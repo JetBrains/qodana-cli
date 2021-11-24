@@ -3,6 +3,8 @@ module jetbrains.team/sa/cli
 go 1.16
 
 require (
+	github.com/owenrumney/go-sarif v1.0.12 // indirect
+	github.com/pterm/pterm v0.12.33 // indirect
 	github.com/sirupsen/logrus v1.8.1 // indirect
 	github.com/spf13/cobra v1.2.1 // indirect
 	github.com/spf13/viper v1.9.0 // indirect

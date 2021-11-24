@@ -1,16 +1,29 @@
 package linters
 
 import (
-	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
+	"jetbrains.team/sa/cli/pkg"
 )
 
-// JvmCmd is an entry point for running jvm qodana linter
-var JvmCmd = &cobra.Command{
-	Use:   "jvm",
-	Short: "Qodana JVM",
-	Long:  "Qodana JVM",
-	Run: func(cmd *cobra.Command, args []string) {
-		log.Info("To be implemented soon...")
-	},
+// NewJvmCommand create new jvm command
+func NewJvmCommand() *cobra.Command {
+	options := pkg.NewLinterOptions()
+	cmd := &cobra.Command{
+		Use:   "jvm",
+		Short: "Qodana JVM",
+		Long:  "Qodana JVM",
+		PreRun: func(cmd *cobra.Command, args []string) {
+			EnsureDockerRunning()
+		},
+		Run: func(cmd *cobra.Command, args []string) {
+			PrintHeader(options.ImageName)
+			b := pkg.DefaultBuilder{}
+			b.SetOptions(options)
+			PrepareFolders(options)
+			PrintProcess(func() { RunCommand(b.GetCommand()) })
+			PrintResults(options.ReportPath)
+		},
+	}
+	AddCommandFlags(cmd, options, "jetbrains/qodana-jvm")
+	return cmd
 }

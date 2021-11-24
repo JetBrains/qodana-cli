@@ -1,16 +1,29 @@
 package linters
 
 import (
-	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
+	"jetbrains.team/sa/cli/pkg"
 )
 
-// PyCmd is an entry point for running php qodana linter
-var PyCmd = &cobra.Command{
-	Use:   "py",
-	Short: "Qodana Python",
-	Long:  "Qodana Python",
-	Run: func(cmd *cobra.Command, args []string) {
-		log.Info("To be implemented soon...")
-	},
+// NewPyCommand create new py command
+func NewPyCommand() *cobra.Command {
+	options := pkg.NewLinterOptions()
+	cmd := &cobra.Command{
+		Use:   "py",
+		Short: "Qodana Python",
+		Long:  "Qodana Python",
+		PreRun: func(cmd *cobra.Command, args []string) {
+			EnsureDockerRunning()
+		},
+		Run: func(cmd *cobra.Command, args []string) {
+			PrintHeader(options.ImageName)
+			b := pkg.DefaultBuilder{}
+			b.SetOptions(options)
+			PrepareFolders(options)
+			PrintProcess(func() { RunCommand(b.GetCommand()) })
+			PrintResults(options.ReportPath)
+		},
+	}
+	AddCommandFlags(cmd, options, "jetbrains/qodana-python")
+	return cmd
 }
