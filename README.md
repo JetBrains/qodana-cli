@@ -1,31 +1,13 @@
 # sa/cli
 
+## Try
 
+Run for debug with (go 1.16+ is required)
 
-## Getting Started
+```go run main.go jvm```
 
-Download links:
+## Build
 
-SSH clone URL: ssh://git@git.jetbrains.team/sa/cli.git
+Build a binary with
+```go build -o qodana main.go```
 
-HTTPS clone URL: https://git.jetbrains.team/sa/cli.git
-
-
-
-These instructions will get you a copy of the project up and running on your local machine for development and testing purposes.
-
-## Prerequisites
-
-What things you need to install the software and how to install them.
-
-```
-Examples
-```
-
-## Deployment
-
-Add additional notes about how to deploy this on a production system.
-
-## Resources
-
-Add links to external resources for this project, such as CI server, bug tracker, etc.
