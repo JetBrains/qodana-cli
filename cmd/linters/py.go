@@ -2,7 +2,7 @@ package linters
 
 import (
 	"github.com/spf13/cobra"
-	"jetbrains.team/sa/cli/pkg"
+	"github.com/tiulpin/qodana-cli/pkg"
 )
 
 // NewPyCommand create new py command

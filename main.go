@@ -3,7 +3,7 @@ package main
 import (
 	"fmt"
 	log "github.com/sirupsen/logrus"
-	"jetbrains.team/sa/cli/cmd"
+	"github.com/tiulpin/qodana-cli/cmd"
 	"os"
 )
 

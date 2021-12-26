@@ -6,7 +6,7 @@ import (
 	"github.com/pterm/pterm"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
-	"jetbrains.team/sa/cli/pkg"
+	"github.com/tiulpin/qodana-cli/pkg"
 	"os"
 	"os/exec"
 	"path/filepath"

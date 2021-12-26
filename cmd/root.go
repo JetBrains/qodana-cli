@@ -4,8 +4,8 @@ import (
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
-	"jetbrains.team/sa/cli/cmd/linters"
-	"jetbrains.team/sa/cli/pkg"
+	"github.com/tiulpin/qodana-cli/cmd/linters"
+	"github.com/tiulpin/qodana-cli/pkg"
 )
 
 // NewRootCmd constructs root command

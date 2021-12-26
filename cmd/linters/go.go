@@ -2,28 +2,28 @@ package linters
 
 import (
 	"github.com/spf13/cobra"
-	"jetbrains.team/sa/cli/pkg"
+	"github.com/tiulpin/qodana-cli/pkg"
 )
 
 // NewGoCommand is an entrypoint for go command
 func NewGoCommand() *cobra.Command {
-	opts := pkg.NewLinterOptions()
+	options := pkg.NewLinterOptions()
 	cmd := &cobra.Command{
 		Use:   "go",
-		Short: "Qodana Go",
-		Long:  "Qodana Go",
+		Short: "Qodana for Go",
+		Long:  "Qodana for Go",
 		PreRun: func(cmd *cobra.Command, args []string) {
 			EnsureDockerRunning()
 		},
 		Run: func(cmd *cobra.Command, args []string) {
-			PrintHeader(opts.ImageName)
+			PrintHeader(options.ImageName)
 			b := pkg.NewDefaultBuilder()
-			b.SetOptions(opts)
-			PrepareFolders(opts)
+			b.SetOptions(options)
+			PrepareFolders(options)
 			PrintProcess(func() { RunCommand(b.GetCommand()) })
-			PrintResults(opts.ReportPath)
+			PrintResults(options.ReportPath)
 		},
 	}
-	AddCommandFlags(cmd, opts, "jetbrains/qodana-go")
+	AddCommandFlags(cmd, options, "jetbrains/qodana-go")
 	return cmd
 }

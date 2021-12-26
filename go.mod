@@ -1,4 +1,4 @@
-module jetbrains.team/sa/cli
+module github.com/tiulpin/qodana-cli
 
 go 1.16
 

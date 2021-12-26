@@ -2,7 +2,7 @@ package linters
 
 import (
 	"github.com/spf13/cobra"
-	"jetbrains.team/sa/cli/pkg"
+	"github.com/tiulpin/qodana-cli/pkg"
 )
 
 // NewPhpCommand create new php command
@@ -10,8 +10,8 @@ func NewPhpCommand() *cobra.Command {
 	options := pkg.NewLinterOptions()
 	cmd := &cobra.Command{
 		Use:   "php",
-		Short: "Qodana PHP",
-		Long:  "Qodana PHP",
+		Short: "Qodana for PHP",
+		Long:  "Qodana for PHP",
 		PreRun: func(cmd *cobra.Command, args []string) {
 			EnsureDockerRunning()
 		},

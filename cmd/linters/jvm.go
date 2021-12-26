@@ -2,7 +2,7 @@ package linters
 
 import (
 	"github.com/spf13/cobra"
-	"jetbrains.team/sa/cli/pkg"
+	"github.com/tiulpin/qodana-cli/pkg"
 )
 
 // NewJvmCommand create new jvm command
@@ -10,8 +10,8 @@ func NewJvmCommand() *cobra.Command {
 	options := pkg.NewLinterOptions()
 	cmd := &cobra.Command{
 		Use:   "jvm",
-		Short: "Qodana JVM",
-		Long:  "Qodana JVM",
+		Short: "Qodana for JVM",
+		Long:  "Qodana for JVM",
 		PreRun: func(cmd *cobra.Command, args []string) {
 			EnsureDockerRunning()
 		},
