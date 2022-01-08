@@ -1,6 +1,6 @@
 # Created by https://www.toptal.com/developers/gitignore/api/macos,goland,go
 # Edit at https://www.toptal.com/developers/gitignore?templates=macos,goland,go
-
+.qodana
 ### Go ###
 # Binaries for programs and plugins
 *.exe
@@ -131,3 +131,6 @@ Temporary Items
 .apdisk
 
 # End of https://www.toptal.com/developers/gitignore/api/macos,goland,go
+dist/
+
+dist/

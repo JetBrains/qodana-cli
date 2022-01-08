@@ -4,8 +4,7 @@ import (
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
-	"github.com/tiulpin/qodana-cli/cmd/linters"
-	"github.com/tiulpin/qodana-cli/pkg"
+	"github.com/tiulpin/qodana/pkg"
 )
 
 // NewRootCmd constructs root command
@@ -39,11 +38,8 @@ var RootCmd = NewRootCmd()
 
 func init() {
 	RootCmd.AddCommand(
-		linters.NewJsCommand(),
-		linters.NewPhpCommand(),
-		linters.NewPyCommand(),
-		linters.NewGoCommand(),
-		linters.NewJvmCommand(),
+		NewInitCommand(),
+		NewScanCommand(),
 	)
 }
 

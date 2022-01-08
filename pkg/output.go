@@ -41,7 +41,7 @@ const logo = `
 // Two newlines at the start are important to lay the output nicely in CLI
 const info = `
 
-Qodana CLI 2021.2
+Qodana CLI
 Documentation – https://jb.gg/qodana-docs
 Contact us at qodana-support@jetbrains.com
 Or via our issue tracker – https://jb.gg/qodana-issue
