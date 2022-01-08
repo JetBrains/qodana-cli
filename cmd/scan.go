@@ -97,10 +97,10 @@ func PrintResults(p string) {
 	if pcnt == 0 {
 		pkg.Primary.Print("✨  Awesome code ")
 		pkg.PrimaryBold.Print("0 problems ")
-		pkg.Primary.Print("found!")
+		pkg.Primary.Print("found!\n")
 	} else {
 		pkg.Error.Print("❌  Found ")
-		pkg.ErrorBold.Printfln("%d problems", pcnt)
+		pkg.ErrorBold.Printfln("%d problems\n", pcnt)
 	}
 }
 

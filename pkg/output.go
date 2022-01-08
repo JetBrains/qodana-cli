@@ -45,7 +45,7 @@ Qodana CLI
 Documentation – https://jb.gg/qodana-docs
 Contact us at qodana-support@jetbrains.com
 Or via our issue tracker – https://jb.gg/qodana-issue
-Or share your feedback in our Slack – https://jb.gg/qodana-slack!
+Or share your feedback in our Slack – https://jb.gg/qodana-slack
 `
 
 // Primary is primary text style

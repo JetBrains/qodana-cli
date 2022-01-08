@@ -34,8 +34,7 @@ go build -o qodana main.go
 
 Just run
 ```shell
-git tag -a v0.1.1 -m "v0.1.1" 
-git push origin v0.1.1
+v=v0.1.2 git tag -a $v -m "$v" && git push origin $v
 ```
 
 goreleaser will do the rest.

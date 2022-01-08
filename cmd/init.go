@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"fmt"
+	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 	"github.com/tiulpin/qodana/pkg"
 	"os"
@@ -18,7 +19,11 @@ func NewInitCommand() *cobra.Command {
 			EnsureDockerRunning()
 		},
 		Run: func(cmd *cobra.Command, args []string) {
+			if err := pkg.Greet(); err != nil {
+				log.Fatal("couldn't print", err)
+			}
 			PrintProcess(func() { configureProject(options) }, "configuration")
+			pkg.Primary.Print("🚀 Run `qodana scan` to analyze the project\n")
 		},
 	}
 	AddCommandFlags(cmd, options)
