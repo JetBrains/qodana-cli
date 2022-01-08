@@ -1,5 +1,8 @@
 # qodana
 
+> **Note**: This is experimental project, so it's not guaranteed to work correctly.
+> Use it at your own risk. For running Qodana stably and reliably, please use [Qodana Docker Images](https://www.jetbrains.com/help/qodana/docker-images.html).
+
 ## Usage
 
 Install and run (only Linux and macOS supported):
@@ -29,7 +32,10 @@ go build -o qodana main.go
 
 ### Release a new version
 
+Just run
 ```shell
 git tag -a v0.1.1 -m "v0.1.1" 
 git push origin v0.1.1
 ```
+
+goreleaser will do the rest.
