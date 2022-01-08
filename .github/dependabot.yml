@@ -2,10 +2,14 @@ version: 2
 updates:
   - package-ecosystem: github-actions
     directory: /
+    commit-message:
+      prefix: ":arrow_up:"
     schedule:
       interval: weekly
 
   - package-ecosystem: gomod
     directory: /
+    commit-message:
+      prefix: ":arrow_up:"
     schedule:
       interval: weekly
