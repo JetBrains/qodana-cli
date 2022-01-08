@@ -4,7 +4,7 @@ go 1.16
 
 require (
 	github.com/go-enry/go-enry/v2 v2.8.0
-	github.com/owenrumney/go-sarif v1.0.12
+	github.com/owenrumney/go-sarif v1.1.1
 	github.com/pterm/pterm v0.12.33
 	github.com/sirupsen/logrus v1.8.1
 	github.com/spf13/cobra v1.2.1
