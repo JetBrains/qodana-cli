@@ -1,4 +1,14 @@
-# [WIP] qodana
+# qodana
+
+## Usage
+
+Install and run (only Linux and macOS supported):
+
+```shell
+curl https://i.jpillora.com/tiulpin/qodana\! | bash  # gets the latest version
+qodana init  # in your project root
+qodana scan  # in your project root
+```
 
 ## Development
 
@@ -6,9 +16,20 @@
 
 Run for debug with (go 1.16+ is required)
 
-```go run main.go jvm```
+```shell
+go run main.go
+```
 
 ### Build
 
 Build a binary with
-```go build -o qodana main.go```
+```shell
+go build -o qodana main.go
+```
+
+### Release a new version
+
+```shell
+git tag -a v0.1.1 -m "v0.1.1" 
+git push origin v0.1.1
+```
