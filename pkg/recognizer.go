@@ -41,7 +41,6 @@ func RecognizeDirLanguages(projectPath string) (map[string]int, error) {
 			if f.IsDir() {
 				return filepath.SkipDir
 			}
-
 			return nil
 		}
 

@@ -20,11 +20,11 @@ func NewScanCommand() *cobra.Command {
 			EnsureDockerRunning()
 		},
 		Run: func(cmd *cobra.Command, args []string) {
-			PrintHeader("jetbrains/qodana")
 			b := pkg.NewDefaultBuilder()
 			b.SetOptions(options)
-			PrepareFolders(options)
-			PrintProcess(func() { RunCommand(b.GetCommand(options)) }, "analysis")
+			prepareFolders(options)
+			linter := readConfiguration(options.ProjectPath)
+			PrintProcess(func() { RunCommand(b.GetCommand(options, linter)) }, "analysis")
 			PrintResults(options.ReportPath)
 		},
 	}
@@ -32,8 +32,8 @@ func NewScanCommand() *cobra.Command {
 	return cmd
 }
 
-// PrepareFolders cleans up report folder, creates the necessary folders for the analysis
-func PrepareFolders(options *pkg.LinterOptions) {
+// prepareFolders cleans up report folder, creates the necessary folders for the analysis
+func prepareFolders(options *pkg.LinterOptions) {
 	if _, err := os.Stat(options.ReportPath); err == nil {
 		err := os.RemoveAll(options.ReportPath)
 		if err != nil {
@@ -46,6 +46,17 @@ func PrepareFolders(options *pkg.LinterOptions) {
 	if err := os.MkdirAll(options.ReportPath, os.ModePerm); err != nil {
 		log.Fatal("couldn't create a directory ", err.Error())
 	}
+}
+
+func readConfiguration(projectPath string) string {
+	qodanaYaml := pkg.GetQodanaYaml(projectPath)
+	if qodanaYaml.Linters == nil {
+		pkg.Error.Println(
+			"No valid qodana.yaml found. Have you run `qodana init`? ",
+		)
+		os.Exit(1)
+	}
+	return qodanaYaml.Linters[0]
 }
 
 // AddCommandFlags adds flags with the default values to the command

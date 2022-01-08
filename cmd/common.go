@@ -12,24 +12,15 @@ import (
 func RunCommand(cmd *exec.Cmd) {
 	log.Info("running", cmd.String())
 	if err := cmd.Run(); err != nil {
-		log.Fatal("failed:", err.Error())
+		log.Fatal("\nProblem occurred:", err.Error())
 	}
-}
-
-// PrintHeader prints the header message
-func PrintHeader(image string) {
-	if err := pkg.Greet(); err != nil {
-		log.Fatal("couldn't print", err)
-	}
-	pkg.Primary.Print("🔋 Powered by ")
-	pkg.PrimaryBold.Println(image)
 }
 
 // PrintProcess prints the message for processing phase
 // 	TODO: Add ETA based on previous runs
 func PrintProcess(f func(), what string) {
 	if err := pkg.Spin(f, "Running project "+what); err != nil {
-		log.Fatal("couldn't spin", err)
+		log.Fatal("\nProblem occurred:", err.Error())
 	}
 	pkg.Primary.Println("✅  Finished project " + what)
 }

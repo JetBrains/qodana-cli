@@ -1,9 +1,10 @@
 package cmd
 
 import (
-	log "github.com/sirupsen/logrus"
+	"fmt"
 	"github.com/spf13/cobra"
 	"github.com/tiulpin/qodana/pkg"
+	"os"
 	"path/filepath"
 )
 
@@ -28,7 +29,11 @@ func configureProject(options *pkg.LinterOptions) {
 	path, _ := filepath.Abs(options.ProjectPath)
 	linters := getProjectLinters(options)
 	if len(linters) == 0 {
-		log.Fatal("Qodana does not support the project " + path + " yet. See https://www.jetbrains.com/help/qodana/supported-technologies.html")
+		pkg.Error.Println(fmt.Sprintf(
+			"Qodana does not support the project %s yet. See https://www.jetbrains.com/help/qodana/supported-technologies.html",
+			path,
+		))
+		os.Exit(1)
 	}
 	pkg.WriteQodanaYaml(options.ProjectPath, linters)
 }
