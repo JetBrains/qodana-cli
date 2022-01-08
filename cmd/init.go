@@ -51,7 +51,9 @@ func getProjectLinters(options *pkg.LinterOptions) []string {
 	languages, _ := pkg.RecognizeDirLanguages(options.ProjectPath)
 	for language, _ := range languages {
 		if linter, err := langLinters[language]; err {
-			linters = append(linters, linter)
+			if !contains(linters, linter) {
+				linters = append(linters, linter)
+			}
 		}
 	}
 	return linters

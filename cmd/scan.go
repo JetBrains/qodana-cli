@@ -24,6 +24,9 @@ func NewScanCommand() *cobra.Command {
 			b.SetOptions(options)
 			prepareFolders(options)
 			linter := readConfiguration(options.ProjectPath)
+			if err := pkg.Greet(); err != nil {
+				log.Fatal("couldn't print", err)
+			}
 			PrintProcess(func() { RunCommand(b.GetCommand(options, linter)) }, "analysis")
 			PrintResults(options.ReportPath)
 		},
