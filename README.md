@@ -43,6 +43,17 @@ qodana scan # in your project root
 - After the first Qodana run, the following runs will be faster because of the saved Qodana cache in your project (defaults to `./.qodana/cache`)
 - Latest Qodana report will be saved to `./.qodana/report` – you can find qodana.sarif.json and other Qodana artifacts (like logs) in this directory.
 
+### Show report
+
+After analysis is done, the report is saved by default to `./.qodana/report`. Inside that directory, you can find Qodana HTML report.
+To view it in the browser, run the following command:
+
+```shell
+qodana show # in your project root
+```
+
+You can serve any Qodana HTML report regardless of the project, if you provide the correct report path.
+
 ## Development
 
 ### Try
