@@ -11,9 +11,9 @@ import (
 	"strings"
 )
 
-func RecognizeDirLanguages(projectPath string) (map[string]int, error) {
+func RecognizeDirLanguages(projectPath string) ([]string, error) {
 	const limitKb = 64
-	out := make(map[string]int, 0)
+	out := make(map[string]int)
 	err := filepath.Walk(projectPath, func(path string, f os.FileInfo, err error) error {
 		if err != nil {
 			return filepath.SkipDir
@@ -72,7 +72,11 @@ func RecognizeDirLanguages(projectPath string) (map[string]int, error) {
 	if err != nil {
 		return nil, err
 	}
-	return out, nil
+	var languages []string
+	for l := range out {
+		languages = append(languages, l)
+	}
+	return languages, nil
 }
 
 func readFile(path string, limit int64) ([]byte, error) {
@@ -103,12 +107,12 @@ func readFile(path string, limit int64) ([]byte, error) {
 	return buf.Bytes(), err
 }
 
-func readIdeaFolder(project string) []string {
-	var linters []string
+func ReadIdeaFolder(project string) []string {
+	var languages []string
 	var files []string
 	root := project + "/.idea"
 	if _, err := os.Stat(root); os.IsNotExist(err) {
-		return linters
+		return languages
 	}
 	err := filepath.Walk(root, func(path string, info os.FileInfo, err error) error {
 		files = append(files, path)
@@ -125,10 +129,10 @@ func readIdeaFolder(project string) []string {
 			}
 			text := string(iml)
 			if strings.Contains(text, "JAVA_MODULE") {
-				linters = append(linters, "jetbrains/qodana-jvm")
+				languages = append(languages, "Java")
 			}
 			if strings.Contains(text, "PYTHON_MODULE") {
-				linters = append(linters, "jetbrains/qodana-python")
+				languages = append(languages, "Python")
 			}
 			if strings.Contains(text, "WEB_MODULE") {
 				xml, err := ioutil.ReadFile(project + "/.idea/workspace.xml")
@@ -137,12 +141,12 @@ func readIdeaFolder(project string) []string {
 				}
 				workspace := string(xml)
 				if strings.Contains(workspace, "PhpWorkspaceProjectConfiguration") {
-					linters = append(linters, "jetbrains/qodana-php")
+					languages = append(languages, "PHP")
 				} else {
-					linters = append(linters, "jetbrains/qodana-js")
+					languages = append(languages, "JavaScript")
 				}
 			}
 		}
 	}
-	return linters
+	return languages
 }

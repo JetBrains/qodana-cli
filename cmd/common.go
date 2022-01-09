@@ -26,9 +26,8 @@ func PrintProcess(f func(), what string) {
 }
 
 // ensureDockerInstalled checks if docker is installed
-// 	TODO: Windows support? Yes, we will use Docker API
 func ensureDockerInstalled() {
-	cmd := exec.Command("which", "docker")
+	cmd := exec.Command("docker", "--version")
 	if err := cmd.Run(); err != nil {
 		if _, ok := err.(*exec.ExitError); ok {
 			pkg.Error.Println(

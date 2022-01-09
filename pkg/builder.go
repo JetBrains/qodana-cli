@@ -16,7 +16,6 @@ type CommandBuilder interface {
 type DefaultBuilder struct {
 	dockerArguments     []string
 	entryPointArguments []string
-	reportShared        bool
 }
 
 func NewDefaultBuilder() *DefaultBuilder {

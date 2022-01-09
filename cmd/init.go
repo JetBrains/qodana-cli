@@ -2,7 +2,6 @@ package cmd
 
 import (
 	"fmt"
-	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 	"github.com/tiulpin/qodana/pkg"
 	"os"
@@ -19,11 +18,8 @@ func NewInitCommand() *cobra.Command {
 			EnsureDockerRunning()
 		},
 		Run: func(cmd *cobra.Command, args []string) {
-			if err := pkg.Greet(); err != nil {
-				log.Fatal("couldn't print", err)
-			}
 			PrintProcess(func() { configureProject(options) }, "configuration")
-			pkg.Primary.Print("🚀 Run `qodana scan` to analyze the project\n")
+			pkg.Primary.Print("🚀  Run `qodana scan` to analyze the project\n")
 		},
 	}
 	AddCommandFlags(cmd, options)
@@ -44,6 +40,7 @@ func configureProject(options *pkg.LinterOptions) {
 }
 
 func getProjectLinters(options *pkg.LinterOptions) []string {
+	var linters []string
 	langLinters := map[string]string{
 		"Java":       "jetbrains/qodana-jvm",
 		"Kotlin":     "jetbrains/qodana-jvm",
@@ -52,9 +49,11 @@ func getProjectLinters(options *pkg.LinterOptions) []string {
 		"JavaScript": "jetbrains/qodana-js",
 		"TypeScript": "jetbrains/qodana-js",
 	}
-	var linters []string
-	languages, _ := pkg.RecognizeDirLanguages(options.ProjectPath)
-	for language, _ := range languages {
+	languages := pkg.ReadIdeaFolder(options.ProjectPath)
+	if len(languages) == 0 {
+		languages, _ = pkg.RecognizeDirLanguages(options.ProjectPath)
+	}
+	for _, language := range languages {
 		if linter, err := langLinters[language]; err {
 			if !contains(linters, linter) {
 				linters = append(linters, linter)

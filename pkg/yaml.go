@@ -35,7 +35,7 @@ func WriteQodanaYaml(path string, linters []string) {
 	q := &QodanaYaml{
 		Version: "1.0",
 		Linters: linters,
-		Exclude: []QodanaExclude{*&QodanaExclude{
+		Exclude: []QodanaExclude{{
 			Name: "All",
 			Paths: []string{
 				".qodana/",
