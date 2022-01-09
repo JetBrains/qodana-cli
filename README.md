@@ -16,7 +16,7 @@ To support this, you must have Docker installed and running locally.
 Install and run `qodana` to `/urs/local/bin` (only Linux and macOS supported):
 
 ```shell
-curl https://raw.githubusercontent.com/tiulpin/qodana/main/install | bash # gets the latest version
+curl -fsSL https://raw.githubusercontent.com/tiulpin/qodana/main/install | bash # gets the latest version
 ```
 
 Alternatively, you can install the latest binary from [GitHub Releases](https://github.com/tiulpin/qodana/releases/latest).
@@ -53,31 +53,3 @@ qodana show # in your project root
 ```
 
 You can serve any Qodana HTML report regardless of the project, if you provide the correct report path.
-
-## Development
-
-### Try
-
-Run for debug with (go 1.16+ is required)
-
-```shell
-go run main.go
-```
-
-### Build
-
-Build a binary with
-
-```shell
-go build -o qodana main.go
-```
-
-### Release a new version
-
-Just run
-
-```shell
-git tag -a vX.X.X -m "vX.X.X" && git push origin vX.X.X
-```
-
-And goreleaser will do the rest.
