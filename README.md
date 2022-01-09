@@ -26,30 +26,34 @@ Alternatively, you can install the latest binary from [GitHub Releases](https://
 ### Project configuration
 
 Before you start using Qodana, you need to configure your project. 
-Qodana CLI can do that for you, by running the following command:
+Qodana CLI can do that for you, just run the following command in your project root:
 
-```shell
-qodana init  # in your project root
+```sh
+qodana init
 ```
 
 ### Project analysis
 
-Right after you configured your project, you can run Qodana inspections simply by invoking the following command:
+Right after you configured your project, you can run Qodana inspections simply by invoking the following command in your project root:
 
-```shell
-qodana scan # in your project root
+```sh
+qodana scan
 ```
 
 - After the first Qodana run, the following runs will be faster because of the saved Qodana cache in your project (defaults to `./.qodana/cache`)
-- Latest Qodana report will be saved to `./.qodana/report` – you can find qodana.sarif.json and other Qodana artifacts (like logs) in this directory.
+- Latest Qodana report will be saved to `./.qodana/results` – you can find qodana.sarif.json and other Qodana artifacts (like logs) in this directory.
 
 ### Show report
 
-After analysis is done, the report is saved by default to `./.qodana/report`. Inside that directory, you can find Qodana HTML report.
-To view it in the browser, run the following command:
+After analysis is done, the results are saved to `./.qodana/results` by default. Inside the directory `./.qodana/results/report`, you can find Qodana HTML report.
+To view it in the browser, run the following command from your project root:
 
 ```shell
-qodana show # in your project root
+qodana show
 ```
 
 You can serve any Qodana HTML report regardless of the project, if you provide the correct report path.
+
+### More configuration
+
+To find more CLI options, run `qodana ...` commands with the `--help` flag. Currently there are not many options, if you want to configure Qodana or checks inside Qodana, consider using [`qodana.yaml` ](https://www.jetbrains.com/help/qodana/qodana-yaml.html).
