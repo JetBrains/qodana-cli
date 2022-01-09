@@ -13,13 +13,27 @@ To support this, you must have Docker installed and running locally.
 
 ## Installation
 
-Install and run `qodana` to `/urs/local/bin` (only Linux and macOS supported):
+We have installation scripts for Linux, macOS and Windows. Alternatively, you can install the latest binary from [GitHub Releases](https://github.com/tiulpin/qodana/releases/latest).
+
+### Linux and macOS
+
+Install and run `qodana` to `/urs/local/bin`:
 
 ```shell
 curl -fsSL https://raw.githubusercontent.com/tiulpin/qodana/main/install | bash
 ```
 
-Alternatively, you can install the latest binary from [GitHub Releases](https://github.com/tiulpin/qodana/releases/latest).
+If you want to install some specific version, add the version number (e.g. `0.2.0`) **in the end** of the command.
+
+### Windows
+
+Install and run `qodana` to `$Home\bin`:
+
+```shell
+iwr https://github.com/tiulpin/qodana/raw/tiulpin/add-windows-installer/install.ps1 -useb | iex
+```
+
+If you want to install some specific version, add the version number (e.g. `$v="0.2.0";`) **in the beginning** of the command.
 
 ## Usage
 
