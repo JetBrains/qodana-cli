@@ -30,7 +30,7 @@ If you want to install some specific version, add the version number (e.g. `0.2.
 Install and run `qodana` to `$Home\bin`:
 
 ```shell
-iwr https://github.com/tiulpin/qodana/raw/tiulpin/add-windows-installer/install.ps1 -useb | iex
+iwr https://raw.githubusercontent.com/tiulpin/qodana/main/install.ps1 -useb | iex
 ```
 
 If you want to install some specific version, add the version number (e.g. `$v="0.2.0";`) **in the beginning** of the command.
