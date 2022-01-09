@@ -16,14 +16,6 @@ type LinterOptions struct {
 	ProjectDir string
 }
 
-// RunCommand runs the command
-func RunCommand(cmd *exec.Cmd) {
-	log.Info("running", cmd.String())
-	if err := cmd.Run(); err != nil {
-		log.Fatal("\nProblem occurred:", err.Error())
-	}
-}
-
 // Contains checks if a string is in a given slice
 func Contains(s []string, str string) bool {
 	for _, v := range s {
@@ -35,7 +27,6 @@ func Contains(s []string, str string) bool {
 }
 
 func ConfigureProject(options *LinterOptions) {
-	prepareFolders(options.ResultsDir, options.CachePath)
 	var linters []string
 	langLinters := map[string]string{
 		"Java":       "jetbrains/qodana-jvm",
@@ -67,18 +58,18 @@ func ConfigureProject(options *LinterOptions) {
 	WriteQodanaYaml(options.ProjectDir, linters)
 }
 
-// prepareFolders cleans up report folder, creates the necessary folders for the analysis
-func prepareFolders(reportPath string, cachePath string) {
-	if _, err := os.Stat(reportPath); err == nil {
-		err := os.RemoveAll(reportPath)
+// PrepareFolders cleans up report folder, creates the necessary folders for the analysis
+func PrepareFolders(opts *LinterOptions) {
+	if _, err := os.Stat(opts.ResultsDir); err == nil {
+		err := os.RemoveAll(opts.ResultsDir)
 		if err != nil {
 			return
 		}
 	}
-	if err := os.MkdirAll(cachePath, os.ModePerm); err != nil {
+	if err := os.MkdirAll(opts.CachePath, os.ModePerm); err != nil {
 		log.Fatal("couldn't create a directory ", err.Error())
 	}
-	if err := os.MkdirAll(reportPath, os.ModePerm); err != nil {
+	if err := os.MkdirAll(opts.ResultsDir, os.ModePerm); err != nil {
 		log.Fatal("couldn't create a directory ", err.Error())
 	}
 }

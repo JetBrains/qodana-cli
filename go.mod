@@ -3,6 +3,9 @@ module github.com/tiulpin/qodana
 go 1.16
 
 require (
+	github.com/containerd/containerd v1.5.9 // indirect
+	github.com/docker/docker v20.10.12+incompatible
+	github.com/docker/go-connections v0.4.0 // indirect
 	github.com/go-enry/go-enry/v2 v2.8.0
 	github.com/mattn/go-isatty v0.0.14
 	github.com/owenrumney/go-sarif v1.1.1
