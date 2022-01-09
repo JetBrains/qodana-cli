@@ -68,11 +68,12 @@ func (q *QodanaYaml) excludeDotQodana() {
 	excluded := false
 	for i, exclude := range q.Exclude {
 		if exclude.Name == "All" {
-			if !Contains(exclude.Paths, ".qodana") {
+			if !Contains(exclude.Paths, ".qodana/") {
 				exclude.Paths = append(exclude.Paths, ".qodana/")
 				q.Exclude[i] = exclude
-				excluded = true
 			}
+			excluded = true
+			break
 		}
 	}
 	if !excluded {

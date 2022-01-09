@@ -13,6 +13,7 @@ func NewInitCommand() *cobra.Command {
 		Long:  "Prepare Qodana configuration file",
 		PreRun: func(cmd *cobra.Command, args []string) {
 			pkg.EnsureDockerRunning()
+			pkg.PrepareFolders(options)
 		},
 		Run: func(cmd *cobra.Command, args []string) {
 			pkg.PrintProcess(
