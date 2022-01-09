@@ -10,9 +10,10 @@ import (
 // NewRootCmd constructs root command
 func NewRootCmd() *cobra.Command {
 	rootCmd := &cobra.Command{
-		Use:   "qodana",
-		Short: "Run Qodana CLI",
-		Long:  "Run Qodana CLI. Qodana is a code quality monitoring platform. Docs: https://jb.gg/qodana-docs",
+		Use:     "qodana",
+		Short:   "Run Qodana CLI",
+		Long:    "Run Qodana CLI. Qodana is a code quality monitoring platform. Docs: https://jb.gg/qodana-docs",
+		Version: "0.2.0",
 		PersistentPreRun: func(cmd *cobra.Command, args []string) {
 			logLevel, err := log.ParseLevel(viper.GetString("log-level"))
 			if err != nil {
@@ -25,6 +26,9 @@ func NewRootCmd() *cobra.Command {
 			if err != nil {
 				log.Fatal(err)
 			}
+		},
+		PostRun: func(cmd *cobra.Command, args []string) {
+			pkg.Primary.Println("\n") // for proper output end in ZSH
 		},
 	}
 	rootCmd.PersistentFlags().String("log-level", "error", "Set log-level for output")

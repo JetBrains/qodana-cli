@@ -2,13 +2,8 @@ package cmd
 
 import (
 	"fmt"
-	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
-	"net/http"
-	"os"
-	"os/exec"
-	"path/filepath"
-	"runtime"
+	"github.com/tiulpin/qodana/pkg"
 )
 
 type ShowOptions struct {
@@ -20,59 +15,26 @@ type ShowOptions struct {
 func NewShowCommand() *cobra.Command {
 	options := &ShowOptions{}
 	cmd := &cobra.Command{
-		Use:    "show",
-		Short:  "Show Qodana report",
-		Long:   "Show (serve locally) the latest Qodana report",
+		Use:   "show",
+		Short: "Show Qodana report",
+		Long: `Show (serve locally) the latest Qodana report.
+
+Due to JavaScript security restrictions, the generated report cannot 
+be viewed via the file:// protocol (that is, by double-clicking the index.html file).
+https://www.jetbrains.com/help/qodana/html-report.html
+This command serves the report locally and opens browser to it.`,
 		PreRun: func(cmd *cobra.Command, args []string) {},
 		Run: func(cmd *cobra.Command, args []string) {
-			checkReport(options.ReportPath)
 			message := fmt.Sprintf("Showing Qodana report at http://localhost:%d", options.Port)
-			printProcess(func() { showReport(options) }, message, "report show")
+			pkg.PrintProcess(func() { pkg.ShowReport(options.ReportPath, options.Port) }, message, "report show")
 		},
 	}
 	flags := cmd.Flags()
-	flags.StringVar(&options.ReportPath, "report-path", ".qodana/report/report", "Specify HTML report path (the one with index.html inside)")
-	flags.IntVar(&options.Port, "port", 8080, "Specify port to serve report at")
-	flags.BoolVar(&options.NoBrowser, "no-browser", false, "Do not open browser with show")
+	flags.StringVar(&options.ReportPath,
+		"report-path",
+		".qodana/report/report",
+		"Specify HTML report path (the one with index.html inside)")
+	flags.IntVarP(&options.Port, "port", "p", 8080, "Specify port to serve report at")
+	flags.BoolVarP(&options.NoBrowser, "no-browser", "n", false, "Do not open browser with show")
 	return cmd
-}
-
-func checkReport(reportPath string) {
-	if _, err := os.Stat(reportPath); os.IsNotExist(err) {
-		log.Fatal("Qodana report at  not found. Get the report by running `qodana scan`")
-	}
-}
-
-// showReport serves the Qodana report
-func showReport(options *ShowOptions) {
-	url := fmt.Sprintf("http://localhost:%d", options.Port)
-	go func() {
-		err := openBrowser(url)
-		if err != nil {
-			log.Fatal(err.Error())
-		}
-	}()
-	http.Handle("/", http.FileServer(http.Dir(filepath.Join(options.ReportPath, "report"))))
-	err := http.ListenAndServe(fmt.Sprintf(":%d", options.Port), nil)
-	if err != nil {
-		return
-	}
-}
-
-// openBrowser opens the default browser to the given url
-func openBrowser(url string) error {
-	var cmd string
-	var args []string
-
-	switch runtime.GOOS {
-	case "windows":
-		cmd = "cmd"
-		args = []string{"/c", "start"}
-	case "darwin":
-		cmd = "open"
-	default: // "linux", "freebsd", "openbsd", "netbsd"
-		cmd = "xdg-open"
-	}
-	args = append(args, url)
-	return exec.Command(cmd, args...).Start()
 }
