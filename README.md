@@ -16,7 +16,7 @@ To support this, you must have Docker installed and running locally.
 Install and run `qodana` to `/urs/local/bin` (only Linux and macOS supported):
 
 ```shell
-curl -fsSL https://raw.githubusercontent.com/tiulpin/qodana/main/install | bash # gets the latest version
+curl -fsSL https://raw.githubusercontent.com/tiulpin/qodana/main/install | bash
 ```
 
 Alternatively, you can install the latest binary from [GitHub Releases](https://github.com/tiulpin/qodana/releases/latest).
