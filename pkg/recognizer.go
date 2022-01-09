@@ -19,6 +19,10 @@ func RecognizeDirLanguages(projectPath string) ([]string, error) {
 			return filepath.SkipDir
 		}
 
+		if strings.Contains(path, ".qodana") {
+			return nil
+		}
+
 		if f.Mode().IsDir() && !f.Mode().IsRegular() {
 			return nil
 		}

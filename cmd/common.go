@@ -8,21 +8,20 @@ import (
 	"os/exec"
 )
 
-// RunCommand runs the command
-func RunCommand(cmd *exec.Cmd) {
+// runCommand runs the command
+func runCommand(cmd *exec.Cmd) {
 	log.Info("running", cmd.String())
 	if err := cmd.Run(); err != nil {
 		log.Fatal("\nProblem occurred:", err.Error())
 	}
 }
 
-// PrintProcess prints the message for processing phase
-// 	TODO: Add ETA based on previous runs
-func PrintProcess(f func(), what string) {
-	if err := pkg.Spin(f, "Running project "+what); err != nil {
+// printProcess prints the message for processing phase. TODO: Add ETA based on previous runs
+func printProcess(f func(), start string, finished string) {
+	if err := pkg.Spin(f, start); err != nil {
 		log.Fatal("\nProblem occurred:", err.Error())
 	}
-	pkg.Primary.Println("✅  Finished project " + what)
+	pkg.Primary.Printfln("✅  Finished %s ", finished)
 }
 
 // ensureDockerInstalled checks if docker is installed
@@ -40,8 +39,8 @@ func ensureDockerInstalled() {
 	}
 }
 
-// EnsureDockerRunning checks if docker daemon is running
-func EnsureDockerRunning() {
+// ensureDockerRunning checks if docker daemon is running
+func ensureDockerRunning() {
 	ensureDockerInstalled()
 	cmd := exec.Command("docker", "ps")
 	if err := cmd.Run(); err != nil {
@@ -54,13 +53,4 @@ func EnsureDockerRunning() {
 		}
 		log.Fatal(err)
 	}
-}
-
-func contains(s []string, str string) bool {
-	for _, v := range s {
-		if v == str {
-			return true
-		}
-	}
-	return false
 }

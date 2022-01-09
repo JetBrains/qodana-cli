@@ -1,7 +1,6 @@
 package cmd
 
 import (
-	"fmt"
 	"github.com/spf13/cobra"
 	"github.com/tiulpin/qodana/pkg"
 	"os"
@@ -9,20 +8,21 @@ import (
 )
 
 func NewInitCommand() *cobra.Command {
-	options := pkg.NewLinterOptions()
+	options := &pkg.LinterOptions{}
 	cmd := &cobra.Command{
 		Use:   "init",
 		Short: "Create qodana.yaml",
 		Long:  "Prepare Qodana configuration file",
 		PreRun: func(cmd *cobra.Command, args []string) {
-			EnsureDockerRunning()
+			ensureDockerRunning()
 		},
 		Run: func(cmd *cobra.Command, args []string) {
-			PrintProcess(func() { configureProject(options) }, "configuration")
-			pkg.Primary.Print("🚀  Run `qodana scan` to analyze the project\n")
+			printProcess(func() { configureProject(options) }, "Configuring project", "project configuration. Check qodana.yaml.")
+			pkg.Primary.Println("🚀  Run `qodana scan` to analyze the project\n")
 		},
 	}
-	AddCommandFlags(cmd, options)
+	flags := cmd.Flags()
+	flags.StringVarP(&options.ProjectPath, "project-path", "p", ".", "Specify project path")
 	return cmd
 }
 
@@ -30,10 +30,10 @@ func configureProject(options *pkg.LinterOptions) {
 	path, _ := filepath.Abs(options.ProjectPath)
 	linters := getProjectLinters(options)
 	if len(linters) == 0 {
-		pkg.Error.Println(fmt.Sprintf(
+		pkg.Error.Printfln(
 			"Qodana does not support the project %s yet. See https://www.jetbrains.com/help/qodana/supported-technologies.html",
 			path,
-		))
+		)
 		os.Exit(1)
 	}
 	pkg.WriteQodanaYaml(options.ProjectPath, linters)
@@ -55,7 +55,7 @@ func getProjectLinters(options *pkg.LinterOptions) []string {
 	}
 	for _, language := range languages {
 		if linter, err := langLinters[language]; err {
-			if !contains(linters, linter) {
+			if !pkg.Contains(linters, linter) {
 				linters = append(linters, linter)
 			}
 		}

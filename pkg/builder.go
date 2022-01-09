@@ -18,10 +18,6 @@ type DefaultBuilder struct {
 	entryPointArguments []string
 }
 
-func NewDefaultBuilder() *DefaultBuilder {
-	return &DefaultBuilder{}
-}
-
 func (b *DefaultBuilder) GetCommand(opt *LinterOptions, linter string) *exec.Cmd {
 	args := make([]string, 0)
 	args = append(args, "run")

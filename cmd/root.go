@@ -11,8 +11,8 @@ import (
 func NewRootCmd() *cobra.Command {
 	rootCmd := &cobra.Command{
 		Use:   "qodana",
-		Short: "Qodana is a fantastic code quality tool",
-		Long:  "Abracadabra, abracadabra, abracadabra",
+		Short: "Run Qodana CLI",
+		Long:  "Run Qodana CLI. Qodana is a code quality monitoring platform. Docs: https://jb.gg/qodana-docs",
 		PersistentPreRun: func(cmd *cobra.Command, args []string) {
 			logLevel, err := log.ParseLevel(viper.GetString("log-level"))
 			if err != nil {
@@ -40,6 +40,7 @@ func init() {
 	RootCmd.AddCommand(
 		NewInitCommand(),
 		NewScanCommand(),
+		NewShowCommand(),
 	)
 }
 

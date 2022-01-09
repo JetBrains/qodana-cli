@@ -11,27 +11,30 @@ import (
 )
 
 func NewScanCommand() *cobra.Command {
-	options := pkg.NewLinterOptions()
+	options := &pkg.LinterOptions{}
 	cmd := &cobra.Command{
 		Use:   "scan",
 		Short: "Scan with Qodana",
 		Long:  "Scan a project with Qodana",
 		PreRun: func(cmd *cobra.Command, args []string) {
-			EnsureDockerRunning()
+			ensureDockerRunning()
 		},
 		Run: func(cmd *cobra.Command, args []string) {
-			b := pkg.NewDefaultBuilder()
+			b := &pkg.DefaultBuilder{}
 			b.SetOptions(options)
 			prepareFolders(options)
-			linter := readConfiguration(options.ProjectPath)
+			linter := readConfiguration(options)
 			if err := pkg.Greet(); err != nil {
 				log.Fatal("couldn't print", err)
 			}
-			PrintProcess(func() { RunCommand(b.GetCommand(options, linter)) }, "analysis")
+			printProcess(func() { runCommand(b.GetCommand(options, linter)) }, "Analyzing project", "project analysis")
 			PrintResults(options.ReportPath)
 		},
 	}
-	AddCommandFlags(cmd, options)
+	flags := cmd.Flags()
+	flags.StringVarP(&options.ProjectPath, "project-path", "p", ".", "Specify project path")
+	flags.StringVar(&options.ReportPath, "report-path", ".qodana/report", "Specify report path")
+	flags.StringVar(&options.CachePath, "cache-path", ".qodana/cache", "Specify cache path")
 	return cmd
 }
 
@@ -51,23 +54,16 @@ func prepareFolders(options *pkg.LinterOptions) {
 	}
 }
 
-func readConfiguration(projectPath string) string {
-	qodanaYaml := pkg.GetQodanaYaml(projectPath)
+func readConfiguration(options *pkg.LinterOptions) string {
+	qodanaYaml := pkg.GetQodanaYaml(options.ProjectPath)
 	if qodanaYaml.Linters == nil {
 		pkg.Error.Println(
-			"No valid qodana.yaml found. Have you run `qodana init`? ",
+			"No valid qodana.yaml found. Have you run `qodana init`? Running that for you...",
 		)
-		os.Exit(1)
+		printProcess(func() { configureProject(options) }, "Configuring project", "project configuration")
+		qodanaYaml = pkg.GetQodanaYaml(options.ProjectPath)
 	}
 	return qodanaYaml.Linters[0]
-}
-
-// AddCommandFlags adds flags with the default values to the command
-func AddCommandFlags(cmd *cobra.Command, opt *pkg.LinterOptions) {
-	flags := cmd.Flags()
-	flags.StringVarP(&opt.ProjectPath, "project-path", "p", ".", "Specify project path")
-	flags.StringVar(&opt.ReportPath, "report-path", ".qodana/report", "Specify report path")
-	flags.StringVar(&opt.CachePath, "cache-path", ".qodana/cache", "Specify cache path")
 }
 
 // PrintResults prints Qodana Scan result into stdout
@@ -95,12 +91,9 @@ func PrintResults(p string) {
 	}
 
 	if pcnt == 0 {
-		pkg.Primary.Print("✨  Awesome code ")
-		pkg.PrimaryBold.Print("0 problems ")
-		pkg.Primary.Print("found!\n")
+		pkg.Primary.Println("👌  It seems all right. 0 problems found according to the checks applied.\n")
 	} else {
-		pkg.Error.Print("❌  Found ")
-		pkg.ErrorBold.Printfln("%d problems\n", pcnt)
+		pkg.Error.Printfln("❌  Found %d problems\n", pcnt)
 	}
 }
 
