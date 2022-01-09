@@ -4,7 +4,7 @@
 > Use it at your own risk. For running Qodana stably and reliably, please use [Qodana Docker Images](https://www.jetbrains.com/help/qodana/docker-images.html).
 
 `qodana` is a command line interface for [Qodana](https://jetbrains.com/qodana). 
-It allows you to run Qodana inspections on your local machine (or a CI agent) easily, by running [Qodana Docker Images](https://www.jetbrains.com/help/qodana/docker-images.html). You can 
+It allows you to run Qodana inspections on your local machine (or a CI agent) easily, by running [Qodana Docker Images](https://www.jetbrains.com/help/qodana/docker-images.html).
 
 ## Prerequisites
 
