@@ -27,8 +27,8 @@ func NewRootCmd() *cobra.Command {
 				log.Fatal(err)
 			}
 		},
-		PostRun: func(cmd *cobra.Command, args []string) {
-			pkg.Primary.Println("\n") // for proper output end in ZSH
+		PersistentPostRun: func(cmd *cobra.Command, args []string) {
+			pkg.Primary.Println("\n") // nolint
 		},
 	}
 	rootCmd.PersistentFlags().String("log-level", "error", "Set log-level for output")

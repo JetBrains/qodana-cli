@@ -23,6 +23,8 @@ func NewInitCommand() *cobra.Command {
 		},
 	}
 	flags := cmd.Flags()
-	flags.StringVarP(&options.ProjectPath, "project-dir", "i", ".", "Root directory of the inspected project")
+	flags.StringVarP(&options.ProjectDir, "project-dir", "i", ".", "Root directory of the inspected project")
+	flags.StringVarP(&options.ResultsDir, "results-dir", "o", ".qodana/results", "Directory to save Qodana inspection results to")
+	flags.StringVarP(&options.CachePath, "cache-path", "c", ".qodana/cache", "Cache directory")
 	return cmd
 }

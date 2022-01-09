@@ -18,25 +18,25 @@ func NewScanCommand() *cobra.Command {
 		Run: func(cmd *cobra.Command, args []string) {
 			b := &pkg.DefaultBuilder{}
 			b.SetOptions(options)
-			qodanaYaml := pkg.GetQodanaYaml(options.ProjectPath)
+			qodanaYaml := pkg.GetQodanaYaml(options.ProjectDir)
 			if qodanaYaml.Linters == nil {
 				pkg.Error.Println(
 					"No valid qodana.yaml found. Have you run `qodana init`? Running that for you...",
 				)
 				pkg.PrintProcess(func() { pkg.ConfigureProject(options) }, "Configuring project", "project configuration")
-				qodanaYaml = pkg.GetQodanaYaml(options.ProjectPath)
+				qodanaYaml = pkg.GetQodanaYaml(options.ProjectDir)
 			}
 			linter := qodanaYaml.Linters[0]
 			if err := pkg.Greet(); err != nil {
 				log.Fatal("couldn't print", err)
 			}
 			pkg.PrintProcess(func() { pkg.RunCommand(b.GetDockerCommand(options, linter)) }, "Analyzing project", "project analysis")
-			pkg.PrintSarif(options.ReportPath)
+			pkg.PrintSarif(options.ResultsDir)
 		},
 	}
 	flags := cmd.Flags()
-	flags.StringVarP(&options.ProjectPath, "project-dir", "i", ".", "Root directory of the inspected project")
-	flags.StringVarP(&options.ReportPath, "results-dir", "o", ".qodana/results", "Directory to save Qodana inspection results to")
+	flags.StringVarP(&options.ProjectDir, "project-dir", "i", ".", "Root directory of the inspected project")
+	flags.StringVarP(&options.ResultsDir, "results-dir", "o", ".qodana/results", "Directory to save Qodana inspection results to")
 	flags.StringVarP(&options.CachePath, "cache-path", "c", ".qodana/cache", "Cache directory")
 	return cmd
 }

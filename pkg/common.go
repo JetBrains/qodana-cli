@@ -11,9 +11,9 @@ import (
 )
 
 type LinterOptions struct {
-	ReportPath  string
-	CachePath   string
-	ProjectPath string
+	ResultsDir string
+	CachePath  string
+	ProjectDir string
 }
 
 // RunCommand runs the command
@@ -35,7 +35,7 @@ func Contains(s []string, str string) bool {
 }
 
 func ConfigureProject(options *LinterOptions) {
-	prepareFolders(options.ReportPath, options.CachePath)
+	prepareFolders(options.ResultsDir, options.CachePath)
 	var linters []string
 	langLinters := map[string]string{
 		"Java":       "jetbrains/qodana-jvm",
@@ -45,9 +45,9 @@ func ConfigureProject(options *LinterOptions) {
 		"JavaScript": "jetbrains/qodana-js",
 		"TypeScript": "jetbrains/qodana-js",
 	}
-	languages := ReadIdeaFolder(options.ProjectPath)
+	languages := ReadIdeaFolder(options.ProjectDir)
 	if len(languages) == 0 {
-		languages, _ = RecognizeDirLanguages(options.ProjectPath)
+		languages, _ = RecognizeDirLanguages(options.ProjectDir)
 	}
 	for _, language := range languages {
 		if linter, err := langLinters[language]; err {
@@ -56,7 +56,7 @@ func ConfigureProject(options *LinterOptions) {
 			}
 		}
 	}
-	path, _ := filepath.Abs(options.ProjectPath)
+	path, _ := filepath.Abs(options.ProjectDir)
 	if len(linters) == 0 {
 		Error.Printfln(
 			"Qodana does not support the project %s yet. See https://www.jetbrains.com/help/qodana/supported-technologies.html",
@@ -64,7 +64,7 @@ func ConfigureProject(options *LinterOptions) {
 		)
 		os.Exit(1)
 	}
-	WriteQodanaYaml(options.ProjectPath, linters)
+	WriteQodanaYaml(options.ProjectDir, linters)
 }
 
 // prepareFolders cleans up report folder, creates the necessary folders for the analysis
@@ -95,7 +95,7 @@ func ShowReport(path string, port int) {
 			log.Fatal(err.Error())
 		}
 	}()
-	http.Handle("/", http.FileServer(http.Dir(filepath.Join(path, "report"))))
+	http.Handle("/", http.FileServer(http.Dir(path)))
 	err := http.ListenAndServe(fmt.Sprintf(":%d", port), nil)
 	if err != nil {
 		return

@@ -75,9 +75,9 @@ func (b *DefaultBuilder) SetCacheDir(path string) {
 }
 
 func (b *DefaultBuilder) SetOptions(opt *LinterOptions) {
-	b.SetSaveReport(opt.ReportPath)
+	b.SetSaveReport(opt.ResultsDir)
 	b.SetCacheDir(opt.CachePath)
-	b.SetProjectDir(opt.ProjectPath)
+	b.SetProjectDir(opt.ProjectDir)
 }
 
 func getVolumeArg(srcPath string, tgtPath string) []string {
