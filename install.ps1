@@ -7,7 +7,7 @@ $inputRepo = "tiulpin/qodana"
 $inputVersion = if ($v) {
   "${v}"
 } else {
-  "0.2.0"
+  "0.2.1"
 }
 $inputExe = "qodana"
 
@@ -35,7 +35,7 @@ if ($inputVersion) {
 if ([Environment]::Is64BitProcess) {
   $arch = "x86_64"
 } else {
-  $arch = "386"
+  $arch = "arm64"
 }
 
 $BinDir = "$Home\bin"
