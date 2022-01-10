@@ -6,6 +6,7 @@ require (
 	github.com/containerd/containerd v1.5.9 // indirect
 	github.com/docker/docker v20.10.12+incompatible
 	github.com/docker/go-connections v0.4.0 // indirect
+	github.com/getsentry/sentry-go v0.12.0
 	github.com/go-enry/go-enry/v2 v2.8.0
 	github.com/mattn/go-isatty v0.0.14
 	github.com/morikuni/aec v1.0.0 // indirect

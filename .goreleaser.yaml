@@ -16,6 +16,8 @@ builds:
     goarch:
       - amd64
       - arm64
+    ldflags:
+      - -X main.sentryDsn={{ .Env.SENTRY_DSN }}
 archives:
   - replacements:
       darwin: Darwin

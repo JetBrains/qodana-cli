@@ -39,7 +39,8 @@ If you want to install some specific version, add the version number (e.g. `$v="
 
 ### Project configuration
 
-Before you start using Qodana, you need to configure your project. 
+Before you start using Qodana, you need to configure your project – choose a linter to use. 
+If you know what linter do you want to use, you can skip this step. 
 Qodana CLI can do that for you, just run the following command in your project root:
 
 ```sh
@@ -48,7 +49,7 @@ qodana init
 
 ### Project analysis
 
-Right after you configured your project, you can run Qodana inspections simply by invoking the following command in your project root:
+Right after you configured your project (or remembered linter name you want to run), you can run Qodana inspections simply by invoking the following command in your project root:
 
 ```sh
 qodana scan
@@ -67,6 +68,15 @@ qodana show
 ```
 
 You can serve any Qodana HTML report regardless of the project, if you provide the correct report path.
+
+### Disable telemetry
+
+To disable [Qodana user statistics](https://www.jetbrains.com/help/qodana/qodana-jvm-docker-readme.html#Usage+statistics) and [CLI Sentry crash reports](https://blog.sentry.io/2016/02/09/what-is-crash-reporting), export the `DO_NOT_TRACK` environment variable to `1` before running the CLI:
+
+```sh
+export DO_NOT_TRACK=1
+```
+
 
 ### More configuration
 
