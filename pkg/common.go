@@ -26,7 +26,10 @@ func Contains(s []string, str string) bool {
 	return false
 }
 
-func ConfigureProject(options *LinterOptions) {
+// ConfigureProject sets up the project directory for Qodana CLI to run
+// Looks up .idea directory to determine used modules
+// If a project doesn't have .idea, then runs language detector
+func ConfigureProject(projectDir string) {
 	var linters []string
 	version := "2021.3-eap"
 	langLinters := map[string]string{
@@ -37,9 +40,9 @@ func ConfigureProject(options *LinterOptions) {
 		"JavaScript": fmt.Sprintf("jetbrains/qodana-js:%s", version),
 		"TypeScript": fmt.Sprintf("jetbrains/qodana-js:%s", version),
 	}
-	languages := ReadIdeaFolder(options.ProjectDir)
+	languages := ReadIdeaFolder(projectDir)
 	if len(languages) == 0 {
-		languages, _ = RecognizeDirLanguages(options.ProjectDir)
+		languages, _ = RecognizeDirLanguages(projectDir)
 	}
 	for _, language := range languages {
 		if linter, err := langLinters[language]; err {
@@ -48,7 +51,7 @@ func ConfigureProject(options *LinterOptions) {
 			}
 		}
 	}
-	path, _ := filepath.Abs(options.ProjectDir)
+	path, _ := filepath.Abs(projectDir)
 	if len(linters) == 0 {
 		Error.Printfln(
 			"Qodana does not support the project %s yet. See https://www.jetbrains.com/help/qodana/supported-technologies.html",
@@ -60,7 +63,7 @@ func ConfigureProject(options *LinterOptions) {
 			Primary.Printfln("- Added %s", linter)
 		}
 	}
-	WriteQodanaYaml(options.ProjectDir, linters)
+	WriteQodanaYaml(projectDir, linters)
 }
 
 // PrepareFolders cleans up report folder, creates the necessary folders for the analysis
