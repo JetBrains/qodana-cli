@@ -36,6 +36,7 @@ type QodanaOptions struct {
 	EnvVariables          []string
 }
 
+var Version = "0.3.0"
 var DoNotTrack = false
 
 // Contains checks if a string is in a given slice

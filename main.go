@@ -26,7 +26,7 @@ func main() {
 			Dsn:              sentryDsn,
 			TracesSampleRate: 0.5,
 			Environment:      runtime.GOOS,
-			Release:          "qodana-cli@0.3.0",
+			Release:          fmt.Sprintf("qodana-cli@%s", pkg.Version),
 			Debug:            false,
 		})
 		if err != nil {

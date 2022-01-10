@@ -4,6 +4,7 @@ import (
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
+	"github.com/tiulpin/qodana/pkg"
 	"os"
 )
 
@@ -24,7 +25,7 @@ Here's a typical usage example:
 - run 'qodana show' to explore generated Qodana report for the project.
 
 `,
-		Version: "0.2.1",
+		Version: pkg.Version,
 		PersistentPreRun: func(cmd *cobra.Command, args []string) {
 			logLevel, err := log.ParseLevel(viper.GetString("log-level"))
 			if err != nil {
