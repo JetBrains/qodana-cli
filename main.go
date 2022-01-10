@@ -15,10 +15,10 @@ import (
 var sentryDsn string
 
 func main() {
-	if !pkg.IsInteractive() || os.Getenv("NO_COLOR") != "" {
+	if !pkg.IsInteractive() || os.Getenv("NO_COLOR") != "" { // http://no-color.org
 		pterm.DisableColor()
 	}
-	if os.Getenv("DO_NOT_TRACK") == "1" {
+	if os.Getenv("DO_NOT_TRACK") == "1" { // https://consoledonottrack.com
 		pkg.DoNotTrack = true
 	}
 	if !pkg.DoNotTrack && sentryDsn != "" {
