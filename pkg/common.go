@@ -26,19 +26,23 @@ func Contains(s []string, str string) bool {
 	return false
 }
 
-func ConfigureProject(options *LinterOptions) {
+// ConfigureProject sets up the project directory for Qodana CLI to run
+// Looks up .idea directory to determine used modules
+// If a project doesn't have .idea, then runs language detector
+func ConfigureProject(projectDir string) {
 	var linters []string
+	version := "2021.3-eap"
 	langLinters := map[string]string{
-		"Java":       "jetbrains/qodana-jvm",
-		"Kotlin":     "jetbrains/qodana-jvm",
-		"Python":     "jetbrains/qodana-python",
-		"PHP":        "jetbrains/qodana-php",
-		"JavaScript": "jetbrains/qodana-js",
-		"TypeScript": "jetbrains/qodana-js",
+		"Java":       fmt.Sprintf("jetbrains/qodana-jvm:%s", version),
+		"Kotlin":     fmt.Sprintf("jetbrains/qodana-jvm:%s", version),
+		"Python":     fmt.Sprintf("jetbrains/qodana-python:%s", version),
+		"PHP":        fmt.Sprintf("jetbrains/qodana-php:%s", version),
+		"JavaScript": fmt.Sprintf("jetbrains/qodana-js:%s", version),
+		"TypeScript": fmt.Sprintf("jetbrains/qodana-js:%s", version),
 	}
-	languages := ReadIdeaFolder(options.ProjectDir)
+	languages := ReadIdeaFolder(projectDir)
 	if len(languages) == 0 {
-		languages, _ = RecognizeDirLanguages(options.ProjectDir)
+		languages, _ = RecognizeDirLanguages(projectDir)
 	}
 	for _, language := range languages {
 		if linter, err := langLinters[language]; err {
@@ -47,15 +51,19 @@ func ConfigureProject(options *LinterOptions) {
 			}
 		}
 	}
-	path, _ := filepath.Abs(options.ProjectDir)
+	path, _ := filepath.Abs(projectDir)
 	if len(linters) == 0 {
 		Error.Printfln(
 			"Qodana does not support the project %s yet. See https://www.jetbrains.com/help/qodana/supported-technologies.html",
 			path,
 		)
 		os.Exit(1)
+	} else {
+		for _, linter := range linters {
+			Primary.Printfln("- Added %s", linter)
+		}
 	}
-	WriteQodanaYaml(options.ProjectDir, linters)
+	WriteQodanaYaml(projectDir, linters)
 }
 
 // PrepareFolders cleans up report folder, creates the necessary folders for the analysis

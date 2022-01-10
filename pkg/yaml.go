@@ -17,16 +17,16 @@ type QodanaYaml struct { // TODO: support full qodana.yaml schema
 	// Linters to run.
 	Linters []string `yaml:"linters"`
 
-	// The profile configuration for Qodana analysis.
+	// Profile is the profile configuration for Qodana analysis.
 	Profile Profile `yaml:"profile,omitempty"`
 
-	// Number of problems to fail the analysis (to exit from Qodana with code 255).
+	// FailThreshold is a number of problems to fail the analysis (to exit from Qodana with code 255).
 	FailThreshold int `yaml:"failThreshold,omitempty"`
 
-	// The exclude property to disable the wanted checks on the wanted paths.
+	// Exclude property to disable the wanted checks on the wanted paths.
 	Exclude []Exclude `yaml:"exclude,omitempty"`
 
-	// The include property to enable the wanted checks.
+	// Include property to enable the wanted checks.
 	Include []Include `yaml:"include,omitempty"`
 }
 

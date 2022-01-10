@@ -85,6 +85,9 @@ var Error = pterm.NewStyle(pterm.FgRed)
 // ErrorBold is a bold error style
 var ErrorBold = pterm.NewStyle(pterm.FgRed, pterm.Bold)
 
+// Warning is a warning style
+var Warning = pterm.NewStyle(pterm.FgYellow)
+
 // PrintSarif prints Qodana Scan result into stdout
 func PrintSarif(p string) {
 	pcnt := 0

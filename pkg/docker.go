@@ -9,6 +9,7 @@ import (
 	"github.com/docker/docker/client"
 	log "github.com/sirupsen/logrus"
 	"io"
+	"io/ioutil"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -106,8 +107,8 @@ func tryRemoveContainer(ctx context.Context, client *client.Client, name string)
 	_ = client.ContainerRemove(ctx, name, types.ContainerRemoveOptions{Force: true})
 }
 
-// pullImage pulls docker image
-func pullImage(ctx context.Context, client *client.Client, image string) {
+// PullImage pulls docker image
+func PullImage(ctx context.Context, client *client.Client, image string) {
 	reader, err := client.ImagePull(ctx, image, types.ImagePullOptions{})
 	if err != nil {
 		return
@@ -118,6 +119,9 @@ func pullImage(ctx context.Context, client *client.Client, image string) {
 			log.Fatal("can't pull image", err)
 		}
 	}(reader)
+	if _, err = io.Copy(ioutil.Discard, reader); err != nil {
+		log.Fatal("couldn't read the image pull logs", err)
+	}
 }
 
 func waitContainerExited(ctx context.Context, client *client.Client, id string) {
@@ -146,13 +150,6 @@ func runContainer(ctx context.Context, client *client.Client, opts *types.Contai
 	if err = client.ContainerStart(ctx, createResp.ID, types.ContainerStartOptions{}); err != nil {
 		log.Fatal("couldn't bootstrap the container", err)
 	}
-}
-
-// PullImage pulls qodana image and returns image with version
-func PullImage(ctx context.Context, client *client.Client, image string) string {
-	pullImage(ctx, client, image)
-	// TODO: Parse version from tags when ready
-	return fmt.Sprintf("%s:%s", image, "latest")
 }
 
 // RunLinter runs the linter container and waits until it's finished

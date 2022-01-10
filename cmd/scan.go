@@ -12,7 +12,7 @@ func NewScanCommand() *cobra.Command {
 	options := &pkg.LinterOptions{}
 	cmd := &cobra.Command{
 		Use:   "scan",
-		Short: "Scan with Qodana",
+		Short: "Scan project with Qodana",
 		Long:  "Scan a project with Qodana",
 		PreRun: func(cmd *cobra.Command, args []string) {
 			pkg.EnsureDockerRunning()
@@ -22,10 +22,10 @@ func NewScanCommand() *cobra.Command {
 			qodanaYaml := pkg.GetQodanaYaml(options.ProjectDir)
 			ctx := cmd.Context()
 			if qodanaYaml.Linters == nil {
-				pkg.Error.Println(
-					"No valid qodana.yaml found. Have you run `qodana init`? Running that for you...",
+				pkg.Warning.Println(
+					"No valid qodana.yaml found. Have you run 'qodana init'? Running that for you...",
 				)
-				pkg.PrintProcess(func() { pkg.ConfigureProject(options) }, "Configuring project", "project configuration")
+				pkg.PrintProcess(func() { pkg.ConfigureProject(options.ProjectDir) }, "Configuring project", "project configuration")
 				qodanaYaml = pkg.GetQodanaYaml(options.ProjectDir)
 			}
 			linter := qodanaYaml.Linters[0]
@@ -36,10 +36,14 @@ func NewScanCommand() *cobra.Command {
 			if err != nil {
 				log.Fatal("couldn't instantiate docker client", err)
 			}
-			version := pkg.PullImage(ctx, docker, linter)
+			pkg.PrintProcess(
+				func() { pkg.PullImage(ctx, docker, linter) },
+				"Preparing images",
+				"preparing images",
+			)
 			pkg.PrintProcess(
 				func() { pkg.RunLinter(cmd.Context(), docker, options, linter) },
-				fmt.Sprintf("Analyzing project with %s", version),
+				fmt.Sprintf("Analyzing project with %s", linter),
 				"project analysis",
 			)
 			pkg.PrintSarif(options.ResultsDir)
