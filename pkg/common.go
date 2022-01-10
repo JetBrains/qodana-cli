@@ -10,11 +10,33 @@ import (
 	"runtime"
 )
 
-type LinterOptions struct {
-	ResultsDir string
-	CachePath  string
-	ProjectDir string
+type QodanaOptions struct {
+	ResultsDir            string
+	CacheDir              string
+	ProjectDir            string
+	Linter                string
+	SourceDirectory       string
+	DisableSanity         bool
+	ProfileName           string
+	ProfilePath           string
+	RunPromo              bool
+	StubProfile           string
+	Baseline              string
+	BaselineIncludeAbsent bool
+	SaveReport            bool
+	ShowReport            bool
+	Port                  int
+	Property              string
+	Script                string
+	FailThreshold         string
+	Changes               bool
+	SendReport            bool
+	Token                 string
+	AnalysisId            string
+	EnvVariables          []string
 }
+
+var DoNotTrack = false
 
 // Contains checks if a string is in a given slice
 func Contains(s []string, str string) bool {
@@ -67,14 +89,14 @@ func ConfigureProject(projectDir string) {
 }
 
 // PrepareFolders cleans up report folder, creates the necessary folders for the analysis
-func PrepareFolders(opts *LinterOptions) {
+func PrepareFolders(opts *QodanaOptions) {
 	if _, err := os.Stat(opts.ResultsDir); err == nil {
 		err := os.RemoveAll(opts.ResultsDir)
 		if err != nil {
 			return
 		}
 	}
-	if err := os.MkdirAll(opts.CachePath, os.ModePerm); err != nil {
+	if err := os.MkdirAll(opts.CacheDir, os.ModePerm); err != nil {
 		log.Fatal("couldn't create a directory ", err.Error())
 	}
 	if err := os.MkdirAll(opts.ResultsDir, os.ModePerm); err != nil {

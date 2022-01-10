@@ -47,16 +47,62 @@ func EnsureDockerRunning() {
 }
 
 // getCmdOptions returns qodana command options
-//goland:noinspection GoUnusedParameter
-func getCmdOptions(opts *LinterOptions) []string {
+func getCmdOptions(opts *QodanaOptions) []string {
 	arguments := make([]string, 0)
-	arguments = append(arguments, "--save-report")
+	if opts.SaveReport {
+		arguments = append(arguments, "--save-report")
+	}
+	if opts.SourceDirectory != "" {
+		arguments = append(arguments, "--source-directory", opts.SourceDirectory)
+	}
+	if opts.DisableSanity {
+		arguments = append(arguments, "--disable-sanity")
+	}
+	if opts.ProfileName != "" {
+		arguments = append(arguments, "--profile-name", opts.ProfileName)
+	}
+	if opts.ProfilePath != "" {
+		arguments = append(arguments, "--profile-path", opts.ProfilePath)
+	}
+	if opts.RunPromo {
+		arguments = append(arguments, "--run-promo")
+	}
+	if opts.StubProfile != "" {
+		arguments = append(arguments, "--stub-profile", opts.StubProfile)
+	}
+	if opts.Baseline != "" {
+		arguments = append(arguments, "--baseline", opts.Baseline)
+	}
+	if opts.BaselineIncludeAbsent {
+		arguments = append(arguments, "--baseline-include-absent")
+	}
+	if opts.Property != "" {
+		arguments = append(arguments, "--property", opts.Property)
+	}
+	if opts.FailThreshold != "" {
+		arguments = append(arguments, "--fail-threshold", opts.FailThreshold)
+	}
+	if opts.Changes {
+		arguments = append(arguments, "--changes")
+	}
+	if opts.SendReport {
+		arguments = append(arguments, "--send-report")
+	}
+	if opts.Token != "" {
+		arguments = append(arguments, "--token", opts.Token)
+	}
+	if opts.AnalysisId != "" {
+		arguments = append(arguments, "--analysis-id", opts.AnalysisId)
+	}
+	if DoNotTrack {
+		arguments = append(arguments, "--property=idea.headless.enable.statistics=false")
+	}
 	return arguments
 }
 
 // getDockerOptions returns qodana docker container options
-func getDockerOptions(opts *LinterOptions, linter string) *types.ContainerCreateConfig {
-	cachePath, err := filepath.Abs(opts.CachePath)
+func getDockerOptions(opts *QodanaOptions) *types.ContainerCreateConfig {
+	cachePath, err := filepath.Abs(opts.CacheDir)
 	if err != nil {
 		log.Fatal("couldn't get abs path for cache", err)
 	}
@@ -74,11 +120,13 @@ func getDockerOptions(opts *LinterOptions, linter string) *types.ContainerCreate
 	return &types.ContainerCreateConfig{
 		Name: "qodana-cli",
 		Config: &container.Config{
-			Image:        linter,
+			Image:        opts.Linter,
 			Cmd:          getCmdOptions(opts),
 			Tty:          true,
 			AttachStdout: true,
 			AttachStderr: true,
+			Env:          opts.EnvVariables,
+			User:         fmt.Sprintf("%d:%d", os.Getuid(), os.Getgid()),
 		},
 		HostConfig: &container.HostConfig{
 			Mounts: []mount.Mount{
@@ -153,8 +201,8 @@ func runContainer(ctx context.Context, client *client.Client, opts *types.Contai
 }
 
 // RunLinter runs the linter container and waits until it's finished
-func RunLinter(ctx context.Context, client *client.Client, opts *LinterOptions, image string) {
-	dockerOpts := getDockerOptions(opts, image)
+func RunLinter(ctx context.Context, client *client.Client, opts *QodanaOptions) {
+	dockerOpts := getDockerOptions(opts)
 	tryRemoveContainer(ctx, client, dockerOpts.Name)
 	runContainer(ctx, client, dockerOpts)
 	waitContainerExited(ctx, client, dockerOpts.Name)

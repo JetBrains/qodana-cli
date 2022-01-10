@@ -35,6 +35,5 @@ This command serves the report locally and opens browser to it.`,
 		".qodana/results/report",
 		"Specify HTML report path (the one with index.html inside)")
 	flags.IntVarP(&options.Port, "port", "p", 8080, "Specify port to serve report at")
-	flags.BoolVarP(&options.NoBrowser, "no-browser", "n", false, "Do not open browser with show")
 	return cmd
 }
