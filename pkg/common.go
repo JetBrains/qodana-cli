@@ -28,13 +28,14 @@ func Contains(s []string, str string) bool {
 
 func ConfigureProject(options *LinterOptions) {
 	var linters []string
+	version := "2021.3-eap"
 	langLinters := map[string]string{
-		"Java":       "jetbrains/qodana-jvm",
-		"Kotlin":     "jetbrains/qodana-jvm",
-		"Python":     "jetbrains/qodana-python",
-		"PHP":        "jetbrains/qodana-php",
-		"JavaScript": "jetbrains/qodana-js",
-		"TypeScript": "jetbrains/qodana-js",
+		"Java":       fmt.Sprintf("jetbrains/qodana-jvm:%s", version),
+		"Kotlin":     fmt.Sprintf("jetbrains/qodana-jvm:%s", version),
+		"Python":     fmt.Sprintf("jetbrains/qodana-python:%s", version),
+		"PHP":        fmt.Sprintf("jetbrains/qodana-php:%s", version),
+		"JavaScript": fmt.Sprintf("jetbrains/qodana-js:%s", version),
+		"TypeScript": fmt.Sprintf("jetbrains/qodana-js:%s", version),
 	}
 	languages := ReadIdeaFolder(options.ProjectDir)
 	if len(languages) == 0 {
@@ -54,6 +55,10 @@ func ConfigureProject(options *LinterOptions) {
 			path,
 		)
 		os.Exit(1)
+	} else {
+		for _, linter := range linters {
+			Primary.Printfln("- Added %s", linter)
+		}
 	}
 	WriteQodanaYaml(options.ProjectDir, linters)
 }
