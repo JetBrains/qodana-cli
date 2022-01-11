@@ -63,7 +63,8 @@ You can also add the linter by its name with the `--linter` option (e.g. `--lint
 
 Before you start using Qodana, you need to configure your project – choose a linter to use.
 If you know what linter you want to use, you can skip this step.
-Qodana CLI can do that for you. Just run the following command in your project root:
+
+Also, Qodana CLI can choose a linter for you. Just run the following command in your project root:
 
 ```sh
 qodana init
