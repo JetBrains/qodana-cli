@@ -14,7 +14,7 @@ func NewScanCommand() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "scan",
 		Short: "Scan project with Qodana",
-		Long: `Scan a project with Qodana. Basically, it runs one of Qodana Docker images (https://www.jetbrains.com/help/qodana/docker-images.html) and reports the results.
+		Long: `Scan a project with Qodana. It runs one of Qodana Docker's images (https://www.jetbrains.com/help/qodana/docker-images.html) and reports the results.
 
 Note that most options can be configured via qodana.yaml (https://www.jetbrains.com/help/qodana/qodana-yaml.html) file.
 But you can always override qodana.yaml options with the following command-line options.
@@ -73,11 +73,11 @@ But you can always override qodana.yaml options with the following command-line 
 
 	// flags that define Docker behaviour
 	// no flags for volumes or any other thing because it seems that they are not needed (proper plugins downloading is on the way)
-	flags.StringArrayVarP(&options.EnvVariables, "env", "e", []string{}, "Define additional environment variables for Qodana container (the flag can be used multiple times). CLI is not reading full host environment variables and does not pass it to Qodana container for security reasons")
+	flags.StringArrayVarP(&options.EnvVariables, "env", "e", []string{}, "Define additional environment variables for the Qodana container (you can use the flag multiple times). CLI is not reading full host environment variables and does not pass it to the Qodana container for security reasons")
 
 	// flags that define Qodana behaviour
 	flags.BoolVarP(&options.SaveReport, "save-report", "s", true, "Generate HTML report")
-	flags.StringVarP(&options.SourceDirectory, "source-directory", "d", "", "Directory inside the project-dir directory that needs to be inspected. If not specified, the whole project is inspected.")
+	flags.StringVarP(&options.SourceDirectory, "source-directory", "d", "", "Directory inside the project-dir directory must be inspected. If not specified, the whole project is inspected.")
 	flags.BoolVar(&options.DisableSanity, "disable-sanity", false, "Skip running the inspections configured by the sanity profile")
 	flags.StringVarP(&options.ProfileName, "profile-name", "n", "", "Profile name defined in the project")
 	flags.StringVarP(&options.ProfilePath, "profile-path", "p", "", "Path to the profile file")
@@ -87,7 +87,7 @@ But you can always override qodana.yaml options with the following command-line 
 	flags.BoolVar(&options.BaselineIncludeAbsent, "baseline-include-absent", false, "Include in the output report the results from the baseline run that are absent in the current run")
 	flags.StringVar(&options.Property, "property", "", "Set a JVM property to be used while running Qodana using the --property=property.name=value1,value2,...,valueN notation")
 	flags.StringVar(&options.Script, "script", "default", "Override the run scenario")
-	flags.StringVar(&options.FailThreshold, "fail-threshold", "", "Set the number of problems that will serve as a quality gate. If this number is reached, the inspection run is terminatedr")
+	flags.StringVar(&options.FailThreshold, "fail-threshold", "", "Set the number of problems that will serve as a quality gate. If this number is reached, the inspection run is terminated with a non-zero exit code")
 	flags.BoolVar(&options.Changes, "changes", false, "Override the docker image to be used for the analysis")
 	flags.BoolVar(&options.SendReport, "send-report", false, "Send the inspection report to Qodana Cloud, requires the '--token' option to be specified")
 	flags.StringVarP(&options.Token, "token", "t", "", "Qodana Cloud token")

@@ -1,9 +1,8 @@
-package test
+package cmd
 
 import (
 	"bytes"
 	"fmt"
-	"github.com/tiulpin/qodana/cmd"
 	"github.com/tiulpin/qodana/pkg"
 	"io/ioutil"
 	"testing"
@@ -12,7 +11,7 @@ import (
 // TestVersion verifies that the version command returns the correct version
 func TestVersion(t *testing.T) {
 	b := bytes.NewBufferString("")
-	command := cmd.NewRootCmd()
+	command := NewRootCmd()
 	command.SetOut(b)
 	command.SetArgs([]string{"-v"})
 	err := command.Execute()
@@ -33,7 +32,7 @@ func TestVersion(t *testing.T) {
 // TestHelp verifies that the help text is returned when running the tool with the flag or without it.
 func TestHelp(t *testing.T) {
 	out := bytes.NewBufferString("")
-	command := cmd.NewRootCmd()
+	command := NewRootCmd()
 	command.SetOut(out)
 	command.SetArgs([]string{"-h"})
 	err := command.Execute()
@@ -47,7 +46,7 @@ func TestHelp(t *testing.T) {
 	expected := string(output)
 
 	out = bytes.NewBufferString("")
-	command = cmd.NewRootCmd()
+	command = NewRootCmd()
 	command.SetOut(out)
 	command.SetArgs([]string{})
 	err = command.Execute()
