@@ -5,7 +5,6 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	"github.com/tiulpin/qodana/pkg"
-	"os"
 )
 
 // NewRootCmd constructs root command
@@ -39,7 +38,6 @@ Here's a typical usage example:
 				if err != nil {
 					return
 				}
-				os.Exit(0)
 			}
 		},
 	}
