@@ -10,7 +10,7 @@ import (
 
 // QodanaYaml A standard qodana.yaml (or qodana.yml) format for Qodana configuration.
 // https://github.com/JetBrains/qodana-profiles/blob/master/schemas/qodana-yaml-1.0.json
-type QodanaYaml struct { // TODO: support full qodana.yaml schema
+type QodanaYaml struct {
 	// The qodana.yaml version of this log file.
 	Version string `yaml:"version,omitempty"`
 
@@ -32,8 +32,8 @@ type QodanaYaml struct { // TODO: support full qodana.yaml schema
 
 // Profile A profile is some template set of checks to run with Qodana analysis.
 type Profile struct {
-	Name string `yaml:"name"`
-	// Path string `yaml:"path"` TODO: support multiple profiles types
+	Name string `yaml:"name,omitempty"`
+	Path string `yaml:"path,omitempty"`
 }
 
 // Exclude A check id to disable.
