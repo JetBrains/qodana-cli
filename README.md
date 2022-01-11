@@ -31,12 +31,12 @@ You must have Docker installed and running locally to support this: https://www.
 
 We have installation scripts for Linux, macOS, and Windows.
 
-#### Linux and macOS
+#### Install in the terminal on Linux and macOS
 ```shell
 curl -fsSL https://raw.githubusercontent.com/tiulpin/qodana/main/install | bash
 ```
 
-#### Windows
+#### Install in the terminal on Windows
 ```shell
 iwr https://raw.githubusercontent.com/tiulpin/qodana/main/install.ps1 -useb | iex
 ```
@@ -123,11 +123,11 @@ init [flags]
   -i, --project-dir string   Root directory of the project to configure (default ".")
 ```
 
-## scan
+### scan
 
 Scan project with Qodana
 
-### Synopsis
+#### Synopsis
 
 Scan a project with Qodana. It runs one of Qodana Docker's images (https://www.jetbrains.com/help/qodana/docker-images.html) and reports the results.
 
@@ -139,7 +139,7 @@ But you can always override qodana.yaml options with the following command-line 
 scan [flags]
 ```
 
-### Options
+#### Options
 
 ```
   -a, --analysis-id string        Unique report identifier (GUID) to be used by Qodana Cloud
@@ -168,11 +168,11 @@ scan [flags]
   -t, --token string              Qodana Cloud token
 ```
 
-## show
+### show
 
 Show Qodana report
 
-### Synopsis
+#### Synopsis
 
 Show (serve locally) the latest Qodana report.
 
@@ -185,7 +185,7 @@ This command serves the Qodana report locally and opens a browser to it.
 show [flags]
 ```
 
-### Options
+#### Options
 
 ```
   -h, --help                help for show
