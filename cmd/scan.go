@@ -6,7 +6,9 @@ import (
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 	"github.com/tiulpin/qodana/pkg"
+	"os"
 	"path/filepath"
+	"strings"
 )
 
 func NewScanCommand() *cobra.Command {
@@ -24,6 +26,7 @@ But you can always override qodana.yaml options with the following command-line 
 			pkg.PrepareFolders(options)
 		},
 		Run: func(cmd *cobra.Command, args []string) {
+			var exitCode int64
 			ctx := cmd.Context()
 			if options.Linter == "" {
 				qodanaYaml := pkg.GetQodanaYaml(options.ProjectDir)
@@ -35,6 +38,18 @@ But you can always override qodana.yaml options with the following command-line 
 					qodanaYaml = pkg.GetQodanaYaml(options.ProjectDir)
 				}
 				options.Linter = qodanaYaml.Linters[0]
+			} else {
+				if !strings.HasPrefix(options.Linter, pkg.OfficialDockerPrefix) {
+					pkg.Warning.Printfln(
+						"You are using an unofficial Qodana linter %s", options.Linter,
+					)
+				}
+				if options.Linter == "jetbrains/qodana-license-audit" {
+					log.Fatal("jetbrains/qodana-license-audit is not supported")
+				}
+				if options.Linter == "jetbrains/qodana-clone-finder" {
+					log.Fatal("jetbrains/qodana-clone-finder is not supported")
+				}
 			}
 			if err := pkg.Greet(); err != nil {
 				log.Fatal("couldn't print", err)
@@ -49,15 +64,24 @@ But you can always override qodana.yaml options with the following command-line 
 				"preparing images",
 			)
 			pkg.PrintProcess(
-				func() { pkg.RunLinter(cmd.Context(), docker, options) },
+				func() {
+					exitCode = pkg.RunLinter(cmd.Context(), docker, options)
+				},
 				fmt.Sprintf("Analyzing project with %s", options.Linter),
 				"project analysis",
 			)
+			if exitCode != pkg.QodanaSuccessExitCode && exitCode != pkg.QodanaFailThresholdExitCode {
+				log.Fatal("Linter failed, please check the logs in ", options.ResultsDir)
+			}
 			pkg.PrintSarif(options.ResultsDir)
 			if options.ShowReport {
 				reportPath := filepath.Join(options.ResultsDir, "report")
 				message := fmt.Sprintf("Showing Qodana report at http://localhost:%d", options.Port)
 				pkg.PrintProcess(func() { pkg.ShowReport(reportPath, options.Port) }, message, "report show")
+			}
+			if exitCode == pkg.QodanaFailThresholdExitCode {
+				pkg.Error.Println("The number of problems exceeds the failThreshold")
+				os.Exit(int(exitCode))
 			}
 		},
 	}

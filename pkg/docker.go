@@ -16,6 +16,10 @@ import (
 	"runtime"
 )
 
+const QodanaSuccessExitCode = 0
+const QodanaFailThresholdExitCode = 255
+const OfficialDockerPrefix = "jetbrains/qodana"
+
 // ensureDockerInstalled checks if docker is installed
 func ensureDockerInstalled() {
 	var what string
@@ -179,15 +183,17 @@ func PullImage(ctx context.Context, client *client.Client, image string) {
 	}
 }
 
-func waitContainerExited(ctx context.Context, client *client.Client, id string) {
+func waitContainerExited(ctx context.Context, client *client.Client, id string) int64 {
 	statusCh, errCh := client.ContainerWait(ctx, id, container.WaitConditionNextExit)
 	select {
 	case err := <-errCh:
 		if err != nil {
 			log.Fatal("container hasn't finished", err)
 		}
-	case <-statusCh:
+	case status := <-statusCh:
+		return status.StatusCode
 	}
+	return 0
 }
 
 func runContainer(ctx context.Context, client *client.Client, opts *types.ContainerCreateConfig) {
@@ -208,10 +214,11 @@ func runContainer(ctx context.Context, client *client.Client, opts *types.Contai
 }
 
 // RunLinter runs the linter container and waits until it's finished
-func RunLinter(ctx context.Context, client *client.Client, opts *QodanaOptions) {
+func RunLinter(ctx context.Context, client *client.Client, opts *QodanaOptions) int64 {
 	dockerOpts := getDockerOptions(opts)
 	tryRemoveContainer(ctx, client, dockerOpts.Name)
 	runContainer(ctx, client, dockerOpts)
-	waitContainerExited(ctx, client, dockerOpts.Name)
+	exitCode := waitContainerExited(ctx, client, dockerOpts.Name)
 	tryRemoveContainer(ctx, client, dockerOpts.Name)
+	return exitCode
 }
