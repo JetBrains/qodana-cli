@@ -19,10 +19,10 @@ func NewShowCommand() *cobra.Command {
 		Short: "Show Qodana report",
 		Long: `Show (serve locally) the latest Qodana report.
 
-Due to JavaScript security restrictions, the generated report cannot 
-be viewed via the file:// protocol (that is, by double-clicking the index.html file).
+Due to JavaScript security restrictions, the generated report cannot
+be viewed via the file:// protocol (by double-clicking the index.html file).
 https://www.jetbrains.com/help/qodana/html-report.html
-This command serves the report locally and opens browser to it.`,
+This command serves the Qodana report locally and opens a browser to it.`,
 		Run: func(cmd *cobra.Command, args []string) {
 			message := fmt.Sprintf("Showing Qodana report at http://localhost:%d", options.Port)
 			pkg.PrintProcess(func() { pkg.ShowReport(options.ReportDir, options.Port) }, message, "report show")

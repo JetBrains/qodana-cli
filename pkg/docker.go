@@ -13,11 +13,18 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"runtime"
 )
 
 // ensureDockerInstalled checks if docker is installed
 func ensureDockerInstalled() {
-	cmd := exec.Command("docker", "--version")
+	var what string
+	if runtime.GOOS == "windows" {
+		what = "where"
+	} else {
+		what = "which"
+	}
+	cmd := exec.Command(what, "docker")
 	if err := cmd.Run(); err != nil {
 		if _, ok := err.(*exec.ExitError); ok {
 			Error.Println(
