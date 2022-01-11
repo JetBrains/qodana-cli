@@ -16,3 +16,15 @@ jobs:
       - uses: actions/checkout@v2
       - run: |
           go test -v ./...
+  run:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/checkout@v2
+        with:
+          repository: JetBrains/code-analytics-examples
+          path: ./projects
+      - run: |
+          go run main.go scan -i ./projects/js/
+          ls -la .qodana/
+          [ -f .qodana/results/qodana.sarif.json ] || fail "No qodana.sarif.json created"
