@@ -1,4 +1,8 @@
 # Qodana CLI
+[![Test](https://github.com/tiulpin/qodana/actions/workflows/build-test.yml/badge.svg)][gh:test]
+[![Docker Hub](https://img.shields.io/docker/pulls/jetbrains/qodana.svg)][jb:docker]
+[![Slack](https://img.shields.io/badge/Slack-%23qodana-blue)][jb:slack]
+[![Twitter Follow](https://img.shields.io/twitter/follow/QodanaEvolves?style=social&logo=twitter)][jb:twitter]
 
 > ⚠️ This is an experimental project, so it's not guaranteed to work correctly.
 > Use it at your own risk. For running Qodana stably and reliably, please use [Qodana Docker Images](https://www.jetbrains.com/help/qodana/docker-images.html).
@@ -9,6 +13,8 @@
 
 - [Qodana CLI](#qodana-cli)
   - [Usage](#usage)
+    - [Installation](#installation)
+    - [Running](#running)
   - [Configuration](#configuration)
 
 <!-- tocstop -->
@@ -43,7 +49,7 @@ Alternatively, you can install the latest binary from [GitHub Releases](https://
 
 ### Running
 
-### tl;dr
+#### tl;dr
 
 If you know what you are doing:
 
@@ -53,7 +59,7 @@ qodana scan --show-report
 
 You can also add the linter by its name with the `--linter` option (e.g. `--linter jetbrains/qodana`).
 
-### Project configuration
+#### Project configuration
 
 Before you start using Qodana, you need to configure your project – choose a linter to use.
 If you know what linter you want to use, you can skip this step.
@@ -63,7 +69,7 @@ Qodana CLI can do that for you. Just run the following command in your project r
 qodana init
 ```
 
-### Project analysis
+#### Project analysis
 
 Right after you configured your project (or remembered linter name you want to run), you can run Qodana inspections simply by invoking the following command in your project root:
 
@@ -74,7 +80,7 @@ qodana scan
 - After the first Qodana run, the following runs will be faster because of the saved Qodana cache in your project (defaults to `./.qodana/cache`)
 - Latest Qodana report will be saved to `./.qodana/results` – you can find qodana.sarif.json and other Qodana artifacts (like logs) in this directory.
 
-### Show report
+#### Show report
 
 After the analysis, the results are saved to `./.qodana/results` by default. Inside the directory `./.qodana/results/report`, you can find Qodana HTML report.
 To view it in the browser, run the following command from your project root:
@@ -85,18 +91,18 @@ qodana show
 
 You can serve any Qodana HTML report regardless of the project if you provide the correct report path.
 
-### Disable telemetry
+## Configuration
+
+Find more CLI options, run `qodana ...` commands with the `--help` flag. Currently, there are not many options.
+If you want to configure Qodana or a check inside Qodana, consider using [`qodana.yaml` ](https://www.jetbrains.com/help/qodana/qodana-yaml.html) to have the same configuration on any CI you use and your machine.
+
+#### Disable telemetry
 
 To disable [Qodana user statistics](https://www.jetbrains.com/help/qodana/qodana-jvm-docker-readme.html#Usage+statistics) and [CLI Sentry crash reporting](https://blog.sentry.io/2016/02/09/what-is-crash-reporting), export the `DO_NOT_TRACK` environment variable to `1` before running the CLI:
 
 ```sh
 export DO_NOT_TRACK=1
 ```
-
-## Configuration
-
-Find more CLI options, run `qodana ...` commands with the `--help` flag. Currently, there are not many options.
-If you want to configure Qodana or a check inside Qodana, consider using [`qodana.yaml` ](https://www.jetbrains.com/help/qodana/qodana-yaml.html) to have the same configuration on any CI you use and your machine.
 
 ### init
 
@@ -186,3 +192,11 @@ show [flags]
   -p, --port int            Specify port to serve report at (default 8080)
   -r, --report-dir string   Specify HTML report path (the one with index.html inside) (default ".qodana/results/report")
 ```
+
+[gh:test]: https://github.com/tiulpin/qodana/actions/workflows/build-test.yml
+[youtrack]: https://youtrack.jetbrains.com/issues/QD
+[youtrack-new-issue]: https://youtrack.jetbrains.com/newIssue?project=QD&c=Platform%20GitHub%20Action
+[jb:confluence-on-gh]: https://confluence.jetbrains.com/display/ALL/JetBrains+on+GitHub
+[jb:slack]: https://jb.gg/qodana-slack
+[jb:twitter]: https://twitter.com/QodanaEvolves
+[jb:docker]: https://hub.docker.com/r/jetbrains/qodana
