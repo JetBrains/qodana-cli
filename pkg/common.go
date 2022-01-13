@@ -8,6 +8,7 @@ import (
 	"os/exec"
 	"path/filepath"
 	"runtime"
+	"strings"
 )
 
 type QodanaOptions struct {
@@ -36,7 +37,7 @@ type QodanaOptions struct {
 	EnvVariables          []string
 }
 
-var Version = "0.3.2"
+var Version = "0.4.0"
 var DoNotTrack = false
 
 // Contains checks if a string is in a given slice
@@ -89,8 +90,22 @@ func ConfigureProject(projectDir string) {
 	WriteQodanaYaml(projectDir, linters)
 }
 
+// GetLinterHome returns path to <project>/.qodana/<linter>/
+func GetLinterHome(project string, linter string) string {
+	dotQodana := filepath.Join(project, ".qodana")
+	parentDirName := strings.Replace(strings.Replace(linter, ":", "-", -1), "/", "-", -1)
+	return filepath.Join(dotQodana, parentDirName)
+}
+
 // PrepareFolders cleans up report folder, creates the necessary folders for the analysis
 func PrepareFolders(opts *QodanaOptions) {
+	linterHome := GetLinterHome(opts.ProjectDir, opts.Linter)
+	if opts.ResultsDir == "" {
+		opts.ResultsDir = filepath.Join(linterHome, "results")
+	}
+	if opts.CacheDir == "" {
+		opts.CacheDir = filepath.Join(linterHome, "cache")
+	}
 	if _, err := os.Stat(opts.ResultsDir); err == nil {
 		err := os.RemoveAll(opts.ResultsDir)
 		if err != nil {
@@ -106,7 +121,7 @@ func PrepareFolders(opts *QodanaOptions) {
 }
 
 // ShowReport serves the Qodana report
-func ShowReport(path string, port int) {
+func ShowReport(path string, port int) { // TODO handle port checking
 	if _, err := os.Stat(path); os.IsNotExist(err) {
 		log.Fatal("Qodana report not found. Get the report by running `qodana scan`")
 	}

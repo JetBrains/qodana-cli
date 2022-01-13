@@ -25,6 +25,6 @@ jobs:
           repository: JetBrains/code-analytics-examples
           path: ./projects
       - run: |
-          go run main.go scan -i ./projects/js/
+          go run main.go scan -i ./projects/js/ -l jetbrains/qodana-js:2021.3-eap
           ls -la .qodana/
-          [ -f .qodana/results/qodana.sarif.json ] || fail "No qodana.sarif.json created"
+          [ -f .qodana/jetbrains-qodana-js-2021.3-eap/results/qodana.sarif.json ] || fail "No qodana.sarif.json created"

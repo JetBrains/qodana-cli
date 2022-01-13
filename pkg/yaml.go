@@ -28,6 +28,12 @@ type QodanaYaml struct {
 
 	// Include property to enable the wanted checks.
 	Include []Include `yaml:"include,omitempty"`
+
+	// Properties property to override IDE properties
+	Properties map[string]string `yaml:"properties,omitempty"`
+
+	// Plugins property containing plugins to install
+	Plugins []string `yaml:"plugins,omitempty"`
 }
 
 // Profile A profile is some template set of checks to run with Qodana analysis.

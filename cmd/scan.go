@@ -11,7 +11,8 @@ import (
 	"strings"
 )
 
-func NewScanCommand() *cobra.Command {
+// NewScanCommand returns a new instance of the scan command
+func NewScanCommand() *cobra.Command { // TODO: handle Ctrl+C: container removing, etc.
 	options := &pkg.QodanaOptions{}
 	cmd := &cobra.Command{
 		Use:   "scan",
@@ -23,7 +24,6 @@ But you can always override qodana.yaml options with the following command-line 
 `,
 		PreRun: func(cmd *cobra.Command, args []string) {
 			pkg.EnsureDockerRunning()
-			pkg.PrepareFolders(options)
 		},
 		Run: func(cmd *cobra.Command, args []string) {
 			var exitCode int64
@@ -41,7 +41,7 @@ But you can always override qodana.yaml options with the following command-line 
 			} else {
 				if !strings.HasPrefix(options.Linter, pkg.OfficialDockerPrefix) {
 					pkg.Warning.Printfln(
-						"You are using an unofficial Qodana linter %s", options.Linter,
+						"You are using an unofficial Qodana linter: %s", options.Linter,
 					)
 				}
 				if options.Linter == "jetbrains/qodana-license-audit" {
@@ -54,6 +54,7 @@ But you can always override qodana.yaml options with the following command-line 
 			if err := pkg.Greet(); err != nil {
 				log.Fatal("couldn't print", err)
 			}
+			pkg.PrepareFolders(options)
 			docker, err := client.NewClientWithOpts()
 			if err != nil {
 				log.Fatal("couldn't instantiate docker client", err)
@@ -90,8 +91,8 @@ But you can always override qodana.yaml options with the following command-line 
 	// flags that define CLI behaviour
 	flags.StringVarP(&options.Linter, "linter", "l", "", "Override linter to use")
 	flags.StringVarP(&options.ProjectDir, "project-dir", "i", ".", "Root directory of the inspected project")
-	flags.StringVarP(&options.ResultsDir, "results-dir", "o", ".qodana/results", "Directory to save Qodana inspection results to")
-	flags.StringVarP(&options.CacheDir, "cache-dir", "c", ".qodana/cache", "Cache directory")
+	flags.StringVarP(&options.ResultsDir, "results-dir", "o", "", "Override directory to save Qodana inspection results to (default is .qodana/<linter>/results)")
+	flags.StringVarP(&options.CacheDir, "cache-dir", "c", "", "Override cache directory (default is .qodana/<linter>/cache")
 	flags.BoolVarP(&options.ShowReport, "show-report", "w", false, "Serve HTML report on port")
 	flags.IntVar(&options.Port, "port", 8080, "Port to serve the report on")
 
