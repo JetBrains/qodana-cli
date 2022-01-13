@@ -91,8 +91,8 @@ But you can always override qodana.yaml options with the following command-line 
 	// flags that define CLI behaviour
 	flags.StringVarP(&options.Linter, "linter", "l", "", "Override linter to use")
 	flags.StringVarP(&options.ProjectDir, "project-dir", "i", ".", "Root directory of the inspected project")
-	flags.StringVarP(&options.ResultsDir, "results-dir", "o", "", "Override directory to save Qodana inspection results to (default is .qodana/<linter>/results)")
-	flags.StringVarP(&options.CacheDir, "cache-dir", "c", "", "Override cache directory (default is .qodana/<linter>/cache")
+	flags.StringVarP(&options.ResultsDir, "results-dir", "o", "", "Override directory to save Qodana inspection results to (default .qodana/<linter>/results)")
+	flags.StringVarP(&options.CacheDir, "cache-dir", "c", "", "Override cache directory (default .qodana/<linter>/cache)")
 	flags.BoolVarP(&options.ShowReport, "show-report", "w", false, "Serve HTML report on port")
 	flags.IntVar(&options.Port, "port", 8080, "Port to serve the report on")
 

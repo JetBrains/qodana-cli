@@ -42,7 +42,7 @@ This command serves the Qodana report locally and opens a browser to it.`,
 		"report-dir",
 		"r",
 		"",
-		"Specify HTML report path (the one with index.html inside). If not specified will try to search the current directory.")
+		"Specify HTML report path (the one with index.html inside) (default .qodana/<linter>/results/report)")
 	flags.IntVarP(&options.Port, "port", "p", 8080, "Specify port to serve report at")
 	return cmd
 }

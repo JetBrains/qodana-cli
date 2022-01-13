@@ -78,12 +78,12 @@ Right after you configured your project (or remembered linter name you want to r
 qodana scan
 ```
 
-- After the first Qodana run, the following runs will be faster because of the saved Qodana cache in your project (defaults to `./.qodana/cache`)
-- Latest Qodana report will be saved to `./.qodana/results` – you can find qodana.sarif.json and other Qodana artifacts (like logs) in this directory.
+- After the first Qodana run, the following runs will be faster because of the saved Qodana cache in your project (defaults to `./.qodana/<linter>/cache`)
+- Latest Qodana report will be saved to `./.qodana/<linter>/results` – you can find qodana.sarif.json and other Qodana artifacts (like logs) in this directory.
 
 #### Show report
 
-After the analysis, the results are saved to `./.qodana/results` by default. Inside the directory `./.qodana/results/report`, you can find Qodana HTML report.
+After the analysis, the results are saved to `./.qodana/<linter>/results` by default. Inside the directory `./.qodana/<linter>/results/report`, you can find Qodana HTML report.
 To view it in the browser, run the following command from your project root:
 
 ```shell
@@ -146,7 +146,7 @@ scan [flags]
   -a, --analysis-id string        Unique report identifier (GUID) to be used by Qodana Cloud
   -b, --baseline string           Provide the path to an existing SARIF report to be used in the baseline state calculation
       --baseline-include-absent   Include in the output report the results from the baseline run that are absent in the current run
-  -c, --cache-dir string          Cache directory (default ".qodana/cache")
+  -c, --cache-dir string          Override cache directory (default .qodana/<linter>/cache)
       --changes                   Override the docker image to be used for the analysis
       --disable-sanity            Skip running the inspections configured by the sanity profile
   -e, --env stringArray           Define additional environment variables for the Qodana container (you can use the flag multiple times). CLI is not reading full host environment variables and does not pass it to the Qodana container for security reasons
@@ -158,7 +158,7 @@ scan [flags]
   -p, --profile-path string       Path to the profile file
   -i, --project-dir string        Root directory of the inspected project (default ".")
       --property string           Set a JVM property to be used while running Qodana using the --property=property.name=value1,value2,...,valueN notation
-  -o, --results-dir string        Directory to save Qodana inspection results to (default ".qodana/results")
+  -o, --results-dir string        Override directory to save Qodana inspection results to (default .qodana/<linter>/results)
       --run-promo                 Set to true to have the application run the inspections configured by the promo profile; set to false otherwise. By default, a promo run is enabled if the application is executed with the default profile and is disabled otherwise
   -s, --save-report               Generate HTML report (default true)
       --script string             Override the run scenario (default "default")
@@ -191,7 +191,7 @@ show [flags]
 ```
   -h, --help                help for show
   -p, --port int            Specify port to serve report at (default 8080)
-  -r, --report-dir string   Specify HTML report path (the one with index.html inside) (default ".qodana/results/report")
+  -r, --report-dir string   Specify HTML report path (the one with index.html inside) (default ".qodana/<linter>/results/report")
 ```
 
 [gh:test]: https://github.com/tiulpin/qodana/actions/workflows/build-test.yml
