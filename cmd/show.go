@@ -2,14 +2,15 @@ package cmd
 
 import (
 	"fmt"
+	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 	"github.com/tiulpin/qodana/pkg"
+	"path/filepath"
 )
 
 type ShowOptions struct {
 	ReportDir string
 	Port      int
-	NoBrowser bool
 }
 
 func NewShowCommand() *cobra.Command {
@@ -25,6 +26,14 @@ https://www.jetbrains.com/help/qodana/html-report.html
 This command serves the Qodana report locally and opens a browser to it.`,
 		Run: func(cmd *cobra.Command, args []string) {
 			message := fmt.Sprintf("Showing Qodana report at http://localhost:%d", options.Port)
+			if options.ReportDir == "" {
+				linters := pkg.GetQodanaYaml(".").Linters
+				if len(linters) == 0 {
+					log.Fatalf("Can't automatically find the report...\n" +
+						"Please specify the report directory with the --report-dir flag.")
+				}
+				options.ReportDir = filepath.Join(pkg.GetLinterHome(".", linters[0]), "results", "report")
+			}
 			pkg.PrintProcess(func() { pkg.ShowReport(options.ReportDir, options.Port) }, message, "report show")
 		},
 	}
@@ -32,8 +41,8 @@ This command serves the Qodana report locally and opens a browser to it.`,
 	flags.StringVarP(&options.ReportDir,
 		"report-dir",
 		"r",
-		".qodana/results/report",
-		"Specify HTML report path (the one with index.html inside)")
+		"",
+		"Specify HTML report path (the one with index.html inside). If not specified will try to search the current directory.")
 	flags.IntVarP(&options.Port, "port", "p", 8080, "Specify port to serve report at")
 	return cmd
 }
