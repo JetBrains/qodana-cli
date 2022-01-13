@@ -26,5 +26,5 @@ jobs:
           path: ./projects
       - run: |
           go run main.go scan -i ./projects/js/ -l jetbrains/qodana-js:2021.3-eap
-          ls -la .qodana/
-          [ -f .qodana/jetbrains-qodana-js-2021.3-eap/results/qodana.sarif.json ] || fail "No qodana.sarif.json created"
+          ls -la ./projects/js/.qodana/
+          [ -f ./projects/js/.qodana/jetbrains-qodana-js-2021.3-eap/results/qodana.sarif.json ] || fail "No qodana.sarif.json created"
