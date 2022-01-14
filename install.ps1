@@ -3,11 +3,11 @@
 # Copyright 2018 the Deno authors. All rights reserved. MIT License.
 
 $ErrorActionPreference = 'Stop'
-$inputRepo = "tiulpin/qodana"
+$inputRepo = "tiulpin/qodana-cli"
 $inputVersion = if ($v) {
   "${v}"
 } else {
-  "0.4.0"
+  "0.4.1"
 }
 $inputExe = "qodana"
 

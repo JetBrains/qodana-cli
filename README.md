@@ -1,7 +1,8 @@
-# Qodana CLI
+# Qodana CLI [<img src="https://api.producthunt.com/widgets/embed-image/v1/top-post-badge.svg?post_id=304841&theme=dark&period=daily" alt="" align="right" width="190" height="41">](https://www.producthunt.com/posts/jetbrains-qodana)
+
 [![Test](https://github.com/tiulpin/qodana/actions/workflows/build-test.yml/badge.svg)][gh:test]
 [![Docker Hub](https://img.shields.io/docker/pulls/jetbrains/qodana.svg)][jb:docker]
-[![Slack](https://img.shields.io/badge/Slack-%23qodana-blue)][jb:slack]
+[![GitHub Discussions](https://img.shields.io/github/discussions/jetbrains/qodana)][jb:discussions]
 [![Twitter Follow](https://img.shields.io/twitter/follow/QodanaEvolves?style=social&logo=twitter)][jb:twitter]
 
 > ⚠️ This is an experimental project, so it's not guaranteed to work correctly.
@@ -11,7 +12,7 @@
 
 <!-- toc -->
 
-- [Qodana CLI](#qodana-cli)
+- Qodana CLI
   - [Usage](#usage)
     - [Installation](#installation)
     - [Running](#running)
@@ -20,25 +21,25 @@
 <!-- tocstop -->
 
 `qodana` is a command-line interface for [Qodana](https://jetbrains.com/qodana).
-It allows you to run Qodana inspections on your local machine (or a CI agent) easily by running [Qodana Docker Images](https://www.jetbrains.com/help/qodana/docker-images.html).
+It allows you to run Qodana inspections on your local machine (or a CI agent) easily by running [Qodana Docker Images](https://www.jetbrains.com/help/qodana/docker-images.html) for you.
 
 ## Usage
 
 ### Installation
 
-> 💡 The Qodana CLI is distributed and run as a binary. The actual linters with inspections are [Docker Images]((https://www.jetbrains.com/help/qodana/docker-images.html)).
+> 💡 The Qodana CLI is distributed and run as a binary. The Qodana linters with inspections are [Docker Images]((https://www.jetbrains.com/help/qodana/docker-images.html)).
 You must have Docker installed and running locally to support this: https://www.docker.com/get-started.
 
 We have installation scripts for Linux, macOS, and Windows.
 
 #### Install in the terminal on Linux and macOS
 ```shell
-curl -fsSL https://raw.githubusercontent.com/tiulpin/qodana/main/install | bash
+curl -fsSL https://raw.githubusercontent.com/tiulpin/qodana-cli/main/install | bash
 ```
 
 #### Install in the terminal on Windows
 ```shell
-iwr https://raw.githubusercontent.com/tiulpin/qodana/main/install.ps1 -useb | iex
+iwr https://raw.githubusercontent.com/tiulpin/qodana-cli/main/install.ps1 -useb | iex
 ```
 
 If you want to install some specific version:
@@ -99,7 +100,7 @@ If you want to configure Qodana or a check inside Qodana, consider using [`qodan
 
 #### Disable telemetry
 
-To disable [Qodana user statistics](https://www.jetbrains.com/help/qodana/qodana-jvm-docker-readme.html#Usage+statistics) and [CLI Sentry crash reporting](https://blog.sentry.io/2016/02/09/what-is-crash-reporting), export the `DO_NOT_TRACK` environment variable to `1` before running the CLI:
+To disable [Qodana user statistics](https://www.jetbrains.com/help/qodana/qodana-jvm-docker-readme.html#Usage+statistics), export the `DO_NOT_TRACK` environment variable to `1` before running the CLI:
 
 ```sh
 export DO_NOT_TRACK=1
@@ -198,6 +199,6 @@ show [flags]
 [youtrack]: https://youtrack.jetbrains.com/issues/QD
 [youtrack-new-issue]: https://youtrack.jetbrains.com/newIssue?project=QD&c=Platform%20GitHub%20Action
 [jb:confluence-on-gh]: https://confluence.jetbrains.com/display/ALL/JetBrains+on+GitHub
-[jb:slack]: https://jb.gg/qodana-slack
+[jb:discussions]: https://jb.gg/qodana-discussions
 [jb:twitter]: https://twitter.com/QodanaEvolves
 [jb:docker]: https://hub.docker.com/r/jetbrains/qodana

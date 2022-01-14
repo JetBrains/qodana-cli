@@ -4,7 +4,7 @@ import (
 	"fmt"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
-	"github.com/tiulpin/qodana/pkg"
+	"github.com/tiulpin/qodana-cli/pkg"
 	"path/filepath"
 )
 

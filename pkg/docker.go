@@ -136,7 +136,7 @@ func getDockerOptions(opts *QodanaOptions) *types.ContainerCreateConfig {
 			Tty:          true,
 			AttachStdout: true,
 			AttachStderr: true,
-			Env:          opts.EnvVariables,
+			Env:          append(opts.EnvVariables, "QODANA_ENV=cli"),
 			User:         fmt.Sprintf("%d:%d", os.Getuid(), os.Getgid()),
 		},
 		HostConfig: &container.HostConfig{
