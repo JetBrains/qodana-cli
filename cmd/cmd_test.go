@@ -3,7 +3,7 @@ package cmd
 import (
 	"bytes"
 	"fmt"
-	"github.com/tiulpin/qodana/pkg"
+	"github.com/tiulpin/qodana-cli/pkg"
 	"io/ioutil"
 	"testing"
 )

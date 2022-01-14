@@ -27,7 +27,7 @@ Qodana CLI
 Documentation – https://jb.gg/qodana-docs
 Contact us at qodana-support@jetbrains.com
 Or via our issue tracker – https://jb.gg/qodana-issue
-Or share your feedback in our Slack – https://jb.gg/qodana-slack
+Or share your feedback – https://jb.gg/qodana-discussions
 `
 
 // IsInteractive returns true if the current execution environment is interactive (useful for colors/animations toggle)
@@ -83,6 +83,7 @@ var Accent = pterm.NewStyle(pterm.FgMagenta)
 var Error = pterm.NewStyle(pterm.FgRed)
 
 // ErrorBold is a bold error style
+//goland:noinspection GoUnusedGlobalVariable
 var ErrorBold = pterm.NewStyle(pterm.FgRed, pterm.Bold)
 
 // Warning is a warning style

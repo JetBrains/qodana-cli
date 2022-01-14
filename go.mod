@@ -1,4 +1,4 @@
-module github.com/tiulpin/qodana
+module github.com/tiulpin/qodana-cli
 
 go 1.16
 

@@ -2,7 +2,7 @@ package cmd
 
 import (
 	"github.com/spf13/cobra"
-	"github.com/tiulpin/qodana/pkg"
+	"github.com/tiulpin/qodana-cli/pkg"
 	"path/filepath"
 )
 
