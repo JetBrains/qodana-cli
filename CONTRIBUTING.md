@@ -2,7 +2,7 @@
 
 [//]: # (By participating in this project, you agree to abide our [code of conduct]&#40;TODO:ADD CODE_OF_CONDUCT.md&#41;.)
 
-## Setup your machine
+## Set up your machine
 
 `qodana` CLI is written in [Go](https://golang.org/).
 
@@ -12,7 +12,7 @@ Prerequisites:
 
 Other things you might need to develop:
 
-- [GoLand](https://www.jetbrains.com/go/) (it's [free for open source](https://www.jetbrains.com/community/opensource/))
+- [GoLand](https://www.jetbrains.com/go/) (it's [free for open-source development](https://www.jetbrains.com/community/opensource/))
 
 Clone `qodana` anywhere:
 
