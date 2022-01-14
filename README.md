@@ -73,14 +73,14 @@ qodana init
 
 #### Project analysis
 
-Right after you configured your project (or remember linter's name you want to run), you can run Qodana inspections simply by invoking the following command in your project root:
+Right after you configured your project (or remembered linter name you want to run), you can run Qodana inspections simply by invoking the following command in your project root:
 
 ```sh
 qodana scan
 ```
 
 - After the first Qodana run, the following runs will be faster because of the saved Qodana cache in your project (defaults to `./.qodana/<linter>/cache`)
-- The latest Qodana report will be saved to `./.qodana/<linter>/results` – you can find qodana.sarif.json and other Qodana artifacts (like logs) in this directory.
+- Latest Qodana report will be saved to `./.qodana/<linter>/results` – you can find qodana.sarif.json and other Qodana artifacts (like logs) in this directory.
 
 #### Show report
 
