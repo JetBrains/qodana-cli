@@ -100,7 +100,7 @@ If you want to configure Qodana or a check inside Qodana, consider using [`qodan
 
 #### Disable telemetry
 
-To disable [Qodana user statistics](https://www.jetbrains.com/help/qodana/qodana-jvm-docker-readme.html#Usage+statistics) and [CLI Sentry crash reporting](https://blog.sentry.io/2016/02/09/what-is-crash-reporting), export the `DO_NOT_TRACK` environment variable to `1` before running the CLI:
+To disable [Qodana user statistics](https://www.jetbrains.com/help/qodana/qodana-jvm-docker-readme.html#Usage+statistics), export the `DO_NOT_TRACK` environment variable to `1` before running the CLI:
 
 ```sh
 export DO_NOT_TRACK=1
