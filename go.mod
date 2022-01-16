@@ -3,7 +3,6 @@ module github.com/tiulpin/qodana-cli
 go 1.16
 
 require (
-	github.com/c2h5oh/datasize v0.0.0-20200825124411-48ed595a09d2
 	github.com/containerd/containerd v1.5.9 // indirect
 	github.com/docker/docker v20.10.12+incompatible
 	github.com/docker/go-connections v0.4.0 // indirect
