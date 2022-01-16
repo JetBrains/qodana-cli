@@ -20,7 +20,13 @@ const QodanaSuccessExitCode = 0
 const QodanaFailThresholdExitCode = 255
 const OfficialDockerPrefix = "jetbrains/qodana"
 
-// ensureDockerInstalled checks if docker is installed
+var unofficialLinter = false
+var notSupportedLinters = []string{
+	"jetbrains/qodana-license-audit",
+	"jetbrains/qodana-clone-finder",
+}
+
+// ensureDockerInstalled checks if docker is installed.
 func ensureDockerInstalled() {
 	var what string
 	if runtime.GOOS == "windows" {
@@ -31,9 +37,8 @@ func ensureDockerInstalled() {
 	cmd := exec.Command(what, "docker")
 	if err := cmd.Run(); err != nil {
 		if _, ok := err.(*exec.ExitError); ok {
-			Error.Println(
-				"Docker is not installed on your system, ",
-				"refer to https://www.docker.com/get-started for installing it",
+			ErrorMessage(
+				"Docker is not installed on your system, refer to https://www.docker.com/get-started for installing it",
 			)
 			os.Exit(1)
 		}
@@ -41,13 +46,13 @@ func ensureDockerInstalled() {
 	}
 }
 
-// EnsureDockerRunning checks if docker daemon is running
-func EnsureDockerRunning() {
+// EnsureDockerRunning checks if docker daemon is running.
+func EnsureDockerRunning() { // TODO: check if /var/run/docker.sock is a Unix domain socket (Linux images are supported)
 	ensureDockerInstalled()
 	cmd := exec.Command("docker", "ps")
 	if err := cmd.Run(); err != nil {
 		if exiterr, ok := err.(*exec.ExitError); ok {
-			Error.Println(fmt.Sprintf(
+			ErrorMessage(fmt.Sprintf(
 				"Docker exited with exit code %d, perhaps docker daemon is not running?",
 				exiterr.ExitCode(),
 			))
@@ -57,7 +62,7 @@ func EnsureDockerRunning() {
 	}
 }
 
-// getCmdOptions returns qodana command options
+// getCmdOptions returns qodana command options.
 func getCmdOptions(opts *QodanaOptions) []string {
 	arguments := make([]string, 0)
 	if opts.SaveReport {
@@ -111,7 +116,7 @@ func getCmdOptions(opts *QodanaOptions) []string {
 	return arguments
 }
 
-// getDockerOptions returns qodana docker container options
+// getDockerOptions returns qodana docker container options.
 func getDockerOptions(opts *QodanaOptions) *types.ContainerCreateConfig {
 	cachePath, err := filepath.Abs(opts.CacheDir)
 	if err != nil {
@@ -127,6 +132,10 @@ func getDockerOptions(opts *QodanaOptions) *types.ContainerCreateConfig {
 	if err != nil {
 		log.Fatal("couldn't get abs path for results", err)
 	}
+
+	// TODO: agree on the memory constraints, set the memory and disable OOM killer
+	// https://docs.docker.com/config/containers/resource_constraints/#limit-a-containers-access-to-memory
+	// or at least drop a warning when Docker is low on RAM
 
 	return &types.ContainerCreateConfig{
 		Name: "qodana-cli",
@@ -161,7 +170,7 @@ func getDockerOptions(opts *QodanaOptions) *types.ContainerCreateConfig {
 	}
 }
 
-// tryRemoveContainer removes the container
+// tryRemoveContainer removes the container.
 func tryRemoveContainer(ctx context.Context, client *client.Client, name string) {
 	_ = client.ContainerRemove(ctx, name, types.ContainerRemoveOptions{Force: true})
 }
@@ -175,11 +184,11 @@ func pullImage(ctx context.Context, client *client.Client, image string) {
 	defer func(pull io.ReadCloser) {
 		err := pull.Close()
 		if err != nil {
-			log.Fatal("can't pull image", err)
+			log.Fatal("can't pull image ", err)
 		}
 	}(reader)
 	if _, err = io.Copy(ioutil.Discard, reader); err != nil {
-		log.Fatal("couldn't read the image pull logs", err)
+		log.Fatal("couldn't read the image pull logs ", err)
 	}
 }
 
@@ -189,7 +198,7 @@ func getDockerExitCode(ctx context.Context, client *client.Client, id string) in
 	select {
 	case err := <-errCh:
 		if err != nil {
-			log.Fatal("container hasn't finished", err)
+			log.Fatal("container hasn't finished ", err)
 		}
 	case status := <-statusCh:
 		return status.StatusCode
@@ -208,18 +217,16 @@ func runContainer(ctx context.Context, client *client.Client, opts *types.Contai
 		opts.Name,
 	)
 	if err != nil {
-		log.Fatal("couldn't create the container", err)
+		log.Fatal("couldn't create the container ", err)
 	}
 	if err = client.ContainerStart(ctx, createResp.ID, types.ContainerStartOptions{}); err != nil {
-		log.Fatal("couldn't bootstrap the container", err)
+		log.Fatal("couldn't bootstrap the container ", err)
 	}
 }
 
 // stopContainer stops the container
 func stopContainer(ctx context.Context, client *client.Client, id string) {
-	if err := client.ContainerStop(ctx, id, nil); err != nil {
-		log.Fatal("couldn't stop the container ", err)
-	}
+	_ = client.ContainerStop(ctx, id, nil)
 }
 
 // DockerCleanup cleans up Qodana containers
