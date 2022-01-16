@@ -15,7 +15,7 @@ type QodanaYaml struct {
 	Version string `yaml:"version,omitempty"`
 
 	// Linters to run.
-	Linters []string `yaml:"linters"`
+	Linter string `yaml:"linter"`
 
 	// Profile is the profile configuration for Qodana analysis.
 	Profile Profile `yaml:"profile,omitempty"`
@@ -89,9 +89,11 @@ func (q *QodanaYaml) excludeDotQodana() {
 
 func WriteQodanaYaml(path string, linters []string) {
 	q := GetQodanaYaml(path)
-	q.Linters = linters
+	if q.Version == "" {
+		q.Version = "1.0"
+	}
+	q.Linter = linters[0]
 	q.excludeDotQodana()
-
 	var b bytes.Buffer
 	yamlEncoder := yaml.NewEncoder(&b)
 	yamlEncoder.SetIndent(2)
