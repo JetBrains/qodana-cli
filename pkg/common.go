@@ -1,8 +1,13 @@
 package pkg
 
 import (
+	"bufio"
+	"context"
 	"fmt"
+	"github.com/docker/docker/api/types"
+	"github.com/docker/docker/client"
 	log "github.com/sirupsen/logrus"
+	"io"
 	"net/http"
 	"os"
 	"os/exec"
@@ -35,12 +40,22 @@ type QodanaOptions struct {
 	Token                 string
 	AnalysisId            string
 	EnvVariables          []string
+	UnveilProblems        bool
 }
 
-var Version = "0.4.1"
+var Version string // TODO: check for updates
 var DoNotTrack = false
+var Interrupted = false
+var internalStages = []string{
+	"Preparing Qodana Docker images",
+	"Starting the analysis engine",
+	"Opening the project",
+	"Configuring the project",
+	"Analyzing the project",
+	"Preparing the report",
+}
 
-// Contains checks if a string is in a given slice
+// Contains checks if a string is in a given slice.
 func Contains(s []string, str string) bool {
 	for _, v := range s {
 		if v == str {
@@ -48,6 +63,19 @@ func Contains(s []string, str string) bool {
 		}
 	}
 	return false
+}
+
+// CheckLinter validates the image used for the scan.
+func CheckLinter(image string) {
+	if !strings.HasPrefix(image, OfficialDockerPrefix) {
+		WarningMessage("You are using an unofficial Qodana linter " + image + "\n")
+		unofficialLinter = true
+	}
+	for _, linter := range notSupportedLinters {
+		if linter == image {
+			log.Fatalf("%s is not supported by Qodana CLI", linter)
+		}
+	}
 }
 
 // ConfigureProject sets up the project directory for Qodana CLI to run
@@ -75,19 +103,12 @@ func ConfigureProject(projectDir string) {
 			}
 		}
 	}
-	path, _ := filepath.Abs(projectDir)
 	if len(linters) == 0 {
-		Error.Printfln(
-			"Qodana does not support the project %s yet. See https://www.jetbrains.com/help/qodana/supported-technologies.html",
-			path,
-		)
+		ErrorMessage("Qodana does not support this project yet. See https://www.jetbrains.com/help/qodana/supported-technologies.html")
 		os.Exit(1)
-	} else {
-		for _, linter := range linters {
-			Primary.Printfln("- Added %s", linter)
-		}
 	}
 	WriteQodanaYaml(projectDir, linters)
+	SuccessMessage(fmt.Sprintf("Added %s", PrimaryBold.Sprint(linters[0])))
 }
 
 // GetLinterHome returns path to <project>/.qodana/<linter>/
@@ -121,22 +142,37 @@ func PrepareFolders(opts *QodanaOptions) {
 }
 
 // ShowReport serves the Qodana report
-func ShowReport(path string, port int) { // TODO handle port checking
-	if _, err := os.Stat(path); os.IsNotExist(err) {
-		log.Fatal("Qodana report not found. Get the report by running `qodana scan`")
-	}
+func ShowReport(path string, port int) { // TODO: Open report from Cloud
+	PrintProcess(
+		func() {
+			if _, err := os.Stat(path); os.IsNotExist(err) {
+				log.Fatal("Qodana report not found. Get the report by running `qodana scan`")
+			}
+			openReport(path, port)
+		},
+		fmt.Sprintf("Showing Qodana report at http://localhost:%d, press Enter to stop", port),
+		"",
+	)
+}
+
+func openReport(path string, port int) {
 	url := fmt.Sprintf("http://localhost:%d", port)
 	go func() {
-		err := openBrowser(url)
-		if err != nil {
-			log.Fatal(err.Error())
+		resp, err := http.Get(url)
+		if err == nil && resp.StatusCode == 200 {
+			err := openBrowser(url)
+			if err != nil {
+				return
+			}
 		}
 	}()
 	http.Handle("/", http.FileServer(http.Dir(path)))
 	err := http.ListenAndServe(fmt.Sprintf(":%d", port), nil)
 	if err != nil {
+		WarningMessage(fmt.Sprintf("Problem serving report, %s\n", err.Error()))
 		return
 	}
+	_, _ = fmt.Scan()
 }
 
 // openBrowser opens the default browser to the given url
@@ -155,4 +191,57 @@ func openBrowser(url string) error {
 	}
 	args = append(args, url)
 	return exec.Command(cmd, args...).Start()
+}
+
+func RunLinter(ctx context.Context, options *QodanaOptions) int64 {
+	docker, err := client.NewClientWithOpts()
+	if err != nil {
+		log.Fatal("couldn't instantiate docker client", err)
+	}
+	for i, stage := range internalStages {
+		internalStages[i] = PrimaryBold.Sprintf("[%d/%d] ", i+1, len(internalStages)+1) + Primary.Sprint(stage)
+	}
+	CheckLinter(options.Linter)
+	progress, _ := StartQodanaSpinner(internalStages[0])
+	pullImage(ctx, docker, options.Linter)
+	dockerOpts := getDockerOptions(options)
+	tryRemoveContainer(ctx, docker, dockerOpts.Name)
+	updateText(progress, internalStages[1])
+	runContainer(ctx, docker, dockerOpts)
+
+	reader, _ := docker.ContainerLogs(context.Background(), dockerOpts.Name, types.ContainerLogsOptions{
+		ShowStdout: true,
+		ShowStderr: true,
+		Follow:     true,
+		Timestamps: false,
+	})
+	defer func(reader io.ReadCloser) {
+		err := reader.Close()
+		if err != nil {
+			log.Fatal(err.Error())
+		}
+	}(reader)
+	scanner := bufio.NewScanner(reader)
+	for scanner.Scan() {
+		line := scanner.Text()
+		if !unofficialLinter && strings.Contains(line, "By using this Docker image") {
+			WarningMessage(licenseWarning(line, options.Linter))
+		}
+		if strings.Contains(line, "Starting up") {
+			updateText(progress, internalStages[2])
+		}
+		if strings.Contains(line, "The Project opening stage completed in") {
+			updateText(progress, internalStages[3])
+		}
+		if strings.Contains(line, "The Project configuration stage completed in") {
+			updateText(progress, internalStages[4])
+		}
+		if strings.Contains(line, "---- Qodana - Detailed summary ----") {
+			updateText(progress, internalStages[5])
+			break
+		}
+	}
+	exitCode := getDockerExitCode(ctx, docker, dockerOpts.Name)
+	_ = progress.Stop()
+	return exitCode
 }

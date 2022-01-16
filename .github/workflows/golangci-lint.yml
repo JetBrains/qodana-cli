@@ -5,7 +5,13 @@ on:
       - v*
     branches:
       - main
+    paths-ignore:
+      - '**/*.md'
+      - '**/*.txt'
   pull_request:
+    paths-ignore:
+      - '**/*.md'
+      - '**/*.txt'
 permissions:
   contents: read
 jobs:

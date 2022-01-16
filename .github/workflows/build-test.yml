@@ -1,10 +1,16 @@
 name: 'test'
 on:
-  pull_request:
   workflow_dispatch:
+  pull_request:
+    paths-ignore:
+      - '**/*.md'
+      - '**/*.txt'
   push:
     branches:
       - main
+    paths-ignore:
+      - '**/*.md'
+      - '**/*.txt'
 
 jobs:
   test:
