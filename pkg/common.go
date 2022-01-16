@@ -150,7 +150,7 @@ func ShowReport(path string, port int) { // TODO: Open report from Cloud
 			}
 			openReport(path, port)
 		},
-		fmt.Sprintf("Showing Qodana report at http://localhost:%d, press Enter to stop", port),
+		fmt.Sprintf("Showing Qodana report at http://localhost:%d, press Ctrl+C to stop", port),
 		"",
 	)
 }

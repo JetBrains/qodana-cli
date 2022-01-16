@@ -23,7 +23,11 @@ func NewInitCommand() *cobra.Command {
 				"Configuring project",
 				"")
 			path, _ := filepath.Abs(options.ProjectDir)
-			pkg.Primary.Printfln("Configuration is stored at %s/qodana.yaml\nRun 'qodana scan' to analyze the project", path)
+			pkg.Primary.Printfln(
+				"Configuration is stored at %s/qodana.yaml\nRun %s to analyze the project",
+				path,
+				pkg.PrimaryBold.Sprint("qodana scan"),
+			)
 		},
 	}
 	flags := cmd.Flags()

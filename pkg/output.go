@@ -11,6 +11,8 @@ import (
 	"strings"
 )
 
+// TODO: unify logging/error exiting messages across the codebase
+
 // https://patorjk.com/software/taag/#p=testall&f=Impossible&t=QD
 const logo = `
           _            _         
@@ -32,11 +34,10 @@ var Info = Accent.Sprintf(`
   Documentation – https://jb.gg/qodana-docs
   Contact us at qodana-support@jetbrains.com
   Bug Tracker: https://jb.gg/qodana-issue
-  Discussions: https://jb.gg/qodana-slack
+  Discussions: https://jb.gg/qodana-forum
 `, PrimaryBold.Sprint("Qodana CLI"), Version)
 
 func licenseWarning(message string, image string) string {
-
 	linters := []string{
 		fmt.Sprintf("By using %s Docker image, you agree to", PrimaryBold.Sprint(image)),
 		"   - JetBrains Privacy Policy (https://jb.gg/jetbrains-privacy-policy)",
@@ -83,13 +84,13 @@ func SuccessMessage(message string) {
 }
 
 func WarningMessage(message string) {
-	icon := pterm.Yellow("! ")
+	icon := Warning.Sprint("\n! ")
 	pterm.Println(icon, Primary.Sprint(message))
 }
 
 func ErrorMessage(message string) {
 	icon := pterm.Red("✗ ")
-	Error.Println(icon, message)
+	pterm.Println(icon, Error.Sprint(message))
 }
 
 var SpinnerSequence = []string{"| ", "/ ", "- ", "\\ "}
@@ -169,7 +170,7 @@ func PrintSarif(p string, b bool) { // TODO: read the number of problems directl
 	if pcnt == 0 {
 		SuccessMessage("It seems all right 👌 No problems found according to the checks applied")
 	} else {
-		ErrorMessage(fmt.Sprintf("%d problems found according to the checks applied", pcnt))
+		ErrorMessage(fmt.Sprintf("Qodana found %d problems according to the checks applied", pcnt))
 	}
 }
 

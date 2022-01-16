@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"fmt"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 	"github.com/tiulpin/qodana-cli/pkg"
@@ -27,10 +28,13 @@ But you can always override qodana.yaml options with the following command-line 
 			if options.Linter == "" {
 				qodanaYaml := pkg.GetQodanaYaml(options.ProjectDir)
 				if qodanaYaml.Linter == "" {
-					pkg.Warning.Println(
-						"No valid qodana.yaml found. Have you run 'qodana init'? Running that for you...",
+					pkg.WarningMessage(
+						fmt.Sprintf(
+							"No valid qodana.yaml found. Have you run %s? Running that for you...",
+							pkg.PrimaryBold.Sprint("qodana init"),
+						),
 					)
-					pkg.PrintProcess(func() { pkg.ConfigureProject(options.ProjectDir) }, "Scanning project", "finished project scanning")
+					pkg.PrintProcess(func() { pkg.ConfigureProject(options.ProjectDir) }, "Scanning project", "")
 					qodanaYaml = pkg.GetQodanaYaml(options.ProjectDir)
 				}
 				options.Linter = qodanaYaml.Linter
@@ -49,6 +53,15 @@ But you can always override qodana.yaml options with the following command-line 
 			pkg.PrintSarif(options.ResultsDir, options.UnveilProblems)
 			if options.ShowReport {
 				pkg.ShowReport(filepath.Join(options.ResultsDir, "report"), options.Port)
+			} else {
+				pkg.WarningMessage(
+					fmt.Sprintf(
+						"To view the results, run %s or add %s flag to %s",
+						pkg.PrimaryBold.Sprint("qodana show"),
+						pkg.PrimaryBold.Sprint("--show-report"),
+						pkg.PrimaryBold.Sprint("qodana scan"),
+					),
+				)
 			}
 			if exitCode == pkg.QodanaFailThresholdExitCode {
 				pkg.ErrorMessage("The number of problems exceeds the failThreshold")
