@@ -16,7 +16,6 @@ func main() {
 	if os.Getenv("DO_NOT_TRACK") == "1" { // https://consoledonottrack.com
 		pkg.DoNotTrack = true
 	}
-
 	if err := cmd.Execute(); err != nil {
 		log.Fatal(fmt.Sprintf("error running command: %s", err))
 		os.Exit(1)

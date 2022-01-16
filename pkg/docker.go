@@ -161,13 +161,13 @@ func getDockerOptions(opts *QodanaOptions) *types.ContainerCreateConfig {
 	}
 }
 
-// RemoveContainer removes the container
+// tryRemoveContainer removes the container
 func tryRemoveContainer(ctx context.Context, client *client.Client, name string) {
 	_ = client.ContainerRemove(ctx, name, types.ContainerRemoveOptions{Force: true})
 }
 
-// PullImage pulls docker image
-func PullImage(ctx context.Context, client *client.Client, image string) {
+// pullImage pulls docker image
+func pullImage(ctx context.Context, client *client.Client, image string) {
 	reader, err := client.ImagePull(ctx, image, types.ImagePullOptions{})
 	if err != nil {
 		return
@@ -183,7 +183,8 @@ func PullImage(ctx context.Context, client *client.Client, image string) {
 	}
 }
 
-func waitContainerExited(ctx context.Context, client *client.Client, id string) int64 {
+// getDockerExitCode returns the exit code of the docker container
+func getDockerExitCode(ctx context.Context, client *client.Client, id string) int64 {
 	statusCh, errCh := client.ContainerWait(ctx, id, container.WaitConditionNextExit)
 	select {
 	case err := <-errCh:
@@ -196,6 +197,7 @@ func waitContainerExited(ctx context.Context, client *client.Client, id string) 
 	return 0
 }
 
+// runContainer runs the container
 func runContainer(ctx context.Context, client *client.Client, opts *types.ContainerCreateConfig) {
 	createResp, err := client.ContainerCreate(
 		ctx,
@@ -213,12 +215,16 @@ func runContainer(ctx context.Context, client *client.Client, opts *types.Contai
 	}
 }
 
-// RunLinter runs the linter container and waits until it's finished
-func RunLinter(ctx context.Context, client *client.Client, opts *QodanaOptions) int64 {
-	dockerOpts := getDockerOptions(opts)
-	tryRemoveContainer(ctx, client, dockerOpts.Name)
-	runContainer(ctx, client, dockerOpts)
-	exitCode := waitContainerExited(ctx, client, dockerOpts.Name)
-	tryRemoveContainer(ctx, client, dockerOpts.Name)
-	return exitCode
+// stopContainer stops the container
+func stopContainer(ctx context.Context, client *client.Client, id string) {
+	if err := client.ContainerStop(ctx, id, nil); err != nil {
+		log.Fatal("couldn't stop the container ", err)
+	}
+}
+
+// DockerCleanup cleans up Qodana containers
+func DockerCleanup() {
+	docker, _ := client.NewClientWithOpts()
+	stopContainer(context.Background(), docker, "qodana-cli")
+	tryRemoveContainer(context.Background(), docker, "qodana-cli")
 }

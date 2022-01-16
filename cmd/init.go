@@ -17,16 +17,17 @@ func NewInitCommand() *cobra.Command {
 		Short: "Configure project for Qodana",
 		Long:  `Configure project for Qodana: prepare Qodana configuration file by analyzing the project structure and generating a default configuration qodana.yaml file.`,
 		Run: func(cmd *cobra.Command, args []string) {
+			pkg.Primary.Println()
 			pkg.PrintProcess(
 				func() { pkg.ConfigureProject(options.ProjectDir) },
 				"Configuring project",
-				"project configuration.")
+				"")
 			path, _ := filepath.Abs(options.ProjectDir)
-			pkg.Primary.Printfln("Configuration is stored at %s/qodana.yaml.", path)
-			pkg.Primary.Println("Run 'qodana scan' to analyze the project.")
+			pkg.Primary.Printfln("Configuration is stored at %s/qodana.yaml\nRun 'qodana scan' to analyze the project", path)
 		},
 	}
 	flags := cmd.Flags()
 	flags.StringVarP(&options.ProjectDir, "project-dir", "i", ".", "Root directory of the project to configure")
+	// TODO: the flag to set up supported CIs, e.g. --github tells to create .github/workflows/code_scanning.yml
 	return cmd
 }

@@ -5,25 +5,17 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	"github.com/tiulpin/qodana-cli/pkg"
+	"io/ioutil"
+	"os"
+	"os/signal"
 )
 
-// NewRootCmd constructs root command
+// NewRootCmd constructs root command.
 func NewRootCmd() *cobra.Command {
 	rootCmd := &cobra.Command{
-		Use:   "qodana",
-		Short: "Run Qodana CLI",
-		Long: `'qodana' is a command line interface for Qodana (https://jetbrains.com/qodana).
-It allows you to run Qodana inspections on your local machine (or a CI agent) easily, by running Qodana Docker Images.
-
-Documentation: https://github.com/tiulpin/qodana/blob/main/README.md
-
-Here's a typical usage example:
-- 'cd' to the project root you want to check
-- run 'qodana init' in the project directory you want to check with Qodana. 
-- run 'qodana scan' to scan the project.
-- run 'qodana show' to explore generated Qodana report for the project.
-
-`,
+		Use:     "qodana",
+		Short:   "Run Qodana CLI",
+		Long:    pkg.Info,
 		Version: pkg.Version,
 		PersistentPreRun: func(cmd *cobra.Command, args []string) {
 			logLevel, err := log.ParseLevel(viper.GetString("log-level"))
@@ -50,7 +42,7 @@ Here's a typical usage example:
 
 var RootCmd = NewRootCmd()
 
-// init adds all child commands to the root command
+// init adds all child commands to the root command.
 func init() {
 	RootCmd.AddCommand(
 		NewInitCommand(),
@@ -60,6 +52,18 @@ func init() {
 }
 
 func Execute() error {
+	c := make(chan os.Signal, 1)
+	signal.Notify(c, os.Interrupt)
+	go func() {
+		for range c {
+			pkg.Interrupted = true
+			log.SetOutput(ioutil.Discard)
+			pkg.WarningMessage("Interrupting Qodana CLI...")
+			pkg.DockerCleanup()
+			_ = pkg.QodanaSpinner.Stop()
+			os.Exit(0)
+		}
+	}()
 	if err := RootCmd.Execute(); err != nil {
 		return err
 	}
