@@ -43,7 +43,7 @@ type QodanaOptions struct {
 	UnveilProblems        bool
 }
 
-var Version string // TODO: check for updates
+var Version = "0.5.0" // TODO: check for updates
 var DoNotTrack = false
 var Interrupted = false
 var internalStages = []string{
