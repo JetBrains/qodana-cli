@@ -7,7 +7,7 @@ $inputRepo = "tiulpin/qodana-cli"
 $inputVersion = if ($v) {
   "${v}"
 } else {
-  "0.5.1"
+  "0.5.2"
 }
 $inputExe = "qodana"
 

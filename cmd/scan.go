@@ -53,16 +53,17 @@ But you can always override qodana.yaml options with the following command-line 
 			pkg.PrintSarif(options.ResultsDir, options.UnveilProblems)
 			if options.ShowReport {
 				pkg.ShowReport(filepath.Join(options.ResultsDir, "report"), options.Port)
-			} else {
-				pkg.WarningMessage(
-					fmt.Sprintf(
-						"To view the results, run %s or add %s flag to %s",
-						pkg.PrimaryBold.Sprint("qodana show"),
-						pkg.PrimaryBold.Sprint("--show-report"),
-						pkg.PrimaryBold.Sprint("qodana scan"),
-					),
-				)
 			}
+			// else { // TODO: find out whether we need this or not
+			//	pkg.WarningMessage(
+			//		fmt.Sprintf(
+			//			"To view the results, run %s or add %s flag to %s",
+			//			pkg.PrimaryBold.Sprint("qodana show"),
+			//			pkg.PrimaryBold.Sprint("--show-report"),
+			//			pkg.PrimaryBold.Sprint("qodana scan"),
+			//		),
+			//	)
+			//}
 			if exitCode == pkg.QodanaFailThresholdExitCode {
 				pkg.ErrorMessage("The number of problems exceeds the failThreshold")
 				os.Exit(int(exitCode))

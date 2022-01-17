@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/client"
+	"github.com/pterm/pterm"
 	log "github.com/sirupsen/logrus"
 	"io"
 	"net/http"
@@ -43,7 +44,7 @@ type QodanaOptions struct {
 	UnveilProblems        bool
 }
 
-var Version = "0.5.1" // TODO: check for updates
+var Version = "0.5.2" // TODO: check for updates
 var DoNotTrack = false
 var Interrupted = false
 var internalStages = []string{
@@ -202,7 +203,13 @@ func RunLinter(ctx context.Context, options *QodanaOptions) int64 {
 		internalStages[i] = PrimaryBold.Sprintf("[%d/%d] ", i+1, len(internalStages)+1) + Primary.Sprint(stage)
 	}
 	CheckLinter(options.Linter)
-	progress, _ := StartQodanaSpinner(internalStages[0])
+	var progress *pterm.SpinnerPrinter
+	if IsInteractive() {
+		progress, _ = StartQodanaSpinner(internalStages[0])
+	} else {
+		updateText(progress, internalStages[0])
+	}
+
 	pullImage(ctx, docker, options.Linter)
 	dockerOpts := getDockerOptions(options)
 	tryRemoveContainer(ctx, docker, dockerOpts.Name)
@@ -238,10 +245,15 @@ func RunLinter(ctx context.Context, options *QodanaOptions) int64 {
 		}
 		if strings.Contains(line, "---- Qodana - Detailed summary ----") {
 			updateText(progress, internalStages[5])
+			if !IsInteractive() {
+				pterm.Println()
+			}
 			break
 		}
 	}
 	exitCode := getDockerExitCode(ctx, docker, dockerOpts.Name)
-	_ = progress.Stop()
+	if progress != nil {
+		_ = progress.Stop()
+	}
 	return exitCode
 }
