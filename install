@@ -1,6 +1,6 @@
 #!/bin/bash
 TMP_DIR="/tmp/tmpinstalldir"
-CLI_VERSION=${1:-"0.5.1"}
+CLI_VERSION=${1:-"0.5.2"}
 function cleanup {
 	echo rm -rf $TMP_DIR > /dev/null
 }

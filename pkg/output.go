@@ -53,7 +53,7 @@ func licenseWarning(message string, image string) string {
 
 // IsInteractive returns true if the current execution environment is interactive (useful for colors/animations toggle).
 func IsInteractive() bool {
-	return isatty.IsTerminal(os.Stdout.Fd())
+	return isatty.IsTerminal(os.Stdout.Fd()) && os.Getenv("NO_INTERACTIVE") == ""
 }
 
 // Primary is primary text style.
@@ -136,7 +136,11 @@ func StartQodanaSpinner(message string) (*pterm.SpinnerPrinter, error) {
 }
 
 func updateText(spinner *pterm.SpinnerPrinter, message string) {
-	spinner.UpdateText(message + "...")
+	if spinner != nil {
+		spinner.UpdateText(message + "...")
+	} else {
+		pterm.DefaultBasicText.Print(message + "..." + "\n")
+	}
 }
 
 // PrintSarif prints Qodana Scan result into stdout
