@@ -2,16 +2,17 @@ package cmd
 
 import (
 	"fmt"
-	log "github.com/sirupsen/logrus"
-	"github.com/spf13/cobra"
-	"github.com/tiulpin/qodana-cli/pkg"
 	"os"
 	"path/filepath"
+
+	"github.com/JetBrains/qodana-cli/core"
+	log "github.com/sirupsen/logrus"
+	"github.com/spf13/cobra"
 )
 
 // NewScanCommand returns a new instance of the scan command.
 func NewScanCommand() *cobra.Command {
-	options := &pkg.QodanaOptions{}
+	options := &core.QodanaOptions{}
 	cmd := &cobra.Command{
 		Use:   "scan",
 		Short: "Scan project with Qodana",
@@ -21,51 +22,41 @@ Note that most options can be configured via qodana.yaml (https://www.jetbrains.
 But you can always override qodana.yaml options with the following command-line options.
 `,
 		PreRun: func(cmd *cobra.Command, args []string) {
-			pkg.EnsureDockerRunning()
+			core.EnsureDockerRunning()
 		},
 		Run: func(cmd *cobra.Command, args []string) {
 			ctx := cmd.Context()
 			if options.Linter == "" {
-				qodanaYaml := pkg.GetQodanaYaml(options.ProjectDir)
+				qodanaYaml := core.GetQodanaYaml(options.ProjectDir)
 				if qodanaYaml.Linter == "" {
-					pkg.WarningMessage(
+					core.WarningMessage(
 						fmt.Sprintf(
 							"No valid qodana.yaml found. Have you run %s? Running that for you...",
-							pkg.PrimaryBold.Sprint("qodana init"),
+							core.PrimaryBold.Sprint("qodana init"),
 						),
 					)
-					pkg.PrintProcess(func() { pkg.ConfigureProject(options.ProjectDir) }, "Scanning project", "")
-					qodanaYaml = pkg.GetQodanaYaml(options.ProjectDir)
+					core.PrintProcess(func() { core.ConfigureProject(options.ProjectDir) }, "Scanning project", "")
+					qodanaYaml = core.GetQodanaYaml(options.ProjectDir)
 				}
 				options.Linter = qodanaYaml.Linter
 			}
-			if err := pkg.Greet(); err != nil {
+			if err := core.Greet(); err != nil {
 				log.Fatal("couldn't print", err)
 			}
-			pkg.PrepareFolders(options)
-			exitCode := pkg.RunLinter(ctx, options)
-			if pkg.Interrupted {
+			core.PrepareFolders(options)
+			exitCode := core.RunLinter(ctx, options)
+			if core.Interrupted {
 				os.Exit(1)
 			}
-			if exitCode != pkg.QodanaSuccessExitCode && exitCode != pkg.QodanaFailThresholdExitCode {
+			if exitCode != core.QodanaSuccessExitCode && exitCode != core.QodanaFailThresholdExitCode {
 				log.Fatal("Linter failed, please check the logs in ", options.ResultsDir)
 			}
-			pkg.PrintSarif(options.ResultsDir, options.UnveilProblems)
+			core.ReadSarif(options.ResultsDir, options.UnveilProblems)
 			if options.ShowReport {
-				pkg.ShowReport(filepath.Join(options.ResultsDir, "report"), options.Port)
+				core.ShowReport(filepath.Join(options.ResultsDir, "report"), options.Port)
 			}
-			// else { // TODO: find out whether we need this or not
-			//	pkg.WarningMessage(
-			//		fmt.Sprintf(
-			//			"To view the results, run %s or add %s flag to %s",
-			//			pkg.PrimaryBold.Sprint("qodana show"),
-			//			pkg.PrimaryBold.Sprint("--show-report"),
-			//			pkg.PrimaryBold.Sprint("qodana scan"),
-			//		),
-			//	)
-			//}
-			if exitCode == pkg.QodanaFailThresholdExitCode {
-				pkg.ErrorMessage("The number of problems exceeds the failThreshold")
+			if exitCode == core.QodanaFailThresholdExitCode {
+				core.ErrorMessage("The number of problems exceeds the failThreshold")
 				os.Exit(int(exitCode))
 			}
 		},

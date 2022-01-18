@@ -1,30 +1,35 @@
-package pkg
+package core
 
 import (
 	"context"
 	"fmt"
-	"github.com/docker/docker/api/types"
-	"github.com/docker/docker/api/types/container"
-	"github.com/docker/docker/api/types/mount"
-	"github.com/docker/docker/client"
-	log "github.com/sirupsen/logrus"
 	"io"
 	"io/ioutil"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"runtime"
+
+	"github.com/docker/docker/api/types"
+	"github.com/docker/docker/api/types/container"
+	"github.com/docker/docker/api/types/mount"
+	"github.com/docker/docker/client"
+	log "github.com/sirupsen/logrus"
 )
 
-const QodanaSuccessExitCode = 0
-const QodanaFailThresholdExitCode = 255
-const OfficialDockerPrefix = "jetbrains/qodana"
+const (
+	QodanaSuccessExitCode       = 0
+	QodanaFailThresholdExitCode = 255
+	OfficialDockerPrefix        = "jetbrains/qodana"
+)
 
-var unofficialLinter = false
-var notSupportedLinters = []string{
-	"jetbrains/qodana-license-audit",
-	"jetbrains/qodana-clone-finder",
-}
+var (
+	unofficialLinter    = false
+	notSupportedLinters = []string{
+		"jetbrains/qodana-license-audit",
+		"jetbrains/qodana-clone-finder",
+	}
+)
 
 // ensureDockerInstalled checks if docker is installed.
 func ensureDockerInstalled() {

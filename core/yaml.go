@@ -1,11 +1,14 @@
-package pkg
+package core
 
 import (
 	"bytes"
+	"errors"
+	"io/ioutil"
+	"os"
+	"path/filepath"
+
 	log "github.com/sirupsen/logrus"
 	"gopkg.in/yaml.v3"
-	"io/ioutil"
-	"path/filepath"
 )
 
 // QodanaYaml A standard qodana.yaml (or qodana.yml) format for Qodana configuration.
@@ -14,7 +17,7 @@ type QodanaYaml struct {
 	// The qodana.yaml version of this log file.
 	Version string `yaml:"version,omitempty"`
 
-	// Linters to run.
+	// Linter to run.
 	Linter string `yaml:"linter"`
 
 	// Profile is the profile configuration for Qodana analysis.
@@ -57,9 +60,17 @@ type Include struct {
 	Name string `yaml:"name"`
 }
 
-func GetQodanaYaml(path string) *QodanaYaml {
+// GetQodanaYaml gets Qodana YAML from the project.
+func GetQodanaYaml(project string) *QodanaYaml {
 	q := &QodanaYaml{}
-	yamlFile, err := ioutil.ReadFile(filepath.Join(path, "qodana.yaml"))
+	qodanaYamlPath := filepath.Join(project, "qodana.yaml")
+	if _, err := os.Stat(qodanaYamlPath); errors.Is(err, os.ErrNotExist) {
+		qodanaYamlPath = filepath.Join(project, "qodana.yml")
+	}
+	if _, err := os.Stat(qodanaYamlPath); errors.Is(err, os.ErrNotExist) {
+		return q
+	}
+	yamlFile, err := ioutil.ReadFile(qodanaYamlPath)
 	if err != nil {
 		log.Printf("yamlFile.Get err   #%v ", err)
 	}
@@ -70,6 +81,7 @@ func GetQodanaYaml(path string) *QodanaYaml {
 	return q
 }
 
+// TODO: remove me
 func (q *QodanaYaml) excludeDotQodana() {
 	excluded := false
 	for i, exclude := range q.Exclude {
@@ -87,6 +99,7 @@ func (q *QodanaYaml) excludeDotQodana() {
 	}
 }
 
+// WriteQodanaYaml writes the qodana.yaml file to the given path.
 func WriteQodanaYaml(path string, linters []string) {
 	q := GetQodanaYaml(path)
 	if q.Version == "" {
@@ -101,7 +114,7 @@ func WriteQodanaYaml(path string, linters []string) {
 	if err != nil {
 		return
 	}
-	err = ioutil.WriteFile(filepath.Join(path, "qodana.yaml"), b.Bytes(), 0644)
+	err = ioutil.WriteFile(filepath.Join(path, "qodana.yaml"), b.Bytes(), 0o644)
 	if err != nil {
 		log.Fatalf("Marshal: %v", err)
 	}

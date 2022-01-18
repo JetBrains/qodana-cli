@@ -1,19 +1,17 @@
-package pkg
+package core
 
 import (
 	"fmt"
+	"os"
+	"strings"
+
 	"github.com/mattn/go-isatty"
-	"github.com/owenrumney/go-sarif/sarif"
 	"github.com/pterm/pterm"
 	log "github.com/sirupsen/logrus"
-	"os"
-	"path/filepath"
-	"strings"
 )
 
 // TODO: unify logging/error exiting messages across the codebase
 
-// https://patorjk.com/software/taag/#p=testall&f=Impossible&t=QD
 const logo = `
           _            _         
          /\ \         /\ \       
@@ -37,6 +35,20 @@ var Info = Accent.Sprintf(`
   Discussions: https://jb.gg/qodana-forum
 `, PrimaryBold.Sprint("Qodana CLI"), Version)
 
+//goland:noinspection GoUnusedGlobalVariable
+var (
+	SpinnerSequence = []string{"| ", "/ ", "- ", "\\ "}
+	QodanaSpinner   = pterm.DefaultSpinner
+	Primary         = pterm.NewStyle()                           // Primary is primary text style.
+	PrimaryBold     = pterm.NewStyle(pterm.Bold)                 // PrimaryBold is primary bold text style.
+	Accent          = pterm.NewStyle(pterm.FgMagenta)            // Accent is an accent style.
+	Error           = pterm.NewStyle(pterm.FgRed)                // Error is an error style.
+	ErrorBold       = pterm.NewStyle(pterm.FgRed, pterm.Bold)    // ErrorBold is a bold error style.
+	Warning         = pterm.NewStyle(pterm.FgYellow)             // Warning is a warning style.
+	WarningBold     = pterm.NewStyle(pterm.FgYellow, pterm.Bold) // WarningBold is a bold warning style.
+)
+
+// licenseWarning prints a license warning (Community/EAP/etc.).
 func licenseWarning(message string, image string) string {
 	linters := []string{
 		fmt.Sprintf("By using %s Docker image, you agree to", PrimaryBold.Sprint(image)),
@@ -56,46 +68,23 @@ func IsInteractive() bool {
 	return isatty.IsTerminal(os.Stdout.Fd()) && os.Getenv("NO_INTERACTIVE") == ""
 }
 
-// Primary is primary text style.
-var Primary = pterm.NewStyle()
-
-// PrimaryBold is primary bold text style.
-var PrimaryBold = pterm.NewStyle(pterm.Bold)
-
-// Accent is an accent style
-var Accent = pterm.NewStyle(pterm.FgMagenta)
-
-// Error is an error style.
-var Error = pterm.NewStyle(pterm.FgRed)
-
-// ErrorBold is a bold error style.
-//goland:noinspection GoUnusedGlobalVariable
-var ErrorBold = pterm.NewStyle(pterm.FgRed, pterm.Bold)
-
-// Warning is a warning style
-var Warning = pterm.NewStyle(pterm.FgYellow)
-
-//goland:noinspection GoUnusedGlobalVariable
-var WarningBold = pterm.NewStyle(pterm.FgYellow, pterm.Bold)
-
+// SuccessMessage print success message with the icon.
 func SuccessMessage(message string) {
 	icon := pterm.Green("✓ ")
 	pterm.Println(icon, Primary.Sprint(message))
 }
 
+// WarningMessage print warning message with the icon.
 func WarningMessage(message string) {
 	icon := Warning.Sprint("\n! ")
 	pterm.Println(icon, Primary.Sprint(message))
 }
 
+// ErrorMessage print error message with the icon.
 func ErrorMessage(message string) {
 	icon := pterm.Red("✗ ")
 	pterm.Println(icon, Error.Sprint(message))
 }
-
-var SpinnerSequence = []string{"| ", "/ ", "- ", "\\ "}
-
-var QodanaSpinner = pterm.DefaultSpinner
 
 // Greet prints welcome message
 func Greet() error {
@@ -130,11 +119,13 @@ func spin(fun func(), message string) error {
 	return nil
 }
 
+// StartQodanaSpinner starts a new spinner with the given message.
 func StartQodanaSpinner(message string) (*pterm.SpinnerPrinter, error) {
 	QodanaSpinner.Sequence = SpinnerSequence
 	return QodanaSpinner.WithStyle(pterm.NewStyle(pterm.FgGray)).WithRemoveWhenDone(true).Start(message + "...")
 }
 
+// updateText updates the text of the spinner (or print text if there is no spinner).
 func updateText(spinner *pterm.SpinnerPrinter, message string) {
 	if spinner != nil {
 		spinner.UpdateText(message + "...")
@@ -143,42 +134,7 @@ func updateText(spinner *pterm.SpinnerPrinter, message string) {
 	}
 }
 
-// PrintSarif prints Qodana Scan result into stdout
-func PrintSarif(p string, b bool) { // TODO: read the number of problems directly from SARIF and prepare a summary table
-	pcnt := 0
-	s, err := sarif.Open(filepath.Join(p, "qodana.sarif.json"))
-	if err != nil {
-		log.Fatal(err)
-	}
-	for _, run := range s.Runs {
-		for _, r := range run.Results {
-			pcnt += 1
-			ruleId := *r.RuleID
-			message := *r.Message.Text
-			level := *r.Level
-			if len(r.Locations) > 0 {
-				startLine := *r.Locations[0].PhysicalLocation.Region.StartLine
-				startColumn := *r.Locations[0].PhysicalLocation.Region.StartColumn
-				filePath := *r.Locations[0].PhysicalLocation.ArtifactLocation.URI
-				if b {
-					PrintLocalizedProblem(ruleId, level, message, filePath, startLine, startColumn)
-				}
-			} else {
-				if b {
-					PrintGlobalProblem(ruleId, level, message)
-				}
-			}
-		}
-	}
-
-	if pcnt == 0 {
-		SuccessMessage("It seems all right 👌 No problems found according to the checks applied")
-	} else {
-		ErrorMessage(fmt.Sprintf("Qodana found %d problems according to the checks applied", pcnt))
-	}
-}
-
-// PrintLocalizedProblem prints problem
+// PrintLocalizedProblem prints problem using pterm panels.
 func PrintLocalizedProblem(ruleId string, level string, message string, path string, l int, c int) {
 	panels := pterm.Panels{
 		{
@@ -195,7 +151,7 @@ func PrintLocalizedProblem(ruleId string, level string, message string, path str
 	}
 }
 
-// PrintGlobalProblem prints global problem
+// PrintGlobalProblem prints global problem using pterm panels.
 func PrintGlobalProblem(ruleId string, level string, message string) {
 	panels := pterm.Panels{
 		{

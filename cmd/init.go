@@ -1,32 +1,35 @@
 package cmd
 
 import (
-	"github.com/spf13/cobra"
-	"github.com/tiulpin/qodana-cli/pkg"
 	"path/filepath"
+
+	"github.com/JetBrains/qodana-cli/core"
+	"github.com/spf13/cobra"
 )
 
-type ScanOptions struct {
+// InitOptions represents scan command options.
+type InitOptions struct {
 	ProjectDir string
 }
 
+// NewInitCommand returns a new instance of the show command.
 func NewInitCommand() *cobra.Command {
-	options := &ScanOptions{}
+	options := &InitOptions{}
 	cmd := &cobra.Command{
 		Use:   "init",
 		Short: "Configure project for Qodana",
 		Long:  `Configure project for Qodana: prepare Qodana configuration file by analyzing the project structure and generating a default configuration qodana.yaml file.`,
 		Run: func(cmd *cobra.Command, args []string) {
-			pkg.Primary.Println()
-			pkg.PrintProcess(
-				func() { pkg.ConfigureProject(options.ProjectDir) },
+			core.Primary.Println() // TODO
+			core.PrintProcess(
+				func() { core.ConfigureProject(options.ProjectDir) },
 				"Configuring project",
 				"")
 			path, _ := filepath.Abs(options.ProjectDir)
-			pkg.Primary.Printfln(
+			core.Primary.Printfln(
 				"Configuration is stored at %s/qodana.yaml\nRun %s to analyze the project",
 				path,
-				pkg.PrimaryBold.Sprint("qodana scan"),
+				core.PrimaryBold.Sprint("qodana scan"),
 			)
 		},
 	}

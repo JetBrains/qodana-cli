@@ -1,13 +1,9 @@
-package pkg
+package core
 
 import (
 	"bufio"
 	"context"
 	"fmt"
-	"github.com/docker/docker/api/types"
-	"github.com/docker/docker/client"
-	"github.com/pterm/pterm"
-	log "github.com/sirupsen/logrus"
 	"io"
 	"net/http"
 	"os"
@@ -15,6 +11,11 @@ import (
 	"path/filepath"
 	"runtime"
 	"strings"
+
+	"github.com/docker/docker/api/types"
+	"github.com/docker/docker/client"
+	"github.com/pterm/pterm"
+	log "github.com/sirupsen/logrus"
 )
 
 type QodanaOptions struct {
@@ -44,17 +45,19 @@ type QodanaOptions struct {
 	UnveilProblems        bool
 }
 
-var Version = "0.5.2" // TODO: check for updates
-var DoNotTrack = false
-var Interrupted = false
-var internalStages = []string{
-	"Preparing Qodana Docker images",
-	"Starting the analysis engine",
-	"Opening the project",
-	"Configuring the project",
-	"Analyzing the project",
-	"Preparing the report",
-}
+var (
+	Version     = "0.5.3" // TODO: check for updates
+	DoNotTrack  = false
+	Interrupted = false
+	scanStages  = []string{
+		"Preparing Qodana Docker images",
+		"Starting the analysis engine",
+		"Opening the project",
+		"Configuring the project",
+		"Analyzing the project",
+		"Preparing the report",
+	}
+)
 
 // Contains checks if a string is in a given slice.
 func Contains(s []string, str string) bool {
@@ -77,39 +80,6 @@ func CheckLinter(image string) {
 			log.Fatalf("%s is not supported by Qodana CLI", linter)
 		}
 	}
-}
-
-// ConfigureProject sets up the project directory for Qodana CLI to run
-// Looks up .idea directory to determine used modules
-// If a project doesn't have .idea, then runs language detector
-func ConfigureProject(projectDir string) {
-	var linters []string
-	version := "2021.3-eap"
-	langLinters := map[string]string{
-		"Java":       fmt.Sprintf("jetbrains/qodana-jvm:%s", version),
-		"Kotlin":     fmt.Sprintf("jetbrains/qodana-jvm:%s", version),
-		"Python":     fmt.Sprintf("jetbrains/qodana-python:%s", version),
-		"PHP":        fmt.Sprintf("jetbrains/qodana-php:%s", version),
-		"JavaScript": fmt.Sprintf("jetbrains/qodana-js:%s", version),
-		"TypeScript": fmt.Sprintf("jetbrains/qodana-js:%s", version),
-	}
-	languages := ReadIdeaFolder(projectDir)
-	if len(languages) == 0 {
-		languages, _ = RecognizeDirLanguages(projectDir)
-	}
-	for _, language := range languages {
-		if linter, err := langLinters[language]; err {
-			if !Contains(linters, linter) {
-				linters = append(linters, linter)
-			}
-		}
-	}
-	if len(linters) == 0 {
-		ErrorMessage("Qodana does not support this project yet. See https://www.jetbrains.com/help/qodana/supported-technologies.html")
-		os.Exit(1)
-	}
-	WriteQodanaYaml(projectDir, linters)
-	SuccessMessage(fmt.Sprintf("Added %s", PrimaryBold.Sprint(linters[0])))
 }
 
 // GetLinterHome returns path to <project>/.qodana/<linter>/
@@ -156,6 +126,7 @@ func ShowReport(path string, port int) { // TODO: Open report from Cloud
 	)
 }
 
+// openReport serves the report on the given port and opens the browser.
 func openReport(path string, port int) {
 	url := fmt.Sprintf("http://localhost:%d", port)
 	go func() {
@@ -199,21 +170,21 @@ func RunLinter(ctx context.Context, options *QodanaOptions) int64 {
 	if err != nil {
 		log.Fatal("couldn't instantiate docker client", err)
 	}
-	for i, stage := range internalStages {
-		internalStages[i] = PrimaryBold.Sprintf("[%d/%d] ", i+1, len(internalStages)+1) + Primary.Sprint(stage)
+	for i, stage := range scanStages {
+		scanStages[i] = PrimaryBold.Sprintf("[%d/%d] ", i+1, len(scanStages)+1) + Primary.Sprint(stage)
 	}
 	CheckLinter(options.Linter)
 	var progress *pterm.SpinnerPrinter
 	if IsInteractive() {
-		progress, _ = StartQodanaSpinner(internalStages[0])
+		progress, _ = StartQodanaSpinner(scanStages[0])
 	} else {
-		updateText(progress, internalStages[0])
+		updateText(progress, scanStages[0])
 	}
 
 	pullImage(ctx, docker, options.Linter)
 	dockerOpts := getDockerOptions(options)
 	tryRemoveContainer(ctx, docker, dockerOpts.Name)
-	updateText(progress, internalStages[1])
+	updateText(progress, scanStages[1])
 	runContainer(ctx, docker, dockerOpts)
 
 	reader, _ := docker.ContainerLogs(context.Background(), dockerOpts.Name, types.ContainerLogsOptions{
@@ -235,16 +206,16 @@ func RunLinter(ctx context.Context, options *QodanaOptions) int64 {
 			WarningMessage(licenseWarning(line, options.Linter))
 		}
 		if strings.Contains(line, "Starting up") {
-			updateText(progress, internalStages[2])
+			updateText(progress, scanStages[2])
 		}
 		if strings.Contains(line, "The Project opening stage completed in") {
-			updateText(progress, internalStages[3])
+			updateText(progress, scanStages[3])
 		}
 		if strings.Contains(line, "The Project configuration stage completed in") {
-			updateText(progress, internalStages[4])
+			updateText(progress, scanStages[4])
 		}
 		if strings.Contains(line, "---- Qodana - Detailed summary ----") {
-			updateText(progress, internalStages[5])
+			updateText(progress, scanStages[5])
 			if !IsInteractive() {
 				pterm.Println()
 			}

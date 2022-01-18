@@ -1,13 +1,14 @@
 package cmd
 
 import (
-	log "github.com/sirupsen/logrus"
-	"github.com/spf13/cobra"
-	"github.com/spf13/viper"
-	"github.com/tiulpin/qodana-cli/pkg"
 	"io/ioutil"
 	"os"
 	"os/signal"
+
+	"github.com/JetBrains/qodana-cli/core"
+	log "github.com/sirupsen/logrus"
+	"github.com/spf13/cobra"
+	"github.com/spf13/viper"
 )
 
 // NewRootCmd constructs root command.
@@ -15,8 +16,8 @@ func NewRootCmd() *cobra.Command {
 	rootCmd := &cobra.Command{
 		Use:     "qodana",
 		Short:   "Run Qodana CLI",
-		Long:    pkg.Info,
-		Version: pkg.Version,
+		Long:    core.Info,
+		Version: core.Version,
 		PersistentPreRun: func(cmd *cobra.Command, args []string) {
 			logLevel, err := log.ParseLevel(viper.GetString("log-level"))
 			if err != nil {
@@ -51,16 +52,17 @@ func init() {
 	)
 }
 
+// Execute runs the command, adds Ctrl+C handler and returns error.
 func Execute() error {
 	c := make(chan os.Signal, 1)
 	signal.Notify(c, os.Interrupt)
 	go func() {
 		for range c {
-			pkg.Interrupted = true
+			core.Interrupted = true
 			log.SetOutput(ioutil.Discard)
-			pkg.WarningMessage("Interrupting Qodana CLI...")
-			pkg.DockerCleanup()
-			_ = pkg.QodanaSpinner.Stop()
+			core.WarningMessage("Interrupting Qodana CLI...")
+			core.DockerCleanup()
+			_ = core.QodanaSpinner.Stop()
 			os.Exit(0)
 		}
 	}()

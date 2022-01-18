@@ -1,11 +1,14 @@
 package cmd
 
+// Provides simple CLI tests for all supported platforms.
+
 import (
 	"bytes"
 	"fmt"
-	"github.com/tiulpin/qodana-cli/pkg"
 	"io/ioutil"
 	"testing"
+
+	"github.com/JetBrains/qodana-cli/core"
 )
 
 // TestVersion verifies that the version command returns the correct version
@@ -22,7 +25,7 @@ func TestVersion(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	expected := fmt.Sprintf("qodana version %s\n", pkg.Version)
+	expected := fmt.Sprintf("qodana version %s\n", core.Version)
 	actual := string(out)
 	if expected != actual {
 		t.Fatalf("expected \"%s\" got \"%s\"", expected, actual)
