@@ -22,6 +22,10 @@ jobs:
             - name: GrazieInspection
             - name: IdentifierGrammar
             - name: LanguageDetectionInspection
+          exclude:
+            - name: All
+              paths:
+                - .github
           EOF
       - name: 'Qodana for Docs (with Grazie)'
         uses: JetBrains/qodana-action@main
