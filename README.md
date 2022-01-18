@@ -1,7 +1,7 @@
 # Qodana CLI
 
 [![JetBrains incubator project](https://jb.gg/badges/incubator.svg)](https://confluence.jetbrains.com/display/ALL/JetBrains+on+GitHub)
-[![Test](https://github.com/JetBrains/qodana/actions/workflows/build-test.yml/badge.svg)][gh:test]
+[![Test](https://github.com/JetBrains/qodana-cli/actions/workflows/build-test.yml/badge.svg)][gh:test]
 [![Docker Hub](https://img.shields.io/docker/pulls/jetbrains/qodana.svg)][jb:docker]
 [![GitHub Discussions](https://img.shields.io/github/discussions/jetbrains/qodana)][jb:discussions]
 [![Twitter Follow](https://img.shields.io/twitter/follow/QodanaEvolves?style=social&logo=twitter)][jb:twitter]
