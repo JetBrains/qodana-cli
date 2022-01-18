@@ -1,7 +1,7 @@
 # Qodana CLI
 
 [![JetBrains incubator project](https://jb.gg/badges/incubator.svg)](https://confluence.jetbrains.com/display/ALL/JetBrains+on+GitHub)
-[![Test](https://github.com/tiulpin/qodana/actions/workflows/build-test.yml/badge.svg)][gh:test]
+[![Test](https://github.com/JetBrains/qodana/actions/workflows/build-test.yml/badge.svg)][gh:test]
 [![Docker Hub](https://img.shields.io/docker/pulls/jetbrains/qodana.svg)][jb:docker]
 [![GitHub Discussions](https://img.shields.io/github/discussions/jetbrains/qodana)][jb:discussions]
 [![Twitter Follow](https://img.shields.io/twitter/follow/QodanaEvolves?style=social&logo=twitter)][jb:twitter]
@@ -35,19 +35,19 @@ We have installation scripts for Linux, macOS, and Windows.
 
 #### Install in the terminal on Linux and macOS
 ```shell
-curl -fsSL https://raw.githubusercontent.com/tiulpin/qodana-cli/main/install | bash
+curl -fsSL https://raw.githubusercontent.com/JetBrains/qodana-cli/main/install | bash
 ```
 
 #### Install in the terminal on Windows
 ```shell
-iwr https://raw.githubusercontent.com/tiulpin/qodana-cli/main/install.ps1 -useb | iex
+iwr https://raw.githubusercontent.com/JetBrains/qodana-cli/main/install.ps1 -useb | iex
 ```
 
 If you want to install some specific version:
 - **macOS and Linux**: add the version number (e.g. `0.2.0`) **to the end** of the command
 - **Windows**: add the version number (e.g. `$v="0.2.0";`) **to the beginning** of the command.
 
-Alternatively, you can install the latest binary from [GitHub Releases](https://github.com/tiulpin/qodana/releases/latest).
+Alternatively, you can install the latest binary from [GitHub Releases](https://github.com/JetBrains/qodana-cli/releases/latest).
 
 ### Running
 
@@ -196,7 +196,7 @@ show [flags]
   -r, --report-dir string   Specify HTML report path (the one with index.html inside) (default ".qodana/<linter>/results/report")
 ```
 
-[gh:test]: https://github.com/tiulpin/qodana/actions/workflows/build-test.yml
+[gh:test]: https://github.com/JetBrains/qodana/actions/workflows/build-test.yml
 [youtrack]: https://youtrack.jetbrains.com/issues/QD
 [youtrack-new-issue]: https://youtrack.jetbrains.com/newIssue?project=QD&c=Platform%20GitHub%20Action
 [jb:confluence-on-gh]: https://confluence.jetbrains.com/display/ALL/JetBrains+on+GitHub

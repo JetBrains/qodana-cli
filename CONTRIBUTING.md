@@ -17,7 +17,7 @@ Other things you might need to develop:
 Clone `qodana` anywhere:
 
 ```sh
-git clone git@github.com:tiulpin/qodana.git
+git clone git@github.com:JetBrains/qodana.git
 ```
 
 `cd` into the directory and run for debug:
