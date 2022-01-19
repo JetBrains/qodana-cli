@@ -49,7 +49,7 @@ This command serves the Qodana report locally and opens a browser to it.`,
 					log.Fatalf("Can't automatically find the report...\n" +
 						"Please specify the report directory with the --report-dir flag.")
 				}
-				options.ReportDir = filepath.Join(core.GetLinterHome(".", linter), "results", "report")
+				options.ReportDir = filepath.Join(core.GetLinterSystemDir(".", linter), "results", "report")
 			}
 			core.ShowReport(options.ReportDir, options.Port)
 		},
@@ -59,7 +59,7 @@ This command serves the Qodana report locally and opens a browser to it.`,
 		"report-dir",
 		"r",
 		"",
-		"Specify HTML report path (the one with index.html inside) (default .qodana/<linter>/results/report)")
+		"Specify HTML report path (the one with index.html inside) (default <userCacheDir>/JetBrains/<linter>/results/report)")
 	flags.IntVarP(&options.Port, "port", "p", 8080, "Specify port to serve report at")
 	return cmd
 }

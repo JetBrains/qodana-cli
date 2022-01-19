@@ -19,6 +19,7 @@ package core
 import (
 	"bufio"
 	"context"
+	"crypto/sha256"
 	"fmt"
 	"io"
 	"net/http"
@@ -62,7 +63,7 @@ type QodanaOptions struct {
 }
 
 var (
-	Version     = "0.5.3" // TODO: check for updates
+	Version     = "0.6.0" // TODO: check for updates
 	DoNotTrack  = false
 	Interrupted = false
 	scanStages  = []string{
@@ -98,16 +99,23 @@ func CheckLinter(image string) {
 	}
 }
 
-// GetLinterHome returns path to <project>/.qodana/<linter>/
-func GetLinterHome(project string, linter string) string {
-	dotQodana := filepath.Join(project, ".qodana")
-	parentDirName := strings.Replace(strings.Replace(linter, ":", "-", -1), "/", "-", -1)
-	return filepath.Join(dotQodana, parentDirName)
+// GetLinterSystemDir returns path to <userCacheDir>/JetBrains/<linter>/<project-hash>/
+func GetLinterSystemDir(project string, linter string) string {
+	userCacheDir, _ := os.UserCacheDir()
+	linterDirName := strings.Replace(strings.Replace(linter, ":", "-", -1), "/", "-", -1)
+	projectAbs, _ := filepath.Abs(project)
+
+	return filepath.Join(
+		userCacheDir,
+		"JetBrains",
+		linterDirName,
+		fmt.Sprintf("%x", sha256.Sum256([]byte(projectAbs))),
+	)
 }
 
 // PrepareFolders cleans up report folder, creates the necessary folders for the analysis
 func PrepareFolders(opts *QodanaOptions) {
-	linterHome := GetLinterHome(opts.ProjectDir, opts.Linter)
+	linterHome := GetLinterSystemDir(opts.ProjectDir, opts.Linter)
 	if opts.ResultsDir == "" {
 		opts.ResultsDir = filepath.Join(linterHome, "results")
 	}

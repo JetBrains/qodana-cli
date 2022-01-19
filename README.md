@@ -80,12 +80,12 @@ Right after you configured your project (or remember linter's name you want to r
 qodana scan
 ```
 
-- After the first Qodana run, the following runs will be faster because of the saved Qodana cache in your project (defaults to `./.qodana/<linter>/cache`)
-- The latest Qodana report will be saved to `./.qodana/<linter>/results` – you can find qodana.sarif.json and other Qodana artifacts (like logs) in this directory.
+- After the first Qodana run, the following runs will be faster because of the saved Qodana cache in your project (defaults to `./<userCacheDir>/JetBrains/<linter>/cache`)
+- The latest Qodana report will be saved to `./<userCacheDir>/JetBrains/<linter>/results` – you can find qodana.sarif.json and other Qodana artifacts (like logs) in this directory.
 
 #### Show report
 
-After the analysis, the results are saved to `./.qodana/<linter>/results` by default. Inside the directory `./.qodana/<linter>/results/report`, you can find Qodana HTML report.
+After the analysis, the results are saved to `./<userCacheDir>/JetBrains/<linter>/results` by default. Inside the directory `./<userCacheDir>/JetBrains/<linter>/results/report`, you can find Qodana HTML report.
 To view it in the browser, run the following command from your project root:
 
 ```shell
@@ -98,6 +98,11 @@ You can serve any Qodana HTML report regardless of the project if you provide th
 
 Find more CLI options, run `qodana ...` commands with the `--help` flag. Currently, there are not many options.
 If you want to configure Qodana or a check inside Qodana, consider using [`qodana.yaml` ](https://www.jetbrains.com/help/qodana/qodana-yaml.html) to have the same configuration on any CI you use and your machine.
+
+> In some flags help texts you can notice that the default path contains `<userCacheDir>/JetBrains`. The `<userCacheDir>` differs from the OS you are running Qodana with.
+> - macOS: ~/Library/Caches/
+> - Linux: ~/.cache/
+> - Windows: %LOCALAPPDATA%\
 
 #### Disable telemetry
 
@@ -148,7 +153,7 @@ scan [flags]
   -a, --analysis-id string        Unique report identifier (GUID) to be used by Qodana Cloud
   -b, --baseline string           Provide the path to an existing SARIF report to be used in the baseline state calculation
       --baseline-include-absent   Include in the output report the results from the baseline run that are absent in the current run
-  -c, --cache-dir string          Override cache directory (default .qodana/<linter>/cache)
+  -c, --cache-dir string          Override cache directory (default <userCacheDir>/JetBrains/<linter>/cache)
       --changes                   Override the docker image to be used for the analysis
       --disable-sanity            Skip running the inspections configured by the sanity profile
   -e, --env stringArray           Define additional environment variables for the Qodana container (you can use the flag multiple times). CLI is not reading full host environment variables and does not pass it to the Qodana container for security reasons
@@ -160,7 +165,7 @@ scan [flags]
   -p, --profile-path string       Path to the profile file
   -i, --project-dir string        Root directory of the inspected project (default ".")
       --property string           Set a JVM property to be used while running Qodana using the --property=property.name=value1,value2,...,valueN notation
-  -o, --results-dir string        Override directory to save Qodana inspection results to (default .qodana/<linter>/results)
+  -o, --results-dir string        Override directory to save Qodana inspection results to (default <userCacheDir>/JetBrains/<linter>/results)
       --run-promo                 Set to true to have the application run the inspections configured by the promo profile; set to false otherwise. By default, a promo run is enabled if the application is executed with the default profile and is disabled otherwise
   -s, --save-report               Generate HTML report (default true)
       --script string             Override the run scenario (default "default")
@@ -193,7 +198,7 @@ show [flags]
 ```
   -h, --help                help for show
   -p, --port int            Specify port to serve report at (default 8080)
-  -r, --report-dir string   Specify HTML report path (the one with index.html inside) (default ".qodana/<linter>/results/report")
+  -r, --report-dir string   Specify HTML report path (the one with index.html inside) (default "<userCacheDir>/JetBrains/<linter>/results/report")
 ```
 
 [gh:test]: https://github.com/JetBrains/qodana/actions/workflows/build-test.yml
