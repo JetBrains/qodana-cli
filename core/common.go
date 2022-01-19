@@ -201,8 +201,6 @@ func RunLinter(ctx context.Context, options *QodanaOptions) int64 {
 	var progress *pterm.SpinnerPrinter
 	if IsInteractive() {
 		progress, _ = StartQodanaSpinner(scanStages[0])
-	} else {
-		updateText(progress, scanStages[0])
 	}
 
 	pullImage(ctx, docker, options.Linter)
@@ -226,9 +224,6 @@ func RunLinter(ctx context.Context, options *QodanaOptions) int64 {
 	scanner := bufio.NewScanner(reader)
 	for scanner.Scan() {
 		line := scanner.Text()
-		if !unofficialLinter && strings.Contains(line, "By using this Docker image") {
-			WarningMessage(licenseWarning(line, options.Linter))
-		}
 		if strings.Contains(line, "Starting up") {
 			updateText(progress, scanStages[2])
 		}
@@ -243,8 +238,11 @@ func RunLinter(ctx context.Context, options *QodanaOptions) int64 {
 			if !IsInteractive() {
 				pterm.Println()
 			}
+		}
+		if strings.Contains(line, "IDEA exit code:") {
 			break
 		}
+		DockerLog.Println(line)
 	}
 	exitCode := getDockerExitCode(ctx, docker, dockerOpts.Name)
 	if progress != nil {

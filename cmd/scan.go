@@ -56,9 +56,6 @@ But you can always override qodana.yaml options with the following command-line 
 				}
 				options.Linter = qodanaYaml.Linter
 			}
-			if err := core.Greet(); err != nil {
-				log.Fatal("couldn't print", err)
-			}
 			core.PrepareFolders(options)
 			exitCode := core.RunLinter(ctx, options)
 			if core.Interrupted {
@@ -70,6 +67,15 @@ But you can always override qodana.yaml options with the following command-line 
 			core.ReadSarif(options.ResultsDir, options.UnveilProblems)
 			if options.ShowReport {
 				core.ShowReport(filepath.Join(options.ResultsDir, "report"), options.Port)
+			} else {
+				core.WarningMessage(
+					fmt.Sprintf(
+						"To view the Qodana report, run %s or add %s flag to %s",
+						core.PrimaryBold.Sprint("qodana show"),
+						core.PrimaryBold.Sprint("--show-report"),
+						core.PrimaryBold.Sprint("qodana scan"),
+					),
+				)
 			}
 			if exitCode == core.QodanaFailThresholdExitCode {
 				core.ErrorMessage("The number of problems exceeds the failThreshold")
