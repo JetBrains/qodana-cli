@@ -90,7 +90,7 @@ func Contains(s []string, str string) bool {
 func CheckLinter(image string) {
 	if !strings.HasPrefix(image, OfficialDockerPrefix) {
 		WarningMessage("You are using an unofficial Qodana linter " + image + "\n")
-		unofficialLinter = true
+		UnofficialLinter = true
 	}
 	for _, linter := range notSupportedLinters {
 		if linter == image {

@@ -18,12 +18,12 @@ package cmd
 
 import (
 	"fmt"
-	"os"
-	"path/filepath"
-
 	"github.com/JetBrains/qodana-cli/core"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
+	"os"
+	"path/filepath"
+	"strings"
 )
 
 // NewScanCommand returns a new instance of the scan command.
@@ -55,6 +55,11 @@ But you can always override qodana.yaml options with the following command-line 
 					qodanaYaml = core.GetQodanaYaml(options.ProjectDir)
 				}
 				options.Linter = qodanaYaml.Linter
+			} else {
+				if !strings.HasPrefix(options.Linter, core.OfficialDockerPrefix) {
+					core.WarningMessage("You are using an unofficial Qodana linter – " + options.Linter + "\n")
+					core.UnofficialLinter = true
+				}
 			}
 			core.PrepareFolders(options)
 			exitCode := core.RunLinter(ctx, options)

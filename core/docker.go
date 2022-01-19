@@ -40,7 +40,7 @@ const (
 )
 
 var (
-	unofficialLinter    = false
+	UnofficialLinter    = false
 	notSupportedLinters = []string{
 		"jetbrains/qodana-license-audit",
 		"jetbrains/qodana-clone-finder",
