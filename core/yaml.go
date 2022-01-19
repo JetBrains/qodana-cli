@@ -97,24 +97,6 @@ func GetQodanaYaml(project string) *QodanaYaml {
 	return q
 }
 
-// TODO: remove me
-func (q *QodanaYaml) excludeDotQodana() {
-	excluded := false
-	for i, exclude := range q.Exclude {
-		if exclude.Name == "All" {
-			if !Contains(exclude.Paths, ".qodana/") {
-				exclude.Paths = append(exclude.Paths, ".qodana/")
-				q.Exclude[i] = exclude
-			}
-			excluded = true
-			break
-		}
-	}
-	if !excluded {
-		q.Exclude = append(q.Exclude, Exclude{Name: "All", Paths: []string{".qodana/"}})
-	}
-}
-
 // WriteQodanaYaml writes the qodana.yaml file to the given path.
 func WriteQodanaYaml(path string, linters []string) {
 	q := GetQodanaYaml(path)
@@ -122,7 +104,6 @@ func WriteQodanaYaml(path string, linters []string) {
 		q.Version = "1.0"
 	}
 	q.Linter = linters[0]
-	q.excludeDotQodana()
 	var b bytes.Buffer
 	yamlEncoder := yaml.NewEncoder(&b)
 	yamlEncoder.SetIndent(2)
