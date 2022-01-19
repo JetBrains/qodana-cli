@@ -1,6 +1,6 @@
 # Contributing
 
-[//]: # (By participating in this project, you agree to abide our [code of conduct]&#40;TODO:ADD CODE_OF_CONDUCT.md&#41;.)
+By participating in this project, you agree to abide our [Code of conduct](.github/CODE_OF_CONDUCT.md).
 
 ## Set up your machine
 

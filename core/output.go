@@ -18,28 +18,13 @@ package core
 
 import (
 	"fmt"
-	"os"
-	"strings"
-
 	"github.com/mattn/go-isatty"
 	"github.com/pterm/pterm"
 	log "github.com/sirupsen/logrus"
+	"os"
 )
 
 // TODO: unify logging/error exiting messages across the codebase
-
-const logo = `
-          _            _         
-         /\ \         /\ \       
-        /  \ \       /  \ \____  
-       / /\ \ \     / /\ \_____\ 
-      / / /\ \ \   / / /\/___  / 
-     / / /  \ \_\ / / /   / / /  
-    / / / _ / / // / /   / / /   
-   / / / /\ \/ // / /   / / /    
-  / / /__\ \ \/ \ \ \__/ / /     
- / / /____\ \ \  \ \___\/ /      
- \/________\_\/   \/_____/`
 
 // Info Two newlines at the start are important to lay the output nicely in CLI.
 var Info = Accent.Sprintf(`
@@ -62,22 +47,8 @@ var (
 	ErrorBold       = pterm.NewStyle(pterm.FgRed, pterm.Bold)    // ErrorBold is a bold error style.
 	Warning         = pterm.NewStyle(pterm.FgYellow)             // Warning is a warning style.
 	WarningBold     = pterm.NewStyle(pterm.FgYellow, pterm.Bold) // WarningBold is a bold warning style.
+	DockerLog       = pterm.NewStyle(pterm.FgGray)               // DockerLog is a log style.
 )
-
-// licenseWarning prints a license warning (Community/EAP/etc.).
-func licenseWarning(message string, image string) string {
-	linters := []string{
-		fmt.Sprintf("By using %s Docker image, you agree to", PrimaryBold.Sprint(image)),
-		"   - JetBrains Privacy Policy (https://jb.gg/jetbrains-privacy-policy)",
-	}
-	var agreement string
-	if strings.Contains(message, "Qodana Community Linters Agreement") {
-		agreement = "   - Qodana Community Linters Agreement (https://jb.gg/qodana-community-linters)"
-	} else {
-		agreement = "   - JETBRAINS EAP USER AGREEMENT (https://jb.gg/jetbrains-user-eap)"
-	}
-	return strings.Join(append(linters, agreement, ""), "\n")
-}
 
 // IsInteractive returns true if the current execution environment is interactive (useful for colors/animations toggle).
 func IsInteractive() bool {
@@ -100,15 +71,6 @@ func WarningMessage(message string) {
 func ErrorMessage(message string) {
 	icon := pterm.Red("✗ ")
 	pterm.Println(icon, Error.Sprint(message))
-}
-
-// Greet prints welcome message
-func Greet() error {
-	panels := pterm.Panels{{
-		{Data: PrimaryBold.Sprint(logo)},
-		{Data: "\n\n\n" + Accent.Sprint(Info)},
-	}}
-	return pterm.DefaultPanel.WithPanels(panels).Render()
 }
 
 // PrintProcess prints the message for processing phase. TODO: Add ETA based on previous runs
@@ -141,12 +103,10 @@ func StartQodanaSpinner(message string) (*pterm.SpinnerPrinter, error) {
 	return QodanaSpinner.WithStyle(pterm.NewStyle(pterm.FgGray)).WithRemoveWhenDone(true).Start(message + "...")
 }
 
-// updateText updates the text of the spinner (or print text if there is no spinner).
+// updateText updates the text of the spinner.
 func updateText(spinner *pterm.SpinnerPrinter, message string) {
 	if spinner != nil {
 		spinner.UpdateText(message + "...")
-	} else {
-		pterm.DefaultBasicText.Print(message + "..." + "\n")
 	}
 }
 
