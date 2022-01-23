@@ -26,7 +26,7 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-var version = "dev"
+var version = ""
 
 func main() {
 	core.Version = version
