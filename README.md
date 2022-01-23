@@ -43,7 +43,13 @@ curl -fsSL https://jb.gg/qodana-cli/install | bash
 iwr https://jb.gg/qodana-cli/install.ps1 -useb | iex
 ```
 
-#### Install on any OS if you have [Go](https://go.dev/doc/install) installed
+#### Install with [Homebrew](https://brew.sh)
+```shell
+brew tap jetbrains/utils
+brew install qodana
+```
+
+#### Install with [Go](https://go.dev/doc/install)
 ```shell
 go install github.com/JetBrains/qodana-cli@latest
 ```

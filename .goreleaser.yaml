@@ -18,15 +18,27 @@ archives:
       linux: Linux
       amd64: x86_64
 nfpms:
-  - vendor: JetBrains s.r.o.
-    homepage: https://github.com/JetBrains/qodana-cli
-    maintainer: Qodana <qodana-support@jetbrains.com>
-    description: 🔧 Command-line interface to Qodana – the code quality platform
-    license: Apache-2.0
+  - vendor: "JetBrains s.r.o."
+    homepage: "https://github.com/JetBrains/qodana-cli"
+    maintainer: "Qodana <qodana-support@jetbrains.com>"
+    description: "🔧 Command-line interface to Qodana – the code quality platform"
+    license: "Apache-2.0"
     formats:
       - apk
       - deb
       - rpm
+brews:
+  - tap:
+      owner: JetBrains
+      name: homebrew-utils
+    commit_author:
+      name: "tiulpin"
+      email: "viktor@tiulp.in"
+    commit_msg_template: ":sparkles: Brew formula update for {{ .ProjectName }} version {{ .Tag }}"
+    folder: Formula
+    homepage: "https://github.com/JetBrains/qodana-cli"
+    description: "🔧 Command-line interface to Qodana – the code quality platform"
+    license: "Apache-2.0"
 checksum:
   name_template: 'checksums.txt'
 snapshot:

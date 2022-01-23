@@ -8,10 +8,14 @@ on:
     paths-ignore:
       - '**/*.md'
       - '**/*.txt'
+      - 'install.ps1'
+      - 'install'
   pull_request:
     paths-ignore:
       - '**/*.md'
       - '**/*.txt'
+      - 'install.ps1'
+      - 'install'
 permissions:
   contents: read
 jobs:

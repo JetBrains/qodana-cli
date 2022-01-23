@@ -5,12 +5,16 @@ on:
     paths-ignore:
       - '**/*.md'
       - '**/*.txt'
+      - 'install.ps1'
+      - 'install'
   push:
     branches:
       - main
     paths-ignore:
       - '**/*.md'
       - '**/*.txt'
+      - 'install.ps1'
+      - 'install'
 
 jobs:
   test:
