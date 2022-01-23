@@ -17,6 +17,16 @@ archives:
       darwin: Darwin
       linux: Linux
       amd64: x86_64
+nfpms:
+  - vendor: JetBrains s.r.o.
+    homepage: https://github.com/JetBrains/qodana-cli
+    maintainer: Qodana <qodana-support@jetbrains.com>
+    description: 🔧 Command-line interface to Qodana – the code quality platform
+    license: Apache-2.0
+    formats:
+      - apk
+      - deb
+      - rpm
 checksum:
   name_template: 'checksums.txt'
 snapshot:
@@ -25,5 +35,5 @@ changelog:
   sort: asc
   filters:
     exclude:
-      - '^docs:'
-      - '^test:'
+      - '^:memo:'
+      - '^:bricks:'
