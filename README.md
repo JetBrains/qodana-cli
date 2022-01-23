@@ -33,21 +33,27 @@ You must have Docker installed and running locally to support this: https://www.
 
 We have installation scripts for Linux, macOS, and Windows.
 
-#### Install in the terminal on Linux and macOS
+#### Install on Linux and macOS
 ```shell
-curl -fsSL https://raw.githubusercontent.com/JetBrains/qodana-cli/main/install | bash
+curl -fsSL https://jb.gg/qodana-cli/install | bash
 ```
 
-#### Install in the terminal on Windows
+#### Install on Windows
+```powershell
+iwr https://jb.gg/qodana-cli/install.ps1 -useb | iex
+```
+
+#### Install on any OS if you have [Go](https://go.dev/doc/install) installed
 ```shell
-iwr https://raw.githubusercontent.com/JetBrains/qodana-cli/main/install.ps1 -useb | iex
+go install github.com/JetBrains/qodana-cli@latest
 ```
 
 If you want to install some specific version:
-- **macOS and Linux**: add the version number (e.g. `0.2.0`) **to the end** of the command
-- **Windows**: add the version number (e.g. `$v="0.2.0";`) **to the beginning** of the command.
+- **macOS and Linux**: add the version number (e.g. `0.5.0`) **to the end** of the command
+- **Windows**: add the version number (e.g. `$v="0.5.0";`) **to the beginning** of the command.
+- **Go**: change the `latest` to the version number.
 
-Alternatively, you can install the latest binary from [GitHub Releases](https://github.com/JetBrains/qodana-cli/releases/latest).
+Alternatively, you can install the latest binary (or the apt/rpm/deb package) from [the repository releases](https://github.com/JetBrains/qodana-cli/releases/latest).
 
 ### Running
 
@@ -59,7 +65,7 @@ If you know what you are doing:
 qodana scan --show-report
 ```
 
-You can also add the linter by its name with the `--linter` option (e.g. `--linter jetbrains/qodana`).
+You can also add the linter by its name with the `--linter` option (e.g. `--linter jetbrains/qodana-js`).
 
 #### Project configuration
 
@@ -174,6 +180,7 @@ scan [flags]
   -d, --source-directory string   Directory inside the project-dir directory must be inspected. If not specified, the whole project is inspected.
       --stub-profile string       Absolute path to the fallback profile file. This option is applied in case the profile was not specified using any available options
   -t, --token string              Qodana Cloud token
+  -u, --unveil-problems           Print all found problems by Qodana in the CLI output
 ```
 
 ### show

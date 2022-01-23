@@ -18,10 +18,11 @@ package core
 
 import (
 	"fmt"
+	"os"
+
 	"github.com/mattn/go-isatty"
 	"github.com/pterm/pterm"
 	log "github.com/sirupsen/logrus"
-	"os"
 )
 
 // TODO: unify logging/error exiting messages across the codebase
