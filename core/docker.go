@@ -39,6 +39,7 @@ const (
 	OfficialDockerPrefix        = "jetbrains/qodana"
 )
 
+//goland:noinspection GoUnusedGlobalVariable
 var (
 	UnofficialLinter    = false
 	notSupportedLinters = []string{
@@ -68,13 +69,13 @@ func ensureDockerInstalled() {
 }
 
 // EnsureDockerRunning checks if docker daemon is running.
-func EnsureDockerRunning() { // TODO: check if /var/run/docker.sock is a Unix domain socket (Linux images are supported)
+func EnsureDockerRunning() {
 	ensureDockerInstalled()
 	cmd := exec.Command("docker", "ps")
 	if err := cmd.Run(); err != nil {
 		if exiterr, ok := err.(*exec.ExitError); ok {
 			ErrorMessage(fmt.Sprintf(
-				"Docker exited with exit code %d, perhaps docker daemon is not running?",
+				"'docker ps' exited with exit code %d, perhaps docker daemon is not running?",
 				exiterr.ExitCode(),
 			))
 			os.Exit(1)
@@ -153,11 +154,7 @@ func getDockerOptions(opts *QodanaOptions) *types.ContainerCreateConfig {
 	if err != nil {
 		log.Fatal("couldn't get abs path for results", err)
 	}
-
-	// TODO: agree on the memory constraints, set the memory and disable OOM killer
-	// https://docs.docker.com/config/containers/resource_constraints/#limit-a-containers-access-to-memory
-	// or at least drop a warning when Docker is low on RAM
-
+	oomKillDisable := true
 	return &types.ContainerCreateConfig{
 		Name: "qodana-cli",
 		Config: &container.Config{
@@ -170,6 +167,11 @@ func getDockerOptions(opts *QodanaOptions) *types.ContainerCreateConfig {
 			User:         fmt.Sprintf("%d:%d", os.Getuid(), os.Getgid()),
 		},
 		HostConfig: &container.HostConfig{
+			AutoRemove: true,
+			Resources: container.Resources{
+				Memory:         4294967296, // 4 GiB
+				OomKillDisable: &oomKillDisable,
+			},
 			Mounts: []mount.Mount{
 				{
 					Type:   mount.TypeBind,
@@ -189,11 +191,6 @@ func getDockerOptions(opts *QodanaOptions) *types.ContainerCreateConfig {
 			},
 		},
 	}
-}
-
-// tryRemoveContainer removes the container.
-func tryRemoveContainer(ctx context.Context, client *client.Client, name string) {
-	_ = client.ContainerRemove(ctx, name, types.ContainerRemoveOptions{Force: true})
 }
 
 // pullImage pulls docker image
@@ -254,5 +251,4 @@ func stopContainer(ctx context.Context, client *client.Client, id string) {
 func DockerCleanup() {
 	docker, _ := client.NewClientWithOpts()
 	stopContainer(context.Background(), docker, "qodana-cli")
-	tryRemoveContainer(context.Background(), docker, "qodana-cli")
 }
