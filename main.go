@@ -26,7 +26,10 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
+var version = "dev"
+
 func main() {
+	core.Version = version
 	if !core.IsInteractive() || os.Getenv("NO_COLOR") != "" { // http://no-color.org
 		pterm.DisableColor()
 	}

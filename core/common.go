@@ -35,7 +35,7 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-type QodanaOptions struct {
+type QodanaOptions struct { // TODO: get available options from the image / have another scheme
 	ResultsDir            string
 	CacheDir              string
 	ProjectDir            string
@@ -63,7 +63,7 @@ type QodanaOptions struct {
 }
 
 var (
-	Version     = "0.6.0" // TODO: check for updates
+	Version     string
 	DoNotTrack  = false
 	Interrupted = false
 	scanStages  = []string{
@@ -89,7 +89,7 @@ func Contains(s []string, str string) bool {
 // CheckLinter validates the image used for the scan.
 func CheckLinter(image string) {
 	if !strings.HasPrefix(image, OfficialDockerPrefix) {
-		WarningMessage("You are using an unofficial Qodana linter " + image + "\n")
+		WarningMessage("You are using an unofficial Qodana linter: " + image + "\n")
 		UnofficialLinter = true
 	}
 	for _, linter := range notSupportedLinters {
@@ -189,6 +189,16 @@ func openBrowser(url string) error {
 	return exec.Command(cmd, args...).Start()
 }
 
+// printLinterLog prints linter logs with color, when needed.
+func printLinterLog(line string) {
+	if strings.Contains(line, "QQQQQQ") || strings.Contains(line, "Q::") {
+		Accent.Println(line)
+	} else {
+		DockerLog.Println(line)
+	}
+}
+
+// RunLinter runs the linter with the given options.
 func RunLinter(ctx context.Context, options *QodanaOptions) int64 {
 	docker, err := client.NewClientWithOpts()
 	if err != nil {
@@ -205,7 +215,6 @@ func RunLinter(ctx context.Context, options *QodanaOptions) int64 {
 
 	pullImage(ctx, docker, options.Linter)
 	dockerOpts := getDockerOptions(options)
-	tryRemoveContainer(ctx, docker, dockerOpts.Name)
 	updateText(progress, scanStages[1])
 	runContainer(ctx, docker, dockerOpts)
 
@@ -242,7 +251,7 @@ func RunLinter(ctx context.Context, options *QodanaOptions) int64 {
 		if strings.Contains(line, "IDEA exit code:") {
 			break
 		}
-		DockerLog.Println(line)
+		printLinterLog(line)
 	}
 	exitCode := getDockerExitCode(ctx, docker, dockerOpts.Name)
 	if progress != nil {

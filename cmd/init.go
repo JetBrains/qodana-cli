@@ -36,7 +36,7 @@ func NewInitCommand() *cobra.Command {
 		Short: "Configure project for Qodana",
 		Long:  `Configure project for Qodana: prepare Qodana configuration file by analyzing the project structure and generating a default configuration qodana.yaml file.`,
 		Run: func(cmd *cobra.Command, args []string) {
-			core.Primary.Println() // TODO
+			core.Primary.Println()
 			core.PrintProcess(
 				func() { core.ConfigureProject(options.ProjectDir) },
 				"Configuring project",

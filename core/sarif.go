@@ -25,7 +25,7 @@ import (
 )
 
 // ReadSarif prints Qodana Scan result into stdout
-func ReadSarif(resultsDir string, printProblems bool) { // TODO: prepare a summary table
+func ReadSarif(resultsDir string, printProblems bool) {
 	problems := 0
 	s, err := sarif.Open(filepath.Join(resultsDir, "qodana.sarif.json"))
 	if err != nil {
