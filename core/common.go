@@ -210,6 +210,7 @@ func OpenDir(path string) error {
 // RunLinter runs the linter with the given options.
 func RunLinter(ctx context.Context, options *QodanaOptions) int {
 	docker, err := client.NewClientWithOpts()
+	checkDockerMemory(docker)
 	if err != nil {
 		log.Fatal("couldn't instantiate docker client", err)
 	}

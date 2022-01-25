@@ -18,9 +18,10 @@ package cmd
 
 import (
 	"fmt"
-	log "github.com/sirupsen/logrus"
 	"os"
 	"path/filepath"
+
+	log "github.com/sirupsen/logrus"
 
 	"github.com/JetBrains/qodana-cli/core"
 	"github.com/erikgeiser/promptkit/confirmation"

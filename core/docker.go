@@ -84,6 +84,36 @@ func EnsureDockerRunning() {
 	}
 }
 
+// checkDockerMemory applicable only for Docker Desktop (has the default limit of 2GB, which can be not enough when Gradle runs inside a container).
+func checkDockerMemory(client *client.Client) {
+	goos := runtime.GOOS
+	if goos != "windows" && goos != "darwin" {
+		return
+	}
+	info, err := client.Info(context.Background())
+	if err != nil {
+		log.Fatal(err)
+	}
+	var helpUrl string
+	switch goos {
+	case "windows":
+		helpUrl = "https://docs.docker.com/docker-for-windows/about/"
+	case "darwin":
+		helpUrl = "https://docs.docker.com/docker-for-mac/about/"
+	}
+
+	if info.MemTotal < 4*1024*1024*1024 {
+		WarningMessage(
+			fmt.Sprintf(`Your Docker daemon is running with less than 4GB of RAM.
+   If you experience issues, consider increasing the Docker Desktop runtime memory limit.
+   Refer to %s for more information.
+`,
+				helpUrl,
+			),
+		)
+	}
+}
+
 // getCmdOptions returns qodana command options.
 func getCmdOptions(opts *QodanaOptions) []string {
 	arguments := make([]string, 0)
@@ -154,7 +184,6 @@ func getDockerOptions(opts *QodanaOptions) *types.ContainerCreateConfig {
 	if err != nil {
 		log.Fatal("couldn't get abs path for results", err)
 	}
-	oomKillDisable := true
 	return &types.ContainerCreateConfig{
 		Name: "qodana-cli",
 		Config: &container.Config{
@@ -168,10 +197,6 @@ func getDockerOptions(opts *QodanaOptions) *types.ContainerCreateConfig {
 		},
 		HostConfig: &container.HostConfig{
 			AutoRemove: true,
-			Resources: container.Resources{
-				Memory:         4294967296, // 4 GiB
-				OomKillDisable: &oomKillDisable,
-			},
 			Mounts: []mount.Mount{
 				{
 					Type:   mount.TypeBind,
