@@ -1,0 +1,30 @@
+name: 'installers'
+on:
+  workflow_dispatch:
+  pull_request:
+    types:
+      - opened
+    paths:
+      - 'install'
+      - 'install.ps1'
+
+jobs:
+  windows:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          depth: 0
+      - run: |
+          .\install.ps1
+          qodana --help
+
+  linux:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          depth: 0
+      - run: |
+          ./install
+          qodana --help
