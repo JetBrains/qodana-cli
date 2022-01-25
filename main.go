@@ -22,7 +22,6 @@ import (
 
 	"github.com/JetBrains/qodana-cli/cmd"
 	"github.com/JetBrains/qodana-cli/core"
-	"github.com/pterm/pterm"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -30,9 +29,6 @@ var version = ""
 
 func main() {
 	core.Version = version
-	if !core.IsInteractive() || os.Getenv("NO_COLOR") != "" { // http://no-color.org
-		pterm.DisableColor()
-	}
 	if os.Getenv("DO_NOT_TRACK") == "1" { // https://consoledonottrack.com
 		core.DoNotTrack = true
 	}
