@@ -18,11 +18,12 @@ package cmd
 
 import (
 	"fmt"
+	log "github.com/sirupsen/logrus"
 	"os"
 	"path/filepath"
 
 	"github.com/JetBrains/qodana-cli/core"
-	log "github.com/sirupsen/logrus"
+	"github.com/erikgeiser/promptkit/confirmation"
 	"github.com/spf13/cobra"
 )
 
@@ -62,7 +63,20 @@ But you can always override qodana.yaml options with the following command-line 
 				os.Exit(1)
 			}
 			if exitCode != core.QodanaSuccessExitCode && exitCode != core.QodanaFailThresholdExitCode {
-				log.Fatal("Linter failed, please check the logs in ", options.ResultsDir)
+				core.ErrorMessage(fmt.Sprintf("Qodana exited with code %d", exitCode))
+				core.WarningMessage(fmt.Sprintf("Please check the logs in %s", options.ResultsDir))
+				input := confirmation.New("Do you want to open that directory?", confirmation.Undecided)
+				ready, err := input.RunPrompt()
+				if err != nil {
+					log.Fatalf("Error while waiting for user input: %s", err)
+				}
+				if ready {
+					err = core.OpenDir(options.ResultsDir)
+					if err != nil {
+						log.Fatalf("Error while opening directory: %s", err)
+					}
+				}
+				os.Exit(exitCode)
 			}
 			core.ReadSarif(options.ResultsDir, options.UnveilProblems)
 			if options.ShowReport {
@@ -79,7 +93,7 @@ But you can always override qodana.yaml options with the following command-line 
 			}
 			if exitCode == core.QodanaFailThresholdExitCode {
 				core.ErrorMessage("The number of problems exceeds the failThreshold")
-				os.Exit(int(exitCode))
+				os.Exit(exitCode)
 			}
 		},
 	}

@@ -19,6 +19,7 @@ package core
 import (
 	"fmt"
 	"os"
+	"strings"
 
 	"github.com/mattn/go-isatty"
 	"github.com/pterm/pterm"
@@ -28,27 +29,25 @@ import (
 // TODO: unify logging/error exiting messages across the codebase
 
 // Info Two newlines at the start are important to lay the output nicely in CLI.
-var Info = Accent.Sprintf(`
+var Info = fmt.Sprintf(`
   %s (v%s)
   https://jetbrains.com/qodana
   Documentation – https://jb.gg/qodana-docs
   Contact us at qodana-support@jetbrains.com
   Bug Tracker: https://jb.gg/qodana-issue
   Discussions: https://jb.gg/qodana-forum
-`, PrimaryBold.Sprint("Qodana CLI"), Version)
+`, "Qodana CLI", Version)
 
 //goland:noinspection GoUnusedGlobalVariable
 var (
 	SpinnerSequence = []string{"| ", "/ ", "- ", "\\ "}
 	QodanaSpinner   = pterm.DefaultSpinner
-	Primary         = pterm.NewStyle()                           // Primary is primary text style.
-	PrimaryBold     = pterm.NewStyle(pterm.Bold)                 // PrimaryBold is primary bold text style.
-	Accent          = pterm.NewStyle(pterm.FgMagenta)            // Accent is an accent style.
-	Error           = pterm.NewStyle(pterm.FgRed)                // Error is an error style.
-	ErrorBold       = pterm.NewStyle(pterm.FgRed, pterm.Bold)    // ErrorBold is a bold error style.
-	Warning         = pterm.NewStyle(pterm.FgYellow)             // Warning is a warning style.
-	WarningBold     = pterm.NewStyle(pterm.FgYellow, pterm.Bold) // WarningBold is a bold warning style.
-	DockerLog       = pterm.NewStyle(pterm.FgGray)               // DockerLog is a log style.
+	Primary         = pterm.NewStyle()                // Primary is primary text style.
+	PrimaryBold     = pterm.NewStyle(pterm.Bold)      // PrimaryBold is primary bold text style.
+	Accent          = pterm.NewStyle(pterm.FgMagenta) // Accent is an accent style.
+	Error           = pterm.NewStyle(pterm.FgRed)     // Error is an error style.
+	Warning         = pterm.NewStyle(pterm.FgYellow)  // Warning is a warning style.
+	Misc            = pterm.NewStyle(pterm.FgGray)    // Misc is a log style.
 )
 
 // IsInteractive returns true if the current execution environment is interactive (useful for colors/animations toggle).
@@ -72,6 +71,15 @@ func WarningMessage(message string) {
 func ErrorMessage(message string) {
 	icon := pterm.Red("✗ ")
 	pterm.Println(icon, Error.Sprint(message))
+}
+
+// printLinterLog prints linter logs with color, when needed.
+func printLinterLog(line string) {
+	if strings.Contains(line, "QQQQQQ") || strings.Contains(line, "Q::") {
+		Primary.Println(line)
+	} else {
+		Misc.Println(line)
+	}
 }
 
 // PrintProcess prints the message for processing phase. TODO: Add ETA based on previous runs

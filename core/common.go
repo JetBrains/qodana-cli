@@ -189,17 +189,26 @@ func openBrowser(url string) error {
 	return exec.Command(cmd, args...).Start()
 }
 
-// printLinterLog prints linter logs with color, when needed.
-func printLinterLog(line string) {
-	if strings.Contains(line, "QQQQQQ") || strings.Contains(line, "Q::") {
-		Accent.Println(line)
-	} else {
-		DockerLog.Println(line)
+// OpenDir opens directory in the default file manager
+func OpenDir(path string) error {
+	var cmd string
+	var args []string
+
+	switch runtime.GOOS {
+	case "windows":
+		cmd = "explorer"
+		args = []string{"/select"}
+	case "darwin":
+		cmd = "open"
+	default: // "linux", "freebsd", "openbsd", "netbsd"
+		cmd = "xdg-open"
 	}
+	args = append(args, path)
+	return exec.Command(cmd, args...).Start()
 }
 
 // RunLinter runs the linter with the given options.
-func RunLinter(ctx context.Context, options *QodanaOptions) int64 {
+func RunLinter(ctx context.Context, options *QodanaOptions) int {
 	docker, err := client.NewClientWithOpts()
 	if err != nil {
 		log.Fatal("couldn't instantiate docker client", err)
@@ -257,5 +266,5 @@ func RunLinter(ctx context.Context, options *QodanaOptions) int64 {
 	if progress != nil {
 		_ = progress.Stop()
 	}
-	return exitCode
+	return int(exitCode)
 }
