@@ -28,6 +28,7 @@ import (
 type ShowOptions struct {
 	ReportDir string
 	Port      int
+	OpenDir   bool
 }
 
 // NewShowCommand returns a new instance of the show command.
@@ -51,7 +52,14 @@ This command serves the Qodana report locally and opens a browser to it.`,
 				}
 				options.ReportDir = filepath.Join(core.GetLinterSystemDir(".", linter), "results", "report")
 			}
-			core.ShowReport(options.ReportDir, options.Port)
+			if options.OpenDir {
+				err := core.OpenDir(options.ReportDir)
+				if err != nil {
+					log.Fatal(err)
+				}
+			} else {
+				core.ShowReport(options.ReportDir, options.Port)
+			}
 		},
 	}
 	flags := cmd.Flags()
@@ -61,5 +69,6 @@ This command serves the Qodana report locally and opens a browser to it.`,
 		"",
 		"Specify HTML report path (the one with index.html inside) (default <userCacheDir>/JetBrains/<linter>/results/report)")
 	flags.IntVarP(&options.Port, "port", "p", 8080, "Specify port to serve report at")
+	flags.BoolVarP(&options.OpenDir, "dir-only", "d", false, "Open report directory only, don't serve it")
 	return cmd
 }
