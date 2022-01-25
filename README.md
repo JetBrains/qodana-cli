@@ -63,6 +63,8 @@ Alternatively, you can install the latest binary (or the apt/rpm/deb package) fr
 
 ### Running
 
+![CleanShot 2022-01-25 at 15 22 02](https://user-images.githubusercontent.com/13538286/150977105-a45872ac-52fb-4bec-a757-b3b5e2059753.gif)
+
 #### tl;dr
 
 If you know what you are doing:
