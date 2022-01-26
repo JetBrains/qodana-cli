@@ -38,8 +38,8 @@ func NewInitCommand() *cobra.Command {
 		Run: func(cmd *cobra.Command, args []string) {
 			core.GetLinter(options.ProjectDir)
 			path, _ := filepath.Abs(options.ProjectDir)
-			core.Primary(
-				"Configuration is stored at %s/qodana.yaml\nRun %s to analyze the project",
+			core.WarningMessage(
+				"Configuration is stored at %s/qodana.yaml\n   Run %s to analyze the project",
 				path,
 				core.PrimaryBold("qodana scan"),
 			)

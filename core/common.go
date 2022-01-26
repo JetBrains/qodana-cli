@@ -96,7 +96,7 @@ func GetLinter(path string) string {
 		os.Exit(1)
 	}
 	linter := linters[0]
-	SuccessMessage("Added %s\n", linter)
+	SuccessMessage("Added %s", linter)
 	return linter
 }
 

@@ -51,6 +51,7 @@ But you can always override qodana.yaml options with the following command-line 
 						core.PrimaryBold("qodana init"),
 					)
 					options.Linter = core.GetLinter(options.ProjectDir)
+					core.EmptyMessage()
 				} else {
 					options.Linter = qodanaYaml.Linter
 				}
