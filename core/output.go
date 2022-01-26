@@ -118,7 +118,7 @@ func PrintProcess(f func(), start string, finished string) {
 func spin(fun func(), message string) error {
 	spinner, _ := startQodanaSpinner(message)
 	if spinner == nil {
-		Primary(message + "...")
+		fmt.Println(Primary(message + "..."))
 	}
 	fun()
 	if spinner != nil {
