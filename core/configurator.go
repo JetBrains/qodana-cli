@@ -18,7 +18,6 @@ package core
 
 import (
 	"bytes"
-	"fmt"
 	"io"
 	"io/ioutil"
 	"os"
@@ -32,18 +31,18 @@ import (
 const version = "2021.3-eap"
 
 var langLinters = map[string]string{
-	"Java":       fmt.Sprintf("jetbrains/qodana-jvm:%s", version),
-	"Kotlin":     fmt.Sprintf("jetbrains/qodana-jvm:%s", version),
-	"Python":     fmt.Sprintf("jetbrains/qodana-python:%s", version),
-	"PHP":        fmt.Sprintf("jetbrains/qodana-php:%s", version),
-	"JavaScript": fmt.Sprintf("jetbrains/qodana-js:%s", version),
-	"TypeScript": fmt.Sprintf("jetbrains/qodana-js:%s", version),
+	"Java":       "jetbrains/qodana-jvm:" + version,
+	"Kotlin":     "jetbrains/qodana-jvm:" + version,
+	"Python":     "jetbrains/qodana-python:" + version,
+	"PHP":        "jetbrains/qodana-php:" + version,
+	"JavaScript": "jetbrains/qodana-js:" + version,
+	"TypeScript": "jetbrains/qodana-js:" + version,
 }
 
 // ConfigureProject sets up the project directory for Qodana CLI to run
 // Looks up .idea directory to determine used modules
 // If a project doesn't have .idea, then runs language detector
-func ConfigureProject(projectDir string) {
+func ConfigureProject(projectDir string) []string {
 	var linters []string
 	languages := readIdeaDir(projectDir)
 	if len(languages) == 0 {
@@ -56,12 +55,12 @@ func ConfigureProject(projectDir string) {
 			}
 		}
 	}
-	if len(linters) == 0 {
-		ErrorMessage("Qodana does not support this project yet. See https://www.jetbrains.com/help/qodana/supported-technologies.html")
-		os.Exit(1)
+	if len(linters) != 0 {
+		log.Infof("Detected linters: %s", strings.Join(linters, ", "))
+		WriteQodanaYaml(projectDir, linters)
 	}
-	WriteQodanaYaml(projectDir, linters)
-	SuccessMessage(fmt.Sprintf("Added %s", PrimaryBold.Sprint(linters[0])))
+
+	return linters
 }
 
 func recognizeDirLanguages(projectPath string) ([]string, error) {

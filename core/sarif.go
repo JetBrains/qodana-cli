@@ -17,7 +17,6 @@
 package core
 
 import (
-	"fmt"
 	"path/filepath"
 
 	"github.com/owenrumney/go-sarif/sarif"
@@ -42,9 +41,9 @@ func ReadSarif(resultsDir string, printProblems bool) {
 					startLine := *r.Locations[0].PhysicalLocation.Region.StartLine
 					startColumn := *r.Locations[0].PhysicalLocation.Region.StartColumn
 					filePath := *r.Locations[0].PhysicalLocation.ArtifactLocation.URI
-					PrintLocalizedProblem(ruleId, level, message, filePath, startLine, startColumn)
+					printLocalizedProblem(ruleId, level, message, filePath, startLine, startColumn)
 				} else {
-					PrintGlobalProblem(ruleId, level, message)
+					printGlobalProblem(ruleId, level, message)
 				}
 			}
 		}
@@ -54,6 +53,6 @@ func ReadSarif(resultsDir string, printProblems bool) {
 	if problems == 0 {
 		SuccessMessage("It seems all right 👌 No problems found according to the checks applied")
 	} else {
-		ErrorMessage(fmt.Sprintf("Qodana found %d problems according to the checks applied", problems))
+		ErrorMessage("Qodana found %d problems according to the checks applied", problems)
 	}
 }

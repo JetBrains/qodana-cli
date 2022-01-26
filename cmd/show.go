@@ -26,9 +26,10 @@ import (
 
 // ShowOptions represents scan command options.
 type ShowOptions struct {
-	ReportDir string
-	Port      int
-	OpenDir   bool
+	ResultsDir string
+	ReportDir  string
+	Port       int
+	OpenDir    bool
 }
 
 // NewShowCommand returns a new instance of the show command.
@@ -37,7 +38,7 @@ func NewShowCommand() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "show",
 		Short: "Show Qodana report",
-		Long: `Show (serve locally) the latest Qodana report.
+		Long: `Show (serve locally) the latest Qodana report. Or open the results directory if the flag is set.
 
 Due to JavaScript security restrictions, the generated report cannot
 be viewed via the file:// protocol (by double-clicking the index.html file).
@@ -50,10 +51,11 @@ This command serves the Qodana report locally and opens a browser to it.`,
 					log.Fatalf("Can't automatically find the report...\n" +
 						"Please specify the report directory with the --report-dir flag.")
 				}
-				options.ReportDir = filepath.Join(core.GetLinterSystemDir(".", linter), "results", "report")
+				options.ResultsDir = filepath.Join(core.GetLinterSystemDir(".", linter), "results")
+				options.ReportDir = filepath.Join(options.ResultsDir, "report")
 			}
 			if options.OpenDir {
-				err := core.OpenDir(options.ReportDir)
+				err := core.OpenDir(options.ResultsDir)
 				if err != nil {
 					log.Fatal(err)
 				}

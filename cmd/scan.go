@@ -17,7 +17,6 @@
 package cmd
 
 import (
-	"fmt"
 	"os"
 	"path/filepath"
 
@@ -48,15 +47,13 @@ But you can always override qodana.yaml options with the following command-line 
 				qodanaYaml := core.GetQodanaYaml(options.ProjectDir)
 				if qodanaYaml.Linter == "" {
 					core.WarningMessage(
-						fmt.Sprintf(
-							"No valid qodana.yaml found. Have you run %s? Running that for you...",
-							core.PrimaryBold.Sprint("qodana init"),
-						),
+						"No valid qodana.yaml found. Have you run %s? Running that for you...",
+						core.PrimaryBold("qodana init"),
 					)
-					core.PrintProcess(func() { core.ConfigureProject(options.ProjectDir) }, "Scanning project", "")
-					qodanaYaml = core.GetQodanaYaml(options.ProjectDir)
+					options.Linter = core.GetLinter(options.ProjectDir)
+				} else {
+					options.Linter = qodanaYaml.Linter
 				}
-				options.Linter = qodanaYaml.Linter
 			}
 			core.PrepareFolders(options)
 			exitCode := core.RunLinter(ctx, options)
@@ -64,17 +61,17 @@ But you can always override qodana.yaml options with the following command-line 
 				os.Exit(1)
 			}
 			if exitCode != core.QodanaSuccessExitCode && exitCode != core.QodanaFailThresholdExitCode {
-				core.ErrorMessage(fmt.Sprintf("Qodana exited with code %d", exitCode))
-				core.WarningMessage(fmt.Sprintf("Please check the logs in %s", options.ResultsDir))
+				core.ErrorMessage("Qodana exited with code %d", exitCode)
+				core.WarningMessage("Please check the logs in %s", options.ResultsDir)
 				input := confirmation.New("Do you want to open that directory?", confirmation.Undecided)
 				ready, err := input.RunPrompt()
 				if err != nil {
-					log.Fatalf("Error while waiting for user input: %s", err)
+					log.Fatalf("ErrorStyle while waiting for user input: %s", err)
 				}
 				if ready {
 					err = core.OpenDir(options.ResultsDir)
 					if err != nil {
-						log.Fatalf("Error while opening directory: %s", err)
+						log.Fatalf("ErrorStyle while opening directory: %s", err)
 					}
 				}
 				os.Exit(exitCode)
@@ -84,15 +81,14 @@ But you can always override qodana.yaml options with the following command-line 
 				core.ShowReport(filepath.Join(options.ResultsDir, "report"), options.Port)
 			} else {
 				core.WarningMessage(
-					fmt.Sprintf(
-						"To view the Qodana report, run %s or add %s flag to %s",
-						core.PrimaryBold.Sprint("qodana show"),
-						core.PrimaryBold.Sprint("--show-report"),
-						core.PrimaryBold.Sprint("qodana scan"),
-					),
+					"To view the Qodana report, run %s or add %s flag to %s",
+					core.PrimaryBold("qodana show"),
+					core.PrimaryBold("--show-report"),
+					core.PrimaryBold("qodana scan"),
 				)
 			}
 			if exitCode == core.QodanaFailThresholdExitCode {
+				core.EmptyMessage()
 				core.ErrorMessage("The number of problems exceeds the failThreshold")
 				os.Exit(exitCode)
 			}
