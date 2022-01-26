@@ -2,27 +2,25 @@
 
 [![JetBrains incubator project](https://jb.gg/badges/incubator.svg)](https://confluence.jetbrains.com/display/ALL/JetBrains+on+GitHub)
 [![Test](https://github.com/JetBrains/qodana-cli/actions/workflows/build-test.yml/badge.svg)][gh:test]
-[![Docker Hub](https://img.shields.io/docker/pulls/jetbrains/qodana.svg)][jb:docker]
 [![GitHub Discussions](https://img.shields.io/github/discussions/jetbrains/qodana)][jb:discussions]
 [![Twitter Follow](https://img.shields.io/twitter/follow/QodanaEvolves?style=social&logo=twitter)][jb:twitter]
 
 > ⚠️ This is an experimental project, so it's not guaranteed to work correctly.
 > Use it at your own risk. For running Qodana stably and reliably, please use [Qodana Docker Images](https://www.jetbrains.com/help/qodana/docker-images.html).
 
+`qodana` is a simple cross-platform command-line tool to run [Qodana linters](https://www.jetbrains.com/help/qodana/docker-images.html) anywhere with minimum effort required.
+
 **Table of Contents**
 
 <!-- toc -->
 
-- Qodana CLI
-  - [Usage](#usage)
-    - [Installation](#installation)
-    - [Running](#running)
-  - [Configuration](#configuration)
+- [Usage](#usage)
+   - [Installation](#installation)
+   - [Running](#running)
+- [Configuration](#configuration)
+- [Questions and answers](#questions-and-answers)
 
 <!-- tocstop -->
-
-`qodana` is a command-line interface for [Qodana](https://jetbrains.com/qodana).
-It allows you to run Qodana inspections on your local machine (or a CI agent) easily by running [Qodana Docker Images](https://www.jetbrains.com/help/qodana/docker-images.html) for you.
 
 ## Usage
 
@@ -216,6 +214,35 @@ show [flags]
   -p, --port int            Specify port to serve report at (default 8080)
   -r, --report-dir string   Specify HTML report path (the one with index.html inside) (default "<userCacheDir>/JetBrains/<linter>/results/report")
 ```
+
+## Questions and answers
+
+### Why do you need a CLI?
+
+Qodana linters are distributed via Docker images – which becomes handy for developers (us) and the users to run code inspections in CI.
+
+But to set up Qodana in CI, one wants to try it locally first, as there is some additional configuration tuning required that differs from project to project (and we try to be as much user-friendly as possible).
+
+It's easy to try Qodana locally by running a _simple_ command:
+
+```shell
+docker run --rm -it -p 8080:8080 -v <source-directory>/:/data/project/ -v <output-directory>/:/data/results/ -v <caches-directory>/:/data/cache/ jetbrains/qodana-<linter> --show-report
+```
+
+**And that's not so simple**: you have to provide a few absolute paths, forward some ports, add a few Docker options...
+
+- On Linux, you might want to set the proper permissions to the results produced after the container run – so you need to add an option like `-u $(id -u):$(id -g)`
+- On Windows and macOS, when there is the default Docker Desktop RAM limit (2GB), your run might fail because of OOM (and this often happens on big Gradle projects on Gradle sync), and the only workaround, for now, is increasing the memory – but to find that out, one needs to look that up in the docs.
+- That list could go on, but we've thought about these problems, experimented a bit, and created the CLI to simplify all of this.
+
+### Isn't that a bit overhead to write a tool that runs Docker containers when we have Docker CLI already?
+
+Our CLI, like Docker CLI, operates with Docker daemon via Docker Engine API using the official Docker SDK, so actually, our tool is our own tailored Docker CLI at the moment. 
+
+### Where can I ask for more features?
+
+[Right here](https://jb.gg/qodana-cli/new-issue).
+
 
 [gh:test]: https://github.com/JetBrains/qodana/actions/workflows/build-test.yml
 [youtrack]: https://youtrack.jetbrains.com/issues/QD
