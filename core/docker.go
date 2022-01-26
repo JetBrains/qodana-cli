@@ -74,10 +74,10 @@ func EnsureDockerRunning() {
 	cmd := exec.Command("docker", "ps")
 	if err := cmd.Run(); err != nil {
 		if exiterr, ok := err.(*exec.ExitError); ok {
-			ErrorMessage(fmt.Sprintf(
+			ErrorMessage(
 				"'docker ps' exited with exit code %d, perhaps docker daemon is not running?",
 				exiterr.ExitCode(),
-			))
+			)
 			os.Exit(1)
 		}
 		log.Fatal(err)
@@ -103,13 +103,11 @@ func checkDockerMemory(client *client.Client) {
 	}
 
 	if info.MemTotal < 4*1024*1024*1024 {
-		WarningMessage(
-			fmt.Sprintf(`Your Docker daemon is running with less than 4GB of RAM.
+		WarningMessage(`Your Docker daemon is running with less than 4GB of RAM.
    If you experience issues, consider increasing the Docker Desktop runtime memory limit.
    Refer to %s for more information.
 `,
-				helpUrl,
-			),
+			helpUrl,
 		)
 	}
 }

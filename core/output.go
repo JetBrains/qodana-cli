@@ -38,47 +38,69 @@ var Info = fmt.Sprintf(`
   Discussions: https://jb.gg/qodana-forum
 `, "Qodana CLI", Version)
 
-//goland:noinspection GoUnusedGlobalVariable
-var (
-	SpinnerSequence = []string{"| ", "/ ", "- ", "\\ "}
-	QodanaSpinner   = pterm.DefaultSpinner
-	Primary         = pterm.NewStyle()                // Primary is primary text style.
-	PrimaryBold     = pterm.NewStyle(pterm.Bold)      // PrimaryBold is primary bold text style.
-	Accent          = pterm.NewStyle(pterm.FgMagenta) // Accent is an accent style.
-	Error           = pterm.NewStyle(pterm.FgRed)     // Error is an error style.
-	Warning         = pterm.NewStyle(pterm.FgYellow)  // Warning is a warning style.
-	Misc            = pterm.NewStyle(pterm.FgGray)    // Misc is a log style.
-)
-
 // IsInteractive returns true if the current execution environment is interactive (useful for colors/animations toggle).
 func IsInteractive() bool {
 	return isatty.IsTerminal(os.Stdout.Fd()) && os.Getenv("NO_INTERACTIVE") == ""
 }
 
-// SuccessMessage print success message with the icon.
-func SuccessMessage(message string) {
+// DisableColor disables colors in the output.
+func DisableColor() {
+	pterm.DisableColor()
+}
+
+// styles and different declarations intended to be used only inside this file
+var (
+	SpinnerSequence  = []string{"| ", "/ ", "- ", "\\ "}
+	QodanaSpinner    = pterm.DefaultSpinner
+	PrimaryStyle     = pterm.NewStyle()               // PrimaryStyle is primary text style.
+	PrimaryBoldStyle = pterm.NewStyle(pterm.Bold)     // PrimaryBoldStyle is primary bold text style.
+	ErrorStyle       = pterm.NewStyle(pterm.FgRed)    // ErrorStyle is an error style.
+	WarningStyle     = pterm.NewStyle(pterm.FgYellow) // WarningStyle is a warning style.
+	MiscStyle        = pterm.NewStyle(pterm.FgGray)   // MiscStyle is a log style.
+)
+
+func Primary(text string, a ...interface{}) string {
+	text = fmt.Sprintf(text, a...)
+	return PrimaryStyle.Sprint(text)
+}
+
+func PrimaryBold(text string, a ...interface{}) string {
+	text = fmt.Sprintf(text, a...)
+	return PrimaryBoldStyle.Sprint(text)
+}
+
+// EmptyMessage is a message that is used when there is no message to show.
+func EmptyMessage() {
+	fmt.Println()
+}
+
+// SuccessMessage prints a success message with the icon.
+func SuccessMessage(message string, a ...interface{}) {
+	message = fmt.Sprintf(message, a...)
 	icon := pterm.Green("✓ ")
-	pterm.Println(icon, Primary.Sprint(message))
+	fmt.Println(icon, Primary(message))
 }
 
-// WarningMessage print warning message with the icon.
-func WarningMessage(message string) {
-	icon := Warning.Sprint("\n! ")
-	pterm.Println(icon, Primary.Sprint(message))
+// WarningMessage prints a warning message with the icon.
+func WarningMessage(message string, a ...interface{}) {
+	message = fmt.Sprintf(message, a...)
+	icon := WarningStyle.Sprint("\n! ")
+	fmt.Println(icon, Primary(message))
 }
 
-// ErrorMessage print error message with the icon.
-func ErrorMessage(message string) {
-	icon := pterm.Red("✗ ")
-	pterm.Println(icon, Error.Sprint(message))
+// ErrorMessage prints an error message with the icon.
+func ErrorMessage(message string, a ...interface{}) {
+	message = fmt.Sprintf(message, a...)
+	icon := ErrorStyle.Sprint("✗ ")
+	fmt.Println(icon, ErrorStyle.Sprint(message))
 }
 
-// printLinterLog prints linter logs with color, when needed.
+// printLinterLog prints the linter logs with color, when needed.
 func printLinterLog(line string) {
 	if strings.Contains(line, "QQQQQQ") || strings.Contains(line, "Q::") {
-		Primary.Println(line)
+		PrimaryStyle.Println(line)
 	} else {
-		Misc.Println(line)
+		MiscStyle.Println(line)
 	}
 }
 
@@ -88,28 +110,30 @@ func PrintProcess(f func(), start string, finished string) {
 		log.Fatal("\nProblem occurred:", err.Error())
 	}
 	if finished != "" {
-		SuccessMessage(fmt.Sprintf("Finished %s", finished))
+		SuccessMessage("Finished %s", finished)
 	}
 }
 
 // spin creates spinner and runs the given function. Also, spin is a spider in Dutch.
 func spin(fun func(), message string) error {
-	if IsInteractive() {
-		spinner, _ := StartQodanaSpinner(message)
-		fun()
+	spinner, _ := startQodanaSpinner(message)
+	if spinner == nil {
+		Primary(message + "...")
+	}
+	fun()
+	if spinner != nil {
 		spinner.Success()
-	} else {
-		pterm.DefaultBasicText.Println(message + "...")
-		fun()
-		pterm.DefaultBasicText.Println(message + "...")
 	}
 	return nil
 }
 
-// StartQodanaSpinner starts a new spinner with the given message.
-func StartQodanaSpinner(message string) (*pterm.SpinnerPrinter, error) {
-	QodanaSpinner.Sequence = SpinnerSequence
-	return QodanaSpinner.WithStyle(pterm.NewStyle(pterm.FgGray)).WithRemoveWhenDone(true).Start(message + "...")
+// startQodanaSpinner starts a new spinner with the given message.
+func startQodanaSpinner(message string) (*pterm.SpinnerPrinter, error) {
+	if IsInteractive() {
+		QodanaSpinner.Sequence = SpinnerSequence
+		return QodanaSpinner.WithStyle(pterm.NewStyle(pterm.FgGray)).WithRemoveWhenDone(true).Start(message + "...")
+	}
+	return nil, nil
 }
 
 // updateText updates the text of the spinner.
@@ -119,16 +143,16 @@ func updateText(spinner *pterm.SpinnerPrinter, message string) {
 	}
 }
 
-// PrintLocalizedProblem prints problem using pterm panels.
-func PrintLocalizedProblem(ruleId string, level string, message string, path string, l int, c int) {
+// printLocalizedProblem prints problem using pterm panels.
+func printLocalizedProblem(ruleId string, level string, message string, path string, l int, c int) {
 	panels := pterm.Panels{
 		{
-			{Data: PrimaryBold.Sprintf("[%s]", level)},
-			{Data: PrimaryBold.Sprint(ruleId)},
-			{Data: Primary.Sprintf("%s:%d:%d", path, l, c)},
+			{Data: PrimaryBold("[%s]", level)},
+			{Data: PrimaryBold(ruleId)},
+			{Data: Primary("%s:%d:%d", path, l, c)},
 		},
 		{
-			{Data: Primary.Sprint(message)},
+			{Data: Primary(message)},
 		},
 	}
 	if err := pterm.DefaultPanel.WithPanels(panels).Render(); err != nil {
@@ -136,15 +160,15 @@ func PrintLocalizedProblem(ruleId string, level string, message string, path str
 	}
 }
 
-// PrintGlobalProblem prints global problem using pterm panels.
-func PrintGlobalProblem(ruleId string, level string, message string) {
+// printGlobalProblem prints global problem using pterm panels.
+func printGlobalProblem(ruleId string, level string, message string) {
 	panels := pterm.Panels{
 		{
-			{Data: PrimaryBold.Sprintf("[%s]", level)},
-			{Data: PrimaryBold.Sprint(ruleId)},
+			{Data: PrimaryBold("[%s]", level)},
+			{Data: PrimaryBold(ruleId)},
 		},
 		{
-			{Data: Primary.Sprint(message)},
+			{Data: Primary(message)},
 		},
 	}
 	if err := pterm.DefaultPanel.WithPanels(panels).Render(); err != nil {

@@ -20,6 +20,7 @@ import (
 	"bufio"
 	"context"
 	"crypto/sha256"
+	"encoding/hex"
 	"fmt"
 	"io"
 	"net/http"
@@ -31,7 +32,6 @@ import (
 
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/client"
-	"github.com/pterm/pterm"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -86,10 +86,24 @@ func Contains(s []string, str string) bool {
 	return false
 }
 
+func GetLinter(path string) string {
+	var linters []string
+	EmptyMessage()
+	PrintProcess(func() { linters = ConfigureProject(path) }, "Scanning project", "")
+	if len(linters) == 0 {
+		ErrorMessage("Could not configure project as it is not supported by Qodana")
+		WarningMessage("See https://www.jetbrains.com/help/qodana/supported-technologies.html for more details")
+		os.Exit(1)
+	}
+	linter := linters[0]
+	SuccessMessage("Added %s\n", linter)
+	return linter
+}
+
 // CheckLinter validates the image used for the scan.
 func CheckLinter(image string) {
 	if !strings.HasPrefix(image, OfficialDockerPrefix) {
-		WarningMessage("You are using an unofficial Qodana linter: " + image + "\n")
+		WarningMessage("You are using an unofficial Qodana linter: %s\n", image)
 		UnofficialLinter = true
 	}
 	for _, linter := range notSupportedLinters {
@@ -104,12 +118,13 @@ func GetLinterSystemDir(project string, linter string) string {
 	userCacheDir, _ := os.UserCacheDir()
 	linterDirName := strings.Replace(strings.Replace(linter, ":", "-", -1), "/", "-", -1)
 	projectAbs, _ := filepath.Abs(project)
+	sha256sum := sha256.Sum256([]byte(projectAbs))
 
 	return filepath.Join(
 		userCacheDir,
 		"JetBrains",
 		linterDirName,
-		fmt.Sprintf("%x", sha256.Sum256([]byte(projectAbs))),
+		hex.EncodeToString(sha256sum[:]),
 	)
 }
 
@@ -165,7 +180,7 @@ func openReport(path string, port int) {
 	http.Handle("/", http.FileServer(http.Dir(path)))
 	err := http.ListenAndServe(fmt.Sprintf(":%d", port), nil)
 	if err != nil {
-		WarningMessage(fmt.Sprintf("Problem serving report, %s\n", err.Error()))
+		WarningMessage("Problem serving report, %s\n", err.Error())
 		return
 	}
 	_, _ = fmt.Scan()
@@ -215,13 +230,10 @@ func RunLinter(ctx context.Context, options *QodanaOptions) int {
 		log.Fatal("couldn't instantiate docker client", err)
 	}
 	for i, stage := range scanStages {
-		scanStages[i] = PrimaryBold.Sprintf("[%d/%d] ", i+1, len(scanStages)+1) + Primary.Sprint(stage)
+		scanStages[i] = PrimaryBold("[%d/%d] ", i+1, len(scanStages)+1) + Primary(stage)
 	}
 	CheckLinter(options.Linter)
-	var progress *pterm.SpinnerPrinter
-	if IsInteractive() {
-		progress, _ = StartQodanaSpinner(scanStages[0])
-	}
+	progress, _ := startQodanaSpinner(scanStages[0])
 
 	pullImage(ctx, docker, options.Linter)
 	dockerOpts := getDockerOptions(options)
@@ -255,7 +267,7 @@ func RunLinter(ctx context.Context, options *QodanaOptions) int {
 		if strings.Contains(line, "---- Qodana - Detailed summary ----") {
 			updateText(progress, scanStages[5])
 			if !IsInteractive() {
-				pterm.Println()
+				EmptyMessage()
 			}
 		}
 		if strings.Contains(line, "IDEA exit code:") {
