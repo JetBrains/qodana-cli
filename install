@@ -1,8 +1,27 @@
 #!/bin/bash
 TMP_DIR="/tmp/tmpinstalldir"
 CLI_VERSION=${1:-"0.6.1"}
+check_mark="\033[1;32m✓\033[0m"
+
+echo -e '
+          _              _
+         /\ \           /\ \        👋 Welcome to Qodana
+        /  \ \         /  \ \
+       / /\ \ \       / /\ \ \      This script will download and install
+      / / /\ \ \     / / /\ \ \     Qodana CLI to \033[4m/usr/local/bin/qodana\033[0m
+     / / /  \ \_\   / / /  \ \_\
+    / / / _ / / /  / / /   / / /    So you can use \033[4mqodana\033[0m to run all commands
+   / / / /\ \/ /  / / /   / / /
+  / / /__\ \ \/  / / /___/ / /      By the way, Qodana CLI is open-sourced:
+ / / /____\ \ \ / / /____\/ /       \033[4mhttps://github.com/JetBrains/qodana-cli\033[0m
+ \/________\_\/ \/_________/
+'
+
 function cleanup {
 	echo rm -rf $TMP_DIR > /dev/null
+}
+function header() {
+  echo -e "\n\033[1m$1\033[0m";
 }
 function fail {
 	cleanup
@@ -12,18 +31,15 @@ function fail {
 	exit 1
 }
 function install {
-	#settings
 	USER="JetBrains"
 	PROG="qodana"
-	MOVE="true"
 	RELEASE="v$CLI_VERSION"
 	INSECURE="false"
 	OUT_DIR="/usr/local/bin"
-	GH="https://github.com"
 	#bash check
 	[ ! "$BASH_VERSION" ] && fail "Please use bash instead"
 	[ ! -d $OUT_DIR ] && fail "output directory missing: $OUT_DIR"
-	#dependency check, assume we are a standard POISX machine
+	#dependency check, assume we are a standard POSIX machine
 	which find > /dev/null || fail "find not installed"
 	which xargs > /dev/null || fail "xargs not installed"
 	which sort > /dev/null || fail "sort not installed"
@@ -42,8 +58,7 @@ function install {
 	else
 		fail "neither wget/curl are installed"
 	fi
-	#find OS #TODO BSDs and other posixs
-	case `uname -s` in
+	case $(uname -s) in
 	Darwin) OS="darwin";;
 	Linux) OS="linux";;
 	*) fail "unknown os: $(uname -s)";;
@@ -52,7 +67,7 @@ function install {
 	if uname -m | grep 64 > /dev/null; then
 		ARCH="amd64"
 	elif uname -m | grep arm > /dev/null; then
-		ARCH="arm" #TODO armv6/v7
+		ARCH="arm"
 	else
 		fail "unknown arch: $(uname -m)"
 	fi
@@ -61,43 +76,43 @@ function install {
 	FTYPE=""
 	case "${OS}_${ARCH}" in
 	"darwin_arm")
+		# shellcheck disable=SC2027
 		URL="https://github.com/JetBrains/qodana-cli/releases/download/$RELEASE/qodana_"$CLI_VERSION"_Darwin_arm64.tar.gz"
 		FTYPE=".tar.gz"
 		;;
 	"darwin_amd64")
+	  # shellcheck disable=SC2027
 		URL="https://github.com/JetBrains/qodana-cli/releases/download/$RELEASE/qodana_"$CLI_VERSION"_Darwin_x86_64.tar.gz"
 		FTYPE=".tar.gz"
 		;;
 	"linux_arm")
+	  # shellcheck disable=SC2027
 		URL="https://github.com/JetBrains/qodana-cli/releases/download/$RELEASE/qodana_"$CLI_VERSION"_Linux_arm64.tar.gz"
 		FTYPE=".tar.gz"
 		;;
 	"linux_amd64")
+	  # shellcheck disable=SC2027
 		URL="https://github.com/JetBrains/qodana-cli/releases/download/$RELEASE/qodana_"$CLI_VERSION"_Linux_x86_64.tar.gz"
 		FTYPE=".tar.gz"
 		;;
 	*) fail "No asset for platform ${OS}-${ARCH}";;
 	esac
 	#got URL! download it...
-	echo -n "Installing $PROG $RELEASE"
 
-	echo "....."
+	echo -e "\033[0;90m\nInstalling $PROG ($RELEASE)... \033[0\n"
 
 	#enter tempdir
 	mkdir -p $TMP_DIR
 	cd $TMP_DIR || exit
 	if [[ $FTYPE = ".gz" ]]; then
 		which gzip > /dev/null || fail "gzip is not installed"
-		#gzipped binary
-		NAME="${PROG}_${OS}_${ARCH}.gz"
-		GZURL="$GH/releases/download/$RELEASE/$NAME"
 		#gz download!
 		bash -c "$GET $URL" | gzip -d - > $PROG || fail "download failed"
 	elif [[ $FTYPE = ".tar.gz" ]] || [[ $FTYPE = ".tgz" ]]; then
 		#check if archiver progs installed
 		which tar > /dev/null || fail "tar is not installed"
 		which gzip > /dev/null || fail "gzip is not installed"
-		bash -c "$GET $URL" | tar zxf - || fail "download failed"
+		bash -c "$GET $URL" | tar zxf - > /dev/null || fail "download failed"
 	elif [[ $FTYPE = ".zip" ]]; then
 		which unzip > /dev/null || fail "unzip is not installed"
 		bash -c "$GET $URL" > tmp.zip || fail "download failed"
@@ -108,21 +123,32 @@ function install {
 	else
 		fail "unknown file type: $FTYPE"
 	fi
-	#search subtree largest file (bin)
+	# shellcheck disable=SC2038
 	TMP_BIN=$(find . -type f | xargs du | sort -n | tail -n 1 | cut -f 2)
 	if [ ! -f "$TMP_BIN" ]; then
 		fail "could not find find binary (largest file)"
 	fi
-	#ensure its larger than 1MB
-	if [[ $(du -m $TMP_BIN | cut -f1) -lt 1 ]]; then
+	# ensure its larger than 1MB
+	if [[ $(du -m "$TMP_BIN" | cut -f1) -lt 1 ]]; then
 		fail "no binary found ($TMP_BIN is not larger than 1MB)"
 	fi
-	#move into PATH or cwd
-	chmod +x $TMP_BIN || fail "chmod +x failed"
+	# move into PATH or cwd
+	chmod +x "$TMP_BIN" || fail "chmod +x failed"
 
-	mv $TMP_BIN $OUT_DIR/$PROG || fail "mv failed" #FINAL STEP!
-	echo "Installed at $OUT_DIR/$PROG"
-	#done
+	mv "$TMP_BIN" $OUT_DIR/$PROG || fail "mv failed" #FINAL STEP!
+	echo -e "${check_mark} Installed at $OUT_DIR/$PROG"
+	# done
 	cleanup
 }
+if [[ $* != "-y" ]]; then
+  printf >/dev/tty '%s' "${*:-Press any key to continue... }"
+  read </dev/tty -rsn1
+fi
+
 install
+
+header "Next steps\n"
+echo -e "‣ \033[1mInitialize Qodana in a project\033[0m"
+echo -e "   \033[0;90m\033[0;33mcd\033[0;90m to the project you want to set up Qodana with and run \033[0;33mqodana init\033[0;90m\033[0m\n"
+echo -e "‣ \033[1mGet help and share your feedback\033[0m"
+echo -e "   \033[0;90mJoin the Qodana community at \033[0;4mhttps://jb.gg/qodana-forum\033[0m"

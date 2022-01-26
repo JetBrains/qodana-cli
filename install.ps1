@@ -1,6 +1,7 @@
 #!/usr/bin/env pwsh
 # https://deno.land/x/install@v0.1.4/install.ps1
 # Copyright 2018 the Deno authors. All rights reserved. MIT License.
+# TODO: make the script more fancy
 
 $ErrorActionPreference = 'Stop'
 $inputRepo = "JetBrains/qodana-cli"
