@@ -63,7 +63,7 @@ Alternatively, you can install the latest binary (or the apt/rpm/deb package) fr
 
 ### Running
 
-![CleanShot 2022-01-25 at 15 22 02](https://user-images.githubusercontent.com/13538286/150977105-a45872ac-52fb-4bec-a757-b3b5e2059753.gif)
+![CleanShot 2022-01-26 at 13 58 28](https://user-images.githubusercontent.com/13538286/151151910-4a9bcebe-a1ff-4820-9798-4d8e15a7c3c1.gif)
 
 #### tl;dr
 
@@ -75,18 +75,18 @@ qodana scan --show-report
 
 You can also add the linter by its name with the `--linter` option (e.g. `--linter jetbrains/qodana-js`).
 
-#### Project configuration
+#### Configure Qodana
 
-Before you start using Qodana, you need to configure your project – choose a linter to use.
+Before you start using Qodana, you need to configure your project – choose [a linter](https://www.jetbrains.com/help/qodana/linters.html) to use.
 If you know what linter you want to use, you can skip this step.
 
-Also, Qodana CLI can choose a linter for you. Just run the following command in your project root:
+Also, Qodana CLI can choose a linter for you. Just run the following command in your **project root**:
 
 ```sh
 qodana init
 ```
 
-#### Project analysis
+#### Run Qodana
 
 Right after you configured your project (or remember linter's name you want to run), you can run Qodana inspections simply by invoking the following command in your project root:
 
@@ -97,7 +97,7 @@ qodana scan
 - After the first Qodana run, the following runs will be faster because of the saved Qodana cache in your project (defaults to `./<userCacheDir>/JetBrains/<linter>/cache`)
 - The latest Qodana report will be saved to `./<userCacheDir>/JetBrains/<linter>/results` – you can find qodana.sarif.json and other Qodana artifacts (like logs) in this directory.
 
-#### Show report
+#### View the Qodana report
 
 After the analysis, the results are saved to `./<userCacheDir>/JetBrains/<linter>/results` by default. Inside the directory `./<userCacheDir>/JetBrains/<linter>/results/report`, you can find Qodana HTML report.
 To view it in the browser, run the following command from your project root:
@@ -211,6 +211,7 @@ show [flags]
 #### Options
 
 ```
+  -d, --dir-only            Open report directory only, don't serve it
   -h, --help                help for show
   -p, --port int            Specify port to serve report at (default 8080)
   -r, --report-dir string   Specify HTML report path (the one with index.html inside) (default "<userCacheDir>/JetBrains/<linter>/results/report")
