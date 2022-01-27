@@ -6,7 +6,7 @@
 [![Twitter Follow](https://img.shields.io/twitter/follow/QodanaEvolves?style=social&logo=twitter)][jb:twitter]
 
 > ⚠️ This is an experimental project, so it's not guaranteed to work correctly.
-> Use it at your own risk. For running Qodana stably and reliably, please use [Qodana Docker Images](https://www.jetbrains.com/help/qodana/docker-images.html).
+> Use it at your own risk. For running Qodana stably and reliably, please use [Qodana Docker Images](https://www.jetbrains.com/help/qodana/docker-images.html). For feature requests or bugs reports please use our YouTrack: https://jb.gg/qodana-cli/new-issue
 
 `qodana` is a simple cross-platform command-line tool to run [Qodana linters](https://www.jetbrains.com/help/qodana/docker-images.html) anywhere with minimum effort required.
 
@@ -18,7 +18,7 @@
    - [Installation](#installation)
    - [Running](#running)
 - [Configuration](#configuration)
-- [Questions and answers](#questions-and-answers)
+- [Why](#why)
 
 <!-- tocstop -->
 
@@ -215,9 +215,11 @@ show [flags]
   -r, --report-dir string   Specify HTML report path (the one with index.html inside) (default "<userCacheDir>/JetBrains/<linter>/results/report")
 ```
 
-## Questions and answers
+## Why
 
-### Why do you need a CLI?
+![image](https://user-images.githubusercontent.com/13538286/151377284-28d845d3-a601-4512-9029-18f99d215ee1.png)
+
+> 🖼 The illustration is created by [Irina Khromova](https://www.instagram.com/irkin_sketch/)
 
 Qodana linters are distributed via Docker images – which becomes handy for developers (us) and the users to run code inspections in CI.
 
@@ -235,13 +237,7 @@ docker run --rm -it -p 8080:8080 -v <source-directory>/:/data/project/ -v <outpu
 - On Windows and macOS, when there is the default Docker Desktop RAM limit (2GB), your run might fail because of OOM (and this often happens on big Gradle projects on Gradle sync), and the only workaround, for now, is increasing the memory – but to find that out, one needs to look that up in the docs.
 - That list could go on, but we've thought about these problems, experimented a bit, and created the CLI to simplify all of this.
 
-### Isn't that a bit overhead to write a tool that runs Docker containers when we have Docker CLI already?
-
-Our CLI, like Docker CLI, operates with Docker daemon via Docker Engine API using the official Docker SDK, so actually, our tool is our own tailored Docker CLI at the moment. 
-
-### Where can I ask for more features?
-
-[Right here](https://jb.gg/qodana-cli/new-issue).
+**Isn't that a bit overhead to write a tool that runs Docker containers when we have Docker CLI already?** Our CLI, like Docker CLI, operates with Docker daemon via Docker Engine API using the official Docker SDK, so actually, our tool is our own tailored Docker CLI at the moment. 
 
 
 [gh:test]: https://github.com/JetBrains/qodana/actions/workflows/build-test.yml
