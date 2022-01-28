@@ -65,7 +65,7 @@ type QodanaOptions struct { // TODO: get available options from the image / have
 }
 
 var (
-	Version     = "0.6.3"
+	Version     = "0.6.4"
 	DoNotTrack  = false
 	Interrupted = false
 	scanStages  = []string{
@@ -118,7 +118,6 @@ func CheckForUpdates() {
 				log.Errorf("Failed to read response body: %s", err)
 				return
 			}
-			// prepare result
 			result := make(map[string]interface{})
 			err = json.Unmarshal(bodyText, &result)
 			if err != nil {
@@ -126,9 +125,10 @@ func CheckForUpdates() {
 				return
 			}
 			latestVersion := result["tag_name"].(string)
-			if latestVersion != Version {
-				WarningMessage("New version of %s is available: %s. See https://jb.gg/qodana-cli/update", PrimaryBold("qodana"), latestVersion)
+			if latestVersion != fmt.Sprintf("v%s", Version) {
+				WarningMessage("New version of %s is available: %s. See https://jb.gg/qodana-cli/update\n", PrimaryBold("qodana"), latestVersion)
 			}
+			return
 		}()
 	}
 }

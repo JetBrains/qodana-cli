@@ -71,28 +71,28 @@ func PrimaryBold(text string, a ...interface{}) string {
 
 // EmptyMessage is a message that is used when there is no message to show.
 func EmptyMessage() {
-	fmt.Println()
+	pterm.Println()
 }
 
 // SuccessMessage prints a success message with the icon.
 func SuccessMessage(message string, a ...interface{}) {
 	message = fmt.Sprintf(message, a...)
 	icon := pterm.Green("✓ ")
-	fmt.Println(icon, Primary(message))
+	pterm.Println(icon, Primary(message))
 }
 
 // WarningMessage prints a warning message with the icon.
 func WarningMessage(message string, a ...interface{}) {
 	message = fmt.Sprintf(message, a...)
 	icon := WarningStyle.Sprint("\n! ")
-	fmt.Println(icon, Primary(message))
+	pterm.Println(icon, Primary(message))
 }
 
 // ErrorMessage prints an error message with the icon.
 func ErrorMessage(message string, a ...interface{}) {
 	message = fmt.Sprintf(message, a...)
 	icon := ErrorStyle.Sprint("✗ ")
-	fmt.Println(icon, ErrorStyle.Sprint(message))
+	pterm.Println(icon, ErrorStyle.Sprint(message))
 }
 
 // printLinterLog prints the linter logs with color, when needed.
