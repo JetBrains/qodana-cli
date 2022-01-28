@@ -21,8 +21,10 @@ import (
 	"context"
 	"crypto/sha256"
 	"encoding/hex"
+	"encoding/json"
 	"fmt"
 	"io"
+	"io/ioutil"
 	"net/http"
 	"os"
 	"os/exec"
@@ -63,7 +65,7 @@ type QodanaOptions struct { // TODO: get available options from the image / have
 }
 
 var (
-	Version     = "dev"
+	Version     = "0.6.3"
 	DoNotTrack  = false
 	Interrupted = false
 	scanStages  = []string{
@@ -74,6 +76,7 @@ var (
 		"Analyzing the project",
 		"Preparing the report",
 	}
+	releaseUrl = "https://api.github.com/repos/JetBrains/qodana-cli/releases/latest"
 )
 
 // Contains checks if a string is in a given slice.
@@ -84,6 +87,50 @@ func Contains(s []string, str string) bool {
 		}
 	}
 	return false
+}
+
+// CheckForUpdates check GitHub https://github.com/JetBrains/qodana-cli/ for the latest version of CLI release.
+func CheckForUpdates() {
+	if !DoNotTrack {
+		go func() {
+			resp, err := http.Get(releaseUrl)
+			if err != nil {
+				log.Errorf("Failed to check for updates: %s", err)
+				return
+			}
+			defer func(Body io.ReadCloser) {
+				err := Body.Close()
+				if err != nil {
+					log.Errorf("Failed to close response body: %s", err)
+					return
+				}
+			}(resp.Body)
+			if err != nil {
+				log.Errorf("Error while making request: %s", err)
+				return
+			}
+			if resp.StatusCode < 200 || resp.StatusCode > 299 {
+				log.Errorf("Failed to check for updates: %s", resp.Status)
+				return
+			}
+			bodyText, err := ioutil.ReadAll(resp.Body)
+			if err != nil {
+				log.Errorf("Failed to read response body: %s", err)
+				return
+			}
+			// prepare result
+			result := make(map[string]interface{})
+			err = json.Unmarshal(bodyText, &result)
+			if err != nil {
+				log.Errorf("Failed to read response JSON: %s", err)
+				return
+			}
+			latestVersion := result["tag_name"].(string)
+			if latestVersion != Version {
+				WarningMessage("New version of %s is available: %s. See https://jb.gg/qodana-cli/update", PrimaryBold("qodana"), latestVersion)
+			}
+		}()
+	}
 }
 
 func GetLinter(path string) string {
@@ -264,7 +311,7 @@ func RunLinter(ctx context.Context, options *QodanaOptions) int {
 		if strings.Contains(line, "The Project configuration stage completed in") {
 			updateText(progress, scanStages[4])
 		}
-		if strings.Contains(line, "---- Qodana - Detailed summary ----") {
+		if strings.Contains(line, "Detailed summary") {
 			updateText(progress, scanStages[5])
 			if !IsInteractive() {
 				EmptyMessage()

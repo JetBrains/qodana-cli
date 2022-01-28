@@ -31,11 +31,11 @@ import (
 // Info Two newlines at the start are important to lay the output nicely in CLI.
 var Info = fmt.Sprintf(`
   %s (v%s)
-  https://jetbrains.com/qodana
+  https://jb.gg/qodana-cli
   Documentation – https://jb.gg/qodana-docs
   Contact us at qodana-support@jetbrains.com
   Bug Tracker: https://jb.gg/qodana-issue
-  Discussions: https://jb.gg/qodana-forum
+  Community forum: https://jb.gg/qodana-forum
 `, "Qodana CLI", Version)
 
 // IsInteractive returns true if the current execution environment is interactive (useful for colors/animations toggle).
@@ -52,8 +52,8 @@ func DisableColor() {
 var (
 	SpinnerSequence  = []string{"| ", "/ ", "- ", "\\ "}
 	QodanaSpinner    = pterm.DefaultSpinner
-	PrimaryStyle     = pterm.NewStyle()               // PrimaryStyle is primary text style.
-	PrimaryBoldStyle = pterm.NewStyle(pterm.Bold)     // PrimaryBoldStyle is primary bold text style.
+	PrimaryStyle     = pterm.NewStyle()               // PrimaryStyle is a primary text style.
+	PrimaryBoldStyle = pterm.NewStyle(pterm.Bold)     // PrimaryBoldStyle is a primary bold text style.
 	ErrorStyle       = pterm.NewStyle(pterm.FgRed)    // ErrorStyle is an error style.
 	WarningStyle     = pterm.NewStyle(pterm.FgYellow) // WarningStyle is a warning style.
 	MiscStyle        = pterm.NewStyle(pterm.FgGray)   // MiscStyle is a log style.
@@ -97,7 +97,10 @@ func ErrorMessage(message string, a ...interface{}) {
 
 // printLinterLog prints the linter logs with color, when needed.
 func printLinterLog(line string) {
-	if strings.Contains(line, "QQQQQQ") || strings.Contains(line, "Q::") {
+	if strings.Contains(line, " / /") ||
+		strings.Contains(line, "_              _") ||
+		strings.Contains(line, "\\/__") ||
+		strings.Contains(line, "\\ \\") {
 		PrimaryStyle.Println(line)
 	} else {
 		MiscStyle.Println(line)
