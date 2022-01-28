@@ -17,6 +17,7 @@
 - [Usage](#usage)
    - [Installation](#installation)
    - [Running](#running)
+   - [Update](#update)
 - [Configuration](#configuration)
 - [Why](#why)
 
@@ -105,6 +106,32 @@ qodana show
 ```
 
 You can serve any Qodana HTML report regardless of the project if you provide the correct report path.
+
+## Update
+
+Update to the latest version depends on how you choose to install `qodana` on your machine.
+
+#### Update on Linux and macOS
+```shell
+curl -fsSL https://jb.gg/qodana-cli/install | bash
+```
+
+#### Update on Windows
+```powershell
+iwr https://jb.gg/qodana-cli/install.ps1 -useb | iex
+```
+
+#### Update with [Homebrew](https://brew.sh)
+```shell
+brew upgrade qodana
+```
+
+#### Update with [Go](https://go.dev/doc/install)
+```shell
+go install github.com/JetBrains/qodana-cli@latest
+```
+
+Alternatively, you can install the latest binary (or the apt/rpm/deb package) from [the repository releases](https://github.com/JetBrains/qodana-cli/releases/latest).
 
 ## Configuration
 
