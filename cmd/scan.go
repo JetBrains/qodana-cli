@@ -20,10 +20,10 @@ import (
 	"os"
 	"path/filepath"
 
+	"github.com/erikgeiser/promptkit/confirmation"
 	log "github.com/sirupsen/logrus"
 
 	"github.com/JetBrains/qodana-cli/core"
-	"github.com/erikgeiser/promptkit/confirmation"
 	"github.com/spf13/cobra"
 )
 
@@ -64,15 +64,17 @@ But you can always override qodana.yaml options with the following command-line 
 			if exitCode != core.QodanaSuccessExitCode && exitCode != core.QodanaFailThresholdExitCode {
 				core.ErrorMessage("Qodana exited with code %d", exitCode)
 				core.WarningMessage("Please check the logs in %s", options.ResultsDir)
-				input := confirmation.New("Do you want to open that directory?", confirmation.Undecided)
-				ready, err := input.RunPrompt()
-				if err != nil {
-					log.Fatalf("ErrorStyle while waiting for user input: %s", err)
-				}
-				if ready {
-					err = core.OpenDir(options.ResultsDir)
+				if core.IsInteractive() {
+					input := confirmation.New("Do you want to open that directory?", confirmation.Undecided)
+					ready, err := input.RunPrompt()
 					if err != nil {
-						log.Fatalf("ErrorStyle while opening directory: %s", err)
+						log.Fatalf("ErrorStyle while waiting for user input: %s", err)
+					}
+					if ready {
+						err = core.OpenDir(options.ResultsDir)
+						if err != nil {
+							log.Fatalf("ErrorStyle while opening directory: %s", err)
+						}
 					}
 				}
 				os.Exit(exitCode)
