@@ -52,12 +52,27 @@ type QodanaYaml struct {
 	Properties map[string]string `yaml:"properties,omitempty"`
 
 	// Plugins property containing plugins to install
-	Plugins []string `yaml:"plugins,omitempty"`
+	Plugins []Plugin `yaml:"plugins,omitempty"`
+
+	// Bootstrap contains a command to run in the container before the analysis starts
+	Bootstrap string `yaml:"bootstrap,omitempty"`
+}
+
+// Plugin to be installed during the Qodana run.
+type Plugin struct {
+	// Id plugin id to install
+	Id string `yaml:"id"`
+
+	// Version plugin version to install
+	Version string `yaml:"plugins,omitempty"`
 }
 
 // Profile A profile is some template set of checks to run with Qodana analysis.
 type Profile struct {
+	// Name profile name to use.
 	Name string `yaml:"name,omitempty"`
+
+	// Path profile path to use.
 	Path string `yaml:"path,omitempty"`
 }
 
