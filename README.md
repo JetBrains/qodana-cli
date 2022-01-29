@@ -3,7 +3,7 @@
 [![JetBrains incubator project](https://jb.gg/badges/incubator.svg)](https://confluence.jetbrains.com/display/ALL/JetBrains+on+GitHub)
 [![Test](https://github.com/JetBrains/qodana-cli/actions/workflows/build-test.yml/badge.svg)][gh:test]
 [![GitHub Discussions](https://img.shields.io/github/discussions/jetbrains/qodana)][jb:discussions]
-[![Twitter Follow](https://img.shields.io/twitter/follow/QodanaEvolves?style=social&logo=twitter)][jb:twitter]
+[![Twitter Follow](https://img.shields.io/twitter/follow/Qodana?style=social&logo=twitter)][jb:twitter]
 
 > ⚠️ This is an experimental project, so it's not guaranteed to work correctly.
 > Use it at your own risk. For running Qodana stably and reliably, please use [Qodana Docker Images](https://www.jetbrains.com/help/qodana/docker-images.html). For feature requests or bugs reports please use our YouTrack: https://jb.gg/qodana-cli/new-issue
@@ -269,5 +269,5 @@ docker run --rm -it -p 8080:8080 -v <source-directory>/:/data/project/ -v <outpu
 [youtrack-new-issue]: https://youtrack.jetbrains.com/newIssue?project=QD&c=Platform%20GitHub%20Action
 [jb:confluence-on-gh]: https://confluence.jetbrains.com/display/ALL/JetBrains+on+GitHub
 [jb:discussions]: https://jb.gg/qodana-discussions
-[jb:twitter]: https://twitter.com/QodanaEvolves
+[jb:twitter]: https://twitter.com/Qodana
 [jb:docker]: https://hub.docker.com/r/jetbrains/qodana
