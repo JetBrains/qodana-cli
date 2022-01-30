@@ -56,7 +56,7 @@ But you can always override qodana.yaml options with the following command-line 
 					options.Linter = qodanaYaml.Linter
 				}
 			}
-			core.PrepareFolders(options)
+			core.PrepareHost(options)
 			exitCode := core.RunLinter(ctx, options)
 			if core.Interrupted {
 				os.Exit(1)
@@ -102,8 +102,11 @@ But you can always override qodana.yaml options with the following command-line 
 	flags.StringVarP(&options.AnalysisId, "analysis-id", "a", "", "Unique report identifier (GUID) to be used by Qodana Cloud")
 	flags.StringVarP(&options.Baseline, "baseline", "b", "", "Provide the path to an existing SARIF report to be used in the baseline state calculation")
 	flags.StringVarP(&options.CacheDir, "cache-dir", "c", "", "Override cache directory (default <userCacheDir>/JetBrains/<linter>/cache)")
-	flags.StringVarP(&options.SourceDirectory, "source-directory", "d", "", "Directory inside the project-dir directory must be inspected. If not specified, the whole project is inspected.")
+	flags.StringVarP(&options.SourceDirectory, "source-directory", "d", "", "Directory inside the project-dir directory must be inspected. If not specified, the whole project is inspected")
 	flags.StringArrayVarP(&options.EnvVariables, "env", "e", []string{}, "Define additional environment variables for the Qodana container (you can use the flag multiple times). CLI is not reading full host environment variables and does not pass it to the Qodana container for security reasons")
+	flags.StringArrayVarP(&options.Volumes, "mount", "v", []string{}, "Define additional mounts for the Qodana container (you can use the flag multiple times)")
+	flags.StringVar(&options.User, "user", "", "User to run Qodana container as (default: the current user)")
+
 	flags.StringVarP(&options.ProjectDir, "project-dir", "i", ".", "Root directory of the inspected project")
 	flags.StringVarP(&options.Linter, "linter", "l", "", "Override linter to use")
 	flags.StringVarP(&options.ResultsDir, "results-dir", "o", "", "Override directory to save Qodana inspection results to (default <userCacheDir>/JetBrains/<linter>/results)")

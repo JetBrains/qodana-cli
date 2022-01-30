@@ -18,13 +18,13 @@ package core
 
 import (
 	"context"
-	"fmt"
 	"io"
 	"io/ioutil"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"runtime"
+	"strings"
 
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/container"
@@ -182,6 +182,32 @@ func getDockerOptions(opts *QodanaOptions) *types.ContainerCreateConfig {
 	if err != nil {
 		log.Fatal("couldn't get abs path for results", err)
 	}
+
+	volumes := []mount.Mount{
+		{
+			Type:   mount.TypeBind,
+			Source: cachePath,
+			Target: "/data/cache",
+		},
+		{
+			Type:   mount.TypeBind,
+			Source: projectPath,
+			Target: "/data/project",
+		},
+		{
+			Type:   mount.TypeBind,
+			Source: resultsPath,
+			Target: "/data/results",
+		},
+	}
+	for _, volume := range opts.Volumes {
+		volumes = append(volumes, mount.Mount{
+			Type:   mount.TypeBind,
+			Source: strings.Split(volume, ":")[0],
+			Target: strings.Split(volume, ":")[1],
+		})
+	}
+
 	return &types.ContainerCreateConfig{
 		Name: "qodana-cli",
 		Config: &container.Config{
@@ -191,27 +217,11 @@ func getDockerOptions(opts *QodanaOptions) *types.ContainerCreateConfig {
 			AttachStdout: true,
 			AttachStderr: true,
 			Env:          append(opts.EnvVariables, "QODANA_ENV=cli"),
-			User:         fmt.Sprintf("%d:%d", os.Getuid(), os.Getgid()),
+			User:         opts.User,
 		},
 		HostConfig: &container.HostConfig{
 			AutoRemove: true,
-			Mounts: []mount.Mount{
-				{
-					Type:   mount.TypeBind,
-					Source: cachePath,
-					Target: "/data/cache",
-				},
-				{
-					Type:   mount.TypeBind,
-					Source: projectPath,
-					Target: "/data/project",
-				},
-				{
-					Type:   mount.TypeBind,
-					Source: resultsPath,
-					Target: "/data/results",
-				},
-			},
+			Mounts:     volumes,
 		},
 	}
 }
