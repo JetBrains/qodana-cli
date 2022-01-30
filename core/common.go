@@ -61,11 +61,13 @@ type QodanaOptions struct { // TODO: get available options from the image / have
 	Token                 string
 	AnalysisId            string
 	EnvVariables          []string
+	Volumes               []string
+	User                  string
 	UnveilProblems        bool
 }
 
 var (
-	Version     = "0.6.4"
+	Version     = "0.6.5"
 	DoNotTrack  = false
 	Interrupted = false
 	scanStages  = []string{
@@ -105,10 +107,6 @@ func CheckForUpdates() {
 					return
 				}
 			}(resp.Body)
-			if err != nil {
-				log.Errorf("Error while making request: %s", err)
-				return
-			}
 			if resp.StatusCode < 200 || resp.StatusCode > 299 {
 				log.Errorf("Failed to check for updates: %s", resp.Status)
 				return
@@ -175,14 +173,17 @@ func GetLinterSystemDir(project string, linter string) string {
 	)
 }
 
-// PrepareFolders cleans up report folder, creates the necessary folders for the analysis
-func PrepareFolders(opts *QodanaOptions) {
+// PrepareHost cleans up report folder, creates the necessary folders for the analysis
+func PrepareHost(opts *QodanaOptions) {
 	linterHome := GetLinterSystemDir(opts.ProjectDir, opts.Linter)
 	if opts.ResultsDir == "" {
 		opts.ResultsDir = filepath.Join(linterHome, "results")
 	}
 	if opts.CacheDir == "" {
 		opts.CacheDir = filepath.Join(linterHome, "cache")
+	}
+	if opts.User == "" {
+		opts.User = fmt.Sprintf("%d:%d", os.Getuid(), os.Getgid())
 	}
 	if _, err := os.Stat(opts.ResultsDir); err == nil {
 		err := os.RemoveAll(opts.ResultsDir)
