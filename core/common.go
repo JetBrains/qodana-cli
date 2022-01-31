@@ -60,10 +60,10 @@ type QodanaOptions struct { // TODO: get available options from the image / have
 	SendReport            bool
 	Token                 string
 	AnalysisId            string
-	EnvVariables          []string
+	Env                   []string
 	Volumes               []string
 	User                  string
-	UnveilProblems        bool
+	PrintProblems         bool
 }
 
 var (
@@ -93,42 +93,39 @@ func Contains(s []string, str string) bool {
 
 // CheckForUpdates check GitHub https://github.com/JetBrains/qodana-cli/ for the latest version of CLI release.
 func CheckForUpdates() {
-	if !DoNotTrack {
-		go func() {
-			resp, err := http.Get(releaseUrl)
-			if err != nil {
-				log.Errorf("Failed to check for updates: %s", err)
-				return
-			}
-			defer func(Body io.ReadCloser) {
-				err := Body.Close()
-				if err != nil {
-					log.Errorf("Failed to close response body: %s", err)
-					return
-				}
-			}(resp.Body)
-			if resp.StatusCode < 200 || resp.StatusCode > 299 {
-				log.Errorf("Failed to check for updates: %s", resp.Status)
-				return
-			}
-			bodyText, err := ioutil.ReadAll(resp.Body)
-			if err != nil {
-				log.Errorf("Failed to read response body: %s", err)
-				return
-			}
-			result := make(map[string]interface{})
-			err = json.Unmarshal(bodyText, &result)
-			if err != nil {
-				log.Errorf("Failed to read response JSON: %s", err)
-				return
-			}
-			latestVersion := result["tag_name"].(string)
-			if latestVersion != fmt.Sprintf("v%s", Version) {
-				WarningMessage("New version of %s is available: %s. See https://jb.gg/qodana-cli/update\n", PrimaryBold("qodana"), latestVersion)
-			}
+	go func() {
+		resp, err := http.Get(releaseUrl)
+		if err != nil {
+			log.Errorf("Failed to check for updates: %s", err)
 			return
-		}()
-	}
+		}
+		defer func(Body io.ReadCloser) {
+			err := Body.Close()
+			if err != nil {
+				log.Errorf("Failed to close response body: %s", err)
+				return
+			}
+		}(resp.Body)
+		if resp.StatusCode < 200 || resp.StatusCode > 299 {
+			log.Errorf("Failed to check for updates: %s", resp.Status)
+			return
+		}
+		bodyText, err := ioutil.ReadAll(resp.Body)
+		if err != nil {
+			log.Errorf("Failed to read response body: %s", err)
+			return
+		}
+		result := make(map[string]interface{})
+		err = json.Unmarshal(bodyText, &result)
+		if err != nil {
+			log.Errorf("Failed to read response JSON: %s", err)
+			return
+		}
+		latestVersion := result["tag_name"].(string)
+		if latestVersion != fmt.Sprintf("v%s", Version) {
+			WarningMessage("New version of %s is available: %s. See https://jb.gg/qodana-cli/update\n", PrimaryBold("qodana"), latestVersion)
+		}
+	}()
 }
 
 func GetLinter(path string) string {
@@ -173,7 +170,7 @@ func GetLinterSystemDir(project string, linter string) string {
 	)
 }
 
-// PrepareHost cleans up report folder, creates the necessary folders for the analysis
+// PrepareHost cleans up report folder, gets the current user, creates the necessary folders for the analysis
 func PrepareHost(opts *QodanaOptions) {
 	linterHome := GetLinterSystemDir(opts.ProjectDir, opts.Linter)
 	if opts.ResultsDir == "" {
