@@ -17,7 +17,6 @@
 - [Usage](#usage)
    - [Installation](#installation)
    - [Running](#running)
-   - [Update](#update)
 - [Configuration](#configuration)
 - [Why](#why)
 
@@ -30,35 +29,7 @@
 > 💡 The Qodana CLI is distributed and run as a binary. The Qodana linters with inspections are [Docker Images]((https://www.jetbrains.com/help/qodana/docker-images.html)).
 You must have Docker installed and running locally to support this: https://www.docker.com/get-started.
 
-We have installation scripts for Linux, macOS, and Windows.
-
-#### Install on Linux and macOS
-```shell
-curl -fsSL https://jb.gg/qodana-cli/install | bash
-```
-
-#### Install on Windows
-```powershell
-iwr https://jb.gg/qodana-cli/install.ps1 -useb | iex
-```
-
-#### Install with [Homebrew](https://brew.sh)
-```shell
-brew tap jetbrains/utils
-brew install qodana
-```
-
-#### Install with [Go](https://go.dev/doc/install)
-```shell
-go install github.com/JetBrains/qodana-cli@latest
-```
-
-If you want to install some specific version:
-- **macOS and Linux**: add the version number (e.g. `0.5.0`) **to the end** of the command
-- **Windows**: add the version number (e.g. `$v="0.5.0";`) **to the beginning** of the command.
-- **Go**: change the `latest` to the version number.
-
-Alternatively, you can install the latest binary (or the apt/rpm/deb package) from [the repository releases](https://github.com/JetBrains/qodana-cli/releases/latest).
+See [the repository releases](https://github.com/JetBrains/qodana-cli/releases/latest) for the detailed instructions on the installation and update.
 
 ### Running
 
@@ -101,34 +72,11 @@ qodana scan
 After the analysis, the results are saved to `./<userCacheDir>/JetBrains/<linter>/results` by default. Inside the directory `./<userCacheDir>/JetBrains/<linter>/results/report`, you can find Qodana HTML report.
 To view it in the browser, run the following command from your project root:
 
-```shell
+```console
 qodana show
 ```
 
 You can serve any Qodana HTML report regardless of the project if you provide the correct report path.
-
-## Update
-Update to the latest version depends on how you choose to install `qodana` on your machine.
-#### Update on Linux and macOS
-```shell
-curl -fsSL https://jb.gg/qodana-cli/install | bash
-```
-#### Update on Windows
-```powershell
-iwr https://jb.gg/qodana-cli/install.ps1 -useb | iex
-```
-#### Update with [Homebrew](https://brew.sh)
-```shell
-brew upgrade qodana
-```
-#### Update with [Go](https://go.dev/doc/install)
-```shell
-go install github.com/JetBrains/qodana-cli@latest
-```
-
-Alternatively,
-you can install the latest binary (or the apt/rpm/deb package)
-from [the repository releases](https://github.com/JetBrains/qodana-cli/releases/latest).
 
 ## Configuration
 
@@ -140,9 +88,17 @@ If you want to configure Qodana or a check inside Qodana, consider using [`qodan
 > - Linux: ~/.cache/
 > - Windows: %LOCALAPPDATA%\
 
+#### Disable the check for update
+
+To disable the check for update, export the `DO_NOT_CHECK_UPDATE` environment variable to `1` before running the CLI:
+
+```sh
+export DO_NOT_CHECK_UPDATE=1
+```
+
 #### Disable telemetry
 
-To disable [Qodana user statistics](https://www.jetbrains.com/help/qodana/qodana-jvm-docker-readme.html#Usage+statistics) and automatic [check for update](#update), export the `DO_NOT_TRACK` environment variable to `1` before running the CLI:
+To disable [Qodana user statistics](https://www.jetbrains.com/help/qodana/qodana-jvm-docker-readme.html#Usage+statistics), export the `DO_NOT_TRACK` environment variable to `1` before running the CLI:
 
 ```sh
 export DO_NOT_TRACK=1
@@ -196,7 +152,9 @@ scan [flags]
       --fail-threshold string     Set the number of problems that will serve as a quality gate. If this number is reached, the inspection run is terminated with a non-zero exit code
   -h, --help                      help for scan
   -l, --linter string             Override linter to use
+  -v, --mount stringArray         Define additional mounts for the Qodana container (you can use the flag multiple times)
       --port int                  Port to serve the report on (default 8080)
+      --print-problems            Print all found problems by Qodana in the CLI output
   -n, --profile-name string       Profile name defined in the project
   -p, --profile-path string       Path to the profile file
   -i, --project-dir string        Root directory of the inspected project (default ".")
@@ -207,10 +165,10 @@ scan [flags]
       --script string             Override the run scenario (default "default")
       --send-report               Send the inspection report to Qodana Cloud, requires the '--token' option to be specified
   -w, --show-report               Serve HTML report on port
-  -d, --source-directory string   Directory inside the project-dir directory must be inspected. If not specified, the whole project is inspected.
+  -d, --source-directory string   Directory inside the project-dir directory must be inspected. If not specified, the whole project is inspected
       --stub-profile string       Absolute path to the fallback profile file. This option is applied in case the profile was not specified using any available options
   -t, --token string              Qodana Cloud token
-  -u, --unveil-problems           Print all found problems by Qodana in the CLI output
+  -u, --user string               User to run Qodana container as (default: the current user)
 ```
 
 ### show
@@ -251,7 +209,7 @@ But to set up Qodana in CI, one wants to try it locally first, as there is some 
 
 It's easy to try Qodana locally by running a _simple_ command:
 
-```shell
+```console
 docker run --rm -it -p 8080:8080 -v <source-directory>/:/data/project/ -v <output-directory>/:/data/results/ -v <caches-directory>/:/data/cache/ jetbrains/qodana-<linter> --show-report
 ```
 
