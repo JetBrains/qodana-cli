@@ -25,13 +25,15 @@ import (
 )
 
 func main() {
+	if os.Getenv("DO_NOT_CHECK_UPDATE") != "" {
+		core.CheckForUpdates()
+	}
+	if os.Getenv("DO_NOT_TRACK") != "" { // https://consoledonottrack.com
+		core.DoNotTrack = true
+	}
 	if !core.IsInteractive() || os.Getenv("NO_COLOR") != "" { // http://no-color.org
 		core.DisableColor()
 	}
-	if os.Getenv("DO_NOT_TRACK") == "1" { // https://consoledonottrack.com
-		core.DoNotTrack = true
-	}
-	core.CheckForUpdates()
 	if err := cmd.Execute(); err != nil {
 		log.Fatalf("error running command: %s", err)
 		os.Exit(1)

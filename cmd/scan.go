@@ -79,7 +79,7 @@ But you can always override qodana.yaml options with the following command-line 
 				}
 				os.Exit(exitCode)
 			}
-			core.ReadSarif(options.ResultsDir, options.UnveilProblems)
+			core.ReadSarif(options.ResultsDir, options.PrintProblems)
 			if options.ShowReport {
 				core.ShowReport(filepath.Join(options.ResultsDir, "report"), options.Port)
 			} else {
@@ -101,11 +101,11 @@ But you can always override qodana.yaml options with the following command-line 
 	flags := cmd.Flags()
 	flags.StringVarP(&options.AnalysisId, "analysis-id", "a", "", "Unique report identifier (GUID) to be used by Qodana Cloud")
 	flags.StringVarP(&options.Baseline, "baseline", "b", "", "Provide the path to an existing SARIF report to be used in the baseline state calculation")
-	flags.StringVarP(&options.CacheDir, "cache-dir", "c", "", "Override cache directory (default <userCacheDir>/JetBrains/<linter>/cache)")
+	flags.StringVar(&options.CacheDir, "cache-dir", "", "Override cache directory (default <userCacheDir>/JetBrains/<linter>/cache)")
 	flags.StringVarP(&options.SourceDirectory, "source-directory", "d", "", "Directory inside the project-dir directory must be inspected. If not specified, the whole project is inspected")
-	flags.StringArrayVarP(&options.EnvVariables, "env", "e", []string{}, "Define additional environment variables for the Qodana container (you can use the flag multiple times). CLI is not reading full host environment variables and does not pass it to the Qodana container for security reasons")
+	flags.StringArrayVarP(&options.Env, "env", "e", []string{}, "Define additional environment variables for the Qodana container (you can use the flag multiple times). CLI is not reading full host environment variables and does not pass it to the Qodana container for security reasons")
 	flags.StringArrayVarP(&options.Volumes, "mount", "v", []string{}, "Define additional mounts for the Qodana container (you can use the flag multiple times)")
-	flags.StringVar(&options.User, "user", "", "User to run Qodana container as (default: the current user)")
+	flags.StringVarP(&options.User, "user", "u", "", "User to run Qodana container as (default: the current user)")
 
 	flags.StringVarP(&options.ProjectDir, "project-dir", "i", ".", "Root directory of the inspected project")
 	flags.StringVarP(&options.Linter, "linter", "l", "", "Override linter to use")
@@ -114,10 +114,10 @@ But you can always override qodana.yaml options with the following command-line 
 	flags.StringVarP(&options.ProfilePath, "profile-path", "p", "", "Path to the profile file")
 	flags.BoolVarP(&options.SaveReport, "save-report", "s", true, "Generate HTML report")
 	flags.StringVarP(&options.Token, "token", "t", "", "Qodana Cloud token")
-	flags.BoolVarP(&options.UnveilProblems, "unveil-problems", "u", false, "Print all found problems by Qodana in the CLI output")
+	flags.BoolVar(&options.PrintProblems, "print-problems", false, "Print all found problems by Qodana in the CLI output")
 	flags.BoolVarP(&options.ShowReport, "show-report", "w", false, "Serve HTML report on port")
 
-	flags.BoolVar(&options.Changes, "changes", false, "Override the docker image to be used for the analysis")
+	flags.BoolVarP(&options.Changes, "changes", "c", false, "Override the docker image to be used for the analysis")
 	flags.StringVar(&options.FailThreshold, "fail-threshold", "", "Set the number of problems that will serve as a quality gate. If this number is reached, the inspection run is terminated with a non-zero exit code")
 	flags.BoolVar(&options.DisableSanity, "disable-sanity", false, "Skip running the inspections configured by the sanity profile")
 	flags.BoolVar(&options.RunPromo, "run-promo", false, "Set to true to have the application run the inspections configured by the promo profile; set to false otherwise. By default, a promo run is enabled if the application is executed with the default profile and is disabled otherwise")
