@@ -152,7 +152,6 @@ scan [flags]
       --fail-threshold string     Set the number of problems that will serve as a quality gate. If this number is reached, the inspection run is terminated with a non-zero exit code
   -h, --help                      help for scan
   -l, --linter string             Override linter to use
-  -v, --mount stringArray         Define additional mounts for the Qodana container (you can use the flag multiple times)
       --port int                  Port to serve the report on (default 8080)
       --print-problems            Print all found problems by Qodana in the CLI output
   -n, --profile-name string       Profile name defined in the project
@@ -169,6 +168,7 @@ scan [flags]
       --stub-profile string       Absolute path to the fallback profile file. This option is applied in case the profile was not specified using any available options
   -t, --token string              Qodana Cloud token
   -u, --user string               User to run Qodana container as (default: the current user)
+  -v, --volume stringArray        Define additional volumes for the Qodana container (you can use the flag multiple times)
 ```
 
 ### show
@@ -219,7 +219,7 @@ docker run --rm -it -p 8080:8080 -v <source-directory>/:/data/project/ -v <outpu
 - On Windows and macOS, when there is the default Docker Desktop RAM limit (2GB), your run might fail because of OOM (and this often happens on big Gradle projects on Gradle sync), and the only workaround, for now, is increasing the memory – but to find that out, one needs to look that up in the docs.
 - That list could go on, but we've thought about these problems, experimented a bit, and created the CLI to simplify all of this.
 
-**Isn't that a bit overhead to write a tool that runs Docker containers when we have Docker CLI already?** Our CLI, like Docker CLI, operates with Docker daemon via Docker Engine API using the official Docker SDK, so actually, our tool is our own tailored Docker CLI at the moment. 
+**Isn't that a bit overhead to write a tool that runs Docker containers when we have Docker CLI already?** Our CLI, like Docker CLI, operates with Docker daemon via Docker Engine API using the official Docker SDK, so actually, our tool is our own tailored Docker CLI at the moment.
 
 
 [gh:test]: https://github.com/JetBrains/qodana/actions/workflows/build-test.yml
