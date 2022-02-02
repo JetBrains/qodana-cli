@@ -145,8 +145,8 @@ scan [flags]
   -a, --analysis-id string        Unique report identifier (GUID) to be used by Qodana Cloud
   -b, --baseline string           Provide the path to an existing SARIF report to be used in the baseline state calculation
       --baseline-include-absent   Include in the output report the results from the baseline run that are absent in the current run
-  -c, --cache-dir string          Override cache directory (default <userCacheDir>/JetBrains/<linter>/cache)
-      --changes                   Override the docker image to be used for the analysis
+      --cache-dir string          Override cache directory (default <userCacheDir>/JetBrains/<linter>/cache)
+  -c, --changes                   Override the docker image to be used for the analysis
       --disable-sanity            Skip running the inspections configured by the sanity profile
   -e, --env stringArray           Define additional environment variables for the Qodana container (you can use the flag multiple times). CLI is not reading full host environment variables and does not pass it to the Qodana container for security reasons
       --fail-threshold string     Set the number of problems that will serve as a quality gate. If this number is reached, the inspection run is terminated with a non-zero exit code
