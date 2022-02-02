@@ -104,7 +104,7 @@ But you can always override qodana.yaml options with the following command-line 
 	flags.StringVar(&options.CacheDir, "cache-dir", "", "Override cache directory (default <userCacheDir>/JetBrains/<linter>/cache)")
 	flags.StringVarP(&options.SourceDirectory, "source-directory", "d", "", "Directory inside the project-dir directory must be inspected. If not specified, the whole project is inspected")
 	flags.StringArrayVarP(&options.Env, "env", "e", []string{}, "Define additional environment variables for the Qodana container (you can use the flag multiple times). CLI is not reading full host environment variables and does not pass it to the Qodana container for security reasons")
-	flags.StringArrayVarP(&options.Volumes, "mount", "v", []string{}, "Define additional mounts for the Qodana container (you can use the flag multiple times)")
+	flags.StringArrayVarP(&options.Volumes, "volume", "v", []string{}, "Define additional volumes for the Qodana container (you can use the flag multiple times)")
 	flags.StringVarP(&options.User, "user", "u", "", "User to run Qodana container as (default: the current user)")
 
 	flags.StringVarP(&options.ProjectDir, "project-dir", "i", ".", "Root directory of the inspected project")

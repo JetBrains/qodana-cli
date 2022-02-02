@@ -28,15 +28,24 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-const version = "2021.3-eap"
+const (
+	version = "2021.3"
+	eap     = "-eap"
+	QDJVMC  = "jetbrains/qodana-jvm-community:" + version
+	QDJVM   = "jetbrains/qodana-jvm:" + version + eap
+	QDAND   = "jetbrains/qodana-jvm-android:" + version + eap
+	QDPHP   = "jetbrains/qodana-php:" + version + eap
+	QDPY    = "jetbrains/qodana-python:" + version + eap
+	QDJS    = "jetbrains/qodana-js:" + version + eap
+)
 
-var langLinters = map[string]string{
-	"Java":       "jetbrains/qodana-jvm:" + version,
-	"Kotlin":     "jetbrains/qodana-jvm:" + version,
-	"Python":     "jetbrains/qodana-python:" + version,
-	"PHP":        "jetbrains/qodana-php:" + version,
-	"JavaScript": "jetbrains/qodana-js:" + version,
-	"TypeScript": "jetbrains/qodana-js:" + version,
+var langsLinters = map[string][]string{
+	"Java":       {QDJVMC, QDJVM, QDAND},
+	"Kotlin":     {QDJVMC, QDJVM, QDAND},
+	"PHP":        {QDPHP},
+	"Python":     {QDPY},
+	"JavaScript": {QDJS},
+	"TypeScript": {QDJS},
 }
 
 // ConfigureProject sets up the project directory for Qodana CLI to run
@@ -48,10 +57,13 @@ func ConfigureProject(projectDir string) []string {
 	if len(languages) == 0 {
 		languages, _ = recognizeDirLanguages(projectDir)
 	}
+	WarningMessage("Detected technologies: " + strings.Join(languages, ", ") + "\n")
 	for _, language := range languages {
-		if linter, err := langLinters[language]; err {
-			if !Contains(linters, linter) {
-				linters = append(linters, linter)
+		if linter, err := langsLinters[language]; err {
+			for _, l := range linter {
+				if !Contains(linters, l) {
+					linters = append(linters, l)
+				}
 			}
 		}
 	}
@@ -126,7 +138,7 @@ func recognizeDirLanguages(projectPath string) ([]string, error) {
 	}
 	var languages []string
 	for l := range out {
-		languages = append(languages, l)
+		languages = Append(languages, l)
 	}
 	return languages, nil
 }
@@ -181,10 +193,10 @@ func readIdeaDir(project string) []string {
 			}
 			text := string(iml)
 			if strings.Contains(text, "JAVA_MODULE") {
-				languages = append(languages, "Java")
+				languages = Append(languages, "Java")
 			}
 			if strings.Contains(text, "PYTHON_MODULE") {
-				languages = append(languages, "Python")
+				languages = Append(languages, "Python")
 			}
 			if strings.Contains(text, "WEB_MODULE") {
 				xml, err := ioutil.ReadFile(project + "/.idea/workspace.xml")
@@ -193,9 +205,9 @@ func readIdeaDir(project string) []string {
 				}
 				workspace := string(xml)
 				if strings.Contains(workspace, "PhpWorkspaceProjectConfiguration") {
-					languages = append(languages, "PHP")
+					languages = Append(languages, "PHP")
 				} else {
-					languages = append(languages, "JavaScript")
+					languages = Append(languages, "JavaScript")
 				}
 			}
 		}

@@ -32,6 +32,8 @@ import (
 	"runtime"
 	"strings"
 
+	"github.com/erikgeiser/promptkit/selection"
+
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/client"
 	log "github.com/sirupsen/logrus"
@@ -91,6 +93,14 @@ func Contains(s []string, str string) bool {
 	return false
 }
 
+// Append appends a string to a slice if it's not already there.
+func Append(slice []string, elems ...string) []string {
+	if !Contains(slice, elems[0]) {
+		slice = append(slice, elems[0])
+	}
+	return slice
+}
+
 // CheckForUpdates check GitHub https://github.com/JetBrains/qodana-cli/ for the latest version of CLI release.
 func CheckForUpdates() {
 	go func() {
@@ -130,14 +140,25 @@ func CheckForUpdates() {
 
 func GetLinter(path string) string {
 	var linters []string
-	EmptyMessage()
+	var linter string
 	PrintProcess(func() { linters = ConfigureProject(path) }, "Scanning project", "")
 	if len(linters) == 0 {
 		ErrorMessage("Could not configure project as it is not supported by Qodana")
 		WarningMessage("See https://www.jetbrains.com/help/qodana/supported-technologies.html for more details")
 		os.Exit(1)
+	} else if len(linters) == 1 {
+		linter = linters[0]
+	} else {
+		sp := selection.New("Which linter do you want to set up?",
+			selection.Choices(linters))
+		sp.PageSize = 5
+		choice, err := sp.RunPrompt()
+		if err != nil {
+			ErrorMessage("%s", err)
+			os.Exit(1)
+		}
+		linter = choice.String
 	}
-	linter := linters[0]
 	SuccessMessage("Added %s", linter)
 	return linter
 }
