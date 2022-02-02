@@ -17,8 +17,6 @@
 package cmd
 
 import (
-	"path/filepath"
-
 	"github.com/JetBrains/qodana-cli/core"
 	"github.com/spf13/cobra"
 )
@@ -37,12 +35,7 @@ func NewInitCommand() *cobra.Command {
 		Long:  `Configure project for Qodana: prepare Qodana configuration file by analyzing the project structure and generating a default configuration qodana.yaml file.`,
 		Run: func(cmd *cobra.Command, args []string) {
 			core.GetLinter(options.ProjectDir)
-			path, _ := filepath.Abs(options.ProjectDir)
-			core.WarningMessage(
-				"Configuration is stored at %s/qodana.yaml\n   Run %s to analyze the project",
-				path,
-				core.PrimaryBold("qodana scan"),
-			)
+			core.WarningMessage("Run %s to analyze the project. The configuration is stored in qodana.yaml and can be changed later", core.PrimaryBold("qodana scan"))
 		},
 	}
 	flags := cmd.Flags()
