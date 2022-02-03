@@ -70,7 +70,7 @@ type QodanaOptions struct { // TODO: get available options from the image / have
 }
 
 var (
-	Version     = "0.6.5"
+	Version     = "0.7.1"
 	DoNotTrack  = false
 	Interrupted = false
 	scanStages  = []string{
