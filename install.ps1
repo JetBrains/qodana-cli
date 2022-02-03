@@ -8,7 +8,7 @@ $inputRepo = "JetBrains/qodana-cli"
 $inputVersion = if ($v) {
   "${v}"
 } else {
-  "0.7.0"
+  "0.7.1"
 }
 $inputExe = "qodana"
 
