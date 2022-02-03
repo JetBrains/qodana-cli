@@ -48,16 +48,16 @@ var (
 	}
 )
 
-// ensureDockerInstalled checks if docker is installed.
-func ensureDockerInstalled() {
-	var what string
-	if runtime.GOOS == "windows" {
-		what = "where"
-	} else {
-		what = "which"
+func IsDockerInstalled() error {
+	if _, err := exec.LookPath("docker"); err != nil {
+		return err
 	}
-	cmd := exec.Command(what, "docker")
-	if err := cmd.Run(); err != nil {
+	return nil
+}
+
+// EnsureDockerInstalled checks if docker is installed.
+func EnsureDockerInstalled() {
+	if err := IsDockerInstalled(); err != nil {
 		if _, ok := err.(*exec.ExitError); ok {
 			ErrorMessage(
 				"Docker is not installed on your system, refer to https://www.docker.com/get-started for installing it",
@@ -70,7 +70,7 @@ func ensureDockerInstalled() {
 
 // EnsureDockerRunning checks if docker daemon is running.
 func EnsureDockerRunning() {
-	ensureDockerInstalled()
+	EnsureDockerInstalled()
 	cmd := exec.Command("docker", "ps")
 	if err := cmd.Run(); err != nil {
 		if exiterr, ok := err.(*exec.ExitError); ok {
@@ -112,8 +112,8 @@ func checkDockerMemory(client *client.Client) {
 	}
 }
 
-// getCmdOptions returns qodana command options.
-func getCmdOptions(opts *QodanaOptions) []string {
+// GetCmdOptions returns qodana command options.
+func GetCmdOptions(opts *QodanaOptions) []string {
 	arguments := make([]string, 0)
 	if opts.SaveReport {
 		arguments = append(arguments, "--save-report")
@@ -212,7 +212,7 @@ func getDockerOptions(opts *QodanaOptions) *types.ContainerCreateConfig {
 		Name: "qodana-cli",
 		Config: &container.Config{
 			Image:        opts.Linter,
-			Cmd:          getCmdOptions(opts),
+			Cmd:          GetCmdOptions(opts),
 			Tty:          true,
 			AttachStdout: true,
 			AttachStderr: true,
@@ -275,13 +275,14 @@ func runContainer(ctx context.Context, client *client.Client, opts *types.Contai
 	}
 }
 
-// stopContainer stops the container
-func stopContainer(ctx context.Context, client *client.Client, id string) {
-	_ = client.ContainerStop(ctx, id, nil)
-}
-
 // DockerCleanup cleans up Qodana containers
 func DockerCleanup() {
-	docker, _ := client.NewClientWithOpts()
-	stopContainer(context.Background(), docker, "qodana-cli")
+	docker, err := client.NewClientWithOpts()
+	if err != nil {
+		log.Fatal("couldn't connect to docker ", err)
+	}
+	err = docker.ContainerStop(context.Background(), "qodana-cli", nil)
+	if err != nil {
+		log.Fatal("couldn't stop the container ", err)
+	}
 }
