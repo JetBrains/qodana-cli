@@ -66,6 +66,7 @@ type QodanaOptions struct { // TODO: get available options from the image / have
 	Volumes               []string
 	User                  string
 	PrintProblems         bool
+	SkipPull              bool
 }
 
 var (
@@ -301,7 +302,9 @@ func RunLinter(ctx context.Context, options *QodanaOptions) int {
 	CheckLinter(options.Linter)
 	progress, _ := startQodanaSpinner(scanStages[0])
 
-	pullImage(ctx, docker, options.Linter)
+	if !(options.SkipPull) {
+		PullImage(ctx, docker, options.Linter)
+	}
 	dockerConfig := getDockerOptions(options)
 	updateText(progress, scanStages[1])
 	runContainer(ctx, docker, dockerConfig)

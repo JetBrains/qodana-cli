@@ -65,6 +65,7 @@ func init() {
 		NewInitCommand(),
 		NewScanCommand(),
 		NewShowCommand(),
+		NewPullCommand(),
 	)
 }
 
