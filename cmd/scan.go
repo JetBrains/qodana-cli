@@ -116,6 +116,7 @@ But you can always override qodana.yaml options with the following command-line 
 	flags.StringVarP(&options.Token, "token", "t", "", "Qodana Cloud token")
 	flags.BoolVar(&options.PrintProblems, "print-problems", false, "Print all found problems by Qodana in the CLI output")
 	flags.BoolVarP(&options.ShowReport, "show-report", "w", false, "Serve HTML report on port")
+	flags.BoolVar(&options.SkipPull, "skip-pull", false, "Skip pulling the latest Qodana container")
 
 	flags.BoolVarP(&options.Changes, "changes", "c", false, "Override the docker image to be used for the analysis")
 	flags.StringVar(&options.FailThreshold, "fail-threshold", "", "Set the number of problems that will serve as a quality gate. If this number is reached, the inspection run is terminated with a non-zero exit code")

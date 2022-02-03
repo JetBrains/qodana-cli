@@ -226,8 +226,8 @@ func getDockerOptions(opts *QodanaOptions) *types.ContainerCreateConfig {
 	}
 }
 
-// pullImage pulls docker image
-func pullImage(ctx context.Context, client *client.Client, image string) {
+// PullImage pulls docker image
+func PullImage(ctx context.Context, client *client.Client, image string) {
 	reader, err := client.ImagePull(ctx, image, types.ImagePullOptions{})
 	if err != nil {
 		return
