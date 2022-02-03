@@ -46,18 +46,5 @@ jobs:
         with:
           fetch-depth: 0
       - run: |
-          go test -v ./...
-  run:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v2
-        with:
-          fetch-depth: 0
-      - uses: actions/checkout@v2
-        with:
-          repository: JetBrains/code-analytics-examples
-          path: ./projects
-      - run: |
-          go run main.go scan -i ./projects/js/ -l jetbrains/qodana-js:2021.3-eap -o ./results
-          ls -la ./results
-          [ -f ./results/qodana.sarif.json ] || fail "No qodana.sarif.json created"
+          go test ./... -coverprofile cover.out
+          go tool cover -func cover.out

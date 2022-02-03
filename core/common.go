@@ -102,7 +102,7 @@ func Append(slice []string, elems ...string) []string {
 }
 
 // CheckForUpdates check GitHub https://github.com/JetBrains/qodana-cli/ for the latest version of CLI release.
-func CheckForUpdates() {
+func CheckForUpdates(currentVersion string) {
 	go func() {
 		resp, err := http.Get(releaseUrl)
 		if err != nil {
@@ -132,7 +132,7 @@ func CheckForUpdates() {
 			return
 		}
 		latestVersion := result["tag_name"].(string)
-		if latestVersion != fmt.Sprintf("v%s", Version) {
+		if latestVersion != fmt.Sprintf("v%s", currentVersion) {
 			WarningMessage("New version of %s is available: %s. See https://jb.gg/qodana-cli/update\n", PrimaryBold("qodana"), latestVersion)
 		}
 	}()
@@ -146,7 +146,7 @@ func GetLinter(path string) string {
 		ErrorMessage("Could not configure project as it is not supported by Qodana")
 		WarningMessage("See https://www.jetbrains.com/help/qodana/supported-technologies.html for more details")
 		os.Exit(1)
-	} else if len(linters) == 1 {
+	} else if len(linters) == 1 || !IsInteractive() {
 		linter = linters[0]
 	} else {
 		sp := selection.New("Which linter do you want to set up?",
@@ -302,11 +302,11 @@ func RunLinter(ctx context.Context, options *QodanaOptions) int {
 	progress, _ := startQodanaSpinner(scanStages[0])
 
 	pullImage(ctx, docker, options.Linter)
-	dockerOpts := getDockerOptions(options)
+	dockerConfig := getDockerOptions(options)
 	updateText(progress, scanStages[1])
-	runContainer(ctx, docker, dockerOpts)
+	runContainer(ctx, docker, dockerConfig)
 
-	reader, _ := docker.ContainerLogs(context.Background(), dockerOpts.Name, types.ContainerLogsOptions{
+	reader, _ := docker.ContainerLogs(context.Background(), dockerConfig.Name, types.ContainerLogsOptions{
 		ShowStdout: true,
 		ShowStderr: true,
 		Follow:     true,
@@ -341,7 +341,7 @@ func RunLinter(ctx context.Context, options *QodanaOptions) int {
 		}
 		printLinterLog(line)
 	}
-	exitCode := getDockerExitCode(ctx, docker, dockerOpts.Name)
+	exitCode := getDockerExitCode(ctx, docker, dockerConfig.Name)
 	if progress != nil {
 		_ = progress.Stop()
 	}
