@@ -10,7 +10,7 @@ require (
 	github.com/go-enry/go-enry/v2 v2.8.0
 	github.com/mattn/go-isatty v0.0.14
 	github.com/morikuni/aec v1.0.0 // indirect
-	github.com/owenrumney/go-sarif v1.1.1
+	github.com/owenrumney/go-sarif/v2 v2.1.0
 	github.com/pterm/pterm v0.12.34
 	github.com/sirupsen/logrus v1.8.1
 	github.com/spf13/cobra v1.3.0

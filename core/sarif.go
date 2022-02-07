@@ -19,7 +19,7 @@ package core
 import (
 	"path/filepath"
 
-	"github.com/owenrumney/go-sarif/sarif"
+	"github.com/owenrumney/go-sarif/v2/sarif"
 	log "github.com/sirupsen/logrus"
 )
 
