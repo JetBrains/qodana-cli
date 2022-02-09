@@ -200,9 +200,18 @@ func TestAllCommands(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	// scan
+	// pull
 	out := bytes.NewBufferString("")
-	command := NewScanCommand()
+	command := NewPullCommand()
+	command.SetOut(out)
+	command.SetArgs([]string{"-i", projectPath})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// scan
+	out = bytes.NewBufferString("")
+	command = NewScanCommand()
 	command.SetOut(out)
 	command.SetArgs([]string{"-i", projectPath, "-o", resultsPath, "--fail-threshold", "5", "--print-problems"})
 	err = command.Execute()
