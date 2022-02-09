@@ -19,7 +19,7 @@ package core
 import (
 	"path/filepath"
 
-	"github.com/owenrumney/go-sarif/sarif"
+	"github.com/owenrumney/go-sarif/v2/sarif"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -38,12 +38,14 @@ func ReadSarif(resultsDir string, printProblems bool) {
 				message := *r.Message.Text
 				level := *r.Level
 				if len(r.Locations) > 0 {
-					startLine := *r.Locations[0].PhysicalLocation.Region.StartLine
-					startColumn := *r.Locations[0].PhysicalLocation.Region.StartColumn
-					filePath := *r.Locations[0].PhysicalLocation.ArtifactLocation.URI
-					printLocalizedProblem(ruleId, level, message, filePath, startLine, startColumn)
-				} else {
-					printGlobalProblem(ruleId, level, message)
+					if r.Locations[0].PhysicalLocation != nil {
+						startLine := *r.Locations[0].PhysicalLocation.Region.StartLine
+						startColumn := *r.Locations[0].PhysicalLocation.Region.StartColumn
+						filePath := *r.Locations[0].PhysicalLocation.ArtifactLocation.URI
+						printLocalizedProblem(ruleId, level, message, filePath, startLine, startColumn)
+					} else {
+						printGlobalProblem(ruleId, level, message)
+					}
 				}
 			}
 		}
