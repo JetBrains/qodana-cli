@@ -47,7 +47,6 @@ scoop:
     name: "tiulpin"
     email: "viktor@tiulp.in"
   commit_msg_template: ":sparkles: Scoop update for {{ .ProjectName }} version {{ .Tag }}"
-  folder: Scoops
   homepage: "https://github.com/JetBrains/qodana-cli"
   description: "🔧 Run Qodana as fast as possible, with minimum effort required"
   license: "Apache-2.0"
@@ -73,7 +72,7 @@ release:
     #### Windows
     ##### Install with [Scoop](https://scoop.sh) (recommended)
     ```console
-    scoop bucket add https://github.com/JetBrains/scoop-utils
+    scoop bucket add jetbrains https://github.com/JetBrains/scoop-utils
     scoop install qodana
     ```
     ##### Install with our installer
@@ -91,23 +90,23 @@ release:
     ## Update
     Update to the latest version depends on how you choose to install `qodana` on your machine.
     #### Update with [Homebrew](https://brew.sh)
-    ```shell
+    ```console
     brew upgrade qodana
     ```
     #### Update with [Scoop](https://scoop.sh)
-    ```shell
+    ```console
     scoop update qodana
     ```
     #### Update on Linux and macOS with the installer script
-    ```shell
+    ```console
     curl -fsSL https://jb.gg/qodana-cli/install | bash
     ```
     #### Update on Windows  with the installer script
-    ```powershell
+    ```console
     iwr https://jb.gg/qodana-cli/install.ps1 -useb | iex
     ```
     #### Update with [Go](https://go.dev/doc/install)
-    ```shell
+    ```console
     go install github.com/JetBrains/qodana-cli@latest
     ```
     Alternatively, you can grab the latest binary (or the apt/rpm/deb package) from this page.

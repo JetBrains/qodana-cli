@@ -6,7 +6,10 @@
 [![Twitter Follow](https://img.shields.io/twitter/follow/Qodana?style=social&logo=twitter)][jb:twitter]
 
 > ⚠️ This is an experimental project, so it's not guaranteed to work correctly.
-> Use it at your own risk. For running Qodana stably and reliably, please use [Qodana Docker Images](https://www.jetbrains.com/help/qodana/docker-images.html). For feature requests or bugs reports please use our YouTrack: https://jb.gg/qodana-cli/new-issue
+> Use it at your own risk.
+> For running Qodana stably and reliably,
+> please use [Qodana Docker Images](https://www.jetbrains.com/help/qodana/docker-images.html).
+> For feature requests or bugs reports please use our YouTrack: https://jb.gg/qodana-cli/new-issue
 
 `qodana` is a simple cross-platform command-line tool to run [Qodana linters](https://www.jetbrains.com/help/qodana/docker-images.html) anywhere with minimum effort required.
 
@@ -39,7 +42,7 @@ See [the repository releases](https://github.com/JetBrains/qodana-cli/releases/l
 
 If you know what you are doing:
 
-```
+```console
 qodana scan --show-report
 ```
 
@@ -52,7 +55,7 @@ If you know what linter you want to use, you can skip this step.
 
 Also, Qodana CLI can choose a linter for you. Just run the following command in your **project root**:
 
-```sh
+```console
 qodana init
 ```
 
@@ -60,7 +63,7 @@ qodana init
 
 Right after you configured your project (or remember linter's name you want to run), you can run Qodana inspections simply by invoking the following command in your project root:
 
-```sh
+```console
 qodana scan
 ```
 
@@ -92,7 +95,7 @@ If you want to configure Qodana or a check inside Qodana, consider using [`qodan
 
 To disable the check for update, export the `DO_NOT_CHECK_UPDATE` environment variable to `1` before running the CLI:
 
-```sh
+```console
 export DO_NOT_CHECK_UPDATE=1
 ```
 
@@ -100,7 +103,7 @@ export DO_NOT_CHECK_UPDATE=1
 
 To disable [Qodana user statistics](https://www.jetbrains.com/help/qodana/qodana-jvm-docker-readme.html#Usage+statistics), export the `DO_NOT_TRACK` environment variable to `1` before running the CLI:
 
-```sh
+```console
 export DO_NOT_TRACK=1
 ```
 
@@ -191,11 +194,14 @@ show [flags]
 #### Options
 
 ```
-  -d, --dir-only            Open report directory only, don't serve it
-  -h, --help                help for show
-  -p, --port int            Specify port to serve report at (default 8080)
-  -r, --report-dir string   Specify HTML report path (the one with index.html inside) (default "<userCacheDir>/JetBrains/<linter>/results/report")
+  -d, --dir-only             Open report directory only, don't serve it
+  -h, --help                 help for show
+  -p, --port int             Specify port to serve report at (default 8080)
+  -i, --project-dir string   Root directory of the inspected project (default ".")
+  -r, --report-dir string    Specify HTML report path (the one with index.html inside) (default <userCacheDir>/JetBrains/<linter>/results/report)
 ```
+
+TODO: generate the readme automatically from the Go code
 
 ## Why
 
