@@ -36,7 +36,7 @@ See [the repository releases](https://github.com/JetBrains/qodana-cli/releases/l
 
 ### Running
 
-![CleanShot 2022-01-26 at 13 58 28](https://user-images.githubusercontent.com/13538286/151153050-934c0f41-e059-480a-a89f-cd4b2ca7a930.gif)
+![qodana](https://user-images.githubusercontent.com/13538286/151153050-934c0f41-e059-480a-a89f-cd4b2ca7a930.gif)
 
 #### tl;dr
 
@@ -205,7 +205,7 @@ TODO: generate the readme automatically from the Go code
 
 ## Why
 
-![image](https://user-images.githubusercontent.com/13538286/151377284-28d845d3-a601-4512-9029-18f99d215ee1.png)
+![comics](https://user-images.githubusercontent.com/13538286/151377284-28d845d3-a601-4512-9029-18f99d215ee1.png)
 
 > 🖼 The illustration is created by [Irina Khromova](https://www.instagram.com/irkin_sketch/)
 
