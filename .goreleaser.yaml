@@ -76,7 +76,7 @@ release:
     scoop install qodana
     ```
     ##### Install with our installer
-    ```powershell
+    ```console
     iwr https://jb.gg/qodana-cli/install.ps1 -useb | iex
     ```
     
