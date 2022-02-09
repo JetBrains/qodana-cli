@@ -31,6 +31,7 @@ import (
 	"path/filepath"
 	"runtime"
 	"strings"
+	"time"
 
 	"github.com/erikgeiser/promptkit/selection"
 
@@ -70,7 +71,7 @@ type QodanaOptions struct { // TODO: get available options from the image / have
 }
 
 var (
-	Version     = "0.7.1"
+	Version     = "0.7.2"
 	DoNotTrack  = false
 	Interrupted = false
 	scanStages  = []string{
@@ -244,7 +245,7 @@ func openReport(path string, port int) {
 			}
 		}
 	}()
-	http.Handle("/", http.FileServer(http.Dir(path)))
+	http.Handle("/", noCache(http.FileServer(http.Dir(path))))
 	err := http.ListenAndServe(fmt.Sprintf(":%d", port), nil)
 	if err != nil {
 		WarningMessage("Problem serving report, %s\n", err.Error())
@@ -349,4 +350,35 @@ func RunLinter(ctx context.Context, options *QodanaOptions) int {
 		_ = progress.Stop()
 	}
 	return int(exitCode)
+}
+
+// noCache handles serving the static files with no cache headers.
+func noCache(h http.Handler) http.Handler {
+	etagHeaders := []string{
+		"ETag",
+		"If-Modified-Since",
+		"If-Match",
+		"If-None-Match",
+		"If-Range",
+		"If-Unmodified-Since",
+	}
+	epoch := time.Unix(0, 0).Format(time.RFC1123)
+	noCacheHeaders := map[string]string{
+		"Expires":         epoch,
+		"Cache-Control":   "no-cache, private, max-age=0",
+		"Pragma":          "no-cache",
+		"X-Accel-Expires": "0",
+	}
+	fn := func(w http.ResponseWriter, r *http.Request) {
+		for _, v := range etagHeaders {
+			if r.Header.Get(v) != "" {
+				r.Header.Del(v)
+			}
+		}
+		for k, v := range noCacheHeaders {
+			w.Header().Set(k, v)
+		}
+		h.ServeHTTP(w, r)
+	}
+	return http.HandlerFunc(fn)
 }
