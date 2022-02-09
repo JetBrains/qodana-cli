@@ -201,8 +201,6 @@ show [flags]
   -r, --report-dir string    Specify HTML report path (the one with index.html inside) (default <userCacheDir>/JetBrains/<linter>/results/report)
 ```
 
-TODO: generate the readme automatically from the Go code
-
 ## Why
 
 ![comics](https://user-images.githubusercontent.com/13538286/151377284-28d845d3-a601-4512-9029-18f99d215ee1.png)
