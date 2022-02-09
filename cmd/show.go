@@ -26,6 +26,7 @@ import (
 
 // ShowOptions represents scan command options.
 type ShowOptions struct {
+	ProjectDir string
 	ResultsDir string
 	ReportDir  string
 	Port       int
@@ -46,12 +47,12 @@ https://www.jetbrains.com/help/qodana/html-report.html
 This command serves the Qodana report locally and opens a browser to it.`,
 		Run: func(cmd *cobra.Command, args []string) {
 			if options.ReportDir == "" {
-				linter := core.GetQodanaYaml(".").Linter
+				linter := core.GetQodanaYaml(options.ProjectDir).Linter
 				if linter == "" {
 					log.Fatalf("Can't automatically find the report...\n" +
 						"Please specify the report directory with the --report-dir flag.")
 				}
-				options.ResultsDir = filepath.Join(core.GetLinterSystemDir(".", linter), "results")
+				options.ResultsDir = filepath.Join(core.GetLinterSystemDir(options.ProjectDir, linter), "results")
 				options.ReportDir = filepath.Join(options.ResultsDir, "report")
 			}
 			if options.OpenDir {
@@ -65,6 +66,7 @@ This command serves the Qodana report locally and opens a browser to it.`,
 		},
 	}
 	flags := cmd.Flags()
+	flags.StringVarP(&options.ProjectDir, "project-dir", "i", ".", "Root directory of the inspected project")
 	flags.StringVarP(&options.ReportDir,
 		"report-dir",
 		"r",
