@@ -34,7 +34,13 @@ func NewInitCommand() *cobra.Command {
 		Short: "Configure project for Qodana",
 		Long:  `Configure project for Qodana: prepare Qodana configuration file by analyzing the project structure and generating a default configuration qodana.yaml file.`,
 		Run: func(cmd *cobra.Command, args []string) {
-			core.GetLinter(options.ProjectDir)
+			qodanaYaml := core.GetQodanaYaml(options.ProjectDir)
+			if qodanaYaml.Linter == "" {
+				core.GetLinter(options.ProjectDir)
+			} else {
+				core.EmptyMessage()
+				core.SuccessMessage("The linter was already configured before: %s", core.PrimaryBold(qodanaYaml.Linter))
+			}
 			core.WarningMessage("Run %s to analyze the project. The configuration is stored in qodana.yaml and can be changed later", core.PrimaryBold("qodana scan"))
 		},
 	}

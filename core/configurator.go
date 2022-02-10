@@ -206,7 +206,8 @@ func readIdeaDir(project string) []string {
 				workspace := string(xml)
 				if strings.Contains(workspace, "PhpWorkspaceProjectConfiguration") {
 					languages = Append(languages, "PHP")
-				} else {
+				}
+				if strings.Contains(workspace, "node.js.detected.package.eslint") {
 					languages = Append(languages, "JavaScript")
 				}
 			}
