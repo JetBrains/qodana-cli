@@ -39,7 +39,7 @@ Note that most options can be configured via qodana.yaml (https://www.jetbrains.
 But you can always override qodana.yaml options with the following command-line options.
 `,
 		PreRun: func(cmd *cobra.Command, args []string) {
-			core.EnsureDockerRunning()
+			core.CheckDockerHost()
 		},
 		Run: func(cmd *cobra.Command, args []string) {
 			ctx := cmd.Context()
@@ -99,35 +99,36 @@ But you can always override qodana.yaml options with the following command-line 
 	}
 
 	flags := cmd.Flags()
-	flags.StringVarP(&options.AnalysisId, "analysis-id", "a", "", "Unique report identifier (GUID) to be used by Qodana Cloud")
-	flags.StringVarP(&options.Baseline, "baseline", "b", "", "Provide the path to an existing SARIF report to be used in the baseline state calculation")
+
+	flags.StringVarP(&options.Linter, "linter", "l", "", "Override linter to use")
+	flags.StringVarP(&options.ProjectDir, "project-dir", "i", ".", "Root directory of the inspected project")
+	flags.StringVarP(&options.ResultsDir, "results-dir", "o", "", "Override directory to save Qodana inspection results to (default <userCacheDir>/JetBrains/<linter>/results)")
 	flags.StringVar(&options.CacheDir, "cache-dir", "", "Override cache directory (default <userCacheDir>/JetBrains/<linter>/cache)")
-	flags.StringVarP(&options.SourceDirectory, "source-directory", "d", "", "Directory inside the project-dir directory must be inspected. If not specified, the whole project is inspected")
 	flags.StringArrayVarP(&options.Env, "env", "e", []string{}, "Define additional environment variables for the Qodana container (you can use the flag multiple times). CLI is not reading full host environment variables and does not pass it to the Qodana container for security reasons")
 	flags.StringArrayVarP(&options.Volumes, "volume", "v", []string{}, "Define additional volumes for the Qodana container (you can use the flag multiple times)")
 	flags.StringVarP(&options.User, "user", "u", "", "User to run Qodana container as (default: the current user)")
-
-	flags.StringVarP(&options.ProjectDir, "project-dir", "i", ".", "Root directory of the inspected project")
-	flags.StringVarP(&options.Linter, "linter", "l", "", "Override linter to use")
-	flags.StringVarP(&options.ResultsDir, "results-dir", "o", "", "Override directory to save Qodana inspection results to (default <userCacheDir>/JetBrains/<linter>/results)")
-	flags.StringVarP(&options.ProfileName, "profile-name", "n", "", "Profile name defined in the project")
-	flags.StringVarP(&options.ProfilePath, "profile-path", "p", "", "Path to the profile file")
-	flags.BoolVarP(&options.SaveReport, "save-report", "s", true, "Generate HTML report")
-	flags.StringVarP(&options.Token, "token", "t", "", "Qodana Cloud token")
+	flags.BoolVar(&options.SkipPull, "skip-pull", false, "Skip pulling the latest Qodana container")
 	flags.BoolVar(&options.PrintProblems, "print-problems", false, "Print all found problems by Qodana in the CLI output")
 	flags.BoolVarP(&options.ShowReport, "show-report", "w", false, "Serve HTML report on port")
-	flags.BoolVar(&options.SkipPull, "skip-pull", false, "Skip pulling the latest Qodana container")
+	flags.IntVar(&options.Port, "port", 8080, "Port to serve the report on")
 
+	flags.StringVarP(&options.AnalysisId, "analysis-id", "a", "", "Unique report identifier (GUID) to be used by Qodana Cloud")
+	flags.StringVarP(&options.Baseline, "baseline", "b", "", "Provide the path to an existing SARIF report to be used in the baseline state calculation")
+	flags.BoolVar(&options.BaselineIncludeAbsent, "baseline-include-absent", false, "Include in the output report the results from the baseline run that are absent in the current run")
 	flags.BoolVarP(&options.Changes, "changes", "c", false, "Override the docker image to be used for the analysis")
 	flags.StringVar(&options.FailThreshold, "fail-threshold", "", "Set the number of problems that will serve as a quality gate. If this number is reached, the inspection run is terminated with a non-zero exit code")
 	flags.BoolVar(&options.DisableSanity, "disable-sanity", false, "Skip running the inspections configured by the sanity profile")
+	flags.StringVarP(&options.SourceDirectory, "source-directory", "d", "", "Directory inside the project-dir directory must be inspected. If not specified, the whole project is inspected")
+	flags.StringVarP(&options.ProfileName, "profile-name", "n", "", "Profile name defined in the project")
+	flags.StringVarP(&options.ProfilePath, "profile-path", "p", "", "Path to the profile file")
 	flags.BoolVar(&options.RunPromo, "run-promo", false, "Set to true to have the application run the inspections configured by the promo profile; set to false otherwise. By default, a promo run is enabled if the application is executed with the default profile and is disabled otherwise")
-	flags.StringVar(&options.StubProfile, "stub-profile", "", "Absolute path to the fallback profile file. This option is applied in case the profile was not specified using any available options")
-	flags.BoolVar(&options.BaselineIncludeAbsent, "baseline-include-absent", false, "Include in the output report the results from the baseline run that are absent in the current run")
-	flags.StringVar(&options.Property, "property", "", "Set a JVM property to be used while running Qodana using the --property=property.name=value1,value2,...,valueN notation")
-	flags.IntVar(&options.Port, "port", 8080, "Port to serve the report on")
 	flags.StringVar(&options.Script, "script", "default", "Override the run scenario")
+	flags.StringVar(&options.StubProfile, "stub-profile", "", "Absolute path to the fallback profile file. This option is applied in case the profile was not specified using any available options")
+
+	flags.StringVar(&options.Property, "property", "", "Set a JVM property to be used while running Qodana using the --property=property.name=value1,value2,...,valueN notation")
+	flags.BoolVarP(&options.SaveReport, "save-report", "s", true, "Generate HTML report")
 	flags.BoolVar(&options.SendReport, "send-report", false, "Send the inspection report to Qodana Cloud, requires the '--token' option to be specified")
+	flags.StringVarP(&options.Token, "token", "t", "", "Qodana Cloud token")
 
 	return cmd
 }

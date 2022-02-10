@@ -40,6 +40,5 @@ func NewInitCommand() *cobra.Command {
 	}
 	flags := cmd.Flags()
 	flags.StringVarP(&options.ProjectDir, "project-dir", "i", ".", "Root directory of the project to configure")
-	// TODO: the flag to set up supported CIs, e.g. --github tells to create .github/workflows/code_scanning.yml
 	return cmd
 }

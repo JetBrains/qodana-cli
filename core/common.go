@@ -27,20 +27,15 @@ import (
 	"io/ioutil"
 	"net/http"
 	"os"
-	"os/exec"
 	"path/filepath"
-	"runtime"
 	"strings"
-	"time"
 
 	"github.com/erikgeiser/promptkit/selection"
 
-	"github.com/docker/docker/api/types"
-	"github.com/docker/docker/client"
 	log "github.com/sirupsen/logrus"
 )
 
-type QodanaOptions struct { // TODO: get available options from the image / have another scheme
+type QodanaOptions struct {
 	ResultsDir            string
 	CacheDir              string
 	ProjectDir            string
@@ -70,17 +65,23 @@ type QodanaOptions struct { // TODO: get available options from the image / have
 	SkipPull              bool
 }
 
+//goland:noinspection GoUnusedGlobalVariable
 var (
-	Version     = "0.7.2"
-	DoNotTrack  = false
-	Interrupted = false
-	scanStages  = []string{
+	UnofficialLinter = false
+	Version          = "0.7.3"
+	DoNotTrack       = false
+	Interrupted      = false
+	scanStages       = []string{
 		"Preparing Qodana Docker images",
 		"Starting the analysis engine",
 		"Opening the project",
 		"Configuring the project",
 		"Analyzing the project",
 		"Preparing the report",
+	}
+	notSupportedLinters = []string{
+		"jetbrains/qodana-license-audit",
+		"jetbrains/qodana-clone-finder",
 	}
 	releaseUrl = "https://api.github.com/repos/JetBrains/qodana-cli/releases/latest"
 )
@@ -140,6 +141,7 @@ func CheckForUpdates(currentVersion string) {
 	}()
 }
 
+// GetLinter gets linter for the given path
 func GetLinter(path string) string {
 	var linters []string
 	var linter string
@@ -178,22 +180,27 @@ func CheckLinter(image string) {
 	}
 }
 
-// GetLinterSystemDir returns path to <userCacheDir>/JetBrains/<linter>/<project-hash>/
+// getProjectId returns the project id for internal CLI usage from the given path.
+func getProjectId(project string) string {
+	projectAbs, _ := filepath.Abs(project)
+	sha256sum := sha256.Sum256([]byte(projectAbs))
+	return hex.EncodeToString(sha256sum[:])
+}
+
+// GetLinterSystemDir returns path to <userCacheDir>/JetBrains/<linter>/<project-id>/.
 func GetLinterSystemDir(project string, linter string) string {
 	userCacheDir, _ := os.UserCacheDir()
 	linterDirName := strings.Replace(strings.Replace(linter, ":", "-", -1), "/", "-", -1)
-	projectAbs, _ := filepath.Abs(project)
-	sha256sum := sha256.Sum256([]byte(projectAbs))
 
 	return filepath.Join(
 		userCacheDir,
 		"JetBrains",
 		linterDirName,
-		hex.EncodeToString(sha256sum[:]),
+		getProjectId(project),
 	)
 }
 
-// PrepareHost cleans up report folder, gets the current user, creates the necessary folders for the analysis
+// PrepareHost cleans up report folder, gets the current user, creates the necessary folders for the analysis.
 func PrepareHost(opts *QodanaOptions) {
 	linterHome := GetLinterSystemDir(opts.ProjectDir, opts.Linter)
 	if opts.ResultsDir == "" {
@@ -233,70 +240,9 @@ func ShowReport(path string, port int) { // TODO: Open report from Cloud
 	)
 }
 
-// openReport serves the report on the given port and opens the browser.
-func openReport(path string, port int) {
-	url := fmt.Sprintf("http://localhost:%d", port)
-	go func() {
-		resp, err := http.Get(url)
-		if err == nil && resp.StatusCode == 200 {
-			err := openBrowser(url)
-			if err != nil {
-				return
-			}
-		}
-	}()
-	http.Handle("/", noCache(http.FileServer(http.Dir(path))))
-	err := http.ListenAndServe(fmt.Sprintf(":%d", port), nil)
-	if err != nil {
-		WarningMessage("Problem serving report, %s\n", err.Error())
-		return
-	}
-	_, _ = fmt.Scan()
-}
-
-// openBrowser opens the default browser to the given url
-func openBrowser(url string) error {
-	var cmd string
-	var args []string
-
-	switch runtime.GOOS {
-	case "windows":
-		cmd = "cmd"
-		args = []string{"/c", "start"}
-	case "darwin":
-		cmd = "open"
-	default: // "linux", "freebsd", "openbsd", "netbsd"
-		cmd = "xdg-open"
-	}
-	args = append(args, url)
-	return exec.Command(cmd, args...).Start()
-}
-
-// OpenDir opens directory in the default file manager
-func OpenDir(path string) error {
-	var cmd string
-	var args []string
-
-	switch runtime.GOOS {
-	case "windows":
-		cmd = "explorer"
-		args = []string{"/select"}
-	case "darwin":
-		cmd = "open"
-	default: // "linux", "freebsd", "openbsd", "netbsd"
-		cmd = "xdg-open"
-	}
-	args = append(args, path)
-	return exec.Command(cmd, args...).Start()
-}
-
 // RunLinter runs the linter with the given options.
 func RunLinter(ctx context.Context, options *QodanaOptions) int {
-	docker, err := client.NewClientWithOpts()
-	checkDockerMemory(docker)
-	if err != nil {
-		log.Fatal("couldn't instantiate docker client", err)
-	}
+	docker := getDockerClient()
 	for i, stage := range scanStages {
 		scanStages[i] = PrimaryBold("[%d/%d] ", i+1, len(scanStages)+1) + Primary(stage)
 	}
@@ -310,12 +256,7 @@ func RunLinter(ctx context.Context, options *QodanaOptions) int {
 	updateText(progress, scanStages[1])
 	runContainer(ctx, docker, dockerConfig)
 
-	reader, _ := docker.ContainerLogs(context.Background(), dockerConfig.Name, types.ContainerLogsOptions{
-		ShowStdout: true,
-		ShowStderr: true,
-		Follow:     true,
-		Timestamps: false,
-	})
+	reader, _ := docker.ContainerLogs(ctx, dockerConfig.Name, dockerLogsOptions)
 	defer func(reader io.ReadCloser) {
 		err := reader.Close()
 		if err != nil {
@@ -350,35 +291,4 @@ func RunLinter(ctx context.Context, options *QodanaOptions) int {
 		_ = progress.Stop()
 	}
 	return int(exitCode)
-}
-
-// noCache handles serving the static files with no cache headers.
-func noCache(h http.Handler) http.Handler {
-	etagHeaders := []string{
-		"ETag",
-		"If-Modified-Since",
-		"If-Match",
-		"If-None-Match",
-		"If-Range",
-		"If-Unmodified-Since",
-	}
-	epoch := time.Unix(0, 0).Format(time.RFC1123)
-	noCacheHeaders := map[string]string{
-		"Expires":         epoch,
-		"Cache-Control":   "no-cache, private, max-age=0",
-		"Pragma":          "no-cache",
-		"X-Accel-Expires": "0",
-	}
-	fn := func(w http.ResponseWriter, r *http.Request) {
-		for _, v := range etagHeaders {
-			if r.Header.Get(v) != "" {
-				r.Header.Del(v)
-			}
-		}
-		for k, v := range noCacheHeaders {
-			w.Header().Set(k, v)
-		}
-		h.ServeHTTP(w, r)
-	}
-	return http.HandlerFunc(fn)
 }

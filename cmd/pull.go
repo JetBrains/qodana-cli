@@ -38,6 +38,9 @@ func NewPullCommand() *cobra.Command {
 		Use:   "pull",
 		Short: "Pull latest version of linter",
 		Long:  `An alternative to docker pull.`,
+		PreRun: func(cmd *cobra.Command, args []string) {
+			core.CheckDockerHost()
+		},
 		Run: func(cmd *cobra.Command, args []string) {
 			if options.Linter == "" {
 				qodanaYaml := core.GetQodanaYaml(options.ProjectDir)

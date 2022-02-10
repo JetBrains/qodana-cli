@@ -26,8 +26,6 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-// TODO: unify logging/error exiting messages across the codebase
-
 // Info Two newlines at the start are important to lay the output nicely in CLI.
 var Info = fmt.Sprintf(`
   %s (v%s)
