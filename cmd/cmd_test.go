@@ -152,7 +152,6 @@ func TestInitCommand(t *testing.T) {
 
 // TestScanFlags verify that the option struct is converted to the wanted Qodana Docker options.
 func TestScanFlags(t *testing.T) {
-	core.DoNotTrack = true
 	expected := strings.Join([]string{
 		"--save-report",
 		"--source-directory",
@@ -173,7 +172,6 @@ func TestScanFlags(t *testing.T) {
 		"--token token",
 		"--analysis-id",
 		"id",
-		"--property=idea.headless.enable.statistics=false",
 	}, " ")
 	actual := strings.Join(core.GetCmdOptions(testOptions), " ")
 	if expected != actual {

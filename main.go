@@ -28,9 +28,6 @@ func main() {
 	if os.Getenv("DO_NOT_CHECK_UPDATE") != "" {
 		core.CheckForUpdates(core.Version)
 	}
-	if os.Getenv("DO_NOT_TRACK") != "" { // https://consoledonottrack.com
-		core.DoNotTrack = true
-	}
 	if !core.IsInteractive() || os.Getenv("NO_COLOR") != "" { // http://no-color.org
 		core.DisableColor()
 	}

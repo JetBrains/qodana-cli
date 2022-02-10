@@ -13,10 +13,12 @@ builds:
       - amd64
       - arm64
 archives:
-  - replacements:
-      darwin: Darwin
-      linux: Linux
-      amd64: x86_64
+  - name_template: "{{ .ProjectName }}_{{ .Os }}_{{ .Arch }}{{ if .Arm }}v{{ .Arm }}{{ end }}{{ if .Mips }}_{{ .Mips }}{{ end }}"
+    format_overrides:
+      - goos: windows
+        format: zip
+    replacements:
+        amd64: x86_64
 nfpms:
   - vendor: "JetBrains s.r.o."
     homepage: "https://github.com/JetBrains/qodana-cli"
@@ -70,14 +72,10 @@ release:
     ```
     
     #### Windows
-    ##### Install with [Scoop](https://scoop.sh) (recommended)
+    ##### Install with [Scoop](https://scoop.sh)
     ```console
     scoop bucket add jetbrains https://github.com/JetBrains/scoop-utils
     scoop install qodana
-    ```
-    ##### Install with our installer
-    ```console
-    iwr https://jb.gg/qodana-cli/install.ps1 -useb | iex
     ```
     
     #### Anywhere else
@@ -100,10 +98,6 @@ release:
     #### Update on Linux and macOS with the installer script
     ```console
     curl -fsSL https://jb.gg/qodana-cli/install | bash
-    ```
-    #### Update on Windows  with the installer script
-    ```console
-    iwr https://jb.gg/qodana-cli/install.ps1 -useb | iex
     ```
     #### Update with [Go](https://go.dev/doc/install)
     ```console

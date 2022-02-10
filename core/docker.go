@@ -165,9 +165,6 @@ func GetCmdOptions(opts *QodanaOptions) []string {
 	if opts.AnalysisId != "" {
 		arguments = append(arguments, "--analysis-id", opts.AnalysisId)
 	}
-	if DoNotTrack {
-		arguments = append(arguments, "--property=idea.headless.enable.statistics=false")
-	}
 	return arguments
 }
 
