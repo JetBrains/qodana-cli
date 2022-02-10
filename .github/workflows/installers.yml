@@ -4,21 +4,10 @@ on:
   pull_request:
     paths:
       - 'install'
-      - 'install.ps1'
   push:
     branches:
       - main
 jobs:
-  windows:
-    runs-on: windows-latest
-    steps:
-      - uses: actions/checkout@v2
-        with:
-          fetch-depth: 0
-      - run: |
-          .\install.ps1
-          qodana --help
-
   linux:
     runs-on: ubuntu-latest
     steps:
