@@ -1,12 +1,59 @@
 package core
 
 import (
+	"crypto/sha256"
+	"encoding/hex"
+	"encoding/json"
 	"fmt"
+	"io"
+	"io/ioutil"
 	"net/http"
+	"os"
 	"os/exec"
+	"path/filepath"
 	"runtime"
+	"strings"
 	"time"
+
+	"github.com/sirupsen/logrus"
 )
+
+// CheckForUpdates check GitHub https://github.com/JetBrains/qodana-cli/ for the latest version of CLI release.
+func CheckForUpdates(currentVersion string) {
+	go func() {
+		resp, err := http.Get(releaseUrl)
+		if err != nil {
+			logrus.Errorf("Failed to check for updates: %s", err)
+			return
+		}
+		defer func(Body io.ReadCloser) {
+			err := Body.Close()
+			if err != nil {
+				logrus.Errorf("Failed to close response body: %s", err)
+				return
+			}
+		}(resp.Body)
+		if resp.StatusCode < 200 || resp.StatusCode > 299 {
+			logrus.Errorf("Failed to check for updates: %s", resp.Status)
+			return
+		}
+		bodyText, err := ioutil.ReadAll(resp.Body)
+		if err != nil {
+			logrus.Errorf("Failed to read response body: %s", err)
+			return
+		}
+		result := make(map[string]interface{})
+		err = json.Unmarshal(bodyText, &result)
+		if err != nil {
+			logrus.Errorf("Failed to read response JSON: %s", err)
+			return
+		}
+		latestVersion := result["tag_name"].(string)
+		if latestVersion != fmt.Sprintf("v%s", currentVersion) {
+			WarningMessage("New version of %s is available: %s. See https://jb.gg/qodana-cli/update\n   Set DO_NOT_CHECK_UPDATE=1 environment variable to never get this message again\n", PrimaryBold("qodana"), latestVersion)
+		}
+	}()
+}
 
 // openReport serves the report on the given port and opens the browser.
 func openReport(path string, port int) {
@@ -94,4 +141,42 @@ func noCache(h http.Handler) http.Handler {
 		h.ServeHTTP(w, r)
 	}
 	return http.HandlerFunc(fn)
+}
+
+// getProjectId returns the project id for internal CLI usage from the given path.
+func getProjectId(project string) string {
+	projectAbs, _ := filepath.Abs(project)
+	sha256sum := sha256.Sum256([]byte(projectAbs))
+	return hex.EncodeToString(sha256sum[:])
+}
+
+// GetLinterSystemDir returns path to <userCacheDir>/JetBrains/<linter>/<project-id>/.
+func GetLinterSystemDir(project string, linter string) string {
+	userCacheDir, _ := os.UserCacheDir()
+	linterDirName := strings.Replace(strings.Replace(linter, ":", "-", -1), "/", "-", -1)
+
+	return filepath.Join(
+		userCacheDir,
+		"JetBrains",
+		linterDirName,
+		getProjectId(project),
+	)
+}
+
+// Contains checks if a string is in a given slice.
+func Contains(s []string, str string) bool {
+	for _, v := range s {
+		if v == str {
+			return true
+		}
+	}
+	return false
+}
+
+// Append appends a string to a slice if it's not already there.
+func Append(slice []string, elems ...string) []string {
+	if !Contains(slice, elems[0]) {
+		slice = append(slice, elems[0])
+	}
+	return slice
 }
