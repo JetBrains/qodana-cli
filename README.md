@@ -7,19 +7,53 @@
 
 `qodana` is a simple cross-platform command-line tool to run [Qodana linters](https://www.jetbrains.com/help/qodana/docker-images.html) anywhere with minimum effort required.
 
+#### tl;dr
+
+[Install](https://github.com/JetBrains/qodana-cli/releases/latest) and run:
+
+```console
+qodana scan --show-report
+```
+
+You can also add the linter by its name with the `--linter` option (e.g. `--linter jetbrains/qodana-js`).
+
 **Table of Contents**
 
 <!-- toc -->
 
-- [Usage](#usage)
-   - [Installation](#installation)
-   - [Running](#running)
-- [Configuration](#configuration)
 - [Why](#why)
+- [Usage](#usage)
+- [Configuration](#configuration)
 
 <!-- tocstop -->
 
+## Why
+
+![Comics by Irina Khromova](https://user-images.githubusercontent.com/13538286/151377284-28d845d3-a601-4512-9029-18f99d215ee1.png)
+
+> 🖼 The illustration is created by [Irina Khromova](https://www.instagram.com/irkin_sketch/)
+
+Qodana linters are distributed via Docker images – which becomes handy for developers (us) and the users to run code inspections in CI.
+
+But to set up Qodana in CI, one wants to try it locally first, as there is some additional configuration tuning required that differs from project to project (and we try to be as much user-friendly as possible).
+
+It's easy to try Qodana locally by running a _simple_ command:
+
+```console
+docker run --rm -it -p 8080:8080 -v <source-directory>/:/data/project/ -v <output-directory>/:/data/results/ -v <caches-directory>/:/data/cache/ jetbrains/qodana-<linter> --show-report
+```
+
+**And that's not so simple**: you have to provide a few absolute paths, forward some ports, add a few Docker options...
+
+- On Linux, you might want to set the proper permissions to the results produced after the container run – so you need to add an option like `-u $(id -u):$(id -g)`
+- On Windows and macOS, when there is the default Docker Desktop RAM limit (2GB), your run might fail because of OOM (and this often happens on big Gradle projects on Gradle sync), and the only workaround, for now, is increasing the memory – but to find that out, one needs to look that up in the docs.
+- That list could go on, but we've thought about these problems, experimented a bit, and created the CLI to simplify all of this.
+
+**Isn't that a bit overhead to write a tool that runs Docker containers when we have Docker CLI already?** Our CLI, like Docker CLI, operates with Docker daemon via Docker Engine API using the official Docker SDK, so actually, our tool is our own tailored Docker CLI at the moment.
+
 ## Usage
+
+![qodana](https://user-images.githubusercontent.com/13538286/151153050-934c0f41-e059-480a-a89f-cd4b2ca7a930.gif)
 
 ### Installation
 
@@ -28,21 +62,8 @@ You must have Docker installed and running locally to support this: https://www.
 
 See [the repository releases](https://github.com/JetBrains/qodana-cli/releases/latest) for the detailed instructions on the installation and update.
 
-### Running
 
-![qodana](https://user-images.githubusercontent.com/13538286/151153050-934c0f41-e059-480a-a89f-cd4b2ca7a930.gif)
-
-#### tl;dr
-
-If you know what you are doing:
-
-```console
-qodana scan --show-report
-```
-
-You can also add the linter by its name with the `--linter` option (e.g. `--linter jetbrains/qodana-js`).
-
-#### Configure Qodana
+### Prepare your project
 
 Before you start using Qodana, you need to configure your project – choose [a linter](https://www.jetbrains.com/help/qodana/linters.html) to use.
 If you know what linter you want to use, you can skip this step.
@@ -53,7 +74,7 @@ Also, Qodana CLI can choose a linter for you. Just run the following command in 
 qodana init
 ```
 
-#### Run Qodana
+### Analyze your project
 
 Right after you configured your project (or remember linter's name you want to run), you can run Qodana inspections simply by invoking the following command in your project root:
 
@@ -64,7 +85,7 @@ qodana scan
 - After the first Qodana run, the following runs will be faster because of the saved Qodana cache in your project (defaults to `./<userCacheDir>/JetBrains/<linter>/cache`)
 - The latest Qodana report will be saved to `./<userCacheDir>/JetBrains/<linter>/results` – you can find qodana.sarif.json and other Qodana artifacts (like logs) in this directory.
 
-#### View the Qodana report
+### View the report
 
 After the analysis, the results are saved to `./<userCacheDir>/JetBrains/<linter>/results` by default. Inside the directory `./<userCacheDir>/JetBrains/<linter>/results/report`, you can find Qodana HTML report.
 To view it in the browser, run the following command from your project root:
@@ -77,7 +98,7 @@ You can serve any Qodana HTML report regardless of the project if you provide th
 
 ## Configuration
 
-Find more CLI options, run `qodana ...` commands with the `--help` flag. Currently, there are not many options.
+To find more CLI options run `qodana ...` commands with the `--help` flag.
 If you want to configure Qodana or a check inside Qodana, consider using [`qodana.yaml` ](https://www.jetbrains.com/help/qodana/qodana-yaml.html) to have the same configuration on any CI you use and your machine.
 
 > In some flags help texts you can notice that the default path contains `<userCacheDir>/JetBrains`. The `<userCacheDir>` differs from the OS you are running Qodana with.
@@ -161,8 +182,8 @@ Show Qodana report
 Show (serve locally) the latest Qodana report.
 
 Due to JavaScript security restrictions, the generated report cannot
-be viewed via the file:// protocol (by double-clicking the index.html file).
-https://www.jetbrains.com/help/qodana/html-report.html
+be viewed via the file:// protocol (by double-clicking the index.html file).  
+https://www.jetbrains.com/help/qodana/html-report.html  
 This command serves the Qodana report locally and opens a browser to it.
 
 ```
@@ -178,32 +199,6 @@ show [flags]
   -i, --project-dir string   Root directory of the inspected project (default ".")
   -r, --report-dir string    Specify HTML report path (the one with index.html inside) (default <userCacheDir>/JetBrains/<linter>/results/report)
 ```
-
-## Why
-
-![Comics by Irina Khromova](https://user-images.githubusercontent.com/13538286/151377284-28d845d3-a601-4512-9029-18f99d215ee1.png)
-
-> 🖼 The illustration is created by [Irina Khromova](https://www.instagram.com/irkin_sketch/)
-
-Qodana linters are distributed via Docker images – which becomes handy for developers (us) and the users to run code inspections in CI.
-
-But to set up Qodana in CI, one wants to try it locally first, as there is some additional configuration tuning required that differs from project to project (and we try to be as much user-friendly as possible).
-
-It's easy to try Qodana locally by running a _simple_ command:
-
-```console
-docker run --rm -it -p 8080:8080 -v <source-directory>/:/data/project/ -v <output-directory>/:/data/results/ -v <caches-directory>/:/data/cache/ jetbrains/qodana-<linter> --show-report
-```
-
-**And that's not so simple**: you have to provide a few absolute paths, forward some ports, add a few Docker options...
-
-- On Linux, you might want to set the proper permissions to the results produced after the container run – so you need to add an option like `-u $(id -u):$(id -g)`
-- On Windows and macOS, when there is the default Docker Desktop RAM limit (2GB), your run might fail because of OOM (and this often happens on big Gradle projects on Gradle sync), and the only workaround, for now, is increasing the memory – but to find that out, one needs to look that up in the docs.
-- That list could go on, but we've thought about these problems, experimented a bit, and created the CLI to simplify all of this.
-
-**Isn't that a bit overhead to write a tool that runs Docker containers when we have Docker CLI already?** Our CLI, like Docker CLI, operates with Docker daemon via Docker Engine API using the official Docker SDK, so actually, our tool is our own tailored Docker CLI at the moment.
-
-**Qodana for Go: when?** We are working on it, follow [QD-2183](https://youtrack.jetbrains.com/issue/QD-2183) for the updates. 
 
 [gh:test]: https://github.com/JetBrains/qodana/actions/workflows/build-test.yml
 [youtrack]: https://youtrack.jetbrains.com/issues/QD
