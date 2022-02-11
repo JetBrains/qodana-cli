@@ -1,21 +1,31 @@
 #!/bin/bash
 TMP_DIR="/tmp/tmpinstalldir"
 CLI_VERSION=${1:-"0.7.4"}
+OUT_DIR=${2:-"/usr/local/bin"}
 check_mark="\033[1;32m✓\033[0m"
+
 
 echo -e '
           _              _
-         /\ \           /\ \        👋 Welcome to Qodana
-        /  \ \         /  \ \
-       / /\ \ \       / /\ \ \      This script will download and install
-      / / /\ \ \     / / /\ \ \     Qodana CLI to \033[4m/usr/local/bin/qodana\033[0m
-     / / /  \ \_\   / / /  \ \_\
-    / / / _ / / /  / / /   / / /    So you can use \033[4mqodana\033[0m to run all commands
-   / / / /\ \/ /  / / /   / / /
-  / / /__\ \ \/  / / /___/ / /      By the way, Qodana CLI is open-sourced:
- / / /____\ \ \ / / /____\/ /       \033[4mhttps://github.com/JetBrains/qodana-cli\033[0m
+         /\ \           /\ \        Qodana CLI (installer)
+        /  \ \         /  \ \       Documentation
+       / /\ \ \       / /\ \ \      https://jb.gg/qodana-docs
+      / / /\ \ \     / / /\ \ \     Contact us at
+     / / /  \ \_\   / / /  \ \_\    qodana-support@jetbrains.com
+    / / / _ / / /  / / /   / / /    Or via our issue tracker
+   / / / /\ \/ /  / / /   / / /     https://jb.gg/qodana-issue
+  / / /__\ \ \/  / / /___/ / /      Or share your feedback at our forum
+ / / /____\ \ \ / / /____\/ /       https://jb.gg/qodana-forum
  \/________\_\/ \/_________/
 '
+
+echo -e "
+👋 This script will download Qodana CLI to \033[4m/usr/local/bin/qodana\033[0m
+   If you get 'permission denied' error:
+   - Specify other dir and version: \033[4mcurl ... | bash -s -- $CLI_VERSION $HOME/.local/bin\033[0m
+   - Or change the owner of $OUT_DIR to your user
+"
+set -e
 
 function cleanup {
 	echo rm -rf $TMP_DIR > /dev/null
@@ -31,11 +41,11 @@ function fail {
 	exit 1
 }
 function install {
+  set -e
 	USER="JetBrains"
 	PROG="qodana"
 	RELEASE="v$CLI_VERSION"
 	INSECURE="false"
-	OUT_DIR="/usr/local/bin"
 	#bash check
 	[ ! "$BASH_VERSION" ] && fail "Please use bash instead"
 	[ ! -d $OUT_DIR ] && fail "output directory missing: $OUT_DIR"
@@ -71,7 +81,6 @@ function install {
 	else
 		fail "unknown arch: $(uname -m)"
 	fi
-	#choose from asset list
 	URL=""
 	FTYPE=""
 	case "${OS}_${ARCH}" in
@@ -119,32 +128,23 @@ function install {
 	else
 		fail "unknown file type: $FTYPE"
 	fi
-	# shellcheck disable=SC2038
 	TMP_BIN=$(find . -type f | xargs du | sort -n | tail -n 1 | cut -f 2)
 	if [ ! -f "$TMP_BIN" ]; then
 		fail "could not find find binary (largest file)"
 	fi
-	# ensure its larger than 1MB
 	if [[ $(du -m "$TMP_BIN" | cut -f1) -lt 1 ]]; then
 		fail "no binary found ($TMP_BIN is not larger than 1MB)"
 	fi
-	# move into PATH or cwd
 	chmod +x "$TMP_BIN" || fail "chmod +x failed"
-
-	mv "$TMP_BIN" $OUT_DIR/$PROG || fail "mv failed" #FINAL STEP!
+	mv "$TMP_BIN" "$OUT_DIR"/$PROG || fail "mv failed" #FINAL STEP!
+	echo -e "$ qodana --help " && "$OUT_DIR/$PROG" --help
 	echo -e "${check_mark} Installed at $OUT_DIR/$PROG"
-	# done
 	cleanup
+	header "Next steps\n"
+  echo -e "‣ \033[1mInitialize Qodana in a project\033[0m"
+  echo -e "   \033[0;90m\033[0;33mcd\033[0;90m to the project you want to set up Qodana with and run \033[0;33mqodana init\033[0;90m\033[0m\n"
+  echo -e "‣ \033[1mGet help and share your feedback\033[0m"
+  echo -e "   \033[0;90mJoin the Qodana community at \033[0;4mhttps://jb.gg/qodana-forum\033[0m"
 }
-if [[ $* != "-y" ]]; then
-  printf >/dev/tty '%s' "${*:-Press any key to continue... }"
-  read </dev/tty -rsn1
-fi
 
 install
-
-header "Next steps\n"
-echo -e "‣ \033[1mInitialize Qodana in a project\033[0m"
-echo -e "   \033[0;90m\033[0;33mcd\033[0;90m to the project you want to set up Qodana with and run \033[0;33mqodana init\033[0;90m\033[0m\n"
-echo -e "‣ \033[1mGet help and share your feedback\033[0m"
-echo -e "   \033[0;90mJoin the Qodana community at \033[0;4mhttps://jb.gg/qodana-forum\033[0m"
