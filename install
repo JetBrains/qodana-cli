@@ -1,6 +1,6 @@
 #!/bin/bash
 TMP_DIR="/tmp/tmpinstalldir"
-CLI_VERSION=${1:-"0.7.4"}
+CLI_VERSION=${1:-"0.7.5"}
 OUT_DIR=${2:-"/usr/local/bin"}
 check_mark="\033[1;32m✓\033[0m"
 
