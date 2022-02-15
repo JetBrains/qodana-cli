@@ -77,10 +77,18 @@ func CheckDockerHost() {
 	cmd := exec.Command("docker", "ps")
 	if err := cmd.Run(); err != nil {
 		if exiterr, ok := err.(*exec.ExitError); ok {
-			ErrorMessage(
-				"'docker ps' exited with exit code %d, perhaps docker daemon is not running?",
-				exiterr.ExitCode(),
-			)
+			if strings.Contains(string(exiterr.Stderr), "permission denied") {
+				ErrorMessage(
+					"Docker can't be run by the current user. Please fix your Docker configuration.",
+				)
+				WarningMessage("https://docs.docker.com/engine/install/linux-postinstall/#manage-docker-as-a-non-root-user")
+				os.Exit(1)
+			} else {
+				ErrorMessage(
+					"'docker ps' exited with exit code %d, perhaps docker daemon is not running?",
+					exiterr.ExitCode(),
+				)
+			}
 			os.Exit(1)
 		}
 		log.Fatal(err)
@@ -159,9 +167,6 @@ func GetCmdOptions(opts *QodanaOptions) []string {
 	if opts.SendReport {
 		arguments = append(arguments, "--send-report")
 	}
-	if opts.Token != "" {
-		arguments = append(arguments, "--token", opts.Token)
-	}
 	if opts.AnalysisId != "" {
 		arguments = append(arguments, "--analysis-id", opts.AnalysisId)
 	}
@@ -170,6 +175,16 @@ func GetCmdOptions(opts *QodanaOptions) []string {
 
 // getDockerOptions returns qodana docker container options.
 func getDockerOptions(opts *QodanaOptions) *types.ContainerCreateConfig {
+	envConfigured := false
+	for _, env := range opts.Env {
+		if strings.HasPrefix(env, "QODANA_ENV=") {
+			envConfigured = true
+		}
+	}
+	if !envConfigured {
+		opts.Env = append(opts.Env, "QODANA_ENV=cli:"+Version)
+	}
+
 	cachePath, err := filepath.Abs(opts.CacheDir)
 	if err != nil {
 		log.Fatal("couldn't get abs path for cache", err)
@@ -220,7 +235,7 @@ func getDockerOptions(opts *QodanaOptions) *types.ContainerCreateConfig {
 			Tty:          true,
 			AttachStdout: true,
 			AttachStderr: true,
-			Env:          append(opts.Env, "QODANA_ENV=cli"),
+			Env:          opts.Env,
 			User:         opts.User,
 		},
 		HostConfig: &container.HostConfig{

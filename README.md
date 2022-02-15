@@ -1,4 +1,4 @@
-# Qodana CLI
+# Qodana CLI [<img src="https://api.producthunt.com/widgets/embed-image/v1/top-post-badge.svg?post_id=304841&theme=dark&period=daily" alt="" align="right" width="190" height="41">](https://www.producthunt.com/posts/jetbrains-qodana)
 
 [![JetBrains incubator project](https://jb.gg/badges/incubator.svg)](https://confluence.jetbrains.com/display/ALL/JetBrains+on+GitHub)
 [![Test](https://github.com/JetBrains/qodana-cli/actions/workflows/build-test.yml/badge.svg)][gh:test]
@@ -168,7 +168,6 @@ scan [flags]
   -w, --show-report               Serve HTML report on port
   -d, --source-directory string   Directory inside the project-dir directory must be inspected. If not specified, the whole project is inspected
       --stub-profile string       Absolute path to the fallback profile file. This option is applied in case the profile was not specified using any available options
-  -t, --token string              Qodana Cloud token
   -u, --user string               User to run Qodana container as (default: the current user)
   -v, --volume stringArray        Define additional volumes for the Qodana container (you can use the flag multiple times)
 ```

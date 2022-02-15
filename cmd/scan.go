@@ -128,7 +128,6 @@ But you can always override qodana.yaml options with the following command-line 
 	flags.StringVar(&options.Property, "property", "", "Set a JVM property to be used while running Qodana using the --property=property.name=value1,value2,...,valueN notation")
 	flags.BoolVarP(&options.SaveReport, "save-report", "s", true, "Generate HTML report")
 	flags.BoolVar(&options.SendReport, "send-report", false, "Send the inspection report to Qodana Cloud, requires the '--token' option to be specified")
-	flags.StringVarP(&options.Token, "token", "t", "", "Qodana Cloud token")
 
 	return cmd
 }

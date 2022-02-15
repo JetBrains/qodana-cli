@@ -51,7 +51,6 @@ type QodanaOptions struct {
 	FailThreshold         string
 	Changes               bool
 	SendReport            bool
-	Token                 string
 	AnalysisId            string
 	Env                   []string
 	Volumes               []string
@@ -61,10 +60,11 @@ type QodanaOptions struct {
 }
 
 var (
-	UnofficialLinter = false
-	Version          = "0.7.4"
-	Interrupted      = false
-	scanStages       = []string{
+	UnofficialLinter      = false
+	Version               = "0.7.5"
+	Interrupted           = false
+	SkipCheckForUpdateEnv = "QODANA_CLI_SKIP_CHECK_FOR_UPDATE"
+	scanStages            = []string{
 		"Preparing Qodana Docker images",
 		"Starting the analysis engine",
 		"Opening the project",
@@ -151,7 +151,7 @@ func ShowReport(path string, port int) { // TODO: Open report from Cloud
 			}
 			openReport(path, port)
 		},
-		fmt.Sprintf("Showing Qodana report at http://localhost:%d, press Ctrl+C to stop", port),
+		fmt.Sprintf("Showing Qodana report at http://localhost:%d – press Ctrl+C to stop", port),
 		"",
 	)
 }
