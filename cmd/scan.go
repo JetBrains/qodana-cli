@@ -106,7 +106,7 @@ But you can always override qodana.yaml options with the following command-line 
 	flags.StringVar(&options.CacheDir, "cache-dir", "", "Override cache directory (default <userCacheDir>/JetBrains/<linter>/cache)")
 	flags.StringArrayVarP(&options.Env, "env", "e", []string{}, "Define additional environment variables for the Qodana container (you can use the flag multiple times). CLI is not reading full host environment variables and does not pass it to the Qodana container for security reasons")
 	flags.StringArrayVarP(&options.Volumes, "volume", "v", []string{}, "Define additional volumes for the Qodana container (you can use the flag multiple times)")
-	flags.StringVarP(&options.User, "user", "u", "", "User to run Qodana container as (default: the current user)")
+	flags.StringVarP(&options.User, "user", "u", "", "User to run Qodana container as. Please specify user id – '$UID' or user id and group id $(id -u):$(id -g). Use 'root' to run as the root user (default: the current user)")
 	flags.BoolVar(&options.SkipPull, "skip-pull", false, "Skip pulling the latest Qodana container")
 	flags.BoolVar(&options.PrintProblems, "print-problems", false, "Print all found problems by Qodana in the CLI output")
 	flags.BoolVarP(&options.ShowReport, "show-report", "w", false, "Serve HTML report on port")
@@ -121,7 +121,7 @@ But you can always override qodana.yaml options with the following command-line 
 	flags.StringVarP(&options.SourceDirectory, "source-directory", "d", "", "Directory inside the project-dir directory must be inspected. If not specified, the whole project is inspected")
 	flags.StringVarP(&options.ProfileName, "profile-name", "n", "", "Profile name defined in the project")
 	flags.StringVarP(&options.ProfilePath, "profile-path", "p", "", "Path to the profile file")
-	flags.BoolVar(&options.RunPromo, "run-promo", false, "Set to true to have the application run the inspections configured by the promo profile; set to false otherwise. By default, a promo run is enabled if the application is executed with the default profile and is disabled otherwise")
+	flags.StringVar(&options.RunPromo, "run-promo", "", "Set to 'true' to have the application run the inspections configured by the promo profile; set to 'false' otherwise (default: 'true' only if Qodana is executed with the default profile)")
 	flags.StringVar(&options.Script, "script", "default", "Override the run scenario")
 	flags.StringVar(&options.StubProfile, "stub-profile", "", "Absolute path to the fallback profile file. This option is applied in case the profile was not specified using any available options")
 

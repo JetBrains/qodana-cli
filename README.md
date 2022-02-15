@@ -1,6 +1,6 @@
 # Qodana CLI [<img src="https://api.producthunt.com/widgets/embed-image/v1/top-post-badge.svg?post_id=304841&theme=dark&period=daily" alt="" align="right" width="190" height="41">](https://www.producthunt.com/posts/jetbrains-qodana)
 
-[![JetBrains incubator project](https://jb.gg/badges/incubator.svg)](https://confluence.jetbrains.com/display/ALL/JetBrains+on+GitHub)
+[![JetBrains official project](https://jb.gg/badges/official.svg)](https://confluence.jetbrains.com/display/ALL/JetBrains+on+GitHub)
 [![Test](https://github.com/JetBrains/qodana-cli/actions/workflows/build-test.yml/badge.svg)][gh:test]
 [![GitHub Discussions](https://img.shields.io/github/discussions/jetbrains/qodana)][jb:discussions]
 [![Twitter Follow](https://img.shields.io/twitter/follow/Qodana?style=social&logo=twitter)][jb:twitter]
@@ -158,14 +158,15 @@ scan [flags]
   -i, --project-dir string        Root directory of the inspected project (default ".")
       --property string           Set a JVM property to be used while running Qodana using the --property=property.name=value1,value2,...,valueN notation
   -o, --results-dir string        Override directory to save Qodana inspection results to (default <userCacheDir>/JetBrains/<linter>/results)
-      --run-promo                 Set to true to have the application run the inspections configured by the promo profile; set to false otherwise. By default, a promo run is enabled if the application is executed with the default profile and is disabled otherwise
+      --run-promo string          Set to 'true' to have the application run the inspections configured by the promo profile; set to 'false' otherwise (default: 'true' only if Qodana is executed with the default profile)
   -s, --save-report               Generate HTML report (default true)
       --script string             Override the run scenario (default "default")
       --send-report               Send the inspection report to Qodana Cloud, requires the '--token' option to be specified
   -w, --show-report               Serve HTML report on port
+      --skip-pull                 Skip pulling the latest Qodana container
   -d, --source-directory string   Directory inside the project-dir directory must be inspected. If not specified, the whole project is inspected
       --stub-profile string       Absolute path to the fallback profile file. This option is applied in case the profile was not specified using any available options
-  -u, --user string               User to run Qodana container as (default: the current user)
+  -u, --user string               User to run Qodana container as. Please specify user id – '$UID' or user id and group id $(id -u):$(id -g). Use 'root' to run as the root user (default: the current user)
   -v, --volume stringArray        Define additional volumes for the Qodana container (you can use the flag multiple times)
 ```
 

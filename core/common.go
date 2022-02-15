@@ -39,7 +39,7 @@ type QodanaOptions struct {
 	DisableSanity         bool
 	ProfileName           string
 	ProfilePath           string
-	RunPromo              bool
+	RunPromo              string
 	StubProfile           string
 	Baseline              string
 	BaselineIncludeAbsent bool
@@ -61,7 +61,7 @@ type QodanaOptions struct {
 
 var (
 	UnofficialLinter      = false
-	Version               = "0.7.5"
+	Version               = "1.0.0"
 	Interrupted           = false
 	SkipCheckForUpdateEnv = "QODANA_CLI_SKIP_CHECK_FOR_UPDATE"
 	scanStages            = []string{

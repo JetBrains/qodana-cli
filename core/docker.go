@@ -143,8 +143,8 @@ func GetCmdOptions(opts *QodanaOptions) []string {
 	if opts.ProfilePath != "" {
 		arguments = append(arguments, "--profile-path", opts.ProfilePath)
 	}
-	if opts.RunPromo {
-		arguments = append(arguments, "--run-promo")
+	if opts.RunPromo != "" {
+		arguments = append(arguments, "--run-promo", opts.RunPromo)
 	}
 	if opts.StubProfile != "" {
 		arguments = append(arguments, "--stub-profile", opts.StubProfile)
