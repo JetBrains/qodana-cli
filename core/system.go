@@ -50,7 +50,12 @@ func CheckForUpdates(currentVersion string) {
 		}
 		latestVersion := result["tag_name"].(string)
 		if latestVersion != fmt.Sprintf("v%s", currentVersion) {
-			WarningMessage("New version of %s is available: %s. See https://jb.gg/qodana-cli/update\n   Set DO_NOT_CHECK_UPDATE=1 environment variable to never get this message again\n", PrimaryBold("qodana"), latestVersion)
+			WarningMessage(
+				"New version of %s is available: %s. See https://jb.gg/qodana-cli/update\n   Set %s=1 environment variable to never get this message again\n",
+				PrimaryBold("qodana"),
+				latestVersion,
+				SkipCheckForUpdateEnv,
+			)
 		}
 	}()
 }

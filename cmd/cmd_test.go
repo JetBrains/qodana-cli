@@ -49,7 +49,6 @@ var testOptions = &core.QodanaOptions{
 	FailThreshold:         "0",
 	Changes:               true,
 	SendReport:            true,
-	Token:                 "token",
 	AnalysisId:            "id",
 	Env:                   []string{"A=B"},
 	Volumes:               []string{"/tmp/foo:/tmp/foo"},
@@ -169,7 +168,6 @@ func TestScanFlags(t *testing.T) {
 		"0",
 		"--changes",
 		"--send-report",
-		"--token token",
 		"--analysis-id",
 		"id",
 	}, " ")

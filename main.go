@@ -25,7 +25,7 @@ import (
 )
 
 func main() {
-	if os.Getenv("DO_NOT_CHECK_UPDATE") != "" {
+	if os.Getenv(core.SkipCheckForUpdateEnv) != "" {
 		core.CheckForUpdates(core.Version)
 	}
 	if !core.IsInteractive() || os.Getenv("NO_COLOR") != "" { // http://no-color.org
