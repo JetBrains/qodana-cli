@@ -7,6 +7,8 @@ on:
   push:
     branches:
       - main
+    paths:
+      - 'install'
 jobs:
   linux:
     runs-on: ubuntu-latest
