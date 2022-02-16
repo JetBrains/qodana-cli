@@ -57,9 +57,6 @@ docker run --rm -it -p 8080:8080 -v <source-directory>/:/data/project/ -v <outpu
 
 ### Installation
 
-> 💡 The Qodana CLI is distributed and run as a binary. The Qodana linters with inspections are [Docker Images]((https://www.jetbrains.com/help/qodana/docker-images.html)).
-You must have Docker installed and running locally to support this: https://www.docker.com/get-started.
-
 See [the repository releases](https://github.com/JetBrains/qodana-cli/releases/latest) for the detailed instructions on the installation and update.
 
 
