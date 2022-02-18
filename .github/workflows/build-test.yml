@@ -47,4 +47,9 @@ jobs:
           fetch-depth: 0
       - run: |
           go test ./... -coverprofile cover.out
-          go tool cover -func cover.out
+      - if: startsWith(matrix.os, 'ubuntu')
+        uses: codecov/codecov-action@v2.1.0
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          fail_ci_if_error: true
+

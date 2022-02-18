@@ -181,6 +181,7 @@ func TestAllCommands(t *testing.T) {
 	if err := core.IsDockerInstalled(); err != nil || (runtime.GOOS == "windows" && isGitHubAction()) {
 		t.Skip(err)
 	}
+	core.DisableColor()
 	core.CheckForUpdates("0.1.0")
 	resultsPath := "/tmp/qodana_scan_results"
 	err := os.MkdirAll(resultsPath, 0o755)
@@ -196,11 +197,13 @@ func TestAllCommands(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+
 	// pull
 	out := bytes.NewBufferString("")
 	command := NewPullCommand()
 	command.SetOut(out)
 	command.SetArgs([]string{"-i", projectPath})
+	err = command.Execute()
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -215,6 +218,30 @@ func TestAllCommands(t *testing.T) {
 		t.Fatal(err)
 	}
 	_, err = os.Stat(filepath.Join(resultsPath, "qodana.sarif.json"))
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// show
+	out = bytes.NewBufferString("")
+	command = NewShowCommand()
+	command.SetOut(out)
+	command.SetArgs([]string{"-i", projectPath, "-d"})
+	err = command.Execute()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// init after project analysis with .idea inside
+	err = os.Remove(filepath.Join(projectPath, "qodana.yaml"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	out = bytes.NewBufferString("")
+	command = NewInitCommand()
+	command.SetOut(out)
+	command.SetArgs([]string{"-i", projectPath})
+	err = command.Execute()
 	if err != nil {
 		t.Fatal(err)
 	}
