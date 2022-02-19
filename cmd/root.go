@@ -57,11 +57,11 @@ func NewRootCmd() *cobra.Command {
 	return rootCmd
 }
 
-var RootCmd = NewRootCmd()
+var rootCmd = NewRootCmd()
 
 // init adds all child commands to the root command.
 func init() {
-	RootCmd.AddCommand(
+	rootCmd.AddCommand(
 		NewInitCommand(),
 		NewScanCommand(),
 		NewShowCommand(),
@@ -83,7 +83,7 @@ func Execute() error {
 			os.Exit(0)
 		}
 	}()
-	if err := RootCmd.Execute(); err != nil {
+	if err := rootCmd.Execute(); err != nil {
 		return err
 	}
 	return nil

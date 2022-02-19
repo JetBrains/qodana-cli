@@ -31,6 +31,7 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
+// QodanaOptions is a struct that contains all the options to run a Qodana linter.
 type QodanaOptions struct {
 	ResultsDir            string
 	CacheDir              string
@@ -61,7 +62,7 @@ type QodanaOptions struct {
 }
 
 var (
-	UnofficialLinter      = false
+	unofficialLinter      = false
 	Version               = "0.8.0"
 	Interrupted           = false
 	SkipCheckForUpdateEnv = "QODANA_CLI_SKIP_CHECK_FOR_UPDATE"
@@ -108,7 +109,7 @@ func GetLinter(path string) string {
 // CheckLinter validates the image used for the scan.
 func CheckLinter(image string) {
 	if !strings.HasPrefix(image, OfficialDockerPrefix) {
-		UnofficialLinter = true
+		unofficialLinter = true
 	}
 	for _, linter := range notSupportedLinters {
 		if linter == image {
@@ -164,7 +165,7 @@ func RunLinter(ctx context.Context, options *QodanaOptions) int {
 		scanStages[i] = PrimaryBold("[%d/%d] ", i+1, len(scanStages)+1) + Primary(stage)
 	}
 	CheckLinter(options.Linter)
-	if UnofficialLinter {
+	if unofficialLinter {
 		WarningMessage("You are using an unofficial Qodana linter: %s\n", options.Linter)
 	}
 	progress, _ := startQodanaSpinner(scanStages[0])

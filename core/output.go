@@ -57,11 +57,13 @@ var (
 	MiscStyle        = pterm.NewStyle(pterm.FgGray)   // MiscStyle is a log style.
 )
 
+// Primary prints a message in the primary style.
 func Primary(text string, a ...interface{}) string {
 	text = fmt.Sprintf(text, a...)
 	return PrimaryStyle.Sprint(text)
 }
 
+// PrimaryBold prints a message in the primary bold style.
 func PrimaryBold(text string, a ...interface{}) string {
 	text = fmt.Sprintf(text, a...)
 	return PrimaryBoldStyle.Sprint(text)
