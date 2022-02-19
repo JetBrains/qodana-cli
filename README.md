@@ -2,6 +2,7 @@
 
 [![JetBrains project](https://jb.gg/badges/incubator.svg)](https://confluence.jetbrains.com/display/ALL/JetBrains+on+GitHub)
 [![Test](https://github.com/JetBrains/qodana-cli/actions/workflows/build-test.yml/badge.svg)][gh:test]
+[![GoReport](https://goreportcard.com/badge/github.com/JetBrains/qodana-cli)][gh:goreport]
 [![GitHub Discussions](https://img.shields.io/github/discussions/jetbrains/qodana)][jb:discussions]
 [![Twitter Follow](https://img.shields.io/twitter/follow/Qodana?style=social&logo=twitter)][jb:twitter]
 
@@ -198,6 +199,7 @@ show [flags]
 ```
 
 [gh:test]: https://github.com/JetBrains/qodana/actions/workflows/build-test.yml
+[gh:goreport]: https://goreportcard.com/report/github.com/JetBrains/qodana-cli
 [youtrack]: https://youtrack.jetbrains.com/issues/QD
 [youtrack-new-issue]: https://youtrack.jetbrains.com/newIssue?project=QD&c=Platform%20GitHub%20Action
 [jb:confluence-on-gh]: https://confluence.jetbrains.com/display/ALL/JetBrains+on+GitHub

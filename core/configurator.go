@@ -31,21 +31,21 @@ import (
 const (
 	version = "2021.3"
 	eap     = "-eap"
-	QDJVMC  = "jetbrains/qodana-jvm-community:" + version
-	QDJVM   = "jetbrains/qodana-jvm:" + version + eap
-	QDAND   = "jetbrains/qodana-jvm-android:" + version + eap
-	QDPHP   = "jetbrains/qodana-php:" + version + eap
-	QDPY    = "jetbrains/qodana-python:" + version + eap
-	QDJS    = "jetbrains/qodana-js:" + version + eap
+	qdjvmc  = "jetbrains/qodana-jvm-community:" + version
+	qdjvm   = "jetbrains/qodana-jvm:" + version + eap
+	qdand   = "jetbrains/qodana-jvm-android:" + version + eap
+	qdphp   = "jetbrains/qodana-php:" + version + eap
+	qdpy    = "jetbrains/qodana-python:" + version + eap
+	qdjs    = "jetbrains/qodana-js:" + version + eap
 )
 
 var langsLinters = map[string][]string{
-	"Java":       {QDJVMC, QDJVM, QDAND},
-	"Kotlin":     {QDJVMC, QDJVM, QDAND},
-	"PHP":        {QDPHP},
-	"Python":     {QDPY},
-	"JavaScript": {QDJS},
-	"TypeScript": {QDJS},
+	"Java":       {qdjvmc, qdjvm, qdand},
+	"Kotlin":     {qdjvmc, qdjvm, qdand},
+	"PHP":        {qdphp},
+	"Python":     {qdpy},
+	"JavaScript": {qdjs},
+	"TypeScript": {qdjs},
 }
 
 // ConfigureProject sets up the project directory for Qodana CLI to run

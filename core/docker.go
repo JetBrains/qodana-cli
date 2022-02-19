@@ -35,9 +35,12 @@ import (
 )
 
 const (
-	QodanaSuccessExitCode       = 0
+	// QodanaSuccessExitCode is Qodana exit code when the analysis is successfully completed.
+	QodanaSuccessExitCode = 0
+	// QodanaFailThresholdExitCode same as QodanaSuccessExitCode, but the threshold is set and exceeded.
 	QodanaFailThresholdExitCode = 255
-	OfficialDockerPrefix        = "jetbrains/qodana"
+	// OfficialDockerPrefix is the prefix of official Qodana Docker images.
+	OfficialDockerPrefix = "jetbrains/qodana"
 )
 
 var (
