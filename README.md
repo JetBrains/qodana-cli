@@ -22,35 +22,11 @@ You can also add the linter by its name with the `--linter` option (e.g. `--lint
 
 <!-- toc -->
 
-- [Why](#why)
 - [Usage](#usage)
 - [Configuration](#configuration)
+- [Why](#why)
 
 <!-- tocstop -->
-
-## Why
-
-![Comics by Irina Khromova](https://user-images.githubusercontent.com/13538286/151377284-28d845d3-a601-4512-9029-18f99d215ee1.png)
-
-> 🖼 The illustration is created by [Irina Khromova](https://www.instagram.com/irkin_sketch/)
-
-Qodana linters are distributed via Docker images – which becomes handy for developers (us) and the users to run code inspections in CI.
-
-But to set up Qodana in CI, one wants to try it locally first, as there is some additional configuration tuning required that differs from project to project (and we try to be as much user-friendly as possible).
-
-It's easy to try Qodana locally by running a _simple_ command:
-
-```console
-docker run --rm -it -p 8080:8080 -v <source-directory>/:/data/project/ -v <output-directory>/:/data/results/ -v <caches-directory>/:/data/cache/ jetbrains/qodana-<linter> --show-report
-```
-
-**And that's not so simple**: you have to provide a few absolute paths, forward some ports, add a few Docker options...
-
-- On Linux, you might want to set the proper permissions to the results produced after the container run – so you need to add an option like `-u $(id -u):$(id -g)`
-- On Windows and macOS, when there is the default Docker Desktop RAM limit (2GB), your run might fail because of OOM (and this often happens on big Gradle projects on Gradle sync), and the only workaround, for now, is increasing the memory – but to find that out, one needs to look that up in the docs.
-- That list could go on, but we've thought about these problems, experimented a bit, and created the CLI to simplify all of this.
-
-**Isn't that a bit overhead to write a tool that runs Docker containers when we have Docker CLI already?** Our CLI, like Docker CLI, operates with Docker daemon via Docker Engine API using the official Docker SDK, so actually, our tool is our own tailored Docker CLI at the moment.
 
 ## Usage
 
@@ -197,6 +173,30 @@ show [flags]
   -i, --project-dir string   Root directory of the inspected project (default ".")
   -r, --report-dir string    Specify HTML report path (the one with index.html inside) (default <userCacheDir>/JetBrains/<linter>/results/report)
 ```
+
+## Why
+
+![Comics by Irina Khromova](https://user-images.githubusercontent.com/13538286/151377284-28d845d3-a601-4512-9029-18f99d215ee1.png)
+
+> 🖼 The illustration is created by [Irina Khromova](https://www.instagram.com/irkin_sketch/)
+
+Qodana linters are distributed via Docker images – which becomes handy for developers (us) and the users to run code inspections in CI.
+
+But to set up Qodana in CI, one wants to try it locally first, as there is some additional configuration tuning required that differs from project to project (and we try to be as much user-friendly as possible).
+
+It's easy to try Qodana locally by running a _simple_ command:
+
+```console
+docker run --rm -it -p 8080:8080 -v <source-directory>/:/data/project/ -v <output-directory>/:/data/results/ -v <caches-directory>/:/data/cache/ jetbrains/qodana-<linter> --show-report
+```
+
+**And that's not so simple**: you have to provide a few absolute paths, forward some ports, add a few Docker options...
+
+- On Linux, you might want to set the proper permissions to the results produced after the container run – so you need to add an option like `-u $(id -u):$(id -g)`
+- On Windows and macOS, when there is the default Docker Desktop RAM limit (2GB), your run might fail because of OOM (and this often happens on big Gradle projects on Gradle sync), and the only workaround, for now, is increasing the memory – but to find that out, one needs to look that up in the docs.
+- That list could go on, but we've thought about these problems, experimented a bit, and created the CLI to simplify all of this.
+
+**Isn't that a bit overhead to write a tool that runs Docker containers when we have Docker CLI already?** Our CLI, like Docker CLI, operates with Docker daemon via Docker Engine API using the official Docker SDK, so actually, our tool is our own tailored Docker CLI at the moment.
 
 [gh:test]: https://github.com/JetBrains/qodana/actions/workflows/build-test.yml
 [gh:goreport]: https://goreportcard.com/report/github.com/JetBrains/qodana-cli
