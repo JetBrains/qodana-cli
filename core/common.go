@@ -26,6 +26,7 @@ import (
 	"strings"
 
 	"github.com/erikgeiser/promptkit/selection"
+	"github.com/pterm/pterm"
 
 	log "github.com/sirupsen/logrus"
 )
@@ -61,7 +62,7 @@ type QodanaOptions struct {
 
 var (
 	UnofficialLinter      = false
-	Version               = "1.0.0"
+	Version               = "0.8.0"
 	Interrupted           = false
 	SkipCheckForUpdateEnv = "QODANA_CLI_SKIP_CHECK_FOR_UPDATE"
 	scanStages            = []string{
@@ -167,47 +168,62 @@ func RunLinter(ctx context.Context, options *QodanaOptions) int {
 		WarningMessage("You are using an unofficial Qodana linter: %s\n", options.Linter)
 	}
 	progress, _ := startQodanaSpinner(scanStages[0])
-
 	if !(options.SkipPull) {
 		PullImage(ctx, docker, options.Linter)
 	}
 	dockerConfig := getDockerOptions(options)
 	updateText(progress, scanStages[1])
 	runContainer(ctx, docker, dockerConfig)
-
-	reader, _ := docker.ContainerLogs(ctx, dockerConfig.Name, dockerLogsOptions)
+	logs, err := docker.ContainerLogs(ctx, dockerConfig.Name, dockerLogsOptions)
+	if err != nil {
+		log.Fatal(err)
+	}
 	defer func(reader io.ReadCloser) {
 		err := reader.Close()
 		if err != nil {
 			log.Fatal(err.Error())
 		}
-	}(reader)
-	scanner := bufio.NewScanner(reader)
-	for scanner.Scan() {
-		line := scanner.Text()
-		if strings.Contains(line, "Starting up") {
-			updateText(progress, scanStages[2])
-		}
-		if strings.Contains(line, "The Project opening stage completed in") {
-			updateText(progress, scanStages[3])
-		}
-		if strings.Contains(line, "The Project configuration stage completed in") {
-			updateText(progress, scanStages[4])
-		}
-		if strings.Contains(line, "Detailed summary") {
-			updateText(progress, scanStages[5])
-			if !IsInteractive() {
-				EmptyMessage()
-			}
-		}
-		if strings.Contains(line, "IDEA exit code:") {
-			break
-		}
-		printLinterLog(line)
-	}
+	}(logs)
+	followLinter(logs, progress)
 	exitCode := getDockerExitCode(ctx, docker, dockerConfig.Name)
 	if progress != nil {
 		_ = progress.Stop()
 	}
 	return int(exitCode)
+}
+
+// followLinter follows the linter logs and prints the progress.
+func followLinter(logs io.ReadCloser, progress *pterm.SpinnerPrinter) {
+	reader := bufio.NewReader(logs)
+	for {
+		line, err := reader.ReadString('\n')
+		line = strings.TrimSuffix(line, "\n")
+		if err == nil || len(line) > 0 {
+			if strings.Contains(line, "Starting up") {
+				updateText(progress, scanStages[2])
+			}
+			if strings.Contains(line, "The Project opening stage completed in") {
+				updateText(progress, scanStages[3])
+			}
+			if strings.Contains(line, "The Project configuration stage completed in") {
+				updateText(progress, scanStages[4])
+			}
+			if strings.Contains(line, "Detailed summary") {
+				updateText(progress, scanStages[5])
+				if !IsInteractive() {
+					EmptyMessage()
+				}
+			}
+			if strings.Contains(line, "IDEA exit code:") {
+				return
+			}
+			printLinterLog(line)
+		}
+		if err != nil {
+			if err != io.EOF {
+				log.Errorf("Error scanning docker log stream: %s", err)
+			}
+			return
+		}
+	}
 }
