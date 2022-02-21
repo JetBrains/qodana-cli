@@ -18,7 +18,7 @@ require (
 	github.com/muesli/ansi v0.0.0-20211031195517-c9f0611b6c70 // indirect
 	github.com/muesli/termenv v0.11.0 // indirect
 	github.com/owenrumney/go-sarif/v2 v2.1.0
-	github.com/pterm/pterm v0.12.36
+	github.com/pterm/pterm v0.12.37
 	github.com/sirupsen/logrus v1.8.1
 	github.com/spf13/afero v1.8.1 // indirect
 	github.com/spf13/cobra v1.3.0
