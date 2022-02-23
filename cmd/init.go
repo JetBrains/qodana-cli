@@ -24,6 +24,7 @@ import (
 // InitOptions represents scan command options.
 type InitOptions struct {
 	ProjectDir string
+	Force      bool
 }
 
 // NewInitCommand returns a new instance of the show command.
@@ -34,8 +35,8 @@ func NewInitCommand() *cobra.Command {
 		Short: "Configure project for Qodana",
 		Long:  `Configure project for Qodana: prepare Qodana configuration file by analyzing the project structure and generating a default configuration qodana.yaml file.`,
 		Run: func(cmd *cobra.Command, args []string) {
-			qodanaYaml := core.GetQodanaYaml(options.ProjectDir)
-			if qodanaYaml.Linter == "" {
+			qodanaYaml := core.LoadQodanaYaml(options.ProjectDir)
+			if qodanaYaml.Linter == "" || options.Force {
 				core.GetLinter(options.ProjectDir)
 			} else {
 				core.EmptyMessage()
@@ -46,5 +47,6 @@ func NewInitCommand() *cobra.Command {
 	}
 	flags := cmd.Flags()
 	flags.StringVarP(&options.ProjectDir, "project-dir", "i", ".", "Root directory of the project to configure")
+	flags.BoolVarP(&options.Force, "force", "f", false, "Force initialization (overwrite existing valid qodana.yaml)")
 	return cmd
 }

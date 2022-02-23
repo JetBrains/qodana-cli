@@ -136,11 +136,10 @@ func TestInitCommand(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	qodanaYaml := core.GetQodanaYaml(projectPath)
-	linter := "jetbrains/qodana-python:2021.3-eap"
+	qodanaYaml := core.LoadQodanaYaml(projectPath)
 
-	if qodanaYaml.Linter != linter {
-		t.Fatalf("expected \"%s\", but got %s", linter, qodanaYaml.Linter)
+	if qodanaYaml.Linter != core.QDPY {
+		t.Fatalf("expected \"%s\", but got %s", core.QDPY, qodanaYaml.Linter)
 	}
 
 	err = os.RemoveAll(projectPath)
