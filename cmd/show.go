@@ -47,7 +47,7 @@ https://www.jetbrains.com/help/qodana/html-report.html
 This command serves the Qodana report locally and opens a browser to it.`,
 		Run: func(cmd *cobra.Command, args []string) {
 			if options.ReportDir == "" {
-				linter := core.GetQodanaYaml(options.ProjectDir).Linter
+				linter := core.LoadQodanaYaml(options.ProjectDir).Linter
 				if linter == "" {
 					log.Fatalf("Can't automatically find the report...\n" +
 						"Please specify the report directory with the --report-dir flag.")

@@ -43,7 +43,7 @@ func NewPullCommand() *cobra.Command {
 		},
 		Run: func(cmd *cobra.Command, args []string) {
 			if options.Linter == "" {
-				qodanaYaml := core.GetQodanaYaml(options.ProjectDir)
+				qodanaYaml := core.LoadQodanaYaml(options.ProjectDir)
 				if qodanaYaml.Linter == "" {
 					core.WarningMessage(
 						"No valid qodana.yaml found. Have you run %s? Running that for you...",

@@ -44,7 +44,7 @@ But you can always override qodana.yaml options with the following command-line 
 		Run: func(cmd *cobra.Command, args []string) {
 			ctx := cmd.Context()
 			if options.Linter == "" {
-				qodanaYaml := core.GetQodanaYaml(options.ProjectDir)
+				qodanaYaml := core.LoadQodanaYaml(options.ProjectDir)
 				if qodanaYaml.Linter == "" {
 					core.WarningMessage(
 						"No valid qodana.yaml found. Have you run %s? Running that for you...",

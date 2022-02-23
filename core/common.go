@@ -63,7 +63,7 @@ type QodanaOptions struct {
 
 var (
 	unofficialLinter      = false
-	Version               = "0.8.0"
+	Version               = "1.0.0"
 	Interrupted           = false
 	SkipCheckForUpdateEnv = "QODANA_CLI_SKIP_CHECK_FOR_UPDATE"
 	scanStages            = []string{

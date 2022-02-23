@@ -135,9 +135,9 @@ func noCache(h http.Handler) http.Handler {
 		"X-Accel-Expires": "0",
 	}
 	fn := func(w http.ResponseWriter, r *http.Request) {
-		for _, v := range etagHeaders {
-			if r.Header.Get(v) != "" {
-				r.Header.Del(v)
+		for _, x := range etagHeaders {
+			if r.Header.Get(x) != "" {
+				r.Header.Del(x)
 			}
 		}
 		for k, v := range noCacheHeaders {
@@ -168,8 +168,13 @@ func GetLinterSystemDir(project string, linter string) string {
 	)
 }
 
-// Contains checks if a string is in a given slice.
-func Contains(s []string, str string) bool {
+// lower a shortcut to strings.ToLower.
+func lower(s string) string {
+	return strings.ToLower(s)
+}
+
+// contains checks if a string is in a given slice.
+func contains(s []string, str string) bool {
 	for _, v := range s {
 		if v == str {
 			return true
@@ -180,7 +185,7 @@ func Contains(s []string, str string) bool {
 
 // Append appends a string to a slice if it's not already there.
 func Append(slice []string, elems ...string) []string {
-	if !Contains(slice, elems[0]) {
+	if !contains(slice, elems[0]) {
 		slice = append(slice, elems[0])
 	}
 	return slice
