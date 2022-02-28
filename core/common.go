@@ -63,7 +63,7 @@ type QodanaOptions struct {
 
 var (
 	unofficialLinter      = false
-	Version               = "1.0.0"
+	Version               = "1.0.1"
 	Interrupted           = false
 	SkipCheckForUpdateEnv = "QODANA_CLI_SKIP_CHECK_FOR_UPDATE"
 	scanStages            = []string{
@@ -84,7 +84,22 @@ var (
 func GetLinter(path string) string {
 	var linters []string
 	var linter string
-	PrintProcess(func() { linters = ConfigureProject(path) }, "Scanning project", "")
+	PrintProcess(func() {
+		languages := readIdeaDir(path)
+		if len(languages) == 0 {
+			languages, _ = recognizeDirLanguages(path)
+		}
+		WarningMessage("Detected technologies: " + strings.Join(languages, ", ") + "\n")
+		for _, language := range languages {
+			if linter, err := langsLinters[language]; err {
+				for _, l := range linter {
+					if !contains(linters, l) {
+						linters = append(linters, l)
+					}
+				}
+			}
+		}
+	}, "Scanning project", "")
 	if len(linters) == 0 {
 		ErrorMessage("Could not configure project as it is not supported by Qodana")
 		WarningMessage("See https://www.jetbrains.com/help/qodana/supported-technologies.html for more details")
@@ -101,6 +116,10 @@ func GetLinter(path string) string {
 			os.Exit(1)
 		}
 		linter = choice.String
+	}
+	if linter != "" {
+		log.Infof("Detected linters: %s", strings.Join(linters, ", "))
+		WriteQodanaYaml(path, linter)
 	}
 	SuccessMessage("Added %s", linter)
 	return linter

@@ -211,13 +211,13 @@ func (q *QodanaYaml) sort() *QodanaYaml {
 }
 
 // WriteQodanaYaml writes the qodana.yaml file to the given path.
-func WriteQodanaYaml(path string, linters []string) {
+func WriteQodanaYaml(path string, linter string) {
 	q := LoadQodanaYaml(path)
 	if q.Version == "" {
 		q.Version = "1.0"
 	}
 	q.sort()
-	q.Linter = linters[0]
+	q.Linter = linter
 	var b bytes.Buffer
 	yamlEncoder := yaml.NewEncoder(&b)
 	yamlEncoder.SetIndent(2)

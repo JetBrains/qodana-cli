@@ -48,33 +48,6 @@ var langsLinters = map[string][]string{
 	"TypeScript": {QDJS},
 }
 
-// ConfigureProject sets up the project directory for Qodana CLI to run
-// Looks up .idea directory to determine used modules
-// If a project doesn't have .idea, then runs language detector
-func ConfigureProject(projectDir string) []string {
-	var linters []string
-	languages := readIdeaDir(projectDir)
-	if len(languages) == 0 {
-		languages, _ = recognizeDirLanguages(projectDir)
-	}
-	WarningMessage("Detected technologies: " + strings.Join(languages, ", ") + "\n")
-	for _, language := range languages {
-		if linter, err := langsLinters[language]; err {
-			for _, l := range linter {
-				if !contains(linters, l) {
-					linters = append(linters, l)
-				}
-			}
-		}
-	}
-	if len(linters) != 0 {
-		log.Infof("Detected linters: %s", strings.Join(linters, ", "))
-		WriteQodanaYaml(projectDir, linters)
-	}
-
-	return linters
-}
-
 func recognizeDirLanguages(projectPath string) ([]string, error) {
 	const limitKb = 64
 	out := make(map[string]int)
