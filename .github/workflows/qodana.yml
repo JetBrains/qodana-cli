@@ -8,7 +8,7 @@ jobs:
     env:
       GRAZIE_PLUGIN: https://plugins.jetbrains.com/plugin/download?rel=true&updateId=152587
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
       - run: |
           curl -L -o grazie-pro.zip "$GRAZIE_PLUGIN" && unzip grazie-pro.zip
           cat > qodana.yaml << EOF
