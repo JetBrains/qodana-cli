@@ -1,6 +1,8 @@
 #!/bin/bash
+
+LATEST=$(curl --silent "https://api.github.com/repos/jetbrains/qodana-cli/releases/latest" | grep '"tag_name":' | sed -E 's/.*"([^"]+)".*/\1/')
+RELEASE=${1:-$LATEST}
 TMP_DIR="/tmp/tmpinstalldir"
-CLI_VERSION=${1:-"1.0.1"}
 OUT_DIR=${2:-"/usr/local/bin"}
 check_mark="\033[1;32m✓\033[0m"
 
@@ -22,7 +24,7 @@ echo -e '
 echo -e "
 👋 This script will download Qodana CLI to \033[4m/usr/local/bin/qodana\033[0m
    If you get 'permission denied' error:
-   - Specify other dir and version: \033[4mcurl ... | bash -s -- $CLI_VERSION $HOME/.local/bin\033[0m
+   - Specify other dir and version: \033[4mcurl -fsSL https://jb.gg/qodana-cli/install | bash -s -- $RELEASE $HOME/.local/bin\033[0m
    - Or change the owner of $OUT_DIR to your user
 "
 set -e
@@ -44,7 +46,6 @@ function install {
   set -e
 	USER="JetBrains"
 	PROG="qodana"
-	RELEASE="v$CLI_VERSION"
 	INSECURE="false"
 	#bash check
 	[ ! "$BASH_VERSION" ] && fail "Please use bash instead"
