@@ -7,21 +7,18 @@ require (
 	github.com/charmbracelet/bubbles v0.10.3 // indirect
 	github.com/charmbracelet/bubbletea v0.20.0 // indirect
 	github.com/charmbracelet/lipgloss v0.5.0 // indirect
-	github.com/containerd/console v1.0.3 // indirect
 	github.com/containerd/containerd v1.6.1 // indirect
 	github.com/docker/distribution v2.8.1+incompatible // indirect
 	github.com/docker/docker v20.10.13+incompatible
-	github.com/docker/go-connections v0.4.0 // indirect
 	github.com/erikgeiser/promptkit v0.6.0
 	github.com/go-enry/go-enry/v2 v2.8.0
 	github.com/gookit/color v1.5.0 // indirect
 	github.com/magiconair/properties v1.8.6 // indirect
 	github.com/mattn/go-isatty v0.0.14
-	github.com/morikuni/aec v1.0.0 // indirect
 	github.com/muesli/ansi v0.0.0-20211031195517-c9f0611b6c70 // indirect
 	github.com/opencontainers/image-spec v1.0.2 // indirect
 	github.com/owenrumney/go-sarif/v2 v2.1.1
-	github.com/pterm/pterm v0.12.38
+	github.com/pterm/pterm v0.12.39
 	github.com/sirupsen/logrus v1.8.1
 	github.com/spf13/afero v1.8.2 // indirect
 	github.com/spf13/cobra v1.4.0
