@@ -23,7 +23,6 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
-	"github.com/pterm/pterm"
 	"io"
 	"io/ioutil"
 	"net/http"
@@ -33,6 +32,8 @@ import (
 	"runtime"
 	"strings"
 	"time"
+
+	"github.com/pterm/pterm"
 
 	"github.com/sirupsen/logrus"
 )
