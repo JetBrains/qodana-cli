@@ -17,44 +17,39 @@
 package core
 
 import (
-	"path/filepath"
-
 	"github.com/owenrumney/go-sarif/v2/sarif"
 	log "github.com/sirupsen/logrus"
 )
 
 // ReadSarif prints Qodana Scan result into stdout
-func ReadSarif(resultsDir string, printProblems bool) {
+func ReadSarif(sarifPath string, printProblems bool) int {
 	problems := 0
-	s, err := sarif.Open(filepath.Join(resultsDir, "qodana.sarif.json"))
+	s, err := sarif.Open(sarifPath)
 	if err != nil {
 		log.Fatal(err)
 	}
+	problems = len(s.Runs[0].Results)
 	if printProblems {
+		EmptyMessage()
 		for _, run := range s.Runs {
 			for _, r := range run.Results {
-				problems += 1
 				ruleId := *r.RuleID
 				message := *r.Message.Text
 				level := *r.Level
 				if len(r.Locations) > 0 {
 					if r.Locations[0].PhysicalLocation != nil {
 						startLine := *r.Locations[0].PhysicalLocation.Region.StartLine
+						contextLine := *r.Locations[0].PhysicalLocation.ContextRegion.StartLine
 						startColumn := *r.Locations[0].PhysicalLocation.Region.StartColumn
 						filePath := *r.Locations[0].PhysicalLocation.ArtifactLocation.URI
-						printLocalizedProblem(ruleId, level, message, filePath, startLine, startColumn)
+						context := *r.Locations[0].PhysicalLocation.ContextRegion.Snippet.Text
+						printProblem(ruleId, level, message, filePath, startLine, startColumn, contextLine, context)
 					} else {
-						printGlobalProblem(ruleId, level, message)
+						printProblem(ruleId, level, message, "", 0, 0, 0, "")
 					}
 				}
 			}
 		}
-	} else {
-		problems = len(s.Runs[0].Results)
 	}
-	if problems == 0 {
-		SuccessMessage("It seems all right 👌 No problems found according to the checks applied")
-	} else {
-		ErrorMessage("Qodana found %d problems according to the checks applied", problems)
-	}
+	return problems
 }

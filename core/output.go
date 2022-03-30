@@ -21,6 +21,7 @@ import (
 	"os"
 	"strings"
 
+	"github.com/liamg/clinch/terminal"
 	"github.com/mattn/go-isatty"
 	"github.com/pterm/pterm"
 	log "github.com/sirupsen/logrus"
@@ -48,6 +49,7 @@ func DisableColor() {
 
 // styles and different declarations intended to be used only inside this file
 var (
+	NoLineWidth      = 7
 	SpinnerSequence  = []string{"| ", "/ ", "- ", "\\ "}
 	QodanaSpinner    = pterm.DefaultSpinner
 	PrimaryStyle     = pterm.NewStyle()               // PrimaryStyle is a primary text style.
@@ -55,6 +57,12 @@ var (
 	ErrorStyle       = pterm.NewStyle(pterm.FgRed)    // ErrorStyle is an error style.
 	WarningStyle     = pterm.NewStyle(pterm.FgYellow) // WarningStyle is a warning style.
 	MiscStyle        = pterm.NewStyle(pterm.FgGray)   // MiscStyle is a log style.
+	TableSep         = MiscStyle.Sprint("─")
+	TableSepUp       = MiscStyle.Sprint("┬")
+	TableSepMid      = MiscStyle.Sprint("│")
+	TableSepDown     = MiscStyle.Sprint("┴")
+	TableUp          = strings.Repeat(TableSep, NoLineWidth) + TableSepUp
+	TableDown        = strings.Repeat(TableSep, NoLineWidth) + TableSepDown
 )
 
 // Primary prints a message in the primary style.
@@ -146,35 +154,43 @@ func updateText(spinner *pterm.SpinnerPrinter, message string) {
 	}
 }
 
-// printLocalizedProblem prints problem using pterm panels.
-func printLocalizedProblem(ruleId string, level string, message string, path string, l int, c int) {
-	panels := pterm.Panels{
-		{
-			{Data: PrimaryBold("[%s]", level)},
-			{Data: PrimaryBold(ruleId)},
-			{Data: Primary("%s:%d:%d", path, l, c)},
-		},
-		{
-			{Data: Primary(message)},
-		},
+// printProblem prints problem with source code or without it.
+func printProblem(
+	ruleId string,
+	level string,
+	message string,
+	path string,
+	line int,
+	column int,
+	contextLine int,
+	context string,
+) {
+	width, _ := terminal.Size()
+	if width <= 0 {
+		width = 80
 	}
-	if err := pterm.DefaultPanel.WithPanels(panels).Render(); err != nil {
-		log.Fatal(err)
+	fmt.Printf("\n%s %s\n", PrimaryBold(strings.ToUpper(level)), Primary(ruleId))
+	fmt.Println(strings.Repeat(TableSep, width))
+	if path != "" && line > 0 && column > 0 {
+		fmt.Printf(" %s:%d:%d\n", path, line, column)
+		fmt.Printf("%s%s\n", TableUp, strings.Repeat(TableSep, width-NoLineWidth-1))
+	} else {
+		fmt.Println(strings.Repeat(TableSep, width))
 	}
-}
-
-// printGlobalProblem prints global problem using pterm panels.
-func printGlobalProblem(ruleId string, level string, message string) {
-	panels := pterm.Panels{
-		{
-			{Data: PrimaryBold("[%s]", level)},
-			{Data: PrimaryBold(ruleId)},
-		},
-		{
-			{Data: Primary(message)},
-		},
+	if contextLine > 0 && context != "" {
+		code := strings.Split(context, "\n")
+		for i := 0; i < len(code); i++ {
+			var printLine string
+			currentLine := contextLine + i
+			if currentLine == line {
+				printLine = ErrorStyle.Sprint(code[i]) + " ←"
+			} else {
+				printLine = WarningStyle.Sprint(code[i])
+			}
+			lineNumber := MiscStyle.Sprintf("%5d", currentLine)
+			fmt.Printf("%s  %s %s\n", lineNumber, TableSepMid, printLine)
+		}
+		fmt.Printf("%s%s\n", TableDown, strings.Repeat(TableSep, width-NoLineWidth-1))
 	}
-	if err := pterm.DefaultPanel.WithPanels(panels).Render(); err != nil {
-		log.Fatal(err)
-	}
+	fmt.Printf("%s\n\n", message)
 }
