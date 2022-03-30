@@ -79,7 +79,12 @@ But you can always override qodana.yaml options with the following command-line 
 				}
 				os.Exit(exitCode)
 			}
-			core.ReadSarif(options.ResultsDir, options.PrintProblems)
+			problems := core.ReadSarif(filepath.Join(options.ResultsDir, "qodana.sarif.json"), options.PrintProblems)
+			if problems == 0 {
+				core.SuccessMessage("It seems all right 👌 No problems found according to the checks applied")
+			} else {
+				core.ErrorMessage("Qodana found %d problems according to the checks applied", problems)
+			}
 			if options.ShowReport {
 				core.ShowReport(filepath.Join(options.ResultsDir, "report"), options.Port)
 			} else {
