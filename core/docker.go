@@ -53,30 +53,9 @@ var (
 	containerName = "qodana-cli"
 )
 
-// IsDockerInstalled returns true if docker is installed (can be found in $PATH).
-func IsDockerInstalled() error {
-	if _, err := exec.LookPath("docker"); err != nil {
-		return err
-	}
-	return nil
-}
-
-// EnsureDockerInstalled checks if Docker is installed.
-func EnsureDockerInstalled() {
-	if err := IsDockerInstalled(); err != nil {
-		if _, ok := err.(*exec.ExitError); ok {
-			ErrorMessage(
-				"Docker is not installed on your system, refer to https://www.docker.com/get-started for installing it",
-			)
-			os.Exit(1)
-		}
-		log.Fatal(err)
-	}
-}
-
 // CheckDockerHost checks if the host is ready to run Qodana Docker images.
 func CheckDockerHost() {
-	EnsureDockerInstalled()
+	ensureDockerInstalled()
 	cmd := exec.Command("docker", "ps")
 	if err := cmd.Run(); err != nil {
 		if exiterr, ok := err.(*exec.ExitError); ok {
@@ -97,6 +76,57 @@ func CheckDockerHost() {
 		log.Fatal(err)
 	}
 	checkDockerMemory()
+}
+
+// PullImage pulls docker image.
+func PullImage(ctx context.Context, client *client.Client, image string) {
+	reader, err := client.ImagePull(ctx, image, types.ImagePullOptions{})
+	if err != nil {
+		return
+	}
+	defer func(pull io.ReadCloser) {
+		err := pull.Close()
+		if err != nil {
+			log.Fatal("can't pull image ", err)
+		}
+	}(reader)
+	if _, err = io.Copy(ioutil.Discard, reader); err != nil {
+		log.Fatal("couldn't read the image pull logs ", err)
+	}
+}
+
+// DockerCleanup cleans up Qodana containers.
+func DockerCleanup() {
+	if containerName != "qodana-cli" { // if containerName is not set, it means that the container was not created!
+		docker := getDockerClient()
+		ctx := context.Background()
+		containers, err := docker.ContainerList(ctx, types.ContainerListOptions{})
+		if err != nil {
+			log.Fatal("couldn't get the running containers ", err)
+		}
+		for _, c := range containers {
+			if c.Names[0] == fmt.Sprintf("/%s", containerName) {
+				err = docker.ContainerStop(context.Background(), c.Names[0], nil)
+				if err != nil {
+					log.Fatal("couldn't stop the container ", err)
+				}
+			}
+		}
+	}
+}
+
+// ensureDockerInstalled checks if Docker is installed.
+func ensureDockerInstalled() {
+	_, err := exec.LookPath("docker")
+	if err != nil {
+		if _, ok := err.(*exec.ExitError); ok {
+			ErrorMessage(
+				"Docker is not installed on your system, refer to https://www.docker.com/get-started for installing it",
+			)
+			os.Exit(1)
+		}
+		log.Fatal(err)
+	}
 }
 
 // checkDockerMemory applicable only for Docker Desktop (has the default limit of 2GB, which can be not enough when Gradle runs inside a container).
@@ -248,23 +278,6 @@ func getDockerOptions(opts *QodanaOptions) *types.ContainerCreateConfig {
 	}
 }
 
-// PullImage pulls docker image.
-func PullImage(ctx context.Context, client *client.Client, image string) {
-	reader, err := client.ImagePull(ctx, image, types.ImagePullOptions{})
-	if err != nil {
-		return
-	}
-	defer func(pull io.ReadCloser) {
-		err := pull.Close()
-		if err != nil {
-			log.Fatal("can't pull image ", err)
-		}
-	}(reader)
-	if _, err = io.Copy(ioutil.Discard, reader); err != nil {
-		log.Fatal("couldn't read the image pull logs ", err)
-	}
-}
-
 // getDockerExitCode returns the exit code of the docker container.
 func getDockerExitCode(ctx context.Context, client *client.Client, id string) int64 {
 	statusCh, errCh := client.ContainerWait(ctx, id, container.WaitConditionNextExit)
@@ -304,24 +317,4 @@ func getDockerClient() *client.Client {
 		log.Fatal("couldn't create docker client ", err)
 	}
 	return docker
-}
-
-// DockerCleanup cleans up Qodana containers.
-func DockerCleanup() {
-	if containerName != "qodana-cli" { // if containerName is not set, it means that the container was not created!
-		docker := getDockerClient()
-		ctx := context.Background()
-		containers, err := docker.ContainerList(ctx, types.ContainerListOptions{})
-		if err != nil {
-			log.Fatal("couldn't get the running containers ", err)
-		}
-		for _, c := range containers {
-			if c.Names[0] == fmt.Sprintf("/%s", containerName) {
-				err = docker.ContainerStop(context.Background(), c.Names[0], nil)
-				if err != nil {
-					log.Fatal("couldn't stop the container ", err)
-				}
-			}
-		}
-	}
 }

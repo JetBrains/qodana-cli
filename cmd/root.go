@@ -17,18 +17,14 @@
 package cmd
 
 import (
-	"io/ioutil"
-	"os"
-	"os/signal"
-
 	"github.com/JetBrains/qodana-cli/core"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )
 
-// NewRootCmd constructs root command.
-func NewRootCmd() *cobra.Command {
+// NewRootCommand constructs root command.
+func NewRootCommand() *cobra.Command {
 	rootCmd := &cobra.Command{
 		Use:     "qodana",
 		Short:   "Run Qodana CLI",
@@ -57,35 +53,15 @@ func NewRootCmd() *cobra.Command {
 	return rootCmd
 }
 
-var rootCmd = NewRootCmd()
+var RootCommand = NewRootCommand()
 
 // init adds all child commands to the root command.
 func init() {
-	rootCmd.AddCommand(
+	RootCommand.AddCommand(
 		NewInitCommand(),
 		NewScanCommand(),
 		NewShowCommand(),
 		NewPullCommand(),
 		NewViewCommand(),
 	)
-}
-
-// Execute runs the command, adds Ctrl+C handler and returns error.
-func Execute() error {
-	c := make(chan os.Signal, 1)
-	signal.Notify(c, os.Interrupt)
-	go func() {
-		for range c {
-			core.Interrupted = true
-			log.SetOutput(ioutil.Discard)
-			core.WarningMessage("Interrupting Qodana CLI...")
-			core.DockerCleanup()
-			_ = core.QodanaSpinner.Stop()
-			os.Exit(0)
-		}
-	}()
-	if err := rootCmd.Execute(); err != nil {
-		return err
-	}
-	return nil
 }

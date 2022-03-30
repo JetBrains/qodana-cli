@@ -17,7 +17,9 @@
 package main
 
 import (
+	"io/ioutil"
 	"os"
+	"os/signal"
 
 	"github.com/JetBrains/qodana-cli/cmd"
 	"github.com/JetBrains/qodana-cli/core"
@@ -34,7 +36,19 @@ func main() {
 	if !core.IsInteractive() || os.Getenv("NO_COLOR") != "" { // http://no-color.org
 		core.DisableColor()
 	}
-	if err := cmd.Execute(); err != nil {
+	c := make(chan os.Signal, 1)
+	signal.Notify(c, os.Interrupt)
+	go func() {
+		for range c {
+			core.Interrupted = true
+			log.SetOutput(ioutil.Discard)
+			core.WarningMessage("Interrupting Qodana CLI...")
+			core.DockerCleanup()
+			_ = core.QodanaSpinner.Stop()
+			os.Exit(0)
+		}
+	}()
+	if err := cmd.RootCommand.Execute(); err != nil {
 		log.Fatalf("error running command: %s", err)
 		os.Exit(1)
 	}

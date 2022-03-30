@@ -1,10 +1,29 @@
+/*
+ * Copyright 2021-2022 JetBrains s.r.o.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * https://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package core
 
 import (
+	"bufio"
+	"context"
 	"crypto/sha256"
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
+	"github.com/pterm/pterm"
 	"io"
 	"io/ioutil"
 	"net/http"
@@ -16,6 +35,24 @@ import (
 	"time"
 
 	"github.com/sirupsen/logrus"
+)
+
+var (
+	unofficialLinter      = false
+	Interrupted           = false
+	SkipCheckForUpdateEnv = "QODANA_CLI_SKIP_CHECK_FOR_UPDATE"
+	scanStages            = []string{
+		"Preparing Qodana Docker images",
+		"Starting the analysis engine",
+		"Opening the project",
+		"Configuring the project",
+		"Analyzing the project",
+		"Preparing the report",
+	}
+	notSupportedLinters = []string{
+		"jetbrains/qodana-clone-finder",
+	}
+	releaseUrl = "https://api.github.com/repos/JetBrains/qodana-cli/releases/latest"
 )
 
 // CheckForUpdates check GitHub https://github.com/JetBrains/qodana-cli/ for the latest version of CLI release.
@@ -168,25 +205,111 @@ func GetLinterSystemDir(project string, linter string) string {
 	)
 }
 
-// lower a shortcut to strings.ToLower.
-func lower(s string) string {
-	return strings.ToLower(s)
-}
-
-// contains checks if a string is in a given slice.
-func contains(s []string, str string) bool {
-	for _, v := range s {
-		if v == str {
-			return true
+// checkLinter validates the image used for the scan.
+func checkLinter(image string) {
+	if !strings.HasPrefix(image, OfficialDockerPrefix) {
+		unofficialLinter = true
+	}
+	for _, linter := range notSupportedLinters {
+		if linter == image {
+			logrus.Fatalf("%s is not supported by Qodana CLI", linter)
 		}
 	}
-	return false
 }
 
-// Append appends a string to a slice if it's not already there.
-func Append(slice []string, elems ...string) []string {
-	if !contains(slice, elems[0]) {
-		slice = append(slice, elems[0])
+// PrepareHost cleans up report folder, gets the current user, creates the necessary folders for the analysis.
+func PrepareHost(opts *QodanaOptions) {
+	linterHome := GetLinterSystemDir(opts.ProjectDir, opts.Linter)
+	if opts.ResultsDir == "" {
+		opts.ResultsDir = filepath.Join(linterHome, "results")
 	}
-	return slice
+	if opts.CacheDir == "" {
+		opts.CacheDir = filepath.Join(linterHome, "cache")
+	}
+	if opts.User == "" {
+		opts.User = fmt.Sprintf("%d:%d", os.Getuid(), os.Getgid())
+	}
+	if _, err := os.Stat(opts.ResultsDir); err == nil {
+		err := os.RemoveAll(opts.ResultsDir)
+		if err != nil {
+			return
+		}
+	}
+	if err := os.MkdirAll(opts.CacheDir, os.ModePerm); err != nil {
+		logrus.Fatal("couldn't create a directory ", err.Error())
+	}
+	if err := os.MkdirAll(opts.ResultsDir, os.ModePerm); err != nil {
+		logrus.Fatal("couldn't create a directory ", err.Error())
+	}
+}
+
+// RunLinter runs the linter with the given options.
+func RunLinter(ctx context.Context, options *QodanaOptions) int {
+	docker := getDockerClient()
+	for i, stage := range scanStages {
+		scanStages[i] = PrimaryBold("[%d/%d] ", i+1, len(scanStages)+1) + Primary(stage)
+	}
+	checkLinter(options.Linter)
+	if unofficialLinter {
+		WarningMessage("You are using an unofficial Qodana linter: %s\n", options.Linter)
+	}
+	progress, _ := startQodanaSpinner(scanStages[0])
+	if !(options.SkipPull) {
+		PullImage(ctx, docker, options.Linter)
+	}
+	dockerConfig := getDockerOptions(options)
+	updateText(progress, scanStages[1])
+	runContainer(ctx, docker, dockerConfig)
+	logs, err := docker.ContainerLogs(ctx, dockerConfig.Name, dockerLogsOptions)
+	if err != nil {
+		logrus.Fatal(err)
+	}
+	defer func(reader io.ReadCloser) {
+		err := reader.Close()
+		if err != nil {
+			logrus.Fatal(err.Error())
+		}
+	}(logs)
+	followLinter(logs, progress)
+	exitCode := getDockerExitCode(ctx, docker, dockerConfig.Name)
+	if progress != nil {
+		_ = progress.Stop()
+	}
+	return int(exitCode)
+}
+
+// followLinter follows the linter logs and prints the progress.
+func followLinter(logs io.ReadCloser, progress *pterm.SpinnerPrinter) {
+	reader := bufio.NewReader(logs)
+	for {
+		line, err := reader.ReadString('\n')
+		line = strings.TrimSuffix(line, "\n")
+		if err == nil || len(line) > 0 {
+			if strings.Contains(line, "Starting up") {
+				updateText(progress, scanStages[2])
+			}
+			if strings.Contains(line, "The Project opening stage completed in") {
+				updateText(progress, scanStages[3])
+			}
+			if strings.Contains(line, "The Project configuration stage completed in") {
+				updateText(progress, scanStages[4])
+			}
+			if strings.Contains(line, "Detailed summary") {
+				updateText(progress, scanStages[5])
+				if !IsInteractive() {
+					EmptyMessage()
+				}
+			}
+			if strings.Contains(line, "IDEA exit code:") {
+				return
+			}
+			printLinterLog(line)
+		}
+		if err != nil {
+			if err != io.EOF {
+				logrus.Errorf("Error scanning docker log stream: %s", err)
+			}
+			return
+		}
+	}
 }

@@ -23,6 +23,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"runtime"
 	"strings"
@@ -64,7 +65,7 @@ func isGitHubAction() bool {
 // TestVersion verifies that the version command returns the correct version
 func TestVersion(t *testing.T) {
 	b := bytes.NewBufferString("")
-	command := NewRootCmd()
+	command := NewRootCommand()
 	command.SetOut(b)
 	command.SetArgs([]string{"-v"})
 	err := command.Execute()
@@ -85,7 +86,7 @@ func TestVersion(t *testing.T) {
 // TestHelp verifies that the help text is returned when running the tool with the flag or without it.
 func TestHelp(t *testing.T) {
 	out := bytes.NewBufferString("")
-	command := NewRootCmd()
+	command := NewRootCommand()
 	command.SetOut(out)
 	command.SetArgs([]string{"-h"})
 	err := command.Execute()
@@ -99,7 +100,7 @@ func TestHelp(t *testing.T) {
 	expected := string(output)
 
 	out = bytes.NewBufferString("")
-	command = NewRootCmd()
+	command = NewRootCommand()
 	command.SetOut(out)
 	command.SetArgs([]string{})
 	err = command.Execute()
@@ -177,7 +178,7 @@ func TestScanFlags(t *testing.T) {
 }
 
 func TestAllCommands(t *testing.T) {
-	if err := core.IsDockerInstalled(); err != nil || (runtime.GOOS == "windows" && isGitHubAction()) {
+	if _, err := exec.LookPath("docker"); err != nil || (runtime.GOOS == "windows" && isGitHubAction()) {
 		t.Skip(err)
 	}
 	core.DisableColor()
@@ -216,7 +217,13 @@ func TestAllCommands(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	_, err = os.Stat(filepath.Join(resultsPath, "qodana.sarif.json"))
+
+	// view
+	out = bytes.NewBufferString("")
+	command = NewViewCommand()
+	command.SetOut(out)
+	command.SetArgs([]string{"-f", filepath.Join(resultsPath, "qodana.sarif.json")})
+	err = command.Execute()
 	if err != nil {
 		t.Fatal(err)
 	}
