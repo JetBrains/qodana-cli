@@ -174,6 +174,25 @@ show [flags]
   -r, --report-dir string    Specify HTML report path (the one with index.html inside) (default <userCacheDir>/JetBrains/<linter>/results/report)
 ```
 
+### view
+
+View SARIF files in CLI
+
+#### Synopsis
+
+Preview all problems found in SARIF files in CLI.
+
+```
+view [flags]
+```
+
+#### Options
+
+```
+  -h, --help                help for view
+  -f, --sarif-file string   Path to the SARIF file (default "./qodana.sarif.json")
+```
+
 ## Why
 
 ![Comics by Irina Khromova](https://user-images.githubusercontent.com/13538286/151377284-28d845d3-a601-4512-9029-18f99d215ee1.png)
