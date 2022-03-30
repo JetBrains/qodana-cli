@@ -115,8 +115,8 @@ func printLinterLog(line string) {
 	}
 }
 
-// PrintProcess prints the message for processing phase. TODO: Add ETA based on previous runs
-func PrintProcess(f func(), start string, finished string) {
+// printProcess prints the message for processing phase. TODO: Add ETA based on previous runs
+func printProcess(f func(), start string, finished string) {
 	if err := spin(f, start); err != nil {
 		log.Fatal("\nProblem occurred:", err.Error())
 	}
