@@ -87,7 +87,7 @@ But you can always override qodana.yaml options with the following command-line 
 			}
 			if options.ShowReport {
 				core.ShowReport(filepath.Join(options.ResultsDir, "report"), options.Port)
-			} else {
+			} else if core.IsInteractive() {
 				core.WarningMessage(
 					"To view the Qodana report, run %s or add %s flag to %s",
 					core.PrimaryBold("qodana show"),
