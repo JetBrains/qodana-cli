@@ -53,6 +53,7 @@ type QodanaOptions struct {
 	User                  string
 	PrintProblems         bool
 	SkipPull              bool
+	ClearCache            bool
 }
 
 var Version = "1.0.1"

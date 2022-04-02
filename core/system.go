@@ -35,7 +35,7 @@ import (
 
 	"github.com/pterm/pterm"
 
-	"github.com/sirupsen/logrus"
+	log "github.com/sirupsen/logrus"
 )
 
 var (
@@ -61,29 +61,29 @@ func CheckForUpdates(currentVersion string) {
 	go func() {
 		resp, err := http.Get(releaseUrl)
 		if err != nil {
-			logrus.Errorf("Failed to check for updates: %s", err)
+			log.Errorf("Failed to check for updates: %s", err)
 			return
 		}
 		defer func(Body io.ReadCloser) {
 			err := Body.Close()
 			if err != nil {
-				logrus.Errorf("Failed to close response body: %s", err)
+				log.Errorf("Failed to close response body: %s", err)
 				return
 			}
 		}(resp.Body)
 		if resp.StatusCode < 200 || resp.StatusCode > 299 {
-			logrus.Errorf("Failed to check for updates: %s", resp.Status)
+			log.Errorf("Failed to check for updates: %s", resp.Status)
 			return
 		}
 		bodyText, err := ioutil.ReadAll(resp.Body)
 		if err != nil {
-			logrus.Errorf("Failed to read response body: %s", err)
+			log.Errorf("Failed to read response body: %s", err)
 			return
 		}
 		result := make(map[string]interface{})
 		err = json.Unmarshal(bodyText, &result)
 		if err != nil {
-			logrus.Errorf("Failed to read response JSON: %s", err)
+			log.Errorf("Failed to read response JSON: %s", err)
 			return
 		}
 		latestVersion := result["tag_name"].(string)
@@ -213,7 +213,7 @@ func checkLinter(image string) {
 	}
 	for _, linter := range notSupportedLinters {
 		if linter == image {
-			logrus.Fatalf("%s is not supported by Qodana CLI", linter)
+			log.Fatalf("%s is not supported by Qodana CLI", linter)
 		}
 	}
 }
@@ -227,6 +227,12 @@ func PrepareHost(opts *QodanaOptions) {
 	if opts.CacheDir == "" {
 		opts.CacheDir = filepath.Join(linterHome, "cache")
 	}
+	if opts.ClearCache {
+		err := os.RemoveAll(opts.CacheDir)
+		if err != nil {
+			log.Errorf("Could not clear local Qodana cache: %s", err)
+		}
+	}
 	if opts.User == "" {
 		opts.User = fmt.Sprintf("%d:%d", os.Getuid(), os.Getgid())
 	}
@@ -237,10 +243,10 @@ func PrepareHost(opts *QodanaOptions) {
 		}
 	}
 	if err := os.MkdirAll(opts.CacheDir, os.ModePerm); err != nil {
-		logrus.Fatal("couldn't create a directory ", err.Error())
+		log.Fatal("couldn't create a directory ", err.Error())
 	}
 	if err := os.MkdirAll(opts.ResultsDir, os.ModePerm); err != nil {
-		logrus.Fatal("couldn't create a directory ", err.Error())
+		log.Fatal("couldn't create a directory ", err.Error())
 	}
 }
 
@@ -263,12 +269,12 @@ func RunLinter(ctx context.Context, options *QodanaOptions) int {
 	runContainer(ctx, docker, dockerConfig)
 	logs, err := docker.ContainerLogs(ctx, dockerConfig.Name, dockerLogsOptions)
 	if err != nil {
-		logrus.Fatal(err)
+		log.Fatal(err)
 	}
 	defer func(reader io.ReadCloser) {
 		err := reader.Close()
 		if err != nil {
-			logrus.Fatal(err.Error())
+			log.Fatal(err.Error())
 		}
 	}(logs)
 	followLinter(logs, progress)
@@ -308,7 +314,7 @@ func followLinter(logs io.ReadCloser, progress *pterm.SpinnerPrinter) {
 		}
 		if err != nil {
 			if err != io.EOF {
-				logrus.Errorf("Error scanning docker log stream: %s", err)
+				log.Errorf("Error scanning docker log stream: %s", err)
 			}
 			return
 		}

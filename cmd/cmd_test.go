@@ -212,7 +212,13 @@ func TestAllCommands(t *testing.T) {
 	out = bytes.NewBufferString("")
 	command = NewScanCommand()
 	command.SetOut(out)
-	command.SetArgs([]string{"-i", projectPath, "-o", resultsPath, "--fail-threshold", "5", "--print-problems"})
+	command.SetArgs([]string{
+		"-i", projectPath,
+		"-o", resultsPath,
+		"--fail-threshold", "5",
+		"--print-problems",
+		"--clear-cache",
+	})
 	err = command.Execute()
 	if err != nil {
 		t.Fatal(err)
