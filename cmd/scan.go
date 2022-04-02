@@ -114,6 +114,7 @@ But you can always override qodana.yaml options with the following command-line 
 	flags.StringVarP(&options.User, "user", "u", "", "User to run Qodana container as. Please specify user id – '$UID' or user id and group id $(id -u):$(id -g). Use 'root' to run as the root user (default: the current user)")
 	flags.BoolVar(&options.SkipPull, "skip-pull", false, "Skip pulling the latest Qodana container")
 	flags.BoolVar(&options.PrintProblems, "print-problems", false, "Print all found problems by Qodana in the CLI output")
+	flags.BoolVar(&options.ClearCache, "clear-cache", false, "Clear the local Qodana cache before running the analysis")
 	flags.BoolVarP(&options.ShowReport, "show-report", "w", false, "Serve HTML report on port")
 	flags.IntVar(&options.Port, "port", 8080, "Port to serve the report on")
 
