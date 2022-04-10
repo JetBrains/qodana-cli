@@ -123,6 +123,7 @@ scan [flags]
       --baseline-include-absent   Include in the output report the results from the baseline run that are absent in the current run
       --cache-dir string          Override cache directory (default <userCacheDir>/JetBrains/<linter>/cache)
   -c, --changes                   Override the docker image to be used for the analysis
+      --clear-cache               Clear the local Qodana cache before running the analysis
       --disable-sanity            Skip running the inspections configured by the sanity profile
   -e, --env stringArray           Define additional environment variables for the Qodana container (you can use the flag multiple times). CLI is not reading full host environment variables and does not pass it to the Qodana container for security reasons
       --fail-threshold string     Set the number of problems that will serve as a quality gate. If this number is reached, the inspection run is terminated with a non-zero exit code
@@ -133,7 +134,7 @@ scan [flags]
   -n, --profile-name string       Profile name defined in the project
   -p, --profile-path string       Path to the profile file
   -i, --project-dir string        Root directory of the inspected project (default ".")
-      --property string           Set a JVM property to be used while running Qodana using the --property=property.name=value1,value2,...,valueN notation
+      --property stringArray      Set a JVM property to be used while running Qodana using the --property property.name=value1,value2,...,valueN notation
   -o, --results-dir string        Override directory to save Qodana inspection results to (default <userCacheDir>/JetBrains/<linter>/results)
       --run-promo string          Set to 'true' to have the application run the inspections configured by the promo profile; set to 'false' otherwise (default: 'true' only if Qodana is executed with the default profile)
   -s, --save-report               Generate HTML report (default true)
