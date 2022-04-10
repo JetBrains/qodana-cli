@@ -42,7 +42,7 @@ type QodanaOptions struct {
 	SaveReport            bool
 	ShowReport            bool
 	Port                  int
-	Property              string
+	Property              []string
 	Script                string
 	FailThreshold         string
 	Changes               bool

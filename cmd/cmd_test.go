@@ -45,7 +45,7 @@ var testOptions = &core.QodanaOptions{
 	SaveReport:            true,
 	ShowReport:            true,
 	Port:                  8888,
-	Property:              "foo=bar",
+	Property:              []string{"foo.baz=bar", "foo.bar=baz"},
 	Script:                "default",
 	FailThreshold:         "0",
 	Changes:               true,
@@ -162,14 +162,14 @@ func TestScanFlags(t *testing.T) {
 		"--baseline",
 		"qodana.sarif.json",
 		"--baseline-include-absent",
-		"--property",
-		"foo=bar",
 		"--fail-threshold",
 		"0",
 		"--changes",
 		"--send-report",
 		"--analysis-id",
 		"id",
+		"--property=foo.baz=bar",
+		"--property=foo.bar=baz",
 	}, " ")
 	actual := strings.Join(core.GetCmdOptions(testOptions), " ")
 	if expected != actual {
@@ -178,6 +178,7 @@ func TestScanFlags(t *testing.T) {
 }
 
 func TestAllCommands(t *testing.T) {
+	//goland:noinspection GoBoolExpressions
 	if _, err := exec.LookPath("docker"); err != nil || (runtime.GOOS == "windows" && isGitHubAction()) {
 		t.Skip(err)
 	}
@@ -218,6 +219,8 @@ func TestAllCommands(t *testing.T) {
 		"--fail-threshold", "5",
 		"--print-problems",
 		"--clear-cache",
+		"--property",
+		"idea.log.config.file=info.xml",
 	})
 	err = command.Execute()
 	if err != nil {
