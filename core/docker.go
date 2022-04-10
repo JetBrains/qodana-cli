@@ -133,7 +133,8 @@ func ensureDockerInstalled() {
 func checkDockerMemory() {
 	docker := getDockerClient()
 	goos := runtime.GOOS
-	if goos != "windows" && goos != "darwin" {
+	if //goland:noinspection GoBoolExpressions
+	goos != "windows" && goos != "darwin" {
 		return
 	}
 	info, err := docker.Info(context.Background())
@@ -188,9 +189,6 @@ func GetCmdOptions(opts *QodanaOptions) []string {
 	if opts.BaselineIncludeAbsent {
 		arguments = append(arguments, "--baseline-include-absent")
 	}
-	if opts.Property != "" {
-		arguments = append(arguments, "--property", opts.Property)
-	}
 	if opts.FailThreshold != "" {
 		arguments = append(arguments, "--fail-threshold", opts.FailThreshold)
 	}
@@ -202,6 +200,9 @@ func GetCmdOptions(opts *QodanaOptions) []string {
 	}
 	if opts.AnalysisId != "" {
 		arguments = append(arguments, "--analysis-id", opts.AnalysisId)
+	}
+	for _, property := range opts.Property {
+		arguments = append(arguments, "--property="+property)
 	}
 	return arguments
 }
