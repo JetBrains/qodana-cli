@@ -67,8 +67,7 @@ release:
     #### macOS and Linux
     ##### Install with [Homebrew](https://brew.sh) (recommended)
     ```console
-    brew tap jetbrains/utils
-    brew install qodana
+    brew install jetbrains/utils/qodana
     ```
     ##### Install with our installer
     ```console
