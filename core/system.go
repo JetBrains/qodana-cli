@@ -58,6 +58,9 @@ var (
 
 // CheckForUpdates check GitHub https://github.com/JetBrains/qodana-cli/ for the latest version of CLI release.
 func CheckForUpdates(currentVersion string) {
+	if currentVersion == "dev" {
+		return
+	}
 	go func() {
 		resp, err := http.Get(releaseUrl)
 		if err != nil {
@@ -87,7 +90,7 @@ func CheckForUpdates(currentVersion string) {
 			return
 		}
 		latestVersion := result["tag_name"].(string)
-		if latestVersion != fmt.Sprintf("v%s", currentVersion) {
+		if latestVersion != currentVersion {
 			WarningMessage(
 				"New version of %s is available: %s. See https://jb.gg/qodana-cli/update\n   Set %s=1 environment variable to never get this message again\n",
 				PrimaryBold("qodana"),

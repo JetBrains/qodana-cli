@@ -56,7 +56,7 @@ type QodanaOptions struct {
 	ClearCache            bool
 }
 
-var Version = "1.0.1"
+var Version = "dev"
 
 // GetLinter gets linter for the given path
 func GetLinter(path string) string {

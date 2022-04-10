@@ -5,6 +5,8 @@ before:
 builds:
   - env:
       - CGO_ENABLED=0
+    ldflags:
+      - -X github.com/JetBrains/qodana-cli/core.Version={{ .Tag }}
     goos:
       - linux
       - darwin
