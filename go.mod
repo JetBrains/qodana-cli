@@ -11,7 +11,7 @@ require (
 	github.com/docker/distribution v2.8.1+incompatible // indirect
 	github.com/docker/docker v20.10.14+incompatible
 	github.com/erikgeiser/promptkit v0.6.0
-	github.com/go-enry/go-enry/v2 v2.8.0
+	github.com/go-enry/go-enry/v2 v2.8.2
 	github.com/liamg/clinch v1.5.6
 	github.com/magiconair/properties v1.8.6 // indirect
 	github.com/mattn/go-isatty v0.0.14
