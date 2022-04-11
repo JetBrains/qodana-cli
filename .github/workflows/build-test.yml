@@ -32,7 +32,7 @@ jobs:
           distribution: goreleaser
           version: latest
           args: --snapshot --rm-dist --debug
-      - uses: actions/upload-artifact@v2
+      - uses: actions/upload-artifact@v3
         with:
           name: dist
           path: dist/
