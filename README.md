@@ -50,7 +50,8 @@ qodana init
 
 ### Analyze your project
 
-Right after you configured your project (or remember linter's name you want to run), you can run Qodana inspections simply by invoking the following command in your project root:
+Right after you configured your project (or remember linter's name you want to run),
+you can run Qodana inspections simply by invoking the following command in your project root:
 
 ```console
 qodana scan
@@ -61,7 +62,8 @@ qodana scan
 
 ### View the report
 
-After the analysis, the results are saved to `./<userCacheDir>/JetBrains/<linter>/results` by default. Inside the directory `./<userCacheDir>/JetBrains/<linter>/results/report`, you can find Qodana HTML report.
+After the analysis, the results are saved to `./<userCacheDir>/JetBrains/<linter>/results` by default.
+Inside the directory `./<userCacheDir>/JetBrains/<linter>/results/report`, you can find a Qodana HTML report.
 To view it in the browser, run the following command from your project root:
 
 ```console
@@ -73,7 +75,9 @@ You can serve any Qodana HTML report regardless of the project if you provide th
 ## Configuration
 
 To find more CLI options run `qodana ...` commands with the `--help` flag.
-If you want to configure Qodana or a check inside Qodana, consider using [`qodana.yaml` ](https://www.jetbrains.com/help/qodana/qodana-yaml.html) to have the same configuration on any CI you use and your machine.
+If you want to configure Qodana or a check inside Qodana,
+consider
+using [`qodana.yaml` ](https://www.jetbrains.com/help/qodana/qodana-yaml.html) to have the same configuration on any CI you use and your machine.
 
 > In some flags help texts you can notice that the default path contains `<userCacheDir>/JetBrains`. The `<userCacheDir>` differs from the OS you are running Qodana with.
 > - macOS: `~/Library/Caches/`
@@ -82,11 +86,13 @@ If you want to configure Qodana or a check inside Qodana, consider using [`qodan
 
 ### init
 
-Configure project for Qodana
+Configure a project for Qodana
 
 #### Synopsis
 
-Configure project for Qodana: prepare Qodana configuration file by analyzing the project structure and generating a default configuration qodana.yaml file.
+Configure a project for Qodana:
+prepare Qodana configuration file by analyzing the project structure
+and generating a default configuration qodana.yaml file.
 
 ```
 init [flags]
@@ -105,7 +111,9 @@ Scan project with Qodana
 
 #### Synopsis
 
-Scan a project with Qodana. It runs one of Qodana Docker's images (https://www.jetbrains.com/help/qodana/docker-images.html) and reports the results.
+Scan a project with Qodana.
+It runs one of Qodana Docker's images
+(https://www.jetbrains.com/help/qodana/docker-images.html) and reports the results.
 
 Note that most options can be configured via qodana.yaml (https://www.jetbrains.com/help/qodana/qodana-yaml.html) file.
 But you can always override qodana.yaml options with the following command-line options.
@@ -150,15 +158,15 @@ scan [flags]
 
 ### show
 
-Show Qodana report
+Show a Qodana report
 
 #### Synopsis
 
-Show (serve locally) the latest Qodana report.
+Show (serve) the latest Qodana report.
 
 Due to JavaScript security restrictions, the generated report cannot
 be viewed via the file:// protocol (by double-clicking the index.html file).  
-https://www.jetbrains.com/help/qodana/html-report.html  
+https://www.jetbrains.com/help/qodana/html-report.html 
 This command serves the Qodana report locally and opens a browser to it.
 
 ```
@@ -198,11 +206,14 @@ view [flags]
 
 ![Comics by Irina Khromova](https://user-images.githubusercontent.com/13538286/151377284-28d845d3-a601-4512-9029-18f99d215ee1.png)
 
-> 🖼 The illustration is created by [Irina Khromova](https://www.instagram.com/irkin_sketch/)
+> 🖼 [Irina Khromova painted the illustration](https://www.instagram.com/irkin_sketch/)
 
-Qodana linters are distributed via Docker images – which becomes handy for developers (us) and the users to run code inspections in CI.
+Qodana linters are distributed via Docker images –
+which become handy for developers (us) and users to run code inspections in CI.
 
-But to set up Qodana in CI, one wants to try it locally first, as there is some additional configuration tuning required that differs from project to project (and we try to be as much user-friendly as possible).
+But to set up Qodana in CI, one wants to try it locally first,
+as there is some additional configuration tuning required that differs from project to project
+(and we try to be as much user-friendly as possible).
 
 It's easy to try Qodana locally by running a _simple_ command:
 

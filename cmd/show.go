@@ -38,8 +38,8 @@ func NewShowCommand() *cobra.Command {
 	options := &ShowOptions{}
 	cmd := &cobra.Command{
 		Use:   "show",
-		Short: "Show Qodana report",
-		Long: `Show (serve locally) the latest Qodana report. Or open the results directory if the flag is set.
+		Short: "Show a Qodana report",
+		Long: `Show (serve) the latest Qodana report. Or open the results directory if the flag is set.
 
 Due to JavaScript security restrictions, the generated report cannot
 be viewed via the file:// protocol (by double-clicking the index.html file).
