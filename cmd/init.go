@@ -32,8 +32,8 @@ func NewInitCommand() *cobra.Command {
 	options := &InitOptions{}
 	cmd := &cobra.Command{
 		Use:   "init",
-		Short: "Configure project for Qodana",
-		Long:  `Configure project for Qodana: prepare Qodana configuration file by analyzing the project structure and generating a default configuration qodana.yaml file.`,
+		Short: "Configure a project for Qodana",
+		Long:  `Configure a project for Qodana: prepare Qodana configuration file by analyzing the project structure and generating a default configuration qodana.yaml file.`,
 		Run: func(cmd *cobra.Command, args []string) {
 			qodanaYaml := core.LoadQodanaYaml(options.ProjectDir)
 			if qodanaYaml.Linter == "" || options.Force {
