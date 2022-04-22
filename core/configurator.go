@@ -25,11 +25,12 @@ import (
 	"strings"
 
 	"github.com/go-enry/go-enry/v2"
+
 	log "github.com/sirupsen/logrus"
 )
 
 const (
-	version = "2021.3"
+	version = "2022.1"
 	eap     = "-eap"
 	QDJVMC  = "jetbrains/qodana-jvm-community:" + version
 	QDJVM   = "jetbrains/qodana-jvm:" + version + eap
