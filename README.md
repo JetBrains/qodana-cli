@@ -126,34 +126,34 @@ scan [flags]
 #### Options
 
 ```
+  -l, --linter string             Override linter to use
+  -i, --project-dir string        Root directory of the inspected project (default ".")
+  -o, --results-dir string        Override directory to save Qodana inspection results to (default <userCacheDir>/JetBrains/<linter>/results)
+      --cache-dir string          Override cache directory (default <userCacheDir>/JetBrains/<linter>/cache)
+  -e, --env stringArray           Define additional environment variables for the Qodana container (you can use the flag multiple times). CLI is not reading full host environment variables and does not pass it to the Qodana container for security reasons
+  -v, --volume stringArray        Define additional volumes for the Qodana container (you can use the flag multiple times)
+  -u, --user string               User to run Qodana container as. Please specify user id – '$UID' or user id and group id $(id -u):$(id -g). Use 'root' to run as the root user (default: the current user)
+      --skip-pull                 Skip pulling the latest Qodana container
+      --print-problems            Print all found problems by Qodana in the CLI output
+      --clear-cache               Clear the local Qodana cache before running the analysis
+  -w, --show-report               Serve HTML report on port
+      --port int                  Port to serve the report on (default 8080)
   -a, --analysis-id string        Unique report identifier (GUID) to be used by Qodana Cloud
   -b, --baseline string           Provide the path to an existing SARIF report to be used in the baseline state calculation
       --baseline-include-absent   Include in the output report the results from the baseline run that are absent in the current run
-      --cache-dir string          Override cache directory (default <userCacheDir>/JetBrains/<linter>/cache)
-  -c, --changes                   Override the docker image to be used for the analysis
-      --clear-cache               Clear the local Qodana cache before running the analysis
-      --disable-sanity            Skip running the inspections configured by the sanity profile
-  -e, --env stringArray           Define additional environment variables for the Qodana container (you can use the flag multiple times). CLI is not reading full host environment variables and does not pass it to the Qodana container for security reasons
+  -c, --changes                   Inspect uncommitted changes and report new problems
       --fail-threshold string     Set the number of problems that will serve as a quality gate. If this number is reached, the inspection run is terminated with a non-zero exit code
-  -h, --help                      help for scan
-  -l, --linter string             Override linter to use
-      --port int                  Port to serve the report on (default 8080)
-      --print-problems            Print all found problems by Qodana in the CLI output
+      --disable-sanity            Skip running the inspections configured by the sanity profile
+  -d, --source-directory string   Directory inside the project-dir directory must be inspected. If not specified, the whole project is inspected
   -n, --profile-name string       Profile name defined in the project
   -p, --profile-path string       Path to the profile file
-  -i, --project-dir string        Root directory of the inspected project (default ".")
-      --property stringArray      Set a JVM property to be used while running Qodana using the --property property.name=value1,value2,...,valueN notation
-  -o, --results-dir string        Override directory to save Qodana inspection results to (default <userCacheDir>/JetBrains/<linter>/results)
       --run-promo string          Set to 'true' to have the application run the inspections configured by the promo profile; set to 'false' otherwise (default: 'true' only if Qodana is executed with the default profile)
-  -s, --save-report               Generate HTML report (default true)
       --script string             Override the run scenario (default "default")
-      --send-report               Send the inspection report to Qodana Cloud, requires the '--token' option to be specified
-  -w, --show-report               Serve HTML report on port
-      --skip-pull                 Skip pulling the latest Qodana container
-  -d, --source-directory string   Directory inside the project-dir directory must be inspected. If not specified, the whole project is inspected
       --stub-profile string       Absolute path to the fallback profile file. This option is applied in case the profile was not specified using any available options
-  -u, --user string               User to run Qodana container as. Please specify user id – '$UID' or user id and group id $(id -u):$(id -g). Use 'root' to run as the root user (default: the current user)
-  -v, --volume stringArray        Define additional volumes for the Qodana container (you can use the flag multiple times)
+      --property stringArray      Set a JVM property to be used while running Qodana using the --property property.name=value1,value2,...,valueN notation
+  -s, --save-report               Generate HTML report (default true)
+      --send-report               Send the inspection report to Qodana Cloud, requires the '--token' option to be specified
+  -h, --help                      help for scan
 ```
 
 ### show
