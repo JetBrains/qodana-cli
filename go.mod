@@ -15,7 +15,7 @@ require (
 	github.com/erikgeiser/promptkit v0.6.0
 	github.com/go-enry/go-enry/v2 v2.8.2
 	github.com/kr/text v0.2.0 // indirect
-	github.com/liamg/clinch v1.5.6
+	github.com/liamg/clinch v1.6.1
 	github.com/mattn/go-isatty v0.0.14
 	github.com/moby/term v0.0.0-20210610120745-9d4ed1856297 // indirect
 	github.com/morikuni/aec v1.0.0 // indirect
