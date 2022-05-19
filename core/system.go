@@ -237,7 +237,12 @@ func PrepareHost(opts *QodanaOptions) {
 		}
 	}
 	if opts.User == "" {
-		opts.User = fmt.Sprintf("%d:%d", os.Getuid(), os.Getgid())
+		switch runtime.GOOS {
+		case "windows":
+			opts.User = "root"
+		default: // "darwin", "linux", "freebsd", "openbsd", "netbsd"
+			opts.User = fmt.Sprintf("%d:%d", os.Getuid(), os.Getgid())
+		}
 	}
 	if _, err := os.Stat(opts.ResultsDir); err == nil {
 		err := os.RemoveAll(opts.ResultsDir)
