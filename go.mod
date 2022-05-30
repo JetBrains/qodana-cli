@@ -14,7 +14,6 @@ require (
 	github.com/docker/go-units v0.4.0 // indirect
 	github.com/erikgeiser/promptkit v0.6.0
 	github.com/go-enry/go-enry/v2 v2.8.2
-	github.com/kr/text v0.2.0 // indirect
 	github.com/liamg/clinch v1.6.1
 	github.com/mattn/go-isatty v0.0.14
 	github.com/moby/term v0.0.0-20210610120745-9d4ed1856297 // indirect
@@ -26,9 +25,9 @@ require (
 	github.com/pterm/pterm v0.12.41
 	github.com/sirupsen/logrus v1.8.1
 	github.com/spf13/cobra v1.4.0
-	github.com/spf13/viper v1.11.0
+	github.com/spf13/viper v1.12.0
 	golang.org/x/time v0.0.0-20210723032227-1f47c861a9ac // indirect
 	gopkg.in/check.v1 v1.0.0-20201130134442-10cb98267c6c // indirect
-	gopkg.in/yaml.v3 v3.0.0-20210107192922-496545a6307b
+	gopkg.in/yaml.v3 v3.0.0
 	gotest.tools/v3 v3.0.3 // indirect
 )
