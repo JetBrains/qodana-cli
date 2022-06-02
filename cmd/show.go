@@ -31,6 +31,7 @@ type ShowOptions struct {
 	ReportDir  string
 	Port       int
 	OpenDir    bool
+	YamlName   string
 }
 
 // NewShowCommand returns a new instance of the show command.
@@ -46,8 +47,11 @@ be viewed via the file:// protocol (by double-clicking the index.html file).
 https://www.jetbrains.com/help/qodana/html-report.html
 This command serves the Qodana report locally and opens a browser to it.`,
 		Run: func(cmd *cobra.Command, args []string) {
+			if options.YamlName == "" {
+				options.YamlName = core.FindQodanaYaml(options.ProjectDir)
+			}
 			if options.ReportDir == "" {
-				linter := core.LoadQodanaYaml(options.ProjectDir).Linter
+				linter := core.LoadQodanaYaml(options.ProjectDir, options.YamlName).Linter
 				if linter == "" {
 					log.Fatalf("Can't automatically find the report...\n" +
 						"Please specify the report directory with the --report-dir flag.")
@@ -74,5 +78,6 @@ This command serves the Qodana report locally and opens a browser to it.`,
 		"Specify HTML report path (the one with index.html inside) (default <userCacheDir>/JetBrains/<linter>/results/report)")
 	flags.IntVarP(&options.Port, "port", "p", 8080, "Specify port to serve report at")
 	flags.BoolVarP(&options.OpenDir, "dir-only", "d", false, "Open report directory only, don't serve it")
+	flags.StringVarP(&options.YamlName, "yaml-name", "y", "", "Override qodana.yaml name")
 	return cmd
 }

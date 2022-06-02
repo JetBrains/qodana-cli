@@ -25,6 +25,7 @@ import (
 type InitOptions struct {
 	ProjectDir string
 	Force      bool
+	YamlName   string
 }
 
 // NewInitCommand returns a new instance of the show command.
@@ -35,18 +36,22 @@ func NewInitCommand() *cobra.Command {
 		Short: "Configure a project for Qodana",
 		Long:  `Configure a project for Qodana: prepare Qodana configuration file by analyzing the project structure and generating a default configuration qodana.yaml file.`,
 		Run: func(cmd *cobra.Command, args []string) {
-			qodanaYaml := core.LoadQodanaYaml(options.ProjectDir)
+			if options.YamlName == "" {
+				options.YamlName = core.FindQodanaYaml(options.ProjectDir)
+			}
+			qodanaYaml := core.LoadQodanaYaml(options.ProjectDir, options.YamlName)
 			if qodanaYaml.Linter == "" || options.Force {
-				core.GetLinter(options.ProjectDir)
+				core.GetLinter(options.ProjectDir, options.YamlName)
 			} else {
 				core.EmptyMessage()
 				core.SuccessMessage("The linter was already configured before: %s", core.PrimaryBold(qodanaYaml.Linter))
 			}
-			core.WarningMessage("Run %s to analyze the project. The configuration is stored in qodana.yaml and can be changed later", core.PrimaryBold("qodana scan"))
+			core.WarningMessage("Run %s to analyze the project. The configuration is stored in %s and can be changed later", core.PrimaryBold("qodana scan"), core.PrimaryBold(options.YamlName))
 		},
 	}
 	flags := cmd.Flags()
 	flags.StringVarP(&options.ProjectDir, "project-dir", "i", ".", "Root directory of the project to configure")
 	flags.BoolVarP(&options.Force, "force", "f", false, "Force initialization (overwrite existing valid qodana.yaml)")
+	flags.StringVar(&options.YamlName, "yaml-name", "", "Override qodana.yaml name")
 	return cmd
 }

@@ -43,11 +43,11 @@ type QodanaYaml struct {
 	// FailThreshold is a number of problems to fail the analysis (to exit from Qodana with code 255).
 	FailThreshold int `yaml:"failThreshold,omitempty"`
 
-	// Exclude property to disable the wanted checks on the wanted paths.
-	Excludes []Exclude `yaml:"exclude,omitempty"`
+	// Clude property to disable the wanted checks on the wanted paths.
+	Excludes []Clude `yaml:"exclude,omitempty"`
 
 	// Include property to enable the wanted checks.
-	Includes []Include `yaml:"include,omitempty"`
+	Includes []Clude `yaml:"include,omitempty"`
 
 	// Properties property to override IDE properties.
 	Properties map[string]string `yaml:"properties,omitempty"`
@@ -80,19 +80,13 @@ type Profile struct {
 	Path string `yaml:"path,omitempty"`
 }
 
-// Exclude A check id to disable.
-type Exclude struct {
-	// The name of check to exclude.
+// Clude A check id to enable/disable for include/exclude YAML field.
+type Clude struct {
+	// The name of check to include/exclude.
 	Name string `yaml:"name"`
 
-	// Relative to the project root path to disable analysis.
+	// Relative to the project root path to enable/disable analysis.
 	Paths []string `yaml:"paths,omitempty"`
-}
-
-// Include A check id to enable.
-type Include struct {
-	// The name of check to exclude.
-	Name string `yaml:"name"`
 }
 
 // Plugin to be installed during the Qodana run.
@@ -158,13 +152,20 @@ type CustomDependency struct {
 	Licenses []License `yaml:"licenses"`
 }
 
-// LoadQodanaYaml gets Qodana YAML from the project.
-func LoadQodanaYaml(project string) *QodanaYaml {
-	q := &QodanaYaml{}
-	qodanaYamlPath := filepath.Join(project, "qodana.yaml")
-	if _, err := os.Stat(qodanaYamlPath); errors.Is(err, os.ErrNotExist) {
-		qodanaYamlPath = filepath.Join(project, "qodana.yml")
+// FindQodanaYaml checks whether qodana.yaml exists or not
+func FindQodanaYaml(project string) string {
+	filename := configName + ".yml"
+	if info, _ := os.Stat(filepath.Join(project, filename)); info != nil {
+		return filename
+	} else {
+		return configName + ".yaml"
 	}
+}
+
+// LoadQodanaYaml gets Qodana YAML from the project.
+func LoadQodanaYaml(project string, filename string) *QodanaYaml {
+	q := &QodanaYaml{}
+	qodanaYamlPath := filepath.Join(project, filename)
 	if _, err := os.Stat(qodanaYamlPath); errors.Is(err, os.ErrNotExist) {
 		return q
 	}
@@ -210,9 +211,9 @@ func (q *QodanaYaml) sort() *QodanaYaml {
 	return q
 }
 
-// WriteQodanaYaml writes the qodana.yaml file to the given path.
-func WriteQodanaYaml(path string, linter string) {
-	q := LoadQodanaYaml(path)
+// SetQodanaLinter writes the qodana.yaml file to the given path.
+func SetQodanaLinter(path string, linter string, filename string) {
+	q := LoadQodanaYaml(path, filename)
 	if q.Version == "" {
 		q.Version = "1.0"
 	}
@@ -225,7 +226,7 @@ func WriteQodanaYaml(path string, linter string) {
 	if err != nil {
 		return
 	}
-	err = ioutil.WriteFile(filepath.Join(path, "qodana.yaml"), b.Bytes(), 0o600)
+	err = ioutil.WriteFile(filepath.Join(path, filename), b.Bytes(), 0o600)
 	if err != nil {
 		log.Fatalf("Marshal: %v", err)
 	}
