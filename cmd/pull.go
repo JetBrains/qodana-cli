@@ -29,6 +29,7 @@ import (
 type PullOptions struct {
 	Linter     string
 	ProjectDir string
+	YamlName   string
 }
 
 // NewPullCommand returns a new instance of the show command.
@@ -42,14 +43,17 @@ func NewPullCommand() *cobra.Command {
 			core.CheckDockerHost()
 		},
 		Run: func(cmd *cobra.Command, args []string) {
+			if options.YamlName == "" {
+				options.YamlName = core.FindQodanaYaml(options.ProjectDir)
+			}
 			if options.Linter == "" {
-				qodanaYaml := core.LoadQodanaYaml(options.ProjectDir)
+				qodanaYaml := core.LoadQodanaYaml(options.ProjectDir, options.YamlName)
 				if qodanaYaml.Linter == "" {
 					core.WarningMessage(
 						"No valid qodana.yaml found. Have you run %s? Running that for you...",
 						core.PrimaryBold("qodana init"),
 					)
-					options.Linter = core.GetLinter(options.ProjectDir)
+					options.Linter = core.GetLinter(options.ProjectDir, options.YamlName)
 					core.EmptyMessage()
 				} else {
 					options.Linter = qodanaYaml.Linter
@@ -66,5 +70,6 @@ func NewPullCommand() *cobra.Command {
 	flags := cmd.Flags()
 	flags.StringVarP(&options.Linter, "linter", "l", "", "Override linter to use")
 	flags.StringVarP(&options.ProjectDir, "project-dir", "i", ".", "Root directory of the inspected project")
+	flags.StringVarP(&options.YamlName, "yaml-name", "y", "", "Override qodana.yaml name")
 	return cmd
 }

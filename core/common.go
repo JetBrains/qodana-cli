@@ -54,12 +54,13 @@ type QodanaOptions struct {
 	PrintProblems         bool
 	SkipPull              bool
 	ClearCache            bool
+	YamlName              string
 }
 
 var Version = "dev"
 
-// GetLinter gets linter for the given path
-func GetLinter(path string) string {
+// GetLinter gets linter for the given path and saves configName
+func GetLinter(path string, yamlName string) string {
 	var linters []string
 	var linter string
 	printProcess(func() {
@@ -67,11 +68,15 @@ func GetLinter(path string) string {
 		if len(languages) == 0 {
 			languages, _ = recognizeDirLanguages(path)
 		}
-		WarningMessage("Detected technologies: " + strings.Join(languages, ", ") + "\n")
-		for _, language := range languages {
-			if linter, err := langsLinters[language]; err {
-				for _, l := range linter {
-					linters = Append(linters, l)
+		if len(languages) == 0 {
+			WarningMessage("No technologies detected (no source code files?)\n")
+		} else {
+			WarningMessage("Detected technologies: " + strings.Join(languages, ", ") + "\n")
+			for _, language := range languages {
+				if linter, err := langsLinters[language]; err {
+					for _, l := range linter {
+						linters = Append(linters, l)
+					}
 				}
 			}
 		}
@@ -95,7 +100,7 @@ func GetLinter(path string) string {
 	}
 	if linter != "" {
 		log.Infof("Detected linters: %s", strings.Join(linters, ", "))
-		WriteQodanaYaml(path, linter)
+		SetQodanaLinter(path, linter, yamlName)
 	}
 	SuccessMessage("Added %s", linter)
 	return linter

@@ -62,6 +62,19 @@ func isGitHubAction() bool {
 	return os.Getenv("GITHUB_ACTIONS") == "true"
 }
 
+func createPythonProject(t *testing.T, name string) string {
+	location := "/tmp/" + name
+	err := os.MkdirAll(location, 0o755)
+	if err != nil {
+		t.Fatal(err)
+	}
+	err = ioutil.WriteFile(location+"/hello.py", []byte("print(\"Hello\")"), 0o755)
+	if err != nil {
+		t.Fatal(err)
+	}
+	return location
+}
+
 // TestVersion verifies that the version command returns the correct version
 func TestVersion(t *testing.T) {
 	b := bytes.NewBufferString("")
@@ -119,12 +132,8 @@ func TestHelp(t *testing.T) {
 }
 
 func TestInitCommand(t *testing.T) {
-	projectPath := "/tmp/qodana_init"
-	err := os.MkdirAll(projectPath, 0o755)
-	if err != nil {
-		t.Fatal(err)
-	}
-	err = ioutil.WriteFile("/tmp/qodana_init/hello.py", []byte("print(\"Hello\")"), 0o755)
+	projectPath := createPythonProject(t, "qodana_init")
+	err := ioutil.WriteFile(projectPath+"/qodana.yml", []byte("version: 1.0"), 0o755)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -137,7 +146,13 @@ func TestInitCommand(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	qodanaYaml := core.LoadQodanaYaml(projectPath)
+	filename := core.FindQodanaYaml(projectPath)
+
+	if filename != "qodana.yml" {
+		t.Fatalf("expected \"qodana.yml\" got \"%s\"", filename)
+	}
+
+	qodanaYaml := core.LoadQodanaYaml(projectPath, filename)
 
 	if qodanaYaml.Linter != core.QDPY {
 		t.Fatalf("expected \"%s\", but got %s", core.QDPY, qodanaYaml.Linter)
@@ -189,15 +204,8 @@ func TestAllCommands(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	projectPath := "/tmp/qodana_scan"
-	err = os.MkdirAll(projectPath, 0o755)
-	if err != nil {
-		t.Fatal(err)
-	}
-	err = ioutil.WriteFile(filepath.Join(projectPath, "hello.py"), []byte("println(\"Hello\")\n123"), 0o755)
-	if err != nil {
-		t.Fatal(err)
-	}
+
+	projectPath := createPythonProject(t, "qodana_scan")
 
 	// pull
 	out := bytes.NewBufferString("")
