@@ -28,6 +28,6 @@ require (
 	github.com/spf13/viper v1.12.0
 	golang.org/x/time v0.0.0-20210723032227-1f47c861a9ac // indirect
 	gopkg.in/check.v1 v1.0.0-20201130134442-10cb98267c6c // indirect
-	gopkg.in/yaml.v3 v3.0.0
+	gopkg.in/yaml.v3 v3.0.1
 	gotest.tools/v3 v3.0.3 // indirect
 )
