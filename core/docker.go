@@ -51,6 +51,8 @@ var (
 		Timestamps: false,
 	}
 	containerName = "qodana-cli"
+	qodanaEnv     = "QODANA_ENV"
+	qodanaToken   = "QODANA_TOKEN"
 )
 
 // CheckDockerHost checks if the host is ready to run Qodana Docker images.
@@ -209,14 +211,24 @@ func GetCmdOptions(opts *QodanaOptions) []string {
 
 // getDockerOptions returns qodana docker container options.
 func getDockerOptions(opts *QodanaOptions) *types.ContainerCreateConfig {
+	tokenConfigured := false
+	for _, env := range opts.Env {
+		if strings.HasPrefix(env, qodanaToken+"=") {
+			tokenConfigured = true
+		}
+	}
+	if !tokenConfigured {
+		opts.Env = append(opts.Env, fmt.Sprintf("%s=%s", qodanaToken, os.Getenv(qodanaToken)))
+	}
+
 	envConfigured := false
 	for _, env := range opts.Env {
-		if strings.HasPrefix(env, "QODANA_ENV=") {
+		if strings.HasPrefix(env, qodanaEnv+"=") {
 			envConfigured = true
 		}
 	}
 	if !envConfigured {
-		opts.Env = append(opts.Env, "QODANA_ENV=cli:"+Version)
+		opts.Env = append(opts.Env, qodanaEnv+"=cli:"+Version)
 	}
 
 	cachePath, err := filepath.Abs(opts.CacheDir)
