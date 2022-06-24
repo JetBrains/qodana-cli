@@ -138,6 +138,7 @@ scan [flags]
       --clear-cache               Clear the local Qodana cache before running the analysis
   -w, --show-report               Serve HTML report on port
       --port int                  Port to serve the report on (default 8080)
+      --yaml-name string          Override qodana.yaml name to use: 'qodana.yaml' or 'qodana.yml'
   -a, --analysis-id string        Unique report identifier (GUID) to be used by Qodana Cloud
   -b, --baseline string           Provide the path to an existing SARIF report to be used in the baseline state calculation
       --baseline-include-absent   Include in the output report the results from the baseline run that are absent in the current run
@@ -152,7 +153,7 @@ scan [flags]
       --stub-profile string       Absolute path to the fallback profile file. This option is applied in case the profile was not specified using any available options
       --property stringArray      Set a JVM property to be used while running Qodana using the --property property.name=value1,value2,...,valueN notation
   -s, --save-report               Generate HTML report (default true)
-      --send-report               Send the inspection report to Qodana Cloud, requires the '--token' option to be specified
+      --send-report               Send the inspection report to Qodana Cloud, requires the 'QODANA_TOKEN' environment variable to be declared
   -h, --help                      help for scan
 ```
 
