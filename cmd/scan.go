@@ -19,6 +19,7 @@ package cmd
 import (
 	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/erikgeiser/promptkit/confirmation"
 	log "github.com/sirupsen/logrus"
@@ -42,6 +43,15 @@ But you can always override qodana.yaml options with the following command-line 
 			core.CheckDockerHost()
 		},
 		Run: func(cmd *cobra.Command, args []string) {
+			gitReset := false
+			if options.Commit != "" && core.IsGitInstalled() {
+				err := core.GitReset(options.ProjectDir, options.Commit)
+				if err != nil {
+					core.WarningMessage("Could not reset git repository, no --commit option will be applied: %s", err)
+				} else {
+					gitReset = true
+				}
+			}
 			ctx := cmd.Context()
 			if options.YamlName == "" {
 				options.YamlName = core.FindQodanaYaml(options.ProjectDir)
@@ -88,6 +98,9 @@ But you can always override qodana.yaml options with the following command-line 
 			} else {
 				core.ErrorMessage("Qodana found %d problems according to the checks applied", problems)
 			}
+			if gitReset && !strings.HasPrefix(options.Commit, "CI") {
+				_ = core.GitResetBack(options.ProjectDir)
+			}
 			if options.ShowReport {
 				core.ShowReport(filepath.Join(options.ResultsDir, "report"), options.Port)
 			} else if core.IsInteractive() {
@@ -126,6 +139,7 @@ But you can always override qodana.yaml options with the following command-line 
 	flags.StringVarP(&options.Baseline, "baseline", "b", "", "Provide the path to an existing SARIF report to be used in the baseline state calculation")
 	flags.BoolVar(&options.BaselineIncludeAbsent, "baseline-include-absent", false, "Include in the output report the results from the baseline run that are absent in the current run")
 	flags.BoolVarP(&options.Changes, "changes", "c", false, "Inspect uncommitted changes and report new problems")
+	flags.StringVar(&options.Commit, "commit", "", "Base changes commit to reset to, useful with --changes: analysis will be run only on changed files since commit X, 'reset' will be cancelled once the analysis is finished if the commit prefix does not contain CI prefix")
 	flags.StringVar(&options.FailThreshold, "fail-threshold", "", "Set the number of problems that will serve as a quality gate. If this number is reached, the inspection run is terminated with a non-zero exit code")
 	flags.BoolVar(&options.DisableSanity, "disable-sanity", false, "Skip running the inspections configured by the sanity profile")
 	flags.StringVarP(&options.SourceDirectory, "source-directory", "d", "", "Directory inside the project-dir directory must be inspected. If not specified, the whole project is inspected")
