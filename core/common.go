@@ -21,7 +21,6 @@ import (
 	"os"
 	"strings"
 
-	"github.com/erikgeiser/promptkit/selection"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -88,15 +87,12 @@ func GetLinter(path string, yamlName string) string {
 	} else if len(linters) == 1 || !IsInteractive() {
 		linter = linters[0]
 	} else {
-		sp := selection.New("Which linter do you want to set up?",
-			selection.Choices(linters))
-		sp.PageSize = 5
-		choice, err := sp.RunPrompt()
+		choice, err := QodanaInteractiveSelect.WithOptions(linters).Show()
 		if err != nil {
 			ErrorMessage("%s", err)
 			os.Exit(1)
 		}
-		linter = choice.String
+		linter = choice
 	}
 	if linter != "" {
 		log.Infof("Detected linters: %s", strings.Join(linters, ", "))

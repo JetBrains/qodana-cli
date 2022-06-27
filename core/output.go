@@ -49,20 +49,40 @@ func DisableColor() {
 
 // styles and different declarations intended to be used only inside this file
 var (
-	NoLineWidth      = 7
-	SpinnerSequence  = []string{"| ", "/ ", "- ", "\\ "}
-	QodanaSpinner    = pterm.DefaultSpinner
-	PrimaryStyle     = pterm.NewStyle()               // PrimaryStyle is a primary text style.
-	PrimaryBoldStyle = pterm.NewStyle(pterm.Bold)     // PrimaryBoldStyle is a primary bold text style.
-	ErrorStyle       = pterm.NewStyle(pterm.FgRed)    // ErrorStyle is an error style.
-	WarningStyle     = pterm.NewStyle(pterm.FgYellow) // WarningStyle is a warning style.
-	MiscStyle        = pterm.NewStyle(pterm.FgGray)   // MiscStyle is a log style.
-	TableSep         = MiscStyle.Sprint("─")
-	TableSepUp       = MiscStyle.Sprint("┬")
-	TableSepMid      = MiscStyle.Sprint("│")
-	TableSepDown     = MiscStyle.Sprint("┴")
-	TableUp          = strings.Repeat(TableSep, NoLineWidth) + TableSepUp
-	TableDown        = strings.Repeat(TableSep, NoLineWidth) + TableSepDown
+	NoLineWidth             = 7
+	SpinnerSequence         = []string{"| ", "/ ", "- ", "\\ "}
+	QodanaSpinner           = pterm.DefaultSpinner
+	PrimaryStyle            = pterm.NewStyle()               // PrimaryStyle is a primary text style.
+	PrimaryBoldStyle        = pterm.NewStyle(pterm.Bold)     // PrimaryBoldStyle is a primary bold text style.
+	ErrorStyle              = pterm.NewStyle(pterm.FgRed)    // ErrorStyle is an error style.
+	WarningStyle            = pterm.NewStyle(pterm.FgYellow) // WarningStyle is a warning style.
+	MiscStyle               = pterm.NewStyle(pterm.FgGray)   // MiscStyle is a log style.
+	TableSep                = MiscStyle.Sprint("─")
+	TableSepUp              = MiscStyle.Sprint("┬")
+	TableSepMid             = MiscStyle.Sprint("│")
+	TableSepDown            = MiscStyle.Sprint("┴")
+	TableUp                 = strings.Repeat(TableSep, NoLineWidth) + TableSepUp
+	TableDown               = strings.Repeat(TableSep, NoLineWidth) + TableSepDown
+	QodanaInteractiveSelect = pterm.InteractiveSelectPrinter{
+		TextStyle:     PrimaryStyle,
+		DefaultText:   "Please select the linter",
+		Options:       []string{},
+		OptionStyle:   PrimaryStyle,
+		DefaultOption: "",
+		MaxHeight:     5,
+		Selector:      ">",
+		SelectorStyle: PrimaryStyle,
+	}
+	QodanaInteractiveConfirm = pterm.InteractiveConfirmPrinter{
+		DefaultValue: true,
+		DefaultText:  "Please confirm",
+		TextStyle:    PrimaryStyle,
+		ConfirmText:  "Yes",
+		ConfirmStyle: PrimaryStyle,
+		RejectText:   "No",
+		RejectStyle:  PrimaryStyle,
+		SuffixStyle:  PrimaryStyle,
+	}
 )
 
 // Primary prints a message in the primary style.
