@@ -143,6 +143,7 @@ scan [flags]
   -b, --baseline string           Provide the path to an existing SARIF report to be used in the baseline state calculation
       --baseline-include-absent   Include in the output report the results from the baseline run that are absent in the current run
   -c, --changes                   Inspect uncommitted changes and report new problems
+      --commit string             Base changes commit to reset to, useful with --changes: analysis will be run only on changed files since commit X, 'reset' will be cancelled once the analysis is finished if the commit prefix does not contain CI prefix
       --fail-threshold string     Set the number of problems that will serve as a quality gate. If this number is reached, the inspection run is terminated with a non-zero exit code
       --disable-sanity            Skip running the inspections configured by the sanity profile
   -d, --source-directory string   Directory inside the project-dir directory must be inspected. If not specified, the whole project is inspected
