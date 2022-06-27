@@ -20,7 +20,6 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/erikgeiser/promptkit/confirmation"
 	log "github.com/sirupsen/logrus"
 
 	"github.com/JetBrains/qodana-cli/core"
@@ -68,15 +67,14 @@ But you can always override qodana.yaml options with the following command-line 
 				core.ErrorMessage("Qodana exited with code %d", exitCode)
 				core.WarningMessage("Please check the logs in %s", options.ResultsDir)
 				if core.IsInteractive() {
-					input := confirmation.New("Do you want to open that directory?", confirmation.Undecided)
-					ready, err := input.RunPrompt()
+					ready, err := core.QodanaInteractiveConfirm.Show()
 					if err != nil {
-						log.Fatalf("ErrorStyle while waiting for user input: %s", err)
+						log.Fatalf("Error while waiting for user input: %s", err)
 					}
 					if ready {
 						err = core.OpenDir(options.ResultsDir)
 						if err != nil {
-							log.Fatalf("ErrorStyle while opening directory: %s", err)
+							log.Fatalf("Error while opening directory: %s", err)
 						}
 					}
 				}
