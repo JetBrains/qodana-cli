@@ -22,7 +22,7 @@ require (
 	github.com/opencontainers/go-digest v1.0.0 // indirect
 	github.com/opencontainers/image-spec v1.0.2 // indirect
 	github.com/owenrumney/go-sarif/v2 v2.1.2
-	github.com/pterm/pterm v0.12.41
+	github.com/pterm/pterm v0.12.42
 	github.com/sirupsen/logrus v1.8.1
 	github.com/spf13/cobra v1.4.0
 	github.com/spf13/viper v1.12.0
