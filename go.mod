@@ -5,20 +5,16 @@ go 1.16
 require (
 	github.com/Azure/go-ansiterm v0.0.0-20210617225240-d185dfc1b5a1 // indirect
 	github.com/Microsoft/go-winio v0.5.2 // indirect
-	github.com/charmbracelet/bubbles v0.10.3 // indirect
-	github.com/charmbracelet/bubbletea v0.20.0 // indirect
-	github.com/charmbracelet/lipgloss v0.5.0 // indirect
 	github.com/docker/distribution v2.8.1+incompatible // indirect
 	github.com/docker/docker v20.10.17+incompatible
 	github.com/docker/go-connections v0.4.0 // indirect
 	github.com/docker/go-units v0.4.0 // indirect
-	github.com/erikgeiser/promptkit v0.6.0
+	github.com/erikgeiser/promptkit v0.7.0
 	github.com/go-enry/go-enry/v2 v2.8.2
 	github.com/liamg/clinch v1.6.1
 	github.com/mattn/go-isatty v0.0.14
 	github.com/moby/term v0.0.0-20210610120745-9d4ed1856297 // indirect
 	github.com/morikuni/aec v1.0.0 // indirect
-	github.com/muesli/ansi v0.0.0-20211031195517-c9f0611b6c70 // indirect
 	github.com/opencontainers/go-digest v1.0.0 // indirect
 	github.com/opencontainers/image-spec v1.0.2 // indirect
 	github.com/owenrumney/go-sarif/v2 v2.1.1
