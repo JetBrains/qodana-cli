@@ -73,7 +73,7 @@ This software is based on or incorporates materials from the following projects.
 |[github.com/spf13/afero](https://pkg.go.dev/github.com/spf13/afero)|[Apache-2.0](http://www.apache.org/licenses/)|`v1.8.2`|
 |[github.com/spf13/afero/mem](https://pkg.go.dev/github.com/spf13/afero/mem)|[Apache-2.0](http://www.apache.org/licenses/)|`v1.8.2`|
 |[github.com/spf13/cast](https://pkg.go.dev/github.com/spf13/cast)|[MIT](http://opensource.org/licenses/mit-license.php)|`v1.5.0`|
-|[github.com/spf13/cobra](https://pkg.go.dev/github.com/spf13/cobra)|[Apache-2.0](http://www.apache.org/licenses/)|`v1.4.0`|
+|[github.com/spf13/cobra](https://pkg.go.dev/github.com/spf13/cobra)|[Apache-2.0](http://www.apache.org/licenses/)|`v1.5.0`|
 |[github.com/spf13/jwalterweatherman](https://pkg.go.dev/github.com/spf13/jwalterweatherman)|[MIT](http://opensource.org/licenses/mit-license.php)|`v1.1.0`|
 |[github.com/spf13/pflag](https://pkg.go.dev/github.com/spf13/pflag)|[BSD-3-Clause](http://www.opensource.org/licenses/BSD-3-Clause)|`v1.0.5`|
 |[github.com/spf13/viper](https://pkg.go.dev/github.com/spf13/viper)|[MIT](http://opensource.org/licenses/mit-license.php)|`v1.12.0`|
