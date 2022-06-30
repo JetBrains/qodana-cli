@@ -37,72 +37,75 @@ import (
 
 // getQodanaEnv returns the environment name.
 func getQodanaEnv() string {
-	if env := os.Getenv(qodanaEnv); env != "" { // User defined
-		return env
-	} else if repo := os.Getenv("BITBUCKET_GIT_HTTP_ORIGIN"); repo != "" { // BitBucket
+	env := "cli"
+	if userDefined := os.Getenv(qodanaEnv); userDefined != "" {
+		return userDefined
+	} else if bitbucket := os.Getenv("BITBUCKET_GIT_HTTP_ORIGIN"); bitbucket != "" {
 		return "bitbucket"
-	} else if env := os.Getenv("BUILDKITE_BUILD_URL"); env != "" { // Buildkite
+	} else if buildkite := os.Getenv("BUILDKITE_BUILD_URL"); buildkite != "" {
 		return "buildkite"
-	} else if env := os.Getenv("CIRCLE_BUILD_URL"); env != "" { // CircleCI
+	} else if circleci := os.Getenv("CIRCLE_BUILD_URL"); circleci != "" {
 		return "circleci"
-	} else if env := os.Getenv("BUILD_URL"); env != "" { // Jenkins
+	} else if jenkins := os.Getenv("BUILD_URL"); jenkins != "" {
 		return "jenkins"
-	} else if env := os.Getenv("GITLAB_CI"); env != "" { // GitLab CI
+	} else if gitlabci := os.Getenv("GITLAB_CI"); gitlabci != "" {
 		return "gitlabci"
-	} else if server := os.Getenv("GITHUB_SERVER_URL"); server != "" {
-		if strings.HasPrefix(server, "https://github.com") {
+	} else if github := os.Getenv("GITHUB_SERVER_URL"); github != "" {
+		if strings.HasPrefix(github, "https://github.com") {
 			return "github"
 		}
 		return "github-enterprise"
-	} else if server := os.Getenv("JB_SPACE_API_URL"); server != "" { // GitHub Actions
-		if !strings.Contains(server, "jetbrains.space") {
+	} else if space := os.Getenv("JB_SPACE_API_URL"); space != "" {
+		if !strings.Contains(space, "jetbrains.space") {
 			return "space-onpremise"
 		}
 		return "space"
 	}
-	return "cli"
+	return env
 }
 
 // getQodanaJobUrl returns the job URL.
 func getQodanaJobUrl() string {
-	if url := os.Getenv(qodanaJobUrl); url != "" { // User defined
+	url := ""
+	if url = os.Getenv(qodanaJobUrl); url != "" { // User defined
 		return url
-	} else if url := getAzureJobUrl(); url != "" { // Azure
+	} else if url = getAzureJobUrl(); url != "" { // Azure
 		return url
-	} else if url := getBitBucketJobUrl(); url != "" { // BitBucket
+	} else if url = getBitBucketJobUrl(); url != "" { // BitBucket
 		return url
-	} else if url := os.Getenv("BUILDKITE_BUILD_URL"); url != "" { // BuildKite
+	} else if url = os.Getenv("BUILDKITE_BUILD_URL"); url != "" { // BuildKite
 		return url
-	} else if url := os.Getenv("CIRCLE_BUILD_URL"); url != "" { // CircleCI
+	} else if url = os.Getenv("CIRCLE_BUILD_URL"); url != "" { // CircleCI
 		return url
-	} else if url := os.Getenv("CI_JOB_URL"); url != "" { // GitLab CI
+	} else if url = os.Getenv("CI_JOB_URL"); url != "" { // GitLab CI
 		return url
-	} else if url := getGitHubJobUrl(); url != "" { // GitHub Actions
+	} else if url = getGitHubJobUrl(); url != "" { // GitHub Actions
 		return url
-	} else if url := os.Getenv("BUILD_URL"); url != "" { // Jenkins
+	} else if url = os.Getenv("BUILD_URL"); url != "" { // Jenkins
 		return url
 	}
-	return ""
+	return url
 }
 
 // getQodanaRepositoryUrl returns the repository URL.
 func getQodanaRepoUrl() string {
-	if url := os.Getenv(qodanaRepoUrl); url != "" { // User defined
+	url := ""
+	if url = os.Getenv(qodanaRepoUrl); url != "" { // User defined
 		return url
-	} else if url := os.Getenv("BUILD_REPOSITORY_URI"); url != "" { // Azure
+	} else if url = os.Getenv("BUILD_REPOSITORY_URI"); url != "" { // Azure
 		return url
-	} else if url := os.Getenv("BITBUCKET_GIT_HTTP_ORIGIN"); url != "" { // BitBucket
+	} else if url = os.Getenv("BITBUCKET_GIT_HTTP_ORIGIN"); url != "" { // BitBucket
 		return url
-	} else if url := os.Getenv("CIRCLE_REPOSITORY_URL"); url != "" { // CircleCI
+	} else if url = os.Getenv("CIRCLE_REPOSITORY_URL"); url != "" { // CircleCI
 		return url
-	} else if url := getGitHubRepoUrl(); url != "" { // GitHub
+	} else if url = getGitHubRepoUrl(); url != "" { // GitHub
 		return url
-	} else if url := os.Getenv("CI_REPOSITORY_URL"); url != "" { // GitHub Actions
+	} else if url = os.Getenv("CI_REPOSITORY_URL"); url != "" { // GitHub Actions
 		return url
-	} else if url := getSpaceRepoUrl(); url != "" { // Space
+	} else if url = getSpaceRepoUrl(); url != "" { // Space
 		return url
 	}
-	return ""
+	return url
 }
 
 // getAzureJobUrl returns the Azure Pipelines job URL.
