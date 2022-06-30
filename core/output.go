@@ -75,7 +75,7 @@ var (
 	}
 	QodanaInteractiveConfirm = pterm.InteractiveConfirmPrinter{
 		DefaultValue: true,
-		DefaultText:  "Please confirm",
+		DefaultText:  "Do you want to open the results (logs) directory?",
 		TextStyle:    PrimaryStyle,
 		ConfirmText:  "Yes",
 		ConfirmStyle: PrimaryStyle,

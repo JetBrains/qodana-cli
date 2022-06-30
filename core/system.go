@@ -149,6 +149,7 @@ func OpenDir(path string) error {
 	case "windows":
 		cmd = "explorer"
 		args = []string{"/select"}
+		path = strings.ReplaceAll(path, "/", "\\")
 	case "darwin":
 		cmd = "open"
 	default: // "linux", "freebsd", "openbsd", "netbsd"
