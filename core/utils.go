@@ -16,7 +16,10 @@
 
 package core
 
-import "strings"
+import (
+	"io/ioutil"
+	"strings"
+)
 
 // lower a shortcut to strings.ToLower.
 func lower(s string) string {
@@ -39,4 +42,13 @@ func Append(slice []string, elems ...string) []string {
 		slice = append(slice, elems[0])
 	}
 	return slice
+}
+
+// CheckDirFiles checks if a directory contains files.
+func CheckDirFiles(dir string) bool {
+	files, err := ioutil.ReadDir(dir)
+	if err != nil {
+		return false
+	}
+	return len(files) > 0
 }
