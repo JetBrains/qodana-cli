@@ -199,9 +199,6 @@ func GetCmdOptions(opts *QodanaOptions) []string {
 	if opts.Changes {
 		arguments = append(arguments, "--changes")
 	}
-	if opts.SendReport {
-		arguments = append(arguments, "--send-report")
-	}
 	if opts.AnalysisId != "" {
 		arguments = append(arguments, "--analysis-id", opts.AnalysisId)
 	}
@@ -223,9 +220,11 @@ func isVariableConfigured(varName string, env []string) bool {
 
 // getDockerOptions returns qodana docker container options.
 func getDockerOptions(opts *QodanaOptions) *types.ContainerCreateConfig {
+	cmdOpts := GetCmdOptions(opts)
 	if !isVariableConfigured(qodanaToken, opts.Env) {
 		if token := os.Getenv(qodanaToken); token != "" {
 			opts.Env = append(opts.Env, fmt.Sprintf("%s=%s", qodanaToken, token))
+			cmdOpts = append(cmdOpts, "--send-report") // temporary until 2022.1.3 release
 		}
 	}
 	if !isVariableConfigured(qodanaEnv, opts.Env) {
@@ -285,12 +284,17 @@ func getDockerOptions(opts *QodanaOptions) *types.ContainerCreateConfig {
 			Target: strings.Split(volume, ":")[1],
 		})
 	}
-
+	log.Debugf("image: %s", opts.Linter)
+	log.Debugf("container name: %s", containerName)
+	log.Debugf("user: %s", opts.User)
+	log.Debugf("env: %v", opts.Env)
+	log.Debugf("volumes: %v", volumes)
+	log.Debugf("cmd: %v", cmdOpts)
 	return &types.ContainerCreateConfig{
 		Name: containerName,
 		Config: &container.Config{
 			Image:        opts.Linter,
-			Cmd:          GetCmdOptions(opts),
+			Cmd:          cmdOpts,
 			Tty:          true,
 			AttachStdout: true,
 			AttachStderr: true,
