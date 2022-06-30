@@ -53,6 +53,8 @@ var (
 	containerName = "qodana-cli"
 	qodanaEnv     = "QODANA_ENV"
 	qodanaToken   = "QODANA_TOKEN"
+	qodanaJobUrl  = "QODANA_JOB_URL"
+	qodanaRepoUrl = "QODANA_REPO_URL"
 )
 
 // CheckDockerHost checks if the host is ready to run Qodana Docker images.
@@ -209,26 +211,37 @@ func GetCmdOptions(opts *QodanaOptions) []string {
 	return arguments
 }
 
+// isVariableConfigured checks if Qodana token is set in the given environment options.
+func isVariableConfigured(varName string, env []string) bool {
+	for _, e := range env {
+		if strings.HasPrefix(e, varName) {
+			return true
+		}
+	}
+	return false
+}
+
 // getDockerOptions returns qodana docker container options.
 func getDockerOptions(opts *QodanaOptions) *types.ContainerCreateConfig {
-	tokenConfigured := false
-	for _, env := range opts.Env {
-		if strings.HasPrefix(env, qodanaToken+"=") {
-			tokenConfigured = true
+	if !isVariableConfigured(qodanaToken, opts.Env) {
+		if token := os.Getenv(qodanaToken); token != "" {
+			opts.Env = append(opts.Env, fmt.Sprintf("%s=%s", qodanaToken, token))
 		}
 	}
-	if !tokenConfigured {
-		opts.Env = append(opts.Env, fmt.Sprintf("%s=%s", qodanaToken, os.Getenv(qodanaToken)))
-	}
-
-	envConfigured := false
-	for _, env := range opts.Env {
-		if strings.HasPrefix(env, qodanaEnv+"=") {
-			envConfigured = true
+	if !isVariableConfigured(qodanaEnv, opts.Env) {
+		if qEnv := getQodanaEnv(); qEnv != "" {
+			opts.Env = append(opts.Env, fmt.Sprintf("%s=%s:%s", qodanaEnv, qodanaEnv, Version))
 		}
 	}
-	if !envConfigured {
-		opts.Env = append(opts.Env, qodanaEnv+"=cli:"+Version)
+	if !isVariableConfigured(qodanaJobUrl, opts.Env) {
+		if qJobUrl := getQodanaJobUrl(); qJobUrl != "" {
+			opts.Env = append(opts.Env, fmt.Sprintf("%s=%s", qodanaJobUrl, qJobUrl))
+		}
+	}
+	if !isVariableConfigured(qodanaRepoUrl, opts.Env) {
+		if qRepoUrl := getQodanaRepoUrl(); qRepoUrl != "" {
+			opts.Env = append(opts.Env, fmt.Sprintf("%s=%s", qodanaRepoUrl, qRepoUrl))
+		}
 	}
 
 	cachePath, err := filepath.Abs(opts.CacheDir)
