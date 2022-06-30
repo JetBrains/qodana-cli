@@ -154,7 +154,6 @@ scan [flags]
       --stub-profile string       Absolute path to the fallback profile file. This option is applied in case the profile was not specified using any available options
       --property stringArray      Set a JVM property to be used while running Qodana using the --property property.name=value1,value2,...,valueN notation
   -s, --save-report               Generate HTML report (default true)
-      --send-report               Send the inspection report to Qodana Cloud, requires the 'QODANA_TOKEN' environment variable to be declared
   -h, --help                      help for scan
 ```
 
