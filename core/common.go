@@ -46,7 +46,6 @@ type QodanaOptions struct {
 	FailThreshold         string
 	Changes               bool
 	Commit                string
-	SendReport            bool
 	AnalysisId            string
 	Env                   []string
 	Volumes               []string
