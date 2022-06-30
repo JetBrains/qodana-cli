@@ -42,6 +42,10 @@ But you can always override qodana.yaml options with the following command-line 
 			core.CheckDockerHost()
 		},
 		Run: func(cmd *cobra.Command, args []string) {
+			if !core.CheckDirFiles(options.ProjectDir) {
+				core.ErrorMessage("No files to check with Qodana found in %s", options.ProjectDir)
+				os.Exit(1)
+			}
 			gitReset := false
 			if options.Commit != "" && core.IsGitInstalled() {
 				err := core.GitReset(options.ProjectDir, options.Commit)
