@@ -29,6 +29,8 @@ import (
 	"strings"
 	"testing"
 
+	log "github.com/sirupsen/logrus"
+
 	"github.com/JetBrains/qodana-cli/core"
 )
 
@@ -191,9 +193,15 @@ func TestScanFlags(t *testing.T) {
 }
 
 func TestAllCommands(t *testing.T) {
-	//goland:noinspection GoBoolExpressions
-	if _, err := exec.LookPath("docker"); err != nil || (runtime.GOOS == "windows" && isGitHubAction()) {
-		t.Skip(err)
+	if isGitHubAction() {
+		//goland:noinspection GoBoolExpressions
+		if _, err := exec.LookPath("docker"); err != nil || runtime.GOOS == "windows" {
+			t.Skip(err)
+		}
+	} else {
+		_ = os.Setenv("GITHUB_SERVER_URL", "https://github.com")
+		_ = os.Setenv("GITHUB_REPOSITORY", "JetBrains/qodana-cli")
+		_ = os.Setenv("GITHUB_RUN_ID", "1")
 	}
 	core.DisableColor()
 	core.CheckForUpdates("0.1.0")
@@ -217,6 +225,8 @@ func TestAllCommands(t *testing.T) {
 
 	// scan
 	out = bytes.NewBufferString("")
+	// set debug log to debug
+	log.SetLevel(log.DebugLevel)
 	command = NewScanCommand()
 	command.SetOut(out)
 	command.SetArgs([]string{
