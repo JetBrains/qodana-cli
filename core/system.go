@@ -262,6 +262,33 @@ func PrepareHost(opts *QodanaOptions) {
 	}
 }
 
+// IsHomeDirectory returns true if the given path is the user's home directory.
+func IsHomeDirectory(path string) bool {
+	absPath, err := filepath.Abs(path)
+	if err != nil {
+		return false
+	}
+	home, err := os.UserHomeDir()
+	if err != nil {
+		return false
+	}
+	return absPath == home
+}
+
+// AskUserConfirm asks the user for confirmation with yes/no.
+func AskUserConfirm(what string) bool {
+	if !IsInteractive() {
+		return false
+	}
+	prompt := QodanaInteractiveConfirm
+	prompt.DefaultText = what
+	answer, err := prompt.Show()
+	if err != nil {
+		log.Fatalf("Error while waiting for user input: %s", err)
+	}
+	return answer
+}
+
 // RunLinter runs the linter with the given options.
 func RunLinter(ctx context.Context, options *QodanaOptions) int {
 	docker := getDockerClient()
