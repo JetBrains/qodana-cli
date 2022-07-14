@@ -87,7 +87,7 @@ func getQodanaJobUrl() string {
 	return url
 }
 
-// getQodanaRepositoryUrl returns the repository URL.
+// getQodanaRepoUrl returns the repository URL.
 func getQodanaRepoUrl() string {
 	url := ""
 	if url = os.Getenv(qodanaRepoUrl); url != "" { // User defined
@@ -95,8 +95,6 @@ func getQodanaRepoUrl() string {
 	} else if url = os.Getenv("BUILD_REPOSITORY_URI"); url != "" { // Azure
 		return url
 	} else if url = os.Getenv("BITBUCKET_GIT_HTTP_ORIGIN"); url != "" { // BitBucket
-		return url
-	} else if url = os.Getenv("CIRCLE_REPOSITORY_URL"); url != "" { // CircleCI
 		return url
 	} else if url = getGitHubRepoUrl(); url != "" { // GitHub
 		return url
