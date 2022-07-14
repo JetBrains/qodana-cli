@@ -101,6 +101,7 @@ init [flags]
 #### Options
 
 ```
+  -f, --force                Force initialization (overwrite existing valid qodana.yaml)
   -h, --help                 help for init
   -i, --project-dir string   Root directory of the project to configure (default ".")
 ```
