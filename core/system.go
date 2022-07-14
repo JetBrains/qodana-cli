@@ -61,44 +61,47 @@ func CheckForUpdates(currentVersion string) {
 	if currentVersion == "dev" {
 		return
 	}
-	go func() {
-		resp, err := http.Get(releaseUrl)
+	latestVersion := getLatestVersion()
+	if latestVersion != "" && latestVersion != currentVersion {
+		WarningMessage(
+			"New version of %s is available: %s. See https://jb.gg/qodana-cli/update\n   Set %s=1 environment variable to never get this message again\n",
+			PrimaryBold("qodana"),
+			latestVersion,
+			SkipCheckForUpdateEnv,
+		)
+	}
+}
+
+// getLatestVersion returns the latest published version of the CLI.
+func getLatestVersion() string {
+	resp, err := http.Get(releaseUrl)
+	if err != nil {
+		log.Errorf("Failed to check for updates: %s", err)
+		return ""
+	}
+	defer func(Body io.ReadCloser) {
+		err := Body.Close()
 		if err != nil {
-			log.Errorf("Failed to check for updates: %s", err)
+			log.Errorf("Failed to close response body: %s", err)
 			return
 		}
-		defer func(Body io.ReadCloser) {
-			err := Body.Close()
-			if err != nil {
-				log.Errorf("Failed to close response body: %s", err)
-				return
-			}
-		}(resp.Body)
-		if resp.StatusCode < 200 || resp.StatusCode > 299 {
-			log.Errorf("Failed to check for updates: %s", resp.Status)
-			return
-		}
-		bodyText, err := ioutil.ReadAll(resp.Body)
-		if err != nil {
-			log.Errorf("Failed to read response body: %s", err)
-			return
-		}
-		result := make(map[string]interface{})
-		err = json.Unmarshal(bodyText, &result)
-		if err != nil {
-			log.Errorf("Failed to read response JSON: %s", err)
-			return
-		}
-		latestVersion := result["tag_name"].(string)
-		if latestVersion != currentVersion {
-			WarningMessage(
-				"New version of %s is available: %s. See https://jb.gg/qodana-cli/update\n   Set %s=1 environment variable to never get this message again\n",
-				PrimaryBold("qodana"),
-				latestVersion,
-				SkipCheckForUpdateEnv,
-			)
-		}
-	}()
+	}(resp.Body)
+	if resp.StatusCode < 200 || resp.StatusCode > 299 {
+		log.Errorf("Failed to check for updates: %s", resp.Status)
+		return ""
+	}
+	bodyText, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		log.Errorf("Failed to read response body: %s", err)
+		return ""
+	}
+	result := make(map[string]interface{})
+	err = json.Unmarshal(bodyText, &result)
+	if err != nil {
+		log.Errorf("Failed to read response JSON: %s", err)
+		return ""
+	}
+	return result["tag_name"].(string)
 }
 
 // openReport serves the report on the given port and opens the browser.
