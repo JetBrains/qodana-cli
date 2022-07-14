@@ -44,7 +44,11 @@ func NewInitCommand() *cobra.Command {
 				core.GetLinter(options.ProjectDir, options.YamlName)
 			} else {
 				core.EmptyMessage()
-				core.SuccessMessage("The linter was already configured before: %s", core.PrimaryBold(qodanaYaml.Linter))
+				core.SuccessMessage(
+					"The linter was already configured before: %s. Run the command with %s flag to re-init the project",
+					core.PrimaryBold(qodanaYaml.Linter),
+					core.PrimaryBold("-f"),
+				)
 			}
 			core.WarningMessage("Run %s to analyze the project. The configuration is stored in %s and can be changed later", core.PrimaryBold("qodana scan"), core.PrimaryBold(options.YamlName))
 		},
