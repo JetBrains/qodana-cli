@@ -30,8 +30,8 @@ func main() {
 	if os.Geteuid() == 0 {
 		core.WarningMessage("Running the tool as root is dangerous: please run it as a regular user")
 	}
-	if os.Getenv(core.SkipCheckForUpdateEnv) != "" {
-		core.CheckForUpdates(core.Version)
+	if core.IsInteractive() && os.Getenv(core.SkipCheckForUpdateEnv) != "" {
+		go core.CheckForUpdates(core.Version)
 	}
 	if !core.IsInteractive() || os.Getenv("NO_COLOR") != "" { // http://no-color.org
 		core.DisableColor()
