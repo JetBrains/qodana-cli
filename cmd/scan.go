@@ -17,6 +17,7 @@
 package cmd
 
 import (
+	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
@@ -43,6 +44,14 @@ But you can always override qodana.yaml options with the following command-line 
 		},
 		Run: func(cmd *cobra.Command, args []string) {
 			go core.CheckForUpdates(core.Version)
+			if core.IsInteractive() && core.IsHomeDirectory(options.ProjectDir) {
+				core.WarningMessage(
+					fmt.Sprintf("Project directory (%s) is the $HOME directory", options.ProjectDir),
+				)
+				if !core.AskUserConfirm(core.DefaultPromptText) {
+					os.Exit(1)
+				}
+			}
 			if !core.CheckDirFiles(options.ProjectDir) {
 				core.ErrorMessage("No files to check with Qodana found in %s", options.ProjectDir)
 				os.Exit(1)
@@ -81,16 +90,10 @@ But you can always override qodana.yaml options with the following command-line 
 			if exitCode != core.QodanaSuccessExitCode && exitCode != core.QodanaFailThresholdExitCode {
 				core.ErrorMessage("Qodana exited with code %d", exitCode)
 				core.WarningMessage("Please check the logs in %s", options.ResultsDir)
-				if core.IsInteractive() {
-					ready, err := core.QodanaInteractiveConfirm.Show()
+				if core.AskUserConfirm(fmt.Sprintf("Do you want to open %s?", options.ResultsDir)) {
+					err := core.OpenDir(options.ResultsDir)
 					if err != nil {
-						log.Fatalf("Error while waiting for user input: %s", err)
-					}
-					if ready {
-						err = core.OpenDir(options.ResultsDir)
-						if err != nil {
-							log.Fatalf("Error while opening directory: %s", err)
-						}
+						log.Fatalf("Error while opening directory: %s", err)
 					}
 				}
 				os.Exit(exitCode)

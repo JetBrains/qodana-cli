@@ -73,9 +73,10 @@ var (
 		Selector:      ">",
 		SelectorStyle: PrimaryStyle,
 	}
+	DefaultPromptText        = "Do you want to continue?"
 	QodanaInteractiveConfirm = pterm.InteractiveConfirmPrinter{
 		DefaultValue: true,
-		DefaultText:  "Do you want to open the results (logs) directory?",
+		DefaultText:  DefaultPromptText,
 		TextStyle:    PrimaryStyle,
 		ConfirmText:  "Yes",
 		ConfirmStyle: PrimaryStyle,
