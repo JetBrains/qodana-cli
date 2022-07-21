@@ -39,7 +39,7 @@ var Info = fmt.Sprintf(`
 
 // IsInteractive returns true if the current execution environment is interactive (useful for colors/animations toggle).
 func IsInteractive() bool {
-	return isatty.IsTerminal(os.Stdout.Fd()) && os.Getenv("NO_INTERACTIVE") == ""
+	return isatty.IsTerminal(os.Stdout.Fd()) && os.Getenv("NONINTERACTIVE") == ""
 }
 
 // DisableColor disables colors in the output.
