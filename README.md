@@ -21,21 +21,47 @@ You can also add the linter by its name with the `--linter` option (e.g. `--lint
 **Table of Contents**
 
 <!-- toc -->
-
+- [Installation](#Installation)
 - [Usage](#usage)
 - [Configuration](#configuration)
 - [Why](#why)
 
 <!-- tocstop -->
 
-## Usage
-
 ![qodana](https://user-images.githubusercontent.com/13538286/151153050-934c0f41-e059-480a-a89f-cd4b2ca7a930.gif)
 
-### Installation
+## Installation
 
-See [the repository releases](https://github.com/JetBrains/qodana-cli/releases/latest) for the detailed instructions on the installation and update.
+> 💡 The Qodana CLI is distributed and run as a binary. The Qodana linters with inspections are [Docker Images](https://www.jetbrains.com/help/qodana/docker-images.html).
+> - You must have Docker installed and running locally to support this: https://www.docker.com/get-started
+> - If you are using Linux, you should be able to run Docker from the current (non-root) user (https://docs.docker.com/engine/install/linux-postinstall/#manage-docker-as-a-non-root-user)
 
+#### macOS and Linux
+##### Install with [Homebrew](https://brew.sh) (recommended)
+```console
+brew install jetbrains/utils/qodana
+```
+##### Install with our installer
+```console
+curl -fsSL https://jb.gg/qodana-cli/install | bash
+```
+
+#### Windows
+##### Install with [Scoop](https://scoop.sh)
+```console
+scoop bucket add jetbrains https://github.com/JetBrains/scoop-utils
+scoop install qodana
+```
+
+#### Anywhere else
+#### Install with [Go](https://go.dev/doc/install)
+```console
+go install github.com/JetBrains/qodana-cli@latest
+```
+Alternatively, you can install the latest binary (or the apt/rpm/deb package) from [this page](https://github.com/JetBrains/qodana-cli/releases/latest).
+
+
+## Usage
 
 ### Prepare your project
 
