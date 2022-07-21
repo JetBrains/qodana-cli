@@ -39,6 +39,8 @@ const (
 	QodanaSuccessExitCode = 0
 	// QodanaFailThresholdExitCode same as QodanaSuccessExitCode, but the threshold is set and exceeded.
 	QodanaFailThresholdExitCode = 255
+	// QodanaOutOfMemoryExitCode reports an interrupted process, sometimes because of an OOM.
+	QodanaOutOfMemoryExitCode = 137
 	// OfficialDockerPrefix is the prefix of official Qodana Docker images.
 	OfficialDockerPrefix = "jetbrains/qodana"
 )
@@ -79,7 +81,7 @@ func CheckDockerHost() {
 		}
 		log.Fatal(err)
 	}
-	checkDockerMemory()
+	CheckDockerMemory()
 }
 
 // PullImage pulls docker image.
@@ -133,8 +135,9 @@ func ensureDockerInstalled() {
 	}
 }
 
-// checkDockerMemory applicable only for Docker Desktop (has the default limit of 2GB, which can be not enough when Gradle runs inside a container).
-func checkDockerMemory() {
+// CheckDockerMemory applicable only for Docker Desktop,
+// (has the default limit of 2GB which can be not enough when Gradle runs inside a container).
+func CheckDockerMemory() {
 	docker := getDockerClient()
 	goos := runtime.GOOS
 	if //goland:noinspection GoBoolExpressions
@@ -152,6 +155,7 @@ func checkDockerMemory() {
 	case "darwin":
 		helpUrl = "https://docs.docker.com/docker-for-mac/about/"
 	}
+	log.Debug("Docker memory limit is set to ", info.MemTotal/1024/1024, " MB")
 
 	if info.MemTotal < 4*1024*1024*1024 {
 		WarningMessage(`Your Docker daemon is running with less than 4GB of RAM.

@@ -90,6 +90,9 @@ But you can always override qodana.yaml options with the following command-line 
 			if exitCode != core.QodanaSuccessExitCode && exitCode != core.QodanaFailThresholdExitCode {
 				core.ErrorMessage("Qodana exited with code %d", exitCode)
 				core.WarningMessage("Please check the logs in %s", options.ResultsDir)
+				if exitCode == core.QodanaOutOfMemoryExitCode {
+					core.CheckDockerMemory()
+				}
 				if core.AskUserConfirm(fmt.Sprintf("Do you want to open %s?", options.ResultsDir)) {
 					err := core.OpenDir(options.ResultsDir)
 					if err != nil {
