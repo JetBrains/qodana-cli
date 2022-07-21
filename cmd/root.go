@@ -21,7 +21,42 @@ import (
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
+	"io/ioutil"
+	"os"
+	"os/signal"
 )
+
+// Execute is a main CLI entrypoint: handles user interrupt, CLI start and everything else.
+func Execute() {
+	c := make(chan os.Signal, 1)
+	signal.Notify(c, os.Interrupt)
+	go func() {
+		<-c
+		core.WarningMessage("Interrupting Qodana CLI...")
+		log.SetOutput(ioutil.Discard)
+		core.Interrupted = true
+		core.CheckForUpdates(core.Version)
+		core.DockerCleanup()
+		_ = core.QodanaSpinner.Stop()
+		os.Exit(0)
+	}()
+
+	if os.Geteuid() == 0 {
+		core.WarningMessage("Running the tool as root is dangerous: please run it as a regular user")
+	}
+	go core.CheckForUpdates(core.Version)
+	if !core.IsInteractive() || os.Getenv("NO_COLOR") != "" { // http://no-color.org
+		core.DisableColor()
+	}
+
+	if err := RootCommand.Execute(); err != nil {
+		core.CheckForUpdates(core.Version)
+		log.Fatalf("error running command: %s", err)
+		os.Exit(1)
+	}
+
+	core.CheckForUpdates(core.Version)
+}
 
 // NewRootCommand constructs root command.
 func NewRootCommand() *cobra.Command {
@@ -47,6 +82,7 @@ func NewRootCommand() *cobra.Command {
 		},
 	}
 	rootCmd.PersistentFlags().String("log-level", "error", "Set log-level for output")
+	rootCmd.PersistentFlags().BoolVar(&core.DisableCheckUpdates, "disable-update-checks", false, "Disable check for updates")
 	if err := viper.BindPFlag("log-level", rootCmd.PersistentFlags().Lookup("log-level")); err != nil {
 		log.Fatal(err)
 	}

@@ -39,10 +39,10 @@ import (
 )
 
 var (
-	unofficialLinter      = false
-	Interrupted           = false
-	SkipCheckForUpdateEnv = "QODANA_CLI_SKIP_CHECK_FOR_UPDATE"
-	scanStages            = []string{
+	unofficialLinter    = false
+	DisableCheckUpdates = false
+	Interrupted         = false
+	scanStages          = []string{
 		"Preparing Qodana Docker images",
 		"Starting the analysis engine",
 		"Opening the project",
@@ -58,16 +58,15 @@ var (
 
 // CheckForUpdates check GitHub https://github.com/JetBrains/qodana-cli/ for the latest version of CLI release.
 func CheckForUpdates(currentVersion string) {
-	if currentVersion == "dev" {
+	if currentVersion == "dev" || DisableCheckUpdates {
 		return
 	}
 	latestVersion := getLatestVersion()
 	if latestVersion != "" && latestVersion != currentVersion {
 		WarningMessage(
-			"New version of %s is available: %s. See https://jb.gg/qodana-cli/update\n   Set %s=1 environment variable to never get this message again\n",
+			"New version of %s CLI is available: %s. See https://jb.gg/qodana-cli/update\n   Set %s=1 environment variable to never get this message again\n",
 			PrimaryBold("qodana"),
 			latestVersion,
-			SkipCheckForUpdateEnv,
 		)
 	}
 }
