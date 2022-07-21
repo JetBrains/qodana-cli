@@ -38,6 +38,6 @@ func NewViewCommand() *cobra.Command {
 		},
 	}
 	flags := cmd.Flags()
-	flags.StringVarP(&options.SarifFile, "sarif-file", "f", "./qodana.sarif.json", "Path to the SARIF file")
+	flags.StringVarP(&options.SarifFile, "sarif-file", "f", core.QodanaSarifName, "Path to the SARIF file")
 	return cmd
 }

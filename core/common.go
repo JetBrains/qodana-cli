@@ -54,6 +54,7 @@ type QodanaOptions struct {
 	SkipPull              bool
 	ClearCache            bool
 	YamlName              string
+	GitReset              bool
 }
 
 var Version = "dev"

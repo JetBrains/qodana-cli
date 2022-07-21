@@ -32,7 +32,7 @@ func GitReset(cwd string, sha string) error {
 	return git(cwd, []string{"reset", "--soft", strings.TrimPrefix(sha, "CI")})
 }
 
-// GitResetBack aborts the git revert.
-func GitResetBack(cwd string) error {
+// gitResetBack aborts the git revert.
+func gitResetBack(cwd string) error {
 	return git(cwd, []string{"reset", "'HEAD@{1}'"})
 }

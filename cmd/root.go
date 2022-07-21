@@ -17,13 +17,14 @@
 package cmd
 
 import (
+	"io/ioutil"
+	"os"
+	"os/signal"
+
 	"github.com/JetBrains/qodana-cli/core"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
-	"io/ioutil"
-	"os"
-	"os/signal"
 )
 
 // Execute is a main CLI entrypoint: handles user interrupt, CLI start and everything else.

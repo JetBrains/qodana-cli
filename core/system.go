@@ -290,6 +290,15 @@ func AskUserConfirm(what string) bool {
 
 // RunLinter runs the linter with the given options.
 func RunLinter(ctx context.Context, options *QodanaOptions) int {
+	options.GitReset = false
+	if options.Commit != "" && IsGitInstalled() {
+		err := GitReset(options.ProjectDir, options.Commit)
+		if err != nil {
+			WarningMessage("Could not reset git repository, no --commit option will be applied: %s", err)
+		} else {
+			options.GitReset = true
+		}
+	}
 	docker := getDockerClient()
 	for i, stage := range scanStages {
 		scanStages[i] = PrimaryBold("[%d/%d] ", i+1, len(scanStages)+1) + Primary(stage)
@@ -317,6 +326,9 @@ func RunLinter(ctx context.Context, options *QodanaOptions) int {
 	}(logs)
 	followLinter(logs, progress)
 	exitCode := getDockerExitCode(ctx, docker, dockerConfig.Name)
+	if options.GitReset && !strings.HasPrefix(options.Commit, "CI") {
+		_ = gitResetBack(options.ProjectDir)
+	}
 	if progress != nil {
 		_ = progress.Stop()
 	}

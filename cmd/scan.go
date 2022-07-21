@@ -20,7 +20,6 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
-	"strings"
 
 	log "github.com/sirupsen/logrus"
 
@@ -43,28 +42,8 @@ But you can always override qodana.yaml options with the following command-line 
 			core.CheckDockerHost()
 		},
 		Run: func(cmd *cobra.Command, args []string) {
-			if core.IsInteractive() && core.IsHomeDirectory(options.ProjectDir) {
-				core.WarningMessage(
-					fmt.Sprintf("Project directory (%s) is the $HOME directory", options.ProjectDir),
-				)
-				if !core.AskUserConfirm(core.DefaultPromptText) {
-					os.Exit(1)
-				}
-			}
-			if !core.CheckDirFiles(options.ProjectDir) {
-				core.ErrorMessage("No files to check with Qodana found in %s", options.ProjectDir)
-				os.Exit(1)
-			}
-			gitReset := false
-			if options.Commit != "" && core.IsGitInstalled() {
-				err := core.GitReset(options.ProjectDir, options.Commit)
-				if err != nil {
-					core.WarningMessage("Could not reset git repository, no --commit option will be applied: %s", err)
-				} else {
-					gitReset = true
-				}
-			}
 			ctx := cmd.Context()
+			checkProjectDir(options.ProjectDir)
 			if options.YamlName == "" {
 				options.YamlName = core.FindQodanaYaml(options.ProjectDir)
 			}
@@ -83,32 +62,8 @@ But you can always override qodana.yaml options with the following command-line 
 			}
 			core.PrepareHost(options)
 			exitCode := core.RunLinter(ctx, options)
-			if core.Interrupted {
-				os.Exit(1)
-			}
-			if exitCode != core.QodanaSuccessExitCode && exitCode != core.QodanaFailThresholdExitCode {
-				core.ErrorMessage("Qodana exited with code %d", exitCode)
-				core.WarningMessage("Please check the logs in %s", options.ResultsDir)
-				if exitCode == core.QodanaOutOfMemoryExitCode {
-					core.CheckDockerMemory()
-				}
-				if core.AskUserConfirm(fmt.Sprintf("Do you want to open %s?", options.ResultsDir)) {
-					err := core.OpenDir(options.ResultsDir)
-					if err != nil {
-						log.Fatalf("Error while opening directory: %s", err)
-					}
-				}
-				os.Exit(exitCode)
-			}
-			problems := core.ReadSarif(filepath.Join(options.ResultsDir, "qodana.sarif.json"), options.PrintProblems)
-			if problems == 0 {
-				core.SuccessMessage("It seems all right 👌 No problems found according to the checks applied")
-			} else {
-				core.ErrorMessage("Qodana found %d problems according to the checks applied", problems)
-			}
-			if gitReset && !strings.HasPrefix(options.Commit, "CI") {
-				_ = core.GitResetBack(options.ProjectDir)
-			}
+			checkExitCode(exitCode, options.ResultsDir)
+			core.ReadSarif(filepath.Join(options.ResultsDir, core.QodanaSarifName), options.PrintProblems)
 			if options.ShowReport {
 				core.ShowReport(filepath.Join(options.ResultsDir, "report"), options.Port)
 			} else if core.IsInteractive() {
@@ -163,4 +118,36 @@ But you can always override qodana.yaml options with the following command-line 
 	flags.SortFlags = false
 
 	return cmd
+}
+
+func checkProjectDir(projectDir string) {
+	if core.IsInteractive() && core.IsHomeDirectory(projectDir) {
+		core.WarningMessage(
+			fmt.Sprintf("Project directory (%s) is the $HOME directory", projectDir),
+		)
+		if !core.AskUserConfirm(core.DefaultPromptText) {
+			os.Exit(1)
+		}
+	}
+	if !core.CheckDirFiles(projectDir) {
+		core.ErrorMessage("No files to check with Qodana found in %s", projectDir)
+		os.Exit(1)
+	}
+}
+
+func checkExitCode(exitCode int, resultsDir string) {
+	if exitCode != core.QodanaSuccessExitCode && exitCode != core.QodanaFailThresholdExitCode {
+		core.ErrorMessage("Qodana exited with code %d", exitCode)
+		core.WarningMessage("Please check the logs in %s", resultsDir)
+		if exitCode == core.QodanaOutOfMemoryExitCode {
+			core.CheckDockerMemory()
+		}
+		if core.AskUserConfirm(fmt.Sprintf("Do you want to open %s?", resultsDir)) {
+			err := core.OpenDir(resultsDir)
+			if err != nil {
+				log.Fatalf("Error while opening directory: %s", err)
+			}
+		}
+		os.Exit(exitCode)
+	}
 }
