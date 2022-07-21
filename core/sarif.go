@@ -22,7 +22,7 @@ import (
 )
 
 // ReadSarif prints Qodana Scan result into stdout
-func ReadSarif(sarifPath string, printProblems bool) int {
+func ReadSarif(sarifPath string, printProblems bool) {
 	problems := 0
 	s, err := sarif.Open(sarifPath)
 	if err != nil {
@@ -51,5 +51,9 @@ func ReadSarif(sarifPath string, printProblems bool) int {
 			}
 		}
 	}
-	return problems
+	if problems == 0 {
+		SuccessMessage("It seems all right 👌 No problems found according to the checks applied")
+	} else {
+		ErrorMessage("Found %d problems according to the checks applied", problems)
+	}
 }
