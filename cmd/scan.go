@@ -43,7 +43,6 @@ But you can always override qodana.yaml options with the following command-line 
 			core.CheckDockerHost()
 		},
 		Run: func(cmd *cobra.Command, args []string) {
-			go core.CheckForUpdates(core.Version)
 			if core.IsInteractive() && core.IsHomeDirectory(options.ProjectDir) {
 				core.WarningMessage(
 					fmt.Sprintf("Project directory (%s) is the $HOME directory", options.ProjectDir),
