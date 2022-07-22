@@ -17,20 +17,24 @@
 package cmd
 
 import (
+	"fmt"
+	"path/filepath"
+
 	"github.com/JetBrains/qodana-cli/core"
+	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 )
 
-// InitOptions represents scan command options.
-type InitOptions struct {
+// initOptions represents scan command options.
+type initOptions struct {
 	ProjectDir string
 	Force      bool
 	YamlName   string
 }
 
-// NewInitCommand returns a new instance of the show command.
-func NewInitCommand() *cobra.Command {
-	options := &InitOptions{}
+// newInitCommand returns a new instance of the show command.
+func newInitCommand() *cobra.Command {
+	options := &initOptions{}
 	cmd := &cobra.Command{
 		Use:   "init",
 		Short: "Configure a project for Qodana",
@@ -41,6 +45,11 @@ func NewInitCommand() *cobra.Command {
 			}
 			qodanaYaml := core.LoadQodanaYaml(options.ProjectDir, options.YamlName)
 			if qodanaYaml.Linter == "" || options.Force {
+				absPath, err := filepath.Abs(options.ProjectDir)
+				if err != nil {
+					log.Fatal(err)
+				}
+				core.AskUserConfirm(fmt.Sprintf("Do you want to set up Qodana in the following project: %s", absPath))
 				core.GetLinter(options.ProjectDir, options.YamlName)
 			} else {
 				core.EmptyMessage()

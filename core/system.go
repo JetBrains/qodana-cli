@@ -41,8 +41,8 @@ import (
 var (
 	unofficialLinter    = false
 	DisableCheckUpdates = false
-	Interrupted         = false
-	scanStages          = []string{
+
+	scanStages = []string{
 		"Preparing Qodana Docker images",
 		"Starting the analysis engine",
 		"Opening the project",
@@ -64,7 +64,7 @@ func CheckForUpdates(currentVersion string) {
 	latestVersion := getLatestVersion()
 	if latestVersion != "" && latestVersion != currentVersion {
 		WarningMessage(
-			"New version of %s CLI is available: %s. See https://jb.gg/qodana-cli/update\n   Set %s=1 environment variable to never get this message again\n",
+			"New version of %s CLI is available: %s. See https://jb.gg/qodana-cli/update\n",
 			PrimaryBold("qodana"),
 			latestVersion,
 		)
@@ -214,7 +214,7 @@ func GetLinterSystemDir(project string, linter string) string {
 
 // checkLinter validates the image used for the scan.
 func checkLinter(image string) {
-	if !strings.HasPrefix(image, OfficialDockerPrefix) {
+	if !strings.HasPrefix(image, officialDockerPrefix) {
 		unofficialLinter = true
 	}
 	for _, linter := range notSupportedLinters {
@@ -279,7 +279,7 @@ func AskUserConfirm(what string) bool {
 	if !IsInteractive() {
 		return false
 	}
-	prompt := QodanaInteractiveConfirm
+	prompt := qodanaInteractiveConfirm
 	prompt.DefaultText = what
 	answer, err := prompt.Show()
 	if err != nil {
@@ -291,8 +291,8 @@ func AskUserConfirm(what string) bool {
 // RunLinter runs the linter with the given options.
 func RunLinter(ctx context.Context, options *QodanaOptions) int {
 	options.GitReset = false
-	if options.Commit != "" && IsGitInstalled() {
-		err := GitReset(options.ProjectDir, options.Commit)
+	if options.Commit != "" && isGitInstalled() {
+		err := gitReset(options.ProjectDir, options.Commit)
 		if err != nil {
 			WarningMessage("Could not reset git repository, no --commit option will be applied: %s", err)
 		} else {
@@ -301,7 +301,7 @@ func RunLinter(ctx context.Context, options *QodanaOptions) int {
 	}
 	docker := getDockerClient()
 	for i, stage := range scanStages {
-		scanStages[i] = PrimaryBold("[%d/%d] ", i+1, len(scanStages)+1) + Primary(stage)
+		scanStages[i] = PrimaryBold("[%d/%d] ", i+1, len(scanStages)+1) + primary(stage)
 	}
 	checkLinter(options.Linter)
 	if unofficialLinter {

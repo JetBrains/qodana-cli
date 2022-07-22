@@ -79,7 +79,7 @@ func createPythonProject(t *testing.T, name string) string {
 // TestVersion verifies that the version command returns the correct version
 func TestVersion(t *testing.T) {
 	b := bytes.NewBufferString("")
-	command := NewRootCommand()
+	command := newRootCommand()
 	command.SetOut(b)
 	command.SetArgs([]string{"-v"})
 	err := command.Execute()
@@ -100,7 +100,7 @@ func TestVersion(t *testing.T) {
 // TestHelp verifies that the help text is returned when running the tool with the flag or without it.
 func TestHelp(t *testing.T) {
 	out := bytes.NewBufferString("")
-	command := NewRootCommand()
+	command := newRootCommand()
 	command.SetOut(out)
 	command.SetArgs([]string{"-h"})
 	err := command.Execute()
@@ -114,7 +114,7 @@ func TestHelp(t *testing.T) {
 	expected := string(output)
 
 	out = bytes.NewBufferString("")
-	command = NewRootCommand()
+	command = newRootCommand()
 	command.SetOut(out)
 	command.SetArgs([]string{})
 	err = command.Execute()
@@ -139,7 +139,7 @@ func TestInitCommand(t *testing.T) {
 		t.Fatal(err)
 	}
 	out := bytes.NewBufferString("")
-	command := NewInitCommand()
+	command := newInitCommand()
 	command.SetOut(out)
 	command.SetArgs([]string{"-i", projectPath})
 	err = command.Execute()
@@ -215,7 +215,7 @@ func TestAllCommands(t *testing.T) {
 
 	// pull
 	out := bytes.NewBufferString("")
-	command := NewPullCommand()
+	command := newPullCommand()
 	command.SetOut(out)
 	command.SetArgs([]string{"-i", projectPath})
 	err = command.Execute()
@@ -227,7 +227,7 @@ func TestAllCommands(t *testing.T) {
 	out = bytes.NewBufferString("")
 	// set debug log to debug
 	log.SetLevel(log.DebugLevel)
-	command = NewScanCommand()
+	command = newScanCommand()
 	command.SetOut(out)
 	command.SetArgs([]string{
 		"-i", projectPath,
@@ -245,7 +245,7 @@ func TestAllCommands(t *testing.T) {
 
 	// view
 	out = bytes.NewBufferString("")
-	command = NewViewCommand()
+	command = newViewCommand()
 	command.SetOut(out)
 	command.SetArgs([]string{"-f", filepath.Join(resultsPath, "qodana.sarif.json")})
 	err = command.Execute()
@@ -255,7 +255,7 @@ func TestAllCommands(t *testing.T) {
 
 	// show
 	out = bytes.NewBufferString("")
-	command = NewShowCommand()
+	command = newShowCommand()
 	command.SetOut(out)
 	command.SetArgs([]string{"-i", projectPath, "-d"})
 	err = command.Execute()
@@ -269,7 +269,7 @@ func TestAllCommands(t *testing.T) {
 		t.Fatal(err)
 	}
 	out = bytes.NewBufferString("")
-	command = NewInitCommand()
+	command = newInitCommand()
 	command.SetOut(out)
 	command.SetArgs([]string{"-i", projectPath})
 	err = command.Execute()

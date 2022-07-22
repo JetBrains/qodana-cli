@@ -24,8 +24,8 @@ import (
 	"github.com/spf13/cobra"
 )
 
-// ShowOptions represents scan command options.
-type ShowOptions struct {
+// showOptions represents scan command options.
+type showOptions struct {
 	ProjectDir string
 	ResultsDir string
 	ReportDir  string
@@ -34,9 +34,9 @@ type ShowOptions struct {
 	YamlName   string
 }
 
-// NewShowCommand returns a new instance of the show command.
-func NewShowCommand() *cobra.Command {
-	options := &ShowOptions{}
+// newShowCommand returns a new instance of the show command.
+func newShowCommand() *cobra.Command {
+	options := &showOptions{}
 	cmd := &cobra.Command{
 		Use:   "show",
 		Short: "Show a Qodana report",

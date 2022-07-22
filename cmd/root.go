@@ -35,7 +35,7 @@ func Execute() {
 		<-c
 		core.WarningMessage("Interrupting Qodana CLI...")
 		log.SetOutput(ioutil.Discard)
-		core.Interrupted = true
+
 		core.CheckForUpdates(core.Version)
 		core.DockerCleanup()
 		_ = core.QodanaSpinner.Stop()
@@ -50,7 +50,7 @@ func Execute() {
 		core.DisableColor()
 	}
 
-	if err := RootCommand.Execute(); err != nil {
+	if err := rootCommand.Execute(); err != nil {
 		core.CheckForUpdates(core.Version)
 		log.Fatalf("error running command: %s", err)
 		os.Exit(1)
@@ -59,8 +59,8 @@ func Execute() {
 	core.CheckForUpdates(core.Version)
 }
 
-// NewRootCommand constructs root command.
-func NewRootCommand() *cobra.Command {
+// newRootCommand constructs root command.
+func newRootCommand() *cobra.Command {
 	rootCmd := &cobra.Command{
 		Use:     "qodana",
 		Short:   "Run Qodana CLI",
@@ -90,15 +90,15 @@ func NewRootCommand() *cobra.Command {
 	return rootCmd
 }
 
-var RootCommand = NewRootCommand()
+var rootCommand = newRootCommand()
 
 // init adds all child commands to the root command.
 func init() {
-	RootCommand.AddCommand(
-		NewInitCommand(),
-		NewScanCommand(),
-		NewShowCommand(),
-		NewPullCommand(),
-		NewViewCommand(),
+	rootCommand.AddCommand(
+		newInitCommand(),
+		newScanCommand(),
+		newShowCommand(),
+		newPullCommand(),
+		newViewCommand(),
 	)
 }

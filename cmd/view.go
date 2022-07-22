@@ -21,14 +21,14 @@ import (
 	"github.com/spf13/cobra"
 )
 
-// ViewOptions represents scan command options.
-type ViewOptions struct {
+// viewOptions represents scan command options.
+type viewOptions struct {
 	SarifFile string
 }
 
-// NewViewCommand returns a new instance of the show command.
-func NewViewCommand() *cobra.Command {
-	options := &ViewOptions{}
+// newViewCommand returns a new instance of the show command.
+func newViewCommand() *cobra.Command {
+	options := &viewOptions{}
 	cmd := &cobra.Command{
 		Use:   "view",
 		Short: "View SARIF files in CLI",
