@@ -39,10 +39,10 @@ import (
 )
 
 var (
-	unofficialLinter      = false
-	Interrupted           = false
-	SkipCheckForUpdateEnv = "QODANA_CLI_SKIP_CHECK_FOR_UPDATE"
-	scanStages            = []string{
+	unofficialLinter    = false
+	DisableCheckUpdates = false
+
+	scanStages = []string{
 		"Preparing Qodana Docker images",
 		"Starting the analysis engine",
 		"Opening the project",
@@ -58,47 +58,49 @@ var (
 
 // CheckForUpdates check GitHub https://github.com/JetBrains/qodana-cli/ for the latest version of CLI release.
 func CheckForUpdates(currentVersion string) {
-	if currentVersion == "dev" {
+	if currentVersion == "dev" || DisableCheckUpdates {
 		return
 	}
-	go func() {
-		resp, err := http.Get(releaseUrl)
+	latestVersion := getLatestVersion()
+	if latestVersion != "" && latestVersion != currentVersion {
+		WarningMessage(
+			"New version of %s CLI is available: %s. See https://jb.gg/qodana-cli/update\n",
+			PrimaryBold("qodana"),
+			latestVersion,
+		)
+	}
+}
+
+// getLatestVersion returns the latest published version of the CLI.
+func getLatestVersion() string {
+	resp, err := http.Get(releaseUrl)
+	if err != nil {
+		log.Errorf("Failed to check for updates: %s", err)
+		return ""
+	}
+	defer func(Body io.ReadCloser) {
+		err := Body.Close()
 		if err != nil {
-			log.Errorf("Failed to check for updates: %s", err)
+			log.Errorf("Failed to close response body: %s", err)
 			return
 		}
-		defer func(Body io.ReadCloser) {
-			err := Body.Close()
-			if err != nil {
-				log.Errorf("Failed to close response body: %s", err)
-				return
-			}
-		}(resp.Body)
-		if resp.StatusCode < 200 || resp.StatusCode > 299 {
-			log.Errorf("Failed to check for updates: %s", resp.Status)
-			return
-		}
-		bodyText, err := ioutil.ReadAll(resp.Body)
-		if err != nil {
-			log.Errorf("Failed to read response body: %s", err)
-			return
-		}
-		result := make(map[string]interface{})
-		err = json.Unmarshal(bodyText, &result)
-		if err != nil {
-			log.Errorf("Failed to read response JSON: %s", err)
-			return
-		}
-		latestVersion := result["tag_name"].(string)
-		if latestVersion != currentVersion {
-			WarningMessage(
-				"New version of %s is available: %s. See https://jb.gg/qodana-cli/update\n   Set %s=1 environment variable to never get this message again\n",
-				PrimaryBold("qodana"),
-				latestVersion,
-				SkipCheckForUpdateEnv,
-			)
-		}
-	}()
+	}(resp.Body)
+	if resp.StatusCode < 200 || resp.StatusCode > 299 {
+		log.Errorf("Failed to check for updates: %s", resp.Status)
+		return ""
+	}
+	bodyText, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		log.Errorf("Failed to read response body: %s", err)
+		return ""
+	}
+	result := make(map[string]interface{})
+	err = json.Unmarshal(bodyText, &result)
+	if err != nil {
+		log.Errorf("Failed to read response JSON: %s", err)
+		return ""
+	}
+	return result["tag_name"].(string)
 }
 
 // openReport serves the report on the given port and opens the browser.
@@ -212,7 +214,7 @@ func GetLinterSystemDir(project string, linter string) string {
 
 // checkLinter validates the image used for the scan.
 func checkLinter(image string) {
-	if !strings.HasPrefix(image, OfficialDockerPrefix) {
+	if !strings.HasPrefix(image, officialDockerPrefix) {
 		unofficialLinter = true
 	}
 	for _, linter := range notSupportedLinters {
@@ -259,11 +261,47 @@ func PrepareHost(opts *QodanaOptions) {
 	}
 }
 
+// IsHomeDirectory returns true if the given path is the user's home directory.
+func IsHomeDirectory(path string) bool {
+	absPath, err := filepath.Abs(path)
+	if err != nil {
+		return false
+	}
+	home, err := os.UserHomeDir()
+	if err != nil {
+		return false
+	}
+	return absPath == home
+}
+
+// AskUserConfirm asks the user for confirmation with yes/no.
+func AskUserConfirm(what string) bool {
+	if !IsInteractive() {
+		return false
+	}
+	prompt := qodanaInteractiveConfirm
+	prompt.DefaultText = what
+	answer, err := prompt.Show()
+	if err != nil {
+		log.Fatalf("Error while waiting for user input: %s", err)
+	}
+	return answer
+}
+
 // RunLinter runs the linter with the given options.
 func RunLinter(ctx context.Context, options *QodanaOptions) int {
+	options.GitReset = false
+	if options.Commit != "" && isGitInstalled() {
+		err := gitReset(options.ProjectDir, options.Commit)
+		if err != nil {
+			WarningMessage("Could not reset git repository, no --commit option will be applied: %s", err)
+		} else {
+			options.GitReset = true
+		}
+	}
 	docker := getDockerClient()
 	for i, stage := range scanStages {
-		scanStages[i] = PrimaryBold("[%d/%d] ", i+1, len(scanStages)+1) + Primary(stage)
+		scanStages[i] = PrimaryBold("[%d/%d] ", i+1, len(scanStages)+1) + primary(stage)
 	}
 	checkLinter(options.Linter)
 	if unofficialLinter {
@@ -288,6 +326,9 @@ func RunLinter(ctx context.Context, options *QodanaOptions) int {
 	}(logs)
 	followLinter(logs, progress)
 	exitCode := getDockerExitCode(ctx, docker, dockerConfig.Name)
+	if options.GitReset && !strings.HasPrefix(options.Commit, "CI") {
+		_ = gitResetBack(options.ProjectDir)
+	}
 	if progress != nil {
 		_ = progress.Stop()
 	}

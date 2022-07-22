@@ -37,6 +37,7 @@ func contains(s []string, str string) bool {
 }
 
 // Append appends a string to a slice if it's not already there.
+//goland:noinspection GoUnnecessarilyExportedIdentifiers
 func Append(slice []string, elems ...string) []string {
 	if !contains(slice, elems[0]) {
 		slice = append(slice, elems[0])

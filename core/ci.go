@@ -28,12 +28,14 @@ import (
  * CircleCI – https://circleci.com/docs/2.0/env-vars#built-in-environment-variables
  * GitHub – https://docs.github.com/en/actions/learn-github-actions/environment-variables#default-environment-variables
  * GitLab – https://docs.gitlab.com/ee/ci/variables/predefined_variables.html
- * Jenkins – https://www.perforce.com/manuals/jenkins/Content/P4Jenkins/variable-expansion.html#Built_in_environment_variables
+ * Jenkins –
+https://www.perforce.com/manuals/jenkins/Content/P4Jenkins/variable-expansion.html#Built_in_environment_variables
  * Space – https://www.jetbrains.com/help/space/automation-environment-variables.html#general
 
- * This list will be extended in the future. Right now it's not possible to properly detect Azure server environment.
+ * This list will be extended in the future.
+Right now it's not possible to properly detect Azure server environment.
  * Some services do not provide the repo URL (BuildKite, Jenkins), some do not have job URL at the moment (Space).
- */
+*/
 
 // getQodanaEnv returns the environment name.
 func getQodanaEnv() string {
@@ -87,7 +89,7 @@ func getQodanaJobUrl() string {
 	return url
 }
 
-// getQodanaRepositoryUrl returns the repository URL.
+// getQodanaRepoUrl returns the repository URL.
 func getQodanaRepoUrl() string {
 	url := ""
 	if url = os.Getenv(qodanaRepoUrl); url != "" { // User defined
@@ -95,8 +97,6 @@ func getQodanaRepoUrl() string {
 	} else if url = os.Getenv("BUILD_REPOSITORY_URI"); url != "" { // Azure
 		return url
 	} else if url = os.Getenv("BITBUCKET_GIT_HTTP_ORIGIN"); url != "" { // BitBucket
-		return url
-	} else if url = os.Getenv("CIRCLE_REPOSITORY_URL"); url != "" { // CircleCI
 		return url
 	} else if url = getGitHubRepoUrl(); url != "" { // GitHub
 		return url
