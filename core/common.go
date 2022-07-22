@@ -88,7 +88,7 @@ func GetLinter(path string, yamlName string) string {
 	} else if len(linters) == 1 || !IsInteractive() {
 		linter = linters[0]
 	} else {
-		choice, err := QodanaInteractiveSelect.WithOptions(linters).Show()
+		choice, err := qodanaInteractiveSelect.WithOptions(linters).Show()
 		if err != nil {
 			ErrorMessage("%s", err)
 			os.Exit(1)

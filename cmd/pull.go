@@ -25,16 +25,16 @@ import (
 	"github.com/spf13/cobra"
 )
 
-// PullOptions represents pull command options.
-type PullOptions struct {
+// pullOptions represents pull command options.
+type pullOptions struct {
 	Linter     string
 	ProjectDir string
 	YamlName   string
 }
 
-// NewPullCommand returns a new instance of the show command.
-func NewPullCommand() *cobra.Command {
-	options := &PullOptions{}
+// newPullCommand returns a new instance of the show command.
+func newPullCommand() *cobra.Command {
+	options := &pullOptions{}
 	cmd := &cobra.Command{
 		Use:   "pull",
 		Short: "Pull latest version of linter",

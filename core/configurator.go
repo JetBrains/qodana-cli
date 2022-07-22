@@ -29,6 +29,7 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
+//goland:noinspection GoUnnecessarilyExportedIdentifiers
 const (
 	QodanaSarifName = "qodana.sarif.json"
 	configName      = "qodana"

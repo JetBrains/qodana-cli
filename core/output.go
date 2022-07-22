@@ -49,53 +49,53 @@ func DisableColor() {
 
 // styles and different declarations intended to be used only inside this file
 var (
-	NoLineWidth             = 7
-	SpinnerSequence         = []string{"| ", "/ ", "- ", "\\ "}
+	noLineWidth             = 7
 	QodanaSpinner           = pterm.DefaultSpinner
-	PrimaryStyle            = pterm.NewStyle()               // PrimaryStyle is a primary text style.
-	PrimaryBoldStyle        = pterm.NewStyle(pterm.Bold)     // PrimaryBoldStyle is a primary bold text style.
-	ErrorStyle              = pterm.NewStyle(pterm.FgRed)    // ErrorStyle is an error style.
-	WarningStyle            = pterm.NewStyle(pterm.FgYellow) // WarningStyle is a warning style.
-	MiscStyle               = pterm.NewStyle(pterm.FgGray)   // MiscStyle is a log style.
-	TableSep                = MiscStyle.Sprint("─")
-	TableSepUp              = MiscStyle.Sprint("┬")
-	TableSepMid             = MiscStyle.Sprint("│")
-	TableSepDown            = MiscStyle.Sprint("┴")
-	TableUp                 = strings.Repeat(TableSep, NoLineWidth) + TableSepUp
-	TableDown               = strings.Repeat(TableSep, NoLineWidth) + TableSepDown
-	QodanaInteractiveSelect = pterm.InteractiveSelectPrinter{
-		TextStyle:     PrimaryStyle,
+	spinnerSequence         = []string{"| ", "/ ", "- ", "\\ "}
+	primaryStyle            = pterm.NewStyle()               // primaryStyle is a primary text style.
+	primaryBoldStyle        = pterm.NewStyle(pterm.Bold)     // primaryBoldStyle is a primary bold text style.
+	errorStyle              = pterm.NewStyle(pterm.FgRed)    // errorStyle is an error style.
+	warningStyle            = pterm.NewStyle(pterm.FgYellow) // warningStyle is a warning style.
+	miscStyle               = pterm.NewStyle(pterm.FgGray)   // miscStyle is a log style.
+	tableSep                = miscStyle.Sprint("─")
+	tableSepUp              = miscStyle.Sprint("┬")
+	tableSepMid             = miscStyle.Sprint("│")
+	tableSepDown            = miscStyle.Sprint("┴")
+	tableUp                 = strings.Repeat(tableSep, noLineWidth) + tableSepUp
+	tableDown               = strings.Repeat(tableSep, noLineWidth) + tableSepDown
+	qodanaInteractiveSelect = pterm.InteractiveSelectPrinter{
+		TextStyle:     primaryStyle,
 		DefaultText:   "Please select the linter",
 		Options:       []string{},
-		OptionStyle:   PrimaryStyle,
+		OptionStyle:   primaryStyle,
 		DefaultOption: "",
 		MaxHeight:     5,
 		Selector:      ">",
-		SelectorStyle: PrimaryStyle,
+		SelectorStyle: primaryStyle,
 	}
 	DefaultPromptText        = "Do you want to continue?"
-	QodanaInteractiveConfirm = pterm.InteractiveConfirmPrinter{
+	qodanaInteractiveConfirm = pterm.InteractiveConfirmPrinter{
 		DefaultValue: true,
 		DefaultText:  DefaultPromptText,
-		TextStyle:    PrimaryStyle,
+		TextStyle:    primaryStyle,
 		ConfirmText:  "Yes",
-		ConfirmStyle: PrimaryStyle,
+		ConfirmStyle: primaryStyle,
 		RejectText:   "No",
-		RejectStyle:  PrimaryStyle,
-		SuffixStyle:  PrimaryStyle,
+		RejectStyle:  primaryStyle,
+		SuffixStyle:  primaryStyle,
 	}
 )
 
-// Primary prints a message in the primary style.
-func Primary(text string, a ...interface{}) string {
+// primary prints a message in the primary style.
+func primary(text string, a ...interface{}) string {
 	text = fmt.Sprintf(text, a...)
-	return PrimaryStyle.Sprint(text)
+	return primaryStyle.Sprint(text)
 }
 
 // PrimaryBold prints a message in the primary bold style.
 func PrimaryBold(text string, a ...interface{}) string {
 	text = fmt.Sprintf(text, a...)
-	return PrimaryBoldStyle.Sprint(text)
+	return primaryBoldStyle.Sprint(text)
 }
 
 // EmptyMessage is a message that is used when there is no message to show.
@@ -107,21 +107,21 @@ func EmptyMessage() {
 func SuccessMessage(message string, a ...interface{}) {
 	message = fmt.Sprintf(message, a...)
 	icon := pterm.Green("✓ ")
-	pterm.Println(icon, Primary(message))
+	pterm.Println(icon, primary(message))
 }
 
 // WarningMessage prints a warning message with the icon.
 func WarningMessage(message string, a ...interface{}) {
 	message = fmt.Sprintf(message, a...)
-	icon := WarningStyle.Sprint("\n! ")
-	pterm.Println(icon, Primary(message))
+	icon := warningStyle.Sprint("\n! ")
+	pterm.Println(icon, primary(message))
 }
 
 // ErrorMessage prints an error message with the icon.
 func ErrorMessage(message string, a ...interface{}) {
 	message = fmt.Sprintf(message, a...)
-	icon := ErrorStyle.Sprint("✗ ")
-	pterm.Println(icon, ErrorStyle.Sprint(message))
+	icon := errorStyle.Sprint("✗ ")
+	pterm.Println(icon, errorStyle.Sprint(message))
 }
 
 // printLinterLog prints the linter logs with color, when needed.
@@ -130,9 +130,9 @@ func printLinterLog(line string) {
 		strings.Contains(line, "_              _") ||
 		strings.Contains(line, "\\/__") ||
 		strings.Contains(line, "\\ \\") {
-		PrimaryStyle.Println(line)
+		primaryStyle.Println(line)
 	} else {
-		MiscStyle.Println(line)
+		miscStyle.Println(line)
 	}
 }
 
@@ -150,7 +150,7 @@ func printProcess(f func(), start string, finished string) {
 func spin(fun func(), message string) error {
 	spinner, _ := startQodanaSpinner(message)
 	if spinner == nil {
-		fmt.Println(Primary(message + "..."))
+		fmt.Println(primary(message + "..."))
 	}
 	fun()
 	if spinner != nil {
@@ -162,7 +162,7 @@ func spin(fun func(), message string) error {
 // startQodanaSpinner starts a new spinner with the given message.
 func startQodanaSpinner(message string) (*pterm.SpinnerPrinter, error) {
 	if IsInteractive() {
-		QodanaSpinner.Sequence = SpinnerSequence
+		QodanaSpinner.Sequence = spinnerSequence
 		return QodanaSpinner.WithStyle(pterm.NewStyle(pterm.FgGray)).WithRemoveWhenDone(true).Start(message + "...")
 	}
 	return nil, nil
@@ -190,13 +190,13 @@ func printProblem(
 	if width <= 0 {
 		width = 80
 	}
-	fmt.Printf("\n%s %s\n", PrimaryBold(strings.ToUpper(level)), Primary(ruleId))
-	fmt.Println(strings.Repeat(TableSep, width))
+	fmt.Printf("\n%s %s\n", PrimaryBold(strings.ToUpper(level)), primary(ruleId))
+	fmt.Println(strings.Repeat(tableSep, width))
 	if path != "" && line > 0 && column > 0 {
 		fmt.Printf(" %s:%d:%d\n", path, line, column)
-		fmt.Printf("%s%s\n", TableUp, strings.Repeat(TableSep, width-NoLineWidth-1))
+		fmt.Printf("%s%s\n", tableUp, strings.Repeat(tableSep, width-noLineWidth-1))
 	} else {
-		fmt.Println(strings.Repeat(TableSep, width))
+		fmt.Println(strings.Repeat(tableSep, width))
 	}
 	if contextLine > 0 && context != "" {
 		code := strings.Split(context, "\n")
@@ -204,14 +204,14 @@ func printProblem(
 			var printLine string
 			currentLine := contextLine + i
 			if currentLine == line {
-				printLine = ErrorStyle.Sprint(code[i]) + " ←"
+				printLine = errorStyle.Sprint(code[i]) + " ←"
 			} else {
-				printLine = WarningStyle.Sprint(code[i])
+				printLine = warningStyle.Sprint(code[i])
 			}
-			lineNumber := MiscStyle.Sprintf("%5d", currentLine)
-			fmt.Printf("%s  %s %s\n", lineNumber, TableSepMid, printLine)
+			lineNumber := miscStyle.Sprintf("%5d", currentLine)
+			fmt.Printf("%s  %s %s\n", lineNumber, tableSepMid, printLine)
 		}
-		fmt.Printf("%s%s\n", TableDown, strings.Repeat(TableSep, width-NoLineWidth-1))
+		fmt.Printf("%s%s\n", tableDown, strings.Repeat(tableSep, width-noLineWidth-1))
 	}
 	fmt.Printf("%s\n\n", message)
 }

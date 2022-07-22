@@ -72,6 +72,7 @@ type QodanaYaml struct {
 }
 
 // Profile A profile is some template set of checks to run with Qodana analysis.
+//goland:noinspection GoUnnecessarilyExportedIdentifiers
 type Profile struct {
 	// Name profile name to use.
 	Name string `yaml:"name,omitempty"`
@@ -81,6 +82,7 @@ type Profile struct {
 }
 
 // Clude A check id to enable/disable for include/exclude YAML field.
+//goland:noinspection GoUnnecessarilyExportedIdentifiers
 type Clude struct {
 	// The name of check to include/exclude.
 	Name string `yaml:"name"`
@@ -90,6 +92,7 @@ type Clude struct {
 }
 
 // Plugin to be installed during the Qodana run.
+//goland:noinspection GoUnnecessarilyExportedIdentifiers
 type Plugin struct {
 	// Id plugin id to install.
 	Id string `yaml:"id"`
@@ -99,12 +102,14 @@ type Plugin struct {
 }
 
 // DependencyIgnore is a dependency to ignore for license checks in Qodana
+//goland:noinspection GoUnnecessarilyExportedIdentifiers
 type DependencyIgnore struct {
 	// Name is the name of the dependency to ignore.
 	Name string `yaml:"name"`
 }
 
 // LicenseRule is a license rule to apply for license compatibility checks in Qodana
+//goland:noinspection GoUnnecessarilyExportedIdentifiers
 type LicenseRule struct {
 	// Keys is the list of project license SPDX IDs.
 	Keys []string `yaml:"keys"`
@@ -116,6 +121,7 @@ type LicenseRule struct {
 	Prohibited []string `yaml:"prohibited,omitempty"`
 }
 
+//goland:noinspection GoUnnecessarilyExportedIdentifiers
 type DependencyOverride struct {
 	// Name is dependency name.
 	Name string `yaml:"name"`
@@ -130,6 +136,7 @@ type DependencyOverride struct {
 	Licenses []License `yaml:"licenses"`
 }
 
+//goland:noinspection GoUnnecessarilyExportedIdentifiers
 type License struct {
 	// Key is the SPDX ID of the license.
 	Key string `yaml:"key"`
@@ -138,6 +145,7 @@ type License struct {
 	Url string `yaml:"url,omitempty"`
 }
 
+//goland:noinspection GoUnnecessarilyExportedIdentifiers
 type CustomDependency struct {
 	// Name is the name of the dependency.
 	Name string `yaml:"name"`
@@ -212,6 +220,7 @@ func (q *QodanaYaml) sort() *QodanaYaml {
 }
 
 // SetQodanaLinter writes the qodana.yaml file to the given path.
+//goland:noinspection GoUnnecessarilyExportedIdentifiers
 func SetQodanaLinter(path string, linter string, filename string) {
 	q := LoadQodanaYaml(path, filename)
 	if q.Version == "" {

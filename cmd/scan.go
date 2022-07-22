@@ -27,8 +27,8 @@ import (
 	"github.com/spf13/cobra"
 )
 
-// NewScanCommand returns a new instance of the scan command.
-func NewScanCommand() *cobra.Command {
+// newScanCommand returns a new instance of the scan command.
+func newScanCommand() *cobra.Command {
 	options := &core.QodanaOptions{}
 	cmd := &cobra.Command{
 		Use:   "scan",

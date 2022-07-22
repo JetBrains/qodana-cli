@@ -58,14 +58,17 @@ scoop install qodana
 ```console
 go install github.com/JetBrains/qodana-cli@latest
 ```
-Alternatively, you can install the latest binary (or the apt/rpm/deb package) from [this page](https://github.com/JetBrains/qodana-cli/releases/latest).
+Alternatively,
+you can install the latest binary (or the apt/rpm/deb package)
+from [this page](https://github.com/JetBrains/qodana-cli/releases/latest).
 
 
 ## Usage
 
 ### Prepare your project
 
-Before you start using Qodana, you need to configure your project – choose [a linter](https://www.jetbrains.com/help/qodana/linters.html) to use.
+Before you start using Qodana, you need to configure your project –
+choose [a linter](https://www.jetbrains.com/help/qodana/linters.html) to use.
 If you know what linter you want to use, you can skip this step.
 
 Also, Qodana CLI can choose a linter for you. Just run the following command in your **project root**:
