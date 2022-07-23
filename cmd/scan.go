@@ -67,12 +67,16 @@ But you can always override qodana.yaml options with the following command-line 
 			if options.ShowReport {
 				core.ShowReport(filepath.Join(options.ResultsDir, "report"), options.Port)
 			} else if core.IsInteractive() {
-				core.WarningMessage(
-					"To view the Qodana report, run %s or add %s flag to %s",
-					core.PrimaryBold("qodana show"),
-					core.PrimaryBold("--show-report"),
-					core.PrimaryBold("qodana scan"),
-				)
+				if core.AskUserConfirm("?  Do you want to open the report") {
+					core.ShowReport(filepath.Join(options.ResultsDir, "report"), options.Port)
+				} else {
+					core.WarningMessage(
+						"To view the Qodana report later, run %s in the current directory or add %s flag to %s",
+						core.PrimaryBold("qodana show"),
+						core.PrimaryBold("--show-report"),
+						core.PrimaryBold("qodana scan"),
+					)
+				}
 			}
 			if exitCode == core.QodanaFailThresholdExitCode {
 				core.EmptyMessage()
@@ -136,13 +140,19 @@ func checkProjectDir(projectDir string) {
 }
 
 func checkExitCode(exitCode int, resultsDir string) {
-	if exitCode != core.QodanaSuccessExitCode && exitCode != core.QodanaFailThresholdExitCode {
+	if exitCode == core.QodanaEapLicenseExpiredExitCode && core.IsInteractive() {
+		core.EmptyMessage()
+		core.ErrorMessage(
+			"Your EAP linter expired. Make sure you are using the latest CLI version and update to the latest linter by running %s ",
+			core.PrimaryBold("qodana init"),
+		)
+		os.Exit(exitCode)
+	} else if exitCode != core.QodanaSuccessExitCode && exitCode != core.QodanaFailThresholdExitCode {
 		core.ErrorMessage("Qodana exited with code %d", exitCode)
 		core.WarningMessage("Check ./logs/ in the results directory for more information")
 		if exitCode == core.QodanaOutOfMemoryExitCode {
 			core.CheckDockerMemory()
-		}
-		if core.AskUserConfirm(fmt.Sprintf("Do you want to open %s?", resultsDir)) {
+		} else if core.AskUserConfirm(fmt.Sprintf("Do you want to open %s?", resultsDir)) {
 			err := core.OpenDir(resultsDir)
 			if err != nil {
 				log.Fatalf("Error while opening directory: %s", err)

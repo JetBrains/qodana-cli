@@ -41,6 +41,8 @@ const (
 	QodanaFailThresholdExitCode = 255
 	// QodanaOutOfMemoryExitCode reports an interrupted process, sometimes because of an OOM.
 	QodanaOutOfMemoryExitCode = 137
+	// QodanaEapLicenseExpiredExitCode reports an expired license.
+	QodanaEapLicenseExpiredExitCode = 7
 	// officialDockerPrefix is the prefix of official Qodana Docker images.
 	officialDockerPrefix = "jetbrains/qodana"
 )

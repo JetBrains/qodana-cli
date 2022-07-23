@@ -49,17 +49,31 @@ func newInitCommand() *cobra.Command {
 				if err != nil {
 					log.Fatal(err)
 				}
-				core.AskUserConfirm(fmt.Sprintf("Do you want to set up Qodana in the following project: %s", absPath))
+				core.AskUserConfirm(fmt.Sprintf("?  Do you want to set up Qodana in the following project: %s", absPath))
 				core.GetLinter(options.ProjectDir, options.YamlName)
 			} else {
-				core.EmptyMessage()
-				core.SuccessMessage(
-					"The linter was already configured before: %s. Run the command with %s flag to re-init the project",
-					core.PrimaryBold(qodanaYaml.Linter),
-					core.PrimaryBold("-f"),
-				)
+				latestLinter := core.GetLatestVersion(qodanaYaml.Linter)
+				if latestLinter != qodanaYaml.Linter {
+					core.WarningMessage("You are using an outdated %s linter\n", qodanaYaml.Linter)
+					if core.AskUserConfirm(
+						fmt.Sprintf("?  Do you want to update to %s", latestLinter),
+					) {
+						core.SetQodanaLinter(options.ProjectDir, latestLinter, options.YamlName)
+					}
+				} else {
+					core.EmptyMessage()
+					core.SuccessMessage(
+						"The linter was already configured before: %s. Run the command with %s flag to re-init the project",
+						core.PrimaryBold(qodanaYaml.Linter),
+						core.PrimaryBold("-f"),
+					)
+				}
 			}
-			core.WarningMessage("Run %s to analyze the project. The configuration is stored in %s and can be changed later", core.PrimaryBold("qodana scan"), core.PrimaryBold(options.YamlName))
+			core.WarningMessage(
+				"Run %s to analyze the project. The configuration is stored in %s and can be changed later",
+				core.PrimaryBold("qodana scan"),
+				core.PrimaryBold(options.YamlName),
+			)
 		},
 	}
 	flags := cmd.Flags()

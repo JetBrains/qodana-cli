@@ -52,6 +52,18 @@ var langsLinters = map[string][]string{
 	"TypeScript": {QDJS},
 }
 
+// GetLatestVersion checks if there's an updated EAP version supported by the CLI.
+func GetLatestVersion(image string) string {
+	if strings.HasSuffix(image, eap) {
+		linter, v := strings.Split(image, ":")[0], strings.Split(image, ":")[1]
+		if v != "latest" && v != version {
+			return linter + ":" + version + eap
+		}
+	}
+	return image
+}
+
+// recognizeDirLanguages returns the languages detected in the given directory.
 func recognizeDirLanguages(projectPath string) ([]string, error) {
 	const limitKb = 64
 	out := make(map[string]int)
@@ -120,6 +132,7 @@ func recognizeDirLanguages(projectPath string) ([]string, error) {
 	return languages, nil
 }
 
+// readFile reads the file at the given path and returns its content.
 func readFile(path string, limit int64) ([]byte, error) {
 	if limit <= 0 {
 		return ioutil.ReadFile(path)
@@ -148,6 +161,7 @@ func readFile(path string, limit int64) ([]byte, error) {
 	return buf.Bytes(), err
 }
 
+// readIdeaDir reads .idea directory and tries to detect which languages are used in the project.
 func readIdeaDir(project string) []string {
 	var languages []string
 	var files []string
