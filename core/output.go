@@ -163,6 +163,7 @@ func spin(fun func(), message string) error {
 func startQodanaSpinner(message string) (*pterm.SpinnerPrinter, error) {
 	if IsInteractive() {
 		QodanaSpinner.Sequence = spinnerSequence
+		QodanaSpinner.MessageStyle = primaryStyle
 		return QodanaSpinner.WithStyle(pterm.NewStyle(pterm.FgGray)).WithRemoveWhenDone(true).Start(message + "...")
 	}
 	return nil, nil
