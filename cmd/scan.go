@@ -138,7 +138,7 @@ func checkProjectDir(projectDir string) {
 func checkExitCode(exitCode int, resultsDir string) {
 	if exitCode != core.QodanaSuccessExitCode && exitCode != core.QodanaFailThresholdExitCode {
 		core.ErrorMessage("Qodana exited with code %d", exitCode)
-		core.WarningMessage("Please check the logs in %s", resultsDir)
+		core.WarningMessage("Check ./logs/ in the results directory for more information")
 		if exitCode == core.QodanaOutOfMemoryExitCode {
 			core.CheckDockerMemory()
 		}
