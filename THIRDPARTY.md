@@ -66,10 +66,10 @@ This software is based on or incorporates materials from the following projects.
 |[github.com/pelletier/go-toml/v2/internal/danger](https://pkg.go.dev/github.com/pelletier/go-toml/v2/internal/danger)|[MIT](http://opensource.org/licenses/mit-license.php)|`v2.0.1`|
 |[github.com/pelletier/go-toml/v2/internal/tracker](https://pkg.go.dev/github.com/pelletier/go-toml/v2/internal/tracker)|[MIT](http://opensource.org/licenses/mit-license.php)|`v2.0.1`|
 |[github.com/pkg/errors](https://pkg.go.dev/github.com/pkg/errors)|[BSD-2-Clause](http://www.opensource.org/licenses/BSD-2-Clause)|`v0.9.1`|
-|[github.com/pterm/pterm](https://pkg.go.dev/github.com/pterm/pterm)|[MIT](http://opensource.org/licenses/mit-license.php)|`v0.12.42`|
-|[github.com/pterm/pterm/internal](https://pkg.go.dev/github.com/pterm/pterm/internal)|[MIT](http://opensource.org/licenses/mit-license.php)|`v0.12.42`|
+|[github.com/pterm/pterm](https://pkg.go.dev/github.com/pterm/pterm)|[MIT](http://opensource.org/licenses/mit-license.php)|`v0.12.45`|
+|[github.com/pterm/pterm/internal](https://pkg.go.dev/github.com/pterm/pterm/internal)|[MIT](http://opensource.org/licenses/mit-license.php)|`v0.12.45`|
 |[github.com/rivo/uniseg](https://pkg.go.dev/github.com/rivo/uniseg)|[MIT](http://opensource.org/licenses/mit-license.php)|`v0.2.0`|
-|[github.com/sirupsen/logrus](https://pkg.go.dev/github.com/sirupsen/logrus)|[MIT](http://opensource.org/licenses/mit-license.php)|`v1.8.1`|
+|[github.com/sirupsen/logrus](https://pkg.go.dev/github.com/sirupsen/logrus)|[MIT](http://opensource.org/licenses/mit-license.php)|`v1.9.0`|
 |[github.com/spf13/afero](https://pkg.go.dev/github.com/spf13/afero)|[Apache-2.0](http://www.apache.org/licenses/)|`v1.8.2`|
 |[github.com/spf13/afero/mem](https://pkg.go.dev/github.com/spf13/afero/mem)|[Apache-2.0](http://www.apache.org/licenses/)|`v1.8.2`|
 |[github.com/spf13/cast](https://pkg.go.dev/github.com/spf13/cast)|[MIT](http://opensource.org/licenses/mit-license.php)|`v1.5.0`|
@@ -90,8 +90,8 @@ This software is based on or incorporates materials from the following projects.
 |[golang.org/x/crypto/ssh/terminal](https://pkg.go.dev/golang.org/x/crypto/ssh/terminal)|[BSD-3-Clause](http://www.opensource.org/licenses/BSD-3-Clause)|`v0.0.0-20220411220226-7b82a4e95df4`|
 |[golang.org/x/net/internal/socks](https://pkg.go.dev/golang.org/x/net/internal/socks)|[BSD-3-Clause](http://www.opensource.org/licenses/BSD-3-Clause)|`v0.0.0-20220520000938-2e3eb7b945c2`|
 |[golang.org/x/net/proxy](https://pkg.go.dev/golang.org/x/net/proxy)|[BSD-3-Clause](http://www.opensource.org/licenses/BSD-3-Clause)|`v0.0.0-20220520000938-2e3eb7b945c2`|
-|[golang.org/x/sys/internal/unsafeheader](https://pkg.go.dev/golang.org/x/sys/internal/unsafeheader)|[BSD-3-Clause](http://www.opensource.org/licenses/BSD-3-Clause)|`v0.0.0-20220520151302-bc2c85ada10a`|
-|[golang.org/x/sys/unix](https://pkg.go.dev/golang.org/x/sys/unix)|[BSD-3-Clause](http://www.opensource.org/licenses/BSD-3-Clause)|`v0.0.0-20220520151302-bc2c85ada10a`|
+|[golang.org/x/sys/internal/unsafeheader](https://pkg.go.dev/golang.org/x/sys/internal/unsafeheader)|[BSD-3-Clause](http://www.opensource.org/licenses/BSD-3-Clause)|`v0.0.0-20220715151400-c0bba94af5f8`|
+|[golang.org/x/sys/unix](https://pkg.go.dev/golang.org/x/sys/unix)|[BSD-3-Clause](http://www.opensource.org/licenses/BSD-3-Clause)|`v0.0.0-20220715151400-c0bba94af5f8`|
 |[golang.org/x/term](https://pkg.go.dev/golang.org/x/term)|[BSD-3-Clause](http://www.opensource.org/licenses/BSD-3-Clause)|`v0.0.0-20210927222741-03fcf44c2211`|
 |[golang.org/x/text/runes](https://pkg.go.dev/golang.org/x/text/runes)|[BSD-3-Clause](http://www.opensource.org/licenses/BSD-3-Clause)|`v0.3.7`|
 |[gopkg.in/ini.v1](https://pkg.go.dev/gopkg.in/ini.v1)|[Apache-2.0](http://www.apache.org/licenses/)|`v1.66.4`|
