@@ -57,3 +57,16 @@ func ReadSarif(sarifPath string, printProblems bool) {
 		ErrorMessage("Found %d problems according to the checks applied", problems)
 	}
 }
+
+// GetReportUrl get Qodana Cloud report URL from the given qodana.sarif.json
+func GetReportUrl(sarifPath string) string {
+	s, err := sarif.Open(sarifPath)
+	if err != nil {
+		log.Fatal(err)
+	}
+	reportUrl, exists := s.Runs[0].Properties["reportUrl"]
+	if exists {
+		return reportUrl.(string)
+	}
+	return ""
+}

@@ -49,14 +49,14 @@ func newInitCommand() *cobra.Command {
 				if err != nil {
 					log.Fatal(err)
 				}
-				core.AskUserConfirm(fmt.Sprintf("?  Do you want to set up Qodana in the following project: %s", absPath))
+				core.AskUserConfirm(fmt.Sprintf("Do you want to set up Qodana in the following project: %s", absPath))
 				core.GetLinter(options.ProjectDir, options.YamlName)
 			} else {
 				latestLinter := core.GetLatestVersion(qodanaYaml.Linter)
 				if latestLinter != qodanaYaml.Linter {
 					core.WarningMessage("You are using an outdated %s linter\n", qodanaYaml.Linter)
 					if core.AskUserConfirm(
-						fmt.Sprintf("?  Do you want to update to %s", latestLinter),
+						fmt.Sprintf("Do you want to update to %s", latestLinter),
 					) {
 						core.SetQodanaLinter(options.ProjectDir, latestLinter, options.YamlName)
 					}

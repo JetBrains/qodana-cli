@@ -63,7 +63,7 @@ func isGitHubAction() bool {
 	return os.Getenv("GITHUB_ACTIONS") == "true"
 }
 
-func createPythonProject(t *testing.T, name string) string {
+func createProject(t *testing.T, name string) string {
 	location := "/tmp/" + name
 	err := os.MkdirAll(location, 0o755)
 	if err != nil {
@@ -133,7 +133,7 @@ func TestHelp(t *testing.T) {
 }
 
 func TestInitCommand(t *testing.T) {
-	projectPath := createPythonProject(t, "qodana_init")
+	projectPath := createProject(t, "qodana_init")
 	err := ioutil.WriteFile(projectPath+"/qodana.yml", []byte("version: 1.0"), 0o755)
 	if err != nil {
 		t.Fatal(err)
@@ -162,6 +162,24 @@ func TestInitCommand(t *testing.T) {
 	err = os.RemoveAll(projectPath)
 	if err != nil {
 		t.Fatal(err)
+	}
+}
+
+func TestCloudUrl(t *testing.T) {
+	projectPath := createProject(t, "qodana_cloud_url")
+	sarifPath := projectPath + "/qodana.sarif.json"
+	err := ioutil.WriteFile(
+		sarifPath,
+		[]byte(`{"version":"2.1.0","$schema":"https://raw.githubusercontent.com/schemastore/schemastore/master/src/schemas/json/sarif-2.1.0-rtm.5.json","runs":[{"tool":{"driver":{"contents":["localizedData","nonLocalizedData"],"fullName":"Qodana for RickRolling","isComprehensive":false,"language":"en-US","name":"QDRICKROLL","rules":[],"version":"223.1218.100"}},"invocations":[{"executionSuccessful":true,"exitCode":0}],"results":[],"automationDetails":{"guid":"87d2cf90-9968-4bd3-9cbc-d1b624f37fd2","id":"project/qodana/2022-08-01","properties":{"jobUrl":"","tags":["jobUrl"]}},"language":"en-US","newlineSequences":["\r\n","\n"],"properties":{"deviceId":"200820300000000-0000-0000-0000-000000000001","reportUrl":"https://youtu.be/dQw4w9WgXcQ","tags":["deviceId"]}}]}`),
+		0o644,
+	)
+	if err != nil {
+		t.Fatal(err)
+	}
+	actual := core.GetReportUrl(sarifPath)
+	expected := "https://youtu.be/dQw4w9WgXcQ"
+	if actual != expected {
+		t.Fatalf("expected \"%s\" got \"%s\"", expected, actual)
 	}
 }
 
@@ -211,7 +229,7 @@ func TestAllCommands(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	projectPath := createPythonProject(t, "qodana_scan")
+	projectPath := createProject(t, "qodana_scan")
 
 	// pull
 	out := bytes.NewBufferString("")

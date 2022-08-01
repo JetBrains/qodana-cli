@@ -63,12 +63,14 @@ But you can always override qodana.yaml options with the following command-line 
 			core.PrepareHost(options)
 			exitCode := core.RunLinter(ctx, options)
 			checkExitCode(exitCode, options.ResultsDir)
-			core.ReadSarif(filepath.Join(options.ResultsDir, core.QodanaSarifName), options.PrintProblems)
+			sarifPath := filepath.Join(options.ResultsDir, core.QodanaSarifName)
+			core.ReadSarif(sarifPath, options.PrintProblems)
+			reportUrl := core.GetReportUrl(sarifPath)
 			if options.ShowReport {
-				core.ShowReport(filepath.Join(options.ResultsDir, "report"), options.Port)
+				core.ShowReport(reportUrl, filepath.Join(options.ResultsDir, "report"), options.Port)
 			} else if core.IsInteractive() {
-				if core.AskUserConfirm("?  Do you want to open the report") {
-					core.ShowReport(filepath.Join(options.ResultsDir, "report"), options.Port)
+				if core.AskUserConfirm("Do you want to open the report") {
+					core.ShowReport(reportUrl, filepath.Join(options.ResultsDir, "report"), options.Port)
 				} else {
 					core.WarningMessage(
 						"To view the Qodana report later, run %s in the current directory or add %s flag to %s",
@@ -130,7 +132,7 @@ func checkProjectDir(projectDir string) {
 			fmt.Sprintf("Project directory (%s) is the $HOME directory", projectDir),
 		)
 		if !core.AskUserConfirm(core.DefaultPromptText) {
-			os.Exit(1)
+			os.Exit(0)
 		}
 	}
 	if !core.CheckDirFiles(projectDir) {
@@ -152,7 +154,7 @@ func checkExitCode(exitCode int, resultsDir string) {
 		core.WarningMessage("Check ./logs/ in the results directory for more information")
 		if exitCode == core.QodanaOutOfMemoryExitCode {
 			core.CheckDockerMemory()
-		} else if core.AskUserConfirm(fmt.Sprintf("Do you want to open %s?", resultsDir)) {
+		} else if core.AskUserConfirm(fmt.Sprintf("Do you want to open %s", resultsDir)) {
 			err := core.OpenDir(resultsDir)
 			if err != nil {
 				log.Fatalf("Error while opening directory: %s", err)

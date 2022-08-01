@@ -104,22 +104,32 @@ func getLatestVersion() string {
 }
 
 // openReport serves the report on the given port and opens the browser.
-func openReport(path string, port int) {
-	url := fmt.Sprintf("http://localhost:%d", port)
-	go func() {
-		resp, err := http.Get(url)
+func openReport(cloudUrl string, path string, port int) {
+	if cloudUrl != "" {
+		resp, err := http.Get(cloudUrl)
 		if err == nil && resp.StatusCode == 200 {
-			err := openBrowser(url)
+			err = openBrowser(cloudUrl)
 			if err != nil {
 				return
 			}
 		}
-	}()
-	http.Handle("/", noCache(http.FileServer(http.Dir(path))))
-	err := http.ListenAndServe(fmt.Sprintf(":%d", port), nil)
-	if err != nil {
-		WarningMessage("Problem serving report, %s\n", err.Error())
-		return
+	} else {
+		url := fmt.Sprintf("http://localhost:%d", port)
+		go func() {
+			resp, err := http.Get(url)
+			if err == nil && resp.StatusCode == 200 {
+				err := openBrowser(url)
+				if err != nil {
+					return
+				}
+			}
+		}()
+		http.Handle("/", noCache(http.FileServer(http.Dir(path))))
+		err := http.ListenAndServe(fmt.Sprintf(":%d", port), nil)
+		if err != nil {
+			WarningMessage("Problem serving report, %s\n", err.Error())
+			return
+		}
 	}
 	_, _ = fmt.Scan()
 }
@@ -280,7 +290,7 @@ func AskUserConfirm(what string) bool {
 		return false
 	}
 	prompt := qodanaInteractiveConfirm
-	prompt.DefaultText = what
+	prompt.DefaultText = "\n?  " + what
 	answer, err := prompt.Show()
 	if err != nil {
 		log.Fatalf("Error while waiting for user input: %s", err)
