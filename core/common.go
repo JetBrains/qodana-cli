@@ -104,15 +104,21 @@ func GetLinter(path string, yamlName string) string {
 }
 
 // ShowReport serves the Qodana report
-func ShowReport(path string, port int) { // TODO: Open report from Cloud
+func ShowReport(cloudUrl string, path string, port int) {
+	var url string
+	if cloudUrl != "" {
+		url = cloudUrl
+	} else {
+		url = fmt.Sprintf("http://localhost:%d/", port)
+	}
 	printProcess(
 		func() {
 			if _, err := os.Stat(path); os.IsNotExist(err) {
-				log.Fatal("Qodana report not found. Get the report by running `qodana scan`")
+				log.Fatal("Qodana report not found. Get a report by running `qodana scan`")
 			}
-			openReport(path, port)
+			openReport(cloudUrl, path, port)
 		},
-		fmt.Sprintf("Showing Qodana report at http://localhost:%d ", port),
+		fmt.Sprintf("Showing Qodana report from %s", url),
 		"",
 	)
 }
