@@ -18,7 +18,7 @@ require (
 	github.com/opencontainers/image-spec v1.0.2 // indirect
 	github.com/owenrumney/go-sarif/v2 v2.1.2
 	github.com/pterm/pterm v0.12.45
-	github.com/sirupsen/logrus v1.8.1
+	github.com/sirupsen/logrus v1.9.0
 	github.com/spf13/cobra v1.5.0
 	github.com/spf13/viper v1.12.0
 	golang.org/x/time v0.0.0-20210723032227-1f47c861a9ac // indirect
