@@ -33,7 +33,7 @@ import (
 const (
 	QodanaSarifName = "qodana.sarif.json"
 	configName      = "qodana"
-	version         = "2022.1"
+	version         = "2022.2"
 	eap             = "-eap"
 	QDJVMC          = "jetbrains/qodana-jvm-community:" + version
 	QDJVM           = "jetbrains/qodana-jvm:" + version + eap

@@ -230,7 +230,6 @@ func getDockerOptions(opts *QodanaOptions) *types.ContainerCreateConfig {
 	if !isVariableConfigured(qodanaToken, opts.Env) {
 		if token := os.Getenv(qodanaToken); token != "" {
 			opts.Env = append(opts.Env, fmt.Sprintf("%s=%s", qodanaToken, token))
-			cmdOpts = append(cmdOpts, "--send-report") // temporary until 2022.1.3 release
 		}
 	}
 	if !isVariableConfigured(qodanaEnv, opts.Env) {
