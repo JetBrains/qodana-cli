@@ -63,9 +63,8 @@ But you can always override qodana.yaml options with the following command-line 
 			core.PrepareHost(options)
 			exitCode := core.RunLinter(ctx, options)
 			checkExitCode(exitCode, options.ResultsDir)
-			sarifPath := filepath.Join(options.ResultsDir, core.QodanaSarifName)
-			core.ReadSarif(sarifPath, options.PrintProblems)
-			reportUrl := core.GetReportUrl(sarifPath)
+			core.ReadSarif(filepath.Join(options.ResultsDir, core.QodanaSarifName), options.PrintProblems)
+			reportUrl := core.GetReportUrl(options.ResultsDir)
 			if options.ShowReport {
 				core.ShowReport(reportUrl, filepath.Join(options.ResultsDir, "report"), options.Port)
 			} else if core.IsInteractive() {

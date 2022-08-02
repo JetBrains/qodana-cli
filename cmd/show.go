@@ -66,7 +66,7 @@ This command serves the Qodana report locally and opens a browser to it.`,
 				}
 			} else {
 				core.ShowReport(
-					core.GetReportUrl(filepath.Join(options.ResultsDir, core.QodanaSarifName)),
+					core.GetReportUrl(options.ResultsDir),
 					options.ReportDir,
 					options.Port,
 				)

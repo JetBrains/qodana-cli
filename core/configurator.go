@@ -31,16 +31,17 @@ import (
 
 //goland:noinspection GoUnnecessarilyExportedIdentifiers
 const (
-	QodanaSarifName = "qodana.sarif.json"
-	configName      = "qodana"
-	version         = "2022.2"
-	eap             = "-eap"
-	QDJVMC          = "jetbrains/qodana-jvm-community:" + version
-	QDJVM           = "jetbrains/qodana-jvm:" + version + eap
-	QDAND           = "jetbrains/qodana-jvm-android:" + version + eap
-	QDPHP           = "jetbrains/qodana-php:" + version + eap
-	QDPY            = "jetbrains/qodana-python:" + version + eap
-	QDJS            = "jetbrains/qodana-js:" + version + eap
+	QodanaSarifName      = "qodana.sarif.json"
+	QodanaShortSarifName = "qodana-short.sarif.json"
+	configName           = "qodana"
+	version              = "2022.2"
+	eap                  = "-eap"
+	QDJVMC               = "jetbrains/qodana-jvm-community:" + version
+	QDJVM                = "jetbrains/qodana-jvm:" + version + eap
+	QDAND                = "jetbrains/qodana-jvm-android:" + version + eap
+	QDPHP                = "jetbrains/qodana-php:" + version + eap
+	QDPY                 = "jetbrains/qodana-python:" + version + eap
+	QDJS                 = "jetbrains/qodana-js:" + version + eap
 )
 
 var langsLinters = map[string][]string{
