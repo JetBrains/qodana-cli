@@ -65,7 +65,8 @@ func GetReportUrl(resultsDir string) string {
 	sarifPath := filepath.Join(resultsDir, QodanaShortSarifName)
 	s, err := sarif.Open(sarifPath)
 	if err != nil {
-		log.Fatal(err)
+		log.Debug(err)
+		return ""
 	}
 	reportUrl, exists := s.Runs[0].Properties["reportUrl"]
 	if exists {
