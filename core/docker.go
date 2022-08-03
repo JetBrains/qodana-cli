@@ -214,7 +214,7 @@ func GetCmdOptions(opts *QodanaOptions) []string {
 	return arguments
 }
 
-// isVariableConfigured checks if Qodana token is set in the given environment options.
+// isVariableConfigured checks if a variable is set in the given environment options.
 func isVariableConfigured(varName string, env []string) bool {
 	for _, e := range env {
 		if strings.HasPrefix(e, varName) {
@@ -234,7 +234,7 @@ func getDockerOptions(opts *QodanaOptions) *types.ContainerCreateConfig {
 	}
 	if !isVariableConfigured(qodanaEnv, opts.Env) {
 		if qEnv := getQodanaEnv(); qEnv != "" {
-			opts.Env = append(opts.Env, fmt.Sprintf("%s=%s:%s", qodanaEnv, qodanaEnv, Version))
+			opts.Env = append(opts.Env, fmt.Sprintf("%s=%s:%s", qodanaEnv, qEnv, Version))
 		}
 	}
 	if !isVariableConfigured(qodanaJobUrl, opts.Env) {

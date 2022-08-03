@@ -165,7 +165,7 @@ func TestInitCommand(t *testing.T) {
 	}
 }
 
-func TestCloudUrl(t *testing.T) {
+func TestValidCloudUrl(t *testing.T) {
 	projectPath := createProject(t, "qodana_cloud_url")
 	sarifPath := projectPath + "/" + core.QodanaShortSarifName
 	err := ioutil.WriteFile(
@@ -178,6 +178,24 @@ func TestCloudUrl(t *testing.T) {
 	}
 	actual := core.GetReportUrl(projectPath)
 	expected := "https://youtu.be/dQw4w9WgXcQ"
+	if actual != expected {
+		t.Fatalf("expected \"%s\" got \"%s\"", expected, actual)
+	}
+}
+
+func TestInvalidCloudUrl(t *testing.T) {
+	projectPath := createProject(t, "qodana_cloud_invalid_url")
+	sarifPath := projectPath + "/" + core.QodanaShortSarifName
+	err := ioutil.WriteFile(
+		sarifPath,
+		[]byte(`{.0-]}`),
+		0o644,
+	)
+	if err != nil {
+		t.Fatal(err)
+	}
+	actual := core.GetReportUrl(projectPath)
+	expected := ""
 	if actual != expected {
 		t.Fatalf("expected \"%s\" got \"%s\"", expected, actual)
 	}
