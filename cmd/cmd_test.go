@@ -25,6 +25,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"reflect"
 	"runtime"
 	"strings"
 	"testing"
@@ -224,6 +225,20 @@ func TestScanFlags(t *testing.T) {
 	}, " ")
 	actual := strings.Join(core.GetCmdOptions(testOptions), " ")
 	if expected != actual {
+		t.Fatalf("expected \"%s\" got \"%s\"", expected, actual)
+	}
+}
+
+func TestScanFlags_Script(t *testing.T) {
+	testOptions := &core.QodanaOptions{
+		Script: "custom-script:parameters",
+	}
+	expected := []string{
+		"--script",
+		"custom-script:parameters",
+	}
+	actual := core.GetCmdOptions(testOptions)
+	if !reflect.DeepEqual(expected, actual) {
 		t.Fatalf("expected \"%s\" got \"%s\"", expected, actual)
 	}
 }
