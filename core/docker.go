@@ -190,6 +190,9 @@ func GetCmdOptions(opts *QodanaOptions) []string {
 	if opts.RunPromo != "" {
 		arguments = append(arguments, "--run-promo", opts.RunPromo)
 	}
+	if opts.Script != "default" {
+		arguments = append(arguments, "--script", opts.Script)
+	}
 	if opts.StubProfile != "" {
 		arguments = append(arguments, "--stub-profile", opts.StubProfile)
 	}
