@@ -33,7 +33,7 @@ func newScanCommand() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "scan",
 		Short: "Scan project with Qodana",
-		Long: `Scan a project with Qodana. It runs one of Qodana Docker's images (https://www.jetbrains.com/help/qodana/docker-images.html) and reports the results.
+		Long: `Scan a project with Qodana. It runs one of Qodana's Docker images (https://www.jetbrains.com/help/qodana/docker-images.html) and reports the results.
 
 Note that most options can be configured via qodana.yaml (https://www.jetbrains.com/help/qodana/qodana-yaml.html) file.
 But you can always override qodana.yaml options with the following command-line options.
