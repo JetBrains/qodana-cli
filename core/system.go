@@ -24,7 +24,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"net/http"
 	"os"
 	"os/exec"
@@ -89,7 +88,7 @@ func getLatestVersion() string {
 		log.Errorf("Failed to check for updates: %s", resp.Status)
 		return ""
 	}
-	bodyText, err := ioutil.ReadAll(resp.Body)
+	bodyText, err := io.ReadAll(resp.Body)
 	if err != nil {
 		log.Errorf("Failed to read response body: %s", err)
 		return ""

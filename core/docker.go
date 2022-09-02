@@ -20,7 +20,6 @@ import (
 	"context"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -98,7 +97,7 @@ func PullImage(ctx context.Context, client *client.Client, image string) {
 			log.Fatal("can't pull image ", err)
 		}
 	}(reader)
-	if _, err = io.Copy(ioutil.Discard, reader); err != nil {
+	if _, err = io.Copy(io.Discard, reader); err != nil {
 		log.Fatal("couldn't read the image pull logs ", err)
 	}
 }

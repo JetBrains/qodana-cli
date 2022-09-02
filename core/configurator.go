@@ -19,7 +19,6 @@ package core
 import (
 	"bytes"
 	"io"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strings"
@@ -136,7 +135,7 @@ func recognizeDirLanguages(projectPath string) ([]string, error) {
 // readFile reads the file at the given path and returns its content.
 func readFile(path string, limit int64) ([]byte, error) {
 	if limit <= 0 {
-		return ioutil.ReadFile(path)
+		return os.ReadFile(path)
 	}
 	f, err := os.Open(path)
 	if err != nil {
@@ -179,7 +178,7 @@ func readIdeaDir(project string) []string {
 	}
 	for _, file := range files {
 		if filepath.Ext(file) == ".iml" {
-			iml, err := ioutil.ReadFile(file)
+			iml, err := os.ReadFile(file)
 			if err != nil {
 				log.Fatal(err)
 			}
@@ -191,7 +190,7 @@ func readIdeaDir(project string) []string {
 				languages = Append(languages, "Python")
 			}
 			if strings.Contains(text, "WEB_MODULE") {
-				xml, err := ioutil.ReadFile(project + "/.idea/workspace.xml")
+				xml, err := os.ReadFile(project + "/.idea/workspace.xml")
 				if err != nil {
 					log.Fatal(err)
 				}
