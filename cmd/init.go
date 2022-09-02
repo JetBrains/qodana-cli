@@ -25,7 +25,7 @@ import (
 	"github.com/spf13/cobra"
 )
 
-// initOptions represents scan command options.
+// initOptions represents init command options.
 type initOptions struct {
 	ProjectDir string
 	Force      bool
