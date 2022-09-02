@@ -49,7 +49,9 @@ func newInitCommand() *cobra.Command {
 				if err != nil {
 					log.Fatal(err)
 				}
-				core.AskUserConfirm(fmt.Sprintf("Do you want to set up Qodana in the following project: %s", absPath))
+				if !core.AskUserConfirm(fmt.Sprintf("Do you want to set up Qodana in the following project: %s", absPath)) {
+					return
+				}
 				core.GetLinter(options.ProjectDir, options.YamlName)
 			} else {
 				latestLinter := core.GetLatestVersion(qodanaYaml.Linter)
