@@ -21,7 +21,7 @@ import (
 	"github.com/spf13/cobra"
 )
 
-// viewOptions represents scan command options.
+// viewOptions represents view command options.
 type viewOptions struct {
 	SarifFile string
 }

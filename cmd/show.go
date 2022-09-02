@@ -24,7 +24,7 @@ import (
 	"github.com/spf13/cobra"
 )
 
-// showOptions represents scan command options.
+// showOptions represents show command options.
 type showOptions struct {
 	ProjectDir string
 	ResultsDir string
