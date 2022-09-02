@@ -49,7 +49,7 @@ func newInitCommand() *cobra.Command {
 				if err != nil {
 					log.Fatal(err)
 				}
-				if !core.AskUserConfirm(fmt.Sprintf("Do you want to set up Qodana in the following project: %s", absPath)) {
+				if core.IsInteractive() && !core.AskUserConfirm(fmt.Sprintf("Do you want to set up Qodana in the following project: %s", absPath)) {
 					return
 				}
 				core.GetLinter(options.ProjectDir, options.YamlName)
@@ -71,11 +71,6 @@ func newInitCommand() *cobra.Command {
 					)
 				}
 			}
-			core.WarningMessage(
-				"Run %s to analyze the project. The configuration is stored in %s and can be changed later",
-				core.PrimaryBold("qodana scan"),
-				core.PrimaryBold(options.YamlName),
-			)
 		},
 	}
 	flags := cmd.Flags()

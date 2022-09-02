@@ -17,7 +17,7 @@
 package core
 
 import (
-	"io/ioutil"
+	"os"
 	"strings"
 )
 
@@ -37,6 +37,7 @@ func contains(s []string, str string) bool {
 }
 
 // Append appends a string to a slice if it's not already there.
+//
 //goland:noinspection GoUnnecessarilyExportedIdentifiers
 func Append(slice []string, elems ...string) []string {
 	if !contains(slice, elems[0]) {
@@ -47,7 +48,7 @@ func Append(slice []string, elems ...string) []string {
 
 // CheckDirFiles checks if a directory contains files.
 func CheckDirFiles(dir string) bool {
-	files, err := ioutil.ReadDir(dir)
+	files, err := os.ReadDir(dir)
 	if err != nil {
 		return false
 	}

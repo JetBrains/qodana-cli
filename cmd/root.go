@@ -17,7 +17,7 @@
 package cmd
 
 import (
-	"io/ioutil"
+	"io"
 	"os"
 	"os/signal"
 
@@ -34,7 +34,7 @@ func Execute() {
 	go func() {
 		<-c
 		core.WarningMessage("Interrupting Qodana CLI...")
-		log.SetOutput(ioutil.Discard)
+		log.SetOutput(io.Discard)
 
 		core.CheckForUpdates(core.Version)
 		core.DockerCleanup()

@@ -19,7 +19,6 @@ package core
 import (
 	"bytes"
 	"errors"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"sort"
@@ -72,6 +71,7 @@ type QodanaYaml struct {
 }
 
 // Profile A profile is some template set of checks to run with Qodana analysis.
+//
 //goland:noinspection GoUnnecessarilyExportedIdentifiers
 type Profile struct {
 	// Name profile name to use.
@@ -82,6 +82,7 @@ type Profile struct {
 }
 
 // Clude A check id to enable/disable for include/exclude YAML field.
+//
 //goland:noinspection GoUnnecessarilyExportedIdentifiers
 type Clude struct {
 	// The name of check to include/exclude.
@@ -92,6 +93,7 @@ type Clude struct {
 }
 
 // Plugin to be installed during the Qodana run.
+//
 //goland:noinspection GoUnnecessarilyExportedIdentifiers
 type Plugin struct {
 	// Id plugin id to install.
@@ -102,6 +104,7 @@ type Plugin struct {
 }
 
 // DependencyIgnore is a dependency to ignore for license checks in Qodana
+//
 //goland:noinspection GoUnnecessarilyExportedIdentifiers
 type DependencyIgnore struct {
 	// Name is the name of the dependency to ignore.
@@ -109,6 +112,7 @@ type DependencyIgnore struct {
 }
 
 // LicenseRule is a license rule to apply for license compatibility checks in Qodana
+//
 //goland:noinspection GoUnnecessarilyExportedIdentifiers
 type LicenseRule struct {
 	// Keys is the list of project license SPDX IDs.
@@ -177,7 +181,7 @@ func LoadQodanaYaml(project string, filename string) *QodanaYaml {
 	if _, err := os.Stat(qodanaYamlPath); errors.Is(err, os.ErrNotExist) {
 		return q
 	}
-	yamlFile, err := ioutil.ReadFile(qodanaYamlPath)
+	yamlFile, err := os.ReadFile(qodanaYamlPath)
 	if err != nil {
 		log.Printf("yamlFile.Get err   #%v ", err)
 	}
@@ -220,6 +224,7 @@ func (q *QodanaYaml) sort() *QodanaYaml {
 }
 
 // SetQodanaLinter writes the qodana.yaml file to the given path.
+//
 //goland:noinspection GoUnnecessarilyExportedIdentifiers
 func SetQodanaLinter(path string, linter string, filename string) {
 	q := LoadQodanaYaml(path, filename)
@@ -235,7 +240,7 @@ func SetQodanaLinter(path string, linter string, filename string) {
 	if err != nil {
 		return
 	}
-	err = ioutil.WriteFile(filepath.Join(path, filename), b.Bytes(), 0o600)
+	err = os.WriteFile(filepath.Join(path, filename), b.Bytes(), 0o600)
 	if err != nil {
 		log.Fatalf("Marshal: %v", err)
 	}
