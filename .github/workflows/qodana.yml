@@ -5,27 +5,17 @@ on:
 jobs:
   qodana:
     runs-on: ubuntu-latest
-    env:
-      GRAZIE_PLUGIN: https://plugins.jetbrains.com/plugin/download?rel=true&updateId=152587
     steps:
       - uses: actions/checkout@v3
-      - run: |
-          curl -L -o grazie-pro.zip "$GRAZIE_PLUGIN" && unzip grazie-pro.zip
-          cat > qodana.yaml << EOF
-          profile:
-            name: empty
-          include:
-            - name: GrazieInspection
-            - name: IdentifierGrammar
-            - name: LanguageDetectionInspection
-          exclude:
-            - name: All
-              paths:
-                - .github
-          EOF
-      - name: 'Qodana for Docs (with Grazie)'
+      - name: Login to Space
+        uses: docker/login-action@v2
+        with:
+          registry: registry.jetbrains.team
+          username: ${{ secrets.SPACE_USERNAME }}
+          password: ${{ secrets.SPACE_PASSWORD }}
+      - run: docker pull registry.jetbrains.team/p/sa/containers/qodana-go:latest
+      - name: 'Qodana'
         uses: JetBrains/qodana-action@main
         with:
           args: >
-            -l,jetbrains/qodana-js:latest,
-            -v,${{ github.workspace }}/grazie-pro:/opt/idea/plugins/grazie-pro
+            -l,registry.jetbrains.team/p/sa/containers/qodana-go:latest
