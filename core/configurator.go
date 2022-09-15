@@ -190,16 +190,19 @@ func readIdeaDir(project string) []string {
 				languages = Append(languages, "Python")
 			}
 			if strings.Contains(text, "WEB_MODULE") {
-				xml, err := os.ReadFile(project + "/.idea/workspace.xml")
-				if err != nil {
-					log.Fatal(err)
-				}
-				workspace := string(xml)
-				if strings.Contains(workspace, "PhpWorkspaceProjectConfiguration") {
-					languages = Append(languages, "PHP")
-				}
-				if strings.Contains(workspace, "node.js.detected.package.eslint") {
-					languages = Append(languages, "JavaScript")
+				workspaceLocation := project + "/.idea/workspace.xml"
+				if _, err := os.Stat(workspaceLocation); err == nil {
+					xml, err := os.ReadFile(workspaceLocation)
+					if err != nil {
+						log.Fatal(err)
+					}
+					workspace := string(xml)
+					if strings.Contains(workspace, "PhpWorkspaceProjectConfiguration") {
+						languages = Append(languages, "PHP")
+					}
+					if strings.Contains(workspace, "node.js.detected.package.eslint") {
+						languages = Append(languages, "JavaScript")
+					}
 				}
 			}
 		}
