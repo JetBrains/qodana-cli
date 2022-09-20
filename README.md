@@ -168,7 +168,6 @@ scan [flags]
       --clear-cache               Clear the local Qodana cache before running the analysis
   -w, --show-report               Serve HTML report on port
       --port int                  Port to serve the report on (default 8080)
-      --yaml-name string          Override qodana.yaml name to use: 'qodana.yaml' or 'qodana.yml'
   -a, --analysis-id string        Unique report identifier (GUID) to be used by Qodana Cloud
   -b, --baseline string           Provide the path to an existing SARIF report to be used in the baseline state calculation
       --baseline-include-absent   Include in the output report the results from the baseline run that are absent in the current run
