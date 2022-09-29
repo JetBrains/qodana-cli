@@ -54,10 +54,6 @@ scoop install qodana
 ```
 
 #### Anywhere else
-#### Install with [Go](https://go.dev/doc/install)
-```console
-go install github.com/JetBrains/qodana-cli@latest
-```
 Alternatively,
 you can install the latest binary (or the apt/rpm/deb package)
 from [this page](https://github.com/JetBrains/qodana-cli/releases/latest).
