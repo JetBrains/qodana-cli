@@ -41,15 +41,19 @@ const (
 	QDPHP                = "jetbrains/qodana-php:" + version + eap
 	QDPY                 = "jetbrains/qodana-python:" + version + eap
 	QDJS                 = "jetbrains/qodana-js:" + version + eap
+	QDNET                = "jetbrains/qodana-dotnet:" + version + eap
 )
 
 var langsLinters = map[string][]string{
-	"Java":       {QDJVMC, QDJVM, QDAND},
-	"Kotlin":     {QDJVMC, QDJVM, QDAND},
-	"PHP":        {QDPHP},
-	"Python":     {QDPY},
-	"JavaScript": {QDJS},
-	"TypeScript": {QDJS},
+	"Java":              {QDJVMC, QDJVM, QDAND},
+	"Kotlin":            {QDJVMC, QDJVM, QDAND},
+	"PHP":               {QDPHP},
+	"Python":            {QDPY},
+	"JavaScript":        {QDJS},
+	"TypeScript":        {QDJS},
+	"C#":                {QDNET},
+	"F#":                {QDNET},
+	"Visual Basic .NET": {QDNET},
 }
 
 // GetLatestVersion checks if there's an updated EAP version supported by the CLI.
