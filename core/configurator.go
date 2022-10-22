@@ -41,7 +41,8 @@ const (
 	QDPHP                = "jetbrains/qodana-php:" + version + eap
 	QDPY                 = "jetbrains/qodana-python:" + version + eap
 	QDJS                 = "jetbrains/qodana-js:" + version + eap
-	QDNET                = "jetbrains/qodana-dotnet:" + version + eap
+	QDGO                 = "jetbrains/qodana-go:" + "2022.3" + eap     // until GoLang 2022.3 is released
+	QDNET                = "jetbrains/qodana-dotnet:" + "2022.3" + eap // until Rider 2022.3 is released
 )
 
 var langsLinters = map[string][]string{
@@ -51,6 +52,7 @@ var langsLinters = map[string][]string{
 	"Python":            {QDPY},
 	"JavaScript":        {QDJS},
 	"TypeScript":        {QDJS},
+	"Go":                {QDGO},
 	"C#":                {QDNET},
 	"F#":                {QDNET},
 	"Visual Basic .NET": {QDNET},
