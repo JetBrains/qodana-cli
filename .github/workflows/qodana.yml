@@ -7,15 +7,5 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
-      - name: Login to Space
-        uses: docker/login-action@v2
-        with:
-          registry: registry.jetbrains.team
-          username: ${{ secrets.SPACE_USERNAME }}
-          password: ${{ secrets.SPACE_PASSWORD }}
-      - run: docker pull registry.jetbrains.team/p/sa/containers/qodana-go:latest
       - name: 'Qodana'
         uses: JetBrains/qodana-action@main
-        with:
-          args: >
-            -l,registry.jetbrains.team/p/sa/containers/qodana-go:latest
