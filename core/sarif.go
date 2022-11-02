@@ -23,40 +23,52 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
+const (
+	BaselineStateEmpty     = ""
+	BaselineStateNew       = "new"
+	BaselineStateUnchanged = "unchanged"
+)
+
 // ReadSarif prints Qodana Scan result into stdout
 func ReadSarif(sarifPath string, printProblems bool) {
-	problems := 0
+	newProblems := 0
 	s, err := sarif.Open(sarifPath)
 	if err != nil {
 		log.Fatal(err)
 	}
-	problems = len(s.Runs[0].Results)
 	if printProblems {
 		EmptyMessage()
-		for _, run := range s.Runs {
-			for _, r := range run.Results {
-				ruleId := *r.RuleID
-				message := *r.Message.Text
-				level := *r.Level
-				if len(r.Locations) > 0 {
-					if r.Locations[0].PhysicalLocation != nil {
-						startLine := *r.Locations[0].PhysicalLocation.Region.StartLine
-						contextLine := *r.Locations[0].PhysicalLocation.ContextRegion.StartLine
-						startColumn := *r.Locations[0].PhysicalLocation.Region.StartColumn
-						filePath := *r.Locations[0].PhysicalLocation.ArtifactLocation.URI
-						context := *r.Locations[0].PhysicalLocation.ContextRegion.Snippet.Text
-						printProblem(ruleId, level, message, filePath, startLine, startColumn, contextLine, context)
-					} else {
-						printProblem(ruleId, level, message, "", 0, 0, 0, "")
-					}
+	}
+	for _, run := range s.Runs {
+		for _, r := range run.Results {
+			ruleId := *r.RuleID
+			message := *r.Message.Text
+			level := *r.Level
+			baselineState := BaselineStateEmpty
+			if r.BaselineState != nil {
+				baselineState = *r.BaselineState
+			}
+			if baselineState == BaselineStateNew || baselineState == BaselineStateEmpty {
+				newProblems++
+			}
+			if printProblems && len(r.Locations) > 0 && baselineState != BaselineStateUnchanged {
+				if r.Locations[0].PhysicalLocation != nil {
+					startLine := *r.Locations[0].PhysicalLocation.Region.StartLine
+					contextLine := *r.Locations[0].PhysicalLocation.ContextRegion.StartLine
+					startColumn := *r.Locations[0].PhysicalLocation.Region.StartColumn
+					filePath := *r.Locations[0].PhysicalLocation.ArtifactLocation.URI
+					context := *r.Locations[0].PhysicalLocation.ContextRegion.Snippet.Text
+					printProblem(ruleId, level, message, filePath, startLine, startColumn, contextLine, context)
+				} else {
+					printProblem(ruleId, level, message, "", 0, 0, 0, "")
 				}
 			}
 		}
 	}
-	if problems == 0 {
-		SuccessMessage("It seems all right 👌 No problems found according to the checks applied")
+	if newProblems == 0 {
+		SuccessMessage("It seems all right 👌 No new problems found according to the checks applied")
 	} else {
-		ErrorMessage("Found %d problems according to the checks applied", problems)
+		ErrorMessage("Found %d new problems according to the checks applied", newProblems)
 	}
 }
 
