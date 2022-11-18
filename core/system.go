@@ -38,7 +38,8 @@ import (
 )
 
 var (
-	unofficialLinter    = false
+	unofficialLinter = false
+	// DisableCheckUpdates flag to disable checking for updates
 	DisableCheckUpdates = false
 
 	scanStages = []string{

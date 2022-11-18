@@ -57,6 +57,7 @@ type QodanaOptions struct {
 	GitReset              bool
 }
 
+// Version returns the version of the Qodana CLI, set during the GoReleaser build
 var Version = "dev"
 
 // GetLinter gets linter for the given path and saves configName

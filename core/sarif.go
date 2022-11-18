@@ -24,8 +24,11 @@ import (
 )
 
 const (
-	BaselineStateEmpty     = ""
-	BaselineStateNew       = "new"
+	// BaselineStateEmpty default baseline state (not set)
+	BaselineStateEmpty = ""
+	// BaselineStateNew new baseline state
+	BaselineStateNew = "new"
+	// BaselineStateUnchanged unchanged baseline state
 	BaselineStateUnchanged = "unchanged"
 )
 
