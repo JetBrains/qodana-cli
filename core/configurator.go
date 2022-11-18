@@ -21,6 +21,7 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"sort"
 	"strings"
 
 	"github.com/go-enry/go-enry/v2"
@@ -45,6 +46,7 @@ const (
 	QDNET                = "jetbrains/qodana-dotnet:" + "2022.3" + eap // until Rider 2022.3 is released
 )
 
+// langsLinters is a map of languages to linters.
 var langsLinters = map[string][]string{
 	"Java":              {QDJVMC, QDJVM, QDAND},
 	"Kotlin":            {QDJVMC, QDJVM, QDAND},
@@ -58,6 +60,13 @@ var langsLinters = map[string][]string{
 	"Visual Basic .NET": {QDNET},
 }
 
+// ignoredDirectories is a list of directories that should be ignored by the configurator.
+var ignoredDirectories = []string{
+	".idea",
+	".vscode",
+	".git",
+}
+
 // GetLatestVersion checks if there's an updated EAP version supported by the CLI.
 func GetLatestVersion(image string) string {
 	if strings.HasSuffix(image, eap) {
@@ -69,8 +78,21 @@ func GetLatestVersion(image string) string {
 	return image
 }
 
-// recognizeDirLanguages returns the languages detected in the given directory.
-func recognizeDirLanguages(projectPath string) ([]string, error) {
+// isInIgnoredDirectory returns true if the given path should be ignored by the configurator.
+func isInIgnoredDirectory(path string) bool {
+	parts := strings.Split(path, string(os.PathSeparator))
+	for _, part := range parts {
+		for _, ignored := range ignoredDirectories {
+			if part == ignored {
+				return true
+			}
+		}
+	}
+	return false
+}
+
+// RecognizeDirLanguages returns the languages detected in the given directory.
+func RecognizeDirLanguages(projectPath string) ([]string, error) {
 	const limitKb = 64
 	out := make(map[string]int)
 	err := filepath.Walk(projectPath, func(path string, f os.FileInfo, err error) error {
@@ -92,9 +114,9 @@ func recognizeDirLanguages(projectPath string) ([]string, error) {
 		}
 
 		if f.IsDir() {
-			relpath = relpath + "/"
+			relpath = relpath + string(os.PathSeparator)
 		}
-		if enry.IsVendor(relpath) || enry.IsDotFile(relpath) ||
+		if isInIgnoredDirectory(path) || enry.IsVendor(relpath) || enry.IsDotFile(relpath) ||
 			enry.IsDocumentation(relpath) || enry.IsConfiguration(relpath) ||
 			enry.IsGenerated(relpath, nil) {
 			if f.IsDir() {
@@ -135,6 +157,9 @@ func recognizeDirLanguages(projectPath string) ([]string, error) {
 	for l := range out {
 		languages = Append(languages, l)
 	}
+	sort.Slice(languages, func(i, j int) bool {
+		return languages[i] < languages[j]
+	})
 	return languages, nil
 }
 
@@ -171,7 +196,7 @@ func readFile(path string, limit int64) ([]byte, error) {
 func readIdeaDir(project string) []string {
 	var languages []string
 	var files []string
-	root := project + "/.idea"
+	root := filepath.Join(project, ".idea")
 	if _, err := os.Stat(root); os.IsNotExist(err) {
 		return languages
 	}
@@ -196,7 +221,7 @@ func readIdeaDir(project string) []string {
 				languages = Append(languages, "Python")
 			}
 			if strings.Contains(text, "WEB_MODULE") {
-				workspaceLocation := project + "/.idea/workspace.xml"
+				workspaceLocation := filepath.Join(project, ".idea", "workspace.xml")
 				if _, err := os.Stat(workspaceLocation); err == nil {
 					xml, err := os.ReadFile(workspaceLocation)
 					if err != nil {

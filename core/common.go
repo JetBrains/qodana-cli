@@ -66,7 +66,7 @@ func GetLinter(path string, yamlName string) string {
 	printProcess(func() {
 		languages := readIdeaDir(path)
 		if len(languages) == 0 {
-			languages, _ = recognizeDirLanguages(path)
+			languages, _ = RecognizeDirLanguages(path)
 		}
 		if len(languages) == 0 {
 			WarningMessage("No technologies detected (no source code files?)\n")

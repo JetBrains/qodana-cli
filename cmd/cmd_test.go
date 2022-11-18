@@ -337,3 +337,14 @@ func TestAllCommands(t *testing.T) {
 		t.Fatal(err)
 	}
 }
+
+func TestDirLanguagesExcluded(t *testing.T) {
+	expected := []string{"Go", "Shell"}
+	actual, err := core.RecognizeDirLanguages("../")
+	if err != nil {
+		return
+	}
+	if !reflect.DeepEqual(expected, actual) {
+		t.Fatalf("expected \"%s\" got \"%s\"", expected, actual)
+	}
+}
