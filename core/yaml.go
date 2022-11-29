@@ -36,7 +36,7 @@ type QodanaYaml struct {
 	// Linter to run.
 	Linter string `yaml:"linter"`
 
-	// Profile is the profile configuration for Qodana analysis.
+	// Profile is the profile configuration for Qodana analysis (either a profile name or a profile path).
 	Profile Profile `yaml:"profile,omitempty"`
 
 	// FailThreshold is a number of problems to fail the analysis (to exit from Qodana with code 255).
@@ -68,6 +68,9 @@ type QodanaYaml struct {
 
 	// Plugins property containing plugins to install.
 	Plugins []Plugin `yaml:"plugins,omitempty"`
+
+	// DotNet is the configuration for .NET solutions and projects (either a solution name or a project name).
+	DotNet DotNet `yaml:"dot-net,omitempty"`
 }
 
 // Profile A profile is some template set of checks to run with Qodana analysis.
@@ -98,9 +101,6 @@ type Clude struct {
 type Plugin struct {
 	// Id plugin id to install.
 	Id string `yaml:"id"`
-
-	// Version plugin version to install.
-	Version string `yaml:"plugins,omitempty"`
 }
 
 // DependencyIgnore is a dependency to ignore for license checks in Qodana
@@ -162,6 +162,14 @@ type CustomDependency struct {
 
 	// License is the license of the dependency.
 	Licenses []License `yaml:"licenses"`
+}
+
+type DotNet struct {
+	// Solution is the name of a .NET solution inside the Qodana project.
+	Solution string `yaml:"solution,omitempty"`
+
+	// Project is the name of a .NET project inside the Qodana project.
+	Project string `yaml:"project,omitempty"`
 }
 
 // FindQodanaYaml checks whether qodana.yaml exists or not
