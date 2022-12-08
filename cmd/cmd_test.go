@@ -39,7 +39,7 @@ var testOptions = &core.QodanaOptions{
 	ResultsDir:            "./results",
 	CacheDir:              "./cache",
 	ProjectDir:            "./project",
-	Linter:                "jetbrains/qodana-jvm-community:2021.3",
+	Linter:                "jetbrains/qodana-jvm-community:latest",
 	SourceDirectory:       "./src",
 	DisableSanity:         true,
 	RunPromo:              "true",

@@ -34,7 +34,7 @@ const (
 	QodanaSarifName      = "qodana.sarif.json"
 	QodanaShortSarifName = "qodana-short.sarif.json"
 	configName           = "qodana"
-	version              = "2022.2"
+	version              = "2022.3"
 	eap                  = "-eap"
 	QDJVMC               = "jetbrains/qodana-jvm-community:" + version
 	QDJVM                = "jetbrains/qodana-jvm:" + version + eap
@@ -42,8 +42,8 @@ const (
 	QDPHP                = "jetbrains/qodana-php:" + version + eap
 	QDPY                 = "jetbrains/qodana-python:" + version + eap
 	QDJS                 = "jetbrains/qodana-js:" + version + eap
-	QDGO                 = "jetbrains/qodana-go:" + "2022.3" + eap     // until GoLang 2022.3 is released
-	QDNET                = "jetbrains/qodana-dotnet:" + "2022.3" + eap // until Rider 2022.3 is released
+	QDGO                 = "jetbrains/qodana-go:" + version + eap
+	QDNET                = "jetbrains/qodana-dotnet:" + version + eap
 )
 
 // langsLinters is a map of languages to linters.
