@@ -38,9 +38,9 @@ func newPullCommand() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "pull",
 		Short: "Pull latest version of linter",
-		Long:  `An alternative to docker pull.`,
+		Long:  `An alternative to pull an image.`,
 		PreRun: func(cmd *cobra.Command, args []string) {
-			core.CheckDockerHost()
+			core.CheckContainerHost()
 		},
 		Run: func(cmd *cobra.Command, args []string) {
 			if options.YamlName == "" {
@@ -59,11 +59,11 @@ func newPullCommand() *cobra.Command {
 					options.Linter = qodanaYaml.Linter
 				}
 			}
-			docker, err := client.NewClientWithOpts()
+			containerClient, err := client.NewClientWithOpts()
 			if err != nil {
-				log.Fatal("couldn't connect to docker ", err)
+				log.Fatal("couldn't connect to container engine ", err)
 			}
-			core.PullImage(context.Background(), docker, options.Linter)
+			core.PullImage(context.Background(), containerClient, options.Linter)
 			core.SuccessMessage("Pulled the latest version of linter")
 		},
 	}

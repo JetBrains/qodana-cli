@@ -65,8 +65,12 @@ func isGitHubAction() bool {
 }
 
 func createProject(t *testing.T, name string) string {
-	location := "/tmp/" + name
-	err := os.MkdirAll(location, 0o755)
+	home, err := os.UserHomeDir()
+	if err != nil {
+		t.Fatal(err)
+	}
+	location := filepath.Join(home, ".qodana_scan", name)
+	err = os.MkdirAll(location, 0o755)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -256,13 +260,13 @@ func TestAllCommands(t *testing.T) {
 	}
 	core.DisableColor()
 	core.CheckForUpdates("0.1.0")
-	resultsPath := "/tmp/qodana_scan_results"
+
+	projectPath := createProject(t, "qodana_scan")
+	resultsPath := filepath.Join(projectPath, "results")
 	err := os.MkdirAll(resultsPath, 0o755)
 	if err != nil {
 		t.Fatal(err)
 	}
-
-	projectPath := createProject(t, "qodana_scan")
 
 	// pull
 	out := bytes.NewBufferString("")
@@ -286,8 +290,6 @@ func TestAllCommands(t *testing.T) {
 		"--fail-threshold", "5",
 		"--print-problems",
 		"--clear-cache",
-		"--property",
-		"idea.log.config.file=info.xml",
 	})
 	err = command.Execute()
 	if err != nil {

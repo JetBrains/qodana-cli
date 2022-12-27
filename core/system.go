@@ -224,7 +224,7 @@ func GetLinterSystemDir(project string, linter string) string {
 
 // checkLinter validates the image used for the scan.
 func checkLinter(image string) {
-	if !strings.HasPrefix(image, officialDockerPrefix) {
+	if !strings.HasPrefix(image, officialImagePrefix) {
 		unofficialLinter = true
 	}
 	for _, linter := range notSupportedLinters {
@@ -309,7 +309,7 @@ func RunLinter(ctx context.Context, options *QodanaOptions) int {
 			options.GitReset = true
 		}
 	}
-	docker := getDockerClient()
+	docker := getContainerClient()
 	for i, stage := range scanStages {
 		scanStages[i] = PrimaryBold("[%d/%d] ", i+1, len(scanStages)+1) + primary(stage)
 	}
@@ -324,7 +324,7 @@ func RunLinter(ctx context.Context, options *QodanaOptions) int {
 	dockerConfig := getDockerOptions(options)
 	updateText(progress, scanStages[1])
 	runContainer(ctx, docker, dockerConfig)
-	logs, err := docker.ContainerLogs(ctx, dockerConfig.Name, dockerLogsOptions)
+	logs, err := docker.ContainerLogs(ctx, dockerConfig.Name, containerLogsOptions)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -335,7 +335,7 @@ func RunLinter(ctx context.Context, options *QodanaOptions) int {
 		}
 	}(logs)
 	followLinter(logs, progress)
-	exitCode := getDockerExitCode(ctx, docker, dockerConfig.Name)
+	exitCode := getContainerExitCode(ctx, docker, dockerConfig.Name)
 	if options.GitReset && !strings.HasPrefix(options.Commit, "CI") {
 		_ = gitResetBack(options.ProjectDir)
 	}
@@ -367,7 +367,8 @@ func followLinter(logs io.ReadCloser, progress *pterm.SpinnerPrinter) {
 					EmptyMessage()
 				}
 			}
-			if strings.Contains(line, "IDEA exit code:") {
+			if strings.Contains(line, "IDEA exit code:") || strings.Contains(line, "permission denied") {
+				printLinterLog(line)
 				return
 			}
 			printLinterLog(line)
