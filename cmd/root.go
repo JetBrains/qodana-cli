@@ -37,7 +37,7 @@ func Execute() {
 		log.SetOutput(io.Discard)
 
 		core.CheckForUpdates(core.Version)
-		core.DockerCleanup()
+		core.ContainerCleanup()
 		_ = core.QodanaSpinner.Stop()
 		os.Exit(0)
 	}()

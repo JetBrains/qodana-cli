@@ -39,7 +39,7 @@ Note that most options can be configured via qodana.yaml (https://www.jetbrains.
 But you can always override qodana.yaml options with the following command-line options.
 `,
 		PreRun: func(cmd *cobra.Command, args []string) {
-			core.CheckDockerHost()
+			core.CheckContainerHost()
 		},
 		Run: func(cmd *cobra.Command, args []string) {
 			ctx := cmd.Context()
@@ -153,7 +153,7 @@ func checkExitCode(exitCode int, resultsDir string) {
 		core.ErrorMessage("Qodana exited with code %d", exitCode)
 		core.WarningMessage("Check ./logs/ in the results directory for more information")
 		if exitCode == core.QodanaOutOfMemoryExitCode {
-			core.CheckDockerMemory()
+			core.CheckContainerEngineMemory()
 		} else if core.AskUserConfirm(fmt.Sprintf("Do you want to open %s", resultsDir)) {
 			err := core.OpenDir(resultsDir)
 			if err != nil {

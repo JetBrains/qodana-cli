@@ -42,12 +42,12 @@ const (
 	QodanaOutOfMemoryExitCode = 137
 	// QodanaEapLicenseExpiredExitCode reports an expired license.
 	QodanaEapLicenseExpiredExitCode = 7
-	// officialDockerPrefix is the prefix of official Qodana Docker images.
-	officialDockerPrefix = "jetbrains/qodana"
+	// officialImagePrefix is the prefix of official Qodana images.
+	officialImagePrefix = "jetbrains/qodana"
 )
 
 var (
-	dockerLogsOptions = types.ContainerLogsOptions{
+	containerLogsOptions = types.ContainerLogsOptions{
 		ShowStdout: true,
 		ShowStderr: true,
 		Follow:     true,
@@ -60,21 +60,37 @@ var (
 	qodanaRepoUrl = "QODANA_REPO_URL"
 )
 
-// CheckDockerHost checks if the host is ready to run Qodana Docker images.
-func CheckDockerHost() {
-	ensureDockerInstalled()
-	cmd := exec.Command("docker", "ps")
+func checkRequiredToolInstalled(tool string) bool {
+	_, err := exec.LookPath(tool)
+	return err == nil
+}
+
+// CheckContainerHost checks if the host is ready to run Qodana container images.
+func CheckContainerHost() {
+	var tool string
+	if checkRequiredToolInstalled("docker") {
+		tool = "docker"
+	} else if checkRequiredToolInstalled("podman") {
+		tool = "podman"
+	} else {
+		ErrorMessage(
+			"Docker is not installed on your system or can't be found in PATH, refer to https://www.docker.com/get-started for installing it",
+		)
+		os.Exit(1)
+	}
+	cmd := exec.Command(tool, "ps")
 	if err := cmd.Run(); err != nil {
 		if exiterr, ok := err.(*exec.ExitError); ok {
 			if strings.Contains(string(exiterr.Stderr), "permission denied") {
 				ErrorMessage(
-					"Docker can't be run by the current user. Please fix your Docker configuration.",
+					"Qodana container can't be run by the current user. Please fix your container engine configuration.",
 				)
 				WarningMessage("https://docs.docker.com/engine/install/linux-postinstall/#manage-docker-as-a-non-root-user")
 				os.Exit(1)
 			} else {
 				ErrorMessage(
-					"'docker ps' exited with exit code %d, perhaps docker daemon is not running?",
+					"'%s ps' exited with exit code %d, perhaps docker daemon is not running?",
+					tool,
 					exiterr.ExitCode(),
 				)
 			}
@@ -82,7 +98,7 @@ func CheckDockerHost() {
 		}
 		log.Fatal(err)
 	}
-	CheckDockerMemory()
+	CheckContainerEngineMemory()
 }
 
 // PullImage pulls docker image.
@@ -102,10 +118,10 @@ func PullImage(ctx context.Context, client *client.Client, image string) {
 	}
 }
 
-// DockerCleanup cleans up Qodana containers.
-func DockerCleanup() {
+// ContainerCleanup cleans up Qodana containers.
+func ContainerCleanup() {
 	if containerName != "qodana-cli" { // if containerName is not set, it means that the container was not created!
-		docker := getDockerClient()
+		docker := getContainerClient()
 		ctx := context.Background()
 		containers, err := docker.ContainerList(ctx, types.ContainerListOptions{})
 		if err != nil {
@@ -122,24 +138,10 @@ func DockerCleanup() {
 	}
 }
 
-// ensureDockerInstalled checks if Docker is installed.
-func ensureDockerInstalled() {
-	_, err := exec.LookPath("docker")
-	if err != nil {
-		if _, ok := err.(*exec.ExitError); ok {
-			ErrorMessage(
-				"Docker is not installed on your system, refer to https://www.docker.com/get-started for installing it",
-			)
-			os.Exit(1)
-		}
-		log.Fatal(err)
-	}
-}
-
-// CheckDockerMemory applicable only for Docker Desktop,
+// CheckContainerEngineMemory applicable only for Docker Desktop,
 // (has the default limit of 2GB which can be not enough when Gradle runs inside a container).
-func CheckDockerMemory() {
-	docker := getDockerClient()
+func CheckContainerEngineMemory() {
+	docker := getContainerClient()
 	goos := runtime.GOOS
 	if //goland:noinspection GoBoolExpressions
 	goos != "windows" && goos != "darwin" {
@@ -159,8 +161,8 @@ func CheckDockerMemory() {
 	log.Debug("Docker memory limit is set to ", info.MemTotal/1024/1024, " MB")
 
 	if info.MemTotal < 4*1024*1024*1024 {
-		WarningMessage(`Your Docker daemon is running with less than 4GB of RAM.
-   If you experience issues, consider increasing the Docker Desktop runtime memory limit.
+		WarningMessage(`Your container daemon is running with less than 4GB of RAM.
+   If you experience issues, consider increasing the container runtime memory limit.
    Refer to %s for more information.
 `,
 			helpUrl,
@@ -315,8 +317,8 @@ func getDockerOptions(opts *QodanaOptions) *types.ContainerCreateConfig {
 	}
 }
 
-// getDockerExitCode returns the exit code of the docker container.
-func getDockerExitCode(ctx context.Context, client *client.Client, id string) int64 {
+// getContainerExitCode returns the exit code of the docker container.
+func getContainerExitCode(ctx context.Context, client *client.Client, id string) int64 {
 	statusCh, errCh := client.ContainerWait(ctx, id, container.WaitConditionNextExit)
 	select {
 	case err := <-errCh:
@@ -347,11 +349,11 @@ func runContainer(ctx context.Context, client *client.Client, opts *types.Contai
 	}
 }
 
-// getDockerClient returns a docker client.
-func getDockerClient() *client.Client {
-	docker, err := client.NewClientWithOpts()
+// getContainerClient returns a docker client.
+func getContainerClient() *client.Client {
+	docker, err := client.NewClientWithOpts(client.FromEnv)
 	if err != nil {
-		log.Fatal("couldn't create docker client ", err)
+		log.Fatal("couldn't create container client ", err)
 	}
 	return docker
 }
