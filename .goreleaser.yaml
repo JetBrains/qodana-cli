@@ -21,6 +21,10 @@ archives:
         format: zip
     replacements:
         amd64: x86_64
+    files:
+      - LICENSE
+      - THIRDPARTY.md
+      - README.md
 nfpms:
   - vendor: "JetBrains s.r.o."
     homepage: "https://github.com/JetBrains/qodana-cli"
@@ -84,10 +88,6 @@ release:
     ```
     
     #### Anywhere else
-    #### Install with [Go](https://go.dev/doc/install)
-    ```console
-    go install github.com/JetBrains/qodana-cli@latest
-    ```
     Alternatively, you can install the latest binary (or the apt/rpm/deb package) from this page.
     
     ## Update
@@ -103,10 +103,6 @@ release:
     #### Update on Linux and macOS with the installer script
     ```console
     curl -fsSL https://jb.gg/qodana-cli/install | bash
-    ```
-    #### Update with [Go](https://go.dev/doc/install)
-    ```console
-    go install github.com/JetBrains/qodana-cli@latest
     ```
     Alternatively, you can grab the latest binary (or the apt/rpm/deb package) from this page.
 changelog:
