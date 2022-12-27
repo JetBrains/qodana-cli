@@ -33,7 +33,7 @@ You can also add the linter by its name with the `--linter` option (e.g. `--lint
 ## Installation
 
 > 💡 The Qodana CLI is distributed and run as a binary. The Qodana linters with inspections are [Docker Images](https://www.jetbrains.com/help/qodana/docker-images.html).
-> - You must have Docker installed and running locally to support this: https://www.docker.com/get-started
+> - You must have Docker installed and running locally to support this: https://www.docker.com/get-started. Podman support is experimental at the moment.
 > - If you are using Linux, you should be able to run Docker from the current (non-root) user (https://docs.docker.com/engine/install/linux-postinstall/#manage-docker-as-a-non-root-user)
 
 #### macOS and Linux
