@@ -68,6 +68,7 @@ func CheckForUpdates(currentVersion string) {
 			PrimaryBold("qodana"),
 			latestVersion,
 		)
+		DisableCheckUpdates = true
 	}
 }
 
