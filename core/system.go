@@ -58,7 +58,7 @@ var (
 
 // CheckForUpdates check GitHub https://github.com/JetBrains/qodana-cli/ for the latest version of CLI release.
 func CheckForUpdates(currentVersion string) {
-	if currentVersion == "dev" || DisableCheckUpdates {
+	if currentVersion == "dev" || getQodanaEnv() != "cli" || DisableCheckUpdates {
 		return
 	}
 	latestVersion := getLatestVersion()
@@ -76,29 +76,24 @@ func CheckForUpdates(currentVersion string) {
 func getLatestVersion() string {
 	resp, err := http.Get(releaseUrl)
 	if err != nil {
-		log.Errorf("Failed to check for updates: %s", err)
 		return ""
 	}
 	defer func(Body io.ReadCloser) {
 		err := Body.Close()
 		if err != nil {
-			log.Errorf("Failed to close response body: %s", err)
 			return
 		}
 	}(resp.Body)
 	if resp.StatusCode < 200 || resp.StatusCode > 299 {
-		log.Errorf("Failed to check for updates: %s", resp.Status)
 		return ""
 	}
 	bodyText, err := io.ReadAll(resp.Body)
 	if err != nil {
-		log.Errorf("Failed to read response body: %s", err)
 		return ""
 	}
 	result := make(map[string]interface{})
 	err = json.Unmarshal(bodyText, &result)
 	if err != nil {
-		log.Errorf("Failed to read response JSON: %s", err)
 		return ""
 	}
 	return result["tag_name"].(string)
