@@ -100,12 +100,81 @@ func getQodanaRepoUrl() string {
 		return url
 	} else if url = getGitHubRepoUrl(); url != "" { // GitHub
 		return url
-	} else if url = os.Getenv("CI_REPOSITORY_URL"); url != "" { // GitHub Actions
+	} else if url = os.Getenv("CI_REPOSITORY_URL"); url != "" { // GitLab CI
 		return url
 	} else if url = getSpaceRepoUrl(); url != "" { // Space
 		return url
 	}
 	return url
+}
+
+// getQodanaRemoteUrl returns the repository URL.
+func getQodanaRemoteUrl() string {
+	url := ""
+	if url = os.Getenv(qodanaRemoteUrl); url != "" { // User defined
+		return url
+	} else if url = os.Getenv("BUILD_REPOSITORY_URI"); url != "" { // Azure
+		return url
+	} else if url = os.Getenv("BITBUCKET_GIT_SSH_ORIGIN"); url != "" { // BitBucket
+		return url
+	} else if url = getGitHubRemoteUrl(); url != "" { // GitHub
+		return url
+	} else if url = os.Getenv("CI_REPOSITORY_URL"); url != "" { // GitLab CI
+		return url
+	} else if url = getSpaceRemoteUrl(); url != "" { // Space
+		return url
+	}
+	return url
+}
+
+// getQodanaBranch returns the branch name.
+func getQodanaBranch() string {
+	branch := ""
+	if branch = os.Getenv(qodanaBranch); branch != "" { // User defined
+		return branch
+	} else if branch = os.Getenv("BUILD_SOURCEBRANCHNAME"); branch != "" { // Azure
+		return branch
+	} else if branch = os.Getenv("BITBUCKET_BRANCH"); branch != "" { // BitBucket
+		return branch
+	} else if branch = os.Getenv("BUILDKITE_BRANCH"); branch != "" { // BuildKite
+		return branch
+	} else if branch = os.Getenv("CIRCLE_BRANCH"); branch != "" { // CircleCI
+		return branch
+	} else if branch = os.Getenv("CI_COMMIT_REF_NAME"); branch != "" { // GitLab CI
+		return branch
+	} else if branch = getGitHubBranch(); branch != "" { // GitHub Actions
+		return branch
+	} else if branch = os.Getenv("BRANCH_NAME"); branch != "" { // Jenkins
+		return branch
+	} else if branch = os.Getenv("JB_SPACE_GIT_BRANCH"); branch != "" { // Space
+		return branch
+	}
+	return branch
+}
+
+// getQodanaRevision returns the commit hash.
+func getQodanaRevision() string {
+	revision := ""
+	if revision = os.Getenv(qodanaRevision); revision != "" { // User defined
+		return revision
+	} else if revision = os.Getenv("BUILD_SOURCEVERSION"); revision != "" { // Azure
+		return revision
+	} else if revision = os.Getenv("BITBUCKET_COMMIT"); revision != "" { // BitBucket
+		return revision
+	} else if revision = os.Getenv("BUILDKITE_COMMIT"); revision != "" { // BuildKite
+		return revision
+	} else if revision = os.Getenv("CIRCLE_SHA1"); revision != "" { // CircleCI
+		return revision
+	} else if revision = os.Getenv("CI_COMMIT_SHA"); revision != "" { // GitLab CI
+		return revision
+	} else if revision = os.Getenv("GITHUB_SHA"); revision != "" { // GitHub Actions
+		return revision
+	} else if revision = os.Getenv("GIT_COMMIT"); revision != "" { // Jenkins
+		return revision
+	} else if revision = os.Getenv("JB_SPACE_GIT_REVISION"); revision != "" { // Space
+		return revision
+	}
+	return revision
 }
 
 // getAzureJobUrl returns the Azure Pipelines job URL.
@@ -171,6 +240,46 @@ func getBitBucketRepoUrl() string {
 func getGitHubRepoUrl() string {
 	if repo := os.Getenv("GITHUB_REPOSITORY"); repo != "" {
 		return os.Getenv("GITHUB_SERVER_URL") + "/" + os.Getenv("GITHUB_REPOSITORY")
+	}
+	return ""
+}
+
+// getGitHubRemoteUrl returns the GitHub repository remote URL.
+func getGitHubRemoteUrl() string {
+	if repo := os.Getenv("GITHUB_REPOSITORY"); repo != "" {
+		return strings.Join([]string{
+			"git@",
+			strings.TrimPrefix(os.Getenv("GITHUB_SERVER_URL"), "https://"),
+			":",
+			os.Getenv("GITHUB_REPOSITORY"),
+			".git",
+		}, "")
+	}
+	return ""
+}
+
+// getSpaceRemoteUrl returns the Space repository URL.
+func getSpaceRemoteUrl() string {
+	if server := os.Getenv("JB_SPACE_API_URL"); server != "" {
+		return strings.Join([]string{
+			"ssh://git@git.",
+			server,
+			"/",
+			os.Getenv("JB_SPACE_PROJECT_KEY"),
+			"/",
+			os.Getenv("JB_SPACE_GIT_REPOSITORY_NAME"),
+			".git",
+		}, "")
+	}
+	return ""
+}
+
+// getGitHubBranch returns the GitHub branch name.
+func getGitHubBranch() string {
+	if branch := os.Getenv("GITHUB_HEAD_REF"); branch != "" {
+		return "refs/heads/" + branch
+	} else if branch = os.Getenv("GITHUB_REF"); branch != "" {
+		return branch
 	}
 	return ""
 }

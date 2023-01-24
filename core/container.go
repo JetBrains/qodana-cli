@@ -53,11 +53,14 @@ var (
 		Follow:     true,
 		Timestamps: false,
 	}
-	containerName = "qodana-cli"
-	qodanaEnv     = "QODANA_ENV"
-	qodanaToken   = "QODANA_TOKEN"
-	qodanaJobUrl  = "QODANA_JOB_URL"
-	qodanaRepoUrl = "QODANA_REPO_URL"
+	containerName   = "qodana-cli"
+	qodanaEnv       = "QODANA_ENV"
+	qodanaToken     = "QODANA_TOKEN"
+	qodanaJobUrl    = "QODANA_JOB_URL"
+	qodanaRepoUrl   = "QODANA_REPO_URL"
+	qodanaRemoteUrl = "QODANA_REMOTE_URL"
+	qodanaBranch    = "QODANA_BRANCH"
+	qodanaRevision  = "QODANA_REVISION"
 )
 
 func checkRequiredToolInstalled(tool string) bool {
@@ -249,6 +252,21 @@ func getDockerOptions(opts *QodanaOptions) *types.ContainerCreateConfig {
 	if !isVariableConfigured(qodanaRepoUrl, opts.Env) {
 		if qRepoUrl := getQodanaRepoUrl(); qRepoUrl != "" {
 			opts.Env = append(opts.Env, fmt.Sprintf("%s=%s", qodanaRepoUrl, qRepoUrl))
+		}
+	}
+	if !isVariableConfigured(qodanaRemoteUrl, opts.Env) {
+		if qRemoteUrl := getQodanaRemoteUrl(); qRemoteUrl != "" {
+			opts.Env = append(opts.Env, fmt.Sprintf("%s=%s", qodanaRemoteUrl, qRemoteUrl))
+		}
+	}
+	if !isVariableConfigured(qodanaBranch, opts.Env) {
+		if qBranch := getQodanaBranch(); qBranch != "" {
+			opts.Env = append(opts.Env, fmt.Sprintf("%s=%s", qodanaBranch, qBranch))
+		}
+	}
+	if !isVariableConfigured(qodanaRevision, opts.Env) {
+		if qRevision := getQodanaRevision(); qRevision != "" {
+			opts.Env = append(opts.Env, fmt.Sprintf("%s=%s", qodanaRevision, qRevision))
 		}
 	}
 
