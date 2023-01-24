@@ -4,7 +4,7 @@
 [![Test](https://github.com/JetBrains/qodana-cli/actions/workflows/build-test.yml/badge.svg)][gh:test]
 [![GoReport](https://goreportcard.com/badge/github.com/JetBrains/qodana-cli)][gh:goreport]
 [![GitHub Discussions](https://img.shields.io/github/discussions/jetbrains/qodana)][jb:discussions]
-[![Twitter Follow](https://img.shields.io/twitter/follow/Qodana?style=social&logo=twitter)][jb:twitter]
+[![Twitter Follow](https://img.shields.io/badge/follow-%40Qodana-1DA1F2?logo=twitter&style=social)][jb:twitter]
 
 `qodana` is a simple cross-platform command-line tool to run [Qodana linters](https://www.jetbrains.com/help/qodana/docker-images.html) anywhere with minimum effort required.
 
