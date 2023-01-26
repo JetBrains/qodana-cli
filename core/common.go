@@ -57,6 +57,18 @@ type QodanaOptions struct {
 	GitReset              bool
 }
 
+// setEnv sets the Qodana environment variables.
+func (o *QodanaOptions) setEnv(key string, value string) {
+	for _, e := range o.Env {
+		if strings.HasPrefix(e, key) {
+			return
+		}
+	}
+	if value != "" {
+		o.Env = append(o.Env, fmt.Sprintf("%s=%s", key, value))
+	}
+}
+
 // Version returns the version of the Qodana CLI, set during the GoReleaser build
 var Version = "dev"
 
