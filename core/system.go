@@ -32,6 +32,8 @@ import (
 	"strings"
 	"time"
 
+	cienvironment "github.com/cucumber/ci-environment/go"
+
 	"github.com/pterm/pterm"
 
 	log "github.com/sirupsen/logrus"
@@ -58,7 +60,7 @@ var (
 
 // CheckForUpdates check GitHub https://github.com/JetBrains/qodana-cli/ for the latest version of CLI release.
 func CheckForUpdates(currentVersion string) {
-	if currentVersion == "dev" || getQodanaEnv() != "cli" || DisableCheckUpdates {
+	if currentVersion == "dev" || cienvironment.DetectCIEnvironment() != nil || DisableCheckUpdates {
 		return
 	}
 	latestVersion := getLatestVersion()

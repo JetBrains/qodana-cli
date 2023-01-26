@@ -26,6 +26,8 @@ import (
 	"runtime"
 	"strings"
 
+	"github.com/cucumber/ci-environment/go"
+
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/container"
 	"github.com/docker/docker/api/types/mount"
@@ -53,15 +55,34 @@ var (
 		Follow:     true,
 		Timestamps: false,
 	}
-	containerName   = "qodana-cli"
+	containerName = "qodana-cli"
+)
+
+const (
 	qodanaEnv       = "QODANA_ENV"
 	qodanaToken     = "QODANA_TOKEN"
 	qodanaJobUrl    = "QODANA_JOB_URL"
-	qodanaRepoUrl   = "QODANA_REPO_URL"
 	qodanaRemoteUrl = "QODANA_REMOTE_URL"
 	qodanaBranch    = "QODANA_BRANCH"
 	qodanaRevision  = "QODANA_REVISION"
 )
+
+// extractQodanaEnvironment extracts Qodana env variables QODANA_* to the given environment array.
+func extractQodanaEnvironment(opts *QodanaOptions) {
+	opts.setEnv(qodanaToken, os.Getenv(qodanaToken))
+	ci := cienvironment.DetectCIEnvironment()
+	qEnv := "cli"
+	if ci != nil {
+		qEnv = strings.ReplaceAll(strings.ToLower(ci.Name), " ", "-")
+		opts.setEnv(qodanaJobUrl, ci.URL)
+		if ci.Git != nil {
+			opts.setEnv(qodanaRemoteUrl, ci.Git.Remote)
+			opts.setEnv(qodanaBranch, ci.Git.Branch)
+			opts.setEnv(qodanaRevision, ci.Git.Revision)
+		}
+	}
+	opts.setEnv(qodanaEnv, fmt.Sprintf("%s:%s", qEnv, Version))
+}
 
 func checkRequiredToolInstalled(tool string) bool {
 	_, err := exec.LookPath(tool)
@@ -221,72 +242,23 @@ func GetCmdOptions(opts *QodanaOptions) []string {
 	return arguments
 }
 
-// isVariableConfigured checks if a variable is set in the given environment options.
-func isVariableConfigured(varName string, env []string) bool {
-	for _, e := range env {
-		if strings.HasPrefix(e, varName) {
-			return true
-		}
-	}
-	return false
-}
-
 // getDockerOptions returns qodana docker container options.
 func getDockerOptions(opts *QodanaOptions) *types.ContainerCreateConfig {
 	cmdOpts := GetCmdOptions(opts)
-	if !isVariableConfigured(qodanaToken, opts.Env) {
-		if token := os.Getenv(qodanaToken); token != "" {
-			opts.Env = append(opts.Env, fmt.Sprintf("%s=%s", qodanaToken, token))
-		}
-	}
-	if !isVariableConfigured(qodanaEnv, opts.Env) {
-		if qEnv := getQodanaEnv(); qEnv != "" {
-			opts.Env = append(opts.Env, fmt.Sprintf("%s=%s:%s", qodanaEnv, qEnv, Version))
-		}
-	}
-	if !isVariableConfigured(qodanaJobUrl, opts.Env) {
-		if qJobUrl := getQodanaJobUrl(); qJobUrl != "" {
-			opts.Env = append(opts.Env, fmt.Sprintf("%s=%s", qodanaJobUrl, qJobUrl))
-		}
-	}
-	if !isVariableConfigured(qodanaRepoUrl, opts.Env) {
-		if qRepoUrl := getQodanaRepoUrl(); qRepoUrl != "" {
-			opts.Env = append(opts.Env, fmt.Sprintf("%s=%s", qodanaRepoUrl, qRepoUrl))
-		}
-	}
-	if !isVariableConfigured(qodanaRemoteUrl, opts.Env) {
-		if qRemoteUrl := getQodanaRemoteUrl(); qRemoteUrl != "" {
-			opts.Env = append(opts.Env, fmt.Sprintf("%s=%s", qodanaRemoteUrl, qRemoteUrl))
-		}
-	}
-	if !isVariableConfigured(qodanaBranch, opts.Env) {
-		if qBranch := getQodanaBranch(); qBranch != "" {
-			opts.Env = append(opts.Env, fmt.Sprintf("%s=%s", qodanaBranch, qBranch))
-		}
-	}
-	if !isVariableConfigured(qodanaRevision, opts.Env) {
-		if qRevision := getQodanaRevision(); qRevision != "" {
-			opts.Env = append(opts.Env, fmt.Sprintf("%s=%s", qodanaRevision, qRevision))
-		}
-	}
-
+	extractQodanaEnvironment(opts)
 	cachePath, err := filepath.Abs(opts.CacheDir)
 	if err != nil {
 		log.Fatal("couldn't get abs path for cache", err)
 	}
-
 	projectPath, err := filepath.Abs(opts.ProjectDir)
 	if err != nil {
 		log.Fatal("couldn't get abs path for project", err)
 	}
-
 	resultsPath, err := filepath.Abs(opts.ResultsDir)
 	if err != nil {
 		log.Fatal("couldn't get abs path for results", err)
 	}
-
 	containerName = fmt.Sprintf("qodana-cli-%s", getProjectId(projectPath))
-
 	volumes := []mount.Mount{
 		{
 			Type:   mount.TypeBind,
