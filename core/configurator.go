@@ -43,7 +43,7 @@ const (
 	QDPY                 = "jetbrains/qodana-python:" + version + eap
 	QDJS                 = "jetbrains/qodana-js:" + version + eap
 	QDGO                 = "jetbrains/qodana-go:" + version + eap
-	QDNET                = "jetbrains/qodana-dotnet:" + version + eap
+	QDNET                = "jetbrains/qodana-dotnet:" + "2023.1" + eap
 )
 
 // langsLinters is a map of languages to linters.
