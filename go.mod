@@ -7,7 +7,7 @@ require (
 	github.com/Microsoft/go-winio v0.5.2 // indirect
 	github.com/cucumber/ci-environment/go v0.0.0-20230123192824-6c9424d4fecf
 	github.com/docker/distribution v2.8.1+incompatible // indirect
-	github.com/docker/docker v20.10.23+incompatible
+	github.com/docker/docker v23.0.0+incompatible
 	github.com/docker/go-connections v0.4.0 // indirect
 	github.com/docker/go-units v0.4.0 // indirect
 	github.com/go-enry/go-enry/v2 v2.8.3
