@@ -20,6 +20,7 @@ import (
 	"context"
 	"fmt"
 	"io"
+	"net/url"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -75,7 +76,7 @@ func extractQodanaEnvironment(opts *QodanaOptions) {
 	qEnv := "cli"
 	if ci != nil {
 		qEnv = strings.ReplaceAll(strings.ToLower(ci.Name), " ", "-")
-		opts.setEnv(qodanaJobUrl, ci.URL)
+		opts.setEnv(qodanaJobUrl, validateCiUrl(ci.URL, qEnv))
 		if ci.Git != nil {
 			opts.setEnv(qodanaRemoteUrl, ci.Git.Remote)
 			opts.setEnv(qodanaBranch, ci.Git.Branch)
@@ -83,6 +84,17 @@ func extractQodanaEnvironment(opts *QodanaOptions) {
 		}
 	}
 	opts.setEnv(qodanaEnv, fmt.Sprintf("%s:%s", qEnv, Version))
+}
+
+func validateCiUrl(ciUrl string, qEnv string) string {
+	if strings.HasPrefix(qEnv, "azure") { // temporary workaround for Azure Pipelines
+		return getAzureJobUrl()
+	}
+	_, err := url.ParseRequestURI(ciUrl)
+	if err != nil {
+		return ""
+	}
+	return ciUrl
 }
 
 func checkRequiredToolInstalled(tool string) bool {

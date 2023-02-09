@@ -54,3 +54,16 @@ func CheckDirFiles(dir string) bool {
 	}
 	return len(files) > 0
 }
+
+// getAzureJobUrl returns the Azure Pipelines job URL.
+func getAzureJobUrl() string {
+	if server := os.Getenv("SYSTEM_TEAMFOUNDATIONCOLLECTIONURI"); server != "" {
+		return strings.Join([]string{
+			server,
+			os.Getenv("SYSTEM_TEAMPROJECT"),
+			"/_build/results?buildId=",
+			os.Getenv("BUILD_BUILDID"),
+		}, "")
+	}
+	return ""
+}
