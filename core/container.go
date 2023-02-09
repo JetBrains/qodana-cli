@@ -45,7 +45,8 @@ const (
 	// QodanaEapLicenseExpiredExitCode reports an expired license.
 	QodanaEapLicenseExpiredExitCode = 7
 	// officialImagePrefix is the prefix of official Qodana images.
-	officialImagePrefix = "jetbrains/qodana"
+	officialImagePrefix      = "jetbrains/qodana"
+	dockerSpecialCharsLength = 8
 )
 
 var (
@@ -294,7 +295,7 @@ func getDockerOptions(opts *QodanaOptions) *types.ContainerCreateConfig {
 		Config: &container.Config{
 			Image:        opts.Linter,
 			Cmd:          cmdOpts,
-			Tty:          true,
+			Tty:          IsInteractive(),
 			AttachStdout: true,
 			AttachStderr: true,
 			Env:          opts.Env,

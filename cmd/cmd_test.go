@@ -260,7 +260,6 @@ func TestAllCommands(t *testing.T) {
 	}
 	core.DisableColor()
 	core.CheckForUpdates("0.1.0")
-
 	projectPath := createProject(t, "qodana_scan")
 	resultsPath := filepath.Join(projectPath, "results")
 	err := os.MkdirAll(resultsPath, 0o755)
