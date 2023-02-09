@@ -32,6 +32,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/docker/docker/client"
+
 	cienvironment "github.com/cucumber/ci-environment/go"
 
 	"github.com/pterm/pterm"
@@ -322,17 +324,7 @@ func RunLinter(ctx context.Context, options *QodanaOptions) int {
 	dockerConfig := getDockerOptions(options)
 	updateText(progress, scanStages[1])
 	runContainer(ctx, docker, dockerConfig)
-	logs, err := docker.ContainerLogs(ctx, dockerConfig.Name, containerLogsOptions)
-	if err != nil {
-		log.Fatal(err)
-	}
-	defer func(reader io.ReadCloser) {
-		err := reader.Close()
-		if err != nil {
-			log.Fatal(err.Error())
-		}
-	}(logs)
-	followLinter(logs, progress)
+	go followLinter(docker, dockerConfig.Name, progress)
 	exitCode := getContainerExitCode(ctx, docker, dockerConfig.Name)
 	if options.GitReset && !strings.HasPrefix(options.Commit, "CI") {
 		_ = gitResetBack(options.ProjectDir)
@@ -344,10 +336,25 @@ func RunLinter(ctx context.Context, options *QodanaOptions) int {
 }
 
 // followLinter follows the linter logs and prints the progress.
-func followLinter(logs io.ReadCloser, progress *pterm.SpinnerPrinter) {
-	reader := bufio.NewReader(logs)
-	for {
-		line, err := reader.ReadString('\n')
+func followLinter(client *client.Client, containerName string, progress *pterm.SpinnerPrinter) {
+	reader, err := client.ContainerLogs(context.Background(), containerName, containerLogsOptions)
+	if err != nil {
+		log.Fatal(err.Error())
+	}
+	defer func(reader io.ReadCloser) {
+		err := reader.Close()
+		if err != nil {
+			log.Fatal(err.Error())
+		}
+	}(reader)
+	scanner := bufio.NewScanner(reader)
+	interactive := IsInteractive()
+	for scanner.Scan() {
+		line := scanner.Text()
+		if !interactive && len(line) >= dockerSpecialCharsLength {
+			line = line[dockerSpecialCharsLength:]
+		}
+
 		line = strings.TrimSuffix(line, "\n")
 		if err == nil || len(line) > 0 {
 			if strings.Contains(line, "Starting up") {
@@ -364,10 +371,6 @@ func followLinter(logs io.ReadCloser, progress *pterm.SpinnerPrinter) {
 				if !IsInteractive() {
 					EmptyMessage()
 				}
-			}
-			if strings.Contains(line, "IDEA exit code:") || strings.Contains(line, "permission denied") {
-				printLinterLog(line)
-				return
 			}
 			printLinterLog(line)
 		}
