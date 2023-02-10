@@ -289,6 +289,7 @@ func TestAllCommands(t *testing.T) {
 		"--fail-threshold", "5",
 		"--print-problems",
 		"--clear-cache",
+		"-l", "registry.jetbrains.team/p/sa/containers/qodana-python:latest",
 	})
 	err = command.Execute()
 	if err != nil {
