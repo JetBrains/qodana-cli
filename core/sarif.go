@@ -24,12 +24,12 @@ import (
 )
 
 const (
-	// BaselineStateEmpty default baseline state (not set)
-	BaselineStateEmpty = ""
-	// BaselineStateNew new baseline state
-	BaselineStateNew = "new"
-	// BaselineStateUnchanged unchanged baseline state
-	BaselineStateUnchanged = "unchanged"
+	// baselineStateEmpty default baseline state (not set)
+	baselineStateEmpty = ""
+	// baselineStateNew new baseline state
+	baselineStateNew = "new"
+	// baselineStateUnchanged unchanged baseline state
+	baselineStateUnchanged = "unchanged"
 )
 
 // ReadSarif prints Qodana Scan result into stdout
@@ -47,14 +47,14 @@ func ReadSarif(sarifPath string, printProblems bool) {
 			ruleId := *r.RuleID
 			message := *r.Message.Text
 			level := *r.Level
-			baselineState := BaselineStateEmpty
+			baselineState := baselineStateEmpty
 			if r.BaselineState != nil {
 				baselineState = *r.BaselineState
 			}
-			if baselineState == BaselineStateNew || baselineState == BaselineStateEmpty {
+			if baselineState == baselineStateNew || baselineState == baselineStateEmpty {
 				newProblems++
 			}
-			if printProblems && len(r.Locations) > 0 && baselineState != BaselineStateUnchanged {
+			if printProblems && len(r.Locations) > 0 && baselineState != baselineStateUnchanged {
 				if r.Locations[0].PhysicalLocation != nil {
 					startLine := *r.Locations[0].PhysicalLocation.Region.StartLine
 					contextLine := *r.Locations[0].PhysicalLocation.ContextRegion.StartLine

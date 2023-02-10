@@ -164,6 +164,7 @@ type CustomDependency struct {
 	Licenses []License `yaml:"licenses"`
 }
 
+//goland:noinspection GoUnnecessarilyExportedIdentifiers
 type DotNet struct {
 	// Solution is the name of a .NET solution inside the Qodana project.
 	Solution string `yaml:"solution,omitempty"`
