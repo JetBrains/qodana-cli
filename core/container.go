@@ -61,12 +61,14 @@ var (
 )
 
 const (
-	qodanaEnv       = "QODANA_ENV"
-	qodanaToken     = "QODANA_TOKEN"
-	qodanaJobUrl    = "QODANA_JOB_URL"
-	qodanaRemoteUrl = "QODANA_REMOTE_URL"
-	qodanaBranch    = "QODANA_BRANCH"
-	qodanaRevision  = "QODANA_REVISION"
+	qodanaEnv              = "QODANA_ENV"
+	qodanaToken            = "QODANA_TOKEN"
+	qodanaJobUrl           = "QODANA_JOB_URL"
+	qodanaRemoteUrl        = "QODANA_REMOTE_URL"
+	qodanaBranch           = "QODANA_BRANCH"
+	qodanaRevision         = "QODANA_REVISION"
+	qodanaCliContainerName = "QODANA_CLI_CONTAINER_NAME"
+	qodanaCliContainerKeep = "QODANA_CLI_CONTAINER_KEEP"
 )
 
 // extractQodanaEnvironment extracts Qodana env variables QODANA_* to the given environment array.
@@ -271,7 +273,10 @@ func getDockerOptions(opts *QodanaOptions) *types.ContainerCreateConfig {
 	if err != nil {
 		log.Fatal("couldn't get abs path for results", err)
 	}
-	containerName = fmt.Sprintf("qodana-cli-%s", getProjectId(projectPath))
+	containerName := os.Getenv(qodanaCliContainerName)
+	if containerName == "" {
+		containerName = fmt.Sprintf("qodana-cli-%s", getId(projectPath))
+	}
 	volumes := []mount.Mount{
 		{
 			Type:   mount.TypeBind,
@@ -302,6 +307,7 @@ func getDockerOptions(opts *QodanaOptions) *types.ContainerCreateConfig {
 	log.Debugf("env: %v", opts.Env)
 	log.Debugf("volumes: %v", volumes)
 	log.Debugf("cmd: %v", cmdOpts)
+	log.Debugf("docker command to debug: docker run --rm -it -u %s -v %s:/data/cache -v %s:/data/project -v %s:/data/results %s %s", opts.User, cachePath, projectPath, resultsPath, opts.Linter, strings.Join(cmdOpts, " "))
 	return &types.ContainerCreateConfig{
 		Name: containerName,
 		Config: &container.Config{
@@ -314,7 +320,7 @@ func getDockerOptions(opts *QodanaOptions) *types.ContainerCreateConfig {
 			User:         opts.User,
 		},
 		HostConfig: &container.HostConfig{
-			AutoRemove: true,
+			AutoRemove: os.Getenv(qodanaCliContainerKeep) == "",
 			Mounts:     volumes,
 		},
 	}

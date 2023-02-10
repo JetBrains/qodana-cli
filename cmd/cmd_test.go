@@ -258,6 +258,8 @@ func TestAllCommands(t *testing.T) {
 		_ = os.Setenv("GITHUB_REPOSITORY", "JetBrains/qodana-cli")
 		_ = os.Setenv("GITHUB_RUN_ID", "1")
 	}
+	//_ = os.Setenv(qodanaCliContainerKeep, "true")
+	//_ = os.Setenv(qodanaCliContainerName, "qodana-cli-test-new1")
 	core.DisableColor()
 	core.CheckForUpdates("0.1.0")
 	projectPath := createProject(t, "qodana_scan")
