@@ -69,6 +69,7 @@ const (
 	qodanaRevision         = "QODANA_REVISION"
 	qodanaCliContainerName = "QODANA_CLI_CONTAINER_NAME"
 	qodanaCliContainerKeep = "QODANA_CLI_CONTAINER_KEEP"
+	qodanaCliUsePodman     = "QODANA_CLI_USE_PODMAN"
 )
 
 // extractQodanaEnvironment extracts Qodana env variables QODANA_* to the given environment array.
@@ -107,13 +108,13 @@ func checkRequiredToolInstalled(tool string) bool {
 // CheckContainerHost checks if the host is ready to run Qodana container images.
 func CheckContainerHost() {
 	var tool string
-	if checkRequiredToolInstalled("docker") {
+	if os.Getenv(qodanaCliUsePodman) == "" && checkRequiredToolInstalled("docker") {
 		tool = "docker"
 	} else if checkRequiredToolInstalled("podman") {
 		tool = "podman"
 	} else {
 		ErrorMessage(
-			"Docker is not installed on your system or can't be found in PATH, refer to https://www.docker.com/get-started for installing it",
+			"Docker (or podman) is not installed on your system or can't be found in PATH, refer to https://www.docker.com/get-started for installing it",
 		)
 		os.Exit(1)
 	}
