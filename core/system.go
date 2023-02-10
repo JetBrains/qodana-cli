@@ -202,23 +202,21 @@ func noCache(h http.Handler) http.Handler {
 	return http.HandlerFunc(fn)
 }
 
-// getProjectId returns the project id for internal CLI usage from the given path.
-func getProjectId(project string) string {
+// getId returns the project/linter id for internal CLI usage from the given path.
+func getId(project string) string {
 	projectAbs, _ := filepath.Abs(project)
 	sha256sum := sha256.Sum256([]byte(projectAbs))
-	return hex.EncodeToString(sha256sum[:])
+	return hex.EncodeToString(sha256sum[:])[0:8]
 }
 
 // GetLinterSystemDir returns path to <userCacheDir>/JetBrains/<linter>/<project-id>/.
 func GetLinterSystemDir(project string, linter string) string {
 	userCacheDir, _ := os.UserCacheDir()
-	linterDirName := strings.Replace(strings.Replace(linter, ":", "-", -1), "/", "-", -1)
-
 	return filepath.Join(
 		userCacheDir,
 		"JetBrains",
-		linterDirName,
-		getProjectId(project),
+		getId(linter),
+		getId(project),
 	)
 }
 
