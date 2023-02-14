@@ -215,6 +215,7 @@ func GetLinterSystemDir(project string, linter string) string {
 	return filepath.Join(
 		userCacheDir,
 		"JetBrains",
+		"Qodana",
 		getId(linter),
 		getId(project),
 	)
