@@ -17,8 +17,6 @@
 package cmd
 
 import (
-	"context"
-
 	"github.com/JetBrains/qodana-cli/core"
 	"github.com/docker/docker/client"
 	log "github.com/sirupsen/logrus"
@@ -63,8 +61,7 @@ func newPullCommand() *cobra.Command {
 			if err != nil {
 				log.Fatal("couldn't connect to container engine ", err)
 			}
-			core.PullImage(context.Background(), containerClient, options.Linter)
-			core.SuccessMessage("Pulled the latest version of linter")
+			core.PullImage(containerClient, options.Linter)
 		},
 	}
 	flags := cmd.Flags()

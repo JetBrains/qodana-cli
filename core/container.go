@@ -18,6 +18,8 @@ package core
 
 import (
 	"context"
+	"encoding/base64"
+	"encoding/json"
 	"fmt"
 	"io"
 	"net/url"
@@ -26,6 +28,8 @@ import (
 	"path/filepath"
 	"runtime"
 	"strings"
+
+	cliconfig "github.com/docker/cli/cli/config"
 
 	"github.com/cucumber/ci-environment/go"
 
@@ -71,6 +75,15 @@ const (
 	qodanaCliContainerKeep = "QODANA_CLI_CONTAINER_KEEP"
 	qodanaCliUsePodman     = "QODANA_CLI_USE_PODMAN"
 )
+
+// encodeAuthToBase64 serializes the auth configuration as JSON base64 payload
+func encodeAuthToBase64(authConfig types.AuthConfig) (string, error) {
+	buf, err := json.Marshal(authConfig)
+	if err != nil {
+		return "", err
+	}
+	return base64.URLEncoding.EncodeToString(buf), nil
+}
 
 // extractQodanaEnvironment extracts Qodana env variables QODANA_* to the given environment array.
 func extractQodanaEnvironment(opts *QodanaOptions) {
@@ -141,11 +154,41 @@ func CheckContainerHost() {
 	CheckContainerEngineMemory()
 }
 
+// PullImage pulls docker image and prints the process.
+func PullImage(client *client.Client, image string) {
+	printProcess(
+		func() {
+			pullImage(context.Background(), client, image)
+		},
+		fmt.Sprintf("Pulling the image %s", PrimaryBold(image)),
+		"pulling the latest version of linter",
+	)
+}
+
 // PullImage pulls docker image.
-func PullImage(ctx context.Context, client *client.Client, image string) {
+func pullImage(ctx context.Context, client *client.Client, image string) {
 	reader, err := client.ImagePull(ctx, image, types.ImagePullOptions{})
-	if err != nil {
-		return
+	if err != nil && strings.Contains(err.Error(), "unauthorized") {
+		cfg, err := cliconfig.Load("")
+		if err != nil {
+			log.Fatal(err)
+		}
+		registryHostname := strings.Split(image, "/")[0]
+		WarningMessage("Authorizing to private registry %s from the local credentials...", registryHostname)
+		a, err := cfg.GetAuthConfig(registryHostname)
+		if err != nil {
+			log.Fatal("can't load the auth config", err)
+		}
+		encodedAuth, err := encodeAuthToBase64(types.AuthConfig(a))
+		if err != nil {
+			log.Fatal("can't encode auth to base64", err)
+		}
+		reader, err = client.ImagePull(ctx, image, types.ImagePullOptions{RegistryAuth: encodedAuth})
+		if err != nil {
+			log.Fatal("can't pull image from the private registry", err)
+		}
+	} else if err != nil {
+		log.Fatal("can't pull image ", err)
 	}
 	defer func(pull io.ReadCloser) {
 		err := pull.Close()

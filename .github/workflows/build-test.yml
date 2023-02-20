@@ -51,8 +51,6 @@ jobs:
           registry: registry.jetbrains.team
           username: ${{ secrets.SPACE_USERNAME }}
           password: ${{ secrets.SPACE_PASSWORD }}
-      - if: ${{ matrix.os == 'ubuntu-latest' }}
-        run: docker pull registry.jetbrains.team/p/sa/containers/qodana-python:latest
       - run: |
           go test -v ./... -coverprofile cover.out
       - if: startsWith(matrix.os, 'ubuntu')

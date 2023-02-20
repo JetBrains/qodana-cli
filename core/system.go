@@ -318,7 +318,7 @@ func RunLinter(ctx context.Context, options *QodanaOptions) int {
 	}
 	progress, _ := startQodanaSpinner(scanStages[0])
 	if !(options.SkipPull) {
-		PullImage(ctx, docker, options.Linter)
+		PullImage(docker, options.Linter)
 	}
 	dockerConfig := getDockerOptions(options)
 	updateText(progress, scanStages[1])

@@ -248,6 +248,8 @@ func TestScanFlags_Script(t *testing.T) {
 }
 
 func TestAllCommands(t *testing.T) {
+	linter := "registry.jetbrains.team/p/sa/containers/qodana-python:latest"
+
 	if isGitHubAction() {
 		//goland:noinspection GoBoolExpressions
 		if _, err := exec.LookPath("docker"); err != nil || runtime.GOOS == "windows" {
@@ -273,7 +275,7 @@ func TestAllCommands(t *testing.T) {
 	out := bytes.NewBufferString("")
 	command := newPullCommand()
 	command.SetOut(out)
-	command.SetArgs([]string{"-i", projectPath})
+	command.SetArgs([]string{"-i", projectPath, "-l", linter})
 	err = command.Execute()
 	if err != nil {
 		t.Fatal(err)
@@ -291,7 +293,7 @@ func TestAllCommands(t *testing.T) {
 		"--fail-threshold", "5",
 		"--print-problems",
 		"--clear-cache",
-		"-l", "registry.jetbrains.team/p/sa/containers/qodana-python:latest",
+		"-l", linter,
 	})
 	err = command.Execute()
 	if err != nil {
@@ -312,17 +314,13 @@ func TestAllCommands(t *testing.T) {
 	out = bytes.NewBufferString("")
 	command = newShowCommand()
 	command.SetOut(out)
-	command.SetArgs([]string{"-i", projectPath, "-d"})
+	command.SetArgs([]string{"-i", projectPath, "-d", "-l", linter})
 	err = command.Execute()
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	// init after project analysis with .idea inside
-	err = os.Remove(filepath.Join(projectPath, "qodana.yaml"))
-	if err != nil {
-		t.Fatal(err)
-	}
 	out = bytes.NewBufferString("")
 	command = newInitCommand()
 	command.SetOut(out)
