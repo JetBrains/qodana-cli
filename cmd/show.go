@@ -32,6 +32,7 @@ type showOptions struct {
 	Port       int
 	OpenDir    bool
 	YamlName   string
+	Linter     string
 }
 
 // newShowCommand returns a new instance of the show command.
@@ -51,12 +52,14 @@ This command serves the Qodana report locally and opens a browser to it.`,
 				options.YamlName = core.FindQodanaYaml(options.ProjectDir)
 			}
 			if options.ReportDir == "" {
-				linter := core.LoadQodanaYaml(options.ProjectDir, options.YamlName).Linter
-				if linter == "" {
-					log.Fatalf("Can't automatically find the report...\n" +
-						"Please specify the report directory with the --report-dir flag.")
+				if options.Linter == "" {
+					options.Linter = core.LoadQodanaYaml(options.ProjectDir, options.YamlName).Linter
+					if options.Linter == "" {
+						log.Fatalf("Can't automatically find the report...\n" +
+							"Please specify the report directory with the --report-dir flag or the linter with --linter.")
+					}
 				}
-				options.ResultsDir = filepath.Join(core.GetLinterSystemDir(options.ProjectDir, linter), "results")
+				options.ResultsDir = filepath.Join(core.GetLinterSystemDir(options.ProjectDir, options.Linter), "results")
 				options.ReportDir = filepath.Join(options.ResultsDir, "report")
 			}
 			if options.OpenDir {
@@ -74,6 +77,7 @@ This command serves the Qodana report locally and opens a browser to it.`,
 		},
 	}
 	flags := cmd.Flags()
+	flags.StringVarP(&options.Linter, "linter", "l", "", "Override linter to use")
 	flags.StringVarP(&options.ProjectDir, "project-dir", "i", ".", "Root directory of the inspected project")
 	flags.StringVarP(&options.ReportDir,
 		"report-dir",
