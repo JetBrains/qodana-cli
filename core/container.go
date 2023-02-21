@@ -317,7 +317,7 @@ func getDockerOptions(opts *QodanaOptions) *types.ContainerCreateConfig {
 	if err != nil {
 		log.Fatal("couldn't get abs path for results", err)
 	}
-	containerName := os.Getenv(qodanaCliContainerName)
+	containerName = os.Getenv(qodanaCliContainerName)
 	if containerName == "" {
 		containerName = fmt.Sprintf("qodana-cli-%s", getId(projectPath))
 	}
