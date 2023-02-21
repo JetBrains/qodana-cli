@@ -204,6 +204,7 @@ show [flags]
 ```
   -d, --dir-only             Open report directory only, don't serve it
   -h, --help                 help for show
+  -l, --linter string        Override linter to use
   -p, --port int             Specify port to serve report at (default 8080)
   -i, --project-dir string   Root directory of the inspected project (default ".")
   -r, --report-dir string    Specify HTML report path (the one with index.html inside) (default <userCacheDir>/JetBrains/<linter>/results/report)
