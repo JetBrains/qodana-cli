@@ -371,6 +371,10 @@ func followLinter(client *client.Client, containerName string, progress *pterm.S
 					EmptyMessage()
 				}
 			}
+			if strings.Contains(line, "Report is successfully uploaded to ") { // tmp until QD-5059
+				_ = os.Setenv(qodanaReportUrl, strings.TrimPrefix(line, "Report is successfully uploaded to "))
+				log.Debug("Cloud report URL: ", os.Getenv(qodanaReportUrl))
+			}
 			printLinterLog(line)
 		}
 		if err != nil {

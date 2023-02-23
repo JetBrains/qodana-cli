@@ -1,6 +1,9 @@
 name: 'build-test'
 on:
   workflow_dispatch:
+  push:
+    branches:
+      - main
   pull_request:
     paths-ignore:
       - '**/*.md'
@@ -51,8 +54,9 @@ jobs:
           registry: registry.jetbrains.team
           username: ${{ secrets.SPACE_USERNAME }}
           password: ${{ secrets.SPACE_PASSWORD }}
-      - run: |
-          go test -v ./... -coverprofile cover.out
+      - run: go test -v ./... -coverprofile cover.out
+        env:
+          QODANA_TOKEN: ${{ secrets.TEST_QODANA_TOKEN }}
       - if: startsWith(matrix.os, 'ubuntu')
         uses: codecov/codecov-action@v3.1.1
         with:

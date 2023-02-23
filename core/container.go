@@ -71,6 +71,7 @@ const (
 	qodanaRemoteUrl        = "QODANA_REMOTE_URL"
 	qodanaBranch           = "QODANA_BRANCH"
 	qodanaRevision         = "QODANA_REVISION"
+	qodanaReportUrl        = "QODANA_REPORT_URL"
 	qodanaCliContainerName = "QODANA_CLI_CONTAINER_NAME"
 	qodanaCliContainerKeep = "QODANA_CLI_CONTAINER_KEEP"
 	qodanaCliUsePodman     = "QODANA_CLI_USE_PODMAN"
@@ -174,7 +175,6 @@ func pullImage(ctx context.Context, client *client.Client, image string) {
 			log.Fatal(err)
 		}
 		registryHostname := strings.Split(image, "/")[0]
-		WarningMessage("Authorizing to private registry %s from the local credentials...", registryHostname)
 		a, err := cfg.GetAuthConfig(registryHostname)
 		if err != nil {
 			log.Fatal("can't load the auth config", err)
