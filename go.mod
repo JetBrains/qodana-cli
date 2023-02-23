@@ -5,7 +5,7 @@ go 1.19
 require (
 	github.com/cucumber/ci-environment/go v0.0.0-20230123192824-6c9424d4fecf
 	github.com/docker/cli v20.10.23+incompatible
-	github.com/docker/docker v20.10.23+incompatible
+	github.com/docker/docker v23.0.1+incompatible
 	github.com/go-enry/go-enry/v2 v2.8.3
 	github.com/liamg/clinch v1.6.1
 	github.com/mattn/go-isatty v0.0.17
