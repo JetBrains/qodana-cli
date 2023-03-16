@@ -23,7 +23,7 @@ RUN mkdir -m 777 -p /opt $QODANA_DATA $QODANA_CONF && apt-get update && \
     git config --global --add safe.directory '*' && \
     rm -rf /var/cache/apt /var/lib/apt/ /tmp/*
 
-COPY --from=composer:2.5.1 /usr/bin/composer /usr/bin/composer
+COPY --from=composer:2.5 /usr/bin/composer /usr/bin/composer
 
 ARG QD_BUILD="QDPHP-231.8243.38"
 ARG QD_RELEASE="231"
