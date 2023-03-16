@@ -1,5 +1,4 @@
-ARG BASE_TAG="1.19-bullseye"
-FROM golang:$BASE_TAG
+FROM golang:1.19-bullseye
 
 ARG TARGETPLATFORM
 

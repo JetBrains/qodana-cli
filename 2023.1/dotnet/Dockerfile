@@ -1,5 +1,4 @@
-ARG BASE_TAG="6.0-bullseye-slim"
-FROM mcr.microsoft.com/dotnet/sdk:$BASE_TAG
+FROM mcr.microsoft.com/dotnet/sdk:6.0-bullseye-slim
 
 ARG TARGETPLATFORM
 

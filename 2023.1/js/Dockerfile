@@ -1,5 +1,4 @@
-ARG BASE_TAG="16-bullseye-slim"
-FROM node:$BASE_TAG
+FROM node:16-bullseye-slim
 
 ARG TARGETPLATFORM
 

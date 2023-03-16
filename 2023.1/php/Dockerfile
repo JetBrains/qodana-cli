@@ -1,5 +1,4 @@
-ARG BASE_TAG="8.1-cli-bullseye"
-FROM php:$BASE_TAG
+FROM php:8.1-cli-bullseye
 
 ARG TARGETPLATFORM
 

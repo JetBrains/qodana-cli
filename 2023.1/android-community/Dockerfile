@@ -1,5 +1,4 @@
-ARG BASE_TAG="bullseye-slim"
-FROM debian:$BASE_TAG
+FROM debian:bullseye-slim
 
 ARG TARGETPLATFORM
 
