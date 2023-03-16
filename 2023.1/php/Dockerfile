@@ -1,7 +1,5 @@
 FROM php:8.1-cli-bullseye
 
-ARG TARGETPLATFORM
-
 ENV HOME="/root" LC_ALL="en_US.UTF-8" QODANA_DIST="/opt/idea" QODANA_DATA="/data"
 ENV JAVA_HOME="$QODANA_DIST/jbr" QODANA_DOCKER="true" QODANA_CONF="$HOME/.config/idea"
 
@@ -28,14 +26,15 @@ COPY --from=composer:2.5 /usr/bin/composer /usr/bin/composer
 ARG QD_BUILD="QDPHP-231.8243.38"
 ARG QD_RELEASE="231"
 RUN set -ex && \
-    case "$TARGETPLATFORM" in \
-        'linux/amd64') \
+    dpkgArch="$(dpkg --print-architecture)" && \
+    case "$dpkgArch" in \
+        'amd64') \
             OS_ARCH_SUFFIX=''; \
             ;; \
-        'linux/arm64') \
+        'arm64') \
             OS_ARCH_SUFFIX='-aarch64'; \
             ;; \
-        *) echo "Unsupported architecture $TARGETPLATFORM or you forgot to enable Docker BuildKit" >&2; exit 1 ;; \
+        *) echo "Unsupported architecture $dpkgArch" >&2; exit 1 ;; \
     esac && \
     QD_NAME="qodana-$QD_BUILD$OS_ARCH_SUFFIX" \
     QD_URL="https://download.jetbrains.com/qodana/$QD_RELEASE/$QD_NAME.tar.gz" && \

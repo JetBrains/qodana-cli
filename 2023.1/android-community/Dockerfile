@@ -1,9 +1,7 @@
 FROM debian:bullseye-slim
 
-ARG TARGETPLATFORM
-
-RUN if [ "${TARGETPLATFORM}" != "linux/amd64" ];  \
-      then echo "Unsupported architecture $TARGETPLATFORM by Android SDK:  \
+RUN dpkgArch="$(dpkg --print-architecture)" && if [ "$dpkgArch" != "amd64" ];  \
+      then echo "Unsupported architecture by Android SDK:  \
           https://developer.android.com/studio#command-line-tools-only" >&2;  \
       exit 1; fi
 
@@ -32,14 +30,15 @@ ENV GRADLE_USER_HOME="/data/cache/gradle"
 ARG QD_BUILD="QDAND-231.8246.34"
 ARG QD_RELEASE="231"
 RUN set -ex && \
-    case "$TARGETPLATFORM" in \
-        'linux/amd64') \
+    dpkgArch="$(dpkg --print-architecture)" && \
+    case "$dpkgArch" in \
+        'amd64') \
             OS_ARCH_SUFFIX=''; \
             ;; \
-        'linux/arm64') \
+        'arm64') \
             OS_ARCH_SUFFIX='-aarch64'; \
             ;; \
-        *) echo "Unsupported architecture $TARGETPLATFORM or you forgot to enable Docker BuildKit" >&2; exit 1 ;; \
+        *) echo "Unsupported architecture $dpkgArch" >&2; exit 1 ;; \
     esac && \
     QD_NAME="qodana-$QD_BUILD$OS_ARCH_SUFFIX" \
     QD_URL="https://download.jetbrains.com/qodana/$QD_RELEASE/$QD_NAME.tar.gz" && \
