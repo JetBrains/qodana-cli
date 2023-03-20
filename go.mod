@@ -9,7 +9,7 @@ require (
 	github.com/go-enry/go-enry/v2 v2.8.4
 	github.com/liamg/clinch v1.6.1
 	github.com/mattn/go-isatty v0.0.17
-	github.com/owenrumney/go-sarif/v2 v2.1.2
+	github.com/owenrumney/go-sarif/v2 v2.1.3
 	github.com/pterm/pterm v0.12.54
 	github.com/sirupsen/logrus v1.9.0
 	github.com/spf13/cobra v1.6.1
