@@ -221,7 +221,7 @@ func TestScanFlags(t *testing.T) {
 		"--baseline-include-absent",
 		"--fail-threshold",
 		"0",
-		"--changes",
+		"--local-changes",
 		"--analysis-id",
 		"id",
 		"--property=foo.baz=bar",
