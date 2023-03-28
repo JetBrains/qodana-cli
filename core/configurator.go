@@ -34,7 +34,7 @@ const (
 	QodanaSarifName      = "qodana.sarif.json"
 	QodanaShortSarifName = "qodana-short.sarif.json"
 	configName           = "qodana"
-	version              = "2022.3"
+	version              = "2023.1"
 	eap                  = "-eap"
 	QDJVMC               = "jetbrains/qodana-jvm-community:" + version
 	QDJVM                = "jetbrains/qodana-jvm:" + version + eap
@@ -43,7 +43,7 @@ const (
 	QDPY                 = "jetbrains/qodana-python:" + version + eap
 	QDJS                 = "jetbrains/qodana-js:" + version + eap
 	QDGO                 = "jetbrains/qodana-go:" + version + eap
-	QDNET                = "jetbrains/qodana-dotnet:" + "2023.1" + eap
+	QDNET                = "jetbrains/qodana-dotnet:" + version + eap
 )
 
 // langsLinters is a map of languages to linters.
