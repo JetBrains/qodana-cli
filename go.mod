@@ -8,7 +8,7 @@ require (
 	github.com/docker/docker v20.10.23+incompatible
 	github.com/go-enry/go-enry/v2 v2.8.4
 	github.com/liamg/clinch v1.6.1
-	github.com/mattn/go-isatty v0.0.17
+	github.com/mattn/go-isatty v0.0.18
 	github.com/owenrumney/go-sarif/v2 v2.1.3
 	github.com/pterm/pterm v0.12.54
 	github.com/sirupsen/logrus v1.9.0
@@ -53,7 +53,7 @@ require (
 	github.com/xo/terminfo v0.0.0-20210125001918-ca9a967f8778 // indirect
 	golang.org/x/crypto v0.0.0-20220525230936-793ad666bf5e // indirect
 	golang.org/x/net v0.7.0 // indirect
-	golang.org/x/sys v0.5.0 // indirect
+	golang.org/x/sys v0.6.0 // indirect
 	golang.org/x/term v0.5.0 // indirect
 	golang.org/x/text v0.7.0 // indirect
 	gopkg.in/check.v1 v1.0.0-20201130134442-10cb98267c6c // indirect
