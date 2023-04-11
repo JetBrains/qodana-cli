@@ -237,9 +237,9 @@ func CheckContainerEngineMemory() {
 	var helpUrl string
 	switch goos {
 	case "windows":
-		helpUrl = "https://docs.docker.com/docker-for-windows/about/"
+		helpUrl = "https://docs.docker.com/desktop/settings/windows/#advanced"
 	case "darwin":
-		helpUrl = "https://docs.docker.com/docker-for-mac/about/"
+		helpUrl = "https://docs.docker.com/desktop/settings/mac/#advanced-1"
 	}
 	log.Debug("Docker memory limit is set to ", info.MemTotal/1024/1024, " MB")
 
