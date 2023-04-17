@@ -58,7 +58,7 @@ jobs:
         env:
           QODANA_TOKEN: ${{ secrets.TEST_QODANA_TOKEN }}
       - if: startsWith(matrix.os, 'ubuntu')
-        uses: codecov/codecov-action@v3.1.1
+        uses: codecov/codecov-action@v3.1.2
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
           fail_ci_if_error: true
