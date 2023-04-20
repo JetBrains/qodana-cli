@@ -17,8 +17,6 @@
 package core
 
 import (
-	"path/filepath"
-
 	"github.com/owenrumney/go-sarif/v2/sarif"
 	log "github.com/sirupsen/logrus"
 )
@@ -73,19 +71,4 @@ func ReadSarif(sarifPath string, printProblems bool) {
 	} else {
 		ErrorMessage("Found %d new problems according to the checks applied", newProblems)
 	}
-}
-
-// GetReportUrl get Qodana Cloud report URL from the given qodana.sarif.json
-func GetReportUrl(resultsDir string) string {
-	sarifPath := filepath.Join(resultsDir, QodanaShortSarifName)
-	s, err := sarif.Open(sarifPath)
-	if err != nil {
-		log.Debug(err)
-		return ""
-	}
-	reportUrl, exists := s.Runs[0].Properties["reportUrl"]
-	if exists {
-		return reportUrl.(string)
-	}
-	return ""
 }

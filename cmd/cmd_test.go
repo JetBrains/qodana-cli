@@ -170,17 +170,16 @@ func TestInitCommand(t *testing.T) {
 }
 
 func TestValidCloudUrl(t *testing.T) {
-	projectPath := createProject(t, "qodana_cloud_url")
-	sarifPath := projectPath + "/" + core.QodanaShortSarifName
+	resultsPath := createProject(t, "qodana_cloud_url")
+	sarifPath := resultsPath + "/" + core.QodanaReportUrlFile
 	err := os.WriteFile(
 		sarifPath,
-		[]byte(`{"version":"2.1.0","$schema":"https://raw.githubusercontent.com/schemastore/schemastore/master/src/schemas/json/sarif-2.1.0-rtm.5.json","runs":[{"tool":{"driver":{"contents":["localizedData","nonLocalizedData"],"fullName":"Qodana for RickRolling","isComprehensive":false,"language":"en-US","name":"QDRICKROLL","rules":[],"version":"223.1218.100"}},"invocations":[{"executionSuccessful":true,"exitCode":0}],"results":[],"automationDetails":{"guid":"87d2cf90-9968-4bd3-9cbc-d1b624f37fd2","id":"project/qodana/2022-08-01","properties":{"jobUrl":"","tags":["jobUrl"]}},"language":"en-US","newlineSequences":["\r\n","\n"],"properties":{"deviceId":"200820300000000-0000-0000-0000-000000000001","reportUrl":"https://youtu.be/dQw4w9WgXcQ","tags":["deviceId"]}}]}`),
-		0o644,
+		[]byte(`https://youtu.be/dQw4w9WgXcQ`), 0o644,
 	)
 	if err != nil {
 		t.Fatal(err)
 	}
-	actual := core.GetReportUrl(projectPath)
+	actual := core.GetReportUrl(resultsPath)
 	expected := "https://youtu.be/dQw4w9WgXcQ"
 	if actual != expected {
 		t.Fatalf("expected \"%s\" got \"%s\"", expected, actual)

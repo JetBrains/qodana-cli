@@ -321,7 +321,7 @@ func RunLinter(ctx context.Context, options *QodanaOptions) int {
 	dockerConfig := getDockerOptions(options)
 	updateText(progress, scanStages[1])
 	runContainer(ctx, docker, dockerConfig)
-	go followLinter(docker, dockerConfig.Name, progress)
+	go followLinter(docker, dockerConfig.Name, progress, options.ResultsDir)
 	exitCode := getContainerExitCode(ctx, docker, dockerConfig.Name)
 	if options.GitReset && !strings.HasPrefix(options.Commit, "CI") {
 		_ = gitResetBack(options.ProjectDir)
@@ -333,7 +333,7 @@ func RunLinter(ctx context.Context, options *QodanaOptions) int {
 }
 
 // followLinter follows the linter logs and prints the progress.
-func followLinter(client *client.Client, containerName string, progress *pterm.SpinnerPrinter) {
+func followLinter(client *client.Client, containerName string, progress *pterm.SpinnerPrinter, resultsDir string) {
 	reader, err := client.ContainerLogs(context.Background(), containerName, containerLogsOptions)
 	if err != nil {
 		log.Fatal(err.Error())
@@ -369,9 +369,9 @@ func followLinter(client *client.Client, containerName string, progress *pterm.S
 					EmptyMessage()
 				}
 			}
-			if strings.Contains(line, "Report is successfully uploaded to ") { // tmp until QD-5059
-				_ = os.Setenv(qodanaReportUrl, strings.TrimPrefix(line, "Report is successfully uploaded to "))
-				log.Debug("Cloud report URL: ", os.Getenv(qodanaReportUrl))
+			if strings.Contains(line, "Report is successfully uploaded to ") {
+				reportUrl := strings.TrimPrefix(line, "Report is successfully uploaded to ")
+				saveReportUrl(resultsDir, reportUrl)
 			}
 			printLinterLog(line)
 		}
@@ -381,5 +381,30 @@ func followLinter(client *client.Client, containerName string, progress *pterm.S
 			}
 			return
 		}
+	}
+}
+
+// GetReportUrl get Qodana Cloud report URL from the given qodana.sarif.json
+func GetReportUrl(resultsDir string) string {
+	filePath := filepath.Join(resultsDir, QodanaReportUrlFile)
+	if _, err := os.Stat(filePath); err == nil {
+		url, err := os.ReadFile(filePath)
+		if err != nil {
+			log.Fatal(err)
+		}
+		return string(url)
+	}
+	return ""
+}
+
+// saveReportUrl saves the report URL to the resultsDir/qodana.cloud file.
+func saveReportUrl(resultsDir, reportUrl string) {
+	if reportUrl == "" {
+		return
+	}
+	resultsDir = filepath.Join(resultsDir, "qodana.cloud")
+	err := os.WriteFile(resultsDir, []byte(reportUrl), 0o644)
+	if err != nil {
+		log.Errorf("Could not save the report URL to the results directory: %s", err)
 	}
 }

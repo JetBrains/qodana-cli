@@ -33,6 +33,7 @@ import (
 const (
 	QodanaSarifName      = "qodana.sarif.json"
 	QodanaShortSarifName = "qodana-short.sarif.json"
+	QodanaReportUrlFile  = "qodana.cloud"
 	configName           = "qodana"
 	version              = "2023.1"
 	eap                  = "-eap"
