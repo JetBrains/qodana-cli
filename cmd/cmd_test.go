@@ -221,6 +221,7 @@ func TestScanFlags(t *testing.T) {
 		"--baseline-include-absent",
 		"--fail-threshold",
 		"0",
+		"--script",
 		"--local-changes",
 		"--analysis-id",
 		"id",
@@ -252,7 +253,7 @@ func TestAllCommands(t *testing.T) {
 
 	if isGitHubAction() {
 		//goland:noinspection GoBoolExpressions
-		if _, err := exec.LookPath("docker"); err != nil || runtime.GOOS == "windows" {
+		if _, err := exec.LookPath("docker"); err != nil && (runtime.GOOS == "windows" || runtime.GOOS == "darwin") {
 			t.Skip(err)
 		}
 	} else {
