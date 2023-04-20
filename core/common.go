@@ -93,13 +93,16 @@ func GetLinter(path string, yamlName string) string {
 			}
 		}
 	}, "Scanning project", "")
-	if len(linters) == 0 {
+	if len(linters) == 0 && !IsInteractive() {
 		ErrorMessage("Could not configure project as it is not supported by Qodana")
 		WarningMessage("See https://www.jetbrains.com/help/qodana/supported-technologies.html for more details")
 		os.Exit(1)
 	} else if len(linters) == 1 || !IsInteractive() {
 		linter = linters[0]
 	} else {
+		if len(linters) == 0 {
+			linters = allLinters
+		}
 		choice, err := qodanaInteractiveSelect.WithOptions(linters).Show()
 		if err != nil {
 			ErrorMessage("%s", err)

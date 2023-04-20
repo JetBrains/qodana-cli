@@ -60,6 +60,9 @@ var langsLinters = map[string][]string{
 	"Visual Basic .NET": {QDNET},
 }
 
+// allLinters is a list of all supported linters.
+var allLinters = []string{QDJVMC, QDJVM, QDAND, QDPHP, QDPY, QDJS, QDGO, QDNET}
+
 // ignoredDirectories is a list of directories that should be ignored by the configurator.
 var ignoredDirectories = []string{
 	".idea",
