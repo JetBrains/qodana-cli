@@ -253,7 +253,7 @@ func TestAllCommands(t *testing.T) {
 
 	if isGitHubAction() {
 		//goland:noinspection GoBoolExpressions
-		if _, err := exec.LookPath("docker"); err != nil && runtime.GOOS != "linux" {
+		if _, err := exec.LookPath("docker"); err != nil || runtime.GOOS != "linux" {
 			t.Skip(err)
 		}
 	} else {
