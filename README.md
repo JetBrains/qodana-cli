@@ -61,6 +61,8 @@ from [this page](https://github.com/JetBrains/qodana-cli/releases/latest).
 
 ## Usage
 
+https://user-images.githubusercontent.com/13538286/233484685-b9225168-8379-41bf-b8c8-6149a324cea8.mp4
+
 ### Prepare your project
 
 Before you start using Qodana, you need to configure your project –
