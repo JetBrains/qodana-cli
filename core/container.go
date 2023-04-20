@@ -290,7 +290,7 @@ func GetCmdOptions(opts *QodanaOptions) []string {
 		arguments = append(arguments, "--fail-threshold", opts.FailThreshold)
 	}
 	if opts.Changes || (opts.GitReset && opts.Commit != "") {
-		arguments = append(arguments, "--local-changes")
+		arguments = append(arguments, "--script", "--local-changes")
 	}
 	if opts.AnalysisId != "" {
 		arguments = append(arguments, "--analysis-id", opts.AnalysisId)
