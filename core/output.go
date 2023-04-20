@@ -29,7 +29,7 @@ import (
 
 // Info Two newlines at the start are important to lay the output nicely in CLI.
 var Info = fmt.Sprintf(`
-  %s (v%s)
+  %s (%s)
   https://jb.gg/qodana-cli
   Documentation – https://jb.gg/qodana-docs
   Contact us at qodana-support@jetbrains.com
