@@ -44,7 +44,6 @@ type QodanaOptions struct {
 	Property              []string
 	Script                string
 	FailThreshold         string
-	Changes               bool
 	Commit                string
 	AnalysisId            string
 	Env                   []string

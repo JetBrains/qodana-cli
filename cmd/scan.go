@@ -107,8 +107,7 @@ But you can always override qodana.yaml options with the following command-line 
 	flags.StringVarP(&options.AnalysisId, "analysis-id", "a", "", "Unique report identifier (GUID) to be used by Qodana Cloud")
 	flags.StringVarP(&options.Baseline, "baseline", "b", "", "Provide the path to an existing SARIF report to be used in the baseline state calculation")
 	flags.BoolVar(&options.BaselineIncludeAbsent, "baseline-include-absent", false, "Include in the output report the results from the baseline run that are absent in the current run")
-	flags.BoolVarP(&options.Changes, "changes", "c", false, "Inspect uncommitted changes and report new problems")
-	flags.StringVar(&options.Commit, "commit", "", "Base changes commit to reset to, useful with --changes: analysis will be run only on changed files since commit X, 'reset' will be cancelled once the analysis is finished if the commit prefix does not contain CI prefix")
+	flags.StringVar(&options.Commit, "commit", "", "Base changes commit to reset to, useful with --script local-changes: analysis will be run only on changed files since commit X, 'reset' will be cancelled once the analysis is finished if the commit prefix does not contain CI prefix")
 	flags.StringVar(&options.FailThreshold, "fail-threshold", "", "Set the number of problems that will serve as a quality gate. If this number is reached, the inspection run is terminated with a non-zero exit code")
 	flags.BoolVar(&options.DisableSanity, "disable-sanity", false, "Skip running the inspections configured by the sanity profile")
 	flags.StringVarP(&options.SourceDirectory, "source-directory", "d", "", "Directory inside the project-dir directory must be inspected. If not specified, the whole project is inspected")
@@ -122,6 +121,8 @@ But you can always override qodana.yaml options with the following command-line 
 	flags.BoolVarP(&options.SaveReport, "save-report", "s", true, "Generate HTML report")
 
 	flags.SortFlags = false
+
+	cmd.MarkFlagsMutuallyExclusive("commit", "script")
 
 	return cmd
 }
