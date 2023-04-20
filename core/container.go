@@ -339,11 +339,16 @@ func getDockerOptions(opts *QodanaOptions) *types.ContainerCreateConfig {
 		},
 	}
 	for _, volume := range opts.Volumes {
-		volumes = append(volumes, mount.Mount{
-			Type:   mount.TypeBind,
-			Source: strings.Split(volume, ":")[0],
-			Target: strings.Split(volume, ":")[1],
-		})
+		source, target := extractDockerVolumes(volume)
+		if source != "" && target != "" {
+			volumes = append(volumes, mount.Mount{
+				Type:   mount.TypeBind,
+				Source: source,
+				Target: target,
+			})
+		} else {
+			log.Fatal("couldn't parse volume ", volume)
+		}
 	}
 	log.Debugf("image: %s", opts.Linter)
 	log.Debugf("container name: %s", containerName)
@@ -409,4 +414,16 @@ func getContainerClient() *client.Client {
 		log.Fatal("couldn't create container client ", err)
 	}
 	return docker
+}
+
+// extractDockerVolumes extracts the source and target of the volume to mount.
+func extractDockerVolumes(volume string) (string, string) {
+	split := strings.Split(volume, ":")
+	if len(split) == 2 {
+		return split[0], split[1]
+	} else if //goland:noinspection GoBoolExpressions
+	runtime.GOOS == "windows" {
+		return fmt.Sprintf("%s:%s", split[0], split[1]), split[2]
+	}
+	return "", ""
 }
