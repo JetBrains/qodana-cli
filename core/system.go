@@ -24,6 +24,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"io/fs"
 	"net/http"
 	"os"
 	"os/exec"
@@ -207,16 +208,54 @@ func getId(project string) string {
 	return hex.EncodeToString(sha256sum[:])[0:8]
 }
 
-// GetLinterSystemDir returns path to <userCacheDir>/JetBrains/<linter>/<project-id>/.
-func GetLinterSystemDir(project string, linter string) string {
+// GetQodanaSystemDir returns path to <userCacheDir>/JetBrains/Qodana/.
+func GetQodanaSystemDir() string {
 	userCacheDir, _ := os.UserCacheDir()
 	return filepath.Join(
 		userCacheDir,
 		"JetBrains",
 		"Qodana",
-		getId(linter),
-		getId(project),
 	)
+}
+
+// GetLinterSystemDir returns path to <userCacheDir>/JetBrains/<linter>/<project-id>/.
+func GetLinterSystemDir(project string, linter string) string {
+	return filepath.Join(
+		GetQodanaSystemDir(),
+		fmt.Sprintf("%s-%s", getId(linter), getId(project)),
+	)
+}
+
+// LookUpLinterSystemDir returns path to the latest modified directory from <userCacheDir>/JetBrains/Qodana
+func LookUpLinterSystemDir() string {
+	parent := GetQodanaSystemDir()
+
+	entries, err := os.ReadDir(parent)
+	if err != nil {
+		log.Debugf("Failed to read directory %s: %s", parent, err.Error())
+		return parent
+	}
+	subdirs := make([]fs.FileInfo, 0, len(entries))
+	for _, entry := range entries {
+		info, err := entry.Info()
+		if err != nil {
+			continue
+		}
+		subdirs = append(subdirs, info)
+	}
+	var latestDir string
+	var latestTime time.Time
+	for _, subdir := range subdirs {
+		if subdir.IsDir() {
+			if subdir.ModTime().After(latestTime) {
+				latestDir = subdir.Name()
+				latestTime = subdir.ModTime()
+			}
+		}
+	}
+	systemDir := filepath.Join(parent, latestDir)
+	log.Debugf("Found latest linter system dir: %s", systemDir)
+	return systemDir
 }
 
 // checkLinter validates the image used for the scan.
@@ -308,10 +347,10 @@ func RunLinter(ctx context.Context, options *QodanaOptions) int {
 	if unofficialLinter {
 		WarningMessage("You are using an unofficial Qodana linter: %s\n", options.Linter)
 	}
-	progress, _ := startQodanaSpinner(scanStages[0])
 	if !(options.SkipPull) {
 		PullImage(docker, options.Linter)
 	}
+	progress, _ := startQodanaSpinner(scanStages[0])
 	dockerConfig := getDockerOptions(options)
 	updateText(progress, scanStages[1])
 	runContainer(ctx, docker, dockerConfig)

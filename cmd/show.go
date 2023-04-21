@@ -17,6 +17,7 @@
 package cmd
 
 import (
+	"os"
 	"path/filepath"
 
 	"github.com/JetBrains/qodana-cli/core"
@@ -54,12 +55,13 @@ This command serves the Qodana report locally and opens a browser to it.`,
 			if options.ReportDir == "" {
 				if options.Linter == "" {
 					options.Linter = core.LoadQodanaYaml(options.ProjectDir, options.YamlName).Linter
-					if options.Linter == "" {
-						log.Fatalf("Can't automatically find the report...\n" +
-							"Please specify the report directory with the --report-dir flag or the linter with --linter.")
-					}
 				}
-				options.ResultsDir = filepath.Join(core.GetLinterSystemDir(options.ProjectDir, options.Linter), "results")
+				systemDir := core.GetLinterSystemDir(options.ProjectDir, options.Linter)
+				if _, err := os.Stat(systemDir); os.IsNotExist(err) {
+					systemDir = core.LookUpLinterSystemDir()
+				}
+
+				options.ResultsDir = filepath.Join(systemDir, "results")
 				options.ReportDir = filepath.Join(options.ResultsDir, "report")
 			}
 			if options.OpenDir {
