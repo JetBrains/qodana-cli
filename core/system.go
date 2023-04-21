@@ -254,12 +254,6 @@ func PrepareHost(opts *QodanaOptions) {
 			opts.User = fmt.Sprintf("%d:%d", os.Getuid(), os.Getgid())
 		}
 	}
-	if _, err := os.Stat(opts.ResultsDir); err == nil {
-		err := os.RemoveAll(opts.ResultsDir)
-		if err != nil {
-			return
-		}
-	}
 	if err := os.MkdirAll(opts.CacheDir, os.ModePerm); err != nil {
 		log.Fatal("couldn't create a directory ", err.Error())
 	}
