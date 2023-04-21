@@ -65,12 +65,12 @@ var (
 )
 
 const (
-	qodanaEnv              = "QODANA_ENV"
-	qodanaToken            = "QODANA_TOKEN"
-	qodanaJobUrl           = "QODANA_JOB_URL"
-	qodanaRemoteUrl        = "QODANA_REMOTE_URL"
-	qodanaBranch           = "QODANA_BRANCH"
-	qodanaRevision         = "QODANA_REVISION"
+	QodanaEnv              = "QODANA_ENV"
+	QodanaToken            = "QODANA_TOKEN"
+	QodanaJobUrl           = "QODANA_JOB_URL"
+	QodanaRemoteUrl        = "QODANA_REMOTE_URL"
+	QodanaBranch           = "QODANA_BRANCH"
+	QodanaRevision         = "QODANA_REVISION"
 	qodanaCliContainerName = "QODANA_CLI_CONTAINER_NAME"
 	qodanaCliContainerKeep = "QODANA_CLI_CONTAINER_KEEP"
 	qodanaCliUsePodman     = "QODANA_CLI_USE_PODMAN"
@@ -85,21 +85,21 @@ func encodeAuthToBase64(authConfig types.AuthConfig) (string, error) {
 	return base64.URLEncoding.EncodeToString(buf), nil
 }
 
-// extractQodanaEnvironment extracts Qodana env variables QODANA_* to the given environment array.
-func extractQodanaEnvironment(opts *QodanaOptions) {
-	opts.setEnv(qodanaToken, os.Getenv(qodanaToken))
+// ExtractQodanaEnvironment extracts Qodana env variables QODANA_* to the given environment array.
+func ExtractQodanaEnvironment(opts *QodanaOptions) {
+	opts.Setenv(QodanaToken, os.Getenv(QodanaToken))
 	ci := cienvironment.DetectCIEnvironment()
 	qEnv := "cli"
 	if ci != nil {
 		qEnv = strings.ReplaceAll(strings.ToLower(ci.Name), " ", "-")
-		opts.setEnv(qodanaJobUrl, validateCiUrl(ci.URL, qEnv))
+		opts.Setenv(QodanaJobUrl, validateCiUrl(ci.URL, qEnv))
 		if ci.Git != nil {
-			opts.setEnv(qodanaRemoteUrl, ci.Git.Remote)
-			opts.setEnv(qodanaBranch, ci.Git.Branch)
-			opts.setEnv(qodanaRevision, ci.Git.Revision)
+			opts.Setenv(QodanaRemoteUrl, ci.Git.Remote)
+			opts.Setenv(QodanaBranch, ci.Git.Branch)
+			opts.Setenv(QodanaRevision, ci.Git.Revision)
 		}
 	}
-	opts.setEnv(qodanaEnv, fmt.Sprintf("%s:%s", qEnv, Version))
+	opts.Setenv(QodanaEnv, fmt.Sprintf("%s:%s", qEnv, Version))
 }
 
 func validateCiUrl(ciUrl string, qEnv string) string {
@@ -166,7 +166,7 @@ func PullImage(client *client.Client, image string) {
 }
 
 func isDockerUnauthorizedError(errMsg string) bool {
-	errMsg = strings.ToLower(errMsg)
+	errMsg = lower(errMsg)
 	return strings.Contains(errMsg, "unauthorized") || strings.Contains(errMsg, "denied") || strings.Contains(errMsg, "forbidden")
 }
 
@@ -308,7 +308,7 @@ func GetCmdOptions(opts *QodanaOptions) []string {
 // getDockerOptions returns qodana docker container options.
 func getDockerOptions(opts *QodanaOptions) *types.ContainerCreateConfig {
 	cmdOpts := GetCmdOptions(opts)
-	extractQodanaEnvironment(opts)
+	ExtractQodanaEnvironment(opts)
 	cachePath, err := filepath.Abs(opts.CacheDir)
 	if err != nil {
 		log.Fatal("couldn't get abs path for cache", err)
