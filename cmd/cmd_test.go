@@ -245,7 +245,7 @@ func TestScanFlags_Script(t *testing.T) {
 }
 
 func TestAllCommands(t *testing.T) {
-	linter := "jetbrains/qodana-python:latest"
+	linter := "registry.jetbrains.team/p/sa/containers/qodana-python:latest"
 
 	if isGitHubAction() {
 		//goland:noinspection GoBoolExpressions

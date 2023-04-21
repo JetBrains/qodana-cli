@@ -165,10 +165,15 @@ func PullImage(client *client.Client, image string) {
 	)
 }
 
+func isDockerUnauthorizedError(errMsg string) bool {
+	errMsg = strings.ToLower(errMsg)
+	return strings.Contains(errMsg, "unauthorized") || strings.Contains(errMsg, "denied") || strings.Contains(errMsg, "forbidden")
+}
+
 // PullImage pulls docker image.
 func pullImage(ctx context.Context, client *client.Client, image string) {
 	reader, err := client.ImagePull(ctx, image, types.ImagePullOptions{})
-	if err != nil && strings.Contains(err.Error(), "unauthorized") {
+	if err != nil && isDockerUnauthorizedError(err.Error()) {
 		cfg, err := cliconfig.Load("")
 		if err != nil {
 			log.Fatal(err)
