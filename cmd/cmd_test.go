@@ -244,6 +244,160 @@ func TestScanFlags_Script(t *testing.T) {
 	}
 }
 
+func TestDirLanguagesExcluded(t *testing.T) {
+	expected := []string{"Go", "Shell"}
+	actual, err := core.RecognizeDirLanguages("../")
+	if err != nil {
+		return
+	}
+	if !reflect.DeepEqual(expected, actual) {
+		t.Fatalf("expected \"%s\" got \"%s\"", expected, actual)
+	}
+}
+
+func Test_ExtractEnvironmentVariables(t *testing.T) {
+	revisionExpected := "1234567890abcdef1234567890abcdef12345678"
+	branchExpected := "main"
+
+	if isGitHubAction() {
+		t.Skip("Not running on GitHub Actions")
+	}
+
+	for _, tc := range []struct {
+		ci                      string
+		variables               map[string]string
+		qodanaJobUrlExpected    string
+		qodanaEnvExpected       string
+		qodanaRemoteUrlExpected string
+	}{
+		{
+			ci:                "no CI detected",
+			variables:         map[string]string{},
+			qodanaEnvExpected: "cli:dev",
+		},
+		{
+			ci: "User defined",
+			variables: map[string]string{
+				core.QodanaEnv:       "user-defined",
+				core.QodanaJobUrl:    "https://qodana.jetbrains.com/never-gonna-give-you-up",
+				core.QodanaRemoteUrl: "https://qodana.jetbrains.com/never-gonna-give-you-up",
+				core.QodanaBranch:    branchExpected,
+				core.QodanaRevision:  revisionExpected,
+			},
+			qodanaEnvExpected:       "user-defined",
+			qodanaRemoteUrlExpected: "https://qodana.jetbrains.com/never-gonna-give-you-up",
+			qodanaJobUrlExpected:    "https://qodana.jetbrains.com/never-gonna-give-you-up",
+		},
+		{
+			ci: "GitLab",
+			variables: map[string]string{
+				"CI_JOB_URL":        "https://gitlab.jetbrains.com/never-gonna-give-you-up",
+				"CI_COMMIT_BRANCH":  branchExpected,
+				"CI_COMMIT_SHA":     revisionExpected,
+				"CI_REPOSITORY_URL": "https://gitlab.jetbrains.com/sa/entrypoint.git",
+			},
+			qodanaEnvExpected:       fmt.Sprintf("gitlab:%s", core.Version),
+			qodanaRemoteUrlExpected: "https://gitlab.jetbrains.com/sa/entrypoint.git",
+			qodanaJobUrlExpected:    "https://gitlab.jetbrains.com/never-gonna-give-you-up",
+		},
+		{
+			ci: "Jenkins",
+			variables: map[string]string{
+				"BUILD_URL":        "https://jenkins.jetbrains.com/never-gonna-give-you-up",
+				"GIT_LOCAL_BRANCH": branchExpected,
+				"GIT_COMMIT":       revisionExpected,
+				"GIT_URL":          "https://git.jetbrains.com/sa/entrypoint.git",
+			},
+			qodanaEnvExpected:       fmt.Sprintf("jenkins:%s", core.Version),
+			qodanaJobUrlExpected:    "https://jenkins.jetbrains.com/never-gonna-give-you-up",
+			qodanaRemoteUrlExpected: "https://git.jetbrains.com/sa/entrypoint.git",
+		},
+		{
+			ci: "GitHub",
+			variables: map[string]string{
+				"GITHUB_SERVER_URL": "https://github.jetbrains.com",
+				"GITHUB_REPOSITORY": "sa/entrypoint",
+				"GITHUB_RUN_ID":     "123456789",
+				"GITHUB_SHA":        revisionExpected,
+				"GITHUB_HEAD_REF":   branchExpected,
+			},
+			qodanaEnvExpected:       fmt.Sprintf("github-actions:%s", core.Version),
+			qodanaJobUrlExpected:    "https://github.jetbrains.com/sa/entrypoint/actions/runs/123456789",
+			qodanaRemoteUrlExpected: "https://github.jetbrains.com/sa/entrypoint.git",
+		},
+		{
+			ci: "CircleCI",
+			variables: map[string]string{
+				"CIRCLE_BUILD_URL":      "https://circleci.jetbrains.com/never-gonna-give-you-up",
+				"CIRCLE_SHA1":           revisionExpected,
+				"CIRCLE_BRANCH":         branchExpected,
+				"CIRCLE_REPOSITORY_URL": "https://circleci.jetbrains.com/sa/entrypoint.git",
+			},
+			qodanaEnvExpected:       fmt.Sprintf("circleci:%s", core.Version),
+			qodanaJobUrlExpected:    "https://circleci.jetbrains.com/never-gonna-give-you-up",
+			qodanaRemoteUrlExpected: "https://circleci.jetbrains.com/sa/entrypoint.git",
+		},
+		{
+			ci: "Azure Pipelines",
+			variables: map[string]string{
+				"SYSTEM_TEAMFOUNDATIONCOLLECTIONURI": "https://dev.azure.com/jetbrains",
+				"BUILD_BUILDURI":                     "https://dev.azure.com/jetbrains/never-gonna-give-you-up",
+				"SYSTEM_TEAMPROJECT":                 "/sa",
+				"BUILD_BUILDID":                      "123456789",
+				"BUILD_SOURCEVERSION":                revisionExpected,
+				"BUILD_SOURCEBRANCH":                 "refs/heads/" + branchExpected,
+				"BUILD_REPOSITORY_URI":               "https://dev.azure.com/jetbrains/sa/entrypoint.git",
+			},
+			qodanaEnvExpected:       fmt.Sprintf("azure-pipelines:%s", core.Version),
+			qodanaJobUrlExpected:    "https://dev.azure.com/jetbrains/sa/_build/results?buildId=123456789",
+			qodanaRemoteUrlExpected: "https://dev.azure.com/jetbrains/sa/entrypoint.git",
+		},
+	} {
+		t.Run(tc.ci, func(t *testing.T) {
+			opts := &core.QodanaOptions{}
+			for k, v := range tc.variables {
+				err := os.Setenv(k, v)
+				if err != nil {
+					t.Fatal(err)
+				}
+				opts.Setenv(k, v)
+			}
+
+			core.ExtractQodanaEnvironment(opts)
+			currentQodanaEnv := opts.Getenv(core.QodanaEnv)
+			if currentQodanaEnv != tc.qodanaEnvExpected {
+				t.Errorf("Expected %s, got %s", tc.qodanaEnvExpected, currentQodanaEnv)
+			}
+			if !strings.HasPrefix(currentQodanaEnv, "cli:") {
+				if opts.Getenv(core.QodanaJobUrl) != tc.qodanaJobUrlExpected {
+					t.Errorf("Expected %s, got %s", tc.qodanaJobUrlExpected, opts.Getenv(core.QodanaJobUrl))
+				}
+				if opts.Getenv(core.QodanaRemoteUrl) != tc.qodanaRemoteUrlExpected {
+					t.Errorf("Expected %s, got %s", tc.qodanaRemoteUrlExpected, opts.Getenv(core.QodanaRemoteUrl))
+				}
+				if opts.Getenv(core.QodanaRevision) != revisionExpected {
+					t.Errorf("Expected %s, got %s", revisionExpected, opts.Getenv(core.QodanaRevision))
+				}
+				if opts.Getenv(core.QodanaBranch) != branchExpected {
+					t.Errorf("Expected %s, got %s", branchExpected, opts.Getenv(core.QodanaBranch))
+				}
+			}
+			for _, k := range []string{core.QodanaJobUrl, core.QodanaEnv, core.QodanaRemoteUrl, core.QodanaRevision, core.QodanaBranch} {
+				err := os.Unsetenv(k)
+				if err != nil {
+					t.Fatal(err)
+				}
+			}
+			for k := range tc.variables {
+				err := os.Unsetenv(k)
+				if err != nil {
+					t.Fatal(err)
+				}
+			}
+		})
+	}
+}
+
 func TestAllCommands(t *testing.T) {
 	linter := "registry.jetbrains.team/p/sa/containers/qodana-python:latest"
 
@@ -252,10 +406,6 @@ func TestAllCommands(t *testing.T) {
 		if _, err := exec.LookPath("docker"); err != nil || runtime.GOOS != "linux" {
 			t.Skip(err)
 		}
-	} else {
-		_ = os.Setenv("GITHUB_SERVER_URL", "https://github.com")
-		_ = os.Setenv("GITHUB_REPOSITORY", "JetBrains/qodana-cli")
-		_ = os.Setenv("GITHUB_RUN_ID", "1")
 	}
 	//_ = os.Setenv(qodanaCliContainerKeep, "true")
 	//_ = os.Setenv(qodanaCliContainerName, "qodana-cli-test-new1")
@@ -334,16 +484,5 @@ func TestAllCommands(t *testing.T) {
 	err = os.RemoveAll(projectPath)
 	if err != nil {
 		t.Fatal(err)
-	}
-}
-
-func TestDirLanguagesExcluded(t *testing.T) {
-	expected := []string{"Go", "Shell"}
-	actual, err := core.RecognizeDirLanguages("../")
-	if err != nil {
-		return
-	}
-	if !reflect.DeepEqual(expected, actual) {
-		t.Fatalf("expected \"%s\" got \"%s\"", expected, actual)
 	}
 }
