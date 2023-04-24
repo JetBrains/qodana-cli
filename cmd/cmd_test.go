@@ -260,7 +260,16 @@ func Test_ExtractEnvironmentVariables(t *testing.T) {
 	branchExpected := "main"
 
 	if isGitHubAction() {
-		t.Skip("Not running on GitHub Actions")
+		variables := []string{
+			"GITHUB_SERVER_URL",
+			"GITHUB_REPOSITORY",
+			"GITHUB_RUN_ID",
+			"GITHUB_HEAD_REF",
+			"GITHUB_REF",
+		}
+		for _, v := range variables {
+			_ = os.Unsetenv(v)
+		}
 	}
 
 	for _, tc := range []struct {
