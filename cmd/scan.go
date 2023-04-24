@@ -69,7 +69,7 @@ But you can always override qodana.yaml options with the following command-line 
 			if options.ShowReport {
 				core.ShowReport(reportUrl, filepath.Join(options.ResultsDir, "report"), options.Port)
 			} else if core.IsInteractive() {
-				if core.AskUserConfirm("Do you want to open the report") {
+				if core.AskUserConfirm("Do you want to open the latest report") {
 					core.ShowReport(reportUrl, filepath.Join(options.ResultsDir, "report"), options.Port)
 				} else {
 					core.WarningMessage(
@@ -107,7 +107,8 @@ But you can always override qodana.yaml options with the following command-line 
 	flags.StringVarP(&options.AnalysisId, "analysis-id", "a", "", "Unique report identifier (GUID) to be used by Qodana Cloud")
 	flags.StringVarP(&options.Baseline, "baseline", "b", "", "Provide the path to an existing SARIF report to be used in the baseline state calculation")
 	flags.BoolVar(&options.BaselineIncludeAbsent, "baseline-include-absent", false, "Include in the output report the results from the baseline run that are absent in the current run")
-	flags.StringVar(&options.Commit, "commit", "", "Base changes commit to reset to, useful with --script local-changes: analysis will be run only on changed files since commit X, 'reset' will be cancelled once the analysis is finished if the commit prefix does not contain CI prefix")
+	flags.BoolVar(&options.FullHistory, "full-history", false, "Go through the full commit history and run the analysis on each commit. If combined with `--commit`, analysis will be started from the given commit. Could take a long time.")
+	flags.StringVar(&options.Commit, "commit", "", "Base changes commit to reset to, resets git and runs linter with `--script local-changes`: analysis will be run only on changed files since the given commit. If combined with `--full-history`, full history analysis will be started from the given commit.")
 	flags.StringVar(&options.FailThreshold, "fail-threshold", "", "Set the number of problems that will serve as a quality gate. If this number is reached, the inspection run is terminated with a non-zero exit code")
 	flags.BoolVar(&options.DisableSanity, "disable-sanity", false, "Skip running the inspections configured by the sanity profile")
 	flags.StringVarP(&options.SourceDirectory, "source-directory", "d", "", "Directory inside the project-dir directory must be inspected. If not specified, the whole project is inspected")
