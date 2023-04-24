@@ -54,6 +54,7 @@ type QodanaOptions struct {
 	ClearCache            bool
 	YamlName              string
 	GitReset              bool
+	FullHistory           bool
 }
 
 // Setenv sets the Qodana container environment variables if such variable was not set before.
@@ -76,6 +77,16 @@ func (o *QodanaOptions) Getenv(key string) string {
 		}
 	}
 	return ""
+}
+
+// Unsetenv unsets the Qodana container environment variables.
+func (o *QodanaOptions) Unsetenv(key string) {
+	for i, e := range o.Env {
+		if strings.HasPrefix(e, key) {
+			o.Env = append(o.Env[:i], o.Env[i+1:]...)
+			return
+		}
+	}
 }
 
 // Version returns the version of the Qodana CLI, set during the GoReleaser build

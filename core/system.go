@@ -47,14 +47,7 @@ var (
 	// DisableCheckUpdates flag to disable checking for updates
 	DisableCheckUpdates = false
 
-	scanStages = []string{
-		"Preparing Qodana Docker images",
-		"Starting the analysis engine",
-		"Opening the project",
-		"Configuring the project",
-		"Analyzing the project",
-		"Preparing the report",
-	}
+	scanStages          []string
 	notSupportedLinters = []string{
 		"jetbrains/qodana-clone-finder",
 	}
@@ -330,15 +323,75 @@ func AskUserConfirm(what string) bool {
 
 // RunLinter runs the linter with the given options.
 func RunLinter(ctx context.Context, options *QodanaOptions) int {
-	options.GitReset = false
-	if options.Commit != "" && isGitInstalled() {
+	var exitCode int
+
+	if options.FullHistory && isGitInstalled() {
+		remoteUrl := gitRemoteUrl(options.ProjectDir)
+		options.Setenv(QodanaRemoteUrl, remoteUrl)
+		branch := gitBranch(options.ProjectDir)
+		options.Setenv(QodanaBranch, branch)
+
+		err := gitClean(options.ProjectDir)
+		if err != nil {
+			log.Fatal(err)
+		}
+		revisions, err := gitRevisions(options.ProjectDir)
+		if err != nil {
+			log.Fatal(err)
+		}
+		allCommits := len(revisions)
+		counter := 0
+		if options.Commit != "" {
+			for i, revision := range revisions {
+				counter++
+				if revision == options.Commit {
+					revisions = revisions[i:]
+					break
+				}
+			}
+		}
+
+		for _, revision := range revisions {
+			counter++
+			options.Setenv(QodanaRevision, revision)
+			WarningMessage("[%d/%d] Running analysis for revision %s", counter+1, allCommits, revision)
+			err = gitCheckout(options.ProjectDir, revision)
+			if err != nil {
+				log.Fatal(err)
+			}
+			EmptyMessage()
+
+			exitCode = runQodanaDocker(ctx, options)
+			options.SkipPull = true
+			options.Unsetenv(QodanaRevision)
+		}
+		err = gitCheckout(options.ProjectDir, branch)
+		if err != nil {
+			log.Fatal(err)
+		}
+	} else if options.Commit != "" && isGitInstalled() {
+		options.GitReset = false
 		err := gitReset(options.ProjectDir, options.Commit)
 		if err != nil {
 			WarningMessage("Could not reset git repository, no --commit option will be applied: %s", err)
 		} else {
 			options.GitReset = true
 		}
+
+		exitCode = runQodanaDocker(ctx, options)
+
+		if options.GitReset && !strings.HasPrefix(options.Commit, "CI") {
+			_ = gitResetBack(options.ProjectDir)
+		}
+	} else {
+		exitCode = runQodanaDocker(ctx, options)
 	}
+
+	return exitCode
+}
+
+func runQodanaDocker(ctx context.Context, options *QodanaOptions) int {
+	resetScanStages()
 	docker := getContainerClient()
 	for i, stage := range scanStages {
 		scanStages[i] = PrimaryBold("[%d/%d] ", i+1, len(scanStages)+1) + primary(stage)
@@ -356,9 +409,6 @@ func RunLinter(ctx context.Context, options *QodanaOptions) int {
 	runContainer(ctx, docker, dockerConfig)
 	go followLinter(docker, dockerConfig.Name, progress, options.ResultsDir)
 	exitCode := getContainerExitCode(ctx, docker, dockerConfig.Name)
-	if options.GitReset && !strings.HasPrefix(options.Commit, "CI") {
-		_ = gitResetBack(options.ProjectDir)
-	}
 	if progress != nil {
 		_ = progress.Stop()
 	}
@@ -439,5 +489,16 @@ func saveReportUrl(resultsDir, reportUrl string) {
 	err := os.WriteFile(resultsDir, []byte(reportUrl), 0o644)
 	if err != nil {
 		log.Errorf("Could not save the report URL to the results directory: %s", err)
+	}
+}
+
+func resetScanStages() {
+	scanStages = []string{
+		"Preparing Qodana Docker images",
+		"Starting the analysis engine",
+		"Opening the project",
+		"Configuring the project",
+		"Analyzing the project",
+		"Preparing the report",
 	}
 }
