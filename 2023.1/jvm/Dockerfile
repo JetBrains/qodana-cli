@@ -1,4 +1,7 @@
-FROM debian:bullseye-slim
+ARG BASE_TAG="bullseye-slim"
+FROM debian:$BASE_TAG
+
+ARG TARGETPLATFORM
 
 ENV HOME="/root" LC_ALL="en_US.UTF-8" QODANA_DIST="/opt/idea" QODANA_DATA="/data"
 ENV JAVA_HOME="$QODANA_DIST/jbr" QODANA_DOCKER="true" QODANA_CONF="$HOME/.config/idea"
@@ -23,7 +26,7 @@ RUN mkdir -m 777 -p /opt $QODANA_DATA $QODANA_CONF && apt-get update && \
 ENV GRADLE_USER_HOME="/data/cache/gradle"
 
 ARG QD_BUILD="QDJVM-231.8246.47"
-ARG QD_RELEASE="231"
+ARG QD_RELEASE="2023.1"
 RUN set -ex && \
     dpkgArch="$(dpkg --print-architecture)" && \
     case "$dpkgArch" in \

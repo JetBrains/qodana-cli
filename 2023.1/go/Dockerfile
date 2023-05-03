@@ -1,4 +1,7 @@
-FROM golang:1.19-bullseye
+ARG BASE_TAG="1.19-bullseye"
+FROM golang:$BASE_TAG
+
+ARG TARGETPLATFORM
 
 ENV HOME="/root" LC_ALL="en_US.UTF-8" QODANA_DIST="/opt/idea" QODANA_DATA="/data"
 ENV JAVA_HOME="$QODANA_DIST/jbr" QODANA_DOCKER="true" QODANA_CONF="$HOME/.config/idea"
@@ -21,7 +24,7 @@ RUN mkdir -m 777 -p /opt $QODANA_DATA $QODANA_CONF && apt-get update && \
     rm -rf /var/cache/apt /var/lib/apt/ /tmp/*
 
 ARG QD_BUILD="QDGO-231.8246.36"
-ARG QD_RELEASE="231"
+ARG QD_RELEASE="2023.1"
 RUN set -ex && \
     dpkgArch="$(dpkg --print-architecture)" && \
     case "$dpkgArch" in \

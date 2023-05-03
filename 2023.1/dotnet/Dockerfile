@@ -1,4 +1,5 @@
-FROM mcr.microsoft.com/dotnet/sdk:6.0
+ARG BASE_TAG="6.0-bullseye-slim"
+FROM mcr.microsoft.com/dotnet/sdk:$BASE_TAG
 
 ARG TARGETPLATFORM
 
@@ -39,7 +40,7 @@ RUN mkdir -m 777 -p $QODANA_DATA $QODANA_CONF $DOTNET_ROOT $RIDER_UNREAL_ROOT &&
 
 
 ARG QD_BUILD="QDNET-231.8246.1.53"
-ARG QD_RELEASE="231"
+ARG QD_RELEASE="2023.1"
 RUN set -ex && \
     dpkgArch="$(dpkg --print-architecture)" && \
     case "$dpkgArch" in \

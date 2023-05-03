@@ -1,4 +1,5 @@
-FROM debian:bullseye-slim
+ARG BASE_TAG="bullseye-slim"
+FROM debian:$BASE_TAG
 
 RUN dpkgArch="$(dpkg --print-architecture)" && if [ "$dpkgArch" != "amd64" ];  \
       then echo "Unsupported architecture by Android SDK:  \
@@ -28,7 +29,7 @@ RUN mkdir -m 777 -p /opt $QODANA_DATA $QODANA_CONF && apt-get update && \
 ENV GRADLE_USER_HOME="/data/cache/gradle"
 
 ARG QD_BUILD="QDAND-231.8246.34"
-ARG QD_RELEASE="231"
+ARG QD_RELEASE="2023.1"
 RUN set -ex && \
     dpkgArch="$(dpkg --print-architecture)" && \
     case "$dpkgArch" in \

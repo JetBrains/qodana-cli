@@ -1,4 +1,7 @@
-FROM php:8.1-cli-bullseye
+ARG BASE_TAG="8.1-cli-bullseye"
+FROM php:$BASE_TAG
+
+ARG TARGETPLATFORM
 
 ENV HOME="/root" LC_ALL="en_US.UTF-8" QODANA_DIST="/opt/idea" QODANA_DATA="/data"
 ENV JAVA_HOME="$QODANA_DIST/jbr" QODANA_DOCKER="true" QODANA_CONF="$HOME/.config/idea"
@@ -24,7 +27,7 @@ RUN mkdir -m 777 -p /opt $QODANA_DATA $QODANA_CONF && apt-get update && \
 COPY --from=composer:2.5 /usr/bin/composer /usr/bin/composer
 
 ARG QD_BUILD="QDPHP-231.8243.38"
-ARG QD_RELEASE="231"
+ARG QD_RELEASE="2023.1"
 RUN set -ex && \
     dpkgArch="$(dpkg --print-architecture)" && \
     case "$dpkgArch" in \
