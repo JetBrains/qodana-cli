@@ -28,7 +28,7 @@ RUN mkdir -m 777 -p /opt $QODANA_DATA $QODANA_CONF && apt-get update && \
 
 ENV GRADLE_USER_HOME="/data/cache/gradle"
 
-ARG QD_BUILD="QDAND-231.8246.34"
+ARG QD_BUILD="QDANDС-231.8246.34"
 ARG QD_RELEASE="2023.1"
 RUN set -ex && \
     dpkgArch="$(dpkg --print-architecture)" && \
