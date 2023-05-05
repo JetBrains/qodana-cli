@@ -71,6 +71,24 @@ type QodanaYaml struct {
 
 	// DotNet is the configuration for .NET solutions and projects (either a solution name or a project name).
 	DotNet DotNet `yaml:"dot-net,omitempty"`
+
+	// Php is the configuration for PHP projects.
+	Php Php `yaml:"php,omitempty"`
+
+	// ProjectJdk is the configuration for the project JDK.
+	ProjectJdk string `yaml:"projectJDK,omitempty"`
+
+	// DisableSanityInspections property to disable sanity inspections.
+	DisableSanityInspections string `yaml:"disableSanityInspections,omitempty"`
+
+	// FixesStrategy property to set fixes strategy. Can be NONE (default), APPLY, CLEANUP;.
+	FixesStrategy string `yaml:"fixesStrategy,omitempty"`
+
+	// RunPromoInspections property to run promo inspections.
+	RunPromoInspections string `yaml:"runPromoInspections,omitempty"`
+
+	// IncludeAbsent property to include absent problems from baseline.
+	IncludeAbsent string `yaml:"includeAbsent,omitempty"`
 }
 
 // Profile A profile is some template set of checks to run with Qodana analysis.
@@ -171,6 +189,12 @@ type DotNet struct {
 
 	// Project is the name of a .NET project inside the Qodana project.
 	Project string `yaml:"project,omitempty"`
+}
+
+//goland:noinspection GoUnnecessarilyExportedIdentifiers
+type Php struct {
+	// Version is the PHP version to use for the analysis.
+	Version string `yaml:"version,omitempty"`
 }
 
 // FindQodanaYaml checks whether qodana.yaml exists or not
