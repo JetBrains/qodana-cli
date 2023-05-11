@@ -19,6 +19,7 @@ package cmd
 import (
 	"fmt"
 	"path/filepath"
+	"strings"
 
 	"github.com/JetBrains/qodana-cli/core"
 	log "github.com/sirupsen/logrus"
@@ -49,10 +50,10 @@ func newInitCommand() *cobra.Command {
 				if err != nil {
 					log.Fatal(err)
 				}
-				if core.IsInteractive() && !core.AskUserConfirm(fmt.Sprintf("Do you want to set up Qodana in the following project: %s", absPath)) {
+				if core.IsInteractive() && !core.AskUserConfirm(fmt.Sprintf("Do you want to set up Qodana in %s", absPath)) {
 					return
 				}
-				core.GetLinter(options.ProjectDir, options.YamlName)
+				qodanaYaml.Linter = core.GetLinter(options.ProjectDir, options.YamlName)
 			} else {
 				latestLinter := core.GetLatestVersion(qodanaYaml.Linter)
 				if latestLinter != qodanaYaml.Linter {
@@ -61,6 +62,7 @@ func newInitCommand() *cobra.Command {
 						fmt.Sprintf("Do you want to update to %s", latestLinter),
 					) {
 						core.SetQodanaLinter(options.ProjectDir, latestLinter, options.YamlName)
+						qodanaYaml.Linter = latestLinter
 					}
 				} else {
 					core.EmptyMessage()
@@ -71,6 +73,12 @@ func newInitCommand() *cobra.Command {
 					)
 				}
 			}
+			if core.IsInteractive() && strings.Contains(qodanaYaml.Linter, "dotnet") && (qodanaYaml.DotNet.IsEmpty() || options.Force) {
+				if core.GetDotNetConfig(options.ProjectDir, options.YamlName) {
+					core.SuccessMessage("The .NET configuration was successfully set")
+				}
+			}
+			core.PrintFile(filepath.Join(options.ProjectDir, options.YamlName))
 		},
 	}
 	flags := cmd.Flags()

@@ -70,7 +70,7 @@ type QodanaYaml struct {
 	Plugins []Plugin `yaml:"plugins,omitempty"`
 
 	// DotNet is the configuration for .NET solutions and projects (either a solution name or a project name).
-	DotNet DotNet `yaml:"dot-net,omitempty"`
+	DotNet DotNet `yaml:"dotnet,omitempty"`
 
 	// Php is the configuration for PHP projects.
 	Php Php `yaml:"php,omitempty"`
@@ -89,6 +89,22 @@ type QodanaYaml struct {
 
 	// IncludeAbsent property to include absent problems from baseline.
 	IncludeAbsent string `yaml:"includeAbsent,omitempty"`
+}
+
+// writeConfig writes QodanaYaml to the given path.
+func (q *QodanaYaml) writeConfig(path string) error {
+	var b bytes.Buffer
+	yamlEncoder := yaml.NewEncoder(&b)
+	yamlEncoder.SetIndent(2)
+	err := yamlEncoder.Encode(&q)
+	if err != nil {
+		return err
+	}
+	err = os.WriteFile(path, b.Bytes(), 0o600)
+	if err != nil {
+		log.Fatalf("Marshal: %v", err)
+	}
+	return nil
 }
 
 // Profile A profile is some template set of checks to run with Qodana analysis.
@@ -191,6 +207,11 @@ type DotNet struct {
 	Project string `yaml:"project,omitempty"`
 }
 
+// IsEmpty checks whether the .NET configuration is empty or not.
+func (d DotNet) IsEmpty() bool {
+	return d.Solution == "" && d.Project == ""
+}
+
 //goland:noinspection GoUnnecessarilyExportedIdentifiers
 type Php struct {
 	// Version is the PHP version to use for the analysis.
@@ -259,7 +280,7 @@ func (q *QodanaYaml) sort() *QodanaYaml {
 	return q
 }
 
-// SetQodanaLinter writes the qodana.yaml file to the given path.
+// SetQodanaLinter adds the linter to the qodana.yaml file.
 func SetQodanaLinter(path string, linter string, filename string) {
 	q := LoadQodanaYaml(path, filename)
 	if q.Version == "" {
@@ -267,15 +288,19 @@ func SetQodanaLinter(path string, linter string, filename string) {
 	}
 	q.sort()
 	q.Linter = linter
-	var b bytes.Buffer
-	yamlEncoder := yaml.NewEncoder(&b)
-	yamlEncoder.SetIndent(2)
-	err := yamlEncoder.Encode(&q)
+	err := q.writeConfig(filepath.Join(path, filename))
 	if err != nil {
-		return
+		log.Fatalf("writeConfig: %v", err)
 	}
-	err = os.WriteFile(filepath.Join(path, filename), b.Bytes(), 0o600)
+}
+
+// setQodanaDotNet adds the .NET configuration to the qodana.yaml file.
+func setQodanaDotNet(path string, dotNet *DotNet, filename string) bool {
+	q := LoadQodanaYaml(path, filename)
+	q.DotNet = *dotNet
+	err := q.writeConfig(filepath.Join(path, filename))
 	if err != nil {
-		log.Fatalf("Marshal: %v", err)
+		log.Fatalf("writeConfig: %v", err)
 	}
+	return true
 }

@@ -105,3 +105,24 @@ func ShowReport(cloudUrl string, path string, port int) {
 		"",
 	)
 }
+
+func GetDotNetConfig(projectDir string, yamlName string) bool {
+	possibleOptions := findFiles(projectDir, []string{".sln", ".csproj", ".vbproj", ".fsproj"})
+	if len(possibleOptions) <= 1 {
+		return false
+	}
+	WarningMessage("Detected multiple .NET solution/project files, select the preferred one \n")
+	choice, err := qodanaInteractiveSelect.WithOptions(possibleOptions).WithDefaultText("Select solution/project").Show()
+	if err != nil {
+		ErrorMessage("%s", err)
+		return false
+	}
+	dotnet := &DotNet{}
+	if strings.HasSuffix(choice, ".sln") {
+		// get only filename, without parent directories and extension
+		dotnet.Solution = getFileName(choice)
+	} else {
+		dotnet.Project = getFileName(choice)
+	}
+	return setQodanaDotNet(projectDir, dotnet, yamlName)
+}
