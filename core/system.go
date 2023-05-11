@@ -201,8 +201,8 @@ func getId(project string) string {
 	return hex.EncodeToString(sha256sum[:])[0:8]
 }
 
-// GetQodanaSystemDir returns path to <userCacheDir>/JetBrains/Qodana/.
-func GetQodanaSystemDir() string {
+// getQodanaSystemDir returns path to <userCacheDir>/JetBrains/Qodana/.
+func getQodanaSystemDir() string {
 	userCacheDir, _ := os.UserCacheDir()
 	return filepath.Join(
 		userCacheDir,
@@ -214,14 +214,14 @@ func GetQodanaSystemDir() string {
 // GetLinterSystemDir returns path to <userCacheDir>/JetBrains/<linter>/<project-id>/.
 func GetLinterSystemDir(project string, linter string) string {
 	return filepath.Join(
-		GetQodanaSystemDir(),
+		getQodanaSystemDir(),
 		fmt.Sprintf("%s-%s", getId(linter), getId(project)),
 	)
 }
 
 // LookUpLinterSystemDir returns path to the latest modified directory from <userCacheDir>/JetBrains/Qodana
 func LookUpLinterSystemDir() string {
-	parent := GetQodanaSystemDir()
+	parent := getQodanaSystemDir()
 
 	entries, err := os.ReadDir(parent)
 	if err != nil {
@@ -327,9 +327,9 @@ func RunLinter(ctx context.Context, options *QodanaOptions) int {
 
 	if options.FullHistory && isGitInstalled() {
 		remoteUrl := gitRemoteUrl(options.ProjectDir)
-		options.Setenv(QodanaRemoteUrl, remoteUrl)
+		options.setenv(qodanaRemoteUrl, remoteUrl)
 		branch := gitBranch(options.ProjectDir)
-		options.Setenv(QodanaBranch, branch)
+		options.setenv(qodanaBranch, branch)
 
 		err := gitClean(options.ProjectDir)
 		if err != nil {
@@ -350,7 +350,7 @@ func RunLinter(ctx context.Context, options *QodanaOptions) int {
 
 		for _, revision := range revisions {
 			counter++
-			options.Setenv(QodanaRevision, revision)
+			options.setenv(qodanaRevision, revision)
 			WarningMessage("[%d/%d] Running analysis for revision %s", counter+1, allCommits, revision)
 			err = gitCheckout(options.ProjectDir, revision)
 			if err != nil {
@@ -360,7 +360,7 @@ func RunLinter(ctx context.Context, options *QodanaOptions) int {
 
 			exitCode = runQodanaDocker(ctx, options)
 			options.SkipPull = true
-			options.Unsetenv(QodanaRevision)
+			options.unsetenv(qodanaRevision)
 		}
 		err = gitCheckout(options.ProjectDir, branch)
 		if err != nil {
@@ -466,7 +466,7 @@ func followLinter(client *client.Client, containerName string, progress *pterm.S
 
 // GetReportUrl get Qodana Cloud report URL from the given qodana.sarif.json
 func GetReportUrl(resultsDir string) string {
-	filePath := filepath.Join(resultsDir, QodanaReportUrlFile)
+	filePath := filepath.Join(resultsDir, qodanaReportUrlFile)
 	if _, err := os.Stat(filePath); err == nil {
 		url, err := os.ReadFile(filePath)
 		if err != nil {

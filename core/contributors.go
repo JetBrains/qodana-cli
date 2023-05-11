@@ -35,14 +35,14 @@ var (
 	)
 )
 
-// Author struct represents a git commit author.
-type Author struct {
+// author struct represents a git commit author.
+type author struct {
 	Email    string
 	Username string
 }
 
 // getId() returns the author's email if it is not empty, otherwise it returns the username.
-func (a *Author) getId() string {
+func (a *author) getId() string {
 	if a.Email != "" {
 		return a.Email
 	}
@@ -50,39 +50,39 @@ func (a *Author) getId() string {
 }
 
 // isBot returns true if the author is a bot.
-func (a *Author) isBot() bool {
+func (a *author) isBot() bool {
 	return strings.HasSuffix(a.Email, gitHubBotSuffix) || contains(commonGitBots, a.Email)
 }
 
-// Commit struct represents a git commit.
-type Commit struct {
-	Author *Author
+// commit struct represents a git commit.
+type commit struct {
+	Author *author
 	Date   string
 	Sha256 string
 }
 
-// Contributor struct represents a git repo contributor: pair of Author and number of contributions.
-type Contributor struct {
-	Author        *Author
+// contributor struct represents a git repo contributor: pair of author and number of contributions.
+type contributor struct {
+	Author        *author
 	Contributions int
 }
 
 // getCommits returns the list of commits for future processing.
-func getCommits(repoDir string, days int, excludeBots bool) []Commit {
-	var commits []Commit
+func getCommits(repoDir string, days int, excludeBots bool) []commit {
+	var commits []commit
 	for _, line := range gitLog(repoDir, gitFormat, days, true) {
 		fields := strings.Split(line, gitFormatSep)
 		if len(fields) != 4 {
 			continue
 		}
-		author := Author{
+		author := author{
 			Email:    fields[0],
 			Username: fields[1],
 		}
 		if excludeBots && author.isBot() {
 			continue
 		}
-		commits = append(commits, Commit{
+		commits = append(commits, commit{
 			Author: &author,
 			Date:   fields[2],
 			Sha256: fields[3],
@@ -92,21 +92,21 @@ func getCommits(repoDir string, days int, excludeBots bool) []Commit {
 }
 
 // GetContributors returns the list of contributors of the git repository.
-func GetContributors(repoDir string, days int, excludeBots bool) []Contributor {
-	contributorMap := make(map[string]*Contributor)
+func GetContributors(repoDir string, days int, excludeBots bool) []contributor {
+	contributorMap := make(map[string]*contributor)
 	for _, commit := range getCommits(repoDir, days, excludeBots) {
 		authorId := commit.Author.getId()
-		if contributor, ok := contributorMap[authorId]; ok {
-			contributor.Contributions++
+		if c, ok := contributorMap[authorId]; ok {
+			c.Contributions++
 		} else {
-			contributorMap[authorId] = &Contributor{
+			contributorMap[authorId] = &contributor{
 				Author:        commit.Author,
 				Contributions: 1,
 			}
 		}
 	}
 
-	contributors := make([]Contributor, 0, len(contributorMap))
+	contributors := make([]contributor, 0, len(contributorMap))
 	for _, contributor := range contributorMap {
 		contributors = append(contributors, *contributor)
 	}

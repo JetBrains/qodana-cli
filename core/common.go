@@ -24,73 +24,20 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-// QodanaOptions is a struct that contains all the options to run a Qodana linter.
-type QodanaOptions struct {
-	ResultsDir            string
-	CacheDir              string
-	ProjectDir            string
-	Linter                string
-	SourceDirectory       string
-	DisableSanity         bool
-	ProfileName           string
-	ProfilePath           string
-	RunPromo              string
-	StubProfile           string
-	Baseline              string
-	BaselineIncludeAbsent bool
-	SaveReport            bool
-	ShowReport            bool
-	Port                  int
-	Property              []string
-	Script                string
-	FailThreshold         string
-	Commit                string
-	AnalysisId            string
-	Env                   []string
-	Volumes               []string
-	User                  string
-	PrintProblems         bool
-	SkipPull              bool
-	ClearCache            bool
-	YamlName              string
-	GitReset              bool
-	FullHistory           bool
-}
-
-// Setenv sets the Qodana container environment variables if such variable was not set before.
-func (o *QodanaOptions) Setenv(key string, value string) {
-	for _, e := range o.Env {
-		if strings.HasPrefix(e, key) {
-			return
-		}
-	}
-	if value != "" {
-		o.Env = append(o.Env, fmt.Sprintf("%s=%s", key, value))
-	}
-}
-
-// Getenv returns the Qodana container environment variables.
-func (o *QodanaOptions) Getenv(key string) string {
-	for _, e := range o.Env {
-		if strings.HasPrefix(e, key) {
-			return strings.TrimPrefix(e, key+"=")
-		}
-	}
-	return ""
-}
-
-// Unsetenv unsets the Qodana container environment variables.
-func (o *QodanaOptions) Unsetenv(key string) {
-	for i, e := range o.Env {
-		if strings.HasPrefix(e, key) {
-			o.Env = append(o.Env[:i], o.Env[i+1:]...)
-			return
-		}
-	}
-}
-
 // Version returns the version of the Qodana CLI, set during the GoReleaser build
 var Version = "dev"
+
+//goland:noinspection GoUnnecessarilyExportedIdentifiers
+var (
+	QDJVMC = "jetbrains/qodana-jvm-community:" + version
+	QDJVM  = "jetbrains/qodana-jvm:" + version + eap
+	QDAND  = "jetbrains/qodana-jvm-android:" + version + eap
+	QDPHP  = "jetbrains/qodana-php:" + version + eap
+	QDPY   = "jetbrains/qodana-python:" + version + eap
+	QDJS   = "jetbrains/qodana-js:" + version + eap
+	QDGO   = "jetbrains/qodana-go:" + version + eap
+	QDNET  = "jetbrains/qodana-dotnet:" + version + eap
+)
 
 // GetLinter gets linter for the given path and saves configName
 func GetLinter(path string, yamlName string) string {
@@ -99,7 +46,7 @@ func GetLinter(path string, yamlName string) string {
 	printProcess(func() {
 		languages := readIdeaDir(path)
 		if len(languages) == 0 {
-			languages, _ = RecognizeDirLanguages(path)
+			languages, _ = recognizeDirLanguages(path)
 		}
 		if len(languages) == 0 {
 			WarningMessage("No technologies detected (no source code files?)\n")

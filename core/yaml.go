@@ -253,12 +253,13 @@ func (q *QodanaYaml) sort() *QodanaYaml {
 	sort.Slice(q.CustomDependencies, func(i, j int) bool {
 		return lower(q.CustomDependencies[i].Name) < lower(q.CustomDependencies[j].Name)
 	})
+	sort.Slice(q.Plugins, func(i, j int) bool {
+		return lower(q.Plugins[i].Id) < lower(q.Plugins[j].Id)
+	})
 	return q
 }
 
 // SetQodanaLinter writes the qodana.yaml file to the given path.
-//
-//goland:noinspection GoUnnecessarilyExportedIdentifiers
 func SetQodanaLinter(path string, linter string, filename string) {
 	q := LoadQodanaYaml(path, filename)
 	if q.Version == "" {
