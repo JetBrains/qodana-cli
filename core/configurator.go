@@ -147,13 +147,22 @@ func recognizeDirLanguages(projectPath string) ([]string, error) {
 	if err != nil {
 		return nil, err
 	}
-	var languages []string
-	for l := range out {
-		languages = Append(languages, l)
+	type languageCount struct {
+		Language string
+		Count    int
 	}
-	sort.Slice(languages, func(i, j int) bool {
-		return languages[i] < languages[j]
+	langCounts := make([]languageCount, 0, len(out))
+	for language, count := range out {
+		langCounts = append(langCounts, languageCount{Language: language, Count: count})
+	}
+	sort.Slice(langCounts, func(i, j int) bool {
+		return langCounts[i].Count > langCounts[j].Count
 	})
+	languages := make([]string, 0, len(langCounts))
+	for _, langCount := range langCounts {
+		languages = append(languages, langCount.Language)
+	}
+
 	return languages, nil
 }
 
@@ -214,21 +223,8 @@ func readIdeaDir(project string) []string {
 			if strings.Contains(text, "PYTHON_MODULE") {
 				languages = Append(languages, "Python")
 			}
-			if strings.Contains(text, "WEB_MODULE") {
-				workspaceLocation := filepath.Join(project, ".idea", "workspace.xml")
-				if _, err := os.Stat(workspaceLocation); err == nil {
-					xml, err := os.ReadFile(workspaceLocation)
-					if err != nil {
-						log.Fatal(err)
-					}
-					workspace := string(xml)
-					if strings.Contains(workspace, "PhpWorkspaceProjectConfiguration") {
-						languages = Append(languages, "PHP")
-					}
-					if strings.Contains(workspace, "node.js.detected.package.eslint") {
-						languages = Append(languages, "JavaScript")
-					}
-				}
+			if strings.Contains(text, "Go") {
+				languages = Append(languages, "Go")
 			}
 		}
 	}
