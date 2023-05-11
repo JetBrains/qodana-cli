@@ -335,10 +335,7 @@ func RunLinter(ctx context.Context, options *QodanaOptions) int {
 		if err != nil {
 			log.Fatal(err)
 		}
-		revisions, err := gitRevisions(options.ProjectDir)
-		if err != nil {
-			log.Fatal(err)
-		}
+		revisions := gitRevisions(options.ProjectDir)
 		allCommits := len(revisions)
 		counter := 0
 		if options.Commit != "" {

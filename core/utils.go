@@ -36,6 +36,14 @@ func contains(s []string, str string) bool {
 	return false
 }
 
+// reverse reverses the given string slice.
+func reverse(s []string) []string {
+	for i, j := 0, len(s)-1; i < j; i, j = i+1, j-1 {
+		s[i], s[j] = s[j], s[i]
+	}
+	return s
+}
+
 // Append appends a string to a slice if it's not already there.
 //
 //goland:noinspection GoUnnecessarilyExportedIdentifiers

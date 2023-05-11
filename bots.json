@@ -1,0 +1,9 @@
+{
+  "bots": [
+    "cla-bot@users.noreply.github.com",
+    "codecov-io@users.noreply.github.com",
+    "snyk-bot@snyk.io",
+    "gitlab-bot@gitlab.com",
+    "bot@swc.rs"
+  ]
+}
