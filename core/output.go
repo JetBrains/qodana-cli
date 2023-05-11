@@ -176,43 +176,74 @@ func updateText(spinner *pterm.SpinnerPrinter, message string) {
 	}
 }
 
+// PrintFile prints the given file content with lines like printProblem.
+func PrintFile(file string) {
+	printHeader("", "", file)
+	content, err := os.ReadFile(file)
+	if err != nil {
+		log.Fatalf("failed to read file %s: %s", file, err)
+	}
+	printLines(string(content), 1, 0, true)
+	printFooter("")
+}
+
 // printProblem prints problem with source code or without it.
-func printProblem(
-	ruleId string,
-	level string,
-	message string,
-	path string,
-	line int,
-	column int,
-	contextLine int,
-	context string,
-) {
+func printProblem(ruleId string, level string, message string, path string, line int, column int, contextLine int, context string) {
+	printHeader(level, ruleId, "")
+	printPath(path, line, column)
+	printLines(context, contextLine, line, false)
+	printFooter(message)
+}
+
+func getTerminalWidth() int {
 	width, _ := terminal.Size()
 	if width <= 0 {
 		width = 80
 	}
-	fmt.Printf("\n%s %s\n", PrimaryBold(strings.ToUpper(level)), primary(ruleId))
+	return width
+}
+
+func printHeader(level string, ruleId string, file string) {
+	width := getTerminalWidth()
+	fmt.Printf("%s %s\n", PrimaryBold(strings.ToUpper(level)), primary(ruleId))
 	fmt.Println(strings.Repeat(tableSep, width))
-	if path != "" && line > 0 && column > 0 {
-		fmt.Printf(" %s:%d:%d\n", path, line, column)
-		fmt.Printf("%s%s\n", tableUp, strings.Repeat(tableSep, width-noLineWidth-1))
-	} else {
+	if file != "" {
+		fmt.Printf("%5s  %s %s\n", "", tableSepMid, PrimaryBold(file))
 		fmt.Println(strings.Repeat(tableSep, width))
 	}
-	if contextLine > 0 && context != "" {
-		code := strings.Split(context, "\n")
-		for i := 0; i < len(code); i++ {
-			var printLine string
-			currentLine := contextLine + i
-			if currentLine == line {
-				printLine = errorStyle.Sprint(code[i]) + " ←"
-			} else {
-				printLine = warningStyle.Sprint(code[i])
-			}
-			lineNumber := miscStyle.Sprintf("%5d", currentLine)
-			fmt.Printf("%s  %s %s\n", lineNumber, tableSepMid, printLine)
-		}
-		fmt.Printf("%s%s\n", tableDown, strings.Repeat(tableSep, width-noLineWidth-1))
+}
+
+func printFooter(message string) {
+	fmt.Printf("%s\n", message)
+}
+
+func printPath(path string, line int, column int) {
+	if path != "" && line > 0 && column > 0 {
+		fmt.Printf(" %s:%d:%d\n", path, line, column)
+		fmt.Printf("%s%s\n", tableUp, strings.Repeat(tableSep, getTerminalWidth()-noLineWidth-1))
+	} else {
+		fmt.Println(strings.Repeat(tableSep, getTerminalWidth()))
 	}
-	fmt.Printf("%s\n\n", message)
+}
+
+func printLines(content string, contextLine int, line int, skipHighlight bool) {
+	lines := strings.Split(content, "\n")
+	lineCount := len(lines)
+	if content[len(content)-1] == '\n' {
+		lineCount -= 1 // Remove the last empty line if content ends with a newline
+	}
+	for i := 0; i < lineCount; i++ {
+		var printLine string
+		currentLine := contextLine + i
+		if skipHighlight {
+			printLine = lines[i]
+		} else if currentLine == line {
+			printLine = errorStyle.Sprint(lines[i]) + " ←"
+		} else {
+			printLine = warningStyle.Sprint(lines[i])
+		}
+		lineNumber := miscStyle.Sprintf("%5d", currentLine)
+		fmt.Printf("%s  %s %s\n", lineNumber, tableSepMid, printLine)
+	}
+	fmt.Printf("%s%s\n", tableDown, strings.Repeat(tableSep, getTerminalWidth()-noLineWidth-1))
 }

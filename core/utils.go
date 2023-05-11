@@ -18,7 +18,10 @@ package core
 
 import (
 	"os"
+	"path/filepath"
 	"strings"
+
+	log "github.com/sirupsen/logrus"
 )
 
 // lower a shortcut to strings.ToLower.
@@ -61,6 +64,31 @@ func CheckDirFiles(dir string) bool {
 		return false
 	}
 	return len(files) > 0
+}
+
+// findFiles returns a slice of files with the given extensions from the given root (recursive).
+func findFiles(root string, extensions []string) []string {
+	var files []string
+	err := filepath.Walk(root, func(path string, info os.FileInfo, err error) error {
+		if err != nil {
+			return err
+		}
+		fileExtension := filepath.Ext(path)
+		if contains(extensions, fileExtension) {
+			files = append(files, path)
+		}
+
+		return nil
+	})
+	if err != nil {
+		log.Fatal(err)
+	}
+	return files
+}
+
+// getFileName returns the file name without the extension and base path.
+func getFileName(path string) string {
+	return strings.TrimSuffix(filepath.Base(path), filepath.Ext(path))
 }
 
 // getAzureJobUrl returns the Azure Pipelines job URL.
