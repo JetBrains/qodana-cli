@@ -38,6 +38,11 @@ Lint your code with `golangci-lint`:
 golangci-lint run
 ```
 
+Test your code with coverage:
+```sh
+go test -v ./... -coverprofile cover.out
+```
+
 Dry run goreleaser:
 
 ```sh

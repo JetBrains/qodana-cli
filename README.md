@@ -124,7 +124,7 @@ prepare Qodana configuration file by analyzing the project structure
 and generating a default configuration qodana.yaml file.
 
 ```
-init [flags]
+qodana init [flags]
 ```
 
 #### Options
@@ -150,7 +150,7 @@ But you can always override qodana.yaml options with the following command-line 
 
 
 ```
-scan [flags]
+qodana scan [flags]
 ```
 
 #### Options
@@ -199,7 +199,7 @@ https://www.jetbrains.com/help/qodana/html-report.html
 This command serves the Qodana report locally and opens a browser to it.
 
 ```
-show [flags]
+qodana show [flags]
 ```
 
 #### Options
@@ -222,7 +222,7 @@ View SARIF files in CLI
 Preview all problems found in SARIF files in CLI.
 
 ```
-view [flags]
+qodana view [flags]
 ```
 
 #### Options
@@ -230,6 +230,34 @@ view [flags]
 ```
   -h, --help                help for view
   -f, --sarif-file string   Path to the SARIF file (default "./qodana.sarif.json")
+```
+
+### contributors
+
+A command-line helper for Qodana pricing to calculate active contributors* in the given repository.
+
+#### Synopsis
+
+* An active contributor is anyone who has made a commit to any
+  of the projects you’ve registered in Qodana Cloud within the last 90 days,
+  regardless of when those commits were originally authored. The number of such
+  contributors will be calculated using both the commit author information
+  and the timestamp for when their contribution to the project was pushed.
+
+** Ultimate Plus plan currently has a discount, more information can be found on https://www.jetbrains.com/qodana/buy/
+
+
+```
+qodana contributors [flags]
+```
+
+#### Options
+
+```
+  -d, --days int             Number of days since when to calculate the number of active contributors (default 30)
+  -h, --help                 help for contributors
+      --ignore-bots          Ignore bots (from https://github.com/JetBrains/qodana-cli/blob/main/bots.json) from contributors list (default true)
+  -i, --project-dir string   Root directory of the inspected project (default ".")
 ```
 
 ## Why

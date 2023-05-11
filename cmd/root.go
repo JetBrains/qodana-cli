@@ -100,5 +100,6 @@ func init() {
 		newShowCommand(),
 		newPullCommand(),
 		newViewCommand(),
+		newContributorsCommand(),
 	)
 }
