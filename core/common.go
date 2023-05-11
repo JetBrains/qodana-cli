@@ -90,20 +90,20 @@ func GetLinter(path string, yamlName string) string {
 func ShowReport(cloudUrl string, path string, port int) {
 	var url string
 	if cloudUrl != "" {
-		url = cloudUrl
+		openReport(url, path, port)
 	} else {
-		url = fmt.Sprintf("http://localhost:%d/", port)
+		WarningMessage("Press Ctrl+C to stop serving the report\n")
+		printProcess(
+			func() {
+				if _, err := os.Stat(path); os.IsNotExist(err) {
+					log.Fatal("Qodana report not found. Get a report by running `qodana scan`")
+				}
+				openReport("", path, port)
+			},
+			fmt.Sprintf("Showing Qodana report from %s", fmt.Sprintf("http://localhost:%d/", port)),
+			"",
+		)
 	}
-	printProcess(
-		func() {
-			if _, err := os.Stat(path); os.IsNotExist(err) {
-				log.Fatal("Qodana report not found. Get a report by running `qodana scan`")
-			}
-			openReport(cloudUrl, path, port)
-		},
-		fmt.Sprintf("Showing Qodana report from %s", url),
-		"",
-	)
 }
 
 func GetDotNetConfig(projectDir string, yamlName string) bool {
