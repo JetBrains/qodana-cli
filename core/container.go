@@ -65,12 +65,12 @@ var (
 )
 
 const (
-	QodanaEnv              = "QODANA_ENV"
-	QodanaToken            = "QODANA_TOKEN"
-	QodanaJobUrl           = "QODANA_JOB_URL"
-	QodanaRemoteUrl        = "QODANA_REMOTE_URL"
-	QodanaBranch           = "QODANA_BRANCH"
-	QodanaRevision         = "QODANA_REVISION"
+	qodanaEnv              = "QODANA_ENV"
+	qodanaToken            = "QODANA_TOKEN"
+	qodanaJobUrl           = "QODANA_JOB_URL"
+	qodanaRemoteUrl        = "QODANA_REMOTE_URL"
+	qodanaBranch           = "QODANA_BRANCH"
+	qodanaRevision         = "QODANA_REVISION"
 	qodanaCliContainerName = "QODANA_CLI_CONTAINER_NAME"
 	qodanaCliContainerKeep = "QODANA_CLI_CONTAINER_KEEP"
 	qodanaCliUsePodman     = "QODANA_CLI_USE_PODMAN"
@@ -85,21 +85,21 @@ func encodeAuthToBase64(authConfig types.AuthConfig) (string, error) {
 	return base64.URLEncoding.EncodeToString(buf), nil
 }
 
-// ExtractQodanaEnvironment extracts Qodana env variables QODANA_* to the given environment array.
-func ExtractQodanaEnvironment(opts *QodanaOptions) {
-	opts.Setenv(QodanaToken, os.Getenv(QodanaToken))
+// extractQodanaEnvironment extracts Qodana env variables QODANA_* to the given environment array.
+func extractQodanaEnvironment(opts *QodanaOptions) {
+	opts.setenv(qodanaToken, os.Getenv(qodanaToken))
 	ci := cienvironment.DetectCIEnvironment()
 	qEnv := "cli"
 	if ci != nil {
 		qEnv = strings.ReplaceAll(strings.ToLower(ci.Name), " ", "-")
-		opts.Setenv(QodanaJobUrl, validateCiUrl(ci.URL, qEnv))
+		opts.setenv(qodanaJobUrl, validateCiUrl(ci.URL, qEnv))
 		if ci.Git != nil {
-			opts.Setenv(QodanaRemoteUrl, ci.Git.Remote)
-			opts.Setenv(QodanaBranch, ci.Git.Branch)
-			opts.Setenv(QodanaRevision, ci.Git.Revision)
+			opts.setenv(qodanaRemoteUrl, ci.Git.Remote)
+			opts.setenv(qodanaBranch, ci.Git.Branch)
+			opts.setenv(qodanaRevision, ci.Git.Revision)
 		}
 	}
-	opts.Setenv(QodanaEnv, fmt.Sprintf("%s:%s", qEnv, Version))
+	opts.setenv(qodanaEnv, fmt.Sprintf("%s:%s", qEnv, Version))
 }
 
 func validateCiUrl(ciUrl string, qEnv string) string {
@@ -257,8 +257,8 @@ func CheckContainerEngineMemory() {
 	}
 }
 
-// GetCmdOptions returns qodana command options.
-func GetCmdOptions(opts *QodanaOptions) []string {
+// getCmdOptions returns qodana command options.
+func getCmdOptions(opts *QodanaOptions) []string {
 	arguments := make([]string, 0)
 	if opts.SaveReport {
 		arguments = append(arguments, "--save-report")
@@ -307,8 +307,8 @@ func GetCmdOptions(opts *QodanaOptions) []string {
 
 // getDockerOptions returns qodana docker container options.
 func getDockerOptions(opts *QodanaOptions) *types.ContainerCreateConfig {
-	cmdOpts := GetCmdOptions(opts)
-	ExtractQodanaEnvironment(opts)
+	cmdOpts := getCmdOptions(opts)
+	extractQodanaEnvironment(opts)
 	cachePath, err := filepath.Abs(opts.CacheDir)
 	if err != nil {
 		log.Fatal("couldn't get abs path for cache", err)

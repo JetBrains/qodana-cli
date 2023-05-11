@@ -29,22 +29,12 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-//goland:noinspection GoUnnecessarilyExportedIdentifiers
 const (
-	QodanaSarifName      = "qodana.sarif.json"
-	QodanaShortSarifName = "qodana-short.sarif.json"
-	QodanaReportUrlFile  = "qodana.cloud"
-	configName           = "qodana"
-	version              = "2023.1"
-	eap                  = "-eap"
-	QDJVMC               = "jetbrains/qodana-jvm-community:" + version
-	QDJVM                = "jetbrains/qodana-jvm:" + version + eap
-	QDAND                = "jetbrains/qodana-jvm-android:" + version + eap
-	QDPHP                = "jetbrains/qodana-php:" + version + eap
-	QDPY                 = "jetbrains/qodana-python:" + version + eap
-	QDJS                 = "jetbrains/qodana-js:" + version + eap
-	QDGO                 = "jetbrains/qodana-go:" + version + eap
-	QDNET                = "jetbrains/qodana-dotnet:" + version + eap
+	QodanaSarifName     = "qodana.sarif.json"
+	qodanaReportUrlFile = "qodana.cloud"
+	configName          = "qodana"
+	version             = "2023.1"
+	eap                 = "-eap"
 )
 
 // langsLinters is a map of languages to linters.
@@ -95,8 +85,8 @@ func isInIgnoredDirectory(path string) bool {
 	return false
 }
 
-// RecognizeDirLanguages returns the languages detected in the given directory.
-func RecognizeDirLanguages(projectPath string) ([]string, error) {
+// recognizeDirLanguages returns the languages detected in the given directory.
+func recognizeDirLanguages(projectPath string) ([]string, error) {
 	const limitKb = 64
 	out := make(map[string]int)
 	err := filepath.Walk(projectPath, func(path string, f os.FileInfo, err error) error {
