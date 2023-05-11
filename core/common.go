@@ -106,6 +106,7 @@ func ShowReport(cloudUrl string, path string, port int) {
 	}
 }
 
+// GetDotNetConfig gets .NET config for the given path and saves configName
 func GetDotNetConfig(projectDir string, yamlName string) bool {
 	possibleOptions := findFiles(projectDir, []string{".sln", ".csproj", ".vbproj", ".fsproj"})
 	if len(possibleOptions) <= 1 {
@@ -119,7 +120,6 @@ func GetDotNetConfig(projectDir string, yamlName string) bool {
 	}
 	dotnet := &DotNet{}
 	if strings.HasSuffix(choice, ".sln") {
-		// get only filename, without parent directories and extension
 		dotnet.Solution = getFileName(choice)
 	} else {
 		dotnet.Project = getFileName(choice)
