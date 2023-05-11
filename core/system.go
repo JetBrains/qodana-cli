@@ -107,6 +107,7 @@ func openReport(cloudUrl string, path string, port int) {
 				return
 			}
 		}
+		return
 	} else {
 		url := fmt.Sprintf("http://localhost:%d", port)
 		go func() {
