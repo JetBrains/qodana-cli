@@ -218,6 +218,15 @@ func TestAllCommands(t *testing.T) {
 		t.Fatal(err)
 	}
 
+	// contributors
+	out = bytes.NewBufferString("")
+	command = newContributorsCommand()
+	command.SetOut(out)
+	err = command.Execute()
+	if err != nil {
+		t.Fatal(err)
+	}
+
 	err = os.RemoveAll(resultsPath)
 	if err != nil {
 		t.Fatal(err)

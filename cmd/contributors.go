@@ -27,7 +27,7 @@ import (
 
 // showOptions represents show command options.
 type contributorsOptions struct {
-	ProjectDir  string
+	ProjectDirs []string
 	Days        int
 	ExcludeBots bool
 }
@@ -35,13 +35,24 @@ type contributorsOptions struct {
 var pricingUrl = "https://www.jetbrains.com/qodana/buy/"
 
 func getPlanMessage(plan string, cost int, contributors int) string {
-	return fmt.Sprintf(
-		"   %s = %d * $%d – approximate cost/month for %s plan\n",
-		core.PrimaryBold(fmt.Sprintf("$%d", cost*contributors)),
-		contributors,
-		cost,
-		core.PrimaryBold(plan),
-	)
+	var costMessage string
+	if cost == 0 {
+		costMessage = fmt.Sprintf("   %s = %d * $0 – Qodana is completely free for %s plan\n",
+			core.PrimaryBold("$0"),
+			contributors,
+			core.PrimaryBold(plan),
+		)
+	} else {
+		costMessage = fmt.Sprintf(
+			"   %s = %d * $%d – approximate cost/month for %s plan\n",
+			core.PrimaryBold(fmt.Sprintf("$%d", cost*contributors)),
+			contributors,
+			cost,
+			core.PrimaryBold(plan),
+		)
+	}
+
+	return costMessage
 }
 
 // newShowCommand returns a new instance of the show command.
@@ -50,23 +61,33 @@ func newContributorsCommand() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "contributors",
 		Short: "Calculate active project contributors",
-		Long: fmt.Sprintf(`A command-line helper for Qodana pricing to calculate active contributors* in the given repository.
+		Long: fmt.Sprintf(`
+A command-line helper for Qodana pricing[1] to calculate active contributor(s)[2] in the given local repositories.
 
-* An active contributor is anyone who has made a commit to any 
+[1] This pricing is preliminary and subject to change.
+Early adopters may receive special offers, which we 
+will announce prior to the commercial release.
+
+[2] An active contributor is anyone who has made a commit to any 
 of the projects you’ve registered in Qodana Cloud within the last 90 days, 
 regardless of when those commits were originally authored. The number of such 
 contributors will be calculated using both the commit author information 
 and the timestamp for when their contribution to the project was pushed.
 
-** Ultimate Plus plan currently has a discount, more information can be found on %s
+[3] Ultimate Plus plan currently has a discount, more information can be found on %s
 `, pricingUrl),
 		Run: func(cmd *cobra.Command, args []string) {
-			contributors := core.GetContributors(options.ProjectDir, options.Days, options.ExcludeBots)
-
-			count := strconv.Itoa(len(contributors))
-			core.EmptyMessage()
+			if len(options.ProjectDirs) == 0 {
+				options.ProjectDirs = append(options.ProjectDirs, ".")
+			}
+			contributors := core.GetContributors(options.ProjectDirs, options.Days, options.ExcludeBots)
+			count := len(contributors)
 			contributorsTableData := pterm.TableData{
-				{core.PrimaryBold("Username"), core.PrimaryBold("Email"), core.PrimaryBold("Commits")},
+				{
+					core.PrimaryBold("Username"),
+					core.PrimaryBold("Email"),
+					core.PrimaryBold("Commits"),
+				},
 			}
 			for _, contributor := range contributors {
 				contributorsTableData = append(contributorsTableData, []string{
@@ -86,15 +107,18 @@ and the timestamp for when their contribution to the project was pushed.
 			}
 			core.EmptyMessage()
 			core.SuccessMessage(
-				"There are %s active contributors* for the last %s days",
-				core.PrimaryBold(count),
+				"There are %s active contributor(s)* for the last %s days in the provided %s project(s).",
+				core.PrimaryBold(strconv.Itoa(count)),
 				core.PrimaryBold(strconv.Itoa(options.Days)),
+				core.PrimaryBold(strconv.Itoa(len(options.ProjectDirs))),
 			)
-			fmt.Print(getPlanMessage("Ultimate", 6, len(contributors)))
-			fmt.Print(getPlanMessage("Ultimate Plus*", 9, len(contributors)))
+			fmt.Print(getPlanMessage("Community", 0, count))
+			fmt.Print(getPlanMessage("Ultimate", 6, count))
+			fmt.Print(getPlanMessage("Ultimate Plus*", 9, count))
 			core.EmptyMessage()
 			fmt.Printf(
-				`*  Run %s or visit %s for more information.`,
+				`*  Run %s or visit %s for more information.
+   Note: Qodana will always be free for verified open source projects.`,
 				core.PrimaryBold("qodana contributors -h"),
 				pricingUrl,
 			)
@@ -102,8 +126,9 @@ and the timestamp for when their contribution to the project was pushed.
 		},
 	}
 	flags := cmd.Flags()
-	flags.StringVarP(&options.ProjectDir, "project-dir", "i", ".", "Root directory of the inspected project")
+	flags.StringArrayVarP(&options.ProjectDirs, "project-dir", "i", []string{}, "Project directory, can be specified multiple times to check multiple projects, if not specified, current directory will be used")
 	flags.IntVarP(&options.Days, "days", "d", 30, "Number of days since when to calculate the number of active contributors")
 	flags.BoolVar(&options.ExcludeBots, "ignore-bots", true, "Ignore bots (from https://github.com/JetBrains/qodana-cli/blob/main/bots.json) from contributors list")
+
 	return cmd
 }

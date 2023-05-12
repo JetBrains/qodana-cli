@@ -64,6 +64,7 @@ type commit struct {
 // contributor struct represents a git repo contributor: pair of author and number of contributions.
 type contributor struct {
 	Author        *author
+	Projects      []string
 	Contributions int
 }
 
@@ -92,23 +93,27 @@ func getCommits(repoDir string, days int, excludeBots bool) []commit {
 }
 
 // GetContributors returns the list of contributors of the git repository.
-func GetContributors(repoDir string, days int, excludeBots bool) []contributor {
+func GetContributors(repoDirs []string, days int, excludeBots bool) []contributor {
 	contributorMap := make(map[string]*contributor)
-	for _, commit := range getCommits(repoDir, days, excludeBots) {
-		authorId := commit.Author.getId()
-		if c, ok := contributorMap[authorId]; ok {
-			c.Contributions++
-		} else {
-			contributorMap[authorId] = &contributor{
-				Author:        commit.Author,
-				Contributions: 1,
+	for _, repoDir := range repoDirs {
+		for _, c := range getCommits(repoDir, days, excludeBots) {
+			authorId := c.Author.getId()
+			if i, ok := contributorMap[authorId]; ok {
+				i.Contributions++
+				i.Projects = Append(i.Projects, repoDir)
+			} else {
+				contributorMap[authorId] = &contributor{
+					Author:        c.Author,
+					Contributions: 1,
+					Projects:      []string{repoDir},
+				}
 			}
 		}
 	}
 
 	contributors := make([]contributor, 0, len(contributorMap))
-	for _, contributor := range contributorMap {
-		contributors = append(contributors, *contributor)
+	for _, c := range contributorMap {
+		contributors = append(contributors, *c)
 	}
 
 	sort.Slice(contributors, func(i, j int) bool {
