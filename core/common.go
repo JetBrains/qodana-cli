@@ -19,6 +19,7 @@ package core
 import (
 	"fmt"
 	"os"
+	"path/filepath"
 	"strings"
 
 	log "github.com/sirupsen/logrus"
@@ -120,9 +121,9 @@ func GetDotNetConfig(projectDir string, yamlName string) bool {
 	}
 	dotnet := &DotNet{}
 	if strings.HasSuffix(choice, ".sln") {
-		dotnet.Solution = getFileName(choice)
+		dotnet.Solution = filepath.Base(choice)
 	} else {
-		dotnet.Project = getFileName(choice)
+		dotnet.Project = filepath.Base(choice)
 	}
 	return setQodanaDotNet(projectDir, dotnet, yamlName)
 }

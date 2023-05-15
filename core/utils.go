@@ -86,11 +86,6 @@ func findFiles(root string, extensions []string) []string {
 	return files
 }
 
-// getFileName returns the file name without the extension and base path.
-func getFileName(path string) string {
-	return strings.TrimSuffix(filepath.Base(path), filepath.Ext(path))
-}
-
 // getAzureJobUrl returns the Azure Pipelines job URL.
 func getAzureJobUrl() string {
 	if server := os.Getenv("SYSTEM_TEAMFOUNDATIONCOLLECTIONURI"); server != "" {
