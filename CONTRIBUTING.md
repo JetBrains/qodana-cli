@@ -46,7 +46,7 @@ go test -v ./... -coverprofile cover.out
 Dry run goreleaser:
 
 ```sh
-goreleaser release --snapshot --rm-dist
+goreleaser release --snapshot --clean
 ```
 
 ## Create a commit

@@ -47,6 +47,10 @@ curl -fsSL https://jb.gg/qodana-cli/install | bash
 ```
 
 #### Windows
+##### Install with [Chocolatey](https://chocolatey.org)
+```console
+choco install qodana
+```
 ##### Install with [Scoop](https://scoop.sh)
 ```console
 scoop bucket add jetbrains https://github.com/JetBrains/scoop-utils
