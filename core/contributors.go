@@ -17,6 +17,8 @@
 package core
 
 import (
+	"encoding/json"
+	"fmt"
 	"sort"
 	"strings"
 )
@@ -37,8 +39,8 @@ var (
 
 // author struct represents a git commit author.
 type author struct {
-	Email    string
-	Username string
+	Email    string `json:"email"`
+	Username string `json:"username"`
 }
 
 // getId() returns the author's email if it is not empty, otherwise it returns the username.
@@ -63,9 +65,20 @@ type commit struct {
 
 // contributor struct represents a git repo contributor: pair of author and number of contributions.
 type contributor struct {
-	Author        *author
-	Projects      []string
-	Contributions int
+	Author        *author  `json:"author"`
+	Projects      []string `json:"projects"`
+	Contributions int      `json:"contributions"`
+}
+
+// ToJSON returns the JSON representation of the list of contributors.
+func ToJSON(contributors []contributor) (string, error) {
+	output := map[string][]contributor{}
+	output["contributors"] = contributors
+	out, err := json.MarshalIndent(output, "", "  ")
+	if err != nil {
+		return "", fmt.Errorf("failed to marshal json: %w", err)
+	}
+	return string(out), nil
 }
 
 // getCommits returns the list of commits for future processing.
@@ -76,15 +89,15 @@ func getCommits(repoDir string, days int, excludeBots bool) []commit {
 		if len(fields) != 4 {
 			continue
 		}
-		author := author{
+		a := author{
 			Email:    fields[0],
 			Username: fields[1],
 		}
-		if excludeBots && author.isBot() {
+		if excludeBots && a.isBot() {
 			continue
 		}
 		commits = append(commits, commit{
-			Author: &author,
+			Author: &a,
 			Date:   fields[2],
 			Sha256: fields[3],
 		})

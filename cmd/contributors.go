@@ -18,10 +18,8 @@ package cmd
 
 import (
 	"fmt"
-	"strconv"
-
 	"github.com/JetBrains/qodana-cli/core"
-	"github.com/pterm/pterm"
+	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 )
 
@@ -30,29 +28,7 @@ type contributorsOptions struct {
 	ProjectDirs []string
 	Days        int
 	ExcludeBots bool
-}
-
-var pricingUrl = "https://www.jetbrains.com/qodana/buy/"
-
-func getPlanMessage(plan string, cost int, contributors int) string {
-	var costMessage string
-	if cost == 0 {
-		costMessage = fmt.Sprintf("   %s = %d * $0 – Qodana is completely free for %s plan\n",
-			core.PrimaryBold("$0"),
-			contributors,
-			core.PrimaryBold(plan),
-		)
-	} else {
-		costMessage = fmt.Sprintf(
-			"   %s = %d * $%d – approximate cost/month for %s plan\n",
-			core.PrimaryBold(fmt.Sprintf("$%d", cost*contributors)),
-			contributors,
-			cost,
-			core.PrimaryBold(plan),
-		)
-	}
-
-	return costMessage
+	Output      string
 }
 
 // newShowCommand returns a new instance of the show command.
@@ -75,60 +51,33 @@ contributors will be calculated using both the commit author information
 and the timestamp for when their contribution to the project was pushed.
 
 [3] Ultimate Plus plan currently has a discount, more information can be found on %s
-`, pricingUrl),
+`, core.PricingUrl),
 		Run: func(cmd *cobra.Command, args []string) {
 			if len(options.ProjectDirs) == 0 {
 				options.ProjectDirs = append(options.ProjectDirs, ".")
 			}
 			contributors := core.GetContributors(options.ProjectDirs, options.Days, options.ExcludeBots)
-			count := len(contributors)
-			contributorsTableData := pterm.TableData{
-				{
-					core.PrimaryBold("Username"),
-					core.PrimaryBold("Email"),
-					core.PrimaryBold("Commits"),
-				},
-			}
-			for _, contributor := range contributors {
-				contributorsTableData = append(contributorsTableData, []string{
-					contributor.Author.Username,
-					contributor.Author.Email,
-					strconv.Itoa(contributor.Contributions),
-				})
-			}
-
-			table := pterm.DefaultTable.WithData(contributorsTableData)
-			table.HeaderRowSeparator = ""
-			table.Separator = " "
-			table.Boxed = true
-			err := table.Render()
-			if err != nil {
+			switch options.Output {
+			case "tabular":
+				core.PrintContributorsTable(contributors, options.Days, len(options.ProjectDirs))
 				return
+			case "json":
+				out, err := core.ToJSON(contributors)
+				if err != nil {
+					log.Fatalf("Failed to convert to JSON: %s", err)
+				}
+				fmt.Println(out)
+				return
+			default:
+				log.Fatalf("Unknown output format: %s", options.Output)
 			}
-			core.EmptyMessage()
-			core.SuccessMessage(
-				"There are %s active contributor(s)* for the last %s days in the provided %s project(s).",
-				core.PrimaryBold(strconv.Itoa(count)),
-				core.PrimaryBold(strconv.Itoa(options.Days)),
-				core.PrimaryBold(strconv.Itoa(len(options.ProjectDirs))),
-			)
-			fmt.Print(getPlanMessage("Community", 0, count))
-			fmt.Print(getPlanMessage("Ultimate", 6, count))
-			fmt.Print(getPlanMessage("Ultimate Plus*", 9, count))
-			core.EmptyMessage()
-			fmt.Printf(
-				`*  Run %s or visit %s for more information.
-   Note: Qodana will always be free for verified open source projects.`,
-				core.PrimaryBold("qodana contributors -h"),
-				pricingUrl,
-			)
-			core.EmptyMessage()
 		},
 	}
 	flags := cmd.Flags()
 	flags.StringArrayVarP(&options.ProjectDirs, "project-dir", "i", []string{}, "Project directory, can be specified multiple times to check multiple projects, if not specified, current directory will be used")
 	flags.IntVarP(&options.Days, "days", "d", 30, "Number of days since when to calculate the number of active contributors")
 	flags.BoolVar(&options.ExcludeBots, "ignore-bots", true, "Ignore bots (from https://github.com/JetBrains/qodana-cli/blob/main/bots.json) from contributors list")
+	flags.StringVarP(&options.Output, "output", "o", "tabular", "Output format, can be tabular or json")
 
 	return cmd
 }

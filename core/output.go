@@ -19,6 +19,7 @@ package core
 import (
 	"fmt"
 	"os"
+	"strconv"
 	"strings"
 
 	"github.com/liamg/clinch/terminal"
@@ -36,6 +37,8 @@ var Info = fmt.Sprintf(`
   Bug Tracker: https://jb.gg/qodana-issue
   Community forum: https://jb.gg/qodana-forum
 `, "Qodana CLI", Version)
+
+var PricingUrl = "https://www.jetbrains.com/qodana/buy/"
 
 // IsInteractive returns true if the current execution environment is interactive (useful for colors/animations toggle).
 func IsInteractive() bool {
@@ -195,6 +198,7 @@ func printProblem(ruleId string, level string, message string, path string, line
 	printFooter(message)
 }
 
+// getTerminalWidth returns the width of the terminal.
 func getTerminalWidth() int {
 	width, _ := terminal.Size()
 	if width <= 0 {
@@ -203,6 +207,7 @@ func getTerminalWidth() int {
 	return width
 }
 
+// printHeader prints the header of the problem/file.
 func printHeader(level string, ruleId string, file string) {
 	width := getTerminalWidth()
 	fmt.Printf("%s %s\n", PrimaryBold(strings.ToUpper(level)), primary(ruleId))
@@ -213,10 +218,12 @@ func printHeader(level string, ruleId string, file string) {
 	}
 }
 
+// printFooter prints the footer of the problem/file.
 func printFooter(message string) {
 	fmt.Printf("%s\n", message)
 }
 
+// printPath prints the path of the problem.
 func printPath(path string, line int, column int) {
 	if path != "" && line > 0 && column > 0 {
 		fmt.Printf(" %s:%d:%d\n", path, line, column)
@@ -226,6 +233,7 @@ func printPath(path string, line int, column int) {
 	}
 }
 
+// printLines prints the lines of the problem.
 func printLines(content string, contextLine int, line int, skipHighlight bool) {
 	lines := strings.Split(content, "\n")
 	lineCount := len(lines)
@@ -246,4 +254,72 @@ func printLines(content string, contextLine int, line int, skipHighlight bool) {
 		fmt.Printf("%s  %s %s\n", lineNumber, tableSepMid, printLine)
 	}
 	fmt.Printf("%s%s\n", tableDown, strings.Repeat(tableSep, getTerminalWidth()-noLineWidth-1))
+}
+
+// PrintContributorsTable prints the contributors table and helpful messages.
+func PrintContributorsTable(contributors []contributor, days int, dirs int) {
+	count := len(contributors)
+	contributorsTableData := pterm.TableData{
+		{
+			PrimaryBold("Username"),
+			PrimaryBold("Email"),
+			PrimaryBold("Commits"),
+		},
+	}
+	for _, p := range contributors {
+		contributorsTableData = append(contributorsTableData, []string{
+			p.Author.Username,
+			p.Author.Email,
+			strconv.Itoa(p.Contributions),
+		})
+	}
+
+	table := pterm.DefaultTable.WithData(contributorsTableData)
+	table.HeaderRowSeparator = ""
+	table.Separator = " "
+	table.Boxed = true
+	err := table.Render()
+	if err != nil {
+		return
+	}
+	EmptyMessage()
+	SuccessMessage(
+		"There are %s active contributor(s)* for the last %s days in the provided %s project(s).",
+		PrimaryBold(strconv.Itoa(count)),
+		PrimaryBold(strconv.Itoa(days)),
+		PrimaryBold(strconv.Itoa(dirs)),
+	)
+	fmt.Print(getPlanMessage("Community", 0, count))
+	fmt.Print(getPlanMessage("Ultimate", 6, count))
+	fmt.Print(getPlanMessage("Ultimate Plus*", 9, count))
+	EmptyMessage()
+	fmt.Printf(
+		`*  Run %s or visit %s for more information.
+   Note: Qodana will always be free for verified open source projects.`,
+		PrimaryBold("qodana contributors -h"),
+		PricingUrl,
+	)
+	EmptyMessage()
+}
+
+// getPlanMessage returns a message with the cost of the plan.
+func getPlanMessage(plan string, cost int, contributors int) string {
+	var costMessage string
+	if cost == 0 {
+		costMessage = fmt.Sprintf("   %s = %d * $0 – Qodana is completely free for %s plan\n",
+			PrimaryBold("$0"),
+			contributors,
+			PrimaryBold(plan),
+		)
+	} else {
+		costMessage = fmt.Sprintf(
+			"   %s = %d * $%d – approximate cost/month for %s plan\n",
+			PrimaryBold(fmt.Sprintf("$%d", cost*contributors)),
+			contributors,
+			cost,
+			PrimaryBold(plan),
+		)
+	}
+
+	return costMessage
 }
