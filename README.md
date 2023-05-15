@@ -116,6 +116,7 @@ using [`qodana.yaml` ](https://www.jetbrains.com/help/qodana/qodana-yaml.html) t
 > - macOS: `~/Library/Caches/`
 > - Linux: `~/.cache/`
 > - Windows: `%LOCALAPPDATA%\`
+> Also, you can just run `qodana show -d` to open the directory with the latest Qodana report.
 
 ### init
 
