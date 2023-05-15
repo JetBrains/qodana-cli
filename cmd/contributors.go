@@ -18,6 +18,7 @@ package cmd
 
 import (
 	"fmt"
+
 	"github.com/JetBrains/qodana-cli/core"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
