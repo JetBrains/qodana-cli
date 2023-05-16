@@ -73,8 +73,10 @@ type contributor struct {
 
 // ToJSON returns the JSON representation of the list of contributors.
 func ToJSON(contributors []contributor) (string, error) {
-	output := map[string][]contributor{}
-	output["contributors"] = contributors
+	output := map[string]interface{}{
+		"total":        len(contributors),
+		"contributors": contributors,
+	}
 	out, err := json.MarshalIndent(output, "", "  ")
 	if err != nil {
 		return "", fmt.Errorf("failed to marshal json: %w", err)
@@ -82,10 +84,10 @@ func ToJSON(contributors []contributor) (string, error) {
 	return string(out), nil
 }
 
-// getCommits returns the list of commits for future processing.
-func getCommits(repoDir string, days int, excludeBots bool) []commit {
+// parseCommits returns the list of commits for future processing.
+func parseCommits(gitLogOutput []string, excludeBots bool) []commit {
 	var commits []commit
-	for _, line := range gitLog(repoDir, gitFormat, days, true) {
+	for _, line := range gitLogOutput {
 		fields := strings.Split(line, gitFormatSep)
 		if len(fields) != 4 {
 			continue
@@ -110,7 +112,8 @@ func getCommits(repoDir string, days int, excludeBots bool) []commit {
 func GetContributors(repoDirs []string, days int, excludeBots bool) []contributor {
 	contributorMap := make(map[string]*contributor)
 	for _, repoDir := range repoDirs {
-		for _, c := range getCommits(repoDir, days, excludeBots) {
+		gLog := gitLog(repoDir, gitFormat, days, true)
+		for _, c := range parseCommits(gLog, excludeBots) {
 			authorId := c.Author.getId()
 			if i, ok := contributorMap[authorId]; ok {
 				i.Count++

@@ -287,3 +287,44 @@ func TestScanFlags_Script(t *testing.T) {
 		t.Fatalf("expected \"%s\" got \"%s\"", expected, actual)
 	}
 }
+
+func TestParseCommits(t *testing.T) {
+	gitLogOutput := []string{
+		"me@me.com||me||0e64c1b093d07762ffd28c0faec75a55f67c2260||2023-05-05 16:11:38 +0200",
+		"me@me.com||me||0e64c1b093d07762ffd28c0faec75a55f67c2260||2023-05-05 16:11:38 +0200",
+	}
+
+	commits := parseCommits(gitLogOutput, true)
+
+	expectedCount := 2
+	if len(commits) != expectedCount {
+		t.Fatalf("Expected %d commits, got %d", expectedCount, len(commits))
+	}
+
+	expectedSha256 := "0e64c1b093d07762ffd28c0faec75a55f67c2260"
+	if commits[0].Sha256 != expectedSha256 {
+		t.Errorf("Expected SHA256 %s, got %s", expectedSha256, commits[0].Sha256)
+	}
+
+	expectedDate := "2023-05-05 16:11:38 +0200"
+	if commits[1].Date != expectedDate {
+		t.Errorf("Expected date %s, got %s", expectedDate, commits[1].Date)
+	}
+}
+
+func TestGetContributors(t *testing.T) {
+	contributors := GetContributors([]string{"."}, -1, false)
+	if len(contributors) == 0 {
+		t.Error("Expected at least one contributor or you need to update the test repo")
+	}
+	found := false
+	for _, c := range contributors {
+		if c.Author.Username == "dependabot[bot]" {
+			found = true
+			break
+		}
+	}
+	if !found {
+		t.Error("Expected dependabot[bot] contributor")
+	}
+}

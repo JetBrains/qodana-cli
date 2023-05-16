@@ -20,6 +20,7 @@ package cmd
 
 import (
 	"bytes"
+	"encoding/json"
 	"fmt"
 	"io"
 	"os"
@@ -136,6 +137,30 @@ func TestInitCommand(t *testing.T) {
 	err = os.RemoveAll(projectPath)
 	if err != nil {
 		t.Fatal(err)
+	}
+}
+
+func TestContributorsCommand(t *testing.T) {
+	out := bytes.NewBufferString("")
+	command := newContributorsCommand()
+	command.SetOut(out)
+	command.SetArgs([]string{"--days", "-1", "-o", "json"})
+	err := command.Execute()
+	if err != nil {
+		t.Fatal(err)
+	}
+	output, err := io.ReadAll(out)
+	if err != nil {
+		t.Fatal(err)
+	}
+	mapData := make(map[string]interface{})
+	err = json.Unmarshal(output, &mapData)
+	if err != nil {
+		t.Fatal(err)
+	}
+	total := mapData["total"].(float64)
+	if total != 6 {
+		t.Fatalf("expected total 6, but got %f", total)
 	}
 }
 

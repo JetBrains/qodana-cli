@@ -67,7 +67,10 @@ and the timestamp for when their contribution to the project was pushed.
 				if err != nil {
 					log.Fatalf("Failed to convert to JSON: %s", err)
 				}
-				fmt.Println(out)
+				_, err = fmt.Fprintln(cmd.OutOrStdout(), out)
+				if err != nil {
+					log.Fatalf("Failed to write to stdout: %s", err)
+				}
 				return
 			default:
 				log.Fatalf("Unknown output format: %s", options.Output)
