@@ -24,7 +24,7 @@ import (
 	"github.com/spf13/cobra"
 )
 
-// showOptions represents show command options.
+// contributorsOptions represents contributor command options.
 type contributorsOptions struct {
 	ProjectDirs []string
 	Days        int

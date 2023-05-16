@@ -265,6 +265,24 @@ qodana contributors [flags]
   -i, --project-dir string   Root directory of the inspected project (default ".")
 ```
 
+### cloc
+
+A command-line helper for project statistics: languages, lines of code. Powered by boyter/scc. For contributors, use "qodana contributors" command.
+
+#### Synopsis
+
+```
+qodana cloc [flags]
+```
+
+#### Options
+
+```
+  -h, --help                      help for cloc
+  -o, --output string             Output format, can be [tabular, wide, json, csv, csv-stream, cloc-yaml, html, html-table, sql, sql-insert, openmetrics] (default "tabular")
+  -i, --project-dir stringArray   Project directory, can be specified multiple times to check multiple projects, if not specified, current directory will be used
+```
+
 ## Why
 
 ![Comics by Irina Khromova](https://user-images.githubusercontent.com/13538286/151377284-28d845d3-a601-4512-9029-18f99d215ee1.png)

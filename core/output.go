@@ -270,7 +270,7 @@ func PrintContributorsTable(contributors []contributor, days int, dirs int) {
 		contributorsTableData = append(contributorsTableData, []string{
 			p.Author.Username,
 			p.Author.Email,
-			strconv.Itoa(p.Contributions),
+			strconv.Itoa(p.Count),
 		})
 	}
 
