@@ -65,7 +65,7 @@ chocolateys:
   - name: qodana
     title: "Qodana CLI"
     authors: "JetBrains"
-    project_url: "https://jetbrains.com/qodana"
+    project_url: "https://github.com/JetBrains/qodana-cli/"
     icon_url: 'https://resources.jetbrains.com/storage/products/company/brand/logos/Qodana_icon.png'
     copyright: "2023 JetBrains"
     license_url: "https://github.com/JetBrains/qodana-cli/blob/main/LICENSE"
@@ -78,8 +78,6 @@ chocolateys:
     description: |
       {{ .ProjectName }} is a simple cross-platform command-line tool to run Qodana linters anywhere with minimum effort required.
     release_notes: "https://github.com/JetBrains/qodana-cli/releases/tag/v{{ .Version }}"
-    dependencies:
-      - id: git
     api_key: '{{ .Env.CHOCOLATEY_API_KEY }}'
     source_repo: "https://push.chocolatey.org/"
 checksum:
