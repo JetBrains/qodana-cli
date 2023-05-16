@@ -101,5 +101,6 @@ func init() {
 		newPullCommand(),
 		newViewCommand(),
 		newContributorsCommand(),
+		newClocCommand(),
 	)
 }

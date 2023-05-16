@@ -58,16 +58,17 @@ func (a *author) isBot() bool {
 
 // commit struct represents a git commit.
 type commit struct {
-	Author *author
-	Date   string
-	Sha256 string
+	Author *author `json:"-"`    // author of the commit
+	Date   string  `json:"date"` // ISO 8601-like format
+	Sha256 string  `json:"sha256"`
 }
 
-// contributor struct represents a git repo contributor: pair of author and number of contributions.
+// contributor struct represents a git repo contributor: a pair of author and number of contributions.
 type contributor struct {
-	Author        *author  `json:"author"`
-	Projects      []string `json:"projects"`
-	Contributions int      `json:"contributions"`
+	Author   *author  `json:"author"`
+	Projects []string `json:"projects"`
+	Count    int      `json:"count"`
+	Commits  []commit `json:"commits"`
 }
 
 // ToJSON returns the JSON representation of the list of contributors.
@@ -98,8 +99,8 @@ func getCommits(repoDir string, days int, excludeBots bool) []commit {
 		}
 		commits = append(commits, commit{
 			Author: &a,
-			Date:   fields[2],
-			Sha256: fields[3],
+			Date:   fields[3],
+			Sha256: fields[2],
 		})
 	}
 	return commits
@@ -112,13 +113,15 @@ func GetContributors(repoDirs []string, days int, excludeBots bool) []contributo
 		for _, c := range getCommits(repoDir, days, excludeBots) {
 			authorId := c.Author.getId()
 			if i, ok := contributorMap[authorId]; ok {
-				i.Contributions++
+				i.Count++
 				i.Projects = Append(i.Projects, repoDir)
+				i.Commits = append(i.Commits, c)
 			} else {
 				contributorMap[authorId] = &contributor{
-					Author:        c.Author,
-					Contributions: 1,
-					Projects:      []string{repoDir},
+					Author:   c.Author,
+					Count:    1,
+					Projects: []string{repoDir},
+					Commits:  []commit{c},
 				}
 			}
 		}
@@ -130,7 +133,7 @@ func GetContributors(repoDirs []string, days int, excludeBots bool) []contributo
 	}
 
 	sort.Slice(contributors, func(i, j int) bool {
-		return contributors[i].Contributions > contributors[j].Contributions
+		return contributors[i].Count > contributors[j].Count
 	})
 
 	return contributors
