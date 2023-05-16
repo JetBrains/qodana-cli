@@ -4,7 +4,7 @@ By participating in this project, you agree to abide our [Code of conduct](.gith
 
 ## Set up your machine
 
-`qodana` CLI is written in [Go](https://golang.org/).
+`qd` is written in [Go](https://golang.org/).
 
 Prerequisites:
 
@@ -14,10 +14,10 @@ Other things you might need to develop:
 
 - [GoLand](https://www.jetbrains.com/go/) (it's [free for open-source development](https://www.jetbrains.com/community/opensource/))
 
-Clone `qodana` anywhere:
+Clone the project anywhere:
 
 ```sh
-git clone git@github.com:JetBrains/qodana.git
+git clone git@github.com:JetBrains/qodana-cli.git
 ```
 
 `cd` into the directory and run for debug:
@@ -29,7 +29,7 @@ go run main.go
 Build a binary with
 
 ```sh
-go build -o qodana main.go
+go build -o qd main.go
 ```
 
 Lint your code with `golangci-lint`:
@@ -59,7 +59,7 @@ You can follow the documentation on
 
 ## Submit a pull request
 
-Push your branch to your `qodana` fork and open a pull request against the
+Push your branch to your repository fork and open a pull request against the
 main branch.
 
 
