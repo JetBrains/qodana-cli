@@ -262,6 +262,15 @@ func TestAllCommands(t *testing.T) {
 		t.Fatal(err)
 	}
 
+	// cloc
+	out = bytes.NewBufferString("")
+	command = newClocCommand()
+	command.SetOut(out)
+	err = command.Execute()
+	if err != nil {
+		t.Fatal(err)
+	}
+
 	err = os.RemoveAll(resultsPath)
 	if err != nil {
 		t.Fatal(err)

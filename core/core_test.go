@@ -328,3 +328,85 @@ func TestGetContributors(t *testing.T) {
 		t.Error("Expected dependabot[bot] contributor")
 	}
 }
+
+func TestReadIdeaDir(t *testing.T) {
+	// Create a temporary directory for testing
+	tempDir := os.TempDir()
+	tempDir = filepath.Join(tempDir, "readIdeaDir")
+	defer os.RemoveAll(tempDir)
+
+	// Case 1: .idea directory with iml files for Java and Kotlin
+	ideaDir := filepath.Join(tempDir, ".idea")
+	err := os.MkdirAll(ideaDir, 0o755)
+	if err != nil {
+		t.Fatal(err)
+	}
+	imlFile := filepath.Join(ideaDir, "test.iml")
+	err = os.WriteFile(imlFile, []byte("<module type=\"JAVA_MODULE\"/>"), 0o644)
+	if err != nil {
+		t.Fatal(err)
+	}
+	kotlinImlFile := filepath.Join(ideaDir, "test.kt.iml")
+	err = os.WriteFile(kotlinImlFile, []byte("<module type=\"JAVA_MODULE\" languageLevel=\"JDK_1_8\"/>"), 0o644)
+	if err != nil {
+		t.Fatal(err)
+	}
+	languages := readIdeaDir(tempDir)
+	expected := []string{"Java"}
+	if !reflect.DeepEqual(languages, expected) {
+		t.Errorf("Case 1: Expected %v, but got %v", expected, languages)
+	}
+
+	// Case 2: .idea directory with no iml files
+	err = os.Remove(imlFile)
+	if err != nil {
+		t.Fatal(err)
+	}
+	err = os.Remove(kotlinImlFile)
+	if err != nil {
+		t.Fatal(err)
+	}
+	languages = readIdeaDir(tempDir)
+	if len(languages) > 0 {
+		t.Errorf("Case 1: Expected empty array, but got %v", languages)
+	}
+
+	// Case 3: No .idea directory
+	err = os.Remove(ideaDir)
+	if err != nil {
+		t.Fatal(err)
+	}
+	languages = readIdeaDir(tempDir)
+	if len(languages) > 0 {
+		t.Errorf("Case 1: Expected empty array, but got %v", languages)
+	}
+}
+
+func TestWriteConfig(t *testing.T) {
+	// Create a temporary directory to use as the path
+	dir := os.TempDir()
+	dir = filepath.Join(dir, "writeConfig")
+	err := os.MkdirAll(dir, 0o755)
+	if err != nil {
+		t.Fatalf("failed to create temporary directory: %v", err)
+	}
+	defer os.RemoveAll(dir)
+
+	// Create a sample qodana.yaml file to write
+	filename := "qodana.yaml"
+	path := filepath.Join(dir, filename)
+	q := &QodanaYaml{Version: "1.0"}
+	if err := q.writeConfig(path); err != nil {
+		t.Fatalf("failed to write qodana.yaml file: %v", err)
+	}
+
+	// Read the contents of the file and check that it matches the expected YAML
+	data, err := os.ReadFile(path)
+	if err != nil {
+		t.Fatalf("failed to read qodana.yaml file: %v", err)
+	}
+	expected := "version: \"1.0\"\nlinter: \"\"\n"
+	if string(data) != expected {
+		t.Errorf("file contents do not match expected YAML: %q", string(data))
+	}
+}
