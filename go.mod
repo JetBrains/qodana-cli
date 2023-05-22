@@ -9,7 +9,7 @@ require (
 	github.com/docker/docker v20.10.23+incompatible
 	github.com/go-enry/go-enry/v2 v2.8.4
 	github.com/liamg/clinch v1.6.4
-	github.com/mattn/go-isatty v0.0.18
+	github.com/mattn/go-isatty v0.0.19
 	github.com/owenrumney/go-sarif/v2 v2.2.0
 	github.com/pterm/pterm v0.12.61
 	github.com/sirupsen/logrus v1.9.0
