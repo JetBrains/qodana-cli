@@ -12,7 +12,7 @@ require (
 	github.com/mattn/go-isatty v0.0.19
 	github.com/owenrumney/go-sarif/v2 v2.2.0
 	github.com/pterm/pterm v0.12.62
-	github.com/sirupsen/logrus v1.9.0
+	github.com/sirupsen/logrus v1.9.3
 	github.com/spf13/cobra v1.7.0
 	github.com/spf13/viper v1.15.0
 	gopkg.in/yaml.v3 v3.0.1
