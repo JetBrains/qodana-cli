@@ -20,10 +20,10 @@ jobs:
           npm run build && npm run -w scan package && npm run -w vsts package
           git config user.name github-actions
           git config user.email github-actions@github.com
+          git checkout -b bot/qodana-next
           git add .
           git commit -m ":arrow_up: Update \`qodana\` to the latest version"
-          git checkout -b bot/qodana-next
-          git push
+          git push origin bot/qodana-next
           gh auth login --with-token < ${{ secrets.GH_PAT }}
           gh pr create --repo jetbrains/qodana-action --base main --head bot/qodana-next
 
