@@ -5,11 +5,14 @@ on:
     types: [released]
 jobs:
   publish:
-    runs-on: windows-latest
+    runs-on: ubuntu-latest
     steps:
-      - uses: vedantmgoyal2009/winget-releaser@v2
-        with:
-          identifier: JetBrains.QodanaCLI
-          token: ${{ secrets.WINGET_GH_PAT_TOKEN }}
-          release-tag: v2023.1.5
-          fork-user: tiulpin
+      - run: curl -fSsL https://github.com/russellbanks/Komac/releases/download/v1.6.0/Komac-1.6.0-all.jar -o komac.jar
+      - run: >
+          VERSION=${{ github.event.release.tag_name }} $JAVA_HOME_17_X64/bin/java -jar komac.jar update 
+            --id 'JetBrains.QodanaCLI' 
+            --version $(echo "$VERSION" | sed 's/^v//')
+            --urls 'https://github.com/JetBrains/qodana-cli/releases/download/$VERSION/qodana_windows_arm64.zip,https://github.com/JetBrains/qodana-cli/releases/download/$VERSION/qodana_windows_x86_64.zip'
+            --submit
+        env:
+          GITHUB_TOKEN: ${{ secrets.WINGET_GH_PAT_TOKEN }}
