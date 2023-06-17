@@ -333,7 +333,12 @@ func TestReadIdeaDir(t *testing.T) {
 	// Create a temporary directory for testing
 	tempDir := os.TempDir()
 	tempDir = filepath.Join(tempDir, "readIdeaDir")
-	defer os.RemoveAll(tempDir)
+	defer func(path string) {
+		err := os.RemoveAll(path)
+		if err != nil {
+			t.Fatal(err)
+		}
+	}(tempDir)
 
 	// Case 1: .idea directory with iml files for Java and Kotlin
 	ideaDir := filepath.Join(tempDir, ".idea")
@@ -390,7 +395,12 @@ func TestWriteConfig(t *testing.T) {
 	if err != nil {
 		t.Fatalf("failed to create temporary directory: %v", err)
 	}
-	defer os.RemoveAll(dir)
+	defer func(path string) {
+		err := os.RemoveAll(path)
+		if err != nil {
+			t.Fatal(err)
+		}
+	}(dir)
 
 	// Create a sample qodana.yaml file to write
 	filename := "qodana.yaml"
