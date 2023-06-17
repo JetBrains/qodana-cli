@@ -10,5 +10,4 @@ jobs:
       - uses: vedantmgoyal2009/winget-releaser@v2
         with:
           identifier: JetBrains.QodanaCLI
-          max-versions-to-keep: 5
           token: ${{ secrets.WINGET_GH_PAT_TOKEN }}
