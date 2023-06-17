@@ -19,6 +19,7 @@ jobs:
 
   test:
     runs-on: ${{ matrix.os }}
+    needs: [ lint ]
     permissions:
       checks: write
       pull-requests: write
@@ -55,7 +56,7 @@ jobs:
         uses: github/codeql-action/analyze@v2
 
   package:
-    needs: [ lint, test, codeql ]
+    needs: [ lint, test ]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
