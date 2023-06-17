@@ -159,8 +159,8 @@ func TestContributorsCommand(t *testing.T) {
 		t.Fatal(err)
 	}
 	total := mapData["total"].(float64)
-	if total != 6 {
-		t.Fatalf("expected total 6, but got %f", total)
+	if total != 7 {
+		t.Fatalf("expected total 7, but got %f", total)
 	}
 }
 
