@@ -21,11 +21,11 @@ jobs:
           git config user.name github-actions
           git config user.email github-actions@github.com
           git add .
-          git commit -m ":arrow_up: Update \`qodana\` to $VERSION"
-          git checkout -b bot/qodana-$VERSION
+          git commit -m ":arrow_up: Update \`qodana\` to the latest version"
+          git checkout -b bot/qodana-next
           git push
           gh auth login --with-token < ${{ secrets.GH_PAT }}
-          gh pr create --repo jetbrains/qodana-action --base main --head bot/qodana-$VERSION
+          gh pr create --repo jetbrains/qodana-action --base main --head bot/qodana-next
 
 #  winget:
 #    runs-on: ubuntu-latest
