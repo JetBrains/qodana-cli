@@ -61,25 +61,25 @@ scoops:
     homepage: "https://github.com/JetBrains/qodana-cli"
     description: "🔧 Run Qodana as fast as possible, with minimum effort required"
     license: "Apache-2.0"
-chocolateys:
-  - name: qodana
-    title: "Qodana CLI"
-    authors: "JetBrains"
-    project_url: "https://github.com/JetBrains/qodana-cli/"
-    icon_url: 'https://resources.jetbrains.com/storage/products/company/brand/logos/Qodana_icon.png'
-    copyright: "2023 JetBrains"
-    license_url: "https://github.com/JetBrains/qodana-cli/blob/main/LICENSE"
-    require_license_acceptance: false
-    project_source_url: "https://github.com/JetBrains/qodana-cli"
-    docs_url: "https://github.com/JetBrains/qodana-cli/blob/main/README.md"
-    bug_tracker_url: "https://github.com/JetBrains/qodana-cli/issues"
-    tags: "code-quality jetbrains static-analysis"
-    summary: "🔧 Run Qodana as fast as possible, with minimum effort required"
-    description: |
-      {{ .ProjectName }} is a simple cross-platform command-line tool to run Qodana linters anywhere with minimum effort required.
-    release_notes: "https://github.com/JetBrains/qodana-cli/releases/tag/v{{ .Version }}"
-    api_key: '{{ .Env.CHOCOLATEY_API_KEY }}'
-    source_repo: "https://push.chocolatey.org/"
+#chocolateys:
+#  - name: qodana
+#    title: "Qodana CLI"
+#    authors: "JetBrains"
+#    project_url: "https://github.com/JetBrains/qodana-cli/"
+#    icon_url: 'https://resources.jetbrains.com/storage/products/company/brand/logos/Qodana_icon.png'
+#    copyright: "2023 JetBrains"
+#    license_url: "https://github.com/JetBrains/qodana-cli/blob/main/LICENSE"
+#    require_license_acceptance: false
+#    project_source_url: "https://github.com/JetBrains/qodana-cli"
+#    docs_url: "https://github.com/JetBrains/qodana-cli/blob/main/README.md"
+#    bug_tracker_url: "https://github.com/JetBrains/qodana-cli/issues"
+#    tags: "code-quality jetbrains static-analysis"
+#    summary: "🔧 Run Qodana as fast as possible, with minimum effort required"
+#    description: |
+#      {{ .ProjectName }} is a simple cross-platform command-line tool to run Qodana linters anywhere with minimum effort required.
+#    release_notes: "https://github.com/JetBrains/qodana-cli/releases/tag/v{{ .Version }}"
+#    api_key: '{{ .Env.CHOCOLATEY_API_KEY }}'
+#    source_repo: "https://push.chocolatey.org/"
 checksum:
   name_template: 'checksums.txt'
 snapshot:
