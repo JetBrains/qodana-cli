@@ -103,11 +103,14 @@ release:
     ```
     
     #### Windows
+    ##### Install with [Windows Package Manager](https://learn.microsoft.com/en-us/windows/package-manager/winget/) (recommended)
+    ```console
+    winget install -e --id JetBrains.QodanaCLI
+    ```
     ##### Install with [Chocolatey](https://chocolatey.org)
     ```console
     choco install qodana
     ```
-    
     ##### Install with [Scoop](https://scoop.sh)
     ```console
     scoop bucket add jetbrains https://github.com/JetBrains/scoop-utils

@@ -47,6 +47,10 @@ curl -fsSL https://jb.gg/qodana-cli/install | bash
 ```
 
 #### Windows
+##### Install with [Windows Package Manager](https://learn.microsoft.com/en-us/windows/package-manager/winget/) (recommended)
+```console
+winget install -e --id JetBrains.QodanaCLI
+```
 ##### Install with [Chocolatey](https://chocolatey.org)
 ```console
 choco install qodana
