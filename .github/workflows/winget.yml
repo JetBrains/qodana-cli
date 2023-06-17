@@ -15,10 +15,11 @@ jobs:
         env:
           SHA256: f9dae7452a89efa6fb8ceda1a3042d9b13b8d75005cfbb0bd8af1f3349fce726
       - run: >
-          VERSION=v2023.1.5 $JAVA_HOME_17_X64/bin/java -jar komac.jar update \
+          VERSION=v2023.1.5
+          $JAVA_HOME_17_X64/bin/java -jar komac.jar update \
             --id 'JetBrains.QodanaCLI' \
             --version $(echo "$VERSION" | sed 's/^v//') \
-            --urls 'https://github.com/JetBrains/qodana-cli/releases/download/$VERSION/qodana_windows_arm64.zip,https://github.com/JetBrains/qodana-cli/releases/download/$VERSION/qodana_windows_x86_64.zip' \
+            --urls "https://github.com/JetBrains/qodana-cli/releases/download/$VERSION/qodana_windows_arm64.zip,https://github.com/JetBrains/qodana-cli/releases/download/$VERSION/qodana_windows_x86_64.zip" \
             --submit
         env:
           GITHUB_TOKEN: ${{ secrets.WINGET_GH_PAT_TOKEN }}
