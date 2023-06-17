@@ -11,3 +11,5 @@ jobs:
         with:
           identifier: JetBrains.QodanaCLI
           token: ${{ secrets.WINGET_GH_PAT_TOKEN }}
+          release-tag: v2023.1.5
+          fork-user: tiulpin
