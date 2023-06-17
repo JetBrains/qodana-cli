@@ -261,7 +261,6 @@ qodana contributors [flags]
 ```
   -d, --days int             Number of days since when to calculate the number of active contributors (default 30)
   -h, --help                 help for contributors
-      --ignore-bots          Ignore bots (from https://github.com/JetBrains/qodana-cli/blob/main/bots.json) from contributors list (default true)
   -i, --project-dir string   Root directory of the inspected project (default ".")
 ```
 

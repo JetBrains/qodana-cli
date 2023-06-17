@@ -28,7 +28,6 @@ import (
 type contributorsOptions struct {
 	ProjectDirs []string
 	Days        int
-	ExcludeBots bool
 	Output      string
 }
 
@@ -57,7 +56,7 @@ and the timestamp for when their contribution to the project was pushed.
 			if len(options.ProjectDirs) == 0 {
 				options.ProjectDirs = append(options.ProjectDirs, ".")
 			}
-			contributors := core.GetContributors(options.ProjectDirs, options.Days, options.ExcludeBots)
+			contributors := core.GetContributors(options.ProjectDirs, options.Days, false)
 			switch options.Output {
 			case "tabular":
 				core.PrintContributorsTable(contributors, options.Days, len(options.ProjectDirs))
@@ -80,7 +79,6 @@ and the timestamp for when their contribution to the project was pushed.
 	flags := cmd.Flags()
 	flags.StringArrayVarP(&options.ProjectDirs, "project-dir", "i", []string{}, "Project directory, can be specified multiple times to check multiple projects, if not specified, current directory will be used")
 	flags.IntVarP(&options.Days, "days", "d", 30, "Number of days since when to calculate the number of active contributors")
-	flags.BoolVar(&options.ExcludeBots, "ignore-bots", true, "Ignore bots (from https://github.com/JetBrains/qodana-cli/blob/main/bots.json) from contributors list")
 	flags.StringVarP(&options.Output, "output", "o", "tabular", "Output format, can be tabular or json")
 
 	return cmd
