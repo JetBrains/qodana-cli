@@ -1,0 +1,48 @@
+name: 'post-release'
+on:
+  workflow_dispatch:
+  release:
+    types: [released]
+jobs:
+  github-actions:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          repository: 'jetbrains/qodana-action'
+          token: ${{ secrets.GH_PAT }}
+          fetch-depth: 0
+
+      - name: Upgrade and send PR
+        run: |
+          cd common && node update-cli.js && cd ..
+          npm ci
+          npm run build && npm run -w scan package && npm run -w vsts package
+          git config user.name github-actions
+          git config user.email github-actions@github.com
+          git add .
+          git commit -m ":arrow_up: Update \`qodana\` to $VERSION"
+          git checkout -b bot/qodana-$VERSION
+          git push
+          gh auth login --with-token < ${{ secrets.GH_PAT }}
+          gh pr create --repo jetbrains/qodana-action --base main --head bot/qodana-$VERSION
+
+#  winget:
+#    runs-on: ubuntu-latest
+#    steps:
+#      - run: >
+#          set -e &&
+#          echo "${SHA256} $(pwd)/komac.jar" > shasum &&
+#          curl -fSsL https://github.com/russellbanks/Komac/releases/download/v1.6.0/Komac-1.6.0-all.jar -o komac.jar &&
+#          sha256sum --check --status shasum
+#        env:
+#          SHA256: f9dae7452a89efa6fb8ceda1a3042d9b13b8d75005cfbb0bd8af1f3349fce726
+#      - run: |
+#          export VERSION=${{ github.event.release.name }}
+#          $JAVA_HOME_17_X64/bin/java -jar komac.jar update \
+#            --id 'JetBrains.QodanaCLI' \
+#            --version $(echo "$VERSION" | sed 's/^v//') \
+#            --urls "https://github.com/JetBrains/qodana-cli/releases/download/$VERSION/qodana_windows_arm64.zip,https://github.com/JetBrains/qodana-cli/releases/download/$VERSION/qodana_windows_x86_64.zip" \
+#            --submit
+#        env:
+#          GITHUB_TOKEN: ${{ secrets.WINGET_GH_PAT_TOKEN }}
