@@ -24,9 +24,9 @@ jobs:
           git add .
           git commit -m ":arrow_up: Update \`qodana\` to the latest version"
           git push origin bot/qodana-next
-          gh auth login --with-token < ${{ secrets.GH_PAT }}
-          gh pr create --repo jetbrains/qodana-action --base main --head bot/qodana-next
-
+          gh pr create --repo jetbrains/qodana-action --base main --head bot/qodana-next --title ":arrow_up: Update \`qodana\` to the latest version" --body "This automated PR updates \`qodana\` to the latest version. Please review and merge it if everything is fine."
+        env:
+          GITHUB_TOKEN: ${{ secrets.GH_PAT }}
 #  winget:
 #    runs-on: ubuntu-latest
 #    steps:
