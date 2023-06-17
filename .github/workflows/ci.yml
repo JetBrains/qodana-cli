@@ -19,9 +19,15 @@ jobs:
 
   test:
     runs-on: ${{ matrix.os }}
+    permissions:
+      checks: write
+      pull-requests: write
+      actions: read
+      contents: read
+      security-events: write
     strategy:
       matrix:
-        os: [ macos-latest, ubuntu-latest, windows-latest ]
+        os: [ ubuntu-latest, macos-latest, windows-latest ]
     steps:
       - uses: actions/checkout@v3
         with:
@@ -36,40 +42,20 @@ jobs:
         env:
           QODANA_TOKEN: ${{ secrets.TEST_QODANA_TOKEN }}
       - if: startsWith(matrix.os, 'ubuntu')
-        uses: codecov/codecov-action@v3.1.4
-        with:
-          token: ${{ secrets.CODECOV_TOKEN }}
-          fail_ci_if_error: true
-
-  qodana:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v3
-      - name: 'Qodana Scan'
         uses: JetBrains/qodana-action@main
         env:
           QODANA_TOKEN: ${{ secrets.QODANA_TOKEN }}
-
-  codeql:
-    runs-on: ubuntu-latest
-    permissions:
-      actions: read
-      contents: read
-      security-events: write
-    strategy:
-      fail-fast: false
-      matrix:
-        language: [ 'go' ]
-    steps:
-      - uses: actions/checkout@v3
-      - uses: github/codeql-action/init@v2
+      - if: startsWith(matrix.os, 'ubuntu')
+        uses: github/codeql-action/init@v2
         with:
-          languages: ${{ matrix.language }}
-      - uses: github/codeql-action/autobuild@v2
-      - uses: github/codeql-action/analyze@v2
+          languages: go
+      - if: startsWith(matrix.os, 'ubuntu')
+        uses: github/codeql-action/autobuild@v2
+      - if: startsWith(matrix.os, 'ubuntu')
+        uses: github/codeql-action/analyze@v2
 
   package:
-    needs: [ lint, test, qodana, codeql ]
+    needs: [ lint, test, codeql ]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
