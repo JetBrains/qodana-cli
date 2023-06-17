@@ -15,7 +15,7 @@ jobs:
         env:
           SHA256: f9dae7452a89efa6fb8ceda1a3042d9b13b8d75005cfbb0bd8af1f3349fce726
       - run: >
-          VERSION=v2023.1.5
+          export VERSION=v2023.1.5
           $JAVA_HOME_17_X64/bin/java -jar komac.jar update \
             --id 'JetBrains.QodanaCLI' \
             --version $(echo "$VERSION" | sed 's/^v//') \
