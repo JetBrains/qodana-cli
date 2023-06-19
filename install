@@ -75,12 +75,12 @@ function install {
 	*) fail "unknown os: $(uname -s)";;
 	esac
 	#find ARCH
-	if uname -m | grep 64 > /dev/null; then
-		ARCH="amd64"
-	elif uname -m | grep arm > /dev/null; then
-		ARCH="arm"
+	if [[ $(uname -m) == "x86_64" ]]; then
+    		ARCH="amd64"
+	elif [[ $(uname -m) == "aarch64" ]]; then
+    		ARCH="arm"
 	else
-		fail "unknown arch: $(uname -m)"
+    		fail "unknown arch: $(uname -m)"
 	fi
 	URL=""
 	FTYPE=""
@@ -105,7 +105,7 @@ function install {
 	esac
 	#got URL! download it...
 
-	echo -e "\033[0;90m\nInstalling $PROG ($RELEASE)... \033[0\n"
+	echo -e "\033[0;90m\nInstalling $PROG ($RELEASE) from $URL ... \033[0\n"
 
 	#enter tempdir
 	mkdir -p $TMP_DIR
