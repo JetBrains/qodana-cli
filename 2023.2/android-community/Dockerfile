@@ -1,22 +1,17 @@
-ARG NODE_TAG="16-bullseye-slim"
-ARG BASE_TAG="6.0-bullseye-slim"
-FROM node:$NODE_TAG AS node_base
-FROM mcr.microsoft.com/dotnet/sdk:$BASE_TAG
+ARG BASE_TAG="bullseye-slim"
+FROM debian:$BASE_TAG
 
-ARG TARGETPLATFORM
+RUN dpkgArch="$(dpkg --print-architecture)" && if [ "$dpkgArch" != "amd64" ];  \
+      then echo "Unsupported architecture by Android SDK:  \
+          https://developer.android.com/studio#command-line-tools-only" >&2;  \
+      exit 1; fi
 
 ENV HOME="/root" LC_ALL="en_US.UTF-8" QODANA_DIST="/opt/idea" QODANA_DATA="/data"
 ENV JAVA_HOME="$QODANA_DIST/jbr" QODANA_DOCKER="true" QODANA_CONF="$HOME/.config/idea"
-ENV RIDER_UNREAL_ROOT="/data/unrealEngine" DOTNET_ROOT="/usr/share/dotnet"
 
-# Not using the URL https://dot.net/v1/dotnet-install.sh because of https://github.com/dotnet/install-scripts/issues/276
-ARG DOTNET_INSTALL_SH_REVISION="40434288dc5bbda41eafcbcbbc5c0fbbe028fb30"
-ARG DOTNET_CHANNEL_A="7.0"
-ARG DOTNET_CHANNEL_B="3.0"
+ENV PATH="$QODANA_DIST/bin:$PATH"
 
-ENV PATH="$QODANA_DIST/bin:/opt/yarn/bin:$PATH"
-
-RUN mkdir -m 777 -p $QODANA_DATA $QODANA_CONF $DOTNET_ROOT $RIDER_UNREAL_ROOT && apt-get update && \
+RUN mkdir -m 777 -p /opt $QODANA_DATA $QODANA_CONF && apt-get update && \
     DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
       ca-certificates \
       curl \
@@ -24,39 +19,18 @@ RUN mkdir -m 777 -p $QODANA_DATA $QODANA_CONF $DOTNET_ROOT $RIDER_UNREAL_ROOT &&
       git \
       gnupg2 \
       locales \
-      software-properties-common && \
+      procps && \
     echo 'en_US.UTF-8 UTF-8' > /etc/locale.gen && locale-gen && \
     apt-get autoremove -y && apt-get clean && \
     chmod 777 -R $HOME && \
     echo 'root:x:0:0:root:/root:/bin/bash' > /etc/passwd && chmod 666 /etc/passwd && \
     git config --global --add safe.directory '*' && \
-    curl -fsSL -o /tmp/dotnet-install.sh  \
-      "https://raw.githubusercontent.com/dotnet/install-scripts/$DOTNET_INSTALL_SH_REVISION/src/dotnet-install.sh" && \
-    echo "d9ede6126a6da49cd3509e5fc8236f79addf175696f29d01f38840fd84663514 /tmp/dotnet-install.sh" > /tmp/shasum && \
-    if [ "${DOTNET_INSTALL_SH_REVISION}" != "master" ]; then sha256sum --check --status /tmp/shasum; fi && \
-    chmod +x /tmp/dotnet-install.sh && \
-    bash /tmp/dotnet-install.sh -c $DOTNET_CHANNEL_A -i $DOTNET_ROOT && \
-    bash /tmp/dotnet-install.sh -c $DOTNET_CHANNEL_B -i $DOTNET_ROOT && \
-    chmod 777 -R $DOTNET_ROOT && \
     rm -rf /var/cache/apt /var/lib/apt/ /tmp/*
 
-COPY --from=node_base /usr/local/bin/node /usr/local/bin/
-COPY --from=node_base /usr/local/include/node /usr/local/include/node
-COPY --from=node_base /usr/local/lib/node_modules /usr/local/lib/node_modules
-COPY --from=node_base /opt/yarn-* /opt/yarn/
-RUN ln -s /usr/local/lib/node_modules/npm/bin/npm-cli.js /usr/local/bin/npm && \
-    ln -s /usr/local/lib/node_modules/npm/bin/npx-cli.js /usr/local/bin/npx && \
-    ln -s /usr/local/lib/node_modules/corepack/dist/corepack.js /usr/local/bin/corepack && \
-    node --version && \
-    npm --version && \
-    yarn --version
+ENV GRADLE_USER_HOME="/data/cache/gradle"
 
-RUN npm install -g eslint && npm config set update-notifier false && \
-    chmod 777 -R "$HOME/.npm" "$HOME/.npmrc"
-
-
-ARG QD_BUILD="QDNET-231.8246.1.53"
-ARG QD_RELEASE="2023.1"
+ARG QD_BUILD="QDANDС-232"
+ARG QD_RELEASE="2023.2"
 RUN set -ex && \
     dpkgArch="$(dpkg --print-architecture)" && \
     case "$dpkgArch" in \
@@ -92,6 +66,28 @@ RUN set -ex && \
     apt-get purge --auto-remove -y gnupg2 && \
     rm -rf /var/cache/apt /var/lib/apt/ /tmp/* $GNUPGHOME
 
-LABEL maintainer="qodana-support@jetbrains.com" description="Qodana for .NET (https://jb.gg/qodana-dotnet)"
+ENV ANDROID_SDK_ROOT="/opt/android-sdk" ANDROID_USER_HOME="$QODANA_DATA/cache/android"
+ENV ANDROID_HOME="$ANDROID_SDK_ROOT"
+ENV ANDROID_SDK_TOOLS="$ANDROID_SDK_ROOT/cmdline-tools/tools/bin" QODANA_CORETTO_SDK="$QODANA_DATA/.jdks/corretto-11"
+# IDE includes JDK17 by default since 2022, so we need additional JDK for the most projects
+COPY --from=amazoncorretto:11 /usr/lib/jvm/java-11-amazon-corretto $QODANA_CORETTO_SDK
+
+ARG ANDROID_SDK_VERSION="9123335"
+ARG ANDROID_SDK_SHA256="0bebf59339eaa534f4217f8aa0972d14dc49e7207be225511073c661ae01da0a"
+ARG ANDROID_API_LEVEL="33"
+RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends unzip && \
+    mkdir -m 777 -p $QODANA_DATA/cache $ANDROID_USER_HOME $ANDROID_SDK_ROOT $ANDROID_SDK_ROOT/cmdline-tools $ANDROID_SDK_ROOT/platforms $ANDROID_SDK_ROOT/ndk && \
+    echo "${ANDROID_SDK_SHA256} /tmp/android.zip" > /tmp/shasum && \
+    curl -fsSL -o /tmp/android.zip  \
+      "https://dl.google.com/android/repository/commandlinetools-linux-${ANDROID_SDK_VERSION}_latest.zip" && \
+    sha256sum --check --status /tmp/shasum && \
+    unzip -q /tmp/android.zip -d ${ANDROID_SDK_ROOT}/cmdline-tools && \
+    mv ${ANDROID_SDK_ROOT}/cmdline-tools/cmdline-tools ${ANDROID_SDK_ROOT}/cmdline-tools/tools && \
+    echo y | ${ANDROID_SDK_TOOLS}/sdkmanager "platforms;android-${ANDROID_API_LEVEL}" && \
+    chmod 777 -R $ANDROID_SDK_ROOT && \
+    apt-get purge --auto-remove -y unzip && \
+    rm -rf /var/cache/apt /var/lib/apt/ /tmp/*
+
+LABEL maintainer="qodana-support@jetbrains.com" description="Qodana Community for Android (https://jb.gg/qodana-android)"
 WORKDIR /data/project
 ENTRYPOINT ["/opt/idea/bin/qodana"]

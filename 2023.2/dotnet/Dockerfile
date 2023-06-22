@@ -1,5 +1,6 @@
 ARG NODE_TAG="16-bullseye-slim"
 ARG BASE_TAG="6.0-bullseye-slim"
+
 FROM node:$NODE_TAG AS node_base
 FROM mcr.microsoft.com/dotnet/sdk:$BASE_TAG
 
@@ -24,6 +25,7 @@ RUN mkdir -m 777 -p $QODANA_DATA $QODANA_CONF $DOTNET_ROOT $RIDER_UNREAL_ROOT &&
       git \
       gnupg2 \
       locales \
+      procps \
       software-properties-common && \
     echo 'en_US.UTF-8 UTF-8' > /etc/locale.gen && locale-gen && \
     apt-get autoremove -y && apt-get clean && \
@@ -54,9 +56,8 @@ RUN ln -s /usr/local/lib/node_modules/npm/bin/npm-cli.js /usr/local/bin/npm && \
 RUN npm install -g eslint && npm config set update-notifier false && \
     chmod 777 -R "$HOME/.npm" "$HOME/.npmrc"
 
-
-ARG QD_BUILD="QDNET-231.8246.1.53"
-ARG QD_RELEASE="2023.1"
+ARG QD_BUILD="QDNET-232"
+ARG QD_RELEASE="2023.2"
 RUN set -ex && \
     dpkgArch="$(dpkg --print-architecture)" && \
     case "$dpkgArch" in \

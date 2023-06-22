@@ -1,22 +1,14 @@
-ARG NODE_TAG="16-bullseye-slim"
-ARG BASE_TAG="6.0-bullseye-slim"
-FROM node:$NODE_TAG AS node_base
-FROM mcr.microsoft.com/dotnet/sdk:$BASE_TAG
+ARG BASE_TAG="8.1-cli-bullseye"
+FROM php:$BASE_TAG
 
 ARG TARGETPLATFORM
 
 ENV HOME="/root" LC_ALL="en_US.UTF-8" QODANA_DIST="/opt/idea" QODANA_DATA="/data"
 ENV JAVA_HOME="$QODANA_DIST/jbr" QODANA_DOCKER="true" QODANA_CONF="$HOME/.config/idea"
-ENV RIDER_UNREAL_ROOT="/data/unrealEngine" DOTNET_ROOT="/usr/share/dotnet"
 
-# Not using the URL https://dot.net/v1/dotnet-install.sh because of https://github.com/dotnet/install-scripts/issues/276
-ARG DOTNET_INSTALL_SH_REVISION="40434288dc5bbda41eafcbcbbc5c0fbbe028fb30"
-ARG DOTNET_CHANNEL_A="7.0"
-ARG DOTNET_CHANNEL_B="3.0"
+ENV PATH="$QODANA_DIST/bin:$PATH"
 
-ENV PATH="$QODANA_DIST/bin:/opt/yarn/bin:$PATH"
-
-RUN mkdir -m 777 -p $QODANA_DATA $QODANA_CONF $DOTNET_ROOT $RIDER_UNREAL_ROOT && apt-get update && \
+RUN mkdir -m 777 -p /opt $QODANA_DATA $QODANA_CONF && apt-get update && \
     DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
       ca-certificates \
       curl \
@@ -24,39 +16,19 @@ RUN mkdir -m 777 -p $QODANA_DATA $QODANA_CONF $DOTNET_ROOT $RIDER_UNREAL_ROOT &&
       git \
       gnupg2 \
       locales \
+      procps \
       software-properties-common && \
     echo 'en_US.UTF-8 UTF-8' > /etc/locale.gen && locale-gen && \
     apt-get autoremove -y && apt-get clean && \
     chmod 777 -R $HOME && \
     echo 'root:x:0:0:root:/root:/bin/bash' > /etc/passwd && chmod 666 /etc/passwd && \
     git config --global --add safe.directory '*' && \
-    curl -fsSL -o /tmp/dotnet-install.sh  \
-      "https://raw.githubusercontent.com/dotnet/install-scripts/$DOTNET_INSTALL_SH_REVISION/src/dotnet-install.sh" && \
-    echo "d9ede6126a6da49cd3509e5fc8236f79addf175696f29d01f38840fd84663514 /tmp/dotnet-install.sh" > /tmp/shasum && \
-    if [ "${DOTNET_INSTALL_SH_REVISION}" != "master" ]; then sha256sum --check --status /tmp/shasum; fi && \
-    chmod +x /tmp/dotnet-install.sh && \
-    bash /tmp/dotnet-install.sh -c $DOTNET_CHANNEL_A -i $DOTNET_ROOT && \
-    bash /tmp/dotnet-install.sh -c $DOTNET_CHANNEL_B -i $DOTNET_ROOT && \
-    chmod 777 -R $DOTNET_ROOT && \
     rm -rf /var/cache/apt /var/lib/apt/ /tmp/*
 
-COPY --from=node_base /usr/local/bin/node /usr/local/bin/
-COPY --from=node_base /usr/local/include/node /usr/local/include/node
-COPY --from=node_base /usr/local/lib/node_modules /usr/local/lib/node_modules
-COPY --from=node_base /opt/yarn-* /opt/yarn/
-RUN ln -s /usr/local/lib/node_modules/npm/bin/npm-cli.js /usr/local/bin/npm && \
-    ln -s /usr/local/lib/node_modules/npm/bin/npx-cli.js /usr/local/bin/npx && \
-    ln -s /usr/local/lib/node_modules/corepack/dist/corepack.js /usr/local/bin/corepack && \
-    node --version && \
-    npm --version && \
-    yarn --version
+COPY --from=composer:2.5 /usr/bin/composer /usr/bin/composer
 
-RUN npm install -g eslint && npm config set update-notifier false && \
-    chmod 777 -R "$HOME/.npm" "$HOME/.npmrc"
-
-
-ARG QD_BUILD="QDNET-231.8246.1.53"
-ARG QD_RELEASE="2023.1"
+ARG QD_BUILD="QDPHP-232"
+ARG QD_RELEASE="2023.2"
 RUN set -ex && \
     dpkgArch="$(dpkg --print-architecture)" && \
     case "$dpkgArch" in \
@@ -92,6 +64,6 @@ RUN set -ex && \
     apt-get purge --auto-remove -y gnupg2 && \
     rm -rf /var/cache/apt /var/lib/apt/ /tmp/* $GNUPGHOME
 
-LABEL maintainer="qodana-support@jetbrains.com" description="Qodana for .NET (https://jb.gg/qodana-dotnet)"
+LABEL maintainer="qodana-support@jetbrains.com" description="Qodana for PHP (https://jb.gg/qodana-php)"
 WORKDIR /data/project
 ENTRYPOINT ["/opt/idea/bin/qodana"]
