@@ -78,7 +78,7 @@ and the timestamp for when their contribution to the project was pushed.
 	}
 	flags := cmd.Flags()
 	flags.StringArrayVarP(&options.ProjectDirs, "project-dir", "i", []string{}, "Project directory, can be specified multiple times to check multiple projects, if not specified, current directory will be used")
-	flags.IntVarP(&options.Days, "days", "d", 30, "Number of days since when to calculate the number of active contributors")
+	flags.IntVarP(&options.Days, "days", "d", 90, "Number of days since when to calculate the number of active contributors")
 	flags.StringVarP(&options.Output, "output", "o", "tabular", "Output format, can be tabular or json")
 
 	return cmd
