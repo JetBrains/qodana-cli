@@ -113,7 +113,7 @@ func TestCloudUrl(t *testing.T) {
 
 func Test_ExtractEnvironmentVariables(t *testing.T) {
 	revisionExpected := "1234567890abcdef1234567890abcdef12345678"
-	branchExpected := "main"
+	branchExpected := "refs/heads/main"
 
 	if os.Getenv("GITHUB_ACTIONS") == "true" {
 		variables := []string{
@@ -185,6 +185,19 @@ func Test_ExtractEnvironmentVariables(t *testing.T) {
 				"GITHUB_RUN_ID":     "123456789",
 				"GITHUB_SHA":        revisionExpected,
 				"GITHUB_HEAD_REF":   branchExpected,
+			},
+			qodanaEnvExpected:       fmt.Sprintf("github-actions:%s", Version),
+			qodanaJobUrlExpected:    "https://github.jetbrains.com/sa/entrypoint/actions/runs/123456789",
+			qodanaRemoteUrlExpected: "https://github.jetbrains.com/sa/entrypoint.git",
+		},
+		{
+			ci: "GitHub push",
+			variables: map[string]string{
+				"GITHUB_SERVER_URL": "https://github.jetbrains.com",
+				"GITHUB_REPOSITORY": "sa/entrypoint",
+				"GITHUB_RUN_ID":     "123456789",
+				"GITHUB_SHA":        revisionExpected,
+				"GITHUB_REF":        branchExpected,
 			},
 			qodanaEnvExpected:       fmt.Sprintf("github-actions:%s", Version),
 			qodanaJobUrlExpected:    "https://github.jetbrains.com/sa/entrypoint/actions/runs/123456789",
