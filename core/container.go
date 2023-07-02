@@ -92,17 +92,41 @@ func extractQodanaEnvironment(opts *QodanaOptions) {
 	qEnv := "cli"
 	if ci != nil {
 		qEnv = strings.ReplaceAll(strings.ToLower(ci.Name), " ", "-")
-		opts.setenv(qodanaJobUrl, validateCiUrl(ci.URL, qEnv))
+		opts.setenv(qodanaJobUrl, validateJobUrl(ci.URL, qEnv))
 		if ci.Git != nil {
-			opts.setenv(qodanaRemoteUrl, ci.Git.Remote)
-			opts.setenv(qodanaBranch, ci.Git.Branch)
+			opts.setenv(qodanaRemoteUrl, validateRemoteUrl(ci.Git.Remote))
+			opts.setenv(qodanaBranch, validateBranch(ci.Git.Branch, qEnv))
 			opts.setenv(qodanaRevision, ci.Git.Revision)
 		}
 	}
 	opts.setenv(qodanaEnv, fmt.Sprintf("%s:%s", qEnv, Version))
 }
 
-func validateCiUrl(ciUrl string, qEnv string) string {
+func validateRemoteUrl(remote string) string {
+	_, err := url.ParseRequestURI(remote)
+	if remote == "" || err != nil {
+		log.Warnf("Unable to parse git remote URL, set %s env variable for proper qodana.cloud reporting", qodanaBranch)
+		return ""
+	}
+	return remote
+}
+
+func validateBranch(branch string, env string) string {
+	if branch == "" {
+		if env == "github-actions" {
+			branch = os.Getenv("GITHUB_REF")
+		} else if env == "azure-pipelines" {
+			branch = os.Getenv("BUILD_SOURCEBRANCHNAME")
+		}
+	}
+	if branch == "" {
+		log.Warnf("Unable to parse git branch, set %s env variable for proper qodana.cloud reporting", qodanaBranch)
+		return ""
+	}
+	return branch
+}
+
+func validateJobUrl(ciUrl string, qEnv string) string {
 	if strings.HasPrefix(qEnv, "azure") { // temporary workaround for Azure Pipelines
 		return getAzureJobUrl()
 	}
