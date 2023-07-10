@@ -1,15 +1,12 @@
-ARG NODE_TAG="16-bullseye-slim"
-ARG BASE_TAG="8.1-cli-bullseye"
-
-FROM node:$NODE_TAG AS node_base
-FROM php:$BASE_TAG
+ARG BASE_TAG="bullseye-slim"
+FROM debian:$BASE_TAG
 
 ARG TARGETPLATFORM
 
 ENV HOME="/root" LC_ALL="en_US.UTF-8" QODANA_DIST="/opt/idea" QODANA_DATA="/data"
 ENV JAVA_HOME="$QODANA_DIST/jbr" QODANA_DOCKER="true" QODANA_CONF="$HOME/.config/idea"
 
-ENV PATH="$QODANA_DIST/bin:/opt/yarn/bin:$PATH"
+ENV PATH="$QODANA_DIST/bin:$PATH"
 
 RUN mkdir -m 777 -p /opt $QODANA_DATA $QODANA_CONF && apt-get update && \
     DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
@@ -19,8 +16,7 @@ RUN mkdir -m 777 -p /opt $QODANA_DATA $QODANA_CONF && apt-get update && \
       git \
       gnupg2 \
       locales \
-      procps \
-      software-properties-common && \
+      procps && \
     echo 'en_US.UTF-8 UTF-8' > /etc/locale.gen && locale-gen && \
     apt-get autoremove -y && apt-get clean && \
     chmod 777 -R $HOME && \
@@ -28,21 +24,40 @@ RUN mkdir -m 777 -p /opt $QODANA_DATA $QODANA_CONF && apt-get update && \
     git config --global --add safe.directory '*' && \
     rm -rf /var/cache/apt /var/lib/apt/ /tmp/*
 
-COPY --from=composer:2.5.1 /usr/bin/composer /usr/bin/composer
-COPY --from=node_base /usr/local/bin/node /usr/local/bin/
-COPY --from=node_base /usr/local/include/node /usr/local/include/node
-COPY --from=node_base /usr/local/lib/node_modules /usr/local/lib/node_modules
-COPY --from=node_base /opt/yarn-* /opt/yarn/
-RUN ln -s /usr/local/lib/node_modules/npm/bin/npm-cli.js /usr/local/bin/npm && \
-    ln -s /usr/local/lib/node_modules/npm/bin/npx-cli.js /usr/local/bin/npx && \
-    ln -s /usr/local/lib/node_modules/corepack/dist/corepack.js /usr/local/bin/corepack && \
-    node --version && \
-    npm --version && \
-    yarn --version && \
-    npm install -g eslint && npm config set update-notifier false && \
-    chmod 777 -R "$HOME/.npm" "$HOME/.npmrc"
+ENV CONDA_DIR="/opt/miniconda3" CONDA_ENVS_PATH="$QODANA_DATA/cache/conda/envs" CONDA_PKGS_DIRS="$QODANA_DATA/cache/conda/pkgs" PIP_CACHE_DIR="$QODANA_DATA/cache/.pip/" FLIT_ROOT_INSTALL=1
+ENV PATH="$CONDA_DIR/bin:$HOME/.local/bin:$PATH"
+ARG CONDA_VERSION="py310_22.11.1-1"
 
-ARG QD_BUILD="QDPHP-2023.2"
+RUN apt-get update &&  \
+    DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
+      bzip2 \
+      libglib2.0-0 \
+      libsm6 \
+      libxext6 \
+      libxrender1 \
+      procps && \
+    mkdir -m 777 -p $QODANA_DATA/cache && \
+    case $TARGETPLATFORM in \
+      linux/amd64)  \
+        MINICONDA_URL="https://repo.anaconda.com/miniconda/Miniconda3-${CONDA_VERSION}-Linux-x86_64.sh" \
+        SHA256SUM="00938c3534750a0e4069499baf8f4e6dc1c2e471c86a59caa0dd03f4a9269db6";; \
+      linux/arm64)  \
+        MINICONDA_URL="https://repo.anaconda.com/miniconda/Miniconda3-${CONDA_VERSION}-Linux-aarch64.sh"  \
+        SHA256SUM="48a96df9ff56f7421b6dd7f9f71d548023847ba918c3826059918c08326c2017";; \
+      *) echo "Unsupported architecture $TARGETPLATFORM or you forgot to enable Docker BuildKit" >&2; exit 1;; \
+    esac && \
+    curl -fsSL -o /tmp/miniconda.sh "${MINICONDA_URL}" && \
+    echo "${SHA256SUM} /tmp/miniconda.sh" > /tmp/shasum && \
+    if [ "${CONDA_VERSION}" != "latest" ]; then sha256sum --check --status /tmp/shasum; fi && \
+    bash /tmp/miniconda.sh -b -p $CONDA_DIR && \
+    ln -s ${CONDA_DIR}/etc/profile.d/conda.sh /etc/profile.d/conda.sh && \
+    echo ". ${CONDA_DIR}/etc/profile.d/conda.sh" >> ~/.bashrc && \
+    echo "conda activate base" >> ~/.bashrc && ln -s ${CONDA_DIR}/bin/python3 /usr/bin/python3 && \
+    find ${CONDA_DIR}/ -follow -type f -name '*.a' -delete && find ${CONDA_DIR}/ -follow -type f -name '*.js.map' -delete && \
+    ${CONDA_DIR}/bin/conda install -c conda-forge poetry pipenv && ${CONDA_DIR}/bin/conda clean -afy && \
+    rm -rf /var/cache/apt /var/lib/apt/ /tmp/*
+
+ARG QD_BUILD="QDPYC-2023.2"
 ARG QD_RELEASE="2023.2"
 RUN set -ex && \
     dpkgArch="$(dpkg --print-architecture)" && \
@@ -79,6 +94,6 @@ RUN set -ex && \
     apt-get purge --auto-remove -y gnupg2 && \
     rm -rf /var/cache/apt /var/lib/apt/ /tmp/* $GNUPGHOME
 
-LABEL maintainer="qodana-support@jetbrains.com" description="Qodana for PHP (https://jb.gg/qodana-php)"
+LABEL maintainer="qodana-support@jetbrains.com" description="Qodana Community for Python (https://jb.gg/qodana-python-community)"
 WORKDIR /data/project
 ENTRYPOINT ["/opt/idea/bin/qodana"]

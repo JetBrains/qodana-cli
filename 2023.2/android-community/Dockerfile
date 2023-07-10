@@ -29,7 +29,7 @@ RUN mkdir -m 777 -p /opt $QODANA_DATA $QODANA_CONF && apt-get update && \
 
 ENV GRADLE_USER_HOME="/data/cache/gradle"
 
-ARG QD_BUILD="QDANDС-232"
+ARG QD_BUILD="QDANDС-2023.2"
 ARG QD_RELEASE="2023.2"
 RUN set -ex && \
     dpkgArch="$(dpkg --print-architecture)" && \
@@ -56,8 +56,8 @@ RUN set -ex && \
     done && \
     gpg --verify /tmp/$QD_NAME.tar.gz.sha256.asc /tmp/$QD_NAME.tar.gz.sha256 && \
     (cd /tmp && sha256sum --check --status $QD_NAME.tar.gz.sha256) && \
-    tar -xzf /tmp/$QD_NAME.tar.gz --directory /tmp/ --strip-components=1 && \
-    mv /tmp/$QD_NAME $QODANA_DIST && \
+    mkdir -p /tmp/qd && tar -xzf /tmp/$QD_NAME.tar.gz --directory /tmp/qd --strip-components=1 && \
+    mv /tmp/qd/qodana-QD* $QODANA_DIST && \
     chmod +x $QODANA_DIST/bin/*.sh $QODANA_DIST/bin/qodana && \
     update-alternatives --install /usr/bin/java java $JAVA_HOME/bin/java 0 && \
     update-alternatives --install /usr/bin/javac javac $JAVA_HOME/bin/javac 0 && \

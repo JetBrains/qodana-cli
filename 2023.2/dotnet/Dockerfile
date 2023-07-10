@@ -13,7 +13,7 @@ ENV RIDER_UNREAL_ROOT="/data/unrealEngine" DOTNET_ROOT="/usr/share/dotnet"
 # Not using the URL https://dot.net/v1/dotnet-install.sh because of https://github.com/dotnet/install-scripts/issues/276
 ARG DOTNET_INSTALL_SH_REVISION="40434288dc5bbda41eafcbcbbc5c0fbbe028fb30"
 ARG DOTNET_CHANNEL_A="7.0"
-ARG DOTNET_CHANNEL_B="3.0"
+ARG DOTNET_CHANNEL_B="6.0"
 
 ENV PATH="$QODANA_DIST/bin:/opt/yarn/bin:$PATH"
 
@@ -56,7 +56,7 @@ RUN ln -s /usr/local/lib/node_modules/npm/bin/npm-cli.js /usr/local/bin/npm && \
 RUN npm install -g eslint && npm config set update-notifier false && \
     chmod 777 -R "$HOME/.npm" "$HOME/.npmrc"
 
-ARG QD_BUILD="QDNET-232"
+ARG QD_BUILD="QDNET-2023.2"
 ARG QD_RELEASE="2023.2"
 RUN set -ex && \
     dpkgArch="$(dpkg --print-architecture)" && \
@@ -83,8 +83,8 @@ RUN set -ex && \
     done && \
     gpg --verify /tmp/$QD_NAME.tar.gz.sha256.asc /tmp/$QD_NAME.tar.gz.sha256 && \
     (cd /tmp && sha256sum --check --status $QD_NAME.tar.gz.sha256) && \
-    tar -xzf /tmp/$QD_NAME.tar.gz --directory /tmp/ --strip-components=1 && \
-    mv /tmp/$QD_NAME $QODANA_DIST && \
+    mkdir -p /tmp/qd && tar -xzf /tmp/$QD_NAME.tar.gz --directory /tmp/qd --strip-components=1 && \
+    mv /tmp/qd/qodana-QD* $QODANA_DIST && \
     chmod +x $QODANA_DIST/bin/*.sh $QODANA_DIST/bin/qodana && \
     update-alternatives --install /usr/bin/java java $JAVA_HOME/bin/java 0 && \
     update-alternatives --install /usr/bin/javac javac $JAVA_HOME/bin/javac 0 && \

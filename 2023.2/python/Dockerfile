@@ -1,4 +1,7 @@
+ARG NODE_TAG="16-bullseye-slim"
 ARG BASE_TAG="bullseye-slim"
+
+FROM node:$NODE_TAG AS node_base
 FROM debian:$BASE_TAG
 
 ARG TARGETPLATFORM
@@ -6,7 +9,7 @@ ARG TARGETPLATFORM
 ENV HOME="/root" LC_ALL="en_US.UTF-8" QODANA_DIST="/opt/idea" QODANA_DATA="/data"
 ENV JAVA_HOME="$QODANA_DIST/jbr" QODANA_DOCKER="true" QODANA_CONF="$HOME/.config/idea"
 
-ENV PATH="$QODANA_DIST/bin:$PATH"
+ENV PATH="$QODANA_DIST/bin:/opt/yarn/bin:$PATH"
 
 RUN mkdir -m 777 -p /opt $QODANA_DATA $QODANA_CONF && apt-get update && \
     DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
@@ -15,7 +18,8 @@ RUN mkdir -m 777 -p /opt $QODANA_DATA $QODANA_CONF && apt-get update && \
       fontconfig \
       git \
       gnupg2 \
-      locales && \
+      locales \
+      procps && \
     echo 'en_US.UTF-8 UTF-8' > /etc/locale.gen && locale-gen && \
     apt-get autoremove -y && apt-get clean && \
     chmod 777 -R $HOME && \
@@ -36,15 +40,14 @@ RUN apt-get update &&  \
       libxrender1 \
       procps && \
     mkdir -m 777 -p $QODANA_DATA/cache && \
-    dpkgArch="$(dpkg --print-architecture)" && \
-    case $dpkgArch in \
-      'amd64')  \
+    case $TARGETPLATFORM in \
+      linux/amd64)  \
         MINICONDA_URL="https://repo.anaconda.com/miniconda/Miniconda3-${CONDA_VERSION}-Linux-x86_64.sh" \
         SHA256SUM="00938c3534750a0e4069499baf8f4e6dc1c2e471c86a59caa0dd03f4a9269db6";; \
-      'arm64')  \
+      linux/arm64)  \
         MINICONDA_URL="https://repo.anaconda.com/miniconda/Miniconda3-${CONDA_VERSION}-Linux-aarch64.sh"  \
         SHA256SUM="48a96df9ff56f7421b6dd7f9f71d548023847ba918c3826059918c08326c2017";; \
-      *) echo "Unsupported architecture" >&2; exit 1;; \
+      *) echo "Unsupported architecture $TARGETPLATFORM or you forgot to enable Docker BuildKit" >&2; exit 1;; \
     esac && \
     curl -fsSL -o /tmp/miniconda.sh "${MINICONDA_URL}" && \
     echo "${SHA256SUM} /tmp/miniconda.sh" > /tmp/shasum && \
@@ -57,7 +60,20 @@ RUN apt-get update &&  \
     ${CONDA_DIR}/bin/conda install -c conda-forge poetry pipenv && ${CONDA_DIR}/bin/conda clean -afy && \
     rm -rf /var/cache/apt /var/lib/apt/ /tmp/*
 
-ARG QD_BUILD="QDPY-232"
+COPY --from=node_base /usr/local/bin/node /usr/local/bin/
+COPY --from=node_base /usr/local/include/node /usr/local/include/node
+COPY --from=node_base /usr/local/lib/node_modules /usr/local/lib/node_modules
+COPY --from=node_base /opt/yarn-* /opt/yarn/
+RUN ln -s /usr/local/lib/node_modules/npm/bin/npm-cli.js /usr/local/bin/npm && \
+    ln -s /usr/local/lib/node_modules/npm/bin/npx-cli.js /usr/local/bin/npx && \
+    ln -s /usr/local/lib/node_modules/corepack/dist/corepack.js /usr/local/bin/corepack && \
+    node --version && \
+    npm --version && \
+    yarn --version && \
+    npm install -g eslint && npm config set update-notifier false && \
+    chmod 777 -R "$HOME/.npm" "$HOME/.npmrc"
+
+ARG QD_BUILD="QDPY-2023.2"
 ARG QD_RELEASE="2023.2"
 RUN set -ex && \
     dpkgArch="$(dpkg --print-architecture)" && \
@@ -84,8 +100,8 @@ RUN set -ex && \
     done && \
     gpg --verify /tmp/$QD_NAME.tar.gz.sha256.asc /tmp/$QD_NAME.tar.gz.sha256 && \
     (cd /tmp && sha256sum --check --status $QD_NAME.tar.gz.sha256) && \
-    tar -xzf /tmp/$QD_NAME.tar.gz --directory /tmp/ --strip-components=1 && \
-    mv /tmp/$QD_NAME $QODANA_DIST && \
+    mkdir -p /tmp/qd && tar -xzf /tmp/$QD_NAME.tar.gz --directory /tmp/qd --strip-components=1 && \
+    mv /tmp/qd/qodana-QD* $QODANA_DIST && \
     chmod +x $QODANA_DIST/bin/*.sh $QODANA_DIST/bin/qodana && \
     update-alternatives --install /usr/bin/java java $JAVA_HOME/bin/java 0 && \
     update-alternatives --install /usr/bin/javac javac $JAVA_HOME/bin/javac 0 && \

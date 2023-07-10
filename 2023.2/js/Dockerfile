@@ -6,7 +6,7 @@ ARG TARGETPLATFORM
 ENV HOME="/root" LC_ALL="en_US.UTF-8" QODANA_DIST="/opt/idea" QODANA_DATA="/data"
 ENV JAVA_HOME="$QODANA_DIST/jbr" QODANA_DOCKER="true" QODANA_CONF="$HOME/.config/idea"
 
-ENV PATH="$QODANA_DIST/bin:$PATH"
+ENV PATH="$QODANA_DIST/bin:/opt/yarn/bin:$PATH"
 
 RUN mkdir -m 777 -p /opt $QODANA_DATA $QODANA_CONF && apt-get update && \
     DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
@@ -26,7 +26,7 @@ RUN mkdir -m 777 -p /opt $QODANA_DATA $QODANA_CONF && apt-get update && \
     chmod 777 -R "$HOME/.npm" "$HOME/.npmrc" && \
     rm -rf /var/cache/apt /var/lib/apt/ /tmp/*
 
-ARG QD_BUILD="QDJS-232"
+ARG QD_BUILD="QDJS-2023.2"
 ARG QD_RELEASE="2023.2"
 RUN set -ex && \
     dpkgArch="$(dpkg --print-architecture)" && \
@@ -53,8 +53,8 @@ RUN set -ex && \
     done && \
     gpg --verify /tmp/$QD_NAME.tar.gz.sha256.asc /tmp/$QD_NAME.tar.gz.sha256 && \
     (cd /tmp && sha256sum --check --status $QD_NAME.tar.gz.sha256) && \
-    tar -xzf /tmp/$QD_NAME.tar.gz --directory /tmp/ --strip-components=1 && \
-    mv /tmp/$QD_NAME $QODANA_DIST && \
+    mkdir -p /tmp/qd && tar -xzf /tmp/$QD_NAME.tar.gz --directory /tmp/qd --strip-components=1 && \
+    mv /tmp/qd/qodana-QD* $QODANA_DIST && \
     chmod +x $QODANA_DIST/bin/*.sh $QODANA_DIST/bin/qodana && \
     update-alternatives --install /usr/bin/java java $JAVA_HOME/bin/java 0 && \
     update-alternatives --install /usr/bin/javac javac $JAVA_HOME/bin/javac 0 && \
