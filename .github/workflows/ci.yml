@@ -1,0 +1,29 @@
+name: 'CI'
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+  pull_request:
+
+jobs:
+  build:
+    strategy:
+      matrix:
+        os: [ ubuntu-latest ]
+        version: [ 2023.2 ]
+        linter: [ android-community, dotnet, go, js, jvm, jvm-community, php, python, python-community ]
+    runs-on: ${{ matrix.os }}
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v3
+    - name: Set up QEMU
+      uses: docker/setup-qemu-action@v2
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v2
+    - name: Build
+      uses: docker/build-push-action@v4
+      with:
+        context: ${{ matrix.version }}/${{ matrix.linter }}
+        push: false
+        tags: jetbrains/qodana-${{ matrix.linter }}:${{ matrix.version }}

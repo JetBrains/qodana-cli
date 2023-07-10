@@ -4,12 +4,11 @@
 [![GitHub Discussions](https://img.shields.io/github/discussions/jetbrains/qodana)][jb:discussions]
 [![Twitter Follow](https://img.shields.io/twitter/follow/Qodana?style=social&logo=twitter)][jb:twitter]
 
-This repository contains official Docker images for [Qodana](https://registry.hub.docker.com/_/qodana/). Detailed README is generated from [docker-library/docs](https://github.com/docker-library/docs).
+This repository contains official Docker images for [Qodana](https://hub.docker.com/search?q=jetbrains%2Fqodana-).
 
+## Questions, issues, or feedback?
 
-## Questions, issues or feedback?
-
-All the issues, feature requests, and support related to the Qodana are handled on [YouTrack][youtrack].
+All the issues, feature requests, and support related to Qodana are handled in [YouTrack][youtrack].
 
 If you'd like to file a new issue, please use the link [YouTrack | New Issue][youtrack-new-issue]. Also, you can use the [GitHub Discussions][jb:discussions] to ask questions or share your feedback.
 
