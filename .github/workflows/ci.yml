@@ -10,6 +10,7 @@ jobs:
   build:
     strategy:
       matrix:
+        platform: [ linux/amd64, linux/arm64 ]
         os: [ ubuntu-latest ]
         version: [ 2023.2 ]
         linter: [ android-community, dotnet, go, js, jvm, jvm-community, php, python, python-community ]
@@ -26,5 +27,5 @@ jobs:
       with:
         tags: jetbrains/qodana-${{ matrix.linter }}:${{ matrix.version }}
         context: ${{ matrix.version }}/${{ matrix.linter }}
-        platforms: linux/amd64,linux/arm64
+        platforms: ${{ matrix.platform }}
         push: false
