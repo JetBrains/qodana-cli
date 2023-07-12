@@ -10,7 +10,7 @@ jobs:
   build:
     strategy:
       matrix:
-        platform: [ linux/amd64, linux/arm64 ]
+        platform: [ linux/amd64 ]  # linux/arm64
         os: [ ubuntu-latest ]
         version: [ 2023.2 ]
         linter: [ android-community, dotnet, go, js, jvm, jvm-community, php, python, python-community ]
