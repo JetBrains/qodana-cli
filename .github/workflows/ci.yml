@@ -24,6 +24,7 @@ jobs:
     - name: Build
       uses: docker/build-push-action@v4
       with:
-        context: ${{ matrix.version }}/${{ matrix.linter }}
-        push: false
         tags: jetbrains/qodana-${{ matrix.linter }}:${{ matrix.version }}
+        context: ${{ matrix.version }}/${{ matrix.linter }}
+        platforms: linux/amd64,linux/arm64
+        push: false
