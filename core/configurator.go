@@ -33,7 +33,7 @@ const (
 	QodanaSarifName     = "qodana.sarif.json"
 	qodanaReportUrlFile = "qodana.cloud"
 	configName          = "qodana"
-	version             = "2023.1"
+	version             = "2023.2"
 	eap                 = "-eap"
 )
 
@@ -42,7 +42,7 @@ var langsLinters = map[string][]string{
 	"Java":              {QDJVMC, QDJVM, QDAND},
 	"Kotlin":            {QDJVMC, QDJVM, QDAND},
 	"PHP":               {QDPHP},
-	"Python":            {QDPY},
+	"Python":            {QDPYC, QDPY},
 	"JavaScript":        {QDJS},
 	"TypeScript":        {QDJS},
 	"Go":                {QDGO},
@@ -52,7 +52,7 @@ var langsLinters = map[string][]string{
 }
 
 // allLinters is a list of all supported linters.
-var allLinters = []string{QDJVMC, QDJVM, QDAND, QDPHP, QDPY, QDJS, QDGO, QDNET}
+var allLinters = []string{QDJVMC, QDJVM, QDAND, QDPHP, QDPY, QDPYC, QDJS, QDGO, QDNET}
 
 // ignoredDirectories is a list of directories that should be ignored by the configurator.
 var ignoredDirectories = []string{
