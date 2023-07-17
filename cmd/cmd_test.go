@@ -140,6 +140,23 @@ func TestInitCommand(t *testing.T) {
 	}
 }
 
+func TestExclusiveFixesCommand(t *testing.T) {
+	if os.Getenv("GITHUB_ACTIONS") == "true" {
+		//goland:noinspection GoBoolExpressions
+		if _, err := exec.LookPath("docker"); err != nil || runtime.GOOS != "linux" {
+			t.Skip(err)
+		}
+	}
+	out := bytes.NewBufferString("")
+	command := newScanCommand()
+	command.SetOut(out)
+	command.SetArgs([]string{"--apply-fixes", "--cleanup"})
+	err := command.Execute()
+	if err == nil {
+		t.Fatal("expected error, but got nil")
+	}
+}
+
 func TestContributorsCommand(t *testing.T) {
 	out := bytes.NewBufferString("")
 	command := newContributorsCommand()

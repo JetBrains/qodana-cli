@@ -81,7 +81,7 @@ type QodanaYaml struct {
 	// DisableSanityInspections property to disable sanity inspections.
 	DisableSanityInspections string `yaml:"disableSanityInspections,omitempty"`
 
-	// FixesStrategy property to set fixes strategy. Can be NONE (default), APPLY, CLEANUP;.
+	// FixesStrategy property to set fixes strategy. Can be none (default), apply, cleanup.
 	FixesStrategy string `yaml:"fixesStrategy,omitempty"`
 
 	// RunPromoInspections property to run promo inspections.
