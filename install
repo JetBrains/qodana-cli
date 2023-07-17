@@ -75,7 +75,9 @@ function install {
 	*) fail "unknown os: $(uname -s)";;
 	esac
 	#find ARCH
-	if [[ $(uname -m) == "x86_64" ]]; then
+	if [[ $OS == "darwin" ]]; then
+	      ARCH="all"
+	elif [[ $(uname -m) == "x86_64" ]]; then
     		ARCH="amd64"
 	elif [[ $(uname -m) == "aarch64" ]]; then
     		ARCH="arm"
@@ -85,12 +87,8 @@ function install {
 	URL=""
 	FTYPE=""
 	case "${OS}_${ARCH}" in
-	"darwin_arm")
-		URL="https://github.com/JetBrains/qodana-cli/releases/download/$RELEASE/qodana_darwin_arm64.tar.gz"
-		FTYPE=".tar.gz"
-		;;
-	"darwin_amd64")
-		URL="https://github.com/JetBrains/qodana-cli/releases/download/$RELEASE/qodana_darwin_x86_64.tar.gz"
+	"darwin_all")
+		URL="https://github.com/JetBrains/qodana-cli/releases/download/$RELEASE/qodana_darwin_all.tar.gz"
 		FTYPE=".tar.gz"
 		;;
 	"linux_arm")
