@@ -38,6 +38,8 @@ nfpms:
       - archlinux
     dependencies:
       - git
+universal_binaries:
+  - replace: true
 brews:
   - tap:
       owner: JetBrains
