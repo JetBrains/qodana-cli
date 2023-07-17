@@ -30,11 +30,12 @@ var Version = "dev"
 
 //goland:noinspection GoUnnecessarilyExportedIdentifiers
 var (
-	QDJVMC = "jetbrains/qodana-jvm-community:" + version
+	QDJVMC = "jetbrains/qodana-jvm-community:" + version + eap
 	QDJVM  = "jetbrains/qodana-jvm:" + version + eap
 	QDAND  = "jetbrains/qodana-jvm-android:" + version + eap
 	QDPHP  = "jetbrains/qodana-php:" + version + eap
 	QDPY   = "jetbrains/qodana-python:" + version + eap
+	QDPYC  = "jetbrains/qodana-python-community:" + version + eap
 	QDJS   = "jetbrains/qodana-js:" + version + eap
 	QDGO   = "jetbrains/qodana-go:" + version + eap
 	QDNET  = "jetbrains/qodana-dotnet:" + version + eap

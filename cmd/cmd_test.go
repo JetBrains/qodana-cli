@@ -130,8 +130,8 @@ func TestInitCommand(t *testing.T) {
 
 	qodanaYaml := core.LoadQodanaYaml(projectPath, filename)
 
-	if qodanaYaml.Linter != core.QDPY {
-		t.Fatalf("expected \"%s\", but got %s", core.QDPY, qodanaYaml.Linter)
+	if qodanaYaml.Linter != core.QDPYC {
+		t.Fatalf("expected \"%s\", but got %s", core.QDPYC, qodanaYaml.Linter)
 	}
 
 	err = os.RemoveAll(projectPath)
@@ -177,7 +177,7 @@ func TestAllCommands(t *testing.T) {
 	//_ = os.Setenv(qodanaCliContainerName, "qodana-cli-test-new1")
 	core.DisableColor()
 	core.CheckForUpdates("0.1.0")
-	projectPath := createProject(t, "qodana_scan")
+	projectPath := createProject(t, "qodana_scan_python")
 	resultsPath := filepath.Join(projectPath, "results")
 	err := os.MkdirAll(resultsPath, 0o755)
 	if err != nil {
