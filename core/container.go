@@ -323,6 +323,12 @@ func getCmdOptions(opts *QodanaOptions) []string {
 	if opts.AnalysisId != "" {
 		arguments = append(arguments, "--analysis-id", opts.AnalysisId)
 	}
+	if opts.ApplyFixes {
+		arguments = append(arguments, "--apply-fixes")
+	}
+	if opts.Cleanup {
+		arguments = append(arguments, "--cleanup")
+	}
 	for _, property := range opts.Property {
 		arguments = append(arguments, "--property="+property)
 	}

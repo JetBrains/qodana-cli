@@ -52,6 +52,8 @@ type QodanaOptions struct {
 	YamlName              string
 	GitReset              bool
 	FullHistory           bool
+	ApplyFixes            bool
+	Cleanup               bool
 }
 
 // setenv sets the Qodana container environment variables if such variable was not set before.

@@ -118,12 +118,17 @@ But you can always override qodana.yaml options with the following command-line 
 	flags.StringVar(&options.Script, "script", "default", "Override the run scenario")
 	flags.StringVar(&options.StubProfile, "stub-profile", "", "Absolute path to the fallback profile file. This option is applied in case the profile was not specified using any available options")
 
+	flags.BoolVar(&options.ApplyFixes, "apply-fixes", false, "Apply all available quick-fixes, including cleanup")
+	flags.BoolVar(&options.Cleanup, "cleanup", false, "Run project cleanup")
+
 	flags.StringArrayVar(&options.Property, "property", []string{}, "Set a JVM property to be used while running Qodana using the --property property.name=value1,value2,...,valueN notation")
 	flags.BoolVarP(&options.SaveReport, "save-report", "s", true, "Generate HTML report")
 
 	flags.SortFlags = false
 
 	cmd.MarkFlagsMutuallyExclusive("commit", "script")
+	cmd.MarkFlagsMutuallyExclusive("profile-name", "profile-path")
+	cmd.MarkFlagsMutuallyExclusive("apply-fixes", "cleanup")
 
 	return cmd
 }
