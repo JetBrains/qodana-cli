@@ -39,12 +39,12 @@ func createProject(t *testing.T, name string) string {
 	if err != nil {
 		t.Fatal(err)
 	}
-	location := filepath.Join(home, ".qodana_scan", name)
+	location := filepath.Join(home, ".qodana_scan_", name)
 	err = os.MkdirAll(location, 0o755)
 	if err != nil {
 		t.Fatal(err)
 	}
-	err = os.WriteFile(location+"/hello.py", []byte("print(\"Hello\")"), 0o755)
+	err = os.WriteFile(location+"/hello.py", []byte("print(\"Hello\"   )"), 0o755)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -182,7 +182,7 @@ func TestContributorsCommand(t *testing.T) {
 }
 
 func TestAllCommands(t *testing.T) {
-	linter := "registry.jetbrains.team/p/sa/containers/qodana-python:latest"
+	linter := "jetbrains/qodana-python:2023.2-eap"
 
 	if os.Getenv("GITHUB_ACTIONS") == "true" {
 		//goland:noinspection GoBoolExpressions
@@ -223,6 +223,7 @@ func TestAllCommands(t *testing.T) {
 		"--fail-threshold", "5",
 		"--print-problems",
 		"--clear-cache",
+		"--apply-fixes",
 		"-l", linter,
 	})
 	err = command.Execute()
