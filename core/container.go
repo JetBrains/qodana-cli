@@ -324,10 +324,9 @@ func getCmdOptions(opts *QodanaOptions) []string {
 		arguments = append(arguments, "--analysis-id", opts.AnalysisId)
 	}
 	if opts.ApplyFixes {
-		arguments = append(arguments, "--apply-fixes")
-	}
-	if opts.Cleanup {
-		arguments = append(arguments, "--cleanup")
+		arguments = append(arguments, "--fixes-strategy", "apply")
+	} else if opts.Cleanup {
+		arguments = append(arguments, "--fixes-strategy", "cleanup")
 	}
 	for _, property := range opts.Property {
 		arguments = append(arguments, "--property="+property)
