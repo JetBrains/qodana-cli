@@ -187,7 +187,6 @@ func PrintFile(file string) {
 		log.Fatalf("failed to read file %s: %s", file, err)
 	}
 	printLines(string(content), 1, 0, true)
-	printFooter("")
 }
 
 // printProblem prints problem with source code or without it.
@@ -195,7 +194,7 @@ func printProblem(ruleId string, level string, message string, path string, line
 	printHeader(level, ruleId, "")
 	printPath(path, line, column)
 	printLines(context, contextLine, line, false)
-	printFooter(message)
+	fmt.Print(message + "\n")
 }
 
 // getTerminalWidth returns the width of the terminal.
@@ -216,11 +215,6 @@ func printHeader(level string, ruleId string, file string) {
 		fmt.Printf("%5s  %s %s\n", "", tableSepMid, PrimaryBold(file))
 		fmt.Println(strings.Repeat(tableSep, width))
 	}
-}
-
-// printFooter prints the footer of the problem/file.
-func printFooter(message string) {
-	fmt.Printf("%s\n", message)
 }
 
 // printPath prints the path of the problem.

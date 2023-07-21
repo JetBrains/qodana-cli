@@ -15,6 +15,7 @@ require (
 	github.com/sirupsen/logrus v1.9.3
 	github.com/spf13/cobra v1.7.0
 	github.com/spf13/viper v1.16.0
+	github.com/zalando/go-keyring v0.2.3
 	gopkg.in/yaml.v3 v3.0.1
 )
 
@@ -24,7 +25,9 @@ require (
 	atomicgo.dev/schedule v0.0.2 // indirect
 	github.com/Azure/go-ansiterm v0.0.0-20210617225240-d185dfc1b5a1 // indirect
 	github.com/Microsoft/go-winio v0.5.2 // indirect
+	github.com/alessio/shellescape v1.4.1 // indirect
 	github.com/containerd/console v1.0.3 // indirect
+	github.com/danieljoos/wincred v1.2.0 // indirect
 	github.com/dbaggerman/cuba v0.3.2 // indirect
 	github.com/docker/distribution v2.8.1+incompatible // indirect
 	github.com/docker/docker-credential-helpers v0.7.0 // indirect
@@ -32,6 +35,7 @@ require (
 	github.com/docker/go-units v0.4.0 // indirect
 	github.com/fsnotify/fsnotify v1.6.0 // indirect
 	github.com/go-enry/go-oniguruma v1.2.1 // indirect
+	github.com/godbus/dbus/v5 v5.1.0 // indirect
 	github.com/gogo/protobuf v1.3.2 // indirect
 	github.com/gookit/color v1.5.3 // indirect
 	github.com/hashicorp/hcl v1.0.0 // indirect

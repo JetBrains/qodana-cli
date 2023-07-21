@@ -26,16 +26,10 @@ import (
 	"github.com/spf13/cobra"
 )
 
-// initOptions represents init command options.
-type initOptions struct {
-	ProjectDir string
-	Force      bool
-	YamlName   string
-}
-
 // newInitCommand returns a new instance of the show command.
 func newInitCommand() *cobra.Command {
-	options := &initOptions{}
+	options := &core.QodanaOptions{}
+	force := false
 	cmd := &cobra.Command{
 		Use:   "init",
 		Short: "Configure a project for Qodana",
@@ -45,7 +39,7 @@ func newInitCommand() *cobra.Command {
 				options.YamlName = core.FindQodanaYaml(options.ProjectDir)
 			}
 			qodanaYaml := core.LoadQodanaYaml(options.ProjectDir, options.YamlName)
-			if qodanaYaml.Linter == "" || options.Force {
+			if qodanaYaml.Linter == "" || force {
 				absPath, err := filepath.Abs(options.ProjectDir)
 				if err != nil {
 					log.Fatal(err)
@@ -73,17 +67,19 @@ func newInitCommand() *cobra.Command {
 					)
 				}
 			}
-			if core.IsInteractive() && strings.Contains(qodanaYaml.Linter, "dotnet") && (qodanaYaml.DotNet.IsEmpty() || options.Force) {
+			if core.IsInteractive() && strings.Contains(qodanaYaml.Linter, "dotnet") && (qodanaYaml.DotNet.IsEmpty() || force) {
 				if core.GetDotNetConfig(options.ProjectDir, options.YamlName) {
 					core.SuccessMessage("The .NET configuration was successfully set")
 				}
 			}
 			core.PrintFile(filepath.Join(options.ProjectDir, options.YamlName))
+			options.Linter = qodanaYaml.Linter
+			options.ValidateToken(force)
 		},
 	}
 	flags := cmd.Flags()
 	flags.StringVarP(&options.ProjectDir, "project-dir", "i", ".", "Root directory of the project to configure")
-	flags.BoolVarP(&options.Force, "force", "f", false, "Force initialization (overwrite existing valid qodana.yaml)")
+	flags.BoolVarP(&force, "force", "f", false, "Force initialization (overwrite existing valid qodana.yaml)")
 	flags.StringVar(&options.YamlName, "yaml-name", "", "Override qodana.yaml name")
 	return cmd
 }

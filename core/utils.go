@@ -17,6 +17,8 @@
 package core
 
 import (
+	"crypto/sha256"
+	"encoding/hex"
 	"os"
 	"path/filepath"
 	"strings"
@@ -45,6 +47,12 @@ func reverse(s []string) []string {
 		s[i], s[j] = s[j], s[i]
 	}
 	return s
+}
+
+// getHash returns a SHA256 hash of a given string.
+func getHash(s string) string {
+	sha256sum := sha256.Sum256([]byte(s))
+	return hex.EncodeToString(sha256sum[:])
 }
 
 // Append appends a string to a slice if it's not already there.

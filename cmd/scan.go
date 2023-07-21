@@ -62,6 +62,7 @@ But you can always override qodana.yaml options with the following command-line 
 				}
 			}
 			core.PrepareHost(options)
+			options.ValidateToken(false)
 			exitCode := core.RunLinter(ctx, options)
 			checkExitCode(exitCode, options.ResultsDir)
 			core.ReadSarif(filepath.Join(options.ResultsDir, core.QodanaSarifName), options.PrintProblems)
@@ -152,7 +153,7 @@ func checkExitCode(exitCode int, resultsDir string) {
 	if exitCode == core.QodanaEapLicenseExpiredExitCode && core.IsInteractive() {
 		core.EmptyMessage()
 		core.ErrorMessage(
-			"Your EAP linter expired. Make sure you are using the latest CLI version and update to the latest linter by running %s ",
+			"Your license expired: update your license or token. If you are using EAP, make sure you are using the latest CLI version and update to the latest linter by running %s ",
 			core.PrimaryBold("qodana init"),
 		)
 		os.Exit(exitCode)
