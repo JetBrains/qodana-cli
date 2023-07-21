@@ -25,20 +25,11 @@ import (
 	"github.com/spf13/cobra"
 )
 
-// showOptions represents show command options.
-type showOptions struct {
-	ProjectDir string
-	ResultsDir string
-	ReportDir  string
-	Port       int
-	OpenDir    bool
-	YamlName   string
-	Linter     string
-}
-
 // newShowCommand returns a new instance of the show command.
 func newShowCommand() *cobra.Command {
-	options := &showOptions{}
+	options := &core.QodanaOptions{}
+	reportDir := ""
+	openDir := false
 	cmd := &cobra.Command{
 		Use:   "show",
 		Short: "Show a Qodana report",
@@ -52,19 +43,19 @@ This command serves the Qodana report locally and opens a browser to it.`,
 			if options.YamlName == "" {
 				options.YamlName = core.FindQodanaYaml(options.ProjectDir)
 			}
-			if options.ReportDir == "" {
+			if reportDir == "" {
 				if options.Linter == "" {
 					options.Linter = core.LoadQodanaYaml(options.ProjectDir, options.YamlName).Linter
 				}
-				systemDir := core.GetLinterSystemDir(options.ProjectDir, options.Linter)
+				systemDir := options.GetLinterDir()
 				if _, err := os.Stat(systemDir); os.IsNotExist(err) {
 					systemDir = core.LookUpLinterSystemDir()
 				}
 
 				options.ResultsDir = filepath.Join(systemDir, "results")
-				options.ReportDir = filepath.Join(options.ResultsDir, "report")
+				reportDir = filepath.Join(options.ResultsDir, "report")
 			}
-			if options.OpenDir {
+			if openDir {
 				err := core.OpenDir(options.ResultsDir)
 				if err != nil {
 					log.Fatal(err)
@@ -72,7 +63,7 @@ This command serves the Qodana report locally and opens a browser to it.`,
 			} else {
 				core.ShowReport(
 					core.GetReportUrl(options.ResultsDir),
-					options.ReportDir,
+					reportDir,
 					options.Port,
 				)
 			}
@@ -81,13 +72,13 @@ This command serves the Qodana report locally and opens a browser to it.`,
 	flags := cmd.Flags()
 	flags.StringVarP(&options.Linter, "linter", "l", "", "Override linter to use")
 	flags.StringVarP(&options.ProjectDir, "project-dir", "i", ".", "Root directory of the inspected project")
-	flags.StringVarP(&options.ReportDir,
+	flags.StringVarP(&reportDir,
 		"report-dir",
 		"r",
 		"",
 		"Specify HTML report path (the one with index.html inside) (default <userCacheDir>/JetBrains/<linter>/results/report)")
 	flags.IntVarP(&options.Port, "port", "p", 8080, "Specify port to serve report at")
-	flags.BoolVarP(&options.OpenDir, "dir-only", "d", false, "Open report directory only, don't serve it")
+	flags.BoolVarP(&openDir, "dir-only", "d", false, "Open report directory only, don't serve it")
 	flags.StringVarP(&options.YamlName, "yaml-name", "y", "", "Override qodana.yaml name")
 	return cmd
 }

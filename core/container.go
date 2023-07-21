@@ -87,7 +87,6 @@ func encodeAuthToBase64(authConfig types.AuthConfig) (string, error) {
 
 // extractQodanaEnvironment extracts Qodana env variables QODANA_* to the given environment array.
 func extractQodanaEnvironment(opts *QodanaOptions) {
-	opts.setenv(qodanaToken, os.Getenv(qodanaToken))
 	ci := cienvironment.DetectCIEnvironment()
 	qEnv := "cli"
 	if ci != nil {
@@ -151,7 +150,7 @@ func CheckContainerHost() {
 		tool = "podman"
 	} else {
 		ErrorMessage(
-			"Docker (or podman) is not installed on your system or can't be found in PATH, refer to https://www.docker.com/get-started for installing it",
+			"Docker (or podman) is not installed on the system or can't be found in PATH, refer to https://www.docker.com/get-started for installing it",
 		)
 		os.Exit(1)
 	}
@@ -160,7 +159,7 @@ func CheckContainerHost() {
 		if exiterr, ok := err.(*exec.ExitError); ok {
 			if strings.Contains(string(exiterr.Stderr), "permission denied") {
 				ErrorMessage(
-					"Qodana container can't be run by the current user. Please fix your container engine configuration.",
+					"Qodana container can't be run by the current user. Please fix the container engine configuration.",
 				)
 				WarningMessage("https://docs.docker.com/engine/install/linux-postinstall/#manage-docker-as-a-non-root-user")
 				os.Exit(1)
@@ -272,7 +271,7 @@ func CheckContainerEngineMemory() {
 	log.Debug("Docker memory limit is set to ", info.MemTotal/1024/1024, " MB")
 
 	if info.MemTotal < 4*1024*1024*1024 {
-		WarningMessage(`Your container daemon is running with less than 4GB of RAM.
+		WarningMessage(`The container daemon is running with less than 4GB of RAM.
    If you experience issues, consider increasing the container runtime memory limit.
    Refer to %s for more information.
 `,
@@ -352,7 +351,7 @@ func getDockerOptions(opts *QodanaOptions) *types.ContainerCreateConfig {
 	}
 	containerName = os.Getenv(qodanaCliContainerName)
 	if containerName == "" {
-		containerName = fmt.Sprintf("qodana-cli-%s", getId(projectPath))
+		containerName = fmt.Sprintf("qodana-cli-%s", opts.Id())
 	}
 	volumes := []mount.Mount{
 		{

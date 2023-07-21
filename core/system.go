@@ -19,8 +19,6 @@ package core
 import (
 	"bufio"
 	"context"
-	"crypto/sha256"
-	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -195,13 +193,6 @@ func noCache(h http.Handler) http.Handler {
 	return http.HandlerFunc(fn)
 }
 
-// getId returns the project/linter id for internal CLI usage from the given path.
-func getId(project string) string {
-	projectAbs, _ := filepath.Abs(project)
-	sha256sum := sha256.Sum256([]byte(projectAbs))
-	return hex.EncodeToString(sha256sum[:])[0:8]
-}
-
 // getQodanaSystemDir returns path to <userCacheDir>/JetBrains/Qodana/.
 func getQodanaSystemDir() string {
 	userCacheDir, _ := os.UserCacheDir()
@@ -209,14 +200,6 @@ func getQodanaSystemDir() string {
 		userCacheDir,
 		"JetBrains",
 		"Qodana",
-	)
-}
-
-// GetLinterSystemDir returns path to <userCacheDir>/JetBrains/<linter>/<project-id>/.
-func GetLinterSystemDir(project string, linter string) string {
-	return filepath.Join(
-		getQodanaSystemDir(),
-		fmt.Sprintf("%s-%s", getId(linter), getId(project)),
 	)
 }
 
@@ -264,14 +247,13 @@ func checkLinter(image string) {
 	}
 }
 
-// PrepareHost cleans up report folder, gets the current user, creates the necessary folders for the analysis.
+// PrepareHost gets the current user, creates the necessary folders for the analysis.
 func PrepareHost(opts *QodanaOptions) {
-	linterHome := GetLinterSystemDir(opts.ProjectDir, opts.Linter)
 	if opts.ResultsDir == "" {
-		opts.ResultsDir = filepath.Join(linterHome, "results")
+		opts.ResultsDir = filepath.Join(opts.GetLinterDir(), "results")
 	}
 	if opts.CacheDir == "" {
-		opts.CacheDir = filepath.Join(linterHome, "cache")
+		opts.CacheDir = filepath.Join(opts.GetLinterDir(), "cache")
 	}
 	if opts.ClearCache {
 		err := os.RemoveAll(opts.CacheDir)
