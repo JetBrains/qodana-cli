@@ -32,15 +32,15 @@ var Version = "dev"
 
 //goland:noinspection GoUnnecessarilyExportedIdentifiers
 var (
-	QDJVMC = "jetbrains/qodana-jvm-community:" + version + eap
-	QDJVM  = "jetbrains/qodana-jvm:" + version + eap
-	QDAND  = "jetbrains/qodana-jvm-android:" + version + eap
-	QDPHP  = "jetbrains/qodana-php:" + version + eap
-	QDPY   = "jetbrains/qodana-python:" + version + eap
-	QDPYC  = "jetbrains/qodana-python-community:" + version + eap
-	QDJS   = "jetbrains/qodana-js:" + version + eap
-	QDGO   = "jetbrains/qodana-go:" + version + eap
-	QDNET  = "jetbrains/qodana-dotnet:" + version + eap
+	QDJVMC = "jetbrains/qodana-jvm-community:" + version
+	QDJVM  = "jetbrains/qodana-jvm:" + version
+	QDAND  = "jetbrains/qodana-jvm-android:" + version
+	QDPHP  = "jetbrains/qodana-php:" + version
+	QDPY   = "jetbrains/qodana-python:" + version
+	QDPYC  = "jetbrains/qodana-python-community:" + version
+	QDJS   = "jetbrains/qodana-js:" + version
+	QDGO   = "jetbrains/qodana-go:" + version
+	QDNET  = "jetbrains/qodana-dotnet:" + version
 )
 
 // GetLinter gets linter for the given path and saves configName
