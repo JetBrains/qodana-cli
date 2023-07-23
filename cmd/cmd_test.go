@@ -22,11 +22,13 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"github.com/stretchr/testify/assert"
 	"io"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"runtime"
+	"sort"
 	"testing"
 
 	log "github.com/sirupsen/logrus"
@@ -130,8 +132,8 @@ func TestInitCommand(t *testing.T) {
 
 	qodanaYaml := core.LoadQodanaYaml(projectPath, filename)
 
-	if qodanaYaml.Linter != core.QDPYC {
-		t.Fatalf("expected \"%s\", but got %s", core.QDPYC, qodanaYaml.Linter)
+	if qodanaYaml.Linter != core.Image(core.QDPYC) {
+		t.Fatalf("expected \"%s\", but got %s", core.Image(core.QDPYC), qodanaYaml.Linter)
 	}
 
 	err = os.RemoveAll(projectPath)
@@ -181,7 +183,7 @@ func TestContributorsCommand(t *testing.T) {
 	}
 }
 
-func TestAllCommands(t *testing.T) {
+func TestAllCommandsWithContainer(t *testing.T) {
 	linter := "jetbrains/qodana-python:2023.2-eap"
 
 	if os.Getenv("GITHUB_ACTIONS") == "true" {
@@ -220,9 +222,9 @@ func TestAllCommands(t *testing.T) {
 	command.SetArgs([]string{
 		"-i", projectPath,
 		"-o", resultsPath,
+		"--cache-dir", filepath.Join(projectPath, "cache"),
 		"--fail-threshold", "5",
 		"--print-problems",
-		"--clear-cache",
 		"--apply-fixes",
 		"-l", linter,
 	})
@@ -294,6 +296,179 @@ func TestAllCommands(t *testing.T) {
 		t.Fatal(err)
 	}
 	err = os.RemoveAll(projectPath)
+	if err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestScanWithIde(t *testing.T) {
+	token := "set your token here"
+	err := os.Setenv("QODANA_TOKEN", token)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if //goland:noinspection GoBoolExpressions
+	token == "set your token here" {
+		t.Skip("set your token here to run the test")
+	}
+	ide := "/Users/tv/Applications/IntelliJ IDEA Community Edition.app/Contents"
+	projectPath := "/Users/tv/Projects/code-analytics-examples/java"
+	resultsPath := filepath.Join(projectPath, "results")
+	err = os.MkdirAll(resultsPath, 0o755)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	core.RunCmd("", "/Users/tv/Applications/IntelliJ IDEA Ultimate 2023.3 Nightly.app/Contents/MacOS/idea", "inspect", "qodana", "--help")
+
+	// scan
+	out := bytes.NewBufferString("")
+	// set debug log to debug
+	log.SetLevel(log.DebugLevel)
+	command := newScanCommand()
+	command.SetOut(out)
+	command.SetArgs([]string{
+		"-i", projectPath,
+		"-o", resultsPath,
+		"--cache-dir", filepath.Join(projectPath, "cache"),
+		//"--fail-threshold", "5", TODO: check wtf is wrong with fail threshold in IDE
+		"--print-problems",
+		"--ide", ide,
+	})
+	err = command.Execute()
+	if err != nil {
+		t.Fatal(err)
+	}
+}
+
+func propertiesFixture(enableStats bool, additionalProperties []string) []string {
+	properties := []string{
+		"-Dfus.internal.reduce.initial.delay=true",
+		fmt.Sprintf("-Didea.application.info.value=%s", filepath.Join(os.TempDir(), "entrypoint", "QodanaAppInfo.xml")),
+		"-Didea.class.before.app=com.jetbrains.rider.protocol.EarlyBackendStarter",
+		fmt.Sprintf("-Didea.config.path=%s", filepath.Join(os.TempDir(), "entrypoint")),
+		fmt.Sprintf("-Didea.headless.enable.statistics=%t", enableStats),
+		"-Didea.headless.statistics.device.id=FAKE",
+		"-Didea.headless.statistics.max.files.to.send=5000",
+		"-Didea.headless.statistics.salt=FAKE",
+		fmt.Sprintf("-Didea.log.path=%s", filepath.Join(os.TempDir(), "entrypoint", "log")),
+		"-Didea.parent.prefix=Rider",
+		"-Didea.platform.prefix=Qodana",
+		fmt.Sprintf("-Didea.plugins.path=%s", filepath.Join(os.TempDir(), "entrypoint", "plugins", "master")),
+		"-Didea.qodana.thirdpartyplugins.accept=true",
+		fmt.Sprintf("-Didea.system.path=%s", filepath.Join(os.TempDir(), "entrypoint", "idea", "master")),
+		"-Dinspect.save.project.settings=true",
+		"-Djava.awt.headless=true",
+		"-Djava.net.useSystemProxies=true",
+		"-Djdk.attach.allowAttachSelf=true",
+		`-Djdk.http.auth.tunneling.disabledSchemes=""`,
+		"-Djdk.module.illegalAccess.silent=true",
+		"-Dkotlinx.coroutines.debug=off",
+		"-Dqodana.automation.guid=FAKE",
+		"-Didea.job.launcher.without.timeout=true",
+		"-Dqodana.coverage.input=/data/coverage",
+		"-Drider.collect.full.container.statistics=true",
+		"-Drider.suppress.std.redirect=true",
+		"-Dsun.io.useCanonCaches=false",
+		"-Dsun.tools.attach.tmp.only=true",
+		"-XX:+HeapDumpOnOutOfMemoryError",
+		"-XX:+UseG1GC",
+		"-XX:-OmitStackTraceInFastThrow",
+		"-XX:CICompilerCount=2",
+		"-XX:MaxJavaStackTraceDepth=10000",
+		"-XX:MaxRAMPercentage=70",
+		"-XX:ReservedCodeCacheSize=512m",
+		"-XX:SoftRefLRUPolicyMSPerMB=50",
+		fmt.Sprintf("-Xlog:gc*:%s", filepath.Join(os.TempDir(), "entrypoint", "log", "gc.log")),
+		"-ea",
+	}
+	properties = append(properties, additionalProperties...)
+	sort.Strings(properties)
+	return properties
+}
+
+func Test_Properties(t *testing.T) {
+	opts := &core.QodanaOptions{}
+	tmpDir := filepath.Join(os.TempDir(), "entrypoint")
+	opts.ProjectDir = tmpDir
+	opts.ResultsDir = opts.ProjectDir
+	opts.CacheDir = opts.ProjectDir
+	opts.CoverageDir = "/data/coverage"
+	opts.AnalysisId = "FAKE"
+
+	core.Prod.BaseScriptName = "rider"
+	core.Prod.Code = "QDNET"
+	core.Prod.Version = "main"
+
+	err := os.Setenv(core.QodanaDistEnv, opts.ProjectDir)
+	if err != nil {
+		t.Fatal(err)
+	}
+	err = os.Setenv(core.QodanaConfEnv, opts.ProjectDir)
+	if err != nil {
+		t.Fatal(err)
+	}
+	err = os.Setenv("DEVICEID", "FAKE")
+	if err != nil {
+		t.Fatal(err)
+	}
+	err = os.Setenv("SALT", "FAKE")
+	if err != nil {
+		t.Fatal(err)
+	}
+	err = os.MkdirAll(opts.ProjectDir, 0o755)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	for _, tc := range []struct {
+		name          string
+		cliProperties []string
+		qodanaYaml    string
+		expected      []string
+	}{
+		{
+			name:          "no overrides, just defaults and .NET project",
+			cliProperties: []string{},
+			qodanaYaml:    "dotnet:\n   project: project.csproj",
+			expected:      propertiesFixture(true, []string{"-Dqodana.net.project=project.csproj"}),
+		},
+		{
+			name:          "add one CLI property and .NET solution settings",
+			cliProperties: []string{"-xa", "idea.some.custom.property=1"},
+			qodanaYaml:    "dotnet:\n   solution: solution.sln\n   configuration: Release\n   platform: x64",
+			expected: append(
+				propertiesFixture(true, []string{"-Dqodana.net.solution=solution.sln", "-Dqodana.net.configuration=Release", "-Dqodana.net.platform=x64", "-Didea.some.custom.property=1"}),
+				"-xa",
+			),
+		},
+		{
+			name:          "override options from CLI, YAML should be ignored",
+			cliProperties: []string{"-Dfus.internal.reduce.initial.delay=false", "-Didea.application.info.value=0", "idea.headless.enable.statistics=false"},
+			qodanaYaml: "" +
+				"version: \"1.0\"\n" +
+				"properties:\n" +
+				"  fus.internal.reduce.initial.delay: true\n" +
+				"  idea.application.info.value: 0\n",
+			expected: append([]string{
+				"-Dfus.internal.reduce.initial.delay=false",
+				"-Didea.application.info.value=0",
+			}, propertiesFixture(false, []string{})[2:]...),
+		},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			err = os.WriteFile(filepath.Join(opts.ProjectDir, "qodana.yml"), []byte(tc.qodanaYaml), 0o600)
+			if err != nil {
+				t.Fatal(err)
+			}
+			opts.Property = tc.cliProperties
+			core.Config = core.GetQodanaYaml(opts.ProjectDir)
+			actual := core.GetProperties(opts, core.Config.Properties, core.Config.DotNet, []string{})
+			assert.Equal(t, tc.expected, actual)
+		})
+	}
+	err = os.RemoveAll(opts.ProjectDir)
 	if err != nil {
 		t.Fatal(err)
 	}

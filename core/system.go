@@ -21,6 +21,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/owenrumney/go-sarif/v2/sarif"
 	"io"
 	"io/fs"
 	"net/http"
@@ -41,14 +42,10 @@ import (
 )
 
 var (
-	unofficialLinter = false
 	// DisableCheckUpdates flag to disable checking for updates
 	DisableCheckUpdates = false
 
-	scanStages          []string
-	notSupportedLinters = []string{
-		"jetbrains/qodana-clone-finder",
-	}
+	scanStages []string
 	releaseUrl = "https://api.github.com/repos/JetBrains/qodana-cli/releases/latest"
 )
 
@@ -235,20 +232,10 @@ func LookUpLinterSystemDir() string {
 	return systemDir
 }
 
-// checkLinter validates the image used for the scan.
-func checkLinter(image string) {
-	if !strings.HasPrefix(image, officialImagePrefix) {
-		unofficialLinter = true
-	}
-	for _, linter := range notSupportedLinters {
-		if linter == image {
-			log.Fatalf("%s is not supported by Qodana CLI", linter)
-		}
-	}
-}
+// prepareHost gets the current user, creates the necessary folders for the analysis.
+func prepareHost(opts *QodanaOptions) {
+	opts.ValidateToken(false)
 
-// PrepareHost gets the current user, creates the necessary folders for the analysis.
-func PrepareHost(opts *QodanaOptions) {
 	if opts.ResultsDir == "" {
 		opts.ResultsDir = filepath.Join(opts.GetLinterDir(), "results")
 	}
@@ -261,7 +248,7 @@ func PrepareHost(opts *QodanaOptions) {
 			log.Errorf("Could not clear local Qodana cache: %s", err)
 		}
 	}
-	if opts.User == "" {
+	if opts.User == "" && opts.Ide == "" {
 		switch runtime.GOOS {
 		case "windows":
 			opts.User = "root"
@@ -274,6 +261,12 @@ func PrepareHost(opts *QodanaOptions) {
 	}
 	if err := os.MkdirAll(opts.ResultsDir, os.ModePerm); err != nil {
 		log.Fatal("couldn't create a directory ", err.Error())
+	}
+	if opts.Linter != "" {
+		PrepairContainerEnvSettings()
+	}
+	if opts.Ide != "" {
+		prepareLocalIdeSettings(opts)
 	}
 }
 
@@ -304,8 +297,11 @@ func AskUserConfirm(what string) bool {
 	return answer
 }
 
-// RunLinter runs the linter with the given options.
-func RunLinter(ctx context.Context, options *QodanaOptions) int {
+// RunAnalysis runs the linter with the given options.
+func RunAnalysis(ctx context.Context, options *QodanaOptions) int {
+	log.Debugf("Running analysis with options: %+v", options)
+	prepareHost(options)
+
 	var exitCode int
 
 	if options.FullHistory && isGitInstalled() {
@@ -341,8 +337,7 @@ func RunLinter(ctx context.Context, options *QodanaOptions) int {
 			}
 			EmptyMessage()
 
-			exitCode = runQodanaDocker(ctx, options)
-			options.SkipPull = true
+			exitCode = runQodana(ctx, options)
 			options.unsetenv(qodanaRevision)
 		}
 		err = gitCheckout(options.ProjectDir, branch)
@@ -358,41 +353,29 @@ func RunLinter(ctx context.Context, options *QodanaOptions) int {
 			options.GitReset = true
 		}
 
-		exitCode = runQodanaDocker(ctx, options)
+		exitCode = runQodana(ctx, options)
 
 		if options.GitReset && !strings.HasPrefix(options.Commit, "CI") {
 			_ = gitResetBack(options.ProjectDir)
 		}
 	} else {
-		exitCode = runQodanaDocker(ctx, options)
+		exitCode = runQodana(ctx, options)
 	}
 
 	return exitCode
 }
 
-func runQodanaDocker(ctx context.Context, options *QodanaOptions) int {
-	resetScanStages()
-	docker := getContainerClient()
-	for i, stage := range scanStages {
-		scanStages[i] = PrimaryBold("[%d/%d] ", i+1, len(scanStages)+1) + primary(stage)
+func runQodana(ctx context.Context, options *QodanaOptions) int {
+	var exitCode int
+	if options.Linter != "" {
+		exitCode = runQodanaContainer(ctx, options)
+	} else if options.Ide != "" {
+		exitCode = runQodanaLocal(options)
+	} else {
+		log.Fatal("No linter or IDE specified")
 	}
-	checkLinter(options.Linter)
-	if unofficialLinter {
-		WarningMessage("You are using an unofficial Qodana linter: %s\n", options.Linter)
-	}
-	if !(options.SkipPull) {
-		PullImage(docker, options.Linter)
-	}
-	progress, _ := startQodanaSpinner(scanStages[0])
-	dockerConfig := getDockerOptions(options)
-	updateText(progress, scanStages[1])
-	runContainer(ctx, docker, dockerConfig)
-	go followLinter(docker, dockerConfig.Name, progress, options.ResultsDir)
-	exitCode := getContainerExitCode(ctx, docker, dockerConfig.Name)
-	if progress != nil {
-		_ = progress.Stop()
-	}
-	return int(exitCode)
+
+	return exitCode
 }
 
 // followLinter follows the linter logs and prints the progress.
@@ -481,4 +464,119 @@ func resetScanStages() {
 		"Analyzing the project",
 		"Preparing the report",
 	}
+}
+
+const (
+	qodanaAppInfoFilename = "QodanaAppInfo.xml"
+	m2                    = ".m2"
+	nuget                 = "nuget"
+)
+
+// saveReport saves web files to expect, and generates json.
+func saveReport(opts *QodanaOptions) {
+	if isDocker() {
+		reportConverter := filepath.Join(Prod.ideBin(), "intellij-report-converter.jar")
+		if _, err := os.Stat(reportConverter); os.IsNotExist(err) {
+			log.Fatal("Not able to save the report: report-converter is missing")
+			return
+		}
+		log.Println("Generating HTML report ...")
+		if res := RunCmd("", quoteForWindows(Prod.jbrJava()), "-jar", quoteForWindows(reportConverter), "-s", quoteForWindows(opts.ProjectDir), "-d", quoteForWindows(opts.ResultsDir), "-o", quoteForWindows(opts.reportResultsPath()), "-n", "result-allProblems.json", "-f"); res > 0 {
+			os.Exit(res)
+		}
+		if res := RunCmd("", "sh", "-c", fmt.Sprintf("cp -r %s/web/* ", Prod.Home)+opts.ReportDir); res > 0 {
+			os.Exit(res)
+		}
+	}
+}
+
+// getPublisherArgs returns args for the publisher.
+func getPublisherArgs(publisher string, opts *QodanaOptions, token string, endpoint string) []string {
+	java := Prod.jbrJava()
+	publisherArgs := []string{
+		quoteForWindows(java),
+		"-jar",
+		quoteForWindows(publisher),
+		"--analysis-id", opts.AnalysisId,
+		"--sources-path", quoteForWindows(opts.ProjectDir),
+		"--report-path", quoteForWindows(opts.reportResultsPath()),
+		"--token", token,
+	}
+	var tools []string
+	tool := os.Getenv(qodanaToolEnv)
+	if tool != "" {
+		tools = []string{tool}
+	}
+	if len(tools) > 0 {
+		for _, t := range tools {
+			publisherArgs = append(publisherArgs, "--tool", t)
+		}
+	}
+	if endpoint != "" {
+		publisherArgs = append(publisherArgs, "--endpoint", endpoint)
+	}
+	return publisherArgs
+}
+
+// copyReportInNativeMode is responsible for copying the reports while being executed in native mode with no report converter
+func copyReportInNativeMode(opts *QodanaOptions) {
+	if !isDocker() {
+		if _, err := os.Stat(opts.reportResultsPath()); os.IsNotExist(err) {
+			if err := os.MkdirAll(opts.reportResultsPath(), os.ModePerm); err != nil {
+				log.Fatalf("failed to create directory: %v", err)
+			}
+		}
+		source := filepath.Join(opts.ResultsDir, "qodana.sarif.json")
+		destination := filepath.Join(opts.reportResultsPath(), "qodana.sarif.json")
+
+		if err := copyFile(source, destination); err != nil {
+			log.Fatalf("failed to copy file: %v", err)
+		}
+	}
+}
+
+func copyFile(src, dst string) error {
+	srcFile, err := os.Open(src)
+	if err != nil {
+		return err
+	}
+	defer func(srcFile *os.File) {
+		err := srcFile.Close()
+		if err != nil {
+			log.Fatal(err)
+		}
+	}(srcFile)
+
+	dstFile, err := os.Create(dst)
+	if err != nil {
+		return err
+	}
+	defer func(dstFile *os.File) {
+		err := dstFile.Close()
+		if err != nil {
+			log.Fatal(err)
+		}
+	}(dstFile)
+
+	_, err = io.Copy(dstFile, srcFile)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func saveSarifProperty(path string, key string, value string) error {
+	s, err := sarif.Open(path)
+	if err != nil {
+		log.Fatal(err)
+	}
+	if len(s.Runs) > 0 {
+		s.Runs[0].AddString(key, value)
+	}
+	err = os.Remove(path)
+	if err != nil {
+		log.Fatal(err)
+	}
+	return s.WriteFile(path)
 }

@@ -18,6 +18,7 @@ package cmd
 
 import (
 	"fmt"
+	"github.com/google/uuid"
 	"os"
 	"path/filepath"
 
@@ -38,16 +39,14 @@ func newScanCommand() *cobra.Command {
 Note that most options can be configured via qodana.yaml (https://www.jetbrains.com/help/qodana/qodana-yaml.html) file.
 But you can always override qodana.yaml options with the following command-line options.
 `,
-		PreRun: func(cmd *cobra.Command, args []string) {
-			core.CheckContainerHost()
-		},
 		Run: func(cmd *cobra.Command, args []string) {
 			ctx := cmd.Context()
 			checkProjectDir(options.ProjectDir)
 			if options.YamlName == "" {
 				options.YamlName = core.FindQodanaYaml(options.ProjectDir)
 			}
-			if options.Linter == "" {
+
+			if options.Linter == "" && options.Ide == "" {
 				qodanaYaml := core.LoadQodanaYaml(options.ProjectDir, options.YamlName)
 				if qodanaYaml.Linter == "" {
 					core.WarningMessage(
@@ -61,9 +60,8 @@ But you can always override qodana.yaml options with the following command-line 
 					options.Linter = qodanaYaml.Linter
 				}
 			}
-			core.PrepareHost(options)
-			options.ValidateToken(false)
-			exitCode := core.RunLinter(ctx, options)
+			exitCode := core.RunAnalysis(ctx, options)
+
 			checkExitCode(exitCode, options.ResultsDir)
 			core.ReadSarif(filepath.Join(options.ResultsDir, core.QodanaSarifName), options.PrintProblems)
 			reportUrl := core.GetReportUrl(options.ResultsDir)
@@ -91,21 +89,21 @@ But you can always override qodana.yaml options with the following command-line 
 
 	flags := cmd.Flags()
 
-	flags.StringVarP(&options.Linter, "linter", "l", "", "Override linter to use")
+	flags.StringVarP(&options.Linter, "linter", "l", "", "Override linter (Docker image) to use")
+	flags.StringVar(&options.Ide, "ide", "", "Override linter Docker image with path to the installed IDE to use")
+
 	flags.StringVarP(&options.ProjectDir, "project-dir", "i", ".", "Root directory of the inspected project")
-	flags.StringVarP(&options.ResultsDir, "results-dir", "o", "", "Override directory to save Qodana inspection results to (default <userCacheDir>/JetBrains/<linter>/results)")
-	flags.StringVar(&options.CacheDir, "cache-dir", "", "Override cache directory (default <userCacheDir>/JetBrains/<linter>/cache)")
-	flags.StringArrayVarP(&options.Env, "env", "e", []string{}, "Define additional environment variables for the Qodana container (you can use the flag multiple times). CLI is not reading full host environment variables and does not pass it to the Qodana container for security reasons")
-	flags.StringArrayVarP(&options.Volumes, "volume", "v", []string{}, "Define additional volumes for the Qodana container (you can use the flag multiple times)")
-	flags.StringVarP(&options.User, "user", "u", "", "User to run Qodana container as. Please specify user id – '$UID' or user id and group id $(id -u):$(id -g). Use 'root' to run as the root user (default: the current user)")
-	flags.BoolVar(&options.SkipPull, "skip-pull", false, "Skip pulling the latest Qodana container")
+	flags.StringVarP(&options.ResultsDir, "results-dir", "o", options.ResultsDirPath(), "Override directory to save Qodana inspection results to (default <userCacheDir>/JetBrains/<linter>/results)")
+	flags.StringVar(&options.CacheDir, "cache-dir", options.CacheDirPath(), "Override cache directory (default <userCacheDir>/JetBrains/<linter>/cache)")
+	flags.StringVar(&options.ReportDir, "report-dir", options.ReportDirPath(), "Override directory to save Qodana HTML report to (default <userCacheDir>/JetBrains/<linter>/results/report)")
+
 	flags.BoolVar(&options.PrintProblems, "print-problems", false, "Print all found problems by Qodana in the CLI output")
 	flags.BoolVar(&options.ClearCache, "clear-cache", false, "Clear the local Qodana cache before running the analysis")
 	flags.BoolVarP(&options.ShowReport, "show-report", "w", false, "Serve HTML report on port")
 	flags.IntVar(&options.Port, "port", 8080, "Port to serve the report on")
 	flags.StringVar(&options.YamlName, "yaml-name", "", "Override qodana.yaml name to use: 'qodana.yaml' or 'qodana.yml'")
 
-	flags.StringVarP(&options.AnalysisId, "analysis-id", "a", "", "Unique report identifier (GUID) to be used by Qodana Cloud")
+	flags.StringVarP(&options.AnalysisId, "analysis-id", "a", uuid.New().String(), "Unique report identifier (GUID) to be used by Qodana Cloud")
 	flags.StringVarP(&options.Baseline, "baseline", "b", "", "Provide the path to an existing SARIF report to be used in the baseline state calculation")
 	flags.BoolVar(&options.BaselineIncludeAbsent, "baseline-include-absent", false, "Include in the output report the results from the baseline run that are absent in the current run")
 	flags.BoolVar(&options.FullHistory, "full-history", false, "Go through the full commit history and run the analysis on each commit. If combined with `--commit`, analysis will be started from the given commit. Could take a long time.")
@@ -125,11 +123,26 @@ But you can always override qodana.yaml options with the following command-line 
 	flags.StringArrayVar(&options.Property, "property", []string{}, "Set a JVM property to be used while running Qodana using the --property property.name=value1,value2,...,valueN notation")
 	flags.BoolVarP(&options.SaveReport, "save-report", "s", true, "Generate HTML report")
 
+	flags.StringArrayVarP(&options.Env, "env", "e", []string{}, "Only for container runs. Define additional environment variables for the Qodana container (you can use the flag multiple times). CLI is not reading full host environment variables and does not pass it to the Qodana container for security reasons")
+	flags.StringArrayVarP(&options.Volumes, "volume", "v", []string{}, "Only for container runs. Define additional volumes for the Qodana container (you can use the flag multiple times)")
+	flags.StringVarP(&options.User, "user", "u", "", "Only for container runs. User to run Qodana container as. Please specify user id – '$UID' or user id and group id $(id -u):$(id -g). Use 'root' to run as the root user (default: the current user)")
+	flags.BoolVar(&options.SkipPull, "skip-pull", false, "Only for container runs. Skip pulling the latest Qodana container")
+
 	flags.SortFlags = false
 
 	cmd.MarkFlagsMutuallyExclusive("commit", "script")
 	cmd.MarkFlagsMutuallyExclusive("profile-name", "profile-path")
 	cmd.MarkFlagsMutuallyExclusive("apply-fixes", "cleanup")
+
+	err := cmd.Flags().MarkHidden("ide")
+	if err != nil {
+		return nil
+	}
+	cmd.MarkFlagsMutuallyExclusive("linter", "ide")
+	cmd.MarkFlagsMutuallyExclusive("skip-pull", "ide")
+	cmd.MarkFlagsMutuallyExclusive("volume", "ide")
+	cmd.MarkFlagsMutuallyExclusive("user", "ide")
+	cmd.MarkFlagsMutuallyExclusive("env", "ide")
 
 	return cmd
 }
