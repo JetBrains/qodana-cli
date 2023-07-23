@@ -20,6 +20,7 @@ import (
 	"context"
 	"encoding/base64"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"net/url"
@@ -64,17 +65,37 @@ var (
 	containerName = "qodana-cli"
 )
 
-const (
-	qodanaEnv              = "QODANA_ENV"
-	qodanaToken            = "QODANA_TOKEN"
-	qodanaJobUrl           = "QODANA_JOB_URL"
-	qodanaRemoteUrl        = "QODANA_REMOTE_URL"
-	qodanaBranch           = "QODANA_BRANCH"
-	qodanaRevision         = "QODANA_REVISION"
-	qodanaCliContainerName = "QODANA_CLI_CONTAINER_NAME"
-	qodanaCliContainerKeep = "QODANA_CLI_CONTAINER_KEEP"
-	qodanaCliUsePodman     = "QODANA_CLI_USE_PODMAN"
-)
+// runQodanaContainer runs the analysis in a Docker container from a Qodana image.
+func runQodanaContainer(ctx context.Context, options *QodanaOptions) int {
+	resetScanStages()
+	docker := getContainerClient()
+
+	for i, stage := range scanStages {
+		scanStages[i] = PrimaryBold("[%d/%d] ", i+1, len(scanStages)+1) + primary(stage)
+	}
+
+	if !strings.HasPrefix(options.Linter, officialImagePrefix) {
+		WarningMessage("You are using an unofficial Qodana linter: %s\n", options.Linter)
+	}
+	if !(options.SkipPull) {
+		PullImage(docker, options.Linter)
+	}
+	progress, _ := startQodanaSpinner(scanStages[0])
+
+	dockerConfig := getDockerOptions(options)
+
+	updateText(progress, scanStages[1])
+
+	runContainer(ctx, docker, dockerConfig)
+	go followLinter(docker, dockerConfig.Name, progress, options.ResultsDir)
+
+	exitCode := getContainerExitCode(ctx, docker, dockerConfig.Name)
+
+	if progress != nil {
+		_ = progress.Stop()
+	}
+	return int(exitCode)
+}
 
 // encodeAuthToBase64 serializes the auth configuration as JSON base64 payload
 func encodeAuthToBase64(authConfig types.AuthConfig) (string, error) {
@@ -141,8 +162,8 @@ func checkRequiredToolInstalled(tool string) bool {
 	return err == nil
 }
 
-// CheckContainerHost checks if the host is ready to run Qodana container images.
-func CheckContainerHost() {
+// PrepairContainerEnvSettings checks if the host is ready to run Qodana container images.
+func PrepairContainerEnvSettings() {
 	var tool string
 	if os.Getenv(qodanaCliUsePodman) == "" && checkRequiredToolInstalled("docker") {
 		tool = "docker"
@@ -156,7 +177,8 @@ func CheckContainerHost() {
 	}
 	cmd := exec.Command(tool, "ps")
 	if err := cmd.Run(); err != nil {
-		if exiterr, ok := err.(*exec.ExitError); ok {
+		var exiterr *exec.ExitError
+		if errors.As(err, &exiterr) {
 			if strings.Contains(string(exiterr.Stderr), "permission denied") {
 				ErrorMessage(
 					"Qodana container can't be run by the current user. Please fix the container engine configuration.",
@@ -280,62 +302,9 @@ func CheckContainerEngineMemory() {
 	}
 }
 
-// getCmdOptions returns qodana command options.
-func getCmdOptions(opts *QodanaOptions) []string {
-	arguments := make([]string, 0)
-	if opts.SaveReport {
-		arguments = append(arguments, "--save-report")
-	}
-	if opts.SourceDirectory != "" {
-		arguments = append(arguments, "--source-directory", opts.SourceDirectory)
-	}
-	if opts.DisableSanity {
-		arguments = append(arguments, "--disable-sanity")
-	}
-	if opts.ProfileName != "" {
-		arguments = append(arguments, "--profile-name", opts.ProfileName)
-	}
-	if opts.ProfilePath != "" {
-		arguments = append(arguments, "--profile-path", opts.ProfilePath)
-	}
-	if opts.RunPromo != "" {
-		arguments = append(arguments, "--run-promo", opts.RunPromo)
-	}
-	if opts.Script != "default" {
-		arguments = append(arguments, "--script", opts.Script)
-	}
-	if opts.StubProfile != "" {
-		arguments = append(arguments, "--stub-profile", opts.StubProfile)
-	}
-	if opts.Baseline != "" {
-		arguments = append(arguments, "--baseline", opts.Baseline)
-	}
-	if opts.BaselineIncludeAbsent {
-		arguments = append(arguments, "--baseline-include-absent")
-	}
-	if opts.FailThreshold != "" {
-		arguments = append(arguments, "--fail-threshold", opts.FailThreshold)
-	}
-	if opts.GitReset && opts.Commit != "" && opts.Script == "default" {
-		arguments = append(arguments, "--script", "local-changes")
-	}
-	if opts.AnalysisId != "" {
-		arguments = append(arguments, "--analysis-id", opts.AnalysisId)
-	}
-	if opts.ApplyFixes {
-		arguments = append(arguments, "--fixes-strategy", "apply")
-	} else if opts.Cleanup {
-		arguments = append(arguments, "--fixes-strategy", "cleanup")
-	}
-	for _, property := range opts.Property {
-		arguments = append(arguments, "--property="+property)
-	}
-	return arguments
-}
-
 // getDockerOptions returns qodana docker container options.
 func getDockerOptions(opts *QodanaOptions) *types.ContainerCreateConfig {
-	cmdOpts := getCmdOptions(opts)
+	cmdOpts := getIdeArgs(opts)
 	extractQodanaEnvironment(opts)
 	cachePath, err := filepath.Abs(opts.CacheDir)
 	if err != nil {
@@ -351,7 +320,7 @@ func getDockerOptions(opts *QodanaOptions) *types.ContainerCreateConfig {
 	}
 	containerName = os.Getenv(qodanaCliContainerName)
 	if containerName == "" {
-		containerName = fmt.Sprintf("qodana-cli-%s", opts.Id())
+		containerName = fmt.Sprintf("qodana-cli-%s", opts.id())
 	}
 	volumes := []mount.Mount{
 		{

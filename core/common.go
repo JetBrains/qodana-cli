@@ -32,16 +32,42 @@ var Version = "dev"
 
 //goland:noinspection GoUnnecessarilyExportedIdentifiers
 var (
-	QDJVMC = "jetbrains/qodana-jvm-community:" + version
-	QDJVM  = "jetbrains/qodana-jvm:" + version
-	QDAND  = "jetbrains/qodana-jvm-android:" + version
-	QDPHP  = "jetbrains/qodana-php:" + version
-	QDPY   = "jetbrains/qodana-python:" + version
-	QDPYC  = "jetbrains/qodana-python-community:" + version
-	QDJS   = "jetbrains/qodana-js:" + version
-	QDGO   = "jetbrains/qodana-go:" + version
-	QDNET  = "jetbrains/qodana-dotnet:" + version
+	QDJVMC = "QDJVMC"
+	QDJVM  = "QDJVM"
+	QDAND  = "QDAND"
+	QDPHP  = "QDPHP"
+	QDPY   = "QDPY"
+	QDPYC  = "QDPYC"
+	QDJS   = "QDJS"
+	QDGO   = "QDGO"
+	QDNET  = "QDNET"
 )
+
+func Image(code string) string {
+	switch code {
+	case QDAND:
+		return "jetbrains/qodana-jvm-android:" + version
+	case QDPHP:
+		return "jetbrains/qodana-php:" + version
+	case QDJS:
+		return "jetbrains/qodana-js:" + version
+	case QDNET:
+		return "jetbrains/qodana-dotnet:" + version
+	case QDPY:
+		return "jetbrains/qodana-python:" + version
+	case QDPYC:
+		return "jetbrains/qodana-python-community:" + version
+	case QDGO:
+		return "jetbrains/qodana-go:" + version
+	case QDJVM:
+		return "jetbrains/qodana-jvm:" + version
+	case QDJVMC:
+		return "jetbrains/qodana-jvm-community:" + version
+	default:
+		log.Fatal("Unknown code: " + code)
+		return ""
+	}
+}
 
 // GetLinter gets linter for the given path and saves configName
 func GetLinter(path string, yamlName string) string {

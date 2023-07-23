@@ -17,12 +17,21 @@
 package core
 
 import (
+	"bytes"
+	"encoding/json"
+	"errors"
 	"fmt"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"reflect"
+	"runtime"
 	"strings"
 	"testing"
+	"time"
+
+	"github.com/owenrumney/go-sarif/v2/sarif"
+	"github.com/stretchr/testify/assert"
 )
 
 var testOptions = &QodanaOptions{
@@ -69,7 +78,7 @@ func TestScanFlags(t *testing.T) {
 		"--property=foo.baz=bar",
 		"--property=foo.bar=baz",
 	}, " ")
-	actual := strings.Join(getCmdOptions(testOptions), " ")
+	actual := strings.Join(getIdeArgs(testOptions), " ")
 	if expected != actual {
 		t.Fatalf("expected \"%s\" got \"%s\"", expected, actual)
 	}
@@ -295,7 +304,7 @@ func TestScanFlags_Script(t *testing.T) {
 		"--script",
 		"custom-script:parameters",
 	}
-	actual := getCmdOptions(testOptions)
+	actual := getIdeArgs(testOptions)
 	if !reflect.DeepEqual(expected, actual) {
 		t.Fatalf("expected \"%s\" got \"%s\"", expected, actual)
 	}
@@ -428,8 +437,468 @@ func TestWriteConfig(t *testing.T) {
 	if err != nil {
 		t.Fatalf("failed to read qodana.yaml file: %v", err)
 	}
-	expected := "version: \"1.0\"\nlinter: \"\"\n"
+	expected := "version: \"1.0\"\n"
 	if string(data) != expected {
 		t.Errorf("file contents do not match expected YAML: %q", string(data))
+	}
+}
+
+func Test_setDeviceID(t *testing.T) {
+	err := os.Unsetenv(qodanaRemoteUrl)
+	if err != nil {
+		return
+	}
+
+	tc := "Empty"
+	err = os.Setenv("SALT", "")
+	if err != nil {
+		t.Fatal(err)
+	}
+	err = os.Setenv("DEVICEID", "")
+	if err != nil {
+		t.Fatal(err)
+	}
+	tmpDir := filepath.Join(os.TempDir(), "entrypoint")
+	err = os.MkdirAll(tmpDir, 0o755)
+	if err != nil {
+		t.Fatal(err)
+	}
+	cwd, err := os.Getwd()
+	if err != nil {
+		t.Fatal(err)
+	}
+	err = os.Chdir(tmpDir)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer func() {
+		err := os.Chdir(cwd)
+		if err != nil {
+			t.Fatal(err)
+		}
+	}()
+	actualDeviceIdSalt := getDeviceIdSalt()
+	if _, err := os.Stat(filepath.Join(tmpDir, ".git", "config")); !os.IsNotExist(err) {
+		t.Errorf("Case: %s: /tmp/entrypoint/.git/config got created, when it should not", tc)
+	}
+	expectedDeviceIdSalt := []string{
+		"200820300000000-0000-0000-0000-000000000000",
+		"0229f593f62e84ad29a64cebb6a9b861",
+	}
+
+	if !reflect.DeepEqual(actualDeviceIdSalt, expectedDeviceIdSalt) {
+		t.Errorf("Case: %s: deviceIdSalt got %v, expected %v", tc, actualDeviceIdSalt, expectedDeviceIdSalt)
+	}
+
+	tc = "FromGit"
+	_, err = exec.Command("git", "init").Output()
+	if err != nil {
+		t.Fatal(err)
+	}
+	_, err = exec.Command("git", "remote", "add", "origin", "ssh://git@git/repo").Output()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	actualDeviceIdSalt = getDeviceIdSalt()
+	expectedDeviceIdSalt = []string{
+		"200820300000000-a294-0dd1-57f5-9f44b322ff64",
+		"e5c8900956f0df2f18f827245f47f04a",
+	}
+
+	if !reflect.DeepEqual(actualDeviceIdSalt, expectedDeviceIdSalt) {
+		t.Errorf("Case: %s: deviceIdSalt got %v, expected %v", tc, actualDeviceIdSalt, expectedDeviceIdSalt)
+	}
+
+	tc = "FromQodanaRemoteUrlEnv"
+	err = os.Setenv("QODANA_REMOTE_URL", "ssh://git@git/repo")
+	if err != nil {
+		t.Fatal(err)
+	}
+	actualDeviceIdSalt = getDeviceIdSalt()
+	expectedDeviceIdSalt = []string{
+		"200820300000000-a294-0dd1-57f5-9f44b322ff64",
+		"e5c8900956f0df2f18f827245f47f04a",
+	}
+	if !reflect.DeepEqual(actualDeviceIdSalt, expectedDeviceIdSalt) {
+		t.Errorf("Case: %s: deviceIdSalt got %v, expected %v", tc, actualDeviceIdSalt, expectedDeviceIdSalt)
+	}
+
+	tc = "FromEnv"
+	err = os.Setenv("SALT", "salt")
+	if err != nil {
+		t.Fatal(err)
+	}
+	err = os.Setenv("DEVICEID", "device")
+	if err != nil {
+		t.Fatal(err)
+	}
+	actualDeviceIdSalt = getDeviceIdSalt()
+	expectedDeviceIdSalt = []string{
+		"device",
+		"salt",
+	}
+
+	if !reflect.DeepEqual(actualDeviceIdSalt, expectedDeviceIdSalt) {
+		t.Errorf("Case: %s: deviceIdSalt got %v, expected %v", tc, actualDeviceIdSalt, expectedDeviceIdSalt)
+	}
+}
+
+func Test_isProcess(t *testing.T) {
+	if isProcess("non-existing_process") {
+		t.Fatal("Found non-existing process")
+	}
+	var cmd *exec.Cmd
+	var cmdString string
+	if runtime.GOOS == "windows" {
+		cmd = exec.Command("ping", "-n", "5", "127.0.0.1")
+		cmdString = "ping -n 5 127.0.0.1"
+	} else {
+		cmd = exec.Command("ping", "-c", "5", "127.0.0.1")
+		cmdString = "ping -c 5 127.0.0.1"
+	}
+	go func() {
+		err := cmd.Run()
+		if err != nil {
+			t.Errorf("Failed to start test process: %v", err)
+			return
+		}
+	}()
+	time.Sleep(time.Second)
+	if !isProcess(cmdString) {
+		t.Errorf("Test process was not found by isProcess")
+	}
+	time.Sleep(time.Second * 6)
+	if isProcess(cmdString) {
+		t.Errorf("Test process was found by isProcess after it should have finished")
+	}
+}
+
+func Test_runCmd(t *testing.T) {
+	if //goland:noinspection ALL
+	runtime.GOOS == "linux" || runtime.GOOS == "darwin" {
+		for _, tc := range []struct {
+			name string
+			cmd  []string
+			res  int
+		}{
+			{"true", []string{"true"}, 0},
+			{"false", []string{"false"}, 1},
+			{"exit 255", []string{"sh", "-c", "exit 255"}, 255},
+		} {
+			t.Run(tc.name, func(t *testing.T) {
+				got := RunCmd("", tc.cmd...)
+				if got != tc.res {
+					t.Errorf("runCmd: %v, Got: %v, Expected: %v", tc.cmd, got, tc.res)
+				}
+			})
+		}
+	}
+}
+
+func Test_createUser(t *testing.T) {
+	if runtime.GOOS == "windows" {
+		return
+	}
+
+	err := os.Setenv(qodanaDockerEnv, "true")
+	if err != nil {
+		t.Fatal(err)
+	}
+	tc := "User"
+	err = os.MkdirAll("/tmp/entrypoint", 0o755)
+	if err != nil {
+		t.Fatal(err)
+	}
+	err = os.WriteFile("/tmp/entrypoint/passwd", []byte("root:x:0:0:root:/root:/bin/bash\n"), 0o600)
+	if err != nil {
+		t.Fatal(err)
+	}
+	createUser("/tmp/entrypoint/passwd")
+	res := fmt.Sprintf("root:x:0:0:root:/root:/bin/bash\nidea:x:%d:%d:idea:/root:/bin/bash", os.Getuid(), os.Getgid())
+	if os.Getuid() == 0 {
+		res = "root:x:0:0:root:/root:/bin/bash\n"
+	}
+	got, err := os.ReadFile("/tmp/entrypoint/passwd")
+	if err != nil || string(got) != res {
+		t.Errorf("Case: %s: Got: %s\n Expected: %v", tc, got, res)
+	}
+
+	tc = "UserAgain"
+	createUser("/tmp/entrypoint/passwd")
+	got, err = os.ReadFile("/tmp/entrypoint/passwd")
+	if err != nil || string(got) != res {
+		t.Errorf("Case: %s: Got: %s\n Expected: %v", tc, got, res)
+	}
+
+	err = os.RemoveAll("/tmp/entrypoint")
+	if err != nil {
+		t.Fatal(err)
+	}
+}
+
+func Test_syncIdeaCache(t *testing.T) {
+	tmpDir := filepath.Join(os.TempDir(), "entrypoint")
+	tc := "NotExist"
+	syncIdeaCache(filepath.Join(tmpDir, "1"), filepath.Join(tmpDir, "2"), true)
+	if _, err := os.Stat(filepath.Join(tmpDir, "2")); err == nil {
+		t.Errorf("Case: %s: Folder dst created, when it should not", tc)
+	}
+
+	tc = "NoOverwrite"
+	err := os.MkdirAll(filepath.Join(tmpDir, "1", ".idea", "dir1", "dir2"), os.FileMode(0o755))
+	if err != nil {
+		t.Fatal(err)
+	}
+	err = os.MkdirAll(filepath.Join(tmpDir, "2", ".idea", "dir1"), os.FileMode(0o755))
+	if err != nil {
+		t.Fatal(err)
+	}
+	err = os.WriteFile(filepath.Join(tmpDir, "1", ".idea", "file1"), []byte("test1"), os.FileMode(0o600))
+	if err != nil {
+		t.Fatal(err)
+	}
+	err = os.WriteFile(filepath.Join(tmpDir, "1", ".idea", "dir1", "file2"), []byte("test2"), os.FileMode(0o600))
+	if err != nil {
+		t.Fatal(err)
+	}
+	err = os.WriteFile(filepath.Join(tmpDir, "2", ".idea", "dir1", "file2"), []byte("test!"), os.FileMode(0o600))
+	if err != nil {
+		t.Fatal(err)
+	}
+	syncIdeaCache(filepath.Join(tmpDir, "1"), filepath.Join(tmpDir, "2"), false)
+	if _, err := os.Stat(filepath.Join(tmpDir, "1", ".idea", "dir1", "dir2")); os.IsNotExist(err) {
+		t.Errorf("Case: %s: Resulting folder .idea/dir1/dir2 not found", tc)
+	}
+	got, err := os.ReadFile(filepath.Join(tmpDir, "2", ".idea", "dir1", "file2"))
+	if err != nil || string(got) != "test!" {
+		t.Errorf("Case: %s: Got: %s\n Expected: test!", tc, got)
+	}
+
+	tc = "Overwrite"
+	syncIdeaCache(filepath.Join(tmpDir, "2"), filepath.Join(tmpDir, "1"), true)
+	got, err = os.ReadFile(filepath.Join(tmpDir, "1", ".idea", "dir1", "file2"))
+	if err != nil || string(got) != "test!" {
+		t.Errorf("Case: %s: Got: %s\n Expected: test!", tc, got)
+	}
+
+	err = os.RemoveAll(tmpDir)
+	if err != nil {
+		t.Fatal(err)
+	}
+}
+
+func Test_Bootstrap(t *testing.T) {
+	opts := &QodanaOptions{}
+	tmpDir := filepath.Join(os.TempDir(), "entrypoint")
+	err := os.MkdirAll(tmpDir, 0o755)
+	if err != nil {
+		t.Fatal(err)
+	}
+	opts.ProjectDir = tmpDir
+	bootstrap("echo \"bootstrap: touch qodana.yml\" > qodana.yaml", opts.ProjectDir)
+	Config = GetQodanaYaml(tmpDir)
+	bootstrap(Config.Bootstrap, opts.ProjectDir)
+	if _, err := os.Stat(filepath.Join(opts.ProjectDir, "qodana.yaml")); errors.Is(err, os.ErrNotExist) {
+		t.Fatalf("No qodana.yml created by the bootstrap command in qodana.yaml")
+	}
+	err = os.RemoveAll(tmpDir)
+	if err != nil {
+		t.Fatal(err)
+	}
+}
+
+// TestSaveProperty saves some SARIF example file, adds a property to it, then checks that a compact version of that JSON file equals the given expected expected.
+func Test_SaveProperty(t *testing.T) {
+	opts := &QodanaOptions{}
+	tmpDir := filepath.Join(os.TempDir(), "entrypoint")
+	err := os.MkdirAll(tmpDir, 0o755)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	opts.ProjectDir = tmpDir
+	shortSarif := filepath.Join(tmpDir, "qodana-short.sarif.json")
+	err = os.WriteFile(
+		shortSarif,
+		[]byte("{\"$schema\":\"https://raw.githubusercontent.com/schemastore/schemastore/master/src/schemas/json/sarif-2.1.0-rtm.5.json\",\"version\":\"2.1.0\",\"runs\":[{\"tool\":{\"driver\":{\"name\":\"QDRICKROLL\",\"fullName\":\"Qodana for RickRolling\",\"version\":\"223.1218.100\",\"rules\":[],\"taxa\":[],\"language\":\"en-US\",\"contents\":[\"localizedData\",\"nonLocalizedData\"],\"isComprehensive\":false},\"extensions\":[]},\"invocations\":[{\"exitCode\":0,\"toolExecutionNotifications\":[],\"executionSuccessful\":true}],\"language\":\"en-US\",\"results\":[],\"automationDetails\":{\"id\":\"project/qodana/2022-08-01\",\"guid\":\"87d2cf90-9968-4bd3-9cbc-d1b624f37fd2\",\"properties\":{\"jobUrl\":\"\",\"tags\":[\"jobUrl\"]}},\"newlineSequences\":[\"\\r\\n\",\"\\n\"],\"properties\":{\"deviceId\":\"200820300000000-0000-0000-0000-000000000001\",\"tags\":[\"deviceId\"]}}]}"),
+		0o644,
+	)
+	if err != nil {
+		t.Fatal(err)
+	}
+	link := "https://youtu.be/dQw4w9WgXcQ"
+	err = saveSarifProperty(
+		shortSarif,
+		"reportUrl",
+		link,
+	)
+	if err != nil {
+		t.Fatal(err)
+	}
+	s, err := sarif.Open(shortSarif)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if s.Runs[0].Properties["reportUrl"] != link {
+		t.Fatal("reportUrl was not added correctly to qodana-short.sarif.json")
+	}
+	expected := []byte(`{"version":"2.1.0","$schema":"https://raw.githubusercontent.com/schemastore/schemastore/master/src/schemas/json/sarif-2.1.0-rtm.5.json","runs":[{"tool":{"driver":{"contents":["localizedData","nonLocalizedData"],"fullName":"Qodana for RickRolling","isComprehensive":false,"language":"en-US","name":"QDRICKROLL","rules":[],"version":"223.1218.100"}},"invocations":[{"executionSuccessful":true,"exitCode":0}],"results":[],"automationDetails":{"guid":"87d2cf90-9968-4bd3-9cbc-d1b624f37fd2","id":"project/qodana/2022-08-01","properties":{"jobUrl":"","tags":["jobUrl"]}},"language":"en-US","newlineSequences":["\r\n","\n"],"properties":{"deviceId":"200820300000000-0000-0000-0000-000000000001","reportUrl":"https://youtu.be/dQw4w9WgXcQ","tags":["deviceId"]}}]}`)
+	content, err := os.ReadFile(shortSarif)
+	if err != nil {
+		t.Fatal("Error when opening file: ", err)
+	}
+	actual := new(bytes.Buffer)
+	err = json.Compact(actual, content)
+	if err != nil {
+		t.Fatal("Error when compacting file: ", err)
+	}
+	if !bytes.Equal(actual.Bytes(), expected) {
+		t.Fatal("Expected: ", string(expected), " Actual: ", actual.String())
+	}
+	err = os.RemoveAll(tmpDir)
+	if err != nil {
+		t.Fatal(err)
+	}
+}
+
+func Test_WriteAppInfo(t *testing.T) {
+	tmpDir := filepath.Join(os.TempDir(), "entrypoint")
+	err := os.MkdirAll(tmpDir, 0o755)
+	if err != nil {
+		t.Fatal(err)
+	}
+	Prod.Version = "2022.1"
+	Prod.EAP = true
+	Prod.Build = "420.69"
+	Prod.Code = "QDTEST"
+	Prod.Name = "Qodana for Tests"
+	xmlFilePath := filepath.Join(tmpDir, "QodanaAppInfo.xml")
+	writeAppInfo(xmlFilePath)
+	actual, err := os.ReadFile(xmlFilePath)
+	if err != nil {
+		t.Fatal(err)
+	}
+	expected := `<component xmlns="http://jetbrains.org/intellij/schema/application-info"
+               xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+               xsi:schemaLocation="http://jetbrains.org/intellij/schema/application-info http://jetbrains.org/intellij/schema/ApplicationInfo.xsd">
+      <version major="2022" minor="1" eap="true"/>
+      <company name="JetBrains s.r.o." url="https://www.jetbrains.com" copyrightStart="2000"/>
+      <build number="QDTEST-420.69" date="202212060511" />
+      <names product="Qodana for Tests" fullname="Qodana for Tests"/>
+      <icon svg="xxx.svg" svg-small="xxx.svg"/>
+      <plugins url="https://plugins.jetbrains.com/" builtin-url="__BUILTIN_PLUGINS_URL__"/>
+</component>`
+	assert.Equal(t, expected, string(actual))
+	err = os.RemoveAll(tmpDir)
+	if err != nil {
+		t.Fatal(err)
+	}
+}
+
+func Test_ReadAppInfo(t *testing.T) {
+	tempDir := os.TempDir()
+	entrypointDir := filepath.Join(tempDir, "entrypoint")
+	xmlFilePath := filepath.Join(entrypointDir, "bin", "QodanaAppInfo.xml")
+	err := os.MkdirAll(filepath.Dir(xmlFilePath), 0o755)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	err = os.WriteFile(
+		xmlFilePath,
+		[]byte(`<component xmlns="http://jetbrains.org/intellij/schema/application-info"
+			   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+			   xsi:schemaLocation="http://jetbrains.org/intellij/schema/application-info http://jetbrains.org/intellij/schema/ApplicationInfo.xsd">
+	  <version major="2022" minor="1" eap="true"/>
+	  <company name="JetBrains s.r.o." url="https://www.jetbrains.com" copyrightStart="2000"/>
+	  <build number="QDTEST-420.69" date="202212060511" />
+	  <names product="Qodana for Tests" fullname="Qodana for Tests"/>
+	  <plugins url="https://plugins.jetbrains.com/" builtin-url="__BUILTIN_PLUGINS_URL__"/>
+	</component>`),
+		0o644,
+	)
+	if err != nil {
+		t.Fatal(err)
+	}
+	appInfoContents := readAppInfoXml(entrypointDir)
+	assert.Equal(t, "2022", appInfoContents.Version.Major)
+	assert.Equal(t, "1", appInfoContents.Version.Minor)
+	assert.Equal(t, "true", appInfoContents.Version.Eap)
+	assert.Equal(t, "QDTEST-420.69", appInfoContents.Build.Number)
+	assert.Equal(t, "202212060511", appInfoContents.Build.Date)
+	assert.Equal(t, "Qodana for Tests", appInfoContents.Names.Product)
+	assert.Equal(t, "Qodana for Tests", appInfoContents.Names.Fullname)
+	err = os.RemoveAll(entrypointDir)
+	if err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestGetPublisherArgs(t *testing.T) {
+	// Set up test options
+	opts := &QodanaOptions{
+		AnalysisId: "test-analysis-id",
+		ProjectDir: "/path/to/project",
+		ResultsDir: "/path/to/results",
+		ReportDir:  "/path/to/report",
+	}
+
+	// Set up test environment variables
+	os.Setenv(qodanaToolEnv, "test-tool")
+	os.Setenv(qodanaEndpoint, "test-endpoint")
+
+	// Call the function being tested
+	publisherArgs := getPublisherArgs("test-publisher.jar", opts, "test-token", "test-endpoint")
+
+	// Assert that the expected arguments are present
+	expectedArgs := []string{
+		Prod.jbrJava(),
+		"-jar",
+		"test-publisher.jar",
+		"--analysis-id", "test-analysis-id",
+		"--sources-path", "/path/to/project",
+		"--report-path", filepath.FromSlash("/path/to/report/results"),
+		"--token", "test-token",
+		"--tool", "test-tool",
+		"--endpoint", "test-endpoint",
+	}
+	if !stringSlicesEqual(publisherArgs, expectedArgs) {
+		t.Errorf("getPublisherArgs returned incorrect arguments: got %v, expected %v", publisherArgs, expectedArgs)
+	}
+}
+
+// Helper function to compare two string slices
+func stringSlicesEqual(a, b []string) bool {
+	if len(a) != len(b) {
+		return false
+	}
+	for i := range a {
+		if a[i] != b[i] {
+			return false
+		}
+	}
+	return true
+}
+
+func TestFetchPublisher(t *testing.T) {
+
+	tempDir, err := os.MkdirTemp("", "test")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	defer func(path string) {
+		err := os.RemoveAll(path)
+		if err != nil {
+			t.Fatal(err)
+		}
+	}(tempDir) // clean up
+
+	fetchPublisher(tempDir)
+
+	expectedPath := filepath.Join(tempDir, "publisher.jar")
+	if _, err := os.Stat(expectedPath); os.IsNotExist(err) {
+		t.Fatalf("fetchPublisher() failed, expected %v to exists, got error: %v", expectedPath, err)
 	}
 }

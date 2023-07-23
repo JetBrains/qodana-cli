@@ -38,7 +38,7 @@ func newPullCommand() *cobra.Command {
 		Short: "Pull latest version of linter",
 		Long:  `An alternative to pull an image.`,
 		PreRun: func(cmd *cobra.Command, args []string) {
-			core.CheckContainerHost()
+			core.PrepairContainerEnvSettings()
 		},
 		Run: func(cmd *cobra.Command, args []string) {
 			if options.YamlName == "" {

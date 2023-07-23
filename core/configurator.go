@@ -30,29 +30,40 @@ import (
 )
 
 const (
-	QodanaSarifName     = "qodana.sarif.json"
-	qodanaReportUrlFile = "qodana.cloud"
-	configName          = "qodana"
-	version             = "2023.2"
-	eap                 = "-eap"
+	QodanaSarifName      = "qodana.sarif.json"
+	qodanaShortSarifName = "qodana-short.sarif.json"
+	qodanaReportUrlFile  = "qodana.cloud"
+	configName           = "qodana"
+	version              = "2023.2"
+	eap                  = "-eap"
 )
 
 // langsLinters is a map of languages to linters.
 var langsLinters = map[string][]string{
-	"Java":              {QDJVMC, QDJVM, QDAND},
-	"Kotlin":            {QDJVMC, QDJVM, QDAND},
-	"PHP":               {QDPHP},
-	"Python":            {QDPYC, QDPY},
-	"JavaScript":        {QDJS},
-	"TypeScript":        {QDJS},
-	"Go":                {QDGO},
-	"C#":                {QDNET},
-	"F#":                {QDNET},
-	"Visual Basic .NET": {QDNET},
+	"Java":              {Image(QDJVMC), Image(QDJVM), Image(QDAND)},
+	"Kotlin":            {Image(QDJVMC), Image(QDJVM), Image(QDAND)},
+	"PHP":               {Image(QDPHP)},
+	"Python":            {Image(QDPYC), Image(QDPY)},
+	"JavaScript":        {Image(QDJS)},
+	"TypeScript":        {Image(QDJS)},
+	"Go":                {Image(QDGO)},
+	"C#":                {Image(QDNET)},
+	"F#":                {Image(QDNET)},
+	"Visual Basic .NET": {Image(QDNET)},
 }
 
 // allLinters is a list of all supported linters.
-var allLinters = []string{QDJVMC, QDJVM, QDAND, QDPHP, QDPY, QDPYC, QDJS, QDGO, QDNET}
+var allLinters = []string{
+	Image(QDJVMC),
+	Image(QDJVM),
+	Image(QDAND),
+	Image(QDPHP),
+	Image(QDPY),
+	Image(QDPYC),
+	Image(QDJS),
+	Image(QDGO),
+	Image(QDNET),
+}
 
 // ignoredDirectories is a list of directories that should be ignored by the configurator.
 var ignoredDirectories = []string{

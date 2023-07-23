@@ -27,6 +27,29 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
+var Config QodanaYaml
+
+// GetQodanaYaml reads qodana.yaml or qodana.yml
+func GetQodanaYaml(project string) QodanaYaml {
+	q := &QodanaYaml{}
+	qodanaYamlPath := filepath.Join(project, "qodana.yaml")
+	if _, err := os.Stat(qodanaYamlPath); errors.Is(err, os.ErrNotExist) {
+		qodanaYamlPath = filepath.Join(project, "qodana.yml")
+	}
+	if _, err := os.Stat(qodanaYamlPath); errors.Is(err, os.ErrNotExist) {
+		return *q
+	}
+	yamlFile, err := os.ReadFile(qodanaYamlPath)
+	if err != nil {
+		log.Printf("Problem loading qodana.yaml: %v ", err)
+	}
+	err = yaml.Unmarshal(yamlFile, q)
+	if err != nil {
+		log.Printf("Not a valid qodana.yaml: %v ", err)
+	}
+	return *q
+}
+
 // QodanaYaml A standard qodana.yaml (or qodana.yml) format for Qodana configuration.
 // https://github.com/JetBrains/qodana-profiles/blob/master/schemas/qodana-yaml-1.0.json
 type QodanaYaml struct {
@@ -34,7 +57,10 @@ type QodanaYaml struct {
 	Version string `yaml:"version,omitempty"`
 
 	// Linter to run.
-	Linter string `yaml:"linter"`
+	Linter string `yaml:"linter,omitempty"`
+
+	// IDE to run.
+	Ide string `yaml:"ide,omitempty"`
 
 	// Profile is the profile configuration for Qodana analysis (either a profile name or a profile path).
 	Profile Profile `yaml:"profile,omitempty"`
@@ -205,6 +231,12 @@ type DotNet struct {
 
 	// Project is the name of a .NET project inside the Qodana project.
 	Project string `yaml:"project,omitempty"`
+
+	// Configuration is the configuration in which .NET project should be opened by Qodana.
+	Configuration string `yaml:"configuration,omitempty"`
+
+	// Platform is the target platform in which .NET project should be opened by Qodana.
+	Platform string `yaml:"platform,omitempty"`
 }
 
 // IsEmpty checks whether the .NET configuration is empty or not.
