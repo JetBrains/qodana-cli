@@ -117,7 +117,7 @@ func setupToken(path string, id string) string {
 			ErrorMessage("Failed to save credentials: %s", err)
 			return ""
 		}
-		SuccessMessage("Token was saved to the system keyring, will be used for %s\n", path)
+		SuccessMessage("Token was saved to the system keyring")
 		return token
 	}
 }
