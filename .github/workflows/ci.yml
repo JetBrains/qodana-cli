@@ -15,7 +15,6 @@ jobs:
         uses: golangci/golangci-lint-action@v3.6.0
         with:
           version: latest
-          args: --enable gofumpt
 
   test:
     runs-on: ${{ matrix.os }}
