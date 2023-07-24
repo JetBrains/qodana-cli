@@ -44,7 +44,8 @@ func newInitCommand() *cobra.Command {
 				if err != nil {
 					log.Fatal(err)
 				}
-				if core.IsInteractive() && !core.AskUserConfirm(fmt.Sprintf("Do you want to set up Qodana in %s", absPath)) {
+				options.ProjectDir = absPath
+				if core.IsInteractive() && !core.AskUserConfirm(fmt.Sprintf("Do you want to set up Qodana in %s", core.PrimaryBold(options.ProjectDir))) {
 					return
 				}
 				qodanaYaml.Linter = core.GetLinter(options.ProjectDir, options.YamlName)
