@@ -52,6 +52,19 @@ var langsLinters = map[string][]string{
 	"Visual Basic .NET": {Image(QDNET)},
 }
 
+// allCodes is a list of all supported linters' product codes.
+var allCodes = []string{
+	QDJVMC,
+	QDJVM,
+	QDAND,
+	QDPHP,
+	QDPYC,
+	QDPY,
+	QDJS,
+	QDGO,
+	QDNET,
+}
+
 // allLinters is a list of all supported linters.
 var allLinters = []string{
 	Image(QDJVMC),
