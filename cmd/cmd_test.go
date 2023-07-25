@@ -22,7 +22,6 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"github.com/stretchr/testify/assert"
 	"io"
 	"os"
 	"os/exec"
@@ -30,6 +29,8 @@ import (
 	"runtime"
 	"sort"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 
 	log "github.com/sirupsen/logrus"
 
@@ -213,7 +214,27 @@ func TestAllCommandsWithContainer(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	// scan
+	// scan with a container
+	out = bytes.NewBufferString("")
+	// set debug log to debug
+	log.SetLevel(log.DebugLevel)
+	command = newScanCommand()
+	command.SetOut(out)
+	command.SetArgs([]string{
+		"-i", projectPath,
+		"-o", resultsPath,
+		"--cache-dir", filepath.Join(projectPath, "cache"),
+		"--fail-threshold", "5",
+		"--print-problems",
+		"--apply-fixes",
+		"-l", linter,
+	})
+	err = command.Execute()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// scan with native mode
 	out = bytes.NewBufferString("")
 	// set debug log to debug
 	log.SetLevel(log.DebugLevel)
@@ -302,38 +323,27 @@ func TestAllCommandsWithContainer(t *testing.T) {
 }
 
 func TestScanWithIde(t *testing.T) {
-	token := "set your token here"
-	err := os.Setenv("QODANA_TOKEN", token)
-	if err != nil {
-		t.Fatal(err)
-	}
+	log.SetLevel(log.DebugLevel)
+	token := os.Getenv("QODANA_TOKEN")
 
 	if //goland:noinspection GoBoolExpressions
-	token == "set your token here" {
+	token == "" {
 		t.Skip("set your token here to run the test")
 	}
-	ide := "/Users/tv/Applications/IntelliJ IDEA Community Edition.app/Contents"
-	projectPath := "/Users/tv/Projects/code-analytics-examples/java"
+	ide := "QDPY"
+	projectPath := createProject(t, "qodana_scan_python")
 	resultsPath := filepath.Join(projectPath, "results")
-	err = os.MkdirAll(resultsPath, 0o755)
+	err := os.MkdirAll(resultsPath, 0o755)
 	if err != nil {
 		t.Fatal(err)
 	}
-
-	core.RunCmd("", "/Users/tv/Applications/IntelliJ IDEA Ultimate 2023.3 Nightly.app/Contents/MacOS/idea", "inspect", "qodana", "--help")
-
-	// scan
 	out := bytes.NewBufferString("")
-	// set debug log to debug
-	log.SetLevel(log.DebugLevel)
+
 	command := newScanCommand()
 	command.SetOut(out)
 	command.SetArgs([]string{
 		"-i", projectPath,
 		"-o", resultsPath,
-		"--cache-dir", filepath.Join(projectPath, "cache"),
-		//"--fail-threshold", "5", TODO: check wtf is wrong with fail threshold in IDE
-		"--print-problems",
 		"--ide", ide,
 	})
 	err = command.Execute()

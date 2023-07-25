@@ -21,7 +21,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/owenrumney/go-sarif/v2/sarif"
 	"io"
 	"io/fs"
 	"net/http"
@@ -31,6 +30,9 @@ import (
 	"runtime"
 	"strings"
 	"time"
+
+	cp "github.com/otiai10/copy"
+	"github.com/owenrumney/go-sarif/v2/sarif"
 
 	"github.com/docker/docker/client"
 
@@ -266,6 +268,11 @@ func prepareHost(opts *QodanaOptions) {
 		PrepairContainerEnvSettings()
 	}
 	if opts.Ide != "" {
+		if contains(allCodes, opts.Ide) {
+			printProcess(func() {
+				opts.Ide = downloadAndInstallIDE(opts.Ide)
+			}, fmt.Sprintf("Downloading %s", opts.Ide), fmt.Sprintf("downloading IDE distribution to %s", getQodanaSystemDir()))
+		}
 		prepareLocalIdeSettings(opts)
 	}
 }
@@ -529,41 +536,10 @@ func copyReportInNativeMode(opts *QodanaOptions) {
 		source := filepath.Join(opts.ResultsDir, "qodana.sarif.json")
 		destination := filepath.Join(opts.reportResultsPath(), "qodana.sarif.json")
 
-		if err := copyFile(source, destination); err != nil {
-			log.Fatalf("failed to copy file: %v", err)
-		}
-	}
-}
-
-func copyFile(src, dst string) error {
-	srcFile, err := os.Open(src)
-	if err != nil {
-		return err
-	}
-	defer func(srcFile *os.File) {
-		err := srcFile.Close()
-		if err != nil {
+		if err := cp.Copy(source, destination); err != nil {
 			log.Fatal(err)
 		}
-	}(srcFile)
-
-	dstFile, err := os.Create(dst)
-	if err != nil {
-		return err
 	}
-	defer func(dstFile *os.File) {
-		err := dstFile.Close()
-		if err != nil {
-			log.Fatal(err)
-		}
-	}(dstFile)
-
-	_, err = io.Copy(dstFile, srcFile)
-	if err != nil {
-		return err
-	}
-
-	return nil
 }
 
 func saveSarifProperty(path string, key string, value string) error {

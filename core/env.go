@@ -58,6 +58,7 @@ func ExtractQodanaEnvironment() {
 		}
 	}
 	setEnv(qodanaEnv, fmt.Sprintf("%s:%s", qEnv, Prod.Version))
+	setEnv(QodanaDistEnv, Prod.Home)
 }
 
 // bootstrap takes the given command (from CLI or qodana.yaml) and runs it.

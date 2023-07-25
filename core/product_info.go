@@ -19,11 +19,12 @@ package core
 import (
 	"encoding/xml"
 	"fmt"
-	log "github.com/sirupsen/logrus"
 	"os"
 	"path/filepath"
 	"runtime"
 	"strings"
+
+	log "github.com/sirupsen/logrus"
 )
 
 type product struct {
@@ -67,14 +68,18 @@ func (p *product) ideBin() string {
 	return filepath.Join(p.Home, "bin")
 }
 
+func (p *product) javaHome() string {
+	return filepath.Join(p.Home, "jbr")
+}
+
 func (p *product) jbrJava() string {
 	switch runtime.GOOS {
 	case "darwin":
-		return filepath.Join(p.Home, "jbr", "Contents", "Home", "bin", "java")
+		return filepath.Join(p.javaHome(), "Contents", "Home", "bin", "java")
 	case "windows":
-		return filepath.Join(p.Home, "jbr", "bin", "java.exe")
+		return filepath.Join(p.javaHome(), "bin", "java.exe")
 	default:
-		return filepath.Join(p.Home, "jbr", "bin", "java")
+		return filepath.Join(p.javaHome(), "bin", "java")
 	}
 }
 
@@ -157,6 +162,10 @@ var Prod product
 // guessProduct fills all product fields.
 func guessProduct(opts *QodanaOptions) {
 	Prod.Home = opts.Ide
+	if //goland:noinspection GoBoolExpressions
+	runtime.GOOS == "darwin" {
+		Prod.Home = filepath.Join(Prod.Home, "Contents")
+	}
 	if Prod.Home == "" {
 		if home, ok := os.LookupEnv(QodanaDistEnv); ok {
 			Prod.Home = home
@@ -264,7 +273,7 @@ func patchIdeScript(product product, strToRemove string, confDirPath string) str
 		modifiedContent = strings.ReplaceAll(modifiedContent, "SET \"IDE_BIN_DIR=%~dp0\"", "SET \"IDE_BIN_DIR=%QODANA_DIST%\\bin\"")
 	} else if //goland:noinspection GoBoolExpressions
 	runtime.GOOS == "linux" {
-		modifiedContent = strings.ReplaceAll(modifiedContent, "IDE_BIN_HOME=$(dirname \"$(realpath \"$0\")\")", "IDE_BIN_HOME=$(dirname \"$(realpath \"$QODANA_DIST/bin\")\")")
+		modifiedContent = strings.ReplaceAll(modifiedContent, "IDE_BIN_HOME=$(dirname \"$(realpath \"$0\")\")", "IDE_BIN_HOME=$QODANA_DIST/bin")
 	} else {
 		WarningMessage("Warning, unsupported platform: %s", runtime.GOOS)
 		return product.IdeScript
