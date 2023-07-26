@@ -12,8 +12,14 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-func downloadAndInstallIDE(productCode string) string {
-	url := getIde(productCode)
+func downloadAndInstallIDE(ide string) string {
+	var url string
+	if strings.HasPrefix(ide, "https://") || strings.HasPrefix(ide, "http://") {
+		url = ide
+	} else {
+		url = getIde(ide)
+	}
+
 	fileName := filepath.Base(url)
 	fileExt := filepath.Ext(fileName)
 	installDir := filepath.Join(getQodanaSystemDir(), strings.TrimSuffix(fileName, fileExt))
