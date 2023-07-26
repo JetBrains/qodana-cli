@@ -6,7 +6,7 @@ require (
 	github.com/boyter/scc/v3 v3.1.0
 	github.com/cucumber/ci-environment/go v0.0.0-20230723160303-a2dce81f299c
 	github.com/docker/cli v20.10.23+incompatible // DO NOT UPDATE: breaking changes
-	github.com/docker/docker v20.10.23+incompatible // DO NOT UPDATE: breaking changes
+	github.com/docker/docker v24.0.5+incompatible // DO NOT UPDATE: breaking changes
 	github.com/go-enry/go-enry/v2 v2.8.4
 	github.com/google/uuid v1.3.0
 	github.com/liamg/clinch v1.6.4
