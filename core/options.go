@@ -147,7 +147,7 @@ func (o *QodanaOptions) ValidateToken(refresh bool) string {
 	}
 
 	if IsInteractive() {
-		WarningMessage("%s is not set – Qodana (non-EAP) linters require token to be configured", PrimaryBold(qodanaToken))
+		WarningMessage(emptyTokenMessage)
 		token := setupToken(o.ProjectDir, o.id())
 		if token != "" {
 			log.Debugf("Loaded token from the user input, saved to the system keyring with id %s", o.id())

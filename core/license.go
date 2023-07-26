@@ -57,8 +57,7 @@ const qodanaLicenseUri = "/v1/linters/license-key"
 
 var tokenDeclinedError = errors.New("token was declined by Qodana Cloud server")
 
-const emptyTokenMessage = `
-Starting from version 2023.2 release versions of Qodana Linters require connection to Qodana Cloud. 
+const emptyTokenMessage = `Starting from version 2023.2 release versions of Qodana Linters require connection to Qodana Cloud. 
 To continue using Qodana, please ensure you have an access token and provide the token as the QODANA_TOKEN environment variable.
 Obtain your token by registering at https://qodana.cloud/
 For more details, please visit: https://www.jetbrains.com/help/qodana/cloud-quickstart.html
