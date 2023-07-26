@@ -90,7 +90,7 @@ But you can always override qodana.yaml options with the following command-line 
 	flags := cmd.Flags()
 
 	flags.StringVarP(&options.Linter, "linter", "l", "", "Override linter (Docker image) to use")
-	flags.StringVar(&options.Ide, "ide", "", "Override linter Docker image with path to the installed IDE to use")
+	flags.StringVar(&options.Ide, "ide", "", "EXPERIMENTAL: Override linter Docker image with path to the installed IDE, or download link, or product code to use")
 
 	flags.StringVarP(&options.ProjectDir, "project-dir", "i", ".", "Root directory of the inspected project")
 	flags.StringVarP(&options.ResultsDir, "results-dir", "o", options.ResultsDirPath(), "Override directory to save Qodana inspection results to (default <userCacheDir>/JetBrains/<linter>/results)")
