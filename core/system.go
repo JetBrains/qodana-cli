@@ -268,9 +268,9 @@ func prepareHost(opts *QodanaOptions) {
 		PrepairContainerEnvSettings()
 	}
 	if opts.Ide != "" {
-		if contains(allCodes, opts.Ide) || strings.HasPrefix(opts.Ide, "https://") {
+		if contains(allCodes, strings.TrimSuffix(opts.Ide, EapSuffix)) || strings.HasPrefix(opts.Ide, "https://") {
 			printProcess(func() {
-				opts.Ide = downloadAndInstallIDE(opts.Ide)
+				opts.Ide = downloadAndInstallIDE(opts.Ide, getQodanaSystemDir())
 			}, fmt.Sprintf("Downloading %s", opts.Ide), fmt.Sprintf("downloading IDE distribution to %s", getQodanaSystemDir()))
 		}
 		prepareLocalIdeSettings(opts)
