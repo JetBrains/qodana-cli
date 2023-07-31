@@ -2,33 +2,41 @@ package core
 
 import (
 	"fmt"
+	cp "github.com/otiai10/copy"
+	log "github.com/sirupsen/logrus"
+	"math/rand"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"runtime"
 	"strings"
-
-	cp "github.com/otiai10/copy"
-	log "github.com/sirupsen/logrus"
+	"time"
 )
 
-func downloadAndInstallIDE(ide string) string {
+var (
+	EapSuffix = "-EAP"
+)
+
+func downloadAndInstallIDE(ide string, baseDir string) string {
 	var url string
 	if strings.HasPrefix(ide, "https://") || strings.HasPrefix(ide, "http://") {
 		url = ide
 	} else {
 		url = getIde(ide)
+		if url == "" {
+			log.Fatalf("Error while obtaining the URL for the supplied IDE, exiting")
+		}
 	}
 
 	fileName := filepath.Base(url)
 	fileExt := filepath.Ext(fileName)
-	installDir := filepath.Join(getQodanaSystemDir(), strings.TrimSuffix(fileName, fileExt))
+	installDir := filepath.Join(baseDir, strings.TrimSuffix(fileName, fileExt))
 	if _, err := os.Stat(installDir); err == nil {
 		log.Debugf("IDE already installed to %s, skipping download", installDir)
 		return installDir
 	}
 
-	filePath := filepath.Join(getQodanaSystemDir(), fileName)
+	filePath := filepath.Join(baseDir, fileName)
 
 	err := downloadFile(filePath, url)
 	if err != nil {
@@ -36,8 +44,10 @@ func downloadAndInstallIDE(ide string) string {
 	}
 
 	switch fileExt {
+	case ".zip":
+		err = installIdeWindowsZip(filePath, installDir)
 	case ".exe":
-		err = installIdeWindows(filePath, installDir)
+		err = installIdeWindowsExe(filePath, installDir)
 	case ".gz":
 		err = installIdeLinux(filePath, installDir)
 	case ".dmg":
@@ -60,44 +70,96 @@ func downloadAndInstallIDE(ide string) string {
 
 //goland:noinspection GoBoolExpressions
 func getIde(productCode string) string {
-	const ideVersion = "2023.1.4"
-
 	products := map[string]string{
-		QDJVMC: "idea/ideaIC",
-		QDPHP:  "webide/PhpStorm",
-		QDJS:   "webstorm/WebStorm",
-		QDNET:  "rider/JetBrains.Rider",
-		QDPY:   "python/pycharm-professional",
-		QDPYC:  "python/pycharm-community",
-		QDGO:   "go/goland",
+		QDJVM:  "IIU",
+		QDJVMC: "IIC",
+		QDAND:  "IIC",
+		QDPHP:  "PS",
+		QDJS:   "WS",
+		QDNET:  "RD",
+		QDPY:   "PCP",
+		QDPYC:  "PCC",
+		QDGO:   "GO",
+	}
+
+	originalCode := productCode
+	dist := "release"
+	if strings.HasSuffix(productCode, EapSuffix) {
+		dist = "eap"
+		productCode = strings.TrimSuffix(productCode, EapSuffix)
 	}
 
 	if _, ok := products[productCode]; !ok {
-		products[productCode] = "idea/ideaIU"
+		ErrorMessage("Product code doesnt exist: ", originalCode)
+		return ""
 	}
 
-	var ext, arch string
+	product, err := GetProductByCode(products[productCode])
+	if err != nil || product == nil {
+		ErrorMessage("Error while obtaining the product info")
+		return ""
+	}
+
+	release := SelectLatestRelease(product, dist)
+	if release == nil {
+		ErrorMessage("Error while obtaining the release type: ", dist)
+		return ""
+	}
+
+	var downloadType string
 	switch runtime.GOOS {
 	case "darwin":
-		ext = ".dmg"
+		downloadType = "mac"
+		if runtime.GOARCH == "arm64" {
+			downloadType = "macM1"
+		}
 	case "windows":
-		ext = ".exe"
+		downloadType = "windowsZip"
+		_, ok := (*release.Downloads)[downloadType]
+		if !ok {
+			downloadType = "windows"
+		}
+		if runtime.GOARCH == "arm64" {
+			downloadType = "windowsZipARM64"
+			_, ok := (*release.Downloads)[downloadType]
+			if !ok {
+				downloadType = "windowsARM64"
+			}
+		}
 	default:
-		ext = ".tar.gz"
-	}
-	if runtime.GOARCH == "arm64" {
-		arch = "-aarch64"
+		downloadType = "linux"
+		if runtime.GOARCH == "arm64" {
+			downloadType = "linuxARM64"
+		}
 	}
 
-	res := fmt.Sprintf("https://download.jetbrains.com/%s-%s%s%s", products[productCode], ideVersion, arch, ext)
-	log.Debug("IDE URL: " + res)
+	url, ok := (*release.Downloads)[downloadType]
+	if !ok {
+		ErrorMessage("Error while obtaining the release for platform type: ", downloadType)
+		return ""
+	}
+
+	res := url.Link
+	log.Debug(fmt.Sprintf("%s %s %s %s URL: %s", productCode, dist, *release.Version, downloadType, url.Link))
 	return res
 }
 
-func installIdeWindows(archivePath string, targetDir string) error {
-	_, err := exec.Command(archivePath, "/S", fmt.Sprintf("/D=%s", targetDir)).Output()
+// installIdeWindowsExe is used as a fallback, since it needs installation privileges and alters the registry
+func installIdeWindowsExe(archivePath string, targetDir string) error {
+	_, err := exec.Command(archivePath, "/S", fmt.Sprintf("/D=%s", quoteForWindows(targetDir))).Output()
 	if err != nil {
 		return fmt.Errorf("%s: %s", archivePath, err)
+	}
+	return nil
+}
+
+func installIdeWindowsZip(archivePath string, targetDir string) error {
+	if err := os.MkdirAll(targetDir, os.ModePerm); err != nil {
+		log.Fatal("couldn't create a directory ", err.Error())
+	}
+	_, err := exec.Command("tar", "-xf", quoteForWindows(archivePath), "-C", quoteForWindows(targetDir)).Output()
+	if err != nil {
+		return fmt.Errorf("tar: %s", err)
 	}
 	return nil
 }
@@ -114,17 +176,18 @@ func installIdeLinux(archivePath string, targetDir string) error {
 }
 
 func installIdeMacOS(archivePath string, targetDir string) error {
-	mountDir := "/Volumes/MyTempMount"
+	rand.Seed(time.Now().UnixNano())
+	mountDir := fmt.Sprintf("/Volumes/MyTempMount%d", rand.Intn(10000))
 	_, err := exec.Command("hdiutil", "attach", "-nobrowse", "-mountpoint", mountDir, archivePath).Output()
 	if err != nil {
-		return fmt.Errorf("hdiutil: %s", err)
+		return fmt.Errorf("hdiutil attach: %s", err)
 	}
 	defer func(command *exec.Cmd) {
 		err := command.Run()
 		if err != nil {
-			log.Fatal(err)
+			log.Fatal(fmt.Errorf("hdiutil eject: %s", err))
 		}
-	}(exec.Command("hdiutil", "detach", mountDir))
+	}(exec.Command("hdiutil", "eject", mountDir, "-force"))
 	matches, err := filepath.Glob(mountDir + "/*.app")
 	if err != nil {
 		return fmt.Errorf("filepath.Glob: %s", err)

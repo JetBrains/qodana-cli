@@ -257,10 +257,6 @@ func guessProduct(opts *QodanaOptions) {
 func patchIdeScript(product product, strToRemove string, confDirPath string) string {
 	ext := filepath.Ext(product.IdeScript)
 	newFilePath := filepath.Join(confDirPath, fmt.Sprintf("%s%s", product.BaseScriptName, ext))
-	if _, err := os.Stat(newFilePath); err == nil {
-		return newFilePath
-	}
-
 	contentBytes, err := os.ReadFile(product.IdeScript)
 	if err != nil {
 		WarningMessage("Warning, can't read original script: %s (probably test mode)", err)
