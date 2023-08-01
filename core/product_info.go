@@ -128,9 +128,13 @@ func (p *product) isCommunity() bool {
 func (p *product) getProductNameFromCode() string {
 	switch p.Code {
 	case QDJVMC:
-		return "Qodana Community for Python"
+		return "Qodana Community for JVM"
 	case QDPYC:
 		return "Qodana Community for Python"
+	case QDANDC:
+		return "Qodana Community for Android"
+	case QDAND:
+		return "Qodana for Android"
 	case QDJVM:
 		return "Qodana for JVM"
 	case QDPHP:
@@ -143,6 +147,10 @@ func (p *product) getProductNameFromCode() string {
 		return "Qodana for Python"
 	case QDGO:
 		return "Qodana for Go"
+	case QDRST:
+		return "Qodana for Rust"
+	case QDRUBY:
+		return "Qodana for Ruby"
 	default:
 		return "Qodana"
 	}

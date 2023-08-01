@@ -24,21 +24,26 @@ import (
 )
 
 func TestGetIde(t *testing.T) {
-	installers := []string{QDJVMC, QDJVM, QDAND, QDPHP, QDPY, QDPYC, QDJS, QDGO, QDNET}
+	installers := []string{QDJVMC, QDJVM, QDPHP, QDPY, QDPYC, QDJS, QDGO, QDNET}
 	for _, installer := range installers {
 		ide := getIde(installer)
-		if ide == "" {
+		if ide == nil {
+			if installer != QDPHP && installer != QDNET {
+				t.Fail()
+			}
+		} else if installer == QDPHP || installer == QDNET {
+			// release happened, fix the test
 			t.Fail()
 		}
 		eap := getIde(installer + "-EAP")
-		if eap == "" {
+		if eap == nil {
 			t.Fail()
 		}
 	}
 }
 
 func TestDownloadAndInstallIDE(t *testing.T) {
-	ides := []string{QDPY, QDNET} // QDPY requires exe on Windows, QDNET - does not
+	ides := []string{QDPY, "QDNET-EAP"} // QDPY requires exe on Windows, QDNET - does not
 	for _, ide := range ides {
 		DownloadAndInstallIDE(ide, t)
 	}

@@ -1,9 +1,12 @@
 package core
 
 import (
+	"crypto/sha256"
+	"encoding/hex"
 	"fmt"
 	cp "github.com/otiai10/copy"
 	log "github.com/sirupsen/logrus"
+	"io"
 	"math/rand"
 	"os"
 	"os/exec"
@@ -14,21 +17,25 @@ import (
 )
 
 var (
-	EapSuffix = "-EAP"
+	EapSuffix    = "-EAP"
+	MajorVersion = "2023.2"
 )
 
 func downloadAndInstallIDE(ide string, baseDir string) string {
-	var url string
+	var ideUrl string
+	checkSumUrl := ""
 	if strings.HasPrefix(ide, "https://") || strings.HasPrefix(ide, "http://") {
-		url = ide
+		ideUrl = ide
 	} else {
-		url = getIde(ide)
-		if url == "" {
+		release := getIde(ide)
+		if release == nil {
 			log.Fatalf("Error while obtaining the URL for the supplied IDE, exiting")
 		}
+		ideUrl = release.Link
+		checkSumUrl = release.ChecksumLink
 	}
 
-	fileName := filepath.Base(url)
+	fileName := filepath.Base(ideUrl)
 	fileExt := filepath.Ext(fileName)
 	installDir := filepath.Join(baseDir, strings.TrimSuffix(fileName, fileExt))
 	if _, err := os.Stat(installDir); err == nil {
@@ -36,22 +43,33 @@ func downloadAndInstallIDE(ide string, baseDir string) string {
 		return installDir
 	}
 
-	filePath := filepath.Join(baseDir, fileName)
-
-	err := downloadFile(filePath, url)
+	downloadedIdePath := filepath.Join(baseDir, fileName)
+	err := downloadFile(downloadedIdePath, ideUrl)
 	if err != nil {
-		log.Fatalf("Error while downloading: %v", err)
+		log.Fatalf("Error while downloading IDE: %v", err)
+	}
+
+	defer func(filePath string) {
+		err = os.Remove(filePath)
+		if err != nil {
+			log.Warning("Error while removing temporary file: " + err.Error())
+		}
+	}(downloadedIdePath)
+
+	if checkSumUrl != "" {
+		checksumFilePath := filepath.Join(baseDir, strings.TrimSuffix(fileName, fileExt)+".sha256")
+		verifySha256(checksumFilePath, checkSumUrl, downloadedIdePath)
 	}
 
 	switch fileExt {
 	case ".zip":
-		err = installIdeWindowsZip(filePath, installDir)
+		err = installIdeWindowsZip(downloadedIdePath, installDir)
 	case ".exe":
-		err = installIdeWindowsExe(filePath, installDir)
+		err = installIdeWindowsExe(downloadedIdePath, installDir)
 	case ".gz":
-		err = installIdeLinux(filePath, installDir)
+		err = installIdeLinux(downloadedIdePath, installDir)
 	case ".dmg":
-		err = installIdeMacOS(filePath, installDir)
+		err = installIdeMacOS(downloadedIdePath, installDir)
 	default:
 		log.Fatalf("Unsupported file extension: %s", fileExt)
 	}
@@ -60,26 +78,22 @@ func downloadAndInstallIDE(ide string, baseDir string) string {
 		log.Fatalf("Error while unpacking: %v", err)
 	}
 
-	err = os.Remove(filePath)
-	if err != nil {
-		log.Warning("Error while removing temporary file: " + err.Error())
-	}
-
 	return installDir
 }
 
 //goland:noinspection GoBoolExpressions
-func getIde(productCode string) string {
+func getIde(productCode string) *ReleaseDownloadInfo {
 	products := map[string]string{
 		QDJVM:  "IIU",
 		QDJVMC: "IIC",
-		QDAND:  "IIC",
-		QDPHP:  "PS",
-		QDJS:   "WS",
-		QDNET:  "RD",
-		QDPY:   "PCP",
-		QDPYC:  "PCC",
-		QDGO:   "GO",
+		// QDAND: // don't use it right now
+		// QDANDC: // don't use it right now
+		QDPHP: "PS",
+		QDJS:  "WS",
+		QDNET: "RD",
+		QDPY:  "PCP",
+		QDPYC: "PCC",
+		QDGO:  "GO",
 	}
 
 	originalCode := productCode
@@ -91,19 +105,24 @@ func getIde(productCode string) string {
 
 	if _, ok := products[productCode]; !ok {
 		ErrorMessage("Product code doesnt exist: ", originalCode)
-		return ""
+		return nil
 	}
 
 	product, err := GetProductByCode(products[productCode])
 	if err != nil || product == nil {
 		ErrorMessage("Error while obtaining the product info")
-		return ""
+		return nil
 	}
 
 	release := SelectLatestRelease(product, dist)
 	if release == nil {
 		ErrorMessage("Error while obtaining the release type: ", dist)
-		return ""
+		return nil
+	}
+
+	if *release.MajorVersion != MajorVersion {
+		ErrorMessage("Major version of the release doesn't match CLI version for %s. Expected major version: %s, got: %s. Use newer CLI or use -EAP suffix", originalCode, MajorVersion, *release.MajorVersion)
+		return nil
 	}
 
 	var downloadType string
@@ -133,15 +152,14 @@ func getIde(productCode string) string {
 		}
 	}
 
-	url, ok := (*release.Downloads)[downloadType]
+	res, ok := (*release.Downloads)[downloadType]
 	if !ok {
 		ErrorMessage("Error while obtaining the release for platform type: ", downloadType)
-		return ""
+		return nil
 	}
 
-	res := url.Link
-	log.Debug(fmt.Sprintf("%s %s %s %s URL: %s", productCode, dist, *release.Version, downloadType, url.Link))
-	return res
+	log.Debug(fmt.Sprintf("%s %s %s %s URL: %s", productCode, dist, *release.Version, downloadType, res.Link))
+	return &res
 }
 
 // installIdeWindowsExe is used as a fallback, since it needs installation privileges and alters the registry
@@ -202,4 +220,51 @@ func installIdeMacOS(archivePath string, targetDir string) error {
 	}
 
 	return nil
+}
+
+func verifySha256(checksumFile string, checkSumUrl string, filePath string) {
+	err := downloadFile(checksumFile, checkSumUrl)
+	if err != nil {
+		log.Fatalf("Error while downloading checksum for IDE: %v", err)
+	}
+
+	defer func(filePath string) {
+		err = os.Remove(filePath)
+		if err != nil {
+			log.Warning("Error while removing temporary file: " + err.Error())
+		}
+	}(checksumFile)
+
+	checksum, err := os.ReadFile(checksumFile)
+	if err != nil {
+		log.Fatalf("Error occurred during reading checksum file: %v", err)
+	}
+
+	file, err := os.Open(filePath)
+	if err != nil {
+		log.Fatalf("Error while opening IDE archive: %v", err)
+	}
+
+	defer func(file *os.File) {
+		err := file.Close()
+		if err != nil {
+			log.Fatalf("Error while closing IDE archive: %v", err)
+		}
+	}(file)
+
+	h := sha256.New()
+	if _, err := io.Copy(h, file); err != nil {
+		log.Fatalf("Error while computing checksum of IDE archive: %v", err)
+	}
+
+	actual := hex.EncodeToString(h.Sum(nil))
+	expected := strings.SplitN(string(checksum), " ", 2)[0]
+	if actual != expected {
+		err = os.Remove(filePath)
+		if err != nil {
+			log.Warning("Error while removing temporary file: " + err.Error())
+		}
+		log.Fatalf("Checksums doesn't match. Expected: %s, Actual: %s", expected, actual)
+	}
+	println("Checksum of downloaded IDE was verified")
 }
