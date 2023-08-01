@@ -26,11 +26,13 @@ import (
 	"crypto/md5"
 	"encoding/hex"
 	"encoding/xml"
+	"fmt"
 	"io"
 	"log"
 	"net/http"
 	"os"
 	"path/filepath"
+	"strconv"
 )
 
 type metadata struct {
@@ -99,17 +101,17 @@ func fetchPublisher(directory string) {
 	if err != nil {
 		log.Fatal(err)
 	}
-	verifyChecksum(version, path)
+	verifyMd5Hash(version, path)
 }
 
-func verifyChecksum(version string, path string) {
+func verifyMd5Hash(version string, path string) {
 	if _, err := os.Stat(path); err != nil {
 		log.Fatal(err)
 	}
 	url := getPublisherUrl(version) + ".md5"
 	resp, err := http.Get(url)
 	if err != nil {
-		log.Fatal("Error downloading md5 hash:", err)
+		log.Fatalf("Error downloading md5 hash: %v", err)
 	}
 	defer func(Body io.ReadCloser) {
 		err := Body.Close()
@@ -120,19 +122,19 @@ func verifyChecksum(version string, path string) {
 
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
-		log.Fatal("Error reading md5 hash:", err)
+		log.Fatalf("Error reading md5 hash: %v", err)
 	}
 
 	downloadedMd5 := string(body)
 	fileContent, err := os.ReadFile(path)
 	if err != nil {
-		log.Fatal("Error reading file:", err)
+		log.Fatalf("Error reading file: %v", err)
 	}
 
 	hasher := md5.New()
 	_, err = hasher.Write(fileContent)
 	if err != nil {
-		log.Fatal("Error computing md5 hash:", err)
+		log.Fatalf("Error computing md5 hash: %v", err)
 	}
 
 	computedMd5 := hex.EncodeToString(hasher.Sum(nil))
@@ -140,7 +142,7 @@ func verifyChecksum(version string, path string) {
 	if computedMd5 != downloadedMd5 {
 		err = os.Remove(path)
 		if err != nil {
-			log.Fatal("Please remove file, since md5 doesn't match", path)
+			log.Fatalf("Please remove file, since md5 doesn't match: %s", path)
 		}
 		log.Fatal("The provided file and the file from the link have different md5 hashes")
 	} else {
@@ -149,15 +151,21 @@ func verifyChecksum(version string, path string) {
 }
 
 func downloadFile(filepath string, url string) error {
-	resp, err := http.Get(url)
-
+	response, err := http.Head(url)
 	if err != nil {
 		return err
 	}
+	size, _ := strconv.Atoi(response.Header.Get("Content-Length"))
+
+	resp, err := http.Get(url)
+	if err != nil {
+		return err
+	}
+
 	defer func(Body io.ReadCloser) {
 		err := Body.Close()
 		if err != nil {
-			log.Fatal(err)
+			log.Fatalf("Error while closing HTTP stream: %v", err)
 		}
 	}(resp.Body)
 
@@ -165,13 +173,33 @@ func downloadFile(filepath string, url string) error {
 	if err != nil {
 		return err
 	}
+
 	defer func(out *os.File) {
 		err := out.Close()
 		if err != nil {
-			log.Fatal(err)
+			log.Fatalf("Error while closing output file: %v", err)
 		}
 	}(out)
 
-	_, err = io.Copy(out, resp.Body)
-	return err
+	buffer := make([]byte, 1024)
+	total := 0
+	for {
+		length, err := resp.Body.Read(buffer)
+		if err != nil && err != io.EOF {
+			return err
+		}
+		total += length
+		if length == 0 {
+			break
+		}
+		if _, err = out.Write(buffer[:length]); err != nil {
+			return err
+		}
+	}
+
+	if total != size {
+		return fmt.Errorf("downloaded file size doesn't match expected size")
+	}
+
+	return nil
 }

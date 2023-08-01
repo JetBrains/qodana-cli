@@ -41,6 +41,9 @@ var (
 	QDJS   = "QDJS"
 	QDGO   = "QDGO"
 	QDNET  = "QDNET"
+	QDANDC = "QDANDC"
+	QDRST  = "QDRST"
+	QDRUBY = "QDRUBY"
 )
 
 func Image(code string) string {

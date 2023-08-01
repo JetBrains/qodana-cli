@@ -17,13 +17,16 @@
 package core
 
 import (
+	bt "bytes"
 	"encoding/json"
 	"encoding/xml"
 	"errors"
 	"fmt"
+	"io"
 	"os"
 	"path/filepath"
 	"runtime"
+	"strings"
 	"time"
 
 	log "github.com/sirupsen/logrus"
@@ -31,7 +34,79 @@ import (
 	cp "github.com/otiai10/copy"
 )
 
+func genExcludedPluginsLocal(opts *QodanaOptions) {
+	products := map[string]string{
+		QDJVM:  "jvm",
+		QDJVMC: "jvm-community",
+		// QDAND: // don't use it right now
+		// QDANDC: // don't use it right now
+		QDPHP: "php",
+		QDJS:  "js",
+		QDNET: "dotnet",
+		QDPY:  "python",
+		QDPYC: "python-community",
+		QDGO:  "go",
+	}
+
+	if _, ok := products[Prod.Code]; ok {
+		includedPlugins := filepath.Join(opts.confDirPath(), "included_plugins.txt")
+		dockerIgnore := filepath.Join(opts.confDirPath(), ".docker_ignore")
+		disabledPlugins := filepath.Join(opts.confDirPath(), "disabled_plugins.txt")
+		if _, err := os.Stat(disabledPlugins); err != nil {
+			url := fmt.Sprintf("https://raw.githubusercontent.com/JetBrains/qodana-docker/main/%s/%s/included_plugins.txt", MajorVersion, products[Prod.Code])
+			if err := downloadFile(includedPlugins, url); err != nil {
+				log.Errorf("Not possible to download included plugins, skipping: %v", err)
+			} else {
+				consoleOutput := getExcludedPlugins(includedPlugins, dockerIgnore)
+				if consoleOutput != "" {
+					if idx := strings.Index(consoleOutput, "=====DISABLED======="); idx != -1 {
+						plugins := strings.TrimSpace(consoleOutput[idx+len("=====DISABLED======="):])
+						if err := os.WriteFile(disabledPlugins, []byte(plugins), 0644); err != nil {
+							log.Errorf("Error while writing disabled plugins list: %v", err)
+						} else {
+							log.Debug("Successfully created the list of disabled plugins")
+						}
+					} else {
+						log.Error("Error while generating list of excluded plugins, no plugins found")
+					}
+				} else {
+					log.Error("Error while asking Qodana to create disabled plugins list")
+				}
+			}
+		}
+	} else {
+		log.Warningf("Not possible to fetch excluded plugins for %s", Prod.Code)
+	}
+}
+
+func getExcludedPlugins(includedPlugins string, dockerIgnore string) string {
+	args := []string{quoteForWindows(Prod.IdeScript), "qodanaExcludedPlugins", quoteForWindows(includedPlugins), quoteForWindows(dockerIgnore)}
+	reader, writer, _ := os.Pipe()
+	origOut := os.Stdout
+	os.Stdout = writer
+	channel := make(chan string)
+	go func() {
+		var buf bt.Buffer
+		_, err := io.Copy(&buf, reader)
+		if err != nil {
+			log.Fatal(err)
+		}
+		channel <- buf.String()
+	}()
+	res := RunCmd("", args...)
+	os.Stdout = origOut
+	err := writer.Close()
+	if err != nil {
+		log.Errorf("Error while closing Qodana stdout: %v", err)
+	}
+	if res == QodanaSuccessExitCode {
+		return <-channel
+	}
+	return ""
+}
+
 func runQodanaLocal(opts *QodanaOptions) int {
+	genExcludedPluginsLocal(opts)
 	args := []string{quoteForWindows(Prod.IdeScript), "inspect", "qodana", "--stub-profile", quoteForWindows(opts.stabProfilePath())}
 	args = append(args, quoteForWindows(opts.ProjectDir), quoteForWindows(opts.ResultsDir))
 	args = append(args, getIdeArgs(opts)...)
