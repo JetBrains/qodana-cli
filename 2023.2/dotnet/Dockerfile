@@ -4,8 +4,6 @@ ARG BASE_TAG="6.0-bullseye-slim"
 FROM node:$NODE_TAG AS node_base
 FROM mcr.microsoft.com/dotnet/sdk:$BASE_TAG
 
-ARG TARGETPLATFORM
-
 ENV HOME="/root" LC_ALL="en_US.UTF-8" QODANA_DIST="/opt/idea" QODANA_DATA="/data"
 ENV JAVA_HOME="$QODANA_DIST/jbr" QODANA_DOCKER="true" QODANA_CONF="$HOME/.config/idea"
 ENV RIDER_UNREAL_ROOT="/data/unrealEngine" DOTNET_ROOT="/usr/share/dotnet"
@@ -23,6 +21,7 @@ RUN mkdir -m 777 -p $QODANA_DATA $QODANA_CONF $DOTNET_ROOT $RIDER_UNREAL_ROOT &&
       curl \
       fontconfig \
       git \
+      git-lfs \
       gnupg2 \
       locales \
       procps \

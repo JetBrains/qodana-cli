@@ -1,8 +1,6 @@
 ARG BASE_TAG="bullseye-slim"
 FROM debian:$BASE_TAG
 
-ARG TARGETPLATFORM
-
 ENV HOME="/root" LC_ALL="en_US.UTF-8" QODANA_DIST="/opt/idea" QODANA_DATA="/data"
 ENV JAVA_HOME="$QODANA_DIST/jbr" QODANA_DOCKER="true" QODANA_CONF="$HOME/.config/idea"
 
@@ -14,6 +12,7 @@ RUN mkdir -m 777 -p /opt $QODANA_DATA $QODANA_CONF && apt-get update && \
       curl \
       fontconfig \
       git \
+      git-lfs \
       gnupg2 \
       locales \
       procps && \
@@ -37,14 +36,15 @@ RUN apt-get update &&  \
       libxrender1 \
       procps && \
     mkdir -m 777 -p $QODANA_DATA/cache && \
-    case $TARGETPLATFORM in \
-      linux/amd64)  \
+    dpkgArch="$(dpkg --print-architecture)" && \
+    case "$dpkgArch" in \
+      'amd64')  \
         MINICONDA_URL="https://repo.anaconda.com/miniconda/Miniconda3-${CONDA_VERSION}-Linux-x86_64.sh" \
         SHA256SUM="00938c3534750a0e4069499baf8f4e6dc1c2e471c86a59caa0dd03f4a9269db6";; \
-      linux/arm64)  \
+      'arm64')  \
         MINICONDA_URL="https://repo.anaconda.com/miniconda/Miniconda3-${CONDA_VERSION}-Linux-aarch64.sh"  \
         SHA256SUM="48a96df9ff56f7421b6dd7f9f71d548023847ba918c3826059918c08326c2017";; \
-      *) echo "Unsupported architecture $TARGETPLATFORM or you forgot to enable Docker BuildKit" >&2; exit 1;; \
+      *) echo "Unsupported architecture $dpkgArch" >&2; exit 1;; \
     esac && \
     curl -fsSL -o /tmp/miniconda.sh "${MINICONDA_URL}" && \
     echo "${SHA256SUM} /tmp/miniconda.sh" > /tmp/shasum && \

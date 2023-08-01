@@ -12,6 +12,7 @@ RUN mkdir -m 777 -p /opt $QODANA_DATA $QODANA_CONF && apt-get update && \
       curl \
       fontconfig \
       git \
+      git-lfs \
       gnupg2 \
       locales \
       procps && \
