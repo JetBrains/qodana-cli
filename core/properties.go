@@ -63,7 +63,6 @@ func getPropertiesMap(
 		"-Didea.log.path":                        quoteIfSpace(logDir),
 		"-Didea.qodana.thirdpartyplugins.accept": "true",
 		"-Dqodana.automation.guid":               quoteIfSpace(analysisId),
-		"-Dqodana.coverage.input":                quoteIfSpace(coverageDir),
 
 		"-XX:SoftRefLRUPolicyMSPerMB": "50",
 		"-XX:MaxJavaStackTraceDepth":  "10000",
@@ -72,6 +71,9 @@ func getPropertiesMap(
 		"-XX:MaxRAMPercentage":        "70",
 
 		"-Didea.job.launcher.without.timeout": "true",
+	}
+	if coverageDir != "" {
+		properties["-Dqodana.coverage.input"] = quoteIfSpace(coverageDir)
 	}
 	if eap {
 		properties["-Deap.login.enabled"] = "false"

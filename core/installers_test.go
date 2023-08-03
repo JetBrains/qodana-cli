@@ -28,10 +28,10 @@ func TestGetIde(t *testing.T) {
 	for _, installer := range installers {
 		ide := getIde(installer)
 		if ide == nil {
-			if installer != QDPHP && installer != QDNET {
+			if installer != QDPHP {
 				t.Fail()
 			}
-		} else if installer == QDPHP || installer == QDNET {
+		} else if installer == QDPHP {
 			// release happened, fix the test
 			t.Fail()
 		}
