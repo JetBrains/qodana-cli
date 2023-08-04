@@ -53,7 +53,7 @@ var (
 
 // CheckForUpdates check GitHub https://github.com/JetBrains/qodana-cli/ for the latest version of CLI release.
 func CheckForUpdates(currentVersion string) {
-	if currentVersion == "dev" || cienvironment.DetectCIEnvironment() != nil || DisableCheckUpdates {
+	if currentVersion == "dev" || IsContainer() || cienvironment.DetectCIEnvironment() != nil || DisableCheckUpdates {
 		return
 	}
 	latestVersion := getLatestVersion()

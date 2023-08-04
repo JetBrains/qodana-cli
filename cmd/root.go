@@ -42,7 +42,7 @@ func Execute() {
 		os.Exit(0)
 	}()
 
-	if os.Geteuid() == 0 {
+	if os.Geteuid() == 0 && !core.IsContainer() {
 		core.WarningMessage("Running the tool as root is dangerous: please run it as a regular user")
 	}
 	go core.CheckForUpdates(core.Version)
