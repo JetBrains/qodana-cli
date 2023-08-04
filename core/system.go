@@ -316,8 +316,11 @@ func RunAnalysis(ctx context.Context, options *QodanaOptions) int {
 
 	if options.FullHistory && isGitInstalled() {
 		remoteUrl := gitRemoteUrl(options.ProjectDir)
-		options.setenv(qodanaRemoteUrl, remoteUrl)
 		branch := gitBranch(options.ProjectDir)
+		if remoteUrl == "" && branch == "" {
+			log.Fatal("Please check that project is located within the Git repo")
+		}
+		options.setenv(qodanaRemoteUrl, remoteUrl)
 		options.setenv(qodanaBranch, branch)
 
 		err := gitClean(options.ProjectDir)
