@@ -48,9 +48,9 @@ But you can always override qodana.yaml options with the following command-line 
 
 			if options.Linter == "" && options.Ide == "" {
 				qodanaYaml := core.LoadQodanaYaml(options.ProjectDir, options.YamlName)
-				if qodanaYaml.Linter == "" {
+				if qodanaYaml.Linter == "" && qodanaYaml.Ide == "" {
 					core.WarningMessage(
-						"No valid `linter:` field %s found. Have you run %s? Running that for you...",
+						"No valid `linter:` field found in %s. Have you run %s? Running that for you...",
 						core.PrimaryBold(options.YamlName),
 						core.PrimaryBold("qodana init"),
 					)
@@ -58,6 +58,9 @@ But you can always override qodana.yaml options with the following command-line 
 					core.EmptyMessage()
 				} else {
 					options.Linter = qodanaYaml.Linter
+				}
+				if options.Ide == "" {
+					options.Ide = qodanaYaml.Ide
 				}
 			}
 			exitCode := core.RunAnalysis(ctx, options)
