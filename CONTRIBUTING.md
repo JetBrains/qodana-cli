@@ -8,7 +8,7 @@ By participating in this project, you agree to abide our [Code of conduct](.gith
 
 Prerequisites:
 
-- [Go 1.16+](https://golang.org/doc/install)
+- [Go 1.19+](https://golang.org/doc/install)
 
 Other things you might need to develop:
 
@@ -72,3 +72,22 @@ git tag -a vX.X.X -m "vX.X.X" && git push origin vX.X.X
 ```
 
 And goreleaser will do the rest.
+
+### Troubleshooting `choco` releases
+
+Releases through `choco` channel can be unstable, so if you have any issues with it on release, upload the package manually:
+
+- Set up [`goreleaser`](https://goreleaser.com/install/) and [`choco`](https://chocolatey.org/install) (for non-Windows systems – look at [ci.yml]([.github/workflows/ci.yml](https://github.com/JetBrains/qodana-cli/blob/ca90ffe4ca0b33fda19b471cc80c7390c7e0bfd9/.github/workflows/ci.yml#L69)) for details)
+- Run the following commands:
+   - Check out to the wanted tag
+   - Release the package locally to generate all metadata files and executables
+   - Set the correct checksum for the already published package (can be obtained from the release page)
+   - Set up `choco` API key and publish
+
+```shell
+git checkout v2023.2.5
+goreleaser release --skip-publish --clean
+vim dist/qodana.choco/tools/chocolateyinstall.ps1
+choco apikey --key <YOUR_API_KEY> --source https://push.chocolatey.org/
+cd dist/qodana.choco && choco pack && choco push qodana.2023.2.5.nupkg --source https://push.chocolatey.org/
+```
