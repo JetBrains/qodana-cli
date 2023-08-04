@@ -5,6 +5,7 @@ import (
 	"encoding/hex"
 	"fmt"
 	cp "github.com/otiai10/copy"
+	"github.com/pterm/pterm"
 	log "github.com/sirupsen/logrus"
 	"io"
 	"math/rand"
@@ -21,7 +22,7 @@ var (
 	MajorVersion = "2023.2"
 )
 
-func downloadAndInstallIDE(ide string, baseDir string) string {
+func downloadAndInstallIDE(ide string, baseDir string, spinner *pterm.SpinnerPrinter) string {
 	var ideUrl string
 	checkSumUrl := ""
 	if strings.HasPrefix(ide, "https://") || strings.HasPrefix(ide, "http://") {
@@ -44,7 +45,7 @@ func downloadAndInstallIDE(ide string, baseDir string) string {
 	}
 
 	downloadedIdePath := filepath.Join(baseDir, fileName)
-	err := downloadFile(downloadedIdePath, ideUrl)
+	err := downloadFile(downloadedIdePath, ideUrl, spinner)
 	if err != nil {
 		log.Fatalf("Error while downloading IDE: %v", err)
 	}
@@ -223,7 +224,7 @@ func installIdeMacOS(archivePath string, targetDir string) error {
 }
 
 func verifySha256(checksumFile string, checkSumUrl string, filePath string) {
-	err := downloadFile(checksumFile, checkSumUrl)
+	err := downloadFile(checksumFile, checkSumUrl, nil)
 	if err != nil {
 		log.Fatalf("Error while downloading checksum for IDE: %v", err)
 	}
@@ -266,5 +267,5 @@ func verifySha256(checksumFile string, checkSumUrl string, filePath string) {
 		}
 		log.Fatalf("Checksums doesn't match. Expected: %s, Actual: %s", expected, actual)
 	}
-	println("Checksum of downloaded IDE was verified")
+	log.Info("Checksum of downloaded IDE was verified")
 }

@@ -140,7 +140,7 @@ func printLinterLog(line string) {
 }
 
 // printProcess prints the message for processing phase. TODO: Add ETA based on previous runs
-func printProcess(f func(), start string, finished string) {
+func printProcess(f func(spinner *pterm.SpinnerPrinter), start string, finished string) {
 	if err := spin(f, start); err != nil {
 		log.Fatal("\nProblem occurred:", err.Error())
 	}
@@ -150,12 +150,12 @@ func printProcess(f func(), start string, finished string) {
 }
 
 // spin creates spinner and runs the given function. Also, spin is a spider in Dutch.
-func spin(fun func(), message string) error {
+func spin(fun func(spinner *pterm.SpinnerPrinter), message string) error {
 	spinner, _ := startQodanaSpinner(message)
 	if spinner == nil {
 		fmt.Println(primary(message + "..."))
 	}
-	fun()
+	fun(spinner)
 	if spinner != nil {
 		spinner.Success()
 	}

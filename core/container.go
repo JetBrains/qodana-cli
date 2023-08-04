@@ -22,6 +22,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/pterm/pterm"
 	"io"
 	"net/url"
 	"os"
@@ -202,7 +203,7 @@ func PrepairContainerEnvSettings() {
 // PullImage pulls docker image and prints the process.
 func PullImage(client *client.Client, image string) {
 	printProcess(
-		func() {
+		func(_ *pterm.SpinnerPrinter) {
 			pullImage(context.Background(), client, image)
 		},
 		fmt.Sprintf("Pulling the image %s", PrimaryBold(image)),

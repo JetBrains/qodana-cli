@@ -76,7 +76,7 @@ func Image(code string) string {
 func GetLinter(path string, yamlName string) string {
 	var linters []string
 	var linter string
-	printProcess(func() {
+	printProcess(func(_ *pterm.SpinnerPrinter) {
 		languages := readIdeaDir(path)
 		if len(languages) == 0 {
 			languages, _ = recognizeDirLanguages(path)
@@ -159,7 +159,7 @@ func ShowReport(cloudUrl string, path string, port int) {
 	} else {
 		WarningMessage("Press Ctrl+C to stop serving the report\n")
 		printProcess(
-			func() {
+			func(_ *pterm.SpinnerPrinter) {
 				if _, err := os.Stat(path); os.IsNotExist(err) {
 					log.Fatal("Qodana report not found. Get a report by running `qodana scan`")
 				}
