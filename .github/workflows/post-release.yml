@@ -17,8 +17,8 @@ jobs:
           cd common && node update-cli.js && cd ..
           npm ci
           npm run build && npm run -w scan package && npm run -w vsts package
-          git config user.name github-actions
-          git config user.email github-actions@github.com
+          git config user.name qodana-bot
+          git config user.email qodana-support@jetbrains.com
           git checkout -b bot/qodana-next
           git add .
           git commit -m ":arrow_up: Update \`qodana\` to \`${{ github.event.release.name }}\`"
