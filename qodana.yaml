@@ -1,5 +1,5 @@
 version: "1.0"
-linter: jetbrains/qodana-go:2023.2
+linter: jetbrains/qodana-go:latest
 include:
   - name: CheckDependencyLicenses
 licenseRules:
@@ -21,3 +21,9 @@ dependencyOverrides:
     licenses:
       - key: MIT
         url: https://github.com/cucumber/ci-environment/blob/main/java/LICENSE
+exclude:
+  - name: VgoDependencyUpdateAvailable
+  - name: All
+    paths:
+      - core/core_test.go
+      - core/license_test.go
