@@ -42,7 +42,7 @@ var PricingUrl = "https://www.jetbrains.com/qodana/buy/"
 
 // IsInteractive returns true if the current execution environment is interactive (useful for colors/animations toggle).
 func IsInteractive() bool {
-	return os.Getenv("NONINTERACTIVE") == "" && (isatty.IsTerminal(os.Stdout.Fd()) || isatty.IsCygwinTerminal(os.Stdout.Fd()))
+	return !IsContainer() && os.Getenv("NONINTERACTIVE") == "" && (isatty.IsTerminal(os.Stdout.Fd()) || isatty.IsCygwinTerminal(os.Stdout.Fd()))
 }
 
 // DisableColor disables colors in the output.

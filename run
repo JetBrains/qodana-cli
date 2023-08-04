@@ -1,0 +1,15 @@
+#!/bin/bash
+
+docker run --rm -v `pwd`:/qodana -w /qodana \
+    -e DEVICEID=200820300000000-0000-0000-0000-000000000001 \
+    -v $GOPATH:/go \
+    golang:1.19 go build -o qodana
+
+docker run -it --rm \
+    -e DEVICEID=200820300000000-0000-0000-0000-000000000001 \
+    --pull always \
+    -w /data/project \
+    -v `pwd`:/data/project \
+    -v `pwd`/qodana:/opt/idea/bin/qodana \
+    -p 8080:8080 \
+    registry.jetbrains.team/p/sa/containers/qodana-go scan
