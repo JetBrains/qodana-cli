@@ -27,6 +27,7 @@ import (
 	"encoding/hex"
 	"encoding/xml"
 	"fmt"
+	"github.com/pterm/pterm"
 	"io"
 	"log"
 	"net/http"
@@ -97,7 +98,7 @@ func fetchPublisher(directory string) {
 	if _, err := os.Stat(path); err == nil {
 		return
 	}
-	err := downloadFile(path, getPublisherUrl(version))
+	err := downloadFile(path, getPublisherUrl(version), nil)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -150,7 +151,7 @@ func verifyMd5Hash(version string, path string) {
 	}
 }
 
-func downloadFile(filepath string, url string) error {
+func downloadFile(filepath string, url string, spinner *pterm.SpinnerPrinter) error {
 	response, err := http.Head(url)
 	if err != nil {
 		return err
@@ -183,12 +184,21 @@ func downloadFile(filepath string, url string) error {
 
 	buffer := make([]byte, 1024)
 	total := 0
+	lastTotal := 0
+	text := ""
+	if spinner != nil {
+		text = spinner.Text
+	}
 	for {
 		length, err := resp.Body.Read(buffer)
 		if err != nil && err != io.EOF {
 			return err
 		}
 		total += length
+		if spinner != nil && total-lastTotal > 1024*1024 {
+			lastTotal = total
+			spinner.UpdateText(fmt.Sprintf("%s (%d %%)", text, 100*total/size))
+		}
 		if length == 0 {
 			break
 		}
@@ -199,6 +209,10 @@ func downloadFile(filepath string, url string) error {
 
 	if total != size {
 		return fmt.Errorf("downloaded file size doesn't match expected size")
+	}
+
+	if spinner != nil {
+		spinner.UpdateText(fmt.Sprintf("%s (100 %%)", text))
 	}
 
 	return nil

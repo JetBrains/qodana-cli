@@ -269,8 +269,11 @@ func prepareHost(opts *QodanaOptions) {
 	}
 	if opts.Ide != "" {
 		if contains(allCodes, strings.TrimSuffix(opts.Ide, EapSuffix)) || strings.HasPrefix(opts.Ide, "https://") {
-			printProcess(func() {
-				opts.Ide = downloadAndInstallIDE(opts.Ide, getQodanaSystemDir())
+			printProcess(func(spinner *pterm.SpinnerPrinter) {
+				if spinner != nil {
+					spinner.ShowTimer = false // We will update interactive spinner
+				}
+				opts.Ide = downloadAndInstallIDE(opts.Ide, getQodanaSystemDir(), spinner)
 			}, fmt.Sprintf("Downloading %s", opts.Ide), fmt.Sprintf("downloading IDE distribution to %s", getQodanaSystemDir()))
 		}
 		prepareLocalIdeSettings(opts)

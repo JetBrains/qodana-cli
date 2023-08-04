@@ -54,7 +54,7 @@ func genExcludedPluginsLocal(opts *QodanaOptions) {
 		disabledPlugins := filepath.Join(opts.confDirPath(), "disabled_plugins.txt")
 		if _, err := os.Stat(disabledPlugins); err != nil {
 			url := fmt.Sprintf("https://raw.githubusercontent.com/JetBrains/qodana-docker/main/%s/%s/included_plugins.txt", MajorVersion, products[Prod.Code])
-			if err := downloadFile(includedPlugins, url); err != nil {
+			if err := downloadFile(includedPlugins, url, nil); err != nil {
 				log.Errorf("Not possible to download included plugins, skipping: %v", err)
 			} else {
 				consoleOutput := getExcludedPlugins(includedPlugins, dockerIgnore)

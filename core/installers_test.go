@@ -28,11 +28,6 @@ func TestGetIde(t *testing.T) {
 	for _, installer := range installers {
 		ide := getIde(installer)
 		if ide == nil {
-			if installer != QDPHP {
-				t.Fail()
-			}
-		} else if installer == QDPHP {
-			// release happened, fix the test
 			t.Fail()
 		}
 		eap := getIde(installer + "-EAP")
@@ -62,7 +57,7 @@ func DownloadAndInstallIDE(ideName string, t *testing.T) {
 		}
 	}(tempDir) // clean up
 
-	ide := downloadAndInstallIDE(ideName, tempDir)
+	ide := downloadAndInstallIDE(ideName, tempDir, nil)
 	if ide == "" {
 		ErrorMessage("Cannot install %s", ideName)
 		t.Fail()
