@@ -73,7 +73,7 @@ func gitOutput(cwd string, args []string) []string {
 	out, err := cmd.Output()
 	if err != nil {
 		log.Warn(err.Error())
-		return []string{}
+		return []string{""}
 	}
 	return strings.Split(strings.TrimSpace(string(out)), "\n")
 }
