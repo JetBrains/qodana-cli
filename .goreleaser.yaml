@@ -23,7 +23,6 @@ archives:
       - LICENSE
       - THIRDPARTY.md
       - README.md
-    rlcp: true
 nfpms:
   - vendor: "JetBrains s.r.o."
     homepage: "https://github.com/JetBrains/qodana-cli"
@@ -41,7 +40,7 @@ nfpms:
 universal_binaries:
   - replace: true
 brews:
-  - tap:
+  - repository:
       owner: JetBrains
       name: homebrew-utils
     commit_author:
@@ -53,7 +52,7 @@ brews:
     description: "🔧 Run Qodana as fast as possible, with minimum effort required"
     license: "Apache-2.0"
 scoops:
-  - bucket:
+  - repository:
       owner: "JetBrains"
       name: "scoop-utils"
     commit_author:
