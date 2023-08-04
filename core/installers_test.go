@@ -24,8 +24,7 @@ import (
 )
 
 func TestGetIde(t *testing.T) {
-	installers := []string{QDJVMC, QDJVM, QDPHP, QDPY, QDPYC, QDJS, QDGO, QDNET}
-	for _, installer := range installers {
+	for _, installer := range AllSupportedCodes {
 		ide := getIde(installer)
 		if ide == nil {
 			t.Fail()

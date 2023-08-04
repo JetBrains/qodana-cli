@@ -114,7 +114,7 @@ func getAzureJobUrl() string {
 
 // findProcess using gopsutil to find process by name.
 func findProcess(processName string) bool {
-	if isDocker() {
+	if IsContainer() {
 		return isProcess(processName)
 	}
 	p, err := process.Processes()
@@ -218,8 +218,8 @@ func getPluginIds(plugins []Plugin) []string {
 	return ids
 }
 
-// isDocker checks if Qodana is running in a Docker container.
-func isDocker() bool {
+// IsContainer checks if Qodana is running in a container.
+func IsContainer() bool {
 	return os.Getenv(qodanaDockerEnv) != ""
 }
 

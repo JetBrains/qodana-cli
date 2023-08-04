@@ -65,8 +65,8 @@ var allCodes = []string{
 	QDNET,
 }
 
-// allLinters is a list of all supported linters.
-var allLinters = []string{
+// AllImages is a list of all supported linters.
+var AllImages = []string{
 	Image(QDJVMC),
 	Image(QDJVM),
 	Image(QDAND),

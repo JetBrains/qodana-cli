@@ -32,9 +32,9 @@ You can also add the linter by its name with the `--linter` option (e.g. `--lint
 
 ## Installation
 
-> 💡 The Qodana CLI is distributed and run as a binary. The Qodana linters with inspections are [Docker Images](https://www.jetbrains.com/help/qodana/docker-images.html).
-> - You must have Docker installed and running locally to support this: https://www.docker.com/get-started
-> - If you are using Linux, you should be able to run Docker from the current (non-root) user (https://docs.docker.com/engine/install/linux-postinstall/#manage-docker-as-a-non-root-user)
+> 💡 The Qodana CLI is distributed and run as a binary. The Qodana linters with inspections are [Docker Images](https://www.jetbrains.com/help/qodana/docker-images.html) or, starting from version `2023.2`, your local/downloaded by CLI IDE installations (experimental support).
+> - To run Qodana with a container (the default mode in CLI), you must have Docker or Podman installed and running locally to support this: https://www.docker.com/get-started, and, if you are using Linux, you should be able to run Docker from the current (non-root) user (https://docs.docker.com/engine/install/linux-postinstall/#manage-docker-as-a-non-root-user)
+> - To run Qodana without a container, you must have the IDE installed locally to provide the IDE installation path to the CLI or specify the product code, and CLI will try to download the IDE automatically (experimental support).
 
 #### macOS and Linux
 ##### Install with [Homebrew](https://brew.sh) (recommended)
@@ -165,17 +165,18 @@ qodana scan [flags]
 #### Options
 
 ```
-  -l, --linter string                   Override linter (Docker image) to use
+  -l, --linter string                   Use to run Qodana in a container (default). Choose linter (image) to use. Not compatible with --ide option. Available images are: jetbrains/qodana-jvm-community, jetbrains/qodana-jvm, jetbrains/qodana-jvm-android, jetbrains/qodana-php, jetbrains/qodana-python, jetbrains/qodana-python-community, jetbrains/qodana-js, jetbrains/qodana-go, jetbrains/qodana-dotnet, though you can use any Docker image with Qodana inside
+      --ide string                      Use to run Qodana without a container. Path to the installed IDE, or a downloaded one: provide direct URL or a product code. Not compatible with --linter option. Available codes are QDJVMC, QDJVM, QDPHP, QDPY, QDPYC, QDJS, QDGO, QDNET, add -EAP part to obtain EAP versions
   -i, --project-dir string              Root directory of the inspected project (default ".")
-  -o, --results-dir string              Override directory to save Qodana inspection results to (default <userCacheDir>/JetBrains/<linter>/results) (default "/Users/tv/Library/Caches/JetBrains/Qodana/e3b0c442-250e5c26/results")
-      --cache-dir string                Override cache directory (default <userCacheDir>/JetBrains/<linter>/cache) (default "/Users/tv/Library/Caches/JetBrains/Qodana/e3b0c442-250e5c26/cache")
-      --report-dir string               Override directory to save Qodana HTML report to (default <userCacheDir>/JetBrains/<linter>/results/report) (default "/Users/tv/Library/Caches/JetBrains/Qodana/e3b0c442-250e5c26/results/report")
+  -o, --results-dir string              Override directory to save Qodana inspection results to (default <userCacheDir>/JetBrains/Qodana/<linter>/results)
+      --cache-dir string                Override cache directory (default <userCacheDir>/JetBrains/Qodana/<linter>/cache)
+      --report-dir string               Override directory to save Qodana HTML report to (default <userCacheDir>/JetBrains/<linter>/results/report)
       --print-problems                  Print all found problems by Qodana in the CLI output
       --clear-cache                     Clear the local Qodana cache before running the analysis
   -w, --show-report                     Serve HTML report on port
       --port int                        Port to serve the report on (default 8080)
       --yaml-name string                Override qodana.yaml name to use: 'qodana.yaml' or 'qodana.yml'
-  -a, --analysis-id string              Unique report identifier (GUID) to be used by Qodana Cloud (default "39505ede-88ba-4577-a325-fc1e0a59fa01")
+  -a, --analysis-id string              Unique report identifier (GUID) to be used by Qodana Cloud (default "<generated value>")
   -b, --baseline string                 Provide the path to an existing SARIF report to be used in the baseline state calculation
       --baseline-include-absent         Include in the output report the results from the baseline run that are absent in the current run
       --full-history --commit           Go through the full commit history and run the analysis on each commit. If combined with --commit, analysis will be started from the given commit. Could take a long time.

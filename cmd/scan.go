@@ -21,6 +21,7 @@ import (
 	"github.com/google/uuid"
 	"os"
 	"path/filepath"
+	"strings"
 
 	log "github.com/sirupsen/logrus"
 
@@ -91,9 +92,12 @@ But you can always override qodana.yaml options with the following command-line 
 	}
 
 	flags := cmd.Flags()
+	flags.SortFlags = false
 
-	flags.StringVarP(&options.Linter, "linter", "l", "", "Override linter (Docker image) to use")
-	flags.StringVar(&options.Ide, "ide", "", "EXPERIMENTAL: Override linter Docker image with path to the installed IDE, or download link, or product code to use")
+	if !core.IsContainer() {
+		flags.StringVarP(&options.Linter, "linter", "l", "", "Use to run Qodana in a container (default). Choose linter (image) to use. Not compatible with --ide option. Available images are: "+strings.Join(core.AllImages, ", "))
+	}
+	flags.StringVar(&options.Ide, "ide", os.Getenv(core.QodanaDistEnv), fmt.Sprintf("Use to run Qodana without a container. Path to the installed IDE, or a downloaded one: provide direct URL or a product code. Not compatible with --linter option. Available codes are %s, add -EAP part to obtain EAP versions", strings.Join(core.AllSupportedCodes, ", ")))
 
 	flags.StringVarP(&options.ProjectDir, "project-dir", "i", ".", "Root directory of the inspected project")
 	flags.StringVarP(&options.ResultsDir, "results-dir", "o", options.ResultsDirPath(), "Override directory to save Qodana inspection results to (default <userCacheDir>/JetBrains/<linter>/results)")
@@ -126,26 +130,21 @@ But you can always override qodana.yaml options with the following command-line 
 	flags.StringArrayVar(&options.Property, "property", []string{}, "Set a JVM property to be used while running Qodana using the --property property.name=value1,value2,...,valueN notation")
 	flags.BoolVarP(&options.SaveReport, "save-report", "s", true, "Generate HTML report")
 
-	flags.StringArrayVarP(&options.Env, "env", "e", []string{}, "Only for container runs. Define additional environment variables for the Qodana container (you can use the flag multiple times). CLI is not reading full host environment variables and does not pass it to the Qodana container for security reasons")
-	flags.StringArrayVarP(&options.Volumes, "volume", "v", []string{}, "Only for container runs. Define additional volumes for the Qodana container (you can use the flag multiple times)")
-	flags.StringVarP(&options.User, "user", "u", "", "Only for container runs. User to run Qodana container as. Please specify user id – '$UID' or user id and group id $(id -u):$(id -g). Use 'root' to run as the root user (default: the current user)")
-	flags.BoolVar(&options.SkipPull, "skip-pull", false, "Only for container runs. Skip pulling the latest Qodana container")
-
-	flags.SortFlags = false
+	if !core.IsContainer() {
+		flags.StringArrayVarP(&options.Env, "env", "e", []string{}, "Only for container runs. Define additional environment variables for the Qodana container (you can use the flag multiple times). CLI is not reading full host environment variables and does not pass it to the Qodana container for security reasons")
+		flags.StringArrayVarP(&options.Volumes, "volume", "v", []string{}, "Only for container runs. Define additional volumes for the Qodana container (you can use the flag multiple times)")
+		flags.StringVarP(&options.User, "user", "u", "", "Only for container runs. User to run Qodana container as. Please specify user id – '$UID' or user id and group id $(id -u):$(id -g). Use 'root' to run as the root user (default: the current user)")
+		flags.BoolVar(&options.SkipPull, "skip-pull", false, "Only for container runs. Skip pulling the latest Qodana container")
+		cmd.MarkFlagsMutuallyExclusive("linter", "ide")
+		cmd.MarkFlagsMutuallyExclusive("skip-pull", "ide")
+		cmd.MarkFlagsMutuallyExclusive("volume", "ide")
+		cmd.MarkFlagsMutuallyExclusive("user", "ide")
+		cmd.MarkFlagsMutuallyExclusive("env", "ide")
+	}
 
 	cmd.MarkFlagsMutuallyExclusive("commit", "script")
 	cmd.MarkFlagsMutuallyExclusive("profile-name", "profile-path")
 	cmd.MarkFlagsMutuallyExclusive("apply-fixes", "cleanup")
-
-	err := cmd.Flags().MarkHidden("ide")
-	if err != nil {
-		return nil
-	}
-	cmd.MarkFlagsMutuallyExclusive("linter", "ide")
-	cmd.MarkFlagsMutuallyExclusive("skip-pull", "ide")
-	cmd.MarkFlagsMutuallyExclusive("volume", "ide")
-	cmd.MarkFlagsMutuallyExclusive("user", "ide")
-	cmd.MarkFlagsMutuallyExclusive("env", "ide")
 
 	return cmd
 }

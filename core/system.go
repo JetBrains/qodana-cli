@@ -487,7 +487,7 @@ const (
 
 // saveReport saves web files to expect, and generates json.
 func saveReport(opts *QodanaOptions) {
-	if isDocker() {
+	if IsContainer() {
 		reportConverter := filepath.Join(Prod.ideBin(), "intellij-report-converter.jar")
 		if _, err := os.Stat(reportConverter); os.IsNotExist(err) {
 			log.Fatal("Not able to save the report: report-converter is missing")
@@ -533,7 +533,7 @@ func getPublisherArgs(publisher string, opts *QodanaOptions, token string, endpo
 
 // copyReportInNativeMode is responsible for copying the reports while being executed in native mode with no report converter
 func copyReportInNativeMode(opts *QodanaOptions) {
-	if !isDocker() {
+	if !IsContainer() {
 		if _, err := os.Stat(opts.reportResultsPath()); os.IsNotExist(err) {
 			if err := os.MkdirAll(opts.reportResultsPath(), os.ModePerm); err != nil {
 				log.Fatalf("failed to create directory: %v", err)

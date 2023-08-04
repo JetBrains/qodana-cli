@@ -168,7 +168,7 @@ func (o *QodanaOptions) GetLinterDir() string {
 
 func (o *QodanaOptions) ResultsDirPath() string {
 	if o.ResultsDir == "" {
-		if isDocker() {
+		if IsContainer() {
 			o.ResultsDir = "/data/results"
 		} else {
 			o.ResultsDir = filepath.Join(o.GetLinterDir(), "results")
@@ -179,7 +179,7 @@ func (o *QodanaOptions) ResultsDirPath() string {
 
 func (o *QodanaOptions) CacheDirPath() string {
 	if o.CacheDir == "" {
-		if isDocker() {
+		if IsContainer() {
 			o.CacheDir = "/data/cache"
 		} else {
 			o.CacheDir = filepath.Join(o.GetLinterDir(), "cache")
@@ -190,7 +190,7 @@ func (o *QodanaOptions) CacheDirPath() string {
 
 func (o *QodanaOptions) ReportDirPath() string {
 	if o.ReportDir == "" {
-		if isDocker() {
+		if IsContainer() {
 			o.ReportDir = "/data/results/report"
 		} else {
 			o.ReportDir = filepath.Join(o.ResultsDirPath(), "report")

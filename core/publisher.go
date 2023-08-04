@@ -48,7 +48,7 @@ type versioning struct {
 // sendReport sends report to Qodana Cloud.
 func sendReport(opts *QodanaOptions, token string) {
 	path := Prod.ideBin()
-	if !isDocker() {
+	if !IsContainer() {
 		path = opts.confDirPath()
 		fetchPublisher(path)
 	}

@@ -46,6 +46,9 @@ var (
 	QDRUBY = "QDRUBY"
 )
 
+// AllSupportedCodes is a list of all supported Qodana linters product codes
+var AllSupportedCodes = []string{QDJVMC, QDJVM, QDPHP, QDPY, QDPYC, QDJS, QDGO, QDNET}
+
 func Image(code string) string {
 	switch code {
 	case QDAND:
@@ -102,7 +105,7 @@ func GetLinter(path string, yamlName string) string {
 		linter = linters[0]
 	} else {
 		if len(linters) == 0 {
-			linters = allLinters
+			linters = AllImages
 		}
 		choice, err := qodanaInteractiveSelect.WithOptions(linters).Show()
 		if err != nil {

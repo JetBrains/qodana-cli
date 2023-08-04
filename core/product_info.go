@@ -177,7 +177,7 @@ func guessProduct(opts *QodanaOptions) {
 	if Prod.Home == "" {
 		if home, ok := os.LookupEnv(QodanaDistEnv); ok {
 			Prod.Home = home
-		} else if isDocker() {
+		} else if IsContainer() {
 			Prod.Home = "/opt/idea"
 		} else { // guess from the executable location
 			ex, err := os.Executable()
@@ -215,7 +215,7 @@ func guessProduct(opts *QodanaOptions) {
 	}
 
 	treatAsRelease := os.Getenv(qodanaTreatAsRelease)
-	if _, err := os.Stat(filepath.Join(Prod.ideBin(), qodanaAppInfoFilename)); err == nil && isDocker() {
+	if _, err := os.Stat(filepath.Join(Prod.ideBin(), qodanaAppInfoFilename)); err == nil && IsContainer() {
 		appInfoContents := readAppInfoXml(Prod.Home)
 		Prod.Version = appInfoContents.Version.Major + "." + appInfoContents.Version.Minor
 		Prod.Build = strings.Split(appInfoContents.Build.Number, "-")[1]
@@ -253,7 +253,7 @@ func guessProduct(opts *QodanaOptions) {
 		}
 	}
 
-	if !isDocker() {
+	if !IsContainer() {
 		remove := fmt.Sprintf("-Didea.platform.prefix=%s", Prod.parentPrefix())
 		Prod.IdeScript = patchIdeScript(Prod, remove, opts.confDirPath())
 	}
@@ -298,7 +298,7 @@ func patchIdeScript(product product, strToRemove string, confDirPath string) str
 }
 
 func writeAppInfo(path string) {
-	if _, err := os.Stat(path); err == nil && isDocker() {
+	if _, err := os.Stat(path); err == nil && IsContainer() {
 		return
 	}
 	log.Printf("Writing app info to %s", path)

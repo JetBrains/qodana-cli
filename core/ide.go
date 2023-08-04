@@ -343,7 +343,7 @@ func prepareLocalIdeSettings(opts *QodanaOptions) {
 	writeAppInfo(opts.appInfoXmlPath(Prod.ideBin()))
 	writeProperties(opts)
 
-	if isDocker() {
+	if IsContainer() {
 		syncIdeaCache(opts.CacheDir, opts.ProjectDir, false)
 		createUser("/etc/passwd")
 	}
@@ -364,7 +364,7 @@ func prepareDirectories(cacheDir string, logDir string, confDir string) {
 		confDir,
 		userPrefsDir,
 	}
-	if isDocker() {
+	if IsContainer() {
 		if Prod.BaseScriptName == rider {
 			nugetDir := filepath.Join(cacheDir, nuget)
 			if err := os.Setenv("NUGET_PACKAGES", nugetDir); err != nil {
@@ -417,7 +417,7 @@ func prepareDirectories(cacheDir string, logDir string, confDir string) {
 		writeFileIfNew(filepath.Join(ideaOptions, "path.macros.xml"), mavenPathMacroxXml)
 
 		androidSdk := os.Getenv(androidSdkRoot)
-		if androidSdk != "" && isDocker() {
+		if androidSdk != "" && IsContainer() {
 			writeFileIfNew(filepath.Join(ideaOptions, "project.default.xml"), androidProjectDefaultXml(androidSdk))
 			corettoSdk := os.Getenv(qodanaCorettoSdk)
 			if corettoSdk != "" {
@@ -461,7 +461,7 @@ func syncIdeaCache(from string, to string, overwrite bool) {
 }
 
 func getScriptSuffix() string {
-	if isDocker() {
+	if IsContainer() {
 		return ".sh"
 	}
 	switch runtime.GOOS {

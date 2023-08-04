@@ -31,9 +31,10 @@ func downloadAndInstallIDE(ide string, baseDir string, spinner *pterm.SpinnerPri
 		release := getIde(ide)
 		if release == nil {
 			log.Fatalf("Error while obtaining the URL for the supplied IDE, exiting")
+		} else {
+			ideUrl = release.Link
+			checkSumUrl = release.ChecksumLink
 		}
-		ideUrl = release.Link
-		checkSumUrl = release.ChecksumLink
 	}
 
 	fileName := filepath.Base(ideUrl)
