@@ -89,10 +89,10 @@ release:
   footer: |
     ## Install
     
-    > 💡 The Qodana CLI is distributed and run as a binary. The Qodana linters with inspections are [Docker Images](https://www.jetbrains.com/help/qodana/docker-images.html).
-    > - You must have Docker installed and running locally to support this: https://www.docker.com/get-started
-    > - If you are using Linux, you should be able to run Docker from the current (non-root) user (https://docs.docker.com/engine/install/linux-postinstall/#manage-docker-as-a-non-root-user)
-    
+    > 💡 The Qodana CLI is distributed and run as a binary. The Qodana linters with inspections are [Docker Images](https://www.jetbrains.com/help/qodana/docker-images.html) or, starting from version `2023.2`, your local/downloaded by CLI IDE installations (experimental support).
+    > - To run Qodana with a container (the default mode in CLI), you must have Docker or Podman installed and running locally to support this: https://www.docker.com/get-started, and, if you are using Linux, you should be able to run Docker from the current (non-root) user (https://docs.docker.com/engine/install/linux-postinstall/#manage-docker-as-a-non-root-user)
+    > - To run Qodana without a container, you must have the IDE installed locally to provide the IDE installation path to the CLI or specify the product code, and CLI will try to download the IDE automatically (experimental support).
+      
     #### macOS and Linux
     ##### Install with [Homebrew](https://brew.sh) (recommended)
     ```console
