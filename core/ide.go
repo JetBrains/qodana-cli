@@ -57,8 +57,10 @@ func genExcludedPluginsLocal(opts *QodanaOptions) {
 			if err := downloadFile(includedPlugins, url, nil); err != nil {
 				log.Errorf("Not possible to download included plugins, skipping: %v", err)
 			} else {
-				consoleOutput := getExcludedPlugins(includedPlugins, dockerIgnore)
-				if consoleOutput != "" {
+				consoleOutput, err := getExcludedPlugins(includedPlugins, dockerIgnore)
+				if err != nil {
+					log.Fatal(err)
+				} else if consoleOutput != "" {
 					if idx := strings.Index(consoleOutput, "=====DISABLED======="); idx != -1 {
 						plugins := strings.TrimSpace(consoleOutput[idx+len("=====DISABLED======="):])
 						if err := os.WriteFile(disabledPlugins, []byte(plugins), 0644); err != nil {
@@ -79,30 +81,59 @@ func genExcludedPluginsLocal(opts *QodanaOptions) {
 	}
 }
 
-func getExcludedPlugins(includedPlugins string, dockerIgnore string) string {
+func getExcludedPlugins(includedPlugins string, dockerIgnore string) (string, error) {
 	args := []string{quoteForWindows(Prod.IdeScript), "qodanaExcludedPlugins", quoteForWindows(includedPlugins), quoteForWindows(dockerIgnore)}
-	reader, writer, _ := os.Pipe()
+	outReader, outWriter, err := os.Pipe()
+	if err != nil {
+		return "", fmt.Errorf("failed to create stdout pipe: %w", err)
+	}
+	errReader, errWriter, err := os.Pipe()
+	if err != nil {
+		return "", fmt.Errorf("failed to create stderr pipe: %w", err)
+	}
+
 	origOut := os.Stdout
-	os.Stdout = writer
-	channel := make(chan string)
+	origErr := os.Stderr
+	os.Stdout = outWriter
+	os.Stderr = errWriter
+
+	outChannel := make(chan string)
+	errChannel := make(chan string)
+
 	go func() {
 		var buf bt.Buffer
-		_, err := io.Copy(&buf, reader)
+		_, err := io.Copy(&buf, outReader)
 		if err != nil {
 			log.Fatal(err)
 		}
-		channel <- buf.String()
+		outChannel <- buf.String()
 	}()
+
+	go func() {
+		var buf bt.Buffer
+		_, err := io.Copy(&buf, errReader)
+		if err != nil {
+			log.Fatal(err)
+		}
+		errChannel <- buf.String()
+	}()
+
 	res := RunCmd("", args...)
 	os.Stdout = origOut
-	err := writer.Close()
-	if err != nil {
-		log.Errorf("Error while closing Qodana stdout: %v", err)
+	os.Stderr = origErr
+	if err := outWriter.Close(); err != nil {
+		return "", fmt.Errorf("error while closing Qodana stdout: %v", err)
 	}
+	if err := errWriter.Close(); err != nil {
+		return "", fmt.Errorf("error while closing Qodana stderr: %v", err)
+	}
+	stdout := <-outChannel
+	stderr := <-errChannel
+	log.Warn(stderr)
 	if res == QodanaSuccessExitCode {
-		return <-channel
+		return stdout, nil
 	}
-	return ""
+	return "", fmt.Errorf("error while exectuing qodanaExcludedPlugins: %d", res)
 }
 
 func runQodanaLocal(opts *QodanaOptions) int {
