@@ -19,10 +19,10 @@ jobs:
           npm run build && npm run -w scan package && npm run -w vsts package
           git config user.name qodana-bot
           git config user.email qodana-support@jetbrains.com
-          git checkout -b bot/qodana-next
+          git checkout -b next
           git add .
           git commit -m ":arrow_up: Update \`qodana\` to \`${{ github.event.release.name }}\`"
-          git push origin bot/qodana-next
+          git push origin next --force
           gh pr create --repo jetbrains/qodana-action --base main --head bot/qodana-next --title ":arrow_up: Update \`qodana\` to the \`${{ github.event.release.name }}\`" --body "This automated PR updates \`qodana\` to the latest version. Please review and merge it if everything is fine."
         env:
           GITHUB_TOKEN: ${{ secrets.GH_PAT }}
