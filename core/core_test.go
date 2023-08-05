@@ -902,3 +902,69 @@ func TestFetchPublisher(t *testing.T) {
 		t.Fatalf("fetchPublisher() failed, expected %v to exists, got error: %v", expectedPath, err)
 	}
 }
+
+func Test_ideaExitCode(t *testing.T) {
+	tmpDir := filepath.Join(os.TempDir(), "entrypoint")
+	err := os.MkdirAll(tmpDir, 0o755)
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, tc := range []struct {
+		name   string
+		c      int
+		sarif  string
+		result int
+	}{
+		{
+			name:   "both exit codes are 0",
+			c:      0,
+			sarif:  "{\"runs\": [{\"invocations\": [{\"exitCode\": 0}]}]}",
+			result: 0,
+		},
+		{
+			name:   "idea.sh exited with 1, no SARIF exitCode",
+			c:      1,
+			sarif:  "{}",
+			result: 1,
+		},
+		{
+			name:   "idea.sh exited successfully, SARIF has exitCode 255",
+			c:      0,
+			sarif:  "{\"runs\": [{\"invocations\": [{\"exitCode\": 255}]}]}",
+			result: 255,
+		},
+		{
+			name:   "idea.sh exited with 1, takes precedence over successful SARIF exitCode",
+			c:      1,
+			sarif:  "{\"runs\": [{\"invocations\": [{\"exitCode\": 0}]}]}",
+			result: 1,
+		},
+		{
+			name:   "SARIF exitCode too large, gets normalized to 1",
+			c:      0,
+			sarif:  "{\"runs\": [{\"invocations\": [{\"exitCode\": 256}]}]}",
+			result: 1,
+		},
+		{
+			name:   "no SARIF exitCode found",
+			c:      0,
+			sarif:  "{\"runs\": [{\"invocations\": [{\"exitCode2\": 2}]}]}",
+			result: 0,
+		},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			err = os.WriteFile(filepath.Join(tmpDir, "qodana-short.sarif.json"), []byte(tc.sarif), 0o600)
+			if err != nil {
+				t.Fatal(err)
+			}
+			got := getIdeExitCode(tmpDir, tc.c)
+			if got != tc.result {
+				t.Errorf("Got: %d, Expected: %d", got, tc.result)
+			}
+		})
+	}
+	err = os.RemoveAll(tmpDir)
+	if err != nil {
+		t.Fatal(err)
+	}
+}

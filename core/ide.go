@@ -22,6 +22,7 @@ import (
 	"encoding/xml"
 	"errors"
 	"fmt"
+	"github.com/owenrumney/go-sarif/v2/sarif"
 	"io"
 	"os"
 	"path/filepath"
@@ -136,12 +137,36 @@ func getExcludedPlugins(includedPlugins string, dockerIgnore string) (string, er
 	return "", fmt.Errorf("error while exectuing qodanaExcludedPlugins: %d", res)
 }
 
+// getIdeExitCode gets IDEA "exitCode" from SARIF.
+func getIdeExitCode(resultsDir string, c int) (res int) {
+	if c != 0 {
+		return c
+	}
+	s, err := sarif.Open(filepath.Join(resultsDir, "qodana-short.sarif.json"))
+	if err != nil {
+		log.Fatal(err)
+	}
+	if len(s.Runs) > 0 && len(s.Runs[0].Invocations) > 0 {
+		if tmp := s.Runs[0].Invocations[0].ExitCode; tmp != nil {
+			res = *tmp
+			if res < QodanaSuccessExitCode || res > QodanaFailThresholdExitCode {
+				log.Printf("Wrong exitCode in sarif: %d", res)
+				return 1
+			}
+			log.Printf("IDE exit code: %d", res)
+			return res
+		}
+	}
+	log.Printf("IDE process exit code: %d", c)
+	return c
+}
+
 func runQodanaLocal(opts *QodanaOptions) int {
 	genExcludedPluginsLocal(opts)
 	args := []string{quoteForWindows(Prod.IdeScript), "inspect", "qodana", "--stub-profile", quoteForWindows(opts.stabProfilePath())}
 	args = append(args, getIdeArgs(opts)...)
 	args = append(args, quoteForWindows(opts.ProjectDir), quoteForWindows(opts.ResultsDir))
-	res := RunCmd("", args...)
+	res := getIdeExitCode(opts.ResultsDir, RunCmd("", args...))
 	if res > QodanaSuccessExitCode && res != QodanaFailThresholdExitCode {
 		postAnalysis(opts)
 		return res
