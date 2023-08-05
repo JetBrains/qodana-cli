@@ -5,6 +5,8 @@ on:
     branches:
       - main
   pull_request:
+permissions:
+  contents: write
 
 jobs:
   lint:
@@ -78,10 +80,13 @@ jobs:
           distribution: goreleaser
           version: latest
           args: --snapshot --clean --debug
-      - uses: actions/upload-artifact@v3
-        with:
-          name: dist
-          path: dist/
+      - if: github.branch == 'main'
+        run:
+          cd dist
+          gh release --repo JetBrains/qodana-cli delete nightly -y || true
+          git push --delete origin nightly || true
+          gh release --repo JetBrains/qodana-cli create nightly -p -t nightly
+          gh release --repo JetBrains/qodana-cli upload nightly qodana_darwin_all.tar.gz qodana_linux_arm64.tar.gz qodana_linux_x86_64.tar.gz qodana_windows_arm64.zip qodana_windows_x86_64.zip
 
   install-script-check:
     runs-on: ubuntu-latest
