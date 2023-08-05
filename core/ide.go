@@ -229,8 +229,10 @@ func getIdeArgs(opts *QodanaOptions) []string {
 	if opts.AnalysisId != "" && opts.Ide == "" {
 		arguments = append(arguments, "--analysis-id", opts.AnalysisId)
 	}
-	for _, property := range opts.Property {
-		arguments = append(arguments, "--property="+property)
+	if opts.Ide == "" {
+		for _, property := range opts.Property {
+			arguments = append(arguments, "--property="+property)
+		}
 	}
 	return arguments
 }
