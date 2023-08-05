@@ -7,12 +7,14 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
+        if: github.event.release.name != 'nightly'
         with:
           repository: 'jetbrains/qodana-action'
           token: ${{ secrets.GH_PAT }}
           fetch-depth: 0
 
       - name: Upgrade and send PR
+        if: github.event.release.name != 'nightly'
         run: |
           cd common && node update-cli.js && cd ..
           npm ci
@@ -28,6 +30,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GH_PAT }}
   winget:
     runs-on: ubuntu-latest
+    if: github.event.release.name != 'nightly'
     steps:
       - run: >
           set -e &&
