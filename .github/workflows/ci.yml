@@ -57,7 +57,7 @@ jobs:
         uses: github/codeql-action/analyze@v2
 
   package:
-    needs: [ lint, test ]
+#    needs: [ lint, test ]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
@@ -80,13 +80,15 @@ jobs:
           distribution: goreleaser
           version: latest
           args: --snapshot --clean --debug
-      - if: github.branch == 'main'
-        run:
+      - if: github.ref == 'refs/heads/main'
+        run: |
           cd dist
           gh release --repo JetBrains/qodana-cli delete nightly -y || true
           git push --delete origin nightly || true
           gh release --repo JetBrains/qodana-cli create nightly -p -t nightly
           gh release --repo JetBrains/qodana-cli upload nightly qodana_darwin_all.tar.gz qodana_linux_arm64.tar.gz qodana_linux_x86_64.tar.gz qodana_windows_arm64.zip qodana_windows_x86_64.zip
+        env:
+          GH_TOKEN: ${{ github.token }}
 
   install-script-check:
     runs-on: ubuntu-latest
