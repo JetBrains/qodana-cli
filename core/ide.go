@@ -139,8 +139,8 @@ func getExcludedPlugins(includedPlugins string, dockerIgnore string) (string, er
 func runQodanaLocal(opts *QodanaOptions) int {
 	genExcludedPluginsLocal(opts)
 	args := []string{quoteForWindows(Prod.IdeScript), "inspect", "qodana", "--stub-profile", quoteForWindows(opts.stabProfilePath())}
-	args = append(args, quoteForWindows(opts.ProjectDir), quoteForWindows(opts.ResultsDir))
 	args = append(args, getIdeArgs(opts)...)
+	args = append(args, quoteForWindows(opts.ProjectDir), quoteForWindows(opts.ResultsDir))
 	res := RunCmd("", args...)
 	if res > QodanaSuccessExitCode && res != QodanaFailThresholdExitCode {
 		postAnalysis(opts)
@@ -170,7 +170,7 @@ func getIdeArgs(opts *QodanaOptions) []string {
 		arguments = append(arguments, "--disable-sanity")
 	}
 	if opts.ProfileName != "" {
-		arguments = append(arguments, "--profile-name", opts.ProfileName)
+		arguments = append(arguments, "--profile-name", quoteForWindows(opts.ProfileName))
 	}
 	if opts.ProfilePath != "" {
 		arguments = append(arguments, "--profile-path", quoteForWindows(opts.ProfilePath))
