@@ -49,7 +49,7 @@ This command serves the Qodana report locally and opens a browser to it.`,
 				}
 				systemDir := options.GetLinterDir()
 				if _, err := os.Stat(systemDir); os.IsNotExist(err) {
-					systemDir = core.LookUpLinterSystemDir()
+					systemDir = core.LookUpLinterSystemDir(options)
 				}
 
 				options.ResultsDir = filepath.Join(systemDir, "results")

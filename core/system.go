@@ -192,19 +192,9 @@ func noCache(h http.Handler) http.Handler {
 	return http.HandlerFunc(fn)
 }
 
-// getQodanaSystemDir returns path to <userCacheDir>/JetBrains/Qodana/.
-func getQodanaSystemDir() string {
-	userCacheDir, _ := os.UserCacheDir()
-	return filepath.Join(
-		userCacheDir,
-		"JetBrains",
-		"Qodana",
-	)
-}
-
 // LookUpLinterSystemDir returns path to the latest modified directory from <userCacheDir>/JetBrains/Qodana
-func LookUpLinterSystemDir() string {
-	parent := getQodanaSystemDir()
+func LookUpLinterSystemDir(opts *QodanaOptions) string {
+	parent := opts.getQodanaSystemDir()
 
 	entries, err := os.ReadDir(parent)
 	if err != nil {
@@ -238,24 +228,10 @@ func LookUpLinterSystemDir() string {
 func prepareHost(opts *QodanaOptions) {
 	opts.ValidateToken(false)
 
-	if opts.ResultsDir == "" {
-		opts.ResultsDir = filepath.Join(opts.GetLinterDir(), "results")
-	}
-	if opts.CacheDir == "" {
-		opts.CacheDir = filepath.Join(opts.GetLinterDir(), "cache")
-	}
 	if opts.ClearCache {
 		err := os.RemoveAll(opts.CacheDir)
 		if err != nil {
 			log.Errorf("Could not clear local Qodana cache: %s", err)
-		}
-	}
-	if opts.User == "" && opts.Ide == "" {
-		switch runtime.GOOS {
-		case "windows":
-			opts.User = "root"
-		default: // "darwin", "linux", "freebsd", "openbsd", "netbsd"
-			opts.User = fmt.Sprintf("%d:%d", os.Getuid(), os.Getgid())
 		}
 	}
 	if err := os.MkdirAll(opts.CacheDir, os.ModePerm); err != nil {
@@ -273,10 +249,19 @@ func prepareHost(opts *QodanaOptions) {
 				if spinner != nil {
 					spinner.ShowTimer = false // We will update interactive spinner
 				}
-				opts.Ide = downloadAndInstallIDE(opts.Ide, getQodanaSystemDir(), spinner)
-			}, fmt.Sprintf("Downloading %s", opts.Ide), fmt.Sprintf("downloading IDE distribution to %s", getQodanaSystemDir()))
+				opts.Ide = downloadAndInstallIDE(opts.Ide, opts.getQodanaSystemDir(), spinner)
+			}, fmt.Sprintf("Downloading %s", opts.Ide), fmt.Sprintf("downloading IDE distribution to %s", opts.getQodanaSystemDir()))
 		}
 		prepareLocalIdeSettings(opts)
+	}
+}
+
+func GetDefaultUser() string {
+	switch runtime.GOOS {
+	case "windows":
+		return "root"
+	default: // "darwin", "linux", "freebsd", "openbsd", "netbsd"
+		return fmt.Sprintf("%d:%d", os.Getuid(), os.Getgid())
 	}
 }
 

@@ -100,9 +100,9 @@ But you can always override qodana.yaml options with the following command-line 
 	flags.StringVar(&options.Ide, "ide", os.Getenv(core.QodanaDistEnv), fmt.Sprintf("Use to run Qodana without a container. Path to the installed IDE, or a downloaded one: provide direct URL or a product code. Not compatible with --linter option. Available codes are %s, add -EAP part to obtain EAP versions", strings.Join(core.AllSupportedCodes, ", ")))
 
 	flags.StringVarP(&options.ProjectDir, "project-dir", "i", ".", "Root directory of the inspected project")
-	flags.StringVarP(&options.ResultsDir, "results-dir", "o", options.ResultsDirPath(), "Override directory to save Qodana inspection results to (default <userCacheDir>/JetBrains/<linter>/results)")
+	flags.StringVarP(&options.ResultsDir, "results-dir", "o", options.ResultsDirPath(), "Override directory to save Qodana inspection results to")
 	flags.StringVar(&options.CacheDir, "cache-dir", options.CacheDirPath(), "Override cache directory (default <userCacheDir>/JetBrains/<linter>/cache)")
-	flags.StringVar(&options.ReportDir, "report-dir", options.ReportDirPath(), "Override directory to save Qodana HTML report to (default <userCacheDir>/JetBrains/<linter>/results/report)")
+	flags.StringVar(&options.ReportDir, "report-dir", options.ReportDirPath(), "Override directory to save Qodana HTML report to")
 
 	flags.BoolVar(&options.PrintProblems, "print-problems", false, "Print all found problems by Qodana in the CLI output")
 	flags.BoolVar(&options.ClearCache, "clear-cache", false, "Clear the local Qodana cache before running the analysis")
@@ -133,7 +133,7 @@ But you can always override qodana.yaml options with the following command-line 
 	if !core.IsContainer() {
 		flags.StringArrayVarP(&options.Env, "env", "e", []string{}, "Only for container runs. Define additional environment variables for the Qodana container (you can use the flag multiple times). CLI is not reading full host environment variables and does not pass it to the Qodana container for security reasons")
 		flags.StringArrayVarP(&options.Volumes, "volume", "v", []string{}, "Only for container runs. Define additional volumes for the Qodana container (you can use the flag multiple times)")
-		flags.StringVarP(&options.User, "user", "u", "", "Only for container runs. User to run Qodana container as. Please specify user id – '$UID' or user id and group id $(id -u):$(id -g). Use 'root' to run as the root user (default: the current user)")
+		flags.StringVarP(&options.User, "user", "u", core.GetDefaultUser(), "Only for container runs. User to run Qodana container as. Please specify user id – '$UID' or user id and group id $(id -u):$(id -g). Use 'root' to run as the root user (default: the current user)")
 		flags.BoolVar(&options.SkipPull, "skip-pull", false, "Only for container runs. Skip pulling the latest Qodana container")
 		cmd.MarkFlagsMutuallyExclusive("linter", "ide")
 		cmd.MarkFlagsMutuallyExclusive("skip-pull", "ide")

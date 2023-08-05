@@ -159,9 +159,22 @@ func (o *QodanaOptions) ValidateToken(refresh bool) string {
 	return ""
 }
 
+func (o *QodanaOptions) getQodanaSystemDir() string {
+	if o.CacheDir != "" {
+		return filepath.Dir(o.CacheDir)
+	}
+
+	userCacheDir, _ := os.UserCacheDir()
+	return filepath.Join(
+		userCacheDir,
+		"JetBrains",
+		"Qodana",
+	)
+}
+
 func (o *QodanaOptions) GetLinterDir() string {
 	return filepath.Join(
-		getQodanaSystemDir(),
+		o.getQodanaSystemDir(),
 		o.id(),
 	)
 }
