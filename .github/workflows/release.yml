@@ -23,6 +23,7 @@ jobs:
           echo '#!/bin/bash' >> /usr/local/bin/choco
           echo 'mono /opt/chocolatey/choco.exe $@' >> /usr/local/bin/choco
           chmod +x /usr/local/bin/choco
+          git tag -d nightly || true
         env:
           CHOCOLATEY_VERSION: 1.2.0
       - uses: goreleaser/goreleaser-action@v4

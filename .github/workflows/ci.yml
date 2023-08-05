@@ -75,6 +75,7 @@ jobs:
           chmod +x /usr/local/bin/choco
         env:
           CHOCOLATEY_VERSION: 1.2.0
+      - run: git tag -d nightly || true
       - uses: goreleaser/goreleaser-action@v4
         with:
           distribution: goreleaser
