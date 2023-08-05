@@ -116,6 +116,8 @@ func (p *product) parentPrefix() string {
 		return "PyCharmCore"
 	case QDGO:
 		return "GoLand"
+	case QDRUBY:
+		return "Ruby"
 	default:
 		return "Idea"
 	}

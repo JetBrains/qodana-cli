@@ -287,6 +287,8 @@ func toQodanaCode(baseProduct string) string {
 		return QDPY
 	case "GO":
 		return QDGO
+	case "RM":
+		return QDRUBY
 	default:
 		return "QD"
 	}
