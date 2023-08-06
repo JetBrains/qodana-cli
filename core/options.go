@@ -61,6 +61,7 @@ type QodanaOptions struct {
 	FullHistory           bool
 	ApplyFixes            bool
 	Cleanup               bool
+	FixesStrategy         string // note: deprecated option
 	_id                   string
 }
 

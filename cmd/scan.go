@@ -126,6 +126,7 @@ But you can always override qodana.yaml options with the following command-line 
 
 	flags.BoolVar(&options.ApplyFixes, "apply-fixes", false, "Apply all available quick-fixes, including cleanup")
 	flags.BoolVar(&options.Cleanup, "cleanup", false, "Run project cleanup")
+	flags.StringVar(&options.FixesStrategy, "fixes-strategy", "", "Set the strategy for applying quick-fixes. Available values: 'apply', 'cleanup', 'none'")
 
 	flags.StringArrayVar(&options.Property, "property", []string{}, "Set a JVM property to be used while running Qodana using the --property property.name=value1,value2,...,valueN notation")
 	flags.BoolVarP(&options.SaveReport, "save-report", "s", true, "Generate HTML report")
@@ -145,6 +146,15 @@ But you can always override qodana.yaml options with the following command-line 
 	cmd.MarkFlagsMutuallyExclusive("commit", "script")
 	cmd.MarkFlagsMutuallyExclusive("profile-name", "profile-path")
 	cmd.MarkFlagsMutuallyExclusive("apply-fixes", "cleanup")
+
+	err := cmd.Flags().MarkHidden("fixes-strategy")
+	if err != nil {
+		return nil
+	}
+	err = cmd.Flags().MarkDeprecated("fixes-strategy", "use --apply-fixes / --cleanup instead")
+	if err != nil {
+		return nil
+	}
 
 	return cmd
 }

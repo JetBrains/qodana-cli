@@ -34,53 +34,63 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-var testOptions = &QodanaOptions{
-	ResultsDir:            "./results",
-	CacheDir:              "./cache",
-	ProjectDir:            "./project",
-	Linter:                "jetbrains/qodana-jvm-community:latest",
-	SourceDirectory:       "./src",
-	DisableSanity:         true,
-	RunPromo:              "true",
-	Baseline:              "qodana.sarif.json",
-	BaselineIncludeAbsent: true,
-	SaveReport:            true,
-	ShowReport:            true,
-	Port:                  8888,
-	Property:              []string{"foo.baz=bar", "foo.bar=baz"},
-	Script:                "default",
-	FailThreshold:         "0",
-	AnalysisId:            "id",
-	Env:                   []string{"A=B"},
-	Volumes:               []string{"/tmp/foo:/tmp/foo"},
-	User:                  "1001:1001",
-	PrintProblems:         true,
-	ProfileName:           "Default",
-}
+func TestCliArgs(t *testing.T) {
+	dir, _ := os.Getwd()
+	projectDir := filepath.Join(dir, "project")
+	cacheDir := filepath.Join(dir, "cache")
+	resultsDir := filepath.Join(dir, "results")
+	Prod.Home = string(os.PathSeparator) + "opt" + string(os.PathSeparator) + "idea"
+	Prod.IdeScript = filepath.Join(Prod.Home, "bin", "idea.sh")
+	err := os.Unsetenv(qodanaDockerEnv)
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, tc := range []struct {
+		name string
+		opts *QodanaOptions
+		res  []string
+	}{
+		{
+			name: "typical set up",
+			opts: &QodanaOptions{ProjectDir: projectDir, CacheDir: cacheDir, ResultsDir: resultsDir, Linter: "jetbrains/qodana-jvm-community:latest", SourceDirectory: "./src", DisableSanity: true, RunPromo: "true", Baseline: "qodana.sarif.json", BaselineIncludeAbsent: true, SaveReport: true, ShowReport: true, Port: 8888, Property: []string{"foo.baz=bar", "foo.bar=baz"}, Script: "default", FailThreshold: "0", AnalysisId: "id", Env: []string{"A=B"}, Volumes: []string{"/tmp/foo:/tmp/foo"}, User: "1001:1001", PrintProblems: true, ProfileName: "Default", ApplyFixes: true},
+			res:  []string{filepath.FromSlash("/opt/idea/bin/idea.sh"), "inspect", "qodana", "--stub-profile", filepath.Join(cacheDir, "profile.xml"), "--save-report", "--source-directory", "./src", "--disable-sanity", "--profile-name", "Default", "--run-promo", "true", "--baseline", "qodana.sarif.json", "--baseline-include-absent", "--fail-threshold", "0", "--fixes-strategy", "apply", "--analysis-id", "id", "--property=foo.baz=bar", "--property=foo.bar=baz", projectDir, resultsDir},
+		},
+		{
+			name: "arguments with spaces, no properties for local runs",
+			opts: &QodanaOptions{ProjectDir: projectDir, CacheDir: cacheDir, ResultsDir: resultsDir, ProfileName: "separated words", Property: []string{"qodana.format=SARIF_AND_PROJECT_STRUCTURE", "qodana.variable.format=JSON"}, Ide: Prod.Home},
+			res:  []string{filepath.FromSlash("/opt/idea/bin/idea.sh"), "inspect", "qodana", "--stub-profile", filepath.Join(cacheDir, "profile.xml"), "--profile-name", "\"separated words\"", projectDir, resultsDir},
+		},
+		{
+			name: "deprecated --fixes-strategy=apply",
+			opts: &QodanaOptions{ProjectDir: projectDir, CacheDir: cacheDir, ResultsDir: resultsDir, FixesStrategy: "apply"},
+			res:  []string{filepath.FromSlash("/opt/idea/bin/idea.sh"), "inspect", "qodana", "--stub-profile", filepath.Join(cacheDir, "profile.xml"), "--fixes-strategy", "apply", projectDir, resultsDir},
+		},
+		{
+			name: "deprecated --fixes-strategy=cleanup",
+			opts: &QodanaOptions{ProjectDir: projectDir, CacheDir: cacheDir, ResultsDir: resultsDir, FixesStrategy: "cleanup"},
+			res:  []string{filepath.FromSlash("/opt/idea/bin/idea.sh"), "inspect", "qodana", "--stub-profile", filepath.Join(cacheDir, "profile.xml"), "--fixes-strategy", "cleanup", projectDir, resultsDir},
+		},
+		{
+			name: "--fixes-strategy=apply for new versions",
+			opts: &QodanaOptions{ProjectDir: projectDir, CacheDir: cacheDir, ResultsDir: resultsDir, FixesStrategy: "apply", Ide: "/opt/idea/233"},
+			res:  []string{filepath.FromSlash("/opt/idea/bin/idea.sh"), "inspect", "qodana", "--stub-profile", filepath.Join(cacheDir, "profile.xml"), "--apply-fixes", projectDir, resultsDir},
+		},
+		{
+			name: "--fixes-strategy=cleanup for new versions",
+			opts: &QodanaOptions{ProjectDir: projectDir, CacheDir: cacheDir, ResultsDir: resultsDir, FixesStrategy: "cleanup", Ide: "/opt/idea/233"},
+			res:  []string{filepath.FromSlash("/opt/idea/bin/idea.sh"), "inspect", "qodana", "--stub-profile", filepath.Join(cacheDir, "profile.xml"), "--cleanup", projectDir, resultsDir},
+		},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			if tc.opts.Ide == "/opt/idea/233" {
+				Prod.Version = "2023.3"
+			} else {
+				Prod.Version = "2023.2"
+			}
 
-// TestScanFlags verify that the option struct is converted to the wanted Qodana Docker options.
-func TestScanFlags(t *testing.T) {
-	expected := strings.Join([]string{
-		"--save-report",
-		"--source-directory",
-		"./src",
-		"--disable-sanity",
-		"--profile-name",
-		"Default",
-		"--run-promo true",
-		"--baseline",
-		"qodana.sarif.json",
-		"--baseline-include-absent",
-		"--fail-threshold",
-		"0",
-		"--analysis-id",
-		"id",
-		"--property=foo.baz=bar",
-		"--property=foo.bar=baz",
-	}, " ")
-	actual := strings.Join(getIdeArgs(testOptions), " ")
-	if expected != actual {
-		t.Fatalf("expected \"%s\" got \"%s\"", expected, actual)
+			args := getIdeRunCommand(tc.opts)
+			assert.Equal(t, tc.res, args)
+		})
 	}
 }
 

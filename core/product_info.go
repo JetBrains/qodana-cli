@@ -22,6 +22,7 @@ import (
 	"os"
 	"path/filepath"
 	"runtime"
+	"strconv"
 	"strings"
 
 	log "github.com/sirupsen/logrus"
@@ -165,6 +166,16 @@ func (p *product) getVersionBranch() string {
 		return "master"
 	}
 	return fmt.Sprintf("%s%s", versions[0][2:], versions[1])
+}
+
+// is233orNewer returns true if the current product is 233 or newer.
+func (p *product) is233orNewer() bool {
+	number, err := strconv.Atoi(p.getVersionBranch())
+	if err != nil {
+		WarningMessage("Invalid version: ", err)
+		return false
+	}
+	return number >= 233
 }
 
 var Prod product

@@ -163,9 +163,7 @@ func getIdeExitCode(resultsDir string, c int) (res int) {
 
 func runQodanaLocal(opts *QodanaOptions) int {
 	genExcludedPluginsLocal(opts)
-	args := []string{quoteForWindows(Prod.IdeScript), "inspect", "qodana", "--stub-profile", quoteForWindows(opts.stabProfilePath())}
-	args = append(args, getIdeArgs(opts)...)
-	args = append(args, quoteForWindows(opts.ProjectDir), quoteForWindows(opts.ResultsDir))
+	args := getIdeRunCommand(opts)
 	res := getIdeExitCode(opts.ResultsDir, RunCmd("", args...))
 	if res > QodanaSuccessExitCode && res != QodanaFailThresholdExitCode {
 		postAnalysis(opts)
@@ -182,6 +180,13 @@ func runQodanaLocal(opts *QodanaOptions) int {
 	return res
 }
 
+func getIdeRunCommand(opts *QodanaOptions) []string {
+	args := []string{quoteForWindows(Prod.IdeScript), "inspect", "qodana", "--stub-profile", quoteForWindows(opts.stabProfilePath())}
+	args = append(args, getIdeArgs(opts)...)
+	args = append(args, quoteForWindows(opts.ProjectDir), quoteForWindows(opts.ResultsDir))
+	return args
+}
+
 // getIdeArgs returns qodana command options.
 func getIdeArgs(opts *QodanaOptions) []string {
 	arguments := make([]string, 0)
@@ -195,7 +200,7 @@ func getIdeArgs(opts *QodanaOptions) []string {
 		arguments = append(arguments, "--disable-sanity")
 	}
 	if opts.ProfileName != "" {
-		arguments = append(arguments, "--profile-name", quoteForWindows(opts.ProfileName))
+		arguments = append(arguments, "--profile-name", quoteIfSpace(opts.ProfileName))
 	}
 	if opts.ProfilePath != "" {
 		arguments = append(arguments, "--profile-path", quoteForWindows(opts.ProfilePath))
@@ -203,7 +208,7 @@ func getIdeArgs(opts *QodanaOptions) []string {
 	if opts.RunPromo != "" {
 		arguments = append(arguments, "--run-promo", opts.RunPromo)
 	}
-	if opts.Script != "default" {
+	if opts.Script != "" && opts.Script != "default" {
 		arguments = append(arguments, "--script", opts.Script)
 	}
 	if opts.StubProfile != "" {
@@ -221,10 +226,30 @@ func getIdeArgs(opts *QodanaOptions) []string {
 	if opts.GitReset && opts.Commit != "" && opts.Script == "default" {
 		arguments = append(arguments, "--script", "local-changes")
 	}
-	if opts.ApplyFixes {
-		arguments = append(arguments, "--fixes-strategy", "apply")
-	} else if opts.Cleanup {
-		arguments = append(arguments, "--fixes-strategy", "cleanup")
+
+	if opts.FixesStrategy != "" {
+		switch strings.ToLower(opts.FixesStrategy) {
+		case "apply":
+			opts.ApplyFixes = true
+		case "cleanup":
+			opts.Cleanup = true
+		default:
+			break
+		}
+	}
+
+	if Prod.is233orNewer() {
+		if opts.ApplyFixes {
+			arguments = append(arguments, "--apply-fixes")
+		} else if opts.Cleanup {
+			arguments = append(arguments, "--cleanup")
+		}
+	} else {
+		if opts.ApplyFixes {
+			arguments = append(arguments, "--fixes-strategy", "apply")
+		} else if opts.Cleanup {
+			arguments = append(arguments, "--fixes-strategy", "cleanup")
+		}
 	}
 	if opts.AnalysisId != "" && opts.Ide == "" {
 		arguments = append(arguments, "--analysis-id", opts.AnalysisId)
