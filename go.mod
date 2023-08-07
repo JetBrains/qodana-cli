@@ -14,7 +14,7 @@ require (
 	github.com/otiai10/copy v1.12.0
 	github.com/owenrumney/go-sarif/v2 v2.2.0
 	github.com/pterm/pterm v0.12.63
-	github.com/shirou/gopsutil/v3 v3.23.6
+	github.com/shirou/gopsutil/v3 v3.23.7
 	github.com/sirupsen/logrus v1.9.3
 	github.com/spf13/cobra v1.7.0
 	github.com/spf13/viper v1.16.0
