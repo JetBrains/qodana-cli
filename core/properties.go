@@ -22,6 +22,7 @@ import (
 	"os"
 	"path/filepath"
 	"sort"
+	"strconv"
 	"strings"
 )
 
@@ -41,7 +42,7 @@ func getPropertiesMap(
 ) map[string]string {
 	properties := map[string]string{
 		"-Dfus.internal.reduce.initial.delay":          "true",
-		"-Didea.headless.enable.statistics":            "true",
+		"-Didea.headless.enable.statistics":            strconv.FormatBool(licenseToken.isAllowedToSendFUS()),
 		"-Didea.headless.statistics.max.files.to.send": "5000",
 		"-Dinspect.save.project.settings":              "true",
 		"-Djava.awt.headless":                          "true",

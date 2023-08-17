@@ -172,9 +172,8 @@ func runQodanaLocal(opts *QodanaOptions) int {
 	if opts.SaveReport || opts.ShowReport {
 		saveReport(opts)
 	}
-	token := opts.ValidateToken(false)
-	if token != "" {
-		sendReport(opts, token)
+	if licenseToken.isAllowedToSendReports() {
+		sendReport(opts, licenseToken.Token)
 	}
 	postAnalysis(opts)
 	return res
@@ -386,8 +385,8 @@ func readAppInfoXml(ideDir string) appInfo {
 func prepareLocalIdeSettings(opts *QodanaOptions) {
 	guessProduct(opts)
 	ExtractQodanaEnvironment()
-	token := opts.ValidateToken(false)
-	setupLicense(token)
+	setupLicenseToken(opts)
+	setupLicense(licenseToken.Token)
 	prepareDirectories(
 		opts.CacheDir,
 		opts.logDirPath(),

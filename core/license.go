@@ -35,6 +35,11 @@ type licenseData struct {
 	LicensePlan    string `json:"licensePlan"`
 }
 
+type LicenseToken struct {
+	Token       string
+	LicenseOnly bool
+}
+
 const qodanaLicenseRequestAttemptsCountEnv = "QODANA_LICENSE_ATTEMPTS"
 
 const qodanaLicenseRequestAttemptsCount = 3
@@ -79,6 +84,33 @@ const declinedTokenErrorMessage = `
 License verification failed. Please ensure that the token provided through the QODANA_TOKEN 
 environment variable is correct and that you have a valid license. 
 If you need further assistance, please contact our support team at qodana-support@jetbrains.com`
+
+var licenseToken LicenseToken
+
+func setupLicenseToken(opts *QodanaOptions) {
+	token := opts.ValidateToken(false)
+	licenseOnlyToken := os.Getenv(qodanaLicenseOnlyToken)
+
+	if token == "" && licenseOnlyToken != "" {
+		licenseToken = LicenseToken{
+			Token:       licenseOnlyToken,
+			LicenseOnly: true,
+		}
+	} else {
+		licenseToken = LicenseToken{
+			Token:       token,
+			LicenseOnly: false,
+		}
+	}
+}
+
+func (o *LicenseToken) isAllowedToSendReports() bool {
+	return !o.LicenseOnly && o.Token != ""
+}
+
+func (o *LicenseToken) isAllowedToSendFUS() bool {
+	return !o.LicenseOnly
+}
 
 func setupLicense(token string) {
 	_, exists := os.LookupEnv(qodanaLicense)

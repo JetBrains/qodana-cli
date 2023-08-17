@@ -29,6 +29,7 @@ import (
 const (
 	qodanaEnv              = "QODANA_ENV"
 	qodanaToken            = "QODANA_TOKEN"
+	qodanaLicenseOnlyToken = "QODANA_LICENSE_ONLY_TOKEN"
 	qodanaJobUrl           = "QODANA_JOB_URL"
 	qodanaRemoteUrl        = "QODANA_REMOTE_URL"
 	qodanaBranch           = "QODANA_BRANCH"
