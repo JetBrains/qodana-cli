@@ -180,6 +180,86 @@ func TestExtractLicenseKey(t *testing.T) {
 	}
 }
 
+func TestSetupLicenseToken(t *testing.T) {
+	for _, testData := range []struct {
+		name       string
+		token      string
+		loToken    string
+		resToken   string
+		sendFus    bool
+		sendReport bool
+	}{
+		{
+			name:       "no key",
+			token:      "",
+			loToken:    "",
+			resToken:   "",
+			sendFus:    true,
+			sendReport: false,
+		},
+		{
+			name:       "with token",
+			token:      "a",
+			loToken:    "",
+			resToken:   "a",
+			sendFus:    true,
+			sendReport: true,
+		},
+		{
+			name:       "with license only token",
+			token:      "",
+			loToken:    "b",
+			resToken:   "b",
+			sendFus:    false,
+			sendReport: false,
+		},
+		{
+			name:       "both tokens",
+			token:      "a",
+			loToken:    "b",
+			resToken:   "a",
+			sendFus:    true,
+			sendReport: true,
+		},
+	} {
+		t.Run(testData.name, func(t *testing.T) {
+			err := os.Setenv(qodanaLicenseOnlyToken, testData.loToken)
+			if err != nil {
+				t.Fatal(err)
+			}
+			err = os.Setenv(qodanaToken, testData.token)
+			if err != nil {
+				t.Fatal(err)
+			}
+			setupLicenseToken(&QodanaOptions{})
+
+			if licenseToken.Token != testData.resToken {
+				t.Errorf("expected token to be '%s' got '%s'", testData.resToken, licenseToken.Token)
+			}
+
+			sendFUS := licenseToken.isAllowedToSendFUS()
+			if sendFUS != testData.sendFus {
+				t.Errorf("expected allow FUS to be '%t' got '%t'", testData.sendFus, sendFUS)
+			}
+
+			toSendReports := licenseToken.isAllowedToSendReports()
+			if toSendReports != testData.sendReport {
+				t.Errorf("expected allow send report to be '%t' got '%t'", testData.sendReport, toSendReports)
+			}
+
+			err = os.Unsetenv(qodanaLicenseOnlyToken)
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			err = os.Unsetenv(qodanaToken)
+			if err != nil {
+				t.Fatal(err)
+			}
+		})
+	}
+}
+
 func TestSetupLicense(t *testing.T) {
 	Prod.Code = "QDJVM"
 	Prod.EAP = false
