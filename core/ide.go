@@ -58,6 +58,9 @@ func genExcludedPluginsLocal(opts *QodanaOptions) {
 			if err := downloadFile(includedPlugins, url, nil); err != nil {
 				log.Errorf("Not possible to download included plugins, skipping: %v", err)
 			} else {
+				if err := appendIncludedPlugins(includedPlugins); err != nil {
+					log.Fatal(err)
+				}
 				consoleOutput, err := getExcludedPlugins(includedPlugins, dockerIgnore)
 				if err != nil {
 					log.Fatal(err)
@@ -80,6 +83,46 @@ func genExcludedPluginsLocal(opts *QodanaOptions) {
 	} else {
 		log.Warningf("Not possible to fetch excluded plugins for %s", Prod.Code)
 	}
+}
+
+func appendIncludedPlugins(filename string) error {
+	if len(Config.Plugins) == 0 {
+		return nil
+	}
+	bytes, err := os.ReadFile(filename)
+	if err != nil {
+		return err
+	}
+	if len(bytes) > 0 && bytes[len(bytes)-1] != '\n' {
+		err = appendToFile(filename, "\n")
+		if err != nil {
+			return err
+		}
+	}
+	var pluginIds []string
+	for _, plugin := range Config.Plugins {
+		pluginIds = append(pluginIds, plugin.Id)
+	}
+	pluginsStr := strings.Join(pluginIds, "\n")
+	err = appendToFile(filename, pluginsStr)
+	return err
+}
+
+func appendToFile(filename string, data string) error {
+	f, err := os.OpenFile(filename, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+	if err != nil {
+		return err
+	}
+	defer func(f *os.File) {
+		err := f.Close()
+		if err != nil {
+			log.Fatal(err)
+		}
+	}(f)
+
+	_, err2 := f.WriteString(data)
+
+	return err2
 }
 
 func getExcludedPlugins(includedPlugins string, dockerIgnore string) (string, error) {
@@ -162,7 +205,9 @@ func getIdeExitCode(resultsDir string, c int) (res int) {
 }
 
 func runQodanaLocal(opts *QodanaOptions) int {
-	genExcludedPluginsLocal(opts)
+	if !IsContainer() {
+		genExcludedPluginsLocal(opts)
+	}
 	args := getIdeRunCommand(opts)
 	res := getIdeExitCode(opts.ResultsDir, RunCmd("", args...))
 	if res > QodanaSuccessExitCode && res != QodanaFailThresholdExitCode {
