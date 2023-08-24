@@ -8,7 +8,7 @@ require (
 	github.com/docker/cli v20.10.23+incompatible // DO NOT UPDATE: breaking changes
 	github.com/docker/docker v20.10.23+incompatible // DO NOT UPDATE: breaking changes
 	github.com/go-enry/go-enry/v2 v2.8.4
-	github.com/google/uuid v1.3.0
+	github.com/google/uuid v1.3.1
 	github.com/liamg/clinch v1.6.4
 	github.com/mattn/go-isatty v0.0.19
 	github.com/otiai10/copy v1.12.0
