@@ -96,6 +96,7 @@ func getIde(productCode string) *ReleaseDownloadInfo {
 		QDPY:  "PCP",
 		QDPYC: "PCC",
 		QDGO:  "GO",
+		QDRST: "RR",
 	}
 
 	originalCode := productCode

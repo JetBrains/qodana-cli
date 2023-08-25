@@ -98,6 +98,8 @@ func (p *product) vmOptionsEnv() string {
 		return "RUBYMINE_VM_OPTIONS"
 	case goLand:
 		return "GOLAND_VM_OPTIONS"
+	case rustRover:
+		return "RUSTROVER_VM_OPTIONS"
 	default:
 		return "IDEA_VM_OPTIONS"
 	}
@@ -119,6 +121,8 @@ func (p *product) parentPrefix() string {
 		return "GoLand"
 	case QDRUBY:
 		return "Ruby"
+	case QDRST:
+		return "RustRover"
 	default:
 		return "Idea"
 	}

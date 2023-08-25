@@ -62,6 +62,8 @@ var allCodes = []string{
 	QDJS,
 	QDGO,
 	QDNET,
+	QDRST,
+	QDRUBY,
 }
 
 // AllImages is a list of all supported linters.
@@ -75,6 +77,8 @@ var AllImages = []string{
 	Image(QDJS),
 	Image(QDGO),
 	Image(QDNET),
+	//Image(QDRST),
+	//Image(QDRUBY),
 }
 
 // ignoredDirectories is a list of directories that should be ignored by the configurator.

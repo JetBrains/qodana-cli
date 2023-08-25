@@ -39,14 +39,16 @@ func genExcludedPluginsLocal(opts *QodanaOptions) {
 	products := map[string]string{
 		QDJVM:  "jvm",
 		QDJVMC: "jvm-community",
-		// QDAND: // don't use it right now
-		// QDANDC: // don't use it right now
-		QDPHP: "php",
-		QDJS:  "js",
-		QDNET: "dotnet",
-		QDPY:  "python",
-		QDPYC: "python-community",
-		QDGO:  "go",
+		QDPHP:  "php",
+		QDJS:   "js",
+		QDNET:  "dotnet",
+		QDPY:   "python",
+		QDPYC:  "python-community",
+		QDGO:   "go",
+		// QDAND: android, // don't use it right now
+		// QDANDC: android-community, // don't use it right now
+		// QDRST: "rust",             // don't use it right now
+		// QDRUBY: "ruby",            // don't use it right now
 	}
 
 	if _, ok := products[Prod.Code]; ok {
@@ -319,13 +321,14 @@ func postAnalysis(opts *QodanaOptions) {
 }
 
 var ( // base script name
-	idea     = "idea"
-	phpStorm = "phpstorm"
-	webStorm = "webstorm"
-	rider    = "rider"
-	pyCharm  = "pycharm"
-	rubyMine = "rubymine"
-	goLand   = "goland"
+	idea      = "idea"
+	phpStorm  = "phpstorm"
+	webStorm  = "webstorm"
+	rider     = "rider"
+	pyCharm   = "pycharm"
+	rubyMine  = "rubymine"
+	goLand    = "goland"
+	rustRover = "rustrover"
 )
 
 var supportedIdes = [...]string{
@@ -336,6 +339,7 @@ var supportedIdes = [...]string{
 	pyCharm,
 	rubyMine,
 	goLand,
+	rustRover,
 }
 
 func toQodanaCode(baseProduct string) string {
@@ -358,6 +362,8 @@ func toQodanaCode(baseProduct string) string {
 		return QDGO
 	case "RM":
 		return QDRUBY
+	case "RR":
+		return QDRST
 	default:
 		return "QD"
 	}
@@ -366,19 +372,21 @@ func toQodanaCode(baseProduct string) string {
 func scriptToProductCode(scriptName string) string {
 	switch scriptName {
 	case idea:
-		return "QDJVM"
+		return QDJVM
 	case phpStorm:
-		return "QDPHP"
+		return QDPHP
 	case webStorm:
-		return "QDJS"
+		return QDJS
 	case rider:
-		return "QDNET"
+		return QDNET
 	case pyCharm:
-		return "QDPY"
+		return QDPY
 	case rubyMine:
-		return "QDRUBY"
+		return QDRUBY
 	case goLand:
-		return "QDGO"
+		return QDGO
+	case rustRover:
+		return QDRST
 	default:
 		return "QD"
 	}
