@@ -102,7 +102,7 @@ But you can always override qodana.yaml options with the following command-line 
 	flags.StringVarP(&options.ProjectDir, "project-dir", "i", ".", "Root directory of the inspected project")
 	flags.StringVarP(&options.ResultsDir, "results-dir", "o", options.ResultsDirPath(), "Override directory to save Qodana inspection results to")
 	flags.StringVar(&options.CacheDir, "cache-dir", options.CacheDirPath(), "Override cache directory (default <userCacheDir>/JetBrains/<linter>/cache)")
-	flags.StringVar(&options.ReportDir, "report-dir", options.ReportDirPath(), "Override directory to save Qodana HTML report to")
+	flags.StringVarP(&options.ReportDir, "report-dir", "r", options.ReportDirPath(), "Override directory to save Qodana HTML report to")
 
 	flags.BoolVar(&options.PrintProblems, "print-problems", false, "Print all found problems by Qodana in the CLI output")
 	flags.BoolVar(&options.ClearCache, "clear-cache", false, "Clear the local Qodana cache before running the analysis")
