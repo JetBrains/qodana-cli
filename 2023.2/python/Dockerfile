@@ -1,7 +1,4 @@
-ARG NODE_TAG="16-bullseye-slim"
 ARG BASE_TAG="bullseye-slim"
-
-FROM node:$NODE_TAG AS node_base
 FROM debian:$BASE_TAG
 
 ENV HOME="/root" \
@@ -10,8 +7,8 @@ ENV HOME="/root" \
     QODANA_DATA="/data" \
     QODANA_DOCKER="true"
 ENV JAVA_HOME="$QODANA_DIST/jbr" \
-    QODANA_CONF="$HOME/.config/idea"
-ENV PATH="$QODANA_DIST/bin:/opt/yarn/bin:$PATH"
+    QODANA_CONF="$HOME/.config/idea" \
+    PATH="$QODANA_DIST/bin:$PATH"
 
 # hadolint ignore=SC2174
 RUN mkdir -m 777 -p /opt $QODANA_DATA $QODANA_CONF && apt-get update && \
@@ -69,10 +66,11 @@ RUN apt-get update &&  \
     ${CONDA_DIR}/bin/conda install -c conda-forge poetry pipenv && ${CONDA_DIR}/bin/conda clean -afy && \
     rm -rf /var/cache/apt /var/lib/apt/ /tmp/*
 
-COPY --from=node_base /usr/local/bin/node /usr/local/bin/
-COPY --from=node_base /usr/local/include/node /usr/local/include/node
-COPY --from=node_base /usr/local/lib/node_modules /usr/local/lib/node_modules
-COPY --from=node_base /opt/yarn-* /opt/yarn/
+ENV PATH="/opt/yarn/bin:$PATH"
+COPY --from=node:16-bullseye-slim /usr/local/bin/node /usr/local/bin/
+COPY --from=node:16-bullseye-slim /usr/local/include/node /usr/local/include/node
+COPY --from=node:16-bullseye-slim /usr/local/lib/node_modules /usr/local/lib/node_modules
+COPY --from=node:16-bullseye-slim /opt/yarn-* /opt/yarn/
 RUN ln -s /usr/local/lib/node_modules/npm/bin/npm-cli.js /usr/local/bin/npm && \
     ln -s /usr/local/lib/node_modules/npm/bin/npx-cli.js /usr/local/bin/npx && \
     ln -s /usr/local/lib/node_modules/corepack/dist/corepack.js /usr/local/bin/corepack && \

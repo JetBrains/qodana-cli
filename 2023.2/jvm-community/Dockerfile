@@ -7,8 +7,8 @@ ENV HOME="/root" \
     QODANA_DATA="/data" \
     QODANA_DOCKER="true"
 ENV JAVA_HOME="$QODANA_DIST/jbr" \
-    QODANA_CONF="$HOME/.config/idea"
-ENV PATH="$QODANA_DIST/bin:$PATH"
+    QODANA_CONF="$HOME/.config/idea" \
+    PATH="$QODANA_DIST/bin:$PATH"
 
 # hadolint ignore=SC2174
 RUN mkdir -m 777 -p /opt $QODANA_DATA $QODANA_CONF && apt-get update && \

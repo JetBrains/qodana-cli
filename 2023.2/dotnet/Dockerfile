@@ -10,7 +10,8 @@ ENV HOME="/root" \
     QODANA_DATA="/data" \
     QODANA_DOCKER="true"
 ENV JAVA_HOME="$QODANA_DIST/jbr" \
-    QODANA_CONF="$HOME/.config/idea"
+    QODANA_CONF="$HOME/.config/idea" \
+    PATH="$QODANA_DIST/bin:$PATH"
 
 ENV RIDER_UNREAL_ROOT="/data/unrealEngine" DOTNET_ROOT="/usr/share/dotnet"
 
@@ -18,8 +19,6 @@ ENV RIDER_UNREAL_ROOT="/data/unrealEngine" DOTNET_ROOT="/usr/share/dotnet"
 ARG DOTNET_INSTALL_SH_REVISION="40434288dc5bbda41eafcbcbbc5c0fbbe028fb30"
 ARG DOTNET_CHANNEL_A="7.0"
 ARG DOTNET_CHANNEL_B="6.0"
-
-ENV PATH="$QODANA_DIST/bin:/opt/yarn/bin:$PATH"
 
 # hadolint ignore=SC2174
 RUN mkdir -m 777 -p $QODANA_DATA $QODANA_CONF $DOTNET_ROOT $RIDER_UNREAL_ROOT && apt-get update && \
@@ -48,6 +47,7 @@ RUN mkdir -m 777 -p $QODANA_DATA $QODANA_CONF $DOTNET_ROOT $RIDER_UNREAL_ROOT &&
     chmod 777 -R $DOTNET_ROOT && \
     rm -rf /var/cache/apt /var/lib/apt/ /tmp/*
 
+ENV PATH="/opt/yarn/bin:$PATH"
 COPY --from=node_base /usr/local/bin/node /usr/local/bin/
 COPY --from=node_base /usr/local/include/node /usr/local/include/node
 COPY --from=node_base /usr/local/lib/node_modules /usr/local/lib/node_modules

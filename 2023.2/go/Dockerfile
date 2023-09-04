@@ -10,9 +10,8 @@ ENV HOME="/root" \
     QODANA_DATA="/data" \
     QODANA_DOCKER="true"
 ENV JAVA_HOME="$QODANA_DIST/jbr" \
-    QODANA_CONF="$HOME/.config/idea"
-
-ENV PATH="$QODANA_DIST/bin:/opt/yarn/bin:$PATH"
+    QODANA_CONF="$HOME/.config/idea"\
+    PATH="$QODANA_DIST/bin:$PATH"
 
 # hadolint ignore=SC2174
 RUN mkdir -m 777 -p /opt $QODANA_DATA $QODANA_CONF && apt-get update && \
@@ -32,6 +31,7 @@ RUN mkdir -m 777 -p /opt $QODANA_DATA $QODANA_CONF && apt-get update && \
     git config --global --add safe.directory '*' && \
     rm -rf /var/cache/apt /var/lib/apt/ /tmp/*
 
+ENV PATH="/opt/yarn/bin:$PATH"
 COPY --from=node_base /usr/local/bin/node /usr/local/bin/
 COPY --from=node_base /usr/local/include/node /usr/local/include/node
 COPY --from=node_base /usr/local/lib/node_modules /usr/local/lib/node_modules

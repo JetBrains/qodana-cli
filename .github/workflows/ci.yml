@@ -33,3 +33,5 @@ jobs:
         context: ${{ matrix.version }}/${{ matrix.linter }}
         platforms: ${{ matrix.platform }}
         push: false
+        cache-from: type=gha
+        cache-to: type=gha,mode=max

@@ -7,9 +7,8 @@ ENV HOME="/root" \
     QODANA_DATA="/data" \
     QODANA_DOCKER="true"
 ENV JAVA_HOME="$QODANA_DIST/jbr" \
-    QODANA_CONF="$HOME/.config/idea"
-
-ENV PATH="$QODANA_DIST/bin:/opt/yarn/bin:$PATH"
+    QODANA_CONF="$HOME/.config/idea" \
+    PATH="$QODANA_DIST/bin:$PATH"
 
 # hadolint ignore=SC2174
 RUN mkdir -m 777 -p /opt $QODANA_DATA $QODANA_CONF && apt-get update && \
@@ -30,6 +29,8 @@ RUN mkdir -m 777 -p /opt $QODANA_DATA $QODANA_CONF && apt-get update && \
     npm install -g eslint@v8.47.0 pnpm@v8.7.1 && npm config set update-notifier false && \
     chmod 777 -R "$HOME/.npm" "$HOME/.npmrc" && \
     rm -rf /var/cache/apt /var/lib/apt/ /tmp/*
+
+ENV PATH="/opt/yarn/bin:$PATH"
 
 ARG QD_BUILD="QDJVM-2023.2"
 ARG QD_RELEASE="2023.2"
