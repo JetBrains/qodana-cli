@@ -6,7 +6,7 @@ jobs:
   github-actions:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
         if: github.event.release.name != 'nightly'
         with:
           repository: 'jetbrains/qodana-action'
