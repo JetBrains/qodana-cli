@@ -10,8 +10,11 @@ ENV JAVA_HOME="$QODANA_DIST/jbr" \
     QODANA_CONF="$HOME/.config/idea" \
     PATH="$QODANA_DIST/bin:$PATH"
 
-# hadolint ignore=SC2174
-RUN mkdir -m 777 -p /opt $QODANA_DATA $QODANA_CONF && apt-get update && \
+# hadolint ignore=SC2174,DL3009
+RUN --mount=target=/var/lib/apt/lists,type=cache,sharing=locked \
+    --mount=target=/var/cache/apt,type=cache,sharing=locked \
+    rm -f /etc/apt/apt.conf.d/docker-clean && \
+    mkdir -m 777 -p /opt $QODANA_DATA $QODANA_CONF && apt-get update && \
     DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
         ca-certificates=20210119 \
         curl=7.74.0-1.3+deb11u7 \
@@ -25,8 +28,7 @@ RUN mkdir -m 777 -p /opt $QODANA_DATA $QODANA_CONF && apt-get update && \
     apt-get autoremove -y && apt-get clean && \
     chmod 777 -R $HOME && \
     echo 'root:x:0:0:root:/root:/bin/bash' > /etc/passwd && chmod 666 /etc/passwd && \
-    git config --global --add safe.directory '*' && \
-    rm -rf /var/cache/apt /var/lib/apt/ /tmp/*
+    git config --global --add safe.directory '*'
 
 ENV GRADLE_USER_HOME="/data/cache/gradle"
 
@@ -79,8 +81,10 @@ ARG ANDROID_SDK_VERSION="9123335"
 ARG ANDROID_SDK_SHA256="0bebf59339eaa534f4217f8aa0972d14dc49e7207be225511073c661ae01da0a"
 ARG ANDROID_API_LEVEL="33"
 SHELL ["/bin/bash", "-o", "pipefail", "-c"]
-# hadolint ignore=SC2174
-RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends unzip=6.0-26+deb11u1 && \
+# hadolint ignore=SC2174,DL3009
+RUN --mount=target=/var/lib/apt/lists,type=cache,sharing=locked \
+    --mount=target=/var/cache/apt,type=cache,sharing=locked \
+    apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends unzip=6.0-26+deb11u1 && \
     mkdir -m 777 -p $QODANA_DATA/cache $ANDROID_USER_HOME $ANDROID_SDK_ROOT $ANDROID_SDK_ROOT/cmdline-tools $ANDROID_SDK_ROOT/platforms $ANDROID_SDK_ROOT/ndk && \
     echo "${ANDROID_SDK_SHA256} /tmp/android.zip" > /tmp/shasum && \
     curl -fsSL -o /tmp/android.zip  \
@@ -91,7 +95,7 @@ RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-ins
     echo y | ${ANDROID_SDK_TOOLS}/sdkmanager "platforms;android-${ANDROID_API_LEVEL}" && \
     chmod 777 -R $ANDROID_SDK_ROOT && \
     apt-get purge --auto-remove -y unzip && \
-    rm -rf /var/cache/apt /var/lib/apt/ /tmp/*
+    rm -rf /tmp/*
 
 LABEL maintainer="qodana-support@jetbrains.com" description="Qodana Community for Android (https://jb.gg/qodana-android)"
 WORKDIR /data/project

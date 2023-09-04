@@ -20,8 +20,11 @@ ARG DOTNET_INSTALL_SH_REVISION="40434288dc5bbda41eafcbcbbc5c0fbbe028fb30"
 ARG DOTNET_CHANNEL_A="7.0"
 ARG DOTNET_CHANNEL_B="6.0"
 
-# hadolint ignore=SC2174
-RUN mkdir -m 777 -p $QODANA_DATA $QODANA_CONF $DOTNET_ROOT $RIDER_UNREAL_ROOT && apt-get update && \
+# hadolint ignore=SC2174,DL3009
+RUN --mount=target=/var/lib/apt/lists,type=cache,sharing=locked \
+    --mount=target=/var/cache/apt,type=cache,sharing=locked \
+    rm -f /etc/apt/apt.conf.d/docker-clean && \
+    mkdir -m 777 -p $QODANA_DATA $QODANA_CONF $DOTNET_ROOT $RIDER_UNREAL_ROOT && apt-get update && \
     DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
         ca-certificates=20210119 \
         curl=7.74.0-1.3+deb11u7 \
@@ -44,8 +47,7 @@ RUN mkdir -m 777 -p $QODANA_DATA $QODANA_CONF $DOTNET_ROOT $RIDER_UNREAL_ROOT &&
     chmod +x /tmp/dotnet-install.sh && \
     bash /tmp/dotnet-install.sh -c $DOTNET_CHANNEL_A -i $DOTNET_ROOT && \
     bash /tmp/dotnet-install.sh -c $DOTNET_CHANNEL_B -i $DOTNET_ROOT && \
-    chmod 777 -R $DOTNET_ROOT && \
-    rm -rf /var/cache/apt /var/lib/apt/ /tmp/*
+    chmod 777 -R $DOTNET_ROOT
 
 ENV PATH="/opt/yarn/bin:$PATH"
 COPY --from=node_base /usr/local/bin/node /usr/local/bin/

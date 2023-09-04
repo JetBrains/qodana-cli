@@ -10,11 +10,14 @@ ENV HOME="/root" \
     QODANA_DATA="/data" \
     QODANA_DOCKER="true"
 ENV JAVA_HOME="$QODANA_DIST/jbr" \
-    QODANA_CONF="$HOME/.config/idea"\
+    QODANA_CONF="$HOME/.config/idea" \
     PATH="$QODANA_DIST/bin:$PATH"
 
-# hadolint ignore=SC2174
-RUN mkdir -m 777 -p /opt $QODANA_DATA $QODANA_CONF && apt-get update && \
+# hadolint ignore=SC2174,DL3009
+RUN --mount=target=/var/lib/apt/lists,type=cache,sharing=locked \
+    --mount=target=/var/cache/apt,type=cache,sharing=locked \
+    rm -f /etc/apt/apt.conf.d/docker-clean && \
+    mkdir -m 777 -p /opt $QODANA_DATA $QODANA_CONF && apt-get update && \
     DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
         ca-certificates=20210119 \
         curl=7.74.0-1.3+deb11u7 \
@@ -28,8 +31,7 @@ RUN mkdir -m 777 -p /opt $QODANA_DATA $QODANA_CONF && apt-get update && \
     apt-get autoremove -y && apt-get clean && \
     chmod 777 -R $HOME && \
     echo 'root:x:0:0:root:/root:/bin/bash' > /etc/passwd && chmod 666 /etc/passwd && \
-    git config --global --add safe.directory '*' && \
-    rm -rf /var/cache/apt /var/lib/apt/ /tmp/*
+    git config --global --add safe.directory '*'
 
 ENV PATH="/opt/yarn/bin:$PATH"
 COPY --from=node_base /usr/local/bin/node /usr/local/bin/
