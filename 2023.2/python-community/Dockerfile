@@ -1,4 +1,6 @@
 ARG BASE_TAG="bullseye-slim"
+ARG NODE_TAG="16-bullseye-slim"
+FROM node:$NODE_TAG AS node_base
 FROM debian:$BASE_TAG
 
 ENV HOME="/root" \
@@ -70,8 +72,8 @@ RUN --mount=target=/var/lib/apt/lists,type=cache,sharing=locked \
     ${CONDA_DIR}/bin/conda install -c conda-forge poetry pipenv && ${CONDA_DIR}/bin/conda clean -afy && \
     rm -rf /tmp/*
 
-ARG QD_BUILD="QDPYC-2023.2"
 ARG QD_RELEASE="2023.2"
+ARG QD_BUILD="QDPYC-$QD_RELEASE"
 # hadolint ignore=DL3003,SC2043
 RUN set -ex && \
     dpkgArch="$(dpkg --print-architecture)" && \

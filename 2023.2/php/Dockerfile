@@ -1,8 +1,9 @@
 ARG NODE_TAG="16-bullseye-slim"
-ARG BASE_TAG="8.1-cli-bullseye"
-
+ARG PHP_TAG="8.1-cli-bullseye"
+ARG COMPOSER_TAG="2.5.1"
 FROM node:$NODE_TAG AS node_base
-FROM php:$BASE_TAG
+FROM composer:$COMPOSER_TAG AS composer_base
+FROM php:$PHP_TAG
 
 ENV HOME="/root" \
     LC_ALL="en_US.UTF-8" \
@@ -35,10 +36,10 @@ RUN --mount=target=/var/lib/apt/lists,type=cache,sharing=locked \
     git config --global --add safe.directory '*'
 
 ENV PATH="/opt/yarn/bin:$PATH"
-COPY --from=node:16-bullseye-slim /usr/local/bin/node /usr/local/bin/
-COPY --from=node:16-bullseye-slim /usr/local/include/node /usr/local/include/node
-COPY --from=node:16-bullseye-slim /usr/local/lib/node_modules /usr/local/lib/node_modules
-COPY --from=node:16-bullseye-slim /opt/yarn-* /opt/yarn/
+COPY --from=node_base /usr/local/bin/node /usr/local/bin/
+COPY --from=node_base /usr/local/include/node /usr/local/include/node
+COPY --from=node_base /usr/local/lib/node_modules /usr/local/lib/node_modules
+COPY --from=node_base /opt/yarn-* /opt/yarn/
 RUN ln -s /usr/local/lib/node_modules/npm/bin/npm-cli.js /usr/local/bin/npm && \
     ln -s /usr/local/lib/node_modules/npm/bin/npx-cli.js /usr/local/bin/npx && \
     ln -s /usr/local/lib/node_modules/corepack/dist/corepack.js /usr/local/bin/corepack && \
@@ -48,10 +49,10 @@ RUN ln -s /usr/local/lib/node_modules/npm/bin/npm-cli.js /usr/local/bin/npm && \
     npm install -g eslint@v8.47.0 pnpm@v8.7.1 && npm config set update-notifier false && \
     chmod 777 -R "$HOME/.npm" "$HOME/.npmrc"
 
-COPY --from=composer:2.5.1 /usr/bin/composer /usr/bin/composer
+COPY --from=composer_base /usr/bin/composer /usr/bin/composer
 
-ARG QD_BUILD="QDPHP-2023.2"
 ARG QD_RELEASE="2023.2"
+ARG QD_BUILD="QDPHP-$QD_RELEASE"
 # hadolint ignore=DL3003,SC2043
 RUN set -ex && \
     dpkgArch="$(dpkg --print-architecture)" && \

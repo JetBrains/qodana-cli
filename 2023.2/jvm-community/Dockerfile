@@ -1,4 +1,6 @@
 ARG BASE_TAG="bullseye-slim"
+ARG NODE_TAG="16-bullseye-slim"
+FROM node:$NODE_TAG AS node_base
 FROM debian:$BASE_TAG
 
 ENV HOME="/root" \
@@ -32,8 +34,8 @@ RUN --mount=target=/var/lib/apt/lists,type=cache,sharing=locked \
 
 ENV GRADLE_USER_HOME="/data/cache/gradle"
 
-ARG QD_BUILD="QDJVMC-2023.2"
 ARG QD_RELEASE="2023.2"
+ARG QD_BUILD="QDJVMC-$QD_RELEASE"
 # hadolint ignore=DL3003,SC2043
 RUN set -ex && \
     dpkgArch="$(dpkg --print-architecture)" && \

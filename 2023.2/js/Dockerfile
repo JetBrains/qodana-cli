@@ -1,5 +1,5 @@
-ARG BASE_TAG="16-bullseye-slim"
-FROM node:$BASE_TAG
+ARG NODE_TAG="16-bullseye-slim"
+FROM node:$NODE_TAG
 
 ENV HOME="/root" \
     LC_ALL="en_US.UTF-8" \
@@ -34,8 +34,8 @@ RUN --mount=target=/var/lib/apt/lists,type=cache,sharing=locked \
 
 ENV PATH="/opt/yarn/bin:$PATH"
 
-ARG QD_BUILD="QDJVM-2023.2"
 ARG QD_RELEASE="2023.2"
+ARG QD_BUILD="QDJVM-$QD_RELEASE"
 # hadolint ignore=DL3003,SC2043
 RUN set -ex && \
     dpkgArch="$(dpkg --print-architecture)" && \

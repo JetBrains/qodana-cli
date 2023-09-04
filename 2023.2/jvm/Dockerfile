@@ -1,4 +1,6 @@
 ARG BASE_TAG="bullseye-slim"
+ARG NODE_TAG="16-bullseye-slim"
+FROM node:$NODE_TAG AS node_base
 FROM debian:$BASE_TAG
 
 ENV HOME="/root" \
@@ -31,10 +33,10 @@ RUN --mount=target=/var/lib/apt/lists,type=cache,sharing=locked \
     git config --global --add safe.directory '*'
 
 ENV PATH="/opt/yarn/bin:$PATH"
-COPY --from=node:16-bullseye-slim /usr/local/bin/node /usr/local/bin/
-COPY --from=node:16-bullseye-slim /usr/local/include/node /usr/local/include/node
-COPY --from=node:16-bullseye-slim /usr/local/lib/node_modules /usr/local/lib/node_modules
-COPY --from=node:16-bullseye-slim /opt/yarn-* /opt/yarn/
+COPY --from=node_base /usr/local/bin/node /usr/local/bin/
+COPY --from=node_base /usr/local/include/node /usr/local/include/node
+COPY --from=node_base /usr/local/lib/node_modules /usr/local/lib/node_modules
+COPY --from=node_base /opt/yarn-* /opt/yarn/
 RUN ln -s /usr/local/lib/node_modules/npm/bin/npm-cli.js /usr/local/bin/npm && \
     ln -s /usr/local/lib/node_modules/npm/bin/npx-cli.js /usr/local/bin/npx && \
     ln -s /usr/local/lib/node_modules/corepack/dist/corepack.js /usr/local/bin/corepack && \
@@ -46,8 +48,8 @@ RUN ln -s /usr/local/lib/node_modules/npm/bin/npm-cli.js /usr/local/bin/npm && \
 
 ENV GRADLE_USER_HOME="/data/cache/gradle"
 
-ARG QD_BUILD="QDJVM-2023.2"
 ARG QD_RELEASE="2023.2"
+ARG QD_BUILD="QDJVM-$QD_RELEASE"
 # hadolint ignore=DL3003,SC2043
 RUN set -ex && \
     dpkgArch="$(dpkg --print-architecture)" && \

@@ -1,8 +1,7 @@
 ARG NODE_TAG="16-bullseye-slim"
-ARG BASE_TAG="6.0-bullseye-slim"
-
+ARG DOTNET_BASE_TAG="6.0-bullseye-slim"
 FROM node:$NODE_TAG AS node_base
-FROM mcr.microsoft.com/dotnet/sdk:$BASE_TAG
+FROM mcr.microsoft.com/dotnet/sdk:$DOTNET_BASE_TAG
 
 ENV HOME="/root" \
     LC_ALL="en_US.UTF-8" \
@@ -63,8 +62,8 @@ RUN ln -s /usr/local/lib/node_modules/npm/bin/npm-cli.js /usr/local/bin/npm && \
     npm install -g eslint@v8.47.0 pnpm@v8.7.1 && npm config set update-notifier false && \
     chmod 777 -R "$HOME/.npm" "$HOME/.npmrc"
 
-ARG QD_BUILD="QDNET-2023.2"
 ARG QD_RELEASE="2023.2"
+ARG QD_BUILD="QDNET-$QD_RELEASE"
 # hadolint ignore=DL3003,SC2043
 RUN set -ex && \
     dpkgArch="$(dpkg --print-architecture)" && \

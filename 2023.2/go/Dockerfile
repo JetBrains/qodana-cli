@@ -1,8 +1,7 @@
+ARG GO_TAG="1.19-bullseye"
 ARG NODE_TAG="16-bullseye-slim"
-ARG BASE_TAG="1.19-bullseye"
-
 FROM node:$NODE_TAG AS node_base
-FROM golang:$BASE_TAG
+FROM golang:$GO_TAG
 
 ENV HOME="/root" \
     LC_ALL="en_US.UTF-8" \
@@ -47,8 +46,8 @@ RUN ln -s /usr/local/lib/node_modules/npm/bin/npm-cli.js /usr/local/bin/npm && \
     npm install -g eslint@v8.47.0 pnpm@v8.7.1 && npm config set update-notifier false && \
     chmod 777 -R "$HOME/.npm" "$HOME/.npmrc"
 
-ARG QD_BUILD="QDGO-2023.2"
 ARG QD_RELEASE="2023.2"
+ARG QD_BUILD="QDGO-$QD_RELEASE"
 # hadolint ignore=DL3003,SC2043
 RUN set -ex && \
     dpkgArch="$(dpkg --print-architecture)" && \
