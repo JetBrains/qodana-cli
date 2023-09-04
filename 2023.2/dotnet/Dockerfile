@@ -58,7 +58,7 @@ RUN ln -s /usr/local/lib/node_modules/npm/bin/npm-cli.js /usr/local/bin/npm && \
     node --version && \
     npm --version && \
     yarn --version && \
-    npm install -g eslint@v8.47.0 && npm config set update-notifier false && \
+    npm install -g eslint@v8.47.0 pnpm@v8.7.1 && npm config set update-notifier false && \
     chmod 777 -R "$HOME/.npm" "$HOME/.npmrc"
 
 ARG QD_BUILD="QDNET-2023.2"
