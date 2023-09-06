@@ -80,6 +80,9 @@ Please check if https://qodana.cloud/ is accessible from your environment.
 If you encounter any issues, please contact us at qodana-support@jetbrains.com. 
 Or use our issue tracker at https://jb.gg/qodana-issue`
 
+const invalidTokenMessage = `
+Token validation failed. Please ensure that the token provided through the QODANA_TOKEN environment variable is correct`
+
 const declinedTokenErrorMessage = `
 License verification failed. Please ensure that the token provided through the QODANA_TOKEN 
 environment variable is correct and that you have a valid license. 

@@ -48,6 +48,16 @@ func (Success) isRequestResult()      {}
 func (APIError) isRequestResult()     {}
 func (RequestError) isRequestResult() {}
 
+func (client *QodanaClient) validateToken(token string) interface{} {
+	result := client.GetProjectByToken(token)
+	switch v := result.(type) {
+	case Success:
+		return v.Data["name"]
+	default:
+		return ""
+	}
+}
+
 func (client *QodanaClient) GetProjectByToken(token string) RequestResult {
 	return client.doRequest("/v1/projects", token, "GET", nil, nil)
 }
