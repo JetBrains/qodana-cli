@@ -11,6 +11,7 @@ import (
 const (
 	baseUrl            = "https://api.qodana.cloud"
 	maxNumberOfRetries = 3
+	waitTimeout        = time.Second * 30
 	requestTimeout     = time.Second * 30
 )
 
@@ -72,7 +73,7 @@ func (client *QodanaClient) doRequest(path, token, method string, headers map[st
 		if err == nil {
 			break
 		}
-		time.Sleep(30 * time.Second)
+		time.Sleep(waitTimeout)
 	}
 	if err != nil {
 		return RequestError{Err: err}
@@ -80,7 +81,7 @@ func (client *QodanaClient) doRequest(path, token, method string, headers map[st
 	defer resp.Body.Close()
 
 	responseBody, _ := io.ReadAll(resp.Body)
-	if resp.StatusCode >= 200 && resp.StatusCode < 300 {
+	if resp.StatusCode >= http.StatusOK && resp.StatusCode < http.StatusMultipleChoices {
 		var data map[string]interface{}
 		if err := json.Unmarshal(responseBody, &data); err != nil {
 			return RequestError{Err: err}
