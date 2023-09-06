@@ -11,7 +11,7 @@ import (
 const (
 	baseUrl            = "https://api.qodana.cloud"
 	maxNumberOfRetries = 3
-	requestTimeout     = 3
+	requestTimeout     = time.Second * 30
 )
 
 type QodanaClient struct {
@@ -72,7 +72,6 @@ func (client *QodanaClient) doRequest(path, token, method string, headers map[st
 		if err == nil {
 			break
 		}
-
 		time.Sleep(30 * time.Second)
 	}
 	if err != nil {
