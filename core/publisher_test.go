@@ -39,8 +39,14 @@ func TestGetPublisherArgs(t *testing.T) {
 	}
 
 	// Set up test environment variables
-	os.Setenv(QodanaToolEnv, "test-tool")
-	os.Setenv(QodanaEndpoint, "test-endpoint")
+	err := os.Setenv(QodanaToolEnv, "test-tool")
+	if err != nil {
+		t.Fatal(err)
+	}
+	err = os.Setenv(QodanaEndpoint, "test-endpoint")
+	if err != nil {
+		t.Fatal(err)
+	}
 
 	// Call the function being tested
 	publisherArgs := getPublisherArgs(Prod.JbrJava(), "test-publisher.jar", opts, "test-token", "test-endpoint")
