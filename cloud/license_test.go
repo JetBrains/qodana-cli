@@ -29,8 +29,14 @@ import (
 func TestRequestLicenseData(t *testing.T) {
 	expectedLicense := "license data"
 	rightToken := "token data"
-	os.Setenv(QodanaLicenseRequestCooldownEnv, "2")
-	os.Setenv(QodanaLicenseRequestTimeoutEnv, "6")
+	err := os.Setenv(QodanaLicenseRequestCooldownEnv, "2")
+	if err != nil {
+		t.Fatal(err)
+	}
+	err = os.Setenv(QodanaLicenseRequestTimeoutEnv, "6")
+	if err != nil {
+		t.Fatal(err)
+	}
 	for _, testData := range []struct {
 		name           string
 		delay          int

@@ -19,6 +19,7 @@ package cloud
 import (
 	"bytes"
 	"encoding/json"
+	log "github.com/sirupsen/logrus"
 	"github.com/zalando/go-keyring"
 	"io"
 	"net/http"
@@ -134,7 +135,12 @@ func (client *QodanaClient) doRequest(path, token, method string, headers map[st
 	if err != nil {
 		return RequestError{Err: err}
 	}
-	defer resp.Body.Close()
+	defer func(Body io.ReadCloser) {
+		err = Body.Close()
+		if err != nil {
+			log.Fatal(err)
+		}
+	}(resp.Body)
 
 	responseBody, _ := io.ReadAll(resp.Body)
 	if resp.StatusCode >= http.StatusOK && resp.StatusCode < http.StatusMultipleChoices {
