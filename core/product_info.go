@@ -65,7 +65,7 @@ type appInfoNames struct {
 	Fullname string   `xml:"fullname,attr"`
 }
 
-func (p *product) ideBin() string {
+func (p *product) IdeBin() string {
 	return filepath.Join(p.Home, "bin")
 }
 
@@ -73,7 +73,7 @@ func (p *product) javaHome() string {
 	return filepath.Join(p.Home, "jbr")
 }
 
-func (p *product) jbrJava() string {
+func (p *product) JbrJava() string {
 	switch runtime.GOOS {
 	case "darwin":
 		return filepath.Join(p.javaHome(), "Contents", "Home", "bin", "java")
@@ -128,7 +128,7 @@ func (p *product) parentPrefix() string {
 	}
 }
 
-func (p *product) isCommunity() bool {
+func (p *product) IsCommunity() bool {
 	return p.Code == QDJVMC || p.Code == QDPYC
 }
 
@@ -210,7 +210,7 @@ func guessProduct(opts *QodanaOptions) {
 		runtime.GOOS == "darwin" {
 			Prod.BaseScriptName = findIde(filepath.Join(Prod.Home, "MacOS"))
 		} else {
-			Prod.BaseScriptName = findIde(Prod.ideBin())
+			Prod.BaseScriptName = findIde(Prod.IdeBin())
 		}
 		if Prod.BaseScriptName == "" {
 			WarningMessage(
@@ -227,12 +227,12 @@ func guessProduct(opts *QodanaOptions) {
 		runtime.GOOS == "darwin" {
 			Prod.IdeScript = filepath.Join(Prod.Home, "MacOS", Prod.BaseScriptName)
 		} else {
-			Prod.IdeScript = filepath.Join(Prod.ideBin(), fmt.Sprintf("%s%s", Prod.BaseScriptName, getScriptSuffix()))
+			Prod.IdeScript = filepath.Join(Prod.IdeBin(), fmt.Sprintf("%s%s", Prod.BaseScriptName, getScriptSuffix()))
 		}
 	}
 
-	treatAsRelease := os.Getenv(qodanaTreatAsRelease)
-	if _, err := os.Stat(filepath.Join(Prod.ideBin(), qodanaAppInfoFilename)); err == nil && IsContainer() {
+	treatAsRelease := os.Getenv(QodanaTreatAsRelease)
+	if _, err := os.Stat(filepath.Join(Prod.IdeBin(), qodanaAppInfoFilename)); err == nil && IsContainer() {
 		appInfoContents := readAppInfoXml(Prod.Home)
 		Prod.Version = appInfoContents.Version.Major + "." + appInfoContents.Version.Minor
 		Prod.Build = strings.Split(appInfoContents.Build.Number, "-")[1]
@@ -272,7 +272,7 @@ func guessProduct(opts *QodanaOptions) {
 
 	if !IsContainer() {
 		remove := fmt.Sprintf("-Didea.platform.prefix=%s", Prod.parentPrefix())
-		Prod.IdeScript = patchIdeScript(Prod, remove, opts.confDirPath())
+		Prod.IdeScript = patchIdeScript(Prod, remove, opts.ConfDirPath())
 	}
 
 	log.Debug(Prod)

@@ -1,3 +1,19 @@
+/*
+ * Copyright 2021-2023 JetBrains s.r.o.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * https://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package core
 
 import (
@@ -46,7 +62,7 @@ func downloadAndInstallIDE(ide string, baseDir string, spinner *pterm.SpinnerPri
 	}
 
 	downloadedIdePath := filepath.Join(baseDir, fileName)
-	err := downloadFile(downloadedIdePath, ideUrl, spinner)
+	err := DownloadFile(downloadedIdePath, ideUrl, spinner)
 	if err != nil {
 		log.Fatalf("Error while downloading IDE: %v", err)
 	}
@@ -167,7 +183,7 @@ func getIde(productCode string) *ReleaseDownloadInfo {
 
 // installIdeWindowsExe is used as a fallback, since it needs installation privileges and alters the registry
 func installIdeWindowsExe(archivePath string, targetDir string) error {
-	_, err := exec.Command(archivePath, "/S", fmt.Sprintf("/D=%s", quoteForWindows(targetDir))).Output()
+	_, err := exec.Command(archivePath, "/S", fmt.Sprintf("/D=%s", QuoteForWindows(targetDir))).Output()
 	if err != nil {
 		return fmt.Errorf("%s: %s", archivePath, err)
 	}
@@ -178,7 +194,7 @@ func installIdeWindowsZip(archivePath string, targetDir string) error {
 	if err := os.MkdirAll(targetDir, os.ModePerm); err != nil {
 		log.Fatal("couldn't create a directory ", err.Error())
 	}
-	_, err := exec.Command("tar", "-xf", quoteForWindows(archivePath), "-C", quoteForWindows(targetDir)).Output()
+	_, err := exec.Command("tar", "-xf", QuoteForWindows(archivePath), "-C", QuoteForWindows(targetDir)).Output()
 	if err != nil {
 		return fmt.Errorf("tar: %s", err)
 	}
@@ -226,7 +242,7 @@ func installIdeMacOS(archivePath string, targetDir string) error {
 }
 
 func verifySha256(checksumFile string, checkSumUrl string, filePath string) {
-	err := downloadFile(checksumFile, checkSumUrl, nil)
+	err := DownloadFile(checksumFile, checkSumUrl, nil)
 	if err != nil {
 		log.Fatalf("Error while downloading checksum for IDE: %v", err)
 	}

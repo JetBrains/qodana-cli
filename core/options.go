@@ -21,8 +21,6 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
-
-	log "github.com/sirupsen/logrus"
 )
 
 // QodanaOptions is a struct that contains all the options to run a Qodana linter.
@@ -116,85 +114,6 @@ func (o *QodanaOptions) id() string {
 	return o._id
 }
 
-func (o *QodanaOptions) loadToken(refresh bool) string {
-	tokenFetchers := []func(bool) string{
-		func(_ bool) string { return o.getTokenFromCliArgs() },
-		func(_ bool) string { return o.getTokenFromEnv() },
-		o.getTokenFromKeychain,
-		func(_ bool) string { return o.getTokenFromUserInput() },
-	}
-
-	for _, fetcher := range tokenFetchers {
-		if token := fetcher(refresh); token != "" {
-			return token
-		}
-	}
-	return ""
-}
-
-func (o *QodanaOptions) getTokenFromCliArgs() string {
-	tokenFromCliArgs := o.getenv(qodanaToken)
-	if tokenFromCliArgs != "" {
-		log.Debug("Loaded token from CLI args environment")
-		return tokenFromCliArgs
-	}
-	return ""
-}
-
-func (o *QodanaOptions) getTokenFromEnv() string {
-	tokenFromEnv := os.Getenv(qodanaToken)
-	if tokenFromEnv != "" {
-		log.Debug("Loaded token from the environment variable")
-		return tokenFromEnv
-	}
-	return ""
-}
-
-func (o *QodanaOptions) getTokenFromKeychain(refresh bool) string {
-	log.Debugf("project id: %s", o.id())
-	tokenFromKeychain, err := getCloudToken(o.id())
-	if err == nil && tokenFromKeychain != "" {
-		WarningMessage(
-			"Got %s from the system keyring, declare %s env variable or run %s to override it",
-			PrimaryBold(qodanaToken),
-			PrimaryBold(qodanaToken),
-			PrimaryBold("qodana init -f"),
-		)
-		o.setenv(qodanaToken, tokenFromKeychain)
-		log.Debugf("Loaded token from the system keyring with id %s", o.id())
-		if !refresh {
-			return tokenFromKeychain
-		}
-	}
-	return ""
-}
-
-func (o *QodanaOptions) getTokenFromUserInput() string {
-	if IsInteractive() {
-		WarningMessage(emptyTokenMessage)
-		token := setupToken(o.ProjectDir, o.id())
-		if token != "" {
-			log.Debugf("Loaded token from the user input, saved to the system keyring with id %s", o.id())
-			return token
-		}
-	}
-	return ""
-}
-
-// ValidateToken checks if QODANA_TOKEN is set in CLI args, or environment or the system keyring, returns it's value.
-func (o *QodanaOptions) ValidateToken(refresh bool) string {
-	token := o.loadToken(refresh)
-	client := NewQodanaClient()
-	if projectName := client.validateToken(token); projectName == "" {
-		WarningMessage(invalidTokenMessage)
-	} else {
-		SuccessMessage("Linked project name: %s", projectName)
-		o.setenv(qodanaToken, token)
-		return token
-	}
-	return token
-}
-
 func (o *QodanaOptions) getQodanaSystemDir() string {
 	if o.CacheDir != "" {
 		return filepath.Dir(o.CacheDir)
@@ -252,7 +171,7 @@ func (o *QodanaOptions) stabProfilePath() string {
 	return filepath.Join(o.CacheDirPath(), "profile.xml")
 }
 
-func (o *QodanaOptions) reportResultsPath() string {
+func (o *QodanaOptions) ReportResultsPath() string {
 	return filepath.Join(o.ReportDirPath(), "results")
 }
 
@@ -261,10 +180,10 @@ func (o *QodanaOptions) logDirPath() string {
 }
 
 func (o *QodanaOptions) vmOptionsPath() string {
-	return filepath.Join(o.confDirPath(), "ide.vmoptions")
+	return filepath.Join(o.ConfDirPath(), "ide.vmoptions")
 }
 
-func (o *QodanaOptions) confDirPath() string {
+func (o *QodanaOptions) ConfDirPath() string {
 	if conf, ok := os.LookupEnv(QodanaConfEnv); ok {
 		return conf
 	}
@@ -274,7 +193,7 @@ func (o *QodanaOptions) confDirPath() string {
 
 func (o *QodanaOptions) appInfoXmlPath(ideBinDir string) string {
 	if _, err := os.Stat(filepath.Join(ideBinDir, qodanaAppInfoFilename)); err != nil {
-		return filepath.Join(o.confDirPath(), qodanaAppInfoFilename)
+		return filepath.Join(o.ConfDirPath(), qodanaAppInfoFilename)
 	}
 	return filepath.Join(ideBinDir, qodanaAppInfoFilename)
 }

@@ -19,6 +19,7 @@ package core
 import (
 	"github.com/owenrumney/go-sarif/v2/sarif"
 	log "github.com/sirupsen/logrus"
+	"os"
 )
 
 const (
@@ -71,4 +72,19 @@ func ReadSarif(sarifPath string, printProblems bool) {
 	} else {
 		ErrorMessage("Found %d new problems according to the checks applied", newProblems)
 	}
+}
+
+func saveSarifProperty(path string, key string, value string) error {
+	s, err := sarif.Open(path)
+	if err != nil {
+		log.Fatal(err)
+	}
+	if len(s.Runs) > 0 {
+		s.Runs[0].AddString(key, value)
+	}
+	err = os.Remove(path)
+	if err != nil {
+		log.Fatal(err)
+	}
+	return s.WriteFile(path)
 }

@@ -18,6 +18,7 @@ package core
 
 import (
 	"fmt"
+	"github.com/JetBrains/qodana-cli/cloud"
 	"log"
 	"os"
 	"path/filepath"
@@ -42,7 +43,7 @@ func getPropertiesMap(
 ) map[string]string {
 	properties := map[string]string{
 		"-Dfus.internal.reduce.initial.delay":          "true",
-		"-Didea.headless.enable.statistics":            strconv.FormatBool(licenseToken.isAllowedToSendFUS()),
+		"-Didea.headless.enable.statistics":            strconv.FormatBool(cloud.Token.IsAllowedToSendFUS()),
 		"-Didea.headless.statistics.max.files.to.send": "5000",
 		"-Dinspect.save.project.settings":              "true",
 		"-Djava.awt.headless":                          "true",
@@ -116,14 +117,14 @@ func GetProperties(opts *QodanaOptions, yamlProps map[string]string, dotNetOptio
 		"-XX:-OmitStackTraceInFastThrow",
 		"-ea",
 	}
-	treatAsRelease := os.Getenv(qodanaTreatAsRelease)
+	treatAsRelease := os.Getenv(QodanaTreatAsRelease)
 	if treatAsRelease == "true" {
 		lines = append(lines, "-Deap.require.license=release")
 	}
 
 	cliProps, flags := opts.properties()
 	for _, f := range flags {
-		if f != "" && !contains(lines, f) {
+		if f != "" && !Contains(lines, f) {
 			lines = append(lines, f)
 		}
 	}
@@ -131,10 +132,10 @@ func GetProperties(opts *QodanaOptions, yamlProps map[string]string, dotNetOptio
 	props := getPropertiesMap(
 		Prod.parentPrefix(),
 		Prod.EAP,
-		opts.appInfoXmlPath(Prod.ideBin()),
+		opts.appInfoXmlPath(Prod.IdeBin()),
 		filepath.Join(opts.CacheDir, "idea", Prod.getVersionBranch()),
 		opts.logDirPath(),
-		opts.confDirPath(),
+		opts.ConfDirPath(),
 		filepath.Join(opts.CacheDir, "plugins", Prod.getVersionBranch()),
 		dotNetOptions,
 		getDeviceIdSalt(),

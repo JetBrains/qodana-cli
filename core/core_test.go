@@ -21,6 +21,9 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/JetBrains/qodana-cli/cloud"
+	"net/http"
+	"net/http/httptest"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -317,47 +320,6 @@ func TestScanFlags_Script(t *testing.T) {
 	actual := getIdeArgs(testOptions)
 	if !reflect.DeepEqual(expected, actual) {
 		t.Fatalf("expected \"%s\" got \"%s\"", expected, actual)
-	}
-}
-
-func TestParseCommits(t *testing.T) {
-	gitLogOutput := []string{
-		"me@me.com||me||0e64c1b093d07762ffd28c0faec75a55f67c2260||2023-05-05 16:11:38 +0200",
-		"me@me.com||me||0e64c1b093d07762ffd28c0faec75a55f67c2260||2023-05-05 16:11:38 +0200",
-	}
-
-	commits := parseCommits(gitLogOutput, true)
-
-	expectedCount := 2
-	if len(commits) != expectedCount {
-		t.Fatalf("Expected %d commits, got %d", expectedCount, len(commits))
-	}
-
-	expectedSha256 := "0e64c1b093d07762ffd28c0faec75a55f67c2260"
-	if commits[0].Sha256 != expectedSha256 {
-		t.Errorf("Expected SHA256 %s, got %s", expectedSha256, commits[0].Sha256)
-	}
-
-	expectedDate := "2023-05-05 16:11:38 +0200"
-	if commits[1].Date != expectedDate {
-		t.Errorf("Expected date %s, got %s", expectedDate, commits[1].Date)
-	}
-}
-
-func TestGetContributors(t *testing.T) {
-	contributors := GetContributors([]string{"."}, -1, false)
-	if len(contributors) == 0 {
-		t.Error("Expected at least one contributor or you need to update the test repo")
-	}
-	found := false
-	for _, c := range contributors {
-		if c.Author.Username == "dependabot[bot]" {
-			found = true
-			break
-		}
-	}
-	if !found {
-		t.Error("Expected dependabot[bot] contributor")
 	}
 }
 
@@ -845,74 +807,6 @@ func Test_ReadAppInfo(t *testing.T) {
 	}
 }
 
-func TestGetPublisherArgs(t *testing.T) {
-	// Set up test options
-	opts := &QodanaOptions{
-		AnalysisId: "test-analysis-id",
-		ProjectDir: "/path/to/project",
-		ResultsDir: "/path/to/results",
-		ReportDir:  "/path/to/report",
-	}
-
-	// Set up test environment variables
-	os.Setenv(qodanaToolEnv, "test-tool")
-	os.Setenv(qodanaEndpoint, "test-endpoint")
-
-	// Call the function being tested
-	publisherArgs := getPublisherArgs("test-publisher.jar", opts, "test-token", "test-endpoint")
-
-	// Assert that the expected arguments are present
-	expectedArgs := []string{
-		Prod.jbrJava(),
-		"-jar",
-		"test-publisher.jar",
-		"--analysis-id", "test-analysis-id",
-		"--sources-path", "/path/to/project",
-		"--report-path", filepath.FromSlash("/path/to/report/results"),
-		"--token", "test-token",
-		"--tool", "test-tool",
-		"--endpoint", "test-endpoint",
-	}
-	if !stringSlicesEqual(publisherArgs, expectedArgs) {
-		t.Errorf("getPublisherArgs returned incorrect arguments: got %v, expected %v", publisherArgs, expectedArgs)
-	}
-}
-
-// Helper function to compare two string slices
-func stringSlicesEqual(a, b []string) bool {
-	if len(a) != len(b) {
-		return false
-	}
-	for i := range a {
-		if a[i] != b[i] {
-			return false
-		}
-	}
-	return true
-}
-
-func TestFetchPublisher(t *testing.T) {
-
-	tempDir, err := os.MkdirTemp("", "test")
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	defer func(path string) {
-		err := os.RemoveAll(path)
-		if err != nil {
-			t.Fatal(err)
-		}
-	}(tempDir) // clean up
-
-	fetchPublisher(tempDir)
-
-	expectedPath := filepath.Join(tempDir, "publisher.jar")
-	if _, err := os.Stat(expectedPath); os.IsNotExist(err) {
-		t.Fatalf("fetchPublisher() failed, expected %v to exists, got error: %v", expectedPath, err)
-	}
-}
-
 func Test_ideaExitCode(t *testing.T) {
 	tmpDir := filepath.Join(os.TempDir(), "entrypoint")
 	err := os.MkdirAll(tmpDir, 0o755)
@@ -976,5 +870,117 @@ func Test_ideaExitCode(t *testing.T) {
 	err = os.RemoveAll(tmpDir)
 	if err != nil {
 		t.Fatal(err)
+	}
+}
+
+func TestSetupLicense(t *testing.T) {
+	Prod.Code = "QDJVM"
+	Prod.EAP = false
+	license := `{"licenseId":"VA5HGQWQH6","licenseKey":"VA5HGQWQH6","expirationDate":"2023-07-31","licensePlan":"EAP_ULTIMATE_PLUS"}`
+	expectedKey := "VA5HGQWQH6"
+
+	svr := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		_, _ = fmt.Fprint(w, license)
+	}))
+	defer svr.Close()
+	err := os.Setenv(QodanaLicenseEndpoint, svr.URL)
+	if err != nil {
+		t.Fatal(err)
+	}
+	SetupLicense("token")
+
+	licenseKey := os.Getenv(QodanaLicense)
+	if licenseKey != expectedKey {
+		t.Errorf("expected key to be '%s' got '%s'", expectedKey, licenseKey)
+	}
+
+	err = os.Unsetenv(QodanaLicenseEndpoint)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	err = os.Unsetenv(QodanaLicense)
+	if err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestSetupLicenseToken(t *testing.T) {
+	for _, testData := range []struct {
+		name       string
+		token      string
+		loToken    string
+		resToken   string
+		sendFus    bool
+		sendReport bool
+	}{
+		{
+			name:       "no key",
+			token:      "",
+			loToken:    "",
+			resToken:   "",
+			sendFus:    true,
+			sendReport: false,
+		},
+		{
+			name:       "with token",
+			token:      "a",
+			loToken:    "",
+			resToken:   "a",
+			sendFus:    true,
+			sendReport: true,
+		},
+		{
+			name:       "with license only token",
+			token:      "",
+			loToken:    "b",
+			resToken:   "b",
+			sendFus:    false,
+			sendReport: false,
+		},
+		{
+			name:       "both tokens",
+			token:      "a",
+			loToken:    "b",
+			resToken:   "a",
+			sendFus:    true,
+			sendReport: true,
+		},
+	} {
+		t.Run(testData.name, func(t *testing.T) {
+			err := os.Setenv(QodanaLicenseOnlyToken, testData.loToken)
+			if err != nil {
+				t.Fatal(err)
+			}
+			err = os.Setenv(QodanaToken, testData.token)
+			if err != nil {
+				t.Fatal(err)
+			}
+			SetupLicenseToken(&QodanaOptions{})
+
+			if cloud.Token.Token != testData.resToken {
+				t.Errorf("expected token to be '%s' got '%s'", testData.resToken, cloud.Token.Token)
+			}
+
+			sendFUS := cloud.Token.IsAllowedToSendFUS()
+			if sendFUS != testData.sendFus {
+				t.Errorf("expected allow FUS to be '%t' got '%t'", testData.sendFus, sendFUS)
+			}
+
+			toSendReports := cloud.Token.IsAllowedToSendReports()
+			if toSendReports != testData.sendReport {
+				t.Errorf("expected allow send report to be '%t' got '%t'", testData.sendReport, toSendReports)
+			}
+
+			err = os.Unsetenv(QodanaLicenseOnlyToken)
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			err = os.Unsetenv(QodanaToken)
+			if err != nil {
+				t.Fatal(err)
+			}
+		})
 	}
 }

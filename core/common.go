@@ -18,6 +18,7 @@ package core
 
 import (
 	"fmt"
+	"github.com/JetBrains/qodana-cli/cloud"
 	"os"
 	"path/filepath"
 	"strings"
@@ -127,7 +128,8 @@ func GetLinter(path string, yamlName string) string {
 func setupToken(path string, id string) string {
 	openCloud := AskUserConfirm("Do you want to open the team page to get the token?")
 	if openCloud {
-		err := openBrowser(getCloudTeamsPageUrl(path))
+		origin := gitRemoteUrl(path)
+		err := openBrowser(cloud.GetCloudTeamsPageUrl(origin, path))
 		if err != nil {
 			ErrorMessage("%s", err)
 			return ""
@@ -146,7 +148,7 @@ func setupToken(path string, id string) string {
 		ErrorMessage("Token cannot be empty")
 		return ""
 	} else {
-		err = saveCloudToken(id, token)
+		err = cloud.SaveCloudToken(id, token)
 		if err != nil {
 			ErrorMessage("Failed to save credentials: %s", err)
 			return ""

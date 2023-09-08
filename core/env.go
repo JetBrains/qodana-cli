@@ -28,8 +28,8 @@ import (
 
 const (
 	qodanaEnv              = "QODANA_ENV"
-	qodanaToken            = "QODANA_TOKEN"
-	qodanaLicenseOnlyToken = "QODANA_LICENSE_ONLY_TOKEN"
+	QodanaToken            = "QODANA_TOKEN"
+	QodanaLicenseOnlyToken = "QODANA_LICENSE_ONLY_TOKEN"
 	qodanaJobUrl           = "QODANA_JOB_URL"
 	qodanaRemoteUrl        = "QODANA_REMOTE_URL"
 	qodanaBranch           = "QODANA_BRANCH"
@@ -39,11 +39,14 @@ const (
 	qodanaCliUsePodman     = "QODANA_CLI_USE_PODMAN"
 	qodanaDockerEnv        = "QODANA_DOCKER"
 	QodanaConfEnv          = "QODANA_CONF"
-	qodanaToolEnv          = "QODANA_TOOL"
+	QodanaToolEnv          = "QODANA_TOOL"
 	QodanaDistEnv          = "QODANA_DIST"
-	qodanaEndpoint         = "ENDPOINT"
+	QodanaEndpoint         = "ENDPOINT"
 	qodanaCorettoSdk       = "QODANA_CORETTO_SDK"
 	androidSdkRoot         = "ANDROID_SDK_ROOT"
+	QodanaLicenseEndpoint  = "LICENSE_ENDPOINT"
+	QodanaLicense          = "QODANA_LICENSE"
+	QodanaTreatAsRelease   = "QODANA_TREAT_AS_RELEASE"
 )
 
 func ExtractQodanaEnvironment() {
