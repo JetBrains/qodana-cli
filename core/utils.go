@@ -21,10 +21,14 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"fmt"
+	"github.com/pterm/pterm"
+	"io"
+	"net/http"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"runtime"
+	"strconv"
 	"strings"
 
 	"github.com/shirou/gopsutil/v3/process"
@@ -36,8 +40,8 @@ func lower(s string) string {
 	return strings.ToLower(s)
 }
 
-// contains checks if a string is in a given slice.
-func contains(s []string, str string) bool {
+// Contains checks if a string is in a given slice.
+func Contains(s []string, str string) bool {
 	for _, v := range s {
 		if v == str {
 			return true
@@ -64,7 +68,7 @@ func getHash(s string) string {
 //
 //goland:noinspection GoUnnecessarilyExportedIdentifiers
 func Append(slice []string, elems ...string) []string {
-	if !contains(slice, elems[0]) {
+	if !Contains(slice, elems[0]) {
 		slice = append(slice, elems[0])
 	}
 	return slice
@@ -87,7 +91,7 @@ func findFiles(root string, extensions []string) []string {
 			return err
 		}
 		fileExtension := filepath.Ext(path)
-		if contains(extensions, fileExtension) {
+		if Contains(extensions, fileExtension) {
 			files = append(files, path)
 		}
 
@@ -150,7 +154,7 @@ func isProcess(find string) bool {
 	return false
 }
 
-// quoteIfSpace wraps in '"' if '`s`' contains space.
+// quoteIfSpace wraps in '"' if '`s`' Contains space.
 func quoteIfSpace(s string) string {
 	if strings.Contains(s, " ") {
 		return "\"" + s + "\""
@@ -159,8 +163,8 @@ func quoteIfSpace(s string) string {
 	}
 }
 
-// quoteForWindows wraps in '"' if '`s`' contains space on windows.
-func quoteForWindows(s string) string {
+// QuoteForWindows wraps in '"' if '`s`' contains space on windows.
+func QuoteForWindows(s string) string {
 	if //goland:noinspection GoBoolExpressions
 	strings.Contains(s, " ") && runtime.GOOS == "windows" {
 		return "\"" + s + "\""
@@ -243,4 +247,71 @@ func createUser(fn string) {
 	if err = os.WriteFile(fn, []byte(strings.Join(append(lines, idea), "\n")), 0o777); err != nil {
 		log.Fatal(err)
 	}
+}
+
+func DownloadFile(filepath string, url string, spinner *pterm.SpinnerPrinter) error {
+	response, err := http.Head(url)
+	if err != nil {
+		return err
+	}
+	size, _ := strconv.Atoi(response.Header.Get("Content-Length"))
+
+	resp, err := http.Get(url)
+	if err != nil {
+		return err
+	}
+
+	defer func(Body io.ReadCloser) {
+		err := Body.Close()
+		if err != nil {
+			log.Fatalf("Error while closing HTTP stream: %v", err)
+		}
+	}(resp.Body)
+
+	out, err := os.Create(filepath)
+	if err != nil {
+		return err
+	}
+
+	defer func(out *os.File) {
+		err := out.Close()
+		if err != nil {
+			log.Fatalf("Error while closing output file: %v", err)
+		}
+	}(out)
+
+	buffer := make([]byte, 1024)
+	total := 0
+	lastTotal := 0
+	text := ""
+	if spinner != nil {
+		text = spinner.Text
+	}
+	for {
+		length, err := resp.Body.Read(buffer)
+		if err != nil && err != io.EOF {
+			return err
+		}
+		total += length
+		if spinner != nil && total-lastTotal > 1024*1024 {
+			lastTotal = total
+			spinner.UpdateText(fmt.Sprintf("%s (%d %%)", text, 100*total/size))
+		}
+		if length == 0 {
+			break
+		}
+		if _, err = out.Write(buffer[:length]); err != nil {
+			return err
+		}
+	}
+
+	if total != size {
+		return fmt.Errorf("downloaded file size doesn't match expected size")
+	}
+
+	if spinner != nil {
+		spinner.UpdateText(fmt.Sprintf("%s (100 %%)", text))
+	}
+
+	return nil
 }

@@ -67,7 +67,7 @@ func GetProductByCode(code string) (*Product, error) {
 	path := filepath.Join(tempDir, "productInfo.json")
 	url := "https://data.services.jetbrains.com/products"
 
-	if err := downloadFile(path, url, nil); err != nil {
+	if err := DownloadFile(path, url, nil); err != nil {
 		return nil, err
 	}
 

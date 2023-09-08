@@ -31,9 +31,6 @@ import (
 	"strings"
 	"time"
 
-	cp "github.com/otiai10/copy"
-	"github.com/owenrumney/go-sarif/v2/sarif"
-
 	"github.com/docker/docker/client"
 
 	cienvironment "github.com/cucumber/ci-environment/go"
@@ -244,7 +241,7 @@ func prepareHost(opts *QodanaOptions) {
 		PrepairContainerEnvSettings()
 	}
 	if opts.Ide != "" {
-		if contains(allCodes, strings.TrimSuffix(opts.Ide, EapSuffix)) || strings.HasPrefix(opts.Ide, "https://") {
+		if Contains(allCodes, strings.TrimSuffix(opts.Ide, EapSuffix)) || strings.HasPrefix(opts.Ide, "https://") {
 			printProcess(func(spinner *pterm.SpinnerPrinter) {
 				if spinner != nil {
 					spinner.ShowTimer = false // We will update interactive spinner
@@ -473,77 +470,17 @@ const (
 // saveReport saves web files to expect, and generates json.
 func saveReport(opts *QodanaOptions) {
 	if IsContainer() {
-		reportConverter := filepath.Join(Prod.ideBin(), "intellij-report-converter.jar")
+		reportConverter := filepath.Join(Prod.IdeBin(), "intellij-report-converter.jar")
 		if _, err := os.Stat(reportConverter); os.IsNotExist(err) {
 			log.Fatal("Not able to save the report: report-converter is missing")
 			return
 		}
 		log.Println("Generating HTML report ...")
-		if res := RunCmd("", quoteForWindows(Prod.jbrJava()), "-jar", quoteForWindows(reportConverter), "-s", quoteForWindows(opts.ProjectDir), "-d", quoteForWindows(opts.ResultsDir), "-o", quoteForWindows(opts.reportResultsPath()), "-n", "result-allProblems.json", "-f"); res > 0 {
+		if res := RunCmd("", QuoteForWindows(Prod.JbrJava()), "-jar", QuoteForWindows(reportConverter), "-s", QuoteForWindows(opts.ProjectDir), "-d", QuoteForWindows(opts.ResultsDir), "-o", QuoteForWindows(opts.ReportResultsPath()), "-n", "result-allProblems.json", "-f"); res > 0 {
 			os.Exit(res)
 		}
 		if res := RunCmd("", "sh", "-c", fmt.Sprintf("cp -r %s/web/* ", Prod.Home)+opts.ReportDir); res > 0 {
 			os.Exit(res)
 		}
 	}
-}
-
-// getPublisherArgs returns args for the publisher.
-func getPublisherArgs(publisher string, opts *QodanaOptions, token string, endpoint string) []string {
-	java := Prod.jbrJava()
-	publisherArgs := []string{
-		quoteForWindows(java),
-		"-jar",
-		quoteForWindows(publisher),
-		"--analysis-id", opts.AnalysisId,
-		"--sources-path", quoteForWindows(opts.ProjectDir),
-		"--report-path", quoteForWindows(opts.reportResultsPath()),
-		"--token", token,
-	}
-	var tools []string
-	tool := os.Getenv(qodanaToolEnv)
-	if tool != "" {
-		tools = []string{tool}
-	}
-	if len(tools) > 0 {
-		for _, t := range tools {
-			publisherArgs = append(publisherArgs, "--tool", t)
-		}
-	}
-	if endpoint != "" {
-		publisherArgs = append(publisherArgs, "--endpoint", endpoint)
-	}
-	return publisherArgs
-}
-
-// copyReportInNativeMode is responsible for copying the reports while being executed in native mode with no report converter
-func copyReportInNativeMode(opts *QodanaOptions) {
-	if !IsContainer() {
-		if _, err := os.Stat(opts.reportResultsPath()); os.IsNotExist(err) {
-			if err := os.MkdirAll(opts.reportResultsPath(), os.ModePerm); err != nil {
-				log.Fatalf("failed to create directory: %v", err)
-			}
-		}
-		source := filepath.Join(opts.ResultsDir, "qodana.sarif.json")
-		destination := filepath.Join(opts.reportResultsPath(), "qodana.sarif.json")
-
-		if err := cp.Copy(source, destination); err != nil {
-			log.Fatal(err)
-		}
-	}
-}
-
-func saveSarifProperty(path string, key string, value string) error {
-	s, err := sarif.Open(path)
-	if err != nil {
-		log.Fatal(err)
-	}
-	if len(s.Runs) > 0 {
-		s.Runs[0].AddString(key, value)
-	}
-	err = os.Remove(path)
-	if err != nil {
-		log.Fatal(err)
-	}
-	return s.WriteFile(path)
 }

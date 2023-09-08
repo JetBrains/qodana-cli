@@ -52,7 +52,7 @@ var (
 )
 `
 	tmpl, _ := template.New("test").Parse(goFileTemplate)
-	file, _ := os.Create("../core/bots.go")
+	file, _ := os.Create("../cloud/bots.go")
 	err = tmpl.Execute(file, botList)
 	if err != nil {
 		return

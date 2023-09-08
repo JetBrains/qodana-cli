@@ -26,14 +26,13 @@ import (
 	"crypto/md5"
 	"encoding/hex"
 	"encoding/xml"
-	"fmt"
-	"github.com/pterm/pterm"
+	"github.com/JetBrains/qodana-cli/cloud"
+	cp "github.com/otiai10/copy"
 	"io"
 	"log"
 	"net/http"
 	"os"
 	"path/filepath"
-	"strconv"
 )
 
 type metadata struct {
@@ -45,22 +44,62 @@ type versioning struct {
 	Release string `xml:"release"`
 }
 
-// sendReport sends report to Qodana Cloud.
-func sendReport(opts *QodanaOptions, token string) {
-	path := Prod.ideBin()
+// SendReport sends report to Qodana Cloud.
+func SendReport(opts *QodanaOptions, token string) {
+	path := Prod.IdeBin()
 	if !IsContainer() {
-		path = opts.confDirPath()
+		path = opts.ConfDirPath()
 		fetchPublisher(path)
 	}
 	publisher := filepath.Join(path, "publisher.jar")
 	if _, err := os.Stat(publisher); os.IsNotExist(err) {
 		log.Fatalf("Not able to send the report: %s is missing", publisher)
 	}
-	copyReportInNativeMode(opts)
-	publisherCommand := getPublisherArgs(publisher, opts, token, os.Getenv(qodanaEndpoint))
+	if !IsContainer() {
+		if _, err := os.Stat(opts.ReportResultsPath()); os.IsNotExist(err) {
+			if err := os.MkdirAll(opts.ReportResultsPath(), os.ModePerm); err != nil {
+				log.Fatalf("failed to create directory: %v", err)
+			}
+		}
+		source := filepath.Join(opts.ResultsDir, "qodana.sarif.json")
+		destination := filepath.Join(opts.ReportResultsPath(), "qodana.sarif.json")
+
+		if err := cp.Copy(source, destination); err != nil {
+			log.Fatal(err)
+		}
+	}
+
+	publisherCommand := getPublisherArgs(Prod.JbrJava(), publisher, opts, token, os.Getenv(cloud.DefaultEndpoint))
 	if res := RunCmd("", publisherCommand...); res > 0 {
 		os.Exit(res)
 	}
+}
+
+// getPublisherArgs returns args for the publisher.
+func getPublisherArgs(java string, publisher string, opts *QodanaOptions, token string, endpoint string) []string {
+	publisherArgs := []string{
+		QuoteForWindows(java),
+		"-jar",
+		QuoteForWindows(publisher),
+		"--analysis-id", opts.AnalysisId,
+		"--sources-path", QuoteForWindows(opts.ProjectDir),
+		"--report-path", QuoteForWindows(opts.ReportResultsPath()),
+		"--token", token,
+	}
+	var tools []string
+	tool := os.Getenv(QodanaToolEnv)
+	if tool != "" {
+		tools = []string{tool}
+	}
+	if len(tools) > 0 {
+		for _, t := range tools {
+			publisherArgs = append(publisherArgs, "--tool", t)
+		}
+	}
+	if endpoint != "" {
+		publisherArgs = append(publisherArgs, "--endpoint", endpoint)
+	}
+	return publisherArgs
 }
 
 func publisherVersion() versioning {
@@ -98,7 +137,7 @@ func fetchPublisher(directory string) {
 	if _, err := os.Stat(path); err == nil {
 		return
 	}
-	err := downloadFile(path, getPublisherUrl(version), nil)
+	err := DownloadFile(path, getPublisherUrl(version), nil)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -149,71 +188,4 @@ func verifyMd5Hash(version string, path string) {
 	} else {
 		println("Obtained publisher " + version + " and successfully checked md5 hash")
 	}
-}
-
-func downloadFile(filepath string, url string, spinner *pterm.SpinnerPrinter) error {
-	response, err := http.Head(url)
-	if err != nil {
-		return err
-	}
-	size, _ := strconv.Atoi(response.Header.Get("Content-Length"))
-
-	resp, err := http.Get(url)
-	if err != nil {
-		return err
-	}
-
-	defer func(Body io.ReadCloser) {
-		err := Body.Close()
-		if err != nil {
-			log.Fatalf("Error while closing HTTP stream: %v", err)
-		}
-	}(resp.Body)
-
-	out, err := os.Create(filepath)
-	if err != nil {
-		return err
-	}
-
-	defer func(out *os.File) {
-		err := out.Close()
-		if err != nil {
-			log.Fatalf("Error while closing output file: %v", err)
-		}
-	}(out)
-
-	buffer := make([]byte, 1024)
-	total := 0
-	lastTotal := 0
-	text := ""
-	if spinner != nil {
-		text = spinner.Text
-	}
-	for {
-		length, err := resp.Body.Read(buffer)
-		if err != nil && err != io.EOF {
-			return err
-		}
-		total += length
-		if spinner != nil && total-lastTotal > 1024*1024 {
-			lastTotal = total
-			spinner.UpdateText(fmt.Sprintf("%s (%d %%)", text, 100*total/size))
-		}
-		if length == 0 {
-			break
-		}
-		if _, err = out.Write(buffer[:length]); err != nil {
-			return err
-		}
-	}
-
-	if total != size {
-		return fmt.Errorf("downloaded file size doesn't match expected size")
-	}
-
-	if spinner != nil {
-		spinner.UpdateText(fmt.Sprintf("%s (100 %%)", text))
-	}
-
-	return nil
 }

@@ -22,6 +22,7 @@ import (
 	"encoding/xml"
 	"errors"
 	"fmt"
+	"github.com/JetBrains/qodana-cli/cloud"
 	"github.com/owenrumney/go-sarif/v2/sarif"
 	"io"
 	"os"
@@ -52,12 +53,12 @@ func genExcludedPluginsLocal(opts *QodanaOptions) {
 	}
 
 	if _, ok := products[Prod.Code]; ok {
-		includedPlugins := filepath.Join(opts.confDirPath(), "included_plugins.txt")
-		dockerIgnore := filepath.Join(opts.confDirPath(), ".docker_ignore")
-		disabledPlugins := filepath.Join(opts.confDirPath(), "disabled_plugins.txt")
+		includedPlugins := filepath.Join(opts.ConfDirPath(), "included_plugins.txt")
+		dockerIgnore := filepath.Join(opts.ConfDirPath(), ".docker_ignore")
+		disabledPlugins := filepath.Join(opts.ConfDirPath(), "disabled_plugins.txt")
 		if _, err := os.Stat(disabledPlugins); err != nil {
 			url := fmt.Sprintf("https://raw.githubusercontent.com/JetBrains/qodana-docker/main/%s/%s/included_plugins.txt", MajorVersion, products[Prod.Code])
-			if err := downloadFile(includedPlugins, url, nil); err != nil {
+			if err := DownloadFile(includedPlugins, url, nil); err != nil {
 				log.Errorf("Not possible to download included plugins, skipping: %v", err)
 			} else {
 				if err := appendIncludedPlugins(includedPlugins); err != nil {
@@ -128,7 +129,7 @@ func appendToFile(filename string, data string) error {
 }
 
 func getExcludedPlugins(includedPlugins string, dockerIgnore string) (string, error) {
-	args := []string{quoteForWindows(Prod.IdeScript), "qodanaExcludedPlugins", quoteForWindows(includedPlugins), quoteForWindows(dockerIgnore)}
+	args := []string{QuoteForWindows(Prod.IdeScript), "qodanaExcludedPlugins", QuoteForWindows(includedPlugins), QuoteForWindows(dockerIgnore)}
 	outReader, outWriter, err := os.Pipe()
 	if err != nil {
 		return "", fmt.Errorf("failed to create stdout pipe: %w", err)
@@ -219,17 +220,17 @@ func runQodanaLocal(opts *QodanaOptions) int {
 	if opts.SaveReport || opts.ShowReport {
 		saveReport(opts)
 	}
-	if licenseToken.isAllowedToSendReports() {
-		sendReport(opts, licenseToken.Token)
+	if cloud.Token.IsAllowedToSendReports() {
+		SendReport(opts, cloud.Token.Token)
 	}
 	postAnalysis(opts)
 	return res
 }
 
 func getIdeRunCommand(opts *QodanaOptions) []string {
-	args := []string{quoteForWindows(Prod.IdeScript), "inspect", "qodana", "--stub-profile", quoteForWindows(opts.stabProfilePath())}
+	args := []string{QuoteForWindows(Prod.IdeScript), "inspect", "qodana", "--stub-profile", QuoteForWindows(opts.stabProfilePath())}
 	args = append(args, getIdeArgs(opts)...)
-	args = append(args, quoteForWindows(opts.ProjectDir), quoteForWindows(opts.ResultsDir))
+	args = append(args, QuoteForWindows(opts.ProjectDir), QuoteForWindows(opts.ResultsDir))
 	return args
 }
 
@@ -240,7 +241,7 @@ func getIdeArgs(opts *QodanaOptions) []string {
 		arguments = append(arguments, "--save-report")
 	}
 	if opts.SourceDirectory != "" {
-		arguments = append(arguments, "--source-directory", quoteForWindows(opts.SourceDirectory))
+		arguments = append(arguments, "--source-directory", QuoteForWindows(opts.SourceDirectory))
 	}
 	if opts.DisableSanity {
 		arguments = append(arguments, "--disable-sanity")
@@ -249,7 +250,7 @@ func getIdeArgs(opts *QodanaOptions) []string {
 		arguments = append(arguments, "--profile-name", quoteIfSpace(opts.ProfileName))
 	}
 	if opts.ProfilePath != "" {
-		arguments = append(arguments, "--profile-path", quoteForWindows(opts.ProfilePath))
+		arguments = append(arguments, "--profile-path", QuoteForWindows(opts.ProfilePath))
 	}
 	if opts.RunPromo != "" {
 		arguments = append(arguments, "--run-promo", opts.RunPromo)
@@ -261,7 +262,7 @@ func getIdeArgs(opts *QodanaOptions) []string {
 		arguments = append(arguments, "--stub-profile", opts.StubProfile)
 	}
 	if opts.Baseline != "" {
-		arguments = append(arguments, "--baseline", quoteForWindows(opts.Baseline))
+		arguments = append(arguments, "--baseline", QuoteForWindows(opts.Baseline))
 	}
 	if opts.BaselineIncludeAbsent {
 		arguments = append(arguments, "--baseline-include-absent")
@@ -438,15 +439,15 @@ func readAppInfoXml(ideDir string) appInfo {
 func prepareLocalIdeSettings(opts *QodanaOptions) {
 	guessProduct(opts)
 	ExtractQodanaEnvironment()
-	setupLicenseToken(opts)
-	setupLicense(licenseToken.Token)
+	SetupLicenseToken(opts)
+	SetupLicense(cloud.Token.Token)
 	prepareDirectories(
 		opts.CacheDir,
 		opts.logDirPath(),
-		opts.confDirPath(),
+		opts.ConfDirPath(),
 	)
 	Config = GetQodanaYaml(opts.ProjectDir)
-	writeAppInfo(opts.appInfoXmlPath(Prod.ideBin()))
+	writeAppInfo(opts.appInfoXmlPath(Prod.IdeBin()))
 	writeProperties(opts)
 
 	if IsContainer() {
@@ -537,7 +538,7 @@ func prepareDirectories(cacheDir string, logDir string, confDir string) {
 func installPlugins(plugins []Plugin) {
 	for _, plugin := range plugins {
 		log.Printf("Installing plugin %s", plugin.Id)
-		if res := RunCmd("", quoteForWindows(Prod.IdeScript), "installPlugins", plugin.Id); res > 0 {
+		if res := RunCmd("", QuoteForWindows(Prod.IdeScript), "installPlugins", plugin.Id); res > 0 {
 			os.Exit(res)
 		}
 	}

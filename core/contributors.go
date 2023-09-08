@@ -19,6 +19,7 @@ package core
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/JetBrains/qodana-cli/cloud"
 	"sort"
 	"strings"
 )
@@ -53,7 +54,7 @@ func (a *author) getId() string {
 
 // isBot returns true if the author is a bot.
 func (a *author) isBot() bool {
-	return strings.HasSuffix(a.Email, gitHubBotSuffix) || contains(commonGitBots, a.Email)
+	return strings.HasSuffix(a.Email, cloud.GitHubBotSuffix) || Contains(cloud.CommonGitBots, a.Email)
 }
 
 // commit struct represents a git commit.
