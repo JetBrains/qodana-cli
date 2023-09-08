@@ -87,7 +87,13 @@ jobs:
           gh release --repo JetBrains/qodana-cli delete nightly -y || true
           git push --delete origin nightly || true
           gh release --repo JetBrains/qodana-cli create nightly -p -t nightly
-          gh release --repo JetBrains/qodana-cli upload nightly qodana_darwin_all.tar.gz qodana_linux_arm64.tar.gz qodana_linux_x86_64.tar.gz qodana_windows_arm64.zip qodana_windows_x86_64.zip
+          gh release --repo JetBrains/qodana-cli upload nightly \
+            qodana_darwin_all.tar.gz \
+            qodana_linux_arm64.tar.gz \
+            qodana_linux_x86_64.tar.gz \
+            qodana_windows_arm64.zip \
+            qodana_windows_x86_64.zip
+          gh release --repo JetBrains/qodana-cli edit nightly --draft=false
         env:
           GH_TOKEN: ${{ github.token }}
 
