@@ -18,7 +18,6 @@ package core
 
 import (
 	"fmt"
-	"github.com/JetBrains/qodana-cli/cloud"
 	"os"
 	"path/filepath"
 	"strings"
@@ -30,6 +29,7 @@ import (
 
 // Version returns the version of the Qodana CLI, set during the GoReleaser build
 var Version = "dev"
+var InterruptChannel chan os.Signal
 
 //goland:noinspection GoUnnecessarilyExportedIdentifiers
 var (
@@ -123,39 +123,6 @@ func GetLinter(path string, yamlName string) string {
 	}
 	SuccessMessage("Added %s", linter)
 	return linter
-}
-
-func setupToken(path string, id string) string {
-	openCloud := AskUserConfirm("Do you want to open the team page to get the token?")
-	if openCloud {
-		origin := gitRemoteUrl(path)
-		err := openBrowser(cloud.GetCloudTeamsPageUrl(origin, path))
-		if err != nil {
-			ErrorMessage("%s", err)
-			return ""
-		}
-	} else {
-		return ""
-	}
-	token, err := pterm.DefaultInteractiveTextInput.WithMask("*").WithTextStyle(primaryStyle).Show(
-		fmt.Sprintf(">  Enter the token (will be saved to the system keyring and used for %s)", PrimaryBold(path)),
-	)
-	if err != nil {
-		ErrorMessage("%s", err)
-		return ""
-	}
-	if token == "" {
-		ErrorMessage("Token cannot be empty")
-		return ""
-	} else {
-		err = cloud.SaveCloudToken(id, token)
-		if err != nil {
-			ErrorMessage("Failed to save credentials: %s", err)
-			return ""
-		}
-		SuccessMessage("Token was saved to the system keyring")
-		return token
-	}
 }
 
 // ShowReport serves the Qodana report
