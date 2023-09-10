@@ -22,8 +22,8 @@ import (
 )
 
 func TestGetProjectByBadToken(t *testing.T) {
-	client := NewQodanaClient()
-	result := client.GetProjectByToken("https://www.jetbrains.com")
+	client := NewQdClient("https://www.jetbrains.com")
+	result := client.getProject()
 	switch v := result.(type) {
 	case Success:
 		t.Errorf("Did not expect request error: %v", v)
@@ -39,8 +39,8 @@ func TestGetProjectByBadToken(t *testing.T) {
 }
 
 func TestValidateToken(t *testing.T) {
-	client := NewQodanaClient()
-	if projectName := client.ValidateToken("kek"); projectName != "" {
+	client := NewQdClient("kek")
+	if projectName := client.ValidateToken(); projectName != "" {
 		t.Errorf("Problem")
 	}
 }

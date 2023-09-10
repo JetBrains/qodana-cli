@@ -20,7 +20,6 @@ import (
 	"bytes"
 	"encoding/json"
 	log "github.com/sirupsen/logrus"
-	"github.com/zalando/go-keyring"
 	"io"
 	"net/http"
 	"path/filepath"
@@ -30,7 +29,6 @@ import (
 
 const (
 	DefaultEndpoint    = "qodana.cloud"
-	defaultService     = "qodana-cli"
 	baseUrl            = "https://api.qodana.cloud"
 	maxNumberOfRetries = 3
 	waitTimeout        = time.Second * 30
@@ -44,33 +42,17 @@ func GetCloudTeamsPageUrl(origin string, path string) string {
 	return strings.Join([]string{"https://", DefaultEndpoint, "/?origin=", origin, "&name=", name}, "")
 }
 
-// SaveCloudToken saves token to the system keyring
-func SaveCloudToken(id string, token string) error {
-	err := keyring.Set(defaultService, id, token)
-	if err != nil {
-		return err
-	}
-	return nil
-}
-
-// GetCloudToken returns token from the system keyring
-func GetCloudToken(id string) (string, error) {
-	secret, err := keyring.Get(defaultService, id)
-	if err != nil {
-		return "", err
-	}
-	return secret, nil
-}
-
-type QodanaClient struct {
+type QdClient struct {
 	httpClient *http.Client
+	token      string
 }
 
-func NewQodanaClient() *QodanaClient {
-	return &QodanaClient{
+func NewQdClient(token string) *QdClient {
+	return &QdClient{
 		httpClient: &http.Client{
 			Timeout: requestTimeout,
 		},
+		token: token,
 	}
 }
 
@@ -95,8 +77,8 @@ func (Success) isRequestResult()      {}
 func (APIError) isRequestResult()     {}
 func (RequestError) isRequestResult() {}
 
-func (client *QodanaClient) ValidateToken(token string) interface{} {
-	result := client.GetProjectByToken(token)
+func (client *QdClient) ValidateToken() interface{} {
+	result := client.getProject()
 	switch v := result.(type) {
 	case Success:
 		return v.Data["name"]
@@ -105,11 +87,11 @@ func (client *QodanaClient) ValidateToken(token string) interface{} {
 	}
 }
 
-func (client *QodanaClient) GetProjectByToken(token string) RequestResult {
-	return client.doRequest("/v1/projects", token, "GET", nil, nil)
+func (client *QdClient) getProject() RequestResult {
+	return client.doRequest("/v1/projects", "GET", nil, nil)
 }
 
-func (client *QodanaClient) doRequest(path, token, method string, headers map[string]string, body []byte) RequestResult {
+func (client *QdClient) doRequest(path, method string, headers map[string]string, body []byte) RequestResult {
 	url := baseUrl + path
 	var resp *http.Response
 	var err error
@@ -120,7 +102,7 @@ func (client *QodanaClient) doRequest(path, token, method string, headers map[st
 			return RequestError{Err: err}
 		}
 
-		req.Header.Set("Authorization", "Bearer "+token)
+		req.Header.Set("Authorization", "Bearer "+client.token)
 		req.Header.Set("Content-Type", "application/json")
 		for key, value := range headers {
 			req.Header.Set(key, value)
