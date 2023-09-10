@@ -17,31 +17,15 @@
 package cmd
 
 import (
-	"io"
-	"os"
-	"os/signal"
-
 	"github.com/JetBrains/qodana-cli/core"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
+	"os"
 )
 
 // Execute is a main CLI entrypoint: handles user interrupt, CLI start and everything else.
 func Execute() {
-	c := make(chan os.Signal, 1)
-	signal.Notify(c, os.Interrupt)
-	go func() {
-		<-c
-		core.WarningMessage("Interrupting Qodana CLI...")
-		log.SetOutput(io.Discard)
-
-		core.CheckForUpdates(core.Version)
-		core.ContainerCleanup()
-		_ = core.QodanaSpinner.Stop()
-		os.Exit(0)
-	}()
-
 	if os.Geteuid() == 0 && !core.IsContainer() {
 		core.WarningMessage("Running the tool as root is dangerous: please run it as a regular user")
 	}
