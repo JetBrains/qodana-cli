@@ -75,6 +75,8 @@ github.com/containerd/console v1.0.3/go.mod h1:7LqA/THxQ86k76b8c/EMSiaJ3h1eZkMkX
 github.com/cpuguy83/go-md2man/v2 v2.0.2/go.mod h1:tgQtvFlXSQOSOSIRvRPT7W67SCa46tRHOmNcaadrF8o=
 github.com/cucumber/ci-environment/go v0.0.0-20230723160303-a2dce81f299c h1:DF3QBvzrySXbiu9Q7GMXP1NyENdmyQmuwldFsn3Nx6I=
 github.com/cucumber/ci-environment/go v0.0.0-20230723160303-a2dce81f299c/go.mod h1:W5gTLX4+0/cT8vgja6OSH3OsnuNK8HfTOK3PrXyGQ/Q=
+github.com/cucumber/ci-environment/go v0.0.0-20230911180507-bd001ebc644c h1:iqnAR9sKSWS134S8vE30UxrqDTxX9AURw0gT1fdqrP0=
+github.com/cucumber/ci-environment/go v0.0.0-20230911180507-bd001ebc644c/go.mod h1:W5gTLX4+0/cT8vgja6OSH3OsnuNK8HfTOK3PrXyGQ/Q=
 github.com/danieljoos/wincred v1.2.0 h1:ozqKHaLK0W/ii4KVbbvluM91W2H3Sh0BncbUNPS7jLE=
 github.com/danieljoos/wincred v1.2.0/go.mod h1:FzQLLMKBFdvu+osBrnFODiv32YGwCfx0SkRa/eYHgec=
 github.com/davecgh/go-spew v1.1.0/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
@@ -268,6 +270,8 @@ github.com/pterm/pterm v0.12.36/go.mod h1:NjiL09hFhT/vWjQHSj1athJpx6H8cjpHXNAK5b
 github.com/pterm/pterm v0.12.40/go.mod h1:ffwPLwlbXxP+rxT0GsgDTzS3y3rmpAO1NMjUkGTYf8s=
 github.com/pterm/pterm v0.12.66 h1:bjsoMyUstaarzJ1NG7+1HGT7afR0JVMYsR3ooPeh4bo=
 github.com/pterm/pterm v0.12.66/go.mod h1:nFuT9ZVkkCi8o4L1dtWuYPwDQxggLh4C263qG5nTLpQ=
+github.com/pterm/pterm v0.12.67 h1:5iB7ajIQROYfxYD7+sFJ4+KJhFJ+xn7QOVBm4s6RUF0=
+github.com/pterm/pterm v0.12.67/go.mod h1:nFuT9ZVkkCi8o4L1dtWuYPwDQxggLh4C263qG5nTLpQ=
 github.com/rivo/uniseg v0.2.0/go.mod h1:J6wj4VEh+S6ZtnVlnTBMWIodfgj8LQOQFoIToxlJtxc=
 github.com/rivo/uniseg v0.4.4 h1:8TfxU8dW6PdqD27gjM8MVNuicgxIjxpm4K7x4jp8sis=
 github.com/rivo/uniseg v0.4.4/go.mod h1:FN3SvrM+Zdj16jyLfmOkMNblXMcoc8DfTHruCPUcx88=
