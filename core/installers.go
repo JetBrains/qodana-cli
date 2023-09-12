@@ -30,7 +30,6 @@ import (
 	"path/filepath"
 	"runtime"
 	"strings"
-	"time"
 )
 
 var (
@@ -213,7 +212,6 @@ func installIdeLinux(archivePath string, targetDir string) error {
 }
 
 func installIdeMacOS(archivePath string, targetDir string) error {
-	rand.Seed(time.Now().UnixNano())
 	mountDir := fmt.Sprintf("/Volumes/MyTempMount%d", rand.Intn(10000))
 	_, err := exec.Command("hdiutil", "attach", "-nobrowse", "-mountpoint", mountDir, archivePath).Output()
 	if err != nil {

@@ -254,7 +254,7 @@ func printLines(content string, contextLine int, line int, skipHighlight bool) {
 func PrintContributorsTable(contributors []contributor, days int, dirs int) {
 	count := len(contributors)
 	contributorsTableData := pterm.TableData{
-		{
+		[]string{
 			PrimaryBold("Username"),
 			PrimaryBold("Email"),
 			PrimaryBold("Commits"),
