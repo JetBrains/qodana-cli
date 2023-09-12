@@ -1,10 +1,10 @@
 module github.com/JetBrains/qodana-cli
 
-go 1.19
+go 1.21
 
 require (
 	github.com/boyter/scc/v3 v3.1.0
-	github.com/cucumber/ci-environment/go v0.0.0-20230723160303-a2dce81f299c
+	github.com/cucumber/ci-environment/go v0.0.0-20230911180507-bd001ebc644c
 	github.com/docker/cli v20.10.23+incompatible // DO NOT UPDATE: breaking changes
 	github.com/docker/docker v20.10.23+incompatible // DO NOT UPDATE: breaking changes
 	github.com/go-enry/go-enry/v2 v2.8.4
@@ -13,7 +13,7 @@ require (
 	github.com/mattn/go-isatty v0.0.19
 	github.com/otiai10/copy v1.12.0
 	github.com/owenrumney/go-sarif/v2 v2.2.0
-	github.com/pterm/pterm v0.12.66
+	github.com/pterm/pterm v0.12.67
 	github.com/shirou/gopsutil/v3 v3.23.8
 	github.com/sirupsen/logrus v1.9.3
 	github.com/spf13/cobra v1.7.0
