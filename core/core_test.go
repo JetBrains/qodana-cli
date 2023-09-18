@@ -362,15 +362,12 @@ func TestLegacyFixStrategies(t *testing.T) {
 			},
 		},
 		{
-			name: "cleanup for old IDE",
+			name: "fixes for unavailable IDE",
 			options: &QodanaOptions{
 				Cleanup: true,
 				Ide:     "QDNET",
 			},
-			expected: []string{
-				"--fixes-strategy",
-				"cleanup",
-			},
+			expected: []string{},
 		},
 	}
 

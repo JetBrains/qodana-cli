@@ -215,3 +215,7 @@ func (o *QodanaOptions) properties() (map[string]string, []string) {
 func (o *QodanaOptions) requiresToken() bool {
 	return (o.Linter != Image(QDPYC) && o.Linter != Image(QDJVMC)) || o.Ide != ""
 }
+
+func (o *QodanaOptions) fixesSupported() bool {
+	return o.Linter != Image(QDNET) && o.Ide != QDNET
+}

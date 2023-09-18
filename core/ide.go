@@ -274,27 +274,29 @@ func getIdeArgs(opts *QodanaOptions) []string {
 		arguments = append(arguments, "--script", "local-changes")
 	}
 
-	if opts.FixesStrategy != "" {
-		switch strings.ToLower(opts.FixesStrategy) {
-		case "apply":
-			opts.ApplyFixes = true
-		case "cleanup":
-			opts.Cleanup = true
-		default:
-			break
+	if opts.fixesSupported() {
+		if opts.FixesStrategy != "" {
+			switch strings.ToLower(opts.FixesStrategy) {
+			case "apply":
+				opts.ApplyFixes = true
+			case "cleanup":
+				opts.Cleanup = true
+			default:
+				break
+			}
 		}
-	}
-	if opts.Ide != "" && Prod.is233orNewer() {
-		if opts.ApplyFixes {
-			arguments = append(arguments, "--apply-fixes")
-		} else if opts.Cleanup {
-			arguments = append(arguments, "--cleanup")
-		}
-	} else { // remove this block in 2023.3 or later
-		if opts.ApplyFixes {
-			arguments = append(arguments, "--fixes-strategy", "apply")
-		} else if opts.Cleanup {
-			arguments = append(arguments, "--fixes-strategy", "cleanup")
+		if opts.Ide != "" && Prod.is233orNewer() {
+			if opts.ApplyFixes {
+				arguments = append(arguments, "--apply-fixes")
+			} else if opts.Cleanup {
+				arguments = append(arguments, "--cleanup")
+			}
+		} else { // remove this block in 2023.3 or later
+			if opts.ApplyFixes {
+				arguments = append(arguments, "--fixes-strategy", "apply")
+			} else if opts.Cleanup {
+				arguments = append(arguments, "--fixes-strategy", "cleanup")
+			}
 		}
 	}
 
