@@ -20,7 +20,6 @@ import (
 	"fmt"
 	cienvironment "github.com/cucumber/ci-environment/go"
 	log "github.com/sirupsen/logrus"
-	"net/url"
 	"os"
 	"runtime"
 	"strings"
@@ -54,10 +53,10 @@ func ExtractQodanaEnvironment() {
 	qEnv := "qodana"
 	if ci != nil {
 		qEnv = strings.ReplaceAll(strings.ToLower(ci.Name), " ", "-")
-		setEnv(qodanaJobUrl, validateCiUrl(ci.URL, qEnv))
+		setEnv(qodanaJobUrl, validateJobUrl(ci.URL, qEnv))
 		if ci.Git != nil {
-			setEnv(qodanaRemoteUrl, ci.Git.Remote)
-			setEnv(qodanaBranch, ci.Git.Branch)
+			setEnv(qodanaRemoteUrl, validateRemoteUrl(ci.Git.Remote))
+			setEnv(qodanaBranch, validateBranch(ci.Git.Branch, qEnv))
 			setEnv(qodanaRevision, ci.Git.Revision)
 		}
 	}
@@ -94,15 +93,4 @@ func setEnv(key string, value string) {
 			return
 		}
 	}
-}
-
-func validateCiUrl(ciUrl string, qEnv string) string {
-	if strings.HasPrefix(qEnv, "azure") { // temporary workaround for Azure Pipelines
-		return getAzureJobUrl()
-	}
-	_, err := url.ParseRequestURI(ciUrl)
-	if err != nil {
-		return ""
-	}
-	return ciUrl
 }

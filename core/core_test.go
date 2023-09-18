@@ -263,7 +263,7 @@ func Test_ExtractEnvironmentVariables(t *testing.T) {
 				opts.setenv(k, v)
 			}
 
-			extractQodanaEnvironment(opts)
+			extractQodanaEnvironmentForDocker(opts)
 			currentQodanaEnv := opts.getenv(qodanaEnv)
 			if currentQodanaEnv != tc.qodanaEnvExpected {
 				t.Errorf("Expected %s, got %s", tc.qodanaEnvExpected, currentQodanaEnv)

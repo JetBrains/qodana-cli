@@ -107,8 +107,8 @@ func encodeAuthToBase64(authConfig types.AuthConfig) (string, error) {
 	return base64.URLEncoding.EncodeToString(buf), nil
 }
 
-// extractQodanaEnvironment extracts Qodana env variables QODANA_* to the given environment array.
-func extractQodanaEnvironment(opts *QodanaOptions) {
+// extractQodanaEnvironmentForDocker extracts Qodana env variables QODANA_* to the given environment array.
+func extractQodanaEnvironmentForDocker(opts *QodanaOptions) {
 	ci := cienvironment.DetectCIEnvironment()
 	qEnv := "cli"
 	if ci != nil {
@@ -138,6 +138,8 @@ func validateBranch(branch string, env string) string {
 			branch = os.Getenv("GITHUB_REF")
 		} else if env == "azure-pipelines" {
 			branch = os.Getenv("BUILD_SOURCEBRANCHNAME")
+		} else if env == "jenkins" {
+			branch = os.Getenv("GIT_BRANCH")
 		}
 	}
 	if branch == "" {
@@ -306,7 +308,7 @@ func CheckContainerEngineMemory() {
 // getDockerOptions returns qodana docker container options.
 func getDockerOptions(opts *QodanaOptions) *types.ContainerCreateConfig {
 	cmdOpts := getIdeArgs(opts)
-	extractQodanaEnvironment(opts)
+	extractQodanaEnvironmentForDocker(opts)
 	cachePath, err := filepath.Abs(opts.CacheDir)
 	if err != nil {
 		log.Fatal("couldn't get abs path for cache", err)
