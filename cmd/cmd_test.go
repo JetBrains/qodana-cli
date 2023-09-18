@@ -185,7 +185,7 @@ func TestContributorsCommand(t *testing.T) {
 }
 
 func TestAllCommandsWithContainer(t *testing.T) {
-	linter := "jetbrains/qodana-python:2023.2-eap"
+	linter := "jetbrains/qodana-python-community:2023.2"
 
 	if os.Getenv("GITHUB_ACTIONS") == "true" {
 		//goland:noinspection GoBoolExpressions
@@ -228,26 +228,8 @@ func TestAllCommandsWithContainer(t *testing.T) {
 		"--print-problems",
 		"--apply-fixes",
 		"-l", linter,
-	})
-	err = command.Execute()
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	// scan with native mode
-	out = bytes.NewBufferString("")
-	// set debug log to debug
-	log.SetLevel(log.DebugLevel)
-	command = newScanCommand()
-	command.SetOut(out)
-	command.SetArgs([]string{
-		"-i", projectPath,
-		"-o", resultsPath,
-		"--cache-dir", filepath.Join(projectPath, "cache"),
-		"--fail-threshold", "5",
-		"--print-problems",
-		"--apply-fixes",
-		"-l", linter,
+		"--property",
+		"idea.headless.enable.statistics=false",
 	})
 	err = command.Execute()
 	if err != nil {
@@ -324,13 +306,12 @@ func TestAllCommandsWithContainer(t *testing.T) {
 
 func TestScanWithIde(t *testing.T) {
 	log.SetLevel(log.DebugLevel)
-	token := os.Getenv("QODANA_TOKEN")
-
+	ide := "QDPY"
+	token := os.Getenv("TESTS_QODANA_TOKEN")
 	if //goland:noinspection GoBoolExpressions
 	token == "" {
 		t.Skip("set your token here to run the test")
 	}
-	ide := "QDPY"
 	projectPath := createProject(t, "qodana_scan_python")
 	resultsPath := filepath.Join(projectPath, "results")
 	err := os.MkdirAll(resultsPath, 0o755)
@@ -345,6 +326,8 @@ func TestScanWithIde(t *testing.T) {
 		"-i", projectPath,
 		"-o", resultsPath,
 		"--ide", ide,
+		"--property",
+		"idea.headless.enable.statistics=false",
 	})
 	err = command.Execute()
 	if err != nil {
