@@ -425,13 +425,16 @@ func followLinter(client *client.Client, containerName string, progress *pterm.S
 	}
 }
 
-// GetReportUrl get Qodana Cloud report URL from the given qodana.sarif.json
-func GetReportUrl(resultsDir string) string {
+// getReportUrl get Qodana Cloud report URL from the given qodana.sarif.json
+func getReportUrl(resultsDir string) string {
 	filePath := filepath.Join(resultsDir, qodanaReportUrlFile)
+	log.Debugf("Looking for report URL in %s", filePath)
 	if _, err := os.Stat(filePath); err == nil {
 		url, err := os.ReadFile(filePath)
+		log.Debugf("Found report URL: %s", string(url))
 		if err != nil {
-			log.Fatal(err)
+			log.Debug(err)
+			return ""
 		}
 		return string(url)
 	}

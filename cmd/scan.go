@@ -68,21 +68,21 @@ But you can always override qodana.yaml options with the following command-line 
 
 			checkExitCode(exitCode, options.ResultsDir)
 			core.ReadSarif(filepath.Join(options.ResultsDir, core.QodanaSarifName), options.PrintProblems)
-			reportUrl := core.GetReportUrl(options.ResultsDir)
-			if options.ShowReport {
-				core.ShowReport(reportUrl, filepath.Join(options.ResultsDir, "report"), options.Port)
-			} else if core.IsInteractive() {
-				if core.AskUserConfirm("Do you want to open the latest report") {
-					core.ShowReport(reportUrl, filepath.Join(options.ResultsDir, "report"), options.Port)
-				} else {
-					core.WarningMessage(
-						"To view the Qodana report later, run %s in the current directory or add %s flag to %s",
-						core.PrimaryBold("qodana show"),
-						core.PrimaryBold("--show-report"),
-						core.PrimaryBold("qodana scan"),
-					)
-				}
+			if core.IsInteractive() {
+				options.ShowReport = core.AskUserConfirm("Do you want to open the latest report")
 			}
+
+			if options.ShowReport {
+				core.ShowReport(options.ResultsDir, options.ReportDirPath(), options.Port)
+			} else {
+				core.WarningMessage(
+					"To view the Qodana report later, run %s in the current directory or add %s flag to %s",
+					core.PrimaryBold("qodana show"),
+					core.PrimaryBold("--show-report"),
+					core.PrimaryBold("qodana scan"),
+				)
+			}
+
 			if exitCode == core.QodanaFailThresholdExitCode {
 				core.EmptyMessage()
 				core.ErrorMessage("The number of problems exceeds the fail threshold")

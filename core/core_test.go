@@ -125,7 +125,7 @@ func TestCloudUrl(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			actual := GetReportUrl(resultsPath)
+			actual := getReportUrl(resultsPath)
 			if actual != tc.expectedUrl {
 				t.Fatalf("expected \"%s\" got \"%s\"", tc.expectedUrl, actual)
 			}

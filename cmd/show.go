@@ -62,7 +62,7 @@ This command serves the Qodana report locally and opens a browser to it.`,
 				}
 			} else {
 				core.ShowReport(
-					core.GetReportUrl(options.ResultsDir),
+					options.ResultsDir,
 					reportDir,
 					options.Port,
 				)
@@ -72,11 +72,8 @@ This command serves the Qodana report locally and opens a browser to it.`,
 	flags := cmd.Flags()
 	flags.StringVarP(&options.Linter, "linter", "l", "", "Override linter to use")
 	flags.StringVarP(&options.ProjectDir, "project-dir", "i", ".", "Root directory of the inspected project")
-	flags.StringVarP(&reportDir,
-		"report-dir",
-		"r",
-		"",
-		"Specify HTML report path (the one with index.html inside) (default <userCacheDir>/JetBrains/<linter>/results/report)")
+	flags.StringVarP(&options.ResultsDir, "results-dir", "o", options.ResultsDirPath(), "Override directory to save Qodana inspection results to")
+	flags.StringVarP(&options.ReportDir, "report-dir", "r", options.ReportDirPath(), "Specify HTML report path (the one with index.html inside) ")
 	flags.IntVarP(&options.Port, "port", "p", 8080, "Specify port to serve report at")
 	flags.BoolVarP(&openDir, "dir-only", "d", false, "Open report directory only, don't serve it")
 	flags.StringVarP(&options.YamlName, "yaml-name", "y", "", "Override qodana.yaml name")
