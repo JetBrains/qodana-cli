@@ -86,7 +86,7 @@ func (o *QodanaOptions) getTokenFromKeychain(refresh bool) string {
 }
 
 func (o *QodanaOptions) getTokenFromUserInput() string {
-	if IsInteractive() {
+	if IsInteractive() && o.requiresToken() {
 		WarningMessage(cloud.EmptyTokenMessage)
 		var token string
 		for {

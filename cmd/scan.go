@@ -85,7 +85,7 @@ But you can always override qodana.yaml options with the following command-line 
 			}
 			if exitCode == core.QodanaFailThresholdExitCode {
 				core.EmptyMessage()
-				core.ErrorMessage("The number of problems exceeds the failThreshold")
+				core.ErrorMessage("The number of problems exceeds the fail threshold")
 				os.Exit(exitCode)
 			}
 		},

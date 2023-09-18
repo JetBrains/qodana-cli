@@ -211,3 +211,7 @@ func (o *QodanaOptions) properties() (map[string]string, []string) {
 	}
 	return props, flagsArr
 }
+
+func (o *QodanaOptions) requiresToken() bool {
+	return (o.Linter != Image(QDPYC) && o.Linter != Image(QDJVMC)) || o.Ide != ""
+}

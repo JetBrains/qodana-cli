@@ -67,10 +67,12 @@ func ReadSarif(sarifPath string, printProblems bool) {
 			}
 		}
 	}
-	if newProblems == 0 {
-		SuccessMessage("It seems all right 👌 No new problems found according to the checks applied")
-	} else {
-		ErrorMessage("Found %d new problems according to the checks applied", newProblems)
+	if !IsContainer() {
+		if newProblems == 0 {
+			SuccessMessage("It seems all right 👌 No new problems found according to the checks applied")
+		} else {
+			ErrorMessage("Found %d new problems according to the checks applied", newProblems)
+		}
 	}
 }
 
