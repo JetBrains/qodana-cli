@@ -323,6 +323,73 @@ func TestScanFlags_Script(t *testing.T) {
 	}
 }
 
+func TestLegacyFixStrategies(t *testing.T) {
+	cases := []struct {
+		name     string
+		options  *QodanaOptions
+		expected []string
+	}{
+		{
+			name: "apply fixes for a container",
+			options: &QodanaOptions{
+				ApplyFixes: true,
+				Ide:        "",
+			},
+			expected: []string{
+				"--fixes-strategy",
+				"apply",
+			},
+		},
+		{
+			name: "cleanup for a container",
+			options: &QodanaOptions{
+				Cleanup: true,
+				Ide:     "",
+			},
+			expected: []string{
+				"--fixes-strategy",
+				"cleanup",
+			},
+		},
+		{
+			name: "apply fixes for new IDE",
+			options: &QodanaOptions{
+				ApplyFixes: true,
+				Ide:        "QDPHP",
+			},
+			expected: []string{
+				"--apply-fixes",
+			},
+		},
+		{
+			name: "cleanup for old IDE",
+			options: &QodanaOptions{
+				Cleanup: true,
+				Ide:     "QDNET",
+			},
+			expected: []string{
+				"--fixes-strategy",
+				"cleanup",
+			},
+		},
+	}
+
+	for _, tt := range cases {
+		t.Run(tt.name, func(t *testing.T) {
+			if tt.options.Ide == "QDPHP" {
+				Prod.Version = "2023.3"
+			} else {
+				Prod.Version = "2023.2"
+			}
+
+			actual := getIdeArgs(tt.options)
+			if !reflect.DeepEqual(tt.expected, actual) {
+				t.Fatalf("expected \"%s\" got \"%s\"", tt.expected, actual)
+			}
+		})
+	}
+}
+
 func TestReadIdeaDir(t *testing.T) {
 	// Create a temporary directory for testing
 	tempDir := os.TempDir()

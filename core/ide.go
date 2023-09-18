@@ -284,28 +284,30 @@ func getIdeArgs(opts *QodanaOptions) []string {
 			break
 		}
 	}
-
-	if Prod.is233orNewer() {
+	if opts.Ide != "" && Prod.is233orNewer() {
 		if opts.ApplyFixes {
 			arguments = append(arguments, "--apply-fixes")
 		} else if opts.Cleanup {
 			arguments = append(arguments, "--cleanup")
 		}
-	} else {
+	} else { // remove this block in 2023.3 or later
 		if opts.ApplyFixes {
 			arguments = append(arguments, "--fixes-strategy", "apply")
 		} else if opts.Cleanup {
 			arguments = append(arguments, "--fixes-strategy", "cleanup")
 		}
 	}
-	if opts.AnalysisId != "" && opts.Ide == "" {
-		arguments = append(arguments, "--analysis-id", opts.AnalysisId)
-	}
+
 	if opts.Ide == "" {
+		if opts.AnalysisId != "" {
+			arguments = append(arguments, "--analysis-id", opts.AnalysisId)
+		}
+
 		for _, property := range opts.Property {
 			arguments = append(arguments, "--property="+property)
 		}
 	}
+
 	return arguments
 }
 
