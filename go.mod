@@ -12,7 +12,7 @@ require (
 	github.com/liamg/clinch v1.6.4
 	github.com/mattn/go-isatty v0.0.19
 	github.com/otiai10/copy v1.12.0
-	github.com/owenrumney/go-sarif/v2 v2.2.0
+	github.com/owenrumney/go-sarif/v2 v2.2.2
 	github.com/pterm/pterm v0.12.69
 	github.com/shirou/gopsutil/v3 v3.23.8
 	github.com/sirupsen/logrus v1.9.3
