@@ -1,6 +1,6 @@
 ARG NODE_TAG="16-bullseye-slim"
-ARG PHP_TAG="8.1-cli-bullseye"
-ARG COMPOSER_TAG="2.5.1"
+ARG PHP_TAG="8.2-cli-bullseye"
+ARG COMPOSER_TAG="2.6.3"
 FROM node:$NODE_TAG AS node_base
 FROM composer:$COMPOSER_TAG AS composer_base
 FROM php:$PHP_TAG

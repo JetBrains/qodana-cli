@@ -12,10 +12,10 @@ target "232" {
     QD_RELEASE = "2023.2"
     BASE_TAG = "bullseye-slim"
     DOTNET_TAG = "6.0-bullseye-slim"
-    GO_TAG = "1.19-bullseye"
+    GO_TAG = "1.21-bullseye"
     NODE_TAG = "16-bullseye-slim"
-    PHP_TAG = "8.1-cli-bullseye"
-    COMPOSER_TAG="2.5.1"
+    PHP_TAG = "8.2-cli-bullseye"
+    COMPOSER_TAG="2.6.3"
   }
   tags = [
     "docker.io/jetbrains/qodana:${edition}-${version}-latest"

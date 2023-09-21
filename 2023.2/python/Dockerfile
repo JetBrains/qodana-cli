@@ -37,6 +37,8 @@ ENV CONDA_DIR="/opt/miniconda3" \
     PIP_CACHE_DIR="$QODANA_DATA/cache/.pip/" \
     FLIT_ROOT_INSTALL=1
 ENV PATH="$CONDA_DIR/bin:$HOME/.local/bin:$PATH"
+
+# https://docs.conda.io/projects/miniconda/en/latest/miniconda-hashes.html
 ARG CONDA_VERSION="py310_22.11.1-1"
 
 # hadolint ignore=SC2174,DL3009
