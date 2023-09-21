@@ -34,7 +34,6 @@ RUN --mount=target=/var/lib/apt/lists,type=cache,sharing=locked \
 
 ENV CONDA_DIR="/opt/miniconda3" \
     CONDA_ENVS_PATH="$QODANA_DATA/cache/conda/envs" \
-    CONDA_PKGS_DIRS="$QODANA_DATA/cache/conda/pkgs" \
     PIP_CACHE_DIR="$QODANA_DATA/cache/.pip/" \
     FLIT_ROOT_INSTALL=1
 ENV PATH="$CONDA_DIR/bin:$HOME/.local/bin:$PATH"
@@ -43,7 +42,7 @@ ARG CONDA_VERSION="py310_22.11.1-1"
 # hadolint ignore=SC2174,DL3009
 RUN --mount=target=/var/lib/apt/lists,type=cache,sharing=locked \
     --mount=target=/var/cache/apt,type=cache,sharing=locked \
-    apt-get update &&  \
+    apt-get update && \
     DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
       bzip2=1.0.8-4 \
       libglib2.0-0=2.66.8-1 \
@@ -70,6 +69,7 @@ RUN --mount=target=/var/lib/apt/lists,type=cache,sharing=locked \
     echo "conda activate base" >> ~/.bashrc && ln -s ${CONDA_DIR}/bin/python3 /usr/bin/python3 && \
     find ${CONDA_DIR}/ -follow -type f -name '*.a' -delete && find ${CONDA_DIR}/ -follow -type f -name '*.js.map' -delete && \
     ${CONDA_DIR}/bin/conda install -c conda-forge poetry pipenv && ${CONDA_DIR}/bin/conda clean -afy && \
+    chmod 777 -R $HOME/.conda && \
     rm -rf /tmp/*
 
 ENV PATH="/opt/yarn/bin:$PATH"
