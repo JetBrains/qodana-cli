@@ -35,6 +35,7 @@ RUN --mount=target=/var/lib/apt/lists,type=cache,sharing=locked \
 ENV CONDA_DIR="/opt/miniconda3" \
     CONDA_ENVS_PATH="$QODANA_DATA/cache/conda/envs" \
     PIP_CACHE_DIR="$QODANA_DATA/cache/.pip/" \
+    POETRY_CACHE_DIR="$QODANA_DATA/cache/.poetry/" \
     FLIT_ROOT_INSTALL=1
 ENV PATH="$CONDA_DIR/bin:$HOME/.local/bin:$PATH"
 
