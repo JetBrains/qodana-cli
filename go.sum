@@ -107,8 +107,8 @@ github.com/frankban/quicktest v1.14.4 h1:g2rn0vABPOOXmZUj+vbmUp0lPoXEMuhTpIluN0X
 github.com/frankban/quicktest v1.14.4/go.mod h1:4ptaffx2x8+WTWXmUCuVU6aPUX1/Mz7zb5vbUoiM6w0=
 github.com/fsnotify/fsnotify v1.6.0 h1:n+5WquG0fcWoWp6xPWfHdbskMCQaFnG6PfBrh1Ky4HY=
 github.com/fsnotify/fsnotify v1.6.0/go.mod h1:sl3t1tCWJFWoRz9R8WJCbQihKKwmorjAbSClcnxKAGw=
-github.com/go-enry/go-enry/v2 v2.8.4 h1:QrY3hx/RiqCJJRbdU0MOcjfTM1a586J0WSooqdlJIhs=
-github.com/go-enry/go-enry/v2 v2.8.4/go.mod h1:9yrj4ES1YrbNb1Wb7/PWYr2bpaCXUGRt0uafN0ISyG8=
+github.com/go-enry/go-enry/v2 v2.8.5 h1:jtYXblst2+d9k7ZgEgkv6Q5hKRKPf0qHRjt715BZEX4=
+github.com/go-enry/go-enry/v2 v2.8.5/go.mod h1:9yrj4ES1YrbNb1Wb7/PWYr2bpaCXUGRt0uafN0ISyG8=
 github.com/go-enry/go-oniguruma v1.2.1 h1:k8aAMuJfMrqm/56SG2lV9Cfti6tC4x8673aHCcBk+eo=
 github.com/go-enry/go-oniguruma v1.2.1/go.mod h1:bWDhYP+S6xZQgiRL7wlTScFYBe023B6ilRZbCAD5Hf4=
 github.com/go-gl/glfw v0.0.0-20190409004039-e6da0acd62b1/go.mod h1:vR7hzQXu2zJy9AVAgeJqvqgH9Q5CA+iKCZ2gyEVpxRU=
