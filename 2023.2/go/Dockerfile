@@ -12,6 +12,8 @@ ENV JAVA_HOME="$QODANA_DIST/jbr" \
     QODANA_CONF="$HOME/.config/idea" \
     PATH="$QODANA_DIST/bin:$PATH"
 
+ENV GOMODCACHE="$QODANA_DATA/cache/go"
+
 # hadolint ignore=SC2174,DL3009
 RUN --mount=target=/var/lib/apt/lists,type=cache,sharing=locked \
     --mount=target=/var/cache/apt,type=cache,sharing=locked \
