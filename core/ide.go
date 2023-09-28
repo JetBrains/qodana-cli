@@ -220,7 +220,7 @@ func runQodanaLocal(opts *QodanaOptions) int {
 	if opts.SaveReport || opts.ShowReport {
 		saveReport(opts)
 	}
-	if cloud.Token.IsAllowedToSendReports() {
+	if cloud.Token.IsAllowedToSendReports() && !IsContainer() {
 		SendReport(opts, cloud.Token.Token)
 	}
 	postAnalysis(opts)
