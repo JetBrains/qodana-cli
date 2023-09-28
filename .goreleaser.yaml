@@ -14,6 +14,9 @@ builds:
     goarch:
       - amd64
       - arm64
+    hooks:
+      post:
+          - sh -c "echo 'test hook for signing'"
 archives:
   - name_template: '{{ .ProjectName }}_{{ .Os }}_{{- if eq .Arch "amd64" }}x86_64{{- else if eq .Arch "386" }}i386{{- else }}{{ .Arch }}{{ end }}'
     format_overrides:
@@ -147,3 +150,14 @@ changelog:
       - '^:memo:'
       - '^:bricks:'
       - '^:recycle:'
+git:
+  ignore_tags:
+    - nightly
+gomod:
+  proxy: true
+  env:
+    - GOPROXY=https://proxy.golang.org,direct
+    - GOSUMDB=sum.golang.org
+    - GOPRIVATE=example.com/blah
+  mod: mod
+report_sizes: true
