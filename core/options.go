@@ -116,7 +116,7 @@ func (o *QodanaOptions) id() string {
 
 func (o *QodanaOptions) getQodanaSystemDir() string {
 	if o.CacheDir != "" {
-		return filepath.Dir(o.CacheDir)
+		return filepath.Dir(filepath.Dir(o.CacheDir))
 	}
 
 	userCacheDir, _ := os.UserCacheDir()
@@ -212,8 +212,8 @@ func (o *QodanaOptions) properties() (map[string]string, []string) {
 	return props, flagsArr
 }
 
-func (o *QodanaOptions) requiresToken() bool {
-	return (o.Linter != Image(QDPYC) && o.Linter != Image(QDJVMC)) || o.Ide != ""
+func (o *QodanaOptions) RequiresToken() bool {
+	return (o.Linter != Image(QDPYC) && o.Linter != Image(QDJVMC)) && o.Ide != QDJVMC && o.Ide != QDPYC
 }
 
 func (o *QodanaOptions) fixesSupported() bool {
