@@ -46,6 +46,7 @@ const (
 	QodanaLicenseEndpoint  = "LICENSE_ENDPOINT"
 	QodanaLicense          = "QODANA_LICENSE"
 	QodanaTreatAsRelease   = "QODANA_TREAT_AS_RELEASE"
+	qodanaClearKeyring     = "QODANA_CLEAR_KEYRING"
 )
 
 func ExtractQodanaEnvironment() {

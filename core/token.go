@@ -63,7 +63,7 @@ func (o *QodanaOptions) getTokenFromEnv() string {
 
 func (o *QodanaOptions) getTokenFromKeychain(refresh bool) string {
 	log.Debugf("project id: %s", o.id())
-	if refresh {
+	if refresh || os.Getenv(qodanaClearKeyring) != "" {
 		err := keyring.Delete(defaultService, o.id())
 		if err != nil {
 			log.Debugf("Failed to delete token from the system keyring: %s", err)
@@ -86,7 +86,7 @@ func (o *QodanaOptions) getTokenFromKeychain(refresh bool) string {
 }
 
 func (o *QodanaOptions) getTokenFromUserInput() string {
-	if IsInteractive() && o.requiresToken() {
+	if IsInteractive() && o.RequiresToken() {
 		WarningMessage(cloud.EmptyTokenMessage)
 		var token string
 		for {
