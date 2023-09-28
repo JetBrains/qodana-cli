@@ -6,6 +6,10 @@ updates:
       prefix: ":arrow_up:"
     schedule:
       interval: weekly
+    groups:
+      dependencies:
+        patterns:
+          - "*"
 
   - package-ecosystem: gomod
     directory: /
@@ -13,3 +17,9 @@ updates:
       prefix: ":arrow_up:"
     schedule:
       interval: weekly
+    groups:
+      dependencies:
+        patterns:
+          - "*"
+        exclude-patterns:
+          - "*docker*"
