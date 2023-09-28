@@ -1048,3 +1048,54 @@ func TestSetupLicenseToken(t *testing.T) {
 		})
 	}
 }
+
+func TestQodanaOptions_RequiresToken(t *testing.T) {
+	tests := []struct {
+		name     string
+		linter   string
+		ide      string
+		expected bool
+	}{
+		{
+			"QDPYC docker",
+			Image(QDPYC),
+			"",
+			false,
+		},
+		{
+			"QDJVMC ide",
+			"",
+			QDJVMC,
+			false,
+		},
+		{
+			QodanaLicense,
+			"",
+			"",
+			false,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if tt.name == QodanaLicense {
+				err := os.Setenv(QodanaLicense, "test")
+				if err != nil {
+					t.Fatal(err)
+				}
+				defer func() {
+					err := os.Unsetenv(QodanaLicense)
+					if err != nil {
+						t.Fatal(err)
+					}
+				}()
+			}
+			o := QodanaOptions{
+				Linter: tt.linter,
+				Ide:    tt.ide,
+			}
+			result := o.RequiresToken()
+			assert.Equal(t, tt.expected, result)
+		})
+	}
+}

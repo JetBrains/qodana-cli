@@ -223,7 +223,9 @@ func LookUpLinterSystemDir(opts *QodanaOptions) string {
 
 // prepareHost gets the current user, creates the necessary folders for the analysis.
 func prepareHost(opts *QodanaOptions) {
-	opts.ValidateToken(false)
+	if opts.RequiresToken() {
+		opts.ValidateToken(false)
+	}
 
 	if opts.ClearCache {
 		err := os.RemoveAll(opts.CacheDir)

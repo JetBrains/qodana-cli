@@ -213,7 +213,16 @@ func (o *QodanaOptions) properties() (map[string]string, []string) {
 }
 
 func (o *QodanaOptions) RequiresToken() bool {
-	return (o.Linter != Image(QDPYC) && o.Linter != Image(QDJVMC)) && o.Ide != QDJVMC && o.Ide != QDPYC
+	if os.Getenv(QodanaLicense) == "" {
+		return false
+	}
+
+	if o.Linter != Image(QDPYC) && o.Linter != Image(QDJVMC) &&
+		o.Ide != QDJVMC && o.Ide != QDPYC {
+		return false
+	}
+
+	return !Prod.IsCommunity() && !Prod.EAP
 }
 
 func (o *QodanaOptions) fixesSupported() bool {

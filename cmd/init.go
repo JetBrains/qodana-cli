@@ -75,7 +75,9 @@ func newInitCommand() *cobra.Command {
 			}
 			core.PrintFile(filepath.Join(options.ProjectDir, options.YamlName))
 			options.Linter = qodanaYaml.Linter
-			options.ValidateToken(force)
+			if options.RequiresToken() {
+				options.ValidateToken(force)
+			}
 		},
 	}
 	flags := cmd.Flags()
