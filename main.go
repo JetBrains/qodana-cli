@@ -17,8 +17,8 @@
 package main
 
 import (
-	"github.com/JetBrains/qodana-cli/cmd"
-	"github.com/JetBrains/qodana-cli/core"
+	"github.com/JetBrains/qodana-cli/v2023/cmd"
+	"github.com/JetBrains/qodana-cli/v2023/core"
 	log "github.com/sirupsen/logrus"
 	"io"
 	"os"

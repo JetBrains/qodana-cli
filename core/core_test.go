@@ -21,7 +21,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/JetBrains/qodana-cli/cloud"
+	"github.com/JetBrains/qodana-cli/v2023/cloud"
 	"net/http"
 	"net/http/httptest"
 	"os"

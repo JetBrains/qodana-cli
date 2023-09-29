@@ -17,7 +17,7 @@
 package cmd
 
 import (
-	"github.com/JetBrains/qodana-cli/core"
+	"github.com/JetBrains/qodana-cli/v2023/core"
 	"github.com/docker/docker/client"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"

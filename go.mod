@@ -1,4 +1,4 @@
-module github.com/JetBrains/qodana-cli
+module github.com/JetBrains/qodana-cli/v2023
 
 go 1.21
 

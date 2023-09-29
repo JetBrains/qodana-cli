@@ -34,7 +34,7 @@ import (
 
 	log "github.com/sirupsen/logrus"
 
-	"github.com/JetBrains/qodana-cli/core"
+	"github.com/JetBrains/qodana-cli/v2023/core"
 )
 
 func createProject(t *testing.T, name string) string {

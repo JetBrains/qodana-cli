@@ -19,7 +19,7 @@ package core
 import (
 	"errors"
 	"fmt"
-	"github.com/JetBrains/qodana-cli/cloud"
+	"github.com/JetBrains/qodana-cli/v2023/cloud"
 	"log"
 	"os"
 )

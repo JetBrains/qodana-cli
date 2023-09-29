@@ -22,7 +22,7 @@ import (
 	"encoding/xml"
 	"errors"
 	"fmt"
-	"github.com/JetBrains/qodana-cli/cloud"
+	"github.com/JetBrains/qodana-cli/v2023/cloud"
 	"github.com/owenrumney/go-sarif/v2/sarif"
 	"io"
 	"os"
