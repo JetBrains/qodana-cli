@@ -147,11 +147,11 @@ But you can always override qodana.yaml options with the following command-line 
 	cmd.MarkFlagsMutuallyExclusive("profile-name", "profile-path")
 	cmd.MarkFlagsMutuallyExclusive("apply-fixes", "cleanup")
 
-	err := cmd.Flags().MarkHidden("fixes-strategy")
+	err := cmd.Flags().MarkDeprecated("fixes-strategy", "use --apply-fixes / --cleanup instead")
 	if err != nil {
 		return nil
 	}
-	err = cmd.Flags().MarkDeprecated("fixes-strategy", "use --apply-fixes / --cleanup instead")
+	err = cmd.Flags().MarkDeprecated("stub-profile", "this option has no effect and no replacement")
 	if err != nil {
 		return nil
 	}

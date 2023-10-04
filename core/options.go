@@ -37,7 +37,7 @@ type QodanaOptions struct {
 	ProfileName           string
 	ProfilePath           string
 	RunPromo              string
-	StubProfile           string
+	StubProfile           string // note: deprecated option
 	Baseline              string
 	BaselineIncludeAbsent bool
 	SaveReport            bool
@@ -165,10 +165,6 @@ func (o *QodanaOptions) ReportDirPath() string {
 		}
 	}
 	return o.ReportDir
-}
-
-func (o *QodanaOptions) stabProfilePath() string {
-	return filepath.Join(o.CacheDirPath(), "profile.xml")
 }
 
 func (o *QodanaOptions) ReportResultsPath() string {

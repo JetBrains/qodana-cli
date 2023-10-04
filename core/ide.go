@@ -228,7 +228,7 @@ func runQodanaLocal(opts *QodanaOptions) int {
 }
 
 func getIdeRunCommand(opts *QodanaOptions) []string {
-	args := []string{QuoteForWindows(Prod.IdeScript), "inspect", "qodana", "--stub-profile", QuoteForWindows(opts.stabProfilePath())}
+	args := []string{QuoteForWindows(Prod.IdeScript), "inspect", "qodana"}
 	args = append(args, getIdeArgs(opts)...)
 	args = append(args, QuoteForWindows(opts.ProjectDir), QuoteForWindows(opts.ResultsDir))
 	return args
@@ -257,9 +257,6 @@ func getIdeArgs(opts *QodanaOptions) []string {
 	}
 	if opts.Script != "" && opts.Script != "default" {
 		arguments = append(arguments, "--script", opts.Script)
-	}
-	if opts.StubProfile != "" {
-		arguments = append(arguments, "--stub-profile", opts.StubProfile)
 	}
 	if opts.Baseline != "" {
 		arguments = append(arguments, "--baseline", QuoteForWindows(opts.Baseline))
