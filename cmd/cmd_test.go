@@ -28,6 +28,7 @@ import (
 	"path/filepath"
 	"runtime"
 	"sort"
+	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -107,6 +108,30 @@ func TestHelp(t *testing.T) {
 
 	if expected != actual {
 		t.Fatalf("expected \"%s\" got \"%s\"", expected, actual)
+	}
+}
+
+func TestDeprecatedScanFlags(t *testing.T) {
+	deprecations := []string{"fixes-strategy", "stub-profile"}
+
+	out := bytes.NewBufferString("")
+	command := newScanCommand()
+	command.SetOut(out)
+	command.SetArgs([]string{"--help"})
+	err := command.Execute()
+	if err != nil {
+		t.Fatal(err)
+	}
+	raw, err := io.ReadAll(out)
+	if err != nil {
+		t.Fatal(err)
+	}
+	output := string(raw)
+
+	for _, dep := range deprecations {
+		if strings.Contains(output, dep) {
+			t.Fatalf("Deprecated flag in output %s", dep)
+		}
 	}
 }
 
