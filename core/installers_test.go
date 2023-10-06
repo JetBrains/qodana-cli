@@ -37,7 +37,7 @@ func TestGetIde(t *testing.T) {
 }
 
 func TestDownloadAndInstallIDE(t *testing.T) {
-	ides := []string{QDPY, "QDNET"} // QDPY requires exe on Windows, QDNET - does not
+	ides := []string{"QDNET-EAP"} // QDPY requires exe on Windows, QDNET - does not
 	for _, ide := range ides {
 		DownloadAndInstallIDE(ide, t)
 	}

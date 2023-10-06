@@ -29,12 +29,12 @@ func TestGetProductByCode(t *testing.T) {
 		t.Fail()
 	}
 
-	eap := SelectLatestRelease(product, "eap")
+	eap := SelectLatestCompatibleRelease(product, "eap")
 	if eap == nil {
 		t.Fail()
 	}
 
-	release := SelectLatestRelease(product, "release")
+	release := SelectLatestCompatibleRelease(product, "release")
 	if release == nil {
 		t.Fail()
 	}

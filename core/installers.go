@@ -132,7 +132,7 @@ func getIde(productCode string) *ReleaseDownloadInfo {
 		return nil
 	}
 
-	release := SelectLatestRelease(product, dist)
+	release := SelectLatestCompatibleRelease(product, dist)
 	if release == nil {
 		ErrorMessage("Error while obtaining the release type: ", dist)
 		return nil

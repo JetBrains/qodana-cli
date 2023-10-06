@@ -98,13 +98,13 @@ func GetProductByCode(code string) (*Product, error) {
 	return nil, nil
 }
 
-func SelectLatestRelease(product *Product, reqType string) *ReleaseInfo {
+func SelectLatestCompatibleRelease(product *Product, reqType string) *ReleaseInfo {
 	var latestRelease *ReleaseInfo
 	latestDate := ""
 
 	for i := 0; i < len(product.Releases); i++ {
 		release := &product.Releases[i]
-		if release.Type == reqType && (latestRelease == nil || release.Date > latestDate) {
+		if *release.MajorVersion == MajorVersion && release.Type == reqType && (latestRelease == nil || release.Date > latestDate) {
 			latestRelease = release
 			latestDate = release.Date
 		}
