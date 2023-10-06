@@ -209,12 +209,19 @@ func (o *QodanaOptions) properties() (map[string]string, []string) {
 }
 
 func (o *QodanaOptions) RequiresToken() bool {
-	if os.Getenv(QodanaLicense) == "" {
+	if os.Getenv(QodanaLicense) != "" {
 		return false
 	}
 
-	if o.Linter != Image(QDPYC) && o.Linter != Image(QDJVMC) &&
-		o.Ide != QDJVMC && o.Ide != QDPYC {
+	if os.Getenv(QodanaToken) != "" || o.getenv(QodanaToken) != "" {
+		return true
+	}
+
+	if o.Linter == Image(QDPYC) || o.Linter == Image(QDJVMC) {
+		return false
+	}
+
+	if o.Ide == QDJVMC || o.Ide == QDPYC {
 		return false
 	}
 

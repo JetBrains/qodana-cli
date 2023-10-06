@@ -1082,6 +1082,13 @@ func TestQodanaOptions_RequiresToken(t *testing.T) {
 	}
 
 	for _, tt := range tests {
+		token := os.Getenv(QodanaToken)
+		if token != "" {
+			err := os.Unsetenv(QodanaToken)
+			if err != nil {
+				t.Fatal(err)
+			}
+		}
 		t.Run(tt.name, func(t *testing.T) {
 			if tt.name == QodanaLicense {
 				err := os.Setenv(QodanaLicense, "test")
@@ -1102,5 +1109,11 @@ func TestQodanaOptions_RequiresToken(t *testing.T) {
 			result := o.RequiresToken()
 			assert.Equal(t, tt.expected, result)
 		})
+		if token != "" {
+			err := os.Setenv(QodanaToken, token)
+			if err != nil {
+				t.Fatal(err)
+			}
+		}
 	}
 }
