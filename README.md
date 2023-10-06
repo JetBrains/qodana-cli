@@ -66,6 +66,11 @@ Alternatively,
 you can install the latest binary (or the apt/rpm/deb package)
 from [this page](https://github.com/JetBrains/qodana-cli/releases/latest).
 
+Or, if you have Go installed, you can install the latest version of the CLI with the following command:
+
+```console
+go install github.com/JetBrains/qodana-cli/v2023@main
+```
 
 ## Usage
 
