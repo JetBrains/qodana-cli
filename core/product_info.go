@@ -74,14 +74,20 @@ func (p *product) javaHome() string {
 }
 
 func (p *product) JbrJava() string {
-	switch runtime.GOOS {
-	case "darwin":
-		return filepath.Join(p.javaHome(), "Contents", "Home", "bin", "java")
-	case "windows":
-		return filepath.Join(p.javaHome(), "bin", "java.exe")
-	default:
-		return filepath.Join(p.javaHome(), "bin", "java")
+	if p.Home != "" {
+		switch runtime.GOOS {
+		case "darwin":
+			return filepath.Join(p.javaHome(), "Contents", "Home", "bin", "java")
+		case "windows":
+			return filepath.Join(p.javaHome(), "bin", "java.exe")
+		default:
+			return filepath.Join(p.javaHome(), "bin", "java")
+		}
+	} else if isInstalled("java") {
+		return "java"
 	}
+	log.Warn("Java is not installed")
+	return ""
 }
 
 func (p *product) vmOptionsEnv() string {

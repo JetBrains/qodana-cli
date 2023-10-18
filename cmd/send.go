@@ -17,37 +17,27 @@
 package cmd
 
 import (
+	"fmt"
 	"github.com/JetBrains/qodana-cli/v2023/core"
-	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 )
 
 // newShowCommand returns a new instance of the show command.
-func newShowCommand() *cobra.Command {
+func newSendCommand() *cobra.Command {
 	options := &core.QodanaOptions{}
-	openDir := false
 	cmd := &cobra.Command{
-		Use:   "show",
-		Short: "Show a Qodana report",
-		Long: `Show (serve) the latest Qodana report. Or open the results directory if the flag is set.
+		Use:   "send",
+		Short: "Send a Qodana report to Cloud",
+		Long: fmt.Sprintf(`Send the report (qodana.sarif.json and other analysis results) to Qodana Cloud. 
 
-Due to JavaScript security restrictions, the generated report cannot
-be viewed via the file:// protocol (by double-clicking the index.html file).
-https://www.jetbrains.com/help/qodana/html-report.html
-This command serves the Qodana report locally and opens a browser to it.`,
+If report directory is not specified, the latest report will be fetched from the default linter results location.
+
+If you are using other Qodana Cloud instance than https://qodana.cloud/, override it with declaring %s environment variable.`, core.PrimaryBold(core.QodanaEndpoint)),
 		Run: func(cmd *cobra.Command, args []string) {
-			if openDir {
-				err := core.OpenDir(options.ResultsDir)
-				if err != nil {
-					log.Fatal(err)
-				}
-			} else {
-				core.ShowReport(
-					options.ResultsDir,
-					options.ReportDir,
-					options.Port,
-				)
-			}
+			core.SendReport(
+				options,
+				options.ValidateToken(false),
+			)
 		},
 	}
 	flags := cmd.Flags()
@@ -55,8 +45,6 @@ This command serves the Qodana report locally and opens a browser to it.`,
 	flags.StringVarP(&options.ProjectDir, "project-dir", "i", ".", "Root directory of the inspected project")
 	flags.StringVarP(&options.ResultsDir, "results-dir", "o", options.ResultsDirPath(), "Override directory to save Qodana inspection results to")
 	flags.StringVarP(&options.ReportDir, "report-dir", "r", options.ReportDirPath(), "Specify HTML report path (the one with index.html inside) ")
-	flags.IntVarP(&options.Port, "port", "p", 8080, "Specify port to serve report at")
-	flags.BoolVarP(&openDir, "dir-only", "d", false, "Open report directory only, don't serve it")
 	flags.StringVarP(&options.YamlName, "yaml-name", "y", core.FindQodanaYaml(options.ProjectDir), "Override qodana.yaml name")
 	return cmd
 }

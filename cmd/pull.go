@@ -41,9 +41,6 @@ func newPullCommand() *cobra.Command {
 			core.PrepairContainerEnvSettings()
 		},
 		Run: func(cmd *cobra.Command, args []string) {
-			if options.YamlName == "" {
-				options.YamlName = core.FindQodanaYaml(options.ProjectDir)
-			}
 			if options.Linter == "" {
 				qodanaYaml := core.LoadQodanaYaml(options.ProjectDir, options.YamlName)
 				if qodanaYaml.Linter == "" {
@@ -67,6 +64,6 @@ func newPullCommand() *cobra.Command {
 	flags := cmd.Flags()
 	flags.StringVarP(&options.Linter, "linter", "l", "", "Override linter to use")
 	flags.StringVarP(&options.ProjectDir, "project-dir", "i", ".", "Root directory of the inspected project")
-	flags.StringVarP(&options.YamlName, "yaml-name", "y", "", "Override qodana.yaml name")
+	flags.StringVarP(&options.YamlName, "yaml-name", "y", core.FindQodanaYaml(options.ProjectDir), "Override qodana.yaml name")
 	return cmd
 }

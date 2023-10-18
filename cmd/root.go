@@ -82,6 +82,7 @@ func init() {
 		newInitCommand(),
 		newScanCommand(),
 		newShowCommand(),
+		newSendCommand(),
 		newPullCommand(),
 		newViewCommand(),
 		newContributorsCommand(),

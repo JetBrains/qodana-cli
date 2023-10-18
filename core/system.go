@@ -22,7 +22,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"io/fs"
 	"net/http"
 	"os"
 	"os/exec"
@@ -189,38 +188,6 @@ func noCache(h http.Handler) http.Handler {
 	return http.HandlerFunc(fn)
 }
 
-// LookUpLinterSystemDir returns path to the latest modified directory from <userCacheDir>/JetBrains/Qodana
-func LookUpLinterSystemDir(opts *QodanaOptions) string {
-	parent := opts.getQodanaSystemDir()
-
-	entries, err := os.ReadDir(parent)
-	if err != nil {
-		log.Debugf("Failed to read directory %s: %s", parent, err.Error())
-		return parent
-	}
-	subdirs := make([]fs.FileInfo, 0, len(entries))
-	for _, entry := range entries {
-		info, err := entry.Info()
-		if err != nil {
-			continue
-		}
-		subdirs = append(subdirs, info)
-	}
-	var latestDir string
-	var latestTime time.Time
-	for _, subdir := range subdirs {
-		if subdir.IsDir() {
-			if subdir.ModTime().After(latestTime) {
-				latestDir = subdir.Name()
-				latestTime = subdir.ModTime()
-			}
-		}
-	}
-	systemDir := filepath.Join(parent, latestDir)
-	log.Debugf("Found latest linter system dir: %s", systemDir)
-	return systemDir
-}
-
 // prepareHost gets the current user, creates the necessary folders for the analysis.
 func prepareHost(opts *QodanaOptions) {
 	if opts.RequiresToken() {
@@ -298,7 +265,7 @@ func RunAnalysis(ctx context.Context, options *QodanaOptions) int {
 
 	var exitCode int
 
-	if options.FullHistory && isGitInstalled() {
+	if options.FullHistory && isInstalled("git") {
 		remoteUrl := gitRemoteUrl(options.ProjectDir)
 		branch := gitBranch(options.ProjectDir)
 		if remoteUrl == "" && branch == "" {
@@ -341,7 +308,7 @@ func RunAnalysis(ctx context.Context, options *QodanaOptions) int {
 		if err != nil {
 			log.Fatal(err)
 		}
-	} else if options.Commit != "" && isGitInstalled() {
+	} else if options.Commit != "" && isInstalled("git") {
 		options.GitReset = false
 		err := gitReset(options.ProjectDir, options.Commit)
 		if err != nil {

@@ -38,25 +38,25 @@ You can also add the linter by its name with the `--linter` option (e.g. `--lint
 
 #### macOS and Linux
 ##### Install with [Homebrew](https://brew.sh) (recommended)
-```console
+```shell
 brew install jetbrains/utils/qodana
 ```
 ##### Install with our installer
-```console
+```shell
 curl -fsSL https://jb.gg/qodana-cli/install | bash
 ```
 
 #### Windows
 ##### Install with [Windows Package Manager](https://learn.microsoft.com/en-us/windows/package-manager/winget/) (recommended)
-```console
+```shell
 winget install -e --id JetBrains.QodanaCLI
 ```
 ##### Install with [Chocolatey](https://chocolatey.org)
-```console
+```shell
 choco install qodana
 ```
 ##### Install with [Scoop](https://scoop.sh)
-```console
+```shell
 scoop bucket add jetbrains https://github.com/JetBrains/scoop-utils
 scoop install qodana
 ```
@@ -68,7 +68,7 @@ from [this page](https://github.com/JetBrains/qodana-cli/releases/latest).
 
 Or, if you have Go installed, you can install the latest version of the CLI with the following command:
 
-```console
+```shell
 go install github.com/JetBrains/qodana-cli/v2023@main
 ```
 
@@ -86,7 +86,7 @@ If you know what linter you want to use, you can skip this step.
 
 Also, Qodana CLI can choose a linter for you. Just run the following command in your **project root**:
 
-```console
+```shell
 qodana init
 ```
 
@@ -95,7 +95,7 @@ qodana init
 Right after you configured your project (or remember linter's name you want to run),
 you can run Qodana inspections simply by invoking the following command in your project root:
 
-```console
+```shell
 qodana scan
 ```
 
@@ -108,7 +108,7 @@ After the analysis, the results are saved to `./<userCacheDir>/JetBrains/<linter
 Inside the directory `./<userCacheDir>/JetBrains/<linter>/results/report`, you can find a Qodana HTML report.
 To view it in the browser, run the following command from your project root:
 
-```console
+```shell
 qodana show
 ```
 
@@ -137,7 +137,7 @@ Configure a project for Qodana:
 prepare Qodana configuration file by analyzing the project structure
 and generating a default configuration qodana.yaml file.
 
-```
+```shell
 qodana init [flags]
 ```
 
@@ -163,7 +163,7 @@ Note that most options can be configured via qodana.yaml (https://www.jetbrains.
 But you can always override qodana.yaml options with the following command-line options.
 
 
-```
+```shell
 qodana scan [flags]
 ```
 
@@ -218,7 +218,7 @@ be viewed via the file:// protocol (by double-clicking the index.html file).
 https://www.jetbrains.com/help/qodana/html-report.html 
 This command serves the Qodana report locally and opens a browser to it.
 
-```
+```shell
 qodana show [flags]
 ```
 
@@ -233,6 +233,33 @@ qodana show [flags]
   -r, --report-dir string    Specify HTML report path (the one with index.html inside) (default <userCacheDir>/JetBrains/<linter>/results/report)
 ```
 
+### send
+
+Send a Qodana report to Cloud
+
+#### Synopsis
+
+Send the report (qodana.sarif.json and other analysis results) to Qodana Cloud.
+
+If report directory is not specified, the latest report will be fetched from the default linter results location.
+
+If you are using other Qodana Cloud instance than https://qodana.cloud/, override it with declaring `ENDPOINT` environment variable.
+
+```shell
+qodana send [flags]
+```
+
+#### Options
+
+```
+  -h, --help                 help for send
+  -l, --linter string        Override linter to use
+  -i, --project-dir string   Root directory of the inspected project (default ".")
+  -r, --report-dir string    Specify HTML report path (the one with index.html inside)  (default "/Users/tv/Library/Caches/JetBrains/Qodana/e3b0c442-250e5c26/results/report")
+  -o, --results-dir string   Override directory to save Qodana inspection results to (default "/Users/tv/Library/Caches/JetBrains/Qodana/e3b0c442-250e5c26/results")
+  -y, --yaml-name string     Override qodana.yaml name
+```
+
 ### view
 
 View SARIF files in CLI
@@ -241,7 +268,7 @@ View SARIF files in CLI
 
 Preview all problems found in SARIF files in CLI.
 
-```
+```shell
 qodana view [flags]
 ```
 
@@ -267,7 +294,7 @@ A command-line helper for Qodana pricing to calculate active contributors* in th
 ** Ultimate Plus plan currently has a discount, more information can be found on https://www.jetbrains.com/qodana/buy/
 
 
-```
+```shell
 qodana contributors [flags]
 ```
 
@@ -285,7 +312,7 @@ A command-line helper for project statistics: languages, lines of code. Powered 
 
 #### Synopsis
 
-```
+```shell
 qodana cloc [flags]
 ```
 
@@ -312,7 +339,7 @@ as there is some additional configuration tuning required that differs from proj
 
 It's easy to try Qodana locally by running a _simple_ command:
 
-```console
+```shell
 docker run --rm -it -p 8080:8080 -v <source-directory>/:/data/project/ -v <output-directory>/:/data/results/ -v <caches-directory>/:/data/cache/ jetbrains/qodana-<linter> --show-report
 ```
 
