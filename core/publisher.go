@@ -26,10 +26,9 @@ import (
 	"crypto/md5"
 	"encoding/hex"
 	"encoding/xml"
-	"github.com/JetBrains/qodana-cli/v2023/cloud"
 	cp "github.com/otiai10/copy"
+	log "github.com/sirupsen/logrus"
 	"io"
-	"log"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -69,7 +68,7 @@ func SendReport(opts *QodanaOptions, token string) {
 		}
 	}
 
-	publisherCommand := getPublisherArgs(Prod.JbrJava(), publisher, opts, token, os.Getenv(cloud.DefaultEndpoint))
+	publisherCommand := getPublisherArgs(Prod.JbrJava(), publisher, opts, token, os.Getenv(QodanaEndpoint))
 	if res := RunCmd("", publisherCommand...); res > 0 {
 		os.Exit(res)
 	}
@@ -186,6 +185,6 @@ func verifyMd5Hash(version string, path string) {
 		}
 		log.Fatal("The provided file and the file from the link have different md5 hashes")
 	} else {
-		println("Obtained publisher " + version + " and successfully checked md5 hash")
+		log.Debug("Obtained publisher " + version + " and successfully checked md5 hash")
 	}
 }

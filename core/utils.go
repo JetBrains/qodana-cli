@@ -227,6 +227,24 @@ func IsContainer() bool {
 	return os.Getenv(qodanaDockerEnv) != ""
 }
 
+// isInstalled checks if git is installed.
+func isInstalled(what string) bool {
+	help := ""
+	if what == "git" {
+		help = ", refer to https://git-scm.com/downloads for installing it"
+	}
+
+	_, err := exec.LookPath(what)
+	if err != nil {
+		WarningMessage(
+			"Unable to find %s"+help,
+			what,
+		)
+		return false
+	}
+	return true
+}
+
 // createUser will make dynamic uid as a valid user `idea`, needed for gradle cache.
 func createUser(fn string) {
 	if //goland:noinspection ALL

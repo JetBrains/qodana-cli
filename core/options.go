@@ -98,17 +98,20 @@ func (o *QodanaOptions) unsetenv(key string) {
 
 func (o *QodanaOptions) id() string {
 	if o._id == "" {
-		var linter string
+		var analyzer string
 		if o.Linter != "" {
-			linter = o.Linter
+			analyzer = o.Linter
 		} else if o.Ide != "" {
-			linter = o.Ide
+			analyzer = o.Ide
+		}
+		if analyzer == "" {
+			analyzer = LoadQodanaYaml(o.ProjectDir, o.YamlName).Linter
 		}
 		length := 7
 		projectAbs, _ := filepath.Abs(o.ProjectDir)
 		o._id = fmt.Sprintf(
 			"%s-%s",
-			getHash(linter)[0:length+1],
+			getHash(analyzer)[0:length+1],
 			getHash(projectAbs)[0:length+1],
 		)
 	}

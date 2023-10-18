@@ -25,18 +25,6 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-// isGitInstalled checks if git is installed.
-func isGitInstalled() bool {
-	_, err := exec.LookPath("git")
-	if err != nil {
-		WarningMessage(
-			"Unable to find git, refer to https://git-scm.com/downloads for installing it",
-		)
-		return false
-	}
-	return true
-}
-
 // gitRun runs the git command in the given directory and returns an error if any.
 func gitRun(cwd string, command []string) error {
 	cmd := exec.Command("git", command...)
