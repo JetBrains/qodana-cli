@@ -43,10 +43,6 @@ But you can always override qodana.yaml options with the following command-line 
 		Run: func(cmd *cobra.Command, args []string) {
 			ctx := cmd.Context()
 			checkProjectDir(options.ProjectDir)
-			if options.YamlName == "" {
-				options.YamlName = core.FindQodanaYaml(options.ProjectDir)
-			}
-
 			if options.Linter == "" && options.Ide == "" {
 				qodanaYaml := core.LoadQodanaYaml(options.ProjectDir, options.YamlName)
 				if qodanaYaml.Linter == "" && qodanaYaml.Ide == "" {
@@ -108,7 +104,7 @@ But you can always override qodana.yaml options with the following command-line 
 	flags.BoolVar(&options.ClearCache, "clear-cache", false, "Clear the local Qodana cache before running the analysis")
 	flags.BoolVarP(&options.ShowReport, "show-report", "w", false, "Serve HTML report on port")
 	flags.IntVar(&options.Port, "port", 8080, "Port to serve the report on")
-	flags.StringVar(&options.YamlName, "yaml-name", "", "Override qodana.yaml name to use: 'qodana.yaml' or 'qodana.yml'")
+	flags.StringVar(&options.YamlName, "yaml-name", core.FindQodanaYaml(options.ProjectDir), "Override qodana.yaml name to use: 'qodana.yaml' or 'qodana.yml'")
 
 	flags.StringVarP(&options.AnalysisId, "analysis-id", "a", uuid.New().String(), "Unique report identifier (GUID) to be used by Qodana Cloud")
 	flags.StringVarP(&options.Baseline, "baseline", "b", "", "Provide the path to an existing SARIF report to be used in the baseline state calculation")
