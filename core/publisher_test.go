@@ -8,7 +8,6 @@ import (
 )
 
 func TestFetchPublisher(t *testing.T) {
-
 	tempDir, err := os.MkdirTemp("", "test")
 	if err != nil {
 		t.Fatal(err)
@@ -20,12 +19,11 @@ func TestFetchPublisher(t *testing.T) {
 			t.Fatal(err)
 		}
 	}(tempDir) // clean up
+	path := filepath.Join(tempDir, "publisher.jar")
+	fetchPublisher(path)
 
-	fetchPublisher(tempDir)
-
-	expectedPath := filepath.Join(tempDir, "publisher.jar")
-	if _, err := os.Stat(expectedPath); os.IsNotExist(err) {
-		t.Fatalf("fetchPublisher() failed, expected %v to exists, got error: %v", expectedPath, err)
+	if _, err := os.Stat(path); os.IsNotExist(err) {
+		t.Fatalf("fetchPublisher() failed, expected %v to exists, got error: %v", path, err)
 	}
 }
 
