@@ -141,7 +141,7 @@ func GetProperties(opts *QodanaOptions, yamlProps map[string]string, dotNetOptio
 		getDeviceIdSalt(),
 		plugins,
 		opts.AnalysisId,
-		opts.CoverageDir,
+		opts.CoverageDirPath(),
 	)
 	for k, v := range yamlProps { // qodana.yaml – overrides vmoptions
 		if !strings.HasPrefix(k, "-") {
