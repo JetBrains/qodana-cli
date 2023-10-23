@@ -103,7 +103,7 @@ func (o *QodanaOptions) id() string {
 		} else if o.Ide != "" {
 			analyzer = o.Ide
 		}
-		if analyzer == "" {
+		if analyzer == "" && o.YamlName != "" {
 			analyzer = LoadQodanaYaml(o.ProjectDir, o.YamlName).Linter
 		}
 		length := 7
