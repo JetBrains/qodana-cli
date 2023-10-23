@@ -34,6 +34,8 @@ import (
 	"path/filepath"
 )
 
+const jarName = "publisher.jar"
+
 type metadata struct {
 	Versioning versioning `xml:"versioning"`
 }
@@ -45,14 +47,21 @@ type versioning struct {
 
 // SendReport sends report to Qodana Cloud.
 func SendReport(opts *QodanaOptions, token string) {
-	path := Prod.IdeBin()
-	if !IsContainer() {
-		path = opts.ConfDirPath()
-		fetchPublisher(path)
+	var publisherPath string
+	if IsContainer() {
+		publisherPath = filepath.Join(Prod.IdeBin(), jarName)
+	} else {
+		publisherPath = filepath.Join(opts.ConfDirPath(), jarName)
 	}
-	publisher := filepath.Join(path, "publisher.jar")
-	if _, err := os.Stat(publisher); os.IsNotExist(err) {
-		log.Fatalf("Not able to send the report: %s is missing", publisher)
+	if _, err := os.Stat(publisherPath); os.IsNotExist(err) {
+		err := os.MkdirAll(filepath.Dir(publisherPath), os.ModePerm)
+		if err != nil {
+			log.Fatalf("failed to create directory: %v", err)
+		}
+		fetchPublisher(publisherPath)
+	}
+	if _, err := os.Stat(publisherPath); os.IsNotExist(err) {
+		log.Fatalf("Not able to send the report: %s is missing", publisherPath)
 	}
 	if !IsContainer() {
 		if _, err := os.Stat(opts.ReportResultsPath()); os.IsNotExist(err) {
@@ -68,7 +77,7 @@ func SendReport(opts *QodanaOptions, token string) {
 		}
 	}
 
-	publisherCommand := getPublisherArgs(Prod.JbrJava(), publisher, opts, token, os.Getenv(QodanaEndpoint))
+	publisherCommand := getPublisherArgs(Prod.JbrJava(), publisherPath, opts, token, os.Getenv(QodanaEndpoint))
 	if res := RunCmd("", publisherCommand...); res > 0 {
 		os.Exit(res)
 	}
@@ -130,17 +139,16 @@ func getPublisherUrl(version string) string {
 	return "https://packages.jetbrains.team/maven/p/ij/intellij-dependencies/org/jetbrains/qodana/publisher-cli/" + version + "/publisher-cli-" + version + ".jar"
 }
 
-func fetchPublisher(directory string) {
-	version := publisherVersion().Release
-	path := filepath.Join(directory, "publisher.jar")
+func fetchPublisher(path string) {
+	jarVersion := publisherVersion().Release
 	if _, err := os.Stat(path); err == nil {
 		return
 	}
-	err := DownloadFile(path, getPublisherUrl(version), nil)
+	err := DownloadFile(path, getPublisherUrl(jarVersion), nil)
 	if err != nil {
 		log.Fatal(err)
 	}
-	verifyMd5Hash(version, path)
+	verifyMd5Hash(jarVersion, path)
 }
 
 func verifyMd5Hash(version string, path string) {
