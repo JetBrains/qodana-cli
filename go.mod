@@ -10,7 +10,7 @@ require (
 	github.com/go-enry/go-enry/v2 v2.8.6
 	github.com/google/uuid v1.3.1
 	github.com/liamg/clinch v1.6.4
-	github.com/mattn/go-isatty v0.0.19
+	github.com/mattn/go-isatty v0.0.20
 	github.com/otiai10/copy v1.14.0
 	github.com/owenrumney/go-sarif/v2 v2.3.0
 	github.com/pterm/pterm v0.12.69
