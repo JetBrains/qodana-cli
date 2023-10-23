@@ -54,7 +54,7 @@ func SendReport(opts *QodanaOptions, token string) {
 		publisherPath = filepath.Join(opts.ConfDirPath(), jarName)
 	}
 	if _, err := os.Stat(publisherPath); os.IsNotExist(err) {
-		err := os.MkdirAll(filepath.Base(publisherPath), os.ModePerm)
+		err := os.MkdirAll(filepath.Dir(publisherPath), os.ModePerm)
 		if err != nil {
 			log.Fatalf("failed to create directory: %v", err)
 		}
