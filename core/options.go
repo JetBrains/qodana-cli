@@ -171,6 +171,17 @@ func (o *QodanaOptions) ReportDirPath() string {
 	return o.ReportDir
 }
 
+func (o *QodanaOptions) CoverageDirPath() string {
+	if o.CoverageDir == "" {
+		if IsContainer() {
+			o.CoverageDir = "/data/coverage"
+		} else {
+			o.CoverageDir = filepath.Join(o.ProjectDir, ".qodana", "code-coverage")
+		}
+	}
+	return o.CoverageDir
+}
+
 func (o *QodanaOptions) ReportResultsPath() string {
 	return filepath.Join(o.ReportDirPath(), "results")
 }
