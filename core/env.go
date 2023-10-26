@@ -78,7 +78,7 @@ func validateRemoteUrl(remote string, qEnv string) string {
 	}
 	_, err := url.ParseRequestURI(remote)
 	if remote == "" || err != nil {
-		log.Warnf("Unable to parse git remote URL, set %s env variable for proper qodana.cloud reporting", qodanaBranch)
+		log.Warnf("Unable to parse git remote URL %s, set %s env variable for proper qodana.cloud reporting", remote, qodanaRemoteUrl)
 		return ""
 	}
 	return remote
