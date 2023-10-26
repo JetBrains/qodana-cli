@@ -190,9 +190,6 @@ func noCache(h http.Handler) http.Handler {
 
 // prepareHost gets the current user, creates the necessary folders for the analysis.
 func prepareHost(opts *QodanaOptions) {
-	if opts.RequiresToken() {
-		opts.ValidateToken(false)
-	}
 	if err := os.MkdirAll(opts.CacheDir, os.ModePerm); err != nil {
 		log.Fatal("couldn't create a directory ", err.Error())
 	}
@@ -203,7 +200,7 @@ func prepareHost(opts *QodanaOptions) {
 		PrepareContainerEnvSettings()
 	}
 	if opts.Ide != "" {
-		if Contains(allCodes, strings.TrimSuffix(opts.Ide, EapSuffix)) || strings.HasPrefix(opts.Ide, "https://") {
+		if Contains(AllSupportedCodes, strings.TrimSuffix(opts.Ide, EapSuffix)) || strings.HasPrefix(opts.Ide, "https://") {
 			printProcess(func(spinner *pterm.SpinnerPrinter) {
 				if spinner != nil {
 					spinner.ShowTimer = false // We will update interactive spinner
@@ -212,6 +209,9 @@ func prepareHost(opts *QodanaOptions) {
 			}, fmt.Sprintf("Downloading %s", opts.Ide), fmt.Sprintf("downloading IDE distribution to %s", opts.getQodanaSystemDir()))
 		}
 		prepareLocalIdeSettings(opts)
+	}
+	if opts.RequiresToken() {
+		opts.ValidateToken(false)
 	}
 }
 

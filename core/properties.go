@@ -19,7 +19,7 @@ package core
 import (
 	"fmt"
 	"github.com/JetBrains/qodana-cli/v2023/cloud"
-	"log"
+	log "github.com/sirupsen/logrus"
 	"os"
 	"path/filepath"
 	"sort"
@@ -103,6 +103,8 @@ func getPropertiesMap(
 			properties["-Dqodana.net.platform"] = dotNet.Platform
 		}
 	}
+
+	log.Debugf("properties: %v", properties)
 
 	return properties
 }

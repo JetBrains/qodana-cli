@@ -22,6 +22,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/JetBrains/qodana-cli/v2023/cloud"
+	log "github.com/sirupsen/logrus"
 	"golang.org/x/exp/maps"
 	"net/http"
 	"net/http/httptest"
@@ -871,16 +872,16 @@ func Test_WriteAppInfo(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	expected := `<component xmlns="http://jetbrains.org/intellij/schema/application-info"
+	expected := fmt.Sprintf(`<component xmlns="http://jetbrains.org/intellij/schema/application-info"
                xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
                xsi:schemaLocation="http://jetbrains.org/intellij/schema/application-info http://jetbrains.org/intellij/schema/ApplicationInfo.xsd">
       <version major="2022" minor="1" eap="true"/>
       <company name="JetBrains s.r.o." url="https://www.jetbrains.com" copyrightStart="2000"/>
-      <build number="QDTEST-420.69" date="202212060511" />
+      <build number="QDTEST-420.69" date="%s" />
       <names product="Qodana for Tests" fullname="Qodana for Tests"/>
       <icon svg="xxx.svg" svg-small="xxx.svg"/>
       <plugins url="https://plugins.jetbrains.com/" builtin-url="__BUILTIN_PLUGINS_URL__"/>
-</component>`
+</component>`, getDateNow())
 	assert.Equal(t, expected, string(actual))
 	err = os.RemoveAll(tmpDir)
 	if err != nil {
@@ -1106,6 +1107,7 @@ func TestSetupLicenseToken(t *testing.T) {
 }
 
 func TestQodanaOptions_RequiresToken(t *testing.T) {
+	log.SetLevel(log.DebugLevel)
 	tests := []struct {
 		name     string
 		linter   string
@@ -1133,13 +1135,17 @@ func TestQodanaOptions_RequiresToken(t *testing.T) {
 	}
 
 	for _, tt := range tests {
-		token := os.Getenv(QodanaToken)
-		if token != "" {
-			err := os.Unsetenv(QodanaToken)
-			if err != nil {
-				t.Fatal(err)
+		var token string
+		for _, env := range []string{QodanaToken, QodanaLicenseOnlyToken, QodanaLicense} {
+			if os.Getenv(env) != "" {
+				token = os.Getenv(env)
+				err := os.Unsetenv(env)
+				if err != nil {
+					t.Fatal(err)
+				}
 			}
 		}
+
 		t.Run(tt.name, func(t *testing.T) {
 			if tt.name == QodanaLicense {
 				err := os.Setenv(QodanaLicense, "test")
@@ -1162,6 +1168,10 @@ func TestQodanaOptions_RequiresToken(t *testing.T) {
 		})
 		if token != "" {
 			err := os.Setenv(QodanaToken, token)
+			if err != nil {
+				t.Fatal(err)
+			}
+			err = os.Setenv(QodanaLicenseOnlyToken, token)
 			if err != nil {
 				t.Fatal(err)
 			}

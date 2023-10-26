@@ -25,11 +25,11 @@ import (
 func appInfoXml(
 	majorMinorVersion string,
 	eap bool,
+	date string,
 	build string,
 	code string,
 	name string,
 ) string {
-	date := "202212060511"
 	versions := strings.Split(majorMinorVersion, ".")
 	var major, minor string
 	if len(versions) == 2 {

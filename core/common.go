@@ -47,12 +47,9 @@ var (
 	QDRUBY = "QDRUBY"
 )
 
-// AllSupportedCodes is a list of all supported Qodana linters product codes
-var AllSupportedCodes = []string{QDJVMC, QDJVM, QDPHP, QDPY, QDPYC, QDJS, QDGO, QDNET}
-
 func Image(code string) string {
 	switch code {
-	case QDAND:
+	case QDANDC:
 		return "jetbrains/qodana-jvm-android:" + version
 	case QDPHP:
 		return "jetbrains/qodana-php:" + version
