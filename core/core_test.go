@@ -22,6 +22,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/JetBrains/qodana-cli/v2023/cloud"
+	log "github.com/sirupsen/logrus"
 	"golang.org/x/exp/maps"
 	"net/http"
 	"net/http/httptest"
@@ -1077,12 +1078,25 @@ func TestSetupLicenseToken(t *testing.T) {
 }
 
 func TestQodanaOptions_RequiresToken(t *testing.T) {
+	log.SetLevel(log.DebugLevel)
 	tests := []struct {
 		name     string
 		linter   string
 		ide      string
 		expected bool
 	}{
+		{
+			QodanaToken,
+			"",
+			"",
+			true,
+		},
+		{
+			QodanaLicense,
+			"",
+			"",
+			false,
+		},
 		{
 			"QDPYC docker",
 			Image(QDPYC),
@@ -1095,24 +1109,33 @@ func TestQodanaOptions_RequiresToken(t *testing.T) {
 			QDJVMC,
 			false,
 		},
-		{
-			QodanaLicense,
-			"",
-			"",
-			false,
-		},
 	}
 
 	for _, tt := range tests {
-		token := os.Getenv(QodanaToken)
-		if token != "" {
-			err := os.Unsetenv(QodanaToken)
-			if err != nil {
-				t.Fatal(err)
+		var token string
+		for _, env := range []string{QodanaToken, QodanaLicenseOnlyToken, QodanaLicense} {
+			if os.Getenv(env) != "" {
+				token = os.Getenv(env)
+				err := os.Unsetenv(env)
+				if err != nil {
+					t.Fatal(err)
+				}
 			}
 		}
+
 		t.Run(tt.name, func(t *testing.T) {
-			if tt.name == QodanaLicense {
+			if tt.name == QodanaToken {
+				err := os.Setenv(QodanaToken, "test")
+				if err != nil {
+					t.Fatal(err)
+				}
+				defer func() {
+					err := os.Unsetenv(QodanaToken)
+					if err != nil {
+						t.Fatal(err)
+					}
+				}()
+			} else if tt.name == QodanaLicense {
 				err := os.Setenv(QodanaLicense, "test")
 				if err != nil {
 					t.Fatal(err)
@@ -1133,6 +1156,10 @@ func TestQodanaOptions_RequiresToken(t *testing.T) {
 		})
 		if token != "" {
 			err := os.Setenv(QodanaToken, token)
+			if err != nil {
+				t.Fatal(err)
+			}
+			err = os.Setenv(QodanaLicenseOnlyToken, token)
 			if err != nil {
 				t.Fatal(err)
 			}

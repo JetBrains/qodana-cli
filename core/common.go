@@ -54,7 +54,7 @@ var AllSupportedCodes = []string{QDNET}
 
 func Image(code string) string {
 	switch code {
-	case QDAND:
+	case QDANDC:
 		return "jetbrains/qodana-jvm-android:" + version
 	case QDPHP:
 		return "jetbrains/qodana-php:" + version

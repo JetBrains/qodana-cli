@@ -225,23 +225,31 @@ func (o *QodanaOptions) properties() (map[string]string, []string) {
 }
 
 func (o *QodanaOptions) RequiresToken() bool {
-	if os.Getenv(QodanaLicense) != "" {
-		return false
-	}
-
-	if os.Getenv(QodanaToken) != "" || o.getenv(QodanaToken) != "" {
+	if os.Getenv(QodanaToken) != "" || o.getenv(QodanaLicenseOnlyToken) != "" {
 		return true
 	}
 
-	if o.Linter == Image(QDPYC) || o.Linter == Image(QDJVMC) {
+	var analyzer string
+	if o.Linter != "" {
+		analyzer = o.Linter
+	} else if o.Ide != "" {
+		analyzer = o.Ide
+	}
+
+	if os.Getenv(QodanaLicense) != "" ||
+		Contains(append(allSupportedFreeImages, allSupportedFreeCodes...), analyzer) ||
+		strings.Contains(lower(analyzer), "eap") ||
+		Prod.IsCommunity() || Prod.EAP {
 		return false
 	}
 
-	if o.Ide == QDJVMC || o.Ide == QDPYC {
-		return false
+	for _, e := range allSupportedPaidCodes {
+		if strings.HasPrefix(Image(e), o.Linter) || strings.HasPrefix(e, o.Ide) {
+			return true
+		}
 	}
 
-	return !Prod.IsCommunity() && !Prod.EAP
+	return false
 }
 
 func (o *QodanaOptions) fixesSupported() bool {

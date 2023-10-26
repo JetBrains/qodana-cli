@@ -388,6 +388,7 @@ func TestScanWithIde(t *testing.T) {
 		"--ide", ide,
 		"--property",
 		"idea.headless.enable.statistics=false",
+		"--log-level", "debug",
 	})
 	err = command.Execute()
 	if err != nil {
