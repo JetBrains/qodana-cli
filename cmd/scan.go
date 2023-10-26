@@ -43,23 +43,7 @@ But you can always override qodana.yaml options with the following command-line 
 		Run: func(cmd *cobra.Command, args []string) {
 			ctx := cmd.Context()
 			checkProjectDir(options.ProjectDir)
-			if options.Linter == "" && options.Ide == "" {
-				qodanaYaml := core.LoadQodanaYaml(options.ProjectDir, options.YamlName)
-				if qodanaYaml.Linter == "" && qodanaYaml.Ide == "" {
-					core.WarningMessage(
-						"No valid `linter:` field found in %s. Have you run %s? Running that for you...",
-						core.PrimaryBold(options.YamlName),
-						core.PrimaryBold("qodana init"),
-					)
-					options.Linter = core.GetLinter(options.ProjectDir, options.YamlName)
-					core.EmptyMessage()
-				} else {
-					options.Linter = qodanaYaml.Linter
-				}
-				if options.Ide == "" {
-					options.Ide = qodanaYaml.Ide
-				}
-			}
+			fetchAnalyzerSetting(options)
 			exitCode := core.RunAnalysis(ctx, options)
 
 			checkExitCode(exitCode, options.ResultsDir)
@@ -153,6 +137,26 @@ But you can always override qodana.yaml options with the following command-line 
 	}
 
 	return cmd
+}
+
+func fetchAnalyzerSetting(options *core.QodanaOptions) {
+	if options.Linter == "" && options.Ide == "" {
+		qodanaYaml := core.LoadQodanaYaml(options.ProjectDir, options.YamlName)
+		if qodanaYaml.Linter == "" && qodanaYaml.Ide == "" {
+			core.WarningMessage(
+				"No valid `linter:` field found in %s. Have you run %s? Running that for you...",
+				core.PrimaryBold(options.YamlName),
+				core.PrimaryBold("qodana init"),
+			)
+			options.Linter = core.GetLinter(options.ProjectDir, options.YamlName)
+			core.EmptyMessage()
+		} else {
+			options.Linter = qodanaYaml.Linter
+		}
+		if options.Ide == "" {
+			options.Ide = qodanaYaml.Ide
+		}
+	}
 }
 
 func checkProjectDir(projectDir string) {
