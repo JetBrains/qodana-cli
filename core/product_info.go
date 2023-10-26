@@ -24,6 +24,7 @@ import (
 	"runtime"
 	"strconv"
 	"strings"
+	"time"
 
 	log "github.com/sirupsen/logrus"
 )
@@ -321,6 +322,10 @@ func patchIdeScript(product product, strToRemove string, confDirPath string) str
 	return newFilePath
 }
 
+func getDateNow() string {
+	return time.Now().Format("200601021504")
+}
+
 func writeAppInfo(path string) {
 	if _, err := os.Stat(path); err == nil && IsContainer() {
 		return
@@ -329,6 +334,7 @@ func writeAppInfo(path string) {
 	appInfoContents := []byte(appInfoXml(
 		Prod.Version,
 		Prod.EAP,
+		getDateNow(),
 		Prod.Build,
 		Prod.Code,
 		Prod.Name,

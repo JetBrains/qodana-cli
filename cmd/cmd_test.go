@@ -333,11 +333,9 @@ func TestAllCommandsWithContainer(t *testing.T) {
 
 func TestScanWithIde(t *testing.T) {
 	log.SetLevel(log.DebugLevel)
-	ide := "QDPY"
-	token := os.Getenv("QODANA_LICENSE_ONLY_TOKEN")
-	if //goland:noinspection GoBoolExpressions
-	token == "" {
-		t.Skip("set your token here to run the test")
+	ide := "QDPYC"
+	if runtime.GOOS == "darwin" {
+		t.Skip("Skip on macOS")
 	}
 	projectPath := createProject(t, "qodana_scan_python")
 	resultsPath := filepath.Join(projectPath, "results")
@@ -355,6 +353,7 @@ func TestScanWithIde(t *testing.T) {
 		"--ide", ide,
 		"--property",
 		"idea.headless.enable.statistics=false",
+		"--log-level", "debug",
 	})
 	err = command.Execute()
 	if err != nil {
