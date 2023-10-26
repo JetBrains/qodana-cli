@@ -24,7 +24,6 @@ import (
 	"fmt"
 	"github.com/pterm/pterm"
 	"io"
-	"net/url"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -32,8 +31,6 @@ import (
 	"strings"
 
 	cliconfig "github.com/docker/cli/cli/config"
-
-	"github.com/cucumber/ci-environment/go"
 
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/container"
@@ -108,66 +105,13 @@ func encodeAuthToBase64(authConfig types.AuthConfig) (string, error) {
 	return base64.URLEncoding.EncodeToString(buf), nil
 }
 
-// extractQodanaEnvironmentForDocker extracts Qodana env variables QODANA_* to the given environment array.
-func extractQodanaEnvironmentForDocker(opts *QodanaOptions) {
-	ci := cienvironment.DetectCIEnvironment()
-	qEnv := "cli"
-	if ci != nil {
-		qEnv = strings.ReplaceAll(strings.ToLower(ci.Name), " ", "-")
-		opts.setenv(qodanaJobUrl, validateJobUrl(ci.URL, qEnv))
-		if ci.Git != nil {
-			opts.setenv(qodanaRemoteUrl, validateRemoteUrl(ci.Git.Remote))
-			opts.setenv(qodanaBranch, validateBranch(ci.Git.Branch, qEnv))
-			opts.setenv(qodanaRevision, ci.Git.Revision)
-		}
-	}
-	opts.setenv(qodanaEnv, fmt.Sprintf("%s:%s", qEnv, Version))
-}
-
-func validateRemoteUrl(remote string) string {
-	_, err := url.ParseRequestURI(remote)
-	if remote == "" || err != nil {
-		log.Warnf("Unable to parse git remote URL, set %s env variable for proper qodana.cloud reporting", qodanaBranch)
-		return ""
-	}
-	return remote
-}
-
-func validateBranch(branch string, env string) string {
-	if branch == "" {
-		if env == "github-actions" {
-			branch = os.Getenv("GITHUB_REF")
-		} else if env == "azure-pipelines" {
-			branch = os.Getenv("BUILD_SOURCEBRANCHNAME")
-		} else if env == "jenkins" {
-			branch = os.Getenv("GIT_BRANCH")
-		}
-	}
-	if branch == "" {
-		log.Warnf("Unable to parse git branch, set %s env variable for proper qodana.cloud reporting", qodanaBranch)
-		return ""
-	}
-	return branch
-}
-
-func validateJobUrl(ciUrl string, qEnv string) string {
-	if strings.HasPrefix(qEnv, "azure") { // temporary workaround for Azure Pipelines
-		return getAzureJobUrl()
-	}
-	_, err := url.ParseRequestURI(ciUrl)
-	if err != nil {
-		return ""
-	}
-	return ciUrl
-}
-
 func checkRequiredToolInstalled(tool string) bool {
 	_, err := exec.LookPath(tool)
 	return err == nil
 }
 
-// PrepairContainerEnvSettings checks if the host is ready to run Qodana container images.
-func PrepairContainerEnvSettings() {
+// PrepareContainerEnvSettings checks if the host is ready to run Qodana container images.
+func PrepareContainerEnvSettings() {
 	var tool string
 	if os.Getenv(qodanaCliUsePodman) == "" && checkRequiredToolInstalled("docker") {
 		tool = "docker"
@@ -309,7 +253,7 @@ func CheckContainerEngineMemory() {
 // getDockerOptions returns qodana docker container options.
 func getDockerOptions(opts *QodanaOptions) *types.ContainerCreateConfig {
 	cmdOpts := getIdeArgs(opts)
-	extractQodanaEnvironmentForDocker(opts)
+	ExtractQodanaEnvironment(opts.setenv)
 	cachePath, err := filepath.Abs(opts.CacheDir)
 	if err != nil {
 		log.Fatal("couldn't get abs path for cache", err)

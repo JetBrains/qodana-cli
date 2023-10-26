@@ -28,11 +28,8 @@ import (
 	"os/exec"
 	"path/filepath"
 	"runtime"
-	"sort"
 	"strings"
 	"testing"
-
-	"github.com/stretchr/testify/assert"
 
 	log "github.com/sirupsen/logrus"
 
@@ -50,6 +47,10 @@ func createProject(t *testing.T, name string) string {
 		t.Fatal(err)
 	}
 	err = os.WriteFile(location+"/hello.py", []byte("print(\"Hello\"   )"), 0o755)
+	if err != nil {
+		t.Fatal(err)
+	}
+	err = os.MkdirAll(location+"/.idea", 0o755)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -278,6 +279,7 @@ func TestAllCommandsWithContainer(t *testing.T) {
 		"-i", projectPath,
 		"-o", resultsPath,
 		"--cache-dir", filepath.Join(projectPath, "cache"),
+		"-v", filepath.Join(projectPath, ".idea") + ":/data/some",
 		"--fail-threshold", "5",
 		"--print-problems",
 		"--apply-fixes",

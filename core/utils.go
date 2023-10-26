@@ -116,6 +116,22 @@ func getAzureJobUrl() string {
 	return ""
 }
 
+// getSpaceJobUrl returns the Space job URL.
+func getSpaceRemoteUrl() string {
+	if server := os.Getenv("JB_SPACE_API_URL"); server != "" {
+		return strings.Join([]string{
+			"ssh://git@git.",
+			server,
+			"/",
+			os.Getenv("JB_SPACE_PROJECT_KEY"),
+			"/",
+			os.Getenv("JB_SPACE_GIT_REPOSITORY_NAME"),
+			".git",
+		}, "")
+	}
+	return ""
+}
+
 // findProcess using gopsutil to find process by name.
 func findProcess(processName string) bool {
 	if IsContainer() {

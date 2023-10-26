@@ -287,7 +287,7 @@ func readAppInfoXml(ideDir string) appInfo {
 
 func prepareLocalIdeSettings(opts *QodanaOptions) {
 	guessProduct(opts)
-	ExtractQodanaEnvironment()
+	ExtractQodanaEnvironment(setEnv)
 	SetupLicenseToken(opts)
 	SetupLicense(cloud.Token.Token)
 	prepareDirectories(
