@@ -46,9 +46,9 @@ jobs:
           registry: registry.jetbrains.team
           username: ${{ secrets.SPACE_USERNAME }}
           password: ${{ secrets.SPACE_PASSWORD }}
-      - run: go test -v ./... -coverprofile cover.out
+      - run: go test -v ./... -coverprofile cover.out -coverpkg=./...
         env:
-          QODANA_TOKEN: ${{ secrets.TEST_QODANA_TOKEN }}
+          QODANA_LICENSE_ONLY_TOKEN: ${{ secrets.QODANA_LICENSE_ONLY_TOKEN }}
       - if: startsWith(matrix.os, 'ubuntu')
         uses: JetBrains/qodana-action@main
         env:

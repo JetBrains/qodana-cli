@@ -282,6 +282,7 @@ func guessProduct(opts *QodanaOptions) {
 	}
 
 	log.Debug(Prod)
+	setEnv(QodanaDistEnv, Prod.Home)
 }
 
 // temporary solution to fix runs in the native mode

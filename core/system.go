@@ -193,13 +193,6 @@ func prepareHost(opts *QodanaOptions) {
 	if opts.RequiresToken() {
 		opts.ValidateToken(false)
 	}
-
-	if opts.ClearCache {
-		err := os.RemoveAll(opts.CacheDir)
-		if err != nil {
-			log.Errorf("Could not clear local Qodana cache: %s", err)
-		}
-	}
 	if err := os.MkdirAll(opts.CacheDir, os.ModePerm); err != nil {
 		log.Fatal("couldn't create a directory ", err.Error())
 	}
@@ -207,7 +200,7 @@ func prepareHost(opts *QodanaOptions) {
 		log.Fatal("couldn't create a directory ", err.Error())
 	}
 	if opts.Linter != "" {
-		PrepairContainerEnvSettings()
+		PrepareContainerEnvSettings()
 	}
 	if opts.Ide != "" {
 		if Contains(allCodes, strings.TrimSuffix(opts.Ide, EapSuffix)) || strings.HasPrefix(opts.Ide, "https://") {
