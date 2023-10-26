@@ -23,37 +23,18 @@ import (
 	"github.com/spf13/cobra"
 )
 
-// pullOptions represents pull command options.
-type pullOptions struct {
-	Linter     string
-	ProjectDir string
-	YamlName   string
-}
-
 // newPullCommand returns a new instance of the show command.
 func newPullCommand() *cobra.Command {
-	options := &pullOptions{}
+	options := &core.QodanaOptions{}
 	cmd := &cobra.Command{
 		Use:   "pull",
 		Short: "Pull latest version of linter",
 		Long:  `An alternative to pull an image.`,
 		PreRun: func(cmd *cobra.Command, args []string) {
-			core.PrepairContainerEnvSettings()
+			core.PrepareContainerEnvSettings()
 		},
 		Run: func(cmd *cobra.Command, args []string) {
-			if options.Linter == "" {
-				qodanaYaml := core.LoadQodanaYaml(options.ProjectDir, options.YamlName)
-				if qodanaYaml.Linter == "" {
-					core.WarningMessage(
-						"No valid qodana.yaml found. Have you run %s? Running that for you...",
-						core.PrimaryBold("qodana init"),
-					)
-					options.Linter = core.GetLinter(options.ProjectDir, options.YamlName)
-					core.EmptyMessage()
-				} else {
-					options.Linter = qodanaYaml.Linter
-				}
-			}
+			fetchAnalyzerSetting(options)
 			containerClient, err := client.NewClientWithOpts()
 			if err != nil {
 				log.Fatal("couldn't connect to container engine ", err)
