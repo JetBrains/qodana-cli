@@ -47,11 +47,11 @@ func TestGetPublisherArgs(t *testing.T) {
 	}
 
 	// Call the function being tested
-	publisherArgs := getPublisherArgs(Prod.JbrJava(), "test-publisher.jar", opts, "test-token", "test-endpoint")
+	publisherArgs := getPublisherArgs(prod.jbrJava(), "test-publisher.jar", opts, "test-token", "test-endpoint")
 
 	// Assert that the expected arguments are present
 	expectedArgs := []string{
-		Prod.JbrJava(),
+		prod.jbrJava(),
 		"-jar",
 		"test-publisher.jar",
 		"--analysis-id", "test-analysis-id",

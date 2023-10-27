@@ -49,7 +49,7 @@ type versioning struct {
 func SendReport(opts *QodanaOptions, token string) {
 	var publisherPath string
 	if IsContainer() {
-		publisherPath = filepath.Join(Prod.IdeBin(), jarName)
+		publisherPath = filepath.Join(prod.IdeBin(), jarName)
 	} else {
 		publisherPath = filepath.Join(opts.ConfDirPath(), jarName)
 	}
@@ -77,7 +77,7 @@ func SendReport(opts *QodanaOptions, token string) {
 		}
 	}
 
-	publisherCommand := getPublisherArgs(Prod.JbrJava(), publisherPath, opts, token, os.Getenv(QodanaEndpoint))
+	publisherCommand := getPublisherArgs(prod.jbrJava(), publisherPath, opts, token, os.Getenv(QodanaEndpoint))
 	if res := RunCmd("", publisherCommand...); res > 0 {
 		os.Exit(res)
 	}
@@ -144,7 +144,7 @@ func fetchPublisher(path string) {
 	if _, err := os.Stat(path); err == nil {
 		return
 	}
-	err := DownloadFile(path, getPublisherUrl(jarVersion), nil)
+	err := downloadFile(path, getPublisherUrl(jarVersion), nil)
 	if err != nil {
 		log.Fatal(err)
 	}

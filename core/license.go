@@ -24,19 +24,19 @@ import (
 	"os"
 )
 
-func SetupLicense(token string) {
+func setupLicense(token string) {
 	_, exists := os.LookupEnv(QodanaLicense)
 	if exists {
 		return
 	}
 
 	// community versions works without any license and can't check any license
-	if Prod.IsCommunity() {
+	if prod.isCommunity() {
 		return
 	}
 
 	// eap version works with eap's license dependent on build date
-	if Prod.EAP {
+	if prod.EAP {
 		if token == "" {
 			fmt.Println(cloud.EapWarnTokenMessage)
 			fmt.Println()
@@ -68,7 +68,7 @@ func SetupLicense(token string) {
 	}
 }
 
-func SetupLicenseToken(opts *QodanaOptions) {
+func setupLicenseToken(opts *QodanaOptions) {
 	token := opts.loadToken(false)
 	licenseOnlyToken := os.Getenv(QodanaLicenseOnlyToken)
 

@@ -27,10 +27,10 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
-var Config QodanaYaml
+var qConfig QodanaYaml
 
-// GetQodanaYaml reads qodana.yaml or qodana.yml
-func GetQodanaYaml(project string) QodanaYaml {
+// getQodanaYaml reads qodana.yaml or qodana.yml
+func getQodanaYaml(project string) QodanaYaml {
 	q := &QodanaYaml{}
 	qodanaYamlPath := filepath.Join(project, "qodana.yaml")
 	if _, err := os.Stat(qodanaYamlPath); errors.Is(err, os.ErrNotExist) {

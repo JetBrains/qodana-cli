@@ -41,6 +41,8 @@ func lower(s string) string {
 }
 
 // Contains checks if a string is in a given slice.
+//
+//goland:noinspection GoUnnecessarilyExportedIdentifiers
 func Contains(s []string, str string) bool {
 	for _, v := range s {
 		if v == str {
@@ -170,8 +172,10 @@ func isProcess(find string) bool {
 	return false
 }
 
-// quoteIfSpace wraps in '"' if '`s`' Contains space.
-func quoteIfSpace(s string) string {
+// QuoteIfSpace wraps in '"' if '`s`' Contains space.
+//
+//goland:noinspection GoUnnecessarilyExportedIdentifiers
+func QuoteIfSpace(s string) string {
 	if strings.Contains(s, " ") {
 		return "\"" + s + "\""
 	} else {
@@ -180,6 +184,8 @@ func quoteIfSpace(s string) string {
 }
 
 // QuoteForWindows wraps in '"' if '`s`' contains space on windows.
+//
+//goland:noinspection GoUnnecessarilyExportedIdentifiers
 func QuoteForWindows(s string) string {
 	if //goland:noinspection GoBoolExpressions
 	strings.Contains(s, " ") && runtime.GOOS == "windows" {
@@ -283,7 +289,7 @@ func createUser(fn string) {
 	}
 }
 
-func DownloadFile(filepath string, url string, spinner *pterm.SpinnerPrinter) error {
+func downloadFile(filepath string, url string, spinner *pterm.SpinnerPrinter) error {
 	response, err := http.Head(url)
 	if err != nil {
 		return err

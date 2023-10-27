@@ -42,11 +42,11 @@ type LicenseToken struct {
 }
 
 const (
-	QodanaLicenseRequestCooldownEnv = "QODANA_LICENSE_REQUEST_COOLDOWN"
+	qodanaLicenseRequestCooldownEnv = "QODANA_LICENSE_REQUEST_COOLDOWN"
 
-	QodanaLicenseRequestTimeoutEnv = "QODANA_LICENSE_REQUEST_TIMEOUT"
+	qodanaLicenseRequestTimeoutEnv = "QODANA_LICENSE_REQUEST_TIMEOUT"
 
-	QodanaLicenseRequestAttemptsCountEnv = "QODANA_LICENSE_ATTEMPTS"
+	qodanaLicenseRequestAttemptsCountEnv = "QODANA_LICENSE_ATTEMPTS"
 
 	qodanaLicenseRequestAttemptsCount = 3
 
@@ -169,15 +169,15 @@ func requestLicenseDataAttempt(endpoint string, token string) ([]byte, error) {
 }
 
 func getTimeout() int {
-	return GetEnvWithDefaultInt(QodanaLicenseRequestTimeoutEnv, qodanaLicenseRequestTimeout)
+	return getEnvWithDefaultInt(qodanaLicenseRequestTimeoutEnv, qodanaLicenseRequestTimeout)
 }
 
 func getCooldown() int {
-	return GetEnvWithDefaultInt(QodanaLicenseRequestCooldownEnv, qodanaLicenseRequestCooldown)
+	return getEnvWithDefaultInt(qodanaLicenseRequestCooldownEnv, qodanaLicenseRequestCooldown)
 }
 
 func getAttempts() int {
-	return GetEnvWithDefaultInt(QodanaLicenseRequestAttemptsCountEnv, qodanaLicenseRequestAttemptsCount)
+	return getEnvWithDefaultInt(qodanaLicenseRequestAttemptsCountEnv, qodanaLicenseRequestAttemptsCount)
 }
 
 func GetEnvWithDefault(env string, defaultValue string) string {
@@ -188,7 +188,7 @@ func GetEnvWithDefault(env string, defaultValue string) string {
 	return value
 }
 
-func GetEnvWithDefaultInt(env string, defaultValue int) int {
+func getEnvWithDefaultInt(env string, defaultValue int) int {
 	value, exists := os.LookupEnv(env)
 	if !exists {
 		return defaultValue

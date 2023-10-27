@@ -26,6 +26,7 @@ import (
 	"strings"
 )
 
+//goland:noinspection GoUnnecessarilyExportedIdentifiers
 const (
 	qodanaEnv              = "QODANA_ENV"
 	QodanaToken            = "QODANA_TOKEN"
@@ -46,11 +47,13 @@ const (
 	androidSdkRoot         = "ANDROID_SDK_ROOT"
 	QodanaLicenseEndpoint  = "LICENSE_ENDPOINT"
 	QodanaLicense          = "QODANA_LICENSE"
-	QodanaTreatAsRelease   = "QODANA_TREAT_AS_RELEASE"
+	qodanaTreatAsRelease   = "QODANA_TREAT_AS_RELEASE"
 	qodanaClearKeyring     = "QODANA_CLEAR_KEYRING"
 )
 
 // ExtractQodanaEnvironment extracts Qodana environment variables from the current environment.
+//
+//goland:noinspection GoUnnecessarilyExportedIdentifiers
 func ExtractQodanaEnvironment(setEnvironmentFunc func(string, string)) {
 	ci := cienvironment.DetectCIEnvironment()
 	qEnv := "cli"

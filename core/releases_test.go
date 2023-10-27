@@ -21,7 +21,7 @@ import (
 )
 
 func TestGetProductByCode(t *testing.T) {
-	product, err := GetProductByCode("IIU")
+	product, err := getProductByCode("IIU")
 	if err != nil {
 		t.Fail()
 	}
@@ -29,12 +29,12 @@ func TestGetProductByCode(t *testing.T) {
 		t.Fail()
 	}
 
-	eap := SelectLatestCompatibleRelease(product, "eap")
+	eap := selectLatestCompatibleRelease(product, "eap")
 	if eap == nil {
 		t.Fail()
 	}
 
-	release := SelectLatestCompatibleRelease(product, "release")
+	release := selectLatestCompatibleRelease(product, "release")
 	if release == nil {
 		t.Fail()
 	}

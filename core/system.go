@@ -200,7 +200,7 @@ func prepareHost(opts *QodanaOptions) {
 		PrepareContainerEnvSettings()
 	}
 	if opts.Ide != "" {
-		if Contains(AllSupportedCodes, strings.TrimSuffix(opts.Ide, EapSuffix)) || strings.HasPrefix(opts.Ide, "https://") {
+		if Contains(AllSupportedCodes, strings.TrimSuffix(opts.Ide, eapSuffix)) || strings.HasPrefix(opts.Ide, "https://") {
 			printProcess(func(spinner *pterm.SpinnerPrinter) {
 				if spinner != nil {
 					spinner.ShowTimer = false // We will update interactive spinner
@@ -435,16 +435,16 @@ const (
 // saveReport saves web files to expect, and generates json.
 func saveReport(opts *QodanaOptions) {
 	if IsContainer() {
-		reportConverter := filepath.Join(Prod.IdeBin(), "intellij-report-converter.jar")
+		reportConverter := filepath.Join(prod.IdeBin(), "intellij-report-converter.jar")
 		if _, err := os.Stat(reportConverter); os.IsNotExist(err) {
 			log.Fatal("Not able to save the report: report-converter is missing")
 			return
 		}
 		log.Println("Generating HTML report ...")
-		if res := RunCmd("", QuoteForWindows(Prod.JbrJava()), "-jar", QuoteForWindows(reportConverter), "-s", QuoteForWindows(opts.ProjectDir), "-d", QuoteForWindows(opts.ResultsDir), "-o", QuoteForWindows(opts.ReportResultsPath()), "-n", "result-allProblems.json", "-f"); res > 0 {
+		if res := RunCmd("", QuoteForWindows(prod.jbrJava()), "-jar", QuoteForWindows(reportConverter), "-s", QuoteForWindows(opts.ProjectDir), "-d", QuoteForWindows(opts.ResultsDir), "-o", QuoteForWindows(opts.ReportResultsPath()), "-n", "result-allProblems.json", "-f"); res > 0 {
 			os.Exit(res)
 		}
-		if res := RunCmd("", "sh", "-c", fmt.Sprintf("cp -r %s/web/* ", Prod.Home)+opts.ReportDir); res > 0 {
+		if res := RunCmd("", "sh", "-c", fmt.Sprintf("cp -r %s/web/* ", prod.Home)+opts.ReportDir); res > 0 {
 			os.Exit(res)
 		}
 	}

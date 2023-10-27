@@ -27,6 +27,7 @@ import (
 	"time"
 )
 
+//goland:noinspection GoUnnecessarilyExportedIdentifiers
 const (
 	DefaultEndpoint    = "qodana.cloud"
 	baseUrl            = "https://api.qodana.cloud"
@@ -56,19 +57,23 @@ func NewQdClient(token string) *QdClient {
 	}
 }
 
+//goland:noinspection GoUnnecessarilyExportedIdentifiers
 type Success struct {
 	Data map[string]interface{}
 }
 
+//goland:noinspection GoUnnecessarilyExportedIdentifiers
 type RequestResult interface {
 	isRequestResult()
 }
 
+//goland:noinspection GoUnnecessarilyExportedIdentifiers
 type APIError struct {
 	StatusCode int
 	Message    string
 }
 
+//goland:noinspection GoUnnecessarilyExportedIdentifiers
 type RequestError struct {
 	Err error
 }
@@ -97,7 +102,8 @@ func (client *QdClient) doRequest(path, method string, headers map[string]string
 	var err error
 
 	for i := 0; i < maxNumberOfRetries; i++ {
-		req, err := http.NewRequest(method, url, bytes.NewBuffer(body))
+		var req *http.Request
+		req, err = http.NewRequest(method, url, bytes.NewBuffer(body))
 		if err != nil {
 			return RequestError{Err: err}
 		}

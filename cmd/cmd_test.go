@@ -334,7 +334,8 @@ func TestAllCommandsWithContainer(t *testing.T) {
 func TestScanWithIde(t *testing.T) {
 	log.SetLevel(log.DebugLevel)
 	ide := "QDPYC"
-	if runtime.GOOS == "darwin" {
+	if //goland:noinspection GoBoolExpressions
+	runtime.GOOS == "darwin" {
 		t.Skip("Skip on macOS")
 	}
 	projectPath := createProject(t, "qodana_scan_python")

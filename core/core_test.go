@@ -44,8 +44,8 @@ func TestCliArgs(t *testing.T) {
 	projectDir := filepath.Join(dir, "project")
 	cacheDir := filepath.Join(dir, "cache")
 	resultsDir := filepath.Join(dir, "results")
-	Prod.Home = string(os.PathSeparator) + "opt" + string(os.PathSeparator) + "idea"
-	Prod.IdeScript = filepath.Join(Prod.Home, "bin", "idea.sh")
+	prod.Home = string(os.PathSeparator) + "opt" + string(os.PathSeparator) + "idea"
+	prod.IdeScript = filepath.Join(prod.Home, "bin", "idea.sh")
 	err := os.Unsetenv(qodanaDockerEnv)
 	if err != nil {
 		t.Fatal(err)
@@ -62,7 +62,7 @@ func TestCliArgs(t *testing.T) {
 		},
 		{
 			name: "arguments with spaces, no properties for local runs",
-			opts: &QodanaOptions{ProjectDir: projectDir, CacheDir: cacheDir, ResultsDir: resultsDir, ProfileName: "separated words", Property: []string{"qodana.format=SARIF_AND_PROJECT_STRUCTURE", "qodana.variable.format=JSON"}, Ide: Prod.Home},
+			opts: &QodanaOptions{ProjectDir: projectDir, CacheDir: cacheDir, ResultsDir: resultsDir, ProfileName: "separated words", Property: []string{"qodana.format=SARIF_AND_PROJECT_STRUCTURE", "qodana.variable.format=JSON"}, Ide: prod.Home},
 			res:  []string{filepath.FromSlash("/opt/idea/bin/idea.sh"), "inspect", "qodana", "--profile-name", "\"separated words\"", projectDir, resultsDir},
 		},
 		{
@@ -93,9 +93,9 @@ func TestCliArgs(t *testing.T) {
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			if tc.opts.Ide == "/opt/idea/233" {
-				Prod.Version = "2023.3"
+				prod.Version = "2023.3"
 			} else {
-				Prod.Version = "2023.2"
+				prod.Version = "2023.2"
 			}
 
 			args := getIdeRunCommand(tc.opts)
@@ -431,9 +431,9 @@ func TestLegacyFixStrategies(t *testing.T) {
 	for _, tt := range cases {
 		t.Run(tt.name, func(t *testing.T) {
 			if tt.options.Ide == "QDPHP" {
-				Prod.Version = "2023.3"
+				prod.Version = "2023.3"
 			} else {
-				Prod.Version = "2023.2"
+				prod.Version = "2023.2"
 			}
 
 			actual := getIdeArgs(tt.options)
@@ -643,12 +643,13 @@ func Test_isProcess(t *testing.T) {
 	}
 	var cmd *exec.Cmd
 	var cmdString string
-	if runtime.GOOS == "windows" {
-		cmd = exec.Command("ping", "-n", "5", "127.0.0.1")
-		cmdString = "ping -n 5 127.0.0.1"
+	if //goland:noinspection GoBoolExpressions
+	runtime.GOOS == "windows" {
+		cmd = exec.Command("ping", "-n", "3", "127.0.0.1")
+		cmdString = "ping -n 3 127.0.0.1"
 	} else {
-		cmd = exec.Command("ping", "-c", "5", "127.0.0.1")
-		cmdString = "ping -c 5 127.0.0.1"
+		cmd = exec.Command("ping", "-c", "3", "127.0.0.1")
+		cmdString = "ping -c 3 127.0.0.1"
 	}
 	go func() {
 		err := cmd.Run()
@@ -690,7 +691,8 @@ func Test_runCmd(t *testing.T) {
 }
 
 func Test_createUser(t *testing.T) {
-	if runtime.GOOS == "windows" {
+	if //goland:noinspection GoBoolExpressions
+	runtime.GOOS == "windows" {
 		return
 	}
 
@@ -790,8 +792,8 @@ func Test_Bootstrap(t *testing.T) {
 	}
 	opts.ProjectDir = tmpDir
 	bootstrap("echo \"bootstrap: touch qodana.yml\" > qodana.yaml", opts.ProjectDir)
-	Config = GetQodanaYaml(tmpDir)
-	bootstrap(Config.Bootstrap, opts.ProjectDir)
+	qConfig = getQodanaYaml(tmpDir)
+	bootstrap(qConfig.Bootstrap, opts.ProjectDir)
 	if _, err := os.Stat(filepath.Join(opts.ProjectDir, "qodana.yaml")); errors.Is(err, os.ErrNotExist) {
 		t.Fatalf("No qodana.yml created by the bootstrap command in qodana.yaml")
 	}
@@ -855,17 +857,18 @@ func Test_SaveProperty(t *testing.T) {
 	}
 }
 
+//goland:noinspection ALL
 func Test_WriteAppInfo(t *testing.T) {
 	tmpDir := filepath.Join(os.TempDir(), "entrypoint")
 	err := os.MkdirAll(tmpDir, 0o755)
 	if err != nil {
 		t.Fatal(err)
 	}
-	Prod.Version = "2022.1"
-	Prod.EAP = true
-	Prod.Build = "420.69"
-	Prod.Code = "QDTEST"
-	Prod.Name = "Qodana for Tests"
+	prod.Version = "2022.1"
+	prod.EAP = true
+	prod.Build = "420.69"
+	prod.Code = "QDTEST"
+	prod.Name = "Qodana for Tests"
 	xmlFilePath := filepath.Join(tmpDir, "QodanaAppInfo.xml")
 	writeAppInfo(xmlFilePath)
 	actual, err := os.ReadFile(xmlFilePath)
@@ -889,6 +892,7 @@ func Test_WriteAppInfo(t *testing.T) {
 	}
 }
 
+//goland:noinspection HttpUrlsUsage
 func Test_ReadAppInfo(t *testing.T) {
 	tempDir := os.TempDir()
 	entrypointDir := filepath.Join(tempDir, "entrypoint")
@@ -995,8 +999,8 @@ func Test_ideaExitCode(t *testing.T) {
 }
 
 func TestSetupLicense(t *testing.T) {
-	Prod.Code = "QDJVM"
-	Prod.EAP = false
+	prod.Code = "QDJVM"
+	prod.EAP = false
 	license := `{"licenseId":"VA5HGQWQH6","licenseKey":"VA5HGQWQH6","expirationDate":"2023-07-31","licensePlan":"EAP_ULTIMATE_PLUS"}`
 	expectedKey := "VA5HGQWQH6"
 
@@ -1008,7 +1012,7 @@ func TestSetupLicense(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	SetupLicense("token")
+	setupLicense("token")
 
 	licenseKey := os.Getenv(QodanaLicense)
 	if licenseKey != expectedKey {
@@ -1077,7 +1081,7 @@ func TestSetupLicenseToken(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			SetupLicenseToken(&QodanaOptions{})
+			setupLicenseToken(&QodanaOptions{})
 
 			if cloud.Token.Token != testData.resToken {
 				t.Errorf("expected token to be '%s' got '%s'", testData.resToken, cloud.Token.Token)
@@ -1234,9 +1238,9 @@ func Test_Properties(t *testing.T) {
 	opts.CoverageDir = "/data/coverage"
 	opts.AnalysisId = "FAKE"
 
-	Prod.BaseScriptName = "rider"
-	Prod.Code = "QDNET"
-	Prod.Version = "main"
+	prod.BaseScriptName = "rider"
+	prod.Code = "QDNET"
+	prod.Version = "main"
 
 	err := os.Setenv(QodanaDistEnv, opts.ProjectDir)
 	if err != nil {
@@ -1300,8 +1304,8 @@ func Test_Properties(t *testing.T) {
 				t.Fatal(err)
 			}
 			opts.Property = tc.cliProperties
-			Config = GetQodanaYaml(opts.ProjectDir)
-			actual := GetProperties(opts, Config.Properties, Config.DotNet, []string{})
+			qConfig = getQodanaYaml(opts.ProjectDir)
+			actual := getProperties(opts, qConfig.Properties, qConfig.DotNet, []string{})
 			assert.Equal(t, tc.expected, actual)
 		})
 	}
