@@ -58,13 +58,13 @@ func getPropertiesMap(
 		"-Didea.headless.statistics.salt":        deviceIdSalt[1],
 		"-Didea.platform.prefix":                 "Qodana",
 		"-Didea.parent.prefix":                   prefix,
-		"-Didea.config.path":                     quoteIfSpace(confDir),
-		"-Didea.system.path":                     quoteIfSpace(systemDir),
-		"-Didea.plugins.path":                    quoteIfSpace(pluginsDir),
-		"-Didea.application.info.value":          quoteIfSpace(appInfoXml),
-		"-Didea.log.path":                        quoteIfSpace(logDir),
+		"-Didea.config.path":                     QuoteIfSpace(confDir),
+		"-Didea.system.path":                     QuoteIfSpace(systemDir),
+		"-Didea.plugins.path":                    QuoteIfSpace(pluginsDir),
+		"-Didea.application.info.value":          QuoteIfSpace(appInfoXml),
+		"-Didea.log.path":                        QuoteIfSpace(logDir),
 		"-Didea.qodana.thirdpartyplugins.accept": "true",
-		"-Dqodana.automation.guid":               quoteIfSpace(analysisId),
+		"-Dqodana.automation.guid":               QuoteIfSpace(analysisId),
 
 		"-XX:SoftRefLRUPolicyMSPerMB": "50",
 		"-XX:MaxJavaStackTraceDepth":  "10000",
@@ -75,7 +75,7 @@ func getPropertiesMap(
 		"-Didea.job.launcher.without.timeout": "true",
 	}
 	if coverageDir != "" {
-		properties["-Dqodana.coverage.input"] = quoteIfSpace(coverageDir)
+		properties["-Dqodana.coverage.input"] = QuoteIfSpace(coverageDir)
 	}
 	if eap {
 		properties["-Deap.login.enabled"] = "false"
@@ -109,17 +109,17 @@ func getPropertiesMap(
 	return properties
 }
 
-// GetProperties writes key=value `props` to file `f` having later key occurrence win
-func GetProperties(opts *QodanaOptions, yamlProps map[string]string, dotNetOptions DotNet, plugins []string) []string {
+// getProperties writes key=value `props` to file `f` having later key occurrence win
+func getProperties(opts *QodanaOptions, yamlProps map[string]string, dotNetOptions DotNet, plugins []string) []string {
 	lines := []string{
-		fmt.Sprintf("-Xlog:gc*:%s", quoteIfSpace(filepath.Join(opts.logDirPath(), "gc.log"))),
+		fmt.Sprintf("-Xlog:gc*:%s", QuoteIfSpace(filepath.Join(opts.logDirPath(), "gc.log"))),
 		`-Djdk.http.auth.tunneling.disabledSchemes=""`,
 		"-XX:+HeapDumpOnOutOfMemoryError",
 		"-XX:+UseG1GC",
 		"-XX:-OmitStackTraceInFastThrow",
 		"-ea",
 	}
-	treatAsRelease := os.Getenv(QodanaTreatAsRelease)
+	treatAsRelease := os.Getenv(qodanaTreatAsRelease)
 	if treatAsRelease == "true" {
 		lines = append(lines, "-Deap.require.license=release")
 	}
@@ -132,13 +132,13 @@ func GetProperties(opts *QodanaOptions, yamlProps map[string]string, dotNetOptio
 	}
 
 	props := getPropertiesMap(
-		Prod.parentPrefix(),
-		Prod.EAP,
-		opts.appInfoXmlPath(Prod.IdeBin()),
-		filepath.Join(opts.CacheDir, "idea", Prod.getVersionBranch()),
+		prod.parentPrefix(),
+		prod.EAP,
+		opts.appInfoXmlPath(prod.IdeBin()),
+		filepath.Join(opts.CacheDir, "idea", prod.getVersionBranch()),
 		opts.logDirPath(),
 		opts.ConfDirPath(),
-		filepath.Join(opts.CacheDir, "plugins", Prod.getVersionBranch()),
+		filepath.Join(opts.CacheDir, "plugins", prod.getVersionBranch()),
 		dotNetOptions,
 		getDeviceIdSalt(),
 		plugins,
@@ -169,12 +169,12 @@ func GetProperties(opts *QodanaOptions, yamlProps map[string]string, dotNetOptio
 
 // writeProperties writes the given key=value `props` to file `f` (sets the environment variable)
 func writeProperties(opts *QodanaOptions) { // opts.confDirPath(Prod.Version)  opts.vmOptionsPath(Prod.Version)
-	properties := GetProperties(opts, Config.Properties, Config.DotNet, getPluginIds(Config.Plugins))
+	properties := getProperties(opts, qConfig.Properties, qConfig.DotNet, getPluginIds(qConfig.Plugins))
 	err := os.WriteFile(opts.vmOptionsPath(), []byte(strings.Join(properties, "\n")), 0o644)
 	if err != nil {
 		log.Fatal(err)
 	}
-	err = os.Setenv(Prod.vmOptionsEnv(), opts.vmOptionsPath())
+	err = os.Setenv(prod.vmOptionsEnv(), opts.vmOptionsPath())
 	if err != nil {
 		log.Fatal(err)
 	}

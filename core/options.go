@@ -130,6 +130,7 @@ func (o *QodanaOptions) getQodanaSystemDir() string {
 	)
 }
 
+//goland:noinspection GoUnnecessarilyExportedIdentifiers
 func (o *QodanaOptions) GetLinterDir() string {
 	return filepath.Join(
 		o.getQodanaSystemDir(),
@@ -170,6 +171,7 @@ func (o *QodanaOptions) ReportDirPath() string {
 	return o.ReportDir
 }
 
+//goland:noinspection GoUnnecessarilyExportedIdentifiers
 func (o *QodanaOptions) CoverageDirPath() string {
 	if o.CoverageDir == "" {
 		if IsContainer() {
@@ -181,6 +183,7 @@ func (o *QodanaOptions) CoverageDirPath() string {
 	return o.CoverageDir
 }
 
+//goland:noinspection GoUnnecessarilyExportedIdentifiers
 func (o *QodanaOptions) ReportResultsPath() string {
 	return filepath.Join(o.ReportDirPath(), "results")
 }
@@ -193,6 +196,7 @@ func (o *QodanaOptions) vmOptionsPath() string {
 	return filepath.Join(o.ConfDirPath(), "ide.vmoptions")
 }
 
+//goland:noinspection GoUnnecessarilyExportedIdentifiers
 func (o *QodanaOptions) ConfDirPath() string {
 	if conf, ok := os.LookupEnv(QodanaConfEnv); ok {
 		return conf
@@ -233,7 +237,7 @@ func (o *QodanaOptions) RequiresToken() bool {
 	if os.Getenv(QodanaLicense) != "" ||
 		Contains(append(allSupportedFreeImages, allSupportedFreeCodes...), analyzer) ||
 		strings.Contains(lower(analyzer), "eap") ||
-		Prod.IsCommunity() || Prod.EAP {
+		prod.isCommunity() || prod.EAP {
 		return false
 	}
 

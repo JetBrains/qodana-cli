@@ -27,6 +27,8 @@ import (
 )
 
 // RunCmd executes subprocess with forwarding of signals, and returns its exit code.
+//
+//goland:noinspection GoUnnecessarilyExportedIdentifiers
 func RunCmd(cwd string, args ...string) int {
 	log.Debugf("Running command: %v", args)
 	cmd := exec.Command(args[0], args[1:]...)

@@ -52,13 +52,13 @@ func genExcludedPluginsLocal(opts *QodanaOptions) {
 		// QDRUBY: "ruby",            // don't use it right now
 	}
 
-	if _, ok := products[Prod.Code]; ok {
+	if _, ok := products[prod.Code]; ok {
 		includedPlugins := filepath.Join(opts.ConfDirPath(), "included_plugins.txt")
 		dockerIgnore := filepath.Join(opts.ConfDirPath(), ".docker_ignore")
 		disabledPlugins := filepath.Join(opts.ConfDirPath(), "disabled_plugins.txt")
 		if _, err := os.Stat(disabledPlugins); err != nil {
-			url := fmt.Sprintf("https://raw.githubusercontent.com/JetBrains/qodana-docker/main/%s/%s/included_plugins.txt", MajorVersion, products[Prod.Code])
-			if err := DownloadFile(includedPlugins, url, nil); err != nil {
+			url := fmt.Sprintf("https://raw.githubusercontent.com/JetBrains/qodana-docker/main/%s/%s/included_plugins.txt", majorVersion, products[prod.Code])
+			if err := downloadFile(includedPlugins, url, nil); err != nil {
 				log.Errorf("Not possible to download included plugins, skipping: %v", err)
 			} else {
 				if err := appendIncludedPlugins(includedPlugins); err != nil {
@@ -84,12 +84,12 @@ func genExcludedPluginsLocal(opts *QodanaOptions) {
 			}
 		}
 	} else {
-		log.Warningf("Not possible to fetch excluded plugins for %s", Prod.Code)
+		log.Warningf("Not possible to fetch excluded plugins for %s", prod.Code)
 	}
 }
 
 func appendIncludedPlugins(filename string) error {
-	if len(Config.Plugins) == 0 {
+	if len(qConfig.Plugins) == 0 {
 		return nil
 	}
 	bytes, err := os.ReadFile(filename)
@@ -103,7 +103,7 @@ func appendIncludedPlugins(filename string) error {
 		}
 	}
 	var pluginIds []string
-	for _, plugin := range Config.Plugins {
+	for _, plugin := range qConfig.Plugins {
 		pluginIds = append(pluginIds, plugin.Id)
 	}
 	pluginsStr := strings.Join(pluginIds, "\n")
@@ -129,7 +129,7 @@ func appendToFile(filename string, data string) error {
 }
 
 func getExcludedPlugins(includedPlugins string, dockerIgnore string) (string, error) {
-	args := []string{QuoteForWindows(Prod.IdeScript), "qodanaExcludedPlugins", QuoteForWindows(includedPlugins), QuoteForWindows(dockerIgnore)}
+	args := []string{QuoteForWindows(prod.IdeScript), "qodanaExcludedPlugins", QuoteForWindows(includedPlugins), QuoteForWindows(dockerIgnore)}
 	outReader, outWriter, err := os.Pipe()
 	if err != nil {
 		return "", fmt.Errorf("failed to create stdout pipe: %w", err)
@@ -228,7 +228,7 @@ func runQodanaLocal(opts *QodanaOptions) int {
 }
 
 func getIdeRunCommand(opts *QodanaOptions) []string {
-	args := []string{QuoteForWindows(Prod.IdeScript), "inspect", "qodana"}
+	args := []string{QuoteForWindows(prod.IdeScript), "inspect", "qodana"}
 	args = append(args, getIdeArgs(opts)...)
 	args = append(args, QuoteForWindows(opts.ProjectDir), QuoteForWindows(opts.ResultsDir))
 	return args
@@ -247,7 +247,7 @@ func getIdeArgs(opts *QodanaOptions) []string {
 		arguments = append(arguments, "--disable-sanity")
 	}
 	if opts.ProfileName != "" {
-		arguments = append(arguments, "--profile-name", quoteIfSpace(opts.ProfileName))
+		arguments = append(arguments, "--profile-name", QuoteIfSpace(opts.ProfileName))
 	}
 	if opts.ProfilePath != "" {
 		arguments = append(arguments, "--profile-path", QuoteForWindows(opts.ProfilePath))
@@ -282,7 +282,7 @@ func getIdeArgs(opts *QodanaOptions) []string {
 				break
 			}
 		}
-		if opts.Ide != "" && Prod.is233orNewer() {
+		if opts.Ide != "" && prod.is233orNewer() {
 			if opts.ApplyFixes {
 				arguments = append(arguments, "--apply-fixes")
 			} else if opts.Cleanup {
@@ -440,15 +440,15 @@ func readAppInfoXml(ideDir string) appInfo {
 func prepareLocalIdeSettings(opts *QodanaOptions) {
 	guessProduct(opts)
 	ExtractQodanaEnvironment(setEnv)
-	SetupLicenseToken(opts)
-	SetupLicense(cloud.Token.Token)
+	setupLicenseToken(opts)
+	setupLicense(cloud.Token.Token)
 	prepareDirectories(
 		opts.CacheDir,
 		opts.logDirPath(),
 		opts.ConfDirPath(),
 	)
-	Config = GetQodanaYaml(opts.ProjectDir)
-	writeAppInfo(opts.appInfoXmlPath(Prod.IdeBin()))
+	qConfig = getQodanaYaml(opts.ProjectDir)
+	writeAppInfo(opts.appInfoXmlPath(prod.IdeBin()))
 	writeProperties(opts)
 
 	if IsContainer() {
@@ -456,8 +456,8 @@ func prepareLocalIdeSettings(opts *QodanaOptions) {
 		createUser("/etc/passwd")
 	}
 
-	bootstrap(Config.Bootstrap, opts.ProjectDir)
-	installPlugins(Config.Plugins)
+	bootstrap(qConfig.Bootstrap, opts.ProjectDir)
+	installPlugins(qConfig.Plugins)
 }
 
 func prepareDirectories(cacheDir string, logDir string, confDir string) {
@@ -473,7 +473,7 @@ func prepareDirectories(cacheDir string, logDir string, confDir string) {
 		userPrefsDir,
 	}
 	if IsContainer() {
-		if Prod.BaseScriptName == rider {
+		if prod.BaseScriptName == rider {
 			nugetDir := filepath.Join(cacheDir, nuget)
 			if err := os.Setenv("NUGET_PACKAGES", nugetDir); err != nil {
 				log.Fatal(err)
@@ -482,7 +482,7 @@ func prepareDirectories(cacheDir string, logDir string, confDir string) {
 				directories,
 				nugetDir,
 			)
-		} else if Prod.BaseScriptName == idea {
+		} else if prod.BaseScriptName == idea {
 			directories = append(
 				directories,
 				filepath.Join(cacheDir, m2),
@@ -514,7 +514,7 @@ func prepareDirectories(cacheDir string, logDir string, confDir string) {
 		writeFileIfNew(filepath.Join(ideaOptions, "security.xml"), securityXml)
 	}
 
-	if Prod.BaseScriptName == idea {
+	if prod.BaseScriptName == idea {
 		mavenRootDir := filepath.Join(homeDir, ".m2")
 		if _, err = os.Stat(mavenRootDir); os.IsNotExist(err) {
 			if err = os.MkdirAll(mavenRootDir, 0o755); err != nil {
@@ -539,7 +539,7 @@ func prepareDirectories(cacheDir string, logDir string, confDir string) {
 func installPlugins(plugins []Plugin) {
 	for _, plugin := range plugins {
 		log.Printf("Installing plugin %s", plugin.Id)
-		if res := RunCmd("", QuoteForWindows(Prod.IdeScript), "installPlugins", plugin.Id); res > 0 {
+		if res := RunCmd("", QuoteForWindows(prod.IdeScript), "installPlugins", plugin.Id); res > 0 {
 			os.Exit(res)
 		}
 	}

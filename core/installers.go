@@ -33,14 +33,15 @@ import (
 )
 
 var (
-	EapSuffix    = "-EAP"
-	MajorVersion = "2023.2"
+	eapSuffix    = "-EAP"
+	majorVersion = "2023.2"
 )
 
 func downloadAndInstallIDE(ide string, baseDir string, spinner *pterm.SpinnerPrinter) string {
 	var ideUrl string
 	checkSumUrl := ""
-	if strings.HasPrefix(ide, "https://") || strings.HasPrefix(ide, "http://") {
+	if //goland:noinspection HttpUrlsUsage
+	strings.HasPrefix(ide, "https://") || strings.HasPrefix(ide, "http://") {
 		ideUrl = ide
 	} else {
 		release := getIde(ide)
@@ -61,7 +62,7 @@ func downloadAndInstallIDE(ide string, baseDir string, spinner *pterm.SpinnerPri
 	}
 
 	downloadedIdePath := filepath.Join(baseDir, fileName)
-	err := DownloadFile(downloadedIdePath, ideUrl, spinner)
+	err := downloadFile(downloadedIdePath, ideUrl, spinner)
 	if err != nil {
 		log.Fatalf("Error while downloading IDE: %v", err)
 	}
@@ -99,7 +100,7 @@ func downloadAndInstallIDE(ide string, baseDir string, spinner *pterm.SpinnerPri
 }
 
 //goland:noinspection GoBoolExpressions
-func getIde(productCode string) *ReleaseDownloadInfo {
+func getIde(productCode string) *releaseDownloadInfo {
 	products := map[string]string{
 		QDJVM:  "IIU",
 		QDJVMC: "IIC",
@@ -116,30 +117,30 @@ func getIde(productCode string) *ReleaseDownloadInfo {
 
 	originalCode := productCode
 	dist := "release"
-	if strings.HasSuffix(productCode, EapSuffix) {
+	if strings.HasSuffix(productCode, eapSuffix) {
 		dist = "eap"
-		productCode = strings.TrimSuffix(productCode, EapSuffix)
+		productCode = strings.TrimSuffix(productCode, eapSuffix)
 	}
 
 	if _, ok := products[productCode]; !ok {
-		ErrorMessage("Product code doesnt exist: ", originalCode)
+		ErrorMessage("jbProduct code doesnt exist: ", originalCode)
 		return nil
 	}
 
-	product, err := GetProductByCode(products[productCode])
+	product, err := getProductByCode(products[productCode])
 	if err != nil || product == nil {
 		ErrorMessage("Error while obtaining the product info")
 		return nil
 	}
 
-	release := SelectLatestCompatibleRelease(product, dist)
+	release := selectLatestCompatibleRelease(product, dist)
 	if release == nil {
 		ErrorMessage("Error while obtaining the release type: ", dist)
 		return nil
 	}
 
-	if *release.MajorVersion != MajorVersion {
-		ErrorMessage("Major version of the release doesn't match CLI version for %s. Expected major version: %s, got: %s. Use newer CLI or use -EAP suffix", originalCode, MajorVersion, *release.MajorVersion)
+	if *release.MajorVersion != majorVersion {
+		ErrorMessage("Major version of the release doesn't match CLI version for %s. Expected major version: %s, got: %s. Use newer CLI or use -EAP suffix", originalCode, majorVersion, *release.MajorVersion)
 		return nil
 	}
 
@@ -240,7 +241,7 @@ func installIdeMacOS(archivePath string, targetDir string) error {
 }
 
 func verifySha256(checksumFile string, checkSumUrl string, filePath string) {
-	err := DownloadFile(checksumFile, checkSumUrl, nil)
+	err := downloadFile(checksumFile, checkSumUrl, nil)
 	if err != nil {
 		log.Fatalf("Error while downloading checksum for IDE: %v", err)
 	}

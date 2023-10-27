@@ -53,6 +53,8 @@ jobs:
         uses: JetBrains/qodana-action@main
         env:
           QODANA_TOKEN: ${{ secrets.QODANA_TOKEN }}
+        with:
+          args: --fail-threshold,0
       - if: startsWith(matrix.os, 'ubuntu')
         uses: github/codeql-action/init@v2
         with:

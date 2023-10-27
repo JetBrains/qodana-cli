@@ -29,11 +29,11 @@ import (
 func TestRequestLicenseData(t *testing.T) {
 	expectedLicense := "license data"
 	rightToken := "token data"
-	err := os.Setenv(QodanaLicenseRequestCooldownEnv, "2")
+	err := os.Setenv(qodanaLicenseRequestCooldownEnv, "2")
 	if err != nil {
 		t.Fatal(err)
 	}
-	err = os.Setenv(QodanaLicenseRequestTimeoutEnv, "6")
+	err = os.Setenv(qodanaLicenseRequestTimeoutEnv, "6")
 	if err != nil {
 		t.Fatal(err)
 	}
