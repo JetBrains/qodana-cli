@@ -1234,6 +1234,10 @@ func Test_Properties(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+	err = os.Setenv(qodanaDockerEnv, "true")
+	if err != nil {
+		t.Fatal(err)
+	}
 	err = os.Setenv("DEVICEID", "FAKE")
 	if err != nil {
 		t.Fatal(err)
@@ -1251,18 +1255,42 @@ func Test_Properties(t *testing.T) {
 		name          string
 		cliProperties []string
 		qodanaYaml    string
+		isContainer   bool
 		expected      []string
 	}{
 		{
 			name:          "no overrides, just defaults and .NET project",
 			cliProperties: []string{},
 			qodanaYaml:    "dotnet:\n   project: project.csproj",
-			expected:      propertiesFixture(true, []string{"-Dqodana.net.project=project.csproj"}),
+			isContainer:   false,
+			expected:      propertiesFixture(true, []string{"-Dqodana.net.project=project.csproj", "-Dqodana.net.targetFrameworks=!net48;!net472;!net471;!net47;!net462;!net461;!net46;!net452;!net451;!net45;!net403;!net40;!net35;!net20;!net11"}),
+		},
+		{
+			name:          "target frameworks set in YAML",
+			cliProperties: []string{},
+			qodanaYaml:    "dotnet:\n   frameworks: net5.0;net6.0",
+			isContainer:   false,
+			expected:      propertiesFixture(true, []string{"-Dqodana.net.targetFrameworks=net5.0;net6.0"}),
+		},
+		{
+			name:          "target frameworks set in YAML in container",
+			cliProperties: []string{},
+			qodanaYaml:    "dotnet:\n   frameworks: net5.0;net6.0",
+			isContainer:   true,
+			expected:      propertiesFixture(true, []string{"-Dqodana.net.targetFrameworks=net5.0;net6.0"}),
+		},
+		{
+			name:          "target frameworks not set in container",
+			cliProperties: []string{},
+			qodanaYaml:    "",
+			isContainer:   true,
+			expected:      propertiesFixture(true, []string{"-Dqodana.net.targetFrameworks=!net48;!net472;!net471;!net47;!net462;!net461;!net46;!net452;!net451;!net45;!net403;!net40;!net35;!net20;!net11"}),
 		},
 		{
 			name:          "add one CLI property and .NET solution settings",
 			cliProperties: []string{"-xa", "idea.some.custom.property=1"},
 			qodanaYaml:    "dotnet:\n   solution: solution.sln\n   configuration: Release\n   platform: x64",
+			isContainer:   false,
 			expected: append(
 				propertiesFixture(true, []string{"-Dqodana.net.solution=solution.sln", "-Dqodana.net.configuration=Release", "-Dqodana.net.platform=x64", "-Didea.some.custom.property=1"}),
 				"-xa",
@@ -1276,6 +1304,7 @@ func Test_Properties(t *testing.T) {
 				"properties:\n" +
 				"  fus.internal.reduce.initial.delay: true\n" +
 				"  idea.application.info.value: 0\n",
+			isContainer: false,
 			expected: append([]string{
 				"-Dfus.internal.reduce.initial.delay=false",
 				"-Didea.application.info.value=0",
@@ -1288,8 +1317,20 @@ func Test_Properties(t *testing.T) {
 				t.Fatal(err)
 			}
 			opts.Property = tc.cliProperties
-			Config = GetQodanaYaml(opts.ProjectDir)
-			actual := GetProperties(opts, Config.Properties, Config.DotNet, []string{})
+			qConfig = getQodanaYaml(opts.ProjectDir)
+			if tc.isContainer {
+				err = os.Setenv(qodanaDockerEnv, "true")
+				if err != nil {
+					t.Fatal(err)
+				}
+			}
+			actual := getProperties(opts, qConfig.Properties, qConfig.DotNet, []string{})
+			if tc.isContainer {
+				err = os.Unsetenv(qodanaDockerEnv)
+				if err != nil {
+					t.Fatal(err)
+				}
+			}
 			assert.Equal(t, tc.expected, actual)
 		})
 	}
