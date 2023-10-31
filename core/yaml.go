@@ -237,6 +237,9 @@ type DotNet struct {
 
 	// Platform is the target platform in which .NET project should be opened by Qodana.
 	Platform string `yaml:"platform,omitempty"`
+
+	// Frameworks is a semicolon-separated list of target framework monikers (TFM) to be analyzed.
+	Frameworks string `yaml:"frameworks,omitempty"`
 }
 
 // IsEmpty checks whether the .NET configuration is empty or not.
