@@ -1251,6 +1251,9 @@ func Test_Properties(t *testing.T) {
 		t.Fatal(err)
 	}
 	err = os.Setenv(qodanaDockerEnv, "true")
+	if err != nil {
+		t.Fatal(err)
+	}
 	err = os.Setenv("DEVICEID", "FAKE")
 	if err != nil {
 		t.Fatal(err)
