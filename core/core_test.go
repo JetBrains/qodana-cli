@@ -1250,6 +1250,7 @@ func Test_Properties(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+	err = os.Setenv(qodanaDockerEnv, "true")
 	err = os.Setenv("DEVICEID", "FAKE")
 	if err != nil {
 		t.Fatal(err)
@@ -1275,7 +1276,7 @@ func Test_Properties(t *testing.T) {
 			cliProperties: []string{},
 			qodanaYaml:    "dotnet:\n   project: project.csproj",
 			isContainer:   false,
-			expected:      propertiesFixture(true, []string{"-Dqodana.net.project=project.csproj"}),
+			expected:      propertiesFixture(true, []string{"-Dqodana.net.project=project.csproj", "-Dqodana.net.targetFrameworks=!net48;!net472;!net471;!net47;!net462;!net461;!net46;!net452;!net451;!net45;!net403;!net40;!net35;!net20;!net11"}),
 		},
 		{
 			name:          "target frameworks set in YAML",
