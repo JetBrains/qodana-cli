@@ -29,7 +29,7 @@ func TestGetIde(t *testing.T) {
 		if ide == nil {
 			t.Fail()
 		}
-		eap := getIde(installer)
+		eap := getIde(installer + "-EAP")
 		if eap == nil {
 			t.Fail()
 		}
