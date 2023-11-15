@@ -1,0 +1,26 @@
+org.intellij.qodana
+org.intellij.intelliLang
+org.editorconfig.editorconfigjetbrains
+Git4Idea
+hg4idea
+AntSupport
+DevKit
+JUnit
+Lombook Plugin
+TestNG-J
+XPathView
+com.intellij.configurationScript
+com.intellij.gradle
+com.intellij.java
+com.intellij.java-i18n
+com.intellij.java.ide
+com.intellij.properties
+com.intellij.uiDesigner
+org.intellij.groovy
+org.jetbrains.idea.eclipse
+org.jetbrains.idea.maven
+org.jetbrains.idea.maven.model
+org.jetbrains.idea.maven.server.api
+org.jetbrains.idea.reposearch
+org.jetbrains.kotlin
+org.jetbrains.plugins.gradle
