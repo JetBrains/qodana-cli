@@ -1180,9 +1180,9 @@ func propertiesFixture(enableStats bool, additionalProperties []string) []string
 		fmt.Sprintf("-Didea.log.path=%s", filepath.Join(os.TempDir(), "entrypoint", "log")),
 		"-Didea.parent.prefix=Rider",
 		"-Didea.platform.prefix=Qodana",
-		fmt.Sprintf("-Didea.plugins.path=%s", filepath.Join(os.TempDir(), "entrypoint", "plugins", "master")),
+		fmt.Sprintf("-Didea.plugins.path=%s", filepath.Join(os.TempDir(), "entrypoint", "plugins", "233")),
 		"-Didea.qodana.thirdpartyplugins.accept=true",
-		fmt.Sprintf("-Didea.system.path=%s", filepath.Join(os.TempDir(), "entrypoint", "idea", "master")),
+		fmt.Sprintf("-Didea.system.path=%s", filepath.Join(os.TempDir(), "entrypoint", "idea", "233")),
 		"-Dinspect.save.project.settings=true",
 		"-Djava.awt.headless=true",
 		"-Djava.net.useSystemProxies=true",
@@ -1193,6 +1193,8 @@ func propertiesFixture(enableStats bool, additionalProperties []string) []string
 		"-Dqodana.automation.guid=FAKE",
 		"-Didea.job.launcher.without.timeout=true",
 		"-Dqodana.coverage.input=/data/coverage",
+		"-Dqodana.recommended.profile.resource=qodana-dotnet.recommended.yaml",
+		"-Dqodana.starter.profile.resource=qodana-dotnet.starter.yaml",
 		"-Drider.collect.full.container.statistics=true",
 		"-Drider.suppress.std.redirect=true",
 		"-Dsun.io.useCanonCaches=false",
@@ -1222,9 +1224,9 @@ func Test_Properties(t *testing.T) {
 	opts.CoverageDir = "/data/coverage"
 	opts.AnalysisId = "FAKE"
 
-	Prod.BaseScriptName = "rider"
-	Prod.Code = "QDNET"
-	Prod.Version = "main"
+	prod.BaseScriptName = "rider"
+	prod.Code = "QDNET"
+	prod.Version = "2023.3"
 
 	err := os.Setenv(QodanaDistEnv, opts.ProjectDir)
 	if err != nil {
