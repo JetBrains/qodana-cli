@@ -33,8 +33,13 @@ import (
 )
 
 var (
-	eapSuffix    = "-EAP"
-	majorVersion = "2023.2"
+	eapSuffix   = "-EAP"
+	releaseVer  = "release"
+	eapVer      = "eap"
+	versionsMap = map[string]string{
+		releaseVer: "2023.2",
+		eapVer:     "2023.3",
+	}
 )
 
 func downloadAndInstallIDE(ide string, baseDir string, spinner *pterm.SpinnerPrinter) string {
@@ -116,9 +121,9 @@ func getIde(productCode string) *releaseDownloadInfo {
 	}
 
 	originalCode := productCode
-	dist := "release"
+	dist := releaseVer
 	if strings.HasSuffix(productCode, eapSuffix) {
-		dist = "eap"
+		dist = eapVer
 		productCode = strings.TrimSuffix(productCode, eapSuffix)
 	}
 
@@ -136,11 +141,6 @@ func getIde(productCode string) *releaseDownloadInfo {
 	release := selectLatestCompatibleRelease(product, dist)
 	if release == nil {
 		ErrorMessage("Error while obtaining the release type: ", dist)
-		return nil
-	}
-
-	if *release.MajorVersion != majorVersion {
-		ErrorMessage("Major version of the release doesn't match CLI version for %s. Expected major version: %s, got: %s. Use newer CLI or use -EAP suffix", originalCode, majorVersion, *release.MajorVersion)
 		return nil
 	}
 
