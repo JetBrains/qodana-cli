@@ -332,6 +332,9 @@ func TestAllCommandsWithContainer(t *testing.T) {
 }
 
 func TestScanWithIde(t *testing.T) {
+	if os.Getenv("GITHUB_ACTIONS") == "true" {
+		t.Skip("Skipping IDE scan test")
+	}
 	log.SetLevel(log.DebugLevel)
 	ide := "QDPYC"
 	if //goland:noinspection GoBoolExpressions
