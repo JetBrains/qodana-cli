@@ -65,7 +65,7 @@ func getProductByCode(code string) (*jbProduct, error) {
 	}(tempDir) // clean up
 
 	path := filepath.Join(tempDir, "productInfo.json")
-	url := "https://data.services.jetbrains.com/products"
+	url := "https://raw.githubusercontent.com/JetBrains/qodana-docker/main/feed/releases.json"
 
 	if err := downloadFile(path, url, nil); err != nil {
 		return nil, err
