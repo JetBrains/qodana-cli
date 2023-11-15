@@ -1209,6 +1209,8 @@ func propertiesFixture(enableStats bool, additionalProperties []string) []string
 		"-Dqodana.automation.guid=FAKE",
 		"-Didea.job.launcher.without.timeout=true",
 		"-Dqodana.coverage.input=/data/coverage",
+		"-Dqodana.recommended.profile.resource=qodana-dotnet.recommended.yaml",
+		"-Dqodana.starter.profile.resource=qodana-dotnet.starter.yaml",
 		"-Drider.collect.full.container.statistics=true",
 		"-Drider.suppress.std.redirect=true",
 		"-Dsun.io.useCanonCaches=false",
