@@ -104,7 +104,7 @@ func selectLatestCompatibleRelease(product *jbProduct, reqType string) *releaseI
 
 	for i := 0; i < len(product.Releases); i++ {
 		release := &product.Releases[i]
-		if *release.MajorVersion == majorVersion && release.Type == reqType && (latestRelease == nil || release.Date > latestDate) {
+		if *release.MajorVersion == versionsMap[reqType] && release.Type == reqType && (latestRelease == nil || release.Date > latestDate) {
 			latestRelease = release
 			latestDate = release.Date
 		}
