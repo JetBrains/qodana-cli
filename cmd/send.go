@@ -34,6 +34,7 @@ If report directory is not specified, the latest report will be fetched from the
 
 If you are using other Qodana Cloud instance than https://qodana.cloud/, override it with declaring %s environment variable.`, core.PrimaryBold(core.QodanaEndpoint)),
 		Run: func(cmd *cobra.Command, args []string) {
+			options.FetchAnalyzerSettings()
 			core.SendReport(
 				options,
 				options.ValidateToken(false),
@@ -43,8 +44,8 @@ If you are using other Qodana Cloud instance than https://qodana.cloud/, overrid
 	flags := cmd.Flags()
 	flags.StringVarP(&options.Linter, "linter", "l", "", "Override linter to use")
 	flags.StringVarP(&options.ProjectDir, "project-dir", "i", ".", "Root directory of the inspected project")
-	flags.StringVarP(&options.ResultsDir, "results-dir", "o", options.ResultsDirPath(), "Override directory to save Qodana inspection results to")
-	flags.StringVarP(&options.ReportDir, "report-dir", "r", options.ReportDirPath(), "Specify HTML report path (the one with index.html inside) ")
+	flags.StringVarP(&options.ResultsDir, "results-dir", "o", "", "Override directory to save Qodana inspection results to (default <userCacheDir>/JetBrains/<linter>/results)")
+	flags.StringVarP(&options.ReportDir, "report-dir", "r", "", "Override directory to save Qodana HTML report to (default <userCacheDir>/JetBrains/<linter>/results/report)")
 	flags.StringVarP(&options.YamlName, "yaml-name", "y", core.FindQodanaYaml(options.ProjectDir), "Override qodana.yaml name")
 	return cmd
 }
