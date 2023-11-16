@@ -324,7 +324,7 @@ func patchIdeScript(product product, strToRemove string, confDirPath string) str
 }
 
 func getDateNow() string {
-	return time.Now().Format("200601021504")
+	return time.Now().UTC().Format("200601021504")
 }
 
 func writeAppInfo(path string) {
