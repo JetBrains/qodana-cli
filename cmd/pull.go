@@ -34,7 +34,7 @@ func newPullCommand() *cobra.Command {
 			core.PrepareContainerEnvSettings()
 		},
 		Run: func(cmd *cobra.Command, args []string) {
-			fetchAnalyzerSetting(options)
+			options.FetchAnalyzerSettings()
 			containerClient, err := client.NewClientWithOpts()
 			if err != nil {
 				log.Fatal("couldn't connect to container engine ", err)
