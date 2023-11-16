@@ -43,7 +43,7 @@ But you can always override qodana.yaml options with the following command-line 
 		Run: func(cmd *cobra.Command, args []string) {
 			ctx := cmd.Context()
 			checkProjectDir(options.ProjectDir)
-			fetchAnalyzerSetting(options)
+			options.FetchAnalyzerSettings()
 			exitCode := core.RunAnalysis(ctx, options)
 
 			checkExitCode(exitCode, options.ResultsDir)
@@ -53,7 +53,7 @@ But you can always override qodana.yaml options with the following command-line 
 			}
 
 			if options.ShowReport {
-				core.ShowReport(options.ResultsDir, options.ReportDirPath(), options.Port)
+				core.ShowReport(options.ResultsDir, options.ReportDir, options.Port)
 			} else {
 				core.WarningMessage(
 					"To view the Qodana report later, run %s in the current directory or add %s flag to %s",
@@ -80,9 +80,9 @@ But you can always override qodana.yaml options with the following command-line 
 	flags.StringVar(&options.Ide, "ide", os.Getenv(core.QodanaDistEnv), fmt.Sprintf("Use to run Qodana without a container. Path to the installed IDE, or a downloaded one: provide direct URL or a product code. Not compatible with --linter option. Available codes are %s, add -EAP part to obtain EAP versions", strings.Join(core.AllSupportedCodes, ", ")))
 
 	flags.StringVarP(&options.ProjectDir, "project-dir", "i", ".", "Root directory of the inspected project")
-	flags.StringVarP(&options.ResultsDir, "results-dir", "o", options.ResultsDirPath(), "Override directory to save Qodana inspection results to")
-	flags.StringVar(&options.CacheDir, "cache-dir", options.CacheDirPath(), "Override cache directory (default <userCacheDir>/JetBrains/<linter>/cache)")
-	flags.StringVarP(&options.ReportDir, "report-dir", "r", options.ReportDirPath(), "Override directory to save Qodana HTML report to")
+	flags.StringVarP(&options.ResultsDir, "results-dir", "o", "", "Override directory to save Qodana inspection results to (default <userCacheDir>/JetBrains/<linter>/results)")
+	flags.StringVar(&options.CacheDir, "cache-dir", "", "Override cache directory (default <userCacheDir>/JetBrains/<linter>/cache)")
+	flags.StringVarP(&options.ReportDir, "report-dir", "r", "", "Override directory to save Qodana HTML report to (default <userCacheDir>/JetBrains/<linter>/results/report)")
 
 	flags.BoolVar(&options.PrintProblems, "print-problems", false, "Print all found problems by Qodana in the CLI output")
 	flags.BoolVar(&options.ClearCache, "clear-cache", false, "Clear the local Qodana cache before running the analysis")
@@ -137,26 +137,6 @@ But you can always override qodana.yaml options with the following command-line 
 	}
 
 	return cmd
-}
-
-func fetchAnalyzerSetting(options *core.QodanaOptions) {
-	if options.Linter == "" && options.Ide == "" {
-		qodanaYaml := core.LoadQodanaYaml(options.ProjectDir, options.YamlName)
-		if qodanaYaml.Linter == "" && qodanaYaml.Ide == "" {
-			core.WarningMessage(
-				"No valid `linter:` field found in %s. Have you run %s? Running that for you...",
-				core.PrimaryBold(options.YamlName),
-				core.PrimaryBold("qodana init"),
-			)
-			options.Linter = core.GetLinter(options.ProjectDir, options.YamlName)
-			core.EmptyMessage()
-		} else {
-			options.Linter = qodanaYaml.Linter
-		}
-		if options.Ide == "" {
-			options.Ide = qodanaYaml.Ide
-		}
-	}
 }
 
 func checkProjectDir(projectDir string) {

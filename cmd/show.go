@@ -36,6 +36,7 @@ be viewed via the file:// protocol (by double-clicking the index.html file).
 https://www.jetbrains.com/help/qodana/html-report.html
 This command serves the Qodana report locally and opens a browser to it.`,
 		Run: func(cmd *cobra.Command, args []string) {
+			options.FetchAnalyzerSettings()
 			if openDir {
 				err := core.OpenDir(options.ResultsDir)
 				if err != nil {
@@ -53,8 +54,8 @@ This command serves the Qodana report locally and opens a browser to it.`,
 	flags := cmd.Flags()
 	flags.StringVarP(&options.Linter, "linter", "l", "", "Override linter to use")
 	flags.StringVarP(&options.ProjectDir, "project-dir", "i", ".", "Root directory of the inspected project")
-	flags.StringVarP(&options.ResultsDir, "results-dir", "o", options.ResultsDirPath(), "Override directory to save Qodana inspection results to")
-	flags.StringVarP(&options.ReportDir, "report-dir", "r", options.ReportDirPath(), "Specify HTML report path (the one with index.html inside) ")
+	flags.StringVarP(&options.ResultsDir, "results-dir", "o", "", "Override directory to save Qodana inspection results to (default <userCacheDir>/JetBrains/<linter>/results)")
+	flags.StringVarP(&options.ReportDir, "report-dir", "r", "", "Override directory to save Qodana HTML report to (default <userCacheDir>/JetBrains/<linter>/results/report)")
 	flags.IntVarP(&options.Port, "port", "p", 8080, "Specify port to serve report at")
 	flags.BoolVarP(&openDir, "dir-only", "d", false, "Open report directory only, don't serve it")
 	flags.StringVarP(&options.YamlName, "yaml-name", "y", core.FindQodanaYaml(options.ProjectDir), "Override qodana.yaml name")

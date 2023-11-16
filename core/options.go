@@ -64,6 +64,29 @@ type QodanaOptions struct {
 	_id                   string
 }
 
+func (o *QodanaOptions) FetchAnalyzerSettings() {
+	if o.Linter == "" && o.Ide == "" {
+		qodanaYaml := LoadQodanaYaml(o.ProjectDir, o.YamlName)
+		if qodanaYaml.Linter == "" && qodanaYaml.Ide == "" {
+			WarningMessage(
+				"No valid `linter:` field found in %s. Have you run %s? Running that for you...",
+				PrimaryBold(o.YamlName),
+				PrimaryBold("qodana init"),
+			)
+			o.Linter = GetLinter(o.ProjectDir, o.YamlName)
+			EmptyMessage()
+		} else {
+			o.Linter = qodanaYaml.Linter
+		}
+		if o.Ide == "" {
+			o.Ide = qodanaYaml.Ide
+		}
+	}
+	o.ResultsDir = o.resultsDirPath()
+	o.ReportDir = o.reportDirPath()
+	o.CacheDir = o.cacheDirPath()
+}
+
 // setenv sets the Qodana container environment variables if such variable was not set before.
 func (o *QodanaOptions) setenv(key string, value string) {
 	for _, e := range o.Env {
@@ -138,7 +161,7 @@ func (o *QodanaOptions) GetLinterDir() string {
 	)
 }
 
-func (o *QodanaOptions) ResultsDirPath() string {
+func (o *QodanaOptions) resultsDirPath() string {
 	if o.ResultsDir == "" {
 		if IsContainer() {
 			o.ResultsDir = "/data/results"
@@ -149,7 +172,7 @@ func (o *QodanaOptions) ResultsDirPath() string {
 	return o.ResultsDir
 }
 
-func (o *QodanaOptions) CacheDirPath() string {
+func (o *QodanaOptions) cacheDirPath() string {
 	if o.CacheDir == "" {
 		if IsContainer() {
 			o.CacheDir = "/data/cache"
@@ -160,12 +183,12 @@ func (o *QodanaOptions) CacheDirPath() string {
 	return o.CacheDir
 }
 
-func (o *QodanaOptions) ReportDirPath() string {
+func (o *QodanaOptions) reportDirPath() string {
 	if o.ReportDir == "" {
 		if IsContainer() {
 			o.ReportDir = "/data/results/report"
 		} else {
-			o.ReportDir = filepath.Join(o.ResultsDirPath(), "report")
+			o.ReportDir = filepath.Join(o.resultsDirPath(), "report")
 		}
 	}
 	return o.ReportDir
@@ -183,11 +206,11 @@ func (o *QodanaOptions) CoverageDirPath() string {
 }
 
 func (o *QodanaOptions) ReportResultsPath() string {
-	return filepath.Join(o.ReportDirPath(), "results")
+	return filepath.Join(o.reportDirPath(), "results")
 }
 
 func (o *QodanaOptions) logDirPath() string {
-	return filepath.Join(o.ResultsDirPath(), "log")
+	return filepath.Join(o.resultsDirPath(), "log")
 }
 
 func (o *QodanaOptions) vmOptionsPath() string {
