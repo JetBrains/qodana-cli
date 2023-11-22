@@ -1,7 +1,6 @@
 #!/bin/bash
 
-LATEST=$(curl --silent "https://api.github.com/repos/jetbrains/qodana-cli/releases/latest" | grep '"tag_name":' | sed -E 's/.*"([^"]+)".*/\1/')
-RELEASE=${1:-$LATEST}
+RELEASE=${1}
 TMP_DIR="/tmp/tmpinstalldir"
 OUT_DIR=${2:-"/usr/local/bin"}
 check_mark="\033[1;32m✓\033[0m"
@@ -24,8 +23,10 @@ echo -e '
 echo -e "
 👋 This script will download Qodana CLI to \033[4m/usr/local/bin/qodana\033[0m
    If you get 'permission denied' error:
-   - Specify other dir and version: \033[4mcurl -fsSL https://jb.gg/qodana-cli/install | bash -s -- $RELEASE $HOME/.local/bin\033[0m
+   - Specify other dir and version: \033[4mcurl -fsSL https://jb.gg/qodana-cli/install | bash -s -- v2023.2.8 $HOME/.local/bin\033[0m
    - Or change the owner of $OUT_DIR to your user
+   If you get API rate limit exceeded error:
+   - Specify the version, so the script does not query GitHub API: \033[4mcurl -fsSL https://jb.gg/qodana-cli/install | bash -s -- v2023.2.8 \033[0m
 "
 set -e
 
@@ -44,6 +45,10 @@ function fail {
 }
 function install {
   set -e
+  if [ -z "$RELEASE" ]; then
+          LATEST=$(curl --silent "https://api.github.com/repos/jetbrains/qodana-cli/releases/latest" | grep '"tag_name":' | sed -E 's/.*"([^"]+)".*/\1/')
+          RELEASE=$LATEST
+  fi
 	USER="JetBrains"
 	PROG="qodana"
 	INSECURE="false"
