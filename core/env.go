@@ -41,7 +41,6 @@ const (
 	QodanaConfEnv          = "QODANA_CONF"
 	QodanaToolEnv          = "QODANA_TOOL"
 	QodanaDistEnv          = "QODANA_DIST"
-	QodanaEndpoint         = "ENDPOINT"
 	qodanaCorettoSdk       = "QODANA_CORETTO_SDK"
 	androidSdkRoot         = "ANDROID_SDK_ROOT"
 	QodanaLicenseEndpoint  = "LICENSE_ENDPOINT"
