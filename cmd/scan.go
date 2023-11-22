@@ -18,6 +18,7 @@ package cmd
 
 import (
 	"fmt"
+	"github.com/JetBrains/qodana-cli/v2023/cloud"
 	"github.com/google/uuid"
 	"os"
 	"path/filepath"
@@ -50,6 +51,11 @@ But you can always override qodana.yaml options with the following command-line 
 			core.ReadSarif(filepath.Join(options.ResultsDir, core.QodanaSarifName), options.PrintProblems)
 			if core.IsInteractive() {
 				options.ShowReport = core.AskUserConfirm("Do you want to open the latest report")
+			}
+
+			reportUrl := cloud.GetReportUrl(options.ResultsDir)
+			if reportUrl != "" {
+				core.SuccessMessage("Report is successfully uploaded to %s", reportUrl)
 			}
 
 			if options.ShowReport {

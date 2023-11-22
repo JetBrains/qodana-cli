@@ -104,42 +104,6 @@ func TestCliArgs(t *testing.T) {
 	}
 }
 
-func TestCloudUrl(t *testing.T) {
-	for _, tc := range []struct {
-		name        string
-		writtenUrl  string
-		expectedUrl string
-	}{
-		{
-			name:        "valid url",
-			writtenUrl:  "https://youtu.be/dQw4w9WgXcQ",
-			expectedUrl: "https://youtu.be/dQw4w9WgXcQ",
-		},
-	} {
-		t.Run(tc.name, func(t *testing.T) {
-			resultsPath := filepath.Join(os.TempDir(), "cloud_url_valid")
-			err := os.MkdirAll(resultsPath, 0o755)
-			if err != nil {
-				return
-			}
-
-			filePath := resultsPath + "/" + qodanaReportUrlFile
-			err = os.WriteFile(
-				filePath,
-				[]byte(tc.writtenUrl),
-				0o644,
-			)
-			if err != nil {
-				t.Fatal(err)
-			}
-			actual := getReportUrl(resultsPath)
-			if actual != tc.expectedUrl {
-				t.Fatalf("expected \"%s\" got \"%s\"", tc.expectedUrl, actual)
-			}
-		})
-	}
-}
-
 func unsetGitHubVariables() {
 	variables := []string{
 		"GITHUB_SERVER_URL",

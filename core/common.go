@@ -18,6 +18,7 @@ package core
 
 import (
 	"fmt"
+	"github.com/JetBrains/qodana-cli/v2023/cloud"
 	"os"
 	"path/filepath"
 	"strings"
@@ -124,7 +125,7 @@ func GetLinter(path string, yamlName string) string {
 
 // ShowReport serves the Qodana report
 func ShowReport(resultsDir string, reportPath string, port int) {
-	cloudUrl := getReportUrl(resultsDir)
+	cloudUrl := cloud.GetReportUrl(resultsDir)
 	if cloudUrl != "" {
 		openReport(cloudUrl, reportPath, port)
 	} else {
