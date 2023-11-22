@@ -30,11 +30,10 @@ import (
 )
 
 const (
-	QodanaSarifName     = "qodana.sarif.json"
-	qodanaReportUrlFile = "qodana.cloud"
-	configName          = "qodana"
-	version             = "2023.2"
-	eap                 = "-eap"
+	QodanaSarifName = "qodana.sarif.json"
+	configName      = "qodana"
+	version         = "2023.2"
+	eap             = "-eap"
 )
 
 // langsLinters is a map of languages to linters.

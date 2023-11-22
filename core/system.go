@@ -21,6 +21,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/JetBrains/qodana-cli/v2023/cloud"
 	"io"
 	"net/http"
 	"os"
@@ -374,7 +375,8 @@ func followLinter(client *client.Client, containerName string, progress *pterm.S
 			}
 			if strings.Contains(line, "Report is successfully uploaded to ") {
 				reportUrl := strings.TrimPrefix(line, "Report is successfully uploaded to ")
-				saveReportUrl(resultsDir, reportUrl)
+				cloud.SaveReportFile(resultsDir, reportUrl) // TODO: stop after 2023.3 CLI release
+				continue
 			}
 			printLinterLog(line)
 		}
@@ -384,34 +386,6 @@ func followLinter(client *client.Client, containerName string, progress *pterm.S
 			}
 			return
 		}
-	}
-}
-
-// getReportUrl get Qodana Cloud report URL from the given qodana.sarif.json
-func getReportUrl(resultsDir string) string {
-	filePath := filepath.Join(resultsDir, qodanaReportUrlFile)
-	log.Debugf("Looking for report URL in %s", filePath)
-	if _, err := os.Stat(filePath); err == nil {
-		url, err := os.ReadFile(filePath)
-		log.Debugf("Found report URL: %s", string(url))
-		if err != nil {
-			log.Debug(err)
-			return ""
-		}
-		return string(url)
-	}
-	return ""
-}
-
-// saveReportUrl saves the report URL to the resultsDir/qodana.cloud file.
-func saveReportUrl(resultsDir, reportUrl string) {
-	if reportUrl == "" {
-		return
-	}
-	resultsDir = filepath.Join(resultsDir, "qodana.cloud")
-	err := os.WriteFile(resultsDir, []byte(reportUrl), 0o644)
-	if err != nil {
-		log.Errorf("Could not save the report URL to the results directory: %s", err)
 	}
 }
 
