@@ -68,6 +68,8 @@ func runQodanaContainer(ctx context.Context, options *QodanaOptions) int {
 	resetScanStages()
 	docker := getContainerClient()
 
+	fixDarwinCaches(options)
+
 	for i, stage := range scanStages {
 		scanStages[i] = PrimaryBold("[%d/%d] ", i+1, len(scanStages)+1) + primary(stage)
 	}
@@ -89,10 +91,43 @@ func runQodanaContainer(ctx context.Context, options *QodanaOptions) int {
 
 	exitCode := getContainerExitCode(ctx, docker, dockerConfig.Name)
 
+	fixDarwinCaches(options)
+
 	if progress != nil {
 		_ = progress.Stop()
 	}
 	return int(exitCode)
+}
+
+func fixDarwinCaches(options *QodanaOptions) {
+	if //goland:noinspection GoBoolExpressions
+	runtime.GOOS == "darwin" {
+		err := removePortSocket(options.CacheDir)
+		if err != nil {
+			log.Warnf("Could not remove .port from %s: %s", options.CacheDir, err)
+		}
+	}
+}
+
+// removePortSocket removes .port from the system dir to resolve QD-7383.
+func removePortSocket(systemDir string) error {
+	ideaDir := filepath.Join(systemDir, "idea")
+	files, err := os.ReadDir(ideaDir)
+	if err != nil {
+		return nil
+	}
+	for _, file := range files {
+		if file.IsDir() {
+			dotPort := filepath.Join(ideaDir, file.Name(), ".port")
+			if _, err = os.Stat(dotPort); err == nil {
+				err = os.Remove(dotPort)
+				if err != nil {
+					return err
+				}
+			}
+		}
+	}
+	return nil
 }
 
 // encodeAuthToBase64 serializes the auth configuration as JSON base64 payload
