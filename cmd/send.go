@@ -18,6 +18,7 @@ package cmd
 
 import (
 	"fmt"
+	"github.com/JetBrains/qodana-cli/v2023/cloud"
 	"github.com/JetBrains/qodana-cli/v2023/core"
 	"github.com/spf13/cobra"
 )
@@ -32,7 +33,7 @@ func newSendCommand() *cobra.Command {
 
 If report directory is not specified, the latest report will be fetched from the default linter results location.
 
-If you are using other Qodana Cloud instance than https://qodana.cloud/, override it with declaring %s environment variable.`, core.PrimaryBold(core.QodanaEndpoint)),
+If you are using other Qodana Cloud instance than https://qodana.cloud/, override it with declaring %s environment variable.`, core.PrimaryBold(cloud.QodanaEndpoint)),
 		Run: func(cmd *cobra.Command, args []string) {
 			options.FetchAnalyzerSettings()
 			core.SendReport(
