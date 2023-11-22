@@ -17,7 +17,10 @@
 package cloud
 
 import (
+	"encoding/json"
 	"net/http"
+	"os"
+	"path/filepath"
 	"testing"
 )
 
@@ -42,5 +45,45 @@ func TestValidateToken(t *testing.T) {
 	client := NewQdClient("kek")
 	if projectName := client.ValidateToken(); projectName != "" {
 		t.Errorf("Problem")
+	}
+}
+
+func TestGetReportUrl(t *testing.T) {
+	for _, tc := range []struct {
+		name           string
+		jsonData       jsonData
+		reportUrlFile  string
+		expectedReport string
+	}{
+		{
+			name:           "valid json data and url",
+			jsonData:       jsonData{Cloud: cloudInfo{URL: "https://cloud.qodana.com/report/url"}},
+			reportUrlFile:  "https://raw.qodana.com/report/url",
+			expectedReport: "https://cloud.qodana.com/report/url",
+		},
+		{
+			name:           "invalid json data, valid url file data",
+			jsonData:       jsonData{Cloud: cloudInfo{URL: ""}},
+			reportUrlFile:  "https://raw.qodana.com/report/url",
+			expectedReport: "https://raw.qodana.com/report/url",
+		},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			dir := t.TempDir()
+			jsonFile := filepath.Join(dir, openInIdeJson)
+			jsonFileData, _ := json.Marshal(tc.jsonData)
+			if err := os.WriteFile(jsonFile, jsonFileData, 0644); err != nil {
+				t.Fatal(err)
+			}
+			urlFile := filepath.Join(dir, legacyReportFile)
+			if err := os.WriteFile(urlFile, []byte(tc.reportUrlFile), 0644); err != nil {
+				t.Fatal(err)
+			}
+
+			actual := GetReportUrl(dir)
+			if actual != tc.expectedReport {
+				t.Fatalf("Expected \"%s\" but got \"%s\"", tc.expectedReport, actual)
+			}
+		})
 	}
 }
