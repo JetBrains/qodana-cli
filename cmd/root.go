@@ -17,9 +17,11 @@
 package cmd
 
 import (
+	"errors"
 	"github.com/JetBrains/qodana-cli/v2023/core"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
+	"github.com/spf13/pflag"
 	"github.com/spf13/viper"
 	"os"
 )
@@ -34,7 +36,13 @@ func Execute() {
 		core.DisableColor()
 	}
 
-	if err := rootCommand.Execute(); err != nil {
+	cmd, _, err := rootCommand.Find(os.Args[1:])
+	if err == nil && cmd.Use == rootCommand.Use && !errors.Is(cmd.Flags().Parse(os.Args[1:]), pflag.ErrHelp) {
+		args := append([]string{"scan"}, os.Args[1:]...)
+		rootCommand.SetArgs(args)
+	}
+
+	if err = rootCommand.Execute(); err != nil {
 		core.CheckForUpdates(core.Version)
 		log.Fatalf("error running command: %s", err)
 		os.Exit(1)
