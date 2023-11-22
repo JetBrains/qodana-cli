@@ -113,7 +113,7 @@ func (o *QodanaOptions) ValidateToken(refresh bool) string {
 				os.Exit(1)
 			}
 		} else {
-			SuccessMessage("Linked qodana.cloud project: %s", projectName)
+			SuccessMessage("Linked %s project: %s", cloud.GetEnvWithDefault(cloud.QodanaEndpoint, cloud.DefaultEndpoint), projectName)
 			o.setenv(QodanaToken, token)
 		}
 	}

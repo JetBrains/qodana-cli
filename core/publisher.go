@@ -26,6 +26,7 @@ import (
 	"crypto/md5"
 	"encoding/hex"
 	"encoding/xml"
+	"github.com/JetBrains/qodana-cli/v2023/cloud"
 	cp "github.com/otiai10/copy"
 	log "github.com/sirupsen/logrus"
 	"io"
@@ -77,7 +78,7 @@ func SendReport(opts *QodanaOptions, token string) {
 		}
 	}
 
-	publisherCommand := getPublisherArgs(prod.jbrJava(), publisherPath, opts, token, os.Getenv(QodanaEndpoint))
+	publisherCommand := getPublisherArgs(prod.jbrJava(), publisherPath, opts, token, cloud.GetEnvWithDefault(cloud.QodanaEndpoint, cloud.DefaultEndpoint))
 	if res := RunCmd("", publisherCommand...); res > 0 {
 		os.Exit(res)
 	}

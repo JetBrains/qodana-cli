@@ -1,6 +1,7 @@
 package core
 
 import (
+	"github.com/JetBrains/qodana-cli/v2023/cloud"
 	"os"
 	"path/filepath"
 	"reflect"
@@ -41,7 +42,7 @@ func TestGetPublisherArgs(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	err = os.Setenv(QodanaEndpoint, "test-endpoint")
+	err = os.Setenv(cloud.QodanaEndpoint, "test-endpoint")
 	if err != nil {
 		t.Fatal(err)
 	}
