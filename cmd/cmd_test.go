@@ -253,6 +253,7 @@ func TestAllCommandsWithContainer(t *testing.T) {
 	core.DisableColor()
 	core.CheckForUpdates("0.1.0")
 	projectPath := createProject(t, "qodana_scan_python")
+	cachePath := createProject(t, "cache")
 	resultsPath := filepath.Join(projectPath, "results")
 	err := os.MkdirAll(resultsPath, 0o755)
 	if err != nil {
@@ -269,27 +270,28 @@ func TestAllCommandsWithContainer(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	// scan with a container
-	out = bytes.NewBufferString("")
-	// set debug log to debug
-	log.SetLevel(log.DebugLevel)
-	command = newScanCommand()
-	command.SetOut(out)
-	command.SetArgs([]string{
-		"-i", projectPath,
-		"-o", resultsPath,
-		"--cache-dir", filepath.Join(projectPath, "cache"),
-		"-v", filepath.Join(projectPath, ".idea") + ":/data/some",
-		"--fail-threshold", "5",
-		"--print-problems",
-		"--apply-fixes",
-		"-l", linter,
-		"--property",
-		"idea.headless.enable.statistics=false",
-	})
-	err = command.Execute()
-	if err != nil {
-		t.Fatal(err)
+	for i := 0; i < 2; i++ { // run scan with a container twice to check the cache
+		out = bytes.NewBufferString("")
+		// set debug log to debug
+		log.SetLevel(log.DebugLevel)
+		command = newScanCommand()
+		command.SetOut(out)
+		command.SetArgs([]string{
+			"-i", projectPath,
+			"-o", resultsPath,
+			"--cache-dir", cachePath,
+			"-v", filepath.Join(projectPath, ".idea") + ":/data/some",
+			"--fail-threshold", "5",
+			"--print-problems",
+			"--apply-fixes",
+			"-l", linter,
+			"--property",
+			"idea.headless.enable.statistics=false",
+		})
+		err = command.Execute()
+		if err != nil {
+			t.Fatal(err)
+		}
 	}
 
 	// view
@@ -355,6 +357,10 @@ func TestAllCommandsWithContainer(t *testing.T) {
 		t.Fatal(err)
 	}
 	err = os.RemoveAll(projectPath)
+	if err != nil {
+		t.Fatal(err)
+	}
+	err = os.RemoveAll(cachePath)
 	if err != nil {
 		t.Fatal(err)
 	}
