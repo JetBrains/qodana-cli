@@ -1134,6 +1134,7 @@ func TestQodanaOptions_RequiresToken(t *testing.T) {
 func propertiesFixture(enableStats bool, additionalProperties []string) []string {
 	properties := []string{
 		"-Dfus.internal.reduce.initial.delay=true",
+		"-Dide.warmup.use.predicates=false",
 		fmt.Sprintf("-Didea.application.info.value=%s", filepath.Join(os.TempDir(), "entrypoint", "QodanaAppInfo.xml")),
 		"-Didea.class.before.app=com.jetbrains.rider.protocol.EarlyBackendStarter",
 		fmt.Sprintf("-Didea.config.path=%s", filepath.Join(os.TempDir(), "entrypoint")),
@@ -1264,7 +1265,7 @@ func Test_Properties(t *testing.T) {
 		},
 		{
 			name:          "override options from CLI, YAML should be ignored",
-			cliProperties: []string{"-Dfus.internal.reduce.initial.delay=false", "-Didea.application.info.value=0", "idea.headless.enable.statistics=false"},
+			cliProperties: []string{"-Dfus.internal.reduce.initial.delay=false", "-Dide.warmup.use.predicates=true", "-Didea.application.info.value=0", "idea.headless.enable.statistics=false"},
 			qodanaYaml: "" +
 				"version: \"1.0\"\n" +
 				"properties:\n" +
@@ -1273,8 +1274,9 @@ func Test_Properties(t *testing.T) {
 			isContainer: false,
 			expected: append([]string{
 				"-Dfus.internal.reduce.initial.delay=false",
+				"-Dide.warmup.use.predicates=true",
 				"-Didea.application.info.value=0",
-			}, propertiesFixture(false, []string{})[2:]...),
+			}, propertiesFixture(false, []string{})[3:]...),
 		},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
