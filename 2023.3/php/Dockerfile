@@ -1,6 +1,6 @@
 ARG NODE_TAG="16-bullseye-slim"
-ARG PHP_TAG="8.1-cli-bullseye"
-ARG COMPOSER_TAG="2.5.1"
+ARG PHP_TAG="8.2-cli-bullseye"
+ARG COMPOSER_TAG="2.6.3"
 FROM node:$NODE_TAG AS node_base
 FROM composer:$COMPOSER_TAG AS composer_base
 FROM php:$PHP_TAG
@@ -21,7 +21,7 @@ RUN --mount=target=/var/lib/apt/lists,type=cache,sharing=locked \
     mkdir -m 777 -p /opt $QODANA_DATA $QODANA_CONF && apt-get update && \
     DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
         ca-certificates=20210119 \
-        curl=7.74.0-1.3+deb11u7 \
+        curl=7.74.0-1.3+deb11u10 \
         fontconfig=2.13.1-4.2 \
         git=1:2.30.2-1+deb11u2 \
         git-lfs=2.13.2-1+b5 \
@@ -51,7 +51,7 @@ RUN ln -s /usr/local/lib/node_modules/npm/bin/npm-cli.js /usr/local/bin/npm && \
 
 COPY --from=composer_base /usr/bin/composer /usr/bin/composer
 
-ARG QD_RELEASE="2023.2"
+ARG QD_RELEASE="2023.3"
 ARG QD_BUILD="QDPHP-$QD_RELEASE"
 # hadolint ignore=DL3003,SC2043
 RUN set -ex && \

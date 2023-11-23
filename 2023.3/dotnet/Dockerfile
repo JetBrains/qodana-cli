@@ -26,7 +26,7 @@ RUN --mount=target=/var/lib/apt/lists,type=cache,sharing=locked \
     mkdir -m 777 -p $QODANA_DATA $QODANA_CONF $DOTNET_ROOT $RIDER_UNREAL_ROOT && apt-get update && \
     DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
         ca-certificates=20210119 \
-        curl=7.74.0-1.3+deb11u7 \
+        curl=7.74.0-1.3+deb11u10 \
         fontconfig=2.13.1-4.2 \
         git=1:2.30.2-1+deb11u2 \
         git-lfs=2.13.2-1+b5 \
@@ -62,7 +62,7 @@ RUN ln -s /usr/local/lib/node_modules/npm/bin/npm-cli.js /usr/local/bin/npm && \
     npm install -g eslint@v8.47.0 pnpm@v8.7.1 && npm config set update-notifier false && \
     chmod 777 -R "$HOME/.npm" "$HOME/.npmrc"
 
-ARG QD_RELEASE="2023.2"
+ARG QD_RELEASE="2023.3"
 ARG QD_BUILD="QDNET-$QD_RELEASE"
 # hadolint ignore=DL3003,SC2043
 RUN set -ex && \

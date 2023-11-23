@@ -21,7 +21,7 @@ RUN --mount=target=/var/lib/apt/lists,type=cache,sharing=locked \
     mkdir -m 777 -p /opt $QODANA_DATA $QODANA_CONF && apt-get update && \
     DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
         ca-certificates=20210119 \
-        curl=7.74.0-1.3+deb11u7 \
+        curl=7.74.0-1.3+deb11u10 \
         fontconfig=2.13.1-4.2 \
         git=1:2.30.2-1+deb11u2 \
         git-lfs=2.13.2-1+b5 \

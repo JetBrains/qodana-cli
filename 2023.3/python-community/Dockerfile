@@ -15,11 +15,11 @@ ENV JAVA_HOME="$QODANA_DIST/jbr" \
 # hadolint ignore=SC2174,DL3009
 RUN --mount=target=/var/lib/apt/lists,type=cache,sharing=locked \
     --mount=target=/var/cache/apt,type=cache,sharing=locked \
-    rm -f /etc/apt/apt.conf.d/docker-clean &&  \
+    rm -f /etc/apt/apt.conf.d/docker-clean && \
     mkdir -m 777 -p /opt $QODANA_DATA $QODANA_CONF && apt-get update && \
     DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
         ca-certificates=20210119 \
-        curl=7.74.0-1.3+deb11u7 \
+        curl=7.74.0-1.3+deb11u10 \
         fontconfig=2.13.1-4.2 \
         git=1:2.30.2-1+deb11u2 \
         git-lfs=2.13.2-1+b5 \
@@ -34,10 +34,12 @@ RUN --mount=target=/var/lib/apt/lists,type=cache,sharing=locked \
 
 ENV CONDA_DIR="/opt/miniconda3" \
     CONDA_ENVS_PATH="$QODANA_DATA/cache/conda/envs" \
-    CONDA_PKGS_DIRS="$QODANA_DATA/cache/conda/pkgs" \
     PIP_CACHE_DIR="$QODANA_DATA/cache/.pip/" \
+    POETRY_CACHE_DIR="$QODANA_DATA/cache/.poetry/" \
     FLIT_ROOT_INSTALL=1
 ENV PATH="$CONDA_DIR/bin:$HOME/.local/bin:$PATH"
+
+# https://docs.conda.io/projects/miniconda/en/latest/miniconda-hashes.html
 ARG CONDA_VERSION="py310_22.11.1-1"
 
 # hadolint ignore=SC2174,DL3009
@@ -70,9 +72,10 @@ RUN --mount=target=/var/lib/apt/lists,type=cache,sharing=locked \
     echo "conda activate base" >> ~/.bashrc && ln -s ${CONDA_DIR}/bin/python3 /usr/bin/python3 && \
     find ${CONDA_DIR}/ -follow -type f -name '*.a' -delete && find ${CONDA_DIR}/ -follow -type f -name '*.js.map' -delete && \
     ${CONDA_DIR}/bin/conda install -c conda-forge poetry pipenv && ${CONDA_DIR}/bin/conda clean -afy && \
+    chmod 777 -R $HOME/.conda && \
     rm -rf /tmp/*
 
-ARG QD_RELEASE="2023.2"
+ARG QD_RELEASE="2023.3"
 ARG QD_BUILD="QDPYC-$QD_RELEASE"
 # hadolint ignore=DL3003,SC2043
 RUN set -ex && \

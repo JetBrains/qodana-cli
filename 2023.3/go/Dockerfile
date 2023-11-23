@@ -1,4 +1,4 @@
-ARG GO_TAG="1.19-bullseye"
+ARG GO_TAG="1.21-bullseye"
 ARG NODE_TAG="16-bullseye-slim"
 FROM node:$NODE_TAG AS node_base
 FROM golang:$GO_TAG
@@ -12,6 +12,8 @@ ENV JAVA_HOME="$QODANA_DIST/jbr" \
     QODANA_CONF="$HOME/.config/idea" \
     PATH="$QODANA_DIST/bin:$PATH"
 
+ENV GOMODCACHE="$QODANA_DATA/cache/go"
+
 # hadolint ignore=SC2174,DL3009
 RUN --mount=target=/var/lib/apt/lists,type=cache,sharing=locked \
     --mount=target=/var/cache/apt,type=cache,sharing=locked \
@@ -19,7 +21,7 @@ RUN --mount=target=/var/lib/apt/lists,type=cache,sharing=locked \
     mkdir -m 777 -p /opt $QODANA_DATA $QODANA_CONF && apt-get update && \
     DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
         ca-certificates=20210119 \
-        curl=7.74.0-1.3+deb11u7 \
+        curl=7.74.0-1.3+deb11u10 \
         fontconfig=2.13.1-4.2 \
         git=1:2.30.2-1+deb11u2 \
         git-lfs=2.13.2-1+b5 \
@@ -46,7 +48,7 @@ RUN ln -s /usr/local/lib/node_modules/npm/bin/npm-cli.js /usr/local/bin/npm && \
     npm install -g eslint@v8.47.0 pnpm@v8.7.1 && npm config set update-notifier false && \
     chmod 777 -R "$HOME/.npm" "$HOME/.npmrc"
 
-ARG QD_RELEASE="2023.2"
+ARG QD_RELEASE="2023.3"
 ARG QD_BUILD="QDGO-$QD_RELEASE"
 # hadolint ignore=DL3003,SC2043
 RUN set -ex && \
