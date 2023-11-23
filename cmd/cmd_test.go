@@ -248,6 +248,8 @@ func TestAllCommandsWithContainer(t *testing.T) {
 		command = newScanCommand()
 		command.SetOut(out)
 		command.SetArgs([]string{
+			"--save-report",
+			"-n", "Default",
 			"-i", projectPath,
 			"-o", resultsPath,
 			"--cache-dir", cachePath,
@@ -256,8 +258,8 @@ func TestAllCommandsWithContainer(t *testing.T) {
 			"--print-problems",
 			"--apply-fixes",
 			"-l", linter,
-			"--property",
-			"idea.headless.enable.statistics=false",
+			"--property", "idea.headless.enable.statistics=false",
+			"--property", "qodana.format=INSPECT_SH_FORMAT",
 		})
 		err = command.Execute()
 		if err != nil {
