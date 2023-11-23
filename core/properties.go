@@ -65,6 +65,7 @@ func getPropertiesMap(
 		"-Didea.log.path":                        QuoteIfSpace(logDir),
 		"-Didea.qodana.thirdpartyplugins.accept": "true",
 		"-Dqodana.automation.guid":               QuoteIfSpace(analysisId),
+		"-Dide.warmup.use.predicates":            "false",
 
 		"-XX:SoftRefLRUPolicyMSPerMB": "50",
 		"-XX:MaxJavaStackTraceDepth":  "10000",
