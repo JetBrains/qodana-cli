@@ -249,7 +249,7 @@ func TestAllCommandsWithContainer(t *testing.T) {
 		command.SetOut(out)
 		command.SetArgs([]string{
 			"--save-report",
-			"-n", "Default",
+			"-n", "qodana.starter",
 			"-i", projectPath,
 			"-o", resultsPath,
 			"--cache-dir", cachePath,
