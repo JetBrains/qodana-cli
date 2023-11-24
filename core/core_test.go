@@ -1083,6 +1083,18 @@ func TestQodanaOptions_RequiresToken(t *testing.T) {
 		expected bool
 	}{
 		{
+			QodanaToken,
+			"",
+			"",
+			true,
+		},
+		{
+			QodanaLicense,
+			"",
+			"",
+			false,
+		},
+		{
 			"QDPYC docker",
 			Image(QDPYC),
 			"",
@@ -1092,12 +1104,6 @@ func TestQodanaOptions_RequiresToken(t *testing.T) {
 			"QDJVMC ide",
 			"",
 			QDJVMC,
-			false,
-		},
-		{
-			QodanaLicense,
-			"",
-			"",
 			false,
 		},
 	}
@@ -1115,7 +1121,18 @@ func TestQodanaOptions_RequiresToken(t *testing.T) {
 		}
 
 		t.Run(tt.name, func(t *testing.T) {
-			if tt.name == QodanaLicense {
+			if tt.name == QodanaToken {
+				err := os.Setenv(QodanaToken, "test")
+				if err != nil {
+					t.Fatal(err)
+				}
+				defer func() {
+					err := os.Unsetenv(QodanaToken)
+					if err != nil {
+						t.Fatal(err)
+					}
+				}()
+			} else if tt.name == QodanaLicense {
 				err := os.Setenv(QodanaLicense, "test")
 				if err != nil {
 					t.Fatal(err)

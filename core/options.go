@@ -250,6 +250,10 @@ func (o *QodanaOptions) properties() (map[string]string, []string) {
 }
 
 func (o *QodanaOptions) RequiresToken() bool {
+	if os.Getenv(QodanaToken) != "" || o.getenv(QodanaLicenseOnlyToken) != "" {
+		return true
+	}
+
 	var analyzer string
 	if o.Linter != "" {
 		analyzer = o.Linter
@@ -262,10 +266,6 @@ func (o *QodanaOptions) RequiresToken() bool {
 		strings.Contains(lower(analyzer), "eap") ||
 		prod.isCommunity() || prod.EAP {
 		return false
-	}
-
-	if os.Getenv(QodanaToken) != "" || o.getenv(QodanaLicenseOnlyToken) != "" {
-		return true
 	}
 
 	for _, e := range allSupportedPaidCodes {
