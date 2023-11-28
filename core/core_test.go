@@ -1168,6 +1168,7 @@ func propertiesFixture(enableStats bool, additionalProperties []string) []string
 	properties := []string{
 		"-Dfus.internal.reduce.initial.delay=true",
 		"-Dide.warmup.use.predicates=false",
+		"-Dvcs.log.index.enable=false",
 		fmt.Sprintf("-Didea.application.info.value=%s", filepath.Join(os.TempDir(), "entrypoint", "QodanaAppInfo.xml")),
 		"-Didea.class.before.app=com.jetbrains.rider.protocol.EarlyBackendStarter",
 		fmt.Sprintf("-Didea.config.path=%s", filepath.Join(os.TempDir(), "entrypoint")),
