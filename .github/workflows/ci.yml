@@ -64,7 +64,7 @@ jobs:
       - if: startsWith(matrix.os, 'ubuntu')
         uses: github/codeql-action/analyze@v2
       - if: startsWith(matrix.os, 'ubuntu')
-      - name: install chocolatey
+        name: install chocolatey
         run: |
           mkdir -p /opt/chocolatey
           wget -q -O - "https://github.com/chocolatey/choco/releases/download/${CHOCOLATEY_VERSION}/chocolatey.v${CHOCOLATEY_VERSION}.tar.gz" | tar -xz -C "/opt/chocolatey"
@@ -74,7 +74,7 @@ jobs:
         env:
           CHOCOLATEY_VERSION: 1.2.0
       - if: startsWith(matrix.os, 'ubuntu')
-      - uses: goreleaser/goreleaser-action@v5
+        uses: goreleaser/goreleaser-action@v5
         with:
           distribution: goreleaser
           version: latest
