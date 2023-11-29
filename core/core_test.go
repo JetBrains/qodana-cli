@@ -22,6 +22,9 @@ import (
 	"errors"
 	"fmt"
 	"github.com/JetBrains/qodana-cli/v2023/cloud"
+	"github.com/docker/docker/api/types"
+	"github.com/docker/docker/api/types/container"
+	"github.com/docker/docker/api/types/mount"
 	log "github.com/sirupsen/logrus"
 	"golang.org/x/exp/maps"
 	"net/http"
@@ -1339,5 +1342,73 @@ func Test_Properties(t *testing.T) {
 	err = os.RemoveAll(opts.ProjectDir)
 	if err != nil {
 		t.Fatal(err)
+	}
+}
+
+func TestGenerateDebugDockerRunCommand(t *testing.T) {
+	tests := []struct {
+		name string
+		cfg  *types.ContainerCreateConfig
+		want string
+	}{
+		{
+			name: "basic config",
+			cfg: &types.ContainerCreateConfig{
+				Config: &container.Config{
+					Image: "test-image",
+					Cmd:   []string{"arg1", "arg2"},
+				},
+			},
+			want: "docker run test-image arg1 arg2 ",
+		},
+		{
+			name: "config with user",
+			cfg: &types.ContainerCreateConfig{
+				Config: &container.Config{
+					Image: "test-image",
+					User:  "test-user",
+					Cmd:   []string{"arg1", "arg2"},
+				},
+			},
+			want: "docker run -u test-user test-image arg1 arg2 ",
+		},
+		{
+			name: "config with environment variables",
+			cfg: &types.ContainerCreateConfig{
+				Config: &container.Config{
+					Image: "test-image",
+					Env:   []string{"ENV1=value1", "ENV2=value2"},
+					Cmd:   []string{"arg1", "arg2"},
+				},
+			},
+			want: "docker run -e ENV1=value1 -e ENV2=value2 test-image arg1 arg2 ",
+		},
+		{
+			name: "config with mounts",
+			cfg: &types.ContainerCreateConfig{
+				Config: &container.Config{
+					Image: "test-image",
+					Cmd:   []string{"arg1", "arg2"},
+				},
+				HostConfig: &container.HostConfig{
+					Mounts: []mount.Mount{
+						{
+							Type:   mount.TypeBind,
+							Source: "/host/path",
+							Target: "/container/path",
+						},
+					},
+				},
+			},
+			want: "docker run -v /host/path:/container/path test-image arg1 arg2 ",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := generateDebugDockerRunCommand(tt.cfg); got != tt.want {
+				t.Errorf("generateDebugDockerRunCommand() = %v, want %v", got, tt.want)
+			}
+		})
 	}
 }

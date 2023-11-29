@@ -211,7 +211,7 @@ func TestContributorsCommand(t *testing.T) {
 }
 
 func TestAllCommandsWithContainer(t *testing.T) {
-	linter := "registry.jetbrains.team/p/sa/containers/qodana-python-community:latest"
+	linter := "registry.jetbrains.team/p/sa/containers/qodana-dotnet:latest"
 
 	if os.Getenv("GITHUB_ACTIONS") == "true" {
 		//goland:noinspection GoBoolExpressions

@@ -63,17 +63,7 @@ jobs:
         uses: github/codeql-action/autobuild@v2
       - if: startsWith(matrix.os, 'ubuntu')
         uses: github/codeql-action/analyze@v2
-
-  package:
-#    needs: [ lint, test ]
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-      - uses: actions/setup-go@v4
-        with:
-          go-version: '1.21'
+      - if: startsWith(matrix.os, 'ubuntu')
       - name: install chocolatey
         run: |
           mkdir -p /opt/chocolatey
@@ -83,12 +73,13 @@ jobs:
           chmod +x /usr/local/bin/choco
         env:
           CHOCOLATEY_VERSION: 1.2.0
+      - if: startsWith(matrix.os, 'ubuntu')
       - uses: goreleaser/goreleaser-action@v5
         with:
           distribution: goreleaser
           version: latest
           args: --snapshot --clean --debug
-      - if: github.ref == 'refs/heads/main'
+      - if: startsWith(matrix.os, 'ubuntu') && github.ref == 'refs/heads/main'
         run: |
           cd dist
           gh release --repo JetBrains/qodana-cli delete nightly -y || true
