@@ -19,6 +19,8 @@ ARG DOTNET_INSTALL_SH_REVISION="40434288dc5bbda41eafcbcbbc5c0fbbe028fb30"
 ARG DOTNET_CHANNEL_A="7.0"
 ARG DOTNET_CHANNEL_B="6.0"
 
+COPY temp.txt /data/temp.txt
+
 # hadolint ignore=SC2174,DL3009
 RUN --mount=target=/var/lib/apt/lists,type=cache,sharing=locked \
     --mount=target=/var/cache/apt,type=cache,sharing=locked \
