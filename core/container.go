@@ -340,6 +340,22 @@ func getDockerOptions(opts *QodanaOptions) *types.ContainerCreateConfig {
 	log.Debugf("volumes: %v", volumes)
 	log.Debugf("cmd: %v", cmdOpts)
 	log.Debugf("docker command to debug: docker run --rm -it -u %s -v %s:/data/cache -v %s:/data/project -v %s:/data/results %s %s", opts.User, cachePath, projectPath, resultsPath, opts.Linter, strings.Join(cmdOpts, " "))
+
+	var hostConfig *container.HostConfig
+	if strings.Contains(opts.Linter, "dotnet") {
+		hostConfig = &container.HostConfig{
+			AutoRemove:  os.Getenv(qodanaCliContainerKeep) == "",
+			Mounts:      volumes,
+			CapAdd:      []string{"SYS_PTRACE"},
+			SecurityOpt: []string{"seccomp=unconfined"},
+		}
+	} else {
+		hostConfig = &container.HostConfig{
+			AutoRemove: os.Getenv(qodanaCliContainerKeep) == "",
+			Mounts:     volumes,
+		}
+	}
+
 	return &types.ContainerCreateConfig{
 		Name: containerName,
 		Config: &container.Config{
@@ -351,10 +367,7 @@ func getDockerOptions(opts *QodanaOptions) *types.ContainerCreateConfig {
 			Env:          opts.Env,
 			User:         opts.User,
 		},
-		HostConfig: &container.HostConfig{
-			AutoRemove: os.Getenv(qodanaCliContainerKeep) == "",
-			Mounts:     volumes,
-		},
+		HostConfig: hostConfig,
 	}
 }
 
