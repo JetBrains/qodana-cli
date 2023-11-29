@@ -113,6 +113,8 @@ func (client *QdClient) doRequest(path, method string, headers map[string]string
 	for i := 0; i < maxNumberOfRetries; i++ {
 		var req *http.Request
 		req, err = http.NewRequest(method, url, bytes.NewBuffer(body))
+		log.Debugf("Requesting %s", url)
+		log.Debugf("Request body: %s", string(body))
 		if err != nil {
 			return RequestError{Err: err}
 		}
