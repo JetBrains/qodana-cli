@@ -5,8 +5,6 @@ on:
     branches:
       - main
   pull_request:
-permissions:
-  contents: write
 
 jobs:
   lint:
@@ -28,7 +26,7 @@ jobs:
       checks: write
       pull-requests: write
       actions: read
-      contents: read
+      contents: write
       security-events: write
     strategy:
       matrix:
@@ -46,13 +44,15 @@ jobs:
           registry: registry.jetbrains.team
           username: ${{ secrets.SPACE_USERNAME }}
           password: ${{ secrets.SPACE_PASSWORD }}
-      - run: go test -v ./... -coverprofile cover.out
+      - run: go test -v ./... -coverprofile cover.out -coverpkg=./...
         env:
-          QODANA_TOKEN: ${{ secrets.TEST_QODANA_TOKEN }}
+          QODANA_LICENSE_ONLY_TOKEN: ${{ secrets.QODANA_LICENSE_ONLY_TOKEN }}
       - if: startsWith(matrix.os, 'ubuntu')
         uses: JetBrains/qodana-action@main
         env:
           QODANA_TOKEN: ${{ secrets.QODANA_TOKEN }}
+        with:
+          args: --fail-threshold,0
       - if: startsWith(matrix.os, 'ubuntu')
         uses: github/codeql-action/init@v2
         with:
@@ -61,18 +61,8 @@ jobs:
         uses: github/codeql-action/autobuild@v2
       - if: startsWith(matrix.os, 'ubuntu')
         uses: github/codeql-action/analyze@v2
-
-  package:
-#    needs: [ lint, test ]
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-      - uses: actions/setup-go@v4
-        with:
-          go-version: '1.21'
-      - name: install chocolatey
+      - if: startsWith(matrix.os, 'ubuntu')
+        name: install chocolatey
         run: |
           mkdir -p /opt/chocolatey
           wget -q -O - "https://github.com/chocolatey/choco/releases/download/${CHOCOLATEY_VERSION}/chocolatey.v${CHOCOLATEY_VERSION}.tar.gz" | tar -xz -C "/opt/chocolatey"
@@ -81,12 +71,13 @@ jobs:
           chmod +x /usr/local/bin/choco
         env:
           CHOCOLATEY_VERSION: 1.2.0
-      - uses: goreleaser/goreleaser-action@v5
+      - if: startsWith(matrix.os, 'ubuntu')
+        uses: goreleaser/goreleaser-action@v5
         with:
           distribution: goreleaser
           version: latest
           args: --snapshot --clean --debug
-      - if: github.ref == 'refs/heads/main'
+      - if: startsWith(matrix.os, 'ubuntu') && github.ref == 'refs/heads/233'
         run: |
           cd dist
           gh release --repo JetBrains/qodana-cli delete nightly -y || true
