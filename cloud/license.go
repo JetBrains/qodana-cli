@@ -155,7 +155,7 @@ func requestLicenseDataAttempt(endpoint string, token string) ([]byte, error) {
 	if err != nil {
 		return nil, fmt.Errorf("Reading license response failed\n. %w", err)
 	}
-	if resp.StatusCode == 403 {
+	if resp.StatusCode == 403 || resp.StatusCode == 404 {
 		return nil, TokenDeclinedError
 	}
 	if resp.StatusCode == 200 {
