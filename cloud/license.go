@@ -28,7 +28,7 @@ import (
 	"time"
 )
 
-type licenseData struct {
+type LicenseData struct {
 	LicenseID      string `json:"licenseId"`
 	LicenseKey     string `json:"licenseKey"`
 	ExpirationDate string `json:"expirationDate"`
@@ -94,13 +94,13 @@ func (o *LicenseToken) IsAllowedToSendFUS() bool {
 	return !o.LicenseOnly
 }
 
-func ExtractLicenseKey(data []byte) string {
-	var ld licenseData
+func DeserializeLicenseData(data []byte) LicenseData {
+	var ld LicenseData
 	err := json.Unmarshal(data, &ld)
 	if err != nil {
 		log.Fatalf("License deserialization failed. License response data:\n%s\nError: '%v'", string(data), err)
 	}
-	return ld.LicenseKey
+	return ld
 }
 
 func RequestLicenseData(endpoint string, token string) ([]byte, error) {

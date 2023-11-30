@@ -128,12 +128,26 @@ func (p *product) parentPrefix() string {
 	}
 }
 
+var CommunityCodes = []string{QDJVMC, QDPYC, QDANDC}
+
 func (p *product) IsCommunity() bool {
-	return p.Code == QDJVMC || p.Code == QDPYC || p.Code == ""
+	if p.Code == "" {
+		return true
+	}
+	for _, code := range CommunityCodes {
+		if p.Code == code {
+			return true
+		}
+	}
+	return false
 }
 
 func (p *product) getProductNameFromCode() string {
-	switch p.Code {
+	return getProductNameFromCode(p.Code)
+}
+
+func getProductNameFromCode(code string) string {
+	switch code {
 	case QDJVMC:
 		return "Qodana Community for JVM"
 	case QDPYC:
