@@ -518,7 +518,7 @@ func Test_setDeviceID(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	tmpDir := filepath.Join(os.TempDir(), "entrypoint")
+	tmpDir := filepath.Join(os.TempDir(), "deviceID")
 	err = os.MkdirAll(tmpDir, 0o755)
 	if err != nil {
 		t.Fatal(err)
@@ -700,7 +700,7 @@ func Test_createUser(t *testing.T) {
 }
 
 func Test_syncIdeaCache(t *testing.T) {
-	tmpDir := filepath.Join(os.TempDir(), "entrypoint")
+	tmpDir := filepath.Join(os.TempDir(), "cache")
 	tc := "NotExist"
 	syncIdeaCache(filepath.Join(tmpDir, "1"), filepath.Join(tmpDir, "2"), true)
 	if _, err := os.Stat(filepath.Join(tmpDir, "2")); err == nil {
@@ -752,7 +752,7 @@ func Test_syncIdeaCache(t *testing.T) {
 
 func Test_Bootstrap(t *testing.T) {
 	opts := &QodanaOptions{}
-	tmpDir := filepath.Join(os.TempDir(), "entrypoint")
+	tmpDir := filepath.Join(os.TempDir(), "bootstrap")
 	err := os.MkdirAll(tmpDir, 0o755)
 	if err != nil {
 		t.Fatal(err)
@@ -773,7 +773,7 @@ func Test_Bootstrap(t *testing.T) {
 // TestSaveProperty saves some SARIF example file, adds a property to it, then checks that a compact version of that JSON file equals the given expected expected.
 func Test_SaveProperty(t *testing.T) {
 	opts := &QodanaOptions{}
-	tmpDir := filepath.Join(os.TempDir(), "entrypoint")
+	tmpDir := filepath.Join(os.TempDir(), "sarif")
 	err := os.MkdirAll(tmpDir, 0o755)
 	if err != nil {
 		t.Fatal(err)
@@ -826,7 +826,7 @@ func Test_SaveProperty(t *testing.T) {
 
 //goland:noinspection ALL
 func Test_WriteAppInfo(t *testing.T) {
-	tmpDir := filepath.Join(os.TempDir(), "entrypoint")
+	tmpDir := filepath.Join(os.TempDir(), "appinfo")
 	err := os.MkdirAll(tmpDir, 0o755)
 	if err != nil {
 		t.Fatal(err)
@@ -862,7 +862,7 @@ func Test_WriteAppInfo(t *testing.T) {
 //goland:noinspection HttpUrlsUsage
 func Test_ReadAppInfo(t *testing.T) {
 	tempDir := os.TempDir()
-	entrypointDir := filepath.Join(tempDir, "entrypoint")
+	entrypointDir := filepath.Join(tempDir, "appinfo")
 	xmlFilePath := filepath.Join(entrypointDir, "bin", "QodanaAppInfo.xml")
 	err := os.MkdirAll(filepath.Dir(xmlFilePath), 0o755)
 	if err != nil {
@@ -900,7 +900,7 @@ func Test_ReadAppInfo(t *testing.T) {
 }
 
 func Test_ideaExitCode(t *testing.T) {
-	tmpDir := filepath.Join(os.TempDir(), "entrypoint")
+	tmpDir := filepath.Join(os.TempDir(), "exitcode")
 	err := os.MkdirAll(tmpDir, 0o755)
 	if err != nil {
 		t.Fatal(err)
