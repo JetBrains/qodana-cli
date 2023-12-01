@@ -18,46 +18,7 @@ package core
 
 import (
 	"fmt"
-	"strings"
 )
-
-// qodanaAppInfo returns the content of the qodana-app-info.xml file.
-func appInfoXml(
-	majorMinorVersion string,
-	eap bool,
-	build string,
-	code string,
-	name string,
-) string {
-	date := "202212060511"
-	versions := strings.Split(majorMinorVersion, ".")
-	var major, minor string
-	if len(versions) == 2 {
-		major = versions[0]
-		minor = versions[1]
-	} else {
-		major = strings.Split(version, ".")[0]
-		minor = strings.Split(version, ".")[1]
-	}
-
-	var eapStr string
-	if eap {
-		eapStr = "true"
-	} else {
-		eapStr = "false"
-	}
-	//goland:noinspection ALL
-	return fmt.Sprintf(`<component xmlns="http://jetbrains.org/intellij/schema/application-info"
-               xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-               xsi:schemaLocation="http://jetbrains.org/intellij/schema/application-info http://jetbrains.org/intellij/schema/ApplicationInfo.xsd">
-      <version major="%s" minor="%s" eap="%s"/>
-      <company name="JetBrains s.r.o." url="https://www.jetbrains.com" copyrightStart="2000"/>
-      <build number="%s-%s" date="%s" />
-      <names product="%s" fullname="%s"/>
-      <icon svg="xxx.svg" svg-small="xxx.svg"/>
-      <plugins url="https://plugins.jetbrains.com/" builtin-url="__BUILTIN_PLUGINS_URL__"/>
-</component>`, major, minor, eapStr, code, build, date, name, name)
-}
 
 func jdkTableXml(jdkPath string) string {
 	return fmt.Sprintf(`<application>
