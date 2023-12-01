@@ -21,7 +21,7 @@ import (
 )
 
 func TestGetProductByCode(t *testing.T) {
-	product, err := GetProductByCode("IIU")
+	product, err := GetProductByCode("RD")
 	if err != nil {
 		t.Fail()
 	}

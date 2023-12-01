@@ -33,8 +33,13 @@ import (
 )
 
 var (
-	EapSuffix    = "-EAP"
-	MajorVersion = "2023.2"
+	eapSuffix   = "-EAP"
+	releaseVer  = "release"
+	eapVer      = "eap"
+	versionsMap = map[string]string{
+		releaseVer: "2023.3",
+		eapVer:     "2023.3",
+	}
 )
 
 func downloadAndInstallIDE(ide string, baseDir string, spinner *pterm.SpinnerPrinter) string {
@@ -115,14 +120,27 @@ func getIde(productCode string) *ReleaseDownloadInfo {
 	}
 
 	originalCode := productCode
-	dist := "release"
-	if strings.HasSuffix(productCode, EapSuffix) {
-		dist = "eap"
-		productCode = strings.TrimSuffix(productCode, EapSuffix)
+	dist := releaseVer
+	if strings.HasSuffix(productCode, eapSuffix) {
+		dist = eapVer
+		productCode = strings.TrimSuffix(productCode, eapSuffix)
 	}
 
 	if _, ok := products[productCode]; !ok {
 		ErrorMessage("Product code doesnt exist: ", originalCode)
+		return nil
+	}
+
+	supportedCode := false
+	for _, v := range AllSupportedCodes {
+		if v == productCode {
+			supportedCode = true
+			break
+		}
+	}
+
+	if !supportedCode {
+		ErrorMessage("Product code is not supported: ", originalCode)
 		return nil
 	}
 
@@ -135,11 +153,6 @@ func getIde(productCode string) *ReleaseDownloadInfo {
 	release := SelectLatestCompatibleRelease(product, dist)
 	if release == nil {
 		ErrorMessage("Error while obtaining the release type: ", dist)
-		return nil
-	}
-
-	if *release.MajorVersion != MajorVersion {
-		ErrorMessage("Major version of the release doesn't match CLI version for %s. Expected major version: %s, got: %s. Use newer CLI or use -EAP suffix", originalCode, MajorVersion, *release.MajorVersion)
 		return nil
 	}
 
@@ -193,7 +206,7 @@ func installIdeWindowsZip(archivePath string, targetDir string) error {
 	if err := os.MkdirAll(targetDir, os.ModePerm); err != nil {
 		log.Fatal("couldn't create a directory ", err.Error())
 	}
-	_, err := exec.Command("tar", "-xf", QuoteForWindows(archivePath), "-C", QuoteForWindows(targetDir)).Output()
+	_, err := exec.Command("tar", "-xf", QuoteForWindows(archivePath), "--strip-components", "2", "-C", QuoteForWindows(targetDir)).Output()
 	if err != nil {
 		return fmt.Errorf("tar: %s", err)
 	}
@@ -204,7 +217,7 @@ func installIdeLinux(archivePath string, targetDir string) error {
 	if err := os.MkdirAll(targetDir, os.ModePerm); err != nil {
 		log.Fatal("couldn't create a directory ", err.Error())
 	}
-	_, err := exec.Command("tar", "-xf", archivePath, "-C", targetDir, "--strip-components", "1").Output()
+	_, err := exec.Command("tar", "-xf", archivePath, "-C", targetDir, "--strip-components", "2").Output()
 	if err != nil {
 		return fmt.Errorf("tar: %s", err)
 	}

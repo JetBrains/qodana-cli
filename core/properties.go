@@ -88,6 +88,10 @@ func getPropertiesMap(
 		properties["-Dqodana.starter.profile.resource"] = "qodana-js.starter.yaml"
 	}
 	if prefix == "Rider" {
+		if Prod.is233orNewer() {
+			properties["-Dqodana.recommended.profile.resource"] = "qodana-dotnet.recommended.yaml"
+			properties["-Dqodana.starter.profile.resource"] = "qodana-dotnet.starter.yaml"
+		}
 		properties["-Didea.class.before.app"] = "com.jetbrains.rider.protocol.EarlyBackendStarter"
 		properties["-Drider.collect.full.container.statistics"] = "true"
 		properties["-Drider.suppress.std.redirect"] = "true"

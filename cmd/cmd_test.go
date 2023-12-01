@@ -55,6 +55,34 @@ func createProject(t *testing.T, name string) string {
 	return location
 }
 
+func createNativeProject(t *testing.T, name string) string {
+	home, err := os.UserHomeDir()
+	if err != nil {
+		t.Fatal(err)
+	}
+	location := filepath.Join(home, ".qodana_scan_", name)
+	err = gitClone("https://github.com/hybloid/BadRulesProject", location)
+	if err != nil {
+		t.Fatal(err)
+	}
+	return location
+}
+
+func gitClone(repoURL, directory string) error {
+	if _, err := os.Stat(directory); !os.IsNotExist(err) {
+		err = os.RemoveAll(directory)
+		if err != nil {
+			return err
+		}
+	}
+	cmd := exec.Command("git", "clone", repoURL, directory)
+	err := cmd.Run()
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
 // TestVersion verifies that the version command returns the correct version
 func TestVersion(t *testing.T) {
 	b := bytes.NewBufferString("")
@@ -331,13 +359,13 @@ func TestAllCommandsWithContainer(t *testing.T) {
 
 func TestScanWithIde(t *testing.T) {
 	log.SetLevel(log.DebugLevel)
-	ide := "QDPY"
-	token := os.Getenv("TESTS_QODANA_TOKEN")
+	ide := "QDNET"
+	token := os.Getenv("QODANA_TOKEN")
 	if //goland:noinspection GoBoolExpressions
 	token == "" {
 		t.Skip("set your token here to run the test")
 	}
-	projectPath := createProject(t, "qodana_scan_python")
+	projectPath := createNativeProject(t, "qodana_scan_rd")
 	resultsPath := filepath.Join(projectPath, "results")
 	err := os.MkdirAll(resultsPath, 0o755)
 	if err != nil {
@@ -386,6 +414,8 @@ func propertiesFixture(enableStats bool, additionalProperties []string) []string
 		"-Dqodana.automation.guid=FAKE",
 		"-Didea.job.launcher.without.timeout=true",
 		"-Dqodana.coverage.input=/data/coverage",
+		"-Dqodana.recommended.profile.resource=qodana-dotnet.recommended.yaml",
+		"-Dqodana.starter.profile.resource=qodana-dotnet.starter.yaml",
 		"-Drider.collect.full.container.statistics=true",
 		"-Drider.suppress.std.redirect=true",
 		"-Dsun.io.useCanonCaches=false",
