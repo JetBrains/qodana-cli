@@ -66,7 +66,7 @@ func setupLicense(token string) {
 			"please try one of the community linters instead: %s or obtain Ultimate "+
 			"or Ultimate Plus license. Read more about licenses and plans at "+
 			"https://www.jetbrains.com/help/qodana/pricing.html#pricing-linters-licenses.",
-			Prod.getProductNameFromCode(),
+			prod.getProductNameFromCode(),
 			allCommunityNames(),
 		)
 	}
@@ -87,7 +87,7 @@ func allCommunityNames() string {
 	return strings.Join(nameList, ", ")
 }
 
-func SetupLicenseToken(opts *QodanaOptions) {
+func setupLicenseToken(opts *QodanaOptions) {
 	token := opts.loadToken(false)
 	licenseOnlyToken := os.Getenv(QodanaLicenseOnlyToken)
 
