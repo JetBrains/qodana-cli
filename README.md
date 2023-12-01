@@ -174,8 +174,8 @@ qodana scan [flags]
 #### Options
 
 ```
-  -l, --linter string                   Use to run Qodana in a container (default). Choose linter (image) to use. Not compatible with --ide option. Available images are: jetbrains/qodana-jvm-community, jetbrains/qodana-jvm, jetbrains/qodana-jvm-android, jetbrains/qodana-php, jetbrains/qodana-python, jetbrains/qodana-python-community, jetbrains/qodana-js, jetbrains/qodana-go, jetbrains/qodana-dotnet, though you can use any Docker image with Qodana inside
-      --ide string                      Use to run Qodana without a container. Path to the installed IDE, or a downloaded one: provide direct URL or a product code. Not compatible with --linter option. Available codes are QDJVMC, QDJVM, QDPHP, QDPY, QDPYC, QDJS, QDGO, QDNET, add -EAP part to obtain EAP versions
+  -l, --linter string                   Use to run Qodana in a container (default). Choose linter (image) to use. Not compatible with --ide option. Available images are: jetbrains/qodana-jvm-community:2023.2, jetbrains/qodana-jvm:2023.2, jetbrains/qodana-jvm-android:2023.2, jetbrains/qodana-php:2023.2, jetbrains/qodana-python:2023.2, jetbrains/qodana-python-community:2023.2, jetbrains/qodana-js:2023.2, jetbrains/qodana-go:2023.2, jetbrains/qodana-dotnet:2023.2
+      --ide string                      Use to run Qodana without a container. Path to the installed IDE, or a downloaded one: provide direct URL or a product code. Not compatible with --linter option. Available codes are QDNET, add -EAP part to obtain EAP versions
   -i, --project-dir string              Root directory of the inspected project (default ".")
   -o, --results-dir string              Override directory to save Qodana inspection results to (default <userCacheDir>/JetBrains/Qodana/<linter>/results)
       --cache-dir string                Override cache directory (default <userCacheDir>/JetBrains/Qodana/<linter>/cache)
