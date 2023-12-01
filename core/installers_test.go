@@ -24,6 +24,10 @@ import (
 )
 
 func TestGetIde(t *testing.T) {
+	if //goland:noinspection GoBoolExpressions
+	runtime.GOOS == "darwin" {
+		t.Skip("Mac OS not supported in native")
+	}
 	for _, installer := range AllSupportedCodes {
 		ide := getIde(installer)
 		if ide == nil {
@@ -70,14 +74,14 @@ func DownloadAndInstallIDE(ideName string, t *testing.T) {
 	runtime.GOOS == "darwin" {
 		ide = filepath.Join(ide, "Contents")
 	}
-	productInfo := readIdeProductInfo(ide)
+	appInfoXml := readAppInfoXml(ide)
 	defer func(path string) {
 		err := os.RemoveAll(path)
 		if err != nil {
 			ErrorMessage("Cannot clean up temp dir: %s", err)
 		}
 	}(ide) // clean up
-	if productInfo == nil {
+	if appInfoXml.Names.Product == "" {
 		t.Fail()
 	}
 }

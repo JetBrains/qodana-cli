@@ -22,6 +22,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"github.com/JetBrains/qodana-cli/v2023/cloud"
 	"io"
 	"os"
 	"os/exec"
@@ -395,7 +396,7 @@ func TestScanWithIde(t *testing.T) {
 func propertiesFixture(enableStats bool, additionalProperties []string) []string {
 	properties := []string{
 		"-Dfus.internal.reduce.initial.delay=true",
-		fmt.Sprintf("-Didea.application.info.value=%s", filepath.Join(os.TempDir(), "entrypoint", "QodanaAppInfo.xml")),
+		fmt.Sprintf("-Didea.application.info.value=%s", filepath.Join(core.Prod.IdeBin(), "QodanaAppInfo.xml")),
 		"-Didea.class.before.app=com.jetbrains.rider.protocol.EarlyBackendStarter",
 		fmt.Sprintf("-Didea.config.path=%s", filepath.Join(os.TempDir(), "entrypoint")),
 		fmt.Sprintf("-Didea.headless.enable.statistics=%t", enableStats),
@@ -405,9 +406,9 @@ func propertiesFixture(enableStats bool, additionalProperties []string) []string
 		fmt.Sprintf("-Didea.log.path=%s", filepath.Join(os.TempDir(), "entrypoint", "log")),
 		"-Didea.parent.prefix=Rider",
 		"-Didea.platform.prefix=Qodana",
-		fmt.Sprintf("-Didea.plugins.path=%s", filepath.Join(os.TempDir(), "entrypoint", "plugins", "master")),
+		fmt.Sprintf("-Didea.plugins.path=%s", filepath.Join(os.TempDir(), "entrypoint", "plugins", "233")),
 		"-Didea.qodana.thirdpartyplugins.accept=true",
-		fmt.Sprintf("-Didea.system.path=%s", filepath.Join(os.TempDir(), "entrypoint", "idea", "master")),
+		fmt.Sprintf("-Didea.system.path=%s", filepath.Join(os.TempDir(), "entrypoint", "idea", "233")),
 		"-Dinspect.save.project.settings=true",
 		"-Djava.awt.headless=true",
 		"-Djava.net.useSystemProxies=true",
@@ -451,7 +452,15 @@ func Test_Properties(t *testing.T) {
 
 	core.Prod.BaseScriptName = "rider"
 	core.Prod.Code = "QDNET"
-	core.Prod.Version = "main"
+	core.Prod.Version = "2023.3"
+	core.Prod.Name = ""
+	core.Prod.IdeScript = ""
+	core.Prod.Build = ""
+	core.Prod.Home = ""
+	core.Prod.EAP = false
+
+	cloud.Token.LicenseOnly = false
+	cloud.Token.Token = ""
 
 	err := os.Setenv(core.QodanaDistEnv, opts.ProjectDir)
 	if err != nil {
