@@ -232,7 +232,7 @@ func guessProduct(opts *QodanaOptions) {
 	}
 
 	treatAsRelease := os.Getenv(QodanaTreatAsRelease)
-	if _, err := os.Stat(filepath.Join(Prod.IdeBin(), qodanaAppInfoFilename)); err == nil && IsContainer() {
+	if _, err := os.Stat(filepath.Join(Prod.IdeBin(), qodanaAppInfoFilename)); err == nil {
 		appInfoContents := readAppInfoXml(Prod.Home)
 		Prod.Version = appInfoContents.Version.Major + "." + appInfoContents.Version.Minor
 		Prod.Build = strings.Split(appInfoContents.Build.Number, "-")[1]
