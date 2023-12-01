@@ -65,7 +65,8 @@ func GetProductByCode(code string) (*Product, error) {
 	}(tempDir) // clean up
 
 	path := filepath.Join(tempDir, "productInfo.json")
-	url := "https://data.services.jetbrains.com/products"
+	url := "https://raw.githubusercontent.com/JetBrains/qodana-docker/main/feed/releases.json"
+	url = "https://raw.githubusercontent.com/JetBrains/qodana-docker/14c1bdd872d833badb1840472107a8853d831b74/feed/releases.json"
 
 	if err := DownloadFile(path, url, nil); err != nil {
 		return nil, err
@@ -104,7 +105,7 @@ func SelectLatestCompatibleRelease(product *Product, reqType string) *ReleaseInf
 
 	for i := 0; i < len(product.Releases); i++ {
 		release := &product.Releases[i]
-		if *release.MajorVersion == MajorVersion && release.Type == reqType && (latestRelease == nil || release.Date > latestDate) {
+		if *release.MajorVersion == versionsMap[reqType] && release.Type == reqType && (latestRelease == nil || release.Date > latestDate) {
 			latestRelease = release
 			latestDate = release.Date
 		}

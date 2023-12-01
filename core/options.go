@@ -18,6 +18,7 @@ package core
 
 import (
 	"fmt"
+	log "github.com/sirupsen/logrus"
 	"os"
 	"path/filepath"
 	"strings"
@@ -188,10 +189,11 @@ func (o *QodanaOptions) ConfDirPath() string {
 }
 
 func (o *QodanaOptions) appInfoXmlPath(ideBinDir string) string {
-	if _, err := os.Stat(filepath.Join(ideBinDir, qodanaAppInfoFilename)); err != nil {
-		return filepath.Join(o.ConfDirPath(), qodanaAppInfoFilename)
+	appInfoPath := filepath.Join(ideBinDir, qodanaAppInfoFilename)
+	if _, err := os.Stat(appInfoPath); err != nil {
+		log.Fatalf("%s should exist in IDE directory %s. Unsupported IDE detected, exiting.", qodanaAppInfoFilename, ideBinDir)
 	}
-	return filepath.Join(ideBinDir, qodanaAppInfoFilename)
+	return appInfoPath
 }
 
 func (o *QodanaOptions) properties() (map[string]string, []string) {

@@ -313,21 +313,3 @@ func patchIdeScript(product product, strToRemove string, confDirPath string) str
 
 	return newFilePath
 }
-
-func writeAppInfo(path string) {
-	if _, err := os.Stat(path); err == nil && IsContainer() {
-		return
-	}
-	log.Printf("Writing app info to %s", path)
-	appInfoContents := []byte(appInfoXml(
-		Prod.Version,
-		Prod.EAP,
-		Prod.Build,
-		Prod.Code,
-		Prod.Name,
-	))
-	err := os.WriteFile(path, appInfoContents, 0o777)
-	if err != nil {
-		log.Fatal(err)
-	}
-}

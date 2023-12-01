@@ -48,7 +48,9 @@ var (
 )
 
 // AllSupportedCodes is a list of all supported Qodana linters product codes
-var AllSupportedCodes = []string{QDJVMC, QDJVM, QDPHP, QDPY, QDPYC, QDJS, QDGO, QDNET}
+var AllSupportedCodes = []string{QDNET}
+
+// support has been disabled now for QDJVMC, QDJVM, QDPHP, QDPY, QDPYC, QDJS, QDGO until further testing
 
 func Image(code string) string {
 	switch code {

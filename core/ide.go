@@ -17,14 +17,12 @@
 package core
 
 import (
-	bt "bytes"
 	"encoding/json"
 	"encoding/xml"
 	"errors"
 	"fmt"
 	"github.com/JetBrains/qodana-cli/v2023/cloud"
 	"github.com/owenrumney/go-sarif/v2/sarif"
-	"io"
 	"os"
 	"path/filepath"
 	"runtime"
@@ -35,153 +33,6 @@ import (
 
 	cp "github.com/otiai10/copy"
 )
-
-func genExcludedPluginsLocal(opts *QodanaOptions) {
-	products := map[string]string{
-		QDJVM:  "jvm",
-		QDJVMC: "jvm-community",
-		QDPHP:  "php",
-		QDJS:   "js",
-		QDNET:  "dotnet",
-		QDPY:   "python",
-		QDPYC:  "python-community",
-		QDGO:   "go",
-		// QDAND: android, // don't use it right now
-		// QDANDC: android-community, // don't use it right now
-		// QDRST: "rust",             // don't use it right now
-		// QDRUBY: "ruby",            // don't use it right now
-	}
-
-	if _, ok := products[Prod.Code]; ok {
-		includedPlugins := filepath.Join(opts.ConfDirPath(), "included_plugins.txt")
-		dockerIgnore := filepath.Join(opts.ConfDirPath(), ".docker_ignore")
-		disabledPlugins := filepath.Join(opts.ConfDirPath(), "disabled_plugins.txt")
-		if _, err := os.Stat(disabledPlugins); err != nil {
-			url := fmt.Sprintf("https://raw.githubusercontent.com/JetBrains/qodana-docker/main/%s/%s/included_plugins.txt", MajorVersion, products[Prod.Code])
-			if err := DownloadFile(includedPlugins, url, nil); err != nil {
-				log.Errorf("Not possible to download included plugins, skipping: %v", err)
-			} else {
-				if err := appendIncludedPlugins(includedPlugins); err != nil {
-					log.Fatal(err)
-				}
-				consoleOutput, err := getExcludedPlugins(includedPlugins, dockerIgnore)
-				if err != nil {
-					log.Fatal(err)
-				} else if consoleOutput != "" {
-					if idx := strings.Index(consoleOutput, "=====DISABLED======="); idx != -1 {
-						plugins := strings.TrimSpace(consoleOutput[idx+len("=====DISABLED======="):])
-						if err := os.WriteFile(disabledPlugins, []byte(plugins), 0644); err != nil {
-							log.Errorf("Error while writing disabled plugins list: %v", err)
-						} else {
-							log.Debug("Successfully created the list of disabled plugins")
-						}
-					} else {
-						log.Error("Error while generating list of excluded plugins, no plugins found")
-					}
-				} else {
-					log.Error("Error while asking Qodana to create disabled plugins list")
-				}
-			}
-		}
-	} else {
-		log.Warningf("Not possible to fetch excluded plugins for %s", Prod.Code)
-	}
-}
-
-func appendIncludedPlugins(filename string) error {
-	if len(Config.Plugins) == 0 {
-		return nil
-	}
-	bytes, err := os.ReadFile(filename)
-	if err != nil {
-		return err
-	}
-	if len(bytes) > 0 && bytes[len(bytes)-1] != '\n' {
-		err = appendToFile(filename, "\n")
-		if err != nil {
-			return err
-		}
-	}
-	var pluginIds []string
-	for _, plugin := range Config.Plugins {
-		pluginIds = append(pluginIds, plugin.Id)
-	}
-	pluginsStr := strings.Join(pluginIds, "\n")
-	err = appendToFile(filename, pluginsStr)
-	return err
-}
-
-func appendToFile(filename string, data string) error {
-	f, err := os.OpenFile(filename, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
-	if err != nil {
-		return err
-	}
-	defer func(f *os.File) {
-		err := f.Close()
-		if err != nil {
-			log.Fatal(err)
-		}
-	}(f)
-
-	_, err2 := f.WriteString(data)
-
-	return err2
-}
-
-func getExcludedPlugins(includedPlugins string, dockerIgnore string) (string, error) {
-	args := []string{QuoteForWindows(Prod.IdeScript), "qodanaExcludedPlugins", QuoteForWindows(includedPlugins), QuoteForWindows(dockerIgnore)}
-	outReader, outWriter, err := os.Pipe()
-	if err != nil {
-		return "", fmt.Errorf("failed to create stdout pipe: %w", err)
-	}
-	errReader, errWriter, err := os.Pipe()
-	if err != nil {
-		return "", fmt.Errorf("failed to create stderr pipe: %w", err)
-	}
-
-	origOut := os.Stdout
-	origErr := os.Stderr
-	os.Stdout = outWriter
-	os.Stderr = errWriter
-
-	outChannel := make(chan string)
-	errChannel := make(chan string)
-
-	go func() {
-		var buf bt.Buffer
-		_, err := io.Copy(&buf, outReader)
-		if err != nil {
-			log.Fatal(err)
-		}
-		outChannel <- buf.String()
-	}()
-
-	go func() {
-		var buf bt.Buffer
-		_, err := io.Copy(&buf, errReader)
-		if err != nil {
-			log.Fatal(err)
-		}
-		errChannel <- buf.String()
-	}()
-
-	res := RunCmd("", args...)
-	os.Stdout = origOut
-	os.Stderr = origErr
-	if err := outWriter.Close(); err != nil {
-		return "", fmt.Errorf("error while closing Qodana stdout: %v", err)
-	}
-	if err := errWriter.Close(); err != nil {
-		return "", fmt.Errorf("error while closing Qodana stderr: %v", err)
-	}
-	stdout := <-outChannel
-	stderr := <-errChannel
-	log.Warn(stderr)
-	if res == QodanaSuccessExitCode {
-		return stdout, nil
-	}
-	return "", fmt.Errorf("error while exectuing qodanaExcludedPlugins: %d", res)
-}
 
 // getIdeExitCode gets IDEA "exitCode" from SARIF.
 func getIdeExitCode(resultsDir string, c int) (res int) {
@@ -208,9 +59,6 @@ func getIdeExitCode(resultsDir string, c int) (res int) {
 }
 
 func runQodanaLocal(opts *QodanaOptions) int {
-	if !IsContainer() {
-		genExcludedPluginsLocal(opts)
-	}
 	args := getIdeRunCommand(opts)
 	res := getIdeExitCode(opts.ResultsDir, RunCmd("", args...))
 	if res > QodanaSuccessExitCode && res != QodanaFailThresholdExitCode {
@@ -448,7 +296,6 @@ func prepareLocalIdeSettings(opts *QodanaOptions) {
 		opts.ConfDirPath(),
 	)
 	Config = GetQodanaYaml(opts.ProjectDir)
-	writeAppInfo(opts.appInfoXmlPath(Prod.IdeBin()))
 	writeProperties(opts)
 
 	if IsContainer() {

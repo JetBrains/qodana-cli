@@ -803,40 +803,6 @@ func Test_SaveProperty(t *testing.T) {
 	}
 }
 
-func Test_WriteAppInfo(t *testing.T) {
-	tmpDir := filepath.Join(os.TempDir(), "appinfo")
-	err := os.MkdirAll(tmpDir, 0o755)
-	if err != nil {
-		t.Fatal(err)
-	}
-	Prod.Version = "2022.1"
-	Prod.EAP = true
-	Prod.Build = "420.69"
-	Prod.Code = "QDTEST"
-	Prod.Name = "Qodana for Tests"
-	xmlFilePath := filepath.Join(tmpDir, "QodanaAppInfo.xml")
-	writeAppInfo(xmlFilePath)
-	actual, err := os.ReadFile(xmlFilePath)
-	if err != nil {
-		t.Fatal(err)
-	}
-	expected := `<component xmlns="http://jetbrains.org/intellij/schema/application-info"
-               xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-               xsi:schemaLocation="http://jetbrains.org/intellij/schema/application-info http://jetbrains.org/intellij/schema/ApplicationInfo.xsd">
-      <version major="2022" minor="1" eap="true"/>
-      <company name="JetBrains s.r.o." url="https://www.jetbrains.com" copyrightStart="2000"/>
-      <build number="QDTEST-420.69" date="202212060511" />
-      <names product="Qodana for Tests" fullname="Qodana for Tests"/>
-      <icon svg="xxx.svg" svg-small="xxx.svg"/>
-      <plugins url="https://plugins.jetbrains.com/" builtin-url="__BUILTIN_PLUGINS_URL__"/>
-</component>`
-	assert.Equal(t, expected, string(actual))
-	err = os.RemoveAll(tmpDir)
-	if err != nil {
-		t.Fatal(err)
-	}
-}
-
 func Test_ReadAppInfo(t *testing.T) {
 	tempDir := os.TempDir()
 	entrypointDir := filepath.Join(tempDir, "appinfo")

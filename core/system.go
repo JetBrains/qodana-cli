@@ -243,7 +243,7 @@ func prepareHost(opts *QodanaOptions) {
 		PrepairContainerEnvSettings()
 	}
 	if opts.Ide != "" {
-		if Contains(allCodes, strings.TrimSuffix(opts.Ide, EapSuffix)) || strings.HasPrefix(opts.Ide, "https://") {
+		if Contains(allCodes, strings.TrimSuffix(opts.Ide, eapSuffix)) || strings.HasPrefix(opts.Ide, "https://") {
 			printProcess(func(spinner *pterm.SpinnerPrinter) {
 				if spinner != nil {
 					spinner.ShowTimer = false // We will update interactive spinner
