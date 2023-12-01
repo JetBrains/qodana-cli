@@ -19,6 +19,7 @@ package cloud
 import (
 	"bytes"
 	"encoding/json"
+	"fmt"
 	log "github.com/sirupsen/logrus"
 	"io"
 	"net/http"
@@ -27,19 +28,28 @@ import (
 	"time"
 )
 
+//goland:noinspection GoUnnecessarilyExportedIdentifiers
 const (
+	QodanaEndpoint     = "ENDPOINT"
 	DefaultEndpoint    = "qodana.cloud"
-	baseUrl            = "https://api.qodana.cloud"
 	maxNumberOfRetries = 3
 	waitTimeout        = time.Second * 30
 	requestTimeout     = time.Second * 30
 )
 
+func getCloudBaseUrl() string {
+	return fmt.Sprintf("https://%s", GetEnvWithDefault(QodanaEndpoint, DefaultEndpoint))
+}
+
+func getCloudApiBaseUrl() string {
+	return fmt.Sprintf("https://api.%s", GetEnvWithDefault(QodanaEndpoint, DefaultEndpoint))
+}
+
 // GetCloudTeamsPageUrl returns the team page URL on Qodana Cloud
 func GetCloudTeamsPageUrl(origin string, path string) string {
 	name := filepath.Base(path)
 
-	return strings.Join([]string{"https://", DefaultEndpoint, "/?origin=", origin, "&name=", name}, "")
+	return strings.Join([]string{"https://", GetEnvWithDefault(QodanaEndpoint, DefaultEndpoint), "/?origin=", origin, "&name=", name}, "")
 }
 
 type QdClient struct {
@@ -56,19 +66,23 @@ func NewQdClient(token string) *QdClient {
 	}
 }
 
+//goland:noinspection GoUnnecessarilyExportedIdentifiers
 type Success struct {
 	Data map[string]interface{}
 }
 
+//goland:noinspection GoUnnecessarilyExportedIdentifiers
 type RequestResult interface {
 	isRequestResult()
 }
 
+//goland:noinspection GoUnnecessarilyExportedIdentifiers
 type APIError struct {
 	StatusCode int
 	Message    string
 }
 
+//goland:noinspection GoUnnecessarilyExportedIdentifiers
 type RequestError struct {
 	Err error
 }
@@ -92,12 +106,15 @@ func (client *QdClient) getProject() RequestResult {
 }
 
 func (client *QdClient) doRequest(path, method string, headers map[string]string, body []byte) RequestResult {
-	url := baseUrl + path
+	url := getCloudApiBaseUrl() + path
 	var resp *http.Response
 	var err error
 
 	for i := 0; i < maxNumberOfRetries; i++ {
-		req, err := http.NewRequest(method, url, bytes.NewBuffer(body))
+		var req *http.Request
+		req, err = http.NewRequest(method, url, bytes.NewBuffer(body))
+		log.Debugf("Requesting %s", url)
+		log.Debugf("Request body: %s", string(body))
 		if err != nil {
 			return RequestError{Err: err}
 		}

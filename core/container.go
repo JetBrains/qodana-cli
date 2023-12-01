@@ -24,7 +24,6 @@ import (
 	"fmt"
 	"github.com/pterm/pterm"
 	"io"
-	"net/url"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -32,8 +31,6 @@ import (
 	"strings"
 
 	cliconfig "github.com/docker/cli/cli/config"
-
-	"github.com/cucumber/ci-environment/go"
 
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/container"
@@ -71,6 +68,8 @@ func runQodanaContainer(ctx context.Context, options *QodanaOptions) int {
 	resetScanStages()
 	docker := getContainerClient()
 
+	fixDarwinCaches(options)
+
 	for i, stage := range scanStages {
 		scanStages[i] = PrimaryBold("[%d/%d] ", i+1, len(scanStages)+1) + primary(stage)
 	}
@@ -84,6 +83,7 @@ func runQodanaContainer(ctx context.Context, options *QodanaOptions) int {
 	progress, _ := startQodanaSpinner(scanStages[0])
 
 	dockerConfig := getDockerOptions(options)
+	log.Debugf("docker command to run: %s", generateDebugDockerRunCommand(dockerConfig))
 
 	updateText(progress, scanStages[1])
 
@@ -92,10 +92,43 @@ func runQodanaContainer(ctx context.Context, options *QodanaOptions) int {
 
 	exitCode := getContainerExitCode(ctx, docker, dockerConfig.Name)
 
+	fixDarwinCaches(options)
+
 	if progress != nil {
 		_ = progress.Stop()
 	}
 	return int(exitCode)
+}
+
+func fixDarwinCaches(options *QodanaOptions) {
+	if //goland:noinspection GoBoolExpressions
+	runtime.GOOS == "darwin" {
+		err := removePortSocket(options.CacheDir)
+		if err != nil {
+			log.Warnf("Could not remove .port from %s: %s", options.CacheDir, err)
+		}
+	}
+}
+
+// removePortSocket removes .port from the system dir to resolve QD-7383.
+func removePortSocket(systemDir string) error {
+	ideaDir := filepath.Join(systemDir, "idea")
+	files, err := os.ReadDir(ideaDir)
+	if err != nil {
+		return nil
+	}
+	for _, file := range files {
+		if file.IsDir() {
+			dotPort := filepath.Join(ideaDir, file.Name(), ".port")
+			if _, err = os.Stat(dotPort); err == nil {
+				err = os.Remove(dotPort)
+				if err != nil {
+					return err
+				}
+			}
+		}
+	}
+	return nil
 }
 
 // encodeAuthToBase64 serializes the auth configuration as JSON base64 payload
@@ -107,66 +140,13 @@ func encodeAuthToBase64(authConfig types.AuthConfig) (string, error) {
 	return base64.URLEncoding.EncodeToString(buf), nil
 }
 
-// extractQodanaEnvironmentForDocker extracts Qodana env variables QODANA_* to the given environment array.
-func extractQodanaEnvironmentForDocker(opts *QodanaOptions) {
-	ci := cienvironment.DetectCIEnvironment()
-	qEnv := "cli"
-	if ci != nil {
-		qEnv = strings.ReplaceAll(strings.ToLower(ci.Name), " ", "-")
-		opts.setenv(qodanaJobUrl, validateJobUrl(ci.URL, qEnv))
-		if ci.Git != nil {
-			opts.setenv(qodanaRemoteUrl, validateRemoteUrl(ci.Git.Remote))
-			opts.setenv(qodanaBranch, validateBranch(ci.Git.Branch, qEnv))
-			opts.setenv(qodanaRevision, ci.Git.Revision)
-		}
-	}
-	opts.setenv(qodanaEnv, fmt.Sprintf("%s:%s", qEnv, Version))
-}
-
-func validateRemoteUrl(remote string) string {
-	_, err := url.ParseRequestURI(remote)
-	if remote == "" || err != nil {
-		log.Warnf("Unable to parse git remote URL, set %s env variable for proper qodana.cloud reporting", qodanaBranch)
-		return ""
-	}
-	return remote
-}
-
-func validateBranch(branch string, env string) string {
-	if branch == "" {
-		if env == "github-actions" {
-			branch = os.Getenv("GITHUB_REF")
-		} else if env == "azure-pipelines" {
-			branch = os.Getenv("BUILD_SOURCEBRANCHNAME")
-		} else if env == "jenkins" {
-			branch = os.Getenv("GIT_BRANCH")
-		}
-	}
-	if branch == "" {
-		log.Warnf("Unable to parse git branch, set %s env variable for proper qodana.cloud reporting", qodanaBranch)
-		return ""
-	}
-	return branch
-}
-
-func validateJobUrl(ciUrl string, qEnv string) string {
-	if strings.HasPrefix(qEnv, "azure") { // temporary workaround for Azure Pipelines
-		return getAzureJobUrl()
-	}
-	_, err := url.ParseRequestURI(ciUrl)
-	if err != nil {
-		return ""
-	}
-	return ciUrl
-}
-
 func checkRequiredToolInstalled(tool string) bool {
 	_, err := exec.LookPath(tool)
 	return err == nil
 }
 
-// PrepairContainerEnvSettings checks if the host is ready to run Qodana container images.
-func PrepairContainerEnvSettings() {
+// PrepareContainerEnvSettings checks if the host is ready to run Qodana container images.
+func PrepareContainerEnvSettings() {
 	var tool string
 	if os.Getenv(qodanaCliUsePodman) == "" && checkRequiredToolInstalled("docker") {
 		tool = "docker"
@@ -308,7 +288,7 @@ func CheckContainerEngineMemory() {
 // getDockerOptions returns qodana docker container options.
 func getDockerOptions(opts *QodanaOptions) *types.ContainerCreateConfig {
 	cmdOpts := getIdeArgs(opts)
-	extractQodanaEnvironmentForDocker(opts)
+	ExtractQodanaEnvironment(opts.setenv)
 	cachePath, err := filepath.Abs(opts.CacheDir)
 	if err != nil {
 		log.Fatal("couldn't get abs path for cache", err)
@@ -357,10 +337,24 @@ func getDockerOptions(opts *QodanaOptions) *types.ContainerCreateConfig {
 	log.Debugf("image: %s", opts.Linter)
 	log.Debugf("container name: %s", containerName)
 	log.Debugf("user: %s", opts.User)
-	log.Debugf("env: %v", opts.Env)
 	log.Debugf("volumes: %v", volumes)
 	log.Debugf("cmd: %v", cmdOpts)
-	log.Debugf("docker command to debug: docker run --rm -it -u %s -v %s:/data/cache -v %s:/data/project -v %s:/data/results %s %s", opts.User, cachePath, projectPath, resultsPath, opts.Linter, strings.Join(cmdOpts, " "))
+
+	var hostConfig *container.HostConfig
+	if strings.Contains(opts.Linter, "dotnet") {
+		hostConfig = &container.HostConfig{
+			AutoRemove:  os.Getenv(qodanaCliContainerKeep) == "",
+			Mounts:      volumes,
+			CapAdd:      []string{"SYS_PTRACE"},
+			SecurityOpt: []string{"seccomp=unconfined"},
+		}
+	} else {
+		hostConfig = &container.HostConfig{
+			AutoRemove: os.Getenv(qodanaCliContainerKeep) == "",
+			Mounts:     volumes,
+		}
+	}
+
 	return &types.ContainerCreateConfig{
 		Name: containerName,
 		Config: &container.Config{
@@ -372,11 +366,50 @@ func getDockerOptions(opts *QodanaOptions) *types.ContainerCreateConfig {
 			Env:          opts.Env,
 			User:         opts.User,
 		},
-		HostConfig: &container.HostConfig{
-			AutoRemove: os.Getenv(qodanaCliContainerKeep) == "",
-			Mounts:     volumes,
-		},
+		HostConfig: hostConfig,
 	}
+}
+
+func generateDebugDockerRunCommand(cfg *types.ContainerCreateConfig) string {
+	var cmdBuilder strings.Builder
+	cmdBuilder.WriteString("docker run ")
+	if cfg.HostConfig != nil && cfg.HostConfig.AutoRemove {
+		cmdBuilder.WriteString("--rm ")
+	}
+	if cfg.Config.AttachStdout {
+		cmdBuilder.WriteString("-a stdout ")
+	}
+	if cfg.Config.AttachStderr {
+		cmdBuilder.WriteString("-a stderr ")
+	}
+	if cfg.Config.Tty {
+		cmdBuilder.WriteString("-it ")
+	}
+	if cfg.Config.User != "" {
+		cmdBuilder.WriteString(fmt.Sprintf("-u %s ", cfg.Config.User))
+	}
+	for _, env := range cfg.Config.Env {
+		if !strings.Contains(env, QodanaToken) || strings.Contains(env, QodanaLicense) || strings.Contains(env, QodanaLicenseOnlyToken) {
+			cmdBuilder.WriteString(fmt.Sprintf("-e %s ", env))
+		}
+	}
+	if cfg.HostConfig != nil {
+		for _, m := range cfg.HostConfig.Mounts {
+			cmdBuilder.WriteString(fmt.Sprintf("-v %s:%s ", m.Source, m.Target))
+		}
+		for _, capAdd := range cfg.HostConfig.CapAdd {
+			cmdBuilder.WriteString(fmt.Sprintf("--cap-add %s ", capAdd))
+		}
+		for _, secOpt := range cfg.HostConfig.SecurityOpt {
+			cmdBuilder.WriteString(fmt.Sprintf("--security-opt %s ", secOpt))
+		}
+	}
+	cmdBuilder.WriteString(cfg.Config.Image + " ")
+	for _, arg := range cfg.Config.Cmd {
+		cmdBuilder.WriteString(fmt.Sprintf("%s ", arg))
+	}
+
+	return cmdBuilder.String()
 }
 
 // getContainerExitCode returns the exit code of the docker container.

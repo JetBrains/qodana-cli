@@ -23,40 +23,18 @@ import (
 	"github.com/spf13/cobra"
 )
 
-// pullOptions represents pull command options.
-type pullOptions struct {
-	Linter     string
-	ProjectDir string
-	YamlName   string
-}
-
 // newPullCommand returns a new instance of the show command.
 func newPullCommand() *cobra.Command {
-	options := &pullOptions{}
+	options := &core.QodanaOptions{}
 	cmd := &cobra.Command{
 		Use:   "pull",
 		Short: "Pull latest version of linter",
 		Long:  `An alternative to pull an image.`,
 		PreRun: func(cmd *cobra.Command, args []string) {
-			core.PrepairContainerEnvSettings()
+			core.PrepareContainerEnvSettings()
 		},
 		Run: func(cmd *cobra.Command, args []string) {
-			if options.YamlName == "" {
-				options.YamlName = core.FindQodanaYaml(options.ProjectDir)
-			}
-			if options.Linter == "" {
-				qodanaYaml := core.LoadQodanaYaml(options.ProjectDir, options.YamlName)
-				if qodanaYaml.Linter == "" {
-					core.WarningMessage(
-						"No valid qodana.yaml found. Have you run %s? Running that for you...",
-						core.PrimaryBold("qodana init"),
-					)
-					options.Linter = core.GetLinter(options.ProjectDir, options.YamlName)
-					core.EmptyMessage()
-				} else {
-					options.Linter = qodanaYaml.Linter
-				}
-			}
+			options.FetchAnalyzerSettings()
 			containerClient, err := client.NewClientWithOpts()
 			if err != nil {
 				log.Fatal("couldn't connect to container engine ", err)
@@ -67,6 +45,6 @@ func newPullCommand() *cobra.Command {
 	flags := cmd.Flags()
 	flags.StringVarP(&options.Linter, "linter", "l", "", "Override linter to use")
 	flags.StringVarP(&options.ProjectDir, "project-dir", "i", ".", "Root directory of the inspected project")
-	flags.StringVarP(&options.YamlName, "yaml-name", "y", "", "Override qodana.yaml name")
+	flags.StringVarP(&options.YamlName, "yaml-name", "y", core.FindQodanaYaml(options.ProjectDir), "Override qodana.yaml name")
 	return cmd
 }

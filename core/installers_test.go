@@ -29,7 +29,7 @@ func TestGetIde(t *testing.T) {
 		if ide == nil {
 			t.Fail()
 		}
-		eap := getIde(installer)
+		eap := getIde(installer + "-EAP")
 		if eap == nil {
 			t.Fail()
 		}
@@ -37,6 +37,10 @@ func TestGetIde(t *testing.T) {
 }
 
 func TestDownloadAndInstallIDE(t *testing.T) {
+	if os.Getenv("GITHUB_ACTIONS") != "true" {
+		t.Skip("Skipping IDE download test")
+	}
+
 	ides := []string{"QDNET-EAP"} // QDPY requires exe on Windows, QDNET - does not
 	for _, ide := range ides {
 		DownloadAndInstallIDE(ide, t)

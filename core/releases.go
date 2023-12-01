@@ -29,28 +29,28 @@ import (
 	"path/filepath"
 )
 
-type Product struct {
+type jbProduct struct {
 	Code     string
-	Releases []ReleaseInfo
+	Releases []releaseInfo
 }
 
-type ReleaseInfo struct {
+type releaseInfo struct {
 	Date                 string
 	Type                 string
-	Downloads            *map[string]ReleaseDownloadInfo
+	Downloads            *map[string]releaseDownloadInfo
 	Version              *string
 	MajorVersion         *string
 	Build                *string
 	PrintableReleaseType *string
 }
 
-type ReleaseDownloadInfo struct {
+type releaseDownloadInfo struct {
 	Link         string
 	Size         uint64
 	ChecksumLink string
 }
 
-func GetProductByCode(code string) (*Product, error) {
+func getProductByCode(code string) (*jbProduct, error) {
 	tempDir, err := os.MkdirTemp("", "productByCode")
 	if err != nil {
 		ErrorMessage("Cannot create temp dir", err)
@@ -65,9 +65,9 @@ func GetProductByCode(code string) (*Product, error) {
 	}(tempDir) // clean up
 
 	path := filepath.Join(tempDir, "productInfo.json")
-	url := "https://data.services.jetbrains.com/products"
+	url := "https://raw.githubusercontent.com/JetBrains/qodana-docker/main/feed/releases.json"
 
-	if err := DownloadFile(path, url, nil); err != nil {
+	if err := downloadFile(path, url, nil); err != nil {
 		return nil, err
 	}
 
@@ -84,7 +84,7 @@ func GetProductByCode(code string) (*Product, error) {
 
 	byteValue, _ := io.ReadAll(file)
 
-	var products []Product
+	var products []jbProduct
 	if err := json.Unmarshal(byteValue, &products); err != nil {
 		return nil, err
 	}
@@ -98,13 +98,13 @@ func GetProductByCode(code string) (*Product, error) {
 	return nil, nil
 }
 
-func SelectLatestCompatibleRelease(product *Product, reqType string) *ReleaseInfo {
-	var latestRelease *ReleaseInfo
+func selectLatestCompatibleRelease(product *jbProduct, reqType string) *releaseInfo {
+	var latestRelease *releaseInfo
 	latestDate := ""
 
 	for i := 0; i < len(product.Releases); i++ {
 		release := &product.Releases[i]
-		if *release.MajorVersion == MajorVersion && release.Type == reqType && (latestRelease == nil || release.Date > latestDate) {
+		if *release.MajorVersion == versionsMap[reqType] && release.Type == reqType && (latestRelease == nil || release.Date > latestDate) {
 			latestRelease = release
 			latestDate = release.Date
 		}

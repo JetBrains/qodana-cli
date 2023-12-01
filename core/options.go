@@ -63,6 +63,29 @@ type QodanaOptions struct {
 	_id                   string
 }
 
+func (o *QodanaOptions) FetchAnalyzerSettings() {
+	if o.Linter == "" && o.Ide == "" {
+		qodanaYaml := LoadQodanaYaml(o.ProjectDir, o.YamlName)
+		if qodanaYaml.Linter == "" && qodanaYaml.Ide == "" {
+			WarningMessage(
+				"No valid `linter:` field found in %s. Have you run %s? Running that for you...",
+				PrimaryBold(o.YamlName),
+				PrimaryBold("qodana init"),
+			)
+			o.Linter = GetLinter(o.ProjectDir, o.YamlName)
+			EmptyMessage()
+		} else {
+			o.Linter = qodanaYaml.Linter
+		}
+		if o.Ide == "" {
+			o.Ide = qodanaYaml.Ide
+		}
+	}
+	o.ResultsDir = o.resultsDirPath()
+	o.ReportDir = o.reportDirPath()
+	o.CacheDir = o.cacheDirPath()
+}
+
 // setenv sets the Qodana container environment variables if such variable was not set before.
 func (o *QodanaOptions) setenv(key string, value string) {
 	for _, e := range o.Env {
@@ -97,17 +120,20 @@ func (o *QodanaOptions) unsetenv(key string) {
 
 func (o *QodanaOptions) id() string {
 	if o._id == "" {
-		var linter string
+		var analyzer string
 		if o.Linter != "" {
-			linter = o.Linter
+			analyzer = o.Linter
 		} else if o.Ide != "" {
-			linter = o.Ide
+			analyzer = o.Ide
+		}
+		if analyzer == "" && o.YamlName != "" {
+			analyzer = LoadQodanaYaml(o.ProjectDir, o.YamlName).Linter
 		}
 		length := 7
 		projectAbs, _ := filepath.Abs(o.ProjectDir)
 		o._id = fmt.Sprintf(
 			"%s-%s",
-			getHash(linter)[0:length+1],
+			getHash(analyzer)[0:length+1],
 			getHash(projectAbs)[0:length+1],
 		)
 	}
@@ -127,6 +153,7 @@ func (o *QodanaOptions) getQodanaSystemDir() string {
 	)
 }
 
+//goland:noinspection GoUnnecessarilyExportedIdentifiers
 func (o *QodanaOptions) GetLinterDir() string {
 	return filepath.Join(
 		o.getQodanaSystemDir(),
@@ -134,7 +161,7 @@ func (o *QodanaOptions) GetLinterDir() string {
 	)
 }
 
-func (o *QodanaOptions) ResultsDirPath() string {
+func (o *QodanaOptions) resultsDirPath() string {
 	if o.ResultsDir == "" {
 		if IsContainer() {
 			o.ResultsDir = "/data/results"
@@ -145,7 +172,7 @@ func (o *QodanaOptions) ResultsDirPath() string {
 	return o.ResultsDir
 }
 
-func (o *QodanaOptions) CacheDirPath() string {
+func (o *QodanaOptions) cacheDirPath() string {
 	if o.CacheDir == "" {
 		if IsContainer() {
 			o.CacheDir = "/data/cache"
@@ -156,29 +183,43 @@ func (o *QodanaOptions) CacheDirPath() string {
 	return o.CacheDir
 }
 
-func (o *QodanaOptions) ReportDirPath() string {
+func (o *QodanaOptions) reportDirPath() string {
 	if o.ReportDir == "" {
 		if IsContainer() {
 			o.ReportDir = "/data/results/report"
 		} else {
-			o.ReportDir = filepath.Join(o.ResultsDirPath(), "report")
+			o.ReportDir = filepath.Join(o.resultsDirPath(), "report")
 		}
 	}
 	return o.ReportDir
 }
 
+//goland:noinspection GoUnnecessarilyExportedIdentifiers
+func (o *QodanaOptions) CoverageDirPath() string {
+	if o.CoverageDir == "" {
+		if IsContainer() {
+			o.CoverageDir = "/data/coverage"
+		} else {
+			o.CoverageDir = filepath.Join(o.ProjectDir, ".qodana", "code-coverage")
+		}
+	}
+	return o.CoverageDir
+}
+
+//goland:noinspection GoUnnecessarilyExportedIdentifiers
 func (o *QodanaOptions) ReportResultsPath() string {
-	return filepath.Join(o.ReportDirPath(), "results")
+	return filepath.Join(o.reportDirPath(), "results")
 }
 
 func (o *QodanaOptions) logDirPath() string {
-	return filepath.Join(o.ResultsDirPath(), "log")
+	return filepath.Join(o.resultsDirPath(), "log")
 }
 
 func (o *QodanaOptions) vmOptionsPath() string {
 	return filepath.Join(o.ConfDirPath(), "ide.vmoptions")
 }
 
+//goland:noinspection GoUnnecessarilyExportedIdentifiers
 func (o *QodanaOptions) ConfDirPath() string {
 	if conf, ok := os.LookupEnv(QodanaConfEnv); ok {
 		return conf
@@ -209,23 +250,31 @@ func (o *QodanaOptions) properties() (map[string]string, []string) {
 }
 
 func (o *QodanaOptions) RequiresToken() bool {
-	if os.Getenv(QodanaLicense) != "" {
-		return false
-	}
-
-	if os.Getenv(QodanaToken) != "" || o.getenv(QodanaToken) != "" {
+	if os.Getenv(QodanaToken) != "" || o.getenv(QodanaLicenseOnlyToken) != "" {
 		return true
 	}
 
-	if o.Linter == Image(QDPYC) || o.Linter == Image(QDJVMC) {
+	var analyzer string
+	if o.Linter != "" {
+		analyzer = o.Linter
+	} else if o.Ide != "" {
+		analyzer = o.Ide
+	}
+
+	if os.Getenv(QodanaLicense) != "" ||
+		Contains(append(allSupportedFreeImages, allSupportedFreeCodes...), analyzer) ||
+		strings.Contains(lower(analyzer), "eap") ||
+		prod.isCommunity() || prod.EAP {
 		return false
 	}
 
-	if o.Ide == QDJVMC || o.Ide == QDPYC {
-		return false
+	for _, e := range allSupportedPaidCodes {
+		if strings.HasPrefix(Image(e), o.Linter) || strings.HasPrefix(e, o.Ide) {
+			return true
+		}
 	}
 
-	return !Prod.IsCommunity() && !Prod.EAP
+	return false
 }
 
 func (o *QodanaOptions) fixesSupported() bool {

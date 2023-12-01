@@ -1,6 +1,9 @@
 version: "1.0"
 linter: jetbrains/qodana-go:latest
+profile:
+  name: "qodana.recommended"
 include:
+  - name: GoUnnecessarilyExportedIdentifiers
   - name: CheckDependencyLicenses
 licenseRules:
   - keys:
@@ -10,20 +13,12 @@ licenseRules:
       - CC-BY-SA-4.0
       - MPL-2.0
       - Unlicense
+      - BSD-3-CLAUSE-NO-TRADEMARK
 dependencyOverrides:
   - name: github.com/BurntSushi/xgb
     version: v0.0.0-20160522181843-27f122750802
     licenses:
       - key: BSD-3-Clause
         url: https://github.com/BurntSushi/xgb/blob/master/LICENSE
-  - name: github.com/cucumber/ci-environment/go
-    version: v0.0.0-20230123192824-6c9424d4fecf
-    licenses:
-      - key: MIT
-        url: https://github.com/cucumber/ci-environment/blob/main/java/LICENSE
 exclude:
   - name: VgoDependencyUpdateAvailable
-  - name: All
-    paths:
-      - core/core_test.go
-      - core/license_test.go

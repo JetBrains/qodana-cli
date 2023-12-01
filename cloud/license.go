@@ -42,11 +42,11 @@ type LicenseToken struct {
 }
 
 const (
-	QodanaLicenseRequestCooldownEnv = "QODANA_LICENSE_REQUEST_COOLDOWN"
+	qodanaLicenseRequestCooldownEnv = "QODANA_LICENSE_REQUEST_COOLDOWN"
 
-	QodanaLicenseRequestTimeoutEnv = "QODANA_LICENSE_REQUEST_TIMEOUT"
+	qodanaLicenseRequestTimeoutEnv = "QODANA_LICENSE_REQUEST_TIMEOUT"
 
-	QodanaLicenseRequestAttemptsCountEnv = "QODANA_LICENSE_ATTEMPTS"
+	qodanaLicenseRequestAttemptsCountEnv = "QODANA_LICENSE_ATTEMPTS"
 
 	qodanaLicenseRequestAttemptsCount = 3
 
@@ -59,23 +59,23 @@ const (
 
 var TokenDeclinedError = errors.New("token was declined by Qodana Cloud server")
 
-const EmptyTokenMessage = `Starting from version 2023.2 release versions of Qodana Linters require connection to Qodana Cloud. 
+var EmptyTokenMessage = fmt.Sprintf(`Starting from version 2023.2 release versions of Qodana Linters require connection to Qodana Cloud. 
 To continue using Qodana, please ensure you have an access token and provide the token as the QODANA_TOKEN environment variable.
-Obtain your token by registering at https://qodana.cloud/
+Obtain your token by registering at %s
 For more details, please visit: https://www.jetbrains.com/help/qodana/cloud-quickstart.html
 We also offer Community versions as an alternative. You can find them here: https://www.jetbrains.com/help/qodana/linters.html
-`
+`, getCloudBaseUrl())
 
-const EapWarnTokenMessage = `
+var EapWarnTokenMessage = fmt.Sprintf(`
 Starting from version 2023.2 release versions of Qodana Linters will require connection to Qodana Cloud. 
-For seamless transition to release versions, obtain your token by registering at https://qodana.cloud/ 
+For seamless transition to release versions, obtain your token by registering at %s 
 and provide the token as the QODANA_TOKEN environment variable.
-For more details, please visit: https://www.jetbrains.com/help/qodana/cloud-quickstart.html`
+For more details, please visit: https://www.jetbrains.com/help/qodana/cloud-quickstart.html`, getCloudBaseUrl())
 
-const GeneralLicenseErrorMessage = `
-Please check if https://qodana.cloud/ is accessible from your environment. 
+var GeneralLicenseErrorMessage = fmt.Sprintf(`
+Please check if %s is accessible from your environment. 
 If you encounter any issues, please contact us at qodana-support@jetbrains.com. 
-Or use our issue tracker at https://jb.gg/qodana-issue`
+Or use our issue tracker at https://jb.gg/qodana-issue`, getCloudBaseUrl())
 
 const InvalidTokenMessage = `QODANA_TOKEN is invalid, please provide a valid token`
 
@@ -155,7 +155,7 @@ func requestLicenseDataAttempt(endpoint string, token string) ([]byte, error) {
 	if err != nil {
 		return nil, fmt.Errorf("Reading license response failed\n. %w", err)
 	}
-	if resp.StatusCode == 403 {
+	if resp.StatusCode == 403 || resp.StatusCode == 404 {
 		return nil, TokenDeclinedError
 	}
 	if resp.StatusCode == 200 {
@@ -169,15 +169,15 @@ func requestLicenseDataAttempt(endpoint string, token string) ([]byte, error) {
 }
 
 func getTimeout() int {
-	return GetEnvWithDefaultInt(QodanaLicenseRequestTimeoutEnv, qodanaLicenseRequestTimeout)
+	return getEnvWithDefaultInt(qodanaLicenseRequestTimeoutEnv, qodanaLicenseRequestTimeout)
 }
 
 func getCooldown() int {
-	return GetEnvWithDefaultInt(QodanaLicenseRequestCooldownEnv, qodanaLicenseRequestCooldown)
+	return getEnvWithDefaultInt(qodanaLicenseRequestCooldownEnv, qodanaLicenseRequestCooldown)
 }
 
 func getAttempts() int {
-	return GetEnvWithDefaultInt(QodanaLicenseRequestAttemptsCountEnv, qodanaLicenseRequestAttemptsCount)
+	return getEnvWithDefaultInt(qodanaLicenseRequestAttemptsCountEnv, qodanaLicenseRequestAttemptsCount)
 }
 
 func GetEnvWithDefault(env string, defaultValue string) string {
@@ -188,7 +188,7 @@ func GetEnvWithDefault(env string, defaultValue string) string {
 	return value
 }
 
-func GetEnvWithDefaultInt(env string, defaultValue int) int {
+func getEnvWithDefaultInt(env string, defaultValue int) int {
 	value, exists := os.LookupEnv(env)
 	if !exists {
 		return defaultValue

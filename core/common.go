@@ -18,6 +18,7 @@ package core
 
 import (
 	"fmt"
+	"github.com/JetBrains/qodana-cli/v2023/cloud"
 	"os"
 	"path/filepath"
 	"strings"
@@ -47,12 +48,9 @@ var (
 	QDRUBY = "QDRUBY"
 )
 
-// AllSupportedCodes is a list of all supported Qodana linters product codes
-var AllSupportedCodes = []string{QDJVMC, QDJVM, QDPHP, QDPY, QDPYC, QDJS, QDGO, QDNET}
-
 func Image(code string) string {
 	switch code {
-	case QDAND:
+	case QDANDC:
 		return "jetbrains/qodana-jvm-android:" + version
 	case QDPHP:
 		return "jetbrains/qodana-php:" + version
@@ -127,7 +125,7 @@ func GetLinter(path string, yamlName string) string {
 
 // ShowReport serves the Qodana report
 func ShowReport(resultsDir string, reportPath string, port int) {
-	cloudUrl := getReportUrl(resultsDir)
+	cloudUrl := cloud.GetReportUrl(resultsDir)
 	if cloudUrl != "" {
 		openReport(cloudUrl, reportPath, port)
 	} else {

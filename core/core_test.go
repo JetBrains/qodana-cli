@@ -22,6 +22,11 @@ import (
 	"errors"
 	"fmt"
 	"github.com/JetBrains/qodana-cli/v2023/cloud"
+	"github.com/docker/docker/api/types"
+	"github.com/docker/docker/api/types/container"
+	"github.com/docker/docker/api/types/mount"
+	log "github.com/sirupsen/logrus"
+	"golang.org/x/exp/maps"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -29,7 +34,7 @@ import (
 	"path/filepath"
 	"reflect"
 	"runtime"
-	"strings"
+	"sort"
 	"testing"
 	"time"
 
@@ -42,8 +47,8 @@ func TestCliArgs(t *testing.T) {
 	projectDir := filepath.Join(dir, "project")
 	cacheDir := filepath.Join(dir, "cache")
 	resultsDir := filepath.Join(dir, "results")
-	Prod.Home = string(os.PathSeparator) + "opt" + string(os.PathSeparator) + "idea"
-	Prod.IdeScript = filepath.Join(Prod.Home, "bin", "idea.sh")
+	prod.Home = string(os.PathSeparator) + "opt" + string(os.PathSeparator) + "idea"
+	prod.IdeScript = filepath.Join(prod.Home, "bin", "idea.sh")
 	err := os.Unsetenv(qodanaDockerEnv)
 	if err != nil {
 		t.Fatal(err)
@@ -60,7 +65,7 @@ func TestCliArgs(t *testing.T) {
 		},
 		{
 			name: "arguments with spaces, no properties for local runs",
-			opts: &QodanaOptions{ProjectDir: projectDir, CacheDir: cacheDir, ResultsDir: resultsDir, ProfileName: "separated words", Property: []string{"qodana.format=SARIF_AND_PROJECT_STRUCTURE", "qodana.variable.format=JSON"}, Ide: Prod.Home},
+			opts: &QodanaOptions{ProjectDir: projectDir, CacheDir: cacheDir, ResultsDir: resultsDir, ProfileName: "separated words", Property: []string{"qodana.format=SARIF_AND_PROJECT_STRUCTURE", "qodana.variable.format=JSON"}, Ide: prod.Home},
 			res:  []string{filepath.FromSlash("/opt/idea/bin/idea.sh"), "inspect", "qodana", "--profile-name", "\"separated words\"", projectDir, resultsDir},
 		},
 		{
@@ -91,9 +96,9 @@ func TestCliArgs(t *testing.T) {
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			if tc.opts.Ide == "/opt/idea/233" {
-				Prod.Version = "2023.3"
+				prod.Version = "2023.3"
 			} else {
-				Prod.Version = "2023.2"
+				prod.Version = "2023.2"
 			}
 
 			args := getIdeRunCommand(tc.opts)
@@ -102,39 +107,16 @@ func TestCliArgs(t *testing.T) {
 	}
 }
 
-func TestCloudUrl(t *testing.T) {
-	for _, tc := range []struct {
-		name        string
-		writtenUrl  string
-		expectedUrl string
-	}{
-		{
-			name:        "valid url",
-			writtenUrl:  "https://youtu.be/dQw4w9WgXcQ",
-			expectedUrl: "https://youtu.be/dQw4w9WgXcQ",
-		},
-	} {
-		t.Run(tc.name, func(t *testing.T) {
-			resultsPath := filepath.Join(os.TempDir(), "cloud_url_valid")
-			err := os.MkdirAll(resultsPath, 0o755)
-			if err != nil {
-				return
-			}
-
-			filePath := resultsPath + "/" + qodanaReportUrlFile
-			err = os.WriteFile(
-				filePath,
-				[]byte(tc.writtenUrl),
-				0o644,
-			)
-			if err != nil {
-				t.Fatal(err)
-			}
-			actual := getReportUrl(resultsPath)
-			if actual != tc.expectedUrl {
-				t.Fatalf("expected \"%s\" got \"%s\"", tc.expectedUrl, actual)
-			}
-		})
+func unsetGitHubVariables() {
+	variables := []string{
+		"GITHUB_SERVER_URL",
+		"GITHUB_REPOSITORY",
+		"GITHUB_RUN_ID",
+		"GITHUB_HEAD_REF",
+		"GITHUB_REF",
+	}
+	for _, v := range variables {
+		_ = os.Unsetenv(v)
 	}
 }
 
@@ -143,29 +125,22 @@ func Test_ExtractEnvironmentVariables(t *testing.T) {
 	branchExpected := "refs/heads/main"
 
 	if os.Getenv("GITHUB_ACTIONS") == "true" {
-		variables := []string{
-			"GITHUB_SERVER_URL",
-			"GITHUB_REPOSITORY",
-			"GITHUB_RUN_ID",
-			"GITHUB_HEAD_REF",
-			"GITHUB_REF",
-		}
-		for _, v := range variables {
-			_ = os.Unsetenv(v)
-		}
+		unsetGitHubVariables()
 	}
 
 	for _, tc := range []struct {
-		ci                      string
-		variables               map[string]string
-		qodanaJobUrlExpected    string
-		qodanaEnvExpected       string
-		qodanaRemoteUrlExpected string
+		ci                string
+		variables         map[string]string
+		jobUrlExpected    string
+		envExpected       string
+		remoteUrlExpected string
+		revisionExpected  string
+		branchExpected    string
 	}{
 		{
-			ci:                "no CI detected",
-			variables:         map[string]string{},
-			qodanaEnvExpected: "cli:dev",
+			ci:          "no CI detected",
+			variables:   map[string]string{},
+			envExpected: "cli:dev",
 		},
 		{
 			ci: "User defined",
@@ -176,9 +151,27 @@ func Test_ExtractEnvironmentVariables(t *testing.T) {
 				qodanaBranch:    branchExpected,
 				qodanaRevision:  revisionExpected,
 			},
-			qodanaEnvExpected:       "user-defined",
-			qodanaRemoteUrlExpected: "https://qodana.jetbrains.com/never-gonna-give-you-up",
-			qodanaJobUrlExpected:    "https://qodana.jetbrains.com/never-gonna-give-you-up",
+			envExpected:       "user-defined",
+			remoteUrlExpected: "https://qodana.jetbrains.com/never-gonna-give-you-up",
+			jobUrlExpected:    "https://qodana.jetbrains.com/never-gonna-give-you-up",
+			revisionExpected:  revisionExpected,
+			branchExpected:    branchExpected,
+		},
+		{
+			ci: "Space",
+			variables: map[string]string{
+				"JB_SPACE_EXECUTION_URL":       "https://space.jetbrains.com/never-gonna-give-you-up",
+				"JB_SPACE_GIT_BRANCH":          branchExpected,
+				"JB_SPACE_GIT_REVISION":        revisionExpected,
+				"JB_SPACE_API_URL":             "jetbrains.team",
+				"JB_SPACE_PROJECT_KEY":         "sa",
+				"JB_SPACE_GIT_REPOSITORY_NAME": "entrypoint",
+			},
+			envExpected:       fmt.Sprintf("space:%s", Version),
+			remoteUrlExpected: "ssh://git@git.jetbrains.team/sa/entrypoint.git",
+			jobUrlExpected:    "https://space.jetbrains.com/never-gonna-give-you-up",
+			revisionExpected:  revisionExpected,
+			branchExpected:    branchExpected,
 		},
 		{
 			ci: "GitLab",
@@ -188,9 +181,11 @@ func Test_ExtractEnvironmentVariables(t *testing.T) {
 				"CI_COMMIT_SHA":     revisionExpected,
 				"CI_REPOSITORY_URL": "https://gitlab.jetbrains.com/sa/entrypoint.git",
 			},
-			qodanaEnvExpected:       fmt.Sprintf("gitlab:%s", Version),
-			qodanaRemoteUrlExpected: "https://gitlab.jetbrains.com/sa/entrypoint.git",
-			qodanaJobUrlExpected:    "https://gitlab.jetbrains.com/never-gonna-give-you-up",
+			envExpected:       fmt.Sprintf("gitlab:%s", Version),
+			remoteUrlExpected: "https://gitlab.jetbrains.com/sa/entrypoint.git",
+			jobUrlExpected:    "https://gitlab.jetbrains.com/never-gonna-give-you-up",
+			revisionExpected:  revisionExpected,
+			branchExpected:    branchExpected,
 		},
 		{
 			ci: "Jenkins",
@@ -200,9 +195,11 @@ func Test_ExtractEnvironmentVariables(t *testing.T) {
 				"GIT_COMMIT":       revisionExpected,
 				"GIT_URL":          "https://git.jetbrains.com/sa/entrypoint.git",
 			},
-			qodanaEnvExpected:       fmt.Sprintf("jenkins:%s", Version),
-			qodanaJobUrlExpected:    "https://jenkins.jetbrains.com/never-gonna-give-you-up",
-			qodanaRemoteUrlExpected: "https://git.jetbrains.com/sa/entrypoint.git",
+			envExpected:       fmt.Sprintf("jenkins:%s", Version),
+			jobUrlExpected:    "https://jenkins.jetbrains.com/never-gonna-give-you-up",
+			remoteUrlExpected: "https://git.jetbrains.com/sa/entrypoint.git",
+			revisionExpected:  revisionExpected,
+			branchExpected:    branchExpected,
 		},
 		{
 			ci: "GitHub",
@@ -213,9 +210,11 @@ func Test_ExtractEnvironmentVariables(t *testing.T) {
 				"GITHUB_SHA":        revisionExpected,
 				"GITHUB_HEAD_REF":   branchExpected,
 			},
-			qodanaEnvExpected:       fmt.Sprintf("github-actions:%s", Version),
-			qodanaJobUrlExpected:    "https://github.jetbrains.com/sa/entrypoint/actions/runs/123456789",
-			qodanaRemoteUrlExpected: "https://github.jetbrains.com/sa/entrypoint.git",
+			envExpected:       fmt.Sprintf("github-actions:%s", Version),
+			jobUrlExpected:    "https://github.jetbrains.com/sa/entrypoint/actions/runs/123456789",
+			remoteUrlExpected: "https://github.jetbrains.com/sa/entrypoint.git",
+			revisionExpected:  revisionExpected,
+			branchExpected:    branchExpected,
 		},
 		{
 			ci: "GitHub push",
@@ -226,9 +225,11 @@ func Test_ExtractEnvironmentVariables(t *testing.T) {
 				"GITHUB_SHA":        revisionExpected,
 				"GITHUB_REF":        branchExpected,
 			},
-			qodanaEnvExpected:       fmt.Sprintf("github-actions:%s", Version),
-			qodanaJobUrlExpected:    "https://github.jetbrains.com/sa/entrypoint/actions/runs/123456789",
-			qodanaRemoteUrlExpected: "https://github.jetbrains.com/sa/entrypoint.git",
+			envExpected:       fmt.Sprintf("github-actions:%s", Version),
+			jobUrlExpected:    "https://github.jetbrains.com/sa/entrypoint/actions/runs/123456789",
+			remoteUrlExpected: "https://github.jetbrains.com/sa/entrypoint.git",
+			revisionExpected:  revisionExpected,
+			branchExpected:    branchExpected,
 		},
 		{
 			ci: "CircleCI",
@@ -238,9 +239,11 @@ func Test_ExtractEnvironmentVariables(t *testing.T) {
 				"CIRCLE_BRANCH":         branchExpected,
 				"CIRCLE_REPOSITORY_URL": "https://circleci.jetbrains.com/sa/entrypoint.git",
 			},
-			qodanaEnvExpected:       fmt.Sprintf("circleci:%s", Version),
-			qodanaJobUrlExpected:    "https://circleci.jetbrains.com/never-gonna-give-you-up",
-			qodanaRemoteUrlExpected: "https://circleci.jetbrains.com/sa/entrypoint.git",
+			envExpected:       fmt.Sprintf("circleci:%s", Version),
+			jobUrlExpected:    "https://circleci.jetbrains.com/never-gonna-give-you-up",
+			remoteUrlExpected: "https://circleci.jetbrains.com/sa/entrypoint.git",
+			revisionExpected:  revisionExpected,
+			branchExpected:    branchExpected,
 		},
 		{
 			ci: "Azure Pipelines",
@@ -253,9 +256,11 @@ func Test_ExtractEnvironmentVariables(t *testing.T) {
 				"BUILD_SOURCEBRANCH":                 "refs/heads/" + branchExpected,
 				"BUILD_REPOSITORY_URI":               "https://dev.azure.com/jetbrains/sa/entrypoint.git",
 			},
-			qodanaEnvExpected:       fmt.Sprintf("azure-pipelines:%s", Version),
-			qodanaJobUrlExpected:    "https://dev.azure.com/jetbrains/sa/_build/results?buildId=123456789",
-			qodanaRemoteUrlExpected: "https://dev.azure.com/jetbrains/sa/entrypoint.git",
+			envExpected:       fmt.Sprintf("azure-pipelines:%s", Version),
+			jobUrlExpected:    "https://dev.azure.com/jetbrains/sa/_build/results?buildId=123456789",
+			remoteUrlExpected: "https://dev.azure.com/jetbrains/sa/entrypoint.git",
+			revisionExpected:  revisionExpected,
+			branchExpected:    branchExpected,
 		},
 	} {
 		t.Run(tc.ci, func(t *testing.T) {
@@ -268,36 +273,50 @@ func Test_ExtractEnvironmentVariables(t *testing.T) {
 				opts.setenv(k, v)
 			}
 
-			extractQodanaEnvironmentForDocker(opts)
-			currentQodanaEnv := opts.getenv(qodanaEnv)
-			if currentQodanaEnv != tc.qodanaEnvExpected {
-				t.Errorf("Expected %s, got %s", tc.qodanaEnvExpected, currentQodanaEnv)
+			for _, environment := range []struct {
+				name  string
+				set   func(string, string)
+				unset func(string)
+				get   func(string) string
+			}{
+				{
+					name: "Container",
+					set:  opts.setenv,
+					get:  opts.getenv,
+				},
+				{
+					name: "Local",
+					set:  setEnv,
+					get:  os.Getenv,
+				},
+			} {
+				t.Run(environment.name, func(t *testing.T) {
+					ExtractQodanaEnvironment(environment.set)
+					currentQodanaEnv := environment.get(qodanaEnv)
+					if currentQodanaEnv != tc.envExpected {
+						t.Errorf("%s: Expected %s, got %s", environment.name, tc.envExpected, currentQodanaEnv)
+					}
+					if environment.get(qodanaJobUrl) != tc.jobUrlExpected {
+						t.Errorf("%s: Expected %s, got %s", environment.name, tc.jobUrlExpected, environment.get(qodanaJobUrl))
+					}
+					if environment.get(qodanaRemoteUrl) != tc.remoteUrlExpected {
+						t.Errorf("%s: Expected %s, got %s", environment.name, tc.remoteUrlExpected, environment.get(qodanaRemoteUrl))
+					}
+					if environment.get(qodanaRevision) != tc.revisionExpected {
+						t.Errorf("%s: Expected %s, got %s", environment.name, revisionExpected, environment.get(qodanaRevision))
+					}
+					if environment.get(qodanaBranch) != tc.branchExpected {
+						t.Errorf("%s: Expected %s, got %s", environment.name, branchExpected, environment.get(qodanaBranch))
+					}
+				})
 			}
-			if !strings.HasPrefix(currentQodanaEnv, "cli:") {
-				if opts.getenv(qodanaJobUrl) != tc.qodanaJobUrlExpected {
-					t.Errorf("Expected %s, got %s", tc.qodanaJobUrlExpected, opts.getenv(qodanaJobUrl))
-				}
-				if opts.getenv(qodanaRemoteUrl) != tc.qodanaRemoteUrlExpected {
-					t.Errorf("Expected %s, got %s", tc.qodanaRemoteUrlExpected, opts.getenv(qodanaRemoteUrl))
-				}
-				if opts.getenv(qodanaRevision) != revisionExpected {
-					t.Errorf("Expected %s, got %s", revisionExpected, opts.getenv(qodanaRevision))
-				}
-				if opts.getenv(qodanaBranch) != branchExpected {
-					t.Errorf("Expected %s, got %s", branchExpected, opts.getenv(qodanaBranch))
-				}
-			}
-			for _, k := range []string{qodanaJobUrl, qodanaEnv, qodanaRemoteUrl, qodanaRevision, qodanaBranch} {
+
+			for _, k := range append(maps.Keys(tc.variables), []string{qodanaJobUrl, qodanaEnv, qodanaRemoteUrl, qodanaRevision, qodanaBranch}...) {
 				err := os.Unsetenv(k)
 				if err != nil {
 					t.Fatal(err)
 				}
-			}
-			for k := range tc.variables {
-				err := os.Unsetenv(k)
-				if err != nil {
-					t.Fatal(err)
-				}
+				opts.unsetenv(k)
 			}
 		})
 	}
@@ -379,9 +398,9 @@ func TestLegacyFixStrategies(t *testing.T) {
 	for _, tt := range cases {
 		t.Run(tt.name, func(t *testing.T) {
 			if tt.options.Ide == "QDPHP" {
-				Prod.Version = "2023.3"
+				prod.Version = "2023.3"
 			} else {
-				Prod.Version = "2023.2"
+				prod.Version = "2023.2"
 			}
 
 			actual := getIdeArgs(tt.options)
@@ -591,12 +610,13 @@ func Test_isProcess(t *testing.T) {
 	}
 	var cmd *exec.Cmd
 	var cmdString string
-	if runtime.GOOS == "windows" {
-		cmd = exec.Command("ping", "-n", "5", "127.0.0.1")
-		cmdString = "ping -n 5 127.0.0.1"
+	if //goland:noinspection GoBoolExpressions
+	runtime.GOOS == "windows" {
+		cmd = exec.Command("ping", "-n", "3", "127.0.0.1")
+		cmdString = "ping -n 3 127.0.0.1"
 	} else {
-		cmd = exec.Command("ping", "-c", "5", "127.0.0.1")
-		cmdString = "ping -c 5 127.0.0.1"
+		cmd = exec.Command("ping", "-c", "3", "127.0.0.1")
+		cmdString = "ping -c 3 127.0.0.1"
 	}
 	go func() {
 		err := cmd.Run()
@@ -638,7 +658,8 @@ func Test_runCmd(t *testing.T) {
 }
 
 func Test_createUser(t *testing.T) {
-	if runtime.GOOS == "windows" {
+	if //goland:noinspection GoBoolExpressions
+	runtime.GOOS == "windows" {
 		return
 	}
 
@@ -738,8 +759,8 @@ func Test_Bootstrap(t *testing.T) {
 	}
 	opts.ProjectDir = tmpDir
 	bootstrap("echo \"bootstrap: touch qodana.yml\" > qodana.yaml", opts.ProjectDir)
-	Config = GetQodanaYaml(tmpDir)
-	bootstrap(Config.Bootstrap, opts.ProjectDir)
+	qConfig = getQodanaYaml(tmpDir)
+	bootstrap(qConfig.Bootstrap, opts.ProjectDir)
 	if _, err := os.Stat(filepath.Join(opts.ProjectDir, "qodana.yaml")); errors.Is(err, os.ErrNotExist) {
 		t.Fatalf("No qodana.yml created by the bootstrap command in qodana.yaml")
 	}
@@ -803,33 +824,34 @@ func Test_SaveProperty(t *testing.T) {
 	}
 }
 
+//goland:noinspection ALL
 func Test_WriteAppInfo(t *testing.T) {
 	tmpDir := filepath.Join(os.TempDir(), "appinfo")
 	err := os.MkdirAll(tmpDir, 0o755)
 	if err != nil {
 		t.Fatal(err)
 	}
-	Prod.Version = "2022.1"
-	Prod.EAP = true
-	Prod.Build = "420.69"
-	Prod.Code = "QDTEST"
-	Prod.Name = "Qodana for Tests"
+	prod.Version = "2022.1"
+	prod.EAP = true
+	prod.Build = "420.69"
+	prod.Code = "QDTEST"
+	prod.Name = "Qodana for Tests"
 	xmlFilePath := filepath.Join(tmpDir, "QodanaAppInfo.xml")
 	writeAppInfo(xmlFilePath)
 	actual, err := os.ReadFile(xmlFilePath)
 	if err != nil {
 		t.Fatal(err)
 	}
-	expected := `<component xmlns="http://jetbrains.org/intellij/schema/application-info"
+	expected := fmt.Sprintf(`<component xmlns="http://jetbrains.org/intellij/schema/application-info"
                xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
                xsi:schemaLocation="http://jetbrains.org/intellij/schema/application-info http://jetbrains.org/intellij/schema/ApplicationInfo.xsd">
       <version major="2022" minor="1" eap="true"/>
       <company name="JetBrains s.r.o." url="https://www.jetbrains.com" copyrightStart="2000"/>
-      <build number="QDTEST-420.69" date="202212060511" />
+      <build number="QDTEST-420.69" date="%s" />
       <names product="Qodana for Tests" fullname="Qodana for Tests"/>
       <icon svg="xxx.svg" svg-small="xxx.svg"/>
       <plugins url="https://plugins.jetbrains.com/" builtin-url="__BUILTIN_PLUGINS_URL__"/>
-</component>`
+</component>`, getDateNow())
 	assert.Equal(t, expected, string(actual))
 	err = os.RemoveAll(tmpDir)
 	if err != nil {
@@ -837,6 +859,7 @@ func Test_WriteAppInfo(t *testing.T) {
 	}
 }
 
+//goland:noinspection HttpUrlsUsage
 func Test_ReadAppInfo(t *testing.T) {
 	tempDir := os.TempDir()
 	entrypointDir := filepath.Join(tempDir, "appinfo")
@@ -943,8 +966,8 @@ func Test_ideaExitCode(t *testing.T) {
 }
 
 func TestSetupLicense(t *testing.T) {
-	Prod.Code = "QDJVM"
-	Prod.EAP = false
+	prod.Code = "QDJVM"
+	prod.EAP = false
 	license := `{"licenseId":"VA5HGQWQH6","licenseKey":"VA5HGQWQH6","expirationDate":"2023-07-31","licensePlan":"EAP_ULTIMATE_PLUS"}`
 	expectedKey := "VA5HGQWQH6"
 
@@ -956,7 +979,7 @@ func TestSetupLicense(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	SetupLicense("token")
+	setupLicense("token")
 
 	licenseKey := os.Getenv(QodanaLicense)
 	if licenseKey != expectedKey {
@@ -1025,7 +1048,7 @@ func TestSetupLicenseToken(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			SetupLicenseToken(&QodanaOptions{})
+			setupLicenseToken(&QodanaOptions{})
 
 			if cloud.Token.Token != testData.resToken {
 				t.Errorf("expected token to be '%s' got '%s'", testData.resToken, cloud.Token.Token)
@@ -1055,12 +1078,25 @@ func TestSetupLicenseToken(t *testing.T) {
 }
 
 func TestQodanaOptions_RequiresToken(t *testing.T) {
+	log.SetLevel(log.DebugLevel)
 	tests := []struct {
 		name     string
 		linter   string
 		ide      string
 		expected bool
 	}{
+		{
+			QodanaToken,
+			"",
+			"",
+			true,
+		},
+		{
+			QodanaLicense,
+			"",
+			"",
+			false,
+		},
 		{
 			"QDPYC docker",
 			Image(QDPYC),
@@ -1073,24 +1109,33 @@ func TestQodanaOptions_RequiresToken(t *testing.T) {
 			QDJVMC,
 			false,
 		},
-		{
-			QodanaLicense,
-			"",
-			"",
-			false,
-		},
 	}
 
 	for _, tt := range tests {
-		token := os.Getenv(QodanaToken)
-		if token != "" {
-			err := os.Unsetenv(QodanaToken)
-			if err != nil {
-				t.Fatal(err)
+		var token string
+		for _, env := range []string{QodanaToken, QodanaLicenseOnlyToken, QodanaLicense} {
+			if os.Getenv(env) != "" {
+				token = os.Getenv(env)
+				err := os.Unsetenv(env)
+				if err != nil {
+					t.Fatal(err)
+				}
 			}
 		}
+
 		t.Run(tt.name, func(t *testing.T) {
-			if tt.name == QodanaLicense {
+			if tt.name == QodanaToken {
+				err := os.Setenv(QodanaToken, "test")
+				if err != nil {
+					t.Fatal(err)
+				}
+				defer func() {
+					err := os.Unsetenv(QodanaToken)
+					if err != nil {
+						t.Fatal(err)
+					}
+				}()
+			} else if tt.name == QodanaLicense {
 				err := os.Setenv(QodanaLicense, "test")
 				if err != nil {
 					t.Fatal(err)
@@ -1114,6 +1159,256 @@ func TestQodanaOptions_RequiresToken(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
+			err = os.Setenv(QodanaLicenseOnlyToken, token)
+			if err != nil {
+				t.Fatal(err)
+			}
 		}
+	}
+}
+
+func propertiesFixture(enableStats bool, additionalProperties []string) []string {
+	properties := []string{
+		"-Dfus.internal.reduce.initial.delay=true",
+		"-Dide.warmup.use.predicates=false",
+		"-Dvcs.log.index.enable=false",
+		fmt.Sprintf("-Didea.application.info.value=%s", filepath.Join(os.TempDir(), "entrypoint", "QodanaAppInfo.xml")),
+		"-Didea.class.before.app=com.jetbrains.rider.protocol.EarlyBackendStarter",
+		fmt.Sprintf("-Didea.config.path=%s", filepath.Join(os.TempDir(), "entrypoint")),
+		fmt.Sprintf("-Didea.headless.enable.statistics=%t", enableStats),
+		"-Didea.headless.statistics.device.id=FAKE",
+		"-Didea.headless.statistics.max.files.to.send=5000",
+		"-Didea.headless.statistics.salt=FAKE",
+		fmt.Sprintf("-Didea.log.path=%s", filepath.Join(os.TempDir(), "entrypoint", "log")),
+		"-Didea.parent.prefix=Rider",
+		"-Didea.platform.prefix=Qodana",
+		fmt.Sprintf("-Didea.plugins.path=%s", filepath.Join(os.TempDir(), "entrypoint", "plugins", "233")),
+		"-Didea.qodana.thirdpartyplugins.accept=true",
+		fmt.Sprintf("-Didea.system.path=%s", filepath.Join(os.TempDir(), "entrypoint", "idea", "233")),
+		"-Dinspect.save.project.settings=true",
+		"-Djava.awt.headless=true",
+		"-Djava.net.useSystemProxies=true",
+		"-Djdk.attach.allowAttachSelf=true",
+		`-Djdk.http.auth.tunneling.disabledSchemes=""`,
+		"-Djdk.module.illegalAccess.silent=true",
+		"-Dkotlinx.coroutines.debug=off",
+		"-Dqodana.automation.guid=FAKE",
+		"-Didea.job.launcher.without.timeout=true",
+		"-Dqodana.coverage.input=/data/coverage",
+		"-Dqodana.recommended.profile.resource=qodana-dotnet.recommended.yaml",
+		"-Dqodana.starter.profile.resource=qodana-dotnet.starter.yaml",
+		"-Drider.collect.full.container.statistics=true",
+		"-Drider.suppress.std.redirect=true",
+		"-Dsun.io.useCanonCaches=false",
+		"-Dsun.tools.attach.tmp.only=true",
+		"-XX:+HeapDumpOnOutOfMemoryError",
+		"-XX:+UseG1GC",
+		"-XX:-OmitStackTraceInFastThrow",
+		"-XX:CICompilerCount=2",
+		"-XX:MaxJavaStackTraceDepth=10000",
+		"-XX:MaxRAMPercentage=70",
+		"-XX:ReservedCodeCacheSize=512m",
+		"-XX:SoftRefLRUPolicyMSPerMB=50",
+		fmt.Sprintf("-Xlog:gc*:%s", filepath.Join(os.TempDir(), "entrypoint", "log", "gc.log")),
+		"-ea",
+	}
+	properties = append(properties, additionalProperties...)
+	sort.Strings(properties)
+	return properties
+}
+
+func Test_Properties(t *testing.T) {
+	opts := &QodanaOptions{}
+	tmpDir := filepath.Join(os.TempDir(), "entrypoint")
+	opts.ProjectDir = tmpDir
+	opts.ResultsDir = opts.ProjectDir
+	opts.CacheDir = opts.ProjectDir
+	opts.CoverageDir = "/data/coverage"
+	opts.AnalysisId = "FAKE"
+
+	prod.BaseScriptName = "rider"
+	prod.Code = "QDNET"
+	prod.Version = "2023.3"
+
+	err := os.Setenv(QodanaDistEnv, opts.ProjectDir)
+	if err != nil {
+		t.Fatal(err)
+	}
+	err = os.Setenv(QodanaConfEnv, opts.ProjectDir)
+	if err != nil {
+		t.Fatal(err)
+	}
+	err = os.Setenv(qodanaDockerEnv, "true")
+	if err != nil {
+		t.Fatal(err)
+	}
+	err = os.Setenv("DEVICEID", "FAKE")
+	if err != nil {
+		t.Fatal(err)
+	}
+	err = os.Setenv("SALT", "FAKE")
+	if err != nil {
+		t.Fatal(err)
+	}
+	err = os.MkdirAll(opts.ProjectDir, 0o755)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	for _, tc := range []struct {
+		name          string
+		cliProperties []string
+		qodanaYaml    string
+		isContainer   bool
+		expected      []string
+	}{
+		{
+			name:          "no overrides, just defaults and .NET project",
+			cliProperties: []string{},
+			qodanaYaml:    "dotnet:\n   project: project.csproj",
+			isContainer:   false,
+			expected:      propertiesFixture(true, []string{"-Dqodana.net.project=project.csproj", "-Dqodana.net.targetFrameworks=!net48;!net472;!net471;!net47;!net462;!net461;!net46;!net452;!net451;!net45;!net403;!net40;!net35;!net20;!net11"}),
+		},
+		{
+			name:          "target frameworks set in YAML",
+			cliProperties: []string{},
+			qodanaYaml:    "dotnet:\n   frameworks: net5.0;net6.0",
+			isContainer:   false,
+			expected:      propertiesFixture(true, []string{"-Dqodana.net.targetFrameworks=net5.0;net6.0"}),
+		},
+		{
+			name:          "target frameworks set in YAML in container",
+			cliProperties: []string{},
+			qodanaYaml:    "dotnet:\n   frameworks: net5.0;net6.0",
+			isContainer:   true,
+			expected:      propertiesFixture(true, []string{"-Dqodana.net.targetFrameworks=net5.0;net6.0"}),
+		},
+		{
+			name:          "target frameworks not set in container",
+			cliProperties: []string{},
+			qodanaYaml:    "",
+			isContainer:   true,
+			expected:      propertiesFixture(true, []string{"-Dqodana.net.targetFrameworks=!net48;!net472;!net471;!net47;!net462;!net461;!net46;!net452;!net451;!net45;!net403;!net40;!net35;!net20;!net11"}),
+		},
+		{
+			name:          "add one CLI property and .NET solution settings",
+			cliProperties: []string{"-xa", "idea.some.custom.property=1"},
+			qodanaYaml:    "dotnet:\n   solution: solution.sln\n   configuration: Release\n   platform: x64",
+			isContainer:   false,
+			expected: append(
+				propertiesFixture(true, []string{"-Dqodana.net.solution=solution.sln", "-Dqodana.net.configuration=Release", "-Dqodana.net.platform=x64", "-Didea.some.custom.property=1"}),
+				"-xa",
+			),
+		},
+		{
+			name:          "override options from CLI, YAML should be ignored",
+			cliProperties: []string{"-Dfus.internal.reduce.initial.delay=false", "-Dide.warmup.use.predicates=true", "-Didea.application.info.value=0", "idea.headless.enable.statistics=false"},
+			qodanaYaml: "" +
+				"version: \"1.0\"\n" +
+				"properties:\n" +
+				"  fus.internal.reduce.initial.delay: true\n" +
+				"  idea.application.info.value: 0\n",
+			isContainer: false,
+			expected: append([]string{
+				"-Dfus.internal.reduce.initial.delay=false",
+				"-Dide.warmup.use.predicates=true",
+				"-Didea.application.info.value=0",
+			}, propertiesFixture(false, []string{})[3:]...),
+		},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			err = os.WriteFile(filepath.Join(opts.ProjectDir, "qodana.yml"), []byte(tc.qodanaYaml), 0o600)
+			if err != nil {
+				t.Fatal(err)
+			}
+			opts.Property = tc.cliProperties
+			qConfig = getQodanaYaml(opts.ProjectDir)
+			if tc.isContainer {
+				err = os.Setenv(qodanaDockerEnv, "true")
+				if err != nil {
+					t.Fatal(err)
+				}
+			}
+			actual := getProperties(opts, qConfig.Properties, qConfig.DotNet, []string{})
+			if tc.isContainer {
+				err = os.Unsetenv(qodanaDockerEnv)
+				if err != nil {
+					t.Fatal(err)
+				}
+			}
+			assert.Equal(t, tc.expected, actual)
+		})
+	}
+	err = os.RemoveAll(opts.ProjectDir)
+	if err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestGenerateDebugDockerRunCommand(t *testing.T) {
+	tests := []struct {
+		name string
+		cfg  *types.ContainerCreateConfig
+		want string
+	}{
+		{
+			name: "basic config",
+			cfg: &types.ContainerCreateConfig{
+				Config: &container.Config{
+					Image: "test-image",
+					Cmd:   []string{"arg1", "arg2"},
+				},
+			},
+			want: "docker run test-image arg1 arg2 ",
+		},
+		{
+			name: "config with user",
+			cfg: &types.ContainerCreateConfig{
+				Config: &container.Config{
+					Image: "test-image",
+					User:  "test-user",
+					Cmd:   []string{"arg1", "arg2"},
+				},
+			},
+			want: "docker run -u test-user test-image arg1 arg2 ",
+		},
+		{
+			name: "config with environment variables",
+			cfg: &types.ContainerCreateConfig{
+				Config: &container.Config{
+					Image: "test-image",
+					Env:   []string{"ENV1=value1", "ENV2=value2"},
+					Cmd:   []string{"arg1", "arg2"},
+				},
+			},
+			want: "docker run -e ENV1=value1 -e ENV2=value2 test-image arg1 arg2 ",
+		},
+		{
+			name: "config with mounts",
+			cfg: &types.ContainerCreateConfig{
+				Config: &container.Config{
+					Image: "test-image",
+					Cmd:   []string{"arg1", "arg2"},
+				},
+				HostConfig: &container.HostConfig{
+					Mounts: []mount.Mount{
+						{
+							Type:   mount.TypeBind,
+							Source: "/host/path",
+							Target: "/container/path",
+						},
+					},
+				},
+			},
+			want: "docker run -v /host/path:/container/path test-image arg1 arg2 ",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := generateDebugDockerRunCommand(tt.cfg); got != tt.want {
+				t.Errorf("generateDebugDockerRunCommand() = %v, want %v", got, tt.want)
+			}
+		})
 	}
 }

@@ -21,8 +21,8 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/JetBrains/qodana-cli/v2023/cloud"
 	"io"
-	"io/fs"
 	"net/http"
 	"os"
 	"os/exec"
@@ -189,50 +189,8 @@ func noCache(h http.Handler) http.Handler {
 	return http.HandlerFunc(fn)
 }
 
-// LookUpLinterSystemDir returns path to the latest modified directory from <userCacheDir>/JetBrains/Qodana
-func LookUpLinterSystemDir(opts *QodanaOptions) string {
-	parent := opts.getQodanaSystemDir()
-
-	entries, err := os.ReadDir(parent)
-	if err != nil {
-		log.Debugf("Failed to read directory %s: %s", parent, err.Error())
-		return parent
-	}
-	subdirs := make([]fs.FileInfo, 0, len(entries))
-	for _, entry := range entries {
-		info, err := entry.Info()
-		if err != nil {
-			continue
-		}
-		subdirs = append(subdirs, info)
-	}
-	var latestDir string
-	var latestTime time.Time
-	for _, subdir := range subdirs {
-		if subdir.IsDir() {
-			if subdir.ModTime().After(latestTime) {
-				latestDir = subdir.Name()
-				latestTime = subdir.ModTime()
-			}
-		}
-	}
-	systemDir := filepath.Join(parent, latestDir)
-	log.Debugf("Found latest linter system dir: %s", systemDir)
-	return systemDir
-}
-
 // prepareHost gets the current user, creates the necessary folders for the analysis.
 func prepareHost(opts *QodanaOptions) {
-	if opts.RequiresToken() {
-		opts.ValidateToken(false)
-	}
-
-	if opts.ClearCache {
-		err := os.RemoveAll(opts.CacheDir)
-		if err != nil {
-			log.Errorf("Could not clear local Qodana cache: %s", err)
-		}
-	}
 	if err := os.MkdirAll(opts.CacheDir, os.ModePerm); err != nil {
 		log.Fatal("couldn't create a directory ", err.Error())
 	}
@@ -240,10 +198,10 @@ func prepareHost(opts *QodanaOptions) {
 		log.Fatal("couldn't create a directory ", err.Error())
 	}
 	if opts.Linter != "" {
-		PrepairContainerEnvSettings()
+		PrepareContainerEnvSettings()
 	}
 	if opts.Ide != "" {
-		if Contains(allCodes, strings.TrimSuffix(opts.Ide, EapSuffix)) || strings.HasPrefix(opts.Ide, "https://") {
+		if Contains(AllSupportedCodes, strings.TrimSuffix(opts.Ide, eapSuffix)) || strings.HasPrefix(opts.Ide, "https://") {
 			printProcess(func(spinner *pterm.SpinnerPrinter) {
 				if spinner != nil {
 					spinner.ShowTimer = false // We will update interactive spinner
@@ -252,6 +210,9 @@ func prepareHost(opts *QodanaOptions) {
 			}, fmt.Sprintf("Downloading %s", opts.Ide), fmt.Sprintf("downloading IDE distribution to %s", opts.getQodanaSystemDir()))
 		}
 		prepareLocalIdeSettings(opts)
+	}
+	if opts.RequiresToken() {
+		opts.ValidateToken(false)
 	}
 }
 
@@ -298,7 +259,7 @@ func RunAnalysis(ctx context.Context, options *QodanaOptions) int {
 
 	var exitCode int
 
-	if options.FullHistory && isGitInstalled() {
+	if options.FullHistory && isInstalled("git") {
 		remoteUrl := gitRemoteUrl(options.ProjectDir)
 		branch := gitBranch(options.ProjectDir)
 		if remoteUrl == "" && branch == "" {
@@ -341,7 +302,7 @@ func RunAnalysis(ctx context.Context, options *QodanaOptions) int {
 		if err != nil {
 			log.Fatal(err)
 		}
-	} else if options.Commit != "" && isGitInstalled() {
+	} else if options.Commit != "" && isInstalled("git") {
 		options.GitReset = false
 		err := gitReset(options.ProjectDir, options.Commit)
 		if err != nil {
@@ -414,7 +375,8 @@ func followLinter(client *client.Client, containerName string, progress *pterm.S
 			}
 			if strings.Contains(line, "Report is successfully uploaded to ") {
 				reportUrl := strings.TrimPrefix(line, "Report is successfully uploaded to ")
-				saveReportUrl(resultsDir, reportUrl)
+				cloud.SaveReportFile(resultsDir, reportUrl) // TODO: stop after 2023.3 CLI release
+				continue
 			}
 			printLinterLog(line)
 		}
@@ -424,34 +386,6 @@ func followLinter(client *client.Client, containerName string, progress *pterm.S
 			}
 			return
 		}
-	}
-}
-
-// getReportUrl get Qodana Cloud report URL from the given qodana.sarif.json
-func getReportUrl(resultsDir string) string {
-	filePath := filepath.Join(resultsDir, qodanaReportUrlFile)
-	log.Debugf("Looking for report URL in %s", filePath)
-	if _, err := os.Stat(filePath); err == nil {
-		url, err := os.ReadFile(filePath)
-		log.Debugf("Found report URL: %s", string(url))
-		if err != nil {
-			log.Debug(err)
-			return ""
-		}
-		return string(url)
-	}
-	return ""
-}
-
-// saveReportUrl saves the report URL to the resultsDir/qodana.cloud file.
-func saveReportUrl(resultsDir, reportUrl string) {
-	if reportUrl == "" {
-		return
-	}
-	resultsDir = filepath.Join(resultsDir, "qodana.cloud")
-	err := os.WriteFile(resultsDir, []byte(reportUrl), 0o644)
-	if err != nil {
-		log.Errorf("Could not save the report URL to the results directory: %s", err)
 	}
 }
 
@@ -475,16 +409,16 @@ const (
 // saveReport saves web files to expect, and generates json.
 func saveReport(opts *QodanaOptions) {
 	if IsContainer() {
-		reportConverter := filepath.Join(Prod.IdeBin(), "intellij-report-converter.jar")
+		reportConverter := filepath.Join(prod.IdeBin(), "intellij-report-converter.jar")
 		if _, err := os.Stat(reportConverter); os.IsNotExist(err) {
 			log.Fatal("Not able to save the report: report-converter is missing")
 			return
 		}
 		log.Println("Generating HTML report ...")
-		if res := RunCmd("", QuoteForWindows(Prod.JbrJava()), "-jar", QuoteForWindows(reportConverter), "-s", QuoteForWindows(opts.ProjectDir), "-d", QuoteForWindows(opts.ResultsDir), "-o", QuoteForWindows(opts.ReportResultsPath()), "-n", "result-allProblems.json", "-f"); res > 0 {
+		if res := RunCmd("", QuoteForWindows(prod.jbrJava()), "-jar", QuoteForWindows(reportConverter), "-s", QuoteForWindows(opts.ProjectDir), "-d", QuoteForWindows(opts.ResultsDir), "-o", QuoteForWindows(opts.ReportResultsPath()), "-n", "result-allProblems.json", "-f"); res > 0 {
 			os.Exit(res)
 		}
-		if res := RunCmd("", "sh", "-c", fmt.Sprintf("cp -r %s/web/* ", Prod.Home)+opts.ReportDir); res > 0 {
+		if res := RunCmd("", "sh", "-c", fmt.Sprintf("cp -r %s/web/* ", prod.Home)+opts.ReportDir); res > 0 {
 			os.Exit(res)
 		}
 	}

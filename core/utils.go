@@ -41,6 +41,8 @@ func lower(s string) string {
 }
 
 // Contains checks if a string is in a given slice.
+//
+//goland:noinspection GoUnnecessarilyExportedIdentifiers
 func Contains(s []string, str string) bool {
 	for _, v := range s {
 		if v == str {
@@ -116,6 +118,22 @@ func getAzureJobUrl() string {
 	return ""
 }
 
+// getSpaceJobUrl returns the Space job URL.
+func getSpaceRemoteUrl() string {
+	if server := os.Getenv("JB_SPACE_API_URL"); server != "" {
+		return strings.Join([]string{
+			"ssh://git@git.",
+			server,
+			"/",
+			os.Getenv("JB_SPACE_PROJECT_KEY"),
+			"/",
+			os.Getenv("JB_SPACE_GIT_REPOSITORY_NAME"),
+			".git",
+		}, "")
+	}
+	return ""
+}
+
 // findProcess using gopsutil to find process by name.
 func findProcess(processName string) bool {
 	if IsContainer() {
@@ -154,8 +172,10 @@ func isProcess(find string) bool {
 	return false
 }
 
-// quoteIfSpace wraps in '"' if '`s`' Contains space.
-func quoteIfSpace(s string) string {
+// QuoteIfSpace wraps in '"' if '`s`' Contains space.
+//
+//goland:noinspection GoUnnecessarilyExportedIdentifiers
+func QuoteIfSpace(s string) string {
 	if strings.Contains(s, " ") {
 		return "\"" + s + "\""
 	} else {
@@ -164,6 +184,8 @@ func quoteIfSpace(s string) string {
 }
 
 // QuoteForWindows wraps in '"' if '`s`' contains space on windows.
+//
+//goland:noinspection GoUnnecessarilyExportedIdentifiers
 func QuoteForWindows(s string) string {
 	if //goland:noinspection GoBoolExpressions
 	strings.Contains(s, " ") && runtime.GOOS == "windows" {
@@ -227,6 +249,24 @@ func IsContainer() bool {
 	return os.Getenv(qodanaDockerEnv) != ""
 }
 
+// isInstalled checks if git is installed.
+func isInstalled(what string) bool {
+	help := ""
+	if what == "git" {
+		help = ", refer to https://git-scm.com/downloads for installing it"
+	}
+
+	_, err := exec.LookPath(what)
+	if err != nil {
+		WarningMessage(
+			"Unable to find %s"+help,
+			what,
+		)
+		return false
+	}
+	return true
+}
+
 // createUser will make dynamic uid as a valid user `idea`, needed for gradle cache.
 func createUser(fn string) {
 	if //goland:noinspection ALL
@@ -249,7 +289,7 @@ func createUser(fn string) {
 	}
 }
 
-func DownloadFile(filepath string, url string, spinner *pterm.SpinnerPrinter) error {
+func downloadFile(filepath string, url string, spinner *pterm.SpinnerPrinter) error {
 	response, err := http.Head(url)
 	if err != nil {
 		return err

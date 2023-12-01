@@ -1,6 +1,7 @@
 package core
 
 import (
+	"github.com/JetBrains/qodana-cli/v2023/cloud"
 	"os"
 	"path/filepath"
 	"reflect"
@@ -8,7 +9,6 @@ import (
 )
 
 func TestFetchPublisher(t *testing.T) {
-
 	tempDir, err := os.MkdirTemp("", "test")
 	if err != nil {
 		t.Fatal(err)
@@ -20,12 +20,11 @@ func TestFetchPublisher(t *testing.T) {
 			t.Fatal(err)
 		}
 	}(tempDir) // clean up
+	path := filepath.Join(tempDir, "publisher.jar")
+	fetchPublisher(path)
 
-	fetchPublisher(tempDir)
-
-	expectedPath := filepath.Join(tempDir, "publisher.jar")
-	if _, err := os.Stat(expectedPath); os.IsNotExist(err) {
-		t.Fatalf("fetchPublisher() failed, expected %v to exists, got error: %v", expectedPath, err)
+	if _, err := os.Stat(path); os.IsNotExist(err) {
+		t.Fatalf("fetchPublisher() failed, expected %v to exists, got error: %v", path, err)
 	}
 }
 
@@ -43,17 +42,17 @@ func TestGetPublisherArgs(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	err = os.Setenv(QodanaEndpoint, "test-endpoint")
+	err = os.Setenv(cloud.QodanaEndpoint, "test-endpoint")
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	// Call the function being tested
-	publisherArgs := getPublisherArgs(Prod.JbrJava(), "test-publisher.jar", opts, "test-token", "test-endpoint")
+	publisherArgs := getPublisherArgs(prod.jbrJava(), "test-publisher.jar", opts, "test-token", "test-endpoint")
 
 	// Assert that the expected arguments are present
 	expectedArgs := []string{
-		Prod.JbrJava(),
+		prod.jbrJava(),
 		"-jar",
 		"test-publisher.jar",
 		"--analysis-id", "test-analysis-id",

@@ -19,7 +19,7 @@ package core
 import (
 	"fmt"
 	"github.com/JetBrains/qodana-cli/v2023/cloud"
-	"log"
+	log "github.com/sirupsen/logrus"
 	"os"
 	"path/filepath"
 	"sort"
@@ -58,13 +58,15 @@ func getPropertiesMap(
 		"-Didea.headless.statistics.salt":        deviceIdSalt[1],
 		"-Didea.platform.prefix":                 "Qodana",
 		"-Didea.parent.prefix":                   prefix,
-		"-Didea.config.path":                     quoteIfSpace(confDir),
-		"-Didea.system.path":                     quoteIfSpace(systemDir),
-		"-Didea.plugins.path":                    quoteIfSpace(pluginsDir),
-		"-Didea.application.info.value":          quoteIfSpace(appInfoXml),
-		"-Didea.log.path":                        quoteIfSpace(logDir),
+		"-Didea.config.path":                     QuoteIfSpace(confDir),
+		"-Didea.system.path":                     QuoteIfSpace(systemDir),
+		"-Didea.plugins.path":                    QuoteIfSpace(pluginsDir),
+		"-Didea.application.info.value":          QuoteIfSpace(appInfoXml),
+		"-Didea.log.path":                        QuoteIfSpace(logDir),
 		"-Didea.qodana.thirdpartyplugins.accept": "true",
-		"-Dqodana.automation.guid":               quoteIfSpace(analysisId),
+		"-Dqodana.automation.guid":               QuoteIfSpace(analysisId),
+		"-Dide.warmup.use.predicates":            "false",
+		"-Dvcs.log.index.enable":                 "false",
 
 		"-XX:SoftRefLRUPolicyMSPerMB": "50",
 		"-XX:MaxJavaStackTraceDepth":  "10000",
@@ -75,7 +77,7 @@ func getPropertiesMap(
 		"-Didea.job.launcher.without.timeout": "true",
 	}
 	if coverageDir != "" {
-		properties["-Dqodana.coverage.input"] = quoteIfSpace(coverageDir)
+		properties["-Dqodana.coverage.input"] = QuoteIfSpace(coverageDir)
 	}
 	if eap {
 		properties["-Deap.login.enabled"] = "false"
@@ -88,6 +90,10 @@ func getPropertiesMap(
 		properties["-Dqodana.starter.profile.resource"] = "qodana-js.starter.yaml"
 	}
 	if prefix == "Rider" {
+		if prod.is233orNewer() {
+			properties["-Dqodana.recommended.profile.resource"] = "qodana-dotnet.recommended.yaml"
+			properties["-Dqodana.starter.profile.resource"] = "qodana-dotnet.starter.yaml"
+		}
 		properties["-Didea.class.before.app"] = "com.jetbrains.rider.protocol.EarlyBackendStarter"
 		properties["-Drider.collect.full.container.statistics"] = "true"
 		properties["-Drider.suppress.std.redirect"] = "true"
@@ -102,22 +108,30 @@ func getPropertiesMap(
 		if dotNet.Platform != "" {
 			properties["-Dqodana.net.platform"] = dotNet.Platform
 		}
+		if dotNet.Frameworks != "" {
+			properties["-Dqodana.net.targetFrameworks"] = dotNet.Frameworks
+		} else if IsContainer() {
+			// We don't want to scan .NET Framework projects in Linux containers
+			properties["-Dqodana.net.targetFrameworks"] = "!net48;!net472;!net471;!net47;!net462;!net461;!net46;!net452;!net451;!net45;!net403;!net40;!net35;!net20;!net11"
+		}
 	}
+
+	log.Debugf("properties: %v", properties)
 
 	return properties
 }
 
-// GetProperties writes key=value `props` to file `f` having later key occurrence win
-func GetProperties(opts *QodanaOptions, yamlProps map[string]string, dotNetOptions DotNet, plugins []string) []string {
+// getProperties writes key=value `props` to file `f` having later key occurrence win
+func getProperties(opts *QodanaOptions, yamlProps map[string]string, dotNetOptions DotNet, plugins []string) []string {
 	lines := []string{
-		fmt.Sprintf("-Xlog:gc*:%s", quoteIfSpace(filepath.Join(opts.logDirPath(), "gc.log"))),
+		fmt.Sprintf("-Xlog:gc*:%s", QuoteIfSpace(filepath.Join(opts.logDirPath(), "gc.log"))),
 		`-Djdk.http.auth.tunneling.disabledSchemes=""`,
 		"-XX:+HeapDumpOnOutOfMemoryError",
 		"-XX:+UseG1GC",
 		"-XX:-OmitStackTraceInFastThrow",
 		"-ea",
 	}
-	treatAsRelease := os.Getenv(QodanaTreatAsRelease)
+	treatAsRelease := os.Getenv(qodanaTreatAsRelease)
 	if treatAsRelease == "true" {
 		lines = append(lines, "-Deap.require.license=release")
 	}
@@ -130,18 +144,18 @@ func GetProperties(opts *QodanaOptions, yamlProps map[string]string, dotNetOptio
 	}
 
 	props := getPropertiesMap(
-		Prod.parentPrefix(),
-		Prod.EAP,
-		opts.appInfoXmlPath(Prod.IdeBin()),
-		filepath.Join(opts.CacheDir, "idea", Prod.getVersionBranch()),
+		prod.parentPrefix(),
+		prod.EAP,
+		opts.appInfoXmlPath(prod.IdeBin()),
+		filepath.Join(opts.CacheDir, "idea", prod.getVersionBranch()),
 		opts.logDirPath(),
 		opts.ConfDirPath(),
-		filepath.Join(opts.CacheDir, "plugins", Prod.getVersionBranch()),
+		filepath.Join(opts.CacheDir, "plugins", prod.getVersionBranch()),
 		dotNetOptions,
 		getDeviceIdSalt(),
 		plugins,
 		opts.AnalysisId,
-		opts.CoverageDir,
+		opts.CoverageDirPath(),
 	)
 	for k, v := range yamlProps { // qodana.yaml – overrides vmoptions
 		if !strings.HasPrefix(k, "-") {
@@ -167,12 +181,12 @@ func GetProperties(opts *QodanaOptions, yamlProps map[string]string, dotNetOptio
 
 // writeProperties writes the given key=value `props` to file `f` (sets the environment variable)
 func writeProperties(opts *QodanaOptions) { // opts.confDirPath(Prod.Version)  opts.vmOptionsPath(Prod.Version)
-	properties := GetProperties(opts, Config.Properties, Config.DotNet, getPluginIds(Config.Plugins))
+	properties := getProperties(opts, qConfig.Properties, qConfig.DotNet, getPluginIds(qConfig.Plugins))
 	err := os.WriteFile(opts.vmOptionsPath(), []byte(strings.Join(properties, "\n")), 0o644)
 	if err != nil {
 		log.Fatal(err)
 	}
-	err = os.Setenv(Prod.vmOptionsEnv(), opts.vmOptionsPath())
+	err = os.Setenv(prod.vmOptionsEnv(), opts.vmOptionsPath())
 	if err != nil {
 		log.Fatal(err)
 	}

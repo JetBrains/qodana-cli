@@ -2,7 +2,7 @@
 
 docker run --rm -v `pwd`:/qodana -w /qodana \
     -e DEVICEID=200820300000000-0000-0000-0000-000000000001 \
-    -v $GOPATH:/go \
+    -v $GOPATH:/go -e CGO_ENABLED=0 \
     golang:1.21 go build -o qodana
 
 docker run -it --rm \
@@ -12,4 +12,4 @@ docker run -it --rm \
     -v `pwd`:/data/project \
     -v `pwd`/qodana:/opt/idea/bin/qodana \
     -p 8080:8080 \
-    registry.jetbrains.team/p/sa/containers/qodana-go scan
+    registry.jetbrains.team/p/sa/containers/qodana-go

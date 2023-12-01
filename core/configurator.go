@@ -30,17 +30,16 @@ import (
 )
 
 const (
-	QodanaSarifName     = "qodana.sarif.json"
-	qodanaReportUrlFile = "qodana.cloud"
-	configName          = "qodana"
-	version             = "2023.2"
-	eap                 = "-eap"
+	QodanaSarifName = "qodana.sarif.json"
+	configName      = "qodana"
+	version         = "2023.2"
+	eap             = "-eap"
 )
 
 // langsLinters is a map of languages to linters.
 var langsLinters = map[string][]string{
-	"Java":              {Image(QDJVMC), Image(QDJVM), Image(QDAND)},
-	"Kotlin":            {Image(QDJVMC), Image(QDJVM), Image(QDAND)},
+	"Java":              {Image(QDJVMC), Image(QDJVM), Image(QDANDC)},
+	"Kotlin":            {Image(QDJVMC), Image(QDJVM), Image(QDANDC)},
 	"PHP":               {Image(QDPHP)},
 	"Python":            {Image(QDPYC), Image(QDPY)},
 	"JavaScript":        {Image(QDJS)},
@@ -51,35 +50,24 @@ var langsLinters = map[string][]string{
 	"Visual Basic .NET": {Image(QDNET)},
 }
 
-// allCodes is a list of all supported linters' product codes.
-var allCodes = []string{
-	QDJVMC,
-	QDJVM,
-	QDAND,
-	QDPHP,
-	QDPYC,
-	QDPY,
-	QDJS,
-	QDGO,
-	QDNET,
-	QDRST,
-	QDRUBY,
+var allSupportedPaidCodes = []string{QDJVM, QDPHP, QDPY, QDJS, QDGO, QDNET}
+var allSupportedFreeCodes = []string{QDJVMC, QDPYC}
+
+// AllSupportedCodes is a list of all supported Qodana linters product codes
+var AllSupportedCodes = append(allSupportedFreeCodes, allSupportedPaidCodes...)
+
+func allImages(codes []string) []string {
+	var images []string
+	for _, code := range codes {
+		images = append(images, Image(code))
+	}
+	return images
 }
 
+var allSupportedFreeImages = allImages(allSupportedFreeCodes)
+
 // AllImages is a list of all supported linters.
-var AllImages = []string{
-	Image(QDJVMC),
-	Image(QDJVM),
-	Image(QDAND),
-	Image(QDPHP),
-	Image(QDPY),
-	Image(QDPYC),
-	Image(QDJS),
-	Image(QDGO),
-	Image(QDNET),
-	//Image(QDRST),
-	//Image(QDRUBY),
-}
+var AllImages = append(allSupportedFreeImages, allImages(allSupportedPaidCodes)...)
 
 // ignoredDirectories is a list of directories that should be ignored by the configurator.
 var ignoredDirectories = []string{

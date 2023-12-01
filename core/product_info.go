@@ -24,6 +24,7 @@ import (
 	"runtime"
 	"strconv"
 	"strings"
+	"time"
 
 	log "github.com/sirupsen/logrus"
 )
@@ -65,6 +66,7 @@ type appInfoNames struct {
 	Fullname string   `xml:"fullname,attr"`
 }
 
+//goland:noinspection GoUnnecessarilyExportedIdentifiers
 func (p *product) IdeBin() string {
 	return filepath.Join(p.Home, "bin")
 }
@@ -73,15 +75,21 @@ func (p *product) javaHome() string {
 	return filepath.Join(p.Home, "jbr")
 }
 
-func (p *product) JbrJava() string {
-	switch runtime.GOOS {
-	case "darwin":
-		return filepath.Join(p.javaHome(), "Contents", "Home", "bin", "java")
-	case "windows":
-		return filepath.Join(p.javaHome(), "bin", "java.exe")
-	default:
-		return filepath.Join(p.javaHome(), "bin", "java")
+func (p *product) jbrJava() string {
+	if p.Home != "" {
+		switch runtime.GOOS {
+		case "darwin":
+			return filepath.Join(p.javaHome(), "Contents", "Home", "bin", "java")
+		case "windows":
+			return filepath.Join(p.javaHome(), "bin", "java.exe")
+		default:
+			return filepath.Join(p.javaHome(), "bin", "java")
+		}
+	} else if isInstalled("java") {
+		return "java"
 	}
+	log.Warn("Java is not installed")
+	return ""
 }
 
 func (p *product) vmOptionsEnv() string {
@@ -130,7 +138,7 @@ func (p *product) parentPrefix() string {
 
 var CommunityCodes = []string{QDJVMC, QDPYC, QDANDC}
 
-func (p *product) IsCommunity() bool {
+func (p *product) isCommunity() bool {
 	if p.Code == "" {
 		return true
 	}
@@ -196,100 +204,101 @@ func (p *product) is233orNewer() bool {
 	return number >= 233
 }
 
-var Prod product
+var prod product
 
 // guessProduct fills all product fields.
 func guessProduct(opts *QodanaOptions) {
-	Prod.Home = opts.Ide
+	prod.Home = opts.Ide
 	if //goland:noinspection GoBoolExpressions
 	runtime.GOOS == "darwin" {
-		Prod.Home = filepath.Join(Prod.Home, "Contents")
+		prod.Home = filepath.Join(prod.Home, "Contents")
 	}
-	if Prod.Home == "" {
+	if prod.Home == "" {
 		if home, ok := os.LookupEnv(QodanaDistEnv); ok {
-			Prod.Home = home
+			prod.Home = home
 		} else if IsContainer() {
-			Prod.Home = "/opt/idea"
+			prod.Home = "/opt/idea"
 		} else { // guess from the executable location
 			ex, err := os.Executable()
 			if err != nil {
 				log.Fatal(err)
 			}
-			Prod.Home = filepath.Dir(filepath.Dir(ex))
+			prod.Home = filepath.Dir(filepath.Dir(ex))
 		}
 	}
 
-	if Prod.BaseScriptName == "" {
+	if prod.BaseScriptName == "" {
 		if //goland:noinspection GoBoolExpressions
 		runtime.GOOS == "darwin" {
-			Prod.BaseScriptName = findIde(filepath.Join(Prod.Home, "MacOS"))
+			prod.BaseScriptName = findIde(filepath.Join(prod.Home, "MacOS"))
 		} else {
-			Prod.BaseScriptName = findIde(Prod.IdeBin())
+			prod.BaseScriptName = findIde(prod.IdeBin())
 		}
-		if Prod.BaseScriptName == "" {
+		if prod.BaseScriptName == "" {
 			WarningMessage(
 				"Supported IDE not found in %s, you can declare the path to IDE home via %s variable",
-				Prod.Home,
+				prod.Home,
 				QodanaDistEnv,
 			)
 			return
 		}
 	}
 
-	if Prod.IdeScript == "" {
+	if prod.IdeScript == "" {
 		if //goland:noinspection ALL
 		runtime.GOOS == "darwin" {
-			Prod.IdeScript = filepath.Join(Prod.Home, "MacOS", Prod.BaseScriptName)
+			prod.IdeScript = filepath.Join(prod.Home, "MacOS", prod.BaseScriptName)
 		} else {
-			Prod.IdeScript = filepath.Join(Prod.IdeBin(), fmt.Sprintf("%s%s", Prod.BaseScriptName, getScriptSuffix()))
+			prod.IdeScript = filepath.Join(prod.IdeBin(), fmt.Sprintf("%s%s", prod.BaseScriptName, getScriptSuffix()))
 		}
 	}
 
-	treatAsRelease := os.Getenv(QodanaTreatAsRelease)
-	if _, err := os.Stat(filepath.Join(Prod.IdeBin(), qodanaAppInfoFilename)); err == nil && IsContainer() {
-		appInfoContents := readAppInfoXml(Prod.Home)
-		Prod.Version = appInfoContents.Version.Major + "." + appInfoContents.Version.Minor
-		Prod.Build = strings.Split(appInfoContents.Build.Number, "-")[1]
-		Prod.Code = strings.Split(appInfoContents.Build.Number, "-")[0]
-		Prod.Name = appInfoContents.Names.Fullname
-		Prod.EAP = appInfoContents.Version.Eap == "true" && !(treatAsRelease == "true")
+	treatAsRelease := os.Getenv(qodanaTreatAsRelease)
+	if _, err := os.Stat(filepath.Join(prod.IdeBin(), qodanaAppInfoFilename)); err == nil && IsContainer() {
+		appInfoContents := readAppInfoXml(prod.Home)
+		prod.Version = appInfoContents.Version.Major + "." + appInfoContents.Version.Minor
+		prod.Build = strings.Split(appInfoContents.Build.Number, "-")[1]
+		prod.Code = strings.Split(appInfoContents.Build.Number, "-")[0]
+		prod.Name = appInfoContents.Names.Fullname
+		prod.EAP = appInfoContents.Version.Eap == "true" && !(treatAsRelease == "true")
 
-	} else if productInfo := readIdeProductInfo(Prod.Home); productInfo != nil {
+	} else if productInfo := readIdeProductInfo(prod.Home); productInfo != nil {
 		if v, ok := productInfo["version"]; ok {
-			Prod.Version = v.(string)
+			prod.Version = v.(string)
 		} else {
-			Prod.Version = version
+			prod.Version = version
 		}
 
 		if v, ok := productInfo["buildNumber"]; ok {
-			Prod.Build = v.(string)
+			prod.Build = v.(string)
 		} else {
-			Prod.Build = version
+			prod.Build = version
 		}
 
 		if v, ok := productInfo["productCode"]; ok {
-			Prod.Code = toQodanaCode(v.(string))
-			Prod.Name = Prod.getProductNameFromCode()
+			prod.Code = toQodanaCode(v.(string))
+			prod.Name = prod.getProductNameFromCode()
 		} else {
-			Prod.Code = scriptToProductCode(Prod.BaseScriptName)
+			prod.Code = scriptToProductCode(prod.BaseScriptName)
 		}
 
 		if v, ok := productInfo["versionSuffix"]; ok {
-			Prod.EAP = v.(string) == "EAP"
+			prod.EAP = v.(string) == "EAP"
 		} else {
-			Prod.EAP = false
+			prod.EAP = false
 		}
 		if treatAsRelease == "true" {
-			Prod.EAP = true
+			prod.EAP = true
 		}
 	}
 
 	if !IsContainer() {
-		remove := fmt.Sprintf("-Didea.platform.prefix=%s", Prod.parentPrefix())
-		Prod.IdeScript = patchIdeScript(Prod, remove, opts.ConfDirPath())
+		remove := fmt.Sprintf("-Didea.platform.prefix=%s", prod.parentPrefix())
+		prod.IdeScript = patchIdeScript(prod, remove, opts.ConfDirPath())
 	}
 
-	log.Debug(Prod)
+	log.Debug(prod)
+	setEnv(QodanaDistEnv, prod.Home)
 }
 
 // temporary solution to fix runs in the native mode
@@ -328,17 +337,22 @@ func patchIdeScript(product product, strToRemove string, confDirPath string) str
 	return newFilePath
 }
 
+func getDateNow() string {
+	return time.Now().UTC().Format("200601021504")
+}
+
 func writeAppInfo(path string) {
 	if _, err := os.Stat(path); err == nil && IsContainer() {
 		return
 	}
 	log.Printf("Writing app info to %s", path)
 	appInfoContents := []byte(appInfoXml(
-		Prod.Version,
-		Prod.EAP,
-		Prod.Build,
-		Prod.Code,
-		Prod.Name,
+		prod.Version,
+		prod.EAP,
+		getDateNow(),
+		prod.Build,
+		prod.Code,
+		prod.Name,
 	))
 	err := os.WriteFile(path, appInfoContents, 0o777)
 	if err != nil {

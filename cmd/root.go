@@ -17,6 +17,7 @@
 package cmd
 
 import (
+	"fmt"
 	"github.com/JetBrains/qodana-cli/v2023/core"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
@@ -34,9 +35,26 @@ func Execute() {
 		core.DisableColor()
 	}
 
+	var cmdFound bool
+	cmd := rootCommand.Commands()
+	for _, a := range cmd {
+		for _, b := range os.Args[1:] {
+			if a.Name() == b {
+				cmdFound = true
+				break
+			}
+		}
+	}
+	if !cmdFound {
+		args := append([]string{"scan"}, os.Args[1:]...)
+		rootCommand.SetArgs(args)
+	}
 	if err := rootCommand.Execute(); err != nil {
 		core.CheckForUpdates(core.Version)
-		log.Fatalf("error running command: %s", err)
+		_, err = fmt.Fprintf(os.Stderr, "error running command: %s\n", err)
+		if err != nil {
+			return
+		}
 		os.Exit(1)
 	}
 
@@ -82,6 +100,7 @@ func init() {
 		newInitCommand(),
 		newScanCommand(),
 		newShowCommand(),
+		newSendCommand(),
 		newPullCommand(),
 		newViewCommand(),
 		newContributorsCommand(),
