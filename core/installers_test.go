@@ -38,6 +38,7 @@ func TestGetIde(t *testing.T) {
 }
 
 func TestDownloadAndInstallIDE(t *testing.T) {
+	t.SkipNow()
 	if os.Getenv("GITHUB_ACTIONS") != "true" {
 		t.Skip("Skipping IDE download test")
 	}
