@@ -360,10 +360,14 @@ func TestAllCommandsWithContainer(t *testing.T) {
 func TestScanWithIde(t *testing.T) {
 	log.SetLevel(log.DebugLevel)
 	ide := "QDNET"
-	token := os.Getenv("QODANA_TOKEN")
+	token := os.Getenv("QODANA_LICENSE_ONLY_TOKEN")
 	if //goland:noinspection GoBoolExpressions
 	token == "" {
 		t.Skip("set your token here to run the test")
+	}
+	if //goland:noinspection GoBoolExpressions
+	runtime.GOOS == "darwin" {
+		t.Skip("Mac OS not supported in native")
 	}
 	projectPath := createNativeProject(t, "qodana_scan_rd")
 	resultsPath := filepath.Join(projectPath, "results")

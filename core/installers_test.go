@@ -37,6 +37,10 @@ func TestGetIde(t *testing.T) {
 }
 
 func TestDownloadAndInstallIDE(t *testing.T) {
+	if //goland:noinspection GoBoolExpressions
+	runtime.GOOS == "darwin" {
+		t.Skip("Mac OS not supported in native")
+	}
 	ides := []string{"QDNET-EAP"} // QDPY requires exe on Windows, QDNET - does not
 	for _, ide := range ides {
 		DownloadAndInstallIDE(ide, t)
