@@ -64,7 +64,7 @@ func getPropertiesMap(
 		"-Didea.application.info.value":          quoteIfSpace(appInfoXml),
 		"-Didea.log.path":                        quoteIfSpace(logDir),
 		"-Didea.qodana.thirdpartyplugins.accept": "true",
-		"-Dqodana.automation.guid":               QuoteIfSpace(analysisId),
+		"-Dqodana.automation.guid":               quoteIfSpace(analysisId),
 		"-Dide.warmup.use.predicates":            "false",
 		"-Dvcs.log.index.enable":                 "false",
 

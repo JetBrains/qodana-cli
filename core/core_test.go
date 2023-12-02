@@ -1136,7 +1136,7 @@ func propertiesFixture(enableStats bool, additionalProperties []string) []string
 		"-Dfus.internal.reduce.initial.delay=true",
 		"-Dide.warmup.use.predicates=false",
 		"-Dvcs.log.index.enable=false",
-		fmt.Sprintf("-Didea.application.info.value=%s", filepath.Join(os.TempDir(), "entrypoint", "QodanaAppInfo.xml")),
+		fmt.Sprintf("-Didea.application.info.value=%s", filepath.Join(Prod.IdeBin(), "QodanaAppInfo.xml")),
 		"-Didea.class.before.app=com.jetbrains.rider.protocol.EarlyBackendStarter",
 		fmt.Sprintf("-Didea.config.path=%s", filepath.Join(os.TempDir(), "entrypoint")),
 		fmt.Sprintf("-Didea.headless.enable.statistics=%t", enableStats),
@@ -1190,9 +1190,9 @@ func Test_Properties(t *testing.T) {
 	opts.CoverageDir = "/data/coverage"
 	opts.AnalysisId = "FAKE"
 
-	prod.BaseScriptName = "rider"
-	prod.Code = "QDNET"
-	prod.Version = "2023.3"
+	Prod.BaseScriptName = "rider"
+	Prod.Code = "QDNET"
+	Prod.Version = "2023.3"
 
 	err := os.Setenv(QodanaDistEnv, opts.ProjectDir)
 	if err != nil {
@@ -1286,14 +1286,14 @@ func Test_Properties(t *testing.T) {
 				t.Fatal(err)
 			}
 			opts.Property = tc.cliProperties
-			qConfig = getQodanaYaml(opts.ProjectDir)
+			qConfig := GetQodanaYaml(opts.ProjectDir)
 			if tc.isContainer {
 				err = os.Setenv(qodanaDockerEnv, "true")
 				if err != nil {
 					t.Fatal(err)
 				}
 			}
-			actual := getProperties(opts, qConfig.Properties, qConfig.DotNet, []string{})
+			actual := GetProperties(opts, qConfig.Properties, qConfig.DotNet, []string{})
 			if tc.isContainer {
 				err = os.Unsetenv(qodanaDockerEnv)
 				if err != nil {

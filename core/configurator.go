@@ -53,9 +53,6 @@ var langsLinters = map[string][]string{
 var allSupportedPaidCodes = []string{QDJVM, QDPHP, QDPY, QDJS, QDGO, QDNET}
 var allSupportedFreeCodes = []string{QDJVMC, QDPYC}
 
-// AllSupportedCodes is a list of all supported Qodana linters product codes
-var AllSupportedCodes = append(allSupportedFreeCodes, allSupportedPaidCodes...)
-
 func allImages(codes []string) []string {
 	var images []string
 	for _, code := range codes {
