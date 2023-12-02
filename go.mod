@@ -23,6 +23,8 @@ require (
 	gopkg.in/yaml.v3 v3.0.1
 )
 
+require golang.org/x/exp v0.0.0-20220909182711-5c715a9e8561
+
 require (
 	atomicgo.dev/cursor v0.2.0 // indirect
 	atomicgo.dev/keyboard v0.2.9 // indirect

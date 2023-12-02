@@ -1,5 +1,5 @@
 version: "1.0"
-linter: jetbrains/qodana-go:latest
+linter: registry.jetbrains.team/p/sa/containers/qodana-go:latest
 include:
   - name: CheckDependencyLicenses
 licenseRules:

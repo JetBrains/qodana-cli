@@ -24,7 +24,6 @@ import (
 	"runtime"
 	"strconv"
 	"strings"
-	"time"
 
 	log "github.com/sirupsen/logrus"
 )
