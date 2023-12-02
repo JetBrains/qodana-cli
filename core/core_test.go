@@ -583,6 +583,11 @@ func Test_setDeviceID(t *testing.T) {
 	if !reflect.DeepEqual(actualDeviceIdSalt, expectedDeviceIdSalt) {
 		t.Errorf("Case: %s: deviceIdSalt got %v, expected %v", tc, actualDeviceIdSalt, expectedDeviceIdSalt)
 	}
+
+	err = os.RemoveAll(tmpDir)
+	if err != nil {
+		return
+	}
 }
 
 func Test_isProcess(t *testing.T) {

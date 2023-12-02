@@ -84,6 +84,7 @@ func runQodanaContainer(ctx context.Context, options *QodanaOptions) int {
 	progress, _ := startQodanaSpinner(scanStages[0])
 
 	dockerConfig := getDockerOptions(options)
+	log.Debugf("docker command to run: %s", generateDebugDockerRunCommand(dockerConfig))
 
 	updateText(progress, scanStages[1])
 
@@ -357,10 +358,24 @@ func getDockerOptions(opts *QodanaOptions) *types.ContainerCreateConfig {
 	log.Debugf("image: %s", opts.Linter)
 	log.Debugf("container name: %s", containerName)
 	log.Debugf("user: %s", opts.User)
-	log.Debugf("env: %v", opts.Env)
 	log.Debugf("volumes: %v", volumes)
 	log.Debugf("cmd: %v", cmdOpts)
-	log.Debugf("docker command to debug: docker run --rm -it -u %s -v %s:/data/cache -v %s:/data/project -v %s:/data/results %s %s", opts.User, cachePath, projectPath, resultsPath, opts.Linter, strings.Join(cmdOpts, " "))
+
+	var hostConfig *container.HostConfig
+	if strings.Contains(opts.Linter, "dotnet") {
+		hostConfig = &container.HostConfig{
+			AutoRemove:  os.Getenv(qodanaCliContainerKeep) == "",
+			Mounts:      volumes,
+			CapAdd:      []string{"SYS_PTRACE"},
+			SecurityOpt: []string{"seccomp=unconfined"},
+		}
+	} else {
+		hostConfig = &container.HostConfig{
+			AutoRemove: os.Getenv(qodanaCliContainerKeep) == "",
+			Mounts:     volumes,
+		}
+	}
+
 	return &types.ContainerCreateConfig{
 		Name: containerName,
 		Config: &container.Config{
@@ -372,11 +387,50 @@ func getDockerOptions(opts *QodanaOptions) *types.ContainerCreateConfig {
 			Env:          opts.Env,
 			User:         opts.User,
 		},
-		HostConfig: &container.HostConfig{
-			AutoRemove: os.Getenv(qodanaCliContainerKeep) == "",
-			Mounts:     volumes,
-		},
+		HostConfig: hostConfig,
 	}
+}
+
+func generateDebugDockerRunCommand(cfg *types.ContainerCreateConfig) string {
+	var cmdBuilder strings.Builder
+	cmdBuilder.WriteString("docker run ")
+	if cfg.HostConfig != nil && cfg.HostConfig.AutoRemove {
+		cmdBuilder.WriteString("--rm ")
+	}
+	if cfg.Config.AttachStdout {
+		cmdBuilder.WriteString("-a stdout ")
+	}
+	if cfg.Config.AttachStderr {
+		cmdBuilder.WriteString("-a stderr ")
+	}
+	if cfg.Config.Tty {
+		cmdBuilder.WriteString("-it ")
+	}
+	if cfg.Config.User != "" {
+		cmdBuilder.WriteString(fmt.Sprintf("-u %s ", cfg.Config.User))
+	}
+	for _, env := range cfg.Config.Env {
+		if !strings.Contains(env, QodanaToken) || strings.Contains(env, QodanaLicense) || strings.Contains(env, QodanaLicenseOnlyToken) {
+			cmdBuilder.WriteString(fmt.Sprintf("-e %s ", env))
+		}
+	}
+	if cfg.HostConfig != nil {
+		for _, m := range cfg.HostConfig.Mounts {
+			cmdBuilder.WriteString(fmt.Sprintf("-v %s:%s ", m.Source, m.Target))
+		}
+		for _, capAdd := range cfg.HostConfig.CapAdd {
+			cmdBuilder.WriteString(fmt.Sprintf("--cap-add %s ", capAdd))
+		}
+		for _, secOpt := range cfg.HostConfig.SecurityOpt {
+			cmdBuilder.WriteString(fmt.Sprintf("--security-opt %s ", secOpt))
+		}
+	}
+	cmdBuilder.WriteString(cfg.Config.Image + " ")
+	for _, arg := range cfg.Config.Cmd {
+		cmdBuilder.WriteString(fmt.Sprintf("%s ", arg))
+	}
+
+	return cmdBuilder.String()
 }
 
 // getContainerExitCode returns the exit code of the docker container.
