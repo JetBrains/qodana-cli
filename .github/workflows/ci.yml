@@ -15,9 +15,7 @@ jobs:
         with:
           go-version: '1.21'
       - name: golangci-lint
-        uses: golangci/golangci-lint-action@v3.7.0
-        with:
-          version: latest
+        uses: reviewdog/action-golangci-lint@v2
 
   test:
     runs-on: ${{ matrix.os }}
@@ -48,42 +46,82 @@ jobs:
           registry: registry.jetbrains.team
           username: ${{ secrets.SPACE_USERNAME }}
           password: ${{ secrets.SPACE_PASSWORD }}
-      - if: startsWith(matrix.os, 'windows')
-        name: Run Windows tests
-        run: go test -v ./...
-        env:
-          QODANA_LICENSE_ONLY_TOKEN: ${{ secrets.QODANA_LICENSE_ONLY_TOKEN }}
-      - if: startsWith(matrix.os, 'macos')
-        name: Run macOS tests
+      - name: Run tests (with coverage)
+        if: ${{ matrix.os != 'windows-latest' }}
         run: |
           set -euo pipefail
-          go test -json -v ./... 2>&1 | tee /tmp/gotest.log | gotestfmt
+          go test -json -v ./... -coverprofile coverage-${{ matrix.os }}.out -coverpkg=./... 2>&1 | tee /tmp/gotest.log | gotestfmt
         env:
           QODANA_LICENSE_ONLY_TOKEN: ${{ secrets.QODANA_LICENSE_ONLY_TOKEN }}
-      - if: startsWith(matrix.os, 'ubuntu')
-        name: Run Linux tests (with coverage)
+      - name: Run tests (with coverage) for Windows
+        if: ${{ matrix.os == 'windows-latest' }}
+        run: go test -json -v ./... -coverprofile coverage-${{ matrix.os }}.out -coverpkg=./...
+        env:
+          QODANA_LICENSE_ONLY_TOKEN: ${{ secrets.QODANA_LICENSE_ONLY_TOKEN }}
+      - name: Upload coverage artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: coverage-${{ matrix.os }}.out
+          path: coverage-${{ matrix.os }}.out
+
+  code-quality:
+    runs-on: ubuntu-latest
+    needs: [ lint, test ]
+    permissions:
+      checks: write
+      pull-requests: write
+      actions: read
+      contents: write
+      security-events: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: docker/login-action@v3
+        with:
+          registry: registry.jetbrains.team
+          username: ${{ secrets.SPACE_USERNAME }}
+          password: ${{ secrets.SPACE_PASSWORD }}
+      - name: Download all coverage artifacts
+        uses: actions/download-artifact@v3
+        with:
+          path: cov/
+      - name: Merge coverage profiles
         run: |
-          set -euo pipefail
+          go install -v github.com/hansboder/gocovmerge@latest
           mkdir -p .qodana/code-coverage
-          go test -json -v ./... -coverprofile .qodana/code-coverage/coverage.out -coverpkg=./... 2>&1 | tee /tmp/gotest.log | gotestfmt
-        env:
-          QODANA_LICENSE_ONLY_TOKEN: ${{ secrets.QODANA_LICENSE_ONLY_TOKEN }}
-      - if: startsWith(matrix.os, 'ubuntu')
-        uses: JetBrains/qodana-action@main
+          export PATH=$PATH:$(go env GOPATH)/bin
+          ls -R cov/
+          gocovmerge cov/coverage-macos-latest.out/coverage-macos-latest.out cov/coverage-ubuntu-latest.out/coverage-ubuntu-latest.out cov/coverage-windows-latest.out/coverage-windows-latest.out > .qodana/code-coverage/coverage.out
+      - uses: JetBrains/qodana-action@main
         env:
           QODANA_TOKEN: ${{ secrets.QODANA_TOKEN }}
         with:
           args: --fail-threshold,0
-      - if: startsWith(matrix.os, 'ubuntu')
-        uses: github/codeql-action/init@v2
+      - uses: github/codeql-action/init@v2
         with:
           languages: go
-      - if: startsWith(matrix.os, 'ubuntu')
-        uses: github/codeql-action/autobuild@v2
-      - if: startsWith(matrix.os, 'ubuntu')
-        uses: github/codeql-action/analyze@v2
-      - if: startsWith(matrix.os, 'ubuntu')
-        name: install chocolatey
+      - uses: github/codeql-action/autobuild@v2
+      - uses: github/codeql-action/analyze@v2
+
+  release-nightly:
+    runs-on: ubuntu-latest
+    needs: [ lint, test, code-quality ]
+    if: github.ref == 'refs/heads/233'
+    permissions:
+      checks: write
+      pull-requests: write
+      actions: read
+      contents: write
+      security-events: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-go@v4
+        with:
+          go-version: '1.21'
+      - name: install chocolatey
         run: |
           mkdir -p /opt/chocolatey
           wget -q -O - "https://github.com/chocolatey/choco/releases/download/${CHOCOLATEY_VERSION}/chocolatey.v${CHOCOLATEY_VERSION}.tar.gz" | tar -xz -C "/opt/chocolatey"
@@ -92,14 +130,12 @@ jobs:
           chmod +x /usr/local/bin/choco
         env:
           CHOCOLATEY_VERSION: 1.2.0
-      - if: startsWith(matrix.os, 'ubuntu')
-        uses: goreleaser/goreleaser-action@v5
+      - uses: goreleaser/goreleaser-action@v5
         with:
           distribution: goreleaser
           version: latest
           args: --snapshot --clean --debug
-      - if: startsWith(matrix.os, 'ubuntu') && github.ref == 'refs/heads/233'
-        run: |
+      - run: |
           cd dist
           gh release --repo JetBrains/qodana-cli delete nightly -y || true
           git push --delete origin nightly || true
