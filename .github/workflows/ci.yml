@@ -4,7 +4,6 @@ on:
   push:
     branches:
       - main
-      - 233
   pull_request:
 
 jobs:
@@ -78,7 +77,7 @@ jobs:
           distribution: goreleaser
           version: latest
           args: --snapshot --clean --debug
-      - if: startsWith(matrix.os, 'ubuntu') && github.ref == 'refs/heads/233'
+      - if: startsWith(matrix.os, 'ubuntu') && github.ref == 'refs/heads/main'
         run: |
           cd dist
           gh release --repo JetBrains/qodana-cli delete nightly -y || true
