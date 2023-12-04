@@ -22,6 +22,7 @@ import (
 	"github.com/JetBrains/qodana-cli/v2023/cloud"
 	"log"
 	"os"
+	"strings"
 )
 
 func SetupLicense(token string) {
@@ -58,14 +59,31 @@ func SetupLicense(token string) {
 	if err != nil {
 		log.Fatalf("License request: %v\n%s", err, cloud.GeneralLicenseErrorMessage)
 	}
-	licenseKey := cloud.ExtractLicenseKey(licenseDataResponse)
-	if licenseKey == "" {
+	licenseData := cloud.DeserializeLicenseData(licenseDataResponse)
+	if strings.ToLower(licenseData.LicensePlan) == "community" {
+		log.Fatalf("Your Qodana Cloud organization has Community license that doesn’t support \"%s\" linter, "+
+			"please try one of the community linters instead: %s or obtain Ultimate "+
+			"or Ultimate Plus license. Read more about licenses and plans at "+
+			"https://www.jetbrains.com/help/qodana/pricing.html#pricing-linters-licenses.",
+			Prod.getProductNameFromCode(),
+			allCommunityNames(),
+		)
+	}
+	if licenseData.LicenseKey == "" {
 		log.Fatalf("Response for license request should contain license key\n%s", string(licenseDataResponse))
 	}
-	err = os.Setenv(QodanaLicense, licenseKey)
+	err = os.Setenv(QodanaLicense, licenseData.LicenseKey)
 	if err != nil {
 		log.Fatal(err)
 	}
+}
+
+func allCommunityNames() string {
+	var nameList []string
+	for _, code := range allSupportedFreeCodes {
+		nameList = append(nameList, "\""+getProductNameFromCode(code)+"\"")
+	}
+	return strings.Join(nameList, ", ")
 }
 
 func SetupLicenseToken(opts *QodanaOptions) {
