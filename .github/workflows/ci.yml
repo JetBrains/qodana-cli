@@ -55,7 +55,7 @@ jobs:
           QODANA_LICENSE_ONLY_TOKEN: ${{ secrets.QODANA_LICENSE_ONLY_TOKEN }}
       - name: Run tests (with coverage) for Windows
         if: ${{ matrix.os == 'windows-latest' }}
-        run: go test -json -v ./... -coverprofile coverage-${{ matrix.os }}.out -coverpkg=./...
+        run: go test -v ./... -coverprofile coverage-${{ matrix.os }}.out -coverpkg=./...
         env:
           QODANA_LICENSE_ONLY_TOKEN: ${{ secrets.QODANA_LICENSE_ONLY_TOKEN }}
       - name: Upload coverage artifact
@@ -107,7 +107,6 @@ jobs:
   release-nightly:
     runs-on: ubuntu-latest
     needs: [ lint, test, code-quality ]
-    if: github.ref == 'refs/heads/2023.3'
     permissions:
       checks: write
       pull-requests: write
