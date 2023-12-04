@@ -107,7 +107,7 @@ jobs:
   release-nightly:
     runs-on: ubuntu-latest
     needs: [ lint, test, code-quality ]
-    if: github.ref == 'refs/heads/233'
+    if: github.ref == 'refs/heads/2023.3'
     permissions:
       checks: write
       pull-requests: write
