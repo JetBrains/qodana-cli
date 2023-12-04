@@ -32,6 +32,7 @@ com.intellij.beanValidation
 com.intellij.cdi
 com.intellij.configurationScript
 com.intellij.css
+com.intellij.dev
 com.intellij.freemarker
 com.intellij.gradle
 com.intellij.hibernate

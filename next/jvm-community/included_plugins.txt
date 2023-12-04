@@ -10,6 +10,7 @@ Lombook Plugin
 TestNG-J
 XPathView
 com.intellij.configurationScript
+com.intellij.dev
 com.intellij.gradle
 com.intellij.java
 com.intellij.java-i18n
