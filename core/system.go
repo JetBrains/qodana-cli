@@ -191,6 +191,12 @@ func noCache(h http.Handler) http.Handler {
 
 // prepareHost gets the current user, creates the necessary folders for the analysis.
 func prepareHost(opts *QodanaOptions) {
+	if opts.ClearCache {
+		err := os.RemoveAll(opts.CacheDir)
+		if err != nil {
+			log.Errorf("Could not clear local Qodana cache: %s", err)
+		}
+	}
 	if err := os.MkdirAll(opts.CacheDir, os.ModePerm); err != nil {
 		log.Fatal("couldn't create a directory ", err.Error())
 	}
