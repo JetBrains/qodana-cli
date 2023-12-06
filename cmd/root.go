@@ -25,9 +25,34 @@ import (
 	"os"
 )
 
+// isHelp checks if only help was requested.
+func isHelp(args []string) bool {
+	return len(args) == 2 && (args[1] == "--help" || args[1] == "-h")
+}
+
+// isCommandRequested checks if any command is requested.
+func isCommandRequested(commands []*cobra.Command, args []string) string {
+	for _, c := range commands {
+		for _, a := range args {
+			if c.Name() == a {
+				return c.Name()
+			}
+		}
+	}
+	return ""
+}
+
+// setDefaultCommandIfNeeded sets default scan command if no other command is requested.
+func setDefaultCommandIfNeeded(rootCmd *cobra.Command, args []string) {
+	if !(isHelp(args) || isCommandRequested(rootCmd.Commands(), args[1:]) != "") {
+		newArgs := append([]string{"scan"}, args[1:]...)
+		rootCmd.SetArgs(newArgs)
+	}
+}
+
 // Execute is a main CLI entrypoint: handles user interrupt, CLI start and everything else.
 func Execute() {
-	if os.Geteuid() == 0 && !core.IsContainer() {
+	if !core.IsContainer() && os.Geteuid() == 0 {
 		core.WarningMessage("Running the tool as root is dangerous: please run it as a regular user")
 	}
 	go core.CheckForUpdates(core.Version)
@@ -35,20 +60,7 @@ func Execute() {
 		core.DisableColor()
 	}
 
-	var cmdFound bool
-	cmd := rootCommand.Commands()
-	for _, a := range cmd {
-		for _, b := range os.Args[1:] {
-			if a.Name() == b {
-				cmdFound = true
-				break
-			}
-		}
-	}
-	if !cmdFound {
-		args := append([]string{"scan"}, os.Args[1:]...)
-		rootCommand.SetArgs(args)
-	}
+	setDefaultCommandIfNeeded(rootCommand, os.Args)
 	if err := rootCommand.Execute(); err != nil {
 		core.CheckForUpdates(core.Version)
 		_, err = fmt.Fprintf(os.Stderr, "error running command: %s\n", err)
