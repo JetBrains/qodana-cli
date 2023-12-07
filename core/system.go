@@ -197,6 +197,10 @@ func prepareHost(opts *QodanaOptions) {
 			log.Errorf("Could not clear local Qodana cache: %s", err)
 		}
 	}
+	if isNugetConfigNeeded() {
+		prepareNugetConfig(os.Getenv("HOME"))
+	}
+	unsetNugetVariables()
 	if err := os.MkdirAll(opts.CacheDir, os.ModePerm); err != nil {
 		log.Fatal("couldn't create a directory ", err.Error())
 	}
@@ -219,6 +223,34 @@ func prepareHost(opts *QodanaOptions) {
 	}
 	if opts.RequiresToken() {
 		opts.ValidateToken(false)
+	}
+}
+
+func unsetNugetVariables() {
+	variables := []string{qodanaNugetUser, qodanaNugetPassword, qodanaNugetName, qodanaNugetUrl}
+	for _, variable := range variables {
+		if err := os.Unsetenv(variable); err != nil {
+			log.Fatal("couldn't unset env variable ", err.Error())
+		}
+	}
+}
+
+func isNugetConfigNeeded() bool {
+	return IsContainer() && os.Getenv(qodanaNugetUrl) != "" && os.Getenv(qodanaNugetUser) != "" && os.Getenv(qodanaNugetPassword) != ""
+}
+
+func prepareNugetConfig(userPath string) {
+	nugetConfig := filepath.Join(userPath, ".nuget", "NuGet")
+	if _, err := os.Stat(nugetConfig); err != nil {
+		// mkdir -p ~/.nuget/NuGet
+		if err := os.MkdirAll(nugetConfig, os.ModePerm); err != nil {
+			log.Fatal("couldn't create a directory ", err.Error())
+		}
+	}
+	nugetConfig = filepath.Join(nugetConfig, "NuGet.Config")
+	config := nugetWithPrivateFeed(cloud.GetEnvWithDefault(qodanaNugetName, "qodana"), os.Getenv(qodanaNugetUrl), os.Getenv(qodanaNugetUser), os.Getenv(qodanaNugetPassword))
+	if err := os.WriteFile(nugetConfig, []byte(config), 0644); err != nil {
+		log.Fatal("couldn't create a file ", err.Error())
 	}
 }
 
