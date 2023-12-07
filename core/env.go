@@ -47,6 +47,10 @@ const (
 	QodanaLicense          = "QODANA_LICENSE"
 	QodanaTreatAsRelease   = "QODANA_TREAT_AS_RELEASE"
 	qodanaClearKeyring     = "QODANA_CLEAR_KEYRING"
+	qodanaNugetUrl         = "QODANA_NUGET_URL"
+	qodanaNugetUser        = "QODANA_NUGET_USER"
+	qodanaNugetPassword    = "QODANA_NUGET_PASSWORD"
+	qodanaNugetName        = "QODANA_NUGET_NAME"
 )
 
 // ExtractQodanaEnvironment extracts Qodana environment variables from the current environment.
