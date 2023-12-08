@@ -288,6 +288,10 @@ func readAppInfoXml(ideDir string) appInfo {
 
 func prepareLocalIdeSettings(opts *QodanaOptions) {
 	guessProduct(opts)
+	if Prod.BaseScriptName == "" {
+		log.Fatal("IDE to run is not found")
+	}
+
 	ExtractQodanaEnvironment(setEnv)
 	SetupLicenseToken(opts)
 	SetupLicense(cloud.Token.Token)
