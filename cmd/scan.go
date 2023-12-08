@@ -42,6 +42,8 @@ Note that most options can be configured via qodana.yaml (https://www.jetbrains.
 But you can always override qodana.yaml options with the following command-line options.
 `,
 		Run: func(cmd *cobra.Command, args []string) {
+			reportUrl := cloud.GetReportUrl(options.ResultsDir)
+
 			ctx := cmd.Context()
 			checkProjectDir(options.ProjectDir)
 			options.FetchAnalyzerSettings()
@@ -53,8 +55,8 @@ But you can always override qodana.yaml options with the following command-line 
 				options.ShowReport = core.AskUserConfirm("Do you want to open the latest report")
 			}
 
-			reportUrl := cloud.GetReportUrl(options.ResultsDir)
-			if reportUrl != "" {
+			newReportUrl := cloud.GetReportUrl(options.ResultsDir)
+			if newReportUrl != reportUrl {
 				core.SuccessMessage("Report is successfully uploaded to %s", reportUrl)
 			}
 
