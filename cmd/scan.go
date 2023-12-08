@@ -111,6 +111,7 @@ But you can always override qodana.yaml options with the following command-line 
 	flags.StringVar(&options.RunPromo, "run-promo", "", "Set to 'true' to have the application run the inspections configured by the promo profile; set to 'false' otherwise (default: 'true' only if Qodana is executed with the default profile)")
 	flags.StringVar(&options.Script, "script", "default", "Override the run scenario")
 	flags.StringVar(&options.StubProfile, "stub-profile", "", "Absolute path to the fallback profile file. This option is applied in case the profile was not specified using any available options")
+	flags.StringVar(&options.CoverageDir, "coverage-dir", "", "Directory with coverage data to process")
 
 	flags.BoolVar(&options.ApplyFixes, "apply-fixes", false, "Apply all available quick-fixes, including cleanup")
 	flags.BoolVar(&options.Cleanup, "cleanup", false, "Run project cleanup")

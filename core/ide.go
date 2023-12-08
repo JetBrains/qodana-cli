@@ -147,6 +147,10 @@ func getIdeArgs(opts *QodanaOptions) []string {
 			arguments = append(arguments, "--analysis-id", opts.AnalysisId)
 		}
 
+		if opts.CoverageDir != "" {
+			arguments = append(arguments, "--coverage-dir", opts.CoverageDir)
+		}
+
 		for _, property := range opts.Property {
 			arguments = append(arguments, "--property="+property)
 		}
