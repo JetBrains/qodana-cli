@@ -51,7 +51,7 @@ var langsLinters = map[string][]string{
 }
 
 var allSupportedPaidCodes = []string{QDJVM, QDPHP, QDPY, QDJS, QDGO, QDNET}
-var allSupportedFreeCodes = []string{QDJVMC, QDPYC}
+var allSupportedFreeCodes = []string{QDJVMC, QDPYC, QDANDC}
 
 // AllSupportedCodes is a list of all supported Qodana linters product codes
 var AllSupportedCodes = append(allSupportedFreeCodes, allSupportedPaidCodes...)

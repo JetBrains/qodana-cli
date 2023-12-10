@@ -137,7 +137,7 @@ func (p *product) parentPrefix() string {
 }
 
 func (p *product) isCommunity() bool {
-	return p.Code == QDJVMC || p.Code == QDPYC || p.Code == ""
+	return p.Code == QDJVMC || p.Code == QDPYC || p.Code == QDANDC || p.Code == ""
 }
 
 func (p *product) getProductNameFromCode() string {
