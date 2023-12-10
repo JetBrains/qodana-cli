@@ -51,7 +51,7 @@ var langsLinters = map[string][]string{
 }
 
 var allSupportedPaidCodes = []string{QDJVM, QDPHP, QDPY, QDJS, QDGO, QDNET}
-var allSupportedFreeCodes = []string{QDJVMC, QDPYC}
+var allSupportedFreeCodes = []string{QDJVMC, QDPYC, QDANDC}
 
 func allImages(codes []string) []string {
 	var images []string
