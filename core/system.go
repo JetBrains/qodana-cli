@@ -375,7 +375,7 @@ func runQodana(ctx context.Context, options *QodanaOptions) int {
 }
 
 // followLinter follows the linter logs and prints the progress.
-func followLinter(client *client.Client, containerName string, progress *pterm.SpinnerPrinter, resultsDir string) {
+func followLinter(client *client.Client, containerName string, progress *pterm.SpinnerPrinter) {
 	reader, err := client.ContainerLogs(context.Background(), containerName, containerLogsOptions)
 	if err != nil {
 		log.Fatal(err.Error())

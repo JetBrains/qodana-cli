@@ -88,7 +88,7 @@ func runQodanaContainer(ctx context.Context, options *QodanaOptions) int {
 	updateText(progress, scanStages[1])
 
 	runContainer(ctx, docker, dockerConfig)
-	go followLinter(docker, dockerConfig.Name, progress, options.ResultsDir)
+	go followLinter(docker, dockerConfig.Name, progress)
 
 	exitCode := getContainerExitCode(ctx, docker, dockerConfig.Name)
 
