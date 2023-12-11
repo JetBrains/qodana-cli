@@ -53,19 +53,19 @@ var (
 		QDPHP:  "jetbrains/qodana-php:",
 		QDJS:   "jetbrains/qodana-js:",
 		QDNET:  "jetbrains/qodana-dotnet:",
+		QDNETC: "jetbrains/qodana-cdnet:",
 		QDPY:   "jetbrains/qodana-python:",
 		QDPYC:  "jetbrains/qodana-python-community:",
 		QDGO:   "jetbrains/qodana-go:",
 		QDJVM:  "jetbrains/qodana-jvm:",
 		QDJVMC: "jetbrains/qodana-jvm-community:",
-		QDNETC: "jetbrains/qodana-cdnet:",
 		QDCL:   "jetbrains/qodana-clang:",
 		//QDRST:  "jetbrains/qodana-rust:",
 	}
 )
 
-// AllSupportedCodes is a list of all supported Qodana linters product codes
-var AllSupportedCodes = []string{QDNET}
+// AllNativeCodes is a list of all supported Qodana linters product codes
+var AllNativeCodes = []string{QDNET}
 
 // support has been disabled now for QDJVMC, QDJVM, QDPHP, QDPY, QDPYC, QDJS, QDGO until further testing
 
@@ -78,10 +78,9 @@ func Image(code string) string {
 	}
 }
 
-// GetLinter gets linter for the given path and saves configName
-func GetLinter(path string, yamlName string) string {
-	var linters []string
-	var linter string
+// GetAnalyzer gets linter for the given path and saves configName
+func GetAnalyzer(path string, yamlName string) string {
+	var analyzers []string
 	printProcess(func(_ *pterm.SpinnerPrinter) {
 		languages := readIdeaDir(path)
 		if len(languages) == 0 {
@@ -92,37 +91,78 @@ func GetLinter(path string, yamlName string) string {
 		} else {
 			WarningMessage("Detected technologies: " + strings.Join(languages, ", ") + "\n")
 			for _, language := range languages {
-				if linter, err := langsLinters[language]; err {
-					for _, l := range linter {
-						linters = Append(linters, l)
+				if i, err := langsProductCodes[language]; err {
+					for _, l := range i {
+						analyzers = Append(analyzers, l)
 					}
 				}
 			}
+			if len(analyzers) == 0 {
+				analyzers = AllCodes
+			}
 		}
 	}, "Scanning project", "")
-	if len(linters) == 0 && !IsInteractive() {
+
+	selector := func(choices []string) string {
+		choice, err := qodanaInteractiveSelect.WithOptions(choices).Show()
+		if err != nil {
+			ErrorMessage("%s", err)
+			return ""
+		}
+		return choice
+	}
+
+	interactive := IsInteractive()
+	analyzer := SelectAnalyzer(path, analyzers, interactive, selector)
+	if analyzer == "" {
 		ErrorMessage("Could not configure project as it is not supported by Qodana")
 		WarningMessage("See https://www.jetbrains.com/help/qodana/supported-technologies.html for more details")
 		os.Exit(1)
-	} else if len(linters) == 1 || !IsInteractive() {
-		linter = linters[0]
+	}
+	SetQodanaLinter(path, analyzer, yamlName)
+	SuccessMessage("Added %s", analyzer)
+	return analyzer
+}
+
+func SelectAnalyzer(path string, analyzers []string, interactive bool, selectFunc func([]string) string) string {
+	var analyzer string
+	if len(analyzers) == 0 && !interactive {
+		return ""
+	}
+
+	selection, choices := analyzerToSelect(analyzers, path)
+	log.Debugf("Detected products: %s", strings.Join(choices, ", "))
+
+	if len(choices) == 1 || !interactive {
+		analyzer = selection[choices[0]]
 	} else {
-		if len(linters) == 0 {
-			linters = AllImages
+		choice := selectFunc(choices)
+		if choice == "" {
+			return ""
 		}
-		choice, err := qodanaInteractiveSelect.WithOptions(linters).Show()
-		if err != nil {
-			ErrorMessage("%s", err)
-			os.Exit(1)
+		analyzer = selection[choice]
+	}
+	return analyzer
+}
+
+func IsNativeAnalyzer(analyzer string) bool {
+	return Contains(AllNativeCodes, analyzer)
+}
+
+func analyzerToSelect(analyzers []string, path string) (map[string]string, []string) {
+	analyzersMap := make(map[string]string)
+	analyzersList := make([]string, 0, len(analyzers))
+	for _, a := range analyzers {
+		if IsNativeAnalyzer(a) {
+			if IsNativeRequired(path, a) {
+				analyzersMap[a+" (Native)"] = a
+				analyzersList = append(analyzersList, a+" (Native)")
+			}
 		}
-		linter = choice
+		analyzersMap[Image(a)+" (Docker)"] = Image(a)
+		analyzersList = append(analyzersList, Image(a)+" (Docker)")
 	}
-	if linter != "" {
-		log.Infof("Detected linters: %s", strings.Join(linters, ", "))
-		SetQodanaLinter(path, linter, yamlName)
-	}
-	SuccessMessage("Added %s", linter)
-	return linter
+	return analyzersMap, analyzersList
 }
 
 // ShowReport serves the Qodana report

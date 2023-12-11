@@ -132,7 +132,7 @@ func getIde(productCode string) *ReleaseDownloadInfo {
 	}
 
 	supportedCode := false
-	for _, v := range AllSupportedCodes {
+	for _, v := range AllNativeCodes {
 		if v == productCode {
 			supportedCode = true
 			break

@@ -22,6 +22,7 @@ import (
 	"os"
 	"path/filepath"
 	"sort"
+	"strings"
 
 	log "github.com/sirupsen/logrus"
 	"gopkg.in/yaml.v3"
@@ -396,11 +397,19 @@ func SetQodanaLinter(path string, linter string, filename string) {
 		q.Version = "1.0"
 	}
 	q.sort()
-	q.Linter = linter
+	if Contains(AllCodes, linter) {
+		q.Ide = linter
+	} else {
+		q.Linter = linter
+	}
 	err := q.writeConfig(filepath.Join(path, filename))
 	if err != nil {
 		log.Fatalf("writeConfig: %v", err)
 	}
+}
+
+func (q *QodanaYaml) IsDotNet() bool {
+	return strings.Contains(q.Linter, "dotnet") || strings.Contains(q.Linter, "cdnet") || strings.Contains(q.Ide, QDNET)
 }
 
 // setQodanaDotNet adds the .NET configuration to the qodana.yaml file.

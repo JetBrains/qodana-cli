@@ -33,25 +33,24 @@ const (
 	QodanaSarifName = "qodana.sarif.json"
 	configName      = "qodana"
 	version         = "2023.3"
-	eap             = "-eap"
 )
 
-// langsLinters is a map of languages to linters.
-var langsLinters = map[string][]string{
-	"Java":              {Image(QDJVMC), Image(QDJVM), Image(QDANDC)},
-	"Kotlin":            {Image(QDJVMC), Image(QDJVM), Image(QDANDC)},
-	"PHP":               {Image(QDPHP)},
-	"Python":            {Image(QDPYC), Image(QDPY)},
-	"JavaScript":        {Image(QDJS)},
-	"TypeScript":        {Image(QDJS)},
-	"Go":                {Image(QDGO)},
-	"C#":                {Image(QDNET), Image(QDNETC)},
-	"F#":                {Image(QDNET)},
-	"Visual Basic .NET": {Image(QDNET), Image(QDNETC)},
+// langsProductCodes is a map of languages to linters.
+var langsProductCodes = map[string][]string{
+	"Java":              {QDJVMC, QDJVM, QDANDC},
+	"Kotlin":            {QDJVMC, QDJVM, QDANDC},
+	"PHP":               {QDPHP},
+	"Python":            {QDPYC, QDPY},
+	"JavaScript":        {QDJS},
+	"TypeScript":        {QDJS},
+	"Go":                {QDGO},
+	"C#":                {QDNET, QDNETC},
+	"F#":                {QDNET},
+	"Visual Basic .NET": {QDNET, QDNETC},
 }
 
 var allSupportedPaidCodes = []string{QDJVM, QDPHP, QDPY, QDJS, QDGO, QDNET}
-var allSupportedFreeCodes = []string{QDJVMC, QDPYC, QDANDC}
+var allSupportedFreeCodes = []string{QDJVMC, QDPYC, QDANDC, QDNETC}
 
 func allImages(codes []string) []string {
 	var images []string
@@ -64,24 +63,16 @@ func allImages(codes []string) []string {
 var allSupportedFreeImages = allImages(allSupportedFreeCodes)
 
 // AllImages is a list of all supported linters.
-var AllImages = append(allSupportedFreeImages, allImages(allSupportedPaidCodes)...)
+var AllImages = append(allImages(allSupportedPaidCodes), allSupportedFreeImages...)
+
+// AllCodes is a list of codes for all supported linters.
+var AllCodes = append(allSupportedPaidCodes, allSupportedFreeCodes...)
 
 // ignoredDirectories is a list of directories that should be ignored by the configurator.
 var ignoredDirectories = []string{
 	".idea",
 	".vscode",
 	".git",
-}
-
-// GetLatestVersion checks if there's an updated EAP version supported by the CLI.
-func GetLatestVersion(image string) string {
-	if strings.HasSuffix(image, eap) {
-		linter, v := strings.Split(image, ":")[0], strings.Split(image, ":")[1]
-		if v != "latest" && v != version {
-			return linter + ":" + version + eap
-		}
-	}
-	return image
 }
 
 // isInIgnoredDirectory returns true if the given path should be ignored by the configurator.
