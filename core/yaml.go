@@ -83,8 +83,17 @@ type QodanaYaml struct {
 	// LicenseRules contains a list of license rules to apply for license checks.
 	LicenseRules []LicenseRule `yaml:"licenseRules,omitempty"`
 
+	// Whether to include dev dependencies in the analysis
+	AnalyzeDevDependencies bool `yaml:"analyzeDevDependencies,omitempty"`
+
 	// DependencyIgnores contains a list of dependencies to ignore for license checks in Qodana.
 	DependencyIgnores []DependencyIgnore `yaml:"dependencyIgnores,omitempty"`
+
+	// Which submodules to include. Omitting this key will include all submodules
+	ModulesToAnalyze []ModuleToAnalyze `yaml:"modulesToAnalyze,omitempty"`
+
+	// Which dependencies to exclude from the generated SBOM report
+	DependencySbomExclude []DependencyIgnore `yaml:"dependencySbomExclude,omitempty"`
 
 	// DependencyOverrides contains a list of dependencies metadata to override for license checks in Qodana.
 	DependencyOverrides []DependencyOverride `yaml:"dependencyOverrides,omitempty"`
@@ -92,8 +101,20 @@ type QodanaYaml struct {
 	// CustomDependencies contains a list of custom dependencies to add to license checks in Qodana.
 	CustomDependencies []CustomDependency `yaml:"customDependencies,omitempty"`
 
+	// Overrides the licenses attached to the project
+	ProjectLicenses []LicenseOverride `yaml:"projectLicenses,omitempty"`
+
+	// Maximum amount of internal errors to collect in the report
+	MaxRuntimeNotifications int `yaml:"maxRuntimeNotifications,omitempty"`
+
 	// Plugins property containing plugins to install.
 	Plugins []Plugin `yaml:"plugins,omitempty"`
+
+	// Whether to fail the run when any internal error was encountered. In that case, the program returns exit code 70
+	FailOnErrorNotification bool `yaml:"failOnErrorNotification,omitempty"`
+
+	// Configures individual failure conditions. Absent properties will not be checked
+	FailureConditions FailureConditions `yaml:"failureConditions,omitempty"`
 
 	// DotNet is the configuration for .NET solutions and projects (either a solution name or a project name).
 	DotNet DotNet `yaml:"dotnet,omitempty"`
@@ -131,6 +152,10 @@ func (q *QodanaYaml) writeConfig(path string) error {
 		log.Fatalf("Marshal: %v", err)
 	}
 	return nil
+}
+
+func (q *QodanaYaml) IsDotNet() bool {
+	return isDotNetLinter(q.Linter) || isDotNetIde(q.Ide)
 }
 
 // Profile A profile is some template set of checks to run with Qodana analysis.
@@ -185,6 +210,14 @@ type LicenseRule struct {
 	Prohibited []string `yaml:"prohibited,omitempty"`
 }
 
+// ModuleToAnalyze is a submodule to include in the analysis
+//
+//goland:noinspection GoUnnecessarilyExportedIdentifiers
+type ModuleToAnalyze struct {
+	// Name corresponds to the JSON schema field "name".
+	Name *string `yaml:"name,omitempty"`
+}
+
 //goland:noinspection GoUnnecessarilyExportedIdentifiers
 type DependencyOverride struct {
 	// Name is dependency name.
@@ -196,12 +229,12 @@ type DependencyOverride struct {
 	// Url is the dependency URL.
 	Url string `yaml:"url,omitempty"`
 
-	// License is the license of the dependency.
-	Licenses []License `yaml:"licenses"`
+	// LicenseOverride is the license of the dependency.
+	Licenses []LicenseOverride `yaml:"licenses"`
 }
 
 //goland:noinspection GoUnnecessarilyExportedIdentifiers
-type License struct {
+type LicenseOverride struct {
 	// Key is the SPDX ID of the license.
 	Key string `yaml:"key"`
 
@@ -220,8 +253,8 @@ type CustomDependency struct {
 	// Url is the dependency URL.
 	Url string `yaml:"url,omitempty"`
 
-	// License is the license of the dependency.
-	Licenses []License `yaml:"licenses"`
+	// LicenseOverride is the license of the dependency.
+	Licenses []LicenseOverride `yaml:"licenses"`
 }
 
 //goland:noinspection GoUnnecessarilyExportedIdentifiers
@@ -240,6 +273,51 @@ type DotNet struct {
 
 	// Frameworks is a semicolon-separated list of target framework monikers (TFM) to be analyzed.
 	Frameworks string `yaml:"frameworks,omitempty"`
+}
+
+type FailureConditions struct {
+	// SeverityThresholds corresponds to the JSON schema field "severityThresholds".
+	SeverityThresholds *SeverityThresholds `yaml:"severityThresholds,omitempty"`
+
+	// TestCoverageThresholds corresponds to the JSON schema field
+	// "testCoverageThresholds".
+	TestCoverageThresholds *CoverageThresholds `yaml:"testCoverageThresholds,omitempty"`
+}
+
+// SeverityThresholds Configures maximum thresholds for different problem severities. Absent properties are not checked. If a baseline is given, only new results are counted
+//
+//goland:noinspection GoUnnecessarilyExportedIdentifiers
+type SeverityThresholds struct {
+	// The run fails if the total amount of results exceeds this number.
+	Any *int `yaml:"any,omitempty"`
+
+	// The run fails if the amount results with severity CRITICAL exceeds this number.
+	Critical *int `yaml:"critical,omitempty"`
+
+	// The run fails if the amount results with severity HIGH exceeds this number.
+	High *int `yaml:"high,omitempty"`
+
+	// The run fails if the amount results with severity INFO exceeds this number.
+	Info *int `yaml:"info,omitempty"`
+
+	// The run fails if the amount results with severity LOW exceeds this number.
+	Low *int `yaml:"low,omitempty"`
+
+	// The run fails if the amount results with severity MODERATE exceeds this number.
+	Moderate *int `yaml:"moderate,omitempty"`
+}
+
+// CoverageThresholds Configures minimum thresholds for test coverage metrics. Absent properties are not checked
+//
+//goland:noinspection GoUnnecessarilyExportedIdentifiers
+type CoverageThresholds struct {
+	// The run fails if the percentage of fresh lines covered is lower than this
+	// number
+	Fresh *int `json:"fresh,omitempty" yaml:"fresh,omitempty" mapstructure:"fresh,omitempty"`
+
+	// The run fails if the percentage of total lines covered is lower than this
+	// number.
+	Total *int `json:"total,omitempty" yaml:"total,omitempty" mapstructure:"total,omitempty"`
 }
 
 // IsEmpty checks whether the .NET configuration is empty or not.
@@ -315,14 +393,18 @@ func (q *QodanaYaml) sort() *QodanaYaml {
 	return q
 }
 
-// SetQodanaLinter adds the linter to the qodana.yaml file.
-func SetQodanaLinter(path string, linter string, filename string) {
+// setQodanaAnalyzer adds the linter to the qodana.yaml file.
+func setQodanaAnalyzer(path string, analyzer string, filename string) {
 	q := LoadQodanaYaml(path, filename)
 	if q.Version == "" {
 		q.Version = "1.0"
 	}
 	q.sort()
-	q.Linter = linter
+	if IsIde(analyzer) {
+		q.Ide = analyzer
+	} else {
+		q.Linter = analyzer
+	}
 	err := q.writeConfig(filepath.Join(path, filename))
 	if err != nil {
 		log.Fatalf("writeConfig: %v", err)
