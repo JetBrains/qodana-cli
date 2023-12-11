@@ -32,7 +32,7 @@ import (
 const (
 	QodanaSarifName = "qodana.sarif.json"
 	configName      = "qodana"
-	version         = "2023.2"
+	version         = "2023.3"
 	eap             = "-eap"
 )
 
@@ -45,9 +45,9 @@ var langsLinters = map[string][]string{
 	"JavaScript":        {Image(QDJS)},
 	"TypeScript":        {Image(QDJS)},
 	"Go":                {Image(QDGO)},
-	"C#":                {Image(QDNET)},
+	"C#":                {Image(QDNET), Image(QDNETC)},
 	"F#":                {Image(QDNET)},
-	"Visual Basic .NET": {Image(QDNET)},
+	"Visual Basic .NET": {Image(QDNET), Image(QDNETC)},
 }
 
 var allSupportedPaidCodes = []string{QDJVM, QDPHP, QDPY, QDJS, QDGO, QDNET}

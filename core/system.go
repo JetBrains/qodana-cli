@@ -411,11 +411,6 @@ func followLinter(client *client.Client, containerName string, progress *pterm.S
 					EmptyMessage()
 				}
 			}
-			if strings.Contains(line, "Report is successfully uploaded to ") {
-				reportUrl := strings.TrimPrefix(line, "Report is successfully uploaded to ")
-				cloud.SaveReportFile(resultsDir, reportUrl) // TODO: stop after 2023.3 CLI release
-				continue
-			}
 			printLinterLog(line)
 		}
 		if err != nil {
