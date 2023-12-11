@@ -56,8 +56,8 @@ But you can always override qodana.yaml options with the following command-line 
 			}
 
 			newReportUrl := cloud.GetReportUrl(options.ResultsDir)
-			if newReportUrl != reportUrl {
-				core.SuccessMessage("Report is successfully uploaded to %s", reportUrl)
+			if newReportUrl != reportUrl && newReportUrl != "" && !core.IsContainer() {
+				core.SuccessMessage("Report is successfully uploaded to %s", newReportUrl)
 			}
 
 			if options.ShowReport {
