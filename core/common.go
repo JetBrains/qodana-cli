@@ -43,6 +43,7 @@ var (
 	QDJS   = "QDJS"
 	QDGO   = "QDGO"
 	QDNET  = "QDNET"
+	QDNETC = "QDNETC"
 	QDANDC = "QDANDC"
 	QDRST  = "QDRST"
 	QDRUBY = "QDRUBY"
@@ -63,6 +64,8 @@ func Image(code string) string {
 		return "jetbrains/qodana-js:" + version
 	case QDNET:
 		return "jetbrains/qodana-dotnet:" + version
+	case QDNETC:
+		return "jetbrains/qodana-cdnet:" + version
 	case QDPY:
 		return "jetbrains/qodana-python:" + version
 	case QDPYC:
@@ -81,10 +84,10 @@ func Image(code string) string {
 	}
 }
 
-// GetLinter gets linter for the given path and saves configName
-func GetLinter(path string, yamlName string) string {
-	var linters []string
-	var linter string
+// GetAnalyzer gets linter for the given path and saves configName
+func GetAnalyzer(path string, yamlName string) string {
+	var analyzers []string
+	var analyzer string
 	printProcess(func(_ *pterm.SpinnerPrinter) {
 		languages := readIdeaDir(path)
 		if len(languages) == 0 {
@@ -95,37 +98,57 @@ func GetLinter(path string, yamlName string) string {
 		} else {
 			WarningMessage("Detected technologies: " + strings.Join(languages, ", ") + "\n")
 			for _, language := range languages {
-				if linter, err := langsLinters[language]; err {
-					for _, l := range linter {
-						linters = Append(linters, l)
+				if i, err := langsAnalyzers[language]; err {
+					for _, l := range i {
+						analyzers = Append(analyzers, l)
 					}
 				}
 			}
 		}
 	}, "Scanning project", "")
-	if len(linters) == 0 && !IsInteractive() {
+	if len(analyzers) == 0 && !IsInteractive() {
 		ErrorMessage("Could not configure project as it is not supported by Qodana")
 		WarningMessage("See https://www.jetbrains.com/help/qodana/supported-technologies.html for more details")
 		os.Exit(1)
-	} else if len(linters) == 1 || !IsInteractive() {
-		linter = linters[0]
+	} else if len(analyzers) == 1 || !IsInteractive() {
+		analyzer = analyzers[0]
 	} else {
-		if len(linters) == 0 {
-			linters = AllImages
+		if len(analyzers) == 0 {
+			analyzers = append(AllImages, QDNET)
 		}
-		choice, err := qodanaInteractiveSelect.WithOptions(linters).Show()
+		choice, err := qodanaInteractiveSelect.WithOptions(analyzerToSelect(analyzers)).Show()
 		if err != nil {
 			ErrorMessage("%s", err)
 			os.Exit(1)
 		}
-		linter = choice
+		analyzer = selectToAnalyzer(choice)
 	}
-	if linter != "" {
-		log.Infof("Detected linters: %s", strings.Join(linters, ", "))
-		SetQodanaLinter(path, linter, yamlName)
+	if analyzer != "" {
+		log.Debugf("Detected products: %s", strings.Join(analyzers, ", "))
+		setQodanaAnalyzer(path, analyzer, yamlName)
 	}
-	SuccessMessage("Added %s", linter)
-	return linter
+	SuccessMessage("Added %s", analyzer)
+	return analyzer
+}
+
+func IsIde(analyzer string) bool {
+	return strings.HasPrefix(analyzer, QDNET)
+}
+
+func analyzerToSelect(analyzers []string) []string {
+	for i, a := range analyzers {
+		if IsIde(a) {
+			analyzers[i] = a + " (Native)"
+		} else {
+			analyzers[i] = a + " (Docker)"
+		}
+	}
+	return analyzers
+}
+
+func selectToAnalyzer(analyzer string) string {
+	removedDocker := strings.TrimSuffix(analyzer, " (Docker)")
+	return strings.TrimSuffix(removedDocker, " (Native)")
 }
 
 // ShowReport serves the Qodana report

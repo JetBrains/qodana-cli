@@ -18,12 +18,10 @@ package cmd
 
 import (
 	"fmt"
-	"path/filepath"
-	"strings"
-
 	"github.com/JetBrains/qodana-cli/v2023/core"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
+	"path/filepath"
 )
 
 // newInitCommand returns a new instance of the show command.
@@ -39,7 +37,7 @@ func newInitCommand() *cobra.Command {
 				options.YamlName = core.FindQodanaYaml(options.ProjectDir)
 			}
 			qodanaYaml := core.LoadQodanaYaml(options.ProjectDir, options.YamlName)
-			if qodanaYaml.Linter == "" || force {
+			if qodanaYaml.Linter == "" || qodanaYaml.Ide == "" || force {
 				absPath, err := filepath.Abs(options.ProjectDir)
 				if err != nil {
 					log.Fatal(err)
@@ -48,33 +46,34 @@ func newInitCommand() *cobra.Command {
 				if core.IsInteractive() && !core.AskUserConfirm(fmt.Sprintf("Do you want to set up Qodana in %s", core.PrimaryBold(options.ProjectDir))) {
 					return
 				}
-				qodanaYaml.Linter = core.GetLinter(options.ProjectDir, options.YamlName)
-			} else {
-				latestLinter := core.GetLatestVersion(qodanaYaml.Linter)
-				if latestLinter != qodanaYaml.Linter {
-					core.WarningMessage("You are using an outdated %s linter\n", qodanaYaml.Linter)
-					if core.AskUserConfirm(
-						fmt.Sprintf("Do you want to update to %s", latestLinter),
-					) {
-						core.SetQodanaLinter(options.ProjectDir, latestLinter, options.YamlName)
-						qodanaYaml.Linter = latestLinter
-					}
+				analyzer := core.GetAnalyzer(options.ProjectDir, options.YamlName)
+				if core.IsIde(analyzer) {
+					options.Ide = analyzer
 				} else {
-					core.EmptyMessage()
-					core.SuccessMessage(
-						"The linter was already configured before: %s. Run the command with %s flag to re-init the project",
-						core.PrimaryBold(qodanaYaml.Linter),
-						core.PrimaryBold("-f"),
-					)
+					options.Linter = analyzer
 				}
+			} else {
+				core.EmptyMessage()
+				var product string
+				if qodanaYaml.Ide != "" {
+					product = qodanaYaml.Ide
+				} else if qodanaYaml.Linter != "" {
+					product = qodanaYaml.Linter
+				}
+				core.SuccessMessage(
+					"The product to use was already configured before: %s. Run the command with %s flag to re-init the project",
+					core.PrimaryBold(product),
+					core.PrimaryBold("-f"),
+				)
 			}
-			if core.IsInteractive() && strings.Contains(qodanaYaml.Linter, "dotnet") && (qodanaYaml.DotNet.IsEmpty() || force) {
+			if core.IsInteractive() && qodanaYaml.IsDotNet() && (qodanaYaml.DotNet.IsEmpty() || force) {
 				if core.GetDotNetConfig(options.ProjectDir, options.YamlName) {
 					core.SuccessMessage("The .NET configuration was successfully set")
 				}
 			}
 			core.PrintFile(filepath.Join(options.ProjectDir, options.YamlName))
 			options.Linter = qodanaYaml.Linter
+			options.Ide = qodanaYaml.Ide
 			if options.RequiresToken() {
 				options.ValidateToken(force)
 			}

@@ -36,8 +36,8 @@ const (
 	eap             = "-eap"
 )
 
-// langsLinters is a map of languages to linters.
-var langsLinters = map[string][]string{
+// langsAnalyzers is a map of languages to linters.
+var langsAnalyzers = map[string][]string{
 	"Java":              {Image(QDJVMC), Image(QDJVM), Image(QDANDC)},
 	"Kotlin":            {Image(QDJVMC), Image(QDJVM), Image(QDANDC)},
 	"PHP":               {Image(QDPHP)},
@@ -45,9 +45,9 @@ var langsLinters = map[string][]string{
 	"JavaScript":        {Image(QDJS)},
 	"TypeScript":        {Image(QDJS)},
 	"Go":                {Image(QDGO)},
-	"C#":                {Image(QDNET)},
-	"F#":                {Image(QDNET)},
-	"Visual Basic .NET": {Image(QDNET)},
+	"C#":                {QDNET, Image(QDNET), Image(QDNETC)},
+	"F#":                {QDNET, Image(QDNET), Image(QDNETC)},
+	"Visual Basic .NET": {QDNET, Image(QDNET), Image(QDNETC)},
 }
 
 var allSupportedPaidCodes = []string{QDJVM, QDPHP, QDPY, QDJS, QDGO, QDNET}
@@ -73,15 +73,12 @@ var ignoredDirectories = []string{
 	".git",
 }
 
-// GetLatestVersion checks if there's an updated EAP version supported by the CLI.
-func GetLatestVersion(image string) string {
-	if strings.HasSuffix(image, eap) {
-		linter, v := strings.Split(image, ":")[0], strings.Split(image, ":")[1]
-		if v != "latest" && v != version {
-			return linter + ":" + version + eap
-		}
-	}
-	return image
+func isDotNetLinter(linter string) bool {
+	return strings.HasPrefix(linter, "jetbrains/qodana-dotnet") || strings.HasPrefix(linter, "jetbrains/qodana-cdnet")
+}
+
+func isDotNetIde(ide string) bool {
+	return strings.HasPrefix(ide, QDNET) || strings.HasPrefix(ide, QDNETC)
 }
 
 // isInIgnoredDirectory returns true if the given path should be ignored by the configurator.

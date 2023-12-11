@@ -69,11 +69,16 @@ func (o *QodanaOptions) FetchAnalyzerSettings() {
 		qodanaYaml := LoadQodanaYaml(o.ProjectDir, o.YamlName)
 		if qodanaYaml.Linter == "" && qodanaYaml.Ide == "" {
 			WarningMessage(
-				"No valid `linter:` field found in %s. Have you run %s? Running that for you...",
+				"No valid `linter:` or `ide:` field found in %s. Have you run %s? Running that for you...",
 				PrimaryBold(o.YamlName),
 				PrimaryBold("qodana init"),
 			)
-			o.Linter = GetLinter(o.ProjectDir, o.YamlName)
+			analyzer := GetAnalyzer(o.ProjectDir, o.YamlName)
+			if IsIde(analyzer) {
+				o.Ide = analyzer
+			} else {
+				o.Linter = analyzer
+			}
 			EmptyMessage()
 		} else {
 			o.Linter = qodanaYaml.Linter
@@ -128,7 +133,12 @@ func (o *QodanaOptions) id() string {
 			analyzer = o.Ide
 		}
 		if analyzer == "" {
-			analyzer = LoadQodanaYaml(o.ProjectDir, o.YamlName).Linter
+			qYaml := LoadQodanaYaml(o.ProjectDir, o.YamlName)
+			if qYaml.Ide != "" {
+				analyzer = qYaml.Linter
+			} else if qYaml.Linter != "" {
+				analyzer = qYaml.Ide
+			}
 		}
 		length := 7
 		projectAbs, _ := filepath.Abs(o.ProjectDir)

@@ -68,7 +68,7 @@ var (
 	tableDown               = strings.Repeat(tableSep, noLineWidth) + tableSepDown
 	qodanaInteractiveSelect = pterm.InteractiveSelectPrinter{
 		TextStyle:     primaryStyle,
-		DefaultText:   "Please select the linter",
+		DefaultText:   "Please select the product to use",
 		Options:       []string{},
 		OptionStyle:   primaryStyle,
 		DefaultOption: "",
