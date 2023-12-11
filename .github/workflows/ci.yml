@@ -111,6 +111,7 @@ jobs:
       actions: read
       contents: write
       security-events: write
+    if: github.ref == 'refs/heads/main'
     steps:
       - uses: actions/checkout@v4
         with:
