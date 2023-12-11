@@ -43,6 +43,7 @@ var (
 	QDJS   = "QDJS"
 	QDGO   = "QDGO"
 	QDNET  = "QDNET"
+	QDNETC = "QDNETC"
 	QDANDC = "QDANDC"
 	QDRST  = "QDRST"
 	QDRUBY = "QDRUBY"
@@ -73,6 +74,8 @@ func Image(code string) string {
 		return "jetbrains/qodana-jvm:" + version
 	case QDJVMC:
 		return "jetbrains/qodana-jvm-community:" + version
+	case QDNETC:
+		return "jetbrains/qodana-cdnet:" + version
 	//case QDRST:
 	//	return "jetbrains/qodana-rust:" + version
 	default:
