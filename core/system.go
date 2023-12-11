@@ -210,7 +210,7 @@ func prepareHost(opts *QodanaOptions) {
 		PrepareContainerEnvSettings()
 	}
 	if opts.Ide != "" {
-		if Contains(AllSupportedCodes, strings.TrimSuffix(opts.Ide, EapSuffix)) {
+		if Contains(AllNativeCodes, strings.TrimSuffix(opts.Ide, EapSuffix)) {
 			printProcess(func(spinner *pterm.SpinnerPrinter) {
 				if spinner != nil {
 					spinner.ShowTimer = false // We will update interactive spinner

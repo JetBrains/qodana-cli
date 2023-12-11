@@ -10,7 +10,10 @@ import (
 	"sync"
 )
 
-func IsNativeRequired(projectDir string) bool {
+func IsNativeRequired(projectDir string, ide string) bool {
+	if ide != QDNET {
+		return false
+	}
 	return containsUnityProjects(projectDir) || containsDotNetFxProjects(projectDir)
 }
 
