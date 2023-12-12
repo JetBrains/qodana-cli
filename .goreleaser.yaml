@@ -16,7 +16,10 @@ builds:
       - arm64
     hooks:
       post:
-          - sh -c "echo 'test hook for signing'"
+        - sh -c "set -e; if [ '{{ .IsSnapshot }}' = 'false' -a '{{ .Os }}' = 'windows' -a '{{ .Arch }}' = 'amd64' ]; then codesign -signed-files-dir ./dist/{{ .ProjectName }}_{{ .Os }}_{{ .Arch }}_v1/ './dist/{{ .ProjectName }}_{{ .Os }}_{{ .Arch }}_v1/qodana.exe' ; fi"
+        - sh -c "set -e; if [ '{{ .IsSnapshot }}' = 'false' -a '{{ .Os }}' = 'windows' -a '{{ .Arch }}' = 'arm64' ]; then codesign -signed-files-dir ./dist/{{ .ProjectName }}_{{ .Os }}_{{ .Arch }}/ './dist/{{ .ProjectName }}_{{ .Os }}_{{ .Arch }}/qodana.exe' ; fi"
+        - sh -c "set -e; if [ '{{ .IsSnapshot }}' = 'false' -a '{{ .Os }}' = 'darwin' -a '{{ .Arch }}' = 'amd64' ]; then codesign -denoted-content-type=application/x-mac-app-bin -signed-files-dir ./dist/{{ .ProjectName }}_{{ .Os }}_{{ .Arch }}_v1/ './dist/{{ .ProjectName }}_{{ .Os }}_{{ .Arch }}_v1/qodana' ; fi"
+        - sh -c "set -e; if [ '{{ .IsSnapshot }}' = 'false' -a '{{ .Os }}' = 'darwin' -a '{{ .Arch }}' = 'arm64' ]; then codesign -denoted-content-type=application/x-mac-app-bin -signed-files-dir ./dist/{{ .ProjectName }}_{{ .Os }}_{{ .Arch }}/ './dist/{{ .ProjectName }}_{{ .Os }}_{{ .Arch }}/qodana' ; fi"
 archives:
   - name_template: '{{ .ProjectName }}_{{ .Os }}_{{- if eq .Arch "amd64" }}x86_64{{- else if eq .Arch "386" }}i386{{- else }}{{ .Arch }}{{ end }}'
     format_overrides:
@@ -40,8 +43,6 @@ nfpms:
       - archlinux
     dependencies:
       - git
-universal_binaries:
-  - replace: true
 brews:
   - repository:
       owner: JetBrains
@@ -95,7 +96,7 @@ release:
     > 💡 The Qodana CLI is distributed and run as a binary. The Qodana linters with inspections are [Docker Images](https://www.jetbrains.com/help/qodana/docker-images.html) or, starting from version `2023.2`, your local/downloaded by CLI IDE installations (experimental support).
     > - To run Qodana with a container (the default mode in CLI), you must have Docker or Podman installed and running locally to support this: https://www.docker.com/get-started, and, if you are using Linux, you should be able to run Docker from the current (non-root) user (https://docs.docker.com/engine/install/linux-postinstall/#manage-docker-as-a-non-root-user)
     > - To run Qodana without a container, you must have the IDE installed locally to provide the IDE installation path to the CLI or specify the product code, and CLI will try to download the IDE automatically (experimental support).
-      
+    
     #### macOS and Linux
     ##### Install with [Homebrew](https://brew.sh) (recommended)
     ```console

@@ -35,7 +35,8 @@ jobs:
           CHOCOLATEY_API_KEY: ${{ secrets.CHOCOLATEY_API_KEY }}
       - run: |
           mkdir dist/binaries && cd dist/binaries
-          mv ../qodana_darwin_all/qodana qodana_darwin_all
+          mv ../qodana_darwin_arm64/qodana qodana_darwin_arm64
+          mv ../qodana_darwin_amd64_v1/qodana qodana_darwin_x86_64
           mv ../qodana_linux_arm64/qodana qodana_linux_arm64
           mv ../qodana_linux_amd64_v1/qodana qodana_linux_x86_64
           mv ../qodana_windows_arm64/qodana.exe qodana_windows_arm64.exe

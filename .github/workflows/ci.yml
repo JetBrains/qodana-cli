@@ -139,7 +139,8 @@ jobs:
           git push --delete origin nightly || true
           gh release --repo JetBrains/qodana-cli create nightly -p -t nightly
           gh release --repo JetBrains/qodana-cli upload nightly \
-            qodana_darwin_all.tar.gz \
+            qodana_darwin_arm64.tar.gz \
+            qodana_darwin_x86_64.tar.gz \
             qodana_linux_arm64.tar.gz \
             qodana_linux_x86_64.tar.gz \
             qodana_windows_arm64.zip \
