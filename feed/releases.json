@@ -3,33 +3,33 @@
         "Code": "RD",
         "Releases": [
             {
-                "Date": "2023-11-03",
+                "Date": "2023-12-11",
                 "Type": "release",
                 "Downloads": {
                     "linux": {
-                        "Link": "https://download.jetbrains.com/qodana/2023.3/qodana-QDNET-233.12259.111.73.tar.gz",
-                        "Size": 1045623181,
-                        "ChecksumLink": "https://download.jetbrains.com/qodana/2023.3/qodana-QDNET-233.12259.111.73.tar.gz.sha256"
+                        "Link": "https://download.jetbrains.com/qodana/2023.3/qodana-QDNET-233.13013.23.93.tar.gz",
+                        "Size": 1040009889,
+                        "ChecksumLink": "https://download.jetbrains.com/qodana/2023.3/qodana-QDNET-233.13013.23.93.tar.gz.sha256"
                     },
                     "linuxARM64": {
-                        "Link": "https://download.jetbrains.com/qodana/2023.3/qodana-QDNET-233.12259.111.73-aarch64.tar.gz",
-                        "Size": 1038490430,
-                        "ChecksumLink": "https://download.jetbrains.com/qodana/2023.3/qodana-QDNET-233.12259.111.73-aarch64.tar.gz.sha256"
+                        "Link": "https://download.jetbrains.com/qodana/2023.3/qodana-QDNET-233.13013.23.93-aarch64.tar.gz",
+                        "Size": 1032931963,
+                        "ChecksumLink": "https://download.jetbrains.com/qodana/2023.3/qodana-QDNET-233.13013.23.93-aarch64.tar.gz.sha256"
                     },
                     "windowsZip": {
-                        "Link": "https://download.jetbrains.com/qodana/2023.3/qodana-QDNET-233.12259.111.73.win.zip",
-                        "Size": 1118286316,
-                        "ChecksumLink": "https://download.jetbrains.com/qodana/2023.3/qodana-QDNET-233.12259.111.73.win.zip.sha256"
+                        "Link": "https://download.jetbrains.com/qodana/2023.3/qodana-QDNET-233.13013.23.93.win.zip",
+                        "Size": 1140010704,
+                        "ChecksumLink": "https://download.jetbrains.com/qodana/2023.3/qodana-QDNET-233.13013.23.93.win.zip.sha256"
                     },
                     "windowsZipARM64": {
-                        "Link": "https://download.jetbrains.com/qodana/2023.3/qodana-QDNET-233.12259.111.73-aarch64.win.zip",
-                        "Size": 1097987122,
-                        "ChecksumLink": "https://download.jetbrains.com/qodana/2023.3/qodana-QDNET-233.12259.111.73-aarch64.win.zip.sha256"
+                        "Link": "https://download.jetbrains.com/qodana/2023.3/qodana-QDNET-233.13013.23.93-aarch64.win.zip",
+                        "Size": 1129467675,
+                        "ChecksumLink": "https://download.jetbrains.com/qodana/2023.3/qodana-QDNET-233.13013.23.93-aarch64.win.zip.sha256"
                     }
                 },
                 "Version": "2023.3.1",
                 "MajorVersion": "2023.3",
-                "Build": "233.12259.111",
+                "Build": "233.13013.23",
                 "PrintableReleaseType": null
             },
             {
