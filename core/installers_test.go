@@ -45,7 +45,7 @@ func TestDownloadAndInstallIDE(t *testing.T) {
 	runtime.GOOS == "darwin" {
 		t.Skip("Mac OS not supported in native")
 	}
-	ides := []string{"QDNET-EAP"} // QDPY requires exe on Windows, QDNET - does not
+	ides := []string{"QDNET"} // QDPY requires exe on Windows, QDNET - does not
 	for _, ide := range ides {
 		DownloadAndInstallIDE(ide, t)
 	}
