@@ -200,7 +200,6 @@ func prepareHost(opts *QodanaOptions) {
 	if isNugetConfigNeeded() {
 		prepareNugetConfig(os.Getenv("HOME"))
 	}
-	unsetNugetVariables()
 	if err := os.MkdirAll(opts.CacheDir, os.ModePerm); err != nil {
 		log.Fatal("couldn't create a directory ", err.Error())
 	}
@@ -366,6 +365,7 @@ func runQodana(ctx context.Context, options *QodanaOptions) int {
 	if options.Linter != "" {
 		exitCode = runQodanaContainer(ctx, options)
 	} else if options.Ide != "" {
+		unsetNugetVariables() // TODO: get rid of it from 241 release
 		exitCode = runQodanaLocal(options)
 	} else {
 		log.Fatal("No linter or IDE specified")

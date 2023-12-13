@@ -65,6 +65,10 @@ func ExtractQodanaEnvironment(setEnvironmentFunc func(string, string)) {
 			setEnvironmentFunc(qodanaBranch, validateBranch(ci.Git.Branch, qEnv))
 			setEnvironmentFunc(qodanaRevision, ci.Git.Revision)
 		}
+		setEnvironmentFunc(qodanaNugetUrl, os.Getenv(qodanaNugetUrl))
+		setEnvironmentFunc(qodanaNugetUser, os.Getenv(qodanaNugetUser))
+		setEnvironmentFunc(qodanaNugetPassword, os.Getenv(qodanaNugetPassword))
+		setEnvironmentFunc(qodanaNugetName, os.Getenv(qodanaNugetName))
 	} else if space := os.Getenv("JB_SPACE_API_URL"); space != "" {
 		qEnv = "space"
 		setEnvironmentFunc(qodanaJobUrl, os.Getenv("JB_SPACE_EXECUTION_URL"))
