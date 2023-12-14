@@ -47,6 +47,7 @@ var (
 	QDANDC = "QDANDC"
 	QDRST  = "QDRST"
 	QDRUBY = "QDRUBY"
+	QDCL   = "QDCL"
 )
 
 // AllSupportedCodes is a list of all supported Qodana linters product codes

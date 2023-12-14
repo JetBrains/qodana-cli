@@ -62,6 +62,14 @@ type QodanaOptions struct {
 	Cleanup               bool
 	FixesStrategy         string // note: deprecated option
 	_id                   string
+	NoStatistics          bool   // thirdparty common option
+	Solution              string // cdnet specific options
+	Project               string
+	Configuration         string
+	Platform              string
+	NoBuild               bool
+	CompileCommands       string // clang specific options
+	ClangArgs             string
 }
 
 func (o *QodanaOptions) FetchAnalyzerSettings() {

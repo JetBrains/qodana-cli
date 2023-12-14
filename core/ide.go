@@ -142,6 +142,39 @@ func getIdeArgs(opts *QodanaOptions) []string {
 		}
 	}
 
+	if Prod.Code == QDNETC || Prod.Code == QDCL {
+		// third party common options
+		if opts.NoStatistics {
+			arguments = append(arguments, "--no-statistics")
+		}
+		if Prod.Code == QDNETC {
+			// cdnet options
+			if opts.Solution != "" {
+				arguments = append(arguments, "--solution", QuoteForWindows(opts.Solution))
+			}
+			if opts.Project != "" {
+				arguments = append(arguments, "--project", QuoteForWindows(opts.Project))
+			}
+			if opts.Configuration != "" {
+				arguments = append(arguments, "--configuration", opts.Configuration)
+			}
+			if opts.Platform != "" {
+				arguments = append(arguments, "--platform", opts.Platform)
+			}
+			if opts.NoBuild {
+				arguments = append(arguments, "--no-build")
+			}
+		} else {
+			// clang options
+			if opts.CompileCommands != "" {
+				arguments = append(arguments, "--compile-commands", QuoteForWindows(opts.CompileCommands))
+			}
+			if opts.ClangArgs != "" {
+				arguments = append(arguments, "--clang-args", opts.ClangArgs)
+			}
+		}
+	}
+
 	if opts.Ide == "" {
 		if opts.AnalysisId != "" {
 			arguments = append(arguments, "--analysis-id", opts.AnalysisId)

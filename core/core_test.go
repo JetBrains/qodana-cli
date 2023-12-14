@@ -390,6 +390,94 @@ func TestLegacyFixStrategies(t *testing.T) {
 			},
 			expected: []string{},
 		},
+		{
+			name: "not sending statistics",
+			options: &QodanaOptions{
+				NoStatistics: true,
+				Ide:          QDNETC,
+			},
+			expected: []string{
+				"--no-statistics",
+			},
+		},
+		{
+			name: "(cdnet) solution",
+			options: &QodanaOptions{
+				Solution: "solution.sln",
+				Ide:      QDNETC,
+			},
+			expected: []string{
+				"--solution", "solution.sln",
+			},
+		},
+		{
+			name: "(cdnet) project",
+			options: &QodanaOptions{
+				Project: "project.csproj",
+				Ide:     QDNETC,
+			},
+			expected: []string{
+				"--project", "project.csproj",
+			},
+		},
+		{
+			name: "(cdnet) configuration",
+			options: &QodanaOptions{
+				Configuration: "Debug",
+				Ide:           QDNETC,
+			},
+			expected: []string{
+				"--configuration", "Debug",
+			},
+		},
+		{
+			name: "(cdnet) platform",
+			options: &QodanaOptions{
+				Platform: "x64",
+				Ide:      QDNETC,
+			},
+			expected: []string{
+				"--platform", "x64",
+			},
+		},
+		{
+			name: "(cdnet) no build",
+			options: &QodanaOptions{
+				NoBuild: true,
+				Ide:     QDNETC,
+			},
+			expected: []string{
+				"--no-build",
+			},
+		},
+		{
+			name: "(clang) compile commands",
+			options: &QodanaOptions{
+				CompileCommands: "compile_commands.json",
+				Ide:             QDCL,
+			},
+			expected: []string{
+				"--compile-commands", "compile_commands.json",
+			},
+		},
+		{
+			name: "(clang) clang args",
+			options: &QodanaOptions{
+				ClangArgs: "-I/usr/include",
+				Ide:       QDCL,
+			},
+			expected: []string{
+				"--clang-args", "-I/usr/include",
+			},
+		},
+		{
+			name: "using flag in non 3rd party linter",
+			options: &QodanaOptions{
+				NoStatistics: true,
+				Ide:          QDNET,
+			},
+			expected: []string{},
+		},
 	}
 
 	for _, tt := range cases {
@@ -399,6 +487,9 @@ func TestLegacyFixStrategies(t *testing.T) {
 			} else {
 				Prod.Version = "2023.2"
 			}
+			if tt.options.Ide != "" {
+				Prod.Code = tt.options.Ide
+			}
 
 			actual := getIdeArgs(tt.options)
 			if !reflect.DeepEqual(tt.expected, actual) {
@@ -406,6 +497,9 @@ func TestLegacyFixStrategies(t *testing.T) {
 			}
 		})
 	}
+	t.Cleanup(func() {
+		Prod.Code = ""
+	})
 }
 
 func TestReadIdeaDir(t *testing.T) {
