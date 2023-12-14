@@ -48,8 +48,8 @@ brews:
       owner: JetBrains
       name: homebrew-utils
     commit_author:
-      name: "tiulpin"
-      email: "viktor@tiulp.in"
+      name: "qodana-bot"
+      email: "qodana-support@jetbrains.com"
     commit_msg_template: ":sparkles: Brew formula update for {{ .ProjectName }} version {{ .Tag }}"
     folder: Formula
     homepage: "https://github.com/JetBrains/qodana-cli"
@@ -60,8 +60,8 @@ scoops:
       owner: "JetBrains"
       name: "scoop-utils"
     commit_author:
-      name: "tiulpin"
-      email: "viktor@tiulp.in"
+      name: "qodana-bot"
+      email: "qodana-support@jetbrains.com"
     commit_msg_template: ":sparkles: Scoop update for {{ .ProjectName }} version {{ .Tag }}"
     homepage: "https://github.com/JetBrains/qodana-cli"
     description: "🔧 Run Qodana as fast as possible, with minimum effort required"
