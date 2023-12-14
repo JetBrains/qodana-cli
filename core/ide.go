@@ -142,12 +142,13 @@ func getIdeArgs(opts *QodanaOptions) []string {
 		}
 	}
 
-	if Prod.Code == QDNETC || Prod.Code == QDCL {
+	prod := opts.guessProduct()
+	if prod == QDNETC || prod == QDCL {
 		// third party common options
 		if opts.NoStatistics {
 			arguments = append(arguments, "--no-statistics")
 		}
-		if Prod.Code == QDNETC {
+		if prod == QDNETC {
 			// cdnet options
 			if opts.Solution != "" {
 				arguments = append(arguments, "--solution", QuoteForWindows(opts.Solution))

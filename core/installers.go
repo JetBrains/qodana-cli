@@ -33,12 +33,25 @@ import (
 )
 
 var (
-	eapSuffix   = "-EAP"
+	EapSuffix   = "-EAP"
 	releaseVer  = "release"
 	eapVer      = "eap"
 	versionsMap = map[string]string{
 		releaseVer: "2023.3",
 		eapVer:     "2023.3",
+	}
+	Products = map[string]string{
+		QDJVM:  "IIU",
+		QDJVMC: "IIC",
+		// QDAND: // don't use it right now
+		// QDANDC: // don't use it right now
+		QDPHP: "PS",
+		QDJS:  "WS",
+		QDNET: "RD",
+		QDPY:  "PCP",
+		QDPYC: "PCC",
+		QDGO:  "GO",
+		QDRST: "RR",
 	}
 )
 
@@ -105,28 +118,15 @@ func downloadAndInstallIDE(ide string, baseDir string, spinner *pterm.SpinnerPri
 
 //goland:noinspection GoBoolExpressions
 func getIde(productCode string) *ReleaseDownloadInfo {
-	products := map[string]string{
-		QDJVM:  "IIU",
-		QDJVMC: "IIC",
-		// QDAND: // don't use it right now
-		// QDANDC: // don't use it right now
-		QDPHP: "PS",
-		QDJS:  "WS",
-		QDNET: "RD",
-		QDPY:  "PCP",
-		QDPYC: "PCC",
-		QDGO:  "GO",
-		QDRST: "RR",
-	}
 
 	originalCode := productCode
 	dist := releaseVer
-	if strings.HasSuffix(productCode, eapSuffix) {
+	if strings.HasSuffix(productCode, EapSuffix) {
 		dist = eapVer
-		productCode = strings.TrimSuffix(productCode, eapSuffix)
+		productCode = strings.TrimSuffix(productCode, EapSuffix)
 	}
 
-	if _, ok := products[productCode]; !ok {
+	if _, ok := Products[productCode]; !ok {
 		ErrorMessage("Product code doesnt exist: ", originalCode)
 		return nil
 	}
@@ -144,7 +144,7 @@ func getIde(productCode string) *ReleaseDownloadInfo {
 		return nil
 	}
 
-	product, err := GetProductByCode(products[productCode])
+	product, err := GetProductByCode(Products[productCode])
 	if err != nil || product == nil {
 		ErrorMessage("Error while obtaining the product info")
 		return nil

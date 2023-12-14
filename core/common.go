@@ -34,20 +34,34 @@ var InterruptChannel chan os.Signal
 
 //goland:noinspection GoUnnecessarilyExportedIdentifiers
 var (
-	QDJVMC = "QDJVMC"
-	QDJVM  = "QDJVM"
-	QDAND  = "QDAND"
-	QDPHP  = "QDPHP"
-	QDPY   = "QDPY"
-	QDPYC  = "QDPYC"
-	QDJS   = "QDJS"
-	QDGO   = "QDGO"
-	QDNET  = "QDNET"
-	QDNETC = "QDNETC"
-	QDANDC = "QDANDC"
-	QDRST  = "QDRST"
-	QDRUBY = "QDRUBY"
-	QDCL   = "QDCL"
+	QDJVMC         = "QDJVMC"
+	QDJVM          = "QDJVM"
+	QDAND          = "QDAND"
+	QDPHP          = "QDPHP"
+	QDPY           = "QDPY"
+	QDPYC          = "QDPYC"
+	QDJS           = "QDJS"
+	QDGO           = "QDGO"
+	QDNET          = "QDNET"
+	QDNETC         = "QDNETC"
+	QDANDC         = "QDANDC"
+	QDRST          = "QDRST"
+	QDRUBY         = "QDRUBY"
+	QDCL           = "QDCL"
+	DockerImageMap = map[string]string{
+		QDANDC: "jetbrains/qodana-jvm-android:",
+		QDPHP:  "jetbrains/qodana-php:",
+		QDJS:   "jetbrains/qodana-js:",
+		QDNET:  "jetbrains/qodana-dotnet:",
+		QDPY:   "jetbrains/qodana-python:",
+		QDPYC:  "jetbrains/qodana-python-community:",
+		QDGO:   "jetbrains/qodana-go:",
+		QDJVM:  "jetbrains/qodana-jvm:",
+		QDJVMC: "jetbrains/qodana-jvm-community:",
+		QDNETC: "jetbrains/qodana-cdnet:",
+		//QDCL:   "jetbrains/qodana-clang:",
+		//QDRST:  "jetbrains/qodana-rust:",
+	}
 )
 
 // AllSupportedCodes is a list of all supported Qodana linters product codes
@@ -56,30 +70,9 @@ var AllSupportedCodes = []string{QDNET}
 // support has been disabled now for QDJVMC, QDJVM, QDPHP, QDPY, QDPYC, QDJS, QDGO until further testing
 
 func Image(code string) string {
-	switch code {
-	case QDANDC:
-		return "jetbrains/qodana-jvm-android:" + version
-	case QDPHP:
-		return "jetbrains/qodana-php:" + version
-	case QDJS:
-		return "jetbrains/qodana-js:" + version
-	case QDNET:
-		return "jetbrains/qodana-dotnet:" + version
-	case QDPY:
-		return "jetbrains/qodana-python:" + version
-	case QDPYC:
-		return "jetbrains/qodana-python-community:" + version
-	case QDGO:
-		return "jetbrains/qodana-go:" + version
-	case QDJVM:
-		return "jetbrains/qodana-jvm:" + version
-	case QDJVMC:
-		return "jetbrains/qodana-jvm-community:" + version
-	case QDNETC:
-		return "jetbrains/qodana-cdnet:" + version
-	//case QDRST:
-	//	return "jetbrains/qodana-rust:" + version
-	default:
+	if val, ok := DockerImageMap[code]; ok {
+		return val + version
+	} else {
 		log.Fatal("Unknown code: " + code)
 		return ""
 	}
