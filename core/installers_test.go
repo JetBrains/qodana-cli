@@ -64,7 +64,10 @@ func DownloadAndInstallIDE(ideName string, t *testing.T) {
 		}
 	}(tempDir) // clean up
 
-	ide := downloadAndInstallIDE(ideName, tempDir, nil)
+	opts := &QodanaOptions{
+		Ide: ideName,
+	}
+	ide := downloadAndInstallIDE(opts, tempDir, nil)
 	if ide == "" {
 		ErrorMessage("Cannot install %s", ideName)
 		t.Fail()
