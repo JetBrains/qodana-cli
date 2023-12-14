@@ -120,6 +120,18 @@ But you can always override qodana.yaml options with the following command-line 
 	flags.StringArrayVar(&options.Property, "property", []string{}, "Set a JVM property to be used while running Qodana using the --property property.name=value1,value2,...,valueN notation")
 	flags.BoolVarP(&options.SaveReport, "save-report", "s", true, "Generate HTML report")
 
+	// Third-party linter options
+	flags.BoolVar(&options.NoStatistics, "no-statistics", false, "(qodana-cdnet/qodana-clang) Don't collect anonymous statistics")
+	// Cdnet specific options
+	flags.StringVar(&options.Solution, "solution", "", "(qodana-cdnet) Relative path to solution file")
+	flags.StringVar(&options.Project, "project", "", "(qodana-cdnet) Relative path to project file")
+	flags.StringVar(&options.Configuration, "configuration", "", "(qodana-cdnet) Build configuration")
+	flags.StringVar(&options.Platform, "platform", "", "(qodana-cdnet) Build platform")
+	flags.BoolVar(&options.NoBuild, "no-build", false, "(qodana-cdnet) Do not build the project before analysis")
+	// Clang specific options
+	flags.StringVar(&options.CompileCommands, "compile-commands", "./build/compile_commands.json", "(qodana-clang) Path to compile_commands.json file")
+	flags.StringVar(&options.ClangArgs, "clang-args", "", "(qodana-clang) Additional arguments to pass to clang-tidy")
+
 	if !core.IsContainer() {
 		flags.StringArrayVarP(&options.Env, "env", "e", []string{}, "Only for container runs. Define additional environment variables for the Qodana container (you can use the flag multiple times). CLI is not reading full host environment variables and does not pass it to the Qodana container for security reasons")
 		flags.StringArrayVarP(&options.Volumes, "volume", "v", []string{}, "Only for container runs. Define additional volumes for the Qodana container (you can use the flag multiple times)")
