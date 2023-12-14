@@ -8,6 +8,55 @@ import (
 	"testing"
 )
 
+func createTempFileWithContent(content string) string {
+	tempFile, _ := os.CreateTemp("", "test")
+	_, _ = tempFile.WriteString(content)
+	err := tempFile.Close()
+	if err != nil {
+		return ""
+	}
+	return tempFile.Name()
+}
+
+func TestCheckForPrivateFeed(t *testing.T) {
+	testCases := []struct {
+		name     string
+		filename string
+		expected bool
+	}{
+		{
+			name:     "FileWithPrivateFeed",
+			filename: createTempFileWithContent(`<add key= 'xxx' value = 'http://'>`),
+			expected: true,
+		},
+		{
+			name:     "FileWithPrivateFeed2",
+			filename: createTempFileWithContent(`<add key= 'xxx' value = 'https://'>`),
+			expected: true,
+		},
+		{
+			name:     "FileWithoutPrivateFeed",
+			filename: createTempFileWithContent(`<add key= 'xxx' value='yyy'>`),
+			expected: false,
+		},
+		{
+			name:     "EmptyFile",
+			filename: createTempFileWithContent(""),
+			expected: false,
+		},
+	}
+
+	for _, test := range testCases {
+		t.Run(test.name, func(t *testing.T) {
+			result := checkForPrivateFeed(test.filename)
+			if result != test.expected {
+				t.Errorf("got/want mismatch, got %v, want %v", result, test.expected)
+			}
+			_ = os.Remove(test.filename)
+		})
+	}
+}
+
 func TestPrepareNugetConfig(t *testing.T) {
 	_ = os.Setenv(qodanaNugetName, "qdn")
 	_ = os.Setenv(qodanaNugetUrl, "test_url")
