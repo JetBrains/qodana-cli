@@ -55,19 +55,19 @@ var (
 	}
 )
 
-func downloadAndInstallIDE(ide string, baseDir string, spinner *pterm.SpinnerPrinter) string {
+func downloadAndInstallIDE(opts *QodanaOptions, baseDir string, spinner *pterm.SpinnerPrinter) string {
+	if opts.Ide == "" || opts.guessProduct() == "" {
+		log.Fatalf("Product code is not defined or not supported, exiting")
+	}
 	var ideUrl string
 	checkSumUrl := ""
-	if strings.HasPrefix(ide, "https://") || strings.HasPrefix(ide, "http://") {
-		ideUrl = ide
+
+	releaseDownloadInfo := getIde(opts.Ide)
+	if releaseDownloadInfo == nil {
+		log.Fatalf("Error while obtaining the URL for the supplied IDE, exiting")
 	} else {
-		release := getIde(ide)
-		if release == nil {
-			log.Fatalf("Error while obtaining the URL for the supplied IDE, exiting")
-		} else {
-			ideUrl = release.Link
-			checkSumUrl = release.ChecksumLink
-		}
+		ideUrl = releaseDownloadInfo.Link
+		checkSumUrl = releaseDownloadInfo.ChecksumLink
 	}
 
 	fileName := filepath.Base(ideUrl)

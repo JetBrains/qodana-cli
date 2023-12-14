@@ -210,13 +210,15 @@ func prepareHost(opts *QodanaOptions) {
 		PrepareContainerEnvSettings()
 	}
 	if opts.Ide != "" {
-		if Contains(AllSupportedCodes, strings.TrimSuffix(opts.Ide, EapSuffix)) || strings.HasPrefix(opts.Ide, "https://") {
+		if Contains(AllSupportedCodes, strings.TrimSuffix(opts.Ide, EapSuffix)) {
 			printProcess(func(spinner *pterm.SpinnerPrinter) {
 				if spinner != nil {
 					spinner.ShowTimer = false // We will update interactive spinner
 				}
-				opts.Ide = downloadAndInstallIDE(opts.Ide, opts.getQodanaSystemDir(), spinner)
+				opts.Ide = downloadAndInstallIDE(opts, opts.getQodanaSystemDir(), spinner)
 			}, fmt.Sprintf("Downloading %s", opts.Ide), fmt.Sprintf("downloading IDE distribution to %s", opts.getQodanaSystemDir()))
+		} else {
+			log.Fatalf("Product code %s is not supported", opts.Ide)
 		}
 		prepareLocalIdeSettings(opts)
 	}
