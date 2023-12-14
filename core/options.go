@@ -284,5 +284,35 @@ func (o *QodanaOptions) RequiresToken() bool {
 }
 
 func (o *QodanaOptions) fixesSupported() bool {
-	return o.Linter != Image(QDNET) && o.Ide != QDNET
+	return o.guessProduct() != QDNET && o.guessProduct() != QDNETC && o.guessProduct() != QDCL
+}
+
+func (o *QodanaOptions) guessProduct() string {
+	if o.Ide != "" {
+		productCode := o.Ide
+		if strings.HasSuffix(productCode, EapSuffix) {
+			productCode = strings.TrimSuffix(productCode, EapSuffix)
+		}
+		if _, ok := Products[productCode]; ok {
+			return productCode
+		}
+		return ""
+	} else if o.Linter != "" {
+		// if Linter contains registry.jetbrains.team/p/sa/containers/ or https://registry.jetbrains.team/p/sa/containers/
+		// then replace it with jetbrains/ and do the comparison
+		linter := o.Linter
+		if strings.HasPrefix(linter, "https://") {
+			linter = strings.TrimPrefix(linter, "https://")
+		}
+		if strings.HasPrefix(linter, "registry.jetbrains.team/p/sa/containers/") {
+			linter = strings.TrimPrefix(linter, "registry.jetbrains.team/p/sa/containers/")
+			linter = "jetbrains/" + linter
+		}
+		for k, v := range DockerImageMap {
+			if strings.HasPrefix(linter, v) {
+				return k
+			}
+		}
+	}
+	return ""
 }
