@@ -289,10 +289,7 @@ func (o *QodanaOptions) fixesSupported() bool {
 
 func (o *QodanaOptions) guessProduct() string {
 	if o.Ide != "" {
-		productCode := o.Ide
-		if strings.HasSuffix(productCode, EapSuffix) {
-			productCode = strings.TrimSuffix(productCode, EapSuffix)
-		}
+		productCode := strings.TrimSuffix(o.Ide, EapSuffix)
 		if _, ok := Products[productCode]; ok {
 			return productCode
 		}
@@ -300,10 +297,7 @@ func (o *QodanaOptions) guessProduct() string {
 	} else if o.Linter != "" {
 		// if Linter contains registry.jetbrains.team/p/sa/containers/ or https://registry.jetbrains.team/p/sa/containers/
 		// then replace it with jetbrains/ and do the comparison
-		linter := o.Linter
-		if strings.HasPrefix(linter, "https://") {
-			linter = strings.TrimPrefix(linter, "https://")
-		}
+		linter := strings.TrimPrefix(o.Linter, "https://")
 		if strings.HasPrefix(linter, "registry.jetbrains.team/p/sa/containers/") {
 			linter = strings.TrimPrefix(linter, "registry.jetbrains.team/p/sa/containers/")
 			linter = "jetbrains/" + linter
