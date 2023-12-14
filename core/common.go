@@ -59,7 +59,7 @@ var (
 		QDJVM:  "jetbrains/qodana-jvm:",
 		QDJVMC: "jetbrains/qodana-jvm-community:",
 		QDNETC: "jetbrains/qodana-cdnet:",
-		//QDCL:   "jetbrains/qodana-clang:",
+		QDCL:   "jetbrains/qodana-clang:",
 		//QDRST:  "jetbrains/qodana-rust:",
 	}
 )

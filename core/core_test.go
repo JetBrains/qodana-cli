@@ -390,11 +390,35 @@ func TestLegacyFixStrategies(t *testing.T) {
 			},
 			expected: []string{},
 		},
+	}
+
+	for _, tt := range cases {
+		t.Run(tt.name, func(t *testing.T) {
+			if tt.options.Ide == "QDPHP" {
+				Prod.Version = "2023.3"
+			} else {
+				Prod.Version = "2023.2"
+			}
+
+			actual := getIdeArgs(tt.options)
+			if !reflect.DeepEqual(tt.expected, actual) {
+				t.Fatalf("expected \"%s\" got \"%s\"", tt.expected, actual)
+			}
+		})
+	}
+}
+
+func TestGetArgsThirdPartyLinters(t *testing.T) {
+	cases := []struct {
+		name     string
+		options  *QodanaOptions
+		expected []string
+	}{
 		{
 			name: "not sending statistics",
 			options: &QodanaOptions{
 				NoStatistics: true,
-				Ide:          QDNETC,
+				Linter:       DockerImageMap[QDNETC],
 			},
 			expected: []string{
 				"--no-statistics",
@@ -404,7 +428,7 @@ func TestLegacyFixStrategies(t *testing.T) {
 			name: "(cdnet) solution",
 			options: &QodanaOptions{
 				Solution: "solution.sln",
-				Ide:      QDNETC,
+				Linter:   DockerImageMap[QDNETC],
 			},
 			expected: []string{
 				"--solution", "solution.sln",
@@ -414,7 +438,7 @@ func TestLegacyFixStrategies(t *testing.T) {
 			name: "(cdnet) project",
 			options: &QodanaOptions{
 				Project: "project.csproj",
-				Ide:     QDNETC,
+				Linter:  DockerImageMap[QDNETC],
 			},
 			expected: []string{
 				"--project", "project.csproj",
@@ -424,7 +448,7 @@ func TestLegacyFixStrategies(t *testing.T) {
 			name: "(cdnet) configuration",
 			options: &QodanaOptions{
 				Configuration: "Debug",
-				Ide:           QDNETC,
+				Linter:        DockerImageMap[QDNETC],
 			},
 			expected: []string{
 				"--configuration", "Debug",
@@ -434,7 +458,7 @@ func TestLegacyFixStrategies(t *testing.T) {
 			name: "(cdnet) platform",
 			options: &QodanaOptions{
 				Platform: "x64",
-				Ide:      QDNETC,
+				Linter:   DockerImageMap[QDNETC],
 			},
 			expected: []string{
 				"--platform", "x64",
@@ -444,7 +468,7 @@ func TestLegacyFixStrategies(t *testing.T) {
 			name: "(cdnet) no build",
 			options: &QodanaOptions{
 				NoBuild: true,
-				Ide:     QDNETC,
+				Linter:  DockerImageMap[QDNETC],
 			},
 			expected: []string{
 				"--no-build",
@@ -454,7 +478,7 @@ func TestLegacyFixStrategies(t *testing.T) {
 			name: "(clang) compile commands",
 			options: &QodanaOptions{
 				CompileCommands: "compile_commands.json",
-				Ide:             QDCL,
+				Linter:          DockerImageMap[QDCL],
 			},
 			expected: []string{
 				"--compile-commands", "compile_commands.json",
@@ -464,7 +488,7 @@ func TestLegacyFixStrategies(t *testing.T) {
 			name: "(clang) clang args",
 			options: &QodanaOptions{
 				ClangArgs: "-I/usr/include",
-				Ide:       QDCL,
+				Linter:    DockerImageMap[QDCL],
 			},
 			expected: []string{
 				"--clang-args", "-I/usr/include",
@@ -482,11 +506,6 @@ func TestLegacyFixStrategies(t *testing.T) {
 
 	for _, tt := range cases {
 		t.Run(tt.name, func(t *testing.T) {
-			if tt.options.Ide == "QDPHP" {
-				Prod.Version = "2023.3"
-			} else {
-				Prod.Version = "2023.2"
-			}
 			if tt.options.Ide != "" {
 				Prod.Code = tt.options.Ide
 			}
