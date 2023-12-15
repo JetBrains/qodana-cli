@@ -37,7 +37,7 @@ func newInitCommand() *cobra.Command {
 				options.YamlName = core.FindQodanaYaml(options.ProjectDir)
 			}
 			qodanaYaml := core.LoadQodanaYaml(options.ProjectDir, options.YamlName)
-			if qodanaYaml.Linter == "" || qodanaYaml.Ide == "" || force {
+			if (qodanaYaml.Linter == "" && qodanaYaml.Ide == "") || force {
 				absPath, err := filepath.Abs(options.ProjectDir)
 				if err != nil {
 					log.Fatal(err)
@@ -54,15 +54,15 @@ func newInitCommand() *cobra.Command {
 				}
 			} else {
 				core.EmptyMessage()
-				var product string
+				var analyzer string
 				if qodanaYaml.Ide != "" {
-					product = qodanaYaml.Ide
+					analyzer = qodanaYaml.Ide
 				} else if qodanaYaml.Linter != "" {
-					product = qodanaYaml.Linter
+					analyzer = qodanaYaml.Linter
 				}
 				core.SuccessMessage(
 					"The product to use was already configured before: %s. Run the command with %s flag to re-init the project",
-					core.PrimaryBold(product),
+					core.PrimaryBold(analyzer),
 					core.PrimaryBold("-f"),
 				)
 			}
