@@ -218,7 +218,10 @@ func prepareHost(opts *QodanaOptions) {
 				opts.Ide = downloadAndInstallIDE(opts, opts.getQodanaSystemDir(), spinner)
 			}, fmt.Sprintf("Downloading %s", opts.Ide), fmt.Sprintf("downloading IDE distribution to %s", opts.getQodanaSystemDir()))
 		} else {
-			log.Fatalf("Product code %s is not supported", opts.Ide)
+			val, exists := os.LookupEnv(QodanaDistEnv)
+			if !exists || val == "" || opts.Ide != val {
+				log.Fatalf("Product code %s is not supported", opts.Ide)
+			}
 		}
 		prepareLocalIdeSettings(opts)
 	}
