@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package core
+package platform
 
 import (
 	"fmt"
@@ -27,12 +27,12 @@ import (
 
 const defaultService = "qodana-cli"
 
-func (o *QodanaOptions) loadToken(refresh bool) string {
+func (o *QodanaOptions) LoadToken(refresh bool, requiresToken bool) string {
 	tokenFetchers := []func(bool) string{
 		func(_ bool) string { return o.getTokenFromDockerArgs() },
 		func(_ bool) string { return o.getTokenFromEnv() },
 		o.getTokenFromKeychain,
-		func(_ bool) string { return o.getTokenFromUserInput() },
+		func(_ bool) string { return o.getTokenFromUserInput(requiresToken) },
 	}
 
 	for _, fetcher := range tokenFetchers {
@@ -44,7 +44,7 @@ func (o *QodanaOptions) loadToken(refresh bool) string {
 }
 
 func (o *QodanaOptions) getTokenFromDockerArgs() string {
-	tokenFromCliArgs := o.getenv(QodanaToken)
+	tokenFromCliArgs := o.Getenv(QodanaToken)
 	if tokenFromCliArgs != "" {
 		log.Debug("Loaded token from CLI args environment")
 		return tokenFromCliArgs
@@ -62,15 +62,15 @@ func (o *QodanaOptions) getTokenFromEnv() string {
 }
 
 func (o *QodanaOptions) getTokenFromKeychain(refresh bool) string {
-	log.Debugf("project id: %s", o.id())
+	log.Debugf("project id: %s", o.Id())
 	if refresh || os.Getenv(qodanaClearKeyring) != "" {
-		err := keyring.Delete(defaultService, o.id())
+		err := keyring.Delete(defaultService, o.Id())
 		if err != nil {
 			log.Debugf("Failed to delete token from the system keyring: %s", err)
 		}
 		return ""
 	}
-	tokenFromKeychain, err := getCloudToken(o.id())
+	tokenFromKeychain, err := getCloudToken(o.Id())
 	if err == nil && tokenFromKeychain != "" {
 		WarningMessage(
 			"Got %s from the system keyring, declare %s env variable or run %s to override it",
@@ -78,19 +78,19 @@ func (o *QodanaOptions) getTokenFromKeychain(refresh bool) string {
 			PrimaryBold(QodanaToken),
 			PrimaryBold("qodana init -f"),
 		)
-		o.setenv(QodanaToken, tokenFromKeychain)
-		log.Debugf("Loaded token from the system keyring with id %s", o.id())
+		o.Setenv(QodanaToken, tokenFromKeychain)
+		log.Debugf("Loaded token from the system keyring with id %s", o.Id())
 		return tokenFromKeychain
 	}
 	return ""
 }
 
-func (o *QodanaOptions) getTokenFromUserInput() string {
-	if IsInteractive() && o.RequiresToken() {
+func (o *QodanaOptions) getTokenFromUserInput(requiresToken bool) string {
+	if IsInteractive() && requiresToken {
 		WarningMessage(cloud.EmptyTokenMessage)
 		var token string
 		for {
-			token = setupToken(o.ProjectDir, o.id())
+			token = setupToken(o.ProjectDir, o.Id())
 			if token == "q" {
 				return ""
 			}
@@ -102,9 +102,9 @@ func (o *QodanaOptions) getTokenFromUserInput() string {
 	return ""
 }
 
-// ValidateToken checks if QODANA_TOKEN is set in CLI args, or environment or the system keyring, returns it's value.
+// ValidateToken checks if QODANA_TOKEN is set in CLI args, or environment or the system keyring, returns its value.
 func (o *QodanaOptions) ValidateToken(refresh bool) string {
-	token := o.loadToken(refresh)
+	token := o.LoadToken(refresh, true)
 	if token != "" {
 		client := cloud.NewQdClient(token)
 		if projectName := client.ValidateToken(); projectName == "" {
@@ -114,7 +114,7 @@ func (o *QodanaOptions) ValidateToken(refresh bool) string {
 			}
 		} else {
 			SuccessMessage("Linked %s project: %s", cloud.GetEnvWithDefault(cloud.QodanaEndpoint, cloud.DefaultEndpoint), projectName)
-			o.setenv(QodanaToken, token)
+			o.Setenv(QodanaToken, token)
 		}
 	}
 	return token
@@ -143,14 +143,14 @@ func getCloudToken(id string) (string, error) {
 func setupToken(path string, id string) string {
 	openCloud := AskUserConfirm("Do you want to open the team page to get the token?")
 	if openCloud {
-		origin := gitRemoteUrl(path)
+		origin := GitRemoteUrl(path)
 		err := openBrowser(cloud.GetCloudTeamsPageUrl(origin, path))
 		if err != nil {
 			ErrorMessage("%s", err)
 			return ""
 		}
 	}
-	token, err := pterm.DefaultInteractiveTextInput.WithMask("*").WithTextStyle(primaryStyle).Show(
+	token, err := pterm.DefaultInteractiveTextInput.WithMask("*").WithTextStyle(PrimaryStyle).Show(
 		fmt.Sprintf(">  Enter the token (will be used for %s; enter 'q' to exit)", PrimaryBold(path)),
 	)
 	if token == "q" {

@@ -19,6 +19,7 @@ package core
 import (
 	"encoding/xml"
 	"fmt"
+	"github.com/JetBrains/qodana-cli/v2023/platform"
 	"os"
 	"path/filepath"
 	"runtime"
@@ -138,7 +139,7 @@ func (p *product) IsCommunity() bool {
 	if p.Code == "" {
 		return true
 	}
-	if Contains(allSupportedFreeCodes, p.Code) {
+	if platform.Contains(allSupportedFreeCodes, p.Code) {
 		return true
 	}
 	return false
@@ -192,7 +193,7 @@ func (p *product) getVersionBranch() string {
 func (p *product) is233orNewer() bool {
 	number, err := strconv.Atoi(p.getVersionBranch())
 	if err != nil {
-		WarningMessage("Invalid version: ", err)
+		platform.WarningMessage("Invalid version: ", err)
 		return false
 	}
 	return number >= 233
@@ -210,7 +211,7 @@ func guessProduct(opts *QodanaOptions) {
 	if Prod.Home == "" {
 		if home, ok := os.LookupEnv(QodanaDistEnv); ok {
 			Prod.Home = home
-		} else if IsContainer() {
+		} else if platform.IsContainer() {
 			Prod.Home = "/opt/idea"
 		} else { // guess from the executable location
 			ex, err := os.Executable()
@@ -229,7 +230,7 @@ func guessProduct(opts *QodanaOptions) {
 			Prod.BaseScriptName = findIde(Prod.IdeBin())
 		}
 		if Prod.BaseScriptName == "" {
-			WarningMessage(
+			platform.WarningMessage(
 				"Supported IDE not found in %s, you can declare the path to IDE home via %s variable",
 				Prod.Home,
 				QodanaDistEnv,
@@ -286,7 +287,7 @@ func guessProduct(opts *QodanaOptions) {
 		}
 	}
 
-	if !IsContainer() {
+	if !platform.IsContainer() {
 		remove := fmt.Sprintf("-Didea.platform.prefix=%s", Prod.parentPrefix())
 		Prod.IdeScript = patchIdeScript(Prod, remove, opts.ConfDirPath())
 	}
@@ -301,7 +302,7 @@ func patchIdeScript(product product, strToRemove string, confDirPath string) str
 	newFilePath := filepath.Join(confDirPath, fmt.Sprintf("%s%s", product.BaseScriptName, ext))
 	contentBytes, err := os.ReadFile(product.IdeScript)
 	if err != nil {
-		WarningMessage("Warning, can't read original script: %s (probably test mode)", err)
+		platform.WarningMessage("Warning, can't read original script: %s (probably test mode)", err)
 		return product.IdeScript
 	}
 
@@ -313,7 +314,7 @@ func patchIdeScript(product product, strToRemove string, confDirPath string) str
 	runtime.GOOS == "linux" {
 		modifiedContent = strings.ReplaceAll(modifiedContent, "IDE_BIN_HOME=$(dirname \"$(realpath \"$0\")\")", "IDE_BIN_HOME=$QODANA_DIST/bin")
 	} else {
-		WarningMessage("Warning, unsupported platform: %s", runtime.GOOS)
+		platform.WarningMessage("Warning, unsupported platform: %s", runtime.GOOS)
 		return product.IdeScript
 	}
 	if _, err := os.Stat(confDirPath); os.IsNotExist(err) {

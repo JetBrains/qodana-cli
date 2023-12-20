@@ -22,6 +22,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/JetBrains/qodana-cli/v2023/cloud"
+	"github.com/JetBrains/qodana-cli/v2023/platform"
 	"github.com/owenrumney/go-sarif/v2/sarif"
 	"os"
 	"path/filepath"
@@ -73,9 +74,9 @@ func runQodanaLocal(opts *QodanaOptions) int {
 }
 
 func getIdeRunCommand(opts *QodanaOptions) []string {
-	args := []string{QuoteForWindows(Prod.IdeScript), "inspect", "qodana"}
+	args := []string{platform.QuoteForWindows(Prod.IdeScript), "inspect", "qodana"}
 	args = append(args, getIdeArgs(opts)...)
-	args = append(args, QuoteForWindows(opts.ProjectDir), QuoteForWindows(opts.ResultsDir))
+	args = append(args, platform.QuoteForWindows(opts.ProjectDir), platform.QuoteForWindows(opts.ResultsDir))
 	return args
 }
 
@@ -86,16 +87,16 @@ func getIdeArgs(opts *QodanaOptions) []string {
 		arguments = append(arguments, "--save-report")
 	}
 	if opts.SourceDirectory != "" {
-		arguments = append(arguments, "--source-directory", QuoteForWindows(opts.SourceDirectory))
+		arguments = append(arguments, "--source-directory", platform.QuoteForWindows(opts.SourceDirectory))
 	}
 	if opts.DisableSanity {
 		arguments = append(arguments, "--disable-sanity")
 	}
 	if opts.ProfileName != "" {
-		arguments = append(arguments, "--profile-name", quoteIfSpace(opts.ProfileName))
+		arguments = append(arguments, "--profile-name", platform.QuoteIfSpace(opts.ProfileName))
 	}
 	if opts.ProfilePath != "" {
-		arguments = append(arguments, "--profile-path", QuoteForWindows(opts.ProfilePath))
+		arguments = append(arguments, "--profile-path", platform.QuoteForWindows(opts.ProfilePath))
 	}
 	if opts.RunPromo != "" {
 		arguments = append(arguments, "--run-promo", opts.RunPromo)
@@ -104,7 +105,7 @@ func getIdeArgs(opts *QodanaOptions) []string {
 		arguments = append(arguments, "--script", opts.Script)
 	}
 	if opts.Baseline != "" {
-		arguments = append(arguments, "--baseline", QuoteForWindows(opts.Baseline))
+		arguments = append(arguments, "--baseline", platform.QuoteForWindows(opts.Baseline))
 	}
 	if opts.BaselineIncludeAbsent {
 		arguments = append(arguments, "--baseline-include-absent")
@@ -142,7 +143,7 @@ func getIdeArgs(opts *QodanaOptions) []string {
 		}
 	}
 
-	prod := opts.guessProduct()
+	prod := opts.guessProduct() // TODO : think how it could be better handled in presence of random 3rd party linters
 	if prod == QDNETC || prod == QDCL {
 		// third party common options
 		if opts.NoStatistics {
@@ -151,10 +152,10 @@ func getIdeArgs(opts *QodanaOptions) []string {
 		if prod == QDNETC {
 			// cdnet options
 			if opts.Solution != "" {
-				arguments = append(arguments, "--solution", QuoteForWindows(opts.Solution))
+				arguments = append(arguments, "--solution", platform.QuoteForWindows(opts.Solution))
 			}
 			if opts.Project != "" {
-				arguments = append(arguments, "--project", QuoteForWindows(opts.Project))
+				arguments = append(arguments, "--project", platform.QuoteForWindows(opts.Project))
 			}
 			if opts.Configuration != "" {
 				arguments = append(arguments, "--configuration", opts.Configuration)
@@ -168,7 +169,7 @@ func getIdeArgs(opts *QodanaOptions) []string {
 		} else {
 			// clang options
 			if opts.CompileCommands != "" {
-				arguments = append(arguments, "--compile-commands", QuoteForWindows(opts.CompileCommands))
+				arguments = append(arguments, "--compile-commands", platform.QuoteForWindows(opts.CompileCommands))
 			}
 			if opts.ClangArgs != "" {
 				arguments = append(arguments, "--clang-args", opts.ClangArgs)
@@ -327,23 +328,23 @@ func prepareLocalIdeSettings(opts *QodanaOptions) {
 	}
 
 	ExtractQodanaEnvironment(setEnv)
-	SetupLicenseToken(opts)
+	cloud.SetupLicenseToken(opts.QodanaOptions, opts.RequiresToken())
 	SetupLicenseAndProjectHash(cloud.Token.Token)
 	prepareDirectories(
 		opts.CacheDir,
-		opts.logDirPath(),
+		opts.LogDirPath(),
 		opts.ConfDirPath(),
 	)
-	Config = GetQodanaYaml(opts.ProjectDir)
+	platform.Config = platform.GetQodanaYaml(opts.ProjectDir) // TODO: Burry it!
 	writeProperties(opts)
 
-	if IsContainer() {
+	if platform.IsContainer() {
 		syncIdeaCache(opts.CacheDir, opts.ProjectDir, false)
 		createUser("/etc/passwd")
 	}
 
-	bootstrap(Config.Bootstrap, opts.ProjectDir)
-	installPlugins(Config.Plugins)
+	bootstrap(platform.Config.Bootstrap, opts.ProjectDir)
+	installPlugins(platform.Config.Plugins)
 }
 
 func prepareDirectories(cacheDir string, logDir string, confDir string) {
@@ -358,7 +359,7 @@ func prepareDirectories(cacheDir string, logDir string, confDir string) {
 		confDir,
 		userPrefsDir,
 	}
-	if IsContainer() {
+	if platform.IsContainer() {
 		if Prod.BaseScriptName == rider {
 			nugetDir := filepath.Join(cacheDir, nuget)
 			if err := os.Setenv("NUGET_PACKAGES", nugetDir); err != nil {
@@ -411,7 +412,7 @@ func prepareDirectories(cacheDir string, logDir string, confDir string) {
 		writeFileIfNew(filepath.Join(ideaOptions, "path.macros.xml"), mavenPathMacroxXml)
 
 		androidSdk := os.Getenv(androidSdkRoot)
-		if androidSdk != "" && IsContainer() {
+		if androidSdk != "" && platform.IsContainer() {
 			writeFileIfNew(filepath.Join(ideaOptions, "project.default.xml"), androidProjectDefaultXml(androidSdk))
 			corettoSdk := os.Getenv(qodanaCorettoSdk)
 			if corettoSdk != "" {
@@ -422,10 +423,10 @@ func prepareDirectories(cacheDir string, logDir string, confDir string) {
 }
 
 // installPlugins runs plugin installer for every plugin id in qodana.yaml.
-func installPlugins(plugins []Plugin) {
+func installPlugins(plugins []platform.Plugin) {
 	for _, plugin := range plugins {
 		log.Printf("Installing plugin %s", plugin.Id)
-		if res := RunCmd("", QuoteForWindows(Prod.IdeScript), "installPlugins", plugin.Id); res > 0 {
+		if res, err := platform.RunCmd("", platform.QuoteForWindows(Prod.IdeScript), "installPlugins", plugin.Id); res > 0 || err != nil {
 			os.Exit(res)
 		}
 	}
@@ -455,7 +456,7 @@ func syncIdeaCache(from string, to string, overwrite bool) {
 }
 
 func getScriptSuffix() string {
-	if IsContainer() {
+	if platform.IsContainer() {
 		return ".sh"
 	}
 	switch runtime.GOOS {

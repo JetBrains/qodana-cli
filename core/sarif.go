@@ -17,6 +17,7 @@
 package core
 
 import (
+	"github.com/JetBrains/qodana-cli/v2023/platform"
 	"github.com/owenrumney/go-sarif/v2/sarif"
 	log "github.com/sirupsen/logrus"
 	"os"
@@ -39,7 +40,7 @@ func ReadSarif(sarifPath string, printProblems bool) {
 		log.Fatal(err)
 	}
 	if printProblems {
-		EmptyMessage()
+		platform.EmptyMessage()
 	}
 	for _, run := range s.Runs {
 		for _, r := range run.Results {
@@ -60,18 +61,18 @@ func ReadSarif(sarifPath string, printProblems bool) {
 					startColumn := *r.Locations[0].PhysicalLocation.Region.StartColumn
 					filePath := *r.Locations[0].PhysicalLocation.ArtifactLocation.URI
 					context := *r.Locations[0].PhysicalLocation.ContextRegion.Snippet.Text
-					printProblem(ruleId, level, message, filePath, startLine, startColumn, contextLine, context)
+					platform.PrintProblem(ruleId, level, message, filePath, startLine, startColumn, contextLine, context)
 				} else {
-					printProblem(ruleId, level, message, "", 0, 0, 0, "")
+					platform.PrintProblem(ruleId, level, message, "", 0, 0, 0, "")
 				}
 			}
 		}
 	}
-	if !IsContainer() {
+	if !platform.IsContainer() {
 		if newProblems == 0 {
-			SuccessMessage("It seems all right 👌 No new problems found according to the checks applied")
+			platform.SuccessMessage("It seems all right 👌 No new problems found according to the checks applied")
 		} else {
-			ErrorMessage("Found %d new problems according to the checks applied", newProblems)
+			platform.ErrorMessage("Found %d new problems according to the checks applied", newProblems)
 		}
 	}
 }

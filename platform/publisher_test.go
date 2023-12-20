@@ -1,4 +1,4 @@
-package core
+package platform
 
 import (
 	"github.com/JetBrains/qodana-cli/v2023/cloud"
@@ -47,12 +47,13 @@ func TestGetPublisherArgs(t *testing.T) {
 		t.Fatal(err)
 	}
 
+	java, _ := getJavaExecutablePath()
 	// Call the function being tested
-	publisherArgs := getPublisherArgs(Prod.JbrJava(), "test-publisher.jar", opts, "test-token", "test-endpoint")
+	publisherArgs := getPublisherArgs(java, "test-publisher.jar", opts, "test-token", "test-endpoint")
 
 	// Assert that the expected arguments are present
 	expectedArgs := []string{
-		Prod.JbrJava(),
+		java,
 		"-jar",
 		"test-publisher.jar",
 		"--analysis-id", "test-analysis-id",

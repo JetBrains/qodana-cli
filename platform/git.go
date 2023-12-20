@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package core
+package platform
 
 import (
 	"fmt"
@@ -34,23 +34,23 @@ func gitRun(cwd string, command []string) error {
 	return cmd.Run()
 }
 
-// gitReset resets the git repository to the given commit.
-func gitReset(cwd string, sha string) error {
+// GitReset resets the git repository to the given commit.
+func GitReset(cwd string, sha string) error {
 	return gitRun(cwd, []string{"reset", "--soft", strings.TrimPrefix(sha, "CI")})
 }
 
-// gitResetBack aborts the git reset.
-func gitResetBack(cwd string) error {
+// GitResetBack aborts the git reset.
+func GitResetBack(cwd string) error {
 	return gitRun(cwd, []string{"reset", "'HEAD@{1}'"})
 }
 
-// gitCheckout checks out the given commit / branch.
-func gitCheckout(cwd string, where string) error {
+// GitCheckout checks out the given commit / branch.
+func GitCheckout(cwd string, where string) error {
 	return gitRun(cwd, []string{"checkout", where})
 }
 
-// gitClean cleans the git repository.
-func gitClean(cwd string) error {
+// GitClean cleans the git repository.
+func GitClean(cwd string) error {
 	return gitRun(cwd, []string{"clean", "-fdx"})
 }
 
@@ -66,8 +66,8 @@ func gitOutput(cwd string, args []string) []string {
 	return strings.Split(strings.TrimSpace(string(out)), "\n")
 }
 
-// gitLog returns the git log of the given repository in the given format.
-func gitLog(cwd string, format string, since int) []string {
+// GitLog returns the git log of the given repository in the given format.
+func GitLog(cwd string, format string, since int) []string {
 	args := []string{"--no-pager", "log"}
 	if format != "" {
 		args = append(args, "--pretty=format:"+format)
@@ -78,17 +78,17 @@ func gitLog(cwd string, format string, since int) []string {
 	return gitOutput(cwd, args)
 }
 
-// gitRevisions returns the list of commits of the git repository in chronological order.
-func gitRevisions(cwd string) []string {
-	return reverse(gitLog(cwd, "%H", 0))
+// GitRevisions returns the list of commits of the git repository in chronological order.
+func GitRevisions(cwd string) []string {
+	return reverse(GitLog(cwd, "%H", 0))
 }
 
-// gitRemoteUrl returns the remote url of the git repository.
-func gitRemoteUrl(cwd string) string {
+// GitRemoteUrl returns the remote url of the git repository.
+func GitRemoteUrl(cwd string) string {
 	return gitOutput(cwd, []string{"remote", "get-url", "origin"})[0]
 }
 
-// gitBranch returns the current branch of the git repository.
-func gitBranch(cwd string) string {
+// GitBranch returns the current branch of the git repository.
+func GitBranch(cwd string) string {
 	return gitOutput(cwd, []string{"rev-parse", "--abbrev-ref", "HEAD"})[0]
 }

@@ -18,6 +18,7 @@ package core
 
 import (
 	"bytes"
+	"github.com/JetBrains/qodana-cli/v2023/platform"
 	"io"
 	"os"
 	"path/filepath"
@@ -221,13 +222,13 @@ func readIdeaDir(project string) []string {
 			}
 			text := string(iml)
 			if strings.Contains(text, "JAVA_MODULE") {
-				languages = Append(languages, "Java")
+				languages = platform.Append(languages, "Java")
 			}
 			if strings.Contains(text, "PYTHON_MODULE") {
-				languages = Append(languages, "Python")
+				languages = platform.Append(languages, "Python")
 			}
 			if strings.Contains(text, "Go") {
-				languages = Append(languages, "Go")
+				languages = platform.Append(languages, "Go")
 			}
 		}
 	}

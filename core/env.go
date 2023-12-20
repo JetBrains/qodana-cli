@@ -18,6 +18,7 @@ package core
 
 import (
 	"fmt"
+	"github.com/JetBrains/qodana-cli/v2023/platform"
 	cienvironment "github.com/cucumber/ci-environment/go"
 	log "github.com/sirupsen/logrus"
 	"net/url"
@@ -26,28 +27,20 @@ import (
 	"strings"
 )
 
-const (
+const ( // TODO : move to platform
 	qodanaEnv              = "QODANA_ENV"
-	QodanaToken            = "QODANA_TOKEN"
-	QodanaLicenseOnlyToken = "QODANA_LICENSE_ONLY_TOKEN"
 	qodanaJobUrl           = "QODANA_JOB_URL"
-	qodanaRemoteUrl        = "QODANA_REMOTE_URL"
 	qodanaBranch           = "QODANA_BRANCH"
 	qodanaRevision         = "QODANA_REVISION"
 	qodanaCliContainerName = "QODANA_CLI_CONTAINER_NAME"
 	qodanaCliContainerKeep = "QODANA_CLI_CONTAINER_KEEP"
 	qodanaCliUsePodman     = "QODANA_CLI_USE_PODMAN"
-	qodanaDockerEnv        = "QODANA_DOCKER"
-	QodanaConfEnv          = "QODANA_CONF"
-	QodanaToolEnv          = "QODANA_TOOL"
 	QodanaDistEnv          = "QODANA_DIST"
 	qodanaCorettoSdk       = "QODANA_CORETTO_SDK"
 	androidSdkRoot         = "ANDROID_SDK_ROOT"
-	QodanaLicenseEndpoint  = "LICENSE_ENDPOINT"
 	QodanaLicense          = "QODANA_LICENSE"
 	QodanaProjectIdHash    = "QODANA_PROJECT_ID_HASH"
 	QodanaTreatAsRelease   = "QODANA_TREAT_AS_RELEASE"
-	qodanaClearKeyring     = "QODANA_CLEAR_KEYRING"
 	qodanaNugetUrl         = "QODANA_NUGET_URL"
 	qodanaNugetUser        = "QODANA_NUGET_USER"
 	qodanaNugetPassword    = "QODANA_NUGET_PASSWORD"
@@ -63,7 +56,7 @@ func ExtractQodanaEnvironment(setEnvironmentFunc func(string, string)) {
 		qEnv = strings.ReplaceAll(strings.ToLower(ci.Name), " ", "-")
 		setEnvironmentFunc(qodanaJobUrl, validateJobUrl(ci.URL, qEnv))
 		if ci.Git != nil {
-			setEnvironmentFunc(qodanaRemoteUrl, validateRemoteUrl(ci.Git.Remote, qEnv))
+			setEnvironmentFunc(platform.QodanaRemoteUrl, validateRemoteUrl(ci.Git.Remote, qEnv))
 			setEnvironmentFunc(qodanaBranch, validateBranch(ci.Git.Branch, qEnv))
 			setEnvironmentFunc(qodanaRevision, ci.Git.Revision)
 			setEnvironmentFunc(qodanaRepoUrl, getRepositoryHttpUrl(qEnv, ci.Git.Remote))
@@ -75,7 +68,7 @@ func ExtractQodanaEnvironment(setEnvironmentFunc func(string, string)) {
 	} else if space := os.Getenv("JB_SPACE_API_URL"); space != "" {
 		qEnv = "space"
 		setEnvironmentFunc(qodanaJobUrl, os.Getenv("JB_SPACE_EXECUTION_URL"))
-		setEnvironmentFunc(qodanaRemoteUrl, getSpaceRemoteUrl())
+		setEnvironmentFunc(platform.QodanaRemoteUrl, getSpaceRemoteUrl())
 		setEnvironmentFunc(qodanaBranch, os.Getenv("JB_SPACE_GIT_BRANCH"))
 		setEnvironmentFunc(qodanaRevision, os.Getenv("JB_SPACE_GIT_REVISION"))
 		setEnvironmentFunc(qodanaRepoUrl, getRepositoryHttpUrl(qEnv, ""))
@@ -89,7 +82,7 @@ func validateRemoteUrl(remote string, qEnv string) string {
 	}
 	_, err := url.ParseRequestURI(remote)
 	if remote == "" || err != nil {
-		log.Warnf("Unable to parse git remote URL %s, set %s env variable for proper qodana.cloud reporting", remote, qodanaRemoteUrl)
+		log.Warnf("Unable to parse git remote URL %s, set %s env variable for proper qodana.cloud reporting", remote, platform.QodanaRemoteUrl)
 		return ""
 	}
 	return remote
@@ -168,7 +161,7 @@ func bootstrap(command string, project string) {
 			flag = "-c"
 		}
 
-		if res := RunCmd(project, executor, flag, command); res > 0 {
+		if res, err := platform.RunCmd(project, executor, flag, command); res > 0 || err != nil {
 			log.Printf("Provided bootstrap command finished with error: %d. Exiting...", res)
 			os.Exit(res)
 		}

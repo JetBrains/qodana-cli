@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"fmt"
 	"github.com/JetBrains/qodana-cli/v2023/cloud"
+	"github.com/JetBrains/qodana-cli/v2023/platform"
 	log "github.com/sirupsen/logrus"
 	"os"
 	"path/filepath"
@@ -65,7 +66,7 @@ func checkForPrivateFeed(fileName string) bool {
 }
 
 func isNugetConfigNeeded() bool {
-	return IsContainer() && qodanaNugetVarsSet()
+	return platform.IsContainer() && qodanaNugetVarsSet()
 }
 
 func qodanaNugetVarsSet() bool {

@@ -1,7 +1,7 @@
 //go:build windows
 // +build windows
 
-package core
+package platform
 
 import (
 	"os"

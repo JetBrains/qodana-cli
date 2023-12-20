@@ -24,6 +24,7 @@ package core
 
 import (
 	"encoding/json"
+	"github.com/JetBrains/qodana-cli/v2023/platform"
 	"io"
 	"os"
 	"path/filepath"
@@ -53,21 +54,21 @@ type ReleaseDownloadInfo struct {
 func GetProductByCode(code string) (*Product, error) {
 	tempDir, err := os.MkdirTemp("", "productByCode")
 	if err != nil {
-		ErrorMessage("Cannot create temp dir", err)
+		platform.ErrorMessage("Cannot create temp dir", err)
 		return nil, err
 	}
 
 	defer func(path string) {
 		err := os.RemoveAll(path)
 		if err != nil {
-			ErrorMessage("Cannot clean up temp dir", err)
+			platform.ErrorMessage("Cannot clean up temp dir", err)
 		}
 	}(tempDir) // clean up
 
 	path := filepath.Join(tempDir, "productInfo.json")
 	url := "https://raw.githubusercontent.com/JetBrains/qodana-docker/main/feed/releases.json"
 
-	if err := DownloadFile(path, url, nil); err != nil {
+	if err := platform.DownloadFile(path, url, nil); err != nil {
 		return nil, err
 	}
 
@@ -78,7 +79,7 @@ func GetProductByCode(code string) (*Product, error) {
 	defer func(file *os.File) {
 		err := file.Close()
 		if err != nil {
-			ErrorMessage("Cannot read downloaded file", err)
+			platform.ErrorMessage("Cannot read downloaded file", err)
 		}
 	}(file)
 

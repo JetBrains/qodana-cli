@@ -20,6 +20,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/JetBrains/qodana-cli/v2023/cloud"
+	"github.com/JetBrains/qodana-cli/v2023/platform"
 	"sort"
 	"strings"
 )
@@ -48,7 +49,7 @@ type author struct {
 
 // isBot returns true if the author is a bot.
 func (a *author) isBot() bool {
-	return strings.HasSuffix(a.Email, cloud.GitHubBotSuffix) || Contains(cloud.CommonGitBots, a.Email)
+	return strings.HasSuffix(a.Email, cloud.GitHubBotSuffix) || platform.Contains(cloud.CommonGitBots, a.Email)
 }
 
 // commit struct represents a git commit.
@@ -110,11 +111,11 @@ func parseCommits(gitLogOutput []string, excludeBots bool) []commit {
 func GetContributors(repoDirs []string, days int, excludeBots bool) []contributor {
 	contributorMap := make(map[author]*contributor)
 	for _, repoDir := range repoDirs {
-		gLog := gitLog(repoDir, gitFormat, days)
+		gLog := platform.GitLog(repoDir, gitFormat, days)
 		for _, c := range parseCommits(gLog, excludeBots) {
 			if i, ok := contributorMap[*c.Author]; ok {
 				i.Count++
-				i.Projects = Append(i.Projects, repoDir)
+				i.Projects = platform.Append(i.Projects, repoDir)
 				i.Commits = append(i.Commits, c)
 			} else {
 				contributorMap[*c.Author] = &contributor{

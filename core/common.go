@@ -19,6 +19,7 @@ package core
 import (
 	"fmt"
 	"github.com/JetBrains/qodana-cli/v2023/cloud"
+	"github.com/JetBrains/qodana-cli/v2023/platform"
 	"os"
 	"path/filepath"
 	"strings"
@@ -81,19 +82,19 @@ func Image(code string) string {
 // GetAnalyzer gets linter for the given path and saves configName
 func GetAnalyzer(path string, yamlName string) string {
 	var analyzers []string
-	printProcess(func(_ *pterm.SpinnerPrinter) {
+	platform.PrintProcess(func(_ *pterm.SpinnerPrinter) {
 		languages := readIdeaDir(path)
 		if len(languages) == 0 {
 			languages, _ = recognizeDirLanguages(path)
 		}
 		if len(languages) == 0 {
-			WarningMessage("No technologies detected (no source code files?)\n")
+			platform.WarningMessage("No technologies detected (no source code files?)\n")
 		} else {
-			WarningMessage("Detected technologies: " + strings.Join(languages, ", ") + "\n")
+			platform.WarningMessage("Detected technologies: " + strings.Join(languages, ", ") + "\n")
 			for _, language := range languages {
 				if i, err := langsProductCodes[language]; err {
 					for _, l := range i {
-						analyzers = Append(analyzers, l)
+						analyzers = platform.Append(analyzers, l)
 					}
 				}
 			}
@@ -106,21 +107,21 @@ func GetAnalyzer(path string, yamlName string) string {
 	selector := func(choices []string) string {
 		choice, err := qodanaInteractiveSelect.WithOptions(choices).Show()
 		if err != nil {
-			ErrorMessage("%s", err)
+			platform.ErrorMessage("%s", err)
 			return ""
 		}
 		return choice
 	}
 
-	interactive := IsInteractive()
+	interactive := platform.IsInteractive()
 	analyzer := SelectAnalyzer(path, analyzers, interactive, selector)
 	if analyzer == "" {
-		ErrorMessage("Could not configure project as it is not supported by Qodana")
-		WarningMessage("See https://www.jetbrains.com/help/qodana/supported-technologies.html for more details")
+		platform.ErrorMessage("Could not configure project as it is not supported by Qodana")
+		platform.WarningMessage("See https://www.jetbrains.com/help/qodana/supported-technologies.html for more details")
 		os.Exit(1)
 	}
 	SetQodanaLinter(path, analyzer, yamlName)
-	SuccessMessage("Added %s", analyzer)
+	platform.SuccessMessage("Added %s", analyzer)
 	return analyzer
 }
 
@@ -146,7 +147,7 @@ func SelectAnalyzer(path string, analyzers []string, interactive bool, selectFun
 }
 
 func IsNativeAnalyzer(analyzer string) bool {
-	return Contains(AllNativeCodes, analyzer)
+	return platform.Contains(AllNativeCodes, analyzer)
 }
 
 func analyzerToSelect(analyzers []string, path string) (map[string]string, []string) {
@@ -171,8 +172,8 @@ func ShowReport(resultsDir string, reportPath string, port int) {
 	if cloudUrl != "" {
 		openReport(cloudUrl, reportPath, port)
 	} else {
-		WarningMessage("Press Ctrl+C to stop serving the report\n")
-		printProcess(
+		platform.WarningMessage("Press Ctrl+C to stop serving the report\n")
+		platform.PrintProcess(
 			func(_ *pterm.SpinnerPrinter) {
 				if _, err := os.Stat(reportPath); os.IsNotExist(err) {
 					log.Fatal("Qodana report not found. Get a report by running `qodana scan`")
@@ -187,17 +188,17 @@ func ShowReport(resultsDir string, reportPath string, port int) {
 
 // GetDotNetConfig gets .NET config for the given path and saves configName
 func GetDotNetConfig(projectDir string, yamlName string) bool {
-	possibleOptions := findFiles(projectDir, []string{".sln", ".csproj", ".vbproj", ".fsproj"})
+	possibleOptions := platform.FindFiles(projectDir, []string{".sln", ".csproj", ".vbproj", ".fsproj"})
 	if len(possibleOptions) <= 1 {
 		return false
 	}
-	WarningMessage("Detected multiple .NET solution/project files, select the preferred one \n")
+	platform.WarningMessage("Detected multiple .NET solution/project files, select the preferred one \n")
 	choice, err := qodanaInteractiveSelect.WithOptions(possibleOptions).WithDefaultText("Select solution/project").Show()
 	if err != nil {
-		ErrorMessage("%s", err)
+		platform.ErrorMessage("%s", err)
 		return false
 	}
-	dotnet := &DotNet{}
+	dotnet := &platform.DotNet{}
 	if strings.HasSuffix(choice, ".sln") {
 		dotnet.Solution = filepath.Base(choice)
 	} else {

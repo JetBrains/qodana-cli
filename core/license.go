@@ -20,6 +20,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/JetBrains/qodana-cli/v2023/cloud"
+	"github.com/JetBrains/qodana-cli/v2023/platform"
 	"log"
 	"os"
 	"strings"
@@ -73,6 +74,16 @@ func SetupLicenseAndProjectHash(token string) {
 		log.Fatal(cloud.EmptyTokenMessage)
 	}
 
+	licenseEndpoint := cloud.GetEnvWithDefault(platform.QodanaLicenseEndpoint, "https://linters.qodana.cloud")
+
+	licenseDataResponse, err := cloud.RequestLicenseData(licenseEndpoint, token)
+	if errors.Is(err, cloud.TokenDeclinedError) {
+		log.Fatalf("License request: %v\n%s", err, cloud.DeclinedTokenErrorMessage)
+	}
+	if err != nil {
+		log.Fatalf("License request: %v\n%s", err, cloud.GeneralLicenseErrorMessage)
+	}
+	licenseData := cloud.DeserializeLicenseData(licenseDataResponse)
 	if strings.ToLower(licenseData.LicensePlan) == "community" {
 		log.Fatalf("Your Qodana Cloud organization has Community license that doesn’t support \"%s\" linter, "+
 			"please try one of the community linters instead: %s or obtain Ultimate "+
@@ -97,21 +108,4 @@ func allCommunityNames() string {
 		nameList = append(nameList, "\""+getProductNameFromCode(code)+"\"")
 	}
 	return strings.Join(nameList, ", ")
-}
-
-func SetupLicenseToken(opts *QodanaOptions) {
-	token := opts.loadToken(false)
-	licenseOnlyToken := os.Getenv(QodanaLicenseOnlyToken)
-
-	if token == "" && licenseOnlyToken != "" {
-		cloud.Token = cloud.LicenseToken{
-			Token:       licenseOnlyToken,
-			LicenseOnly: true,
-		}
-	} else {
-		cloud.Token = cloud.LicenseToken{
-			Token:       token,
-			LicenseOnly: false,
-		}
-	}
 }

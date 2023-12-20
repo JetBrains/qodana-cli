@@ -39,5 +39,6 @@ func main() {
 		_ = core.QodanaSpinner.Stop()
 		os.Exit(0)
 	}()
+	cmd.InitCli()
 	cmd.Execute()
 }

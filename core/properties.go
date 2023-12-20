@@ -19,6 +19,7 @@ package core
 import (
 	"fmt"
 	"github.com/JetBrains/qodana-cli/v2023/cloud"
+	"github.com/JetBrains/qodana-cli/v2023/platform"
 	log "github.com/sirupsen/logrus"
 	"os"
 	"path/filepath"
@@ -35,7 +36,7 @@ func getPropertiesMap(
 	logDir string,
 	confDir string,
 	pluginsDir string,
-	dotNet DotNet,
+	dotNet platform.DotNet,
 	deviceIdSalt []string,
 	plugins []string,
 	analysisId string,
@@ -58,13 +59,13 @@ func getPropertiesMap(
 		"-Didea.headless.statistics.salt":        deviceIdSalt[1],
 		"-Didea.platform.prefix":                 "Qodana",
 		"-Didea.parent.prefix":                   prefix,
-		"-Didea.config.path":                     quoteIfSpace(confDir),
-		"-Didea.system.path":                     quoteIfSpace(systemDir),
-		"-Didea.plugins.path":                    quoteIfSpace(pluginsDir),
-		"-Didea.application.info.value":          quoteIfSpace(appInfoXml),
-		"-Didea.log.path":                        quoteIfSpace(logDir),
+		"-Didea.config.path":                     platform.QuoteIfSpace(confDir),
+		"-Didea.system.path":                     platform.QuoteIfSpace(systemDir),
+		"-Didea.plugins.path":                    platform.QuoteIfSpace(pluginsDir),
+		"-Didea.application.info.value":          platform.QuoteIfSpace(appInfoXml),
+		"-Didea.log.path":                        platform.QuoteIfSpace(logDir),
 		"-Didea.qodana.thirdpartyplugins.accept": "true",
-		"-Dqodana.automation.guid":               quoteIfSpace(analysisId),
+		"-Dqodana.automation.guid":               platform.QuoteIfSpace(analysisId),
 		"-Dide.warmup.use.predicates":            "false",
 		"-Dvcs.log.index.enable":                 "false",
 
@@ -77,7 +78,7 @@ func getPropertiesMap(
 		"-Didea.job.launcher.without.timeout": "true",
 	}
 	if coverageDir != "" {
-		properties["-Dqodana.coverage.input"] = quoteIfSpace(coverageDir)
+		properties["-Dqodana.coverage.input"] = platform.QuoteIfSpace(coverageDir)
 	}
 	if eap {
 		properties["-Deap.login.enabled"] = "false"
@@ -110,7 +111,7 @@ func getPropertiesMap(
 		}
 		if dotNet.Frameworks != "" {
 			properties["-Dqodana.net.targetFrameworks"] = dotNet.Frameworks
-		} else if IsContainer() {
+		} else if platform.IsContainer() {
 			// We don't want to scan .NET Framework projects in Linux containers
 			properties["-Dqodana.net.targetFrameworks"] = "!net48;!net472;!net471;!net47;!net462;!net461;!net46;!net452;!net451;!net45;!net403;!net40;!net35;!net20;!net11"
 		}
@@ -122,9 +123,9 @@ func getPropertiesMap(
 }
 
 // GetProperties writes key=value `props` to file `f` having later key occurrence win
-func GetProperties(opts *QodanaOptions, yamlProps map[string]string, dotNetOptions DotNet, plugins []string) []string {
+func GetProperties(opts *QodanaOptions, yamlProps map[string]string, dotNetOptions platform.DotNet, plugins []string) []string {
 	lines := []string{
-		fmt.Sprintf("-Xlog:gc*:%s", quoteIfSpace(filepath.Join(opts.logDirPath(), "gc.log"))),
+		fmt.Sprintf("-Xlog:gc*:%s", platform.QuoteIfSpace(filepath.Join(opts.LogDirPath(), "gc.log"))),
 		`-Djdk.http.auth.tunneling.disabledSchemes=""`,
 		"-XX:+HeapDumpOnOutOfMemoryError",
 		"-XX:+UseG1GC",
@@ -136,9 +137,9 @@ func GetProperties(opts *QodanaOptions, yamlProps map[string]string, dotNetOptio
 		lines = append(lines, "-Deap.require.license=release")
 	}
 
-	cliProps, flags := opts.properties()
+	cliProps, flags := opts.Properties()
 	for _, f := range flags {
-		if f != "" && !Contains(lines, f) {
+		if f != "" && !platform.Contains(lines, f) {
 			lines = append(lines, f)
 		}
 	}
@@ -148,11 +149,11 @@ func GetProperties(opts *QodanaOptions, yamlProps map[string]string, dotNetOptio
 		Prod.EAP,
 		opts.appInfoXmlPath(Prod.IdeBin()),
 		filepath.Join(opts.CacheDir, "idea", Prod.getVersionBranch()),
-		opts.logDirPath(),
+		opts.LogDirPath(),
 		opts.ConfDirPath(),
 		filepath.Join(opts.CacheDir, "plugins", Prod.getVersionBranch()),
 		dotNetOptions,
-		getDeviceIdSalt(),
+		platform.GetDeviceIdSalt(),
 		plugins,
 		opts.AnalysisId,
 		opts.CoverageDirPath(),
@@ -181,7 +182,7 @@ func GetProperties(opts *QodanaOptions, yamlProps map[string]string, dotNetOptio
 
 // writeProperties writes the given key=value `props` to file `f` (sets the environment variable)
 func writeProperties(opts *QodanaOptions) { // opts.confDirPath(Prod.Version)  opts.vmOptionsPath(Prod.Version)
-	properties := GetProperties(opts, Config.Properties, Config.DotNet, getPluginIds(Config.Plugins))
+	properties := GetProperties(opts, platform.Config.Properties, platform.Config.DotNet, getPluginIds(platform.Config.Plugins))
 	err := os.WriteFile(opts.vmOptionsPath(), []byte(strings.Join(properties, "\n")), 0o644)
 	if err != nil {
 		log.Fatal(err)

@@ -22,6 +22,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"github.com/JetBrains/qodana-cli/v2023/platform"
 	"io"
 	"os"
 	"os/exec"
@@ -179,13 +180,13 @@ func TestInitCommand(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	filename := core.FindQodanaYaml(projectPath)
+	filename := platform.FindQodanaYaml(projectPath)
 
 	if filename != "qodana.yml" {
 		t.Fatalf("expected \"qodana.yml\" got \"%s\"", filename)
 	}
 
-	qodanaYaml := core.LoadQodanaYaml(projectPath, filename)
+	qodanaYaml := platform.LoadQodanaYaml(projectPath, filename)
 
 	if qodanaYaml.Linter != core.Image(core.QDPYC) {
 		t.Fatalf("expected \"%s\", but got %s", core.Image(core.QDPYC), qodanaYaml.Linter)
@@ -263,7 +264,7 @@ func TestAllCommandsWithContainer(t *testing.T) {
 	}
 	//_ = os.Setenv(qodanaCliContainerKeep, "true")
 	//_ = os.Setenv(qodanaCliContainerName, "qodana-cli-test-new1")
-	core.DisableColor()
+	platform.DisableColor()
 	core.CheckForUpdates("0.1.0")
 	projectPath := createProject(t, "qodana_scan_python")
 	cachePath := createProject(t, "cache")

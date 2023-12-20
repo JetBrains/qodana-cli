@@ -17,6 +17,7 @@
 package core
 
 import (
+	"github.com/JetBrains/qodana-cli/v2023/platform"
 	"os"
 	"path/filepath"
 	"runtime"
@@ -54,22 +55,24 @@ func TestDownloadAndInstallIDE(t *testing.T) {
 func DownloadAndInstallIDE(ideName string, t *testing.T) {
 	tempDir, err := os.MkdirTemp("", "productByCode")
 	if err != nil {
-		ErrorMessage("Cannot create temp dir: %s", err)
+		platform.ErrorMessage("Cannot create temp dir: %s", err)
 	}
 
 	defer func(path string) {
 		err := os.RemoveAll(path)
 		if err != nil {
-			ErrorMessage("Cannot clean up temp dir: %s", err)
+			platform.ErrorMessage("Cannot clean up temp dir: %s", err)
 		}
 	}(tempDir) // clean up
 
 	opts := &QodanaOptions{
-		Ide: ideName,
+		&platform.QodanaOptions{
+			Ide: ideName,
+		},
 	}
 	ide := downloadAndInstallIDE(opts, tempDir, nil)
 	if ide == "" {
-		ErrorMessage("Cannot install %s", ideName)
+		platform.ErrorMessage("Cannot install %s", ideName)
 		t.Fail()
 	}
 
@@ -81,7 +84,7 @@ func DownloadAndInstallIDE(ideName string, t *testing.T) {
 	defer func(path string) {
 		err := os.RemoveAll(path)
 		if err != nil {
-			ErrorMessage("Cannot clean up temp dir: %s", err)
+			platform.ErrorMessage("Cannot clean up temp dir: %s", err)
 		}
 	}(ide) // clean up
 	if appInfoXml.Names.Product == "" {

@@ -19,6 +19,7 @@ package cmd
 import (
 	"fmt"
 	"github.com/JetBrains/qodana-cli/v2023/core"
+	"github.com/JetBrains/qodana-cli/v2023/platform"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
@@ -52,12 +53,12 @@ func setDefaultCommandIfNeeded(rootCmd *cobra.Command, args []string) {
 
 // Execute is a main CLI entrypoint: handles user interrupt, CLI start and everything else.
 func Execute() {
-	if !core.IsContainer() && os.Geteuid() == 0 {
-		core.WarningMessage("Running the tool as root is dangerous: please run it as a regular user")
+	if !platform.IsContainer() && os.Geteuid() == 0 {
+		platform.WarningMessage("Running the tool as root is dangerous: please run it as a regular user")
 	}
 	go core.CheckForUpdates(core.Version)
-	if !core.IsInteractive() || os.Getenv("NO_COLOR") != "" { // http://no-color.org
-		core.DisableColor()
+	if !platform.IsInteractive() || os.Getenv("NO_COLOR") != "" { // http://no-color.org
+		platform.DisableColor()
 	}
 
 	setDefaultCommandIfNeeded(rootCommand, os.Args)
@@ -78,7 +79,7 @@ func newRootCommand() *cobra.Command {
 	rootCmd := &cobra.Command{
 		Use:     "qodana",
 		Short:   "Run Qodana CLI",
-		Long:    core.Info,
+		Long:    platform.InfoString(core.Version), // TODO : return to core
 		Version: core.Version,
 		PersistentPreRun: func(cmd *cobra.Command, args []string) {
 			logLevel, err := log.ParseLevel(viper.GetString("log-level"))
@@ -106,8 +107,8 @@ func newRootCommand() *cobra.Command {
 
 var rootCommand = newRootCommand()
 
-// init adds all child commands to the root command.
-func init() {
+// InitCli adds all child commands to the root command.
+func InitCli() {
 	rootCommand.AddCommand(
 		newInitCommand(),
 		newScanCommand(),
@@ -118,4 +119,9 @@ func init() {
 		newContributorsCommand(),
 		newClocCommand(),
 	)
+}
+
+// InitWithCustomCommands adds custom commands to the root command.
+func InitWithCustomCommands(commands []*cobra.Command) {
+	rootCommand.AddCommand(commands...)
 }

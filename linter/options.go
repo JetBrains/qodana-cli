@@ -1,0 +1,124 @@
+package linter
+
+import (
+	"fmt"
+	"github.com/JetBrains/qodana-cli/v2023/core"
+	"github.com/JetBrains/qodana-cli/v2023/platform"
+	"github.com/spf13/pflag"
+	"strconv"
+	"strings"
+)
+
+type LocalOptions struct {
+	*platform.QodanaOptions
+}
+
+type CltOptions struct {
+	Solution      string
+	Project       string
+	Configuration string
+	Platform      string
+	NoBuild       bool
+	MountInfo     *platform.MountInfo
+	LinterInfo    *platform.LinterInfo
+}
+
+func (o *CltOptions) GetMountInfo() *platform.MountInfo {
+	return o.MountInfo
+}
+
+func (o *CltOptions) GetInfo(_ *platform.QodanaOptions) *platform.LinterInfo {
+	// todo: vary by release
+	return o.LinterInfo
+}
+
+func (o *CltOptions) AddFlags(flags *pflag.FlagSet) {
+	flags.StringVar(&o.Solution, "solution", "", "Relative path to solution file")
+	flags.StringVar(&o.Project, "project", "", "Relative path to project file")
+	flags.StringVar(&o.Configuration, "configuration", "", "Build configuration")
+	flags.StringVar(&o.Platform, "platform", "", "Build platform")
+	flags.BoolVar(&o.NoBuild, "no-build", false, "Do not build the project before analysis")
+}
+
+func (o *LocalOptions) GetCltOptions() *CltOptions {
+	if v, ok := o.LinterSpecific.(*CltOptions); ok {
+		return v
+	}
+	return &CltOptions{}
+}
+
+func (o *CltOptions) computeCdnetArgs(opts *core.QodanaOptions, options *LocalOptions, yaml platform.QodanaYaml) ([]string, error) {
+	target := getSolutionOrProject(options, yaml)
+	if target == "" {
+		return nil, fmt.Errorf("solution/project relative file path is not specified. Use --solution or --project flags or create qodana.yaml file with respective fields")
+	}
+	var props = ""
+	for _, p := range opts.Property {
+		if strings.HasPrefix(p, "log.") ||
+			strings.HasPrefix(p, "idea.") ||
+			strings.HasPrefix(p, "qodana.") ||
+			strings.HasPrefix(p, "jetbrains.") {
+			continue
+		}
+		if props != "" {
+			props += ";"
+		}
+		props += p
+	}
+	if options.GetCltOptions().Configuration != "" {
+		if props != "" {
+			props += ";"
+		}
+		props += "Configuration=" + options.GetCltOptions().Configuration
+	} else if yaml.DotNet.Configuration != "" {
+		if props != "" {
+			props += ";"
+		}
+		props += "Configuration=" + yaml.DotNet.Configuration
+	}
+	if options.GetCltOptions().Platform != "" {
+		if props != "" {
+			props += ";"
+		}
+		props += "Platform=" + options.GetCltOptions().Platform
+	} else if yaml.DotNet.Platform != "" {
+		if props != "" {
+			props += ";"
+		}
+		props += "Platform=" + yaml.DotNet.Platform
+	}
+	if options.FailThreshold == "" && yaml.FailThreshold != nil {
+		options.FailThreshold = strconv.Itoa(*yaml.FailThreshold)
+	}
+	args := []string{
+		"dotnet",
+		core.QuoteForWindows(options.Tooling.CustomTools["clt"]),
+		"inspectcode",
+		core.QuoteForWindows(target),
+		"-o=\"" + options.GetSarifPath() + "\"",
+		"-f=\"Qodana\"",
+		"--LogFolder=\"" + options.GetLogsDir() + "\"",
+	}
+	if props != "" {
+		args = append(args, "--properties:"+props)
+	}
+	if options.NoStatistics {
+		args = append(args, "--telemetry-optout")
+	}
+	if options.GetCltOptions().NoBuild {
+		args = append(args, "--no-build")
+	}
+	return args, nil
+}
+
+func getSolutionOrProject(options *LocalOptions, yaml platform.QodanaYaml) string {
+	var target = ""
+	paths := [4]string{options.GetCltOptions().Solution, options.GetCltOptions().Project, yaml.DotNet.Solution, yaml.DotNet.Project}
+	for _, path := range paths {
+		if path != "" {
+			target = path
+			break
+		}
+	}
+	return target
+}

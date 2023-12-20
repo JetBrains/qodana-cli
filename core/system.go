@@ -21,6 +21,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/JetBrains/qodana-cli/v2023/platform"
 	"io"
 	"net/http"
 	"os"
@@ -49,14 +50,14 @@ var (
 
 // CheckForUpdates check GitHub https://github.com/JetBrains/qodana-cli/ for the latest version of CLI release.
 func CheckForUpdates(currentVersion string) {
-	if currentVersion == "dev" || IsContainer() || cienvironment.DetectCIEnvironment() != nil || DisableCheckUpdates {
+	if currentVersion == "dev" || platform.IsContainer() || cienvironment.DetectCIEnvironment() != nil || DisableCheckUpdates {
 		return
 	}
 	latestVersion := getLatestVersion()
 	if latestVersion != "" && latestVersion != currentVersion {
-		WarningMessage(
+		platform.WarningMessage(
 			"New version of %s CLI is available: %s. See https://jb.gg/qodana-cli/update\n",
-			PrimaryBold("qodana"),
+			platform.PrimaryBold("qodana"),
 			latestVersion,
 		)
 		DisableCheckUpdates = true
@@ -115,7 +116,7 @@ func openReport(cloudUrl string, path string, port int) {
 		http.Handle("/", noCache(http.FileServer(http.Dir(path))))
 		err := http.ListenAndServe(fmt.Sprintf(":%d", port), nil)
 		if err != nil {
-			WarningMessage("Problem serving report, %s\n", err.Error())
+			platform.WarningMessage("Problem serving report, %s\n", err.Error())
 			return
 		}
 	}
@@ -210,13 +211,13 @@ func prepareHost(opts *QodanaOptions) {
 		PrepareContainerEnvSettings()
 	}
 	if opts.Ide != "" {
-		if Contains(AllNativeCodes, strings.TrimSuffix(opts.Ide, EapSuffix)) {
-			printProcess(func(spinner *pterm.SpinnerPrinter) {
+		if platform.Contains(AllNativeCodes, strings.TrimSuffix(opts.Ide, EapSuffix)) {
+			platform.PrintProcess(func(spinner *pterm.SpinnerPrinter) {
 				if spinner != nil {
 					spinner.ShowTimer = false // We will update interactive spinner
 				}
-				opts.Ide = downloadAndInstallIDE(opts, opts.getQodanaSystemDir(), spinner)
-			}, fmt.Sprintf("Downloading %s", opts.Ide), fmt.Sprintf("downloading IDE distribution to %s", opts.getQodanaSystemDir()))
+				opts.Ide = downloadAndInstallIDE(opts, opts.GetQodanaSystemDir(), spinner)
+			}, fmt.Sprintf("Downloading %s", opts.Ide), fmt.Sprintf("downloading IDE distribution to %s", opts.GetQodanaSystemDir()))
 		} else {
 			val, exists := os.LookupEnv(QodanaDistEnv)
 			if !exists || val == "" || opts.Ide != val {
@@ -254,7 +255,7 @@ func IsHomeDirectory(path string) bool {
 
 // AskUserConfirm asks the user for confirmation with yes/no.
 func AskUserConfirm(what string) bool {
-	if !IsInteractive() {
+	if !platform.IsInteractive() {
 		return false
 	}
 	prompt := qodanaInteractiveConfirm
@@ -274,19 +275,19 @@ func RunAnalysis(ctx context.Context, options *QodanaOptions) int {
 	var exitCode int
 
 	if options.FullHistory && isInstalled("git") {
-		remoteUrl := gitRemoteUrl(options.ProjectDir)
-		branch := gitBranch(options.ProjectDir)
+		remoteUrl := platform.GitRemoteUrl(options.ProjectDir)
+		branch := platform.GitBranch(options.ProjectDir)
 		if remoteUrl == "" && branch == "" {
 			log.Fatal("Please check that project is located within the Git repo")
 		}
-		options.setenv(qodanaRemoteUrl, remoteUrl)
-		options.setenv(qodanaBranch, branch)
+		options.Setenv(platform.QodanaRemoteUrl, remoteUrl)
+		options.Setenv(qodanaBranch, branch)
 
-		err := gitClean(options.ProjectDir)
+		err := platform.GitClean(options.ProjectDir)
 		if err != nil {
 			log.Fatal(err)
 		}
-		revisions := gitRevisions(options.ProjectDir)
+		revisions := platform.GitRevisions(options.ProjectDir)
 		allCommits := len(revisions)
 		counter := 0
 		if options.Commit != "" {
@@ -301,26 +302,26 @@ func RunAnalysis(ctx context.Context, options *QodanaOptions) int {
 
 		for _, revision := range revisions {
 			counter++
-			options.setenv(qodanaRevision, revision)
-			WarningMessage("[%d/%d] Running analysis for revision %s", counter+1, allCommits, revision)
-			err = gitCheckout(options.ProjectDir, revision)
+			options.Setenv(qodanaRevision, revision)
+			platform.WarningMessage("[%d/%d] Running analysis for revision %s", counter+1, allCommits, revision)
+			err = platform.GitCheckout(options.ProjectDir, revision)
 			if err != nil {
 				log.Fatal(err)
 			}
-			EmptyMessage()
+			platform.EmptyMessage()
 
 			exitCode = runQodana(ctx, options)
-			options.unsetenv(qodanaRevision)
+			options.Unsetenv(qodanaRevision)
 		}
-		err = gitCheckout(options.ProjectDir, branch)
+		err = platform.GitCheckout(options.ProjectDir, branch)
 		if err != nil {
 			log.Fatal(err)
 		}
 	} else if options.Commit != "" && isInstalled("git") {
 		options.GitReset = false
-		err := gitReset(options.ProjectDir, options.Commit)
+		err := platform.GitReset(options.ProjectDir, options.Commit)
 		if err != nil {
-			WarningMessage("Could not reset git repository, no --commit option will be applied: %s", err)
+			platform.WarningMessage("Could not reset git repository, no --commit option will be applied: %s", err)
 		} else {
 			options.GitReset = true
 		}
@@ -328,7 +329,7 @@ func RunAnalysis(ctx context.Context, options *QodanaOptions) int {
 		exitCode = runQodana(ctx, options)
 
 		if options.GitReset && !strings.HasPrefix(options.Commit, "CI") {
-			_ = gitResetBack(options.ProjectDir)
+			_ = platform.GitResetBack(options.ProjectDir)
 		}
 	} else {
 		exitCode = runQodana(ctx, options)
@@ -364,7 +365,7 @@ func followLinter(client *client.Client, containerName string, progress *pterm.S
 		}
 	}(reader)
 	scanner := bufio.NewScanner(reader)
-	interactive := IsInteractive()
+	interactive := platform.IsInteractive()
 	for scanner.Scan() {
 		line := scanner.Text()
 		if !interactive && len(line) >= dockerSpecialCharsLength {
@@ -374,21 +375,21 @@ func followLinter(client *client.Client, containerName string, progress *pterm.S
 		line = strings.TrimSuffix(line, "\n")
 		if err == nil || len(line) > 0 {
 			if strings.Contains(line, "Starting up") {
-				updateText(progress, scanStages[2])
+				platform.UpdateText(progress, scanStages[2])
 			}
 			if strings.Contains(line, "The Project opening stage completed in") {
-				updateText(progress, scanStages[3])
+				platform.UpdateText(progress, scanStages[3])
 			}
 			if strings.Contains(line, "The Project configuration stage completed in") {
-				updateText(progress, scanStages[4])
+				platform.UpdateText(progress, scanStages[4])
 			}
 			if strings.Contains(line, "Detailed summary") {
-				updateText(progress, scanStages[5])
-				if !IsInteractive() {
-					EmptyMessage()
+				platform.UpdateText(progress, scanStages[5])
+				if !platform.IsInteractive() {
+					platform.EmptyMessage()
 				}
 			}
-			printLinterLog(line)
+			platform.PrintLinterLog(line)
 		}
 		if err != nil {
 			if err != io.EOF {
@@ -418,17 +419,17 @@ const (
 
 // saveReport saves web files to expect, and generates json.
 func saveReport(opts *QodanaOptions) {
-	if IsContainer() {
+	if platform.IsContainer() {
 		reportConverter := filepath.Join(Prod.IdeBin(), "intellij-report-converter.jar")
 		if _, err := os.Stat(reportConverter); os.IsNotExist(err) {
 			log.Fatal("Not able to save the report: report-converter is missing")
 			return
 		}
 		log.Println("Generating HTML report ...")
-		if res := RunCmd("", QuoteForWindows(Prod.JbrJava()), "-jar", QuoteForWindows(reportConverter), "-s", QuoteForWindows(opts.ProjectDir), "-d", QuoteForWindows(opts.ResultsDir), "-o", QuoteForWindows(opts.ReportResultsPath()), "-n", "result-allProblems.json", "-f"); res > 0 {
+		if res, err := platform.RunCmd("", platform.QuoteForWindows(Prod.JbrJava()), "-jar", platform.QuoteForWindows(reportConverter), "-s", platform.QuoteForWindows(opts.ProjectDir), "-d", platform.QuoteForWindows(opts.ResultsDir), "-o", platform.QuoteForWindows(opts.ReportResultsPath()), "-n", "result-allProblems.json", "-f"); res > 0 || err != nil {
 			os.Exit(res)
 		}
-		if res := RunCmd("", "sh", "-c", fmt.Sprintf("cp -r %s/web/* ", Prod.Home)+opts.ReportDir); res > 0 {
+		if res, err := platform.RunCmd("", "sh", "-c", fmt.Sprintf("cp -r %s/web/* ", Prod.Home)+opts.ReportDir); res > 0 || err != nil {
 			os.Exit(res)
 		}
 	}

@@ -20,6 +20,7 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"fmt"
+	"github.com/JetBrains/qodana-cli/v2023/platform"
 	cp "github.com/otiai10/copy"
 	"github.com/pterm/pterm"
 	log "github.com/sirupsen/logrus"
@@ -79,7 +80,7 @@ func downloadAndInstallIDE(opts *QodanaOptions, baseDir string, spinner *pterm.S
 	}
 
 	downloadedIdePath := filepath.Join(baseDir, fileName)
-	err := DownloadFile(downloadedIdePath, ideUrl, spinner)
+	err := platform.DownloadFile(downloadedIdePath, ideUrl, spinner)
 	if err != nil {
 		log.Fatalf("Error while downloading IDE: %v", err)
 	}
@@ -127,7 +128,7 @@ func getIde(productCode string) *ReleaseDownloadInfo {
 	}
 
 	if _, ok := Products[productCode]; !ok {
-		ErrorMessage("Product code doesnt exist: ", originalCode)
+		platform.ErrorMessage("Product code doesnt exist: ", originalCode)
 		return nil
 	}
 
@@ -140,19 +141,19 @@ func getIde(productCode string) *ReleaseDownloadInfo {
 	}
 
 	if !supportedCode {
-		ErrorMessage("Product code is not supported: ", originalCode)
+		platform.ErrorMessage("Product code is not supported: ", originalCode)
 		return nil
 	}
 
 	product, err := GetProductByCode(Products[productCode])
 	if err != nil || product == nil {
-		ErrorMessage("Error while obtaining the product info")
+		platform.ErrorMessage("Error while obtaining the product info")
 		return nil
 	}
 
 	release := SelectLatestCompatibleRelease(product, dist)
 	if release == nil {
-		ErrorMessage("Error while obtaining the release type: ", dist)
+		platform.ErrorMessage("Error while obtaining the release type: ", dist)
 		return nil
 	}
 
@@ -185,7 +186,7 @@ func getIde(productCode string) *ReleaseDownloadInfo {
 
 	res, ok := (*release.Downloads)[downloadType]
 	if !ok {
-		ErrorMessage("Error while obtaining the release for platform type: ", downloadType)
+		platform.ErrorMessage("Error while obtaining the release for platform type: ", downloadType)
 		return nil
 	}
 
@@ -195,7 +196,7 @@ func getIde(productCode string) *ReleaseDownloadInfo {
 
 // installIdeWindowsExe is used as a fallback, since it needs installation privileges and alters the registry
 func installIdeWindowsExe(archivePath string, targetDir string) error {
-	_, err := exec.Command(archivePath, "/S", fmt.Sprintf("/D=%s", QuoteForWindows(targetDir))).Output()
+	_, err := exec.Command(archivePath, "/S", fmt.Sprintf("/D=%s", platform.QuoteForWindows(targetDir))).Output()
 	if err != nil {
 		return fmt.Errorf("%s: %s", archivePath, err)
 	}
@@ -206,7 +207,7 @@ func installIdeWindowsZip(archivePath string, targetDir string) error {
 	if err := os.MkdirAll(targetDir, os.ModePerm); err != nil {
 		log.Fatal("couldn't create a directory ", err.Error())
 	}
-	_, err := exec.Command("tar", "-xf", QuoteForWindows(archivePath), "--strip-components", "2", "-C", QuoteForWindows(targetDir)).Output()
+	_, err := exec.Command("tar", "-xf", platform.QuoteForWindows(archivePath), "--strip-components", "2", "-C", platform.QuoteForWindows(targetDir)).Output()
 	if err != nil {
 		return fmt.Errorf("tar: %s", err)
 	}
@@ -253,7 +254,7 @@ func installIdeMacOS(archivePath string, targetDir string) error {
 }
 
 func verifySha256(checksumFile string, checkSumUrl string, filePath string) {
-	err := DownloadFile(checksumFile, checkSumUrl, nil)
+	err := platform.DownloadFile(checksumFile, checkSumUrl, nil)
 	if err != nil {
 		log.Fatalf("Error while downloading checksum for IDE: %v", err)
 	}

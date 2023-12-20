@@ -22,6 +22,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/JetBrains/qodana-cli/v2023/platform"
 	"github.com/pterm/pterm"
 	"io"
 	"os"
@@ -74,21 +75,21 @@ func runQodanaContainer(ctx context.Context, options *QodanaOptions) int {
 	fixDarwinCaches(options)
 
 	for i, stage := range scanStages {
-		scanStages[i] = PrimaryBold("[%d/%d] ", i+1, len(scanStages)+1) + primary(stage)
+		scanStages[i] = platform.PrimaryBold("[%d/%d] ", i+1, len(scanStages)+1) + platform.Primary(stage)
 	}
 
 	if !strings.HasPrefix(options.Linter, officialImagePrefix) {
-		WarningMessage("You are using an unofficial Qodana linter: %s\n", options.Linter)
+		platform.WarningMessage("You are using an unofficial Qodana linter: %s\n", options.Linter)
 	}
 	if !(options.SkipPull) {
 		PullImage(docker, options.Linter)
 	}
-	progress, _ := startQodanaSpinner(scanStages[0])
+	progress, _ := platform.StartQodanaSpinner(scanStages[0])
 
 	dockerConfig := getDockerOptions(options)
 	log.Debugf("docker command to run: %s", generateDebugDockerRunCommand(dockerConfig))
 
-	updateText(progress, scanStages[1])
+	platform.UpdateText(progress, scanStages[1])
 
 	runContainer(ctx, docker, dockerConfig)
 	go followLinter(docker, dockerConfig.Name, progress)
@@ -156,7 +157,7 @@ func PrepareContainerEnvSettings() {
 	} else if checkRequiredToolInstalled("podman") {
 		tool = "podman"
 	} else {
-		ErrorMessage(
+		platform.ErrorMessage(
 			"Docker (or podman) is not installed on the system or can't be found in PATH, refer to https://www.docker.com/get-started for installing it",
 		)
 		os.Exit(1)
@@ -166,13 +167,13 @@ func PrepareContainerEnvSettings() {
 		var exiterr *exec.ExitError
 		if errors.As(err, &exiterr) {
 			if strings.Contains(string(exiterr.Stderr), "permission denied") {
-				ErrorMessage(
+				platform.ErrorMessage(
 					"Qodana container can't be run by the current user. Please fix the container engine configuration.",
 				)
-				WarningMessage("https://docs.docker.com/engine/install/linux-postinstall/#manage-docker-as-a-non-root-user")
+				platform.WarningMessage("https://docs.docker.com/engine/install/linux-postinstall/#manage-docker-as-a-non-root-user")
 				os.Exit(1)
 			} else {
-				ErrorMessage(
+				platform.ErrorMessage(
 					"'%s ps' exited with exit code %d, perhaps docker daemon is not running?",
 					tool,
 					exiterr.ExitCode(),
@@ -187,17 +188,17 @@ func PrepareContainerEnvSettings() {
 
 // PullImage pulls docker image and prints the process.
 func PullImage(client *client.Client, image string) {
-	printProcess(
+	platform.PrintProcess(
 		func(_ *pterm.SpinnerPrinter) {
 			pullImage(context.Background(), client, image)
 		},
-		fmt.Sprintf("Pulling the image %s", PrimaryBold(image)),
+		fmt.Sprintf("Pulling the image %s", platform.PrimaryBold(image)),
 		"pulling the latest version of linter",
 	)
 }
 
 func isDockerUnauthorizedError(errMsg string) bool {
-	errMsg = lower(errMsg)
+	errMsg = platform.Lower(errMsg)
 	return strings.Contains(errMsg, "unauthorized") || strings.Contains(errMsg, "denied") || strings.Contains(errMsg, "forbidden")
 }
 
@@ -279,7 +280,7 @@ func CheckContainerEngineMemory() {
 	log.Debug("Docker memory limit is set to ", info.MemTotal/1024/1024, " MB")
 
 	if info.MemTotal < 4*1024*1024*1024 {
-		WarningMessage(`The container daemon is running with less than 4GB of RAM.
+		platform.WarningMessage(`The container daemon is running with less than 4GB of RAM.
    If you experience issues, consider increasing the container runtime memory limit.
    Refer to %s for more information.
 `,
@@ -291,7 +292,7 @@ func CheckContainerEngineMemory() {
 // getDockerOptions returns qodana docker container options.
 func getDockerOptions(opts *QodanaOptions) *types.ContainerCreateConfig {
 	cmdOpts := getIdeArgs(opts)
-	ExtractQodanaEnvironment(opts.setenv)
+	ExtractQodanaEnvironment(opts.Setenv)
 	cachePath, err := filepath.Abs(opts.CacheDir)
 	if err != nil {
 		log.Fatal("couldn't get abs path for cache", err)
@@ -306,7 +307,7 @@ func getDockerOptions(opts *QodanaOptions) *types.ContainerCreateConfig {
 	}
 	containerName = os.Getenv(qodanaCliContainerName)
 	if containerName == "" {
-		containerName = fmt.Sprintf("qodana-cli-%s", opts.id())
+		containerName = fmt.Sprintf("qodana-cli-%s", opts.Id())
 	}
 	volumes := []mount.Mount{
 		{
@@ -363,7 +364,7 @@ func getDockerOptions(opts *QodanaOptions) *types.ContainerCreateConfig {
 		Config: &container.Config{
 			Image:        opts.Linter,
 			Cmd:          cmdOpts,
-			Tty:          IsInteractive(),
+			Tty:          platform.IsInteractive(),
 			AttachStdout: true,
 			AttachStderr: true,
 			Env:          opts.Env,
@@ -392,7 +393,7 @@ func generateDebugDockerRunCommand(cfg *types.ContainerCreateConfig) string {
 		cmdBuilder.WriteString(fmt.Sprintf("-u %s ", cfg.Config.User))
 	}
 	for _, env := range cfg.Config.Env {
-		if !strings.Contains(env, QodanaToken) || strings.Contains(env, QodanaLicense) || strings.Contains(env, QodanaLicenseOnlyToken) {
+		if !strings.Contains(env, platform.QodanaToken) || strings.Contains(env, QodanaLicense) || strings.Contains(env, platform.QodanaLicenseOnlyToken) {
 			cmdBuilder.WriteString(fmt.Sprintf("-e %s ", env))
 		}
 	}

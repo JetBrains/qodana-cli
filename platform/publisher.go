@@ -20,7 +20,7 @@
  * This will be refactored/removed after the proper endpoint is implemented.
  */
 
-package core
+package platform
 
 import (
 	"crypto/md5"
@@ -35,7 +35,7 @@ import (
 	"path/filepath"
 )
 
-const jarName = "publisher.jar"
+const PublisherJarName = "publisher.jar"
 
 type metadata struct {
 	Versioning versioning `xml:"versioning"`
@@ -47,13 +47,7 @@ type versioning struct {
 }
 
 // SendReport sends report to Qodana Cloud.
-func SendReport(opts *QodanaOptions, token string) {
-	var publisherPath string
-	if IsContainer() {
-		publisherPath = filepath.Join(Prod.IdeBin(), jarName)
-	} else {
-		publisherPath = filepath.Join(opts.ConfDirPath(), jarName)
-	}
+func SendReport(opts *QodanaOptions, token string, publisherPath string, javaPath string) {
 	if _, err := os.Stat(publisherPath); os.IsNotExist(err) {
 		err := os.MkdirAll(filepath.Dir(publisherPath), os.ModePerm)
 		if err != nil {
@@ -78,8 +72,8 @@ func SendReport(opts *QodanaOptions, token string) {
 		}
 	}
 
-	publisherCommand := getPublisherArgs(Prod.JbrJava(), publisherPath, opts, token, cloud.GetEnvWithDefault(cloud.QodanaEndpoint, cloud.DefaultEndpoint))
-	if res := RunCmd("", publisherCommand...); res > 0 {
+	publisherCommand := getPublisherArgs(javaPath, publisherPath, opts, token, cloud.GetEnvWithDefault(cloud.QodanaEndpoint, cloud.DefaultEndpoint))
+	if res, err := RunCmd("", publisherCommand...); res > 0 || err != nil {
 		os.Exit(res)
 	}
 }
