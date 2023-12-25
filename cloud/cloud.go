@@ -103,7 +103,7 @@ func (client *QdClient) getProject() RequestResult {
 func (client *QdClient) doRequest(path, method string, headers map[string]string, body []byte) RequestResult {
 	url := getCloudApiBaseUrl() + path
 	var resp *http.Response
-	var err error
+	var responseErr error
 
 	for i := 0; i < maxNumberOfRetries; i++ {
 		req, err := http.NewRequest(method, url, bytes.NewBuffer(body))
@@ -117,17 +117,17 @@ func (client *QdClient) doRequest(path, method string, headers map[string]string
 			req.Header.Set(key, value)
 		}
 
-		resp, err = client.httpClient.Do(req)
-		if err == nil {
+		resp, responseErr = client.httpClient.Do(req)
+		if responseErr == nil {
 			break
 		}
 		time.Sleep(waitTimeout)
 	}
-	if err != nil {
-		return RequestError{Err: err}
+	if responseErr != nil {
+		return RequestError{Err: responseErr}
 	}
 	defer func(Body io.ReadCloser) {
-		err = Body.Close()
+		err := Body.Close()
 		if err != nil {
 			log.Fatal(err)
 		}
