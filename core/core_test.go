@@ -168,7 +168,7 @@ func Test_ExtractEnvironmentVariables(t *testing.T) {
 				"JB_SPACE_PROJECT_KEY":         "sa",
 				"JB_SPACE_GIT_REPOSITORY_NAME": "entrypoint",
 			},
-			envExpected:       fmt.Sprintf("space:%s", Version),
+			envExpected:       fmt.Sprintf("space:%s", platform.Version),
 			remoteUrlExpected: "ssh://git@git.jetbrains.team/sa/entrypoint.git",
 			jobUrlExpected:    "https://space.jetbrains.com/never-gonna-give-you-up",
 			repoUrlExpected:   "https://jetbrains.team/p/sa/repositories/entrypoint",
@@ -184,7 +184,7 @@ func Test_ExtractEnvironmentVariables(t *testing.T) {
 				"CI_REPOSITORY_URL": "https://gitlab.jetbrains.com/sa/entrypoint.git",
 				"CI_PROJECT_URL":    "https://gitlab.jetbrains.com/sa/entrypoint",
 			},
-			envExpected:       fmt.Sprintf("gitlab:%s", Version),
+			envExpected:       fmt.Sprintf("gitlab:%s", platform.Version),
 			remoteUrlExpected: "https://gitlab.jetbrains.com/sa/entrypoint.git",
 			jobUrlExpected:    "https://gitlab.jetbrains.com/never-gonna-give-you-up",
 			repoUrlExpected:   "https://gitlab.jetbrains.com/sa/entrypoint",
@@ -199,7 +199,7 @@ func Test_ExtractEnvironmentVariables(t *testing.T) {
 				"GIT_COMMIT":       revisionExpected,
 				"GIT_URL":          "https://git.jetbrains.com/sa/entrypoint.git",
 			},
-			envExpected:       fmt.Sprintf("jenkins:%s", Version),
+			envExpected:       fmt.Sprintf("jenkins:%s", platform.Version),
 			jobUrlExpected:    "https://jenkins.jetbrains.com/never-gonna-give-you-up",
 			remoteUrlExpected: "https://git.jetbrains.com/sa/entrypoint.git",
 			repoUrlExpected:   "https://git.jetbrains.com/sa/entrypoint",
@@ -215,7 +215,7 @@ func Test_ExtractEnvironmentVariables(t *testing.T) {
 				"GITHUB_SHA":        revisionExpected,
 				"GITHUB_HEAD_REF":   branchExpected,
 			},
-			envExpected:       fmt.Sprintf("github-actions:%s", Version),
+			envExpected:       fmt.Sprintf("github-actions:%s", platform.Version),
 			jobUrlExpected:    "https://github.jetbrains.com/sa/entrypoint/actions/runs/123456789",
 			remoteUrlExpected: "https://github.jetbrains.com/sa/entrypoint.git",
 			repoUrlExpected:   "https://github.jetbrains.com/sa/entrypoint",
@@ -231,7 +231,7 @@ func Test_ExtractEnvironmentVariables(t *testing.T) {
 				"GITHUB_SHA":        revisionExpected,
 				"GITHUB_REF":        branchExpected,
 			},
-			envExpected:       fmt.Sprintf("github-actions:%s", Version),
+			envExpected:       fmt.Sprintf("github-actions:%s", platform.Version),
 			jobUrlExpected:    "https://github.jetbrains.com/sa/entrypoint/actions/runs/123456789",
 			remoteUrlExpected: "https://github.jetbrains.com/sa/entrypoint.git",
 			repoUrlExpected:   "https://github.jetbrains.com/sa/entrypoint",
@@ -263,7 +263,7 @@ func Test_ExtractEnvironmentVariables(t *testing.T) {
 				"CIRCLE_BRANCH":         branchExpected,
 				"CIRCLE_REPOSITORY_URL": "https://circleci.jetbrains.com/sa/entrypoint.git",
 			},
-			envExpected:       fmt.Sprintf("circleci:%s", Version),
+			envExpected:       fmt.Sprintf("circleci:%s", platform.Version),
 			jobUrlExpected:    "https://circleci.jetbrains.com/never-gonna-give-you-up",
 			remoteUrlExpected: "https://circleci.jetbrains.com/sa/entrypoint.git",
 			repoUrlExpected:   "https://circleci.jetbrains.com/sa/entrypoint",
@@ -281,7 +281,7 @@ func Test_ExtractEnvironmentVariables(t *testing.T) {
 				"BUILD_SOURCEBRANCH":                 "refs/heads/" + branchExpected,
 				"BUILD_REPOSITORY_URI":               "https://dev.azure.com/jetbrains/sa/entrypoint.git",
 			},
-			envExpected:       fmt.Sprintf("azure-pipelines:%s", Version),
+			envExpected:       fmt.Sprintf("azure-pipelines:%s", platform.Version),
 			jobUrlExpected:    "https://dev.azure.com/jetbrains/sa/_build/results?buildId=123456789",
 			remoteUrlExpected: "https://dev.azure.com/jetbrains/sa/entrypoint.git",
 			repoUrlExpected:   "https://dev.azure.com/jetbrains/sa/entrypoint",
@@ -1105,7 +1105,7 @@ func TestSetupLicenseToken(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			cloud.SetupLicenseToken(&platform.QodanaOptions{}, true)
+			cloud.SetupLicenseToken(testData.token, false)
 
 			if cloud.Token.Token != testData.resToken {
 				t.Errorf("expected token to be '%s' got '%s'", testData.resToken, cloud.Token.Token)
@@ -1156,7 +1156,7 @@ func TestQodanaOptions_RequiresToken(t *testing.T) {
 		},
 		{
 			"QDPYC docker",
-			Image(QDPYC),
+			platform.Image(platform.QDPYC),
 			"",
 			false,
 		},
@@ -1289,7 +1289,7 @@ func Test_Properties(t *testing.T) {
 	Prod.Code = "QDNET"
 	Prod.Version = "2023.3"
 
-	err := os.Setenv(QodanaDistEnv, opts.ProjectDir)
+	err := os.Setenv(platform.QodanaDistEnv, opts.ProjectDir)
 	if err != nil {
 		t.Fatal(err)
 	}

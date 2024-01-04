@@ -18,7 +18,6 @@ package platform
 
 import (
 	"fmt"
-	"github.com/JetBrains/qodana-cli/v2023/core"
 	"os"
 	"path"
 	"path/filepath"
@@ -84,8 +83,8 @@ func (o *QodanaOptions) FetchAnalyzerSettings() {
 				PrimaryBold(o.YamlName),
 				PrimaryBold("qodana init"),
 			)
-			analyzer := core.GetAnalyzer(o.ProjectDir, o.YamlName)
-			if core.IsNativeAnalyzer(analyzer) {
+			analyzer := GetAnalyzer(o.ProjectDir, o.YamlName)
+			if IsNativeAnalyzer(analyzer) {
 				o.Ide = analyzer
 			} else {
 				o.Linter = analyzer
@@ -254,6 +253,34 @@ func (o *QodanaOptions) Properties() (map[string]string, []string) {
 		}
 	}
 	return props, flagsArr
+}
+
+func (o *QodanaOptions) RequiresToken(isCommunityOrEap bool) bool {
+	if os.Getenv(QodanaToken) != "" || o.Getenv(QodanaLicenseOnlyToken) != "" {
+		return true
+	}
+
+	var analyzer string
+	if o.Linter != "" {
+		analyzer = o.Linter
+	} else if o.Ide != "" {
+		analyzer = o.Ide
+	}
+
+	if os.Getenv(QodanaLicense) != "" ||
+		Contains(append(AllSupportedFreeImages, AllSupportedFreeCodes...), analyzer) ||
+		strings.Contains(Lower(analyzer), "eap") ||
+		isCommunityOrEap {
+		return false
+	}
+
+	for _, e := range AllSupportedPaidCodes {
+		if strings.HasPrefix(Image(e), o.Linter) || strings.HasPrefix(e, o.Ide) {
+			return true
+		}
+	}
+
+	return false
 }
 
 func (o *QodanaOptions) IsCommunity() bool {

@@ -10,35 +10,6 @@ import (
 	"strings"
 )
 
-// getAzureJobUrl returns the Azure Pipelines job URL.
-func getAzureJobUrl() string {
-	if server := os.Getenv("SYSTEM_TEAMFOUNDATIONCOLLECTIONURI"); server != "" {
-		return strings.Join([]string{
-			server,
-			os.Getenv("SYSTEM_TEAMPROJECT"),
-			"/_build/results?buildId=",
-			os.Getenv("BUILD_BUILDID"),
-		}, "")
-	}
-	return ""
-}
-
-// getSpaceJobUrl returns the Space job URL.
-func getSpaceRemoteUrl() string {
-	if server := os.Getenv("JB_SPACE_API_URL"); server != "" {
-		return strings.Join([]string{
-			"ssh://git@git.",
-			server,
-			"/",
-			os.Getenv("JB_SPACE_PROJECT_KEY"),
-			"/",
-			os.Getenv("JB_SPACE_GIT_REPOSITORY_NAME"),
-			".git",
-		}, "")
-	}
-	return ""
-}
-
 // findProcess using gopsutil to find process by name.
 func findProcess(processName string) bool {
 	if platform.IsContainer() {
@@ -133,38 +104,6 @@ func getPluginIds(plugins []platform.Plugin) []string {
 	return ids
 }
 
-func RequiresToken(o *platform.QodanaOptions) bool {
-	return (&QodanaOptions{QodanaOptions: o}).RequiresToken()
-}
-
-func (o *QodanaOptions) RequiresToken() bool {
-	if os.Getenv(platform.QodanaToken) != "" || o.Getenv(platform.QodanaLicenseOnlyToken) != "" {
-		return true
-	}
-
-	var analyzer string
-	if o.Linter != "" {
-		analyzer = o.Linter
-	} else if o.Ide != "" {
-		analyzer = o.Ide
-	}
-
-	if os.Getenv(QodanaLicense) != "" ||
-		platform.Contains(append(allSupportedFreeImages, allSupportedFreeCodes...), analyzer) ||
-		strings.Contains(platform.Lower(analyzer), "eap") ||
-		Prod.IsCommunity() || Prod.EAP {
-		return false
-	}
-
-	for _, e := range allSupportedPaidCodes {
-		if strings.HasPrefix(Image(e), o.Linter) || strings.HasPrefix(e, o.Ide) {
-			return true
-		}
-	}
-
-	return false
-}
-
 func (o *QodanaOptions) guessProduct() string {
 	if o.Ide != "" {
 		productCode := strings.TrimSuffix(o.Ide, EapSuffix)
@@ -180,7 +119,7 @@ func (o *QodanaOptions) guessProduct() string {
 			linter = strings.TrimPrefix(linter, "registry.jetbrains.team/p/sa/containers/")
 			linter = "jetbrains/" + linter
 		}
-		for k, v := range DockerImageMap {
+		for k, v := range platform.DockerImageMap {
 			if strings.HasPrefix(linter, v) {
 				return k
 			}

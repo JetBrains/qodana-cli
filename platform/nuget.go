@@ -1,10 +1,9 @@
-package core
+package platform
 
 import (
 	"bufio"
 	"fmt"
 	"github.com/JetBrains/qodana-cli/v2023/cloud"
-	"github.com/JetBrains/qodana-cli/v2023/platform"
 	log "github.com/sirupsen/logrus"
 	"os"
 	"path/filepath"
@@ -17,7 +16,7 @@ const (
 	nugetConfigNamePascalCase = "NuGet.Config"
 )
 
-func unsetNugetVariables() {
+func UnsetNugetVariables() {
 	variables := []string{qodanaNugetUser, qodanaNugetPassword, qodanaNugetName, qodanaNugetUrl}
 	for _, variable := range variables {
 		if err := os.Unsetenv(variable); err != nil {
@@ -26,8 +25,8 @@ func unsetNugetVariables() {
 	}
 }
 
-func warnIfPrivateFeedDetected(projectPath string) {
-	if Prod.Code != QDNET && Prod.Code != QDNETC || qodanaNugetVarsSet() {
+func WarnIfPrivateFeedDetected(prodCode string, projectPath string) {
+	if prodCode != QDNET && prodCode != QDNETC || qodanaNugetVarsSet() {
 		return
 	}
 	configFileNames := []string{nugetConfigName, nugetConfigNamePascalCase}
@@ -65,15 +64,15 @@ func checkForPrivateFeed(fileName string) bool {
 	return false
 }
 
-func isNugetConfigNeeded() bool {
-	return platform.IsContainer() && qodanaNugetVarsSet()
+func IsNugetConfigNeeded() bool {
+	return IsContainer() && qodanaNugetVarsSet()
 }
 
 func qodanaNugetVarsSet() bool {
 	return os.Getenv(qodanaNugetUrl) != "" && os.Getenv(qodanaNugetUser) != "" && os.Getenv(qodanaNugetPassword) != ""
 }
 
-func prepareNugetConfig(userPath string) {
+func PrepareNugetConfig(userPath string) {
 	nugetConfig := filepath.Join(userPath, ".nuget", "NuGet")
 	if _, err := os.Stat(nugetConfig); err != nil {
 		// mkdir -p ~/.nuget/NuGet
@@ -86,4 +85,27 @@ func prepareNugetConfig(userPath string) {
 	if err := os.WriteFile(nugetConfig, []byte(config), 0644); err != nil {
 		log.Fatal("couldn't create a file ", err.Error())
 	}
+}
+
+func nugetWithPrivateFeed(nugetSourceName string, nugetUrl string, nugetUser string, nugetPassword string) string {
+	return fmt.Sprintf(`<?xml version="1.0" encoding="utf-8"?>
+<configuration>
+  <packageSources>
+    <clear />
+    <add key="nuget.org" value="https://api.nuget.org/v3/index.json" />
+    <add key="%s" value="%s" />
+  </packageSources>
+  <packageSourceCredentials>
+    <%s>
+      <add key="Username" value="%s" />
+      <add key="ClearTextPassword" value="%s" />
+    </%s>
+  </packageSourceCredentials>
+</configuration>`,
+		nugetSourceName,
+		nugetUrl,
+		nugetSourceName,
+		nugetUser,
+		nugetPassword,
+		nugetSourceName)
 }

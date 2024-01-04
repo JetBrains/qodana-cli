@@ -27,6 +27,17 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
+var qodanaInteractiveSelect = pterm.InteractiveSelectPrinter{
+	TextStyle:     PrimaryStyle,
+	DefaultText:   "Please select the product to use",
+	Options:       []string{},
+	OptionStyle:   PrimaryStyle,
+	DefaultOption: "",
+	MaxHeight:     5,
+	Selector:      ">",
+	SelectorStyle: PrimaryStyle,
+}
+
 // InfoString Two newlines at the start are important to lay the output nicely in CLI.
 func InfoString(version string) string {
 	return fmt.Sprintf(`

@@ -1,4 +1,4 @@
-package core
+package platform
 
 import (
 	"bufio"
@@ -72,7 +72,7 @@ func TestPrepareNugetConfig(t *testing.T) {
 		}
 	}(tmpDir)
 
-	prepareNugetConfig(tmpDir)
+	PrepareNugetConfig(tmpDir)
 
 	expected := `<?xml version="1.0" encoding="utf-8"?>
 <configuration>

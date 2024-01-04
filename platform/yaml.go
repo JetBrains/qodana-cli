@@ -19,17 +19,12 @@ package platform
 import (
 	"bytes"
 	"errors"
-	"github.com/JetBrains/qodana-cli/v2023/core"
 	log "github.com/sirupsen/logrus"
 	"gopkg.in/yaml.v3"
 	"os"
 	"path/filepath"
 	"sort"
 	"strings"
-)
-
-const (
-	configName = "qodana"
 )
 
 var Config QodanaYaml // TODO : burry the value somewhere
@@ -404,5 +399,34 @@ func (q *QodanaYaml) Sort() *QodanaYaml {
 }
 
 func (q *QodanaYaml) IsDotNet() bool {
-	return strings.Contains(q.Linter, "dotnet") || strings.Contains(q.Linter, "cdnet") || strings.Contains(q.Ide, core.QDNET)
+	return strings.Contains(q.Linter, "dotnet") || strings.Contains(q.Linter, "cdnet") || strings.Contains(q.Ide, "QDNET")
+}
+
+// SetQodanaLinter adds the linter to the qodana.yaml file.
+func SetQodanaLinter(path string, linter string, filename string) {
+	q := LoadQodanaYaml(path, filename)
+	if q.Version == "" {
+		q.Version = "1.0"
+	}
+	q.Sort()
+	if Contains(AllCodes, linter) {
+		q.Ide = linter
+	} else {
+		q.Linter = linter
+	}
+	err := q.WriteConfig(filepath.Join(path, filename))
+	if err != nil {
+		log.Fatalf("writeConfig: %v", err)
+	}
+}
+
+// setQodanaDotNet adds the .NET configuration to the qodana.yaml file.
+func setQodanaDotNet(path string, dotNet *DotNet, filename string) bool {
+	q := LoadQodanaYaml(path, filename)
+	q.DotNet = *dotNet
+	err := q.WriteConfig(filepath.Join(path, filename))
+	if err != nil {
+		log.Fatalf("writeConfig: %v", err)
+	}
+	return true
 }

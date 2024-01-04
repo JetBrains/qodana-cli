@@ -7,29 +7,6 @@ import (
 	"strconv"
 )
 
-var (
-	qodanaInteractiveSelect = pterm.InteractiveSelectPrinter{
-		TextStyle:     platform.PrimaryStyle,
-		DefaultText:   "Please select the product to use",
-		Options:       []string{},
-		OptionStyle:   platform.PrimaryStyle,
-		DefaultOption: "",
-		MaxHeight:     5,
-		Selector:      ">",
-		SelectorStyle: platform.PrimaryStyle,
-	}
-	qodanaInteractiveConfirm = pterm.InteractiveConfirmPrinter{
-		DefaultValue: true,
-		DefaultText:  platform.DefaultPromptText,
-		TextStyle:    platform.PrimaryStyle,
-		ConfirmText:  "Yes",
-		ConfirmStyle: platform.PrimaryStyle,
-		RejectText:   "No",
-		RejectStyle:  platform.PrimaryStyle,
-		SuffixStyle:  platform.PrimaryStyle,
-	}
-)
-
 var PricingUrl = "https://www.jetbrains.com/qodana/buy/"
 
 // PrintContributorsTable prints the contributors table and helpful messages.

@@ -25,8 +25,8 @@ func setup(options *QodanaOptions) error {
 	if err != nil {
 		return fmt.Errorf("failed to get java executable path: %w", err)
 	}
-
-	cloud.SetupLicenseToken(options, false) // it doesn't require token for 3rd party linters
+	// TODO iscommunityoreap
+	cloud.SetupLicenseToken(options.LoadToken(false, options.RequiresToken(false)), os.Getenv(QodanaLicenseOnlyToken) != "")
 	options.LicensePlan, err = cloud.GetLicensePlan()
 	if err != nil {
 		if !linterInfo.IsEap {

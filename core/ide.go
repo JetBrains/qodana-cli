@@ -144,12 +144,12 @@ func getIdeArgs(opts *QodanaOptions) []string {
 	}
 
 	prod := opts.guessProduct() // TODO : think how it could be better handled in presence of random 3rd party linters
-	if prod == QDNETC || prod == QDCL {
+	if prod == platform.QDNETC || prod == platform.QDCL {
 		// third party common options
 		if opts.NoStatistics {
 			arguments = append(arguments, "--no-statistics")
 		}
-		if prod == QDNETC {
+		if prod == platform.QDNETC {
 			// cdnet options
 			if opts.Solution != "" {
 				arguments = append(arguments, "--solution", platform.QuoteForWindows(opts.Solution))
@@ -231,25 +231,25 @@ var supportedIdes = [...]string{
 func toQodanaCode(baseProduct string) string {
 	switch baseProduct {
 	case "IC":
-		return QDJVMC
+		return platform.QDJVMC
 	case "PC":
-		return QDPYC
+		return platform.QDPYC
 	case "IU":
-		return QDJVM
+		return platform.QDJVM
 	case "PS":
-		return QDPHP
+		return platform.QDPHP
 	case "WS":
-		return QDJS
+		return platform.QDJS
 	case "RD":
-		return QDNET
+		return platform.QDNET
 	case "PY":
-		return QDPY
+		return platform.QDPY
 	case "GO":
-		return QDGO
+		return platform.QDGO
 	case "RM":
-		return QDRUBY
+		return platform.QDRUBY
 	case "RR":
-		return QDRST
+		return platform.QDRST
 	default:
 		return "QD"
 	}
@@ -258,21 +258,21 @@ func toQodanaCode(baseProduct string) string {
 func scriptToProductCode(scriptName string) string {
 	switch scriptName {
 	case idea:
-		return QDJVM
+		return platform.QDJVM
 	case phpStorm:
-		return QDPHP
+		return platform.QDPHP
 	case webStorm:
-		return QDJS
+		return platform.QDJS
 	case rider:
-		return QDNET
+		return platform.QDNET
 	case pyCharm:
-		return QDPY
+		return platform.QDPY
 	case rubyMine:
-		return QDRUBY
+		return platform.QDRUBY
 	case goLand:
-		return QDGO
+		return platform.QDGO
 	case rustRover:
-		return QDRST
+		return platform.QDRST
 	default:
 		return "QD"
 	}
@@ -327,8 +327,9 @@ func prepareLocalIdeSettings(opts *QodanaOptions) {
 		log.Fatal("IDE to run is not found")
 	}
 
-	ExtractQodanaEnvironment(setEnv)
-	cloud.SetupLicenseToken(opts.QodanaOptions, opts.RequiresToken())
+	platform.ExtractQodanaEnvironment(platform.SetEnv)
+	requiresToken := opts.RequiresToken(Prod.EAP || Prod.IsCommunity())
+	cloud.SetupLicenseToken(opts.LoadToken(false, requiresToken), os.Getenv(platform.QodanaLicenseOnlyToken) != "")
 	SetupLicenseAndProjectHash(cloud.Token.Token)
 	prepareDirectories(
 		opts.CacheDir,
@@ -343,7 +344,7 @@ func prepareLocalIdeSettings(opts *QodanaOptions) {
 		createUser("/etc/passwd")
 	}
 
-	bootstrap(platform.Config.Bootstrap, opts.ProjectDir)
+	platform.Bootstrap(platform.Config.Bootstrap, opts.ProjectDir)
 	installPlugins(platform.Config.Plugins)
 }
 
@@ -411,10 +412,10 @@ func prepareDirectories(cacheDir string, logDir string, confDir string) {
 		writeFileIfNew(filepath.Join(mavenRootDir, "settings.xml"), mavenSettingsXml)
 		writeFileIfNew(filepath.Join(ideaOptions, "path.macros.xml"), mavenPathMacroxXml)
 
-		androidSdk := os.Getenv(androidSdkRoot)
+		androidSdk := os.Getenv(platform.AndroidSdkRoot)
 		if androidSdk != "" && platform.IsContainer() {
 			writeFileIfNew(filepath.Join(ideaOptions, "project.default.xml"), androidProjectDefaultXml(androidSdk))
-			corettoSdk := os.Getenv(qodanaCorettoSdk)
+			corettoSdk := os.Getenv(platform.QodanaCorettoSdk)
 			if corettoSdk != "" {
 				writeFileIfNew(filepath.Join(ideaOptions, "jdk.table.xml"), jdkTableXml(corettoSdk))
 			}

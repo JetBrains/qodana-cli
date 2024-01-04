@@ -50,7 +50,7 @@ func SetupLicenseAndProjectHash(token string) {
 			}
 		}
 	}
-	_, exists := os.LookupEnv(QodanaLicense)
+	_, exists := os.LookupEnv(platform.QodanaLicense)
 	if exists {
 		return
 	}
@@ -96,7 +96,7 @@ func SetupLicenseAndProjectHash(token string) {
 	if licenseData.LicenseKey == "" {
 		log.Fatalf("License key should not be empty\n")
 	}
-	err := os.Setenv(QodanaLicense, licenseData.LicenseKey)
+	err := os.Setenv(platform.QodanaLicense, licenseData.LicenseKey)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -104,7 +104,7 @@ func SetupLicenseAndProjectHash(token string) {
 
 func allCommunityNames() string {
 	var nameList []string
-	for _, code := range allSupportedFreeCodes {
+	for _, code := range platform.AllSupportedFreeCodes {
 		nameList = append(nameList, "\""+getProductNameFromCode(code)+"\"")
 	}
 	return strings.Join(nameList, ", ")

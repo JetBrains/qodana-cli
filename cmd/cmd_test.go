@@ -99,7 +99,7 @@ func TestVersion(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	expected := fmt.Sprintf("qodana version %s\n", core.Version)
+	expected := fmt.Sprintf("qodana version %s\n", platform.Version)
 	actual := string(out)
 	if expected != actual {
 		t.Fatalf("expected \"%s\" got \"%s\"", expected, actual)
@@ -188,8 +188,8 @@ func TestInitCommand(t *testing.T) {
 
 	qodanaYaml := platform.LoadQodanaYaml(projectPath, filename)
 
-	if qodanaYaml.Linter != core.Image(core.QDPYC) {
-		t.Fatalf("expected \"%s\", but got %s", core.Image(core.QDPYC), qodanaYaml.Linter)
+	if qodanaYaml.Linter != platform.Image(platform.QDPYC) {
+		t.Fatalf("expected \"%s\", but got %s", platform.Image(platform.QDPYC), qodanaYaml.Linter)
 	}
 
 	err = os.RemoveAll(projectPath)

@@ -22,6 +22,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/JetBrains/qodana-cli/v2023/platform"
+	"github.com/docker/docker/client"
 	"io"
 	"net/http"
 	"os"
@@ -29,9 +30,6 @@ import (
 	"path/filepath"
 	"runtime"
 	"strings"
-	"time"
-
-	"github.com/docker/docker/client"
 
 	cienvironment "github.com/cucumber/ci-environment/go"
 
@@ -91,56 +89,6 @@ func getLatestVersion() string {
 	return result["tag_name"].(string)
 }
 
-// openReport serves the report on the given port and opens the browser.
-func openReport(cloudUrl string, path string, port int) {
-	if cloudUrl != "" {
-		resp, err := http.Get(cloudUrl)
-		if err == nil && resp.StatusCode == 200 {
-			err = openBrowser(cloudUrl)
-			if err != nil {
-				return
-			}
-		}
-		return
-	} else {
-		url := fmt.Sprintf("http://localhost:%d", port)
-		go func() {
-			resp, err := http.Get(url)
-			if err == nil && resp.StatusCode == 200 {
-				err := openBrowser(url)
-				if err != nil {
-					return
-				}
-			}
-		}()
-		http.Handle("/", noCache(http.FileServer(http.Dir(path))))
-		err := http.ListenAndServe(fmt.Sprintf(":%d", port), nil)
-		if err != nil {
-			platform.WarningMessage("Problem serving report, %s\n", err.Error())
-			return
-		}
-	}
-	_, _ = fmt.Scan()
-}
-
-// openBrowser opens the default browser to the given url
-func openBrowser(url string) error {
-	var cmd string
-	var args []string
-
-	switch runtime.GOOS {
-	case "windows":
-		cmd = "cmd"
-		args = []string{"/c", "start"}
-	case "darwin":
-		cmd = "open"
-	default: // "linux", "freebsd", "openbsd", "netbsd"
-		cmd = "xdg-open"
-	}
-	args = append(args, url)
-	return exec.Command(cmd, args...).Start()
-}
-
 // OpenDir opens directory in the default file manager
 func OpenDir(path string) error {
 	var cmd string
@@ -158,37 +106,6 @@ func OpenDir(path string) error {
 	return exec.Command(cmd, args...).Start()
 }
 
-// noCache handles serving the static files with no cache headers.
-func noCache(h http.Handler) http.Handler {
-	etagHeaders := []string{
-		"ETag",
-		"If-Modified-Since",
-		"If-Match",
-		"If-None-Match",
-		"If-Range",
-		"If-Unmodified-Since",
-	}
-	epoch := time.Unix(0, 0).Format(time.RFC1123)
-	noCacheHeaders := map[string]string{
-		"Expires":         epoch,
-		"Cache-Control":   "no-cache, private, max-age=0",
-		"Pragma":          "no-cache",
-		"X-Accel-Expires": "0",
-	}
-	fn := func(w http.ResponseWriter, r *http.Request) {
-		for _, x := range etagHeaders {
-			if r.Header.Get(x) != "" {
-				r.Header.Del(x)
-			}
-		}
-		for k, v := range noCacheHeaders {
-			w.Header().Set(k, v)
-		}
-		h.ServeHTTP(w, r)
-	}
-	return http.HandlerFunc(fn)
-}
-
 // prepareHost gets the current user, creates the necessary folders for the analysis.
 func prepareHost(opts *QodanaOptions) {
 	if opts.ClearCache {
@@ -197,9 +114,9 @@ func prepareHost(opts *QodanaOptions) {
 			log.Errorf("Could not clear local Qodana cache: %s", err)
 		}
 	}
-	warnIfPrivateFeedDetected(opts.ProjectDir)
-	if isNugetConfigNeeded() {
-		prepareNugetConfig(os.Getenv("HOME"))
+	platform.WarnIfPrivateFeedDetected(Prod.Code, opts.ProjectDir)
+	if platform.IsNugetConfigNeeded() {
+		platform.PrepareNugetConfig(os.Getenv("HOME"))
 	}
 	if err := os.MkdirAll(opts.CacheDir, os.ModePerm); err != nil {
 		log.Fatal("couldn't create a directory ", err.Error())
@@ -211,7 +128,7 @@ func prepareHost(opts *QodanaOptions) {
 		PrepareContainerEnvSettings()
 	}
 	if opts.Ide != "" {
-		if platform.Contains(AllNativeCodes, strings.TrimSuffix(opts.Ide, EapSuffix)) {
+		if platform.Contains(platform.AllNativeCodes, strings.TrimSuffix(opts.Ide, EapSuffix)) {
 			platform.PrintProcess(func(spinner *pterm.SpinnerPrinter) {
 				if spinner != nil {
 					spinner.ShowTimer = false // We will update interactive spinner
@@ -219,24 +136,15 @@ func prepareHost(opts *QodanaOptions) {
 				opts.Ide = downloadAndInstallIDE(opts, opts.GetQodanaSystemDir(), spinner)
 			}, fmt.Sprintf("Downloading %s", opts.Ide), fmt.Sprintf("downloading IDE distribution to %s", opts.GetQodanaSystemDir()))
 		} else {
-			val, exists := os.LookupEnv(QodanaDistEnv)
+			val, exists := os.LookupEnv(platform.QodanaDistEnv)
 			if !exists || val == "" || opts.Ide != val {
 				log.Fatalf("Product code %s is not supported", opts.Ide)
 			}
 		}
 		prepareLocalIdeSettings(opts)
 	}
-	if opts.RequiresToken() {
+	if opts.RequiresToken(Prod.IsCommunity() || Prod.EAP) {
 		opts.ValidateToken(false)
-	}
-}
-
-func GetDefaultUser() string {
-	switch runtime.GOOS {
-	case "windows":
-		return "root"
-	default: // "darwin", "linux", "freebsd", "openbsd", "netbsd"
-		return fmt.Sprintf("%d:%d", os.Getuid(), os.Getgid())
 	}
 }
 
@@ -253,20 +161,6 @@ func IsHomeDirectory(path string) bool {
 	return absPath == home
 }
 
-// AskUserConfirm asks the user for confirmation with yes/no.
-func AskUserConfirm(what string) bool {
-	if !platform.IsInteractive() {
-		return false
-	}
-	prompt := qodanaInteractiveConfirm
-	prompt.DefaultText = "\n?  " + what
-	answer, err := prompt.Show()
-	if err != nil {
-		log.Fatalf("Error while waiting for user input: %s", err)
-	}
-	return answer
-}
-
 // RunAnalysis runs the linter with the given options.
 func RunAnalysis(ctx context.Context, options *QodanaOptions) int {
 	log.Debugf("Running analysis with options: %+v", options)
@@ -281,7 +175,7 @@ func RunAnalysis(ctx context.Context, options *QodanaOptions) int {
 			log.Fatal("Please check that project is located within the Git repo")
 		}
 		options.Setenv(platform.QodanaRemoteUrl, remoteUrl)
-		options.Setenv(qodanaBranch, branch)
+		options.Setenv(platform.QodanaBranch, branch)
 
 		err := platform.GitClean(options.ProjectDir)
 		if err != nil {
@@ -302,7 +196,7 @@ func RunAnalysis(ctx context.Context, options *QodanaOptions) int {
 
 		for _, revision := range revisions {
 			counter++
-			options.Setenv(qodanaRevision, revision)
+			options.Setenv(platform.QodanaRevision, revision)
 			platform.WarningMessage("[%d/%d] Running analysis for revision %s", counter+1, allCommits, revision)
 			err = platform.GitCheckout(options.ProjectDir, revision)
 			if err != nil {
@@ -311,7 +205,7 @@ func RunAnalysis(ctx context.Context, options *QodanaOptions) int {
 			platform.EmptyMessage()
 
 			exitCode = runQodana(ctx, options)
-			options.Unsetenv(qodanaRevision)
+			options.Unsetenv(platform.QodanaRevision)
 		}
 		err = platform.GitCheckout(options.ProjectDir, branch)
 		if err != nil {
@@ -343,7 +237,7 @@ func runQodana(ctx context.Context, options *QodanaOptions) int {
 	if options.Linter != "" {
 		exitCode = runQodanaContainer(ctx, options)
 	} else if options.Ide != "" {
-		unsetNugetVariables() // TODO: get rid of it from 241 release
+		platform.UnsetNugetVariables() // TODO: get rid of it from 241 release
 		exitCode = runQodanaLocal(options)
 	} else {
 		log.Fatal("No linter or IDE specified")

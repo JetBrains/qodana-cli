@@ -44,11 +44,11 @@ func newInitCommand() *cobra.Command {
 					log.Fatal(err)
 				}
 				options.ProjectDir = absPath
-				if platform.IsInteractive() && !core.AskUserConfirm(fmt.Sprintf("Do you want to set up Qodana in %s", platform.PrimaryBold(options.ProjectDir))) {
+				if platform.IsInteractive() && !platform.AskUserConfirm(fmt.Sprintf("Do you want to set up Qodana in %s", platform.PrimaryBold(options.ProjectDir))) {
 					return
 				}
-				analyzer := core.GetAnalyzer(options.ProjectDir, options.YamlName)
-				if core.IsNativeAnalyzer(analyzer) {
+				analyzer := platform.GetAnalyzer(options.ProjectDir, options.YamlName)
+				if platform.IsNativeAnalyzer(analyzer) {
 					options.Ide = analyzer
 				} else {
 					options.Linter = analyzer
@@ -68,14 +68,14 @@ func newInitCommand() *cobra.Command {
 				)
 			}
 			if platform.IsInteractive() && qodanaYaml.IsDotNet() && (qodanaYaml.DotNet.IsEmpty() || force) {
-				if core.GetDotNetConfig(options.ProjectDir, options.YamlName) {
+				if platform.GetDotNetConfig(options.ProjectDir, options.YamlName) {
 					platform.SuccessMessage("The .NET configuration was successfully set")
 				}
 			}
 			platform.PrintFile(filepath.Join(options.ProjectDir, options.YamlName))
 			options.Linter = qodanaYaml.Linter
 			options.Ide = qodanaYaml.Ide
-			if core.RequiresToken(options) {
+			if options.RequiresToken(core.Prod.EAP || core.Prod.IsCommunity()) {
 				options.ValidateToken(force)
 			}
 		},

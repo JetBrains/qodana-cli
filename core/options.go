@@ -15,7 +15,7 @@ type QodanaOptions struct {
 }
 
 func (o *QodanaOptions) fixesSupported() bool {
-	return o.guessProduct() != QDNET && o.guessProduct() != QDNETC && o.guessProduct() != QDCL
+	return o.guessProduct() != platform.QDNET && o.guessProduct() != platform.QDNETC && o.guessProduct() != platform.QDCL
 }
 
 func (o *QodanaOptions) appInfoXmlPath(ideBinDir string) string {

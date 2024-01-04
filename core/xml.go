@@ -174,26 +174,3 @@ const userPrefsXml = `?xml version="1.0" encoding="UTF-8" standalone="no"?>
 <!DOCTYPE map SYSTEM "http://java.sun.com/dtd/preferences.dtd">
 <map MAP_XML_VERSION="1.0">
 </map>`
-
-func nugetWithPrivateFeed(nugetSourceName string, nugetUrl string, nugetUser string, nugetPassword string) string {
-	return fmt.Sprintf(`<?xml version="1.0" encoding="utf-8"?>
-<configuration>
-  <packageSources>
-    <clear />
-    <add key="nuget.org" value="https://api.nuget.org/v3/index.json" />
-    <add key="%s" value="%s" />
-  </packageSources>
-  <packageSourceCredentials>
-    <%s>
-      <add key="Username" value="%s" />
-      <add key="ClearTextPassword" value="%s" />
-    </%s>
-  </packageSourceCredentials>
-</configuration>`,
-		nugetSourceName,
-		nugetUrl,
-		nugetSourceName,
-		nugetUser,
-		nugetPassword,
-		nugetSourceName)
-}

@@ -2,7 +2,6 @@ package platform
 
 import (
 	"fmt"
-	"github.com/JetBrains/qodana-cli/v2023/core"
 	"github.com/google/uuid"
 	"github.com/spf13/cobra"
 	"os"
@@ -14,9 +13,9 @@ func ComputeFlags(cmd *cobra.Command, options *QodanaOptions) error {
 	flags.SortFlags = false
 
 	if !IsContainer() {
-		flags.StringVarP(&options.Linter, "linter", "l", "", "Use to run Qodana in a container (default). Choose linter (image) to use. Not compatible with --ide option. Available images are: "+strings.Join(core.AllImages, ", "))
+		flags.StringVarP(&options.Linter, "linter", "l", "", "Use to run Qodana in a container (default). Choose linter (image) to use. Not compatible with --ide option. Available images are: "+strings.Join(AllImages, ", "))
 	}
-	flags.StringVar(&options.Ide, "ide", os.Getenv(core.QodanaDistEnv), fmt.Sprintf("Use to run Qodana without a container. Not compatible with --linter option. Available codes are %s, add -EAP part to obtain EAP versions", strings.Join(core.AllNativeCodes, ", ")))
+	flags.StringVar(&options.Ide, "ide", os.Getenv(QodanaDistEnv), fmt.Sprintf("Use to run Qodana without a container. Not compatible with --linter option. Available codes are %s, add -EAP part to obtain EAP versions", strings.Join(AllNativeCodes, ", ")))
 
 	flags.StringVarP(&options.ProjectDir, "project-dir", "i", ".", "Root directory of the inspected project")
 	flags.StringVarP(&options.ResultsDir, "results-dir", "o", "", "Override directory to save Qodana inspection results to (default <userCacheDir>/JetBrains/<linter>/results)")
@@ -60,7 +59,7 @@ func ComputeFlags(cmd *cobra.Command, options *QodanaOptions) error {
 	if !IsContainer() {
 		flags.StringArrayVarP(&options.Env, "env", "e", []string{}, "Only for container runs. Define additional environment variables for the Qodana container (you can use the flag multiple times). CLI is not reading full host environment variables and does not pass it to the Qodana container for security reasons")
 		flags.StringArrayVarP(&options.Volumes, "volume", "v", []string{}, "Only for container runs. Define additional volumes for the Qodana container (you can use the flag multiple times)")
-		flags.StringVarP(&options.User, "user", "u", core.GetDefaultUser(), "Only for container runs. User to run Qodana container as. Please specify user id – '$UID' or user id and group id $(id -u):$(id -g). Use 'root' to run as the root user (default: the current user)")
+		flags.StringVarP(&options.User, "user", "u", GetDefaultUser(), "Only for container runs. User to run Qodana container as. Please specify user id – '$UID' or user id and group id $(id -u):$(id -g). Use 'root' to run as the root user (default: the current user)")
 		flags.BoolVar(&options.SkipPull, "skip-pull", false, "Only for container runs. Skip pulling the latest Qodana container")
 		cmd.MarkFlagsMutuallyExclusive("linter", "ide")
 		cmd.MarkFlagsMutuallyExclusive("skip-pull", "ide")

@@ -14,11 +14,10 @@
  * limitations under the License.
  */
 
-package core
+package platform
 
 import (
 	"bytes"
-	"github.com/JetBrains/qodana-cli/v2023/platform"
 	"io"
 	"os"
 	"path/filepath"
@@ -33,7 +32,7 @@ import (
 const (
 	QodanaSarifName = "qodana.sarif.json"
 	configName      = "qodana"
-	version         = "2023.3"
+	releaseVersion  = "2023.3"
 )
 
 // langsProductCodes is a map of languages to linters.
@@ -50,8 +49,8 @@ var langsProductCodes = map[string][]string{
 	"Visual Basic .NET": {QDNET, QDNETC},
 }
 
-var allSupportedPaidCodes = []string{QDJVM, QDPHP, QDPY, QDJS, QDGO, QDNET}
-var allSupportedFreeCodes = []string{QDJVMC, QDPYC, QDANDC, QDNETC}
+var AllSupportedPaidCodes = []string{QDJVM, QDPHP, QDPY, QDJS, QDGO, QDNET}
+var AllSupportedFreeCodes = []string{QDJVMC, QDPYC, QDANDC, QDNETC}
 
 func allImages(codes []string) []string {
 	var images []string
@@ -61,13 +60,13 @@ func allImages(codes []string) []string {
 	return images
 }
 
-var allSupportedFreeImages = allImages(allSupportedFreeCodes)
+var AllSupportedFreeImages = allImages(AllSupportedFreeCodes)
 
 // AllImages is a list of all supported linters.
-var AllImages = append(allImages(allSupportedPaidCodes), allSupportedFreeImages...)
+var AllImages = append(allImages(AllSupportedPaidCodes), AllSupportedFreeImages...)
 
 // AllCodes is a list of codes for all supported linters.
-var AllCodes = append(allSupportedPaidCodes, allSupportedFreeCodes...)
+var AllCodes = append(AllSupportedPaidCodes, AllSupportedFreeCodes...)
 
 // ignoredDirectories is a list of directories that should be ignored by the configurator.
 var ignoredDirectories = []string{
@@ -222,13 +221,13 @@ func readIdeaDir(project string) []string {
 			}
 			text := string(iml)
 			if strings.Contains(text, "JAVA_MODULE") {
-				languages = platform.Append(languages, "Java")
+				languages = Append(languages, "Java")
 			}
 			if strings.Contains(text, "PYTHON_MODULE") {
-				languages = platform.Append(languages, "Python")
+				languages = Append(languages, "Python")
 			}
 			if strings.Contains(text, "Go") {
-				languages = platform.Append(languages, "Go")
+				languages = Append(languages, "Go")
 			}
 		}
 	}

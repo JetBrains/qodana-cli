@@ -1,4 +1,4 @@
-package core
+package platform
 
 // currently contains only the logic for .NET products
 import (

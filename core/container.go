@@ -152,7 +152,7 @@ func checkRequiredToolInstalled(tool string) bool {
 // PrepareContainerEnvSettings checks if the host is ready to run Qodana container images.
 func PrepareContainerEnvSettings() {
 	var tool string
-	if os.Getenv(qodanaCliUsePodman) == "" && checkRequiredToolInstalled("docker") {
+	if os.Getenv(platform.QodanaCliUsePodman) == "" && checkRequiredToolInstalled("docker") {
 		tool = "docker"
 	} else if checkRequiredToolInstalled("podman") {
 		tool = "podman"
@@ -292,7 +292,7 @@ func CheckContainerEngineMemory() {
 // getDockerOptions returns qodana docker container options.
 func getDockerOptions(opts *QodanaOptions) *types.ContainerCreateConfig {
 	cmdOpts := getIdeArgs(opts)
-	ExtractQodanaEnvironment(opts.Setenv)
+	platform.ExtractQodanaEnvironment(opts.Setenv)
 	cachePath, err := filepath.Abs(opts.CacheDir)
 	if err != nil {
 		log.Fatal("couldn't get abs path for cache", err)
@@ -305,7 +305,7 @@ func getDockerOptions(opts *QodanaOptions) *types.ContainerCreateConfig {
 	if err != nil {
 		log.Fatal("couldn't get abs path for results", err)
 	}
-	containerName = os.Getenv(qodanaCliContainerName)
+	containerName = os.Getenv(platform.QodanaCliContainerName)
 	if containerName == "" {
 		containerName = fmt.Sprintf("qodana-cli-%s", opts.Id())
 	}
@@ -347,14 +347,14 @@ func getDockerOptions(opts *QodanaOptions) *types.ContainerCreateConfig {
 	var hostConfig *container.HostConfig
 	if strings.Contains(opts.Linter, "dotnet") {
 		hostConfig = &container.HostConfig{
-			AutoRemove:  os.Getenv(qodanaCliContainerKeep) == "",
+			AutoRemove:  os.Getenv(platform.QodanaCliContainerKeep) == "",
 			Mounts:      volumes,
 			CapAdd:      []string{"SYS_PTRACE"},
 			SecurityOpt: []string{"seccomp=unconfined"},
 		}
 	} else {
 		hostConfig = &container.HostConfig{
-			AutoRemove: os.Getenv(qodanaCliContainerKeep) == "",
+			AutoRemove: os.Getenv(platform.QodanaCliContainerKeep) == "",
 			Mounts:     volumes,
 		}
 	}
@@ -393,7 +393,7 @@ func generateDebugDockerRunCommand(cfg *types.ContainerCreateConfig) string {
 		cmdBuilder.WriteString(fmt.Sprintf("-u %s ", cfg.Config.User))
 	}
 	for _, env := range cfg.Config.Env {
-		if !strings.Contains(env, platform.QodanaToken) || strings.Contains(env, QodanaLicense) || strings.Contains(env, platform.QodanaLicenseOnlyToken) {
+		if !strings.Contains(env, platform.QodanaToken) || strings.Contains(env, platform.QodanaLicense) || strings.Contains(env, platform.QodanaLicenseOnlyToken) {
 			cmdBuilder.WriteString(fmt.Sprintf("-e %s ", env))
 		}
 	}

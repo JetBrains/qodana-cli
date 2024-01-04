@@ -132,7 +132,7 @@ func GetProperties(opts *QodanaOptions, yamlProps map[string]string, dotNetOptio
 		"-XX:-OmitStackTraceInFastThrow",
 		"-ea",
 	}
-	treatAsRelease := os.Getenv(QodanaTreatAsRelease)
+	treatAsRelease := os.Getenv(platform.QodanaTreatAsRelease)
 	if treatAsRelease == "true" {
 		lines = append(lines, "-Deap.require.license=release")
 	}

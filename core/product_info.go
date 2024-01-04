@@ -114,21 +114,21 @@ func (p *product) vmOptionsEnv() string {
 
 func (p *product) parentPrefix() string {
 	switch p.Code {
-	case QDPHP:
+	case platform.QDPHP:
 		return "PhpStorm"
-	case QDJS:
+	case platform.QDJS:
 		return "WebStorm"
-	case QDNET:
+	case platform.QDNET:
 		return "Rider"
-	case QDPY:
+	case platform.QDPY:
 		return "Python"
-	case QDPYC:
+	case platform.QDPYC:
 		return "PyCharmCore"
-	case QDGO:
+	case platform.QDGO:
 		return "GoLand"
-	case QDRUBY:
+	case platform.QDRUBY:
 		return "Ruby"
-	case QDRST:
+	case platform.QDRST:
 		return "RustRover"
 	default:
 		return "Idea"
@@ -139,7 +139,7 @@ func (p *product) IsCommunity() bool {
 	if p.Code == "" {
 		return true
 	}
-	if platform.Contains(allSupportedFreeCodes, p.Code) {
+	if platform.Contains(platform.AllSupportedFreeCodes, p.Code) {
 		return true
 	}
 	return false
@@ -151,29 +151,29 @@ func (p *product) getProductNameFromCode() string {
 
 func getProductNameFromCode(code string) string {
 	switch code {
-	case QDJVMC:
+	case platform.QDJVMC:
 		return "Qodana Community for JVM"
-	case QDPYC:
+	case platform.QDPYC:
 		return "Qodana Community for Python"
-	case QDANDC:
+	case platform.QDANDC:
 		return "Qodana Community for Android"
-	case QDAND:
+	case platform.QDAND:
 		return "Qodana for Android"
-	case QDJVM:
+	case platform.QDJVM:
 		return "Qodana for JVM"
-	case QDPHP:
+	case platform.QDPHP:
 		return "Qodana for PHP"
-	case QDJS:
+	case platform.QDJS:
 		return "Qodana for JS"
-	case QDNET:
+	case platform.QDNET:
 		return "Qodana for .NET"
-	case QDPY:
+	case platform.QDPY:
 		return "Qodana for Python"
-	case QDGO:
+	case platform.QDGO:
 		return "Qodana for Go"
-	case QDRST:
+	case platform.QDRST:
 		return "Qodana for Rust"
-	case QDRUBY:
+	case platform.QDRUBY:
 		return "Qodana for Ruby"
 	default:
 		return "Qodana"
@@ -209,7 +209,7 @@ func guessProduct(opts *QodanaOptions) {
 		Prod.Home = filepath.Join(Prod.Home, "Contents")
 	}
 	if Prod.Home == "" {
-		if home, ok := os.LookupEnv(QodanaDistEnv); ok {
+		if home, ok := os.LookupEnv(platform.QodanaDistEnv); ok {
 			Prod.Home = home
 		} else if platform.IsContainer() {
 			Prod.Home = "/opt/idea"
@@ -233,7 +233,7 @@ func guessProduct(opts *QodanaOptions) {
 			platform.WarningMessage(
 				"Supported IDE not found in %s, you can declare the path to IDE home via %s variable",
 				Prod.Home,
-				QodanaDistEnv,
+				platform.QodanaDistEnv,
 			)
 			return
 		}
@@ -248,7 +248,7 @@ func guessProduct(opts *QodanaOptions) {
 		}
 	}
 
-	treatAsRelease := os.Getenv(QodanaTreatAsRelease)
+	treatAsRelease := os.Getenv(platform.QodanaTreatAsRelease)
 	if _, err := os.Stat(filepath.Join(Prod.IdeBin(), qodanaAppInfoFilename)); err == nil {
 		appInfoContents := readAppInfoXml(Prod.Home)
 		Prod.Version = appInfoContents.Version.Major + "." + appInfoContents.Version.Minor
@@ -261,13 +261,13 @@ func guessProduct(opts *QodanaOptions) {
 		if v, ok := productInfo["version"]; ok {
 			Prod.Version = v.(string)
 		} else {
-			Prod.Version = version
+			Prod.Version = platform.Version
 		}
 
 		if v, ok := productInfo["buildNumber"]; ok {
 			Prod.Build = v.(string)
 		} else {
-			Prod.Build = version
+			Prod.Build = platform.Version
 		}
 
 		if v, ok := productInfo["productCode"]; ok {
@@ -293,7 +293,7 @@ func guessProduct(opts *QodanaOptions) {
 	}
 
 	log.Debug(Prod)
-	setEnv(QodanaDistEnv, Prod.Home)
+	platform.SetEnv(platform.QodanaDistEnv, Prod.Home)
 }
 
 // temporary solution to fix runs in the native mode

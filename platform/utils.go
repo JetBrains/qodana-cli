@@ -279,3 +279,12 @@ func reverse(s []string) []string {
 	}
 	return s
 }
+
+func GetDefaultUser() string {
+	switch runtime.GOOS {
+	case "windows":
+		return "root"
+	default: // "darwin", "linux", "freebsd", "openbsd", "netbsd"
+		return fmt.Sprintf("%d:%d", os.Getuid(), os.Getgid())
+	}
+}

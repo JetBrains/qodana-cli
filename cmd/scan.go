@@ -48,9 +48,9 @@ But you can always override qodana.yaml options with the following command-line 
 			exitCode := core.RunAnalysis(ctx, &core.QodanaOptions{QodanaOptions: options})
 
 			checkExitCode(exitCode, options.ResultsDir, options)
-			core.ReadSarif(filepath.Join(options.ResultsDir, core.QodanaSarifName), options.PrintProblems)
+			core.ReadSarif(filepath.Join(options.ResultsDir, platform.QodanaSarifName), options.PrintProblems)
 			if platform.IsInteractive() {
-				options.ShowReport = core.AskUserConfirm("Do you want to open the latest report")
+				options.ShowReport = platform.AskUserConfirm("Do you want to open the latest report")
 			}
 
 			newReportUrl := cloud.GetReportUrl(options.ResultsDir)
@@ -59,7 +59,7 @@ But you can always override qodana.yaml options with the following command-line 
 			}
 
 			if options.ShowReport {
-				core.ShowReport(options.ResultsDir, options.ReportDir, options.Port)
+				platform.ShowReport(options.ResultsDir, options.ReportDir, options.Port)
 			} else if !platform.IsContainer() && platform.IsInteractive() {
 				platform.WarningMessage(
 					"To view the Qodana report later, run %s in the current directory or add %s flag to %s",
@@ -90,7 +90,7 @@ func checkProjectDir(projectDir string) {
 		platform.WarningMessage(
 			fmt.Sprintf("Project directory (%s) is the $HOME directory", projectDir),
 		)
-		if !core.AskUserConfirm(platform.DefaultPromptText) {
+		if !platform.AskUserConfirm(platform.DefaultPromptText) {
 			os.Exit(0)
 		}
 	}
@@ -116,7 +116,7 @@ func checkExitCode(exitCode int, resultsDir string, options *core.QodanaOptions)
 		platform.WarningMessage("Check ./logs/ in the results directory for more information")
 		if exitCode == core.QodanaOutOfMemoryExitCode {
 			core.CheckContainerEngineMemory()
-		} else if core.AskUserConfirm(fmt.Sprintf("Do you want to open %s", resultsDir)) {
+		} else if platform.AskUserConfirm(fmt.Sprintf("Do you want to open %s", resultsDir)) {
 			err := core.OpenDir(resultsDir)
 			if err != nil {
 				log.Fatalf("Error while opening directory: %s", err)

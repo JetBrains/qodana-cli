@@ -42,17 +42,17 @@ var (
 		eapVer:     "2023.3",
 	}
 	Products = map[string]string{
-		QDJVM:  "IIU",
-		QDJVMC: "IIC",
+		platform.QDJVM:  "IIU",
+		platform.QDJVMC: "IIC",
 		// QDAND: // don't use it right now
 		// QDANDC: // don't use it right now
-		QDPHP: "PS",
-		QDJS:  "WS",
-		QDNET: "RD",
-		QDPY:  "PCP",
-		QDPYC: "PCC",
-		QDGO:  "GO",
-		QDRST: "RR",
+		platform.QDPHP: "PS",
+		platform.QDJS:  "WS",
+		platform.QDNET: "RD",
+		platform.QDPY:  "PCP",
+		platform.QDPYC: "PCC",
+		platform.QDGO:  "GO",
+		platform.QDRST: "RR",
 	}
 )
 
@@ -133,7 +133,7 @@ func getIde(productCode string) *ReleaseDownloadInfo {
 	}
 
 	supportedCode := false
-	for _, v := range AllNativeCodes {
+	for _, v := range platform.AllNativeCodes {
 		if v == productCode {
 			supportedCode = true
 			break

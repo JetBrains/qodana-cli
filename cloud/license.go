@@ -20,7 +20,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/JetBrains/qodana-cli/v2023/platform"
 	log "github.com/sirupsen/logrus"
 	"io"
 	"net/http"
@@ -49,6 +48,7 @@ const (
 	QodanaLicenseRequestTimeoutEnv = "QODANA_LICENSE_REQUEST_TIMEOUT"
 
 	QodanaLicenseRequestAttemptsCountEnv = "QODANA_LICENSE_ATTEMPTS"
+	QodanaLicenseEndpoint                = "LICENSE_ENDPOINT"
 
 	qodanaLicenseRequestAttemptsCount = 3
 
@@ -202,20 +202,10 @@ func GetEnvWithDefaultInt(env string, defaultValue int) int {
 	return result
 }
 
-func SetupLicenseToken(opts *platform.QodanaOptions, requiresToken bool) { // TODO : I don't like it (circle dependency)
-	token := opts.LoadToken(false, requiresToken)
-	licenseOnlyToken := os.Getenv(platform.QodanaLicenseOnlyToken)
-
-	if token == "" && licenseOnlyToken != "" {
-		Token = LicenseToken{
-			Token:       licenseOnlyToken,
-			LicenseOnly: true,
-		}
-	} else {
-		Token = LicenseToken{
-			Token:       token,
-			LicenseOnly: false,
-		}
+func SetupLicenseToken(token string, licenseOnly bool) {
+	Token = LicenseToken{
+		Token:       token,
+		LicenseOnly: licenseOnly,
 	}
 }
 
@@ -241,7 +231,7 @@ func GetLicensePlan() (string, error) {
 		return "", errors.New("no token provided, please provide a token via the QODANA_TOKEN environment variable")
 	}
 
-	licenseEndpoint := getEnv(platform.QodanaLicenseEndpoint, "https://linters.qodana.cloud")
+	licenseEndpoint := getEnv(QodanaLicenseEndpoint, "https://linters.qodana.cloud")
 
 	licenseDataResponse, err := RequestLicenseData(licenseEndpoint, Token.Token)
 	if errors.Is(err, TokenDeclinedError) {

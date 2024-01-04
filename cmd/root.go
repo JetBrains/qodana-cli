@@ -56,14 +56,14 @@ func Execute() {
 	if !platform.IsContainer() && os.Geteuid() == 0 {
 		platform.WarningMessage("Running the tool as root is dangerous: please run it as a regular user")
 	}
-	go core.CheckForUpdates(core.Version)
+	go core.CheckForUpdates(platform.Version)
 	if !platform.IsInteractive() || os.Getenv("NO_COLOR") != "" { // http://no-color.org
 		platform.DisableColor()
 	}
 
 	setDefaultCommandIfNeeded(rootCommand, os.Args)
 	if err := rootCommand.Execute(); err != nil {
-		core.CheckForUpdates(core.Version)
+		core.CheckForUpdates(platform.Version)
 		_, err = fmt.Fprintf(os.Stderr, "error running command: %s\n", err)
 		if err != nil {
 			return
@@ -71,7 +71,7 @@ func Execute() {
 		os.Exit(1)
 	}
 
-	core.CheckForUpdates(core.Version)
+	core.CheckForUpdates(platform.Version)
 }
 
 // newRootCommand constructs root command.
@@ -79,8 +79,8 @@ func newRootCommand() *cobra.Command {
 	rootCmd := &cobra.Command{
 		Use:     "qodana",
 		Short:   "Run Qodana CLI",
-		Long:    platform.InfoString(core.Version), // TODO : return to core
-		Version: core.Version,
+		Long:    platform.InfoString(platform.Version), // TODO : return to core
+		Version: platform.Version,
 		PersistentPreRun: func(cmd *cobra.Command, args []string) {
 			logLevel, err := log.ParseLevel(viper.GetString("log-level"))
 			if err != nil {

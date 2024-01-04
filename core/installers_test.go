@@ -29,7 +29,7 @@ func TestGetIde(t *testing.T) {
 	runtime.GOOS == "darwin" {
 		t.Skip("Mac OS not supported in native")
 	}
-	for _, installer := range AllNativeCodes {
+	for _, installer := range platform.AllNativeCodes {
 		ide := getIde(installer)
 		if ide == nil {
 			t.Fail()
