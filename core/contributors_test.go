@@ -23,15 +23,19 @@ func TestGetContributors(t *testing.T) {
 	if len(contributors) == 0 {
 		t.Error("Expected at least one contributor or you need to update the test repo")
 	}
-	found := false
-	for _, c := range contributors {
-		if c.Author.Username == "dependabot[bot]" {
-			found = true
-			break
-		}
-	}
-	if !found {
+
+	numBotContributors := countContributors(func(c contributor) bool {
+		return c.Author.Username == "dependabot[bot]"
+	}, contributors)
+	if numBotContributors < 1 {
 		t.Error("Expected dependabot[bot] contributor")
+	}
+
+	numContributorsWithSameEmail := countContributors(func(c contributor) bool {
+		return c.Author.Email == "dmitry.golovinov@jetbrains.com"
+	}, contributors)
+	if numContributorsWithSameEmail < 2 {
+		t.Error("Expected contributor with same email but different username to be counted multiple times")
 	}
 }
 
@@ -57,4 +61,14 @@ func TestParseCommits(t *testing.T) {
 	if commits[1].Date != expectedDate {
 		t.Errorf("Expected date %s, got %s", expectedDate, commits[1].Date)
 	}
+}
+
+func countContributors(matches func(contributor) bool, contributors []contributor) int {
+	result := 0
+	for _, c := range contributors {
+		if matches(c) {
+			result += 1
+		}
+	}
+	return result
 }

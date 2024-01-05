@@ -67,7 +67,7 @@ func gitOutput(cwd string, args []string) []string {
 }
 
 // gitLog returns the git log of the given repository in the given format.
-func gitLog(cwd string, format string, since int, mailmap bool) []string {
+func gitLog(cwd string, format string, since int) []string {
 	args := []string{"--no-pager", "log"}
 	if format != "" {
 		args = append(args, "--pretty=format:"+format)
@@ -75,15 +75,12 @@ func gitLog(cwd string, format string, since int, mailmap bool) []string {
 	if since > 0 {
 		args = append(args, fmt.Sprintf("--since=%d.days", since))
 	}
-	if mailmap {
-		args = append(args, "--mailmap")
-	}
 	return gitOutput(cwd, args)
 }
 
 // gitRevisions returns the list of commits of the git repository in chronological order.
 func gitRevisions(cwd string) []string {
-	return reverse(gitLog(cwd, "%H", 0, false))
+	return reverse(gitLog(cwd, "%H", 0))
 }
 
 // gitRemoteUrl returns the remote url of the git repository.

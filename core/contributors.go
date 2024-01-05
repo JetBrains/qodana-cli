@@ -38,18 +38,12 @@ var (
 	)
 )
 
+const qodanaBotEmail = "qodana-support@jetbrains.com"
+
 // author struct represents a git commit author.
 type author struct {
 	Email    string `json:"email"`
 	Username string `json:"username"`
-}
-
-// getId() returns the author's email if it is not empty, otherwise it returns the username.
-func (a *author) getId() string {
-	if a.Email != "" {
-		return a.Email
-	}
-	return a.Username
 }
 
 // isBot returns true if the author is a bot.
@@ -100,6 +94,9 @@ func parseCommits(gitLogOutput []string, excludeBots bool) []commit {
 		if excludeBots && a.isBot() {
 			continue
 		}
+		if a.Email == qodanaBotEmail {
+			continue
+		}
 		commits = append(commits, commit{
 			Author: &a,
 			Date:   fields[3],
@@ -111,17 +108,16 @@ func parseCommits(gitLogOutput []string, excludeBots bool) []commit {
 
 // GetContributors returns the list of contributors of the git repository.
 func GetContributors(repoDirs []string, days int, excludeBots bool) []contributor {
-	contributorMap := make(map[string]*contributor)
+	contributorMap := make(map[author]*contributor)
 	for _, repoDir := range repoDirs {
-		gLog := gitLog(repoDir, gitFormat, days, true)
+		gLog := gitLog(repoDir, gitFormat, days)
 		for _, c := range parseCommits(gLog, excludeBots) {
-			authorId := c.Author.getId()
-			if i, ok := contributorMap[authorId]; ok {
+			if i, ok := contributorMap[*c.Author]; ok {
 				i.Count++
 				i.Projects = Append(i.Projects, repoDir)
 				i.Commits = append(i.Commits, c)
 			} else {
-				contributorMap[authorId] = &contributor{
+				contributorMap[*c.Author] = &contributor{
 					Author:   c.Author,
 					Count:    1,
 					Projects: []string{repoDir},
