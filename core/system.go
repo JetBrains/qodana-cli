@@ -234,11 +234,15 @@ func RunAnalysis(ctx context.Context, options *QodanaOptions) int {
 
 func runQodana(ctx context.Context, options *QodanaOptions) int {
 	var exitCode int
+	var err error
 	if options.Linter != "" {
 		exitCode = runQodanaContainer(ctx, options)
 	} else if options.Ide != "" {
 		platform.UnsetNugetVariables() // TODO: get rid of it from 241 release
-		exitCode = runQodanaLocal(options)
+		exitCode, err = runQodanaLocal(options)
+		if err != nil {
+			log.Fatal(err)
+		}
 	} else {
 		log.Fatal("No linter or IDE specified")
 	}

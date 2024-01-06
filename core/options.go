@@ -3,11 +3,8 @@ package core
 import (
 	"github.com/JetBrains/qodana-cli/v2023/platform"
 	log "github.com/sirupsen/logrus"
-	"math"
 	"os"
 	"path/filepath"
-	"strings"
-	"time"
 )
 
 type QodanaOptions struct {

@@ -2,7 +2,6 @@ package linter
 
 import (
 	"fmt"
-	"github.com/JetBrains/qodana-cli/v2023/core"
 	"github.com/JetBrains/qodana-cli/v2023/platform"
 	"github.com/spf13/pflag"
 	"strconv"
@@ -47,7 +46,7 @@ func (o *LocalOptions) GetCltOptions() *CltOptions {
 	return &CltOptions{}
 }
 
-func (o *CltOptions) computeCdnetArgs(opts *core.QodanaOptions, options *LocalOptions, yaml platform.QodanaYaml) ([]string, error) {
+func (o *CltOptions) computeCdnetArgs(opts *platform.QodanaOptions, options *LocalOptions, yaml platform.QodanaYaml) ([]string, error) {
 	target := getSolutionOrProject(options, yaml)
 	if target == "" {
 		return nil, fmt.Errorf("solution/project relative file path is not specified. Use --solution or --project flags or create qodana.yaml file with respective fields")
@@ -90,14 +89,19 @@ func (o *CltOptions) computeCdnetArgs(opts *core.QodanaOptions, options *LocalOp
 	if options.FailThreshold == "" && yaml.FailThreshold != nil {
 		options.FailThreshold = strconv.Itoa(*yaml.FailThreshold)
 	}
+	mountInfo := o.GetMountInfo()
+	if mountInfo == nil {
+		return nil, fmt.Errorf("mount info is not set")
+	}
+
 	args := []string{
 		"dotnet",
-		core.QuoteForWindows(options.Tooling.CustomTools["clt"]),
+		platform.QuoteForWindows(mountInfo.CustomTools["clt"]),
 		"inspectcode",
-		core.QuoteForWindows(target),
+		platform.QuoteForWindows(target),
 		"-o=\"" + options.GetSarifPath() + "\"",
 		"-f=\"Qodana\"",
-		"--LogFolder=\"" + options.GetLogsDir() + "\"",
+		"--LogFolder=\"" + options.LogDirPath() + "\"",
 	}
 	if props != "" {
 		args = append(args, "--properties:"+props)

@@ -24,7 +24,6 @@ import (
 	"github.com/JetBrains/qodana-cli/v2023/cloud"
 	"github.com/JetBrains/qodana-cli/v2023/platform"
 	log "github.com/sirupsen/logrus"
-	"golang.org/x/exp/maps"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -105,278 +104,6 @@ func TestCliArgs(t *testing.T) {
 	}
 }
 
-func unsetGitHubVariables() {
-	variables := []string{
-		"GITHUB_SERVER_URL",
-		"GITHUB_REPOSITORY",
-		"GITHUB_RUN_ID",
-		"GITHUB_HEAD_REF",
-		"GITHUB_REF",
-	}
-	for _, v := range variables {
-		_ = os.Unsetenv(v)
-	}
-}
-
-func Test_ExtractEnvironmentVariables(t *testing.T) {
-	revisionExpected := "1234567890abcdef1234567890abcdef12345678"
-	branchExpected := "refs/heads/main"
-
-	if os.Getenv("GITHUB_ACTIONS") == "true" {
-		unsetGitHubVariables()
-	}
-
-	for _, tc := range []struct {
-		ci                string
-		variables         map[string]string
-		jobUrlExpected    string
-		envExpected       string
-		remoteUrlExpected string
-		repoUrlExpected   string
-		revisionExpected  string
-		branchExpected    string
-	}{
-		{
-			ci:          "no CI detected",
-			variables:   map[string]string{},
-			envExpected: "cli:dev",
-		},
-		{
-			ci: "User defined",
-			variables: map[string]string{
-				qodanaEnv:                "user-defined",
-				qodanaJobUrl:             "https://qodana.jetbrains.com/never-gonna-give-you-up",
-				platform.QodanaRemoteUrl: "https://qodana.jetbrains.com/never-gonna-give-you-up",
-				qodanaRepoUrl:   "https://qodana.jetbrains.com/never-gonna-give-you-up",
-				qodanaBranch:             branchExpected,
-				qodanaRevision:           revisionExpected,
-			},
-			envExpected:       "user-defined",
-			remoteUrlExpected: "https://qodana.jetbrains.com/never-gonna-give-you-up",
-			jobUrlExpected:    "https://qodana.jetbrains.com/never-gonna-give-you-up",
-			repoUrlExpected:   "https://qodana.jetbrains.com/never-gonna-give-you-up",
-			revisionExpected:  revisionExpected,
-			branchExpected:    branchExpected,
-		},
-		{
-			ci: "Space",
-			variables: map[string]string{
-				"JB_SPACE_EXECUTION_URL":       "https://space.jetbrains.com/never-gonna-give-you-up",
-				"JB_SPACE_GIT_BRANCH":          branchExpected,
-				"JB_SPACE_GIT_REVISION":        revisionExpected,
-				"JB_SPACE_API_URL":             "jetbrains.team",
-				"JB_SPACE_PROJECT_KEY":         "sa",
-				"JB_SPACE_GIT_REPOSITORY_NAME": "entrypoint",
-			},
-			envExpected:       fmt.Sprintf("space:%s", platform.Version),
-			remoteUrlExpected: "ssh://git@git.jetbrains.team/sa/entrypoint.git",
-			jobUrlExpected:    "https://space.jetbrains.com/never-gonna-give-you-up",
-			repoUrlExpected:   "https://jetbrains.team/p/sa/repositories/entrypoint",
-			revisionExpected:  revisionExpected,
-			branchExpected:    branchExpected,
-		},
-		{
-			ci: "GitLab",
-			variables: map[string]string{
-				"CI_JOB_URL":        "https://gitlab.jetbrains.com/never-gonna-give-you-up",
-				"CI_COMMIT_BRANCH":  branchExpected,
-				"CI_COMMIT_SHA":     revisionExpected,
-				"CI_REPOSITORY_URL": "https://gitlab.jetbrains.com/sa/entrypoint.git",
-				"CI_PROJECT_URL":    "https://gitlab.jetbrains.com/sa/entrypoint",
-			},
-			envExpected:       fmt.Sprintf("gitlab:%s", platform.Version),
-			remoteUrlExpected: "https://gitlab.jetbrains.com/sa/entrypoint.git",
-			jobUrlExpected:    "https://gitlab.jetbrains.com/never-gonna-give-you-up",
-			repoUrlExpected:   "https://gitlab.jetbrains.com/sa/entrypoint",
-			revisionExpected:  revisionExpected,
-			branchExpected:    branchExpected,
-		},
-		{
-			ci: "Jenkins",
-			variables: map[string]string{
-				"BUILD_URL":        "https://jenkins.jetbrains.com/never-gonna-give-you-up",
-				"GIT_LOCAL_BRANCH": branchExpected,
-				"GIT_COMMIT":       revisionExpected,
-				"GIT_URL":          "https://git.jetbrains.com/sa/entrypoint.git",
-			},
-			envExpected:       fmt.Sprintf("jenkins:%s", platform.Version),
-			jobUrlExpected:    "https://jenkins.jetbrains.com/never-gonna-give-you-up",
-			remoteUrlExpected: "https://git.jetbrains.com/sa/entrypoint.git",
-			repoUrlExpected:   "https://git.jetbrains.com/sa/entrypoint",
-			revisionExpected:  revisionExpected,
-			branchExpected:    branchExpected,
-		},
-		{
-			ci: "GitHub",
-			variables: map[string]string{
-				"GITHUB_SERVER_URL": "https://github.jetbrains.com",
-				"GITHUB_REPOSITORY": "sa/entrypoint",
-				"GITHUB_RUN_ID":     "123456789",
-				"GITHUB_SHA":        revisionExpected,
-				"GITHUB_HEAD_REF":   branchExpected,
-			},
-			envExpected:       fmt.Sprintf("github-actions:%s", platform.Version),
-			jobUrlExpected:    "https://github.jetbrains.com/sa/entrypoint/actions/runs/123456789",
-			remoteUrlExpected: "https://github.jetbrains.com/sa/entrypoint.git",
-			repoUrlExpected:   "https://github.jetbrains.com/sa/entrypoint",
-			revisionExpected:  revisionExpected,
-			branchExpected:    branchExpected,
-		},
-		{
-			ci: "GitHub push",
-			variables: map[string]string{
-				"GITHUB_SERVER_URL": "https://github.jetbrains.com",
-				"GITHUB_REPOSITORY": "sa/entrypoint",
-				"GITHUB_RUN_ID":     "123456789",
-				"GITHUB_SHA":        revisionExpected,
-				"GITHUB_REF":        branchExpected,
-			},
-			envExpected:       fmt.Sprintf("github-actions:%s", platform.Version),
-			jobUrlExpected:    "https://github.jetbrains.com/sa/entrypoint/actions/runs/123456789",
-			remoteUrlExpected: "https://github.jetbrains.com/sa/entrypoint.git",
-			repoUrlExpected:   "https://github.jetbrains.com/sa/entrypoint",
-			revisionExpected:  revisionExpected,
-			branchExpected:    branchExpected,
-		},
-		{
-			ci: "GitHub pull request",
-			variables: map[string]string{
-				"GITHUB_SERVER_URL": "https://github.jetbrains.com",
-				"GITHUB_REPOSITORY": "sa/entrypoint",
-				"GITHUB_RUN_ID":     "123456789",
-				"GITHUB_SHA":        revisionExpected,
-				"GITHUB_HEAD_REF":   branchExpected,
-				"GITHUB_REF":        "refs/pull/123/merge",
-			},
-			envExpected:       fmt.Sprintf("github-actions:%s", Version),
-			jobUrlExpected:    "https://github.jetbrains.com/sa/entrypoint/actions/runs/123456789",
-			remoteUrlExpected: "https://github.jetbrains.com/sa/entrypoint.git",
-			repoUrlExpected:   "https://github.jetbrains.com/sa/entrypoint",
-			revisionExpected:  revisionExpected,
-			branchExpected:    branchExpected,
-		},
-		{
-			ci: "CircleCI",
-			variables: map[string]string{
-				"CIRCLE_BUILD_URL":      "https://circleci.jetbrains.com/never-gonna-give-you-up",
-				"CIRCLE_SHA1":           revisionExpected,
-				"CIRCLE_BRANCH":         branchExpected,
-				"CIRCLE_REPOSITORY_URL": "https://circleci.jetbrains.com/sa/entrypoint.git",
-			},
-			envExpected:       fmt.Sprintf("circleci:%s", platform.Version),
-			jobUrlExpected:    "https://circleci.jetbrains.com/never-gonna-give-you-up",
-			remoteUrlExpected: "https://circleci.jetbrains.com/sa/entrypoint.git",
-			repoUrlExpected:   "https://circleci.jetbrains.com/sa/entrypoint",
-			revisionExpected:  revisionExpected,
-			branchExpected:    branchExpected,
-		},
-		{
-			ci: "Azure Pipelines",
-			variables: map[string]string{
-				"SYSTEM_TEAMFOUNDATIONCOLLECTIONURI": "https://dev.azure.com/jetbrains",
-				"BUILD_BUILDURI":                     "https://dev.azure.com/jetbrains/never-gonna-give-you-up",
-				"SYSTEM_TEAMPROJECT":                 "/sa",
-				"BUILD_BUILDID":                      "123456789",
-				"BUILD_SOURCEVERSION":                revisionExpected,
-				"BUILD_SOURCEBRANCH":                 "refs/heads/" + branchExpected,
-				"BUILD_REPOSITORY_URI":               "https://dev.azure.com/jetbrains/sa/entrypoint.git",
-			},
-			envExpected:       fmt.Sprintf("azure-pipelines:%s", platform.Version),
-			jobUrlExpected:    "https://dev.azure.com/jetbrains/sa/_build/results?buildId=123456789",
-			remoteUrlExpected: "https://dev.azure.com/jetbrains/sa/entrypoint.git",
-			repoUrlExpected:   "https://dev.azure.com/jetbrains/sa/entrypoint",
-			revisionExpected:  revisionExpected,
-			branchExpected:    branchExpected,
-		},
-		{
-			ci: "CircleCI", // includes userinfo in the url
-			variables: map[string]string{
-				"CIRCLE_BUILD_URL":      "https://circleci.jetbrains.com/never-gonna-give-you-up",
-				"CIRCLE_SHA1":           revisionExpected,
-				"CIRCLE_BRANCH":         branchExpected,
-				"CIRCLE_REPOSITORY_URL": "https://user:password@circleci.jetbrains.com/sa/entrypoint.git",
-			},
-			envExpected:       fmt.Sprintf("circleci:%s", Version),
-			jobUrlExpected:    "https://circleci.jetbrains.com/never-gonna-give-you-up",
-			remoteUrlExpected: "https://circleci.jetbrains.com/sa/entrypoint.git",
-			repoUrlExpected:   "https://circleci.jetbrains.com/sa/entrypoint",
-			revisionExpected:  revisionExpected,
-			branchExpected:    branchExpected,
-		},
-	} {
-		t.Run(tc.ci, func(t *testing.T) {
-			opts := &platform.QodanaOptions{}
-			for k, v := range tc.variables {
-				err := os.Setenv(k, v)
-				if err != nil {
-					t.Fatal(err)
-				}
-				opts.Setenv(k, v)
-			}
-
-			for _, environment := range []struct {
-				name  string
-				set   func(string, string)
-				unset func(string)
-				get   func(string) string
-			}{
-				{
-					name: "Container",
-					set:  opts.Setenv,
-					get:  opts.Getenv,
-				},
-				{
-					name: "Local",
-					set:  setEnv,
-					get:  os.Getenv,
-				},
-			} {
-				t.Run(environment.name, func(t *testing.T) {
-					ExtractQodanaEnvironment(environment.set)
-					currentQodanaEnv := environment.get(qodanaEnv)
-					if currentQodanaEnv != tc.envExpected {
-						t.Errorf("%s: Expected %s, got %s", environment.name, tc.envExpected, currentQodanaEnv)
-					}
-					if environment.get(qodanaJobUrl) != tc.jobUrlExpected {
-						t.Errorf("%s: Expected %s, got %s", environment.name, tc.jobUrlExpected, environment.get(qodanaJobUrl))
-					}
-					if environment.get(platform.QodanaRemoteUrl) != tc.remoteUrlExpected {
-						t.Errorf("%s: Expected %s, got %s", environment.name, tc.remoteUrlExpected, environment.get(platform.QodanaRemoteUrl))
-					}
-					if environment.get(qodanaRevision) != tc.revisionExpected {
-						t.Errorf("%s: Expected %s, got %s", environment.name, revisionExpected, environment.get(qodanaRevision))
-					}
-					if environment.get(qodanaBranch) != tc.branchExpected {
-						t.Errorf("%s: Expected %s, got %s", environment.name, branchExpected, environment.get(qodanaBranch))
-					}
-					if environment.get(qodanaRepoUrl) != tc.repoUrlExpected {
-						t.Errorf("%s: Expected %s, got %s", environment.name, tc.repoUrlExpected, environment.get(qodanaRepoUrl))
-					}
-				})
-			}
-
-			for _, k := range append(maps.Keys(tc.variables), []string{qodanaRepoUrl, qodanaJobUrl, qodanaEnv, platform.QodanaRemoteUrl, qodanaRevision, qodanaBranch}...) {
-				err := os.Unsetenv(k)
-				if err != nil {
-					t.Fatal(err)
-				}
-				opts.Unsetenv(k)
-			}
-		})
-	}
-}
-
-func TestDirLanguagesExcluded(t *testing.T) {
-	expected := []string{"Go", "Shell", "Dockerfile"}
-	actual, err := recognizeDirLanguages("../")
-	if err != nil {
-		return
-	}
-	if !reflect.DeepEqual(expected, actual) {
-		t.Fatalf("expected \"%s\" got \"%s\"", expected, actual)
-	}
-}
-
 func TestScanFlags_Script(t *testing.T) {
 	testOptions := &QodanaOptions{
 		&platform.QodanaOptions{
@@ -387,7 +114,7 @@ func TestScanFlags_Script(t *testing.T) {
 		"--script",
 		"custom-script:parameters",
 	}
-	actual := getIdeArgs(testOptions)
+	actual := GetIdeArgs(testOptions)
 	if !reflect.DeepEqual(expected, actual) {
 		t.Fatalf("expected \"%s\" got \"%s\"", expected, actual)
 	}
@@ -449,69 +176,11 @@ func TestLegacyFixStrategies(t *testing.T) {
 				Prod.Version = "2023.2"
 			}
 
-			actual := getIdeArgs(&QodanaOptions{tt.options})
+			actual := GetIdeArgs(&QodanaOptions{tt.options})
 			if !reflect.DeepEqual(tt.expected, actual) {
 				t.Fatalf("expected \"%s\" got \"%s\"", tt.expected, actual)
 			}
 		})
-	}
-}
-
-func TestReadIdeaDir(t *testing.T) {
-	// Create a temporary directory for testing
-	tempDir := os.TempDir()
-	tempDir = filepath.Join(tempDir, "readIdeaDir")
-	defer func(path string) {
-		err := os.RemoveAll(path)
-		if err != nil {
-			t.Fatal(err)
-		}
-	}(tempDir)
-
-	// Case 1: .idea directory with iml files for Java and Kotlin
-	ideaDir := filepath.Join(tempDir, ".idea")
-	err := os.MkdirAll(ideaDir, 0o755)
-	if err != nil {
-		t.Fatal(err)
-	}
-	imlFile := filepath.Join(ideaDir, "test.iml")
-	err = os.WriteFile(imlFile, []byte("<module type=\"JAVA_MODULE\"/>"), 0o644)
-	if err != nil {
-		t.Fatal(err)
-	}
-	kotlinImlFile := filepath.Join(ideaDir, "test.kt.iml")
-	err = os.WriteFile(kotlinImlFile, []byte("<module type=\"JAVA_MODULE\" languageLevel=\"JDK_1_8\"/>"), 0o644)
-	if err != nil {
-		t.Fatal(err)
-	}
-	languages := readIdeaDir(tempDir)
-	expected := []string{"Java"}
-	if !reflect.DeepEqual(languages, expected) {
-		t.Errorf("Case 1: Expected %v, but got %v", expected, languages)
-	}
-
-	// Case 2: .idea directory with no iml files
-	err = os.Remove(imlFile)
-	if err != nil {
-		t.Fatal(err)
-	}
-	err = os.Remove(kotlinImlFile)
-	if err != nil {
-		t.Fatal(err)
-	}
-	languages = readIdeaDir(tempDir)
-	if len(languages) > 0 {
-		t.Errorf("Case 1: Expected empty array, but got %v", languages)
-	}
-
-	// Case 3: No .idea directory
-	err = os.Remove(ideaDir)
-	if err != nil {
-		t.Fatal(err)
-	}
-	languages = readIdeaDir(tempDir)
-	if len(languages) > 0 {
-		t.Errorf("Case 1: Expected empty array, but got %v", languages)
 	}
 }
 
@@ -686,60 +355,6 @@ func Test_isProcess(t *testing.T) {
 	}
 }
 
-func Test_runCmd(t *testing.T) {
-	if //goland:noinspection ALL
-	runtime.GOOS == "linux" || runtime.GOOS == "darwin" {
-		for _, tc := range []struct {
-			name string
-			cmd  []string
-			res  int
-		}{
-			{"true", []string{"true"}, 0},
-			{"false", []string{"false"}, 1},
-			{"exit 255", []string{"sh", "-c", "exit 255"}, 255},
-		} {
-			t.Run(tc.name, func(t *testing.T) {
-				got, _ := platform.RunCmd("", tc.cmd...)
-				if got != tc.res {
-					t.Errorf("runCmd: %v, Got: %v, Expected: %v", tc.cmd, got, tc.res)
-				}
-			})
-		}
-	}
-}
-
-func Test_runCmdWithTimeout(t *testing.T) {
-	if //goland:noinspection ALL
-	runtime.GOOS == "linux" || runtime.GOOS == "darwin" {
-		var sleepFor2SecondsCmd = []string{"sh", "-c", "sleep 2 && exit 255"}
-		for _, tc := range []struct {
-			name            string
-			timeout         time.Duration
-			timeoutExitCode int
-			cmd             []string
-			res             int
-			expectedTimeS   int
-		}{
-			{"timeout not reached exit code 255", time.Duration(3) * time.Second, 0, sleepFor2SecondsCmd, 255, 2},
-			{"timeout reached exit code 42", time.Duration(1) * time.Second, 42, sleepFor2SecondsCmd, 42, 1},
-		} {
-			t.Run(tc.name, func(t *testing.T) {
-				startTime := time.Now()
-				got := RunCmdWithTimeout("", tc.timeout, tc.timeoutExitCode, tc.cmd...)
-				endTime := time.Now()
-
-				if got != tc.res {
-					t.Errorf("runCmdWithTimeout: %v, Got: %v, Expected: %v", tc.cmd, got, tc.res)
-				}
-				durationSeconds := int(endTime.Sub(startTime).Seconds())
-				if tc.expectedTimeS > durationSeconds || durationSeconds >= tc.expectedTimeS+1 {
-					t.Errorf("runCmdWithTimeout: %v, Duration: %vs, Expected: %vs", tc.cmd, durationSeconds, tc.expectedTimeS)
-				}
-			})
-		}
-	}
-}
-
 func Test_createUser(t *testing.T) {
 	//goland:noinspection GoBoolExpressions
 	if runtime.GOOS == "windows" {
@@ -841,9 +456,9 @@ func Test_Bootstrap(t *testing.T) {
 		t.Fatal(err)
 	}
 	opts.ProjectDir = tmpDir
-	bootstrap("echo \"bootstrap: touch qodana.yml\" > qodana.yaml", opts.ProjectDir)
+	platform.Bootstrap("echo \"bootstrap: touch qodana.yml\" > qodana.yaml", opts.ProjectDir)
 	config := platform.GetQodanaYaml(tmpDir)
-	bootstrap(config.Bootstrap, opts.ProjectDir)
+	platform.Bootstrap(config.Bootstrap, opts.ProjectDir)
 	if _, err := os.Stat(filepath.Join(opts.ProjectDir, "qodana.yaml")); errors.Is(err, os.ErrNotExist) {
 		t.Fatalf("No qodana.yml created by the bootstrap command in qodana.yaml")
 	}
@@ -1029,11 +644,11 @@ func TestSetupLicense(t *testing.T) {
 	}
 	SetupLicenseAndProjectHash("token")
 
-	licenseKey := os.Getenv(QodanaLicense)
+	licenseKey := os.Getenv(platform.QodanaLicense)
 	if licenseKey != expectedKey {
 		t.Errorf("expected key to be '%s' got '%s'", expectedKey, licenseKey)
 	}
-	projectIdHash := os.Getenv(QodanaProjectIdHash)
+	projectIdHash := os.Getenv(platform.QodanaProjectIdHash)
 	if projectIdHash != expectedHash {
 		t.Errorf("expected projectIdHash to be '%s' got '%s'", expectedHash, projectIdHash)
 	}
@@ -1043,12 +658,12 @@ func TestSetupLicense(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	err = os.Unsetenv(QodanaLicense)
+	err = os.Unsetenv(platform.QodanaLicense)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	err = os.Unsetenv(QodanaProjectIdHash)
+	err = os.Unsetenv(platform.QodanaProjectIdHash)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -1105,7 +720,7 @@ func TestSetupLicenseToken(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			cloud.SetupLicenseToken(testData.token, false)
+			cloud.SetupLicenseToken(testData.token)
 
 			if cloud.Token.Token != testData.resToken {
 				t.Errorf("expected token to be '%s' got '%s'", testData.resToken, cloud.Token.Token)
@@ -1149,7 +764,7 @@ func TestQodanaOptions_RequiresToken(t *testing.T) {
 			true,
 		},
 		{
-			QodanaLicense,
+			platform.QodanaLicense,
 			"",
 			"",
 			false,
@@ -1163,14 +778,14 @@ func TestQodanaOptions_RequiresToken(t *testing.T) {
 		{
 			"QDJVMC ide",
 			"",
-			QDJVMC,
+			platform.QDJVMC,
 			false,
 		},
 	}
 
 	for _, tt := range tests {
 		var token string
-		for _, env := range []string{platform.QodanaToken, platform.QodanaLicenseOnlyToken, QodanaLicense} {
+		for _, env := range []string{platform.QodanaToken, platform.QodanaLicenseOnlyToken, platform.QodanaLicense} {
 			if os.Getenv(env) != "" {
 				token = os.Getenv(env)
 				err := os.Unsetenv(env)
@@ -1192,13 +807,13 @@ func TestQodanaOptions_RequiresToken(t *testing.T) {
 						t.Fatal(err)
 					}
 				}()
-			} else if tt.name == QodanaLicense {
-				err := os.Setenv(QodanaLicense, "test")
+			} else if tt.name == platform.QodanaLicense {
+				err := os.Setenv(platform.QodanaLicense, "test")
 				if err != nil {
 					t.Fatal(err)
 				}
 				defer func() {
-					err := os.Unsetenv(QodanaLicense)
+					err := os.Unsetenv(platform.QodanaLicense)
 					if err != nil {
 						t.Fatal(err)
 					}
@@ -1210,7 +825,7 @@ func TestQodanaOptions_RequiresToken(t *testing.T) {
 					Ide:    tt.ide,
 				},
 			}
-			result := o.RequiresToken()
+			result := o.RequiresToken(Prod.EAP || Prod.IsCommunity())
 			assert.Equal(t, tt.expected, result)
 		})
 		if token != "" {
@@ -1277,7 +892,7 @@ func propertiesFixture(enableStats bool, additionalProperties []string) []string
 }
 
 func Test_Properties(t *testing.T) {
-	opts := &QodanaOptions{}
+	opts := &QodanaOptions{&platform.QodanaOptions{}}
 	tmpDir := filepath.Join(os.TempDir(), "entrypoint")
 	opts.ProjectDir = tmpDir
 	opts.ResultsDir = opts.ProjectDir

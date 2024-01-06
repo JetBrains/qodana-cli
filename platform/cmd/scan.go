@@ -24,8 +24,8 @@ import (
 	"os"
 )
 
-// newScanCommand returns a new instance of the scan command.
-func newScanCommand(options *platform.QodanaOptions) *cobra.Command {
+// NewScanCommand returns a new instance of the scan command.
+func NewScanCommand(options *platform.QodanaOptions) *cobra.Command {
 	linterInfo := options.GetLinterSpecificOptions()
 	if linterInfo == nil {
 		log.Fatal("linterInfo is nil")

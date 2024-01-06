@@ -47,6 +47,7 @@ const (
 	AndroidSdkRoot         = "ANDROID_SDK_ROOT"
 	QodanaLicense          = "QODANA_LICENSE"
 	QodanaTreatAsRelease   = "QODANA_TREAT_AS_RELEASE"
+	QodanaProjectIdHash    = "QODANA_PROJECT_ID_HASH"
 	qodanaNugetUrl         = "QODANA_NUGET_URL"
 	qodanaNugetUser        = "QODANA_NUGET_USER"
 	qodanaNugetPassword    = "QODANA_NUGET_PASSWORD"

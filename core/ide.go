@@ -47,7 +47,7 @@ func getIdeExitCode(resultsDir string, c int) (res int) {
 	if len(s.Runs) > 0 && len(s.Runs[0].Invocations) > 0 {
 		if tmp := s.Runs[0].Invocations[0].ExitCode; tmp != nil {
 			res = *tmp
-			if res < QodanaSuccessExitCode || res > QodanaFailThresholdExitCode {
+			if res < platform.QodanaSuccessExitCode || res > platform.QodanaFailThresholdExitCode {
 				log.Printf("Wrong exitCode in sarif: %d", res)
 				return 1
 			}
@@ -59,29 +59,36 @@ func getIdeExitCode(resultsDir string, c int) (res int) {
 	return c
 }
 
-func runQodanaLocal(opts *QodanaOptions) int {
+func runQodanaLocal(opts *QodanaOptions) (int, error) {
 	args := getIdeRunCommand(opts)
-	res := getIdeExitCode(opts.ResultsDir, RunCmdWithTimeout("", opts.GetAnalysisTimeout(), QodanaTimeoutExitCodePlaceholder, args...))
-	if res > QodanaSuccessExitCode && res != QodanaFailThresholdExitCode {
+	ideProcess, err := platform.RunCmdWithTimeout(
+		"",
+		os.Stdout, os.Stderr,
+		opts.GetAnalysisTimeout(),
+		platform.QodanaTimeoutExitCodePlaceholder,
+		args...,
+	)
+	res := getIdeExitCode(opts.ResultsDir, ideProcess)
+	if res > platform.QodanaSuccessExitCode && res != platform.QodanaFailThresholdExitCode {
 		postAnalysis(opts)
-		return res
+		return res, err
 	}
 	if opts.SaveReport || opts.ShowReport {
 		saveReport(opts)
 	}
 	postAnalysis(opts)
-	return res
+	return res, err
 }
 
 func getIdeRunCommand(opts *QodanaOptions) []string {
 	args := []string{platform.QuoteForWindows(Prod.IdeScript), "inspect", "qodana"}
-	args = append(args, getIdeArgs(opts)...)
+	args = append(args, GetIdeArgs(opts)...)
 	args = append(args, platform.QuoteForWindows(opts.ProjectDir), platform.QuoteForWindows(opts.ResultsDir))
 	return args
 }
 
-// getIdeArgs returns qodana command options.
-func getIdeArgs(opts *QodanaOptions) []string {
+// GetIdeArgs returns qodana command options.
+func GetIdeArgs(opts *QodanaOptions) []string {
 	arguments := make([]string, 0)
 	if opts.Linter != "" && opts.SaveReport {
 		arguments = append(arguments, "--save-report")
@@ -329,7 +336,7 @@ func prepareLocalIdeSettings(opts *QodanaOptions) {
 
 	platform.ExtractQodanaEnvironment(platform.SetEnv)
 	requiresToken := opts.RequiresToken(Prod.EAP || Prod.IsCommunity())
-	cloud.SetupLicenseToken(opts.LoadToken(false, requiresToken), os.Getenv(platform.QodanaLicenseOnlyToken) != "")
+	cloud.SetupLicenseToken(opts.LoadToken(false, requiresToken))
 	SetupLicenseAndProjectHash(cloud.Token.Token)
 	prepareDirectories(
 		opts.CacheDir,

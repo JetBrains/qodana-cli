@@ -56,7 +56,9 @@ const (
 
 	qodanaLicenseRequestCooldown = 60
 
-	qodanaLicenseUri = "/v1/linters/license-key"
+	qodanaLicenseUri       = "/v1/linters/license-key"
+	QodanaToken            = "QODANA_TOKEN"
+	QodanaLicenseOnlyToken = "QODANA_LICENSE_ONLY_TOKEN"
 )
 
 var TokenDeclinedError = errors.New("token was declined by Qodana Cloud server")
@@ -202,10 +204,18 @@ func GetEnvWithDefaultInt(env string, defaultValue int) int {
 	return result
 }
 
-func SetupLicenseToken(token string, licenseOnly bool) {
-	Token = LicenseToken{
-		Token:       token,
-		LicenseOnly: licenseOnly,
+func SetupLicenseToken(token string) {
+	licenseOnlyToken := os.Getenv(QodanaLicenseOnlyToken)
+	if token == "" && licenseOnlyToken != "" {
+		Token = LicenseToken{
+			Token:       licenseOnlyToken,
+			LicenseOnly: true,
+		}
+	} else {
+		Token = LicenseToken{
+			Token:       token,
+			LicenseOnly: false,
+		}
 	}
 }
 

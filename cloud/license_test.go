@@ -26,6 +26,86 @@ import (
 	"time"
 )
 
+func TestSetupLicenseToken(t *testing.T) {
+	for _, testData := range []struct {
+		name       string
+		token      string
+		loToken    string
+		resToken   string
+		sendFus    bool
+		sendReport bool
+	}{
+		{
+			name:       "no key",
+			token:      "",
+			loToken:    "",
+			resToken:   "",
+			sendFus:    true,
+			sendReport: false,
+		},
+		{
+			name:       "with token",
+			token:      "a",
+			loToken:    "",
+			resToken:   "a",
+			sendFus:    true,
+			sendReport: true,
+		},
+		{
+			name:       "with license only token",
+			token:      "",
+			loToken:    "b",
+			resToken:   "b",
+			sendFus:    false,
+			sendReport: false,
+		},
+		{
+			name:       "both tokens",
+			token:      "a",
+			loToken:    "b",
+			resToken:   "a",
+			sendFus:    true,
+			sendReport: true,
+		},
+	} {
+		t.Run(testData.name, func(t *testing.T) {
+			err := os.Setenv(QodanaLicenseOnlyToken, testData.loToken)
+			if err != nil {
+				t.Fatal(err)
+			}
+			err = os.Setenv(QodanaToken, testData.token)
+			if err != nil {
+				t.Fatal(err)
+			}
+			SetupLicenseToken(testData.token)
+
+			if Token.Token != testData.resToken {
+				t.Errorf("expected token to be '%s' got '%s'", testData.resToken, Token.Token)
+			}
+
+			sendFUS := Token.IsAllowedToSendFUS()
+			if sendFUS != testData.sendFus {
+				t.Errorf("expected allow FUS to be '%t' got '%t'", testData.sendFus, sendFUS)
+			}
+
+			toSendReports := Token.IsAllowedToSendReports()
+			if toSendReports != testData.sendReport {
+				t.Errorf("expected allow send report to be '%t' got '%t'", testData.sendReport, toSendReports)
+			}
+
+			err = os.Unsetenv(QodanaLicenseOnlyToken)
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			err = os.Unsetenv(QodanaToken)
+			if err != nil {
+				t.Fatal(err)
+			}
+		})
+	}
+}
+
 func TestRequestLicenseData(t *testing.T) {
 	expectedLicense := "license data"
 	rightToken := "token data"

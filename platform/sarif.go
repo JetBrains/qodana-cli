@@ -2,7 +2,6 @@ package platform
 
 import (
 	"encoding/json"
-	"errors"
 	"fmt"
 	"github.com/JetBrains/qodana-cli/v2023/sarif"
 	"github.com/google/uuid"
@@ -20,18 +19,18 @@ const extension = ".sarif.json"
 func MergeSarifReports(options *QodanaOptions, deviceId string) (int, error) {
 	files, err := findSarifFiles(options.GetTmpResultsDir())
 	if err != nil {
-		return 0, errors.New(fmt.Sprintf("Error locating SARIF files: %s\n", err))
+		return 0, fmt.Errorf("Error locating SARIF files: %s\n", err)
 	}
 
 	if len(files) == 0 {
-		return 0, errors.New(fmt.Sprintf("No SARIF files (file names ending with .sarif.json) found in %s\n", options.GetTmpResultsDir()))
+		return 0, fmt.Errorf("No SARIF files (file names ending with .sarif.json) found in %s\n", options.GetTmpResultsDir())
 	}
 
 	ch := make(chan *sarif.Report)
 	go collectReports(files, ch)
 	finalReport, err := mergeReports(ch)
 	if err != nil {
-		return 0, errors.New(fmt.Sprintf("Error merging SARIF files: %s\n", err))
+		return 0, fmt.Errorf("Error merging SARIF files: %s\n", err)
 	}
 
 	for _, result := range finalReport.Runs[0].Results {
@@ -63,12 +62,12 @@ func WriteReport(path string, finalReport *sarif.Report) error {
 	// serialize object skipping empty fields
 	fatBytes, err := json.MarshalIndent(finalReport, "", " ")
 	if err != nil {
-		return errors.New(fmt.Sprintf("Error marshalling report: %s\n", err))
+		return fmt.Errorf("Error marshalling report: %s\n", err)
 	}
 
 	f, err := os.Create(path)
 	if err != nil {
-		return errors.New(fmt.Sprintf("Error creating resulting SARIF file: %s\n", err))
+		return fmt.Errorf("Error creating resulting SARIF file: %s\n", err)
 	}
 
 	defer func(f *os.File) {
@@ -80,7 +79,7 @@ func WriteReport(path string, finalReport *sarif.Report) error {
 
 	_, err = f.Write(fatBytes)
 	if err != nil {
-		return errors.New(fmt.Sprintf("Error writing resulting SARIF file: %s\n", err))
+		return fmt.Errorf("Error writing resulting SARIF file: %s\n", err)
 	}
 	return nil
 }
@@ -92,7 +91,7 @@ func MakeShortSarif(sarifPath string, shortSarifPath string) error {
 	}
 
 	if len(report.Runs) == 0 {
-		return errors.New(fmt.Sprintf("Error reading SARIF %s: no runs found", sarifPath))
+		return fmt.Errorf("Error reading SARIF %s: no runs found", sarifPath)
 	}
 	report.Runs[0].Tool.Extensions = []sarif.ToolComponent{}
 	report.Runs[0].Tool.Driver.Taxa = []sarif.ReportingDescriptor{}

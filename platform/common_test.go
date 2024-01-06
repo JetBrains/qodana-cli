@@ -4,6 +4,8 @@ import (
 	"github.com/stretchr/testify/assert"
 	"os"
 	"path/filepath"
+	"reflect"
+	"runtime"
 	"testing"
 )
 
@@ -103,5 +105,85 @@ func TestSelectAnalyzer(t *testing.T) {
 			got := SelectAnalyzer(dir, test.analyzers, test.interactive, test.selectFunc)
 			assert.Equal(t, test.expectedAnalyzer, got)
 		})
+	}
+}
+
+func TestReadIdeaDir(t *testing.T) {
+	// Create a temporary directory for testing
+	tempDir := os.TempDir()
+	tempDir = filepath.Join(tempDir, "readIdeaDir")
+	defer func(path string) {
+		err := os.RemoveAll(path)
+		if err != nil {
+			t.Fatal(err)
+		}
+	}(tempDir)
+
+	// Case 1: .idea directory with iml files for Java and Kotlin
+	ideaDir := filepath.Join(tempDir, ".idea")
+	err := os.MkdirAll(ideaDir, 0o755)
+	if err != nil {
+		t.Fatal(err)
+	}
+	imlFile := filepath.Join(ideaDir, "test.iml")
+	err = os.WriteFile(imlFile, []byte("<module type=\"JAVA_MODULE\"/>"), 0o644)
+	if err != nil {
+		t.Fatal(err)
+	}
+	kotlinImlFile := filepath.Join(ideaDir, "test.kt.iml")
+	err = os.WriteFile(kotlinImlFile, []byte("<module type=\"JAVA_MODULE\" languageLevel=\"JDK_1_8\"/>"), 0o644)
+	if err != nil {
+		t.Fatal(err)
+	}
+	languages := readIdeaDir(tempDir)
+	expected := []string{"Java"}
+	if !reflect.DeepEqual(languages, expected) {
+		t.Errorf("Case 1: Expected %v, but got %v", expected, languages)
+	}
+
+	// Case 2: .idea directory with no iml files
+	err = os.Remove(imlFile)
+	if err != nil {
+		t.Fatal(err)
+	}
+	err = os.Remove(kotlinImlFile)
+	if err != nil {
+		t.Fatal(err)
+	}
+	languages = readIdeaDir(tempDir)
+	if len(languages) > 0 {
+		t.Errorf("Case 1: Expected empty array, but got %v", languages)
+	}
+
+	// Case 3: No .idea directory
+	err = os.Remove(ideaDir)
+	if err != nil {
+		t.Fatal(err)
+	}
+	languages = readIdeaDir(tempDir)
+	if len(languages) > 0 {
+		t.Errorf("Case 1: Expected empty array, but got %v", languages)
+	}
+}
+
+func Test_runCmd(t *testing.T) {
+	if //goland:noinspection ALL
+	runtime.GOOS == "linux" || runtime.GOOS == "darwin" {
+		for _, tc := range []struct {
+			name string
+			cmd  []string
+			res  int
+		}{
+			{"true", []string{"true"}, 0},
+			{"false", []string{"false"}, 1},
+			{"exit 255", []string{"exit 255"}, 255},
+		} {
+			t.Run(tc.name, func(t *testing.T) {
+				got, _ := RunCmd("", tc.cmd...)
+				if got != tc.res {
+					t.Errorf("runCmd: %v, Got: %v, Expected: %v", tc.cmd, got, tc.res)
+				}
+			})
+		}
 	}
 }

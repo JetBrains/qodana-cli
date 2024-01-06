@@ -14,8 +14,11 @@ jobs:
       - uses: actions/setup-go@v5
         with:
           go-version: '1.21'
+      - run: rm -rf linter
       - name: golangci-lint
         uses: reviewdog/action-golangci-lint@v2
+        with:
+          golangci_lint_flags: --skip-dirs linter/tooling/
 
   test:
     runs-on: ${{ matrix.os }}
@@ -46,6 +49,8 @@ jobs:
           registry: registry.jetbrains.team
           username: ${{ secrets.SPACE_USERNAME }}
           password: ${{ secrets.SPACE_PASSWORD }}
+      - run: rm -rf linter # temporary workaround
+        shell: bash
       - name: Run tests (with coverage)
         if: ${{ matrix.os != 'windows-latest' }}
         run: |

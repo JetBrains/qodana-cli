@@ -26,7 +26,7 @@ func setup(options *QodanaOptions) error {
 		return fmt.Errorf("failed to get java executable path: %w", err)
 	}
 	// TODO iscommunityoreap
-	cloud.SetupLicenseToken(options.LoadToken(false, options.RequiresToken(false)), os.Getenv(QodanaLicenseOnlyToken) != "")
+	cloud.SetupLicenseToken(options.LoadToken(false, options.RequiresToken(false)))
 	options.LicensePlan, err = cloud.GetLicensePlan()
 	if err != nil {
 		if !linterInfo.IsEap {
@@ -37,7 +37,13 @@ func setup(options *QodanaOptions) error {
 	}
 
 	options.ResultsDir, err = filepath.Abs(options.ResultsDir)
+	if err != nil {
+		return fmt.Errorf("failed to get absolute path to results directory: %w", err)
+	}
 	options.ReportDir, err = filepath.Abs(options.reportDirPath())
+	if err != nil {
+		return fmt.Errorf("failed to get absolute path to report directory: %w", err)
+	}
 	tmpResultsDir := options.GetTmpResultsDir()
 	// cleanup tmpResultsDir if it exists
 	if _, err := os.Stat(tmpResultsDir); err == nil {

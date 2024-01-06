@@ -45,9 +45,10 @@ But you can always override qodana.yaml options with the following command-line 
 			ctx := cmd.Context()
 			checkProjectDir(options.ProjectDir)
 			options.FetchAnalyzerSettings()
-			exitCode := core.RunAnalysis(ctx, &core.QodanaOptions{QodanaOptions: options})
+			qodanaOptions := core.QodanaOptions{QodanaOptions: options}
+			exitCode := core.RunAnalysis(ctx, &qodanaOptions)
 
-			checkExitCode(exitCode, options.ResultsDir, options)
+			checkExitCode(exitCode, options.ResultsDir, &qodanaOptions)
 			core.ReadSarif(filepath.Join(options.ResultsDir, platform.QodanaSarifName), options.PrintProblems)
 			if platform.IsInteractive() {
 				options.ShowReport = platform.AskUserConfirm("Do you want to open the latest report")
@@ -69,7 +70,7 @@ But you can always override qodana.yaml options with the following command-line 
 				)
 			}
 
-			if exitCode == core.QodanaFailThresholdExitCode {
+			if exitCode == platform.QodanaFailThresholdExitCode {
 				platform.EmptyMessage()
 				platform.ErrorMessage("The number of problems exceeds the fail threshold")
 				os.Exit(exitCode)
@@ -101,20 +102,20 @@ func checkProjectDir(projectDir string) {
 }
 
 func checkExitCode(exitCode int, resultsDir string, options *core.QodanaOptions) {
-	if exitCode == core.QodanaEapLicenseExpiredExitCode && platform.IsInteractive() {
+	if exitCode == platform.QodanaEapLicenseExpiredExitCode && platform.IsInteractive() {
 		platform.EmptyMessage()
 		platform.ErrorMessage(
 			"Your license expired: update your license or token. If you are using EAP, make sure you are using the latest CLI version and update to the latest linter by running %s ",
 			platform.PrimaryBold("qodana init"),
 		)
 		os.Exit(exitCode)
-	} else if exitCode == core.QodanaTimeoutExitCodePlaceholder {
-		core.ErrorMessage("Qodana analysis reached timeout %s", options.GetAnalysisTimeout())
+	} else if exitCode == platform.QodanaTimeoutExitCodePlaceholder {
+		platform.ErrorMessage("Qodana analysis reached timeout %s", options.GetAnalysisTimeout())
 		os.Exit(options.AnalysisTimeoutExitCode)
-	} else if exitCode != core.QodanaSuccessExitCode && exitCode != core.QodanaFailThresholdExitCode {
+	} else if exitCode != platform.QodanaSuccessExitCode && exitCode != platform.QodanaFailThresholdExitCode {
 		platform.ErrorMessage("Qodana exited with code %d", exitCode)
 		platform.WarningMessage("Check ./logs/ in the results directory for more information")
-		if exitCode == core.QodanaOutOfMemoryExitCode {
+		if exitCode == platform.QodanaOutOfMemoryExitCode {
 			core.CheckContainerEngineMemory()
 		} else if platform.AskUserConfirm(fmt.Sprintf("Do you want to open %s", resultsDir)) {
 			err := core.OpenDir(resultsDir)

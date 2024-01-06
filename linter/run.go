@@ -3,40 +3,31 @@ package linter
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/JetBrains/qodana-cli/v2023/core"
+	"github.com/JetBrains/qodana-cli/v2023/platform"
+	"github.com/JetBrains/qodana-cli/v2023/sarif"
 	log "github.com/sirupsen/logrus"
 	"os"
 	"strings"
 )
 
-const (
-	qodanaNugetUrl      = "QODANA_NUGET_URL"
-	qodanaNugetUser     = "QODANA_NUGET_USER"
-	qodanaNugetPassword = "QODANA_NUGET_PASSWORD"
-	qodanaNugetName     = "QODANA_NUGET_NAME"
-)
-
-func (o *CltOptions) Setup(_ *core.Options) error {
+func (o *CltOptions) Setup(_ *platform.QodanaOptions) error {
 	return nil
 }
 
-func (o *CltOptions) RunAnalysis(opts *core.Options) error {
+func (o *CltOptions) RunAnalysis(opts *platform.QodanaOptions) error {
 	options := &LocalOptions{opts}
-	yaml := core.GetQodanaYaml(options.ProjectDir)
-	err := core.Bootstrap(options.ProjectDir, yaml)
-	if err != nil {
-		return err
-	}
+	yaml := platform.GetQodanaYaml(options.ProjectDir)
+	platform.Bootstrap(yaml.Bootstrap, options.ProjectDir)
 	args, err := o.computeCdnetArgs(opts, options, yaml)
 	if err != nil {
 		return err
 	}
-	if isNugetConfigNeeded() {
-		prepareNugetConfig(os.Getenv("HOME"))
+	if platform.IsNugetConfigNeeded() {
+		platform.PrepareNugetConfig(os.Getenv("HOME"))
 	}
-	unsetNugetVariables()
-	ret, err := core.RunCmd(
-		core.QuoteForWindows(options.ProjectDir),
+	platform.UnsetNugetVariables()
+	ret, err := platform.RunCmd(
+		platform.QuoteForWindows(options.ProjectDir),
 		args...,
 	)
 	if err != nil {
@@ -50,7 +41,7 @@ func (o *CltOptions) RunAnalysis(opts *core.Options) error {
 }
 
 func patchReport(options *LocalOptions) error {
-	finalReport, err := core.ReadReport(options.GetSarifPath())
+	finalReport, err := platform.ReadReport(options.GetSarifPath())
 	if err != nil {
 		return fmt.Errorf("failed to read report: %w", err)
 	}
@@ -72,7 +63,7 @@ func patchReport(options *LocalOptions) error {
 		run.Tool.Driver.Rules = rules
 	}
 
-	vcd, err := core.GetVersionDetails(options.ProjectDir)
+	vcd, err := platform.GetVersionDetails(options.ProjectDir)
 	if err != nil {
 		log.Errorf("Error getting version control details: %s. Project is probably outside of the Git VCS.", err)
 	} else {
@@ -80,26 +71,27 @@ func patchReport(options *LocalOptions) error {
 		finalReport.Runs[0].VersionControlProvenance = append(finalReport.Runs[0].VersionControlProvenance, vcd)
 	}
 
-	if options.DeviceId != "" {
+	deviceId := platform.GetDeviceIdSalt()[0]
+	if deviceId != "" {
 		finalReport.Runs[0].Properties = &sarif.PropertyBag{}
 		finalReport.Runs[0].Properties.AdditionalProperties = map[string]interface{}{
-			"deviceId": options.DeviceId,
+			"deviceId": deviceId,
 		}
 	}
 
-	if options.ProductCode != "" {
-		finalReport.Runs[0].Tool.Driver.Name = options.ProductCode
+	if options.GetLinterInfo().ProductCode != "" {
+		finalReport.Runs[0].Tool.Driver.Name = options.GetLinterInfo().ProductCode
 	}
-	if options.LinterName != "" {
-		finalReport.Runs[0].Tool.Driver.FullName = options.LinterName
+	if options.GetLinterInfo().LinterName != "" {
+		finalReport.Runs[0].Tool.Driver.FullName = options.GetLinterInfo().LinterName
 	}
 
 	finalReport.Runs[0].AutomationDetails = &sarif.RunAutomationDetails{
-		Guid: core.RunGUID(),
-		Id:   core.ReportId(options.ProductCode),
+		Guid: platform.RunGUID(),
+		Id:   platform.ReportId(options.GetLinterInfo().ProductCode),
 		Properties: &sarif.PropertyBag{
 			AdditionalProperties: map[string]interface{}{
-				"jobUrl": core.JobUrl(),
+				"jobUrl": platform.JobUrl(),
 			},
 		},
 	}

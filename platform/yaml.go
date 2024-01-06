@@ -75,7 +75,7 @@ type QodanaYaml struct {
 	Profile Profile `yaml:"profile,omitempty"`
 
 	// FailThreshold is a number of problems to fail the analysis (to exit from Qodana with code 255).
-	FailThreshold int `yaml:"failThreshold,omitempty"`
+	FailThreshold *int `yaml:"failThreshold,omitempty"`
 
 	// Clude property to disable the wanted checks on the wanted paths.
 	Excludes []Clude `yaml:"exclude,omitempty"`

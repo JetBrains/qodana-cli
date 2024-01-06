@@ -41,17 +41,6 @@ import (
 )
 
 const (
-	// QodanaSuccessExitCode is Qodana exit code when the analysis is successfully completed.
-	QodanaSuccessExitCode = 0
-	// QodanaFailThresholdExitCode same as QodanaSuccessExitCode, but the threshold is set and exceeded.
-	QodanaFailThresholdExitCode = 255
-	// QodanaOutOfMemoryExitCode reports an interrupted process, sometimes because of an OOM.
-	QodanaOutOfMemoryExitCode = 137
-	// QodanaEapLicenseExpiredExitCode reports an expired license.
-	QodanaEapLicenseExpiredExitCode = 7
-	// QodanaTimeoutExitCodePlaceholder is not a real exit code (it is not obtained from IDE process! and not returned from CLI)
-	// Placeholder used to identify the case when the analysis reached timeout
-	QodanaTimeoutExitCodePlaceholder = 1000
 	// officialImagePrefix is the prefix of official Qodana images.
 	officialImagePrefix      = "jetbrains/qodana"
 	dockerSpecialCharsLength = 8
@@ -291,7 +280,7 @@ func CheckContainerEngineMemory() {
 
 // getDockerOptions returns qodana docker container options.
 func getDockerOptions(opts *QodanaOptions) *types.ContainerCreateConfig {
-	cmdOpts := getIdeArgs(opts)
+	cmdOpts := GetIdeArgs(opts)
 	platform.ExtractQodanaEnvironment(opts.Setenv)
 	cachePath, err := filepath.Abs(opts.CacheDir)
 	if err != nil {

@@ -6,21 +6,37 @@ import (
 	"fmt"
 	log "github.com/sirupsen/logrus"
 	"io"
+	"math"
 	"os"
 	"os/exec"
 	"os/signal"
 	"runtime"
 	"strings"
 	"syscall"
+	"time"
+)
+
+const (
+	// QodanaSuccessExitCode is Qodana exit code when the analysis is successfully completed.
+	QodanaSuccessExitCode = 0
+	// QodanaFailThresholdExitCode same as QodanaSuccessExitCode, but the threshold is set and exceeded.
+	QodanaFailThresholdExitCode = 255
+	// QodanaOutOfMemoryExitCode reports an interrupted process, sometimes because of an OOM.
+	QodanaOutOfMemoryExitCode = 137
+	// QodanaEapLicenseExpiredExitCode reports an expired license.
+	QodanaEapLicenseExpiredExitCode = 7
+	// QodanaTimeoutExitCodePlaceholder is not a real exit code (it is not obtained from IDE process! and not returned from CLI)
+	QodanaTimeoutExitCodePlaceholder = 1000
+	// Placeholder used to identify the case when the analysis reached timeout
 )
 
 // RunCmd executes subprocess with forwarding of signals, and returns its exit code.
 func RunCmd(cwd string, args ...string) (int, error) {
-	return RunCmdWithForward(cwd, os.Stdout, os.Stderr, args...)
+	return RunCmdWithTimeout(cwd, os.Stdout, os.Stderr, time.Duration(math.MaxInt64), 1, args...)
 }
 
-// RunCmdWithForward executes subprocess with forwarding of signals, and returns its exit code.
-func RunCmdWithForward(cwd string, stdout *os.File, stderr *os.File, args ...string) (int, error) {
+// RunCmdWithTimeout executes subprocess with forwarding of signals, and returns its exit code.
+func RunCmdWithTimeout(cwd string, stdout *os.File, stderr *os.File, timeout time.Duration, timeoutExitCode int, args ...string) (int, error) {
 	log.Debugf("Running command: %v", args)
 	cmd := exec.Command("bash", "-c", strings.Join(args, " ")) // TODO : Viktor told about set -e
 	if                                                         //goland:noinspection GoBoolExpressions
@@ -44,7 +60,7 @@ func RunCmdWithForward(cwd string, stdout *os.File, stderr *os.File, args ...str
 		close(waitCh)
 	}()
 
-	return handleSignals(cmd, waitCh)
+	return handleSignals(cmd, waitCh, timeout, timeoutExitCode)
 }
 
 // closePipe closes the pipe
@@ -74,7 +90,7 @@ func RunCmdRedirectOutput(cwd string, args ...string) (string, string, int, erro
 	go copyToChannel(outReader, outChannel)
 	go copyToChannel(errReader, errChannel)
 
-	res, err := RunCmdWithForward(cwd, outWriter, errWriter, args...)
+	res, err := RunCmdWithTimeout(cwd, outWriter, errWriter, time.Duration(math.MaxInt64), 1, args...)
 	closePipes(outWriter, errWriter)
 	stdout := <-outChannel
 	stderr := <-errChannel
@@ -117,7 +133,7 @@ func getCwdPath(cwd string) (string, error) {
 }
 
 // handleSignals handles the signals from the subprocess
-func handleSignals(cmd *exec.Cmd, waitCh <-chan error) (int, error) {
+func handleSignals(cmd *exec.Cmd, waitCh <-chan error, timeout time.Duration, timeoutExitCode int) (int, error) {
 	sigChan := make(chan os.Signal, 1)
 	signal.Notify(sigChan)
 	defer func() {
@@ -125,33 +141,36 @@ func handleSignals(cmd *exec.Cmd, waitCh <-chan error) (int, error) {
 		close(sigChan)
 	}()
 
+	var timeoutCh = time.After(timeout)
+
 	for {
 		select {
 		case sig := <-sigChan:
 			if err := cmd.Process.Signal(sig); err != nil && !errors.Is(err, os.ErrProcessDone) { // Use errors.Is for semantic comparison
 				log.Error("Error sending signal: ", sig, err)
 			}
+		case <-timeoutCh:
+			if err := cmd.Process.Signal(syscall.SIGTERM); err != nil {
+				log.Fatal("failed to kill process on timeout: ", err)
+			}
+			_, _ = cmd.Process.Wait()
+			return timeoutExitCode, nil
 		case ret := <-waitCh:
-			return getExitCode(ret), nil
+			var exitError *exec.ExitError
+			if errors.As(ret, &exitError) {
+				log.Println(ret)
+				waitStatus := exitError.Sys().(syscall.WaitStatus)
+				if waitStatus.Exited() {
+					return waitStatus.ExitStatus(), nil
+				}
+				log.Println("Process killed (OOM?)")
+				return QodanaOutOfMemoryExitCode, nil
+			}
+			if ret != nil {
+				log.Println(ret)
+				return 1, nil
+			}
+			return 0, nil
 		}
 	}
-}
-
-// getExitCode gets the exit code of the subprocess
-func getExitCode(err error) int {
-	var exitError *exec.ExitError
-	if errors.As(err, &exitError) {
-		log.Println(err)
-		waitStatus := exitError.Sys().(syscall.WaitStatus)
-		if waitStatus.Exited() {
-			return waitStatus.ExitStatus()
-		}
-		log.Println("Process killed (OOM?)")
-		return 137 // QodanaOutOfMemoryExitCode
-	}
-	if err != nil {
-		log.Println(err)
-		return 1
-	}
-	return 0
 }

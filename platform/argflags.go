@@ -50,6 +50,9 @@ func ComputeFlags(cmd *cobra.Command, options *QodanaOptions) error {
 	flags.StringArrayVar(&options.Property, "property", []string{}, "Set a JVM property to be used while running Qodana using the --property property.name=value1,value2,...,valueN notation")
 	flags.BoolVarP(&options.SaveReport, "save-report", "s", true, "Generate HTML report")
 
+	flags.IntVar(&options.AnalysisTimeoutMs, "timeout", -1, "Qodana analysis time limit in milliseconds. If reached, the analysis is terminated, process exits with code timeout-exit-code. Negative – no timeout")
+	flags.IntVar(&options.AnalysisTimeoutExitCode, "timeout-exit-code", 1, "See timeout option")
+
 	if options.LinterSpecific != nil {
 		if linterSpecific, ok := options.LinterSpecific.(ThirdPartyOptions); ok {
 			linterSpecific.AddFlags(flags)
