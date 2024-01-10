@@ -238,6 +238,20 @@ func TestContributorsCommand(t *testing.T) {
 	}
 }
 
+func TestPullInNative(t *testing.T) {
+	projectPath := createProject(t, "qodana_scan_python_native")
+	yamlFile := filepath.Join(projectPath, "qodana.yaml")
+	_ = os.WriteFile(yamlFile, []byte("ide: QDPY"), 0o755)
+	out := bytes.NewBufferString("")
+	command := newPullCommand()
+	command.SetOut(out)
+	command.SetArgs([]string{"-i", projectPath})
+	err := command.Execute()
+	if err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestAllCommandsWithContainer(t *testing.T) {
 	linter := "registry.jetbrains.team/p/sa/containers/qodana-dotnet:latest"
 
