@@ -30,16 +30,18 @@ func newPullCommand() *cobra.Command {
 		Use:   "pull",
 		Short: "Pull latest version of linter",
 		Long:  `An alternative to pull an image.`,
-		PreRun: func(cmd *cobra.Command, args []string) {
-			core.PrepareContainerEnvSettings()
-		},
 		Run: func(cmd *cobra.Command, args []string) {
 			options.FetchAnalyzerSettings()
-			containerClient, err := client.NewClientWithOpts()
-			if err != nil {
-				log.Fatal("couldn't connect to container engine ", err)
+			if options.Ide != "" {
+				log.Println("Native mode is used, skipping pull")
+			} else {
+				core.PrepareContainerEnvSettings()
+				containerClient, err := client.NewClientWithOpts()
+				if err != nil {
+					log.Fatal("couldn't connect to container engine ", err)
+				}
+				core.PullImage(containerClient, options.Linter)
 			}
-			core.PullImage(containerClient, options.Linter)
 		},
 	}
 	flags := cmd.Flags()
