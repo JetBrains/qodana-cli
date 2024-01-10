@@ -320,7 +320,7 @@ func Test_ExtractEnvironmentVariables(t *testing.T) {
 }
 
 func TestDirLanguagesExcluded(t *testing.T) {
-	expected := []string{"Go", "Shell"}
+	expected := []string{"Go", "Shell", "Dockerfile"}
 	actual, err := recognizeDirLanguages("../")
 	if err != nil {
 		return
