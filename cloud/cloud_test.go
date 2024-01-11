@@ -42,6 +42,27 @@ func TestGetProjectByBadToken(t *testing.T) {
 	}
 }
 
+func TestGetProjectByStaging(t *testing.T) {
+	err := os.Setenv(QodanaEndpoint, "https://cloud.sssa-stgn.aws.intellij.net")
+	if err != nil {
+		t.Fatal(err)
+	}
+	token := os.Getenv("QODANA_TOKEN")
+	if token == "" {
+		t.Skip()
+	}
+	client := NewQdClient(token)
+	result := client.getProject()
+	switch v := result.(type) {
+	case APIError:
+		if v.StatusCode > http.StatusBadRequest {
+			t.Errorf("Expected status code %d, got %d", http.StatusBadRequest, v.StatusCode)
+		}
+	case RequestError:
+		t.Errorf("Did not expect request error: %v", v)
+	}
+}
+
 func TestValidateToken(t *testing.T) {
 	client := NewQdClient("kek")
 	if projectName := client.ValidateToken(); projectName != "" {
