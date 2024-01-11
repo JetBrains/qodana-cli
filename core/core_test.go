@@ -131,6 +131,7 @@ func Test_ExtractEnvironmentVariables(t *testing.T) {
 		jobUrlExpected    string
 		envExpected       string
 		remoteUrlExpected string
+		repoUrlExpected   string
 		revisionExpected  string
 		branchExpected    string
 	}{
@@ -145,12 +146,14 @@ func Test_ExtractEnvironmentVariables(t *testing.T) {
 				qodanaEnv:       "user-defined",
 				qodanaJobUrl:    "https://qodana.jetbrains.com/never-gonna-give-you-up",
 				qodanaRemoteUrl: "https://qodana.jetbrains.com/never-gonna-give-you-up",
+				qodanaRepoUrl:   "https://qodana.jetbrains.com/never-gonna-give-you-up",
 				qodanaBranch:    branchExpected,
 				qodanaRevision:  revisionExpected,
 			},
 			envExpected:       "user-defined",
 			remoteUrlExpected: "https://qodana.jetbrains.com/never-gonna-give-you-up",
 			jobUrlExpected:    "https://qodana.jetbrains.com/never-gonna-give-you-up",
+			repoUrlExpected:   "https://qodana.jetbrains.com/never-gonna-give-you-up",
 			revisionExpected:  revisionExpected,
 			branchExpected:    branchExpected,
 		},
@@ -167,6 +170,7 @@ func Test_ExtractEnvironmentVariables(t *testing.T) {
 			envExpected:       fmt.Sprintf("space:%s", Version),
 			remoteUrlExpected: "ssh://git@git.jetbrains.team/sa/entrypoint.git",
 			jobUrlExpected:    "https://space.jetbrains.com/never-gonna-give-you-up",
+			repoUrlExpected:   "https://jetbrains.team/p/sa/repositories/entrypoint",
 			revisionExpected:  revisionExpected,
 			branchExpected:    branchExpected,
 		},
@@ -177,10 +181,12 @@ func Test_ExtractEnvironmentVariables(t *testing.T) {
 				"CI_COMMIT_BRANCH":  branchExpected,
 				"CI_COMMIT_SHA":     revisionExpected,
 				"CI_REPOSITORY_URL": "https://gitlab.jetbrains.com/sa/entrypoint.git",
+				"CI_PROJECT_URL":    "https://gitlab.jetbrains.com/sa/entrypoint",
 			},
 			envExpected:       fmt.Sprintf("gitlab:%s", Version),
 			remoteUrlExpected: "https://gitlab.jetbrains.com/sa/entrypoint.git",
 			jobUrlExpected:    "https://gitlab.jetbrains.com/never-gonna-give-you-up",
+			repoUrlExpected:   "https://gitlab.jetbrains.com/sa/entrypoint",
 			revisionExpected:  revisionExpected,
 			branchExpected:    branchExpected,
 		},
@@ -195,6 +201,7 @@ func Test_ExtractEnvironmentVariables(t *testing.T) {
 			envExpected:       fmt.Sprintf("jenkins:%s", Version),
 			jobUrlExpected:    "https://jenkins.jetbrains.com/never-gonna-give-you-up",
 			remoteUrlExpected: "https://git.jetbrains.com/sa/entrypoint.git",
+			repoUrlExpected:   "https://git.jetbrains.com/sa/entrypoint",
 			revisionExpected:  revisionExpected,
 			branchExpected:    branchExpected,
 		},
@@ -210,6 +217,7 @@ func Test_ExtractEnvironmentVariables(t *testing.T) {
 			envExpected:       fmt.Sprintf("github-actions:%s", Version),
 			jobUrlExpected:    "https://github.jetbrains.com/sa/entrypoint/actions/runs/123456789",
 			remoteUrlExpected: "https://github.jetbrains.com/sa/entrypoint.git",
+			repoUrlExpected:   "https://github.jetbrains.com/sa/entrypoint",
 			revisionExpected:  revisionExpected,
 			branchExpected:    branchExpected,
 		},
@@ -225,6 +233,7 @@ func Test_ExtractEnvironmentVariables(t *testing.T) {
 			envExpected:       fmt.Sprintf("github-actions:%s", Version),
 			jobUrlExpected:    "https://github.jetbrains.com/sa/entrypoint/actions/runs/123456789",
 			remoteUrlExpected: "https://github.jetbrains.com/sa/entrypoint.git",
+			repoUrlExpected:   "https://github.jetbrains.com/sa/entrypoint",
 			revisionExpected:  revisionExpected,
 			branchExpected:    branchExpected,
 		},
@@ -239,6 +248,7 @@ func Test_ExtractEnvironmentVariables(t *testing.T) {
 			envExpected:       fmt.Sprintf("circleci:%s", Version),
 			jobUrlExpected:    "https://circleci.jetbrains.com/never-gonna-give-you-up",
 			remoteUrlExpected: "https://circleci.jetbrains.com/sa/entrypoint.git",
+			repoUrlExpected:   "https://circleci.jetbrains.com/sa/entrypoint",
 			revisionExpected:  revisionExpected,
 			branchExpected:    branchExpected,
 		},
@@ -256,6 +266,22 @@ func Test_ExtractEnvironmentVariables(t *testing.T) {
 			envExpected:       fmt.Sprintf("azure-pipelines:%s", Version),
 			jobUrlExpected:    "https://dev.azure.com/jetbrains/sa/_build/results?buildId=123456789",
 			remoteUrlExpected: "https://dev.azure.com/jetbrains/sa/entrypoint.git",
+			repoUrlExpected:   "https://dev.azure.com/jetbrains/sa/entrypoint",
+			revisionExpected:  revisionExpected,
+			branchExpected:    branchExpected,
+		},
+		{
+			ci: "CircleCI", // includes userinfo in the url
+			variables: map[string]string{
+				"CIRCLE_BUILD_URL":      "https://circleci.jetbrains.com/never-gonna-give-you-up",
+				"CIRCLE_SHA1":           revisionExpected,
+				"CIRCLE_BRANCH":         branchExpected,
+				"CIRCLE_REPOSITORY_URL": "https://user:password@circleci.jetbrains.com/sa/entrypoint.git",
+			},
+			envExpected:       fmt.Sprintf("circleci:%s", Version),
+			jobUrlExpected:    "https://circleci.jetbrains.com/never-gonna-give-you-up",
+			remoteUrlExpected: "https://circleci.jetbrains.com/sa/entrypoint.git",
+			repoUrlExpected:   "https://circleci.jetbrains.com/sa/entrypoint",
 			revisionExpected:  revisionExpected,
 			branchExpected:    branchExpected,
 		},
@@ -305,10 +331,13 @@ func Test_ExtractEnvironmentVariables(t *testing.T) {
 					if environment.get(qodanaBranch) != tc.branchExpected {
 						t.Errorf("%s: Expected %s, got %s", environment.name, branchExpected, environment.get(qodanaBranch))
 					}
+					if environment.get(qodanaRepoUrl) != tc.repoUrlExpected {
+						t.Errorf("%s: Expected %s, got %s", environment.name, tc.repoUrlExpected, environment.get(qodanaRepoUrl))
+					}
 				})
 			}
 
-			for _, k := range append(maps.Keys(tc.variables), []string{qodanaJobUrl, qodanaEnv, qodanaRemoteUrl, qodanaRevision, qodanaBranch}...) {
+			for _, k := range append(maps.Keys(tc.variables), []string{qodanaRepoUrl, qodanaJobUrl, qodanaEnv, qodanaRemoteUrl, qodanaRevision, qodanaBranch}...) {
 				err := os.Unsetenv(k)
 				if err != nil {
 					t.Fatal(err)
