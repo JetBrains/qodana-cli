@@ -37,11 +37,11 @@ const (
 )
 
 func getCloudBaseUrl() string {
-	return fmt.Sprintf("https://%s", GetEnvWithDefault(QodanaEndpoint, DefaultEndpoint))
+	return GetEnvWithDefault(QodanaEndpoint, fmt.Sprintf("https://%s", DefaultEndpoint))
 }
 
 func getCloudApiBaseUrl() string {
-	return fmt.Sprintf("https://api.%s", GetEnvWithDefault(QodanaEndpoint, DefaultEndpoint))
+	return GetEnvWithDefault(QodanaEndpoint, fmt.Sprintf("https://api.%s", DefaultEndpoint))
 }
 
 // GetCloudTeamsPageUrl returns the team page URL on Qodana Cloud
@@ -126,20 +126,23 @@ func (client *QdClient) doRequest(path, method string, headers map[string]string
 	if responseErr != nil {
 		return RequestError{Err: responseErr}
 	}
-	defer func(Body io.ReadCloser) {
-		err := Body.Close()
-		if err != nil {
-			log.Fatal(err)
-		}
-	}(resp.Body)
+	if resp != nil {
+		defer func(Body io.ReadCloser) {
+			err := Body.Close()
+			if err != nil {
+				log.Fatal(err)
+			}
+		}(resp.Body)
 
-	responseBody, _ := io.ReadAll(resp.Body)
-	if resp.StatusCode >= http.StatusOK && resp.StatusCode < http.StatusMultipleChoices {
-		var data map[string]interface{}
-		if err := json.Unmarshal(responseBody, &data); err != nil {
-			return RequestError{Err: err}
+		responseBody, _ := io.ReadAll(resp.Body)
+		if resp.StatusCode >= http.StatusOK && resp.StatusCode < http.StatusMultipleChoices {
+			var data map[string]interface{}
+			if err := json.Unmarshal(responseBody, &data); err != nil {
+				return RequestError{Err: err}
+			}
+			return Success{Data: data}
 		}
-		return Success{Data: data}
+		return APIError{StatusCode: resp.StatusCode, Message: string(responseBody)}
 	}
-	return APIError{StatusCode: resp.StatusCode, Message: string(responseBody)}
+	return APIError{StatusCode: 400, Message: "Wrong endpoint"}
 }
