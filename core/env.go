@@ -51,6 +51,7 @@ const (
 	qodanaNugetUser        = "QODANA_NUGET_USER"
 	qodanaNugetPassword    = "QODANA_NUGET_PASSWORD"
 	qodanaNugetName        = "QODANA_NUGET_NAME"
+	qodanaRepoUrl          = "QODANA_REPO_URL"
 )
 
 // ExtractQodanaEnvironment extracts Qodana environment variables from the current environment.
@@ -64,6 +65,7 @@ func ExtractQodanaEnvironment(setEnvironmentFunc func(string, string)) {
 			setEnvironmentFunc(qodanaRemoteUrl, validateRemoteUrl(ci.Git.Remote, qEnv))
 			setEnvironmentFunc(qodanaBranch, validateBranch(ci.Git.Branch, qEnv))
 			setEnvironmentFunc(qodanaRevision, ci.Git.Revision)
+			setEnvironmentFunc(qodanaRepoUrl, getRepositoryHttpUrl(qEnv, ci.Git.Remote))
 		}
 		setEnvironmentFunc(qodanaNugetUrl, os.Getenv(qodanaNugetUrl))
 		setEnvironmentFunc(qodanaNugetUser, os.Getenv(qodanaNugetUser))
@@ -75,6 +77,7 @@ func ExtractQodanaEnvironment(setEnvironmentFunc func(string, string)) {
 		setEnvironmentFunc(qodanaRemoteUrl, getSpaceRemoteUrl())
 		setEnvironmentFunc(qodanaBranch, os.Getenv("JB_SPACE_GIT_BRANCH"))
 		setEnvironmentFunc(qodanaRevision, os.Getenv("JB_SPACE_GIT_REVISION"))
+		setEnvironmentFunc(qodanaRepoUrl, getRepositoryHttpUrl(qEnv, ""))
 	}
 	setEnvironmentFunc(qodanaEnv, fmt.Sprintf("%s:%s", qEnv, Version))
 }
@@ -89,6 +92,33 @@ func validateRemoteUrl(remote string, qEnv string) string {
 		return ""
 	}
 	return remote
+}
+
+func getRepositoryHttpUrl(qEnv string, remoteUrl string) string {
+	switch qEnv {
+	case "gitlab":
+		return os.Getenv("CI_PROJECT_URL") // gitlab exposes this directly, don't need to mess with the url
+	case "space":
+		return strings.Join([]string{
+			"https://",
+			os.Getenv("JB_SPACE_API_URL"),
+			"/p/",
+			os.Getenv("JB_SPACE_PROJECT_KEY"),
+			"/repositories/",
+			os.Getenv("JB_SPACE_GIT_REPOSITORY_NAME"),
+		}, "")
+	default:
+		remoteUrl = strings.TrimSuffix(remoteUrl, ".git")
+	}
+	parsed, err := url.ParseRequestURI(remoteUrl)
+
+	if remoteUrl == "" || err != nil || !strings.HasPrefix(parsed.Scheme, "http") {
+		log.Warnf("Unable to parse http(s) remote URL from %s, set %s env variable for proper qodana.cloud reporting", remoteUrl, qodanaRepoUrl)
+		return ""
+	}
+
+	parsed.User = nil
+	return parsed.String()
 }
 
 func validateBranch(branch string, env string) string {
