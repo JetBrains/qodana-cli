@@ -5,33 +5,53 @@ on:
     branches:
       - main
   pull_request:
+  schedule:
+    - cron: '0 0 * * 1'
 
 jobs:
+  base:
+    strategy:
+      matrix:
+        version: [ next, 2023.3, 2023.2 ]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v2
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
+      - uses: docker/login-action@v3
+        with:
+          registry: registry.jetbrains.team
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+      - name: Build and push
+        uses: docker/bake-action@v4
+        with:
+          push: true
+          workdir: ${{ matrix.version }}/base
+
   build:
     strategy:
       matrix:
         platform: [ linux/amd64 ]  # linux/arm64
-        os: [ ubuntu-latest ]
         version: [ 2023.3, 2023.2 ]
         linter: [ android-community, dotnet, go, js, jvm, jvm-community, php, python, python-community ]
-    runs-on: ${{ matrix.os }}
+    runs-on: ubuntu-latest
     steps:
-    - name: Checkout
-      uses: actions/checkout@v4
-#    - name: Hadolint
-#      uses: hadolint/hadolint-action@v3.1.0
-#      with:
-#        dockerfile: ${{ matrix.version }}/${{ matrix.linter }}/Dockerfile
-    - name: Set up QEMU
-      uses: docker/setup-qemu-action@v2
-    - name: Set up Docker Buildx
-      uses: docker/setup-buildx-action@v2
-    - name: Build
-      uses: docker/build-push-action@v4
-      with:
-        tags: jetbrains/qodana-${{ matrix.linter }}:${{ matrix.version }}
-        context: ${{ matrix.version }}/${{ matrix.linter }}
-        platforms: ${{ matrix.platform }}
-        push: false
-        cache-from: type=gha
-        cache-to: type=gha,mode=max
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v2
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
+      - name: Build
+        uses: docker/build-push-action@v4
+        with:
+          tags: jetbrains/qodana-${{ matrix.linter }}:${{ matrix.version }}
+          context: ${{ matrix.version }}/${{ matrix.linter }}
+          platforms: ${{ matrix.platform }}
+          push: false
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
