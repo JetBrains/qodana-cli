@@ -1,0 +1,39 @@
+name: 'Base'
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+    paths:
+      - '**/base/*.Dockerfile'
+      - '**/base/*.hcl'
+  pull_request:
+    paths:
+      - '**/base/*.Dockerfile'
+      - '**/base/*.hcl'
+  schedule:
+    - cron: '0 0 * * 1'
+
+jobs:
+  base:
+    strategy:
+      matrix:
+        version: [ next, 2023.3, 2023.2 ]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v2
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
+      - uses: docker/login-action@v3
+        with:
+          registry: registry.jetbrains.team
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+      - name: Build and push
+        uses: docker/bake-action@v4
+        with:
+          push: github.ref == 'refs/heads/main'
+          workdir: ${{ matrix.version }}/base

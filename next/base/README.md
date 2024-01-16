@@ -1,6 +1,6 @@
 The base images are used to build the internal Qodana images. They are not intended to be used directly, but are built regularly to minimize the build time of the Qodana images.
 
-The [images are built on TeamCity](https://buildserver.labs.intellij.net/buildConfiguration/StaticAnalysis_Infrastructure_DockerBase) and pushed to [our internal registry](https://jetbrains.team/p/sa/packages/container/containers). 
+The [images are built on GitHub](https://github.com/JetBrains/qodana-docker/actions) and pushed to [our internal registry](https://jetbrains.team/p/sa/packages/container/containers).
 
 To build them all locally, you can run the following command
 
