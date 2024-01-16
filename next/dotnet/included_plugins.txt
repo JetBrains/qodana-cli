@@ -62,3 +62,4 @@ org.jetbrains.plugins.sass
 org.jetbrains.plugins.vue
 org.intellij.plugins.postcss
 com.intellij.plugins.dependencyAnalysis
+com.jetbrains.restClient

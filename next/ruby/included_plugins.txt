@@ -39,3 +39,4 @@ org.jetbrains.plugins.sass
 org.jetbrains.plugins.vue
 org.intellij.plugins.postcss
 intellij.webpack
+com.jetbrains.restClient
