@@ -52,7 +52,7 @@ With `--print` option in the previous command you'll get the full picture of ima
       },
       "dockerfile": "debian.js.Dockerfile",
       "args": {
-        "NODE_TAG": "16-bullseye-slim"
+        "NODE_TAG": "20-bullseye-slim"
       },
       "tags": [
         "registry.jetbrains.team/p/sa/containers/qodana:debian-js-base"
@@ -69,7 +69,7 @@ With `--print` option in the previous command you'll get the full picture of ima
         "COMPOSER_TAG": "2.5.1",
         "DOTNET_TAG": "6.0-bullseye-slim",
         "GO_TAG": "1.19-bullseye",
-        "NODE_TAG": "16-bullseye-slim",
+        "NODE_TAG": "20-bullseye-slim",
         "PHP_TAG": "8.1-cli-bullseye",
         "RUBY_TAG": "3.0-bullseye",
         "RUST_TAG": "1.71-slim-bullseye"
@@ -89,7 +89,7 @@ With `--print` option in the previous command you'll get the full picture of ima
         "COMPOSER_TAG": "2.5.1",
         "DOTNET_TAG": "6.0-bullseye-slim",
         "GO_TAG": "1.19-bullseye",
-        "NODE_TAG": "16-bullseye-slim",
+        "NODE_TAG": "20-bullseye-slim",
         "PHP_TAG": "8.1-cli-bullseye",
         "RUBY_TAG": "3.0-bullseye",
         "RUST_TAG": "1.71-slim-bullseye"
@@ -109,7 +109,7 @@ With `--print` option in the previous command you'll get the full picture of ima
         "COMPOSER_TAG": "2.5.1",
         "DOTNET_TAG": "6.0-bullseye-slim",
         "GO_TAG": "1.19-bullseye",
-        "NODE_TAG": "16-bullseye-slim",
+        "NODE_TAG": "20-bullseye-slim",
         "PHP_TAG": "8.1-cli-bullseye",
         "RUBY_TAG": "3.0-bullseye",
         "RUST_TAG": "1.71-slim-bullseye"
@@ -129,7 +129,7 @@ With `--print` option in the previous command you'll get the full picture of ima
         "COMPOSER_TAG": "2.5.1",
         "DOTNET_TAG": "6.0-bullseye-slim",
         "GO_TAG": "1.19-bullseye",
-        "NODE_TAG": "16-bullseye-slim",
+        "NODE_TAG": "20-bullseye-slim",
         "PHP_TAG": "8.1-cli-bullseye",
         "RUBY_TAG": "3.0-bullseye",
         "RUST_TAG": "1.71-slim-bullseye"
@@ -163,7 +163,7 @@ With `--print` option in the previous command you'll get the full picture of ima
       },
       "dockerfile": "python.js.Dockerfile",
       "args": {
-        "NODE_TAG": "16-bullseye-slim"
+        "NODE_TAG": "20-bullseye-slim"
       },
       "tags": [
         "registry.jetbrains.team/p/sa/containers/qodana:python-js-base"
@@ -180,7 +180,7 @@ With `--print` option in the previous command you'll get the full picture of ima
         "COMPOSER_TAG": "2.5.1",
         "DOTNET_TAG": "6.0-bullseye-slim",
         "GO_TAG": "1.19-bullseye",
-        "NODE_TAG": "16-bullseye-slim",
+        "NODE_TAG": "20-bullseye-slim",
         "PHP_TAG": "8.1-cli-bullseye",
         "RUBY_TAG": "3.0-bullseye",
         "RUST_TAG": "1.71-slim-bullseye"
@@ -200,7 +200,7 @@ With `--print` option in the previous command you'll get the full picture of ima
         "COMPOSER_TAG": "2.5.1",
         "DOTNET_TAG": "6.0-bullseye-slim",
         "GO_TAG": "1.19-bullseye",
-        "NODE_TAG": "16-bullseye-slim",
+        "NODE_TAG": "20-bullseye-slim",
         "PHP_TAG": "8.1-cli-bullseye",
         "RUBY_TAG": "3.0-bullseye",
         "RUST_TAG": "1.71-slim-bullseye"

@@ -1,6 +1,4 @@
 ARG BASE_TAG="bullseye-slim"
-ARG NODE_TAG="16-bullseye-slim"
-FROM node:$NODE_TAG AS node_base
 FROM debian:$BASE_TAG
 
 ENV HOME="/root" \
