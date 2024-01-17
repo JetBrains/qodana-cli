@@ -3,6 +3,37 @@ ARG NODE_TAG="16-bullseye-slim"
 FROM node:$NODE_TAG AS node_base
 FROM debian:$BASE_TAG
 
+# renovate: datasource=repology depName=debian_11/ca-certificates versioning=loose
+ENV CA_CERTIFICATES_VERSION="20210119"
+# renovate: datasource=repology depName=debian_11/curl versioning=loose
+ENV CURL_VERSION="7.74.0-1.3+deb11u11"
+# renovate: datasource=repology depName=debian_11/fontconfig versioning=loose
+ENV FONTCONFIG_VERSION="2.13.1-4.2"
+# renovate: datasource=repology depName=debian_11/git versioning=loose
+ENV GIT_VERSION="1:2.30.2-1+deb11u2"
+# renovate: datasource=repology depName=debian_11/git-lfs versioning=loose
+ENV GIT_LFS_VERSION="2.13.2-1+b5"
+# renovate: datasource=repology depName=debian_11/gnupg2 versioning=loose
+ENV GNUPG2_VERSION="2.2.27-2+deb11u2"
+# renovate: datasource=repology depName=debian_11/locales versioning=loose
+ENV LOCALES_VERSION="2.31-13+deb11u6"
+# renovate: datasource=repology depName=debian_11/procps versioning=loose
+ENV PROCPS_VERSION="2:3.3.17-5"
+# renovate: datasource=repology depName=debian_11/bzip2 versioning=loose
+ENV BZIP2_VERSION="1.0.8-4"
+# renovate: datasource=repology depName=debian_11/libglib2.0-0 versioning=loose
+ENV LIBGLIB2_0_0_VERSION="2.66.8-1"
+# renovate: datasource=repology depName=debian_11/libsm6 versioning=loose
+ENV LIBSM6_VERSION="2:1.2.3-1"
+# renovate: datasource=repology depName=debian_11/libxext6 versioning=loose
+ENV LIBXEXT6_VERSION="2:1.3.3-1.1"
+# renovate: datasource=repology depName=debian_11/libxrender1 versioning=loose
+ENV LIBXRENDER1_VERSION="1:0.9.10-1"
+# renovate: datasource=npm depName=eslint
+ENV ESLINT_VERSION="8.47.0"
+# renovate: datasource=npm depName=pnpm
+ENV PNPM_VERSION="8.7.1"
+
 ENV HOME="/root" \
     LC_ALL="en_US.UTF-8" \
     QODANA_DIST="/opt/idea" \
@@ -18,14 +49,14 @@ RUN --mount=target=/var/lib/apt/lists,type=cache,sharing=locked \
     rm -f /etc/apt/apt.conf.d/docker-clean && \
     mkdir -m 777 -p /opt $QODANA_DATA $QODANA_CONF && apt-get update && \
     DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
-        ca-certificates=20210119 \
-        curl=7.74.0-1.3+deb11u11 \
-        fontconfig=2.13.1-4.2 \
-        git=1:2.30.2-1+deb11u2 \
-        git-lfs=2.13.2-1+b5 \
-        gnupg2=2.2.27-2+deb11u2 \
-        locales=2.31-13+deb11u6 \
-        procps=2:3.3.17-5 && \
+        ca-certificates=$CA_CERTIFICATES_VERSION \
+        curl=$CURL_VERSION \
+        fontconfig=$FONTCONFIG_VERSION \
+        git=$GIT_VERSION \
+        git-lfs=$GIT_LFS_VERSION \
+        gnupg2=$GNUPG2_VERSION \
+        locales=$LOCALES_VERSION \
+        procps=$PROCPS_VERSION && \
     echo 'en_US.UTF-8 UTF-8' > /etc/locale.gen && locale-gen && \
     apt-get autoremove -y && apt-get clean && \
     chmod 777 -R $HOME && \
@@ -47,11 +78,11 @@ RUN --mount=target=/var/lib/apt/lists,type=cache,sharing=locked \
     --mount=target=/var/cache/apt,type=cache,sharing=locked \
     apt-get update && \
     DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
-      bzip2=1.0.8-4 \
-      libglib2.0-0=2.66.8-1 \
-      libsm6=2:1.2.3-1 \
-      libxext6=2:1.3.3-1.1 \
-      libxrender1=1:0.9.10-1 && \
+      bzip2=$BZIP2_VERSION \
+      libglib2.0-0=$LIBGLIB2_0_0_VERSION \
+      libsm6=$LIBSM6_VERSION \
+      libxext6=$LIBXEXT6_VERSION \
+      libxrender1=$LIBXRENDER1_VERSION && \
     mkdir -m 777 -p $QODANA_DATA/cache && \
     dpkgArch="$(dpkg --print-architecture)" && \
     case "$dpkgArch" in \
@@ -86,7 +117,7 @@ RUN ln -s /usr/local/lib/node_modules/npm/bin/npm-cli.js /usr/local/bin/npm && \
     node --version && \
     npm --version && \
     yarn --version && \
-    npm install -g eslint@v8.47.0 pnpm@v8.7.1 && npm config set update-notifier false && \
+    npm install -g eslint@$ESLINT_VERSION pnpm@$PNPM_VERSION && npm config set update-notifier false && \
     chmod 777 -R "$HOME/.npm" "$HOME/.npmrc"
 
 ARG QD_RELEASE="2023.3"
