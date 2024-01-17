@@ -35,5 +35,5 @@ jobs:
       - name: Build and push
         uses: docker/bake-action@v4
         with:
-          push: github.ref == 'refs/heads/main'
+          push: ${{ github.ref == 'refs/heads/main' }}
           workdir: ${{ matrix.version }}/base

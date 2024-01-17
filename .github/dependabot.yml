@@ -10,9 +10,98 @@ updates:
       dependencies:
         patterns:
           - "*"
-
   - package-ecosystem: docker
-    directory: /next/
+    directory: /next/android-community
+    commit-message:
+      prefix: "QD-8148"
+    schedule:
+      interval: weekly
+    groups:
+      dependencies:
+        patterns:
+          - "*"
+  - package-ecosystem: docker
+    directory: /next/dotnet
+    commit-message:
+      prefix: "QD-8148"
+    schedule:
+      interval: weekly
+    groups:
+      dependencies:
+        patterns:
+          - "*"
+  - package-ecosystem: docker
+    directory: /next/dotnet-community
+    commit-message:
+      prefix: "QD-8148"
+    schedule:
+      interval: weekly
+    groups:
+      dependencies:
+        patterns:
+          - "*"
+  - package-ecosystem: docker
+    directory: /next/go
+    commit-message:
+      prefix: "QD-8148"
+    schedule:
+        interval: weekly
+    groups:
+        dependencies:
+            patterns:
+            - "*"
+  - package-ecosystem: docker
+    directory: /next/js
+    commit-message:
+      prefix: "QD-8148"
+    schedule:
+      interval: weekly
+    groups:
+      dependencies:
+        patterns:
+          - "*"
+  - package-ecosystem: docker
+    directory: /next/jvm
+    commit-message:
+      prefix: "QD-8148"
+    schedule:
+      interval: weekly
+    groups:
+      dependencies:
+        patterns:
+          - "*"
+  - package-ecosystem: docker
+    directory: /next/jvm-community
+    commit-message:
+        prefix: "QD-8148"
+    schedule:
+        interval: weekly
+    groups:
+        dependencies:
+          patterns:
+              - "*"
+  - package-ecosystem: docker
+    directory: /next/php
+    commit-message:
+      prefix: "QD-8148"
+    schedule:
+      interval: weekly
+    groups:
+      dependencies:
+        patterns:
+          - "*"
+  - package-ecosystem: docker
+    directory: /next/python
+    commit-message:
+      prefix: "QD-8148"
+    schedule:
+      interval: weekly
+    groups:
+      dependencies:
+        patterns:
+          - "*"
+  - package-ecosystem: docker
+    directory: /next/python-community
     commit-message:
       prefix: "QD-8148"
     schedule:
