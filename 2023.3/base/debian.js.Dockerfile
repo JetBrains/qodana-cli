@@ -14,4 +14,5 @@ RUN ln -s /usr/local/lib/node_modules/npm/bin/npm-cli.js /usr/local/bin/npm && \
     npm --version && \
     yarn --version && \
     npm install -g eslint@v8.47.0 pnpm@v8.7.1 && npm config set update-notifier false && \
-    chmod 777 -R "$HOME/.npm" "$HOME/.npmrc"
+    chmod 777 -R "$HOME/.npm" "$HOME/.npmrc" && \
+    mkdir -p -m 777 "$HOME/.m2" "$HOME/.m2/repository"

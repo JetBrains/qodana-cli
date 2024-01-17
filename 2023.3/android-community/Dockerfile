@@ -30,7 +30,8 @@ RUN --mount=target=/var/lib/apt/lists,type=cache,sharing=locked \
     apt-get autoremove -y && apt-get clean && \
     chmod 777 -R $HOME && \
     echo 'root:x:0:0:root:/root:/bin/bash' > /etc/passwd && chmod 666 /etc/passwd && \
-    git config --global --add safe.directory '*'
+    git config --global --add safe.directory '*' && \
+    mkdir -p -m 777 "$HOME/.m2" "$HOME/.m2/repository"
 
 ENV GRADLE_USER_HOME="/data/cache/gradle"
 
