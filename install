@@ -91,11 +91,11 @@ function install {
 	FTYPE=""
 	case "${OS}_${ARCH}" in
 	"darwin_arm")
-		URL="https://github.com/JetBrains/qodana-cli/releases/download/$RELEASE/qodana_darwin_all.tar.gz"
+		URL="https://github.com/JetBrains/qodana-cli/releases/download/$RELEASE/qodana_darwin_arm64.tar.gz"
 		FTYPE=".tar.gz"
 		;;
   "darwin_amd64")
-    URL="https://github.com/JetBrains/qodana-cli/releases/download/$RELEASE/qodana_darwin_all.tar.gz"
+    URL="https://github.com/JetBrains/qodana-cli/releases/download/$RELEASE/qodana_darwin_x86_64.tar.gz"
     FTYPE=".tar.gz"
     ;;
 	"linux_arm")
