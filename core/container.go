@@ -48,6 +48,9 @@ const (
 	QodanaOutOfMemoryExitCode = 137
 	// QodanaEapLicenseExpiredExitCode reports an expired license.
 	QodanaEapLicenseExpiredExitCode = 7
+	// QodanaTimeoutExitCodePlaceholder is not a real exit code (it is not obtained from IDE process! and not returned from CLI)
+	// Placeholder used to identify the case when the analysis reached timeout
+	QodanaTimeoutExitCodePlaceholder = 1000
 	// officialImagePrefix is the prefix of official Qodana images.
 	officialImagePrefix      = "jetbrains/qodana"
 	dockerSpecialCharsLength = 8
