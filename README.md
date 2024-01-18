@@ -202,6 +202,8 @@ qodana scan [flags]
       --cleanup                         Run project cleanup
       --property stringArray            Set a JVM property to be used while running Qodana using the --property property.name=value1,value2,...,valueN notation
   -s, --save-report                     Generate HTML report (default true)
+      --timeout int                     Qodana analysis time limit in milliseconds. If reached, the analysis is terminated, process exits with code timeout-exit-code. Negative – no timeout (default -1)
+      --timeout-exit-code int           See timeout option (default 1)
   -e, --env stringArray                 Only for container runs. Define additional environment variables for the Qodana container (you can use the flag multiple times). CLI is not reading full host environment variables and does not pass it to the Qodana container for security reasons
   -v, --volume stringArray              Only for container runs. Define additional volumes for the Qodana container (you can use the flag multiple times)
   -u, --user string                     Only for container runs. User to run Qodana container as. Please specify user id – '$UID' or user id and group id $(id -u):$(id -g). Use 'root' to run as the root user (default: the current user)

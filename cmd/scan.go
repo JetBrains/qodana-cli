@@ -49,7 +49,7 @@ But you can always override qodana.yaml options with the following command-line 
 			options.FetchAnalyzerSettings()
 			exitCode := core.RunAnalysis(ctx, options)
 
-			checkExitCode(exitCode, options.ResultsDir)
+			checkExitCode(exitCode, options.ResultsDir, options)
 			core.ReadSarif(filepath.Join(options.ResultsDir, core.QodanaSarifName), options.PrintProblems)
 			if core.IsInteractive() {
 				options.ShowReport = core.AskUserConfirm("Do you want to open the latest report")
@@ -120,6 +120,9 @@ But you can always override qodana.yaml options with the following command-line 
 	flags.StringArrayVar(&options.Property, "property", []string{}, "Set a JVM property to be used while running Qodana using the --property property.name=value1,value2,...,valueN notation")
 	flags.BoolVarP(&options.SaveReport, "save-report", "s", true, "Generate HTML report")
 
+	flags.IntVar(&options.AnalysisTimeoutMs, "timeout", -1, "Qodana analysis time limit in milliseconds. If reached, the analysis is terminated, process exits with code timeout-exit-code. Negative – no timeout")
+	flags.IntVar(&options.AnalysisTimeoutExitCode, "timeout-exit-code", 1, "See timeout option")
+
 	// Third-party linter options
 	flags.BoolVar(&options.NoStatistics, "no-statistics", false, "(qodana-cdnet/qodana-clang) Don't collect anonymous statistics")
 	// Cdnet specific options
@@ -175,7 +178,7 @@ func checkProjectDir(projectDir string) {
 	}
 }
 
-func checkExitCode(exitCode int, resultsDir string) {
+func checkExitCode(exitCode int, resultsDir string, options *core.QodanaOptions) {
 	if exitCode == core.QodanaEapLicenseExpiredExitCode && core.IsInteractive() {
 		core.EmptyMessage()
 		core.ErrorMessage(
@@ -183,6 +186,9 @@ func checkExitCode(exitCode int, resultsDir string) {
 			core.PrimaryBold("qodana init"),
 		)
 		os.Exit(exitCode)
+	} else if exitCode == core.QodanaTimeoutExitCodePlaceholder {
+		core.ErrorMessage("Qodana analysis reached timeout %s", options.GetAnalysisTimeout())
+		os.Exit(options.AnalysisTimeoutExitCode)
 	} else if exitCode != core.QodanaSuccessExitCode && exitCode != core.QodanaFailThresholdExitCode {
 		core.ErrorMessage("Qodana exited with code %d", exitCode)
 		core.WarningMessage("Check ./logs/ in the results directory for more information")
