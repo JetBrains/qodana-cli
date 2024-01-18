@@ -60,7 +60,7 @@ func getIdeExitCode(resultsDir string, c int) (res int) {
 
 func runQodanaLocal(opts *QodanaOptions) int {
 	args := getIdeRunCommand(opts)
-	res := getIdeExitCode(opts.ResultsDir, RunCmd("", args...))
+	res := getIdeExitCode(opts.ResultsDir, RunCmdWithTimeout("", opts.GetAnalysisTimeout(), QodanaTimeoutExitCodePlaceholder, args...))
 	if res > QodanaSuccessExitCode && res != QodanaFailThresholdExitCode {
 		postAnalysis(opts)
 		return res
