@@ -19,57 +19,61 @@ package core
 import (
 	"fmt"
 	log "github.com/sirupsen/logrus"
+	"math"
 	"os"
 	"path/filepath"
 	"strings"
+	"time"
 )
 
 // QodanaOptions is a struct that contains all the options to run a Qodana linter.
 type QodanaOptions struct {
-	ResultsDir            string
-	CacheDir              string
-	ProjectDir            string
-	ReportDir             string
-	CoverageDir           string
-	Linter                string
-	Ide                   string
-	SourceDirectory       string
-	DisableSanity         bool
-	ProfileName           string
-	ProfilePath           string
-	RunPromo              string
-	StubProfile           string // note: deprecated option
-	Baseline              string
-	BaselineIncludeAbsent bool
-	SaveReport            bool
-	ShowReport            bool
-	Port                  int
-	Property              []string
-	Script                string
-	FailThreshold         string
-	Commit                string
-	AnalysisId            string
-	Env                   []string
-	Volumes               []string
-	User                  string
-	PrintProblems         bool
-	SkipPull              bool
-	ClearCache            bool
-	YamlName              string
-	GitReset              bool
-	FullHistory           bool
-	ApplyFixes            bool
-	Cleanup               bool
-	FixesStrategy         string // note: deprecated option
-	_id                   string
-	NoStatistics          bool   // thirdparty common option
-	Solution              string // cdnet specific options
-	Project               string
-	Configuration         string
-	Platform              string
-	NoBuild               bool
-	CompileCommands       string // clang specific options
-	ClangArgs             string
+	ResultsDir              string
+	CacheDir                string
+	ProjectDir              string
+	ReportDir               string
+	CoverageDir             string
+	Linter                  string
+	Ide                     string
+	SourceDirectory         string
+	DisableSanity           bool
+	ProfileName             string
+	ProfilePath             string
+	RunPromo                string
+	StubProfile             string // note: deprecated option
+	Baseline                string
+	BaselineIncludeAbsent   bool
+	SaveReport              bool
+	ShowReport              bool
+	Port                    int
+	Property                []string
+	Script                  string
+	FailThreshold           string
+	Commit                  string
+	AnalysisId              string
+	Env                     []string
+	Volumes                 []string
+	User                    string
+	PrintProblems           bool
+	SkipPull                bool
+	ClearCache              bool
+	YamlName                string
+	GitReset                bool
+	FullHistory             bool
+	ApplyFixes              bool
+	Cleanup                 bool
+	FixesStrategy           string // note: deprecated option
+	_id                     string
+	NoStatistics            bool   // thirdparty common option
+	Solution                string // cdnet specific options
+	Project                 string
+	Configuration           string
+	Platform                string
+	NoBuild                 bool
+	CompileCommands         string // clang specific options
+	ClangArgs               string
+	AnalysisTimeoutMs       int
+	AnalysisTimeoutExitCode int
 }
 
 func (o *QodanaOptions) FetchAnalyzerSettings() {
@@ -130,6 +134,13 @@ func (o *QodanaOptions) unsetenv(key string) {
 			return
 		}
 	}
+}
+
+func (o *QodanaOptions) GetAnalysisTimeout() time.Duration {
+	if o.AnalysisTimeoutMs <= 0 {
+		return time.Duration(math.MaxInt64)
+	}
+	return time.Duration(o.AnalysisTimeoutMs) * time.Millisecond
 }
 
 func (o *QodanaOptions) id() string {

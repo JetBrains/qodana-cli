@@ -800,6 +800,38 @@ func Test_runCmd(t *testing.T) {
 	}
 }
 
+func Test_runCmdWithTimeout(t *testing.T) {
+	if //goland:noinspection ALL
+	runtime.GOOS == "linux" || runtime.GOOS == "darwin" {
+		var sleepFor2SecondsCmd = []string{"sh", "-c", "sleep 2 && exit 255"}
+		for _, tc := range []struct {
+			name            string
+			timeout         time.Duration
+			timeoutExitCode int
+			cmd             []string
+			res             int
+			expectedTimeS   int
+		}{
+			{"timeout not reached exit code 255", time.Duration(3) * time.Second, 0, sleepFor2SecondsCmd, 255, 2},
+			{"timeout reached exit code 42", time.Duration(1) * time.Second, 42, sleepFor2SecondsCmd, 42, 1},
+		} {
+			t.Run(tc.name, func(t *testing.T) {
+				startTime := time.Now()
+				got := RunCmdWithTimeout("", tc.timeout, tc.timeoutExitCode, tc.cmd...)
+				endTime := time.Now()
+
+				if got != tc.res {
+					t.Errorf("runCmdWithTimeout: %v, Got: %v, Expected: %v", tc.cmd, got, tc.res)
+				}
+				durationSeconds := int(endTime.Sub(startTime).Seconds())
+				if tc.expectedTimeS > durationSeconds || durationSeconds >= tc.expectedTimeS+1 {
+					t.Errorf("runCmdWithTimeout: %v, Duration: %vs, Expected: %vs", tc.cmd, durationSeconds, tc.expectedTimeS)
+				}
+			})
+		}
+	}
+}
+
 func Test_createUser(t *testing.T) {
 	if runtime.GOOS == "windows" {
 		return

@@ -19,15 +19,22 @@ package core
 import (
 	"errors"
 	log "github.com/sirupsen/logrus"
+	"math"
 	"os"
 	"os/exec"
 	"os/signal"
 	"runtime"
 	"syscall"
+	"time"
 )
 
-// RunCmd executes subprocess with forwarding of signals, and returns its exit code.
 func RunCmd(cwd string, args ...string) int {
+	return RunCmdWithTimeout(cwd, time.Duration(math.MaxInt64), 1, args...)
+}
+
+// RunCmdWithTimeout executes subprocess with forwarding of signals, and returns its exit code.
+// If timeout occurs, subprocess is terminated, timeoutExitCode is returned
+func RunCmdWithTimeout(cwd string, timeout time.Duration, timeoutExitCode int, args ...string) int {
 	log.Debugf("Running command: %v", args)
 	cmd := exec.Command(args[0], args[1:]...)
 	if //goland:noinspection GoBoolExpressions
@@ -63,12 +70,20 @@ func RunCmd(cwd string, args ...string) int {
 		close(sigChan)
 	}()
 
+	var timeoutCh = time.After(timeout)
+
 	for {
 		select {
 		case sig := <-sigChan:
 			if err := cmd.Process.Signal(sig); err != nil && err.Error() != "os: process already finished" {
 				log.Print("error sending signal", sig, err)
 			}
+		case <-timeoutCh:
+			if err := cmd.Process.Signal(syscall.SIGTERM); err != nil {
+				log.Fatal("failed to kill process on timeout: ", err)
+			}
+			_, _ = cmd.Process.Wait()
+			return timeoutExitCode
 		case err := <-waitCh:
 			var exitError *exec.ExitError
 			if errors.As(err, &exitError) {
