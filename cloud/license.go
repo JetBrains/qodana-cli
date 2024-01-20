@@ -32,6 +32,7 @@ type LicenseData struct {
 	LicenseID      string `json:"licenseId"`
 	LicenseKey     string `json:"licenseKey"`
 	ExpirationDate string `json:"expirationDate"`
+	ProjectIdHash  string `json:"projectIdHash"`
 	LicensePlan    string `json:"licensePlan"`
 }
 
