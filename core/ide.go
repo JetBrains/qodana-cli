@@ -328,7 +328,7 @@ func prepareLocalIdeSettings(opts *QodanaOptions) {
 
 	ExtractQodanaEnvironment(setEnv)
 	SetupLicenseToken(opts)
-	SetupLicense(cloud.Token.Token)
+	SetupLicenseAndProjectHash(cloud.Token.Token)
 	prepareDirectories(
 		opts.CacheDir,
 		opts.logDirPath(),
