@@ -25,7 +25,30 @@ import (
 	"strings"
 )
 
-func SetupLicense(token string) {
+func requestLicenseData(token string) cloud.LicenseData {
+	licenseEndpoint := cloud.GetEnvWithDefault(QodanaLicenseEndpoint, "https://linters.qodana.cloud")
+
+	licenseDataResponse, err := cloud.RequestLicenseData(licenseEndpoint, token)
+	if errors.Is(err, cloud.TokenDeclinedError) {
+		log.Fatalf("License request: %v\n%s", err, cloud.DeclinedTokenErrorMessage)
+	}
+	if err != nil {
+		log.Fatalf("License request: %v\n%s", err, cloud.GeneralLicenseErrorMessage)
+	}
+	return cloud.DeserializeLicenseData(licenseDataResponse)
+}
+
+func SetupLicenseAndProjectHash(token string) {
+	var licenseData cloud.LicenseData
+	if token != "" {
+		licenseData = requestLicenseData(token)
+		if licenseData.ProjectIdHash != "" {
+			err := os.Setenv(QodanaProjectIdHash, licenseData.ProjectIdHash)
+			if err != nil {
+				log.Fatal(err)
+			}
+		}
+	}
 	_, exists := os.LookupEnv(QodanaLicense)
 	if exists {
 		return
@@ -45,21 +68,11 @@ func SetupLicense(token string) {
 		return
 	}
 
-	// usual builds should have token for execution
+	// usual builds should have token and LicenseData for execution
 	if token == "" {
 		log.Fatal(cloud.EmptyTokenMessage)
 	}
 
-	licenseEndpoint := cloud.GetEnvWithDefault(QodanaLicenseEndpoint, "https://linters.qodana.cloud")
-
-	licenseDataResponse, err := cloud.RequestLicenseData(licenseEndpoint, token)
-	if errors.Is(err, cloud.TokenDeclinedError) {
-		log.Fatalf("License request: %v\n%s", err, cloud.DeclinedTokenErrorMessage)
-	}
-	if err != nil {
-		log.Fatalf("License request: %v\n%s", err, cloud.GeneralLicenseErrorMessage)
-	}
-	licenseData := cloud.DeserializeLicenseData(licenseDataResponse)
 	if strings.ToLower(licenseData.LicensePlan) == "community" {
 		log.Fatalf("Your Qodana Cloud organization has Community license that doesn’t support \"%s\" linter, "+
 			"please try one of the community linters instead: %s or obtain Ultimate "+
@@ -70,9 +83,9 @@ func SetupLicense(token string) {
 		)
 	}
 	if licenseData.LicenseKey == "" {
-		log.Fatalf("Response for license request should contain license key\n%s", string(licenseDataResponse))
+		log.Fatalf("License key should not be empty\n")
 	}
-	err = os.Setenv(QodanaLicense, licenseData.LicenseKey)
+	err := os.Setenv(QodanaLicense, licenseData.LicenseKey)
 	if err != nil {
 		log.Fatal(err)
 	}
