@@ -1074,8 +1074,9 @@ func Test_ideaExitCode(t *testing.T) {
 func TestSetupLicense(t *testing.T) {
 	Prod.Code = "QDJVM"
 	Prod.EAP = false
-	license := `{"licenseId":"VA5HGQWQH6","licenseKey":"VA5HGQWQH6","expirationDate":"2023-07-31","licensePlan":"EAP_ULTIMATE_PLUS"}`
+	license := `{"licenseId":"VA5HGQWQH6","licenseKey":"VA5HGQWQH6","expirationDate":"2023-07-31","licensePlan":"EAP_ULTIMATE_PLUS","projectIdHash":"hash"}`
 	expectedKey := "VA5HGQWQH6"
+	expectedHash := "hash"
 
 	svr := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		_, _ = fmt.Fprint(w, license)
@@ -1085,11 +1086,15 @@ func TestSetupLicense(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	SetupLicense("token")
+	SetupLicenseAndProjectHash("token")
 
 	licenseKey := os.Getenv(QodanaLicense)
 	if licenseKey != expectedKey {
 		t.Errorf("expected key to be '%s' got '%s'", expectedKey, licenseKey)
+	}
+	projectIdHash := os.Getenv(QodanaProjectIdHash)
+	if projectIdHash != expectedHash {
+		t.Errorf("expected projectIdHash to be '%s' got '%s'", expectedHash, projectIdHash)
 	}
 
 	err = os.Unsetenv(QodanaLicenseEndpoint)
@@ -1098,6 +1103,11 @@ func TestSetupLicense(t *testing.T) {
 	}
 
 	err = os.Unsetenv(QodanaLicense)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	err = os.Unsetenv(QodanaProjectIdHash)
 	if err != nil {
 		t.Fatal(err)
 	}
