@@ -5,7 +5,7 @@ go 1.21
 require (
 	github.com/boyter/scc/v3 v3.2.0
 	github.com/cucumber/ci-environment/go v0.0.0-20230911180507-bd001ebc644c
-	github.com/docker/cli v24.0.6+incompatible
+	github.com/docker/cli v25.0.0+incompatible
 	github.com/docker/docker v20.10.23+incompatible // DO NOT UPDATE: breaking changes
 	github.com/go-enry/go-enry/v2 v2.8.6
 	github.com/google/uuid v1.5.0
