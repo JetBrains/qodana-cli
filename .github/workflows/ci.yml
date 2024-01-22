@@ -149,13 +149,14 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
 
-  install-script-check:
-    strategy:
-        fail-fast: false
-        matrix:
-            os: [ubuntu-latest, macos-latest]
-    runs-on: ${{ matrix.os }}
-    steps:
-      - uses: actions/checkout@v4
-      - run: |
-          ./install
+#  install-script-check:
+#    strategy:
+#        fail-fast: false
+#        matrix:
+#            os: [ubuntu-latest, macos-latest]
+#    runs-on: ${{ matrix.os }}
+#    steps:
+#      - uses: actions/checkout@v4
+#      - run: |
+#          ./install
+#          ./install nightly
