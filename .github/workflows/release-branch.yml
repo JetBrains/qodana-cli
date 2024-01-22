@@ -1,0 +1,33 @@
+name: Check PR Commits Against Main Branch
+
+on:
+  pull_request:
+    branches:
+      - '2*'
+  pull_request_target:
+    branches:
+      - '2*'
+
+jobs:
+  check-commits:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout main branch
+      uses: actions/checkout@v2
+      with:
+        ref: 'main'
+    
+    - name: Fetch all history for all tags and branches
+      run: git fetch --prune --unshallow
+    
+    - name: Check if PR commits are in the main branch
+      run: |
+        PR_COMMITS=$(git log --format=format:%H origin/${{ github.head_ref }})
+        for COMMIT in $PR_COMMITS; do
+          if ! git merge-base --is-ancestor $COMMIT main; then
+            echo "::error::Commit $COMMIT is not in the main branch."
+            echo "Commit $COMMIT from the PR is not present in the main branch."
+            exit 1
+          fi
+        done
+      shell: bash
