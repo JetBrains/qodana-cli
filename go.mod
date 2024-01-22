@@ -13,7 +13,7 @@ require (
 	github.com/mattn/go-isatty v0.0.20
 	github.com/otiai10/copy v1.14.0
 	github.com/owenrumney/go-sarif/v2 v2.3.0
-	github.com/pterm/pterm v0.12.74
+	github.com/pterm/pterm v0.12.75
 	github.com/shirou/gopsutil/v3 v3.23.12
 	github.com/sirupsen/logrus v1.9.3
 	github.com/spf13/cobra v1.8.0
@@ -84,8 +84,8 @@ require (
 	golang.org/x/mod v0.12.0 // indirect
 	golang.org/x/net v0.19.0 // indirect
 	golang.org/x/sync v0.5.0 // indirect
-	golang.org/x/sys v0.15.0 // indirect
-	golang.org/x/term v0.15.0 // indirect
+	golang.org/x/sys v0.16.0 // indirect
+	golang.org/x/term v0.16.0 // indirect
 	golang.org/x/text v0.14.0 // indirect
 	golang.org/x/tools v0.13.0 // indirect
 	gopkg.in/ini.v1 v1.67.0 // indirect
