@@ -238,6 +238,23 @@ func Test_ExtractEnvironmentVariables(t *testing.T) {
 			branchExpected:    branchExpected,
 		},
 		{
+			ci: "GitHub pull request",
+			variables: map[string]string{
+				"GITHUB_SERVER_URL": "https://github.jetbrains.com",
+				"GITHUB_REPOSITORY": "sa/entrypoint",
+				"GITHUB_RUN_ID":     "123456789",
+				"GITHUB_SHA":        revisionExpected,
+				"GITHUB_HEAD_REF":   branchExpected,
+				"GITHUB_REF":        "refs/pull/123/merge",
+			},
+			envExpected:       fmt.Sprintf("github-actions:%s", Version),
+			jobUrlExpected:    "https://github.jetbrains.com/sa/entrypoint/actions/runs/123456789",
+			remoteUrlExpected: "https://github.jetbrains.com/sa/entrypoint.git",
+			repoUrlExpected:   "https://github.jetbrains.com/sa/entrypoint",
+			revisionExpected:  revisionExpected,
+			branchExpected:    branchExpected,
+		},
+		{
 			ci: "CircleCI",
 			variables: map[string]string{
 				"CIRCLE_BUILD_URL":      "https://circleci.jetbrains.com/never-gonna-give-you-up",
