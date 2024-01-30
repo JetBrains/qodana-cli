@@ -26,7 +26,7 @@ import (
 	"crypto/md5"
 	"encoding/hex"
 	"encoding/xml"
-	"github.com/JetBrains/qodana-cli/v2023/cloud"
+	"github.com/JetBrains/qodana-cli/v2024/cloud"
 	cp "github.com/otiai10/copy"
 	log "github.com/sirupsen/logrus"
 	"io"

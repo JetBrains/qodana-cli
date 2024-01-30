@@ -17,7 +17,7 @@
 package core
 
 import (
-	"github.com/JetBrains/qodana-cli/v2023/platform"
+	"github.com/JetBrains/qodana-cli/v2024/platform"
 	"os"
 	"path/filepath"
 	"runtime"

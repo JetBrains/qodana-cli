@@ -1,7 +1,7 @@
 package platform
 
 import (
-	"github.com/JetBrains/qodana-cli/v2023/cloud"
+	"github.com/JetBrains/qodana-cli/v2024/cloud"
 	"os"
 	"path/filepath"
 	"reflect"

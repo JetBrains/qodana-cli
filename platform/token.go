@@ -18,7 +18,7 @@ package platform
 
 import (
 	"fmt"
-	"github.com/JetBrains/qodana-cli/v2023/cloud"
+	"github.com/JetBrains/qodana-cli/v2024/cloud"
 	"github.com/pterm/pterm"
 	log "github.com/sirupsen/logrus"
 	"github.com/zalando/go-keyring"

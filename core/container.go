@@ -22,7 +22,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/JetBrains/qodana-cli/v2023/platform"
+	"github.com/JetBrains/qodana-cli/v2024/platform"
 	"github.com/pterm/pterm"
 	"io"
 	"os"

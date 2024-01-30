@@ -18,13 +18,13 @@ package cmd
 
 import (
 	"fmt"
-	"github.com/JetBrains/qodana-cli/v2023/cloud"
-	"github.com/JetBrains/qodana-cli/v2023/platform"
+	"github.com/JetBrains/qodana-cli/v2024/cloud"
+	"github.com/JetBrains/qodana-cli/v2024/platform"
 	log "github.com/sirupsen/logrus"
 	"os"
 	"path/filepath"
 
-	"github.com/JetBrains/qodana-cli/v2023/core"
+	"github.com/JetBrains/qodana-cli/v2024/core"
 	"github.com/spf13/cobra"
 )
 

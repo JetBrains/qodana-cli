@@ -2,7 +2,7 @@ package platform
 
 import (
 	"fmt"
-	"github.com/JetBrains/qodana-cli/v2023/cloud"
+	"github.com/JetBrains/qodana-cli/v2024/cloud"
 	"github.com/pterm/pterm"
 	"github.com/sirupsen/logrus"
 	"net/http"

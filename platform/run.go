@@ -2,8 +2,8 @@ package platform
 
 import (
 	"fmt"
-	"github.com/JetBrains/qodana-cli/v2023/cloud"
-	"github.com/JetBrains/qodana-cli/v2023/tooling"
+	"github.com/JetBrains/qodana-cli/v2024/cloud"
+	"github.com/JetBrains/qodana-cli/v2024/tooling"
 	log "github.com/sirupsen/logrus"
 	"os"
 	"path"

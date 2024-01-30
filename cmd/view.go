@@ -17,8 +17,8 @@
 package cmd
 
 import (
-	"github.com/JetBrains/qodana-cli/v2023/core"
-	"github.com/JetBrains/qodana-cli/v2023/platform"
+	"github.com/JetBrains/qodana-cli/v2024/core"
+	"github.com/JetBrains/qodana-cli/v2024/platform"
 	"github.com/spf13/cobra"
 )
 

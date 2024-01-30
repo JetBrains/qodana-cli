@@ -1,9 +1,9 @@
 package linter
 
 import (
-	"github.com/JetBrains/qodana-cli/v2023/cmd"
-	"github.com/JetBrains/qodana-cli/v2023/platform"
-	platformcmd "github.com/JetBrains/qodana-cli/v2023/platform/cmd"
+	"github.com/JetBrains/qodana-cli/v2024/cmd"
+	"github.com/JetBrains/qodana-cli/v2024/platform"
+	platformcmd "github.com/JetBrains/qodana-cli/v2024/platform/cmd"
 	"github.com/spf13/cobra"
 )
 

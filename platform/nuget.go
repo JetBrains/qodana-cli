@@ -3,7 +3,7 @@ package platform
 import (
 	"bufio"
 	"fmt"
-	"github.com/JetBrains/qodana-cli/v2023/cloud"
+	"github.com/JetBrains/qodana-cli/v2024/cloud"
 	log "github.com/sirupsen/logrus"
 	"os"
 	"path/filepath"

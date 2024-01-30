@@ -2,8 +2,8 @@ package linter
 
 import (
 	"fmt"
-	tooling "github.com/JetBrains/qodana-cli/v2023/linter/tooling"
-	"github.com/JetBrains/qodana-cli/v2023/platform"
+	tooling "github.com/JetBrains/qodana-cli/v2024/linter/tooling"
+	"github.com/JetBrains/qodana-cli/v2024/platform"
 	"os"
 	"path/filepath"
 )

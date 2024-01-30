@@ -2,7 +2,7 @@ package core
 
 import (
 	"fmt"
-	"github.com/JetBrains/qodana-cli/v2023/platform"
+	"github.com/JetBrains/qodana-cli/v2024/platform"
 	"github.com/shirou/gopsutil/v3/process"
 	log "github.com/sirupsen/logrus"
 	"os"

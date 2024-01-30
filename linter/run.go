@@ -3,8 +3,8 @@ package linter
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/JetBrains/qodana-cli/v2023/platform"
-	"github.com/JetBrains/qodana-cli/v2023/sarif"
+	"github.com/JetBrains/qodana-cli/v2024/platform"
+	"github.com/JetBrains/qodana-cli/v2024/sarif"
 	log "github.com/sirupsen/logrus"
 	"os"
 	"strings"

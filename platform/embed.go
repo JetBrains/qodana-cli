@@ -5,7 +5,7 @@ import (
 	"archive/zip"
 	"compress/gzip"
 	"fmt"
-	"github.com/JetBrains/qodana-cli/v2023/tooling"
+	"github.com/JetBrains/qodana-cli/v2024/tooling"
 	"io"
 	"log"
 	"os"

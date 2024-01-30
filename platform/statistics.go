@@ -3,7 +3,7 @@ package platform
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/JetBrains/qodana-cli/v2023/tooling"
+	"github.com/JetBrains/qodana-cli/v2024/tooling"
 	"github.com/google/uuid"
 	log "github.com/sirupsen/logrus"
 	"os"

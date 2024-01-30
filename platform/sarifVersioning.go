@@ -2,7 +2,7 @@ package platform
 
 import (
 	"errors"
-	"github.com/JetBrains/qodana-cli/v2023/sarif"
+	"github.com/JetBrains/qodana-cli/v2024/sarif"
 	"os"
 	"strings"
 )

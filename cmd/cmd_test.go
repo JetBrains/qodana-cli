@@ -22,7 +22,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"github.com/JetBrains/qodana-cli/v2023/platform"
+	"github.com/JetBrains/qodana-cli/v2024/platform"
 	"io"
 	"os"
 	"os/exec"
@@ -33,7 +33,7 @@ import (
 
 	log "github.com/sirupsen/logrus"
 
-	"github.com/JetBrains/qodana-cli/v2023/core"
+	"github.com/JetBrains/qodana-cli/v2024/core"
 )
 
 func createProject(t *testing.T, name string) string {

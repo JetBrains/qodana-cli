@@ -1,12 +1,9 @@
 project_name: qodana
-before:
-  hooks:
-    - go mod tidy
 builds:
   - env:
       - CGO_ENABLED=0
     ldflags:
-      - -X github.com/JetBrains/qodana-cli/v2023/core.Version={{ .Tag }}
+      - -X github.com/JetBrains/qodana-cli/v2024/core.Version={{ .Tag }}
     goos:
       - linux
       - darwin
@@ -25,10 +22,6 @@ archives:
     format_overrides:
       - goos: windows
         format: zip
-    files:
-      - LICENSE
-      - THIRDPARTY.md
-      - README.md
 nfpms:
   - vendor: "JetBrains s.r.o."
     homepage: "https://github.com/JetBrains/qodana-cli"
@@ -162,11 +155,4 @@ changelog:
 git:
   ignore_tags:
     - nightly
-gomod:
-  proxy: true
-  env:
-    - GOPROXY=https://proxy.golang.org,direct
-    - GOSUMDB=sum.golang.org
-    - GOPRIVATE=example.com/blah
-  mod: mod
 report_sizes: true

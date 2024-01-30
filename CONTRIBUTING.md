@@ -20,7 +20,7 @@ Clone the project anywhere:
 git clone git@github.com:JetBrains/qodana-cli.git
 ```
 
-`cd` into the directory and run for debug:
+`cd` into the `cli` directory and run for debug:
 
 ```sh
 go run main.go
@@ -32,15 +32,9 @@ Build a binary with
 go build -o qd main.go
 ```
 
-Lint your code with `golangci-lint`:
-
-```sh
-golangci-lint run
-```
-
 Test your code with coverage:
 ```sh
-go test -v ./... -coverprofile cover.out
+go test -v $(go list -f '{{.Dir}}/...' -m | xargs)
 ```
 
 Dry run goreleaser:

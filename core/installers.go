@@ -20,7 +20,7 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"fmt"
-	"github.com/JetBrains/qodana-cli/v2023/platform"
+	"github.com/JetBrains/qodana-cli/v2024/platform"
 	cp "github.com/otiai10/copy"
 	"github.com/pterm/pterm"
 	log "github.com/sirupsen/logrus"

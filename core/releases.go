@@ -24,7 +24,7 @@ package core
 
 import (
 	"encoding/json"
-	"github.com/JetBrains/qodana-cli/v2023/platform"
+	"github.com/JetBrains/qodana-cli/v2024/platform"
 	"io"
 	"os"
 	"path/filepath"

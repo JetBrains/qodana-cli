@@ -2,7 +2,7 @@ package linter
 
 import (
 	"fmt"
-	"github.com/JetBrains/qodana-cli/v2023/platform"
+	"github.com/JetBrains/qodana-cli/v2024/platform"
 	"github.com/spf13/pflag"
 	"strconv"
 	"strings"
