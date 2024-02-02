@@ -54,6 +54,12 @@ RUN --mount=target=/var/lib/apt/lists,type=cache,sharing=locked \
     echo 'root:x:0:0:root:/root:/bin/bash' > /etc/passwd && chmod 666 /etc/passwd && \
     git config --global --add safe.directory '*'
 
+RUN apt-get update && \
+    apt-get install -y sudo build-essential && \
+    useradd -m -u 1001 -U qodana && \
+    passwd -d qodana && \
+    echo 'qodana ALL=(ALL) NOPASSWD:ALL' >> /etc/sudoers
+
 ENV PATH="/opt/yarn/bin:$PATH"
 COPY --from=node_base /usr/local/bin/node /usr/local/bin/
 COPY --from=node_base /usr/local/include/node /usr/local/include/node
