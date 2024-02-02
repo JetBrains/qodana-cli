@@ -63,3 +63,4 @@ org.jetbrains.plugins.vue
 org.intellij.plugins.postcss
 com.intellij.plugins.dependencyAnalysis
 com.jetbrains.restClient
+com.intellij.hardcodedPasswords
