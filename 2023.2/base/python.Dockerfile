@@ -16,7 +16,7 @@ RUN --mount=target=/var/lib/apt/lists,type=cache,sharing=locked \
     apt-get update && \
     DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
       bzip2=1.0.8-4 \
-      libglib2.0-0=2.66.8-1 \
+      libglib2.0-0=2.66.8-1+deb11u1 \
       libsm6=2:1.2.3-1 \
       libxext6=2:1.3.3-1.1 \
       libxrender1=1:0.9.10-1 && \

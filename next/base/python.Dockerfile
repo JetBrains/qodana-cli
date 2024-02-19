@@ -19,7 +19,7 @@ ENV PROCPS_VERSION="2:3.3.17-5"
 # renovate: datasource=repology depName=debian_11/bzip2 versioning=loose
 ENV BZIP2_VERSION="1.0.8-4"
 # renovate: datasource=repology depName=debian_11/libglib2.0-0 versioning=loose
-ENV LIBGLIB2_0_0_VERSION="2.66.8-1"
+ENV LIBGLIB2_0_0_VERSION="2.66.8-1+deb11u1"
 # renovate: datasource=repology depName=debian_11/libsm6 versioning=loose
 ENV LIBSM6_VERSION="2:1.2.3-1"
 # renovate: datasource=repology depName=debian_11/libxext6 versioning=loose
