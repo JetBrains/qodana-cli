@@ -18,7 +18,7 @@ ENV LOCALES_VERSION="2.31-13+deb11u8"
 # renovate: datasource=repology depName=debian_11/procps versioning=loose
 ENV PROCPS_VERSION="2:3.3.17-5"
 # renovate: datasource=npm depName=eslint
-ENV ESLINT_VERSION="8.47.0"
+ENV ESLINT_VERSION="8.56.0"
 # renovate: datasource=npm depName=pnpm
 ENV PNPM_VERSION="8.7.1"
 

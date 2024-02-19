@@ -30,7 +30,7 @@ ENV LIBXEXT6_VERSION="2:1.3.3-1.1"
 # renovate: datasource=repology depName=debian_11/libxrender1 versioning=loose
 ENV LIBXRENDER1_VERSION="1:0.9.10-1"
 # renovate: datasource=npm depName=eslint
-ENV ESLINT_VERSION="8.47.0"
+ENV ESLINT_VERSION="8.56.0"
 # renovate: datasource=npm depName=pnpm
 ENV PNPM_VERSION="8.7.1"
 
