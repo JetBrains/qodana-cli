@@ -31,7 +31,7 @@ RUN --mount=target=/var/lib/apt/lists,type=cache,sharing=locked \
         git=1:2.30.2-1+deb11u2 \
         git-lfs=2.13.2-1+b5 \
         gnupg2=2.2.27-2+deb11u2 \
-        locales=2.31-13+deb11u6 \
+        locales=2.31-13+deb11u8 \
         procps=2:3.3.17-5 \
         software-properties-common=0.96.20.2-2.1 && \
     echo 'en_US.UTF-8 UTF-8' > /etc/locale.gen && locale-gen && \

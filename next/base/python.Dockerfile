@@ -13,7 +13,7 @@ ENV GIT_LFS_VERSION="2.13.2-1+b5"
 # renovate: datasource=repology depName=debian_11/gnupg2 versioning=loose
 ENV GNUPG2_VERSION="2.2.27-2+deb11u2"
 # renovate: datasource=repology depName=debian_11/locales versioning=loose
-ENV LOCALES_VERSION="2.31-13+deb11u6"
+ENV LOCALES_VERSION="2.31-13+deb11u8"
 # renovate: datasource=repology depName=debian_11/procps versioning=loose
 ENV PROCPS_VERSION="2:3.3.17-5"
 # renovate: datasource=repology depName=debian_11/bzip2 versioning=loose
