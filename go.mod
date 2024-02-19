@@ -13,8 +13,8 @@ require (
 	github.com/mattn/go-isatty v0.0.20
 	github.com/otiai10/copy v1.14.0
 	github.com/owenrumney/go-sarif/v2 v2.3.0
-	github.com/pterm/pterm v0.12.76
-	github.com/shirou/gopsutil/v3 v3.23.12
+	github.com/pterm/pterm v0.12.79
+	github.com/shirou/gopsutil/v3 v3.24.1
 	github.com/sirupsen/logrus v1.9.3
 	github.com/spf13/cobra v1.8.0
 	github.com/spf13/viper v1.18.2
