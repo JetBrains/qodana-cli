@@ -6,7 +6,7 @@
   "regexManagers": [
     {
       "fileMatch": [
-        "(^|/)Dockerfile$"
+        "(^|/)(.*\\.)?Dockerfile$"
       ],
       "matchStrings": [
         "#\\s*renovate:\\s*datasource=(?<datasource>.*?) depName=(?<depName>.*?)( versioning=(?<versioning>.*?))?\\sENV .*?_VERSION=\"?(?<currentValue>.*?)\"?\\s"
@@ -28,8 +28,8 @@
     }
   ],
   "includePaths": [
-    "2023.2/**",
     "2023.3/**",
     "next/**"
-  ]
+  ],
+  "commitMessagePrefix": "QD-8148 "
 }
