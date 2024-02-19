@@ -228,7 +228,9 @@ func extractTarGz(archivePath string, destPath string) (error, bool) {
 		}
 
 		target := filepath.Join(destPath, header.Name)
-
+		if !isInDirectory(destPath, target) {
+			return fmt.Errorf("%s: illegal file path", target), true
+		}
 		switch header.Typeflag {
 		case tar.TypeDir:
 			if _, err := os.Stat(target); err != nil {
@@ -255,4 +257,13 @@ func extractTarGz(archivePath string, destPath string) (error, bool) {
 		}
 	}
 	return nil, false
+}
+
+// isInDirectory checks if the target file is within the destination directory.
+func isInDirectory(destPath string, target string) bool {
+	relative, err := filepath.Rel(destPath, target)
+	if err != nil {
+		return false
+	}
+	return !strings.HasPrefix(relative, "..")
 }
