@@ -147,7 +147,7 @@ type QodanaYaml struct {
 	IncludeAbsent string `yaml:"includeAbsent,omitempty"`
 }
 
-// writeConfig writes QodanaYaml to the given path.
+// WriteConfig writes QodanaYaml to the given path.
 func (q *QodanaYaml) WriteConfig(path string) error {
 	var b bytes.Buffer
 	yamlEncoder := yaml.NewEncoder(&b)
@@ -364,7 +364,7 @@ func LoadQodanaYaml(project string, filename string) *QodanaYaml {
 	return q
 }
 
-// sort makes QodanaYaml prettier.
+// Sort makes QodanaYaml prettier.
 func (q *QodanaYaml) Sort() *QodanaYaml {
 	sort.Slice(q.Includes, func(i, j int) bool {
 		return Lower(q.Includes[i].Name) < Lower(q.Includes[j].Name)

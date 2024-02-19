@@ -106,7 +106,7 @@ func (o *QodanaOptions) FetchAnalyzerSettings() {
 	o.CacheDir = o.cacheDirPath()
 }
 
-// setenv sets the Qodana container environment variables if such variable was not set before.
+// Setenv sets the Qodana container environment variables if such variable was not set before.
 func (o *QodanaOptions) Setenv(key string, value string) {
 	for _, e := range o.Env {
 		if strings.HasPrefix(e, key) {

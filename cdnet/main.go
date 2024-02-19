@@ -34,7 +34,8 @@ const (
 var InterruptChannel chan os.Signal
 var version = "2023.3"
 var buildDateStr = "2023-12-05T10:52:23Z"
-var isEap = true
+
+//var isEap = true
 
 func main() {
 	InterruptChannel = make(chan os.Signal, 1)
@@ -46,5 +47,5 @@ func main() {
 		log.SetOutput(io.Discard)
 		os.Exit(0)
 	}()
-	linter.Execute(productCode, linterName, version, buildDateStr, isEap)
+	linter.Execute(productCode, linterName, version, buildDateStr, true)
 }

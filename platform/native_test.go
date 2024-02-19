@@ -97,6 +97,7 @@ func TestContainsUnityProjects(t *testing.T) {
 	}
 }
 
+//goland:noinspection HttpUrlsUsage
 const v45ProjectOld = `<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="12.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />

@@ -107,7 +107,7 @@ func MakeShortSarif(sarifPath string, shortSarifPath string) error {
 	}
 
 	if len(report.Runs) == 0 {
-		return fmt.Errorf("Error reading SARIF %s: no runs found", sarifPath)
+		return fmt.Errorf("error reading SARIF %s: no runs found", sarifPath)
 	}
 	report.Runs[0].Tool.Extensions = []sarif.ToolComponent{}
 	report.Runs[0].Tool.Driver.Taxa = []sarif.ReportingDescriptor{}

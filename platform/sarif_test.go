@@ -113,6 +113,7 @@ type SarifTestOptions struct {
 	linterInfo *LinterInfo
 }
 
+//goland:noinspection GoUnusedParameter
 func (s SarifTestOptions) AddFlags(flags *pflag.FlagSet) {
 }
 
@@ -120,14 +121,17 @@ func (s SarifTestOptions) GetMountInfo() *MountInfo {
 	return nil
 }
 
+//goland:noinspection GoUnusedParameter
 func (s SarifTestOptions) MountTools(tempPath string, mountPath string, o *QodanaOptions) (map[string]string, error) {
 	return make(map[string]string), nil
 }
 
+//goland:noinspection GoUnusedParameter
 func (s SarifTestOptions) GetInfo(o *QodanaOptions) *LinterInfo {
 	return s.linterInfo
 }
 
+//goland:noinspection GoUnusedParameter
 func (s SarifTestOptions) Setup(o *QodanaOptions) error {
 	return nil
 }

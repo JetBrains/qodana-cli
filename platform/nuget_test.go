@@ -34,6 +34,7 @@ func createTempFileWithContent(content string) string {
 	return tempFile.Name()
 }
 
+//goland:noinspection HttpUrlsUsage
 func TestCheckForPrivateFeed(t *testing.T) {
 	testCases := []struct {
 		name     string
