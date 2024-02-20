@@ -456,7 +456,7 @@ func Test_Bootstrap(t *testing.T) {
 		t.Fatal(err)
 	}
 	opts.ProjectDir = tmpDir
-	platform.Bootstrap("echo \"bootstrap: touch qodana.yml\" > qodana.yaml", opts.ProjectDir)
+	platform.Bootstrap("echo 'bootstrap: touch qodana.yml' > qodana.yaml", opts.ProjectDir)
 	config := platform.GetQodanaYaml(tmpDir)
 	platform.Bootstrap(config.Bootstrap, opts.ProjectDir)
 	if _, err := os.Stat(filepath.Join(opts.ProjectDir, "qodana.yaml")); errors.Is(err, os.ErrNotExist) {

@@ -123,7 +123,6 @@ func validateJobUrl(ciUrl string, qEnv string) string {
 // Bootstrap takes the given command (from CLI or qodana.yaml) and runs it.
 func Bootstrap(command string, project string) {
 	if command != "" {
-		log.Printf("Running %s...", command)
 		var executor string
 		var flag string
 		switch runtime.GOOS {
@@ -135,7 +134,7 @@ func Bootstrap(command string, project string) {
 			flag = "-c"
 		}
 
-		if res, err := RunCmd(project, executor, flag, command); res > 0 || err != nil {
+		if res, err := RunCmd(project, executor, flag, "\""+command+"\""); res > 0 || err != nil {
 			log.Printf("Provided bootstrap command finished with error: %d. Exiting...", res)
 			os.Exit(res)
 		}
