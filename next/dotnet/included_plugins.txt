@@ -28,7 +28,6 @@ com.jetbrains.plugins.webDeployment
 com.jetbrains.rider.publish.webDeploy
 rider.intellij.plugin.appender
 com.jetbrains.performancePlugin
-com.jetbrains.rider-cpp-injection
 com.jetbrains.rider.razor
 org.jetbrains.plugins.vagrant
 com.jetbrains.dotCommon
@@ -40,7 +39,6 @@ com.jetbrains.rider-cpp
 com.intellij.resharper.unity
 com.jetbrains.dotCover
 com.intellij.microservices.ui
-org.jetbrains.settingsRepository
 Refactor-X
 XPathView
 tslint
@@ -53,7 +51,6 @@ com.jetbrains.plugins.jade
 com.intellij.plugins.webcomponents
 com.dmarcotte.handlebars
 Karma
-XSLT-Debugger
 W3Validators
 com.intellij.plugins.html.instantEditing
 com.intellij.css

@@ -6,7 +6,6 @@ com.intellij.platform.images
 org.editorconfig.editorconfigjetbrains
 org.jetbrains.plugins.yaml
 org.jetbrains.plugins.textmate
-com.jetbrains.plugins.ini4idea
 com.jetbrains.sh
 com.intellij.css
 Git4Idea
@@ -26,12 +25,9 @@ NodeJS
 JavaScriptDebugger
 JavaScript
 JSIntentionPowerPack
-com.jetbrains.plugins.jade
 com.intellij.plugins.webcomponents
-com.dmarcotte.handlebars
 Karma
-XSLT-Debugger
-W3Validators
+XPathView
 com.intellij.plugins.html.instantEditing
 com.intellij.css
 org.jetbrains.plugins.less

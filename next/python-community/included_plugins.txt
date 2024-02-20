@@ -12,9 +12,8 @@ Git4Idea
 hg4idea
 tanvd.grazi
 intellij.indexing.shared.core
-intellij.indexing.shared
 PythonCore
-com.jetbrains.python.sharedIndexes.downloadable
 com.jetbrains.pycharm.community.customization
 com.jetbrains.pycharm.community.sharedIndexes.bundled
 org.toml.lang
+com.intellij.dev
