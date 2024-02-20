@@ -37,11 +37,8 @@ type jsonData struct {
 func GetReportUrl(resultsDir string) string {
 	reportURL, err := readOpenInIde(resultsDir, openInIdeJson)
 	if err != nil || reportURL == "" {
-		reportURL, err = readLegacyReportFile(resultsDir, legacyReportFile)
-		if err != nil || reportURL == "" {
-			log.Debugf("Unable to find the report url in %s", filepath.Join(resultsDir, legacyReportFile))
-			return ""
-		}
+		log.Debugf("Unable to find the report url in %s", filepath.Join(resultsDir, openInIdeJson))
+		return ""
 	}
 	return reportURL
 }

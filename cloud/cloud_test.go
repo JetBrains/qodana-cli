@@ -79,14 +79,12 @@ func TestGetReportUrl(t *testing.T) {
 		{
 			name:           "valid json data and url",
 			jsonData:       jsonData{Cloud: cloudInfo{URL: "https://cloud.qodana.com/report/url"}},
-			reportUrlFile:  "https://raw.qodana.com/report/url",
 			expectedReport: "https://cloud.qodana.com/report/url",
 		},
 		{
 			name:           "invalid json data, valid url file data",
 			jsonData:       jsonData{Cloud: cloudInfo{URL: ""}},
-			reportUrlFile:  "https://raw.qodana.com/report/url",
-			expectedReport: "https://raw.qodana.com/report/url",
+			expectedReport: "",
 		},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
@@ -94,10 +92,6 @@ func TestGetReportUrl(t *testing.T) {
 			jsonFile := filepath.Join(dir, openInIdeJson)
 			jsonFileData, _ := json.Marshal(tc.jsonData)
 			if err := os.WriteFile(jsonFile, jsonFileData, 0644); err != nil {
-				t.Fatal(err)
-			}
-			urlFile := filepath.Join(dir, legacyReportFile)
-			if err := os.WriteFile(urlFile, []byte(tc.reportUrlFile), 0644); err != nil {
 				t.Fatal(err)
 			}
 

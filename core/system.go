@@ -163,7 +163,8 @@ func IsHomeDirectory(path string) bool {
 
 // RunAnalysis runs the linter with the given options.
 func RunAnalysis(ctx context.Context, options *QodanaOptions) int {
-	log.Debugf("Running analysis with options: %+v", options)
+	log.Debug("Running analysis with options")
+	options.LogOptions()
 	prepareHost(options)
 
 	var exitCode int
@@ -327,8 +328,10 @@ func saveReport(opts *QodanaOptions) {
 		if res, err := platform.RunCmd("", platform.QuoteForWindows(Prod.JbrJava()), "-jar", platform.QuoteForWindows(reportConverter), "-s", platform.QuoteForWindows(opts.ProjectDir), "-d", platform.QuoteForWindows(opts.ResultsDir), "-o", platform.QuoteForWindows(opts.ReportResultsPath()), "-n", "result-allProblems.json", "-f"); res > 0 || err != nil {
 			os.Exit(res)
 		}
-		if res, err := platform.RunCmd("", "sh", "-c", fmt.Sprintf("cp -r %s/web/* ", Prod.Home)+opts.ReportDir); res > 0 || err != nil {
-			os.Exit(res)
+		err := platform.CopyDir(filepath.Join(Prod.Home, "web"), opts.ReportDir)
+		if err != nil {
+			log.Fatal("Not able to save the report: ", err)
+			return
 		}
 	}
 }

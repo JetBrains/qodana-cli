@@ -16,7 +16,7 @@
 # limitations under the License.
 #
 
-docker run --rm -v `pwd`:/qodana -w /qodana \
+docker run --rm -v `pwd`:/qodana -w /qodana/cli \
     -e DEVICEID=200820300000000-0000-0000-0000-000000000001 \
     -v $GOPATH:/go \
     -e CGO_ENABLED=0 \
@@ -26,7 +26,7 @@ docker run -it --rm \
     -e DEVICEID=200820300000000-0000-0000-0000-000000000001 \
     --pull always \
     -w /data/project \
-    -v `pwd`:/data/project \
-    -v `pwd`/qodana:/opt/idea/bin/qodana \
+    -v `pwd`/sarif:/data/project \
+    -v `pwd`/cli/qodana:/opt/idea/bin/qodana \
     -p 8080:8080 \
-    registry.jetbrains.team/p/sa/containers/qodana-go scan
+    registry.jetbrains.team/p/sa/containers/qodana-go --save-report --log-level debug

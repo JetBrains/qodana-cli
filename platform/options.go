@@ -17,13 +17,18 @@
 package platform
 
 import (
+	"bytes"
 	"fmt"
+	log "github.com/sirupsen/logrus"
 	"math"
 	"os"
 	"path"
 	"path/filepath"
+	"reflect"
 	"strings"
+	"text/tabwriter"
 	"time"
+	"unicode"
 )
 
 // QodanaOptions is a struct that contains all the options to run a Qodana linter.
@@ -76,6 +81,41 @@ type QodanaOptions struct {
 	ClangArgs               string
 	AnalysisTimeoutMs       int
 	AnalysisTimeoutExitCode int
+}
+
+func (o *QodanaOptions) LogOptions() {
+	buffer := new(bytes.Buffer)
+	w := new(tabwriter.Writer)
+	w.Init(buffer, 0, 8, 2, '\t', 0)
+
+	_, err := fmt.Fprintln(w, "Option\tValue\t")
+	if err != nil {
+		return
+	}
+	_, err = fmt.Fprintln(w, "------\t-----\t")
+	if err != nil {
+		return
+	}
+
+	value := reflect.ValueOf(o).Elem()
+	typeInfo := value.Type()
+
+	for i := 0; i < value.NumField(); i++ {
+		fieldType := typeInfo.Field(i)
+		if !unicode.IsUpper([]rune(fieldType.Name)[0]) {
+			continue
+		}
+		fieldValue := value.Field(i)
+		line := fmt.Sprintf("%s\t%v\t", fieldType.Name, fieldValue.Interface())
+		_, err = fmt.Fprintln(w, line)
+		if err != nil {
+			return
+		}
+	}
+	if err := w.Flush(); err != nil {
+		return
+	}
+	log.Debug(buffer.String())
 }
 
 func (o *QodanaOptions) FetchAnalyzerSettings() {
