@@ -4,14 +4,12 @@ linux/amd64/web/asset-manifest.json
 linux/amd64/web/preview.html
 linux/amd64/Install-Linux-tar.txt
 linux/amd64/build.txt
-linux/amd64/product-info.json
 linux/arm64/remotedevelopment
 linux/arm64/help
 linux/arm64/web/asset-manifest.json
 linux/arm64/web/preview.html
 linux/arm64/Install-Linux-tar.txt
 linux/arm64/build.txt
-linux/arm64/product-info.json
 linux/amd64/plugins/*
 linux/arm64/plugins/*
 *.tar.gz
