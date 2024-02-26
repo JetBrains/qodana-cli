@@ -1364,6 +1364,7 @@ func propertiesFixture(enableStats bool, additionalProperties []string) []string
 		"-Dqodana.starter.profile.resource=qodana-dotnet.starter.yaml",
 		"-Drider.collect.full.container.statistics=true",
 		"-Drider.suppress.std.redirect=true",
+		"-Dscanning.in.smart.mode=false",
 		"-Dsun.io.useCanonCaches=false",
 		"-Dsun.tools.attach.tmp.only=true",
 		"-XX:+HeapDumpOnOutOfMemoryError",

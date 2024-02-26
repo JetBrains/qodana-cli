@@ -75,6 +75,7 @@ func getPropertiesMap(
 		"-XX:MaxRAMPercentage":        "70",
 
 		"-Didea.job.launcher.without.timeout": "true",
+		"-Dscanning.in.smart.mode":            "false",
 	}
 	if coverageDir != "" {
 		properties["-Dqodana.coverage.input"] = quoteIfSpace(coverageDir)
