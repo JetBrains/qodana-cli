@@ -183,6 +183,7 @@ func GetProperties(opts *QodanaOptions, yamlProps map[string]string, dotNetOptio
 
 // writeProperties writes the given key=value `props` to file `f` (sets the environment variable)
 func writeProperties(opts *QodanaOptions) { // opts.confDirPath(Prod.Version)  opts.vmOptionsPath(Prod.Version)
+	// TODO: in native mode we override vm options too?
 	properties := GetProperties(opts, platform.Config.Properties, platform.Config.DotNet, getPluginIds(platform.Config.Plugins))
 	err := os.WriteFile(opts.vmOptionsPath(), []byte(strings.Join(properties, "\n")), 0o644)
 	if err != nil {

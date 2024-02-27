@@ -73,9 +73,8 @@ func runQodanaLocal(opts *QodanaOptions) (int, error) {
 		postAnalysis(opts)
 		return res, err
 	}
-	if opts.SaveReport || opts.ShowReport {
-		saveReport(opts)
-	}
+
+	saveReport(opts)
 	postAnalysis(opts)
 	return res, err
 }
@@ -181,6 +180,14 @@ func GetIdeArgs(opts *QodanaOptions) []string {
 			if opts.ClangArgs != "" {
 				arguments = append(arguments, "--clang-args", opts.ClangArgs)
 			}
+		}
+	}
+
+	if opts.DiffStart != "" && opts.DiffEnd != "" {
+		if opts.Ide == "" {
+			arguments = append(arguments, "--diff-start", opts.DiffStart, "--diff-end", opts.DiffEnd)
+		} else {
+			arguments = append(arguments, "--script", platform.QuoteForWindows("scoped:"+opts.DiffScopeFile))
 		}
 	}
 

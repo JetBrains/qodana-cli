@@ -69,6 +69,9 @@ func ComputeFlags(cmd *cobra.Command, options *QodanaOptions) error {
 	flags.IntVar(&options.AnalysisTimeoutMs, "timeout", -1, "Qodana analysis time limit in milliseconds. If reached, the analysis is terminated, process exits with code timeout-exit-code. Negative – no timeout")
 	flags.IntVar(&options.AnalysisTimeoutExitCode, "timeout-exit-code", 1, "See timeout option")
 
+	flags.StringVar(&options.DiffStart, "diff-start", "", "Commit to start an incremental run from. Only files changed between --diff-start and --diff-end will be analysed.")
+	flags.StringVar(&options.DiffEnd, "diff-end", "", "Commit to end an incremental run on. Only files changed between --diff-start and --diff-end will be analysed.")
+
 	if options.LinterSpecific != nil {
 		if linterSpecific, ok := options.LinterSpecific.(ThirdPartyOptions); ok {
 			linterSpecific.AddFlags(flags)
@@ -86,6 +89,8 @@ func ComputeFlags(cmd *cobra.Command, options *QodanaOptions) error {
 		cmd.MarkFlagsMutuallyExclusive("user", "ide")
 		cmd.MarkFlagsMutuallyExclusive("env", "ide")
 	}
+
+	cmd.MarkFlagsRequiredTogether("diff-start", "diff-end")
 
 	cmd.MarkFlagsMutuallyExclusive("commit", "script")
 	cmd.MarkFlagsMutuallyExclusive("profile-name", "profile-path")
