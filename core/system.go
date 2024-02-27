@@ -167,69 +167,82 @@ func RunAnalysis(ctx context.Context, options *QodanaOptions) int {
 	options.LogOptions()
 	prepareHost(options)
 
-	var exitCode int
-
-	if options.FullHistory && isInstalled("git") {
-		remoteUrl := platform.GitRemoteUrl(options.ProjectDir)
-		branch := platform.GitBranch(options.ProjectDir)
-		if remoteUrl == "" && branch == "" {
-			log.Fatal("Please check that project is located within the Git repo")
-		}
-		options.Setenv(platform.QodanaRemoteUrl, remoteUrl)
-		options.Setenv(platform.QodanaBranch, branch)
-
-		err := platform.GitClean(options.ProjectDir)
-		if err != nil {
-			log.Fatal(err)
-		}
-		revisions := platform.GitRevisions(options.ProjectDir)
-		allCommits := len(revisions)
-		counter := 0
-		if options.Commit != "" {
-			for i, revision := range revisions {
-				counter++
-				if revision == options.Commit {
-					revisions = revisions[i:]
-					break
-				}
-			}
-		}
-
-		for _, revision := range revisions {
-			counter++
-			options.Setenv(platform.QodanaRevision, revision)
-			platform.WarningMessage("[%d/%d] Running analysis for revision %s", counter+1, allCommits, revision)
-			err = platform.GitCheckout(options.ProjectDir, revision)
-			if err != nil {
-				log.Fatal(err)
-			}
-			platform.EmptyMessage()
-
-			exitCode = runQodana(ctx, options)
-			options.Unsetenv(platform.QodanaRevision)
-		}
-		err = platform.GitCheckout(options.ProjectDir, branch)
-		if err != nil {
-			log.Fatal(err)
-		}
-	} else if options.Commit != "" && isInstalled("git") {
-		options.GitReset = false
-		err := platform.GitReset(options.ProjectDir, options.Commit)
-		if err != nil {
-			platform.WarningMessage("Could not reset git repository, no --commit option will be applied: %s", err)
-		} else {
-			options.GitReset = true
-		}
-
-		exitCode = runQodana(ctx, options)
-
-		if options.GitReset && !strings.HasPrefix(options.Commit, "CI") {
-			_ = platform.GitResetBack(options.ProjectDir)
-		}
-	} else {
-		exitCode = runQodana(ctx, options)
+	if !isInstalled("git") && (options.FullHistory || options.Commit != "" || options.DiffStart != "" || options.DiffEnd != "") {
+		log.Fatal("Cannot use git related functionality without a git executable")
 	}
 
+	if options.FullHistory {
+		return runWithFullHistory(ctx, options)
+	} else if options.Commit != "" {
+		return runOnSingleCommit(ctx, options)
+	} else {
+		return runQodana(ctx, options)
+	}
+}
+
+func runOnSingleCommit(ctx context.Context, options *QodanaOptions) int {
+	var exitCode int
+	options.GitReset = false
+	err := platform.GitReset(options.ProjectDir, options.Commit)
+	if err != nil {
+		platform.WarningMessage("Could not reset git repository, no --commit option will be applied: %s", err)
+	} else {
+		options.GitReset = true
+	}
+
+	exitCode = runQodana(ctx, options)
+
+	if options.GitReset && !strings.HasPrefix(options.Commit, "CI") {
+		_ = platform.GitResetBack(options.ProjectDir)
+	}
+	return exitCode
+}
+
+func runWithFullHistory(ctx context.Context, options *QodanaOptions) int {
+	remoteUrl := platform.GitRemoteUrl(options.ProjectDir)
+	branch := platform.GitBranch(options.ProjectDir)
+	if remoteUrl == "" && branch == "" {
+		log.Fatal("Please check that project is located within the Git repo")
+	}
+	options.Setenv(platform.QodanaRemoteUrl, remoteUrl)
+	options.Setenv(platform.QodanaBranch, branch)
+
+	err := platform.GitClean(options.ProjectDir)
+	if err != nil {
+		log.Fatal(err)
+	}
+	revisions := platform.GitRevisions(options.ProjectDir)
+	allCommits := len(revisions)
+	counter := 0
+	var exitCode int
+
+	if options.Commit != "" {
+		for i, revision := range revisions {
+			counter++
+			if revision == options.Commit {
+				revisions = revisions[i:]
+				break
+			}
+		}
+	}
+
+	for _, revision := range revisions {
+		counter++
+		options.Setenv(platform.QodanaRevision, revision)
+		platform.WarningMessage("[%d/%d] Running analysis for revision %s", counter+1, allCommits, revision)
+		err = platform.GitCheckout(options.ProjectDir, revision)
+		if err != nil {
+			log.Fatal(err)
+		}
+		platform.EmptyMessage()
+
+		exitCode = runQodana(ctx, options)
+		options.Unsetenv(platform.QodanaRevision)
+	}
+	err = platform.GitCheckout(options.ProjectDir, branch)
+	if err != nil {
+		log.Fatal(err)
+	}
 	return exitCode
 }
 
