@@ -1,4 +1,4 @@
-ARG DOTNET_BASE_TAG="6.0-bullseye-slim"
+ARG DOTNET_BASE_TAG="7.0-bullseye-slim"
 FROM mcr.microsoft.com/dotnet/sdk:$DOTNET_BASE_TAG
 
 # renovate: datasource=repology depName=debian_11/ca-certificates versioning=loose
