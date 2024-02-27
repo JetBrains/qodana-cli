@@ -22,6 +22,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/JetBrains/qodana-cli/v2024/platform"
+	cienvironment "github.com/cucumber/ci-environment/go"
 	"github.com/docker/docker/client"
 	"io"
 	"net/http"
@@ -30,8 +31,6 @@ import (
 	"path/filepath"
 	"runtime"
 	"strings"
-
-	cienvironment "github.com/cucumber/ci-environment/go"
 
 	"github.com/pterm/pterm"
 
@@ -175,6 +174,8 @@ func RunAnalysis(ctx context.Context, options *QodanaOptions) int {
 		return runWithFullHistory(ctx, options)
 	} else if options.Commit != "" {
 		return runOnSingleCommit(ctx, options)
+	} else if options.DiffStart != "" && options.DiffEnd != "" {
+		return runOnCommitRange(ctx, options)
 	} else {
 		return runQodana(ctx, options)
 	}
@@ -244,6 +245,127 @@ func runWithFullHistory(ctx context.Context, options *QodanaOptions) int {
 		log.Fatal(err)
 	}
 	return exitCode
+}
+
+func runOnCommitRange(ctx context.Context, options *QodanaOptions) int {
+	// don't run this logic when we're about to launch a container - it's just double work
+	if options.Ide == "" {
+		return runQodana(ctx, options)
+	}
+	scopeFile, err := writeChangesFile(options)
+	if err != nil {
+		log.Fatal("Failed to prepare diff run ", err)
+	}
+	defer func() {
+		_ = os.Remove(scopeFile)
+	}()
+
+	fixesStrategy := options.FixesStrategy
+	applyFixes := options.ApplyFixes
+	cleanup := options.Cleanup
+	resultsDir := options.ResultsDir
+	showReport := options.ShowReport
+	saveReportOpt := options.SaveReport
+	props := options.Property
+
+	runFunc := func(hash string) (bool, int) {
+		e := platform.GitCheckout(options.ProjectDir, hash)
+		if e != nil {
+			log.Fatalf("Cannot checkout commit %s: %v", hash, e)
+		}
+		log.Infof("Analysing %s", hash)
+		writeProperties(options)
+		platform.Bootstrap(platform.Config.Bootstrap, options.ProjectDir) // TODO: different config prop?
+
+		exitCode := runQodana(ctx, options)
+		if !(exitCode == 0 || exitCode == 255) {
+			log.Errorf("Qodana analysis on %s exited with code %d. Aborting", hash, exitCode)
+			return true, exitCode
+		}
+		return false, exitCode
+	}
+
+	options.DiffScopeFile = scopeFile
+	options.ShowReport = false
+	options.SaveReport = false
+
+	startDir := filepath.Join(resultsDir, "start")
+	options.Property = append(options.Property, "-Dqodana.skip.result=true") // don't print results
+	options.Baseline = ""
+	options.ResultsDir = startDir
+	options.ApplyFixes = false
+	options.Cleanup = false
+	options.FixesStrategy = "none" // this option is deprecated, but the only way to overwrite the possible yaml value
+
+	stop, code := runFunc(options.DiffStart)
+	if stop {
+		return code
+	}
+
+	startSarif := options.GetSarifPath()
+
+	endDir := filepath.Join(resultsDir, "end")
+	options.Property = append(
+		props,
+		"-Dqodana.skip.preamble=true", // don't print the QD logo again
+		"-Didea.headless.enable.statistics=false", // disable statistics for second run
+	)
+	options.ResultsDir = endDir
+	options.Baseline = startSarif
+	options.ApplyFixes = applyFixes
+	options.Cleanup = cleanup
+	options.FixesStrategy = fixesStrategy
+
+	stop, code = runFunc(options.DiffEnd)
+	if stop {
+		return code
+	}
+
+	err = platform.CopyDir(options.ResultsDir, resultsDir)
+	if err != nil {
+		log.Fatal(err)
+	}
+	options.ResultsDir = resultsDir
+	options.ShowReport = showReport
+	options.SaveReport = saveReportOpt
+
+	saveReport(options)
+	return code
+}
+
+// writeChangesFile creates a temp file containing the changes between diffStart and diffEnd
+func writeChangesFile(options *QodanaOptions) (string, error) {
+	if options.DiffStart == "" || options.DiffEnd == "" {
+		return "", nil
+	}
+	diff := platform.GitDiffNameOnly(options.ProjectDir, options.DiffStart, options.DiffEnd)
+	emptyDiff := true
+	for _, e := range diff {
+		emptyDiff = emptyDiff && (len(e) == 0)
+		if !emptyDiff {
+			break
+		}
+	}
+	if emptyDiff {
+		return "", fmt.Errorf("nothing to compare between %s and %s", options.DiffStart, options.DiffEnd)
+	}
+	file, err := os.CreateTemp("", "diff-scope.txt")
+	if err != nil {
+		return "", err
+	}
+	defer func() {
+		err := file.Close()
+		if err != nil {
+			log.Warn("Failed to close scope file ", err)
+		}
+	}()
+
+	_, err = file.WriteString(strings.Join(diff, "\n"))
+	if err != nil {
+		return "", fmt.Errorf("failed to write scope file: %w", err)
+	}
+
+	return file.Name(), nil
 }
 
 func runQodana(ctx context.Context, options *QodanaOptions) int {
@@ -331,20 +453,22 @@ const (
 
 // saveReport saves web files to expect, and generates json.
 func saveReport(opts *QodanaOptions) {
-	if platform.IsContainer() {
-		reportConverter := filepath.Join(Prod.IdeBin(), "intellij-report-converter.jar")
-		if _, err := os.Stat(reportConverter); os.IsNotExist(err) {
-			log.Fatal("Not able to save the report: report-converter is missing")
-			return
-		}
-		log.Println("Generating HTML report ...")
-		if res, err := platform.RunCmd("", platform.QuoteForWindows(Prod.JbrJava()), "-jar", platform.QuoteForWindows(reportConverter), "-s", platform.QuoteForWindows(opts.ProjectDir), "-d", platform.QuoteForWindows(opts.ResultsDir), "-o", platform.QuoteForWindows(opts.ReportResultsPath()), "-n", "result-allProblems.json", "-f"); res > 0 || err != nil {
-			os.Exit(res)
-		}
-		err := platform.CopyDir(filepath.Join(Prod.Home, "web"), opts.ReportDir)
-		if err != nil {
-			log.Fatal("Not able to save the report: ", err)
-			return
-		}
+	if opts.SaveReport || opts.ShowReport || !platform.IsContainer() {
+		return
+	}
+
+	reportConverter := filepath.Join(Prod.IdeBin(), "intellij-report-converter.jar")
+	if _, err := os.Stat(reportConverter); os.IsNotExist(err) {
+		log.Fatal("Not able to save the report: report-converter is missing")
+		return
+	}
+	log.Println("Generating HTML report ...")
+	if res, err := platform.RunCmd("", platform.QuoteForWindows(Prod.JbrJava()), "-jar", platform.QuoteForWindows(reportConverter), "-s", platform.QuoteForWindows(opts.ProjectDir), "-d", platform.QuoteForWindows(opts.ResultsDir), "-o", platform.QuoteForWindows(opts.ReportResultsPath()), "-n", "result-allProblems.json", "-f"); res > 0 || err != nil {
+		os.Exit(res)
+	}
+	err := platform.CopyDir(filepath.Join(Prod.Home, "web"), opts.ReportDir)
+	if err != nil {
+		log.Fatal("Not able to save the report: ", err)
+		return
 	}
 }

@@ -55,6 +55,9 @@ type QodanaOptions struct {
 	Script                  string
 	FailThreshold           string
 	Commit                  string
+	DiffStart               string
+	DiffEnd                 string
+	DiffScopeFile           string
 	AnalysisId              string
 	Env                     []string
 	Volumes                 []string

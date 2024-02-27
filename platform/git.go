@@ -92,3 +92,7 @@ func GitRemoteUrl(cwd string) string {
 func GitBranch(cwd string) string {
 	return gitOutput(cwd, []string{"rev-parse", "--abbrev-ref", "HEAD"})[0]
 }
+
+func GitDiffNameOnly(cwd string, diffStart string, diffEnd string) []string {
+	return gitOutput(cwd, []string{"diff", "--name-only", diffStart, diffEnd})
+}
