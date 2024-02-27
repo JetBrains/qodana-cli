@@ -34,8 +34,8 @@ func TestGetContributors(t *testing.T) {
 	numContributorsWithSameEmail := countContributors(func(c contributor) bool {
 		return c.Author.Email == "dmitry.golovinov@jetbrains.com"
 	}, contributors)
-	if numContributorsWithSameEmail < 2 {
-		t.Error("Expected contributor with same email but different username to be counted multiple times")
+	if numContributorsWithSameEmail > 1 {
+		t.Error("Expected contributor with same email but different username to be counted once")
 	}
 }
 

@@ -46,6 +46,14 @@ type author struct {
 	Username string `json:"username"`
 }
 
+// getId() returns the author's email if it is not empty, otherwise it returns the username.
+func (a *author) getId() string {
+	if a.Email != "" {
+		return a.Email
+	}
+	return a.Username
+}
+
 // isBot returns true if the author is a bot.
 func (a *author) isBot() bool {
 	return strings.HasSuffix(a.Email, cloud.GitHubBotSuffix) || Contains(cloud.CommonGitBots, a.Email)
@@ -108,16 +116,17 @@ func parseCommits(gitLogOutput []string, excludeBots bool) []commit {
 
 // GetContributors returns the list of contributors of the git repository.
 func GetContributors(repoDirs []string, days int, excludeBots bool) []contributor {
-	contributorMap := make(map[author]*contributor)
+	contributorMap := make(map[string]*contributor)
 	for _, repoDir := range repoDirs {
 		gLog := gitLog(repoDir, gitFormat, days)
 		for _, c := range parseCommits(gLog, excludeBots) {
-			if i, ok := contributorMap[*c.Author]; ok {
+			authorId := c.Author.getId()
+			if i, ok := contributorMap[authorId]; ok {
 				i.Count++
 				i.Projects = Append(i.Projects, repoDir)
 				i.Commits = append(i.Commits, c)
 			} else {
-				contributorMap[*c.Author] = &contributor{
+				contributorMap[authorId] = &contributor{
 					Author:   c.Author,
 					Count:    1,
 					Projects: []string{repoDir},
