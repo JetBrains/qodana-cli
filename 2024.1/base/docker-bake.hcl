@@ -4,7 +4,7 @@ group "default" {
 
 target "debian" {
   tags = [
-      "registry.jetbrains.team/p/sa/containers/qodana:debian-base-233"
+    "registry.jetbrains.team/p/sa/containers/qodana:debian-base-241"
   ]
   platforms = ["linux/amd64", "linux/arm64"]
   dockerfile = "debian.Dockerfile"
@@ -21,7 +21,7 @@ target "debian-js" {
     debianbase = "target:debian"
   }
   tags = [
-    "registry.jetbrains.team/p/sa/containers/qodana:debian-js-base-233"
+    "registry.jetbrains.team/p/sa/containers/qodana:debian-js-base-241"
   ]
   platforms = ["linux/amd64", "linux/arm64"]
   dockerfile = "debian.js.Dockerfile"
@@ -38,7 +38,7 @@ target "python" {
     debianbase = "target:debian"
   }
   tags = [
-      "registry.jetbrains.team/p/sa/containers/qodana:python-base-233"
+    "registry.jetbrains.team/p/sa/containers/qodana:python-base-241"
   ]
   platforms = ["linux/amd64", "linux/arm64"]
   dockerfile = "python.Dockerfile"
@@ -55,7 +55,7 @@ target "python-js" {
     pythonbase = "target:python"
   }
   tags = [
-    "registry.jetbrains.team/p/sa/containers/qodana:python-js-base-233"
+    "registry.jetbrains.team/p/sa/containers/qodana:python-js-base-241"
   ]
   platforms = ["linux/amd64", "linux/arm64"]
   dockerfile = "python.js.Dockerfile"
@@ -68,12 +68,12 @@ target "python-js" {
 }
 
 target "other" {
-  name = "${edition}-base-233"
+  name = "${edition}-base-241"
   matrix = {
-    edition = ["dotnet", "go", "js", "php", "cdnet"]
+    edition = ["dotnet", "go", "js", "php", "rust", "ruby", "cdnet"]
   }
   tags = [
-    "registry.jetbrains.team/p/sa/containers/qodana:${edition}-base-233"
+    "registry.jetbrains.team/p/sa/containers/qodana:${edition}-base-241"
   ]
   platforms = ["linux/amd64", "linux/arm64"]
   dockerfile = "${edition}.Dockerfile"

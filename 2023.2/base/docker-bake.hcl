@@ -1,5 +1,5 @@
 group "default" {
-  targets = ["debian", "debian-js", "python", "python-js", "dotnet", "go", "js", "php", "rust", "ruby"] 
+  targets = ["debian", "debian-js", "python", "python-js", "dotnet", "go", "js", "php"]
 }
 
 variable "NODE_TAG" {

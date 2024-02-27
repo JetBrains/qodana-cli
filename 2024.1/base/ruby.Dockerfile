@@ -1,5 +1,8 @@
-ARG RUST_TAG="1.71-slim-bullseye"
-FROM rust:$RUST_TAG
+ARG NODE_TAG="20-bullseye-slim"
+ARG RUBY_TAG="3.3-slim-bullseye"
+
+FROM node:$NODE_TAG AS node_base
+FROM ruby:$RUBY_TAG
 
 # renovate: datasource=repology depName=debian_11/ca-certificates versioning=loose
 ENV CA_CERTIFICATES_VERSION="20210119"
@@ -17,24 +20,26 @@ ENV GNUPG2_VERSION="2.2.27-2+deb11u2"
 ENV LOCALES_VERSION="2.31-13+deb11u8"
 # renovate: datasource=repology depName=debian_11/procps versioning=loose
 ENV PROCPS_VERSION="2:3.3.17-5"
-# renovate: datasource=repology depName=debian_11/pkg-config versioning=loose
-ENV PKGCONFIG_VERSION="0.29.2-1"
+# renovate: datasource=npm depName=eslint
+ENV ESLINT_VERSION="8.57.0"
+# renovate: datasource=npm depName=pnpm
+ENV PNPM_VERSION="8.15.4"
 
-ARG TARGETPLATFORM
+ENV HOME="/root" \
+    LC_ALL="en_US.UTF-8" \
+    QODANA_DIST="/opt/idea" \
+    QODANA_DATA="/data" \
+    QODANA_DOCKER="true"
+ENV JAVA_HOME="$QODANA_DIST/jbr" \
+    QODANA_CONF="$HOME/.config/idea" \
+    PATH="$QODANA_DIST/bin:$PATH"
 
-ENV HOME="/root" LC_ALL="en_US.UTF-8" QODANA_DIST="/opt/idea" QODANA_DATA="/data"
-ENV JAVA_HOME="$QODANA_DIST/jbr" QODANA_DOCKER="true" QODANA_CONF="$HOME/.config/idea"
-
-ENV PATH="$QODANA_DIST/bin:$PATH"
-
-ARG RUSTUP_URL_AMD="https://static.rust-lang.org/rustup/dist/x86_64-unknown-linux-gnu/rustup-init"
-ARG RUSTUP_URL_ARM="https://static.rust-lang.org/rustup/dist/aarch64-unknown-linux-gnu/rustup-init"
-
+# hadolint ignore=SC2174
 RUN --mount=target=/var/lib/apt/lists,type=cache,sharing=locked \
     --mount=target=/var/cache/apt,type=cache,sharing=locked \
     rm -f /etc/apt/apt.conf.d/docker-clean && \
     mkdir -m 777 -p /opt $QODANA_DATA $QODANA_CONF && apt-get update && \
-    DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends  \
+    DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
         ca-certificates=$CA_CERTIFICATES_VERSION \
         curl=$CURL_VERSION \
         fontconfig=$FONTCONFIG_VERSION \
@@ -42,20 +47,29 @@ RUN --mount=target=/var/lib/apt/lists,type=cache,sharing=locked \
         git-lfs=$GIT_LFS_VERSION \
         gnupg2=$GNUPG2_VERSION \
         locales=$LOCALES_VERSION \
-        pkg-config=$PKGCONFIG_VERSION \
         procps=$PROCPS_VERSION && \
     echo 'en_US.UTF-8 UTF-8' > /etc/locale.gen && locale-gen && \
     apt-get autoremove -y && apt-get clean && \
     chmod 777 -R $HOME && \
     echo 'root:x:0:0:root:/root:/bin/bash' > /etc/passwd && chmod 666 /etc/passwd && \
-    git config --global --add safe.directory '*' && \
-    case $TARGETPLATFORM in \
-      linux/amd64) RUSTUP_URL=$RUSTUP_URL_AMD;; \
-      linux/arm64) RUSTUP_URL=$RUSTUP_URL_ARM;; \
-      *) echo "Unsupported architecture $TARGETPLATFORM or you forgot to enable Docker BuildKit" >&2; exit 1;; \
-    esac && \
-    curl -fsSL -o /tmp/rustup-init $RUSTUP_URL && \
-    chmod +x /tmp/rustup-init && /tmp/rustup-init -y --no-modify-path && \
-    /usr/local/cargo/bin/rustup component add rust-src && \
-    chmod -R +w /usr/local/rustup && \
-    rm -rf /tmp/*
+    git config --global --add safe.directory '*'
+
+RUN apt-get update && \
+    apt-get install -y sudo build-essential && \
+    useradd -m -u 1001 -U qodana && \
+    passwd -d qodana && \
+    echo 'qodana ALL=(ALL) NOPASSWD:ALL' >> /etc/sudoers
+
+ENV PATH="/opt/yarn/bin:$PATH"
+COPY --from=node_base /usr/local/bin/node /usr/local/bin/
+COPY --from=node_base /usr/local/include/node /usr/local/include/node
+COPY --from=node_base /usr/local/lib/node_modules /usr/local/lib/node_modules
+COPY --from=node_base /opt/yarn-* /opt/yarn/
+RUN ln -s /usr/local/lib/node_modules/npm/bin/npm-cli.js /usr/local/bin/npm && \
+    ln -s /usr/local/lib/node_modules/npm/bin/npx-cli.js /usr/local/bin/npx && \
+    ln -s /usr/local/lib/node_modules/corepack/dist/corepack.js /usr/local/bin/corepack && \
+    node --version && \
+    npm --version && \
+    yarn --version && \
+    npm install -g eslint@$ESLINT_VERSION pnpm@$PNPM_VERSION && npm config set update-notifier false && \
+    chmod 777 -R "$HOME/.npm" "$HOME/.npmrc"

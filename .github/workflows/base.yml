@@ -13,8 +13,9 @@ on:
 jobs:
   base:
     strategy:
+      fail-fast: false
       matrix:
-        version: [ next, 2023.3, 2023.2 ]
+        version: [ next, 2024.1, 2023.3, 2023.2 ]
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
