@@ -7,10 +7,6 @@ on:
     paths:
       - '**/base/*.Dockerfile'
       - '**/base/*.hcl'
-  pull_request:
-    paths:
-      - '**/base/*.Dockerfile'
-      - '**/base/*.hcl'
   schedule:
     - cron: '0 0 * * 1'
 
