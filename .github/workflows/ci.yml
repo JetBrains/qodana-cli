@@ -7,19 +7,9 @@ on:
   pull_request:
 
 jobs:
-  lint:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-go@v5
-        with:
-          go-version: '1.21'
-      - name: golangci-lint
-        uses: reviewdog/action-golangci-lint@v2
-
+  # lint: disabled as golangci-lint is not yet ready for Go workspaces
   test:
     runs-on: ${{ matrix.os }}
-    needs: [ lint ]
     permissions:
       checks: write
       pull-requests: write
@@ -46,16 +36,18 @@ jobs:
           registry: registry.jetbrains.team
           username: ${{ secrets.SPACE_USERNAME }}
           password: ${{ secrets.SPACE_PASSWORD }}
+      - run: touch linter/tooling/clt.zip # temporary workaround
+        shell: bash
       - name: Run tests (with coverage)
         if: ${{ matrix.os != 'windows-latest' }}
         run: |
           set -euo pipefail
-          go test -json -v ./... -coverprofile coverage-${{ matrix.os }}.out -coverpkg=./... 2>&1 | tee /tmp/gotest.log | gotestfmt
+          go test -json -v $(go list -f '{{.Dir}}/...' -m | xargs) -coverprofile coverage-${{ matrix.os }}.out 2>&1 | tee /tmp/gotest.log | gotestfmt
         env:
           QODANA_LICENSE_ONLY_TOKEN: ${{ secrets.QODANA_LICENSE_ONLY_TOKEN }}
       - name: Run tests (with coverage) for Windows
         if: ${{ matrix.os == 'windows-latest' }}
-        run: go test -v ./... -coverprofile coverage-${{ matrix.os }}.out -coverpkg=./...
+        run: go test -v $(go list -f '{{.Dir}}/...' -m | ForEach-Object { $_ }) -coverprofile coverage-${{ matrix.os }}.out
         env:
           QODANA_LICENSE_ONLY_TOKEN: ${{ secrets.QODANA_LICENSE_ONLY_TOKEN }}
       - name: Upload coverage artifact
@@ -66,7 +58,7 @@ jobs:
 
   code-quality:
     runs-on: ubuntu-latest
-    needs: [ lint, test ]
+    needs: [ test ]
     permissions:
       checks: write
       pull-requests: write
@@ -104,7 +96,7 @@ jobs:
 
   release-nightly:
     runs-on: ubuntu-latest
-    needs: [ lint, test, code-quality ]
+    needs: [ test, code-quality ]
     permissions:
       checks: write
       pull-requests: write
@@ -130,11 +122,12 @@ jobs:
           CHOCOLATEY_VERSION: 1.2.0
       - uses: goreleaser/goreleaser-action@v5
         with:
-          distribution: goreleaser
+          distribution: goreleaser-pro
           version: latest
           args: --snapshot --clean --debug
+          workdir: cli
       - run: |
-          cd dist
+          cd cli/dist
           gh release --repo JetBrains/qodana-cli delete nightly -y || true
           git push --delete origin nightly || true
           gh release --repo JetBrains/qodana-cli create nightly -p -t nightly

@@ -1,5 +1,5 @@
 /*
- * Copyright 2021-2023 JetBrains s.r.o.
+ * Copyright 2021-2024 JetBrains s.r.o.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,7 +17,8 @@
 package cmd
 
 import (
-	"github.com/JetBrains/qodana-cli/v2023/core"
+	"github.com/JetBrains/qodana-cli/v2024/core"
+	"github.com/JetBrains/qodana-cli/v2024/platform"
 	"github.com/spf13/cobra"
 )
 
@@ -38,6 +39,6 @@ func newViewCommand() *cobra.Command {
 		},
 	}
 	flags := cmd.Flags()
-	flags.StringVarP(&options.SarifFile, "sarif-file", "f", core.QodanaSarifName, "Path to the SARIF file")
+	flags.StringVarP(&options.SarifFile, "sarif-file", "f", platform.QodanaSarifName, "Path to the SARIF file")
 	return cmd
 }

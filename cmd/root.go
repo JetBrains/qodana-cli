@@ -1,5 +1,5 @@
 /*
- * Copyright 2021-2023 JetBrains s.r.o.
+ * Copyright 2021-2024 JetBrains s.r.o.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,7 +18,8 @@ package cmd
 
 import (
 	"fmt"
-	"github.com/JetBrains/qodana-cli/v2023/core"
+	"github.com/JetBrains/qodana-cli/v2024/core"
+	"github.com/JetBrains/qodana-cli/v2024/platform"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
@@ -52,17 +53,17 @@ func setDefaultCommandIfNeeded(rootCmd *cobra.Command, args []string) {
 
 // Execute is a main CLI entrypoint: handles user interrupt, CLI start and everything else.
 func Execute() {
-	if !core.IsContainer() && os.Geteuid() == 0 {
-		core.WarningMessage("Running the tool as root is dangerous: please run it as a regular user")
+	if !platform.IsContainer() && os.Geteuid() == 0 {
+		platform.WarningMessage("Running the tool as root is dangerous: please run it as a regular user")
 	}
-	go core.CheckForUpdates(core.Version)
-	if !core.IsInteractive() || os.Getenv("NO_COLOR") != "" { // http://no-color.org
-		core.DisableColor()
+	go core.CheckForUpdates(platform.Version)
+	if !platform.IsInteractive() || os.Getenv("NO_COLOR") != "" { // http://no-color.org
+		platform.DisableColor()
 	}
 
 	setDefaultCommandIfNeeded(rootCommand, os.Args)
 	if err := rootCommand.Execute(); err != nil {
-		core.CheckForUpdates(core.Version)
+		core.CheckForUpdates(platform.Version)
 		_, err = fmt.Fprintf(os.Stderr, "error running command: %s\n", err)
 		if err != nil {
 			return
@@ -70,7 +71,7 @@ func Execute() {
 		os.Exit(1)
 	}
 
-	core.CheckForUpdates(core.Version)
+	core.CheckForUpdates(platform.Version)
 }
 
 // newRootCommand constructs root command.
@@ -78,8 +79,8 @@ func newRootCommand() *cobra.Command {
 	rootCmd := &cobra.Command{
 		Use:     "qodana",
 		Short:   "Run Qodana CLI",
-		Long:    core.Info,
-		Version: core.Version,
+		Long:    platform.InfoString(platform.Version), // TODO : return to core
+		Version: platform.Version,
 		PersistentPreRun: func(cmd *cobra.Command, args []string) {
 			logLevel, err := log.ParseLevel(viper.GetString("log-level"))
 			if err != nil {
@@ -106,8 +107,8 @@ func newRootCommand() *cobra.Command {
 
 var rootCommand = newRootCommand()
 
-// init adds all child commands to the root command.
-func init() {
+// InitCli adds all child commands to the root command.
+func InitCli() {
 	rootCommand.AddCommand(
 		newInitCommand(),
 		newScanCommand(),
@@ -118,4 +119,9 @@ func init() {
 		newContributorsCommand(),
 		newClocCommand(),
 	)
+}
+
+// InitWithCustomCommands adds custom commands to the root command.
+func InitWithCustomCommands(commands []*cobra.Command) {
+	rootCommand.AddCommand(commands...)
 }

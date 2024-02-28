@@ -1,22 +1,23 @@
 /*
-* Copyright 2021-2023 JetBrains s.r.o.
-*
-* Licensed under the Apache License, Version 2.0 (the "License");
-* you may not use this file except in compliance with the License.
-* You may obtain a copy of the License at
-*
-* https://www.apache.org/licenses/LICENSE-2.0
-*
-* Unless required by applicable law or agreed to in writing, software
-* distributed under the License is distributed on an "AS IS" BASIS,
-* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-* See the License for the specific language governing permissions and
-* limitations under the License.
+ * Copyright 2021-2024 JetBrains s.r.o.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * https://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  */
 
 package core
 
 import (
+	"github.com/JetBrains/qodana-cli/v2024/platform"
 	"os"
 	"path/filepath"
 	"runtime"
@@ -28,7 +29,7 @@ func TestGetIde(t *testing.T) {
 	runtime.GOOS == "darwin" {
 		t.Skip("Mac OS not supported in native")
 	}
-	for _, installer := range AllNativeCodes {
+	for _, installer := range platform.AllNativeCodes {
 		ide := getIde(installer)
 		if ide == nil {
 			t.Fail()
@@ -54,22 +55,24 @@ func TestDownloadAndInstallIDE(t *testing.T) {
 func DownloadAndInstallIDE(ideName string, t *testing.T) {
 	tempDir, err := os.MkdirTemp("", "productByCode")
 	if err != nil {
-		ErrorMessage("Cannot create temp dir: %s", err)
+		platform.ErrorMessage("Cannot create temp dir: %s", err)
 	}
 
 	defer func(path string) {
 		err := os.RemoveAll(path)
 		if err != nil {
-			ErrorMessage("Cannot clean up temp dir: %s", err)
+			platform.ErrorMessage("Cannot clean up temp dir: %s", err)
 		}
 	}(tempDir) // clean up
 
 	opts := &QodanaOptions{
-		Ide: ideName,
+		&platform.QodanaOptions{
+			Ide: ideName,
+		},
 	}
 	ide := downloadAndInstallIDE(opts, tempDir, nil)
 	if ide == "" {
-		ErrorMessage("Cannot install %s", ideName)
+		platform.ErrorMessage("Cannot install %s", ideName)
 		t.Fail()
 	}
 
@@ -81,7 +84,7 @@ func DownloadAndInstallIDE(ideName string, t *testing.T) {
 	defer func(path string) {
 		err := os.RemoveAll(path)
 		if err != nil {
-			ErrorMessage("Cannot clean up temp dir: %s", err)
+			platform.ErrorMessage("Cannot clean up temp dir: %s", err)
 		}
 	}(ide) // clean up
 	if appInfoXml.Names.Product == "" {

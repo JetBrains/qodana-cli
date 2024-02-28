@@ -1,5 +1,5 @@
 /*
- * Copyright 2021-2023 JetBrains s.r.o.
+ * Copyright 2021-2024 JetBrains s.r.o.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,14 +19,15 @@ package core
 import (
 	"errors"
 	"fmt"
-	"github.com/JetBrains/qodana-cli/v2023/cloud"
+	"github.com/JetBrains/qodana-cli/v2024/cloud"
+	"github.com/JetBrains/qodana-cli/v2024/platform"
 	"log"
 	"os"
 	"strings"
 )
 
 func requestLicenseData(token string) cloud.LicenseData {
-	licenseEndpoint := cloud.GetEnvWithDefault(QodanaLicenseEndpoint, "https://linters.qodana.cloud")
+	licenseEndpoint := cloud.GetEnvWithDefault(platform.QodanaLicenseEndpoint, "https://linters.qodana.cloud")
 
 	licenseDataResponse, err := cloud.RequestLicenseData(licenseEndpoint, token)
 	if errors.Is(err, cloud.TokenDeclinedError) {
@@ -43,13 +44,13 @@ func SetupLicenseAndProjectHash(token string) {
 	if token != "" {
 		licenseData = requestLicenseData(token)
 		if licenseData.ProjectIdHash != "" {
-			err := os.Setenv(QodanaProjectIdHash, licenseData.ProjectIdHash)
+			err := os.Setenv(platform.QodanaProjectIdHash, licenseData.ProjectIdHash)
 			if err != nil {
 				log.Fatal(err)
 			}
 		}
 	}
-	_, exists := os.LookupEnv(QodanaLicense)
+	_, exists := os.LookupEnv(platform.QodanaLicense)
 	if exists {
 		return
 	}
@@ -73,6 +74,16 @@ func SetupLicenseAndProjectHash(token string) {
 		log.Fatal(cloud.EmptyTokenMessage)
 	}
 
+	licenseEndpoint := cloud.GetEnvWithDefault(platform.QodanaLicenseEndpoint, "https://linters.qodana.cloud")
+
+	licenseDataResponse, err := cloud.RequestLicenseData(licenseEndpoint, token)
+	if errors.Is(err, cloud.TokenDeclinedError) {
+		log.Fatalf("License request: %v\n%s", err, cloud.DeclinedTokenErrorMessage)
+	}
+	if err != nil {
+		log.Fatalf("License request: %v\n%s", err, cloud.GeneralLicenseErrorMessage)
+	}
+	licenseData = cloud.DeserializeLicenseData(licenseDataResponse)
 	if strings.ToLower(licenseData.LicensePlan) == "community" {
 		log.Fatalf("Your Qodana Cloud organization has Community license that doesn’t support \"%s\" linter, "+
 			"please try one of the community linters instead: %s or obtain Ultimate "+
@@ -85,7 +96,7 @@ func SetupLicenseAndProjectHash(token string) {
 	if licenseData.LicenseKey == "" {
 		log.Fatalf("License key should not be empty\n")
 	}
-	err := os.Setenv(QodanaLicense, licenseData.LicenseKey)
+	err = os.Setenv(platform.QodanaLicense, licenseData.LicenseKey)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -93,25 +104,8 @@ func SetupLicenseAndProjectHash(token string) {
 
 func allCommunityNames() string {
 	var nameList []string
-	for _, code := range allSupportedFreeCodes {
+	for _, code := range platform.AllSupportedFreeCodes {
 		nameList = append(nameList, "\""+getProductNameFromCode(code)+"\"")
 	}
 	return strings.Join(nameList, ", ")
-}
-
-func SetupLicenseToken(opts *QodanaOptions) {
-	token := opts.loadToken(false)
-	licenseOnlyToken := os.Getenv(QodanaLicenseOnlyToken)
-
-	if token == "" && licenseOnlyToken != "" {
-		cloud.Token = cloud.LicenseToken{
-			Token:       licenseOnlyToken,
-			LicenseOnly: true,
-		}
-	} else {
-		cloud.Token = cloud.LicenseToken{
-			Token:       token,
-			LicenseOnly: false,
-		}
-	}
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright 2021-2023 JetBrains s.r.o.
+ * Copyright 2021-2024 JetBrains s.r.o.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,124 +17,18 @@
 package core
 
 import (
-	"crypto/md5"
-	"crypto/sha256"
-	"encoding/hex"
 	"fmt"
-	"github.com/pterm/pterm"
-	"io"
-	"net/http"
-	"os"
-	"os/exec"
-	"path/filepath"
-	"runtime"
-	"strconv"
-	"strings"
-
+	"github.com/JetBrains/qodana-cli/v2024/platform"
 	"github.com/shirou/gopsutil/v3/process"
 	log "github.com/sirupsen/logrus"
+	"os"
+	"os/exec"
+	"strings"
 )
-
-// lower a shortcut to strings.ToLower.
-func lower(s string) string {
-	return strings.ToLower(s)
-}
-
-// Contains checks if a string is in a given slice.
-func Contains(s []string, str string) bool {
-	for _, v := range s {
-		if v == str {
-			return true
-		}
-	}
-	return false
-}
-
-// reverse reverses the given string slice.
-func reverse(s []string) []string {
-	for i, j := 0, len(s)-1; i < j; i, j = i+1, j-1 {
-		s[i], s[j] = s[j], s[i]
-	}
-	return s
-}
-
-// getHash returns a SHA256 hash of a given string.
-func getHash(s string) string {
-	sha256sum := sha256.Sum256([]byte(s))
-	return hex.EncodeToString(sha256sum[:])
-}
-
-// Append appends a string to a slice if it's not already there.
-//
-//goland:noinspection GoUnnecessarilyExportedIdentifiers
-func Append(slice []string, elems ...string) []string {
-	if !Contains(slice, elems[0]) {
-		slice = append(slice, elems[0])
-	}
-	return slice
-}
-
-// CheckDirFiles checks if a directory contains files.
-func CheckDirFiles(dir string) bool {
-	files, err := os.ReadDir(dir)
-	if err != nil {
-		return false
-	}
-	return len(files) > 0
-}
-
-// findFiles returns a slice of files with the given extensions from the given root (recursive).
-func findFiles(root string, extensions []string) []string {
-	var files []string
-	err := filepath.Walk(root, func(path string, info os.FileInfo, err error) error {
-		if err != nil {
-			return err
-		}
-		fileExtension := filepath.Ext(path)
-		if Contains(extensions, fileExtension) {
-			files = append(files, path)
-		}
-
-		return nil
-	})
-	if err != nil {
-		log.Fatal(err)
-	}
-	return files
-}
-
-// getAzureJobUrl returns the Azure Pipelines job URL.
-func getAzureJobUrl() string {
-	if server := os.Getenv("SYSTEM_TEAMFOUNDATIONCOLLECTIONURI"); server != "" {
-		return strings.Join([]string{
-			server,
-			os.Getenv("SYSTEM_TEAMPROJECT"),
-			"/_build/results?buildId=",
-			os.Getenv("BUILD_BUILDID"),
-		}, "")
-	}
-	return ""
-}
-
-// getSpaceJobUrl returns the Space job URL.
-func getSpaceRemoteUrl() string {
-	if server := os.Getenv("JB_SPACE_API_URL"); server != "" {
-		return strings.Join([]string{
-			"ssh://git@git.",
-			server,
-			"/",
-			os.Getenv("JB_SPACE_PROJECT_KEY"),
-			"/",
-			os.Getenv("JB_SPACE_GIT_REPOSITORY_NAME"),
-			".git",
-		}, "")
-	}
-	return ""
-}
 
 // findProcess using gopsutil to find process by name.
 func findProcess(processName string) bool {
-	if IsContainer() {
+	if platform.IsContainer() {
 		return isProcess(processName)
 	}
 	p, err := process.Processes()
@@ -170,79 +64,6 @@ func isProcess(find string) bool {
 	return false
 }
 
-// quoteIfSpace wraps in '"' if '`s`' Contains space.
-func quoteIfSpace(s string) string {
-	if strings.Contains(s, " ") {
-		return "\"" + s + "\""
-	} else {
-		return s
-	}
-}
-
-// QuoteForWindows wraps in '"' if '`s`' contains space on windows.
-func QuoteForWindows(s string) string {
-	if //goland:noinspection GoBoolExpressions
-	strings.Contains(s, " ") && runtime.GOOS == "windows" {
-		return "\"" + s + "\""
-	} else {
-		return s
-	}
-}
-
-// getRemoteUrl returns remote url of the current git repository.
-func getRemoteUrl() string {
-	url := os.Getenv(qodanaRemoteUrl)
-	if url == "" {
-		out, err := exec.Command("git", "remote", "get-url", "origin").Output()
-		if err != nil {
-			return ""
-		}
-		url = string(out)
-	}
-	return strings.TrimSpace(url)
-}
-
-// getDeviceIdSalt set consistent device.id based on given repo upstream #SA-391.
-func getDeviceIdSalt() []string {
-	salt := os.Getenv("SALT")
-	deviceId := os.Getenv("DEVICEID")
-	if salt == "" || deviceId == "" {
-		hash := "00000000000000000000000000000000"
-		remoteUrl := getRemoteUrl()
-		if remoteUrl != "" {
-			hash = fmt.Sprintf("%x", md5.Sum(append([]byte("1n1T-$@Lt-"), remoteUrl...)))
-		}
-		if salt == "" {
-			salt = fmt.Sprintf("%x", md5.Sum([]byte("$eC0nd-$@Lt-"+hash)))
-		}
-		if deviceId == "" {
-			deviceId = fmt.Sprintf("200820300000000-%s-%s-%s-%s", hash[0:4], hash[4:8], hash[8:12], hash[12:24])
-		}
-	}
-	return []string{deviceId, salt}
-}
-
-func writeFileIfNew(filepath string, content string) {
-	if _, err := os.Stat(filepath); os.IsNotExist(err) {
-		if err := os.WriteFile(filepath, []byte(content), 0o755); err != nil {
-			log.Fatal(err)
-		}
-	}
-}
-
-func getPluginIds(plugins []Plugin) []string {
-	ids := make([]string, len(plugins))
-	for i, plugin := range plugins {
-		ids[i] = plugin.Id
-	}
-	return ids
-}
-
-// IsContainer checks if Qodana is running in a container.
-func IsContainer() bool {
-	return os.Getenv(qodanaDockerEnv) != ""
-}
-
 // isInstalled checks if git is installed.
 func isInstalled(what string) bool {
 	help := ""
@@ -252,7 +73,7 @@ func isInstalled(what string) bool {
 
 	_, err := exec.LookPath(what)
 	if err != nil {
-		WarningMessage(
+		platform.WarningMessage(
 			"Unable to find %s"+help,
 			what,
 		)
@@ -283,69 +104,42 @@ func createUser(fn string) {
 	}
 }
 
-func DownloadFile(filepath string, url string, spinner *pterm.SpinnerPrinter) error {
-	response, err := http.Head(url)
-	if err != nil {
-		return err
-	}
-	size, _ := strconv.Atoi(response.Header.Get("Content-Length"))
-
-	resp, err := http.Get(url)
-	if err != nil {
-		return err
-	}
-
-	defer func(Body io.ReadCloser) {
-		err := Body.Close()
-		if err != nil {
-			log.Fatalf("Error while closing HTTP stream: %v", err)
-		}
-	}(resp.Body)
-
-	out, err := os.Create(filepath)
-	if err != nil {
-		return err
-	}
-
-	defer func(out *os.File) {
-		err := out.Close()
-		if err != nil {
-			log.Fatalf("Error while closing output file: %v", err)
-		}
-	}(out)
-
-	buffer := make([]byte, 1024)
-	total := 0
-	lastTotal := 0
-	text := ""
-	if spinner != nil {
-		text = spinner.Text
-	}
-	for {
-		length, err := resp.Body.Read(buffer)
-		if err != nil && err != io.EOF {
-			return err
-		}
-		total += length
-		if spinner != nil && total-lastTotal > 1024*1024 {
-			lastTotal = total
-			spinner.UpdateText(fmt.Sprintf("%s (%d %%)", text, 100*total/size))
-		}
-		if length == 0 {
-			break
-		}
-		if _, err = out.Write(buffer[:length]); err != nil {
-			return err
+func writeFileIfNew(filepath string, content string) {
+	if _, err := os.Stat(filepath); os.IsNotExist(err) {
+		if err := os.WriteFile(filepath, []byte(content), 0o755); err != nil {
+			log.Fatal(err)
 		}
 	}
+}
 
-	if total != size {
-		return fmt.Errorf("downloaded file size doesn't match expected size")
+func getPluginIds(plugins []platform.Plugin) []string {
+	ids := make([]string, len(plugins))
+	for i, plugin := range plugins {
+		ids[i] = plugin.Id
 	}
+	return ids
+}
 
-	if spinner != nil {
-		spinner.UpdateText(fmt.Sprintf("%s (100 %%)", text))
+func (o *QodanaOptions) guessProduct() string {
+	if o.Ide != "" {
+		productCode := strings.TrimSuffix(o.Ide, EapSuffix)
+		if _, ok := Products[productCode]; ok {
+			return productCode
+		}
+		return ""
+	} else if o.Linter != "" {
+		// if Linter contains registry.jetbrains.team/p/sa/containers/ or https://registry.jetbrains.team/p/sa/containers/
+		// then replace it with jetbrains/ and do the comparison
+		linter := strings.TrimPrefix(o.Linter, "https://")
+		if strings.HasPrefix(linter, "registry.jetbrains.team/p/sa/containers/") {
+			linter = strings.TrimPrefix(linter, "registry.jetbrains.team/p/sa/containers/")
+			linter = "jetbrains/" + linter
+		}
+		for k, v := range platform.DockerImageMap {
+			if strings.HasPrefix(linter, v) {
+				return k
+			}
+		}
 	}
-
-	return nil
+	return ""
 }

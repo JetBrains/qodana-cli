@@ -1,5 +1,5 @@
 /*
- * Copyright 2021-2023 JetBrains s.r.o.
+ * Copyright 2021-2024 JetBrains s.r.o.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,14 +17,15 @@
 package cmd
 
 import (
-	"github.com/JetBrains/qodana-cli/v2023/core"
+	"github.com/JetBrains/qodana-cli/v2024/core"
+	"github.com/JetBrains/qodana-cli/v2024/platform"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 )
 
 // newShowCommand returns a new instance of the show command.
 func newShowCommand() *cobra.Command {
-	options := &core.QodanaOptions{}
+	options := &platform.QodanaOptions{}
 	openDir := false
 	cmd := &cobra.Command{
 		Use:   "show",
@@ -43,7 +44,7 @@ This command serves the Qodana report locally and opens a browser to it.`,
 					log.Fatal(err)
 				}
 			} else {
-				core.ShowReport(
+				platform.ShowReport(
 					options.ResultsDir,
 					options.ReportDir,
 					options.Port,
@@ -58,6 +59,6 @@ This command serves the Qodana report locally and opens a browser to it.`,
 	flags.StringVarP(&options.ReportDir, "report-dir", "r", "", "Override directory to save Qodana HTML report to (default <userCacheDir>/JetBrains/<linter>/results/report)")
 	flags.IntVarP(&options.Port, "port", "p", 8080, "Specify port to serve report at")
 	flags.BoolVarP(&openDir, "dir-only", "d", false, "Open report directory only, don't serve it")
-	flags.StringVarP(&options.YamlName, "yaml-name", "y", core.FindQodanaYaml(options.ProjectDir), "Override qodana.yaml name")
+	flags.StringVarP(&options.YamlName, "yaml-name", "y", platform.FindQodanaYaml(options.ProjectDir), "Override qodana.yaml name")
 	return cmd
 }

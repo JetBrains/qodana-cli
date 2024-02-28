@@ -20,7 +20,7 @@ Clone the project anywhere:
 git clone git@github.com:JetBrains/qodana-cli.git
 ```
 
-`cd` into the directory and run for debug:
+`cd` into the `cli` directory and run for debug:
 
 ```sh
 go run main.go
@@ -32,15 +32,9 @@ Build a binary with
 go build -o qd main.go
 ```
 
-Lint your code with `golangci-lint`:
-
-```sh
-golangci-lint run
-```
-
 Test your code with coverage:
 ```sh
-go test -v ./... -coverprofile cover.out
+go test -v $(go list -f '{{.Dir}}/...' -m | xargs)
 ```
 
 Dry run goreleaser:
@@ -62,6 +56,29 @@ You can follow the documentation on
 Push your branch to your repository fork and open a pull request against the
 main branch.
 
+## 'Patching' an existing Qodana image
+
+For testing purposes, it can be necessary to patch an existing Qodana image with a custom qodana-cli build.
+To achieve that, first build a linux binary:
+```shell
+# assume we're in the cli directory
+env GOOS=linux CGO_ENABLED=0 go build -o qd-custom
+```
+
+Then build a new docker image, replacing the bundled qodana-cli with the newly built one:
+```dockerfile
+# Use any existing qodana image
+FROM registry.jetbrains.team/p/sa/containers/qodana-go:latest
+COPY qd-custom /opt/idea/bin/qodana
+```
+```shell
+docker build . -t qd-image
+```
+
+And lastly run the custom image with the custom binary:
+```shell
+/path/to/qodana-cli/cli/qd-custom scan --linter="docker.io/library/qd-image" --skip-pull
+```
 
 ## Release a new version
 

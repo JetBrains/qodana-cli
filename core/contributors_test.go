@@ -1,5 +1,5 @@
 /*
- * Copyright 2021-2023 JetBrains s.r.o.
+ * Copyright 2021-2024 JetBrains s.r.o.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -34,8 +34,8 @@ func TestGetContributors(t *testing.T) {
 	numContributorsWithSameEmail := countContributors(func(c contributor) bool {
 		return c.Author.Email == "dmitry.golovinov@jetbrains.com"
 	}, contributors)
-	if numContributorsWithSameEmail < 2 {
-		t.Error("Expected contributor with same email but different username to be counted multiple times")
+	if numContributorsWithSameEmail != 1 {
+		t.Error("Expected contributor with same email but different username to be counted once")
 	}
 }
 

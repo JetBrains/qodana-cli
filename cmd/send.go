@@ -1,5 +1,5 @@
 /*
- * Copyright 2021-2023 JetBrains s.r.o.
+ * Copyright 2021-2024 JetBrains s.r.o.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,14 +18,16 @@ package cmd
 
 import (
 	"fmt"
-	"github.com/JetBrains/qodana-cli/v2023/cloud"
-	"github.com/JetBrains/qodana-cli/v2023/core"
+	"github.com/JetBrains/qodana-cli/v2024/cloud"
+	"github.com/JetBrains/qodana-cli/v2024/core"
+	"github.com/JetBrains/qodana-cli/v2024/platform"
 	"github.com/spf13/cobra"
+	"path/filepath"
 )
 
 // newShowCommand returns a new instance of the show command.
 func newSendCommand() *cobra.Command {
-	options := &core.QodanaOptions{}
+	options := &platform.QodanaOptions{}
 	cmd := &cobra.Command{
 		Use:   "send",
 		Short: "Send a Qodana report to Cloud",
@@ -33,12 +35,20 @@ func newSendCommand() *cobra.Command {
 
 If report directory is not specified, the latest report will be fetched from the default linter results location.
 
-If you are using other Qodana Cloud instance than https://qodana.cloud/, override it with declaring %s environment variable.`, core.PrimaryBold(cloud.QodanaEndpoint)),
+If you are using other Qodana Cloud instance than https://qodana.cloud/, override it by declaring the %s environment variable.`, platform.PrimaryBold(cloud.QodanaEndpoint)),
 		Run: func(cmd *cobra.Command, args []string) {
 			options.FetchAnalyzerSettings()
-			core.SendReport(
+			var publisherPath string
+			if platform.IsContainer() {
+				publisherPath = filepath.Join(core.Prod.IdeBin(), platform.PublisherJarName) // TODO : what to do with PROD
+			} else {
+				publisherPath = filepath.Join(options.ConfDirPath(), platform.PublisherJarName)
+			}
+			platform.SendReport(
 				options,
 				options.ValidateToken(false),
+				publisherPath,
+				core.Prod.JbrJava(),
 			)
 		},
 	}
@@ -47,6 +57,6 @@ If you are using other Qodana Cloud instance than https://qodana.cloud/, overrid
 	flags.StringVarP(&options.ProjectDir, "project-dir", "i", ".", "Root directory of the inspected project")
 	flags.StringVarP(&options.ResultsDir, "results-dir", "o", "", "Override directory to save Qodana inspection results to (default <userCacheDir>/JetBrains/<linter>/results)")
 	flags.StringVarP(&options.ReportDir, "report-dir", "r", "", "Override directory to save Qodana HTML report to (default <userCacheDir>/JetBrains/<linter>/results/report)")
-	flags.StringVarP(&options.YamlName, "yaml-name", "y", core.FindQodanaYaml(options.ProjectDir), "Override qodana.yaml name")
+	flags.StringVarP(&options.YamlName, "yaml-name", "y", platform.FindQodanaYaml(options.ProjectDir), "Override qodana.yaml name")
 	return cmd
 }

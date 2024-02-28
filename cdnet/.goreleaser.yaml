@@ -1,0 +1,19 @@
+project_name: qodana-cdnet
+builds:
+  - env:
+      - CGO_ENABLED=0
+    goos:
+      - linux
+      - windows
+      - darwin
+    goarch:
+      - amd64
+      - arm64
+    ldflags:
+      - -s -w -X github.com/JetBrains/qodana-cli/v2024/cdnet.version={{ .Env.VERSION }} -X main.buildDateStr={{ .Date }}
+snapshot:
+  name_template: "{{ incpatch .Version }}-next"
+archives:
+  -
+    format: binary
+    name_template: "{{ .Binary }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}"

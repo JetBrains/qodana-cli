@@ -1,5 +1,5 @@
 /*
- * Copyright 2021-2023 JetBrains s.r.o.
+ * Copyright 2021-2024 JetBrains s.r.o.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,7 +18,8 @@ package cmd
 
 import (
 	"fmt"
-	"github.com/JetBrains/qodana-cli/v2023/core"
+	"github.com/JetBrains/qodana-cli/v2024/core"
+	"github.com/JetBrains/qodana-cli/v2024/platform"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 	"path/filepath"
@@ -26,7 +27,7 @@ import (
 
 // newInitCommand returns a new instance of the show command.
 func newInitCommand() *cobra.Command {
-	options := &core.QodanaOptions{}
+	options := &platform.QodanaOptions{}
 	force := false
 	cmd := &cobra.Command{
 		Use:   "init",
@@ -34,47 +35,47 @@ func newInitCommand() *cobra.Command {
 		Long:  `Configure a project for Qodana: prepare Qodana configuration file by analyzing the project structure and generating a default configuration qodana.yaml file.`,
 		Run: func(cmd *cobra.Command, args []string) {
 			if options.YamlName == "" {
-				options.YamlName = core.FindQodanaYaml(options.ProjectDir)
+				options.YamlName = platform.FindQodanaYaml(options.ProjectDir)
 			}
-			qodanaYaml := core.LoadQodanaYaml(options.ProjectDir, options.YamlName)
+			qodanaYaml := platform.LoadQodanaYaml(options.ProjectDir, options.YamlName)
 			if (qodanaYaml.Linter == "" && qodanaYaml.Ide == "") || force {
 				absPath, err := filepath.Abs(options.ProjectDir)
 				if err != nil {
 					log.Fatal(err)
 				}
 				options.ProjectDir = absPath
-				if core.IsInteractive() && !core.AskUserConfirm(fmt.Sprintf("Do you want to set up Qodana in %s", core.PrimaryBold(options.ProjectDir))) {
+				if platform.IsInteractive() && !platform.AskUserConfirm(fmt.Sprintf("Do you want to set up Qodana in %s", platform.PrimaryBold(options.ProjectDir))) {
 					return
 				}
-				analyzer := core.GetAnalyzer(options.ProjectDir, options.YamlName)
-				if core.IsNativeAnalyzer(analyzer) {
+				analyzer := platform.GetAnalyzer(options.ProjectDir, options.YamlName)
+				if platform.IsNativeAnalyzer(analyzer) {
 					options.Ide = analyzer
 				} else {
 					options.Linter = analyzer
 				}
 			} else {
-				core.EmptyMessage()
+				platform.EmptyMessage()
 				var analyzer string
 				if qodanaYaml.Ide != "" {
 					analyzer = qodanaYaml.Ide
 				} else if qodanaYaml.Linter != "" {
 					analyzer = qodanaYaml.Linter
 				}
-				core.SuccessMessage(
+				platform.SuccessMessage(
 					"The product to use was already configured before: %s. Run the command with %s flag to re-init the project",
-					core.PrimaryBold(analyzer),
-					core.PrimaryBold("-f"),
+					platform.PrimaryBold(analyzer),
+					platform.PrimaryBold("-f"),
 				)
 			}
-			if core.IsInteractive() && qodanaYaml.IsDotNet() && (qodanaYaml.DotNet.IsEmpty() || force) {
-				if core.GetDotNetConfig(options.ProjectDir, options.YamlName) {
-					core.SuccessMessage("The .NET configuration was successfully set")
+			if platform.IsInteractive() && qodanaYaml.IsDotNet() && (qodanaYaml.DotNet.IsEmpty() || force) {
+				if platform.GetDotNetConfig(options.ProjectDir, options.YamlName) {
+					platform.SuccessMessage("The .NET configuration was successfully set")
 				}
 			}
-			core.PrintFile(filepath.Join(options.ProjectDir, options.YamlName))
+			platform.PrintFile(filepath.Join(options.ProjectDir, options.YamlName))
 			options.Linter = qodanaYaml.Linter
 			options.Ide = qodanaYaml.Ide
-			if options.RequiresToken() {
+			if options.RequiresToken(core.Prod.EAP || core.Prod.IsCommunity()) {
 				options.ValidateToken(force)
 			}
 		},

@@ -1,5 +1,5 @@
 /*
- * Copyright 2021-2023 JetBrains s.r.o.
+ * Copyright 2021-2024 JetBrains s.r.o.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,7 +21,8 @@ import (
 	"encoding/xml"
 	"errors"
 	"fmt"
-	"github.com/JetBrains/qodana-cli/v2023/cloud"
+	"github.com/JetBrains/qodana-cli/v2024/cloud"
+	"github.com/JetBrains/qodana-cli/v2024/platform"
 	"github.com/owenrumney/go-sarif/v2/sarif"
 	"os"
 	"path/filepath"
@@ -46,7 +47,7 @@ func getIdeExitCode(resultsDir string, c int) (res int) {
 	if len(s.Runs) > 0 && len(s.Runs[0].Invocations) > 0 {
 		if tmp := s.Runs[0].Invocations[0].ExitCode; tmp != nil {
 			res = *tmp
-			if res < QodanaSuccessExitCode || res > QodanaFailThresholdExitCode {
+			if res < platform.QodanaSuccessExitCode || res > platform.QodanaFailThresholdExitCode {
 				log.Printf("Wrong exitCode in sarif: %d", res)
 				return 1
 			}
@@ -58,44 +59,51 @@ func getIdeExitCode(resultsDir string, c int) (res int) {
 	return c
 }
 
-func runQodanaLocal(opts *QodanaOptions) int {
+func runQodanaLocal(opts *QodanaOptions) (int, error) {
 	args := getIdeRunCommand(opts)
-	res := getIdeExitCode(opts.ResultsDir, RunCmdWithTimeout("", opts.GetAnalysisTimeout(), QodanaTimeoutExitCodePlaceholder, args...))
-	if res > QodanaSuccessExitCode && res != QodanaFailThresholdExitCode {
+	ideProcess, err := platform.RunCmdWithTimeout(
+		"",
+		os.Stdout, os.Stderr,
+		opts.GetAnalysisTimeout(),
+		platform.QodanaTimeoutExitCodePlaceholder,
+		args...,
+	)
+	res := getIdeExitCode(opts.ResultsDir, ideProcess)
+	if res > platform.QodanaSuccessExitCode && res != platform.QodanaFailThresholdExitCode {
 		postAnalysis(opts)
-		return res
+		return res, err
 	}
 	if opts.SaveReport || opts.ShowReport {
 		saveReport(opts)
 	}
 	postAnalysis(opts)
-	return res
+	return res, err
 }
 
 func getIdeRunCommand(opts *QodanaOptions) []string {
-	args := []string{QuoteForWindows(Prod.IdeScript), "inspect", "qodana"}
-	args = append(args, getIdeArgs(opts)...)
-	args = append(args, QuoteForWindows(opts.ProjectDir), QuoteForWindows(opts.ResultsDir))
+	args := []string{platform.QuoteForWindows(Prod.IdeScript), "inspect", "qodana"}
+	args = append(args, GetIdeArgs(opts)...)
+	args = append(args, platform.QuoteForWindows(opts.ProjectDir), platform.QuoteForWindows(opts.ResultsDir))
 	return args
 }
 
-// getIdeArgs returns qodana command options.
-func getIdeArgs(opts *QodanaOptions) []string {
+// GetIdeArgs returns qodana command options.
+func GetIdeArgs(opts *QodanaOptions) []string {
 	arguments := make([]string, 0)
 	if opts.Linter != "" && opts.SaveReport {
 		arguments = append(arguments, "--save-report")
 	}
 	if opts.SourceDirectory != "" {
-		arguments = append(arguments, "--source-directory", QuoteForWindows(opts.SourceDirectory))
+		arguments = append(arguments, "--source-directory", platform.QuoteForWindows(opts.SourceDirectory))
 	}
 	if opts.DisableSanity {
 		arguments = append(arguments, "--disable-sanity")
 	}
 	if opts.ProfileName != "" {
-		arguments = append(arguments, "--profile-name", quoteIfSpace(opts.ProfileName))
+		arguments = append(arguments, "--profile-name", platform.QuoteIfSpace(opts.ProfileName))
 	}
 	if opts.ProfilePath != "" {
-		arguments = append(arguments, "--profile-path", QuoteForWindows(opts.ProfilePath))
+		arguments = append(arguments, "--profile-path", platform.QuoteForWindows(opts.ProfilePath))
 	}
 	if opts.RunPromo != "" {
 		arguments = append(arguments, "--run-promo", opts.RunPromo)
@@ -104,7 +112,7 @@ func getIdeArgs(opts *QodanaOptions) []string {
 		arguments = append(arguments, "--script", opts.Script)
 	}
 	if opts.Baseline != "" {
-		arguments = append(arguments, "--baseline", QuoteForWindows(opts.Baseline))
+		arguments = append(arguments, "--baseline", platform.QuoteForWindows(opts.Baseline))
 	}
 	if opts.BaselineIncludeAbsent {
 		arguments = append(arguments, "--baseline-include-absent")
@@ -142,19 +150,19 @@ func getIdeArgs(opts *QodanaOptions) []string {
 		}
 	}
 
-	prod := opts.guessProduct()
-	if prod == QDNETC || prod == QDCL {
+	prod := opts.guessProduct() // TODO : think how it could be better handled in presence of random 3rd party linters
+	if prod == platform.QDNETC || prod == platform.QDCL {
 		// third party common options
 		if opts.NoStatistics {
 			arguments = append(arguments, "--no-statistics")
 		}
-		if prod == QDNETC {
+		if prod == platform.QDNETC {
 			// cdnet options
 			if opts.Solution != "" {
-				arguments = append(arguments, "--solution", QuoteForWindows(opts.Solution))
+				arguments = append(arguments, "--solution", platform.QuoteForWindows(opts.Solution))
 			}
 			if opts.Project != "" {
-				arguments = append(arguments, "--project", QuoteForWindows(opts.Project))
+				arguments = append(arguments, "--project", platform.QuoteForWindows(opts.Project))
 			}
 			if opts.Configuration != "" {
 				arguments = append(arguments, "--configuration", opts.Configuration)
@@ -168,7 +176,7 @@ func getIdeArgs(opts *QodanaOptions) []string {
 		} else {
 			// clang options
 			if opts.CompileCommands != "" {
-				arguments = append(arguments, "--compile-commands", QuoteForWindows(opts.CompileCommands))
+				arguments = append(arguments, "--compile-commands", platform.QuoteForWindows(opts.CompileCommands))
 			}
 			if opts.ClangArgs != "" {
 				arguments = append(arguments, "--clang-args", opts.ClangArgs)
@@ -230,25 +238,25 @@ var supportedIdes = [...]string{
 func toQodanaCode(baseProduct string) string {
 	switch baseProduct {
 	case "IC":
-		return QDJVMC
+		return platform.QDJVMC
 	case "PC":
-		return QDPYC
+		return platform.QDPYC
 	case "IU":
-		return QDJVM
+		return platform.QDJVM
 	case "PS":
-		return QDPHP
+		return platform.QDPHP
 	case "WS":
-		return QDJS
+		return platform.QDJS
 	case "RD":
-		return QDNET
+		return platform.QDNET
 	case "PY":
-		return QDPY
+		return platform.QDPY
 	case "GO":
-		return QDGO
+		return platform.QDGO
 	case "RM":
-		return QDRUBY
+		return platform.QDRUBY
 	case "RR":
-		return QDRST
+		return platform.QDRST
 	default:
 		return "QD"
 	}
@@ -257,21 +265,21 @@ func toQodanaCode(baseProduct string) string {
 func scriptToProductCode(scriptName string) string {
 	switch scriptName {
 	case idea:
-		return QDJVM
+		return platform.QDJVM
 	case phpStorm:
-		return QDPHP
+		return platform.QDPHP
 	case webStorm:
-		return QDJS
+		return platform.QDJS
 	case rider:
-		return QDNET
+		return platform.QDNET
 	case pyCharm:
-		return QDPY
+		return platform.QDPY
 	case rubyMine:
-		return QDRUBY
+		return platform.QDRUBY
 	case goLand:
-		return QDGO
+		return platform.QDGO
 	case rustRover:
-		return QDRST
+		return platform.QDRST
 	default:
 		return "QD"
 	}
@@ -326,24 +334,25 @@ func prepareLocalIdeSettings(opts *QodanaOptions) {
 		log.Fatal("IDE to run is not found")
 	}
 
-	ExtractQodanaEnvironment(setEnv)
-	SetupLicenseToken(opts)
+	platform.ExtractQodanaEnvironment(platform.SetEnv)
+	requiresToken := opts.RequiresToken(Prod.EAP || Prod.IsCommunity())
+	cloud.SetupLicenseToken(opts.LoadToken(false, requiresToken))
 	SetupLicenseAndProjectHash(cloud.Token.Token)
 	prepareDirectories(
 		opts.CacheDir,
-		opts.logDirPath(),
+		opts.LogDirPath(),
 		opts.ConfDirPath(),
 	)
-	Config = GetQodanaYaml(opts.ProjectDir)
+	platform.Config = platform.GetQodanaYaml(opts.ProjectDir) // TODO: Burry it!
 	writeProperties(opts)
 
-	if IsContainer() {
+	if platform.IsContainer() {
 		syncIdeaCache(opts.CacheDir, opts.ProjectDir, false)
 		createUser("/etc/passwd")
 	}
 
-	bootstrap(Config.Bootstrap, opts.ProjectDir)
-	installPlugins(Config.Plugins)
+	platform.Bootstrap(platform.Config.Bootstrap, opts.ProjectDir)
+	installPlugins(platform.Config.Plugins)
 }
 
 func prepareDirectories(cacheDir string, logDir string, confDir string) {
@@ -358,7 +367,7 @@ func prepareDirectories(cacheDir string, logDir string, confDir string) {
 		confDir,
 		userPrefsDir,
 	}
-	if IsContainer() {
+	if platform.IsContainer() {
 		if Prod.BaseScriptName == rider {
 			nugetDir := filepath.Join(cacheDir, nuget)
 			if err := os.Setenv("NUGET_PACKAGES", nugetDir); err != nil {
@@ -410,10 +419,10 @@ func prepareDirectories(cacheDir string, logDir string, confDir string) {
 		writeFileIfNew(filepath.Join(mavenRootDir, "settings.xml"), mavenSettingsXml)
 		writeFileIfNew(filepath.Join(ideaOptions, "path.macros.xml"), mavenPathMacroxXml)
 
-		androidSdk := os.Getenv(androidSdkRoot)
-		if androidSdk != "" && IsContainer() {
+		androidSdk := os.Getenv(platform.AndroidSdkRoot)
+		if androidSdk != "" && platform.IsContainer() {
 			writeFileIfNew(filepath.Join(ideaOptions, "project.default.xml"), androidProjectDefaultXml(androidSdk))
-			corettoSdk := os.Getenv(qodanaCorettoSdk)
+			corettoSdk := os.Getenv(platform.QodanaCorettoSdk)
 			if corettoSdk != "" {
 				writeFileIfNew(filepath.Join(ideaOptions, "jdk.table.xml"), jdkTableXml(corettoSdk))
 			}
@@ -422,10 +431,10 @@ func prepareDirectories(cacheDir string, logDir string, confDir string) {
 }
 
 // installPlugins runs plugin installer for every plugin id in qodana.yaml.
-func installPlugins(plugins []Plugin) {
+func installPlugins(plugins []platform.Plugin) {
 	for _, plugin := range plugins {
 		log.Printf("Installing plugin %s", plugin.Id)
-		if res := RunCmd("", QuoteForWindows(Prod.IdeScript), "installPlugins", plugin.Id); res > 0 {
+		if res, err := platform.RunCmd("", platform.QuoteForWindows(Prod.IdeScript), "installPlugins", plugin.Id); res > 0 || err != nil {
 			os.Exit(res)
 		}
 	}
@@ -455,7 +464,7 @@ func syncIdeaCache(from string, to string, overwrite bool) {
 }
 
 func getScriptSuffix() string {
-	if IsContainer() {
+	if platform.IsContainer() {
 		return ".sh"
 	}
 	switch runtime.GOOS {

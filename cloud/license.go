@@ -1,5 +1,5 @@
 /*
- * Copyright 2021-2023 JetBrains s.r.o.
+ * Copyright 2021-2024 JetBrains s.r.o.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,8 +20,8 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	log "github.com/sirupsen/logrus"
 	"io"
-	"log"
 	"net/http"
 	"os"
 	"strconv"
@@ -48,6 +48,7 @@ const (
 	QodanaLicenseRequestTimeoutEnv = "QODANA_LICENSE_REQUEST_TIMEOUT"
 
 	QodanaLicenseRequestAttemptsCountEnv = "QODANA_LICENSE_ATTEMPTS"
+	QodanaLicenseEndpoint                = "LICENSE_ENDPOINT"
 
 	qodanaLicenseRequestAttemptsCount = 3
 
@@ -55,7 +56,9 @@ const (
 
 	qodanaLicenseRequestCooldown = 60
 
-	qodanaLicenseUri = "/v1/linters/license-key"
+	qodanaLicenseUri       = "/v1/linters/license-key"
+	QodanaToken            = "QODANA_TOKEN"
+	QodanaLicenseOnlyToken = "QODANA_LICENSE_ONLY_TOKEN"
 )
 
 var TokenDeclinedError = errors.New("token was declined by Qodana Cloud server")
@@ -199,4 +202,61 @@ func GetEnvWithDefaultInt(env string, defaultValue int) int {
 		log.Fatalf("Variable '%s' should has integer value but it has value '%s'", env, value)
 	}
 	return result
+}
+
+func SetupLicenseToken(token string) {
+	licenseOnlyToken := os.Getenv(QodanaLicenseOnlyToken)
+	if token == "" && licenseOnlyToken != "" {
+		Token = LicenseToken{
+			Token:       licenseOnlyToken,
+			LicenseOnly: true,
+		}
+	} else {
+		Token = LicenseToken{
+			Token:       token,
+			LicenseOnly: false,
+		}
+	}
+}
+
+func getEnv(env string, defaultValue string) string {
+	value, exists := os.LookupEnv(env)
+	if !exists {
+		return defaultValue
+	}
+	return value
+}
+
+func extractLicensePlan(data []byte) (string, error) {
+	var licenseData LicenseData
+	err := json.Unmarshal(data, &licenseData)
+	if err != nil {
+		return "", fmt.Errorf("License deserialization failed. License response data:\n%s\nError: '%v'", string(data), err)
+	}
+	return licenseData.LicensePlan, nil
+}
+
+func GetLicensePlan() (string, error) {
+	if Token.Token == "" {
+		return "", errors.New("no token provided, please provide a token via the QODANA_TOKEN environment variable")
+	}
+
+	licenseEndpoint := getEnv(QodanaLicenseEndpoint, "https://linters.qodana.cloud")
+
+	licenseDataResponse, err := RequestLicenseData(licenseEndpoint, Token.Token)
+	if errors.Is(err, TokenDeclinedError) {
+		log.Fatalf("License request: %v\n%s", err, DeclinedTokenErrorMessage)
+	}
+	if err != nil {
+		return "", fmt.Errorf("license request: %v\n%s", err, GeneralLicenseErrorMessage)
+	}
+	licensePlan, err := extractLicensePlan(licenseDataResponse)
+	if err != nil {
+		return "", err
+	}
+	if licensePlan == "" {
+		return "", fmt.Errorf("response for license request should contain license plan\n%s", string(licenseDataResponse))
+	}
+	log.Debug(fmt.Printf("Qodana license plan: %s", licensePlan))
+	return licensePlan, nil
 }

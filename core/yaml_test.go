@@ -1,6 +1,23 @@
+/*
+ * Copyright 2021-2024 JetBrains s.r.o.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * https://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package core
 
 import (
+	"github.com/JetBrains/qodana-cli/v2024/platform"
 	log "github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
 	"os"
@@ -39,7 +56,7 @@ func TestLoadQodanaYaml(t *testing.T) {
 		setup       func(name string)
 		project     string
 		filename    string
-		expected    *QodanaYaml
+		expected    *platform.QodanaYaml
 	}{
 		{
 			description: "file exists but is empty",
@@ -48,7 +65,7 @@ func TestLoadQodanaYaml(t *testing.T) {
 			},
 			project:  os.TempDir(),
 			filename: "empty.yaml",
-			expected: &QodanaYaml{},
+			expected: &platform.QodanaYaml{},
 		},
 		{
 			description: "file exists with valid content",
@@ -58,7 +75,7 @@ func TestLoadQodanaYaml(t *testing.T) {
 			},
 			project:  os.TempDir(),
 			filename: "valid.yaml",
-			expected: &QodanaYaml{
+			expected: &platform.QodanaYaml{
 				Version: "1.0",
 			},
 		},
@@ -73,9 +90,9 @@ dotnet:
 			},
 			project:  os.TempDir(),
 			filename: "dotnet.yaml",
-			expected: &QodanaYaml{
+			expected: &platform.QodanaYaml{
 				Version: "1.0",
-				DotNet: DotNet{
+				DotNet: platform.DotNet{
 					Project:    "test.csproj",
 					Frameworks: "!netstandard2.0;!netstandard2.1",
 				},
@@ -86,7 +103,7 @@ dotnet:
 	for _, tc := range testCases {
 		t.Run(tc.description, func(t *testing.T) {
 			tc.setup(tc.filename)
-			actual := LoadQodanaYaml(tc.project, tc.filename)
+			actual := platform.LoadQodanaYaml(tc.project, tc.filename)
 			_ = os.Remove(filepath.Join(tc.project, tc.filename))
 			assert.Equal(t, tc.expected, actual)
 		})

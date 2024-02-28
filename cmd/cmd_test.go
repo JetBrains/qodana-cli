@@ -1,5 +1,5 @@
 /*
- * Copyright 2021-2023 JetBrains s.r.o.
+ * Copyright 2021-2024 JetBrains s.r.o.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,6 +22,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"github.com/JetBrains/qodana-cli/v2024/platform"
 	"io"
 	"os"
 	"os/exec"
@@ -32,7 +33,7 @@ import (
 
 	log "github.com/sirupsen/logrus"
 
-	"github.com/JetBrains/qodana-cli/v2023/core"
+	"github.com/JetBrains/qodana-cli/v2024/core"
 )
 
 func createProject(t *testing.T, name string) string {
@@ -98,7 +99,7 @@ func TestVersion(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	expected := fmt.Sprintf("qodana version %s\n", core.Version)
+	expected := fmt.Sprintf("qodana version %s\n", platform.Version)
 	actual := string(out)
 	if expected != actual {
 		t.Fatalf("expected \"%s\" got \"%s\"", expected, actual)
@@ -179,16 +180,16 @@ func TestInitCommand(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	filename := core.FindQodanaYaml(projectPath)
+	filename := platform.FindQodanaYaml(projectPath)
 
 	if filename != "qodana.yml" {
 		t.Fatalf("expected \"qodana.yml\" got \"%s\"", filename)
 	}
 
-	qodanaYaml := core.LoadQodanaYaml(projectPath, filename)
+	qodanaYaml := platform.LoadQodanaYaml(projectPath, filename)
 
-	if qodanaYaml.Linter != core.Image(core.QDPYC) {
-		t.Fatalf("expected \"%s\", but got %s", core.Image(core.QDPYC), qodanaYaml.Linter)
+	if qodanaYaml.Linter != platform.Image(platform.QDPYC) {
+		t.Fatalf("expected \"%s\", but got %s", platform.Image(platform.QDPYC), qodanaYaml.Linter)
 	}
 
 	err = os.RemoveAll(projectPath)
@@ -263,7 +264,7 @@ func TestAllCommandsWithContainer(t *testing.T) {
 	}
 	//_ = os.Setenv(qodanaCliContainerKeep, "true")
 	//_ = os.Setenv(qodanaCliContainerName, "qodana-cli-test-new1")
-	core.DisableColor()
+	platform.DisableColor()
 	core.CheckForUpdates("0.1.0")
 	projectPath := createProject(t, "qodana_scan_python")
 	cachePath := createProject(t, "cache")

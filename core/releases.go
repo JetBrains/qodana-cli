@@ -1,17 +1,17 @@
 /*
-* Copyright 2021-2023 JetBrains s.r.o.
-*
-* Licensed under the Apache License, Version 2.0 (the "License");
-* you may not use this file except in compliance with the License.
-* You may obtain a copy of the License at
-*
-* https://www.apache.org/licenses/LICENSE-2.0
-*
-* Unless required by applicable law or agreed to in writing, software
-* distributed under the License is distributed on an "AS IS" BASIS,
-* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-* See the License for the specific language governing permissions and
-* limitations under the License.
+ * Copyright 2021-2024 JetBrains s.r.o.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * https://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  */
 
 /*
@@ -24,6 +24,7 @@ package core
 
 import (
 	"encoding/json"
+	"github.com/JetBrains/qodana-cli/v2024/platform"
 	"io"
 	"os"
 	"path/filepath"
@@ -53,21 +54,21 @@ type ReleaseDownloadInfo struct {
 func GetProductByCode(code string) (*Product, error) {
 	tempDir, err := os.MkdirTemp("", "productByCode")
 	if err != nil {
-		ErrorMessage("Cannot create temp dir", err)
+		platform.ErrorMessage("Cannot create temp dir", err)
 		return nil, err
 	}
 
 	defer func(path string) {
 		err := os.RemoveAll(path)
 		if err != nil {
-			ErrorMessage("Cannot clean up temp dir", err)
+			platform.ErrorMessage("Cannot clean up temp dir", err)
 		}
 	}(tempDir) // clean up
 
 	path := filepath.Join(tempDir, "productInfo.json")
 	url := "https://raw.githubusercontent.com/JetBrains/qodana-docker/main/feed/releases.json"
 
-	if err := DownloadFile(path, url, nil); err != nil {
+	if err := platform.DownloadFile(path, url, nil); err != nil {
 		return nil, err
 	}
 
@@ -78,7 +79,7 @@ func GetProductByCode(code string) (*Product, error) {
 	defer func(file *os.File) {
 		err := file.Close()
 		if err != nil {
-			ErrorMessage("Cannot read downloaded file", err)
+			platform.ErrorMessage("Cannot read downloaded file", err)
 		}
 	}(file)
 

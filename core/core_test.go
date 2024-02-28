@@ -1,5 +1,5 @@
 /*
- * Copyright 2021-2023 JetBrains s.r.o.
+ * Copyright 2021-2024 JetBrains s.r.o.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,9 +21,9 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/JetBrains/qodana-cli/v2023/cloud"
+	"github.com/JetBrains/qodana-cli/v2024/cloud"
+	"github.com/JetBrains/qodana-cli/v2024/platform"
 	log "github.com/sirupsen/logrus"
-	"golang.org/x/exp/maps"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -46,48 +46,48 @@ func TestCliArgs(t *testing.T) {
 	resultsDir := filepath.Join(dir, "results")
 	Prod.Home = string(os.PathSeparator) + "opt" + string(os.PathSeparator) + "idea"
 	Prod.IdeScript = filepath.Join(Prod.Home, "bin", "idea.sh")
-	err := os.Unsetenv(qodanaDockerEnv)
+	err := os.Unsetenv(platform.QodanaDockerEnv)
 	if err != nil {
 		t.Fatal(err)
 	}
 	for _, tc := range []struct {
 		name string
-		opts *QodanaOptions
+		opts *platform.QodanaOptions
 		res  []string
 	}{
 		{
 			name: "typical set up",
-			opts: &QodanaOptions{ProjectDir: projectDir, CacheDir: cacheDir, ResultsDir: resultsDir, Linter: "jetbrains/qodana-jvm-community:latest", SourceDirectory: "./src", DisableSanity: true, RunPromo: "true", Baseline: "qodana.sarif.json", BaselineIncludeAbsent: true, SaveReport: true, ShowReport: true, Port: 8888, Property: []string{"foo.baz=bar", "foo.bar=baz"}, Script: "default", FailThreshold: "0", AnalysisId: "id", Env: []string{"A=B"}, Volumes: []string{"/tmp/foo:/tmp/foo"}, User: "1001:1001", PrintProblems: true, ProfileName: "Default", ApplyFixes: true},
+			opts: &platform.QodanaOptions{ProjectDir: projectDir, CacheDir: cacheDir, ResultsDir: resultsDir, Linter: "jetbrains/qodana-jvm-community:latest", SourceDirectory: "./src", DisableSanity: true, RunPromo: "true", Baseline: "qodana.sarif.json", BaselineIncludeAbsent: true, SaveReport: true, ShowReport: true, Port: 8888, Property: []string{"foo.baz=bar", "foo.bar=baz"}, Script: "default", FailThreshold: "0", AnalysisId: "id", Env: []string{"A=B"}, Volumes: []string{"/tmp/foo:/tmp/foo"}, User: "1001:1001", PrintProblems: true, ProfileName: "Default", ApplyFixes: true},
 			res:  []string{filepath.FromSlash("/opt/idea/bin/idea.sh"), "inspect", "qodana", "--save-report", "--source-directory", "./src", "--disable-sanity", "--profile-name", "Default", "--run-promo", "true", "--baseline", "qodana.sarif.json", "--baseline-include-absent", "--fail-threshold", "0", "--fixes-strategy", "apply", "--analysis-id", "id", "--property=foo.baz=bar", "--property=foo.bar=baz", projectDir, resultsDir},
 		},
 		{
 			name: "arguments with spaces, no properties for local runs",
-			opts: &QodanaOptions{ProjectDir: projectDir, CacheDir: cacheDir, ResultsDir: resultsDir, ProfileName: "separated words", Property: []string{"qodana.format=SARIF_AND_PROJECT_STRUCTURE", "qodana.variable.format=JSON"}, Ide: Prod.Home},
+			opts: &platform.QodanaOptions{ProjectDir: projectDir, CacheDir: cacheDir, ResultsDir: resultsDir, ProfileName: "separated words", Property: []string{"qodana.format=SARIF_AND_PROJECT_STRUCTURE", "qodana.variable.format=JSON"}, Ide: Prod.Home},
 			res:  []string{filepath.FromSlash("/opt/idea/bin/idea.sh"), "inspect", "qodana", "--profile-name", "\"separated words\"", projectDir, resultsDir},
 		},
 		{
 			name: "deprecated --fixes-strategy=apply",
-			opts: &QodanaOptions{ProjectDir: projectDir, CacheDir: cacheDir, ResultsDir: resultsDir, FixesStrategy: "apply"},
+			opts: &platform.QodanaOptions{ProjectDir: projectDir, CacheDir: cacheDir, ResultsDir: resultsDir, FixesStrategy: "apply"},
 			res:  []string{filepath.FromSlash("/opt/idea/bin/idea.sh"), "inspect", "qodana", "--fixes-strategy", "apply", projectDir, resultsDir},
 		},
 		{
 			name: "deprecated --fixes-strategy=cleanup",
-			opts: &QodanaOptions{ProjectDir: projectDir, CacheDir: cacheDir, ResultsDir: resultsDir, FixesStrategy: "cleanup"},
+			opts: &platform.QodanaOptions{ProjectDir: projectDir, CacheDir: cacheDir, ResultsDir: resultsDir, FixesStrategy: "cleanup"},
 			res:  []string{filepath.FromSlash("/opt/idea/bin/idea.sh"), "inspect", "qodana", "--fixes-strategy", "cleanup", projectDir, resultsDir},
 		},
 		{
 			name: "--fixes-strategy=apply for new versions",
-			opts: &QodanaOptions{ProjectDir: projectDir, CacheDir: cacheDir, ResultsDir: resultsDir, FixesStrategy: "apply", Ide: "/opt/idea/233"},
+			opts: &platform.QodanaOptions{ProjectDir: projectDir, CacheDir: cacheDir, ResultsDir: resultsDir, FixesStrategy: "apply", Ide: "/opt/idea/233"},
 			res:  []string{filepath.FromSlash("/opt/idea/bin/idea.sh"), "inspect", "qodana", "--apply-fixes", projectDir, resultsDir},
 		},
 		{
 			name: "--fixes-strategy=cleanup for new versions",
-			opts: &QodanaOptions{ProjectDir: projectDir, CacheDir: cacheDir, ResultsDir: resultsDir, FixesStrategy: "cleanup", Ide: "/opt/idea/233"},
+			opts: &platform.QodanaOptions{ProjectDir: projectDir, CacheDir: cacheDir, ResultsDir: resultsDir, FixesStrategy: "cleanup", Ide: "/opt/idea/233"},
 			res:  []string{filepath.FromSlash("/opt/idea/bin/idea.sh"), "inspect", "qodana", "--cleanup", projectDir, resultsDir},
 		},
 		{
 			name: "--stub-profile ignored",
-			opts: &QodanaOptions{StubProfile: "ignored", ProjectDir: projectDir, CacheDir: cacheDir, ResultsDir: resultsDir, FixesStrategy: "cleanup", Ide: "/opt/idea/233"},
+			opts: &platform.QodanaOptions{StubProfile: "ignored", ProjectDir: projectDir, CacheDir: cacheDir, ResultsDir: resultsDir, FixesStrategy: "cleanup", Ide: "/opt/idea/233"},
 			res:  []string{filepath.FromSlash("/opt/idea/bin/idea.sh"), "inspect", "qodana", "--cleanup", projectDir, resultsDir},
 		},
 	} {
@@ -98,293 +98,23 @@ func TestCliArgs(t *testing.T) {
 				Prod.Version = "2023.2"
 			}
 
-			args := getIdeRunCommand(tc.opts)
+			args := getIdeRunCommand(&QodanaOptions{tc.opts})
 			assert.Equal(t, tc.res, args)
 		})
 	}
 }
 
-func unsetGitHubVariables() {
-	variables := []string{
-		"GITHUB_SERVER_URL",
-		"GITHUB_REPOSITORY",
-		"GITHUB_RUN_ID",
-		"GITHUB_HEAD_REF",
-		"GITHUB_REF",
-	}
-	for _, v := range variables {
-		_ = os.Unsetenv(v)
-	}
-}
-
-func Test_ExtractEnvironmentVariables(t *testing.T) {
-	revisionExpected := "1234567890abcdef1234567890abcdef12345678"
-	branchExpected := "refs/heads/main"
-
-	if os.Getenv("GITHUB_ACTIONS") == "true" {
-		unsetGitHubVariables()
-	}
-
-	for _, tc := range []struct {
-		ci                string
-		variables         map[string]string
-		jobUrlExpected    string
-		envExpected       string
-		remoteUrlExpected string
-		repoUrlExpected   string
-		revisionExpected  string
-		branchExpected    string
-	}{
-		{
-			ci:          "no CI detected",
-			variables:   map[string]string{},
-			envExpected: "cli:dev",
-		},
-		{
-			ci: "User defined",
-			variables: map[string]string{
-				qodanaEnv:       "user-defined",
-				qodanaJobUrl:    "https://qodana.jetbrains.com/never-gonna-give-you-up",
-				qodanaRemoteUrl: "https://qodana.jetbrains.com/never-gonna-give-you-up",
-				qodanaRepoUrl:   "https://qodana.jetbrains.com/never-gonna-give-you-up",
-				qodanaBranch:    branchExpected,
-				qodanaRevision:  revisionExpected,
-			},
-			envExpected:       "user-defined",
-			remoteUrlExpected: "https://qodana.jetbrains.com/never-gonna-give-you-up",
-			jobUrlExpected:    "https://qodana.jetbrains.com/never-gonna-give-you-up",
-			repoUrlExpected:   "https://qodana.jetbrains.com/never-gonna-give-you-up",
-			revisionExpected:  revisionExpected,
-			branchExpected:    branchExpected,
-		},
-		{
-			ci: "Space",
-			variables: map[string]string{
-				"JB_SPACE_EXECUTION_URL":       "https://space.jetbrains.com/never-gonna-give-you-up",
-				"JB_SPACE_GIT_BRANCH":          branchExpected,
-				"JB_SPACE_GIT_REVISION":        revisionExpected,
-				"JB_SPACE_API_URL":             "jetbrains.team",
-				"JB_SPACE_PROJECT_KEY":         "sa",
-				"JB_SPACE_GIT_REPOSITORY_NAME": "entrypoint",
-			},
-			envExpected:       fmt.Sprintf("space:%s", Version),
-			remoteUrlExpected: "ssh://git@git.jetbrains.team/sa/entrypoint.git",
-			jobUrlExpected:    "https://space.jetbrains.com/never-gonna-give-you-up",
-			repoUrlExpected:   "https://jetbrains.team/p/sa/repositories/entrypoint",
-			revisionExpected:  revisionExpected,
-			branchExpected:    branchExpected,
-		},
-		{
-			ci: "GitLab",
-			variables: map[string]string{
-				"CI_JOB_URL":        "https://gitlab.jetbrains.com/never-gonna-give-you-up",
-				"CI_COMMIT_BRANCH":  branchExpected,
-				"CI_COMMIT_SHA":     revisionExpected,
-				"CI_REPOSITORY_URL": "https://gitlab.jetbrains.com/sa/entrypoint.git",
-				"CI_PROJECT_URL":    "https://gitlab.jetbrains.com/sa/entrypoint",
-			},
-			envExpected:       fmt.Sprintf("gitlab:%s", Version),
-			remoteUrlExpected: "https://gitlab.jetbrains.com/sa/entrypoint.git",
-			jobUrlExpected:    "https://gitlab.jetbrains.com/never-gonna-give-you-up",
-			repoUrlExpected:   "https://gitlab.jetbrains.com/sa/entrypoint",
-			revisionExpected:  revisionExpected,
-			branchExpected:    branchExpected,
-		},
-		{
-			ci: "Jenkins",
-			variables: map[string]string{
-				"BUILD_URL":        "https://jenkins.jetbrains.com/never-gonna-give-you-up",
-				"GIT_LOCAL_BRANCH": branchExpected,
-				"GIT_COMMIT":       revisionExpected,
-				"GIT_URL":          "https://git.jetbrains.com/sa/entrypoint.git",
-			},
-			envExpected:       fmt.Sprintf("jenkins:%s", Version),
-			jobUrlExpected:    "https://jenkins.jetbrains.com/never-gonna-give-you-up",
-			remoteUrlExpected: "https://git.jetbrains.com/sa/entrypoint.git",
-			repoUrlExpected:   "https://git.jetbrains.com/sa/entrypoint",
-			revisionExpected:  revisionExpected,
-			branchExpected:    branchExpected,
-		},
-		{
-			ci: "GitHub",
-			variables: map[string]string{
-				"GITHUB_SERVER_URL": "https://github.jetbrains.com",
-				"GITHUB_REPOSITORY": "sa/entrypoint",
-				"GITHUB_RUN_ID":     "123456789",
-				"GITHUB_SHA":        revisionExpected,
-				"GITHUB_HEAD_REF":   branchExpected,
-			},
-			envExpected:       fmt.Sprintf("github-actions:%s", Version),
-			jobUrlExpected:    "https://github.jetbrains.com/sa/entrypoint/actions/runs/123456789",
-			remoteUrlExpected: "https://github.jetbrains.com/sa/entrypoint.git",
-			repoUrlExpected:   "https://github.jetbrains.com/sa/entrypoint",
-			revisionExpected:  revisionExpected,
-			branchExpected:    branchExpected,
-		},
-		{
-			ci: "GitHub push",
-			variables: map[string]string{
-				"GITHUB_SERVER_URL": "https://github.jetbrains.com",
-				"GITHUB_REPOSITORY": "sa/entrypoint",
-				"GITHUB_RUN_ID":     "123456789",
-				"GITHUB_SHA":        revisionExpected,
-				"GITHUB_REF":        branchExpected,
-			},
-			envExpected:       fmt.Sprintf("github-actions:%s", Version),
-			jobUrlExpected:    "https://github.jetbrains.com/sa/entrypoint/actions/runs/123456789",
-			remoteUrlExpected: "https://github.jetbrains.com/sa/entrypoint.git",
-			repoUrlExpected:   "https://github.jetbrains.com/sa/entrypoint",
-			revisionExpected:  revisionExpected,
-			branchExpected:    branchExpected,
-		},
-		{
-			ci: "GitHub pull request",
-			variables: map[string]string{
-				"GITHUB_SERVER_URL": "https://github.jetbrains.com",
-				"GITHUB_REPOSITORY": "sa/entrypoint",
-				"GITHUB_RUN_ID":     "123456789",
-				"GITHUB_SHA":        revisionExpected,
-				"GITHUB_HEAD_REF":   branchExpected,
-				"GITHUB_REF":        "refs/pull/123/merge",
-			},
-			envExpected:       fmt.Sprintf("github-actions:%s", Version),
-			jobUrlExpected:    "https://github.jetbrains.com/sa/entrypoint/actions/runs/123456789",
-			remoteUrlExpected: "https://github.jetbrains.com/sa/entrypoint.git",
-			repoUrlExpected:   "https://github.jetbrains.com/sa/entrypoint",
-			revisionExpected:  revisionExpected,
-			branchExpected:    branchExpected,
-		},
-		{
-			ci: "CircleCI",
-			variables: map[string]string{
-				"CIRCLE_BUILD_URL":      "https://circleci.jetbrains.com/never-gonna-give-you-up",
-				"CIRCLE_SHA1":           revisionExpected,
-				"CIRCLE_BRANCH":         branchExpected,
-				"CIRCLE_REPOSITORY_URL": "https://circleci.jetbrains.com/sa/entrypoint.git",
-			},
-			envExpected:       fmt.Sprintf("circleci:%s", Version),
-			jobUrlExpected:    "https://circleci.jetbrains.com/never-gonna-give-you-up",
-			remoteUrlExpected: "https://circleci.jetbrains.com/sa/entrypoint.git",
-			repoUrlExpected:   "https://circleci.jetbrains.com/sa/entrypoint",
-			revisionExpected:  revisionExpected,
-			branchExpected:    branchExpected,
-		},
-		{
-			ci: "Azure Pipelines",
-			variables: map[string]string{
-				"SYSTEM_TEAMFOUNDATIONCOLLECTIONURI": "https://dev.azure.com/jetbrains",
-				"BUILD_BUILDURI":                     "https://dev.azure.com/jetbrains/never-gonna-give-you-up",
-				"SYSTEM_TEAMPROJECT":                 "/sa",
-				"BUILD_BUILDID":                      "123456789",
-				"BUILD_SOURCEVERSION":                revisionExpected,
-				"BUILD_SOURCEBRANCH":                 "refs/heads/" + branchExpected,
-				"BUILD_REPOSITORY_URI":               "https://dev.azure.com/jetbrains/sa/entrypoint.git",
-			},
-			envExpected:       fmt.Sprintf("azure-pipelines:%s", Version),
-			jobUrlExpected:    "https://dev.azure.com/jetbrains/sa/_build/results?buildId=123456789",
-			remoteUrlExpected: "https://dev.azure.com/jetbrains/sa/entrypoint.git",
-			repoUrlExpected:   "https://dev.azure.com/jetbrains/sa/entrypoint",
-			revisionExpected:  revisionExpected,
-			branchExpected:    branchExpected,
-		},
-		{
-			ci: "CircleCI", // includes userinfo in the url
-			variables: map[string]string{
-				"CIRCLE_BUILD_URL":      "https://circleci.jetbrains.com/never-gonna-give-you-up",
-				"CIRCLE_SHA1":           revisionExpected,
-				"CIRCLE_BRANCH":         branchExpected,
-				"CIRCLE_REPOSITORY_URL": "https://user:password@circleci.jetbrains.com/sa/entrypoint.git",
-			},
-			envExpected:       fmt.Sprintf("circleci:%s", Version),
-			jobUrlExpected:    "https://circleci.jetbrains.com/never-gonna-give-you-up",
-			remoteUrlExpected: "https://circleci.jetbrains.com/sa/entrypoint.git",
-			repoUrlExpected:   "https://circleci.jetbrains.com/sa/entrypoint",
-			revisionExpected:  revisionExpected,
-			branchExpected:    branchExpected,
-		},
-	} {
-		t.Run(tc.ci, func(t *testing.T) {
-			opts := &QodanaOptions{}
-			for k, v := range tc.variables {
-				err := os.Setenv(k, v)
-				if err != nil {
-					t.Fatal(err)
-				}
-				opts.setenv(k, v)
-			}
-
-			for _, environment := range []struct {
-				name  string
-				set   func(string, string)
-				unset func(string)
-				get   func(string) string
-			}{
-				{
-					name: "Container",
-					set:  opts.setenv,
-					get:  opts.getenv,
-				},
-				{
-					name: "Local",
-					set:  setEnv,
-					get:  os.Getenv,
-				},
-			} {
-				t.Run(environment.name, func(t *testing.T) {
-					ExtractQodanaEnvironment(environment.set)
-					currentQodanaEnv := environment.get(qodanaEnv)
-					if currentQodanaEnv != tc.envExpected {
-						t.Errorf("%s: Expected %s, got %s", environment.name, tc.envExpected, currentQodanaEnv)
-					}
-					if environment.get(qodanaJobUrl) != tc.jobUrlExpected {
-						t.Errorf("%s: Expected %s, got %s", environment.name, tc.jobUrlExpected, environment.get(qodanaJobUrl))
-					}
-					if environment.get(qodanaRemoteUrl) != tc.remoteUrlExpected {
-						t.Errorf("%s: Expected %s, got %s", environment.name, tc.remoteUrlExpected, environment.get(qodanaRemoteUrl))
-					}
-					if environment.get(qodanaRevision) != tc.revisionExpected {
-						t.Errorf("%s: Expected %s, got %s", environment.name, revisionExpected, environment.get(qodanaRevision))
-					}
-					if environment.get(qodanaBranch) != tc.branchExpected {
-						t.Errorf("%s: Expected %s, got %s", environment.name, branchExpected, environment.get(qodanaBranch))
-					}
-					if environment.get(qodanaRepoUrl) != tc.repoUrlExpected {
-						t.Errorf("%s: Expected %s, got %s", environment.name, tc.repoUrlExpected, environment.get(qodanaRepoUrl))
-					}
-				})
-			}
-
-			for _, k := range append(maps.Keys(tc.variables), []string{qodanaRepoUrl, qodanaJobUrl, qodanaEnv, qodanaRemoteUrl, qodanaRevision, qodanaBranch}...) {
-				err := os.Unsetenv(k)
-				if err != nil {
-					t.Fatal(err)
-				}
-				opts.unsetenv(k)
-			}
-		})
-	}
-}
-
-func TestDirLanguagesExcluded(t *testing.T) {
-	expected := []string{"Go", "Shell", "Dockerfile"}
-	actual, err := recognizeDirLanguages("../")
-	if err != nil {
-		return
-	}
-	if !reflect.DeepEqual(expected, actual) {
-		t.Fatalf("expected \"%s\" got \"%s\"", expected, actual)
-	}
-}
-
 func TestScanFlags_Script(t *testing.T) {
 	testOptions := &QodanaOptions{
-		Script: "custom-script:parameters",
+		&platform.QodanaOptions{
+			Script: "custom-script:parameters",
+		},
 	}
 	expected := []string{
 		"--script",
 		"custom-script:parameters",
 	}
-	actual := getIdeArgs(testOptions)
+	actual := GetIdeArgs(testOptions)
 	if !reflect.DeepEqual(expected, actual) {
 		t.Fatalf("expected \"%s\" got \"%s\"", expected, actual)
 	}
@@ -393,12 +123,12 @@ func TestScanFlags_Script(t *testing.T) {
 func TestLegacyFixStrategies(t *testing.T) {
 	cases := []struct {
 		name     string
-		options  *QodanaOptions
+		options  *platform.QodanaOptions
 		expected []string
 	}{
 		{
 			name: "apply fixes for a container",
-			options: &QodanaOptions{
+			options: &platform.QodanaOptions{
 				ApplyFixes: true,
 				Ide:        "",
 			},
@@ -409,7 +139,7 @@ func TestLegacyFixStrategies(t *testing.T) {
 		},
 		{
 			name: "cleanup for a container",
-			options: &QodanaOptions{
+			options: &platform.QodanaOptions{
 				Cleanup: true,
 				Ide:     "",
 			},
@@ -420,7 +150,7 @@ func TestLegacyFixStrategies(t *testing.T) {
 		},
 		{
 			name: "apply fixes for new IDE",
-			options: &QodanaOptions{
+			options: &platform.QodanaOptions{
 				ApplyFixes: true,
 				Ide:        "QDPHP",
 			},
@@ -430,7 +160,7 @@ func TestLegacyFixStrategies(t *testing.T) {
 		},
 		{
 			name: "fixes for unavailable IDE",
-			options: &QodanaOptions{
+			options: &platform.QodanaOptions{
 				Cleanup: true,
 				Ide:     "QDNET",
 			},
@@ -446,182 +176,11 @@ func TestLegacyFixStrategies(t *testing.T) {
 				Prod.Version = "2023.2"
 			}
 
-			actual := getIdeArgs(tt.options)
+			actual := GetIdeArgs(&QodanaOptions{tt.options})
 			if !reflect.DeepEqual(tt.expected, actual) {
 				t.Fatalf("expected \"%s\" got \"%s\"", tt.expected, actual)
 			}
 		})
-	}
-}
-
-func TestGetArgsThirdPartyLinters(t *testing.T) {
-	cases := []struct {
-		name     string
-		options  *QodanaOptions
-		expected []string
-	}{
-		{
-			name: "not sending statistics",
-			options: &QodanaOptions{
-				NoStatistics: true,
-				Linter:       DockerImageMap[QDNETC],
-			},
-			expected: []string{
-				"--no-statistics",
-			},
-		},
-		{
-			name: "(cdnet) solution",
-			options: &QodanaOptions{
-				Solution: "solution.sln",
-				Linter:   DockerImageMap[QDNETC],
-			},
-			expected: []string{
-				"--solution", "solution.sln",
-			},
-		},
-		{
-			name: "(cdnet) project",
-			options: &QodanaOptions{
-				Project: "project.csproj",
-				Linter:  DockerImageMap[QDNETC],
-			},
-			expected: []string{
-				"--project", "project.csproj",
-			},
-		},
-		{
-			name: "(cdnet) configuration",
-			options: &QodanaOptions{
-				Configuration: "Debug",
-				Linter:        DockerImageMap[QDNETC],
-			},
-			expected: []string{
-				"--configuration", "Debug",
-			},
-		},
-		{
-			name: "(cdnet) platform",
-			options: &QodanaOptions{
-				Platform: "x64",
-				Linter:   DockerImageMap[QDNETC],
-			},
-			expected: []string{
-				"--platform", "x64",
-			},
-		},
-		{
-			name: "(cdnet) no build",
-			options: &QodanaOptions{
-				NoBuild: true,
-				Linter:  DockerImageMap[QDNETC],
-			},
-			expected: []string{
-				"--no-build",
-			},
-		},
-		{
-			name: "(clang) compile commands",
-			options: &QodanaOptions{
-				CompileCommands: "compile_commands.json",
-				Linter:          DockerImageMap[QDCL],
-			},
-			expected: []string{
-				"--compile-commands", "compile_commands.json",
-			},
-		},
-		{
-			name: "(clang) clang args",
-			options: &QodanaOptions{
-				ClangArgs: "-I/usr/include",
-				Linter:    DockerImageMap[QDCL],
-			},
-			expected: []string{
-				"--clang-args", "-I/usr/include",
-			},
-		},
-		{
-			name: "using flag in non 3rd party linter",
-			options: &QodanaOptions{
-				NoStatistics: true,
-				Ide:          QDNET,
-			},
-			expected: []string{},
-		},
-	}
-
-	for _, tt := range cases {
-		t.Run(tt.name, func(t *testing.T) {
-			if tt.options.Ide != "" {
-				Prod.Code = tt.options.Ide
-			}
-
-			actual := getIdeArgs(tt.options)
-			if !reflect.DeepEqual(tt.expected, actual) {
-				t.Fatalf("expected \"%s\" got \"%s\"", tt.expected, actual)
-			}
-		})
-	}
-	t.Cleanup(func() {
-		Prod.Code = ""
-	})
-}
-
-func TestReadIdeaDir(t *testing.T) {
-	// Create a temporary directory for testing
-	tempDir := os.TempDir()
-	tempDir = filepath.Join(tempDir, "readIdeaDir")
-	defer func(path string) {
-		err := os.RemoveAll(path)
-		if err != nil {
-			t.Fatal(err)
-		}
-	}(tempDir)
-
-	// Case 1: .idea directory with iml files for Java and Kotlin
-	ideaDir := filepath.Join(tempDir, ".idea")
-	err := os.MkdirAll(ideaDir, 0o755)
-	if err != nil {
-		t.Fatal(err)
-	}
-	imlFile := filepath.Join(ideaDir, "test.iml")
-	err = os.WriteFile(imlFile, []byte("<module type=\"JAVA_MODULE\"/>"), 0o644)
-	if err != nil {
-		t.Fatal(err)
-	}
-	kotlinImlFile := filepath.Join(ideaDir, "test.kt.iml")
-	err = os.WriteFile(kotlinImlFile, []byte("<module type=\"JAVA_MODULE\" languageLevel=\"JDK_1_8\"/>"), 0o644)
-	if err != nil {
-		t.Fatal(err)
-	}
-	languages := readIdeaDir(tempDir)
-	expected := []string{"Java"}
-	if !reflect.DeepEqual(languages, expected) {
-		t.Errorf("Case 1: Expected %v, but got %v", expected, languages)
-	}
-
-	// Case 2: .idea directory with no iml files
-	err = os.Remove(imlFile)
-	if err != nil {
-		t.Fatal(err)
-	}
-	err = os.Remove(kotlinImlFile)
-	if err != nil {
-		t.Fatal(err)
-	}
-	languages = readIdeaDir(tempDir)
-	if len(languages) > 0 {
-		t.Errorf("Case 1: Expected empty array, but got %v", languages)
-	}
-
-	// Case 3: No .idea directory
-	err = os.Remove(ideaDir)
-	if err != nil {
-		t.Fatal(err)
-	}
-	languages = readIdeaDir(tempDir)
-	if len(languages) > 0 {
-		t.Errorf("Case 1: Expected empty array, but got %v", languages)
 	}
 }
 
@@ -643,8 +202,8 @@ func TestWriteConfig(t *testing.T) {
 	// Create a sample qodana.yaml file to write
 	filename := "qodana.yaml"
 	path := filepath.Join(dir, filename)
-	q := &QodanaYaml{Version: "1.0"}
-	if err := q.writeConfig(path); err != nil {
+	q := &platform.QodanaYaml{Version: "1.0"}
+	if err := q.WriteConfig(path); err != nil {
 		t.Fatalf("failed to write qodana.yaml file: %v", err)
 	}
 
@@ -660,7 +219,7 @@ func TestWriteConfig(t *testing.T) {
 }
 
 func Test_setDeviceID(t *testing.T) {
-	err := os.Unsetenv(qodanaRemoteUrl)
+	err := os.Unsetenv(platform.QodanaRemoteUrl)
 	if err != nil {
 		return
 	}
@@ -693,7 +252,7 @@ func Test_setDeviceID(t *testing.T) {
 			t.Fatal(err)
 		}
 	}()
-	actualDeviceIdSalt := getDeviceIdSalt()
+	actualDeviceIdSalt := platform.GetDeviceIdSalt()
 	if _, err := os.Stat(filepath.Join(tmpDir, ".git", "config")); !os.IsNotExist(err) {
 		t.Errorf("Case: %s: /tmp/entrypoint/.git/config got created, when it should not", tc)
 	}
@@ -716,7 +275,7 @@ func Test_setDeviceID(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	actualDeviceIdSalt = getDeviceIdSalt()
+	actualDeviceIdSalt = platform.GetDeviceIdSalt()
 	expectedDeviceIdSalt = []string{
 		"200820300000000-a294-0dd1-57f5-9f44b322ff64",
 		"e5c8900956f0df2f18f827245f47f04a",
@@ -731,7 +290,7 @@ func Test_setDeviceID(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	actualDeviceIdSalt = getDeviceIdSalt()
+	actualDeviceIdSalt = platform.GetDeviceIdSalt()
 	expectedDeviceIdSalt = []string{
 		"200820300000000-a294-0dd1-57f5-9f44b322ff64",
 		"e5c8900956f0df2f18f827245f47f04a",
@@ -749,7 +308,7 @@ func Test_setDeviceID(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	actualDeviceIdSalt = getDeviceIdSalt()
+	actualDeviceIdSalt = platform.GetDeviceIdSalt()
 	expectedDeviceIdSalt = []string{
 		"device",
 		"salt",
@@ -771,6 +330,7 @@ func Test_isProcess(t *testing.T) {
 	}
 	var cmd *exec.Cmd
 	var cmdString string
+	//goland:noinspection GoBoolExpressions
 	if runtime.GOOS == "windows" {
 		cmd = exec.Command("ping", "-n", "5", "127.0.0.1")
 		cmdString = "ping -n 5 127.0.0.1"
@@ -795,66 +355,13 @@ func Test_isProcess(t *testing.T) {
 	}
 }
 
-func Test_runCmd(t *testing.T) {
-	if //goland:noinspection ALL
-	runtime.GOOS == "linux" || runtime.GOOS == "darwin" {
-		for _, tc := range []struct {
-			name string
-			cmd  []string
-			res  int
-		}{
-			{"true", []string{"true"}, 0},
-			{"false", []string{"false"}, 1},
-			{"exit 255", []string{"sh", "-c", "exit 255"}, 255},
-		} {
-			t.Run(tc.name, func(t *testing.T) {
-				got := RunCmd("", tc.cmd...)
-				if got != tc.res {
-					t.Errorf("runCmd: %v, Got: %v, Expected: %v", tc.cmd, got, tc.res)
-				}
-			})
-		}
-	}
-}
-
-func Test_runCmdWithTimeout(t *testing.T) {
-	if //goland:noinspection ALL
-	runtime.GOOS == "linux" || runtime.GOOS == "darwin" {
-		var sleepFor2SecondsCmd = []string{"sh", "-c", "sleep 2 && exit 255"}
-		for _, tc := range []struct {
-			name            string
-			timeout         time.Duration
-			timeoutExitCode int
-			cmd             []string
-			res             int
-			expectedTimeS   int
-		}{
-			{"timeout not reached exit code 255", time.Duration(3) * time.Second, 0, sleepFor2SecondsCmd, 255, 2},
-			{"timeout reached exit code 42", time.Duration(1) * time.Second, 42, sleepFor2SecondsCmd, 42, 1},
-		} {
-			t.Run(tc.name, func(t *testing.T) {
-				startTime := time.Now()
-				got := RunCmdWithTimeout("", tc.timeout, tc.timeoutExitCode, tc.cmd...)
-				endTime := time.Now()
-
-				if got != tc.res {
-					t.Errorf("runCmdWithTimeout: %v, Got: %v, Expected: %v", tc.cmd, got, tc.res)
-				}
-				durationSeconds := int(endTime.Sub(startTime).Seconds())
-				if tc.expectedTimeS > durationSeconds || durationSeconds >= tc.expectedTimeS+1 {
-					t.Errorf("runCmdWithTimeout: %v, Duration: %vs, Expected: %vs", tc.cmd, durationSeconds, tc.expectedTimeS)
-				}
-			})
-		}
-	}
-}
-
 func Test_createUser(t *testing.T) {
+	//goland:noinspection GoBoolExpressions
 	if runtime.GOOS == "windows" {
 		return
 	}
 
-	err := os.Setenv(qodanaDockerEnv, "true")
+	err := os.Setenv(platform.QodanaDockerEnv, "true")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -942,16 +449,16 @@ func Test_syncIdeaCache(t *testing.T) {
 }
 
 func Test_Bootstrap(t *testing.T) {
-	opts := &QodanaOptions{}
+	opts := &platform.QodanaOptions{}
 	tmpDir := filepath.Join(os.TempDir(), "bootstrap")
 	err := os.MkdirAll(tmpDir, 0o755)
 	if err != nil {
 		t.Fatal(err)
 	}
 	opts.ProjectDir = tmpDir
-	bootstrap("echo \"bootstrap: touch qodana.yml\" > qodana.yaml", opts.ProjectDir)
-	Config = GetQodanaYaml(tmpDir)
-	bootstrap(Config.Bootstrap, opts.ProjectDir)
+	platform.Bootstrap("echo 'bootstrap: touch qodana.yml' > qodana.yaml", opts.ProjectDir)
+	config := platform.GetQodanaYaml(tmpDir)
+	platform.Bootstrap(config.Bootstrap, opts.ProjectDir)
 	if _, err := os.Stat(filepath.Join(opts.ProjectDir, "qodana.yaml")); errors.Is(err, os.ErrNotExist) {
 		t.Fatalf("No qodana.yml created by the bootstrap command in qodana.yaml")
 	}
@@ -961,9 +468,9 @@ func Test_Bootstrap(t *testing.T) {
 	}
 }
 
-// TestSaveProperty saves some SARIF example file, adds a property to it, then checks that a compact version of that JSON file equals the given expected expected.
+// TestSaveProperty saves some SARIF example file, adds a property to it, then checks that a compact version of that JSON file equals the given expected.
 func Test_SaveProperty(t *testing.T) {
-	opts := &QodanaOptions{}
+	opts := &platform.QodanaOptions{}
 	tmpDir := filepath.Join(os.TempDir(), "sarif")
 	err := os.MkdirAll(tmpDir, 0o755)
 	if err != nil {
@@ -1131,32 +638,32 @@ func TestSetupLicense(t *testing.T) {
 		_, _ = fmt.Fprint(w, license)
 	}))
 	defer svr.Close()
-	err := os.Setenv(QodanaLicenseEndpoint, svr.URL)
+	err := os.Setenv(platform.QodanaLicenseEndpoint, svr.URL)
 	if err != nil {
 		t.Fatal(err)
 	}
 	SetupLicenseAndProjectHash("token")
 
-	licenseKey := os.Getenv(QodanaLicense)
+	licenseKey := os.Getenv(platform.QodanaLicense)
 	if licenseKey != expectedKey {
 		t.Errorf("expected key to be '%s' got '%s'", expectedKey, licenseKey)
 	}
-	projectIdHash := os.Getenv(QodanaProjectIdHash)
+	projectIdHash := os.Getenv(platform.QodanaProjectIdHash)
 	if projectIdHash != expectedHash {
 		t.Errorf("expected projectIdHash to be '%s' got '%s'", expectedHash, projectIdHash)
 	}
 
-	err = os.Unsetenv(QodanaLicenseEndpoint)
+	err = os.Unsetenv(platform.QodanaLicenseEndpoint)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	err = os.Unsetenv(QodanaLicense)
+	err = os.Unsetenv(platform.QodanaLicense)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	err = os.Unsetenv(QodanaProjectIdHash)
+	err = os.Unsetenv(platform.QodanaProjectIdHash)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -1205,15 +712,15 @@ func TestSetupLicenseToken(t *testing.T) {
 		},
 	} {
 		t.Run(testData.name, func(t *testing.T) {
-			err := os.Setenv(QodanaLicenseOnlyToken, testData.loToken)
+			err := os.Setenv(platform.QodanaLicenseOnlyToken, testData.loToken)
 			if err != nil {
 				t.Fatal(err)
 			}
-			err = os.Setenv(QodanaToken, testData.token)
+			err = os.Setenv(platform.QodanaToken, testData.token)
 			if err != nil {
 				t.Fatal(err)
 			}
-			SetupLicenseToken(&QodanaOptions{})
+			cloud.SetupLicenseToken(testData.token)
 
 			if cloud.Token.Token != testData.resToken {
 				t.Errorf("expected token to be '%s' got '%s'", testData.resToken, cloud.Token.Token)
@@ -1229,12 +736,12 @@ func TestSetupLicenseToken(t *testing.T) {
 				t.Errorf("expected allow send report to be '%t' got '%t'", testData.sendReport, toSendReports)
 			}
 
-			err = os.Unsetenv(QodanaLicenseOnlyToken)
+			err = os.Unsetenv(platform.QodanaLicenseOnlyToken)
 			if err != nil {
 				t.Fatal(err)
 			}
 
-			err = os.Unsetenv(QodanaToken)
+			err = os.Unsetenv(platform.QodanaToken)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -1251,34 +758,34 @@ func TestQodanaOptions_RequiresToken(t *testing.T) {
 		expected bool
 	}{
 		{
-			QodanaToken,
+			platform.QodanaToken,
 			"",
 			"",
 			true,
 		},
 		{
-			QodanaLicense,
+			platform.QodanaLicense,
 			"",
 			"",
 			false,
 		},
 		{
 			"QDPYC docker",
-			Image(QDPYC),
+			platform.Image(platform.QDPYC),
 			"",
 			false,
 		},
 		{
 			"QDJVMC ide",
 			"",
-			QDJVMC,
+			platform.QDJVMC,
 			false,
 		},
 	}
 
 	for _, tt := range tests {
 		var token string
-		for _, env := range []string{QodanaToken, QodanaLicenseOnlyToken, QodanaLicense} {
+		for _, env := range []string{platform.QodanaToken, platform.QodanaLicenseOnlyToken, platform.QodanaLicense} {
 			if os.Getenv(env) != "" {
 				token = os.Getenv(env)
 				err := os.Unsetenv(env)
@@ -1289,42 +796,44 @@ func TestQodanaOptions_RequiresToken(t *testing.T) {
 		}
 
 		t.Run(tt.name, func(t *testing.T) {
-			if tt.name == QodanaToken {
-				err := os.Setenv(QodanaToken, "test")
+			if tt.name == platform.QodanaToken {
+				err := os.Setenv(platform.QodanaToken, "test")
 				if err != nil {
 					t.Fatal(err)
 				}
 				defer func() {
-					err := os.Unsetenv(QodanaToken)
+					err := os.Unsetenv(platform.QodanaToken)
 					if err != nil {
 						t.Fatal(err)
 					}
 				}()
-			} else if tt.name == QodanaLicense {
-				err := os.Setenv(QodanaLicense, "test")
+			} else if tt.name == platform.QodanaLicense {
+				err := os.Setenv(platform.QodanaLicense, "test")
 				if err != nil {
 					t.Fatal(err)
 				}
 				defer func() {
-					err := os.Unsetenv(QodanaLicense)
+					err := os.Unsetenv(platform.QodanaLicense)
 					if err != nil {
 						t.Fatal(err)
 					}
 				}()
 			}
-			o := QodanaOptions{
-				Linter: tt.linter,
-				Ide:    tt.ide,
+			o := &QodanaOptions{
+				&platform.QodanaOptions{
+					Linter: tt.linter,
+					Ide:    tt.ide,
+				},
 			}
-			result := o.RequiresToken()
+			result := o.RequiresToken(Prod.EAP || Prod.IsCommunity())
 			assert.Equal(t, tt.expected, result)
 		})
 		if token != "" {
-			err := os.Setenv(QodanaToken, token)
+			err := os.Setenv(platform.QodanaToken, token)
 			if err != nil {
 				t.Fatal(err)
 			}
-			err = os.Setenv(QodanaLicenseOnlyToken, token)
+			err = os.Setenv(platform.QodanaLicenseOnlyToken, token)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -1384,7 +893,7 @@ func propertiesFixture(enableStats bool, additionalProperties []string) []string
 }
 
 func Test_Properties(t *testing.T) {
-	opts := &QodanaOptions{}
+	opts := &QodanaOptions{&platform.QodanaOptions{}}
 	tmpDir := filepath.Join(os.TempDir(), "entrypoint")
 	opts.ProjectDir = tmpDir
 	opts.ResultsDir = opts.ProjectDir
@@ -1396,15 +905,15 @@ func Test_Properties(t *testing.T) {
 	Prod.Code = "QDNET"
 	Prod.Version = "2023.3"
 
-	err := os.Setenv(QodanaDistEnv, opts.ProjectDir)
+	err := os.Setenv(platform.QodanaDistEnv, opts.ProjectDir)
 	if err != nil {
 		t.Fatal(err)
 	}
-	err = os.Setenv(QodanaConfEnv, opts.ProjectDir)
+	err = os.Setenv(platform.QodanaConfEnv, opts.ProjectDir)
 	if err != nil {
 		t.Fatal(err)
 	}
-	err = os.Setenv(qodanaDockerEnv, "true")
+	err = os.Setenv(platform.QodanaDockerEnv, "true")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -1488,16 +997,16 @@ func Test_Properties(t *testing.T) {
 				t.Fatal(err)
 			}
 			opts.Property = tc.cliProperties
-			qConfig := GetQodanaYaml(opts.ProjectDir)
+			qConfig := platform.GetQodanaYaml(opts.ProjectDir)
 			if tc.isContainer {
-				err = os.Setenv(qodanaDockerEnv, "true")
+				err = os.Setenv(platform.QodanaDockerEnv, "true")
 				if err != nil {
 					t.Fatal(err)
 				}
 			}
 			actual := GetProperties(opts, qConfig.Properties, qConfig.DotNet, []string{})
 			if tc.isContainer {
-				err = os.Unsetenv(qodanaDockerEnv)
+				err = os.Unsetenv(platform.QodanaDockerEnv)
 				if err != nil {
 					t.Fatal(err)
 				}

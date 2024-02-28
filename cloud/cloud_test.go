@@ -1,5 +1,5 @@
 /*
- * Copyright 2021-2023 JetBrains s.r.o.
+ * Copyright 2021-2024 JetBrains s.r.o.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,7 +25,6 @@ import (
 )
 
 func TestGetProjectByBadToken(t *testing.T) {
-	t.Skip() // Until qodana.cloud response is fixed
 	client := NewQdClient("https://www.jetbrains.com")
 	result := client.getProject()
 	switch v := result.(type) {
@@ -80,14 +79,12 @@ func TestGetReportUrl(t *testing.T) {
 		{
 			name:           "valid json data and url",
 			jsonData:       jsonData{Cloud: cloudInfo{URL: "https://cloud.qodana.com/report/url"}},
-			reportUrlFile:  "https://raw.qodana.com/report/url",
 			expectedReport: "https://cloud.qodana.com/report/url",
 		},
 		{
 			name:           "invalid json data, valid url file data",
 			jsonData:       jsonData{Cloud: cloudInfo{URL: ""}},
-			reportUrlFile:  "https://raw.qodana.com/report/url",
-			expectedReport: "https://raw.qodana.com/report/url",
+			expectedReport: "",
 		},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
@@ -95,10 +92,6 @@ func TestGetReportUrl(t *testing.T) {
 			jsonFile := filepath.Join(dir, openInIdeJson)
 			jsonFileData, _ := json.Marshal(tc.jsonData)
 			if err := os.WriteFile(jsonFile, jsonFileData, 0644); err != nil {
-				t.Fatal(err)
-			}
-			urlFile := filepath.Join(dir, legacyReportFile)
-			if err := os.WriteFile(urlFile, []byte(tc.reportUrlFile), 0644); err != nil {
 				t.Fatal(err)
 			}
 

@@ -1,15 +1,32 @@
 #!/bin/bash
 
-docker run --rm -v `pwd`:/qodana -w /qodana \
+#
+# Copyright 2021-2024 JetBrains s.r.o.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# https://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+
+docker run --rm -v `pwd`:/qodana -w /qodana/cli \
     -e DEVICEID=200820300000000-0000-0000-0000-000000000001 \
     -v $GOPATH:/go \
+    -e CGO_ENABLED=0 \
     golang:1.21 go build -o qodana
 
 docker run -it --rm \
     -e DEVICEID=200820300000000-0000-0000-0000-000000000001 \
     --pull always \
     -w /data/project \
-    -v `pwd`:/data/project \
-    -v `pwd`/qodana:/opt/idea/bin/qodana \
+    -v `pwd`/sarif:/data/project \
+    -v `pwd`/cli/qodana:/opt/idea/bin/qodana \
     -p 8080:8080 \
-    registry.jetbrains.team/p/sa/containers/qodana-go scan
+    registry.jetbrains.team/p/sa/containers/qodana-go --save-report --log-level debug
