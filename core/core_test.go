@@ -457,7 +457,7 @@ func Test_Bootstrap(t *testing.T) {
 	}
 	opts.ProjectDir = tmpDir
 	platform.Bootstrap("echo 'bootstrap: touch qodana.yml' > qodana.yaml", opts.ProjectDir)
-	config := platform.GetQodanaYaml(tmpDir)
+	config := platform.GetQodanaYamlOrDefault(tmpDir)
 	platform.Bootstrap(config.Bootstrap, opts.ProjectDir)
 	if _, err := os.Stat(filepath.Join(opts.ProjectDir, "qodana.yaml")); errors.Is(err, os.ErrNotExist) {
 		t.Fatalf("No qodana.yml created by the bootstrap command in qodana.yaml")
@@ -997,7 +997,7 @@ func Test_Properties(t *testing.T) {
 				t.Fatal(err)
 			}
 			opts.Property = tc.cliProperties
-			qConfig := platform.GetQodanaYaml(opts.ProjectDir)
+			qConfig := platform.GetQodanaYamlOrDefault(opts.ProjectDir)
 			if tc.isContainer {
 				err = os.Setenv(platform.QodanaDockerEnv, "true")
 				if err != nil {

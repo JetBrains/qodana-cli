@@ -32,7 +32,7 @@ func (o *CltOptions) Setup(_ *platform.QodanaOptions) error {
 
 func (o *CltOptions) RunAnalysis(opts *platform.QodanaOptions) error {
 	options := &LocalOptions{opts}
-	yaml := platform.GetQodanaYaml(options.ProjectDir)
+	yaml := platform.GetQodanaYamlOrDefault(options.ProjectDir)
 	platform.Bootstrap(yaml.Bootstrap, options.ProjectDir)
 	args, err := o.computeCdnetArgs(opts, options, yaml)
 	if err != nil {
