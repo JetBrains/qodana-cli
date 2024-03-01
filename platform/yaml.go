@@ -19,6 +19,7 @@ package platform
 import (
 	"bytes"
 	"errors"
+	"fmt"
 	log "github.com/sirupsen/logrus"
 	"gopkg.in/yaml.v3"
 	"os"
@@ -41,22 +42,31 @@ func GetQodanaYamlPath(project string) (string, error) {
 	return qodanaYamlPath, nil
 }
 
-// GetQodanaYaml reads qodana.yaml or qodana.yml
-func GetQodanaYaml(project string) QodanaYaml {
+// GetQodanaYaml returns a parsed qodana.yaml or qodana.yml or error if not found/invalid
+func GetQodanaYaml(project string) (QodanaYaml, error) {
 	q := &QodanaYaml{}
 	qodanaYamlPath, err := GetQodanaYamlPath(project)
 	if err != nil {
-		return *q
+		return *q, err
 	}
 	yamlFile, err := os.ReadFile(qodanaYamlPath)
 	if err != nil {
-		log.Printf("Problem loading qodana.yaml: %v ", err)
+		return *q, err
 	}
 	err = yaml.Unmarshal(yamlFile, q)
 	if err != nil {
-		log.Printf("Not a valid qodana.yaml: %v ", err)
+		return *q, fmt.Errorf("not a valid qodana.yaml: %w", err)
 	}
-	return *q
+	return *q, nil
+}
+
+// GetQodanaYamlOrDefault reads qodana.yaml or qodana.yml and returns an empty config if not found or invalid
+func GetQodanaYamlOrDefault(project string) QodanaYaml {
+	q, err := GetQodanaYaml(project)
+	if err != nil {
+		log.Printf("Problem loading qodana.yaml: %v ", err)
+	}
+	return q
 }
 
 // QodanaYaml A standard qodana.yaml (or qodana.yml) format for Qodana configuration.

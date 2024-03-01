@@ -166,6 +166,13 @@ func RunAnalysis(ctx context.Context, options *QodanaOptions) int {
 	options.LogOptions()
 	prepareHost(options)
 
+	hasCommitRange := options.DiffStart != "" && options.DiffEnd != ""
+	// this way of running needs to do bootstrap twice on different commits and will do it internally
+	if !hasCommitRange && options.Ide != "" {
+		platform.Bootstrap(platform.Config.Bootstrap, options.ProjectDir)
+		installPlugins(platform.Config.Plugins)
+	}
+
 	if !isInstalled("git") && (options.FullHistory || options.Commit != "" || options.DiffStart != "" || options.DiffEnd != "") {
 		log.Fatal("Cannot use git related functionality without a git executable")
 	}
@@ -174,7 +181,7 @@ func RunAnalysis(ctx context.Context, options *QodanaOptions) int {
 		return runWithFullHistory(ctx, options)
 	} else if options.Commit != "" {
 		return runOnSingleCommit(ctx, options)
-	} else if options.DiffStart != "" && options.DiffEnd != "" {
+	} else if hasCommitRange {
 		return runOnCommitRange(ctx, options)
 	} else {
 		return runQodana(ctx, options)
@@ -275,7 +282,14 @@ func runOnCommitRange(ctx context.Context, options *QodanaOptions) int {
 		}
 		log.Infof("Analysing %s", hash)
 		writeProperties(options)
-		platform.Bootstrap(platform.Config.Bootstrap, options.ProjectDir) // TODO: different config prop?
+
+		configAtHash, e := platform.GetQodanaYaml(options.ProjectDir)
+		if e != nil {
+			log.Warnf("Could not read qodana yaml at %s: %v. Using last known config", hash, e)
+			configAtHash = platform.Config
+		}
+		platform.Bootstrap(configAtHash.Bootstrap, options.ProjectDir)
+		installPlugins(configAtHash.Plugins)
 
 		exitCode := runQodana(ctx, options)
 		if !(exitCode == 0 || exitCode == 255) {

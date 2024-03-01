@@ -350,16 +350,13 @@ func prepareLocalIdeSettings(opts *QodanaOptions) {
 		opts.LogDirPath(),
 		opts.ConfDirPath(),
 	)
-	platform.Config = platform.GetQodanaYaml(opts.ProjectDir) // TODO: Burry it!
+	platform.Config = platform.GetQodanaYamlOrDefault(opts.ProjectDir) // TODO: Burry it!
 	writeProperties(opts)
 
 	if platform.IsContainer() {
 		syncIdeaCache(opts.CacheDir, opts.ProjectDir, false)
 		createUser("/etc/passwd")
 	}
-
-	platform.Bootstrap(platform.Config.Bootstrap, opts.ProjectDir)
-	installPlugins(platform.Config.Plugins)
 }
 
 func prepareDirectories(cacheDir string, logDir string, confDir string) {
