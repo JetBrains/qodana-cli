@@ -1,13 +1,13 @@
 go 1.21
 
 use (
-	cdnet
-	cli
-	cloud
-	cmd
-	core
-	linter
-	platform
-	sarif
-	tooling
+	./cdnet
+	./cli
+	./cloud
+	./cmd
+	./core
+	./linter
+	./platform
+	./sarif
+	./tooling
 )

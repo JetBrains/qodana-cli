@@ -12,6 +12,36 @@ licenseRules:
       - Unlicense
       - BSD-3-CLAUSE-NO-TRADEMARK
 dependencyOverrides:
+  - name: github.com/JetBrains/qodana-cli/v2024/cdnet
+    version: ""
+    licenses:
+      - key: Apache-2.0
+        url: https://github.com/JetBrains/qodana-cli/blob/main/LICENSE
+  - name: github.com/JetBrains/qodana-cli/v2024/cli
+    version: ""
+    licenses:
+      - key: Apache-2.0
+        url: https://github.com/JetBrains/qodana-cli/blob/main/LICENSE
+  - name: github.com/JetBrains/qodana-cli/v2024/linter
+    version: ""
+    licenses:
+      - key: Apache-2.0
+        url: https://github.com/JetBrains/qodana-cli/blob/main/LICENSE
+  - name: github.com/JetBrains/qodana-cli/v2024/platform
+    version: ""
+    licenses:
+      - key: Apache-2.0
+        url: https://github.com/JetBrains/qodana-cli/blob/main/LICENSE
+  - name: github.com/JetBrains/qodana-cli/v2024/sarif
+    version: ""
+    licenses:
+      - key: Apache-2.0
+        url: https://github.com/JetBrains/qodana-cli/blob/main/LICENSE
+  - name: github.com/JetBrains/qodana-cli/v2024/tooling
+    version: ""
+    licenses:
+      - key: Apache-2.0
+        url: https://github.com/JetBrains/qodana-cli/blob/main/LICENSE
   - name: github.com/BurntSushi/xgb
     version: v0.0.0-20160522181843-27f122750802
     licenses:
