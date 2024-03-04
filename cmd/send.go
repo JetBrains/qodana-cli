@@ -57,6 +57,6 @@ If you are using other Qodana Cloud instance than https://qodana.cloud/, overrid
 	flags.StringVarP(&options.ProjectDir, "project-dir", "i", ".", "Root directory of the inspected project")
 	flags.StringVarP(&options.ResultsDir, "results-dir", "o", "", "Override directory to save Qodana inspection results to (default <userCacheDir>/JetBrains/<linter>/results)")
 	flags.StringVarP(&options.ReportDir, "report-dir", "r", "", "Override directory to save Qodana HTML report to (default <userCacheDir>/JetBrains/<linter>/results/report)")
-	flags.StringVarP(&options.YamlName, "yaml-name", "y", platform.FindQodanaYaml(options.ProjectDir), "Override qodana.yaml name")
+	flags.StringVar(&options.ConfigName, "config", "", "Set a custom configuration file instead of 'qodana.yaml'. Relative paths in the configuration will be based on the project directory.")
 	return cmd
 }

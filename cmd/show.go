@@ -59,6 +59,6 @@ This command serves the Qodana report locally and opens a browser to it.`,
 	flags.StringVarP(&options.ReportDir, "report-dir", "r", "", "Override directory to save Qodana HTML report to (default <userCacheDir>/JetBrains/<linter>/results/report)")
 	flags.IntVarP(&options.Port, "port", "p", 8080, "Specify port to serve report at")
 	flags.BoolVarP(&openDir, "dir-only", "d", false, "Open report directory only, don't serve it")
-	flags.StringVarP(&options.YamlName, "yaml-name", "y", platform.FindQodanaYaml(options.ProjectDir), "Override qodana.yaml name")
+	flags.StringVar(&options.ConfigName, "config", "", "Set a custom configuration file instead of 'qodana.yaml'. Relative paths in the configuration will be based on the project directory.")
 	return cmd
 }

@@ -34,10 +34,10 @@ func newInitCommand() *cobra.Command {
 		Short: "Configure a project for Qodana",
 		Long:  `Configure a project for Qodana: prepare Qodana configuration file by analyzing the project structure and generating a default configuration qodana.yaml file.`,
 		Run: func(cmd *cobra.Command, args []string) {
-			if options.YamlName == "" {
-				options.YamlName = platform.FindQodanaYaml(options.ProjectDir)
+			if options.ConfigName == "" {
+				options.ConfigName = platform.FindQodanaYaml(options.ProjectDir)
 			}
-			qodanaYaml := platform.LoadQodanaYaml(options.ProjectDir, options.YamlName)
+			qodanaYaml := platform.LoadQodanaYaml(options.ProjectDir, options.ConfigName)
 			if (qodanaYaml.Linter == "" && qodanaYaml.Ide == "") || force {
 				absPath, err := filepath.Abs(options.ProjectDir)
 				if err != nil {
@@ -47,7 +47,7 @@ func newInitCommand() *cobra.Command {
 				if platform.IsInteractive() && !platform.AskUserConfirm(fmt.Sprintf("Do you want to set up Qodana in %s", platform.PrimaryBold(options.ProjectDir))) {
 					return
 				}
-				analyzer := platform.GetAnalyzer(options.ProjectDir, options.YamlName)
+				analyzer := platform.GetAnalyzer(options.ProjectDir, options.ConfigName)
 				if platform.IsNativeAnalyzer(analyzer) {
 					options.Ide = analyzer
 				} else {
@@ -68,11 +68,11 @@ func newInitCommand() *cobra.Command {
 				)
 			}
 			if platform.IsInteractive() && qodanaYaml.IsDotNet() && (qodanaYaml.DotNet.IsEmpty() || force) {
-				if platform.GetDotNetConfig(options.ProjectDir, options.YamlName) {
+				if platform.GetDotNetConfig(options.ProjectDir, options.ConfigName) {
 					platform.SuccessMessage("The .NET configuration was successfully set")
 				}
 			}
-			platform.PrintFile(filepath.Join(options.ProjectDir, options.YamlName))
+			platform.PrintFile(filepath.Join(options.ProjectDir, options.ConfigName))
 			options.Linter = qodanaYaml.Linter
 			options.Ide = qodanaYaml.Ide
 			if options.RequiresToken(core.Prod.EAP || core.Prod.IsCommunity()) {
@@ -83,6 +83,6 @@ func newInitCommand() *cobra.Command {
 	flags := cmd.Flags()
 	flags.StringVarP(&options.ProjectDir, "project-dir", "i", ".", "Root directory of the project to configure")
 	flags.BoolVarP(&force, "force", "f", false, "Force initialization (overwrite existing valid qodana.yaml)")
-	flags.StringVar(&options.YamlName, "yaml-name", "", "Override qodana.yaml name")
+	flags.StringVar(&options.ConfigName, "config", "", "Set a custom configuration file instead of 'qodana.yaml'. Relative paths in the configuration will be based on the project directory.")
 	return cmd
 }

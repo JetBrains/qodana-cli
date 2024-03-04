@@ -42,7 +42,7 @@ func ComputeFlags(cmd *cobra.Command, options *QodanaOptions) error {
 	flags.BoolVar(&options.ClearCache, "clear-cache", false, "Clear the local Qodana cache before running the analysis")
 	flags.BoolVarP(&options.ShowReport, "show-report", "w", false, "Serve HTML report on port")
 	flags.IntVar(&options.Port, "port", 8080, "Port to serve the report on")
-	flags.StringVar(&options.YamlName, "yaml-name", FindQodanaYaml(options.ProjectDir), "Override qodana.yaml name to use: 'qodana.yaml' or 'qodana.yml'")
+	flags.StringVar(&options.ConfigName, "config", "", "Set a custom configuration file instead of 'qodana.yaml'. Relative paths in the configuration will be based on the project directory.")
 
 	flags.StringVarP(&options.AnalysisId, "analysis-id", "a", uuid.New().String(), "Unique report identifier (GUID) to be used by Qodana Cloud")
 	flags.StringVarP(&options.Baseline, "baseline", "b", "", "Provide the path to an existing SARIF report to be used in the baseline state calculation")

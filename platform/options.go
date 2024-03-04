@@ -65,7 +65,7 @@ type QodanaOptions struct {
 	PrintProblems           bool
 	SkipPull                bool
 	ClearCache              bool
-	YamlName                string
+	ConfigName              string
 	GitReset                bool
 	FullHistory             bool
 	ApplyFixes              bool
@@ -123,14 +123,14 @@ func (o *QodanaOptions) LogOptions() {
 
 func (o *QodanaOptions) FetchAnalyzerSettings() {
 	if o.Linter == "" && o.Ide == "" {
-		qodanaYaml := LoadQodanaYaml(o.ProjectDir, o.YamlName)
+		qodanaYaml := LoadQodanaYaml(o.ProjectDir, o.ConfigName)
 		if qodanaYaml.Linter == "" && qodanaYaml.Ide == "" {
 			WarningMessage(
 				"No valid `linter:` or `ide:` field found in %s. Have you run %s? Running that for you...",
-				PrimaryBold(o.YamlName),
+				PrimaryBold(o.ConfigName),
 				PrimaryBold("qodana init"),
 			)
-			analyzer := GetAnalyzer(o.ProjectDir, o.YamlName)
+			analyzer := GetAnalyzer(o.ProjectDir, o.ConfigName)
 			if IsNativeAnalyzer(analyzer) {
 				o.Ide = analyzer
 			} else {
@@ -190,7 +190,7 @@ func (o *QodanaOptions) Id() string {
 			analyzer = o.Ide
 		}
 		if analyzer == "" {
-			qYaml := LoadQodanaYaml(o.ProjectDir, o.YamlName)
+			qYaml := LoadQodanaYaml(o.ProjectDir, o.ConfigName)
 			if qYaml.Ide != "" {
 				analyzer = qYaml.Linter
 			} else if qYaml.Linter != "" {
