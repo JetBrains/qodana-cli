@@ -88,6 +88,8 @@ jobs:
       - uses: JetBrains/qodana-action@main
         env:
           QODANA_TOKEN: ${{ secrets.QODANA_TOKEN }}
+        with:
+          args: '-b,.github/qodana.sarif.json'
       - uses: github/codeql-action/init@v3
         with:
           languages: go
