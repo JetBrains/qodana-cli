@@ -280,6 +280,12 @@ func runOnCommitRange(ctx context.Context, options *QodanaOptions) int {
 		if e != nil {
 			log.Fatalf("Cannot checkout commit %s: %v", hash, e)
 		}
+
+		prepareDirectories(
+			options.CacheDir,
+			options.LogDirPath(),
+			options.ConfDirPath(),
+		)
 		log.Infof("Analysing %s", hash)
 		writeProperties(options)
 
