@@ -68,7 +68,7 @@ func gitOutput(cwd string, args []string) []string {
 
 // GitLog returns the git log of the given repository in the given format.
 func GitLog(cwd string, format string, since int) []string {
-	args := []string{"--no-pager", "log"}
+	args := []string{"--no-pager", "log", "--all"}
 	if format != "" {
 		args = append(args, "--pretty=format:"+format)
 	}
