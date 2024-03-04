@@ -89,6 +89,9 @@ func getIdeRunCommand(opts *QodanaOptions) []string {
 // GetIdeArgs returns qodana command options.
 func GetIdeArgs(opts *QodanaOptions) []string {
 	arguments := make([]string, 0)
+	if opts.ConfigName != "" {
+		arguments = append(arguments, "--config", platform.QuoteForWindows(opts.ConfigName))
+	}
 	if opts.Linter != "" && opts.SaveReport {
 		arguments = append(arguments, "--save-report")
 	}

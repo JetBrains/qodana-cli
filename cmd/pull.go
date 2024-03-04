@@ -32,6 +32,9 @@ func newPullCommand() *cobra.Command {
 		Short: "Pull latest version of linter",
 		Long:  `An alternative to pull an image.`,
 		Run: func(cmd *cobra.Command, args []string) {
+			if options.ConfigName == "" {
+				options.ConfigName = platform.FindQodanaYaml(options.ProjectDir)
+			}
 			options.FetchAnalyzerSettings()
 			if options.Ide != "" {
 				log.Println("Native mode is used, skipping pull")
@@ -48,6 +51,6 @@ func newPullCommand() *cobra.Command {
 	flags := cmd.Flags()
 	flags.StringVarP(&options.Linter, "linter", "l", "", "Override linter to use")
 	flags.StringVarP(&options.ProjectDir, "project-dir", "i", ".", "Root directory of the inspected project")
-	flags.StringVarP(&options.YamlName, "yaml-name", "y", platform.FindQodanaYaml(options.ProjectDir), "Override qodana.yaml name")
+	flags.StringVar(&options.ConfigName, "config", "", "Set a custom configuration file instead of 'qodana.yaml'. Relative paths in the configuration will be based on the project directory.")
 	return cmd
 }
