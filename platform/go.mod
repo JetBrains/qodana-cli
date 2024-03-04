@@ -4,15 +4,15 @@ go 1.21
 
 require (
 	github.com/cucumber/ci-environment/go v0.0.0-20230911180507-bd001ebc644c
-	github.com/go-enry/go-enry/v2 v2.8.6
-	github.com/google/uuid v1.5.0
+	github.com/go-enry/go-enry/v2 v2.8.7
+	github.com/google/uuid v1.6.0
 	github.com/liamg/clinch v1.6.6
 	github.com/mattn/go-isatty v0.0.20
 	github.com/otiai10/copy v1.14.0
-	github.com/pterm/pterm v0.12.75
+	github.com/pterm/pterm v0.12.79
 	github.com/sirupsen/logrus v1.9.3
 	github.com/spf13/cobra v1.8.0
-	github.com/stretchr/testify v1.8.4
+	github.com/stretchr/testify v1.9.0
 	github.com/zalando/go-keyring v0.2.3
 	gopkg.in/yaml.v3 v3.0.1
 )
