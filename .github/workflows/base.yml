@@ -7,6 +7,9 @@ on:
     paths:
       - '**/base/*.Dockerfile'
       - '**/base/*.hcl'
+  pull_request:
+    paths:
+      - '**/base/*.hcl'
   schedule:
     - cron: '0 0 * * 1'
 
@@ -15,9 +18,16 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        version: [ next, 2024.1, 2023.3, 2023.2 ]
+        version: [ "next", "2024.1", "2023.3", "2023.2" ]
+        group: [ "default", "more" ]
     runs-on: ubuntu-latest
     steps:
+      - name: Clean up
+        run: |
+          sudo rm -rf /usr/share/dotnet
+          sudo rm -rf /opt/ghc
+          sudo rm -rf "/usr/local/share/boost"
+          sudo rm -rf "$AGENT_TOOLSDIRECTORY"
       - name: Checkout
         uses: actions/checkout@v4
       - name: Set up QEMU
@@ -34,3 +44,7 @@ jobs:
         with:
           push: ${{ github.ref == 'refs/heads/main' }}
           workdir: ${{ matrix.version }}/base
+          targets: ${{ matrix.group }}
+          set: |
+            *.cache-from=type=gha,scope=provenance
+            *.cache-to=type=gha,scope=provenance,mode=max

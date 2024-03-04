@@ -1,5 +1,13 @@
-group "default" {
+group "all" {
   targets = ["debian", "debian-js", "python", "python-js", "other"]
+}
+
+group "default" {
+  targets = ["debian", "debian-js", "python", "python-js"]
+}
+
+group "more" {
+  targets = ["other"]
 }
 
 target "debian" {
@@ -8,12 +16,6 @@ target "debian" {
   ]
   platforms = ["linux/amd64", "linux/arm64"]
   dockerfile = "debian.Dockerfile"
-  cache-from = [
-    "type=local,src=docker_cache/debian",
-  ]
-  cache-to = [
-    "type=local,dest=docker_cache/debian,mode=max",
-  ]
 }
 
 target "debian-js" {
@@ -25,12 +27,6 @@ target "debian-js" {
   ]
   platforms = ["linux/amd64", "linux/arm64"]
   dockerfile = "debian.js.Dockerfile"
-  cache-from = [
-    "type=local,src=docker_cache/debian_js",
-  ]
-  cache-to = [
-    "type=local,dest=docker_cache/debian_js,mode=max",
-  ]
 }
 
 target "python" {
@@ -42,12 +38,6 @@ target "python" {
   ]
   platforms = ["linux/amd64", "linux/arm64"]
   dockerfile = "python.Dockerfile"
-  cache-from = [
-    "type=local,src=docker_cache/python",
-  ]
-  cache-to = [
-    "type=local,dest=docker_cache/python,mode=max",
-  ]
 }
 
 target "python-js" {
@@ -59,12 +49,6 @@ target "python-js" {
   ]
   platforms = ["linux/amd64", "linux/arm64"]
   dockerfile = "python.js.Dockerfile"
-  cache-from = [
-    "type=local,src=docker_cache/python_js",
-  ]
-  cache-to = [
-    "type=local,dest=docker_cache/python_js,mode=max",
-  ]
 }
 
 target "other" {
@@ -77,10 +61,4 @@ target "other" {
   ]
   platforms = ["linux/amd64", "linux/arm64"]
   dockerfile = "${edition}.Dockerfile"
-  cache-from = [
-    "type=local,src=docker_cache/other",
-  ]
-  cache-to = [
-    "type=local,dest=docker_cache/other,mode=max",
-  ]
 }

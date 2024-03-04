@@ -1,5 +1,13 @@
+group "all" {
+  targets = ["debian", "debian-js", "python", "python-js", "dotnet", "go", "js", "php", "rust", "ruby", "cpp", "cdnet"]
+}
+
 group "default" {
-  targets = ["debian", "debian-js", "python", "python-js", "dotnet", "go", "js", "php"]
+  targets = ["debian", "debian-js", "python", "python-js"]
+}
+
+group "more" {
+    targets = ["dotnet", "go", "js", "php"]
 }
 
 variable "NODE_TAG" {
@@ -20,12 +28,6 @@ target "debian" {
   }
   platforms = ["linux/amd64", "linux/arm64"]
   dockerfile = "debian.Dockerfile"
-  cache-from = [
-    "type=local,src=docker_cache/debian",
-  ]
-  cache-to = [
-    "type=local,dest=docker_cache/debian,mode=max",
-  ]
 }
 
 target "debian-js" {
@@ -40,12 +42,6 @@ target "debian-js" {
   ]
   platforms = ["linux/amd64", "linux/arm64"]
   dockerfile = "debian.js.Dockerfile"
-  cache-from = [
-    "type=local,src=docker_cache/debian_js",
-  ]
-  cache-to = [
-    "type=local,dest=docker_cache/debian_js,mode=max",
-  ]
 }
 
 target "python" {
@@ -57,12 +53,6 @@ target "python" {
   ]
   platforms = ["linux/amd64", "linux/arm64"]
   dockerfile = "python.Dockerfile"
-  cache-from = [
-    "type=local,src=docker_cache/python",
-  ]
-  cache-to = [
-    "type=local,dest=docker_cache/python,mode=max",
-  ]
 }
 
 target "python-js" {
@@ -77,12 +67,6 @@ target "python-js" {
   ]
   platforms = ["linux/amd64", "linux/arm64"]
   dockerfile = "python.js.Dockerfile"
-  cache-from = [
-    "type=local,src=docker_cache/python_js",
-  ]
-  cache-to = [
-    "type=local,dest=docker_cache/python_js,mode=max",
-  ]
 }
 
 target "dotnet" {
@@ -95,12 +79,6 @@ target "dotnet" {
   ]
   platforms = ["linux/amd64", "linux/arm64"]
   dockerfile = "dotnet.Dockerfile"
-  cache-from = [
-    "type=local,src=docker_cache/dotnet",
-  ]
-  cache-to = [
-    "type=local,dest=docker_cache/dotnet,mode=max",
-  ]
 }
 
 target "go" {
@@ -113,12 +91,6 @@ target "go" {
   ]
   platforms = ["linux/amd64", "linux/arm64"]
   dockerfile = "go.Dockerfile"
-  cache-from = [
-    "type=local,src=docker_cache/go",
-  ]
-  cache-to = [
-    "type=local,dest=docker_cache/go,mode=max",
-  ]
 }
 
 target "js" {
@@ -130,12 +102,6 @@ target "js" {
   ]
   platforms = ["linux/amd64", "linux/arm64"]
   dockerfile = "js.Dockerfile"
-  cache-from = [
-    "type=local,src=docker_cache/js",
-  ]
-  cache-to = [
-    "type=local,dest=docker_cache/js,mode=max",
-  ]
 }
 
 target "php" {
@@ -149,12 +115,6 @@ target "php" {
   ]
   platforms = ["linux/amd64", "linux/arm64"]
   dockerfile = "php.Dockerfile"
-  cache-from = [
-    "type=local,src=docker_cache/php",
-  ]
-  cache-to = [
-    "type=local,dest=docker_cache/php,mode=max",
-  ]
 }
 
 target "rust" {
@@ -167,12 +127,6 @@ target "rust" {
   ]
   platforms = ["linux/amd64", "linux/arm64"]
   dockerfile = "rust.Dockerfile"
-  cache-from = [
-    "type=local,src=docker_cache/rust",
-  ]
-  cache-to = [
-    "type=local,dest=docker_cache/rust,mode=max",
-  ]
 }
 
 target "ruby" {
@@ -185,12 +139,6 @@ target "ruby" {
   ]
   platforms = ["linux/amd64", "linux/arm64"]
   dockerfile = "ruby.Dockerfile"
-  cache-from = [
-    "type=local,src=docker_cache/ruby",
-  ]
-  cache-to = [
-    "type=local,dest=docker_cache/ruby,mode=max",
-  ]
 }
 
 target "cpp" {
@@ -202,12 +150,6 @@ target "cpp" {
   }
   platforms = ["linux/amd64", "linux/arm64"]
   dockerfile = "cpp.Dockerfile"
-  cache-from = [
-    "type=local,src=docker_cache/cpp",
-  ]
-  cache-to = [
-    "type=local,dest=docker_cache/cpp,mode=max",
-  ]
 }
 
 target "cdnet" {
@@ -219,10 +161,4 @@ target "cdnet" {
   }
   platforms = ["linux/amd64", "linux/arm64"]
   dockerfile = "dotnet.community.Dockerfile"
-  cache-from = [
-    "type=local,src=docker_cache/cdnet",
-  ]
-  cache-to = [
-    "type=local,dest=docker_cache/cdnet,mode=max",
-  ]
 }
