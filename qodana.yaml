@@ -58,3 +58,4 @@ exclude:
     paths:
       - core/core_test.go
       - core/license_test.go
+      - .github/qodana.sarif.json
