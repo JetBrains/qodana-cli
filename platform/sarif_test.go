@@ -136,6 +136,7 @@ func (s SarifTestOptions) Setup(o *QodanaOptions) error {
 	return nil
 }
 
+//goland:noinspection GoUnusedParameter
 func (s SarifTestOptions) RunAnalysis(o *QodanaOptions) error {
 	return nil
 }
