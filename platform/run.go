@@ -43,7 +43,7 @@ func setup(options *QodanaOptions) error {
 	}
 	// TODO iscommunityoreap
 	cloud.SetupLicenseToken(options.LoadToken(false, options.RequiresToken(false)))
-	options.LicensePlan, err = cloud.GetLicensePlan()
+	options.LicensePlan, err = cloud.GetCloudApiEndpoints().GetLicensePlan()
 	if err != nil {
 		if !linterInfo.IsEap {
 			return fmt.Errorf("failed to get license plan: %w", err)

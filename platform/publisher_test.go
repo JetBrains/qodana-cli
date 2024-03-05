@@ -17,7 +17,6 @@
 package platform
 
 import (
-	"github.com/JetBrains/qodana-cli/v2024/cloud"
 	"os"
 	"path/filepath"
 	"reflect"
@@ -55,10 +54,6 @@ func TestGetPublisherArgs(t *testing.T) {
 
 	// Set up test environment variables
 	err := os.Setenv(QodanaToolEnv, "test-tool")
-	if err != nil {
-		t.Fatal(err)
-	}
-	err = os.Setenv(cloud.QodanaEndpoint, "test-endpoint")
 	if err != nil {
 		t.Fatal(err)
 	}

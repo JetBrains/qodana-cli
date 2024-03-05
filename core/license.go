@@ -26,23 +26,23 @@ import (
 	"strings"
 )
 
-func requestLicenseData(token string) cloud.LicenseData {
-	licenseEndpoint := cloud.GetEnvWithDefault(platform.QodanaLicenseEndpoint, "https://linters.qodana.cloud")
+func requestLicenseData(endpoints *cloud.QdApiEndpoints, token string) cloud.LicenseData {
 
-	licenseDataResponse, err := cloud.RequestLicenseData(licenseEndpoint, token)
+	licenseDataResponse, err := endpoints.RequestLicenseData(token)
 	if errors.Is(err, cloud.TokenDeclinedError) {
 		log.Fatalf("License request: %v\n%s", err, cloud.DeclinedTokenErrorMessage)
 	}
 	if err != nil {
-		log.Fatalf("License request: %v\n%s", err, cloud.GeneralLicenseErrorMessage)
+		errMessage := fmt.Sprintf(cloud.GeneralLicenseErrorMessage, endpoints.RootEndpoint.GetCloudUrl())
+		log.Fatalf("License request: %v\n%s", err, errMessage)
 	}
 	return cloud.DeserializeLicenseData(licenseDataResponse)
 }
 
-func SetupLicenseAndProjectHash(token string) {
+func SetupLicenseAndProjectHash(endpoints *cloud.QdApiEndpoints, token string) {
 	var licenseData cloud.LicenseData
 	if token != "" {
-		licenseData = requestLicenseData(token)
+		licenseData = requestLicenseData(endpoints, token)
 		if licenseData.ProjectIdHash != "" {
 			err := os.Setenv(platform.QodanaProjectIdHash, licenseData.ProjectIdHash)
 			if err != nil {
@@ -63,7 +63,8 @@ func SetupLicenseAndProjectHash(token string) {
 	// eap version works with eap's license dependent on build date
 	if Prod.EAP {
 		if token == "" {
-			fmt.Println(cloud.EapWarnTokenMessage)
+			fmt.Printf(cloud.EapWarnTokenMessage, endpoints.RootEndpoint.GetCloudUrl())
+			fmt.Println()
 			fmt.Println()
 		}
 		return
@@ -71,17 +72,16 @@ func SetupLicenseAndProjectHash(token string) {
 
 	// usual builds should have token and LicenseData for execution
 	if token == "" {
-		log.Fatal(cloud.EmptyTokenMessage)
+		log.Fatalf(cloud.EmptyTokenMessage, endpoints.RootEndpoint.GetCloudUrl())
 	}
 
-	licenseEndpoint := cloud.GetEnvWithDefault(platform.QodanaLicenseEndpoint, "https://linters.qodana.cloud")
-
-	licenseDataResponse, err := cloud.RequestLicenseData(licenseEndpoint, token)
+	licenseDataResponse, err := endpoints.RequestLicenseData(token)
 	if errors.Is(err, cloud.TokenDeclinedError) {
 		log.Fatalf("License request: %v\n%s", err, cloud.DeclinedTokenErrorMessage)
 	}
 	if err != nil {
-		log.Fatalf("License request: %v\n%s", err, cloud.GeneralLicenseErrorMessage)
+		errMessage := fmt.Sprintf(cloud.GeneralLicenseErrorMessage, endpoints.RootEndpoint.GetCloudUrl())
+		log.Fatalf("License request: %v\n%s", err, errMessage)
 	}
 	licenseData = cloud.DeserializeLicenseData(licenseDataResponse)
 	if strings.ToLower(licenseData.LicensePlan) == "community" {

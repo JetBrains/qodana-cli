@@ -72,7 +72,7 @@ func SendReport(opts *QodanaOptions, token string, publisherPath string, javaPat
 		}
 	}
 
-	publisherCommand := getPublisherArgs(javaPath, publisherPath, opts, token, cloud.GetEnvWithDefault(cloud.QodanaEndpoint, cloud.DefaultEndpoint))
+	publisherCommand := getPublisherArgs(javaPath, publisherPath, opts, token, cloud.GetCloudRootEndpoint().Host)
 	if res, err := RunCmd("", publisherCommand...); res > 0 || err != nil {
 		os.Exit(res)
 	}

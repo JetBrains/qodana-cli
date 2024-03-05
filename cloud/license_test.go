@@ -204,7 +204,8 @@ func TestRequestLicenseData(t *testing.T) {
 			}))
 			defer svr.Close()
 
-			res, err := RequestLicenseData(svr.URL, testData.token)
+			apis := QdApiEndpoints{LintersApiUrl: svr.URL}
+			res, err := apis.RequestLicenseData(testData.token)
 			if err != nil {
 				if testData.success {
 					t.Errorf("requestLicenseData should failed")
