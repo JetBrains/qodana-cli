@@ -18,6 +18,7 @@ package cloud
 
 import (
 	"encoding/json"
+	"errors"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -25,47 +26,45 @@ import (
 )
 
 func TestGetProjectByBadToken(t *testing.T) {
-	client := NewQdClient("https://www.jetbrains.com")
-	result := client.getProject()
-	switch v := result.(type) {
-	case Success:
-		t.Errorf("Did not expect request error: %v", v)
-	case APIError:
-		if v.StatusCode > http.StatusBadRequest {
-			t.Errorf("Expected status code %d, got %d", http.StatusBadRequest, v.StatusCode)
+	apis := QdApiEndpoints{CloudApiUrl: "https://api.qodana.cloud/v1"}
+	client := apis.NewCloudApiClient("bad_token")
+	_, err := client.RequestProjectName()
+	if err == nil {
+		t.Errorf("Did not expect request success: %v", err)
+	}
+	var v *APIError
+	switch {
+	case errors.As(err, &v):
+		if v.StatusCode != http.StatusUnauthorized {
+			t.Errorf("Expected status code %d, got %d. Message %s", http.StatusUnauthorized, v.StatusCode, v.Message)
 		}
-	case RequestError:
-		t.Errorf("Did not expect request error: %v", v)
 	default:
-		t.Error("Unknown result type")
+		t.Errorf("Unknown result type")
 	}
 }
 
+// debug purpose only
 func TestGetProjectByStaging(t *testing.T) {
-	err := os.Setenv(QodanaEndpoint, "https://cloud.sssa-stgn.aws.intellij.net")
-	if err != nil {
-		t.Fatal(err)
-	}
+	endpoint := QdRootEndpoint{Host: "cloud.sssa-stgn.aws.intellij.net"}
 	token := os.Getenv("QODANA_TOKEN")
 	if token == "" {
 		t.Skip()
 	}
-	client := NewQdClient(token)
-	result := client.getProject()
-	switch v := result.(type) {
-	case APIError:
+	endpoints, err := endpoint.requestApiEndpoints()
+	if err != nil {
+		t.Errorf("Unexpected error: %v", err)
+	}
+
+	client := endpoints.NewCloudApiClient(token)
+	_, err = client.RequestProjectName()
+	var v *APIError
+	switch {
+	case errors.As(err, &v):
 		if v.StatusCode > http.StatusBadRequest {
 			t.Errorf("Expected status code %d, got %d", http.StatusBadRequest, v.StatusCode)
 		}
-	case RequestError:
-		t.Errorf("Did not expect request error: %v", v)
-	}
-}
-
-func TestValidateToken(t *testing.T) {
-	client := NewQdClient("kek")
-	if projectName := client.ValidateToken(); projectName != "" {
-		t.Errorf("Problem")
+	default:
+		t.Error("Unknown result type")
 	}
 }
 

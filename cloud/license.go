@@ -48,7 +48,6 @@ const (
 	QodanaLicenseRequestTimeoutEnv = "QODANA_LICENSE_REQUEST_TIMEOUT"
 
 	QodanaLicenseRequestAttemptsCountEnv = "QODANA_LICENSE_ATTEMPTS"
-	QodanaLicenseEndpoint                = "LICENSE_ENDPOINT"
 
 	qodanaLicenseRequestAttemptsCount = 3
 
@@ -56,30 +55,30 @@ const (
 
 	qodanaLicenseRequestCooldown = 60
 
-	qodanaLicenseUri       = "/v1/linters/license-key"
+	qodanaLicenseUri       = "/linters/license-key"
 	QodanaToken            = "QODANA_TOKEN"
 	QodanaLicenseOnlyToken = "QODANA_LICENSE_ONLY_TOKEN"
 )
 
 var TokenDeclinedError = errors.New("token was declined by Qodana Cloud server")
 
-var EmptyTokenMessage = fmt.Sprintf(`Starting from version 2023.2 release versions of Qodana Linters require connection to Qodana Cloud. 
+var EmptyTokenMessage = `Starting from version 2023.2 release versions of Qodana Linters require connection to Qodana Cloud. 
 To continue using Qodana, please ensure you have an access token and provide the token as the QODANA_TOKEN environment variable.
 Obtain your token by registering at %s
 For more details, please visit: https://www.jetbrains.com/help/qodana/cloud-quickstart.html
 We also offer Community versions as an alternative. You can find them here: https://www.jetbrains.com/help/qodana/linters.html
-`, getCloudBaseUrl())
+`
 
-var EapWarnTokenMessage = fmt.Sprintf(`
+var EapWarnTokenMessage = `
 Starting from version 2023.2 release versions of Qodana Linters will require connection to Qodana Cloud. 
 For seamless transition to release versions, obtain your token by registering at %s 
 and provide the token as the QODANA_TOKEN environment variable.
-For more details, please visit: https://www.jetbrains.com/help/qodana/cloud-quickstart.html`, getCloudBaseUrl())
+For more details, please visit: https://www.jetbrains.com/help/qodana/cloud-quickstart.html`
 
-var GeneralLicenseErrorMessage = fmt.Sprintf(`
+var GeneralLicenseErrorMessage = `
 Please check if %s is accessible from your environment. 
 If you encounter any issues, please contact us at qodana-support@jetbrains.com. 
-Or use our issue tracker at https://jb.gg/qodana-issue`, getCloudBaseUrl())
+Or use our issue tracker at https://jb.gg/qodana-issue`
 
 const InvalidTokenMessage = `QODANA_TOKEN is invalid, please provide a valid token`
 
@@ -107,11 +106,11 @@ func DeserializeLicenseData(data []byte) LicenseData {
 	return ld
 }
 
-func RequestLicenseData(endpoint string, token string) ([]byte, error) {
+func (endpoints *QdApiEndpoints) RequestLicenseData(token string) ([]byte, error) {
 	attempts := getAttempts()
 	cooldown := getCooldown()
 	for i := 1; i <= attempts; i++ {
-		license, err := requestLicenseDataAttempt(endpoint, token)
+		license, err := requestLicenseDataAttempt(endpoints.LintersApiUrl, token)
 		if errors.Is(err, TokenDeclinedError) {
 			return nil, err
 		}
@@ -159,7 +158,7 @@ func requestLicenseDataAttempt(endpoint string, token string) ([]byte, error) {
 	if err != nil {
 		return nil, fmt.Errorf("Reading license response failed\n. %w", err)
 	}
-	if resp.StatusCode == 403 || resp.StatusCode == 404 {
+	if resp.StatusCode == 401 || resp.StatusCode == 404 {
 		return nil, TokenDeclinedError
 	}
 	if resp.StatusCode == 200 {
@@ -219,14 +218,6 @@ func SetupLicenseToken(token string) {
 	}
 }
 
-func getEnv(env string, defaultValue string) string {
-	value, exists := os.LookupEnv(env)
-	if !exists {
-		return defaultValue
-	}
-	return value
-}
-
 func extractLicensePlan(data []byte) (string, error) {
 	var licenseData LicenseData
 	err := json.Unmarshal(data, &licenseData)
@@ -236,19 +227,18 @@ func extractLicensePlan(data []byte) (string, error) {
 	return licenseData.LicensePlan, nil
 }
 
-func GetLicensePlan() (string, error) {
+func (endpoints *QdApiEndpoints) GetLicensePlan() (string, error) {
 	if Token.Token == "" {
 		return "", errors.New("no token provided, please provide a token via the QODANA_TOKEN environment variable")
 	}
 
-	licenseEndpoint := getEnv(QodanaLicenseEndpoint, "https://linters.qodana.cloud")
-
-	licenseDataResponse, err := RequestLicenseData(licenseEndpoint, Token.Token)
+	licenseDataResponse, err := endpoints.RequestLicenseData(Token.Token)
 	if errors.Is(err, TokenDeclinedError) {
 		log.Fatalf("License request: %v\n%s", err, DeclinedTokenErrorMessage)
 	}
 	if err != nil {
-		return "", fmt.Errorf("license request: %v\n%s", err, GeneralLicenseErrorMessage)
+		errMessage := fmt.Sprintf(GeneralLicenseErrorMessage, endpoints.RootEndpoint.GetCloudUrl())
+		return "", fmt.Errorf("license request: %v\n%s", err, errMessage)
 	}
 	licensePlan, err := extractLicensePlan(licenseDataResponse)
 	if err != nil {

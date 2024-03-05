@@ -638,11 +638,7 @@ func TestSetupLicense(t *testing.T) {
 		_, _ = fmt.Fprint(w, license)
 	}))
 	defer svr.Close()
-	err := os.Setenv(platform.QodanaLicenseEndpoint, svr.URL)
-	if err != nil {
-		t.Fatal(err)
-	}
-	SetupLicenseAndProjectHash("token")
+	SetupLicenseAndProjectHash(&cloud.QdApiEndpoints{LintersApiUrl: svr.URL}, "token")
 
 	licenseKey := os.Getenv(platform.QodanaLicense)
 	if licenseKey != expectedKey {
@@ -653,12 +649,7 @@ func TestSetupLicense(t *testing.T) {
 		t.Errorf("expected projectIdHash to be '%s' got '%s'", expectedHash, projectIdHash)
 	}
 
-	err = os.Unsetenv(platform.QodanaLicenseEndpoint)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	err = os.Unsetenv(platform.QodanaLicense)
+	err := os.Unsetenv(platform.QodanaLicense)
 	if err != nil {
 		t.Fatal(err)
 	}

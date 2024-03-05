@@ -17,132 +17,38 @@
 package cloud
 
 import (
-	"bytes"
 	"encoding/json"
 	"fmt"
-	log "github.com/sirupsen/logrus"
-	"io"
-	"net/http"
 	"path/filepath"
-	"strings"
-	"time"
 )
-
-const (
-	QodanaEndpoint     = "ENDPOINT"
-	DefaultEndpoint    = "qodana.cloud"
-	maxNumberOfRetries = 3
-	waitTimeout        = time.Second * 30
-	requestTimeout     = time.Second * 30
-)
-
-func getCloudBaseUrl() string {
-	return GetEnvWithDefault(QodanaEndpoint, fmt.Sprintf("https://%s", DefaultEndpoint))
-}
-
-func getCloudApiBaseUrl() string {
-	return GetEnvWithDefault(QodanaEndpoint, fmt.Sprintf("https://api.%s", DefaultEndpoint))
-}
 
 // GetCloudTeamsPageUrl returns the team page URL on Qodana Cloud
-func GetCloudTeamsPageUrl(origin string, path string) string {
+func (endpoint *QdRootEndpoint) GetCloudTeamsPageUrl(origin string, path string) string {
 	name := filepath.Base(path)
-
-	return strings.Join([]string{"https://", GetEnvWithDefault(QodanaEndpoint, DefaultEndpoint), "/?origin=", origin, "&name=", name}, "")
+	return fmt.Sprintf("https://%s/?origin=%s&name=%s", endpoint.Host, origin, name)
 }
 
-type QdClient struct {
-	httpClient *http.Client
-	token      string
+func (endpoint *QdRootEndpoint) GetCloudUrl() string {
+	return fmt.Sprintf("https://%s", endpoint.Host)
 }
 
-func NewQdClient(token string) *QdClient {
-	return &QdClient{
-		httpClient: &http.Client{
-			Timeout: requestTimeout,
-		},
-		token: token,
+func (client *QdClient) RequestProjectName() (string, error) {
+	request := NewCloudRequest("/projects")
+	result, err := client.doRequest(&request)
+	if err != nil {
+		return "", err
 	}
-}
-
-type Success struct {
-	Data map[string]interface{}
-}
-
-type RequestResult interface {
-	isRequestResult()
-}
-
-type APIError struct {
-	StatusCode int
-	Message    string
-}
-
-type RequestError struct {
-	Err error
-}
-
-func (Success) isRequestResult()      {}
-func (APIError) isRequestResult()     {}
-func (RequestError) isRequestResult() {}
-
-func (client *QdClient) ValidateToken() interface{} {
-	result := client.getProject()
-	switch v := result.(type) {
-	case Success:
-		return v.Data["name"]
-	default:
-		return ""
+	projectName, err := parseProjectName(result)
+	if err != nil {
+		return "", err
 	}
+	return projectName, nil
 }
 
-func (client *QdClient) getProject() RequestResult {
-	return client.doRequest("/v1/projects", "GET", nil, nil)
-}
-
-func (client *QdClient) doRequest(path, method string, headers map[string]string, body []byte) RequestResult {
-	url := getCloudApiBaseUrl() + path
-	var resp *http.Response
-	var responseErr error
-
-	for i := 0; i < maxNumberOfRetries; i++ {
-		req, err := http.NewRequest(method, url, bytes.NewBuffer(body))
-		if err != nil {
-			return RequestError{Err: err}
-		}
-
-		req.Header.Set("Authorization", "Bearer "+client.token)
-		req.Header.Set("Content-Type", "application/json")
-		for key, value := range headers {
-			req.Header.Set(key, value)
-		}
-
-		resp, responseErr = client.httpClient.Do(req)
-		if responseErr == nil {
-			break
-		}
-		time.Sleep(waitTimeout)
+func parseProjectName(data []byte) (string, error) {
+	var answer map[string]interface{}
+	if err := json.Unmarshal(data, &answer); err != nil {
+		return "", fmt.Errorf("response '%s': %w", string(data), err)
 	}
-	if responseErr != nil {
-		return RequestError{Err: responseErr}
-	}
-	if resp != nil {
-		defer func(Body io.ReadCloser) {
-			err := Body.Close()
-			if err != nil {
-				log.Fatal(err)
-			}
-		}(resp.Body)
-
-		responseBody, _ := io.ReadAll(resp.Body)
-		if resp.StatusCode >= http.StatusOK && resp.StatusCode < http.StatusMultipleChoices {
-			var data map[string]interface{}
-			if err := json.Unmarshal(responseBody, &data); err != nil {
-				return RequestError{Err: err}
-			}
-			return Success{Data: data}
-		}
-		return APIError{StatusCode: resp.StatusCode, Message: string(responseBody)}
-	}
-	return APIError{StatusCode: 400, Message: "Wrong endpoint"}
+	return fmt.Sprintf("%v", answer["name"]), nil
 }

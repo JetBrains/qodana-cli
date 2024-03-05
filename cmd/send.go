@@ -35,7 +35,7 @@ func newSendCommand() *cobra.Command {
 
 If report directory is not specified, the latest report will be fetched from the default linter results location.
 
-If you are using other Qodana Cloud instance than https://qodana.cloud/, override it by declaring the %s environment variable.`, platform.PrimaryBold(cloud.QodanaEndpoint)),
+If you are using other Qodana Cloud instance than https://qodana.cloud/, override it by declaring the %s environment variable.`, platform.PrimaryBold(cloud.QodanaEndpointEnv)),
 		Run: func(cmd *cobra.Command, args []string) {
 			options.FetchAnalyzerSettings()
 			var publisherPath string

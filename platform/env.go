@@ -28,7 +28,6 @@ import (
 
 const (
 	QodanaLicenseOnlyToken = "QODANA_LICENSE_ONLY_TOKEN"
-	QodanaLicenseEndpoint  = "LICENSE_ENDPOINT"
 	QodanaRemoteUrl        = "QODANA_REMOTE_URL"
 	QodanaDockerEnv        = "QODANA_DOCKER"
 	QodanaToolEnv          = "QODANA_TOOL"

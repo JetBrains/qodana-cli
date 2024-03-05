@@ -87,7 +87,7 @@ func (o *QodanaOptions) getTokenFromKeychain(refresh bool) string {
 
 func (o *QodanaOptions) getTokenFromUserInput(requiresToken bool) string {
 	if IsInteractive() && requiresToken {
-		WarningMessage(cloud.EmptyTokenMessage)
+		WarningMessage(cloud.EmptyTokenMessage, cloud.GetCloudRootEndpoint().GetCloudUrl())
 		var token string
 		for {
 			token = setupToken(o.ProjectDir, o.Id())
@@ -106,14 +106,14 @@ func (o *QodanaOptions) getTokenFromUserInput(requiresToken bool) string {
 func (o *QodanaOptions) ValidateToken(refresh bool) string {
 	token := o.LoadToken(refresh, true)
 	if token != "" {
-		client := cloud.NewQdClient(token)
-		if projectName := client.ValidateToken(); projectName == "" {
+		client := cloud.GetCloudApiEndpoints().NewCloudApiClient(token)
+		if projectName, err := client.RequestProjectName(); err != nil {
 			if token != "" {
 				ErrorMessage(cloud.InvalidTokenMessage)
 				os.Exit(1)
 			}
 		} else {
-			SuccessMessage("Linked %s project: %s", cloud.GetEnvWithDefault(cloud.QodanaEndpoint, cloud.DefaultEndpoint), projectName)
+			SuccessMessage("Linked %s project: %s", cloud.GetCloudRootEndpoint().Host, projectName)
 			o.Setenv(QodanaToken, token)
 		}
 	}
@@ -144,7 +144,7 @@ func setupToken(path string, id string) string {
 	openCloud := AskUserConfirm("Do you want to open the team page to get the token?")
 	if openCloud {
 		origin := GitRemoteUrl(path)
-		err := openBrowser(cloud.GetCloudTeamsPageUrl(origin, path))
+		err := openBrowser(cloud.GetCloudRootEndpoint().GetCloudTeamsPageUrl(origin, path))
 		if err != nil {
 			ErrorMessage("%s", err)
 			return ""
@@ -164,9 +164,9 @@ func setupToken(path string, id string) string {
 		ErrorMessage("Token cannot be empty")
 		return ""
 	} else {
-		client := cloud.NewQdClient(token)
-		projectName := client.ValidateToken()
-		if projectName == "" {
+		client := cloud.GetCloudApiEndpoints().NewCloudApiClient(token)
+		_, err := client.RequestProjectName()
+		if err != nil {
 			ErrorMessage("Invalid token, try again")
 			return ""
 		}
