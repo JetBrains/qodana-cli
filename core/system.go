@@ -473,7 +473,7 @@ const (
 
 // saveReport saves web files to expect, and generates json.
 func saveReport(opts *QodanaOptions) {
-	if opts.SaveReport || opts.ShowReport || !platform.IsContainer() {
+	if !(platform.IsContainer() && (opts.SaveReport || opts.ShowReport)) {
 		return
 	}
 
