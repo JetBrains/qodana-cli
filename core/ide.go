@@ -27,6 +27,7 @@ import (
 	"os"
 	"path/filepath"
 	"runtime"
+	"strconv"
 	"strings"
 	"time"
 
@@ -201,6 +202,10 @@ func GetIdeArgs(opts *QodanaOptions) []string {
 
 		if opts.CoverageDir != "" {
 			arguments = append(arguments, "--coverage-dir", opts.CoverageDir)
+		}
+
+		if opts.JvmDebugPort > 0 {
+			arguments = append(arguments, "--jvm-debug-port", strconv.Itoa(opts.JvmDebugPort))
 		}
 
 		for _, property := range opts.Property {

@@ -23,12 +23,14 @@ import (
 	"errors"
 	"fmt"
 	"github.com/JetBrains/qodana-cli/v2024/platform"
+	"github.com/docker/go-connections/nat"
 	"github.com/pterm/pterm"
 	"io"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"runtime"
+	"strconv"
 	"strings"
 
 	cliconfig "github.com/docker/cli/cli/config"
@@ -44,6 +46,7 @@ const (
 	// officialImagePrefix is the prefix of official Qodana images.
 	officialImagePrefix      = "jetbrains/qodana"
 	dockerSpecialCharsLength = 8
+	containerJvmDebugPort    = "5005"
 )
 
 var (
@@ -333,18 +336,37 @@ func getDockerOptions(opts *QodanaOptions) *types.ContainerCreateConfig {
 	log.Debugf("volumes: %v", volumes)
 	log.Debugf("cmd: %v", cmdOpts)
 
+	portBindings := make(nat.PortMap)
+	exposedPorts := make(nat.PortSet)
+
+	if opts.JvmDebugPort > 0 {
+		log.Infof("Enabling JVM debug on port %d", opts.JvmDebugPort)
+		portBindings = nat.PortMap{
+			containerJvmDebugPort: []nat.PortBinding{
+				{
+					HostIP:   "0.0.0.0",
+					HostPort: strconv.Itoa(opts.JvmDebugPort),
+				},
+			},
+		}
+		exposedPorts = nat.PortSet{
+			containerJvmDebugPort: struct{}{},
+		}
+	}
 	var hostConfig *container.HostConfig
 	if strings.Contains(opts.Linter, "dotnet") {
 		hostConfig = &container.HostConfig{
-			AutoRemove:  os.Getenv(platform.QodanaCliContainerKeep) == "",
-			Mounts:      volumes,
-			CapAdd:      []string{"SYS_PTRACE"},
-			SecurityOpt: []string{"seccomp=unconfined"},
+			AutoRemove:   os.Getenv(platform.QodanaCliContainerKeep) == "",
+			Mounts:       volumes,
+			CapAdd:       []string{"SYS_PTRACE"},
+			SecurityOpt:  []string{"seccomp=unconfined"},
+			PortBindings: portBindings,
 		}
 	} else {
 		hostConfig = &container.HostConfig{
-			AutoRemove: os.Getenv(platform.QodanaCliContainerKeep) == "",
-			Mounts:     volumes,
+			AutoRemove:   os.Getenv(platform.QodanaCliContainerKeep) == "",
+			Mounts:       volumes,
+			PortBindings: portBindings,
 		}
 	}
 
@@ -358,6 +380,7 @@ func getDockerOptions(opts *QodanaOptions) *types.ContainerCreateConfig {
 			AttachStderr: true,
 			Env:          opts.Env,
 			User:         opts.User,
+			ExposedPorts: exposedPorts,
 		},
 		HostConfig: hostConfig,
 	}

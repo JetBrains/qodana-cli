@@ -84,6 +84,7 @@ type QodanaOptions struct {
 	ClangArgs               string
 	AnalysisTimeoutMs       int
 	AnalysisTimeoutExitCode int
+	JvmDebugPort            int
 }
 
 func (o *QodanaOptions) LogOptions() {
