@@ -133,6 +133,9 @@ func GetProperties(opts *QodanaOptions, yamlProps map[string]string, dotNetOptio
 		"-XX:-OmitStackTraceInFastThrow",
 		"-ea",
 	}
+	if opts.JvmDebugPort > 0 {
+		lines = append(lines, fmt.Sprintf("-agentlib:jdwp=transport=dt_socket,server=y,suspend=y,address=*:%s", containerJvmDebugPort))
+	}
 	treatAsRelease := os.Getenv(platform.QodanaTreatAsRelease)
 	if treatAsRelease == "true" {
 		lines = append(lines, "-Deap.require.license=release")

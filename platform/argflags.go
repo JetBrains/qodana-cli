@@ -72,6 +72,7 @@ func ComputeFlags(cmd *cobra.Command, options *QodanaOptions) error {
 	flags.StringVar(&options.DiffStart, "diff-start", "", "Commit to start an incremental run from. Only files changed between --diff-start and --diff-end will be analysed.")
 	flags.StringVar(&options.DiffEnd, "diff-end", "", "Commit to end an incremental run on. Only files changed between --diff-start and --diff-end will be analysed.")
 
+	flags.IntVar(&options.JvmDebugPort, "jvm-debug-port", -1, "Enable JVM remote debug under given port")
 	if options.LinterSpecific != nil {
 		if linterSpecific, ok := options.LinterSpecific.(ThirdPartyOptions); ok {
 			linterSpecific.AddFlags(flags)
@@ -101,6 +102,10 @@ func ComputeFlags(cmd *cobra.Command, options *QodanaOptions) error {
 		return err
 	}
 	err = cmd.Flags().MarkDeprecated("stub-profile", "this option has no effect and no replacement")
+	if err != nil {
+		return err
+	}
+	err = cmd.Flags().MarkHidden("jvm-debug-port")
 	if err != nil {
 		return err
 	}

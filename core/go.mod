@@ -6,6 +6,7 @@ require (
 	github.com/cucumber/ci-environment/go v0.0.0-20230911180507-bd001ebc644c
 	github.com/docker/cli v25.0.0+incompatible
 	github.com/docker/docker v20.10.23+incompatible // DO NOT UPDATE: breaking changes
+	github.com/docker/go-connections v0.5.0
 	github.com/otiai10/copy v1.14.0
 	github.com/owenrumney/go-sarif/v2 v2.3.0
 	github.com/pterm/pterm v0.12.79
@@ -42,14 +43,13 @@ require (
 	github.com/distribution/reference v0.5.0 // indirect
 	github.com/docker/distribution v2.8.3+incompatible // indirect
 	github.com/docker/docker-credential-helpers v0.8.0 // indirect
-	github.com/docker/go-connections v0.5.0 // indirect
 	github.com/docker/go-units v0.5.0 // indirect
-	github.com/go-enry/go-enry/v2 v2.8.6 // indirect
+	github.com/go-enry/go-enry/v2 v2.8.7 // indirect
 	github.com/go-enry/go-oniguruma v1.2.1 // indirect
 	github.com/go-ole/go-ole v1.2.6 // indirect
 	github.com/godbus/dbus/v5 v5.1.0 // indirect
 	github.com/gogo/protobuf v1.3.2 // indirect
-	github.com/google/uuid v1.5.0 // indirect
+	github.com/google/uuid v1.6.0 // indirect
 	github.com/gookit/color v1.5.4 // indirect
 	github.com/inconshreveable/mousetrap v1.1.0 // indirect
 	github.com/kr/text v0.2.0 // indirect
@@ -79,7 +79,7 @@ require (
 	golang.org/x/crypto v0.20.0 // indirect
 	golang.org/x/mod v0.12.0 // indirect
 	golang.org/x/sync v0.5.0 // indirect
-	golang.org/x/sys v0.17.0 // indirect
+	golang.org/x/sys v0.18.0 // indirect
 	golang.org/x/term v0.17.0 // indirect
 	golang.org/x/text v0.14.0 // indirect
 	golang.org/x/time v0.5.0 // indirect
