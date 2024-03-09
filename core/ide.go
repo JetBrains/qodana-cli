@@ -214,6 +214,7 @@ func GetIdeArgs(opts *QodanaOptions) []string {
 // postAnalysis post-analysis stage: wait for FUS stats to upload
 func postAnalysis(opts *QodanaOptions) {
 	syncIdeaCache(opts.ProjectDir, opts.CacheDir, true)
+	syncConfigCache(opts, false)
 	for i := 1; i <= 600; i++ {
 		if findProcess("statistics-uploader") {
 			time.Sleep(time.Second)
@@ -358,6 +359,7 @@ func prepareLocalIdeSettings(opts *QodanaOptions) {
 
 	if platform.IsContainer() {
 		syncIdeaCache(opts.CacheDir, opts.ProjectDir, false)
+		syncConfigCache(opts, true)
 		createUser("/etc/passwd")
 	}
 }
@@ -443,6 +445,33 @@ func installPlugins(plugins []platform.Plugin) {
 		log.Printf("Installing plugin %s", plugin.Id)
 		if res, err := platform.RunCmd("", platform.QuoteForWindows(Prod.IdeScript), "installPlugins", plugin.Id); res > 0 || err != nil {
 			os.Exit(res)
+		}
+	}
+}
+
+func syncConfigCache(opts *QodanaOptions, fromCache bool) {
+	if Prod.BaseScriptName == idea {
+		jdkTableFile := filepath.Join(opts.ConfDirPath(), "options", "jdk.table.xml")
+		cacheFile := filepath.Join(opts.CacheDir, "config", Prod.getVersionBranch(), "jdk.table.xml")
+		if fromCache {
+			if _, err := os.Stat(cacheFile); os.IsNotExist(err) {
+				return
+			}
+			if _, err := os.Stat(jdkTableFile); os.IsNotExist(err) {
+				if err := cp.Copy(cacheFile, jdkTableFile); err != nil {
+					log.Fatal(err)
+				}
+				log.Debugf("SDK table is synced from cache")
+			}
+		} else {
+			if _, err := os.Stat(jdkTableFile); os.IsNotExist(err) {
+				log.Debugf("SDK table isnt't stored to cache, file doesn't exist")
+			} else {
+				if err := cp.Copy(jdkTableFile, cacheFile); err != nil {
+					log.Fatal(err)
+				}
+				log.Debugf("SDK table is stored to cache")
+			}
 		}
 	}
 }
