@@ -36,4 +36,4 @@ org.jetbrains.plugins.vue
 org.intellij.plugins.postcss
 intellij.webpack
 com.jetbrains.restClient
-com.jetbrains.restClient
+org.intellij.kotlinScripting
