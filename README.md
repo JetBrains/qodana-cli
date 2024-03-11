@@ -45,7 +45,7 @@ brew install jetbrains/utils/qodana
 ```shell
 curl -fsSL https://jb.gg/qodana-cli/install | bash
 ```
-Also, you can install `nightly` or any other version (e.g. `v2023.2.9`) the following way:
+Also, you can install `nightly` or any other version (e.g. `v2023.3.1`) the following way:
 ```
 curl -fsSL https://jb.gg/qodana-cli/install | bash -s -- nightly
 ```
@@ -174,7 +174,7 @@ qodana scan [flags]
 #### Options
 
 ```
-  -l, --linter string                   Use to run Qodana in a container (default). Choose linter (image) to use. Not compatible with --ide option. Available images are: jetbrains/qodana-jvm-community:2023.2, jetbrains/qodana-jvm:2023.2, jetbrains/qodana-jvm-android:2023.2, jetbrains/qodana-php:2023.2, jetbrains/qodana-python:2023.2, jetbrains/qodana-python-community:2023.2, jetbrains/qodana-js:2023.2, jetbrains/qodana-go:2023.2, jetbrains/qodana-dotnet:2023.2
+  -l, --linter string                   Use to run Qodana in a container (default). Choose linter (image) to use. Not compatible with --ide option. Available images are: jetbrains/qodana-jvm-community:2023.3, jetbrains/qodana-jvm:2023.3, jetbrains/qodana-jvm-android:2023.3, jetbrains/qodana-php:2023.3, jetbrains/qodana-python:2023.3, jetbrains/qodana-python-community:2023.3, jetbrains/qodana-js:2023.3, jetbrains/qodana-go:2023.3, jetbrains/qodana-dotnet:2023.3
       --ide string                      Use to run Qodana without a container. Not compatible with --linter option. Available codes are QDNET, add -EAP part to obtain EAP versions
   -i, --project-dir string              Root directory of the inspected project (default ".")
   -o, --results-dir string              Override directory to save Qodana inspection results to (default <userCacheDir>/JetBrains/Qodana/<linter>/results)
@@ -184,7 +184,7 @@ qodana scan [flags]
       --clear-cache                     Clear the local Qodana cache before running the analysis
   -w, --show-report                     Serve HTML report on port
       --port int                        Port to serve the report on (default 8080)
-      --yaml-name string                Override qodana.yaml name to use: 'qodana.yaml' or 'qodana.yml'
+      --config string                   Set a custom configuration file instead of 'qodana.yaml'. Relative paths in the configuration will be based on the project directory.
   -a, --analysis-id string              Unique report identifier (GUID) to be used by Qodana Cloud (default "<generated value>")
   -b, --baseline string                 Provide the path to an existing SARIF report to be used in the baseline state calculation
       --baseline-include-absent         Include in the output report the results from the baseline run that are absent in the current run
@@ -197,13 +197,15 @@ qodana scan [flags]
   -p, --profile-path string             Path to the profile file
       --run-promo string                Set to 'true' to have the application run the inspections configured by the promo profile; set to 'false' otherwise (default: 'true' only if Qodana is executed with the default profile)
       --script string                   Override the run scenario (default "default")
-      --stub-profile string             Absolute path to the fallback profile file. This option is applied in case the profile was not specified using any available options
+      --coverage-dir string             Directory with coverage data to process
       --apply-fixes                     Apply all available quick-fixes, including cleanup
       --cleanup                         Run project cleanup
       --property stringArray            Set a JVM property to be used while running Qodana using the --property property.name=value1,value2,...,valueN notation
   -s, --save-report                     Generate HTML report (default true)
       --timeout int                     Qodana analysis time limit in milliseconds. If reached, the analysis is terminated, process exits with code timeout-exit-code. Negative – no timeout (default -1)
       --timeout-exit-code int           See timeout option (default 1)
+      --diff-start string               Commit to start an incremental run from. Only files changed between --diff-start and --diff-end will be analysed.
+      --diff-end string                 Commit to end an incremental run on. Only files changed between --diff-start and --diff-end will be analysed.
   -e, --env stringArray                 Only for container runs. Define additional environment variables for the Qodana container (you can use the flag multiple times). CLI is not reading full host environment variables and does not pass it to the Qodana container for security reasons
   -v, --volume stringArray              Only for container runs. Define additional volumes for the Qodana container (you can use the flag multiple times)
   -u, --user string                     Only for container runs. User to run Qodana container as. Please specify user id – '$UID' or user id and group id $(id -u):$(id -g). Use 'root' to run as the root user (default: the current user)
@@ -346,7 +348,7 @@ as there is some additional configuration tuning required that differs from proj
 It's easy to try Qodana locally by running a _simple_ command:
 
 ```shell
-docker run --rm -it -p 8080:8080 -v <source-directory>/:/data/project/ -v <output-directory>/:/data/results/ -v <caches-directory>/:/data/cache/ jetbrains/qodana-<linter> --show-report
+docker run --rm -p 8080:8080 -v <source-directory>/:/data/project/ -v <output-directory>/:/data/results/ -v <caches-directory>/:/data/cache/ jetbrains/qodana-<linter> --show-report
 ```
 
 **And that's not so simple**: you have to provide a few absolute paths, forward some ports, add a few Docker options...
