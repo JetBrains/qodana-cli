@@ -41,3 +41,4 @@ com.jetbrains.plugins.webDeployment
 com.intellij.plugins.dependencyAnalysis
 org.jetbrains.security.package-checker
 com.jetbrains.restClient
+com.jetbrains.restClient

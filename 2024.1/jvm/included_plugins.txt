@@ -92,4 +92,3 @@ intellij.webpack
 com.jetbrains.restClient
 org.toml.lang
 com.intellij.jvm.dfa.analysis
-org.intellij.kotlinScripting
