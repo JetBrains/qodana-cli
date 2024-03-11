@@ -41,3 +41,4 @@ com.jetbrains.restClient
 org.toml.lang
 com.jetbrains.python.pyscript
 com.intellij.dev
+org.intellij.kotlinScripting
