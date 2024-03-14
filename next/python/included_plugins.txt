@@ -42,3 +42,4 @@ org.toml.lang
 com.jetbrains.python.pyscript
 com.intellij.dev
 org.intellij.kotlinScripting
+com.intellij.dev

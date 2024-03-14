@@ -37,3 +37,4 @@ org.intellij.plugins.postcss
 intellij.webpack
 com.jetbrains.restClient
 org.intellij.kotlinScripting
+com.intellij.dev
