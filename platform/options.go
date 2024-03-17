@@ -31,6 +31,11 @@ import (
 	"unicode"
 )
 
+const (
+	IncrementalScriptLocalChanges = "local-changes"
+	IncrementalScriptScope        = "scope"
+)
+
 // QodanaOptions is a struct that contains all the options to run a Qodana linter.
 type QodanaOptions struct {
 	ResultsDir              string
@@ -57,7 +62,7 @@ type QodanaOptions struct {
 	Commit                  string
 	DiffStart               string
 	DiffEnd                 string
-	DiffScopeFile           string
+	ForceIncrementalScript  string
 	AnalysisId              string
 	Env                     []string
 	Volumes                 []string
@@ -179,6 +184,19 @@ func (o *QodanaOptions) Unsetenv(key string) {
 			o.Env = append(o.Env[:i], o.Env[i+1:]...)
 			return
 		}
+	}
+}
+
+func (o *QodanaOptions) StartHash() (string, error) {
+	switch {
+	case o.Commit == o.DiffStart:
+		return o.Commit, nil
+	case o.Commit == "":
+		return o.DiffStart, nil
+	case o.DiffStart == "":
+		return o.Commit, nil
+	default:
+		return "", fmt.Errorf("conflicting CLI arguments: --commit=%s --diff-start=%s", o.Commit, o.DiffStart)
 	}
 }
 

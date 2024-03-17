@@ -123,9 +123,6 @@ func GetIdeArgs(opts *QodanaOptions) []string {
 	if opts.FailThreshold != "" {
 		arguments = append(arguments, "--fail-threshold", opts.FailThreshold)
 	}
-	if opts.GitReset && opts.Commit != "" && opts.Script == "default" {
-		arguments = append(arguments, "--script", "local-changes")
-	}
 
 	if opts.fixesSupported() {
 		if opts.FixesStrategy != "" {
@@ -187,15 +184,17 @@ func GetIdeArgs(opts *QodanaOptions) []string {
 		}
 	}
 
-	if opts.DiffStart != "" && opts.DiffEnd != "" {
-		if opts.Ide == "" {
-			arguments = append(arguments, "--diff-start", opts.DiffStart, "--diff-end", opts.DiffEnd)
-		} else {
-			arguments = append(arguments, "--script", platform.QuoteForWindows("scoped:"+opts.DiffScopeFile))
-		}
-	}
-
 	if opts.Ide == "" {
+		if startHash, err := opts.StartHash(); startHash != "" && err == nil && opts.Script == "default" {
+			arguments = append(arguments, "--diff-start", startHash)
+		}
+		if opts.DiffEnd != "" && opts.Script == "default" {
+			arguments = append(arguments, "--diff-end", opts.DiffEnd)
+		}
+		if opts.ForceIncrementalScript != "" && opts.Script == "default" {
+			arguments = append(arguments, "--force-incremental-script", opts.ForceIncrementalScript)
+		}
+
 		if opts.AnalysisId != "" {
 			arguments = append(arguments, "--analysis-id", opts.AnalysisId)
 		}

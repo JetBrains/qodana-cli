@@ -166,47 +166,60 @@ func RunAnalysis(ctx context.Context, options *QodanaOptions) int {
 	options.LogOptions()
 	prepareHost(options)
 
-	hasCommitRange := options.DiffStart != "" && options.DiffEnd != ""
-	// this way of running needs to do bootstrap twice on different commits and will do it internally
-	if !hasCommitRange && options.Ide != "" {
-		platform.Bootstrap(platform.Config.Bootstrap, options.ProjectDir)
-		installPlugins(platform.Config.Plugins)
-	}
-
 	if !isInstalled("git") && (options.FullHistory || options.Commit != "" || options.DiffStart != "" || options.DiffEnd != "") {
 		log.Fatal("Cannot use git related functionality without a git executable")
 	}
 
-	if options.FullHistory {
-		return runWithFullHistory(ctx, options)
-	} else if options.Commit != "" {
-		return runOnSingleCommit(ctx, options)
-	} else if hasCommitRange {
-		return runOnCommitRange(ctx, options)
-	} else {
+	startHash, err := options.StartHash()
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	scenario := options.determineRunScenario(startHash != "")
+	// this way of running needs to do bootstrap twice on different commits and will do it internally
+	if scenario != runScenarioScoped && options.Ide != "" {
+		platform.Bootstrap(platform.Config.Bootstrap, options.ProjectDir)
+		installPlugins(platform.Config.Plugins)
+	}
+	switch scenario {
+	case runScenarioFullHistory:
+		return runWithFullHistory(ctx, options, startHash)
+	case runScenarioLocalChanges:
+		return runLocalChanges(ctx, options, startHash)
+	case runScenarioScoped:
+		return runScopeScript(ctx, options, startHash)
+	case runScenarioDefault:
 		return runQodana(ctx, options)
+	default:
+		log.Fatalf("Unknown run scenario %s", scenario)
+		panic("Unreachable")
 	}
 }
 
-func runOnSingleCommit(ctx context.Context, options *QodanaOptions) int {
+func runLocalChanges(ctx context.Context, options *QodanaOptions, startHash string) int {
 	var exitCode int
 	options.GitReset = false
-	err := platform.GitReset(options.ProjectDir, options.Commit)
-	if err != nil {
-		platform.WarningMessage("Could not reset git repository, no --commit option will be applied: %s", err)
+	if r := platform.GitCurrentRevision(options.ProjectDir); options.DiffEnd != "" && options.DiffEnd != r {
+		platform.WarningMessage("Cannot run local-changes because --diff-end is %s and HEAD is %s", options.DiffEnd, r)
 	} else {
-		options.GitReset = true
+		err := platform.GitReset(options.ProjectDir, startHash)
+		if err != nil {
+			platform.WarningMessage("Could not reset git repository, no --commit option will be applied: %s", err)
+		} else {
+			options.Script = "local-changes"
+			options.GitReset = true
+		}
 	}
 
 	exitCode = runQodana(ctx, options)
 
-	if options.GitReset && !strings.HasPrefix(options.Commit, "CI") {
+	if options.GitReset && !strings.HasPrefix(startHash, "CI") {
 		_ = platform.GitResetBack(options.ProjectDir)
 	}
 	return exitCode
 }
 
-func runWithFullHistory(ctx context.Context, options *QodanaOptions) int {
+func runWithFullHistory(ctx context.Context, options *QodanaOptions, startHash string) int {
 	remoteUrl := platform.GitRemoteUrl(options.ProjectDir)
 	branch := platform.GitBranch(options.ProjectDir)
 	if remoteUrl == "" && branch == "" {
@@ -224,10 +237,10 @@ func runWithFullHistory(ctx context.Context, options *QodanaOptions) int {
 	counter := 0
 	var exitCode int
 
-	if options.Commit != "" {
+	if startHash != "" {
 		for i, revision := range revisions {
 			counter++
-			if revision == options.Commit {
+			if revision == startHash {
 				revisions = revisions[i:]
 				break
 			}
@@ -254,12 +267,17 @@ func runWithFullHistory(ctx context.Context, options *QodanaOptions) int {
 	return exitCode
 }
 
-func runOnCommitRange(ctx context.Context, options *QodanaOptions) int {
+func runScopeScript(ctx context.Context, options *QodanaOptions, startHash string) int {
 	// don't run this logic when we're about to launch a container - it's just double work
 	if options.Ide == "" {
 		return runQodana(ctx, options)
 	}
-	scopeFile, err := writeChangesFile(options)
+	end := options.DiffEnd
+	if end == "" {
+		end = platform.GitCurrentRevision(options.ProjectDir)
+	}
+
+	scopeFile, err := writeChangesFile(options, startHash, end)
 	if err != nil {
 		log.Fatal("Failed to prepare diff run ", err)
 	}
@@ -305,7 +323,7 @@ func runOnCommitRange(ctx context.Context, options *QodanaOptions) int {
 		return false, exitCode
 	}
 
-	options.DiffScopeFile = scopeFile
+	options.Script = platform.QuoteForWindows("scoped:" + scopeFile)
 	options.ShowReport = false
 	options.SaveReport = false
 
@@ -317,7 +335,7 @@ func runOnCommitRange(ctx context.Context, options *QodanaOptions) int {
 	options.Cleanup = false
 	options.FixesStrategy = "none" // this option is deprecated, but the only way to overwrite the possible yaml value
 
-	stop, code := runFunc(options.DiffStart)
+	stop, code := runFunc(startHash)
 	if stop {
 		return code
 	}
@@ -336,7 +354,7 @@ func runOnCommitRange(ctx context.Context, options *QodanaOptions) int {
 	options.Cleanup = cleanup
 	options.FixesStrategy = fixesStrategy
 
-	stop, code = runFunc(options.DiffEnd)
+	stop, code = runFunc(end)
 	if stop {
 		return code
 	}
@@ -354,11 +372,11 @@ func runOnCommitRange(ctx context.Context, options *QodanaOptions) int {
 }
 
 // writeChangesFile creates a temp file containing the changes between diffStart and diffEnd
-func writeChangesFile(options *QodanaOptions) (string, error) {
-	if options.DiffStart == "" || options.DiffEnd == "" {
-		return "", nil
+func writeChangesFile(options *QodanaOptions, start string, end string) (string, error) {
+	if start == "" || end == "" {
+		return "", fmt.Errorf("no commits given")
 	}
-	diff := platform.GitDiffNameOnly(options.ProjectDir, options.DiffStart, options.DiffEnd)
+	diff := platform.GitDiffNameOnly(options.ProjectDir, start, end)
 	emptyDiff := true
 	for _, e := range diff {
 		emptyDiff = emptyDiff && (len(e) == 0)
@@ -367,7 +385,7 @@ func writeChangesFile(options *QodanaOptions) (string, error) {
 		}
 	}
 	if emptyDiff {
-		return "", fmt.Errorf("nothing to compare between %s and %s", options.DiffStart, options.DiffEnd)
+		return "", fmt.Errorf("nothing to compare between %s and %s", start, end)
 	}
 	file, err := os.CreateTemp("", "diff-scope.txt")
 	if err != nil {
