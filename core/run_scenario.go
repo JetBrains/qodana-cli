@@ -26,7 +26,7 @@ const (
 	runScenarioDefault      = "default"
 	runScenarioFullHistory  = "full-history"
 	runScenarioLocalChanges = "local-changes"
-	runScenarioScoped       = "scoped"
+	runScenarioScoped       = "scope"
 )
 
 type RunScenario = string
