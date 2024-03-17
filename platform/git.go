@@ -96,3 +96,7 @@ func GitBranch(cwd string) string {
 func GitDiffNameOnly(cwd string, diffStart string, diffEnd string) []string {
 	return gitOutput(cwd, []string{"diff", "--name-only", diffStart, diffEnd})
 }
+
+func GitCurrentRevision(cwd string) string {
+	return gitOutput(cwd, []string{"rev-parse", "HEAD"})[0]
+}
