@@ -359,6 +359,9 @@ func FindQodanaYaml(project string) string {
 // LoadQodanaYaml gets Qodana YAML from the project.
 func LoadQodanaYaml(project string, filename string) *QodanaYaml {
 	q := &QodanaYaml{}
+	if filename == "" {
+		filename = FindQodanaYaml(project)
+	}
 	qodanaYamlPath := filepath.Join(project, filename)
 	if _, err := os.Stat(qodanaYamlPath); errors.Is(err, os.ErrNotExist) {
 		return q

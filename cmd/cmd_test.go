@@ -284,6 +284,12 @@ func TestAllCommandsWithContainer(t *testing.T) {
 		t.Fatal(err)
 	}
 
+	yamlFile := filepath.Join(projectPath, "qodana.yml")
+	err = os.WriteFile(yamlFile, []byte(fmt.Sprintf("linter: %s", linter)), 0o755)
+	if err != nil {
+		t.Fatal(err)
+	}
+
 	for i := 0; i < 2; i++ { // run scan with a container twice to check the cache
 		out = bytes.NewBufferString("")
 		// set debug log to debug
@@ -298,7 +304,6 @@ func TestAllCommandsWithContainer(t *testing.T) {
 			"--fail-threshold", "5",
 			"--print-problems",
 			"--apply-fixes",
-			"-l", linter,
 			"--property",
 			"idea.headless.enable.statistics=false",
 		})
