@@ -351,7 +351,7 @@ func prepareLocalIdeSettings(opts *QodanaOptions) {
 
 	platform.ExtractQodanaEnvironment(platform.SetEnv)
 	requiresToken := opts.RequiresToken(Prod.EAP || Prod.IsCommunity())
-	cloud.SetupLicenseToken(opts.LoadToken(false, requiresToken))
+	cloud.SetupLicenseToken(opts.LoadToken(false, requiresToken, true))
 	SetupLicenseAndProjectHash(cloud.GetCloudApiEndpoints(), cloud.Token.Token)
 	prepareDirectories(
 		opts.CacheDir,

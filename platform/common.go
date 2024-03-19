@@ -20,7 +20,7 @@ import (
 	"fmt"
 	"github.com/JetBrains/qodana-cli/v2024/cloud"
 	"github.com/pterm/pterm"
-	"github.com/sirupsen/logrus"
+	log "github.com/sirupsen/logrus"
 	"net/http"
 	"os"
 	"os/exec"
@@ -80,8 +80,8 @@ func QodanaLogo(toolDesc string, version string) string {
 `, toolDesc, version)
 }
 
-// GetAnalyzer gets linter for the given path and saves configName
-func GetAnalyzer(path string, yamlName string) string {
+// GetAnalyzer gets linter for the given path and saves a config
+func GetAnalyzer(path string, yamlName string, token string) string {
 	var analyzers []string
 	PrintProcess(func(_ *pterm.SpinnerPrinter) {
 		languages := readIdeaDir(path)
@@ -115,6 +115,7 @@ func GetAnalyzer(path string, yamlName string) string {
 	}
 
 	interactive := IsInteractive()
+	analyzers = filterByLicensePlan(analyzers, token)
 	analyzer := SelectAnalyzer(path, analyzers, interactive, selector)
 	if analyzer == "" {
 		ErrorMessage("Could not configure project as it is not supported by Qodana")
@@ -124,6 +125,28 @@ func GetAnalyzer(path string, yamlName string) string {
 	SetQodanaLinter(path, analyzer, yamlName)
 	SuccessMessage("Added %s", analyzer)
 	return analyzer
+}
+
+// filterCommunityCodes filters out codes that are available with a community license
+func filterByLicensePlan(codes []string, token string) []string {
+	if token == "" {
+		return codes
+	}
+	cloud.SetupLicenseToken(token)
+	licensePlan, err := cloud.GetCloudApiEndpoints().GetLicensePlan()
+	if err != nil {
+		log.Debugf("Failed to get license plan: %v", err)
+	}
+	if licensePlan == cloud.CommunityLicensePlan {
+		var filteredCodes []string
+		for _, code := range codes {
+			if Contains(AllSupportedFreeCodes, code) {
+				filteredCodes = append(filteredCodes, code)
+			}
+		}
+		return filteredCodes
+	}
+	return codes
 }
 
 // GetDotNetConfig gets .NET config for the given path and saves configName
@@ -154,7 +177,7 @@ func Image(code string) string {
 	if val, ok := DockerImageMap[code]; ok {
 		return val + releaseVersion
 	} else {
-		logrus.Fatal("Unknown code: " + code)
+		log.Fatal("Unknown code: " + code)
 		return ""
 	}
 }
@@ -166,7 +189,7 @@ func SelectAnalyzer(path string, analyzers []string, interactive bool, selectFun
 	}
 
 	selection, choices := analyzerToSelect(analyzers, path)
-	logrus.Debugf("Detected products: %s", strings.Join(choices, ", "))
+	log.Debugf("Detected products: %s", strings.Join(choices, ", "))
 
 	if len(choices) == 1 || !interactive {
 		analyzer = selection[choices[0]]
@@ -210,7 +233,7 @@ func ShowReport(resultsDir string, reportPath string, port int) {
 		PrintProcess(
 			func(_ *pterm.SpinnerPrinter) {
 				if _, err := os.Stat(reportPath); os.IsNotExist(err) {
-					logrus.Fatal("Qodana report not found. Get a report by running `qodana scan`")
+					log.Fatal("Qodana report not found. Get a report by running `qodana scan`")
 				}
 				openReport("", reportPath, port)
 			},

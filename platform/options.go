@@ -127,6 +127,11 @@ func (o *QodanaOptions) LogOptions() {
 	log.Debug(buffer.String())
 }
 
+// GetToken default options function to obtain token (no user interaction)
+func (o *QodanaOptions) GetToken() string {
+	return o.LoadToken(false, o.RequiresToken(false), false)
+}
+
 func (o *QodanaOptions) FetchAnalyzerSettings() {
 	if o.Linter == "" && o.Ide == "" {
 		qodanaYaml := LoadQodanaYaml(o.ProjectDir, o.ConfigName)
@@ -136,7 +141,7 @@ func (o *QodanaOptions) FetchAnalyzerSettings() {
 				PrimaryBold(o.ConfigName),
 				PrimaryBold("qodana init"),
 			)
-			analyzer := GetAnalyzer(o.ProjectDir, o.ConfigName)
+			analyzer := GetAnalyzer(o.ProjectDir, o.ConfigName, o.GetToken())
 			if IsNativeAnalyzer(analyzer) {
 				o.Ide = analyzer
 			} else {
