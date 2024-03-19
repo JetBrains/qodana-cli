@@ -27,12 +27,14 @@ import (
 
 const defaultService = "qodana-cli"
 
-func (o *QodanaOptions) LoadToken(refresh bool, requiresToken bool) string {
+func (o *QodanaOptions) LoadToken(refresh bool, requiresToken bool, interactive bool) string {
 	tokenFetchers := []func(bool) string{
 		func(_ bool) string { return o.getTokenFromDockerArgs() },
 		func(_ bool) string { return o.getTokenFromEnv() },
 		o.getTokenFromKeychain,
-		func(_ bool) string { return o.getTokenFromUserInput(requiresToken) },
+	}
+	if interactive {
+		tokenFetchers = append(tokenFetchers, func(_ bool) string { return o.getTokenFromUserInput(requiresToken) })
 	}
 
 	for _, fetcher := range tokenFetchers {
@@ -104,7 +106,7 @@ func (o *QodanaOptions) getTokenFromUserInput(requiresToken bool) string {
 
 // ValidateToken checks if QODANA_TOKEN is set in CLI args, or environment or the system keyring, returns its value.
 func (o *QodanaOptions) ValidateToken(refresh bool) string {
-	token := o.LoadToken(refresh, true)
+	token := o.LoadToken(refresh, true, true)
 	if token != "" {
 		client := cloud.GetCloudApiEndpoints().NewCloudApiClient(token)
 		if projectName, err := client.RequestProjectName(); err != nil {

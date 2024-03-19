@@ -47,7 +47,7 @@ func newInitCommand() *cobra.Command {
 				if platform.IsInteractive() && !platform.AskUserConfirm(fmt.Sprintf("Do you want to set up Qodana in %s", platform.PrimaryBold(options.ProjectDir))) {
 					return
 				}
-				analyzer := platform.GetAnalyzer(options.ProjectDir, options.ConfigName)
+				analyzer := platform.GetAnalyzer(options.ProjectDir, options.ConfigName, options.GetToken())
 				if platform.IsNativeAnalyzer(analyzer) {
 					options.Ide = analyzer
 				} else {

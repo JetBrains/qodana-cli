@@ -42,14 +42,14 @@ func setup(options *QodanaOptions) error {
 		return fmt.Errorf("failed to get java executable path: %w", err)
 	}
 	// TODO iscommunityoreap
-	cloud.SetupLicenseToken(options.LoadToken(false, options.RequiresToken(false)))
+	cloud.SetupLicenseToken(options.GetToken())
 	options.LicensePlan, err = cloud.GetCloudApiEndpoints().GetLicensePlan()
 	if err != nil {
 		if !linterInfo.IsEap {
 			return fmt.Errorf("failed to get license plan: %w", err)
 		}
 		println("Qodana license plan: EAP license.")
-		options.LicensePlan = "COMMUNITY"
+		options.LicensePlan = cloud.CommunityLicensePlan
 	}
 
 	options.ResultsDir, err = filepath.Abs(options.ResultsDir)

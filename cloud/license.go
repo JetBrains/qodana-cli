@@ -58,6 +58,7 @@ const (
 	qodanaLicenseUri       = "/linters/license-key"
 	QodanaToken            = "QODANA_TOKEN"
 	QodanaLicenseOnlyToken = "QODANA_LICENSE_ONLY_TOKEN"
+	CommunityLicensePlan   = "COMMUNITY"
 )
 
 var TokenDeclinedError = errors.New("token was declined by Qodana Cloud server")
