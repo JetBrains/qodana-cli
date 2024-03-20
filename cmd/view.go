@@ -17,7 +17,6 @@
 package cmd
 
 import (
-	"github.com/JetBrains/qodana-cli/v2024/core"
 	"github.com/JetBrains/qodana-cli/v2024/platform"
 	"github.com/spf13/cobra"
 )
@@ -35,7 +34,7 @@ func newViewCommand() *cobra.Command {
 		Short: "View SARIF files in CLI",
 		Long:  `Preview all problems found in SARIF files in CLI.`,
 		Run: func(cmd *cobra.Command, args []string) {
-			core.ReadSarif(options.SarifFile, true)
+			platform.ProcessSarif(options.SarifFile, true, false)
 		},
 	}
 	flags := cmd.Flags()

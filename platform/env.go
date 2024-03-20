@@ -17,11 +17,14 @@
 package platform
 
 import (
+	"encoding/json"
 	"fmt"
 	cienvironment "github.com/cucumber/ci-environment/go"
+	sarif2 "github.com/owenrumney/go-sarif/v2/sarif"
 	log "github.com/sirupsen/logrus"
 	"net/url"
 	"os"
+	"path/filepath"
 	"runtime"
 	"strings"
 )
@@ -51,7 +54,26 @@ const (
 	qodanaNugetUser        = "QODANA_NUGET_USER"
 	qodanaNugetPassword    = "QODANA_NUGET_PASSWORD"
 	qodanaNugetName        = "QODANA_NUGET_NAME"
+	glCodeQualityReport    = "gl-code-quality-report.json"
 )
+
+// CCIssue represents a Code Climate (GitLab CodeQuality) issue
+type CCIssue struct {
+	CheckName   string   `json:"check_name"`
+	Description string   `json:"description"`
+	Fingerprint string   `json:"fingerprint"`
+	Severity    string   `json:"severity"`
+	Location    Location `json:"location"`
+}
+
+type Location struct {
+	Path  string `json:"path"`
+	Lines Line   `json:"lines"`
+}
+
+type Line struct {
+	Begin int `json:"begin"`
+}
 
 // ExtractQodanaEnvironment extracts Qodana environment variables from the current environment.
 func ExtractQodanaEnvironment(setEnvironmentFunc func(string, string)) {
@@ -178,4 +200,50 @@ func getSpaceRemoteUrl() string {
 		}, "")
 	}
 	return ""
+}
+
+// IsGitLab returns true if the current environment is GitLab CI.
+func isGitLab() bool {
+	return os.Getenv("GITLAB_CI") == "true"
+}
+
+// sarifResultToCodeClimate converts a SARIF result to a Code Climate issue.
+func sarifResultToCodeClimate(r *sarif2.Result) CCIssue {
+	fingerprint, ok := r.PartialFingerprints["equalIndicator/v2"].(string)
+	if !ok {
+		fingerprint = ""
+	}
+	return CCIssue{
+		CheckName:   *r.RuleID,
+		Description: *r.Message.Text,
+		Fingerprint: fingerprint,
+		Severity:    map[string]string{"error": "critical", "warning": "major", "note": "minor"}[*r.Level],
+		Location: Location{
+			Path: *r.Locations[0].PhysicalLocation.ArtifactLocation.URI,
+			Lines: Line{
+				Begin: *r.Locations[0].PhysicalLocation.Region.StartLine,
+			},
+		},
+	}
+}
+
+// writeGlCodeQualityReport saves GitLab CodeQuality issues to a file in JSON format
+func writeGlCodeQualityReport(issues []CCIssue, sarifPath string) error {
+	outputFile := filepath.Join(filepath.Dir(sarifPath), glCodeQualityReport)
+	file, err := os.Create(outputFile)
+	if err != nil {
+		log.Fatalf("Failed to create GitLab CodeQuality report file: %v", err)
+	}
+	defer func(file *os.File) error {
+		err := file.Close()
+		if err != nil {
+			return fmt.Errorf("failed to close GitLab CodeQuality report file: %w", err)
+		}
+		return nil
+	}(file)
+	encoder := json.NewEncoder(file)
+	if err := encoder.Encode(issues); err != nil {
+		return fmt.Errorf("failed to write GitLab CodeQuality report: %w", err)
+	}
+	return nil
 }
