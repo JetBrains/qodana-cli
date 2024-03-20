@@ -18,6 +18,7 @@ package platform
 
 import (
 	"fmt"
+	"github.com/owenrumney/go-sarif/v2/sarif"
 	"os"
 	"strings"
 
@@ -179,8 +180,8 @@ func PrintFile(file string) {
 	printLines(string(content), 1, 0, true)
 }
 
-// PrintProblem prints problem with source code or without it.
-func PrintProblem(ruleId string, level string, message string, path string, line int, column int, contextLine int, context string) {
+// printProblem prints problem with source code or without it.
+func printProblem(ruleId string, level string, message string, path string, line int, column int, contextLine int, context string) {
 	printHeader(level, ruleId, "")
 	printPath(path, line, column)
 	printLines(context, contextLine, line, false)
@@ -238,4 +239,30 @@ func printLines(content string, contextLine int, line int, skipHighlight bool) {
 		fmt.Printf("%s  %s %s\n", lineNumber, tableSepMid, printLine)
 	}
 	fmt.Printf("%s%s\n", tableDown, strings.Repeat(tableSep, getTerminalWidth()-noLineWidth-1))
+}
+
+func printSarifProblem(r *sarif.Result, ruleId string, level string, message string) {
+	if r.Locations[0].PhysicalLocation != nil {
+		printProblem(
+			ruleId,
+			level,
+			message,
+			*r.Locations[0].PhysicalLocation.ArtifactLocation.URI,
+			*r.Locations[0].PhysicalLocation.Region.StartLine,
+			*r.Locations[0].PhysicalLocation.Region.StartColumn,
+			*r.Locations[0].PhysicalLocation.ContextRegion.StartLine,
+			*r.Locations[0].PhysicalLocation.ContextRegion.Snippet.Text,
+		)
+	} else {
+		printProblem(
+			ruleId,
+			level,
+			message,
+			"",
+			0,
+			0,
+			0,
+			"",
+		)
+	}
 }

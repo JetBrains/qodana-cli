@@ -17,8 +17,6 @@
 package core
 
 import (
-	"bytes"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"github.com/JetBrains/qodana-cli/v2024/cloud"
@@ -35,7 +33,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/owenrumney/go-sarif/v2/sarif"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -461,60 +458,6 @@ func Test_Bootstrap(t *testing.T) {
 	platform.Bootstrap(config.Bootstrap, opts.ProjectDir)
 	if _, err := os.Stat(filepath.Join(opts.ProjectDir, "qodana.yaml")); errors.Is(err, os.ErrNotExist) {
 		t.Fatalf("No qodana.yml created by the bootstrap command in qodana.yaml")
-	}
-	err = os.RemoveAll(tmpDir)
-	if err != nil {
-		t.Fatal(err)
-	}
-}
-
-// TestSaveProperty saves some SARIF example file, adds a property to it, then checks that a compact version of that JSON file equals the given expected.
-func Test_SaveProperty(t *testing.T) {
-	opts := &platform.QodanaOptions{}
-	tmpDir := filepath.Join(os.TempDir(), "sarif")
-	err := os.MkdirAll(tmpDir, 0o755)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	opts.ProjectDir = tmpDir
-	shortSarif := filepath.Join(tmpDir, "qodana-short.sarif.json")
-	err = os.WriteFile(
-		shortSarif,
-		[]byte("{\"$schema\":\"https://raw.githubusercontent.com/schemastore/schemastore/master/src/schemas/json/sarif-2.1.0-rtm.5.json\",\"version\":\"2.1.0\",\"runs\":[{\"tool\":{\"driver\":{\"name\":\"QDRICKROLL\",\"fullName\":\"Qodana for RickRolling\",\"version\":\"223.1218.100\",\"rules\":[],\"taxa\":[],\"language\":\"en-US\",\"contents\":[\"localizedData\",\"nonLocalizedData\"],\"isComprehensive\":false},\"extensions\":[]},\"invocations\":[{\"exitCode\":0,\"toolExecutionNotifications\":[],\"executionSuccessful\":true}],\"language\":\"en-US\",\"results\":[],\"automationDetails\":{\"id\":\"project/qodana/2022-08-01\",\"guid\":\"87d2cf90-9968-4bd3-9cbc-d1b624f37fd2\",\"properties\":{\"jobUrl\":\"\",\"tags\":[\"jobUrl\"]}},\"newlineSequences\":[\"\\r\\n\",\"\\n\"],\"properties\":{\"deviceId\":\"200820300000000-0000-0000-0000-000000000001\",\"tags\":[\"deviceId\"]}}]}"),
-		0o644,
-	)
-	if err != nil {
-		t.Fatal(err)
-	}
-	link := "https://youtu.be/dQw4w9WgXcQ"
-	err = saveSarifProperty(
-		shortSarif,
-		"reportUrl",
-		link,
-	)
-	if err != nil {
-		t.Fatal(err)
-	}
-	s, err := sarif.Open(shortSarif)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if s.Runs[0].Properties["reportUrl"] != link {
-		t.Fatal("reportUrl was not added correctly to qodana-short.sarif.json")
-	}
-	expected := []byte(`{"version":"2.1.0","$schema":"https://raw.githubusercontent.com/schemastore/schemastore/master/src/schemas/json/sarif-2.1.0-rtm.5.json","runs":[{"tool":{"driver":{"contents":["localizedData","nonLocalizedData"],"fullName":"Qodana for RickRolling","isComprehensive":false,"language":"en-US","name":"QDRICKROLL","rules":[],"version":"223.1218.100"}},"invocations":[{"executionSuccessful":true,"exitCode":0}],"results":[],"automationDetails":{"guid":"87d2cf90-9968-4bd3-9cbc-d1b624f37fd2","id":"project/qodana/2022-08-01","properties":{"jobUrl":"","tags":["jobUrl"]}},"language":"en-US","newlineSequences":["\r\n","\n"],"properties":{"deviceId":"200820300000000-0000-0000-0000-000000000001","reportUrl":"https://youtu.be/dQw4w9WgXcQ","tags":["deviceId"]}}]}`)
-	content, err := os.ReadFile(shortSarif)
-	if err != nil {
-		t.Fatal("Error when opening file: ", err)
-	}
-	actual := new(bytes.Buffer)
-	err = json.Compact(actual, content)
-	if err != nil {
-		t.Fatal("Error when compacting file: ", err)
-	}
-	if !bytes.Equal(actual.Bytes(), expected) {
-		t.Fatal("Expected: ", string(expected), " Actual: ", actual.String())
 	}
 	err = os.RemoveAll(tmpDir)
 	if err != nil {

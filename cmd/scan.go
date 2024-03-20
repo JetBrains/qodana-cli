@@ -49,7 +49,7 @@ But you can always override qodana.yaml options with the following command-line 
 			exitCode := core.RunAnalysis(ctx, &qodanaOptions)
 
 			checkExitCode(exitCode, options.ResultsDir, &qodanaOptions)
-			core.ReadSarif(filepath.Join(options.ResultsDir, platform.QodanaSarifName), options.PrintProblems)
+			platform.ProcessSarif(filepath.Join(options.ResultsDir, platform.QodanaSarifName), options.PrintProblems, options.GenerateCodeClimateReport)
 			if platform.IsInteractive() {
 				options.ShowReport = platform.AskUserConfirm("Do you want to open the latest report")
 			}

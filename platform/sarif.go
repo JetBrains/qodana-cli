@@ -21,6 +21,7 @@ import (
 	"fmt"
 	"github.com/JetBrains/qodana-cli/v2024/sarif"
 	"github.com/google/uuid"
+	sarif2 "github.com/owenrumney/go-sarif/v2/sarif"
 	log "github.com/sirupsen/logrus"
 	"os"
 	"path/filepath"
@@ -28,9 +29,15 @@ import (
 	"time"
 )
 
-// let's name it sarifutils
-
-const extension = ".sarif.json"
+const (
+	// baselineStateEmpty default baseline state (not set)
+	baselineStateEmpty = ""
+	// baselineStateNew new baseline state
+	baselineStateNew = "new"
+	// baselineStateUnchanged unchanged baseline state
+	baselineStateUnchanged = "unchanged"
+	extension              = ".sarif.json"
+)
 
 func MergeSarifReports(options *QodanaOptions, deviceId string) (int, error) {
 	files, err := findSarifFiles(options.GetTmpResultsDir())
@@ -264,4 +271,55 @@ func ReportId(projectName string) string {
 
 func JobUrl() string {
 	return os.Getenv("QODANA_JOB_URL")
+}
+
+// ProcessSarif concludes the result of analysis based on provided SARIF file
+// can print problems to the output
+// can create GitLab CodeQuality issues report
+// TODO: can submit problems to BitBucket Code Insights
+func ProcessSarif(sarifPath string, printProblems bool, generateCodeClimateReport bool) {
+	newProblems := 0
+	s, err := sarif2.Open(sarifPath)
+	if err != nil {
+		log.Fatal(err)
+	}
+	var codeClimateIssues []CCIssue
+	if printProblems {
+		EmptyMessage()
+	}
+	for _, run := range s.Runs {
+		for _, r := range run.Results {
+			ruleId := *r.RuleID
+			message := *r.Message.Text
+			level := *r.Level
+			baselineState := baselineStateEmpty
+			if r.BaselineState != nil {
+				baselineState = *r.BaselineState
+			}
+			if baselineState == baselineStateNew || baselineState == baselineStateEmpty {
+				newProblems++
+			}
+			if len(r.Locations) > 0 && baselineState != baselineStateUnchanged {
+				if generateCodeClimateReport {
+					codeClimateIssues = append(codeClimateIssues, sarifResultToCodeClimate(r))
+				}
+				if printProblems {
+					printSarifProblem(r, ruleId, level, message)
+				}
+			}
+		}
+	}
+	if generateCodeClimateReport {
+		err = writeGlCodeQualityReport(codeClimateIssues, sarifPath)
+		if err != nil {
+			log.Warnf("Failed to write GitLab CodeQuality report: %v", err)
+		}
+	}
+	if !IsContainer() {
+		if newProblems == 0 {
+			SuccessMessage("It seems all right 👌 No new problems found according to the checks applied")
+		} else {
+			ErrorMessage("Found %d new problems according to the checks applied", newProblems)
+		}
+	}
 }

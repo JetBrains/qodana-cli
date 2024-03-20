@@ -39,6 +39,7 @@ func ComputeFlags(cmd *cobra.Command, options *QodanaOptions) error {
 	flags.StringVarP(&options.ReportDir, "report-dir", "r", "", "Override directory to save Qodana HTML report to (default <userCacheDir>/JetBrains/<linter>/results/report)")
 
 	flags.BoolVar(&options.PrintProblems, "print-problems", false, "Print all found problems by Qodana in the CLI output")
+	flags.BoolVar(&options.GenerateCodeClimateReport, "code-climate", isGitLab(), "Generate a Code Climate report in SARIF format (compatible with GitLab Code Quality)")
 	flags.BoolVar(&options.ClearCache, "clear-cache", false, "Clear the local Qodana cache before running the analysis")
 	flags.BoolVarP(&options.ShowReport, "show-report", "w", false, "Serve HTML report on port")
 	flags.IntVar(&options.Port, "port", 8080, "Port to serve the report on")
