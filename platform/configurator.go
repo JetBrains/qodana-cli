@@ -37,10 +37,10 @@ const (
 
 // langsProductCodes is a map of languages to linters.
 var langsProductCodes = map[string][]string{
-	"Java":              {QDJVMC, QDJVM, QDANDC},
-	"Kotlin":            {QDJVMC, QDJVM, QDANDC},
+	"Java":              {QDJVM, QDJVMC, QDANDC},
+	"Kotlin":            {QDJVM, QDJVMC, QDANDC},
 	"PHP":               {QDPHP},
-	"Python":            {QDPYC, QDPY},
+	"Python":            {QDPY, QDPYC},
 	"JavaScript":        {QDJS},
 	"TypeScript":        {QDJS},
 	"Go":                {QDGO},
