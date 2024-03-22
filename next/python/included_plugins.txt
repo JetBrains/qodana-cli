@@ -43,3 +43,4 @@ com.jetbrains.python.pyscript
 com.intellij.dev
 org.intellij.kotlinScripting
 com.intellij.dev
+intellij.jupyter
