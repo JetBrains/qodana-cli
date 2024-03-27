@@ -23,7 +23,6 @@ import (
 	"fmt"
 	"github.com/JetBrains/qodana-cli/v2024/cloud"
 	"github.com/JetBrains/qodana-cli/v2024/platform"
-	"github.com/owenrumney/go-sarif/v2/sarif"
 	"os"
 	"path/filepath"
 	"runtime"
@@ -41,20 +40,18 @@ func getIdeExitCode(resultsDir string, c int) (res int) {
 	if c != 0 {
 		return c
 	}
-	s, err := sarif.Open(filepath.Join(resultsDir, "qodana-short.sarif.json"))
+	s, err := platform.ReadReport(filepath.Join(resultsDir, "qodana-short.sarif.json"))
 	if err != nil {
 		log.Fatal(err)
 	}
 	if len(s.Runs) > 0 && len(s.Runs[0].Invocations) > 0 {
-		if tmp := s.Runs[0].Invocations[0].ExitCode; tmp != nil {
-			res = *tmp
-			if res < platform.QodanaSuccessExitCode || res > platform.QodanaFailThresholdExitCode {
-				log.Printf("Wrong exitCode in sarif: %d", res)
-				return 1
-			}
-			log.Printf("IDE exit code: %d", res)
-			return res
+		res := int(s.Runs[0].Invocations[0].ExitCode)
+		if res < platform.QodanaSuccessExitCode || res > platform.QodanaFailThresholdExitCode {
+			log.Printf("Wrong exitCode in sarif: %d", res)
+			return 1
 		}
+		log.Printf("IDE exit code: %d", res)
+		return res
 	}
 	log.Printf("IDE process exit code: %d", c)
 	return c

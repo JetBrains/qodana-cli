@@ -465,6 +465,7 @@ func Test_Bootstrap(t *testing.T) {
 	}
 }
 
+//goland:noinspection HttpUrlsUsage
 func Test_ReadAppInfo(t *testing.T) {
 	tempDir := os.TempDir()
 	entrypointDir := filepath.Join(tempDir, "appinfo")

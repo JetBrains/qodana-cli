@@ -174,43 +174,46 @@ qodana scan [flags]
 #### Options
 
 ```
-  -l, --linter string                   Use to run Qodana in a container (default). Choose linter (image) to use. Not compatible with --ide option. Available images are: jetbrains/qodana-jvm-community:2023.3, jetbrains/qodana-jvm:2023.3, jetbrains/qodana-jvm-android:2023.3, jetbrains/qodana-php:2023.3, jetbrains/qodana-python:2023.3, jetbrains/qodana-python-community:2023.3, jetbrains/qodana-js:2023.3, jetbrains/qodana-go:2023.3, jetbrains/qodana-dotnet:2023.3
-      --ide string                      Use to run Qodana without a container. Not compatible with --linter option. Available codes are QDNET, add -EAP part to obtain EAP versions
-  -i, --project-dir string              Root directory of the inspected project (default ".")
-  -o, --results-dir string              Override directory to save Qodana inspection results to (default <userCacheDir>/JetBrains/Qodana/<linter>/results)
-      --cache-dir string                Override cache directory (default <userCacheDir>/JetBrains/Qodana/<linter>/cache)
-      --report-dir string               Override directory to save Qodana HTML report to (default <userCacheDir>/JetBrains/<linter>/results/report)
-      --print-problems                  Print all found problems by Qodana in the CLI output
-      --clear-cache                     Clear the local Qodana cache before running the analysis
-  -w, --show-report                     Serve HTML report on port
-      --port int                        Port to serve the report on (default 8080)
-      --config string                   Set a custom configuration file instead of 'qodana.yaml'. Relative paths in the configuration will be based on the project directory.
-  -a, --analysis-id string              Unique report identifier (GUID) to be used by Qodana Cloud (default "<generated value>")
-  -b, --baseline string                 Provide the path to an existing SARIF report to be used in the baseline state calculation
-      --baseline-include-absent         Include in the output report the results from the baseline run that are absent in the current run
-      --full-history --commit           Go through the full commit history and run the analysis on each commit. If combined with --commit, analysis will be started from the given commit. Could take a long time.
-      --commit --script local-changes   Base changes commit to reset to, resets git and runs linter with --script local-changes: analysis will be run only on changed files since the given commit. If combined with `--full-history`, full history analysis will be started from the given commit.
-      --fail-threshold string           Set the number of problems that will serve as a quality gate. If this number is reached, the inspection run is terminated with a non-zero exit code
-      --disable-sanity                  Skip running the inspections configured by the sanity profile
-  -d, --source-directory string         Directory inside the project-dir directory must be inspected. If not specified, the whole project is inspected
-  -n, --profile-name string             Profile name defined in the project
-  -p, --profile-path string             Path to the profile file
-      --run-promo string                Set to 'true' to have the application run the inspections configured by the promo profile; set to 'false' otherwise (default: 'true' only if Qodana is executed with the default profile)
-      --script string                   Override the run scenario (default "default")
-      --coverage-dir string             Directory with coverage data to process
-      --apply-fixes                     Apply all available quick-fixes, including cleanup
-      --cleanup                         Run project cleanup
-      --property stringArray            Set a JVM property to be used while running Qodana using the --property property.name=value1,value2,...,valueN notation
-  -s, --save-report                     Generate HTML report (default true)
-      --timeout int                     Qodana analysis time limit in milliseconds. If reached, the analysis is terminated, process exits with code timeout-exit-code. Negative – no timeout (default -1)
-      --timeout-exit-code int           See timeout option (default 1)
-      --diff-start string               Commit to start an incremental run from. Only files changed between --diff-start and --diff-end will be analysed.
-      --diff-end string                 Commit to end an incremental run on. Only files changed between --diff-start and --diff-end will be analysed.
-  -e, --env stringArray                 Only for container runs. Define additional environment variables for the Qodana container (you can use the flag multiple times). CLI is not reading full host environment variables and does not pass it to the Qodana container for security reasons
-  -v, --volume stringArray              Only for container runs. Define additional volumes for the Qodana container (you can use the flag multiple times)
-  -u, --user string                     Only for container runs. User to run Qodana container as. Please specify user id – '$UID' or user id and group id $(id -u):$(id -g). Use 'root' to run as the root user (default: the current user)
-      --skip-pull                       Only for container runs. Skip pulling the latest Qodana container
-  -h, --help                            help for scan
+  -l, --linter string                            Use to run Qodana in a container (default). Choose linter (image) to use. Not compatible with --ide option. Available images are: jetbrains/qodana-jvm:2023.3, jetbrains/qodana-php:2023.3, jetbrains/qodana-python:2023.3, jetbrains/qodana-js:2023.3, jetbrains/qodana-go:2023.3, jetbrains/qodana-dotnet:2023.3, jetbrains/qodana-jvm-community:2023.3, jetbrains/qodana-python-community:2023.3, jetbrains/qodana-jvm-android:2023.3, jetbrains/qodana-cdnet:2023.3
+      --ide string                               Use to run Qodana without a container. Not compatible with --linter option. Available codes are QDNET, add -EAP part to obtain EAP versions
+  -i, --project-dir string                       Root directory of the inspected project (default ".")
+  -o, --results-dir string                       Override directory to save Qodana inspection results to (default <userCacheDir>/JetBrains/<linter>/results)
+      --cache-dir string                         Override cache directory (default <userCacheDir>/JetBrains/<linter>/cache)
+  -r, --report-dir string                        Override directory to save Qodana HTML report to (default <userCacheDir>/JetBrains/<linter>/results/report)
+      --print-problems                           Print all found problems by Qodana in the CLI output
+      --code-climate                             Generate a Code Climate report in SARIF format (compatible with GitLab Code Quality), will be saved to the results directory (default true if Qodana is executed on GitLab CI)
+      --bitbucket-insights                       Send the results BitBucket Code Insights, no additional configuration required if ran in BitBucket Pipelines (default true if Qodana is executed on BitBucket Pipelines)
+      --clear-cache                              Clear the local Qodana cache before running the analysis
+  -w, --show-report                              Serve HTML report on port
+      --port int                                 Port to serve the report on (default 8080)
+      --config string                            Set a custom configuration file instead of 'qodana.yaml'. Relative paths in the configuration will be based on the project directory.
+  -a, --analysis-id string                       Unique report identifier (GUID) to be used by Qodana Cloud (default "<generated-value>")
+  -b, --baseline string                          Provide the path to an existing SARIF report to be used in the baseline state calculation
+      --baseline-include-absent                  Include in the output report the results from the baseline run that are absent in the current run
+      --full-history --commit                    Go through the full commit history and run the analysis on each commit. If combined with --commit, analysis will be started from the given commit. Could take a long time.
+      --commit --full-history                    Base changes commit to reset to, resets git and runs an incremental analysis: analysis will be run only on changed files since the given commit. If combined with --full-history, full history analysis will be started from the given commit.
+      --fail-threshold string                    Set the number of problems that will serve as a quality gate. If this number is reached, the inspection run is terminated with a non-zero exit code
+      --disable-sanity                           Skip running the inspections configured by the sanity profile
+  -d, --source-directory string                  Directory inside the project-dir directory must be inspected. If not specified, the whole project is inspected
+  -n, --profile-name string                      Profile name defined in the project
+  -p, --profile-path string                      Path to the profile file
+      --run-promo string                         Set to 'true' to have the application run the inspections configured by the promo profile; set to 'false' otherwise (default: 'true' only if Qodana is executed with the default profile)
+      --script string                            Override the run scenario (default "default")
+      --coverage-dir string                      Directory with coverage data to process
+      --apply-fixes                              Apply all available quick-fixes, including cleanup
+      --cleanup                                  Run project cleanup
+      --property stringArray                     Set a JVM property to be used while running Qodana using the --property property.name=value1,value2,...,valueN notation
+  -s, --save-report                              Generate HTML report (default true)
+      --timeout int                              Qodana analysis time limit in milliseconds. If reached, the analysis is terminated, process exits with code timeout-exit-code. Negative – no timeout (default -1)
+      --timeout-exit-code int                    See timeout option (default 1)
+      --diff-start string                        Commit to start an incremental run from. Only files changed between --diff-start and --diff-end will be analysed.
+      --diff-end string                          Commit to end an incremental run on. Only files changed between --diff-start and --diff-end will be analysed.
+      --force-incremental-script local-changes   Override the default run-scenario for incremental runs. Allowed values are local-changes and `scope`. Note that the given scenario might not be compatible with the linter.
+  -e, --env stringArray                          Only for container runs. Define additional environment variables for the Qodana container (you can use the flag multiple times). CLI is not reading full host environment variables and does not pass it to the Qodana container for security reasons
+  -v, --volume stringArray                       Only for container runs. Define additional volumes for the Qodana container (you can use the flag multiple times)
+  -u, --user string                              Only for container runs. User to run Qodana container as. Please specify user id – '$UID' or user id and group id $(id -u):$(id -g). Use 'root' to run as the root user (default: <the current user>)
+      --skip-pull                                Only for container runs. Skip pulling the latest Qodana container
+  -h, --help                                     help for scan
 ```
 
 ### show
