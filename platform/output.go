@@ -18,7 +18,7 @@ package platform
 
 import (
 	"fmt"
-	"github.com/owenrumney/go-sarif/v2/sarif"
+	"github.com/JetBrains/qodana-cli/v2024/sarif"
 	"os"
 	"strings"
 
@@ -241,22 +241,22 @@ func printLines(content string, contextLine int, line int, skipHighlight bool) {
 	fmt.Printf("%s%s\n", tableDown, strings.Repeat(tableSep, getTerminalWidth()-noLineWidth-1))
 }
 
-func printSarifProblem(r *sarif.Result, ruleId string, level string, message string) {
+func printSarifProblem(r *sarif.Result, ruleId, message string) {
 	if r.Locations[0].PhysicalLocation != nil {
 		printProblem(
 			ruleId,
-			level,
+			getSeverity(r),
 			message,
-			*r.Locations[0].PhysicalLocation.ArtifactLocation.URI,
-			*r.Locations[0].PhysicalLocation.Region.StartLine,
-			*r.Locations[0].PhysicalLocation.Region.StartColumn,
-			*r.Locations[0].PhysicalLocation.ContextRegion.StartLine,
-			*r.Locations[0].PhysicalLocation.ContextRegion.Snippet.Text,
+			r.Locations[0].PhysicalLocation.ArtifactLocation.Uri,
+			int(r.Locations[0].PhysicalLocation.Region.StartLine),
+			int(r.Locations[0].PhysicalLocation.Region.StartColumn),
+			int(r.Locations[0].PhysicalLocation.ContextRegion.StartLine),
+			r.Locations[0].PhysicalLocation.ContextRegion.Snippet.Text,
 		)
 	} else {
 		printProblem(
 			ruleId,
-			level,
+			getSeverity(r),
 			message,
 			"",
 			0,
@@ -265,4 +265,12 @@ func printSarifProblem(r *sarif.Result, ruleId string, level string, message str
 			"",
 		)
 	}
+}
+
+// getProblemsFoundMessage returns a message about the number of problems found, used in CLI and BitBucket report.
+func getProblemsFoundMessage(newProblems int) string {
+	if newProblems == 0 {
+		return "It seems all right 👌 No new problems found according to the checks applied"
+	}
+	return fmt.Sprintf("Found %d new problems according to the checks applied", newProblems)
 }

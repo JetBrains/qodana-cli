@@ -17,27 +17,27 @@
 package cmd
 
 import (
-    "github.com/JetBrains/qodana-cli/v2024/platform"
-    "github.com/spf13/cobra"
+	"github.com/JetBrains/qodana-cli/v2024/platform"
+	"github.com/spf13/cobra"
 )
 
 // viewOptions represents view command options.
 type viewOptions struct {
-    SarifFile string
+	SarifFile string
 }
 
 // newViewCommand returns a new instance of the show command.
 func newViewCommand() *cobra.Command {
-    options := &viewOptions{}
-    cmd := &cobra.Command{
-        Use:   "view",
-        Short: "View SARIF files in CLI",
-        Long:  `Preview all problems found in SARIF files in CLI.`,
-        Run: func(cmd *cobra.Command, args []string) {
-            platform.ProcessSarif(options.SarifFile, "", false, false, false)
-        },
-    }
-    flags := cmd.Flags()
-    flags.StringVarP(&options.SarifFile, "sarif-file", "f", platform.QodanaSarifName, "Path to the SARIF file")
-    return cmd
+	options := &viewOptions{}
+	cmd := &cobra.Command{
+		Use:   "view",
+		Short: "View SARIF files in CLI",
+		Long:  `Preview all problems found in SARIF files in CLI.`,
+		Run: func(cmd *cobra.Command, args []string) {
+			platform.ProcessSarif(options.SarifFile, "", "", false, false, false)
+		},
+	}
+	flags := cmd.Flags()
+	flags.StringVarP(&options.SarifFile, "sarif-file", "f", platform.QodanaSarifName, "Path to the SARIF file")
+	return cmd
 }

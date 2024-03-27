@@ -12,6 +12,11 @@ licenseRules:
       - Unlicense
       - BSD-3-CLAUSE-NO-TRADEMARK
 dependencyOverrides:
+  - name: github.com/reviewdog/go-bitbucket
+    version: v0.0.0-20201024094602-708c3f6a7de0
+    licenses:
+      - key: MIT
+        url: https://github.com/reviewdog/reviewdog/
   - name: github.com/JetBrains/qodana-cli/v2024/cdnet
     version: ""
     licenses:
@@ -56,6 +61,4 @@ exclude:
   - name: VgoDependencyUpdateAvailable
   - name: All
     paths:
-      - core/core_test.go
-      - core/license_test.go
       - .github/qodana.sarif.json
