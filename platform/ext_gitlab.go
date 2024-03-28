@@ -20,7 +20,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/JetBrains/qodana-cli/v2024/sarif"
-	"github.com/sirupsen/logrus"
+	log "github.com/sirupsen/logrus"
 	"os"
 	"path/filepath"
 )
@@ -91,12 +91,12 @@ func writeGlCodeQualityReport(issues []CCIssue, sarifPath string) error {
 	outputFile := filepath.Join(filepath.Dir(sarifPath), glCodeQualityReport)
 	file, err := os.Create(outputFile)
 	if err != nil {
-		logrus.Fatalf("Failed to create GitLab CodeQuality report file: %v", err)
+		log.Warnf("Failed to create GitLab CodeQuality report file: %v", err)
 	}
 	defer func(file *os.File) {
 		err := file.Close()
 		if err != nil {
-			logrus.Warnf("failed to close GitLab CodeQuality report file: %s", err.Error())
+			log.Warnf("failed to close GitLab CodeQuality report file: %s", err.Error())
 		}
 	}(file)
 	encoder := json.NewEncoder(file)

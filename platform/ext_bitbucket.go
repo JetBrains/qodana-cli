@@ -49,13 +49,14 @@ const (
 	pipeProxyURL     = "http://host.docker.internal:29418"
 )
 
+// toBitBucketSeverity maps SARIF and Qodana severity levels to BitBucket severity levels, levels are mapped to the closest match https://www.jetbrains.com/help/qodana/qodana-sarif-output.html#SARIF+severity
 var (
 	toBitBucketSeverity = map[string]string{
 		sarifError:     bitBucketHigh,
 		sarifWarning:   bitBucketMedium,
 		sarifNote:      bitBucketLow,
 		qodanaCritical: bitBucketHigh,
-		qodanaHigh:     bitBucketMedium,
+		qodanaHigh:     bitBucketHigh,
 		qodanaModerate: bitBucketMedium,
 		qodanaLow:      bitBucketLow,
 		qodanaInfo:     bitBucketInfo,
@@ -186,20 +187,6 @@ func getBitBucketClient() *bbapi.APIClient {
 	return bbapi.NewAPIClient(config)
 }
 
-// UnexpectedResponseError is triggered when we have unexpected response from CodeInsights API
-type UnexpectedResponseError struct {
-	Code int
-	Body []byte
-}
-
-func (e UnexpectedResponseError) Error() string {
-	msg := fmt.Sprintf("received unexpected %d code from Bitbucket API", e.Code)
-	if len(e.Body) > 0 {
-		msg += " with message:\n" + string(e.Body)
-	}
-	return msg
-}
-
 // checkBitBucketApiError checks if the API call was successful
 func checkBitBucketApiError(err error, resp *http.Response, expectedCode int) error {
 	if err != nil {
@@ -207,10 +194,8 @@ func checkBitBucketApiError(err error, resp *http.Response, expectedCode int) er
 	}
 	if resp != nil && resp.StatusCode != expectedCode {
 		body, _ := io.ReadAll(resp.Body)
-		return UnexpectedResponseError{
-			Code: resp.StatusCode,
-			Body: body,
-		}
+		log.Debugf("Unexpected response: %s", body)
+		return fmt.Errorf("bitbucket Cloud API error: %w", err)
 	}
 	return nil
 }
