@@ -1,0 +1,22 @@
+name: 'Feed'
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+    paths:
+      - 'feed/releases.json'
+  pull_request:
+    paths:
+      - 'feed/releases.json'
+
+jobs:
+  verify-links:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        shell: bash
+        working-directory: .github/scripts
+    steps:
+      - uses: actions/checkout@v4
+      - run: node verifyChecksums.js

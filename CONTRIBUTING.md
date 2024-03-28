@@ -24,6 +24,12 @@ git clone git@github.com:JetBrains/qodana-docker.git
 docker buildx bake
 ```
 
+`cd` into `.github/scripts` and run the script to check product feed if you edited something in `feed/releases.json`:
+
+```shell
+cd .github/scripts && node verifyChecksums.js
+```
+
 ## Create a commit
 
 Commit messages should be well formatted, and to make that "standardized", we are using [internal issue tracker](https://youtrack.jetbrains.com) references.

@@ -61,6 +61,156 @@
                 "MajorVersion": "2023.3",
                 "Build": "233.12259.111",
                 "PrintableReleaseType": null
+            },
+            {
+                "Date": "2024-03-18",
+                "Type": "eap",
+                "Downloads": {
+                    "linux": {
+                        "Link": "https://download.jetbrains.com/qodana/2024.1/qodana-QDNET-241.15106.48.tar.gz",
+                        "ChecksumLink": "https://download.jetbrains.com/qodana/2024.1/qodana-QDNET-241.15106.48.tar.gz.sha256"
+                    },
+                    "linuxARM64": {
+                        "Link": "https://download.jetbrains.com/qodana/2024.1/qodana-QDNET-241.15106.48-aarch64.tar.gz",
+                        "ChecksumLink": "https://download.jetbrains.com/qodana/2024.1/qodana-QDNET-241.15106.48-aarch64.tar.gz.sha256"
+                    },
+                    "windowsZip": {
+                        "Link": "https://download.jetbrains.com/qodana/2024.1/qodana-QDNET-241.15106.48.win.zip",
+                        "ChecksumLink": "https://download.jetbrains.com/qodana/2024.1/qodana-QDNET-241.15106.48.win.zip.sha256"
+                    },
+                    "windowsZipARM64": {
+                        "Link": "https://download.jetbrains.com/qodana/2024.1/qodana-QDNET-241.15106.48-aarch64.win.zip",
+                        "ChecksumLink": "https://download.jetbrains.com/qodana/2024.1/qodana-QDNET-241.15106.48-aarch64.win.zip.sha256"
+                    }
+                },
+                "Version": "2024.1.0",
+                "MajorVersion": "2024.1",
+                "Build": "241.15106.48",
+                "PrintableReleaseType": null
+            }
+        ]
+    },
+    {
+        "Code": "IIU",
+        "Releases": [
+            {
+                "Date": "2024-03-18",
+                "Type": "eap",
+                "Downloads": {
+                    "linux": {
+                        "Link": "https://download.jetbrains.com/qodana/2024.1/qodana-QDJVM-241.14881.38.tar.gz",
+                        "ChecksumLink": "https://download.jetbrains.com/qodana/2024.1/qodana-QDJVM-241.14881.38.tar.gz.sha256"
+                    },
+                    "linuxARM64": {
+                        "Link": "https://download.jetbrains.com/qodana/2024.1/qodana-QDJVM-241.14881.38-aarch64.tar.gz",
+                        "ChecksumLink": "https://download.jetbrains.com/qodana/2024.1/qodana-QDJVM-241.14881.38-aarch64.tar.gz.sha256"
+                    },
+                    "windowsZip": {
+                        "Link": "https://download.jetbrains.com/qodana/2024.1/qodana-QDJVM-241.14881.38.win.zip",
+                        "ChecksumLink": "https://download.jetbrains.com/qodana/2024.1/qodana-QDJVM-241.14881.38.win.zip.sha256"
+                    },
+                    "windowsZipARM64": {
+                        "Link": "https://download.jetbrains.com/qodana/2024.1/qodana-QDJVM-241.14881.38-aarch64.win.zip",
+                        "ChecksumLink": "https://download.jetbrains.com/qodana/2024.1/qodana-QDJVM-241.14881.38-aarch64.win.zip.sha256"
+                    }
+                },
+                "Version": "2024.1.0",
+                "MajorVersion": "2024.1",
+                "Build": "241.14881.38",
+                "PrintableReleaseType": null
+            }
+        ]
+    },
+    {
+        "Code": "IIC",
+        "Releases": [
+            {
+                "Date": "2024-03-18",
+                "Type": "eap",
+                "Downloads": {
+                    "linux": {
+                        "Link": "https://download.jetbrains.com/qodana/2024.1/qodana-QDJVMC-241.14884.52.tar.gz",
+                        "ChecksumLink": "https://download.jetbrains.com/qodana/2024.1/qodana-QDJVMC-241.14884.52.tar.gz.sha256"
+                    },
+                    "linuxARM64": {
+                        "Link": "https://download.jetbrains.com/qodana/2024.1/qodana-QDJVMC-241.14884.52-aarch64.tar.gz",
+                        "ChecksumLink": "https://download.jetbrains.com/qodana/2024.1/qodana-QDJVMC-241.14884.52-aarch64.tar.gz.sha256"
+                    },
+                    "windowsZip": {
+                        "Link": "https://download.jetbrains.com/qodana/2024.1/qodana-QDJVMC-241.14884.52.win.zip",
+                        "ChecksumLink": "https://download.jetbrains.com/qodana/2024.1/qodana-QDJVMC-241.14884.52.win.zip.sha256"
+                    },
+                    "windowsZipARM64": {
+                        "Link": "https://download.jetbrains.com/qodana/2024.1/qodana-QDJVMC-241.14884.52-aarch64.win.zip",
+                        "ChecksumLink": "https://download.jetbrains.com/qodana/2024.1/qodana-QDJVMC-241.14884.52-aarch64.win.zip.sha256"
+                    }
+                },
+                "Version": "2024.1.0",
+                "MajorVersion": "2024.1",
+                "Build": "241.14884.52",
+                "PrintableReleaseType": null
+            }
+        ]
+    },
+    {
+        "Code": "PCP",
+        "Releases": [
+            {
+                "Date": "2024-03-18",
+                "Type": "eap",
+                "Downloads": {
+                    "linux": {
+                        "Link": "https://download.jetbrains.com/qodana/2024.1/qodana-QDPY-241.14872.33.tar.gz",
+                        "ChecksumLink": "https://download.jetbrains.com/qodana/2024.1/qodana-QDPY-241.14872.33.tar.gz.sha256"
+                    },
+                    "linuxARM64": {
+                        "Link": "https://download.jetbrains.com/qodana/2024.1/qodana-QDPY-241.14872.33-aarch64.tar.gz",
+                        "ChecksumLink": "https://download.jetbrains.com/qodana/2024.1/qodana-QDPY-241.14872.33-aarch64.tar.gz.sha256"
+                    },
+                    "windowsZip": {
+                        "Link": "https://download.jetbrains.com/qodana/2024.1/qodana-QDPY-241.14872.33.win.zip",
+                        "ChecksumLink": "https://download.jetbrains.com/qodana/2024.1/qodana-QDPY-241.14872.33.win.zip.sha256"
+                    },
+                    "windowsZipARM64": {
+                        "Link": "https://download.jetbrains.com/qodana/2024.1/qodana-QDPY-241.14872.33-aarch64.win.zip",
+                        "ChecksumLink": "https://download.jetbrains.com/qodana/2024.1/qodana-QDPY-241.14872.33-aarch64.win.zip.sha256"
+                    }
+                },
+                "Version": "2024.1.0",
+                "MajorVersion": "2024.1",
+                "Build": "241.14872.33",
+                "PrintableReleaseType": null
+            }
+        ]
+    },
+    {
+        "Code": "PCC",
+        "Releases": [
+            {
+                "Date": "2024-03-18",
+                "Type": "eap",
+                "Downloads": {
+                    "linux": {
+                        "Link": "https://download.jetbrains.com/qodana/2024.1/qodana-QDPYC-241.14872.33.tar.gz",
+                        "ChecksumLink": "https://download.jetbrains.com/qodana/2024.1/qodana-QDPYC-241.14872.33.tar.gz.sha256"
+                    },
+                    "linuxARM64": {
+                        "Link": "https://download.jetbrains.com/qodana/2024.1/qodana-QDPYC-241.14872.33-aarch64.tar.gz",
+                        "ChecksumLink": "https://download.jetbrains.com/qodana/2024.1/qodana-QDPYC-241.14872.33-aarch64.tar.gz.sha256"
+                    },
+                    "windowsZip": {
+                        "Link": "https://download.jetbrains.com/qodana/2024.1/qodana-QDPYC-241.14872.33.win.zip",
+                        "ChecksumLink": "https://download.jetbrains.com/qodana/2024.1/qodana-QDPYC-241.14872.33.win.zip.sha256"
+                    },
+                    "windowsZipARM64": {
+                        "Link": "https://download.jetbrains.com/qodana/2024.1/qodana-QDPYC-241.14872.33-aarch64.win.zip",
+                        "ChecksumLink": "https://download.jetbrains.com/qodana/2024.1/qodana-QDPYC-241.14872.33-aarch64.win.zip.sha256"
+                    }
+                },
+                "Version": "2024.1.0",
+                "MajorVersion": "2024.1",
+                "Build": "241.14872.33",
+                "PrintableReleaseType": null
             }
         ]
     }
