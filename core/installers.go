@@ -39,7 +39,7 @@ var (
 	eapVer      = "eap"
 	versionsMap = map[string]string{
 		releaseVer: "2023.3",
-		eapVer:     "2023.3",
+		eapVer:     "2024.1",
 	}
 	Products = map[string]string{
 		platform.QDJVM:  "IIU",
@@ -119,7 +119,6 @@ func downloadAndInstallIDE(opts *QodanaOptions, baseDir string, spinner *pterm.S
 
 //goland:noinspection GoBoolExpressions
 func getIde(productCode string) *ReleaseDownloadInfo {
-
 	originalCode := productCode
 	dist := releaseVer
 	if strings.HasSuffix(productCode, EapSuffix) {
