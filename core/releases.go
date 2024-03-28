@@ -30,6 +30,8 @@ import (
 	"path/filepath"
 )
 
+const productFeed = "https://raw.githubusercontent.com/JetBrains/qodana-docker/main/feed/releases.json"
+
 type Product struct {
 	Code     string
 	Releases []ReleaseInfo
@@ -46,9 +48,9 @@ type ReleaseInfo struct {
 }
 
 type ReleaseDownloadInfo struct {
-	Link         string
-	Size         uint64
-	ChecksumLink string
+	Link         string `json:"Link"`
+	Size         uint64 `json:"Size,omitempty"`
+	ChecksumLink string `json:"ChecksumLink"`
 }
 
 func GetProductByCode(code string) (*Product, error) {
@@ -66,9 +68,8 @@ func GetProductByCode(code string) (*Product, error) {
 	}(tempDir) // clean up
 
 	path := filepath.Join(tempDir, "productInfo.json")
-	url := "https://raw.githubusercontent.com/JetBrains/qodana-docker/main/feed/releases.json"
 
-	if err := platform.DownloadFile(path, url, nil); err != nil {
+	if err := platform.DownloadFile(path, productFeed, nil); err != nil {
 		return nil, err
 	}
 

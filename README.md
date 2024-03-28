@@ -45,7 +45,7 @@ brew install jetbrains/utils/qodana
 ```shell
 curl -fsSL https://jb.gg/qodana-cli/install | bash
 ```
-Also, you can install `nightly` or any other version (e.g. `v2023.3.1`) the following way:
+Also, you can install `nightly` or any other version (e.g. `v2024.1.0`) the following way:
 ```
 curl -fsSL https://jb.gg/qodana-cli/install | bash -s -- nightly
 ```
@@ -174,7 +174,7 @@ qodana scan [flags]
 #### Options
 
 ```
-  -l, --linter string                            Use to run Qodana in a container (default). Choose linter (image) to use. Not compatible with --ide option. Available images are: jetbrains/qodana-jvm:2023.3, jetbrains/qodana-php:2023.3, jetbrains/qodana-python:2023.3, jetbrains/qodana-js:2023.3, jetbrains/qodana-go:2023.3, jetbrains/qodana-dotnet:2023.3, jetbrains/qodana-jvm-community:2023.3, jetbrains/qodana-python-community:2023.3, jetbrains/qodana-jvm-android:2023.3, jetbrains/qodana-cdnet:2023.3
+  -l, --linter string                            Use to run Qodana in a container (default). Choose linter (image) to use. Not compatible with --ide option. Available images are: jetbrains/qodana-jvm:2024.1, jetbrains/qodana-php:2024.1, jetbrains/qodana-python:2024.1, jetbrains/qodana-js:2024.1, jetbrains/qodana-go:2024.1, jetbrains/qodana-dotnet:2024.1, jetbrains/qodana-jvm-community:2024.1, jetbrains/qodana-python-community:2024.1, jetbrains/qodana-jvm-android:2024.1, jetbrains/qodana-cdnet:2024.1
       --ide string                               Use to run Qodana without a container. Not compatible with --linter option. Available codes are QDNET, add -EAP part to obtain EAP versions
   -i, --project-dir string                       Root directory of the inspected project (default ".")
   -o, --results-dir string                       Override directory to save Qodana inspection results to (default <userCacheDir>/JetBrains/<linter>/results)
