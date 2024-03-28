@@ -75,6 +75,9 @@ func ExtractQodanaEnvironment(setEnvironmentFunc func(string, string)) {
 		setEnvironmentFunc(QodanaRemoteUrl, getSpaceRemoteUrl())
 		setEnvironmentFunc(QodanaBranch, os.Getenv("JB_SPACE_GIT_BRANCH"))
 		setEnvironmentFunc(QodanaRevision, os.Getenv("JB_SPACE_GIT_REVISION"))
+	} else if isBitBucket() {
+		qEnv = "bitbucket"
+		setEnvironmentFunc(qodanaJobUrl, getBitBucketJobUrl())
 	}
 	setEnvironmentFunc(qodanaEnv, fmt.Sprintf("%s:%s", qEnv, Version))
 }
@@ -193,6 +196,10 @@ func isBitBucket() bool {
 // isBitBucketPipe returns true if the current environment is in a working BitBucket Pipe.
 func isBitBucketPipe() bool {
 	return os.Getenv("BITBUCKET_PIPE_STORAGE_DIR") != "" || os.Getenv("BITBUCKET_PIPE_SHARED_STORAGE_DIR") != ""
+}
+
+func getBitBucketJobUrl() string {
+	return fmt.Sprintf("https://bitbucket.org/%s/pipelines/results/%s", getBitBucketRepoFullName(), os.Getenv("BITBUCKET_BUILD_NUMBER"))
 }
 
 // getBitBucketCommit returns the BitBucket commit hash.

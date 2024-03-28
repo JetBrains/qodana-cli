@@ -179,6 +179,16 @@ func Test_ExtractEnvironmentVariables(t *testing.T) {
 			revisionExpected:  revisionExpected,
 			branchExpected:    branchExpected,
 		},
+		{
+			ci: "BitBucket Pipelines",
+			variables: map[string]string{
+				"BITBUCKET_PIPELINE_UUID":  "123456789",
+				"BITBUCKET_BUILD_NUMBER":   "123456789",
+				"BITBUCKET_REPO_FULL_NAME": "sa/entrypoint",
+			},
+			envExpected:    fmt.Sprintf("bitbucket:%s", Version),
+			jobUrlExpected: "https://bitbucket.org/sa/entrypoint/pipelines/results/123456789",
+		},
 	} {
 		t.Run(tc.ci, func(t *testing.T) {
 			opts := &QodanaOptions{}
