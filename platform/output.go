@@ -271,6 +271,9 @@ func printSarifProblem(r *sarif.Result, ruleId, message string) {
 func getProblemsFoundMessage(newProblems int) string {
 	if newProblems == 0 {
 		return "It seems all right 👌 No new problems found according to the checks applied"
+	} else if newProblems == 1 {
+		return fmt.Sprintf("Found 1 new problem according to the checks applied")
+	} else {
+		return fmt.Sprintf("Found %d new problems according to the checks applied", newProblems)
 	}
-	return fmt.Sprintf("Found %d new problems according to the checks applied", newProblems)
 }

@@ -293,9 +293,7 @@ func getRuleDescription(report *sarif.Report, ruleId string) string {
 		for _, extension := range run.Tool.Extensions {
 			for _, rule := range extension.Rules {
 				if rule.Id == ruleId {
-					return fmt.Sprintf("Short description: %v\nFull description: %v",
-						rule.ShortDescription.Text,
-						rule.FullDescription.Text)
+					return rule.ShortDescription.Text
 				}
 			}
 		}
@@ -315,6 +313,7 @@ func ProcessSarif(sarifPath, analysisId, reportUrl string, printProblems, codeCl
 	}
 	var codeClimateIssues []CCIssue
 	var codeInsightIssues []bbapi.ReportAnnotation
+	rulesDescriptions := make(map[string]string)
 	if printProblems {
 		EmptyMessage()
 	}
@@ -334,7 +333,11 @@ func ProcessSarif(sarifPath, analysisId, reportUrl string, printProblems, codeCl
 					codeClimateIssues = append(codeClimateIssues, sarifResultToCodeClimate(&r))
 				}
 				if codeInsights {
-					ruleDescription := getRuleDescription(s, ruleId)
+					ruleDescription, ok := rulesDescriptions[ruleId]
+					if !ok {
+						ruleDescription = getRuleDescription(s, ruleId)
+						rulesDescriptions[ruleId] = ruleDescription
+					}
 					codeInsightIssues = append(codeInsightIssues, buildAnnotation(&r, ruleDescription, reportUrl))
 				}
 				if printProblems {
@@ -377,7 +380,8 @@ func getFingerprint(r *sarif.Result) string {
 			}
 		}
 	}
-	return RunGUID()
+	log.Fatalf("failed to get fingerprint from result: %v", r)
+	return ""
 }
 
 // getSeverity returns the severity of the Qodana (or not) SARIF result.
