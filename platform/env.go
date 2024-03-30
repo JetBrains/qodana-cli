@@ -97,7 +97,7 @@ func validateRemoteUrl(remote string, qEnv string) string {
 func validateBranch(branch string, env string) string {
 	if branch == "" {
 		if env == "github-actions" {
-			branch = os.Getenv("GITHUB_REF")
+			branch = os.Getenv("GITHUB_REF_NAME")
 		} else if env == "azure-pipelines" {
 			branch = os.Getenv("BUILD_SOURCEBRANCHNAME")
 		} else if env == "jenkins" {

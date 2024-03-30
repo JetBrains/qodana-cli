@@ -39,7 +39,7 @@ func unsetGitHubVariables() {
 
 func Test_ExtractEnvironmentVariables(t *testing.T) {
 	revisionExpected := "1234567890abcdef1234567890abcdef12345678"
-	branchExpected := "refs/heads/main"
+	branchExpected := "main"
 
 	if os.Getenv("GITHUB_ACTIONS") == "true" {
 		unsetGitHubVariables()
@@ -140,7 +140,7 @@ func Test_ExtractEnvironmentVariables(t *testing.T) {
 				"GITHUB_REPOSITORY": "sa/entrypoint",
 				"GITHUB_RUN_ID":     "123456789",
 				"GITHUB_SHA":        revisionExpected,
-				"GITHUB_REF":        branchExpected,
+				"GITHUB_REF_NAME":   branchExpected,
 			},
 			envExpected:       fmt.Sprintf("github-actions:%s", Version),
 			jobUrlExpected:    "https://github.jetbrains.com/sa/entrypoint/actions/runs/123456789",
