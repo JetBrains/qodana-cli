@@ -32,31 +32,19 @@ const (
 type RunScenario = string
 
 func (o *QodanaOptions) determineRunScenario(hasStartHash bool) RunScenario {
-	switch o.ForceIncrementalScript {
-	case "":
-		isDotNet := Prod.Code == platform.QDNET || strings.Contains(o.Linter, "dotnet")
-		switch {
-		case o.FullHistory:
-			return runScenarioFullHistory
-		case hasStartHash && isDotNet:
-			return runScenarioScoped
-		case hasStartHash && !isDotNet:
-			return runScenarioLocalChanges
-		default:
-			return runScenarioDefault
-		}
-	case platform.IncrementalScriptLocalChanges:
-		if !hasStartHash {
-			log.Fatal("Cannot run any incremental script without --diff-start/--commit")
-		}
-		return runScenarioLocalChanges
-	case platform.IncrementalScriptScope:
-		if !hasStartHash {
-			log.Fatal("Cannot run any incremental script without --diff-start/--commit")
-		}
+	isDotNet := Prod.Code == platform.QDNET || strings.Contains(o.Linter, "dotnet")
+
+	switch {
+	case o.ForceDiffMode && !hasStartHash:
+		log.Fatal("Cannot run any diff script without --diff-start/--commit")
+		panic("Unreachable")
+	case o.FullHistory:
+		return runScenarioFullHistory
+	case !hasStartHash:
+		return runScenarioDefault
+	case o.ForceDiffMode || isDotNet:
 		return runScenarioScoped
 	default:
-		log.Fatalf("Unknown forced incremental script %s", o.ForceIncrementalScript)
-		panic("Unreachable")
+		return runScenarioLocalChanges
 	}
 }

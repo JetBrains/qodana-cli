@@ -95,12 +95,12 @@ func TestQodanaOptions_determineRunScenario(t *testing.T) {
 			name: "forced script",
 			args: args{
 				qodanaOptions: &platform.QodanaOptions{
-					ForceIncrementalScript: platform.IncrementalScriptLocalChanges,
+					ForceDiffMode: true,
 				},
 				hasStartHash: true,
-				productCode:  platform.QDNET,
+				productCode:  platform.QDJVM,
 			},
-			want: runScenarioLocalChanges,
+			want: runScenarioScoped,
 		},
 	}
 	for _, tt := range tests {

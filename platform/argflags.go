@@ -50,7 +50,7 @@ func ComputeFlags(cmd *cobra.Command, options *QodanaOptions) error {
 	flags.StringVarP(&options.Baseline, "baseline", "b", "", "Provide the path to an existing SARIF report to be used in the baseline state calculation")
 	flags.BoolVar(&options.BaselineIncludeAbsent, "baseline-include-absent", false, "Include in the output report the results from the baseline run that are absent in the current run")
 	flags.BoolVar(&options.FullHistory, "full-history", false, "Go through the full commit history and run the analysis on each commit. If combined with `--commit`, analysis will be started from the given commit. Could take a long time.")
-	flags.StringVar(&options.Commit, "commit", "", "Base changes commit to reset to, resets git and runs an incremental analysis: analysis will be run only on changed files since the given commit. If combined with `--full-history`, full history analysis will be started from the given commit.")
+	flags.StringVar(&options.Commit, "commit", "", "Base changes commit to reset to, resets git and starts a diff run: analysis will be run only on changed files since the given commit. If combined with `--full-history`, full history analysis will be started from the given commit.")
 	flags.StringVar(&options.FailThreshold, "fail-threshold", "", "Set the number of problems that will serve as a quality gate. If this number is reached, the inspection run is terminated with a non-zero exit code")
 	flags.BoolVar(&options.DisableSanity, "disable-sanity", false, "Skip running the inspections configured by the sanity profile")
 	flags.StringVarP(&options.SourceDirectory, "source-directory", "d", "", "Directory inside the project-dir directory must be inspected. If not specified, the whole project is inspected")
@@ -71,9 +71,9 @@ func ComputeFlags(cmd *cobra.Command, options *QodanaOptions) error {
 	flags.IntVar(&options.AnalysisTimeoutMs, "timeout", -1, "Qodana analysis time limit in milliseconds. If reached, the analysis is terminated, process exits with code timeout-exit-code. Negative – no timeout")
 	flags.IntVar(&options.AnalysisTimeoutExitCode, "timeout-exit-code", 1, "See timeout option")
 
-	flags.StringVar(&options.DiffStart, "diff-start", "", "Commit to start an incremental run from. Only files changed between --diff-start and --diff-end will be analysed.")
-	flags.StringVar(&options.DiffEnd, "diff-end", "", "Commit to end an incremental run on. Only files changed between --diff-start and --diff-end will be analysed.")
-	flags.StringVar(&options.ForceIncrementalScript, "force-incremental-script", "", "Override the default run-scenario for incremental runs. Allowed values are `local-changes` and `scope`. Note that the given scenario might not be compatible with the linter.")
+	flags.StringVar(&options.DiffStart, "diff-start", "", "Commit to start a diff run from. Only files changed between --diff-start and --diff-end will be analysed.")
+	flags.StringVar(&options.DiffEnd, "diff-end", "", "Commit to end a diff run on. Only files changed between --diff-start and --diff-end will be analysed.")
+	flags.BoolVar(&options.ForceDiffMode, "force-diff-analysis-mode", false, "Override the default run-scenario for diff runs to always use the restart-based approach")
 
 	flags.IntVar(&options.JvmDebugPort, "jvm-debug-port", -1, "Enable JVM remote debug under given port")
 	if options.LinterSpecific != nil {
@@ -94,7 +94,7 @@ func ComputeFlags(cmd *cobra.Command, options *QodanaOptions) error {
 		cmd.MarkFlagsMutuallyExclusive("env", "ide")
 	}
 
-	cmd.MarkFlagsMutuallyExclusive("script", "force-incremental-script", "full-history")
+	cmd.MarkFlagsMutuallyExclusive("script", "force-diff-analysis-mode", "full-history")
 	cmd.MarkFlagsMutuallyExclusive("commit", "script", "diff-start")
 	cmd.MarkFlagsMutuallyExclusive("profile-name", "profile-path")
 	cmd.MarkFlagsMutuallyExclusive("apply-fixes", "cleanup")
@@ -108,6 +108,7 @@ func ComputeFlags(cmd *cobra.Command, options *QodanaOptions) error {
 		return err
 	}
 	err = cmd.Flags().MarkHidden("jvm-debug-port")
+	err = cmd.Flags().MarkHidden("force-diff-analysis-mode")
 	if err != nil {
 		return err
 	}
