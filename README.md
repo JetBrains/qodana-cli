@@ -206,9 +206,8 @@ qodana scan [flags]
   -s, --save-report                              Generate HTML report (default true)
       --timeout int                              Qodana analysis time limit in milliseconds. If reached, the analysis is terminated, process exits with code timeout-exit-code. Negative – no timeout (default -1)
       --timeout-exit-code int                    See timeout option (default 1)
-      --diff-start string                        Commit to start an incremental run from. Only files changed between --diff-start and --diff-end will be analysed.
-      --diff-end string                          Commit to end an incremental run on. Only files changed between --diff-start and --diff-end will be analysed.
-      --force-incremental-script local-changes   Override the default run-scenario for incremental runs. Allowed values are local-changes and `scope`. Note that the given scenario might not be compatible with the linter.
+      --diff-start string                        Commit to start an diff run from. Only files changed between --diff-start and --diff-end will be analysed.
+      --diff-end string                          Commit to end an diff run on. Only files changed between --diff-start and --diff-end will be analysed.
   -e, --env stringArray                          Only for container runs. Define additional environment variables for the Qodana container (you can use the flag multiple times). CLI is not reading full host environment variables and does not pass it to the Qodana container for security reasons
   -v, --volume stringArray                       Only for container runs. Define additional volumes for the Qodana container (you can use the flag multiple times)
   -u, --user string                              Only for container runs. User to run Qodana container as. Please specify user id – '$UID' or user id and group id $(id -u):$(id -g). Use 'root' to run as the root user (default: <the current user>)

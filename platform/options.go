@@ -31,11 +31,6 @@ import (
 	"unicode"
 )
 
-const (
-	IncrementalScriptLocalChanges = "local-changes"
-	IncrementalScriptScope        = "scope"
-)
-
 // QodanaOptions is a struct that contains all the options to run a Qodana linter.
 type QodanaOptions struct {
 	ResultsDir                string
@@ -62,7 +57,7 @@ type QodanaOptions struct {
 	Commit                    string
 	DiffStart                 string
 	DiffEnd                   string
-	ForceIncrementalScript    string
+	ForceDiffMode             bool
 	AnalysisId                string
 	Env                       []string
 	Volumes                   []string
