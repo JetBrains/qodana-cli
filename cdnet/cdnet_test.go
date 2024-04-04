@@ -29,6 +29,10 @@ import (
 )
 
 func TestLinterRun(t *testing.T) {
+	// skip test on GH, since required jars are not there
+	if os.Getenv("GITHUB_ACTIONS") == "true" {
+		t.Skip()
+	}
 	projectPath := createNativeProject(t, "badrules")
 	defer deferredCleanup(projectPath)
 	outputDir := filepath.Join(os.TempDir(), "cdnet-output")
