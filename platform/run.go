@@ -139,10 +139,10 @@ func RunAnalysis(options *QodanaOptions) (int, error) {
 	source := filepath.Join(options.ResultsDir, "qodana.sarif.json")
 	destination := filepath.Join(options.ReportResultsPath(), "qodana.sarif.json")
 	if err := CopyFile(source, destination); err != nil {
-		log.Fatal(err)
+		log.Fatalf("problem while copying the report %e", err)
 	}
 	if err := MakeShortSarif(destination, options.GetShortSarifPath()); err != nil {
-		log.Fatal(err)
+		log.Fatalf("problem while making short sarif %e", err)
 	}
 
 	log.Debugf("Generating report to %s...", options.ReportResultsPath())

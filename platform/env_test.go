@@ -24,6 +24,24 @@ import (
 	"testing"
 )
 
+func unsetTeamcityVariables() {
+	variables := []string{
+		"BUILD_VCS_NUMBER",
+		"BUILD_NUMBER",
+		"TEAMCITY_VERSION",
+		"TEAMCITY_BUILDCONF_NAME",
+		"BUILD_VCS_URL",
+		"BUILD_URL",
+		"BUILD_NUMBER",
+		"GIT_URL",
+		"GIT_COMMIT",
+		"GIT_LOCAL_BRANCH",
+	}
+	for _, v := range variables {
+		_ = os.Unsetenv(v)
+	}
+}
+
 func unsetGitHubVariables() {
 	variables := []string{
 		"GITHUB_SERVER_URL",
@@ -43,6 +61,10 @@ func Test_ExtractEnvironmentVariables(t *testing.T) {
 
 	if os.Getenv("GITHUB_ACTIONS") == "true" {
 		unsetGitHubVariables()
+	}
+
+	if os.Getenv("TEAMCITY_VERSION") != "" {
+		unsetTeamcityVariables()
 	}
 
 	for _, tc := range []struct {

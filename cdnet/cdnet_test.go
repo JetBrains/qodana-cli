@@ -33,6 +33,7 @@ func TestLinterRun(t *testing.T) {
 	if os.Getenv("GITHUB_ACTIONS") == "true" {
 		t.Skip()
 	}
+	log.SetLevel(log.DebugLevel)
 	projectPath := createNativeProject(t, "badrules")
 	defer deferredCleanup(projectPath)
 	outputDir := filepath.Join(os.TempDir(), "cdnet-output")
@@ -50,7 +51,7 @@ func TestLinterRun(t *testing.T) {
 	})
 
 	command := platformcmd.NewScanCommand(options)
-	command.SetArgs([]string{"-i", projectPath, "-o", outputDir})
+	command.SetArgs([]string{"-i", projectPath, "-o", outputDir, "--no-build"})
 	err := command.Execute()
 	defer deferredCleanup(options.CacheDir)
 	if err != nil {
