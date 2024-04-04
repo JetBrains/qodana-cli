@@ -154,7 +154,7 @@ func (o *QodanaOptions) FetchAnalyzerSettings() {
 	}
 	o.ResultsDir = o.resultsDirPath()
 	o.ReportDir = o.reportDirPath()
-	o.CacheDir = o.cacheDirPath()
+	o.CacheDir = o.GetCacheDir()
 }
 
 // Setenv sets the Qodana container environment variables if such variable was not set before.
@@ -260,7 +260,7 @@ func (o *QodanaOptions) resultsDirPath() string {
 	return o.ResultsDir
 }
 
-func (o *QodanaOptions) cacheDirPath() string {
+func (o *QodanaOptions) GetCacheDir() string {
 	if o.CacheDir == "" {
 		if IsContainer() {
 			o.CacheDir = "/data/cache"

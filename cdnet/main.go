@@ -14,11 +14,10 @@
  * limitations under the License.
  */
 
-package main
+package cdnet
 
 import (
 	"fmt"
-	"github.com/JetBrains/qodana-cli/v2024/linter"
 	log "github.com/sirupsen/logrus"
 	"io"
 	"os"
@@ -47,5 +46,5 @@ func main() {
 		log.SetOutput(io.Discard)
 		os.Exit(0)
 	}()
-	linter.Execute(productCode, linterName, version, buildDateStr, true)
+	Execute(productCode, linterName, version, buildDateStr, true)
 }

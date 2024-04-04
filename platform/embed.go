@@ -68,7 +68,7 @@ func getToolsMountPath(options *QodanaOptions) string {
 	if linterInfo == nil {
 		log.Fatal("Linter info is not defined for 3rd party linter")
 	}
-	mountPath := filepath.Join(options.cacheDirPath(), (*linterInfo).LinterVersion)
+	mountPath := filepath.Join(options.GetCacheDir(), (*linterInfo).LinterVersion)
 	if _, err := os.Stat(mountPath); err != nil {
 		if os.IsNotExist(err) {
 			err = os.MkdirAll(mountPath, 0755)

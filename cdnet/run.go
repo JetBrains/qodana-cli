@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package linter
+package cdnet
 
 import (
 	"encoding/json"
@@ -23,7 +23,6 @@ import (
 	"github.com/JetBrains/qodana-cli/v2024/sarif"
 	log "github.com/sirupsen/logrus"
 	"os"
-	"strings"
 )
 
 func (o *CltOptions) Setup(_ *platform.QodanaOptions) error {
@@ -62,21 +61,30 @@ func patchReport(options *LocalOptions) error {
 		return fmt.Errorf("failed to read report: %w", err)
 	}
 	for _, run := range finalReport.Runs {
-		run.Tool.Driver.Taxa = make([]sarif.ReportingDescriptor, 0)
 		rules := make([]sarif.ReportingDescriptor, 0)
 		for _, rule := range run.Tool.Driver.Rules {
-			rule.FullDescription = rule.ShortDescription
-			if len(rule.Relationships) == 0 && !strings.HasSuffix(rule.Id, "Errors") {
-				rule.Name = rule.ShortDescription.Text
-				run.Tool.Driver.Taxa = append(run.Tool.Driver.Taxa, rule)
-			} else {
-				rule.DefaultConfiguration = &sarif.ReportingConfiguration{
-					Enabled: true,
-				}
-				rules = append(rules, rule)
+			if rule.FullDescription == nil {
+				rule.FullDescription = rule.ShortDescription
 			}
+			if rule.ShortDescription == nil {
+				rule.ShortDescription = rule.FullDescription
+			}
+
+			rule.DefaultConfiguration = &sarif.ReportingConfiguration{
+				Enabled: true,
+			}
+			rules = append(rules, rule)
 		}
 		run.Tool.Driver.Rules = rules
+
+		taxonomy := make([]sarif.ReportingDescriptor, 0)
+		for _, taxa := range run.Tool.Driver.Taxa {
+			if taxa.Name == "" {
+				taxa.Name = taxa.Id
+			}
+			taxonomy = append(taxonomy, taxa)
+		}
+		run.Tool.Driver.Taxa = taxonomy
 	}
 
 	vcd, err := platform.GetVersionDetails(options.ProjectDir)

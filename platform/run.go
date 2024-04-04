@@ -24,6 +24,7 @@ import (
 	"os"
 	"path"
 	"path/filepath"
+	"strings"
 )
 
 // it's a 3rd party linter executor
@@ -95,18 +96,22 @@ func cleanup() {
 	umount()
 }
 
-func RunAnalysis(options *QodanaOptions) int {
+func RunAnalysis(options *QodanaOptions) (int, error) {
+	// we don't provide default for cache dir, since we don't want to compute options.id without knowing the exact folder
+	if options.CacheDir == "" {
+		options.CacheDir = options.GetCacheDir()
+	}
 	linterOptions := options.GetLinterSpecificOptions()
 	if linterOptions == nil {
 		ErrorMessage("linter specific options are not set")
-		return 1
+		return 1, nil
 	}
 	mountInfo := (*linterOptions).GetMountInfo()
 	linterInfo := (*linterOptions).GetInfo(options)
 	err := setup(options)
 	if err != nil {
 		ErrorMessage(err.Error())
-		return 1
+		return 1, err
 	}
 	printQodanaLogo(options, linterInfo)
 	deviceId := GetDeviceIdSalt()[0] // TODO : let's move it to QodanaOptions
@@ -121,14 +126,14 @@ func RunAnalysis(options *QodanaOptions) int {
 	err = (*linterOptions).RunAnalysis(options)
 	if err != nil {
 		ErrorMessage(err.Error())
-		return 1
+		return 1, err
 	}
 
 	log.Debugf("Java executable path: %s", mountInfo.JavaPath)
 	analysisResult, err := computeBaselinePrintResults(options, mountInfo)
 	if err != nil {
 		log.Error(err)
-		return 1
+		return 1, err
 	}
 
 	source := filepath.Join(options.ResultsDir, "qodana.sarif.json")
@@ -141,16 +146,19 @@ func RunAnalysis(options *QodanaOptions) int {
 	}
 
 	log.Debugf("Generating report to %s...", options.ReportResultsPath())
-	res, err := RunCmd("", QuoteForWindows(mountInfo.JavaPath), "-jar", QuoteForWindows(mountInfo.Converter), "-s", QuoteForWindows(options.ProjectDir), "-d", QuoteForWindows(options.ResultsDir), "-o", QuoteForWindows(options.ReportResultsPath()), "-n", "result-allProblems.json", "-f")
+	stdout, _, res, err := RunCmdRedirectOutput("", QuoteForWindows(mountInfo.JavaPath), "-jar", QuoteForWindows(mountInfo.Converter), "-s", QuoteForWindows(options.ProjectDir), "-d", QuoteForWindows(options.ResultsDir), "-o", QuoteForWindows(options.ReportResultsPath()), "-n", "result-allProblems.json", "-f")
 	if err != nil {
 		log.Errorf("Error while generating report: %s", err)
-		return res
+		return res, err
+	}
+	if strings.Contains(stdout, "java.lang") {
+		return 1, fmt.Errorf("exception occured while generating report: %s", stdout)
 	}
 
 	if yamlPath, err := GetQodanaYamlPath(options.ProjectDir); err == nil {
 		if err := CopyFile(yamlPath, path.Join(options.ReportResultsPath(), "qodana.yaml")); err != nil {
 			log.Errorf("Error while copying qodana.yaml: %s", err)
-			return 1
+			return 1, err
 		}
 	}
 
@@ -162,7 +170,7 @@ func RunAnalysis(options *QodanaOptions) int {
 	}
 
 	logProjectClose(eventsCh)
-	return analysisResult
+	return analysisResult, nil
 }
 
 func printQodanaLogo(options *QodanaOptions, linterInfo *LinterInfo) {

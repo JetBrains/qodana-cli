@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package linter
+package cdnet
 
 import (
 	"github.com/JetBrains/qodana-cli/v2024/cmd"

@@ -38,15 +38,20 @@ func NewScanCommand(options *platform.QodanaOptions) *cobra.Command {
 Note that most options can be configured via qodana.yaml (https://www.jetbrains.com/help/qodana/qodana-yaml.html) file.
 But you can always override qodana.yaml options with the following command-line options.
 `, (*linterInfo).GetInfo(options).LinterName),
-		Run: func(cmd *cobra.Command, args []string) {
-			exitCode := platform.RunAnalysis(options)
+		RunE: func(cmd *cobra.Command, args []string) error {
+			exitCode, err := platform.RunAnalysis(options)
 			log.Debug("exitCode: ", exitCode)
-			os.Exit(exitCode)
+			if exitCode == platform.QodanaFailThresholdExitCode {
+				platform.EmptyMessage()
+				platform.ErrorMessage("The number of problems exceeds the fail threshold")
+				os.Exit(exitCode)
+			}
+			return err
 		},
 	}
 
 	res := platform.ComputeFlags(cmd, options)
-	if res == nil {
+	if res != nil {
 		log.Fatal("Error while computing flags")
 	}
 
