@@ -21,7 +21,6 @@ import (
 	"fmt"
 	"github.com/JetBrains/qodana-cli/v2024/platform"
 	"github.com/JetBrains/qodana-cli/v2024/sarif"
-	log "github.com/sirupsen/logrus"
 	"os"
 )
 
@@ -87,38 +86,7 @@ func patchReport(options *LocalOptions) error {
 		run.Tool.Driver.Taxa = taxonomy
 	}
 
-	vcd, err := platform.GetVersionDetails(options.ProjectDir)
-	if err != nil {
-		log.Errorf("Error getting version control details: %s. Project is probably outside of the Git VCS.", err)
-	} else {
-		finalReport.Runs[0].VersionControlProvenance = make([]sarif.VersionControlDetails, 0)
-		finalReport.Runs[0].VersionControlProvenance = append(finalReport.Runs[0].VersionControlProvenance, vcd)
-	}
-
-	deviceId := platform.GetDeviceIdSalt()[0]
-	if deviceId != "" {
-		finalReport.Runs[0].Properties = &sarif.PropertyBag{}
-		finalReport.Runs[0].Properties.AdditionalProperties = map[string]interface{}{
-			"deviceId": deviceId,
-		}
-	}
-
-	if options.GetLinterInfo().ProductCode != "" {
-		finalReport.Runs[0].Tool.Driver.Name = options.GetLinterInfo().ProductCode
-	}
-	if options.GetLinterInfo().LinterName != "" {
-		finalReport.Runs[0].Tool.Driver.FullName = options.GetLinterInfo().LinterName
-	}
-
-	finalReport.Runs[0].AutomationDetails = &sarif.RunAutomationDetails{
-		Guid: platform.RunGUID(),
-		Id:   platform.ReportId(options.GetLinterInfo().ProductCode),
-		Properties: &sarif.PropertyBag{
-			AdditionalProperties: map[string]interface{}{
-				"jobUrl": platform.JobUrl(),
-			},
-		},
-	}
+	platform.SetVersionControlParams(options.QodanaOptions, platform.GetDeviceIdSalt()[0], finalReport)
 
 	// serialize object skipping empty fields
 	fatBytes, err := json.MarshalIndent(finalReport, "", " ")
