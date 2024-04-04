@@ -6,7 +6,6 @@ use (
 	./cloud
 	./cmd
 	./core
-	./linter
 	./platform
 	./sarif
 	./tooling

@@ -193,7 +193,7 @@ func LaunchAndLog(opts *QodanaOptions, executable string, args ...string) (int, 
 	}
 	fmt.Println(stdout)
 	if stderr != "" {
-		log.Error(stderr)
+		_, _ = fmt.Fprintln(os.Stderr, stderr)
 	}
 	if err := AppendToFile(filepath.Join(opts.LogDirPath(), executable+"-out.log"), stdout); err != nil {
 		log.Error(err)

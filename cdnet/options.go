@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package linter
+package cdnet
 
 import (
 	"fmt"
@@ -39,6 +39,10 @@ type CltOptions struct {
 }
 
 func (o *CltOptions) GetMountInfo() *platform.MountInfo {
+	if o.MountInfo == nil {
+		o.MountInfo = &platform.MountInfo{}
+		o.MountInfo.CustomTools = make(map[string]string)
+	}
 	return o.MountInfo
 }
 
