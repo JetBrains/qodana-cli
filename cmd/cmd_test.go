@@ -37,12 +37,8 @@ import (
 )
 
 func createProject(t *testing.T, name string) string {
-	home, err := os.UserHomeDir()
-	if err != nil {
-		t.Fatal(err)
-	}
-	location := filepath.Join(home, ".qodana_scan_", name)
-	err = os.MkdirAll(location, 0o755)
+	location := filepath.Join(os.TempDir(), ".qodana_scan_", name)
+	err := os.MkdirAll(location, 0o755)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -267,9 +263,15 @@ func TestAllCommandsWithContainer(t *testing.T) {
 	platform.DisableColor()
 	core.CheckForUpdates("0.1.0")
 	projectPath := createProject(t, "qodana_scan_python")
-	cachePath := createProject(t, "cache")
+
+	// create temp directory for cache
+	cachePath := filepath.Join(os.TempDir(), "qodana_cache")
+	err := os.MkdirAll(cachePath, 0o755)
+	if err != nil {
+		t.Fatal(err)
+	}
 	resultsPath := filepath.Join(projectPath, "results")
-	err := os.MkdirAll(resultsPath, 0o755)
+	err = os.MkdirAll(resultsPath, 0o755)
 	if err != nil {
 		t.Fatal(err)
 	}

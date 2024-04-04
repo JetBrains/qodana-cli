@@ -26,6 +26,24 @@ jobs:
       - uses: actions/setup-go@v5
         with:
           go-version: '1.21'
+      - name: Overwrite tools (to run tests only on gh repo)
+        run: |
+          touch cdnet/tooling/clt.zip tooling/baseline-cli.jar tooling/intellij-report-converter.jar tooling/qodana-fuser.jar
+          cat > go.work << EOF
+          go 1.21
+          
+          use (
+          ./cdnet
+          ./cli
+          ./cloud
+          ./cmd
+          ./core
+          ./platform
+          ./sarif
+          ./tooling
+          )
+          EOF
+        shell: bash
       - name: Set up gotestfmt
         uses: gotesttools/gotestfmt-action@v2
         with:
@@ -36,8 +54,6 @@ jobs:
           registry: registry.jetbrains.team
           username: ${{ secrets.SPACE_USERNAME }}
           password: ${{ secrets.SPACE_PASSWORD }}
-      - run: touch cdnet/tooling/clt.zip tooling/baseline-cli.jar tooling/intellij-report-converter.jar tooling/qodana-fuser.jar # temporary workaround
-        shell: bash
       - name: Run tests (with coverage)
         if: ${{ matrix.os != 'windows-latest' }}
         run: |
@@ -50,15 +66,9 @@ jobs:
         run: go test -v $(go list -f '{{.Dir}}/...' -m | ForEach-Object { $_ }) -coverprofile coverage-${{ matrix.os }}.out
         env:
           QODANA_LICENSE_ONLY_TOKEN: ${{ secrets.QODANA_LICENSE_ONLY_TOKEN }}
-      - name: Upload coverage artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: coverage-${{ matrix.os }}.out
-          path: coverage-${{ matrix.os }}.out
 
   code-quality:
     runs-on: ubuntu-latest
-    needs: [ test ]
     permissions:
       checks: write
       pull-requests: write
@@ -69,27 +79,32 @@ jobs:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
+      - name: Overwrite tools (to run tests only on gh repo)
+        run: |
+          touch cdnet/tooling/clt.zip tooling/baseline-cli.jar tooling/intellij-report-converter.jar tooling/qodana-fuser.jar
+          cat > go.work << EOF
+          go 1.21
+
+          use (
+          ./cdnet
+          ./cli
+          ./cloud
+          ./cmd
+          ./core
+          ./platform
+          ./sarif
+          ./tooling
+          )
+          EOF
+        shell: bash
       - uses: docker/login-action@v3
         with:
           registry: registry.jetbrains.team
           username: ${{ secrets.SPACE_USERNAME }}
           password: ${{ secrets.SPACE_PASSWORD }}
-      - name: Download all coverage artifacts
-        uses: actions/download-artifact@v4
-        with:
-          path: cov/
-      - name: Merge coverage profiles
-        run: |
-          go install -v github.com/hansboder/gocovmerge@latest
-          mkdir -p .qodana/code-coverage
-          export PATH=$PATH:$(go env GOPATH)/bin
-          ls -R cov/
-          gocovmerge cov/coverage-macos-latest.out/coverage-macos-latest.out cov/coverage-ubuntu-latest.out/coverage-ubuntu-latest.out cov/coverage-windows-latest.out/coverage-windows-latest.out > .qodana/code-coverage/coverage.out
       - uses: JetBrains/qodana-action@main
         env:
           QODANA_TOKEN: ${{ secrets.QODANA_TOKEN }}
-        with:
-          args: '-b,.github/qodana.sarif.json'
       - uses: github/codeql-action/init@v3
         with:
           languages: go
