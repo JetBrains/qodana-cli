@@ -36,6 +36,7 @@ var buildDateStr = "2023-12-05T10:52:23Z"
 
 //var isEap = true
 
+// noinspection GoUnusedFunction
 func main() {
 	InterruptChannel = make(chan os.Signal, 1)
 	signal.Notify(InterruptChannel, os.Interrupt)
