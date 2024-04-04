@@ -12,7 +12,7 @@ ENV CHOCO_URL="https://github.com/chocolatey/choco/releases/download/$CHOCO_VERS
 RUN set -ex \
     && mkdir -p /opt/chocolatey /tmp \
     && apt-get update \
-    && apt-get install --no-install-recommends ca-certificates gnupg curl git -y \
+    && apt-get install --no-install-recommends ca-certificates iputils-ping gnupg curl git openjdk-17-jre -y \
     && gpg --homedir /tmp --no-default-keyring --keyring /usr/share/keyrings/mono-official-archive-keyring.gpg --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys $MONO_KEY \
     && echo "deb [trusted=yes] $GR_REPO /" | tee /etc/apt/sources.list.d/goreleaser.list \
     && echo "deb [signed-by=/usr/share/keyrings/mono-official-archive-keyring.gpg] $MONO_REPO stable-buster main" | tee /etc/apt/sources.list.d/mono-official-stable.list \
