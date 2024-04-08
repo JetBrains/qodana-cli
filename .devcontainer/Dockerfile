@@ -50,7 +50,7 @@ RUN set -ex &&  \
     echo "deb [trusted=yes] https://repo.goreleaser.com/apt/ /" | tee /etc/apt/sources.list.d/goreleaser.list &&  \
     echo "deb [signed-by=/usr/share/keyrings/mono-official-archive-keyring.gpg] $MONO_REPO stable-buster main" |  \
         tee /etc/apt/sources.list.d/mono-official-stable.list &&  \
-    apt-get update && apt-get install --no-install-recommends goreleaser mono-devel -y &&  \
+    apt-get update && apt-get install --no-install-recommends goreleaser-pro mono-devel -y &&  \
     curl -sL "https://github.com/chocolatey/choco/releases/download/$CHOCO_VERSION/chocolatey.v$CHOCO_VERSION.tar.gz" |  \
         tar -xz -C "/opt/chocolatey" &&  \
     echo '#!/bin/bash' >> /usr/local/bin/choco &&  \
