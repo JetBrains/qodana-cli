@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package cdnet
+package main
 
 import (
 	"encoding/json"

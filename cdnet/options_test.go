@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package cdnet
+package main
 
 import (
 	"github.com/JetBrains/qodana-cli/v2024/core"
