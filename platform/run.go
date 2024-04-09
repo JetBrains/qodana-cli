@@ -128,49 +128,77 @@ func RunAnalysis(options *QodanaOptions) (int, error) {
 		ErrorMessage(err.Error())
 		return 1, err
 	}
-
 	log.Debugf("Java executable path: %s", mountInfo.JavaPath)
-	analysisResult, err := computeBaselinePrintResults(options, mountInfo)
-	if err != nil {
-		log.Error(err)
+	var analysisResult int
+	if analysisResult, err = computeBaselinePrintResults(options, mountInfo); err != nil {
+		ErrorMessage(err.Error())
 		return 1, err
 	}
+	if err = copySarifToReportPath(options); err != nil {
+		ErrorMessage(err.Error())
+		return 1, err
+	}
+	if err = convertReportToCloudFormat(options, mountInfo); err != nil {
+		ErrorMessage(err.Error())
+		return 1, err
+	}
+	if err = copyQodanaYamlToReportPath(options); err != nil {
+		ErrorMessage(err.Error())
+		return 1, err
+	}
+	sendReportToQodanaServer(options, mountInfo)
+	logProjectClose(eventsCh)
+	return analysisResult, nil
+}
 
-	source := filepath.Join(options.ResultsDir, "qodana.sarif.json")
-	destination := filepath.Join(options.ReportResultsPath(), "qodana.sarif.json")
-	if err := CopyFile(source, destination); err != nil {
-		log.Fatalf("problem while copying the report %e", err)
-	}
-	if err := MakeShortSarif(destination, options.GetShortSarifPath()); err != nil {
-		log.Fatalf("problem while making short sarif %e", err)
-	}
-
-	log.Debugf("Generating report to %s...", options.ReportResultsPath())
-	stdout, _, res, err := RunCmdRedirectOutput("", QuoteForWindows(mountInfo.JavaPath), "-jar", QuoteForWindows(mountInfo.Converter), "-s", QuoteForWindows(options.ProjectDir), "-d", QuoteForWindows(options.ResultsDir), "-o", QuoteForWindows(options.ReportResultsPath()), "-n", "result-allProblems.json", "-f")
-	if err != nil {
-		log.Errorf("Error while generating report: %s", err)
-		return res, err
-	}
-	if strings.Contains(stdout, "java.lang") {
-		return 1, fmt.Errorf("exception occured while generating report: %s", stdout)
-	}
-
-	if yamlPath, err := GetQodanaYamlPath(options.ProjectDir); err == nil {
-		if err := CopyFile(yamlPath, path.Join(options.ReportResultsPath(), "qodana.yaml")); err != nil {
-			log.Errorf("Error while copying qodana.yaml: %s", err)
-			return 1, err
-		}
-	}
-
+func sendReportToQodanaServer(options *QodanaOptions, mountInfo *MountInfo) {
 	if cloud.Token.Token != "" {
 		fmt.Println("Publishing report ...")
 		SendReport(options, cloud.Token.Token, QuoteForWindows(filepath.Join(options.CacheDir, PublisherJarName)), QuoteForWindows(mountInfo.JavaPath))
 	} else {
 		fmt.Println("License token is not set, skipping report publishing")
 	}
+}
 
-	logProjectClose(eventsCh)
-	return analysisResult, nil
+func copyQodanaYamlToReportPath(options *QodanaOptions) error {
+	if yamlPath, err := GetQodanaYamlPath(options.ProjectDir); err == nil {
+		if err := CopyFile(yamlPath, path.Join(options.ReportResultsPath(), "qodana.yaml")); err != nil {
+			log.Errorf("Error while copying qodana.yaml: %s", err)
+			return err
+		}
+	}
+	return nil
+}
+
+func convertReportToCloudFormat(options *QodanaOptions, mountInfo *MountInfo) error {
+	log.Debugf("Generating report to %s...", options.ReportResultsPath())
+	args := converterArgs(options, mountInfo)
+	stdout, _, res, err := LaunchAndLog(options, "converter", args...)
+	if res != 0 {
+		return fmt.Errorf("converter exited with non-zero status code: %d", res)
+	}
+	if err != nil {
+		return fmt.Errorf("error while running converter: %s", err)
+	}
+	if strings.Contains(stdout, "java.lang") {
+		return fmt.Errorf("exception occured while generating report: %s", stdout)
+	}
+	return nil
+}
+
+func copySarifToReportPath(options *QodanaOptions) error {
+	destination := filepath.Join(options.ReportResultsPath(), "qodana.sarif.json")
+	if err := CopyFile(options.GetSarifPath(), destination); err != nil {
+		return fmt.Errorf("problem while copying the report %e", err)
+	}
+	if err := MakeShortSarif(destination, options.GetShortSarifPath()); err != nil {
+		return fmt.Errorf("problem while making short sarif %e", err)
+	}
+	return nil
+}
+
+func converterArgs(options *QodanaOptions, mountInfo *MountInfo) []string {
+	return []string{QuoteForWindows(mountInfo.JavaPath), "-jar", QuoteForWindows(mountInfo.Converter), "-s", QuoteForWindows(options.ProjectDir), "-d", QuoteForWindows(options.ResultsDir), "-o", QuoteForWindows(options.ReportResultsPath()), "-n", "result-allProblems.json", "-f"}
 }
 
 func printQodanaLogo(options *QodanaOptions, linterInfo *LinterInfo) {
