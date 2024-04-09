@@ -22,6 +22,7 @@ import (
 	"github.com/JetBrains/qodana-cli/v2024/platform"
 	"github.com/JetBrains/qodana-cli/v2024/sarif"
 	"os"
+	"path/filepath"
 )
 
 func (o *CltOptions) Setup(_ *platform.QodanaOptions) error {
@@ -55,6 +56,9 @@ func (o *CltOptions) RunAnalysis(opts *platform.QodanaOptions) error {
 }
 
 func patchReport(options *LocalOptions) error {
+	if err := copyOriginalReportToLog(options); err != nil {
+		return err
+	}
 	finalReport, err := platform.ReadReport(options.GetSarifPath())
 	if err != nil {
 		return fmt.Errorf("failed to read report: %w", err)
@@ -109,6 +113,14 @@ func patchReport(options *LocalOptions) error {
 	_, err = f.Write(fatBytes)
 	if err != nil {
 		return fmt.Errorf("error writing resulting SARIF file: %w", err)
+	}
+	return nil
+}
+
+func copyOriginalReportToLog(options *LocalOptions) error {
+	destination := filepath.Join(options.LogDirPath(), "clt.original.sarif.json")
+	if err := platform.CopyFile(options.GetSarifPath(), destination); err != nil {
+		return fmt.Errorf("problem while copying the original CLT report %e", err)
 	}
 	return nil
 }

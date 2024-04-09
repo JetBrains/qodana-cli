@@ -90,7 +90,7 @@ func sendFuserEvents(ch chan tooling.FuserEvent, events *[]tooling.FuserEvent, o
 	if os.Getenv("GO_TESTING") == "true" {
 		args = append(args, "true")
 	}
-	_, _ = LaunchAndLog(opts, "fuser", args...)
+	_, _, _, _ = LaunchAndLog(opts, "fuser", args...)
 }
 
 func currentTimestamp() int64 {

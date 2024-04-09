@@ -33,7 +33,6 @@ func TestLinterRun(t *testing.T) {
 	if os.Getenv("GITHUB_ACTIONS") == "true" {
 		t.Skip()
 	}
-	log.SetLevel(log.DebugLevel)
 	projectPath := createNativeProject(t, "badrules")
 	defer deferredCleanup(projectPath)
 	outputDir := filepath.Join(os.TempDir(), "cdnet-output")

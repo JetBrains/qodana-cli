@@ -29,7 +29,7 @@ func computeBaselinePrintResults(options *QodanaOptions, mountInfo *MountInfo) (
 	if options.Baseline != "" {
 		args = append(args, "-b", QuoteForWindows(options.Baseline))
 	}
-	ret, err := LaunchAndLog(options, "baseline", args...)
+	_, _, ret, err := LaunchAndLog(options, "baseline", args...)
 	if err != nil {
 		return -1, fmt.Errorf("error while running baseline-cli: %w", err)
 	}
@@ -39,5 +39,5 @@ func computeBaselinePrintResults(options *QodanaOptions, mountInfo *MountInfo) (
 		}
 		return ret, nil
 	}
-	return 0, err
+	return ret, nil
 }
