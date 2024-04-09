@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package lintertooling
+package cdnet
 
 import _ "embed"
 

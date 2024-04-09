@@ -18,7 +18,6 @@ package cdnet
 
 import (
 	"fmt"
-	lintertooling "github.com/JetBrains/qodana-cli/v2024/cdnet/tooling"
 	"github.com/JetBrains/qodana-cli/v2024/platform"
 	"os"
 	"path/filepath"
@@ -30,7 +29,7 @@ func (o *CltOptions) MountTools(_ string, mountPath string, _ *platform.QodanaOp
 	archive := "clt.zip"
 	if _, err := os.Stat(val["clt"]); err != nil {
 		if os.IsNotExist(err) {
-			path := platform.ProcessAuxiliaryTool(archive, "clang", mountPath, lintertooling.Clt)
+			path := platform.ProcessAuxiliaryTool(archive, "clang", mountPath, Clt)
 			if err := platform.Decompress(path, mountPath); err != nil {
 				return nil, fmt.Errorf("failed to decompress clang archive: %w", err)
 			}
