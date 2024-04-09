@@ -101,6 +101,9 @@ func RunAnalysis(options *QodanaOptions) (int, error) {
 	if options.CacheDir == "" {
 		options.CacheDir = options.GetCacheDir()
 	}
+	if options.ResultsDir == "" {
+		options.ResultsDir = options.resultsDirPath()
+	}
 	linterOptions := options.GetLinterSpecificOptions()
 	if linterOptions == nil {
 		ErrorMessage("linter specific options are not set")
@@ -113,6 +116,7 @@ func RunAnalysis(options *QodanaOptions) (int, error) {
 		ErrorMessage(err.Error())
 		return 1, err
 	}
+	options.LogOptions()
 	printQodanaLogo(options, linterInfo)
 	deviceId := GetDeviceIdSalt()[0] // TODO : let's move it to QodanaOptions
 	defer cleanup()
