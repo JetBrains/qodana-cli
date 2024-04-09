@@ -28,7 +28,7 @@ jobs:
           go-version: '1.21'
       - name: Overwrite tools (to run tests only on gh repo)
         run: |
-          touch cdnet/tooling/clt.zip tooling/baseline-cli.jar tooling/intellij-report-converter.jar tooling/qodana-fuser.jar
+          touch cdnet/clt.zip tooling/baseline-cli.jar tooling/intellij-report-converter.jar tooling/qodana-fuser.jar
           cat > go.work << EOF
           go 1.21
           
@@ -81,7 +81,7 @@ jobs:
           fetch-depth: 0
       - name: Overwrite tools (to run tests only on gh repo)
         run: |
-          touch cdnet/tooling/clt.zip tooling/baseline-cli.jar tooling/intellij-report-converter.jar tooling/qodana-fuser.jar
+          touch cdnet/clt.zip tooling/baseline-cli.jar tooling/intellij-report-converter.jar tooling/qodana-fuser.jar
           cat > go.work << EOF
           go 1.21
 
