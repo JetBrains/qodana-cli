@@ -10,7 +10,7 @@ builds:
       - amd64
       - arm64
     ldflags:
-      - -s -w -X github.com/JetBrains/qodana-cli/v2024/main.version={{ .Env.VERSION }} -X main.buildDateStr={{ .Date }}
+      - -s -w -X main.version={{ .Env.VERSION }} -X main.buildDateStr={{ .Date }}
     hooks:
       post:
         - sh -c "set -e; if [ '{{ .Env.SIGN }}' = 'true' -a '{{ .Os }}' = 'windows' -a '{{ .Arch }}' = 'amd64' ]; then codesign -signed-files-dir ./dist/{{ .ProjectName }}_{{ .Os }}_{{ .Arch }}_v1/ './dist/{{ .ProjectName }}_{{ .Os }}_{{ .Arch }}_v1/qodana-cdnet.exe' ; fi"
