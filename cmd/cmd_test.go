@@ -286,33 +286,44 @@ func TestAllCommandsWithContainer(t *testing.T) {
 		t.Fatal(err)
 	}
 
+	// scan without configuration
+	scanArgs := []string{
+		"-i", projectPath,
+		"-o", resultsPath,
+		"--cache-dir", cachePath,
+		"-v", filepath.Join(projectPath, ".idea") + ":/data/some",
+		"--fail-threshold", "5",
+		"--print-problems",
+		"--apply-fixes",
+		"--property",
+		"idea.headless.enable.statistics=false",
+	}
+	out = bytes.NewBufferString("")
+	// set debug log to debug
+	log.SetLevel(log.DebugLevel)
+	command = newScanCommand()
+	command.SetOut(out)
+	command.SetArgs(scanArgs)
+	err = command.Execute()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// second scan with a configuration and cache
 	yamlFile := filepath.Join(projectPath, "qodana.yml")
 	err = os.WriteFile(yamlFile, []byte(fmt.Sprintf("linter: %s", linter)), 0o755)
 	if err != nil {
 		t.Fatal(err)
 	}
-
-	for i := 0; i < 2; i++ { // run scan with a container twice to check the cache
-		out = bytes.NewBufferString("")
-		// set debug log to debug
-		log.SetLevel(log.DebugLevel)
-		command = newScanCommand()
-		command.SetOut(out)
-		command.SetArgs([]string{
-			"-i", projectPath,
-			"-o", resultsPath,
-			"--cache-dir", cachePath,
-			"-v", filepath.Join(projectPath, ".idea") + ":/data/some",
-			"--fail-threshold", "5",
-			"--print-problems",
-			"--apply-fixes",
-			"--property",
-			"idea.headless.enable.statistics=false",
-		})
-		err = command.Execute()
-		if err != nil {
-			t.Fatal(err)
-		}
+	out = bytes.NewBufferString("")
+	// set debug log to debug
+	log.SetLevel(log.DebugLevel)
+	command = newScanCommand()
+	command.SetOut(out)
+	command.SetArgs(scanArgs)
+	err = command.Execute()
+	if err != nil {
+		t.Fatal(err)
 	}
 
 	// view

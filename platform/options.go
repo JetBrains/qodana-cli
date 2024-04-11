@@ -131,14 +131,18 @@ func (o *QodanaOptions) GetToken() string {
 
 func (o *QodanaOptions) FetchAnalyzerSettings() {
 	if o.Linter == "" && o.Ide == "" {
-		qodanaYaml := LoadQodanaYaml(o.ProjectDir, o.ConfigName)
+		qodanaYamlPath := configName + ".yaml"
+		if o.ConfigName != "" {
+			qodanaYamlPath = o.ConfigName
+		}
+		qodanaYaml := LoadQodanaYaml(o.ProjectDir, qodanaYamlPath)
 		if qodanaYaml.Linter == "" && qodanaYaml.Ide == "" {
 			WarningMessage(
 				"No valid `linter:` or `ide:` field found in %s. Have you run %s? Running that for you...",
-				PrimaryBold(o.ConfigName),
+				PrimaryBold(qodanaYamlPath),
 				PrimaryBold("qodana init"),
 			)
-			analyzer := GetAnalyzer(o.ProjectDir, o.ConfigName, o.GetToken())
+			analyzer := GetAnalyzer(o.ProjectDir, qodanaYamlPath, o.GetToken())
 			if IsNativeAnalyzer(analyzer) {
 				o.Ide = analyzer
 			} else {
