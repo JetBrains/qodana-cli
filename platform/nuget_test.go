@@ -131,3 +131,35 @@ func TestPrepareNugetConfig(t *testing.T) {
 		t.Fatalf("got:\n%s\n\nwant:\n%s", text, expected)
 	}
 }
+
+func TestIsNonNativeDotnetLinter(t *testing.T) {
+	testCases := []struct {
+		name     string
+		expected bool
+	}{
+		{
+			name:     "",
+			expected: false,
+		},
+		{
+			name:     DockerImageMap[QDNET],
+			expected: true,
+		},
+		{
+			name:     DockerImageMap[QDNETC],
+			expected: true,
+		},
+		{
+			name:     DockerImageMap[QDAND],
+			expected: false,
+		},
+	}
+	for _, test := range testCases {
+		t.Run(test.name, func(t *testing.T) {
+			result := isNonNativeDotnetLinter(test.name)
+			if result != test.expected {
+				t.Errorf("got/want mismatch, got %v, want %v", result, test.expected)
+			}
+		})
+	}
+}
