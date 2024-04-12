@@ -41,16 +41,23 @@ func UnsetNugetVariables() {
 	}
 }
 
-func WarnIfPrivateFeedDetected(prodCode string, projectPath string) {
-	if prodCode != QDNET && prodCode != QDNETC || qodanaNugetVarsSet() {
+func isNonNativeDotnetLinter(linter string) bool {
+	return strings.Contains(linter, DockerImageMap[QDNET]) ||
+		strings.Contains(linter, DockerImageMap[QDNETC])
+}
+
+func WarnIfPrivateFeedDetected(linter string, projectPath string) {
+	if !isNonNativeDotnetLinter(linter) {
 		return
 	}
 	configFileNames := []string{nugetConfigName, nugetConfigNamePascalCase}
 	for _, fileName := range configFileNames {
 		if _, err := os.Stat(filepath.Join(projectPath, fileName)); err == nil {
-			if checkForPrivateFeed(filepath.Join(projectPath, fileName)) {
-				_, _ = fmt.Fprintf(os.Stderr, "\nWarning: private NuGet feed detected. Please set %s, %s, %s and %s (optional) environment variables to provide credentials for the private feed.\n",
-					qodanaNugetUser, qodanaNugetPassword, qodanaNugetUrl, qodanaNugetName)
+			nugetPath := filepath.Join(projectPath, fileName)
+			if checkForPrivateFeed(nugetPath) {
+				_, _ = fmt.Fprintf(os.Stderr, "\nWarning: private NuGet feed detected (%s). Please set %s, %s, %s and %s (optional) environment variables to provide credentials for the private feed.\n",
+					nugetPath, qodanaNugetUser, qodanaNugetPassword, qodanaNugetUrl, qodanaNugetName)
+				return
 			}
 		}
 	}
