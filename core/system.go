@@ -113,7 +113,7 @@ func prepareHost(opts *QodanaOptions) {
 			log.Errorf("Could not clear local Qodana cache: %s", err)
 		}
 	}
-	platform.WarnIfPrivateFeedDetected(Prod.Code, opts.ProjectDir)
+	platform.WarnIfPrivateFeedDetected(opts.Linter, opts.ProjectDir)
 	if platform.IsNugetConfigNeeded() {
 		platform.PrepareNugetConfig(os.Getenv("HOME"))
 	}
