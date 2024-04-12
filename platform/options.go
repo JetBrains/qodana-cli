@@ -150,6 +150,13 @@ func (o *QodanaOptions) FetchAnalyzerSettings() {
 			}
 			EmptyMessage()
 		} else {
+			if qodanaYaml.Linter != "" && qodanaYaml.Ide != "" {
+				ErrorMessage("You have both `linter:` (%s) and `ide:` (%s) fields set in %s. Modify the configuration file to keep one of them",
+					qodanaYaml.Linter,
+					qodanaYaml.Ide,
+					qodanaYamlPath)
+				os.Exit(1)
+			}
 			o.Linter = qodanaYaml.Linter
 		}
 		if o.Ide == "" {
