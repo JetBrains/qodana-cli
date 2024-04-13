@@ -24,7 +24,7 @@ ENV SOFTWARE_PROPERTIES_COMMON_VERSION="0.96.20.2-2.1"
 # renovate: datasource=npm depName=eslint
 ENV ESLINT_VERSION="8.57.0"
 # renovate: datasource=npm depName=pnpm
-ENV PNPM_VERSION="8.15.5"
+ENV PNPM_VERSION="8.15.7"
 
 ENV HOME="/root" \
     LC_ALL="en_US.UTF-8" \
