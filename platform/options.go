@@ -324,7 +324,7 @@ func (o *QodanaOptions) Properties() (map[string]string, []string) {
 	var flagsArr []string
 	props := map[string]string{}
 	for _, arg := range o.Property {
-		kv := strings.Split(arg, "=")
+		kv := strings.SplitN(arg, "=", 2)
 		if len(kv) == 2 {
 			props[kv[0]] = kv[1]
 		} else {
