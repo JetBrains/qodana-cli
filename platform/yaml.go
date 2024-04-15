@@ -75,17 +75,14 @@ type QodanaYaml struct {
 	// The qodana.yaml version of this log file.
 	Version string `yaml:"version,omitempty"`
 
-	// Linter to run.
-	Linter string `yaml:"linter,omitempty"`
-
-	// IDE to run.
-	Ide string `yaml:"ide,omitempty"`
-
 	// Profile is the profile configuration for Qodana analysis (either a profile name or a profile path).
 	Profile Profile `yaml:"profile,omitempty"`
 
 	// FailThreshold is a number of problems to fail the analysis (to exit from Qodana with code 255).
 	FailThreshold *int `yaml:"failThreshold,omitempty"`
+
+	// Script is the run scenario. 'default' by default
+	Script string `yaml:"script,omitempty"`
 
 	// Clude property to disable the wanted checks on the wanted paths.
 	Excludes []Clude `yaml:"exclude,omitempty"`
@@ -93,56 +90,44 @@ type QodanaYaml struct {
 	// Include property to enable the wanted checks.
 	Includes []Clude `yaml:"include,omitempty"`
 
-	// Properties property to override IDE properties.
-	Properties map[string]string `yaml:"properties,omitempty"`
+	// Linter to run.
+	Linter string `yaml:"linter,omitempty"`
+
+	// IDE to run.
+	Ide string `yaml:"ide,omitempty"`
 
 	// Bootstrap contains a command to run in the container before the analysis starts.
 	Bootstrap string `yaml:"bootstrap,omitempty"`
 
+	// Properties property to override IDE properties.
+	Properties map[string]string `yaml:"properties,omitempty"`
+
 	// LicenseRules contains a list of license rules to apply for license checks.
 	LicenseRules []LicenseRule `yaml:"licenseRules,omitempty"`
-
-	// Whether to include dev dependencies in the analysis
-	AnalyzeDevDependencies bool `yaml:"analyzeDevDependencies,omitempty"`
 
 	// DependencyIgnores contains a list of dependencies to ignore for license checks in Qodana.
 	DependencyIgnores []DependencyIgnore `yaml:"dependencyIgnores,omitempty"`
 
-	// Which submodules to include. Omitting this key will include all submodules
-	ModulesToAnalyze []ModuleToAnalyze `yaml:"modulesToAnalyze,omitempty"`
-
-	// Which dependencies to exclude from the generated SBOM report
-	DependencySbomExclude []DependencyIgnore `yaml:"dependencySbomExclude,omitempty"`
-
 	// DependencyOverrides contains a list of dependencies metadata to override for license checks in Qodana.
 	DependencyOverrides []DependencyOverride `yaml:"dependencyOverrides,omitempty"`
-
-	// CustomDependencies contains a list of custom dependencies to add to license checks in Qodana.
-	CustomDependencies []CustomDependency `yaml:"customDependencies,omitempty"`
 
 	// Overrides the licenses attached to the project
 	ProjectLicenses []LicenseOverride `yaml:"projectLicenses,omitempty"`
 
-	// Maximum amount of internal errors to collect in the report
-	MaxRuntimeNotifications int `yaml:"maxRuntimeNotifications,omitempty"`
+	// CustomDependencies contains a list of custom dependencies to add to license checks in Qodana.
+	CustomDependencies []CustomDependency `yaml:"customDependencies,omitempty"`
 
 	// Plugins property containing plugins to install.
 	Plugins []Plugin `yaml:"plugins,omitempty"`
 
-	// Whether to fail the run when any internal error was encountered. In that case, the program returns exit code 70
-	FailOnErrorNotification bool `yaml:"failOnErrorNotification,omitempty"`
-
-	// Configures individual failure conditions. Absent properties will not be checked
-	FailureConditions FailureConditions `yaml:"failureConditions,omitempty"`
-
 	// DotNet is the configuration for .NET solutions and projects (either a solution name or a project name).
 	DotNet DotNet `yaml:"dotnet,omitempty"`
 
-	// Php is the configuration for PHP projects.
-	Php Php `yaml:"php,omitempty"`
-
 	// ProjectJdk is the configuration for the project JDK.
 	ProjectJdk string `yaml:"projectJDK,omitempty"`
+
+	// Php is the configuration for PHP projects.
+	Php Php `yaml:"php,omitempty"`
 
 	// DisableSanityInspections property to disable sanity inspections.
 	DisableSanityInspections string `yaml:"disableSanityInspections,omitempty"`
@@ -155,6 +140,30 @@ type QodanaYaml struct {
 
 	// IncludeAbsent property to include absent problems from baseline.
 	IncludeAbsent string `yaml:"includeAbsent,omitempty"`
+
+	// MaxRuntimeNotifications property defines maximum amount of internal errors to collect in the report
+	MaxRuntimeNotifications int `yaml:"maxRuntimeNotifications,omitempty"`
+
+	// FailOnErrorNotification property defines whether to fail the run when any internal error was encountered. In that case, the program returns exit code 70
+	FailOnErrorNotification bool `yaml:"failOnErrorNotification,omitempty"`
+
+	// FailureConditions configures individual failure conditions. Absent properties will not be checked
+	FailureConditions FailureConditions `yaml:"failureConditions,omitempty"`
+
+	// DependencySbomExclude property to define which dependencies to exclude from the generated SBOM report
+	DependencySbomExclude []DependencyIgnore `yaml:"dependencySbomExclude,omitempty"`
+
+	// ModulesToAnalyze property to define which submodules to include. Omitting this key will include all submodules.
+	ModulesToAnalyze []ModuleToAnalyze `yaml:"modulesToAnalyze,omitempty"`
+
+	// AnalyzeDevDependencies property whether to include dev dependencies in the analysis
+	AnalyzeDevDependencies bool `yaml:"analyzeDevDependencies,omitempty"`
+
+	// EnablePackageSearch property to start using package-search service for fetching license data for dependencies (only for jvm libraries)
+	EnablePackageSearch bool `yaml:"enablePackageSearch,omitempty"`
+
+	// RaiseLicenseProblems property to show license problems like other inspections.
+	RaiseLicenseProblems bool `yaml:"raiseLicenseProblems,omitempty"`
 }
 
 // WriteConfig writes QodanaYaml to the given path.
