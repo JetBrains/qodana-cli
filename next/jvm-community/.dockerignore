@@ -12,5 +12,7 @@ linux/arm64/Install-Linux-tar.txt
 linux/arm64/build.txt
 linux/amd64/plugins/*
 linux/arm64/plugins/*
+!linux/amd64/plugins/plugin-classpath.txt
+!linux/arm64/plugins/plugin-classpath.txt
 *.tar.gz
 *.zip
