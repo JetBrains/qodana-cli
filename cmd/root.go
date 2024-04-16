@@ -26,9 +26,9 @@ import (
 	"os"
 )
 
-// isHelp checks if only help was requested.
-func isHelp(args []string) bool {
-	return len(args) == 2 && (args[1] == "--help" || args[1] == "-h")
+// isHelpOrVersion checks if only help was requested.
+func isHelpOrVersion(args []string) bool {
+	return len(args) == 2 && (args[1] == "--help" || args[1] == "-h" || args[1] == "help" || args[1] == "--version" || args[1] == "-v")
 }
 
 // isCommandRequested checks if any command is requested.
@@ -45,7 +45,7 @@ func isCommandRequested(commands []*cobra.Command, args []string) string {
 
 // setDefaultCommandIfNeeded sets default scan command if no other command is requested.
 func setDefaultCommandIfNeeded(rootCmd *cobra.Command, args []string) {
-	if !(isHelp(args) || isCommandRequested(rootCmd.Commands(), args[1:]) != "") {
+	if !(isHelpOrVersion(args) || isCommandRequested(rootCmd.Commands(), args[1:]) != "") {
 		newArgs := append([]string{"scan"}, args[1:]...)
 		rootCmd.SetArgs(newArgs)
 	}
