@@ -292,6 +292,7 @@ func TestAllCommandsWithContainer(t *testing.T) {
 		"-o", resultsPath,
 		"--cache-dir", cachePath,
 		"-v", filepath.Join(projectPath, ".idea") + ":/data/some",
+		"-e", platform.QodanaLicenseOnlyToken + "=" + os.Getenv("QODANA_LICENSE_ONLY_TOKEN"),
 		"--fail-threshold", "5",
 		"--print-problems",
 		"--apply-fixes",
