@@ -3,7 +3,7 @@ builds:
   - env:
       - CGO_ENABLED=0
     ldflags:
-      - -X github.com/JetBrains/qodana-cli/v2024/platform.Version={{ .Tag }}
+      - -X github.com/JetBrains/qodana-cli/v2024/platform.Version={{ .Version }}
     goos:
       - linux
       - darwin
@@ -13,10 +13,33 @@ builds:
       - arm64
     hooks:
       post:
-        - sh -c "set -e; if [ '{{ .IsSnapshot }}' = 'false' -a '{{ .Os }}' = 'windows' -a '{{ .Arch }}' = 'amd64' ]; then codesign -signed-files-dir ./dist/{{ .ProjectName }}_{{ .Os }}_{{ .Arch }}_v1/ './dist/{{ .ProjectName }}_{{ .Os }}_{{ .Arch }}_v1/qodana.exe' ; fi"
-        - sh -c "set -e; if [ '{{ .IsSnapshot }}' = 'false' -a '{{ .Os }}' = 'windows' -a '{{ .Arch }}' = 'arm64' ]; then codesign -signed-files-dir ./dist/{{ .ProjectName }}_{{ .Os }}_{{ .Arch }}/ './dist/{{ .ProjectName }}_{{ .Os }}_{{ .Arch }}/qodana.exe' ; fi"
-        - sh -c "set -e; if [ '{{ .IsSnapshot }}' = 'false' -a '{{ .Os }}' = 'darwin' -a '{{ .Arch }}' = 'amd64' ]; then codesign -denoted-content-type=application/x-mac-app-bin -signed-files-dir ./dist/{{ .ProjectName }}_{{ .Os }}_{{ .Arch }}_v1/ './dist/{{ .ProjectName }}_{{ .Os }}_{{ .Arch }}_v1/qodana' ; fi"
-        - sh -c "set -e; if [ '{{ .IsSnapshot }}' = 'false' -a '{{ .Os }}' = 'darwin' -a '{{ .Arch }}' = 'arm64' ]; then codesign -denoted-content-type=application/x-mac-app-bin -signed-files-dir ./dist/{{ .ProjectName }}_{{ .Os }}_{{ .Arch }}/ './dist/{{ .ProjectName }}_{{ .Os }}_{{ .Arch }}/qodana' ; fi"
+        - cmd: | # check if the version was set correctly
+            sh -c "
+            set -e;
+            if [ '{{ .IsSnapshot }}' = 'false' -a '{{ .Os }}' = `go env GOOS` -a '{{ .Arch }}' = `go env GOARCH` ];
+              then ver=\$(chmod +x {{ .Path	}}; {{ .Path }} -v | tr -d '\\n');
+                  if [ \"\$ver\" != 'qodana version {{ .Version }}' ];
+                    then echo 'Version check failed – expected {{ .Version }} but got '\$ver;
+                    exit 1;
+                  fi;
+            fi"
+          output: true
+        - cmd: | # copy binaries to dist/upload for GitHub binary upload
+            sh -c "
+            set -e; 
+            mkdir -p dist/upload;
+            cp {{ .Path }} \
+              dist/upload/{{ .ProjectName }}_{{ .Os }}_{{ if eq .Arch "arm64" }}arm64{{ end }}{{ if eq .Arch "amd64" }}x86_64{{ end }}{{ if eq .Os "windows" }}.exe{{ end }}"
+        - cmd: | # sign binaries for Windows and macOS
+            sh -c "
+            set -e;
+            if [ '{{ .IsSnapshot }}' = 'false' -a '{{ .Os }}' != 'linux' ];
+            then codesign \
+              {{ if eq .Os "darwin" }}-denoted-content-type=application/x-mac-app-bin{{ end }} \
+              -signed-files-dir ./dist/{{ .ProjectName }}_{{ .Os }}_{{ .Arch }}{{ if eq .Arch "amd64" }}_v1{{ end }}/ \
+              {{ .Path }};
+            fi"
+          output: true
 archives:
   - name_template: '{{ .ProjectName }}_{{ .Os }}_{{- if eq .Arch "amd64" }}x86_64{{- else if eq .Arch "386" }}i386{{- else }}{{ .Arch }}{{ end }}'
     format_overrides:
@@ -157,3 +180,19 @@ nightly:
   tag_name: nightly
   publish_release: true
   keep_single_release: true
+after:
+  hooks:
+    - sh -c "
+      set -e;
+      if [ '{{ .IsSnapshot }}' = 'false' ];
+      then
+        codesign -gpg-key `$FINGERPRINT` -signed-files-dir ./dist/ dist/checksums.txt;
+        cd dist/upload && gh release --repo JetBrains/qodana-cli upload `$(git symbolic-ref --short HEAD)` \
+          ../checksums.txt.asc \
+          qodana_darwin_arm64 \
+          qodana_darwin_x86_64 \
+          qodana_linux_arm64 \
+          qodana_linux_x86_64 \
+          qodana_windows_arm64.exe \
+          qodana_windows_x86_64.exe;
+      fi"
