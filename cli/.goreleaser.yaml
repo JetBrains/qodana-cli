@@ -122,10 +122,6 @@ release:
     #### Anywhere else
     Alternatively, you can install the latest binary (or the apt/rpm/deb/archlinux package) from this page.
     
-    Or, if you have Go installed, you can install the latest version of the CLI with the following command:
-    ```console
-    go install github.com/JetBrains/qodana-cli/v2023@main
-    ```
     ## Update
     Update to the latest version depends on how you choose to install `qodana` on your machine.
     #### Update with [Homebrew](https://brew.sh)
