@@ -14,10 +14,10 @@ builds:
     hooks:
       post:
         - cmd: | # check if the version was set correctly
-            sh -c "
+            bash -c "
             set -e;
             if [ '{{ .IsSnapshot }}' = 'false' -a '{{ .Os }}' = `go env GOOS` -a '{{ .Arch }}' = `go env GOARCH` ];
-              then ver=\$(chmod +x {{ .Path	}}; {{ .Path }} -v | tr -d '\\n');
+              then ver=\$(chmod +x {{ .Path	}}; {{ .Path }} -v | grep 'qodana version *');
                   if [ \"\$ver\" != 'qodana version {{ .Version }}' ];
                     then echo 'Version check failed – expected {{ .Version }} but got '\$ver;
                     exit 1;
@@ -28,16 +28,12 @@ builds:
             sh -c "
             set -e; 
             mkdir -p dist/upload;
-            cp {{ .Path }} \
-              dist/upload/{{ .ProjectName }}_{{ .Os }}_{{ if eq .Arch "arm64" }}arm64{{ end }}{{ if eq .Arch "amd64" }}x86_64{{ end }}{{ if eq .Os "windows" }}.exe{{ end }}"
+            cp {{ .Path }} dist/upload/{{ .ProjectName }}_{{ .Os }}_{{ if eq .Arch "amd64" }}x86_64{{ else }}{{ .Arch }}{{ end }}{{ if eq .Os "windows" }}.exe{{ end }}"
         - cmd: | # sign binaries for Windows and macOS
             sh -c "
             set -e;
             if [ '{{ .IsSnapshot }}' = 'false' -a '{{ .Os }}' != 'linux' ];
-            then codesign \
-              {{ if eq .Os "darwin" }}-denoted-content-type=application/x-mac-app-bin{{ end }} \
-              -signed-files-dir ./dist/{{ .ProjectName }}_{{ .Os }}_{{ .Arch }}{{ if eq .Arch "amd64" }}_v1{{ end }}/ \
-              {{ .Path }};
+            then codesign {{ if eq .Os "darwin" }}-denoted-content-type=application/x-mac-app-bin{{ end }} -signed-files-dir=./dist/{{ .ProjectName }}_{{ .Os }}_{{ .Arch }}{{ if eq .Arch "amd64" }}_v1{{ end }}/ './dist/{{ .ProjectName }}_{{ .Os }}_{{ .Arch }}{{ if eq .Arch "amd64" }}_v1{{ end }}/qodana{{ if eq .Os "windows" }}.exe{{ end }}' ;
             fi"
           output: true
 archives:
@@ -67,7 +63,7 @@ brews:
       name: "qodana-bot"
       email: "qodana-support@jetbrains.com"
     commit_msg_template: ":sparkles: Brew formula update for {{ .ProjectName }} version {{ .Tag }}"
-    folder: Formula
+    directory: Formula
     homepage: "https://github.com/JetBrains/qodana-cli"
     description: "🔧 Run Qodana as fast as possible, with minimum effort required"
     license: "Apache-2.0"
@@ -106,6 +102,8 @@ checksum:
 snapshot:
   name_template: "{{ incpatch .Version }}-next"
 release:
+  extra_files:
+    - glob: dist/upload/**
   footer: |
     ## Install
     
@@ -186,13 +184,6 @@ after:
       set -e;
       if [ '{{ .IsSnapshot }}' = 'false' ];
       then
-        codesign -gpg-key `$FINGERPRINT` -signed-files-dir ./dist/ dist/checksums.txt;
-        cd dist/upload && gh release --repo JetBrains/qodana-cli upload `$(git symbolic-ref --short HEAD)` \
-          ../checksums.txt.asc \
-          qodana_darwin_arm64 \
-          qodana_darwin_x86_64 \
-          qodana_linux_arm64 \
-          qodana_linux_x86_64 \
-          qodana_windows_arm64.exe \
-          qodana_windows_x86_64.exe;
+      codesign -gpg-key $FINGERPRINT -signed-files-dir=./dist/ dist/checksums.txt;
+      gh release --repo JetBrains/qodana-cli upload {{ if .IsNightly }}nightly{{ else }}{{ .Version}}{{ end }} dist/checksums.txt.asc;
       fi"
