@@ -63,10 +63,14 @@ var (
 )
 
 // QodanaLogo prepares the info message for the tool
-func QodanaLogo(toolDesc string, version string) string {
+func QodanaLogo(toolDesc string, version string, eap bool) string {
+	eapString := ""
+	if eap {
+		eapString = "EAP"
+	}
 	return fmt.Sprintf(`
           _              _
-         /\ \           /\ \        %s %s
+         /\ \           /\ \        %s %s %s
         /  \ \         /  \ \       Documentation
        / /\ \ \       / /\ \ \      https://jb.gg/qodana-docs
       / / /\ \ \     / / /\ \ \     Contact us at
@@ -77,7 +81,7 @@ func QodanaLogo(toolDesc string, version string) string {
  / / /____\ \ \ / / /____\/ /       https://jb.gg/qodana-forum
  \/________\_\/ \/_________/
 
-`, toolDesc, version)
+`, toolDesc, version, eapString)
 }
 
 // GetAnalyzer gets linter for the given path and saves a config
