@@ -141,6 +141,11 @@ func GetProperties(opts *QodanaOptions, yamlProps map[string]string, dotNetOptio
 		lines = append(lines, "-Deap.require.license=release")
 	}
 
+	customPluginPathsValue := getCustomPluginPaths()
+	if customPluginPathsValue != "" {
+		lines = append(lines, fmt.Sprintf("-Dplugin.path=%s", customPluginPathsValue))
+	}
+
 	cliProps, flags := opts.Properties()
 	for _, f := range flags {
 		if f != "" && !platform.Contains(lines, f) {
@@ -182,6 +187,22 @@ func GetProperties(opts *QodanaOptions, yamlProps map[string]string, dotNetOptio
 	sort.Strings(lines)
 
 	return lines
+}
+
+func getCustomPluginPaths() string {
+	path := Prod.CustomPluginsPath()
+
+	var paths string
+	files, err := os.ReadDir(path)
+	for _, file := range files {
+		paths += filepath.Join(path, file.Name()) + ","
+	}
+	paths = strings.TrimSuffix(paths, ",")
+
+	if err != nil {
+		log.Fatal(err)
+	}
+	return paths
 }
 
 // writeProperties writes the given key=value `props` to file `f` (sets the environment variable)
