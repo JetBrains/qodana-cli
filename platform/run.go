@@ -207,5 +207,6 @@ func converterArgs(options *QodanaOptions, mountInfo *MountInfo) []string {
 
 func printQodanaLogo(options *QodanaOptions, linterInfo *LinterInfo) {
 	fmt.Println("\nLog directory: " + options.LogDirPath())
-	fmt.Print(QodanaLogo(linterInfo.LinterName, linterInfo.LinterVersion))
+	fmt.Println("Cache directory: " + options.GetCacheDir())
+	fmt.Print(QodanaLogo(linterInfo.LinterName, linterInfo.LinterVersion, linterInfo.IsEap))
 }

@@ -34,8 +34,12 @@ func CheckEAP(buildDateStr string, isEap bool) {
 	deadline := buildDate.AddDate(0, 0, 60)
 	now := time.Now()
 	if now.After(deadline) {
-		log.Fatal("Current date is two months after the build date. Exiting...")
+		if IsContainer() {
+			log.Fatal("EAP license of this Qodana image is expired. Please use \"docker pull\" to update image.")
+		}
+		log.Fatalf("EAP license of this Qodana linter is expired. Obtain the new one with the latest version of Qodana CLI.")
 	} else {
+		date := deadline.Format("January 02, 2006")
 		if IsContainer() {
 			println(fmt.Sprintf("\nBy using this Docker image, you agree to"+
 				"\n- JetBrains Privacy Policy (https://jb.gg/jetbrains-privacy-policy)"+
@@ -43,7 +47,7 @@ func CheckEAP(buildDateStr string, isEap bool) {
 				"\n"+
 				"\nThe Docker image includes an evaluation license."+
 				"\nThe license will expire on %s."+
-				"\nPlease ensure you pull a new image on time.", deadline.Format("2006-01-02")))
+				"\nPlease ensure you pull a new image on time.", date))
 		} else {
 			println(fmt.Sprintf("\nBy using this linter, you agree to"+
 				"\n- JetBrains Privacy Policy (https://jb.gg/jetbrains-privacy-policy)"+
@@ -51,7 +55,7 @@ func CheckEAP(buildDateStr string, isEap bool) {
 				"\n"+
 				"\nThe linter includes an evaluation license."+
 				"\nThe license will expire on %s."+
-				"\nPlease ensure you obtain a new version on time.", deadline.Format("2006-01-02")))
+				"\nPlease ensure you obtain a new version on time.", date))
 		}
 	}
 }
