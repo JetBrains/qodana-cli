@@ -33,6 +33,7 @@ const (
 	QodanaSarifName = "qodana.sarif.json"
 	configName      = "qodana"
 	releaseVersion  = "2024.1"
+	shortVersion    = "241"
 )
 
 // langsProductCodes is a map of languages to linters.
@@ -47,10 +48,12 @@ var langsProductCodes = map[string][]string{
 	"C#":                {QDNET, QDNETC},
 	"F#":                {QDNET},
 	"Visual Basic .NET": {QDNET, QDNETC},
+	"C":                 {QDCL, QDNET},
+	"C++":               {QDCL, QDNET},
 }
 
 var AllSupportedPaidCodes = []string{QDJVM, QDPHP, QDPY, QDJS, QDGO, QDNET}
-var AllSupportedFreeCodes = []string{QDJVMC, QDPYC, QDANDC, QDNETC}
+var AllSupportedFreeCodes = []string{QDJVMC, QDPYC, QDANDC, QDNETC, QDCL}
 
 func allImages(codes []string) []string {
 	var images []string
