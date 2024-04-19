@@ -96,6 +96,7 @@ func getPropertiesMap(
 			properties["-Dqodana.recommended.profile.resource"] = "qodana-dotnet.recommended.yaml"
 			properties["-Dqodana.starter.profile.resource"] = "qodana-dotnet.starter.yaml"
 		}
+		properties["-Dqodana.disable.default.fixes.strategy"] = "true"
 		properties["-Didea.class.before.app"] = "com.jetbrains.rider.protocol.EarlyBackendStarter"
 		properties["-Drider.collect.full.container.statistics"] = "true"
 		properties["-Drider.suppress.std.redirect"] = "true"

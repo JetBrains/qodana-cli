@@ -782,6 +782,7 @@ func propertiesFixture(enableStats bool, additionalProperties []string) []string
 		"-Dide.warmup.use.predicates=false",
 		"-Dvcs.log.index.enable=false",
 		fmt.Sprintf("-Didea.application.info.value=%s", filepath.Join(Prod.IdeBin(), "QodanaAppInfo.xml")),
+		"-Dqodana.disable.default.fixes.strategy=true",
 		"-Didea.class.before.app=com.jetbrains.rider.protocol.EarlyBackendStarter",
 		fmt.Sprintf("-Didea.config.path=%s", filepath.Join(os.TempDir(), "entrypoint")),
 		fmt.Sprintf("-Didea.headless.enable.statistics=%t", enableStats),
