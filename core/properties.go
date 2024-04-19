@@ -191,7 +191,10 @@ func GetProperties(opts *QodanaOptions, yamlProps map[string]string, dotNetOptio
 
 func getCustomPluginPaths() string {
 	path := Prod.CustomPluginsPath()
-
+	_, err := os.Stat(path)
+	if os.IsNotExist(err) {
+		return ""
+	}
 	var paths string
 	files, err := os.ReadDir(path)
 	for _, file := range files {
