@@ -191,21 +191,19 @@ func GetProperties(opts *QodanaOptions, yamlProps map[string]string, dotNetOptio
 
 func getCustomPluginPaths() string {
 	path := Prod.CustomPluginsPath()
-	_, err := os.Stat(path)
-	if os.IsNotExist(err) {
+	if _, err := os.Stat(path); os.IsNotExist(err) {
 		return ""
 	}
-	var paths string
-	files, err := os.ReadDir(path)
-	for _, file := range files {
-		paths += filepath.Join(path, file.Name()) + ","
-	}
-	paths = strings.TrimSuffix(paths, ",")
 
+	files, err := os.ReadDir(path)
 	if err != nil {
 		log.Fatal(err)
 	}
-	return paths
+	var paths []string
+	for _, file := range files {
+		paths = append(paths, filepath.Join(path, file.Name()))
+	}
+	return strings.Join(paths, ",")
 }
 
 // writeProperties writes the given key=value `props` to file `f` (sets the environment variable)
