@@ -18,6 +18,7 @@ package platform
 
 import (
 	"github.com/spf13/pflag"
+	"regexp"
 )
 
 // ThirdPartyOptions is used to customize the CLI options for a specific linter.
@@ -55,6 +56,15 @@ func DefineOptions(initializer LinterSpecificInitializer) *QodanaOptions {
 		options.LinterSpecific = initializer()
 	}
 	return options
+}
+
+func (i *LinterInfo) GetMajorVersion() string {
+	re := regexp.MustCompile(`\b\d+\.\d+`)
+	matches := re.FindStringSubmatch(i.LinterVersion)
+	if len(matches) == 0 {
+		return releaseVersion
+	}
+	return matches[0]
 }
 
 func (o *QodanaOptions) GetLinterSpecificOptions() *ThirdPartyOptions {

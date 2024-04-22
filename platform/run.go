@@ -27,108 +27,39 @@ import (
 	"strings"
 )
 
-// it's a 3rd party linter executor
-
-func setup(options *QodanaOptions) error {
-	linterOptions := options.GetLinterSpecificOptions()
-	if linterOptions == nil {
-		return fmt.Errorf("linter specific options are not set")
-	}
-	mountInfo := (*linterOptions).GetMountInfo()
-	linterInfo := (*linterOptions).GetInfo(options)
-	var err error
-
-	mountInfo.JavaPath, err = getJavaExecutablePath()
-	if err != nil {
-		return fmt.Errorf("failed to get java executable path: %w", err)
-	}
-	// TODO iscommunityoreap
-	cloud.SetupLicenseToken(options.GetToken())
-	options.LicensePlan, err = cloud.GetCloudApiEndpoints().GetLicensePlan()
-	if err != nil {
-		if !linterInfo.IsEap {
-			return fmt.Errorf("failed to get license plan: %w", err)
-		}
-		println("Qodana license plan: EAP license.")
-		options.LicensePlan = cloud.CommunityLicensePlan
-	}
-
-	options.ResultsDir, err = filepath.Abs(options.ResultsDir)
-	if err != nil {
-		return fmt.Errorf("failed to get absolute path to results directory: %w", err)
-	}
-	options.ReportDir, err = filepath.Abs(options.reportDirPath())
-	if err != nil {
-		return fmt.Errorf("failed to get absolute path to report directory: %w", err)
-	}
-	tmpResultsDir := options.GetTmpResultsDir()
-	// cleanup tmpResultsDir if it exists
-	if _, err := os.Stat(tmpResultsDir); err == nil {
-		if err := os.RemoveAll(tmpResultsDir); err != nil {
-			return fmt.Errorf("failed to remove folder with temporary data: %w", err)
-		}
-	}
-
-	directories := []string{
-		options.ResultsDir,
-		options.LogDirPath(),
-		options.CacheDir,
-		options.ReportResultsPath(),
-		tmpResultsDir,
-	}
-	for _, dir := range directories {
-		if _, err := os.Stat(dir); os.IsNotExist(err) {
-			if err := os.MkdirAll(dir, 0755); err != nil {
-				return fmt.Errorf("failed to create directory %s: %w", dir, err)
-			}
-		}
-	}
-
-	err = (*linterOptions).Setup(options)
-	if err != nil {
-		return fmt.Errorf("failed to setup linter specific options: %w", err)
-	}
-
-	return nil
-}
-
-func cleanup() {
-	umount()
-}
-
 func RunAnalysis(options *QodanaOptions) (int, error) {
-	// we don't provide default for cache dir, since we don't want to compute options.id without knowing the exact folder
-	if options.CacheDir == "" {
-		options.CacheDir = options.GetCacheDir()
-	}
-	if options.ResultsDir == "" {
-		options.ResultsDir = options.resultsDirPath()
-	}
-	linterOptions := options.GetLinterSpecificOptions()
-	if linterOptions == nil {
-		ErrorMessage("linter specific options are not set")
-		return 1, nil
-	}
-	mountInfo := (*linterOptions).GetMountInfo()
-	linterInfo := (*linterOptions).GetInfo(options)
-	err := setup(options)
+	linterOptions, mountInfo, linterInfo, err := getLinterDescriptors(options)
 	if err != nil {
 		ErrorMessage(err.Error())
 		return 1, err
 	}
-	options.LogOptions()
+	checkLinterLicense(options, linterInfo)
 	printQodanaLogo(options, linterInfo)
-	deviceId := GetDeviceIdSalt()[0] // TODO : let's move it to QodanaOptions
-	defer cleanup()
-	mount(options)
+
+	defineResultAndCacheDir(options)
+	if err = ensureWorkingDirsCreated(options, mountInfo); err != nil {
+		ErrorMessage(err.Error())
+		return 1, err
+	}
+
+	if err = (*linterOptions).Setup(options); err != nil {
+		return 1, fmt.Errorf("failed to run linter specific setup procedures: %w", err)
+	}
+	options.LogOptions()
+
+	defer cleanupUtils()
+	extractUtils(options)
+
 	events := make([]tooling.FuserEvent, 0)
 	eventsCh := createFuserEventChannel(&events)
-	defer sendFuserEvents(eventsCh, &events, options, deviceId)
-	logOs(eventsCh)
-	logProjectOpen(eventsCh)
+	defer func() {
+		logProjectClose(eventsCh, options, linterInfo)
+		sendFuserEvents(eventsCh, &events, options, GetDeviceIdSalt()[0])
+	}()
+	logOs(eventsCh, options, linterInfo)
+	logProjectOpen(eventsCh, options, linterInfo)
 
-	err = (*linterOptions).RunAnalysis(options)
-	if err != nil {
+	if err = (*linterOptions).RunAnalysis(options); err != nil {
 		ErrorMessage(err.Error())
 		return 1, err
 	}
@@ -151,8 +82,81 @@ func RunAnalysis(options *QodanaOptions) (int, error) {
 		return 1, err
 	}
 	sendReportToQodanaServer(options, mountInfo)
-	logProjectClose(eventsCh)
 	return analysisResult, nil
+}
+
+func ensureWorkingDirsCreated(options *QodanaOptions, mountInfo *MountInfo) error {
+	var err error
+
+	if mountInfo.JavaPath, err = getJavaExecutablePath(); err != nil {
+		return fmt.Errorf("failed to get java executable path: %w", err)
+	}
+
+	if options.ResultsDir, err = filepath.Abs(options.ResultsDir); err != nil {
+		return fmt.Errorf("failed to get absolute path to results directory: %w", err)
+	}
+
+	if options.ReportDir, err = filepath.Abs(options.reportDirPath()); err != nil {
+		return fmt.Errorf("failed to get absolute path to report directory: %w", err)
+	}
+
+	if _, err := os.Stat(options.GetTmpResultsDir()); err == nil {
+		if err := os.RemoveAll(options.GetTmpResultsDir()); err != nil {
+			return fmt.Errorf("failed to remove folder with temporary data: %w", err)
+		}
+	}
+
+	directories := []string{
+		options.ResultsDir,
+		options.LogDirPath(),
+		options.CacheDir,
+		options.ReportResultsPath(),
+		options.GetTmpResultsDir(),
+	}
+	for _, dir := range directories {
+		if _, err := os.Stat(dir); os.IsNotExist(err) {
+			if err := os.MkdirAll(dir, 0755); err != nil {
+				return fmt.Errorf("failed to create directory %s: %w", dir, err)
+			}
+		}
+	}
+	return nil
+}
+
+func checkLinterLicense(options *QodanaOptions, linterInfo *LinterInfo) {
+	var err error
+	cloud.SetupLicenseToken(options.GetToken())
+	if cloud.Token.Token != "" {
+		licenseData := cloud.GetCloudApiEndpoints().GetLicenseData(cloud.Token.Token)
+		options.LicensePlan = licenseData.LicensePlan
+		options.ProjectIdHash = licenseData.ProjectIdHash
+	} else {
+		if !linterInfo.IsEap {
+			log.Fatalf("Failed to get license plan: %e", err)
+		}
+		SuccessMessage("Qodana license plan: EAP license.")
+		options.LicensePlan = cloud.CommunityLicensePlan
+	}
+}
+
+func getLinterDescriptors(options *QodanaOptions) (*ThirdPartyOptions, *MountInfo, *LinterInfo, error) {
+	linterOptions := options.GetLinterSpecificOptions()
+	if linterOptions == nil {
+		return nil, nil, nil, fmt.Errorf("linter specific options are not set")
+	}
+	mountInfo := (*linterOptions).GetMountInfo()
+	linterInfo := (*linterOptions).GetInfo(options)
+	return linterOptions, mountInfo, linterInfo, nil
+}
+
+func defineResultAndCacheDir(options *QodanaOptions) {
+	// we don't provide default for cache dir, since we don't want to compute options.id without knowing the exact folder
+	if options.CacheDir == "" {
+		options.CacheDir = options.GetCacheDir()
+	}
+	if options.ResultsDir == "" {
+		options.ResultsDir = options.resultsDirPath()
+	}
 }
 
 func sendReportToQodanaServer(options *QodanaOptions, mountInfo *MountInfo) {
