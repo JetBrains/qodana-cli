@@ -156,11 +156,11 @@ func RunAnalysis(options *QodanaOptions) (int, error) {
 }
 
 func sendReportToQodanaServer(options *QodanaOptions, mountInfo *MountInfo) {
-	if cloud.Token.Token != "" {
+	if cloud.Token.IsAllowedToSendReports() {
 		fmt.Println("Publishing report ...")
 		SendReport(options, cloud.Token.Token, QuoteForWindows(filepath.Join(options.CacheDir, PublisherJarName)), QuoteForWindows(mountInfo.JavaPath))
 	} else {
-		fmt.Println("License token is not set, skipping report publishing")
+		fmt.Println("Skipping report publishing")
 	}
 }
 
