@@ -85,7 +85,7 @@ func getLatestVersion() string {
 	if err != nil {
 		return ""
 	}
-	return result["tag_name"].(string)
+	return strings.TrimPrefix(result["tag_name"].(string), "v")
 }
 
 // OpenDir opens directory in the default file manager
