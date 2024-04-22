@@ -39,8 +39,8 @@ const (
 // temporary folder for mounting helper tools in community mode
 var tempMountPath string
 
-// mount mounts the helper tools to the temporary folder.
-func mount(options *QodanaOptions) {
+// extractUtils mounts the helper tools to the temporary folder.
+func extractUtils(options *QodanaOptions) {
 	path, err := getTempDir()
 	if err != nil {
 		log.Fatal(err)
@@ -58,7 +58,7 @@ func mount(options *QodanaOptions) {
 	mountInfo.BaselineCli = ProcessAuxiliaryTool(baselineCli, "baseline-cli", permanentMountPath, tooling.BaselineCli)
 	mountInfo.CustomTools, err = (*linterOptions).MountTools(tempMountPath, permanentMountPath, options)
 	if err != nil {
-		umount()
+		cleanupUtils()
 		log.Fatal(err)
 	}
 }
@@ -76,8 +76,8 @@ func getToolsMountPath(options *QodanaOptions) string {
 	return mountPath
 }
 
-// umount removes the temporary folder with extracted helper tools.
-func umount() {
+// cleanupUtils removes the temporary folder with extracted helper tools.
+func cleanupUtils() {
 	if _, err := os.Stat(tempMountPath); err != nil {
 		if os.IsNotExist(err) {
 			return
@@ -94,7 +94,7 @@ func ProcessAuxiliaryTool(toolName, moniker, mountPath string, bytes []byte) str
 	if _, err := os.Stat(toolPath); err != nil {
 		if os.IsNotExist(err) {
 			if err := os.WriteFile(toolPath, bytes, 0644); err != nil { // change the second parameter depending on which tool you have to process
-				umount()
+				cleanupUtils()
 				log.Fatalf("Failed to write %s : %s", moniker, err)
 			}
 		}
