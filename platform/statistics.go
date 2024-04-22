@@ -19,6 +19,7 @@ package platform
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/JetBrains/qodana-cli/v2024/cloud"
 	"github.com/JetBrains/qodana-cli/v2024/tooling"
 	"github.com/google/uuid"
 	log "github.com/sirupsen/logrus"
@@ -49,6 +50,10 @@ func sendFuserEvents(ch chan tooling.FuserEvent, events *[]tooling.FuserEvent, o
 	close(ch)
 	if opts.NoStatistics {
 		println("Statistics disabled, skipping FUS")
+		return
+	}
+	if !cloud.Token.IsAllowedToSendFUS() {
+		println("You are not allowed to send FUS")
 		return
 	}
 	linterOptions := opts.GetLinterSpecificOptions()
