@@ -438,6 +438,14 @@ func prepareDirectories(cacheDir string, logDir string, confDir string) {
 			}
 		}
 	}
+
+	disabledPluginsPathSrc := filepath.Join(Prod.Home, "disabled_plugins.txt")
+	disabledPluginsPathDst := filepath.Join(confDir, "disabled_plugins.txt")
+	if _, err := os.Stat(disabledPluginsPathSrc); err == nil {
+		if err := cp.Copy(disabledPluginsPathSrc, disabledPluginsPathDst); err != nil {
+			log.Fatal(err)
+		}
+	}
 }
 
 // installPlugins runs plugin installer for every plugin id in qodana.yaml.
