@@ -70,6 +70,10 @@ func (p *product) IdeBin() string {
 	return filepath.Join(p.Home, "bin")
 }
 
+func (p *product) CustomPluginsPath() string {
+	return filepath.Join(p.Home, "custom-plugins")
+}
+
 func (p *product) javaHome() string {
 	return filepath.Join(p.Home, "jbr")
 }
