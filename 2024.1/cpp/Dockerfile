@@ -32,6 +32,8 @@ ENV MAKE_VERSION="4.3-4.1"
 ENV PATCH_VERSION="2.7.6-7"
 # renovate: datasource=repology depName=debian_12/libc6-dev versioning=loose
 ENV LIBC6_DEV_VERSION="2.36-9+deb12u6"
+# renovate: datasource=repology depName=debian_12/wget versioning=loose
+ENV WGET_VERSION="1.21.3-1+b1"
 
 ENV QODANA_DATA="/data" \
     QODANA_DOCKER="true"
@@ -84,3 +86,50 @@ RUN echo "deb https://apt.llvm.org/bookworm/ llvm-toolchain-bookworm-16 main" > 
     ln -sf clang++ /usr/bin/g++ && \
     rm -rf /var/lib/apt/lists/* && \
     apt-get autoremove -y && apt-get clean
+
+RUN apt-get update && \
+    apt-get install -y sudo && \
+    useradd -m -u 1001 -U qodana && \
+    passwd -d qodana && \
+    echo 'qodana ALL=(ALL) NOPASSWD:ALL' >> /etc/sudoers
+
+ARG QD_RELEASE="2024.1"
+ARG QD_BUILD="QDCL-$QD_RELEASE"
+# hadolint ignore=DL3003,SC2043
+RUN set -ex && \
+    dpkgArch="$(dpkg --print-architecture)" && \
+    case "$dpkgArch" in \
+        "amd64") \
+            OS_ARCH_SUFFIX=""; \
+            ;; \
+        "arm64") \
+            OS_ARCH_SUFFIX="-aarch64"; \
+            ;; \
+        *) echo "Unsupported architecture $dpkgArch" >&2; exit 1 ;; \
+    esac && \
+    QD_NAME="qodana-$QD_BUILD$OS_ARCH_SUFFIX" \
+    QD_URL="https://download.jetbrains.com/qodana/$QD_RELEASE/$QD_NAME.tar.gz" && \
+    curl -fsSL "$QD_URL" -o "/tmp/$QD_NAME.tar.gz" \
+               "$QD_URL.sha256" -o "/tmp/$QD_NAME.tar.gz.sha256" \
+               "$QD_URL.sha256.asc" -o "/tmp/$QD_NAME.tar.gz.sha256.asc" && \
+    GNUPGHOME="$(mktemp -d)" && \
+    export GNUPGHOME && \
+    for key in \
+        "B46DC71E03FEEB7F89D1F2491F7A8F87B9D8F501" \
+      ; do \
+        gpg --batch --keyserver "hkps://keys.openpgp.org" --recv-keys "$key" || \
+        gpg --batch --keyserver "keyserver.ubuntu.com" --recv-keys "$key" ; \
+    done && \
+    gpg --verify "/tmp/$QD_NAME.tar.gz.sha256.asc" "/tmp/$QD_NAME.tar.gz.sha256" && \
+    (cd /tmp && sha256sum --check --status "$QD_NAME.tar.gz.sha256") && \
+    mkdir -p /tmp/qd && tar -xzf "/tmp/$QD_NAME.tar.gz" --directory /opt/qodana  && \
+    mv /opt/qodana/qodana-clang /opt/qodana/qodana && \
+    chmod +x /opt/qodana/qodana && \
+    apt-get purge --auto-remove -y gnupg2 && \
+    rm -rf /var/cache/apt /var/lib/apt/ /tmp/* "$GNUPGHOME"
+
+ENV PATH="/opt/qodana:${PATH}"
+
+LABEL maintainer="qodana-support@jetbrains.com" description="Qodana for C/C++ (CMake)"
+WORKDIR /data/project
+ENTRYPOINT ["qodana", "scan"]

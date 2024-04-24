@@ -92,6 +92,6 @@ RUN set -ex && \
 
 ENV PATH="/opt/qodana:${PATH}"
 
-LABEL maintainer="qodana-support@jetbrains.com" description="Qodana for .NET Community"
+LABEL maintainer="qodana-support@jetbrains.com" description="Qodana Community for .NET"
 WORKDIR /data/project
 ENTRYPOINT ["qodana", "scan"]
