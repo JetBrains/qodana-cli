@@ -142,6 +142,7 @@ qodana init [flags]
 #### Options
 
 ```
+      --config string        Set a custom configuration file instead of 'qodana.yaml'. Relative paths in the configuration will be based on the project directory.
   -f, --force                Force initialization (overwrite existing valid qodana.yaml)
   -h, --help                 help for init
   -i, --project-dir string   Root directory of the project to configure (default ".")
@@ -305,9 +306,10 @@ qodana contributors [flags]
 #### Options
 
 ```
-  -d, --days int             Number of days since when to calculate the number of active contributors (default 30)
-  -h, --help                 help for contributors
-  -i, --project-dir string   Root directory of the inspected project (default ".")
+  -d, --days int                  Number of days since when to calculate the number of active contributors (default 90)
+  -h, --help                      help for contributors
+  -o, --output string             Output format, can be tabular or json (default "tabular")
+  -i, --project-dir stringArray   Project directory, can be specified multiple times to check multiple projects, if not specified, current directory will be used
 ```
 
 ### cloc
