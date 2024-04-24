@@ -131,7 +131,7 @@ func (o *QodanaOptions) GetToken() string {
 
 func (o *QodanaOptions) FetchAnalyzerSettings() {
 	if o.Linter == "" && o.Ide == "" {
-		qodanaYamlPath := configName + ".yaml"
+		qodanaYamlPath := FindQodanaYaml(o.ProjectDir)
 		if o.ConfigName != "" {
 			qodanaYamlPath = o.ConfigName
 		}
