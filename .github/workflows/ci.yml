@@ -18,7 +18,7 @@ jobs:
     strategy:
       matrix:
         platform: [ linux/amd64 ]  # linux/arm64
-        linter: [ android-community, dotnet, go, js, jvm, jvm-community, php, python, python-community ] # dotnet-community
+        linter: [ android-community, dotnet, go, js, jvm, jvm-community, php, python, python-community, dotnet-community, cpp ]
     runs-on: ubuntu-latest
     steps:
       - name: Checkout

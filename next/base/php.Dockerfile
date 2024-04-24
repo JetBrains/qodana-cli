@@ -23,6 +23,10 @@ ENV LOCALES_VERSION="2.31-13+deb11u8"
 ENV PROCPS_VERSION="2:3.3.17-5"
 # renovate: datasource=repology depName=debian_11/software-properties-common versioning=loose
 ENV SOFTWARE_PROPERTIES_VERSION="0.96.20.2-2.1"
+# renovate: datasource=repology depName=debian_11/zip versioning=loose
+ENV ZIP_VERSION="3.0-12"
+# renovate: datasource=repology depName=debian_11/unzip versioning=loose
+ENV UNZIP_VERSION="6.0-26+deb11u1"
 # renovate: datasource=npm depName=eslint
 ENV ESLINT_VERSION="8.57.0"
 # renovate: datasource=npm depName=pnpm
@@ -51,7 +55,9 @@ RUN --mount=target=/var/lib/apt/lists,type=cache,sharing=locked \
         gnupg2=$GNUPG2_VERSION \
         locales=$LOCALES_VERSION \
         procps=$PROCPS_VERSION \
-        software-properties-common=$SOFTWARE_PROPERTIES_VERSION && \
+        software-properties-common=$SOFTWARE_PROPERTIES_VERSION \
+        zip=$ZIP_VERSION \
+        unzip=$UNZIP_VERSION && \
     echo 'en_US.UTF-8 UTF-8' > /etc/locale.gen && locale-gen && \
     apt-get autoremove -y && apt-get clean && \
     chmod 777 -R $HOME && \
