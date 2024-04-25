@@ -1,7 +1,5 @@
 version: "1.0"
-linter: registry.jetbrains.team/p/sa/containers/qodana-go:latest
-include:
-  - name: CheckDependencyLicenses
+linter: jetbrains/qodana-go:latest
 licenseRules:
   - keys:
       - Apache-2.0
@@ -17,48 +15,25 @@ dependencyOverrides:
     licenses:
       - key: MIT
         url: https://github.com/reviewdog/reviewdog/
-  - name: github.com/JetBrains/qodana-cli/v2024/cdnet
-    version: ""
-    licenses:
-      - key: Apache-2.0
-        url: https://github.com/JetBrains/qodana-cli/blob/main/LICENSE
-  - name: github.com/JetBrains/qodana-cli/v2024/cli
-    version: ""
-    licenses:
-      - key: Apache-2.0
-        url: https://github.com/JetBrains/qodana-cli/blob/main/LICENSE
-  - name: github.com/JetBrains/qodana-cli/v2024/linter
-    version: ""
-    licenses:
-      - key: Apache-2.0
-        url: https://github.com/JetBrains/qodana-cli/blob/main/LICENSE
-  - name: github.com/JetBrains/qodana-cli/v2024/platform
-    version: ""
-    licenses:
-      - key: Apache-2.0
-        url: https://github.com/JetBrains/qodana-cli/blob/main/LICENSE
-  - name: github.com/JetBrains/qodana-cli/v2024/sarif
-    version: ""
-    licenses:
-      - key: Apache-2.0
-        url: https://github.com/JetBrains/qodana-cli/blob/main/LICENSE
-  - name: github.com/JetBrains/qodana-cli/v2024/tooling
-    version: ""
-    licenses:
-      - key: Apache-2.0
-        url: https://github.com/JetBrains/qodana-cli/blob/main/LICENSE
   - name: github.com/BurntSushi/xgb
     version: v0.0.0-20160522181843-27f122750802
     licenses:
       - key: BSD-3-Clause
         url: https://github.com/BurntSushi/xgb/blob/master/LICENSE
   - name: github.com/cucumber/ci-environment/go
-    version: v0.0.0-20230123192824-6c9424d4fecf
+    version: v0.0.0-20230911180507-bd001ebc644c
     licenses:
       - key: MIT
         url: https://github.com/cucumber/ci-environment/blob/main/java/LICENSE
+dependencyIgnores:
+  - name: github.com/JetBrains/qodana-cli/v2024/cdnet
+  - name: github.com/JetBrains/qodana-cli/v2024/cli
+  - name: github.com/JetBrains/qodana-cli/v2024/platform
+  - name: github.com/JetBrains/qodana-cli/v2024/sarif
+  - name: github.com/JetBrains/qodana-cli/v2024/tooling
 exclude:
   - name: VgoDependencyUpdateAvailable
   - name: All
     paths:
       - .github/qodana.sarif.json
+raiseLicenseProblems: true
