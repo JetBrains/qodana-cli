@@ -32,6 +32,8 @@ import (
 
 var wg sync.WaitGroup
 
+const qodanaProjectId = "system_qdcld_project_id"
+
 func createFuserEventChannel(events *[]tooling.FuserEvent) chan tooling.FuserEvent {
 	ch := make(chan tooling.FuserEvent)
 	guid := uuid.New().String()
@@ -102,35 +104,47 @@ func currentTimestamp() int64 {
 	return time.Now().UnixNano() / int64(time.Millisecond)
 }
 
-func logProjectOpen(ch chan tooling.FuserEvent) {
+func commonEventData(linterInfo *LinterInfo, options *QodanaOptions) map[string]string {
+	eventData := map[string]string{"version": linterInfo.GetMajorVersion()}
+	if options.ProjectIdHash != "" {
+		eventData[qodanaProjectId] = options.ProjectIdHash
+	}
+	return eventData
+}
+
+func logProjectOpen(ch chan tooling.FuserEvent, options *QodanaOptions, linterInfo *LinterInfo) {
 	wg.Add(1)
-	// get current time in milliseconds
+	eventData := commonEventData(linterInfo, options)
 	ch <- tooling.FuserEvent{
 		GroupId:   "qd.cl.lifecycle",
 		EventName: "project.opened",
-		EventData: map[string]string{},
+		EventData: eventData,
 		Time:      currentTimestamp(),
 		State:     false,
 	}
 }
 
-func logProjectClose(ch chan tooling.FuserEvent) {
+func logProjectClose(ch chan tooling.FuserEvent, options *QodanaOptions, linterInfo *LinterInfo) {
 	wg.Add(1)
+	eventData := commonEventData(linterInfo, options)
 	ch <- tooling.FuserEvent{
 		GroupId:   "qd.cl.lifecycle",
 		EventName: "project.closed",
-		EventData: map[string]string{},
+		EventData: eventData,
 		Time:      currentTimestamp(),
 		State:     false,
 	}
 }
 
-func logOs(ch chan tooling.FuserEvent) {
+func logOs(ch chan tooling.FuserEvent, options *QodanaOptions, linterInfo *LinterInfo) {
 	wg.Add(1)
+	eventData := commonEventData(linterInfo, options)
+	eventData["name"] = runtime.GOOS
+	eventData["arch"] = runtime.GOARCH
 	ch <- tooling.FuserEvent{
 		GroupId:   "qd.cl.system.os",
 		EventName: "os.name",
-		EventData: map[string]string{"name": runtime.GOOS, "arch": runtime.GOARCH},
+		EventData: eventData,
 		Time:      currentTimestamp(),
 		State:     true,
 	}

@@ -219,35 +219,20 @@ func SetupLicenseToken(token string) {
 	}
 }
 
-func extractLicensePlan(data []byte) (string, error) {
-	var licenseData LicenseData
-	err := json.Unmarshal(data, &licenseData)
-	if err != nil {
-		return "", fmt.Errorf("License deserialization failed. License response data:\n%s\nError: '%v'", string(data), err)
-	}
-	return licenseData.LicensePlan, nil
-}
-
-func (endpoints *QdApiEndpoints) GetLicensePlan() (string, error) {
-	if Token.Token == "" {
-		return "", errors.New("no token provided, please provide a token via the QODANA_TOKEN environment variable")
-	}
-
-	licenseDataResponse, err := endpoints.RequestLicenseData(Token.Token)
+func (endpoints *QdApiEndpoints) GetLicenseData(token string) LicenseData {
+	licenseDataResponse, err := endpoints.RequestLicenseData(token)
 	if errors.Is(err, TokenDeclinedError) {
 		log.Fatalf("License request: %v\n%s", err, DeclinedTokenErrorMessage)
 	}
 	if err != nil {
 		errMessage := fmt.Sprintf(GeneralLicenseErrorMessage, endpoints.RootEndpoint.GetCloudUrl())
-		return "", fmt.Errorf("license request: %v\n%s", err, errMessage)
+		log.Fatalf("License request: %v\n%s", err, errMessage)
 	}
-	licensePlan, err := extractLicensePlan(licenseDataResponse)
-	if err != nil {
-		return "", err
-	}
-	if licensePlan == "" {
-		return "", fmt.Errorf("response for license request should contain license plan\n%s", string(licenseDataResponse))
-	}
-	log.Debug(fmt.Printf("Qodana license plan: %s", licensePlan))
-	return licensePlan, nil
+	return DeserializeLicenseData(licenseDataResponse)
+}
+
+func (endpoints *QdApiEndpoints) GetLicensePlan(token string) string {
+	licenseData := endpoints.GetLicenseData(token)
+	log.Debug(fmt.Printf("Qodana license plan: %s", licenseData.LicensePlan))
+	return licenseData.LicensePlan
 }

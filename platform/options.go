@@ -76,6 +76,7 @@ type QodanaOptions struct {
 	_id                       string
 	LinterSpecific            interface{} // linter specific options
 	LicensePlan               string
+	ProjectIdHash             string
 	NoStatistics              bool   // thirdparty common option
 	Solution                  string // cdnet specific options
 	Project                   string
