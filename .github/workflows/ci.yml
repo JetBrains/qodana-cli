@@ -105,6 +105,8 @@ jobs:
       - uses: JetBrains/qodana-action@main
         env:
           QODANA_TOKEN: ${{ secrets.QODANA_TOKEN }}
+        with:
+          use-nightly: true
       - uses: github/codeql-action/init@v3
         with:
           languages: go
