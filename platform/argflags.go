@@ -76,12 +76,15 @@ func ComputeFlags(cmd *cobra.Command, options *QodanaOptions) error {
 	flags.BoolVar(&options.ForceDiffMode, "force-diff-analysis-mode", false, "Override the default run-scenario for diff runs to always use the restart-based approach")
 
 	flags.IntVar(&options.JvmDebugPort, "jvm-debug-port", -1, "Enable JVM remote debug under given port")
-	if options.LinterSpecific != nil {
-		if linterSpecific, ok := options.LinterSpecific.(ThirdPartyOptions); ok {
-			linterSpecific.AddFlags(flags)
-		}
-		flags.BoolVar(&options.NoStatistics, "no-statistics", false, "Disable sending anonymous statistics")
-	}
+
+	flags.BoolVar(&options.NoStatistics, "no-statistics", false, "[qodana-clang/qodana-dotner]Disable sending anonymous statistics")
+	flags.StringVar(&options.ClangCompileCommands, "compile-commands", "./build/compile_commands.json", "[qodana-clang specific] Path to compile_commands.json")
+	flags.StringVar(&options.ClangArgs, "clang-args", "", "[qodana-clang specific] Additional arguments for clang")
+	flags.StringVar(&options.CdnetSolution, "solution", "", "[qodana-cdnet specific] Relative path to solution file")
+	flags.StringVar(&options.CdnetProject, "project", "", "[qodana-cdnet specific] Relative path to project file")
+	flags.StringVar(&options.CdnetConfiguration, "configuration", "", "[qodana-cdnet specific] Build configuration")
+	flags.StringVar(&options.CdnetPlatform, "platform", "", "[qodana-cdnet specific] Build platform")
+	flags.BoolVar(&options.CdnetNoBuild, "no-build", false, "[qodana-cdnet specific] Do not build the project before analysis")
 
 	if !IsContainer() {
 		flags.StringArrayVarP(&options.Env, "env", "e", []string{}, "Only for container runs. Define additional environment variables for the Qodana container (you can use the flag multiple times). CLI is not reading full host environment variables and does not pass it to the Qodana container for security reasons")
