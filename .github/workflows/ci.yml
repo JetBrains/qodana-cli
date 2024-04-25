@@ -25,7 +25,8 @@ jobs:
           fetch-depth: 0
       - uses: actions/setup-go@v5
         with:
-          go-version: '1.21'
+          cache-dependency-path: "**/*.sum"
+          go-version-file: go.work
       - name: Overwrite tools (to run tests only on gh repo)
         run: |
           touch cdnet/clt.zip tooling/baseline-cli.jar tooling/intellij-report-converter.jar tooling/qodana-fuser.jar
@@ -102,11 +103,17 @@ jobs:
           registry: registry.jetbrains.team
           username: ${{ secrets.SPACE_USERNAME }}
           password: ${{ secrets.SPACE_PASSWORD }}
-      - uses: JetBrains/qodana-action@main
+      - uses: JetBrains/qodana-action@glob
         env:
           QODANA_TOKEN: ${{ secrets.QODANA_TOKEN }}
         with:
           use-nightly: true
+          pr-mode: false
+          upload-result: true
+      - uses: actions/upload-artifact@v4
+        with:
+          name: qodana-artifacts
+          path: "${{ runner.temp }}/qodana/results"
       - uses: github/codeql-action/init@v3
         with:
           languages: go
