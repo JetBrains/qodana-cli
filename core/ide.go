@@ -155,25 +155,25 @@ func GetIdeArgs(opts *QodanaOptions) []string {
 		}
 		if prod == platform.QDNETC {
 			// cdnet options
-			if opts.Solution != "" {
-				arguments = append(arguments, "--solution", platform.QuoteForWindows(opts.Solution))
+			if opts.CdnetSolution != "" {
+				arguments = append(arguments, "--solution", platform.QuoteForWindows(opts.CdnetSolution))
 			}
-			if opts.Project != "" {
-				arguments = append(arguments, "--project", platform.QuoteForWindows(opts.Project))
+			if opts.CdnetProject != "" {
+				arguments = append(arguments, "--project", platform.QuoteForWindows(opts.CdnetProject))
 			}
-			if opts.Configuration != "" {
-				arguments = append(arguments, "--configuration", opts.Configuration)
+			if opts.CdnetConfiguration != "" {
+				arguments = append(arguments, "--configuration", opts.CdnetConfiguration)
 			}
-			if opts.Platform != "" {
-				arguments = append(arguments, "--platform", opts.Platform)
+			if opts.CdnetPlatform != "" {
+				arguments = append(arguments, "--platform", opts.CdnetPlatform)
 			}
-			if opts.NoBuild {
+			if opts.CdnetNoBuild {
 				arguments = append(arguments, "--no-build")
 			}
 		} else {
 			// clang options
-			if opts.CompileCommands != "" {
-				arguments = append(arguments, "--compile-commands", platform.QuoteForWindows(opts.CompileCommands))
+			if opts.ClangCompileCommands != "" {
+				arguments = append(arguments, "--compile-commands", platform.QuoteForWindows(opts.ClangCompileCommands))
 			}
 			if opts.ClangArgs != "" {
 				arguments = append(arguments, "--clang-args", opts.ClangArgs)

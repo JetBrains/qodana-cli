@@ -17,13 +17,11 @@
 package platform
 
 import (
-	"github.com/spf13/pflag"
 	"regexp"
 )
 
 // ThirdPartyOptions is used to customize the CLI options for a specific linter.
 type ThirdPartyOptions interface {
-	AddFlags(flags *pflag.FlagSet)
 	GetMountInfo() *MountInfo
 	MountTools(tempPath string, mountPath string, o *QodanaOptions) (map[string]string, error)
 	GetInfo(o *QodanaOptions) *LinterInfo

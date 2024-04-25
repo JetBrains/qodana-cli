@@ -59,10 +59,10 @@ func TestComputeCdnetArgs(t *testing.T) {
 		{
 			name: "project specified",
 			options: &platform.QodanaOptions{
-				Property:   []string{},
-				ResultsDir: "",
+				Property:     []string{},
+				ResultsDir:   "",
+				CdnetProject: "project",
 				LinterSpecific: &CltOptions{
-					Project:   "project",
 					MountInfo: getTooling(),
 				},
 			},
@@ -86,10 +86,10 @@ func TestComputeCdnetArgs(t *testing.T) {
 		{
 			name: "solution specified",
 			options: &platform.QodanaOptions{
-				Property:   []string{},
-				ResultsDir: "",
+				Property:      []string{},
+				ResultsDir:    "",
+				CdnetSolution: "solution",
 				LinterSpecific: &CltOptions{
-					Solution:  "solution",
 					MountInfo: getTooling(),
 				},
 			},
@@ -126,11 +126,11 @@ func TestComputeCdnetArgs(t *testing.T) {
 		{
 			name: "configuration specified",
 			options: &platform.QodanaOptions{
-				Property:   []string{},
-				ResultsDir: "",
+				Property:           []string{},
+				ResultsDir:         "",
+				CdnetConfiguration: "cfg",
 				LinterSpecific: &CltOptions{
-					Configuration: "cfg",
-					MountInfo:     getTooling(),
+					MountInfo: getTooling(),
 				},
 			},
 			yaml:         createDefaultYaml("solution", "", "", ""),
@@ -153,10 +153,10 @@ func TestComputeCdnetArgs(t *testing.T) {
 		{
 			name: "platform specified",
 			options: &platform.QodanaOptions{
-				Property:   []string{},
-				ResultsDir: "",
+				Property:      []string{},
+				ResultsDir:    "",
+				CdnetPlatform: "x64",
 				LinterSpecific: &CltOptions{
-					Platform:  "x64",
 					MountInfo: getTooling(),
 				},
 			},
@@ -167,12 +167,12 @@ func TestComputeCdnetArgs(t *testing.T) {
 		{
 			name: "many options",
 			options: &platform.QodanaOptions{
-				Property:   []string{"prop1=val1", "prop2=val2"},
-				ResultsDir: "",
+				Property:           []string{"prop1=val1", "prop2=val2"},
+				ResultsDir:         "",
+				CdnetPlatform:      "x64",
+				CdnetConfiguration: "Debug",
 				LinterSpecific: &CltOptions{
-					Platform:      "x64",
-					Configuration: "Debug",
-					MountInfo:     getTooling(),
+					MountInfo: getTooling(),
 				},
 			},
 			yaml:         createDefaultYaml("solution", "", "", ""),
@@ -182,10 +182,10 @@ func TestComputeCdnetArgs(t *testing.T) {
 		{
 			name: "no-build",
 			options: &platform.QodanaOptions{
-				Property:   []string{},
-				ResultsDir: "",
+				Property:     []string{},
+				ResultsDir:   "",
+				CdnetNoBuild: true,
 				LinterSpecific: &CltOptions{
-					NoBuild:   true,
 					MountInfo: getTooling(),
 				},
 			},
@@ -258,8 +258,8 @@ func TestGetArgsThirdPartyLinters(t *testing.T) {
 		{
 			name: "(cdnet) solution",
 			options: &platform.QodanaOptions{
-				Solution: "solution.sln",
-				Linter:   platform.DockerImageMap[platform.QDNETC],
+				CdnetSolution: "solution.sln",
+				Linter:        platform.DockerImageMap[platform.QDNETC],
 			},
 			expected: []string{
 				"--solution", "solution.sln",
@@ -268,8 +268,8 @@ func TestGetArgsThirdPartyLinters(t *testing.T) {
 		{
 			name: "(cdnet) project",
 			options: &platform.QodanaOptions{
-				Project: "project.csproj",
-				Linter:  platform.DockerImageMap[platform.QDNETC],
+				CdnetProject: "project.csproj",
+				Linter:       platform.DockerImageMap[platform.QDNETC],
 			},
 			expected: []string{
 				"--project", "project.csproj",
@@ -278,8 +278,8 @@ func TestGetArgsThirdPartyLinters(t *testing.T) {
 		{
 			name: "(cdnet) configuration",
 			options: &platform.QodanaOptions{
-				Configuration: "Debug",
-				Linter:        platform.DockerImageMap[platform.QDNETC],
+				CdnetConfiguration: "Debug",
+				Linter:             platform.DockerImageMap[platform.QDNETC],
 			},
 			expected: []string{
 				"--configuration", "Debug",
@@ -288,8 +288,8 @@ func TestGetArgsThirdPartyLinters(t *testing.T) {
 		{
 			name: "(cdnet) platform",
 			options: &platform.QodanaOptions{
-				Platform: "x64",
-				Linter:   platform.DockerImageMap[platform.QDNETC],
+				CdnetPlatform: "x64",
+				Linter:        platform.DockerImageMap[platform.QDNETC],
 			},
 			expected: []string{
 				"--platform", "x64",
@@ -298,8 +298,8 @@ func TestGetArgsThirdPartyLinters(t *testing.T) {
 		{
 			name: "(cdnet) no build",
 			options: &platform.QodanaOptions{
-				NoBuild: true,
-				Linter:  platform.DockerImageMap[platform.QDNETC],
+				CdnetNoBuild: true,
+				Linter:       platform.DockerImageMap[platform.QDNETC],
 			},
 			expected: []string{
 				"--no-build",
@@ -308,8 +308,8 @@ func TestGetArgsThirdPartyLinters(t *testing.T) {
 		{
 			name: "(clang) compile commands",
 			options: &platform.QodanaOptions{
-				CompileCommands: "compile_commands.json",
-				Linter:          platform.DockerImageMap[platform.QDCL],
+				ClangCompileCommands: "compile_commands.json",
+				Linter:               platform.DockerImageMap[platform.QDCL],
 			},
 			expected: []string{
 				"--compile-commands", "compile_commands.json",
