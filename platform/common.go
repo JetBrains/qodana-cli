@@ -137,11 +137,7 @@ func filterByLicensePlan(codes []string, token string) []string {
 		return codes
 	}
 	cloud.SetupLicenseToken(token)
-	licensePlan, err := cloud.GetCloudApiEndpoints().GetLicensePlan()
-	if err != nil {
-		log.Debugf("Failed to get license plan: %v", err)
-	}
-	if licensePlan == cloud.CommunityLicensePlan {
+	if licensePlan := cloud.GetCloudApiEndpoints().GetLicensePlan(token); licensePlan == cloud.CommunityLicensePlan {
 		var filteredCodes []string
 		for _, code := range codes {
 			if Contains(AllSupportedFreeCodes, code) {

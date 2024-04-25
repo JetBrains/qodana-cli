@@ -26,23 +26,10 @@ import (
 	"strings"
 )
 
-func requestLicenseData(endpoints *cloud.QdApiEndpoints, token string) cloud.LicenseData {
-
-	licenseDataResponse, err := endpoints.RequestLicenseData(token)
-	if errors.Is(err, cloud.TokenDeclinedError) {
-		log.Fatalf("License request: %v\n%s", err, cloud.DeclinedTokenErrorMessage)
-	}
-	if err != nil {
-		errMessage := fmt.Sprintf(cloud.GeneralLicenseErrorMessage, endpoints.RootEndpoint.GetCloudUrl())
-		log.Fatalf("License request: %v\n%s", err, errMessage)
-	}
-	return cloud.DeserializeLicenseData(licenseDataResponse)
-}
-
 func SetupLicenseAndProjectHash(endpoints *cloud.QdApiEndpoints, token string) {
 	var licenseData cloud.LicenseData
 	if token != "" {
-		licenseData = requestLicenseData(endpoints, token)
+		licenseData = endpoints.GetLicenseData(token)
 		if licenseData.ProjectIdHash != "" {
 			err := os.Setenv(platform.QodanaProjectIdHash, licenseData.ProjectIdHash)
 			if err != nil {

@@ -28,12 +28,12 @@ func TestMount(t *testing.T) {
 	options := &QodanaOptions{
 		LinterSpecific: linterOpts,
 	}
-	defer umount()
-	mount(options)
+	defer cleanupUtils()
+	extractUtils(options)
 
 	mountInfo := *linterOpts.GetMountInfo()
 	if mountInfo.Converter == "" {
-		t.Error("mount() failed")
+		t.Error("extractUtils() failed")
 	}
 
 	list := []string{mountInfo.Converter, mountInfo.Fuser, mountInfo.BaselineCli}
