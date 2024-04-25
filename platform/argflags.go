@@ -80,6 +80,7 @@ func ComputeFlags(cmd *cobra.Command, options *QodanaOptions) error {
 		if linterSpecific, ok := options.LinterSpecific.(ThirdPartyOptions); ok {
 			linterSpecific.AddFlags(flags)
 		}
+		flags.BoolVar(&options.NoStatistics, "no-statistics", false, "Disable sending anonymous statistics")
 	}
 
 	if !IsContainer() {
