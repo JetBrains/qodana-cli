@@ -78,12 +78,12 @@ type QodanaOptions struct {
 	LicensePlan               string
 	ProjectIdHash             string
 	NoStatistics              bool   // thirdparty common option
-	Solution                  string // cdnet specific options
-	Project                   string
-	Configuration             string
-	Platform                  string
-	NoBuild                   bool
-	CompileCommands           string // clang specific options
+	CdnetSolution             string // cdnet specific options
+	CdnetProject              string
+	CdnetConfiguration        string
+	CdnetPlatform             string
+	CdnetNoBuild              bool
+	ClangCompileCommands      string // clang specific options
 	ClangArgs                 string
 	AnalysisTimeoutMs         int
 	AnalysisTimeoutExitCode   int

@@ -19,7 +19,6 @@ package main
 import (
 	"fmt"
 	"github.com/JetBrains/qodana-cli/v2024/platform"
-	"github.com/spf13/pflag"
 	"strconv"
 	"strings"
 )
@@ -29,13 +28,8 @@ type LocalOptions struct {
 }
 
 type CltOptions struct {
-	Solution      string
-	Project       string
-	Configuration string
-	Platform      string
-	NoBuild       bool
-	MountInfo     *platform.MountInfo
-	LinterInfo    *platform.LinterInfo
+	MountInfo  *platform.MountInfo
+	LinterInfo *platform.LinterInfo
 }
 
 func (o *CltOptions) GetMountInfo() *platform.MountInfo {
@@ -49,14 +43,6 @@ func (o *CltOptions) GetMountInfo() *platform.MountInfo {
 func (o *CltOptions) GetInfo(_ *platform.QodanaOptions) *platform.LinterInfo {
 	// todo: vary by release
 	return o.LinterInfo
-}
-
-func (o *CltOptions) AddFlags(flags *pflag.FlagSet) {
-	flags.StringVar(&o.Solution, "solution", "", "Relative path to solution file")
-	flags.StringVar(&o.Project, "project", "", "Relative path to project file")
-	flags.StringVar(&o.Configuration, "configuration", "", "Build configuration")
-	flags.StringVar(&o.Platform, "platform", "", "Build platform")
-	flags.BoolVar(&o.NoBuild, "no-build", false, "Do not build the project before analysis")
 }
 
 func (o *LocalOptions) GetCltOptions() *CltOptions {
@@ -84,22 +70,22 @@ func (o *CltOptions) computeCdnetArgs(opts *platform.QodanaOptions, options *Loc
 		}
 		props += p
 	}
-	if options.GetCltOptions().Configuration != "" {
+	if options.CdnetConfiguration != "" {
 		if props != "" {
 			props += ";"
 		}
-		props += "Configuration=" + options.GetCltOptions().Configuration
+		props += "Configuration=" + options.CdnetConfiguration
 	} else if yaml.DotNet.Configuration != "" {
 		if props != "" {
 			props += ";"
 		}
 		props += "Configuration=" + yaml.DotNet.Configuration
 	}
-	if options.GetCltOptions().Platform != "" {
+	if options.CdnetPlatform != "" {
 		if props != "" {
 			props += ";"
 		}
-		props += "Platform=" + options.GetCltOptions().Platform
+		props += "Platform=" + options.CdnetPlatform
 	} else if yaml.DotNet.Platform != "" {
 		if props != "" {
 			props += ";"
@@ -129,7 +115,7 @@ func (o *CltOptions) computeCdnetArgs(opts *platform.QodanaOptions, options *Loc
 	if options.NoStatistics {
 		args = append(args, "--telemetry-optout")
 	}
-	if options.GetCltOptions().NoBuild {
+	if options.CdnetNoBuild {
 		args = append(args, "--no-build")
 	}
 	return args, nil
@@ -137,7 +123,7 @@ func (o *CltOptions) computeCdnetArgs(opts *platform.QodanaOptions, options *Loc
 
 func getSolutionOrProject(options *LocalOptions, yaml platform.QodanaYaml) string {
 	var target = ""
-	paths := [4]string{options.GetCltOptions().Solution, options.GetCltOptions().Project, yaml.DotNet.Solution, yaml.DotNet.Project}
+	paths := [4]string{options.CdnetSolution, options.CdnetProject, yaml.DotNet.Solution, yaml.DotNet.Project}
 	for _, path := range paths {
 		if path != "" {
 			target = path
