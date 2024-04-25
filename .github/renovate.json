@@ -26,11 +26,11 @@
       "groupName": "debian packages",
       "groupSlug": "debian",
       "paths": ["2023.2/**", "2023.3/**", "2024.1/**", "next"]
+    },
+    {
+      "matchDatasources": ["docker"],
+      "paths": ["next"]
     }
   ],
-  "commitMessagePrefix": "QD-8148 ",
-  "ignorePaths": [
-    "2023.2/**",
-    "2023.3/**"
-  ]
+  "commitMessagePrefix": "QD-8148 "
 }
