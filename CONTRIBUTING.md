@@ -82,29 +82,36 @@ And lastly run the custom image with the custom binary:
 
 ## Release a new version
 
-If you are a core maintainer and want to release a new version, all you need is just running the following command:
+If you are a core maintainer and want to release a new version, all you need to release a new version is:
 
-```shell
-git tag -a vX.X.X -m "vX.X.X" && git push origin vX.X.X
-```
-
-And goreleaser will do the rest.
+1. Tag release **in the release branch** (e.g. `241`)
+  ```
+  git checkout 241 && git tag -a vX.X.X -m "vX.X.X" && git push origin vX.X.X
+  ```
+2. Trigger [release job](https://buildserver.labs.intellij.net/buildConfiguration/StaticAnalysis_Base_Releasecli) **in the release branch** (e.g. `241`)
+3. The release will be published to:
+- [`JetBrains/qodana-cli`](https://github.com/JetBrains/qodana-cli/releases/) release page
+- [Chocolatey](https://community.chocolatey.org/packages/qodana) registry
+- GitHub's repositories that are used for package managers:
+  - external (updates are done via pull requests): [`Microsoft/winget-pkgs`](https://github.com/microsoft/winget-pkgs/pulls?q=JetBrains.QodanaCLI)
+  - internal (updates are done via direct commits): [`JetBrains/scoop-utils`](https://github.com/jetbrains/scoop-utils) and [`JetBrains/homebrew-utils`](https://github.com/jetbrains/homebrew-utils)
 
 ### Troubleshooting `choco` releases
 
-Releases through `choco` channel can be unstable, so if you have any issues with it on release, upload the package manually:
+Releases through `choco` channel can be unstable sometimes depending on the Chocolatey services,
+so if you have any issues with it on release, upload the package manually:
 
 - Set up [`goreleaser`](https://goreleaser.com/install/) and [`choco`](https://chocolatey.org/install) (for non-Windows systems – look at [ci.yml]([.github/workflows/ci.yml](https://github.com/JetBrains/qodana-cli/blob/ca90ffe4ca0b33fda19b471cc80c7390c7e0bfd9/.github/workflows/ci.yml#L69)) for details)
 - Run the following commands:
-   - Check out to the wanted tag
-   - Release the package locally to generate all metadata files and executables
-   - Set the correct checksum for the already published package (can be obtained from the release page)
-   - Set up `choco` API key and publish
+  - Check out the wanted tag
+  - Release the package locally to generate all metadata files and executables
+  - Set the correct checksum for the already published package (can be obtained from the release page)
+  - Set up `choco` API key and publish
 
 ```shell
-git checkout v2023.2.5
+git checkout v2024.1.2
 goreleaser release --skip-publish --clean
 vim dist/qodana.choco/tools/chocolateyinstall.ps1
 choco apikey --key <YOUR_API_KEY> --source https://push.chocolatey.org/
-cd dist/qodana.choco && choco pack && choco push qodana.2023.2.5.nupkg --source https://push.chocolatey.org/
+cd dist/qodana.choco && choco pack && choco push qodana.2024.1.2.nupkg --source https://push.chocolatey.org/
 ```
