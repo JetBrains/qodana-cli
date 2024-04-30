@@ -19,7 +19,6 @@ package main
 import (
 	"fmt"
 	"github.com/JetBrains/qodana-cli/v2024/platform"
-	"strconv"
 	"strings"
 )
 
@@ -52,7 +51,7 @@ func (o *LocalOptions) GetCltOptions() *CltOptions {
 	return &CltOptions{}
 }
 
-func (o *CltOptions) computeCdnetArgs(opts *platform.QodanaOptions, options *LocalOptions, yaml platform.QodanaYaml) ([]string, error) {
+func (o *CltOptions) computeCdnetArgs(opts *platform.QodanaOptions, options *LocalOptions, yaml *platform.QodanaYaml) ([]string, error) {
 	target := getSolutionOrProject(options, yaml)
 	if target == "" {
 		return nil, fmt.Errorf("solution/project relative file path is not specified. Use --solution or --project flags or create qodana.yaml file with respective fields")
@@ -92,9 +91,6 @@ func (o *CltOptions) computeCdnetArgs(opts *platform.QodanaOptions, options *Loc
 		}
 		props += "Platform=" + yaml.DotNet.Platform
 	}
-	if options.FailThreshold == "" && yaml.FailThreshold != nil {
-		options.FailThreshold = strconv.Itoa(*yaml.FailThreshold)
-	}
 	mountInfo := o.GetMountInfo()
 	if mountInfo == nil {
 		return nil, fmt.Errorf("mount info is not set")
@@ -121,7 +117,7 @@ func (o *CltOptions) computeCdnetArgs(opts *platform.QodanaOptions, options *Loc
 	return args, nil
 }
 
-func getSolutionOrProject(options *LocalOptions, yaml platform.QodanaYaml) string {
+func getSolutionOrProject(options *LocalOptions, yaml *platform.QodanaYaml) string {
 	var target = ""
 	paths := [4]string{options.CdnetSolution, options.CdnetProject, yaml.DotNet.Solution, yaml.DotNet.Project}
 	for _, path := range paths {

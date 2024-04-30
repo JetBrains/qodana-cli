@@ -42,6 +42,7 @@ func RunAnalysis(options *QodanaOptions) (int, error) {
 		return 1, err
 	}
 
+	yaml := getQodanaYaml(options)
 	if err = (*linterOptions).Setup(options); err != nil {
 		return 1, fmt.Errorf("failed to run linter specific setup procedures: %w", err)
 	}
@@ -59,13 +60,15 @@ func RunAnalysis(options *QodanaOptions) (int, error) {
 	logOs(eventsCh, options, linterInfo)
 	logProjectOpen(eventsCh, options, linterInfo)
 
-	if err = (*linterOptions).RunAnalysis(options); err != nil {
+	if err = (*linterOptions).RunAnalysis(options, yaml); err != nil {
 		ErrorMessage(err.Error())
 		return 1, err
 	}
 	log.Debugf("Java executable path: %s", mountInfo.JavaPath)
+
+	thresholds := getFailureThresholds(yaml)
 	var analysisResult int
-	if analysisResult, err = computeBaselinePrintResults(options, mountInfo); err != nil {
+	if analysisResult, err = computeBaselinePrintResults(options, mountInfo, thresholds); err != nil {
 		ErrorMessage(err.Error())
 		return 1, err
 	}
@@ -83,6 +86,14 @@ func RunAnalysis(options *QodanaOptions) (int, error) {
 	}
 	sendReportToQodanaServer(options, mountInfo)
 	return analysisResult, nil
+}
+
+func getQodanaYaml(options *QodanaOptions) *QodanaYaml {
+	qodanaYamlPath := FindQodanaYaml(options.ProjectDir)
+	if options.ConfigName != "" {
+		qodanaYamlPath = options.ConfigName
+	}
+	return LoadQodanaYaml(options.ProjectDir, qodanaYamlPath)
 }
 
 func ensureWorkingDirsCreated(options *QodanaOptions, mountInfo *MountInfo) error {

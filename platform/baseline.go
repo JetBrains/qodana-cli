@@ -21,10 +21,11 @@ import (
 )
 
 // computeBaselinePrintResults runs SARIF analysis (compares with baseline and prints the result)=
-func computeBaselinePrintResults(options *QodanaOptions, mountInfo *MountInfo) (int, error) {
+func computeBaselinePrintResults(options *QodanaOptions, mountInfo *MountInfo, thresholds map[string]string) (int, error) {
 	args := []string{QuoteForWindows(mountInfo.JavaPath), "-jar", QuoteForWindows(mountInfo.BaselineCli), "-r", QuoteForWindows(options.GetSarifPath())}
-	if options.FailThreshold != "" {
-		args = append(args, "-f", options.FailThreshold)
+	severities := thresholdsToArgs(thresholds)
+	for _, sev := range severities {
+		args = append(args, sev)
 	}
 	if options.Baseline != "" {
 		args = append(args, "-b", QuoteForWindows(options.Baseline))
