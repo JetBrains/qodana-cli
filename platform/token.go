@@ -108,18 +108,21 @@ func (o *QodanaOptions) getTokenFromUserInput(requiresToken bool) string {
 func (o *QodanaOptions) ValidateToken(refresh bool) string {
 	token := o.LoadToken(refresh, true, true)
 	if token != "" {
-		client := cloud.GetCloudApiEndpoints().NewCloudApiClient(token)
-		if projectName, err := client.RequestProjectName(); err != nil {
-			if token != "" {
-				ErrorMessage(cloud.InvalidTokenMessage)
-				os.Exit(1)
-			}
-		} else {
-			SuccessMessage("Linked %s project: %s", cloud.GetCloudRootEndpoint().Host, projectName)
-			o.Setenv(QodanaToken, token)
-		}
+		ValidateTokenPrintProject(token)
+		o.Setenv(QodanaToken, token)
 	}
 	return token
+}
+
+// ValidateTokenPrintProject validates given token by requesting linked project name.
+func ValidateTokenPrintProject(token string) {
+	client := cloud.GetCloudApiEndpoints().NewCloudApiClient(token)
+	if projectName, err := client.RequestProjectName(); err != nil {
+		ErrorMessage(cloud.InvalidTokenMessage)
+		os.Exit(1)
+	} else {
+		SuccessMessage("Linked %s project: %s", cloud.GetCloudRootEndpoint().Host, projectName)
+	}
 }
 
 // saveCloudToken saves token to the system keyring
