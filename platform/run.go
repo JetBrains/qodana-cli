@@ -136,10 +136,11 @@ func ensureWorkingDirsCreated(options *QodanaOptions, mountInfo *MountInfo) erro
 
 func checkLinterLicense(options *QodanaOptions, linterInfo *LinterInfo) {
 	var err error
-	cloud.SetupLicenseToken(options.GetToken())
+	cloud.SetupLicenseToken(options.LoadToken(false, false, true))
 	if cloud.Token.Token != "" {
 		licenseData := cloud.GetCloudApiEndpoints().GetLicenseData(cloud.Token.Token)
 		options.LicensePlan = licenseData.LicensePlan
+		SuccessMessage("Qodana license plan: %s", options.LicensePlan)
 		options.ProjectIdHash = licenseData.ProjectIdHash
 	} else {
 		if !linterInfo.IsEap {
