@@ -33,7 +33,8 @@ func RunAnalysis(options *QodanaOptions) (int, error) {
 		ErrorMessage(err.Error())
 		return 1, err
 	}
-	checkLinterLicense(options, linterInfo)
+	checkLinterLicense(options)
+	printLinterLicense(options, linterInfo)
 	printQodanaLogo(options, linterInfo)
 
 	defineResultAndCacheDir(options)
@@ -134,21 +135,23 @@ func ensureWorkingDirsCreated(options *QodanaOptions, mountInfo *MountInfo) erro
 	return nil
 }
 
-func checkLinterLicense(options *QodanaOptions, linterInfo *LinterInfo) {
-	var err error
+func checkLinterLicense(options *QodanaOptions) {
+	options.LicensePlan = cloud.CommunityLicensePlan
 	cloud.SetupLicenseToken(options.LoadToken(false, false, true))
 	if cloud.Token.Token != "" {
 		licenseData := cloud.GetCloudApiEndpoints().GetLicenseData(cloud.Token.Token)
+		ValidateTokenPrintProject(cloud.Token.Token)
 		options.LicensePlan = licenseData.LicensePlan
-		SuccessMessage("Qodana license plan: %s", options.LicensePlan)
 		options.ProjectIdHash = licenseData.ProjectIdHash
-	} else {
-		if !linterInfo.IsEap {
-			log.Fatalf("Failed to get license plan: %e", err)
-		}
-		SuccessMessage("Qodana license plan: EAP license.")
-		options.LicensePlan = cloud.CommunityLicensePlan
 	}
+}
+
+func printLinterLicense(options *QodanaOptions, linterInfo *LinterInfo) {
+	licenseString := options.LicensePlan
+	if cloud.Token.Token == "" && linterInfo.IsEap {
+		licenseString = "EAP license"
+	}
+	SuccessMessage("Qodana license plan: %s", licenseString)
 }
 
 func getLinterDescriptors(options *QodanaOptions) (*ThirdPartyOptions, *MountInfo, *LinterInfo, error) {
