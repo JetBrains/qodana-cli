@@ -26,7 +26,7 @@ type ThirdPartyOptions interface {
 	MountTools(tempPath string, mountPath string, o *QodanaOptions) (map[string]string, error)
 	GetInfo(o *QodanaOptions) *LinterInfo
 	Setup(o *QodanaOptions) error
-	RunAnalysis(o *QodanaOptions) error
+	RunAnalysis(o *QodanaOptions, yaml *QodanaYaml) error
 }
 
 // MountInfo is a struct that contains all the helper tools to run a Qodana linter.

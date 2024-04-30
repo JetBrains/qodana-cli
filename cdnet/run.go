@@ -29,9 +29,8 @@ func (o *CltOptions) Setup(_ *platform.QodanaOptions) error {
 	return nil
 }
 
-func (o *CltOptions) RunAnalysis(opts *platform.QodanaOptions) error {
+func (o *CltOptions) RunAnalysis(opts *platform.QodanaOptions, yaml *platform.QodanaYaml) error {
 	options := &LocalOptions{opts}
-	yaml := platform.GetQodanaYamlOrDefault(options.ProjectDir)
 	platform.Bootstrap(yaml.Bootstrap, options.ProjectDir)
 	args, err := o.computeCdnetArgs(opts, options, yaml)
 	if err != nil {

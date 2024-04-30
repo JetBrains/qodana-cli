@@ -24,8 +24,8 @@ import (
 	"testing"
 )
 
-func createDefaultYaml(sln string, prj string, cfg string, plt string) platform.QodanaYaml {
-	return platform.QodanaYaml{
+func createDefaultYaml(sln string, prj string, cfg string, plt string) *platform.QodanaYaml {
+	return &platform.QodanaYaml{
 		DotNet: platform.DotNet{
 			Solution:      sln,
 			Project:       prj,
@@ -39,7 +39,7 @@ func TestComputeCdnetArgs(t *testing.T) {
 	tests := []struct {
 		name         string
 		options      *platform.QodanaOptions
-		yaml         platform.QodanaYaml
+		yaml         *platform.QodanaYaml
 		expectedArgs []string
 		expectedErr  string
 	}{
