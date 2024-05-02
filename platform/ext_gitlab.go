@@ -72,17 +72,24 @@ type Line struct {
 
 // sarifResultToCodeClimate converts a SARIF result to a Code Climate issue.
 func sarifResultToCodeClimate(r *sarif.Result) CCIssue {
+	loc := Location{
+		Path: "",
+		Lines: Line{
+			Begin: 0,
+		},
+	}
+
+	if r != nil && r.Locations != nil && len(r.Locations) > 0 {
+		loc.Path = r.Locations[0].PhysicalLocation.ArtifactLocation.Uri
+		loc.Lines.Begin = int(r.Locations[0].PhysicalLocation.Region.StartLine)
+	}
+
 	return CCIssue{
 		CheckName:   r.RuleId,
 		Description: r.Message.Text,
 		Fingerprint: getFingerprint(r),
 		Severity:    toCodeClimateSeverity[getSeverity(r)],
-		Location: Location{
-			Path: r.Locations[0].PhysicalLocation.ArtifactLocation.Uri,
-			Lines: Line{
-				Begin: int(r.Locations[0].PhysicalLocation.Region.StartLine),
-			},
-		},
+		Location:    loc,
 	}
 }
 
