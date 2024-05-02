@@ -138,22 +138,29 @@ func buildReport(toolName string, annotations []bbapi.ReportAnnotation, cloudUrl
 }
 
 // buildAnnotation builds an annotation to be sent to BitBucket Code Insights
-func buildAnnotation(result *sarif.Result, ruleDescription string, reportLink string) bbapi.ReportAnnotation {
-	bbSeverity, ok := toBitBucketSeverity[getSeverity(result)]
+func buildAnnotation(r *sarif.Result, ruleDescription string, reportLink string) bbapi.ReportAnnotation {
+	bbSeverity, ok := toBitBucketSeverity[getSeverity(r)]
 	if !ok {
-		log.Debugf("Unknown SARIF severity: %s", getSeverity(result))
+		log.Debugf("Unknown SARIF severity: %s", getSeverity(r))
 		bbSeverity = bitBucketLow
 	}
-	location := result.Locations[0].PhysicalLocation
 
 	data := bbapi.NewReportAnnotation()
-	data.SetExternalId(getFingerprint(result))
+	data.SetExternalId(getFingerprint(r))
 	data.SetAnnotationType(bitBucketAnnotationType)
-	data.SetSummary(fmt.Sprintf("%s: %s", result.RuleId, result.Message.Text))
+	data.SetSummary(fmt.Sprintf("%s: %s", r.RuleId, r.Message.Text))
 	data.SetDetails(ruleDescription)
 	data.SetSeverity(bbSeverity)
-	data.SetLine(int32(location.Region.StartLine))
-	data.SetPath(location.ArtifactLocation.Uri)
+
+	if r != nil && r.Locations != nil && len(r.Locations) > 0 && r.Locations[0].PhysicalLocation != nil {
+		location := r.Locations[0].PhysicalLocation
+		if location.Region != nil {
+			data.SetLine(int32(location.Region.StartLine))
+		}
+		if location.ArtifactLocation != nil {
+			data.SetPath(location.ArtifactLocation.Uri)
+		}
+	}
 	data.SetLink(reportLink)
 	return *data
 }

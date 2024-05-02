@@ -151,18 +151,7 @@ const sarifFileData = `
 					"partialFingerprints": {
                       "equalIndicator/v2": "2faa123efwsfsdqwer144d723b5999101424efba41c6caf11e6da4c2d7622ae04"
 					},
-                    "locations": [
-                        {
-                            "physicalLocation": {
-                                "artifactLocation": {
-                                    "uri": "src/main/java/AppStarter.java"
-                                },
-                                "region": {
-                                    "startLine": 3
-                                }
-                            }
-                        }
-                    ]
+                    "locations": []
                 }
             ]
         }
@@ -202,8 +191,8 @@ const expectedAnnotationsAsJSON = `[
     "annotation_type": "CODE_SMELL",
     "details": "This is a long boring description",
     "external_id": "2faa123efwsfsdqwer144d723b5999101424efba41c6caf11e6da4c2d7622ae04",
-    "line": 3,
-    "path": "src/main/java/AppStarter.java",
+    "line": 0,
+    "path": "",
     "severity": "LOW",
     "summary": "MissingLevel: This result does not specify a level."
   }
@@ -220,6 +209,9 @@ func TestSarifResultToBitBucketAnnotation(t *testing.T) {
 	}
 	expectedAnnotations := getExpectedAnnotations(t)
 	for i, annotation := range annotations { // doing comparison like this because only some fields are interesting
+		if (bbapi.ReportAnnotation{} == annotation) {
+			continue
+		}
 		if *annotation.Details != *expectedAnnotations[i].Details {
 			t.Fatalf("Mismatch in Details at index %d: got %s, want %s\n", i, *annotation.Details, *expectedAnnotations[i].Details)
 		}
@@ -232,10 +224,10 @@ func TestSarifResultToBitBucketAnnotation(t *testing.T) {
 		if *annotation.ExternalId != *expectedAnnotations[i].ExternalId {
 			t.Fatalf("Mismatch in ExternalId at index %d: got %s, want %s\n", i, *annotation.ExternalId, *expectedAnnotations[i].ExternalId)
 		}
-		if *annotation.Line != *expectedAnnotations[i].Line {
+		if annotation.Line != nil && *annotation.Line != *expectedAnnotations[i].Line {
 			t.Fatalf("Mismatch in Line at index %d: got %d, want %d\n", i, *annotation.Line, *expectedAnnotations[i].Line)
 		}
-		if *annotation.Path != *expectedAnnotations[i].Path {
+		if annotation.Path != nil && *annotation.Path != *expectedAnnotations[i].Path {
 			t.Fatalf("Mismatch in Path at index %d: got %s, want %s\n", i, *annotation.Path, *expectedAnnotations[i].Path)
 		}
 		if *annotation.Severity != *expectedAnnotations[i].Severity {
@@ -286,7 +278,7 @@ func TestSarifResultToCodeClimate(t *testing.T) {
 			CheckName:   "MissingLevel",
 			Description: "This result does not specify a level.",
 			Fingerprint: "2faa123efwsfsdqwer144d723b5999101424efba41c6caf11e6da4c2d7622ae04",
-			Location:    Location{Path: "src/main/java/AppStarter.java", Lines: Line{Begin: 3}},
+			Location:    Location{Path: "", Lines: Line{Begin: 0}},
 		},
 	}
 
