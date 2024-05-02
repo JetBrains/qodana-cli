@@ -36,7 +36,7 @@ func gitRun(cwd string, command []string) error {
 
 // GitReset resets the git repository to the given commit.
 func GitReset(cwd string, sha string) error {
-	return gitRun(cwd, []string{"reset", "--soft", strings.TrimPrefix(sha, "CI")})
+	return gitRun(cwd, []string{"reset", "--soft", sha})
 }
 
 // GitResetBack aborts the git reset.

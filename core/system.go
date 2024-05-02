@@ -170,6 +170,11 @@ func RunAnalysis(ctx context.Context, options *QodanaOptions) int {
 		log.Fatal("Cannot use git related functionality without a git executable")
 	}
 
+	isCiPrMode := false
+	if strings.HasPrefix(options.Commit, "CI") {
+		options.Commit = strings.TrimPrefix(options.Commit, "CI")
+		isCiPrMode = true
+	}
 	startHash, err := options.StartHash()
 	if err != nil {
 		log.Fatal(err)
@@ -185,7 +190,7 @@ func RunAnalysis(ctx context.Context, options *QodanaOptions) int {
 	case runScenarioFullHistory:
 		return runWithFullHistory(ctx, options, startHash)
 	case runScenarioLocalChanges:
-		return runLocalChanges(ctx, options, startHash)
+		return runLocalChanges(ctx, options, startHash, isCiPrMode)
 	case runScenarioScoped:
 		return runScopeScript(ctx, options, startHash)
 	case runScenarioDefault:
@@ -196,7 +201,7 @@ func RunAnalysis(ctx context.Context, options *QodanaOptions) int {
 	}
 }
 
-func runLocalChanges(ctx context.Context, options *QodanaOptions, startHash string) int {
+func runLocalChanges(ctx context.Context, options *QodanaOptions, startHash string, isCiPrMode bool) int {
 	var exitCode int
 	options.GitReset = false
 	if r := platform.GitCurrentRevision(options.ProjectDir); options.DiffEnd != "" && options.DiffEnd != r {
@@ -213,7 +218,7 @@ func runLocalChanges(ctx context.Context, options *QodanaOptions, startHash stri
 
 	exitCode = runQodana(ctx, options)
 
-	if options.GitReset && !strings.HasPrefix(startHash, "CI") {
+	if options.GitReset && isCiPrMode {
 		_ = platform.GitResetBack(options.ProjectDir)
 	}
 	return exitCode
