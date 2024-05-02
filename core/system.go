@@ -170,10 +170,8 @@ func RunAnalysis(ctx context.Context, options *QodanaOptions) int {
 		log.Fatal("Cannot use git related functionality without a git executable")
 	}
 
-	isCiPrMode := false
 	if strings.HasPrefix(options.Commit, "CI") {
 		options.Commit = strings.TrimPrefix(options.Commit, "CI")
-		isCiPrMode = true
 	}
 	startHash, err := options.StartHash()
 	if err != nil {
@@ -190,7 +188,7 @@ func RunAnalysis(ctx context.Context, options *QodanaOptions) int {
 	case runScenarioFullHistory:
 		return runWithFullHistory(ctx, options, startHash)
 	case runScenarioLocalChanges:
-		return runLocalChanges(ctx, options, startHash, isCiPrMode)
+		return runLocalChanges(ctx, options, startHash)
 	case runScenarioScoped:
 		return runScopeScript(ctx, options, startHash)
 	case runScenarioDefault:
@@ -201,9 +199,9 @@ func RunAnalysis(ctx context.Context, options *QodanaOptions) int {
 	}
 }
 
-func runLocalChanges(ctx context.Context, options *QodanaOptions, startHash string, isCiPrMode bool) int {
+func runLocalChanges(ctx context.Context, options *QodanaOptions, startHash string) int {
 	var exitCode int
-	options.GitReset = false
+	gitReset := false
 	if r := platform.GitCurrentRevision(options.ProjectDir); options.DiffEnd != "" && options.DiffEnd != r {
 		platform.WarningMessage("Cannot run local-changes because --diff-end is %s and HEAD is %s", options.DiffEnd, r)
 	} else {
@@ -212,13 +210,13 @@ func runLocalChanges(ctx context.Context, options *QodanaOptions, startHash stri
 			platform.WarningMessage("Could not reset git repository, no --commit option will be applied: %s", err)
 		} else {
 			options.Script = "local-changes"
-			options.GitReset = true
+			gitReset = true
 		}
 	}
 
 	exitCode = runQodana(ctx, options)
 
-	if options.GitReset && isCiPrMode {
+	if gitReset {
 		_ = platform.GitResetBack(options.ProjectDir)
 	}
 	return exitCode

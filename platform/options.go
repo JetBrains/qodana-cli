@@ -68,7 +68,6 @@ type QodanaOptions struct {
 	SkipPull                  bool
 	ClearCache                bool
 	ConfigName                string
-	GitReset                  bool
 	FullHistory               bool
 	ApplyFixes                bool
 	Cleanup                   bool
