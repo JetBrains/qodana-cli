@@ -28,7 +28,7 @@ const severityModerate = "moderate"
 const severityLow = "low"
 const severityInfo = "info"
 
-func getFailureThresholds(yaml *QodanaYaml) map[string]string {
+func getFailureThresholds(yaml *QodanaYaml, options *QodanaOptions) map[string]string {
 	ret := make(map[string]string)
 	if yaml.FailThreshold != nil {
 		ret[severityAny] = strconv.Itoa(*yaml.FailThreshold)
@@ -53,6 +53,10 @@ func getFailureThresholds(yaml *QodanaYaml) map[string]string {
 		if thresholds.Info != nil {
 			ret[severityInfo] = strconv.Itoa(*thresholds.Info)
 		}
+	}
+	if options.FailThreshold != "" { // console option overrides the behavior
+		ret = make(map[string]string)
+		ret[severityAny] = options.FailThreshold
 	}
 	return ret
 }
