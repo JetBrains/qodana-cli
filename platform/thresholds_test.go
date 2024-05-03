@@ -27,16 +27,19 @@ func TestFailureThresholds(t *testing.T) {
 	for _, testData := range []struct {
 		name     string
 		yaml     string
+		option   string
 		expected string
 	}{
 		{
 			name:     "empty",
 			yaml:     "",
+			option:   "",
 			expected: "",
 		},
 		{
 			name:     "failThreshold set to 0",
 			yaml:     `failThreshold: 0`,
+			option:   "",
 			expected: " --threshold-any=0",
 		},
 		{
@@ -50,6 +53,7 @@ func TestFailureThresholds(t *testing.T) {
     low: 5
     info: 6
 `,
+			option:   "",
 			expected: " --threshold-any=1 --threshold-critical=2 --threshold-high=3 --threshold-info=6 --threshold-low=5 --threshold-moderate=4",
 		},
 		{
@@ -64,6 +68,7 @@ func TestFailureThresholds(t *testing.T) {
     info: 6
 failThreshold: 123
 `,
+			option:   "",
 			expected: " --threshold-any=1 --threshold-critical=2 --threshold-high=3 --threshold-info=6 --threshold-low=5 --threshold-moderate=4",
 		},
 		{
@@ -77,7 +82,22 @@ failThreshold: 123
     info: 6
 failThreshold: 123
 `,
+			option:   "",
 			expected: " --threshold-any=123 --threshold-critical=2 --threshold-high=3 --threshold-info=6 --threshold-low=5 --threshold-moderate=4",
+		},
+		{
+			name: "cli option ovevrrides yaml settings",
+			yaml: `failureConditions:
+  severityThresholds:
+    any: 1
+    critical: 2
+    high: 3
+    moderate: 4
+    low: 5
+    info: 6
+`,
+			option:   "123",
+			expected: " --threshold-any=123",
 		},
 	} {
 		t.Run(testData.name, func(t *testing.T) {
@@ -89,7 +109,7 @@ failThreshold: 123
 				}
 			}
 			yaml := LoadQodanaYaml(tempDir, "qodana.yaml")
-			thresholds := getFailureThresholds(yaml)
+			thresholds := getFailureThresholds(yaml, &QodanaOptions{FailThreshold: testData.option})
 			thresholdArgs := thresholdsToArgs(thresholds)
 			sort.Strings(thresholdArgs)
 			argString := ""

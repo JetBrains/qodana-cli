@@ -67,7 +67,7 @@ func RunAnalysis(options *QodanaOptions) (int, error) {
 	}
 	log.Debugf("Java executable path: %s", mountInfo.JavaPath)
 
-	thresholds := getFailureThresholds(yaml)
+	thresholds := getFailureThresholds(yaml, options)
 	var analysisResult int
 	if analysisResult, err = computeBaselinePrintResults(options, mountInfo, thresholds); err != nil {
 		ErrorMessage(err.Error())
