@@ -185,5 +185,5 @@ after:
       if [ '{{ .IsSnapshot }}' = 'false' ];
       then
       codesign -gpg-key $FINGERPRINT -signed-files-dir=./dist/ dist/checksums.txt;
-      gh release --repo JetBrains/qodana-cli upload {{ if .IsNightly }}nightly{{ else }}{{ .Version}}{{ end }} dist/checksums.txt.asc;
+      gh release --repo JetBrains/qodana-cli upload {{ if .IsNightly }}nightly{{ else }}v{{ .Version}}{{ end }} dist/checksums.txt.asc;
       fi"
