@@ -70,6 +70,27 @@ type Line struct {
 	Begin int `json:"begin"`
 }
 
+type LocationProperties struct {
+	Uri       string
+	StartLine int
+}
+
+func extractLocationProperties(r *sarif.Result) *LocationProperties {
+	if r == nil ||
+		r.Locations == nil ||
+		len(r.Locations) == 0 ||
+		r.Locations[0].PhysicalLocation == nil ||
+		r.Locations[0].PhysicalLocation.ArtifactLocation == nil ||
+		r.Locations[0].PhysicalLocation.Region == nil {
+		return nil
+	}
+
+	return &LocationProperties{
+		Uri:       r.Locations[0].PhysicalLocation.ArtifactLocation.Uri,
+		StartLine: int(r.Locations[0].PhysicalLocation.Region.StartLine),
+	}
+}
+
 // sarifResultToCodeClimate converts a SARIF result to a Code Climate issue.
 func sarifResultToCodeClimate(r *sarif.Result) CCIssue {
 	loc := Location{
@@ -79,9 +100,10 @@ func sarifResultToCodeClimate(r *sarif.Result) CCIssue {
 		},
 	}
 
-	if r != nil && r.Locations != nil && len(r.Locations) > 0 {
-		loc.Path = r.Locations[0].PhysicalLocation.ArtifactLocation.Uri
-		loc.Lines.Begin = int(r.Locations[0].PhysicalLocation.Region.StartLine)
+	locationProperties := extractLocationProperties(r)
+	if locationProperties != nil {
+		loc.Path = locationProperties.Uri
+		loc.Lines.Begin = locationProperties.StartLine
 	}
 
 	return CCIssue{
