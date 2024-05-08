@@ -152,7 +152,22 @@ const sarifFileData = `
                       "equalIndicator/v2": "2faa123efwsfsdqwer144d723b5999101424efba41c6caf11e6da4c2d7622ae04"
 					},
                     "locations": []
-                }
+                },
+				{				
+					"ruleId": "PhysicalLocationNilTest",
+					"level": "level_here",
+					"message": {
+						"text": "Testing when PhysicalLocation is nil"
+					},
+					"partialFingerprints": {
+						"equalIndicator/v2": "fingerprint_here"
+					},
+					"locations": [
+						{
+							"physicalLocation": null
+						}
+					]
+				}
             ]
         }
     ]
@@ -195,6 +210,15 @@ const expectedAnnotationsAsJSON = `[
     "path": "",
     "severity": "LOW",
     "summary": "MissingLevel: This result does not specify a level."
+  },
+  {
+	"annotation_type": "CODE_SMELL",
+	"details": "This is a long boring description",
+	"external_id": "fingerprint_here",
+	"line": 0,
+	"path": "",
+	"severity": "LOW",
+	"summary": "PhysicalLocationNilTest: Testing when PhysicalLocation is nil"
   }
 ]`
 
@@ -278,6 +302,12 @@ func TestSarifResultToCodeClimate(t *testing.T) {
 			CheckName:   "MissingLevel",
 			Description: "This result does not specify a level.",
 			Fingerprint: "2faa123efwsfsdqwer144d723b5999101424efba41c6caf11e6da4c2d7622ae04",
+			Location:    Location{Path: "", Lines: Line{Begin: 0}},
+		},
+		{
+			CheckName:   "PhysicalLocationNilTest",
+			Description: "Testing when PhysicalLocation is nil",
+			Fingerprint: "fingerprint_here",
 			Location:    Location{Path: "", Lines: Line{Begin: 0}},
 		},
 	}
