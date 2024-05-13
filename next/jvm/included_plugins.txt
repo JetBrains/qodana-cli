@@ -42,6 +42,7 @@ com.intellij.javaee
 com.intellij.javaee.jpa
 com.intellij.javaee.web
 com.intellij.javaee.el
+com.intellij.jpa.jpb.model
 com.intellij.jsp
 com.intellij.microservices.jvm
 com.intellij.persistence
