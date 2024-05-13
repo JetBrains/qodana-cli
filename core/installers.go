@@ -38,7 +38,7 @@ var (
 	releaseVer  = "release"
 	eapVer      = "eap"
 	versionsMap = map[string]string{
-		releaseVer: "2023.3",
+		releaseVer: "2024.1",
 		eapVer:     "2024.1",
 	}
 	Products = map[string]string{
