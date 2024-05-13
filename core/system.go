@@ -133,6 +133,7 @@ func prepareHost(opts *QodanaOptions) {
 					spinner.ShowTimer = false // We will update interactive spinner
 				}
 				opts.Ide = downloadAndInstallIDE(opts, opts.GetQodanaSystemDir(), spinner)
+				fixWindowsPlugins(opts.Ide)
 			}, fmt.Sprintf("Downloading %s", opts.Ide), fmt.Sprintf("downloading IDE distribution to %s", opts.GetQodanaSystemDir()))
 		} else {
 			val, exists := os.LookupEnv(platform.QodanaDistEnv)
@@ -144,6 +145,19 @@ func prepareHost(opts *QodanaOptions) {
 	}
 	if opts.RequiresToken(Prod.IsCommunity() || Prod.EAP) {
 		opts.ValidateToken(false)
+	}
+}
+
+// fixWindowsPlugins quick-fix for Windows 241 distributions
+func fixWindowsPlugins(ideDir string) {
+	if runtime.GOOS == "windows" && strings.Contains(ideDir, "241") {
+		pluginsClasspath := filepath.Join(ideDir, "plugins", "plugin-classpath.txt")
+		if _, err := os.Stat(pluginsClasspath); err == nil {
+			err = os.Remove(pluginsClasspath)
+			if err != nil {
+				log.Warnf("Failed to remove plugin-classpath.txt: %v", err)
+			}
+		}
 	}
 }
 
