@@ -142,7 +142,7 @@ func (o *QodanaOptions) FetchAnalyzerSettings() {
 				PrimaryBold(qodanaYamlPath),
 				PrimaryBold("qodana init"),
 			)
-			analyzer := GetAnalyzer(o.ProjectDir, qodanaYamlPath, o.GetToken())
+			analyzer := GetAnalyzer(o.ProjectDir, qodanaYamlPath, o.GetToken(), false)
 			if IsNativeAnalyzer(analyzer) {
 				o.Ide = analyzer
 			} else {

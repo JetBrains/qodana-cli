@@ -85,7 +85,7 @@ func QodanaLogo(toolDesc string, version string, eap bool) string {
 }
 
 // GetAnalyzer gets linter for the given path and saves a config
-func GetAnalyzer(path string, yamlName string, token string) string {
+func GetAnalyzer(path string, yamlName string, token string, writeYaml bool) string {
 	var analyzers []string
 	PrintProcess(func(_ *pterm.SpinnerPrinter) {
 		languages := readIdeaDir(path)
@@ -126,8 +126,10 @@ func GetAnalyzer(path string, yamlName string, token string) string {
 		WarningMessage("See https://www.jetbrains.com/help/qodana/supported-technologies.html for more details")
 		os.Exit(1)
 	}
-	SetQodanaLinter(path, analyzer, yamlName)
-	SuccessMessage("Added %s", analyzer)
+	if writeYaml {
+		SetQodanaLinter(path, analyzer, yamlName)
+	}
+	SuccessMessage("Selected %s", analyzer)
 	return analyzer
 }
 
