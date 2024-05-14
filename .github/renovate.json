@@ -16,9 +16,7 @@
   ],
   "packageRules": [
     {
-      "datasources": [
-        "repology"
-      ],
+      "datasources": ["repology"],
       "packagePatterns": [
         "^debian_11/"
       ],
@@ -28,7 +26,7 @@
       "paths": ["2023.2/**", "2023.3/**", "2024.1/**", "next"]
     },
     {
-      "matchDatasources": ["docker"],
+      "datasources": ["docker"],
       "paths": ["next"]
     }
   ],
