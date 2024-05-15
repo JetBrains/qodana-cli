@@ -55,3 +55,4 @@ intellij.webpack
 com.jetbrains.restClient
 org.intellij.kotlinScripting
 com.intellij.dev
+org.jetbrains.security.package-checker
