@@ -4,7 +4,7 @@ go 1.21
 
 require (
 	github.com/cucumber/ci-environment/go v0.0.0-20230911180507-bd001ebc644c
-	github.com/docker/cli v25.0.0+incompatible
+	github.com/docker/cli v26.1.3+incompatible
 	github.com/docker/docker v20.10.23+incompatible // DO NOT UPDATE: breaking changes
 	github.com/docker/go-connections v0.5.0
 	github.com/otiai10/copy v1.14.0
@@ -43,7 +43,7 @@ require (
 	github.com/docker/distribution v2.8.3+incompatible // indirect
 	github.com/docker/docker-credential-helpers v0.8.0 // indirect
 	github.com/docker/go-units v0.5.0 // indirect
-	github.com/go-enry/go-enry/v2 v2.8.7 // indirect
+	github.com/go-enry/go-enry/v2 v2.8.8 // indirect
 	github.com/go-enry/go-oniguruma v1.2.1 // indirect
 	github.com/go-ole/go-ole v1.2.6 // indirect
 	github.com/godbus/dbus/v5 v5.1.0 // indirect
