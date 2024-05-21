@@ -64,10 +64,45 @@ func TestGetPublisherArgs(t *testing.T) {
 
 	// Assert that the expected arguments are present
 	expectedArgs := []string{
-		java,
+		QuoteForWindows(java),
 		"-jar",
 		"test-publisher.jar",
 		"--analysis-id", "test-analysis-id",
+		"--sources-path", "/path/to/project",
+		"--report-path", filepath.FromSlash("/path/to/report/results"),
+		"--token", "test-token",
+		"--tool", "test-tool",
+		"--endpoint", "test-endpoint",
+	}
+	if !reflect.DeepEqual(publisherArgs, expectedArgs) {
+		t.Errorf("getPublisherArgs returned incorrect arguments: got %v, expected %v", publisherArgs, expectedArgs)
+	}
+}
+
+func TestGetPublisherArgsNoAnalysisId(t *testing.T) {
+	// Set up test options
+	opts := &QodanaOptions{
+		AnalysisId: "",
+		ProjectDir: "/path/to/project",
+		ResultsDir: "/path/to/results",
+		ReportDir:  "/path/to/report",
+	}
+
+	// Set up test environment variables
+	err := os.Setenv(QodanaToolEnv, "test-tool")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	java, _ := getJavaExecutablePath()
+	// Call the function being tested
+	publisherArgs := getPublisherArgs(java, "test-publisher.jar", opts, "test-token", "test-endpoint")
+
+	// Assert that the expected arguments are present
+	expectedArgs := []string{
+		QuoteForWindows(java),
+		"-jar",
+		"test-publisher.jar",
 		"--sources-path", "/path/to/project",
 		"--report-path", filepath.FromSlash("/path/to/report/results"),
 		"--token", "test-token",
