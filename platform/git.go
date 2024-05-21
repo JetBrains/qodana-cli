@@ -45,8 +45,12 @@ func GitResetBack(cwd string) error {
 }
 
 // GitCheckout checks out the given commit / branch.
-func GitCheckout(cwd string, where string) error {
-	return gitRun(cwd, []string{"checkout", where})
+func GitCheckout(cwd string, where string, force bool) error {
+	if !force {
+		return gitRun(cwd, []string{"checkout", where})
+	} else {
+		return gitRun(cwd, []string{"checkout", "-f", where})
+	}
 }
 
 // GitClean cleans the git repository.
