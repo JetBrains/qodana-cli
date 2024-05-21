@@ -84,11 +84,17 @@ func getPublisherArgs(java string, publisher string, opts *QodanaOptions, token 
 		QuoteForWindows(java),
 		"-jar",
 		QuoteForWindows(publisher),
-		"--analysis-id", opts.AnalysisId,
+	}
+
+	if opts.AnalysisId != "" {
+		publisherArgs = append(publisherArgs, "--analysis-id", opts.AnalysisId)
+	}
+
+	publisherArgs = append(publisherArgs,
 		"--sources-path", QuoteForWindows(opts.ProjectDir),
 		"--report-path", QuoteForWindows(opts.ReportResultsPath()),
-		"--token", token,
-	}
+		"--token", token)
+
 	var tools []string
 	tool := os.Getenv(QodanaToolEnv)
 	if tool != "" {
