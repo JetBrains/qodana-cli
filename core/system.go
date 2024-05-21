@@ -268,7 +268,7 @@ func runWithFullHistory(ctx context.Context, options *QodanaOptions, startHash s
 		counter++
 		options.Setenv(platform.QodanaRevision, revision)
 		platform.WarningMessage("[%d/%d] Running analysis for revision %s", counter+1, allCommits, revision)
-		err = platform.GitCheckout(options.ProjectDir, revision)
+		err = platform.GitCheckout(options.ProjectDir, revision, true)
 		if err != nil {
 			log.Fatal(err)
 		}
@@ -277,7 +277,7 @@ func runWithFullHistory(ctx context.Context, options *QodanaOptions, startHash s
 		exitCode = runQodana(ctx, options)
 		options.Unsetenv(platform.QodanaRevision)
 	}
-	err = platform.GitCheckout(options.ProjectDir, branch)
+	err = platform.GitCheckout(options.ProjectDir, branch, true)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -311,7 +311,7 @@ func runScopeScript(ctx context.Context, options *QodanaOptions, startHash strin
 	props := options.Property
 
 	runFunc := func(hash string) (bool, int) {
-		e := platform.GitCheckout(options.ProjectDir, hash)
+		e := platform.GitCheckout(options.ProjectDir, hash, true)
 		if e != nil {
 			log.Fatalf("Cannot checkout commit %s: %v", hash, e)
 		}
