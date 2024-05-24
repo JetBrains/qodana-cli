@@ -44,3 +44,9 @@ com.intellij.dev
 org.intellij.kotlinScripting
 com.intellij.dev
 intellij.jupyter
+com.intellij.react
+intellij.nextjs
+intellij.vitejs
+intellij.prettierJS
+com.deadlock.scsyntax
+com.intellij.jsonpath

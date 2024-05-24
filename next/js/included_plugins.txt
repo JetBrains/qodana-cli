@@ -23,7 +23,6 @@ com.jetbrains.plugins.jade
 JavaScript
 JavaScriptDebugger
 com.dmarcotte.handlebars
-Karma
 JSIntentionPowerPack
 org.jetbrains.plugins.less
 NodeJS
@@ -43,3 +42,8 @@ org.jetbrains.security.package-checker
 com.jetbrains.restClient
 org.intellij.kotlinScripting
 com.intellij.dev
+com.intellij.react
+Karma
+intellij.nextjs
+intellij.vitejs
+com.intellij.jsonpath

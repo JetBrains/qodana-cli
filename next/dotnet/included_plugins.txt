@@ -61,3 +61,9 @@ org.intellij.plugins.postcss
 com.intellij.plugins.dependencyAnalysis
 com.jetbrains.restClient
 com.intellij.hardcodedPasswords
+com.intellij.react
+intellij.nextjs
+intellij.vitejs
+intellij.prettierJS
+com.deadlock.scsyntax
+com.intellij.jsonpath

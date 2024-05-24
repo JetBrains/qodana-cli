@@ -93,3 +93,9 @@ intellij.webpack
 com.jetbrains.restClient
 org.toml.lang
 com.intellij.jvm.dfa.analysis
+com.intellij.react
+intellij.nextjs
+intellij.vitejs
+intellij.prettierJS
+com.deadlock.scsyntax
+com.intellij.jsonpath

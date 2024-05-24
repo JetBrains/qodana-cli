@@ -31,3 +31,12 @@ org.intellij.plugins.postcss
 com.jetbrains.restClient
 org.intellij.kotlinScripting
 com.intellij.dev
+com.intellij.react
+Karma
+intellij.nextjs
+intellij.vitejs
+intellij.prettierJS
+com.intellij.plugins.webcomponents
+com.deadlock.scsyntax
+intellij.webpack
+com.intellij.jsonpath

@@ -56,3 +56,9 @@ com.jetbrains.restClient
 org.intellij.kotlinScripting
 com.intellij.dev
 org.jetbrains.security.package-checker
+com.intellij.react
+intellij.nextjs
+intellij.vitejs
+intellij.prettierJS
+com.deadlock.scsyntax
+com.intellij.jsonpath

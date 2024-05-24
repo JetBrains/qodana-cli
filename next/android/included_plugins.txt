@@ -96,3 +96,6 @@ com.intellij.jvm.dfa.analysis
 org.jetbrains.android
 com.android.tools.idea.smali
 intellij.webp
+com.intellij.react
+intellij.nextjs
+intellij.vitejs
