@@ -6,7 +6,7 @@ require (
 	github.com/JetBrains/qodana-cli/v2024/cloud v0.0.0-00010101000000-000000000000
 	github.com/JetBrains/qodana-cli/v2024/core v0.0.0-00010101000000-000000000000
 	github.com/JetBrains/qodana-cli/v2024/platform v0.0.0-00010101000000-000000000000
-	github.com/boyter/scc/v3 v3.3.3
+	github.com/boyter/scc/v3 v3.3.4
 	github.com/docker/docker v20.10.23+incompatible // DO NOT UPDATE: breaking changes
 	github.com/sirupsen/logrus v1.9.3
 	github.com/spf13/cobra v1.8.0
@@ -21,6 +21,8 @@ replace (
 	github.com/JetBrains/qodana-cli/v2024/sarif => ../sarif
 	github.com/JetBrains/qodana-cli/v2024/tooling => ../tooling
 )
+
+require github.com/google/uuid v1.6.0
 
 require (
 	atomicgo.dev/cursor v0.2.0 // indirect
@@ -43,13 +45,12 @@ require (
 	github.com/docker/go-connections v0.5.0 // indirect
 	github.com/docker/go-units v0.5.0 // indirect
 	github.com/fsnotify/fsnotify v1.7.0 // indirect
-	github.com/go-enry/go-enry/v2 v2.8.7 // indirect
+	github.com/go-enry/go-enry/v2 v2.8.8 // indirect
 	github.com/go-enry/go-oniguruma v1.2.1 // indirect
 	github.com/go-ole/go-ole v1.2.6 // indirect
 	github.com/godbus/dbus/v5 v5.1.0 // indirect
 	github.com/gogo/protobuf v1.3.2 // indirect
 	github.com/golang/protobuf v1.5.3 // indirect
-	github.com/google/uuid v1.6.0 // indirect
 	github.com/gookit/color v1.5.4 // indirect
 	github.com/hashicorp/hcl v1.0.0 // indirect
 	github.com/inconshreveable/mousetrap v1.1.0 // indirect
