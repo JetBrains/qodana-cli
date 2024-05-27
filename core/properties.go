@@ -101,9 +101,9 @@ func getPropertiesMap(
 		properties["-Drider.collect.full.container.statistics"] = "true"
 		properties["-Drider.suppress.std.redirect"] = "true"
 		if dotNet.Project != "" {
-			properties["-Dqodana.net.project"] = dotNet.Project
+			properties["-Dqodana.net.project"] = platform.QuoteIfSpace(dotNet.Project)
 		} else if dotNet.Solution != "" {
-			properties["-Dqodana.net.solution"] = dotNet.Solution
+			properties["-Dqodana.net.solution"] = platform.QuoteIfSpace(dotNet.Solution)
 		}
 		if dotNet.Configuration != "" {
 			properties["-Dqodana.net.configuration"] = dotNet.Configuration
