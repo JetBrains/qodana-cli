@@ -106,13 +106,13 @@ func getPropertiesMap(
 			properties["-Dqodana.net.solution"] = platform.QuoteIfSpace(dotNet.Solution)
 		}
 		if dotNet.Configuration != "" {
-			properties["-Dqodana.net.configuration"] = dotNet.Configuration
+			properties["-Dqodana.net.configuration"] = platform.QuoteIfSpace(dotNet.Configuration)
 		}
 		if dotNet.Platform != "" {
-			properties["-Dqodana.net.platform"] = dotNet.Platform
+			properties["-Dqodana.net.platform"] = platform.QuoteIfSpace(dotNet.Platform)
 		}
 		if dotNet.Frameworks != "" {
-			properties["-Dqodana.net.targetFrameworks"] = dotNet.Frameworks
+			properties["-Dqodana.net.targetFrameworks"] = platform.QuoteIfSpace(dotNet.Frameworks)
 		} else if platform.IsContainer() {
 			// We don't want to scan .NET Framework projects in Linux containers
 			properties["-Dqodana.net.targetFrameworks"] = "!net48;!net472;!net471;!net47;!net462;!net461;!net46;!net452;!net451;!net45;!net403;!net40;!net35;!net20;!net11"
