@@ -59,8 +59,8 @@ github.com/alessio/shellescape v1.4.1/go.mod h1:PZAiSCk0LJaZkiCSkPv8qIobYglO3FPp
 github.com/atomicgo/cursor v0.0.1/go.mod h1:cBON2QmmrysudxNBFthvMtN32r3jxVRIvzkUiF/RuIk=
 github.com/boyter/gocodewalker v1.3.2 h1:aXC/Z0/lYKZUXNjpSl5kwfgdJs9qxkIoMatk6LyhdOY=
 github.com/boyter/gocodewalker v1.3.2/go.mod h1:hXG8xzR1uURS+99P5/3xh3uWHjaV2XfoMMmvPyhrCDg=
-github.com/boyter/scc/v3 v3.3.3 h1:ov/+d3/8JJMkX912/0PdWZ204y/Z3Z44Gova3cbnUVo=
-github.com/boyter/scc/v3 v3.3.3/go.mod h1:XkakiNpC5L7GuQu8a7NDQUVzg2v3s4pA0glUbbpWiGs=
+github.com/boyter/scc/v3 v3.3.4 h1:iRbY4RyVmDAKx96WHs06S/BwrlbS6v2anTlPVhBT5Eg=
+github.com/boyter/scc/v3 v3.3.4/go.mod h1:XkakiNpC5L7GuQu8a7NDQUVzg2v3s4pA0glUbbpWiGs=
 github.com/census-instrumentation/opencensus-proto v0.2.1/go.mod h1:f6KPmirojxKA12rnyqOA5BBL4O983OfeGPqjHWSTneU=
 github.com/chzyer/logex v1.1.10/go.mod h1:+Ywpsq7O8HXn0nuIou7OrIPyXbp3wmkHB+jjWRnGsAI=
 github.com/chzyer/readline v0.0.0-20180603132655-2972be24d48e/go.mod h1:nSuG5e5PlCu98SY8svDHJxuZscDgtXS6KTTbou5AhLI=
@@ -102,8 +102,8 @@ github.com/frankban/quicktest v1.14.6 h1:7Xjx+VpznH+oBnejlPUj8oUpdxnVs4f8XU8WnHk
 github.com/frankban/quicktest v1.14.6/go.mod h1:4ptaffx2x8+WTWXmUCuVU6aPUX1/Mz7zb5vbUoiM6w0=
 github.com/fsnotify/fsnotify v1.7.0 h1:8JEhPFa5W2WU7YfeZzPNqzMP6Lwt7L2715Ggo0nosvA=
 github.com/fsnotify/fsnotify v1.7.0/go.mod h1:40Bi/Hjc2AVfZrqy+aj+yEI+/bRxZnMJyTJwOpGvigM=
-github.com/go-enry/go-enry/v2 v2.8.7 h1:vbab0pcf5Yo1cHQLzbWZ+QomUh3EfEU8EiR5n7W0lnQ=
-github.com/go-enry/go-enry/v2 v2.8.7/go.mod h1:9yrj4ES1YrbNb1Wb7/PWYr2bpaCXUGRt0uafN0ISyG8=
+github.com/go-enry/go-enry/v2 v2.8.8 h1:EhfxWpw4DQ3WEFB1Y77X8vKqZL0D0EDUUWYDUAIv9/4=
+github.com/go-enry/go-enry/v2 v2.8.8/go.mod h1:9yrj4ES1YrbNb1Wb7/PWYr2bpaCXUGRt0uafN0ISyG8=
 github.com/go-enry/go-oniguruma v1.2.1 h1:k8aAMuJfMrqm/56SG2lV9Cfti6tC4x8673aHCcBk+eo=
 github.com/go-enry/go-oniguruma v1.2.1/go.mod h1:bWDhYP+S6xZQgiRL7wlTScFYBe023B6ilRZbCAD5Hf4=
 github.com/go-gl/glfw v0.0.0-20190409004039-e6da0acd62b1/go.mod h1:vR7hzQXu2zJy9AVAgeJqvqgH9Q5CA+iKCZ2gyEVpxRU=
