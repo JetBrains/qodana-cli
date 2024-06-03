@@ -9,7 +9,7 @@ require (
 	github.com/docker/go-connections v0.5.0
 	github.com/otiai10/copy v1.14.0
 	github.com/pterm/pterm v0.12.79
-	github.com/shirou/gopsutil/v3 v3.24.3
+	github.com/shirou/gopsutil/v3 v3.24.5
 	github.com/sirupsen/logrus v1.9.3
 	github.com/stretchr/testify v1.9.0
 )
@@ -43,7 +43,7 @@ require (
 	github.com/docker/distribution v2.8.3+incompatible // indirect
 	github.com/docker/docker-credential-helpers v0.8.0 // indirect
 	github.com/docker/go-units v0.5.0 // indirect
-	github.com/go-enry/go-enry/v2 v2.8.7 // indirect
+	github.com/go-enry/go-enry/v2 v2.8.8 // indirect
 	github.com/go-enry/go-oniguruma v1.2.1 // indirect
 	github.com/go-ole/go-ole v1.2.6 // indirect
 	github.com/godbus/dbus/v5 v5.1.0 // indirect
@@ -80,7 +80,7 @@ require (
 	golang.org/x/net v0.23.0 // indirect
 	golang.org/x/oauth2 v0.15.0 // indirect
 	golang.org/x/sync v0.5.0 // indirect
-	golang.org/x/sys v0.18.0 // indirect
+	golang.org/x/sys v0.20.0 // indirect
 	golang.org/x/term v0.18.0 // indirect
 	golang.org/x/text v0.14.0 // indirect
 	golang.org/x/time v0.5.0 // indirect
