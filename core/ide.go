@@ -78,7 +78,13 @@ func runQodanaLocal(opts *QodanaOptions) (int, error) {
 }
 
 func getIdeRunCommand(opts *QodanaOptions) []string {
-	args := []string{platform.QuoteForWindows(Prod.IdeScript), "inspect", "qodana"}
+
+	args := []string{platform.QuoteForWindows(Prod.IdeScript)}
+	if !Prod.is242orNewer() {
+		args = append(args, "inspect")
+	}
+	args = append(args, "qodana")
+
 	args = append(args, GetIdeArgs(opts)...)
 	args = append(args, platform.QuoteForWindows(opts.ProjectDir), platform.QuoteForWindows(opts.ResultsDir))
 	return args

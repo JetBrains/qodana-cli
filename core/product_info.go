@@ -203,6 +203,15 @@ func (p *product) is233orNewer() bool {
 	return number >= 233
 }
 
+func (p *product) is242orNewer() bool {
+	number, err := strconv.Atoi(p.getVersionBranch())
+	if err != nil {
+		platform.WarningMessage("Invalid version: ", err)
+		return false
+	}
+	return number >= 242
+}
+
 var Prod product
 
 // guessProduct fills all product fields.
