@@ -103,7 +103,7 @@ jobs:
           registry: registry.jetbrains.team
           username: ${{ secrets.SPACE_USERNAME }}
           password: ${{ secrets.SPACE_PASSWORD }}
-      - uses: JetBrains/qodana-action@glob
+      - uses: JetBrains/qodana-action@main
         env:
           QODANA_TOKEN: ${{ secrets.QODANA_TOKEN }}
         with:
