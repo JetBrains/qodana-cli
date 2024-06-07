@@ -56,6 +56,18 @@ const (
 // ExtractQodanaEnvironment extracts Qodana environment variables from the current environment.
 func ExtractQodanaEnvironment(setEnvironmentFunc func(string, string)) {
 	ci := cienvironment.DetectCIEnvironment()
+	if license := os.Getenv(QodanaLicense); license != "" {
+		setEnvironmentFunc(QodanaLicense, license)
+	}
+	if remoteUrl := os.Getenv(QodanaRemoteUrl); remoteUrl != "" {
+		setEnvironmentFunc(QodanaRemoteUrl, remoteUrl)
+	}
+	if branch := os.Getenv(QodanaBranch); branch != "" {
+		setEnvironmentFunc(QodanaBranch, branch)
+	}
+	if revision := os.Getenv(QodanaRevision); revision != "" {
+		setEnvironmentFunc(QodanaRevision, revision)
+	}
 	qEnv := "cli"
 	if ci != nil {
 		qEnv = strings.ReplaceAll(strings.ToLower(ci.Name), " ", "-")
