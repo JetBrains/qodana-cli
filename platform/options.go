@@ -87,6 +87,7 @@ type QodanaOptions struct {
 	AnalysisTimeoutMs         int
 	AnalysisTimeoutExitCode   int
 	JvmDebugPort              int
+	QdConfig                  QodanaYaml
 }
 
 func (o *QodanaOptions) LogOptions() {
@@ -130,13 +131,13 @@ func (o *QodanaOptions) GetToken() string {
 }
 
 func (o *QodanaOptions) FetchAnalyzerSettings() {
+	qodanaYamlPath := FindQodanaYaml(o.ProjectDir)
+	if o.ConfigName != "" {
+		qodanaYamlPath = o.ConfigName
+	}
+	o.QdConfig = *LoadQodanaYaml(o.ProjectDir, qodanaYamlPath)
 	if o.Linter == "" && o.Ide == "" {
-		qodanaYamlPath := FindQodanaYaml(o.ProjectDir)
-		if o.ConfigName != "" {
-			qodanaYamlPath = o.ConfigName
-		}
-		qodanaYaml := LoadQodanaYaml(o.ProjectDir, qodanaYamlPath)
-		if qodanaYaml.Linter == "" && qodanaYaml.Ide == "" {
+		if o.QdConfig.Linter == "" && o.QdConfig.Ide == "" {
 			WarningMessage(
 				"No valid `linter:` or `ide:` field found in %s. Have you run %s? Running that for you...",
 				PrimaryBold(qodanaYamlPath),
@@ -150,17 +151,17 @@ func (o *QodanaOptions) FetchAnalyzerSettings() {
 			}
 			EmptyMessage()
 		} else {
-			if qodanaYaml.Linter != "" && qodanaYaml.Ide != "" {
+			if o.QdConfig.Linter != "" && o.QdConfig.Ide != "" {
 				ErrorMessage("You have both `linter:` (%s) and `ide:` (%s) fields set in %s. Modify the configuration file to keep one of them",
-					qodanaYaml.Linter,
-					qodanaYaml.Ide,
+					o.QdConfig.Linter,
+					o.QdConfig.Ide,
 					qodanaYamlPath)
 				os.Exit(1)
 			}
-			o.Linter = qodanaYaml.Linter
+			o.Linter = o.QdConfig.Linter
 		}
 		if o.Ide == "" {
-			o.Ide = qodanaYaml.Ide
+			o.Ide = o.QdConfig.Ide
 		}
 	}
 	o.ResultsDir = o.resultsDirPath()
