@@ -28,8 +28,6 @@ import (
 	"strings"
 )
 
-var Config QodanaYaml // TODO : burry the value somewhere
-
 // GetQodanaYamlPath returns the path to qodana.yaml or qodana.yml
 func GetQodanaYamlPath(project string) (string, error) {
 	qodanaYamlPath := filepath.Join(project, "qodana.yaml")

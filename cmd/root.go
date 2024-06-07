@@ -79,7 +79,7 @@ func newRootCommand() *cobra.Command {
 	rootCmd := &cobra.Command{
 		Use:     "qodana",
 		Short:   "Run Qodana CLI",
-		Long:    platform.InfoString(platform.Version), // TODO : return to core
+		Long:    platform.InfoString(platform.Version),
 		Version: platform.Version,
 		PersistentPreRun: func(cmd *cobra.Command, args []string) {
 			logLevel, err := log.ParseLevel(viper.GetString("log-level"))

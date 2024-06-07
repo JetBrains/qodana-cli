@@ -361,7 +361,6 @@ func prepareLocalIdeSettings(opts *QodanaOptions) {
 		opts.LogDirPath(),
 		opts.ConfDirPath(),
 	)
-	platform.Config = platform.GetQodanaYamlOrDefault(opts.ProjectDir) // TODO: Burry it!
 	writeProperties(opts)
 
 	if platform.IsContainer() {
