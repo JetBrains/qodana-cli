@@ -30,8 +30,6 @@ import (
 
 func getPropertiesMap(
 	prefix string,
-	eap bool,
-	appInfoXml string,
 	systemDir string,
 	logDir string,
 	confDir string,
@@ -43,63 +41,23 @@ func getPropertiesMap(
 	coverageDir string,
 ) map[string]string {
 	properties := map[string]string{
-		"-Dfus.internal.reduce.initial.delay":          "true",
-		"-Didea.headless.enable.statistics":            strconv.FormatBool(cloud.Token.IsAllowedToSendFUS()),
-		"-Didea.headless.statistics.max.files.to.send": "5000",
-		"-Dinspect.save.project.settings":              "true",
-		"-Djava.awt.headless":                          "true",
-		"-Djava.net.useSystemProxies":                  "true",
-		"-Djdk.attach.allowAttachSelf":                 "true",
-		"-Djdk.module.illegalAccess.silent":            "true",
-		"-Dkotlinx.coroutines.debug":                   "off",
-		"-Dsun.io.useCanonCaches":                      "false",
-		"-Dsun.tools.attach.tmp.only":                  "true",
-
-		"-Didea.headless.statistics.device.id":   deviceIdSalt[0],
-		"-Didea.headless.statistics.salt":        deviceIdSalt[1],
-		"-Didea.platform.prefix":                 "Qodana",
-		"-Didea.parent.prefix":                   prefix,
-		"-Didea.config.path":                     platform.QuoteIfSpace(confDir),
-		"-Didea.system.path":                     platform.QuoteIfSpace(systemDir),
-		"-Didea.plugins.path":                    platform.QuoteIfSpace(pluginsDir),
-		"-Didea.application.info.value":          platform.QuoteIfSpace(appInfoXml),
-		"-Didea.log.path":                        platform.QuoteIfSpace(logDir),
-		"-Didea.qodana.thirdpartyplugins.accept": "true",
-		"-Dqodana.automation.guid":               platform.QuoteIfSpace(analysisId),
-		"-Dide.warmup.use.predicates":            "false",
-		"-Dvcs.log.index.enable":                 "false",
-
-		"-XX:SoftRefLRUPolicyMSPerMB": "50",
-		"-XX:MaxJavaStackTraceDepth":  "10000",
-		"-XX:ReservedCodeCacheSize":   "512m",
-		"-XX:CICompilerCount":         "2",
-		"-XX:MaxRAMPercentage":        "70",
-
-		"-Didea.job.launcher.without.timeout": "true",
-		"-Dscanning.in.smart.mode":            "false",
+		"-Didea.headless.enable.statistics":    strconv.FormatBool(cloud.Token.IsAllowedToSendFUS()),
+		"-Didea.headless.statistics.device.id": deviceIdSalt[0],
+		"-Didea.headless.statistics.salt":      deviceIdSalt[1],
+		"-Didea.config.path":                   platform.QuoteIfSpace(confDir),
+		"-Didea.system.path":                   platform.QuoteIfSpace(systemDir),
+		"-Didea.plugins.path":                  platform.QuoteIfSpace(pluginsDir),
+		"-Didea.log.path":                      platform.QuoteIfSpace(logDir),
+		"-Dqodana.automation.guid":             platform.QuoteIfSpace(analysisId),
+		"-XX:MaxRAMPercentage":                 "70", //only in docker?
 	}
 	if coverageDir != "" {
 		properties["-Dqodana.coverage.input"] = platform.QuoteIfSpace(coverageDir)
 	}
-	if eap {
-		properties["-Deap.login.enabled"] = "false"
-	}
 	if len(plugins) > 0 {
 		properties["-Didea.required.plugins.id"] = strings.Join(plugins, ",")
 	}
-	if prefix == "WebStorm" {
-		properties["-Dqodana.recommended.profile.resource"] = "qodana-js.recommended.yaml"
-		properties["-Dqodana.starter.profile.resource"] = "qodana-js.starter.yaml"
-	}
 	if prefix == "Rider" {
-		if Prod.is233orNewer() {
-			properties["-Dqodana.recommended.profile.resource"] = "qodana-dotnet.recommended.yaml"
-			properties["-Dqodana.starter.profile.resource"] = "qodana-dotnet.starter.yaml"
-		}
-		properties["-Dqodana.disable.default.fixes.strategy"] = "true"
-		properties["-Didea.class.before.app"] = "com.jetbrains.rider.protocol.EarlyBackendStarter"
-		properties["-Drider.collect.full.container.statistics"] = "true"
-		properties["-Drider.suppress.std.redirect"] = "true"
 		if dotNet.Project != "" {
 			properties["-Dqodana.net.project"] = platform.QuoteIfSpace(dotNet.Project)
 		} else if dotNet.Solution != "" {
@@ -128,11 +86,6 @@ func getPropertiesMap(
 func GetProperties(opts *QodanaOptions, yamlProps map[string]string, dotNetOptions platform.DotNet, plugins []string) []string {
 	lines := []string{
 		fmt.Sprintf("-Xlog:gc*:%s", platform.QuoteIfSpace(filepath.Join(opts.LogDirPath(), "gc.log"))),
-		`-Djdk.http.auth.tunneling.disabledSchemes=""`,
-		"-XX:+HeapDumpOnOutOfMemoryError",
-		"-XX:+UseG1GC",
-		"-XX:-OmitStackTraceInFastThrow",
-		"-ea",
 	}
 	if opts.JvmDebugPort > 0 {
 		lines = append(lines, fmt.Sprintf("-agentlib:jdwp=transport=dt_socket,server=y,suspend=y,address=*:%s", containerJvmDebugPort))
@@ -156,8 +109,6 @@ func GetProperties(opts *QodanaOptions, yamlProps map[string]string, dotNetOptio
 
 	props := getPropertiesMap(
 		Prod.parentPrefix(),
-		Prod.EAP,
-		opts.appInfoXmlPath(Prod.IdeBin()),
 		filepath.Join(opts.CacheDir, "idea", Prod.getVersionBranch()),
 		opts.LogDirPath(),
 		opts.ConfDirPath(),

@@ -137,7 +137,7 @@ func prepareHost(opts *QodanaOptions) {
 			}, fmt.Sprintf("Downloading %s", opts.Ide), fmt.Sprintf("downloading IDE distribution to %s", opts.GetQodanaSystemDir()))
 		} else {
 			val, exists := os.LookupEnv(platform.QodanaDistEnv)
-			if !exists || val == "" || opts.Ide != val {
+			if !exists || val == "" || opts.Ide != val { // very strange check
 				log.Fatalf("Product code %s is not supported", opts.Ide)
 			}
 		}
@@ -501,9 +501,8 @@ func resetScanStages() {
 }
 
 const (
-	qodanaAppInfoFilename = "QodanaAppInfo.xml"
-	m2                    = ".m2"
-	nuget                 = "nuget"
+	m2    = ".m2"
+	nuget = "nuget"
 )
 
 // saveReport saves web files to expect, and generates json.
