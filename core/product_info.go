@@ -17,7 +17,6 @@
 package core
 
 import (
-	"encoding/xml"
 	"fmt"
 	"github.com/JetBrains/qodana-cli/v2024/platform"
 	"os"
@@ -38,32 +37,6 @@ type product struct {
 	Build          string
 	Home           string
 	EAP            bool
-}
-
-type appInfo struct {
-	XMLName xml.Name       `xml:"component"`
-	Version appInfoVersion `xml:"version"`
-	Build   appInfoBuild   `xml:"build"`
-	Names   appInfoNames   `xml:"names"`
-}
-
-type appInfoVersion struct {
-	XMLName xml.Name `xml:"version"`
-	Major   string   `xml:"major,attr"`
-	Minor   string   `xml:"minor,attr"`
-	Eap     string   `xml:"eap,attr"`
-}
-
-type appInfoBuild struct {
-	XMLName xml.Name `xml:"build"`
-	Number  string   `xml:"number,attr"`
-	Date    string   `xml:"date,attr"`
-}
-
-type appInfoNames struct {
-	XMLName  xml.Name `xml:"names"`
-	Product  string   `xml:"product,attr"`
-	Fullname string   `xml:"fullname,attr"`
 }
 
 func (p *product) IdeBin() string {
@@ -262,15 +235,7 @@ func guessProduct(opts *QodanaOptions) {
 	}
 
 	treatAsRelease := os.Getenv(platform.QodanaTreatAsRelease)
-	if _, err := os.Stat(filepath.Join(Prod.IdeBin(), qodanaAppInfoFilename)); err == nil {
-		appInfoContents := readAppInfoXml(Prod.Home)
-		Prod.Version = appInfoContents.Version.Major + "." + appInfoContents.Version.Minor
-		Prod.Build = strings.Split(appInfoContents.Build.Number, "-")[1]
-		Prod.Code = strings.Split(appInfoContents.Build.Number, "-")[0]
-		Prod.Name = appInfoContents.Names.Fullname
-		Prod.EAP = appInfoContents.Version.Eap == "true" && !(treatAsRelease == "true")
-
-	} else if productInfo := readIdeProductInfo(Prod.Home); productInfo != nil {
+	if productInfo := readIdeProductInfo(Prod.Home); productInfo != nil {
 		if v, ok := productInfo["version"]; ok {
 			Prod.Version = v.(string)
 		} else {
@@ -300,47 +265,6 @@ func guessProduct(opts *QodanaOptions) {
 		}
 	}
 
-	if !platform.IsContainer() {
-		remove := fmt.Sprintf("-Didea.platform.prefix=%s", Prod.parentPrefix())
-		Prod.IdeScript = patchIdeScript(Prod, remove, opts.ConfDirPath())
-	}
-
 	log.Debug(Prod)
 	platform.SetEnv(platform.QodanaDistEnv, Prod.Home)
-}
-
-// temporary solution to fix runs in the native mode
-func patchIdeScript(product product, strToRemove string, confDirPath string) string {
-	ext := filepath.Ext(product.IdeScript)
-	newFilePath := filepath.Join(confDirPath, fmt.Sprintf("%s%s", product.BaseScriptName, ext))
-	contentBytes, err := os.ReadFile(product.IdeScript)
-	if err != nil {
-		platform.WarningMessage("Warning, can't read original script: %s (probably test mode)", err)
-		return product.IdeScript
-	}
-
-	modifiedContent := strings.ReplaceAll(string(contentBytes), strToRemove, "")
-	if //goland:noinspection GoBoolExpressions
-	runtime.GOOS == "windows" {
-		modifiedContent = strings.ReplaceAll(modifiedContent, "SET \"IDE_BIN_DIR=%~dp0\"", "SET \"IDE_BIN_DIR=%QODANA_DIST%\\bin\"")
-	} else if //goland:noinspection GoBoolExpressions
-	runtime.GOOS == "linux" {
-		modifiedContent = strings.ReplaceAll(modifiedContent, "IDE_BIN_HOME=$(dirname \"$(realpath \"$0\")\")", "IDE_BIN_HOME=$QODANA_DIST/bin")
-	} else {
-		platform.WarningMessage("Warning, unsupported platform: %s", runtime.GOOS)
-		return product.IdeScript
-	}
-	if _, err := os.Stat(confDirPath); os.IsNotExist(err) {
-		err := os.MkdirAll(confDirPath, os.ModePerm)
-		if err != nil {
-			log.Fatalf("failed to create directory: %v", err)
-		}
-	}
-
-	err = os.WriteFile(newFilePath, []byte(modifiedContent), 0755)
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	return newFilePath
 }

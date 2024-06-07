@@ -18,7 +18,6 @@ package core
 
 import (
 	"encoding/json"
-	"encoding/xml"
 	"errors"
 	"fmt"
 	"github.com/JetBrains/qodana-cli/v2024/cloud"
@@ -336,16 +335,6 @@ func readIdeProductInfo(ideDir string) map[string]interface{} {
 	return productInfoMap
 }
 
-func readAppInfoXml(ideDir string) appInfo {
-	bytes, _ := os.ReadFile(filepath.Join(ideDir, "bin", qodanaAppInfoFilename))
-	var appInfo appInfo
-	err := xml.Unmarshal(bytes, &appInfo)
-	if err != nil {
-		log.Fatal(err)
-	}
-	return appInfo
-}
-
 func prepareLocalIdeSettings(opts *QodanaOptions) {
 	guessProduct(opts)
 	if Prod.BaseScriptName == "" {
@@ -513,16 +502,10 @@ func syncIdeaCache(from string, to string, overwrite bool) {
 	}
 }
 
+//goland:noinspection GoBoolExpressions
 func getScriptSuffix() string {
-	if platform.IsContainer() {
-		return ".sh"
+	if runtime.GOOS == "windows" {
+		return "64.exe"
 	}
-	switch runtime.GOOS {
-	case "windows":
-		return ".bat"
-	case "darwin":
-		return ""
-	default:
-		return ".sh"
-	}
+	return ""
 }

@@ -44,7 +44,7 @@ func TestGetIde(t *testing.T) {
 func TestDownloadAndInstallIDE(t *testing.T) {
 	if //goland:noinspection GoBoolExpressions
 	runtime.GOOS == "darwin" {
-		t.Skip("Mac OS not supported in native")
+		t.Skip("Mac OS not supported in native") // TODO after publishing macOS distributions
 	}
 	ides := []string{"QDNET-EAP"} // QDPY requires exe on Windows, QDNET - does not
 	for _, ide := range ides {
@@ -80,14 +80,14 @@ func DownloadAndInstallIDE(ideName string, t *testing.T) {
 	runtime.GOOS == "darwin" {
 		ide = filepath.Join(ide, "Contents")
 	}
-	appInfoXml := readAppInfoXml(ide)
+	prod := readIdeProductInfo(ide)
 	defer func(path string) {
 		err := os.RemoveAll(path)
 		if err != nil {
 			platform.ErrorMessage("Cannot clean up temp dir: %s", err)
 		}
 	}(ide) // clean up
-	if appInfoXml.Names.Product == "" {
+	if prod["productCode"] == "" {
 		t.Fail()
 	}
 }

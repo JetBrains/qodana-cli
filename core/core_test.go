@@ -451,46 +451,6 @@ func Test_Bootstrap(t *testing.T) {
 	}
 }
 
-//goland:noinspection HttpUrlsUsage
-func Test_ReadAppInfo(t *testing.T) {
-	tempDir := os.TempDir()
-	entrypointDir := filepath.Join(tempDir, "appinfo")
-	xmlFilePath := filepath.Join(entrypointDir, "bin", "QodanaAppInfo.xml")
-	err := os.MkdirAll(filepath.Dir(xmlFilePath), 0o755)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	err = os.WriteFile(
-		xmlFilePath,
-		[]byte(`<component xmlns="http://jetbrains.org/intellij/schema/application-info"
-			   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-			   xsi:schemaLocation="http://jetbrains.org/intellij/schema/application-info http://jetbrains.org/intellij/schema/ApplicationInfo.xsd">
-	  <version major="2022" minor="1" eap="true"/>
-	  <company name="JetBrains s.r.o." url="https://www.jetbrains.com" copyrightStart="2000"/>
-	  <build number="QDTEST-420.69" date="202212060511" />
-	  <names product="Qodana for Tests" fullname="Qodana for Tests"/>
-	  <plugins url="https://plugins.jetbrains.com/" builtin-url="__BUILTIN_PLUGINS_URL__"/>
-	</component>`),
-		0o644,
-	)
-	if err != nil {
-		t.Fatal(err)
-	}
-	appInfoContents := readAppInfoXml(entrypointDir)
-	assert.Equal(t, "2022", appInfoContents.Version.Major)
-	assert.Equal(t, "1", appInfoContents.Version.Minor)
-	assert.Equal(t, "true", appInfoContents.Version.Eap)
-	assert.Equal(t, "QDTEST-420.69", appInfoContents.Build.Number)
-	assert.Equal(t, "202212060511", appInfoContents.Build.Date)
-	assert.Equal(t, "Qodana for Tests", appInfoContents.Names.Product)
-	assert.Equal(t, "Qodana for Tests", appInfoContents.Names.Fullname)
-	err = os.RemoveAll(entrypointDir)
-	if err != nil {
-		t.Fatal(err)
-	}
-}
-
 func Test_ideaExitCode(t *testing.T) {
 	tmpDir := filepath.Join(os.TempDir(), "exitcode")
 	err := os.MkdirAll(tmpDir, 0o755)
@@ -724,50 +684,17 @@ func TestQodanaOptions_RequiresToken(t *testing.T) {
 
 func propertiesFixture(enableStats bool, additionalProperties []string) []string {
 	properties := []string{
-		"-Dfus.internal.reduce.initial.delay=true",
-		"-Dide.warmup.use.predicates=false",
-		"-Dvcs.log.index.enable=false",
-		fmt.Sprintf("-Didea.application.info.value=%s", filepath.Join(Prod.IdeBin(), "QodanaAppInfo.xml")),
-		"-Dqodana.disable.default.fixes.strategy=true",
-		"-Didea.class.before.app=com.jetbrains.rider.protocol.EarlyBackendStarter",
 		fmt.Sprintf("-Didea.config.path=%s", filepath.Join(os.TempDir(), "entrypoint")),
 		fmt.Sprintf("-Didea.headless.enable.statistics=%t", enableStats),
 		"-Didea.headless.statistics.device.id=FAKE",
-		"-Didea.headless.statistics.max.files.to.send=5000",
 		"-Didea.headless.statistics.salt=FAKE",
-		fmt.Sprintf("-Didea.log.path=%s", filepath.Join(os.TempDir(), "entrypoint", "log")),
-		"-Didea.parent.prefix=Rider",
-		"-Didea.platform.prefix=Qodana",
-		fmt.Sprintf("-Didea.plugins.path=%s", filepath.Join(os.TempDir(), "entrypoint", "plugins", "233")),
-		"-Didea.qodana.thirdpartyplugins.accept=true",
-		fmt.Sprintf("-Didea.system.path=%s", filepath.Join(os.TempDir(), "entrypoint", "idea", "233")),
-		"-Dinspect.save.project.settings=true",
-		"-Djava.awt.headless=true",
-		"-Djava.net.useSystemProxies=true",
-		"-Djdk.attach.allowAttachSelf=true",
-		`-Djdk.http.auth.tunneling.disabledSchemes=""`,
-		"-Djdk.module.illegalAccess.silent=true",
-		"-Dkotlinx.coroutines.debug=off",
 		"-Dqodana.automation.guid=FAKE",
-		"-Didea.job.launcher.without.timeout=true",
 		"-Dqodana.coverage.input=/data/coverage",
-		"-Dqodana.recommended.profile.resource=qodana-dotnet.recommended.yaml",
-		"-Dqodana.starter.profile.resource=qodana-dotnet.starter.yaml",
-		"-Drider.collect.full.container.statistics=true",
-		"-Drider.suppress.std.redirect=true",
-		"-Dscanning.in.smart.mode=false",
-		"-Dsun.io.useCanonCaches=false",
-		"-Dsun.tools.attach.tmp.only=true",
-		"-XX:+HeapDumpOnOutOfMemoryError",
-		"-XX:+UseG1GC",
-		"-XX:-OmitStackTraceInFastThrow",
-		"-XX:CICompilerCount=2",
-		"-XX:MaxJavaStackTraceDepth=10000",
-		"-XX:MaxRAMPercentage=70",
-		"-XX:ReservedCodeCacheSize=512m",
-		"-XX:SoftRefLRUPolicyMSPerMB=50",
+		fmt.Sprintf("-Didea.log.path=%s", filepath.Join(os.TempDir(), "entrypoint", "log")),
+		fmt.Sprintf("-Didea.plugins.path=%s", filepath.Join(os.TempDir(), "entrypoint", "plugins", "233")),
+		fmt.Sprintf("-Didea.system.path=%s", filepath.Join(os.TempDir(), "entrypoint", "idea", "233")),
 		fmt.Sprintf("-Xlog:gc*:%s", filepath.Join(os.TempDir(), "entrypoint", "log", "gc.log")),
-		"-ea",
+		"-XX:MaxRAMPercentage=70",
 	}
 	properties = append(properties, additionalProperties...)
 	sort.Strings(properties)
@@ -844,18 +771,16 @@ func Test_Properties(t *testing.T) {
 		},
 		{
 			name:          "override options from CLI, YAML should be ignored",
-			cliProperties: []string{"-Dfus.internal.reduce.initial.delay=false", "-Dide.warmup.use.predicates=true", "-Didea.application.info.value=0", "idea.headless.enable.statistics=false"},
+			cliProperties: []string{"idea.headless.enable.statistics=false"},
 			qodanaYaml: "" +
 				"version: \"1.0\"\n" +
 				"properties:\n" +
-				"  fus.internal.reduce.initial.delay: true\n" +
+				"  idea.headless.enable.statistics: true\n" +
 				"  idea.application.info.value: 0\n",
 			isContainer: false,
 			expected: append([]string{
-				"-Dfus.internal.reduce.initial.delay=false",
-				"-Dide.warmup.use.predicates=true",
 				"-Didea.application.info.value=0",
-			}, propertiesFixture(false, []string{})[3:]...),
+			}, propertiesFixture(false, []string{})...),
 		},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
