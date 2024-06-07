@@ -209,7 +209,7 @@ func getCustomPluginPaths() string {
 
 // writeProperties writes the given key=value `props` to file `f` (sets the environment variable)
 func writeProperties(opts *QodanaOptions) { // opts.confDirPath(Prod.Version)  opts.vmOptionsPath(Prod.Version)
-	properties := GetProperties(opts, platform.Config.Properties, platform.Config.DotNet, getPluginIds(platform.Config.Plugins))
+	properties := GetProperties(opts, opts.QdConfig.Properties, opts.QdConfig.DotNet, getPluginIds(opts.QdConfig.Plugins))
 	err := os.WriteFile(opts.vmOptionsPath(), []byte(strings.Join(properties, "\n")), 0o644)
 	if err != nil {
 		log.Fatal(err)

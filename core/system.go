@@ -195,8 +195,8 @@ func RunAnalysis(ctx context.Context, options *QodanaOptions) int {
 	scenario := options.determineRunScenario(startHash != "")
 	// this way of running needs to do bootstrap twice on different commits and will do it internally
 	if scenario != runScenarioScoped && options.Ide != "" {
-		platform.Bootstrap(platform.Config.Bootstrap, options.ProjectDir)
-		installPlugins(platform.Config.Plugins)
+		platform.Bootstrap(options.QdConfig.Bootstrap, options.ProjectDir)
+		installPlugins(options.QdConfig.Plugins)
 	}
 	switch scenario {
 	case runScenarioFullHistory:
@@ -327,7 +327,7 @@ func runScopeScript(ctx context.Context, options *QodanaOptions, startHash strin
 		configAtHash, e := platform.GetQodanaYaml(options.ProjectDir)
 		if e != nil {
 			log.Warnf("Could not read qodana yaml at %s: %v. Using last known config", hash, e)
-			configAtHash = platform.Config
+			configAtHash = options.QdConfig
 		}
 		platform.Bootstrap(configAtHash.Bootstrap, options.ProjectDir)
 		installPlugins(configAtHash.Plugins)
