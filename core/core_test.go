@@ -226,14 +226,8 @@ func Test_setDeviceID(t *testing.T) {
 	}
 
 	tc := "Empty"
-	err = os.Setenv("SALT", "")
-	if err != nil {
-		t.Fatal(err)
-	}
-	err = os.Setenv("DEVICEID", "")
-	if err != nil {
-		t.Fatal(err)
-	}
+	t.Setenv("SALT", "")
+	t.Setenv("DEVICEID", "")
 	tmpDir := filepath.Join(os.TempDir(), "deviceID")
 	err = os.MkdirAll(tmpDir, 0o755)
 	if err != nil {
@@ -287,10 +281,7 @@ func Test_setDeviceID(t *testing.T) {
 	}
 
 	tc = "FromQodanaRemoteUrlEnv"
-	err = os.Setenv("QODANA_REMOTE_URL", "ssh://git@git/repo")
-	if err != nil {
-		t.Fatal(err)
-	}
+	t.Setenv("QODANA_REMOTE_URL", "ssh://git@git/repo")
 	actualDeviceIdSalt = platform.GetDeviceIdSalt()
 	expectedDeviceIdSalt = []string{
 		"200820300000000-a294-0dd1-57f5-9f44b322ff64",
@@ -301,14 +292,8 @@ func Test_setDeviceID(t *testing.T) {
 	}
 
 	tc = "FromEnv"
-	err = os.Setenv("SALT", "salt")
-	if err != nil {
-		t.Fatal(err)
-	}
-	err = os.Setenv("DEVICEID", "device")
-	if err != nil {
-		t.Fatal(err)
-	}
+	t.Setenv("SALT", "salt")
+	t.Setenv("DEVICEID", "device")
 	actualDeviceIdSalt = platform.GetDeviceIdSalt()
 	expectedDeviceIdSalt = []string{
 		"device",
@@ -362,12 +347,9 @@ func Test_createUser(t *testing.T) {
 		return
 	}
 
-	err := os.Setenv(platform.QodanaDockerEnv, "true")
-	if err != nil {
-		t.Fatal(err)
-	}
+	t.Setenv(platform.QodanaDockerEnv, "true")
 	tc := "User"
-	err = os.MkdirAll("/tmp/entrypoint", 0o755)
+	err := os.MkdirAll("/tmp/entrypoint", 0o755)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -651,14 +633,8 @@ func TestSetupLicenseToken(t *testing.T) {
 		},
 	} {
 		t.Run(testData.name, func(t *testing.T) {
-			err := os.Setenv(platform.QodanaLicenseOnlyToken, testData.loToken)
-			if err != nil {
-				t.Fatal(err)
-			}
-			err = os.Setenv(platform.QodanaToken, testData.token)
-			if err != nil {
-				t.Fatal(err)
-			}
+			t.Setenv(platform.QodanaLicenseOnlyToken, testData.loToken)
+			t.Setenv(platform.QodanaToken, testData.token)
 			cloud.SetupLicenseToken(testData.token)
 
 			if cloud.Token.Token != testData.resToken {
@@ -673,16 +649,6 @@ func TestSetupLicenseToken(t *testing.T) {
 			toSendReports := cloud.Token.IsAllowedToSendReports()
 			if toSendReports != testData.sendReport {
 				t.Errorf("expected allow send report to be '%t' got '%t'", testData.sendReport, toSendReports)
-			}
-
-			err = os.Unsetenv(platform.QodanaLicenseOnlyToken)
-			if err != nil {
-				t.Fatal(err)
-			}
-
-			err = os.Unsetenv(platform.QodanaToken)
-			if err != nil {
-				t.Fatal(err)
 			}
 		})
 	}
@@ -736,27 +702,9 @@ func TestQodanaOptions_RequiresToken(t *testing.T) {
 
 		t.Run(tt.name, func(t *testing.T) {
 			if tt.name == platform.QodanaToken {
-				err := os.Setenv(platform.QodanaToken, "test")
-				if err != nil {
-					t.Fatal(err)
-				}
-				defer func() {
-					err := os.Unsetenv(platform.QodanaToken)
-					if err != nil {
-						t.Fatal(err)
-					}
-				}()
+				t.Setenv(platform.QodanaToken, "test")
 			} else if tt.name == platform.QodanaLicense {
-				err := os.Setenv(platform.QodanaLicense, "test")
-				if err != nil {
-					t.Fatal(err)
-				}
-				defer func() {
-					err := os.Unsetenv(platform.QodanaLicense)
-					if err != nil {
-						t.Fatal(err)
-					}
-				}()
+				t.Setenv(platform.QodanaLicense, "test")
 			}
 			o := &QodanaOptions{
 				&platform.QodanaOptions{
@@ -768,14 +716,8 @@ func TestQodanaOptions_RequiresToken(t *testing.T) {
 			assert.Equal(t, tt.expected, result)
 		})
 		if token != "" {
-			err := os.Setenv(platform.QodanaToken, token)
-			if err != nil {
-				t.Fatal(err)
-			}
-			err = os.Setenv(platform.QodanaLicenseOnlyToken, token)
-			if err != nil {
-				t.Fatal(err)
-			}
+			t.Setenv(platform.QodanaToken, token)
+			t.Setenv(platform.QodanaLicenseOnlyToken, token)
 		}
 	}
 }
@@ -845,27 +787,12 @@ func Test_Properties(t *testing.T) {
 	Prod.Code = "QDNET"
 	Prod.Version = "2023.3"
 
-	err := os.Setenv(platform.QodanaDistEnv, opts.ProjectDir)
-	if err != nil {
-		t.Fatal(err)
-	}
-	err = os.Setenv(platform.QodanaConfEnv, opts.ProjectDir)
-	if err != nil {
-		t.Fatal(err)
-	}
-	err = os.Setenv(platform.QodanaDockerEnv, "true")
-	if err != nil {
-		t.Fatal(err)
-	}
-	err = os.Setenv("DEVICEID", "FAKE")
-	if err != nil {
-		t.Fatal(err)
-	}
-	err = os.Setenv("SALT", "FAKE")
-	if err != nil {
-		t.Fatal(err)
-	}
-	err = os.MkdirAll(opts.ProjectDir, 0o755)
+	t.Setenv(platform.QodanaDistEnv, opts.ProjectDir)
+	t.Setenv(platform.QodanaConfEnv, opts.ProjectDir)
+	t.Setenv(platform.QodanaDockerEnv, "true")
+	t.Setenv("DEVICEID", "FAKE")
+	t.Setenv("SALT", "FAKE")
+	err := os.MkdirAll(opts.ProjectDir, 0o755)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -882,7 +809,7 @@ func Test_Properties(t *testing.T) {
 			cliProperties: []string{},
 			qodanaYaml:    "dotnet:\n   project: project.csproj",
 			isContainer:   false,
-			expected:      propertiesFixture(true, []string{"-Dqodana.net.project=project.csproj", "-Dqodana.net.targetFrameworks=!net48;!net472;!net471;!net47;!net462;!net461;!net46;!net452;!net451;!net45;!net403;!net40;!net35;!net20;!net11"}),
+			expected:      propertiesFixture(true, []string{"-Dqodana.net.project=project.csproj"}),
 		},
 		{
 			name:          "target frameworks set in YAML",
@@ -939,18 +866,14 @@ func Test_Properties(t *testing.T) {
 			opts.Property = tc.cliProperties
 			qConfig := platform.GetQodanaYamlOrDefault(opts.ProjectDir)
 			if tc.isContainer {
-				err = os.Setenv(platform.QodanaDockerEnv, "true")
+				t.Setenv(platform.QodanaDockerEnv, "true")
+			} else {
+				err := os.Unsetenv(platform.QodanaDockerEnv)
 				if err != nil {
 					t.Fatal(err)
 				}
 			}
 			actual := GetProperties(opts, qConfig.Properties, qConfig.DotNet, []string{})
-			if tc.isContainer {
-				err = os.Unsetenv(platform.QodanaDockerEnv)
-				if err != nil {
-					t.Fatal(err)
-				}
-			}
 			assert.Equal(t, tc.expected, actual)
 		})
 	}
