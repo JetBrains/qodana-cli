@@ -1,0 +1,19 @@
+version: "1.0"
+linter: jetbrains/qodana-go:latest
+licenseRules:
+  - keys:
+      - Apache-2.0
+    allowed:
+      - BSD-XGB
+      - CC-BY-SA-4.0
+      - MPL-2.0
+      - Unlicense
+      - BSD-3-CLAUSE-NO-TRADEMARK
+exclude:
+  - name: VgoDependencyUpdateAvailable
+  - name: All
+    paths:
+      - .github/qodana.sarif.json
+raiseLicenseProblems: true
+projectLicenses:
+  - key: AGPL-3.0-or-later
