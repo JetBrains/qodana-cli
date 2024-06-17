@@ -52,7 +52,7 @@ var langsProductCodes = map[string][]string{
 	"C++":               {QDCL, QDNET},
 }
 
-var AllSupportedPaidCodes = []string{QDJVM, QDPHP, QDPY, QDJS, QDGO, QDNET}
+var AllSupportedPaidCodes = []string{QDJVM, QDPHP, QDPY, QDJS, QDGO, QDNET, QDAND}
 var AllSupportedFreeCodes = []string{QDJVMC, QDPYC, QDANDC, QDNETC, QDCL}
 
 func allImages(codes []string) []string {
