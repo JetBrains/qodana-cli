@@ -15,5 +15,3 @@ exclude:
     paths:
       - .github/qodana.sarif.json
 raiseLicenseProblems: true
-projectLicenses:
-  - key: AGPL-3.0-or-later
