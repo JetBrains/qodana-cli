@@ -47,6 +47,7 @@ var (
 	QDRUBY         = "QDRUBY"
 	QDCL           = "QDCL"
 	DockerImageMap = map[string]string{
+		QDAND:  "jetbrains/qodana-android:",
 		QDANDC: "jetbrains/qodana-jvm-android:",
 		QDPHP:  "jetbrains/qodana-php:",
 		QDJS:   "jetbrains/qodana-js:",
@@ -107,6 +108,12 @@ func GetAnalyzer(path string, yamlName string, token string, writeYaml bool) str
 				analyzers = AllCodes
 			}
 		}
+		// breaking change will not be backported to 241
+		//if (Contains(analyzers, QDAND) || Contains(analyzers, QDANDC)) && isAndroidProject(path) {
+		//	analyzers = Remove(analyzers, QDAND)
+		//	analyzers = Remove(analyzers, QDANDC)
+		//	analyzers = append([]string{QDAND, QDANDC}, analyzers...)
+		//}
 	}, "Scanning project", "")
 
 	selector := func(choices []string) string {

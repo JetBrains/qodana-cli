@@ -65,6 +65,15 @@ func Append(slice []string, elems ...string) []string {
 	return slice
 }
 
+func Remove(s []string, r string) []string {
+	for i, v := range s {
+		if v == r {
+			return append(s[:i], s[i+1:]...)
+		}
+	}
+	return s
+}
+
 // CheckDirFiles checks if a directory contains files.
 func CheckDirFiles(dir string) bool {
 	files, err := os.ReadDir(dir)
