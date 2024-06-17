@@ -34,7 +34,7 @@ jobs:
         uses: docker/setup-buildx-action@v3
       - if: steps.changes.outputs.dockerfile == 'true'
         name: Build
-        uses: docker/build-push-action@v5
+        uses: docker/build-push-action@v6
         with:
           tags: jetbrains/qodana-${{ matrix.linter }}:2024.1
           context: 2024.1/${{ matrix.linter }}
@@ -64,7 +64,7 @@ jobs:
         uses: docker/setup-buildx-action@v3
       - if: steps.changes.outputs.dockerfile == 'true'
         name: Build
-        uses: docker/build-push-action@v5
+        uses: docker/build-push-action@v6
         with:
           tags: jetbrains/qodana-${{ matrix.linter }}:2023.3
           context: 2023.3/${{ matrix.linter }}
@@ -94,7 +94,7 @@ jobs:
         uses: docker/setup-buildx-action@v3
       - if: steps.changes.outputs.dockerfile == 'true'
         name: Build
-        uses: docker/build-push-action@v5
+        uses: docker/build-push-action@v6
         with:
           tags: jetbrains/qodana-${{ matrix.linter }}:2023.2
           context: 2023.2/${{ matrix.linter }}
