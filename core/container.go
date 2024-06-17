@@ -63,6 +63,14 @@ var (
 func runQodanaContainer(ctx context.Context, options *QodanaOptions) int {
 	resetScanStages()
 	docker := getContainerClient()
+	info, err := docker.Info(ctx)
+	if err != nil {
+		log.Fatal("Couldn't retrieve Docker daemon information", err)
+	}
+	if info.OSType != "linux" {
+		platform.ErrorMessage("Container engine is not running a Linux platform, other platforms are not supported by Qodana")
+		return 1
+	}
 
 	fixDarwinCaches(options)
 
