@@ -109,11 +109,11 @@ func GetAnalyzer(path string, yamlName string, token string, writeYaml bool) str
 			}
 		}
 		// breaking change will not be backported to 241
-		//if (Contains(analyzers, QDAND) || Contains(analyzers, QDANDC)) && isAndroidProject(path) {
-		//	analyzers = Remove(analyzers, QDAND)
-		//	analyzers = Remove(analyzers, QDANDC)
-		//	analyzers = append([]string{QDAND, QDANDC}, analyzers...)
-		//}
+		if (Contains(analyzers, QDAND) || Contains(analyzers, QDANDC)) && isAndroidProject(path) {
+			analyzers = Remove(analyzers, QDAND)
+			analyzers = Remove(analyzers, QDANDC)
+			analyzers = append([]string{QDAND, QDANDC}, analyzers...)
+		}
 	}, "Scanning project", "")
 
 	selector := func(choices []string) string {
