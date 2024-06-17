@@ -38,8 +38,8 @@ const (
 
 // langsProductCodes is a map of languages to linters.
 var langsProductCodes = map[string][]string{
-	"Java":              {QDJVM, QDJVMC, QDANDC},
-	"Kotlin":            {QDJVM, QDJVMC, QDANDC},
+	"Java":              {QDJVM, QDJVMC, QDAND, QDANDC},
+	"Kotlin":            {QDJVM, QDJVMC, QDAND, QDANDC},
 	"PHP":               {QDPHP},
 	"Python":            {QDPY, QDPYC},
 	"JavaScript":        {QDJS},
@@ -235,4 +235,28 @@ func readIdeaDir(project string) []string {
 		}
 	}
 	return languages
+}
+
+// isAndroidProject checks if the given directory is an Android project by checking AndroidManifest
+// https://developer.android.com/guide/topics/manifest/manifest-intro
+func isAndroidProject(projectDir string) bool {
+	var foundManifest bool
+	err := filepath.Walk(projectDir, func(path string, info os.FileInfo, err error) error {
+		if err != nil {
+			return err
+		}
+		if info.IsDir() {
+			return nil
+		}
+		if strings.HasSuffix(info.Name(), "AndroidManifest.xml") {
+			foundManifest = true
+			return filepath.SkipDir
+		}
+
+		return nil
+	})
+	if err != nil {
+		log.Fatal("Error walking the path: ", err)
+	}
+	return foundManifest
 }
