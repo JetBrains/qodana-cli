@@ -11,7 +11,7 @@ require (
 	github.com/otiai10/copy v1.14.0
 	github.com/pterm/pterm v0.12.79
 	github.com/sirupsen/logrus v1.9.3
-	github.com/spf13/cobra v1.8.0
+	github.com/spf13/cobra v1.8.1
 	github.com/stretchr/testify v1.9.0
 	github.com/zalando/go-keyring v0.2.5
 	gopkg.in/yaml.v3 v3.0.1
