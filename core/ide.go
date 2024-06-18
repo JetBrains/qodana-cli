@@ -239,6 +239,7 @@ var ( // base script name
 	rubyMine  = "rubymine"
 	goLand    = "goland"
 	rustRover = "rustrover"
+	clion     = "clion"
 )
 
 var supportedIdes = [...]string{
@@ -250,6 +251,7 @@ var supportedIdes = [...]string{
 	rubyMine,
 	goLand,
 	rustRover,
+	clion,
 }
 
 func toQodanaCode(baseProduct string) string {
@@ -274,6 +276,8 @@ func toQodanaCode(baseProduct string) string {
 		return platform.QDRUBY
 	case "RR":
 		return platform.QDRST
+	case "CL":
+		return platform.QDCPP
 	default:
 		return "QD"
 	}
@@ -297,6 +301,8 @@ func scriptToProductCode(scriptName string) string {
 		return platform.QDGO
 	case rustRover:
 		return platform.QDRST
+	case clion:
+		return platform.QDCPP
 	default:
 		return "QD"
 	}

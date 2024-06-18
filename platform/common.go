@@ -46,6 +46,7 @@ var (
 	QDRST          = "QDRST"
 	QDRUBY         = "QDRUBY"
 	QDCL           = "QDCL"
+	QDCPP          = "QDCPP"
 	DockerImageMap = map[string]string{
 		QDAND:  "jetbrains/qodana-android:",
 		QDANDC: "jetbrains/qodana-jvm-android:",
