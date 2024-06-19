@@ -260,7 +260,7 @@ func guessProduct(opts *QodanaOptions) {
 		}
 
 		if v, ok := productInfo["versionSuffix"]; ok {
-			Prod.EAP = v.(string) == "EAP"
+			Prod.EAP = strings.HasPrefix(v.(string), "EAP")
 		} else {
 			Prod.EAP = false
 		}
