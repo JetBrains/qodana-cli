@@ -53,6 +53,7 @@ var (
 		platform.QDPYC: "PCC",
 		platform.QDGO:  "GO",
 		platform.QDRST: "RR",
+		platform.QDCPP: "CL",
 	}
 )
 

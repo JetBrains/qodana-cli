@@ -107,6 +107,8 @@ func (p *product) parentPrefix() string {
 		return "Ruby"
 	case platform.QDRST:
 		return "RustRover"
+	case platform.QDCPP:
+		return "CLion"
 	default:
 		return "Idea"
 	}
@@ -152,6 +154,8 @@ func getProductNameFromCode(code string) string {
 		return "Qodana for Rust"
 	case platform.QDRUBY:
 		return "Qodana for Ruby"
+	case platform.QDCPP:
+		return "Qodana for C/C++"
 	default:
 		return "Qodana"
 	}
