@@ -22,6 +22,7 @@ com.jetbrains.rider.fsharp
 org.jetbrains.fortea
 com.intellij.cidr.debugger
 intellij.rider.cpp.debugger
+com.jetbrains.rider.rdct-shared
 com.jetbrains.xaml.previewer
 com.intellij.plugins.watcher
 com.jetbrains.plugins.webDeployment
