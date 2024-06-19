@@ -10,6 +10,10 @@ group "more" {
   targets = ["other"]
 }
 
+group "clang" {
+  targets = ["cpp"]
+}
+
 target "debian" {
   tags = [
     "registry.jetbrains.team/p/sa/containers/qodana:debian-base-latest"
@@ -54,11 +58,26 @@ target "python-js" {
 target "other" {
   name = "${edition}-base-latest"
   matrix = {
-    edition = ["dotnet", "go", "js", "php", "rust", "ruby", "cpp", "cdnet"]
+    edition = ["dotnet", "go", "js", "php", "rust", "ruby", "cdnet"]
   }
   tags = [
     "registry.jetbrains.team/p/sa/containers/qodana:${edition}-base-latest"
   ]
   platforms = ["linux/amd64", "linux/arm64"]
   dockerfile = "${edition}.Dockerfile"
+}
+
+target "cpp" {
+  matrix = {
+    clang = ["15", "16", "17", "18"]
+  }
+  name = "cpp-base-${clang}-latest"
+  tags = [
+      "registry.jetbrains.team/p/sa/containers/qodana:cpp-base-${clang}-latest"
+  ]
+  platforms = ["linux/amd64", "linux/arm64"]
+  dockerfile = "cpp.Dockerfile"
+  args = {
+    CLANG = clang
+  }
 }

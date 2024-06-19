@@ -1,6 +1,6 @@
 ARG BASE_TAG="bookworm-slim"
-
 FROM debian:$BASE_TAG
+ARG CLANG="16"
 
 # renovate: datasource=repology depName=debian_12/ca-certificates versioning=loose
 ENV CA_CERTIFICATES_VERSION="20230311"
@@ -32,16 +32,14 @@ ENV MAKE_VERSION="4.3-4.1"
 ENV PATCH_VERSION="2.7.6-7"
 # renovate: datasource=repology depName=debian_12/libc6-dev versioning=loose
 ENV LIBC6_DEV_VERSION="2.36-9+deb12u7"
-# renovate: datasource=repology depName=debian_12/wget versioning=loose
-ENV WGET_VERSION="1.21.3-1+b1"
 
 ENV QODANA_DATA="/data" \
     QODANA_DOCKER="true"
 ENV PATH="/opt/qodana:${PATH}"
 
-ENV CXX="/usr/lib/llvm-16/bin/clang++" \
-    CC="/usr/lib/llvm-16/bin/clang" \
-    CPLUS_INCLUDE_PATH="/usr/lib/clang/16/include"
+ENV CXX="/usr/lib/llvm-$CLANG/bin/clang++" \
+    CC="/usr/lib/llvm-$CLANG/bin/clang" \
+    CPLUS_INCLUDE_PATH="/usr/lib/clang/$CLANG/include"
 
 # hadolint ignore=SC2174,DL3009
 RUN --mount=target=/var/lib/apt/lists,type=cache,sharing=locked \
@@ -66,19 +64,19 @@ RUN --mount=target=/var/lib/apt/lists,type=cache,sharing=locked \
         libc6-dev=$LIBC6_DEV_VERSION && \
     apt-get autoremove -y && apt-get clean
 
-RUN echo "deb https://apt.llvm.org/bookworm/ llvm-toolchain-bookworm-16 main" > /etc/apt/sources.list.d/llvm.list && \
+RUN echo "deb https://apt.llvm.org/bookworm/ llvm-toolchain-bookworm-$CLANG main" > /etc/apt/sources.list.d/llvm.list && \
     curl -s https://apt.llvm.org/llvm-snapshot.gpg.key | gpg --dearmor > /etc/apt/trusted.gpg.d/llvm.gpg && \
     apt-key adv --keyserver keyserver.ubuntu.com --recv-keys "15CF4D18AF4F7421" && \
     apt-get -qq update && \
     apt-get install -qqy -t \
-      llvm-toolchain-bookworm-16 \
-      clang-16 \
-      clang-tidy-16 \
-      clang-format-16 \
-      lld-16 \
-      libc++-16-dev \
-      libc++abi-16-dev && \
-    for f in /usr/lib/llvm-16/bin/*; do ln -sf "$f" /usr/bin; done && \
+      llvm-toolchain-bookworm-$CLANG \
+      clang-$CLANG \
+      clang-tidy-$CLANG \
+      clang-format-$CLANG \
+      lld-$CLANG \
+      libc++-$CLANG-dev \
+      libc++abi-$CLANG-dev && \
+    for f in /usr/lib/llvm-$CLANG/bin/*; do ln -sf "$f" /usr/bin; done && \
     ln -sf clang /usr/bin/cc && \
     ln -sf clang /usr/bin/c89 && \
     ln -sf clang /usr/bin/c99 && \

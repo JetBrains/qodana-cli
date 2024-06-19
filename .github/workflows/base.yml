@@ -20,6 +20,11 @@ jobs:
       matrix:
         version: [ "next", "2024.1", "2023.3", "2023.2" ]
         group: [ "default", "more" ]
+        include:
+          - version: "next"
+            group: "clang"
+          - version: "2024.1"
+            group: "clang"
     runs-on: ubuntu-latest
     steps:
       - name: Clean up

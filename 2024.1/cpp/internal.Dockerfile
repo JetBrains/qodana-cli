@@ -1,4 +1,5 @@
-FROM registry.jetbrains.team/p/sa/containers/qodana:cpp-base-latest
+ARG CLANG_VERSION="16"
+FROM registry.jetbrains.team/p/sa/containers/qodana:cpp-base-$CLANG_VERSION-latest
 
 ARG TARGETPLATFORM
 COPY $TARGETPLATFORM/qodana-clang /opt/qodana/qodana
