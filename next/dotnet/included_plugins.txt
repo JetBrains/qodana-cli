@@ -61,6 +61,7 @@ org.jetbrains.plugins.vue
 org.intellij.plugins.postcss
 com.intellij.plugins.dependencyAnalysis
 com.jetbrains.restClient
+com.intellij.modules.rider.cpp.core
 com.intellij.hardcodedPasswords
 com.intellij.react
 intellij.nextjs
