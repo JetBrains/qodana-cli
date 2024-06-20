@@ -99,3 +99,4 @@ intellij.webp
 com.intellij.react
 intellij.nextjs
 intellij.vitejs
+com.intellij.jsonpath
