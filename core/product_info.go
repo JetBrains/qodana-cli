@@ -70,6 +70,8 @@ func (p *product) JbrJava() string {
 
 func (p *product) vmOptionsEnv() string {
 	switch p.BaseScriptName {
+	case idea:
+		return "IDEA_VM_OPTIONS"
 	case phpStorm:
 		return "PHPSTORM_VM_OPTIONS"
 	case webStorm:
@@ -84,8 +86,11 @@ func (p *product) vmOptionsEnv() string {
 		return "GOLAND_VM_OPTIONS"
 	case rustRover:
 		return "RUSTROVER_VM_OPTIONS"
+	case clion:
+		return "CLION_VM_OPTIONS"
 	default:
-		return "IDEA_VM_OPTIONS"
+		log.Fatalf("Usupported base script name for vmoptions file: %s", p.BaseScriptName)
+		return ""
 	}
 }
 
