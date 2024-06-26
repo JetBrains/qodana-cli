@@ -18,12 +18,14 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        version: [ "next", "2024.1", "2023.3", "2023.2" ]
+        version: [ "next", "2024.2", "2024.1", "2023.3" ]
         group: [ "default", "more" ]
         include:
           - version: "next"
             group: "clang"
           - version: "2024.1"
+            group: "clang"
+          - version: "2024.2"
             group: "clang"
     runs-on: ubuntu-latest
     steps:
