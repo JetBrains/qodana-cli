@@ -25,7 +25,6 @@ package platform
 import (
 	"crypto/md5"
 	"encoding/hex"
-	"encoding/xml"
 	"github.com/JetBrains/qodana-cli/v2024/cloud"
 	cp "github.com/otiai10/copy"
 	log "github.com/sirupsen/logrus"
@@ -35,16 +34,8 @@ import (
 	"path/filepath"
 )
 
-const PublisherJarName = "publisher.jar"
-
-type metadata struct {
-	Versioning versioning `xml:"versioning"`
-}
-
-type versioning struct {
-	Latest  string `xml:"latest"`
-	Release string `xml:"release"`
-}
+const PublisherJarName = "publisher-cli.jar"
+const PublisherVersion = "2.1.32"
 
 // SendReport sends report to Qodana Cloud.
 func SendReport(opts *QodanaOptions, token string, publisherPath string, javaPath string) {
@@ -105,37 +96,12 @@ func getPublisherArgs(java string, publisher string, opts *QodanaOptions, token 
 	return publisherArgs
 }
 
-func publisherVersion() versioning {
-	resp, err := http.Get("https://packages.jetbrains.team/maven/p/ij/intellij-dependencies/org/jetbrains/qodana/publisher/maven-metadata.xml")
-	if err != nil {
-		log.Fatal(err)
-	}
-	defer func(Body io.ReadCloser) {
-		err := Body.Close()
-		if err != nil {
-			log.Fatal(err)
-		}
-	}(resp.Body)
-
-	content, err := io.ReadAll(resp.Body)
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	meta := &metadata{}
-	err = xml.Unmarshal(content, meta)
-	if err != nil {
-		log.Fatal(err)
-	}
-	return meta.Versioning
-}
-
 func getPublisherUrl(version string) string {
 	return "https://packages.jetbrains.team/maven/p/ij/intellij-dependencies/org/jetbrains/qodana/publisher-cli/" + version + "/publisher-cli-" + version + ".jar"
 }
 
 func fetchPublisher(path string) {
-	jarVersion := publisherVersion().Release
+	jarVersion := PublisherVersion
 	if _, err := os.Stat(path); err == nil {
 		return
 	}
