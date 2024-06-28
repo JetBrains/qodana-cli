@@ -35,7 +35,7 @@ import (
 )
 
 const PublisherJarName = "publisher-cli.jar"
-const PublisherVersion = "2.1.32"
+const PublisherVersion = "2.1.31"
 
 // SendReport sends report to Qodana Cloud.
 func SendReport(opts *QodanaOptions, token string, publisherPath string, javaPath string) {
