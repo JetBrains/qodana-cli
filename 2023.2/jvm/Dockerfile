@@ -19,12 +19,12 @@ RUN --mount=target=/var/lib/apt/lists,type=cache,sharing=locked \
     mkdir -m 777 -p /opt $QODANA_DATA $QODANA_CONF && apt-get update && \
     DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
         ca-certificates=20210119 \
-        curl=7.74.0-1.3+deb11u11 \
+        curl=7.74.0-1.3+deb11u12 \
         fontconfig=2.13.1-4.2 \
         git=1:2.30.2-1+deb11u2 \
         git-lfs=2.13.2-1+b5 \
         gnupg2=2.2.27-2+deb11u2 \
-        locales=2.31-13+deb11u8 \
+        locales=2.31-13+deb11u10 \
         procps=2:3.3.17-5 && \
     echo 'en_US.UTF-8 UTF-8' > /etc/locale.gen && locale-gen && \
     apt-get autoremove -y && apt-get clean && \

@@ -6,7 +6,7 @@ FROM debian:$BASE_TAG
 # renovate: datasource=repology depName=debian_11/ca-certificates versioning=loose
 ENV CA_CERTIFICATES_VERSION="20210119"
 # renovate: datasource=repology depName=debian_11/curl versioning=loose
-ENV CURL_VERSION="7.74.0-1.3+deb11u11"
+ENV CURL_VERSION="7.74.0-1.3+deb11u12"
 # renovate: datasource=repology depName=debian_11/fontconfig versioning=loose
 ENV FONTCONFIG_VERSION="2.13.1-4.2"
 # renovate: datasource=repology depName=debian_11/git versioning=loose
@@ -16,13 +16,13 @@ ENV GIT_LFS_VERSION="2.13.2-1+b5"
 # renovate: datasource=repology depName=debian_11/gnupg2 versioning=loose
 ENV GNUPG2_VERSION="2.2.27-2+deb11u2"
 # renovate: datasource=repology depName=debian_11/locales versioning=loose
-ENV LOCALES_VERSION="2.31-13+deb11u8"
+ENV LOCALES_VERSION="2.31-13+deb11u10"
 # renovate: datasource=repology depName=debian_11/procps versioning=loose
 ENV PROCPS_VERSION="2:3.3.17-5"
 # renovate: datasource=repology depName=debian_11/bzip2 versioning=loose
 ENV BZIP2_VERSION="1.0.8-4"
 # renovate: datasource=repology depName=debian_11/libglib2.0-0 versioning=loose
-ENV LIBGLIB2_0_0_VERSION="2.66.8-1+deb11u1"
+ENV LIBGLIB2_0_0_VERSION="2.66.8-1+deb11u4"
 # renovate: datasource=repology depName=debian_11/libsm6 versioning=loose
 ENV LIBSM6_VERSION="2:1.2.3-1"
 # renovate: datasource=repology depName=debian_11/libxext6 versioning=loose

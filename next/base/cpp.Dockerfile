@@ -4,7 +4,7 @@ ARG CLANG="16"
 # renovate: datasource=repology depName=debian_12/ca-certificates versioning=loose
 ENV CA_CERTIFICATES_VERSION="20230311"
 # renovate: datasource=repology depName=debian_12/curl versioning=loose
-ENV CURL_VERSION="7.88.1-10+deb12u5"
+ENV CURL_VERSION="7.88.1-10+deb12u6"
 # renovate: datasource=repology depName=debian_12/git versioning=loose
 ENV GIT_VERSION="1:2.39.2-1.1"
 # renovate: datasource=repology depName=debian_12/git-lfs versioning=loose

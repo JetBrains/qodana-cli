@@ -7,7 +7,7 @@ FROM ruby:$RUBY_TAG
 # renovate: datasource=repology depName=debian_11/ca-certificates versioning=loose
 ENV CA_CERTIFICATES_VERSION="20210119"
 # renovate: datasource=repology depName=debian_11/curl versioning=loose
-ENV CURL_VERSION="7.74.0-1.3+deb11u11"
+ENV CURL_VERSION="7.74.0-1.3+deb11u12"
 # renovate: datasource=repology depName=debian_11/fontconfig versioning=loose
 ENV FONTCONFIG_VERSION="2.13.1-4.2"
 # renovate: datasource=repology depName=debian_11/git versioning=loose
@@ -17,7 +17,7 @@ ENV GIT_LFS_VERSION="2.13.2-1+b5"
 # renovate: datasource=repology depName=debian_11/gnupg2 versioning=loose
 ENV GNUPG2_VERSION="2.2.27-2+deb11u2"
 # renovate: datasource=repology depName=debian_11/locales versioning=loose
-ENV LOCALES_VERSION="2.31-13+deb11u8"
+ENV LOCALES_VERSION="2.31-13+deb11u10"
 # renovate: datasource=repology depName=debian_11/procps versioning=loose
 ENV PROCPS_VERSION="2:3.3.17-5"
 # renovate: datasource=npm depName=eslint

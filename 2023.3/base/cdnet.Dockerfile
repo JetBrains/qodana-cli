@@ -4,7 +4,7 @@ FROM mcr.microsoft.com/dotnet/sdk:$DOTNET_BASE_TAG
 # renovate: datasource=repology depName=debian_11/ca-certificates versioning=loose
 ENV CA_CERTIFICATES_VERSION="20210119"
 # renovate: datasource=repology depName=debian_11/curl versioning=loose
-ENV CURL_VERSION="7.74.0-1.3+deb11u11"
+ENV CURL_VERSION="7.74.0-1.3+deb11u12"
 # renovate: datasource=repology depName=debian_11/git versioning=loose
 ENV GIT_VERSION="1:2.30.2-1+deb11u2"
 # renovate: datasource=repology depName=debian_11/git-lfs versioning=loose
