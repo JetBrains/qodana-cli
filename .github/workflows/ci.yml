@@ -41,7 +41,7 @@ jobs:
           platforms: ${{ matrix.platform }}
           push: false
           cache-from: type=gha
-          cache-to: type=gha,mode=max
+          cache-to: type=gha,mode=max,ignore-error=true
 
   build241:
     name: "2024.1"
