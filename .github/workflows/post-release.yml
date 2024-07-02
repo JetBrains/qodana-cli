@@ -35,17 +35,17 @@ jobs:
       - run: >
           set -e &&
           echo "${SHA256} *komac.tar.gz" > shasum &&
-          curl -fSsL https://github.com/russellbanks/Komac/releases/download/v2.2.1/KomacPortable-linux-x64.tar.gz -o komac.tar.gz &&
+          curl -fSsL https://github.com/russellbanks/Komac/releases/download/v2.3.0/komac-2.3.0-x86_64-unknown-linux-gnu.tar.gz -o komac.tar.gz &&
           sha256sum --check --status shasum &&
           tar -xzf komac.tar.gz && chmod +x KomacPortable-linux-x64
         env:
-          SHA256: 4d0530246a7e867166bc728c4128832765c24dc6ca197cbad99dc983fabd2f81
+          SHA256: 84eaa5e5344c8b1ffbab9cb78d388310d617a84727a7c3be3c562c8d663d51c4
       - run: |
           export VERSION=${{ github.event.release.name }}
-          ./KomacPortable-linux-x64 update \
-            --identifier 'JetBrains.QodanaCLI' \
+          ./komac update \
+            'JetBrains.QodanaCLI' \
             --version $(echo "$VERSION" | sed 's/^v//') \
-            --urls "https://github.com/JetBrains/qodana-cli/releases/download/$VERSION/qodana_windows_arm64.zip,https://github.com/JetBrains/qodana-cli/releases/download/$VERSION/qodana_windows_x86_64.zip" \
+            --urls https://github.com/JetBrains/qodana-cli/releases/download/$VERSION/qodana_windows_arm64.zip https://github.com/JetBrains/qodana-cli/releases/download/$VERSION/qodana_windows_x86_64.zip \
             --submit
         env:
           GITHUB_TOKEN: ${{ secrets.WINGET_GH_PAT_TOKEN }}
