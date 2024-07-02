@@ -121,7 +121,9 @@ func ValidateTokenPrintProject(token string) {
 		ErrorMessage(cloud.InvalidTokenMessage)
 		os.Exit(1)
 	} else {
-		SuccessMessage("Linked %s project: %s", cloud.GetCloudRootEndpoint().Host, projectName)
+		if !IsContainer() {
+			SuccessMessage("Linked %s project: %s", cloud.GetCloudRootEndpoint().Host, projectName)
+		}
 	}
 }
 
