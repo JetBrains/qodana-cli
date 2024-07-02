@@ -43,7 +43,7 @@ jobs:
       - run: |
           export VERSION=${{ github.event.release.name }}
           ./KomacPortable-linux-x64 update \
-            --id 'JetBrains.QodanaCLI' \
+            --identifier 'JetBrains.QodanaCLI' \
             --version $(echo "$VERSION" | sed 's/^v//') \
             --urls "https://github.com/JetBrains/qodana-cli/releases/download/$VERSION/qodana_windows_arm64.zip,https://github.com/JetBrains/qodana-cli/releases/download/$VERSION/qodana_windows_x86_64.zip" \
             --submit
