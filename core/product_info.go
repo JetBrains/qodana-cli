@@ -151,6 +151,10 @@ func getProductNameFromCode(code string) string {
 		return "Qodana for JS"
 	case platform.QDNET:
 		return "Qodana for .NET"
+	case platform.QDNETC:
+		return "Qodana Community for .NET"
+	case platform.QDCL:
+		return "Qodana for C/C++"
 	case platform.QDPY:
 		return "Qodana for Python"
 	case platform.QDGO:
