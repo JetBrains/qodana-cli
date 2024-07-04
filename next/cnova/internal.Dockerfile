@@ -10,7 +10,6 @@ RUN chmod +x $QODANA_DIST/bin/*.sh $QODANA_DIST/bin/qodana && \
     update-alternatives --set java $JAVA_HOME/bin/java && \
     update-alternatives --set javac $JAVA_HOME/bin/javac && \
     chmod 777 /etc/passwd && \
-    apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y libicu67=67.1-7 && \
     rm -rf /var/cache/apt /var/lib/apt/ /tmp/*
 
 LABEL maintainer="qodana-support@jetbrains.com" description="Qodana for C/C++ (https://jb.gg/qodana-cpp)"
