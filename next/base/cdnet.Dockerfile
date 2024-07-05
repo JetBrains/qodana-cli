@@ -13,8 +13,12 @@ ENV GIT_LFS_VERSION="2.13.2-1+b5"
 ENV GNUPG2_VERSION="2.2.27-2+deb11u2"
 # renovate: datasource=repology depName=debian_11/default-jre versioning=loose
 ENV DEFAULT_JRE_VERSION="2:1.11-72"
+# renovate: datasource=repology depName=debian_11/locales versioning=loose
+ENV LOCALES_VERSION="2.31-13+deb11u10"
 
-ENV QODANA_DATA="/data" \
+ENV HOME="/root" \
+    LC_ALL="en_US.UTF-8" \
+    QODANA_DATA="/data" \
     QODANA_DOCKER="true" \
     PATH="/opt/qodana:${PATH}"
 
@@ -37,7 +41,9 @@ RUN --mount=target=/var/lib/apt/lists,type=cache,sharing=locked \
         default-jre=$DEFAULT_JRE_VERSION \
         git=$GIT_VERSION \
         git-lfs=$GIT_LFS_VERSION \
-        gnupg2=$GNUPG2_VERSION && \
+        gnupg2=$GNUPG2_VERSION \
+        locales=$LOCALES_VERSION && \
+    echo 'en_US.UTF-8 UTF-8' > /etc/locale.gen && locale-gen && \
     apt-get autoremove -y && apt-get clean && \
     curl -fsSL -o /tmp/dotnet-install.sh  \
          "https://raw.githubusercontent.com/dotnet/install-scripts/$DOTNET_INSTALL_SH_REVISION/src/dotnet-install.sh" && \
@@ -47,4 +53,7 @@ RUN --mount=target=/var/lib/apt/lists,type=cache,sharing=locked \
     bash /tmp/dotnet-install.sh -c $DOTNET_CHANNEL_A -i $DOTNET_ROOT && \
     bash /tmp/dotnet-install.sh -c $DOTNET_CHANNEL_B -i $DOTNET_ROOT && \
     bash /tmp/dotnet-install.sh -c $DOTNET_CHANNEL_C -i $DOTNET_ROOT && \
-    chmod 777 -R $DOTNET_ROOT
+    chmod 777 -R $DOTNET_ROOT && \
+    chmod 777 -R $HOME && \
+    echo 'root:x:0:0:root:/root:/bin/bash' > /etc/passwd && chmod 666 /etc/passwd && \
+    git config --global --add safe.directory '*'

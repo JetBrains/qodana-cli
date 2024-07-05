@@ -31,10 +31,14 @@ ENV MAKE_VERSION="4.3-4.1"
 ENV PATCH_VERSION="2.7.6-7"
 # renovate: datasource=repology depName=debian_12/libc6-dev versioning=loose
 ENV LIBC6_DEV_VERSION="2.36-9+deb12u7"
+# renovate: datasource=repology depName=debian_11/locales versioning=loose
+ENV LOCALES_VERSION="2.36-9+deb12u7"
 
-ENV QODANA_DATA="/data" \
-    QODANA_DOCKER="true"
-ENV PATH="/opt/qodana:${PATH}"
+ENV HOME="/root" \
+    LC_ALL="en_US.UTF-8" \
+    QODANA_DATA="/data" \
+    QODANA_DOCKER="true" \
+    PATH="/opt/qodana:${PATH}"
 
 ENV CXX="/usr/lib/llvm-$CLANG/bin/clang++" \
     CC="/usr/lib/llvm-$CLANG/bin/clang" \
@@ -60,8 +64,13 @@ RUN --mount=target=/var/lib/apt/lists,type=cache,sharing=locked \
         file=$FILE_VERSION \
         make=$MAKE_VERSION \
         patch=$PATCH_VERSION \
-        libc6-dev=$LIBC6_DEV_VERSION && \
-    apt-get autoremove -y && apt-get clean
+        libc6-dev=$LIBC6_DEV_VERSION \
+        locales=$LOCALES_VERSION && \
+    echo 'en_US.UTF-8 UTF-8' > /etc/locale.gen && locale-gen && \
+    apt-get autoremove -y && apt-get clean && \
+    chmod 777 -R $HOME && \
+    echo 'root:x:0:0:root:/root:/bin/bash' > /etc/passwd && chmod 666 /etc/passwd && \
+    git config --global --add safe.directory '*'
 
 RUN echo "deb https://apt.llvm.org/bookworm/ llvm-toolchain-bookworm-${CLANG} main" > /etc/apt/sources.list.d/llvm.list && \
     curl -s https://apt.llvm.org/llvm-snapshot.gpg.key | gpg --dearmor > /etc/apt/trusted.gpg.d/llvm.gpg && \
