@@ -58,7 +58,7 @@ target "python-js" {
 target "other" {
   name = "${edition}-base-latest"
   matrix = {
-    edition = ["dotnet", "go", "js", "php", "rust", "ruby", "cdnet"]
+    edition = ["dotnet", "go", "js", "php", "rust", "ruby", "cdnet", "cnova"]
   }
   tags = [
     "registry.jetbrains.team/p/sa/containers/qodana:${edition}-base-latest"
