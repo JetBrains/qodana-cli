@@ -77,15 +77,14 @@ func runQodanaLocal(opts *QodanaOptions) (int, error) {
 }
 
 func getIdeRunCommand(opts *QodanaOptions) []string {
-
-	args := []string{platform.QuoteForWindows(Prod.IdeScript)}
+	args := []string{platform.QuoteIfSpace(Prod.IdeScript)}
 	if !Prod.is242orNewer() {
 		args = append(args, "inspect")
 	}
 	args = append(args, "qodana")
 
 	args = append(args, GetIdeArgs(opts)...)
-	args = append(args, platform.QuoteForWindows(opts.ProjectDir), platform.QuoteForWindows(opts.ResultsDir))
+	args = append(args, platform.QuoteIfSpace(opts.ProjectDir), platform.QuoteIfSpace(opts.ResultsDir))
 	return args
 }
 
@@ -452,7 +451,7 @@ func prepareDirectories(cacheDir string, logDir string, confDir string) {
 func installPlugins(plugins []platform.Plugin) {
 	for _, plugin := range plugins {
 		log.Printf("Installing plugin %s", plugin.Id)
-		if res, err := platform.RunCmd("", platform.QuoteForWindows(Prod.IdeScript), "installPlugins", plugin.Id); res > 0 || err != nil {
+		if res, err := platform.RunCmd("", platform.QuoteIfSpace(Prod.IdeScript), "installPlugins", platform.QuoteIfSpace(plugin.Id)); res > 0 || err != nil {
 			os.Exit(res)
 		}
 	}

@@ -400,19 +400,13 @@ func TestAllCommandsWithContainer(t *testing.T) {
 }
 
 func TestScanWithIde(t *testing.T) {
-	t.Skip("This test is needed to be updated for 242")
 	log.SetLevel(log.DebugLevel)
-	ide := "QDNET"
 	token := os.Getenv("QODANA_LICENSE_ONLY_TOKEN")
 	if //goland:noinspection GoBoolExpressions
 	token == "" {
 		t.Skip("set your token here to run the test")
 	}
-	if //goland:noinspection GoBoolExpressions
-	runtime.GOOS == "darwin" {
-		t.Skip("Mac OS not supported in native")
-	}
-	projectPath := createNativeProject(t, "qodana_scan_rd")
+	projectPath := ".."
 	resultsPath := filepath.Join(projectPath, "results")
 	err := os.MkdirAll(resultsPath, 0o755)
 	if err != nil {
@@ -425,7 +419,7 @@ func TestScanWithIde(t *testing.T) {
 	command.SetArgs([]string{
 		"-i", projectPath,
 		"-o", resultsPath,
-		"--ide", ide,
+		"--ide", "QDGO-EAP",
 		"--property",
 		"idea.headless.enable.statistics=false",
 	})

@@ -23,15 +23,15 @@ import (
 func TestGetProductByCode(t *testing.T) {
 	product, err := GetProductByCode("RD")
 	if err != nil {
-		t.Fail()
+		t.Fatalf("Error getting product: %s", err)
 	}
 	if product == nil {
-		t.Fail()
+		t.Fatalf("Product is nil")
 	}
 
 	eap := SelectLatestCompatibleRelease(product, "eap")
 	if eap == nil {
-		t.Fail()
+		t.Fatalf("EAP is nil")
 	}
 
 	release := SelectLatestCompatibleRelease(product, "release")
