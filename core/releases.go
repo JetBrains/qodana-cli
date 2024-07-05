@@ -30,7 +30,12 @@ import (
 	"path/filepath"
 )
 
-const productFeed = "https://raw.githubusercontent.com/JetBrains/qodana-docker/main/feed/releases.json"
+func getProductFeed() string {
+	if feed := os.Getenv("QD_PRODUCT_INTERNAL_FEED"); feed != "" {
+		return feed
+	}
+	return "https://raw.githubusercontent.com/JetBrains/qodana-docker/main/feed/releases.json"
+}
 
 type Product struct {
 	Code     string
@@ -69,7 +74,7 @@ func GetProductByCode(code string) (*Product, error) {
 
 	path := filepath.Join(tempDir, "productInfo.json")
 
-	if err := platform.DownloadFile(path, productFeed, nil); err != nil {
+	if err := platform.DownloadFile(path, getProductFeed(), nil); err != nil {
 		return nil, err
 	}
 

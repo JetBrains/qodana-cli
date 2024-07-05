@@ -39,7 +39,7 @@ var (
 	eapVer      = "eap"
 	versionsMap = map[string]string{
 		releaseVer: "2024.1",
-		eapVer:     "2024.1",
+		eapVer:     "2024.2",
 	}
 	Products = map[string]string{
 		platform.QDJVM:  "IIU",
@@ -132,22 +132,14 @@ func getIde(productCode string) *ReleaseDownloadInfo {
 		return nil
 	}
 
-	supportedCode := false
-	for _, v := range platform.AllNativeCodes {
-		if v == productCode {
-			supportedCode = true
-			break
-		}
-	}
-
-	if !supportedCode {
+	if !platform.Contains(platform.AllNativeCodes, productCode) {
 		platform.ErrorMessage("Product code is not supported: ", originalCode)
 		return nil
 	}
 
 	product, err := GetProductByCode(Products[productCode])
 	if err != nil || product == nil {
-		platform.ErrorMessage("Error while obtaining the product info")
+		platform.ErrorMessage("Error while obtaining the product info: " + err.Error())
 		return nil
 	}
 

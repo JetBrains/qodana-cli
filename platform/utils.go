@@ -213,35 +213,39 @@ func LaunchAndLog(opts *QodanaOptions, executable string, args ...string) (strin
 	return stdout, stderr, ret, nil
 }
 
-// DownloadFile downloads a file from a given url to a given filepath.
+// DownloadFile downloads a file from a given URL to a given filepath.
 func DownloadFile(filepath string, url string, spinner *pterm.SpinnerPrinter) error {
 	response, err := http.Head(url)
 	if err != nil {
-		return err
+		return fmt.Errorf("error making HEAD request: %w", err)
 	}
-	size, _ := strconv.Atoi(response.Header.Get("Content-Length"))
+
+	sizeStr := response.Header.Get("Content-Length")
+	if sizeStr == "" {
+		sizeStr = "-1"
+	}
+	size, err := strconv.Atoi(sizeStr)
+	if err != nil {
+		return fmt.Errorf("error converting Content-Length to integer: %w", err)
+	}
 
 	resp, err := http.Get(url)
 	if err != nil {
-		return err
+		return fmt.Errorf("error making GET request: %w", err)
 	}
-
 	defer func(Body io.ReadCloser) {
-		err := Body.Close()
-		if err != nil {
-			log.Fatalf("Error while closing HTTP stream: %v", err)
+		if err := Body.Close(); err != nil {
+			fmt.Printf("Error while closing HTTP stream: %v\n", err)
 		}
 	}(resp.Body)
 
 	out, err := os.Create(filepath)
 	if err != nil {
-		return err
+		return fmt.Errorf("error creating file: %w", err)
 	}
-
 	defer func(out *os.File) {
-		err := out.Close()
-		if err != nil {
-			log.Fatalf("Error while closing output file: %v", err)
+		if err := out.Close(); err != nil {
+			fmt.Printf("Error while closing output file: %v\n", err)
 		}
 	}(out)
 
@@ -255,7 +259,7 @@ func DownloadFile(filepath string, url string, spinner *pterm.SpinnerPrinter) er
 	for {
 		length, err := resp.Body.Read(buffer)
 		if err != nil && err != io.EOF {
-			return err
+			return fmt.Errorf("error reading response body: %w", err)
 		}
 		total += length
 		if spinner != nil && total-lastTotal > 1024*1024 {
@@ -266,12 +270,13 @@ func DownloadFile(filepath string, url string, spinner *pterm.SpinnerPrinter) er
 			break
 		}
 		if _, err = out.Write(buffer[:length]); err != nil {
-			return err
+			return fmt.Errorf("error writing to file: %w", err)
 		}
 	}
 
-	if total != size {
-		return fmt.Errorf("downloaded file size doesn't match expected size")
+	// Check if the size matches, but only if the Content-Length header was present and valid
+	if size > 0 && total != size {
+		return fmt.Errorf("downloaded file size doesn't match expected size, got %d, expected %d", total, size)
 	}
 
 	if spinner != nil {
