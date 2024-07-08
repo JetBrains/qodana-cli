@@ -57,10 +57,10 @@ github.com/Microsoft/go-winio v0.6.1/go.mod h1:LRdKpFKfdobln8UmuiYcKPot9D2v6svN5
 github.com/alessio/shellescape v1.4.1 h1:V7yhSDDn8LP4lc4jS8pFkt0zCnzVJlG5JXy9BVKJUX0=
 github.com/alessio/shellescape v1.4.1/go.mod h1:PZAiSCk0LJaZkiCSkPv8qIobYglO3FPpyFjDCtHLS30=
 github.com/atomicgo/cursor v0.0.1/go.mod h1:cBON2QmmrysudxNBFthvMtN32r3jxVRIvzkUiF/RuIk=
-github.com/boyter/gocodewalker v1.3.2 h1:aXC/Z0/lYKZUXNjpSl5kwfgdJs9qxkIoMatk6LyhdOY=
-github.com/boyter/gocodewalker v1.3.2/go.mod h1:hXG8xzR1uURS+99P5/3xh3uWHjaV2XfoMMmvPyhrCDg=
-github.com/boyter/scc/v3 v3.3.4 h1:iRbY4RyVmDAKx96WHs06S/BwrlbS6v2anTlPVhBT5Eg=
-github.com/boyter/scc/v3 v3.3.4/go.mod h1:XkakiNpC5L7GuQu8a7NDQUVzg2v3s4pA0glUbbpWiGs=
+github.com/boyter/gocodewalker v1.3.3 h1:yPSbWT1wGmPSC73jASY0GaJu4EDN3FROfwYUDQjTmuE=
+github.com/boyter/gocodewalker v1.3.3/go.mod h1:hXG8xzR1uURS+99P5/3xh3uWHjaV2XfoMMmvPyhrCDg=
+github.com/boyter/scc/v3 v3.3.5 h1:xM/nsHj8BdM+TO6b3THGX5Wc70g+NSFihxxAVTQNRtc=
+github.com/boyter/scc/v3 v3.3.5/go.mod h1:2BymOEKnEn8dCdiTnZv8mf9u3ZEo+DHYvxQ+dnRk9mw=
 github.com/census-instrumentation/opencensus-proto v0.2.1/go.mod h1:f6KPmirojxKA12rnyqOA5BBL4O983OfeGPqjHWSTneU=
 github.com/chzyer/logex v1.1.10/go.mod h1:+Ywpsq7O8HXn0nuIou7OrIPyXbp3wmkHB+jjWRnGsAI=
 github.com/chzyer/readline v0.0.0-20180603132655-2972be24d48e/go.mod h1:nSuG5e5PlCu98SY8svDHJxuZscDgtXS6KTTbou5AhLI=
