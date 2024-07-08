@@ -6,7 +6,7 @@ require (
 	github.com/JetBrains/qodana-cli/v2024/cloud v0.0.0-00010101000000-000000000000
 	github.com/JetBrains/qodana-cli/v2024/core v0.0.0-00010101000000-000000000000
 	github.com/JetBrains/qodana-cli/v2024/platform v0.0.0-00010101000000-000000000000
-	github.com/boyter/scc/v3 v3.3.4
+	github.com/boyter/scc/v3 v3.3.5
 	github.com/docker/docker v20.10.23+incompatible // DO NOT UPDATE: breaking changes
 	github.com/sirupsen/logrus v1.9.3
 	github.com/spf13/cobra v1.8.1
@@ -33,7 +33,7 @@ require (
 	github.com/JetBrains/qodana-cli/v2024/tooling v0.0.0-00010101000000-000000000000 // indirect
 	github.com/Microsoft/go-winio v0.6.1 // indirect
 	github.com/alessio/shellescape v1.4.1 // indirect
-	github.com/boyter/gocodewalker v1.3.2 // indirect
+	github.com/boyter/gocodewalker v1.3.3 // indirect
 	github.com/containerd/console v1.0.3 // indirect
 	github.com/cucumber/ci-environment/go v0.0.0-20230911180507-bd001ebc644c // indirect
 	github.com/danieljoos/wincred v1.2.0 // indirect
