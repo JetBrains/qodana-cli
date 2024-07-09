@@ -80,7 +80,7 @@ type QodanaYaml struct {
 	FailThreshold *int `yaml:"failThreshold,omitempty"`
 
 	// Script is the run scenario. 'default' by default
-	Script string `yaml:"script,omitempty"`
+	Script Script `yaml:"script,omitempty"`
 
 	// Clude property to disable the wanted checks on the wanted paths.
 	Excludes []Clude `yaml:"exclude,omitempty"`
@@ -340,6 +340,11 @@ type CoverageThresholds struct {
 	// The run fails if the percentage of total lines covered is lower than this
 	// number.
 	Total *int `json:"total,omitempty" yaml:"total,omitempty" mapstructure:"total,omitempty"`
+}
+
+type Script struct {
+	Name       string            `yaml:"name,omitempty"`
+	Parameters map[string]string `yaml:"parameters,omitempty"`
 }
 
 // IsEmpty checks whether the .NET configuration is empty or not.
