@@ -1,19 +1,19 @@
 version: "1.0"
+exclude:
+  - name: All
+    paths:
+      - .github/qodana.sarif.json
+  - name: VgoDependencyUpdateAvailable
 linter: jetbrains/qodana-go:latest
 licenseRules:
   - keys:
       - Apache-2.0
     allowed:
+      - BSD-3-CLAUSE-NO-TRADEMARK
       - BSD-XGB
       - CC-BY-SA-4.0
       - MPL-2.0
       - Unlicense
-      - BSD-3-CLAUSE-NO-TRADEMARK
 dependencyIgnores:
   - name: github.com/JetBrains/qodana-cli/v2024/clangd
-exclude:
-  - name: VgoDependencyUpdateAvailable
-  - name: All
-    paths:
-      - .github/qodana.sarif.json
 raiseLicenseProblems: true
