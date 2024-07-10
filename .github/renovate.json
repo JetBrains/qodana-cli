@@ -30,5 +30,6 @@
       "paths": ["next"]
     }
   ],
-  "commitMessagePrefix": "QD-8148 "
+  "commitMessagePrefix": "QD-8148 ",
+  "ignorePaths": ["2023.2/**", "2023.3/**", "2024.1/**"]
 }
