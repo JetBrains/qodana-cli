@@ -22,7 +22,7 @@ ENV PROCPS_VERSION="2:3.3.17-5"
 # renovate: datasource=npm depName=eslint
 ENV ESLINT_VERSION="9.6.0"
 # renovate: datasource=npm depName=pnpm
-ENV PNPM_VERSION="8.15.8"
+ENV PNPM_VERSION="9.5.0"
 
 ENV HOME="/root" \
     LC_ALL="en_US.UTF-8" \

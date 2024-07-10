@@ -22,7 +22,7 @@ ENV PKGCONFIG_VERSION="0.29.2-1"
 # renovate: datasource=npm depName=eslint
 ENV ESLINT_VERSION="9.6.0"
 # renovate: datasource=npm depName=pnpm
-ENV PNPM_VERSION="8.15.8"
+ENV PNPM_VERSION="9.5.0"
 
 ARG TARGETPLATFORM
 

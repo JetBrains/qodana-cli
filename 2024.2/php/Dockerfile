@@ -30,7 +30,7 @@ ENV UNZIP_VERSION="6.0-26+deb11u1"
 # renovate: datasource=npm depName=eslint
 ENV ESLINT_VERSION="9.6.0"
 # renovate: datasource=npm depName=pnpm
-ENV PNPM_VERSION="8.15.8"
+ENV PNPM_VERSION="9.5.0"
 
 ENV HOME="/root" \
     LC_ALL="en_US.UTF-8" \
