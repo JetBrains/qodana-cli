@@ -23,6 +23,8 @@ intellij.python.community.impl
 com.jetbrains.pycharm.pro.customization
 com.jetbrains.pycharm.pro.sharedIndexes.bundled
 com.intellij.plugins.dependencyAnalysis
+com.intellij.notebooks.core
+intellij.jupyter.py
 org.jetbrains.security.package-checker
 NodeJS
 JavaScriptDebugger

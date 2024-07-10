@@ -22,6 +22,7 @@ Pythonid
 intellij.python.community.impl
 com.jetbrains.pycharm.pro.customization
 com.jetbrains.pycharm.pro.sharedIndexes.bundled
+intellij.jupyter.py
 com.intellij.plugins.dependencyAnalysis
 org.jetbrains.security.package-checker
 NodeJS
