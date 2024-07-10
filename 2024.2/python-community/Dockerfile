@@ -99,7 +99,8 @@ RUN --mount=target=/var/lib/apt/lists,type=cache,sharing=locked \
     echo "conda activate base" >> ~/.bashrc && ln -s ${CONDA_DIR}/bin/python3 /usr/bin/python3 && \
     find ${CONDA_DIR}/ -follow -type f -name '*.a' -delete && find ${CONDA_DIR}/ -follow -type f -name '*.js.map' -delete && \
     ${CONDA_DIR}/bin/conda install -c conda-forge poetry pipenv && ${CONDA_DIR}/bin/conda clean -afy && \
-    chmod 777 -R $HOME/.conda && \
+    poetry config virtualenvs.create false && \
+    chmod 777 -R $HOME/.conda $CONDA_DIR/bin $CONDA_DIR/lib $HOME/.config/pypoetry/ && \
     rm -rf /tmp/*
 
 ARG QD_RELEASE="2024.2"
