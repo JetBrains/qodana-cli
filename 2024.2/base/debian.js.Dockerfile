@@ -5,7 +5,7 @@ FROM debianbase
 # renovate: datasource=npm depName=eslint
 ENV ESLINT_VERSION="8.57.0"
 # renovate: datasource=npm depName=pnpm
-ENV PNPM_VERSION="8.15.7"
+ENV PNPM_VERSION="8.15.8"
 
 ENV PATH="/opt/yarn/bin:$PATH"
 COPY --from=node_base /usr/local/bin/node /usr/local/bin/

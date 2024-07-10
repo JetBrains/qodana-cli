@@ -1,8 +1,5 @@
-ARG NODE_TAG="22-bookworm-slim"
 ARG BASE_TAG="bookworm-slim"
-FROM node:$NODE_TAG AS node_base
 FROM debian:$BASE_TAG
-
 ARG CLANG="16"
 # renovate: datasource=repology depName=debian_12/ca-certificates versioning=loose
 ENV CA_CERTIFICATES_VERSION="20230311"
@@ -37,19 +34,11 @@ ENV LIBC6_DEV_VERSION="2.36-9+deb12u7"
 # renovate: datasource=repology depName=debian_11/locales versioning=loose
 ENV LOCALES_VERSION="2.36-9+deb12u7"
 
-# renovate: datasource=npm depName=eslint
-ENV ESLINT_VERSION="8.57.0"
-# renovate: datasource=npm depName=pnpm
-ENV PNPM_VERSION="8.15.8"
-
 ENV HOME="/root" \
     LC_ALL="en_US.UTF-8" \
-    QODANA_DIST="/opt/idea" \
     QODANA_DATA="/data" \
-    QODANA_DOCKER="true"
-ENV JAVA_HOME="$QODANA_DIST/jbr" \
-    QODANA_CONF="$HOME/.config/idea" \
-    PATH="/opt/yarn/bin:$QODANA_DIST/bin:$PATH"
+    QODANA_DOCKER="true" \
+    PATH="/opt/qodana:${PATH}"
 
 ENV CXX="/usr/lib/llvm-$CLANG/bin/clang++" \
     CC="/usr/lib/llvm-$CLANG/bin/clang" \
@@ -104,17 +93,49 @@ RUN echo "deb https://apt.llvm.org/bookworm/ llvm-toolchain-bookworm-${CLANG} ma
     rm -rf /var/lib/apt/lists/* && \
     apt-get autoremove -y && apt-get clean
 
-COPY --from=node_base /usr/local/bin/node /usr/local/bin/
-COPY --from=node_base /usr/local/include/node /usr/local/include/node
-COPY --from=node_base /usr/local/lib/node_modules /usr/local/lib/node_modules
-COPY --from=node_base /opt/yarn-* /opt/yarn/
+RUN apt-get update && \
+    apt-get install -y sudo && \
+    useradd -m -u 1001 -U qodana && \
+    passwd -d qodana && \
+    echo 'qodana ALL=(ALL) NOPASSWD:ALL' >> /etc/sudoers
 
-RUN ln -s /usr/local/lib/node_modules/npm/bin/npm-cli.js /usr/local/bin/npm && \
-    ln -s /usr/local/lib/node_modules/npm/bin/npx-cli.js /usr/local/bin/npx && \
-    ln -s /usr/local/lib/node_modules/corepack/dist/corepack.js /usr/local/bin/corepack && \
-    node --version && \
-    npm --version && \
-    yarn --version && \
-    npm install -g eslint@$ESLINT_VERSION pnpm@$PNPM_VERSION && npm config set update-notifier false && \
-    chmod 777 -R "$HOME/.npm" "$HOME/.npmrc" && \
-    mkdir -p -m 777 "$HOME/.m2" "$HOME/.m2/repository"
+ARG QD_RELEASE="2024.2"
+ARG QD_BUILD="QDCL-$QD_RELEASE"
+# hadolint ignore=DL3003,SC2043
+RUN set -ex && \
+    dpkgArch="$(dpkg --print-architecture)" && \
+    case "$dpkgArch" in \
+        "amd64") \
+            OS_ARCH_SUFFIX=""; \
+            ;; \
+        "arm64") \
+            OS_ARCH_SUFFIX="-aarch64"; \
+            ;; \
+        *) echo "Unsupported architecture $dpkgArch" >&2; exit 1 ;; \
+    esac && \
+    QD_NAME="qodana-$QD_BUILD$OS_ARCH_SUFFIX" \
+    QD_URL="https://download.jetbrains.com/qodana/$QD_RELEASE/$QD_NAME.tar.gz" && \
+    curl -fsSL "$QD_URL" -o "/tmp/$QD_NAME.tar.gz" \
+               "$QD_URL.sha256" -o "/tmp/$QD_NAME.tar.gz.sha256" \
+               "$QD_URL.sha256.asc" -o "/tmp/$QD_NAME.tar.gz.sha256.asc" && \
+    GNUPGHOME="$(mktemp -d)" && \
+    export GNUPGHOME && \
+    for key in \
+        "B46DC71E03FEEB7F89D1F2491F7A8F87B9D8F501" \
+      ; do \
+        gpg --batch --keyserver "hkps://keys.openpgp.org" --recv-keys "$key" || \
+        gpg --batch --keyserver "keyserver.ubuntu.com" --recv-keys "$key" ; \
+    done && \
+    gpg --verify "/tmp/$QD_NAME.tar.gz.sha256.asc" "/tmp/$QD_NAME.tar.gz.sha256" && \
+    (cd /tmp && sha256sum --check --status "$QD_NAME.tar.gz.sha256") && \
+    mkdir -p /tmp/qd && tar -xzf "/tmp/$QD_NAME.tar.gz" --directory /opt/qodana  && \
+    mv /opt/qodana/qodana-clang /opt/qodana/qodana && \
+    chmod +x /opt/qodana/qodana && \
+    apt-get purge --auto-remove -y gnupg2 && \
+    rm -rf /var/cache/apt /var/lib/apt/ /tmp/* "$GNUPGHOME"
+
+ENV PATH="/opt/qodana:${PATH}"
+
+LABEL maintainer="qodana-support@jetbrains.com" description="Qodana for C/C++ (CMake)"
+WORKDIR /data/project
+ENTRYPOINT ["qodana", "scan"]

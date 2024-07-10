@@ -1,4 +1,4 @@
-ARG RUST_TAG="1.77-slim-bullseye"
+ARG RUST_TAG="1.79-slim-bullseye"
 FROM rust:$RUST_TAG
 
 # renovate: datasource=repology depName=debian_11/ca-certificates versioning=loose
@@ -22,7 +22,7 @@ ENV PKGCONFIG_VERSION="0.29.2-1"
 # renovate: datasource=npm depName=eslint
 ENV ESLINT_VERSION="8.57.0"
 # renovate: datasource=npm depName=pnpm
-ENV PNPM_VERSION="8.15.7"
+ENV PNPM_VERSION="8.15.8"
 
 ARG TARGETPLATFORM
 
