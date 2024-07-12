@@ -53,6 +53,7 @@ func createProject(t *testing.T, name string) string {
 	return location
 }
 
+//goland:noinspection GoUnusedFunction
 func createNativeProject(t *testing.T, name string) string {
 	home, err := os.UserHomeDir()
 	if err != nil {
