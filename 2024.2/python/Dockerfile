@@ -151,7 +151,7 @@ RUN set -ex && \
     done && \
     gpg --verify "/tmp/$QD_NAME.tar.gz.sha256.asc" "/tmp/$QD_NAME.tar.gz.sha256" && \
     (cd /tmp && sha256sum --check --status "$QD_NAME.tar.gz.sha256") && \
-    mkdir -p /tmp/qd && tar -xzf "/tmp/$QD_NAME.tar.gz" --directory /tmp/qd --strip-components=1 && \
+    mkdir -p /tmp/qd && tar -xzf "/tmp/$QD_NAME.tar.gz" --directory /tmp/qd  && \
     mv /tmp/qd/qodana-QD* "$QODANA_DIST" && \
     chmod +x "$QODANA_DIST"/bin/*.sh "$QODANA_DIST"/bin/qodana && \
     update-alternatives --install /usr/bin/java java "$JAVA_HOME/bin/java" 0 && \
