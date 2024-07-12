@@ -74,6 +74,7 @@ RUN --mount=target=/var/lib/apt/lists,type=cache,sharing=locked \
     chmod 777 -R $DOTNET_ROOT
 
 ENV PATH="/opt/yarn/bin:$PATH"
+ENV SKIP_YARN_COREPACK_CHECK=0
 COPY --from=node_base /usr/local/bin/node /usr/local/bin/
 COPY --from=node_base /usr/local/include/node /usr/local/include/node
 COPY --from=node_base /usr/local/lib/node_modules /usr/local/lib/node_modules

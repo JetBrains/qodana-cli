@@ -8,6 +8,7 @@ ENV ESLINT_VERSION="8.57.0"
 ENV PNPM_VERSION="8.15.8"
 
 ENV PATH="/opt/yarn/bin:$PATH"
+ENV SKIP_YARN_COREPACK_CHECK=0
 COPY --from=node_base /usr/local/bin/node /usr/local/bin/
 COPY --from=node_base /usr/local/include/node /usr/local/include/node
 COPY --from=node_base /usr/local/lib/node_modules /usr/local/lib/node_modules

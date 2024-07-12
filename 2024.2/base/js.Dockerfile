@@ -54,3 +54,4 @@ RUN --mount=target=/var/lib/apt/lists,type=cache,sharing=locked \
     chmod 777 -R "$HOME/.npm" "$HOME/.npmrc"
 
 ENV PATH="/opt/yarn/bin:$PATH"
+ENV SKIP_YARN_COREPACK_CHECK=0
