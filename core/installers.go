@@ -104,7 +104,7 @@ func downloadAndInstallIDE(opts *QodanaOptions, baseDir string, spinner *pterm.S
 	case ".exe":
 		err = installIdeWindowsExe(downloadedIdePath, installDir)
 	case ".gz":
-		err = installIdeLinux(downloadedIdePath, installDir)
+		err = installIdeFromTar(downloadedIdePath, installDir)
 	case ".dmg":
 		err = installIdeMacOS(downloadedIdePath, installDir)
 	default:
@@ -152,9 +152,17 @@ func getIde(productCode string) *ReleaseDownloadInfo {
 	var downloadType string
 	switch runtime.GOOS {
 	case "darwin":
-		downloadType = "mac"
+		downloadType = "macTar"
+		_, ok := (*release.Downloads)[downloadType]
+		if !ok {
+			downloadType = "mac"
+		}
 		if runtime.GOARCH == "arm64" {
-			downloadType = "macM1"
+			downloadType = "macTarM1"
+			_, ok := (*release.Downloads)[downloadType]
+			if !ok {
+				downloadType = "macM1"
+			}
 		}
 	case "windows":
 		downloadType = "windowsZip"
@@ -199,18 +207,18 @@ func installIdeWindowsZip(archivePath string, targetDir string) error {
 	if err := os.MkdirAll(targetDir, os.ModePerm); err != nil {
 		log.Fatal("couldn't create a directory ", err.Error())
 	}
-	_, err := exec.Command("tar", "-xf", platform.QuoteForWindows(archivePath), "--strip-components", "2", "-C", platform.QuoteForWindows(targetDir)).Output()
+	_, err := exec.Command("tar", "-xf", platform.QuoteForWindows(archivePath), "-C", platform.QuoteForWindows(targetDir)).Output()
 	if err != nil {
 		return fmt.Errorf("tar: %s", err)
 	}
 	return nil
 }
 
-func installIdeLinux(archivePath string, targetDir string) error {
+func installIdeFromTar(archivePath string, targetDir string) error {
 	if err := os.MkdirAll(targetDir, os.ModePerm); err != nil {
 		log.Fatal("couldn't create a directory ", err.Error())
 	}
-	_, err := exec.Command("tar", "-xf", archivePath, "-C", targetDir, "--strip-components", "2").Output()
+	_, err := exec.Command("tar", "-xf", archivePath, "-C", targetDir, "--strip-components", "1").Output()
 	if err != nil {
 		return fmt.Errorf("tar: %s", err)
 	}
