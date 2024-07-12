@@ -68,5 +68,5 @@ RUN --mount=target=/var/lib/apt/lists,type=cache,sharing=locked \
     find ${CONDA_DIR}/ -follow -type f -name '*.a' -delete && find ${CONDA_DIR}/ -follow -type f -name '*.js.map' -delete && \
     ${CONDA_DIR}/bin/conda install -c conda-forge poetry pipenv && ${CONDA_DIR}/bin/conda clean -afy && \
     poetry config virtualenvs.create false && \
-    chmod 777 -R $HOME/.conda $CONDA_DIR/bin $CONDA_DIR/lib $HOME/.config/pypoetry/ && \
+    chmod 777 -R $HOME/.conda $CONDA_DIR/ $HOME/.config/pypoetry/ && \
     rm -rf /tmp/*
