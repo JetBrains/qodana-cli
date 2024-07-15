@@ -343,8 +343,8 @@ type CoverageThresholds struct {
 }
 
 type Script struct {
-	Name       string            `yaml:"name,omitempty"`
-	Parameters map[string]string `yaml:"parameters,omitempty"`
+	Name       string                 `yaml:"name,omitempty"`
+	Parameters map[string]interface{} `yaml:"parameters,omitempty"`
 }
 
 // IsEmpty checks whether the .NET configuration is empty or not.
