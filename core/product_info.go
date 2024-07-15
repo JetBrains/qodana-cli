@@ -205,7 +205,10 @@ func guessProduct(opts *QodanaOptions) {
 	Prod.Home = opts.Ide
 	if //goland:noinspection GoBoolExpressions
 	runtime.GOOS == "darwin" {
-		Prod.Home = filepath.Join(Prod.Home, "Contents")
+		contentsDir := filepath.Join(Prod.Home, "Contents")
+		if _, err := os.Stat(contentsDir); err == nil {
+			Prod.Home = contentsDir
+		}
 	}
 	if Prod.Home == "" {
 		if home, ok := os.LookupEnv(platform.QodanaDistEnv); ok {
