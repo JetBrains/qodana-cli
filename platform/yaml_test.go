@@ -14,10 +14,9 @@
  * limitations under the License.
  */
 
-package core
+package platform
 
 import (
-	"github.com/JetBrains/qodana-cli/v2024/platform"
 	log "github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
 	"os"
@@ -56,7 +55,7 @@ func TestLoadQodanaYaml(t *testing.T) {
 		setup       func(name string)
 		project     string
 		filename    string
-		expected    *platform.QodanaYaml
+		expected    *QodanaYaml
 	}{
 		{
 			description: "file exists but is empty",
@@ -65,7 +64,7 @@ func TestLoadQodanaYaml(t *testing.T) {
 			},
 			project:  os.TempDir(),
 			filename: "empty.yaml",
-			expected: &platform.QodanaYaml{},
+			expected: &QodanaYaml{},
 		},
 		{
 			description: "file exists with valid content",
@@ -75,7 +74,7 @@ func TestLoadQodanaYaml(t *testing.T) {
 			},
 			project:  os.TempDir(),
 			filename: "valid.yaml",
-			expected: &platform.QodanaYaml{
+			expected: &QodanaYaml{
 				Version: "1.0",
 			},
 		},
@@ -90,12 +89,58 @@ dotnet:
 			},
 			project:  os.TempDir(),
 			filename: "dotnet.yaml",
-			expected: &platform.QodanaYaml{
+			expected: &QodanaYaml{
 				Version: "1.0",
-				DotNet: platform.DotNet{
+				DotNet: DotNet{
 					Project:    "test.csproj",
 					Frameworks: "!netstandard2.0;!netstandard2.1",
 				},
+			},
+		},
+		{
+			description: "file exists with script section",
+			setup: func(name string) {
+				content := `
+version: 1.0
+profile:
+  name: qodana.starter
+script:
+  name: migrate-classes
+  parameters:
+    include-mapping: "Java EE to Jakarta EE"
+    mapping:
+      - old-name: "javax.management.j2ee"
+        new-name: "jakarta.management.j2ee"
+        type: "package"
+        recursive: "true"
+      - old-name: "javax.annotation.security.DenyAll"
+        new-name: "jakarta.annotation.security.DenyAll"
+        type: "class"`
+				setupTestFile(name, content)
+			},
+			project:  os.TempDir(),
+			filename: "script.yaml",
+			expected: &QodanaYaml{
+				Version: "1.0",
+				Profile: Profile{
+					Name: "qodana.starter",
+				},
+				Script: Script{Name: "migrate-classes", Parameters: map[string]interface{}{
+					"include-mapping": "Java EE to Jakarta EE",
+					"mapping": []interface{}{
+						map[string]interface{}{
+							"old-name":  "javax.management.j2ee",
+							"new-name":  "jakarta.management.j2ee",
+							"type":      "package",
+							"recursive": "true",
+						},
+						map[string]interface{}{
+							"old-name": "javax.annotation.security.DenyAll",
+							"new-name": "jakarta.annotation.security.DenyAll",
+							"type":     "class",
+						},
+					},
+				}},
 			},
 		},
 	}
@@ -103,7 +148,7 @@ dotnet:
 	for _, tc := range testCases {
 		t.Run(tc.description, func(t *testing.T) {
 			tc.setup(tc.filename)
-			actual := platform.LoadQodanaYaml(tc.project, tc.filename)
+			actual := LoadQodanaYaml(tc.project, tc.filename)
 			_ = os.Remove(filepath.Join(tc.project, tc.filename))
 			assert.Equal(t, tc.expected, actual)
 		})
