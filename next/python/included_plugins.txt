@@ -52,3 +52,4 @@ intellij.vitejs
 intellij.prettierJS
 com.deadlock.scsyntax
 com.intellij.jsonpath
+com.intellij.hardcodedPasswords
