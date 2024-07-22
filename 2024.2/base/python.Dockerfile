@@ -35,7 +35,7 @@ ENV CONDA_DIR="/opt/miniconda3" \
 ENV PATH="$CONDA_DIR/bin:$HOME/.local/bin:$PATH"
 
 # https://docs.conda.io/projects/miniconda/en/latest/miniconda-hashes.html
-ARG CONDA_VERSION="py312_24.5.0-0"
+ARG CONDA_VERSION="py311_24.5.0-0"
 
 # hadolint ignore=SC2174,DL3009
 RUN --mount=target=/var/lib/apt/lists,type=cache,sharing=locked \
@@ -52,10 +52,10 @@ RUN --mount=target=/var/lib/apt/lists,type=cache,sharing=locked \
     case "$dpkgArch" in \
       'amd64')  \
         MINICONDA_URL="https://repo.anaconda.com/miniconda/Miniconda3-${CONDA_VERSION}-Linux-x86_64.sh" \
-        SHA256SUM="4b3b3b1b99215e85fd73fb2c2d7ebf318ac942a457072de62d885056556eb83e";; \
+        SHA256SUM="38b203bb1f2be78b735ebc00162f29e8e73fcd9a619ed5980490a72193ee1f58";; \
       'arm64')  \
         MINICONDA_URL="https://repo.anaconda.com/miniconda/Miniconda3-${CONDA_VERSION}-Linux-aarch64.sh"  \
-        SHA256SUM="70afe954cc8ee91f605f9aa48985bfe01ecfc10751339e8245eac7262b01298d";; \
+        SHA256SUM="94a742af7bf5c7bae3dba6bd07d84d94b858b839e15af2ea0cd10fdf2bde8a73";; \
       *) echo "Unsupported architecture $TARGETPLATFORM" >&2; exit 1;; \
     esac && \
     curl -fsSL -o /tmp/miniconda.sh "${MINICONDA_URL}" && \
