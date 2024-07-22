@@ -32,7 +32,7 @@ ENV LIBXRENDER1_VERSION="1:0.9.10-1"
 # renovate: datasource=npm depName=eslint
 ENV ESLINT_VERSION="9.7.0"
 # renovate: datasource=npm depName=pnpm
-ENV PNPM_VERSION="9.5.0"
+ENV PNPM_VERSION="9.6.0"
 
 ENV HOME="/root" \
     LC_ALL="en_US.UTF-8" \
