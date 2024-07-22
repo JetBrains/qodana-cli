@@ -7,7 +7,6 @@ com.intellij.qt
 com.intellij.dev
 com.intellij.zh
 intellij.grid.core.impl
-PythonCore
 com.jetbrains.sh
 org.toml.lang
 com.intellij.jsonpath
