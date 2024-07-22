@@ -33,7 +33,7 @@ const (
 	QodanaSarifName = "qodana.sarif.json"
 	configName      = "qodana"
 	releaseVersion  = "2024.1"
-	shortVersion    = "241"
+	shortVersion    = "242"
 )
 
 // langsProductCodes is a map of languages to linters.
