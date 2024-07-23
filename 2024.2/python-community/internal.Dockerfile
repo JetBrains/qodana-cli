@@ -1,4 +1,4 @@
-FROM registry.jetbrains.team/p/sa/containers/qodana:python-base-latest
+FROM registry.jetbrains.team/p/sa/containers/qodana:python-base-242
 
 ARG TARGETPLATFORM
 ARG DEVICEID

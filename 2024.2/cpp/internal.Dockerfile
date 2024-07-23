@@ -1,4 +1,4 @@
-FROM registry.jetbrains.team/p/sa/containers/qodana:cpp-base-16-latest
+FROM registry.jetbrains.team/p/sa/containers/qodana:cpp-base-16-242
 
 ARG TARGETPLATFORM
 COPY $TARGETPLATFORM/qodana-clang /opt/qodana/qodana

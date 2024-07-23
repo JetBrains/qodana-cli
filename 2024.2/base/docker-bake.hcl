@@ -16,7 +16,7 @@ group "clang" {
 
 target "debian" {
   tags = [
-    "registry.jetbrains.team/p/sa/containers/qodana:debian-base-latest"
+    "registry.jetbrains.team/p/sa/containers/qodana:debian-base-242"
   ]
   platforms = ["linux/amd64", "linux/arm64"]
   dockerfile = "debian.Dockerfile"
@@ -27,7 +27,7 @@ target "debian-js" {
     debianbase = "target:debian"
   }
   tags = [
-    "registry.jetbrains.team/p/sa/containers/qodana:debian-js-base-latest"
+    "registry.jetbrains.team/p/sa/containers/qodana:debian-js-base-242"
   ]
   platforms = ["linux/amd64", "linux/arm64"]
   dockerfile = "debian.js.Dockerfile"
@@ -38,7 +38,7 @@ target "python" {
     debianbase = "target:debian"
   }
   tags = [
-    "registry.jetbrains.team/p/sa/containers/qodana:python-base-latest"
+    "registry.jetbrains.team/p/sa/containers/qodana:python-base-242"
   ]
   platforms = ["linux/amd64", "linux/arm64"]
   dockerfile = "python.Dockerfile"
@@ -49,19 +49,19 @@ target "python-js" {
     pythonbase = "target:python"
   }
   tags = [
-    "registry.jetbrains.team/p/sa/containers/qodana:python-js-base-latest"
+    "registry.jetbrains.team/p/sa/containers/qodana:python-js-base-242"
   ]
   platforms = ["linux/amd64", "linux/arm64"]
   dockerfile = "python.js.Dockerfile"
 }
 
 target "other" {
-  name = "${edition}-base-latest"
+  name = "${edition}-base-242"
   matrix = {
     edition = ["dotnet", "go", "js", "php", "rust", "ruby", "cdnet", "cnova"]
   }
   tags = [
-    "registry.jetbrains.team/p/sa/containers/qodana:${edition}-base-latest"
+    "registry.jetbrains.team/p/sa/containers/qodana:${edition}-base-242"
   ]
   platforms = ["linux/amd64", "linux/arm64"]
   dockerfile = "${edition}.Dockerfile"
@@ -71,9 +71,9 @@ target "cpp" {
   matrix = {
     clang = ["15", "16", "17", "18"]
   }
-  name = "cpp-base-${clang}-latest"
+  name = "cpp-base-${clang}-242"
   tags = [
-      "registry.jetbrains.team/p/sa/containers/qodana:cpp-base-${clang}-latest"
+      "registry.jetbrains.team/p/sa/containers/qodana:cpp-base-${clang}-242"
   ]
   platforms = ["linux/amd64", "linux/arm64"]
   dockerfile = "cpp.Dockerfile"

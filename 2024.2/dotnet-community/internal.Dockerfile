@@ -1,4 +1,4 @@
-FROM registry.jetbrains.team/p/sa/containers/qodana:cdnet-base-latest
+FROM registry.jetbrains.team/p/sa/containers/qodana:cdnet-base-242
 
 ARG TARGETPLATFORM
 COPY $TARGETPLATFORM/qodana-cdnet /opt/qodana/qodana

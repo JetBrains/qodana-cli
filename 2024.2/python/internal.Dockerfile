@@ -1,4 +1,4 @@
-FROM registry.jetbrains.team/p/sa/containers/qodana:python-js-base-latest
+FROM registry.jetbrains.team/p/sa/containers/qodana:python-js-base-242
 
 ARG TARGETPLATFORM
 ARG DEVICEID
