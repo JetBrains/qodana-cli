@@ -39,3 +39,11 @@ Commit messages should be well formatted, and to make that "standardized", we ar
 
 Push your branch to your repository fork and open a pull request against the
 main branch.
+
+## Create a new directory for a new release branch
+
+Run the script `release_branch.sh` with the release version as an argument. For example, to create a new directory for the 2024.3 release branch:
+
+```shell
+./release_branch.sh 2024.3
+```
