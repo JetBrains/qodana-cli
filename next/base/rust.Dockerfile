@@ -20,7 +20,7 @@ ENV PROCPS_VERSION="2:3.3.17-5"
 # renovate: datasource=repology depName=debian_11/pkg-config versioning=loose
 ENV PKGCONFIG_VERSION="0.29.2-1"
 # renovate: datasource=npm depName=eslint
-ENV ESLINT_VERSION="9.7.0"
+ENV ESLINT_VERSION="9.8.0"
 # renovate: datasource=npm depName=pnpm
 ENV PNPM_VERSION="9.6.0"
 
