@@ -1,4 +1,4 @@
-ARG RUST_TAG="1.79-slim-bullseye"
+ARG RUST_TAG="1.80-slim-bullseye"
 FROM rust:$RUST_TAG
 
 # renovate: datasource=repology depName=debian_11/ca-certificates versioning=loose
