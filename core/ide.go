@@ -17,8 +17,6 @@
 package core
 
 import (
-	"encoding/json"
-	"errors"
 	"fmt"
 	"github.com/JetBrains/qodana-cli/v2024/cloud"
 	"github.com/JetBrains/qodana-cli/v2024/platform"
@@ -315,30 +313,6 @@ func findIde(dir string) string {
 		}
 	}
 	return ""
-}
-
-// readIdeProductInfo returns IDE info from the given path.
-func readIdeProductInfo(ideDir string) map[string]interface{} {
-	if //goland:noinspection ALL
-	runtime.GOOS == "darwin" {
-		ideDir = filepath.Join(ideDir, "Resources")
-	}
-	productInfo := filepath.Join(ideDir, "product-info.json")
-	if _, err := os.Stat(productInfo); errors.Is(err, os.ErrNotExist) {
-		return nil
-	}
-	productInfoFile, err := os.ReadFile(productInfo)
-	if err != nil {
-		log.Printf("Problem loading product-info.json: %v ", err)
-		return nil
-	}
-	var productInfoMap map[string]interface{}
-	err = json.Unmarshal(productInfoFile, &productInfoMap)
-	if err != nil {
-		log.Printf("Not a valid product-info.json: %v ", err)
-		return nil
-	}
-	return productInfoMap
 }
 
 func prepareLocalIdeSettings(opts *QodanaOptions) {

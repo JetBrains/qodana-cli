@@ -80,14 +80,14 @@ func DownloadAndInstallIDE(ideName string, t *testing.T) {
 	runtime.GOOS == "darwin" {
 		ide = filepath.Join(ide, "Contents")
 	}
-	prod := readIdeProductInfo(ide)
+	prod, err := readIdeProductInfo(ide)
 	defer func(path string) {
 		err := os.RemoveAll(path)
 		if err != nil {
 			platform.ErrorMessage("Cannot clean up temp dir: %s", err)
 		}
 	}(ide) // clean up
-	if prod["productCode"] == "" {
+	if prod.ProductCode == "" {
 		t.Fail()
 	}
 }
