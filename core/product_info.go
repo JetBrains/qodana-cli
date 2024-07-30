@@ -17,6 +17,7 @@
 package core
 
 import (
+	"encoding/json"
 	"fmt"
 	"github.com/JetBrains/qodana-cli/v2024/platform"
 	"os"
@@ -37,6 +38,21 @@ type product struct {
 	Build          string
 	Home           string
 	EAP            bool
+}
+
+type Launch struct {
+	CustomCommands []struct {
+		Commands               []string
+		AdditionalJvmArguments []string
+	} `json:"customCommands"`
+}
+
+type ProductInfoJson struct {
+	Version       string   `json:"version"`
+	BuildNumber   string   `json:"buildNumber"`
+	ProductCode   string   `json:"productCode"`
+	VersionSuffix string   `json:"versionSuffix"`
+	Launch        []Launch `json:"launch"`
 }
 
 func (p *product) IdeBin() string {
@@ -249,38 +265,61 @@ func guessProduct(opts *QodanaOptions) {
 			Prod.IdeScript = filepath.Join(Prod.IdeBin(), fmt.Sprintf("%s%s", Prod.BaseScriptName, getScriptSuffix()))
 		}
 	}
-
-	treatAsRelease := os.Getenv(platform.QodanaTreatAsRelease)
-	if productInfo := readIdeProductInfo(Prod.Home); productInfo != nil {
-		if v, ok := productInfo["version"]; ok {
-			Prod.Version = v.(string)
-		} else {
-			Prod.Version = platform.Version
-		}
-
-		if v, ok := productInfo["buildNumber"]; ok {
-			Prod.Build = v.(string)
-		} else {
-			Prod.Build = platform.Version
-		}
-
-		if v, ok := productInfo["productCode"]; ok {
-			Prod.Code = toQodanaCode(v.(string))
-			Prod.Name = Prod.getProductNameFromCode()
-		} else {
-			Prod.Code = scriptToProductCode(Prod.BaseScriptName)
-		}
-
-		if v, ok := productInfo["versionSuffix"]; ok {
-			Prod.EAP = strings.HasPrefix(v.(string), "EAP")
-		} else {
-			Prod.EAP = false
-		}
-		if treatAsRelease == "true" {
-			Prod.EAP = true
-		}
+	productInfo, err := readIdeProductInfo(Prod.Home)
+	if err != nil {
+		log.Fatalf("Can't read product-info.json: %v ", err)
 	}
+	Prod.Version = productInfo.Version
+	Prod.Code = toQodanaCode(productInfo.ProductCode)
+	Prod.Name = Prod.getProductNameFromCode()
+	Prod.Build = productInfo.BuildNumber
+	Prod.EAP = isEap(*productInfo)
 
 	log.Debug(Prod)
 	platform.SetEnv(platform.QodanaDistEnv, Prod.Home)
+}
+
+func isEap(info ProductInfoJson) bool {
+	treatAsRelease := os.Getenv(platform.QodanaTreatAsRelease)
+	if treatAsRelease == "true" {
+		return true
+	}
+
+	for _, launch := range info.Launch {
+		for _, command := range launch.CustomCommands {
+			for _, cmd := range command.Commands {
+				if cmd == "qodana" {
+					for _, arg := range command.AdditionalJvmArguments {
+						if arg == "-Dqodana.eap=true" {
+							return true
+						}
+					}
+				}
+			}
+		}
+	}
+
+	return false
+}
+
+// readIdeProductInfo returns IDE info from the given path.
+func readIdeProductInfo(ideDir string) (*ProductInfoJson, error) {
+	if //goland:noinspection ALL
+	runtime.GOOS == "darwin" {
+		ideDir = filepath.Join(ideDir, "Resources")
+	}
+	productInfo := filepath.Join(ideDir, "product-info.json")
+	if _, err := os.Stat(productInfo); err != nil {
+		return nil, err
+	}
+	productInfoFile, err := os.ReadFile(productInfo)
+	if err != nil {
+		return nil, err
+	}
+	var productInfoJson ProductInfoJson
+	err = json.Unmarshal(productInfoFile, &productInfoJson)
+	if err != nil {
+		return nil, err
+	}
+	return &productInfoJson, nil
 }
