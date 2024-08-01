@@ -20,15 +20,14 @@ import (
 	"github.com/JetBrains/qodana-cli/v2024/platform"
 	"os"
 	"path/filepath"
-	"runtime"
 	"testing"
 )
 
 func TestGetIde(t *testing.T) {
-	err := os.Setenv("QD_PRODUCT_INTERNAL_FEED", "https://data.services.jetbrains.com/products")
-	if err != nil {
-		t.Fatal(err)
-	}
+	//err := os.Setenv("QD_PRODUCT_INTERNAL_FEED", "https://data.services.jetbrains.com/products")
+	//if err != nil {
+	//	t.Fatal(err)
+	//}
 	for _, installer := range platform.AllNativeCodes {
 		//ide := getIde(installer)
 		//if ide == nil {
@@ -42,10 +41,10 @@ func TestGetIde(t *testing.T) {
 }
 
 func TestDownloadAndInstallIDE(t *testing.T) {
-	err := os.Setenv("QD_PRODUCT_INTERNAL_FEED", "https://data.services.jetbrains.com/products")
-	if err != nil {
-		t.Fatal(err)
-	}
+	//err := os.Setenv("QD_PRODUCT_INTERNAL_FEED", "https://data.services.jetbrains.com/products")
+	//if err != nil {
+	//	t.Fatal(err)
+	//}
 	ides := []string{"QDGO-EAP"}
 	for _, ide := range ides {
 		DownloadAndInstallIDE(ide, t)
@@ -53,17 +52,12 @@ func TestDownloadAndInstallIDE(t *testing.T) {
 }
 
 func DownloadAndInstallIDE(ideName string, t *testing.T) {
-	tempDir, err := os.MkdirTemp("", "productByCode")
+	tempDir := filepath.Join(os.TempDir(), ".qodana_scan_", "ideTest")
+	err := os.MkdirAll(tempDir, 0755)
 	if err != nil {
 		platform.ErrorMessage("Cannot create temp dir: %s", err)
+		t.Fail()
 	}
-
-	defer func(path string) {
-		err := os.RemoveAll(path)
-		if err != nil {
-			platform.ErrorMessage("Cannot clean up temp dir: %s", err)
-		}
-	}(tempDir) // clean up
 
 	opts := &QodanaOptions{
 		&platform.QodanaOptions{
@@ -71,22 +65,15 @@ func DownloadAndInstallIDE(ideName string, t *testing.T) {
 		},
 	}
 	ide := downloadAndInstallIDE(opts, tempDir, nil)
+
 	if ide == "" {
 		platform.ErrorMessage("Cannot install %s", ideName)
 		t.Fail()
 	}
-
-	if //goland:noinspection GoBoolExpressions
-	runtime.GOOS == "darwin" {
-		ide = filepath.Join(ide, "Contents")
-	}
 	prod, err := readIdeProductInfo(ide)
-	defer func(path string) {
-		err := os.RemoveAll(path)
-		if err != nil {
-			platform.ErrorMessage("Cannot clean up temp dir: %s", err)
-		}
-	}(ide) // clean up
+	if err != nil || prod == nil {
+		t.Fatalf("Failed to read IDE product info: %v", err)
+	}
 	if prod.ProductCode == "" {
 		t.Fail()
 	}

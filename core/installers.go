@@ -115,6 +115,12 @@ func downloadAndInstallIDE(opts *QodanaOptions, baseDir string, spinner *pterm.S
 		log.Fatalf("Error while unpacking: %v", err)
 	}
 
+	if runtime.GOOS == "windows" {
+		if dirs, err := filepath.Glob(filepath.Join(installDir, "*")); err == nil && len(dirs) == 1 {
+			installDir = dirs[0]
+		}
+	}
+
 	return installDir
 }
 
