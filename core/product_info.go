@@ -209,6 +209,10 @@ func guessProduct(opts *QodanaOptions) {
 		if _, err := os.Stat(contentsDir); err == nil {
 			Prod.Home = contentsDir
 		}
+	} else if runtime.GOOS == "windows" {
+		if dirs, err := filepath.Glob(filepath.Join(Prod.Home, "*")); err == nil && len(dirs) == 1 {
+			Prod.Home = dirs[0]
+		}
 	}
 	if Prod.Home == "" {
 		if home, ok := os.LookupEnv(platform.QodanaDistEnv); ok {

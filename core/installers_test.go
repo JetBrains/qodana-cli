@@ -25,10 +25,10 @@ import (
 )
 
 func TestGetIde(t *testing.T) {
-	err := os.Setenv("QD_PRODUCT_INTERNAL_FEED", "https://data.services.jetbrains.com/products")
-	if err != nil {
-		t.Fatal(err)
-	}
+	//err := os.Setenv("QD_PRODUCT_INTERNAL_FEED", "https://data.services.jetbrains.com/products")
+	//if err != nil {
+	//	t.Fatal(err)
+	//}
 	for _, installer := range platform.AllNativeCodes {
 		//ide := getIde(installer)
 		//if ide == nil {
@@ -42,10 +42,10 @@ func TestGetIde(t *testing.T) {
 }
 
 func TestDownloadAndInstallIDE(t *testing.T) {
-	err := os.Setenv("QD_PRODUCT_INTERNAL_FEED", "https://data.services.jetbrains.com/products")
-	if err != nil {
-		t.Fatal(err)
-	}
+	//err := os.Setenv("QD_PRODUCT_INTERNAL_FEED", "https://data.services.jetbrains.com/products")
+	//if err != nil {
+	//	t.Fatal(err)
+	//}
 	ides := []string{"QDGO-EAP"}
 	for _, ide := range ides {
 		DownloadAndInstallIDE(ide, t)

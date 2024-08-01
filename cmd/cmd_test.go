@@ -400,10 +400,10 @@ func TestAllCommandsWithContainer(t *testing.T) {
 }
 
 func TestScanWithIde(t *testing.T) {
-	err := os.Setenv("QD_PRODUCT_INTERNAL_FEED", "https://data.services.jetbrains.com/products")
-	if err != nil {
-		t.Fatal(err)
-	}
+	//err := os.Setenv("QD_PRODUCT_INTERNAL_FEED", "https://data.services.jetbrains.com/products")
+	//if err != nil {
+	//	t.Fatal(err)
+	//}
 	log.SetLevel(log.DebugLevel)
 	token := os.Getenv("QODANA_LICENSE_ONLY_TOKEN")
 	if //goland:noinspection GoBoolExpressions
@@ -412,7 +412,7 @@ func TestScanWithIde(t *testing.T) {
 	}
 	projectPath := ".."
 	resultsPath := filepath.Join(projectPath, "results")
-	err = os.MkdirAll(resultsPath, 0o755)
+	err := os.MkdirAll(resultsPath, 0o755)
 	if err != nil {
 		t.Fatal(err)
 	}
