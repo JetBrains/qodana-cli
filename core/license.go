@@ -36,6 +36,12 @@ func SetupLicenseAndProjectHash(endpoints *cloud.QdApiEndpoints, token string) {
 				log.Fatal(err)
 			}
 		}
+		if licenseData.OrganisationIdHash != "" {
+			err := os.Setenv(platform.QodanaOrganisationIdHash, licenseData.OrganisationIdHash)
+			if err != nil {
+				log.Fatal(err)
+			}
+		}
 	}
 	_, exists := os.LookupEnv(platform.QodanaLicense)
 	if exists {

@@ -520,33 +520,72 @@ func Test_ideaExitCode(t *testing.T) {
 func TestSetupLicense(t *testing.T) {
 	Prod.Code = "QDJVM"
 	Prod.EAP = false
-	license := `{"licenseId":"VA5HGQWQH6","licenseKey":"VA5HGQWQH6","expirationDate":"2023-07-31","licensePlan":"EAP_ULTIMATE_PLUS","projectIdHash":"hash"}`
-	expectedKey := "VA5HGQWQH6"
-	expectedHash := "hash"
+	for _, tc := range []struct {
+		name            string
+		license         string
+		expectedKey     string
+		expectedHash    string
+		expectedOrgHash string
+	}{
+		{
+			name:            "valid license",
+			license:         `{"licenseId":"VA5HGQWQH6","licenseKey":"VA5HGQWQH6","expirationDate":"2023-07-31","licensePlan":"EAP_ULTIMATE_PLUS","projectIdHash":"hash","organizationIdHash":"org hash"}`,
+			expectedKey:     "VA5HGQWQH6",
+			expectedHash:    "hash",
+			expectedOrgHash: "org hash",
+		},
+		{
+			name:            "no organizationIdHash",
+			license:         `{"licenseId":"VA5HGQWQH6","licenseKey":"VA5HGQWQH6","expirationDate":"2023-07-31","licensePlan":"EAP_ULTIMATE_PLUS","projectIdHash":"hash"}`,
+			expectedKey:     "VA5HGQWQH6",
+			expectedHash:    "hash",
+			expectedOrgHash: "",
+		},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			svr := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				_, _ = fmt.Fprint(w, tc.license)
+			}))
+			defer svr.Close()
+			SetupLicenseAndProjectHash(&cloud.QdApiEndpoints{LintersApiUrl: svr.URL}, "token")
 
-	svr := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		_, _ = fmt.Fprint(w, license)
-	}))
-	defer svr.Close()
-	SetupLicenseAndProjectHash(&cloud.QdApiEndpoints{LintersApiUrl: svr.URL}, "token")
+			licenseKey := os.Getenv(platform.QodanaLicense)
+			if licenseKey != tc.expectedKey {
+				t.Errorf("expected key to be '%s' got '%s'", tc.expectedKey, licenseKey)
+			}
 
-	licenseKey := os.Getenv(platform.QodanaLicense)
-	if licenseKey != expectedKey {
-		t.Errorf("expected key to be '%s' got '%s'", expectedKey, licenseKey)
-	}
-	projectIdHash := os.Getenv(platform.QodanaProjectIdHash)
-	if projectIdHash != expectedHash {
-		t.Errorf("expected projectIdHash to be '%s' got '%s'", expectedHash, projectIdHash)
-	}
+			projectIdHash := os.Getenv(platform.QodanaProjectIdHash)
+			if projectIdHash != tc.expectedHash {
+				t.Errorf("expected projectIdHash to be '%s' got '%s'", tc.expectedHash, projectIdHash)
+			}
 
-	err := os.Unsetenv(platform.QodanaLicense)
-	if err != nil {
-		t.Fatal(err)
-	}
+			if tc.expectedOrgHash == "" {
+				_, r := os.LookupEnv(platform.QodanaOrganisationIdHash)
+				if r {
+					t.Errorf("'%s' env shoul not be set", platform.QodanaOrganisationIdHash)
+				}
+			} else {
+				orgIdHash := os.Getenv(platform.QodanaOrganisationIdHash)
+				if orgIdHash != tc.expectedOrgHash {
+					t.Errorf("expected organizationIdHash to be '%s' got '%s'", tc.expectedOrgHash, orgIdHash)
+				}
+			}
 
-	err = os.Unsetenv(platform.QodanaProjectIdHash)
-	if err != nil {
-		t.Fatal(err)
+			err := os.Unsetenv(platform.QodanaLicense)
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			err = os.Unsetenv(platform.QodanaProjectIdHash)
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			err = os.Unsetenv(platform.QodanaOrganisationIdHash)
+			if err != nil {
+				t.Fatal(err)
+			}
+		})
 	}
 }
 
