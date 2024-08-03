@@ -29,11 +29,12 @@ import (
 )
 
 type LicenseData struct {
-	LicenseID      string `json:"licenseId"`
-	LicenseKey     string `json:"licenseKey"`
-	ExpirationDate string `json:"expirationDate"`
-	ProjectIdHash  string `json:"projectIdHash"`
-	LicensePlan    string `json:"licensePlan"`
+	LicenseID          string `json:"licenseId"`
+	LicenseKey         string `json:"licenseKey"`
+	ExpirationDate     string `json:"expirationDate"`
+	ProjectIdHash      string `json:"projectIdHash"`
+	OrganisationIdHash string `json:"organizationIdHash"`
+	LicensePlan        string `json:"licensePlan"`
 }
 
 type LicenseToken struct {
