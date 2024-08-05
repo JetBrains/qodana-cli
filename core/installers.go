@@ -76,6 +76,11 @@ func downloadAndInstallIDE(opts *QodanaOptions, baseDir string, spinner *pterm.S
 	fileExt := filepath.Ext(fileName)
 	installDir := filepath.Join(baseDir, strings.TrimSuffix(fileName, fileExt))
 	if _, err := os.Stat(installDir); err == nil {
+		if runtime.GOOS == "windows" {
+			if dirs, err := filepath.Glob(filepath.Join(installDir, "*")); err == nil && len(dirs) == 1 {
+				installDir = dirs[0]
+			}
+		}
 		log.Debugf("IDE already installed to %s, skipping download", installDir)
 		return installDir
 	}
