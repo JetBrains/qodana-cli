@@ -199,9 +199,8 @@ func handleSignals(cmd *exec.Cmd, waitCh <-chan error, timeout time.Duration, ti
 			}
 			if ret != nil {
 				log.Println(ret)
-				return 1, nil
 			}
-			return 0, nil
+			return cmd.ProcessState.ExitCode(), ret
 		}
 	}
 }
