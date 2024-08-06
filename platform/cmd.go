@@ -55,17 +55,27 @@ func RunCmd(cwd string, args ...string) (int, error) {
 func RunCmdWithTimeout(cwd string, stdout *os.File, stderr *os.File, timeout time.Duration, timeoutExitCode int, args ...string) (int, error) {
 	log.Debugf("Running command: %v", args)
 	cmd := exec.Command("bash", "-c", strings.Join(args, " ")) // TODO : Viktor told about set -e
-	if                                                         //goland:noinspection GoBoolExpressions
+	var stdoutPipe, stderrPipe io.ReadCloser
+	var err error
+	if //goland:noinspection GoBoolExpressions
 	runtime.GOOS == "windows" {
 		cmd = prepareWinCmd(args...)
+		stdoutPipe, err = cmd.StdoutPipe()
+		if err != nil {
+			return 1, fmt.Errorf("failed to get stdout pipe: %w", err)
+		}
+		stderrPipe, err = cmd.StderrPipe()
+		if err != nil {
+			return 1, fmt.Errorf("failed to get stderr pipe: %w", err)
+		}
+	} else {
+		cmd.Stdout = stdout
+		cmd.Stderr = stderr
 	}
-	var err error
 	if cmd.Dir, err = getCwdPath(cwd); err != nil {
 		return 1, err
 	}
 	cmd.Stdin = bt.NewBuffer([]byte{})
-	cmd.Stdout = stdout
-	cmd.Stderr = stderr
 	if err := cmd.Start(); err != nil {
 		return 1, fmt.Errorf("failed to start command: %w", err)
 	}
@@ -76,6 +86,11 @@ func RunCmdWithTimeout(cwd string, stdout *os.File, stderr *os.File, timeout tim
 		close(waitCh)
 	}()
 
+	if //goland:noinspection GoBoolExpressions
+	runtime.GOOS == "windows" {
+		go readAndWrite(stdoutPipe, stdout)
+		go readAndWrite(stderrPipe, stderr)
+	}
 	return handleSignals(cmd, waitCh, timeout, timeoutExitCode)
 }
 
@@ -187,6 +202,26 @@ func handleSignals(cmd *exec.Cmd, waitCh <-chan error, timeout time.Duration, ti
 				return 1, nil
 			}
 			return 0, nil
+		}
+	}
+}
+
+func readAndWrite(pipe io.ReadCloser, output *os.File) {
+	buf := make([]byte, 1024)
+	for {
+		n, err := pipe.Read(buf)
+		if n > 0 {
+			_, writeErr := output.Write(buf[:n])
+			if writeErr != nil {
+				log.Printf("failed to write to output: %v", writeErr)
+				break
+			}
+		}
+		if err != nil {
+			if err != io.EOF {
+				log.Printf("error reading from pipe: %v", err)
+			}
+			break
 		}
 	}
 }
