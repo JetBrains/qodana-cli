@@ -37,7 +37,7 @@ jobs:
           echo "${SHA256} *komac.tar.gz" > shasum &&
           curl -fSsL https://github.com/russellbanks/Komac/releases/download/v2.3.0/komac-2.3.0-x86_64-unknown-linux-gnu.tar.gz -o komac.tar.gz &&
           sha256sum --check --status shasum &&
-          tar -xzf komac.tar.gz && chmod +x KomacPortable-linux-x64
+          tar -xzf komac.tar.gz && chmod +x komac
         env:
           SHA256: 84eaa5e5344c8b1ffbab9cb78d388310d617a84727a7c3be3c562c8d663d51c4
       - run: |
