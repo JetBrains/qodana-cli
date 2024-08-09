@@ -104,6 +104,12 @@ func runQodanaContainer(ctx context.Context, options *QodanaOptions) int {
 	return int(exitCode)
 }
 
+func unusedFunction() {
+	for {
+
+	}
+}
+
 func fixDarwinCaches(options *QodanaOptions) {
 	if //goland:noinspection GoBoolExpressions
 	runtime.GOOS == "darwin" {
