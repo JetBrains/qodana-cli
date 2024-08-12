@@ -13370,7 +13370,20 @@
      ],
      "version": "clang version 18.0.0 (ssh://git@git.jetbrains.team/llvm/llvm-project.git 65f16dce7895b60d35793394c8abea305e3e50d7 based on LLVM 254d1396f0e00c05ba8fe32e974492a8211b10c8 revision)"
     }
-   }
+   },
+   "versionControlProvenance": [
+    {
+     "branch": "foo",
+     "properties": {
+      "lastAuthorEmail": "",
+      "lastAuthorName": "",
+      "repoUrl": "repourl",
+      "vcsType": "Git"
+     },
+     "repositoryUri": "repourl",
+     "revisionId": "bar"
+    }
+   ]
   }
  ],
  "$schema": "https://raw.githubusercontent.com/schemastore/schemastore/master/src/schemas/json/sarif-2.1.0-rtm.5.json",

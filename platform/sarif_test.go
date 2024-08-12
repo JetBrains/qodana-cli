@@ -17,14 +17,13 @@
 package platform
 
 import (
-	"github.com/spf13/pflag"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 )
 
 func TestMergeSarifReports(t *testing.T) {
-	t.Skip() // TODO: @dima fix this test
 	if err := os.Setenv("QODANA_AUTOMATION_GUID", "00000000-0000-1000-8000-000000000000"); err != nil {
 		t.Fail()
 	}
@@ -34,6 +33,15 @@ func TestMergeSarifReports(t *testing.T) {
 	if err := os.Setenv("QODANA_JOB_URL", "joburl"); err != nil {
 		t.Fail()
 	}
+	if err := os.Setenv("QODANA_REMOTE_URL", "repourl"); err != nil {
+		t.Fail()
+	}
+	if err := os.Setenv("QODANA_BRANCH", "foo"); err != nil {
+		t.Fail()
+	}
+	if err := os.Setenv("QODANA_REVISION", "bar"); err != nil {
+		t.Fail()
+	}
 	toolCode := "QDCL"
 	toolDesc := "Qodana for C/C++ (CMake)"
 	workingDir, err := os.Getwd()
@@ -41,7 +49,7 @@ func TestMergeSarifReports(t *testing.T) {
 		t.Fatalf("Failed to get working directory: %v", err)
 	}
 
-	testdataPath := filepath.Join(workingDir, "..", "testdata")
+	testdataPath := filepath.Join(workingDir, "testdata")
 	// create temp directory
 	dir, err := os.MkdirTemp("", "test")
 	if err != nil {
@@ -63,17 +71,17 @@ func TestMergeSarifReports(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	opts := &QodanaOptions{
-		ResultsDir: dir,
-		ProjectDir: dir,
-		LinterSpecific: &SarifTestOptions{
+	opts := DefineOptions(func() ThirdPartyOptions {
+		return &TestOptions{
 			linterInfo: &LinterInfo{
 				ProductCode:   toolCode,
 				LinterName:    toolDesc,
 				LinterVersion: "",
 			},
-		},
-	}
+		}
+	})
+	opts.ResultsDir = dir
+	opts.ProjectDir = dir
 	_, err = MergeSarifReports(opts, "01234")
 	if err != nil {
 		t.Fatal(err)
@@ -94,49 +102,29 @@ func TestMergeSarifReports(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if err := os.Unsetenv("QODANA_AUTOMATION_GUID"); err != nil {
-		t.Fatal(err)
+	envs := []string{
+		"QODANA_AUTOMATION_GUID",
+		"QODANA_REPORT_ID",
+		"QODANA_JOB_URL",
+		"QODANA_REMOTE_URL",
+		"QODANA_BRANCH",
+		"QODANA_REVISION",
 	}
-	if err := os.Unsetenv("QODANA_REPORT_ID"); err != nil {
-		t.Fatal(err)
-	}
-	if err := os.Unsetenv("QODANA_JOB_URL"); err != nil {
-		t.Fatal(err)
+
+	for _, env := range envs {
+		if err := os.Unsetenv(env); err != nil {
+			t.Fatalf("Failed to unset environment variable %s: %v", env, err)
+		}
 	}
 	// do comparison
-	if string(expected) != string(actual) {
-		t.Fatal("Files are not equal")
+	expString := normalize(string(expected))
+	actString := normalize(string(actual))
+
+	if expString != actString {
+		t.Fatalf("Files are not of equal. Length: expected %d vs actual %d", len(expString), len(actString))
 	}
 }
 
-type SarifTestOptions struct {
-	linterInfo *LinterInfo
-}
-
-//goland:noinspection GoUnusedParameter
-func (s SarifTestOptions) AddFlags(flags *pflag.FlagSet) {
-}
-
-func (s SarifTestOptions) GetMountInfo() *MountInfo {
-	return nil
-}
-
-//goland:noinspection GoUnusedParameter
-func (s SarifTestOptions) MountTools(tempPath string, mountPath string, o *QodanaOptions) (map[string]string, error) {
-	return make(map[string]string), nil
-}
-
-//goland:noinspection GoUnusedParameter
-func (s SarifTestOptions) GetInfo(o *QodanaOptions) *LinterInfo {
-	return s.linterInfo
-}
-
-//goland:noinspection GoUnusedParameter
-func (s SarifTestOptions) Setup(o *QodanaOptions) error {
-	return nil
-}
-
-//goland:noinspection GoUnusedParameter
-func (s SarifTestOptions) RunAnalysis(o *QodanaOptions) error {
-	return nil
+func normalize(s string) string {
+	return strings.NewReplacer("\r\n", "\n", "\r", "\n").Replace(s)
 }
