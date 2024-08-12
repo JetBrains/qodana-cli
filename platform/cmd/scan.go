@@ -41,6 +41,12 @@ But you can always override qodana.yaml options with the following command-line 
 		RunE: func(cmd *cobra.Command, args []string) error {
 			log.SetFormatter(&log.TextFormatter{DisableQuote: true, DisableTimestamp: true})
 			exitCode, err := platform.RunAnalysis(options)
+			if platform.IsContainer() {
+				err := platform.ChangePermissionsRecursively(options.ResultsDir)
+				if err != nil {
+					platform.ErrorMessage("Unable to change permissions in %s: %s", options.ResultsDir, err)
+				}
+			}
 			log.Debug("exitCode: ", exitCode)
 			if exitCode == platform.QodanaFailThresholdExitCode {
 				platform.EmptyMessage()

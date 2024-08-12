@@ -47,7 +47,12 @@ But you can always override qodana.yaml options with the following command-line 
 			options.FetchAnalyzerSettings()
 			qodanaOptions := core.QodanaOptions{QodanaOptions: options}
 			exitCode := core.RunAnalysis(ctx, &qodanaOptions)
-
+			if platform.IsContainer() {
+				err := platform.ChangePermissionsRecursively(options.ResultsDir)
+				if err != nil {
+					platform.ErrorMessage("Unable to change permissions in %s: %s", options.ResultsDir, err)
+				}
+			}
 			checkExitCode(exitCode, options.ResultsDir, &qodanaOptions)
 			newReportUrl := cloud.GetReportUrl(options.ResultsDir)
 			platform.ProcessSarif(
