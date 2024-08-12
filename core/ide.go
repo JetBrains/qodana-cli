@@ -280,31 +280,6 @@ func toQodanaCode(baseProduct string) string {
 	}
 }
 
-func scriptToProductCode(scriptName string) string {
-	switch scriptName {
-	case idea:
-		return platform.QDJVM
-	case phpStorm:
-		return platform.QDPHP
-	case webStorm:
-		return platform.QDJS
-	case rider:
-		return platform.QDNET
-	case pyCharm:
-		return platform.QDPY
-	case rubyMine:
-		return platform.QDRUBY
-	case goLand:
-		return platform.QDGO
-	case rustRover:
-		return platform.QDRST
-	case clion:
-		return platform.QDCPP
-	default:
-		return "QD"
-	}
-}
-
 func findIde(dir string) string {
 	for _, element := range supportedIdes {
 		if _, err := os.Stat(filepath.Join(dir, fmt.Sprintf("%s%s", element, getScriptSuffix()))); err == nil {

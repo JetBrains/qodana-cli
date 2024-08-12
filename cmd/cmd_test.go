@@ -53,34 +53,6 @@ func createProject(t *testing.T, name string) string {
 	return location
 }
 
-func createNativeProject(t *testing.T, name string) string {
-	home, err := os.UserHomeDir()
-	if err != nil {
-		t.Fatal(err)
-	}
-	location := filepath.Join(home, ".qodana_scan_", name)
-	err = gitClone("https://github.com/hybloid/BadRulesProject", location)
-	if err != nil {
-		t.Fatal(err)
-	}
-	return location
-}
-
-func gitClone(repoURL, directory string) error {
-	if _, err := os.Stat(directory); !os.IsNotExist(err) {
-		err = os.RemoveAll(directory)
-		if err != nil {
-			return err
-		}
-	}
-	cmd := exec.Command("git", "clone", repoURL, directory)
-	err := cmd.Run()
-	if err != nil {
-		return err
-	}
-	return nil
-}
-
 // TestVersion verifies that the version command returns the correct version
 func TestVersion(t *testing.T) {
 	b := bytes.NewBufferString("")
