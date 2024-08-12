@@ -32,6 +32,14 @@ func (endpoint *QdRootEndpoint) GetCloudUrl() string {
 	return fmt.Sprintf("https://%s", endpoint.Host)
 }
 
+func (endpoint *QdRootEndpoint) GetCloudUrl2() string {
+	return fmt.Sprintf("https://%s", endpoint.Host)
+}
+
+func (endpoint *QdRootEndpoint) GetCloudUrl3() string {
+	return fmt.Sprintf("https://%s", endpoint.Host)
+}
+
 func (client *QdClient) RequestProjectName() (string, error) {
 	request := NewCloudRequest("/projects")
 	result, err := client.doRequest(&request)
