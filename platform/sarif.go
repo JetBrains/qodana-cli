@@ -25,6 +25,7 @@ import (
 	log "github.com/sirupsen/logrus"
 	"os"
 	"path/filepath"
+	"sort"
 	"strings"
 	"time"
 )
@@ -47,6 +48,7 @@ const (
 
 func MergeSarifReports(options *QodanaOptions, deviceId string) (int, error) {
 	files, err := findSarifFiles(options.GetTmpResultsDir())
+	sort.Strings(files)
 	if err != nil {
 		return 0, fmt.Errorf("Error locating SARIF files: %s\n", err)
 	}
@@ -107,6 +109,10 @@ func removeDuplicates(results []sarif.Result) []sarif.Result {
 		}
 		results[writeIndex] = result
 		writeIndex++
+	}
+
+	if len(results) != writeIndex {
+		log.Warnf("Removed duplicates: %d", len(results)-writeIndex)
 	}
 
 	return results[:writeIndex]

@@ -23,8 +23,9 @@ import (
 )
 
 func TestMount(t *testing.T) {
-	t.Skip() // TODO: @dima fix this test
-	linterOpts := &TestOptions{}
+	linterOpts := &TestOptions{
+		mountInfo: &MountInfo{},
+	}
 	options := &QodanaOptions{
 		LinterSpecific: linterOpts,
 	}
@@ -52,26 +53,29 @@ func TestMount(t *testing.T) {
 	}
 }
 
-type TestOptions struct{}
+type TestOptions struct {
+	linterInfo *LinterInfo
+	mountInfo  *MountInfo
+}
 
 func (TestOptions) AddFlags(_ *pflag.FlagSet) {}
 
-func (TestOptions) GetMountInfo() *MountInfo {
-	return &MountInfo{}
+func (t TestOptions) GetMountInfo() *MountInfo {
+	return t.mountInfo
 }
 
 func (TestOptions) MountTools(_ string, _ string, _ *QodanaOptions) (map[string]string, error) {
 	return make(map[string]string), nil
 }
 
-func (TestOptions) GetInfo(_ *QodanaOptions) *LinterInfo {
-	return &LinterInfo{}
+func (t TestOptions) GetInfo(_ *QodanaOptions) *LinterInfo {
+	return t.linterInfo
 }
 
 func (TestOptions) Setup(_ *QodanaOptions) error {
 	return nil
 }
 
-func (TestOptions) RunAnalysis(_ *QodanaOptions) error {
+func (TestOptions) RunAnalysis(_ *QodanaOptions, _ *QodanaYaml) error {
 	return nil
 }
