@@ -75,6 +75,7 @@ func MergeSarifReports(options *QodanaOptions, deviceId string) (int, error) {
 			location.PhysicalLocation.ArtifactLocation.Uri = strings.TrimPrefix(location.PhysicalLocation.ArtifactLocation.Uri, toReplace)
 		}
 	}
+	finalReport.Runs[0].Results = removeDuplicates(finalReport.Runs[0].Results)
 
 	SetVersionControlParams(options, deviceId, finalReport)
 
@@ -85,6 +86,30 @@ func MergeSarifReports(options *QodanaOptions, deviceId string) (int, error) {
 		return 0, err
 	}
 	return totalProblems, nil
+}
+
+func removeDuplicates(results []sarif.Result) []sarif.Result {
+	if len(results) == 0 {
+		return results
+	}
+	seen := make(map[string]struct{}, len(results))
+	writeIndex := 0
+
+	for _, result := range results {
+		if result.PartialFingerprints != nil {
+			fingerPrint := getFingerprint(&result)
+			if fingerPrint != "" {
+				if _, exists := seen[fingerPrint]; exists {
+					continue
+				}
+				seen[fingerPrint] = struct{}{}
+			}
+		}
+		results[writeIndex] = result
+		writeIndex++
+	}
+
+	return results[:writeIndex]
 }
 
 func WriteReport(path string, finalReport *sarif.Report) error {
