@@ -216,9 +216,9 @@
                         "Link": "https://download.jetbrains.com/qodana/2024.2/qodana-QDJS-242.20926.36.mac.tar.gz",
                         "ChecksumLink": "https://download.jetbrains.com/qodana/2024.2/qodana-QDJS-242.20926.36.mac.tar.gz.sha256"
                     },
-                    "macTarM1": {
-                        "Link": "https://download.jetbrains.com/qodana/2024.2/qodana-QDJS-242.20926.36-aarch64.mac.tar.gz",
-                        "ChecksumLink": "https://download.jetbrains.com/qodana/2024.2/qodana-QDJS-242.20926.36-aarch64.mac.tar.gz.sha256"
+                    "macSitM1": {
+                        "Link": "https://download-cdn.jetbrains.com/qodana/2024.2/qodana-QDJS-242.21827.64-aarch64.sit",
+                        "ChecksumLink": "https://download-cdn.jetbrains.com/qodana/2024.2/qodana-QDJS-242.21827.64-aarch64.sit.sha256"
                     }
                 },
                 "Version": "2024.2.0",
