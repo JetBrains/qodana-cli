@@ -372,10 +372,6 @@ func TestAllCommandsWithContainer(t *testing.T) {
 }
 
 func TestScanWithIde(t *testing.T) {
-	//err := os.Setenv("QD_PRODUCT_INTERNAL_FEED", "https://data.services.jetbrains.com/products")
-	//if err != nil {
-	//	t.Fatal(err)
-	//}
 	log.SetLevel(log.DebugLevel)
 	token := os.Getenv("QODANA_LICENSE_ONLY_TOKEN")
 	if //goland:noinspection GoBoolExpressions
@@ -395,7 +391,7 @@ func TestScanWithIde(t *testing.T) {
 	command.SetArgs([]string{
 		"-i", projectPath,
 		"-o", resultsPath,
-		"--ide", "QDGO-EAP",
+		"--ide", "QDGO",
 		"--property",
 		"idea.headless.enable.statistics=false",
 	})
