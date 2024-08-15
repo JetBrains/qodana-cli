@@ -38,7 +38,7 @@ var (
 	releaseVer  = "release"
 	eapVer      = "eap"
 	versionsMap = map[string]string{
-		releaseVer: "2024.1",
+		releaseVer: "2024.2",
 		eapVer:     "2024.2",
 	}
 	Products = map[string]string{
@@ -80,6 +80,10 @@ func downloadAndInstallIDE(opts *QodanaOptions, baseDir string, spinner *pterm.S
 			if dirs, err := filepath.Glob(filepath.Join(installDir, "*")); err == nil && len(dirs) == 1 {
 				installDir = dirs[0]
 			}
+		} else if runtime.GOOS == "darwin" {
+			if dirs, err := filepath.Glob(filepath.Join(installDir, "*.app")); err == nil && len(dirs) == 1 {
+				installDir = filepath.Join(dirs[0], "Contents")
+			}
 		}
 		log.Debugf("IDE already installed to %s, skipping download", installDir)
 		return installDir
@@ -104,8 +108,10 @@ func downloadAndInstallIDE(opts *QodanaOptions, baseDir string, spinner *pterm.S
 	}
 
 	switch fileExt {
+	case ".sit":
+		err = installIdeFromZip(downloadedIdePath, installDir)
 	case ".zip":
-		err = installIdeWindowsZip(downloadedIdePath, installDir)
+		err = installIdeFromZip(downloadedIdePath, installDir)
 	case ".exe":
 		err = installIdeWindowsExe(downloadedIdePath, installDir)
 	case ".gz":
@@ -123,6 +129,14 @@ func downloadAndInstallIDE(opts *QodanaOptions, baseDir string, spinner *pterm.S
 	if runtime.GOOS == "windows" {
 		if dirs, err := filepath.Glob(filepath.Join(installDir, "*")); err == nil && len(dirs) == 1 {
 			installDir = dirs[0]
+		}
+	} else if runtime.GOOS == "darwin" {
+		if dirs, err := filepath.Glob(filepath.Join(installDir, "*.app")); err == nil && len(dirs) == 1 {
+			installDir = filepath.Join(dirs[0], "Contents")
+		}
+		err = downloadCustomPlugins(ideUrl, installDir, spinner)
+		if err != nil {
+			log.Warning("Error while downloading custom plugins: " + err.Error())
 		}
 	}
 
@@ -163,13 +177,13 @@ func getIde(productCode string) *ReleaseDownloadInfo {
 	var downloadType string
 	switch runtime.GOOS {
 	case "darwin":
-		downloadType = "macTar"
+		downloadType = "macSit"
 		_, ok := (*release.Downloads)[downloadType]
 		if !ok {
 			downloadType = "mac"
 		}
 		if runtime.GOARCH == "arm64" {
-			downloadType = "macTarM1"
+			downloadType = "macSitM1"
 			_, ok := (*release.Downloads)[downloadType]
 			if !ok {
 				downloadType = "macM1"
@@ -214,7 +228,7 @@ func installIdeWindowsExe(archivePath string, targetDir string) error {
 	return nil
 }
 
-func installIdeWindowsZip(archivePath string, targetDir string) error {
+func installIdeFromZip(archivePath string, targetDir string) error {
 	if err := os.MkdirAll(targetDir, os.ModePerm); err != nil {
 		log.Fatal("couldn't create a directory ", err.Error())
 	}
@@ -309,4 +323,36 @@ func verifySha256(checksumFile string, checkSumUrl string, filePath string) {
 		log.Fatalf("Checksums doesn't match. Expected: %s, Actual: %s", expected, actual)
 	}
 	log.Info("Checksum of downloaded IDE was verified")
+}
+
+func downloadCustomPlugins(ideUrl string, installDir string, spinner *pterm.SpinnerPrinter) error {
+	pluginsUrl := getPluginsURL(ideUrl)
+	log.Debugf("Downloading custom plugins from %s", pluginsUrl)
+	archivePath := filepath.Join(installDir, "custom-plugins.zip")
+	err := platform.DownloadFile(archivePath, pluginsUrl, spinner)
+	if err != nil {
+		return fmt.Errorf("error while downloading plugins: %v", err)
+	}
+	_, err = exec.Command("tar", "-xf", archivePath, "-C", installDir).Output()
+	if err != nil {
+		return fmt.Errorf("tar: %s", err)
+	}
+	disabledPluginsPath := filepath.Join(installDir, "custom-plugins", "disabled_plugins.txt")
+	err = cp.Copy(disabledPluginsPath, filepath.Join(installDir, "disabled_plugins.txt"))
+	if err != nil {
+		return fmt.Errorf("error while copying plugins: %s", err)
+	}
+
+	return nil
+}
+
+func getPluginsURL(ideUrl string) string {
+	pluginsUrl := strings.Replace(ideUrl, "-aarch64", "", 1)
+	if strings.Contains(pluginsUrl, ".sit") {
+		return strings.Replace(pluginsUrl, ".sit", "-custom-plugins.zip", 1)
+	} else if strings.Contains(pluginsUrl, ".win.zip") {
+		return strings.Replace(pluginsUrl, ".win.zip", "-custom-plugins.zip", 1)
+	} else {
+		return strings.Replace(pluginsUrl, ".tar.gz", "-custom-plugins.zip", 1)
+	}
 }

@@ -32,7 +32,7 @@ import (
 const (
 	QodanaSarifName = "qodana.sarif.json"
 	configName      = "qodana"
-	releaseVersion  = "2024.1"
+	releaseVersion  = "2024.2"
 	shortVersion    = "242"
 )
 

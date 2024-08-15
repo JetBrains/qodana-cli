@@ -20,41 +20,40 @@ import (
 	"github.com/JetBrains/qodana-cli/v2024/platform"
 	"os"
 	"path/filepath"
+	"runtime"
 	"testing"
 )
 
 func TestGetIde(t *testing.T) {
-	t.Skip("Skipping test for now")
-	//err := os.Setenv("QD_PRODUCT_INTERNAL_FEED", "https://data.services.jetbrains.com/products")
-	//if err != nil {
-	//	t.Fatal(err)
-	//}
+	//os.Setenv("QD_PRODUCT_INTERNAL_FEED", "https://data.services.jetbrains.com/products")
 	for _, installer := range platform.AllNativeCodes {
-		//ide := getIde(installer)
-		//if ide == nil {
-		//	t.Fail()
-		//}
-		eap := getIde(installer + "-EAP")
-		if eap == nil {
+		ide := getIde(installer)
+		if ide == nil {
 			t.Fail()
+		}
+		if runtime.GOOS != "darwin" {
+			eap := getIde(installer + "-EAP")
+			if eap == nil {
+				t.Fail()
+			}
 		}
 	}
 }
 
 func TestDownloadAndInstallIDE(t *testing.T) {
-	//err := os.Setenv("QD_PRODUCT_INTERNAL_FEED", "https://data.services.jetbrains.com/products")
-	//if err != nil {
-	//	t.Fatal(err)
-	//}
-	ides := []string{"QDGO-EAP"}
+	ides := []string{"QDGO"}
 	for _, ide := range ides {
 		DownloadAndInstallIDE(ide, t)
 	}
 }
 
 func DownloadAndInstallIDE(ideName string, t *testing.T) {
-	tempDir := filepath.Join(os.TempDir(), ".qodana_scan_", "ideTest")
-	err := os.MkdirAll(tempDir, 0755)
+	homeDir, err := os.UserHomeDir()
+	if err != nil {
+		t.Fatal(err)
+	}
+	tempDir := filepath.Join(homeDir, ".qodana_scan_", "ideTest")
+	err = os.MkdirAll(tempDir, 0755)
 	if err != nil {
 		platform.ErrorMessage("Cannot create temp dir: %s", err)
 		t.Fail()

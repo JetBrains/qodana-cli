@@ -181,14 +181,15 @@ func GetDotNetConfig(projectDir string, yamlName string) bool {
 }
 
 // AllNativeCodes is a list of all supported Qodana linters product codes
-var AllNativeCodes = []string{QDNET, QDJVM, QDJVMC, QDGO, QDPY, QDPYC, QDJS, QDPHP}
+var AllNativeCodes = []string{QDNET, QDJVM, QDJVMC, QDGO, QDPY, QDPYC, QDJS} // TODO: QDPHP
 
 func Image(code string) string {
 	if val, ok := DockerImageMap[code]; ok {
-		if code == QDNETC || code == QDCL {
-			return val + releaseVersion + "-eap"
-		}
-		return val + releaseVersion
+		//if code == QDNETC || code == QDCL {
+		//	return val + releaseVersion + "-eap"
+		//}
+		//return val + releaseVersion
+		return val + releaseVersion + "-eap"
 	} else {
 		log.Fatal("Unknown code: " + code)
 		return ""
