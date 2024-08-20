@@ -73,7 +73,7 @@ func ComputeFlags(cmd *cobra.Command, options *QodanaOptions) error {
 
 	flags.StringVar(&options.DiffStart, "diff-start", "", "Commit to start a diff run from. Only files changed between --diff-start and --diff-end will be analysed.")
 	flags.StringVar(&options.DiffEnd, "diff-end", "", "Commit to end a diff run on. Only files changed between --diff-start and --diff-end will be analysed.")
-	flags.BoolVar(&options.ForceDiffMode, "force-diff-analysis-mode", false, "Override the default run-scenario for diff runs to always use the restart-based approach")
+	flags.BoolVar(&options.ForceLocalChangesScript, "force-local-changes-script", false, "Override the default run-scenario for diff runs to always use the local-changes script")
 
 	flags.IntVar(&options.JvmDebugPort, "jvm-debug-port", -1, "Enable JVM remote debug under given port")
 
@@ -98,7 +98,7 @@ func ComputeFlags(cmd *cobra.Command, options *QodanaOptions) error {
 		cmd.MarkFlagsMutuallyExclusive("env", "ide")
 	}
 
-	cmd.MarkFlagsMutuallyExclusive("script", "force-diff-analysis-mode", "full-history")
+	cmd.MarkFlagsMutuallyExclusive("script", "force-local-changes-script", "full-history")
 	cmd.MarkFlagsMutuallyExclusive("commit", "script", "diff-start")
 	cmd.MarkFlagsMutuallyExclusive("profile-name", "profile-path")
 	cmd.MarkFlagsMutuallyExclusive("apply-fixes", "cleanup")
@@ -112,7 +112,7 @@ func ComputeFlags(cmd *cobra.Command, options *QodanaOptions) error {
 		return err
 	}
 	err = cmd.Flags().MarkHidden("jvm-debug-port")
-	err = cmd.Flags().MarkHidden("force-diff-analysis-mode")
+	err = cmd.Flags().MarkHidden("force-local-changes-script")
 	if err != nil {
 		return err
 	}

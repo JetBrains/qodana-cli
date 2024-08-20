@@ -190,8 +190,8 @@ func GetIdeArgs(opts *QodanaOptions) []string {
 		if opts.DiffEnd != "" && opts.Script == "default" {
 			arguments = append(arguments, "--diff-end", opts.DiffEnd)
 		}
-		if opts.ForceDiffMode && opts.Script == "default" {
-			arguments = append(arguments, "--force-diff-analysis-mode")
+		if opts.ForceLocalChangesScript && opts.Script == "default" {
+			arguments = append(arguments, "--force-local-changes-script")
 		}
 
 		if opts.AnalysisId != "" {
