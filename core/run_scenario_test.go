@@ -89,18 +89,18 @@ func TestQodanaOptions_determineRunScenario(t *testing.T) {
 				hasStartHash:  true,
 				productCode:   platform.QDJVM,
 			},
-			want: runScenarioLocalChanges,
+			want: runScenarioScoped,
 		},
 		{
 			name: "forced script",
 			args: args{
 				qodanaOptions: &platform.QodanaOptions{
-					ForceDiffMode: true,
+					ForceLocalChangesScript: true,
 				},
 				hasStartHash: true,
 				productCode:  platform.QDJVM,
 			},
-			want: runScenarioScoped,
+			want: runScenarioLocalChanges,
 		},
 	}
 	for _, tt := range tests {

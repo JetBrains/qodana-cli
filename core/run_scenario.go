@@ -16,11 +16,7 @@
 
 package core
 
-import (
-	"github.com/JetBrains/qodana-cli/v2024/platform"
-	log "github.com/sirupsen/logrus"
-	"strings"
-)
+import "github.com/JetBrains/qodana-cli/v2024/platform"
 
 const (
 	runScenarioDefault      = "default"
@@ -32,19 +28,17 @@ const (
 type RunScenario = string
 
 func (o *QodanaOptions) determineRunScenario(hasStartHash bool) RunScenario {
-	isDotNet := Prod.Code == platform.QDNET || strings.Contains(o.Linter, "dotnet")
-
+	if o.ForceLocalChangesScript || o.Script == "local-changes" {
+		platform.WarningMessage("Using local-changes script is deprecated, please switch to other mechanisms of incremental analysis. Further information - https://www.jetbrains.com/help/qodana/analyze-pr.html")
+	}
 	switch {
-	case o.ForceDiffMode && !hasStartHash:
-		log.Fatal("Cannot run any diff script without --diff-start/--commit")
-		panic("Unreachable")
 	case o.FullHistory:
 		return runScenarioFullHistory
 	case !hasStartHash:
 		return runScenarioDefault
-	case o.ForceDiffMode || isDotNet:
-		return runScenarioScoped
-	default:
+	case o.ForceLocalChangesScript:
 		return runScenarioLocalChanges
+	default:
+		return runScenarioScoped
 	}
 }

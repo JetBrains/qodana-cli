@@ -57,7 +57,7 @@ type QodanaOptions struct {
 	Commit                    string
 	DiffStart                 string
 	DiffEnd                   string
-	ForceDiffMode             bool
+	ForceLocalChangesScript   bool
 	AnalysisId                string
 	Env                       []string
 	Volumes                   []string
