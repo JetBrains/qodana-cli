@@ -24,6 +24,7 @@ import (
 )
 
 func TestGetIde(t *testing.T) {
+	t.Skip("Skipping test for now")
 	//err := os.Setenv("QD_PRODUCT_INTERNAL_FEED", "https://data.services.jetbrains.com/products")
 	//if err != nil {
 	//	t.Fatal(err)

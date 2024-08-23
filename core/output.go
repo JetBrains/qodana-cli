@@ -58,37 +58,11 @@ func PrintContributorsTable(contributors []contributor, days int, dirs int) {
 		platform.PrimaryBold(strconv.Itoa(days)),
 		platform.PrimaryBold(strconv.Itoa(dirs)),
 	)
-	fmt.Print(getPlanMessage("Community", 0, count))
-	fmt.Print(getPlanMessage("Ultimate", 6, count))
-	fmt.Print(getPlanMessage("Ultimate Plus*", 9, count))
 	platform.EmptyMessage()
 	fmt.Printf(
-		`*  Run %s or visit %s for more information.
+		`*  Visit %s for more information.
    Note: Qodana will always be free for verified open source projects.`,
-		platform.PrimaryBold("qodana contributors -h"),
 		PricingUrl,
 	)
 	platform.EmptyMessage()
-}
-
-// getPlanMessage returns a message with the cost of the plan.
-func getPlanMessage(plan string, cost int, contributors int) string {
-	var costMessage string
-	if cost == 0 {
-		costMessage = fmt.Sprintf("   %s = %d * $0 – Qodana is completely free for %s plan\n",
-			platform.PrimaryBold("$0"),
-			contributors,
-			platform.PrimaryBold(plan),
-		)
-	} else {
-		costMessage = fmt.Sprintf(
-			"   %s = %d * $%d – approximate cost/month for %s plan\n",
-			platform.PrimaryBold(fmt.Sprintf("$%d", cost*contributors)),
-			contributors,
-			cost,
-			platform.PrimaryBold(plan),
-		)
-	}
-
-	return costMessage
 }
