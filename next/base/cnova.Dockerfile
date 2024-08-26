@@ -40,7 +40,7 @@ ENV LOCALES_VERSION="2.36-9+deb12u7"
 # renovate: datasource=npm depName=eslint
 ENV ESLINT_VERSION="9.9.0"
 # renovate: datasource=npm depName=pnpm
-ENV PNPM_VERSION="9.8.0"
+ENV PNPM_VERSION="9.9.0"
 
 ENV HOME="/root" \
     LC_ALL="en_US.UTF-8" \
