@@ -181,7 +181,7 @@ func GetDotNetConfig(projectDir string, yamlName string) bool {
 }
 
 // AllNativeCodes is a list of all supported Qodana linters product codes
-var AllNativeCodes = []string{QDNET, QDJVM, QDJVMC, QDGO, QDPY, QDPYC, QDJS} // TODO: QDPHP
+var AllNativeCodes = []string{QDNET, QDJVM, QDJVMC, QDGO, QDPY, QDPYC, QDJS, QDPHP}
 
 func Image(code string) string {
 	if val, ok := DockerImageMap[code]; ok {
