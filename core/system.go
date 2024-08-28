@@ -216,7 +216,11 @@ func RunAnalysis(ctx context.Context, options *QodanaOptions) int {
 func runLocalChanges(ctx context.Context, options *QodanaOptions, startHash string) int {
 	var exitCode int
 	gitReset := false
-	if r := platform.GitCurrentRevision(options.ProjectDir); options.DiffEnd != "" && options.DiffEnd != r {
+	r, err := platform.GitCurrentRevision(options.ProjectDir)
+	if err != nil {
+		log.Fatal(err)
+	}
+	if options.DiffEnd != "" && options.DiffEnd != r {
 		platform.WarningMessage("Cannot run local-changes because --diff-end is %s and HEAD is %s", options.DiffEnd, r)
 	} else {
 		err := platform.GitReset(options.ProjectDir, startHash)
@@ -237,15 +241,21 @@ func runLocalChanges(ctx context.Context, options *QodanaOptions, startHash stri
 }
 
 func runWithFullHistory(ctx context.Context, options *QodanaOptions, startHash string) int {
-	remoteUrl := platform.GitRemoteUrl(options.ProjectDir)
-	branch := platform.GitBranch(options.ProjectDir)
+	remoteUrl, err := platform.GitRemoteUrl(options.ProjectDir)
+	if err != nil {
+		log.Fatal(err)
+	}
+	branch, err := platform.GitBranch(options.ProjectDir)
+	if err != nil {
+		log.Fatal(err)
+	}
 	if remoteUrl == "" && branch == "" {
 		log.Fatal("Please check that project is located within the Git repo")
 	}
 	options.Setenv(platform.QodanaRemoteUrl, remoteUrl)
 	options.Setenv(platform.QodanaBranch, branch)
 
-	err := platform.GitClean(options.ProjectDir)
+	err = platform.GitClean(options.ProjectDir)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -289,9 +299,13 @@ func runScopeScript(ctx context.Context, options *QodanaOptions, startHash strin
 	if options.Ide == "" {
 		return runQodana(ctx, options)
 	}
+	var err error
 	end := options.DiffEnd
 	if end == "" {
-		end = platform.GitCurrentRevision(options.ProjectDir)
+		end, err = platform.GitCurrentRevision(options.ProjectDir)
+		if err != nil {
+			log.Fatal(err)
+		}
 	}
 
 	scopeFile, err := writeChangesFile(options, startHash, end)
@@ -393,7 +407,10 @@ func writeChangesFile(options *QodanaOptions, start string, end string) (string,
 	if start == "" || end == "" {
 		return "", fmt.Errorf("no commits given")
 	}
-	diff := platform.GitDiffNameOnly(options.ProjectDir, start, end)
+	diff, err := platform.GitDiffNameOnly(options.ProjectDir, start, end)
+	if err != nil {
+		return "", err
+	}
 	emptyDiff := true
 	for _, e := range diff {
 		emptyDiff = emptyDiff && (len(e) == 0)
