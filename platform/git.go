@@ -18,11 +18,12 @@ package platform
 
 import (
 	"fmt"
+	"github.com/go-git/go-git/v5"
+	"github.com/go-git/go-git/v5/plumbing"
+	"github.com/go-git/go-git/v5/plumbing/object"
+	log "github.com/sirupsen/logrus"
 	"os"
 	"os/exec"
-	"strings"
-
-	log "github.com/sirupsen/logrus"
 )
 
 // gitRun runs the git command in the given directory and returns an error if any.
@@ -58,49 +59,123 @@ func GitClean(cwd string) error {
 	return gitRun(cwd, []string{"clean", "-fdx"})
 }
 
-// gitOutput runs the git command in the given directory and returns the output.
-func gitOutput(cwd string, args []string) []string {
-	cmd := exec.Command("git", args...)
-	cmd.Dir = cwd
-	out, err := cmd.Output()
-	if err != nil {
-		log.Warn(err.Error())
-		return []string{""}
-	}
-	return strings.Split(strings.TrimSpace(string(out)), "\n")
-}
-
-// GitLog returns the git log of the given repository in the given format.
-func GitLog(cwd string, format string, since int) []string {
-	args := []string{"--no-pager", "log", "--all"}
-	if format != "" {
-		args = append(args, "--pretty=format:"+format)
-	}
-	if since > 0 {
-		args = append(args, fmt.Sprintf("--since=%d.days", since))
-	}
-	return gitOutput(cwd, args)
-}
-
 // GitRevisions returns the list of commits of the git repository in chronological order.
 func GitRevisions(cwd string) []string {
 	return reverse(GitLog(cwd, "%H", 0))
 }
 
 // GitRemoteUrl returns the remote url of the git repository.
-func GitRemoteUrl(cwd string) string {
-	return gitOutput(cwd, []string{"remote", "get-url", "origin"})[0]
+func GitRemoteUrl(cwd string) (string, error) {
+	repo, err := openRepository(cwd)
+	if err != nil {
+		return "", err
+	}
+	remote, err := repo.Remote("origin")
+	if err != nil {
+		return "", fmt.Errorf("failed to get origin remote: %s", err)
+	}
+
+	urls := remote.Config().URLs
+	if len(urls) > 0 {
+		return urls[0], nil
+	} else {
+		return "", fmt.Errorf("no URLs found for remote 'origin': %d", len(urls))
+	}
 }
 
 // GitBranch returns the current branch of the git repository.
-func GitBranch(cwd string) string {
-	return gitOutput(cwd, []string{"rev-parse", "--abbrev-ref", "HEAD"})[0]
+func GitBranch(cwd string) (string, error) {
+	repo, err := openRepository(cwd)
+	if err != nil {
+		return "", err
+	}
+	ref, err := repo.Head()
+	if err != nil {
+		return "", fmt.Errorf("failed to get HEAD reference: %v", err)
+	}
+
+	return ref.Name().Short(), nil
 }
 
-func GitDiffNameOnly(cwd string, diffStart string, diffEnd string) []string {
-	return gitOutput(cwd, []string{"diff", "--name-only", diffStart, diffEnd})
+func GitDiffNameOnly(cwd string, diffStart string, diffEnd string) ([]string, error) {
+	repo, err := openRepository(cwd)
+	if err != nil {
+		return []string{""}, err
+	}
+	files, err := getChangedFilesBetweenCommits(repo, diffStart, diffEnd)
+	if err != nil {
+		return []string{""}, err
+	}
+	return files, nil
 }
 
-func GitCurrentRevision(cwd string) string {
-	return gitOutput(cwd, []string{"rev-parse", "HEAD"})[0]
+func GitCurrentRevision(cwd string) (string, error) {
+	repo, err := openRepository(cwd)
+	if err != nil {
+		return "", err
+	}
+	ref, err := repo.Head()
+	if err != nil {
+		log.Fatalf("Failed to get HEAD reference: %v", err)
+	}
+
+	// Get the hash of the HEAD reference
+	hash := ref.Hash()
+	return hash.String(), nil
+}
+
+// getChangedFilesBetweenCommits retrieves changed files between two commit hashes
+func getChangedFilesBetweenCommits(repo *git.Repository, hash1, hash2 string) ([]string, error) {
+	commit1, err := repo.CommitObject(plumbing.NewHash(hash1))
+	if err != nil {
+		return nil, fmt.Errorf("failed to find commit %s: %v", hash1, err)
+	}
+
+	commit2, err := repo.CommitObject(plumbing.NewHash(hash2))
+	if err != nil {
+		return nil, fmt.Errorf("failed to find commit %s: %v", hash2, err)
+	}
+
+	tree1, err := commit1.Tree()
+	if err != nil {
+		return nil, fmt.Errorf("failed to get tree for commit %s: %v", hash1, err)
+	}
+
+	tree2, err := commit2.Tree()
+	if err != nil {
+		return nil, fmt.Errorf("failed to get tree for commit %s: %v", hash2, err)
+	}
+
+	changes, err := object.DiffTree(tree1, tree2)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get changes between commits %s and %s: %v", hash1, hash2, err)
+	}
+
+	changedFilesMap := make(map[string]struct{})
+
+	for _, change := range changes {
+		if change.From.Name != "" {
+			changedFilesMap[change.From.Name] = struct{}{}
+		}
+		if change.To.Name != "" {
+			changedFilesMap[change.To.Name] = struct{}{}
+		}
+	}
+
+	var changedFiles []string
+	for file := range changedFilesMap {
+		changedFiles = append(changedFiles, file)
+	}
+
+	return changedFiles, nil
+}
+
+// openRepository finds the repository root directory and opens the Git repository
+func openRepository(path string) (*git.Repository, error) {
+	// Attempt to open the repository, starting from the given path and searching upwards
+	repo, err := git.PlainOpenWithOptions(path, &git.PlainOpenOptions{DetectDotGit: true})
+	if err != nil {
+		return nil, fmt.Errorf("failed to open repository: %v", err)
+	}
+	return repo, nil
 }
