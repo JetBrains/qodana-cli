@@ -20,6 +20,7 @@ import (
 	"fmt"
 	log "github.com/sirupsen/logrus"
 	"os/exec"
+	"path/filepath"
 	"strings"
 )
 
@@ -28,7 +29,20 @@ func GitBranchLegacy(cwd string) string {
 }
 
 func GitDiffNameOnlyLegacy(cwd string, diffStart string, diffEnd string) []string {
-	return gitOutput(cwd, []string{"diff", "--name-only", diffStart, diffEnd})
+	relPaths := gitOutput(cwd, []string{"diff", "--name-only", "--relative", diffStart, diffEnd})
+	absPaths := make([]string, 0)
+	for _, relPath := range relPaths {
+		if relPath == "" {
+			continue
+		}
+		filePath := filepath.Join(cwd, relPath)
+		absFilePath, err := filepath.Abs(filePath)
+		if err != nil {
+			log.Fatalf("Failed to resolve absolute path of %s: %s", filePath, err)
+		}
+		absPaths = append(absPaths, absFilePath)
+	}
+	return absPaths
 }
 
 func GitCurrentRevisionLegacy(cwd string) string {
