@@ -168,9 +168,15 @@ func getChangedFilesBetweenCommits(repo *git.Repository, cwd, hash1, hash2 strin
 		}
 	}
 
+	// Get the repository's working directory
+	worktree, err := repo.Worktree()
+	if err != nil {
+		return nil, fmt.Errorf("failed to get worktree: %v", err)
+	}
+	repoRoot := worktree.Filesystem.Root()
 	var changedFiles = make([]string, 0)
 	for file := range changedFilesMap {
-		absolutePath, err := getAbsolutePath(repo, file)
+		absolutePath, err := filepath.Abs(filepath.Join(repoRoot, file))
 		if err != nil {
 			return nil, fmt.Errorf("failed to get absolute path for file %s: %v", file, err)
 		}
@@ -181,21 +187,6 @@ func getChangedFilesBetweenCommits(repo *git.Repository, cwd, hash1, hash2 strin
 	}
 
 	return changedFiles, nil
-}
-
-// getAbsolutePath returns the absolute path of a file relative to the repository root
-func getAbsolutePath(repo *git.Repository, relativePath string) (string, error) {
-	// Get the repository's working directory
-	worktree, err := repo.Worktree()
-	if err != nil {
-		return "", fmt.Errorf("failed to get worktree: %v", err)
-	}
-	repoRoot := worktree.Filesystem.Root()
-
-	// Combine the repository root with the relative path to get the absolute path
-	absolutePath, err := filepath.Abs(filepath.Join(repoRoot, relativePath))
-
-	return absolutePath, err
 }
 
 // openRepository finds the repository root directory and opens the Git repository
