@@ -24,6 +24,8 @@ import (
 	log "github.com/sirupsen/logrus"
 	"os"
 	"os/exec"
+	"path/filepath"
+	"strings"
 )
 
 // gitRun runs the git command in the given directory and returns an error if any.
@@ -102,7 +104,7 @@ func GitDiffNameOnly(cwd string, diffStart string, diffEnd string) ([]string, er
 	if err != nil {
 		return []string{""}, err
 	}
-	files, err := getChangedFilesBetweenCommits(repo, diffStart, diffEnd)
+	files, err := getChangedFilesBetweenCommits(repo, cwd, diffStart, diffEnd)
 	if err != nil {
 		return []string{""}, err
 	}
@@ -125,7 +127,11 @@ func GitCurrentRevision(cwd string) (string, error) {
 }
 
 // getChangedFilesBetweenCommits retrieves changed files between two commit hashes
-func getChangedFilesBetweenCommits(repo *git.Repository, hash1, hash2 string) ([]string, error) {
+func getChangedFilesBetweenCommits(repo *git.Repository, cwd, hash1, hash2 string) ([]string, error) {
+	absCwd, err := filepath.Abs(cwd)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get absolute path of root folder %s: %v", cwd, err)
+	}
 	commit1, err := repo.CommitObject(plumbing.NewHash(hash1))
 	if err != nil {
 		return nil, fmt.Errorf("failed to find commit %s: %v", hash1, err)
@@ -162,12 +168,34 @@ func getChangedFilesBetweenCommits(repo *git.Repository, hash1, hash2 string) ([
 		}
 	}
 
-	var changedFiles []string
+	var changedFiles = make([]string, 0)
 	for file := range changedFilesMap {
-		changedFiles = append(changedFiles, file)
+		absolutePath, err := getAbsolutePath(repo, file)
+		if err != nil {
+			return nil, fmt.Errorf("failed to get absolute path for file %s: %v", file, err)
+		}
+		isInSubfolder := strings.HasPrefix(absolutePath, absCwd+string(filepath.Separator))
+		if isInSubfolder {
+			changedFiles = append(changedFiles, absolutePath)
+		}
 	}
 
 	return changedFiles, nil
+}
+
+// getAbsolutePath returns the absolute path of a file relative to the repository root
+func getAbsolutePath(repo *git.Repository, relativePath string) (string, error) {
+	// Get the repository's working directory
+	worktree, err := repo.Worktree()
+	if err != nil {
+		return "", fmt.Errorf("failed to get worktree: %v", err)
+	}
+	repoRoot := worktree.Filesystem.Root()
+
+	// Combine the repository root with the relative path to get the absolute path
+	absolutePath, err := filepath.Abs(filepath.Join(repoRoot, relativePath))
+
+	return absolutePath, err
 }
 
 // openRepository finds the repository root directory and opens the Git repository
