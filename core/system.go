@@ -435,6 +435,11 @@ func writeChangesFile(options *QodanaOptions, start string, end string) (string,
 		return "", fmt.Errorf("failed to write scope file: %w", err)
 	}
 
+	err = platform.CopyFile(file.Name(), filepath.Join(options.LogDirPath(), "changes.json"))
+	if err != nil {
+		return "", err
+	}
+
 	return file.Name(), nil
 }
 

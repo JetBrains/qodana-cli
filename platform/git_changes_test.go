@@ -149,12 +149,12 @@ func TestChangesCalculation(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.action, func(t *testing.T) {
-			repo, hashBefore, hashAfter := createRepo(t, tc)
+			repo := createRepo(t, tc)
 			defer func(path string) {
 				_ = os.RemoveAll(path)
 			}(repo)
 
-			commits, err := GitChangedFiles(repo, hashBefore, hashAfter)
+			commits, err := GitChangedFiles(repo, "HEAD~1", "HEAD")
 			for _, file := range commits.Files {
 				file.Path = filepath.Base(file.Path)
 			}
@@ -167,7 +167,7 @@ func TestChangesCalculation(t *testing.T) {
 	}
 }
 
-func createRepo(t *testing.T, tc TestConfig) (string, string, string) {
+func createRepo(t *testing.T, tc TestConfig) string {
 	// Step 1: Create a new directory for the repository
 	repoDir, err := os.MkdirTemp("", "testrepo")
 	assert.NoError(t, err)
@@ -199,8 +199,6 @@ func createRepo(t *testing.T, tc TestConfig) (string, string, string) {
 	cmd.Dir = repoDir
 	err = cmd.Run()
 	assert.NoError(t, err)
-
-	initHash := getCurrentHash(t, repoDir)
 
 	// Step 4: Perform the action specified
 	switch tc.action {
@@ -234,7 +232,7 @@ func createRepo(t *testing.T, tc TestConfig) (string, string, string) {
 	err = cmd.Run()
 	assert.NoError(t, err)
 
-	return repoDir, initHash, getCurrentHash(t, repoDir)
+	return repoDir
 }
 
 func getCurrentHash(t *testing.T, repoDir string) string {
