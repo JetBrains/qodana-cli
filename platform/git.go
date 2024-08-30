@@ -19,13 +19,9 @@ package platform
 import (
 	"fmt"
 	"github.com/go-git/go-git/v5"
-	"github.com/go-git/go-git/v5/plumbing"
-	"github.com/go-git/go-git/v5/plumbing/object"
 	log "github.com/sirupsen/logrus"
 	"os"
 	"os/exec"
-	"path/filepath"
-	"strings"
 )
 
 // gitRun runs the git command in the given directory and returns an error if any.
@@ -99,18 +95,6 @@ func GitBranch(cwd string) (string, error) {
 	return ref.Name().Short(), nil
 }
 
-func GitDiffNameOnly(cwd string, diffStart string, diffEnd string) ([]string, error) {
-	repo, err := openRepository(cwd)
-	if err != nil {
-		return []string{""}, err
-	}
-	files, err := getChangedFilesBetweenCommits(repo, cwd, diffStart, diffEnd)
-	if err != nil {
-		return []string{""}, err
-	}
-	return files, nil
-}
-
 func GitCurrentRevision(cwd string) (string, error) {
 	repo, err := openRepository(cwd)
 	if err != nil {
@@ -124,69 +108,6 @@ func GitCurrentRevision(cwd string) (string, error) {
 	// Get the hash of the HEAD reference
 	hash := ref.Hash()
 	return hash.String(), nil
-}
-
-// getChangedFilesBetweenCommits retrieves changed files between two commit hashes
-func getChangedFilesBetweenCommits(repo *git.Repository, cwd, hash1, hash2 string) ([]string, error) {
-	absCwd, err := filepath.Abs(cwd)
-	if err != nil {
-		return nil, fmt.Errorf("failed to get absolute path of root folder %s: %v", cwd, err)
-	}
-	commit1, err := repo.CommitObject(plumbing.NewHash(hash1))
-	if err != nil {
-		return nil, fmt.Errorf("failed to find commit %s: %v", hash1, err)
-	}
-
-	commit2, err := repo.CommitObject(plumbing.NewHash(hash2))
-	if err != nil {
-		return nil, fmt.Errorf("failed to find commit %s: %v", hash2, err)
-	}
-
-	tree1, err := commit1.Tree()
-	if err != nil {
-		return nil, fmt.Errorf("failed to get tree for commit %s: %v", hash1, err)
-	}
-
-	tree2, err := commit2.Tree()
-	if err != nil {
-		return nil, fmt.Errorf("failed to get tree for commit %s: %v", hash2, err)
-	}
-
-	changes, err := object.DiffTree(tree1, tree2)
-	if err != nil {
-		return nil, fmt.Errorf("failed to get changes between commits %s and %s: %v", hash1, hash2, err)
-	}
-
-	changedFilesMap := make(map[string]struct{})
-
-	for _, change := range changes {
-		if change.From.Name != "" {
-			changedFilesMap[change.From.Name] = struct{}{}
-		}
-		if change.To.Name != "" {
-			changedFilesMap[change.To.Name] = struct{}{}
-		}
-	}
-
-	// Get the repository's working directory
-	worktree, err := repo.Worktree()
-	if err != nil {
-		return nil, fmt.Errorf("failed to get worktree: %v", err)
-	}
-	repoRoot := worktree.Filesystem.Root()
-	var changedFiles = make([]string, 0)
-	for file := range changedFilesMap {
-		absolutePath, err := filepath.Abs(filepath.Join(repoRoot, file))
-		if err != nil {
-			return nil, fmt.Errorf("failed to get absolute path for file %s: %v", file, err)
-		}
-		isInSubfolder := strings.HasPrefix(absolutePath, absCwd+string(filepath.Separator))
-		if isInSubfolder {
-			changedFiles = append(changedFiles, absolutePath)
-		}
-	}
-
-	return changedFiles, nil
 }
 
 // openRepository finds the repository root directory and opens the Git repository
