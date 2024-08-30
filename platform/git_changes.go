@@ -24,6 +24,7 @@ import (
 	"github.com/go-git/go-git/v5/plumbing/object"
 	"path/filepath"
 	"regexp"
+	"sort"
 	"strings"
 )
 
@@ -74,12 +75,22 @@ func getChangedFilesBetweenCommits(repo *git.Repository, cwd, hash1, hash2 strin
 	if err != nil {
 		return ChangedFiles{}, fmt.Errorf("failed to get absolute path of root folder %s: %v", cwd, err)
 	}
-	commit1, err := repo.CommitObject(plumbing.NewHash(hash1))
+	revision1, err := repo.ResolveRevision(plumbing.Revision(hash1))
+	if err != nil {
+		return ChangedFiles{}, fmt.Errorf("failed to resolve revision %s: %v", hash1, err)
+	}
+
+	revision2, err := repo.ResolveRevision(plumbing.Revision(hash2))
+	if err != nil {
+		return ChangedFiles{}, fmt.Errorf("failed to resolve revision %s: %v", hash2, err)
+	}
+
+	commit1, err := repo.CommitObject(*revision1)
 	if err != nil {
 		return ChangedFiles{}, fmt.Errorf("failed to find commit %s: %v", hash1, err)
 	}
 
-	commit2, err := repo.CommitObject(plumbing.NewHash(hash2))
+	commit2, err := repo.CommitObject(*revision2)
 	if err != nil {
 		return ChangedFiles{}, fmt.Errorf("failed to find commit %s: %v", hash2, err)
 	}
@@ -147,6 +158,10 @@ func getChangedFilesBetweenCommits(repo *git.Repository, cwd, hash1, hash2 strin
 	for _, file := range changedFilesMap {
 		files = append(files, file)
 	}
+
+	sort.Slice(files, func(i, j int) bool {
+		return files[i].Path < files[j].Path
+	})
 
 	return ChangedFiles{Files: files}, nil
 }
