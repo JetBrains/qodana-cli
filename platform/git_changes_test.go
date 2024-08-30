@@ -115,6 +115,36 @@ func TestChangesCalculation(t *testing.T) {
   ]
 }`,
 		},
+		{
+			initialContent:  "Hello, New File!\nThis file is newly created.\n",
+			modifiedContent: "Hello, New File!\nThis file is newly created.\n",
+			action:          "move",
+			result: `
+{
+  "files": [
+    {
+      "path": "file.txt",
+      "added": [],
+      "deleted": [
+        {
+          "firstLine": 1,
+          "count": 2
+        }
+      ]
+    },
+    {
+      "path": "file2.txt",
+      "added": [
+        {
+          "firstLine": 1,
+          "count": 2
+        }
+      ],
+      "deleted": []
+    }
+  ]
+}`,
+		},
 	}
 
 	for _, tc := range testCases {
@@ -150,6 +180,7 @@ func createRepo(t *testing.T, tc TestConfig) (string, string, string) {
 
 	// File name
 	fileName := "file.txt"
+	fileName2 := "file2.txt"
 
 	// Step 3: Create the first file and commit it if initial content is not empty
 	initialFileName := fileName
@@ -176,6 +207,14 @@ func createRepo(t *testing.T, tc TestConfig) (string, string, string) {
 	case "modify":
 		err = os.WriteFile(repoDir+"/"+fileName, []byte(tc.modifiedContent), 0644)
 		assert.NoError(t, err)
+	case "move":
+		cmd = exec.Command("git", "mv", repoDir+"/"+fileName, repoDir+"/"+fileName2)
+		cmd.Dir = repoDir
+		err = cmd.Run()
+		assert.NoError(t, err)
+		//err = os.Remove(repoDir + "/" + fileName)
+		//err = os.WriteFile(repoDir+"/"+fileName2, []byte(tc.modifiedContent), 0644)
+		//assert.NoError(t, err)
 	case "delete":
 		err = os.Remove(repoDir + "/" + fileName)
 		assert.NoError(t, err)
