@@ -104,10 +104,10 @@ func getChangedFilesBetweenCommits(repo *git.Repository, cwd, hash1, hash2 strin
 
 	for _, change := range changes {
 		var path = ""
-		if change.From.Name != "" {
-			path = change.From.Name
-		} else {
+		if change.To.Name != "" {
 			path = change.To.Name
+		} else {
+			path = change.From.Name
 		}
 		if path == "" {
 			continue
