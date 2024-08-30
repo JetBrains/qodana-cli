@@ -407,18 +407,12 @@ func writeChangesFile(options *QodanaOptions, start string, end string) (string,
 	if start == "" || end == "" {
 		return "", fmt.Errorf("no commits given")
 	}
-	diff, err := platform.GitDiffNameOnly(options.ProjectDir, start, end)
+	changedFiles, err := platform.GitChangedFiles(options.ProjectDir, start, end)
 	if err != nil {
 		return "", err
 	}
-	emptyDiff := true
-	for _, e := range diff {
-		emptyDiff = emptyDiff && (len(e) == 0)
-		if !emptyDiff {
-			break
-		}
-	}
-	if emptyDiff {
+
+	if len(changedFiles.Files) == 0 {
 		return "", fmt.Errorf("nothing to compare between %s and %s", start, end)
 	}
 	file, err := os.CreateTemp("", "diff-scope.txt")
@@ -432,7 +426,11 @@ func writeChangesFile(options *QodanaOptions, start string, end string) (string,
 		}
 	}()
 
-	_, err = file.WriteString(strings.Join(diff, "\n"))
+	jsonChanges, err := json.MarshalIndent(changedFiles, "", "  ")
+	if err != nil {
+		return "", err
+	}
+	_, err = file.WriteString(string(jsonChanges))
 	if err != nil {
 		return "", fmt.Errorf("failed to write scope file: %w", err)
 	}
