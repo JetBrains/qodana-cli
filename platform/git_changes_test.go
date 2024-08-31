@@ -194,6 +194,12 @@ func createRepo(t *testing.T, tc TestConfig) string {
 	cmd = exec.Command("git", "add", initialFileName)
 	runGit(t, cmd, repoDir)
 
+	cmd = exec.Command("git", "config", "user.email", "you@example.com")
+	runGit(t, cmd, repoDir)
+
+	cmd = exec.Command("git", "config", "user.name", "name")
+	runGit(t, cmd, repoDir)
+
 	cmd = exec.Command("git", "commit", "-m", "Initial commit")
 	runGit(t, cmd, repoDir)
 
