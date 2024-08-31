@@ -18,6 +18,7 @@ package platform
 
 import (
 	"encoding/json"
+	log "github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
 	"os"
 	"os/exec"
@@ -174,9 +175,7 @@ func createRepo(t *testing.T, tc TestConfig) string {
 
 	// Step 2: Initialize a new Git repository
 	cmd := exec.Command("git", "init")
-	cmd.Dir = repoDir
-	err = cmd.Run()
-	assert.NoError(t, err)
+	runGit(t, cmd, repoDir)
 
 	// File name
 	fileName := "file.txt"
@@ -193,14 +192,10 @@ func createRepo(t *testing.T, tc TestConfig) string {
 	assert.NoError(t, err)
 
 	cmd = exec.Command("git", "add", initialFileName)
-	cmd.Dir = repoDir
-	err = cmd.Run()
-	assert.NoError(t, err)
+	runGit(t, cmd, repoDir)
 
 	cmd = exec.Command("git", "commit", "-m", "Initial commit")
-	cmd.Dir = repoDir
-	err = cmd.Run()
-	assert.NoError(t, err)
+	runGit(t, cmd, repoDir)
 
 	// Step 4: Perform the action specified
 	switch tc.action {
@@ -209,9 +204,7 @@ func createRepo(t *testing.T, tc TestConfig) string {
 		assert.NoError(t, err)
 	case "move":
 		cmd = exec.Command("git", "mv", absolutePath, absolutePath2)
-		cmd.Dir = repoDir
-		err = cmd.Run()
-		assert.NoError(t, err)
+		runGit(t, cmd, repoDir)
 	case "delete":
 		err = os.Remove(absolutePath)
 		assert.NoError(t, err)
@@ -222,14 +215,18 @@ func createRepo(t *testing.T, tc TestConfig) string {
 
 	// Step 5: Stage changes and commit
 	cmd = exec.Command("git", "add", "-A")
-	cmd.Dir = repoDir
-	err = cmd.Run()
-	assert.NoError(t, err)
+	runGit(t, cmd, repoDir)
 
 	cmd = exec.Command("git", "commit", "-m", tc.action+" file")
-	cmd.Dir = repoDir
-	err = cmd.Run()
-	assert.NoError(t, err)
+	runGit(t, cmd, repoDir)
 
 	return repoDir
+}
+
+func runGit(t *testing.T, cmd *exec.Cmd, repoDir string) {
+	cmd.Dir = repoDir
+	err := cmd.Run()
+	out, _ := cmd.CombinedOutput()
+	log.Info(string(out))
+	assert.NoError(t, err)
 }
