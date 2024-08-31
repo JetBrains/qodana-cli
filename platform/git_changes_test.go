@@ -181,13 +181,15 @@ func createRepo(t *testing.T, tc TestConfig) string {
 	// File name
 	fileName := "file.txt"
 	fileName2 := "file2.txt"
+	absolutePath := filepath.Join(repoDir, fileName)
+	absolutePath2 := filepath.Join(repoDir, fileName2)
 
 	// Step 3: Create the first file and commit it if initial content is not empty
 	initialFileName := fileName
 	if tc.initialContent == "" {
 		initialFileName = "file2.txt"
 	}
-	err = os.WriteFile(repoDir+"/"+initialFileName, []byte(tc.initialContent), 0644)
+	err = os.WriteFile(filepath.Join(repoDir, initialFileName), []byte(tc.initialContent), 0644)
 	assert.NoError(t, err)
 
 	cmd = exec.Command("git", "add", initialFileName)
@@ -203,21 +205,18 @@ func createRepo(t *testing.T, tc TestConfig) string {
 	// Step 4: Perform the action specified
 	switch tc.action {
 	case "modify":
-		err = os.WriteFile(repoDir+"/"+fileName, []byte(tc.modifiedContent), 0644)
+		err = os.WriteFile(absolutePath, []byte(tc.modifiedContent), 0644)
 		assert.NoError(t, err)
 	case "move":
-		cmd = exec.Command("git", "mv", repoDir+"/"+fileName, repoDir+"/"+fileName2)
+		cmd = exec.Command("git", "mv", absolutePath, absolutePath2)
 		cmd.Dir = repoDir
 		err = cmd.Run()
 		assert.NoError(t, err)
-		//err = os.Remove(repoDir + "/" + fileName)
-		//err = os.WriteFile(repoDir+"/"+fileName2, []byte(tc.modifiedContent), 0644)
-		//assert.NoError(t, err)
 	case "delete":
-		err = os.Remove(repoDir + "/" + fileName)
+		err = os.Remove(absolutePath)
 		assert.NoError(t, err)
 	case "create":
-		err = os.WriteFile(repoDir+"/"+fileName, []byte(tc.modifiedContent), 0644)
+		err = os.WriteFile(absolutePath, []byte(tc.modifiedContent), 0644)
 		assert.NoError(t, err)
 	}
 
@@ -233,12 +232,4 @@ func createRepo(t *testing.T, tc TestConfig) string {
 	assert.NoError(t, err)
 
 	return repoDir
-}
-
-func getCurrentHash(t *testing.T, repoDir string) string {
-	cmd := exec.Command("git", "rev-parse", "HEAD")
-	cmd.Dir = repoDir
-	out, err := cmd.Output()
-	assert.NoError(t, err)
-	return string(out)
 }
