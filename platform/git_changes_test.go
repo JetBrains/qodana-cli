@@ -67,7 +67,7 @@ func TestChangesCalculation(t *testing.T) {
       ],
       "deleted": [
         {
-          "firstLine": 6,
+          "firstLine": 5,
           "count": 1
         }
       ]
