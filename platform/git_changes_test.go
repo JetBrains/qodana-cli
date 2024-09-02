@@ -30,8 +30,9 @@ import (
 type TestConfig struct {
 	initialContent  string
 	modifiedContent string
-	action          string // Either "create" or "delete"
+	action          string
 	result          string
+	projDir         string
 }
 
 func TestChangesCalculation(t *testing.T) {
@@ -176,19 +177,76 @@ func TestChangesCalculation(t *testing.T) {
   ]
 }`,
 		},
+		{
+			initialContent:  "Hello, New File!\nThis file is newly created.\n",
+			modifiedContent: "",
+			action:          "subfolder_move",
+			result: `
+{
+  "files": [
+    {
+      "path": "file.txt",
+      "added": [],
+      "deleted": [
+        {
+          "firstLine": 1,
+          "count": 2
+        }
+      ]
+    },
+    {
+      "path": "subfolder/file2.txt",
+      "added": [
+        {
+          "firstLine": 1,
+          "count": 2
+        }
+      ],
+      "deleted": []
+    }
+  ]
+}`,
+		},
+		{
+			initialContent:  "Hello, New File!\nThis file is newly created.\n",
+			modifiedContent: "",
+			action:          "subfolder_move",
+			projDir:         "subfolder",
+			result: `
+{
+  "files": [
+    {
+      "path": "subfolder/file2.txt",
+      "added": [
+        {
+          "firstLine": 1,
+          "count": 2
+        }
+      ],
+      "deleted": []
+    }
+  ]
+}`,
+		},
 	}
 
 	for _, tc := range testCases {
 		t.Run(tc.action, func(t *testing.T) {
 			temp, _ := os.MkdirTemp("", "")
 			repo := createRepo(t, tc)
+
 			defer func(path string) {
 				_ = os.RemoveAll(path)
 			}(repo)
 
-			commits, err := GitChangedFiles(repo, "HEAD~1", "HEAD", temp)
+			repo, err := filepath.EvalSymlinks(repo)
+			assert.NoError(t, err)
+			projDir := filepath.Join(repo, tc.projDir)
+			commits, err := GitChangedFiles(projDir, "HEAD~1", "HEAD", temp)
+
 			for _, file := range commits.Files {
-				file.Path = filepath.Base(file.Path)
+				relPath, _ := filepath.Rel(repo, file.Path)
+				file.Path = filepath.Clean(relPath)
 			}
 			assert.NoError(t, err)
 			jsonCommits, err := json.MarshalIndent(commits, "", "  ")
@@ -213,6 +271,12 @@ func createRepo(t *testing.T, tc TestConfig) string {
 	fileName2 := "file2.txt"
 	absolutePath := filepath.Join(repoDir, fileName)
 	absolutePath2 := filepath.Join(repoDir, fileName2)
+
+	if tc.action == "subfolder_move" {
+		err = os.MkdirAll(filepath.Join(repoDir, "subfolder"), 0755)
+		assert.NoError(t, err)
+		absolutePath2 = filepath.Join(repoDir, "subfolder", fileName2)
+	}
 
 	// Step 3: Create the first file and commit it if initial content is not empty
 	initialFileName := fileName
@@ -240,6 +304,9 @@ func createRepo(t *testing.T, tc TestConfig) string {
 		err = os.WriteFile(absolutePath, []byte(tc.modifiedContent), 0644)
 		assert.NoError(t, err)
 	case "move":
+		cmd = exec.Command("git", "mv", absolutePath, absolutePath2)
+		runGit(t, cmd, repoDir)
+	case "subfolder_move":
 		cmd = exec.Command("git", "mv", absolutePath, absolutePath2)
 		runGit(t, cmd, repoDir)
 	case "delete":

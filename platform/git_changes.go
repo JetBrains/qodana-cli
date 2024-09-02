@@ -70,15 +70,24 @@ func GitDiffNameOnly(cwd string, diffStart string, diffEnd string, logdir string
 }
 
 func GitChangedFiles(cwd string, diffStart string, diffEnd string, logdir string) (ChangedFiles, error) {
+	cwd, err := filepath.EvalSymlinks(cwd)
+	if err != nil {
+		return ChangedFiles{}, err
+	}
+	repoRoot, err := GitRoot(cwd, logdir)
+	if err != nil {
+		return ChangedFiles{}, err
+	}
+
 	stdout, _, err := gitRun(cwd, []string{"diff", diffStart, diffEnd, "--unified=0", "--no-renames"}, logdir)
 	if err != nil {
 		return ChangedFiles{}, err
 	}
-	return parseDiff(stdout)
+	return parseDiff(stdout, repoRoot, cwd)
 }
 
 // parseDiff parses the git diff output and extracts changes
-func parseDiff(diff string) (ChangedFiles, error) {
+func parseDiff(diff string, repoRoot string, cwd string) (ChangedFiles, error) {
 	var changes []HunkChange
 	scanner := bufio.NewScanner(strings.NewReader(diff))
 
@@ -135,11 +144,14 @@ func parseDiff(diff string) (ChangedFiles, error) {
 				fileName = file.ToPath
 			}
 		}
-		files = append(files, &ChangedFile{
-			Path:    fileName,
-			Added:   file.Added,
-			Deleted: file.Deleted,
-		})
+		path := filepath.Join(repoRoot, fileName)
+		if strings.HasPrefix(path, cwd) { // take changes only inside project
+			files = append(files, &ChangedFile{
+				Path:    path,
+				Added:   file.Added,
+				Deleted: file.Deleted,
+			})
+		}
 	}
 
 	sort.Slice(files, func(i, j int) bool {

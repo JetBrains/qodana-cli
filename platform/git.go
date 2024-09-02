@@ -82,6 +82,15 @@ func GitRevisions(cwd string) []string {
 	return reverse(GitLog(cwd, "%H", 0))
 }
 
+// GitRoot returns absolute path of repo root
+func GitRoot(cwd string, logdir string) (string, error) {
+	stdout, _, err := gitRun(cwd, []string{"rev-parse", "--show-toplevel"}, logdir)
+	if err != nil {
+		return "", err
+	}
+	return strings.TrimSpace(stdout), nil
+}
+
 // GitRemoteUrl returns the remote url of the git repository.
 func GitRemoteUrl(cwd string, logdir string) (string, error) {
 	stdout, _, err := gitRun(cwd, []string{"remote", "get-url", "origin"}, logdir)
