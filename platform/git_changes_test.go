@@ -246,7 +246,7 @@ func TestChangesCalculation(t *testing.T) {
 
 			for _, file := range commits.Files {
 				relPath, _ := filepath.Rel(repo, file.Path)
-				file.Path = filepath.Clean(relPath)
+				file.Path = strings.ReplaceAll(relPath, string(os.PathSeparator), "/")
 			}
 			assert.NoError(t, err)
 			jsonCommits, err := json.MarshalIndent(commits, "", "  ")
