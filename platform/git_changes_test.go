@@ -146,6 +146,36 @@ func TestChangesCalculation(t *testing.T) {
   ]
 }`,
 		},
+		{
+			initialContent:  "Hello, New File!\nThis file is newly created.\n",
+			modifiedContent: "Hello, New File!\nThis file is newly created.\n",
+			action:          "rename",
+			result: `
+{
+  "files": [
+    {
+      "path": "file.txt",
+      "added": [],
+      "deleted": [
+        {
+          "firstLine": 1,
+          "count": 2
+        }
+      ]
+    },
+    {
+      "path": "file2.txt",
+      "added": [
+        {
+          "firstLine": 1,
+          "count": 2
+        }
+      ],
+      "deleted": []
+    }
+  ]
+}`,
+		},
 	}
 
 	for _, tc := range testCases {
@@ -214,6 +244,9 @@ func createRepo(t *testing.T, tc TestConfig) string {
 		runGit(t, cmd, repoDir)
 	case "delete":
 		err = os.Remove(absolutePath)
+		assert.NoError(t, err)
+	case "rename":
+		err = os.Rename(absolutePath, absolutePath2)
 		assert.NoError(t, err)
 	case "create":
 		err = os.WriteFile(absolutePath, []byte(tc.modifiedContent), 0644)
