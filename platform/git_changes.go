@@ -17,11 +17,9 @@
 package platform
 
 import (
+	"bufio"
 	"fmt"
-	"github.com/go-git/go-git/v5"
-	"github.com/go-git/go-git/v5/plumbing"
-	"github.com/go-git/go-git/v5/plumbing/format/diff"
-	"github.com/go-git/go-git/v5/plumbing/object"
+	log "github.com/sirupsen/logrus"
 	"path/filepath"
 	"regexp"
 	"sort"
@@ -31,6 +29,13 @@ import (
 type ChangedRegion struct {
 	FirstLine int `json:"firstLine"`
 	Count     int `json:"count"`
+}
+
+type HunkChange struct {
+	FromPath string
+	ToPath   string
+	Added    []*ChangedRegion
+	Deleted  []*ChangedRegion
 }
 
 type ChangedFile struct {
@@ -43,120 +48,135 @@ type ChangedFiles struct {
 	Files []*ChangedFile `json:"files"`
 }
 
-func GitDiffNameOnly(cwd string, diffStart string, diffEnd string) ([]string, error) {
-	repo, err := openRepository(cwd)
+func GitDiffNameOnly(cwd string, diffStart string, diffEnd string, logdir string) ([]string, error) {
+	stdout, _, err := gitRun(cwd, []string{"diff", "--name-only", "--relative", diffStart, diffEnd}, logdir)
 	if err != nil {
 		return []string{""}, err
 	}
-	changedFiles, err := getChangedFilesBetweenCommits(repo, cwd, diffStart, diffEnd)
-	if err != nil {
-		return []string{""}, err
+	relPaths := strings.Split(strings.TrimSpace(stdout), "\n")
+	absPaths := make([]string, 0)
+	for _, relPath := range relPaths {
+		if relPath == "" {
+			continue
+		}
+		filePath := filepath.Join(cwd, relPath)
+		absFilePath, err := filepath.Abs(filePath)
+		if err != nil {
+			log.Fatalf("Failed to resolve absolute path of %s: %s", filePath, err)
+		}
+		absPaths = append(absPaths, absFilePath)
 	}
-
-	var changedFileNames = make([]string, 0, len(changedFiles.Files))
-	for _, file := range changedFiles.Files {
-		changedFileNames = append(changedFileNames, file.Path)
-	}
-
-	return changedFileNames, nil
+	return absPaths, nil
 }
 
-func GitChangedFiles(cwd string, diffStart string, diffEnd string) (ChangedFiles, error) {
-	repo, err := openRepository(cwd)
+func GitChangedFiles(cwd string, diffStart string, diffEnd string, logdir string) (ChangedFiles, error) {
+	stdout, _, err := gitRun(cwd, []string{"diff", diffStart, diffEnd, "--unified=0", "--no-renames"}, logdir)
 	if err != nil {
 		return ChangedFiles{}, err
 	}
-	return getChangedFilesBetweenCommits(repo, cwd, diffStart, diffEnd)
+	return parseDiff(stdout)
 }
 
-// getChangedFilesBetweenCommits retrieves changed files between two commit hashes
-func getChangedFilesBetweenCommits(repo *git.Repository, cwd, hash1, hash2 string) (ChangedFiles, error) {
-	absCwd, err := filepath.Abs(cwd)
-	if err != nil {
-		return ChangedFiles{}, fmt.Errorf("failed to get absolute path of root folder %s: %v", cwd, err)
-	}
-	revision1, err := repo.ResolveRevision(plumbing.Revision(hash1))
-	if err != nil {
-		return ChangedFiles{}, fmt.Errorf("failed to resolve revision %s: %v", hash1, err)
-	}
+// parseDiff parses the git diff output and extracts changes
+func parseDiff(diff string) (ChangedFiles, error) {
+	var changes []HunkChange
+	scanner := bufio.NewScanner(strings.NewReader(diff))
 
-	revision2, err := repo.ResolveRevision(plumbing.Revision(hash2))
-	if err != nil {
-		return ChangedFiles{}, fmt.Errorf("failed to resolve revision %s: %v", hash2, err)
-	}
+	var currentChange *HunkChange
+	// Regular expressions to match diff headers and hunks
+	reFilename := regexp.MustCompile(`^diff --git a/(.*) b/(.*)`)
+	reHunk := regexp.MustCompile(`^@@ -(\d+),?(\d*) \+(\d+),?(\d*) @@`)
 
-	commit1, err := repo.CommitObject(*revision1)
-	if err != nil {
-		return ChangedFiles{}, fmt.Errorf("failed to find commit %s: %v", hash1, err)
-	}
+	for scanner.Scan() {
+		line := scanner.Text()
 
-	commit2, err := repo.CommitObject(*revision2)
-	if err != nil {
-		return ChangedFiles{}, fmt.Errorf("failed to find commit %s: %v", hash2, err)
-	}
-
-	tree1, err := commit1.Tree()
-	if err != nil {
-		return ChangedFiles{}, fmt.Errorf("failed to get tree for commit %s: %v", hash1, err)
-	}
-
-	tree2, err := commit2.Tree()
-	if err != nil {
-		return ChangedFiles{}, fmt.Errorf("failed to get tree for commit %s: %v", hash2, err)
-	}
-
-	changes, err := object.DiffTree(tree1, tree2)
-	if err != nil {
-		return ChangedFiles{}, fmt.Errorf("failed to get changes between commits %s and %s: %v", hash1, hash2, err)
-	}
-
-	changedFilesMap := make(map[string]*ChangedFile)
-	repoRoot, err := getRepoRoot(repo, err)
-
-	for _, change := range changes {
-		var path = ""
-		if change.To.Name != "" {
-			path = change.To.Name
-		} else {
-			path = change.From.Name
-		}
-		if path == "" {
-			continue
-		}
-		absolutePath, err := filepath.Abs(filepath.Join(repoRoot, path))
-		if err != nil {
-			return ChangedFiles{}, fmt.Errorf("failed to get absolute path for file %s: %v", path, err)
-		}
-		if !strings.HasPrefix(absolutePath, absCwd+string(filepath.Separator)) {
-			continue
-		}
-
-		changedFile, exists := changedFilesMap[absolutePath]
-		if !exists {
-			changedFile = &ChangedFile{
-				Path:    absolutePath,
-				Added:   make([]*ChangedRegion, 0),
-				Deleted: make([]*ChangedRegion, 0),
+		if matches := reFilename.FindStringSubmatch(line); matches != nil {
+			if currentChange != nil {
+				changes = append(changes, *currentChange)
 			}
-			changedFilesMap[absolutePath] = changedFile
-		}
-
-		patch, err := change.Patch()
-		if err != nil {
-			return ChangedFiles{}, err
-		}
-
-		if len(patch.FilePatches()) == 0 {
+			currentChange = &HunkChange{
+				FromPath: matches[1],
+				ToPath:   matches[2],
+				Added:    []*ChangedRegion{},
+				Deleted:  []*ChangedRegion{},
+			}
 			continue
 		}
-		filePatch := patch.FilePatches()[0]
-		added, deleted := computeChangedRegions(filePatch.Chunks())
-		changedFile.Added = added
-		changedFile.Deleted = deleted
+
+		if matches := reHunk.FindStringSubmatch(line); matches != nil && currentChange != nil {
+			origLineStart := toInt(matches[1])
+			newLineStart := toInt(matches[3])
+
+			var addCount, removeCount int
+			for scanner.Scan() {
+				line = scanner.Text()
+				if strings.HasPrefix(line, "---") || strings.HasPrefix(line, "+++ ") || strings.HasPrefix(line, "diff ") {
+					addCount = persistAdd(addCount, currentChange, newLineStart)
+					removeCount = persistDelete(removeCount, currentChange, origLineStart)
+					if matches = reFilename.FindStringSubmatch(line); matches != nil {
+						changes = append(changes, *currentChange)
+						currentChange = &HunkChange{
+							FromPath: matches[1],
+							ToPath:   matches[2],
+							Added:    []*ChangedRegion{},
+							Deleted:  []*ChangedRegion{},
+						}
+					}
+					break
+				}
+				if strings.HasPrefix(line, "\\") {
+					// Hanv
+					continue
+				}
+				if strings.HasPrefix(line, "+") {
+					removeCount = persistDelete(removeCount, currentChange, origLineStart)
+					addCount++
+					newLineStart++
+				} else if strings.HasPrefix(line, "-") {
+					addCount = persistAdd(addCount, currentChange, newLineStart)
+					removeCount++
+					origLineStart++
+				} else {
+					addCount = persistAdd(addCount, currentChange, newLineStart)
+					removeCount = persistDelete(removeCount, currentChange, origLineStart)
+					if matches = reHunk.FindStringSubmatch(line); matches != nil {
+						origLineStart = toInt(matches[1])
+						newLineStart = toInt(matches[3])
+					} else {
+						origLineStart++
+						newLineStart++
+					}
+				}
+			}
+			// Add any remaining counts after loop
+			addCount = persistAdd(addCount, currentChange, newLineStart)
+			removeCount = persistDelete(removeCount, currentChange, origLineStart)
+		}
 	}
-	files := make([]*ChangedFile, 0, len(changedFilesMap))
-	for _, file := range changedFilesMap {
-		files = append(files, file)
+
+	if currentChange != nil {
+		changes = append(changes, *currentChange)
+	}
+
+	if err := scanner.Err(); err != nil {
+		return ChangedFiles{}, err
+	}
+
+	files := make([]*ChangedFile, 0, len(changes))
+	for _, file := range changes {
+		fileName := file.ToPath
+		if file.ToPath != file.FromPath {
+			if len(file.Deleted) > 0 {
+				fileName = file.FromPath
+			} else {
+				fileName = file.ToPath
+			}
+		}
+		files = append(files, &ChangedFile{
+			Path:    fileName,
+			Added:   file.Added,
+			Deleted: file.Deleted,
+		})
 	}
 
 	sort.Slice(files, func(i, j int) bool {
@@ -166,44 +186,28 @@ func getChangedFilesBetweenCommits(repo *git.Repository, cwd, hash1, hash2 strin
 	return ChangedFiles{Files: files}, nil
 }
 
-func getRepoRoot(repo *git.Repository, err error) (string, error) {
-	worktree, err := repo.Worktree()
-	if err != nil {
-		return "", fmt.Errorf("failed to get worktree: %v", err)
+func persistDelete(removeCount int, currentChange *HunkChange, origLineStart int) int {
+	if removeCount > 0 {
+		currentChange.Deleted = append(currentChange.Deleted, &ChangedRegion{FirstLine: origLineStart - removeCount, Count: removeCount})
+		removeCount = 0
 	}
-	repoRoot := worktree.Filesystem.Root()
-	return repoRoot, nil
+	return removeCount
 }
 
-func computeChangedRegions(chunks []diff.Chunk) ([]*ChangedRegion, []*ChangedRegion) {
-	var toLine = 1
-	var added = make([]*ChangedRegion, 0, len(chunks))
-	var deleted = make([]*ChangedRegion, 0, len(chunks))
-	for _, chunk := range chunks {
-		lines := splitLines(chunk.Content())
-		nLines := len(lines)
-		switch chunk.Type() {
-		case diff.Equal:
-			// same line in origin and in modified
-			toLine += nLines
-		case diff.Delete:
-			// deleted from the origin file
-			deleted = append(deleted, &ChangedRegion{FirstLine: toLine, Count: nLines})
-		case diff.Add:
-			// added to the new file
-			added = append(added, &ChangedRegion{FirstLine: toLine, Count: nLines})
-			toLine += nLines
-		}
+func persistAdd(addCount int, currentChange *HunkChange, newLineStart int) int {
+	if addCount > 0 {
+		currentChange.Added = append(currentChange.Added, &ChangedRegion{FirstLine: newLineStart - addCount, Count: addCount})
+		addCount = 0
 	}
-	return added, deleted
+	return addCount
 }
 
-var lineSplitter = regexp.MustCompile(`[^\n]*(\n|$)`)
-
-func splitLines(s string) []string {
-	ret := lineSplitter.FindAllString(s, -1)
-	if ret[len(ret)-1] == "" {
-		ret = ret[:len(ret)-1]
+// toInt converts a string to an integer
+func toInt(str string) int {
+	if str == "" {
+		return 0
 	}
-	return ret
+	var result int
+	_, _ = fmt.Sscanf(str, "%d", &result)
+	return result
 }
