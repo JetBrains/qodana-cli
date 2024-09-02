@@ -104,53 +104,16 @@ func parseDiff(diff string) (ChangedFiles, error) {
 		}
 
 		if matches := reHunk.FindStringSubmatch(line); matches != nil && currentChange != nil {
-			origLineStart := toInt(matches[1])
-			newLineStart := toInt(matches[3])
-
-			var addCount, removeCount int
-			for scanner.Scan() {
-				line = scanner.Text()
-				if strings.HasPrefix(line, "---") || strings.HasPrefix(line, "+++ ") || strings.HasPrefix(line, "diff ") {
-					addCount = persistAdd(addCount, currentChange, newLineStart)
-					removeCount = persistDelete(removeCount, currentChange, origLineStart)
-					if matches = reFilename.FindStringSubmatch(line); matches != nil {
-						changes = append(changes, *currentChange)
-						currentChange = &HunkChange{
-							FromPath: matches[1],
-							ToPath:   matches[2],
-							Added:    []*ChangedRegion{},
-							Deleted:  []*ChangedRegion{},
-						}
-					}
-					break
-				}
-				if strings.HasPrefix(line, "\\") {
-					// Handle \ No newline at end of file
-					continue
-				}
-				if strings.HasPrefix(line, "+") {
-					removeCount = persistDelete(removeCount, currentChange, origLineStart)
-					addCount++
-					newLineStart++
-				} else if strings.HasPrefix(line, "-") {
-					addCount = persistAdd(addCount, currentChange, newLineStart)
-					removeCount++
-					origLineStart++
-				} else {
-					addCount = persistAdd(addCount, currentChange, newLineStart)
-					removeCount = persistDelete(removeCount, currentChange, origLineStart)
-					if matches = reHunk.FindStringSubmatch(line); matches != nil {
-						origLineStart = toInt(matches[1])
-						newLineStart = toInt(matches[3])
-					} else {
-						origLineStart++
-						newLineStart++
-					}
-				}
+			origLineStart := diffToInt(matches[1])
+			origCount := diffToInt(matches[2])
+			newLineStart := diffToInt(matches[3])
+			newCount := diffToInt(matches[4])
+			if origCount != 0 {
+				currentChange.Deleted = append(currentChange.Deleted, &ChangedRegion{FirstLine: origLineStart, Count: origCount})
 			}
-			// Add any remaining counts after loop
-			addCount = persistAdd(addCount, currentChange, newLineStart)
-			removeCount = persistDelete(removeCount, currentChange, origLineStart)
+			if newCount != 0 {
+				currentChange.Added = append(currentChange.Added, &ChangedRegion{FirstLine: newLineStart, Count: newCount})
+			}
 		}
 	}
 
@@ -186,26 +149,10 @@ func parseDiff(diff string) (ChangedFiles, error) {
 	return ChangedFiles{Files: files}, nil
 }
 
-func persistDelete(removeCount int, currentChange *HunkChange, origLineStart int) int {
-	if removeCount > 0 {
-		currentChange.Deleted = append(currentChange.Deleted, &ChangedRegion{FirstLine: origLineStart - removeCount, Count: removeCount})
-		removeCount = 0
-	}
-	return removeCount
-}
-
-func persistAdd(addCount int, currentChange *HunkChange, newLineStart int) int {
-	if addCount > 0 {
-		currentChange.Added = append(currentChange.Added, &ChangedRegion{FirstLine: newLineStart - addCount, Count: addCount})
-		addCount = 0
-	}
-	return addCount
-}
-
-// toInt converts a string to an integer
-func toInt(str string) int {
+// diffToInt converts a string to an integer preserving git default number logic
+func diffToInt(str string) int {
 	if str == "" {
-		return 0
+		return 1
 	}
 	var result int
 	_, _ = fmt.Sscanf(str, "%d", &result)
