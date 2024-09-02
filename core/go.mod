@@ -4,7 +4,7 @@ go 1.21
 
 require (
 	github.com/cucumber/ci-environment/go v0.0.0-20230911180507-bd001ebc644c
-	github.com/docker/cli v25.0.0+incompatible
+	github.com/docker/cli v27.2.0+incompatible
 	github.com/docker/docker v20.10.23+incompatible // DO NOT UPDATE: breaking changes
 	github.com/docker/go-connections v0.5.0
 	github.com/otiai10/copy v1.14.0
@@ -26,7 +26,6 @@ replace (
 require (
 	github.com/JetBrains/qodana-cli/v2024/cloud v0.0.0-00010101000000-000000000000
 	github.com/JetBrains/qodana-cli/v2024/platform v0.0.0-00010101000000-000000000000
-	github.com/go-git/go-git/v5 v5.12.0
 )
 
 require (
@@ -53,6 +52,7 @@ require (
 	github.com/go-enry/go-oniguruma v1.2.1 // indirect
 	github.com/go-git/gcfg v1.5.1-0.20230307220236-3a3c6141e376 // indirect
 	github.com/go-git/go-billy/v5 v5.5.0 // indirect
+	github.com/go-git/go-git/v5 v5.12.0 // indirect
 	github.com/go-ole/go-ole v1.2.6 // indirect
 	github.com/godbus/dbus/v5 v5.1.0 // indirect
 	github.com/gogo/protobuf v1.3.2 // indirect
