@@ -150,12 +150,13 @@ func TestChangesCalculation(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.action, func(t *testing.T) {
+			temp, _ := os.MkdirTemp("", "")
 			repo := createRepo(t, tc)
 			defer func(path string) {
 				_ = os.RemoveAll(path)
 			}(repo)
 
-			commits, err := GitChangedFiles(repo, "HEAD~1", "HEAD")
+			commits, err := GitChangedFiles(repo, "HEAD~1", "HEAD", temp)
 			for _, file := range commits.Files {
 				file.Path = filepath.Base(file.Path)
 			}

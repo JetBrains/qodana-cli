@@ -27,6 +27,7 @@ import (
 )
 
 func TestGitDiffNamesOnly(t *testing.T) {
+	temp, _ := os.MkdirTemp("", "")
 	projectPath := createNativeProject(t, "casamples")
 	defer deferredCleanup(projectPath)
 
@@ -37,7 +38,7 @@ func TestGitDiffNamesOnly(t *testing.T) {
 	// Iterate over the array using a for loop.
 	for _, str := range strings {
 		path := filepath.Join(projectPath, str)
-		diff, err := GitDiffNameOnly(path, oldRev, newRev)
+		diff, err := GitDiffNameOnly(path, oldRev, newRev, temp)
 		if err != nil {
 			t.Fatalf("GitDiffNameOnly() error = %v", err)
 		}
@@ -48,17 +49,17 @@ func TestGitDiffNamesOnly(t *testing.T) {
 		if !equal {
 			t.Fatalf("Old and new diffs are not equal: old: %v new: %v", diffLegacy, diff)
 		}
-		branch, _ := GitBranch(path)
+		branch, _ := GitBranch(path, temp)
 		branchLegacy := GitBranchLegacy(path)
 		if branch != branchLegacy {
 			t.Fatalf("Old and new branch are not equal: old: %v new: %v", branchLegacy, branch)
 		}
-		revision, _ := GitCurrentRevision(path)
+		revision, _ := GitCurrentRevision(path, temp)
 		revisionLegacy := GitCurrentRevisionLegacy(path)
 		if revision != revisionLegacy {
 			t.Fatalf("Old and new revision are not equal: old: %v new: %v", revisionLegacy, revision)
 		}
-		remoteUrl, _ := GitRemoteUrl(path)
+		remoteUrl, _ := GitRemoteUrl(path, temp)
 		remoteUrlLegacy := GitRemoteUrlLegacy(path)
 		if remoteUrl != remoteUrlLegacy {
 			t.Fatalf("Old and new url are not equal: old: %v new: %v", remoteUrlLegacy, remoteUrl)

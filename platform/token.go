@@ -92,7 +92,7 @@ func (o *QodanaOptions) getTokenFromUserInput(requiresToken bool) string {
 		WarningMessage(cloud.EmptyTokenMessage, cloud.GetCloudRootEndpoint().GetCloudUrl())
 		var token string
 		for {
-			token = setupToken(o.ProjectDir, o.Id())
+			token = setupToken(o.ProjectDir, o.Id(), o.LogDirPath())
 			if token == "q" {
 				return ""
 			}
@@ -147,10 +147,10 @@ func getCloudToken(id string) (string, error) {
 	return secret, nil
 }
 
-func setupToken(path string, id string) string {
+func setupToken(path string, id string, logdir string) string {
 	openCloud := AskUserConfirm("Do you want to open the team page to get the token?")
 	if openCloud {
-		origin, err := GitRemoteUrl(path)
+		origin, err := GitRemoteUrl(path, logdir)
 		if err != nil {
 			ErrorMessage("%s", err)
 			return ""

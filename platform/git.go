@@ -18,43 +18,63 @@ package platform
 
 import (
 	"fmt"
-	"github.com/go-git/go-git/v5"
 	log "github.com/sirupsen/logrus"
 	"os"
-	"os/exec"
+	"strings"
 )
 
 // gitRun runs the git command in the given directory and returns an error if any.
-func gitRun(cwd string, command []string) error {
-	cmd := exec.Command("git", command...)
-	cmd.Dir = cwd
-	cmd.Stdout = os.Stdout
-	cmd.Stderr = os.Stderr
-	return cmd.Run()
+func gitRun(cwd string, command []string, logdir string) (string, string, error) {
+	args := []string{"git"}
+	args = append(args, command...)
+	logger, err := LOGGER.GetLogger(logdir, "git")
+	if err != nil {
+		log.Errorf("Failed to create git logger: %v", err)
+		return "", "", err
+	}
+	stdout, stderr, _, err := RunCmdRedirectOutput(cwd, args...)
+	logger.Printf("Executing command: %v", args)
+	logger.Printf(stdout)
+	_, _ = fmt.Fprintf(os.Stdout, "%s\n", stdout)
+	if stderr != "" {
+		logger.Printf(stderr)
+		_, _ = fmt.Fprintf(os.Stderr, "%s\n", stderr)
+		err = fmt.Errorf("error while executing command %v: %v", args, stderr)
+	}
+	if err != nil {
+		log.Errorf("Error executing git command %s: %s", strings.Join(args, " "), err)
+		return stdout, stderr, err
+	}
+	return stdout, stderr, nil
 }
 
 // GitReset resets the git repository to the given commit.
-func GitReset(cwd string, sha string) error {
-	return gitRun(cwd, []string{"reset", "--soft", sha})
+func GitReset(cwd string, sha string, logdir string) error {
+	_, _, err := gitRun(cwd, []string{"reset", "--soft", sha}, logdir)
+	return err
 }
 
 // GitResetBack aborts the git reset.
-func GitResetBack(cwd string) error {
-	return gitRun(cwd, []string{"reset", "'HEAD@{1}'"})
+func GitResetBack(cwd string, logdir string) error {
+	_, _, err := gitRun(cwd, []string{"reset", "'HEAD@{1}'"}, logdir)
+	return err
 }
 
 // GitCheckout checks out the given commit / branch.
-func GitCheckout(cwd string, where string, force bool) error {
+func GitCheckout(cwd string, where string, force bool, logdir string) error {
+	var err error
 	if !force {
-		return gitRun(cwd, []string{"checkout", where})
+		_, _, err = gitRun(cwd, []string{"checkout", where}, logdir)
 	} else {
-		return gitRun(cwd, []string{"checkout", "-f", where})
+		_, _, err = gitRun(cwd, []string{"checkout", "-f", where}, logdir)
 	}
+	return err
 }
 
 // GitClean cleans the git repository.
-func GitClean(cwd string) error {
-	return gitRun(cwd, []string{"clean", "-fdx"})
+func GitClean(cwd string, logdir string) error {
+	_, _, err := gitRun(cwd, []string{"clean", "-fdx"}, logdir)
+	return err
 }
 
 // GitRevisions returns the list of commits of the git repository in chronological order.
@@ -63,59 +83,30 @@ func GitRevisions(cwd string) []string {
 }
 
 // GitRemoteUrl returns the remote url of the git repository.
-func GitRemoteUrl(cwd string) (string, error) {
-	repo, err := openRepository(cwd)
+func GitRemoteUrl(cwd string, logdir string) (string, error) {
+	stdout, _, err := gitRun(cwd, []string{"remote", "get-url", "origin"}, logdir)
 	if err != nil {
 		return "", err
 	}
-	remote, err := repo.Remote("origin")
-	if err != nil {
-		return "", fmt.Errorf("failed to get origin remote: %s", err)
-	}
-
-	urls := remote.Config().URLs
-	if len(urls) > 0 {
-		return urls[0], nil
-	} else {
-		return "", fmt.Errorf("no URLs found for remote 'origin': %d", len(urls))
-	}
+	output := strings.Split(strings.TrimSpace(stdout), "\n")
+	return output[0], nil
 }
 
 // GitBranch returns the current branch of the git repository.
-func GitBranch(cwd string) (string, error) {
-	repo, err := openRepository(cwd)
+func GitBranch(cwd string, logdir string) (string, error) {
+	stdout, _, err := gitRun(cwd, []string{"rev-parse", "--abbrev-ref", "HEAD"}, logdir)
 	if err != nil {
 		return "", err
 	}
-	ref, err := repo.Head()
-	if err != nil {
-		return "", fmt.Errorf("failed to get HEAD reference: %v", err)
-	}
-
-	return ref.Name().Short(), nil
+	output := strings.Split(strings.TrimSpace(stdout), "\n")
+	return output[0], nil
 }
 
-func GitCurrentRevision(cwd string) (string, error) {
-	repo, err := openRepository(cwd)
+func GitCurrentRevision(cwd string, logdir string) (string, error) {
+	stdout, _, err := gitRun(cwd, []string{"rev-parse", "HEAD"}, logdir)
 	if err != nil {
 		return "", err
 	}
-	ref, err := repo.Head()
-	if err != nil {
-		log.Fatalf("Failed to get HEAD reference: %v", err)
-	}
-
-	// Get the hash of the HEAD reference
-	hash := ref.Hash()
-	return hash.String(), nil
-}
-
-// openRepository finds the repository root directory and opens the Git repository
-func openRepository(path string) (*git.Repository, error) {
-	// Attempt to open the repository, starting from the given path and searching upwards
-	repo, err := git.PlainOpenWithOptions(path, &git.PlainOpenOptions{DetectDotGit: true})
-	if err != nil {
-		return nil, fmt.Errorf("failed to open repository: %v", err)
-	}
-	return repo, nil
+	output := strings.Split(strings.TrimSpace(stdout), "\n")
+	return output[0], nil
 }
