@@ -34,10 +34,10 @@ func gitRun(cwd string, command []string, logdir string) (string, string, error)
 	}
 	stdout, stderr, _, err := RunCmdRedirectOutput(cwd, args...)
 	logger.Printf("Executing command: %v", args)
-	logger.Printf(stdout)
+	logger.Println(stdout)
 	_, _ = fmt.Fprintf(os.Stdout, "%s\n", stdout)
 	if stderr != "" {
-		logger.Printf(stderr)
+		logger.Error(stderr + "\n")
 		_, _ = fmt.Fprintf(os.Stderr, "%s\n", stderr)
 		err = fmt.Errorf("error while executing command %v: %v", args, stderr)
 	}
