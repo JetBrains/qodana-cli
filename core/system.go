@@ -216,14 +216,14 @@ func RunAnalysis(ctx context.Context, options *QodanaOptions) int {
 func runLocalChanges(ctx context.Context, options *QodanaOptions, startHash string) int {
 	var exitCode int
 	gitReset := false
-	r, err := platform.GitCurrentRevision(options.ProjectDir)
+	r, err := platform.GitCurrentRevision(options.ProjectDir, options.LogDirPath())
 	if err != nil {
 		log.Fatal(err)
 	}
 	if options.DiffEnd != "" && options.DiffEnd != r {
 		platform.WarningMessage("Cannot run local-changes because --diff-end is %s and HEAD is %s", options.DiffEnd, r)
 	} else {
-		err := platform.GitReset(options.ProjectDir, startHash)
+		err := platform.GitReset(options.ProjectDir, startHash, options.LogDirPath())
 		if err != nil {
 			platform.WarningMessage("Could not reset git repository, no --commit option will be applied: %s", err)
 		} else {
@@ -235,17 +235,17 @@ func runLocalChanges(ctx context.Context, options *QodanaOptions, startHash stri
 	exitCode = runQodana(ctx, options)
 
 	if gitReset {
-		_ = platform.GitResetBack(options.ProjectDir)
+		_ = platform.GitResetBack(options.ProjectDir, options.LogDirPath())
 	}
 	return exitCode
 }
 
 func runWithFullHistory(ctx context.Context, options *QodanaOptions, startHash string) int {
-	remoteUrl, err := platform.GitRemoteUrl(options.ProjectDir)
+	remoteUrl, err := platform.GitRemoteUrl(options.ProjectDir, options.LogDirPath())
 	if err != nil {
 		log.Fatal(err)
 	}
-	branch, err := platform.GitBranch(options.ProjectDir)
+	branch, err := platform.GitBranch(options.ProjectDir, options.LogDirPath())
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -255,7 +255,7 @@ func runWithFullHistory(ctx context.Context, options *QodanaOptions, startHash s
 	options.Setenv(platform.QodanaRemoteUrl, remoteUrl)
 	options.Setenv(platform.QodanaBranch, branch)
 
-	err = platform.GitClean(options.ProjectDir)
+	err = platform.GitClean(options.ProjectDir, options.LogDirPath())
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -278,7 +278,7 @@ func runWithFullHistory(ctx context.Context, options *QodanaOptions, startHash s
 		counter++
 		options.Setenv(platform.QodanaRevision, revision)
 		platform.WarningMessage("[%d/%d] Running analysis for revision %s", counter+1, allCommits, revision)
-		err = platform.GitCheckout(options.ProjectDir, revision, true)
+		err = platform.GitCheckout(options.ProjectDir, revision, true, options.LogDirPath())
 		if err != nil {
 			log.Fatal(err)
 		}
@@ -287,7 +287,7 @@ func runWithFullHistory(ctx context.Context, options *QodanaOptions, startHash s
 		exitCode = runQodana(ctx, options)
 		options.Unsetenv(platform.QodanaRevision)
 	}
-	err = platform.GitCheckout(options.ProjectDir, branch, true)
+	err = platform.GitCheckout(options.ProjectDir, branch, true, options.LogDirPath())
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -302,7 +302,7 @@ func runScopeScript(ctx context.Context, options *QodanaOptions, startHash strin
 	var err error
 	end := options.DiffEnd
 	if end == "" {
-		end, err = platform.GitCurrentRevision(options.ProjectDir)
+		end, err = platform.GitCurrentRevision(options.ProjectDir, options.LogDirPath())
 		if err != nil {
 			log.Fatal(err)
 		}
@@ -325,7 +325,7 @@ func runScopeScript(ctx context.Context, options *QodanaOptions, startHash strin
 	props := options.Property
 
 	runFunc := func(hash string) (bool, int) {
-		e := platform.GitCheckout(options.ProjectDir, hash, true)
+		e := platform.GitCheckout(options.ProjectDir, hash, true, options.LogDirPath())
 		if e != nil {
 			log.Fatalf("Cannot checkout commit %s: %v", hash, e)
 		}
@@ -407,7 +407,7 @@ func writeChangesFile(options *QodanaOptions, start string, end string) (string,
 	if start == "" || end == "" {
 		return "", fmt.Errorf("no commits given")
 	}
-	changedFiles, err := platform.GitChangedFiles(options.ProjectDir, start, end)
+	changedFiles, err := platform.GitChangedFiles(options.ProjectDir, start, end, options.LogDirPath())
 	if err != nil {
 		return "", err
 	}
