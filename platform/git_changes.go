@@ -125,7 +125,7 @@ func parseDiff(diff string) (ChangedFiles, error) {
 					break
 				}
 				if strings.HasPrefix(line, "\\") {
-					// Hanv
+					// Handle \ No newline at end of file
 					continue
 				}
 				if strings.HasPrefix(line, "+") {
