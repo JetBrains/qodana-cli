@@ -17,7 +17,6 @@
 package platform
 
 import (
-	"fmt"
 	log "github.com/sirupsen/logrus"
 	"strings"
 )
@@ -36,7 +35,6 @@ func gitRun(cwd string, command []string, logdir string) (string, string, error)
 	logger.Println(stdout)
 	if stderr != "" {
 		logger.Error(stderr + "\n")
-		err = fmt.Errorf("error while executing command %v: %v", args, stderr)
 	}
 	if err != nil {
 		log.Errorf("Error executing git command %s: %s", strings.Join(args, " "), err)
