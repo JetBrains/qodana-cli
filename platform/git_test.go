@@ -60,7 +60,7 @@ func TestGitFunctionalityChange(t *testing.T) {
 		t.Fatalf("New and expected repo urls are not equal: new: %v expected: %v", remoteUrl, REPO)
 	}
 	rootPath, _ := GitRoot(projectPath, temp)
-	if rootPath != projectPath {
+	if filepath.ToSlash(rootPath) != filepath.ToSlash(projectPath) {
 		t.Fatalf("Computed git root path are not equal: new: %v expected: %v", rootPath, projectPath)
 	}
 }

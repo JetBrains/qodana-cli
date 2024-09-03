@@ -48,7 +48,7 @@ type ChangedFiles struct {
 	Files []*ChangedFile `json:"files"`
 }
 
-func computeAbsCwd(cwd string) (string, error) {
+func computeAbsPath(cwd string) (string, error) {
 	cwd, err := filepath.EvalSymlinks(cwd)
 	if err != nil {
 		return "", err
@@ -58,11 +58,15 @@ func computeAbsCwd(cwd string) (string, error) {
 }
 
 func GitChangedFiles(cwd string, diffStart string, diffEnd string, logdir string) (ChangedFiles, error) {
-	absCwd, err := computeAbsCwd(cwd)
+	absCwd, err := computeAbsPath(cwd)
 	if err != nil {
 		return ChangedFiles{}, err
 	}
 	repoRoot, err := GitRoot(cwd, logdir)
+	if err != nil {
+		return ChangedFiles{}, err
+	}
+	absRepoRoot, err := computeAbsPath(repoRoot)
 	if err != nil {
 		return ChangedFiles{}, err
 	}
@@ -71,7 +75,7 @@ func GitChangedFiles(cwd string, diffStart string, diffEnd string, logdir string
 	if err != nil {
 		return ChangedFiles{}, err
 	}
-	return parseDiff(stdout, repoRoot, absCwd)
+	return parseDiff(stdout, absRepoRoot, absCwd)
 }
 
 // parseDiff parses the git diff output and extracts changes
