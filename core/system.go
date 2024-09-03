@@ -377,10 +377,10 @@ func runScopeScript(ctx context.Context, options *QodanaOptions, startHash strin
 	options.Property = append(
 		props,
 		"-Dqodana.skip.preamble=true", // don't print the QD logo again
-		"-Didea.headless.enable.statistics=false", // disable statistics for second run
+		"-Didea.headless.enable.statistics=false",                   // disable statistics for second run
+		fmt.Sprintf("-Dqodana.scoped.baseline.path=%s", startSarif), // disable statistics for second run
 	)
 	options.ResultsDir = endDir
-	options.Baseline = startSarif
 	options.ApplyFixes = applyFixes
 	options.Cleanup = cleanup
 	options.FixesStrategy = fixesStrategy
