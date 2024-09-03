@@ -48,29 +48,17 @@ type ChangedFiles struct {
 	Files []*ChangedFile `json:"files"`
 }
 
-func GitDiffNameOnly(cwd string, diffStart string, diffEnd string, logdir string) ([]string, error) {
-	stdout, _, err := gitRun(cwd, []string{"diff", "--name-only", "--relative", diffStart, diffEnd}, logdir)
+func computeAbsCwd(cwd string) (string, error) {
+	cwd, err := filepath.EvalSymlinks(cwd)
 	if err != nil {
-		return []string{""}, err
+		return "", err
 	}
-	relPaths := strings.Split(strings.TrimSpace(stdout), "\n")
-	absPaths := make([]string, 0)
-	for _, relPath := range relPaths {
-		if relPath == "" {
-			continue
-		}
-		filePath := filepath.Join(cwd, relPath)
-		absFilePath, err := filepath.Abs(filePath)
-		if err != nil {
-			log.Fatalf("Failed to resolve absolute path of %s: %s", filePath, err)
-		}
-		absPaths = append(absPaths, absFilePath)
-	}
-	return absPaths, nil
+	cwdAbs, err := filepath.Abs(cwd)
+	return cwdAbs, err
 }
 
 func GitChangedFiles(cwd string, diffStart string, diffEnd string, logdir string) (ChangedFiles, error) {
-	cwd, err := filepath.EvalSymlinks(cwd)
+	absCwd, err := computeAbsCwd(cwd)
 	if err != nil {
 		return ChangedFiles{}, err
 	}
@@ -83,11 +71,12 @@ func GitChangedFiles(cwd string, diffStart string, diffEnd string, logdir string
 	if err != nil {
 		return ChangedFiles{}, err
 	}
-	return parseDiff(stdout, repoRoot, cwd)
+	return parseDiff(stdout, repoRoot, absCwd)
 }
 
 // parseDiff parses the git diff output and extracts changes
 func parseDiff(diff string, repoRoot string, cwd string) (ChangedFiles, error) {
+	log.Debugf("Parsing diff of length: %d, repo root: %s, cwd: %s", len(diff), repoRoot, cwd)
 	var changes []HunkChange
 	scanner := bufio.NewScanner(strings.NewReader(diff))
 
