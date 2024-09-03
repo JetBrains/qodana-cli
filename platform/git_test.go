@@ -21,49 +21,47 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
-	"reflect"
-	"sort"
 	"testing"
 )
 
-func TestGitDiffNamesOnly(t *testing.T) {
+const (
+	REV    = "aa1fe0eac28bbc363036b39ab937b081f06f407a"
+	BRANCH = "my-branch"
+	REPO   = "https://github.com/JetBrains/code-analytics-examples"
+)
+
+func TestGitFunctionalityChange(t *testing.T) {
 	temp, _ := os.MkdirTemp("", "")
 	projectPath := createNativeProject(t, "casamples")
 	defer deferredCleanup(projectPath)
 
-	strings := [2]string{"", "duplicates"}
-	oldRev := "12bf1bf4dd267b972e05a586cd7dfd3ad9a5b4a0"
-	newRev := "d6f64adb1d594ea4bb6e40d027e1e863726c4323"
-
-	// Iterate over the array using a for loop.
-	for _, str := range strings {
-		path := filepath.Join(projectPath, str)
-		diff, err := GitDiffNameOnly(path, oldRev, newRev, temp)
-		if err != nil {
-			t.Fatalf("GitDiffNameOnly() error = %v", err)
-		}
-		diffLegacy := GitDiffNameOnlyLegacy(path, oldRev, newRev)
-		sort.Strings(diff)
-		sort.Strings(diffLegacy)
-		equal := reflect.DeepEqual(diff, diffLegacy)
-		if !equal {
-			t.Fatalf("Old and new diffs are not equal: old: %v new: %v", diffLegacy, diff)
-		}
-		branch, _ := GitBranch(path, temp)
-		branchLegacy := GitBranchLegacy(path)
-		if branch != branchLegacy {
-			t.Fatalf("Old and new branch are not equal: old: %v new: %v", branchLegacy, branch)
-		}
-		revision, _ := GitCurrentRevision(path, temp)
-		revisionLegacy := GitCurrentRevisionLegacy(path)
-		if revision != revisionLegacy {
-			t.Fatalf("Old and new revision are not equal: old: %v new: %v", revisionLegacy, revision)
-		}
-		remoteUrl, _ := GitRemoteUrl(path, temp)
-		remoteUrlLegacy := GitRemoteUrlLegacy(path)
-		if remoteUrl != remoteUrlLegacy {
-			t.Fatalf("Old and new url are not equal: old: %v new: %v", remoteUrlLegacy, remoteUrl)
-		}
+	branch, _ := GitBranch(projectPath, temp)
+	branchLegacy := GitBranchLegacy(projectPath)
+	if branch != branchLegacy {
+		t.Fatalf("Old and new branch are not equal: old: %v new: %v", branchLegacy, branch)
+	}
+	if branch != BRANCH {
+		t.Fatalf("New and expected branch are not equal: new: %v expected: %v", branch, BRANCH)
+	}
+	revision, _ := GitCurrentRevision(projectPath, temp)
+	revisionLegacy := GitCurrentRevisionLegacy(projectPath)
+	if revision != revisionLegacy {
+		t.Fatalf("Old and new revision are not equal: old: %v new: %v", revisionLegacy, revision)
+	}
+	if revision != REV {
+		t.Fatalf("New and expected revision are not equal: new: %v expected: %v", revision, REV)
+	}
+	remoteUrl, _ := GitRemoteUrl(projectPath, temp)
+	remoteUrlLegacy := GitRemoteUrlLegacy(projectPath)
+	if remoteUrl != remoteUrlLegacy {
+		t.Fatalf("Old and new url are not equal: old: %v new: %v", remoteUrlLegacy, remoteUrl)
+	}
+	if remoteUrl != REPO {
+		t.Fatalf("New and expected repo urls are not equal: new: %v expected: %v", remoteUrl, REPO)
+	}
+	rootPath, _ := GitRoot(projectPath, temp)
+	if rootPath != projectPath {
+		t.Fatalf("Computed git root path are not equal: new: %v expected: %v", rootPath, projectPath)
 	}
 }
 
@@ -80,14 +78,14 @@ func createNativeProject(t *testing.T, name string) string {
 		t.Fatal(err)
 	}
 	location := filepath.Join(home, ".qodana_scan_", name)
-	err = gitClone("https://github.com/JetBrains/code-analytics-examples", location)
+	err = gitClone("https://github.com/JetBrains/code-analytics-examples", location, REV, BRANCH)
 	if err != nil {
 		t.Fatal(err)
 	}
 	return location
 }
 
-func gitClone(repoURL, directory string) error {
+func gitClone(repoURL, directory string, revision string, branch string) error {
 	if _, err := os.Stat(directory); !os.IsNotExist(err) {
 		err = os.RemoveAll(directory)
 		if err != nil {
@@ -96,6 +94,18 @@ func gitClone(repoURL, directory string) error {
 	}
 	cmd := exec.Command("git", "clone", repoURL, directory)
 	err := cmd.Run()
+	if err != nil {
+		return err
+	}
+	cmd = exec.Command("git", "checkout", revision)
+	cmd.Dir = directory
+	err = cmd.Run()
+	if err != nil {
+		return err
+	}
+	cmd = exec.Command("git", "checkout", "-b", branch)
+	cmd.Dir = directory
+	err = cmd.Run()
 	if err != nil {
 		return err
 	}

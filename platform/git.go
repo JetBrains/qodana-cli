@@ -19,7 +19,6 @@ package platform
 import (
 	"fmt"
 	log "github.com/sirupsen/logrus"
-	"os"
 	"strings"
 )
 
@@ -35,10 +34,8 @@ func gitRun(cwd string, command []string, logdir string) (string, string, error)
 	stdout, stderr, _, err := RunCmdRedirectOutput(cwd, args...)
 	logger.Printf("Executing command: %v", args)
 	logger.Println(stdout)
-	_, _ = fmt.Fprintf(os.Stdout, "%s\n", stdout)
 	if stderr != "" {
 		logger.Error(stderr + "\n")
-		_, _ = fmt.Fprintf(os.Stderr, "%s\n", stderr)
 		err = fmt.Errorf("error while executing command %v: %v", args, stderr)
 	}
 	if err != nil {
@@ -97,8 +94,7 @@ func GitRemoteUrl(cwd string, logdir string) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	output := strings.Split(strings.TrimSpace(stdout), "\n")
-	return output[0], nil
+	return strings.TrimSpace(stdout), nil
 }
 
 // GitBranch returns the current branch of the git repository.
@@ -107,8 +103,7 @@ func GitBranch(cwd string, logdir string) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	output := strings.Split(strings.TrimSpace(stdout), "\n")
-	return output[0], nil
+	return strings.TrimSpace(stdout), nil
 }
 
 func GitCurrentRevision(cwd string, logdir string) (string, error) {
@@ -116,6 +111,5 @@ func GitCurrentRevision(cwd string, logdir string) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	output := strings.Split(strings.TrimSpace(stdout), "\n")
-	return output[0], nil
+	return strings.TrimSpace(stdout), nil
 }
