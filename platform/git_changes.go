@@ -20,6 +20,8 @@ import (
 	"bufio"
 	"fmt"
 	log "github.com/sirupsen/logrus"
+	"io"
+	"os"
 	"path/filepath"
 	"regexp"
 	"sort"
@@ -71,26 +73,51 @@ func GitChangedFiles(cwd string, diffStart string, diffEnd string, logdir string
 		return ChangedFiles{}, err
 	}
 
-	stdout, _, err := gitRun(cwd, []string{"diff", diffStart, diffEnd, "--unified=0", "--no-renames"}, logdir)
+	filePath, _ := filepath.Abs(filepath.Join(logdir, "git-diff.log"))
+	file, err := os.Create(filePath)
+	if err != nil {
+		return ChangedFiles{}, fmt.Errorf("failed to create file %s: %w", filePath, err)
+	}
+	if err = file.Close(); err != nil {
+		return ChangedFiles{}, fmt.Errorf("failed to close file %s: %w", filePath, err)
+	}
+
+	_, _, err = gitRun(cwd, []string{"diff", diffStart, diffEnd, "--unified=0", "--no-renames", ">", QuoteIfSpace(filePath)}, logdir)
 	if err != nil {
 		return ChangedFiles{}, err
 	}
-	return parseDiff(stdout, absRepoRoot, absCwd)
+	return parseDiff(filePath, absRepoRoot, absCwd)
 }
 
 // parseDiff parses the git diff output and extracts changes
-func parseDiff(diff string, repoRoot string, cwd string) (ChangedFiles, error) {
-	log.Debugf("Parsing diff of length: %d, repo root: %s, cwd: %s", len(diff), repoRoot, cwd)
+func parseDiff(diffPath string, repoRoot string, cwd string) (ChangedFiles, error) {
+	log.Debugf("Parsing diff - repo root: %s, cwd: %s", repoRoot, cwd)
 	var changes []HunkChange
-	scanner := bufio.NewScanner(strings.NewReader(diff))
+
+	diffFile, err := os.Open(diffPath)
+	if err != nil {
+		return ChangedFiles{}, fmt.Errorf("failed to open diff file %s: %w", diffPath, err)
+	}
+	defer func(diffFile *os.File) {
+		err := diffFile.Close()
+		if err != nil {
+			log.Errorf("failed to close diff file %s: %s", diffPath, err)
+		}
+	}(diffFile)
+	scanner := bufio.NewReader(diffFile)
 
 	var currentChange *HunkChange
+	var line string
 	// Regular expressions to match diff headers and hunks
 	reFilename := regexp.MustCompile(`^diff --git a/(.*) b/(.*)`)
 	reHunk := regexp.MustCompile(`^@@ -(\d+),?(\d*) \+(\d+),?(\d*) @@`)
 
-	for scanner.Scan() {
-		line := scanner.Text()
+	for {
+		line, err = scanner.ReadString('\n')
+		if err == io.EOF || err != nil {
+			break
+		}
+		line = strings.TrimSpace(line)
 
 		if matches := reFilename.FindStringSubmatch(line); matches != nil {
 			if currentChange != nil {
@@ -123,7 +150,7 @@ func parseDiff(diff string, repoRoot string, cwd string) (ChangedFiles, error) {
 		changes = append(changes, *currentChange)
 	}
 
-	if err := scanner.Err(); err != nil {
+	if err != nil && err != io.EOF {
 		return ChangedFiles{}, err
 	}
 
