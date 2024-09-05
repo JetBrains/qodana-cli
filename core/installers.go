@@ -211,7 +211,7 @@ func getIde(productCode string) *ReleaseDownloadInfo {
 
 	res, ok := (*release.Downloads)[downloadType]
 	if !ok {
-		platform.ErrorMessage("Error while obtaining the release for platform type: ", downloadType)
+		platform.ErrorMessage("%s %s (%s) is not available or not supported for the current platform", productCode, *release.Version, dist)
 		return nil
 	}
 
