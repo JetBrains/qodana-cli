@@ -23,6 +23,8 @@ import (
 	"errors"
 	"fmt"
 	"github.com/JetBrains/qodana-cli/v2024/platform"
+	"github.com/docker/docker/api/types/backend"
+	"github.com/docker/docker/api/types/registry"
 	"github.com/docker/go-connections/nat"
 	"github.com/pterm/pterm"
 	"io"
@@ -50,7 +52,7 @@ const (
 )
 
 var (
-	containerLogsOptions = types.ContainerLogsOptions{
+	containerLogsOptions = container.LogsOptions{
 		ShowStdout: true,
 		ShowStderr: true,
 		Follow:     true,
@@ -136,7 +138,7 @@ func removePortSocket(systemDir string) error {
 }
 
 // encodeAuthToBase64 serializes the auth configuration as JSON base64 payload
-func encodeAuthToBase64(authConfig types.AuthConfig) (string, error) {
+func encodeAuthToBase64(authConfig registry.AuthConfig) (string, error) {
 	buf, err := json.Marshal(authConfig)
 	if err != nil {
 		return "", err
@@ -215,7 +217,7 @@ func pullImage(ctx context.Context, client *client.Client, image string) {
 		if err != nil {
 			log.Fatal("can't load the auth config", err)
 		}
-		encodedAuth, err := encodeAuthToBase64(types.AuthConfig(a))
+		encodedAuth, err := encodeAuthToBase64(registry.AuthConfig(a))
 		if err != nil {
 			log.Fatal("can't encode auth to base64", err)
 		}
@@ -242,13 +244,13 @@ func ContainerCleanup() {
 	if containerName != "qodana-cli" { // if containerName is not set, it means that the container was not created!
 		docker := getContainerClient()
 		ctx := context.Background()
-		containers, err := docker.ContainerList(ctx, types.ContainerListOptions{})
+		containers, err := docker.ContainerList(ctx, container.ListOptions{})
 		if err != nil {
 			log.Fatal("couldn't get the running containers ", err)
 		}
 		for _, c := range containers {
 			if c.Names[0] == fmt.Sprintf("/%s", containerName) {
-				err = docker.ContainerStop(context.Background(), c.Names[0], nil)
+				err = docker.ContainerStop(context.Background(), c.Names[0], container.StopOptions{})
 				if err != nil {
 					log.Fatal("couldn't stop the container ", err)
 				}
@@ -290,7 +292,7 @@ func CheckContainerEngineMemory() {
 }
 
 // getDockerOptions returns qodana docker container options.
-func getDockerOptions(opts *QodanaOptions) *types.ContainerCreateConfig {
+func getDockerOptions(opts *QodanaOptions) *backend.ContainerCreateConfig {
 	cmdOpts := GetIdeArgs(opts)
 	platform.ExtractQodanaEnvironment(opts.Setenv)
 	cachePath, err := filepath.Abs(opts.CacheDir)
@@ -378,7 +380,7 @@ func getDockerOptions(opts *QodanaOptions) *types.ContainerCreateConfig {
 		}
 	}
 
-	return &types.ContainerCreateConfig{
+	return &backend.ContainerCreateConfig{
 		Name: containerName,
 		Config: &container.Config{
 			Image:        opts.Linter,
@@ -394,7 +396,7 @@ func getDockerOptions(opts *QodanaOptions) *types.ContainerCreateConfig {
 	}
 }
 
-func generateDebugDockerRunCommand(cfg *types.ContainerCreateConfig) string {
+func generateDebugDockerRunCommand(cfg *backend.ContainerCreateConfig) string {
 	var cmdBuilder strings.Builder
 	cmdBuilder.WriteString("docker run ")
 	if cfg.HostConfig != nil && cfg.HostConfig.AutoRemove {
@@ -451,7 +453,7 @@ func getContainerExitCode(ctx context.Context, client *client.Client, id string)
 }
 
 // runContainer runs the container.
-func runContainer(ctx context.Context, client *client.Client, opts *types.ContainerCreateConfig) {
+func runContainer(ctx context.Context, client *client.Client, opts *backend.ContainerCreateConfig) {
 	createResp, err := client.ContainerCreate(
 		ctx,
 		opts.Config,
@@ -463,7 +465,7 @@ func runContainer(ctx context.Context, client *client.Client, opts *types.Contai
 	if err != nil {
 		log.Fatal("couldn't create the container ", err)
 	}
-	if err = client.ContainerStart(ctx, createResp.ID, types.ContainerStartOptions{}); err != nil {
+	if err = client.ContainerStart(ctx, createResp.ID, container.StartOptions{}); err != nil {
 		log.Fatal("couldn't bootstrap the container ", err)
 	}
 }
