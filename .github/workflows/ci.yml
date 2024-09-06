@@ -31,7 +31,7 @@ jobs:
         run: |
           touch cdnet/clt.zip tooling/baseline-cli.jar tooling/intellij-report-converter.jar tooling/qodana-fuser.jar
           cat > go.work << EOF
-          go 1.21
+          go 1.21.13
           
           use (
           ./cdnet
@@ -84,7 +84,7 @@ jobs:
         run: |
           touch cdnet/clt.zip tooling/baseline-cli.jar tooling/intellij-report-converter.jar tooling/qodana-fuser.jar
           cat > go.work << EOF
-          go 1.21
+          go 1.21.13
 
           use (
           ./cdnet
@@ -103,6 +103,10 @@ jobs:
           registry: registry.jetbrains.team
           username: ${{ secrets.SPACE_USERNAME }}
           password: ${{ secrets.SPACE_PASSWORD }}
+      - uses: actions/setup-go@v5
+        with:
+          cache-dependency-path: "**/*.sum"
+          go-version-file: go.work
       - uses: JetBrains/qodana-action@main
         env:
           QODANA_TOKEN: ${{ secrets.QODANA_TOKEN }}
