@@ -6,7 +6,7 @@ FROM debian:$BASE_TAG
 # renovate: datasource=repology depName=debian_11/ca-certificates versioning=loose
 ENV CA_CERTIFICATES_VERSION="20210119"
 # renovate: datasource=repology depName=debian_11/curl versioning=loose
-ENV CURL_VERSION="7.74.0-1.3+deb11u12"
+ENV CURL_VERSION="7.74.0-1.3+deb11u13"
 # renovate: datasource=repology depName=debian_11/fontconfig versioning=loose
 ENV FONTCONFIG_VERSION="2.13.1-4.2"
 # renovate: datasource=repology depName=debian_11/git versioning=loose
