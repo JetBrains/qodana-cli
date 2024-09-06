@@ -11,7 +11,7 @@ ENV CURL_VERSION="7.74.0-1.3+deb11u13"
 # renovate: datasource=repology depName=debian_11/fontconfig versioning=loose
 ENV FONTCONFIG_VERSION="2.13.1-4.2"
 # renovate: datasource=repology depName=debian_11/git versioning=loose
-ENV GIT_VERSION="1:2.30.2-1+deb11u2"
+ENV GIT_VERSION="1:2.30.2-1+deb11u3"
 # renovate: datasource=repology depName=debian_11/git-lfs versioning=loose
 ENV GIT_LFS_VERSION="2.13.2-1+b5"
 # renovate: datasource=repology depName=debian_11/gnupg2 versioning=loose
