@@ -83,6 +83,7 @@ func GitRoot(cwd string, logdir string) (string, error) {
 	if err != nil {
 		return "", err
 	}
+	log.Debugf("Git repo root is at: %s", stdout)
 	return strings.TrimSpace(stdout), nil
 }
 

@@ -40,6 +40,13 @@ type HunkChange struct {
 	Deleted  []*ChangedRegion
 }
 
+func (hc HunkChange) String() string {
+	return fmt.Sprintf(
+		"Old: %s, New: %s, Added: %d, Deleted: %d",
+		hc.FromPath, hc.ToPath,
+	)
+}
+
 type ChangedFile struct {
 	Path    string           `json:"path"`
 	Added   []*ChangedRegion `json:"added"`
@@ -114,12 +121,17 @@ func parseDiff(diffPath string, repoRoot string, cwd string) (ChangedFiles, erro
 
 	for {
 		line, err = scanner.ReadString('\n')
-		if err == io.EOF || err != nil {
-			break
+		if err != nil {
+			if err == io.EOF {
+				break
+			} else {
+				return ChangedFiles{}, fmt.Errorf("failed to read diff line: %s", err)
+			}
 		}
 		line = strings.TrimSpace(line)
 
 		if matches := reFilename.FindStringSubmatch(line); matches != nil {
+			log.Debugf("File change found. Old file: %s, New file: %s", matches[0], matches[1])
 			if currentChange != nil {
 				changes = append(changes, *currentChange)
 			}
@@ -133,6 +145,10 @@ func parseDiff(diffPath string, repoRoot string, cwd string) (ChangedFiles, erro
 		}
 
 		if matches := reHunk.FindStringSubmatch(line); matches != nil && currentChange != nil {
+			log.Debugf(
+				"Hunk header found. Old start: %s, Old lines: %s, New start: %s, New lines: %s",
+				matches[0], matches[1], matches[2], matches[3],
+			)
 			origLineStart := diffToInt(matches[1])
 			origCount := diffToInt(matches[2])
 			newLineStart := diffToInt(matches[3])
@@ -150,10 +166,7 @@ func parseDiff(diffPath string, repoRoot string, cwd string) (ChangedFiles, erro
 		changes = append(changes, *currentChange)
 	}
 
-	if err != nil && err != io.EOF {
-		return ChangedFiles{}, err
-	}
-
+	log.Debugf("Found %d changes", len(changes))
 	files := make([]*ChangedFile, 0, len(changes))
 	for _, file := range changes {
 		fileName := file.ToPath
@@ -166,6 +179,7 @@ func parseDiff(diffPath string, repoRoot string, cwd string) (ChangedFiles, erro
 		}
 		path := filepath.Join(repoRoot, fileName)
 		if strings.HasPrefix(path, cwd) { // take changes only inside project
+			log.Debugf("Adding %s to changed files", path)
 			files = append(files, &ChangedFile{
 				Path:    path,
 				Added:   file.Added,
