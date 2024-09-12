@@ -30,7 +30,7 @@ ENV MAKE_VERSION="4.3-4.1"
 # renovate: datasource=repology depName=debian_12/patch versioning=loose
 ENV PATCH_VERSION="2.7.6-7"
 # renovate: datasource=repology depName=debian_12/libc6-dev versioning=loose
-ENV LIBC6_DEV_VERSION="2.36-9+deb12u7"
+ENV LIBC6_DEV_VERSION="2.36-9+deb12u8"
 # renovate: datasource=repology depName=debian_11/locales versioning=loose
 ENV LOCALES_VERSION="2.36-9+deb12u7"
 
