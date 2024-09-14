@@ -9,7 +9,7 @@ ENV CA_CERTIFICATES_VERSION="20230311"
 # renovate: datasource=repology depName=debian_12/curl versioning=loose
 ENV CURL_VERSION="7.88.1-10+deb12u7"
 # renovate: datasource=repology depName=debian_12/git versioning=loose
-ENV GIT_VERSION="1:2.39.2-1.1"
+ENV GIT_VERSION="1:2.39.5-0+deb12u1"
 # renovate: datasource=repology depName=debian_12/git-lfs versioning=loose
 ENV GIT_LFS_VERSION="3.3.0-1+b5"
 # renovate: datasource=repology depName=debian_12/gnupg2 versioning=loose
