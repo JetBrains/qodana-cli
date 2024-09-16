@@ -187,12 +187,12 @@ func Image(code string) string {
 	if val, ok := DockerImageMap[code]; ok {
 		if //goland:noinspection GoBoolExpressions
 		!isReleased {
-			return val + releaseVersion + "-eap"
+			return val + ReleaseVersion + "-eap"
 		}
 		if code == QDNETC || code == QDCL {
-			return val + releaseVersion + "-eap"
+			return val + ReleaseVersion + "-eap"
 		}
-		return val + releaseVersion
+		return val + ReleaseVersion
 	} else {
 		log.Fatal("Unknown code: " + code)
 		return ""
