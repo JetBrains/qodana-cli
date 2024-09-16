@@ -60,7 +60,7 @@ func (i *LinterInfo) GetMajorVersion() string {
 	re := regexp.MustCompile(`\b\d+\.\d+`)
 	matches := re.FindStringSubmatch(i.LinterVersion)
 	if len(matches) == 0 {
-		return releaseVersion
+		return ReleaseVersion
 	}
 	return matches[0]
 }

@@ -185,9 +185,9 @@ var AllNativeCodes = []string{QDNET}
 func Image(code string) string {
 	if val, ok := DockerImageMap[code]; ok {
 		if code == QDNETC || code == QDCL {
-			return val + releaseVersion + "-eap"
+			return val + ReleaseVersion + "-eap"
 		}
-		return val + releaseVersion
+		return val + ReleaseVersion
 	} else {
 		log.Fatal("Unknown code: " + code)
 		return ""
