@@ -73,14 +73,15 @@ func runQodanaContainer(ctx context.Context, options *QodanaOptions) int {
 		platform.ErrorMessage("Container engine is not running a Linux platform, other platforms are not supported by Qodana")
 		return 1
 	}
-	checkImage(options.Linter)
 	fixDarwinCaches(options)
 
 	for i, stage := range scanStages {
 		scanStages[i] = platform.PrimaryBold("[%d/%d] ", i+1, len(scanStages)+1) + platform.Primary(stage)
 	}
 
-	if !(options.SkipPull) {
+	if options.SkipPull {
+		checkImage(options.Linter)
+	} else {
 		PullImage(docker, options.Linter)
 	}
 	progress, _ := platform.StartQodanaSpinner(scanStages[0])
@@ -126,17 +127,17 @@ func checkImage(linter string) {
 	}
 
 	if isUnofficialLinter(linter) {
-		platform.WarningMessage("You are using an unofficial Qodana linter: %s\n", linter)
+		platform.WarningMessageCI("You are using an unofficial Qodana linter: %s\n", linter)
 	}
 
 	if !hasExactVersionTag(linter) {
-		platform.WarningMessage(
+		platform.WarningMessageCI(
 			"You are running a Qodana linter without an exact version tag: %s \n   Consider pinning the version in your configuration to ensure version compatibility: %s\n",
 			linter,
-			strings.Join([]string{linter, platform.ReleaseVersion}, ":"),
+			strings.Join([]string{strings.Split(linter, ":")[0], platform.ReleaseVersion}, ":"),
 		)
 	} else if !isCompatibleLinter(linter) {
-		platform.WarningMessage(
+		platform.WarningMessageCI(
 			"You are using a non-compatible Qodana linter %s with the current CLI (%s) \n   Consider updating CLI or using a compatible linter %s \n",
 			linter,
 			platform.Version,
@@ -229,6 +230,7 @@ func PrepareContainerEnvSettings() {
 
 // PullImage pulls docker image and prints the process.
 func PullImage(client *client.Client, image string) {
+	checkImage(image)
 	platform.PrintProcess(
 		func(_ *pterm.SpinnerPrinter) {
 			pullImage(context.Background(), client, image)
