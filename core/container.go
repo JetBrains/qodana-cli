@@ -73,16 +73,13 @@ func runQodanaContainer(ctx context.Context, options *QodanaOptions) int {
 		platform.ErrorMessage("Container engine is not running a Linux platform, other platforms are not supported by Qodana")
 		return 1
 	}
-
+	checkImage(options.Linter)
 	fixDarwinCaches(options)
 
 	for i, stage := range scanStages {
 		scanStages[i] = platform.PrimaryBold("[%d/%d] ", i+1, len(scanStages)+1) + platform.Primary(stage)
 	}
 
-	if !strings.HasPrefix(options.Linter, officialImagePrefix) {
-		platform.WarningMessage("You are using an unofficial Qodana linter: %s\n", options.Linter)
-	}
 	if !(options.SkipPull) {
 		PullImage(docker, options.Linter)
 	}
@@ -103,7 +100,49 @@ func runQodanaContainer(ctx context.Context, options *QodanaOptions) int {
 	if progress != nil {
 		_ = progress.Stop()
 	}
+	checkImage(options.Linter)
 	return int(exitCode)
+}
+
+// isUnofficialLinter checks if the linter is unofficial.
+func isUnofficialLinter(linter string) bool {
+	return !strings.HasPrefix(linter, officialImagePrefix)
+}
+
+// hasExactVersionTag checks if the linter has an exact version tag.
+func hasExactVersionTag(linter string) bool {
+	return strings.Contains(linter, ":") && !strings.Contains(linter, ":latest")
+}
+
+// isCompatibleLinter checks if the linter is compatible with the current CLI.
+func isCompatibleLinter(linter string) bool {
+	return strings.Contains(linter, platform.ReleaseVersion)
+}
+
+// checkImage checks the linter image and prints warnings if necessary.
+func checkImage(linter string) {
+	if strings.Contains(platform.Version, "nightly") || strings.Contains(platform.Version, "dev") {
+		return
+	}
+
+	if isUnofficialLinter(linter) {
+		platform.WarningMessage("You are using an unofficial Qodana linter: %s\n", linter)
+	}
+
+	if !hasExactVersionTag(linter) {
+		platform.WarningMessage(
+			"You are running a Qodana linter without an exact version tag: %s \n   Consider pinning the version in your configuration to ensure version compatibility: %s\n",
+			linter,
+			strings.Join([]string{linter, platform.ReleaseVersion}, ":"),
+		)
+	} else if !isCompatibleLinter(linter) {
+		platform.WarningMessage(
+			"You are using a non-compatible Qodana linter %s with the current CLI (%s) \n   Consider updating CLI or using a compatible linter %s \n",
+			linter,
+			platform.Version,
+			strings.Join([]string{strings.Split(linter, ":")[0], platform.ReleaseVersion}, ":"),
+		)
+	}
 }
 
 func fixDarwinCaches(options *QodanaOptions) {
