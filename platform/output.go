@@ -109,14 +109,20 @@ func SuccessMessage(message string, a ...interface{}) {
 func WarningMessage(message string, a ...interface{}) {
 	message = fmt.Sprintf(message, a...)
 	icon := warningStyle.Sprint("\n! ")
-	pterm.Println(formatMessageForCI(icon, Primary(message)))
+	pterm.Println(icon, Primary(message))
+}
+
+// WarningMessageCI prints a warning message to the CI environment (additional highlighting).
+func WarningMessageCI(message string, a ...interface{}) {
+	message = fmt.Sprintf(message, a...)
+	pterm.Println(formatMessageForCI("warning", message))
 }
 
 // ErrorMessage prints an error message with the icon.
 func ErrorMessage(message string, a ...interface{}) {
 	message = fmt.Sprintf(message, a...)
 	icon := errorStyle.Sprint("✗ ")
-	pterm.Println(formatMessageForCI(icon, errorStyle.Sprint(message)))
+	pterm.Println(icon, errorStyle.Sprint(message))
 }
 
 // PrintLinterLog prints the linter logs with color, when needed.
@@ -283,6 +289,9 @@ func getProblemsFoundMessage(newProblems int) string {
 func formatMessageForCI(level, format string, a ...interface{}) string {
 	message := fmt.Sprintf(format, a...)
 	ci := cienvironment.DetectCIEnvironment()
+	if ci == nil {
+		return message
+	}
 	name := getCIName(ci)
 	if name == "github-actions" {
 		return fmt.Sprintf("::%s::%s", level, message)
