@@ -32,7 +32,7 @@ func isHelpOrVersion(args []string) bool {
 }
 
 func isCompletionRequested(args []string) bool {
-	return args[1] == "completion"
+	return len(args) >= 2 && args[1] == "completion"
 }
 
 // isCommandRequested checks if any command is requested.
