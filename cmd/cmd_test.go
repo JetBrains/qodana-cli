@@ -23,6 +23,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/JetBrains/qodana-cli/v2024/platform"
+	log "github.com/sirupsen/logrus"
 	"io"
 	"os"
 	"os/exec"
@@ -30,8 +31,6 @@ import (
 	"runtime"
 	"strings"
 	"testing"
-
-	log "github.com/sirupsen/logrus"
 
 	"github.com/JetBrains/qodana-cli/v2024/core"
 )
@@ -222,6 +221,7 @@ func TestPullInNative(t *testing.T) {
 }
 
 func TestAllCommandsWithContainer(t *testing.T) {
+	platform.Version = "0.1.0"
 	linter := "registry.jetbrains.team/p/sa/containers/qodana-dotnet:latest"
 
 	if os.Getenv("GITHUB_ACTIONS") == "true" {
@@ -233,7 +233,7 @@ func TestAllCommandsWithContainer(t *testing.T) {
 	//_ = os.Setenv(qodanaCliContainerKeep, "true")
 	//_ = os.Setenv(qodanaCliContainerName, "qodana-cli-test-new1")
 	platform.DisableColor()
-	core.CheckForUpdates("0.1.0")
+	core.CheckForUpdates(platform.Version)
 	projectPath := createProject(t, "qodana_scan_python")
 
 	// create temp directory for cache
