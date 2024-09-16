@@ -55,7 +55,6 @@ const (
 
 // ExtractQodanaEnvironment extracts Qodana environment variables from the current environment.
 func ExtractQodanaEnvironment(setEnvironmentFunc func(string, string)) {
-	ci := cienvironment.DetectCIEnvironment()
 	if license := os.Getenv(QodanaLicense); license != "" {
 		setEnvironmentFunc(QodanaLicense, license)
 	}
@@ -68,9 +67,10 @@ func ExtractQodanaEnvironment(setEnvironmentFunc func(string, string)) {
 	if revision := os.Getenv(QodanaRevision); revision != "" {
 		setEnvironmentFunc(QodanaRevision, revision)
 	}
+	ci := cienvironment.DetectCIEnvironment()
 	qEnv := "cli"
 	if ci != nil {
-		qEnv = strings.ReplaceAll(strings.ToLower(ci.Name), " ", "-")
+		qEnv = getCIName(ci)
 		setEnvironmentFunc(qodanaJobUrl, validateJobUrl(ci.URL, qEnv))
 		if ci.Git != nil {
 			setEnvironmentFunc(QodanaRemoteUrl, validateRemoteUrl(ci.Git.Remote, qEnv))
@@ -92,6 +92,10 @@ func ExtractQodanaEnvironment(setEnvironmentFunc func(string, string)) {
 		setEnvironmentFunc(qodanaJobUrl, getBitBucketJobUrl())
 	}
 	setEnvironmentFunc(qodanaEnv, fmt.Sprintf("%s:%s", qEnv, Version))
+}
+
+func getCIName(ci *cienvironment.CiEnvironment) string {
+	return strings.ReplaceAll(strings.ToLower(ci.Name), " ", "-")
 }
 
 func validateRemoteUrl(remote string, qEnv string) string {

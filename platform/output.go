@@ -19,6 +19,7 @@ package platform
 import (
 	"fmt"
 	"github.com/JetBrains/qodana-cli/v2024/sarif"
+	cienvironment "github.com/cucumber/ci-environment/go"
 	"os"
 	"strings"
 
@@ -108,14 +109,14 @@ func SuccessMessage(message string, a ...interface{}) {
 func WarningMessage(message string, a ...interface{}) {
 	message = fmt.Sprintf(message, a...)
 	icon := warningStyle.Sprint("\n! ")
-	pterm.Println(icon, Primary(message))
+	pterm.Println(formatMessageForCI(icon, Primary(message)))
 }
 
 // ErrorMessage prints an error message with the icon.
 func ErrorMessage(message string, a ...interface{}) {
 	message = fmt.Sprintf(message, a...)
 	icon := errorStyle.Sprint("✗ ")
-	pterm.Println(icon, errorStyle.Sprint(message))
+	pterm.Println(formatMessageForCI(icon, errorStyle.Sprint(message)))
 }
 
 // PrintLinterLog prints the linter logs with color, when needed.
@@ -276,4 +277,19 @@ func getProblemsFoundMessage(newProblems int) string {
 	} else {
 		return fmt.Sprintf("Found %d new problems according to the checks applied", newProblems)
 	}
+}
+
+// formatMessageForCI formats the message for the CI environment.
+func formatMessageForCI(level, format string, a ...interface{}) string {
+	message := fmt.Sprintf(format, a...)
+	ci := cienvironment.DetectCIEnvironment()
+	name := getCIName(ci)
+	if name == "github-actions" {
+		return fmt.Sprintf("::%s::%s", level, message)
+	} else if strings.HasPrefix(name, "azure") {
+		return fmt.Sprintf("##vso[task.logissue type=%s]%s", level, message)
+	} else if strings.HasPrefix(name, "circleci") {
+		return fmt.Sprintf("echo '%s: %s'", level, message)
+	}
+	return message
 }
