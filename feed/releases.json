@@ -141,37 +141,37 @@
                 "PrintableReleaseType": null
             },
             {
-                "Date": "2024-08-28",
+                "Date": "2024-09-12",
                 "Type": "release",
                 "Downloads": {
                     "linux": {
-                        "Link": "https://download.jetbrains.com/qodana/2024.2/qodana-QDNET-242.22289.82.tar.gz",
-                        "ChecksumLink": "https://download.jetbrains.com/qodana/2024.2/qodana-QDNET-242.22289.82.tar.gz.sha256"
+                        "Link": "https://download.jetbrains.com/qodana/2024.2/qodana-QDNET-242.22918.100.tar.gz",
+                        "ChecksumLink": "https://download.jetbrains.com/qodana/2024.2/qodana-QDNET-242.22918.100.tar.gz.sha256"
                     },
                     "linuxARM64": {
-                        "Link": "https://download.jetbrains.com/qodana/2024.2/qodana-QDNET-242.22289.82-aarch64.tar.gz",
-                        "ChecksumLink": "https://download.jetbrains.com/qodana/2024.2/qodana-QDNET-242.22289.82-aarch64.tar.gz.sha256"
+                        "Link": "https://download.jetbrains.com/qodana/2024.2/qodana-QDNET-242.22918.100-aarch64.tar.gz",
+                        "ChecksumLink": "https://download.jetbrains.com/qodana/2024.2/qodana-QDNET-242.22918.100-aarch64.tar.gz.sha256"
                     },
                     "windowsZip": {
-                        "Link": "https://download.jetbrains.com/qodana/2024.2/qodana-QDNET-242.22289.82.win.zip",
-                        "ChecksumLink": "https://download.jetbrains.com/qodana/2024.2/qodana-QDNET-242.22289.82.win.zip.sha256"
+                        "Link": "https://download.jetbrains.com/qodana/2024.2/qodana-QDNET-242.22918.100.win.zip",
+                        "ChecksumLink": "https://download.jetbrains.com/qodana/2024.2/qodana-QDNET-242.22918.100.win.zip.sha256"
                     },
                     "windowsZipARM64": {
-                        "Link": "https://download.jetbrains.com/qodana/2024.2/qodana-QDNET-242.22289.82-aarch64.win.zip",
-                        "ChecksumLink": "https://download.jetbrains.com/qodana/2024.2/qodana-QDNET-242.22289.82-aarch64.win.zip.sha256"
+                        "Link": "https://download.jetbrains.com/qodana/2024.2/qodana-QDNET-242.22918.100-aarch64.win.zip",
+                        "ChecksumLink": "https://download.jetbrains.com/qodana/2024.2/qodana-QDNET-242.22918.100-aarch64.win.zip.sha256"
                     },
                     "macSit": {
-                        "Link": "https://download.jetbrains.com/qodana/2024.2/qodana-QDNET-242.22289.82.sit",
-                        "ChecksumLink": "https://download.jetbrains.com/qodana/2024.2/qodana-QDNET-242.22289.82.sit.sha256"
+                        "Link": "https://download.jetbrains.com/qodana/2024.2/qodana-QDNET-242.22918.100.sit",
+                        "ChecksumLink": "https://download.jetbrains.com/qodana/2024.2/qodana-QDNET-242.22918.100.sit.sha256"
                     },
                     "macSitM1": {
-                        "Link": "https://download.jetbrains.com/qodana/2024.2/qodana-QDNET-242.22289.82-aarch64.sit",
-                        "ChecksumLink": "https://download.jetbrains.com/qodana/2024.2/qodana-QDNET-242.22289.82-aarch64.sit.sha256"
+                        "Link": "https://download.jetbrains.com/qodana/2024.2/qodana-QDNET-242.22918.100-aarch64.sit",
+                        "ChecksumLink": "https://download.jetbrains.com/qodana/2024.2/qodana-QDNET-242.22918.100-aarch64.sit.sha256"
                     }
                 },
                 "Version": "2024.2.0",
                 "MajorVersion": "2024.2",
-                "Build": "242.22289.82",
+                "Build": "242.22918.100",
                 "PrintableReleaseType": null
             }
         ]
@@ -206,37 +206,37 @@
                 "PrintableReleaseType": null
             },
             {
-                "Date": "2024-08-28",
+                "Date": "2024-09-12",
                 "Type": "release",
                 "Downloads": {
                     "linux": {
-                        "Link": "https://download.jetbrains.com/qodana/2024.2/qodana-QDGO-242.22320.86.tar.gz",
-                        "ChecksumLink": "https://download.jetbrains.com/qodana/2024.2/qodana-QDGO-242.22320.86.tar.gz.sha256"
+                        "Link": "https://download.jetbrains.com/qodana/2024.2/qodana-QDGO-242.22942.104.tar.gz",
+                        "ChecksumLink": "https://download.jetbrains.com/qodana/2024.2/qodana-QDGO-242.22942.104.tar.gz.sha256"
                     },
                     "linuxARM64": {
-                        "Link": "https://download.jetbrains.com/qodana/2024.2/qodana-QDGO-242.22320.86-aarch64.tar.gz",
-                        "ChecksumLink": "https://download.jetbrains.com/qodana/2024.2/qodana-QDGO-242.22320.86-aarch64.tar.gz.sha256"
+                        "Link": "https://download.jetbrains.com/qodana/2024.2/qodana-QDGO-242.22942.104-aarch64.tar.gz",
+                        "ChecksumLink": "https://download.jetbrains.com/qodana/2024.2/qodana-QDGO-242.22942.104-aarch64.tar.gz.sha256"
                     },
                     "windowsZip": {
-                        "Link": "https://download.jetbrains.com/qodana/2024.2/qodana-QDGO-242.22320.86.win.zip",
-                        "ChecksumLink": "https://download.jetbrains.com/qodana/2024.2/qodana-QDGO-242.22320.86.win.zip.sha256"
+                        "Link": "https://download.jetbrains.com/qodana/2024.2/qodana-QDGO-242.22942.104.win.zip",
+                        "ChecksumLink": "https://download.jetbrains.com/qodana/2024.2/qodana-QDGO-242.22942.104.win.zip.sha256"
                     },
                     "windowsZipARM64": {
-                        "Link": "https://download.jetbrains.com/qodana/2024.2/qodana-QDGO-242.22320.86-aarch64.win.zip",
-                        "ChecksumLink": "https://download.jetbrains.com/qodana/2024.2/qodana-QDGO-242.22320.86-aarch64.win.zip.sha256"
+                        "Link": "https://download.jetbrains.com/qodana/2024.2/qodana-QDGO-242.22942.104-aarch64.win.zip",
+                        "ChecksumLink": "https://download.jetbrains.com/qodana/2024.2/qodana-QDGO-242.22942.104-aarch64.win.zip.sha256"
                     },
                     "macSit": {
-                        "Link": "https://download.jetbrains.com/qodana/2024.2/qodana-QDGO-242.22320.86.sit",
-                        "ChecksumLink": "https://download.jetbrains.com/qodana/2024.2/qodana-QDGO-242.22320.86.sit.sha256"
+                        "Link": "https://download.jetbrains.com/qodana/2024.2/qodana-QDGO-242.22942.104.sit",
+                        "ChecksumLink": "https://download.jetbrains.com/qodana/2024.2/qodana-QDGO-242.22942.104.sit.sha256"
                     },
                     "macSitM1": {
-                        "Link": "https://download.jetbrains.com/qodana/2024.2/qodana-QDGO-242.22320.86-aarch64.sit",
-                        "ChecksumLink": "https://download.jetbrains.com/qodana/2024.2/qodana-QDGO-242.22320.86-aarch64.sit.sha256"
+                        "Link": "https://download.jetbrains.com/qodana/2024.2/qodana-QDGO-242.22942.104-aarch64.sit",
+                        "ChecksumLink": "https://download.jetbrains.com/qodana/2024.2/qodana-QDGO-242.22942.104-aarch64.sit.sha256"
                     }
                 },
                 "Version": "2024.2.0",
                 "MajorVersion": "2024.2",
-                "Build": "242.22320.86",
+                "Build": "242.22942.104",
                 "PrintableReleaseType": null
             }
         ]
@@ -271,28 +271,28 @@
                 "PrintableReleaseType": null
             },
             {
-                "Date": "2024-08-28",
+                "Date": "2024-09-12",
                 "Type": "release",
                 "Downloads": {
                     "linux": {
-                        "Link": "https://download.jetbrains.com/qodana/2024.2/qodana-QDJS-242.22323.77.tar.gz",
-                        "ChecksumLink": "https://download.jetbrains.com/qodana/2024.2/qodana-QDJS-242.22323.77.tar.gz.sha256"
+                        "Link": "https://download.jetbrains.com/qodana/2024.2/qodana-QDJS-242.22945.94.tar.gz",
+                        "ChecksumLink": "https://download.jetbrains.com/qodana/2024.2/qodana-QDJS-242.22945.94.tar.gz.sha256"
                     },
                     "linuxARM64": {
-                        "Link": "https://download.jetbrains.com/qodana/2024.2/qodana-QDJS-242.22323.77-aarch64.tar.gz",
-                        "ChecksumLink": "https://download.jetbrains.com/qodana/2024.2/qodana-QDJS-242.22323.77-aarch64.tar.gz.sha256"
+                        "Link": "https://download.jetbrains.com/qodana/2024.2/qodana-QDJS-242.22945.94-aarch64.tar.gz",
+                        "ChecksumLink": "https://download.jetbrains.com/qodana/2024.2/qodana-QDJS-242.22945.94-aarch64.tar.gz.sha256"
                     },
                     "windowsZip": {
-                        "Link": "https://download.jetbrains.com/qodana/2024.2/qodana-QDJS-242.22323.77.win.zip",
-                        "ChecksumLink": "https://download.jetbrains.com/qodana/2024.2/qodana-QDJS-242.22323.77.win.zip.sha256"
+                        "Link": "https://download.jetbrains.com/qodana/2024.2/qodana-QDJS-242.22945.94.win.zip",
+                        "ChecksumLink": "https://download.jetbrains.com/qodana/2024.2/qodana-QDJS-242.22945.94.win.zip.sha256"
                     },
                     "windowsZipARM64": {
-                        "Link": "https://download.jetbrains.com/qodana/2024.2/qodana-QDJS-242.22323.77-aarch64.win.zip",
-                        "ChecksumLink": "https://download.jetbrains.com/qodana/2024.2/qodana-QDJS-242.22323.77-aarch64.win.zip.sha256"
+                        "Link": "https://download.jetbrains.com/qodana/2024.2/qodana-QDJS-242.22945.94-aarch64.win.zip",
+                        "ChecksumLink": "https://download.jetbrains.com/qodana/2024.2/qodana-QDJS-242.22945.94-aarch64.win.zip.sha256"
                     },
                     "macSit": {
-                        "Link": "https://download.jetbrains.com/qodana/2024.2/qodana-QDJS-242.22323.77.sit",
-                        "ChecksumLink": "https://download.jetbrains.com/qodana/2024.2/qodana-QDJS-242.22323.77.sit.sha256"
+                        "Link": "https://download.jetbrains.com/qodana/2024.2/qodana-QDJS-242.22945.94.sit",
+                        "ChecksumLink": "https://download.jetbrains.com/qodana/2024.2/qodana-QDJS-242.22945.94.sit.sha256"
                     },
                     "macSitM1": {
                         "Link": "https://download.jetbrains.com/qodana/2024.2/qodana-QDJS-242.21827.64-aarch64.sit",
@@ -301,7 +301,7 @@
                 },
                 "Version": "2024.2.0",
                 "MajorVersion": "2024.2",
-                "Build": "242.22323.77",
+                "Build": "242.22945.94",
                 "PrintableReleaseType": null
             }
         ]
@@ -362,37 +362,37 @@
                 "PrintableReleaseType": null
             },
             {
-                "Date": "2024-08-28",
+                "Date": "2024-09-12",
                 "Type": "release",
                 "Downloads": {
                     "linux": {
-                        "Link": "https://download.jetbrains.com/qodana/2024.2/qodana-QDJVM-242.22319.101.tar.gz",
-                        "ChecksumLink": "https://download.jetbrains.com/qodana/2024.2/qodana-QDJVM-242.22319.101.tar.gz.sha256"
+                        "Link": "https://download.jetbrains.com/qodana/2024.2/qodana-QDJVM-242.22941.120.tar.gz",
+                        "ChecksumLink": "https://download.jetbrains.com/qodana/2024.2/qodana-QDJVM-242.22941.120.tar.gz.sha256"
                     },
                     "linuxARM64": {
-                        "Link": "https://download.jetbrains.com/qodana/2024.2/qodana-QDJVM-242.22319.101-aarch64.tar.gz",
-                        "ChecksumLink": "https://download.jetbrains.com/qodana/2024.2/qodana-QDJVM-242.22319.101-aarch64.tar.gz.sha256"
+                        "Link": "https://download.jetbrains.com/qodana/2024.2/qodana-QDJVM-242.22941.120-aarch64.tar.gz",
+                        "ChecksumLink": "https://download.jetbrains.com/qodana/2024.2/qodana-QDJVM-242.22941.120-aarch64.tar.gz.sha256"
                     },
                     "windowsZip": {
-                        "Link": "https://download.jetbrains.com/qodana/2024.2/qodana-QDJVM-242.22319.101.win.zip",
-                        "ChecksumLink": "https://download.jetbrains.com/qodana/2024.2/qodana-QDJVM-242.22319.101.win.zip.sha256"
+                        "Link": "https://download.jetbrains.com/qodana/2024.2/qodana-QDJVM-242.22941.120.win.zip",
+                        "ChecksumLink": "https://download.jetbrains.com/qodana/2024.2/qodana-QDJVM-242.22941.120.win.zip.sha256"
                     },
                     "windowsZipARM64": {
-                        "Link": "https://download.jetbrains.com/qodana/2024.2/qodana-QDJVM-242.22319.101-aarch64.win.zip",
-                        "ChecksumLink": "https://download.jetbrains.com/qodana/2024.2/qodana-QDJVM-242.22319.101-aarch64.win.zip.sha256"
+                        "Link": "https://download.jetbrains.com/qodana/2024.2/qodana-QDJVM-242.22941.120-aarch64.win.zip",
+                        "ChecksumLink": "https://download.jetbrains.com/qodana/2024.2/qodana-QDJVM-242.22941.120-aarch64.win.zip.sha256"
                     },
                     "macSit": {
-                        "Link": "https://download.jetbrains.com/qodana/2024.2/qodana-QDJVM-242.22319.101.sit",
-                        "ChecksumLink": "https://download.jetbrains.com/qodana/2024.2/qodana-QDJVM-242.22319.101.sit.sha256"
+                        "Link": "https://download.jetbrains.com/qodana/2024.2/qodana-QDJVM-242.22941.120.sit",
+                        "ChecksumLink": "https://download.jetbrains.com/qodana/2024.2/qodana-QDJVM-242.22941.120.sit.sha256"
                     },
                     "macSitM1": {
-                        "Link": "https://download.jetbrains.com/qodana/2024.2/qodana-QDJVM-242.22319.101-aarch64.sit",
-                        "ChecksumLink": "https://download.jetbrains.com/qodana/2024.2/qodana-QDJVM-242.22319.101-aarch64.sit.sha256"
+                        "Link": "https://download.jetbrains.com/qodana/2024.2/qodana-QDJVM-242.22941.120-aarch64.sit",
+                        "ChecksumLink": "https://download.jetbrains.com/qodana/2024.2/qodana-QDJVM-242.22941.120-aarch64.sit.sha256"
                     }
                 },
                 "Version": "2024.2.0",
                 "MajorVersion": "2024.2",
-                "Build": "242.22319.101",
+                "Build": "242.22941.120",
                 "PrintableReleaseType": null
             }
         ]
@@ -453,37 +453,37 @@
                 "PrintableReleaseType": null
             },
             {
-                "Date": "2024-08-28",
+                "Date": "2024-09-12",
                 "Type": "release",
                 "Downloads": {
                     "linux": {
-                        "Link": "https://download.jetbrains.com/qodana/2024.2/qodana-QDJVMC-242.22319.72.tar.gz",
-                        "ChecksumLink": "https://download.jetbrains.com/qodana/2024.2/qodana-QDJVMC-242.22319.72.tar.gz.sha256"
+                        "Link": "https://download.jetbrains.com/qodana/2024.2/qodana-QDJVMC-242.22941.89.tar.gz",
+                        "ChecksumLink": "https://download.jetbrains.com/qodana/2024.2/qodana-QDJVMC-242.22941.89.tar.gz.sha256"
                     },
                     "linuxARM64": {
-                        "Link": "https://download.jetbrains.com/qodana/2024.2/qodana-QDJVMC-242.22319.72-aarch64.tar.gz",
-                        "ChecksumLink": "https://download.jetbrains.com/qodana/2024.2/qodana-QDJVMC-242.22319.72-aarch64.tar.gz.sha256"
+                        "Link": "https://download.jetbrains.com/qodana/2024.2/qodana-QDJVMC-242.22941.89-aarch64.tar.gz",
+                        "ChecksumLink": "https://download.jetbrains.com/qodana/2024.2/qodana-QDJVMC-242.22941.89-aarch64.tar.gz.sha256"
                     },
                     "windowsZip": {
-                        "Link": "https://download.jetbrains.com/qodana/2024.2/qodana-QDJVMC-242.22319.72.win.zip",
-                        "ChecksumLink": "https://download.jetbrains.com/qodana/2024.2/qodana-QDJVMC-242.22319.72.win.zip.sha256"
+                        "Link": "https://download.jetbrains.com/qodana/2024.2/qodana-QDJVMC-242.22941.89.win.zip",
+                        "ChecksumLink": "https://download.jetbrains.com/qodana/2024.2/qodana-QDJVMC-242.22941.89.win.zip.sha256"
                     },
                     "windowsZipARM64": {
-                        "Link": "https://download.jetbrains.com/qodana/2024.2/qodana-QDJVMC-242.22319.72-aarch64.win.zip",
-                        "ChecksumLink": "https://download.jetbrains.com/qodana/2024.2/qodana-QDJVMC-242.22319.72-aarch64.win.zip.sha256"
+                        "Link": "https://download.jetbrains.com/qodana/2024.2/qodana-QDJVMC-242.22941.89-aarch64.win.zip",
+                        "ChecksumLink": "https://download.jetbrains.com/qodana/2024.2/qodana-QDJVMC-242.22941.89-aarch64.win.zip.sha256"
                     },
                     "macSit": {
-                        "Link": "https://download.jetbrains.com/qodana/2024.2/qodana-QDJVMC-242.22319.72.sit",
-                        "ChecksumLink": "https://download.jetbrains.com/qodana/2024.2/qodana-QDJVMC-242.22319.72.sit.sha256"
+                        "Link": "https://download.jetbrains.com/qodana/2024.2/qodana-QDJVMC-242.22941.89.sit",
+                        "ChecksumLink": "https://download.jetbrains.com/qodana/2024.2/qodana-QDJVMC-242.22941.89.sit.sha256"
                     },
                     "macSitM1": {
-                        "Link": "https://download.jetbrains.com/qodana/2024.2/qodana-QDJVMC-242.22319.72-aarch64.sit",
-                        "ChecksumLink": "https://download.jetbrains.com/qodana/2024.2/qodana-QDJVMC-242.22319.72-aarch64.sit.sha256"
+                        "Link": "https://download.jetbrains.com/qodana/2024.2/qodana-QDJVMC-242.22941.89-aarch64.sit",
+                        "ChecksumLink": "https://download.jetbrains.com/qodana/2024.2/qodana-QDJVMC-242.22941.89-aarch64.sit.sha256"
                     }
                 },
                 "Version": "2024.2.0",
                 "MajorVersion": "2024.2",
-                "Build": "242.22319.72",
+                "Build": "242.22941.89",
                 "PrintableReleaseType": null
             }
         ]
@@ -518,37 +518,37 @@
                 "PrintableReleaseType": null
             },
             {
-                "Date": "2024-08-28",
+                "Date": "2024-09-12",
                 "Type": "release",
                 "Downloads": {
                     "linux": {
-                        "Link": "https://download.jetbrains.com/qodana/2024.2/qodana-QDPHP-242.22333.76.tar.gz",
-                        "ChecksumLink": "https://download.jetbrains.com/qodana/2024.2/qodana-QDPHP-242.22333.76.tar.gz.sha256"
+                        "Link": "https://download.jetbrains.com/qodana/2024.2/qodana-QDPHP-242.22958.93.tar.gz",
+                        "ChecksumLink": "https://download.jetbrains.com/qodana/2024.2/qodana-QDPHP-242.22958.93.tar.gz.sha256"
                     },
                     "linuxARM64": {
-                        "Link": "https://download.jetbrains.com/qodana/2024.2/qodana-QDPHP-242.22333.76-aarch64.tar.gz",
-                        "ChecksumLink": "https://download.jetbrains.com/qodana/2024.2/qodana-QDPHP-242.22333.76-aarch64.tar.gz.sha256"
+                        "Link": "https://download.jetbrains.com/qodana/2024.2/qodana-QDPHP-242.22958.93-aarch64.tar.gz",
+                        "ChecksumLink": "https://download.jetbrains.com/qodana/2024.2/qodana-QDPHP-242.22958.93-aarch64.tar.gz.sha256"
                     },
                     "windowsZip": {
-                        "Link": "https://download.jetbrains.com/qodana/2024.2/qodana-QDPHP-242.22333.76.win.zip",
-                        "ChecksumLink": "https://download.jetbrains.com/qodana/2024.2/qodana-QDPHP-242.22333.76.win.zip.sha256"
+                        "Link": "https://download.jetbrains.com/qodana/2024.2/qodana-QDPHP-242.22958.93.win.zip",
+                        "ChecksumLink": "https://download.jetbrains.com/qodana/2024.2/qodana-QDPHP-242.22958.93.win.zip.sha256"
                     },
                     "windowsZipARM64": {
-                        "Link": "https://download.jetbrains.com/qodana/2024.2/qodana-QDPHP-242.22333.76-aarch64.win.zip",
-                        "ChecksumLink": "https://download.jetbrains.com/qodana/2024.2/qodana-QDPHP-242.22333.76-aarch64.win.zip.sha256"
+                        "Link": "https://download.jetbrains.com/qodana/2024.2/qodana-QDPHP-242.22958.93-aarch64.win.zip",
+                        "ChecksumLink": "https://download.jetbrains.com/qodana/2024.2/qodana-QDPHP-242.22958.93-aarch64.win.zip.sha256"
                     },
                     "macSit": {
-                        "Link": "https://download.jetbrains.com/qodana/2024.2/qodana-QDPHP-242.22333.76.sit",
-                        "ChecksumLink": "https://download.jetbrains.com/qodana/2024.2/qodana-QDPHP-242.22333.76.sit.sha256"
+                        "Link": "https://download.jetbrains.com/qodana/2024.2/qodana-QDPHP-242.22958.93.sit",
+                        "ChecksumLink": "https://download.jetbrains.com/qodana/2024.2/qodana-QDPHP-242.22958.93.sit.sha256"
                     },
                     "macSitM1": {
-                        "Link": "https://download.jetbrains.com/qodana/2024.2/qodana-QDPHP-242.22333.76-aarch64.sit",
-                        "ChecksumLink": "https://download.jetbrains.com/qodana/2024.2/qodana-QDPHP-242.22333.76-aarch64.sit.sha256"
+                        "Link": "https://download.jetbrains.com/qodana/2024.2/qodana-QDPHP-242.22958.93-aarch64.sit",
+                        "ChecksumLink": "https://download.jetbrains.com/qodana/2024.2/qodana-QDPHP-242.22958.93-aarch64.sit.sha256"
                     }
                 },
                 "Version": "2024.2.0",
                 "MajorVersion": "2024.2",
-                "Build": "242.22333.76",
+                "Build": "242.22958.93",
                 "PrintableReleaseType": null
             }
         ]
@@ -609,37 +609,37 @@
                 "PrintableReleaseType": null
             },
             {
-                "Date": "2024-08-28",
+                "Date": "2024-09-12",
                 "Type": "release",
                 "Downloads": {
                     "linux": {
-                        "Link": "https://download.jetbrains.com/qodana/2024.2/qodana-QDPY-242.22321.110.tar.gz",
-                        "ChecksumLink": "https://download.jetbrains.com/qodana/2024.2/qodana-QDPY-242.22321.110.tar.gz.sha256"
+                        "Link": "https://download.jetbrains.com/qodana/2024.2/qodana-QDPY-242.22964.127.tar.gz",
+                        "ChecksumLink": "https://download.jetbrains.com/qodana/2024.2/qodana-QDPY-242.22964.127.tar.gz.sha256"
                     },
                     "linuxARM64": {
-                        "Link": "https://download.jetbrains.com/qodana/2024.2/qodana-QDPY-242.22321.110-aarch64.tar.gz",
-                        "ChecksumLink": "https://download.jetbrains.com/qodana/2024.2/qodana-QDPY-242.22321.110-aarch64.tar.gz.sha256"
+                        "Link": "https://download.jetbrains.com/qodana/2024.2/qodana-QDPY-242.22964.127-aarch64.tar.gz",
+                        "ChecksumLink": "https://download.jetbrains.com/qodana/2024.2/qodana-QDPY-242.22964.127-aarch64.tar.gz.sha256"
                     },
                     "windowsZip": {
-                        "Link": "https://download.jetbrains.com/qodana/2024.2/qodana-QDPY-242.22321.110.win.zip",
-                        "ChecksumLink": "https://download.jetbrains.com/qodana/2024.2/qodana-QDPY-242.22321.110.win.zip.sha256"
+                        "Link": "https://download.jetbrains.com/qodana/2024.2/qodana-QDPY-242.22964.127.win.zip",
+                        "ChecksumLink": "https://download.jetbrains.com/qodana/2024.2/qodana-QDPY-242.22964.127.win.zip.sha256"
                     },
                     "windowsZipARM64": {
-                        "Link": "https://download.jetbrains.com/qodana/2024.2/qodana-QDPY-242.22321.110-aarch64.win.zip",
-                        "ChecksumLink": "https://download.jetbrains.com/qodana/2024.2/qodana-QDPY-242.22321.110-aarch64.win.zip.sha256"
+                        "Link": "https://download.jetbrains.com/qodana/2024.2/qodana-QDPY-242.22964.127-aarch64.win.zip",
+                        "ChecksumLink": "https://download.jetbrains.com/qodana/2024.2/qodana-QDPY-242.22964.127-aarch64.win.zip.sha256"
                     },
                     "macSit": {
-                        "Link": "https://download.jetbrains.com/qodana/2024.2/qodana-QDPY-242.22321.110.sit",
-                        "ChecksumLink": "https://download.jetbrains.com/qodana/2024.2/qodana-QDPY-242.22321.110.sit.sha256"
+                        "Link": "https://download.jetbrains.com/qodana/2024.2/qodana-QDPY-242.22964.127.sit",
+                        "ChecksumLink": "https://download.jetbrains.com/qodana/2024.2/qodana-QDPY-242.22964.127.sit.sha256"
                     },
                     "macSitM1": {
-                        "Link": "https://download.jetbrains.com/qodana/2024.2/qodana-QDPY-242.22321.110-aarch64.sit",
-                        "ChecksumLink": "https://download.jetbrains.com/qodana/2024.2/qodana-QDPY-242.22321.110-aarch64.sit.sha256"
+                        "Link": "https://download.jetbrains.com/qodana/2024.2/qodana-QDPY-242.22964.127-aarch64.sit",
+                        "ChecksumLink": "https://download.jetbrains.com/qodana/2024.2/qodana-QDPY-242.22964.127-aarch64.sit.sha256"
                     }
                 },
                 "Version": "2024.2.0",
                 "MajorVersion": "2024.2",
-                "Build": "242.22321.110",
+                "Build": "242.22964.127",
                 "PrintableReleaseType": null
             }
         ]
@@ -700,37 +700,37 @@
                 "PrintableReleaseType": null
             },
             {
-                "Date": "2024-08-28",
+                "Date": "2024-09-12",
                 "Type": "release",
                 "Downloads": {
                     "linux": {
-                        "Link": "https://download.jetbrains.com/qodana/2024.2/qodana-QDPYC-242.22321.83.tar.gz",
-                        "ChecksumLink": "https://download.jetbrains.com/qodana/2024.2/qodana-QDPYC-242.22321.83.tar.gz.sha256"
+                        "Link": "https://download.jetbrains.com/qodana/2024.2/qodana-QDPYC-242.22964.101.tar.gz",
+                        "ChecksumLink": "https://download.jetbrains.com/qodana/2024.2/qodana-QDPYC-242.22964.101.tar.gz.sha256"
                     },
                     "linuxARM64": {
-                        "Link": "https://download.jetbrains.com/qodana/2024.2/qodana-QDPYC-242.22321.83-aarch64.tar.gz",
-                        "ChecksumLink": "https://download.jetbrains.com/qodana/2024.2/qodana-QDPYC-242.22321.83-aarch64.tar.gz.sha256"
+                        "Link": "https://download.jetbrains.com/qodana/2024.2/qodana-QDPYC-242.22964.101-aarch64.tar.gz",
+                        "ChecksumLink": "https://download.jetbrains.com/qodana/2024.2/qodana-QDPYC-242.22964.101-aarch64.tar.gz.sha256"
                     },
                     "windowsZip": {
-                        "Link": "https://download.jetbrains.com/qodana/2024.2/qodana-QDPYC-242.22321.83.win.zip",
-                        "ChecksumLink": "https://download.jetbrains.com/qodana/2024.2/qodana-QDPYC-242.22321.83.win.zip.sha256"
+                        "Link": "https://download.jetbrains.com/qodana/2024.2/qodana-QDPYC-242.22964.101.win.zip",
+                        "ChecksumLink": "https://download.jetbrains.com/qodana/2024.2/qodana-QDPYC-242.22964.101.win.zip.sha256"
                     },
                     "windowsZipARM64": {
-                        "Link": "https://download.jetbrains.com/qodana/2024.2/qodana-QDPYC-242.22321.83-aarch64.win.zip",
-                        "ChecksumLink": "https://download.jetbrains.com/qodana/2024.2/qodana-QDPYC-242.22321.83-aarch64.win.zip.sha256"
+                        "Link": "https://download.jetbrains.com/qodana/2024.2/qodana-QDPYC-242.22964.101-aarch64.win.zip",
+                        "ChecksumLink": "https://download.jetbrains.com/qodana/2024.2/qodana-QDPYC-242.22964.101-aarch64.win.zip.sha256"
                     },
                     "macSit": {
-                        "Link": "https://download.jetbrains.com/qodana/2024.2/qodana-QDPYC-242.22321.83.sit",
-                        "ChecksumLink": "https://download.jetbrains.com/qodana/2024.2/qodana-QDPYC-242.22321.83.sit.sha256"
+                        "Link": "https://download.jetbrains.com/qodana/2024.2/qodana-QDPYC-242.22964.101.sit",
+                        "ChecksumLink": "https://download.jetbrains.com/qodana/2024.2/qodana-QDPYC-242.22964.101.sit.sha256"
                     },
                     "macSitM1": {
-                        "Link": "https://download.jetbrains.com/qodana/2024.2/qodana-QDPYC-242.22321.83-aarch64.sit",
-                        "ChecksumLink": "https://download.jetbrains.com/qodana/2024.2/qodana-QDPYC-242.22321.83-aarch64.sit.sha256"
+                        "Link": "https://download.jetbrains.com/qodana/2024.2/qodana-QDPYC-242.22964.101-aarch64.sit",
+                        "ChecksumLink": "https://download.jetbrains.com/qodana/2024.2/qodana-QDPYC-242.22964.101-aarch64.sit.sha256"
                     }
                 },
                 "Version": "2024.2.0",
                 "MajorVersion": "2024.2",
-                "Build": "242.22321.83",
+                "Build": "242.22964.101",
                 "PrintableReleaseType": null
             }
         ]
