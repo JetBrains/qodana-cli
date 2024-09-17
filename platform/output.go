@@ -289,16 +289,15 @@ func getProblemsFoundMessage(newProblems int) string {
 func formatMessageForCI(level, format string, a ...interface{}) string {
 	message := fmt.Sprintf(format, a...)
 	ci := cienvironment.DetectCIEnvironment()
-	if ci == nil {
-		return message
+	if ci != nil {
+		name := getCIName(ci)
+		if name == "github-actions" {
+			return fmt.Sprintf("::%s::%s", level, message)
+		} else if strings.HasPrefix(name, "azure") {
+			return fmt.Sprintf("##vso[task.logissue type=%s]%s", level, message)
+		} else if strings.HasPrefix(name, "circleci") {
+			return fmt.Sprintf("echo '%s: %s'", level, message)
+		}
 	}
-	name := getCIName(ci)
-	if name == "github-actions" {
-		return fmt.Sprintf("::%s::%s", level, message)
-	} else if strings.HasPrefix(name, "azure") {
-		return fmt.Sprintf("##vso[task.logissue type=%s]%s", level, message)
-	} else if strings.HasPrefix(name, "circleci") {
-		return fmt.Sprintf("echo '%s: %s'", level, message)
-	}
-	return message
+	return fmt.Sprintf("!  %s", message)
 }
