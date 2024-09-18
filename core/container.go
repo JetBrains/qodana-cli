@@ -80,7 +80,7 @@ func runQodanaContainer(ctx context.Context, options *QodanaOptions) int {
 	}
 
 	if options.SkipPull {
-		checkImage(options.Linter)
+		options.Linter = checkImage(options.Linter)
 	} else {
 		PullImage(docker, options.Linter)
 	}
@@ -121,22 +121,29 @@ func isCompatibleLinter(linter string) bool {
 }
 
 // checkImage checks the linter image and prints warnings if necessary.
-func checkImage(linter string) {
+func checkImage(linter string) string {
 	if strings.Contains(platform.Version, "nightly") || strings.Contains(platform.Version, "dev") {
-		return
+		return linter
 	}
 
 	if isUnofficialLinter(linter) {
 		platform.WarningMessageCI("You are using an unofficial Qodana linter: %s\n", linter)
+		return linter
 	}
 
 	if !hasExactVersionTag(linter) {
-		platform.WarningMessageCI(
-			"You are running a Qodana linter without an exact version tag: %s \n   Consider pinning the version in your configuration to ensure version compatibility: %s\n",
-			linter,
-			strings.Join([]string{strings.Split(linter, ":")[0], platform.ReleaseVersion}, ":"),
+		newLinter := strings.Join([]string{strings.Split(linter, ":")[0], platform.ReleaseVersion}, ":")
+		if platform.IsEapOnly(newLinter) {
+			newLinter = newLinter + "-eap"
+		}
+		platform.WarningMessage(
+			"Running analysis with %s...",
+			newLinter,
 		)
-	} else if !isCompatibleLinter(linter) {
+		return newLinter
+	}
+
+	if !isCompatibleLinter(linter) {
 		platform.WarningMessageCI(
 			"You are using a non-compatible Qodana linter %s with the current CLI (%s) \n   Consider updating CLI or using a compatible linter %s \n",
 			linter,
@@ -144,6 +151,7 @@ func checkImage(linter string) {
 			strings.Join([]string{strings.Split(linter, ":")[0], platform.ReleaseVersion}, ":"),
 		)
 	}
+	return linter
 }
 
 func fixDarwinCaches(options *QodanaOptions) {
@@ -230,7 +238,7 @@ func PrepareContainerEnvSettings() {
 
 // PullImage pulls docker image and prints the process.
 func PullImage(client *client.Client, image string) {
-	checkImage(image)
+	image = checkImage(image)
 	platform.PrintProcess(
 		func(_ *pterm.SpinnerPrinter) {
 			pullImage(context.Background(), client, image)
