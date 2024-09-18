@@ -8,7 +8,7 @@ By participating in this project, you agree to abide our [Code of conduct](.gith
 
 Prerequisites:
 
-- [Go 1.19+](https://golang.org/doc/install)
+- [Go 1.21+](https://golang.org/doc/install)
 
 Other things you might need to develop:
 
@@ -37,7 +37,13 @@ Test your code with coverage:
 go test -v $(go list -f '{{.Dir}}/...' -m | xargs)
 ```
 
-Dry run goreleaser:
+Test your code with a human-readable report (requires `go install github.com/mfridman/tparse@latest`):
+```shell
+export GITHUB_ACTIONS=true # skip third-party linter tests
+set -o pipefail && go test -json -v $(go list -f '{{.Dir}}/...' -m | xargs) | tparse -all
+```
+
+Dry-run goreleaser:
 
 ```sh
 goreleaser release --snapshot --clean

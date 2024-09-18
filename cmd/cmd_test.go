@@ -224,6 +224,12 @@ func TestAllCommandsWithContainer(t *testing.T) {
 	platform.Version = "0.1.0"
 	linter := "registry.jetbrains.team/p/sa/containers/qodana-dotnet:latest"
 
+	token := os.Getenv("QODANA_LICENSE_ONLY_TOKEN")
+	if //goland:noinspection GoBoolExpressions
+	token == "" {
+		t.Skip("set your token here to run the test")
+	}
+
 	if os.Getenv("GITHUB_ACTIONS") == "true" {
 		//goland:noinspection GoBoolExpressions
 		if _, err := exec.LookPath("docker"); err != nil || runtime.GOOS != "linux" {
