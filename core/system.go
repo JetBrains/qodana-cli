@@ -193,6 +193,10 @@ func RunAnalysis(ctx context.Context, options *QodanaOptions) int {
 	}
 
 	scenario := options.determineRunScenario(startHash != "")
+	if scenario != runScenarioDefault && !platform.GitRevisionExists(options.ProjectDir, startHash, options.LogDirPath()) {
+		platform.WarningMessageCI("Cannot run analysis for commit %s because it doesn't exist in the repository. Check that you retrieve the full git history before running Qodana.", startHash)
+		scenario = runScenarioDefault
+	}
 	// this way of running needs to do bootstrap twice on different commits and will do it internally
 	if scenario != runScenarioScoped && options.Ide != "" {
 		platform.Bootstrap(options.QdConfig.Bootstrap, options.ProjectDir)
