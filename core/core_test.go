@@ -382,51 +382,107 @@ func Test_createUser(t *testing.T) {
 
 func Test_syncIdeaCache(t *testing.T) {
 	tmpDir := filepath.Join(os.TempDir(), "cache")
-	tc := "NotExist"
-	syncIdeaCache(filepath.Join(tmpDir, "1"), filepath.Join(tmpDir, "2"), true)
-	if _, err := os.Stat(filepath.Join(tmpDir, "2")); err == nil {
-		t.Errorf("Case: %s: Folder dst created, when it should not", tc)
-	}
 
-	tc = "NoOverwrite"
-	err := os.MkdirAll(filepath.Join(tmpDir, "1", ".idea", "dir1", "dir2"), os.FileMode(0o755))
-	if err != nil {
-		t.Fatal(err)
-	}
-	err = os.MkdirAll(filepath.Join(tmpDir, "2", ".idea", "dir1"), os.FileMode(0o755))
-	if err != nil {
-		t.Fatal(err)
-	}
-	err = os.WriteFile(filepath.Join(tmpDir, "1", ".idea", "file1"), []byte("test1"), os.FileMode(0o600))
-	if err != nil {
-		t.Fatal(err)
-	}
-	err = os.WriteFile(filepath.Join(tmpDir, "1", ".idea", "dir1", "file2"), []byte("test2"), os.FileMode(0o600))
-	if err != nil {
-		t.Fatal(err)
-	}
-	err = os.WriteFile(filepath.Join(tmpDir, "2", ".idea", "dir1", "file2"), []byte("test!"), os.FileMode(0o600))
-	if err != nil {
-		t.Fatal(err)
-	}
-	syncIdeaCache(filepath.Join(tmpDir, "1"), filepath.Join(tmpDir, "2"), false)
-	if _, err := os.Stat(filepath.Join(tmpDir, "1", ".idea", "dir1", "dir2")); os.IsNotExist(err) {
-		t.Errorf("Case: %s: Resulting folder .idea/dir1/dir2 not found", tc)
-	}
-	got, err := os.ReadFile(filepath.Join(tmpDir, "2", ".idea", "dir1", "file2"))
-	if err != nil || string(got) != "test!" {
-		t.Errorf("Case: %s: Got: %s\n Expected: test!", tc, got)
-	}
+	t.Run("NotExist", func(t *testing.T) {
+		err := syncIdeaCache(filepath.Join(tmpDir, "1"), filepath.Join(tmpDir, "2"), true)
+		if err == nil {
+			t.Errorf("Expected error when source folder does not exist")
+		}
+		if _, err := os.Stat(filepath.Join(tmpDir, "2")); err == nil {
+			t.Errorf("Folder dst created, when it should not")
+		}
+	})
 
-	tc = "Overwrite"
-	syncIdeaCache(filepath.Join(tmpDir, "2"), filepath.Join(tmpDir, "1"), true)
-	got, err = os.ReadFile(filepath.Join(tmpDir, "1", ".idea", "dir1", "file2"))
-	if err != nil || string(got) != "test!" {
-		t.Errorf("Case: %s: Got: %s\n Expected: test!", tc, got)
-	}
+	t.Run("NoOverwrite", func(t *testing.T) {
+		err := os.MkdirAll(filepath.Join(tmpDir, "1", ".idea", "dir1", "dir2"), os.FileMode(0o755))
+		if err != nil {
+			t.Fatal(err)
+		}
+		err = os.MkdirAll(filepath.Join(tmpDir, "2", ".idea", "dir1"), os.FileMode(0o755))
+		if err != nil {
+			t.Fatal(err)
+		}
+		err = os.WriteFile(filepath.Join(tmpDir, "1", ".idea", "file1"), []byte("test1"), os.FileMode(0o600))
+		if err != nil {
+			t.Fatal(err)
+		}
+		err = os.WriteFile(filepath.Join(tmpDir, "1", ".idea", "dir1", "file2"), []byte("test2"), os.FileMode(0o600))
+		if err != nil {
+			t.Fatal(err)
+		}
+		err = os.WriteFile(filepath.Join(tmpDir, "2", ".idea", "dir1", "file2"), []byte("test!"), os.FileMode(0o600))
+		if err != nil {
+			t.Fatal(err)
+		}
 
-	err = os.RemoveAll(tmpDir)
-	if err != nil {
+		err = syncIdeaCache(filepath.Join(tmpDir, "1"), filepath.Join(tmpDir, "2"), false)
+		if err != nil {
+			t.Fatalf("syncIdeaCache failed: %v", err)
+		}
+
+		if _, err := os.Stat(filepath.Join(tmpDir, "1", ".idea", "dir1", "dir2")); os.IsNotExist(err) {
+			t.Errorf("Resulting folder .idea/dir1/dir2 not found")
+		}
+		got, err := os.ReadFile(filepath.Join(tmpDir, "2", ".idea", "dir1", "file2"))
+		if err != nil || string(got) != "test!" {
+			t.Errorf("Got: %s\n Expected: test!", string(got))
+		}
+	})
+
+	t.Run("Overwrite", func(t *testing.T) {
+		err := syncIdeaCache(filepath.Join(tmpDir, "2"), filepath.Join(tmpDir, "1"), true)
+		if err != nil {
+			t.Fatalf("syncIdeaCache failed: %v", err)
+		}
+
+		got, err := os.ReadFile(filepath.Join(tmpDir, "1", ".idea", "dir1", "file2"))
+		if err != nil || string(got) != "test!" {
+			t.Errorf("Got: %s\n Expected: test!", string(got))
+		}
+	})
+
+	t.Run("HasSymlinksAndFileExistsInDst", func(t *testing.T) {
+		err := os.MkdirAll(filepath.Join(tmpDir, "1", ".idea", "dir1", "dir2"), os.FileMode(0o755))
+		if err != nil {
+			t.Fatal(err)
+		}
+		err = os.MkdirAll(filepath.Join(tmpDir, "2", ".idea", "dir1"), os.FileMode(0o755))
+		if err != nil {
+			t.Fatal(err)
+		}
+		err = os.WriteFile(filepath.Join(tmpDir, "1", ".idea", "file1"), []byte("test1"), os.FileMode(0o600))
+		if err != nil {
+			t.Fatal(err)
+		}
+		err = os.WriteFile(filepath.Join(tmpDir, "1", ".idea", "dir1", "file2"), []byte("test2"), os.FileMode(0o600))
+		if err != nil {
+			t.Fatal(err)
+		}
+		err = os.WriteFile(filepath.Join(tmpDir, "2", ".idea", "dir1", "file2"), []byte("test!"), os.FileMode(0o600))
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		err = os.Symlink(filepath.Join(tmpDir, "1", ".idea", "dir1", "file2"), filepath.Join(tmpDir, "1", ".idea", "dir1", "symlink"))
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		err = syncIdeaCache(filepath.Join(tmpDir, "1"), filepath.Join(tmpDir, "2"), false)
+		if err != nil {
+			t.Fatalf("syncIdeaCache failed: %v", err)
+		}
+
+		if _, err := os.Stat(filepath.Join(tmpDir, "1", ".idea", "dir1", "dir2")); os.IsNotExist(err) {
+			t.Errorf("Resulting folder .idea/dir1/dir2 not found")
+		}
+		got, err := os.ReadFile(filepath.Join(tmpDir, "2", ".idea", "dir1", "file2"))
+		if err != nil || string(got) != "test!" {
+			t.Errorf("Got: %s\n Expected: test!", string(got))
+		}
+	})
+
+	if err := os.RemoveAll(tmpDir); err != nil {
 		t.Fatal(err)
 	}
 }

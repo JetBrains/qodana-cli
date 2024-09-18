@@ -216,7 +216,10 @@ func GetIdeArgs(opts *QodanaOptions) []string {
 
 // postAnalysis post-analysis stage: wait for FUS stats to upload
 func postAnalysis(opts *QodanaOptions) {
-	syncIdeaCache(opts.ProjectDir, opts.CacheDir, true)
+	err := syncIdeaCache(opts.ProjectDir, opts.CacheDir, true)
+	if err != nil {
+		log.Warnf("failed to sync .idea directory: %v", err)
+	}
 	syncConfigCache(opts, false)
 	for i := 1; i <= 600; i++ {
 		if findProcess("statistics-uploader") {
@@ -307,7 +310,10 @@ func prepareLocalIdeSettings(opts *QodanaOptions) {
 	writeProperties(opts)
 
 	if platform.IsContainer() {
-		syncIdeaCache(opts.CacheDir, opts.ProjectDir, false)
+		err := syncIdeaCache(opts.CacheDir, opts.ProjectDir, false)
+		if err != nil {
+			log.Warnf("failed to sync .idea directory: %v", err)
+		}
 		syncConfigCache(opts, true)
 		createUser("/etc/passwd")
 	}
@@ -434,26 +440,29 @@ func syncConfigCache(opts *QodanaOptions, fromCache bool) {
 }
 
 // syncIdeaCache sync .idea/ content from cache and back.
-func syncIdeaCache(from string, to string, overwrite bool) {
-	opt := cp.Options{}
-	if overwrite {
-		opt.OnDirExists = func(src, dest string) cp.DirExistsAction {
-			return cp.Merge
-		}
-	} else {
-		opt.OnDirExists = func(src, dest string) cp.DirExistsAction {
+func syncIdeaCache(from string, to string, overwrite bool) error {
+	copyOptions := cp.Options{
+		OnDirExists: func(src, dest string) cp.DirExistsAction {
+			if overwrite {
+				return cp.Merge
+			}
 			return cp.Untouchable
-		}
+		},
+		OnSymlink: func(src string) cp.SymlinkAction {
+			return cp.Skip
+		},
 	}
 	src := filepath.Join(from, ".idea")
 	if _, err := os.Stat(src); os.IsNotExist(err) {
-		return
+		return fmt.Errorf("source .idea directory does not exist: %s", src)
 	}
 	dst := filepath.Join(to, ".idea")
 	log.Printf("Sync IDE cache from: %s to: %s", src, dst)
-	if err := cp.Copy(src, dst, opt); err != nil {
-		log.Fatal(err)
+	if err := cp.Copy(src, dst, copyOptions); err != nil {
+		return fmt.Errorf("failed to sync .idea directory: %w", err)
 	}
+
+	return nil
 }
 
 //goland:noinspection GoBoolExpressions
