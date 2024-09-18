@@ -111,3 +111,12 @@ func GitCurrentRevision(cwd string, logdir string) (string, error) {
 	}
 	return strings.TrimSpace(stdout), nil
 }
+
+// GitRevisionExists returns true when revision exists in history.
+func GitRevisionExists(cwd string, revision string, logdir string) bool {
+	_, stderr, _ := gitRun(cwd, []string{"show", "--no-patch", revision}, logdir)
+	if strings.Contains(stderr, revision) || strings.Contains(stderr, "fatal:") {
+		return false
+	}
+	return true
+}

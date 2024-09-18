@@ -25,9 +25,10 @@ import (
 )
 
 const (
-	REV    = "aa1fe0eac28bbc363036b39ab937b081f06f407a"
-	BRANCH = "my-branch"
-	REPO   = "https://github.com/JetBrains/code-analytics-examples"
+	REV       = "aa1fe0eac28bbc363036b39ab937b081f06f407a"
+	MALFORMED = "aabbb0eac28bbc363036b39ab937b081f06f407a"
+	BRANCH    = "my-branch"
+	REPO      = "https://github.com/JetBrains/code-analytics-examples"
 )
 
 func TestGitFunctionalityChange(t *testing.T) {
@@ -62,6 +63,14 @@ func TestGitFunctionalityChange(t *testing.T) {
 	rootPath, _ := GitRoot(projectPath, temp)
 	if filepath.ToSlash(rootPath) != filepath.ToSlash(projectPath) {
 		t.Fatalf("Computed git root path are not equal: new: %v expected: %v", rootPath, projectPath)
+	}
+	existsCorrect := GitRevisionExists(projectPath, REV, temp)
+	if existsCorrect != true {
+		t.Fatalf("Revision %v is not found in project %v", REV, projectPath)
+	}
+	dontExists := GitRevisionExists(projectPath, MALFORMED, temp)
+	if dontExists {
+		t.Fatalf("Revision %v is found in project %v", MALFORMED, projectPath)
 	}
 }
 
