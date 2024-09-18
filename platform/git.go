@@ -31,10 +31,16 @@ func gitRun(cwd string, command []string, logdir string) (string, string, error)
 		return "", "", err
 	}
 	stdout, stderr, _, err := RunCmdRedirectOutput(cwd, args...)
-	logger.Printf("Executing command: %v", args)
-	logger.Println(stdout)
+	if logger != nil {
+		logger.Printf("Executing command: %v", args)
+		logger.Println(stdout)
+	}
 	if stderr != "" {
-		logger.Error(stderr + "\n")
+		if logger != nil {
+			logger.Error(stderr + "\n")
+		} else {
+			log.Error(stderr)
+		}
 	}
 	if err != nil {
 		log.Errorf("Error executing git command %s: %s", strings.Join(args, " "), err)
@@ -114,8 +120,8 @@ func GitCurrentRevision(cwd string, logdir string) (string, error) {
 
 // GitRevisionExists returns true when revision exists in history.
 func GitRevisionExists(cwd string, revision string, logdir string) bool {
-	_, stderr, _ := gitRun(cwd, []string{"show", "--no-patch", revision}, logdir)
-	if strings.Contains(stderr, revision) || strings.Contains(stderr, "fatal:") {
+	_, stderr, err := gitRun(cwd, []string{"show", "--no-patch", revision}, logdir)
+	if strings.Contains(stderr, revision) || strings.Contains(stderr, "fatal:") || err != nil {
 		return false
 	}
 	return true

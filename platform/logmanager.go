@@ -50,6 +50,10 @@ func (lm *LoggerManager) GetLogger(logdir string, command string) (*logrus.Logge
 
 	logger := logrus.New()
 
+	if _, err := os.Stat(logdir); os.IsNotExist(err) {
+		// When docker being launched, directory does not get created, returning nil
+		return nil, nil
+	}
 	logFileName := filepath.Join(logdir, filepath.Base(command)+".log")
 
 	logFile, err := os.OpenFile(logFileName, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0666)
