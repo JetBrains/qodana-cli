@@ -214,6 +214,16 @@ func (o *QodanaOptions) StartHash() (string, error) {
 	}
 }
 
+// ResetScanScenarioOptions drops the options that lead to local change analysis
+func (o *QodanaOptions) ResetScanScenarioOptions() {
+	o.Commit = ""
+	o.DiffStart = ""
+	o.DiffEnd = ""
+	o.FullHistory = false
+	o.ForceLocalChangesScript = false
+	o.Script = ""
+}
+
 func (o *QodanaOptions) Id() string {
 	if o._id == "" {
 		var analyzer string
