@@ -3,7 +3,7 @@ FROM node:$NODE_TAG AS node_base
 FROM debianbase
 
 # renovate: datasource=npm depName=eslint
-ENV ESLINT_VERSION="9.9.1"
+ENV ESLINT_VERSION="9.10.0"
 # renovate: datasource=npm depName=pnpm
 ENV PNPM_VERSION="9.11.0"
 

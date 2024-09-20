@@ -28,7 +28,7 @@ ENV ZIP_VERSION="3.0-12"
 # renovate: datasource=repology depName=debian_11/unzip versioning=loose
 ENV UNZIP_VERSION="6.0-26+deb11u1"
 # renovate: datasource=npm depName=eslint
-ENV ESLINT_VERSION="9.9.1"
+ENV ESLINT_VERSION="9.10.0"
 # renovate: datasource=npm depName=pnpm
 ENV PNPM_VERSION="9.11.0"
 

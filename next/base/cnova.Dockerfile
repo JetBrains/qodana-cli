@@ -38,7 +38,7 @@ ENV LIBC6_DEV_VERSION="2.36-9+deb12u7"
 ENV LOCALES_VERSION="2.36-9+deb12u7"
 
 # renovate: datasource=npm depName=eslint
-ENV ESLINT_VERSION="9.9.1"
+ENV ESLINT_VERSION="9.10.0"
 # renovate: datasource=npm depName=pnpm
 ENV PNPM_VERSION="9.11.0"
 
