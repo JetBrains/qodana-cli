@@ -5,7 +5,7 @@ FROM debianbase
 # renovate: datasource=npm depName=eslint
 ENV ESLINT_VERSION="9.9.1"
 # renovate: datasource=npm depName=pnpm
-ENV PNPM_VERSION="9.9.0"
+ENV PNPM_VERSION="9.11.0"
 
 ENV PATH="/opt/yarn/bin:$PATH"
 ENV SKIP_YARN_COREPACK_CHECK=0
