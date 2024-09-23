@@ -22,7 +22,7 @@ ENV PROCPS_VERSION="2:3.3.17-5"
 # renovate: datasource=repology depName=debian_11/software-properties-common versioning=loose
 ENV SOFTWARE_PROPERTIES_COMMON_VERSION="0.96.20.2-2.1"
 # renovate: datasource=npm depName=eslint
-ENV ESLINT_VERSION="9.11.0"
+ENV ESLINT_VERSION="9.11.1"
 # renovate: datasource=npm depName=pnpm
 ENV PNPM_VERSION="9.11.0"
 
