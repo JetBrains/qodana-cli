@@ -1,4 +1,5 @@
-FROM registry.jetbrains.team/p/sa/containers/qodana:cpp-base-16-242
+ARG CLANG="16"
+FROM registry.jetbrains.team/p/sa/containers/qodana:cpp-base-$CLANG-242
 
 ARG TARGETPLATFORM
 COPY $TARGETPLATFORM/qodana-clang /opt/qodana/qodana
