@@ -22,6 +22,8 @@ jobs:
         group: [ "default", "more" ]
         include:
           - version: "next"
+            group: "ruby"
+          - version: "next"
             group: "clang"
           - version: "2024.1"
             group: "clang"

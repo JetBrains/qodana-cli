@@ -14,6 +14,10 @@ group "clang" {
   targets = ["cpp"]
 }
 
+group "ruby" {
+  targets = ["ruby2x", "ruby3x"]
+}
+
 target "debian" {
   tags = [
     "registry.jetbrains.team/p/sa/containers/qodana:debian-base-latest"
@@ -73,11 +77,41 @@ target "cpp" {
   }
   name = "cpp-base-${clang}-latest"
   tags = [
-      "registry.jetbrains.team/p/sa/containers/qodana:cpp-base-${clang}-latest"
+    "registry.jetbrains.team/p/sa/containers/qodana:cpp-base-${clang}-latest"
   ]
   platforms = ["linux/amd64", "linux/arm64"]
   dockerfile = "cpp.Dockerfile"
   args = {
     CLANG = clang
+  }
+}
+
+target "ruby2x" {
+  matrix = {
+    version = ["6", "7"]
+  }
+  name = "ruby-base-2${version}-latest"
+  tags = [
+    "registry.jetbrains.team/p/sa/containers/qodana:ruby-base-2.${version}-latest"
+  ]
+  platforms = ["linux/amd64", "linux/arm64"]
+  dockerfile = "ruby.Dockerfile"
+  args = {
+    RUBY_TAG = "2.${version}-slim-bullseye"
+  }
+}
+
+target "ruby3x" {
+  matrix = {
+    version = ["0", "1", "2", "3"]
+  }
+  name = "ruby-base-3${version}-latest"
+  tags = [
+    "registry.jetbrains.team/p/sa/containers/qodana:ruby-base-3.${version}-latest"
+  ]
+  platforms = ["linux/amd64", "linux/arm64"]
+  dockerfile = "ruby.Dockerfile"
+  args = {
+    RUBY_TAG = "3.${version}-slim-bullseye"
   }
 }
