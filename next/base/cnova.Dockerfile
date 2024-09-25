@@ -33,9 +33,7 @@ ENV MAKE_VERSION="4.3-4.1"
 # renovate: datasource=repology depName=debian_12/patch versioning=loose
 ENV PATCH_VERSION="2.7.6-7"
 # renovate: datasource=repology depName=debian_12/libc6-dev versioning=loose
-ENV LIBC6_DEV_VERSION="2.36-9+deb12u7"
-# renovate: datasource=repology depName=debian_11/locales versioning=loose
-ENV LOCALES_VERSION="2.36-9+deb12u7"
+ENV LIBC6_DEV_VERSION="2.36-9+deb12u8"
 
 # renovate: datasource=npm depName=eslint
 ENV ESLINT_VERSION="9.11.0"
@@ -76,7 +74,7 @@ RUN --mount=target=/var/lib/apt/lists,type=cache,sharing=locked \
         make=$MAKE_VERSION \
         patch=$PATCH_VERSION \
         libc6-dev=$LIBC6_DEV_VERSION \
-        locales=$LOCALES_VERSION && \
+        locales=$LIBC6_DEV_VERSION && \
     echo 'en_US.UTF-8 UTF-8' > /etc/locale.gen && locale-gen && \
     apt-get autoremove -y && apt-get clean && \
     chmod 777 -R $HOME && \
