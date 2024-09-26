@@ -1,21 +1,6 @@
 ARG DOTNET_BASE_TAG="7.0-bullseye-slim"
 FROM mcr.microsoft.com/dotnet/sdk:$DOTNET_BASE_TAG
 
-# renovate: datasource=repology depName=debian_11/ca-certificates versioning=loose
-ENV CA_CERTIFICATES_VERSION="20210119"
-# renovate: datasource=repology depName=debian_11/curl versioning=loose
-ENV CURL_VERSION="7.74.0-1.3+deb11u13"
-# renovate: datasource=repology depName=debian_11/git versioning=loose
-ENV GIT_VERSION="1:2.30.2-1+deb11u3"
-# renovate: datasource=repology depName=debian_11/git-lfs versioning=loose
-ENV GIT_LFS_VERSION="2.13.2-1+b5"
-# renovate: datasource=repology depName=debian_11/gnupg2 versioning=loose
-ENV GNUPG2_VERSION="2.2.27-2+deb11u2"
-# renovate: datasource=repology depName=debian_11/default-jre versioning=loose
-ENV DEFAULT_JRE_VERSION="2:1.11-72"
-# renovate: datasource=repology depName=debian_11/locales versioning=loose
-ENV LOCALES_VERSION="2.31-13+deb11u10"
-
 ENV HOME="/root" \
     LC_ALL="en_US.UTF-8" \
     QODANA_DATA="/data" \
@@ -36,13 +21,13 @@ RUN --mount=target=/var/lib/apt/lists,type=cache,sharing=locked \
     rm -f /etc/apt/apt.conf.d/docker-clean && \
     mkdir -m 777 -p /opt/qodana /data/project /data/cache /data/results && apt-get update && \
     DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
-        ca-certificates=$CA_CERTIFICATES_VERSION \
-        curl=$CURL_VERSION \
-        default-jre=$DEFAULT_JRE_VERSION \
-        git=$GIT_VERSION \
-        git-lfs=$GIT_LFS_VERSION \
-        gnupg2=$GNUPG2_VERSION \
-        locales=$LOCALES_VERSION && \
+        ca-certificates \
+        curl \
+        default-jre \
+        git \
+        git-lfs \
+        gnupg2 \
+        locales && \
     echo 'en_US.UTF-8 UTF-8' > /etc/locale.gen && locale-gen && \
     apt-get autoremove -y && apt-get clean && \
     curl -fsSL -o /tmp/dotnet-install.sh  \

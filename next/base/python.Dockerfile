@@ -1,32 +1,5 @@
 FROM debianbase
 
-# renovate: datasource=repology depName=debian_11/ca-certificates versioning=loose
-ENV CA_CERTIFICATES_VERSION="20210119"
-# renovate: datasource=repology depName=debian_11/curl versioning=loose
-ENV CURL_VERSION="7.74.0-1.3+deb11u13"
-# renovate: datasource=repology depName=debian_11/fontconfig versioning=loose
-ENV FONTCONFIG_VERSION="2.13.1-4.2"
-# renovate: datasource=repology depName=debian_11/git versioning=loose
-ENV GIT_VERSION="1:2.30.2-1+deb11u3"
-# renovate: datasource=repology depName=debian_11/git-lfs versioning=loose
-ENV GIT_LFS_VERSION="2.13.2-1+b5"
-# renovate: datasource=repology depName=debian_11/gnupg2 versioning=loose
-ENV GNUPG2_VERSION="2.2.27-2+deb11u2"
-# renovate: datasource=repology depName=debian_11/locales versioning=loose
-ENV LOCALES_VERSION="2.31-13+deb11u10"
-# renovate: datasource=repology depName=debian_11/procps versioning=loose
-ENV PROCPS_VERSION="2:3.3.17-5"
-# renovate: datasource=repology depName=debian_11/bzip2 versioning=loose
-ENV BZIP2_VERSION="1.0.8-4"
-# renovate: datasource=repology depName=debian_11/libglib2.0-0 versioning=loose
-ENV LIBGLIB2_0_0_VERSION="2.66.8-1+deb11u4"
-# renovate: datasource=repology depName=debian_11/libsm6 versioning=loose
-ENV LIBSM6_VERSION="2:1.2.3-1"
-# renovate: datasource=repology depName=debian_11/libxext6 versioning=loose
-ENV LIBXEXT6_VERSION="2:1.3.3-1.1"
-# renovate: datasource=repology depName=debian_11/libxrender1 versioning=loose
-ENV LIBXRENDER1_VERSION="1:0.9.10-1"
-
 ENV CONDA_DIR="/opt/miniconda3" \
     CONDA_ENVS_PATH="$QODANA_DATA/cache/conda/envs" \
     PIP_CACHE_DIR="$QODANA_DATA/cache/.pip/" \
@@ -42,11 +15,11 @@ RUN --mount=target=/var/lib/apt/lists,type=cache,sharing=locked \
     --mount=target=/var/cache/apt,type=cache,sharing=locked \
     apt-get update && \
     DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
-      bzip2=$BZIP2_VERSION \
-      libglib2.0-0=$LIBGLIB2_0_0_VERSION \
-      libsm6=$LIBSM6_VERSION \
-      libxext6=$LIBXEXT6_VERSION \
-      libxrender1=$LIBXRENDER1_VERSION && \
+      bzip2 \
+      libglib2.0-0 \
+      libsm6 \
+      libxext6 \
+      libxrender1 && \
     mkdir -m 777 -p $QODANA_DATA/cache && \
     dpkgArch="$(dpkg --print-architecture)" && \
     case "$dpkgArch" in \

@@ -4,36 +4,6 @@ FROM node:$NODE_TAG AS node_base
 FROM debian:$BASE_TAG
 
 ARG CLANG="16"
-# renovate: datasource=repology depName=debian_12/ca-certificates versioning=loose
-ENV CA_CERTIFICATES_VERSION="20230311"
-# renovate: datasource=repology depName=debian_12/curl versioning=loose
-ENV CURL_VERSION="7.88.1-10+deb12u7"
-# renovate: datasource=repology depName=debian_12/git versioning=loose
-ENV GIT_VERSION="1:2.39.5-0+deb12u1"
-# renovate: datasource=repology depName=debian_12/git-lfs versioning=loose
-ENV GIT_LFS_VERSION="3.3.0-1+b5"
-# renovate: datasource=repology depName=debian_12/gnupg2 versioning=loose
-ENV GNUPG2_VERSION="2.2.40-1.1"
-# renovate: datasource=repology depName=debian_12/default-jre versioning=loose
-ENV DEFAULT_JRE_VERSION="2:1.17-74"
-# renovate: datasource=repology depName=debian_12/apt-transport-https versioning=loose
-ENV APT_TRANSPORT_HTTPS_VERSION="2.6.1"
-# renovate: datasource=repology depName=debian_12/autoconf versioning=loose
-ENV AUTOCONF_VERSION="2.71-3"
-# renovate: datasource=repology depName=debian_12/automake versioning=loose
-ENV AUTOMAKE_VERSION="1:1.16.5-1.3"
-# renovate: datasource=repology depName=debian_12/cmake versioning=loose
-ENV CMAKE_VERSION="3.25.1-1"
-# renovate: datasource=repology depName=debian_12/dpkg-dev versioning=loose
-ENV DPKG_DEV_VERSION="1.21.22"
-# renovate: datasource=repology depName=debian_12/file versioning=loose
-ENV FILE_VERSION="1:5.44-3"
-# renovate: datasource=repology depName=debian_12/make versioning=loose
-ENV MAKE_VERSION="4.3-4.1"
-# renovate: datasource=repology depName=debian_12/patch versioning=loose
-ENV PATCH_VERSION="2.7.6-7"
-# renovate: datasource=repology depName=debian_12/libc6-dev versioning=loose
-ENV LIBC6_DEV_VERSION="2.36-9+deb12u8"
 
 # renovate: datasource=npm depName=eslint
 ENV ESLINT_VERSION="9.11.1"
@@ -59,22 +29,22 @@ RUN --mount=target=/var/lib/apt/lists,type=cache,sharing=locked \
     rm -f /etc/apt/apt.conf.d/docker-clean && \
     mkdir -m 777 -p /opt/qodana $QODANA_DATA/project $QODANA_DATA/cache $QODANA_DATA/results && apt-get update && \
     DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
-        ca-certificates=$CA_CERTIFICATES_VERSION \
-        curl=$CURL_VERSION \
-        default-jre=$DEFAULT_JRE_VERSION \
-        git=$GIT_VERSION \
-        git-lfs=$GIT_LFS_VERSION \
-        gnupg2=$GNUPG2_VERSION \
-        apt-transport-https=$APT_TRANSPORT_HTTPS_VERSION \
-        autoconf=$AUTOCONF_VERSION \
-        automake=$AUTOMAKE_VERSION \
-        cmake=$CMAKE_VERSION \
-        dpkg-dev=$DPKG_DEV_VERSION \
-        file=$FILE_VERSION \
-        make=$MAKE_VERSION \
-        patch=$PATCH_VERSION \
-        libc6-dev=$LIBC6_DEV_VERSION \
-        locales=$LIBC6_DEV_VERSION && \
+        ca-certificates \
+        curl \
+        default-jre \
+        git \
+        git-lfs \
+        gnupg2 \
+        apt-transport-https \
+        autoconf \
+        automake \
+        cmake \
+        dpkg-dev \
+        file \
+        make \
+        patch \
+        libc6-dev \
+        locales && \
     echo 'en_US.UTF-8 UTF-8' > /etc/locale.gen && locale-gen && \
     apt-get autoremove -y && apt-get clean && \
     chmod 777 -R $HOME && \
