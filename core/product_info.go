@@ -214,6 +214,10 @@ func (p *product) is242orNewer() bool {
 	return number >= 242
 }
 
+func (p *product) isRuby() bool {
+	return p.Code == platform.QDRUBY
+}
+
 var Prod product
 
 // guessProduct fills all product fields.
@@ -277,6 +281,9 @@ func guessProduct(opts *QodanaOptions) {
 
 	log.Debug(Prod)
 	platform.SetEnv(platform.QodanaDistEnv, Prod.Home)
+	if Prod.isRuby() {
+		platform.UnsetRubyVariables()
+	}
 }
 
 func isEap(info ProductInfoJson) bool {
