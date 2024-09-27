@@ -328,6 +328,7 @@ func runScopeScript(ctx context.Context, options *QodanaOptions, startHash strin
 	showReport := options.ShowReport
 	saveReportOpt := options.SaveReport
 	props := options.Property
+	baseline := options.Baseline
 
 	runFunc := func(hash string) (bool, int) {
 		e := platform.GitCheckout(options.ProjectDir, hash, true, options.LogDirPath())
@@ -364,7 +365,10 @@ func runScopeScript(ctx context.Context, options *QodanaOptions, startHash strin
 	options.SaveReport = false
 
 	startDir := filepath.Join(resultsDir, "start")
-	options.Property = append(options.Property, "-Dqodana.skip.result=true") // don't print results
+	options.Property = append(
+		options.Property,
+		"-Dqodana.skip.result=true",               // don't print results
+		"-Dqodana.skip.coverage.computation=true") // don't compute coverage on first pass
 	options.Baseline = ""
 	options.ResultsDir = startDir
 	options.ApplyFixes = false
@@ -384,7 +388,9 @@ func runScopeScript(ctx context.Context, options *QodanaOptions, startHash strin
 		"-Dqodana.skip.preamble=true", // don't print the QD logo again
 		"-Didea.headless.enable.statistics=false",                   // disable statistics for second run
 		fmt.Sprintf("-Dqodana.scoped.baseline.path=%s", startSarif), // disable statistics for second run
+		"-Dqodana.skip.coverage.issues.reporting=true",              // don't report coverage issues on the second pass, but allow numbers to be computed
 	)
+	options.Baseline = baseline
 	options.ResultsDir = endDir
 	options.ApplyFixes = applyFixes
 	options.Cleanup = cleanup
