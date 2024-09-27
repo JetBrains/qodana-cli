@@ -52,6 +52,8 @@ const (
 	qodanaNugetUser          = "QODANA_NUGET_USER"
 	qodanaNugetPassword      = "QODANA_NUGET_PASSWORD"
 	qodanaNugetName          = "QODANA_NUGET_NAME"
+	gemHome                  = "GEM_HOME"
+	bundleAppConfig          = "BUNDLE_APP_CONFIG"
 )
 
 // ExtractQodanaEnvironment extracts Qodana environment variables from the current environment.
@@ -168,6 +170,15 @@ func SetEnv(key string, value string) {
 			return
 		}
 		log.Debugf("Set %s=%s", key, value)
+	}
+}
+
+func UnsetRubyVariables() {
+	variables := []string{gemHome, bundleAppConfig}
+	for _, variable := range variables {
+		if err := os.Unsetenv(variable); err != nil {
+			log.Warnf("couldn't unset env variable %s", err.Error())
+		}
 	}
 }
 
