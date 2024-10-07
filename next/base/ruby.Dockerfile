@@ -18,6 +18,8 @@ ENV JAVA_HOME="$QODANA_DIST/jbr" \
     QODANA_CONF="$HOME/.config/idea" \
     PATH="$QODANA_DIST/bin:$PATH"
 
+ENV BUNDLE_USER_CONFIG="$HOME/.bundle"
+
 # hadolint ignore=SC2174
 RUN --mount=target=/var/lib/apt/lists,type=cache,sharing=locked \
     --mount=target=/var/cache/apt,type=cache,sharing=locked \
@@ -36,7 +38,10 @@ RUN --mount=target=/var/lib/apt/lists,type=cache,sharing=locked \
     apt-get autoremove -y && apt-get clean && \
     chmod 777 -R $HOME && \
     echo 'root:x:0:0:root:/root:/bin/bash' > /etc/passwd && chmod 666 /etc/passwd && \
-    git config --global --add safe.directory '*'
+    git config --global --add safe.directory '*' && \
+    mkdir -p $BUNDLE_USER_CONFIG && \
+      echo --- >> $BUNDLE_USER_CONFIG/config && \
+      echo "BUNDLE_PATH: ${HOME}/.local/share/gem" >> $BUNDLE_USER_CONFIG/config
 
 RUN apt-get update && \
     apt-get install -y sudo build-essential && \
@@ -58,5 +63,3 @@ RUN ln -s /usr/local/lib/node_modules/npm/bin/npm-cli.js /usr/local/bin/npm && \
     yarn --version && \
     npm install -g eslint@$ESLINT_VERSION pnpm@$PNPM_VERSION && npm config set update-notifier false && \
     chmod 777 -R "$HOME/.npm" "$HOME/.npmrc"
-
-RUN unset GEM_HOME BUNDLE_APP_CONFIG
