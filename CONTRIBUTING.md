@@ -102,8 +102,8 @@ If you are a core maintainer and want to release a new version, all you need to 
   - external (updates are done via pull requests): [`Microsoft/winget-pkgs`](https://github.com/microsoft/winget-pkgs/pulls?q=JetBrains.QodanaCLI)
   - internal (updates are done via direct commits): [`JetBrains/scoop-utils`](https://github.com/jetbrains/scoop-utils) and [`JetBrains/homebrew-utils`](https://github.com/jetbrains/homebrew-utils)
 4. For all integrations that use the CLI:
-  - TeamCity: bump CLI catalogue version, [like this](https://code.jetbrains.team/p/sa/repositories/teamcity-qodana/revision/47734d41eec2d4e8895aa8555871d29abcdd5d92).
-  - for all other CIs: the update will be done automatically via pull request, read https://github.com/JetBrains/qodana-action/blob/main/CONTRIBUTING.md#release-a-new-version
+  - for all CIs (except TeamCity): the update will be done automatically via pull request, read https://github.com/JetBrains/qodana-action/blob/main/CONTRIBUTING.md#release-a-new-version
+  - TeamCity: after GitHub action release, bump CLI catalogue version, [like this](https://code.jetbrains.team/p/sa/repositories/teamcity-qodana/revision/47734d41eec2d4e8895aa8555871d29abcdd5d92).
 
 ### Troubleshooting `choco` releases
 
