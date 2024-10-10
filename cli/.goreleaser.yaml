@@ -24,17 +24,14 @@ builds:
                   fi;
             fi"
           output: true
-        - cmd: | # copy binaries to dist/upload for GitHub binary upload
-            sh -c "
-            set -e; 
-            mkdir -p dist/upload;
-            cp {{ .Path }} dist/upload/{{ .ProjectName }}_{{ .Os }}_{{ if eq .Arch "amd64" }}x86_64{{ else }}{{ .Arch }}{{ end }}{{ if eq .Os "windows" }}.exe{{ end }}"
         - cmd: | # sign binaries for Windows and macOS
             sh -c "
             set -e;
             if [ '{{ .IsSnapshot }}' = 'false' -a '{{ .Os }}' != 'linux' ];
             then codesign {{ if eq .Os "darwin" }}-denoted-content-type=application/x-mac-app-bin{{ end }} -signed-files-dir=./dist/{{ .ProjectName }}_{{ .Os }}_{{ .Arch }}{{ if eq .Arch "amd64" }}_v1{{ end }}/ './dist/{{ .ProjectName }}_{{ .Os }}_{{ .Arch }}{{ if eq .Arch "amd64" }}_v1{{ end }}/qodana{{ if eq .Os "windows" }}.exe{{ end }}' ;
-            fi"
+            fi;
+            mkdir -p dist/upload;
+            cp {{ .Path }} dist/upload/{{ .ProjectName }}_{{ .Os }}_{{ if eq .Arch "amd64" }}x86_64{{ else }}{{ .Arch }}{{ end }}{{ if eq .Os "windows" }}.exe{{ end }}""
           output: true
 archives:
   - name_template: '{{ .ProjectName }}_{{ .Os }}_{{- if eq .Arch "amd64" }}x86_64{{- else if eq .Arch "386" }}i386{{- else }}{{ .Arch }}{{ end }}'
