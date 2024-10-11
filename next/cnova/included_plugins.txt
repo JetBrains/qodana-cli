@@ -33,6 +33,7 @@ com.intellij.cpp-diagnostics
 com.intellij.cidr.compiler.custom
 com.intellij.dts
 com.intellij.clion-makefile
+com.jetbrains.clion.plugins.webDeployment
 org.jetbrains.plugins.clion.test.google
 org.jetbrains.plugins.clion.ctest
 org.jetbrains.plugins.clion.test.catch
