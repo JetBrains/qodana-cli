@@ -5,7 +5,7 @@ FROM pythonbase
 # renovate: datasource=npm depName=eslint
 ENV ESLINT_VERSION="9.13.0"
 # renovate: datasource=npm depName=pnpm
-ENV PNPM_VERSION="9.12.1"
+ENV PNPM_VERSION="9.12.2"
 
 ENV PATH="/opt/yarn/bin:$PATH"
 ENV SKIP_YARN_COREPACK_CHECK=0
