@@ -1,4 +1,4 @@
-ARG RUST_TAG="1.81-slim-bullseye"
+ARG RUST_TAG="1.82-slim-bullseye"
 FROM rust:$RUST_TAG
 
 # renovate: datasource=npm depName=eslint
