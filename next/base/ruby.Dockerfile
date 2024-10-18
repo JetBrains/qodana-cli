@@ -5,7 +5,7 @@ FROM node:$NODE_TAG AS node_base
 FROM ruby:$RUBY_TAG
 
 # renovate: datasource=npm depName=eslint
-ENV ESLINT_VERSION="9.12.0"
+ENV ESLINT_VERSION="9.13.0"
 # renovate: datasource=npm depName=pnpm
 ENV PNPM_VERSION="9.12.1"
 
