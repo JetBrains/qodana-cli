@@ -31,7 +31,7 @@ jobs:
         run: |
           touch cdnet/clt.zip tooling/baseline-cli.jar tooling/intellij-report-converter.jar tooling/qodana-fuser.jar
           cat > go.work << EOF
-          go 1.21.13
+          go 1.22.8
           
           use (
           ./cdnet
@@ -84,7 +84,7 @@ jobs:
         run: |
           touch cdnet/clt.zip tooling/baseline-cli.jar tooling/intellij-report-converter.jar tooling/qodana-fuser.jar
           cat > go.work << EOF
-          go 1.21.13
+          go 1.22.8
 
           use (
           ./cdnet

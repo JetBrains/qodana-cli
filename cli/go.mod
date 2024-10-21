@@ -1,13 +1,13 @@
 module github.com/JetBrains/qodana-cli/v2024/cli
 
-go 1.21.13
+go 1.22.8
 
 require (
 	github.com/boyter/scc/v3 v3.3.5 // indirect
 	github.com/cucumber/ci-environment/go v0.0.0-20230911180507-bd001ebc644c // indirect
 	github.com/docker/cli v25.0.0+incompatible // indirect
 	github.com/docker/docker v25.0.6+incompatible // indirect; DO NOT UPDATE: breaking changes
-	github.com/go-enry/go-enry/v2 v2.8.9 // indirect
+	github.com/go-enry/go-enry/v2 v2.9.0 // indirect
 	github.com/google/uuid v1.6.0 // indirect
 	github.com/liamg/clinch v1.6.6 // indirect
 	github.com/mattn/go-isatty v0.0.20 // indirect

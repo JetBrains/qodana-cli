@@ -1,6 +1,6 @@
 module github.com/JetBrains/qodana-cli/v2024/core
 
-go 1.21.13
+go 1.22.8
 
 require (
 	github.com/cucumber/ci-environment/go v0.0.0-20230911180507-bd001ebc644c
@@ -44,7 +44,7 @@ require (
 	github.com/docker/docker-credential-helpers v0.8.0 // indirect
 	github.com/docker/go-units v0.5.0 // indirect
 	github.com/felixge/httpsnoop v1.0.4 // indirect
-	github.com/go-enry/go-enry/v2 v2.8.9 // indirect
+	github.com/go-enry/go-enry/v2 v2.9.0 // indirect
 	github.com/go-enry/go-oniguruma v1.2.1 // indirect
 	github.com/go-logr/logr v1.4.1 // indirect
 	github.com/go-logr/stdr v1.2.2 // indirect
