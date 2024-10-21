@@ -18,7 +18,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        version: [ "next", "2024.2" ]
+        version: [ "next", "2024.2", "2024.3" ]
         group: [ "default", "more", "clang" ]
         include:
           - version: "next"
