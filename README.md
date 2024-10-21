@@ -1,5 +1,6 @@
 # Qodana CLI [<img src="https://api.producthunt.com/widgets/embed-image/v1/top-post-badge.svg?post_id=304841&theme=dark&period=daily" alt="" align="right" width="190" height="41">](https://www.producthunt.com/posts/jetbrains-qodana)
 
+![TeamCity build status](https://buildserver.labs.intellij.net/app/rest/builds/buildType:id:StaticAnalysis_Base_TestCli/statusIcon.svg)
 [![JetBrains project](https://jb.gg/badges/official.svg)](https://confluence.jetbrains.com/display/ALL/JetBrains+on+GitHub)
 [![Qodana](https://github.com/JetBrains/qodana-cli/actions/workflows/ci.yml/badge.svg)](https://github.com/JetBrains/qodana-cli/actions/workflows/ci.yml)
 [![GoReport](https://goreportcard.com/badge/github.com/JetBrains/qodana-cli)][gh:goreport]
