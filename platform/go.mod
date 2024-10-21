@@ -4,7 +4,7 @@ go 1.22.8
 
 require (
 	github.com/cucumber/ci-environment/go v0.0.0-20230911180507-bd001ebc644c
-	github.com/go-enry/go-enry/v2 v2.9.0
+	github.com/go-enry/go-enry/v2 v2.9.1
 	github.com/google/uuid v1.6.0
 	github.com/liamg/clinch v1.6.6
 	github.com/mattn/go-isatty v0.0.20
