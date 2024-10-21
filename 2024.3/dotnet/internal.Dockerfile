@@ -1,4 +1,4 @@
-FROM registry.jetbrains.team/p/sa/containers/qodana:dotnet-base-latest
+FROM registry.jetbrains.team/p/sa/containers/qodana:dotnet-base-243
 
 ARG TARGETPLATFORM
 ARG DEVICEID

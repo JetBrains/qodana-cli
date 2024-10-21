@@ -1,5 +1,5 @@
 ARG RUBY="3.3"
-FROM registry.jetbrains.team/p/sa/containers/qodana:ruby-base-$RUBY-latest
+FROM registry.jetbrains.team/p/sa/containers/qodana:ruby-base-$RUBY-243
 
 ARG TARGETPLATFORM
 ARG DEVICEID

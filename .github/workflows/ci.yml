@@ -13,35 +13,35 @@ on:
     - cron: '0 0 * * 1'
 
 jobs:
-  build243:
-    name: "2024.3"
-    strategy:
-      matrix:
-        platform: [ linux/amd64 ]  # linux/arm64
-        linter: [ android-community, android, dotnet, go, js, jvm, jvm-community, php, python, python-community, dotnet-community, cpp, cnova ]
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-      - uses: dorny/paths-filter@v3
-        id: changes
-        with:
-          filters: |
-            dockerfile:
-              - '2024.3/${{ matrix.linter }}/Dockerfile'
-      - if: steps.changes.outputs.dockerfile == 'true'
-        name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
-      - if: steps.changes.outputs.dockerfile == 'true'
-        name: Build
-        uses: docker/build-push-action@v6
-        with:
-          tags: jetbrains/qodana-${{ matrix.linter }}:2024.3
-          context: 2024.3/${{ matrix.linter }}
-          platforms: ${{ matrix.platform }}
-          push: false
-          cache-from: type=gha
-          cache-to: type=gha,mode=max,ignore-error=true
+#  build243:
+#    name: "2024.3"
+#    strategy:
+#      matrix:
+#        platform: [ linux/amd64 ]  # linux/arm64
+#        linter: [ android-community, android, dotnet, go, js, jvm, jvm-community, php, python, python-community, dotnet-community, cpp, cnova ]
+#    runs-on: ubuntu-latest
+#    steps:
+#      - name: Checkout
+#        uses: actions/checkout@v4
+#      - uses: dorny/paths-filter@v3
+#        id: changes
+#        with:
+#          filters: |
+#            dockerfile:
+#              - '2024.3/${{ matrix.linter }}/Dockerfile'
+#      - if: steps.changes.outputs.dockerfile == 'true'
+#        name: Set up Docker Buildx
+#        uses: docker/setup-buildx-action@v3
+#      - if: steps.changes.outputs.dockerfile == 'true'
+#       name: Build
+#        uses: docker/build-push-action@v6
+#        with:
+#          tags: jetbrains/qodana-${{ matrix.linter }}:2024.3
+#          context: 2024.3/${{ matrix.linter }}
+#          platforms: ${{ matrix.platform }}
+#          push: false
+#          cache-from: type=gha
+#          cache-to: type=gha,mode=max,ignore-error=true
 
   build242:
     name: "2024.2"

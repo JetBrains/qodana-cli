@@ -1,4 +1,4 @@
-FROM registry.jetbrains.team/p/sa/containers/qodana:cnova-base-latest
+FROM registry.jetbrains.team/p/sa/containers/qodana:cnova-base-243
 
 ARG TARGETPLATFORM
 ARG DEVICEID

@@ -20,7 +20,7 @@ group "ruby" {
 
 target "debian" {
   tags = [
-    "registry.jetbrains.team/p/sa/containers/qodana:debian-base-latest"
+    "registry.jetbrains.team/p/sa/containers/qodana:debian-base-243"
   ]
   platforms = ["linux/amd64", "linux/arm64"]
   dockerfile = "debian.Dockerfile"
@@ -31,7 +31,7 @@ target "debian-js" {
     debianbase = "target:debian"
   }
   tags = [
-    "registry.jetbrains.team/p/sa/containers/qodana:debian-js-base-latest"
+    "registry.jetbrains.team/p/sa/containers/qodana:debian-js-base-243"
   ]
   platforms = ["linux/amd64", "linux/arm64"]
   dockerfile = "debian.js.Dockerfile"
@@ -42,7 +42,7 @@ target "python" {
     debianbase = "target:debian"
   }
   tags = [
-    "registry.jetbrains.team/p/sa/containers/qodana:python-base-latest"
+    "registry.jetbrains.team/p/sa/containers/qodana:python-base-243"
   ]
   platforms = ["linux/amd64", "linux/arm64"]
   dockerfile = "python.Dockerfile"
@@ -53,19 +53,19 @@ target "python-js" {
     pythonbase = "target:python"
   }
   tags = [
-    "registry.jetbrains.team/p/sa/containers/qodana:python-js-base-latest"
+    "registry.jetbrains.team/p/sa/containers/qodana:python-js-base-243"
   ]
   platforms = ["linux/amd64", "linux/arm64"]
   dockerfile = "python.js.Dockerfile"
 }
 
 target "other" {
-  name = "${edition}-base-latest"
+  name = "${edition}-base-243"
   matrix = {
     edition = ["dotnet", "go", "js", "php", "rust", "ruby", "cdnet", "cnova"]
   }
   tags = [
-    "registry.jetbrains.team/p/sa/containers/qodana:${edition}-base-latest"
+    "registry.jetbrains.team/p/sa/containers/qodana:${edition}-base-243"
   ]
   platforms = ["linux/amd64", "linux/arm64"]
   dockerfile = "${edition}.Dockerfile"
@@ -75,9 +75,9 @@ target "cpp" {
   matrix = {
     clang = ["15", "16", "17", "18"]
   }
-  name = "cpp-base-${clang}-latest"
+  name = "cpp-base-${clang}-243"
   tags = [
-    "registry.jetbrains.team/p/sa/containers/qodana:cpp-base-${clang}-latest"
+    "registry.jetbrains.team/p/sa/containers/qodana:cpp-base-${clang}-243"
   ]
   platforms = ["linux/amd64", "linux/arm64"]
   dockerfile = "cpp.Dockerfile"
@@ -90,9 +90,9 @@ target "ruby2x" {
   matrix = {
     version = ["6", "7"]
   }
-  name = "ruby-base-2${version}-latest"
+  name = "ruby-base-2${version}-243"
   tags = [
-    "registry.jetbrains.team/p/sa/containers/qodana:ruby-base-2.${version}-latest"
+    "registry.jetbrains.team/p/sa/containers/qodana:ruby-base-2.${version}-243"
   ]
   platforms = ["linux/amd64", "linux/arm64"]
   dockerfile = "ruby.Dockerfile"
@@ -105,9 +105,9 @@ target "ruby3x" {
   matrix = {
     version = ["0", "1", "2", "3"]
   }
-  name = "ruby-base-3${version}-latest"
+  name = "ruby-base-3${version}-243"
   tags = [
-    "registry.jetbrains.team/p/sa/containers/qodana:ruby-base-3.${version}-latest"
+    "registry.jetbrains.team/p/sa/containers/qodana:ruby-base-3.${version}-243"
   ]
   platforms = ["linux/amd64", "linux/arm64"]
   dockerfile = "ruby.Dockerfile"
