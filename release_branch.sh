@@ -16,4 +16,24 @@ cp -r next "$RELEASE_NAME"
 # Using 'find' and 'perl' for compatibility
 find "$RELEASE_NAME" -type f -exec perl -pi -e "s/-latest/-$TRANSFORMED_NAME/g" {} +
 
+# Update related workflows: do not forget to update ci.yml AFTER publishing PUBLIC dockerfiles
+YML_FILE=".github/workflows/base.yml"
+if [ ! -f "$YML_FILE" ]; then
+  echo "Error: $YML_FILE does not exist."
+  exit 1
+fi
+
+append_version_to_yaml() {
+  local version="$1"
+  local yaml_file="$2"
+  if yq e ".jobs.base.strategy.matrix.version[]" "$yaml_file" | grep -qx "$version"; then
+    echo "Version $version already exists in $yaml_file"
+  else
+    yq e ".jobs.base.strategy.matrix.version += [\"$version\"]" -i "$yaml_file"
+    echo "Updated $yaml_file with new version $version"
+  fi
+}
+
+append_version_to_yaml "$RELEASE_NAME" "$YML_FILE"
+
 echo "Done!"
