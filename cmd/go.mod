@@ -1,6 +1,6 @@
 module github.com/JetBrains/qodana-cli/v2024/cmd
 
-go 1.21.13
+go 1.22.8
 
 require (
 	github.com/JetBrains/qodana-cli/v2024/cloud v0.0.0-00010101000000-000000000000
@@ -114,4 +114,3 @@ require (
 	gopkg.in/ini.v1 v1.67.0 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
-)

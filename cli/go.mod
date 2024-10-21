@@ -1,6 +1,6 @@
 module github.com/JetBrains/qodana-cli/v2024/cli
 
-go 1.21.13
+go 1.22.8
 
 require (
 	github.com/boyter/scc/v3 v3.3.5 // indirect
