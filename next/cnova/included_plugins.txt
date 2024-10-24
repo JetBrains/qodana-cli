@@ -71,3 +71,4 @@ org.jetbrains.plugins.clangConfig
 org.jetbrains.plugins.clangFormat
 intellij.rider.cpp.debugger
 AngularJS
+intellij.grid.impl
