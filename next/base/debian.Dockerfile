@@ -1,5 +1,5 @@
 ARG BASE_TAG="bullseye-slim"
-ARG NODE_TAG="20-bullseye-slim"
+ARG NODE_TAG="22-bullseye-slim"
 FROM node:$NODE_TAG AS node_base
 FROM debian:$BASE_TAG
 

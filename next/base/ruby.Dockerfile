@@ -1,4 +1,4 @@
-ARG NODE_TAG="20-bullseye-slim"
+ARG NODE_TAG="22-bullseye-slim"
 ARG RUBY_TAG="3.3-slim-bullseye"
 
 FROM node:$NODE_TAG AS node_base

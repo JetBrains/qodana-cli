@@ -1,4 +1,4 @@
-ARG NODE_TAG="20-bullseye-slim"
+ARG NODE_TAG="22-bullseye-slim"
 FROM node:$NODE_TAG
 
 # renovate: datasource=npm depName=eslint

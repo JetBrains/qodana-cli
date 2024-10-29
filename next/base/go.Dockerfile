@@ -1,5 +1,5 @@
 ARG GO_TAG="1.23-bullseye"
-ARG NODE_TAG="20-bullseye-slim"
+ARG NODE_TAG="22-bullseye-slim"
 FROM node:$NODE_TAG AS node_base
 FROM golang:$GO_TAG
 
