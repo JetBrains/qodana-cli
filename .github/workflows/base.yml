@@ -23,6 +23,8 @@ jobs:
         include:
           - version: "next"
             group: "ruby"
+          - version: "2024.3"
+            group: "ruby"
     runs-on: ubuntu-latest
     steps:
       - name: Clean up
