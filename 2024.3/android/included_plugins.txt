@@ -101,3 +101,4 @@ intellij.nextjs
 intellij.vitejs
 com.intellij.jsonpath
 com.intellij.hardcodedPasswords
+com.jetbrains.codeWithMe

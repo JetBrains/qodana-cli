@@ -41,3 +41,4 @@ com.deadlock.scsyntax
 intellij.webpack
 com.intellij.jsonpath
 com.intellij.hardcodedPasswords
+com.jetbrains.codeWithMe
