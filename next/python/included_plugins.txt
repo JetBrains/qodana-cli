@@ -53,3 +53,4 @@ intellij.prettierJS
 com.deadlock.scsyntax
 com.intellij.jsonpath
 com.intellij.hardcodedPasswords
+com.jetbrains.codeWithMe
