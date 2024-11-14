@@ -18,6 +18,7 @@ package platform
 
 import (
 	"fmt"
+	"github.com/JetBrains/qodana-cli/v2024/cloud"
 	cienvironment "github.com/cucumber/ci-environment/go"
 	log "github.com/sirupsen/logrus"
 	"net/url"
@@ -60,6 +61,9 @@ const (
 func ExtractQodanaEnvironment(setEnvironmentFunc func(string, string)) {
 	if license := os.Getenv(QodanaLicense); license != "" {
 		setEnvironmentFunc(QodanaLicense, license)
+	}
+	if endpoint := os.Getenv(cloud.QodanaEndpointEnv); endpoint != "" {
+		setEnvironmentFunc(cloud.QodanaEndpointEnv, endpoint)
 	}
 	if remoteUrl := os.Getenv(QodanaRemoteUrl); remoteUrl != "" {
 		setEnvironmentFunc(QodanaRemoteUrl, remoteUrl)
