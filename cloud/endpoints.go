@@ -29,7 +29,6 @@ import (
 )
 
 const (
-	QodanaEndpointOldEnv          = "ENDPOINT"
 	QodanaEndpointEnv             = "QODANA_ENDPOINT"
 	QodanaCloudRequestCooldownEnv = "QODANA_CLOUD_REQUEST_COOLDOWN"
 	QodanaCloudRequestTimeoutEnv  = "QODANA_CLOUD_REQUEST_TIMEOUT"
@@ -76,8 +75,7 @@ func GetCloudRootEndpoint() *QdRootEndpoint {
 	if endpoint != nil {
 		return endpoint
 	}
-	oldEnvValue := GetEnvWithDefault(QodanaEndpointOldEnv, DefaultEndpoint)
-	userUrl := GetEnvWithDefault(QodanaEndpointEnv, oldEnvValue)
+	userUrl := GetEnvWithDefault(QodanaEndpointEnv, DefaultEndpoint)
 	host, err := parseRawURL(userUrl)
 	if err != nil {
 		log.Fatal(err)
