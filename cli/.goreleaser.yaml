@@ -28,7 +28,7 @@ builds:
             sh -c "
             set -e;
             if [ '{{ .IsSnapshot }}' = 'false' -a '{{ .Os }}' != 'linux' ];
-            then codesign {{ if eq .Os "darwin" }}-denoted-content-type=application/x-mac-app-bin{{ end }} -signed-files-dir=./dist/{{ .ProjectName }}_{{ .Os }}_{{ .Arch }}{{ if eq .Arch "amd64" }}_v1{{ end }}/ './dist/{{ .ProjectName }}_{{ .Os }}_{{ .Arch }}{{ if eq .Arch "amd64" }}_v1{{ end }}/qodana{{ if eq .Os "windows" }}.exe{{ end }}' ;
+            then codesign {{ if eq .Os "darwin" }}-denoted-content-type=application/x-mac-app-bin{{ end }} -signed-files-dir=./dist/{{ .ProjectName }}_{{ .Os }}_{{ .Arch }}{{ if eq .Arch "amd64" }}_v1{{ end }}{{ if eq .Arch "arm64" }}_v8.0{{ end }}/ './dist/{{ .ProjectName }}_{{ .Os }}_{{ .Arch }}{{ if eq .Arch "amd64" }}_v1{{ end }}{{ if eq .Arch "arm64" }}_v8.0{{ end }}/qodana{{ if eq .Os "windows" }}.exe{{ end }}' ;
             fi;
             mkdir -p dist/upload;
             cp {{ .Path }} dist/upload/{{ .ProjectName }}_{{ .Os }}_{{ if eq .Arch "amd64" }}x86_64{{ else }}{{ .Arch }}{{ end }}{{ if eq .Os "windows" }}.exe{{ end }}"
