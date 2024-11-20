@@ -70,4 +70,3 @@ org.jetbrains.plugins.clangConfig
 org.jetbrains.plugins.clangFormat
 intellij.rider.cpp.debugger
 AngularJS
-com.jetbrains.codeWithMe

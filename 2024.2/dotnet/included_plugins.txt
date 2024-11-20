@@ -81,4 +81,3 @@ idea.plugin.protoeditor
 com.intellij.rider.godot
 com.intellij.rider.godot.community
 com.jetbrains.gateway
-intellij.rider.plugins.cwm
