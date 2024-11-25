@@ -32,3 +32,6 @@ func (o *QodanaOptions) fixesSupported() bool {
 func (o *QodanaOptions) vmOptionsPath() string {
 	return filepath.Join(o.ConfDirPath(), "ide.vmoptions")
 }
+func (o *QodanaOptions) installPluginsVmOptionsPath() string {
+	return filepath.Join(o.ConfDirPath(), "install_plugins.vmoptions")
+}
