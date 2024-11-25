@@ -403,7 +403,10 @@ func prepareDirectories(cacheDir string, logDir string, confDir string) {
 }
 
 // installPlugins runs plugin installer for every plugin id in qodana.yaml.
-func installPlugins(plugins []platform.Plugin) {
+func installPlugins(opts *QodanaOptions, plugins []platform.Plugin) {
+	if len(plugins) > 0 {
+		setInstallPluginsVmoptions(opts)
+	}
 	for _, plugin := range plugins {
 		log.Printf("Installing plugin %s", plugin.Id)
 		if res, err := platform.RunCmd("", platform.QuoteIfSpace(Prod.IdeScript), "installPlugins", platform.QuoteIfSpace(plugin.Id)); res > 0 || err != nil {

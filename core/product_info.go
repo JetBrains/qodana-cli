@@ -31,6 +31,7 @@ import (
 
 type product struct {
 	Name           string
+	IDECode        string
 	Code           string
 	Version        string
 	BaseScriptName string
@@ -274,6 +275,7 @@ func guessProduct(opts *QodanaOptions) {
 		log.Fatalf("Can't read product-info.json: %v ", err)
 	}
 	Prod.Version = productInfo.Version
+	Prod.IDECode = productInfo.ProductCode
 	Prod.Code = toQodanaCode(productInfo.ProductCode)
 	Prod.Name = Prod.getProductNameFromCode()
 	Prod.Build = productInfo.BuildNumber

@@ -203,7 +203,7 @@ func RunAnalysis(ctx context.Context, options *QodanaOptions) int {
 	// this way of running needs to do bootstrap twice on different commits and will do it internally
 	if scenario != runScenarioScoped && options.Ide != "" {
 		platform.Bootstrap(options.QdConfig.Bootstrap, options.ProjectDir)
-		installPlugins(options.QdConfig.Plugins)
+		installPlugins(options, options.QdConfig.Plugins)
 	}
 	switch scenario {
 	case runScenarioFullHistory:
@@ -352,7 +352,7 @@ func runScopeScript(ctx context.Context, options *QodanaOptions, startHash strin
 			configAtHash = options.QdConfig
 		}
 		platform.Bootstrap(configAtHash.Bootstrap, options.ProjectDir)
-		installPlugins(configAtHash.Plugins)
+		installPlugins(options, configAtHash.Plugins)
 
 		exitCode := runQodana(ctx, options)
 		if !(exitCode == 0 || exitCode == 255) {
