@@ -170,3 +170,19 @@ func writeProperties(opts *QodanaOptions) { // opts.confDirPath(Prod.Version)  o
 		log.Fatal(err)
 	}
 }
+
+func setInstallPluginsVmoptions(opts *QodanaOptions) {
+	vmOptions := []string{
+		"-Dqodana.application=true",
+		"-Dintellij.platform.load.app.info.from.resources=true",
+		fmt.Sprintf("-Dqodana.build.number=%s-%s", Prod.IDECode, Prod.Build),
+	}
+	err := os.WriteFile(opts.installPluginsVmOptionsPath(), []byte(strings.Join(vmOptions, "\n")), 0o644)
+	if err != nil {
+		log.Fatal(err)
+	}
+	err = os.Setenv(Prod.vmOptionsEnv(), opts.installPluginsVmOptionsPath())
+	if err != nil {
+		log.Fatal(err)
+	}
+}
