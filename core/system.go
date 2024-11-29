@@ -351,7 +351,6 @@ func runScopeScript(ctx context.Context, options *QodanaOptions, startHash strin
 		platform.Bootstrap(configAtHash.Bootstrap, options.ProjectDir)
 		installPlugins(options, configAtHash.Plugins)
 
-		writeProperties(options)
 		exitCode := runQodana(ctx, options)
 		if !(exitCode == 0 || exitCode == 255) {
 			log.Errorf("Qodana analysis on %s exited with code %d. Aborting", hash, exitCode)
