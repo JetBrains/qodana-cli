@@ -16,4 +16,3 @@ tanvd.grazi
 intellij.indexing.shared.core
 org.toml.lang
 com.jetbrains.restClient
-com.jetbrains.codeWithMe

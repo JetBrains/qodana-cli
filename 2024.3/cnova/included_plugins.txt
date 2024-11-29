@@ -72,4 +72,3 @@ org.jetbrains.plugins.clangFormat
 intellij.rider.cpp.debugger
 AngularJS
 intellij.grid.impl
-com.jetbrains.codeWithMe
