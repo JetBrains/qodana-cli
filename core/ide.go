@@ -55,6 +55,7 @@ func getIdeExitCode(resultsDir string, c int) (res int) {
 }
 
 func runQodanaLocal(opts *QodanaOptions) (int, error) {
+	writeProperties(opts)
 	args := getIdeRunCommand(opts)
 	ideProcess, err := platform.RunCmdWithTimeout(
 		"",
@@ -307,7 +308,6 @@ func prepareLocalIdeSettings(opts *QodanaOptions) {
 		opts.LogDirPath(),
 		opts.ConfDirPath(),
 	)
-	writeProperties(opts)
 
 	if platform.IsContainer() {
 		err := syncIdeaCache(opts.CacheDir, opts.ProjectDir, false)
