@@ -893,7 +893,7 @@ func Test_Properties(t *testing.T) {
 					t.Fatal(err)
 				}
 			}
-			actual := GetProperties(opts, qConfig.Properties, qConfig.DotNet, []string{})
+			actual := GetScanProperties(opts, qConfig.Properties, qConfig.DotNet, []string{})
 			assert.Equal(t, tc.expected, actual)
 		})
 	}
