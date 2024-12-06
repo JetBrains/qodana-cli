@@ -6,7 +6,7 @@ FROM mcr.microsoft.com/dotnet/sdk:$DOTNET_BASE_TAG
 # renovate: datasource=npm depName=eslint
 ENV ESLINT_VERSION="9.16.0"
 # renovate: datasource=npm depName=pnpm
-ENV PNPM_VERSION="9.14.4"
+ENV PNPM_VERSION="9.15.0"
 
 ENV HOME="/root" \
     LC_ALL="en_US.UTF-8" \
