@@ -34,7 +34,7 @@ RUN --mount=target=/var/lib/apt/lists,type=cache,sharing=locked \
     unzip -q /tmp/android.zip -d ${ANDROID_SDK_ROOT}/cmdline-tools && \
     mv ${ANDROID_SDK_ROOT}/cmdline-tools/cmdline-tools ${ANDROID_SDK_ROOT}/cmdline-tools/tools && \
     echo y | ${ANDROID_SDK_TOOLS}/sdkmanager "platforms;android-${ANDROID_API_LEVEL}" && \
-    chmod 777 -R $ANDROID_SDK_ROOT && \
+    chmod 777 -R $ANDROID_SDK_ROOT $HOME/.jdks/ && \
     apt-get purge --auto-remove -y unzip && \
     rm -rf /tmp/*
 
