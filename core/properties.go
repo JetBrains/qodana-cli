@@ -30,10 +30,6 @@ import (
 
 func getPropertiesMap(
 	prefix string,
-	systemDir string,
-	logDir string,
-	confDir string,
-	pluginsDir string,
 	dotNet platform.DotNet,
 	deviceIdSalt []string,
 	plugins []string,
@@ -44,10 +40,6 @@ func getPropertiesMap(
 		"-Didea.headless.enable.statistics":    strconv.FormatBool(cloud.Token.IsAllowedToSendFUS()),
 		"-Didea.headless.statistics.device.id": deviceIdSalt[0],
 		"-Didea.headless.statistics.salt":      deviceIdSalt[1],
-		"-Didea.config.path":                   platform.QuoteIfSpace(confDir),
-		"-Didea.system.path":                   platform.QuoteIfSpace(systemDir),
-		"-Didea.plugins.path":                  platform.QuoteIfSpace(pluginsDir),
-		"-Didea.log.path":                      platform.QuoteIfSpace(logDir),
 		"-Dqodana.automation.guid":             platform.QuoteIfSpace(analysisId),
 		"-XX:MaxRAMPercentage":                 "70", //only in docker?
 	}
@@ -82,17 +74,49 @@ func getPropertiesMap(
 	return properties
 }
 
-// GetProperties writes key=value `props` to file `f` having later key occurrence win
-func GetProperties(opts *QodanaOptions, yamlProps map[string]string, dotNetOptions platform.DotNet, plugins []string) []string {
+// Common part for installPlugins and qodana executuion
+func GetCommonProperties(opts *QodanaOptions) []string {
+	systemDir := filepath.Join(opts.CacheDir, "idea", Prod.getVersionBranch())
+	pluginsDir := filepath.Join(opts.CacheDir, "plugins", Prod.getVersionBranch())
 	lines := []string{
-		fmt.Sprintf("-Xlog:gc*:%s", platform.QuoteIfSpace(filepath.Join(opts.LogDirPath(), "gc.log"))),
-	}
-	if opts.JvmDebugPort > 0 {
-		lines = append(lines, fmt.Sprintf("-agentlib:jdwp=transport=dt_socket,server=y,suspend=y,address=*:%s", containerJvmDebugPort))
+		fmt.Sprintf("-Didea.config.path=%s", platform.QuoteIfSpace(opts.ConfDirPath())),
+		fmt.Sprintf("-Didea.system.path=%s", platform.QuoteIfSpace(systemDir)),
+		fmt.Sprintf("-Didea.plugins.path=%s", platform.QuoteIfSpace(pluginsDir)),
+		fmt.Sprintf("-Didea.log.path=%s", platform.QuoteIfSpace(opts.LogDirPath())),
 	}
 	treatAsRelease := os.Getenv(platform.QodanaTreatAsRelease)
 	if treatAsRelease == "true" {
 		lines = append(lines, "-Deap.require.license=release")
+	}
+
+	return lines
+}
+
+func GetInstallPluginsProperties(opts *QodanaOptions) []string {
+	lines := GetCommonProperties(opts)
+
+	lines = append(lines,
+		"-Didea.headless.enable.statistics=false",
+		"-Dqodana.application=true",
+		"-Dintellij.platform.load.app.info.from.resources=true",
+		fmt.Sprintf("-Dqodana.build.number=%s-%s", Prod.IDECode, Prod.Build),
+	)
+
+	sort.Strings(lines)
+	return lines
+}
+
+// GetScanProperties writes key=value `props` to file `f` having later key occurrence win
+func GetScanProperties(opts *QodanaOptions, yamlProps map[string]string, dotNetOptions platform.DotNet, plugins []string) []string {
+	lines := GetCommonProperties(opts)
+
+	lines = append(
+		lines,
+		fmt.Sprintf("-Xlog:gc*:%s", platform.QuoteIfSpace(filepath.Join(opts.LogDirPath(), "gc.log"))),
+	)
+
+	if opts.JvmDebugPort > 0 {
+		lines = append(lines, fmt.Sprintf("-agentlib:jdwp=transport=dt_socket,server=y,suspend=y,address=*:%s", containerJvmDebugPort))
 	}
 
 	customPluginPathsValue := getCustomPluginPaths()
@@ -109,10 +133,6 @@ func GetProperties(opts *QodanaOptions, yamlProps map[string]string, dotNetOptio
 
 	props := getPropertiesMap(
 		Prod.parentPrefix(),
-		filepath.Join(opts.CacheDir, "idea", Prod.getVersionBranch()),
-		opts.LogDirPath(),
-		opts.ConfDirPath(),
-		filepath.Join(opts.CacheDir, "plugins", Prod.getVersionBranch()),
 		dotNetOptions,
 		platform.GetDeviceIdSalt(),
 		plugins,
@@ -160,7 +180,7 @@ func getCustomPluginPaths() string {
 
 // writeProperties writes the given key=value `props` to file `f` (sets the environment variable)
 func writeProperties(opts *QodanaOptions) { // opts.confDirPath(Prod.Version)  opts.vmOptionsPath(Prod.Version)
-	properties := GetProperties(opts, opts.QdConfig.Properties, opts.QdConfig.DotNet, getPluginIds(opts.QdConfig.Plugins))
+	properties := GetScanProperties(opts, opts.QdConfig.Properties, opts.QdConfig.DotNet, getPluginIds(opts.QdConfig.Plugins))
 	err := os.WriteFile(opts.vmOptionsPath(), []byte(strings.Join(properties, "\n")), 0o644)
 	if err != nil {
 		log.Fatal(err)
@@ -172,11 +192,8 @@ func writeProperties(opts *QodanaOptions) { // opts.confDirPath(Prod.Version)  o
 }
 
 func setInstallPluginsVmoptions(opts *QodanaOptions) {
-	vmOptions := []string{
-		"-Dqodana.application=true",
-		"-Dintellij.platform.load.app.info.from.resources=true",
-		fmt.Sprintf("-Dqodana.build.number=%s-%s", Prod.IDECode, Prod.Build),
-	}
+	vmOptions := GetInstallPluginsProperties(opts)
+	log.Debugf("install plugins options:%s", vmOptions)
 	err := os.WriteFile(opts.installPluginsVmOptionsPath(), []byte(strings.Join(vmOptions, "\n")), 0o644)
 	if err != nil {
 		log.Fatal(err)
