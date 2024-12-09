@@ -118,8 +118,8 @@ func recognizeDirLanguages(projectPath string) ([]string, error) {
 			relpath = relpath + string(os.PathSeparator)
 		}
 		if isInIgnoredDirectory(path) || enry.IsVendor(relpath) || enry.IsDotFile(relpath) ||
-			enry.IsDocumentation(relpath) || enry.IsConfiguration(relpath) ||
-			enry.IsGenerated(relpath, nil) {
+				enry.IsDocumentation(relpath) || enry.IsConfiguration(relpath) ||
+				enry.IsGenerated(relpath, nil) {
 			if f.IsDir() {
 				return filepath.SkipDir
 			}
