@@ -39,7 +39,7 @@ var (
 	eapVer      = "eap"
 	versionsMap = map[string]string{
 		releaseVer: "2024.2",
-		eapVer:     "2024.2",
+		eapVer:     "2024.3",
 	}
 	Products = map[string]string{
 		platform.QDJVM:  "IIU",

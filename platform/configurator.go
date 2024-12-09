@@ -32,9 +32,9 @@ import (
 const (
 	QodanaSarifName = "qodana.sarif.json"
 	configName      = "qodana"
-	ReleaseVersion  = "2024.2"
-	shortVersion    = "242"
-	isReleased      = true // set to true after the 2024.2 release is published
+	ReleaseVersion  = "2024.3"
+	shortVersion    = "243"
+	isReleased      = false // set to true after the 2024.2 release is published
 )
 
 // langsProductCodes is a map of languages to linters.
@@ -118,8 +118,8 @@ func recognizeDirLanguages(projectPath string) ([]string, error) {
 			relpath = relpath + string(os.PathSeparator)
 		}
 		if isInIgnoredDirectory(path) || enry.IsVendor(relpath) || enry.IsDotFile(relpath) ||
-			enry.IsDocumentation(relpath) || enry.IsConfiguration(relpath) ||
-			enry.IsGenerated(relpath, nil) {
+				enry.IsDocumentation(relpath) || enry.IsConfiguration(relpath) ||
+				enry.IsGenerated(relpath, nil) {
 			if f.IsDir() {
 				return filepath.SkipDir
 			}
