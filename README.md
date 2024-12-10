@@ -162,6 +162,10 @@ It runs one of Qodana Docker's images
 Note that most options can be configured via qodana.yaml (https://www.jetbrains.com/help/qodana/qodana-yaml.html) file.
 But you can always override qodana.yaml options with the following command-line options.
 
+Supply the qodana project token by declaring the `QODANA_TOKEN` environment variable
+
+If you are using other Qodana Cloud instance than https://qodana.cloud/, override it with declaring `QODANA_ENDPOINT` environment variable.
+
 
 ```shell
 qodana scan [flags]
@@ -249,7 +253,9 @@ Send the report (qodana.sarif.json and other analysis results) to Qodana Cloud.
 
 If report directory is not specified, the latest report will be fetched from the default linter results location.
 
-If you are using other Qodana Cloud instance than https://qodana.cloud/, override it with declaring `ENDPOINT` environment variable.
+Supply the qodana project token by declaring the `QODANA_TOKEN` environment variable
+
+If you are using other Qodana Cloud instance than https://qodana.cloud/, override it with declaring `QODANA_ENDPOINT` environment variable.
 
 ```shell
 qodana send [flags]
