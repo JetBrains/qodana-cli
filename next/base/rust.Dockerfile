@@ -2,7 +2,7 @@ ARG RUST_TAG="1.83-slim-bullseye"
 FROM rust:$RUST_TAG
 
 # renovate: datasource=npm depName=eslint
-ENV ESLINT_VERSION="9.16.0"
+ENV ESLINT_VERSION="9.17.0"
 # renovate: datasource=npm depName=pnpm
 ENV PNPM_VERSION="9.15.0"
 

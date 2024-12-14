@@ -2,7 +2,7 @@ ARG NODE_TAG="22-bullseye-slim"
 FROM node:$NODE_TAG
 
 # renovate: datasource=npm depName=eslint
-ENV ESLINT_VERSION="9.16.0"
+ENV ESLINT_VERSION="9.17.0"
 # renovate: datasource=npm depName=pnpm
 ENV PNPM_VERSION="9.15.0"
 

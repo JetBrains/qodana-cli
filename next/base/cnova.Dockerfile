@@ -6,7 +6,7 @@ FROM debian:$BASE_TAG
 ARG CLANG="16"
 
 # renovate: datasource=npm depName=eslint
-ENV ESLINT_VERSION="9.16.0"
+ENV ESLINT_VERSION="9.17.0"
 # renovate: datasource=npm depName=pnpm
 ENV PNPM_VERSION="9.15.0"
 
