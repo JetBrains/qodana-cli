@@ -4,7 +4,7 @@ go 1.22.8
 
 require (
 	github.com/cucumber/ci-environment/go v0.0.0-20230911180507-bd001ebc644c
-	github.com/docker/cli v25.0.0+incompatible
+	github.com/docker/cli v27.4.0+incompatible
 	github.com/docker/docker v25.0.6+incompatible // DO NOT UPDATE: breaking changes
 	github.com/docker/go-connections v0.5.0
 	github.com/otiai10/copy v1.14.0
