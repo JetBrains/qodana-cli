@@ -12,85 +12,14 @@ updates:
           - "*"
 
   - package-ecosystem: gomod
-    directory: /cdnet
-    commit-message:
-      prefix: ":arrow_up:"
-    schedule:
-      interval: weekly
-    groups:
-      dependencies:
-        patterns:
-          - "*"
-        exclude-patterns:
-          - "*docker*"
-
-  - package-ecosystem: gomod
-    directory: /cli
-    commit-message:
-      prefix: ":arrow_up:"
-    schedule:
-      interval: weekly
-    groups:
-      dependencies:
-        patterns:
-          - "*"
-        exclude-patterns:
-          - "*docker*"
-
-  - package-ecosystem: gomod
-    directory: /cloud
-    commit-message:
-      prefix: ":arrow_up:"
-    schedule:
-      interval: weekly
-    groups:
-      dependencies:
-        patterns:
-          - "*"
-        exclude-patterns:
-          - "*docker*"
-
-  - package-ecosystem: gomod
-    directory: /cmd
-    commit-message:
-      prefix: ":arrow_up:"
-    schedule:
-      interval: weekly
-    groups:
-      dependencies:
-        patterns:
-          - "*"
-        exclude-patterns:
-          - "*docker*"
-
-  - package-ecosystem: gomod
-    directory: /core
-    commit-message:
-      prefix: ":arrow_up:"
-    schedule:
-      interval: weekly
-    groups:
-      dependencies:
-        patterns:
-          - "*"
-        exclude-patterns:
-          - "*docker*"
-
-  - package-ecosystem: gomod
-    directory: /linter
-    commit-message:
-      prefix: ":arrow_up:"
-    schedule:
-      interval: weekly
-    groups:
-      dependencies:
-        patterns:
-          - "*"
-        exclude-patterns:
-          - "*docker*"
-
-  - package-ecosystem: gomod
-    directory: /platform
+    directories: 
+      - cdnet
+      - cli
+      - cloud
+      - cmd
+      - core
+      - platform
+      - sarif
     commit-message:
       prefix: ":arrow_up:"
     schedule:
