@@ -34,7 +34,7 @@ const (
 	configName      = "qodana"
 	ReleaseVersion  = "2024.3"
 	shortVersion    = "243"
-	isReleased      = false
+	isReleased      = true
 )
 
 // langsProductCodes is a map of languages to linters.
