@@ -34,7 +34,7 @@ func newViewCommand() *cobra.Command {
 		Short: "View SARIF files in CLI",
 		Long:  `Preview all problems found in SARIF files in CLI.`,
 		Run: func(cmd *cobra.Command, args []string) {
-			platform.ProcessSarif(options.SarifFile, "", "", false, false, false)
+			platform.ProcessSarif(options.SarifFile, "", "", true, false, false)
 		},
 	}
 	flags := cmd.Flags()
