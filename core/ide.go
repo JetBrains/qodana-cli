@@ -404,6 +404,9 @@ func prepareDirectories(cacheDir string, logDir string, confDir string) {
 
 // installPlugins runs plugin installer for every plugin id in qodana.yaml.
 func installPlugins(opts *QodanaOptions, plugins []platform.Plugin) {
+	if !opts.IsNative() {
+		return
+	}
 	if len(plugins) > 0 {
 		setInstallPluginsVmoptions(opts)
 	}
