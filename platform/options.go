@@ -395,3 +395,7 @@ func (o *QodanaOptions) GetSarifPath() string {
 func (o *QodanaOptions) GetShortSarifPath() string {
 	return path.Join(o.ResultsDir, "qodana-short.sarif.json")
 }
+
+func (o *QodanaOptions) IsNative() bool {
+	return o.Ide != ""
+}
