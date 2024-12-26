@@ -1,5 +1,5 @@
 ARG NODE_TAG="22-bullseye-slim"
-ARG RUBY_TAG="3.3-slim-bullseye"
+ARG RUBY_TAG="3.4-slim-bullseye"
 
 FROM node:$NODE_TAG AS node_base
 FROM ruby:$RUBY_TAG
@@ -7,7 +7,7 @@ FROM ruby:$RUBY_TAG
 # renovate: datasource=npm depName=eslint
 ENV ESLINT_VERSION="9.17.0"
 # renovate: datasource=npm depName=pnpm
-ENV PNPM_VERSION="9.15.1"
+ENV PNPM_VERSION="9.15.3"
 
 ENV HOME="/root" \
     LC_ALL="en_US.UTF-8" \
