@@ -32,9 +32,9 @@ import (
 const (
 	QodanaSarifName = "qodana.sarif.json"
 	configName      = "qodana"
-	ReleaseVersion  = "2024.2"
-	shortVersion    = "242"
-	isReleased      = true // set to true after the 2024.2 release is published
+	ReleaseVersion  = "2024.3"
+	shortVersion    = "243"
+	isReleased      = false
 )
 
 // langsProductCodes is a map of languages to linters.
