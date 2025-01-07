@@ -37,7 +37,7 @@ func GitRemoteUrlLegacy(cwd string) string {
 
 // GitLog returns the git log of the given repository in the given format.
 func GitLog(cwd string, format string, since int) []string {
-	args := []string{"--no-pager", "log", "--all"}
+	args := []string{"--no-pager", "log", "--all", "--no-use-mailmap"}
 	if format != "" {
 		args = append(args, "--pretty=format:"+format)
 	}

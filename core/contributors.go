@@ -30,8 +30,8 @@ var (
 	gitFormatSep = "||" // separator for git log format
 	gitFormat    = strings.Join(
 		[]string{
-			"%aE", // author mail, respecting .mailmap
-			"%aN", // author name, respecting .mailmap
+			"%ae", // author mail
+			"%an", // author name
 			"%H",  // commit hash, in full SHA-256 format
 			"%ai", // author date, ISO 8601-like format
 		},
