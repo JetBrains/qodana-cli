@@ -118,8 +118,8 @@ func recognizeDirLanguages(projectPath string) ([]string, error) {
 			relpath = relpath + string(os.PathSeparator)
 		}
 		if isInIgnoredDirectory(path) || enry.IsVendor(relpath) || enry.IsDotFile(relpath) ||
-				enry.IsDocumentation(relpath) || enry.IsConfiguration(relpath) ||
-				enry.IsGenerated(relpath, nil) {
+			enry.IsDocumentation(relpath) || enry.IsConfiguration(relpath) ||
+			enry.IsGenerated(relpath, nil) {
 			if f.IsDir() {
 				return filepath.SkipDir
 			}
@@ -193,7 +193,7 @@ func readFile(path string, limit int64) ([]byte, error) {
 		return nil, err
 	}
 	size := st.Size()
-	if limit > 0 && size > limit {
+	if size > limit {
 		size = limit
 	}
 	buf := bytes.NewBuffer(nil)

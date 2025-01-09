@@ -163,8 +163,12 @@ func getIde(productCode string) *ReleaseDownloadInfo {
 	}
 
 	product, err := GetProductByCode(Products[productCode])
-	if err != nil || product == nil {
+	if err != nil {
 		platform.ErrorMessage("Error while obtaining the product info: " + err.Error())
+		return nil
+	}
+	if product == nil {
+		platform.ErrorMessage("Product info is not found for code: ", originalCode)
 		return nil
 	}
 
