@@ -13,14 +13,11 @@ hg4idea
 HtmlTools
 tanvd.grazi
 com.intellij.database
-intellij.grid.core.impl
-intellij.grid.impl
 intellij.charts
 com.jetbrains.rider.fsharp
 org.jetbrains.fortea
 com.intellij.cidr.debugger
 intellij.rider.cpp.debugger
-com.jetbrains.rider.rdct-shared
 com.jetbrains.xaml.previewer
 com.intellij.plugins.watcher
 com.jetbrains.plugins.webDeployment
@@ -81,5 +78,5 @@ idea.plugin.protoeditor
 com.intellij.rider.godot
 com.intellij.rider.godot.community
 com.jetbrains.gateway
-com.intellij.rider.json
 intellij.rider.plugins.cwm
+com.jetbrains.rider.frontend
