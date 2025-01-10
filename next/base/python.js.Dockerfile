@@ -3,7 +3,7 @@ FROM node:$NODE_TAG AS node_base
 FROM pythonbase
 
 # renovate: datasource=npm depName=eslint
-ENV ESLINT_VERSION="9.17.0"
+ENV ESLINT_VERSION="9.18.0"
 # renovate: datasource=npm depName=pnpm
 ENV PNPM_VERSION="9.15.4"
 
