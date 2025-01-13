@@ -6,7 +6,7 @@ FROM golang:$GO_TAG
 # renovate: datasource=npm depName=eslint
 ENV ESLINT_VERSION="9.17.0"
 # renovate: datasource=npm depName=pnpm
-ENV PNPM_VERSION="9.15.3"
+ENV PNPM_VERSION="9.15.4"
 
 ENV HOME="/root" \
     LC_ALL="en_US.UTF-8" \
