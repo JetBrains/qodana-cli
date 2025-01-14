@@ -42,8 +42,11 @@ const (
 	// QodanaEapLicenseExpiredExitCode reports an expired license.
 	QodanaEapLicenseExpiredExitCode = 7
 	// QodanaTimeoutExitCodePlaceholder is not a real exit code (it is not obtained from IDE process! and not returned from CLI)
-	QodanaTimeoutExitCodePlaceholder = 1000
 	// Placeholder used to identify the case when the analysis reached timeout
+	QodanaTimeoutExitCodePlaceholder = 1000
+	// QodanaEmptyChangesetExitCodePlaceholder is not a real exit code (it is not obtained from IDE process! and not returned from CLI)
+	// Placeholder used to identify the case when the changeset for scoped analysis is empty
+	QodanaEmptyChangesetExitCodePlaceholder = 2000
 )
 
 // RunCmd executes subprocess with forwarding of signals, and returns its exit code.

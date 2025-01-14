@@ -27,8 +27,11 @@ import (
 // NewScanCommand returns a new instance of the scan command.
 func NewScanCommand(options *platform.QodanaOptions) *cobra.Command {
 	linterInfo := options.GetLinterSpecificOptions()
+	linterName := ""
 	if linterInfo == nil {
 		log.Fatal("linterInfo is nil")
+	} else {
+		linterName = (*linterInfo).GetInfo(options).LinterName
 	}
 	cmd := &cobra.Command{
 		Use:   "scan",
@@ -37,7 +40,7 @@ func NewScanCommand(options *platform.QodanaOptions) *cobra.Command {
 
 Note that most options can be configured via qodana.yaml (https://www.jetbrains.com/help/qodana/qodana-yaml.html) file.
 But you can always override qodana.yaml options with the following command-line options.
-`, (*linterInfo).GetInfo(options).LinterName),
+`, linterName),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			log.SetFormatter(&log.TextFormatter{DisableQuote: true, DisableTimestamp: true})
 			exitCode, err := platform.RunAnalysis(options)

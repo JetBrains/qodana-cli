@@ -74,7 +74,7 @@ func getPropertiesMap(
 	return properties
 }
 
-// Common part for installPlugins and qodana executuion
+// GetCommonProperties computes common properties for installPlugins and qodana executuion
 func GetCommonProperties(opts *QodanaOptions) []string {
 	systemDir := filepath.Join(opts.CacheDir, "idea", Prod.getVersionBranch())
 	pluginsDir := filepath.Join(opts.CacheDir, "plugins", Prod.getVersionBranch())
