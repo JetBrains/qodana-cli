@@ -14,6 +14,7 @@ ARG DOTNET_INSTALL_SH_REVISION="40434288dc5bbda41eafcbcbbc5c0fbbe028fb30"
 ARG DOTNET_CHANNEL_A="7.0"
 ARG DOTNET_CHANNEL_B="6.0"
 ARG DOTNET_CHANNEL_C="8.0"
+ARG DOTNET_CHANNEL_D="9.0"
 
 # hadolint ignore=SC2174,DL3009
 RUN --mount=target=/var/lib/apt/lists,type=cache,sharing=locked \
@@ -38,6 +39,7 @@ RUN --mount=target=/var/lib/apt/lists,type=cache,sharing=locked \
     bash /tmp/dotnet-install.sh -c $DOTNET_CHANNEL_A -i $DOTNET_ROOT && \
     bash /tmp/dotnet-install.sh -c $DOTNET_CHANNEL_B -i $DOTNET_ROOT && \
     bash /tmp/dotnet-install.sh -c $DOTNET_CHANNEL_C -i $DOTNET_ROOT && \
+    bash /tmp/dotnet-install.sh -c $DOTNET_CHANNEL_D -i $DOTNET_ROOT && \
     chmod 777 -R $DOTNET_ROOT && \
     chmod 777 -R $HOME && \
     echo 'root:x:0:0:root:/root:/bin/bash' > /etc/passwd && chmod 666 /etc/passwd && \

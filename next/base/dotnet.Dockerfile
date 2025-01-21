@@ -21,9 +21,8 @@ ENV RIDER_UNREAL_ROOT="/data/unrealEngine" DOTNET_ROOT="/usr/share/dotnet"
 
 # Not using the URL https://dot.net/v1/dotnet-install.sh because of https://github.com/dotnet/install-scripts/issues/276
 ARG DOTNET_INSTALL_SH_REVISION="40434288dc5bbda41eafcbcbbc5c0fbbe028fb30"
-ARG DOTNET_CHANNEL_A="7.0"
-ARG DOTNET_CHANNEL_B="6.0"
-ARG DOTNET_CHANNEL_C="8.0"
+ARG DOTNET_CHANNEL_A="9.0"
+ARG DOTNET_CHANNEL_B="8.0"
 
 # hadolint ignore=SC2174,DL3009
 RUN --mount=target=/var/lib/apt/lists,type=cache,sharing=locked \
@@ -52,7 +51,6 @@ RUN --mount=target=/var/lib/apt/lists,type=cache,sharing=locked \
     chmod +x /tmp/dotnet-install.sh && \
     bash /tmp/dotnet-install.sh -c $DOTNET_CHANNEL_A -i $DOTNET_ROOT && \
     bash /tmp/dotnet-install.sh -c $DOTNET_CHANNEL_B -i $DOTNET_ROOT && \
-    bash /tmp/dotnet-install.sh -c $DOTNET_CHANNEL_C -i $DOTNET_ROOT && \
     chmod 777 -R $DOTNET_ROOT
 
 ENV PATH="/opt/yarn/bin:$PATH"
