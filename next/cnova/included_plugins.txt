@@ -73,3 +73,7 @@ intellij.rider.cpp.debugger
 AngularJS
 intellij.grid.impl
 com.jetbrains.codeWithMe
+com.intellij.modules.python
+intellij.grid.charts.impl
+com.jetbrains.plugins.ini4idea
+intellij.python.community.plugin.minor
