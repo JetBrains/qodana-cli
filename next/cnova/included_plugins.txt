@@ -1,12 +1,10 @@
 org.intellij.qodana
 com.intellij
 com.intellij.ja
-com.intellij.platform.ide.provisioner
 org.jetbrains.plugins.yaml
 com.intellij.qt
 com.intellij.dev
 com.intellij.zh
-intellij.grid.core.impl
 com.jetbrains.sh
 org.toml.lang
 com.intellij.jsonpath
@@ -19,7 +17,6 @@ org.jetbrains.plugins.sass
 org.jetbrains.plugins.remote-run
 org.jetbrains.plugins.terminal
 name.kropp.intellij.makefile
-com.intellij.rml.dfa
 Remote Development Server
 org.intellij.intelliLang
 Docker
@@ -71,9 +68,9 @@ org.jetbrains.plugins.clangConfig
 org.jetbrains.plugins.clangFormat
 intellij.rider.cpp.debugger
 AngularJS
-intellij.grid.impl
 com.jetbrains.codeWithMe
 com.intellij.modules.python
-intellij.grid.charts.impl
 com.jetbrains.plugins.ini4idea
-intellij.python.community.plugin.minor
+intellij.grid.plugin
+intellij.grid.core.plugin
+PythonCore
