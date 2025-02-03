@@ -29,7 +29,7 @@ require (
 	github.com/JetBrains/qodana-cli/v2024/sarif v0.0.0-00010101000000-000000000000
 	github.com/JetBrains/qodana-cli/v2024/tooling v0.0.0-00010101000000-000000000000
 	github.com/reviewdog/go-bitbucket v0.0.0-20201024094602-708c3f6a7de0
-	github.com/spf13/pflag v1.0.5
+	github.com/spf13/pflag v1.0.6
 	golang.org/x/exp v0.0.0-20230905200255-921286631fa9
 )
 
