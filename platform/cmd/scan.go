@@ -40,7 +40,7 @@ But you can always override qodana.yaml options with the following command-line 
 `, (*linterInfo).GetInfo(options).LinterName),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			log.SetFormatter(&log.TextFormatter{DisableQuote: true, DisableTimestamp: true})
-			exitCode, err := platform.RunAnalysis(options)
+			exitCode, err := platform.RunThirdPartyLinterAnalysis(options)
 			if platform.IsContainer() {
 				err := platform.ChangePermissionsRecursively(options.ResultsDir)
 				if err != nil {

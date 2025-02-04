@@ -14,10 +14,11 @@
  * limitations under the License.
  */
 
-package core
+package startup
 
 import (
 	"github.com/JetBrains/qodana-cli/v2024/platform"
+	"github.com/JetBrains/qodana-cli/v2024/preparehost/product"
 	"os"
 	"path/filepath"
 	"runtime"
@@ -59,18 +60,13 @@ func DownloadAndInstallIDE(ideName string, t *testing.T) {
 		t.Fail()
 	}
 
-	opts := &QodanaOptions{
-		&platform.QodanaOptions{
-			Ide: ideName,
-		},
-	}
-	ide := downloadAndInstallIDE(opts, tempDir, nil)
+	ide := downloadAndInstallIDE(ideName, "", tempDir, nil)
 
 	if ide == "" {
 		platform.ErrorMessage("Cannot install %s", ideName)
 		t.Fail()
 	}
-	prod, err := readIdeProductInfo(ide)
+	prod, err := product.ReadIdeProductInfo(ide)
 	if err != nil || prod == nil {
 		t.Fatalf("Failed to read IDE product info: %v", err)
 	}

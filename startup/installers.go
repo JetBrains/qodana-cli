@@ -14,12 +14,13 @@
  * limitations under the License.
  */
 
-package core
+package startup
 
 import (
 	"crypto/sha256"
 	"encoding/hex"
 	"fmt"
+	"github.com/JetBrains/qodana-cli/v2024/core"
 	"github.com/JetBrains/qodana-cli/v2024/platform"
 	cp "github.com/otiai10/copy"
 	"github.com/pterm/pterm"
@@ -37,7 +38,7 @@ var (
 	EapSuffix   = "-EAP"
 	releaseVer  = "release"
 	eapVer      = "eap"
-	versionsMap = map[string]string{
+	VersionsMap = map[string]string{
 		releaseVer: "2024.2",
 		eapVer:     "2024.3",
 	}
@@ -57,14 +58,19 @@ var (
 	}
 )
 
-func downloadAndInstallIDE(opts *QodanaOptions, baseDir string, spinner *pterm.SpinnerPrinter) string {
-	if opts.Ide == "" || opts.guessProduct() == "" {
+func downloadAndInstallIDE(
+	ide string,
+	linter string,
+	baseDir string,
+	spinner *pterm.SpinnerPrinter,
+) string {
+	if ide == "" || core.GuessProductCode(ide, linter) == "" {
 		log.Fatalf("Product code is not defined or not supported, exiting")
 	}
 	var ideUrl string
 	checkSumUrl := ""
 
-	releaseDownloadInfo := getIde(opts.Ide)
+	releaseDownloadInfo := getIde(ide)
 	if releaseDownloadInfo == nil {
 		log.Fatalf("Error while obtaining the URL for the supplied IDE, exiting")
 	} else {
@@ -144,7 +150,7 @@ func downloadAndInstallIDE(opts *QodanaOptions, baseDir string, spinner *pterm.S
 }
 
 //goland:noinspection GoBoolExpressions
-func getIde(productCode string) *ReleaseDownloadInfo {
+func getIde(productCode string) *core.ReleaseDownloadInfo {
 	originalCode := productCode
 	dist := releaseVer
 	if strings.HasSuffix(productCode, EapSuffix) {
@@ -162,13 +168,17 @@ func getIde(productCode string) *ReleaseDownloadInfo {
 		return nil
 	}
 
-	product, err := GetProductByCode(Products[productCode])
+	product, err := core.GetProductByCode(Products[productCode])
 	if err != nil || product == nil {
-		platform.ErrorMessage("Error while obtaining the product info: " + err.Error())
+		errorMessage := ""
+		if err != nil {
+			errorMessage = err.Error()
+		}
+		platform.ErrorMessage("Error while obtaining the Product info: " + errorMessage)
 		return nil
 	}
 
-	release := SelectLatestCompatibleRelease(product, dist)
+	release := core.SelectLatestCompatibleRelease(product, dist)
 	if release == nil {
 		platform.ErrorMessage("Error while obtaining the release type: ", dist)
 		return nil

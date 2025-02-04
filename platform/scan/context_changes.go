@@ -14,12 +14,34 @@
  * limitations under the License.
  */
 
-package core
+package scan
 
 import (
-	"github.com/JetBrains/qodana-cli/v2024/platform"
+	"fmt"
+	"strings"
 )
 
-type QodanaOptions struct {
-	*platform.QodanaOptions
+func (c Context) WithAddedProperties(propertiesToAdd ...string) Context {
+	props := c.Property()
+	props = append(props, propertiesToAdd...)
+	c._property = props
+	return c
+}
+
+func (c Context) WithEnv(key string, value string) Context {
+	currentEnvs := c.Env()
+	envs := make([]string, len(currentEnvs))
+
+	for _, e := range currentEnvs {
+		isEnvAlreadySet := strings.HasPrefix(e, key) && value != ""
+		if !isEnvAlreadySet {
+			envs = append(envs, e)
+		}
+	}
+	if value != "" {
+		envs = append(envs, fmt.Sprintf("%s=%s", key, value))
+	}
+
+	c._env = envs
+	return c
 }

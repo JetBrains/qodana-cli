@@ -18,8 +18,6 @@ package platform
 
 import (
 	"crypto/md5"
-	"crypto/sha256"
-	"encoding/hex"
 	"fmt"
 	"github.com/pterm/pterm"
 	"io"
@@ -47,12 +45,6 @@ func Contains(s []string, str string) bool {
 		}
 	}
 	return false
-}
-
-// getHash returns a SHA256 hash of a given string.
-func getHash(s string) string {
-	sha256sum := sha256.Sum256([]byte(s))
-	return hex.EncodeToString(sha256sum[:])
 }
 
 // Append appends a string to a slice if it's not already there.

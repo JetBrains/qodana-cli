@@ -25,6 +25,7 @@ package core
 import (
 	"encoding/json"
 	"github.com/JetBrains/qodana-cli/v2024/platform"
+	startup "github.com/JetBrains/qodana-cli/v2024/preparehost"
 	"io"
 	"os"
 	"path/filepath"
@@ -111,7 +112,7 @@ func SelectLatestCompatibleRelease(product *Product, reqType string) *ReleaseInf
 
 	for i := 0; i < len(product.Releases); i++ {
 		release := &product.Releases[i]
-		if *release.MajorVersion == versionsMap[reqType] && release.Type == reqType && (latestRelease == nil || release.Date > latestDate) {
+		if *release.MajorVersion == startup.VersionsMap[reqType] && release.Type == reqType && (latestRelease == nil || release.Date > latestDate) {
 			latestRelease = release
 			latestDate = release.Date
 		}
