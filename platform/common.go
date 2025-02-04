@@ -86,8 +86,8 @@ func QodanaLogo(toolDesc string, version string, eap bool) string {
 `, toolDesc, version, eapString)
 }
 
-// GetAnalyzer gets linter for the given path and saves a config
-func GetAnalyzer(path string, yamlName string, token string, writeYaml bool) string {
+// GetAnalyzer gets linter for the given path
+func GetAnalyzer(path string, token string) string {
 	var analyzers []string
 	PrintProcess(func(_ *pterm.SpinnerPrinter) {
 		languages := readIdeaDir(path)
@@ -128,14 +128,11 @@ func GetAnalyzer(path string, yamlName string, token string, writeYaml bool) str
 
 	interactive := IsInteractive()
 	analyzers = filterByLicensePlan(analyzers, token)
-	analyzer := SelectAnalyzer(path, analyzers, interactive, selector)
+	analyzer := selectAnalyzer(path, analyzers, interactive, selector)
 	if analyzer == "" {
 		ErrorMessage("Could not configure project as it is not supported by Qodana")
 		WarningMessage("See https://www.jetbrains.com/help/qodana/supported-technologies.html for more details")
 		os.Exit(1)
-	}
-	if writeYaml {
-		SetQodanaLinter(path, analyzer, yamlName)
 	}
 	SuccessMessage("Selected %s", analyzer)
 	return analyzer
@@ -199,7 +196,7 @@ func Image(code string) string {
 	}
 }
 
-func SelectAnalyzer(path string, analyzers []string, interactive bool, selectFunc func([]string) string) string {
+func selectAnalyzer(path string, analyzers []string, interactive bool, selectFunc func([]string) string) string {
 	var analyzer string
 	if len(analyzers) == 0 && !interactive {
 		return ""
@@ -265,7 +262,7 @@ func openReport(cloudUrl string, path string, port int) {
 	if cloudUrl != "" {
 		resp, err := http.Get(cloudUrl)
 		if err == nil && resp.StatusCode == 200 {
-			err = openBrowser(cloudUrl)
+			err = OpenBrowser(cloudUrl)
 			if err != nil {
 				return
 			}
@@ -276,7 +273,7 @@ func openReport(cloudUrl string, path string, port int) {
 		go func() {
 			resp, err := http.Get(url)
 			if err == nil && resp.StatusCode == 200 {
-				err := openBrowser(url)
+				err := OpenBrowser(url)
 				if err != nil {
 					return
 				}
@@ -292,8 +289,8 @@ func openReport(cloudUrl string, path string, port int) {
 	_, _ = fmt.Scan()
 }
 
-// openBrowser opens the default browser to the given url
-func openBrowser(url string) error {
+// OpenBrowser opens the default browser to the given url
+func OpenBrowser(url string) error {
 	var cmd string
 	var args []string
 

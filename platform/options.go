@@ -19,6 +19,7 @@ package platform
 import (
 	"bytes"
 	"fmt"
+	"github.com/JetBrains/qodana-cli/v2024/platform/tokenloader"
 	log "github.com/sirupsen/logrus"
 	"math"
 	"os"
@@ -33,33 +34,33 @@ import (
 
 // QodanaOptions is a struct that contains all the options to run a Qodana linter.
 type QodanaOptions struct {
-	ResultsDir                string
-	CacheDir                  string
-	ProjectDir                string
-	ReportDir                 string
-	CoverageDir               string
-	Linter                    string
-	Ide                       string
+	ResultsDir                string // mutated
+	CacheDir                  string // mutated
+	ProjectDir                string // mutated
+	ReportDir                 string // mutated
+	CoverageDir               string // mutated
+	Linter                    string // mutated
+	Ide                       string // mutated
 	SourceDirectory           string
 	DisableSanity             bool
 	ProfileName               string
 	ProfilePath               string
 	RunPromo                  string
 	StubProfile               string // note: deprecated option
-	Baseline                  string
+	Baseline                  string // mutated
 	BaselineIncludeAbsent     bool
-	SaveReport                bool
-	ShowReport                bool
+	SaveReport                bool // mutated
+	ShowReport                bool // mutated
 	Port                      int
 	Property                  []string
-	Script                    string
+	Script                    string // mutated
 	FailThreshold             string
-	Commit                    string
-	DiffStart                 string
-	DiffEnd                   string
-	ForceLocalChangesScript   bool
+	Commit                    string // mutated
+	DiffStart                 string // mutated
+	DiffEnd                   string // mutated
+	ForceLocalChangesScript   bool   // mutated
 	AnalysisId                string
-	Env                       []string
+	Env                       []string // mutated HEAVILY
 	Volumes                   []string
 	User                      string
 	PrintProblems             bool
@@ -67,23 +68,23 @@ type QodanaOptions struct {
 	SendBitBucketInsights     bool
 	SkipPull                  bool
 	ClearCache                bool
-	ConfigName                string
-	FullHistory               bool
-	ApplyFixes                bool
+	ConfigName                string // mutated
+	FullHistory               bool   // mutated
+	ApplyFixes                bool   // mutated
 	Cleanup                   bool
-	FixesStrategy             string // note: deprecated option
-	_id                       string
-	LinterSpecific            interface{} // linter specific options
-	LicensePlan               string
-	ProjectIdHash             string
-	NoStatistics              bool   // thirdparty common option
-	CdnetSolution             string // cdnet specific options
+	FixesStrategy             string      // note: deprecated option
+	_id                       string      // mutated
+	LinterSpecific            interface{} // mutated // linter specific options
+	LicensePlan               string      // mutated
+	ProjectIdHash             string      // mutated
+	NoStatistics              bool        // thirdparty common option
+	CdnetSolution             string      // cdnet specific options
 	CdnetProject              string
 	CdnetConfiguration        string
 	CdnetPlatform             string
 	CdnetNoBuild              bool
-	ClangCompileCommands      string // clang specific options
-	ClangArgs                 string
+	ClangCompileCommands      string // mutated // clang specific options
+	ClangArgs                 string // mutated
 	AnalysisTimeoutMs         int
 	AnalysisTimeoutExitCode   int
 	JvmDebugPort              int
@@ -143,7 +144,9 @@ func (o *QodanaOptions) FetchAnalyzerSettings() {
 				PrimaryBold(qodanaYamlPath),
 				PrimaryBold("qodana init"),
 			)
-			analyzer := GetAnalyzer(o.ProjectDir, qodanaYamlPath, o.GetToken(), false)
+			token := o.GetToken()
+			o.Setenv(QodanaToken, token)
+			analyzer := GetAnalyzer(o.ProjectDir, token)
 			if IsNativeAnalyzer(analyzer) {
 				o.Ide = analyzer
 			} else {
@@ -315,8 +318,8 @@ func (o *QodanaOptions) CoverageDirPath() string {
 	return o.CoverageDir
 }
 
-func (o *QodanaOptions) ReportResultsPath() string {
-	return filepath.Join(o.reportDirPath(), "results")
+func ReportResultsPath(reportDir string) string {
+	return filepath.Join(reportDir, "results")
 }
 
 func (o *QodanaOptions) LogDirPath() string {
@@ -346,31 +349,7 @@ func (o *QodanaOptions) Properties() (map[string]string, []string) {
 }
 
 func (o *QodanaOptions) RequiresToken(isCommunityOrEap bool) bool {
-	if os.Getenv(QodanaToken) != "" || o.Getenv(QodanaLicenseOnlyToken) != "" {
-		return true
-	}
-
-	var analyzer string
-	if o.Linter != "" {
-		analyzer = o.Linter
-	} else if o.Ide != "" {
-		analyzer = o.Ide
-	}
-
-	if os.Getenv(QodanaLicense) != "" ||
-		Contains(append(AllSupportedFreeImages, AllSupportedFreeCodes...), analyzer) ||
-		strings.Contains(Lower(analyzer), "eap") ||
-		isCommunityOrEap {
-		return false
-	}
-
-	for _, e := range AllSupportedPaidCodes {
-		if strings.HasPrefix(Image(e), o.Linter) || strings.HasPrefix(e, o.Ide) {
-			return true
-		}
-	}
-
-	return false
+	return tokenloader.IsCloudTokenRequired(o.AsInitOptions(), isCommunityOrEap)
 }
 
 func (o *QodanaOptions) GetAnalysisTimeout() time.Duration {
@@ -388,8 +367,8 @@ func (o *QodanaOptions) GetTmpResultsDir() string {
 	return path.Join(o.ResultsDir, "tmp")
 }
 
-func (o *QodanaOptions) GetSarifPath() string {
-	return path.Join(o.ResultsDir, "qodana.sarif.json")
+func GetSarifPath(resultsDir string) string {
+	return path.Join(resultsDir, "qodana.sarif.json")
 }
 
 func (o *QodanaOptions) GetShortSarifPath() string {

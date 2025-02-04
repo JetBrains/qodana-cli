@@ -38,7 +38,7 @@ const (
 	codeClimateInfo     = "info"
 )
 
-// toCodeClimateSeverity maps SARIF and Qodana severity levels to Code Climate severity levels
+// toCodeClimateSeverity maps SARIF and Qodana severity levels to code Climate severity levels
 var toCodeClimateSeverity = map[string]string{
 	sarifError:     codeClimateCritical,
 	sarifWarning:   codeClimateMajor,
@@ -50,7 +50,7 @@ var toCodeClimateSeverity = map[string]string{
 	qodanaInfo:     codeClimateInfo,
 }
 
-// CCIssue represents a Code Climate (GitLab CodeQuality) issue
+// CCIssue represents a code Climate (GitLab CodeQuality) issue
 type CCIssue struct {
 	CheckName   string   `json:"check_name"`
 	Description string   `json:"description"`
@@ -91,7 +91,7 @@ func extractLocationProperties(r *sarif.Result) *LocationProperties {
 	}
 }
 
-// sarifResultToCodeClimate converts a SARIF result to a Code Climate issue.
+// sarifResultToCodeClimate converts a SARIF result to a code Climate issue.
 func sarifResultToCodeClimate(r *sarif.Result) CCIssue {
 	loc := Location{
 		Path: "",

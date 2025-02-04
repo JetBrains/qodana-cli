@@ -18,98 +18,113 @@ package core
 
 import (
 	"github.com/JetBrains/qodana-cli/v2024/platform"
+	"github.com/JetBrains/qodana-cli/v2024/platform/scan"
+	"github.com/JetBrains/qodana-cli/v2024/preparehost/product"
 	"github.com/stretchr/testify/assert"
 	"testing"
 )
 
 func TestQodanaOptions_determineRunScenario(t *testing.T) {
 	type args struct {
-		qodanaOptions *platform.QodanaOptions
-		productCode   string
-		hasStartHash  bool
+		c            scan.Context
+		hasStartHash bool
 	}
 	tests := []struct {
 		name string
 		args args
-		want RunScenario
+		want scan.RunScenario
 	}{
 		{
 			name: "full history for .NET",
 			args: args{
-				qodanaOptions: &platform.QodanaOptions{
+				c: scan.Context{
 					FullHistory: true,
+					Prod: product.Product{
+						Code: platform.QDNET,
+					},
 				},
 				hasStartHash: true,
-				productCode:  platform.QDNET,
 			},
-			want: runScenarioFullHistory,
+			want: scan.RunScenarioFullHistory,
 		},
 		{
 			name: "full history for not .NET",
 			args: args{
-				qodanaOptions: &platform.QodanaOptions{
+				c: scan.Context{
 					FullHistory: true,
+					Prod: product.Product{
+						Code: platform.QDJVM,
+					},
 				},
 				hasStartHash: true,
-				productCode:  platform.QDJVM,
 			},
-			want: runScenarioFullHistory,
+			want: scan.RunScenarioFullHistory,
 		},
 		{
 			name: "default .NET",
 			args: args{
-				qodanaOptions: &platform.QodanaOptions{},
-				hasStartHash:  false,
-				productCode:   platform.QDNET,
+				c: scan.Context{
+					Prod: product.Product{
+						Code: platform.QDNET,
+					},
+				},
+				hasStartHash: false,
 			},
-			want: runScenarioDefault,
+			want: scan.RunScenarioDefault,
 		},
 		{
 			name: "default not .NET",
 			args: args{
-				qodanaOptions: &platform.QodanaOptions{},
-				hasStartHash:  false,
-				productCode:   platform.QDJVM,
+				c: scan.Context{
+					Prod: product.Product{
+						Code: platform.QDJVM,
+					},
+				},
+				hasStartHash: false,
 			},
-			want: runScenarioDefault,
+			want: scan.RunScenarioDefault,
 		},
 		{
 			name: "with start hash .NET",
 			args: args{
-				qodanaOptions: &platform.QodanaOptions{},
-				hasStartHash:  true,
-				productCode:   platform.QDNET,
+				c: scan.Context{
+					Prod: product.Product{
+						Code: platform.QDNET,
+					},
+				},
+				hasStartHash: true,
 			},
-			want: runScenarioScoped,
+			want: scan.RunScenarioScoped,
 		},
 		{
 			name: "with start hash not .NET",
 			args: args{
-				qodanaOptions: &platform.QodanaOptions{},
-				hasStartHash:  true,
-				productCode:   platform.QDJVM,
+				c: scan.Context{
+					Prod: product.Product{
+						Code: platform.QDJVM,
+					},
+				},
+				hasStartHash: false,
 			},
-			want: runScenarioScoped,
+			want: scan.RunScenarioScoped,
 		},
 		{
 			name: "forced script",
 			args: args{
-				qodanaOptions: &platform.QodanaOptions{
+				c: scan.Context{
 					ForceLocalChangesScript: true,
+					Prod: product.Product{
+						Code: platform.QDJVM,
+					},
 				},
 				hasStartHash: true,
-				productCode:  platform.QDJVM,
 			},
-			want: runScenarioLocalChanges,
+			want: scan.RunScenarioLocalChanges,
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			code := Prod.Code
-			Prod.Code = tt.args.productCode
-			defer func() { Prod.Code = code }()
-			o := QodanaOptions{QodanaOptions: tt.args.qodanaOptions}
-			assert.Equalf(t, tt.want, o.determineRunScenario(tt.args.hasStartHash), "determineRunScenario(%v)", tt.args.hasStartHash)
+			assert.Equalf(t, tt.want, tt.args.c.DetermineRunScenario(tt.args.hasStartHash), "determineRunScenario(%v)", tt.args.hasStartHash)
 		})
 	}
 }

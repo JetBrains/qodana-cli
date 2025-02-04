@@ -63,7 +63,7 @@ var (
 	}
 )
 
-// sendBitBucketReport sends annotations to BitBucket Code Insights
+// sendBitBucketReport sends annotations to BitBucket code Insights
 func sendBitBucketReport(annotations []bbapi.ReportAnnotation, toolName, cloudUrl, reportId string) error {
 	client, ctx := getBitBucketClient(), getBitBucketContext()
 	repoOwner, repoName, sha := getBitBucketRepoOwner(), getBitBucketRepoName(), getBitBucketCommit()
@@ -117,7 +117,7 @@ func getBitBucketContext() context.Context {
 	return ctx
 }
 
-// buildReport builds a report to be sent to BitBucket Code Insights
+// buildReport builds a report to be sent to BitBucket code Insights
 func buildReport(toolName string, annotations []bbapi.ReportAnnotation, cloudUrl string) bbapi.Report {
 	var result string
 	if len(annotations) == 0 {
@@ -137,7 +137,7 @@ func buildReport(toolName string, annotations []bbapi.ReportAnnotation, cloudUrl
 	return *data
 }
 
-// buildAnnotation builds an annotation to be sent to BitBucket Code Insights
+// buildAnnotation builds an annotation to be sent to BitBucket code Insights
 func buildAnnotation(r *sarif.Result, ruleDescription string, reportLink string) bbapi.ReportAnnotation {
 	bbSeverity, ok := toBitBucketSeverity[getSeverity(r)]
 	if !ok {
@@ -175,7 +175,7 @@ func getBitBucketClient() *bbapi.APIClient {
 		URL:         "https://api.bitbucket.org/2.0",
 		Description: `HTTPS API endpoint`,
 	}
-	if isBitBucket() {
+	if IsBitBucket() {
 		var proxyURL *url.URL
 		if isBitBucketPipe() {
 			proxyURL, _ = url.Parse(pipeProxyURL)

@@ -10,4 +10,5 @@ use (
 	./platform
 	./sarif
 	./tooling
+	./startup
 )

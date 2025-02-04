@@ -21,12 +21,13 @@ import (
 	"fmt"
 	"github.com/JetBrains/qodana-cli/v2024/cloud"
 	"github.com/JetBrains/qodana-cli/v2024/platform"
+	"github.com/JetBrains/qodana-cli/v2024/preparehost/product"
 	"log"
 	"os"
 	"strings"
 )
 
-func SetupLicenseAndProjectHash(endpoints *cloud.QdApiEndpoints, token string) {
+func SetupLicenseAndProjectHash(prod product.Product, endpoints *cloud.QdApiEndpoints, token string) {
 	var licenseData cloud.LicenseData
 	if token != "" {
 		licenseData = endpoints.GetLicenseData(token)
@@ -49,12 +50,12 @@ func SetupLicenseAndProjectHash(endpoints *cloud.QdApiEndpoints, token string) {
 	}
 
 	// community versions works without any license and can't check any license
-	if Prod.IsCommunity() {
+	if prod.IsCommunity() {
 		return
 	}
 
 	// eap version works with eap's license dependent on build date
-	if Prod.EAP {
+	if prod.IsEap {
 		if token == "" {
 			fmt.Printf(cloud.EapWarnTokenMessage, endpoints.RootEndpoint.GetCloudUrl())
 			fmt.Println()
@@ -82,7 +83,7 @@ func SetupLicenseAndProjectHash(endpoints *cloud.QdApiEndpoints, token string) {
 			"please try one of the community linters instead: %s or obtain Ultimate "+
 			"or Ultimate Plus license. Read more about licenses and plans at "+
 			"https://www.jetbrains.com/help/qodana/pricing.html#pricing-linters-licenses.",
-			Prod.getProductNameFromCode(),
+			prod.GetProductNameFromCode(),
 			allCommunityNames(),
 		)
 	}
@@ -98,7 +99,7 @@ func SetupLicenseAndProjectHash(endpoints *cloud.QdApiEndpoints, token string) {
 func allCommunityNames() string {
 	var nameList []string
 	for _, code := range platform.AllSupportedFreeCodes {
-		nameList = append(nameList, "\""+getProductNameFromCode(code)+"\"")
+		nameList = append(nameList, "\""+product.GetProductNameFromCode(code)+"\"")
 	}
 	return strings.Join(nameList, ", ")
 }
