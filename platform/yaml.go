@@ -427,8 +427,8 @@ func (q *QodanaYaml) IsDotNet() bool {
 	return strings.Contains(q.Linter, "dotnet") || strings.Contains(q.Linter, "cdnet") || strings.Contains(q.Ide, "QDNET")
 }
 
-// SetQodanaLinter adds the linter to the qodana.yaml file.
-func SetQodanaLinter(path string, linter string, filename string) {
+// WriteQodanaLinterToYamlFile adds the linter to the qodana.yaml file.
+func WriteQodanaLinterToYamlFile(path string, linter string, filename string) {
 	q := LoadQodanaYaml(path, filename)
 	if q.Version == "" {
 		q.Version = "1.0"

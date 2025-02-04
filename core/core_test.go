@@ -21,6 +21,8 @@ import (
 	"fmt"
 	"github.com/JetBrains/qodana-cli/v2024/cloud"
 	"github.com/JetBrains/qodana-cli/v2024/platform"
+	"github.com/JetBrains/qodana-cli/v2024/platform/scan"
+	startup "github.com/JetBrains/qodana-cli/v2024/preparehost"
 	log "github.com/sirupsen/logrus"
 	"net/http"
 	"net/http/httptest"
@@ -41,8 +43,8 @@ func TestCliArgs(t *testing.T) {
 	projectDir := filepath.Join(dir, "project")
 	cacheDir := filepath.Join(dir, "cache")
 	resultsDir := filepath.Join(dir, "results")
-	Prod.Home = string(os.PathSeparator) + "opt" + string(os.PathSeparator) + "idea"
-	Prod.IdeScript = filepath.Join(Prod.Home, "bin", "idea.sh")
+	preparehost.Prod.Home = string(os.PathSeparator) + "opt" + string(os.PathSeparator) + "idea"
+	preparehost.Prod.IdeScript = filepath.Join(preparehost.Prod.Home, "bin", "idea.sh")
 	err := os.Unsetenv(platform.QodanaDockerEnv)
 	if err != nil {
 		t.Fatal(err)
@@ -62,7 +64,7 @@ func TestCliArgs(t *testing.T) {
 		{
 			name:         "arguments with spaces, no properties for local runs",
 			majorVersion: "2024.1",
-			opts:         &platform.QodanaOptions{ProjectDir: projectDir, CacheDir: cacheDir, ResultsDir: resultsDir, ProfileName: "separated words", Property: []string{"qodana.format=SARIF_AND_PROJECT_STRUCTURE", "qodana.variable.format=JSON"}, Ide: Prod.Home},
+			opts:         &platform.QodanaOptions{ProjectDir: projectDir, CacheDir: cacheDir, ResultsDir: resultsDir, ProfileName: "separated words", Property: []string{"qodana.format=SARIF_AND_PROJECT_STRUCTURE", "qodana.variable.format=JSON"}, Ide: preparehost.Prod.Home},
 			res:          []string{filepath.FromSlash("/opt/idea/bin/idea.sh"), "inspect", "qodana", "--profile-name", "\"separated words\"", projectDir, resultsDir},
 		},
 		{
@@ -97,7 +99,7 @@ func TestCliArgs(t *testing.T) {
 		},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
-			Prod.Version = tc.majorVersion
+			preparehost.Prod.Version = tc.majorVersion
 
 			args := getIdeRunCommand(&QodanaOptions{tc.opts})
 			assert.Equal(t, tc.res, args)
@@ -106,16 +108,14 @@ func TestCliArgs(t *testing.T) {
 }
 
 func TestScanFlags_Script(t *testing.T) {
-	testOptions := &QodanaOptions{
-		&platform.QodanaOptions{
-			Script: "custom-script:parameters",
-		},
+	b := scan.ContextBuilder{
+		Script: "custom-script:parameters",
 	}
 	expected := []string{
 		"--script",
 		"custom-script:parameters",
 	}
-	actual := GetIdeArgs(testOptions)
+	actual := GetIdeArgs(b.AsContext())
 	if !reflect.DeepEqual(expected, actual) {
 		t.Fatalf("expected \"%s\" got \"%s\"", expected, actual)
 	}
@@ -124,12 +124,12 @@ func TestScanFlags_Script(t *testing.T) {
 func TestLegacyFixStrategies(t *testing.T) {
 	cases := []struct {
 		name     string
-		options  *platform.QodanaOptions
+		c        scan.ContextBuilder
 		expected []string
 	}{
 		{
 			name: "apply fixes for a container",
-			options: &platform.QodanaOptions{
+			c: scan.ContextBuilder{
 				ApplyFixes: true,
 				Ide:        "",
 			},
@@ -140,7 +140,7 @@ func TestLegacyFixStrategies(t *testing.T) {
 		},
 		{
 			name: "cleanup for a container",
-			options: &platform.QodanaOptions{
+			c: scan.ContextBuilder{
 				Cleanup: true,
 				Ide:     "",
 			},
@@ -151,7 +151,7 @@ func TestLegacyFixStrategies(t *testing.T) {
 		},
 		{
 			name: "apply fixes for new IDE",
-			options: &platform.QodanaOptions{
+			c: scan.ContextBuilder{
 				ApplyFixes: true,
 				Ide:        "QDPHP",
 			},
@@ -161,7 +161,7 @@ func TestLegacyFixStrategies(t *testing.T) {
 		},
 		{
 			name: "fixes for unavailable IDE",
-			options: &platform.QodanaOptions{
+			c: scan.ContextBuilder{
 				Cleanup: true,
 				Ide:     "QDNET",
 			},
@@ -171,13 +171,14 @@ func TestLegacyFixStrategies(t *testing.T) {
 
 	for _, tt := range cases {
 		t.Run(tt.name, func(t *testing.T) {
-			if tt.options.Ide == "QDPHP" {
-				Prod.Version = "2023.3"
+			c := tt.c
+			if c.Ide == "QDPHP" {
+				c.Prod.Version = "2023.3"
 			} else {
-				Prod.Version = "2023.2"
+				c.Prod.Version = "2023.2"
 			}
 
-			actual := GetIdeArgs(&QodanaOptions{tt.options})
+			actual := GetIdeArgs(c.AsContext())
 			if !reflect.DeepEqual(tt.expected, actual) {
 				t.Fatalf("expected \"%s\" got \"%s\"", tt.expected, actual)
 			}
@@ -357,7 +358,7 @@ func Test_createUser(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	createUser("/tmp/entrypoint/passwd")
+	startup.CreateUser("/tmp/entrypoint/passwd")
 	res := fmt.Sprintf("root:x:0:0:root:/root:/bin/bash\nidea:x:%d:%d:idea:/root:/bin/bash", os.Getuid(), os.Getgid())
 	if os.Getuid() == 0 {
 		res = "root:x:0:0:root:/root:/bin/bash\n"
@@ -368,7 +369,7 @@ func Test_createUser(t *testing.T) {
 	}
 
 	tc = "UserAgain"
-	createUser("/tmp/entrypoint/passwd")
+	startup.CreateUser("/tmp/entrypoint/passwd")
 	got, err = os.ReadFile("/tmp/entrypoint/passwd")
 	if err != nil || string(got) != res {
 		t.Errorf("Case: %s: Got: %s\n Expected: %v", tc, got, res)
@@ -384,7 +385,7 @@ func Test_syncIdeaCache(t *testing.T) {
 	tmpDir := filepath.Join(os.TempDir(), "cache")
 
 	t.Run("NotExist", func(t *testing.T) {
-		err := syncIdeaCache(filepath.Join(tmpDir, "1"), filepath.Join(tmpDir, "2"), true)
+		err := startup.SyncIdeaCache(filepath.Join(tmpDir, "1"), filepath.Join(tmpDir, "2"), true)
 		if err == nil {
 			t.Errorf("Expected error when source folder does not exist")
 		}
@@ -415,7 +416,7 @@ func Test_syncIdeaCache(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		err = syncIdeaCache(filepath.Join(tmpDir, "1"), filepath.Join(tmpDir, "2"), false)
+		err = startup.SyncIdeaCache(filepath.Join(tmpDir, "1"), filepath.Join(tmpDir, "2"), false)
 		if err != nil {
 			t.Fatalf("syncIdeaCache failed: %v", err)
 		}
@@ -430,7 +431,7 @@ func Test_syncIdeaCache(t *testing.T) {
 	})
 
 	t.Run("Overwrite", func(t *testing.T) {
-		err := syncIdeaCache(filepath.Join(tmpDir, "2"), filepath.Join(tmpDir, "1"), true)
+		err := startup.SyncIdeaCache(filepath.Join(tmpDir, "2"), filepath.Join(tmpDir, "1"), true)
 		if err != nil {
 			t.Fatalf("syncIdeaCache failed: %v", err)
 		}
@@ -468,7 +469,7 @@ func Test_syncIdeaCache(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		err = syncIdeaCache(filepath.Join(tmpDir, "1"), filepath.Join(tmpDir, "2"), false)
+		err = startup.SyncIdeaCache(filepath.Join(tmpDir, "1"), filepath.Join(tmpDir, "2"), false)
 		if err != nil {
 			t.Fatalf("syncIdeaCache failed: %v", err)
 		}
@@ -574,8 +575,8 @@ func Test_ideaExitCode(t *testing.T) {
 }
 
 func TestSetupLicense(t *testing.T) {
-	Prod.Code = "QDJVM"
-	Prod.EAP = false
+	preparehost.Prod.Code = "QDJVM"
+	preparehost.Prod.EAP = false
 	for _, tc := range []struct {
 		name            string
 		license         string
@@ -767,7 +768,7 @@ func TestQodanaOptions_RequiresToken(t *testing.T) {
 					Ide:    tt.ide,
 				},
 			}
-			result := o.RequiresToken(Prod.EAP || Prod.IsCommunity())
+			result := o.RequiresToken(preparehost.Prod.EAP || preparehost.Prod.IsCommunity())
 			assert.Equal(t, tt.expected, result)
 		})
 		if token != "" {
@@ -805,9 +806,9 @@ func Test_Properties(t *testing.T) {
 	opts.CoverageDir = "/data/coverage"
 	opts.AnalysisId = "FAKE"
 
-	Prod.BaseScriptName = "rider"
-	Prod.Code = "QDNET"
-	Prod.Version = "2023.3"
+	preparehost.Prod.BaseScriptName = "rider"
+	preparehost.Prod.Code = "QDNET"
+	preparehost.Prod.Version = "2023.3"
 
 	t.Setenv(platform.QodanaDistEnv, opts.ProjectDir)
 	t.Setenv(platform.QodanaConfEnv, opts.ProjectDir)

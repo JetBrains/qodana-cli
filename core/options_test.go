@@ -47,7 +47,7 @@ func TestQodanaOptions_guessProduct(t *testing.T) {
 					Linter: tt.linter,
 				},
 			}
-			if got := opts.guessProduct(); got != tt.expected {
+			if got := GuessProductCode(opts.Ide, opts.Linter); got != tt.expected {
 				t.Errorf("QodanaOptions.guessProduct() = %v, want %v", got, tt.expected)
 			}
 		})

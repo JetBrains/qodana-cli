@@ -14,24 +14,82 @@
  * limitations under the License.
  */
 
-package platform
+package cli
 
 import (
 	"fmt"
+	"github.com/JetBrains/qodana-cli/v2024/platform"
 	"github.com/google/uuid"
 	"github.com/spf13/cobra"
 	"os"
 	"strings"
 )
 
-func ComputeFlags(cmd *cobra.Command, options *QodanaOptions) error {
+type QodanaScanCliOptions struct {
+	ResultsDir                string
+	CacheDir                  string
+	ProjectDir                string
+	ReportDir                 string
+	CoverageDir               string
+	Linter                    string
+	Ide                       string
+	SourceDirectory           string
+	DisableSanity             bool
+	ProfileName               string
+	ProfilePath               string
+	RunPromo                  string
+	StubProfile               string // note: deprecated option
+	Baseline                  string
+	BaselineIncludeAbsent     bool
+	SaveReport                bool
+	ShowReport                bool
+	Port                      int
+	Property                  []string
+	Script                    string
+	FailThreshold             string
+	Commit                    string
+	DiffStart                 string
+	DiffEnd                   string
+	ForceLocalChangesScript   bool
+	AnalysisId                string
+	Env                       []string
+	Volumes                   []string
+	User                      string
+	PrintProblems             bool
+	GenerateCodeClimateReport bool
+	SendBitBucketInsights     bool
+	SkipPull                  bool
+	ClearCache                bool
+	ConfigName                string
+	FullHistory               bool
+	ApplyFixes                bool
+	Cleanup                   bool
+	FixesStrategy             string // note: deprecated option
+	_id                       string
+	LinterSpecific            interface{} // linter specific options
+	LicensePlan               string
+	ProjectIdHash             string
+	NoStatistics              bool   // thirdparty common option
+	CdnetSolution             string // cdnet specific options
+	CdnetProject              string
+	CdnetConfiguration        string
+	CdnetPlatform             string
+	CdnetNoBuild              bool
+	ClangCompileCommands      string // clang specific options
+	ClangArgs                 string
+	AnalysisTimeoutMs         int
+	AnalysisTimeoutExitCode   int
+	JvmDebugPort              int
+}
+
+func ComputeFlags(cmd *cobra.Command, options *QodanaScanCliOptions) error {
 	flags := cmd.Flags()
 	flags.SortFlags = false
 
-	if !IsContainer() {
-		flags.StringVarP(&options.Linter, "linter", "l", "", "Use to run Qodana in a container (default). Choose linter (image) to use. Not compatible with --ide option. Available images are: "+strings.Join(AllImages, ", "))
+	if !platform.IsContainer() {
+		flags.StringVarP(&options.Linter, "linter", "l", "", "Use to run Qodana in a container (default). Choose linter (image) to use. Not compatible with --ide option. Available images are: "+strings.Join(platform.AllImages, ", "))
 	}
-	flags.StringVar(&options.Ide, "ide", os.Getenv(QodanaDistEnv), fmt.Sprintf("Use to run Qodana without a container. Not compatible with --linter option. Available codes are %s, add -EAP part to obtain EAP versions", strings.Join(AllNativeCodes, ", ")))
+	flags.StringVar(&options.Ide, "ide", os.Getenv(platform.QodanaDistEnv), fmt.Sprintf("Use to run Qodana without a container. Not compatible with --linter option. Available codes are %s, add -EAP part to obtain EAP versions", strings.Join(platform.AllNativeCodes, ", ")))
 
 	flags.StringVarP(&options.ProjectDir, "project-dir", "i", ".", "Root directory of the inspected project")
 	flags.StringVarP(&options.ResultsDir, "results-dir", "o", "", "Override directory to save Qodana inspection results to (default <userCacheDir>/JetBrains/<linter>/results)")
@@ -39,8 +97,8 @@ func ComputeFlags(cmd *cobra.Command, options *QodanaOptions) error {
 	flags.StringVarP(&options.ReportDir, "report-dir", "r", "", "Override directory to save Qodana HTML report to (default <userCacheDir>/JetBrains/<linter>/results/report)")
 
 	flags.BoolVar(&options.PrintProblems, "print-problems", false, "Print all found problems by Qodana in the CLI output")
-	flags.BoolVar(&options.GenerateCodeClimateReport, "code-climate", isGitLab(), "Generate a code Climate report in SARIF format (compatible with GitLab code Quality), will be saved to the results directory (default true if Qodana is executed on GitLab CI)")
-	flags.BoolVar(&options.SendBitBucketInsights, "bitbucket-insights", isBitBucket(), "Send the results BitBucket code Insights, no additional configuration required if ran in BitBucket Pipelines (default true if Qodana is executed on BitBucket Pipelines)")
+	flags.BoolVar(&options.GenerateCodeClimateReport, "code-climate", platform.IsGitLab(), "Generate a code Climate report in SARIF format (compatible with GitLab code Quality), will be saved to the results directory (default true if Qodana is executed on GitLab CI)")
+	flags.BoolVar(&options.SendBitBucketInsights, "bitbucket-insights", platform.IsBitBucket(), "Send the results BitBucket code Insights, no additional configuration required if ran in BitBucket Pipelines (default true if Qodana is executed on BitBucket Pipelines)")
 	flags.BoolVar(&options.ClearCache, "clear-cache", false, "Clear the local Qodana cache before running the analysis")
 	flags.BoolVarP(&options.ShowReport, "show-report", "w", false, "Serve HTML report on port")
 	flags.IntVar(&options.Port, "port", 8080, "Port to serve the report on")
@@ -86,10 +144,10 @@ func ComputeFlags(cmd *cobra.Command, options *QodanaOptions) error {
 	flags.StringVar(&options.CdnetPlatform, "platform", "", "[qodana-cdnet specific] Build platform")
 	flags.BoolVar(&options.CdnetNoBuild, "no-build", false, "[qodana-cdnet specific] Do not build the project before analysis")
 
-	if !IsContainer() {
+	if !platform.IsContainer() {
 		flags.StringArrayVarP(&options.Env, "env", "e", []string{}, "Only for container runs. Define additional environment variables for the Qodana container (you can use the flag multiple times). CLI is not reading full host environment variables and does not pass it to the Qodana container for security reasons")
 		flags.StringArrayVarP(&options.Volumes, "volume", "v", []string{}, "Only for container runs. Define additional volumes for the Qodana container (you can use the flag multiple times)")
-		flags.StringVarP(&options.User, "user", "u", GetDefaultUser(), "Only for container runs. User to run Qodana container as. Please specify user id – '$UID' or user id and group id $(id -u):$(id -g). Use 'root' to run as the root user (default: the current user)")
+		flags.StringVarP(&options.User, "user", "u", platform.GetDefaultUser(), "Only for container runs. User to run Qodana container as. Please specify user id – '$UID' or user id and group id $(id -u):$(id -g). Use 'root' to run as the root user (default: the current user)")
 		flags.BoolVar(&options.SkipPull, "skip-pull", false, "Only for container runs. Skip pulling the latest Qodana container")
 		cmd.MarkFlagsMutuallyExclusive("linter", "ide")
 		cmd.MarkFlagsMutuallyExclusive("skip-pull", "ide")

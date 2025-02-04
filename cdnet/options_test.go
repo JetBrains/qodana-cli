@@ -18,6 +18,7 @@ package main
 
 import (
 	"github.com/JetBrains/qodana-cli/v2024/core"
+	"github.com/JetBrains/qodana-cli/v2024/core/preparehost"
 	"github.com/JetBrains/qodana-cli/v2024/platform"
 	"github.com/stretchr/testify/assert"
 	"reflect"
@@ -338,7 +339,7 @@ func TestGetArgsThirdPartyLinters(t *testing.T) {
 	for _, tt := range cases {
 		t.Run(tt.name, func(t *testing.T) {
 			if tt.options.Ide != "" {
-				core.Prod.Code = tt.options.Ide
+				preparehost.Prod.Code = tt.options.Ide
 			}
 
 			actual := core.GetIdeArgs(&core.QodanaOptions{QodanaOptions: tt.options})
@@ -348,6 +349,6 @@ func TestGetArgsThirdPartyLinters(t *testing.T) {
 		})
 	}
 	t.Cleanup(func() {
-		core.Prod.Code = ""
+		preparehost.Prod.Code = ""
 	})
 }

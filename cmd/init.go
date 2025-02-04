@@ -18,10 +18,11 @@ package cmd
 
 import (
 	"fmt"
-	"github.com/JetBrains/qodana-cli/v2024/core"
 	"github.com/JetBrains/qodana-cli/v2024/platform"
+	"github.com/JetBrains/qodana-cli/v2024/preparehost/product"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
+	"os"
 	"path/filepath"
 )
 
@@ -34,9 +35,8 @@ func newInitCommand() *cobra.Command {
 		Short: "Configure a project for Qodana",
 		Long:  `Configure a project for Qodana: prepare Qodana configuration file by analyzing the project structure and generating a default configuration qodana.yaml file.`,
 		Run: func(cmd *cobra.Command, args []string) {
-			if options.ConfigName == "" {
-				options.ConfigName = platform.FindQodanaYaml(options.ProjectDir)
-			}
+			emptyProduct := product.Product{} // TODO what to do with product?
+
 			qodanaYaml := platform.LoadQodanaYaml(options.ProjectDir, options.ConfigName)
 			if (qodanaYaml.Linter == "" && qodanaYaml.Ide == "") || force {
 				absPath, err := filepath.Abs(options.ProjectDir)
@@ -47,7 +47,10 @@ func newInitCommand() *cobra.Command {
 				if platform.IsInteractive() && !platform.AskUserConfirm(fmt.Sprintf("Do you want to set up Qodana in %s", platform.PrimaryBold(options.ProjectDir))) {
 					return
 				}
-				analyzer := platform.GetAnalyzer(options.ProjectDir, options.ConfigName, options.GetToken(), true)
+				token := os.Getenv(platform.QodanaToken)
+				options.Setenv(platform.QodanaToken, token)
+				analyzer := platform.GetAnalyzer(options.ProjectDir, token)
+				platform.WriteQodanaLinterToYamlFile(options.ProjectDir, analyzer, options.CoverageDir)
 				if platform.IsNativeAnalyzer(analyzer) {
 					options.Ide = analyzer
 				} else {
@@ -75,7 +78,7 @@ func newInitCommand() *cobra.Command {
 			platform.PrintFile(filepath.Join(options.ProjectDir, options.ConfigName))
 			options.Linter = qodanaYaml.Linter
 			options.Ide = qodanaYaml.Ide
-			if options.RequiresToken(core.Prod.EAP || core.Prod.IsCommunity()) {
+			if options.RequiresToken(emptyProduct.IsEap || emptyProduct.IsCommunity()) {
 				options.ValidateToken(force)
 			}
 		},

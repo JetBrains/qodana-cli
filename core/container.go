@@ -23,6 +23,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/JetBrains/qodana-cli/v2024/platform"
+	"github.com/JetBrains/qodana-cli/v2024/platform/scan"
 	"github.com/docker/docker/api/types/backend"
 	"github.com/docker/docker/api/types/registry"
 	"github.com/docker/go-connections/nat"
@@ -62,8 +63,7 @@ var (
 )
 
 // runQodanaContainer runs the analysis in a Docker container from a Qodana image.
-func runQodanaContainer(ctx context.Context, options *QodanaOptions) int {
-	resetScanStages()
+func runQodanaContainer(ctx context.Context, c scan.Context) int {
 	docker := getContainerClient()
 	info, err := docker.Info(ctx)
 	if err != nil {
@@ -73,35 +73,33 @@ func runQodanaContainer(ctx context.Context, options *QodanaOptions) int {
 		platform.ErrorMessage("Container engine is not running a Linux platform, other platforms are not supported by Qodana")
 		return 1
 	}
-	fixDarwinCaches(options)
+	fixDarwinCaches(c.CacheDir)
 
-	for i, stage := range scanStages {
-		scanStages[i] = platform.PrimaryBold("[%d/%d] ", i+1, len(scanStages)+1) + platform.Primary(stage)
-	}
+	scanStages := getScanStages()
 
-	if options.SkipPull {
-		checkImage(options.Linter)
+	if c.SkipPull {
+		checkImage(c.Linter)
 	} else {
-		PullImage(docker, options.Linter)
+		PullImage(docker, c.Linter)
 	}
 	progress, _ := platform.StartQodanaSpinner(scanStages[0])
 
-	dockerConfig := getDockerOptions(options)
+	dockerConfig := getDockerOptions(c)
 	log.Debugf("docker command to run: %s", generateDebugDockerRunCommand(dockerConfig))
 
 	platform.UpdateText(progress, scanStages[1])
 
 	runContainer(ctx, docker, dockerConfig)
-	go followLinter(docker, dockerConfig.Name, progress)
+	go followLinter(docker, dockerConfig.Name, progress, scanStages)
 
 	exitCode := getContainerExitCode(ctx, docker, dockerConfig.Name)
 
-	fixDarwinCaches(options)
+	fixDarwinCaches(c.CacheDir)
 
 	if progress != nil {
 		_ = progress.Stop()
 	}
-	checkImage(options.Linter)
+	checkImage(c.Linter)
 	return int(exitCode)
 }
 
@@ -146,12 +144,12 @@ func checkImage(linter string) {
 	}
 }
 
-func fixDarwinCaches(options *QodanaOptions) {
+func fixDarwinCaches(cacheDir string) {
 	if //goland:noinspection GoBoolExpressions
 	runtime.GOOS == "darwin" {
-		err := removePortSocket(options.CacheDir)
+		err := removePortSocket(cacheDir)
 		if err != nil {
-			log.Warnf("Could not remove .port from %s: %s", options.CacheDir, err)
+			log.Warnf("Could not remove .port from %s: %s", cacheDir, err)
 		}
 	}
 }
@@ -333,24 +331,27 @@ func CheckContainerEngineMemory() {
 }
 
 // getDockerOptions returns qodana docker container options.
-func getDockerOptions(opts *QodanaOptions) *backend.ContainerCreateConfig {
-	cmdOpts := GetIdeArgs(opts)
-	platform.ExtractQodanaEnvironment(opts.Setenv)
-	cachePath, err := filepath.Abs(opts.CacheDir)
+func getDockerOptions(c scan.Context) *backend.ContainerCreateConfig {
+	cmdOpts := GetIdeArgs(c)
+
+	updateScanContextEnv := func(key string, value string) { c = c.WithEnv(key, value) }
+	platform.ExtractQodanaEnvironment(updateScanContextEnv)
+
+	cachePath, err := filepath.Abs(c.CacheDir)
 	if err != nil {
 		log.Fatal("couldn't get abs path for cache", err)
 	}
-	projectPath, err := filepath.Abs(opts.ProjectDir)
+	projectPath, err := filepath.Abs(c.ProjectDir)
 	if err != nil {
 		log.Fatal("couldn't get abs path for project", err)
 	}
-	resultsPath, err := filepath.Abs(opts.ResultsDir)
+	resultsPath, err := filepath.Abs(c.ResultsDir)
 	if err != nil {
 		log.Fatal("couldn't get abs path for results", err)
 	}
 	containerName = os.Getenv(platform.QodanaCliContainerName)
 	if containerName == "" {
-		containerName = fmt.Sprintf("qodana-cli-%s", opts.Id())
+		containerName = fmt.Sprintf("qodana-cli-%s", c.Id)
 	}
 	volumes := []mount.Mount{
 		{
@@ -369,7 +370,7 @@ func getDockerOptions(opts *QodanaOptions) *backend.ContainerCreateConfig {
 			Target: "/data/results",
 		},
 	}
-	for _, volume := range opts.Volumes {
+	for _, volume := range c.Volumes() {
 		source, target := extractDockerVolumes(volume)
 		if source != "" && target != "" {
 			volumes = append(volumes, mount.Mount{
@@ -381,22 +382,22 @@ func getDockerOptions(opts *QodanaOptions) *backend.ContainerCreateConfig {
 			log.Fatal("couldn't parse volume ", volume)
 		}
 	}
-	log.Debugf("image: %s", opts.Linter)
+	log.Debugf("image: %s", c.Linter)
 	log.Debugf("container name: %s", containerName)
-	log.Debugf("user: %s", opts.User)
+	log.Debugf("user: %s", c.User)
 	log.Debugf("volumes: %v", volumes)
 	log.Debugf("cmd: %v", cmdOpts)
 
 	portBindings := make(nat.PortMap)
 	exposedPorts := make(nat.PortSet)
 
-	if opts.JvmDebugPort > 0 {
-		log.Infof("Enabling JVM debug on port %d", opts.JvmDebugPort)
+	if c.JvmDebugPort > 0 {
+		log.Infof("Enabling JVM debug on port %d", c.JvmDebugPort)
 		portBindings = nat.PortMap{
 			containerJvmDebugPort: []nat.PortBinding{
 				{
 					HostIP:   "0.0.0.0",
-					HostPort: strconv.Itoa(opts.JvmDebugPort),
+					HostPort: strconv.Itoa(c.JvmDebugPort),
 				},
 			},
 		}
@@ -405,7 +406,7 @@ func getDockerOptions(opts *QodanaOptions) *backend.ContainerCreateConfig {
 		}
 	}
 	var hostConfig *container.HostConfig
-	if strings.Contains(opts.Linter, "dotnet") {
+	if strings.Contains(c.Linter, "dotnet") {
 		hostConfig = &container.HostConfig{
 			AutoRemove:   os.Getenv(platform.QodanaCliContainerKeep) == "",
 			Mounts:       volumes,
@@ -424,13 +425,13 @@ func getDockerOptions(opts *QodanaOptions) *backend.ContainerCreateConfig {
 	return &backend.ContainerCreateConfig{
 		Name: containerName,
 		Config: &container.Config{
-			Image:        opts.Linter,
+			Image:        c.Linter,
 			Cmd:          cmdOpts,
 			Tty:          platform.IsInteractive(),
 			AttachStdout: true,
 			AttachStderr: true,
-			Env:          opts.Env,
-			User:         opts.User,
+			Env:          c.Env(),
+			User:         c.User,
 			ExposedPorts: exposedPorts,
 		},
 		HostConfig: hostConfig,

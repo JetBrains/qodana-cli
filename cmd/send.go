@@ -19,8 +19,8 @@ package cmd
 import (
 	"fmt"
 	"github.com/JetBrains/qodana-cli/v2024/cloud"
-	"github.com/JetBrains/qodana-cli/v2024/core"
 	"github.com/JetBrains/qodana-cli/v2024/platform"
+	"github.com/JetBrains/qodana-cli/v2024/preparehost/product"
 	"github.com/google/uuid"
 	"github.com/spf13/cobra"
 	"path/filepath"
@@ -38,10 +38,12 @@ If report directory is not specified, the latest report will be fetched from the
 
 If you are using other Qodana Cloud instance than https://qodana.cloud/, override it by declaring the %s environment variable.`, platform.PrimaryBold(cloud.QodanaEndpointEnv)),
 		Run: func(cmd *cobra.Command, args []string) {
+			emptyProd := product.Product{} // TODO : what to do with PROD?
+
 			options.FetchAnalyzerSettings()
 			var publisherPath string
 			if platform.IsContainer() {
-				publisherPath = filepath.Join(core.Prod.IdeBin(), platform.PublisherJarName) // TODO : what to do with PROD
+				publisherPath = filepath.Join(emptyProd.IdeBin(), platform.PublisherJarName)
 			} else {
 				publisherPath = filepath.Join(options.ConfDirPath(), platform.PublisherJarName)
 			}
@@ -49,7 +51,7 @@ If you are using other Qodana Cloud instance than https://qodana.cloud/, overrid
 				options,
 				options.ValidateToken(false),
 				publisherPath,
-				core.Prod.JbrJava(),
+				emptyProd.JbrJava(),
 			)
 		},
 	}

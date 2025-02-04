@@ -34,7 +34,7 @@ const (
 	QodanaDockerEnv          = "QODANA_DOCKER"
 	QodanaToolEnv            = "QODANA_TOOL"
 	QodanaConfEnv            = "QODANA_CONF"
-	qodanaClearKeyring       = "QODANA_CLEAR_KEYRING"
+	QodanaClearKeyring       = "QODANA_CLEAR_KEYRING"
 	qodanaEnv                = "QODANA_ENV"
 	qodanaJobUrl             = "QODANA_JOB_URL"
 	QodanaBranch             = "QODANA_BRANCH"
@@ -94,7 +94,7 @@ func ExtractQodanaEnvironment(setEnvironmentFunc func(string, string)) {
 		setEnvironmentFunc(QodanaRemoteUrl, getSpaceRemoteUrl())
 		setEnvironmentFunc(QodanaBranch, os.Getenv("JB_SPACE_GIT_BRANCH"))
 		setEnvironmentFunc(QodanaRevision, os.Getenv("JB_SPACE_GIT_REVISION"))
-	} else if isBitBucket() {
+	} else if IsBitBucket() {
 		qEnv = "bitbucket"
 		setEnvironmentFunc(qodanaJobUrl, getBitBucketJobUrl())
 	}
@@ -216,12 +216,12 @@ func getSpaceRemoteUrl() string {
 }
 
 // IsGitLab returns true if the current environment is GitLab CI.
-func isGitLab() bool {
+func IsGitLab() bool {
 	return os.Getenv("GITLAB_CI") == "true"
 }
 
 // IsBitBucket returns true if the current environment is BitBucket Pipelines.
-func isBitBucket() bool {
+func IsBitBucket() bool {
 	return os.Getenv("BITBUCKET_PIPELINE_UUID") != ""
 }
 

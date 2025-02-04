@@ -27,7 +27,7 @@ import (
 	"strings"
 )
 
-func RunAnalysis(options *QodanaOptions) (int, error) {
+func RunThirdPartyLinterAnalysis(options *QodanaOptions) (int, error) {
 	linterOptions, mountInfo, linterInfo, err := getLinterDescriptors(options)
 	if err != nil {
 		ErrorMessage(err.Error())
@@ -137,10 +137,14 @@ func ensureWorkingDirsCreated(options *QodanaOptions, mountInfo *MountInfo) erro
 
 func checkLinterLicense(options *QodanaOptions) {
 	options.LicensePlan = cloud.CommunityLicensePlan
-	cloud.SetupLicenseToken(options.LoadToken(false, false, true))
+	token := options.LoadToken(false, false, true)
+	if token != "" {
+		options.Setenv(QodanaToken, token)
+	}
+	cloud.SetupLicenseToken(token)
 	if cloud.Token.Token != "" {
 		licenseData := cloud.GetCloudApiEndpoints().GetLicenseData(cloud.Token.Token)
-		ValidateTokenPrintProject(cloud.Token.Token)
+		token.ValidateTokenPrintProject(cloud.Token.Token)
 		options.LicensePlan = licenseData.LicensePlan
 		options.ProjectIdHash = licenseData.ProjectIdHash
 	}

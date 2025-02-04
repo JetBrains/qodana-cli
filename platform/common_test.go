@@ -118,7 +118,7 @@ func TestSelectAnalyzer(t *testing.T) {
 				}
 			}(dir)
 			_ = test.pathMaker(dir)
-			got := SelectAnalyzer(dir, test.analyzers, test.interactive, test.selectFunc)
+			got := selectAnalyzer(dir, test.analyzers, test.interactive, test.selectFunc)
 			assert.Equal(t, test.expectedAnalyzer, got)
 		})
 	}
