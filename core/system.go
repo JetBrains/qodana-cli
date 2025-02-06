@@ -141,7 +141,7 @@ func RunAnalysis(ctx context.Context, c corescan.Context) int {
 	}
 
 	scenario := c.DetermineRunScenario(startHash != "")
-	if scenario != corescan.RunScenarioDefault && !git.GitRevisionExists(c.ProjectDir(), startHash, c.LogDir()) {
+	if scenario != corescan.RunScenarioDefault && !git.RevisionExists(c.ProjectDir(), startHash, c.LogDir()) {
 		msg.WarningMessageCI(
 			"Cannot run analysis for commit %s because it doesn't exist in the repository. Check that you retrieve the full git history before running Qodana.",
 			startHash,
@@ -175,14 +175,14 @@ func RunAnalysis(ctx context.Context, c corescan.Context) int {
 func runLocalChanges(ctx context.Context, c corescan.Context, startHash string) int {
 	var exitCode int
 	gitReset := false
-	r, err := git.GitCurrentRevision(c.ProjectDir(), c.LogDir())
+	r, err := git.CurrentRevision(c.ProjectDir(), c.LogDir())
 	if err != nil {
 		log.Fatal(err)
 	}
 	if c.DiffEnd() != "" && c.DiffEnd() != r {
 		msg.WarningMessage("Cannot run local-changes because --diff-end is %s and HEAD is %s", c.DiffEnd(), r)
 	} else {
-		err := git.GitReset(c.ProjectDir(), startHash, c.LogDir())
+		err := git.Reset(c.ProjectDir(), startHash, c.LogDir())
 		if err != nil {
 			msg.WarningMessage("Could not reset git repository, no --commit option will be applied: %s", err)
 		} else {
@@ -194,17 +194,17 @@ func runLocalChanges(ctx context.Context, c corescan.Context, startHash string) 
 	exitCode = runQodana(ctx, c)
 
 	if gitReset {
-		_ = git.GitResetBack(c.ProjectDir(), c.LogDir())
+		_ = git.ResetBack(c.ProjectDir(), c.LogDir())
 	}
 	return exitCode
 }
 
 func runWithFullHistory(ctx context.Context, c corescan.Context, startHash string) int {
-	remoteUrl, err := git.GitRemoteUrl(c.ProjectDir(), c.LogDir())
+	remoteUrl, err := git.RemoteUrl(c.ProjectDir(), c.LogDir())
 	if err != nil {
 		log.Fatal(err)
 	}
-	branch, err := git.GitBranch(c.ProjectDir(), c.LogDir())
+	branch, err := git.Branch(c.ProjectDir(), c.LogDir())
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -212,11 +212,11 @@ func runWithFullHistory(ctx context.Context, c corescan.Context, startHash strin
 		log.Fatal("Please check that project is located within the Git repo")
 	}
 
-	err = git.GitClean(c.ProjectDir(), c.LogDir())
+	err = git.Clean(c.ProjectDir(), c.LogDir())
 	if err != nil {
 		log.Fatal(err)
 	}
-	revisions := git.GitRevisions(c.ProjectDir())
+	revisions := git.Revisions(c.ProjectDir())
 	allCommits := len(revisions)
 	counter := 0
 	var exitCode int
@@ -235,7 +235,7 @@ func runWithFullHistory(ctx context.Context, c corescan.Context, startHash strin
 		counter++
 
 		msg.WarningMessage("[%d/%d] Running analysis for revision %s", counter+1, allCommits, revision)
-		err = git.GitCheckout(c.ProjectDir(), revision, true, c.LogDir())
+		err = git.Checkout(c.ProjectDir(), revision, true, c.LogDir())
 		if err != nil {
 			log.Fatal(err)
 		}
@@ -244,7 +244,7 @@ func runWithFullHistory(ctx context.Context, c corescan.Context, startHash strin
 		contextForAnalysis := c.WithVcsEnvForFullHistoryAnalysisIteration(remoteUrl, branch, revision)
 		exitCode = runQodana(ctx, contextForAnalysis)
 	}
-	err = git.GitCheckout(c.ProjectDir(), branch, true, c.LogDir())
+	err = git.Checkout(c.ProjectDir(), branch, true, c.LogDir())
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -259,7 +259,7 @@ func runScopeScript(ctx context.Context, c corescan.Context, startHash string) i
 	var err error
 	end := c.DiffEnd()
 	if end == "" {
-		end, err = git.GitCurrentRevision(c.ProjectDir(), c.LogDir())
+		end, err = git.CurrentRevision(c.ProjectDir(), c.LogDir())
 		if err != nil {
 			log.Fatal(err)
 		}
@@ -274,7 +274,7 @@ func runScopeScript(ctx context.Context, c corescan.Context, startHash string) i
 	}()
 
 	runFunc := func(hash string, c corescan.Context) (bool, int) {
-		e := git.GitCheckout(c.ProjectDir(), hash, true, c.LogDir())
+		e := git.Checkout(c.ProjectDir(), hash, true, c.LogDir())
 		if e != nil {
 			log.Fatalf("Cannot checkout commit %s: %v", hash, e)
 		}
@@ -325,7 +325,7 @@ func writeChangesFile(c corescan.Context, start string, end string) (string, err
 	if start == "" || end == "" {
 		return "", fmt.Errorf("no commits given")
 	}
-	changedFiles, err := git.GitChangedFiles(c.ProjectDir(), start, end, c.LogDir())
+	changedFiles, err := git.ComputeChangedFiles(c.ProjectDir(), start, end, c.LogDir())
 	if err != nil {
 		return "", err
 	}

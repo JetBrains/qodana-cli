@@ -47,7 +47,7 @@ type PreparedHost struct {
 	Prod        product.Product
 }
 
-// prepareHost gets the current user, creates the necessary folders for the analysis.
+// PrepareHost gets the current user, creates the necessary folders for the analysis.
 func PrepareHost(args platforminit.Args) PreparedHost {
 	prod := product.Product{}
 	token := args.QodanaToken
@@ -251,7 +251,7 @@ func SyncConfigCache(prod product.Product, confDirPath string, cacheDir string, 
 	}
 }
 
-// syncIdeaCache sync .idea/ content from cache and back.
+// SyncIdeaCache sync .idea/ content from cache and back.
 func SyncIdeaCache(from string, to string, overwrite bool) error {
 	copyOptions := cp.Options{
 		OnDirExists: func(src, dest string) cp.DirExistsAction {

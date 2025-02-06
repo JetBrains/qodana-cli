@@ -138,7 +138,7 @@ func getCloudToken(id string) (string, error) {
 func setupToken(path string, id string, logdir string) string {
 	openCloud := msg.AskUserConfirm("Do you want to open the team page to get the token?")
 	if openCloud {
-		origin, err := git.GitRemoteUrl(path, logdir)
+		origin, err := git.RemoteUrl(path, logdir)
 		if err != nil {
 			msg.ErrorMessage("%s", err)
 			return ""

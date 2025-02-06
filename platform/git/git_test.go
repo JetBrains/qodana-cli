@@ -36,39 +36,39 @@ func TestGitFunctionalityChange(t *testing.T) {
 	projectPath := createNativeProject(t, "casamples")
 	defer deferredCleanup(projectPath)
 
-	branch, _ := GitBranch(projectPath, temp)
-	branchLegacy := GitBranchLegacy(projectPath)
+	branch, _ := Branch(projectPath, temp)
+	branchLegacy := BranchLegacy(projectPath)
 	if branch != branchLegacy {
 		t.Fatalf("Old and new branch are not equal: old: %v new: %v", branchLegacy, branch)
 	}
 	if branch != BRANCH {
 		t.Fatalf("New and expected branch are not equal: new: %v expected: %v", branch, BRANCH)
 	}
-	revision, _ := GitCurrentRevision(projectPath, temp)
-	revisionLegacy := GitCurrentRevisionLegacy(projectPath)
+	revision, _ := CurrentRevision(projectPath, temp)
+	revisionLegacy := CurrentRevisionLegacy(projectPath)
 	if revision != revisionLegacy {
 		t.Fatalf("Old and new revision are not equal: old: %v new: %v", revisionLegacy, revision)
 	}
 	if revision != REV {
 		t.Fatalf("New and expected revision are not equal: new: %v expected: %v", revision, REV)
 	}
-	remoteUrl, _ := GitRemoteUrl(projectPath, temp)
-	remoteUrlLegacy := GitRemoteUrlLegacy(projectPath)
+	remoteUrl, _ := RemoteUrl(projectPath, temp)
+	remoteUrlLegacy := RemoteUrlLegacy(projectPath)
 	if remoteUrl != remoteUrlLegacy {
 		t.Fatalf("Old and new url are not equal: old: %v new: %v", remoteUrlLegacy, remoteUrl)
 	}
 	if remoteUrl != REPO {
 		t.Fatalf("New and expected repo urls are not equal: new: %v expected: %v", remoteUrl, REPO)
 	}
-	rootPath, _ := GitRoot(projectPath, temp)
+	rootPath, _ := Root(projectPath, temp)
 	if filepath.ToSlash(rootPath) != filepath.ToSlash(projectPath) {
 		t.Fatalf("Computed git root path are not equal: new: %v expected: %v", rootPath, projectPath)
 	}
-	existsCorrect := GitRevisionExists(projectPath, REV, temp)
+	existsCorrect := RevisionExists(projectPath, REV, temp)
 	if existsCorrect != true {
 		t.Fatalf("Revision %v is not found in project %v", REV, projectPath)
 	}
-	dontExists := GitRevisionExists(projectPath, MALFORMED, temp)
+	dontExists := RevisionExists(projectPath, MALFORMED, temp)
 	if dontExists {
 		t.Fatalf("Revision %v is found in project %v", MALFORMED, projectPath)
 	}

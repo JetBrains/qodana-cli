@@ -18,7 +18,7 @@ package platform
 
 import (
 	"fmt"
-	thirdpartyscan "github.com/JetBrains/qodana-cli/v2024/platform/thirdpartyscan"
+	"github.com/JetBrains/qodana-cli/v2024/platform/thirdpartyscan"
 	"github.com/JetBrains/qodana-cli/v2024/platform/utils"
 )
 

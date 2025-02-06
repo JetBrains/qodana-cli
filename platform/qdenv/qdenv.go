@@ -219,7 +219,7 @@ func IsBitBucket() bool {
 	return os.Getenv("BITBUCKET_PIPELINE_UUID") != ""
 }
 
-// isBitBucketPipe returns true if the current environment is in a working BitBucket Pipe.
+// IsBitBucketPipe returns true if the current environment is in a working BitBucket Pipe.
 func IsBitBucketPipe() bool {
 	return os.Getenv("BITBUCKET_PIPE_STORAGE_DIR") != "" || os.Getenv("BITBUCKET_PIPE_SHARED_STORAGE_DIR") != ""
 }
@@ -232,7 +232,7 @@ func GetBitBucketJobUrl() string {
 	)
 }
 
-// getBitBucketCommit returns the BitBucket commit hash.
+// GetBitBucketCommit returns the BitBucket commit hash.
 func GetBitBucketCommit() string {
 	return os.Getenv("BITBUCKET_COMMIT")
 }
