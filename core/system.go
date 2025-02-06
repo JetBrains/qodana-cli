@@ -32,6 +32,8 @@ import (
 	"github.com/JetBrains/qodana-cli/v2024/platform/utils"
 	cienvironment "github.com/cucumber/ci-environment/go"
 	"github.com/docker/docker/client"
+	"github.com/pterm/pterm"
+	log "github.com/sirupsen/logrus"
 	"io"
 	"net/http"
 	"os"
@@ -39,10 +41,6 @@ import (
 	"path/filepath"
 	"runtime"
 	"strings"
-
-	"github.com/pterm/pterm"
-
-	log "github.com/sirupsen/logrus"
 )
 
 var (
@@ -131,7 +129,7 @@ func IsHomeDirectory(path string) bool {
 // RunAnalysis runs the linter with the given options.
 func RunAnalysis(ctx context.Context, c corescan.Context) int {
 	log.Debug("Running analysis with options")
-	platform.LogContext(c)
+	platform.LogContext(&c)
 
 	if !utils.IsInstalled("git") && (c.FullHistory() || c.Commit() != "" || c.DiffStart() != "" || c.DiffEnd() != "") {
 		log.Fatal("Cannot use git related functionality without a git executable")

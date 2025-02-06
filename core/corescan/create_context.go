@@ -28,15 +28,16 @@ import (
 
 func CreateContext(
 	cliOptions platformcmd.CliOptions,
-	startupArgs platforminit.Args,
+	initArgs platforminit.Args,
 	preparedHost startup.PreparedHost,
+	qodanaYaml qdyaml.QodanaYaml,
 ) Context {
 	coverageDir := cliOptions.CoverageDir
 	if coverageDir == "" {
 		if qdenv.IsContainer() {
 			coverageDir = "/data/coverage"
 		} else {
-			coverageDir = filepath.Join(startupArgs.ProjectDir, ".qodana", "code-coverage")
+			coverageDir = filepath.Join(initArgs.ProjectDir, ".qodana", "code-coverage")
 		}
 	}
 
@@ -46,21 +47,21 @@ func CreateContext(
 	}
 
 	return ContextBuilder{
-		Linter:                    startupArgs.Linter,
-		Ide:                       startupArgs.Ide,
-		Id:                        startupArgs.Id,
+		Linter:                    initArgs.Linter,
+		Ide:                       initArgs.Ide,
+		Id:                        initArgs.Id,
 		IdeDir:                    preparedHost.IdeDir,
-		QodanaYaml:                qdyaml.QodanaYaml{},
+		QodanaYaml:                qodanaYaml,
 		Prod:                      preparedHost.Prod,
 		QodanaToken:               preparedHost.QodanaToken,
-		QodanaLicenseOnlyToken:    startupArgs.QodanaLicenseOnlyToken,
-		ProjectDir:                startupArgs.ProjectDir,
-		ResultsDir:                startupArgs.ResultsDir,
-		ConfigDir:                 startupArgs.ConfDirPath(),
-		LogDir:                    startupArgs.LogDir(),
-		QodanaSystemDir:           startupArgs.QodanaSystemDir,
-		CacheDir:                  startupArgs.CacheDir,
-		ReportDir:                 startupArgs.ReportDir,
+		QodanaLicenseOnlyToken:    initArgs.QodanaLicenseOnlyToken,
+		ProjectDir:                initArgs.ProjectDir,
+		ResultsDir:                initArgs.ResultsDir,
+		ConfigDir:                 initArgs.ConfDirPath(),
+		LogDir:                    initArgs.LogDir(),
+		QodanaSystemDir:           initArgs.QodanaSystemDir,
+		CacheDir:                  initArgs.CacheDir,
+		ReportDir:                 initArgs.ReportDir,
 		CoverageDir:               coverageDir,
 		SourceDirectory:           cliOptions.SourceDirectory,
 		Env:                       cliOptions.Env_,
@@ -88,7 +89,7 @@ func CreateContext(
 		GenerateCodeClimateReport: cliOptions.GenerateCodeClimateReport,
 		SendBitBucketInsights:     cliOptions.SendBitBucketInsights,
 		SkipPull:                  cliOptions.SkipPull,
-		ClearCache:                startupArgs.IsClearCache,
+		ClearCache:                initArgs.IsClearCache,
 		ConfigName:                cliOptions.ConfigName,
 		FullHistory:               cliOptions.FullHistory,
 		ApplyFixes:                cliOptions.ApplyFixes,

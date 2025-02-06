@@ -99,7 +99,7 @@ func (c Context) withAddedProperties(propertiesToAdd ...string) Context {
 
 func (c Context) withEnv(key string, value string, override bool) Context {
 	currentEnvs := c.Env()
-	envs := make([]string, len(currentEnvs))
+	envs := make([]string, 0)
 
 	for _, e := range currentEnvs {
 		isEnvAlreadySet := strings.HasPrefix(e, key) && value != ""

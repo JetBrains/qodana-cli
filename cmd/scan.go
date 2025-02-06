@@ -26,6 +26,7 @@ import (
 	"github.com/JetBrains/qodana-cli/v2024/platform/msg"
 	"github.com/JetBrains/qodana-cli/v2024/platform/platforminit"
 	"github.com/JetBrains/qodana-cli/v2024/platform/qdenv"
+	"github.com/JetBrains/qodana-cli/v2024/platform/qdyaml"
 	"github.com/JetBrains/qodana-cli/v2024/platform/utils"
 	log "github.com/sirupsen/logrus"
 	"os"
@@ -49,6 +50,8 @@ But you can always override qodana.yaml options with the following command-line 
 		Run: func(cmd *cobra.Command, args []string) {
 			ctx := cmd.Context()
 
+			qodanaYaml := qdyaml.LoadQodanaYaml(cliOptions.ProjectDir, cliOptions.ConfigName)
+
 			startupArgs := platforminit.ComputeArgs(
 				cliOptions.Linter,
 				cliOptions.Ide,
@@ -65,7 +68,7 @@ But you can always override qodana.yaml options with the following command-line 
 			checkProjectDir(startupArgs.ProjectDir)
 
 			preparedHost := startup.PrepareHost(startupArgs)
-			scanContext := corescan.CreateContext(*cliOptions, startupArgs, preparedHost)
+			scanContext := corescan.CreateContext(*cliOptions, startupArgs, preparedHost, qodanaYaml)
 
 			exitCode := core.RunAnalysis(ctx, scanContext)
 			if qdenv.IsContainer() {

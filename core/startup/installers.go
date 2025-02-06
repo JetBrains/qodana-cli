@@ -145,8 +145,8 @@ func getIde(productCode string) *ReleaseDownloadInfo {
 		return nil
 	}
 
-	product, err := GetProductByCode(product.Products[productCode])
-	if err != nil || product == nil {
+	prod, err := GetProductByCode(product.Products[productCode])
+	if err != nil || prod == nil {
 		errorMessage := ""
 		if err != nil {
 			errorMessage = err.Error()
@@ -155,7 +155,7 @@ func getIde(productCode string) *ReleaseDownloadInfo {
 		return nil
 	}
 
-	release := SelectLatestCompatibleRelease(product, dist)
+	release := SelectLatestCompatibleRelease(prod, dist)
 	if release == nil {
 		msg.ErrorMessage("Error while obtaining the release type: ", dist)
 		return nil

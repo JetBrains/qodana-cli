@@ -142,6 +142,7 @@ func (b ContextBuilder) Build() Context {
 		baseline:              b.Baseline,
 		baselineIncludeAbsent: b.BaselineIncludeAbsent,
 		failThreshold:         b.FailThreshold,
+		qodanaYaml:            b.QodanaYaml,
 	}
 }
 

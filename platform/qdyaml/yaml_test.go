@@ -55,7 +55,7 @@ func TestLoadQodanaYaml(t *testing.T) {
 		setup       func(name string)
 		project     string
 		filename    string
-		expected    *QodanaYaml
+		expected    QodanaYaml
 	}{
 		{
 			description: "file exists but is empty",
@@ -64,7 +64,7 @@ func TestLoadQodanaYaml(t *testing.T) {
 			},
 			project:  os.TempDir(),
 			filename: "empty.yaml",
-			expected: &QodanaYaml{},
+			expected: QodanaYaml{},
 		},
 		{
 			description: "file exists with valid content",
@@ -74,7 +74,7 @@ func TestLoadQodanaYaml(t *testing.T) {
 			},
 			project:  os.TempDir(),
 			filename: "valid.yaml",
-			expected: &QodanaYaml{
+			expected: QodanaYaml{
 				Version: "1.0",
 			},
 		},
@@ -89,7 +89,7 @@ dotnet:
 			},
 			project:  os.TempDir(),
 			filename: "dotnet.yaml",
-			expected: &QodanaYaml{
+			expected: QodanaYaml{
 				Version: "1.0",
 				DotNet: DotNet{
 					Project:    "test.csproj",
@@ -120,7 +120,7 @@ script:
 			},
 			project:  os.TempDir(),
 			filename: "script.yaml",
-			expected: &QodanaYaml{
+			expected: QodanaYaml{
 				Version: "1.0",
 				Profile: Profile{
 					Name: "qodana.starter",
