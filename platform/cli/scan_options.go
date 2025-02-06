@@ -18,7 +18,9 @@ package cli
 
 import (
 	"fmt"
-	"github.com/JetBrains/qodana-cli/v2024/platform"
+	"github.com/JetBrains/qodana-cli/v2024/platform/qdenv"
+	"github.com/JetBrains/qodana-cli/v2024/platform/scan/startup/product"
+	"github.com/JetBrains/qodana-cli/v2024/platform/utils"
 	"github.com/google/uuid"
 	"github.com/spf13/cobra"
 	"os"
@@ -88,14 +90,14 @@ func ComputeFlags(cmd *cobra.Command, options *QodanaScanCliOptions) error {
 	flags := cmd.Flags()
 	flags.SortFlags = false
 
-	if !platform.IsContainer() {
+	if !qdenv.IsContainer() {
 		flags.StringVarP(
 			&options.Linter,
 			"linter",
 			"l",
 			"",
 			"Use to run Qodana in a container (default). Choose linter (image) to use. Not compatible with --ide option. Available images are: "+strings.Join(
-				platform.AllImages,
+				product.AllImages,
 				", ",
 			),
 		)
@@ -103,10 +105,10 @@ func ComputeFlags(cmd *cobra.Command, options *QodanaScanCliOptions) error {
 	flags.StringVar(
 		&options.Ide,
 		"ide",
-		os.Getenv(platform.QodanaDistEnv),
+		os.Getenv(qdenv.QodanaDistEnv),
 		fmt.Sprintf(
 			"Use to run Qodana without a container. Not compatible with --linter option. Available codes are %s, add -EAP part to obtain EAP versions",
-			strings.Join(platform.AllNativeCodes, ", "),
+			strings.Join(product.AllNativeCodes, ", "),
 		),
 	)
 
@@ -141,13 +143,13 @@ func ComputeFlags(cmd *cobra.Command, options *QodanaScanCliOptions) error {
 	flags.BoolVar(
 		&options.GenerateCodeClimateReport,
 		"code-climate",
-		platform.IsGitLab(),
+		qdenv.IsGitLab(),
 		"Generate a code Climate report in SARIF format (compatible with GitLab code Quality), will be saved to the results directory (default true if Qodana is executed on GitLab CI)",
 	)
 	flags.BoolVar(
 		&options.SendBitBucketInsights,
 		"bitbucket-insights",
-		platform.IsBitBucket(),
+		qdenv.IsBitBucket(),
 		"Send the results BitBucket code Insights, no additional configuration required if ran in BitBucket Pipelines (default true if Qodana is executed on BitBucket Pipelines)",
 	)
 	flags.BoolVar(&options.ClearCache, "clear-cache", false, "Clear the local Qodana cache before running the analysis")
@@ -298,7 +300,7 @@ func ComputeFlags(cmd *cobra.Command, options *QodanaScanCliOptions) error {
 		"[qodana-cdnet specific] Do not build the project before analysis",
 	)
 
-	if !platform.IsContainer() {
+	if !qdenv.IsContainer() {
 		flags.StringArrayVarP(
 			&options.Env_,
 			"env",
@@ -317,7 +319,7 @@ func ComputeFlags(cmd *cobra.Command, options *QodanaScanCliOptions) error {
 			&options.User,
 			"user",
 			"u",
-			platform.GetDefaultUser(),
+			utils.GetDefaultUser(),
 			"Only for container runs. User to run Qodana container as. Please specify user id – '$UID' or user id and group id $(id -u):$(id -g). Use 'root' to run as the root user (default: the current user)",
 		)
 		flags.BoolVar(

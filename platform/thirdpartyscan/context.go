@@ -16,12 +16,42 @@
 
 package thirdpartyscan
 
-import "github.com/JetBrains/qodana-cli/v2024/platform"
+import (
+	"github.com/JetBrains/qodana-cli/v2024/platform/qdyaml"
+	"github.com/JetBrains/qodana-cli/v2024/platform/scan/startup/product"
+	"regexp"
+)
+
+const Clang = "clang"
+const Clt = "clt"
+
+type ThirdPartyStartupCloudData struct {
+	LicensePlan   string
+	ProjectIdHash string
+	QodanaToken   string
+}
+
+// MountInfo is a struct that contains all the helper tools to run a Qodana linter.
+type MountInfo struct {
+	Converter   string
+	Fuser       string
+	BaselineCli string
+	CustomTools map[string]string
+	JavaPath    string
+}
+
+// LinterInfo is a struct that contains all the information about the linter.
+type LinterInfo struct {
+	ProductCode   string
+	LinterName    string
+	LinterVersion string
+	IsEap         bool
+}
 
 type Context struct {
-	linterInfo            platform.LinterInfo
-	mountInfo             platform.MountInfo
-	cloudData             platform.ThirdPartyStartupCloudData
+	linterInfo            LinterInfo
+	mountInfo             MountInfo
+	cloudData             ThirdPartyStartupCloudData
 	projectDir            string
 	resultsDir            string
 	logDir                string
@@ -39,13 +69,13 @@ type Context struct {
 	baseline              string
 	baselineIncludeAbsent bool
 	failThreshold         string
-	qodanaYaml            platform.QodanaYaml
+	qodanaYaml            qdyaml.QodanaYaml
 }
 
 type ContextBuilder struct {
-	LinterInfo            platform.LinterInfo
-	MountInfo             platform.MountInfo
-	CloudData             platform.ThirdPartyStartupCloudData
+	LinterInfo            LinterInfo
+	MountInfo             MountInfo
+	CloudData             ThirdPartyStartupCloudData
 	ProjectDir            string
 	ResultsDir            string
 	LogDir                string
@@ -63,7 +93,7 @@ type ContextBuilder struct {
 	Baseline              string
 	BaselineIncludeAbsent bool
 	FailThreshold         string
-	QodanaYaml            platform.QodanaYaml
+	QodanaYaml            qdyaml.QodanaYaml
 }
 
 func (b ContextBuilder) Build() Context {
@@ -91,26 +121,26 @@ func (b ContextBuilder) Build() Context {
 	}
 }
 
-func (c Context) LinterInfo() platform.LinterInfo                { return c.linterInfo }
-func (c Context) MountInfo() platform.MountInfo                  { return c.mountInfo }
-func (c Context) CloudData() platform.ThirdPartyStartupCloudData { return c.cloudData }
-func (c Context) ProjectDir() string                             { return c.projectDir }
-func (c Context) ResultsDir() string                             { return c.resultsDir }
-func (c Context) LogDir() string                                 { return c.logDir }
-func (c Context) CacheDir() string                               { return c.cacheDir }
-func (c Context) ClangCompileCommands() string                   { return c.clangCompileCommands }
-func (c Context) ClangArgs() string                              { return c.clangArgs }
-func (c Context) CdnetSolution() string                          { return c.cdnetSolution }
-func (c Context) CdnetProject() string                           { return c.cdnetProject }
-func (c Context) CdnetConfiguration() string                     { return c.cdnetConfiguration }
-func (c Context) CdnetPlatform() string                          { return c.cdnetPlatform }
-func (c Context) NoStatistics() bool                             { return c.noStatistics }
-func (c Context) CdnetNoBuild() bool                             { return c.cdnetNoBuild }
-func (c Context) AnalysisId() string                             { return c.analysisId }
-func (c Context) Baseline() string                               { return c.baseline }
-func (c Context) BaselineIncludeAbsent() bool                    { return c.baselineIncludeAbsent }
-func (c Context) FailThreshold() string                          { return c.failThreshold }
-func (c Context) QodanaYaml() platform.QodanaYaml                { return c.qodanaYaml }
+func (c Context) LinterInfo() LinterInfo                { return c.linterInfo }
+func (c Context) MountInfo() MountInfo                  { return c.mountInfo }
+func (c Context) CloudData() ThirdPartyStartupCloudData { return c.cloudData }
+func (c Context) ProjectDir() string                    { return c.projectDir }
+func (c Context) ResultsDir() string                    { return c.resultsDir }
+func (c Context) LogDir() string                        { return c.logDir }
+func (c Context) CacheDir() string                      { return c.cacheDir }
+func (c Context) ClangCompileCommands() string          { return c.clangCompileCommands }
+func (c Context) ClangArgs() string                     { return c.clangArgs }
+func (c Context) CdnetSolution() string                 { return c.cdnetSolution }
+func (c Context) CdnetProject() string                  { return c.cdnetProject }
+func (c Context) CdnetConfiguration() string            { return c.cdnetConfiguration }
+func (c Context) CdnetPlatform() string                 { return c.cdnetPlatform }
+func (c Context) NoStatistics() bool                    { return c.noStatistics }
+func (c Context) CdnetNoBuild() bool                    { return c.cdnetNoBuild }
+func (c Context) AnalysisId() string                    { return c.analysisId }
+func (c Context) Baseline() string                      { return c.baseline }
+func (c Context) BaselineIncludeAbsent() bool           { return c.baselineIncludeAbsent }
+func (c Context) FailThreshold() string                 { return c.failThreshold }
+func (c Context) QodanaYaml() qdyaml.QodanaYaml         { return c.qodanaYaml }
 
 func (c Context) Property() []string {
 	props := make([]string, len(c.property))
@@ -123,5 +153,14 @@ func (c Context) IsCommunity() bool {
 }
 
 func (c Context) ClangPath() string {
-	return c.MountInfo().CustomTools[platform.Clang]
+	return c.MountInfo().CustomTools[Clang]
+}
+
+func (i LinterInfo) GetMajorVersion() string {
+	re := regexp.MustCompile(`\b\d+\.\d+`)
+	matches := re.FindStringSubmatch(i.LinterVersion)
+	if len(matches) == 0 {
+		return product.ReleaseVersion
+	}
+	return matches[0]
 }

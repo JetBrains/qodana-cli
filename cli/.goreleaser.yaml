@@ -3,7 +3,7 @@ builds:
   - env:
       - CGO_ENABLED=0
     ldflags:
-      - -X github.com/JetBrains/qodana-cli/v2024/platform.Version={{ .Version }}
+      - -X github.com/JetBrains/qodana-cli/v2024/platform/version.Version={{ .Version }}
     goos:
       - linux
       - darwin

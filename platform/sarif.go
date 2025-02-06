@@ -19,6 +19,8 @@ package platform
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/JetBrains/qodana-cli/v2024/platform/msg"
+	"github.com/JetBrains/qodana-cli/v2024/platform/qdenv"
 	"github.com/JetBrains/qodana-cli/v2024/platform/thirdpartyscan"
 	"github.com/JetBrains/qodana-cli/v2024/sarif"
 	"github.com/google/uuid"
@@ -348,7 +350,7 @@ func ProcessSarif(sarifPath, analysisId, reportUrl string, printProblems, codeCl
 	var codeInsightIssues = make([]bbapi.ReportAnnotation, 0)
 	rulesDescriptions := make(map[string]string)
 	if printProblems {
-		EmptyMessage()
+		msg.EmptyMessage()
 	}
 	for _, run := range s.Runs {
 		for _, r := range run.Results {
@@ -391,12 +393,38 @@ func ProcessSarif(sarifPath, analysisId, reportUrl string, printProblems, codeCl
 			log.Warnf("Problems sending BitBucket Code Insights report: %v", err)
 		}
 	}
-	if !IsContainer() {
+	if !qdenv.IsContainer() {
 		if newProblems == 0 {
-			SuccessMessage(getProblemsFoundMessage(0))
+			msg.SuccessMessage(msg.GetProblemsFoundMessage(0))
 		} else {
-			ErrorMessage(getProblemsFoundMessage(newProblems))
+			msg.ErrorMessage(msg.GetProblemsFoundMessage(newProblems))
 		}
+	}
+}
+
+func printSarifProblem(r *sarif.Result, ruleId, message string) {
+	if r.Locations[0].PhysicalLocation != nil {
+		msg.PrintProblem(
+			ruleId,
+			getSeverity(r),
+			message,
+			r.Locations[0].PhysicalLocation.ArtifactLocation.Uri,
+			int(r.Locations[0].PhysicalLocation.Region.StartLine),
+			int(r.Locations[0].PhysicalLocation.Region.StartColumn),
+			int(r.Locations[0].PhysicalLocation.ContextRegion.StartLine),
+			r.Locations[0].PhysicalLocation.ContextRegion.Snippet.Text,
+		)
+	} else {
+		msg.PrintProblem(
+			ruleId,
+			getSeverity(r),
+			message,
+			"",
+			0,
+			0,
+			0,
+			"",
+		)
 	}
 }
 

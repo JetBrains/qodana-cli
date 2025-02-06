@@ -18,6 +18,7 @@ package platform
 
 import (
 	"errors"
+	"github.com/JetBrains/qodana-cli/v2024/platform/utils"
 	"github.com/JetBrains/qodana-cli/v2024/sarif"
 	"os"
 	"strings"
@@ -67,7 +68,7 @@ func GetVersionDetails(pwd string) (sarif.VersionControlDetails, error) {
 }
 
 func getRepositoryUri(pwd string) (string, error) {
-	uri, _, ret, err := RunCmdRedirectOutput(pwd, "git", "ls-remote", "--get-url")
+	uri, _, ret, err := utils.RunCmdRedirectOutput(pwd, "git", "ls-remote", "--get-url")
 	if err != nil {
 		return "", err
 	}
@@ -82,7 +83,7 @@ func getRepositoryUri(pwd string) (string, error) {
 }
 
 func getRevisionId(pwd string) (string, error) {
-	rev, _, ret, err := RunCmdRedirectOutput(pwd, "git", "rev-parse", "HEAD")
+	rev, _, ret, err := utils.RunCmdRedirectOutput(pwd, "git", "rev-parse", "HEAD")
 	if err != nil {
 		return "", err
 	}
@@ -93,7 +94,7 @@ func getRevisionId(pwd string) (string, error) {
 }
 
 func getBranchName(pwd string) (string, error) {
-	branch, _, ret, err := RunCmdRedirectOutput(pwd, "git", "rev-parse", "--abbrev-ref", "HEAD")
+	branch, _, ret, err := utils.RunCmdRedirectOutput(pwd, "git", "rev-parse", "--abbrev-ref", "HEAD")
 	if err != nil {
 		return "", err
 	}
@@ -104,7 +105,7 @@ func getBranchName(pwd string) (string, error) {
 }
 
 func getLastAuthorName(pwd string) string {
-	name, _, ret, err := RunCmdRedirectOutput(pwd, "git", "log", "-1", "--pretty=format:%an")
+	name, _, ret, err := utils.RunCmdRedirectOutput(pwd, "git", "log", "-1", "--pretty=format:%an")
 	if err != nil || ret != 0 {
 		return ""
 	}
@@ -112,7 +113,7 @@ func getLastAuthorName(pwd string) string {
 }
 
 func getAuthorEmail(pwd string) string {
-	email, _, ret, err := RunCmdRedirectOutput(pwd, "git", "log", "-1", "--pretty=format:%ae")
+	email, _, ret, err := utils.RunCmdRedirectOutput(pwd, "git", "log", "-1", "--pretty=format:%ae")
 	if err != nil || ret != 0 {
 		return ""
 	}

@@ -20,7 +20,9 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/JetBrains/qodana-cli/v2024/platform"
+	"github.com/JetBrains/qodana-cli/v2024/platform/scan/startup"
 	"github.com/JetBrains/qodana-cli/v2024/platform/thirdpartyscan"
+	"github.com/JetBrains/qodana-cli/v2024/platform/utils"
 	"github.com/JetBrains/qodana-cli/v2024/sarif"
 	"os"
 	"path/filepath"
@@ -29,22 +31,25 @@ import (
 type CdnetLinter struct {
 }
 
-func (l CdnetLinter) ComputeNewLinterInfo(linterInfo platform.LinterInfo, _ bool) (platform.LinterInfo, error) {
+func (l CdnetLinter) ComputeNewLinterInfo(
+	linterInfo thirdpartyscan.LinterInfo,
+	_ bool,
+) (thirdpartyscan.LinterInfo, error) {
 	return linterInfo, nil
 }
 
 func (l CdnetLinter) RunAnalysis(c thirdpartyscan.Context) error {
-	platform.Bootstrap(c.QodanaYaml().Bootstrap, c.ProjectDir())
+	utils.Bootstrap(c.QodanaYaml().Bootstrap, c.ProjectDir())
 	args, err := l.computeCdnetArgs(c)
 	if err != nil {
 		return err
 	}
-	if platform.IsNugetConfigNeeded() {
-		platform.PrepareNugetConfig(os.Getenv("HOME"))
+	if startup.IsNugetConfigNeeded() {
+		startup.PrepareNugetConfig(os.Getenv("HOME"))
 	}
-	platform.UnsetNugetVariables()
-	ret, err := platform.RunCmd(
-		platform.QuoteForWindows(c.ProjectDir()),
+	startup.UnsetNugetVariables()
+	ret, err := utils.RunCmd(
+		utils.QuoteForWindows(c.ProjectDir()),
 		args...,
 	)
 	if err != nil {
@@ -122,7 +127,7 @@ func patchReport(c thirdpartyscan.Context) error {
 
 func copyOriginalReportToLog(logDir string, sarifPath string) error {
 	destination := filepath.Join(logDir, "clt.original.sarif.json")
-	if err := platform.CopyFile(sarifPath, destination); err != nil {
+	if err := utils.CopyFile(sarifPath, destination); err != nil {
 		return fmt.Errorf("problem while copying the original CLT report %e", err)
 	}
 	return nil

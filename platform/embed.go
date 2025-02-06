@@ -21,6 +21,9 @@ import (
 	"archive/zip"
 	"compress/gzip"
 	"fmt"
+	"github.com/JetBrains/qodana-cli/v2024/platform/scan/startup/product"
+	"github.com/JetBrains/qodana-cli/v2024/platform/thirdpartyscan"
+	"github.com/JetBrains/qodana-cli/v2024/platform/utils"
 	"github.com/JetBrains/qodana-cli/v2024/tooling"
 	"io"
 	"log"
@@ -37,14 +40,14 @@ const (
 )
 
 // extractUtils mounts the helper tools to the temporary folder.
-func extractUtils(linter ThirdPartyLinter, cacheDir string, isCommunity bool) (string, MountInfo) {
+func extractUtils(linter ThirdPartyLinter, cacheDir string, isCommunity bool) (string, thirdpartyscan.MountInfo) {
 	tempMountPath, err := getTempDir()
 	if err != nil {
 		log.Fatal(err)
 	}
 	permanentMountPath := getToolsMountPath(cacheDir)
 
-	javaPath, err := getJavaExecutablePath()
+	javaPath, err := utils.GetJavaExecutablePath()
 	if err != nil {
 		log.Fatalf("failed to get java executable path: %w", err)
 	}
@@ -65,7 +68,7 @@ func extractUtils(linter ThirdPartyLinter, cacheDir string, isCommunity bool) (s
 		tooling.BaselineCli,
 	)
 
-	mountInfo := MountInfo{
+	mountInfo := thirdpartyscan.MountInfo{
 		Converter:   converter,
 		Fuser:       fuser,
 		BaselineCli: baselineCliJar,
@@ -76,7 +79,7 @@ func extractUtils(linter ThirdPartyLinter, cacheDir string, isCommunity bool) (s
 }
 
 func getToolsMountPath(cacheDir string) string {
-	mountPath := filepath.Join(cacheDir, shortVersion)
+	mountPath := filepath.Join(cacheDir, product.ShortVersion)
 	if _, err := os.Stat(mountPath); err != nil {
 		if os.IsNotExist(err) {
 			err = os.MkdirAll(mountPath, 0755)

@@ -18,6 +18,7 @@ package cloud
 
 import (
 	"fmt"
+	"github.com/JetBrains/qodana-cli/v2024/platform/qdenv"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -68,41 +69,43 @@ func TestSetupLicenseToken(t *testing.T) {
 			sendReport: true,
 		},
 	} {
-		t.Run(testData.name, func(t *testing.T) {
-			err := os.Setenv(QodanaLicenseOnlyToken, testData.loToken)
-			if err != nil {
-				t.Fatal(err)
-			}
-			err = os.Setenv(QodanaToken, testData.token)
-			if err != nil {
-				t.Fatal(err)
-			}
-			SetupLicenseToken(testData.token)
+		t.Run(
+			testData.name, func(t *testing.T) {
+				err := os.Setenv(qdenv.QodanaLicenseOnlyToken, testData.loToken)
+				if err != nil {
+					t.Fatal(err)
+				}
+				err = os.Setenv(qdenv.QodanaToken, testData.token)
+				if err != nil {
+					t.Fatal(err)
+				}
+				SetupLicenseToken(testData.token)
 
-			if Token.Token != testData.resToken {
-				t.Errorf("expected token to be '%s' got '%s'", testData.resToken, Token.Token)
-			}
+				if Token.Token != testData.resToken {
+					t.Errorf("expected token to be '%s' got '%s'", testData.resToken, Token.Token)
+				}
 
-			sendFUS := Token.IsAllowedToSendFUS()
-			if sendFUS != testData.sendFus {
-				t.Errorf("expected allow FUS to be '%t' got '%t'", testData.sendFus, sendFUS)
-			}
+				sendFUS := Token.IsAllowedToSendFUS()
+				if sendFUS != testData.sendFus {
+					t.Errorf("expected allow FUS to be '%t' got '%t'", testData.sendFus, sendFUS)
+				}
 
-			toSendReports := Token.IsAllowedToSendReports()
-			if toSendReports != testData.sendReport {
-				t.Errorf("expected allow send report to be '%t' got '%t'", testData.sendReport, toSendReports)
-			}
+				toSendReports := Token.IsAllowedToSendReports()
+				if toSendReports != testData.sendReport {
+					t.Errorf("expected allow send report to be '%t' got '%t'", testData.sendReport, toSendReports)
+				}
 
-			err = os.Unsetenv(QodanaLicenseOnlyToken)
-			if err != nil {
-				t.Fatal(err)
-			}
+				err = os.Unsetenv(qdenv.QodanaLicenseOnlyToken)
+				if err != nil {
+					t.Fatal(err)
+				}
 
-			err = os.Unsetenv(QodanaToken)
-			if err != nil {
-				t.Fatal(err)
-			}
-		})
+				err = os.Unsetenv(qdenv.QodanaToken)
+				if err != nil {
+					t.Fatal(err)
+				}
+			},
+		)
 	}
 }
 
@@ -182,44 +185,50 @@ func TestRequestLicenseData(t *testing.T) {
 			success:        false,
 		},
 	} {
-		t.Run(testData.name, func(t *testing.T) {
-			requestServed := 0
-			svr := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-				requestServed++
-				if r.URL.Path != qodanaLicenseUri {
-					t.Errorf("expected uri to be '%s' got '%s'", qodanaLicenseUri, r.URL.Path)
-				}
-				authHeader := r.Header.Get("Authorization")
-				expectedAuth := fmt.Sprintf("Bearer %s", rightToken)
-				time.Sleep(time.Duration(testData.delay) * time.Second)
-				if requestServed <= testData.failedAttempts {
-					w.WriteHeader(http.StatusInternalServerError)
-					return
-				}
-				if authHeader != expectedAuth {
-					w.WriteHeader(http.StatusForbidden)
-					return
-				}
-				_, _ = fmt.Fprint(w, expectedLicense)
-			}))
-			defer svr.Close()
+		t.Run(
+			testData.name, func(t *testing.T) {
+				requestServed := 0
+				svr := httptest.NewServer(
+					http.HandlerFunc(
+						func(w http.ResponseWriter, r *http.Request) {
+							requestServed++
+							if r.URL.Path != qodanaLicenseUri {
+								t.Errorf("expected uri to be '%s' got '%s'", qodanaLicenseUri, r.URL.Path)
+							}
+							authHeader := r.Header.Get("Authorization")
+							expectedAuth := fmt.Sprintf("Bearer %s", rightToken)
+							time.Sleep(time.Duration(testData.delay) * time.Second)
+							if requestServed <= testData.failedAttempts {
+								w.WriteHeader(http.StatusInternalServerError)
+								return
+							}
+							if authHeader != expectedAuth {
+								w.WriteHeader(http.StatusForbidden)
+								return
+							}
+							_, _ = fmt.Fprint(w, expectedLicense)
+						},
+					),
+				)
+				defer svr.Close()
 
-			apis := QdApiEndpoints{LintersApiUrl: svr.URL}
-			res, err := apis.RequestLicenseData(testData.token)
-			if err != nil {
-				if testData.success {
-					t.Errorf("requestLicenseData should failed")
+				apis := QdApiEndpoints{LintersApiUrl: svr.URL}
+				res, err := apis.RequestLicenseData(testData.token)
+				if err != nil {
+					if testData.success {
+						t.Errorf("requestLicenseData should failed")
+					}
+					return
 				}
-				return
-			}
-			if testData.actualAttempts != requestServed {
-				t.Errorf("expected to be '%d' requests but was '%d'", testData.actualAttempts, requestServed)
-			}
-			license := strings.TrimSpace(string(res))
-			if license != expectedLicense {
-				t.Errorf("expected response to be '%s' got '%s'", expectedLicense, license)
-			}
-		})
+				if testData.actualAttempts != requestServed {
+					t.Errorf("expected to be '%d' requests but was '%d'", testData.actualAttempts, requestServed)
+				}
+				license := strings.TrimSpace(string(res))
+				if license != expectedLicense {
+					t.Errorf("expected response to be '%s' got '%s'", expectedLicense, license)
+				}
+			},
+		)
 	}
 }
 
@@ -258,11 +267,13 @@ func TestExtractLicenseKey(t *testing.T) {
 			expectedKey: "VA5HGQWQH6",
 		},
 	} {
-		t.Run(testData.name, func(t *testing.T) {
-			data := DeserializeLicenseData([]byte(testData.data))
-			if data.LicenseKey != testData.expectedKey {
-				t.Errorf("expected data to be '%s' got '%s'", data, testData.expectedKey)
-			}
-		})
+		t.Run(
+			testData.name, func(t *testing.T) {
+				data := DeserializeLicenseData([]byte(testData.data))
+				if data.LicenseKey != testData.expectedKey {
+					t.Errorf("expected data to be '%s' got '%s'", data, testData.expectedKey)
+				}
+			},
+		)
 	}
 }

@@ -20,6 +20,7 @@ import (
 	"github.com/JetBrains/qodana-cli/v2024/cmd"
 	"github.com/JetBrains/qodana-cli/v2024/platform"
 	platformcmd "github.com/JetBrains/qodana-cli/v2024/platform/cmd"
+	"github.com/JetBrains/qodana-cli/v2024/platform/thirdpartyscan"
 	"github.com/spf13/cobra"
 )
 
@@ -28,7 +29,7 @@ func Execute(productCode string, linterName string, linterVersion string, buildD
 
 	linter := CdnetLinter{}
 
-	linterInfo := platform.LinterInfo{
+	linterInfo := thirdpartyscan.LinterInfo{
 		ProductCode:   productCode,
 		LinterName:    linterName,
 		LinterVersion: linterVersion,

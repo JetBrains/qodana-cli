@@ -17,9 +17,9 @@
 package thirdpartyscan
 
 import (
-	"github.com/JetBrains/qodana-cli/v2024/platform"
 	"github.com/JetBrains/qodana-cli/v2024/platform/cli"
-	"github.com/JetBrains/qodana-cli/v2024/platform/startup"
+	"github.com/JetBrains/qodana-cli/v2024/platform/qdyaml"
+	"github.com/JetBrains/qodana-cli/v2024/platform/scan/startup"
 	"path/filepath"
 	"strings"
 )
@@ -27,10 +27,10 @@ import (
 func ComputeContext(
 	cliOptions cli.QodanaScanCliOptions,
 	startupArgs startup.Args,
-	linterInfo platform.LinterInfo,
-	mountInfo platform.MountInfo,
-	cloudData platform.ThirdPartyStartupCloudData,
-	qodanaYaml platform.QodanaYaml,
+	linterInfo LinterInfo,
+	mountInfo MountInfo,
+	cloudData ThirdPartyStartupCloudData,
+	qodanaYaml qdyaml.QodanaYaml,
 ) Context {
 	projectDir := startupArgs.ProjectDir
 

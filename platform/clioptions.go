@@ -18,36 +18,12 @@ package platform
 
 import (
 	"github.com/JetBrains/qodana-cli/v2024/platform/thirdpartyscan"
-	"regexp"
 )
-
-type ThirdPartyStartupCloudData struct {
-	LicensePlan   string
-	ProjectIdHash string
-	QodanaToken   string
-}
 
 type ThirdPartyLinter interface {
 	MountTools(tempPath string, mountPath string, isCommunity bool) (map[string]string, error)
-	ComputeNewLinterInfo(info LinterInfo, isCommunity bool) (LinterInfo, error)
+	ComputeNewLinterInfo(info thirdpartyscan.LinterInfo, isCommunity bool) (thirdpartyscan.LinterInfo, error)
 	RunAnalysis(c thirdpartyscan.Context) error
-}
-
-// MountInfo is a struct that contains all the helper tools to run a Qodana linter.
-type MountInfo struct {
-	Converter   string
-	Fuser       string
-	BaselineCli string
-	CustomTools map[string]string
-	JavaPath    string
-}
-
-// LinterInfo is a struct that contains all the information about the linter.
-type LinterInfo struct {
-	ProductCode   string
-	LinterName    string
-	LinterVersion string
-	IsEap         bool
 }
 
 type LinterSpecificInitializer func() ThirdPartyLinter
@@ -58,15 +34,6 @@ func DefineOptions(initializer LinterSpecificInitializer) *QodanaOptions {
 		options.LinterSpecific = initializer()
 	}
 	return options
-}
-
-func (i LinterInfo) GetMajorVersion() string {
-	re := regexp.MustCompile(`\b\d+\.\d+`)
-	matches := re.FindStringSubmatch(i.LinterVersion)
-	if len(matches) == 0 {
-		return ReleaseVersion
-	}
-	return matches[0]
 }
 
 func (o *QodanaOptions) GetLinterSpecificOptions() *ThirdPartyLinter {
