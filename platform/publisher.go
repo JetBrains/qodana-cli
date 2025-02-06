@@ -37,8 +37,15 @@ import (
 const PublisherJarName = "publisher-cli.jar"
 const PublisherVersion = "2.1.31"
 
+type Publisher struct {
+	ResultsDir string
+	ProjectDir string
+	LogDir     string
+	AnalysisId string
+}
+
 // SendReport sends report to Qodana Cloud.
-func SendReport(opts *QodanaOptions, token string, publisherPath string, javaPath string) {
+func SendReport(publisher Publisher, token string, publisherPath string, javaPath string) {
 	if _, err := os.Stat(publisherPath); os.IsNotExist(err) {
 		err := os.MkdirAll(filepath.Dir(publisherPath), os.ModePerm)
 		if err != nil {
@@ -50,34 +57,36 @@ func SendReport(opts *QodanaOptions, token string, publisherPath string, javaPat
 		log.Fatalf("Not able to send the report: %s is missing", publisherPath)
 	}
 	if !IsContainer() {
-		if _, err := os.Stat(opts.ReportResultsPath()); os.IsNotExist(err) {
-			if err := os.MkdirAll(opts.ReportResultsPath(), os.ModePerm); err != nil {
+		reportResultsPath := ReportResultsPath(publisher.ResultsDir)
+		if _, err := os.Stat(reportResultsPath); os.IsNotExist(err) {
+			if err := os.MkdirAll(reportResultsPath, os.ModePerm); err != nil {
 				log.Fatalf("failed to create directory: %v", err)
 			}
 		}
-		source := filepath.Join(opts.ResultsDir, "qodana.sarif.json")
-		destination := filepath.Join(opts.ReportResultsPath(), "qodana.sarif.json")
+		source := filepath.Join(publisher.ResultsDir, "qodana.sarif.json")
+		destination := filepath.Join(reportResultsPath, "qodana.sarif.json")
 
 		if err := cp.Copy(source, destination); err != nil {
 			log.Fatal(err)
 		}
 	}
 
-	publisherCommand := getPublisherArgs(javaPath, publisherPath, opts, token, cloud.GetCloudApiEndpoints().CloudApiUrl)
-	if _, _, res, err := LaunchAndLog(opts, "publisher", publisherCommand...); res > 0 || err != nil {
+	publisherCommand := getPublisherArgs(javaPath, publisherPath, publisher, token, cloud.GetCloudApiEndpoints().CloudApiUrl)
+	if _, _, res, err := LaunchAndLog(publisher.LogDir, "publisher", publisherCommand...); res > 0 || err != nil {
 		os.Exit(res)
 	}
 }
 
 // getPublisherArgs returns args for the publisher.
-func getPublisherArgs(java string, publisher string, opts *QodanaOptions, token string, endpoint string) []string {
+func getPublisherArgs(java string, publisherPath string, publisher Publisher, token string, endpoint string) []string {
+	reportResultsPath := ReportResultsPath(publisher.ResultsDir)
 	publisherArgs := []string{
 		QuoteForWindows(java),
 		"-jar",
-		QuoteForWindows(publisher),
-		"--analysis-id", opts.AnalysisId,
-		"--sources-path", QuoteForWindows(opts.ProjectDir),
-		"--report-path", QuoteForWindows(opts.ReportResultsPath()),
+		QuoteForWindows(publisherPath),
+		"--analysis-id", publisher.AnalysisId,
+		"--sources-path", QuoteForWindows(publisher.ProjectDir),
+		"--report-path", QuoteForWindows(reportResultsPath),
 		"--token", token,
 	}
 	var tools []string

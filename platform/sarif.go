@@ -19,6 +19,7 @@ package platform
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/JetBrains/qodana-cli/v2024/platform/thirdpartyscan"
 	"github.com/JetBrains/qodana-cli/v2024/sarif"
 	"github.com/google/uuid"
 	bbapi "github.com/reviewdog/go-bitbucket"
@@ -46,15 +47,16 @@ const (
 	sarifNote              = "note"
 )
 
-func MergeSarifReports(options *QodanaOptions, deviceId string) (int, error) {
-	files, err := findSarifFiles(options.GetTmpResultsDir())
+func MergeSarifReports(c thirdpartyscan.Context, deviceId string) (int, error) {
+	tmpResultsDir := GetTmpResultsDir(c.ResultsDir())
+	files, err := findSarifFiles(tmpResultsDir)
 	sort.Strings(files)
 	if err != nil {
 		return 0, fmt.Errorf("Error locating SARIF files: %s\n", err)
 	}
 
 	if len(files) == 0 {
-		return 0, fmt.Errorf("No SARIF files (file names ending with .sarif.json) found in %s\n", options.GetTmpResultsDir())
+		return 0, fmt.Errorf("No SARIF files (file names ending with .sarif.json) found in %s\n", tmpResultsDir)
 	}
 
 	ch := make(chan *sarif.Report)
@@ -70,20 +72,23 @@ func MergeSarifReports(options *QodanaOptions, deviceId string) (int, error) {
 			if (location.PhysicalLocation == nil) || (location.PhysicalLocation.ArtifactLocation == nil) {
 				continue
 			}
-			toReplace := options.ProjectDir
+			toReplace := c.ProjectDir()
 			if !strings.HasSuffix(toReplace, string(os.PathSeparator)) {
 				toReplace += string(os.PathSeparator)
 			}
-			location.PhysicalLocation.ArtifactLocation.Uri = strings.TrimPrefix(location.PhysicalLocation.ArtifactLocation.Uri, toReplace)
+			location.PhysicalLocation.ArtifactLocation.Uri = strings.TrimPrefix(
+				location.PhysicalLocation.ArtifactLocation.Uri,
+				toReplace,
+			)
 		}
 	}
 	finalReport.Runs[0].Results = removeDuplicates(finalReport.Runs[0].Results)
 
-	SetVersionControlParams(options, deviceId, finalReport)
+	SetVersionControlParams(c, deviceId, finalReport)
 
 	totalProblems := len(finalReport.Runs[0].Results)
 
-	err = WriteReport(options.GetSarifPath(), finalReport)
+	err = WriteReport(GetSarifPath(c.ResultsDir()), finalReport)
 	if err != nil {
 		return 0, err
 	}
@@ -161,14 +166,9 @@ func MakeShortSarif(sarifPath string, shortSarifPath string) error {
 	return WriteReport(shortSarifPath, report)
 }
 
-func SetVersionControlParams(options *QodanaOptions, deviceId string, finalReport *sarif.Report) {
-	linterOptions := options.GetLinterSpecificOptions()
-	if linterOptions == nil {
-		log.Errorf("Error getting linter-specific options")
-		return
-	}
-	linterInfo := (*linterOptions).GetInfo(options)
-	vcd, err := GetVersionDetails(options.ProjectDir)
+func SetVersionControlParams(c thirdpartyscan.Context, deviceId string, finalReport *sarif.Report) {
+	linterInfo := c.LinterInfo()
+	vcd, err := GetVersionDetails(c.ProjectDir())
 	if err != nil {
 		log.Errorf("Error getting version control details: %s. Project is probably outside of the Git VCS.", err)
 	} else {
@@ -206,15 +206,17 @@ func SetVersionControlParams(options *QodanaOptions, deviceId string, finalRepor
 
 func findSarifFiles(root string) ([]string, error) {
 	var files []string
-	err := filepath.Walk(root, func(path string, info os.FileInfo, err error) error {
-		if err != nil {
-			return err
-		}
-		if !info.IsDir() && strings.HasSuffix(strings.ToLower(info.Name()), extension) {
-			files = append(files, path)
-		}
-		return nil
-	})
+	err := filepath.Walk(
+		root, func(path string, info os.FileInfo, err error) error {
+			if err != nil {
+				return err
+			}
+			if !info.IsDir() && strings.HasSuffix(strings.ToLower(info.Name()), extension) {
+				files = append(files, path)
+			}
+			return nil
+		},
+	)
 	if err != nil {
 		return nil, err
 	}

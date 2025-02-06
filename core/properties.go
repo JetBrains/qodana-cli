@@ -20,8 +20,8 @@ import (
 	"fmt"
 	"github.com/JetBrains/qodana-cli/v2024/cloud"
 	"github.com/JetBrains/qodana-cli/v2024/platform"
+	"github.com/JetBrains/qodana-cli/v2024/platform/product"
 	"github.com/JetBrains/qodana-cli/v2024/platform/scan"
-	"github.com/JetBrains/qodana-cli/v2024/preparehost/product"
 	log "github.com/sirupsen/logrus"
 	"os"
 	"path/filepath"
@@ -97,7 +97,8 @@ func GetCommonProperties(c scan.Context) []string {
 func GetInstallPluginsProperties(c scan.Context) []string {
 	lines := GetCommonProperties(c)
 
-	lines = append(lines,
+	lines = append(
+		lines,
 		"-Didea.headless.enable.statistics=false",
 		"-Dqodana.application=true",
 		"-Dintellij.platform.load.app.info.from.resources=true",
@@ -110,7 +111,7 @@ func GetInstallPluginsProperties(c scan.Context) []string {
 
 // GetScanProperties writes key=value `props` to file `f` having later key occurrence win
 func GetScanProperties(c scan.Context) []string {
-	yaml := c.QodanaYaml()
+	yaml := c.QodanaYaml
 	yamlProps := yaml.Properties
 	dotNetOptions := yaml.DotNet
 	plugins := getPluginIds(yaml.Plugins)
@@ -123,7 +124,10 @@ func GetScanProperties(c scan.Context) []string {
 	)
 
 	if c.JvmDebugPort > 0 {
-		lines = append(lines, fmt.Sprintf("-agentlib:jdwp=transport=dt_socket,server=y,suspend=y,address=*:%s", containerJvmDebugPort))
+		lines = append(
+			lines,
+			fmt.Sprintf("-agentlib:jdwp=transport=dt_socket,server=y,suspend=y,address=*:%s", containerJvmDebugPort),
+		)
 	}
 
 	customPluginPathsValue := getCustomPluginPaths(c.Prod)
@@ -168,7 +172,7 @@ func GetScanProperties(c scan.Context) []string {
 	return lines
 }
 
-func getCustomPluginPaths(prod *product.Product) string {
+func getCustomPluginPaths(prod product.Product) string {
 	path := prod.CustomPluginsPath()
 	if _, err := os.Stat(path); os.IsNotExist(err) {
 		return ""

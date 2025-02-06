@@ -17,19 +17,14 @@
 package scan
 
 import (
-	"bytes"
 	"fmt"
 	"github.com/JetBrains/qodana-cli/v2024/core"
 	"github.com/JetBrains/qodana-cli/v2024/platform"
-	"github.com/JetBrains/qodana-cli/v2024/preparehost/product"
-	log "github.com/sirupsen/logrus"
+	"github.com/JetBrains/qodana-cli/v2024/platform/product"
 	"math"
 	"path/filepath"
-	"reflect"
 	"strings"
-	"text/tabwriter"
 	"time"
-	"unicode"
 )
 
 const (
@@ -46,7 +41,7 @@ type Context struct {
 	Ide                       string
 	Id                        string
 	IdeDir                    string
-	Q_odanaYaml               platform.QodanaYaml
+	QodanaYaml                platform.QodanaYaml
 	Prod                      product.Product
 	QodanaToken               string
 	QodanaLicenseOnlyToken    string
@@ -90,9 +85,6 @@ type Context struct {
 	ApplyFixes                bool
 	Cleanup                   bool
 	FixesStrategy             string
-	LinterSpecific            interface{}
-	LicensePlan               string
-	ProjectIdHash             string
 	NoStatistics              bool
 	CdnetSolution             string
 	CdnetProject              string
@@ -123,8 +115,6 @@ func arrayCopy(arr []string) []string {
 	copy(newArr, arr)
 	return newArr
 }
-
-func (c Context) QodanaYaml() *platform.QodanaYaml { return &c.Q_odanaYaml }
 
 func (c Context) StartHash() (string, error) {
 	switch {
@@ -190,39 +180,4 @@ func (c Context) GetAnalysisTimeout() time.Duration {
 		return time.Duration(math.MaxInt64)
 	}
 	return time.Duration(c.AnalysisTimeoutMs) * time.Millisecond
-}
-
-func (c Context) LogOptions() {
-	buffer := new(bytes.Buffer)
-	w := new(tabwriter.Writer)
-	w.Init(buffer, 0, 8, 2, '\t', 0)
-
-	_, err := fmt.Fprintln(w, "Option\tValue\t")
-	if err != nil {
-		return
-	}
-	_, err = fmt.Fprintln(w, "------\t-----\t")
-	if err != nil {
-		return
-	}
-
-	value := reflect.ValueOf(c).Elem()
-	typeInfo := value.Type()
-
-	for i := 0; i < value.NumField(); i++ {
-		fieldType := typeInfo.Field(i)
-		if !unicode.IsUpper([]rune(fieldType.Name)[0]) {
-			continue
-		}
-		fieldValue := value.Field(i)
-		line := fmt.Sprintf("%s\t%v\t", fieldType.Name, fieldValue.Interface())
-		_, err = fmt.Fprintln(w, line)
-		if err != nil {
-			return
-		}
-	}
-	if err := w.Flush(); err != nil {
-		return
-	}
-	log.Debug(buffer.String())
 }

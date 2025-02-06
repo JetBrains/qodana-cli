@@ -186,7 +186,7 @@ func getJavaExecutablePath() (string, error) {
 }
 
 // LaunchAndLog launches a process and logs its output.
-func LaunchAndLog(opts *QodanaOptions, executable string, args ...string) (string, string, int, error) {
+func LaunchAndLog(logDir string, executable string, args ...string) (string, string, int, error) {
 	stdout, stderr, ret, err := RunCmdRedirectOutput("", args...)
 	if err != nil {
 		log.Error(fmt.Errorf("failed to run %s: %w", executable, err))
@@ -196,10 +196,10 @@ func LaunchAndLog(opts *QodanaOptions, executable string, args ...string) (strin
 	if stderr != "" {
 		_, _ = fmt.Fprintln(os.Stderr, stderr)
 	}
-	if err := AppendToFile(filepath.Join(opts.LogDirPath(), executable+"-out.log"), stdout); err != nil {
+	if err := AppendToFile(filepath.Join(logDir, executable+"-out.log"), stdout); err != nil {
 		log.Error(err)
 	}
-	if err := AppendToFile(filepath.Join(opts.LogDirPath(), executable+"-err.log"), stderr); err != nil {
+	if err := AppendToFile(filepath.Join(logDir, executable+"-err.log"), stderr); err != nil {
 		log.Error(err)
 	}
 	return stdout, stderr, ret, nil

@@ -49,7 +49,7 @@ func TestComputeCdnetArgs(t *testing.T) {
 			options: &platform.QodanaOptions{
 				Property:   []string{},
 				ResultsDir: "",
-				LinterSpecific: &CltOptions{
+				LinterSpecific: &CdnetLinter{
 					MountInfo: getTooling(),
 				},
 			},
@@ -63,26 +63,42 @@ func TestComputeCdnetArgs(t *testing.T) {
 				Property:     []string{},
 				ResultsDir:   "",
 				CdnetProject: "project",
-				LinterSpecific: &CltOptions{
+				LinterSpecific: &CdnetLinter{
 					MountInfo: getTooling(),
 				},
 			},
-			yaml:         createDefaultYaml("", "", "", ""),
-			expectedArgs: []string{"dotnet", "clt", "inspectcode", "project", "-o=\"qodana.sarif.json\"", "-f=\"Qodana\"", "--LogFolder=\"log\""},
-			expectedErr:  "",
+			yaml: createDefaultYaml("", "", "", ""),
+			expectedArgs: []string{
+				"dotnet",
+				"clt",
+				"inspectcode",
+				"project",
+				"-o=\"qodana.sarif.json\"",
+				"-f=\"Qodana\"",
+				"--LogFolder=\"log\"",
+			},
+			expectedErr: "",
 		},
 		{
 			name: "project specified in yaml",
 			options: &platform.QodanaOptions{
 				Property:   []string{},
 				ResultsDir: "",
-				LinterSpecific: &CltOptions{
+				LinterSpecific: &CdnetLinter{
 					MountInfo: getTooling(),
 				},
 			},
-			yaml:         createDefaultYaml("", "project", "", ""),
-			expectedArgs: []string{"dotnet", "clt", "inspectcode", "project", "-o=\"qodana.sarif.json\"", "-f=\"Qodana\"", "--LogFolder=\"log\""},
-			expectedErr:  "",
+			yaml: createDefaultYaml("", "project", "", ""),
+			expectedArgs: []string{
+				"dotnet",
+				"clt",
+				"inspectcode",
+				"project",
+				"-o=\"qodana.sarif.json\"",
+				"-f=\"Qodana\"",
+				"--LogFolder=\"log\"",
+			},
+			expectedErr: "",
 		},
 		{
 			name: "solution specified",
@@ -90,39 +106,64 @@ func TestComputeCdnetArgs(t *testing.T) {
 				Property:      []string{},
 				ResultsDir:    "",
 				CdnetSolution: "solution",
-				LinterSpecific: &CltOptions{
+				LinterSpecific: &CdnetLinter{
 					MountInfo: getTooling(),
 				},
 			},
-			yaml:         createDefaultYaml("", "", "", ""),
-			expectedArgs: []string{"dotnet", "clt", "inspectcode", "solution", "-o=\"qodana.sarif.json\"", "-f=\"Qodana\"", "--LogFolder=\"log\""},
-			expectedErr:  "",
+			yaml: createDefaultYaml("", "", "", ""),
+			expectedArgs: []string{
+				"dotnet",
+				"clt",
+				"inspectcode",
+				"solution",
+				"-o=\"qodana.sarif.json\"",
+				"-f=\"Qodana\"",
+				"--LogFolder=\"log\"",
+			},
+			expectedErr: "",
 		},
 		{
 			name: "solution specified",
 			options: &platform.QodanaOptions{
 				Property:   []string{},
 				ResultsDir: "",
-				LinterSpecific: &CltOptions{
+				LinterSpecific: &CdnetLinter{
 					MountInfo: getTooling(),
 				},
 			},
-			yaml:         createDefaultYaml("solution", "", "", ""),
-			expectedArgs: []string{"dotnet", "clt", "inspectcode", "solution", "-o=\"qodana.sarif.json\"", "-f=\"Qodana\"", "--LogFolder=\"log\""},
-			expectedErr:  "",
+			yaml: createDefaultYaml("solution", "", "", ""),
+			expectedArgs: []string{
+				"dotnet",
+				"clt",
+				"inspectcode",
+				"solution",
+				"-o=\"qodana.sarif.json\"",
+				"-f=\"Qodana\"",
+				"--LogFolder=\"log\"",
+			},
+			expectedErr: "",
 		},
 		{
 			name: "configuration specified in yaml",
 			options: &platform.QodanaOptions{
 				Property:   []string{},
 				ResultsDir: "",
-				LinterSpecific: &CltOptions{
+				LinterSpecific: &CdnetLinter{
 					MountInfo: getTooling(),
 				},
 			},
-			yaml:         createDefaultYaml("solution", "", "cfg", ""),
-			expectedArgs: []string{"dotnet", "clt", "inspectcode", "solution", "-o=\"qodana.sarif.json\"", "-f=\"Qodana\"", "--LogFolder=\"log\"", "--properties:Configuration=cfg"},
-			expectedErr:  "",
+			yaml: createDefaultYaml("solution", "", "cfg", ""),
+			expectedArgs: []string{
+				"dotnet",
+				"clt",
+				"inspectcode",
+				"solution",
+				"-o=\"qodana.sarif.json\"",
+				"-f=\"Qodana\"",
+				"--LogFolder=\"log\"",
+				"--properties:Configuration=cfg",
+			},
+			expectedErr: "",
 		},
 		{
 			name: "configuration specified",
@@ -130,26 +171,44 @@ func TestComputeCdnetArgs(t *testing.T) {
 				Property:           []string{},
 				ResultsDir:         "",
 				CdnetConfiguration: "cfg",
-				LinterSpecific: &CltOptions{
+				LinterSpecific: &CdnetLinter{
 					MountInfo: getTooling(),
 				},
 			},
-			yaml:         createDefaultYaml("solution", "", "", ""),
-			expectedArgs: []string{"dotnet", "clt", "inspectcode", "solution", "-o=\"qodana.sarif.json\"", "-f=\"Qodana\"", "--LogFolder=\"log\"", "--properties:Configuration=cfg"},
-			expectedErr:  "",
+			yaml: createDefaultYaml("solution", "", "", ""),
+			expectedArgs: []string{
+				"dotnet",
+				"clt",
+				"inspectcode",
+				"solution",
+				"-o=\"qodana.sarif.json\"",
+				"-f=\"Qodana\"",
+				"--LogFolder=\"log\"",
+				"--properties:Configuration=cfg",
+			},
+			expectedErr: "",
 		},
 		{
 			name: "platform specified in cfg",
 			options: &platform.QodanaOptions{
 				Property:   []string{},
 				ResultsDir: "",
-				LinterSpecific: &CltOptions{
+				LinterSpecific: &CdnetLinter{
 					MountInfo: getTooling(),
 				},
 			},
-			yaml:         createDefaultYaml("solution", "", "", "x64"),
-			expectedArgs: []string{"dotnet", "clt", "inspectcode", "solution", "-o=\"qodana.sarif.json\"", "-f=\"Qodana\"", "--LogFolder=\"log\"", "--properties:Platform=x64"},
-			expectedErr:  "",
+			yaml: createDefaultYaml("solution", "", "", "x64"),
+			expectedArgs: []string{
+				"dotnet",
+				"clt",
+				"inspectcode",
+				"solution",
+				"-o=\"qodana.sarif.json\"",
+				"-f=\"Qodana\"",
+				"--LogFolder=\"log\"",
+				"--properties:Platform=x64",
+			},
+			expectedErr: "",
 		},
 		{
 			name: "platform specified",
@@ -157,13 +216,22 @@ func TestComputeCdnetArgs(t *testing.T) {
 				Property:      []string{},
 				ResultsDir:    "",
 				CdnetPlatform: "x64",
-				LinterSpecific: &CltOptions{
+				LinterSpecific: &CdnetLinter{
 					MountInfo: getTooling(),
 				},
 			},
-			yaml:         createDefaultYaml("solution", "", "", ""),
-			expectedArgs: []string{"dotnet", "clt", "inspectcode", "solution", "-o=\"qodana.sarif.json\"", "-f=\"Qodana\"", "--LogFolder=\"log\"", "--properties:Platform=x64"},
-			expectedErr:  "",
+			yaml: createDefaultYaml("solution", "", "", ""),
+			expectedArgs: []string{
+				"dotnet",
+				"clt",
+				"inspectcode",
+				"solution",
+				"-o=\"qodana.sarif.json\"",
+				"-f=\"Qodana\"",
+				"--LogFolder=\"log\"",
+				"--properties:Platform=x64",
+			},
+			expectedErr: "",
 		},
 		{
 			name: "many options",
@@ -172,13 +240,22 @@ func TestComputeCdnetArgs(t *testing.T) {
 				ResultsDir:         "",
 				CdnetPlatform:      "x64",
 				CdnetConfiguration: "Debug",
-				LinterSpecific: &CltOptions{
+				LinterSpecific: &CdnetLinter{
 					MountInfo: getTooling(),
 				},
 			},
-			yaml:         createDefaultYaml("solution", "", "", ""),
-			expectedArgs: []string{"dotnet", "clt", "inspectcode", "solution", "-o=\"qodana.sarif.json\"", "-f=\"Qodana\"", "--LogFolder=\"log\"", "--properties:prop1=val1;prop2=val2;Configuration=Debug;Platform=x64"},
-			expectedErr:  "",
+			yaml: createDefaultYaml("solution", "", "", ""),
+			expectedArgs: []string{
+				"dotnet",
+				"clt",
+				"inspectcode",
+				"solution",
+				"-o=\"qodana.sarif.json\"",
+				"-f=\"Qodana\"",
+				"--LogFolder=\"log\"",
+				"--properties:prop1=val1;prop2=val2;Configuration=Debug;Platform=x64",
+			},
+			expectedErr: "",
 		},
 		{
 			name: "no-build",
@@ -186,51 +263,78 @@ func TestComputeCdnetArgs(t *testing.T) {
 				Property:     []string{},
 				ResultsDir:   "",
 				CdnetNoBuild: true,
-				LinterSpecific: &CltOptions{
+				LinterSpecific: &CdnetLinter{
 					MountInfo: getTooling(),
 				},
 			},
-			yaml:         createDefaultYaml("solution", "", "", ""),
-			expectedArgs: []string{"dotnet", "clt", "inspectcode", "solution", "-o=\"qodana.sarif.json\"", "-f=\"Qodana\"", "--LogFolder=\"log\"", "--no-build"},
-			expectedErr:  "",
+			yaml: createDefaultYaml("solution", "", "", ""),
+			expectedArgs: []string{
+				"dotnet",
+				"clt",
+				"inspectcode",
+				"solution",
+				"-o=\"qodana.sarif.json\"",
+				"-f=\"Qodana\"",
+				"--LogFolder=\"log\"",
+				"--no-build",
+			},
+			expectedErr: "",
 		},
 		{
 			name: "TeamCity args ignored",
 			options: &platform.QodanaOptions{
-				Property:   []string{"log.project.structure.changes=true", "idea.log.config.file=warn.xml", "qodana.default.file.suspend.threshold=100000", "qodana.default.module.suspend.threshold=100000", "qodana.default.project.suspend.threshold=100000", "idea.diagnostic.opentelemetry.file=/data/results/log/open-telemetry.json", "jetbrains.security.package-checker.synchronizationTimeout=1000"},
+				Property: []string{
+					"log.project.structure.changes=true",
+					"idea.log.config.file=warn.xml",
+					"qodana.default.file.suspend.threshold=100000",
+					"qodana.default.module.suspend.threshold=100000",
+					"qodana.default.project.suspend.threshold=100000",
+					"idea.diagnostic.opentelemetry.file=/data/results/log/open-telemetry.json",
+					"jetbrains.security.package-checker.synchronizationTimeout=1000",
+				},
 				ResultsDir: "",
-				LinterSpecific: &CltOptions{
+				LinterSpecific: &CdnetLinter{
 					MountInfo: getTooling(),
 				},
 			},
-			yaml:         createDefaultYaml("solution", "", "", ""),
-			expectedArgs: []string{"dotnet", "clt", "inspectcode", "solution", "-o=\"qodana.sarif.json\"", "-f=\"Qodana\"", "--LogFolder=\"log\""},
-			expectedErr:  "",
+			yaml: createDefaultYaml("solution", "", "", ""),
+			expectedArgs: []string{
+				"dotnet",
+				"clt",
+				"inspectcode",
+				"solution",
+				"-o=\"qodana.sarif.json\"",
+				"-f=\"Qodana\"",
+				"--LogFolder=\"log\"",
+			},
+			expectedErr: "",
 		},
 	}
 
 	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			options := &LocalOptions{tt.options}
-			args, err := options.GetCltOptions().computeCdnetArgs(tt.options, options, tt.yaml)
-			logDir := options.LogDirPath()
-			if platform.Contains(tt.expectedArgs, "--LogFolder=\"log\"") {
-				for i, arg := range tt.expectedArgs {
-					if arg == "--LogFolder=\"log\"" {
-						tt.expectedArgs[i] = "--LogFolder=\"" + logDir + "\""
+		t.Run(
+			tt.name, func(t *testing.T) {
+				options := &LocalOptions{tt.options}
+				args, err := options.GetCltOptions().computeCdnetArgs(tt.options, options, tt.yaml)
+				logDir := options.LogDirPath()
+				if platform.Contains(tt.expectedArgs, "--LogFolder=\"log\"") {
+					for i, arg := range tt.expectedArgs {
+						if arg == "--LogFolder=\"log\"" {
+							tt.expectedArgs[i] = "--LogFolder=\"" + logDir + "\""
+						}
 					}
+
 				}
 
-			}
-
-			if tt.expectedErr != "" {
-				assert.NotNil(t, err)
-				assert.Equal(t, tt.expectedErr, err.Error())
-			} else {
-				assert.Nil(t, err)
-				assert.Equal(t, tt.expectedArgs, args)
-			}
-		})
+				if tt.expectedErr != "" {
+					assert.NotNil(t, err)
+					assert.Equal(t, tt.expectedErr, err.Error())
+				} else {
+					assert.Nil(t, err)
+					assert.Equal(t, tt.expectedArgs, args)
+				}
+			},
+		)
 	}
 }
 
@@ -337,18 +441,22 @@ func TestGetArgsThirdPartyLinters(t *testing.T) {
 	}
 
 	for _, tt := range cases {
-		t.Run(tt.name, func(t *testing.T) {
-			if tt.options.Ide != "" {
-				preparehost.Prod.Code = tt.options.Ide
-			}
+		t.Run(
+			tt.name, func(t *testing.T) {
+				if tt.options.Ide != "" {
+					preparehost.Prod.Code = tt.options.Ide
+				}
 
-			actual := core.GetIdeArgs(&core.QodanaOptions{QodanaOptions: tt.options})
-			if !reflect.DeepEqual(tt.expected, actual) {
-				t.Fatalf("expected \"%s\" got \"%s\"", tt.expected, actual)
-			}
-		})
+				actual := core.GetIdeArgs(&core.QodanaOptions{QodanaOptions: tt.options})
+				if !reflect.DeepEqual(tt.expected, actual) {
+					t.Fatalf("expected \"%s\" got \"%s\"", tt.expected, actual)
+				}
+			},
+		)
 	}
-	t.Cleanup(func() {
-		preparehost.Prod.Code = ""
-	})
+	t.Cleanup(
+		func() {
+			preparehost.Prod.Code = ""
+		},
+	)
 }

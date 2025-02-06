@@ -156,8 +156,8 @@ func filterByLicensePlan(codes []string, token string) []string {
 	return codes
 }
 
-// GetDotNetConfig gets .NET config for the given path and saves configName
-func GetDotNetConfig(projectDir string, yamlName string) bool {
+// GetAndSaveDotNetConfig gets .NET config for the given path and saves configName
+func GetAndSaveDotNetConfig(projectDir string, yamlName string) bool {
 	possibleOptions := FindFiles(projectDir, []string{".sln", ".csproj", ".vbproj", ".fsproj"})
 	if len(possibleOptions) <= 1 {
 		return false

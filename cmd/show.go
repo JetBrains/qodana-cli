@@ -19,14 +19,15 @@ package cmd
 import (
 	"github.com/JetBrains/qodana-cli/v2024/core"
 	"github.com/JetBrains/qodana-cli/v2024/platform"
+	"github.com/JetBrains/qodana-cli/v2024/platform/startup"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
+	"os"
 )
 
 // newShowCommand returns a new instance of the show command.
 func newShowCommand() *cobra.Command {
-	options := &platform.QodanaOptions{}
-	openDir := false
+	cliOptions := &showOptions{}
 	cmd := &cobra.Command{
 		Use:   "show",
 		Short: "Show a Qodana report",
@@ -37,28 +38,66 @@ be viewed via the file:// protocol (by double-clicking the index.html file).
 https://www.jetbrains.com/help/qodana/html-report.html
 This command serves the Qodana report locally and opens a browser to it.`,
 		Run: func(cmd *cobra.Command, args []string) {
-			options.FetchAnalyzerSettings()
-			if openDir {
-				err := core.OpenDir(options.ResultsDir)
+			startupArgs := startup.ComputeArgs(
+				cliOptions.Linter,
+				"",
+				"",
+				cliOptions.ResultsDir,
+				cliOptions.ReportDir,
+				os.Getenv(platform.QodanaToken),
+				os.Getenv(platform.QodanaLicenseOnlyToken),
+				false,
+				cliOptions.ProjectDir,
+				cliOptions.ConfigName,
+			)
+			if cliOptions.OpenDir {
+				err := core.OpenDir(startupArgs.ResultsDir)
 				if err != nil {
 					log.Fatal(err)
 				}
 			} else {
 				platform.ShowReport(
-					options.ResultsDir,
-					options.ReportDir,
-					options.Port,
+					startupArgs.ResultsDir,
+					startupArgs.ReportDir,
+					cliOptions.Port,
 				)
 			}
 		},
 	}
 	flags := cmd.Flags()
-	flags.StringVarP(&options.Linter, "linter", "l", "", "Override linter to use")
-	flags.StringVarP(&options.ProjectDir, "project-dir", "i", ".", "Root directory of the inspected project")
-	flags.StringVarP(&options.ResultsDir, "results-dir", "o", "", "Override directory to save Qodana inspection results to (default <userCacheDir>/JetBrains/<linter>/results)")
-	flags.StringVarP(&options.ReportDir, "report-dir", "r", "", "Override directory to save Qodana HTML report to (default <userCacheDir>/JetBrains/<linter>/results/report)")
-	flags.IntVarP(&options.Port, "port", "p", 8080, "Specify port to serve report at")
-	flags.BoolVarP(&openDir, "dir-only", "d", false, "Open report directory only, don't serve it")
-	flags.StringVar(&options.ConfigName, "config", "", "Set a custom configuration file instead of 'qodana.yaml'. Relative paths in the configuration will be based on the project directory.")
+	flags.StringVarP(&cliOptions.Linter, "linter", "l", "", "Override linter to use")
+	flags.StringVarP(&cliOptions.ProjectDir, "project-dir", "i", ".", "Root directory of the inspected project")
+	flags.StringVarP(
+		&cliOptions.ResultsDir,
+		"results-dir",
+		"o",
+		"",
+		"Override directory to save Qodana inspection results to (default <userCacheDir>/JetBrains/<linter>/results)",
+	)
+	flags.StringVarP(
+		&cliOptions.ReportDir,
+		"report-dir",
+		"r",
+		"",
+		"Override directory to save Qodana HTML report to (default <userCacheDir>/JetBrains/<linter>/results/report)",
+	)
+	flags.IntVarP(&cliOptions.Port, "port", "p", 8080, "Specify port to serve report at")
+	flags.BoolVarP(&cliOptions.OpenDir, "dir-only", "d", false, "Open report directory only, don't serve it")
+	flags.StringVar(
+		&cliOptions.ConfigName,
+		"config",
+		"",
+		"Set a custom configuration file instead of 'qodana.yaml'. Relative paths in the configuration will be based on the project directory.",
+	)
 	return cmd
+}
+
+type showOptions struct {
+	Linter     string
+	ProjectDir string
+	ResultsDir string
+	ReportDir  string
+	Port       int
+	OpenDir    bool
+	ConfigName string
 }

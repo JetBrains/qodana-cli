@@ -19,24 +19,38 @@ package cmd
 import (
 	"github.com/JetBrains/qodana-cli/v2024/core"
 	"github.com/JetBrains/qodana-cli/v2024/platform"
+	"github.com/JetBrains/qodana-cli/v2024/platform/startup"
 	"github.com/docker/docker/client"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
+	"os"
 )
 
 // newPullCommand returns a new instance of the show command.
 func newPullCommand() *cobra.Command {
-	options := &platform.QodanaOptions{}
+	cliOptions := &pullOptions{}
 	cmd := &cobra.Command{
 		Use:   "pull",
 		Short: "Pull latest version of linter",
 		Long:  `An alternative to pull an image.`,
 		Run: func(cmd *cobra.Command, args []string) {
-			if options.ConfigName == "" {
-				options.ConfigName = platform.FindQodanaYaml(options.ProjectDir)
+			if cliOptions.ConfigName == "" {
+				cliOptions.ConfigName = platform.FindDefaultQodanaYaml(cliOptions.ProjectDir)
 			}
-			options.FetchAnalyzerSettings()
-			if options.Ide != "" {
+
+			startupArgs := startup.ComputeArgs(
+				cliOptions.Linter,
+				"",
+				"",
+				"",
+				"",
+				os.Getenv(platform.QodanaToken),
+				os.Getenv(platform.QodanaLicenseOnlyToken),
+				false,
+				cliOptions.ProjectDir,
+				cliOptions.ConfigName,
+			)
+			if startupArgs.Ide != "" {
 				log.Println("Native mode is used, skipping pull")
 			} else {
 				core.PrepareContainerEnvSettings()
@@ -44,13 +58,24 @@ func newPullCommand() *cobra.Command {
 				if err != nil {
 					log.Fatal("couldn't connect to container engine ", err)
 				}
-				core.PullImage(containerClient, options.Linter)
+				core.PullImage(containerClient, startupArgs.Linter)
 			}
 		},
 	}
 	flags := cmd.Flags()
-	flags.StringVarP(&options.Linter, "linter", "l", "", "Override linter to use")
-	flags.StringVarP(&options.ProjectDir, "project-dir", "i", ".", "Root directory of the inspected project")
-	flags.StringVar(&options.ConfigName, "config", "", "Set a custom configuration file instead of 'qodana.yaml'. Relative paths in the configuration will be based on the project directory.")
+	flags.StringVarP(&cliOptions.Linter, "linter", "l", "", "Override linter to use")
+	flags.StringVarP(&cliOptions.ProjectDir, "project-dir", "i", ".", "Root directory of the inspected project")
+	flags.StringVar(
+		&cliOptions.ConfigName,
+		"config",
+		"",
+		"Set a custom configuration file instead of 'qodana.yaml'. Relative paths in the configuration will be based on the project directory.",
+	)
 	return cmd
+}
+
+type pullOptions struct {
+	Linter     string
+	ProjectDir string
+	ConfigName string
 }

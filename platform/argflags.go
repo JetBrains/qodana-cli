@@ -39,8 +39,8 @@ func ComputeFlags(cmd *cobra.Command, options *QodanaOptions) error {
 	flags.StringVarP(&options.ReportDir, "report-dir", "r", "", "Override directory to save Qodana HTML report to (default <userCacheDir>/JetBrains/<linter>/results/report)")
 
 	flags.BoolVar(&options.PrintProblems, "print-problems", false, "Print all found problems by Qodana in the CLI output")
-	flags.BoolVar(&options.GenerateCodeClimateReport, "code-climate", isGitLab(), "Generate a code Climate report in SARIF format (compatible with GitLab code Quality), will be saved to the results directory (default true if Qodana is executed on GitLab CI)")
-	flags.BoolVar(&options.SendBitBucketInsights, "bitbucket-insights", isBitBucket(), "Send the results BitBucket code Insights, no additional configuration required if ran in BitBucket Pipelines (default true if Qodana is executed on BitBucket Pipelines)")
+	flags.BoolVar(&options.GenerateCodeClimateReport, "code-climate", IsGitLab(), "Generate a code Climate report in SARIF format (compatible with GitLab code Quality), will be saved to the results directory (default true if Qodana is executed on GitLab CI)")
+	flags.BoolVar(&options.SendBitBucketInsights, "bitbucket-insights", IsBitBucket(), "Send the results BitBucket code Insights, no additional configuration required if ran in BitBucket Pipelines (default true if Qodana is executed on BitBucket Pipelines)")
 	flags.BoolVar(&options.ClearCache, "clear-cache", false, "Clear the local Qodana cache before running the analysis")
 	flags.BoolVarP(&options.ShowReport, "show-report", "w", false, "Serve HTML report on port")
 	flags.IntVar(&options.Port, "port", 8080, "Port to serve the report on")
@@ -77,7 +77,7 @@ func ComputeFlags(cmd *cobra.Command, options *QodanaOptions) error {
 
 	flags.IntVar(&options.JvmDebugPort, "jvm-debug-port", -1, "Enable JVM remote debug under given port")
 
-	flags.BoolVar(&options.NoStatistics, "no-statistics", false, "[qodana-clang/qodana-dotner]Disable sending anonymous statistics")
+	flags.BoolVar(&options.NoStatistics, "no-statistics", false, "[qodana-clang/qodana-cdnet]Disable sending anonymous statistics")
 	flags.StringVar(&options.ClangCompileCommands, "compile-commands", "./build/compile_commands.json", "[qodana-clang specific] Path to compile_commands.json")
 	flags.StringVar(&options.ClangArgs, "clang-args", "", "[qodana-clang specific] Additional arguments for clang")
 	flags.StringVar(&options.CdnetSolution, "solution", "", "[qodana-cdnet specific] Relative path to solution file")
