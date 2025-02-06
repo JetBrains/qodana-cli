@@ -38,16 +38,18 @@ func TestLinterRun(t *testing.T) {
 	outputDir := filepath.Join(os.TempDir(), "cdnet-output")
 	defer deferredCleanup(outputDir)
 
-	options := platform.DefineOptions(func() platform.ThirdPartyOptions {
-		return &CltOptions{
-			LinterInfo: &platform.LinterInfo{
-				ProductCode:   productCode,
-				LinterName:    linterName,
-				LinterVersion: "2023.3",
-				IsEap:         true,
-			},
-		}
-	})
+	options := platform.DefineOptions(
+		func() platform.ThirdPartyLinter {
+			return &CdnetLinter{
+				LinterInfo: &platform.LinterInfo{
+					ProductCode:   productCode,
+					LinterName:    linterName,
+					LinterVersion: "2023.3",
+					IsEap:         true,
+				},
+			}
+		},
+	)
 
 	command := platformcmd.NewScanCommand(options)
 	command.SetArgs([]string{"-i", projectPath, "-o", outputDir, "--no-build"})

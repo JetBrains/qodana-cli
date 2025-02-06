@@ -23,7 +23,7 @@ import (
 	"fmt"
 	"github.com/JetBrains/qodana-cli/v2024/platform"
 	"github.com/JetBrains/qodana-cli/v2024/platform/scan"
-	startup "github.com/JetBrains/qodana-cli/v2024/preparehost"
+	"github.com/JetBrains/qodana-cli/v2024/platform/startup"
 	cienvironment "github.com/cucumber/ci-environment/go"
 	"github.com/docker/docker/client"
 	"io"
@@ -48,7 +48,10 @@ var (
 
 // CheckForUpdates check GitHub https://github.com/JetBrains/qodana-cli/ for the latest version of CLI release.
 func CheckForUpdates(currentVersion string) {
-	if currentVersion == "dev" || strings.HasSuffix(currentVersion, "nightly") || platform.IsContainer() || cienvironment.DetectCIEnvironment() != nil || DisableCheckUpdates {
+	if currentVersion == "dev" || strings.HasSuffix(
+		currentVersion,
+		"nightly",
+	) || platform.IsContainer() || cienvironment.DetectCIEnvironment() != nil || DisableCheckUpdates {
 		return
 	}
 	latestVersion := getLatestVersion()
@@ -122,7 +125,7 @@ func IsHomeDirectory(path string) bool {
 // RunAnalysis runs the linter with the given options.
 func RunAnalysis(ctx context.Context, c scan.Context) int {
 	log.Debug("Running analysis with options")
-	c.LogOptions()
+	platform.LogContext(c)
 
 	if !IsInstalled("git") && (c.FullHistory || c.Commit != "" || c.DiffStart != "" || c.DiffEnd != "") {
 		log.Fatal("Cannot use git related functionality without a git executable")
@@ -139,7 +142,10 @@ func RunAnalysis(ctx context.Context, c scan.Context) int {
 
 	scenario := c.DetermineRunScenario(startHash != "")
 	if scenario != scan.RunScenarioDefault && !platform.GitRevisionExists(c.ProjectDir, startHash, c.LogDir) {
-		platform.WarningMessageCI("Cannot run analysis for commit %s because it doesn't exist in the repository. Check that you retrieve the full git history before running Qodana.", startHash)
+		platform.WarningMessageCI(
+			"Cannot run analysis for commit %s because it doesn't exist in the repository. Check that you retrieve the full git history before running Qodana.",
+			startHash,
+		)
 		scenario = scan.RunScenarioDefault
 
 		// backoff to regular analysis
@@ -154,7 +160,7 @@ func RunAnalysis(ctx context.Context, c scan.Context) int {
 	installPlugins(c)
 	// this way of running needs to do bootstrap twice on different commits and will do it internally
 	if scenario != scan.RunScenarioScoped && c.Ide != "" {
-		platform.Bootstrap(c.QodanaYaml().Bootstrap, c.ProjectDir)
+		platform.Bootstrap(c.QodanaYaml.Bootstrap, c.ProjectDir)
 	}
 	switch scenario {
 	case scan.RunScenarioFullHistory:
@@ -211,9 +217,6 @@ func runWithFullHistory(ctx context.Context, c scan.Context, startHash string) i
 		log.Fatal("Please check that project is located within the Git repo")
 	}
 
-	c = c.WithEnv(platform.QodanaRemoteUrl, remoteUrl)
-	c = c.WithEnv(platform.QodanaBranch, branch)
-
 	err = platform.GitClean(c.ProjectDir, c.LogDir)
 	if err != nil {
 		log.Fatal(err)
@@ -235,7 +238,12 @@ func runWithFullHistory(ctx context.Context, c scan.Context, startHash string) i
 
 	for _, revision := range revisions {
 		counter++
-		contextForAnalysis := c.WithEnv(platform.QodanaRevision, revision)
+
+		contextForAnalysis := c.
+			WithEnvOverride(platform.QodanaRemoteUrl, remoteUrl).
+			WithEnvOverride(platform.QodanaBranch, branch).
+			WithEnvOverride(platform.QodanaRevision, revision)
+
 		platform.WarningMessage("[%d/%d] Running analysis for revision %s", counter+1, allCommits, revision)
 		err = platform.GitCheckout(c.ProjectDir, revision, true, c.LogDir)
 		if err != nil {
@@ -280,18 +288,13 @@ func runScopeScript(ctx context.Context, c scan.Context, startHash string) int {
 			log.Fatalf("Cannot checkout commit %s: %v", hash, e)
 		}
 
-		startup.PrepareDirectories(
-			c.Prod,
-			c.CacheDir,
-			c.LogDir,
-			c.ConfigDir,
-		)
+		startup.PrepareDirectories(c.Prod, c.CacheDir, c.LogDir, c.ConfigDir)
 		log.Infof("Analysing %s", hash)
 
 		configAtHash, e := platform.GetQodanaYaml(c.ProjectDir)
 		if e != nil {
 			log.Warnf("Could not read qodana yaml at %s: %v. Using last known config", hash, e)
-			configAtHash = *c.QodanaYaml()
+			configAtHash = c.QodanaYaml
 		}
 		platform.Bootstrap(configAtHash.Bootstrap, c.ProjectDir)
 
@@ -487,7 +490,21 @@ func saveReport(c scan.Context) {
 		return
 	}
 	log.Println("Generating HTML report ...")
-	if res, err := platform.RunCmd("", platform.QuoteForWindows(prod.JbrJava()), "-jar", platform.QuoteForWindows(reportConverter), "-s", platform.QuoteForWindows(c.ProjectDir), "-d", platform.QuoteForWindows(c.ResultsDir), "-o", platform.QuoteForWindows(platform.ReportResultsPath(c.ReportDir)), "-n", "result-allProblems.json", "-f"); res > 0 || err != nil {
+	if res, err := platform.RunCmd(
+		"",
+		platform.QuoteForWindows(prod.JbrJava()),
+		"-jar",
+		platform.QuoteForWindows(reportConverter),
+		"-s",
+		platform.QuoteForWindows(c.ProjectDir),
+		"-d",
+		platform.QuoteForWindows(c.ResultsDir),
+		"-o",
+		platform.QuoteForWindows(platform.ReportResultsPath(c.ReportDir)),
+		"-n",
+		"result-allProblems.json",
+		"-f",
+	); res > 0 || err != nil {
 		os.Exit(res)
 	}
 	err := platform.CopyDir(filepath.Join(prod.Home, "web"), c.ReportDir)

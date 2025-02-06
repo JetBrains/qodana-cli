@@ -16,15 +16,5 @@
 
 package platform
 
-import (
-	"github.com/JetBrains/qodana-cli/v2024/platform/tokenloader"
-)
-
-func (o *QodanaOptions) LoadToken(refresh bool, requiresToken bool, interactive bool) string {
-	return tokenloader.LoadCloudToken(o.AsInitOptions(), refresh, requiresToken, interactive)
-}
-
-// ValidateToken checks if QODANA_TOKEN is set in CLI args, or environment or the system keyring, returns its value.
-func (o *QodanaOptions) ValidateToken(refresh bool) string {
-	return tokenloader.ValidateToken(o.AsInitOptions(), refresh)
-}
+const Clang = "clang"
+const Clt = "clt"

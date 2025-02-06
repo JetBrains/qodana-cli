@@ -71,15 +71,17 @@ func TestMergeSarifReports(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	opts := DefineOptions(func() ThirdPartyOptions {
-		return &TestOptions{
-			linterInfo: &LinterInfo{
-				ProductCode:   toolCode,
-				LinterName:    toolDesc,
-				LinterVersion: "",
-			},
-		}
-	})
+	opts := DefineOptions(
+		func() ThirdPartyLinter {
+			return &TestOptions{
+				linterInfo: &LinterInfo{
+					ProductCode:   toolCode,
+					LinterName:    toolDesc,
+					LinterVersion: "",
+				},
+			}
+		},
+	)
 	opts.ResultsDir = dir
 	opts.ProjectDir = dir
 	_, err = MergeSarifReports(opts, "01234")

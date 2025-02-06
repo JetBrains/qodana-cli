@@ -19,45 +19,17 @@ package main
 import (
 	"fmt"
 	"github.com/JetBrains/qodana-cli/v2024/platform"
+	"github.com/JetBrains/qodana-cli/v2024/platform/thirdpartyscan"
 	"strings"
 )
 
-type LocalOptions struct {
-	*platform.QodanaOptions
-}
-
-type CltOptions struct {
-	MountInfo  *platform.MountInfo
-	LinterInfo *platform.LinterInfo
-}
-
-func (o *CltOptions) GetMountInfo() *platform.MountInfo {
-	if o.MountInfo == nil {
-		o.MountInfo = &platform.MountInfo{}
-		o.MountInfo.CustomTools = make(map[string]string)
-	}
-	return o.MountInfo
-}
-
-func (o *CltOptions) GetInfo(_ *platform.QodanaOptions) *platform.LinterInfo {
-	// todo: vary by release
-	return o.LinterInfo
-}
-
-func (o *LocalOptions) GetCltOptions() *CltOptions {
-	if v, ok := o.LinterSpecific.(*CltOptions); ok {
-		return v
-	}
-	return &CltOptions{}
-}
-
-func (o *CltOptions) computeCdnetArgs(opts *platform.QodanaOptions, options *LocalOptions, yaml *platform.QodanaYaml) ([]string, error) {
-	target := getSolutionOrProject(options, yaml)
+func (l CdnetLinter) computeCdnetArgs(c thirdpartyscan.Context) ([]string, error) {
+	target := getSolutionOrProject(c)
 	if target == "" {
 		return nil, fmt.Errorf("solution/project relative file path is not specified. Use --solution or --project flags or create qodana.yaml file with respective fields")
 	}
 	var props = ""
-	for _, p := range opts.Property {
+	for _, p := range c.Property() {
 		if strings.HasPrefix(p, "log.") ||
 			strings.HasPrefix(p, "idea.") ||
 			strings.HasPrefix(p, "qodana.") ||
@@ -69,57 +41,61 @@ func (o *CltOptions) computeCdnetArgs(opts *platform.QodanaOptions, options *Loc
 		}
 		props += p
 	}
-	if options.CdnetConfiguration != "" {
+	if c.CdnetConfiguration() != "" {
 		if props != "" {
 			props += ";"
 		}
-		props += "Configuration=" + options.CdnetConfiguration
-	} else if yaml.DotNet.Configuration != "" {
+		props += "Configuration=" + c.CdnetConfiguration()
+	} else if c.QodanaYaml().DotNet.Configuration != "" {
 		if props != "" {
 			props += ";"
 		}
-		props += "Configuration=" + yaml.DotNet.Configuration
+		props += "Configuration=" + c.QodanaYaml().DotNet.Configuration
 	}
-	if options.CdnetPlatform != "" {
+	if c.CdnetPlatform() != "" {
 		if props != "" {
 			props += ";"
 		}
-		props += "Platform=" + options.CdnetPlatform
-	} else if yaml.DotNet.Platform != "" {
+		props += "Platform=" + c.CdnetPlatform()
+	} else if c.QodanaYaml().DotNet.Platform != "" {
 		if props != "" {
 			props += ";"
 		}
-		props += "Platform=" + yaml.DotNet.Platform
+		props += "Platform=" + c.QodanaYaml().DotNet.Platform
 	}
-	mountInfo := o.GetMountInfo()
-	if mountInfo == nil {
-		return nil, fmt.Errorf("mount info is not set")
-	}
+	mountInfo := c.MountInfo()
+
+	sarifPath := platform.GetSarifPath(c.ResultsDir())
 
 	args := []string{
 		"dotnet",
-		platform.QuoteForWindows(mountInfo.CustomTools["clt"]),
+		platform.QuoteForWindows(mountInfo.CustomTools[platform.Clt]),
 		"inspectcode",
 		platform.QuoteForWindows(target),
-		"-o=\"" + options.GetSarifPath() + "\"",
+		"-o=\"" + sarifPath + "\"",
 		"-f=\"Qodana\"",
-		"--LogFolder=\"" + options.LogDirPath() + "\"",
+		"--LogFolder=\"" + c.LogDir() + "\"",
 	}
 	if props != "" {
 		args = append(args, "--properties:"+props)
 	}
-	if options.NoStatistics {
+	if c.NoStatistics() {
 		args = append(args, "--telemetry-optout")
 	}
-	if options.CdnetNoBuild {
+	if c.CdnetNoBuild() {
 		args = append(args, "--no-build")
 	}
 	return args, nil
 }
 
-func getSolutionOrProject(options *LocalOptions, yaml *platform.QodanaYaml) string {
+func getSolutionOrProject(c thirdpartyscan.Context) string {
 	var target = ""
-	paths := [4]string{options.CdnetSolution, options.CdnetProject, yaml.DotNet.Solution, yaml.DotNet.Project}
+	paths := [4]string{
+		c.CdnetSolution(),
+		c.CdnetProject(),
+		c.QodanaYaml().DotNet.Solution,
+		c.QodanaYaml().DotNet.Project,
+	}
 	for _, path := range paths {
 		if path != "" {
 			target = path

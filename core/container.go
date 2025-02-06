@@ -240,7 +240,10 @@ func PullImage(client *client.Client, image string) {
 
 func isDockerUnauthorizedError(errMsg string) bool {
 	errMsg = platform.Lower(errMsg)
-	return strings.Contains(errMsg, "unauthorized") || strings.Contains(errMsg, "denied") || strings.Contains(errMsg, "forbidden")
+	return strings.Contains(errMsg, "unauthorized") || strings.Contains(errMsg, "denied") || strings.Contains(
+		errMsg,
+		"forbidden",
+	)
 }
 
 // PullImage pulls docker image.
@@ -321,7 +324,8 @@ func CheckContainerEngineMemory() {
 	log.Debug("Docker memory limit is set to ", info.MemTotal/1024/1024, " MB")
 
 	if info.MemTotal < 4*1024*1024*1024 {
-		platform.WarningMessage(`The container daemon is running with less than 4GB of RAM.
+		platform.WarningMessage(
+			`The container daemon is running with less than 4GB of RAM.
    If you experience issues, consider increasing the container runtime memory limit.
    Refer to %s for more information.
 `,
@@ -334,7 +338,7 @@ func CheckContainerEngineMemory() {
 func getDockerOptions(c scan.Context) *backend.ContainerCreateConfig {
 	cmdOpts := GetIdeArgs(c)
 
-	updateScanContextEnv := func(key string, value string) { c = c.WithEnv(key, value) }
+	updateScanContextEnv := func(key string, value string) { c = c.WithEnvNoOverride(key, value) }
 	platform.ExtractQodanaEnvironment(updateScanContextEnv)
 
 	cachePath, err := filepath.Abs(c.CacheDir)
@@ -373,11 +377,13 @@ func getDockerOptions(c scan.Context) *backend.ContainerCreateConfig {
 	for _, volume := range c.Volumes() {
 		source, target := extractDockerVolumes(volume)
 		if source != "" && target != "" {
-			volumes = append(volumes, mount.Mount{
-				Type:   mount.TypeBind,
-				Source: source,
-				Target: target,
-			})
+			volumes = append(
+				volumes, mount.Mount{
+					Type:   mount.TypeBind,
+					Source: source,
+					Target: target,
+				},
+			)
 		} else {
 			log.Fatal("couldn't parse volume ", volume)
 		}
@@ -457,7 +463,10 @@ func generateDebugDockerRunCommand(cfg *backend.ContainerCreateConfig) string {
 		cmdBuilder.WriteString(fmt.Sprintf("-u %s ", cfg.Config.User))
 	}
 	for _, env := range cfg.Config.Env {
-		if !strings.Contains(env, platform.QodanaToken) || strings.Contains(env, platform.QodanaLicense) || strings.Contains(env, platform.QodanaLicenseOnlyToken) {
+		if !strings.Contains(env, platform.QodanaToken) || strings.Contains(
+			env,
+			platform.QodanaLicense,
+		) || strings.Contains(env, platform.QodanaLicenseOnlyToken) {
 			cmdBuilder.WriteString(fmt.Sprintf("-e %s ", env))
 		}
 	}

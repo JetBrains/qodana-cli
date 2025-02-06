@@ -19,7 +19,7 @@ package core
 import (
 	"github.com/JetBrains/qodana-cli/v2024/platform"
 	"github.com/JetBrains/qodana-cli/v2024/platform/scan"
-	startup "github.com/JetBrains/qodana-cli/v2024/preparehost"
+	"github.com/JetBrains/qodana-cli/v2024/platform/startup"
 	"os"
 	"path/filepath"
 	"strconv"
@@ -148,7 +148,10 @@ func GetIdeArgs(c scan.Context) []string {
 		}
 	}
 
-	prod := GuessProductCode(c.Ide, c.Linter) // TODO : think how it could be better handled in presence of random 3rd party linters
+	prod := GuessProductCode(
+		c.Ide,
+		c.Linter,
+	) // TODO : think how it could be better handled in presence of random 3rd party linters
 	if prod == platform.QDNETC || prod == platform.QDCL {
 		// third party common options
 		if c.NoStatistics {
@@ -234,13 +237,18 @@ func installPlugins(c scan.Context) {
 		return
 	}
 
-	plugins := c.QodanaYaml().Plugins
+	plugins := c.QodanaYaml.Plugins
 	if len(plugins) > 0 {
 		setInstallPluginsVmoptions(c)
 	}
 	for _, plugin := range plugins {
 		log.Printf("Installing plugin %s", plugin.Id)
-		if res, err := platform.RunCmd("", platform.QuoteIfSpace(c.Prod.IdeScript), "installPlugins", platform.QuoteIfSpace(plugin.Id)); res > 0 || err != nil {
+		if res, err := platform.RunCmd(
+			"",
+			platform.QuoteIfSpace(c.Prod.IdeScript),
+			"installPlugins",
+			platform.QuoteIfSpace(plugin.Id),
+		); res > 0 || err != nil {
 			os.Exit(res)
 		}
 	}

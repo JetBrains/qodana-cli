@@ -17,16 +17,20 @@
 package platform
 
 import (
+	"github.com/JetBrains/qodana-cli/v2024/platform/thirdpartyscan"
 	"regexp"
 )
 
-// ThirdPartyOptions is used to customize the CLI options for a specific linter.
-type ThirdPartyOptions interface {
-	GetMountInfo() *MountInfo
-	MountTools(tempPath string, mountPath string, o *QodanaOptions) (map[string]string, error)
-	GetInfo(o *QodanaOptions) *LinterInfo
-	Setup(o *QodanaOptions) error
-	RunAnalysis(o *QodanaOptions, yaml *QodanaYaml) error
+type ThirdPartyStartupCloudData struct {
+	LicensePlan   string
+	ProjectIdHash string
+	QodanaToken   string
+}
+
+type ThirdPartyLinter interface {
+	MountTools(tempPath string, mountPath string, isCommunity bool) (map[string]string, error)
+	ComputeNewLinterInfo(info LinterInfo, isCommunity bool) (LinterInfo, error)
+	RunAnalysis(c thirdpartyscan.Context) error
 }
 
 // MountInfo is a struct that contains all the helper tools to run a Qodana linter.
@@ -46,7 +50,7 @@ type LinterInfo struct {
 	IsEap         bool
 }
 
-type LinterSpecificInitializer func() ThirdPartyOptions
+type LinterSpecificInitializer func() ThirdPartyLinter
 
 func DefineOptions(initializer LinterSpecificInitializer) *QodanaOptions {
 	options := &QodanaOptions{}
@@ -56,7 +60,7 @@ func DefineOptions(initializer LinterSpecificInitializer) *QodanaOptions {
 	return options
 }
 
-func (i *LinterInfo) GetMajorVersion() string {
+func (i LinterInfo) GetMajorVersion() string {
 	re := regexp.MustCompile(`\b\d+\.\d+`)
 	matches := re.FindStringSubmatch(i.LinterVersion)
 	if len(matches) == 0 {
@@ -65,19 +69,11 @@ func (i *LinterInfo) GetMajorVersion() string {
 	return matches[0]
 }
 
-func (o *QodanaOptions) GetLinterSpecificOptions() *ThirdPartyOptions {
+func (o *QodanaOptions) GetLinterSpecificOptions() *ThirdPartyLinter {
 	if o.LinterSpecific != nil {
-		if linterSpecific, ok := o.LinterSpecific.(ThirdPartyOptions); ok {
+		if linterSpecific, ok := o.LinterSpecific.(ThirdPartyLinter); ok {
 			return &linterSpecific
 		}
-	}
-	return nil
-}
-
-func (o *QodanaOptions) GetLinterInfo() *LinterInfo {
-	linterOpts := o.GetLinterSpecificOptions()
-	if linterOpts != nil {
-		return (*linterOpts).GetInfo(o)
 	}
 	return nil
 }

@@ -25,19 +25,18 @@ import (
 
 func Execute(productCode string, linterName string, linterVersion string, buildDateStr string, isEap bool) {
 	platform.CheckEAP(buildDateStr, isEap)
-	options := platform.DefineOptions(func() platform.ThirdPartyOptions {
-		return &CltOptions{
-			LinterInfo: &platform.LinterInfo{
-				ProductCode:   productCode,
-				LinterName:    linterName,
-				LinterVersion: linterVersion,
-				IsEap:         isEap,
-			},
-		}
-	})
+
+	linter := CdnetLinter{}
+
+	linterInfo := platform.LinterInfo{
+		ProductCode:   productCode,
+		LinterName:    linterName,
+		LinterVersion: linterVersion,
+		IsEap:         isEap,
+	}
 
 	commands := make([]*cobra.Command, 1)
-	commands[0] = platformcmd.NewScanCommand(options)
+	commands[0] = platformcmd.NewScanCommand(linter, linterInfo)
 	cmd.InitWithCustomCommands(commands)
 	cmd.Execute()
 }

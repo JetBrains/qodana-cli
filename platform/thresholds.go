@@ -18,6 +18,7 @@ package platform
 
 import (
 	"fmt"
+	"github.com/JetBrains/qodana-cli/v2024/platform/thirdpartyscan"
 	"strconv"
 )
 
@@ -28,7 +29,8 @@ const severityModerate = "moderate"
 const severityLow = "low"
 const severityInfo = "info"
 
-func getFailureThresholds(yaml *QodanaYaml, options *QodanaOptions) map[string]string {
+func getFailureThresholds(c thirdpartyscan.Context) map[string]string {
+	yaml := c.QodanaYaml()
 	ret := make(map[string]string)
 	if yaml.FailThreshold != nil {
 		ret[severityAny] = strconv.Itoa(*yaml.FailThreshold)
@@ -54,9 +56,9 @@ func getFailureThresholds(yaml *QodanaYaml, options *QodanaOptions) map[string]s
 			ret[severityInfo] = strconv.Itoa(*thresholds.Info)
 		}
 	}
-	if options.FailThreshold != "" { // console option overrides the behavior
+	if c.FailThreshold() != "" { // console option overrides the behavior
 		ret = make(map[string]string)
-		ret[severityAny] = options.FailThreshold
+		ret[severityAny] = c.FailThreshold()
 	}
 	return ret
 }

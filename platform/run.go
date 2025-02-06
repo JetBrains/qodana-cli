@@ -17,8 +17,13 @@
 package platform
 
 import (
+	"errors"
 	"fmt"
 	"github.com/JetBrains/qodana-cli/v2024/cloud"
+	"github.com/JetBrains/qodana-cli/v2024/platform/cli"
+	"github.com/JetBrains/qodana-cli/v2024/platform/startup"
+	"github.com/JetBrains/qodana-cli/v2024/platform/thirdpartyscan"
+	"github.com/JetBrains/qodana-cli/v2024/platform/tokenloader"
 	"github.com/JetBrains/qodana-cli/v2024/tooling"
 	log "github.com/sirupsen/logrus"
 	"os"
@@ -27,180 +32,189 @@ import (
 	"strings"
 )
 
-func RunThirdPartyLinterAnalysis(options *QodanaOptions) (int, error) {
-	linterOptions, mountInfo, linterInfo, err := getLinterDescriptors(options)
+func RunThirdPartyLinterAnalysis(
+	cliOptions cli.QodanaScanCliOptions,
+	linter ThirdPartyLinter,
+	linterInfo LinterInfo,
+) (thirdpartyscan.Context, int, error) {
+	var err error
+
+	startupArgs := startup.ComputeArgs(
+		cliOptions.Linter,
+		cliOptions.Ide,
+		cliOptions.CacheDir,
+		cliOptions.ResultsDir,
+		cliOptions.ReportDir,
+		GetEnvWithOsEnv(cliOptions, QodanaToken),
+		GetEnvWithOsEnv(cliOptions, QodanaLicenseOnlyToken),
+		cliOptions.ClearCache,
+		cliOptions.ProjectDir,
+		cliOptions.ConfigName,
+	)
+	startupArgs, err = correctStartupArgsForThirdParty(startupArgs)
 	if err != nil {
 		ErrorMessage(err.Error())
-		return 1, err
-	}
-	checkLinterLicense(options)
-	printLinterLicense(options, linterInfo)
-	printQodanaLogo(options, linterInfo)
-
-	defineResultAndCacheDir(options)
-	if err = ensureWorkingDirsCreated(options, mountInfo); err != nil {
-		ErrorMessage(err.Error())
-		return 1, err
+		return thirdpartyscan.Context{}, 1, err
 	}
 
-	yaml := getQodanaYaml(options)
-	if err = (*linterOptions).Setup(options); err != nil {
-		return 1, fmt.Errorf("failed to run linter specific setup procedures: %w", err)
-	}
-	options.LogOptions()
+	thirdPartyCloudData := checkLinterLicense(startupArgs)
+	isCommunity := thirdPartyCloudData.LicensePlan == cloud.CommunityLicensePlan
 
-	defer cleanupUtils()
-	extractUtils(options)
+	printLinterLicense(thirdPartyCloudData.LicensePlan, linterInfo)
+	printQodanaLogo(startupArgs.LogDir(), startupArgs.CacheDir, linterInfo)
+
+	if linterInfo, err = linter.ComputeNewLinterInfo(linterInfo, isCommunity); err != nil {
+		return thirdpartyscan.Context{}, 1, fmt.Errorf("failed to run linter specific setup procedures: %w", err)
+	}
+
+	tempMountPath, mountInfo := extractUtils(linter, startupArgs.CacheDir, isCommunity)
+	defer cleanupUtils(tempMountPath)
+
+	qodanaYamlPath := GetQodanaYamlPathWithProject(startupArgs.ProjectDir, cliOptions.ConfigName)
+	yaml := LoadQodanaYamlByFullPath(qodanaYamlPath)
+
+	context := thirdpartyscan.ComputeContext(cliOptions, startupArgs, linterInfo, mountInfo, thirdPartyCloudData, yaml)
+
+	LogContext(context)
 
 	events := make([]tooling.FuserEvent, 0)
 	eventsCh := createFuserEventChannel(&events)
-	defer func() {
-		logProjectClose(eventsCh, options, linterInfo)
-		sendFuserEvents(eventsCh, &events, options, GetDeviceIdSalt()[0])
-	}()
-	logOs(eventsCh, options, linterInfo)
-	logProjectOpen(eventsCh, options, linterInfo)
 
-	if err = (*linterOptions).RunAnalysis(options, yaml); err != nil {
+	projectIdHash := thirdPartyCloudData.ProjectIdHash
+	defer func() {
+		logProjectClose(eventsCh, linterInfo, projectIdHash)
+		sendFuserEvents(eventsCh, &events, context, GetDeviceIdSalt()[0])
+	}()
+	logOs(eventsCh, linterInfo, projectIdHash)
+	logProjectOpen(eventsCh, linterInfo, projectIdHash)
+
+	if err = linter.RunAnalysis(context); err != nil {
 		ErrorMessage(err.Error())
-		return 1, err
+		return context, 1, err
 	}
 	log.Debugf("Java executable path: %s", mountInfo.JavaPath)
 
-	thresholds := getFailureThresholds(yaml, options)
+	thresholds := getFailureThresholds(context)
 	var analysisResult int
-	if analysisResult, err = computeBaselinePrintResults(options, mountInfo, thresholds); err != nil {
+	if analysisResult, err = computeBaselinePrintResults(context, thresholds); err != nil {
 		ErrorMessage(err.Error())
-		return 1, err
+		return context, 1, err
 	}
-	if err = copySarifToReportPath(options); err != nil {
+	if err = copySarifToReportPath(context.ResultsDir()); err != nil {
 		ErrorMessage(err.Error())
-		return 1, err
+		return context, 1, err
 	}
-	if err = convertReportToCloudFormat(options, mountInfo); err != nil {
+	if err = convertReportToCloudFormat(context); err != nil {
 		ErrorMessage(err.Error())
-		return 1, err
+		return context, 1, err
 	}
-	if err = copyQodanaYamlToReportPath(options); err != nil {
+	resultsPath := ReportResultsPath(context.ResultsDir())
+	if err = copyQodanaYamlToReportPath(qodanaYamlPath, resultsPath); err != nil {
 		ErrorMessage(err.Error())
-		return 1, err
+		return context, 1, err
 	}
-	sendReportToQodanaServer(options, mountInfo)
-	return analysisResult, nil
+	sendReportToQodanaServer(context)
+	return context, analysisResult, nil
 }
 
-func getQodanaYaml(options *QodanaOptions) *QodanaYaml {
-	qodanaYamlPath := FindQodanaYaml(options.ProjectDir)
-	if options.ConfigName != "" {
-		qodanaYamlPath = options.ConfigName
-	}
-	return LoadQodanaYaml(options.ProjectDir, qodanaYamlPath)
-}
-
-func ensureWorkingDirsCreated(options *QodanaOptions, mountInfo *MountInfo) error {
+func correctStartupArgsForThirdParty(args startup.Args) (startup.Args, error) {
+	empty := startup.Args{}
 	var err error
 
-	if mountInfo.JavaPath, err = getJavaExecutablePath(); err != nil {
-		return fmt.Errorf("failed to get java executable path: %w", err)
+	if args.ResultsDir, err = filepath.Abs(args.ResultsDir); err != nil {
+		return empty, fmt.Errorf("failed to get absolute path to results directory: %w", err)
 	}
 
-	if options.ResultsDir, err = filepath.Abs(options.ResultsDir); err != nil {
-		return fmt.Errorf("failed to get absolute path to results directory: %w", err)
+	if args.ReportDir, err = filepath.Abs(args.ReportDir); err != nil {
+		return empty, fmt.Errorf("failed to get absolute path to report directory: %w", err)
 	}
 
-	if options.ReportDir, err = filepath.Abs(options.reportDirPath()); err != nil {
-		return fmt.Errorf("failed to get absolute path to report directory: %w", err)
-	}
-
-	if _, err := os.Stat(options.GetTmpResultsDir()); err == nil {
-		if err := os.RemoveAll(options.GetTmpResultsDir()); err != nil {
-			return fmt.Errorf("failed to remove folder with temporary data: %w", err)
+	tmpResultsDir := GetTmpResultsDir(args.ResultsDir)
+	if _, err := os.Stat(tmpResultsDir); err == nil {
+		if err := os.RemoveAll(tmpResultsDir); err != nil {
+			return empty, fmt.Errorf("failed to remove folder with temporary data: %w", err)
 		}
 	}
 
 	directories := []string{
-		options.ResultsDir,
-		options.LogDirPath(),
-		options.CacheDir,
-		options.ReportResultsPath(),
-		options.GetTmpResultsDir(),
+		args.ResultsDir,
+		args.LogDir(),
+		args.CacheDir,
+		ReportResultsPath(args.ReportDir),
+		tmpResultsDir,
 	}
 	for _, dir := range directories {
 		if _, err := os.Stat(dir); os.IsNotExist(err) {
 			if err := os.MkdirAll(dir, 0755); err != nil {
-				return fmt.Errorf("failed to create directory %s: %w", dir, err)
+				return empty, fmt.Errorf("failed to create directory %s: %w", dir, err)
 			}
 		}
 	}
-	return nil
+	return args, nil
 }
 
-func checkLinterLicense(options *QodanaOptions) {
-	options.LicensePlan = cloud.CommunityLicensePlan
-	token := options.LoadToken(false, false, true)
-	if token != "" {
-		options.Setenv(QodanaToken, token)
-	}
+func checkLinterLicense(loader tokenloader.CloudTokenLoader) ThirdPartyStartupCloudData {
+	licensePlan := cloud.CommunityLicensePlan
+	token := tokenloader.LoadCloudToken(loader, false, false, true)
+	projectIdHash := ""
 	cloud.SetupLicenseToken(token)
 	if cloud.Token.Token != "" {
 		licenseData := cloud.GetCloudApiEndpoints().GetLicenseData(cloud.Token.Token)
-		token.ValidateTokenPrintProject(cloud.Token.Token)
-		options.LicensePlan = licenseData.LicensePlan
-		options.ProjectIdHash = licenseData.ProjectIdHash
+		tokenloader.ValidateTokenPrintProject(cloud.Token.Token)
+		licensePlan = licenseData.LicensePlan
+		projectIdHash = licenseData.ProjectIdHash
+	}
+	return ThirdPartyStartupCloudData{
+		LicensePlan:   licensePlan,
+		QodanaToken:   token,
+		ProjectIdHash: projectIdHash,
 	}
 }
 
-func printLinterLicense(options *QodanaOptions, linterInfo *LinterInfo) {
-	licenseString := options.LicensePlan
+func printLinterLicense(licensePlan string, linterInfo LinterInfo) {
+	licenseString := licensePlan
 	if cloud.Token.Token == "" && linterInfo.IsEap {
 		licenseString = "EAP license"
 	}
 	SuccessMessage("Qodana license plan: %s", licenseString)
 }
 
-func getLinterDescriptors(options *QodanaOptions) (*ThirdPartyOptions, *MountInfo, *LinterInfo, error) {
-	linterOptions := options.GetLinterSpecificOptions()
-	if linterOptions == nil {
-		return nil, nil, nil, fmt.Errorf("linter specific options are not set")
-	}
-	mountInfo := (*linterOptions).GetMountInfo()
-	linterInfo := (*linterOptions).GetInfo(options)
-	return linterOptions, mountInfo, linterInfo, nil
-}
-
-func defineResultAndCacheDir(options *QodanaOptions) {
-	// we don't provide default for cache dir, since we don't want to compute options.id without knowing the exact folder
-	if options.CacheDir == "" {
-		options.CacheDir = options.GetCacheDir()
-	}
-	if options.ResultsDir == "" {
-		options.ResultsDir = options.resultsDirPath()
-	}
-}
-
-func sendReportToQodanaServer(options *QodanaOptions, mountInfo *MountInfo) {
+func sendReportToQodanaServer(c thirdpartyscan.Context) {
 	if cloud.Token.IsAllowedToSendReports() {
 		fmt.Println("Publishing report ...")
-		SendReport(options, cloud.Token.Token, QuoteForWindows(filepath.Join(options.CacheDir, PublisherJarName)), QuoteForWindows(mountInfo.JavaPath))
+		publisher := Publisher{
+			ResultsDir: c.ResultsDir(),
+			ProjectDir: c.ProjectDir(),
+			LogDir:     c.LogDir(),
+			AnalysisId: c.AnalysisId(),
+		}
+		SendReport(
+			publisher,
+			cloud.Token.Token,
+			QuoteForWindows(filepath.Join(c.CacheDir(), PublisherJarName)),
+			QuoteForWindows(c.MountInfo().JavaPath),
+		)
 	} else {
 		fmt.Println("Skipping report publishing")
 	}
 }
 
-func copyQodanaYamlToReportPath(options *QodanaOptions) error {
-	if yamlPath, err := GetQodanaYamlPath(options.ProjectDir); err == nil {
-		if err := CopyFile(yamlPath, path.Join(options.ReportResultsPath(), "qodana.yaml")); err != nil {
-			log.Errorf("Error while copying qodana.yaml: %s", err)
-			return err
-		}
+func copyQodanaYamlToReportPath(qodanaYamlFullPath string, reportResultsPath string) error {
+	if _, err := os.Stat(qodanaYamlFullPath); errors.Is(err, os.ErrNotExist) {
+		return nil
+	}
+	if err := CopyFile(qodanaYamlFullPath, path.Join(reportResultsPath, "qodana.yaml")); err != nil {
+		log.Errorf("Error while copying qodana.yaml: %s", err)
+		return err
 	}
 	return nil
 }
 
-func convertReportToCloudFormat(options *QodanaOptions, mountInfo *MountInfo) error {
-	log.Debugf("Generating report to %s...", options.ReportResultsPath())
-	args := converterArgs(options, mountInfo)
-	stdout, _, res, err := LaunchAndLog(options, "converter", args...)
+func convertReportToCloudFormat(c thirdpartyscan.Context) error {
+	reportResultsPath := ReportResultsPath(c.ResultsDir())
+	log.Debugf("Generating report to %s...", reportResultsPath)
+	args := converterArgs(c)
+	stdout, _, res, err := LaunchAndLog(c.LogDir(), "converter", args...)
 	if res != 0 {
 		return fmt.Errorf("converter exited with non-zero status code: %d", res)
 	}
@@ -213,23 +227,41 @@ func convertReportToCloudFormat(options *QodanaOptions, mountInfo *MountInfo) er
 	return nil
 }
 
-func copySarifToReportPath(options *QodanaOptions) error {
-	destination := filepath.Join(options.ReportResultsPath(), "qodana.sarif.json")
-	if err := CopyFile(options.GetSarifPath(), destination); err != nil {
+func copySarifToReportPath(resultsDir string) error {
+	reportResultsPath := ReportResultsPath(resultsDir)
+	sarifPath := GetSarifPath(resultsDir)
+	shortSarifPath := GetShortSarifPath(resultsDir)
+
+	destination := filepath.Join(reportResultsPath, "qodana.sarif.json")
+	if err := CopyFile(sarifPath, destination); err != nil {
 		return fmt.Errorf("problem while copying the report %e", err)
 	}
-	if err := MakeShortSarif(destination, options.GetShortSarifPath()); err != nil {
+	if err := MakeShortSarif(destination, shortSarifPath); err != nil {
 		return fmt.Errorf("problem while making short sarif %e", err)
 	}
 	return nil
 }
 
-func converterArgs(options *QodanaOptions, mountInfo *MountInfo) []string {
-	return []string{QuoteForWindows(mountInfo.JavaPath), "-jar", QuoteForWindows(mountInfo.Converter), "-s", QuoteForWindows(options.ProjectDir), "-d", QuoteForWindows(options.ResultsDir), "-o", QuoteForWindows(options.ReportResultsPath()), "-n", "result-allProblems.json", "-f"}
+func converterArgs(c thirdpartyscan.Context) []string {
+	reportResultsPath := ReportResultsPath(c.ResultsDir())
+	return []string{
+		QuoteForWindows(c.MountInfo().JavaPath),
+		"-jar",
+		QuoteForWindows(c.MountInfo().Converter),
+		"-s",
+		QuoteForWindows(c.ProjectDir()),
+		"-d",
+		QuoteForWindows(c.ResultsDir()),
+		"-o",
+		QuoteForWindows(reportResultsPath),
+		"-n",
+		"result-allProblems.json",
+		"-f",
+	}
 }
 
-func printQodanaLogo(options *QodanaOptions, linterInfo *LinterInfo) {
-	fmt.Println("\nLog directory: " + options.LogDirPath())
-	fmt.Println("Cache directory: " + options.GetCacheDir())
+func printQodanaLogo(logDir string, cacheDir string, linterInfo LinterInfo) {
+	fmt.Println("\nLog directory: " + logDir)
+	fmt.Println("Cache directory: " + cacheDir)
 	fmt.Print(QodanaLogo(linterInfo.LinterName, linterInfo.LinterVersion, linterInfo.IsEap))
 }

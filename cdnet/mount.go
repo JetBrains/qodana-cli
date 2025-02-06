@@ -23,13 +23,13 @@ import (
 	"path/filepath"
 )
 
-func (o *CltOptions) MountTools(_ string, mountPath string, _ *platform.QodanaOptions) (map[string]string, error) {
+func (l CdnetLinter) MountTools(tempMountPath string, mountPath string, _ bool) (map[string]string, error) {
 	val := make(map[string]string)
-	val["clt"] = filepath.Join(mountPath, "tools", "netcoreapp3.1", "any", "JetBrains.CommandLine.Products.dll")
+	val[platform.Clt] = filepath.Join(mountPath, "tools", "netcoreapp3.1", "any", "JetBrains.CommandLine.Products.dll")
 	archive := "clt.zip"
 	if _, err := os.Stat(val["clt"]); err != nil {
 		if os.IsNotExist(err) {
-			path := platform.ProcessAuxiliaryTool(archive, "clang", mountPath, Clt)
+			path := platform.ProcessAuxiliaryTool(archive, "clang", tempMountPath, mountPath, Clt)
 			if err := platform.Decompress(path, mountPath); err != nil {
 				return nil, fmt.Errorf("failed to decompress clang archive: %w", err)
 			}

@@ -358,8 +358,8 @@ type Php struct {
 	Version string `yaml:"version,omitempty"`
 }
 
-// FindQodanaYaml checks whether qodana.yaml exists or not
-func FindQodanaYaml(project string) string {
+// FindDefaultQodanaYaml checks whether qodana.yaml exists or not
+func FindDefaultQodanaYaml(project string) string {
 	filename := configName + ".yml"
 	if info, _ := os.Stat(filepath.Join(project, filename)); info != nil {
 		return filename
@@ -368,17 +368,27 @@ func FindQodanaYaml(project string) string {
 	}
 }
 
-// LoadQodanaYaml gets Qodana YAML from the project.
-func LoadQodanaYaml(project string, filename string) *QodanaYaml {
-	q := &QodanaYaml{}
+func GetQodanaYamlPathWithProject(project string, filename string) string {
 	if filename == "" {
-		filename = FindQodanaYaml(project)
+		filename = FindDefaultQodanaYaml(project)
 	}
 	qodanaYamlPath := filepath.Join(project, filename)
-	if _, err := os.Stat(qodanaYamlPath); errors.Is(err, os.ErrNotExist) {
-		return q
+	return qodanaYamlPath
+}
+
+// LoadQodanaYaml gets Qodana YAML from the project.
+func LoadQodanaYaml(project string, filename string) QodanaYaml {
+	qodanaYamlPath := GetQodanaYamlPathWithProject(project, filename)
+	q := LoadQodanaYamlByFullPath(qodanaYamlPath)
+	return q
+}
+
+func LoadQodanaYamlByFullPath(fullPath string) QodanaYaml {
+	q := &QodanaYaml{}
+	if _, err := os.Stat(fullPath); errors.Is(err, os.ErrNotExist) {
+		return *q
 	}
-	yamlFile, err := os.ReadFile(qodanaYamlPath)
+	yamlFile, err := os.ReadFile(fullPath)
 	if err != nil {
 		log.Printf("yamlFile.Get err   #%v ", err)
 	}
@@ -386,45 +396,66 @@ func LoadQodanaYaml(project string, filename string) *QodanaYaml {
 	if err != nil {
 		log.Fatalf("Unmarshal: %v", err)
 	}
-	return q
+	return *q
 }
 
 // Sort makes QodanaYaml prettier.
 func (q *QodanaYaml) Sort() *QodanaYaml {
-	sort.Slice(q.Includes, func(i, j int) bool {
-		return Lower(q.Includes[i].Name) < Lower(q.Includes[j].Name)
-	})
-	sort.Slice(q.Excludes, func(i, j int) bool {
-		return Lower(q.Excludes[i].Name) < Lower(q.Excludes[j].Name)
-	})
+	sort.Slice(
+		q.Includes, func(i, j int) bool {
+			return Lower(q.Includes[i].Name) < Lower(q.Includes[j].Name)
+		},
+	)
+	sort.Slice(
+		q.Excludes, func(i, j int) bool {
+			return Lower(q.Excludes[i].Name) < Lower(q.Excludes[j].Name)
+		},
+	)
 	for _, rule := range q.LicenseRules {
-		sort.Slice(rule.Keys, func(i, j int) bool {
-			return Lower(rule.Keys[i]) < Lower(rule.Keys[j])
-		})
-		sort.Slice(rule.Allowed, func(i, j int) bool {
-			return Lower(rule.Allowed[i]) < Lower(rule.Allowed[j])
-		})
-		sort.Slice(rule.Prohibited, func(i, j int) bool {
-			return Lower(rule.Prohibited[i]) < Lower(rule.Prohibited[j])
-		})
+		sort.Slice(
+			rule.Keys, func(i, j int) bool {
+				return Lower(rule.Keys[i]) < Lower(rule.Keys[j])
+			},
+		)
+		sort.Slice(
+			rule.Allowed, func(i, j int) bool {
+				return Lower(rule.Allowed[i]) < Lower(rule.Allowed[j])
+			},
+		)
+		sort.Slice(
+			rule.Prohibited, func(i, j int) bool {
+				return Lower(rule.Prohibited[i]) < Lower(rule.Prohibited[j])
+			},
+		)
 	}
-	sort.Slice(q.DependencyIgnores, func(i, j int) bool {
-		return Lower(q.DependencyIgnores[i].Name) < Lower(q.DependencyIgnores[j].Name)
-	})
-	sort.Slice(q.DependencyOverrides, func(i, j int) bool {
-		return Lower(q.DependencyOverrides[i].Name) < Lower(q.DependencyOverrides[j].Name)
-	})
-	sort.Slice(q.CustomDependencies, func(i, j int) bool {
-		return Lower(q.CustomDependencies[i].Name) < Lower(q.CustomDependencies[j].Name)
-	})
-	sort.Slice(q.Plugins, func(i, j int) bool {
-		return Lower(q.Plugins[i].Id) < Lower(q.Plugins[j].Id)
-	})
+	sort.Slice(
+		q.DependencyIgnores, func(i, j int) bool {
+			return Lower(q.DependencyIgnores[i].Name) < Lower(q.DependencyIgnores[j].Name)
+		},
+	)
+	sort.Slice(
+		q.DependencyOverrides, func(i, j int) bool {
+			return Lower(q.DependencyOverrides[i].Name) < Lower(q.DependencyOverrides[j].Name)
+		},
+	)
+	sort.Slice(
+		q.CustomDependencies, func(i, j int) bool {
+			return Lower(q.CustomDependencies[i].Name) < Lower(q.CustomDependencies[j].Name)
+		},
+	)
+	sort.Slice(
+		q.Plugins, func(i, j int) bool {
+			return Lower(q.Plugins[i].Id) < Lower(q.Plugins[j].Id)
+		},
+	)
 	return q
 }
 
 func (q *QodanaYaml) IsDotNet() bool {
-	return strings.Contains(q.Linter, "dotnet") || strings.Contains(q.Linter, "cdnet") || strings.Contains(q.Ide, "QDNET")
+	return strings.Contains(q.Linter, "dotnet") || strings.Contains(q.Linter, "cdnet") || strings.Contains(
+		q.Ide,
+		"QDNET",
+	)
 }
 
 // WriteQodanaLinterToYamlFile adds the linter to the qodana.yaml file.

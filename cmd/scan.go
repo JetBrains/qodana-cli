@@ -22,8 +22,7 @@ import (
 	"github.com/JetBrains/qodana-cli/v2024/platform"
 	"github.com/JetBrains/qodana-cli/v2024/platform/cli"
 	"github.com/JetBrains/qodana-cli/v2024/platform/scan"
-	startup "github.com/JetBrains/qodana-cli/v2024/preparehost"
-	"github.com/JetBrains/qodana-cli/v2024/preparehost/startupargs"
+	"github.com/JetBrains/qodana-cli/v2024/platform/startup"
 	log "github.com/sirupsen/logrus"
 	"os"
 	"path/filepath"
@@ -46,29 +45,23 @@ But you can always override qodana.yaml options with the following command-line 
 		Run: func(cmd *cobra.Command, args []string) {
 			ctx := cmd.Context()
 
-			// work
-			qodanaToken := os.Getenv(platform.QodanaToken)
-			qodanaLicenseOnlyToken := os.Getenv(platform.QodanaLicenseOnlyToken)
-
-			prepareHostArgs := startupargs.Compute(
+			startupArgs := startup.ComputeArgs(
 				cliOptions.Linter,
 				cliOptions.Ide,
 				cliOptions.CacheDir,
 				cliOptions.ResultsDir,
-				qodanaToken,
-				qodanaLicenseOnlyToken, // REWORK
+				cliOptions.ReportDir,
+				platform.GetEnvWithOsEnv(cliOptions, platform.QodanaToken),
+				platform.GetEnvWithOsEnv(cliOptions, platform.QodanaLicenseOnlyToken), // REWORK
 				cliOptions.ClearCache,
 				cliOptions.ProjectDir,
-				"", //TODO
+				cliOptions.ConfigName,
 			)
+			oldReportUrl := cloud.GetReportUrl(startupArgs.ResultsDir)
+			checkProjectDir(startupArgs.ProjectDir)
 
-			reportUrl := cloud.GetReportUrl(prepareHostArgs.ResultsDir)
-
-			checkProjectDir(prepareHostArgs.ProjectDir)
-
-			preparedHost := startup.PrepareHost(prepareHostArgs)
-
-			scanContext := scan.Context{}
+			preparedHost := startup.PrepareHost(startupArgs)
+			scanContext := scan.CreateContext(*cliOptions, startupArgs, preparedHost)
 
 			exitCode := core.RunAnalysis(ctx, scanContext)
 			if platform.IsContainer() {
@@ -93,7 +86,7 @@ But you can always override qodana.yaml options with the following command-line 
 				showReport = platform.AskUserConfirm("Do you want to open the latest report")
 			}
 
-			if newReportUrl != reportUrl && newReportUrl != "" && !platform.IsContainer() {
+			if newReportUrl != oldReportUrl && newReportUrl != "" && !platform.IsContainer() {
 				platform.SuccessMessage("Report is successfully uploaded to %s", newReportUrl)
 			}
 
