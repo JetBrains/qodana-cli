@@ -19,7 +19,6 @@ package main
 import (
 	"github.com/JetBrains/qodana-cli/v2024/core"
 	"github.com/JetBrains/qodana-cli/v2024/core/corescan"
-	"github.com/JetBrains/qodana-cli/v2024/platform"
 	"github.com/JetBrains/qodana-cli/v2024/platform/product"
 	"github.com/JetBrains/qodana-cli/v2024/platform/qdyaml"
 	"github.com/JetBrains/qodana-cli/v2024/platform/thirdpartyscan"
@@ -318,7 +317,6 @@ func getTooling() thirdpartyscan.MountInfo {
 func TestGetArgsThirdPartyLinters(t *testing.T) {
 	cases := []struct {
 		name     string
-		options  *platform.QodanaOptions
 		cb       corescan.ContextBuilder
 		expected []string
 	}{
