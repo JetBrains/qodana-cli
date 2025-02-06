@@ -17,6 +17,7 @@
 package platforminit
 
 import (
+	"github.com/JetBrains/qodana-cli/v2024/platform/product"
 	"github.com/JetBrains/qodana-cli/v2024/platform/utils"
 	"github.com/stretchr/testify/assert"
 	"os"
@@ -59,47 +60,47 @@ func TestSelectAnalyzer(t *testing.T) {
 		{
 			name:             "Multiple Analyzers Non-interactive",
 			pathMaker:        nonNativePathMaker,
-			analyzers:        AllCodes,
+			analyzers:        product.AllCodes,
 			interactive:      false,
 			selectFunc:       nil,
-			expectedAnalyzer: Image(AllCodes[0]),
+			expectedAnalyzer: product.Image(product.AllCodes[0]),
 		},
 		{
 			name:             "Single .NET Analyzer Interactive Non Native",
 			pathMaker:        nonNativePathMaker,
-			analyzers:        []string{QDNET},
+			analyzers:        []string{product.QDNET},
 			interactive:      true,
 			selectFunc:       func(choices []string) string { return choices[0] },
-			expectedAnalyzer: Image(QDNET),
+			expectedAnalyzer: product.Image(product.QDNET),
 		},
 		{
 			name:             "Single .NET Analyzer Interactive Native",
 			pathMaker:        nativePathMaker,
-			analyzers:        []string{QDNET},
+			analyzers:        []string{product.QDNET},
 			interactive:      true,
 			selectFunc:       func(choices []string) string { return choices[0] },
-			expectedAnalyzer: QDNET,
+			expectedAnalyzer: product.QDNET,
 		},
 		{
 			name:             "Single .NET Community Analyzer Interactive Native",
 			pathMaker:        nativePathMaker,
-			analyzers:        []string{QDNETC},
+			analyzers:        []string{product.QDNETC},
 			interactive:      true,
 			selectFunc:       func(choices []string) string { return choices[0] },
-			expectedAnalyzer: Image(QDNETC),
+			expectedAnalyzer: product.Image(product.QDNETC),
 		},
 		{
 			name:             "Multiple Analyzers Interactive",
 			pathMaker:        nonNativePathMaker,
-			analyzers:        AllCodes,
+			analyzers:        product.AllCodes,
 			interactive:      true,
 			selectFunc:       func(choices []string) string { return choices[0] },
-			expectedAnalyzer: Image(AllCodes[0]),
+			expectedAnalyzer: product.Image(product.AllCodes[0]),
 		},
 		{
 			name:             "Empty Choice Interactive",
 			pathMaker:        nonNativePathMaker,
-			analyzers:        AllCodes,
+			analyzers:        product.AllCodes,
 			interactive:      true,
 			selectFunc:       func(choices []string) string { return "" },
 			expectedAnalyzer: "",
