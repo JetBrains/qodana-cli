@@ -661,17 +661,16 @@ func Test_syncIdeaCache(t *testing.T) {
 }
 
 func Test_Bootstrap(t *testing.T) {
-	opts := &platform.QodanaOptions{}
 	tmpDir := filepath.Join(os.TempDir(), "bootstrap")
 	err := os.MkdirAll(tmpDir, 0o755)
 	if err != nil {
 		t.Fatal(err)
 	}
-	opts.ProjectDir = tmpDir
-	utils.Bootstrap("echo 'bootstrap: touch qodana.yml' > qodana.yaml", opts.ProjectDir)
+	projectDir := tmpDir
+	utils.Bootstrap("echo 'bootstrap: touch qodana.yml' > qodana.yaml", projectDir)
 	config := qdyaml.GetQodanaYamlOrDefault(tmpDir)
-	utils.Bootstrap(config.Bootstrap, opts.ProjectDir)
-	if _, err := os.Stat(filepath.Join(opts.ProjectDir, "qodana.yaml")); errors.Is(err, os.ErrNotExist) {
+	utils.Bootstrap(config.Bootstrap, projectDir)
+	if _, err := os.Stat(filepath.Join(projectDir, "qodana.yaml")); errors.Is(err, os.ErrNotExist) {
 		t.Fatalf("No qodana.yml created by the bootstrap command in qodana.yaml")
 	}
 	err = os.RemoveAll(tmpDir)
