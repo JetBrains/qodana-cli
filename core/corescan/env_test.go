@@ -14,16 +14,15 @@
  * limitations under the License.
  */
 
-package platform
+package corescan
 
 import (
 	"fmt"
+	"github.com/JetBrains/qodana-cli/v2024/platform"
 	"github.com/JetBrains/qodana-cli/v2024/platform/qdenv"
-	"github.com/JetBrains/qodana-cli/v2024/platform/scan/startup"
 	"github.com/JetBrains/qodana-cli/v2024/platform/version"
 	"golang.org/x/exp/maps"
 	"os"
-	"reflect"
 	"testing"
 )
 
@@ -87,11 +86,11 @@ func Test_ExtractEnvironmentVariables(t *testing.T) {
 		{
 			ci: "User defined",
 			variables: map[string]string{
-				qodanaEnv:       "user-defined",
-				qodanaJobUrl:    "https://qodana.jetbrains.com/never-gonna-give-you-up",
-				QodanaRemoteUrl: "https://qodana.jetbrains.com/never-gonna-give-you-up",
-				QodanaBranch:    branchExpected,
-				QodanaRevision:  revisionExpected,
+				qdenv.QodanaEnv:       "user-defined",
+				qdenv.QodanaJobUrl:    "https://qodana.jetbrains.com/never-gonna-give-you-up",
+				qdenv.QodanaRemoteUrl: "https://qodana.jetbrains.com/never-gonna-give-you-up",
+				qdenv.QodanaBranch:    branchExpected,
+				qdenv.QodanaRevision:  revisionExpected,
 			},
 			envExpected:       "user-defined",
 			remoteUrlExpected: "https://qodana.jetbrains.com/never-gonna-give-you-up",
@@ -217,13 +216,13 @@ func Test_ExtractEnvironmentVariables(t *testing.T) {
 	} {
 		t.Run(
 			tc.ci, func(t *testing.T) {
-				opts := &QodanaOptions{}
+				c := Context{}
 				for k, v := range tc.variables {
 					err := os.Setenv(k, v)
 					if err != nil {
 						t.Fatal(err)
 					}
-					opts.Setenv(k, v)
+					c = c.withEnv(k, v, false)
 				}
 
 				for _, environment := range []struct {
@@ -234,52 +233,52 @@ func Test_ExtractEnvironmentVariables(t *testing.T) {
 				}{
 					{
 						name: "Container",
-						set:  opts.Setenv,
-						get:  opts.Getenv,
+						set:  func(k string, v string) { c = c.withEnv(k, v, false) },
+						get:  func(k string) string { return platform.GetEnv(c, k) },
 					},
 					{
 						name: "Local",
-						set:  SetEnv,
+						set:  qdenv.SetEnv,
 						get:  os.Getenv,
 					},
 				} {
 					t.Run(
 						environment.name, func(t *testing.T) {
 							qdenv.ExtractQodanaEnvironment(environment.set)
-							currentQodanaEnv := environment.get(qodanaEnv)
+							currentQodanaEnv := environment.get(qdenv.QodanaEnv)
 							if currentQodanaEnv != tc.envExpected {
 								t.Errorf("%s: Expected %s, got %s", environment.name, tc.envExpected, currentQodanaEnv)
 							}
-							if environment.get(qodanaJobUrl) != tc.jobUrlExpected {
+							if environment.get(qdenv.QodanaJobUrl) != tc.jobUrlExpected {
 								t.Errorf(
 									"%s: Expected %s, got %s",
 									environment.name,
 									tc.jobUrlExpected,
-									environment.get(qodanaJobUrl),
+									environment.get(qdenv.QodanaJobUrl),
 								)
 							}
-							if environment.get(QodanaRemoteUrl) != tc.remoteUrlExpected {
+							if environment.get(qdenv.QodanaRemoteUrl) != tc.remoteUrlExpected {
 								t.Errorf(
 									"%s: Expected %s, got %s",
 									environment.name,
 									tc.remoteUrlExpected,
-									environment.get(QodanaRemoteUrl),
+									environment.get(qdenv.QodanaRemoteUrl),
 								)
 							}
-							if environment.get(QodanaRevision) != tc.revisionExpected {
+							if environment.get(qdenv.QodanaRevision) != tc.revisionExpected {
 								t.Errorf(
 									"%s: Expected %s, got %s",
 									environment.name,
 									revisionExpected,
-									environment.get(QodanaRevision),
+									environment.get(qdenv.QodanaRevision),
 								)
 							}
-							if environment.get(QodanaBranch) != tc.branchExpected {
+							if environment.get(qdenv.QodanaBranch) != tc.branchExpected {
 								t.Errorf(
 									"%s: Expected %s, got %s",
 									environment.name,
 									branchExpected,
-									environment.get(QodanaBranch),
+									environment.get(qdenv.QodanaBranch),
 								)
 							}
 						},
@@ -288,26 +287,20 @@ func Test_ExtractEnvironmentVariables(t *testing.T) {
 
 				for _, k := range append(
 					maps.Keys(tc.variables),
-					[]string{qodanaJobUrl, qodanaEnv, QodanaRemoteUrl, QodanaRevision, QodanaBranch}...,
+					[]string{
+						qdenv.QodanaJobUrl,
+						qdenv.QodanaEnv,
+						qdenv.QodanaRemoteUrl,
+						qdenv.QodanaRevision,
+						qdenv.QodanaBranch,
+					}...,
 				) {
 					err := os.Unsetenv(k)
 					if err != nil {
 						t.Fatal(err)
 					}
-					opts.Unsetenv(k)
 				}
 			},
 		)
-	}
-}
-
-func TestDirLanguagesExcluded(t *testing.T) {
-	expected := []string{"Go", "Shell", "Dockerfile"}
-	actual, err := startup.recognizeDirLanguages("../")
-	if err != nil {
-		return
-	}
-	if !reflect.DeepEqual(expected, actual) {
-		t.Fatalf("expected \"%s\" got \"%s\"", expected, actual)
 	}
 }

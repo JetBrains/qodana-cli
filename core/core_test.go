@@ -20,9 +20,10 @@ import (
 	"errors"
 	"fmt"
 	"github.com/JetBrains/qodana-cli/v2024/cloud"
-	"github.com/JetBrains/qodana-cli/v2024/core/scan"
+	"github.com/JetBrains/qodana-cli/v2024/core/corescan"
 	startup2 "github.com/JetBrains/qodana-cli/v2024/core/startup"
 	"github.com/JetBrains/qodana-cli/v2024/platform"
+	"github.com/JetBrains/qodana-cli/v2024/platform/product"
 	"github.com/JetBrains/qodana-cli/v2024/platform/qdenv"
 	"github.com/JetBrains/qodana-cli/v2024/platform/qdyaml"
 	"github.com/JetBrains/qodana-cli/v2024/platform/utils"
@@ -48,7 +49,7 @@ func TestCliArgs(t *testing.T) {
 	resultsDir := filepath.Join(dir, "results")
 	preparehost.Prod.Home = string(os.PathSeparator) + "opt" + string(os.PathSeparator) + "idea"
 	preparehost.Prod.IdeScript = filepath.Join(preparehost.Prod.Home, "bin", "idea.sh")
-	err := os.Unsetenv(platform.QodanaDockerEnv)
+	err := os.Unsetenv(qdenv.QodanaDockerEnv)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -239,14 +240,14 @@ func TestCliArgs(t *testing.T) {
 }
 
 func TestScanFlags_Script(t *testing.T) {
-	b := scan.ContextBuilder{
+	b := corescan.ContextBuilder{
 		Script: "custom-script:parameters",
 	}
 	expected := []string{
 		"--script",
 		"custom-script:parameters",
 	}
-	actual := GetIdeArgs(b.AsContext())
+	actual := GetIdeArgs(b.Build())
 	if !reflect.DeepEqual(expected, actual) {
 		t.Fatalf("expected \"%s\" got \"%s\"", expected, actual)
 	}
@@ -255,12 +256,12 @@ func TestScanFlags_Script(t *testing.T) {
 func TestLegacyFixStrategies(t *testing.T) {
 	cases := []struct {
 		name     string
-		c        scan.ContextBuilder
+		c        corescan.ContextBuilder
 		expected []string
 	}{
 		{
 			name: "apply fixes for a container",
-			c: scan.ContextBuilder{
+			c: corescan.ContextBuilder{
 				ApplyFixes: true,
 				Ide:        "",
 			},
@@ -271,7 +272,7 @@ func TestLegacyFixStrategies(t *testing.T) {
 		},
 		{
 			name: "cleanup for a container",
-			c: scan.ContextBuilder{
+			c: corescan.ContextBuilder{
 				Cleanup: true,
 				Ide:     "",
 			},
@@ -282,7 +283,7 @@ func TestLegacyFixStrategies(t *testing.T) {
 		},
 		{
 			name: "apply fixes for new IDE",
-			c: scan.ContextBuilder{
+			c: corescan.ContextBuilder{
 				ApplyFixes: true,
 				Ide:        "QDPHP",
 			},
@@ -292,7 +293,7 @@ func TestLegacyFixStrategies(t *testing.T) {
 		},
 		{
 			name: "fixes for unavailable IDE",
-			c: scan.ContextBuilder{
+			c: corescan.ContextBuilder{
 				Cleanup: true,
 				Ide:     "QDNET",
 			},
@@ -310,7 +311,7 @@ func TestLegacyFixStrategies(t *testing.T) {
 					c.Prod.Version = "2023.2"
 				}
 
-				actual := GetIdeArgs(c.AsContext())
+				actual := GetIdeArgs(c.Build())
 				if !reflect.DeepEqual(tt.expected, actual) {
 					t.Fatalf("expected \"%s\" got \"%s\"", tt.expected, actual)
 				}
@@ -354,7 +355,7 @@ func TestWriteConfig(t *testing.T) {
 }
 
 func Test_setDeviceID(t *testing.T) {
-	err := os.Unsetenv(platform.QodanaRemoteUrl)
+	err := os.Unsetenv(qdenv.QodanaRemoteUrl)
 	if err != nil {
 		return
 	}
@@ -381,7 +382,7 @@ func Test_setDeviceID(t *testing.T) {
 			t.Fatal(err)
 		}
 	}()
-	actualDeviceIdSalt := utils.GetDeviceIdSalt()
+	actualDeviceIdSalt := platform.GetDeviceIdSalt()
 	if _, err := os.Stat(filepath.Join(tmpDir, ".git", "config")); !os.IsNotExist(err) {
 		t.Errorf("Case: %s: /tmp/entrypoint/.git/config got created, when it should not", tc)
 	}
@@ -404,7 +405,7 @@ func Test_setDeviceID(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	actualDeviceIdSalt = utils.GetDeviceIdSalt()
+	actualDeviceIdSalt = platform.GetDeviceIdSalt()
 	expectedDeviceIdSalt = []string{
 		"200820300000000-a294-0dd1-57f5-9f44b322ff64",
 		"e5c8900956f0df2f18f827245f47f04a",
@@ -416,7 +417,7 @@ func Test_setDeviceID(t *testing.T) {
 
 	tc = "FromQodanaRemoteUrlEnv"
 	t.Setenv("QODANA_REMOTE_URL", "ssh://git@git/repo")
-	actualDeviceIdSalt = utils.GetDeviceIdSalt()
+	actualDeviceIdSalt = platform.GetDeviceIdSalt()
 	expectedDeviceIdSalt = []string{
 		"200820300000000-a294-0dd1-57f5-9f44b322ff64",
 		"e5c8900956f0df2f18f827245f47f04a",
@@ -428,7 +429,7 @@ func Test_setDeviceID(t *testing.T) {
 	tc = "FromEnv"
 	t.Setenv("SALT", "salt")
 	t.Setenv("DEVICEID", "device")
-	actualDeviceIdSalt = utils.GetDeviceIdSalt()
+	actualDeviceIdSalt = platform.GetDeviceIdSalt()
 	expectedDeviceIdSalt = []string{
 		"device",
 		"salt",
@@ -481,7 +482,7 @@ func Test_createUser(t *testing.T) {
 		return
 	}
 
-	t.Setenv(platform.QodanaDockerEnv, "true")
+	t.Setenv(qdenv.QodanaDockerEnv, "true")
 	tc := "User"
 	err := os.MkdirAll("/tmp/entrypoint", 0o755)
 	if err != nil {
@@ -656,9 +657,9 @@ func Test_Bootstrap(t *testing.T) {
 		t.Fatal(err)
 	}
 	opts.ProjectDir = tmpDir
-	qdenv.Bootstrap("echo 'bootstrap: touch qodana.yml' > qodana.yaml", opts.ProjectDir)
+	utils.Bootstrap("echo 'bootstrap: touch qodana.yml' > qodana.yaml", opts.ProjectDir)
 	config := qdyaml.GetQodanaYamlOrDefault(tmpDir)
-	qdenv.Bootstrap(config.Bootstrap, opts.ProjectDir)
+	utils.Bootstrap(config.Bootstrap, opts.ProjectDir)
 	if _, err := os.Stat(filepath.Join(opts.ProjectDir, "qodana.yaml")); errors.Is(err, os.ErrNotExist) {
 		t.Fatalf("No qodana.yml created by the bootstrap command in qodana.yaml")
 	}
@@ -773,39 +774,39 @@ func TestSetupLicense(t *testing.T) {
 				defer svr.Close()
 				startup2.SetupLicenseAndProjectHash(&cloud.QdApiEndpoints{LintersApiUrl: svr.URL}, "token")
 
-				licenseKey := os.Getenv(platform.QodanaLicense)
+				licenseKey := os.Getenv(qdenv.QodanaLicense)
 				if licenseKey != tc.expectedKey {
 					t.Errorf("expected key to be '%s' got '%s'", tc.expectedKey, licenseKey)
 				}
 
-				projectIdHash := os.Getenv(platform.QodanaProjectIdHash)
+				projectIdHash := os.Getenv(qdenv.QodanaProjectIdHash)
 				if projectIdHash != tc.expectedHash {
 					t.Errorf("expected projectIdHash to be '%s' got '%s'", tc.expectedHash, projectIdHash)
 				}
 
 				if tc.expectedOrgHash == "" {
-					_, r := os.LookupEnv(platform.QodanaOrganisationIdHash)
+					_, r := os.LookupEnv(qdenv.QodanaOrganisationIdHash)
 					if r {
-						t.Errorf("'%s' env shoul not be set", platform.QodanaOrganisationIdHash)
+						t.Errorf("'%s' env shoul not be set", qdenv.QodanaOrganisationIdHash)
 					}
 				} else {
-					orgIdHash := os.Getenv(platform.QodanaOrganisationIdHash)
+					orgIdHash := os.Getenv(qdenv.QodanaOrganisationIdHash)
 					if orgIdHash != tc.expectedOrgHash {
 						t.Errorf("expected organizationIdHash to be '%s' got '%s'", tc.expectedOrgHash, orgIdHash)
 					}
 				}
 
-				err := os.Unsetenv(platform.QodanaLicense)
+				err := os.Unsetenv(qdenv.QodanaLicense)
 				if err != nil {
 					t.Fatal(err)
 				}
 
-				err = os.Unsetenv(platform.QodanaProjectIdHash)
+				err = os.Unsetenv(qdenv.QodanaProjectIdHash)
 				if err != nil {
 					t.Fatal(err)
 				}
 
-				err = os.Unsetenv(platform.QodanaOrganisationIdHash)
+				err = os.Unsetenv(qdenv.QodanaOrganisationIdHash)
 				if err != nil {
 					t.Fatal(err)
 				}
@@ -889,34 +890,34 @@ func TestQodanaOptions_RequiresToken(t *testing.T) {
 		expected bool
 	}{
 		{
-			platform.QodanaToken,
+			qdenv.QodanaToken,
 			"",
 			"",
 			true,
 		},
 		{
-			platform.QodanaLicense,
+			qdenv.QodanaLicense,
 			"",
 			"",
 			false,
 		},
 		{
 			"QDPYC docker",
-			platform.Image(platform.QDPYC),
+			product.Image(product.QDPYC),
 			"",
 			false,
 		},
 		{
 			"QDJVMC ide",
 			"",
-			platform.QDJVMC,
+			product.QDJVMC,
 			false,
 		},
 	}
 
 	for _, tt := range tests {
 		var token string
-		for _, env := range []string{platform.QodanaToken, platform.QodanaLicenseOnlyToken, platform.QodanaLicense} {
+		for _, env := range []string{qdenv.QodanaToken, qdenv.QodanaLicenseOnlyToken, qdenv.QodanaLicense} {
 			if os.Getenv(env) != "" {
 				token = os.Getenv(env)
 				err := os.Unsetenv(env)
@@ -928,10 +929,10 @@ func TestQodanaOptions_RequiresToken(t *testing.T) {
 
 		t.Run(
 			tt.name, func(t *testing.T) {
-				if tt.name == platform.QodanaToken {
-					t.Setenv(platform.QodanaToken, "test")
-				} else if tt.name == platform.QodanaLicense {
-					t.Setenv(platform.QodanaLicense, "test")
+				if tt.name == qdenv.QodanaToken {
+					t.Setenv(qdenv.QodanaToken, "test")
+				} else if tt.name == qdenv.QodanaLicense {
+					t.Setenv(qdenv.QodanaLicense, "test")
 				}
 				o := &QodanaOptions{
 					&platform.QodanaOptions{
@@ -944,8 +945,8 @@ func TestQodanaOptions_RequiresToken(t *testing.T) {
 			},
 		)
 		if token != "" {
-			t.Setenv(platform.QodanaToken, token)
-			t.Setenv(platform.QodanaLicenseOnlyToken, token)
+			t.Setenv(qdenv.QodanaToken, token)
+			t.Setenv(qdenv.QodanaLicenseOnlyToken, token)
 		}
 	}
 }
@@ -982,9 +983,9 @@ func Test_Properties(t *testing.T) {
 	preparehost.Prod.Code = "QDNET"
 	preparehost.Prod.Version = "2023.3"
 
-	t.Setenv(platform.QodanaDistEnv, opts.ProjectDir)
-	t.Setenv(platform.QodanaConfEnv, opts.ProjectDir)
-	t.Setenv(platform.QodanaDockerEnv, "true")
+	t.Setenv(qdenv.QodanaDistEnv, opts.ProjectDir)
+	t.Setenv(qdenv.QodanaConfEnv, opts.ProjectDir)
+	t.Setenv(qdenv.QodanaDockerEnv, "true")
 	t.Setenv("DEVICEID", "FAKE")
 	t.Setenv("SALT", "FAKE")
 	err := os.MkdirAll(opts.ProjectDir, 0o755)
@@ -1073,9 +1074,9 @@ func Test_Properties(t *testing.T) {
 				opts.Property = tc.cliProperties
 				qConfig := qdyaml.GetQodanaYamlOrDefault(opts.ProjectDir)
 				if tc.isContainer {
-					t.Setenv(platform.QodanaDockerEnv, "true")
+					t.Setenv(qdenv.QodanaDockerEnv, "true")
 				} else {
-					err := os.Unsetenv(platform.QodanaDockerEnv)
+					err := os.Unsetenv(qdenv.QodanaDockerEnv)
 					if err != nil {
 						t.Fatal(err)
 					}

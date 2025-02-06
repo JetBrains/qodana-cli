@@ -14,10 +14,9 @@
  * limitations under the License.
  */
 
-package platform
+package qdyaml
 
 import (
-	"github.com/JetBrains/qodana-cli/v2024/platform/qdyaml"
 	log "github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
 	"os"
@@ -56,7 +55,7 @@ func TestLoadQodanaYaml(t *testing.T) {
 		setup       func(name string)
 		project     string
 		filename    string
-		expected    *qdyaml.QodanaYaml
+		expected    *QodanaYaml
 	}{
 		{
 			description: "file exists but is empty",
@@ -65,7 +64,7 @@ func TestLoadQodanaYaml(t *testing.T) {
 			},
 			project:  os.TempDir(),
 			filename: "empty.yaml",
-			expected: &qdyaml.QodanaYaml{},
+			expected: &QodanaYaml{},
 		},
 		{
 			description: "file exists with valid content",
@@ -75,7 +74,7 @@ func TestLoadQodanaYaml(t *testing.T) {
 			},
 			project:  os.TempDir(),
 			filename: "valid.yaml",
-			expected: &qdyaml.QodanaYaml{
+			expected: &QodanaYaml{
 				Version: "1.0",
 			},
 		},
@@ -90,9 +89,9 @@ dotnet:
 			},
 			project:  os.TempDir(),
 			filename: "dotnet.yaml",
-			expected: &qdyaml.QodanaYaml{
+			expected: &QodanaYaml{
 				Version: "1.0",
-				DotNet: qdyaml.DotNet{
+				DotNet: DotNet{
 					Project:    "test.csproj",
 					Frameworks: "!netstandard2.0;!netstandard2.1",
 				},
@@ -121,12 +120,12 @@ script:
 			},
 			project:  os.TempDir(),
 			filename: "script.yaml",
-			expected: &qdyaml.QodanaYaml{
+			expected: &QodanaYaml{
 				Version: "1.0",
-				Profile: qdyaml.Profile{
+				Profile: Profile{
 					Name: "qodana.starter",
 				},
-				Script: qdyaml.Script{
+				Script: Script{
 					Name: "migrate-classes", Parameters: map[string]interface{}{
 						"include-mapping": "Java EE to Jakarta EE",
 						"mapping": []interface{}{
@@ -152,7 +151,7 @@ script:
 		t.Run(
 			tc.description, func(t *testing.T) {
 				tc.setup(tc.filename)
-				actual := qdyaml.LoadQodanaYaml(tc.project, tc.filename)
+				actual := LoadQodanaYaml(tc.project, tc.filename)
 				_ = os.Remove(filepath.Join(tc.project, tc.filename))
 				assert.Equal(t, tc.expected, actual)
 			},

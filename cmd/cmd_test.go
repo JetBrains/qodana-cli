@@ -22,8 +22,9 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"github.com/JetBrains/qodana-cli/v2024/platform"
 	"github.com/JetBrains/qodana-cli/v2024/platform/msg"
+	"github.com/JetBrains/qodana-cli/v2024/platform/product"
+	"github.com/JetBrains/qodana-cli/v2024/platform/qdenv"
 	"github.com/JetBrains/qodana-cli/v2024/platform/qdyaml"
 	"github.com/JetBrains/qodana-cli/v2024/platform/version"
 	log "github.com/sirupsen/logrus"
@@ -158,8 +159,8 @@ func TestInitCommand(t *testing.T) {
 
 	qodanaYaml := qdyaml.LoadQodanaYaml(projectPath, filename)
 
-	if qodanaYaml.Linter != platform.Image(platform.QDPY) {
-		t.Fatalf("expected \"%s\", but got %s", platform.Image(platform.QDPY), qodanaYaml.Linter)
+	if qodanaYaml.Linter != product.Image(product.QDPY) {
+		t.Fatalf("expected \"%s\", but got %s", product.Image(product.QDPY), qodanaYaml.Linter)
 	}
 
 	err = os.RemoveAll(projectPath)
@@ -273,7 +274,7 @@ func TestAllCommandsWithContainer(t *testing.T) {
 		"-o", resultsPath,
 		"--cache-dir", cachePath,
 		"-v", filepath.Join(projectPath, ".idea") + ":/data/some",
-		"-e", platform.QodanaLicenseOnlyToken + "=" + os.Getenv("QODANA_LICENSE_ONLY_TOKEN"),
+		"-e", qdenv.QodanaLicenseOnlyToken + "=" + os.Getenv("QODANA_LICENSE_ONLY_TOKEN"),
 		"--fail-threshold", "5",
 		"--print-problems",
 		"--apply-fixes",

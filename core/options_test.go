@@ -17,7 +17,6 @@
 package core
 
 import (
-	"github.com/JetBrains/qodana-cli/v2024/platform"
 	"github.com/JetBrains/qodana-cli/v2024/platform/product"
 	"testing"
 )
@@ -42,14 +41,7 @@ func TestQodanaOptions_guessProduct(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(
 			tt.name, func(t *testing.T) {
-
-				opts := &QodanaOptions{
-					&platform.QodanaOptions{
-						Ide:    tt.ide,
-						Linter: tt.linter,
-					},
-				}
-				if got := product.GuessProductCode(opts.Ide, opts.Linter); got != tt.expected {
+				if got := product.GuessProductCode(tt.ide, tt.linter); got != tt.expected {
 					t.Errorf("QodanaOptions.guessProduct() = %v, want %v", got, tt.expected)
 				}
 			},

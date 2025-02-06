@@ -19,7 +19,7 @@ package core
 import (
 	"fmt"
 	"github.com/JetBrains/qodana-cli/v2024/cloud"
-	"github.com/JetBrains/qodana-cli/v2024/core/scan"
+	"github.com/JetBrains/qodana-cli/v2024/core/corescan"
 	"github.com/JetBrains/qodana-cli/v2024/platform"
 	"github.com/JetBrains/qodana-cli/v2024/platform/product"
 	"github.com/JetBrains/qodana-cli/v2024/platform/qdenv"
@@ -80,14 +80,14 @@ func getPropertiesMap(
 }
 
 // Common part for installPlugins and qodana executuion
-func GetCommonProperties(c scan.Context) []string {
-	systemDir := filepath.Join(c.CacheDir, "idea", c.Prod.GetVersionBranch())
-	pluginsDir := filepath.Join(c.CacheDir, "plugins", c.Prod.GetVersionBranch())
+func GetCommonProperties(c corescan.Context) []string {
+	systemDir := filepath.Join(c.CacheDir(), "idea", c.Prod().GetVersionBranch())
+	pluginsDir := filepath.Join(c.CacheDir(), "plugins", c.Prod().GetVersionBranch())
 	lines := []string{
-		fmt.Sprintf("-Didea.config.path=%s", utils.QuoteIfSpace(c.ConfigDir)),
+		fmt.Sprintf("-Didea.config.path=%s", utils.QuoteIfSpace(c.ConfigDir())),
 		fmt.Sprintf("-Didea.system.path=%s", utils.QuoteIfSpace(systemDir)),
 		fmt.Sprintf("-Didea.plugins.path=%s", utils.QuoteIfSpace(pluginsDir)),
-		fmt.Sprintf("-Didea.log.path=%s", utils.QuoteIfSpace(c.LogDir)),
+		fmt.Sprintf("-Didea.log.path=%s", utils.QuoteIfSpace(c.LogDir())),
 	}
 	treatAsRelease := os.Getenv(qdenv.QodanaTreatAsRelease)
 	if treatAsRelease == "true" {
@@ -97,7 +97,7 @@ func GetCommonProperties(c scan.Context) []string {
 	return lines
 }
 
-func GetInstallPluginsProperties(c scan.Context) []string {
+func GetInstallPluginsProperties(c corescan.Context) []string {
 	lines := GetCommonProperties(c)
 
 	lines = append(
@@ -105,7 +105,7 @@ func GetInstallPluginsProperties(c scan.Context) []string {
 		"-Didea.headless.enable.statistics=false",
 		"-Dqodana.application=true",
 		"-Dintellij.platform.load.app.info.from.resources=true",
-		fmt.Sprintf("-Dqodana.build.number=%s-%s", c.Prod.IdeCode, c.Prod.Build),
+		fmt.Sprintf("-Dqodana.build.number=%s-%s", c.Prod().IdeCode, c.Prod().Build),
 	)
 
 	sort.Strings(lines)
@@ -113,8 +113,8 @@ func GetInstallPluginsProperties(c scan.Context) []string {
 }
 
 // GetScanProperties writes key=value `props` to file `f` having later key occurrence win
-func GetScanProperties(c scan.Context) []string {
-	yaml := c.QodanaYaml
+func GetScanProperties(c corescan.Context) []string {
+	yaml := c.QodanaYaml()
 	yamlProps := yaml.Properties
 	dotNetOptions := yaml.DotNet
 	plugins := getPluginIds(yaml.Plugins)
@@ -123,17 +123,17 @@ func GetScanProperties(c scan.Context) []string {
 
 	lines = append(
 		lines,
-		fmt.Sprintf("-Xlog:gc*:%s", utils.QuoteIfSpace(filepath.Join(c.LogDir, "gc.log"))),
+		fmt.Sprintf("-Xlog:gc*:%s", utils.QuoteIfSpace(filepath.Join(c.LogDir(), "gc.log"))),
 	)
 
-	if c.JvmDebugPort > 0 {
+	if c.JvmDebugPort() > 0 {
 		lines = append(
 			lines,
 			fmt.Sprintf("-agentlib:jdwp=transport=dt_socket,server=y,suspend=y,address=*:%s", containerJvmDebugPort),
 		)
 	}
 
-	customPluginPathsValue := getCustomPluginPaths(c.Prod)
+	customPluginPathsValue := getCustomPluginPaths(c.Prod())
 	if customPluginPathsValue != "" {
 		lines = append(lines, fmt.Sprintf("-Dplugin.path=%s", customPluginPathsValue))
 	}
@@ -146,12 +146,12 @@ func GetScanProperties(c scan.Context) []string {
 	}
 
 	props := getPropertiesMap(
-		c.Prod.ParentPrefix(),
+		c.Prod().ParentPrefix(),
 		dotNetOptions,
 		platform.GetDeviceIdSalt(),
 		plugins,
-		c.AnalysisId,
-		c.CoverageDir,
+		c.AnalysisId(),
+		c.CoverageDir(),
 	)
 	for k, v := range yamlProps { // qodana.yaml – overrides vmoptions
 		if !strings.HasPrefix(k, "-") {
@@ -193,26 +193,26 @@ func getCustomPluginPaths(prod product.Product) string {
 }
 
 // writeProperties writes the given key=value `props` to file `f` (sets the environment variable)
-func writeProperties(c scan.Context) { // opts.confDirPath(Prod.version)  opts.vmOptionsPath(Prod.version)
+func writeProperties(c corescan.Context) { // opts.confDirPath(Prod().version)  opts.vmOptionsPath(Prod().version)
 	properties := GetScanProperties(c)
 	err := os.WriteFile(c.VmOptionsPath(), []byte(strings.Join(properties, "\n")), 0o644)
 	if err != nil {
 		log.Fatal(err)
 	}
-	err = os.Setenv(c.Prod.VmOptionsEnv(), c.VmOptionsPath())
+	err = os.Setenv(c.Prod().VmOptionsEnv(), c.VmOptionsPath())
 	if err != nil {
 		log.Fatal(err)
 	}
 }
 
-func setInstallPluginsVmoptions(c scan.Context) {
+func setInstallPluginsVmoptions(c corescan.Context) {
 	vmOptions := GetInstallPluginsProperties(c)
 	log.Debugf("install plugins options:%s", vmOptions)
 	err := os.WriteFile(c.InstallPluginsVmOptionsPath(), []byte(strings.Join(vmOptions, "\n")), 0o644)
 	if err != nil {
 		log.Fatal(err)
 	}
-	err = os.Setenv(c.Prod.VmOptionsEnv(), c.InstallPluginsVmOptionsPath())
+	err = os.Setenv(c.Prod().VmOptionsEnv(), c.InstallPluginsVmOptionsPath())
 	if err != nil {
 		log.Fatal(err)
 	}
