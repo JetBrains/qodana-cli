@@ -17,6 +17,7 @@
 package platform
 
 import (
+	"github.com/JetBrains/qodana-cli/v2024/platform/qdyaml"
 	"os"
 	"path/filepath"
 	"sort"
@@ -100,26 +101,32 @@ failThreshold: 123
 			expected: " --threshold-any=123",
 		},
 	} {
-		t.Run(testData.name, func(t *testing.T) {
-			tempDir := t.TempDir()
-			// create qodana.yaml if needed
-			if testData.yaml != "" {
-				if err := os.WriteFile(filepath.Join(tempDir, "qodana.yaml"), []byte(testData.yaml), 0o644); err != nil {
-					t.Fatal(err)
+		t.Run(
+			testData.name, func(t *testing.T) {
+				tempDir := t.TempDir()
+				// create qodana.yaml if needed
+				if testData.yaml != "" {
+					if err := os.WriteFile(
+						filepath.Join(tempDir, "qodana.yaml"),
+						[]byte(testData.yaml),
+						0o644,
+					); err != nil {
+						t.Fatal(err)
+					}
 				}
-			}
-			yaml := LoadQodanaYaml(tempDir, "qodana.yaml")
-			thresholds := getFailureThresholds(yaml, &QodanaOptions{FailThreshold: testData.option})
-			thresholdArgs := thresholdsToArgs(thresholds)
-			sort.Strings(thresholdArgs)
-			argString := ""
-			for _, arg := range thresholdArgs {
-				argString += " " + arg
-			}
+				yaml := qdyaml.LoadQodanaYaml(tempDir, "qodana.yaml")
+				thresholds := getFailureThresholds(yaml, &QodanaOptions{FailThreshold: testData.option})
+				thresholdArgs := thresholdsToArgs(thresholds)
+				sort.Strings(thresholdArgs)
+				argString := ""
+				for _, arg := range thresholdArgs {
+					argString += " " + arg
+				}
 
-			if argString != testData.expected {
-				t.Errorf("expected argString to be '%s' got '%s'", testData.expected, argString)
-			}
-		})
+				if argString != testData.expected {
+					t.Errorf("expected argString to be '%s' got '%s'", testData.expected, argString)
+				}
+			},
+		)
 	}
 }

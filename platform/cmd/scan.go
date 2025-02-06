@@ -20,13 +20,17 @@ import (
 	"fmt"
 	"github.com/JetBrains/qodana-cli/v2024/platform"
 	"github.com/JetBrains/qodana-cli/v2024/platform/cli"
+	"github.com/JetBrains/qodana-cli/v2024/platform/msg"
+	"github.com/JetBrains/qodana-cli/v2024/platform/qdenv"
+	"github.com/JetBrains/qodana-cli/v2024/platform/thirdpartyscan"
+	"github.com/JetBrains/qodana-cli/v2024/platform/utils"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 	"os"
 )
 
 // NewScanCommand returns a new instance of the scan command.
-func NewScanCommand(linter platform.ThirdPartyLinter, linterInfo platform.LinterInfo) *cobra.Command {
+func NewScanCommand(linter platform.ThirdPartyLinter, linterInfo thirdpartyscan.LinterInfo) *cobra.Command {
 	cliOptions := &cli.QodanaScanCliOptions{}
 	cmd := &cobra.Command{
 		Use:   "scan",
@@ -46,17 +50,17 @@ But you can always override qodana.yaml options with the following command-line 
 			if resultDir == "" {
 				resultDir = cliOptions.ResultsDir
 			}
-			if platform.IsContainer() {
+			if qdenv.IsContainer() {
 				c.ResultsDir()
 				err := platform.ChangePermissionsRecursively(resultDir)
 				if err != nil {
-					platform.ErrorMessage("Unable to change permissions in %s: %s", resultDir, err)
+					msg.ErrorMessage("Unable to change permissions in %s: %s", resultDir, err)
 				}
 			}
 			log.Debug("exitCode: ", exitCode)
-			if exitCode == platform.QodanaFailThresholdExitCode {
-				platform.EmptyMessage()
-				platform.ErrorMessage("The number of problems exceeds the fail threshold")
+			if exitCode == utils.QodanaFailThresholdExitCode {
+				msg.EmptyMessage()
+				msg.ErrorMessage("The number of problems exceeds the fail threshold")
 				os.Exit(exitCode)
 			}
 			return err

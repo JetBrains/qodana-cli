@@ -18,9 +18,9 @@ package scan
 
 import (
 	"fmt"
-	"github.com/JetBrains/qodana-cli/v2024/core"
-	"github.com/JetBrains/qodana-cli/v2024/platform"
-	"github.com/JetBrains/qodana-cli/v2024/platform/product"
+	"github.com/JetBrains/qodana-cli/v2024/platform/msg"
+	"github.com/JetBrains/qodana-cli/v2024/platform/qdyaml"
+	product2 "github.com/JetBrains/qodana-cli/v2024/platform/scan/startup/product"
 	"math"
 	"path/filepath"
 	"strings"
@@ -41,8 +41,8 @@ type Context struct {
 	Ide                       string
 	Id                        string
 	IdeDir                    string
-	QodanaYaml                platform.QodanaYaml
-	Prod                      product.Product
+	QodanaYaml                qdyaml.QodanaYaml
+	Prod                      product2.Product
 	QodanaToken               string
 	QodanaLicenseOnlyToken    string
 	ProjectDir                string
@@ -131,7 +131,7 @@ func (c Context) StartHash() (string, error) {
 
 func (c Context) DetermineRunScenario(hasStartHash bool) RunScenario {
 	if c.ForceLocalChangesScript || c.Script == "local-changes" {
-		platform.WarningMessage("Using local-changes script is deprecated, please switch to other mechanisms of incremental analysis. Further information - https://www.jetbrains.com/help/qodana/analyze-pr.html")
+		msg.WarningMessage("Using local-changes script is deprecated, please switch to other mechanisms of incremental analysis. Further information - https://www.jetbrains.com/help/qodana/analyze-pr.html")
 	}
 	switch {
 	case c.FullHistory:
@@ -157,8 +157,8 @@ func (c Context) InstallPluginsVmOptionsPath() string {
 }
 
 func (c Context) FixesSupported() bool {
-	productCode := core.GuessProductCode(c.Ide, c.Linter)
-	return productCode != platform.QDNET && productCode != platform.QDNETC && productCode != platform.QDCL
+	productCode := product2.GuessProductCode(c.Ide, c.Linter)
+	return productCode != product2.QDNET && productCode != product2.QDNETC && productCode != product2.QDCL
 }
 
 func (c Context) PropertiesAndFlags() (map[string]string, []string) {

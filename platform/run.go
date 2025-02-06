@@ -21,9 +21,13 @@ import (
 	"fmt"
 	"github.com/JetBrains/qodana-cli/v2024/cloud"
 	"github.com/JetBrains/qodana-cli/v2024/platform/cli"
-	"github.com/JetBrains/qodana-cli/v2024/platform/startup"
+	"github.com/JetBrains/qodana-cli/v2024/platform/msg"
+	"github.com/JetBrains/qodana-cli/v2024/platform/qdenv"
+	"github.com/JetBrains/qodana-cli/v2024/platform/qdyaml"
+	startup2 "github.com/JetBrains/qodana-cli/v2024/platform/scan/startup"
 	"github.com/JetBrains/qodana-cli/v2024/platform/thirdpartyscan"
 	"github.com/JetBrains/qodana-cli/v2024/platform/tokenloader"
+	"github.com/JetBrains/qodana-cli/v2024/platform/utils"
 	"github.com/JetBrains/qodana-cli/v2024/tooling"
 	log "github.com/sirupsen/logrus"
 	"os"
@@ -35,25 +39,25 @@ import (
 func RunThirdPartyLinterAnalysis(
 	cliOptions cli.QodanaScanCliOptions,
 	linter ThirdPartyLinter,
-	linterInfo LinterInfo,
+	linterInfo thirdpartyscan.LinterInfo,
 ) (thirdpartyscan.Context, int, error) {
 	var err error
 
-	startupArgs := startup.ComputeArgs(
+	startupArgs := startup2.ComputeArgs(
 		cliOptions.Linter,
 		cliOptions.Ide,
 		cliOptions.CacheDir,
 		cliOptions.ResultsDir,
 		cliOptions.ReportDir,
-		GetEnvWithOsEnv(cliOptions, QodanaToken),
-		GetEnvWithOsEnv(cliOptions, QodanaLicenseOnlyToken),
+		GetEnvWithOsEnv(cliOptions, qdenv.QodanaToken),
+		GetEnvWithOsEnv(cliOptions, qdenv.QodanaLicenseOnlyToken),
 		cliOptions.ClearCache,
 		cliOptions.ProjectDir,
 		cliOptions.ConfigName,
 	)
 	startupArgs, err = correctStartupArgsForThirdParty(startupArgs)
 	if err != nil {
-		ErrorMessage(err.Error())
+		msg.ErrorMessage(err.Error())
 		return thirdpartyscan.Context{}, 1, err
 	}
 
@@ -70,8 +74,8 @@ func RunThirdPartyLinterAnalysis(
 	tempMountPath, mountInfo := extractUtils(linter, startupArgs.CacheDir, isCommunity)
 	defer cleanupUtils(tempMountPath)
 
-	qodanaYamlPath := GetQodanaYamlPathWithProject(startupArgs.ProjectDir, cliOptions.ConfigName)
-	yaml := LoadQodanaYamlByFullPath(qodanaYamlPath)
+	qodanaYamlPath := qdyaml.GetQodanaYamlPathWithProject(startupArgs.ProjectDir, cliOptions.ConfigName)
+	yaml := qdyaml.LoadQodanaYamlByFullPath(qodanaYamlPath)
 
 	context := thirdpartyscan.ComputeContext(cliOptions, startupArgs, linterInfo, mountInfo, thirdPartyCloudData, yaml)
 
@@ -89,7 +93,7 @@ func RunThirdPartyLinterAnalysis(
 	logProjectOpen(eventsCh, linterInfo, projectIdHash)
 
 	if err = linter.RunAnalysis(context); err != nil {
-		ErrorMessage(err.Error())
+		msg.ErrorMessage(err.Error())
 		return context, 1, err
 	}
 	log.Debugf("Java executable path: %s", mountInfo.JavaPath)
@@ -97,28 +101,28 @@ func RunThirdPartyLinterAnalysis(
 	thresholds := getFailureThresholds(context)
 	var analysisResult int
 	if analysisResult, err = computeBaselinePrintResults(context, thresholds); err != nil {
-		ErrorMessage(err.Error())
+		msg.ErrorMessage(err.Error())
 		return context, 1, err
 	}
 	if err = copySarifToReportPath(context.ResultsDir()); err != nil {
-		ErrorMessage(err.Error())
+		msg.ErrorMessage(err.Error())
 		return context, 1, err
 	}
 	if err = convertReportToCloudFormat(context); err != nil {
-		ErrorMessage(err.Error())
+		msg.ErrorMessage(err.Error())
 		return context, 1, err
 	}
 	resultsPath := ReportResultsPath(context.ResultsDir())
 	if err = copyQodanaYamlToReportPath(qodanaYamlPath, resultsPath); err != nil {
-		ErrorMessage(err.Error())
+		msg.ErrorMessage(err.Error())
 		return context, 1, err
 	}
 	sendReportToQodanaServer(context)
 	return context, analysisResult, nil
 }
 
-func correctStartupArgsForThirdParty(args startup.Args) (startup.Args, error) {
-	empty := startup.Args{}
+func correctStartupArgsForThirdParty(args startup2.Args) (startup2.Args, error) {
+	empty := startup2.Args{}
 	var err error
 
 	if args.ResultsDir, err = filepath.Abs(args.ResultsDir); err != nil {
@@ -153,7 +157,7 @@ func correctStartupArgsForThirdParty(args startup.Args) (startup.Args, error) {
 	return args, nil
 }
 
-func checkLinterLicense(loader tokenloader.CloudTokenLoader) ThirdPartyStartupCloudData {
+func checkLinterLicense(loader tokenloader.CloudTokenLoader) thirdpartyscan.ThirdPartyStartupCloudData {
 	licensePlan := cloud.CommunityLicensePlan
 	token := tokenloader.LoadCloudToken(loader, false, false, true)
 	projectIdHash := ""
@@ -164,19 +168,19 @@ func checkLinterLicense(loader tokenloader.CloudTokenLoader) ThirdPartyStartupCl
 		licensePlan = licenseData.LicensePlan
 		projectIdHash = licenseData.ProjectIdHash
 	}
-	return ThirdPartyStartupCloudData{
+	return thirdpartyscan.ThirdPartyStartupCloudData{
 		LicensePlan:   licensePlan,
 		QodanaToken:   token,
 		ProjectIdHash: projectIdHash,
 	}
 }
 
-func printLinterLicense(licensePlan string, linterInfo LinterInfo) {
+func printLinterLicense(licensePlan string, linterInfo thirdpartyscan.LinterInfo) {
 	licenseString := licensePlan
 	if cloud.Token.Token == "" && linterInfo.IsEap {
 		licenseString = "EAP license"
 	}
-	SuccessMessage("Qodana license plan: %s", licenseString)
+	msg.SuccessMessage("Qodana license plan: %s", licenseString)
 }
 
 func sendReportToQodanaServer(c thirdpartyscan.Context) {
@@ -191,8 +195,8 @@ func sendReportToQodanaServer(c thirdpartyscan.Context) {
 		SendReport(
 			publisher,
 			cloud.Token.Token,
-			QuoteForWindows(filepath.Join(c.CacheDir(), PublisherJarName)),
-			QuoteForWindows(c.MountInfo().JavaPath),
+			utils.QuoteForWindows(filepath.Join(c.CacheDir(), PublisherJarName)),
+			utils.QuoteForWindows(c.MountInfo().JavaPath),
 		)
 	} else {
 		fmt.Println("Skipping report publishing")
@@ -203,7 +207,7 @@ func copyQodanaYamlToReportPath(qodanaYamlFullPath string, reportResultsPath str
 	if _, err := os.Stat(qodanaYamlFullPath); errors.Is(err, os.ErrNotExist) {
 		return nil
 	}
-	if err := CopyFile(qodanaYamlFullPath, path.Join(reportResultsPath, "qodana.yaml")); err != nil {
+	if err := utils.CopyFile(qodanaYamlFullPath, path.Join(reportResultsPath, "qodana.yaml")); err != nil {
 		log.Errorf("Error while copying qodana.yaml: %s", err)
 		return err
 	}
@@ -214,7 +218,7 @@ func convertReportToCloudFormat(c thirdpartyscan.Context) error {
 	reportResultsPath := ReportResultsPath(c.ResultsDir())
 	log.Debugf("Generating report to %s...", reportResultsPath)
 	args := converterArgs(c)
-	stdout, _, res, err := LaunchAndLog(c.LogDir(), "converter", args...)
+	stdout, _, res, err := utils.LaunchAndLog(c.LogDir(), "converter", args...)
 	if res != 0 {
 		return fmt.Errorf("converter exited with non-zero status code: %d", res)
 	}
@@ -233,7 +237,7 @@ func copySarifToReportPath(resultsDir string) error {
 	shortSarifPath := GetShortSarifPath(resultsDir)
 
 	destination := filepath.Join(reportResultsPath, "qodana.sarif.json")
-	if err := CopyFile(sarifPath, destination); err != nil {
+	if err := utils.CopyFile(sarifPath, destination); err != nil {
 		return fmt.Errorf("problem while copying the report %e", err)
 	}
 	if err := MakeShortSarif(destination, shortSarifPath); err != nil {
@@ -245,23 +249,23 @@ func copySarifToReportPath(resultsDir string) error {
 func converterArgs(c thirdpartyscan.Context) []string {
 	reportResultsPath := ReportResultsPath(c.ResultsDir())
 	return []string{
-		QuoteForWindows(c.MountInfo().JavaPath),
+		utils.QuoteForWindows(c.MountInfo().JavaPath),
 		"-jar",
-		QuoteForWindows(c.MountInfo().Converter),
+		utils.QuoteForWindows(c.MountInfo().Converter),
 		"-s",
-		QuoteForWindows(c.ProjectDir()),
+		utils.QuoteForWindows(c.ProjectDir()),
 		"-d",
-		QuoteForWindows(c.ResultsDir()),
+		utils.QuoteForWindows(c.ResultsDir()),
 		"-o",
-		QuoteForWindows(reportResultsPath),
+		utils.QuoteForWindows(reportResultsPath),
 		"-n",
 		"result-allProblems.json",
 		"-f",
 	}
 }
 
-func printQodanaLogo(logDir string, cacheDir string, linterInfo LinterInfo) {
+func printQodanaLogo(logDir string, cacheDir string, linterInfo thirdpartyscan.LinterInfo) {
 	fmt.Println("\nLog directory: " + logDir)
 	fmt.Println("Cache directory: " + cacheDir)
-	fmt.Print(QodanaLogo(linterInfo.LinterName, linterInfo.LinterVersion, linterInfo.IsEap))
+	fmt.Print(startup2.QodanaLogo(linterInfo.LinterName, linterInfo.LinterVersion, linterInfo.IsEap))
 }

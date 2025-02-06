@@ -19,29 +19,30 @@ package platform
 import (
 	"fmt"
 	thirdpartyscan "github.com/JetBrains/qodana-cli/v2024/platform/thirdpartyscan"
+	"github.com/JetBrains/qodana-cli/v2024/platform/utils"
 )
 
 // computeBaselinePrintResults runs SARIF analysis (compares with baseline and prints the result)=
 func computeBaselinePrintResults(c thirdpartyscan.Context, thresholds map[string]string) (int, error) {
 	sarifPath := GetSarifPath(c.ResultsDir())
 	args := []string{
-		QuoteForWindows(c.MountInfo().JavaPath),
+		utils.QuoteForWindows(c.MountInfo().JavaPath),
 		"-jar",
-		QuoteForWindows(c.MountInfo().BaselineCli),
+		utils.QuoteForWindows(c.MountInfo().BaselineCli),
 		"-r",
-		QuoteForWindows(sarifPath),
+		utils.QuoteForWindows(sarifPath),
 	}
 	severities := thresholdsToArgs(thresholds)
 	for _, sev := range severities {
 		args = append(args, sev)
 	}
 	if c.Baseline() != "" {
-		args = append(args, "-b", QuoteForWindows(c.Baseline()))
+		args = append(args, "-b", utils.QuoteForWindows(c.Baseline()))
 	}
 	if c.BaselineIncludeAbsent() {
 		args = append(args, "-i")
 	}
-	_, _, ret, err := LaunchAndLog(c.LogDir(), "baseline", args...)
+	_, _, ret, err := utils.LaunchAndLog(c.LogDir(), "baseline", args...)
 	if err != nil {
 		return -1, fmt.Errorf("error while running baseline-cli: %w", err)
 	}

@@ -17,6 +17,7 @@
 package platform
 
 import (
+	"github.com/JetBrains/qodana-cli/v2024/platform/qdyaml"
 	"github.com/spf13/pflag"
 	"os"
 	"testing"
@@ -76,6 +77,6 @@ func (TestOptions) Setup(_ *QodanaOptions) error {
 	return nil
 }
 
-func (TestOptions) RunAnalysis(_ *QodanaOptions, _ *QodanaYaml) error {
+func (TestOptions) RunAnalysis(_ *QodanaOptions, _ *qdyaml.QodanaYaml) error {
 	return nil
 }

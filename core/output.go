@@ -18,7 +18,7 @@ package core
 
 import (
 	"fmt"
-	"github.com/JetBrains/qodana-cli/v2024/platform"
+	"github.com/JetBrains/qodana-cli/v2024/platform/msg"
 	"github.com/pterm/pterm"
 	"strconv"
 )
@@ -30,9 +30,9 @@ func PrintContributorsTable(contributors []contributor, days int, dirs int) {
 	count := len(contributors)
 	contributorsTableData := pterm.TableData{
 		[]string{
-			platform.PrimaryBold("Username"),
-			platform.PrimaryBold("Email"),
-			platform.PrimaryBold("Commits"),
+			msg.PrimaryBold("Username"),
+			msg.PrimaryBold("Email"),
+			msg.PrimaryBold("Commits"),
 		},
 	}
 	for _, p := range contributors {
@@ -51,18 +51,18 @@ func PrintContributorsTable(contributors []contributor, days int, dirs int) {
 	if err != nil {
 		return
 	}
-	platform.EmptyMessage()
-	platform.SuccessMessage(
+	msg.EmptyMessage()
+	msg.SuccessMessage(
 		"There are %s active contributor(s)* for the last %s days in the provided %s project(s).",
-		platform.PrimaryBold(strconv.Itoa(count)),
-		platform.PrimaryBold(strconv.Itoa(days)),
-		platform.PrimaryBold(strconv.Itoa(dirs)),
+		msg.PrimaryBold(strconv.Itoa(count)),
+		msg.PrimaryBold(strconv.Itoa(days)),
+		msg.PrimaryBold(strconv.Itoa(dirs)),
 	)
-	platform.EmptyMessage()
+	msg.EmptyMessage()
 	fmt.Printf(
 		`*  Visit %s for more information.
    Note: Qodana will always be free for verified open source projects.`,
 		PricingUrl,
 	)
-	platform.EmptyMessage()
+	msg.EmptyMessage()
 }

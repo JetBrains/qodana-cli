@@ -19,13 +19,14 @@ package main
 import (
 	"fmt"
 	"github.com/JetBrains/qodana-cli/v2024/platform"
+	"github.com/JetBrains/qodana-cli/v2024/platform/thirdpartyscan"
 	"os"
 	"path/filepath"
 )
 
 func (l CdnetLinter) MountTools(tempMountPath string, mountPath string, _ bool) (map[string]string, error) {
 	val := make(map[string]string)
-	val[platform.Clt] = filepath.Join(mountPath, "tools", "netcoreapp3.1", "any", "JetBrains.CommandLine.Products.dll")
+	val[thirdpartyscan.Clt] = filepath.Join(mountPath, "tools", "netcoreapp3.1", "any", "JetBrains.CommandLine.Products.dll")
 	archive := "clt.zip"
 	if _, err := os.Stat(val["clt"]); err != nil {
 		if os.IsNotExist(err) {

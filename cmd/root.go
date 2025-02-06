@@ -19,7 +19,9 @@ package cmd
 import (
 	"fmt"
 	"github.com/JetBrains/qodana-cli/v2024/core"
-	"github.com/JetBrains/qodana-cli/v2024/platform"
+	"github.com/JetBrains/qodana-cli/v2024/platform/msg"
+	"github.com/JetBrains/qodana-cli/v2024/platform/qdenv"
+	"github.com/JetBrains/qodana-cli/v2024/platform/version"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
@@ -49,7 +51,10 @@ func isCommandRequested(commands []*cobra.Command, args []string) string {
 
 // setDefaultCommandIfNeeded sets default scan command if no other command is requested.
 func setDefaultCommandIfNeeded(rootCmd *cobra.Command, args []string) {
-	if !(isHelpOrVersion(args) || isCommandRequested(rootCmd.Commands(), args[1:]) != "" || isCompletionRequested(args)) {
+	if !(isHelpOrVersion(args) || isCommandRequested(
+		rootCmd.Commands(),
+		args[1:],
+	) != "" || isCompletionRequested(args)) {
 		newArgs := append([]string{"scan"}, args[1:]...)
 		rootCmd.SetArgs(newArgs)
 	}
@@ -57,17 +62,17 @@ func setDefaultCommandIfNeeded(rootCmd *cobra.Command, args []string) {
 
 // Execute is a main CLI entrypoint: handles user interrupt, CLI start and everything else.
 func Execute() {
-	if !platform.IsContainer() && os.Geteuid() == 0 {
-		platform.WarningMessage("Running the tool as root is dangerous: please run it as a regular user")
+	if !qdenv.IsContainer() && os.Geteuid() == 0 {
+		msg.WarningMessage("Running the tool as root is dangerous: please run it as a regular user")
 	}
-	go core.CheckForUpdates(platform.Version)
-	if !platform.IsInteractive() || os.Getenv("NO_COLOR") != "" { // http://no-color.org
-		platform.DisableColor()
+	go core.CheckForUpdates(version.Version)
+	if !msg.IsInteractive() || os.Getenv("NO_COLOR") != "" { // http://no-color.org
+		msg.DisableColor()
 	}
 
 	setDefaultCommandIfNeeded(rootCommand, os.Args)
 	if err := rootCommand.Execute(); err != nil {
-		core.CheckForUpdates(platform.Version)
+		core.CheckForUpdates(version.Version)
 		_, err = fmt.Fprintf(os.Stderr, "error running command: %s\n", err)
 		if err != nil {
 			return
@@ -75,7 +80,7 @@ func Execute() {
 		os.Exit(1)
 	}
 
-	core.CheckForUpdates(platform.Version)
+	core.CheckForUpdates(version.Version)
 }
 
 // newRootCommand constructs root command.
@@ -83,8 +88,8 @@ func newRootCommand() *cobra.Command {
 	rootCmd := &cobra.Command{
 		Use:     "qodana",
 		Short:   "Run Qodana CLI",
-		Long:    platform.InfoString(platform.Version),
-		Version: platform.Version,
+		Long:    msg.InfoString(version.Version),
+		Version: version.Version,
 		PersistentPreRun: func(cmd *cobra.Command, args []string) {
 			logLevel, err := log.ParseLevel(viper.GetString("log-level"))
 			if err != nil {
@@ -102,7 +107,12 @@ func newRootCommand() *cobra.Command {
 		},
 	}
 	rootCmd.PersistentFlags().String("log-level", "error", "Set log-level for output")
-	rootCmd.PersistentFlags().BoolVar(&core.DisableCheckUpdates, "disable-update-checks", false, "Disable check for updates")
+	rootCmd.PersistentFlags().BoolVar(
+		&core.DisableCheckUpdates,
+		"disable-update-checks",
+		false,
+		"Disable check for updates",
+	)
 	if err := viper.BindPFlag("log-level", rootCmd.PersistentFlags().Lookup("log-level")); err != nil {
 		log.Fatal(err)
 	}

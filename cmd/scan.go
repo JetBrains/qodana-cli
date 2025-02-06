@@ -21,8 +21,11 @@ import (
 	"github.com/JetBrains/qodana-cli/v2024/cloud"
 	"github.com/JetBrains/qodana-cli/v2024/platform"
 	"github.com/JetBrains/qodana-cli/v2024/platform/cli"
+	"github.com/JetBrains/qodana-cli/v2024/platform/msg"
+	"github.com/JetBrains/qodana-cli/v2024/platform/qdenv"
 	"github.com/JetBrains/qodana-cli/v2024/platform/scan"
-	"github.com/JetBrains/qodana-cli/v2024/platform/startup"
+	"github.com/JetBrains/qodana-cli/v2024/platform/scan/startup"
+	"github.com/JetBrains/qodana-cli/v2024/platform/utils"
 	log "github.com/sirupsen/logrus"
 	"os"
 	"path/filepath"
@@ -51,8 +54,8 @@ But you can always override qodana.yaml options with the following command-line 
 				cliOptions.CacheDir,
 				cliOptions.ResultsDir,
 				cliOptions.ReportDir,
-				platform.GetEnvWithOsEnv(cliOptions, platform.QodanaToken),
-				platform.GetEnvWithOsEnv(cliOptions, platform.QodanaLicenseOnlyToken), // REWORK
+				platform.GetEnvWithOsEnv(cliOptions, qdenv.QodanaToken),
+				platform.GetEnvWithOsEnv(cliOptions, qdenv.QodanaLicenseOnlyToken),
 				cliOptions.ClearCache,
 				cliOptions.ProjectDir,
 				cliOptions.ConfigName,
@@ -64,16 +67,16 @@ But you can always override qodana.yaml options with the following command-line 
 			scanContext := scan.CreateContext(*cliOptions, startupArgs, preparedHost)
 
 			exitCode := core.RunAnalysis(ctx, scanContext)
-			if platform.IsContainer() {
+			if qdenv.IsContainer() {
 				err := platform.ChangePermissionsRecursively(scanContext.ResultsDir)
 				if err != nil {
-					platform.ErrorMessage("Unable to change permissions in %s: %s", scanContext.ResultsDir, err)
+					msg.ErrorMessage("Unable to change permissions in %s: %s", scanContext.ResultsDir, err)
 				}
 			}
 			checkExitCode(exitCode, scanContext)
 			newReportUrl := cloud.GetReportUrl(scanContext.ResultsDir)
 			platform.ProcessSarif(
-				filepath.Join(scanContext.ResultsDir, platform.QodanaSarifName),
+				filepath.Join(scanContext.ResultsDir, startup.QodanaSarifName),
 				scanContext.AnalysisId,
 				newReportUrl,
 				scanContext.PrintProblems,
@@ -82,28 +85,28 @@ But you can always override qodana.yaml options with the following command-line 
 			)
 
 			showReport := scanContext.ShowReport
-			if platform.IsInteractive() {
-				showReport = platform.AskUserConfirm("Do you want to open the latest report")
+			if msg.IsInteractive() {
+				showReport = msg.AskUserConfirm("Do you want to open the latest report")
 			}
 
-			if newReportUrl != oldReportUrl && newReportUrl != "" && !platform.IsContainer() {
-				platform.SuccessMessage("Report is successfully uploaded to %s", newReportUrl)
+			if newReportUrl != oldReportUrl && newReportUrl != "" && !qdenv.IsContainer() {
+				msg.SuccessMessage("Report is successfully uploaded to %s", newReportUrl)
 			}
 
 			if showReport {
-				platform.ShowReport(scanContext.ResultsDir, scanContext.ReportDir, scanContext.Port)
-			} else if !platform.IsContainer() && platform.IsInteractive() {
-				platform.WarningMessage(
+				startup.ShowReport(scanContext.ResultsDir, scanContext.ReportDir, scanContext.Port)
+			} else if !qdenv.IsContainer() && msg.IsInteractive() {
+				msg.WarningMessage(
 					"To view the Qodana report later, run %s in the current directory or add %s flag to %s",
-					platform.PrimaryBold("qodana show"),
-					platform.PrimaryBold("--show-report"),
-					platform.PrimaryBold("qodana scan"),
+					msg.PrimaryBold("qodana show"),
+					msg.PrimaryBold("--show-report"),
+					msg.PrimaryBold("qodana scan"),
 				)
 			}
 
-			if exitCode == platform.QodanaFailThresholdExitCode {
-				platform.EmptyMessage()
-				platform.ErrorMessage("The number of problems exceeds the fail threshold")
+			if exitCode == utils.QodanaFailThresholdExitCode {
+				msg.EmptyMessage()
+				msg.ErrorMessage("The number of problems exceeds the fail threshold")
 				os.Exit(exitCode)
 			}
 		},
@@ -118,37 +121,37 @@ But you can always override qodana.yaml options with the following command-line 
 }
 
 func checkProjectDir(projectDir string) {
-	if platform.IsInteractive() && core.IsHomeDirectory(projectDir) {
-		platform.WarningMessage(
+	if msg.IsInteractive() && core.IsHomeDirectory(projectDir) {
+		msg.WarningMessage(
 			fmt.Sprintf("Project directory (%s) is the $HOME directory", projectDir),
 		)
-		if !platform.AskUserConfirm(platform.DefaultPromptText) {
+		if !msg.AskUserConfirm(msg.DefaultPromptText) {
 			os.Exit(0)
 		}
 	}
-	if !platform.CheckDirFiles(projectDir) {
-		platform.ErrorMessage("No files to check with Qodana found in %s", projectDir)
+	if !utils.CheckDirFiles(projectDir) {
+		msg.ErrorMessage("No files to check with Qodana found in %s", projectDir)
 		os.Exit(1)
 	}
 }
 
 func checkExitCode(exitCode int, c scan.Context) {
-	if exitCode == platform.QodanaEapLicenseExpiredExitCode && platform.IsInteractive() {
-		platform.EmptyMessage()
-		platform.ErrorMessage(
+	if exitCode == utils.QodanaEapLicenseExpiredExitCode && msg.IsInteractive() {
+		msg.EmptyMessage()
+		msg.ErrorMessage(
 			"Your license expired: update your license or token. If you are using EAP, make sure you are using the latest CLI version and update to the latest linter by running %s ",
-			platform.PrimaryBold("qodana init"),
+			msg.PrimaryBold("qodana init"),
 		)
 		os.Exit(exitCode)
-	} else if exitCode == platform.QodanaTimeoutExitCodePlaceholder {
-		platform.ErrorMessage("Qodana analysis reached timeout %s", c.GetAnalysisTimeout())
+	} else if exitCode == utils.QodanaTimeoutExitCodePlaceholder {
+		msg.ErrorMessage("Qodana analysis reached timeout %s", c.GetAnalysisTimeout())
 		os.Exit(c.AnalysisTimeoutExitCode)
-	} else if exitCode != platform.QodanaSuccessExitCode && exitCode != platform.QodanaFailThresholdExitCode {
-		platform.ErrorMessage("Qodana exited with code %d", exitCode)
-		platform.WarningMessage("Check ./logs/ in the results directory for more information")
-		if exitCode == platform.QodanaOutOfMemoryExitCode {
+	} else if exitCode != utils.QodanaSuccessExitCode && exitCode != utils.QodanaFailThresholdExitCode {
+		msg.ErrorMessage("Qodana exited with code %d", exitCode)
+		msg.WarningMessage("Check ./logs/ in the results directory for more information")
+		if exitCode == utils.QodanaOutOfMemoryExitCode {
 			core.CheckContainerEngineMemory()
-		} else if platform.AskUserConfirm(fmt.Sprintf("Do you want to open %s", c.ResultsDir)) {
+		} else if msg.AskUserConfirm(fmt.Sprintf("Do you want to open %s", c.ResultsDir)) {
 			err := core.OpenDir(c.ResultsDir)
 			if err != nil {
 				log.Fatalf("Error while opening directory: %s", err)

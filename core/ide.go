@@ -19,7 +19,9 @@ package core
 import (
 	"github.com/JetBrains/qodana-cli/v2024/platform"
 	"github.com/JetBrains/qodana-cli/v2024/platform/scan"
-	"github.com/JetBrains/qodana-cli/v2024/platform/startup"
+	"github.com/JetBrains/qodana-cli/v2024/platform/scan/startup"
+	"github.com/JetBrains/qodana-cli/v2024/platform/scan/startup/product"
+	"github.com/JetBrains/qodana-cli/v2024/platform/utils"
 	"os"
 	"path/filepath"
 	"strconv"
@@ -40,7 +42,7 @@ func getIdeExitCode(resultsDir string, c int) (res int) {
 	}
 	if len(s.Runs) > 0 && len(s.Runs[0].Invocations) > 0 {
 		res := int(s.Runs[0].Invocations[0].ExitCode)
-		if res < platform.QodanaSuccessExitCode || res > platform.QodanaFailThresholdExitCode {
+		if res < utils.QodanaSuccessExitCode || res > utils.QodanaFailThresholdExitCode {
 			log.Printf("Wrong exitCode in sarif: %d", res)
 			return 1
 		}
@@ -54,15 +56,15 @@ func getIdeExitCode(resultsDir string, c int) (res int) {
 func runQodanaLocal(c scan.Context) (int, error) {
 	writeProperties(c)
 	args := getIdeRunCommand(c)
-	ideProcess, err := platform.RunCmdWithTimeout(
+	ideProcess, err := utils.RunCmdWithTimeout(
 		"",
 		os.Stdout, os.Stderr,
 		c.GetAnalysisTimeout(),
-		platform.QodanaTimeoutExitCodePlaceholder,
+		utils.QodanaTimeoutExitCodePlaceholder,
 		args...,
 	)
 	res := getIdeExitCode(c.ResultsDir, ideProcess)
-	if res > platform.QodanaSuccessExitCode && res != platform.QodanaFailThresholdExitCode {
+	if res > utils.QodanaSuccessExitCode && res != utils.QodanaFailThresholdExitCode {
 		postAnalysis(c)
 		return res, err
 	}
@@ -73,14 +75,14 @@ func runQodanaLocal(c scan.Context) (int, error) {
 }
 
 func getIdeRunCommand(c scan.Context) []string {
-	args := []string{platform.QuoteIfSpace(c.Prod.IdeScript)}
+	args := []string{utils.QuoteIfSpace(c.Prod.IdeScript)}
 	if !c.Prod.Is242orNewer() {
 		args = append(args, "inspect")
 	}
 	args = append(args, "qodana")
 
 	args = append(args, GetIdeArgs(c)...)
-	args = append(args, platform.QuoteIfSpace(c.ProjectDir), platform.QuoteIfSpace(c.ResultsDir))
+	args = append(args, utils.QuoteIfSpace(c.ProjectDir), utils.QuoteIfSpace(c.ResultsDir))
 	return args
 }
 
@@ -88,22 +90,22 @@ func getIdeRunCommand(c scan.Context) []string {
 func GetIdeArgs(c scan.Context) []string {
 	arguments := make([]string, 0)
 	if c.ConfigName != "" {
-		arguments = append(arguments, "--config", platform.QuoteForWindows(c.ConfigName))
+		arguments = append(arguments, "--config", utils.QuoteForWindows(c.ConfigName))
 	}
 	if c.Linter != "" && c.SaveReport {
 		arguments = append(arguments, "--save-report")
 	}
 	if c.SourceDirectory != "" {
-		arguments = append(arguments, "--source-directory", platform.QuoteForWindows(c.SourceDirectory))
+		arguments = append(arguments, "--source-directory", utils.QuoteForWindows(c.SourceDirectory))
 	}
 	if c.DisableSanity {
 		arguments = append(arguments, "--disable-sanity")
 	}
 	if c.ProfileName != "" {
-		arguments = append(arguments, "--profile-name", platform.QuoteIfSpace(c.ProfileName))
+		arguments = append(arguments, "--profile-name", utils.QuoteIfSpace(c.ProfileName))
 	}
 	if c.ProfilePath != "" {
-		arguments = append(arguments, "--profile-path", platform.QuoteForWindows(c.ProfilePath))
+		arguments = append(arguments, "--profile-path", utils.QuoteForWindows(c.ProfilePath))
 	}
 	if c.RunPromo != "" {
 		arguments = append(arguments, "--run-promo", c.RunPromo)
@@ -112,7 +114,7 @@ func GetIdeArgs(c scan.Context) []string {
 		arguments = append(arguments, "--script", c.Script)
 	}
 	if c.Baseline != "" {
-		arguments = append(arguments, "--baseline", platform.QuoteForWindows(c.Baseline))
+		arguments = append(arguments, "--baseline", utils.QuoteForWindows(c.Baseline))
 	}
 	if c.BaselineIncludeAbsent {
 		arguments = append(arguments, "--baseline-include-absent")
@@ -148,22 +150,22 @@ func GetIdeArgs(c scan.Context) []string {
 		}
 	}
 
-	prod := GuessProductCode(
+	prod := product.GuessProductCode(
 		c.Ide,
 		c.Linter,
 	) // TODO : think how it could be better handled in presence of random 3rd party linters
-	if prod == platform.QDNETC || prod == platform.QDCL {
+	if prod == product.QDNETC || prod == product.QDCL {
 		// third party common options
 		if c.NoStatistics {
 			arguments = append(arguments, "--no-statistics")
 		}
-		if prod == platform.QDNETC {
+		if prod == product.QDNETC {
 			// cdnet options
 			if c.CdnetSolution != "" {
-				arguments = append(arguments, "--solution", platform.QuoteForWindows(c.CdnetSolution))
+				arguments = append(arguments, "--solution", utils.QuoteForWindows(c.CdnetSolution))
 			}
 			if c.CdnetProject != "" {
-				arguments = append(arguments, "--project", platform.QuoteForWindows(c.CdnetProject))
+				arguments = append(arguments, "--project", utils.QuoteForWindows(c.CdnetProject))
 			}
 			if c.CdnetConfiguration != "" {
 				arguments = append(arguments, "--configuration", c.CdnetConfiguration)
@@ -177,7 +179,7 @@ func GetIdeArgs(c scan.Context) []string {
 		} else {
 			// clang options
 			if c.ClangCompileCommands != "" {
-				arguments = append(arguments, "--compile-commands", platform.QuoteForWindows(c.ClangCompileCommands))
+				arguments = append(arguments, "--compile-commands", utils.QuoteForWindows(c.ClangCompileCommands))
 			}
 			if c.ClangArgs != "" {
 				arguments = append(arguments, "--clang-args", c.ClangArgs)
@@ -223,7 +225,7 @@ func postAnalysis(c scan.Context) {
 	}
 	startup.SyncConfigCache(c.Prod, c.ConfigDir, c.CacheDir, false)
 	for i := 1; i <= 600; i++ {
-		if findProcess("statistics-uploader") {
+		if utils.FindProcess("statistics-uploader") {
 			time.Sleep(time.Second)
 		} else {
 			break
@@ -243,11 +245,11 @@ func installPlugins(c scan.Context) {
 	}
 	for _, plugin := range plugins {
 		log.Printf("Installing plugin %s", plugin.Id)
-		if res, err := platform.RunCmd(
+		if res, err := utils.RunCmd(
 			"",
-			platform.QuoteIfSpace(c.Prod.IdeScript),
+			utils.QuoteIfSpace(c.Prod.IdeScript),
 			"installPlugins",
-			platform.QuoteIfSpace(plugin.Id),
+			utils.QuoteIfSpace(plugin.Id),
 		); res > 0 || err != nil {
 			os.Exit(res)
 		}

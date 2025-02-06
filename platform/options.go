@@ -19,6 +19,7 @@ package platform
 import (
 	"bytes"
 	"fmt"
+	"github.com/JetBrains/qodana-cli/v2024/platform/qdyaml"
 	log "github.com/sirupsen/logrus"
 	"os"
 	"path"
@@ -85,7 +86,7 @@ type QodanaOptions struct {
 	AnalysisTimeoutMs         int
 	AnalysisTimeoutExitCode   int
 	JvmDebugPort              int
-	QdConfig                  QodanaYaml
+	QdConfig                  qdyaml.QodanaYaml
 }
 
 func LogContext(context any) {

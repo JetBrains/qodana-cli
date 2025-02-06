@@ -17,6 +17,7 @@
 package platform
 
 import (
+	"github.com/JetBrains/qodana-cli/v2024/platform/utils"
 	"os"
 	"path/filepath"
 	"strings"
@@ -66,7 +67,7 @@ func TestMergeSarifReports(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	err = CopyDir(filepath.Join(testdataPath, "merge"), filepath.Join(dir, "tmp"))
+	err = utils.CopyDir(filepath.Join(testdataPath, "merge"), filepath.Join(dir, "tmp"))
 	if err != nil {
 		t.Fatal(err)
 	}
