@@ -19,12 +19,13 @@ package cmd
 import (
 	"fmt"
 	"github.com/JetBrains/qodana-cli/v2024/cloud"
+	"github.com/JetBrains/qodana-cli/v2024/core/scan"
+	"github.com/JetBrains/qodana-cli/v2024/core/startup"
 	"github.com/JetBrains/qodana-cli/v2024/platform"
-	"github.com/JetBrains/qodana-cli/v2024/platform/cli"
+	"github.com/JetBrains/qodana-cli/v2024/platform/cmd"
 	"github.com/JetBrains/qodana-cli/v2024/platform/msg"
+	"github.com/JetBrains/qodana-cli/v2024/platform/platforminit"
 	"github.com/JetBrains/qodana-cli/v2024/platform/qdenv"
-	"github.com/JetBrains/qodana-cli/v2024/platform/scan"
-	"github.com/JetBrains/qodana-cli/v2024/platform/scan/startup"
 	"github.com/JetBrains/qodana-cli/v2024/platform/utils"
 	log "github.com/sirupsen/logrus"
 	"os"
@@ -36,7 +37,7 @@ import (
 
 // newScanCommand returns a new instance of the scan command.
 func newScanCommand() *cobra.Command {
-	cliOptions := &cli.QodanaScanCliOptions{}
+	cliOptions := &platformcmd.CliOptions{}
 	cmd := &cobra.Command{
 		Use:   "scan",
 		Short: "Scan project with Qodana",
@@ -48,7 +49,7 @@ But you can always override qodana.yaml options with the following command-line 
 		Run: func(cmd *cobra.Command, args []string) {
 			ctx := cmd.Context()
 
-			startupArgs := startup.ComputeArgs(
+			startupArgs := platforminit.ComputeArgs(
 				cliOptions.Linter,
 				cliOptions.Ide,
 				cliOptions.CacheDir,
@@ -76,7 +77,7 @@ But you can always override qodana.yaml options with the following command-line 
 			checkExitCode(exitCode, scanContext)
 			newReportUrl := cloud.GetReportUrl(scanContext.ResultsDir)
 			platform.ProcessSarif(
-				filepath.Join(scanContext.ResultsDir, startup.QodanaSarifName),
+				filepath.Join(scanContext.ResultsDir, platforminit.QodanaSarifName),
 				scanContext.AnalysisId,
 				newReportUrl,
 				scanContext.PrintProblems,
@@ -94,7 +95,7 @@ But you can always override qodana.yaml options with the following command-line 
 			}
 
 			if showReport {
-				startup.ShowReport(scanContext.ResultsDir, scanContext.ReportDir, scanContext.Port)
+				platforminit.ShowReport(scanContext.ResultsDir, scanContext.ReportDir, scanContext.Port)
 			} else if !qdenv.IsContainer() && msg.IsInteractive() {
 				msg.WarningMessage(
 					"To view the Qodana report later, run %s in the current directory or add %s flag to %s",
@@ -112,7 +113,7 @@ But you can always override qodana.yaml options with the following command-line 
 		},
 	}
 
-	err := cli.ComputeFlags(cmd, cliOptions)
+	err := platformcmd.ComputeFlags(cmd, cliOptions)
 	if err != nil {
 		return nil
 	}

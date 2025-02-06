@@ -20,11 +20,11 @@ import (
 	"errors"
 	"fmt"
 	"github.com/JetBrains/qodana-cli/v2024/cloud"
-	"github.com/JetBrains/qodana-cli/v2024/platform/cli"
+	"github.com/JetBrains/qodana-cli/v2024/platform/cmd"
 	"github.com/JetBrains/qodana-cli/v2024/platform/msg"
+	"github.com/JetBrains/qodana-cli/v2024/platform/platforminit"
 	"github.com/JetBrains/qodana-cli/v2024/platform/qdenv"
 	"github.com/JetBrains/qodana-cli/v2024/platform/qdyaml"
-	startup2 "github.com/JetBrains/qodana-cli/v2024/platform/scan/startup"
 	"github.com/JetBrains/qodana-cli/v2024/platform/thirdpartyscan"
 	"github.com/JetBrains/qodana-cli/v2024/platform/tokenloader"
 	"github.com/JetBrains/qodana-cli/v2024/platform/utils"
@@ -37,13 +37,13 @@ import (
 )
 
 func RunThirdPartyLinterAnalysis(
-	cliOptions cli.QodanaScanCliOptions,
+	cliOptions platformcmd.CliOptions,
 	linter ThirdPartyLinter,
 	linterInfo thirdpartyscan.LinterInfo,
 ) (thirdpartyscan.Context, int, error) {
 	var err error
 
-	startupArgs := startup2.ComputeArgs(
+	initArgs := platforminit.ComputeArgs(
 		cliOptions.Linter,
 		cliOptions.Ide,
 		cliOptions.CacheDir,
@@ -55,29 +55,29 @@ func RunThirdPartyLinterAnalysis(
 		cliOptions.ProjectDir,
 		cliOptions.ConfigName,
 	)
-	startupArgs, err = correctStartupArgsForThirdParty(startupArgs)
+	initArgs, err = correctInitArgsForThirdParty(initArgs)
 	if err != nil {
 		msg.ErrorMessage(err.Error())
 		return thirdpartyscan.Context{}, 1, err
 	}
 
-	thirdPartyCloudData := checkLinterLicense(startupArgs)
+	thirdPartyCloudData := checkLinterLicense(initArgs)
 	isCommunity := thirdPartyCloudData.LicensePlan == cloud.CommunityLicensePlan
 
 	printLinterLicense(thirdPartyCloudData.LicensePlan, linterInfo)
-	printQodanaLogo(startupArgs.LogDir(), startupArgs.CacheDir, linterInfo)
+	printQodanaLogo(initArgs.LogDir(), initArgs.CacheDir, linterInfo)
 
 	if linterInfo, err = linter.ComputeNewLinterInfo(linterInfo, isCommunity); err != nil {
 		return thirdpartyscan.Context{}, 1, fmt.Errorf("failed to run linter specific setup procedures: %w", err)
 	}
 
-	tempMountPath, mountInfo := extractUtils(linter, startupArgs.CacheDir, isCommunity)
+	tempMountPath, mountInfo := extractUtils(linter, initArgs.CacheDir, isCommunity)
 	defer cleanupUtils(tempMountPath)
 
-	qodanaYamlPath := qdyaml.GetQodanaYamlPathWithProject(startupArgs.ProjectDir, cliOptions.ConfigName)
+	qodanaYamlPath := qdyaml.GetQodanaYamlPathWithProject(initArgs.ProjectDir, cliOptions.ConfigName)
 	yaml := qdyaml.LoadQodanaYamlByFullPath(qodanaYamlPath)
 
-	context := thirdpartyscan.ComputeContext(cliOptions, startupArgs, linterInfo, mountInfo, thirdPartyCloudData, yaml)
+	context := thirdpartyscan.ComputeContext(cliOptions, initArgs, linterInfo, mountInfo, thirdPartyCloudData, yaml)
 
 	LogContext(context)
 
@@ -121,8 +121,8 @@ func RunThirdPartyLinterAnalysis(
 	return context, analysisResult, nil
 }
 
-func correctStartupArgsForThirdParty(args startup2.Args) (startup2.Args, error) {
-	empty := startup2.Args{}
+func correctInitArgsForThirdParty(args platforminit.Args) (platforminit.Args, error) {
+	empty := platforminit.Args{}
 	var err error
 
 	if args.ResultsDir, err = filepath.Abs(args.ResultsDir); err != nil {
@@ -267,5 +267,5 @@ func converterArgs(c thirdpartyscan.Context) []string {
 func printQodanaLogo(logDir string, cacheDir string, linterInfo thirdpartyscan.LinterInfo) {
 	fmt.Println("\nLog directory: " + logDir)
 	fmt.Println("Cache directory: " + cacheDir)
-	fmt.Print(startup2.QodanaLogo(linterInfo.LinterName, linterInfo.LinterVersion, linterInfo.IsEap))
+	fmt.Print(platforminit.QodanaLogo(linterInfo.LinterName, linterInfo.LinterVersion, linterInfo.IsEap))
 }

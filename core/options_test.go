@@ -18,7 +18,7 @@ package core
 
 import (
 	"github.com/JetBrains/qodana-cli/v2024/platform"
-	"github.com/JetBrains/qodana-cli/v2024/platform/scan/startup/product"
+	"github.com/JetBrains/qodana-cli/v2024/platform/product"
 	"testing"
 )
 

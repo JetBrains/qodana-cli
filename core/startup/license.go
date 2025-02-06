@@ -20,14 +20,14 @@ import (
 	"errors"
 	"fmt"
 	"github.com/JetBrains/qodana-cli/v2024/cloud"
+	"github.com/JetBrains/qodana-cli/v2024/platform/product"
 	"github.com/JetBrains/qodana-cli/v2024/platform/qdenv"
-	product2 "github.com/JetBrains/qodana-cli/v2024/platform/scan/startup/product"
 	"log"
 	"os"
 	"strings"
 )
 
-func SetupLicenseAndProjectHash(prod product2.Product, endpoints *cloud.QdApiEndpoints, token string) {
+func SetupLicenseAndProjectHash(prod product.Product, endpoints *cloud.QdApiEndpoints, token string) {
 	var licenseData cloud.LicenseData
 	if token != "" {
 		licenseData = endpoints.GetLicenseData(token)
@@ -99,8 +99,8 @@ func SetupLicenseAndProjectHash(prod product2.Product, endpoints *cloud.QdApiEnd
 
 func allCommunityNames() string {
 	var nameList []string
-	for _, code := range product2.AllSupportedFreeCodes {
-		nameList = append(nameList, "\""+product2.GetProductNameFromCode(code)+"\"")
+	for _, code := range product.AllSupportedFreeCodes {
+		nameList = append(nameList, "\""+product.GetProductNameFromCode(code)+"\"")
 	}
 	return strings.Join(nameList, ", ")
 }

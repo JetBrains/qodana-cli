@@ -21,13 +21,14 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/JetBrains/qodana-cli/v2024/core/scan"
+	"github.com/JetBrains/qodana-cli/v2024/core/startup"
 	"github.com/JetBrains/qodana-cli/v2024/platform"
 	"github.com/JetBrains/qodana-cli/v2024/platform/git"
 	"github.com/JetBrains/qodana-cli/v2024/platform/msg"
+	"github.com/JetBrains/qodana-cli/v2024/platform/nuget"
 	"github.com/JetBrains/qodana-cli/v2024/platform/qdenv"
 	"github.com/JetBrains/qodana-cli/v2024/platform/qdyaml"
-	"github.com/JetBrains/qodana-cli/v2024/platform/scan"
-	"github.com/JetBrains/qodana-cli/v2024/platform/scan/startup"
 	"github.com/JetBrains/qodana-cli/v2024/platform/utils"
 	cienvironment "github.com/cucumber/ci-environment/go"
 	"github.com/docker/docker/client"
@@ -407,7 +408,7 @@ func runQodana(ctx context.Context, c scan.Context) int {
 	if c.Linter != "" {
 		exitCode = runQodanaContainer(ctx, c)
 	} else if c.Ide != "" {
-		startup.UnsetNugetVariables() // TODO: get rid of it from 241 release
+		nuget.UnsetNugetVariables() // TODO: get rid of it from 241 release
 		exitCode, err = runQodanaLocal(c)
 		if err != nil {
 			log.Fatal(err)

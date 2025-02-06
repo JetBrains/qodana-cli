@@ -14,14 +14,14 @@
  * limitations under the License.
  */
 
-package startup
+package nuget
 
 import (
 	"bufio"
 	"fmt"
 	"github.com/JetBrains/qodana-cli/v2024/cloud"
+	"github.com/JetBrains/qodana-cli/v2024/platform/product"
 	"github.com/JetBrains/qodana-cli/v2024/platform/qdenv"
-	"github.com/JetBrains/qodana-cli/v2024/platform/scan/startup/product"
 	log "github.com/sirupsen/logrus"
 	"os"
 	"path/filepath"

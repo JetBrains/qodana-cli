@@ -19,8 +19,8 @@ package scan
 import (
 	"fmt"
 	"github.com/JetBrains/qodana-cli/v2024/platform/msg"
+	"github.com/JetBrains/qodana-cli/v2024/platform/product"
 	"github.com/JetBrains/qodana-cli/v2024/platform/qdyaml"
-	product2 "github.com/JetBrains/qodana-cli/v2024/platform/scan/startup/product"
 	"math"
 	"path/filepath"
 	"strings"
@@ -42,7 +42,7 @@ type Context struct {
 	Id                        string
 	IdeDir                    string
 	QodanaYaml                qdyaml.QodanaYaml
-	Prod                      product2.Product
+	Prod                      product.Product
 	QodanaToken               string
 	QodanaLicenseOnlyToken    string
 	ProjectDir                string
@@ -157,8 +157,8 @@ func (c Context) InstallPluginsVmOptionsPath() string {
 }
 
 func (c Context) FixesSupported() bool {
-	productCode := product2.GuessProductCode(c.Ide, c.Linter)
-	return productCode != product2.QDNET && productCode != product2.QDNETC && productCode != product2.QDCL
+	productCode := product.GuessProductCode(c.Ide, c.Linter)
+	return productCode != product.QDNET && productCode != product.QDNETC && productCode != product.QDCL
 }
 
 func (c Context) PropertiesAndFlags() (map[string]string, []string) {

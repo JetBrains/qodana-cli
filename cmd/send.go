@@ -20,9 +20,9 @@ import (
 	"fmt"
 	"github.com/JetBrains/qodana-cli/v2024/platform"
 	"github.com/JetBrains/qodana-cli/v2024/platform/msg"
+	"github.com/JetBrains/qodana-cli/v2024/platform/platforminit"
+	"github.com/JetBrains/qodana-cli/v2024/platform/product"
 	"github.com/JetBrains/qodana-cli/v2024/platform/qdenv"
-	"github.com/JetBrains/qodana-cli/v2024/platform/scan/startup"
-	"github.com/JetBrains/qodana-cli/v2024/platform/scan/startup/product"
 	"github.com/JetBrains/qodana-cli/v2024/platform/tokenloader"
 	"github.com/google/uuid"
 	"github.com/spf13/cobra"
@@ -47,7 +47,7 @@ If you are using other Qodana Cloud instance than https://qodana.cloud/, overrid
 		Run: func(cmd *cobra.Command, args []string) {
 			emptyProd := product.Product{} // TODO : what to do with PROD?
 
-			startupArgs := startup.ComputeArgs(
+			startupArgs := platforminit.ComputeArgs(
 				cliOptions.Linter,
 				"",
 				"",

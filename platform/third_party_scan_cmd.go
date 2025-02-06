@@ -14,12 +14,11 @@
  * limitations under the License.
  */
 
-package platformcmd
+package platform
 
 import (
 	"fmt"
-	"github.com/JetBrains/qodana-cli/v2024/platform"
-	"github.com/JetBrains/qodana-cli/v2024/platform/cli"
+	"github.com/JetBrains/qodana-cli/v2024/platform/cmd"
 	"github.com/JetBrains/qodana-cli/v2024/platform/msg"
 	"github.com/JetBrains/qodana-cli/v2024/platform/qdenv"
 	"github.com/JetBrains/qodana-cli/v2024/platform/thirdpartyscan"
@@ -29,9 +28,9 @@ import (
 	"os"
 )
 
-// NewScanCommand returns a new instance of the scan command.
-func NewScanCommand(linter platform.ThirdPartyLinter, linterInfo thirdpartyscan.LinterInfo) *cobra.Command {
-	cliOptions := &cli.QodanaScanCliOptions{}
+// NewThirdPartyScanCommand returns a new instance of the scan command.
+func NewThirdPartyScanCommand(linter ThirdPartyLinter, linterInfo thirdpartyscan.LinterInfo) *cobra.Command {
+	cliOptions := &platformcmd.CliOptions{}
 	cmd := &cobra.Command{
 		Use:   "scan",
 		Short: "Scan project with Qodana",
@@ -44,7 +43,7 @@ But you can always override qodana.yaml options with the following command-line 
 		),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			log.SetFormatter(&log.TextFormatter{DisableQuote: true, DisableTimestamp: true})
-			c, exitCode, err := platform.RunThirdPartyLinterAnalysis(*cliOptions, linter, linterInfo)
+			c, exitCode, err := RunThirdPartyLinterAnalysis(*cliOptions, linter, linterInfo)
 
 			resultDir := c.ResultsDir()
 			if resultDir == "" {
@@ -52,7 +51,7 @@ But you can always override qodana.yaml options with the following command-line 
 			}
 			if qdenv.IsContainer() {
 				c.ResultsDir()
-				err := platform.ChangePermissionsRecursively(resultDir)
+				err := ChangePermissionsRecursively(resultDir)
 				if err != nil {
 					msg.ErrorMessage("Unable to change permissions in %s: %s", resultDir, err)
 				}
@@ -67,7 +66,7 @@ But you can always override qodana.yaml options with the following command-line 
 		},
 	}
 
-	err := cli.ComputeFlags(cmd, cliOptions)
+	err := platformcmd.ComputeFlags(cmd, cliOptions)
 	if err != nil {
 		log.Fatal("Error while computing flags")
 	}

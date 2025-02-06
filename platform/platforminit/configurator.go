@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package startup
+package platforminit
 
 import (
 	"bytes"

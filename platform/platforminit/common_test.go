@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package startup
+package platforminit
 
 import (
 	"github.com/JetBrains/qodana-cli/v2024/platform/utils"
