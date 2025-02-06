@@ -20,7 +20,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/JetBrains/qodana-cli/v2024/platform"
-	"github.com/JetBrains/qodana-cli/v2024/platform/scan/startup"
+	"github.com/JetBrains/qodana-cli/v2024/platform/nuget"
 	"github.com/JetBrains/qodana-cli/v2024/platform/thirdpartyscan"
 	"github.com/JetBrains/qodana-cli/v2024/platform/utils"
 	"github.com/JetBrains/qodana-cli/v2024/sarif"
@@ -44,10 +44,10 @@ func (l CdnetLinter) RunAnalysis(c thirdpartyscan.Context) error {
 	if err != nil {
 		return err
 	}
-	if startup.IsNugetConfigNeeded() {
-		startup.PrepareNugetConfig(os.Getenv("HOME"))
+	if nuget.IsNugetConfigNeeded() {
+		nuget.PrepareNugetConfig(os.Getenv("HOME"))
 	}
-	startup.UnsetNugetVariables()
+	nuget.UnsetNugetVariables()
 	ret, err := utils.RunCmd(
 		utils.QuoteForWindows(c.ProjectDir()),
 		args...,

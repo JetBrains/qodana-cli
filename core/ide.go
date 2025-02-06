@@ -17,10 +17,10 @@
 package core
 
 import (
+	"github.com/JetBrains/qodana-cli/v2024/core/scan"
+	"github.com/JetBrains/qodana-cli/v2024/core/startup"
 	"github.com/JetBrains/qodana-cli/v2024/platform"
-	"github.com/JetBrains/qodana-cli/v2024/platform/scan"
-	"github.com/JetBrains/qodana-cli/v2024/platform/scan/startup"
-	"github.com/JetBrains/qodana-cli/v2024/platform/scan/startup/product"
+	"github.com/JetBrains/qodana-cli/v2024/platform/product"
 	"github.com/JetBrains/qodana-cli/v2024/platform/utils"
 	"os"
 	"path/filepath"

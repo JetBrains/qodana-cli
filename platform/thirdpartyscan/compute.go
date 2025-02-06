@@ -17,22 +17,22 @@
 package thirdpartyscan
 
 import (
-	"github.com/JetBrains/qodana-cli/v2024/platform/cli"
+	"github.com/JetBrains/qodana-cli/v2024/platform/cmd"
+	"github.com/JetBrains/qodana-cli/v2024/platform/platforminit"
 	"github.com/JetBrains/qodana-cli/v2024/platform/qdyaml"
-	"github.com/JetBrains/qodana-cli/v2024/platform/scan/startup"
 	"path/filepath"
 	"strings"
 )
 
 func ComputeContext(
-	cliOptions cli.QodanaScanCliOptions,
-	startupArgs startup.Args,
+	cliOptions platformcmd.CliOptions,
+	initArgs platforminit.Args,
 	linterInfo LinterInfo,
 	mountInfo MountInfo,
 	cloudData ThirdPartyStartupCloudData,
 	qodanaYaml qdyaml.QodanaYaml,
 ) Context {
-	projectDir := startupArgs.ProjectDir
+	projectDir := initArgs.ProjectDir
 
 	clangCompileCommands := cliOptions.ClangCompileCommands
 	if strings.HasPrefix(clangCompileCommands, "./") || strings.HasPrefix(clangCompileCommands, "../") {
@@ -50,9 +50,9 @@ func ComputeContext(
 		MountInfo:             mountInfo,
 		CloudData:             cloudData,
 		ProjectDir:            projectDir,
-		ResultsDir:            startupArgs.ResultsDir,
-		LogDir:                startupArgs.LogDir(),
-		CacheDir:              startupArgs.CacheDir,
+		ResultsDir:            initArgs.ResultsDir,
+		LogDir:                initArgs.LogDir(),
+		CacheDir:              initArgs.CacheDir,
 		ClangCompileCommands:  clangCompileCommands,
 		ClangArgs:             clangArgs,
 		Property:              cliOptions.Property,

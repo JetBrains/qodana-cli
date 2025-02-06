@@ -19,7 +19,6 @@ package main
 import (
 	"github.com/JetBrains/qodana-cli/v2024/cmd"
 	"github.com/JetBrains/qodana-cli/v2024/platform"
-	platformcmd "github.com/JetBrains/qodana-cli/v2024/platform/cmd"
 	"github.com/JetBrains/qodana-cli/v2024/platform/thirdpartyscan"
 	"github.com/spf13/cobra"
 )
@@ -37,7 +36,7 @@ func Execute(productCode string, linterName string, linterVersion string, buildD
 	}
 
 	commands := make([]*cobra.Command, 1)
-	commands[0] = platformcmd.NewScanCommand(linter, linterInfo)
+	commands[0] = platform.NewThirdPartyScanCommand(linter, linterInfo)
 	cmd.InitWithCustomCommands(commands)
 	cmd.Execute()
 }

@@ -19,7 +19,6 @@ package main
 import (
 	"fmt"
 	"github.com/JetBrains/qodana-cli/v2024/platform"
-	platformcmd "github.com/JetBrains/qodana-cli/v2024/platform/cmd"
 	log "github.com/sirupsen/logrus"
 	"os"
 	"os/exec"
@@ -51,7 +50,7 @@ func TestLinterRun(t *testing.T) {
 		},
 	)
 
-	command := platformcmd.NewScanCommand(options)
+	command := platform.NewThirdPartyScanCommand(options)
 	command.SetArgs([]string{"-i", projectPath, "-o", outputDir, "--no-build"})
 	err := command.Execute()
 	defer deferredCleanup(options.CacheDir)

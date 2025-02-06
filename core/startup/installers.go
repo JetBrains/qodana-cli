@@ -21,7 +21,7 @@ import (
 	"encoding/hex"
 	"fmt"
 	"github.com/JetBrains/qodana-cli/v2024/platform/msg"
-	"github.com/JetBrains/qodana-cli/v2024/platform/scan/startup/product"
+	"github.com/JetBrains/qodana-cli/v2024/platform/product"
 	"github.com/JetBrains/qodana-cli/v2024/platform/utils"
 	cp "github.com/otiai10/copy"
 	"github.com/pterm/pterm"

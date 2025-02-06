@@ -14,12 +14,12 @@
  * limitations under the License.
  */
 
-package platform
+package platformcmd
 
 import (
 	"fmt"
+	"github.com/JetBrains/qodana-cli/v2024/platform/product"
 	"github.com/JetBrains/qodana-cli/v2024/platform/qdenv"
-	"github.com/JetBrains/qodana-cli/v2024/platform/scan/startup/product"
 	"github.com/JetBrains/qodana-cli/v2024/platform/utils"
 	"github.com/google/uuid"
 	"github.com/spf13/cobra"
@@ -27,7 +27,66 @@ import (
 	"strings"
 )
 
-func ComputeFlags(cmd *cobra.Command, options *QodanaOptions) error {
+type CliOptions struct {
+	ResultsDir                string
+	CacheDir                  string
+	ProjectDir                string
+	ReportDir                 string
+	CoverageDir               string
+	Linter                    string
+	Ide                       string
+	SourceDirectory           string
+	DisableSanity             bool
+	ProfileName               string
+	ProfilePath               string
+	RunPromo                  string
+	StubProfile               string // note: deprecated option
+	Baseline                  string
+	BaselineIncludeAbsent     bool
+	SaveReport                bool
+	ShowReport                bool
+	Port                      int
+	Property                  []string
+	Script                    string
+	FailThreshold             string
+	Commit                    string
+	DiffStart                 string
+	DiffEnd                   string
+	ForceLocalChangesScript   bool
+	AnalysisId                string
+	Env_                      []string
+	Volumes                   []string
+	User                      string
+	PrintProblems             bool
+	GenerateCodeClimateReport bool
+	SendBitBucketInsights     bool
+	SkipPull                  bool
+	ClearCache                bool
+	ConfigName                string
+	FullHistory               bool
+	ApplyFixes                bool
+	Cleanup                   bool
+	FixesStrategy             string // note: deprecated option
+	NoStatistics              bool
+	CdnetSolution             string // cdnet specific options
+	CdnetProject              string
+	CdnetConfiguration        string
+	CdnetPlatform             string
+	CdnetNoBuild              bool
+	ClangCompileCommands      string // clang specific options
+	ClangArgs                 string
+	AnalysisTimeoutMs         int
+	AnalysisTimeoutExitCode   int
+	JvmDebugPort              int
+}
+
+func (o CliOptions) Env() []string {
+	env := make([]string, len(o.Env_))
+	copy(env, o.Env_)
+	return env
+}
+
+func ComputeFlags(cmd *cobra.Command, options *CliOptions) error {
 	flags := cmd.Flags()
 	flags.SortFlags = false
 
@@ -221,7 +280,7 @@ func ComputeFlags(cmd *cobra.Command, options *QodanaOptions) error {
 		&options.NoStatistics,
 		"no-statistics",
 		false,
-		"[qodana-clang/qodana-cdnet]Disable sending anonymous statistics",
+		"[qodana-clang/qodana-dotner]Disable sending anonymous statistics",
 	)
 	flags.StringVar(
 		&options.ClangCompileCommands,
@@ -243,7 +302,7 @@ func ComputeFlags(cmd *cobra.Command, options *QodanaOptions) error {
 
 	if !qdenv.IsContainer() {
 		flags.StringArrayVarP(
-			&options.Env,
+			&options.Env_,
 			"env",
 			"e",
 			[]string{},
