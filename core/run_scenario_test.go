@@ -103,7 +103,7 @@ func TestQodanaOptions_determineRunScenario(t *testing.T) {
 						Code: product.QDJVM,
 					},
 				},
-				hasStartHash: false,
+				hasStartHash: true,
 			},
 			want: corescan.RunScenarioScoped,
 		},

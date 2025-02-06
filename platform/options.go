@@ -30,7 +30,6 @@ import (
 	"unsafe"
 )
 
-// QodanaOptions is a struct that contains all the options to run a Qodana linter.
 type QodanaOptions struct {
 	ResultsDir                string // mutated
 	CacheDir                  string // mutated
@@ -144,16 +143,6 @@ func GetEnvWithOsEnv(provider EnvProvider, key string) string {
 		return envFromProvider
 	}
 	return os.Getenv(key)
-}
-
-// Unsetenv unsets the Qodana container environment variables.
-func (o *QodanaOptions) Unsetenv(key string) {
-	for i, e := range o.Env {
-		if strings.HasPrefix(e, key) {
-			o.Env = append(o.Env[:i], o.Env[i+1:]...)
-			return
-		}
-	}
 }
 
 func ReportResultsPath(reportDir string) string {
