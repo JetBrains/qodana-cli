@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package startupargs
+package startup
 
 import (
 	"github.com/JetBrains/qodana-cli/v2024/platform"
@@ -29,6 +29,7 @@ type Args struct {
 	CacheDir               string
 	ProjectDir             string
 	ResultsDir             string
+	ReportDir              string
 	QodanaSystemDir        string
 	Id                     string
 	QodanaToken            string

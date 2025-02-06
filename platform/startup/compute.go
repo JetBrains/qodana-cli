@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package startupargs
+package startup
 
 import (
 	"crypto/sha256"
@@ -25,24 +25,32 @@ import (
 	"path/filepath"
 )
 
-func Compute(
+func ComputeArgs(
 	linterFromCliOptions string,
 	ideFromCliOptions string,
 	cacheDirFromCliOptions string,
 	resultsDirFromCliOptions string,
+	reportDirFromCliOptions string,
 	qodanaCloudToken string,
 	qodanaLicenseOnlyToken string,
 	clearCache bool,
 	projectDir string,
 	qodanaYamlPath string,
 ) Args {
-	linter, ide := computeActualLinterAndIde(linterFromCliOptions, ideFromCliOptions, qodanaCloudToken, projectDir, qodanaYamlPath)
+	linter, ide := computeActualLinterAndIde(
+		linterFromCliOptions,
+		ideFromCliOptions,
+		qodanaCloudToken,
+		projectDir,
+		qodanaYamlPath,
+	)
 	qodanaId := computeId(linter, ide, projectDir)
 
 	systemDir := computeQodanaSystemDir(cacheDirFromCliOptions)
 	linterDir := filepath.Join(systemDir, qodanaId)
 	resultsDir := computeResultsDir(resultsDirFromCliOptions, linterDir)
 	cacheDir := computeCacheDir(cacheDirFromCliOptions, linterDir)
+	reportDir := computeReportDir(reportDirFromCliOptions, resultsDir)
 
 	args := Args{
 		Linter:                 linter,
@@ -52,6 +60,7 @@ func Compute(
 		ProjectDir:             projectDir,
 		ResultsDir:             resultsDir,
 		QodanaSystemDir:        systemDir,
+		ReportDir:              reportDir,
 		Id:                     qodanaId,
 		QodanaToken:            qodanaCloudToken,
 		QodanaLicenseOnlyToken: qodanaLicenseOnlyToken,
@@ -84,10 +93,12 @@ func computeActualLinterAndIde(
 				linter = analyzer
 			}
 		} else if qodanaYaml.Linter != "" && qodanaYaml.Ide != "" {
-			platform.ErrorMessage("You have both `linter:` (%s) and `ide:` (%s) fields set in %s. Modify the configuration file to keep one of them",
+			platform.ErrorMessage(
+				"You have both `linter:` (%s) and `ide:` (%s) fields set in %s. Modify the configuration file to keep one of them",
 				qodanaYaml.Linter,
 				qodanaYaml.Ide,
-				qodanaYamlPath)
+				qodanaYamlPath,
+			)
 			os.Exit(1)
 		}
 		if qodanaYaml.Linter != "" {
@@ -153,8 +164,20 @@ func computeCacheDir(cacheDirFromCliOptions string, linterDir string) string {
 	}
 
 	if platform.IsContainer() {
-		return "/data/results"
+		return "/data/cache"
 	} else {
-		return filepath.Join(linterDir, "results")
+		return filepath.Join(linterDir, "cache")
+	}
+}
+
+func computeReportDir(reportDirFromCliOptions string, resultsDir string) string {
+	if reportDirFromCliOptions != "" {
+		return reportDirFromCliOptions
+	}
+
+	if platform.IsContainer() {
+		return "/data/results/report"
+	} else {
+		return filepath.Join(resultsDir, "report")
 	}
 }

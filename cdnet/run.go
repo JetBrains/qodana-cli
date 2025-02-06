@@ -20,19 +20,22 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/JetBrains/qodana-cli/v2024/platform"
+	"github.com/JetBrains/qodana-cli/v2024/platform/thirdpartyscan"
 	"github.com/JetBrains/qodana-cli/v2024/sarif"
 	"os"
 	"path/filepath"
 )
 
-func (o *CltOptions) Setup(_ *platform.QodanaOptions) error {
-	return nil
+type CdnetLinter struct {
 }
 
-func (o *CltOptions) RunAnalysis(opts *platform.QodanaOptions, yaml *platform.QodanaYaml) error {
-	options := &LocalOptions{opts}
-	platform.Bootstrap(yaml.Bootstrap, options.ProjectDir)
-	args, err := o.computeCdnetArgs(opts, options, yaml)
+func (l CdnetLinter) ComputeNewLinterInfo(linterInfo platform.LinterInfo, _ bool) (platform.LinterInfo, error) {
+	return linterInfo, nil
+}
+
+func (l CdnetLinter) RunAnalysis(c thirdpartyscan.Context) error {
+	platform.Bootstrap(c.QodanaYaml().Bootstrap, c.ProjectDir())
+	args, err := l.computeCdnetArgs(c)
 	if err != nil {
 		return err
 	}
@@ -41,7 +44,7 @@ func (o *CltOptions) RunAnalysis(opts *platform.QodanaOptions, yaml *platform.Qo
 	}
 	platform.UnsetNugetVariables()
 	ret, err := platform.RunCmd(
-		platform.QuoteForWindows(options.ProjectDir),
+		platform.QuoteForWindows(c.ProjectDir()),
 		args...,
 	)
 	if err != nil {
@@ -50,15 +53,16 @@ func (o *CltOptions) RunAnalysis(opts *platform.QodanaOptions, yaml *platform.Qo
 	if ret != 0 {
 		return fmt.Errorf("analysis exited with code: %d", ret)
 	}
-	err = patchReport(options)
+	err = patchReport(c)
 	return err
 }
 
-func patchReport(options *LocalOptions) error {
-	if err := copyOriginalReportToLog(options); err != nil {
+func patchReport(c thirdpartyscan.Context) error {
+	sarifPath := platform.GetSarifPath(c.ResultsDir())
+	if err := copyOriginalReportToLog(c.LogDir(), sarifPath); err != nil {
 		return err
 	}
-	finalReport, err := platform.ReadReport(options.GetSarifPath())
+	finalReport, err := platform.ReadReport(sarifPath)
 	if err != nil {
 		return fmt.Errorf("failed to read report: %w", err)
 	}
@@ -89,7 +93,7 @@ func patchReport(options *LocalOptions) error {
 		run.Tool.Driver.Taxa = taxonomy
 	}
 
-	platform.SetVersionControlParams(options.QodanaOptions, platform.GetDeviceIdSalt()[0], finalReport)
+	platform.SetVersionControlParams(c, platform.GetDeviceIdSalt()[0], finalReport)
 
 	// serialize object skipping empty fields
 	fatBytes, err := json.MarshalIndent(finalReport, "", " ")
@@ -97,7 +101,7 @@ func patchReport(options *LocalOptions) error {
 		return fmt.Errorf("error marshalling report: %w", err)
 	}
 
-	f, err := os.Create(options.GetSarifPath())
+	f, err := os.Create(sarifPath)
 	if err != nil {
 		return fmt.Errorf("error creating resulting SARIF file: %w", err)
 	}
@@ -116,9 +120,9 @@ func patchReport(options *LocalOptions) error {
 	return nil
 }
 
-func copyOriginalReportToLog(options *LocalOptions) error {
-	destination := filepath.Join(options.LogDirPath(), "clt.original.sarif.json")
-	if err := platform.CopyFile(options.GetSarifPath(), destination); err != nil {
+func copyOriginalReportToLog(logDir string, sarifPath string) error {
+	destination := filepath.Join(logDir, "clt.original.sarif.json")
+	if err := platform.CopyFile(sarifPath, destination); err != nil {
 		return fmt.Errorf("problem while copying the original CLT report %e", err)
 	}
 	return nil

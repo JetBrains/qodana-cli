@@ -21,9 +21,8 @@ import (
 	"github.com/JetBrains/qodana-cli/v2024/cloud"
 	"github.com/JetBrains/qodana-cli/v2024/core"
 	"github.com/JetBrains/qodana-cli/v2024/platform"
+	"github.com/JetBrains/qodana-cli/v2024/platform/product"
 	"github.com/JetBrains/qodana-cli/v2024/platform/tokenloader"
-	"github.com/JetBrains/qodana-cli/v2024/preparehost/product"
-	"github.com/JetBrains/qodana-cli/v2024/preparehost/startupargs"
 	cp "github.com/otiai10/copy"
 	"github.com/pterm/pterm"
 	log "github.com/sirupsen/logrus"
@@ -45,7 +44,7 @@ type PreparedHost struct {
 }
 
 // prepareHost gets the current user, creates the necessary folders for the analysis.
-func PrepareHost(args startupargs.Args) PreparedHost {
+func PrepareHost(args Args) PreparedHost {
 	prod := product.Product{}
 	token := args.QodanaToken
 	ideDir := ""
@@ -71,19 +70,28 @@ func PrepareHost(args startupargs.Args) PreparedHost {
 	}
 	if args.Ide != "" {
 		if platform.Contains(platform.AllNativeCodes, strings.TrimSuffix(args.Ide, EapSuffix)) {
-			platform.PrintProcess(func(spinner *pterm.SpinnerPrinter) {
-				if spinner != nil {
-					spinner.ShowTimer = false // We will update interactive spinner
-				}
-				ideDir = downloadAndInstallIDE(args.Ide, args.Linter, args.QodanaSystemDir, spinner)
-				fixWindowsPlugins(ideDir)
-			}, fmt.Sprintf("Downloading %s", args.Ide), fmt.Sprintf("downloading IDE distribution to %s", args.QodanaSystemDir))
+			platform.PrintProcess(
+				func(spinner *pterm.SpinnerPrinter) {
+					if spinner != nil {
+						spinner.ShowTimer = false // We will update interactive spinner
+					}
+					ideDir = downloadAndInstallIDE(args.Ide, args.Linter, args.QodanaSystemDir, spinner)
+					fixWindowsPlugins(ideDir)
+				},
+				fmt.Sprintf("Downloading %s", args.Ide),
+				fmt.Sprintf("downloading IDE distribution to %s", args.QodanaSystemDir),
+			)
 		} else {
 			val, exists := os.LookupEnv(platform.QodanaDistEnv)
 			if !exists || val == "" {
 				log.Fatalf("Product code %s is not supported. ", args.Ide)
 			} else if args.Ide != val {
-				log.Fatalf("--ide argument '%s' doesn't match env variable %s value '%s'", args.Ide, platform.QodanaDistEnv, val)
+				log.Fatalf(
+					"--ide argument '%s' doesn't match env variable %s value '%s'",
+					args.Ide,
+					platform.QodanaDistEnv,
+					val,
+				)
 			}
 			ideDir = val
 		}
@@ -103,7 +111,7 @@ func PrepareHost(args startupargs.Args) PreparedHost {
 	return result
 }
 
-func prepareLocalIdeSettingsAndGetQodanaCloudToken(args startupargs.Args) (product.Product, string) {
+func prepareLocalIdeSettingsAndGetQodanaCloudToken(args Args) (product.Product, string) {
 	prod := product.GuessProduct(args.Ide)
 
 	platform.ExtractQodanaEnvironment(platform.SetEnv)

@@ -147,7 +147,7 @@ func TestInitCommand(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	filename := platform.FindQodanaYaml(projectPath)
+	filename := platform.FindDefaultQodanaYaml(projectPath)
 
 	if filename != "qodana.yml" {
 		t.Fatalf("expected \"qodana.yml\" got \"%s\"", filename)
@@ -394,13 +394,15 @@ func TestScanWithIde(t *testing.T) {
 
 	command := newScanCommand()
 	command.SetOut(out)
-	command.SetArgs([]string{
-		"-i", projectPath,
-		"-o", resultsPath,
-		"--ide", "QDGO",
-		"--property",
-		"idea.headless.enable.statistics=false",
-	})
+	command.SetArgs(
+		[]string{
+			"-i", projectPath,
+			"-o", resultsPath,
+			"--ide", "QDGO",
+			"--property",
+			"idea.headless.enable.statistics=false",
+		},
+	)
 	err = command.Execute()
 	if err != nil {
 		t.Fatal(err)

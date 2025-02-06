@@ -98,8 +98,10 @@ fabric.properties
 # Editor-based Rest Client
 .idea/httpRequests
 
-# Ignores the whole .idea folder and all .iml files
-.idea/
+# Ignores the whole .idea besides codeStyles
+!idea/
+.idea/*
+!.idea/codeStyles/
 
 # Android studio 3.1+ serialized cache file
 .idea/caches/build_file_checksums.ser

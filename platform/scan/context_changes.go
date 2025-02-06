@@ -28,12 +28,24 @@ func (c Context) WithAddedProperties(propertiesToAdd ...string) Context {
 	return c
 }
 
-func (c Context) WithEnv(key string, value string) Context {
+func (c Context) WithEnvOverride(key string, value string) Context {
+	return c.withEnv(key, value, true)
+}
+
+func (c Context) WithEnvNoOverride(key string, value string) Context {
+	return c.withEnv(key, value, false)
+}
+
+func (c Context) withEnv(key string, value string, override bool) Context {
 	currentEnvs := c.Env()
 	envs := make([]string, len(currentEnvs))
 
 	for _, e := range currentEnvs {
 		isEnvAlreadySet := strings.HasPrefix(e, key) && value != ""
+		if isEnvAlreadySet && !override {
+			return c
+		}
+
 		if !isEnvAlreadySet {
 			envs = append(envs, e)
 		}

@@ -19,32 +19,38 @@ package platformcmd
 import (
 	"fmt"
 	"github.com/JetBrains/qodana-cli/v2024/platform"
+	"github.com/JetBrains/qodana-cli/v2024/platform/cli"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 	"os"
 )
 
 // NewScanCommand returns a new instance of the scan command.
-func NewScanCommand(options *platform.QodanaOptions) *cobra.Command {
-	linterInfo := options.GetLinterSpecificOptions()
-	if linterInfo == nil {
-		log.Fatal("linterInfo is nil")
-	}
+func NewScanCommand(linter platform.ThirdPartyLinter, linterInfo platform.LinterInfo) *cobra.Command {
+	cliOptions := &cli.QodanaScanCliOptions{}
 	cmd := &cobra.Command{
 		Use:   "scan",
 		Short: "Scan project with Qodana",
-		Long: fmt.Sprintf(`Scan a project with Qodana. It runs %s and reports the results.
+		Long: fmt.Sprintf(
+			`Scan a project with Qodana. It runs %s and reports the results.
 
 Note that most options can be configured via qodana.yaml (https://www.jetbrains.com/help/qodana/qodana-yaml.html) file.
 But you can always override qodana.yaml options with the following command-line options.
-`, (*linterInfo).GetInfo(options).LinterName),
+`, linterInfo,
+		),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			log.SetFormatter(&log.TextFormatter{DisableQuote: true, DisableTimestamp: true})
-			exitCode, err := platform.RunThirdPartyLinterAnalysis(options)
+			c, exitCode, err := platform.RunThirdPartyLinterAnalysis(*cliOptions, linter, linterInfo)
+
+			resultDir := c.ResultsDir()
+			if resultDir == "" {
+				resultDir = cliOptions.ResultsDir
+			}
 			if platform.IsContainer() {
-				err := platform.ChangePermissionsRecursively(options.ResultsDir)
+				c.ResultsDir()
+				err := platform.ChangePermissionsRecursively(resultDir)
 				if err != nil {
-					platform.ErrorMessage("Unable to change permissions in %s: %s", options.ResultsDir, err)
+					platform.ErrorMessage("Unable to change permissions in %s: %s", resultDir, err)
 				}
 			}
 			log.Debug("exitCode: ", exitCode)
@@ -57,8 +63,8 @@ But you can always override qodana.yaml options with the following command-line 
 		},
 	}
 
-	res := platform.ComputeFlags(cmd, options)
-	if res != nil {
+	err := cli.ComputeFlags(cmd, cliOptions)
+	if err != nil {
 		log.Fatal("Error while computing flags")
 	}
 
