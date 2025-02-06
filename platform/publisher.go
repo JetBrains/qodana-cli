@@ -26,6 +26,8 @@ import (
 	"crypto/md5"
 	"encoding/hex"
 	"github.com/JetBrains/qodana-cli/v2024/cloud"
+	"github.com/JetBrains/qodana-cli/v2024/platform/qdenv"
+	"github.com/JetBrains/qodana-cli/v2024/platform/utils"
 	cp "github.com/otiai10/copy"
 	log "github.com/sirupsen/logrus"
 	"io"
@@ -56,7 +58,7 @@ func SendReport(publisher Publisher, token string, publisherPath string, javaPat
 	if _, err := os.Stat(publisherPath); os.IsNotExist(err) {
 		log.Fatalf("Not able to send the report: %s is missing", publisherPath)
 	}
-	if !IsContainer() {
+	if !qdenv.IsContainer() {
 		reportResultsPath := ReportResultsPath(publisher.ResultsDir)
 		if _, err := os.Stat(reportResultsPath); os.IsNotExist(err) {
 			if err := os.MkdirAll(reportResultsPath, os.ModePerm); err != nil {
@@ -71,8 +73,14 @@ func SendReport(publisher Publisher, token string, publisherPath string, javaPat
 		}
 	}
 
-	publisherCommand := getPublisherArgs(javaPath, publisherPath, publisher, token, cloud.GetCloudApiEndpoints().CloudApiUrl)
-	if _, _, res, err := LaunchAndLog(publisher.LogDir, "publisher", publisherCommand...); res > 0 || err != nil {
+	publisherCommand := getPublisherArgs(
+		javaPath,
+		publisherPath,
+		publisher,
+		token,
+		cloud.GetCloudApiEndpoints().CloudApiUrl,
+	)
+	if _, _, res, err := utils.LaunchAndLog(publisher.LogDir, "publisher", publisherCommand...); res > 0 || err != nil {
 		os.Exit(res)
 	}
 }
@@ -81,16 +89,16 @@ func SendReport(publisher Publisher, token string, publisherPath string, javaPat
 func getPublisherArgs(java string, publisherPath string, publisher Publisher, token string, endpoint string) []string {
 	reportResultsPath := ReportResultsPath(publisher.ResultsDir)
 	publisherArgs := []string{
-		QuoteForWindows(java),
+		utils.QuoteForWindows(java),
 		"-jar",
-		QuoteForWindows(publisherPath),
+		utils.QuoteForWindows(publisherPath),
 		"--analysis-id", publisher.AnalysisId,
-		"--sources-path", QuoteForWindows(publisher.ProjectDir),
-		"--report-path", QuoteForWindows(reportResultsPath),
+		"--sources-path", utils.QuoteForWindows(publisher.ProjectDir),
+		"--report-path", utils.QuoteForWindows(reportResultsPath),
 		"--token", token,
 	}
 	var tools []string
-	tool := os.Getenv(QodanaToolEnv)
+	tool := os.Getenv(qdenv.QodanaToolEnv)
 	if tool != "" {
 		tools = []string{tool}
 	}
@@ -114,7 +122,7 @@ func fetchPublisher(path string) {
 	if _, err := os.Stat(path); err == nil {
 		return
 	}
-	err := DownloadFile(path, getPublisherUrl(jarVersion), nil)
+	err := utils.DownloadFile(path, getPublisherUrl(jarVersion), nil)
 	if err != nil {
 		log.Fatal(err)
 	}

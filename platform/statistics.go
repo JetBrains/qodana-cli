@@ -21,6 +21,7 @@ import (
 	"fmt"
 	"github.com/JetBrains/qodana-cli/v2024/cloud"
 	"github.com/JetBrains/qodana-cli/v2024/platform/thirdpartyscan"
+	"github.com/JetBrains/qodana-cli/v2024/platform/utils"
 	"github.com/JetBrains/qodana-cli/v2024/tooling"
 	"github.com/google/uuid"
 	log "github.com/sirupsen/logrus"
@@ -95,25 +96,25 @@ func sendFuserEvents(
 	}
 
 	args := []string{
-		QuoteForWindows(mountInfo.JavaPath),
+		utils.QuoteForWindows(mountInfo.JavaPath),
 		"-jar",
-		QuoteForWindows(mountInfo.Fuser),
+		utils.QuoteForWindows(mountInfo.Fuser),
 		deviceId,
 		linterInfo.ProductCode,
 		linterInfo.LinterVersion,
-		QuoteForWindows(fileName),
+		utils.QuoteForWindows(fileName),
 	}
 	if os.Getenv("GO_TESTING") == "true" {
 		args = append(args, "true")
 	}
-	_, _, _, _ = LaunchAndLog(c.LogDir(), "fuser", args...)
+	_, _, _, _ = utils.LaunchAndLog(c.LogDir(), "fuser", args...)
 }
 
 func currentTimestamp() int64 {
 	return time.Now().UnixNano() / int64(time.Millisecond)
 }
 
-func commonEventData(linterInfo LinterInfo, projectIdHash string) map[string]string {
+func commonEventData(linterInfo thirdpartyscan.LinterInfo, projectIdHash string) map[string]string {
 	eventData := map[string]string{"version": linterInfo.GetMajorVersion()}
 	if projectIdHash != "" {
 		eventData[qodanaProjectId] = projectIdHash
@@ -121,7 +122,7 @@ func commonEventData(linterInfo LinterInfo, projectIdHash string) map[string]str
 	return eventData
 }
 
-func logProjectOpen(ch chan tooling.FuserEvent, linterInfo LinterInfo, projectIdHash string) {
+func logProjectOpen(ch chan tooling.FuserEvent, linterInfo thirdpartyscan.LinterInfo, projectIdHash string) {
 	wg.Add(1)
 	eventData := commonEventData(linterInfo, projectIdHash)
 	ch <- tooling.FuserEvent{
@@ -133,7 +134,7 @@ func logProjectOpen(ch chan tooling.FuserEvent, linterInfo LinterInfo, projectId
 	}
 }
 
-func logProjectClose(ch chan tooling.FuserEvent, linterInfo LinterInfo, projectIdHash string) {
+func logProjectClose(ch chan tooling.FuserEvent, linterInfo thirdpartyscan.LinterInfo, projectIdHash string) {
 	wg.Add(1)
 	eventData := commonEventData(linterInfo, projectIdHash)
 	ch <- tooling.FuserEvent{
@@ -145,7 +146,7 @@ func logProjectClose(ch chan tooling.FuserEvent, linterInfo LinterInfo, projectI
 	}
 }
 
-func logOs(ch chan tooling.FuserEvent, linterInfo LinterInfo, projectIdHash string) {
+func logOs(ch chan tooling.FuserEvent, linterInfo thirdpartyscan.LinterInfo, projectIdHash string) {
 	wg.Add(1)
 	eventData := commonEventData(linterInfo, projectIdHash)
 	eventData["name"] = runtime.GOOS

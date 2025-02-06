@@ -18,10 +18,11 @@ package cmd
 
 import (
 	"fmt"
-	"github.com/JetBrains/qodana-cli/v2024/cloud"
 	"github.com/JetBrains/qodana-cli/v2024/platform"
-	"github.com/JetBrains/qodana-cli/v2024/platform/product"
-	"github.com/JetBrains/qodana-cli/v2024/platform/startup"
+	"github.com/JetBrains/qodana-cli/v2024/platform/msg"
+	"github.com/JetBrains/qodana-cli/v2024/platform/qdenv"
+	"github.com/JetBrains/qodana-cli/v2024/platform/scan/startup"
+	"github.com/JetBrains/qodana-cli/v2024/platform/scan/startup/product"
 	"github.com/JetBrains/qodana-cli/v2024/platform/tokenloader"
 	"github.com/google/uuid"
 	"github.com/spf13/cobra"
@@ -41,7 +42,7 @@ func newSendCommand() *cobra.Command {
 If report directory is not specified, the latest report will be fetched from the default linter results location.
 
 If you are using other Qodana Cloud instance than https://qodana.cloud/, override it by declaring the %s environment variable.`,
-			platform.PrimaryBold(cloud.QodanaEndpointEnv),
+			msg.PrimaryBold(qdenv.QodanaEndpointEnv),
 		),
 		Run: func(cmd *cobra.Command, args []string) {
 			emptyProd := product.Product{} // TODO : what to do with PROD?
@@ -52,15 +53,15 @@ If you are using other Qodana Cloud instance than https://qodana.cloud/, overrid
 				"",
 				cliOptions.ResultsDir,
 				cliOptions.ReportDir,
-				os.Getenv(platform.QodanaToken),
-				os.Getenv(platform.QodanaLicenseOnlyToken),
+				os.Getenv(qdenv.QodanaToken),
+				os.Getenv(qdenv.QodanaLicenseOnlyToken),
 				false,
 				cliOptions.ProjectDir,
 				cliOptions.ConfigName,
 			)
 
 			var publisherPath string
-			if platform.IsContainer() {
+			if qdenv.IsContainer() {
 				publisherPath = filepath.Join(emptyProd.IdeBin(), platform.PublisherJarName)
 			} else {
 				publisherPath = filepath.Join(startupArgs.ConfDirPath(), platform.PublisherJarName)

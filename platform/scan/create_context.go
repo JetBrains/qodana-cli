@@ -17,20 +17,21 @@
 package scan
 
 import (
-	"github.com/JetBrains/qodana-cli/v2024/platform"
 	"github.com/JetBrains/qodana-cli/v2024/platform/cli"
-	"github.com/JetBrains/qodana-cli/v2024/platform/startup"
+	"github.com/JetBrains/qodana-cli/v2024/platform/qdenv"
+	"github.com/JetBrains/qodana-cli/v2024/platform/qdyaml"
+	startup2 "github.com/JetBrains/qodana-cli/v2024/platform/scan/startup"
 	"path/filepath"
 )
 
 func CreateContext(
 	cliOptions cli.QodanaScanCliOptions,
-	startupArgs startup.Args,
-	preparedHost startup.PreparedHost,
+	startupArgs startup2.Args,
+	preparedHost startup2.PreparedHost,
 ) Context {
 	coverageDir := cliOptions.CoverageDir
 	if coverageDir == "" {
-		if platform.IsContainer() {
+		if qdenv.IsContainer() {
 			coverageDir = "/data/coverage"
 		} else {
 			coverageDir = filepath.Join(startupArgs.ProjectDir, ".qodana", "code-coverage")
@@ -42,7 +43,7 @@ func CreateContext(
 		Ide:                       startupArgs.Ide,
 		Id:                        startupArgs.Id,
 		IdeDir:                    preparedHost.IdeDir,
-		QodanaYaml:                platform.QodanaYaml{},
+		QodanaYaml:                qdyaml.QodanaYaml{},
 		Prod:                      preparedHost.Prod,
 		QodanaToken:               preparedHost.QodanaToken,
 		QodanaLicenseOnlyToken:    startupArgs.QodanaLicenseOnlyToken,

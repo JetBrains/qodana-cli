@@ -20,6 +20,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/JetBrains/qodana-cli/v2024/platform/qdenv"
 	log "github.com/sirupsen/logrus"
 	"io"
 	"net/http"
@@ -56,10 +57,8 @@ const (
 
 	qodanaLicenseRequestCooldown = 60
 
-	qodanaLicenseUri       = "/linters/license-key"
-	QodanaToken            = "QODANA_TOKEN"
-	QodanaLicenseOnlyToken = "QODANA_LICENSE_ONLY_TOKEN"
-	CommunityLicensePlan   = "COMMUNITY"
+	qodanaLicenseUri     = "/linters/license-key"
+	CommunityLicensePlan = "COMMUNITY"
 )
 
 var TokenDeclinedError = errors.New("token was declined by Qodana Cloud server")
@@ -206,7 +205,7 @@ func GetEnvWithDefaultInt(env string, defaultValue int) int {
 }
 
 func SetupLicenseToken(token string) {
-	licenseOnlyToken := os.Getenv(QodanaLicenseOnlyToken)
+	licenseOnlyToken := os.Getenv(qdenv.QodanaLicenseOnlyToken)
 	if token == "" && licenseOnlyToken != "" {
 		Token = LicenseToken{
 			Token:       licenseOnlyToken,

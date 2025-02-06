@@ -23,6 +23,9 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/JetBrains/qodana-cli/v2024/platform"
+	"github.com/JetBrains/qodana-cli/v2024/platform/msg"
+	"github.com/JetBrains/qodana-cli/v2024/platform/qdyaml"
+	"github.com/JetBrains/qodana-cli/v2024/platform/version"
 	log "github.com/sirupsen/logrus"
 	"io"
 	"os"
@@ -66,7 +69,7 @@ func TestVersion(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	expected := fmt.Sprintf("qodana version %s\n", platform.Version)
+	expected := fmt.Sprintf("qodana version %s\n", version.Version)
 	actual := string(out)
 	if expected != actual {
 		t.Fatalf("expected \"%s\" got \"%s\"", expected, actual)
@@ -147,13 +150,13 @@ func TestInitCommand(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	filename := platform.FindDefaultQodanaYaml(projectPath)
+	filename := qdyaml.FindDefaultQodanaYaml(projectPath)
 
 	if filename != "qodana.yml" {
 		t.Fatalf("expected \"qodana.yml\" got \"%s\"", filename)
 	}
 
-	qodanaYaml := platform.LoadQodanaYaml(projectPath, filename)
+	qodanaYaml := qdyaml.LoadQodanaYaml(projectPath, filename)
 
 	if qodanaYaml.Linter != platform.Image(platform.QDPY) {
 		t.Fatalf("expected \"%s\", but got %s", platform.Image(platform.QDPY), qodanaYaml.Linter)
@@ -221,7 +224,7 @@ func TestPullInNative(t *testing.T) {
 }
 
 func TestAllCommandsWithContainer(t *testing.T) {
-	platform.Version = "0.1.0"
+	version.Version = "0.1.0"
 	linter := "registry.jetbrains.team/p/sa/containers/qodana-dotnet:latest"
 
 	token := os.Getenv("QODANA_LICENSE_ONLY_TOKEN")
@@ -238,8 +241,8 @@ func TestAllCommandsWithContainer(t *testing.T) {
 	}
 	//_ = os.Setenv(qodanaCliContainerKeep, "true")
 	//_ = os.Setenv(qodanaCliContainerName, "qodana-cli-test-new1")
-	platform.DisableColor()
-	core.CheckForUpdates(platform.Version)
+	msg.DisableColor()
+	core.CheckForUpdates(version.Version)
 	projectPath := createProject(t, "qodana_scan_python")
 
 	// create temp directory for cache

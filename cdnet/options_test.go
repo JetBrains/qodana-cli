@@ -18,16 +18,17 @@ package main
 
 import (
 	"github.com/JetBrains/qodana-cli/v2024/core"
-	"github.com/JetBrains/qodana-cli/v2024/core/preparehost"
 	"github.com/JetBrains/qodana-cli/v2024/platform"
+	"github.com/JetBrains/qodana-cli/v2024/platform/qdyaml"
+	"github.com/JetBrains/qodana-cli/v2024/platform/utils"
 	"github.com/stretchr/testify/assert"
 	"reflect"
 	"testing"
 )
 
-func createDefaultYaml(sln string, prj string, cfg string, plt string) *platform.QodanaYaml {
-	return &platform.QodanaYaml{
-		DotNet: platform.DotNet{
+func createDefaultYaml(sln string, prj string, cfg string, plt string) *qdyaml.QodanaYaml {
+	return &qdyaml.QodanaYaml{
+		DotNet: qdyaml.DotNet{
 			Solution:      sln,
 			Project:       prj,
 			Configuration: cfg,
@@ -40,7 +41,7 @@ func TestComputeCdnetArgs(t *testing.T) {
 	tests := []struct {
 		name         string
 		options      *platform.QodanaOptions
-		yaml         *platform.QodanaYaml
+		yaml         *qdyaml.QodanaYaml
 		expectedArgs []string
 		expectedErr  string
 	}{
@@ -317,7 +318,7 @@ func TestComputeCdnetArgs(t *testing.T) {
 				options := &LocalOptions{tt.options}
 				args, err := options.GetCltOptions().computeCdnetArgs(tt.options, options, tt.yaml)
 				logDir := options.LogDirPath()
-				if platform.Contains(tt.expectedArgs, "--LogFolder=\"log\"") {
+				if utils.Contains(tt.expectedArgs, "--LogFolder=\"log\"") {
 					for i, arg := range tt.expectedArgs {
 						if arg == "--LogFolder=\"log\"" {
 							tt.expectedArgs[i] = "--LogFolder=\"" + logDir + "\""

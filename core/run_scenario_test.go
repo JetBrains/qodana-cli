@@ -19,7 +19,6 @@ package core
 import (
 	"github.com/JetBrains/qodana-cli/v2024/platform"
 	"github.com/JetBrains/qodana-cli/v2024/platform/scan"
-	"github.com/JetBrains/qodana-cli/v2024/preparehost/product"
 	"github.com/stretchr/testify/assert"
 	"testing"
 )
@@ -123,8 +122,16 @@ func TestQodanaOptions_determineRunScenario(t *testing.T) {
 		},
 	}
 	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			assert.Equalf(t, tt.want, tt.args.c.DetermineRunScenario(tt.args.hasStartHash), "determineRunScenario(%v)", tt.args.hasStartHash)
-		})
+		t.Run(
+			tt.name, func(t *testing.T) {
+				assert.Equalf(
+					t,
+					tt.want,
+					tt.args.c.DetermineRunScenario(tt.args.hasStartHash),
+					"determineRunScenario(%v)",
+					tt.args.hasStartHash,
+				)
+			},
+		)
 	}
 }

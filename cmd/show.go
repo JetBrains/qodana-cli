@@ -18,8 +18,8 @@ package cmd
 
 import (
 	"github.com/JetBrains/qodana-cli/v2024/core"
-	"github.com/JetBrains/qodana-cli/v2024/platform"
-	"github.com/JetBrains/qodana-cli/v2024/platform/startup"
+	"github.com/JetBrains/qodana-cli/v2024/platform/qdenv"
+	"github.com/JetBrains/qodana-cli/v2024/platform/scan/startup"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 	"os"
@@ -44,8 +44,8 @@ This command serves the Qodana report locally and opens a browser to it.`,
 				"",
 				cliOptions.ResultsDir,
 				cliOptions.ReportDir,
-				os.Getenv(platform.QodanaToken),
-				os.Getenv(platform.QodanaLicenseOnlyToken),
+				os.Getenv(qdenv.QodanaToken),
+				os.Getenv(qdenv.QodanaLicenseOnlyToken),
 				false,
 				cliOptions.ProjectDir,
 				cliOptions.ConfigName,
@@ -56,7 +56,7 @@ This command serves the Qodana report locally and opens a browser to it.`,
 					log.Fatal(err)
 				}
 			} else {
-				platform.ShowReport(
+				startup.ShowReport(
 					startupArgs.ResultsDir,
 					startupArgs.ReportDir,
 					cliOptions.Port,

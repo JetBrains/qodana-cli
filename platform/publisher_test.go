@@ -17,6 +17,7 @@
 package platform
 
 import (
+	"github.com/JetBrains/qodana-cli/v2024/platform/utils"
 	"os"
 	"path/filepath"
 	"reflect"
@@ -58,7 +59,7 @@ func TestGetPublisherArgs(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	java, _ := getJavaExecutablePath()
+	java, _ := utils.getJavaExecutablePath()
 	// Call the function being tested
 	publisherArgs := getPublisherArgs(java, "test-publisher.jar", opts, "test-token", "test-endpoint")
 

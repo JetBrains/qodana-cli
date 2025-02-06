@@ -18,8 +18,10 @@ package cmd
 
 import (
 	"github.com/JetBrains/qodana-cli/v2024/core"
-	"github.com/JetBrains/qodana-cli/v2024/platform"
-	"github.com/JetBrains/qodana-cli/v2024/platform/startup"
+	"github.com/JetBrains/qodana-cli/v2024/platform/qdcontainer"
+	"github.com/JetBrains/qodana-cli/v2024/platform/qdenv"
+	"github.com/JetBrains/qodana-cli/v2024/platform/qdyaml"
+	"github.com/JetBrains/qodana-cli/v2024/platform/scan/startup"
 	"github.com/docker/docker/client"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
@@ -35,7 +37,7 @@ func newPullCommand() *cobra.Command {
 		Long:  `An alternative to pull an image.`,
 		Run: func(cmd *cobra.Command, args []string) {
 			if cliOptions.ConfigName == "" {
-				cliOptions.ConfigName = platform.FindDefaultQodanaYaml(cliOptions.ProjectDir)
+				cliOptions.ConfigName = qdyaml.FindDefaultQodanaYaml(cliOptions.ProjectDir)
 			}
 
 			startupArgs := startup.ComputeArgs(
@@ -44,8 +46,8 @@ func newPullCommand() *cobra.Command {
 				"",
 				"",
 				"",
-				os.Getenv(platform.QodanaToken),
-				os.Getenv(platform.QodanaLicenseOnlyToken),
+				os.Getenv(qdenv.QodanaToken),
+				os.Getenv(qdenv.QodanaLicenseOnlyToken),
 				false,
 				cliOptions.ProjectDir,
 				cliOptions.ConfigName,
@@ -53,7 +55,7 @@ func newPullCommand() *cobra.Command {
 			if startupArgs.Ide != "" {
 				log.Println("Native mode is used, skipping pull")
 			} else {
-				core.PrepareContainerEnvSettings()
+				qdcontainer.PrepareContainerEnvSettings()
 				containerClient, err := client.NewClientWithOpts()
 				if err != nil {
 					log.Fatal("couldn't connect to container engine ", err)

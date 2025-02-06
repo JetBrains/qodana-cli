@@ -18,9 +18,11 @@ package cmd
 
 import (
 	"fmt"
-	"github.com/JetBrains/qodana-cli/v2024/platform"
-	"github.com/JetBrains/qodana-cli/v2024/platform/product"
-	"github.com/JetBrains/qodana-cli/v2024/platform/startup"
+	"github.com/JetBrains/qodana-cli/v2024/platform/msg"
+	"github.com/JetBrains/qodana-cli/v2024/platform/qdenv"
+	"github.com/JetBrains/qodana-cli/v2024/platform/qdyaml"
+	"github.com/JetBrains/qodana-cli/v2024/platform/scan/startup"
+	"github.com/JetBrains/qodana-cli/v2024/platform/scan/startup/product"
 	"github.com/JetBrains/qodana-cli/v2024/platform/tokenloader"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
@@ -38,7 +40,7 @@ func newInitCommand() *cobra.Command {
 		Run: func(cmd *cobra.Command, args []string) {
 			emptyProduct := product.Product{} // TODO what to do with product?
 
-			qodanaYaml := platform.LoadQodanaYaml(cliOptions.ProjectDir, cliOptions.ConfigName)
+			qodanaYaml := qdyaml.LoadQodanaYaml(cliOptions.ProjectDir, cliOptions.ConfigName)
 
 			ide := qodanaYaml.Ide
 			linter := qodanaYaml.Linter
@@ -48,43 +50,48 @@ func newInitCommand() *cobra.Command {
 					log.Fatal(err)
 				}
 				cliOptions.ProjectDir = absPath
-				if platform.IsInteractive() && !platform.AskUserConfirm(
+				if msg.IsInteractive() && !msg.AskUserConfirm(
 					fmt.Sprintf(
 						"Do you want to set up Qodana in %s",
-						platform.PrimaryBold(cliOptions.ProjectDir),
+						msg.PrimaryBold(cliOptions.ProjectDir),
 					),
 				) {
 					return
 				}
-				token := os.Getenv(platform.QodanaToken)
-				analyzer := platform.GetAnalyzer(cliOptions.ProjectDir, token)
+				token := os.Getenv(qdenv.QodanaToken)
+				analyzer := startup.GetAnalyzer(cliOptions.ProjectDir, token)
 
-				platform.WriteQodanaLinterToYamlFile(cliOptions.ProjectDir, analyzer, cliOptions.ConfigName)
-				if platform.IsNativeAnalyzer(analyzer) {
+				qdyaml.WriteQodanaLinterToYamlFile(
+					cliOptions.ProjectDir,
+					analyzer,
+					cliOptions.ConfigName,
+					product.AllCodes,
+				)
+				if product.IsNativeAnalyzer(analyzer) {
 					ide = analyzer
 				} else {
 					linter = analyzer
 				}
 			} else {
-				platform.EmptyMessage()
+				msg.EmptyMessage()
 				var analyzer string
 				if ide != "" {
 					analyzer = ide
 				} else if linter != "" {
 					analyzer = linter
 				}
-				platform.SuccessMessage(
+				msg.SuccessMessage(
 					"The product to use was already configured before: %s. Run the command with %s flag to re-init the project",
-					platform.PrimaryBold(analyzer),
-					platform.PrimaryBold("-f"),
+					msg.PrimaryBold(analyzer),
+					msg.PrimaryBold("-f"),
 				)
 			}
-			if platform.IsInteractive() && qodanaYaml.IsDotNet() && (qodanaYaml.DotNet.IsEmpty() || cliOptions.Force) {
-				if platform.GetAndSaveDotNetConfig(cliOptions.ProjectDir, cliOptions.ConfigName) {
-					platform.SuccessMessage("The .NET configuration was successfully set")
+			if msg.IsInteractive() && qodanaYaml.IsDotNet() && (qodanaYaml.DotNet.IsEmpty() || cliOptions.Force) {
+				if startup.GetAndSaveDotNetConfig(cliOptions.ProjectDir, cliOptions.ConfigName) {
+					msg.SuccessMessage("The .NET configuration was successfully set")
 				}
 			}
-			platform.PrintFile(filepath.Join(cliOptions.ProjectDir, cliOptions.ConfigName))
+			msg.PrintFile(filepath.Join(cliOptions.ProjectDir, cliOptions.ConfigName))
 
 			startupArgs := startup.ComputeArgs(
 				linter,
@@ -92,8 +99,8 @@ func newInitCommand() *cobra.Command {
 				"",
 				"",
 				"",
-				os.Getenv(platform.QodanaToken),
-				os.Getenv(platform.QodanaLicenseOnlyToken),
+				os.Getenv(qdenv.QodanaToken),
+				os.Getenv(qdenv.QodanaLicenseOnlyToken),
 				false,
 				cliOptions.ProjectDir,
 				cliOptions.ConfigName,

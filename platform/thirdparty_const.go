@@ -15,6 +15,3 @@
  */
 
 package platform
-
-const Clang = "clang"
-const Clt = "clt"

@@ -19,7 +19,11 @@ package tokenloader
 import (
 	"fmt"
 	"github.com/JetBrains/qodana-cli/v2024/cloud"
-	"github.com/JetBrains/qodana-cli/v2024/platform"
+	"github.com/JetBrains/qodana-cli/v2024/platform/git"
+	"github.com/JetBrains/qodana-cli/v2024/platform/msg"
+	"github.com/JetBrains/qodana-cli/v2024/platform/qdenv"
+	"github.com/JetBrains/qodana-cli/v2024/platform/scan/startup/product"
+	"github.com/JetBrains/qodana-cli/v2024/platform/utils"
 	"github.com/pterm/pterm"
 	log "github.com/sirupsen/logrus"
 	"github.com/zalando/go-keyring"
@@ -53,15 +57,15 @@ func IsCloudTokenRequired(tokenLoader CloudTokenLoader, isCommunityOrEap bool) b
 		analyzer = tokenLoader.GetIde()
 	}
 
-	if os.Getenv(platform.QodanaLicense) != "" ||
-		platform.Contains(append(platform.AllSupportedFreeImages, platform.AllSupportedFreeCodes...), analyzer) ||
-		strings.Contains(platform.Lower(analyzer), "eap") ||
+	if os.Getenv(qdenv.QodanaLicense) != "" ||
+		utils.Contains(append(product.AllSupportedFreeImages, product.AllSupportedFreeCodes...), analyzer) ||
+		strings.Contains(utils.Lower(analyzer), "eap") ||
 		isCommunityOrEap {
 		return false
 	}
 
-	for _, e := range platform.AllSupportedPaidCodes {
-		if strings.HasPrefix(platform.Image(e), tokenLoader.GetLinter()) || strings.HasPrefix(e, tokenLoader.GetIde()) {
+	for _, e := range product.AllSupportedPaidCodes {
+		if strings.HasPrefix(product.Image(e), tokenLoader.GetLinter()) || strings.HasPrefix(e, tokenLoader.GetIde()) {
 			return true
 		}
 	}
@@ -102,11 +106,11 @@ func ValidateToken(tokenLoader CloudTokenLoader, refresh bool) string {
 func ValidateTokenPrintProject(token string) {
 	client := cloud.GetCloudApiEndpoints().NewCloudApiClient(token)
 	if projectName, err := client.RequestProjectName(); err != nil {
-		platform.ErrorMessage(cloud.InvalidTokenMessage)
+		msg.ErrorMessage(cloud.InvalidTokenMessage)
 		os.Exit(1)
 	} else {
-		if !platform.IsContainer() {
-			platform.SuccessMessage("Linked %s project: %s", cloud.GetCloudRootEndpoint().Host, projectName)
+		if !qdenv.IsContainer() {
+			msg.SuccessMessage("Linked %s project: %s", cloud.GetCloudRootEndpoint().Host, projectName)
 		}
 	}
 }
@@ -132,42 +136,42 @@ func getCloudToken(id string) (string, error) {
 }
 
 func setupToken(path string, id string, logdir string) string {
-	openCloud := platform.AskUserConfirm("Do you want to open the team page to get the token?")
+	openCloud := msg.AskUserConfirm("Do you want to open the team page to get the token?")
 	if openCloud {
-		origin, err := platform.GitRemoteUrl(path, logdir)
+		origin, err := git.GitRemoteUrl(path, logdir)
 		if err != nil {
-			platform.ErrorMessage("%s", err)
+			msg.ErrorMessage("%s", err)
 			return ""
 		}
-		err = platform.OpenBrowser(cloud.GetCloudRootEndpoint().GetCloudTeamsPageUrl(origin, path))
+		err = utils.OpenBrowser(cloud.GetCloudRootEndpoint().GetCloudTeamsPageUrl(origin, path))
 		if err != nil {
-			platform.ErrorMessage("%s", err)
+			msg.ErrorMessage("%s", err)
 			return ""
 		}
 	}
-	token, err := pterm.DefaultInteractiveTextInput.WithMask("*").WithTextStyle(platform.PrimaryStyle).Show(
-		fmt.Sprintf(">  Enter the token (will be used for %s; enter 'q' to exit)", platform.PrimaryBold(path)),
+	token, err := pterm.DefaultInteractiveTextInput.WithMask("*").WithTextStyle(msg.PrimaryStyle).Show(
+		fmt.Sprintf(">  Enter the token (will be used for %s; enter 'q' to exit)", msg.PrimaryBold(path)),
 	)
 	if token == "q" {
 		return "q"
 	}
 	if err != nil {
-		platform.ErrorMessage("%s", err)
+		msg.ErrorMessage("%s", err)
 		return ""
 	}
 	if token == "" {
-		platform.ErrorMessage("Token cannot be empty")
+		msg.ErrorMessage("Token cannot be empty")
 		return ""
 	} else {
 		client := cloud.GetCloudApiEndpoints().NewCloudApiClient(token)
 		_, err := client.RequestProjectName()
 		if err != nil {
-			platform.ErrorMessage("Invalid token, try again")
+			msg.ErrorMessage("Invalid token, try again")
 			return ""
 		}
 		err = saveCloudToken(id, token)
 		if err != nil {
-			platform.ErrorMessage("Failed to save credentials: %s", err)
+			msg.ErrorMessage("Failed to save credentials: %s", err)
 			return ""
 		}
 		return token
@@ -175,7 +179,7 @@ func setupToken(path string, id string, logdir string) string {
 }
 
 func getTokenFromEnv() string {
-	tokenFromEnv := os.Getenv(platform.QodanaToken)
+	tokenFromEnv := os.Getenv(qdenv.QodanaToken)
 	if tokenFromEnv != "" {
 		log.Debug("Loaded token from the environment variable")
 		return tokenFromEnv
@@ -185,7 +189,7 @@ func getTokenFromEnv() string {
 
 func getTokenFromKeychain(refresh bool, id string) string {
 	log.Debugf("project id: %s", id)
-	if refresh || os.Getenv(platform.QodanaClearKeyring) != "" {
+	if refresh || os.Getenv(qdenv.QodanaClearKeyring) != "" {
 		err := keyring.Delete(keyringDefaultService, id)
 		if err != nil {
 			log.Debugf("Failed to delete token from the system keyring: %s", err)
@@ -194,11 +198,11 @@ func getTokenFromKeychain(refresh bool, id string) string {
 	}
 	tokenFromKeychain, err := getCloudToken(id)
 	if err == nil && tokenFromKeychain != "" {
-		platform.WarningMessage(
+		msg.WarningMessage(
 			"Got %s from the system keyring, declare %s env variable or run %s to override it",
-			platform.PrimaryBold(platform.QodanaToken),
-			platform.PrimaryBold(platform.QodanaToken),
-			platform.PrimaryBold("qodana init -f"),
+			msg.PrimaryBold(qdenv.QodanaToken),
+			msg.PrimaryBold(qdenv.QodanaToken),
+			msg.PrimaryBold("qodana init -f"),
 		)
 		log.Debugf("Loaded token from the system keyring with id %s", id)
 		return tokenFromKeychain
@@ -207,8 +211,8 @@ func getTokenFromKeychain(refresh bool, id string) string {
 }
 
 func getTokenFromUserInput(projectDir string, id string, logDir string) string {
-	if platform.IsInteractive() {
-		platform.WarningMessage(cloud.EmptyTokenMessage, cloud.GetCloudRootEndpoint().GetCloudUrl())
+	if msg.IsInteractive() {
+		msg.WarningMessage(cloud.EmptyTokenMessage, cloud.GetCloudRootEndpoint().GetCloudUrl())
 		var token string
 		for {
 			token = setupToken(projectDir, id, logDir)
