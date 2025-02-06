@@ -98,9 +98,9 @@ func GetProductByCode(code string) (*Product, error) {
 		return nil, err
 	}
 
-	for _, product := range products {
-		if product.Code == code {
-			return &product, nil
+	for _, prod := range products {
+		if prod.Code == code {
+			return &prod, nil
 		}
 	}
 

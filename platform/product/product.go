@@ -104,7 +104,7 @@ func Image(code string) string {
 	}
 }
 
-// langsProductCodes is a map of languages to linters.
+// LangsProductCodes is a map of languages to linters.
 var LangsProductCodes = map[string][]string{
 	"Java":              {QDJVM, QDJVMC, QDAND, QDANDC},
 	"Kotlin":            {QDJVM, QDJVMC, QDAND, QDANDC},

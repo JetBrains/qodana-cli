@@ -4,6 +4,7 @@ exclude:
     paths:
       - .github/qodana.sarif.json
   - name: VgoDependencyUpdateAvailable
+  - name: GoAssignmentToReceiver
 linter: jetbrains/qodana-go:latest
 licenseRules:
   - keys:

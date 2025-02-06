@@ -23,20 +23,20 @@ import (
 	"strings"
 )
 
-func GitBranchLegacy(cwd string) string {
+func BranchLegacy(cwd string) string {
 	return gitOutput(cwd, []string{"rev-parse", "--abbrev-ref", "HEAD"})[0]
 }
 
-func GitCurrentRevisionLegacy(cwd string) string {
+func CurrentRevisionLegacy(cwd string) string {
 	return gitOutput(cwd, []string{"rev-parse", "HEAD"})[0]
 }
 
-func GitRemoteUrlLegacy(cwd string) string {
+func RemoteUrlLegacy(cwd string) string {
 	return gitOutput(cwd, []string{"remote", "get-url", "origin"})[0]
 }
 
-// GitLog returns the git log of the given repository in the given format.
-func GitLog(cwd string, format string, since int) []string {
+// Log returns the git log of the given repository in the given format.
+func Log(cwd string, format string, since int) []string {
 	args := []string{"--no-pager", "log", "--all", "--no-use-mailmap"}
 	if format != "" {
 		args = append(args, "--pretty=format:"+format)
