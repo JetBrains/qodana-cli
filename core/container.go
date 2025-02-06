@@ -21,7 +21,7 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
-	"github.com/JetBrains/qodana-cli/v2024/core/scan"
+	"github.com/JetBrains/qodana-cli/v2024/core/corescan"
 	"github.com/JetBrains/qodana-cli/v2024/platform/msg"
 	"github.com/JetBrains/qodana-cli/v2024/platform/product"
 	"github.com/JetBrains/qodana-cli/v2024/platform/qdcontainer"
@@ -66,7 +66,7 @@ var (
 )
 
 // runQodanaContainer runs the analysis in a Docker container from a Qodana image.
-func runQodanaContainer(ctx context.Context, c scan.Context) int {
+func runQodanaContainer(ctx context.Context, c corescan.Context) int {
 	docker := qdcontainer.GetContainerClient()
 	info, err := docker.Info(ctx)
 	if err != nil {
@@ -76,14 +76,14 @@ func runQodanaContainer(ctx context.Context, c scan.Context) int {
 		msg.ErrorMessage("Container engine is not running a Linux platform, other platforms are not supported by Qodana")
 		return 1
 	}
-	fixDarwinCaches(c.CacheDir)
+	fixDarwinCaches(c.CacheDir())
 
 	scanStages := getScanStages()
 
-	if c.SkipPull {
-		checkImage(c.Linter)
+	if c.SkipPull() {
+		checkImage(c.Linter())
 	} else {
-		PullImage(docker, c.Linter)
+		PullImage(docker, c.Linter())
 	}
 	progress, _ := msg.StartQodanaSpinner(scanStages[0])
 
@@ -97,12 +97,12 @@ func runQodanaContainer(ctx context.Context, c scan.Context) int {
 
 	exitCode := getContainerExitCode(ctx, docker, dockerConfig.Name)
 
-	fixDarwinCaches(c.CacheDir)
+	fixDarwinCaches(c.CacheDir())
 
 	if progress != nil {
 		_ = progress.Stop()
 	}
-	checkImage(c.Linter)
+	checkImage(c.Linter())
 	return int(exitCode)
 }
 
@@ -269,27 +269,27 @@ func CheckContainerEngineMemory() {
 }
 
 // getDockerOptions returns qodana docker container options.
-func getDockerOptions(c scan.Context) *backend.ContainerCreateConfig {
+func getDockerOptions(c corescan.Context) *backend.ContainerCreateConfig {
 	cmdOpts := GetIdeArgs(c)
 
-	updateScanContextEnv := func(key string, value string) { c = c.WithEnvNoOverride(key, value) }
+	updateScanContextEnv := func(key string, value string) { c = c.WithEnvExtractedFromOsEnv(key, value) }
 	qdenv.ExtractQodanaEnvironment(updateScanContextEnv)
 
-	cachePath, err := filepath.Abs(c.CacheDir)
+	cachePath, err := filepath.Abs(c.CacheDir())
 	if err != nil {
 		log.Fatal("couldn't get abs path for cache", err)
 	}
-	projectPath, err := filepath.Abs(c.ProjectDir)
+	projectPath, err := filepath.Abs(c.ProjectDir())
 	if err != nil {
 		log.Fatal("couldn't get abs path for project", err)
 	}
-	resultsPath, err := filepath.Abs(c.ResultsDir)
+	resultsPath, err := filepath.Abs(c.ResultsDir())
 	if err != nil {
 		log.Fatal("couldn't get abs path for results", err)
 	}
 	containerName = os.Getenv(qdenv.QodanaCliContainerName)
 	if containerName == "" {
-		containerName = fmt.Sprintf("qodana-cli-%s", c.Id)
+		containerName = fmt.Sprintf("qodana-cli-%s", c.Id())
 	}
 	volumes := []mount.Mount{
 		{
@@ -322,22 +322,22 @@ func getDockerOptions(c scan.Context) *backend.ContainerCreateConfig {
 			log.Fatal("couldn't parse volume ", volume)
 		}
 	}
-	log.Debugf("image: %s", c.Linter)
+	log.Debugf("image: %s", c.Linter())
 	log.Debugf("container name: %s", containerName)
-	log.Debugf("user: %s", c.User)
+	log.Debugf("user: %s", c.User())
 	log.Debugf("volumes: %v", volumes)
 	log.Debugf("cmd: %v", cmdOpts)
 
 	portBindings := make(nat.PortMap)
 	exposedPorts := make(nat.PortSet)
 
-	if c.JvmDebugPort > 0 {
-		log.Infof("Enabling JVM debug on port %d", c.JvmDebugPort)
+	if c.JvmDebugPort() > 0 {
+		log.Infof("Enabling JVM debug on port %d", c.JvmDebugPort())
 		portBindings = nat.PortMap{
 			containerJvmDebugPort: []nat.PortBinding{
 				{
 					HostIP:   "0.0.0.0",
-					HostPort: strconv.Itoa(c.JvmDebugPort),
+					HostPort: strconv.Itoa(c.JvmDebugPort()),
 				},
 			},
 		}
@@ -346,7 +346,7 @@ func getDockerOptions(c scan.Context) *backend.ContainerCreateConfig {
 		}
 	}
 	var hostConfig *container.HostConfig
-	if strings.Contains(c.Linter, "dotnet") {
+	if strings.Contains(c.Linter(), "dotnet") {
 		hostConfig = &container.HostConfig{
 			AutoRemove:   os.Getenv(qdenv.QodanaCliContainerKeep) == "",
 			Mounts:       volumes,
@@ -365,13 +365,13 @@ func getDockerOptions(c scan.Context) *backend.ContainerCreateConfig {
 	return &backend.ContainerCreateConfig{
 		Name: containerName,
 		Config: &container.Config{
-			Image:        c.Linter,
+			Image:        c.Linter(),
 			Cmd:          cmdOpts,
 			Tty:          msg.IsInteractive(),
 			AttachStdout: true,
 			AttachStderr: true,
 			Env:          c.Env(),
-			User:         c.User,
+			User:         c.User(),
 			ExposedPorts: exposedPorts,
 		},
 		HostConfig: hostConfig,

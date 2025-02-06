@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package scan
+package corescan
 
 import (
 	"github.com/JetBrains/qodana-cli/v2024/core/startup"
@@ -23,6 +23,7 @@ import (
 	"github.com/JetBrains/qodana-cli/v2024/platform/qdenv"
 	"github.com/JetBrains/qodana-cli/v2024/platform/qdyaml"
 	"path/filepath"
+	"strings"
 )
 
 func CreateContext(
@@ -39,7 +40,12 @@ func CreateContext(
 		}
 	}
 
-	return Context{
+	commit := cliOptions.Commit
+	if strings.HasPrefix(commit, "CI") {
+		commit = strings.TrimPrefix(commit, "CI")
+	}
+
+	return ContextBuilder{
 		Linter:                    startupArgs.Linter,
 		Ide:                       startupArgs.Ide,
 		Id:                        startupArgs.Id,
@@ -57,7 +63,7 @@ func CreateContext(
 		ReportDir:                 startupArgs.ReportDir,
 		CoverageDir:               coverageDir,
 		SourceDirectory:           cliOptions.SourceDirectory,
-		_env:                      cliOptions.Env_,
+		Env:                       cliOptions.Env_,
 		DisableSanity:             cliOptions.DisableSanity,
 		ProfileName:               cliOptions.ProfileName,
 		ProfilePath:               cliOptions.ProfilePath,
@@ -68,15 +74,15 @@ func CreateContext(
 		SaveReport:                cliOptions.SaveReport,
 		ShowReport:                cliOptions.ShowReport,
 		Port:                      cliOptions.Port,
-		_property:                 cliOptions.Property,
+		Property:                  cliOptions.Property,
 		Script:                    cliOptions.Script,
 		FailThreshold:             cliOptions.FailThreshold,
-		Commit:                    cliOptions.Commit,
+		Commit:                    commit,
 		DiffStart:                 cliOptions.DiffStart,
 		DiffEnd:                   cliOptions.DiffEnd,
 		ForceLocalChangesScript:   cliOptions.ForceLocalChangesScript,
 		AnalysisId:                cliOptions.AnalysisId,
-		_volumes:                  cliOptions.Volumes,
+		Volumes:                   cliOptions.Volumes,
 		User:                      cliOptions.User,
 		PrintProblems:             cliOptions.PrintProblems,
 		GenerateCodeClimateReport: cliOptions.GenerateCodeClimateReport,
@@ -99,5 +105,5 @@ func CreateContext(
 		AnalysisTimeoutMs:         cliOptions.AnalysisTimeoutMs,
 		AnalysisTimeoutExitCode:   cliOptions.AnalysisTimeoutExitCode,
 		JvmDebugPort:              cliOptions.JvmDebugPort,
-	}
+	}.Build()
 }

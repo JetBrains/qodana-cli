@@ -18,6 +18,7 @@ package platform
 
 import (
 	"github.com/JetBrains/qodana-cli/v2024/platform/qdyaml"
+	"github.com/JetBrains/qodana-cli/v2024/platform/thirdpartyscan"
 	"os"
 	"path/filepath"
 	"sort"
@@ -115,7 +116,11 @@ failThreshold: 123
 					}
 				}
 				yaml := qdyaml.LoadQodanaYaml(tempDir, "qodana.yaml")
-				thresholds := getFailureThresholds(yaml, &QodanaOptions{FailThreshold: testData.option})
+				c := thirdpartyscan.ContextBuilder{
+					FailThreshold: testData.option,
+					QodanaYaml:    yaml,
+				}.Build()
+				thresholds := getFailureThresholds(c)
 				thresholdArgs := thresholdsToArgs(thresholds)
 				sort.Strings(thresholdArgs)
 				argString := ""

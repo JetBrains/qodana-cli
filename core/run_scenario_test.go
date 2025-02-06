@@ -17,108 +17,108 @@
 package core
 
 import (
-	"github.com/JetBrains/qodana-cli/v2024/core/scan"
-	"github.com/JetBrains/qodana-cli/v2024/platform"
+	"github.com/JetBrains/qodana-cli/v2024/core/corescan"
+	"github.com/JetBrains/qodana-cli/v2024/platform/product"
 	"github.com/stretchr/testify/assert"
 	"testing"
 )
 
 func TestQodanaOptions_determineRunScenario(t *testing.T) {
 	type args struct {
-		c            scan.Context
+		c            corescan.ContextBuilder
 		hasStartHash bool
 	}
 	tests := []struct {
 		name string
 		args args
-		want scan.RunScenario
+		want corescan.RunScenario
 	}{
 		{
 			name: "full history for .NET",
 			args: args{
-				c: scan.Context{
+				c: corescan.ContextBuilder{
 					FullHistory: true,
 					Prod: product.Product{
-						Code: platform.QDNET,
+						Code: product.QDNET,
 					},
 				},
 				hasStartHash: true,
 			},
-			want: scan.RunScenarioFullHistory,
+			want: corescan.RunScenarioFullHistory,
 		},
 		{
 			name: "full history for not .NET",
 			args: args{
-				c: scan.Context{
+				c: corescan.ContextBuilder{
 					FullHistory: true,
 					Prod: product.Product{
-						Code: platform.QDJVM,
+						Code: product.QDJVM,
 					},
 				},
 				hasStartHash: true,
 			},
-			want: scan.RunScenarioFullHistory,
+			want: corescan.RunScenarioFullHistory,
 		},
 		{
 			name: "default .NET",
 			args: args{
-				c: scan.Context{
+				c: corescan.ContextBuilder{
 					Prod: product.Product{
-						Code: platform.QDNET,
+						Code: product.QDNET,
 					},
 				},
 				hasStartHash: false,
 			},
-			want: scan.RunScenarioDefault,
+			want: corescan.RunScenarioDefault,
 		},
 		{
 			name: "default not .NET",
 			args: args{
-				c: scan.Context{
+				c: corescan.ContextBuilder{
 					Prod: product.Product{
-						Code: platform.QDJVM,
+						Code: product.QDJVM,
 					},
 				},
 				hasStartHash: false,
 			},
-			want: scan.RunScenarioDefault,
+			want: corescan.RunScenarioDefault,
 		},
 		{
 			name: "with start hash .NET",
 			args: args{
-				c: scan.Context{
+				c: corescan.ContextBuilder{
 					Prod: product.Product{
-						Code: platform.QDNET,
+						Code: product.QDNET,
 					},
 				},
 				hasStartHash: true,
 			},
-			want: scan.RunScenarioScoped,
+			want: corescan.RunScenarioScoped,
 		},
 		{
 			name: "with start hash not .NET",
 			args: args{
-				c: scan.Context{
+				c: corescan.ContextBuilder{
 					Prod: product.Product{
-						Code: platform.QDJVM,
+						Code: product.QDJVM,
 					},
 				},
 				hasStartHash: false,
 			},
-			want: scan.RunScenarioScoped,
+			want: corescan.RunScenarioScoped,
 		},
 		{
 			name: "forced script",
 			args: args{
-				c: scan.Context{
+				c: corescan.ContextBuilder{
 					ForceLocalChangesScript: true,
 					Prod: product.Product{
-						Code: platform.QDJVM,
+						Code: product.QDJVM,
 					},
 				},
 				hasStartHash: true,
 			},
-			want: scan.RunScenarioLocalChanges,
+			want: corescan.RunScenarioLocalChanges,
 		},
 	}
 	for _, tt := range tests {
@@ -127,7 +127,7 @@ func TestQodanaOptions_determineRunScenario(t *testing.T) {
 				assert.Equalf(
 					t,
 					tt.want,
-					tt.args.c.DetermineRunScenario(tt.args.hasStartHash),
+					tt.args.c.Build().DetermineRunScenario(tt.args.hasStartHash),
 					"determineRunScenario(%v)",
 					tt.args.hasStartHash,
 				)
