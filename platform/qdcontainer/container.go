@@ -103,7 +103,7 @@ func CheckContainerEngineMemory() {
 	}
 }
 
-// getContainerClient returns a docker client.
+// GetContainerClient getContainerClient returns a docker client.
 func GetContainerClient() *client.Client {
 	docker, err := client.NewClientWithOpts(client.FromEnv)
 	if err != nil {
