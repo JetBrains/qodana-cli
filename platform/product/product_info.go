@@ -299,7 +299,7 @@ func GuessProduct(idePath string) Product {
 	}
 	productInfo, err := ReadIdeProductInfo(homePath)
 	if err != nil {
-		log.Fatalf("Can't read Product-info.json: %v ", err)
+		log.Fatalf("Can't read product-info.json: %v ", err)
 	}
 
 	version := productInfo.Version
@@ -387,7 +387,7 @@ func ReadIdeProductInfo(ideDir string) (*InfoJson, error) {
 	runtime.GOOS == "darwin" {
 		ideDir = filepath.Join(ideDir, "Resources")
 	}
-	productInfo := filepath.Join(ideDir, "Product-info.json")
+	productInfo := filepath.Join(ideDir, "product-info.json")
 	if _, err := os.Stat(productInfo); err != nil {
 		return nil, err
 	}
