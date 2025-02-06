@@ -19,11 +19,11 @@ package core
 import (
 	"fmt"
 	"github.com/JetBrains/qodana-cli/v2024/cloud"
+	"github.com/JetBrains/qodana-cli/v2024/core/scan"
 	"github.com/JetBrains/qodana-cli/v2024/platform"
+	"github.com/JetBrains/qodana-cli/v2024/platform/product"
 	"github.com/JetBrains/qodana-cli/v2024/platform/qdenv"
 	"github.com/JetBrains/qodana-cli/v2024/platform/qdyaml"
-	"github.com/JetBrains/qodana-cli/v2024/platform/scan"
-	"github.com/JetBrains/qodana-cli/v2024/platform/scan/startup/product"
 	"github.com/JetBrains/qodana-cli/v2024/platform/utils"
 	log "github.com/sirupsen/logrus"
 	"os"

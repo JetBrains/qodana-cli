@@ -20,9 +20,11 @@ import (
 	"fmt"
 	"github.com/JetBrains/qodana-cli/v2024/cloud"
 	"github.com/JetBrains/qodana-cli/v2024/platform/msg"
+	"github.com/JetBrains/qodana-cli/v2024/platform/nuget"
+	"github.com/JetBrains/qodana-cli/v2024/platform/platforminit"
+	"github.com/JetBrains/qodana-cli/v2024/platform/product"
 	"github.com/JetBrains/qodana-cli/v2024/platform/qdcontainer"
 	"github.com/JetBrains/qodana-cli/v2024/platform/qdenv"
-	product2 "github.com/JetBrains/qodana-cli/v2024/platform/scan/startup/product"
 	"github.com/JetBrains/qodana-cli/v2024/platform/tokenloader"
 	"github.com/JetBrains/qodana-cli/v2024/platform/utils"
 	cp "github.com/otiai10/copy"
@@ -35,19 +37,19 @@ import (
 )
 
 const (
-	m2    = ".m2"
-	nuget = "nuget"
+	m2       = ".m2"
+	nugetDir = "nuget"
 )
 
 type PreparedHost struct {
 	IdeDir      string
 	QodanaToken string
-	Prod        product2.Product
+	Prod        product.Product
 }
 
 // prepareHost gets the current user, creates the necessary folders for the analysis.
-func PrepareHost(args Args) PreparedHost {
-	prod := product2.Product{}
+func PrepareHost(args platforminit.Args) PreparedHost {
+	prod := product.Product{}
 	token := args.QodanaToken
 	ideDir := ""
 
@@ -57,9 +59,9 @@ func PrepareHost(args Args) PreparedHost {
 			log.Errorf("Could not clear local Qodana cache: %s", err)
 		}
 	}
-	WarnIfPrivateFeedDetected(args.Linter, args.ProjectDir)
-	if IsNugetConfigNeeded() {
-		PrepareNugetConfig(os.Getenv("HOME"))
+	nuget.WarnIfPrivateFeedDetected(args.Linter, args.ProjectDir)
+	if nuget.IsNugetConfigNeeded() {
+		nuget.PrepareNugetConfig(os.Getenv("HOME"))
 	}
 	if err := os.MkdirAll(args.CacheDir, os.ModePerm); err != nil {
 		log.Fatal("couldn't create a directory ", err.Error())
@@ -71,7 +73,7 @@ func PrepareHost(args Args) PreparedHost {
 		qdcontainer.PrepareContainerEnvSettings()
 	}
 	if args.Ide != "" {
-		if utils.Contains(product2.AllNativeCodes, strings.TrimSuffix(args.Ide, product2.EapSuffix)) {
+		if utils.Contains(product.AllNativeCodes, strings.TrimSuffix(args.Ide, product.EapSuffix)) {
 			msg.PrintProcess(
 				func(spinner *pterm.SpinnerPrinter) {
 					if spinner != nil {
@@ -113,8 +115,8 @@ func PrepareHost(args Args) PreparedHost {
 	return result
 }
 
-func prepareLocalIdeSettingsAndGetQodanaCloudToken(args Args) (product2.Product, string) {
-	prod := product2.GuessProduct(args.Ide)
+func prepareLocalIdeSettingsAndGetQodanaCloudToken(args platforminit.Args) (product.Product, string) {
+	prod := product.GuessProduct(args.Ide)
 
 	qdenv.ExtractQodanaEnvironment(qdenv.SetEnv)
 	isTokenRequired := tokenloader.IsCloudTokenRequired(args, prod.IsEap || prod.IsCommunity())
@@ -139,7 +141,7 @@ func prepareLocalIdeSettingsAndGetQodanaCloudToken(args Args) (product2.Product,
 	return prod, token
 }
 
-func PrepareDirectories(prod product2.Product, cacheDir string, logDir string, confDir string) {
+func PrepareDirectories(prod product.Product, cacheDir string, logDir string, confDir string) {
 	homeDir, err := os.UserHomeDir()
 	if err != nil {
 		log.Fatal(err)
@@ -152,8 +154,8 @@ func PrepareDirectories(prod product2.Product, cacheDir string, logDir string, c
 		userPrefsDir,
 	}
 	if qdenv.IsContainer() {
-		if prod.BaseScriptName == product2.Rider {
-			nugetDir := filepath.Join(cacheDir, nuget)
+		if prod.BaseScriptName == product.Rider {
+			nugetDir := filepath.Join(cacheDir, nugetDir)
 			if err := os.Setenv("NUGET_PACKAGES", nugetDir); err != nil {
 				log.Fatal(err)
 			}
@@ -161,7 +163,7 @@ func PrepareDirectories(prod product2.Product, cacheDir string, logDir string, c
 				directories,
 				nugetDir,
 			)
-		} else if prod.BaseScriptName == product2.Idea {
+		} else if prod.BaseScriptName == product.Idea {
 			directories = append(
 				directories,
 				filepath.Join(cacheDir, m2),
@@ -193,7 +195,7 @@ func PrepareDirectories(prod product2.Product, cacheDir string, logDir string, c
 		writeFileIfNew(filepath.Join(ideaOptions, "security.xml"), securityXml)
 	}
 
-	if prod.BaseScriptName == product2.Idea {
+	if prod.BaseScriptName == product.Idea {
 		mavenRootDir := filepath.Join(homeDir, ".m2")
 		if _, err = os.Stat(mavenRootDir); os.IsNotExist(err) {
 			if err = os.MkdirAll(mavenRootDir, 0o755); err != nil {
@@ -222,8 +224,8 @@ func PrepareDirectories(prod product2.Product, cacheDir string, logDir string, c
 	}
 }
 
-func SyncConfigCache(prod product2.Product, confDirPath string, cacheDir string, fromCache bool) {
-	if prod.BaseScriptName == product2.Idea {
+func SyncConfigCache(prod product.Product, confDirPath string, cacheDir string, fromCache bool) {
+	if prod.BaseScriptName == product.Idea {
 		jdkTableFile := filepath.Join(confDirPath, "options", "jdk.table.xml")
 		cacheFile := filepath.Join(cacheDir, "config", prod.GetVersionBranch(), "jdk.table.xml")
 		if fromCache {

@@ -19,10 +19,10 @@ package cmd
 import (
 	"fmt"
 	"github.com/JetBrains/qodana-cli/v2024/platform/msg"
+	"github.com/JetBrains/qodana-cli/v2024/platform/platforminit"
+	"github.com/JetBrains/qodana-cli/v2024/platform/product"
 	"github.com/JetBrains/qodana-cli/v2024/platform/qdenv"
 	"github.com/JetBrains/qodana-cli/v2024/platform/qdyaml"
-	"github.com/JetBrains/qodana-cli/v2024/platform/scan/startup"
-	"github.com/JetBrains/qodana-cli/v2024/platform/scan/startup/product"
 	"github.com/JetBrains/qodana-cli/v2024/platform/tokenloader"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
@@ -59,7 +59,7 @@ func newInitCommand() *cobra.Command {
 					return
 				}
 				token := os.Getenv(qdenv.QodanaToken)
-				analyzer := startup.GetAnalyzer(cliOptions.ProjectDir, token)
+				analyzer := platforminit.GetAnalyzer(cliOptions.ProjectDir, token)
 
 				qdyaml.WriteQodanaLinterToYamlFile(
 					cliOptions.ProjectDir,
@@ -87,13 +87,13 @@ func newInitCommand() *cobra.Command {
 				)
 			}
 			if msg.IsInteractive() && qodanaYaml.IsDotNet() && (qodanaYaml.DotNet.IsEmpty() || cliOptions.Force) {
-				if startup.GetAndSaveDotNetConfig(cliOptions.ProjectDir, cliOptions.ConfigName) {
+				if platforminit.GetAndSaveDotNetConfig(cliOptions.ProjectDir, cliOptions.ConfigName) {
 					msg.SuccessMessage("The .NET configuration was successfully set")
 				}
 			}
 			msg.PrintFile(filepath.Join(cliOptions.ProjectDir, cliOptions.ConfigName))
 
-			startupArgs := startup.ComputeArgs(
+			startupArgs := platforminit.ComputeArgs(
 				linter,
 				ide,
 				"",

@@ -20,11 +20,11 @@ import (
 	"errors"
 	"fmt"
 	"github.com/JetBrains/qodana-cli/v2024/cloud"
+	"github.com/JetBrains/qodana-cli/v2024/core/scan"
+	startup2 "github.com/JetBrains/qodana-cli/v2024/core/startup"
 	"github.com/JetBrains/qodana-cli/v2024/platform"
 	"github.com/JetBrains/qodana-cli/v2024/platform/qdenv"
 	"github.com/JetBrains/qodana-cli/v2024/platform/qdyaml"
-	"github.com/JetBrains/qodana-cli/v2024/platform/scan"
-	"github.com/JetBrains/qodana-cli/v2024/platform/scan/startup"
 	"github.com/JetBrains/qodana-cli/v2024/platform/utils"
 	log "github.com/sirupsen/logrus"
 	"net/http"
@@ -445,8 +445,7 @@ func Test_setDeviceID(t *testing.T) {
 }
 
 func Test_isProcess(t *testing.T) {
-	utils.FindProcess("non-existing_process")
-	if {
+	if utils.FindProcess("non-existing_process") {
 		t.Fatal("Found non-existing process")
 	}
 	var cmd *exec.Cmd
@@ -471,8 +470,7 @@ func Test_isProcess(t *testing.T) {
 		t.Errorf("Test process was not found by isProcess")
 	}
 	time.Sleep(time.Second * 6)
-	utils.FindProcess(cmdString)
-	if {
+	if utils.FindProcess(cmdString) {
 		t.Errorf("Test process was found by isProcess after it should have finished")
 	}
 }
@@ -493,7 +491,7 @@ func Test_createUser(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	startup.CreateUser("/tmp/entrypoint/passwd")
+	startup2.CreateUser("/tmp/entrypoint/passwd")
 	res := fmt.Sprintf("root:x:0:0:root:/root:/bin/bash\nidea:x:%d:%d:idea:/root:/bin/bash", os.Getuid(), os.Getgid())
 	if os.Getuid() == 0 {
 		res = "root:x:0:0:root:/root:/bin/bash\n"
@@ -504,7 +502,7 @@ func Test_createUser(t *testing.T) {
 	}
 
 	tc = "UserAgain"
-	startup.CreateUser("/tmp/entrypoint/passwd")
+	startup2.CreateUser("/tmp/entrypoint/passwd")
 	got, err = os.ReadFile("/tmp/entrypoint/passwd")
 	if err != nil || string(got) != res {
 		t.Errorf("Case: %s: Got: %s\n Expected: %v", tc, got, res)
@@ -521,7 +519,7 @@ func Test_syncIdeaCache(t *testing.T) {
 
 	t.Run(
 		"NotExist", func(t *testing.T) {
-			err := startup.SyncIdeaCache(filepath.Join(tmpDir, "1"), filepath.Join(tmpDir, "2"), true)
+			err := startup2.SyncIdeaCache(filepath.Join(tmpDir, "1"), filepath.Join(tmpDir, "2"), true)
 			if err == nil {
 				t.Errorf("Expected error when source folder does not exist")
 			}
@@ -562,7 +560,7 @@ func Test_syncIdeaCache(t *testing.T) {
 				t.Fatal(err)
 			}
 
-			err = startup.SyncIdeaCache(filepath.Join(tmpDir, "1"), filepath.Join(tmpDir, "2"), false)
+			err = startup2.SyncIdeaCache(filepath.Join(tmpDir, "1"), filepath.Join(tmpDir, "2"), false)
 			if err != nil {
 				t.Fatalf("syncIdeaCache failed: %v", err)
 			}
@@ -579,7 +577,7 @@ func Test_syncIdeaCache(t *testing.T) {
 
 	t.Run(
 		"Overwrite", func(t *testing.T) {
-			err := startup.SyncIdeaCache(filepath.Join(tmpDir, "2"), filepath.Join(tmpDir, "1"), true)
+			err := startup2.SyncIdeaCache(filepath.Join(tmpDir, "2"), filepath.Join(tmpDir, "1"), true)
 			if err != nil {
 				t.Fatalf("syncIdeaCache failed: %v", err)
 			}
@@ -630,7 +628,7 @@ func Test_syncIdeaCache(t *testing.T) {
 				t.Fatal(err)
 			}
 
-			err = startup.SyncIdeaCache(filepath.Join(tmpDir, "1"), filepath.Join(tmpDir, "2"), false)
+			err = startup2.SyncIdeaCache(filepath.Join(tmpDir, "1"), filepath.Join(tmpDir, "2"), false)
 			if err != nil {
 				t.Fatalf("syncIdeaCache failed: %v", err)
 			}
@@ -773,7 +771,7 @@ func TestSetupLicense(t *testing.T) {
 					),
 				)
 				defer svr.Close()
-				startup.SetupLicenseAndProjectHash(&cloud.QdApiEndpoints{LintersApiUrl: svr.URL}, "token")
+				startup2.SetupLicenseAndProjectHash(&cloud.QdApiEndpoints{LintersApiUrl: svr.URL}, "token")
 
 				licenseKey := os.Getenv(platform.QodanaLicense)
 				if licenseKey != tc.expectedKey {

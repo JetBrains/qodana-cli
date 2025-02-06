@@ -14,14 +14,14 @@
  * limitations under the License.
  */
 
-package startup
+package platforminit
 
 import (
 	"fmt"
 	"github.com/JetBrains/qodana-cli/v2024/cloud"
 	"github.com/JetBrains/qodana-cli/v2024/platform/msg"
+	"github.com/JetBrains/qodana-cli/v2024/platform/product"
 	"github.com/JetBrains/qodana-cli/v2024/platform/qdyaml"
-	"github.com/JetBrains/qodana-cli/v2024/platform/scan/startup/product"
 	"github.com/JetBrains/qodana-cli/v2024/platform/utils"
 	"github.com/pterm/pterm"
 	log "github.com/sirupsen/logrus"

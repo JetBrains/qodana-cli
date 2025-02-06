@@ -25,22 +25,3 @@ type ThirdPartyLinter interface {
 	ComputeNewLinterInfo(info thirdpartyscan.LinterInfo, isCommunity bool) (thirdpartyscan.LinterInfo, error)
 	RunAnalysis(c thirdpartyscan.Context) error
 }
-
-type LinterSpecificInitializer func() ThirdPartyLinter
-
-func DefineOptions(initializer LinterSpecificInitializer) *QodanaOptions {
-	options := &QodanaOptions{}
-	if initializer != nil {
-		options.LinterSpecific = initializer()
-	}
-	return options
-}
-
-func (o *QodanaOptions) GetLinterSpecificOptions() *ThirdPartyLinter {
-	if o.LinterSpecific != nil {
-		if linterSpecific, ok := o.LinterSpecific.(ThirdPartyLinter); ok {
-			return &linterSpecific
-		}
-	}
-	return nil
-}

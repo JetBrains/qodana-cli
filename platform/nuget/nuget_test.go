@@ -14,12 +14,12 @@
  * limitations under the License.
  */
 
-package startup
+package nuget
 
 import (
 	"bufio"
+	"github.com/JetBrains/qodana-cli/v2024/platform/product"
 	"github.com/JetBrains/qodana-cli/v2024/platform/qdenv"
-	"github.com/JetBrains/qodana-cli/v2024/platform/scan/startup/product"
 	"os"
 	"path/filepath"
 	"strings"

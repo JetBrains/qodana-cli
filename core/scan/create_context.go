@@ -17,17 +17,18 @@
 package scan
 
 import (
-	"github.com/JetBrains/qodana-cli/v2024/platform/cli"
+	"github.com/JetBrains/qodana-cli/v2024/core/startup"
+	"github.com/JetBrains/qodana-cli/v2024/platform/cmd"
+	"github.com/JetBrains/qodana-cli/v2024/platform/platforminit"
 	"github.com/JetBrains/qodana-cli/v2024/platform/qdenv"
 	"github.com/JetBrains/qodana-cli/v2024/platform/qdyaml"
-	startup2 "github.com/JetBrains/qodana-cli/v2024/platform/scan/startup"
 	"path/filepath"
 )
 
 func CreateContext(
-	cliOptions cli.QodanaScanCliOptions,
-	startupArgs startup2.Args,
-	preparedHost startup2.PreparedHost,
+	cliOptions platformcmd.CliOptions,
+	startupArgs platforminit.Args,
+	preparedHost startup.PreparedHost,
 ) Context {
 	coverageDir := cliOptions.CoverageDir
 	if coverageDir == "" {

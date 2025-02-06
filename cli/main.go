@@ -20,7 +20,7 @@ import (
 	"github.com/JetBrains/qodana-cli/v2024/cmd"
 	"github.com/JetBrains/qodana-cli/v2024/core"
 	"github.com/JetBrains/qodana-cli/v2024/platform/msg"
-	"github.com/JetBrains/qodana-cli/v2024/platform/scan/startup"
+	"github.com/JetBrains/qodana-cli/v2024/platform/platforminit"
 	"github.com/JetBrains/qodana-cli/v2024/platform/version"
 	log "github.com/sirupsen/logrus"
 	"io"
@@ -30,11 +30,11 @@ import (
 )
 
 func main() {
-	startup.InterruptChannel = make(chan os.Signal, 1)
-	signal.Notify(startup.InterruptChannel, os.Interrupt)
-	signal.Notify(startup.InterruptChannel, syscall.SIGINT, syscall.SIGTERM)
+	platforminit.InterruptChannel = make(chan os.Signal, 1)
+	signal.Notify(platforminit.InterruptChannel, os.Interrupt)
+	signal.Notify(platforminit.InterruptChannel, syscall.SIGINT, syscall.SIGTERM)
 	go func() {
-		<-startup.InterruptChannel
+		<-platforminit.InterruptChannel
 		msg.WarningMessage("Interrupting Qodana CLI...")
 		log.SetOutput(io.Discard)
 		core.CheckForUpdates(version.Version)
