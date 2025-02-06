@@ -1,0 +1,15 @@
+<component name="ProjectCodeStyleConfiguration">
+  <code_scheme name="Project" version="173">
+    <GoCodeStyleSettings>
+      <option name="LOCAL_PACKAGE_PREFIXES" />
+      <option name="WRAP_COMP_LIT" value="5" />
+      <option name="WRAP_FUNC_PARAMS" value="5" />
+    </GoCodeStyleSettings>
+    <editorconfig>
+      <option name="ENABLED" value="false" />
+    </editorconfig>
+    <codeStyleSettings language="go">
+      <option name="CALL_PARAMETERS_WRAP" value="5" />
+    </codeStyleSettings>
+  </code_scheme>
+</component>
