@@ -27,7 +27,7 @@ import (
 	"reflect"
 	"strings"
 	"text/tabwriter"
-	"unicode"
+	"unsafe"
 )
 
 // QodanaOptions is a struct that contains all the options to run a Qodana linter.
@@ -89,7 +89,7 @@ type QodanaOptions struct {
 	QdConfig                  qdyaml.QodanaYaml
 }
 
-func LogContext(context any) {
+func LogContext(contextPointer any) {
 	buffer := new(bytes.Buffer)
 	w := new(tabwriter.Writer)
 	w.Init(buffer, 0, 8, 2, '\t', 0)
@@ -103,15 +103,16 @@ func LogContext(context any) {
 		return
 	}
 
-	value := reflect.ValueOf(context).Elem()
+	value := reflect.ValueOf(contextPointer).Elem()
 	typeInfo := value.Type()
 
 	for i := 0; i < value.NumField(); i++ {
 		fieldType := typeInfo.Field(i)
-		if !unicode.IsUpper([]rune(fieldType.Name)[0]) {
-			continue
-		}
+
 		fieldValue := value.Field(i)
+		// unexported fields
+		fieldValue = reflect.NewAt(fieldValue.Type(), unsafe.Pointer(fieldValue.UnsafeAddr())).Elem()
+
 		line := fmt.Sprintf("%s\t%v\t", fieldType.Name, fieldValue.Interface())
 		_, err = fmt.Fprintln(w, line)
 		if err != nil {

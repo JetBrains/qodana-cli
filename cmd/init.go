@@ -40,6 +40,7 @@ func newInitCommand() *cobra.Command {
 		Run: func(cmd *cobra.Command, args []string) {
 			emptyProduct := product.Product{} // TODO what to do with product?
 
+			cliOptions.ConfigName = qdyaml.FindDefaultQodanaYaml(cliOptions.ProjectDir)
 			qodanaYaml := qdyaml.LoadQodanaYaml(cliOptions.ProjectDir, cliOptions.ConfigName)
 
 			ide := qodanaYaml.Ide
