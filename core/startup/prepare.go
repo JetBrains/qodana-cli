@@ -99,7 +99,7 @@ func PrepareHost(args platforminit.Args) PreparedHost {
 			}
 			ideDir = val
 		}
-		prod, token = prepareLocalIdeSettingsAndGetQodanaCloudToken(args)
+		prod, token = prepareLocalIdeSettingsAndGetQodanaCloudToken(args, ideDir)
 	}
 	args.QodanaToken = token
 
@@ -115,8 +115,8 @@ func PrepareHost(args platforminit.Args) PreparedHost {
 	return result
 }
 
-func prepareLocalIdeSettingsAndGetQodanaCloudToken(args platforminit.Args) (product.Product, string) {
-	prod := product.GuessProduct(args.Ide)
+func prepareLocalIdeSettingsAndGetQodanaCloudToken(args platforminit.Args, ideDir string) (product.Product, string) {
+	prod := product.GuessProduct(ideDir)
 
 	qdenv.ExtractQodanaEnvironment(qdenv.SetEnv)
 	isTokenRequired := tokenloader.IsCloudTokenRequired(args, prod.IsEap || prod.IsCommunity())

@@ -18,7 +18,7 @@ package startup
 
 import (
 	"github.com/JetBrains/qodana-cli/v2024/platform/msg"
-	product2 "github.com/JetBrains/qodana-cli/v2024/platform/product"
+	"github.com/JetBrains/qodana-cli/v2024/platform/product"
 	"os"
 	"path/filepath"
 	"runtime"
@@ -27,7 +27,7 @@ import (
 
 func TestGetIde(t *testing.T) {
 	//os.Setenv("QD_PRODUCT_INTERNAL_FEED", "https://data.services.jetbrains.com/products")
-	for _, installer := range product2.AllNativeCodes {
+	for _, installer := range product.AllNativeCodes {
 		ide := getIde(installer)
 		if ide == nil {
 			t.Fail()
@@ -66,7 +66,7 @@ func DownloadAndInstallIDE(ideName string, t *testing.T) {
 		msg.ErrorMessage("Cannot install %s", ideName)
 		t.Fail()
 	}
-	prod, err := product2.ReadIdeProductInfo(ide)
+	prod, err := product.ReadIdeProductInfo(ide)
 	if err != nil || prod == nil {
 		t.Fatalf("Failed to read IDE product info: %v", err)
 	}

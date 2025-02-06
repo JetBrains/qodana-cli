@@ -39,7 +39,7 @@ const (
 	baselineCli  = "baseline-cli.jar"
 )
 
-// extractUtils mounts the helper tools to the temporary folder.
+// extractUtils mounts the helper tools to the temporary folder, return temp mount path and mount info
 func extractUtils(linter ThirdPartyLinter, cacheDir string, isCommunity bool) (string, thirdpartyscan.MountInfo) {
 	tempMountPath, err := getTempDir()
 	if err != nil {
@@ -49,7 +49,7 @@ func extractUtils(linter ThirdPartyLinter, cacheDir string, isCommunity bool) (s
 
 	javaPath, err := utils.GetJavaExecutablePath()
 	if err != nil {
-		log.Fatalf("failed to get java executable path: %w", err)
+		log.Fatal("failed to get java executable path", err)
 	}
 
 	customTools, err := linter.MountTools(tempMountPath, permanentMountPath, isCommunity)

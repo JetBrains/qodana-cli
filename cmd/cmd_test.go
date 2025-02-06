@@ -22,6 +22,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"github.com/JetBrains/qodana-cli/v2024/core"
 	"github.com/JetBrains/qodana-cli/v2024/platform/msg"
 	"github.com/JetBrains/qodana-cli/v2024/platform/product"
 	"github.com/JetBrains/qodana-cli/v2024/platform/qdenv"
@@ -35,8 +36,6 @@ import (
 	"runtime"
 	"strings"
 	"testing"
-
-	"github.com/JetBrains/qodana-cli/v2024/core"
 )
 
 func createProject(t *testing.T, name string) string {
@@ -384,8 +383,7 @@ func TestAllCommandsWithContainer(t *testing.T) {
 func TestScanWithIde(t *testing.T) {
 	log.SetLevel(log.DebugLevel)
 	token := os.Getenv("QODANA_LICENSE_ONLY_TOKEN")
-	if //goland:noinspection GoBoolExpressions
-	token == "" {
+	if token == "" {
 		t.Skip("set your token here to run the test")
 	}
 	projectPath := ".."

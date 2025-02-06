@@ -17,23 +17,21 @@
 package platform
 
 import (
-	"github.com/JetBrains/qodana-cli/v2024/platform/qdyaml"
-	"github.com/spf13/pflag"
+	"github.com/JetBrains/qodana-cli/v2024/platform/thirdpartyscan"
 	"os"
 	"testing"
 )
 
 func TestMount(t *testing.T) {
-	linterOpts := &TestOptions{
-		mountInfo: &MountInfo{},
-	}
-	options := &QodanaOptions{
-		LinterSpecific: linterOpts,
-	}
-	defer cleanupUtils()
-	extractUtils(options)
+	linter := mockThirdPartyLinter{}
+	tempCacheDir, _ := os.MkdirTemp("", "qodana-platform")
+	defer func() {
+		_ = os.RemoveAll(tempCacheDir)
+	}()
 
-	mountInfo := *linterOpts.GetMountInfo()
+	tempMountPath, mountInfo := extractUtils(linter, tempCacheDir, false)
+	defer cleanupUtils(tempMountPath)
+
 	if mountInfo.Converter == "" {
 		t.Error("extractUtils() failed")
 	}
@@ -54,29 +52,19 @@ func TestMount(t *testing.T) {
 	}
 }
 
-type TestOptions struct {
-	linterInfo *LinterInfo
-	mountInfo  *MountInfo
+type mockThirdPartyLinter struct {
 }
 
-func (TestOptions) AddFlags(_ *pflag.FlagSet) {}
-
-func (t TestOptions) GetMountInfo() *MountInfo {
-	return t.mountInfo
-}
-
-func (TestOptions) MountTools(_ string, _ string, _ *QodanaOptions) (map[string]string, error) {
+func (mockThirdPartyLinter) MountTools(_ string, _ string, _ bool) (map[string]string, error) {
 	return make(map[string]string), nil
 }
-
-func (t TestOptions) GetInfo(_ *QodanaOptions) *LinterInfo {
-	return t.linterInfo
+func (mockThirdPartyLinter) ComputeNewLinterInfo(
+	info thirdpartyscan.LinterInfo,
+	_ bool,
+) (thirdpartyscan.LinterInfo, error) {
+	return info, nil
 }
 
-func (TestOptions) Setup(_ *QodanaOptions) error {
-	return nil
-}
-
-func (TestOptions) RunAnalysis(_ *QodanaOptions, _ *qdyaml.QodanaYaml) error {
+func (mockThirdPartyLinter) RunAnalysis(_ thirdpartyscan.Context) error {
 	return nil
 }

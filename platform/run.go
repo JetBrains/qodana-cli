@@ -79,7 +79,7 @@ func RunThirdPartyLinterAnalysis(
 
 	context := thirdpartyscan.ComputeContext(cliOptions, initArgs, linterInfo, mountInfo, thirdPartyCloudData, yaml)
 
-	LogContext(context)
+	LogContext(&context)
 
 	events := make([]tooling.FuserEvent, 0)
 	eventsCh := createFuserEventChannel(&events)

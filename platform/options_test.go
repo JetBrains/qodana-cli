@@ -17,6 +17,7 @@
 package platform
 
 import (
+	"github.com/JetBrains/qodana-cli/v2024/platform/platforminit"
 	"github.com/stretchr/testify/assert"
 	"os"
 	"testing"
@@ -47,65 +48,102 @@ func cleanupTest(projectDir string) error {
 }
 
 func TestFetchAnalyzerSettings(t *testing.T) {
-	t.Run("qodana.yaml exists", func(t *testing.T) {
-		projectDir := "./testData/project_with_qodana_yaml"
-		expectedIde := "expectedIde"
-		fileName := "qodana.yaml"
-		data := "ide: " + expectedIde
+	t.Run(
+		"qodana.yaml exists", func(t *testing.T) {
+			projectDir := "./testData/project_with_qodana_yaml"
+			expectedIde := "expectedIde"
+			fileName := "qodana.yaml"
+			data := "ide: " + expectedIde
 
-		_, err := setupTest(projectDir, fileName, data)
-		if err != nil {
-			t.Fatalf("Failed to setup test: %v", err)
-		}
+			_, err := setupTest(projectDir, fileName, data)
+			if err != nil {
+				t.Fatalf("Failed to setup test: %v", err)
+			}
 
-		o := &QodanaOptions{ProjectDir: projectDir}
-		o.FetchAnalyzerSettings()
-		assert.Equal(t, expectedIde, o.Ide)
+			initArgs := platforminit.ComputeArgs(
+				"",
+				"",
+				"",
+				"",
+				"",
+				"",
+				"",
+				false,
+				projectDir,
+				"",
+			)
 
-		if err := cleanupTest(projectDir); err != nil {
-			t.Fatal(err)
-		}
-	})
+			assert.Equal(t, expectedIde, initArgs.Ide)
 
-	t.Run("qodana.yml exists", func(t *testing.T) {
-		projectDir := "./testData/project_with_qodana_yml"
-		expectedIde := "expectedIde_yml"
-		fileName := "qodana.yml"
-		data := "ide: " + expectedIde
+			if err := cleanupTest(projectDir); err != nil {
+				t.Fatal(err)
+			}
+		},
+	)
 
-		_, err := setupTest(projectDir, fileName, data)
-		if err != nil {
-			t.Fatalf("Failed to setup test: %v", err)
-		}
+	t.Run(
+		"qodana.yml exists", func(t *testing.T) {
+			projectDir := "./testData/project_with_qodana_yml"
+			expectedIde := "expectedIde_yml"
+			fileName := "qodana.yml"
+			data := "ide: " + expectedIde
 
-		o := &QodanaOptions{ProjectDir: projectDir}
-		o.FetchAnalyzerSettings()
+			_, err := setupTest(projectDir, fileName, data)
+			if err != nil {
+				t.Fatalf("Failed to setup test: %v", err)
+			}
 
-		assert.Equal(t, expectedIde, o.Ide)
+			initArgs := platforminit.ComputeArgs(
+				"",
+				"",
+				"",
+				"",
+				"",
+				"",
+				"",
+				false,
+				projectDir,
+				"",
+			)
 
-		if err := cleanupTest(projectDir); err != nil {
-			t.Fatal(err)
-		}
-	})
+			assert.Equal(t, expectedIde, initArgs.Ide)
 
-	t.Run("configName is set", func(t *testing.T) {
-		projectDir := "./testData/project_with_custom_qodana_yaml"
-		expectedIde := "expectedIde_custom"
-		fileName := "custom_qodana.yaml"
-		data := "ide: " + expectedIde
+			if err := cleanupTest(projectDir); err != nil {
+				t.Fatal(err)
+			}
+		},
+	)
 
-		_, err := setupTest(projectDir, fileName, data)
-		if err != nil {
-			t.Fatalf("Failed to setup test: %v", err)
-		}
+	t.Run(
+		"configName is set", func(t *testing.T) {
+			projectDir := "./testData/project_with_custom_qodana_yaml"
+			expectedIde := "expectedIde_custom"
+			fileName := "custom_qodana.yaml"
+			data := "ide: " + expectedIde
 
-		o := &QodanaOptions{ProjectDir: projectDir, ConfigName: fileName}
-		o.FetchAnalyzerSettings()
+			_, err := setupTest(projectDir, fileName, data)
+			if err != nil {
+				t.Fatalf("Failed to setup test: %v", err)
+			}
 
-		assert.Equal(t, expectedIde, o.Ide)
+			initArgs := platforminit.ComputeArgs(
+				"",
+				"",
+				"",
+				"",
+				"",
+				"",
+				"",
+				false,
+				projectDir,
+				fileName,
+			)
 
-		if err := cleanupTest(projectDir); err != nil {
-			t.Fatal(err)
-		}
-	})
+			assert.Equal(t, expectedIde, initArgs.Ide)
+
+			if err := cleanupTest(projectDir); err != nil {
+				t.Fatal(err)
+			}
+		},
+	)
 }
