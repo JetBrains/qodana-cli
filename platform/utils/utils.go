@@ -268,7 +268,7 @@ func GetDefaultUser() string {
 	}
 }
 
-// findProcess using gopsutil to find process by name.
+// FindProcess using gopsutil to find process by name.
 func FindProcess(processName string) bool {
 	if qdenv.IsContainer() {
 		return IsProcess(processName)

@@ -477,7 +477,7 @@ func WriteQodanaLinterToYamlFile(path string, linter string, filename string, al
 	}
 }
 
-// setQodanaDotNet adds the .NET configuration to the qodana.yaml file.
+// SetQodanaDotNet adds the .NET configuration to the qodana.yaml file.
 func SetQodanaDotNet(path string, dotNet *DotNet, filename string) bool {
 	q := LoadQodanaYaml(path, filename)
 	q.DotNet = *dotNet

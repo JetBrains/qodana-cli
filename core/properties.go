@@ -79,7 +79,7 @@ func getPropertiesMap(
 	return properties
 }
 
-// Common part for installPlugins and qodana executuion
+// GetCommonProperties Common part for installPlugins and qodana executuion
 func GetCommonProperties(c corescan.Context) []string {
 	systemDir := filepath.Join(c.CacheDir(), "idea", c.Prod().GetVersionBranch())
 	pluginsDir := filepath.Join(c.CacheDir(), "plugins", c.Prod().GetVersionBranch())

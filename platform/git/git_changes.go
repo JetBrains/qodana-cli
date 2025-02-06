@@ -60,12 +60,12 @@ func computeAbsPath(cwd string) (string, error) {
 	return cwdAbs, err
 }
 
-func GitChangedFiles(cwd string, diffStart string, diffEnd string, logdir string) (ChangedFiles, error) {
+func ComputeChangedFiles(cwd string, diffStart string, diffEnd string, logdir string) (ChangedFiles, error) {
 	absCwd, err := computeAbsPath(cwd)
 	if err != nil {
 		return ChangedFiles{}, err
 	}
-	repoRoot, err := GitRoot(cwd, logdir)
+	repoRoot, err := Root(cwd, logdir)
 	if err != nil {
 		return ChangedFiles{}, err
 	}
@@ -83,7 +83,11 @@ func GitChangedFiles(cwd string, diffStart string, diffEnd string, logdir string
 		return ChangedFiles{}, fmt.Errorf("failed to close file %s: %w", filePath, err)
 	}
 
-	_, _, err = gitRun(cwd, []string{"diff", diffStart, diffEnd, "--unified=0", "--no-renames", ">", utils.QuoteIfSpace(filePath)}, logdir)
+	_, _, err = gitRun(
+		cwd,
+		[]string{"diff", diffStart, diffEnd, "--unified=0", "--no-renames", ">", utils.QuoteIfSpace(filePath)},
+		logdir,
+	)
 	if err != nil {
 		return ChangedFiles{}, err
 	}
@@ -139,10 +143,16 @@ func parseDiff(diffPath string, repoRoot string, cwd string) (ChangedFiles, erro
 			newLineStart := diffToInt(matches[3])
 			newCount := diffToInt(matches[4])
 			if origCount != 0 {
-				currentChange.Deleted = append(currentChange.Deleted, &ChangedRegion{FirstLine: origLineStart, Count: origCount})
+				currentChange.Deleted = append(
+					currentChange.Deleted,
+					&ChangedRegion{FirstLine: origLineStart, Count: origCount},
+				)
 			}
 			if newCount != 0 {
-				currentChange.Added = append(currentChange.Added, &ChangedRegion{FirstLine: newLineStart, Count: newCount})
+				currentChange.Added = append(
+					currentChange.Added,
+					&ChangedRegion{FirstLine: newLineStart, Count: newCount},
+				)
 			}
 		}
 	}
@@ -167,17 +177,21 @@ func parseDiff(diffPath string, repoRoot string, cwd string) (ChangedFiles, erro
 		}
 		path := filepath.Join(repoRoot, fileName)
 		if strings.HasPrefix(path, cwd) { // take changes only inside project
-			files = append(files, &ChangedFile{
-				Path:    path,
-				Added:   file.Added,
-				Deleted: file.Deleted,
-			})
+			files = append(
+				files, &ChangedFile{
+					Path:    path,
+					Added:   file.Added,
+					Deleted: file.Deleted,
+				},
+			)
 		}
 	}
 
-	sort.Slice(files, func(i, j int) bool {
-		return files[i].Path < files[j].Path
-	})
+	sort.Slice(
+		files, func(i, j int) bool {
+			return files[i].Path < files[j].Path
+		},
+	)
 
 	return ChangedFiles{Files: files}, nil
 }

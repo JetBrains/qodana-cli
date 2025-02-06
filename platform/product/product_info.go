@@ -241,7 +241,7 @@ type Launch struct {
 	} `json:"customCommands"`
 }
 
-type ProductInfoJson struct {
+type InfoJson struct {
 	Version       string   `json:"version"`
 	BuildNumber   string   `json:"buildNumber"`
 	ProductCode   string   `json:"productCode"`
@@ -358,7 +358,7 @@ func toQodanaCode(baseProduct string) string {
 	}
 }
 
-func isEap(info ProductInfoJson) bool {
+func isEap(info InfoJson) bool {
 	treatAsRelease := os.Getenv(qdenv.QodanaTreatAsRelease)
 	if treatAsRelease == "true" {
 		return true
@@ -382,7 +382,7 @@ func isEap(info ProductInfoJson) bool {
 }
 
 // ReadIdeProductInfo returns IDE info from the given path.
-func ReadIdeProductInfo(ideDir string) (*ProductInfoJson, error) {
+func ReadIdeProductInfo(ideDir string) (*InfoJson, error) {
 	if //goland:noinspection ALL
 	runtime.GOOS == "darwin" {
 		ideDir = filepath.Join(ideDir, "Resources")
@@ -395,7 +395,7 @@ func ReadIdeProductInfo(ideDir string) (*ProductInfoJson, error) {
 	if err != nil {
 		return nil, err
 	}
-	var productInfoJson ProductInfoJson
+	var productInfoJson InfoJson
 	err = json.Unmarshal(productInfoFile, &productInfoJson)
 	if err != nil {
 		return nil, err

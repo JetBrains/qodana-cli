@@ -231,29 +231,31 @@ func TestChangesCalculation(t *testing.T) {
 	}
 
 	for _, tc := range testCases {
-		t.Run(tc.action, func(t *testing.T) {
-			temp, _ := os.MkdirTemp("", "")
-			repo := createRepo(t, tc)
+		t.Run(
+			tc.action, func(t *testing.T) {
+				temp, _ := os.MkdirTemp("", "")
+				repo := createRepo(t, tc)
 
-			defer func(path string) {
-				_ = os.RemoveAll(path)
-			}(repo)
+				defer func(path string) {
+					_ = os.RemoveAll(path)
+				}(repo)
 
-			repo, err := filepath.EvalSymlinks(repo)
-			assert.NoError(t, err)
-			projDir := filepath.Join(repo, tc.projDir)
-			commits, err := GitChangedFiles(projDir, "HEAD~1", "HEAD", temp)
+				repo, err := filepath.EvalSymlinks(repo)
+				assert.NoError(t, err)
+				projDir := filepath.Join(repo, tc.projDir)
+				commits, err := ComputeChangedFiles(projDir, "HEAD~1", "HEAD", temp)
 
-			for _, file := range commits.Files {
-				relPath, _ := filepath.Rel(repo, file.Path)
-				file.Path = strings.ReplaceAll(relPath, string(os.PathSeparator), "/")
-			}
-			assert.NoError(t, err)
-			jsonCommits, err := json.MarshalIndent(commits, "", "  ")
-			assert.NoError(t, err)
+				for _, file := range commits.Files {
+					relPath, _ := filepath.Rel(repo, file.Path)
+					file.Path = strings.ReplaceAll(relPath, string(os.PathSeparator), "/")
+				}
+				assert.NoError(t, err)
+				jsonCommits, err := json.MarshalIndent(commits, "", "  ")
+				assert.NoError(t, err)
 
-			assert.Equal(t, strings.TrimSpace(tc.result), string(jsonCommits))
-		})
+				assert.Equal(t, strings.TrimSpace(tc.result), string(jsonCommits))
+			},
+		)
 	}
 }
 

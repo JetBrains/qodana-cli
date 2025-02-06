@@ -189,7 +189,7 @@ func PrintFile(file string) {
 	printLines(string(content), 1, 0, true)
 }
 
-// printProblem prints problem with source code or without it.
+// PrintProblem printProblem prints problem with source code or without it.
 func PrintProblem(
 	ruleId string,
 	level string,

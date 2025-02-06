@@ -50,20 +50,20 @@ func gitRun(cwd string, command []string, logdir string) (string, string, error)
 	return stdout, stderr, nil
 }
 
-// GitReset resets the git repository to the given commit.
-func GitReset(cwd string, sha string, logdir string) error {
+// Reset resets the git repository to the given commit.
+func Reset(cwd string, sha string, logdir string) error {
 	_, _, err := gitRun(cwd, []string{"reset", "--soft", sha}, logdir)
 	return err
 }
 
-// GitResetBack aborts the git reset.
-func GitResetBack(cwd string, logdir string) error {
+// ResetBack aborts the git reset.
+func ResetBack(cwd string, logdir string) error {
 	_, _, err := gitRun(cwd, []string{"reset", "'HEAD@{1}'"}, logdir)
 	return err
 }
 
-// GitCheckout checks out the given commit / branch.
-func GitCheckout(cwd string, where string, force bool, logdir string) error {
+// Checkout checks out the given commit / branch.
+func Checkout(cwd string, where string, force bool, logdir string) error {
 	var err error
 	if !force {
 		_, _, err = gitRun(cwd, []string{"checkout", where}, logdir)
@@ -73,19 +73,19 @@ func GitCheckout(cwd string, where string, force bool, logdir string) error {
 	return err
 }
 
-// GitClean cleans the git repository.
-func GitClean(cwd string, logdir string) error {
+// Clean cleans the git repository.
+func Clean(cwd string, logdir string) error {
 	_, _, err := gitRun(cwd, []string{"clean", "-fdx"}, logdir)
 	return err
 }
 
-// GitRevisions returns the list of commits of the git repository in chronological order.
-func GitRevisions(cwd string) []string {
-	return utils.Reverse(GitLog(cwd, "%H", 0))
+// Revisions returns the list of commits of the git repository in chronological order.
+func Revisions(cwd string) []string {
+	return utils.Reverse(Log(cwd, "%H", 0))
 }
 
-// GitRoot returns absolute path of repo root
-func GitRoot(cwd string, logdir string) (string, error) {
+// Root returns absolute path of repo root
+func Root(cwd string, logdir string) (string, error) {
 	stdout, _, err := gitRun(cwd, []string{"rev-parse", "--show-toplevel"}, logdir)
 	if err != nil {
 		return "", err
@@ -93,8 +93,8 @@ func GitRoot(cwd string, logdir string) (string, error) {
 	return strings.TrimSpace(stdout), nil
 }
 
-// GitRemoteUrl returns the remote url of the git repository.
-func GitRemoteUrl(cwd string, logdir string) (string, error) {
+// RemoteUrl returns the remote url of the git repository.
+func RemoteUrl(cwd string, logdir string) (string, error) {
 	stdout, _, err := gitRun(cwd, []string{"remote", "get-url", "origin"}, logdir)
 	if err != nil {
 		return "", err
@@ -102,8 +102,8 @@ func GitRemoteUrl(cwd string, logdir string) (string, error) {
 	return strings.TrimSpace(stdout), nil
 }
 
-// GitBranch returns the current branch of the git repository.
-func GitBranch(cwd string, logdir string) (string, error) {
+// Branch returns the current branch of the git repository.
+func Branch(cwd string, logdir string) (string, error) {
 	stdout, _, err := gitRun(cwd, []string{"rev-parse", "--abbrev-ref", "HEAD"}, logdir)
 	if err != nil {
 		return "", err
@@ -111,7 +111,7 @@ func GitBranch(cwd string, logdir string) (string, error) {
 	return strings.TrimSpace(stdout), nil
 }
 
-func GitCurrentRevision(cwd string, logdir string) (string, error) {
+func CurrentRevision(cwd string, logdir string) (string, error) {
 	stdout, _, err := gitRun(cwd, []string{"rev-parse", "HEAD"}, logdir)
 	if err != nil {
 		return "", err
@@ -119,8 +119,8 @@ func GitCurrentRevision(cwd string, logdir string) (string, error) {
 	return strings.TrimSpace(stdout), nil
 }
 
-// GitRevisionExists returns true when revision exists in history.
-func GitRevisionExists(cwd string, revision string, logdir string) bool {
+// RevisionExists returns true when revision exists in history.
+func RevisionExists(cwd string, revision string, logdir string) bool {
 	_, stderr, err := gitRun(cwd, []string{"show", "--no-patch", revision}, logdir)
 	if strings.Contains(stderr, revision) || strings.Contains(stderr, "fatal:") || err != nil {
 		return false

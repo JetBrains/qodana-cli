@@ -117,10 +117,10 @@ func downloadAndInstallIDE(
 		if dirs, err := filepath.Glob(filepath.Join(installDir, "*.app")); err == nil && len(dirs) == 1 {
 			installDir = filepath.Join(dirs[0], "Contents")
 		}
-		err = downloadCustomPlugins(ideUrl, installDir, spinner)
-		if err != nil {
-			log.Warning("Error while downloading custom plugins: " + err.Error())
-		}
+		//err = downloadCustomPlugins(ideUrl, installDir, spinner)
+		//if err != nil {
+		//	log.Warning("Error while downloading custom plugins: " + err.Error())
+		//}
 	}
 
 	return installDir
