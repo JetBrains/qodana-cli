@@ -6,7 +6,7 @@ FROM composer:$COMPOSER_TAG AS composer_base
 FROM php:$PHP_TAG
 
 # renovate: datasource=npm depName=eslint
-ENV ESLINT_VERSION="9.19.0"
+ENV ESLINT_VERSION="9.20.1"
 # renovate: datasource=npm depName=pnpm
 ENV PNPM_VERSION="9.15.5"
 
