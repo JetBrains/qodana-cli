@@ -8,7 +8,7 @@ ARG CLANG="16"
 # renovate: datasource=npm depName=eslint
 ENV ESLINT_VERSION="9.20.1"
 # renovate: datasource=npm depName=pnpm
-ENV PNPM_VERSION="9.15.5"
+ENV PNPM_VERSION="10.3.0"
 
 ENV HOME="/root" \
     LC_ALL="en_US.UTF-8" \
