@@ -248,6 +248,15 @@ func runLocalChanges(ctx context.Context, options *QodanaOptions, startHash stri
 	return exitCode
 }
 
+func checkoutCommit(options *QodanaOptions, commit string, force bool) error {
+	err := platform.GitCheckout(options.ProjectDir, commit, force, options.LogDirPath())
+	if err != nil {
+		return err
+	}
+	err = platform.GitSubmoduleUpdate(options.ProjectDir, force, options.LogDirPath())
+	return err
+}
+
 func runWithFullHistory(ctx context.Context, options *QodanaOptions, startHash string) int {
 	remoteUrl, err := platform.GitRemoteUrl(options.ProjectDir, options.LogDirPath())
 	if err != nil {
@@ -286,7 +295,7 @@ func runWithFullHistory(ctx context.Context, options *QodanaOptions, startHash s
 		counter++
 		options.Setenv(platform.QodanaRevision, revision)
 		platform.WarningMessage("[%d/%d] Running analysis for revision %s", counter+1, allCommits, revision)
-		err = platform.GitCheckout(options.ProjectDir, revision, true, options.LogDirPath())
+		err = checkoutCommit(options, revision, true)
 		if err != nil {
 			log.Fatal(err)
 		}
@@ -295,7 +304,7 @@ func runWithFullHistory(ctx context.Context, options *QodanaOptions, startHash s
 		exitCode = runQodana(ctx, options)
 		options.Unsetenv(platform.QodanaRevision)
 	}
-	err = platform.GitCheckout(options.ProjectDir, branch, true, options.LogDirPath())
+	err = checkoutCommit(options, branch, true)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -334,7 +343,7 @@ func runScopeScript(ctx context.Context, options *QodanaOptions, startHash strin
 	baseline := options.Baseline
 
 	runFunc := func(hash string) (bool, int) {
-		e := platform.GitCheckout(options.ProjectDir, hash, true, options.LogDirPath())
+		e := checkoutCommit(options, hash, true)
 		if e != nil {
 			log.Fatalf("Cannot checkout commit %s: %v", hash, e)
 		}
