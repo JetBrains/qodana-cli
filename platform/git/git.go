@@ -62,8 +62,18 @@ func ResetBack(cwd string, logdir string) error {
 	return err
 }
 
-// Checkout checks out the given commit / branch.
-func Checkout(cwd string, where string, force bool, logdir string) error {
+// See QD-10767 case for why update submodule is needed
+func CheckoutAndUpdateSubmodule(cwd string, where string, force bool, logdir string) error {
+	err := checkout(cwd, where, force, logdir)
+	if err != nil {
+		return err
+	}
+	err = submoduleUpdate(cwd, force, logdir)
+	return err
+}
+
+// checkout checks out the given commit / branch.
+func checkout(cwd string, where string, force bool, logdir string) error {
 	var err error
 	if !force {
 		_, _, err = gitRun(cwd, []string{"checkout", where}, logdir)
@@ -71,6 +81,17 @@ func Checkout(cwd string, where string, force bool, logdir string) error {
 		_, _, err = gitRun(cwd, []string{"checkout", "-f", where}, logdir)
 	}
 	return err
+}
+
+// GitSubmoduleUpdate updates submodules according to current revision
+func submoduleUpdate(cwd string, force bool, logdir string) error {
+	if !force {
+		_, _, err := gitRun(cwd, []string{"submodule", "update", "--init", "--recursive"}, logdir)
+		return err
+	} else {
+		_, _, err := gitRun(cwd, []string{"submodule", "update", "--init", "--recursive", "--force"}, logdir)
+		return err
+	}
 }
 
 // Clean cleans the git repository.
