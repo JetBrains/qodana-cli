@@ -24,6 +24,7 @@ import (
 	"github.com/JetBrains/qodana-cli/v2025/core/corescan"
 	"github.com/JetBrains/qodana-cli/v2025/core/startup"
 	"github.com/JetBrains/qodana-cli/v2025/platform"
+	"github.com/JetBrains/qodana-cli/v2025/platform/effectiveconfig"
 	"github.com/JetBrains/qodana-cli/v2025/platform/git"
 	"github.com/JetBrains/qodana-cli/v2025/platform/msg"
 	"github.com/JetBrains/qodana-cli/v2025/platform/nuget"
@@ -155,7 +156,7 @@ func RunAnalysis(ctx context.Context, c corescan.Context) int {
 	installPlugins(c)
 	// this way of running needs to do bootstrap twice on different commits and will do it internally
 	if scenario != corescan.RunScenarioScoped && c.Ide() != "" {
-		utils.Bootstrap(c.QodanaYaml().Bootstrap, c.ProjectDir())
+		utils.Bootstrap(c.QodanaYamlConfig().Bootstrap, c.ProjectDir())
 	}
 	switch scenario {
 	case corescan.RunScenarioFullHistory:
@@ -282,14 +283,37 @@ func runScopeScript(ctx context.Context, c corescan.Context, startHash string) i
 		startup.PrepareDirectories(c.Prod(), c.CacheDir(), c.LogDir(), c.ConfigDir())
 		log.Infof("Analysing %s", hash)
 
-		configAtHash, e := qdyaml.GetQodanaYaml(c.ProjectDir())
-		if e != nil {
-			log.Warnf("Could not read qodana yaml at %s: %v. Using last known config", hash, e)
-			configAtHash = c.QodanaYaml()
+		// for CLI, we use only bootstrap from this effective yaml
+		// all other fields are used from the one (effective aswell) obtained at the start
+		localQodanaYamlFullPath := qdyaml.GetLocalNotEffectiveQodanaYamlFullPath(
+			c.ProjectDir(),
+			c.CustomLocalQodanaYamlPath(),
+		)
+		effectiveConfigFiles, err := effectiveconfig.CreateEffectiveConfigFiles(
+			localQodanaYamlFullPath,
+			c.GlobalConfigurationsFile(),
+			c.GlobalConfigurationId(),
+			c.Prod().JbrJava(),
+			c.QodanaSystemDir(),
+			"qdconfig-"+hash,
+			c.LogDir(),
+		)
+		if err != nil {
+			log.Fatalf("Failed to load Qodana configuration during analysis of commit %s: %v", hash, err)
 		}
-		utils.Bootstrap(configAtHash.Bootstrap, c.ProjectDir())
 
-		exitCode := runQodana(ctx, c) // TODO WHY qodana yaml is not passed further to runQodana???
+		// if local qodana yaml doesn't exist on revision, for bootstrap fallback to the one constructed at the start
+		var bootstrap string
+		if c.LocalQodanaYamlExists() {
+			yaml := qdyaml.LoadQodanaYamlByFullPath(effectiveConfigFiles.EffectiveQodanaYamlPath)
+			bootstrap = yaml.Bootstrap
+		} else {
+			bootstrap = c.QodanaYamlConfig().Bootstrap
+		}
+		utils.Bootstrap(bootstrap, c.ProjectDir())
+
+		contextForAnalysis := c.WithEffectiveConfigurationDirOnRevision(effectiveConfigFiles.ConfigDir)
+		exitCode := runQodana(ctx, contextForAnalysis) // TODO WHY qodana yaml is not passed further to runQodana?
 		if !(exitCode == 0 || exitCode == 255) {
 			log.Errorf("Qodana analysis on %s exited with code %d. Aborting", hash, exitCode)
 			return true, exitCode

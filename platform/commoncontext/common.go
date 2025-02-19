@@ -108,7 +108,7 @@ func filterByLicensePlan(codes []string, token string) []string {
 }
 
 // GetAndSaveDotNetConfig gets .NET config for the given path and saves configName
-func GetAndSaveDotNetConfig(projectDir string, yamlName string) bool {
+func GetAndSaveDotNetConfig(projectDir string, qodanaYamlFullPath string) bool {
 	possibleOptions := utils.FindFiles(projectDir, []string{".sln", ".csproj", ".vbproj", ".fsproj"})
 	if len(possibleOptions) <= 1 {
 		return false
@@ -125,7 +125,7 @@ func GetAndSaveDotNetConfig(projectDir string, yamlName string) bool {
 	} else {
 		dotnet.Project = filepath.Base(choice)
 	}
-	return qdyaml.SetQodanaDotNet(projectDir, dotnet, yamlName)
+	return qdyaml.SetQodanaDotNet(qodanaYamlFullPath, dotnet)
 }
 
 func selectAnalyzer(path string, analyzers []string, interactive bool, selectFunc func([]string) string) string {

@@ -21,7 +21,6 @@ import (
 	"github.com/JetBrains/qodana-cli/v2025/platform/cmd"
 	"github.com/JetBrains/qodana-cli/v2025/platform/commoncontext"
 	"github.com/JetBrains/qodana-cli/v2025/platform/qdenv"
-	"github.com/JetBrains/qodana-cli/v2025/platform/qdyaml"
 	"path/filepath"
 	"strings"
 )
@@ -30,7 +29,8 @@ func CreateContext(
 	cliOptions platformcmd.CliOptions,
 	commonCtx commoncontext.Context,
 	preparedHost startup.PreparedHost,
-	qodanaYaml qdyaml.QodanaYaml,
+	qodanaYamlConfig QodanaYamlConfig,
+	effectiveConfigurationDir string,
 ) Context {
 	coverageDir := cliOptions.CoverageDir
 	if coverageDir == "" {
@@ -51,7 +51,7 @@ func CreateContext(
 		Ide:                       commonCtx.Ide,
 		Id:                        commonCtx.Id,
 		IdeDir:                    preparedHost.IdeDir,
-		QodanaYaml:                qodanaYaml,
+		EffectiveConfigurationDir: effectiveConfigurationDir,
 		Prod:                      preparedHost.Prod,
 		QodanaUploadToken:         preparedHost.QodanaUploadToken,
 		ProjectDir:                commonCtx.ProjectDir,
@@ -105,5 +105,9 @@ func CreateContext(
 		AnalysisTimeoutMs:         cliOptions.AnalysisTimeoutMs,
 		AnalysisTimeoutExitCode:   cliOptions.AnalysisTimeoutExitCode,
 		JvmDebugPort:              cliOptions.JvmDebugPort,
+		GlobalConfigurationsFile:  cliOptions.GlobalConfigurationsFile,
+		GlobalConfigurationId:     cliOptions.GlobalConfigurationId,
+		CustomLocalQodanaYamlPath: cliOptions.ConfigName,
+		QodanaYamlConfig:          qodanaYamlConfig,
 	}.Build()
 }

@@ -1,0 +1,20 @@
+version: 1.0
+
+profile:
+  path: a-profile.yaml
+
+include:
+  # from root
+  - name: InspectionA
+  - name: InspectionB #from root
+  # from inner
+  - name: InspectionC # from inner
+  - name: InspectionD
+
+#this is a failure conditions section
+failureConditions:
+  # this is a severityThresholds section
+  severityThresholds:
+    any: 1 #from root
+    critical: 2 # from root
+    moderate: 3 # moderate is from inner

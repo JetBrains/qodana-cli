@@ -30,7 +30,7 @@ const severityLow = "low"
 const severityInfo = "info"
 
 func getFailureThresholds(c thirdpartyscan.Context) map[string]string {
-	yaml := c.QodanaYaml()
+	yaml := c.QodanaYamlConfig()
 	ret := make(map[string]string)
 	if yaml.FailThreshold != nil {
 		ret[severityAny] = strconv.Itoa(*yaml.FailThreshold)
