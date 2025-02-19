@@ -235,7 +235,7 @@ func runWithFullHistory(ctx context.Context, c corescan.Context, startHash strin
 		counter++
 
 		msg.WarningMessage("[%d/%d] Running analysis for revision %s", counter+1, allCommits, revision)
-		err = git.Checkout(c.ProjectDir(), revision, true, c.LogDir())
+		err = git.CheckoutAndUpdateSubmodule(c.ProjectDir(), revision, true, c.LogDir())
 		if err != nil {
 			log.Fatal(err)
 		}
@@ -244,7 +244,7 @@ func runWithFullHistory(ctx context.Context, c corescan.Context, startHash strin
 		contextForAnalysis := c.WithVcsEnvForFullHistoryAnalysisIteration(remoteUrl, branch, revision)
 		exitCode = runQodana(ctx, contextForAnalysis)
 	}
-	err = git.Checkout(c.ProjectDir(), branch, true, c.LogDir())
+	err = git.CheckoutAndUpdateSubmodule(c.ProjectDir(), branch, true, c.LogDir())
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -274,7 +274,7 @@ func runScopeScript(ctx context.Context, c corescan.Context, startHash string) i
 	}()
 
 	runFunc := func(hash string, c corescan.Context) (bool, int) {
-		e := git.Checkout(c.ProjectDir(), hash, true, c.LogDir())
+		e := git.CheckoutAndUpdateSubmodule(c.ProjectDir(), hash, true, c.LogDir())
 		if e != nil {
 			log.Fatalf("Cannot checkout commit %s: %v", hash, e)
 		}
