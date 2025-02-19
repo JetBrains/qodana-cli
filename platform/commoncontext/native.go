@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package platforminit
+package commoncontext
 
 // currently contains only the logic for .NET products
 import (

@@ -18,7 +18,7 @@ package cmd
 
 import (
 	"github.com/JetBrains/qodana-cli/v2024/core"
-	"github.com/JetBrains/qodana-cli/v2024/platform/platforminit"
+	"github.com/JetBrains/qodana-cli/v2024/platform/commoncontext"
 	"github.com/JetBrains/qodana-cli/v2024/platform/qdenv"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
@@ -38,7 +38,7 @@ be viewed via the file:// protocol (by double-clicking the index.html file).
 https://www.jetbrains.com/help/qodana/html-report.html
 This command serves the Qodana report locally and opens a browser to it.`,
 		Run: func(cmd *cobra.Command, args []string) {
-			startupArgs := platforminit.ComputeArgs(
+			commonCtx := commoncontext.Compute(
 				cliOptions.Linter,
 				"",
 				"",
@@ -51,14 +51,14 @@ This command serves the Qodana report locally and opens a browser to it.`,
 				cliOptions.ConfigName,
 			)
 			if cliOptions.OpenDir {
-				err := core.OpenDir(startupArgs.ResultsDir)
+				err := core.OpenDir(commonCtx.ResultsDir)
 				if err != nil {
 					log.Fatal(err)
 				}
 			} else {
-				platforminit.ShowReport(
-					startupArgs.ResultsDir,
-					startupArgs.ReportDir,
+				commoncontext.ShowReport(
+					commonCtx.ResultsDir,
+					commonCtx.ReportDir,
 					cliOptions.Port,
 				)
 			}

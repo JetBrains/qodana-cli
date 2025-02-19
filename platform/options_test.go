@@ -17,7 +17,7 @@
 package platform
 
 import (
-	"github.com/JetBrains/qodana-cli/v2024/platform/platforminit"
+	"github.com/JetBrains/qodana-cli/v2024/platform/commoncontext"
 	"github.com/stretchr/testify/assert"
 	"os"
 	"testing"
@@ -60,7 +60,7 @@ func TestFetchAnalyzerSettings(t *testing.T) {
 				t.Fatalf("Failed to setup test: %v", err)
 			}
 
-			initArgs := platforminit.ComputeArgs(
+			commonCtx := commoncontext.Compute(
 				"",
 				"",
 				"",
@@ -73,7 +73,7 @@ func TestFetchAnalyzerSettings(t *testing.T) {
 				"",
 			)
 
-			assert.Equal(t, expectedIde, initArgs.Ide)
+			assert.Equal(t, expectedIde, commonCtx.Ide)
 
 			if err := cleanupTest(projectDir); err != nil {
 				t.Fatal(err)
@@ -93,7 +93,7 @@ func TestFetchAnalyzerSettings(t *testing.T) {
 				t.Fatalf("Failed to setup test: %v", err)
 			}
 
-			initArgs := platforminit.ComputeArgs(
+			commonCtx := commoncontext.Compute(
 				"",
 				"",
 				"",
@@ -106,7 +106,7 @@ func TestFetchAnalyzerSettings(t *testing.T) {
 				"",
 			)
 
-			assert.Equal(t, expectedIde, initArgs.Ide)
+			assert.Equal(t, expectedIde, commonCtx.Ide)
 
 			if err := cleanupTest(projectDir); err != nil {
 				t.Fatal(err)
@@ -126,7 +126,7 @@ func TestFetchAnalyzerSettings(t *testing.T) {
 				t.Fatalf("Failed to setup test: %v", err)
 			}
 
-			initArgs := platforminit.ComputeArgs(
+			commonCtx := commoncontext.Compute(
 				"",
 				"",
 				"",
@@ -139,7 +139,7 @@ func TestFetchAnalyzerSettings(t *testing.T) {
 				fileName,
 			)
 
-			assert.Equal(t, expectedIde, initArgs.Ide)
+			assert.Equal(t, expectedIde, commonCtx.Ide)
 
 			if err := cleanupTest(projectDir); err != nil {
 				t.Fatal(err)

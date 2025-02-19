@@ -18,7 +18,7 @@ package thirdpartyscan
 
 import (
 	"github.com/JetBrains/qodana-cli/v2024/platform/cmd"
-	"github.com/JetBrains/qodana-cli/v2024/platform/platforminit"
+	"github.com/JetBrains/qodana-cli/v2024/platform/commoncontext"
 	"github.com/JetBrains/qodana-cli/v2024/platform/qdyaml"
 	"path/filepath"
 	"strings"
@@ -26,7 +26,7 @@ import (
 
 func ComputeContext(
 	cliOptions platformcmd.CliOptions,
-	initArgs platforminit.Args,
+	initArgs commoncontext.Context,
 	linterInfo LinterInfo,
 	mountInfo MountInfo,
 	cloudData ThirdPartyStartupCloudData,
