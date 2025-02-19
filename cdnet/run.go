@@ -39,7 +39,7 @@ func (l CdnetLinter) ComputeNewLinterInfo(
 }
 
 func (l CdnetLinter) RunAnalysis(c thirdpartyscan.Context) error {
-	utils.Bootstrap(c.QodanaYaml().Bootstrap, c.ProjectDir())
+	utils.Bootstrap(c.QodanaYamlConfig().Bootstrap, c.ProjectDir())
 	args, err := l.computeCdnetArgs(c)
 	if err != nil {
 		return err

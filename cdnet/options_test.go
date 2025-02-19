@@ -28,8 +28,8 @@ import (
 	"testing"
 )
 
-func createDefaultYaml(sln string, prj string, cfg string, plt string) qdyaml.QodanaYaml {
-	return qdyaml.QodanaYaml{
+func createDefaultYaml(sln string, prj string, cfg string, plt string) thirdpartyscan.QodanaYamlConfig {
+	return thirdpartyscan.QodanaYamlConfig{
 		DotNet: qdyaml.DotNet{
 			Solution:      sln,
 			Project:       prj,
@@ -49,9 +49,9 @@ func TestComputeCdnetArgs(t *testing.T) {
 		{
 			name: "No solution/project specified",
 			cb: thirdpartyscan.ContextBuilder{
-				Property:   []string{},
-				ResultsDir: "",
-				QodanaYaml: createDefaultYaml("", "", "", ""),
+				Property:         []string{},
+				ResultsDir:       "",
+				QodanaYamlConfig: createDefaultYaml("", "", "", ""),
 			},
 			expectedArgs: nil,
 			expectedErr:  "solution/project relative file path is not specified. Use --solution or --project flags or create qodana.yaml file with respective fields",
@@ -59,10 +59,10 @@ func TestComputeCdnetArgs(t *testing.T) {
 		{
 			name: "project specified",
 			cb: thirdpartyscan.ContextBuilder{
-				Property:     []string{},
-				ResultsDir:   "",
-				CdnetProject: "project",
-				QodanaYaml:   createDefaultYaml("", "", "", ""),
+				Property:         []string{},
+				ResultsDir:       "",
+				CdnetProject:     "project",
+				QodanaYamlConfig: createDefaultYaml("", "", "", ""),
 			},
 			expectedArgs: []string{
 				"dotnet",
@@ -78,9 +78,9 @@ func TestComputeCdnetArgs(t *testing.T) {
 		{
 			name: "project specified in yaml",
 			cb: thirdpartyscan.ContextBuilder{
-				Property:   []string{},
-				ResultsDir: "",
-				QodanaYaml: createDefaultYaml("", "project", "", ""),
+				Property:         []string{},
+				ResultsDir:       "",
+				QodanaYamlConfig: createDefaultYaml("", "project", "", ""),
 			},
 			expectedArgs: []string{
 				"dotnet",
@@ -96,10 +96,10 @@ func TestComputeCdnetArgs(t *testing.T) {
 		{
 			name: "solution specified",
 			cb: thirdpartyscan.ContextBuilder{
-				Property:      []string{},
-				ResultsDir:    "",
-				CdnetSolution: "solution",
-				QodanaYaml:    createDefaultYaml("", "", "", ""),
+				Property:         []string{},
+				ResultsDir:       "",
+				CdnetSolution:    "solution",
+				QodanaYamlConfig: createDefaultYaml("", "", "", ""),
 			},
 			expectedArgs: []string{
 				"dotnet",
@@ -115,9 +115,9 @@ func TestComputeCdnetArgs(t *testing.T) {
 		{
 			name: "solution specified",
 			cb: thirdpartyscan.ContextBuilder{
-				Property:   []string{},
-				ResultsDir: "",
-				QodanaYaml: createDefaultYaml("solution", "", "", ""),
+				Property:         []string{},
+				ResultsDir:       "",
+				QodanaYamlConfig: createDefaultYaml("solution", "", "", ""),
 			},
 			expectedArgs: []string{
 				"dotnet",
@@ -133,9 +133,9 @@ func TestComputeCdnetArgs(t *testing.T) {
 		{
 			name: "configuration specified in yaml",
 			cb: thirdpartyscan.ContextBuilder{
-				Property:   []string{},
-				ResultsDir: "",
-				QodanaYaml: createDefaultYaml("solution", "", "cfg", ""),
+				Property:         []string{},
+				ResultsDir:       "",
+				QodanaYamlConfig: createDefaultYaml("solution", "", "cfg", ""),
 			},
 			expectedArgs: []string{
 				"dotnet",
@@ -155,7 +155,7 @@ func TestComputeCdnetArgs(t *testing.T) {
 				Property:           []string{},
 				ResultsDir:         "",
 				CdnetConfiguration: "cfg",
-				QodanaYaml:         createDefaultYaml("solution", "", "", ""),
+				QodanaYamlConfig:   createDefaultYaml("solution", "", "", ""),
 			},
 			expectedArgs: []string{
 				"dotnet",
@@ -172,9 +172,9 @@ func TestComputeCdnetArgs(t *testing.T) {
 		{
 			name: "platform specified in cfg",
 			cb: thirdpartyscan.ContextBuilder{
-				Property:   []string{},
-				ResultsDir: "",
-				QodanaYaml: createDefaultYaml("solution", "", "", "x64"),
+				Property:         []string{},
+				ResultsDir:       "",
+				QodanaYamlConfig: createDefaultYaml("solution", "", "", "x64"),
 			},
 			expectedArgs: []string{
 				"dotnet",
@@ -191,10 +191,10 @@ func TestComputeCdnetArgs(t *testing.T) {
 		{
 			name: "platform specified",
 			cb: thirdpartyscan.ContextBuilder{
-				Property:      []string{},
-				ResultsDir:    "",
-				CdnetPlatform: "x64",
-				QodanaYaml:    createDefaultYaml("solution", "", "", ""),
+				Property:         []string{},
+				ResultsDir:       "",
+				CdnetPlatform:    "x64",
+				QodanaYamlConfig: createDefaultYaml("solution", "", "", ""),
 			},
 			expectedArgs: []string{
 				"dotnet",
@@ -215,7 +215,7 @@ func TestComputeCdnetArgs(t *testing.T) {
 				ResultsDir:         "",
 				CdnetPlatform:      "x64",
 				CdnetConfiguration: "Debug",
-				QodanaYaml:         createDefaultYaml("solution", "", "", ""),
+				QodanaYamlConfig:   createDefaultYaml("solution", "", "", ""),
 			},
 			expectedArgs: []string{
 				"dotnet",
@@ -232,10 +232,10 @@ func TestComputeCdnetArgs(t *testing.T) {
 		{
 			name: "no-build",
 			cb: thirdpartyscan.ContextBuilder{
-				Property:     []string{},
-				ResultsDir:   "",
-				CdnetNoBuild: true,
-				QodanaYaml:   createDefaultYaml("solution", "", "", ""),
+				Property:         []string{},
+				ResultsDir:       "",
+				CdnetNoBuild:     true,
+				QodanaYamlConfig: createDefaultYaml("solution", "", "", ""),
 			},
 			expectedArgs: []string{
 				"dotnet",
@@ -261,8 +261,8 @@ func TestComputeCdnetArgs(t *testing.T) {
 					"idea.diagnostic.opentelemetry.file=/data/results/log/open-telemetry.json",
 					"jetbrains.security.package-checker.synchronizationTimeout=1000",
 				},
-				ResultsDir: "",
-				QodanaYaml: createDefaultYaml("solution", "", "", ""),
+				ResultsDir:       "",
+				QodanaYamlConfig: createDefaultYaml("solution", "", "", ""),
 			},
 			expectedArgs: []string{
 				"dotnet",

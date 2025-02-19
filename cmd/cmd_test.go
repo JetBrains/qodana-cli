@@ -149,13 +149,13 @@ func TestInitCommand(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	filename := qdyaml.FindDefaultQodanaYaml(projectPath)
+	updatedQodanaYamlPath := qdyaml.GetLocalNotEffectiveQodanaYamlFullPath(projectPath, "")
 
-	if filename != "qodana.yml" {
-		t.Fatalf("expected \"qodana.yml\" got \"%s\"", filename)
+	if !strings.HasSuffix(updatedQodanaYamlPath, "qodana.yml") {
+		t.Fatalf("expected \"qodana.yml\" got \"%s\"", updatedQodanaYamlPath)
 	}
 
-	qodanaYaml := qdyaml.LoadQodanaYaml(projectPath, filename)
+	qodanaYaml := qdyaml.LoadQodanaYamlByFullPath(updatedQodanaYamlPath)
 
 	if qodanaYaml.Linter != product.Image(product.QDPY) {
 		t.Fatalf("expected \"%s\", but got %s", product.Image(product.QDPY), qodanaYaml.Linter)

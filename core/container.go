@@ -53,6 +53,8 @@ const (
 	officialImagePrefix      = "jetbrains/qodana"
 	dockerSpecialCharsLength = 8
 	containerJvmDebugPort    = "5005"
+	// when container is launched by CLI, qodana-global-configurations.yaml file is mounted here
+	globalConfigsFileContainerMountPath = "/data/qdconfig/qodana-global-configurations.yaml"
 )
 
 var (
@@ -317,6 +319,23 @@ func getDockerOptions(c corescan.Context) *backend.ContainerCreateConfig {
 			Source: resultsPath,
 			Target: "/data/results",
 		},
+	}
+	if c.GlobalConfigurationsFile() != "" {
+		globalConfigurationsAbsPath, err := filepath.Abs(c.GlobalConfigurationsFile())
+		if err != nil {
+			log.Fatalf(
+				"Failed to get absolute path for global configurations file %s: %s",
+				c.GlobalConfigurationsFile(),
+				err,
+			)
+		}
+		volumes = append(
+			volumes, mount.Mount{
+				Type:   mount.TypeBind,
+				Source: globalConfigurationsAbsPath,
+				Target: globalConfigsFileContainerMountPath,
+			},
+		)
 	}
 	for _, volume := range c.Volumes() {
 		source, target := extractDockerVolumes(volume)

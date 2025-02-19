@@ -235,6 +235,47 @@ func TestCliArgs(t *testing.T) {
 				resultsDir,
 			},
 		},
+		{
+			name:         "no --config-dir in <251",
+			majorVersion: "2024.3",
+			cb: corescan.ContextBuilder{
+				StubProfile:   "ignored",
+				ProjectDir:    projectDir,
+				CacheDir:      cacheDir,
+				ResultsDir:    resultsDir,
+				FixesStrategy: "cleanup",
+				Ide:           "/opt/idea/243",
+			},
+			res: []string{
+				filepath.FromSlash("/opt/idea/bin/idea.sh"),
+				"qodana",
+				"--cleanup",
+				projectDir,
+				resultsDir,
+			},
+		},
+		{
+			name:         "--config-dir in >=251",
+			majorVersion: "2025.1",
+			cb: corescan.ContextBuilder{
+				StubProfile:               "ignored",
+				ProjectDir:                projectDir,
+				CacheDir:                  cacheDir,
+				ResultsDir:                resultsDir,
+				FixesStrategy:             "cleanup",
+				EffectiveConfigurationDir: "/qdconfig",
+				Ide:                       "/opt/idea/251",
+			},
+			res: []string{
+				filepath.FromSlash("/opt/idea/bin/idea.sh"),
+				"qodana",
+				"--cleanup",
+				"--config-dir",
+				"/qdconfig",
+				projectDir,
+				resultsDir,
+			},
+		},
 	} {
 		t.Run(
 			tc.name, func(t *testing.T) {
@@ -667,10 +708,10 @@ func Test_Bootstrap(t *testing.T) {
 		t.Fatal(err)
 	}
 	projectDir := tmpDir
-	utils.Bootstrap("echo 'bootstrap: touch qodana.yml' > qodana.yaml", projectDir)
-	config := qdyaml.GetQodanaYamlOrDefault(tmpDir)
+	utils.Bootstrap("echo bootstrap: touch qodana.yml > qodana.yaml", projectDir)
+	config := qdyaml.TestOnlyLoadLocalNotEffectiveQodanaYaml(projectDir, "qodana.yaml")
 	utils.Bootstrap(config.Bootstrap, projectDir)
-	if _, err := os.Stat(filepath.Join(projectDir, "qodana.yaml")); errors.Is(err, os.ErrNotExist) {
+	if _, err := os.Stat(filepath.Join(projectDir, "qodana.yml")); errors.Is(err, os.ErrNotExist) {
 		t.Fatalf("No qodana.yml created by the bootstrap command in qodana.yaml")
 	}
 	err = os.RemoveAll(tmpDir)
@@ -1107,7 +1148,7 @@ func Test_Properties(t *testing.T) {
 				if err != nil {
 					t.Fatal(err)
 				}
-				qConfig := qdyaml.GetQodanaYamlOrDefault(projectDir)
+				qConfig := qdyaml.TestOnlyLoadLocalNotEffectiveQodanaYaml(projectDir, "qodana.yml")
 
 				context := corescan.CreateContext(
 					platformcmd.CliOptions{
@@ -1125,7 +1166,8 @@ func Test_Properties(t *testing.T) {
 							Version:        "2023.3",
 						},
 					},
-					qConfig,
+					corescan.YamlConfig(qConfig),
+					"",
 				)
 				actual := GetScanProperties(context)
 				assert.Equal(t, tc.expected, actual)

@@ -1,0 +1,20 @@
+version: 1.0
+
+profile:
+  path: b-profile.yaml
+
+include:
+  # from local
+  - name: InspectionA
+  - name: InspectionB #from local
+  # from global
+  - name: InspectionC # from global
+  - name: InspectionD
+
+#this is a failure conditions section
+failureConditions:
+  # this is a severityThresholds section
+  severityThresholds:
+    any: 1 #from local
+    critical: 2 # from local
+    moderate: 3 # moderate is global

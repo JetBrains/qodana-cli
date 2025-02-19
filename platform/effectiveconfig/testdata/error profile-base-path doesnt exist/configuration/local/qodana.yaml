@@ -1,0 +1,17 @@
+version: 1.0
+
+profile:
+  base:
+    path: "profile.yaml"
+
+include:
+  # from root
+  - name: InspectionA
+  - name: InspectionB #from root
+
+#this is a failure conditions section
+failureConditions:
+  # this is a severityThresholds section
+  severityThresholds:
+    any: 1 #from root
+    critical: 2 # from root

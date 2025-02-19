@@ -101,6 +101,9 @@ func FindFiles(root string, extensions []string) []string {
 
 // QuoteIfSpace wraps in '"' if '`s`' Contains space.
 func QuoteIfSpace(s string) string {
+	if isStringQuoted(s) {
+		return s
+	}
 	if strings.Contains(s, " ") {
 		return "\"" + s + "\""
 	} else {
@@ -110,12 +113,19 @@ func QuoteIfSpace(s string) string {
 
 // QuoteForWindows wraps in '"' if '`s`' contains space on windows.
 func QuoteForWindows(s string) string {
+	if isStringQuoted(s) {
+		return s
+	}
 	if //goland:noinspection GoBoolExpressions
 	strings.Contains(s, " ") && runtime.GOOS == "windows" {
 		return "\"" + s + "\""
 	} else {
 		return s
 	}
+}
+
+func isStringQuoted(s string) bool {
+	return strings.HasPrefix(s, "\"") && strings.HasSuffix(s, "\"")
 }
 
 func GetJavaExecutablePath() (string, error) {

@@ -1,0 +1,10 @@
+{
+  "global": {
+    "filename": "qodana.yaml",
+    "properties": {
+      "id": "main",
+      "name": "global configuration"
+    },
+    "content": "version: 1.0\n\nprofile:\n  path: a-profile.yaml\n\ninclude:\n  # from root\n  - name: InspectionA\n  - name: InspectionB #from root\n  # from inner\n  - name: InspectionC # from inner\n  - name: InspectionD\n\n#this is a failure conditions section\nfailureConditions:\n  # this is a severityThresholds section\n  severityThresholds:\n    any: 1 #from root\n    critical: 2 # from root\n    moderate: 3 # moderate is from inner"
+  }
+}

@@ -1,0 +1,5 @@
+configurations:
+  - id: "main"
+    name: "global configuration"
+    description: "global configuration"
+    qodanaYaml: "files/no-qodana.yaml"

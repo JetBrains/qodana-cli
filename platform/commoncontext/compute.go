@@ -37,14 +37,14 @@ func Compute(
 	qodanaCloudToken string,
 	clearCache bool,
 	projectDir string,
-	qodanaYamlPath string,
+	localNotEffectiveQodanaYamlPathInProject string,
 ) Context {
 	linter, ide := computeActualLinterAndIde(
 		linterFromCliOptions,
 		ideFromCliOptions,
 		qodanaCloudToken,
 		projectDir,
-		qodanaYamlPath,
+		localNotEffectiveQodanaYamlPathInProject,
 	)
 	qodanaId := computeId(linter, ide, projectDir)
 	systemDir := computeQodanaSystemDir(cacheDirFromCliOptions)
@@ -73,17 +73,21 @@ func computeActualLinterAndIde(
 	ideFromCliOptions string,
 	qodanaCloudToken string,
 	projectDir string,
-	qodanaYamlPath string,
+	localNotEffectiveQodanaYamlPathInProject string,
 ) (string, string) {
 	linter := linterFromCliOptions
 	ide := ideFromCliOptions
 
 	if linter == "" && ide == "" {
-		qodanaYaml := qdyaml.LoadQodanaYaml(projectDir, qodanaYamlPath)
+		qodanaYamlPath := qdyaml.GetLocalNotEffectiveQodanaYamlFullPath(
+			projectDir,
+			localNotEffectiveQodanaYamlPathInProject,
+		)
+		qodanaYaml := qdyaml.LoadQodanaYamlByFullPath(qodanaYamlPath)
 		if qodanaYaml.Linter == "" && qodanaYaml.Ide == "" {
 			msg.WarningMessage(
 				"No valid `linter:` or `ide:` field found in %s. Have you run %s? Running that for you...",
-				msg.PrimaryBold(qodanaYamlPath),
+				msg.PrimaryBold(localNotEffectiveQodanaYamlPathInProject),
 				msg.PrimaryBold("qodana init"),
 			)
 			analyzer := GetAnalyzer(projectDir, qodanaCloudToken)
@@ -97,7 +101,7 @@ func computeActualLinterAndIde(
 				"You have both `linter:` (%s) and `ide:` (%s) fields set in %s. Modify the configuration file to keep one of them",
 				qodanaYaml.Linter,
 				qodanaYaml.Ide,
-				qodanaYamlPath,
+				localNotEffectiveQodanaYamlPathInProject,
 			)
 			os.Exit(1)
 		}

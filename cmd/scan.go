@@ -24,6 +24,7 @@ import (
 	"github.com/JetBrains/qodana-cli/v2025/platform"
 	"github.com/JetBrains/qodana-cli/v2025/platform/cmd"
 	"github.com/JetBrains/qodana-cli/v2025/platform/commoncontext"
+	"github.com/JetBrains/qodana-cli/v2025/platform/effectiveconfig"
 	"github.com/JetBrains/qodana-cli/v2025/platform/msg"
 	"github.com/JetBrains/qodana-cli/v2025/platform/qdenv"
 	"github.com/JetBrains/qodana-cli/v2025/platform/qdyaml"
@@ -50,8 +51,6 @@ But you can always override qodana.yaml options with the following command-line 
 		Run: func(cmd *cobra.Command, args []string) {
 			ctx := cmd.Context()
 
-			qodanaYaml := qdyaml.LoadQodanaYaml(cliOptions.ProjectDir, cliOptions.ConfigName)
-
 			commonCtx := commoncontext.Compute(
 				cliOptions.Linter,
 				cliOptions.Ide,
@@ -67,7 +66,39 @@ But you can always override qodana.yaml options with the following command-line 
 			checkProjectDir(commonCtx.ProjectDir)
 
 			preparedHost := startup.PrepareHost(commonCtx)
-			scanContext := corescan.CreateContext(*cliOptions, commonCtx, preparedHost, qodanaYaml)
+
+			effectiveConfigFiles := effectiveconfig.Files{}
+			qodanaYamlConfig := corescan.QodanaYamlConfig{}
+			if commonCtx.Ide != "" {
+				var err error
+				localQodanaYamlFullPath := qdyaml.GetLocalNotEffectiveQodanaYamlFullPath(
+					commonCtx.ProjectDir,
+					cliOptions.ConfigName,
+				)
+				effectiveConfigFiles, err = effectiveconfig.CreateEffectiveConfigFiles(
+					localQodanaYamlFullPath,
+					cliOptions.GlobalConfigurationsFile,
+					cliOptions.GlobalConfigurationId,
+					preparedHost.Prod.JbrJava(),
+					commonCtx.QodanaSystemDir,
+					"qdconfig",
+					commonCtx.LogDir(),
+				)
+				if err != nil {
+					log.Fatalf("Failed to load Qodana configuration %s", err)
+				}
+				if effectiveConfigFiles.EffectiveQodanaYamlPath != "" {
+					yaml := qdyaml.LoadQodanaYamlByFullPath(effectiveConfigFiles.EffectiveQodanaYamlPath)
+					qodanaYamlConfig = corescan.YamlConfig(yaml)
+				}
+			}
+			scanContext := corescan.CreateContext(
+				*cliOptions,
+				commonCtx,
+				preparedHost,
+				qodanaYamlConfig,
+				effectiveConfigFiles.ConfigDir,
+			)
 
 			exitCode := core.RunAnalysis(ctx, scanContext)
 			if qdenv.IsContainer() {

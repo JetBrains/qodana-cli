@@ -48,22 +48,23 @@ const (
 
 // Bootstrap takes the given command (from CLI or qodana.yaml) and runs it.
 func Bootstrap(command string, project string) {
-	if command != "" {
-		var executor string
-		var flag string
-		switch runtime.GOOS {
-		case "windows":
-			executor = "cmd"
-			flag = "/c"
-		default:
-			executor = "sh"
-			flag = "-c"
-		}
+	if command == "" {
+		return
+	}
+	var executor string
+	var flag string
+	switch runtime.GOOS {
+	case "windows":
+		executor = "cmd"
+		flag = "/c"
+	default:
+		executor = "sh"
+		flag = "-c"
+	}
 
-		if res, err := RunCmd(project, executor, flag, "\""+command+"\""); res > 0 || err != nil {
-			log.Printf("Provided bootstrap command finished with error: %d. Exiting...", res)
-			os.Exit(res)
-		}
+	if res, err := RunCmd(project, executor, flag, "\""+command+"\""); res > 0 || err != nil {
+		log.Printf("Provided bootstrap command finished with error: %d. Exiting...", res)
+		os.Exit(res)
 	}
 }
 
@@ -73,7 +74,14 @@ func RunCmd(cwd string, args ...string) (int, error) {
 }
 
 // RunCmdWithTimeout executes subprocess with forwarding of signals, and returns its exit code.
-func RunCmdWithTimeout(cwd string, stdout *os.File, stderr *os.File, timeout time.Duration, timeoutExitCode int, args ...string) (int, error) {
+func RunCmdWithTimeout(
+	cwd string,
+	stdout *os.File,
+	stderr *os.File,
+	timeout time.Duration,
+	timeoutExitCode int,
+	args ...string,
+) (int, error) {
 	log.Debugf("Running command: %v", args)
 	cmd := exec.Command("bash", "-c", strings.Join(args, " ")) // TODO : Viktor told about set -e
 	var stdoutPipe, stderrPipe io.ReadCloser
@@ -198,7 +206,10 @@ func handleSignals(cmd *exec.Cmd, waitCh <-chan error, timeout time.Duration, ti
 	for {
 		select {
 		case sig := <-sigChan:
-			if err := cmd.Process.Signal(sig); err != nil && !errors.Is(err, os.ErrProcessDone) { // Use errors.Is for semantic comparison
+			if err := cmd.Process.Signal(sig); err != nil && !errors.Is(
+				err,
+				os.ErrProcessDone,
+			) { // Use errors.Is for semantic comparison
 				log.Error("Error sending signal: ", sig, err)
 			}
 		case <-timeoutCh:
