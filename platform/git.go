@@ -78,17 +78,6 @@ func GitClean(cwd string, logdir string) error {
 	return err
 }
 
-// GitSubmoduleUpdate updates submodules according to current revision
-func GitSubmoduleUpdate(cwd string, force bool, logdir string) error {
-	if !force {
-		_, _, err := gitRun(cwd, []string{"submodule", "update", "--init", "--recursive"}, logdir)
-		return err
-	} else {
-		_, _, err := gitRun(cwd, []string{"submodule", "update", "--init", "--recursive", "--force"}, logdir)
-		return err
-	}
-}
-
 // GitRevisions returns the list of commits of the git repository in chronological order.
 func GitRevisions(cwd string) []string {
 	return reverse(GitLog(cwd, "%H", 0))
