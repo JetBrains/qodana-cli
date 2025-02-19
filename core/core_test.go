@@ -24,7 +24,7 @@ import (
 	"github.com/JetBrains/qodana-cli/v2024/core/startup"
 	"github.com/JetBrains/qodana-cli/v2024/platform"
 	platformcmd "github.com/JetBrains/qodana-cli/v2024/platform/cmd"
-	"github.com/JetBrains/qodana-cli/v2024/platform/platforminit"
+	"github.com/JetBrains/qodana-cli/v2024/platform/commoncontext"
 	"github.com/JetBrains/qodana-cli/v2024/platform/product"
 	"github.com/JetBrains/qodana-cli/v2024/platform/qdenv"
 	"github.com/JetBrains/qodana-cli/v2024/platform/qdyaml"
@@ -941,7 +941,7 @@ func TestQodanaOptions_RequiresToken(t *testing.T) {
 
 		t.Run(
 			tt.name, func(t *testing.T) {
-				initArgs := platforminit.Args{
+				initArgs := commoncontext.Context{
 					Linter:                 tt.linter,
 					Ide:                    tt.ide,
 					IsClearCache:           false,
@@ -1092,7 +1092,7 @@ func Test_Properties(t *testing.T) {
 					}
 				}
 
-				initArgs := platforminit.ComputeArgs(
+				commonCtx := commoncontext.Compute(
 					"jetbrains/qodana-dotnet:latest",
 					"",
 					cacheDir,
@@ -1117,7 +1117,7 @@ func Test_Properties(t *testing.T) {
 						CoverageDir: "/data/coverage",
 						AnalysisId:  "FAKE",
 					},
-					initArgs,
+					commonCtx,
 					startup.PreparedHost{
 						IdeDir:      "",
 						QodanaToken: "",

@@ -19,8 +19,8 @@ package cmd
 import (
 	"fmt"
 	"github.com/JetBrains/qodana-cli/v2024/platform"
+	"github.com/JetBrains/qodana-cli/v2024/platform/commoncontext"
 	"github.com/JetBrains/qodana-cli/v2024/platform/msg"
-	"github.com/JetBrains/qodana-cli/v2024/platform/platforminit"
 	"github.com/JetBrains/qodana-cli/v2024/platform/product"
 	"github.com/JetBrains/qodana-cli/v2024/platform/qdenv"
 	"github.com/JetBrains/qodana-cli/v2024/platform/tokenloader"
@@ -47,7 +47,7 @@ If you are using other Qodana Cloud instance than https://qodana.cloud/, overrid
 		Run: func(cmd *cobra.Command, args []string) {
 			emptyProd := product.Product{} // TODO : what to do with PROD?
 
-			startupArgs := platforminit.ComputeArgs(
+			commonCtx := commoncontext.Compute(
 				cliOptions.Linter,
 				"",
 				"",
@@ -64,19 +64,19 @@ If you are using other Qodana Cloud instance than https://qodana.cloud/, overrid
 			if qdenv.IsContainer() {
 				publisherPath = filepath.Join(emptyProd.IdeBin(), platform.PublisherJarName)
 			} else {
-				publisherPath = filepath.Join(startupArgs.ConfDirPath(), platform.PublisherJarName)
+				publisherPath = filepath.Join(commonCtx.ConfDirPath(), platform.PublisherJarName)
 			}
 
 			publisher := platform.Publisher{
-				ResultsDir: startupArgs.ResultsDir,
-				ProjectDir: startupArgs.ProjectDir,
-				LogDir:     startupArgs.LogDir(),
+				ResultsDir: commonCtx.ResultsDir,
+				ProjectDir: commonCtx.ProjectDir,
+				LogDir:     commonCtx.LogDir(),
 				AnalysisId: cliOptions.AnalysisId,
 			}
 
 			platform.SendReport(
 				publisher,
-				tokenloader.ValidateToken(startupArgs, false),
+				tokenloader.ValidateToken(commonCtx, false),
 				publisherPath,
 				emptyProd.JbrJava(),
 			)

@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package platforminit
+package commoncontext
 
 import (
 	"github.com/JetBrains/qodana-cli/v2024/platform/product"

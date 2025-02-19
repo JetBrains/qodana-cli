@@ -18,8 +18,8 @@ package cmd
 
 import (
 	"fmt"
+	"github.com/JetBrains/qodana-cli/v2024/platform/commoncontext"
 	"github.com/JetBrains/qodana-cli/v2024/platform/msg"
-	"github.com/JetBrains/qodana-cli/v2024/platform/platforminit"
 	"github.com/JetBrains/qodana-cli/v2024/platform/product"
 	"github.com/JetBrains/qodana-cli/v2024/platform/qdenv"
 	"github.com/JetBrains/qodana-cli/v2024/platform/qdyaml"
@@ -60,7 +60,7 @@ func newInitCommand() *cobra.Command {
 					return
 				}
 				token := os.Getenv(qdenv.QodanaToken)
-				analyzer := platforminit.GetAnalyzer(cliOptions.ProjectDir, token)
+				analyzer := commoncontext.GetAnalyzer(cliOptions.ProjectDir, token)
 
 				qdyaml.WriteQodanaLinterToYamlFile(
 					cliOptions.ProjectDir,
@@ -88,13 +88,13 @@ func newInitCommand() *cobra.Command {
 				)
 			}
 			if msg.IsInteractive() && qodanaYaml.IsDotNet() && (qodanaYaml.DotNet.IsEmpty() || cliOptions.Force) {
-				if platforminit.GetAndSaveDotNetConfig(cliOptions.ProjectDir, cliOptions.ConfigName) {
+				if commoncontext.GetAndSaveDotNetConfig(cliOptions.ProjectDir, cliOptions.ConfigName) {
 					msg.SuccessMessage("The .NET configuration was successfully set")
 				}
 			}
 			msg.PrintFile(filepath.Join(cliOptions.ProjectDir, cliOptions.ConfigName))
 
-			startupArgs := platforminit.ComputeArgs(
+			commonCtx := commoncontext.Compute(
 				linter,
 				ide,
 				"",
@@ -106,8 +106,8 @@ func newInitCommand() *cobra.Command {
 				cliOptions.ProjectDir,
 				cliOptions.ConfigName,
 			)
-			if tokenloader.IsCloudTokenRequired(startupArgs, emptyProduct.IsEap || emptyProduct.IsCommunity()) {
-				tokenloader.ValidateToken(startupArgs, cliOptions.Force)
+			if tokenloader.IsCloudTokenRequired(commonCtx, emptyProduct.IsEap || emptyProduct.IsCommunity()) {
+				tokenloader.ValidateToken(commonCtx, cliOptions.Force)
 			}
 		},
 	}

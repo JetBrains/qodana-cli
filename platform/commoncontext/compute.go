@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package platforminit
+package commoncontext
 
 import (
 	"crypto/sha256"
@@ -28,7 +28,7 @@ import (
 	"path/filepath"
 )
 
-func ComputeArgs(
+func Compute(
 	linterFromCliOptions string,
 	ideFromCliOptions string,
 	cacheDirFromCliOptions string,
@@ -39,7 +39,7 @@ func ComputeArgs(
 	clearCache bool,
 	projectDir string,
 	qodanaYamlPath string,
-) Args {
+) Context {
 	linter, ide := computeActualLinterAndIde(
 		linterFromCliOptions,
 		ideFromCliOptions,
@@ -48,14 +48,13 @@ func ComputeArgs(
 		qodanaYamlPath,
 	)
 	qodanaId := computeId(linter, ide, projectDir)
-
 	systemDir := computeQodanaSystemDir(cacheDirFromCliOptions)
 	linterDir := filepath.Join(systemDir, qodanaId)
 	resultsDir := computeResultsDir(resultsDirFromCliOptions, linterDir)
 	cacheDir := computeCacheDir(cacheDirFromCliOptions, linterDir)
 	reportDir := computeReportDir(reportDirFromCliOptions, resultsDir)
 
-	args := Args{
+	args := Context{
 		Linter:                 linter,
 		Ide:                    ide,
 		IsClearCache:           clearCache,

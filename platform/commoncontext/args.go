@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package platforminit
+package commoncontext
 
 import (
 	"github.com/JetBrains/qodana-cli/v2024/platform/qdenv"
@@ -22,7 +22,7 @@ import (
 	"path/filepath"
 )
 
-type Args struct {
+type Context struct {
 	Linter                 string
 	Ide                    string
 	IsClearCache           bool
@@ -36,22 +36,22 @@ type Args struct {
 	QodanaLicenseOnlyToken string
 }
 
-func (o Args) LogDir() string {
-	return filepath.Join(o.ResultsDir, "log")
+func (c Context) LogDir() string {
+	return filepath.Join(c.ResultsDir, "log")
 }
 
-func (o Args) ConfDirPath() string {
+func (c Context) ConfDirPath() string {
 	if conf, ok := os.LookupEnv(qdenv.QodanaConfEnv); ok {
 		return conf
 	}
-	confDir := filepath.Join(o.GetLinterDir(), "config")
+	confDir := filepath.Join(c.GetLinterDir(), "config")
 	return confDir
 }
 
-func (o Args) GetLinterDir() string {
+func (c Context) GetLinterDir() string {
 	return filepath.Join(
-		o.QodanaSystemDir,
-		o.Id,
+		c.QodanaSystemDir,
+		c.Id,
 	)
 }
 
@@ -59,10 +59,10 @@ func (o Args) GetLinterDir() string {
 CloudTokenLoader
 */
 
-func (o Args) GetQodanaToken() string            { return o.QodanaToken }
-func (o Args) GetQodanaLicenseOnlyToken() string { return o.QodanaLicenseOnlyToken }
-func (o Args) GetId() string                     { return o.Id }
-func (o Args) GetIde() string                    { return o.Ide }
-func (o Args) GetLinter() string                 { return o.Linter }
-func (o Args) GetProjectDir() string             { return o.ProjectDir }
-func (o Args) GetLogDir() string                 { return o.LogDir() }
+func (c Context) GetQodanaToken() string            { return c.QodanaToken }
+func (c Context) GetQodanaLicenseOnlyToken() string { return c.QodanaLicenseOnlyToken }
+func (c Context) GetId() string                     { return c.Id }
+func (c Context) GetIde() string                    { return c.Ide }
+func (c Context) GetLinter() string                 { return c.Linter }
+func (c Context) GetProjectDir() string             { return c.ProjectDir }
+func (c Context) GetLogDir() string                 { return c.LogDir() }

@@ -19,9 +19,9 @@ package startup
 import (
 	"fmt"
 	"github.com/JetBrains/qodana-cli/v2024/cloud"
+	"github.com/JetBrains/qodana-cli/v2024/platform/commoncontext"
 	"github.com/JetBrains/qodana-cli/v2024/platform/msg"
 	"github.com/JetBrains/qodana-cli/v2024/platform/nuget"
-	"github.com/JetBrains/qodana-cli/v2024/platform/platforminit"
 	"github.com/JetBrains/qodana-cli/v2024/platform/product"
 	"github.com/JetBrains/qodana-cli/v2024/platform/qdcontainer"
 	"github.com/JetBrains/qodana-cli/v2024/platform/qdenv"
@@ -48,63 +48,63 @@ type PreparedHost struct {
 }
 
 // PrepareHost gets the current user, creates the necessary folders for the analysis.
-func PrepareHost(args platforminit.Args) PreparedHost {
+func PrepareHost(commonCtx commoncontext.Context) PreparedHost {
 	prod := product.Product{}
-	token := args.QodanaToken
+	token := commonCtx.QodanaToken
 	ideDir := ""
 
-	if args.IsClearCache {
-		err := os.RemoveAll(args.CacheDir)
+	if commonCtx.IsClearCache {
+		err := os.RemoveAll(commonCtx.CacheDir)
 		if err != nil {
 			log.Errorf("Could not clear local Qodana cache: %s", err)
 		}
 	}
-	nuget.WarnIfPrivateFeedDetected(args.Linter, args.ProjectDir)
+	nuget.WarnIfPrivateFeedDetected(commonCtx.Linter, commonCtx.ProjectDir)
 	if nuget.IsNugetConfigNeeded() {
 		nuget.PrepareNugetConfig(os.Getenv("HOME"))
 	}
-	if err := os.MkdirAll(args.CacheDir, os.ModePerm); err != nil {
+	if err := os.MkdirAll(commonCtx.CacheDir, os.ModePerm); err != nil {
 		log.Fatal("couldn't create a directory ", err.Error())
 	}
-	if err := os.MkdirAll(args.ResultsDir, os.ModePerm); err != nil {
+	if err := os.MkdirAll(commonCtx.ResultsDir, os.ModePerm); err != nil {
 		log.Fatal("couldn't create a directory ", err.Error())
 	}
-	if args.Linter != "" {
+	if commonCtx.Linter != "" {
 		qdcontainer.PrepareContainerEnvSettings()
 	}
-	if args.Ide != "" {
-		if utils.Contains(product.AllNativeCodes, strings.TrimSuffix(args.Ide, product.EapSuffix)) {
+	if commonCtx.Ide != "" {
+		if utils.Contains(product.AllNativeCodes, strings.TrimSuffix(commonCtx.Ide, product.EapSuffix)) {
 			msg.PrintProcess(
 				func(spinner *pterm.SpinnerPrinter) {
 					if spinner != nil {
 						spinner.ShowTimer = false // We will update interactive spinner
 					}
-					ideDir = downloadAndInstallIDE(args.Ide, args.Linter, args.QodanaSystemDir, spinner)
+					ideDir = downloadAndInstallIDE(commonCtx.Ide, commonCtx.Linter, commonCtx.QodanaSystemDir, spinner)
 					fixWindowsPlugins(ideDir)
 				},
-				fmt.Sprintf("Downloading %s", args.Ide),
-				fmt.Sprintf("downloading IDE distribution to %s", args.QodanaSystemDir),
+				fmt.Sprintf("Downloading %s", commonCtx.Ide),
+				fmt.Sprintf("downloading IDE distribution to %s", commonCtx.QodanaSystemDir),
 			)
 		} else {
 			val, exists := os.LookupEnv(qdenv.QodanaDistEnv)
 			if !exists || val == "" {
-				log.Fatalf("Product code %s is not supported. ", args.Ide)
-			} else if args.Ide != val {
+				log.Fatalf("Product code %s is not supported. ", commonCtx.Ide)
+			} else if commonCtx.Ide != val {
 				log.Fatalf(
 					"--ide argument '%s' doesn't match env variable %s value '%s'",
-					args.Ide,
+					commonCtx.Ide,
 					qdenv.QodanaDistEnv,
 					val,
 				)
 			}
 			ideDir = val
 		}
-		prod, token = prepareLocalIdeSettingsAndGetQodanaCloudToken(args, ideDir)
+		prod, token = prepareLocalIdeSettingsAndGetQodanaCloudToken(commonCtx, ideDir)
 	}
-	args.QodanaToken = token
+	commonCtx.QodanaToken = token
 
-	if tokenloader.IsCloudTokenRequired(args, prod.IsCommunity() || prod.IsEap) {
-		token = tokenloader.ValidateToken(args, false)
+	if tokenloader.IsCloudTokenRequired(commonCtx, prod.IsCommunity() || prod.IsEap) {
+		token = tokenloader.ValidateToken(commonCtx, false)
 	}
 
 	result := PreparedHost{
@@ -115,27 +115,30 @@ func PrepareHost(args platforminit.Args) PreparedHost {
 	return result
 }
 
-func prepareLocalIdeSettingsAndGetQodanaCloudToken(args platforminit.Args, ideDir string) (product.Product, string) {
+func prepareLocalIdeSettingsAndGetQodanaCloudToken(
+	commonCtx commoncontext.Context,
+	ideDir string,
+) (product.Product, string) {
 	prod := product.GuessProduct(ideDir)
 
 	qdenv.ExtractQodanaEnvironment(qdenv.SetEnv)
-	isTokenRequired := tokenloader.IsCloudTokenRequired(args, prod.IsEap || prod.IsCommunity())
-	token := tokenloader.LoadCloudToken(args, false, isTokenRequired, true)
+	isTokenRequired := tokenloader.IsCloudTokenRequired(commonCtx, prod.IsEap || prod.IsCommunity())
+	token := tokenloader.LoadCloudToken(commonCtx, false, isTokenRequired, true)
 	cloud.SetupLicenseToken(token)
 	SetupLicenseAndProjectHash(prod, cloud.GetCloudApiEndpoints(), cloud.Token.Token)
 	PrepareDirectories(
 		prod,
-		args.CacheDir,
-		args.LogDir(),
-		args.ConfDirPath(),
+		commonCtx.CacheDir,
+		commonCtx.LogDir(),
+		commonCtx.ConfDirPath(),
 	)
 
 	if qdenv.IsContainer() {
-		err := SyncIdeaCache(args.CacheDir, args.ProjectDir, false)
+		err := SyncIdeaCache(commonCtx.CacheDir, commonCtx.ProjectDir, false)
 		if err != nil {
 			log.Warnf("failed to sync .idea directory: %v", err)
 		}
-		SyncConfigCache(prod, args.ConfDirPath(), args.CacheDir, true)
+		SyncConfigCache(prod, commonCtx.ConfDirPath(), commonCtx.CacheDir, true)
 		CreateUser("/etc/passwd")
 	}
 	return prod, token

@@ -19,7 +19,7 @@ package corescan
 import (
 	"github.com/JetBrains/qodana-cli/v2024/core/startup"
 	"github.com/JetBrains/qodana-cli/v2024/platform/cmd"
-	"github.com/JetBrains/qodana-cli/v2024/platform/platforminit"
+	"github.com/JetBrains/qodana-cli/v2024/platform/commoncontext"
 	"github.com/JetBrains/qodana-cli/v2024/platform/qdenv"
 	"github.com/JetBrains/qodana-cli/v2024/platform/qdyaml"
 	"path/filepath"
@@ -28,7 +28,7 @@ import (
 
 func CreateContext(
 	cliOptions platformcmd.CliOptions,
-	initArgs platforminit.Args,
+	commonCtx commoncontext.Context,
 	preparedHost startup.PreparedHost,
 	qodanaYaml qdyaml.QodanaYaml,
 ) Context {
@@ -37,7 +37,7 @@ func CreateContext(
 		if qdenv.IsContainer() {
 			coverageDir = "/data/coverage"
 		} else {
-			coverageDir = filepath.Join(initArgs.ProjectDir, ".qodana", "code-coverage")
+			coverageDir = filepath.Join(commonCtx.ProjectDir, ".qodana", "code-coverage")
 		}
 	}
 
@@ -47,21 +47,21 @@ func CreateContext(
 	}
 
 	return ContextBuilder{
-		Linter:                    initArgs.Linter,
-		Ide:                       initArgs.Ide,
-		Id:                        initArgs.Id,
+		Linter:                    commonCtx.Linter,
+		Ide:                       commonCtx.Ide,
+		Id:                        commonCtx.Id,
 		IdeDir:                    preparedHost.IdeDir,
 		QodanaYaml:                qodanaYaml,
 		Prod:                      preparedHost.Prod,
 		QodanaToken:               preparedHost.QodanaToken,
-		QodanaLicenseOnlyToken:    initArgs.QodanaLicenseOnlyToken,
-		ProjectDir:                initArgs.ProjectDir,
-		ResultsDir:                initArgs.ResultsDir,
-		ConfigDir:                 initArgs.ConfDirPath(),
-		LogDir:                    initArgs.LogDir(),
-		QodanaSystemDir:           initArgs.QodanaSystemDir,
-		CacheDir:                  initArgs.CacheDir,
-		ReportDir:                 initArgs.ReportDir,
+		QodanaLicenseOnlyToken:    commonCtx.QodanaLicenseOnlyToken,
+		ProjectDir:                commonCtx.ProjectDir,
+		ResultsDir:                commonCtx.ResultsDir,
+		ConfigDir:                 commonCtx.ConfDirPath(),
+		LogDir:                    commonCtx.LogDir(),
+		QodanaSystemDir:           commonCtx.QodanaSystemDir,
+		CacheDir:                  commonCtx.CacheDir,
+		ReportDir:                 commonCtx.ReportDir,
 		CoverageDir:               coverageDir,
 		SourceDirectory:           cliOptions.SourceDirectory,
 		Env:                       cliOptions.Env_,
@@ -89,7 +89,7 @@ func CreateContext(
 		GenerateCodeClimateReport: cliOptions.GenerateCodeClimateReport,
 		SendBitBucketInsights:     cliOptions.SendBitBucketInsights,
 		SkipPull:                  cliOptions.SkipPull,
-		ClearCache:                initArgs.IsClearCache,
+		ClearCache:                commonCtx.IsClearCache,
 		ConfigName:                cliOptions.ConfigName,
 		FullHistory:               cliOptions.FullHistory,
 		ApplyFixes:                cliOptions.ApplyFixes,
