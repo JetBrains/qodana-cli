@@ -45,6 +45,11 @@ jobs:
           )
           EOF
         shell: bash
+      - name: Download config-loader-cli.jar
+        run: |
+          chmod +x download_deps.sh
+          ./download_deps.sh
+        shell: bash
       - name: Set up gotestfmt
         uses: gotesttools/gotestfmt-action@v2
         with:

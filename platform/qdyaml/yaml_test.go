@@ -151,7 +151,7 @@ script:
 		t.Run(
 			tc.description, func(t *testing.T) {
 				tc.setup(tc.filename)
-				actual := LoadQodanaYaml(tc.project, tc.filename)
+				actual := TestOnlyLoadLocalNotEffectiveQodanaYaml(tc.project, tc.filename)
 				_ = os.Remove(filepath.Join(tc.project, tc.filename))
 				assert.Equal(t, tc.expected, actual)
 			},

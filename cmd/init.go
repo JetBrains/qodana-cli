@@ -38,8 +38,14 @@ func newInitCommand() *cobra.Command {
 		Short: "Configure a project for Qodana",
 		Long:  `Configure a project for Qodana: prepare Qodana configuration file by analyzing the project structure and generating a default configuration qodana.yaml file.`,
 		Run: func(cmd *cobra.Command, args []string) {
-			cliOptions.ConfigName = qdyaml.FindDefaultQodanaYaml(cliOptions.ProjectDir)
-			qodanaYaml := qdyaml.LoadQodanaYaml(cliOptions.ProjectDir, cliOptions.ConfigName)
+			localQodanaYamlFullPath := qdyaml.GetLocalNotEffectiveQodanaYamlFullPath(
+				cliOptions.ProjectDir,
+				cliOptions.ConfigName,
+			)
+			if localQodanaYamlFullPath == "" {
+				localQodanaYamlFullPath = filepath.Join(cliOptions.ProjectDir, "qodana.yaml")
+			}
+			qodanaYaml := qdyaml.LoadQodanaYamlByFullPath(localQodanaYamlFullPath)
 
 			ide := qodanaYaml.Ide
 			linter := qodanaYaml.Linter
@@ -61,9 +67,8 @@ func newInitCommand() *cobra.Command {
 				analyzer := commoncontext.GetAnalyzer(cliOptions.ProjectDir, token)
 
 				qdyaml.WriteQodanaLinterToYamlFile(
-					cliOptions.ProjectDir,
+					localQodanaYamlFullPath,
 					analyzer,
-					cliOptions.ConfigName,
 					product.AllCodes,
 				)
 				if product.IsNativeAnalyzer(analyzer) {
@@ -86,11 +91,11 @@ func newInitCommand() *cobra.Command {
 				)
 			}
 			if msg.IsInteractive() && qodanaYaml.IsDotNet() && (qodanaYaml.DotNet.IsEmpty() || cliOptions.Force) {
-				if commoncontext.GetAndSaveDotNetConfig(cliOptions.ProjectDir, cliOptions.ConfigName) {
+				if commoncontext.GetAndSaveDotNetConfig(cliOptions.ProjectDir, localQodanaYamlFullPath) {
 					msg.SuccessMessage("The .NET configuration was successfully set")
 				}
 			}
-			msg.PrintFile(filepath.Join(cliOptions.ProjectDir, cliOptions.ConfigName))
+			msg.PrintFile(localQodanaYamlFullPath)
 
 			commonCtx := commoncontext.Compute(
 				linter,

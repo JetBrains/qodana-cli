@@ -78,6 +78,8 @@ type CliOptions struct {
 	AnalysisTimeoutMs         int
 	AnalysisTimeoutExitCode   int
 	JvmDebugPort              int
+	GlobalConfigurationsFile  string
+	GlobalConfigurationId     string
 }
 
 func (o CliOptions) Env() []string {
@@ -335,12 +337,34 @@ func ComputeFlags(cmd *cobra.Command, options *CliOptions) error {
 		cmd.MarkFlagsMutuallyExclusive("env", "ide")
 	}
 
+	flags.StringVar(
+		&options.GlobalConfigurationsFile,
+		"global-configs-file",
+		"",
+		"Path to the global configurations .yaml file, must be specified with '--global-configuration-id'",
+	)
+	flags.StringVar(
+		&options.GlobalConfigurationId,
+		"global-config-id",
+		"",
+		"Id of the global configuration from `--global-configs-file`, must be specified with '--global-configs-file'",
+	)
+	err := flags.MarkHidden("global-configs-file")
+	cmd.MarkFlagsRequiredTogether("global-configs-file", "global-config-id")
+	if err != nil {
+		return err
+	}
+	err = flags.MarkHidden("global-config-id")
+	if err != nil {
+		return err
+	}
+
 	cmd.MarkFlagsMutuallyExclusive("script", "force-local-changes-script", "full-history")
 	cmd.MarkFlagsMutuallyExclusive("commit", "script", "diff-start")
 	cmd.MarkFlagsMutuallyExclusive("profile-name", "profile-path")
 	cmd.MarkFlagsMutuallyExclusive("apply-fixes", "cleanup")
 
-	err := cmd.Flags().MarkDeprecated("fixes-strategy", "use --apply-fixes / --cleanup instead")
+	err = cmd.Flags().MarkDeprecated("fixes-strategy", "use --apply-fixes / --cleanup instead")
 	if err != nil {
 		return err
 	}

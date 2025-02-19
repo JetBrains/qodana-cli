@@ -19,7 +19,6 @@ package thirdpartyscan
 import (
 	"github.com/JetBrains/qodana-cli/v2024/platform/cmd"
 	"github.com/JetBrains/qodana-cli/v2024/platform/commoncontext"
-	"github.com/JetBrains/qodana-cli/v2024/platform/qdyaml"
 	"path/filepath"
 	"strings"
 )
@@ -30,7 +29,7 @@ func ComputeContext(
 	linterInfo LinterInfo,
 	mountInfo MountInfo,
 	cloudData ThirdPartyStartupCloudData,
-	qodanaYaml qdyaml.QodanaYaml,
+	qodanaYamlConfig QodanaYamlConfig,
 ) Context {
 	projectDir := initArgs.ProjectDir
 
@@ -66,6 +65,6 @@ func ComputeContext(
 		Baseline:              cliOptions.Baseline,
 		BaselineIncludeAbsent: cliOptions.BaselineIncludeAbsent,
 		FailThreshold:         cliOptions.FailThreshold,
-		QodanaYaml:            qodanaYaml,
+		QodanaYamlConfig:      qodanaYamlConfig,
 	}.Build()
 }

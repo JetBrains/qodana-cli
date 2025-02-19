@@ -151,10 +151,8 @@ func GetIdeArgs(c corescan.Context) []string {
 		}
 	}
 
-	prod := product.GuessProductCode(
-		c.Ide(),
-		c.Linter(),
-	) // TODO : think how it could be better handled in presence of random 3rd party linters
+	// TODO : think how it could be better handled in presence of random 3rd party linters
+	prod := product.GuessProductCode(c.Ide(), c.Linter())
 	if prod == product.QDNETC || prod == product.QDCL {
 		// third party common options
 		if c.NoStatistics() {
@@ -210,10 +208,17 @@ func GetIdeArgs(c corescan.Context) []string {
 		if c.JvmDebugPort() > 0 {
 			arguments = append(arguments, "--jvm-debug-port", strconv.Itoa(c.JvmDebugPort()))
 		}
-
+		if c.GlobalConfigurationsFile() != "" {
+			arguments = append(arguments, "--global-configs-file", globalConfigsFileContainerMountPath)
+		}
+		if c.GlobalConfigurationId() != "" {
+			arguments = append(arguments, "--global-config-id", c.GlobalConfigurationId())
+		}
 		for _, property := range c.Property() {
 			arguments = append(arguments, "--property="+property)
 		}
+	} else if c.Prod().Is251orNewer() {
+		arguments = append(arguments, "--config-dir", utils.QuoteForWindows(c.EffectiveConfigurationDir()))
 	}
 	return arguments
 }
@@ -240,7 +245,7 @@ func installPlugins(c corescan.Context) {
 		return
 	}
 
-	plugins := c.QodanaYaml().Plugins
+	plugins := c.QodanaYamlConfig().Plugins
 	if len(plugins) > 0 {
 		setInstallPluginsVmoptions(c)
 	}

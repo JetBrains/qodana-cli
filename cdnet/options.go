@@ -42,27 +42,28 @@ func (l CdnetLinter) computeCdnetArgs(c thirdpartyscan.Context) ([]string, error
 		}
 		props += p
 	}
+	dotNet := c.QodanaYamlConfig().DotNet
 	if c.CdnetConfiguration() != "" {
 		if props != "" {
 			props += ";"
 		}
 		props += "Configuration=" + c.CdnetConfiguration()
-	} else if c.QodanaYaml().DotNet.Configuration != "" {
+	} else if dotNet.Configuration != "" {
 		if props != "" {
 			props += ";"
 		}
-		props += "Configuration=" + c.QodanaYaml().DotNet.Configuration
+		props += "Configuration=" + dotNet.Configuration
 	}
 	if c.CdnetPlatform() != "" {
 		if props != "" {
 			props += ";"
 		}
 		props += "Platform=" + c.CdnetPlatform()
-	} else if c.QodanaYaml().DotNet.Platform != "" {
+	} else if dotNet.Platform != "" {
 		if props != "" {
 			props += ";"
 		}
-		props += "Platform=" + c.QodanaYaml().DotNet.Platform
+		props += "Platform=" + dotNet.Platform
 	}
 	mountInfo := c.MountInfo()
 
@@ -94,8 +95,8 @@ func getSolutionOrProject(c thirdpartyscan.Context) string {
 	paths := [4]string{
 		c.CdnetSolution(),
 		c.CdnetProject(),
-		c.QodanaYaml().DotNet.Solution,
-		c.QodanaYaml().DotNet.Project,
+		c.QodanaYamlConfig().DotNet.Solution,
+		c.QodanaYamlConfig().DotNet.Project,
 	}
 	for _, path := range paths {
 		if path != "" {

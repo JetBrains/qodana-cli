@@ -1,0 +1,42 @@
+{
+  "local": {
+    "filename": "qodana.yaml",
+    "content": "version: 1.0\n\nprofile:\n  path: b-profile.yaml\n\ninclude:\n  # from local\n  - name: InspectionA\n  - name: InspectionB #from local\n\n#this is a failure conditions section\nfailureConditions:\n  # this is a severityThresholds section\n  severityThresholds:\n    any: 1 #from local\n    critical: 2 # from local"
+  },
+  "global": {
+    "filename": "qodana.yaml",
+    "properties": {
+      "id": "main",
+      "name": "global configuration"
+    },
+    "content": "version: 1.0\n\nprofile:\n  path: a-profile.yaml\n\nfailureConditions:\n  severityThresholds:\n    critical: 3\n    moderate: 3 # moderate is global\n\ninclude:\n  # from global\n  - name: InspectionC # from global\n  - name: InspectionD"
+  },
+  "localGlobal": {
+    "filename": "effective.qodana.yaml",
+    "properties": {
+      "linesStatuses": [
+        "L_OVER_G",
+        "LG",
+        "LG",
+        "L_OVER_G",
+        "LG",
+        "LG",
+        "L",
+        "L",
+        "L",
+        "G",
+        "G",
+        "G",
+        "LG",
+        "LG",
+        "LG",
+        "LG",
+        "LG",
+        "L",
+        "L_OVER_G",
+        "G"
+      ]
+    },
+    "content": "version: 1.0\n\nprofile:\n  path: b-profile.yaml\n\ninclude:\n  # from local\n  - name: InspectionA\n  - name: InspectionB #from local\n  # from global\n  - name: InspectionC # from global\n  - name: InspectionD\n\n#this is a failure conditions section\nfailureConditions:\n  # this is a severityThresholds section\n  severityThresholds:\n    any: 1 #from local\n    critical: 2 # from local\n    moderate: 3 # moderate is global"
+  }
+}

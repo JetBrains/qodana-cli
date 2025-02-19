@@ -114,7 +114,7 @@ func GetInstallPluginsProperties(c corescan.Context) []string {
 
 // GetScanProperties writes key=value `props` to file `f` having later key occurrence win
 func GetScanProperties(c corescan.Context) []string {
-	yaml := c.QodanaYaml()
+	yaml := c.QodanaYamlConfig()
 	yamlProps := yaml.Properties
 	dotNetOptions := yaml.DotNet
 	plugins := getPluginIds(yaml.Plugins)

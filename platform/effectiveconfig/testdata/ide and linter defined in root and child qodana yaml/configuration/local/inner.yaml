@@ -1,0 +1,15 @@
+version: "1.0"
+
+ide: QDJVM
+
+linter: jetbrains/qodana-jvm:latest
+
+failureConditions:
+  severityThresholds:
+    critical: 3
+    moderate: 3 # moderate is from inner
+
+include:
+  # from inner
+  - name: InspectionC # from inner
+  - name: InspectionD

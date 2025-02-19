@@ -88,6 +88,29 @@ type Context struct {
 	baselineIncludeAbsent bool
 	failThreshold         string
 	qodanaYaml            qdyaml.QodanaYaml
+	qodanaYamlConfig      QodanaYamlConfig
+}
+
+type QodanaYamlConfig struct {
+	Bootstrap         string
+	Version           string
+	DotNet            qdyaml.DotNet
+	Includes          []qdyaml.Clude
+	Excludes          []qdyaml.Clude
+	FailThreshold     *int
+	FailureConditions qdyaml.FailureConditions
+}
+
+func YamlConfig(yaml qdyaml.QodanaYaml) QodanaYamlConfig {
+	return QodanaYamlConfig{
+		Bootstrap:         yaml.Bootstrap,
+		Version:           yaml.Version,
+		DotNet:            yaml.DotNet,
+		Includes:          yaml.Includes,
+		Excludes:          yaml.Excludes,
+		FailThreshold:     yaml.FailThreshold,
+		FailureConditions: yaml.FailureConditions,
+	}
 }
 
 type ContextBuilder struct {
@@ -111,7 +134,7 @@ type ContextBuilder struct {
 	Baseline              string
 	BaselineIncludeAbsent bool
 	FailThreshold         string
-	QodanaYaml            qdyaml.QodanaYaml
+	QodanaYamlConfig      QodanaYamlConfig
 }
 
 func (b ContextBuilder) Build() Context {
@@ -136,7 +159,7 @@ func (b ContextBuilder) Build() Context {
 		baseline:              b.Baseline,
 		baselineIncludeAbsent: b.BaselineIncludeAbsent,
 		failThreshold:         b.FailThreshold,
-		qodanaYaml:            b.QodanaYaml,
+		qodanaYamlConfig:      b.QodanaYamlConfig,
 	}
 }
 
@@ -159,7 +182,7 @@ func (c Context) AnalysisId() string                    { return c.analysisId }
 func (c Context) Baseline() string                      { return c.baseline }
 func (c Context) BaselineIncludeAbsent() bool           { return c.baselineIncludeAbsent }
 func (c Context) FailThreshold() string                 { return c.failThreshold }
-func (c Context) QodanaYaml() qdyaml.QodanaYaml         { return c.qodanaYaml }
+func (c Context) QodanaYamlConfig() QodanaYamlConfig    { return c.qodanaYamlConfig }
 
 func (c Context) Property() []string {
 	props := make([]string, len(c.property))

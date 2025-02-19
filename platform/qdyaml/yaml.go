@@ -359,32 +359,38 @@ type Php struct {
 	Version string `yaml:"version,omitempty"`
 }
 
-// FindDefaultQodanaYaml checks whether qodana.yaml exists or not
-func FindDefaultQodanaYaml(project string) string {
-	filename := "qodana.yml"
-	if info, _ := os.Stat(filepath.Join(project, filename)); info != nil {
-		return filename
-	} else {
-		return "qodana.yaml"
+func defaultLocalNotEffectiveQodanaYamlIfExists(project string) string {
+	filenames := []string{"qodana.yml", "qodana.yaml"}
+	for _, filename := range filenames {
+		if info, _ := os.Stat(filepath.Join(project, filename)); info != nil {
+			return filename
+		}
 	}
+	return ""
 }
 
-func GetQodanaYamlPathWithProject(project string, filename string) string {
-	if filename == "" {
-		filename = FindDefaultQodanaYaml(project)
+// GetLocalNotEffectiveQodanaYamlFullPath does not process `imports` field and doesn't use global configuration
+func GetLocalNotEffectiveQodanaYamlFullPath(project string, yamlPathInProject string) string {
+	if yamlPathInProject == "" {
+		yamlPathInProject = defaultLocalNotEffectiveQodanaYamlIfExists(project)
 	}
-	qodanaYamlPath := filepath.Join(project, filename)
-	return qodanaYamlPath
+	if yamlPathInProject == "" {
+		return ""
+	}
+	return filepath.Join(project, yamlPathInProject)
 }
 
-// LoadQodanaYaml gets Qodana YAML from the project.
-func LoadQodanaYaml(project string, filename string) QodanaYaml {
-	qodanaYamlPath := GetQodanaYamlPathWithProject(project, filename)
-	q := LoadQodanaYamlByFullPath(qodanaYamlPath)
-	return q
+// TestOnlyLoadLocalNotEffectiveQodanaYaml test only!
+// Gets Qodana YAML from the project. Does not process `imports` field and doesn't use global configurations
+func TestOnlyLoadLocalNotEffectiveQodanaYaml(project string, yamlPathInProject string) QodanaYaml {
+	qodanaYamlPath := GetLocalNotEffectiveQodanaYamlFullPath(project, yamlPathInProject)
+	return LoadQodanaYamlByFullPath(qodanaYamlPath)
 }
 
 func LoadQodanaYamlByFullPath(fullPath string) QodanaYaml {
+	if fullPath == "" {
+		return QodanaYaml{}
+	}
 	q := &QodanaYaml{}
 	if _, err := os.Stat(fullPath); errors.Is(err, os.ErrNotExist) {
 		return *q
@@ -460,8 +466,8 @@ func (q *QodanaYaml) IsDotNet() bool {
 }
 
 // WriteQodanaLinterToYamlFile adds the linter to the qodana.yaml file.
-func WriteQodanaLinterToYamlFile(path string, linter string, filename string, allProductCodes []string) {
-	q := LoadQodanaYaml(path, filename)
+func WriteQodanaLinterToYamlFile(qodanaYamlFullPath string, linter string, allProductCodes []string) {
+	q := LoadQodanaYamlByFullPath(qodanaYamlFullPath)
 	if q.Version == "" {
 		q.Version = "1.0"
 	}
@@ -471,17 +477,17 @@ func WriteQodanaLinterToYamlFile(path string, linter string, filename string, al
 	} else {
 		q.Linter = linter
 	}
-	err := q.WriteConfig(filepath.Join(path, filename))
+	err := q.WriteConfig(qodanaYamlFullPath)
 	if err != nil {
 		log.Fatalf("writeConfig: %v", err)
 	}
 }
 
 // SetQodanaDotNet adds the .NET configuration to the qodana.yaml file.
-func SetQodanaDotNet(path string, dotNet *DotNet, filename string) bool {
-	q := LoadQodanaYaml(path, filename)
+func SetQodanaDotNet(qodanaYamlFullPath string, dotNet *DotNet) bool {
+	q := LoadQodanaYamlByFullPath(qodanaYamlFullPath)
 	q.DotNet = *dotNet
-	err := q.WriteConfig(filepath.Join(path, filename))
+	err := q.WriteConfig(qodanaYamlFullPath)
 	if err != nil {
 		log.Fatalf("writeConfig: %v", err)
 	}

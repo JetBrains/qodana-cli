@@ -220,6 +220,10 @@ func (p Product) Is242orNewer() bool {
 	return p.isNotOlderThan(242)
 }
 
+func (p Product) Is251orNewer() bool {
+	return p.isNotOlderThan(251)
+}
+
 func (p Product) isNotOlderThan(version int) bool {
 	number, err := strconv.Atoi(p.GetVersionBranch())
 	if err != nil {
