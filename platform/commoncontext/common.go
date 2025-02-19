@@ -156,7 +156,7 @@ func analyzerToSelect(analyzers []string, path string) (map[string]string, []str
 	analyzersList := make([]string, 0, len(analyzers))
 	for _, a := range analyzers {
 		if product.IsNativeAnalyzer(a) {
-			if IsNativeRequired(path, a) {
+			if isNativeRequired(path, a) {
 				analyzersMap[a+" (Native)"] = a
 				analyzersList = append(analyzersList, a+" (Native)")
 			}

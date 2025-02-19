@@ -54,7 +54,7 @@ func Compute(
 	cacheDir := computeCacheDir(cacheDirFromCliOptions, linterDir)
 	reportDir := computeReportDir(reportDirFromCliOptions, resultsDir)
 
-	args := Context{
+	commonCtx := Context{
 		Linter:                 linter,
 		Ide:                    ide,
 		IsClearCache:           clearCache,
@@ -67,7 +67,7 @@ func Compute(
 		QodanaToken:            qodanaCloudToken,
 		QodanaLicenseOnlyToken: qodanaLicenseOnlyToken,
 	}
-	return args
+	return commonCtx
 }
 
 func computeActualLinterAndIde(

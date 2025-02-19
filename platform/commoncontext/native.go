@@ -27,7 +27,7 @@ import (
 	"sync"
 )
 
-func IsNativeRequired(projectDir string, ide string) bool {
+func isNativeRequired(projectDir string, ide string) bool {
 	if ide != product.QDNET {
 		return false
 	}
