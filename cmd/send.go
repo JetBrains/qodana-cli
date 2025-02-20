@@ -21,9 +21,9 @@ import (
 	"github.com/JetBrains/qodana-cli/v2024/platform"
 	"github.com/JetBrains/qodana-cli/v2024/platform/commoncontext"
 	"github.com/JetBrains/qodana-cli/v2024/platform/msg"
-	"github.com/JetBrains/qodana-cli/v2024/platform/product"
 	"github.com/JetBrains/qodana-cli/v2024/platform/qdenv"
 	"github.com/JetBrains/qodana-cli/v2024/platform/tokenloader"
+	"github.com/JetBrains/qodana-cli/v2024/platform/utils"
 	"github.com/google/uuid"
 	"github.com/spf13/cobra"
 	"os"
@@ -45,8 +45,6 @@ If you are using other Qodana Cloud instance than https://qodana.cloud/, overrid
 			msg.PrimaryBold(qdenv.QodanaEndpointEnv),
 		),
 		Run: func(cmd *cobra.Command, args []string) {
-			emptyProd := product.Product{} // TODO : what to do with PROD?
-
 			commonCtx := commoncontext.Compute(
 				cliOptions.Linter,
 				"",
@@ -61,11 +59,7 @@ If you are using other Qodana Cloud instance than https://qodana.cloud/, overrid
 			)
 
 			var publisherPath string
-			if qdenv.IsContainer() {
-				publisherPath = filepath.Join(emptyProd.IdeBin(), platform.PublisherJarName)
-			} else {
-				publisherPath = filepath.Join(commonCtx.ConfDirPath(), platform.PublisherJarName)
-			}
+			publisherPath = filepath.Join(commonCtx.ConfDirPath(), platform.PublisherJarName)
 
 			publisher := platform.Publisher{
 				ResultsDir: commonCtx.ResultsDir,
@@ -74,11 +68,15 @@ If you are using other Qodana Cloud instance than https://qodana.cloud/, overrid
 				AnalysisId: cliOptions.AnalysisId,
 			}
 
+			java := ""
+			if utils.IsInstalled("java") {
+				java = "java"
+			}
 			platform.SendReport(
 				publisher,
 				tokenloader.ValidateToken(commonCtx, false),
 				publisherPath,
-				emptyProd.JbrJava(),
+				java,
 			)
 		},
 	}
