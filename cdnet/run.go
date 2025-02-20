@@ -62,6 +62,27 @@ func (l CdnetLinter) RunAnalysis(c thirdpartyscan.Context) error {
 	return err
 }
 
+func (l CdnetLinter) MountTools(tempMountPath string, mountPath string, _ bool) (map[string]string, error) {
+	val := make(map[string]string)
+	val[thirdpartyscan.Clt] = filepath.Join(
+		mountPath,
+		"tools",
+		"netcoreapp3.1",
+		"any",
+		"JetBrains.CommandLine.Products.dll",
+	)
+	archive := "clt.zip"
+	if _, err := os.Stat(val["clt"]); err != nil {
+		if os.IsNotExist(err) {
+			path := platform.ProcessAuxiliaryTool(archive, "clang", tempMountPath, mountPath, Clt)
+			if err := platform.Decompress(path, mountPath); err != nil {
+				return nil, fmt.Errorf("failed to decompress clang archive: %w", err)
+			}
+		}
+	}
+	return val, nil
+}
+
 func patchReport(c thirdpartyscan.Context) error {
 	sarifPath := platform.GetSarifPath(c.ResultsDir())
 	if err := copyOriginalReportToLog(c.LogDir(), sarifPath); err != nil {

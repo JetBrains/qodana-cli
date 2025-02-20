@@ -40,8 +40,10 @@ func RunThirdPartyLinterAnalysis(
 	cliOptions platformcmd.CliOptions,
 	linter ThirdPartyLinter,
 	linterInfo thirdpartyscan.LinterInfo,
-) (thirdpartyscan.Context, int, error) {
+) (int, error) {
 	var err error
+	resultDir := cliOptions.ResultsDir
+	defer changeResultDirPermissionsInContainer(resultDir)
 
 	commonCtx := commoncontext.Compute(
 		cliOptions.Linter,
@@ -58,8 +60,9 @@ func RunThirdPartyLinterAnalysis(
 	commonCtx, err = correctInitArgsForThirdParty(commonCtx)
 	if err != nil {
 		msg.ErrorMessage(err.Error())
-		return thirdpartyscan.Context{}, 1, err
+		return 1, err
 	}
+	resultDir = commonCtx.ResultsDir
 
 	thirdPartyCloudData := checkLinterLicense(commonCtx)
 	isCommunity := thirdPartyCloudData.LicensePlan == cloud.CommunityLicensePlan
@@ -68,7 +71,7 @@ func RunThirdPartyLinterAnalysis(
 	printQodanaLogo(commonCtx.LogDir(), commonCtx.CacheDir, linterInfo)
 
 	if linterInfo, err = linter.ComputeNewLinterInfo(linterInfo, isCommunity); err != nil {
-		return thirdpartyscan.Context{}, 1, fmt.Errorf("failed to run linter specific setup procedures: %w", err)
+		return 1, fmt.Errorf("failed to run linter specific setup procedures: %w", err)
 	}
 
 	tempMountPath, mountInfo := extractUtils(linter, commonCtx.CacheDir, isCommunity)
@@ -94,7 +97,7 @@ func RunThirdPartyLinterAnalysis(
 
 	if err = linter.RunAnalysis(context); err != nil {
 		msg.ErrorMessage(err.Error())
-		return context, 1, err
+		return 1, err
 	}
 	log.Debugf("Java executable path: %s", mountInfo.JavaPath)
 
@@ -102,23 +105,23 @@ func RunThirdPartyLinterAnalysis(
 	var analysisResult int
 	if analysisResult, err = computeBaselinePrintResults(context, thresholds); err != nil {
 		msg.ErrorMessage(err.Error())
-		return context, 1, err
+		return 1, err
 	}
 	if err = copySarifToReportPath(context.ResultsDir()); err != nil {
 		msg.ErrorMessage(err.Error())
-		return context, 1, err
+		return 1, err
 	}
 	if err = convertReportToCloudFormat(context); err != nil {
 		msg.ErrorMessage(err.Error())
-		return context, 1, err
+		return 1, err
 	}
 	resultsPath := ReportResultsPath(context.ResultsDir())
 	if err = copyQodanaYamlToReportPath(qodanaYamlPath, resultsPath); err != nil {
 		msg.ErrorMessage(err.Error())
-		return context, 1, err
+		return 1, err
 	}
 	sendReportToQodanaServer(context)
-	return context, analysisResult, nil
+	return analysisResult, nil
 }
 
 func correctInitArgsForThirdParty(commonCtx commoncontext.Context) (commoncontext.Context, error) {
@@ -292,4 +295,14 @@ func qodanaLogo(toolDesc string, version string, eap bool) string {
 
 `, toolDesc, version, eapString,
 	)
+}
+
+func changeResultDirPermissionsInContainer(resultDir string) {
+	if !qdenv.IsContainer() {
+		return
+	}
+	err := ChangePermissionsRecursively(resultDir)
+	if err != nil {
+		msg.ErrorMessage("Unable to change permissions in %s: %s", resultDir, err)
+	}
 }

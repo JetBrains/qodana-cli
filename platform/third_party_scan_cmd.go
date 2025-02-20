@@ -20,7 +20,6 @@ import (
 	"fmt"
 	"github.com/JetBrains/qodana-cli/v2024/platform/cmd"
 	"github.com/JetBrains/qodana-cli/v2024/platform/msg"
-	"github.com/JetBrains/qodana-cli/v2024/platform/qdenv"
 	"github.com/JetBrains/qodana-cli/v2024/platform/thirdpartyscan"
 	"github.com/JetBrains/qodana-cli/v2024/platform/utils"
 	log "github.com/sirupsen/logrus"
@@ -43,19 +42,8 @@ But you can always override qodana.yaml options with the following command-line 
 		),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			log.SetFormatter(&log.TextFormatter{DisableQuote: true, DisableTimestamp: true})
-			c, exitCode, err := RunThirdPartyLinterAnalysis(*cliOptions, linter, linterInfo)
+			exitCode, err := RunThirdPartyLinterAnalysis(*cliOptions, linter, linterInfo)
 
-			resultDir := c.ResultsDir()
-			if resultDir == "" {
-				resultDir = cliOptions.ResultsDir
-			}
-			if qdenv.IsContainer() {
-				c.ResultsDir()
-				err := ChangePermissionsRecursively(resultDir)
-				if err != nil {
-					msg.ErrorMessage("Unable to change permissions in %s: %s", resultDir, err)
-				}
-			}
 			log.Debug("exitCode: ", exitCode)
 			if exitCode == utils.QodanaFailThresholdExitCode {
 				msg.EmptyMessage()
