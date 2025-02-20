@@ -84,7 +84,6 @@ func (p Product) javaHome() string {
 }
 
 func (p Product) JbrJava() string {
-	utils.IsInstalled("java")
 	if p.Home != "" {
 		switch runtime.GOOS {
 		case "darwin":

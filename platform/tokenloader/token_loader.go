@@ -45,7 +45,7 @@ type CloudTokenLoader interface {
 	GetLogDir() string
 }
 
-func IsCloudTokenRequired(tokenLoader CloudTokenLoader, isCommunityOrEap bool) bool {
+func IsCloudTokenRequired(tokenLoader CloudTokenLoader, forceIsCommunityOrEap bool) bool {
 	if tokenLoader.GetQodanaToken() != "" || tokenLoader.GetQodanaLicenseOnlyToken() != "" {
 		return true
 	}
@@ -57,10 +57,10 @@ func IsCloudTokenRequired(tokenLoader CloudTokenLoader, isCommunityOrEap bool) b
 		analyzer = tokenLoader.GetIde()
 	}
 
-	if os.Getenv(qdenv.QodanaLicense) != "" ||
-		utils.Contains(append(product.AllSupportedFreeImages, product.AllSupportedFreeCodes...), analyzer) ||
-		strings.Contains(utils.Lower(analyzer), "eap") ||
-		isCommunityOrEap {
+	isQodanaLicenseSet := os.Getenv(qdenv.QodanaLicense) != ""
+	isFreeAnalyzer := utils.Contains(append(product.AllSupportedFreeImages, product.AllSupportedFreeCodes...), analyzer)
+	isEapAnalyzer := strings.Contains(utils.Lower(analyzer), "eap")
+	if isQodanaLicenseSet || isFreeAnalyzer || isEapAnalyzer || forceIsCommunityOrEap {
 		return false
 	}
 

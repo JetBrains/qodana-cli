@@ -38,8 +38,6 @@ func newInitCommand() *cobra.Command {
 		Short: "Configure a project for Qodana",
 		Long:  `Configure a project for Qodana: prepare Qodana configuration file by analyzing the project structure and generating a default configuration qodana.yaml file.`,
 		Run: func(cmd *cobra.Command, args []string) {
-			emptyProduct := product.Product{} // TODO what to do with product?
-
 			cliOptions.ConfigName = qdyaml.FindDefaultQodanaYaml(cliOptions.ProjectDir)
 			qodanaYaml := qdyaml.LoadQodanaYaml(cliOptions.ProjectDir, cliOptions.ConfigName)
 
@@ -106,7 +104,7 @@ func newInitCommand() *cobra.Command {
 				cliOptions.ProjectDir,
 				cliOptions.ConfigName,
 			)
-			if tokenloader.IsCloudTokenRequired(commonCtx, emptyProduct.IsEap || emptyProduct.IsCommunity()) {
+			if tokenloader.IsCloudTokenRequired(commonCtx, false) {
 				tokenloader.ValidateToken(commonCtx, cliOptions.Force)
 			}
 		},
