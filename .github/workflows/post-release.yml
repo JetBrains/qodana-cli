@@ -45,7 +45,7 @@ jobs:
           ./komac update \
             'JetBrains.QodanaCLI' \
             --version $(echo "$VERSION" | sed 's/^v//') \
-            --urls https://github.com/JetBrains/qodana-cli/releases/download/v$VERSION/qodana_windows_arm64.zip https://github.com/JetBrains/qodana-cli/releases/download/v$VERSION/qodana_windows_x86_64.zip \
+            --urls https://github.com/JetBrains/qodana-cli/releases/download/$VERSION/qodana_windows_arm64.zip https://github.com/JetBrains/qodana-cli/releases/download/v$VERSION/qodana_windows_x86_64.zip \
             --submit
         env:
           GITHUB_TOKEN: ${{ secrets.WINGET_GH_PAT_TOKEN }}
