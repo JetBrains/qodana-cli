@@ -26,16 +26,34 @@ const (
 	ReleaseVersion = "2024.3"
 	ShortVersion   = "243"
 	IsReleased     = true
+
+	EapSuffix  = "-EAP"
+	ReleaseVer = "release"
+	EapVer     = "eap"
+
+	QDJVMC = "QDJVMC"
+	QDJVM  = "QDJVM"
+	QDAND  = "QDAND"
+	QDPHP  = "QDPHP"
+	QDPY   = "QDPY"
+	QDPYC  = "QDPYC"
+	QDJS   = "QDJS"
+	QDGO   = "QDGO"
+	QDNET  = "QDNET"
+	QDNETC = "QDNETC"
+	QDANDC = "QDANDC"
+	QDRST  = "QDRST"
+	QDRUBY = "QDRUBY"
+	QDCL   = "QDCL"
+	QDCPP  = "QDCPP"
 )
 
 var (
-	EapSuffix   = "-EAP"
-	ReleaseVer  = "release"
-	EapVer      = "eap"
 	VersionsMap = map[string]string{
 		ReleaseVer: "2024.2",
 		EapVer:     "2024.3",
 	}
+
 	Products = map[string]string{
 		QDJVM:  "IIU",
 		QDJVMC: "IIC",
@@ -50,25 +68,7 @@ var (
 		QDRST: "RR",
 		QDCPP: "CL",
 	}
-)
 
-//goland:noinspection GoUnnecessarilyExportedIdentifiers
-var (
-	QDJVMC         = "QDJVMC"
-	QDJVM          = "QDJVM"
-	QDAND          = "QDAND"
-	QDPHP          = "QDPHP"
-	QDPY           = "QDPY"
-	QDPYC          = "QDPYC"
-	QDJS           = "QDJS"
-	QDGO           = "QDGO"
-	QDNET          = "QDNET"
-	QDNETC         = "QDNETC"
-	QDANDC         = "QDANDC"
-	QDRST          = "QDRST"
-	QDRUBY         = "QDRUBY"
-	QDCL           = "QDCL"
-	QDCPP          = "QDCPP"
 	DockerImageMap = map[string]string{
 		QDAND:  "jetbrains/qodana-android:",
 		QDANDC: "jetbrains/qodana-jvm-android:",
@@ -84,9 +84,10 @@ var (
 		QDCL:   "jetbrains/qodana-clang:",
 		//QDRST:  "jetbrains/qodana-rust:",
 	}
-)
 
-var AllNativeCodes = []string{QDNET, QDJVM, QDJVMC, QDGO, QDPY, QDPYC, QDJS, QDPHP}
+	// AllNativeCodes is a list of all supported Qodana linters product codes
+	AllNativeCodes = []string{QDNET, QDJVM, QDJVMC, QDGO, QDPY, QDPYC, QDJS, QDPHP}
+)
 
 func Image(code string) string {
 	if val, ok := DockerImageMap[code]; ok {

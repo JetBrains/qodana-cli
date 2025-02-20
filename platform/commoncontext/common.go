@@ -128,8 +128,6 @@ func GetAndSaveDotNetConfig(projectDir string, yamlName string) bool {
 	return qdyaml.SetQodanaDotNet(projectDir, dotnet, yamlName)
 }
 
-// AllNativeCodes is a list of all supported Qodana linters product codes
-
 func selectAnalyzer(path string, analyzers []string, interactive bool, selectFunc func([]string) string) string {
 	var analyzer string
 	if len(analyzers) == 0 && !interactive {

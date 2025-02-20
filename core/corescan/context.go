@@ -38,10 +38,6 @@ type RunScenario = string
 
 // Context
 //
-// !!!KEEP IT IMMUTABLE!!!
-// !!!KEEP IT IMMUTABLE!!!
-// !!!KEEP IT IMMUTABLE!!!
-//
 // If one has the instance of Context, then it means that it was initialized, and it is in valid state
 // all mutations should be defined in context_changes.go with names clearly demonstrating the usecase and business logic.
 // example: scoped script launches two stages of default analysis
@@ -57,8 +53,6 @@ type RunScenario = string
 //	suddenly change, and pass it further? It's not clear why it was changed? Was it actually initialized at this place?
 //	but it must be initialized already, so we limit all changes, and keep them in context_changes.go
 //
-// !!!KEEP IT IMMUTABLE!!!
-// !!!KEEP IT IMMUTABLE!!!
 // !!!KEEP IT IMMUTABLE!!!
 type Context struct {
 	linter                    string
