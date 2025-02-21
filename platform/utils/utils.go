@@ -18,8 +18,8 @@ package utils
 
 import (
 	"fmt"
-	"github.com/JetBrains/qodana-cli/v2024/platform/msg"
-	"github.com/JetBrains/qodana-cli/v2024/platform/qdenv"
+	"github.com/JetBrains/qodana-cli/v2025/platform/msg"
+	"github.com/JetBrains/qodana-cli/v2025/platform/qdenv"
 	"github.com/pterm/pterm"
 	"github.com/shirou/gopsutil/v3/process"
 	"io"

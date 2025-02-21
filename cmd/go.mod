@@ -1,11 +1,11 @@
-module github.com/JetBrains/qodana-cli/v2024/cmd
+module github.com/JetBrains/qodana-cli/v2025/cmd
 
 go 1.24.0
 
 require (
-	github.com/JetBrains/qodana-cli/v2024/cloud v0.0.0-00010101000000-000000000000
-	github.com/JetBrains/qodana-cli/v2024/core v0.0.0-00010101000000-000000000000
-	github.com/JetBrains/qodana-cli/v2024/platform v0.0.0-00010101000000-000000000000
+	github.com/JetBrains/qodana-cli/v2025/cloud v0.0.0-00010101000000-000000000000
+	github.com/JetBrains/qodana-cli/v2025/core v0.0.0-00010101000000-000000000000
+	github.com/JetBrains/qodana-cli/v2025/platform v0.0.0-00010101000000-000000000000
 	github.com/boyter/scc/v3 v3.4.0
 	github.com/docker/docker v25.0.6+incompatible // DO NOT UPDATE: breaking changes
 	github.com/sirupsen/logrus v1.9.3
@@ -14,12 +14,12 @@ require (
 )
 
 replace (
-	github.com/JetBrains/qodana-cli/v2024/cloud => ../cloud
-	github.com/JetBrains/qodana-cli/v2024/cmd => ../cmd
-	github.com/JetBrains/qodana-cli/v2024/core => ../core
-	github.com/JetBrains/qodana-cli/v2024/platform => ../platform
-	github.com/JetBrains/qodana-cli/v2024/sarif => ../sarif
-	github.com/JetBrains/qodana-cli/v2024/tooling => ../tooling
+	github.com/JetBrains/qodana-cli/v2025/cloud => ../cloud
+	github.com/JetBrains/qodana-cli/v2025/cmd => ../cmd
+	github.com/JetBrains/qodana-cli/v2025/core => ../core
+	github.com/JetBrains/qodana-cli/v2025/platform => ../platform
+	github.com/JetBrains/qodana-cli/v2025/sarif => ../sarif
+	github.com/JetBrains/qodana-cli/v2025/tooling => ../tooling
 )
 
 require github.com/google/uuid v1.6.0
@@ -30,8 +30,8 @@ require (
 	atomicgo.dev/keyboard v0.2.9 // indirect
 	atomicgo.dev/schedule v0.1.0 // indirect
 	github.com/Azure/go-ansiterm v0.0.0-20210617225240-d185dfc1b5a1 // indirect
-	github.com/JetBrains/qodana-cli/v2024/sarif v0.0.0-00010101000000-000000000000 // indirect
-	github.com/JetBrains/qodana-cli/v2024/tooling v0.0.0-00010101000000-000000000000 // indirect
+	github.com/JetBrains/qodana-cli/v2025/sarif v0.0.0-00010101000000-000000000000 // indirect
+	github.com/JetBrains/qodana-cli/v2025/tooling v0.0.0-00010101000000-000000000000 // indirect
 	github.com/Microsoft/go-winio v0.6.1 // indirect
 	github.com/boyter/gocodewalker v1.3.4 // indirect
 	github.com/cenkalti/backoff/v4 v4.3.0 // indirect

@@ -18,7 +18,7 @@ package core
 
 import (
 	"fmt"
-	"github.com/JetBrains/qodana-cli/v2024/platform/msg"
+	"github.com/JetBrains/qodana-cli/v2025/platform/msg"
 	"github.com/pterm/pterm"
 	"strconv"
 )
@@ -36,11 +36,13 @@ func PrintContributorsTable(contributors []contributor, days int, dirs int) {
 		},
 	}
 	for _, p := range contributors {
-		contributorsTableData = append(contributorsTableData, []string{
-			p.Author.Username,
-			p.Author.Email,
-			strconv.Itoa(p.Count),
-		})
+		contributorsTableData = append(
+			contributorsTableData, []string{
+				p.Author.Username,
+				p.Author.Email,
+				strconv.Itoa(p.Count),
+			},
+		)
 	}
 
 	table := pterm.DefaultTable.WithData(contributorsTableData)

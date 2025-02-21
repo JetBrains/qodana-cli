@@ -18,7 +18,7 @@ package qdenv
 
 import (
 	"fmt"
-	"github.com/JetBrains/qodana-cli/v2024/platform/version"
+	"github.com/JetBrains/qodana-cli/v2025/platform/version"
 	cienvironment "github.com/cucumber/ci-environment/go"
 	log "github.com/sirupsen/logrus"
 	"net/url"

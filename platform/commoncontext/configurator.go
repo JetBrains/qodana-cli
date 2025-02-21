@@ -18,7 +18,7 @@ package commoncontext
 
 import (
 	"bytes"
-	"github.com/JetBrains/qodana-cli/v2024/platform/utils"
+	"github.com/JetBrains/qodana-cli/v2025/platform/utils"
 	"io"
 	"os"
 	"path/filepath"

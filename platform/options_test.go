@@ -17,7 +17,7 @@
 package platform
 
 import (
-	"github.com/JetBrains/qodana-cli/v2024/platform/commoncontext"
+	"github.com/JetBrains/qodana-cli/v2025/platform/commoncontext"
 	"github.com/stretchr/testify/assert"
 	"os"
 	"testing"

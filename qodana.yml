@@ -16,5 +16,5 @@ licenseRules:
       - MPL-2.0
       - Unlicense
 dependencyIgnores:
-  - name: github.com/JetBrains/qodana-cli/v2024/clangd
+  - name: github.com/JetBrains/qodana-cli/v2025/clangd
 raiseLicenseProblems: true

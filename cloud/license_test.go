@@ -18,7 +18,7 @@ package cloud
 
 import (
 	"fmt"
-	"github.com/JetBrains/qodana-cli/v2024/platform/qdenv"
+	"github.com/JetBrains/qodana-cli/v2025/platform/qdenv"
 	"net/http"
 	"net/http/httptest"
 	"os"

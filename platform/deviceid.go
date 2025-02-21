@@ -19,7 +19,7 @@ package platform
 import (
 	"crypto/md5"
 	"fmt"
-	"github.com/JetBrains/qodana-cli/v2024/platform/qdenv"
+	"github.com/JetBrains/qodana-cli/v2025/platform/qdenv"
 	"os"
 	"os/exec"
 	"strings"

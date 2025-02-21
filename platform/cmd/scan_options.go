@@ -18,9 +18,9 @@ package platformcmd
 
 import (
 	"fmt"
-	"github.com/JetBrains/qodana-cli/v2024/platform/product"
-	"github.com/JetBrains/qodana-cli/v2024/platform/qdenv"
-	"github.com/JetBrains/qodana-cli/v2024/platform/utils"
+	"github.com/JetBrains/qodana-cli/v2025/platform/product"
+	"github.com/JetBrains/qodana-cli/v2025/platform/qdenv"
+	"github.com/JetBrains/qodana-cli/v2025/platform/utils"
 	"github.com/google/uuid"
 	"github.com/spf13/cobra"
 	"os"

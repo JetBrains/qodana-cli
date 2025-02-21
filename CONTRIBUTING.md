@@ -116,7 +116,7 @@ so if you have any issues with it on release, upload the package manually:
   - Set up `choco` API key and publish
 
 ```shell
-git checkout v2024.1.2
+git checkout v2025.1.2
 goreleaser release --skip-publish --clean
 vim dist/qodana.choco/tools/chocolateyinstall.ps1
 choco apikey --key <YOUR_API_KEY> --source https://push.chocolatey.org/

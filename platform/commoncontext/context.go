@@ -17,7 +17,7 @@
 package commoncontext
 
 import (
-	"github.com/JetBrains/qodana-cli/v2024/platform/qdenv"
+	"github.com/JetBrains/qodana-cli/v2025/platform/qdenv"
 	"os"
 	"path/filepath"
 )

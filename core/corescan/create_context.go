@@ -17,11 +17,11 @@
 package corescan
 
 import (
-	"github.com/JetBrains/qodana-cli/v2024/core/startup"
-	"github.com/JetBrains/qodana-cli/v2024/platform/cmd"
-	"github.com/JetBrains/qodana-cli/v2024/platform/commoncontext"
-	"github.com/JetBrains/qodana-cli/v2024/platform/qdenv"
-	"github.com/JetBrains/qodana-cli/v2024/platform/qdyaml"
+	"github.com/JetBrains/qodana-cli/v2025/core/startup"
+	"github.com/JetBrains/qodana-cli/v2025/platform/cmd"
+	"github.com/JetBrains/qodana-cli/v2025/platform/commoncontext"
+	"github.com/JetBrains/qodana-cli/v2025/platform/qdenv"
+	"github.com/JetBrains/qodana-cli/v2025/platform/qdyaml"
 	"path/filepath"
 	"strings"
 )

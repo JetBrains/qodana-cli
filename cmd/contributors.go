@@ -19,7 +19,7 @@ package cmd
 import (
 	"fmt"
 
-	"github.com/JetBrains/qodana-cli/v2024/core"
+	"github.com/JetBrains/qodana-cli/v2025/core"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 )
@@ -37,11 +37,13 @@ func newContributorsCommand() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "contributors",
 		Short: "Calculate active project contributors",
-		Long: fmt.Sprintf(`
+		Long: fmt.Sprintf(
+			`
 A command-line helper for Qodana pricing[1] to calculate active contributor(s)[2] in the given local repositories.
 
 [1] More information about available Qodana plans can be found at %s
-`, core.PricingUrl),
+`, core.PricingUrl,
+		),
 		Run: func(cmd *cobra.Command, args []string) {
 			if len(options.ProjectDirs) == 0 {
 				options.ProjectDirs = append(options.ProjectDirs, ".")
@@ -67,8 +69,20 @@ A command-line helper for Qodana pricing[1] to calculate active contributor(s)[2
 		},
 	}
 	flags := cmd.Flags()
-	flags.StringArrayVarP(&options.ProjectDirs, "project-dir", "i", []string{}, "Project directory, can be specified multiple times to check multiple projects, if not specified, current directory will be used")
-	flags.IntVarP(&options.Days, "days", "d", 90, "Number of days since when to calculate the number of active contributors")
+	flags.StringArrayVarP(
+		&options.ProjectDirs,
+		"project-dir",
+		"i",
+		[]string{},
+		"Project directory, can be specified multiple times to check multiple projects, if not specified, current directory will be used",
+	)
+	flags.IntVarP(
+		&options.Days,
+		"days",
+		"d",
+		90,
+		"Number of days since when to calculate the number of active contributors",
+	)
 	flags.StringVarP(&options.Output, "output", "o", "tabular", "Output format, can be tabular or json")
 
 	return cmd

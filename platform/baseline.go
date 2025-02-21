@@ -18,8 +18,8 @@ package platform
 
 import (
 	"fmt"
-	"github.com/JetBrains/qodana-cli/v2024/platform/thirdpartyscan"
-	"github.com/JetBrains/qodana-cli/v2024/platform/utils"
+	"github.com/JetBrains/qodana-cli/v2025/platform/thirdpartyscan"
+	"github.com/JetBrains/qodana-cli/v2025/platform/utils"
 )
 
 // computeBaselinePrintResults runs SARIF analysis (compares with baseline and prints the result)=
