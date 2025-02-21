@@ -23,11 +23,11 @@
       "separateMajorMinor": false,
       "groupName": "debian packages",
       "groupSlug": "debian",
-      "paths": ["2023.2/**", "2023.3/**", "2024.1/**", "2024.3/**", "next"]
+      "paths": ["2023.2/**", "2023.3/**", "2024.1/**", "2024.3/**", "2025.1/**", "next"]
     },
     {
       "datasources": ["docker"],
-      "paths": ["next"]
+      "paths": ["next", "2025.1"]
     }
   ],
   "commitMessagePrefix": "QD-8148 ",
