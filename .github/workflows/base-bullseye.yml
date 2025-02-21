@@ -1,0 +1,54 @@
+name: 'Base (2024.3 and older)'
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+    paths:
+      - '2024.3/base/*.Dockerfile'
+      - '2024.3/base/*.hcl'
+      - '.github/workflows/base-bullseye.yml'
+  pull_request:
+    paths:
+      - '2024.3/base/*.Dockerfile'
+      - '2024.3/base/*.hcl'
+      - '.github/workflows/base-bullseye.yml'
+  schedule:
+    - cron: '0 0 * * 1'
+jobs:
+  base:
+    strategy:
+      fail-fast: false
+      matrix:
+        version: ["2024.3"]
+        group: ["default", "more", "clang", "ruby"]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Clean up
+        run: |
+          sudo rm -rf /usr/share/dotnet
+          sudo rm -rf /opt/ghc
+          sudo rm -rf "/usr/local/share/boost"
+          sudo rm -rf "$AGENT_TOOLSDIRECTORY"
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+        with:
+          image: tonistiigi/binfmt:qemu-v7.0.0
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+      - uses: docker/login-action@v3
+        with:
+          registry: registry.jetbrains.team
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+      - name: Build and push
+        uses: docker/bake-action@v5
+        with:
+          push: ${{ github.ref == 'refs/heads/main' }}
+          workdir: ${{ matrix.version }}/base
+          targets: ${{ matrix.group }}
+          set: |
+            *.cache-from=type=gha,scope=provenance
+            *.cache-to=type=gha,scope=provenance,mode=max
