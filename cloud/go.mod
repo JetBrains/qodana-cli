@@ -1,6 +1,6 @@
 module github.com/JetBrains/qodana-cli/v2024/cloud
 
-go 1.22.8
+go 1.24.0
 
 require (
 	github.com/sirupsen/logrus v1.9.3
