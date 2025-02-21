@@ -17,8 +17,8 @@ jobs:
     name: lint
     runs-on: ubuntu-latest
     strategy:
-        matrix:
-            release: [ "2025.1" ]
+      matrix:
+        release: [ "2025.1" ]
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -27,23 +27,24 @@ jobs:
         with:
           filters: |
             dockerfiles:
-              - '${{ matrix.release }}
+              - '${{ matrix.release }}/**'
       - if: steps.changes.outputs.dockerfiles == 'true'
         run: ./dockerfiles.py ${{ matrix.release }}
-      - if: steps.changes.outputs.dockerfiles == 'true'
-        name: Compare the expected and actual directories
+      - name: Compare the expected and actual directories
         run: |
-          if [ "$(git diff --ignore-space-at-eol ${{ matrix.release }} | wc -l)" -gt "0" ]; then
-            echo "Detected uncommitted changes after build.  See status below:"
-            git diff
-            git config user.name github-actions
-            git config user.email github-actions@github.com
-            git add .
-            git commit -m "QD-8148 Update \`${{ matrix.release }}\`"
-            git push
-            exit 1
+          git status
+          if [ "$(git status --porcelain ${{ matrix.release }} | wc -l)" -gt "0" ]; then
+              echo "Detected uncommitted changes after build. See status below:"
+              git diff --ignore-space-at-eol HEAD -- ${{ matrix.release }}
+              git config user.name github-actions
+              git config user.email github-actions@github.com
+              git checkout $GITHUB_REF
+              git add .
+              git commit -m "QD-8148 Update \`${{ matrix.release }}\` Dockerfiles"
+              git push
+              exit 1
           fi
-        id: diffscan
+        if: steps.changes.outputs.dockerfiles == 'true'
 
   build243:
     name: "2024.3"
