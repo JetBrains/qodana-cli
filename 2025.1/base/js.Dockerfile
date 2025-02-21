@@ -2,7 +2,7 @@ ARG NODE_TAG="22-bookworm-slim"
 FROM node:$NODE_TAG
 
 # renovate: datasource=npm depName=eslint
-ENV ESLINT_VERSION="9.20.1"
+ENV ESLINT_VERSION="9.21.0"
 # renovate: datasource=npm depName=pnpm
 ENV PNPM_VERSION="10.5.0"
 
