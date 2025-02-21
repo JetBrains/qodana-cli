@@ -1,7 +1,7 @@
 ARG NODE_TAG="22-bookworm-slim"
 ARG DOTNET_BASE_TAG="9.0-bookworm-slim"
 FROM node:$NODE_TAG AS node_base
-FROM mcr.microsoft.com/dotnet/sdk:$DOTNET_BASE_TAG
+FROM dotnet-community
 
 # renovate: datasource=npm depName=eslint
 ENV ESLINT_VERSION="9.21.0"
@@ -51,7 +51,7 @@ RUN --mount=target=/var/lib/apt/lists,type=cache,sharing=locked \
     bash /tmp/dotnet-install.sh -c $DOTNET_CHANNEL_B -i $DOTNET_ROOT && \
     chmod 777 -R $DOTNET_ROOT
 
-ENV PATH="/opt/yarn/bin:$PATH"
+ENV PATH="/opt/yarn/bin:$PATH" RIDER_UNREAL_ROOT="/data/unrealEngine"
 ENV SKIP_YARN_COREPACK_CHECK=0
 COPY --from=node_base /usr/local/bin/node /usr/local/bin/
 COPY --from=node_base /usr/local/include/node /usr/local/include/node
@@ -64,4 +64,5 @@ RUN ln -s /usr/local/lib/node_modules/npm/bin/npm-cli.js /usr/local/bin/npm && \
     npm --version && \
     yarn --version && \
     npm install -g eslint@$ESLINT_VERSION pnpm@$PNPM_VERSION && npm config set update-notifier false && \
+    mkdir -p $RIDER_UNREAL_ROOT && \
     chmod 777 -R "$HOME/.npm" "$HOME/.npmrc"

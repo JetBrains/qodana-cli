@@ -1,4 +1,4 @@
-FROM registry.jetbrains.team/p/sa/containers/qodana:python-base-251
+FROM registry.jetbrains.team/p/sa/containers/qodana:python-community-base-251
 
 ARG TARGETPLATFORM
 ARG DEVICEID

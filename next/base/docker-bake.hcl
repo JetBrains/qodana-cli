@@ -1,9 +1,9 @@
 group "all" {
-  targets = ["debian", "debian-js", "python", "python-js", "other"]
+  targets = ["jvm-community", "jvm", "python", "python-community", "other", "cpp", "cpp-community", "ruby3x", "dotnet", "dotnet-community"]
 }
 
 group "default" {
-  targets = ["debian", "debian-js", "python", "python-js"]
+  targets = ["jvm-community", "jvm", "python-community", "python", "dotnet-community", "dotnet"]
 }
 
 group "more" {
@@ -11,35 +11,46 @@ group "more" {
 }
 
 group "clang" {
-  targets = ["cpp"]
+  targets = ["cpp", "cpp-community"]
 }
 
 group "ruby" {
   targets = ["ruby3x"]
 }
 
-target "debian" {
+target "jvm-community" {
   tags = [
-    "registry.jetbrains.team/p/sa/containers/qodana:debian-base-latest"
+    "registry.jetbrains.team/p/sa/containers/qodana:jvm-community-base-latest"
   ]
   platforms = ["linux/amd64", "linux/arm64"]
-  dockerfile = "debian.Dockerfile"
+  dockerfile = "jvm-community.Dockerfile"
 }
 
-target "debian-js" {
+target "jvm" {
   contexts = {
-    debianbase = "target:debian"
+    jvm-community = "target:jvm-community"
   }
   tags = [
-    "registry.jetbrains.team/p/sa/containers/qodana:debian-js-base-latest"
+    "registry.jetbrains.team/p/sa/containers/qodana:jvm-base-latest"
   ]
   platforms = ["linux/amd64", "linux/arm64"]
-  dockerfile = "debian.js.Dockerfile"
+  dockerfile = "jvm.Dockerfile"
+}
+
+target "python-community" {
+  contexts = {
+    jvm-community = "target:jvm-community"
+  }
+  tags = [
+    "registry.jetbrains.team/p/sa/containers/qodana:python-community-base-latest"
+  ]
+  platforms = ["linux/amd64", "linux/arm64"]
+  dockerfile = "python-community.Dockerfile"
 }
 
 target "python" {
   contexts = {
-    debianbase = "target:debian"
+    python-community = "target:python-community"
   }
   tags = [
     "registry.jetbrains.team/p/sa/containers/qodana:python-base-latest"
@@ -48,21 +59,10 @@ target "python" {
   dockerfile = "python.Dockerfile"
 }
 
-target "python-js" {
-  contexts = {
-    pythonbase = "target:python"
-  }
-  tags = [
-    "registry.jetbrains.team/p/sa/containers/qodana:python-js-base-latest"
-  ]
-  platforms = ["linux/amd64", "linux/arm64"]
-  dockerfile = "python.js.Dockerfile"
-}
-
 target "other" {
   name = "${edition}-base-latest"
   matrix = {
-    edition = ["dotnet", "go", "js", "php", "rust", "ruby", "cdnet", "cnova"]
+    edition = ["go", "js", "php", "rust", "ruby"]
   }
   tags = [
     "registry.jetbrains.team/p/sa/containers/qodana:${edition}-base-latest"
@@ -71,7 +71,25 @@ target "other" {
   dockerfile = "${edition}.Dockerfile"
 }
 
+target "cpp-community" {
+  matrix = {
+    clang = ["15", "16", "17", "18"]
+  }
+  name = "cpp-community-base-${clang}-latest"
+  tags = [
+    "registry.jetbrains.team/p/sa/containers/qodana:cpp-community-base-${clang}-latest"
+  ]
+  platforms = ["linux/amd64", "linux/arm64"]
+  dockerfile = "cpp-community.Dockerfile"
+  args = {
+    CLANG = clang
+  }
+}
+
 target "cpp" {
+  contexts = {
+    cpp-community = "target:cpp-community"
+  }
   matrix = {
     clang = ["15", "16", "17", "18"]
   }
@@ -84,6 +102,25 @@ target "cpp" {
   args = {
     CLANG = clang
   }
+}
+
+target "dotnet-community" {
+  tags = [
+    "registry.jetbrains.team/p/sa/containers/qodana:dotnet-community-base-latest"
+  ]
+  platforms = ["linux/amd64", "linux/arm64"]
+  dockerfile = "dotnet-community.Dockerfile"
+}
+
+target "dotnet" {
+  contexts = {
+    dotnet-community = "target:dotnet-community"
+  }
+  tags = [
+    "registry.jetbrains.team/p/sa/containers/qodana:dotnet-base-latest"
+  ]
+  platforms = ["linux/amd64", "linux/arm64"]
+  dockerfile = "dotnet.Dockerfile"
 }
 
 target "ruby3x" {

@@ -1,6 +1,6 @@
 ARG NODE_TAG="22-bookworm-slim"
 FROM node:$NODE_TAG AS node_base
-FROM debianbase
+FROM jvm-community
 
 # renovate: datasource=npm depName=eslint
 ENV ESLINT_VERSION="9.21.0"

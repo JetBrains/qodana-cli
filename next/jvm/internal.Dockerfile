@@ -1,4 +1,4 @@
-FROM registry.jetbrains.team/p/sa/containers/qodana:debian-js-base-latest
+FROM registry.jetbrains.team/p/sa/containers/qodana:jvm-base-latest
 
 ARG TARGETPLATFORM
 ARG DEVICEID
