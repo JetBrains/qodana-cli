@@ -19,12 +19,12 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        version: ["next", "2024.2", "2024.3", "2025.1"]
+        version: ["next", "2024.3", "2025.1"]
         group: ["default", "more", "clang"]
         include:
           - version: "next"
             group: "ruby"
-          - version: "2024.3"
+          - version: "2025.1"
             group: "ruby"
     runs-on: ubuntu-latest
     steps:

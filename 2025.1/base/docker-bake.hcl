@@ -15,7 +15,7 @@ group "clang" {
 }
 
 group "ruby" {
-  targets = ["ruby2x", "ruby3x"]
+  targets = ["ruby3x"]
 }
 
 target "debian" {
@@ -86,24 +86,9 @@ target "cpp" {
   }
 }
 
-target "ruby2x" {
-  matrix = {
-    version = ["6", "7"]
-  }
-  name = "ruby-base-2${version}-251"
-  tags = [
-    "registry.jetbrains.team/p/sa/containers/qodana:ruby-base-2.${version}-251"
-  ]
-  platforms = ["linux/amd64", "linux/arm64"]
-  dockerfile = "ruby.Dockerfile"
-  args = {
-    RUBY_TAG = "2.${version}-slim-bullseye"
-  }
-}
-
 target "ruby3x" {
   matrix = {
-    version = ["0", "1", "2", "3"]
+    version = ["1", "2", "3"]
   }
   name = "ruby-base-3${version}-251"
   tags = [
@@ -112,6 +97,6 @@ target "ruby3x" {
   platforms = ["linux/amd64", "linux/arm64"]
   dockerfile = "ruby.Dockerfile"
   args = {
-    RUBY_TAG = "3.${version}-slim-bullseye"
+    RUBY_TAG = "3.${version}-slim-bookworm"
   }
 }

@@ -1,4 +1,4 @@
-ARG DOTNET_BASE_TAG="7.0-bullseye-slim"
+ARG DOTNET_BASE_TAG="7.0-bookworm-slim"
 FROM mcr.microsoft.com/dotnet/sdk:$DOTNET_BASE_TAG
 
 ENV HOME="/root" \

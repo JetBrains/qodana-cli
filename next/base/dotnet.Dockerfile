@@ -1,5 +1,5 @@
-ARG NODE_TAG="22-bullseye-slim"
-ARG DOTNET_BASE_TAG="7.0-bullseye-slim"
+ARG NODE_TAG="22-bookworm-slim"
+ARG DOTNET_BASE_TAG="7.0-bookworm-slim"
 FROM node:$NODE_TAG AS node_base
 FROM mcr.microsoft.com/dotnet/sdk:$DOTNET_BASE_TAG
 

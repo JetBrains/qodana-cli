@@ -52,7 +52,7 @@ With `--print` option in the previous command you'll get the full picture of ima
       },
       "dockerfile": "debian.js.Dockerfile",
       "args": {
-        "NODE_TAG": "20-bullseye-slim"
+        "NODE_TAG": "20-bookworm-slim"
       },
       "tags": [
         "registry.jetbrains.team/p/sa/containers/qodana:debian-js-base"
@@ -67,12 +67,12 @@ With `--print` option in the previous command you'll get the full picture of ima
       "dockerfile": "dotnet.Dockerfile",
       "args": {
         "COMPOSER_TAG": "2.5.1",
-        "DOTNET_TAG": "6.0-bullseye-slim",
-        "GO_TAG": "1.19-bullseye",
-        "NODE_TAG": "20-bullseye-slim",
-        "PHP_TAG": "8.1-cli-bullseye",
-        "RUBY_TAG": "3.0-bullseye",
-        "RUST_TAG": "1.71-slim-bullseye"
+        "DOTNET_TAG": "6.0-bookworm-slim",
+        "GO_TAG": "1.19-bookworm",
+        "NODE_TAG": "20-bookworm-slim",
+        "PHP_TAG": "8.1-cli-bookworm",
+        "RUBY_TAG": "3.0-bookworm",
+        "RUST_TAG": "1.71-slim-bookworm"
       },
       "tags": [
         "registry.jetbrains.team/p/sa/containers/qodana:dotnet-base"
@@ -87,12 +87,12 @@ With `--print` option in the previous command you'll get the full picture of ima
       "dockerfile": "go.Dockerfile",
       "args": {
         "COMPOSER_TAG": "2.5.1",
-        "DOTNET_TAG": "6.0-bullseye-slim",
-        "GO_TAG": "1.19-bullseye",
-        "NODE_TAG": "20-bullseye-slim",
-        "PHP_TAG": "8.1-cli-bullseye",
-        "RUBY_TAG": "3.0-bullseye",
-        "RUST_TAG": "1.71-slim-bullseye"
+        "DOTNET_TAG": "6.0-bookworm-slim",
+        "GO_TAG": "1.19-bookworm",
+        "NODE_TAG": "20-bookworm-slim",
+        "PHP_TAG": "8.1-cli-bookworm",
+        "RUBY_TAG": "3.0-bookworm",
+        "RUST_TAG": "1.71-slim-bookworm"
       },
       "tags": [
         "registry.jetbrains.team/p/sa/containers/qodana:go-base"
@@ -107,12 +107,12 @@ With `--print` option in the previous command you'll get the full picture of ima
       "dockerfile": "js.Dockerfile",
       "args": {
         "COMPOSER_TAG": "2.5.1",
-        "DOTNET_TAG": "6.0-bullseye-slim",
-        "GO_TAG": "1.19-bullseye",
-        "NODE_TAG": "20-bullseye-slim",
-        "PHP_TAG": "8.1-cli-bullseye",
-        "RUBY_TAG": "3.0-bullseye",
-        "RUST_TAG": "1.71-slim-bullseye"
+        "DOTNET_TAG": "6.0-bookworm-slim",
+        "GO_TAG": "1.19-bookworm",
+        "NODE_TAG": "20-bookworm-slim",
+        "PHP_TAG": "8.1-cli-bookworm",
+        "RUBY_TAG": "3.0-bookworm",
+        "RUST_TAG": "1.71-slim-bookworm"
       },
       "tags": [
         "registry.jetbrains.team/p/sa/containers/qodana:js-base"
@@ -127,12 +127,12 @@ With `--print` option in the previous command you'll get the full picture of ima
       "dockerfile": "php.Dockerfile",
       "args": {
         "COMPOSER_TAG": "2.5.1",
-        "DOTNET_TAG": "6.0-bullseye-slim",
-        "GO_TAG": "1.19-bullseye",
-        "NODE_TAG": "20-bullseye-slim",
-        "PHP_TAG": "8.1-cli-bullseye",
-        "RUBY_TAG": "3.0-bullseye",
-        "RUST_TAG": "1.71-slim-bullseye"
+        "DOTNET_TAG": "6.0-bookworm-slim",
+        "GO_TAG": "1.19-bookworm",
+        "NODE_TAG": "20-bookworm-slim",
+        "PHP_TAG": "8.1-cli-bookworm",
+        "RUBY_TAG": "3.0-bookworm",
+        "RUST_TAG": "1.71-slim-bookworm"
       },
       "tags": [
         "registry.jetbrains.team/p/sa/containers/qodana:php-base"
@@ -163,7 +163,7 @@ With `--print` option in the previous command you'll get the full picture of ima
       },
       "dockerfile": "python.js.Dockerfile",
       "args": {
-        "NODE_TAG": "20-bullseye-slim"
+        "NODE_TAG": "20-bookworm-slim"
       },
       "tags": [
         "registry.jetbrains.team/p/sa/containers/qodana:python-js-base"
@@ -178,12 +178,12 @@ With `--print` option in the previous command you'll get the full picture of ima
       "dockerfile": "ruby.Dockerfile",
       "args": {
         "COMPOSER_TAG": "2.5.1",
-        "DOTNET_TAG": "6.0-bullseye-slim",
-        "GO_TAG": "1.19-bullseye",
-        "NODE_TAG": "20-bullseye-slim",
-        "PHP_TAG": "8.1-cli-bullseye",
-        "RUBY_TAG": "3.0-bullseye",
-        "RUST_TAG": "1.71-slim-bullseye"
+        "DOTNET_TAG": "6.0-bookworm-slim",
+        "GO_TAG": "1.19-bookworm",
+        "NODE_TAG": "20-bookworm-slim",
+        "PHP_TAG": "8.1-cli-bookworm",
+        "RUBY_TAG": "3.0-bookworm",
+        "RUST_TAG": "1.71-slim-bookworm"
       },
       "tags": [
         "registry.jetbrains.team/p/sa/containers/qodana:ruby-base"
@@ -198,12 +198,12 @@ With `--print` option in the previous command you'll get the full picture of ima
       "dockerfile": "rust.Dockerfile",
       "args": {
         "COMPOSER_TAG": "2.5.1",
-        "DOTNET_TAG": "6.0-bullseye-slim",
-        "GO_TAG": "1.19-bullseye",
-        "NODE_TAG": "20-bullseye-slim",
-        "PHP_TAG": "8.1-cli-bullseye",
-        "RUBY_TAG": "3.0-bullseye",
-        "RUST_TAG": "1.71-slim-bullseye"
+        "DOTNET_TAG": "6.0-bookworm-slim",
+        "GO_TAG": "1.19-bookworm",
+        "NODE_TAG": "20-bookworm-slim",
+        "PHP_TAG": "8.1-cli-bookworm",
+        "RUBY_TAG": "3.0-bookworm",
+        "RUST_TAG": "1.71-slim-bookworm"
       },
       "tags": [
         "registry.jetbrains.team/p/sa/containers/qodana:rust-base"

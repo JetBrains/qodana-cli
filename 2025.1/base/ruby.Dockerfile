@@ -1,5 +1,5 @@
-ARG NODE_TAG="22-bullseye-slim"
-ARG RUBY_TAG="3.4-slim-bullseye"
+ARG NODE_TAG="22-bookworm-slim"
+ARG RUBY_TAG="3.4-slim-bookworm"
 
 FROM node:$NODE_TAG AS node_base
 FROM ruby:$RUBY_TAG
