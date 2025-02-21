@@ -17,8 +17,8 @@
 package core
 
 import (
-	"github.com/JetBrains/qodana-cli/v2024/core/corescan"
-	"github.com/JetBrains/qodana-cli/v2024/platform/product"
+	"github.com/JetBrains/qodana-cli/v2025/core/corescan"
+	"github.com/JetBrains/qodana-cli/v2025/platform/product"
 	"github.com/stretchr/testify/assert"
 	"testing"
 )

@@ -17,8 +17,8 @@
 package platform
 
 import (
-	"github.com/JetBrains/qodana-cli/v2024/platform/qdyaml"
-	"github.com/JetBrains/qodana-cli/v2024/platform/thirdpartyscan"
+	"github.com/JetBrains/qodana-cli/v2025/platform/qdyaml"
+	"github.com/JetBrains/qodana-cli/v2025/platform/thirdpartyscan"
 	"os"
 	"path/filepath"
 	"sort"

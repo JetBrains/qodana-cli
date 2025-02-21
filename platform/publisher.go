@@ -25,9 +25,9 @@ package platform
 import (
 	"crypto/md5"
 	"encoding/hex"
-	"github.com/JetBrains/qodana-cli/v2024/cloud"
-	"github.com/JetBrains/qodana-cli/v2024/platform/qdenv"
-	"github.com/JetBrains/qodana-cli/v2024/platform/utils"
+	"github.com/JetBrains/qodana-cli/v2025/cloud"
+	"github.com/JetBrains/qodana-cli/v2025/platform/qdenv"
+	"github.com/JetBrains/qodana-cli/v2025/platform/utils"
 	cp "github.com/otiai10/copy"
 	log "github.com/sirupsen/logrus"
 	"io"

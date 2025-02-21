@@ -17,12 +17,12 @@
 package main
 
 import (
-	"github.com/JetBrains/qodana-cli/v2024/core"
-	"github.com/JetBrains/qodana-cli/v2024/core/corescan"
-	"github.com/JetBrains/qodana-cli/v2024/platform/product"
-	"github.com/JetBrains/qodana-cli/v2024/platform/qdyaml"
-	"github.com/JetBrains/qodana-cli/v2024/platform/thirdpartyscan"
-	"github.com/JetBrains/qodana-cli/v2024/platform/utils"
+	"github.com/JetBrains/qodana-cli/v2025/core"
+	"github.com/JetBrains/qodana-cli/v2025/core/corescan"
+	"github.com/JetBrains/qodana-cli/v2025/platform/product"
+	"github.com/JetBrains/qodana-cli/v2025/platform/qdyaml"
+	"github.com/JetBrains/qodana-cli/v2025/platform/thirdpartyscan"
+	"github.com/JetBrains/qodana-cli/v2025/platform/utils"
 	"github.com/stretchr/testify/assert"
 	"reflect"
 	"testing"

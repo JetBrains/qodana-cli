@@ -18,10 +18,10 @@ package cmd
 
 import (
 	"fmt"
-	"github.com/JetBrains/qodana-cli/v2024/core"
-	"github.com/JetBrains/qodana-cli/v2024/platform/msg"
-	"github.com/JetBrains/qodana-cli/v2024/platform/qdenv"
-	"github.com/JetBrains/qodana-cli/v2024/platform/version"
+	"github.com/JetBrains/qodana-cli/v2025/core"
+	"github.com/JetBrains/qodana-cli/v2025/platform/msg"
+	"github.com/JetBrains/qodana-cli/v2025/platform/qdenv"
+	"github.com/JetBrains/qodana-cli/v2025/platform/version"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"

@@ -17,9 +17,9 @@
 package cmd
 
 import (
-	"github.com/JetBrains/qodana-cli/v2024/core"
-	"github.com/JetBrains/qodana-cli/v2024/platform/commoncontext"
-	"github.com/JetBrains/qodana-cli/v2024/platform/qdenv"
+	"github.com/JetBrains/qodana-cli/v2025/core"
+	"github.com/JetBrains/qodana-cli/v2025/platform/commoncontext"
+	"github.com/JetBrains/qodana-cli/v2025/platform/qdenv"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 	"os"

@@ -18,21 +18,21 @@ package cmd
 
 import (
 	"fmt"
-	"github.com/JetBrains/qodana-cli/v2024/cloud"
-	"github.com/JetBrains/qodana-cli/v2024/core/corescan"
-	"github.com/JetBrains/qodana-cli/v2024/core/startup"
-	"github.com/JetBrains/qodana-cli/v2024/platform"
-	"github.com/JetBrains/qodana-cli/v2024/platform/cmd"
-	"github.com/JetBrains/qodana-cli/v2024/platform/commoncontext"
-	"github.com/JetBrains/qodana-cli/v2024/platform/msg"
-	"github.com/JetBrains/qodana-cli/v2024/platform/qdenv"
-	"github.com/JetBrains/qodana-cli/v2024/platform/qdyaml"
-	"github.com/JetBrains/qodana-cli/v2024/platform/utils"
+	"github.com/JetBrains/qodana-cli/v2025/cloud"
+	"github.com/JetBrains/qodana-cli/v2025/core/corescan"
+	"github.com/JetBrains/qodana-cli/v2025/core/startup"
+	"github.com/JetBrains/qodana-cli/v2025/platform"
+	"github.com/JetBrains/qodana-cli/v2025/platform/cmd"
+	"github.com/JetBrains/qodana-cli/v2025/platform/commoncontext"
+	"github.com/JetBrains/qodana-cli/v2025/platform/msg"
+	"github.com/JetBrains/qodana-cli/v2025/platform/qdenv"
+	"github.com/JetBrains/qodana-cli/v2025/platform/qdyaml"
+	"github.com/JetBrains/qodana-cli/v2025/platform/utils"
 	log "github.com/sirupsen/logrus"
 	"os"
 	"path/filepath"
 
-	"github.com/JetBrains/qodana-cli/v2024/core"
+	"github.com/JetBrains/qodana-cli/v2025/core"
 	"github.com/spf13/cobra"
 )
 

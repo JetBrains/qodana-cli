@@ -19,8 +19,8 @@ package qdcontainer
 import (
 	"context"
 	"errors"
-	"github.com/JetBrains/qodana-cli/v2024/platform/msg"
-	"github.com/JetBrains/qodana-cli/v2024/platform/qdenv"
+	"github.com/JetBrains/qodana-cli/v2025/platform/msg"
+	"github.com/JetBrains/qodana-cli/v2025/platform/qdenv"
 	"github.com/docker/docker/client"
 	log "github.com/sirupsen/logrus"
 	"os"

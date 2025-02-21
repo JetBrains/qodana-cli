@@ -19,9 +19,9 @@ package core
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/JetBrains/qodana-cli/v2024/cloud"
-	"github.com/JetBrains/qodana-cli/v2024/platform/git"
-	"github.com/JetBrains/qodana-cli/v2024/platform/utils"
+	"github.com/JetBrains/qodana-cli/v2025/cloud"
+	"github.com/JetBrains/qodana-cli/v2025/platform/git"
+	"github.com/JetBrains/qodana-cli/v2025/platform/utils"
 	"sort"
 	"strings"
 )

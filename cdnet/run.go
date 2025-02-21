@@ -19,11 +19,11 @@ package main
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/JetBrains/qodana-cli/v2024/platform"
-	"github.com/JetBrains/qodana-cli/v2024/platform/nuget"
-	"github.com/JetBrains/qodana-cli/v2024/platform/thirdpartyscan"
-	"github.com/JetBrains/qodana-cli/v2024/platform/utils"
-	"github.com/JetBrains/qodana-cli/v2024/sarif"
+	"github.com/JetBrains/qodana-cli/v2025/platform"
+	"github.com/JetBrains/qodana-cli/v2025/platform/nuget"
+	"github.com/JetBrains/qodana-cli/v2025/platform/thirdpartyscan"
+	"github.com/JetBrains/qodana-cli/v2025/platform/utils"
+	"github.com/JetBrains/qodana-cli/v2025/sarif"
 	"os"
 	"path/filepath"
 )

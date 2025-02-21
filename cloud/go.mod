@@ -1,4 +1,4 @@
-module github.com/JetBrains/qodana-cli/v2024/cloud
+module github.com/JetBrains/qodana-cli/v2025/cloud
 
 go 1.24.0
 
@@ -18,10 +18,10 @@ require (
 )
 
 replace (
-	github.com/JetBrains/qodana-cli/v2024/cloud => ../cloud
-	github.com/JetBrains/qodana-cli/v2024/cmd => ../cmd
-	github.com/JetBrains/qodana-cli/v2024/core => ../core
-	github.com/JetBrains/qodana-cli/v2024/platform => ../platform
-	github.com/JetBrains/qodana-cli/v2024/sarif => ../sarif
-	github.com/JetBrains/qodana-cli/v2024/tooling => ../tooling
+	github.com/JetBrains/qodana-cli/v2025/cloud => ../cloud
+	github.com/JetBrains/qodana-cli/v2025/cmd => ../cmd
+	github.com/JetBrains/qodana-cli/v2025/core => ../core
+	github.com/JetBrains/qodana-cli/v2025/platform => ../platform
+	github.com/JetBrains/qodana-cli/v2025/sarif => ../sarif
+	github.com/JetBrains/qodana-cli/v2025/tooling => ../tooling
 )

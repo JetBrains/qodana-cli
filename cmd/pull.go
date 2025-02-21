@@ -17,11 +17,11 @@
 package cmd
 
 import (
-	"github.com/JetBrains/qodana-cli/v2024/core"
-	"github.com/JetBrains/qodana-cli/v2024/platform/commoncontext"
-	"github.com/JetBrains/qodana-cli/v2024/platform/qdcontainer"
-	"github.com/JetBrains/qodana-cli/v2024/platform/qdenv"
-	"github.com/JetBrains/qodana-cli/v2024/platform/qdyaml"
+	"github.com/JetBrains/qodana-cli/v2025/core"
+	"github.com/JetBrains/qodana-cli/v2025/platform/commoncontext"
+	"github.com/JetBrains/qodana-cli/v2025/platform/qdcontainer"
+	"github.com/JetBrains/qodana-cli/v2025/platform/qdenv"
+	"github.com/JetBrains/qodana-cli/v2025/platform/qdyaml"
 	"github.com/docker/docker/client"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"

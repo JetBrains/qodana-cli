@@ -18,8 +18,8 @@ package platform
 
 import (
 	"errors"
-	"github.com/JetBrains/qodana-cli/v2024/platform/utils"
-	"github.com/JetBrains/qodana-cli/v2024/sarif"
+	"github.com/JetBrains/qodana-cli/v2025/platform/utils"
+	"github.com/JetBrains/qodana-cli/v2025/sarif"
 	"os"
 	"strings"
 )

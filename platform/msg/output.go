@@ -18,7 +18,7 @@ package msg
 
 import (
 	"fmt"
-	"github.com/JetBrains/qodana-cli/v2024/platform/qdenv"
+	"github.com/JetBrains/qodana-cli/v2025/platform/qdenv"
 	cienvironment "github.com/cucumber/ci-environment/go"
 	"os"
 	"strings"

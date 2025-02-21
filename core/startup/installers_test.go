@@ -17,8 +17,8 @@
 package startup
 
 import (
-	"github.com/JetBrains/qodana-cli/v2024/platform/msg"
-	"github.com/JetBrains/qodana-cli/v2024/platform/product"
+	"github.com/JetBrains/qodana-cli/v2025/platform/msg"
+	"github.com/JetBrains/qodana-cli/v2025/platform/product"
 	"os"
 	"path/filepath"
 	"runtime"

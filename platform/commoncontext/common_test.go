@@ -17,8 +17,8 @@
 package commoncontext
 
 import (
-	"github.com/JetBrains/qodana-cli/v2024/platform/product"
-	"github.com/JetBrains/qodana-cli/v2024/platform/utils"
+	"github.com/JetBrains/qodana-cli/v2025/platform/product"
+	"github.com/JetBrains/qodana-cli/v2025/platform/utils"
 	"github.com/stretchr/testify/assert"
 	"os"
 	"path/filepath"

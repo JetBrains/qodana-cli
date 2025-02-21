@@ -18,10 +18,10 @@ package platform
 
 import (
 	"fmt"
-	"github.com/JetBrains/qodana-cli/v2024/platform/cmd"
-	"github.com/JetBrains/qodana-cli/v2024/platform/msg"
-	"github.com/JetBrains/qodana-cli/v2024/platform/thirdpartyscan"
-	"github.com/JetBrains/qodana-cli/v2024/platform/utils"
+	"github.com/JetBrains/qodana-cli/v2025/platform/cmd"
+	"github.com/JetBrains/qodana-cli/v2025/platform/msg"
+	"github.com/JetBrains/qodana-cli/v2025/platform/thirdpartyscan"
+	"github.com/JetBrains/qodana-cli/v2025/platform/utils"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 	"os"

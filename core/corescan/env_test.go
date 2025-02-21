@@ -18,9 +18,9 @@ package corescan
 
 import (
 	"fmt"
-	"github.com/JetBrains/qodana-cli/v2024/platform"
-	"github.com/JetBrains/qodana-cli/v2024/platform/qdenv"
-	"github.com/JetBrains/qodana-cli/v2024/platform/version"
+	"github.com/JetBrains/qodana-cli/v2025/platform"
+	"github.com/JetBrains/qodana-cli/v2025/platform/qdenv"
+	"github.com/JetBrains/qodana-cli/v2025/platform/version"
 	"golang.org/x/exp/maps"
 	"os"
 	"testing"
