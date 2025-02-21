@@ -8,10 +8,10 @@ on:
       - '**/base/*.Dockerfile'
       - '**/base/*.hcl'
       - '.github/workflows/base.yml'
-  pull_request:
-    paths:
-      - '**/base/*.hcl'
-      - '.github/workflows/base.yml'
+#  pull_request:
+#    paths:
+#      - '**/base/*.hcl'
+#      - '.github/workflows/base.yml'
   schedule:
     - cron: '0 0 * * 1'
 jobs:
