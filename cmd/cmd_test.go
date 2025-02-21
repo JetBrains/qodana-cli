@@ -25,7 +25,6 @@ import (
 	"github.com/JetBrains/qodana-cli/v2024/core"
 	"github.com/JetBrains/qodana-cli/v2024/platform/msg"
 	"github.com/JetBrains/qodana-cli/v2024/platform/product"
-	"github.com/JetBrains/qodana-cli/v2024/platform/qdenv"
 	"github.com/JetBrains/qodana-cli/v2024/platform/qdyaml"
 	"github.com/JetBrains/qodana-cli/v2024/platform/version"
 	log "github.com/sirupsen/logrus"
@@ -230,7 +229,7 @@ func TestAllCommandsWithContainer(t *testing.T) {
 	token := os.Getenv("QODANA_LICENSE_ONLY_TOKEN")
 	if //goland:noinspection GoBoolExpressions
 	token == "" {
-		t.Skip("set your token here to run the test")
+		t.Skip("set your QODANA_LICENSE_ONLY_TOKEN as env variable to run the test")
 	}
 
 	if os.Getenv("GITHUB_ACTIONS") == "true" {
@@ -273,7 +272,6 @@ func TestAllCommandsWithContainer(t *testing.T) {
 		"-o", resultsPath,
 		"--cache-dir", cachePath,
 		"-v", filepath.Join(projectPath, ".idea") + ":/data/some",
-		"-e", qdenv.QodanaLicenseOnlyToken + "=" + os.Getenv("QODANA_LICENSE_ONLY_TOKEN"),
 		"--fail-threshold", "5",
 		"--print-problems",
 		"--apply-fixes",

@@ -35,7 +35,6 @@ const keyringDefaultService = "qodana-cli"
 
 type CloudTokenLoader interface {
 	GetQodanaToken() string
-	GetQodanaLicenseOnlyToken() string
 
 	GetId() string
 	GetIde() string
@@ -46,7 +45,7 @@ type CloudTokenLoader interface {
 }
 
 func IsCloudTokenRequired(tokenLoader CloudTokenLoader, forceIsCommunityOrEap bool) bool {
-	if tokenLoader.GetQodanaToken() != "" || tokenLoader.GetQodanaLicenseOnlyToken() != "" {
+	if tokenLoader.GetQodanaToken() != "" || os.Getenv(qdenv.QodanaLicenseOnlyToken) != "" {
 		return true
 	}
 
@@ -73,10 +72,9 @@ func IsCloudTokenRequired(tokenLoader CloudTokenLoader, forceIsCommunityOrEap bo
 	return false
 }
 
-func LoadCloudToken(tokenLoader CloudTokenLoader, refresh bool, requiresToken bool, interactive bool) string {
+func LoadCloudUploadToken(tokenLoader CloudTokenLoader, refresh bool, requiresToken bool, interactive bool) string {
 	tokenFetchers := []func(bool) string{
 		func(_ bool) string { return tokenLoader.GetQodanaToken() },
-		func(_ bool) string { return getTokenFromEnv() },
 		func(refresh bool) string { return getTokenFromKeychain(refresh, tokenLoader.GetId()) },
 	}
 	if interactive && requiresToken {
@@ -94,8 +92,8 @@ func LoadCloudToken(tokenLoader CloudTokenLoader, refresh bool, requiresToken bo
 	return ""
 }
 
-func ValidateToken(tokenLoader CloudTokenLoader, refresh bool) string {
-	token := LoadCloudToken(tokenLoader, refresh, true, true)
+func ValidateCloudToken(tokenLoader CloudTokenLoader, refresh bool) string {
+	token := LoadCloudUploadToken(tokenLoader, refresh, true, true)
 	if token != "" {
 		ValidateTokenPrintProject(token)
 	}
@@ -176,15 +174,6 @@ func setupToken(path string, id string, logdir string) string {
 		}
 		return token
 	}
-}
-
-func getTokenFromEnv() string {
-	tokenFromEnv := os.Getenv(qdenv.QodanaToken)
-	if tokenFromEnv != "" {
-		log.Debug("Loaded token from the environment variable")
-		return tokenFromEnv
-	}
-	return ""
 }
 
 func getTokenFromKeychain(refresh bool, id string) string {

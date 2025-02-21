@@ -42,15 +42,15 @@ const (
 )
 
 type PreparedHost struct {
-	IdeDir      string
-	QodanaToken string
-	Prod        product.Product
+	IdeDir            string
+	QodanaUploadToken string
+	Prod              product.Product
 }
 
 // PrepareHost gets the current user, creates the necessary folders for the analysis.
 func PrepareHost(commonCtx commoncontext.Context) PreparedHost {
 	prod := product.Product{}
-	token := commonCtx.QodanaToken
+	cloudUploadToken := commonCtx.QodanaToken
 	ideDir := ""
 
 	if commonCtx.IsClearCache {
@@ -99,23 +99,22 @@ func PrepareHost(commonCtx commoncontext.Context) PreparedHost {
 			}
 			ideDir = val
 		}
-		prod, token = prepareLocalIdeSettingsAndGetQodanaCloudToken(commonCtx, ideDir)
+		prod, cloudUploadToken = prepareLocalIdeSettingsAndGetQodanaCloudUploadToken(commonCtx, ideDir)
 	}
-	commonCtx.QodanaToken = token
 
 	if tokenloader.IsCloudTokenRequired(commonCtx, prod.IsCommunity() || prod.IsEap) {
-		token = tokenloader.ValidateToken(commonCtx, false)
+		cloudUploadToken = tokenloader.ValidateCloudToken(commonCtx, false)
 	}
 
 	result := PreparedHost{
-		IdeDir:      ideDir,
-		QodanaToken: token,
-		Prod:        prod,
+		IdeDir:            ideDir,
+		QodanaUploadToken: cloudUploadToken,
+		Prod:              prod,
 	}
 	return result
 }
 
-func prepareLocalIdeSettingsAndGetQodanaCloudToken(
+func prepareLocalIdeSettingsAndGetQodanaCloudUploadToken(
 	commonCtx commoncontext.Context,
 	ideDir string,
 ) (product.Product, string) {
@@ -123,7 +122,7 @@ func prepareLocalIdeSettingsAndGetQodanaCloudToken(
 
 	qdenv.ExtractQodanaEnvironment(qdenv.SetEnv)
 	isTokenRequired := tokenloader.IsCloudTokenRequired(commonCtx, prod.IsEap || prod.IsCommunity())
-	token := tokenloader.LoadCloudToken(commonCtx, false, isTokenRequired, true)
+	token := tokenloader.LoadCloudUploadToken(commonCtx, false, isTokenRequired, true)
 	cloud.SetupLicenseToken(token)
 	SetupLicenseAndProjectHash(prod, cloud.GetCloudApiEndpoints(), cloud.Token.Token)
 	PrepareDirectories(

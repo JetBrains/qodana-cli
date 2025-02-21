@@ -23,17 +23,16 @@ import (
 )
 
 type Context struct {
-	Linter                 string
-	Ide                    string
-	IsClearCache           bool
-	CacheDir               string
-	ProjectDir             string
-	ResultsDir             string
-	ReportDir              string
-	QodanaSystemDir        string
-	Id                     string
-	QodanaToken            string
-	QodanaLicenseOnlyToken string
+	Linter          string
+	Ide             string
+	IsClearCache    bool
+	CacheDir        string
+	ProjectDir      string
+	ResultsDir      string
+	ReportDir       string
+	QodanaSystemDir string
+	Id              string
+	QodanaToken     string
 }
 
 func (c Context) LogDir() string {
@@ -59,10 +58,9 @@ func (c Context) GetLinterDir() string {
 CloudTokenLoader
 */
 
-func (c Context) GetQodanaToken() string            { return c.QodanaToken }
-func (c Context) GetQodanaLicenseOnlyToken() string { return c.QodanaLicenseOnlyToken }
-func (c Context) GetId() string                     { return c.Id }
-func (c Context) GetIde() string                    { return c.Ide }
-func (c Context) GetLinter() string                 { return c.Linter }
-func (c Context) GetProjectDir() string             { return c.ProjectDir }
-func (c Context) GetLogDir() string                 { return c.LogDir() }
+func (c Context) GetQodanaToken() string { return c.QodanaToken }
+func (c Context) GetId() string          { return c.Id }
+func (c Context) GetIde() string         { return c.Ide }
+func (c Context) GetLinter() string      { return c.Linter }
+func (c Context) GetProjectDir() string  { return c.ProjectDir }
+func (c Context) GetLogDir() string      { return c.LogDir() }

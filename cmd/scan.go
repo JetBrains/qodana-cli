@@ -59,7 +59,6 @@ But you can always override qodana.yaml options with the following command-line 
 				cliOptions.ResultsDir,
 				cliOptions.ReportDir,
 				platform.GetEnvWithOsEnv(cliOptions, qdenv.QodanaToken),
-				platform.GetEnvWithOsEnv(cliOptions, qdenv.QodanaLicenseOnlyToken),
 				cliOptions.ClearCache,
 				cliOptions.ProjectDir,
 				cliOptions.ConfigName,
