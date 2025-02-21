@@ -204,16 +204,16 @@ func GetEnvWithDefaultInt(env string, defaultValue int) int {
 	return result
 }
 
-func SetupLicenseToken(token string) {
+func SetupLicenseToken(cloudUploadToken string) {
 	licenseOnlyToken := os.Getenv(qdenv.QodanaLicenseOnlyToken)
-	if token == "" && licenseOnlyToken != "" {
+	if cloudUploadToken == "" && licenseOnlyToken != "" {
 		Token = LicenseToken{
 			Token:       licenseOnlyToken,
 			LicenseOnly: true,
 		}
 	} else {
 		Token = LicenseToken{
-			Token:       token,
+			Token:       cloudUploadToken,
 			LicenseOnly: false,
 		}
 	}

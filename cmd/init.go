@@ -99,13 +99,12 @@ func newInitCommand() *cobra.Command {
 				"",
 				"",
 				os.Getenv(qdenv.QodanaToken),
-				os.Getenv(qdenv.QodanaLicenseOnlyToken),
 				false,
 				cliOptions.ProjectDir,
 				cliOptions.ConfigName,
 			)
 			if tokenloader.IsCloudTokenRequired(commonCtx, false) {
-				tokenloader.ValidateToken(commonCtx, cliOptions.Force)
+				tokenloader.ValidateCloudToken(commonCtx, cliOptions.Force)
 			}
 		},
 	}

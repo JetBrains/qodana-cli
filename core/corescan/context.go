@@ -61,8 +61,7 @@ type Context struct {
 	ideDir                    string
 	qodanaYaml                qdyaml.QodanaYaml
 	prod                      product.Product
-	qodanaToken               string
-	qodanaLicenseOnlyToken    string
+	qodanaUploadToken         string
 	projectDir                string
 	resultsDir                string
 	configDir                 string
@@ -122,8 +121,7 @@ func (c Context) Id() string                      { return c.id }
 func (c Context) IdeDir() string                  { return c.ideDir }
 func (c Context) QodanaYaml() qdyaml.QodanaYaml   { return c.qodanaYaml }
 func (c Context) Prod() product.Product           { return c.prod }
-func (c Context) QodanaToken() string             { return c.qodanaToken }
-func (c Context) QodanaLicenseOnlyToken() string  { return c.qodanaLicenseOnlyToken }
+func (c Context) QodanaUploadToken() string       { return c.qodanaUploadToken }
 func (c Context) ProjectDir() string              { return c.projectDir }
 func (c Context) ResultsDir() string              { return c.resultsDir }
 func (c Context) ConfigDir() string               { return c.configDir }
@@ -183,8 +181,7 @@ type ContextBuilder struct {
 	IdeDir                    string
 	QodanaYaml                qdyaml.QodanaYaml
 	Prod                      product.Product
-	QodanaToken               string
-	QodanaLicenseOnlyToken    string
+	QodanaUploadToken         string
 	ProjectDir                string
 	ResultsDir                string
 	ConfigDir                 string
@@ -246,8 +243,7 @@ func (b ContextBuilder) Build() Context {
 		ideDir:                    b.IdeDir,
 		qodanaYaml:                b.QodanaYaml,
 		prod:                      b.Prod,
-		qodanaToken:               b.QodanaToken,
-		qodanaLicenseOnlyToken:    b.QodanaLicenseOnlyToken,
+		qodanaUploadToken:         b.QodanaUploadToken,
 		projectDir:                b.ProjectDir,
 		resultsDir:                b.ResultsDir,
 		configDir:                 b.ConfigDir,

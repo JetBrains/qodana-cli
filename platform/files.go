@@ -20,11 +20,9 @@ import (
 	"bytes"
 	"fmt"
 	log "github.com/sirupsen/logrus"
-	"os"
 	"path"
 	"path/filepath"
 	"reflect"
-	"strings"
 	"text/tabwriter"
 	"unsafe"
 )
@@ -63,27 +61,6 @@ func LogContext(contextPointer any) {
 		return
 	}
 	log.Debug(buffer.String())
-}
-
-type EnvProvider interface {
-	Env() []string
-}
-
-func GetEnv(provider EnvProvider, key string) string {
-	for _, e := range provider.Env() {
-		if strings.HasPrefix(e, key) {
-			return strings.TrimPrefix(e, key+"=")
-		}
-	}
-	return ""
-}
-
-func GetEnvWithOsEnv(provider EnvProvider, key string) string {
-	envFromProvider := GetEnv(provider, key)
-	if envFromProvider != "" {
-		return envFromProvider
-	}
-	return os.Getenv(key)
 }
 
 func ReportResultsPath(reportDir string) string {

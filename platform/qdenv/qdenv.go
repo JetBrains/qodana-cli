@@ -27,6 +27,7 @@ import (
 )
 
 const (
+	// !!! QODANA_LICENSE_ONLY_TOKEN is accesses only by env !!!
 	QodanaLicenseOnlyToken        = "QODANA_LICENSE_ONLY_TOKEN"
 	QodanaToken                   = "QODANA_TOKEN"
 	QodanaRemoteUrl               = "QODANA_REMOTE_URL"

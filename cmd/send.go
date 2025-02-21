@@ -52,7 +52,6 @@ If you are using other Qodana Cloud instance than https://qodana.cloud/, overrid
 				cliOptions.ResultsDir,
 				cliOptions.ReportDir,
 				os.Getenv(qdenv.QodanaToken),
-				os.Getenv(qdenv.QodanaLicenseOnlyToken),
 				false,
 				cliOptions.ProjectDir,
 				cliOptions.ConfigName,
@@ -74,7 +73,7 @@ If you are using other Qodana Cloud instance than https://qodana.cloud/, overrid
 			}
 			platform.SendReport(
 				publisher,
-				tokenloader.ValidateToken(commonCtx, false),
+				tokenloader.ValidateCloudToken(commonCtx, false),
 				publisherPath,
 				java,
 			)

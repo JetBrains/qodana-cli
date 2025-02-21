@@ -67,7 +67,6 @@ func TestFetchAnalyzerSettings(t *testing.T) {
 				"",
 				"",
 				"",
-				"",
 				false,
 				projectDir,
 				"",
@@ -100,7 +99,6 @@ func TestFetchAnalyzerSettings(t *testing.T) {
 				"",
 				"",
 				"",
-				"",
 				false,
 				projectDir,
 				"",
@@ -127,7 +125,6 @@ func TestFetchAnalyzerSettings(t *testing.T) {
 			}
 
 			commonCtx := commoncontext.Compute(
-				"",
 				"",
 				"",
 				"",

@@ -942,17 +942,16 @@ func TestQodanaOptions_RequiresToken(t *testing.T) {
 		t.Run(
 			tt.name, func(t *testing.T) {
 				initArgs := commoncontext.Context{
-					Linter:                 tt.linter,
-					Ide:                    tt.ide,
-					IsClearCache:           false,
-					CacheDir:               "",
-					ProjectDir:             "",
-					ResultsDir:             "",
-					ReportDir:              "",
-					QodanaSystemDir:        "",
-					Id:                     "",
-					QodanaToken:            "",
-					QodanaLicenseOnlyToken: "",
+					Linter:          tt.linter,
+					Ide:             tt.ide,
+					IsClearCache:    false,
+					CacheDir:        "",
+					ProjectDir:      "",
+					ResultsDir:      "",
+					ReportDir:       "",
+					QodanaSystemDir: "",
+					Id:              "",
+					QodanaToken:     "",
 				}
 
 				if tt.name == qdenv.QodanaToken {
@@ -1099,7 +1098,6 @@ func Test_Properties(t *testing.T) {
 					resultsDir,
 					"",
 					"",
-					"",
 					false,
 					projectDir,
 					"",
@@ -1119,8 +1117,8 @@ func Test_Properties(t *testing.T) {
 					},
 					commonCtx,
 					startup.PreparedHost{
-						IdeDir:      "",
-						QodanaToken: "",
+						IdeDir:            "",
+						QodanaUploadToken: "",
 						Prod: product.Product{
 							BaseScriptName: "rider",
 							Code:           "QDNET",

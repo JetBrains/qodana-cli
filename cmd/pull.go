@@ -47,7 +47,6 @@ func newPullCommand() *cobra.Command {
 				"",
 				"",
 				os.Getenv(qdenv.QodanaToken),
-				os.Getenv(qdenv.QodanaLicenseOnlyToken),
 				false,
 				cliOptions.ProjectDir,
 				cliOptions.ConfigName,

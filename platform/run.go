@@ -52,7 +52,6 @@ func RunThirdPartyLinterAnalysis(
 		cliOptions.ResultsDir,
 		cliOptions.ReportDir,
 		GetEnvWithOsEnv(cliOptions, qdenv.QodanaToken),
-		GetEnvWithOsEnv(cliOptions, qdenv.QodanaLicenseOnlyToken),
 		cliOptions.ClearCache,
 		cliOptions.ProjectDir,
 		cliOptions.ConfigName,
@@ -162,7 +161,7 @@ func correctInitArgsForThirdParty(commonCtx commoncontext.Context) (commoncontex
 
 func checkLinterLicense(loader tokenloader.CloudTokenLoader) thirdpartyscan.ThirdPartyStartupCloudData {
 	licensePlan := cloud.CommunityLicensePlan
-	token := tokenloader.LoadCloudToken(loader, false, false, true)
+	token := tokenloader.LoadCloudUploadToken(loader, false, false, true)
 	projectIdHash := ""
 	cloud.SetupLicenseToken(token)
 	if cloud.Token.Token != "" {

@@ -35,7 +35,6 @@ func Compute(
 	resultsDirFromCliOptions string,
 	reportDirFromCliOptions string,
 	qodanaCloudToken string,
-	qodanaLicenseOnlyToken string,
 	clearCache bool,
 	projectDir string,
 	qodanaYamlPath string,
@@ -55,17 +54,16 @@ func Compute(
 	reportDir := computeReportDir(reportDirFromCliOptions, resultsDir)
 
 	commonCtx := Context{
-		Linter:                 linter,
-		Ide:                    ide,
-		IsClearCache:           clearCache,
-		CacheDir:               cacheDir,
-		ProjectDir:             projectDir,
-		ResultsDir:             resultsDir,
-		QodanaSystemDir:        systemDir,
-		ReportDir:              reportDir,
-		Id:                     qodanaId,
-		QodanaToken:            qodanaCloudToken,
-		QodanaLicenseOnlyToken: qodanaLicenseOnlyToken,
+		Linter:          linter,
+		Ide:             ide,
+		IsClearCache:    clearCache,
+		CacheDir:        cacheDir,
+		ProjectDir:      projectDir,
+		ResultsDir:      resultsDir,
+		QodanaSystemDir: systemDir,
+		ReportDir:       reportDir,
+		Id:              qodanaId,
+		QodanaToken:     qodanaCloudToken,
 	}
 	return commonCtx
 }

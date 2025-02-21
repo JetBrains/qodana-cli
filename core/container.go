@@ -275,6 +275,16 @@ func getDockerOptions(c corescan.Context) *backend.ContainerCreateConfig {
 	updateScanContextEnv := func(key string, value string) { c = c.WithEnvExtractedFromOsEnv(key, value) }
 	qdenv.ExtractQodanaEnvironment(updateScanContextEnv)
 
+	dockerEnv := c.Env()
+	qodanaCloudUploadToken := c.QodanaUploadToken()
+	if qodanaCloudUploadToken != "" {
+		dockerEnv = append(dockerEnv, fmt.Sprintf("%s=%s", qdenv.QodanaToken, qodanaCloudUploadToken))
+	}
+	qodanaLicenseOnlyToken := os.Getenv(qdenv.QodanaLicenseOnlyToken)
+	if qodanaLicenseOnlyToken != "" && qodanaCloudUploadToken == "" {
+		dockerEnv = append(dockerEnv, fmt.Sprintf("%s=%s", qdenv.QodanaLicenseOnlyToken, qodanaLicenseOnlyToken))
+	}
+
 	cachePath, err := filepath.Abs(c.CacheDir())
 	if err != nil {
 		log.Fatal("couldn't get abs path for cache", err)
@@ -370,7 +380,7 @@ func getDockerOptions(c corescan.Context) *backend.ContainerCreateConfig {
 			Tty:          msg.IsInteractive(),
 			AttachStdout: true,
 			AttachStderr: true,
-			Env:          c.Env(),
+			Env:          dockerEnv,
 			User:         c.User(),
 			ExposedPorts: exposedPorts,
 		},
