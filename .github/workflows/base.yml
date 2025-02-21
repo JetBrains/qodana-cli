@@ -19,13 +19,8 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        version: ["next", "2024.3", "2025.1"]
-        group: ["default", "more", "clang"]
-        include:
-          - version: "next"
-            group: "ruby"
-          - version: "2025.1"
-            group: "ruby"
+        version: ["next", "2025.1"]
+        group: ["default", "more", "clang", "ruby"]
     runs-on: ubuntu-latest
     steps:
       - name: Clean up

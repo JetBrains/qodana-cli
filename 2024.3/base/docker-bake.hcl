@@ -15,7 +15,7 @@ group "clang" {
 }
 
 group "ruby" {
-  targets = ["ruby2x", "ruby3x"]
+  targets = []
 }
 
 target "debian" {
