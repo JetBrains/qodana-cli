@@ -1,6 +1,6 @@
 module github.com/JetBrains/qodana-cli/v2024/core
 
-go 1.22.8
+go 1.24.0
 
 require (
 	github.com/cucumber/ci-environment/go v0.0.0-20230911180507-bd001ebc644c

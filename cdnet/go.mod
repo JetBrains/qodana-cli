@@ -1,6 +1,6 @@
 module github.com/JetBrains/qodana-cli/v2024/cdnet
 
-go 1.22.8
+go 1.24.0
 
 replace (
 	github.com/JetBrains/qodana-cli/v2024/cmd => ../cmd

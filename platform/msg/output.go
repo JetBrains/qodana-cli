@@ -117,7 +117,7 @@ func WarningMessage(message string, a ...interface{}) {
 // WarningMessageCI prints a warning message to the CI environment (additional highlighting).
 func WarningMessageCI(message string, a ...interface{}) {
 	message = fmt.Sprintf(message, a...)
-	pterm.Println(formatMessageForCI("warning", message))
+	pterm.Println(formatMessageForCI("warning", "%s", message))
 }
 
 // ErrorMessage prints an error message with the icon.
