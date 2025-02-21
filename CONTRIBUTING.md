@@ -30,6 +30,22 @@ docker buildx bake
 cd .github/scripts && node verifyChecksums.js
 ```
 
+## Set up a new major release
+
+To set up a directory for a new major release, run the script `release_branch.sh` with the release version as an argument. For example, to create a new directory for the 2025.1 release branch:
+
+```shell
+./release_branch.sh 2025.1
+```
+
+To generate Dockerfiles for that release (when you :
+
+```shell
+./dockerfiles.py 2025.1
+```
+
+To add a new released product, check `2025.1/public.json`.
+
 ## Create a commit
 
 Commit messages should be well formatted, and to make that "standardized", we are using [internal issue tracker](https://youtrack.jetbrains.com) references.
