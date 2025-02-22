@@ -19,7 +19,6 @@ package qdyaml
 import (
 	"bytes"
 	"errors"
-	"fmt"
 	"github.com/JetBrains/qodana-cli/v2024/platform/utils"
 	log "github.com/sirupsen/logrus"
 	"gopkg.in/yaml.v3"
@@ -28,45 +27,6 @@ import (
 	"sort"
 	"strings"
 )
-
-// GetQodanaYamlPath returns the path to qodana.yaml or qodana.yml
-func GetQodanaYamlPath(project string) (string, error) {
-	qodanaYamlPath := filepath.Join(project, "qodana.yaml")
-	if _, err := os.Stat(qodanaYamlPath); errors.Is(err, os.ErrNotExist) {
-		qodanaYamlPath = filepath.Join(project, "qodana.yml")
-	}
-	if _, err := os.Stat(qodanaYamlPath); errors.Is(err, os.ErrNotExist) {
-		return "", errors.New("qodana.yaml or qodana.yml not found")
-	}
-	return qodanaYamlPath, nil
-}
-
-// GetQodanaYaml returns a parsed qodana.yaml or qodana.yml or error if not found/invalid
-func GetQodanaYaml(project string) (QodanaYaml, error) {
-	q := &QodanaYaml{}
-	qodanaYamlPath, err := GetQodanaYamlPath(project)
-	if err != nil {
-		return *q, err
-	}
-	yamlFile, err := os.ReadFile(qodanaYamlPath)
-	if err != nil {
-		return *q, err
-	}
-	err = yaml.Unmarshal(yamlFile, q)
-	if err != nil {
-		return *q, fmt.Errorf("not a valid qodana.yaml: %w", err)
-	}
-	return *q, nil
-}
-
-// GetQodanaYamlOrDefault reads qodana.yaml or qodana.yml and returns an empty config if not found or invalid
-func GetQodanaYamlOrDefault(project string) QodanaYaml {
-	q, err := GetQodanaYaml(project)
-	if err != nil {
-		log.Printf("Problem loading qodana.yaml: %v ", err)
-	}
-	return q
-}
 
 // QodanaYaml A standard qodana.yaml (or qodana.yml) format for Qodana configuration.
 // https://github.com/JetBrains/qodana-profiles/blob/master/schemas/qodana-yaml-1.0.json

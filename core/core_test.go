@@ -709,7 +709,7 @@ func Test_Bootstrap(t *testing.T) {
 	}
 	projectDir := tmpDir
 	utils.Bootstrap("echo 'bootstrap: touch qodana.yml' > qodana.yaml", projectDir)
-	config := qdyaml.GetQodanaYamlOrDefault(tmpDir)
+	config := qdyaml.TestOnlyLoadLocalNotEffectiveQodanaYaml(tmpDir, "qodana.yaml")
 	utils.Bootstrap(config.Bootstrap, projectDir)
 	if _, err := os.Stat(filepath.Join(projectDir, "qodana.yaml")); errors.Is(err, os.ErrNotExist) {
 		t.Fatalf("No qodana.yml created by the bootstrap command in qodana.yaml")
@@ -1145,12 +1145,12 @@ func Test_Properties(t *testing.T) {
 					projectDir,
 					"",
 				)
-				qConfig := qdyaml.GetQodanaYamlOrDefault(projectDir)
 
 				err = os.WriteFile(filepath.Join(projectDir, "qodana.yml"), []byte(tc.qodanaYaml), 0o600)
 				if err != nil {
 					t.Fatal(err)
 				}
+				qConfig := qdyaml.TestOnlyLoadLocalNotEffectiveQodanaYaml(projectDir, "qodana.yml")
 
 				context := corescan.CreateContext(
 					platformcmd.CliOptions{
