@@ -27,6 +27,11 @@ jobs:
         with:
           cache-dependency-path: "**/*.sum"
           go-version-file: go.work
+      - name: Set up Java 17 for config-loader-cli.jar
+        uses: actions/setup-java@v3
+        with:
+          distribution: 'temurin' # Use the Temurin JDK distribution
+          java-version: '17'     # Java version 17
       - name: Overwrite tools (to run tests only on gh repo)
         run: |
           touch cdnet/clt.zip tooling/baseline-cli.jar tooling/intellij-report-converter.jar tooling/qodana-fuser.jar
