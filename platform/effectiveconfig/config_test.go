@@ -262,12 +262,13 @@ func verifyDirectoriesContentEqual(t *testing.T, expectedDir string, actualDir s
 			if err != nil {
 				t.Error(err)
 			}
-			actualContentString := strings.ReplaceAll(string(actualContent), "\r\n", "\n")
-			actualContentString = strings.ReplaceAll(actualContentString, "\r", "\n")
-			if err != nil {
-				t.Error(err)
-			}
-			assert.Equal(t, string(expectedContent), actualContentString, "mismatched content for: %s", rel)
+			assert.Equal(
+				t,
+				systemIndependentLinebreaks(string(expectedContent)),
+				systemIndependentLinebreaks(string(actualContent)),
+				"mismatched content for: %s",
+				rel,
+			)
 		}
 	}
 
@@ -277,4 +278,10 @@ func verifyDirectoriesContentEqual(t *testing.T, expectedDir string, actualDir s
 			t.Errorf("unexpected file or directory found: %s", rel)
 		}
 	}
+}
+
+func systemIndependentLinebreaks(input string) string {
+	input = strings.ReplaceAll(input, "\r\n", "\n")
+	input = strings.ReplaceAll(input, "\r", "\n")
+	return input
 }
