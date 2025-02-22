@@ -27,9 +27,28 @@ if [ ! -f "$HASH_FILE" ]; then
   exit 1
 fi
 
-# Compute the SHA256 hash of the downloaded file
-COMPUTED_HASH=$(shasum -a 256 "$JAR_FILE" | awk '{print $1}')
-EXPECTED_HASH=$(cat "$HASH_FILE" | tr -d ' \n')
+# Function to calculate SHA256
+function calculate_sha256 {
+  local file="$1"
+
+  if command -v sha256sum > /dev/null; then
+    # Linux or macOS with sha256sum
+    sha256sum "$file" | awk '{print $1}'
+  elif command -v shasum > /dev/null; then
+    # macOS with shasum
+    shasum -a 256 "$file" | awk '{print $1}'
+  elif [[ "$OSTYPE" == "msys" || "$OSTYPE" == "cygwin" || "$OSTYPE" == "win32" ]]; then
+    # Windows with CertUtil
+    certutil -hashfile "$file" SHA256 | findstr /v "SHA256" | tr -d '\r\n'
+  else
+    echo "Error: No supported hashing utility found!" >&2
+    exit 1
+  fi
+}
+
+# Compute and compare the SHA256 hashes
+COMPUTED_HASH=$(calculate_sha256 "$JAR_FILE")
+EXPECTED_HASH=$(cat "$HASH_FILE" | tr -d ' \r\n')
 
 if [ "$COMPUTED_HASH" == "$EXPECTED_HASH" ]; then
   echo "SHA256 hash verification succeeded."
