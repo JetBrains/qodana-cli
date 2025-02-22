@@ -21,6 +21,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 )
 
@@ -261,7 +262,12 @@ func verifyDirectoriesContentEqual(t *testing.T, expectedDir string, actualDir s
 			if err != nil {
 				t.Error(err)
 			}
-			assert.Equal(t, string(expectedContent), string(actualContent), "mismatched content for: %s", rel)
+			actualContentString := strings.ReplaceAll(string(actualContent), "\r\n", "\n")
+			actualContentString = strings.ReplaceAll(actualContentString, "\r", "\n")
+			if err != nil {
+				t.Error(err)
+			}
+			assert.Equal(t, string(expectedContent), actualContentString, "mismatched content for: %s", rel)
 		}
 	}
 
