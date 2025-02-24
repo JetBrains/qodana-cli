@@ -1,3 +1,4 @@
+version: 2
 project_name: qodana
 builds:
   - env:
@@ -37,7 +38,7 @@ archives:
   - name_template: '{{ .ProjectName }}_{{ .Os }}_{{- if eq .Arch "amd64" }}x86_64{{- else if eq .Arch "386" }}i386{{- else }}{{ .Arch }}{{ end }}'
     format_overrides:
       - goos: windows
-        format: zip
+        formats: [ 'zip' ]
 nfpms:
   - vendor: "JetBrains s.r.o."
     homepage: "https://github.com/JetBrains/qodana-cli"
@@ -97,7 +98,7 @@ chocolateys:
 checksum:
   name_template: 'checksums.txt'
 snapshot:
-  name_template: "{{ incpatch .Version }}-next"
+  version_template: "{{ incpatch .Version }}-next"
 release:
   extra_files:
     - glob: dist/upload/**
@@ -171,7 +172,7 @@ git:
     - nightly
 report_sizes: true
 nightly:
-  name_template: '{{ incpatch .Version }}-nightly'
+  version_template: '{{ incpatch .Version }}-nightly'
   tag_name: nightly
   publish_release: true
   keep_single_release: true
