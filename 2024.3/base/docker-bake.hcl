@@ -103,7 +103,7 @@ target "ruby2x" {
 
 target "ruby3x" {
   matrix = {
-    version = ["0", "1", "2", "3"]
+    version = ["0", "1", "2", "3", "4"]
   }
   name = "ruby-base-3${version}-243"
   tags = [
