@@ -55,7 +55,7 @@ func newPullCommand() *cobra.Command {
 				log.Println("Native mode is used, skipping pull")
 			} else {
 				qdcontainer.PrepareContainerEnvSettings()
-				containerClient, err := client.NewClientWithOpts()
+				containerClient, err := client.NewClientWithOpts(client.FromEnv)
 				if err != nil {
 					log.Fatal("couldn't connect to container engine ", err)
 				}
