@@ -289,13 +289,18 @@ func runScopeScript(ctx context.Context, c corescan.Context, startHash string) i
 			c.ProjectDir(),
 			c.CustomLocalQodanaYamlPath(),
 		)
+		effectiveConfigDir, cleanup, err := utils.CreateTempDir("qd-effective-config-")
+		if err != nil {
+			log.Fatalf("Failed to create Qodana effective config directory: %v", err)
+		}
+		defer cleanup()
+
 		effectiveConfigFiles, err := effectiveconfig.CreateEffectiveConfigFiles(
 			localQodanaYamlFullPath,
-			c.GlobalConfigurationsFile(),
+			c.GlobalConfigurationsDir(),
 			c.GlobalConfigurationId(),
 			c.Prod().JbrJava(),
-			c.QodanaSystemDir(),
-			"qdconfig-"+hash,
+			effectiveConfigDir,
 			c.LogDir(),
 		)
 		if err != nil {
@@ -313,7 +318,7 @@ func runScopeScript(ctx context.Context, c corescan.Context, startHash string) i
 		utils.Bootstrap(bootstrap, c.ProjectDir())
 
 		contextForAnalysis := c.WithEffectiveConfigurationDirOnRevision(effectiveConfigFiles.ConfigDir)
-		exitCode := runQodana(ctx, contextForAnalysis) // TODO WHY qodana yaml is not passed further to runQodana?
+		exitCode := runQodana(ctx, contextForAnalysis)
 		if !(exitCode == 0 || exitCode == 255) {
 			log.Errorf("Qodana analysis on %s exited with code %d. Aborting", hash, exitCode)
 			return true, exitCode

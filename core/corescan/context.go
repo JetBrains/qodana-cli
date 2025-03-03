@@ -18,7 +18,6 @@ package corescan
 
 import (
 	"fmt"
-	"github.com/JetBrains/qodana-cli/v2025/platform/effectiveconfig"
 	"github.com/JetBrains/qodana-cli/v2025/platform/msg"
 	"github.com/JetBrains/qodana-cli/v2025/platform/product"
 	"github.com/JetBrains/qodana-cli/v2025/platform/qdyaml"
@@ -62,10 +61,9 @@ type Context struct {
 	id                        string
 	ideDir                    string
 	effectiveConfigurationDir string
-	globalConfigurationsFile  string
+	globalConfigurationsDir   string
 	globalConfigurationId     string
 	customLocalQodanaYamlPath string
-	effectiveYamlData         effectiveconfig.Files
 	qodanaYamlConfig          QodanaYamlConfig
 	prod                      product.Product
 	qodanaUploadToken         string
@@ -83,7 +81,6 @@ type Context struct {
 	profileName               string
 	profilePath               string
 	runPromo                  string
-	stubProfile               string
 	baseline                  string
 	baselineIncludeAbsent     bool
 	saveReport                bool
@@ -103,8 +100,6 @@ type Context struct {
 	generateCodeClimateReport bool
 	sendBitBucketInsights     bool
 	skipPull                  bool
-	clearCache                bool
-	configName                string
 	fullHistory               bool
 	applyFixes                bool
 	cleanup                   bool
@@ -144,7 +139,7 @@ func (c Context) Ide() string                        { return c.ide }
 func (c Context) Id() string                         { return c.id }
 func (c Context) IdeDir() string                     { return c.ideDir }
 func (c Context) EffectiveConfigurationDir() string  { return c.effectiveConfigurationDir }
-func (c Context) GlobalConfigurationsFile() string   { return c.globalConfigurationsFile }
+func (c Context) GlobalConfigurationsDir() string    { return c.globalConfigurationsDir }
 func (c Context) GlobalConfigurationId() string      { return c.globalConfigurationId }
 func (c Context) CustomLocalQodanaYamlPath() string  { return c.customLocalQodanaYamlPath }
 func (c Context) QodanaYamlConfig() QodanaYamlConfig { return c.qodanaYamlConfig }
@@ -163,7 +158,6 @@ func (c Context) DisableSanity() bool                { return c.disableSanity }
 func (c Context) ProfileName() string                { return c.profileName }
 func (c Context) ProfilePath() string                { return c.profilePath }
 func (c Context) RunPromo() string                   { return c.runPromo }
-func (c Context) StubProfile() string                { return c.stubProfile }
 func (c Context) Baseline() string                   { return c.baseline }
 func (c Context) BaselineIncludeAbsent() bool        { return c.baselineIncludeAbsent }
 func (c Context) SaveReport() bool                   { return c.saveReport }
@@ -181,8 +175,6 @@ func (c Context) PrintProblems() bool                { return c.printProblems }
 func (c Context) GenerateCodeClimateReport() bool    { return c.generateCodeClimateReport }
 func (c Context) SendBitBucketInsights() bool        { return c.sendBitBucketInsights }
 func (c Context) SkipPull() bool                     { return c.skipPull }
-func (c Context) ClearCache() bool                   { return c.clearCache }
-func (c Context) ConfigName() string                 { return c.configName }
 func (c Context) FullHistory() bool                  { return c.fullHistory }
 func (c Context) ApplyFixes() bool                   { return c.applyFixes }
 func (c Context) Cleanup() bool                      { return c.cleanup }
@@ -224,7 +216,6 @@ type ContextBuilder struct {
 	ProfileName               string
 	ProfilePath               string
 	RunPromo                  string
-	StubProfile               string
 	Baseline                  string
 	BaselineIncludeAbsent     bool
 	SaveReport                bool
@@ -244,8 +235,6 @@ type ContextBuilder struct {
 	GenerateCodeClimateReport bool
 	SendBitBucketInsights     bool
 	SkipPull                  bool
-	ClearCache                bool
-	ConfigName                string
 	FullHistory               bool
 	ApplyFixes                bool
 	Cleanup                   bool
@@ -261,7 +250,7 @@ type ContextBuilder struct {
 	AnalysisTimeoutMs         int
 	AnalysisTimeoutExitCode   int
 	JvmDebugPort              int
-	GlobalConfigurationsFile  string
+	GlobalConfigurationsDir   string
 	GlobalConfigurationId     string
 	CustomLocalQodanaYamlPath string
 	QodanaYamlConfig          QodanaYamlConfig
@@ -290,7 +279,6 @@ func (b ContextBuilder) Build() Context {
 		profileName:               b.ProfileName,
 		profilePath:               b.ProfilePath,
 		runPromo:                  b.RunPromo,
-		stubProfile:               b.StubProfile,
 		baseline:                  b.Baseline,
 		baselineIncludeAbsent:     b.BaselineIncludeAbsent,
 		saveReport:                b.SaveReport,
@@ -310,8 +298,6 @@ func (b ContextBuilder) Build() Context {
 		generateCodeClimateReport: b.GenerateCodeClimateReport,
 		sendBitBucketInsights:     b.SendBitBucketInsights,
 		skipPull:                  b.SkipPull,
-		clearCache:                b.ClearCache,
-		configName:                b.ConfigName,
 		fullHistory:               b.FullHistory,
 		applyFixes:                b.ApplyFixes,
 		cleanup:                   b.Cleanup,
@@ -327,7 +313,7 @@ func (b ContextBuilder) Build() Context {
 		analysisTimeoutMs:         b.AnalysisTimeoutMs,
 		analysisTimeoutExitCode:   b.AnalysisTimeoutExitCode,
 		jvmDebugPort:              b.JvmDebugPort,
-		globalConfigurationsFile:  b.GlobalConfigurationsFile,
+		globalConfigurationsDir:   b.GlobalConfigurationsDir,
 		globalConfigurationId:     b.GlobalConfigurationId,
 		customLocalQodanaYamlPath: b.CustomLocalQodanaYamlPath,
 		qodanaYamlConfig:          b.QodanaYamlConfig,

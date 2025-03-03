@@ -111,7 +111,7 @@ func TestHelp(t *testing.T) {
 }
 
 func TestDeprecatedScanFlags(t *testing.T) {
-	deprecations := []string{"fixes-strategy", "stub-profile"}
+	deprecations := []string{"fixes-strategy"}
 
 	out := bytes.NewBufferString("")
 	command := newScanCommand()

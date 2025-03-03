@@ -75,13 +75,19 @@ But you can always override qodana.yaml options with the following command-line 
 					commonCtx.ProjectDir,
 					cliOptions.ConfigName,
 				)
+
+				effectiveConfigDir, cleanup, err := utils.CreateTempDir("qd-effective-config")
+				if err != nil {
+					log.Fatalf("Failed to create effective config directory: %v", err)
+				}
+				defer cleanup()
+
 				effectiveConfigFiles, err = effectiveconfig.CreateEffectiveConfigFiles(
 					localQodanaYamlFullPath,
-					cliOptions.GlobalConfigurationsFile,
+					cliOptions.GlobalConfigurationsDir,
 					cliOptions.GlobalConfigurationId,
 					preparedHost.Prod.JbrJava(),
-					commonCtx.QodanaSystemDir,
-					"qdconfig",
+					effectiveConfigDir,
 					commonCtx.LogDir(),
 				)
 				if err != nil {

@@ -54,7 +54,7 @@ const (
 	dockerSpecialCharsLength = 8
 	containerJvmDebugPort    = "5005"
 	// when container is launched by CLI, qodana-global-configurations.yaml file is mounted here
-	globalConfigsFileContainerMountPath = "/data/qdconfig/qodana-global-configurations.yaml"
+	globalConfigDirContainerMountPath = "/data/qodana-global-config/"
 )
 
 var (
@@ -320,20 +320,20 @@ func getDockerOptions(c corescan.Context) *backend.ContainerCreateConfig {
 			Target: "/data/results",
 		},
 	}
-	if c.GlobalConfigurationsFile() != "" {
-		globalConfigurationsAbsPath, err := filepath.Abs(c.GlobalConfigurationsFile())
+	if c.GlobalConfigurationsDir() != "" {
+		globalConfigDirAbsPath, err := filepath.Abs(c.GlobalConfigurationsDir())
 		if err != nil {
 			log.Fatalf(
 				"Failed to get absolute path for global configurations file %s: %s",
-				c.GlobalConfigurationsFile(),
+				c.GlobalConfigurationsDir(),
 				err,
 			)
 		}
 		volumes = append(
 			volumes, mount.Mount{
 				Type:   mount.TypeBind,
-				Source: globalConfigurationsAbsPath,
-				Target: globalConfigsFileContainerMountPath,
+				Source: globalConfigDirAbsPath,
+				Target: globalConfigDirContainerMountPath,
 			},
 		)
 	}

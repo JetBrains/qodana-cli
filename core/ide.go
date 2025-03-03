@@ -89,8 +89,8 @@ func getIdeRunCommand(c corescan.Context) []string {
 // GetIdeArgs returns qodana command options.
 func GetIdeArgs(c corescan.Context) []string {
 	arguments := make([]string, 0)
-	if c.ConfigName() != "" {
-		arguments = append(arguments, "--config", utils.QuoteForWindows(c.ConfigName()))
+	if c.CustomLocalQodanaYamlPath() != "" {
+		arguments = append(arguments, "--config", utils.QuoteForWindows(c.CustomLocalQodanaYamlPath()))
 	}
 	if c.Linter() != "" && c.SaveReport() {
 		arguments = append(arguments, "--save-report")
@@ -208,8 +208,8 @@ func GetIdeArgs(c corescan.Context) []string {
 		if c.JvmDebugPort() > 0 {
 			arguments = append(arguments, "--jvm-debug-port", strconv.Itoa(c.JvmDebugPort()))
 		}
-		if c.GlobalConfigurationsFile() != "" {
-			arguments = append(arguments, "--global-configs-file", globalConfigsFileContainerMountPath)
+		if c.GlobalConfigurationsDir() != "" {
+			arguments = append(arguments, "--global-config-dir", globalConfigDirContainerMountPath)
 		}
 		if c.GlobalConfigurationId() != "" {
 			arguments = append(arguments, "--global-config-id", c.GlobalConfigurationId())

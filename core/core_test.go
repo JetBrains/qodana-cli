@@ -216,30 +216,9 @@ func TestCliArgs(t *testing.T) {
 			},
 		},
 		{
-			name:         "--stub-profile ignored",
-			majorVersion: "2023.3",
-			cb: corescan.ContextBuilder{
-				StubProfile:   "ignored",
-				ProjectDir:    projectDir,
-				CacheDir:      cacheDir,
-				ResultsDir:    resultsDir,
-				FixesStrategy: "cleanup",
-				Ide:           "/opt/idea/233",
-			},
-			res: []string{
-				filepath.FromSlash("/opt/idea/bin/idea.sh"),
-				"inspect",
-				"qodana",
-				"--cleanup",
-				projectDir,
-				resultsDir,
-			},
-		},
-		{
 			name:         "no --config-dir in <251",
 			majorVersion: "2024.3",
 			cb: corescan.ContextBuilder{
-				StubProfile:   "ignored",
 				ProjectDir:    projectDir,
 				CacheDir:      cacheDir,
 				ResultsDir:    resultsDir,
@@ -258,7 +237,6 @@ func TestCliArgs(t *testing.T) {
 			name:         "--config-dir in >=251",
 			majorVersion: "2025.1",
 			cb: corescan.ContextBuilder{
-				StubProfile:               "ignored",
 				ProjectDir:                projectDir,
 				CacheDir:                  cacheDir,
 				ResultsDir:                resultsDir,
