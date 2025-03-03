@@ -38,13 +38,13 @@ To set up a directory for a new major release, run the script `release_branch.sh
 ./release_branch.sh 2025.1
 ```
 
-To generate Dockerfiles for that release (when you :
+To generate Dockerfiles for that release (when you are ready to publish at least a new EAP):
 
 ```shell
 ./dockerfiles.py 2025.1
 ```
 
-To add a new released product, check `2025.1/public.json`.
+To add a newly released product, check `2025.1/public.json`.
 
 ## Create a commit
 
