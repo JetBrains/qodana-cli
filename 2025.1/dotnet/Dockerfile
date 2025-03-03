@@ -109,6 +109,18 @@ RUN set -ex && \
     apt-get purge --auto-remove -y gnupg2 && \
     rm -rf /var/cache/apt /var/lib/apt/ /tmp/* "$GNUPGHOME"
 
+ARG PRIVILEGED="false"
+RUN if [ "$PRIVILEGED" = "true" ]; then \
+        apt-get update && \
+        apt-get install -y sudo && \
+        useradd -m -u 1001 -U qodana && \
+        passwd -d qodana && \
+        echo 'qodana ALL=(ALL) NOPASSWD:ALL' >> /etc/sudoers && \
+        rm -rf /var/cache/apt /var/lib/apt/ /tmp/*; \
+    else \
+        echo "Skipping privileged commands because PRIVILEGED is not set to true."; \
+    fi
+
 LABEL maintainer="qodana-support@jetbrains.com" description="Qodana for .NET (https://jb.gg/qodana-dotnet)"
 WORKDIR /data/project
 ENTRYPOINT ["/opt/idea/bin/qodana"]

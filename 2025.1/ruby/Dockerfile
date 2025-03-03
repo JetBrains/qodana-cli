@@ -43,12 +43,6 @@ RUN --mount=target=/var/lib/apt/lists,type=cache,sharing=locked \
       echo "BUNDLE_PATH: ${HOME}/.local/share/gem" >>  $HOME/.bundle/config && \
     chmod 777 -R $HOME
 
-RUN apt-get update && \
-    apt-get install -y sudo build-essential && \
-    useradd -m -u 1001 -U qodana && \
-    passwd -d qodana && \
-    echo 'qodana ALL=(ALL) NOPASSWD:ALL' >> /etc/sudoers
-
 ENV PATH="/opt/yarn/bin:$PATH"
 ENV SKIP_YARN_COREPACK_CHECK=0
 COPY --from=node_base /usr/local/bin/node /usr/local/bin/
@@ -102,6 +96,18 @@ RUN set -ex && \
     update-alternatives --set javac "$JAVA_HOME/bin/javac" && \
     apt-get purge --auto-remove -y gnupg2 && \
     rm -rf /var/cache/apt /var/lib/apt/ /tmp/* "$GNUPGHOME"
+
+ARG PRIVILEGED="false"
+RUN if [ "$PRIVILEGED" = "true" ]; then \
+        apt-get update && \
+        apt-get install -y sudo && \
+        useradd -m -u 1001 -U qodana && \
+        passwd -d qodana && \
+        echo 'qodana ALL=(ALL) NOPASSWD:ALL' >> /etc/sudoers && \
+        rm -rf /var/cache/apt /var/lib/apt/ /tmp/*; \
+    else \
+        echo "Skipping privileged commands because PRIVILEGED is not set to true."; \
+    fi
 
 LABEL maintainer="qodana-support@jetbrains.com" description="Qodana for Ruby (https://jb.gg/qodana-ruby)"
 WORKDIR /data/project

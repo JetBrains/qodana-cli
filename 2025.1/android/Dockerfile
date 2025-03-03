@@ -123,7 +123,6 @@ RUN --mount=target=/var/lib/apt/lists,type=cache,sharing=locked \
     apt-get purge --auto-remove -y unzip && \
     rm -rf /tmp/*
 
-
 LABEL maintainer="qodana-support@jetbrains.com" description="Qodana for Android (https://jb.gg/qodana-android)"
 WORKDIR /data/project
 ENTRYPOINT ["/opt/idea/bin/qodana"]

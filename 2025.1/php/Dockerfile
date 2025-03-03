@@ -100,6 +100,7 @@ RUN set -ex && \
     apt-get purge --auto-remove -y gnupg2 && \
     rm -rf /var/cache/apt /var/lib/apt/ /tmp/* "$GNUPGHOME"
 
+
 LABEL maintainer="qodana-support@jetbrains.com" description="Qodana for PHP (https://jb.gg/qodana-php)"
 WORKDIR /data/project
 ENTRYPOINT ["/opt/idea/bin/qodana"]

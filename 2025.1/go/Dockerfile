@@ -95,6 +95,7 @@ RUN set -ex && \
     apt-get purge --auto-remove -y gnupg2 && \
     rm -rf /var/cache/apt /var/lib/apt/ /tmp/* "$GNUPGHOME"
 
+
 LABEL maintainer="qodana-support@jetbrains.com" description="Qodana for Go (https://jb.gg/qodana-go)"
 WORKDIR /data/project
 ENTRYPOINT ["/opt/idea/bin/qodana"]

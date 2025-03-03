@@ -41,12 +41,6 @@ RUN --mount=target=/var/lib/apt/lists,type=cache,sharing=locked \
       echo "BUNDLE_PATH: ${HOME}/.local/share/gem" >>  $HOME/.bundle/config && \
     chmod 777 -R $HOME
 
-RUN apt-get update && \
-    apt-get install -y sudo build-essential && \
-    useradd -m -u 1001 -U qodana && \
-    passwd -d qodana && \
-    echo 'qodana ALL=(ALL) NOPASSWD:ALL' >> /etc/sudoers
-
 ENV PATH="/opt/yarn/bin:$PATH"
 ENV SKIP_YARN_COREPACK_CHECK=0
 COPY --from=node_base /usr/local/bin/node /usr/local/bin/

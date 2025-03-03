@@ -116,6 +116,7 @@ RUN set -ex && \
     apt-get purge --auto-remove -y gnupg2 && \
     rm -rf /var/cache/apt /var/lib/apt/ /tmp/* "$GNUPGHOME"
 
+
 LABEL maintainer="qodana-support@jetbrains.com" description="Qodana Community for Python (https://jb.gg/qodana-python)"
 WORKDIR /data/project
 ENTRYPOINT ["/opt/idea/bin/qodana"]
