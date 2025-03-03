@@ -81,13 +81,19 @@ func RunThirdPartyLinterAnalysis(
 		commonCtx.ProjectDir,
 		cliOptions.ConfigName,
 	)
+
+	effectiveDir, cleanup, err := utils.CreateTempDir("qodana-effective-config")
+	if err != nil {
+		return 1, fmt.Errorf("failed to create qodana effective configuration dir %v", err)
+	}
+	defer cleanup()
+
 	qodanaConfigEffectiveFiles, err := effectiveconfig.CreateEffectiveConfigFiles(
 		localQodanaYamlFullPath,
-		cliOptions.GlobalConfigurationsFile,
+		cliOptions.GlobalConfigurationsDir,
 		cliOptions.GlobalConfigurationId,
 		mountInfo.JavaPath,
-		commonCtx.QodanaSystemDir,
-		"qdconfig",
+		effectiveDir,
 		commonCtx.LogDir(),
 	)
 	if err != nil {

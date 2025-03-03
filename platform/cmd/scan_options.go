@@ -40,7 +40,6 @@ type CliOptions struct {
 	ProfileName               string
 	ProfilePath               string
 	RunPromo                  string
-	StubProfile               string // note: deprecated option
 	Baseline                  string
 	BaselineIncludeAbsent     bool
 	SaveReport                bool
@@ -78,7 +77,7 @@ type CliOptions struct {
 	AnalysisTimeoutMs         int
 	AnalysisTimeoutExitCode   int
 	JvmDebugPort              int
-	GlobalConfigurationsFile  string
+	GlobalConfigurationsDir   string
 	GlobalConfigurationId     string
 }
 
@@ -224,12 +223,6 @@ func ComputeFlags(cmd *cobra.Command, options *CliOptions) error {
 		"Set to 'true' to have the application run the inspections configured by the promo profile; set to 'false' otherwise (default: 'true' only if Qodana is executed with the default profile)",
 	)
 	flags.StringVar(&options.Script, "script", "default", "Override the run scenario")
-	flags.StringVar(
-		&options.StubProfile,
-		"stub-profile",
-		"",
-		"Absolute path to the fallback profile file. This option is applied in case the profile was not specified using any available options",
-	)
 	flags.StringVar(&options.CoverageDir, "coverage-dir", "", "Directory with coverage data to process")
 
 	flags.BoolVar(&options.ApplyFixes, "apply-fixes", false, "Apply all available quick-fixes, including cleanup")
@@ -337,24 +330,32 @@ func ComputeFlags(cmd *cobra.Command, options *CliOptions) error {
 		cmd.MarkFlagsMutuallyExclusive("env", "ide")
 	}
 
+	globalConfigDirOptionName := "global-config-dir"
+	globalConfigIdOptionName := "global-config-id"
 	flags.StringVar(
-		&options.GlobalConfigurationsFile,
-		"global-configs-file",
+		&options.GlobalConfigurationsDir,
+		globalConfigDirOptionName,
 		"",
-		"Path to the global configurations .yaml file, must be specified with '--global-configuration-id'",
+		fmt.Sprintf(
+			"Path to the global configurations directory with `qodana-global-configurations.yaml` file in the root, must be specified with '--%s'",
+			globalConfigIdOptionName,
+		),
 	)
 	flags.StringVar(
 		&options.GlobalConfigurationId,
-		"global-config-id",
+		globalConfigIdOptionName,
 		"",
-		"Id of the global configuration from `--global-configs-file`, must be specified with '--global-configs-file'",
+		fmt.Sprintf(
+			"Id of the global configuration defined in qodana-global-configurations.yaml, must be specified with '--%s'",
+			globalConfigDirOptionName,
+		),
 	)
-	err := flags.MarkHidden("global-configs-file")
-	cmd.MarkFlagsRequiredTogether("global-configs-file", "global-config-id")
+	err := flags.MarkHidden(globalConfigDirOptionName)
+	cmd.MarkFlagsRequiredTogether(globalConfigDirOptionName, globalConfigIdOptionName)
 	if err != nil {
 		return err
 	}
-	err = flags.MarkHidden("global-config-id")
+	err = flags.MarkHidden(globalConfigIdOptionName)
 	if err != nil {
 		return err
 	}
@@ -365,10 +366,6 @@ func ComputeFlags(cmd *cobra.Command, options *CliOptions) error {
 	cmd.MarkFlagsMutuallyExclusive("apply-fixes", "cleanup")
 
 	err = cmd.Flags().MarkDeprecated("fixes-strategy", "use --apply-fixes / --cleanup instead")
-	if err != nil {
-		return err
-	}
-	err = cmd.Flags().MarkDeprecated("stub-profile", "this option has no effect and no replacement")
 	if err != nil {
 		return err
 	}

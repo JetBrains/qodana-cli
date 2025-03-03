@@ -33,25 +33,25 @@ func TestSuccess(t *testing.T) {
 	}
 
 	testCases := []struct {
-		testCaseName             string
-		localQodanaYaml          string
-		globalConfigurationsFile string
-		globalConfigurationId    string
+		testCaseName            string
+		localQodanaYaml         string
+		globalConfigurationsDir string
+		globalConfigurationId   string
 	}{
 		{
-			testCaseName:             "local and global input qodana yaml",
-			localQodanaYaml:          "local/qodana.yaml",
-			globalConfigurationsFile: "global/qodana-global-configurations.yaml",
-			globalConfigurationId:    "main",
+			testCaseName:            "local and global input qodana yaml",
+			localQodanaYaml:         "local/qodana.yaml",
+			globalConfigurationsDir: "global",
+			globalConfigurationId:   "main",
 		},
 		{
 			testCaseName:    "only local input qodana yaml",
 			localQodanaYaml: "local/qodana.yaml",
 		},
 		{
-			testCaseName:             "only global input qodana yaml",
-			globalConfigurationsFile: "global/qodana-global-configurations.yaml",
-			globalConfigurationId:    "main",
+			testCaseName:            "only global input qodana yaml",
+			globalConfigurationsDir: "global",
+			globalConfigurationId:   "main",
 		},
 		{
 			testCaseName: "no input qodana yaml",
@@ -70,20 +70,19 @@ func TestSuccess(t *testing.T) {
 				if tc.localQodanaYaml != "" {
 					tc.localQodanaYaml = filepath.Join(configurationDir, tc.localQodanaYaml)
 				}
-				if tc.globalConfigurationsFile != "" {
-					tc.globalConfigurationsFile = filepath.Join(configurationDir, tc.globalConfigurationsFile)
+				if tc.globalConfigurationsDir != "" {
+					tc.globalConfigurationsDir = filepath.Join(configurationDir, tc.globalConfigurationsDir)
 				}
 
-				systemDir := t.TempDir()
+				effectiveConfigDir := t.TempDir()
 				logDir := t.TempDir()
 
 				configFiles, err := CreateEffectiveConfigFiles(
 					tc.localQodanaYaml,
-					tc.globalConfigurationsFile,
+					tc.globalConfigurationsDir,
 					tc.globalConfigurationId,
 					"java",
-					systemDir,
-					"qdconfig",
+					effectiveConfigDir,
 					logDir,
 				)
 				if err != nil {
@@ -92,7 +91,7 @@ func TestSuccess(t *testing.T) {
 
 				verifyDirectoriesContentEqual(t, filepath.Join(testDataPath, "expected"), configFiles.ConfigDir)
 
-				isEmptyConfiguration := tc.globalConfigurationsFile == "" &&
+				isEmptyConfiguration := tc.globalConfigurationsDir == "" &&
 					tc.globalConfigurationId == "" &&
 					tc.localQodanaYaml == ""
 				if !isEmptyConfiguration {
@@ -112,14 +111,19 @@ func TestError(t *testing.T) {
 	}
 
 	testCases := []struct {
-		testCaseName             string
-		localQodanaYaml          string
-		globalConfigurationsFile string
-		globalConfigurationId    string
+		testCaseName            string
+		localQodanaYaml         string
+		globalConfigurationsDir string
+		globalConfigurationId   string
 	}{
 		{
-			testCaseName:             "error no global config id",
-			globalConfigurationsFile: "global/qodana-global-configurations.yaml",
+			testCaseName:            "error no qodana-global-configurations yaml",
+			globalConfigurationsDir: "global",
+			globalConfigurationId:   "main",
+		},
+		{
+			testCaseName:            "error no global config id",
+			globalConfigurationsDir: "global",
 		},
 		{
 			testCaseName:          "error no global config file",
@@ -134,19 +138,19 @@ func TestError(t *testing.T) {
 			localQodanaYaml: "local/no-qodana.yaml",
 		},
 		{
-			testCaseName:             "error global configurations file doesn't exist",
-			globalConfigurationsFile: "global/no-qodana-global-configurations.yaml",
-			globalConfigurationId:    "main",
+			testCaseName:            "error global configurations file doesn't exist",
+			globalConfigurationsDir: "global",
+			globalConfigurationId:   "main",
 		},
 		{
-			testCaseName:             "error global configuration id doesn't exist",
-			globalConfigurationsFile: "global/qodana-global-configurations.yaml",
-			globalConfigurationId:    "no-main",
+			testCaseName:            "error global configuration id doesn't exist",
+			globalConfigurationsDir: "global",
+			globalConfigurationId:   "no-main",
 		},
 		{
-			testCaseName:             "error global configuration qodana yaml doesn't exist",
-			globalConfigurationsFile: "global/qodana-global-configurations.yaml",
-			globalConfigurationId:    "main",
+			testCaseName:            "error global configuration qodana yaml doesn't exist",
+			globalConfigurationsDir: "global",
+			globalConfigurationId:   "main",
 		},
 		{
 			testCaseName:    "error inner qodana yaml doesnt exist",
@@ -174,20 +178,19 @@ func TestError(t *testing.T) {
 				if tc.localQodanaYaml != "" {
 					tc.localQodanaYaml = filepath.Join(configurationDir, tc.localQodanaYaml)
 				}
-				if tc.globalConfigurationsFile != "" {
-					tc.globalConfigurationsFile = filepath.Join(configurationDir, tc.globalConfigurationsFile)
+				if tc.globalConfigurationsDir != "" {
+					tc.globalConfigurationsDir = filepath.Join(configurationDir, tc.globalConfigurationsDir)
 				}
 
-				systemDir := t.TempDir()
+				effectiveConfigDir := t.TempDir()
 				logDir := t.TempDir()
 
 				configFiles, err := CreateEffectiveConfigFiles(
 					tc.localQodanaYaml,
-					tc.globalConfigurationsFile,
+					tc.globalConfigurationsDir,
 					tc.globalConfigurationId,
 					"java",
-					systemDir,
-					"qdconfig",
+					effectiveConfigDir,
 					logDir,
 				)
 				if err == nil {

@@ -40,27 +40,45 @@ type Files struct {
 
 func CreateEffectiveConfigFiles(
 	localQodanaYamlFullPath string,
-	globalConfigurationsFile string,
+	globalConfigurationsDir string,
 	globalConfigId string,
 	jrePath string,
-	systemDir string,
-	effectiveConfigDirName string,
+	effectiveConfigDir string,
 	logDir string,
 ) (Files, error) {
-	if globalConfigId != "" && globalConfigurationsFile == "" {
+	if globalConfigId != "" && globalConfigurationsDir == "" {
 		return Files{}, fmt.Errorf(
-			"global configuration id %s is defined without global cofigurations file",
+			"global configuration id %s is defined without global cofigurations directory",
 			globalConfigId,
 		)
 	}
-	if globalConfigurationsFile != "" && globalConfigId == "" {
+	if globalConfigurationsDir != "" && globalConfigId == "" {
 		return Files{}, fmt.Errorf(
-			"global configurations file %s is defined without global configuration id",
-			globalConfigurationsFile,
+			"global configurations directory %s is defined without global configuration id",
+			globalConfigurationsDir,
 		)
 	}
+	globalConfigurationsFile := ""
+	if globalConfigurationsDir != "" {
+		globalConfigurationsYamlFilename := "qodana-global-configurations.yaml"
+		globalConfigurationsFile = filepath.Join(globalConfigurationsDir, globalConfigurationsYamlFilename)
+		if !isFileExists(globalConfigurationsFile) {
+			msg.ErrorMessage(
+				"%s file not found in global configuration directory %s",
+				globalConfigurationsYamlFilename,
+				globalConfigurationsDir,
+			)
+			return Files{}, fmt.Errorf("%s doesn't exist", globalConfigurationsFile)
+		}
+	}
 
-	configLoaderCliJar, err := createConfigLoaderCliJar(systemDir)
+	configLoaderTempDir, cleanup, err := utils.CreateTempDir("config-loader-cli")
+	if err != nil {
+		return Files{}, err
+	}
+	defer cleanup()
+
+	configLoaderCliJar, err := createConfigLoaderCliJar(configLoaderTempDir)
 	if err != nil {
 		return Files{}, err
 	}
@@ -70,8 +88,6 @@ func CreateEffectiveConfigFiles(
 			log.Warnf("Failed to delete config-loader-cli.jar: %v", err)
 		}
 	}(configLoaderCliJar)
-
-	effectiveConfigDir := filepath.Join(systemDir, effectiveConfigDirName)
 	args, err := configurationLoaderCliArgs(
 		jrePath,
 		configLoaderCliJar,
@@ -109,8 +125,8 @@ func CreateEffectiveConfigFiles(
 	return effectiveQodanaYamlData, nil
 }
 
-func createConfigLoaderCliJar(systemDir string) (string, error) {
-	configLoaderCliJarPath := filepath.Join(systemDir, "tools", "config-loader-cli.jar")
+func createConfigLoaderCliJar(dir string) (string, error) {
+	configLoaderCliJarPath := filepath.Join(dir, "config-loader-cli.jar")
 	if isFileExists(configLoaderCliJarPath) {
 		err := os.Remove(configLoaderCliJarPath)
 		if err != nil {
