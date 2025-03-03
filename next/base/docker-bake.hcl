@@ -75,7 +75,7 @@ target "cpp-community" {
   matrix = {
     clang = ["15", "16", "17", "18"]
   }
-  name = "cpp-community-base-${clang}-latest"
+  name = "cpp-community-${clang}-latest"
   tags = [
     "registry.jetbrains.team/p/sa/containers/qodana:cpp-community-base-${clang}-latest"
   ]
@@ -88,7 +88,7 @@ target "cpp-community" {
 
 target "cpp" {
   contexts = {
-    cpp-community = "target:cpp-community"
+    cpp-community = "target:cpp-community-${clang}-latest"
   }
   matrix = {
     clang = ["15", "16", "17", "18"]
@@ -127,7 +127,7 @@ target "ruby3x" {
   matrix = {
     version = ["1", "2", "3", "4"]
   }
-  name = "ruby-base-3${version}-latest"
+  name = "ruby-base-3${version}"
   tags = [
     "registry.jetbrains.team/p/sa/containers/qodana:ruby-base-3.${version}-latest"
   ]

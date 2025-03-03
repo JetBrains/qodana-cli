@@ -1,6 +1,4 @@
-ARG NODE_TAG="22-bookworm-slim"
 ARG DOTNET_BASE_TAG="9.0-bookworm-slim"
-FROM node:$NODE_TAG AS node_base
 FROM mcr.microsoft.com/dotnet/sdk:$DOTNET_BASE_TAG
 
 ENV HOME="/root" \
@@ -8,6 +6,7 @@ ENV HOME="/root" \
     QODANA_DIST="/opt/idea" \
     QODANA_DATA="/data" \
     QODANA_DOCKER="true"
+
 ENV JAVA_HOME="$QODANA_DIST/jbr" \
     QODANA_CONF="$HOME/.config/idea" \
     PATH="$QODANA_DIST/bin:$PATH"

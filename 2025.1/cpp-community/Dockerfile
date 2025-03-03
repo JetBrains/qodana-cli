@@ -8,8 +8,9 @@ ENV HOME="/root" \
     LC_ALL="en_US.UTF-8" \
     QODANA_DIST="/opt/idea" \
     QODANA_DATA="/data" \
-    QODANA_DOCKER="true" \
-    PATH="/opt/qodana:$QODANA_DIST/bin:${PATH}"
+    QODANA_DOCKER="true"
+
+ENV PATH="/opt/qodana:$QODANA_DIST/bin:${PATH}"
 
 ENV CXX="/usr/lib/llvm-$CLANG/bin/clang++" \
     CC="/usr/lib/llvm-$CLANG/bin/clang" \
