@@ -75,6 +75,7 @@ var (
 		QDPHP:  "jetbrains/qodana-php:",
 		QDJS:   "jetbrains/qodana-js:",
 		QDNET:  "jetbrains/qodana-dotnet:",
+		QDCPP:  "jetbrains/qodana-cpp:",
 		QDNETC: "jetbrains/qodana-cdnet:",
 		QDPY:   "jetbrains/qodana-python:",
 		QDPYC:  "jetbrains/qodana-python-community:",
@@ -117,11 +118,11 @@ var LangsProductCodes = map[string][]string{
 	"C#":                {QDNET, QDNETC},
 	"F#":                {QDNET},
 	"Visual Basic .NET": {QDNET, QDNETC},
-	"C":                 {QDCL, QDNET},
-	"C++":               {QDCL, QDNET},
+	"C":                 {QDCL, QDNET, QDCPP},
+	"C++":               {QDCL, QDNET, QDCPP},
 }
 
-var AllSupportedPaidCodes = []string{QDJVM, QDPHP, QDPY, QDJS, QDGO, QDNET, QDAND}
+var AllSupportedPaidCodes = []string{QDJVM, QDPHP, QDPY, QDJS, QDGO, QDNET, QDAND, QDCPP}
 var AllSupportedFreeCodes = []string{QDJVMC, QDPYC, QDANDC, QDNETC, QDCL}
 
 func allImages(codes []string) []string {
