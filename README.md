@@ -174,7 +174,7 @@ qodana scan [flags]
 #### Options
 
 ```
-  -l, --linter string                            Use to run Qodana in a container (default). Choose linter (image) to use. Not compatible with --ide option. Available images are: jetbrains/qodana-jvm, jetbrains/qodana-php, jetbrains/qodana-python, jetbrains/qodana-js, jetbrains/qodana-go, jetbrains/qodana-dotnet, jetbrains/qodana-jvm-community, jetbrains/qodana-python-community, jetbrains/qodana-jvm-android, jetbrains/qodana-cdnet
+  -l, --linter string                            Use to run Qodana in a container (default). Choose linter (image) to use. Not compatible with --ide option. Available images are: jetbrains/qodana-jvm, jetbrains/qodana-php, jetbrains/qodana-python, jetbrains/qodana-js, jetbrains/qodana-go, jetbrains/qodana-dotnet, jetbrains/qodana-cpp, jetbrains/qodana-jvm-community, jetbrains/qodana-python-community, jetbrains/qodana-jvm-android, jetbrains/qodana-cdnet
       --ide string                               Use to run Qodana without a container. Not compatible with --linter option. Available codes are QDNET, add -EAP part to obtain EAP versions
   -i, --project-dir string                       Root directory of the inspected project (default ".")
   -o, --results-dir string                       Override directory to save Qodana inspection results to (default <userCacheDir>/JetBrains/<linter>/results)
