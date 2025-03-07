@@ -118,8 +118,8 @@ var LangsProductCodes = map[string][]string{
 	"C#":                {QDNET, QDNETC},
 	"F#":                {QDNET},
 	"Visual Basic .NET": {QDNET, QDNETC},
-	"C":                 {QDCL, QDNET, QDCPP},
-	"C++":               {QDCL, QDNET, QDCPP},
+	"C":                 {QDCPP, QDCL, QDNET},
+	"C++":               {QDCPP, QDCL, QDNET},
 }
 
 var AllSupportedPaidCodes = []string{QDJVM, QDPHP, QDPY, QDJS, QDGO, QDNET, QDAND, QDCPP}
