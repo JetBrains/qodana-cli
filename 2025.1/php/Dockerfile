@@ -10,7 +10,7 @@ FROM php:$PHP_TAG
 # renovate: datasource=npm depName=eslint
 ENV ESLINT_VERSION="9.21.0"
 # renovate: datasource=npm depName=pnpm
-ENV PNPM_VERSION="10.5.2"
+ENV PNPM_VERSION="10.6.1"
 
 ENV HOME="/root" \
     LC_ALL="en_US.UTF-8" \
