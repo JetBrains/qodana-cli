@@ -110,7 +110,7 @@ SHELL ["/bin/bash", "-o", "pipefail", "-c"]
 # hadolint ignore=SC2174
 RUN --mount=target=/var/lib/apt/lists,type=cache,sharing=locked \
     --mount=target=/var/cache/apt,type=cache,sharing=locked \
-    apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends unzip=6.0-26+deb11u1 && \
+    apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends unzip && \
     mkdir -m 777 -p $QODANA_DATA/cache $ANDROID_USER_HOME $ANDROID_SDK_ROOT $ANDROID_SDK_ROOT/cmdline-tools $ANDROID_SDK_ROOT/platforms $ANDROID_SDK_ROOT/ndk && \
     echo "${ANDROID_SDK_SHA256} /tmp/android.zip" > /tmp/shasum && \
     curl -fsSL -o /tmp/android.zip  \

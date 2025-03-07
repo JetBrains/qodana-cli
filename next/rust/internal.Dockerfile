@@ -10,7 +10,7 @@ RUN chmod +x $QODANA_DIST/bin/*.sh $QODANA_DIST/bin/qodana && \
     update-alternatives --set java $JAVA_HOME/bin/java && \
     update-alternatives --set javac $JAVA_HOME/bin/javac && \
     rm -rf /var/cache/apt /var/lib/apt/ /tmp/*  && \
-    apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends unzip=6.0-26+deb11u1 build-essential && \
+    apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends unzip build-essential && \
     plugin=$(curl -fSsL https://plugins.jetbrains.com/plugins/nightly/22407 | \
         awk 'BEGIN { RS="<idea-plugin"; FS="<download-url>|</download-url>" } /<version>233\./ && !found { print $2; found=1; }') && \
     curl -fSsL -o /tmp/plugin.zip "$plugin" && unzip /tmp/plugin.zip && mv intellij-rust $QODANA_DIST/plugins/ && \
