@@ -18,5 +18,7 @@ package tooling
 
 import _ "embed"
 
+// execute [./download_deps.sh] to load config-loader-cli.jar
+
 //go:embed config-loader-cli.jar
 var ConfigLoaderCli []byte
