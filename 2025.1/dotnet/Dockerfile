@@ -50,7 +50,7 @@ RUN --mount=target=/var/lib/apt/lists,type=cache,sharing=locked \
     chmod 777 -R $DOTNET_ROOT $HOME
 
 # renovate: datasource=npm depName=eslint
-ENV ESLINT_VERSION="9.20.1"
+ENV ESLINT_VERSION="9.21.0"
 # renovate: datasource=npm depName=pnpm
 ENV PNPM_VERSION="10.4.1"
 
