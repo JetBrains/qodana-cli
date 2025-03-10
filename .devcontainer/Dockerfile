@@ -17,6 +17,7 @@
 
 FROM golang:bookworm
 ARG TARGETARCH
+ARG CLANG=16
 ENV CHOCO_VERSION=2.2.2 \
     GH_VERSION=2.41.0
 ENV MONO_REPO="https://download.mono-project.com/repo/debian" \
@@ -73,7 +74,7 @@ RUN curl -fsSL "https://get.docker.com" | sh
 # optional: needed for .net tests
 ARG DOTNET_INSTALL_SH_REVISION="40434288dc5bbda41eafcbcbbc5c0fbbe028fb30"
 ENV DOTNET_ROOT="/usr/share/dotnet" \
-    DOTNET_CHANNEL="6.0"
+    DOTNET_CHANNEL="9.0"
 RUN curl -fsSL -o /tmp/dotnet-install.sh  \
              "https://raw.githubusercontent.com/dotnet/install-scripts/$DOTNET_INSTALL_SH_REVISION/src/dotnet-install.sh" && \
     echo "d9ede6126a6da49cd3509e5fc8236f79addf175696f29d01f38840fd84663514 /tmp/dotnet-install.sh" > /tmp/shasum && \
@@ -83,21 +84,21 @@ RUN curl -fsSL -o /tmp/dotnet-install.sh  \
     chmod 777 -R $DOTNET_ROOT
 
 # optional: needed for cpp tests
-ENV CXX="/usr/lib/llvm-16/bin/clang++" \
-    CC="/usr/lib/llvm-16/bin/clang" \
-    CPLUS_INCLUDE_PATH="/usr/lib/clang/16/include"
-RUN echo "deb https://apt.llvm.org/bookworm llvm-toolchain-bookworm-16 main" \
+ENV CXX="/usr/lib/llvm-$CLANG/bin/clang++" \
+    CC="/usr/lib/llvm-$CLANG/bin/clang" \
+    CPLUS_INCLUDE_PATH="/usr/lib/clang/$CLANG/include"
+RUN echo "deb https://apt.llvm.org/bookworm llvm-toolchain-bookworm-$CLANG main" \
         > /etc/apt/sources.list.d/llvm.list && \
     wget -qO /etc/apt/trusted.gpg.d/llvm.asc \
         https://apt.llvm.org/llvm-snapshot.gpg.key && \
     apt-get -qq update && \
     apt-get install -qqy -t \
-      llvm-toolchain-bookworm-16 \
-      clang-16 clang-tidy-16 \
-      clang-format-16 lld-16 \
-      libc++-16-dev \
-      libc++abi-16-dev && \
-    for f in /usr/lib/llvm-16/bin/*; do ln -sf "$f" /usr/bin; done && \
+      llvm-toolchain-bookworm-$CLANG \
+      clang-$CLANG clang-tidy-$CLANG \
+      clang-format-$CLANG lld-$CLANG \
+      libc++-$CLANG-dev \
+      libc++abi-$CLANG-dev && \
+    for f in /usr/lib/llvm-$CLANG/bin/*; do ln -sf "$f" /usr/bin; done && \
     ln -sf clang /usr/bin/cc && \
     ln -sf clang /usr/bin/c89 && \
     ln -sf clang /usr/bin/c99 && \
