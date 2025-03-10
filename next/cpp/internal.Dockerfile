@@ -1,4 +1,5 @@
-FROM registry.jetbrains.team/p/sa/containers/qodana:cpp-base-latest
+ARG CLANG="16"
+FROM registry.jetbrains.team/p/sa/containers/qodana:cpp-base-$CLANG-latest
 
 ARG TARGETPLATFORM
 ARG DEVICEID
