@@ -5,7 +5,7 @@ set -euo pipefail
 # Execute this script LOCALLY ONLY, on CI/CD checksum file must be present
 
 # Variables
-CONFIG_LOADER_CLI_VERSION="0.0.9"
+CONFIG_LOADER_CLI_VERSION="0.0.16"
 URL="https://packages.jetbrains.team/maven/p/ij/intellij-dependencies/org/jetbrains/qodana/config-loader-cli/$CONFIG_LOADER_CLI_VERSION/config-loader-cli-$CONFIG_LOADER_CLI_VERSION.jar.sha256"
 DEST_DIR="tooling"
 SHA256_FILE="$DEST_DIR/config-loader-cli-$CONFIG_LOADER_CLI_VERSION.jar.sha256"

@@ -19,6 +19,7 @@ package tooling
 import _ "embed"
 
 // execute [./download_deps.sh] to load config-loader-cli.jar
+// source code: https://github.com/JetBrains/qodana-configuration
 
 //go:embed config-loader-cli.jar
 var ConfigLoaderCli []byte
