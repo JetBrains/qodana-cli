@@ -71,6 +71,7 @@ RUN if [ "$PRIVILEGED" = "true" ]; then \
         useradd -m -u 1001 -U qodana && \
         passwd -d qodana && \
         echo 'qodana ALL=(ALL) NOPASSWD:ALL' >> /etc/sudoers && \
+        chmod 777 /etc/passwd && \
         rm -rf /var/cache/apt /var/lib/apt/ /tmp/*; \
     else \
         echo "Skipping privileged commands because PRIVILEGED is not set to true."; \
