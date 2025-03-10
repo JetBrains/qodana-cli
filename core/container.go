@@ -299,6 +299,10 @@ func getDockerOptions(c corescan.Context) *backend.ContainerCreateConfig {
 	if err != nil {
 		log.Fatal("couldn't get abs path for results", err)
 	}
+	reportPath, err := filepath.Abs(c.ReportDir())
+	if err != nil {
+		log.Fatal("couldn't get abs path for report", err)
+	}
 	containerName = os.Getenv(qdenv.QodanaCliContainerName)
 	if containerName == "" {
 		containerName = fmt.Sprintf("qodana-cli-%s", c.Id())
@@ -318,6 +322,11 @@ func getDockerOptions(c corescan.Context) *backend.ContainerCreateConfig {
 			Type:   mount.TypeBind,
 			Source: resultsPath,
 			Target: "/data/results",
+		},
+		{
+			Type:   mount.TypeBind,
+			Source: reportPath,
+			Target: "/data/results/report",
 		},
 	}
 	if c.GlobalConfigurationsDir() != "" {
