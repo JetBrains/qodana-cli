@@ -40,7 +40,7 @@ import (
 // newScanCommand returns a new instance of the scan command.
 func newScanCommand() *cobra.Command {
 	cliOptions := &platformcmd.CliOptions{}
-	cmd := &cobra.Command{
+	c := &cobra.Command{
 		Use:   "scan",
 		Short: "Scan project with Qodana",
 		Long: `Scan a project with Qodana. It runs one of Qodana's Docker images (https://www.jetbrains.com/help/qodana/docker-images.html) and reports the results.
@@ -152,12 +152,12 @@ But you can always override qodana.yaml options with the following command-line 
 		},
 	}
 
-	err := platformcmd.ComputeFlags(cmd, cliOptions)
+	err := platformcmd.ComputeFlags(c, cliOptions)
 	if err != nil {
 		return nil
 	}
 
-	return cmd
+	return c
 }
 
 func checkProjectDir(projectDir string) {

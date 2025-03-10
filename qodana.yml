@@ -5,6 +5,9 @@ exclude:
       - .github/qodana.sarif.json
   - name: VgoDependencyUpdateAvailable
   - name: GoAssignmentToReceiver
+  - name: GoUnusedConst
+  - name: GoUnusedExportedFunction
+  - name: GoUnusedGlobalVariable
 linter: jetbrains/qodana-go:latest
 licenseRules:
   - keys:

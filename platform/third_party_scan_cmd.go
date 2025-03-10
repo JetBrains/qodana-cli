@@ -30,7 +30,7 @@ import (
 // NewThirdPartyScanCommand returns a new instance of the scan command.
 func NewThirdPartyScanCommand(linter ThirdPartyLinter, linterInfo thirdpartyscan.LinterInfo) *cobra.Command {
 	cliOptions := &platformcmd.CliOptions{}
-	cmd := &cobra.Command{
+	c := &cobra.Command{
 		Use:   "scan",
 		Short: "Scan project with Qodana",
 		Long: fmt.Sprintf(
@@ -54,10 +54,10 @@ But you can always override qodana.yaml options with the following command-line 
 		},
 	}
 
-	err := platformcmd.ComputeFlags(cmd, cliOptions)
+	err := platformcmd.ComputeFlags(c, cliOptions)
 	if err != nil {
 		log.Fatal("Error while computing flags")
 	}
 
-	return cmd
+	return c
 }

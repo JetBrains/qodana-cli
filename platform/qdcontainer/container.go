@@ -84,6 +84,7 @@ func CheckContainerEngineMemory() {
 		log.Fatal(err)
 	}
 	var helpUrl string
+	//goland:noinspection GoDfaConstantCondition
 	switch goos {
 	case "windows":
 		helpUrl = "https://docs.docker.com/desktop/settings/windows/#advanced"

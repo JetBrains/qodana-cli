@@ -159,7 +159,7 @@ func readFile(path string, limit int64) ([]byte, error) {
 		return nil, err
 	}
 	size := st.Size()
-	if limit > 0 && size > limit {
+	if size > limit {
 		size = limit
 	}
 	buf := bytes.NewBuffer(nil)
