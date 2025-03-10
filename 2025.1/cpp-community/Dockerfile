@@ -10,7 +10,9 @@ ENV HOME="/root" \
     QODANA_DATA="/data" \
     QODANA_DOCKER="true"
 
-ENV PATH="/opt/qodana:$QODANA_DIST/bin:${PATH}"
+ENV JAVA_HOME="$QODANA_DIST/jbr" \
+    QODANA_CONF="$HOME/.config/idea" \
+    PATH="/opt/qodana:$QODANA_DIST/bin:${PATH}"
 
 ENV CXX="/usr/lib/llvm-$CLANG/bin/clang++" \
     CC="/usr/lib/llvm-$CLANG/bin/clang" \

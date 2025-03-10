@@ -1,3 +1,4 @@
+ARG BASE_TAG="bookworm-slim"
 ARG NODE_TAG="22-bookworm-slim"
 FROM node:$NODE_TAG AS node_base
 FROM cpp-community

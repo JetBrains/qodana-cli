@@ -1,3 +1,4 @@
+ARG DOTNET_BASE_TAG="9.0-bookworm-slim"
 ARG NODE_TAG="22-bookworm-slim"
 FROM node:$NODE_TAG AS node_base
 FROM dotnet-community
