@@ -18,6 +18,8 @@
 FROM golang:bookworm
 ARG TARGETARCH
 ARG CLANG=16
+ENV TARGETARCH=$TARGETARCH \
+    CLANG=$CLANG
 ENV CHOCO_VERSION=2.2.2 \
     GH_VERSION=2.41.0
 ENV MONO_REPO="https://download.mono-project.com/repo/debian" \
@@ -57,11 +59,6 @@ RUN set -ex &&  \
     echo '#!/bin/bash' >> /usr/local/bin/choco &&  \
     echo 'mono /opt/chocolatey/choco.exe $@' >> /usr/local/bin/choco &&  \
     chmod +x /usr/local/bin/choco
-
-# optional: the dependency for the internal needs
-RUN curl -fsSL "https://codesign-distribution.labs.jb.gg/codesign-client-linux-$TARGETARCH"  \
-        -o /usr/local/bin/codesign || true && \
-    chmod +x /usr/local/bin/codesign || true
 
 # optional: gh cli is a must only for publishing the releases
 RUN curl -fsSL "https://github.com/cli/cli/releases/download/v${GH_VERSION}/gh_${GH_VERSION}_linux_$TARGETARCH.deb"  \
