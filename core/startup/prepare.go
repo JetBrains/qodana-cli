@@ -69,6 +69,9 @@ func PrepareHost(commonCtx commoncontext.Context) PreparedHost {
 	if err := os.MkdirAll(commonCtx.ResultsDir, os.ModePerm); err != nil {
 		log.Fatal("couldn't create a directory ", err.Error())
 	}
+	if err := os.MkdirAll(commonCtx.ReportDir, os.ModePerm); err != nil {
+		log.Fatal("couldn't create a directory ", err.Error())
+	}
 	if commonCtx.Linter != "" {
 		qdcontainer.PrepareContainerEnvSettings()
 	}
