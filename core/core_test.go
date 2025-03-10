@@ -75,7 +75,7 @@ func TestCliArgs(t *testing.T) {
 				ProjectDir:            projectDir,
 				CacheDir:              cacheDir,
 				ResultsDir:            resultsDir,
-				Linter:                "jetbrains/qodana-jvm-community:latest",
+				Linter:                "jetbrains/qodana-jvm:latest",
 				SourceDirectory:       "./src",
 				DisableSanity:         true,
 				RunPromo:              "true",
@@ -326,7 +326,7 @@ func TestLegacyFixStrategies(t *testing.T) {
 			name: "fixes for unavailable IDE",
 			c: corescan.ContextBuilder{
 				Cleanup: true,
-				Ide:     "QDNET",
+				Ide:     "QDCPP",
 			},
 			expected: []string{},
 		},

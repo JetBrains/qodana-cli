@@ -125,6 +125,8 @@ var LangsProductCodes = map[string][]string{
 var AllSupportedPaidCodes = []string{QDJVM, QDPHP, QDPY, QDJS, QDGO, QDNET, QDAND, QDCPP}
 var AllSupportedFreeCodes = []string{QDJVMC, QDPYC, QDANDC, QDNETC, QDCL}
 
+var AllFixesSupportedProducts = []string{QDJVM, QDNET, QDPY, QDJS, QDPHP, QDGO, QDAND, QDRUBY}
+
 func allImages(codes []string) []string {
 	var images []string
 	for _, code := range codes {
