@@ -111,21 +111,30 @@ func QuoteIfSpace(s string) string {
 	}
 }
 
-// QuoteForWindows wraps in '"' if '`s`' contains space on windows.
+// QuoteForWindows wraps s in quotes if s contains a typical Windows batch special char and isn't yet quoted.
 func QuoteForWindows(s string) string {
 	if isStringQuoted(s) {
 		return s
 	}
-	if //goland:noinspection GoBoolExpressions
-	strings.Contains(s, " ") && runtime.GOOS == "windows" {
-		return "\"" + s + "\""
-	} else {
-		return s
+	if runtime.GOOS == "windows" && containsWinSpecialChar(s) {
+		return `"` + s + `"`
 	}
+	return s
 }
 
 func isStringQuoted(s string) bool {
 	return strings.HasPrefix(s, "\"") && strings.HasSuffix(s, "\"")
+}
+
+// containsWinSpecialChar returns true if s contains any common Windows batch special char that requires quoting.
+func containsWinSpecialChar(s string) bool {
+	specialChars := []string{" ", "(", ")", "^", "&", "|", "<", ">"}
+	for _, c := range specialChars {
+		if strings.Contains(s, c) {
+			return true
+		}
+	}
+	return false
 }
 
 func GetJavaExecutablePath() (string, error) {
