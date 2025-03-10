@@ -28,7 +28,7 @@ jobs:
           cache-dependency-path: "**/*.sum"
           go-version-file: go.work
       - name: Set up Java 17 for config-loader-cli.jar
-        uses: actions/setup-java@v3
+        uses: actions/setup-java@v4
         with:
           distribution: 'temurin' # Use the Temurin JDK distribution
           java-version: '17'     # Java version 17
