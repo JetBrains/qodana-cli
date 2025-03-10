@@ -90,8 +90,9 @@ func (c Context) ForcedLocalChanges() Context {
 	return c
 }
 
-// in diff-start, diff-end scenario, for analysis of revision, we reset only effectiveConfigurationDir (which is used by IJ).
-// Fields used by CLI besides bootsrap stay the same
+// WithEffectiveConfigurationDirOnRevision
+// in diff-start, diff-end scenario, for analysis of revision, we reset only
+// effectiveConfigurationDir (which is used by IJ), fields used by CLI besides bootstrap stay the same
 func (c Context) WithEffectiveConfigurationDirOnRevision(effectiveConfigurationDir string) Context {
 	c.effectiveConfigurationDir = effectiveConfigurationDir
 	return c

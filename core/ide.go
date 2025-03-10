@@ -214,6 +214,9 @@ func GetIdeArgs(c corescan.Context) []string {
 		if c.GlobalConfigurationId() != "" {
 			arguments = append(arguments, "--global-config-id", c.GlobalConfigurationId())
 		}
+		if c.GenerateCodeClimateReport() {
+			arguments = append(arguments, "--code-climate")
+		}
 		for _, property := range c.Property() {
 			arguments = append(arguments, "--property="+property)
 		}

@@ -62,7 +62,7 @@ func ResetBack(cwd string, logdir string) error {
 	return err
 }
 
-// See QD-10767 case for why update submodule is needed
+// CheckoutAndUpdateSubmodule performs a git checkout to the specified rev and updates submodules recursively, QD-10767.
 func CheckoutAndUpdateSubmodule(cwd string, where string, force bool, logdir string) error {
 	err := checkout(cwd, where, force, logdir)
 	if err != nil {

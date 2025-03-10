@@ -30,6 +30,7 @@ func CheckEAP(buildDateStr string, isEap bool) {
 	buildDate, err := time.Parse(time.RFC3339, buildDateStr)
 	if err != nil {
 		log.Fatal("Failed to parse build date")
+		return
 	}
 
 	deadline := buildDate.AddDate(0, 0, 60)
