@@ -192,7 +192,8 @@ def generate_variant_dockerfile(
         qd_release=release_dir,
         qd_code=data.get("qd_code", ""),
         description=data.get("description", ""),
-        variant=variant.split("-")[0]
+        variant=variant.split("-")[0],
+        qd_image=variant
     )
 
     final_dockerfile = processed_base_content.rstrip() + "\n\n" + snippet

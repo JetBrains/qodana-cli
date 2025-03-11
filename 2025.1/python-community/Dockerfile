@@ -78,6 +78,7 @@ RUN --mount=target=/var/lib/apt/lists,type=cache,sharing=locked \
     rm -rf /tmp/*
 
 ARG QD_RELEASE="2025.1"
+ENV QD_VERSION="2025.1" QD_IMAGE="python-community"
 ARG QD_BUILD="QDPYC-$QD_RELEASE"
 # hadolint ignore=DL3003,SC2043
 RUN set -ex && \

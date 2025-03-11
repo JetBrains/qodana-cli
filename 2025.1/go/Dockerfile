@@ -57,6 +57,7 @@ RUN ln -s /usr/local/lib/node_modules/npm/bin/npm-cli.js /usr/local/bin/npm && \
     chmod 777 -R "$HOME/.npm" "$HOME/.npmrc"
 
 ARG QD_RELEASE="2025.1"
+ENV QD_VERSION="2025.1" QD_IMAGE="go"
 ARG QD_BUILD="QDGO-$QD_RELEASE"
 # hadolint ignore=DL3003,SC2043
 RUN set -ex && \

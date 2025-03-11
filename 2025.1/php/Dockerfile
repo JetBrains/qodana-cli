@@ -62,6 +62,7 @@ RUN ln -s /usr/local/lib/node_modules/npm/bin/npm-cli.js /usr/local/bin/npm && \
 COPY --from=composer_base /usr/bin/composer /usr/bin/composer
 
 ARG QD_RELEASE="2025.1"
+ENV QD_VERSION="2025.1" QD_IMAGE="php"
 ARG QD_BUILD="QDPHP-$QD_RELEASE"
 # hadolint ignore=DL3003,SC2043
 RUN set -ex && \

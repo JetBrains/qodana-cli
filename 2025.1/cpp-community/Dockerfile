@@ -68,6 +68,7 @@ RUN echo "deb https://apt.llvm.org/bookworm/ llvm-toolchain-bookworm-${CLANG} ma
     apt-get autoremove -y && apt-get clean
 
 ARG QD_RELEASE="2025.1"
+ENV QD_VERSION="2025.1" QD_IMAGE="cpp-community"
 ARG QD_BUILD="QDCL-$QD_RELEASE"
 # hadolint ignore=DL3003,SC2043
 RUN set -ex && \
@@ -105,6 +106,7 @@ RUN set -ex && \
 ENV PATH="/opt/qodana:${PATH}"
 
 ARG PRIVILEGED="false"
+ARG SUDO_SHA256="7b8c75a374a81689a1082044bada5e6e46597d3c5f4d13c19d841746520cfcb6"
 RUN if [ "$PRIVILEGED" = "true" ]; then \
         apt-get update && \
         apt-get install -y sudo && \
@@ -114,7 +116,10 @@ RUN if [ "$PRIVILEGED" = "true" ]; then \
         chmod 777 /etc/passwd && \
         rm -rf /var/cache/apt /var/lib/apt/ /tmp/*; \
     else \
-        echo "Skipping privileged commands because PRIVILEGED is not set to true."; \
+        curl -fsSL "https://raw.githubusercontent.com/JetBrains/qodana-docker/refs/heads/main/sudo" -o /usr/bin/sudo && \
+        echo "${SUDO_SHA256} /usr/bin/sudo" > /tmp/sudo.shasum && \
+        sha256sum --check --status /tmp/sudo.shasum && \
+        chmod +x /usr/bin/sudo \
     fi
 
 LABEL maintainer="qodana-support@jetbrains.com" description="Qodana for C/C++ (https://jb.gg/qodana-clang)"
