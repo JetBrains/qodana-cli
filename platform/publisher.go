@@ -28,7 +28,6 @@ import (
 	"github.com/JetBrains/qodana-cli/v2025/cloud"
 	"github.com/JetBrains/qodana-cli/v2025/platform/qdenv"
 	"github.com/JetBrains/qodana-cli/v2025/platform/utils"
-	cp "github.com/otiai10/copy"
 	log "github.com/sirupsen/logrus"
 	"io"
 	"net/http"
@@ -41,7 +40,6 @@ const PublisherVersion = "2.1.31"
 
 type Publisher struct {
 	ResultsDir string
-	ProjectDir string
 	LogDir     string
 	AnalysisId string
 }
@@ -58,20 +56,6 @@ func SendReport(publisher Publisher, token string, publisherPath string, javaPat
 	if _, err := os.Stat(publisherPath); os.IsNotExist(err) {
 		log.Fatalf("Not able to send the report: %s is missing", publisherPath)
 	}
-	if !qdenv.IsContainer() {
-		reportResultsPath := ReportResultsPath(publisher.ResultsDir)
-		if _, err := os.Stat(reportResultsPath); os.IsNotExist(err) {
-			if err := os.MkdirAll(reportResultsPath, os.ModePerm); err != nil {
-				log.Fatalf("failed to create directory: %v", err)
-			}
-		}
-		source := filepath.Join(publisher.ResultsDir, "qodana.sarif.json")
-		destination := filepath.Join(reportResultsPath, "qodana.sarif.json")
-
-		if err := cp.Copy(source, destination); err != nil {
-			log.Fatal(err)
-		}
-	}
 
 	publisherCommand := getPublisherArgs(
 		javaPath,
@@ -87,14 +71,12 @@ func SendReport(publisher Publisher, token string, publisherPath string, javaPat
 
 // getPublisherArgs returns args for the publisher.
 func getPublisherArgs(java string, publisherPath string, publisher Publisher, token string, endpoint string) []string {
-	reportResultsPath := ReportResultsPath(publisher.ResultsDir)
 	publisherArgs := []string{
 		utils.QuoteForWindows(java),
 		"-jar",
 		utils.QuoteForWindows(publisherPath),
 		"--analysis-id", publisher.AnalysisId,
-		"--sources-path", utils.QuoteForWindows(publisher.ProjectDir),
-		"--report-path", utils.QuoteForWindows(reportResultsPath),
+		"--report-path", utils.QuoteForWindows(publisher.ResultsDir),
 		"--token", token,
 	}
 	var tools []string
