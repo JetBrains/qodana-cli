@@ -62,7 +62,6 @@ If you are using other Qodana Cloud instance than https://qodana.cloud/, overrid
 
 			publisher := platform.Publisher{
 				ResultsDir: commonCtx.ResultsDir,
-				ProjectDir: commonCtx.ProjectDir,
 				LogDir:     commonCtx.LogDir(),
 				AnalysisId: cliOptions.AnalysisId,
 			}

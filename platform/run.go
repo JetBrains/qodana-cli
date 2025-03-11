@@ -34,7 +34,6 @@ import (
 	"os"
 	"path"
 	"path/filepath"
-	"strings"
 )
 
 func RunThirdPartyLinterAnalysis(
@@ -139,17 +138,8 @@ func RunThirdPartyLinterAnalysis(
 		msg.ErrorMessage(err.Error())
 		return 1, err
 	}
-	if err = copySarifToReportPath(context.ResultsDir()); err != nil {
-		msg.ErrorMessage(err.Error())
-		return 1, err
-	}
-	if err = convertReportToCloudFormat(context); err != nil {
-		msg.ErrorMessage(err.Error())
-		return 1, err
-	}
-	resultsPath := ReportResultsPath(context.ResultsDir())
 	if qodanaConfigEffectiveFiles.EffectiveQodanaYamlPath != "" {
-		err = copyQodanaYamlToReportPath(qodanaConfigEffectiveFiles.EffectiveQodanaYamlPath, resultsPath)
+		err = copyQodanaYamlToLogDir(qodanaConfigEffectiveFiles.EffectiveQodanaYamlPath, context.LogDir())
 		if err != nil {
 			msg.ErrorMessage(err.Error())
 			return 1, err
@@ -226,7 +216,6 @@ func sendReportToQodanaServer(c thirdpartyscan.Context) {
 		fmt.Println("Publishing report ...")
 		publisher := Publisher{
 			ResultsDir: c.ResultsDir(),
-			ProjectDir: c.ProjectDir(),
 			LogDir:     c.LogDir(),
 			AnalysisId: c.AnalysisId(),
 		}
@@ -241,71 +230,15 @@ func sendReportToQodanaServer(c thirdpartyscan.Context) {
 	}
 }
 
-func copyQodanaYamlToReportPath(qodanaYamlFullPath string, reportResultsPath string) error {
+func copyQodanaYamlToLogDir(qodanaYamlFullPath string, logDir string) error {
 	if _, err := os.Stat(qodanaYamlFullPath); errors.Is(err, os.ErrNotExist) {
 		return nil
 	}
-	if err := utils.CopyFile(qodanaYamlFullPath, path.Join(reportResultsPath, "qodana.yaml")); err != nil {
+	if err := utils.CopyFile(qodanaYamlFullPath, path.Join(logDir, "qodana.yaml")); err != nil {
 		log.Errorf("Error while copying qodana.yaml: %s", err)
 		return err
 	}
 	return nil
-}
-
-func convertReportToCloudFormat(c thirdpartyscan.Context) error {
-	reportResultsPath := ReportResultsPath(c.ResultsDir())
-	log.Debugf("Generating report to %s...", reportResultsPath)
-	args := converterArgs(c)
-	stdout, _, res, err := utils.LaunchAndLog(c.LogDir(), "converter", args...)
-	if res != 0 {
-		return fmt.Errorf("converter exited with non-zero status code: %d", res)
-	}
-	if err != nil {
-		return fmt.Errorf("error while running converter: %s", err)
-	}
-	if strings.Contains(stdout, "java.lang") {
-		return fmt.Errorf("exception occured while generating report: %s", stdout)
-	}
-	return nil
-}
-
-func copySarifToReportPath(resultsDir string) error {
-	reportResultsPath := ReportResultsPath(resultsDir)
-	sarifPath := GetSarifPath(resultsDir)
-	shortSarifPath := GetShortSarifPath(resultsDir)
-
-	if _, err := os.Stat(reportResultsPath); errors.Is(err, os.ErrNotExist) {
-		err := os.MkdirAll(reportResultsPath, 0755)
-		if err != nil {
-			return err
-		}
-	}
-	destination := filepath.Join(reportResultsPath, "qodana.sarif.json")
-	if err := utils.CopyFile(sarifPath, destination); err != nil {
-		return fmt.Errorf("problem while copying the report %e", err)
-	}
-	if err := MakeShortSarif(destination, shortSarifPath); err != nil {
-		return fmt.Errorf("problem while making short sarif %e", err)
-	}
-	return nil
-}
-
-func converterArgs(c thirdpartyscan.Context) []string {
-	reportResultsPath := ReportResultsPath(c.ResultsDir())
-	return []string{
-		utils.QuoteForWindows(c.MountInfo().JavaPath),
-		"-jar",
-		utils.QuoteForWindows(c.MountInfo().Converter),
-		"-s",
-		utils.QuoteForWindows(c.ProjectDir()),
-		"-d",
-		utils.QuoteForWindows(c.ResultsDir()),
-		"-o",
-		utils.QuoteForWindows(reportResultsPath),
-		"-n",
-		"result-allProblems.json",
-		"-f",
-	}
 }
 
 func printQodanaLogo(logDir string, cacheDir string, linterInfo thirdpartyscan.LinterInfo) {

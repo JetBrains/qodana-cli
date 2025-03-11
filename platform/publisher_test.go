@@ -48,8 +48,7 @@ func TestFetchPublisher(t *testing.T) {
 func TestGetPublisherArgs(t *testing.T) {
 	// Set up test options
 	publisher := Publisher{
-		ResultsDir: "/path/to/results",
-		ProjectDir: "/path/to/project",
+		ResultsDir: filepath.FromSlash("/path/to/results"),
 		LogDir:     "",
 		AnalysisId: "test-analysis-id",
 	}
@@ -70,8 +69,7 @@ func TestGetPublisherArgs(t *testing.T) {
 		"-jar",
 		"test-publisher.jar",
 		"--analysis-id", "test-analysis-id",
-		"--sources-path", "/path/to/project",
-		"--report-path", filepath.FromSlash("/path/to/results/results"),
+		"--report-path", filepath.FromSlash("/path/to/results"),
 		"--token", "test-token",
 		"--tool", "test-tool",
 		"--endpoint", "test-endpoint",
