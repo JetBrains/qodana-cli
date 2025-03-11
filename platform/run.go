@@ -274,6 +274,12 @@ func copySarifToReportPath(resultsDir string) error {
 	sarifPath := GetSarifPath(resultsDir)
 	shortSarifPath := GetShortSarifPath(resultsDir)
 
+	if _, err := os.Stat(reportResultsPath); errors.Is(err, os.ErrNotExist) {
+		err := os.MkdirAll(reportResultsPath, 0755)
+		if err != nil {
+			return err
+		}
+	}
 	destination := filepath.Join(reportResultsPath, "qodana.sarif.json")
 	if err := utils.CopyFile(sarifPath, destination); err != nil {
 		return fmt.Errorf("problem while copying the report %e", err)
