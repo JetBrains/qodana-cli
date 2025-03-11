@@ -22,6 +22,7 @@ import (
 	"fmt"
 	"github.com/JetBrains/qodana-cli/v2025/platform/msg"
 	"github.com/JetBrains/qodana-cli/v2025/platform/product"
+	"github.com/JetBrains/qodana-cli/v2025/platform/qdcontainer"
 	"github.com/JetBrains/qodana-cli/v2025/platform/qdenv"
 	"github.com/JetBrains/qodana-cli/v2025/platform/qdyaml"
 	"os"
@@ -155,7 +156,7 @@ func computeResultsDir(resultsDirFromCliOptions string, linterDir string) string
 		return resultsDirFromCliOptions
 	}
 	if qdenv.IsContainer() {
-		return "/data/results"
+		return qdcontainer.DataResultsDir
 	} else {
 		return filepath.Join(linterDir, "results")
 	}
@@ -166,7 +167,7 @@ func computeCacheDir(cacheDirFromCliOptions string, linterDir string) string {
 		return cacheDirFromCliOptions
 	}
 	if qdenv.IsContainer() {
-		return "/data/cache"
+		return qdcontainer.DataCacheDir
 	} else {
 		return filepath.Join(linterDir, "cache")
 	}
@@ -177,7 +178,7 @@ func computeReportDir(reportDirFromCliOptions string, resultsDir string) string 
 		return reportDirFromCliOptions
 	}
 	if qdenv.IsContainer() {
-		return "/data/results/report"
+		return qdcontainer.DataResultsReportDir
 	} else {
 		return filepath.Join(resultsDir, "report")
 	}

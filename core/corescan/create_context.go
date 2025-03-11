@@ -20,6 +20,7 @@ import (
 	"github.com/JetBrains/qodana-cli/v2025/core/startup"
 	"github.com/JetBrains/qodana-cli/v2025/platform/cmd"
 	"github.com/JetBrains/qodana-cli/v2025/platform/commoncontext"
+	"github.com/JetBrains/qodana-cli/v2025/platform/qdcontainer"
 	"github.com/JetBrains/qodana-cli/v2025/platform/qdenv"
 	"path/filepath"
 	"strings"
@@ -35,7 +36,7 @@ func CreateContext(
 	coverageDir := cliOptions.CoverageDir
 	if coverageDir == "" {
 		if qdenv.IsContainer() {
-			coverageDir = "/data/coverage"
+			coverageDir = qdcontainer.DataCoverageDir
 		} else {
 			coverageDir = filepath.Join(commonCtx.ProjectDir, ".qodana", "code-coverage")
 		}

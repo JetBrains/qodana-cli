@@ -26,6 +26,7 @@ import (
 	platformcmd "github.com/JetBrains/qodana-cli/v2025/platform/cmd"
 	"github.com/JetBrains/qodana-cli/v2025/platform/commoncontext"
 	"github.com/JetBrains/qodana-cli/v2025/platform/product"
+	"github.com/JetBrains/qodana-cli/v2025/platform/qdcontainer"
 	"github.com/JetBrains/qodana-cli/v2025/platform/qdenv"
 	"github.com/JetBrains/qodana-cli/v2025/platform/qdyaml"
 	"github.com/JetBrains/qodana-cli/v2025/platform/tokenloader"
@@ -998,7 +999,7 @@ func propertiesFixture(enableStats bool, additionalProperties []string) []string
 		"-Didea.headless.statistics.device.id=FAKE",
 		"-Didea.headless.statistics.salt=FAKE",
 		"-Dqodana.automation.guid=FAKE",
-		"-Dqodana.coverage.input=/data/coverage",
+		fmt.Sprintf("-Dqodana.coverage.input=%s", qdcontainer.DataCoverageDir),
 		fmt.Sprintf("-Didea.log.path=%s", filepath.Join(os.TempDir(), "entrypoint", "log")),
 		fmt.Sprintf("-Didea.plugins.path=%s", filepath.Join(os.TempDir(), "entrypoint", "plugins", "233")),
 		fmt.Sprintf("-Didea.system.path=%s", filepath.Join(os.TempDir(), "entrypoint", "idea", "233")),
@@ -1131,7 +1132,7 @@ func Test_Properties(t *testing.T) {
 				context := corescan.CreateContext(
 					platformcmd.CliOptions{
 						Property:    tc.cliProperties,
-						CoverageDir: "/data/coverage",
+						CoverageDir: qdcontainer.DataCoverageDir,
 						AnalysisId:  "FAKE",
 					},
 					commonCtx,
