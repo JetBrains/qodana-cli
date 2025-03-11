@@ -21,6 +21,7 @@ import (
 	"github.com/JetBrains/qodana-cli/v2025/core/startup"
 	"github.com/JetBrains/qodana-cli/v2025/platform"
 	"github.com/JetBrains/qodana-cli/v2025/platform/product"
+	"github.com/JetBrains/qodana-cli/v2025/platform/qdcontainer"
 	"github.com/JetBrains/qodana-cli/v2025/platform/utils"
 	"os"
 	"path/filepath"
@@ -209,7 +210,7 @@ func GetIdeArgs(c corescan.Context) []string {
 			arguments = append(arguments, "--jvm-debug-port", strconv.Itoa(c.JvmDebugPort()))
 		}
 		if c.GlobalConfigurationsDir() != "" {
-			arguments = append(arguments, "--global-config-dir", globalConfigDirContainerMountPath)
+			arguments = append(arguments, "--global-config-dir", qdcontainer.DataGlobalConfigDir)
 		}
 		if c.GlobalConfigurationId() != "" {
 			arguments = append(arguments, "--global-config-id", c.GlobalConfigurationId())

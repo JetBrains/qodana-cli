@@ -29,6 +29,15 @@ import (
 	"strings"
 )
 
+const (
+	DataProjectDir       = "/data/project"
+	DataResultsDir       = "/data/results"
+	DataResultsReportDir = "/data/results/report"
+	DataCacheDir         = "/data/cache"
+	DataCoverageDir      = "/data/coverage"
+	DataGlobalConfigDir  = "/data/qodana-global-config/" // when container is launched by CLI, qodana-global-configurations.yaml file is mounted here
+)
+
 func checkRequiredToolInstalled(tool string) bool {
 	_, err := exec.LookPath(tool)
 	return err == nil

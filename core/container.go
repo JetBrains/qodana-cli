@@ -53,8 +53,6 @@ const (
 	officialImagePrefix      = "jetbrains/qodana"
 	dockerSpecialCharsLength = 8
 	containerJvmDebugPort    = "5005"
-	// when container is launched by CLI, qodana-global-configurations.yaml file is mounted here
-	globalConfigDirContainerMountPath = "/data/qodana-global-config/"
 )
 
 var (
@@ -311,22 +309,22 @@ func getDockerOptions(c corescan.Context) *backend.ContainerCreateConfig {
 		{
 			Type:   mount.TypeBind,
 			Source: cachePath,
-			Target: "/data/cache",
+			Target: qdcontainer.DataCacheDir,
 		},
 		{
 			Type:   mount.TypeBind,
 			Source: projectPath,
-			Target: "/data/project",
+			Target: qdcontainer.DataProjectDir,
 		},
 		{
 			Type:   mount.TypeBind,
 			Source: resultsPath,
-			Target: "/data/results",
+			Target: qdcontainer.DataResultsDir,
 		},
 		{
 			Type:   mount.TypeBind,
 			Source: reportPath,
-			Target: "/data/results/report",
+			Target: qdcontainer.DataResultsReportDir,
 		},
 	}
 	if c.GlobalConfigurationsDir() != "" {
@@ -342,7 +340,7 @@ func getDockerOptions(c corescan.Context) *backend.ContainerCreateConfig {
 			volumes, mount.Mount{
 				Type:   mount.TypeBind,
 				Source: globalConfigDirAbsPath,
-				Target: globalConfigDirContainerMountPath,
+				Target: qdcontainer.DataGlobalConfigDir,
 			},
 		)
 	}

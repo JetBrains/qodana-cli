@@ -17,9 +17,11 @@
 package main
 
 import (
+	"fmt"
 	"github.com/JetBrains/qodana-cli/v2025/core"
 	"github.com/JetBrains/qodana-cli/v2025/core/corescan"
 	"github.com/JetBrains/qodana-cli/v2025/platform/product"
+	"github.com/JetBrains/qodana-cli/v2025/platform/qdcontainer"
 	"github.com/JetBrains/qodana-cli/v2025/platform/qdyaml"
 	"github.com/JetBrains/qodana-cli/v2025/platform/thirdpartyscan"
 	"github.com/JetBrains/qodana-cli/v2025/platform/utils"
@@ -258,7 +260,10 @@ func TestComputeCdnetArgs(t *testing.T) {
 					"qodana.default.file.suspend.threshold=100000",
 					"qodana.default.module.suspend.threshold=100000",
 					"qodana.default.project.suspend.threshold=100000",
-					"idea.diagnostic.opentelemetry.file=/data/results/log/open-telemetry.json",
+					fmt.Sprintf(
+						"idea.diagnostic.opentelemetry.file=%s/log/open-telemetry.json",
+						qdcontainer.DataResultsDir,
+					),
 					"jetbrains.security.package-checker.synchronizationTimeout=1000",
 				},
 				ResultsDir:       "",

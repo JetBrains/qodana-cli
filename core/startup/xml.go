@@ -18,10 +18,12 @@ package startup
 
 import (
 	"fmt"
+	"github.com/JetBrains/qodana-cli/v2025/platform/qdcontainer"
 )
 
 func jdkTableXml(jdkPath string) string {
-	return fmt.Sprintf(`<application>
+	return fmt.Sprintf(
+		`<application>
   <component name="ProjectJdkTable">
     <jdk version="2">
       <name value="11" />
@@ -106,11 +108,13 @@ func jdkTableXml(jdkPath string) string {
     </jdk>
   </component>
 </application>
-`, jdkPath)
+`, jdkPath,
+	)
 }
 
 func androidProjectDefaultXml(androidSdkPath string) string {
-	return fmt.Sprintf(`<application>
+	return fmt.Sprintf(
+		`<application>
   <component name="ProjectManager">
     <defaultProject>
       <component name="PropertiesComponent">
@@ -118,7 +122,8 @@ func androidProjectDefaultXml(androidSdkPath string) string {
       </component>
     </defaultProject>
   </component>
-</application>`, androidSdkPath)
+</application>`, androidSdkPath,
+	)
 }
 
 const securityXml = `<application>
@@ -127,8 +132,9 @@ const securityXml = `<application>
     </component>
 </application>`
 
-const mavenSettingsXml = `<settings>
-    <localRepository>/data/cache/.m2</localRepository>
+var mavenSettingsXml = fmt.Sprintf(
+	`<settings>
+    <localRepository>%s/.m2</localRepository>
     <mirrors>
         <mirror>
             <id>cache-central</id>
@@ -162,13 +168,16 @@ const mavenSettingsXml = `<settings>
         </mirror>
     </mirrors>
 </settings>
-`
+`, qdcontainer.DataCacheDir,
+)
 
-const mavenPathMacroxXml = `<application>
+var mavenPathMacroxXml = fmt.Sprintf(
+	`<application>
     <component name="PathMacrosImpl">
-        <macro name="MAVEN_REPOSITORY" value="/data/cache/.m2" />
+        <macro name="MAVEN_REPOSITORY" value="%s/.m2" />
     </component>
-</application>`
+</application>`, qdcontainer.DataCacheDir,
+)
 
 const userPrefsXml = `?xml version="1.0" encoding="UTF-8" standalone="no"?>
 <!DOCTYPE map SYSTEM "http://java.sun.com/dtd/preferences.dtd">
