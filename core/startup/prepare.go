@@ -125,14 +125,12 @@ func prepareLocalIdeSettingsAndGetQodanaCloudUploadToken(
 	token := tokenloader.LoadCloudUploadToken(commonCtx, false, isTokenRequired, true)
 	cloud.SetupLicenseToken(token)
 	SetupLicenseAndProjectHash(prod, cloud.GetCloudApiEndpoints(), cloud.Token.Token)
-	PrepareDirectories(
-		prod,
-		commonCtx.CacheDir,
-		commonCtx.LogDir(),
-		commonCtx.ConfDirPath(),
-	)
+
+	prepareDirectories(prod, commonCtx.CacheDir, commonCtx.LogDir(), commonCtx.ConfDirPath())
 
 	if qdenv.IsContainer() {
+		prepareContainerSpecificDirectories(prod, commonCtx.CacheDir, commonCtx.ConfDirPath())
+
 		err := SyncIdeaCache(commonCtx.CacheDir, commonCtx.ProjectDir, false)
 		if err != nil {
 			log.Warnf("failed to sync .idea directory: %v", err)
@@ -143,59 +141,30 @@ func prepareLocalIdeSettingsAndGetQodanaCloudUploadToken(
 	return prod, token
 }
 
-func PrepareDirectories(prod product.Product, cacheDir string, logDir string, confDir string) {
+func prepareContainerSpecificDirectories(prod product.Product, cacheDir string, confDir string) {
 	homeDir, err := os.UserHomeDir()
 	if err != nil {
 		log.Fatal(err)
 	}
 	userPrefsDir := filepath.Join(homeDir, ".java", ".userPrefs")
-	directories := []string{
-		cacheDir,
-		logDir,
-		confDir,
-		userPrefsDir,
-	}
-	if qdenv.IsContainer() {
-		if prod.BaseScriptName == product.Rider {
-			nugetDir := filepath.Join(cacheDir, nugetDir)
-			if err := os.Setenv("NUGET_PACKAGES", nugetDir); err != nil {
-				log.Fatal(err)
-			}
-			directories = append(
-				directories,
-				nugetDir,
-			)
-		} else if prod.BaseScriptName == product.Idea {
-			directories = append(
-				directories,
-				filepath.Join(cacheDir, m2),
-			)
-			if err = os.Setenv("GRADLE_USER_HOME", filepath.Join(cacheDir, "gradle")); err != nil {
-				log.Fatal(err)
-			}
+	MakeDirAll(userPrefsDir)
+
+	if prod.BaseScriptName == product.Rider {
+		nugetDir := filepath.Join(cacheDir, nugetDir)
+		if err := os.Setenv("NUGET_PACKAGES", nugetDir); err != nil {
+			log.Fatal(err)
 		}
-	}
-	for _, dir := range directories {
-		if _, err := os.Stat(dir); os.IsNotExist(err) {
-			if err := os.MkdirAll(dir, 0o755); err != nil {
-				log.Fatal(err)
-			}
+		MakeDirAll(nugetDir)
+	} else if prod.BaseScriptName == product.Idea {
+		MakeDirAll(filepath.Join(cacheDir, m2))
+		if err = os.Setenv("GRADLE_USER_HOME", filepath.Join(cacheDir, "gradle")); err != nil {
+			log.Fatal(err)
 		}
 	}
 
 	writeFileIfNew(filepath.Join(userPrefsDir, "prefs.xml"), userPrefsXml)
 
 	ideaOptions := filepath.Join(confDir, "options")
-	if _, err := os.Stat(ideaOptions); os.IsNotExist(err) {
-		if err := os.MkdirAll(ideaOptions, 0o755); err != nil {
-			log.Fatal(err)
-		}
-	}
-
-	if //goland:noinspection ALL
-	runtime.GOOS != "darwin" && runtime.GOOS != "windows" {
-		writeFileIfNew(filepath.Join(ideaOptions, "security.xml"), securityXml)
-	}
 
 	if prod.BaseScriptName == product.Idea {
 		mavenRootDir := filepath.Join(homeDir, ".m2")
@@ -204,11 +173,12 @@ func PrepareDirectories(prod product.Product, cacheDir string, logDir string, co
 				log.Fatal(err)
 			}
 		}
+
 		writeFileIfNew(filepath.Join(mavenRootDir, "settings.xml"), mavenSettingsXml)
 		writeFileIfNew(filepath.Join(ideaOptions, "path.macros.xml"), mavenPathMacroxXml)
 
 		androidSdk := os.Getenv(qdenv.AndroidSdkRoot)
-		if androidSdk != "" && qdenv.IsContainer() {
+		if androidSdk != "" {
 			writeFileIfNew(filepath.Join(ideaOptions, "project.default.xml"), androidProjectDefaultXml(androidSdk))
 			corettoSdk := os.Getenv(qdenv.QodanaCorettoSdk)
 			if corettoSdk != "" {
@@ -216,13 +186,41 @@ func PrepareDirectories(prod product.Product, cacheDir string, logDir string, co
 			}
 		}
 	}
+}
 
+func prepareDirectories(prod product.Product, cacheDir string, logDir string, confDir string) {
+	MakeDirAll(cacheDir)
+	MakeDirAll(logDir)
+
+	ideaOptions := filepath.Join(confDir, "options")
+	MakeDirAll(ideaOptions)
+	addKeepassIDEConfig(ideaOptions)
+
+	setDisabledPluginsTxt(prod, confDir)
+}
+
+func MakeDirAll(dir string) {
+	if _, err := os.Stat(dir); os.IsNotExist(err) {
+		if err := os.MkdirAll(dir, 0o755); err != nil {
+			log.Fatal(err)
+		}
+	}
+}
+
+func setDisabledPluginsTxt(prod product.Product, confDir string) {
 	disabledPluginsPathSrc := filepath.Join(prod.Home, "disabled_plugins.txt")
 	disabledPluginsPathDst := filepath.Join(confDir, "disabled_plugins.txt")
 	if _, err := os.Stat(disabledPluginsPathSrc); err == nil {
 		if err := cp.Copy(disabledPluginsPathSrc, disabledPluginsPathDst); err != nil {
 			log.Fatal(err)
 		}
+	}
+}
+
+func addKeepassIDEConfig(ideaOptions string) {
+	if //goland:noinspection ALL
+	runtime.GOOS != "darwin" && runtime.GOOS != "windows" {
+		writeFileIfNew(filepath.Join(ideaOptions, "security.xml"), securityXml)
 	}
 }
 

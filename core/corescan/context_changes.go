@@ -18,6 +18,7 @@ package corescan
 
 import (
 	"fmt"
+	"github.com/JetBrains/qodana-cli/v2025/core/startup"
 	"github.com/JetBrains/qodana-cli/v2025/platform/qdenv"
 	"github.com/JetBrains/qodana-cli/v2025/platform/utils"
 	"path/filepath"
@@ -63,6 +64,8 @@ func (c Context) FirstStageOfScopedScript(scopeFile string) Context {
 	)
 	c.baseline = ""
 	c.resultsDir = startDir
+	startup.MakeDirAll(c.LogDir()) // need to prepare new result and log dir
+
 	c.applyFixes = false
 	c.cleanup = false
 	c.fixesStrategy = "none" // this option is deprecated, but the only way to overwrite the possible yaml value
@@ -73,6 +76,7 @@ func (c Context) SecondStageOfScopedScript(scopeFile string, startSarif string) 
 	c.script = utils.QuoteForWindows("scoped:" + scopeFile)
 
 	endDir := filepath.Join(c.ResultsDir(), "end")
+
 	c = c.withAddedProperties(
 		"-Dqodana.skip.preamble=true",                               // don't print the QD logo again
 		"-Didea.headless.enable.statistics=false",                   // disable statistics for second run
@@ -80,6 +84,7 @@ func (c Context) SecondStageOfScopedScript(scopeFile string, startSarif string) 
 		"-Dqodana.skip.coverage.issues.reporting=true",              // don't report coverage issues on the second pass, but allow numbers to be computed
 	)
 	c.resultsDir = endDir
+	startup.MakeDirAll(c.LogDir()) // need to prepare new result and log dir
 	c.showReport = false
 	c.saveReport = false
 	return c
