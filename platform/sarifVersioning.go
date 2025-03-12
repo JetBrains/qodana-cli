@@ -39,15 +39,22 @@ func GetVersionDetails(pwd string) (sarif.VersionControlDetails, error) {
 		}
 		ret.RepositoryUri = uri
 	}
-	if os.Getenv("QODANA_BRANCH") != "" {
-		ret.Branch = os.Getenv("QODANA_BRANCH")
-	} else {
+
+	ret.Branch = os.Getenv("QODANA_BRANCH")
+	if ret.Branch == "" {
 		branch, err := getBranchName(pwd)
 		if err != nil {
 			return ret, err
 		}
 		ret.Branch = branch
 	}
+	// GitLab CI detaches HEAD even on "push"-triggered pipelines. As a last resort, try to pick up the branch name from
+	// pre-defined environment variables.
+	// See also https://docs.gitlab.com/ci/variables/predefined_variables/
+	if ret.Branch == "" && os.Getenv("CI") == "true" {
+		ret.Branch = os.Getenv("CI_COMMIT_BRANCH")
+	}
+
 	if os.Getenv("QODANA_REVISION") != "" {
 		ret.RevisionId = os.Getenv("QODANA_REVISION")
 	} else {
