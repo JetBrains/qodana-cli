@@ -2,7 +2,7 @@
 set -euo pipefail
 
 # Variables
-CONFIG_LOADER_CLI_VERSION="0.0.16"
+CONFIG_LOADER_CLI_VERSION="0.0.17"
 URL="https://packages.jetbrains.team/maven/p/ij/intellij-dependencies/org/jetbrains/qodana/config-loader-cli/$CONFIG_LOADER_CLI_VERSION/config-loader-cli-$CONFIG_LOADER_CLI_VERSION.jar"
 DEST_DIR="tooling"
 JAR_FILE="$DEST_DIR/config-loader-cli.jar"

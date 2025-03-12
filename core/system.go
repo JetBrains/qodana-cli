@@ -22,7 +22,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/JetBrains/qodana-cli/v2025/core/corescan"
-	"github.com/JetBrains/qodana-cli/v2025/core/startup"
 	"github.com/JetBrains/qodana-cli/v2025/platform"
 	"github.com/JetBrains/qodana-cli/v2025/platform/effectiveconfig"
 	"github.com/JetBrains/qodana-cli/v2025/platform/git"
@@ -280,7 +279,6 @@ func runScopeScript(ctx context.Context, c corescan.Context, startHash string) i
 			log.Fatalf("Cannot checkout commit %s: %v", hash, e)
 		}
 
-		startup.PrepareDirectories(c.Prod(), c.CacheDir(), c.LogDir(), c.ConfigDir())
 		log.Infof("Analysing %s", hash)
 
 		// for CLI, we use only bootstrap from this effective yaml
