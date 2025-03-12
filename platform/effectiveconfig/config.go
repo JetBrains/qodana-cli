@@ -108,7 +108,7 @@ func CreateEffectiveConfigFiles(
 			//goland:noinspection GoErrorStringFormat
 			err = fmt.Errorf("Failed to create effective configuration: %v", err)
 		}
-		msg.ErrorMessage("Failed to create effective configuration. See log above for details")
+		msg.ErrorMessage("Failed to create effective configuration.")
 		return Files{}, err
 	}
 
