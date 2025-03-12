@@ -105,36 +105,36 @@ jobs:
       - uses: github/codeql-action/autobuild@v3
       - uses: github/codeql-action/analyze@v3
 
-  release-nightly:
-    runs-on: sre-eqx-kata
-    needs: [ test, code-quality ]
-    container:
-      image: ghcr.io/jetbrains/qodana-cli/devcontainer:latest
-    permissions:
-      checks: write
-      pull-requests: write
-      actions: read
-      contents: write
-      security-events: write
-      packages: read
-    if: github.ref == 'refs/heads/main'
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-      - name: Overwrite tools (to run tests only on gh repo)
-        run: |
-          touch cdnet/clt.zip tooling/baseline-cli.jar tooling/intellij-report-converter.jar tooling/qodana-fuser.jar
-          rm go.work && mv go.work.github go.work
-      - run: |
-          ./download_deps.sh
-          export TARGETARCH=$(uname -m)
-          curl -fsSL "https://codesign-distribution.labs.jb.gg/codesign-client-linux-$TARGETARCH" -o /usr/local/bin/codesign || true
-          chmod +x /usr/local/bin/codesign || true
-          cd cli && goreleaser release --clean --nightly --skip=chocolatey,nfpm,homebrew,scoop,snapcraft
-        env:
-          GH_TOKEN: ${{ github.token }}
-          GORELEASER_KEY: ${{ secrets.GORELEASER_KEY }}
+#  release-nightly:
+#    runs-on: sre-eqx-kata
+#    needs: [ test, code-quality ]
+#    container:
+#      image: ghcr.io/jetbrains/qodana-cli/devcontainer:latest
+#    permissions:
+#      checks: write
+#      pull-requests: write
+#      actions: read
+#      contents: write
+#      security-events: write
+#      packages: read
+#    if: github.ref == 'refs/heads/main'
+#    steps:
+#      - uses: actions/checkout@v4
+#        with:
+#          fetch-depth: 0
+#      - name: Overwrite tools (to run tests only on gh repo)
+#        run: |
+#          touch cdnet/clt.zip tooling/baseline-cli.jar tooling/intellij-report-converter.jar tooling/qodana-fuser.jar
+#          rm go.work && mv go.work.github go.work
+#      - run: |
+#          ./download_deps.sh
+#          export TARGETARCH=$(uname -m)
+#          curl -fsSL "https://codesign-distribution.labs.jb.gg/codesign-client-linux-$TARGETARCH" -o /usr/local/bin/codesign || true
+#          chmod +x /usr/local/bin/codesign || true
+#          cd cli && goreleaser release --clean --nightly --skip=chocolatey,nfpm,homebrew,scoop,snapcraft
+#        env:
+#          GH_TOKEN: ${{ github.token }}
+#          GORELEASER_KEY: ${{ secrets.GORELEASER_KEY }}
 
 #  install-script-check:
 #    strategy:
