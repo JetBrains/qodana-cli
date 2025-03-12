@@ -94,14 +94,14 @@ func getRevisionId(pwd string) (string, error) {
 }
 
 func getBranchName(pwd string) (string, error) {
-	branch, _, ret, err := utils.RunCmdRedirectOutput(pwd, "git", "rev-parse", "--abbrev-ref", "HEAD")
+	branch, _, ret, err := utils.RunCmdRedirectOutput(pwd, "git", "branch", "--show-current")
 	if err != nil {
 		return "", err
 	}
 	if ret != 0 {
-		return "", errors.New("git rev-parse --abbrev-ref HEAD failed")
+		return "", errors.New("git branch --show-current failed")
 	}
-	return strings.TrimSpace(branch), nil
+	return strings.TrimSpace(branch), nil // note: branch could be "" if HEAD is detached
 }
 
 func getLastAuthorName(pwd string) string {
