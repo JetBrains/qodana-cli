@@ -18,10 +18,11 @@ package platform
 
 import (
 	"errors"
-	"github.com/JetBrains/qodana-cli/v2025/platform/utils"
-	"github.com/JetBrains/qodana-cli/v2025/sarif"
 	"os"
 	"strings"
+
+	"github.com/JetBrains/qodana-cli/v2025/platform/utils"
+	"github.com/JetBrains/qodana-cli/v2025/sarif"
 )
 
 // it is needed for third party linters
