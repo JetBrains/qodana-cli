@@ -331,6 +331,9 @@ func defaultLocalNotEffectiveQodanaYamlIfExists(project string) string {
 
 // GetLocalNotEffectiveQodanaYamlFullPath does not process `imports` field and doesn't use global configuration
 func GetLocalNotEffectiveQodanaYamlFullPath(project string, yamlPathInProject string) string {
+	if filepath.IsAbs(yamlPathInProject) {
+		return yamlPathInProject
+	}
 	if yamlPathInProject == "" {
 		yamlPathInProject = defaultLocalNotEffectiveQodanaYamlIfExists(project)
 	}
