@@ -17,6 +17,7 @@
 package platform
 
 import (
+	"fmt"
 	"os"
 	"path/filepath"
 	"runtime"
@@ -26,30 +27,34 @@ import (
 // directory and all its contents to allow read and write
 // permissions for files, and appropriate permissions for directories.
 func ChangePermissionsRecursively(path string) error {
+	fmt.Printf("Changing permissions of %s", path)
 	//goland:noinspection GoBoolExpressions
 	if runtime.GOOS == "windows" {
 		return nil
 	}
-	return filepath.Walk(path, func(path string, info os.FileInfo, err error) error {
-		if err != nil {
-			return err
-		}
+	return filepath.Walk(
+		path, func(path string, info os.FileInfo, err error) error {
+			fmt.Printf("Ascending into path %s", path)
+			if err != nil {
+				return err
+			}
 
-		var perm os.FileMode
-		if info.IsDir() {
-			// Set directory permissions to read, write, and
-			// execute for owner and group, read and execute for others
-			perm = 0775
-		} else {
-			// Set file permissions to read and write for owner, group, and others
-			perm = 0666
-		}
+			var perm os.FileMode
+			if info.IsDir() {
+				// Set directory permissions to read, write, and
+				// execute for owner and group, read and execute for others
+				perm = 0775
+			} else {
+				// Set file permissions to read and write for owner, group, and others
+				perm = 0666
+			}
 
-		err = os.Chmod(path, perm)
-		if err != nil {
-			return err
-		}
+			err = os.Chmod(path, perm)
+			if err != nil {
+				return err
+			}
 
-		return nil
-	})
+			return nil
+		},
+	)
 }
