@@ -97,7 +97,7 @@ RUN set -ex && \
     done && \
     gpg --verify "/tmp/$QD_NAME.tar.gz.sha256.asc" "/tmp/$QD_NAME.tar.gz.sha256" && \
     (cd /tmp && sha256sum --check --status "$QD_NAME.tar.gz.sha256") && \
-    mkdir -p /tmp/qd && tar -xzf "/tmp/$QD_NAME.tar.gz" --directory /opt/qodana  && \
+    mkdir -p /tmp/qd /opt/qodana && tar -xzf "/tmp/$QD_NAME.tar.gz" --directory /opt/qodana  && \
     mv /opt/qodana/qodana-clang /opt/qodana/qodana && \
     chmod +x /opt/qodana/qodana && \
     apt-get purge --auto-remove -y gnupg2 && \
