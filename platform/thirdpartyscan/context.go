@@ -72,6 +72,7 @@ type Context struct {
 	cloudData             ThirdPartyStartupCloudData
 	projectDir            string
 	resultsDir            string
+	reportDir             string
 	logDir                string
 	cacheDir              string
 	clangCompileCommands  string
@@ -119,6 +120,7 @@ type ContextBuilder struct {
 	CloudData             ThirdPartyStartupCloudData
 	ProjectDir            string
 	ResultsDir            string
+	ReportDir             string
 	LogDir                string
 	CacheDir              string
 	ClangCompileCommands  string
@@ -144,6 +146,7 @@ func (b ContextBuilder) Build() Context {
 		cloudData:             b.CloudData,
 		projectDir:            b.ProjectDir,
 		resultsDir:            b.ResultsDir,
+		reportDir:             b.ReportDir,
 		logDir:                b.LogDir,
 		cacheDir:              b.CacheDir,
 		clangCompileCommands:  b.ClangCompileCommands,
@@ -168,6 +171,7 @@ func (c Context) MountInfo() MountInfo                  { return c.mountInfo }
 func (c Context) CloudData() ThirdPartyStartupCloudData { return c.cloudData }
 func (c Context) ProjectDir() string                    { return c.projectDir }
 func (c Context) ResultsDir() string                    { return c.resultsDir }
+func (c Context) ReportDir() string                     { return c.reportDir }
 func (c Context) LogDir() string                        { return c.logDir }
 func (c Context) CacheDir() string                      { return c.cacheDir }
 func (c Context) ClangCompileCommands() string          { return c.clangCompileCommands }
