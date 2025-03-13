@@ -42,8 +42,6 @@ func RunThirdPartyLinterAnalysis(
 	linterInfo thirdpartyscan.LinterInfo,
 ) (int, error) {
 	var err error
-	resultDir := cliOptions.ResultsDir
-	defer changeResultDirPermissionsInContainer(resultDir)
 
 	commonCtx := commoncontext.Compute(
 		cliOptions.Linter,
@@ -61,7 +59,8 @@ func RunThirdPartyLinterAnalysis(
 		msg.ErrorMessage(err.Error())
 		return 1, err
 	}
-	resultDir = commonCtx.ResultsDir
+	resultDir := commonCtx.ResultsDir
+	defer changeResultDirPermissionsInContainer(resultDir)
 
 	thirdPartyCloudData := checkLinterLicense(commonCtx)
 	isCommunity := thirdPartyCloudData.LicensePlan == cloud.CommunityLicensePlan
