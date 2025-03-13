@@ -18,8 +18,12 @@ package platform
 
 import (
 	"errors"
+	"net/url"
 	"os"
+	"path/filepath"
 	"strings"
+
+	log "github.com/sirupsen/logrus"
 
 	"github.com/JetBrains/qodana-cli/v2025/platform/utils"
 	"github.com/JetBrains/qodana-cli/v2025/sarif"
@@ -79,6 +83,16 @@ func getRepositoryUri(pwd string) (string, error) {
 	uri, _, ret, err := utils.RunCmdRedirectOutput(pwd, "git", "ls-remote", "--get-url")
 	if err != nil {
 		return "", err
+	}
+	if ret == 128 {
+		// Returned when a remote is not configured or multiple remotes exist, none of which is the default
+		log.Warn("Failed to retrieve remote URL:", err)
+		uri_struct := url.URL{
+			Scheme: "file",
+			Host:   "",
+			Path:   filepath.ToSlash(pwd),
+		}
+		return uri_struct.String(), nil
 	}
 	if ret != 0 {
 		return "", errors.New("git ls-remote --get-url failed")
