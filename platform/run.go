@@ -34,6 +34,7 @@ import (
 	"os"
 	"path"
 	"path/filepath"
+	"strings"
 )
 
 func RunThirdPartyLinterAnalysis(
@@ -143,6 +144,10 @@ func RunThirdPartyLinterAnalysis(
 			msg.ErrorMessage(err.Error())
 			return 1, err
 		}
+	}
+	if err = convertReportToCloudFormat(context); err != nil {
+		msg.ErrorMessage(err.Error())
+		return 1, err
 	}
 	sendReportToQodanaServer(context)
 	return analysisResult, nil
@@ -277,5 +282,38 @@ func changeResultDirPermissionsInContainer(resultDir string) {
 	err := ChangePermissionsRecursively(resultDir)
 	if err != nil {
 		msg.ErrorMessage("Unable to change permissions in %s: %s", resultDir, err)
+	}
+}
+
+func convertReportToCloudFormat(context thirdpartyscan.Context) error {
+	log.Debugf("Generating report to %s...", context.ReportDir())
+	args := converterArgs(context, context.MountInfo())
+	stdout, _, res, err := utils.LaunchAndLog(context.LogDir(), "converter", args...)
+	if res != 0 {
+		return fmt.Errorf("converter exited with non-zero status code: %d", res)
+	}
+	if err != nil {
+		return fmt.Errorf("error while running converter: %s", err)
+	}
+	if strings.Contains(stdout, "java.lang") {
+		return fmt.Errorf("exception occured while generating report: %s", stdout)
+	}
+	return nil
+}
+
+func converterArgs(options thirdpartyscan.Context, mountInfo thirdpartyscan.MountInfo) []string {
+	return []string{
+		utils.QuoteForWindows(mountInfo.JavaPath),
+		"-jar",
+		utils.QuoteForWindows(mountInfo.Converter),
+		"-s",
+		utils.QuoteForWindows(options.ProjectDir()),
+		"-d",
+		utils.QuoteForWindows(options.ResultsDir()),
+		"-o",
+		utils.QuoteForWindows(options.ReportDir()),
+		"-n",
+		"result-allProblems.json",
+		"-f",
 	}
 }
