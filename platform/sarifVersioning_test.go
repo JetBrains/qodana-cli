@@ -76,12 +76,12 @@ func TestGetVersionDetailsBranchFromEnvironment(t *testing.T) {
 	}(dir)
 
 	assertBranchName := func(expected string) {
-		version_info, err := GetVersionDetails(dir)
+		versionInfo, err := GetVersionDetails(dir)
 		if err != nil {
 			t.Fatal(err)
 		}
-		if version_info.Branch != expected {
-			t.Fatalf("Incorrect branch name: '%s' (expected '%s')", version_info.Branch, expected)
+		if versionInfo.Branch != expected {
+			t.Fatalf("Incorrect branch name: '%s' (expected '%s')", versionInfo.Branch, expected)
 		}
 	}
 
@@ -89,29 +89,29 @@ func TestGetVersionDetailsBranchFromEnvironment(t *testing.T) {
 	runGitCommit(t, dir)
 	runCommand(t, dir, "git", "switch", "--detach")
 
-	os.Setenv("QODANA_BRANCH", "QODANA_BRANCH")
-	os.Setenv("CI", "true")
-	os.Setenv("CI_COMMIT_BRANCH", "CI_COMMIT_BRANCH")
+	setEnv(t, "QODANA_BRANCH", "QODANA_BRANCH")
+	setEnv(t, "CI", "true")
+	setEnv(t, "CI_COMMIT_BRANCH", "CI_COMMIT_BRANCH")
 	assertBranchName("QODANA_BRANCH")
 
-	os.Setenv("QODANA_BRANCH", "QODANA_BRANCH")
-	os.Unsetenv("CI")
-	os.Unsetenv("CI_COMMIT_BRANCH")
+	setEnv(t, "QODANA_BRANCH", "QODANA_BRANCH")
+	unsetEnv(t, "CI")
+	unsetEnv(t, "CI_COMMIT_BRANCH")
 	assertBranchName("QODANA_BRANCH")
 
-	os.Unsetenv("QODANA_BRANCH")
-	os.Setenv("CI", "true")
-	os.Setenv("CI_COMMIT_BRANCH", "CI_COMMIT_BRANCH")
+	unsetEnv(t, "QODANA_BRANCH")
+	setEnv(t, "CI", "true")
+	setEnv(t, "CI_COMMIT_BRANCH", "CI_COMMIT_BRANCH")
 	assertBranchName("CI_COMMIT_BRANCH")
 
-	os.Unsetenv("QODANA_BRANCH")
-	os.Setenv("CI", "false")
-	os.Setenv("CI_COMMIT_BRANCH", "CI_COMMIT_BRANCH")
+	unsetEnv(t, "QODANA_BRANCH")
+	setEnv(t, "CI", "false")
+	setEnv(t, "CI_COMMIT_BRANCH", "CI_COMMIT_BRANCH")
 	assertBranchName("")
 
-	os.Unsetenv("QODANA_BRANCH")
-	os.Unsetenv("CI")
-	os.Setenv("CI_COMMIT_BRANCH", "CI_COMMIT_BRANCH")
+	unsetEnv(t, "QODANA_BRANCH")
+	unsetEnv(t, "CI")
+	setEnv(t, "CI_COMMIT_BRANCH", "CI_COMMIT_BRANCH")
 	assertBranchName("")
 }
 
@@ -132,4 +132,18 @@ func runGitCommit(t *testing.T, cwd string) {
 		"git", "-c", "user.name=platform/sarifVersioning_test.go", "-c", "user.email=<>",
 		"commit", "--allow-empty", "-m", "commit",
 	)
+}
+
+func setEnv(t *testing.T, key string, value string) {
+	err := os.Setenv(key, value)
+	if err != nil {
+		t.Fatal(err)
+	}
+}
+
+func unsetEnv(t *testing.T, key string) {
+	err := os.Unsetenv(key)
+	if err != nil {
+		t.Fatal(err)
+	}
 }
