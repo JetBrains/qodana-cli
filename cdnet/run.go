@@ -31,6 +31,11 @@ import (
 type CdnetLinter struct {
 }
 
+const cltFingeprint = "contextRegionHash/v1"
+const qodanaFingeprint = "equalIndicator/v1"
+const archive = "clt.zip"
+const moniker = "resharper-clt"
+
 func (l CdnetLinter) ComputeNewLinterInfo(
 	linterInfo thirdpartyscan.LinterInfo,
 	_ bool,
@@ -71,12 +76,12 @@ func (l CdnetLinter) MountTools(tempMountPath string, mountPath string, _ bool) 
 		"any",
 		"JetBrains.CommandLine.Products.dll",
 	)
-	archive := "clt.zip"
+
 	if _, err := os.Stat(val["clt"]); err != nil {
 		if os.IsNotExist(err) {
-			path := platform.ProcessAuxiliaryTool(archive, "clang", tempMountPath, mountPath, Clt)
+			path := platform.ProcessAuxiliaryTool(archive, moniker, tempMountPath, mountPath, Clt)
 			if err := platform.Decompress(path, mountPath); err != nil {
-				return nil, fmt.Errorf("failed to decompress clang archive: %w", err)
+				return nil, fmt.Errorf("failed to decompress %s archive: %w", moniker, err)
 			}
 		}
 	}
@@ -117,6 +122,18 @@ func patchReport(c thirdpartyscan.Context) error {
 			taxonomy = append(taxonomy, taxa)
 		}
 		run.Tool.Driver.Taxa = taxonomy
+
+		results := make([]sarif.Result, 0)
+		for _, result := range run.Results {
+			if result.PartialFingerprints != nil {
+				if cltValue := result.PartialFingerprints[cltFingeprint]; cltValue != "" && result.PartialFingerprints[qodanaFingeprint] == "" {
+					result.PartialFingerprints[qodanaFingeprint] = cltValue
+					delete(result.PartialFingerprints, cltFingeprint)
+				}
+			}
+			results = append(results, result)
+		}
+		run.Results = results
 	}
 
 	platform.SetVersionControlParams(c, platform.GetDeviceIdSalt()[0], finalReport)

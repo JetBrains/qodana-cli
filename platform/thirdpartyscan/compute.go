@@ -50,6 +50,7 @@ func ComputeContext(
 		CloudData:             cloudData,
 		ProjectDir:            projectDir,
 		ResultsDir:            initArgs.ResultsDir,
+		ReportDir:             initArgs.ReportDir,
 		LogDir:                initArgs.LogDir(),
 		CacheDir:              initArgs.CacheDir,
 		ClangCompileCommands:  clangCompileCommands,
