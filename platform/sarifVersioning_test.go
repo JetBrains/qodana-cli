@@ -44,7 +44,7 @@ func TestGetBranchName(t *testing.T) {
 		t.Fatalf("Incorrect branch name: '%s' (expected 'my-branch')", branch)
 	}
 
-	runCommand(t, dir, "git", "commit", "--allow-empty", "-m", "commit")
+	runGitCommit(t, dir)
 	branch, err = getBranchName(dir)
 	if err != nil {
 		t.Fatal(err)
@@ -86,7 +86,7 @@ func TestGetVersionDetailsBranchFromEnvironment(t *testing.T) {
 	}
 
 	runCommand(t, dir, "git", "init", "--initial-branch=my-branch")
-	runCommand(t, dir, "git", "commit", "--allow-empty", "-m", "commit")
+	runGitCommit(t, dir)
 	runCommand(t, dir, "git", "switch", "--detach")
 
 	os.Setenv("QODANA_BRANCH", "QODANA_BRANCH")
@@ -125,4 +125,11 @@ func runCommand(t *testing.T, cwd string, args ...string) (string, string) {
 	}
 
 	return stdout, stderr
+}
+
+func runGitCommit(t *testing.T, cwd string) {
+	runCommand(t, cwd,
+		"git", "-c", "user.name=platform/sarifVersioning_test.go", "-c", "user.email=<>",
+		"commit", "--allow-empty", "-m", "commit",
+	)
 }
