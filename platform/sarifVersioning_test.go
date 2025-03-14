@@ -121,7 +121,7 @@ func runCommand(t *testing.T, cwd string, args ...string) (string, string) {
 		t.Fatal(err)
 	}
 	if ret != 0 {
-		t.Fatalf("%q failed with exit code %d", args, ret)
+		t.Fatalf("%q failed with exit code %d.\nStdout was: %q\nStderr was: %q", args, ret, stdout, stderr)
 	}
 
 	return stdout, stderr
