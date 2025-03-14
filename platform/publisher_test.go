@@ -65,7 +65,7 @@ func TestGetPublisherArgs(t *testing.T) {
 
 	// Assert that the expected arguments are present
 	expectedArgs := []string{
-		java,
+		utils.QuoteForWindows(java),
 		"-jar",
 		"test-publisher.jar",
 		"--analysis-id", "test-analysis-id",
