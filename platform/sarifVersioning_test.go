@@ -35,7 +35,7 @@ func TestGetBranchName(t *testing.T) {
 		}
 	}(dir)
 
-	runCommand(t, dir, "git", "init", "--initial-branch=my-branch")
+	runCommand(t, dir, "git init --initial-branch=my-branch")
 	branch, err := getBranchName(dir)
 	if err != nil {
 		t.Fatal(err)
@@ -53,7 +53,7 @@ func TestGetBranchName(t *testing.T) {
 		t.Fatalf("Incorrect branch name: '%s' (expected 'my-branch')", branch)
 	}
 
-	runCommand(t, dir, "git", "switch", "--detach")
+	runCommand(t, dir, "git switch --detach")
 	branch, err = getBranchName(dir)
 	if err != nil {
 		t.Fatal(err)
@@ -85,9 +85,9 @@ func TestGetVersionDetailsBranchFromEnvironment(t *testing.T) {
 		}
 	}
 
-	runCommand(t, dir, "git", "init", "--initial-branch=my-branch")
+	runCommand(t, dir, "git init --initial-branch=my-branch")
 	runGitCommit(t, dir)
-	runCommand(t, dir, "git", "switch", "--detach")
+	runCommand(t, dir, "git switch --detach")
 
 	setEnv(t, "QODANA_BRANCH", "QODANA_BRANCH")
 	setEnv(t, "CI", "true")
@@ -115,13 +115,13 @@ func TestGetVersionDetailsBranchFromEnvironment(t *testing.T) {
 	assertBranchName("")
 }
 
-func runCommand(t *testing.T, cwd string, args ...string) (string, string) {
-	stdout, stderr, ret, err := utils.RunCmdRedirectOutput(cwd, args...)
+func runCommand(t *testing.T, cwd string, command string) (string, string) {
+	stdout, stderr, ret, err := utils.RunCmdRedirectOutput(cwd, command)
 	if err != nil {
 		t.Fatal(err)
 	}
 	if ret != 0 {
-		t.Fatalf("%q failed with exit code %d.\nStdout was: %q\nStderr was: %q", args, ret, stdout, stderr)
+		t.Fatalf("%q failed with exit code %d.\nStdout was: %q\nStderr was: %q", command, ret, stdout, stderr)
 	}
 
 	return stdout, stderr
@@ -129,8 +129,7 @@ func runCommand(t *testing.T, cwd string, args ...string) (string, string) {
 
 func runGitCommit(t *testing.T, cwd string) {
 	runCommand(t, cwd,
-		"git", "-c", "user.name=platform/sarifVersioning_test.go", "-c", "user.email=<>",
-		"commit", "--allow-empty", "-m", "commit",
+		"git -c user.name=platform/sarifVersioning_test.go -c user.email=none commit --allow-empty -m commit",
 	)
 }
 
