@@ -121,6 +121,13 @@ func getBranchName(pwd string) (string, error) {
 	if err != nil {
 		return "", err
 	}
+	if ret == 128 {
+		// this approach covers some corner cases, notably when no commits exist
+		branch, _, ret, err = utils.RunCmdRedirectOutput(pwd, "git", "symbolic-ref", "--short", "HEAD")
+		if err != nil {
+			return "", err
+		}
+	}
 	if ret != 0 {
 		return "", errors.New("git rev-parse --abbrev-ref HEAD failed")
 	}
