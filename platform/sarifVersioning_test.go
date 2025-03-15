@@ -90,28 +90,24 @@ func TestGetVersionDetailsBranchFromEnvironment(t *testing.T) {
 	runCommand(t, dir, "git switch --detach")
 
 	setEnv(t, "QODANA_BRANCH", "QODANA_BRANCH")
-	setEnv(t, "CI", "true")
+	setEnv(t, "CI_REPOSITORY_URL", "https://ci-repository-url")
+	setEnv(t, "CI_JOB_URL", "https://ci-job-url")
+	setEnv(t, "CI_COMMIT_SHA", "0000000000000000000000000000000000000000")
 	setEnv(t, "CI_COMMIT_BRANCH", "CI_COMMIT_BRANCH")
 	assertBranchName("QODANA_BRANCH")
 
-	setEnv(t, "QODANA_BRANCH", "QODANA_BRANCH")
-	unsetEnv(t, "CI")
-	unsetEnv(t, "CI_COMMIT_BRANCH")
-	assertBranchName("QODANA_BRANCH")
-
 	unsetEnv(t, "QODANA_BRANCH")
-	setEnv(t, "CI", "true")
+	setEnv(t, "CI_REPOSITORY_URL", "https://ci-repository-url")
+	setEnv(t, "CI_JOB_URL", "https://ci-job-url")
+	setEnv(t, "CI_COMMIT_SHA", "0000000000000000000000000000000000000000")
 	setEnv(t, "CI_COMMIT_BRANCH", "CI_COMMIT_BRANCH")
 	assertBranchName("CI_COMMIT_BRANCH")
 
 	unsetEnv(t, "QODANA_BRANCH")
-	setEnv(t, "CI", "false")
-	setEnv(t, "CI_COMMIT_BRANCH", "CI_COMMIT_BRANCH")
-	assertBranchName("")
-
-	unsetEnv(t, "QODANA_BRANCH")
-	unsetEnv(t, "CI")
-	setEnv(t, "CI_COMMIT_BRANCH", "CI_COMMIT_BRANCH")
+	unsetEnv(t, "CI_REPOSITORY_URL")
+	unsetEnv(t, "CI_JOB_URL")
+	unsetEnv(t, "CI_COMMIT_SHA")
+	unsetEnv(t, "CI_COMMIT_BRANCH")
 	assertBranchName("")
 }
 

@@ -23,6 +23,7 @@ import (
 	"path/filepath"
 	"strings"
 
+	cienvironment "github.com/cucumber/ci-environment/go"
 	log "github.com/sirupsen/logrus"
 
 	"github.com/JetBrains/qodana-cli/v2025/platform/utils"
@@ -52,11 +53,13 @@ func GetVersionDetails(pwd string) (sarif.VersionControlDetails, error) {
 		}
 		ret.Branch = branch
 	}
-	// GitLab CI detaches HEAD even on "push"-triggered pipelines. As a last resort, try to pick up the branch name from
-	// pre-defined environment variables.
-	// See also https://docs.gitlab.com/ci/variables/predefined_variables/
-	if ret.Branch == "" && os.Getenv("CI") == "true" {
-		ret.Branch = os.Getenv("CI_COMMIT_BRANCH")
+	// Sometimes in CI the HEAD is detached even on push-based runs.
+	// As a last resort, try to pick up the branch name from pre-defined environment variables.
+	if ret.Branch == "" {
+		ci := cienvironment.DetectCIEnvironment()
+		if ci != nil && ci.Git != nil {
+			ret.Branch = ci.Git.Branch
+		}
 	}
 
 	if os.Getenv("QODANA_REVISION") != "" {
