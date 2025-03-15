@@ -137,3 +137,4 @@ Temporary Items
 
 # End of https://www.toptal.com/developers/gitignore/api/macos,goland,go
 dist/
+.vscode/
