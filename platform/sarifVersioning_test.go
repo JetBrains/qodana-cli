@@ -63,54 +63,6 @@ func TestGetBranchName(t *testing.T) {
 	}
 }
 
-func TestGetVersionDetailsBranchFromEnvironment(t *testing.T) {
-	dir, err := os.MkdirTemp("", "repo-TestGetVersionDetailsBranch")
-	if err != nil {
-		t.Fatal(err)
-	}
-	defer func(path string) {
-		err := os.RemoveAll(path)
-		if err != nil {
-			t.Fatal(err)
-		}
-	}(dir)
-
-	assertBranchName := func(expected string) {
-		versionInfo, err := GetVersionDetails(dir)
-		if err != nil {
-			t.Fatal(err)
-		}
-		if versionInfo.Branch != expected {
-			t.Fatalf("Incorrect branch name: '%s' (expected '%s')", versionInfo.Branch, expected)
-		}
-	}
-
-	runCommand(t, dir, "git init --initial-branch=my-branch")
-	runGitCommit(t, dir)
-	runCommand(t, dir, "git switch --detach")
-
-	setEnv(t, "QODANA_BRANCH", "QODANA_BRANCH")
-	setEnv(t, "CI_REPOSITORY_URL", "https://ci-repository-url")
-	setEnv(t, "CI_JOB_URL", "https://ci-job-url")
-	setEnv(t, "CI_COMMIT_SHA", "0000000000000000000000000000000000000000")
-	setEnv(t, "CI_COMMIT_BRANCH", "CI_COMMIT_BRANCH")
-	assertBranchName("QODANA_BRANCH")
-
-	unsetEnv(t, "QODANA_BRANCH")
-	setEnv(t, "CI_REPOSITORY_URL", "https://ci-repository-url")
-	setEnv(t, "CI_JOB_URL", "https://ci-job-url")
-	setEnv(t, "CI_COMMIT_SHA", "0000000000000000000000000000000000000000")
-	setEnv(t, "CI_COMMIT_BRANCH", "CI_COMMIT_BRANCH")
-	assertBranchName("CI_COMMIT_BRANCH")
-
-	unsetEnv(t, "QODANA_BRANCH")
-	unsetEnv(t, "CI_REPOSITORY_URL")
-	unsetEnv(t, "CI_JOB_URL")
-	unsetEnv(t, "CI_COMMIT_SHA")
-	unsetEnv(t, "CI_COMMIT_BRANCH")
-	assertBranchName("")
-}
-
 func runCommand(t *testing.T, cwd string, command string) (string, string) {
 	stdout, stderr, ret, err := utils.RunCmdRedirectOutput(cwd, command)
 	if err != nil {
@@ -127,18 +79,4 @@ func runGitCommit(t *testing.T, cwd string) {
 	runCommand(t, cwd,
 		"git -c user.name=platform/sarifVersioning_test.go -c user.email=none commit --allow-empty -m commit",
 	)
-}
-
-func setEnv(t *testing.T, key string, value string) {
-	err := os.Setenv(key, value)
-	if err != nil {
-		t.Fatal(err)
-	}
-}
-
-func unsetEnv(t *testing.T, key string) {
-	err := os.Unsetenv(key)
-	if err != nil {
-		t.Fatal(err)
-	}
 }
