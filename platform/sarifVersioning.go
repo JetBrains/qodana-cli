@@ -80,13 +80,13 @@ func GetVersionDetails(pwd string) (sarif.VersionControlDetails, error) {
 }
 
 func getRepositoryUri(pwd string) (string, error) {
-	uri, _, ret, err := utils.RunCmdRedirectOutput(pwd, "git", "ls-remote", "--get-url")
+	uri, stderr, ret, err := utils.RunCmdRedirectOutput(pwd, "git", "ls-remote", "--get-url")
 	if err != nil {
 		return "", err
 	}
 	if ret == 128 {
 		// Returned when a remote is not configured or multiple remotes exist, none of which is the default
-		log.Warn("Failed to retrieve remote URL:", err)
+		log.Warn("Failed to retrieve remote URI: ", stderr)
 		uriStruct := url.URL{
 			Scheme: "file",
 			Host:   "",
