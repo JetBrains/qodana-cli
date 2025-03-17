@@ -6,7 +6,7 @@ FROM cpp-community
 # renovate: datasource=npm depName=eslint
 ENV ESLINT_VERSION="9.22.0"
 # renovate: datasource=npm depName=pnpm
-ENV PNPM_VERSION="10.6.2"
+ENV PNPM_VERSION="10.6.4"
 
 ENV PATH="/opt/yarn/bin:$PATH"
 ENV SKIP_YARN_COREPACK_CHECK=0
