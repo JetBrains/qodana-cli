@@ -87,7 +87,7 @@ func getRepositoryUri(pwd string) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	if ret == 128 {
+	if ret != 0 {
 		// Returned when a remote is not configured or multiple remotes exist, none of which is the default
 		log.Warn("Failed to retrieve remote URI: ", stderr)
 		uriStruct := url.URL{
@@ -96,9 +96,6 @@ func getRepositoryUri(pwd string) (string, error) {
 			Path:   filepath.ToSlash(pwd),
 		}
 		return uriStruct.String(), nil
-	}
-	if ret != 0 {
-		return "", errors.New("git ls-remote --get-url failed")
 	}
 	trimUrl := strings.TrimSpace(uri)
 	if !strings.Contains(trimUrl, "://") {
