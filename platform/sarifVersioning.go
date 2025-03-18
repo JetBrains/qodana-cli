@@ -18,10 +18,16 @@ package platform
 
 import (
 	"errors"
+	"net/url"
+	"os"
+	"path/filepath"
+	"strings"
+
+	cienvironment "github.com/cucumber/ci-environment/go"
+	log "github.com/sirupsen/logrus"
+
 	"github.com/JetBrains/qodana-cli/v2025/platform/utils"
 	"github.com/JetBrains/qodana-cli/v2025/sarif"
-	"os"
-	"strings"
 )
 
 // it is needed for third party linters
@@ -38,15 +44,24 @@ func GetVersionDetails(pwd string) (sarif.VersionControlDetails, error) {
 		}
 		ret.RepositoryUri = uri
 	}
-	if os.Getenv("QODANA_BRANCH") != "" {
-		ret.Branch = os.Getenv("QODANA_BRANCH")
-	} else {
+
+	ret.Branch = os.Getenv("QODANA_BRANCH")
+	if ret.Branch == "" {
 		branch, err := getBranchName(pwd)
 		if err != nil {
 			return ret, err
 		}
 		ret.Branch = branch
 	}
+	// Sometimes in CI the HEAD is detached even on push-based runs.
+	// As a last resort, try to pick up the branch name from pre-defined environment variables.
+	if ret.Branch == "" {
+		ci := cienvironment.DetectCIEnvironment()
+		if ci != nil && ci.Git != nil {
+			ret.Branch = ci.Git.Branch
+		}
+	}
+
 	if os.Getenv("QODANA_REVISION") != "" {
 		ret.RevisionId = os.Getenv("QODANA_REVISION")
 	} else {
@@ -68,12 +83,19 @@ func GetVersionDetails(pwd string) (sarif.VersionControlDetails, error) {
 }
 
 func getRepositoryUri(pwd string) (string, error) {
-	uri, _, ret, err := utils.RunCmdRedirectOutput(pwd, "git", "ls-remote", "--get-url")
+	uri, stderr, ret, err := utils.RunCmdRedirectOutput(pwd, "git", "ls-remote", "--get-url")
 	if err != nil {
 		return "", err
 	}
 	if ret != 0 {
-		return "", errors.New("git ls-remote --get-url failed")
+		// Returned when a remote is not configured or multiple remotes exist, none of which is the default
+		log.Warn("Failed to retrieve remote URI: ", stderr)
+		uriStruct := url.URL{
+			Scheme: "file",
+			Host:   "",
+			Path:   filepath.ToSlash(pwd),
+		}
+		return uriStruct.String(), nil
 	}
 	trimUrl := strings.TrimSpace(uri)
 	if !strings.Contains(trimUrl, "://") {
@@ -94,14 +116,27 @@ func getRevisionId(pwd string) (string, error) {
 }
 
 func getBranchName(pwd string) (string, error) {
+	// note: git branch --show-current not used because the flag is too recent at the time of writing
 	branch, _, ret, err := utils.RunCmdRedirectOutput(pwd, "git", "rev-parse", "--abbrev-ref", "HEAD")
 	if err != nil {
 		return "", err
 	}
+	if ret == 128 {
+		// this approach covers some corner cases, notably when no commits exist
+		branch, _, ret, err = utils.RunCmdRedirectOutput(pwd, "git", "symbolic-ref", "--short", "HEAD")
+		if err != nil {
+			return "", err
+		}
+	}
 	if ret != 0 {
 		return "", errors.New("git rev-parse --abbrev-ref HEAD failed")
 	}
-	return strings.TrimSpace(branch), nil
+	branch = strings.TrimSpace(branch)
+	if branch == "HEAD" {
+		// HEAD is a reserved name in git, so HEAD can only mean that HEAD is detached.
+		return "", nil
+	}
+	return branch, nil
 }
 
 func getLastAuthorName(pwd string) string {
