@@ -8,7 +8,7 @@ FROM php:$PHP_TAG
 # renovate: datasource=npm depName=eslint
 ENV ESLINT_VERSION="9.22.0"
 # renovate: datasource=npm depName=pnpm
-ENV PNPM_VERSION="10.6.4"
+ENV PNPM_VERSION="10.6.5"
 
 ENV HOME="/root" \
     LC_ALL="en_US.UTF-8" \
