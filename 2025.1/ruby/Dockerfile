@@ -112,7 +112,7 @@ RUN if [ "$PRIVILEGED" = "true" ]; then \
         curl -fsSL "https://raw.githubusercontent.com/JetBrains/qodana-docker/refs/heads/main/sudo" -o /usr/bin/sudo && \
         echo "${SUDO_SHA256} /usr/bin/sudo" > /tmp/sudo.shasum && \
         sha256sum --check --status /tmp/sudo.shasum && \
-        chmod +x /usr/bin/sudo \
+        chmod +x /usr/bin/sudo; \
     fi
 
 LABEL maintainer="qodana-support@jetbrains.com" description="Qodana for Ruby (https://jb.gg/qodana-ruby)"
