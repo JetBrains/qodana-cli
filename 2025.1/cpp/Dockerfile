@@ -71,7 +71,7 @@ RUN echo "deb https://apt.llvm.org/bookworm/ llvm-toolchain-bookworm-${CLANG} ma
     apt-get autoremove -y && apt-get clean
 
 # renovate: datasource=npm depName=eslint
-ENV ESLINT_VERSION="9.22.0"
+ENV ESLINT_VERSION="9.23.0"
 # renovate: datasource=npm depName=pnpm
 ENV PNPM_VERSION="10.6.5"
 
