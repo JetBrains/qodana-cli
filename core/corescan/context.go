@@ -24,6 +24,7 @@ import (
 	"math"
 	"os"
 	"path/filepath"
+	"slices"
 	"strings"
 	"time"
 )
@@ -368,7 +369,8 @@ func (c Context) InstallPluginsVmOptionsPath() string {
 
 func (c Context) FixesSupported() bool {
 	productCode := product.GuessProductCode(c.Ide(), c.Linter())
-	return productCode != product.QDNET && productCode != product.QDNETC && productCode != product.QDCL
+	// productCode == "" could be anything
+	return slices.Contains(product.AllFixesSupportedProducts, productCode) || productCode == ""
 }
 
 func (c Context) PropertiesAndFlags() (map[string]string, []string) {
