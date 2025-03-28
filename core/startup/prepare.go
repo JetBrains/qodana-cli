@@ -228,28 +228,32 @@ func addKeepassIDEConfig(ideaOptions string) {
 }
 
 func SyncConfigCache(prod product.Product, confDirPath string, cacheDir string, fromCache bool) {
-	if prod.BaseScriptName == product.Idea {
-		jdkTableFile := filepath.Join(confDirPath, "options", "jdk.table.xml")
-		cacheFile := filepath.Join(cacheDir, "config", prod.GetVersionBranch(), "jdk.table.xml")
-		if fromCache {
-			if _, err := os.Stat(cacheFile); os.IsNotExist(err) {
-				return
+	isIdea := prod.BaseScriptName == product.Idea
+	isPyCharm := prod.BaseScriptName == product.PyCharm
+	if !(isIdea || isPyCharm) {
+		return
+	}
+
+	jdkTableFile := filepath.Join(confDirPath, "options", "jdk.table.xml")
+	cacheFile := filepath.Join(cacheDir, "config", prod.GetVersionBranch(), "jdk.table.xml")
+	if fromCache {
+		if _, err := os.Stat(cacheFile); os.IsNotExist(err) {
+			return
+		}
+		if _, err := os.Stat(jdkTableFile); os.IsNotExist(err) {
+			if err := cp.Copy(cacheFile, jdkTableFile); err != nil {
+				log.Fatal(err)
 			}
-			if _, err := os.Stat(jdkTableFile); os.IsNotExist(err) {
-				if err := cp.Copy(cacheFile, jdkTableFile); err != nil {
-					log.Fatal(err)
-				}
-				log.Debugf("SDK table is synced from cache")
-			}
+			log.Debugf("SDK table is synced from cache")
+		}
+	} else {
+		if _, err := os.Stat(jdkTableFile); os.IsNotExist(err) {
+			log.Debugf("SDK table isnt't stored to cache, file doesn't exist")
 		} else {
-			if _, err := os.Stat(jdkTableFile); os.IsNotExist(err) {
-				log.Debugf("SDK table isnt't stored to cache, file doesn't exist")
-			} else {
-				if err := cp.Copy(jdkTableFile, cacheFile); err != nil {
-					log.Fatal(err)
-				}
-				log.Debugf("SDK table is stored to cache")
+			if err := cp.Copy(jdkTableFile, cacheFile); err != nil {
+				log.Fatal(err)
 			}
+			log.Debugf("SDK table is stored to cache")
 		}
 	}
 }
