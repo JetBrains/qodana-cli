@@ -7,7 +7,7 @@ FROM ruby:$RUBY_TAG
 # renovate: datasource=npm depName=eslint
 ENV ESLINT_VERSION="9.23.0"
 # renovate: datasource=npm depName=pnpm
-ENV PNPM_VERSION="10.6.5"
+ENV PNPM_VERSION="10.7.1"
 
 ENV HOME="/root" \
     LC_ALL="en_US.UTF-8" \
