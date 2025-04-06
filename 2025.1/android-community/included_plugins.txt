@@ -36,4 +36,5 @@ org.jetbrains.plugins.gradle
 org.jetbrains.android
 org.jetbrains.idea.gradle.dsl
 com.android.tools.idea.smali
+com.android.tools.gradle.dcl
 org.toml.lang
