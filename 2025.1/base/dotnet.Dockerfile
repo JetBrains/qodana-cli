@@ -6,7 +6,7 @@ FROM dotnet-community
 # renovate: datasource=npm depName=eslint
 ENV ESLINT_VERSION="9.24.0"
 # renovate: datasource=npm depName=pnpm
-ENV PNPM_VERSION="10.7.1"
+ENV PNPM_VERSION="10.8.0"
 
 ENV PATH="/opt/yarn/bin:$PATH" RIDER_UNREAL_ROOT="/data/unrealEngine"
 ENV SKIP_YARN_COREPACK_CHECK=0

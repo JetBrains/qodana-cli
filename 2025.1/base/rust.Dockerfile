@@ -4,7 +4,7 @@ FROM rust:$RUST_TAG
 # renovate: datasource=npm depName=eslint
 ENV ESLINT_VERSION="9.24.0"
 # renovate: datasource=npm depName=pnpm
-ENV PNPM_VERSION="10.7.1"
+ENV PNPM_VERSION="10.8.0"
 
 ARG TARGETPLATFORM
 
