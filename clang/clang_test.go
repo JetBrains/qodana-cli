@@ -81,7 +81,7 @@ func createNativeProject(t *testing.T, name string) string {
 		t.Fatal(err)
 	}
 	location := filepath.Join(home, ".qodana_scan_", name)
-	err = gitClone("https://github.com/hybloid/cpp-demo", location)
+	err = gitClone("https://github.com/qodana/cpp-demo", location)
 	if err != nil {
 		t.Fatal(err)
 	}
