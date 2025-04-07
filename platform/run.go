@@ -64,16 +64,11 @@ func RunThirdPartyLinterAnalysis(
 	defer changeResultDirPermissionsInContainer(resultDir)
 
 	thirdPartyCloudData := checkLinterLicense(commonCtx)
-	isCommunity := thirdPartyCloudData.LicensePlan == cloud.CommunityLicensePlan
 
 	printLinterLicense(thirdPartyCloudData.LicensePlan, linterInfo)
 	printQodanaLogo(commonCtx.LogDir(), commonCtx.CacheDir, linterInfo)
 
-	if linterInfo, err = linter.ComputeNewLinterInfo(linterInfo, isCommunity); err != nil {
-		return 1, fmt.Errorf("failed to run linter specific setup procedures: %w", err)
-	}
-
-	tempMountPath, mountInfo := extractUtils(linter, commonCtx.CacheDir, isCommunity)
+	tempMountPath, mountInfo := extractUtils(linter, commonCtx.CacheDir)
 	defer cleanupUtils(tempMountPath)
 
 	localQodanaYamlFullPath := qdyaml.GetLocalNotEffectiveQodanaYamlFullPath(

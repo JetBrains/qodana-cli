@@ -40,7 +40,7 @@ const (
 )
 
 // extractUtils mounts the helper tools to the temporary folder, return temp mount path and mount info
-func extractUtils(linter ThirdPartyLinter, cacheDir string, isCommunity bool) (string, thirdpartyscan.MountInfo) {
+func extractUtils(linter ThirdPartyLinter, cacheDir string) (string, thirdpartyscan.MountInfo) {
 	tempMountPath, err := getTempDir()
 	if err != nil {
 		log.Fatal(err)
@@ -52,7 +52,7 @@ func extractUtils(linter ThirdPartyLinter, cacheDir string, isCommunity bool) (s
 		log.Fatal("failed to get java executable path", err)
 	}
 
-	customTools, err := linter.MountTools(tempMountPath, permanentMountPath, isCommunity)
+	customTools, err := linter.MountTools(tempMountPath, permanentMountPath)
 	if err != nil {
 		cleanupUtils(tempMountPath)
 		log.Fatal(err)

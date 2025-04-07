@@ -21,7 +21,6 @@ import (
 )
 
 type ThirdPartyLinter interface {
-	MountTools(tempPath string, mountPath string, isCommunity bool) (map[string]string, error)
-	ComputeNewLinterInfo(info thirdpartyscan.LinterInfo, isCommunity bool) (thirdpartyscan.LinterInfo, error)
+	MountTools(tempPath string, mountPath string) (map[string]string, error)
 	RunAnalysis(c thirdpartyscan.Context) error
 }

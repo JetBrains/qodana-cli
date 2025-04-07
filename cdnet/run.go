@@ -36,13 +36,6 @@ const qodanaFingeprint = "equalIndicator/v1"
 const archive = "clt.zip"
 const moniker = "resharper-clt"
 
-func (l CdnetLinter) ComputeNewLinterInfo(
-	linterInfo thirdpartyscan.LinterInfo,
-	_ bool,
-) (thirdpartyscan.LinterInfo, error) {
-	return linterInfo, nil
-}
-
 func (l CdnetLinter) RunAnalysis(c thirdpartyscan.Context) error {
 	utils.Bootstrap(c.QodanaYamlConfig().Bootstrap, c.ProjectDir())
 	args, err := l.computeCdnetArgs(c)
@@ -67,7 +60,7 @@ func (l CdnetLinter) RunAnalysis(c thirdpartyscan.Context) error {
 	return err
 }
 
-func (l CdnetLinter) MountTools(tempMountPath string, mountPath string, _ bool) (map[string]string, error) {
+func (l CdnetLinter) MountTools(tempMountPath string, mountPath string) (map[string]string, error) {
 	val := make(map[string]string)
 	val[thirdpartyscan.Clt] = filepath.Join(
 		mountPath,

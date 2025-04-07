@@ -13,18 +13,6 @@ import (
 type ClangLinter struct {
 }
 
-func (l ClangLinter) ComputeNewLinterInfo(
-	linterInfo thirdpartyscan.LinterInfo,
-	isCommunity bool,
-) (thirdpartyscan.LinterInfo, error) {
-	if isCommunity && linterInfo.IsEap {
-		linterInfo.ProductCode = communityProductCode
-		linterInfo.LinterName = communityLinterName
-	}
-
-	return linterInfo, nil
-}
-
 func (l ClangLinter) RunAnalysis(c thirdpartyscan.Context) error {
 	checks, err := allowedChecksByLicenseAndYaml(c)
 	if err != nil {
@@ -53,13 +41,10 @@ func (l ClangLinter) RunAnalysis(c thirdpartyscan.Context) error {
 	return nil
 }
 
-func (l ClangLinter) MountTools(tempPath string, mountPath string, isCommunity bool) (map[string]string, error) {
+func (l ClangLinter) MountTools(tempPath string, mountPath string) (map[string]string, error) {
 	clang := thirdpartyscan.Clang
 
 	toolsPath := mountPath
-	if isCommunity {
-		toolsPath = tempPath
-	}
 	val := make(map[string]string)
 	val[clang] = getBinaryPath(toolsPath)
 	if _, err := os.Stat(val[clang]); err != nil {
