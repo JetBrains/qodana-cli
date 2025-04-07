@@ -10,10 +10,8 @@ import (
 )
 
 const (
-	productCode          = "QDCL"
-	linterName           = "Qodana for C/C++"
-	communityProductCode = "QDCLC"
-	communityLinterName  = "Qodana Community for C/C++"
+	productCode = "QDCLC"
+	linterName  = "Qodana Community for C/C++"
 )
 
 var InterruptChannel chan os.Signal
