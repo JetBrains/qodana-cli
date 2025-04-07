@@ -3,7 +3,7 @@ package main
 import (
 	"fmt"
 	"github.com/JetBrains/qodana-cli/v2025/platform"
-	thirdpartyscan "github.com/JetBrains/qodana-cli/v2025/platform/thirdpartyscan"
+	"github.com/JetBrains/qodana-cli/v2025/platform/thirdpartyscan"
 	"github.com/JetBrains/qodana-cli/v2025/platform/utils"
 	"github.com/briandowns/spinner"
 	log "github.com/sirupsen/logrus"
