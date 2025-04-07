@@ -7,29 +7,9 @@ import (
 	"strings"
 )
 
-var SupportedLicenseTypes = map[string]bool{
-	"COMMUNITY":           true,
-	"TRIAL_ULTIMATE":      true,
-	"TRIAL_ULTIMATE_PLUS": true,
-	"ULTIMATE":            true,
-	"ULTIMATE_PLUS":       true,
-	"PREMIUM":             true,
-}
-
 func allowedChecksByLicenseAndYaml(c thirdpartyscan.Context) (string, error) {
-	var isCommunity = false
 	var excludeRules []string
 	var includeRules []string
-
-	if c.IsCommunity() {
-		if !c.LinterInfo().IsEap {
-			fmt.Println("You are using community version of the linter. Restrictions on the checks apply.")
-			excludeRules = append(excludeRules, "clion-*")
-			isCommunity = true
-		}
-	} else if _, exists := SupportedLicenseTypes[c.CloudData().LicensePlan]; !exists {
-		return "", fmt.Errorf("unsupported license type: %s", c.CloudData().LicensePlan)
-	}
 
 	yaml := c.QodanaYamlConfig()
 	var checks = ""
@@ -37,7 +17,7 @@ func allowedChecksByLicenseAndYaml(c thirdpartyscan.Context) (string, error) {
 	if yaml.Version != "" || len(yaml.Includes) > 0 || len(yaml.Excludes) > 0 {
 		fmt.Println("Found qodana.yaml. Note that only bootstrap command and inspection names from include and exclude sections are supported.")
 		for _, include := range yaml.Includes {
-			if isCommunity && strings.HasPrefix(strings.TrimSpace(include.Name), "clion-") {
+			if strings.HasPrefix(strings.TrimSpace(include.Name), "clion-") {
 				continue
 			}
 			if strings.ContainsAny(include.Name, "\"") {
