@@ -14,7 +14,7 @@ type ClangLinter struct {
 }
 
 func (l ClangLinter) RunAnalysis(c thirdpartyscan.Context) error {
-	checks, err := allowedChecksByLicenseAndYaml(c)
+	checks, err := processConfig(c)
 	if err != nil {
 		return err
 	}
@@ -68,7 +68,6 @@ func getBinaryPath(toolsPath string) string {
 		binaryPath += ".exe"
 	}
 
-	// Check if the file exists; if it doesn't, try adding "bin/" before the binary name
 	if _, err := os.Stat(binaryPath); os.IsNotExist(err) {
 		binaryPath = filepath.Join(toolsPath, "bin", binaryName)
 		//goland:noinspection GoBoolExpressions

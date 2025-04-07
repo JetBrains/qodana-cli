@@ -7,7 +7,8 @@ import (
 	"strings"
 )
 
-func allowedChecksByLicenseAndYaml(c thirdpartyscan.Context) (string, error) {
+// Find qodana.yaml, run bootstrap, find enabled checks and return them formatted as an argument for clang-tidy.
+func processConfig(c thirdpartyscan.Context) (string, error) {
 	var excludeRules []string
 	var includeRules []string
 

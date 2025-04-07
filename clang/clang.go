@@ -58,7 +58,6 @@ func worker(
 	spin *spinner.Spinner,
 	stdoutChannel, stderrChannel chan string,
 ) {
-	// your semaphore logic, signal handling and goroutine code goes here...
 	spin.Start()
 	spin.Suffix = fmt.Sprintf(" %d/%d", 0, len(filesAndCompilers))
 
@@ -133,7 +132,6 @@ func runClangTidy(
 		utils.QuoteIfSpace(c.ClangCompileCommands()),
 		"--export-sarif",
 		utils.QuoteIfSpace(path.Join(tmpResultsDir, fmt.Sprintf("%d.sarif.json", counter))),
-		//"--extra-arg=-resource-dir=" + core.QuoteIfSpace(filepath.Join(filepath.Dir(options.ClangPath()), "include")),
 	}
 	args = append(args, input.Headers...)
 	args = append(args, input.File)

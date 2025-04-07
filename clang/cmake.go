@@ -95,7 +95,6 @@ func askCompiler(compiler string, headerType string) ([]string, error) {
 	if startIndex != -1 && endIndex != -1 && endIndex > startIndex {
 		includes := strings.TrimSpace(stderr[startIndex+len(SIS) : endIndex])
 
-		// Use regexp to split lines
 		re := regexp.MustCompile(`[\n\r]+`)
 		lines := re.Split(includes, -1)
 		for _, dir := range lines {

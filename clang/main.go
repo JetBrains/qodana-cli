@@ -18,8 +18,6 @@ var InterruptChannel chan os.Signal
 var version = "2023.3"
 var buildDateStr = "2024-04-05T10:52:23Z"
 
-//var isEap = true
-
 // noinspection GoUnusedFunction
 func main() {
 	InterruptChannel = make(chan os.Signal, 1)
