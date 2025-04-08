@@ -36,13 +36,6 @@ const qodanaFingeprint = "equalIndicator/v1"
 const archive = "clt.zip"
 const moniker = "resharper-clt"
 
-func (l CdnetLinter) ComputeNewLinterInfo(
-	linterInfo thirdpartyscan.LinterInfo,
-	_ bool,
-) (thirdpartyscan.LinterInfo, error) {
-	return linterInfo, nil
-}
-
 func (l CdnetLinter) RunAnalysis(c thirdpartyscan.Context) error {
 	utils.Bootstrap(c.QodanaYamlConfig().Bootstrap, c.ProjectDir())
 	args, err := l.computeCdnetArgs(c)
@@ -67,10 +60,10 @@ func (l CdnetLinter) RunAnalysis(c thirdpartyscan.Context) error {
 	return err
 }
 
-func (l CdnetLinter) MountTools(tempMountPath string, mountPath string, _ bool) (map[string]string, error) {
+func (l CdnetLinter) MountTools(path string) (map[string]string, error) {
 	val := make(map[string]string)
 	val[thirdpartyscan.Clt] = filepath.Join(
-		mountPath,
+		path,
 		"tools",
 		"netcoreapp3.1",
 		"any",
@@ -79,8 +72,8 @@ func (l CdnetLinter) MountTools(tempMountPath string, mountPath string, _ bool) 
 
 	if _, err := os.Stat(val["clt"]); err != nil {
 		if os.IsNotExist(err) {
-			path := platform.ProcessAuxiliaryTool(archive, moniker, tempMountPath, mountPath, Clt)
-			if err := platform.Decompress(path, mountPath); err != nil {
+			path := platform.ProcessAuxiliaryTool(archive, moniker, path, Clt)
+			if err := platform.Decompress(path, path); err != nil {
 				return nil, fmt.Errorf("failed to decompress %s archive: %w", moniker, err)
 			}
 		}

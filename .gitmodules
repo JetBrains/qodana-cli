@@ -1,3 +1,0 @@
-[submodule "clang"]
-	path = clang
-	url = ssh://git.jetbrains.team/sa/clang.git

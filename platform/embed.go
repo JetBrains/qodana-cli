@@ -39,32 +39,26 @@ const (
 	baselineCli  = "baseline-cli.jar"
 )
 
-// extractUtils mounts the helper tools to the temporary folder, return temp mount path and mount info
-func extractUtils(linter ThirdPartyLinter, cacheDir string, isCommunity bool) (string, thirdpartyscan.MountInfo) {
-	tempMountPath, err := getTempDir()
-	if err != nil {
-		log.Fatal(err)
-	}
-	permanentMountPath := getToolsMountPath(cacheDir)
+// Mount a third-party linter.
+func extractUtils(linter ThirdPartyLinter, cacheDir string) thirdpartyscan.MountInfo {
+	mountPath := getToolsMountPath(cacheDir)
 
 	javaPath, err := utils.GetJavaExecutablePath()
 	if err != nil {
 		log.Fatal("failed to get java executable path", err)
 	}
 
-	customTools, err := linter.MountTools(tempMountPath, permanentMountPath, isCommunity)
+	customTools, err := linter.MountTools(mountPath)
 	if err != nil {
-		cleanupUtils(tempMountPath)
 		log.Fatal(err)
 	}
 
-	converter := ProcessAuxiliaryTool(converterJar, "converter", tempMountPath, permanentMountPath, tooling.Converter)
-	fuser := ProcessAuxiliaryTool(fuserJar, "FUS", permanentMountPath, tempMountPath, tooling.Fuser)
+	converter := ProcessAuxiliaryTool(converterJar, "converter", mountPath, tooling.Converter)
+	fuser := ProcessAuxiliaryTool(fuserJar, "FUS", mountPath, tooling.Fuser)
 	baselineCliJar := ProcessAuxiliaryTool(
 		baselineCli,
 		"baseline-cli",
-		tempMountPath,
-		permanentMountPath,
+		mountPath,
 		tooling.BaselineCli,
 	)
 
@@ -75,7 +69,7 @@ func extractUtils(linter ThirdPartyLinter, cacheDir string, isCommunity bool) (s
 		CustomTools: customTools,
 		JavaPath:    javaPath,
 	}
-	return tempMountPath, mountInfo
+	return mountInfo
 }
 
 func getToolsMountPath(cacheDir string) string {
@@ -91,39 +85,17 @@ func getToolsMountPath(cacheDir string) string {
 	return mountPath
 }
 
-// cleanupUtils removes the temporary folder with extracted helper tools.
-func cleanupUtils(tempMountPath string) {
-	if _, err := os.Stat(tempMountPath); err != nil {
-		if os.IsNotExist(err) {
-			return
-		}
-	}
-
-	if err := os.RemoveAll(tempMountPath); err != nil {
-		log.Fatal("Failed to remove temporary folder")
-	}
-}
-
-func ProcessAuxiliaryTool(toolName, moniker, tempMountPath string, mountPath string, bytes []byte) string {
+func ProcessAuxiliaryTool(toolName, moniker, mountPath string, bytes []byte) string {
 	toolPath := filepath.Join(mountPath, toolName)
 	if _, err := os.Stat(toolPath); err != nil {
 		if os.IsNotExist(err) {
 			err := os.WriteFile(toolPath, bytes, 0644)
 			if err != nil { // change the second parameter depending on which tool you have to process
-				cleanupUtils(tempMountPath)
 				log.Fatalf("Failed to write %s : %s", moniker, err)
 			}
 		}
 	}
 	return toolPath
-}
-
-func getTempDir() (string, error) {
-	tmpDir, err := os.MkdirTemp("", "qodana-platform")
-	if err != nil {
-		return "", err
-	}
-	return tmpDir, nil
 }
 
 func Decompress(archivePath string, destPath string) error {
