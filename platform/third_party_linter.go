@@ -21,6 +21,6 @@ import (
 )
 
 type ThirdPartyLinter interface {
-	MountTools(tempPath string, mountPath string) (map[string]string, error)
+	MountTools(path string) (map[string]string, error)
 	RunAnalysis(c thirdpartyscan.Context) error
 }

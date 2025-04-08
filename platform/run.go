@@ -68,8 +68,7 @@ func RunThirdPartyLinterAnalysis(
 	printLinterLicense(thirdPartyCloudData.LicensePlan, linterInfo)
 	printQodanaLogo(commonCtx.LogDir(), commonCtx.CacheDir, linterInfo)
 
-	tempMountPath, mountInfo := extractUtils(linter, commonCtx.CacheDir)
-	defer cleanupUtils(tempMountPath)
+	mountInfo := extractUtils(linter, commonCtx.CacheDir)
 
 	localQodanaYamlFullPath := qdyaml.GetLocalNotEffectiveQodanaYamlFullPath(
 		commonCtx.ProjectDir,

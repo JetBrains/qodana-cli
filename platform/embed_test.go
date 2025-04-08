@@ -29,9 +29,7 @@ func TestMount(t *testing.T) {
 		_ = os.RemoveAll(tempCacheDir)
 	}()
 
-	tempMountPath, mountInfo := extractUtils(linter, tempCacheDir)
-	defer cleanupUtils(tempMountPath)
-
+	mountInfo := extractUtils(linter, tempCacheDir)
 	if mountInfo.Converter == "" {
 		t.Error("extractUtils() failed")
 	}
@@ -55,7 +53,7 @@ func TestMount(t *testing.T) {
 type mockThirdPartyLinter struct {
 }
 
-func (mockThirdPartyLinter) MountTools(_ string, _ string) (map[string]string, error) {
+func (mockThirdPartyLinter) MountTools(_ string) (map[string]string, error) {
 	return make(map[string]string), nil
 }
 

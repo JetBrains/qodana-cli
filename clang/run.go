@@ -41,20 +41,19 @@ func (l ClangLinter) RunAnalysis(c thirdpartyscan.Context) error {
 	return nil
 }
 
-func (l ClangLinter) MountTools(tempPath string, mountPath string) (map[string]string, error) {
+func (l ClangLinter) MountTools(path string) (map[string]string, error) {
 	clang := thirdpartyscan.Clang
 
-	toolsPath := mountPath
 	val := make(map[string]string)
-	val[clang] = getBinaryPath(toolsPath)
+	val[clang] = getBinaryPath(path)
 	if _, err := os.Stat(val[clang]); err != nil {
 		if os.IsNotExist(err) {
 			clangArchive := clang + Ext
-			clangArchivePath := platform.ProcessAuxiliaryTool(clangArchive, clang, tempPath, toolsPath, Clang)
-			if err := platform.Decompress(clangArchivePath, toolsPath); err != nil {
+			clangArchivePath := platform.ProcessAuxiliaryTool(clangArchive, clang, path, Clang)
+			if err := platform.Decompress(clangArchivePath, path); err != nil {
 				return nil, fmt.Errorf("failed to decompress clang archive: %w", err)
 			}
-			val[clang] = getBinaryPath(toolsPath)
+			val[clang] = getBinaryPath(path)
 		}
 	}
 	return val, nil
