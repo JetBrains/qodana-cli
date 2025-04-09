@@ -45,16 +45,22 @@ func withUncompressedZip(path string, callback func(io.Reader)) (err error) {
 		}
 
 		if !callbackCalled {
-			reader, err := f.Open()
+			err = func() (err error) { // wrap file open/close in a scope
+				reader, err := f.Open()
+				if err != nil {
+					return err
+				}
+				defer func() {
+					err = errors.Join(err, reader.Close())
+				}()
+
+				callback(reader)
+				callbackCalled = true
+				return nil
+			}()
 			if err != nil {
 				return err
 			}
-			defer func() {
-				err = errors.Join(err, reader.Close())
-			}()
-
-			callback(reader)
-			callbackCalled = true
 		} else {
 			return fmt.Errorf("archive %q contains more than one file", path)
 		}
@@ -67,7 +73,7 @@ func withUncompressedZip(path string, callback func(io.Reader)) (err error) {
 	return nil
 }
 
-func withUncompressedTarGz(path string, callback func(io.Reader)) error {
+func withUncompressedTarGz(path string, callback func(io.Reader)) (err error) {
 	// Call `callback` with the contents of the .tar.gz archive.
 	//
 	// The function will return an error if the archive contains more than a single file. Directory structure is
@@ -76,13 +82,17 @@ func withUncompressedTarGz(path string, callback func(io.Reader)) error {
 	if err != nil {
 		log.Fatalf("Failed to open %q: %s", path, err)
 	}
-	defer reader.Close()
+	defer func() {
+		err = errors.Join(err, reader.Close())
+	}()
 
 	gzReader, err := gzip.NewReader(reader)
 	if err != nil {
 		log.Fatalf("gzip error in %q: %s", path, err)
 	}
-	defer gzReader.Close()
+	defer func() {
+		err = errors.Join(err, gzReader.Close())
+	}()
 
 	tarReader := tar.NewReader(gzReader)
 	callbackCalled := false
@@ -152,5 +162,8 @@ func main() {
 		log.Fatal(err)
 	}
 
-	fmt.Fprintf(os.Stderr, "sha256 of the contents of %q: %s\n", archivePath, hex.EncodeToString(hash))
+	_, err = fmt.Fprintf(os.Stderr, "sha256 of the contents of %q: %s\n", archivePath, hex.EncodeToString(hash))
+	if err != nil {
+		log.Fatal(err)
+	}
 }
