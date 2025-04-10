@@ -27,7 +27,7 @@ func TestMountTools(t *testing.T) {
 	}
 
 	path := mountInfo[thirdpartyscan.Clang]
-	expectedHash := Hash
+	expectedHash := ClangTidySha256
 	actualHash, err := getSha256(path)
 	if err != nil {
 		t.Fatal(err)

@@ -20,6 +20,7 @@ import (
 	"archive/tar"
 	"archive/zip"
 	"compress/gzip"
+	"crypto/sha256"
 	"errors"
 	"fmt"
 	"io"
@@ -90,6 +91,17 @@ func CopyDir(src string, dst string) error {
 		}
 	}
 	return nil
+}
+
+// GetSha256 computes a hash sum for a file steam.
+func GetSha256(stream io.Reader) (result []byte, err error) {
+	hasher := sha256.New()
+	_, err = io.Copy(hasher, stream)
+	if err != nil {
+		return nil, err
+	}
+
+	return hasher.Sum(nil), nil
 }
 
 // WalkArchiveCallback will be called for each archived item, e.g. in WalkArchiveFiles.
