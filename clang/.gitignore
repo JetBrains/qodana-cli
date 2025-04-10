@@ -1,3 +1,7 @@
 # build artifacts
 *.tar.gz
+*.zip
+
+## go generate artifacs
+*.archive
 *.sha256.bin

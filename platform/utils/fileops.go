@@ -17,9 +17,18 @@
 package utils
 
 import (
-	log "github.com/sirupsen/logrus"
+	"archive/tar"
+	"archive/zip"
+	"compress/gzip"
+	"crypto/sha256"
+	"errors"
+	"fmt"
+	"io"
 	"os"
 	"path/filepath"
+	"strings"
+
+	log "github.com/sirupsen/logrus"
 )
 
 // CopyFile copies a file from src to dst.
@@ -81,5 +90,104 @@ func CopyDir(src string, dst string) error {
 			}
 		}
 	}
+	return nil
+}
+
+// GetSha256 computes a hash sum for a file steam.
+func GetSha256(stream io.Reader) (result []byte, err error) {
+	hasher := sha256.New()
+	_, err = io.Copy(hasher, stream)
+	if err != nil {
+		return nil, err
+	}
+
+	return hasher.Sum(nil), nil
+}
+
+// WalkArchiveFiles calls `callback` for each file entry in an archive specified by `path`.
+// Format is guessed automatically from the extension.
+func WalkArchiveFiles(path string, callback func(path string, contents io.Reader)) error {
+	implFunc := walkZipFiles
+
+	if strings.HasSuffix(path, ".zip") {
+		implFunc = walkZipFiles
+	} else if strings.HasSuffix(path, ".tar.gz") {
+		implFunc = walkTarGzFiles
+	} else {
+		return fmt.Errorf("path %q does not have a recognizable extension", path)
+	}
+
+	return implFunc(path, callback)
+}
+
+// walkZipFiles implements WalkArchiveFiles for .zip.
+func walkZipFiles(path string, callback func(path string, contents io.Reader)) (err error) {
+	zipReader, err := zip.OpenReader(path)
+	if err != nil {
+		return err
+	}
+	defer func() {
+		err = errors.Join(err, zipReader.Close())
+	}()
+
+	for _, f := range zipReader.File {
+		if f.FileInfo().IsDir() {
+			continue // ignore directories
+		}
+
+		err = func() (err error) { // wrap file open/close in a scope
+			reader, err := f.Open()
+			if err != nil {
+				return err
+			}
+			defer func() {
+				err = errors.Join(err, reader.Close())
+			}()
+
+			callback(f.Name, reader)
+			return nil
+		}()
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+// walkTarGzFiles implements WalkArchiveFiles for .tar.gz.
+func walkTarGzFiles(path string, callback func(path string, contents io.Reader)) (err error) {
+	reader, err := os.Open(path)
+	if err != nil {
+		log.Fatalf("Failed to open %q: %s", path, err)
+	}
+	defer func() {
+		err = errors.Join(err, reader.Close())
+	}()
+
+	gzReader, err := gzip.NewReader(reader)
+	if err != nil {
+		log.Fatalf("gzip error in %q: %s", path, err)
+	}
+	defer func() {
+		err = errors.Join(err, gzReader.Close())
+	}()
+
+	tarReader := tar.NewReader(gzReader)
+
+	for {
+		header, err := tarReader.Next()
+		if err == io.EOF {
+			break
+		} else if err != nil {
+			log.Fatalf("tar error while reading contents of %q: %s", path, err)
+		}
+		if header.FileInfo().IsDir() {
+			continue // ignore directories
+		}
+
+		callback(header.Name, tarReader)
+	}
+
 	return nil
 }
