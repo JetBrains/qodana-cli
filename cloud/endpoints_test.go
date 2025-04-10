@@ -30,37 +30,47 @@ import (
 	"testing"
 )
 
+//goland:noinspection ALL
 func TestEndpoint(t *testing.T) {
 	for _, testData := range []struct {
 		name  string
 		input string
-		host  string
+		url   string
 		error bool
 	}{
 		{
 			name:  "default",
 			input: "",
-			host:  DefaultEndpoint,
+			url:   DefaultEndpoint,
 		},
 		{
-			name:  "with schema",
-			input: "https://qodana.cloud",
-			host:  DefaultEndpoint,
+			name:  "without schema",
+			input: "qodana.cloud",
+			url:   DefaultEndpoint,
+		},
+		{
+			name:  "with http",
+			input: "http://qodana.cloud",
+			url:   "http://qodana.cloud",
+		},
+		{
+			name:  "with port",
+			input: "http://localhost:8080",
+			url:   "http://localhost:8080",
 		},
 		{
 			name:  "with path",
 			input: "https://qodana.cloud/api/v1",
-			host:  DefaultEndpoint,
+			url:   DefaultEndpoint,
 		},
 		{
 			name:  "custom domain",
 			input: "https://qodana.company.com/api/v1",
-			host:  "qodana.company.com",
+			url:   "https://qodana.company.com",
 		},
 		{
 			name:  "not domain",
 			input: ":hsa/sdf",
-			host:  "",
 			error: true,
 		},
 	} {
@@ -83,8 +93,8 @@ func TestEndpoint(t *testing.T) {
 				if testData.error && !fatal {
 					t.Errorf("Should be fatal")
 				}
-				if !testData.error && cloudEndpoint.Host != testData.host {
-					assert.Equal(t, testData.host, cloudEndpoint.Host)
+				if !testData.error && cloudEndpoint.Url != testData.url {
+					assert.Equal(t, testData.url, cloudEndpoint.Url)
 				}
 			},
 		)

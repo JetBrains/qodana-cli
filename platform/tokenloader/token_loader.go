@@ -108,7 +108,7 @@ func ValidateTokenPrintProject(token string) {
 		os.Exit(1)
 	} else {
 		if !qdenv.IsContainer() {
-			msg.SuccessMessage("Linked %s project: %s", cloud.GetCloudRootEndpoint().Host, projectName)
+			msg.SuccessMessage("Linked %s project: %s", cloud.GetCloudRootEndpoint().Url, projectName)
 		}
 	}
 }
@@ -201,7 +201,7 @@ func getTokenFromKeychain(refresh bool, id string) string {
 
 func getTokenFromUserInput(projectDir string, id string, logDir string) string {
 	if msg.IsInteractive() {
-		msg.WarningMessage(cloud.EmptyTokenMessage, cloud.GetCloudRootEndpoint().GetCloudUrl())
+		msg.WarningMessage(cloud.EmptyTokenMessage, cloud.GetCloudRootEndpoint().Url)
 		var token string
 		for {
 			token = setupToken(projectDir, id, logDir)
