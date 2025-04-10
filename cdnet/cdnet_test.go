@@ -18,14 +18,16 @@ package main
 
 import (
 	"fmt"
-	"github.com/JetBrains/qodana-cli/v2025/platform"
-	"github.com/JetBrains/qodana-cli/v2025/platform/thirdpartyscan"
-	log "github.com/sirupsen/logrus"
 	"os"
-	"os/exec"
 	"path/filepath"
 	"strings"
 	"testing"
+
+	"github.com/JetBrains/qodana-cli/v2025/platform/thirdpartyscan"
+	"github.com/JetBrains/qodana-cli/v2025/platform/utils"
+
+	"github.com/JetBrains/qodana-cli/v2025/platform"
+	log "github.com/sirupsen/logrus"
 )
 
 func TestLinterRun(t *testing.T) {
@@ -33,23 +35,37 @@ func TestLinterRun(t *testing.T) {
 	if os.Getenv("GITHUB_ACTIONS") == "true" {
 		t.Skip()
 	}
-	projectPath := createNativeProject(t, "badrules")
-	defer deferredCleanup(projectPath)
-	outputDir := filepath.Join(os.TempDir(), "cdnet-output")
-	defer deferredCleanup(outputDir)
-	cacheDir := filepath.Join(os.TempDir(), "cdnetTmp")
-	defer deferredCleanup(cacheDir)
+	log.SetLevel(log.DebugLevel)
+
+	projectDir, err := os.MkdirTemp("", "TestLinterRun")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer func() {
+		err := os.RemoveAll(projectDir)
+		if err != nil {
+			t.Fatal(err)
+		}
+	}()
+
+	os.CopyFS(projectDir, os.DirFS("testdata/TestLinterRun"))
+
+	outputDir := filepath.Join(projectDir, ".linter-output")
+	cacheDir := filepath.Join(projectDir, ".linter-cache")
 
 	linterInfo := thirdpartyscan.LinterInfo{
 		ProductCode:   productCode,
 		LinterName:    linterName,
-		LinterVersion: "2023.3",
+		LinterVersion: version,
 		IsEap:         true,
 	}
 
+	linter_field := fmt.Sprintf("linter: jetbrains/qodana-clang:%s\n", linterInfo.LinterVersion)
+	utils.AppendToFile(filepath.Join(projectDir, "qodana.yaml"), linter_field)
+
 	command := platform.NewThirdPartyScanCommand(CdnetLinter{}, linterInfo)
-	command.SetArgs([]string{"-i", projectPath, "-o", outputDir, "--cache-dir", cacheDir, "--no-build"})
-	err := command.Execute()
+	command.SetArgs([]string{"-i", projectDir, "-o", outputDir, "--cache-dir", cacheDir})
+	err = command.Execute()
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -70,7 +86,7 @@ func TestLinterRun(t *testing.T) {
 		fmt.Println("Found issues: ", resultsSize)
 	}
 
-	resultAllProblems, err := os.ReadFile(filepath.Join(outputDir, "report", "results", "result-allProblems.json"))
+	resultAllProblems, err := os.ReadFile(filepath.Join(outputDir, "report", "result-allProblems.json"))
 	if err != nil {
 		t.Fatal("Error reading all problems file", err)
 	}
@@ -79,39 +95,4 @@ func TestLinterRun(t *testing.T) {
 	if strings.Contains(allProblems, `"listProblem":[]`) {
 		t.Fatal("All problems file is empty")
 	}
-}
-
-func deferredCleanup(path string) {
-	err := os.RemoveAll(path)
-	if err != nil {
-		log.Fatal(err)
-	}
-}
-
-func createNativeProject(t *testing.T, name string) string {
-	home, err := os.UserHomeDir()
-	if err != nil {
-		t.Fatal(err)
-	}
-	location := filepath.Join(home, ".qodana_scan_", name)
-	err = gitClone("https://github.com/hybloid/BadRulesProject", location)
-	if err != nil {
-		t.Fatal(err)
-	}
-	return location
-}
-
-func gitClone(repoURL, directory string) error {
-	if _, err := os.Stat(directory); !os.IsNotExist(err) {
-		err = os.RemoveAll(directory)
-		if err != nil {
-			return err
-		}
-	}
-	cmd := exec.Command("git", "clone", repoURL, directory)
-	err := cmd.Run()
-	if err != nil {
-		return err
-	}
-	return nil
 }
