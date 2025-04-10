@@ -32,7 +32,10 @@ func TestLinterRun(t *testing.T) {
 		}
 	}()
 
-	os.CopyFS(projectDir, os.DirFS("testdata/TestLinterRun"))
+	err = os.CopyFS(projectDir, os.DirFS("testdata/TestLinterRun"))
+	if err != nil {
+		t.Fatal(err)
+	}
 
 	outputDir := filepath.Join(projectDir, ".linter-output")
 	cacheDir := filepath.Join(projectDir, ".linter-cache")
@@ -44,8 +47,8 @@ func TestLinterRun(t *testing.T) {
 		IsEap:         true,
 	}
 
-	linter_field := fmt.Sprintf("linter: jetbrains/qodana-clang:%s\n", linterInfo.LinterVersion)
-	utils.AppendToFile(filepath.Join(projectDir, "qodana.yaml"), linter_field)
+	linterYamlField := fmt.Sprintf("linter: jetbrains/qodana-clang:%s\n", linterInfo.LinterVersion)
+	utils.AppendToFile(filepath.Join(projectDir, "qodana.yaml"), linterYamlField)
 
 	command := platform.NewThirdPartyScanCommand(ClangLinter{}, linterInfo)
 	command.SetArgs([]string{"-i", projectDir, "-o", outputDir, "--cache-dir", cacheDir})
