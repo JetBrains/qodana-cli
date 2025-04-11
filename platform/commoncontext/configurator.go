@@ -69,6 +69,7 @@ func recognizeDirLanguages(projectPath string) ([]string, error) {
 			}
 
 			relpath, err := filepath.Rel(projectPath, path)
+			relpath = filepath.ToSlash(relpath) // enry always uses forward slashes for regex matching
 			if err != nil {
 				return nil
 			}
@@ -78,7 +79,7 @@ func recognizeDirLanguages(projectPath string) ([]string, error) {
 			}
 
 			if f.IsDir() {
-				relpath = relpath + string(os.PathSeparator)
+				relpath += "/"
 			}
 			if isInIgnoredDirectory(path) || enry.IsVendor(relpath) || enry.IsDotFile(relpath) ||
 				enry.IsDocumentation(relpath) || enry.IsConfiguration(relpath) ||
