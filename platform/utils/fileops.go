@@ -17,9 +17,17 @@
 package utils
 
 import (
-	log "github.com/sirupsen/logrus"
+	"archive/tar"
+	"archive/zip"
+	"compress/gzip"
+	"errors"
+	"fmt"
+	"io"
 	"os"
 	"path/filepath"
+	"strings"
+
+	log "github.com/sirupsen/logrus"
 )
 
 // CopyFile copies a file from src to dst.
@@ -81,5 +89,103 @@ func CopyDir(src string, dst string) error {
 			}
 		}
 	}
+	return nil
+}
+
+// WalkArchiveCallback will be called for each archived item, e.g. in WalkArchiveFiles.
+// Parameters:
+// - path: relative path of an item within the archive
+// - info: `os.FileInfo` for the item
+// - contents: `io.Reader` for the file contents or `nil` if the `info.IsDir()` is true.
+type WalkArchiveCallback = func(path string, info os.FileInfo, contents io.Reader)
+
+// WalkArchive calls `callback` for each file entry in an archive specified by `path`.
+// Format is guessed automatically from the extension.
+func WalkArchive(path string, callback WalkArchiveCallback) error {
+	implFunc := walkZipArchive
+
+	if strings.HasSuffix(path, ".zip") {
+		implFunc = walkZipArchive
+	} else if strings.HasSuffix(path, ".tar.gz") {
+		implFunc = walkTarGzArchive
+	} else {
+		return fmt.Errorf("path %q does not have a recognizable extension", path)
+	}
+
+	return implFunc(path, callback)
+}
+
+// walkZipArchive implements WalkArchiveFiles for .zip.
+func walkZipArchive(path string, callback WalkArchiveCallback) (err error) {
+	zipReader, err := zip.OpenReader(path)
+	if err != nil {
+		return err
+	}
+	defer func() {
+		err = errors.Join(err, zipReader.Close())
+	}()
+
+	for _, f := range zipReader.File {
+		fileInfo := f.FileInfo()
+
+		err = func() (err error) { // wrap file open/close in a scope
+			reader := (io.Reader)(nil)
+			if !fileInfo.IsDir() {
+				reader, err := f.Open()
+				if err != nil {
+					return err
+				}
+				defer func() {
+					err = errors.Join(err, reader.Close())
+				}()
+			}
+
+			callback(f.Name, fileInfo, reader)
+			return nil
+		}()
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+// walkTarGzArchive implements WalkArchiveFiles for .tar.gz.
+func walkTarGzArchive(path string, callback WalkArchiveCallback) (err error) {
+	reader, err := os.Open(path)
+	if err != nil {
+		log.Fatalf("Failed to open %q: %s", path, err)
+	}
+	defer func() {
+		err = errors.Join(err, reader.Close())
+	}()
+
+	gzReader, err := gzip.NewReader(reader)
+	if err != nil {
+		log.Fatalf("gzip error in %q: %s", path, err)
+	}
+	defer func() {
+		err = errors.Join(err, gzReader.Close())
+	}()
+
+	tarReader := tar.NewReader(gzReader)
+
+	for {
+		header, err := tarReader.Next()
+		if err == io.EOF {
+			break
+		} else if err != nil {
+			log.Fatalf("tar error while reading contents of %q: %s", path, err)
+		}
+		fileInfo := header.FileInfo()
+		callbackReader := tarReader
+		if fileInfo.IsDir() {
+			callbackReader = nil
+		}
+
+		callback(header.Name, fileInfo, callbackReader)
+	}
+
 	return nil
 }
