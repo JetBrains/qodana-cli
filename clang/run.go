@@ -1,13 +1,21 @@
 package main
 
 import (
+	"bytes"
+	"crypto/sha256"
+	"encoding/hex"
+	"errors"
 	"fmt"
-	"github.com/JetBrains/qodana-cli/v2025/platform"
-	"github.com/JetBrains/qodana-cli/v2025/platform/thirdpartyscan"
-	log "github.com/sirupsen/logrus"
+	"io"
 	"os"
 	"path/filepath"
 	"runtime"
+
+	_ "embed"
+
+	"github.com/JetBrains/qodana-cli/v2025/platform"
+	"github.com/JetBrains/qodana-cli/v2025/platform/thirdpartyscan"
+	log "github.com/sirupsen/logrus"
 )
 
 type ClangLinter struct {
@@ -41,21 +49,74 @@ func (l ClangLinter) RunAnalysis(c thirdpartyscan.Context) error {
 	return nil
 }
 
+func getSha256(path string) (result []byte, err error) {
+	/// Get sha256 of a file.
+	reader, err := os.Open(path)
+	defer func() {
+		err = errors.Join(err, reader.Close())
+	}()
+
+	hasher := sha256.New()
+	_, err = io.Copy(hasher, reader)
+	if err != nil {
+		return nil, err
+	}
+
+	return hasher.Sum(nil), nil
+}
+
+//go:generate go run scripts/prepare-clang-tidy-binary.go
+
+//go:embed clang-tidy.archive
+var ClangTidyArchive []byte
+
+//go:embed clang-tidy.sha256.bin
+var ClangTidySha256 []byte
+
 func (l ClangLinter) MountTools(path string) (map[string]string, error) {
 	clang := thirdpartyscan.Clang
 
 	val := make(map[string]string)
 	val[clang] = getBinaryPath(path)
-	if _, err := os.Stat(val[clang]); err != nil {
-		if os.IsNotExist(err) {
-			clangArchive := clang + Ext
-			clangArchivePath := platform.ProcessAuxiliaryTool(clangArchive, clang, path, Clang)
-			if err := platform.Decompress(clangArchivePath, path); err != nil {
-				return nil, fmt.Errorf("failed to decompress clang archive: %w", err)
+
+	_, err := os.Stat(val[clang])
+	isBinaryOk := true
+
+	if os.IsNotExist(err) {
+		isBinaryOk = false
+	} else if err != nil {
+		return nil, err
+	} else {
+		hash, err := getSha256(val[clang])
+		if err != nil {
+			log.Warningf("getting sha256 of %q failed: %s", val[clang], err)
+			isBinaryOk = false
+		} else {
+			isBinaryOk = bytes.Equal(hash, ClangTidySha256)
+			if !isBinaryOk {
+				log.Warningf(
+					"failed to verify sha256 checksum of %q: expected %s, got %s", val[clang],
+					hex.EncodeToString(ClangTidySha256),
+					hex.EncodeToString(hash),
+				)
 			}
-			val[clang] = getBinaryPath(path)
 		}
 	}
+
+	if !isBinaryOk {
+		extension := ".tar.gz"
+		if runtime.GOOS == "windows" {
+			extension = ".zip"
+		}
+
+		clangArchive := clang + extension
+		clangArchivePath := platform.ProcessAuxiliaryTool(clangArchive, clang, path, ClangTidyArchive)
+		if err := platform.Decompress(clangArchivePath, path); err != nil {
+			return nil, fmt.Errorf("failed to decompress clang archive: %w", err)
+		}
+		val[clang] = getBinaryPath(path)
+	}
+
 	return val, nil
 }
 
