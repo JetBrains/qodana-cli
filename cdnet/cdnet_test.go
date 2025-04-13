@@ -24,6 +24,7 @@ import (
 	"testing"
 
 	"github.com/JetBrains/qodana-cli/v2025/platform/thirdpartyscan"
+	"github.com/JetBrains/qodana-cli/v2025/platform/utils"
 
 	"github.com/JetBrains/qodana-cli/v2025/platform"
 	log "github.com/sirupsen/logrus"
@@ -61,6 +62,9 @@ func TestLinterRun(t *testing.T) {
 		LinterVersion: version,
 		IsEap:         true,
 	}
+
+	linterYamlField := fmt.Sprintf("linter: jetbrains/qodana-cdnet:%s\n", linterInfo.LinterVersion)
+	utils.AppendToFile(filepath.Join(projectDir, "qodana.yaml"), linterYamlField)
 
 	command := platform.NewThirdPartyScanCommand(CdnetLinter{}, linterInfo)
 	command.SetArgs([]string{"-i", projectDir, "-o", outputDir, "--cache-dir", cacheDir})

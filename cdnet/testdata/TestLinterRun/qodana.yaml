@@ -3,3 +3,4 @@ profile:
   name: qodana.recommended
 dotnet:
   project: TestLinterRun.csproj
+# linter: jetbrains/qodana-cdnet:<VERSION>  # Added at runtime
