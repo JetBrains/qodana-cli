@@ -93,7 +93,7 @@ func CopyDir(src string, dst string) error {
 	return nil
 }
 
-// GetSha256 computes a hash sum for a file steam.
+// GetSha256 computes a hash sum for a byte stream.
 func GetSha256(stream io.Reader) (result []byte, err error) {
 	hasher := sha256.New()
 	_, err = io.Copy(hasher, stream)
@@ -102,6 +102,19 @@ func GetSha256(stream io.Reader) (result []byte, err error) {
 	}
 
 	return hasher.Sum(nil), nil
+}
+
+// GetFileSha256 computes a hash sum from an existing file.
+func GetFileSha256(path string) (result []byte, err error) {
+	reader, err := os.Open(path)
+	if err != nil {
+		return nil, err
+	}
+	defer func() {
+		err = errors.Join(err, reader.Close())
+	}()
+
+	return GetSha256(reader)
 }
 
 // WalkArchiveCallback will be called for each archived item, e.g. in WalkArchiveFiles.

@@ -2,11 +2,8 @@ package main
 
 import (
 	"bytes"
-	"crypto/sha256"
 	"encoding/hex"
-	"errors"
 	"fmt"
-	"io"
 	"os"
 	"path/filepath"
 	"runtime"
@@ -15,6 +12,7 @@ import (
 
 	"github.com/JetBrains/qodana-cli/v2025/platform"
 	"github.com/JetBrains/qodana-cli/v2025/platform/thirdpartyscan"
+	"github.com/JetBrains/qodana-cli/v2025/platform/utils"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -49,22 +47,6 @@ func (l ClangLinter) RunAnalysis(c thirdpartyscan.Context) error {
 	return nil
 }
 
-func getSha256(path string) (result []byte, err error) {
-	/// Get sha256 of a file.
-	reader, err := os.Open(path)
-	defer func() {
-		err = errors.Join(err, reader.Close())
-	}()
-
-	hasher := sha256.New()
-	_, err = io.Copy(hasher, reader)
-	if err != nil {
-		return nil, err
-	}
-
-	return hasher.Sum(nil), nil
-}
-
 //go:generate go run scripts/prepare-clang-tidy-binary.go
 
 //go:embed clang-tidy.archive
@@ -87,7 +69,7 @@ func (l ClangLinter) MountTools(path string) (map[string]string, error) {
 	} else if err != nil {
 		return nil, err
 	} else {
-		hash, err := getSha256(val[clang])
+		hash, err := utils.GetFileSha256(val[clang])
 		if err != nil {
 			log.Warningf("getting sha256 of %q failed: %s", val[clang], err)
 			isBinaryOk = false

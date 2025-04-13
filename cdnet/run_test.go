@@ -10,7 +10,7 @@ import (
 )
 
 func TestMountTools(t *testing.T) {
-	linter := ClangLinter{}
+	linter := CdnetLinter{}
 	tempdir, err := os.MkdirTemp("", "TestMountTools")
 	if err != nil {
 		t.Fatal(err)
@@ -28,7 +28,7 @@ func TestMountTools(t *testing.T) {
 	}
 
 	path := mountInfo[thirdpartyscan.Clang]
-	expectedHash := ClangTidySha256
+	expectedHash := CltSha256
 	actualHash, err := utils.GetFileSha256(path)
 	if err != nil {
 		t.Fatal(err)

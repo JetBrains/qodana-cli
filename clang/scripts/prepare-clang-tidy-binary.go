@@ -1,3 +1,5 @@
+// Find the correct archive for this system, rename it to something that go:embed will pick up, and compute its sha-256
+// sum.
 package main
 
 import (
