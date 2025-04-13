@@ -37,8 +37,18 @@ jobs:
           distribution: 'temurin' # Use the Temurin JDK distribution
           java-version: '17'     # Java version 17
       - name: Overwrite tools (to run tests only on gh repo)
-        run: |
-          touch cdnet/clt.zip tooling/baseline-cli.jar tooling/intellij-report-converter.jar tooling/qodana-fuser.jar
+        run: >-
+          touch
+          cdnet/clt.zip
+          tooling/baseline-cli.jar
+          tooling/intellij-report-converter.jar
+          tooling/qodana-fuser.jar
+          clang/clang-tidy-linux-amd64.tar.gz
+          clang/clang-tidy-linux-arm64.tar.gz
+          clang/clang-tidy-windows-amd64.zip
+          clang/clang-tidy-windows-arm64.zip
+          clang/clang-tidy-darwin-amd64.tar.gz
+          clang/clang-tidy-darwin-arm64.tar.gz
       - name: Download config-loader-cli.jar
         run: chmod +x download_deps.sh && ./download_deps.sh
       - name: Set up gotestfmt

@@ -94,21 +94,22 @@ func CopyDir(src string, dst string) error {
 }
 
 // GetSha256 computes a hash sum for a byte stream.
-func GetSha256(stream io.Reader) (result []byte, err error) {
+func GetSha256(stream io.Reader) (result [32]byte, err error) {
 	hasher := sha256.New()
 	_, err = io.Copy(hasher, stream)
 	if err != nil {
-		return nil, err
+		return result, err
 	}
 
-	return hasher.Sum(nil), nil
+	copy(result[:], hasher.Sum(nil))
+	return result, nil
 }
 
 // GetFileSha256 computes a hash sum from an existing file.
-func GetFileSha256(path string) (result []byte, err error) {
+func GetFileSha256(path string) (result [32]byte, err error) {
 	reader, err := os.Open(path)
 	if err != nil {
-		return nil, err
+		return result, err
 	}
 	defer func() {
 		err = errors.Join(err, reader.Close())

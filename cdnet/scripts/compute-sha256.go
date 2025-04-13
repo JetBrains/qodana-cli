@@ -18,7 +18,7 @@ func main() {
 	targetPath := os.Args[1]
 
 	// Compute hash for the clang-tidy binary
-	hash := ([]byte)(nil)
+	var hash [32]byte
 	callback := func(path string, info os.FileInfo, stream io.Reader) {
 		if info.IsDir() {
 			return
@@ -34,13 +34,26 @@ func main() {
 		}
 	}
 
-	utils.WalkZipArchive("clt.zip", callback)
-	err := os.WriteFile("clt.sha256.bin", hash, 0666)
+	stat, err := os.Stat("clt.zip")
+	if err != nil {
+		log.Fatal(err)
+	}
+	if stat.Size() == 0 {
+		// Assume someone does not have clt.zip and just `touch`-ed it to proceed with the build.
+		_, err = fmt.Fprintln(os.Stderr, "clt.zip is a 0-byte file, will generate mock hashsum.")
+		if err != nil {
+			log.Fatal(err)
+		}
+	} else {
+		utils.WalkZipArchive("clt.zip", callback)
+	}
+
+	err = os.WriteFile("clt.sha256.bin", hash[:], 0666)
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	_, err = fmt.Fprintf(os.Stderr, "sha256 of the contents of clt.zip/%q: %s\n", targetPath, hex.EncodeToString(hash))
+	_, err = fmt.Fprintf(os.Stderr, "sha256 of the contents of clt.zip: %s\n", hex.EncodeToString(hash[:]))
 	if err != nil {
 		log.Fatal(err)
 	}

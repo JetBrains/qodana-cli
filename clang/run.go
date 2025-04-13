@@ -74,12 +74,12 @@ func (l ClangLinter) MountTools(path string) (map[string]string, error) {
 			log.Warningf("getting sha256 of %q failed: %s", val[clang], err)
 			isBinaryOk = false
 		} else {
-			isBinaryOk = bytes.Equal(hash, ClangTidySha256)
+			isBinaryOk = bytes.Equal(hash[:], ClangTidySha256)
 			if !isBinaryOk {
 				log.Warningf(
 					"failed to verify sha256 checksum of %q: expected %s, got %s", val[clang],
 					hex.EncodeToString(ClangTidySha256),
-					hex.EncodeToString(hash),
+					hex.EncodeToString(hash[:]),
 				)
 			}
 		}
