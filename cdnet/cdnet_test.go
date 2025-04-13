@@ -37,18 +37,9 @@ func TestLinterRun(t *testing.T) {
 	}
 	log.SetLevel(log.DebugLevel)
 
-	projectDir, err := os.MkdirTemp("", "TestLinterRun")
-	if err != nil {
-		t.Fatal(err)
-	}
-	defer func() {
-		err := os.RemoveAll(projectDir)
-		if err != nil {
-			t.Fatal(err)
-		}
-	}()
+	projectDir := t.TempDir()
 
-	err = os.CopyFS(projectDir, os.DirFS("testdata/TestLinterRun"))
+	err := os.CopyFS(projectDir, os.DirFS("testdata/TestLinterRun"))
 	if err != nil {
 		t.Fatal(err)
 	}
