@@ -15,10 +15,11 @@ import (
 )
 
 func TestLinterRun(t *testing.T) {
-	// skip test on GH, since required jars are not there
+	// skip this test on GitHub due to missing artifacts
 	if os.Getenv("GITHUB_ACTIONS") == "true" {
 		t.Skip()
 	}
+
 	log.SetLevel(log.DebugLevel)
 
 	projectDir := t.TempDir()

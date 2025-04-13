@@ -39,8 +39,6 @@ jobs:
       - name: Overwrite tools (to run tests only on gh repo)
         run: |
           touch cdnet/clt.zip tooling/baseline-cli.jar tooling/intellij-report-converter.jar tooling/qodana-fuser.jar
-          rm go.work
-          mv go.work.github go.work
       - name: Download config-loader-cli.jar
         run: chmod +x download_deps.sh && ./download_deps.sh
       - name: Set up gotestfmt
@@ -79,7 +77,6 @@ jobs:
       - name: Overwrite tools (to run tests only on gh repo)
         run: |
           touch cdnet/clt.zip tooling/baseline-cli.jar tooling/intellij-report-converter.jar tooling/qodana-fuser.jar
-          rm go.work && mv go.work.github go.work
       - uses: docker/login-action@v3
         with:
           registry: registry.jetbrains.team
@@ -126,7 +123,6 @@ jobs:
 #      - name: Overwrite tools (to run tests only on gh repo)
 #        run: |
 #          touch cdnet/clt.zip tooling/baseline-cli.jar tooling/intellij-report-converter.jar tooling/qodana-fuser.jar
-#          rm go.work && mv go.work.github go.work
 #      - run: |
 #          ./download_deps.sh
 #          export TARGETARCH=$(uname -m)

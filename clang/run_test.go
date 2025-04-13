@@ -10,17 +10,13 @@ import (
 )
 
 func TestMountTools(t *testing.T) {
-	linter := ClangLinter{}
-	tempdir, err := os.MkdirTemp("", "TestMountTools")
-	if err != nil {
-		t.Fatal(err)
+	// skip this test on GitHub due to missing artifacts
+	if os.Getenv("GITHUB_ACTIONS") == "true" {
+		t.Skip()
 	}
-	defer func() {
-		err = os.RemoveAll(tempdir)
-		if err != nil {
-			t.Fatal(err)
-		}
-	}()
+
+	linter := ClangLinter{}
+	tempdir := t.TempDir()
 
 	mountInfo, err := linter.MountTools(tempdir)
 	if err != nil {
