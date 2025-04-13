@@ -56,7 +56,9 @@ jobs:
       - name: Build
         # Build everything that will be tested. Although go test performs a build itself, gotestfmt will panic on a
         # failed build.
-        run: go build -v $(go list -m)
+        run: |
+          go generate -v $(go list -m)
+          go build -v $(go list -m)
       - name: Run tests (with coverage)
         run: go test -json -v $(go list -f '{{.Dir}}/...' -m) -coverprofile coverage-${{ matrix.os }}.out 2>&1 | tee /tmp/gotest.log | gotestfmt
         env:
