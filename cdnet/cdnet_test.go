@@ -67,7 +67,7 @@ func TestLinterRun(t *testing.T) {
 	utils.AppendToFile(filepath.Join(projectDir, "qodana.yaml"), linterYamlField)
 
 	command := platform.NewThirdPartyScanCommand(CdnetLinter{}, linterInfo)
-	command.SetArgs([]string{"-i", projectDir, "-o", outputDir, "--cache-dir", cacheDir})
+	command.SetArgs([]string{"-i", projectDir, "-o", outputDir, "--cache-dir", cacheDir, "--no-build"})
 	err = command.Execute()
 	if err != nil {
 		t.Fatal(err)
