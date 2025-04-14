@@ -1,3 +1,2 @@
 version: "1.0"
 bootstrap: cmake -S . -B build -DCMAKE_EXPORT_COMPILE_COMMANDS=ON
-# linter: jetbrains/qodana-clang:<VERSION>  # Added at runtime

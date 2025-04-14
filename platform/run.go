@@ -19,11 +19,17 @@ package platform
 import (
 	"errors"
 	"fmt"
+	"os"
+	"path"
+	"path/filepath"
+	"strings"
+
 	"github.com/JetBrains/qodana-cli/v2025/cloud"
-	"github.com/JetBrains/qodana-cli/v2025/platform/cmd"
+	platformcmd "github.com/JetBrains/qodana-cli/v2025/platform/cmd"
 	"github.com/JetBrains/qodana-cli/v2025/platform/commoncontext"
 	"github.com/JetBrains/qodana-cli/v2025/platform/effectiveconfig"
 	"github.com/JetBrains/qodana-cli/v2025/platform/msg"
+	"github.com/JetBrains/qodana-cli/v2025/platform/product"
 	"github.com/JetBrains/qodana-cli/v2025/platform/qdenv"
 	"github.com/JetBrains/qodana-cli/v2025/platform/qdyaml"
 	"github.com/JetBrains/qodana-cli/v2025/platform/thirdpartyscan"
@@ -31,10 +37,6 @@ import (
 	"github.com/JetBrains/qodana-cli/v2025/platform/utils"
 	"github.com/JetBrains/qodana-cli/v2025/tooling"
 	log "github.com/sirupsen/logrus"
-	"os"
-	"path"
-	"path/filepath"
-	"strings"
 )
 
 func RunThirdPartyLinterAnalysis(
@@ -44,9 +46,11 @@ func RunThirdPartyLinterAnalysis(
 ) (int, error) {
 	var err error
 
+	linterImage := product.DockerImageMap[linterInfo.ProductCode] + linterInfo.LinterVersion
+
 	commonCtx := commoncontext.Compute(
-		cliOptions.Linter,
-		cliOptions.Ide,
+		linterImage,
+		"",
 		cliOptions.CacheDir,
 		cliOptions.ResultsDir,
 		cliOptions.ReportDir,

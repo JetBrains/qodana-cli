@@ -18,13 +18,14 @@ package platform
 
 import (
 	"fmt"
-	"github.com/JetBrains/qodana-cli/v2025/platform/cmd"
+	"os"
+
+	platformcmd "github.com/JetBrains/qodana-cli/v2025/platform/cmd"
 	"github.com/JetBrains/qodana-cli/v2025/platform/msg"
 	"github.com/JetBrains/qodana-cli/v2025/platform/thirdpartyscan"
 	"github.com/JetBrains/qodana-cli/v2025/platform/utils"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
-	"os"
 )
 
 // NewThirdPartyScanCommand returns a new instance of the scan command.
@@ -57,6 +58,12 @@ But you can always override qodana.yaml options with the following command-line 
 	err := platformcmd.ComputeFlags(c, cliOptions)
 	if err != nil {
 		log.Fatal("Error while computing flags")
+	}
+	if cliOptions.Linter != "" {
+		msg.WarningMessage("Warning: --linter option is ignored when running a linter wrapper.")
+	}
+	if cliOptions.Ide != "" {
+		msg.WarningMessage("Warning: --ide option is ignored when running a linter wrapper.")
 	}
 
 	return c
