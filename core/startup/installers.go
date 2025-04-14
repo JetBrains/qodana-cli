@@ -222,34 +222,19 @@ func installIdeWindowsExe(archivePath string, targetDir string) error {
 }
 
 func installIdeFromZip(archivePath string, targetDir string) error {
-	if err := os.RemoveAll(targetDir); err != nil {
-		log.Fatal("couldn't clean target directory ", err.Error())
-	}
 	if err := os.MkdirAll(targetDir, os.ModePerm); err != nil {
 		log.Fatal("couldn't create a directory ", err.Error())
 	}
-
-	err := utils.WalkZipArchive(archivePath, func(localPath string, info os.FileInfo, contents io.Reader) {
-		path := filepath.Join(targetDir, localPath)
-		if info.IsDir() {
-			if err := os.Mkdir(path, info.Mode()); err != nil {
-				log.Fatalf("couldn't create directory %q: %s", path, err)
-			}
-		} else {
-			writer, err := os.OpenFile(path, os.O_WRONLY|os.O_CREATE, info.Mode())
-			if err != nil {
-				log.Fatalf("couldn't create file %q: %s", path, err)
-			}
-			_, err = io.Copy(writer, contents)
-			if err != nil {
-				log.Fatalf("couldn't extract file %q: %s", localPath, err)
-			}
-		}
-	})
+	_, err := exec.Command(
+		"tar",
+		"-xf",
+		utils.QuoteForWindows(archivePath),
+		"-C",
+		utils.QuoteForWindows(targetDir),
+	).Output()
 	if err != nil {
-		log.Fatal(err)
+		return fmt.Errorf("tar: %s", err)
 	}
-
 	return nil
 }
 
