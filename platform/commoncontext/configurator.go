@@ -18,12 +18,14 @@ package commoncontext
 
 import (
 	"bytes"
-	"github.com/JetBrains/qodana-cli/v2025/platform/utils"
 	"io"
 	"os"
 	"path/filepath"
+	"slices"
 	"sort"
 	"strings"
+
+	"github.com/JetBrains/qodana-cli/v2025/platform/utils"
 
 	"github.com/go-enry/go-enry/v2"
 
@@ -137,6 +139,7 @@ func recognizeDirLanguages(projectPath string) ([]string, error) {
 		languages = append(languages, langCount.Language)
 	}
 
+	slices.Sort(languages)
 	return languages, nil
 }
 
