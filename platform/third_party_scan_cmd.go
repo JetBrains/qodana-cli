@@ -60,10 +60,10 @@ But you can always override qodana.yaml options with the following command-line 
 		log.Fatal("Error while computing flags")
 	}
 	if cliOptions.Linter != "" {
-		msg.WarningMessage("Warning: --linter option is ignored when running a linter wrapper.")
+		msg.WarningMessage("Warning: --linter option is ignored when running a third-party linter.")
 	}
 	if cliOptions.Ide != "" {
-		msg.WarningMessage("Warning: --ide option is ignored when running a linter wrapper.")
+		msg.WarningMessage("Warning: --ide option is ignored when running a third-party linter.")
 	}
 
 	return c
