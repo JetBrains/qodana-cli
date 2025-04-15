@@ -29,7 +29,6 @@ import (
 	"github.com/JetBrains/qodana-cli/v2025/platform/commoncontext"
 	"github.com/JetBrains/qodana-cli/v2025/platform/effectiveconfig"
 	"github.com/JetBrains/qodana-cli/v2025/platform/msg"
-	"github.com/JetBrains/qodana-cli/v2025/platform/product"
 	"github.com/JetBrains/qodana-cli/v2025/platform/qdenv"
 	"github.com/JetBrains/qodana-cli/v2025/platform/qdyaml"
 	"github.com/JetBrains/qodana-cli/v2025/platform/thirdpartyscan"
@@ -46,11 +45,9 @@ func RunThirdPartyLinterAnalysis(
 ) (int, error) {
 	var err error
 
-	linterImage := product.DockerImageMap[linterInfo.ProductCode] + linterInfo.LinterVersion
-
 	commonCtx := commoncontext.Compute(
-		linterImage,
 		"",
+		linterInfo.ProductCode,
 		cliOptions.CacheDir,
 		cliOptions.ResultsDir,
 		cliOptions.ReportDir,
