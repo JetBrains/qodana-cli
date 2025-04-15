@@ -20,6 +20,12 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"fmt"
+	"github.com/JetBrains/qodana-cli/v2025/platform/msg"
+	"github.com/JetBrains/qodana-cli/v2025/platform/product"
+	"github.com/JetBrains/qodana-cli/v2025/platform/utils"
+	cp "github.com/otiai10/copy"
+	"github.com/pterm/pterm"
+	log "github.com/sirupsen/logrus"
 	"io"
 	"math/rand"
 	"os"
@@ -27,13 +33,6 @@ import (
 	"path/filepath"
 	"runtime"
 	"strings"
-
-	"github.com/JetBrains/qodana-cli/v2025/platform/msg"
-	"github.com/JetBrains/qodana-cli/v2025/platform/product"
-	"github.com/JetBrains/qodana-cli/v2025/platform/utils"
-	cp "github.com/otiai10/copy"
-	"github.com/pterm/pterm"
-	log "github.com/sirupsen/logrus"
 )
 
 func downloadAndInstallIDE(

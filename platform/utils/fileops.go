@@ -17,10 +17,9 @@
 package utils
 
 import (
+	log "github.com/sirupsen/logrus"
 	"os"
 	"path/filepath"
-
-	log "github.com/sirupsen/logrus"
 )
 
 // CopyFile copies a file from src to dst.
