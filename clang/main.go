@@ -10,7 +10,7 @@ import (
 )
 
 const (
-	productCode = "QDCL"
+	productCode = "QDCLC"
 	linterName  = "Qodana Community for C/C++"
 )
 

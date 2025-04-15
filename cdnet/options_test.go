@@ -18,6 +18,9 @@ package main
 
 import (
 	"fmt"
+	"reflect"
+	"testing"
+
 	"github.com/JetBrains/qodana-cli/v2025/core"
 	"github.com/JetBrains/qodana-cli/v2025/core/corescan"
 	"github.com/JetBrains/qodana-cli/v2025/platform/product"
@@ -26,8 +29,6 @@ import (
 	"github.com/JetBrains/qodana-cli/v2025/platform/thirdpartyscan"
 	"github.com/JetBrains/qodana-cli/v2025/platform/utils"
 	"github.com/stretchr/testify/assert"
-	"reflect"
-	"testing"
 )
 
 func createDefaultYaml(sln string, prj string, cfg string, plt string) thirdpartyscan.QodanaYamlConfig {
@@ -389,7 +390,7 @@ func TestGetArgsThirdPartyLinters(t *testing.T) {
 			name: "(clang) compile commands",
 			cb: corescan.ContextBuilder{
 				ClangCompileCommands: "compile_commands.json",
-				Linter:               product.DockerImageMap[product.QDCL],
+				Linter:               product.DockerImageMap[product.QDCLC],
 			},
 			expected: []string{
 				"--compile-commands", "compile_commands.json",
@@ -399,7 +400,7 @@ func TestGetArgsThirdPartyLinters(t *testing.T) {
 			name: "(clang) clang args",
 			cb: corescan.ContextBuilder{
 				ClangArgs: "-I/usr/include",
-				Linter:    product.DockerImageMap[product.QDCL],
+				Linter:    product.DockerImageMap[product.QDCLC],
 			},
 			expected: []string{
 				"--clang-args", "-I/usr/include",

@@ -17,9 +17,10 @@
 package product
 
 import (
+	"strings"
+
 	"github.com/JetBrains/qodana-cli/v2025/platform/utils"
 	log "github.com/sirupsen/logrus"
-	"strings"
 )
 
 const (
@@ -44,7 +45,7 @@ const (
 	QDANDC = "QDANDC"
 	QDRST  = "QDRST"
 	QDRUBY = "QDRUBY"
-	QDCL   = "QDCL"
+	QDCLC  = "QDCLC"
 	QDCPP  = "QDCPP"
 )
 
@@ -82,7 +83,7 @@ var (
 		QDGO:   "jetbrains/qodana-go:",
 		QDJVM:  "jetbrains/qodana-jvm:",
 		QDJVMC: "jetbrains/qodana-jvm-community:",
-		QDCL:   "jetbrains/qodana-clang:",
+		QDCLC:  "jetbrains/qodana-clang:",
 		//QDRST:  "jetbrains/qodana-rust:",
 	}
 
@@ -96,7 +97,7 @@ func Image(code string) string {
 		!IsReleased {
 			return val + ReleaseVersion + "-eap"
 		}
-		if code == QDNETC || code == QDCL {
+		if code == QDNETC || code == QDCLC {
 			return val + ReleaseVersion + "-eap"
 		}
 		return val + ReleaseVersion
@@ -118,12 +119,12 @@ var LangsProductCodes = map[string][]string{
 	"C#":                {QDNET, QDNETC},
 	"F#":                {QDNET},
 	"Visual Basic .NET": {QDNET, QDNETC},
-	"C":                 {QDCPP, QDCL, QDNET},
-	"C++":               {QDCPP, QDCL, QDNET},
+	"C":                 {QDCPP, QDCLC, QDNET},
+	"C++":               {QDCPP, QDCLC, QDNET},
 }
 
 var AllSupportedPaidCodes = []string{QDJVM, QDPHP, QDPY, QDJS, QDGO, QDNET, QDAND, QDCPP}
-var AllSupportedFreeCodes = []string{QDJVMC, QDPYC, QDANDC, QDNETC, QDCL}
+var AllSupportedFreeCodes = []string{QDJVMC, QDPYC, QDANDC, QDNETC, QDCLC}
 
 var AllFixesSupportedProducts = []string{QDJVM, QDNET, QDPY, QDJS, QDPHP, QDGO, QDAND, QDRUBY}
 
