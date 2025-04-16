@@ -145,17 +145,17 @@ func getIde(productCode string) *ReleaseDownloadInfo {
 		return nil
 	}
 
-	product, err := GetProductByCode(product.Products[productCode])
+	prod, err := GetProductByCode(product.Products[productCode])
 	if err != nil {
 		msg.ErrorMessage("Error while obtaining the product info: " + err.Error())
 		return nil
 	}
-	if product == nil {
+	if prod == nil {
 		msg.ErrorMessage("Product info is not found for code: ", originalCode)
 		return nil
 	}
 
-	release := SelectLatestCompatibleRelease(product, dist)
+	release := SelectLatestCompatibleRelease(prod, dist)
 	if release == nil {
 		msg.ErrorMessage("Error while obtaining the release type: ", dist)
 		return nil
