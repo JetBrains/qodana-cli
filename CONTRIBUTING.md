@@ -34,13 +34,13 @@ go build -o qd main.go
 
 Test your code with coverage:
 ```sh
-go test -v $(go list -f '{{.Dir}}/...' -m | xargs)
+go test -v $(go list -f '{{.Dir}}/...' -m)
 ```
 
 Test your code with a human-readable report (requires `go install github.com/mfridman/tparse@latest`):
 ```shell
 export GITHUB_ACTIONS=true # skip third-party linter tests
-set -o pipefail && go test -json -v $(go list -f '{{.Dir}}/...' -m | xargs) | tparse -all
+set -o pipefail && go test -json -v $(go list -f '{{.Dir}}/...' -m) | tparse -all
 ```
 
 Dry-run goreleaser:
