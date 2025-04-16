@@ -203,9 +203,9 @@ func (client *QdClient) doRequestAttempt(request *QdCloudRequest) ([]byte, error
 		}
 	}(resp.Body)
 
-	responseBody, responseErr := io.ReadAll(resp.Body)
-	if responseErr != nil {
-		return nil, responseErr
+	responseBody, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return nil, err
 	}
 
 	if resp.StatusCode >= http.StatusOK && resp.StatusCode < http.StatusMultipleChoices {
