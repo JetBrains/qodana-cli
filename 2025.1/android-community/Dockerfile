@@ -78,7 +78,7 @@ ENV ANDROID_SDK_ROOT="/opt/android-sdk" ANDROID_USER_HOME="$QODANA_DATA/cache/an
 ENV ANDROID_HOME="$ANDROID_SDK_ROOT"
 ENV ANDROID_SDK_TOOLS="$ANDROID_SDK_ROOT/cmdline-tools/tools/bin" QODANA_CORETTO_SDK_11="/root/.jdks/corretto-11" QODANA_CORETTO_SDK_17="/root/.jdks/corretto-17"
 # IDE includes JDK17 by default since 2022, so we need additional JDK for the most projects
-COPY --from=amazoncorretto:11.0.27 /usr/lib/jvm/java-11-amazon-corretto $QODANA_CORETTO_SDK_11
+COPY --from=amazoncorretto:11.0.26 /usr/lib/jvm/java-11-amazon-corretto $QODANA_CORETTO_SDK_11
 COPY --from=amazoncorretto:17.0.14 /usr/lib/jvm/java-17-amazon-corretto $QODANA_CORETTO_SDK_17
 
 ARG ANDROID_SDK_VERSION="9123335"
