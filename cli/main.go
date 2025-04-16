@@ -17,9 +17,11 @@
 package main
 
 import (
-	"github.com/JetBrains/qodana-cli/v2024/cmd"
-	"github.com/JetBrains/qodana-cli/v2024/core"
-	"github.com/JetBrains/qodana-cli/v2024/platform"
+	"github.com/JetBrains/qodana-cli/v2025/cmd"
+	"github.com/JetBrains/qodana-cli/v2025/core"
+	"github.com/JetBrains/qodana-cli/v2025/platform/commoncontext"
+	"github.com/JetBrains/qodana-cli/v2025/platform/msg"
+	"github.com/JetBrains/qodana-cli/v2025/platform/version"
 	log "github.com/sirupsen/logrus"
 	"io"
 	"os"
@@ -28,16 +30,16 @@ import (
 )
 
 func main() {
-	platform.InterruptChannel = make(chan os.Signal, 1)
-	signal.Notify(platform.InterruptChannel, os.Interrupt)
-	signal.Notify(platform.InterruptChannel, syscall.SIGINT, syscall.SIGTERM)
+	commoncontext.InterruptChannel = make(chan os.Signal, 1)
+	signal.Notify(commoncontext.InterruptChannel, os.Interrupt)
+	signal.Notify(commoncontext.InterruptChannel, syscall.SIGINT, syscall.SIGTERM)
 	go func() {
-		<-platform.InterruptChannel
-		platform.WarningMessage("Interrupting Qodana CLI...")
+		<-commoncontext.InterruptChannel
+		msg.WarningMessage("Interrupting Qodana CLI...")
 		log.SetOutput(io.Discard)
-		core.CheckForUpdates(platform.Version)
+		core.CheckForUpdates(version.Version)
 		core.ContainerCleanup()
-		_ = platform.QodanaSpinner.Stop()
+		_ = msg.QodanaSpinner.Stop()
 		os.Exit(0)
 	}()
 	cmd.InitCli()

@@ -19,8 +19,18 @@ package core
 import (
 	"errors"
 	"fmt"
-	"github.com/JetBrains/qodana-cli/v2024/cloud"
-	"github.com/JetBrains/qodana-cli/v2024/platform"
+	"github.com/JetBrains/qodana-cli/v2025/cloud"
+	"github.com/JetBrains/qodana-cli/v2025/core/corescan"
+	"github.com/JetBrains/qodana-cli/v2025/core/startup"
+	"github.com/JetBrains/qodana-cli/v2025/platform"
+	platformcmd "github.com/JetBrains/qodana-cli/v2025/platform/cmd"
+	"github.com/JetBrains/qodana-cli/v2025/platform/commoncontext"
+	"github.com/JetBrains/qodana-cli/v2025/platform/product"
+	"github.com/JetBrains/qodana-cli/v2025/platform/qdcontainer"
+	"github.com/JetBrains/qodana-cli/v2025/platform/qdenv"
+	"github.com/JetBrains/qodana-cli/v2025/platform/qdyaml"
+	"github.com/JetBrains/qodana-cli/v2025/platform/tokenloader"
+	"github.com/JetBrains/qodana-cli/v2025/platform/utils"
 	log "github.com/sirupsen/logrus"
 	"net/http"
 	"net/http/httptest"
@@ -41,81 +51,234 @@ func TestCliArgs(t *testing.T) {
 	projectDir := filepath.Join(dir, "project")
 	cacheDir := filepath.Join(dir, "cache")
 	resultsDir := filepath.Join(dir, "results")
-	Prod.Home = string(os.PathSeparator) + "opt" + string(os.PathSeparator) + "idea"
-	Prod.IdeScript = filepath.Join(Prod.Home, "bin", "idea.sh")
-	err := os.Unsetenv(platform.QodanaDockerEnv)
+
+	home := string(os.PathSeparator) + "opt" + string(os.PathSeparator) + "idea"
+	ideScript := filepath.Join(home, "bin", "idea.sh")
+	prod := product.Product{
+		IdeScript: ideScript,
+		Home:      home,
+	}
+	err := os.Unsetenv(qdenv.QodanaDockerEnv)
 	if err != nil {
 		t.Fatal(err)
 	}
 	for _, tc := range []struct {
 		name         string
 		majorVersion string
-		opts         *platform.QodanaOptions
+		cb           corescan.ContextBuilder
 		res          []string
 	}{
 		{
 			name:         "typical set up",
 			majorVersion: "2024.2",
-			opts:         &platform.QodanaOptions{ProjectDir: projectDir, CacheDir: cacheDir, ResultsDir: resultsDir, Linter: "jetbrains/qodana-jvm-community:latest", SourceDirectory: "./src", DisableSanity: true, RunPromo: "true", Baseline: "qodana.sarif.json", BaselineIncludeAbsent: true, SaveReport: true, ShowReport: true, Port: 8888, Property: []string{"foo.baz=bar", "foo.bar=baz"}, Script: "default", FailThreshold: "0", AnalysisId: "id", Env: []string{"A=B"}, Volumes: []string{"/tmp/foo:/tmp/foo"}, User: "1001:1001", PrintProblems: true, ProfileName: "Default", ApplyFixes: true},
-			res:          []string{filepath.FromSlash("/opt/idea/bin/idea.sh"), "qodana", "--save-report", "--source-directory", "./src", "--disable-sanity", "--profile-name", "Default", "--run-promo", "true", "--baseline", "qodana.sarif.json", "--baseline-include-absent", "--fail-threshold", "0", "--fixes-strategy", "apply", "--analysis-id", "id", "--property=foo.baz=bar", "--property=foo.bar=baz", projectDir, resultsDir},
+			cb: corescan.ContextBuilder{
+				ProjectDir:            projectDir,
+				CacheDir:              cacheDir,
+				ResultsDir:            resultsDir,
+				Linter:                "jetbrains/qodana-jvm:latest",
+				SourceDirectory:       "./src",
+				DisableSanity:         true,
+				RunPromo:              "true",
+				Baseline:              "qodana.sarif.json",
+				BaselineIncludeAbsent: true,
+				SaveReport:            true,
+				ShowReport:            true,
+				Port:                  8888,
+				Property:              []string{"foo.baz=bar", "foo.bar=baz"},
+				Script:                "default",
+				FailThreshold:         "0",
+				AnalysisId:            "id",
+				Env:                   []string{"A=B"},
+				Volumes:               []string{"/tmp/foo:/tmp/foo"},
+				User:                  "1001:1001",
+				PrintProblems:         true,
+				ProfileName:           "Default",
+				ApplyFixes:            true,
+			},
+			res: []string{
+				filepath.FromSlash("/opt/idea/bin/idea.sh"),
+				"qodana",
+				"--save-report",
+				"--source-directory",
+				"./src",
+				"--disable-sanity",
+				"--profile-name",
+				"Default",
+				"--run-promo",
+				"true",
+				"--baseline",
+				"qodana.sarif.json",
+				"--baseline-include-absent",
+				"--fail-threshold",
+				"0",
+				"--fixes-strategy",
+				"apply",
+				"--analysis-id",
+				"id",
+				"--property=foo.baz=bar",
+				"--property=foo.bar=baz",
+				projectDir,
+				resultsDir,
+			},
 		},
 		{
 			name:         "arguments with spaces, no properties for local runs",
 			majorVersion: "2024.1",
-			opts:         &platform.QodanaOptions{ProjectDir: projectDir, CacheDir: cacheDir, ResultsDir: resultsDir, ProfileName: "separated words", Property: []string{"qodana.format=SARIF_AND_PROJECT_STRUCTURE", "qodana.variable.format=JSON"}, Ide: Prod.Home},
-			res:          []string{filepath.FromSlash("/opt/idea/bin/idea.sh"), "inspect", "qodana", "--profile-name", "\"separated words\"", projectDir, resultsDir},
+			cb: corescan.ContextBuilder{
+				ProjectDir:  projectDir,
+				CacheDir:    cacheDir,
+				ResultsDir:  resultsDir,
+				ProfileName: "separated words",
+				Property:    []string{"qodana.format=SARIF_AND_PROJECT_STRUCTURE", "qodana.variable.format=JSON"},
+				Ide:         prod.Home,
+			},
+			res: []string{
+				filepath.FromSlash("/opt/idea/bin/idea.sh"),
+				"inspect",
+				"qodana",
+				"--profile-name",
+				"\"separated words\"",
+				projectDir,
+				resultsDir,
+			},
 		},
 		{
 			name:         "deprecated --fixes-strategy=apply",
 			majorVersion: "2024.2",
-			opts:         &platform.QodanaOptions{ProjectDir: projectDir, CacheDir: cacheDir, ResultsDir: resultsDir, FixesStrategy: "apply"},
-			res:          []string{filepath.FromSlash("/opt/idea/bin/idea.sh"), "qodana", "--fixes-strategy", "apply", projectDir, resultsDir},
+			cb: corescan.ContextBuilder{
+				ProjectDir:    projectDir,
+				CacheDir:      cacheDir,
+				ResultsDir:    resultsDir,
+				FixesStrategy: "apply",
+			},
+			res: []string{
+				filepath.FromSlash("/opt/idea/bin/idea.sh"),
+				"qodana",
+				"--fixes-strategy",
+				"apply",
+				projectDir,
+				resultsDir,
+			},
 		},
 		{
 			name:         "deprecated --fixes-strategy=cleanup",
 			majorVersion: "2024.3",
-			opts:         &platform.QodanaOptions{ProjectDir: projectDir, CacheDir: cacheDir, ResultsDir: resultsDir, FixesStrategy: "cleanup"},
-			res:          []string{filepath.FromSlash("/opt/idea/bin/idea.sh"), "qodana", "--fixes-strategy", "cleanup", projectDir, resultsDir},
+			cb: corescan.ContextBuilder{
+				ProjectDir:    projectDir,
+				CacheDir:      cacheDir,
+				ResultsDir:    resultsDir,
+				FixesStrategy: "cleanup",
+			},
+			res: []string{
+				filepath.FromSlash("/opt/idea/bin/idea.sh"),
+				"qodana",
+				"--fixes-strategy",
+				"cleanup",
+				projectDir,
+				resultsDir,
+			},
 		},
 		{
 			name:         "--fixes-strategy=apply for new versions",
 			majorVersion: "2023.3",
-			opts:         &platform.QodanaOptions{ProjectDir: projectDir, CacheDir: cacheDir, ResultsDir: resultsDir, FixesStrategy: "apply", Ide: "/opt/idea/233"},
-			res:          []string{filepath.FromSlash("/opt/idea/bin/idea.sh"), "inspect", "qodana", "--apply-fixes", projectDir, resultsDir},
+			cb: corescan.ContextBuilder{
+				ProjectDir:    projectDir,
+				CacheDir:      cacheDir,
+				ResultsDir:    resultsDir,
+				FixesStrategy: "apply",
+				Ide:           "/opt/idea/233",
+			},
+			res: []string{
+				filepath.FromSlash("/opt/idea/bin/idea.sh"),
+				"inspect",
+				"qodana",
+				"--apply-fixes",
+				projectDir,
+				resultsDir,
+			},
 		},
 		{
 			name:         "--fixes-strategy=cleanup for new versions",
 			majorVersion: "2023.3",
-			opts:         &platform.QodanaOptions{ProjectDir: projectDir, CacheDir: cacheDir, ResultsDir: resultsDir, FixesStrategy: "cleanup", Ide: "/opt/idea/233"},
-			res:          []string{filepath.FromSlash("/opt/idea/bin/idea.sh"), "inspect", "qodana", "--cleanup", projectDir, resultsDir},
+			cb: corescan.ContextBuilder{
+				ProjectDir:    projectDir,
+				CacheDir:      cacheDir,
+				ResultsDir:    resultsDir,
+				FixesStrategy: "cleanup",
+				Ide:           "/opt/idea/233",
+			},
+			res: []string{
+				filepath.FromSlash("/opt/idea/bin/idea.sh"),
+				"inspect",
+				"qodana",
+				"--cleanup",
+				projectDir,
+				resultsDir,
+			},
 		},
 		{
-			name:         "--stub-profile ignored",
-			majorVersion: "2023.3",
-			opts:         &platform.QodanaOptions{StubProfile: "ignored", ProjectDir: projectDir, CacheDir: cacheDir, ResultsDir: resultsDir, FixesStrategy: "cleanup", Ide: "/opt/idea/233"},
-			res:          []string{filepath.FromSlash("/opt/idea/bin/idea.sh"), "inspect", "qodana", "--cleanup", projectDir, resultsDir},
+			name:         "no --config-dir in <251",
+			majorVersion: "2024.3",
+			cb: corescan.ContextBuilder{
+				ProjectDir:    projectDir,
+				CacheDir:      cacheDir,
+				ResultsDir:    resultsDir,
+				FixesStrategy: "cleanup",
+				Ide:           "/opt/idea/243",
+			},
+			res: []string{
+				filepath.FromSlash("/opt/idea/bin/idea.sh"),
+				"qodana",
+				"--cleanup",
+				projectDir,
+				resultsDir,
+			},
+		},
+		{
+			name:         "--config-dir in >=251",
+			majorVersion: "2025.1",
+			cb: corescan.ContextBuilder{
+				ProjectDir:                projectDir,
+				CacheDir:                  cacheDir,
+				ResultsDir:                resultsDir,
+				FixesStrategy:             "cleanup",
+				EffectiveConfigurationDir: "/qdconfig",
+				Ide:                       "/opt/idea/251",
+			},
+			res: []string{
+				filepath.FromSlash("/opt/idea/bin/idea.sh"),
+				"qodana",
+				"--cleanup",
+				"--config-dir",
+				"/qdconfig",
+				projectDir,
+				resultsDir,
+			},
 		},
 	} {
-		t.Run(tc.name, func(t *testing.T) {
-			Prod.Version = tc.majorVersion
+		t.Run(
+			tc.name, func(t *testing.T) {
+				updatedProduct := prod
+				updatedProduct.Version = tc.majorVersion
 
-			args := getIdeRunCommand(&QodanaOptions{tc.opts})
-			assert.Equal(t, tc.res, args)
-		})
+				tc.cb.Prod = updatedProduct
+				context := tc.cb.Build()
+				args := getIdeRunCommand(context)
+				assert.Equal(t, tc.res, args)
+			},
+		)
 	}
 }
 
 func TestScanFlags_Script(t *testing.T) {
-	testOptions := &QodanaOptions{
-		&platform.QodanaOptions{
-			Script: "custom-script:parameters",
-		},
+	b := corescan.ContextBuilder{
+		Script: "custom-script:parameters",
 	}
 	expected := []string{
 		"--script",
 		"custom-script:parameters",
 	}
-	actual := GetIdeArgs(testOptions)
+	actual := GetIdeArgs(b.Build())
 	if !reflect.DeepEqual(expected, actual) {
 		t.Fatalf("expected \"%s\" got \"%s\"", expected, actual)
 	}
@@ -124,12 +287,12 @@ func TestScanFlags_Script(t *testing.T) {
 func TestLegacyFixStrategies(t *testing.T) {
 	cases := []struct {
 		name     string
-		options  *platform.QodanaOptions
+		c        corescan.ContextBuilder
 		expected []string
 	}{
 		{
 			name: "apply fixes for a container",
-			options: &platform.QodanaOptions{
+			c: corescan.ContextBuilder{
 				ApplyFixes: true,
 				Ide:        "",
 			},
@@ -140,7 +303,7 @@ func TestLegacyFixStrategies(t *testing.T) {
 		},
 		{
 			name: "cleanup for a container",
-			options: &platform.QodanaOptions{
+			c: corescan.ContextBuilder{
 				Cleanup: true,
 				Ide:     "",
 			},
@@ -151,7 +314,7 @@ func TestLegacyFixStrategies(t *testing.T) {
 		},
 		{
 			name: "apply fixes for new IDE",
-			options: &platform.QodanaOptions{
+			c: corescan.ContextBuilder{
 				ApplyFixes: true,
 				Ide:        "QDPHP",
 			},
@@ -161,27 +324,30 @@ func TestLegacyFixStrategies(t *testing.T) {
 		},
 		{
 			name: "fixes for unavailable IDE",
-			options: &platform.QodanaOptions{
+			c: corescan.ContextBuilder{
 				Cleanup: true,
-				Ide:     "QDNET",
+				Ide:     "QDCPP",
 			},
 			expected: []string{},
 		},
 	}
 
 	for _, tt := range cases {
-		t.Run(tt.name, func(t *testing.T) {
-			if tt.options.Ide == "QDPHP" {
-				Prod.Version = "2023.3"
-			} else {
-				Prod.Version = "2023.2"
-			}
+		t.Run(
+			tt.name, func(t *testing.T) {
+				c := tt.c
+				if c.Ide == "QDPHP" {
+					c.Prod.Version = "2023.3"
+				} else {
+					c.Prod.Version = "2023.2"
+				}
 
-			actual := GetIdeArgs(&QodanaOptions{tt.options})
-			if !reflect.DeepEqual(tt.expected, actual) {
-				t.Fatalf("expected \"%s\" got \"%s\"", tt.expected, actual)
-			}
-		})
+				actual := GetIdeArgs(c.Build())
+				if !reflect.DeepEqual(tt.expected, actual) {
+					t.Fatalf("expected \"%s\" got \"%s\"", tt.expected, actual)
+				}
+			},
+		)
 	}
 }
 
@@ -203,7 +369,7 @@ func TestWriteConfig(t *testing.T) {
 	// Create a sample qodana.yaml file to write
 	filename := "qodana.yaml"
 	path := filepath.Join(dir, filename)
-	q := &platform.QodanaYaml{Version: "1.0"}
+	q := &qdyaml.QodanaYaml{Version: "1.0"}
 	if err := q.WriteConfig(path); err != nil {
 		t.Fatalf("failed to write qodana.yaml file: %v", err)
 	}
@@ -220,7 +386,7 @@ func TestWriteConfig(t *testing.T) {
 }
 
 func Test_setDeviceID(t *testing.T) {
-	err := os.Unsetenv(platform.QodanaRemoteUrl)
+	err := os.Unsetenv(qdenv.QodanaRemoteUrl)
 	if err != nil {
 		return
 	}
@@ -311,7 +477,7 @@ func Test_setDeviceID(t *testing.T) {
 }
 
 func Test_isProcess(t *testing.T) {
-	if isProcess("non-existing_process") {
+	if utils.FindProcess("non-existing_process") {
 		t.Fatal("Found non-existing process")
 	}
 	var cmd *exec.Cmd
@@ -332,11 +498,11 @@ func Test_isProcess(t *testing.T) {
 		}
 	}()
 	time.Sleep(time.Second)
-	if !isProcess(cmdString) {
+	if !utils.IsProcess(cmdString) {
 		t.Errorf("Test process was not found by isProcess")
 	}
 	time.Sleep(time.Second * 6)
-	if isProcess(cmdString) {
+	if utils.IsProcess(cmdString) {
 		t.Errorf("Test process was found by isProcess after it should have finished")
 	}
 }
@@ -347,7 +513,7 @@ func Test_createUser(t *testing.T) {
 		return
 	}
 
-	t.Setenv(platform.QodanaDockerEnv, "true")
+	t.Setenv(qdenv.QodanaDockerEnv, "true")
 	tc := "User"
 	err := os.MkdirAll("/tmp/entrypoint", 0o755)
 	if err != nil {
@@ -357,7 +523,7 @@ func Test_createUser(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	createUser("/tmp/entrypoint/passwd")
+	startup.CreateUser("/tmp/entrypoint/passwd")
 	res := fmt.Sprintf("root:x:0:0:root:/root:/bin/bash\nidea:x:%d:%d:idea:/root:/bin/bash", os.Getuid(), os.Getgid())
 	if os.Getuid() == 0 {
 		res = "root:x:0:0:root:/root:/bin/bash\n"
@@ -368,7 +534,7 @@ func Test_createUser(t *testing.T) {
 	}
 
 	tc = "UserAgain"
-	createUser("/tmp/entrypoint/passwd")
+	startup.CreateUser("/tmp/entrypoint/passwd")
 	got, err = os.ReadFile("/tmp/entrypoint/passwd")
 	if err != nil || string(got) != res {
 		t.Errorf("Case: %s: Got: %s\n Expected: %v", tc, got, res)
@@ -383,104 +549,131 @@ func Test_createUser(t *testing.T) {
 func Test_syncIdeaCache(t *testing.T) {
 	tmpDir := filepath.Join(os.TempDir(), "cache")
 
-	t.Run("NotExist", func(t *testing.T) {
-		err := syncIdeaCache(filepath.Join(tmpDir, "1"), filepath.Join(tmpDir, "2"), true)
-		if err == nil {
-			t.Errorf("Expected error when source folder does not exist")
-		}
-		if _, err := os.Stat(filepath.Join(tmpDir, "2")); err == nil {
-			t.Errorf("Folder dst created, when it should not")
-		}
-	})
+	t.Run(
+		"NotExist", func(t *testing.T) {
+			err := startup.SyncIdeaCache(filepath.Join(tmpDir, "1"), filepath.Join(tmpDir, "2"), true)
+			if err == nil {
+				t.Errorf("Expected error when source folder does not exist")
+			}
+			if _, err := os.Stat(filepath.Join(tmpDir, "2")); err == nil {
+				t.Errorf("Folder dst created, when it should not")
+			}
+		},
+	)
 
-	t.Run("NoOverwrite", func(t *testing.T) {
-		err := os.MkdirAll(filepath.Join(tmpDir, "1", ".idea", "dir1", "dir2"), os.FileMode(0o755))
-		if err != nil {
-			t.Fatal(err)
-		}
-		err = os.MkdirAll(filepath.Join(tmpDir, "2", ".idea", "dir1"), os.FileMode(0o755))
-		if err != nil {
-			t.Fatal(err)
-		}
-		err = os.WriteFile(filepath.Join(tmpDir, "1", ".idea", "file1"), []byte("test1"), os.FileMode(0o600))
-		if err != nil {
-			t.Fatal(err)
-		}
-		err = os.WriteFile(filepath.Join(tmpDir, "1", ".idea", "dir1", "file2"), []byte("test2"), os.FileMode(0o600))
-		if err != nil {
-			t.Fatal(err)
-		}
-		err = os.WriteFile(filepath.Join(tmpDir, "2", ".idea", "dir1", "file2"), []byte("test!"), os.FileMode(0o600))
-		if err != nil {
-			t.Fatal(err)
-		}
+	t.Run(
+		"NoOverwrite", func(t *testing.T) {
+			err := os.MkdirAll(filepath.Join(tmpDir, "1", ".idea", "dir1", "dir2"), os.FileMode(0o755))
+			if err != nil {
+				t.Fatal(err)
+			}
+			err = os.MkdirAll(filepath.Join(tmpDir, "2", ".idea", "dir1"), os.FileMode(0o755))
+			if err != nil {
+				t.Fatal(err)
+			}
+			err = os.WriteFile(filepath.Join(tmpDir, "1", ".idea", "file1"), []byte("test1"), os.FileMode(0o600))
+			if err != nil {
+				t.Fatal(err)
+			}
+			err = os.WriteFile(
+				filepath.Join(tmpDir, "1", ".idea", "dir1", "file2"),
+				[]byte("test2"),
+				os.FileMode(0o600),
+			)
+			if err != nil {
+				t.Fatal(err)
+			}
+			err = os.WriteFile(
+				filepath.Join(tmpDir, "2", ".idea", "dir1", "file2"),
+				[]byte("test!"),
+				os.FileMode(0o600),
+			)
+			if err != nil {
+				t.Fatal(err)
+			}
 
-		err = syncIdeaCache(filepath.Join(tmpDir, "1"), filepath.Join(tmpDir, "2"), false)
-		if err != nil {
-			t.Fatalf("syncIdeaCache failed: %v", err)
-		}
+			err = startup.SyncIdeaCache(filepath.Join(tmpDir, "1"), filepath.Join(tmpDir, "2"), false)
+			if err != nil {
+				t.Fatalf("syncIdeaCache failed: %v", err)
+			}
 
-		if _, err := os.Stat(filepath.Join(tmpDir, "1", ".idea", "dir1", "dir2")); os.IsNotExist(err) {
-			t.Errorf("Resulting folder .idea/dir1/dir2 not found")
-		}
-		got, err := os.ReadFile(filepath.Join(tmpDir, "2", ".idea", "dir1", "file2"))
-		if err != nil || string(got) != "test!" {
-			t.Errorf("Got: %s\n Expected: test!", string(got))
-		}
-	})
+			if _, err := os.Stat(filepath.Join(tmpDir, "1", ".idea", "dir1", "dir2")); os.IsNotExist(err) {
+				t.Errorf("Resulting folder .idea/dir1/dir2 not found")
+			}
+			got, err := os.ReadFile(filepath.Join(tmpDir, "2", ".idea", "dir1", "file2"))
+			if err != nil || string(got) != "test!" {
+				t.Errorf("Got: %s\n Expected: test!", string(got))
+			}
+		},
+	)
 
-	t.Run("Overwrite", func(t *testing.T) {
-		err := syncIdeaCache(filepath.Join(tmpDir, "2"), filepath.Join(tmpDir, "1"), true)
-		if err != nil {
-			t.Fatalf("syncIdeaCache failed: %v", err)
-		}
+	t.Run(
+		"Overwrite", func(t *testing.T) {
+			err := startup.SyncIdeaCache(filepath.Join(tmpDir, "2"), filepath.Join(tmpDir, "1"), true)
+			if err != nil {
+				t.Fatalf("syncIdeaCache failed: %v", err)
+			}
 
-		got, err := os.ReadFile(filepath.Join(tmpDir, "1", ".idea", "dir1", "file2"))
-		if err != nil || string(got) != "test!" {
-			t.Errorf("Got: %s\n Expected: test!", string(got))
-		}
-	})
+			got, err := os.ReadFile(filepath.Join(tmpDir, "1", ".idea", "dir1", "file2"))
+			if err != nil || string(got) != "test!" {
+				t.Errorf("Got: %s\n Expected: test!", string(got))
+			}
+		},
+	)
 
-	t.Run("HasSymlinksAndFileExistsInDst", func(t *testing.T) {
-		err := os.MkdirAll(filepath.Join(tmpDir, "1", ".idea", "dir1", "dir2"), os.FileMode(0o755))
-		if err != nil {
-			t.Fatal(err)
-		}
-		err = os.MkdirAll(filepath.Join(tmpDir, "2", ".idea", "dir1"), os.FileMode(0o755))
-		if err != nil {
-			t.Fatal(err)
-		}
-		err = os.WriteFile(filepath.Join(tmpDir, "1", ".idea", "file1"), []byte("test1"), os.FileMode(0o600))
-		if err != nil {
-			t.Fatal(err)
-		}
-		err = os.WriteFile(filepath.Join(tmpDir, "1", ".idea", "dir1", "file2"), []byte("test2"), os.FileMode(0o600))
-		if err != nil {
-			t.Fatal(err)
-		}
-		err = os.WriteFile(filepath.Join(tmpDir, "2", ".idea", "dir1", "file2"), []byte("test!"), os.FileMode(0o600))
-		if err != nil {
-			t.Fatal(err)
-		}
+	t.Run(
+		"HasSymlinksAndFileExistsInDst", func(t *testing.T) {
+			err := os.MkdirAll(filepath.Join(tmpDir, "1", ".idea", "dir1", "dir2"), os.FileMode(0o755))
+			if err != nil {
+				t.Fatal(err)
+			}
+			err = os.MkdirAll(filepath.Join(tmpDir, "2", ".idea", "dir1"), os.FileMode(0o755))
+			if err != nil {
+				t.Fatal(err)
+			}
+			err = os.WriteFile(filepath.Join(tmpDir, "1", ".idea", "file1"), []byte("test1"), os.FileMode(0o600))
+			if err != nil {
+				t.Fatal(err)
+			}
+			err = os.WriteFile(
+				filepath.Join(tmpDir, "1", ".idea", "dir1", "file2"),
+				[]byte("test2"),
+				os.FileMode(0o600),
+			)
+			if err != nil {
+				t.Fatal(err)
+			}
+			err = os.WriteFile(
+				filepath.Join(tmpDir, "2", ".idea", "dir1", "file2"),
+				[]byte("test!"),
+				os.FileMode(0o600),
+			)
+			if err != nil {
+				t.Fatal(err)
+			}
 
-		err = os.Symlink(filepath.Join(tmpDir, "1", ".idea", "dir1", "file2"), filepath.Join(tmpDir, "1", ".idea", "dir1", "symlink"))
-		if err != nil {
-			t.Fatal(err)
-		}
+			err = os.Symlink(
+				filepath.Join(tmpDir, "1", ".idea", "dir1", "file2"),
+				filepath.Join(tmpDir, "1", ".idea", "dir1", "symlink"),
+			)
+			if err != nil {
+				t.Fatal(err)
+			}
 
-		err = syncIdeaCache(filepath.Join(tmpDir, "1"), filepath.Join(tmpDir, "2"), false)
-		if err != nil {
-			t.Fatalf("syncIdeaCache failed: %v", err)
-		}
+			err = startup.SyncIdeaCache(filepath.Join(tmpDir, "1"), filepath.Join(tmpDir, "2"), false)
+			if err != nil {
+				t.Fatalf("syncIdeaCache failed: %v", err)
+			}
 
-		if _, err := os.Stat(filepath.Join(tmpDir, "1", ".idea", "dir1", "dir2")); os.IsNotExist(err) {
-			t.Errorf("Resulting folder .idea/dir1/dir2 not found")
-		}
-		got, err := os.ReadFile(filepath.Join(tmpDir, "2", ".idea", "dir1", "file2"))
-		if err != nil || string(got) != "test!" {
-			t.Errorf("Got: %s\n Expected: test!", string(got))
-		}
-	})
+			if _, err := os.Stat(filepath.Join(tmpDir, "1", ".idea", "dir1", "dir2")); os.IsNotExist(err) {
+				t.Errorf("Resulting folder .idea/dir1/dir2 not found")
+			}
+			got, err := os.ReadFile(filepath.Join(tmpDir, "2", ".idea", "dir1", "file2"))
+			if err != nil || string(got) != "test!" {
+				t.Errorf("Got: %s\n Expected: test!", string(got))
+			}
+		},
+	)
 
 	if err := os.RemoveAll(tmpDir); err != nil {
 		t.Fatal(err)
@@ -488,17 +681,16 @@ func Test_syncIdeaCache(t *testing.T) {
 }
 
 func Test_Bootstrap(t *testing.T) {
-	opts := &platform.QodanaOptions{}
 	tmpDir := filepath.Join(os.TempDir(), "bootstrap")
 	err := os.MkdirAll(tmpDir, 0o755)
 	if err != nil {
 		t.Fatal(err)
 	}
-	opts.ProjectDir = tmpDir
-	platform.Bootstrap("echo 'bootstrap: touch qodana.yml' > qodana.yaml", opts.ProjectDir)
-	config := platform.GetQodanaYamlOrDefault(tmpDir)
-	platform.Bootstrap(config.Bootstrap, opts.ProjectDir)
-	if _, err := os.Stat(filepath.Join(opts.ProjectDir, "qodana.yaml")); errors.Is(err, os.ErrNotExist) {
+	projectDir := tmpDir
+	utils.Bootstrap("echo bootstrap: touch qodana.yml > qodana.yaml", projectDir)
+	config := qdyaml.TestOnlyLoadLocalNotEffectiveQodanaYaml(projectDir, "qodana.yaml")
+	utils.Bootstrap(config.Bootstrap, projectDir)
+	if _, err := os.Stat(filepath.Join(projectDir, "qodana.yml")); errors.Is(err, os.ErrNotExist) {
 		t.Fatalf("No qodana.yml created by the bootstrap command in qodana.yaml")
 	}
 	err = os.RemoveAll(tmpDir)
@@ -556,16 +748,18 @@ func Test_ideaExitCode(t *testing.T) {
 			result: 0,
 		},
 	} {
-		t.Run(tc.name, func(t *testing.T) {
-			err = os.WriteFile(filepath.Join(tmpDir, "qodana-short.sarif.json"), []byte(tc.sarif), 0o600)
-			if err != nil {
-				t.Fatal(err)
-			}
-			got := getIdeExitCode(tmpDir, tc.c)
-			if got != tc.result {
-				t.Errorf("Got: %d, Expected: %d", got, tc.result)
-			}
-		})
+		t.Run(
+			tc.name, func(t *testing.T) {
+				err = os.WriteFile(filepath.Join(tmpDir, "qodana-short.sarif.json"), []byte(tc.sarif), 0o600)
+				if err != nil {
+					t.Fatal(err)
+				}
+				got := getIdeExitCode(tmpDir, tc.c)
+				if got != tc.result {
+					t.Errorf("Got: %d, Expected: %d", got, tc.result)
+				}
+			},
+		)
 	}
 	err = os.RemoveAll(tmpDir)
 	if err != nil {
@@ -574,8 +768,10 @@ func Test_ideaExitCode(t *testing.T) {
 }
 
 func TestSetupLicense(t *testing.T) {
-	Prod.Code = "QDJVM"
-	Prod.EAP = false
+	prod := product.Product{
+		Code:  "QDJVM",
+		IsEap: false,
+	}
 	for _, tc := range []struct {
 		name            string
 		license         string
@@ -598,50 +794,56 @@ func TestSetupLicense(t *testing.T) {
 			expectedOrgHash: "",
 		},
 	} {
-		t.Run(tc.name, func(t *testing.T) {
-			svr := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-				_, _ = fmt.Fprint(w, tc.license)
-			}))
-			defer svr.Close()
-			SetupLicenseAndProjectHash(&cloud.QdApiEndpoints{LintersApiUrl: svr.URL}, "token")
+		t.Run(
+			tc.name, func(t *testing.T) {
+				svr := httptest.NewServer(
+					http.HandlerFunc(
+						func(w http.ResponseWriter, r *http.Request) {
+							_, _ = fmt.Fprint(w, tc.license)
+						},
+					),
+				)
+				defer svr.Close()
+				startup.SetupLicenseAndProjectHash(prod, &cloud.QdApiEndpoints{LintersApiUrl: svr.URL}, "token")
 
-			licenseKey := os.Getenv(platform.QodanaLicense)
-			if licenseKey != tc.expectedKey {
-				t.Errorf("expected key to be '%s' got '%s'", tc.expectedKey, licenseKey)
-			}
-
-			projectIdHash := os.Getenv(platform.QodanaProjectIdHash)
-			if projectIdHash != tc.expectedHash {
-				t.Errorf("expected projectIdHash to be '%s' got '%s'", tc.expectedHash, projectIdHash)
-			}
-
-			if tc.expectedOrgHash == "" {
-				_, r := os.LookupEnv(platform.QodanaOrganisationIdHash)
-				if r {
-					t.Errorf("'%s' env shoul not be set", platform.QodanaOrganisationIdHash)
+				licenseKey := os.Getenv(qdenv.QodanaLicense)
+				if licenseKey != tc.expectedKey {
+					t.Errorf("expected key to be '%s' got '%s'", tc.expectedKey, licenseKey)
 				}
-			} else {
-				orgIdHash := os.Getenv(platform.QodanaOrganisationIdHash)
-				if orgIdHash != tc.expectedOrgHash {
-					t.Errorf("expected organizationIdHash to be '%s' got '%s'", tc.expectedOrgHash, orgIdHash)
+
+				projectIdHash := os.Getenv(qdenv.QodanaProjectIdHash)
+				if projectIdHash != tc.expectedHash {
+					t.Errorf("expected projectIdHash to be '%s' got '%s'", tc.expectedHash, projectIdHash)
 				}
-			}
 
-			err := os.Unsetenv(platform.QodanaLicense)
-			if err != nil {
-				t.Fatal(err)
-			}
+				if tc.expectedOrgHash == "" {
+					_, r := os.LookupEnv(qdenv.QodanaOrganisationIdHash)
+					if r {
+						t.Errorf("'%s' env shoul not be set", qdenv.QodanaOrganisationIdHash)
+					}
+				} else {
+					orgIdHash := os.Getenv(qdenv.QodanaOrganisationIdHash)
+					if orgIdHash != tc.expectedOrgHash {
+						t.Errorf("expected organizationIdHash to be '%s' got '%s'", tc.expectedOrgHash, orgIdHash)
+					}
+				}
 
-			err = os.Unsetenv(platform.QodanaProjectIdHash)
-			if err != nil {
-				t.Fatal(err)
-			}
+				err := os.Unsetenv(qdenv.QodanaLicense)
+				if err != nil {
+					t.Fatal(err)
+				}
 
-			err = os.Unsetenv(platform.QodanaOrganisationIdHash)
-			if err != nil {
-				t.Fatal(err)
-			}
-		})
+				err = os.Unsetenv(qdenv.QodanaProjectIdHash)
+				if err != nil {
+					t.Fatal(err)
+				}
+
+				err = os.Unsetenv(qdenv.QodanaOrganisationIdHash)
+				if err != nil {
+					t.Fatal(err)
+				}
+			},
+		)
 	}
 }
 
@@ -687,25 +889,27 @@ func TestSetupLicenseToken(t *testing.T) {
 			sendReport: true,
 		},
 	} {
-		t.Run(testData.name, func(t *testing.T) {
-			t.Setenv(platform.QodanaLicenseOnlyToken, testData.loToken)
-			t.Setenv(platform.QodanaToken, testData.token)
-			cloud.SetupLicenseToken(testData.token)
+		t.Run(
+			testData.name, func(t *testing.T) {
+				t.Setenv(qdenv.QodanaLicenseOnlyToken, testData.loToken)
+				t.Setenv(qdenv.QodanaToken, testData.token)
+				cloud.SetupLicenseToken(testData.token)
 
-			if cloud.Token.Token != testData.resToken {
-				t.Errorf("expected token to be '%s' got '%s'", testData.resToken, cloud.Token.Token)
-			}
+				if cloud.Token.Token != testData.resToken {
+					t.Errorf("expected token to be '%s' got '%s'", testData.resToken, cloud.Token.Token)
+				}
 
-			sendFUS := cloud.Token.IsAllowedToSendFUS()
-			if sendFUS != testData.sendFus {
-				t.Errorf("expected allow FUS to be '%t' got '%t'", testData.sendFus, sendFUS)
-			}
+				sendFUS := cloud.Token.IsAllowedToSendFUS()
+				if sendFUS != testData.sendFus {
+					t.Errorf("expected allow FUS to be '%t' got '%t'", testData.sendFus, sendFUS)
+				}
 
-			toSendReports := cloud.Token.IsAllowedToSendReports()
-			if toSendReports != testData.sendReport {
-				t.Errorf("expected allow send report to be '%t' got '%t'", testData.sendReport, toSendReports)
-			}
-		})
+				toSendReports := cloud.Token.IsAllowedToSendReports()
+				if toSendReports != testData.sendReport {
+					t.Errorf("expected allow send report to be '%t' got '%t'", testData.sendReport, toSendReports)
+				}
+			},
+		)
 	}
 }
 
@@ -718,34 +922,34 @@ func TestQodanaOptions_RequiresToken(t *testing.T) {
 		expected bool
 	}{
 		{
-			platform.QodanaToken,
+			qdenv.QodanaToken,
 			"",
 			"",
 			true,
 		},
 		{
-			platform.QodanaLicense,
+			qdenv.QodanaLicense,
 			"",
 			"",
 			false,
 		},
 		{
 			"QDPYC docker",
-			platform.Image(platform.QDPYC),
+			product.Image(product.QDPYC),
 			"",
 			false,
 		},
 		{
 			"QDJVMC ide",
 			"",
-			platform.QDJVMC,
+			product.QDJVMC,
 			false,
 		},
 	}
 
 	for _, tt := range tests {
 		var token string
-		for _, env := range []string{platform.QodanaToken, platform.QodanaLicenseOnlyToken, platform.QodanaLicense} {
+		for _, env := range []string{qdenv.QodanaToken, qdenv.QodanaLicenseOnlyToken, qdenv.QodanaLicense} {
 			if os.Getenv(env) != "" {
 				token = os.Getenv(env)
 				err := os.Unsetenv(env)
@@ -755,24 +959,35 @@ func TestQodanaOptions_RequiresToken(t *testing.T) {
 			}
 		}
 
-		t.Run(tt.name, func(t *testing.T) {
-			if tt.name == platform.QodanaToken {
-				t.Setenv(platform.QodanaToken, "test")
-			} else if tt.name == platform.QodanaLicense {
-				t.Setenv(platform.QodanaLicense, "test")
-			}
-			o := &QodanaOptions{
-				&platform.QodanaOptions{
-					Linter: tt.linter,
-					Ide:    tt.ide,
-				},
-			}
-			result := o.RequiresToken(Prod.EAP || Prod.IsCommunity())
-			assert.Equal(t, tt.expected, result)
-		})
+		t.Run(
+			tt.name, func(t *testing.T) {
+				initArgs := commoncontext.Context{
+					Linter:          tt.linter,
+					Ide:             tt.ide,
+					IsClearCache:    false,
+					CacheDir:        "",
+					ProjectDir:      "",
+					ResultsDir:      "",
+					ReportDir:       "",
+					QodanaSystemDir: "",
+					Id:              "",
+					QodanaToken:     "",
+				}
+
+				if tt.name == qdenv.QodanaToken {
+					t.Setenv(qdenv.QodanaToken, "test")
+					initArgs.QodanaToken = "test"
+				} else if tt.name == qdenv.QodanaLicense {
+					t.Setenv(qdenv.QodanaLicense, "test")
+				}
+				emptyProd := product.Product{}
+				result := tokenloader.IsCloudTokenRequired(initArgs, emptyProd.IsEap || emptyProd.IsCommunity())
+				assert.Equal(t, tt.expected, result)
+			},
+		)
 		if token != "" {
-			t.Setenv(platform.QodanaToken, token)
-			t.Setenv(platform.QodanaLicenseOnlyToken, token)
+			t.Setenv(qdenv.QodanaToken, token)
+			t.Setenv(qdenv.QodanaLicenseOnlyToken, token)
 		}
 	}
 }
@@ -784,7 +999,7 @@ func propertiesFixture(enableStats bool, additionalProperties []string) []string
 		"-Didea.headless.statistics.device.id=FAKE",
 		"-Didea.headless.statistics.salt=FAKE",
 		"-Dqodana.automation.guid=FAKE",
-		"-Dqodana.coverage.input=/data/coverage",
+		fmt.Sprintf("-Dqodana.coverage.input=%s", qdcontainer.DataCoverageDir),
 		fmt.Sprintf("-Didea.log.path=%s", filepath.Join(os.TempDir(), "entrypoint", "log")),
 		fmt.Sprintf("-Didea.plugins.path=%s", filepath.Join(os.TempDir(), "entrypoint", "plugins", "233")),
 		fmt.Sprintf("-Didea.system.path=%s", filepath.Join(os.TempDir(), "entrypoint", "idea", "233")),
@@ -797,24 +1012,18 @@ func propertiesFixture(enableStats bool, additionalProperties []string) []string
 }
 
 func Test_Properties(t *testing.T) {
-	opts := &QodanaOptions{&platform.QodanaOptions{}}
 	tmpDir := filepath.Join(os.TempDir(), "entrypoint")
-	opts.ProjectDir = tmpDir
-	opts.ResultsDir = opts.ProjectDir
-	opts.CacheDir = opts.ProjectDir
-	opts.CoverageDir = "/data/coverage"
-	opts.AnalysisId = "FAKE"
+	projectDir := tmpDir
+	resultsDir := tmpDir
+	cacheDir := tmpDir
 
-	Prod.BaseScriptName = "rider"
-	Prod.Code = "QDNET"
-	Prod.Version = "2023.3"
-
-	t.Setenv(platform.QodanaDistEnv, opts.ProjectDir)
-	t.Setenv(platform.QodanaConfEnv, opts.ProjectDir)
-	t.Setenv(platform.QodanaDockerEnv, "true")
+	t.Setenv(qdenv.QodanaDistEnv, projectDir)
+	t.Setenv(qdenv.QodanaConfEnv, projectDir)
+	t.Setenv(qdenv.QodanaDockerEnv, "true")
 	t.Setenv("DEVICEID", "FAKE")
 	t.Setenv("SALT", "FAKE")
-	err := os.MkdirAll(opts.ProjectDir, 0o755)
+
+	err := os.MkdirAll(projectDir, 0o755)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -852,7 +1061,10 @@ func Test_Properties(t *testing.T) {
 			cliProperties: []string{},
 			qodanaYaml:    "",
 			isContainer:   true,
-			expected:      propertiesFixture(true, []string{"-Dqodana.net.targetFrameworks=!net48;!net472;!net471;!net47;!net462;!net461;!net46;!net452;!net451;!net45;!net403;!net40;!net35;!net20;!net11"}),
+			expected: propertiesFixture(
+				true,
+				[]string{"-Dqodana.net.targetFrameworks=!net48;!net472;!net471;!net47;!net462;!net461;!net46;!net452;!net451;!net45;!net403;!net40;!net35;!net20;!net11"},
+			),
 		},
 		{
 			name:          "add one CLI property and .NET solution settings",
@@ -860,7 +1072,15 @@ func Test_Properties(t *testing.T) {
 			qodanaYaml:    "dotnet:\n   solution: solution.sln\n   configuration: Release\n   platform: x64",
 			isContainer:   false,
 			expected: append(
-				propertiesFixture(true, []string{"-Dqodana.net.solution=solution.sln", "-Dqodana.net.configuration=Release", "-Dqodana.net.platform=x64", "-Didea.some.custom.property=1"}),
+				propertiesFixture(
+					true,
+					[]string{
+						"-Dqodana.net.solution=solution.sln",
+						"-Dqodana.net.configuration=Release",
+						"-Dqodana.net.platform=x64",
+						"-Didea.some.custom.property=1",
+					},
+				),
 				"-xa",
 			),
 		},
@@ -873,31 +1093,67 @@ func Test_Properties(t *testing.T) {
 				"  idea.headless.enable.statistics: true\n" +
 				"  idea.application.info.value: 0\n",
 			isContainer: false,
-			expected: append([]string{
-				"-Didea.application.info.value=0",
-			}, propertiesFixture(false, []string{})...),
+			expected: append(
+				[]string{
+					"-Didea.application.info.value=0",
+				}, propertiesFixture(false, []string{})...,
+			),
 		},
 	} {
-		t.Run(tc.name, func(t *testing.T) {
-			err = os.WriteFile(filepath.Join(opts.ProjectDir, "qodana.yml"), []byte(tc.qodanaYaml), 0o600)
-			if err != nil {
-				t.Fatal(err)
-			}
-			opts.Property = tc.cliProperties
-			qConfig := platform.GetQodanaYamlOrDefault(opts.ProjectDir)
-			if tc.isContainer {
-				t.Setenv(platform.QodanaDockerEnv, "true")
-			} else {
-				err := os.Unsetenv(platform.QodanaDockerEnv)
+		t.Run(
+			tc.name, func(t *testing.T) {
+				if tc.isContainer {
+					t.Setenv(qdenv.QodanaDockerEnv, "true")
+				} else {
+					err := os.Unsetenv(qdenv.QodanaDockerEnv)
+					if err != nil {
+						t.Fatal(err)
+					}
+				}
+
+				commonCtx := commoncontext.Compute(
+					"jetbrains/qodana-dotnet:latest",
+					"",
+					cacheDir,
+					resultsDir,
+					"",
+					"",
+					false,
+					projectDir,
+					"",
+				)
+
+				err = os.WriteFile(filepath.Join(projectDir, "qodana.yml"), []byte(tc.qodanaYaml), 0o600)
 				if err != nil {
 					t.Fatal(err)
 				}
-			}
-			actual := GetScanProperties(opts, qConfig.Properties, qConfig.DotNet, []string{})
-			assert.Equal(t, tc.expected, actual)
-		})
+				qConfig := qdyaml.TestOnlyLoadLocalNotEffectiveQodanaYaml(projectDir, "qodana.yml")
+
+				context := corescan.CreateContext(
+					platformcmd.CliOptions{
+						Property:    tc.cliProperties,
+						CoverageDir: qdcontainer.DataCoverageDir,
+						AnalysisId:  "FAKE",
+					},
+					commonCtx,
+					startup.PreparedHost{
+						IdeDir:            "",
+						QodanaUploadToken: "",
+						Prod: product.Product{
+							BaseScriptName: "rider",
+							Code:           "QDNET",
+							Version:        "2023.3",
+						},
+					},
+					corescan.YamlConfig(qConfig),
+					"",
+				)
+				actual := GetScanProperties(context)
+				assert.Equal(t, tc.expected, actual)
+			},
+		)
 	}
-	err = os.RemoveAll(opts.ProjectDir)
+	err = os.RemoveAll(projectDir)
 	if err != nil {
 		t.Fatal(err)
 	}

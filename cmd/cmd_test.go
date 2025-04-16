@@ -22,7 +22,11 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"github.com/JetBrains/qodana-cli/v2024/platform"
+	"github.com/JetBrains/qodana-cli/v2025/core"
+	"github.com/JetBrains/qodana-cli/v2025/platform/msg"
+	"github.com/JetBrains/qodana-cli/v2025/platform/product"
+	"github.com/JetBrains/qodana-cli/v2025/platform/qdyaml"
+	"github.com/JetBrains/qodana-cli/v2025/platform/version"
 	log "github.com/sirupsen/logrus"
 	"io"
 	"os"
@@ -31,8 +35,6 @@ import (
 	"runtime"
 	"strings"
 	"testing"
-
-	"github.com/JetBrains/qodana-cli/v2024/core"
 )
 
 func createProject(t *testing.T, name string) string {
@@ -66,7 +68,7 @@ func TestVersion(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	expected := fmt.Sprintf("qodana version %s\n", platform.Version)
+	expected := fmt.Sprintf("qodana version %s\n", version.Version)
 	actual := string(out)
 	if expected != actual {
 		t.Fatalf("expected \"%s\" got \"%s\"", expected, actual)
@@ -109,7 +111,7 @@ func TestHelp(t *testing.T) {
 }
 
 func TestDeprecatedScanFlags(t *testing.T) {
-	deprecations := []string{"fixes-strategy", "stub-profile"}
+	deprecations := []string{"fixes-strategy"}
 
 	out := bytes.NewBufferString("")
 	command := newScanCommand()
@@ -147,16 +149,16 @@ func TestInitCommand(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	filename := platform.FindQodanaYaml(projectPath)
+	updatedQodanaYamlPath := qdyaml.GetLocalNotEffectiveQodanaYamlFullPath(projectPath, "")
 
-	if filename != "qodana.yml" {
-		t.Fatalf("expected \"qodana.yml\" got \"%s\"", filename)
+	if !strings.HasSuffix(updatedQodanaYamlPath, "qodana.yml") {
+		t.Fatalf("expected \"qodana.yml\" got \"%s\"", updatedQodanaYamlPath)
 	}
 
-	qodanaYaml := platform.LoadQodanaYaml(projectPath, filename)
+	qodanaYaml := qdyaml.LoadQodanaYamlByFullPath(updatedQodanaYamlPath)
 
-	if qodanaYaml.Linter != platform.Image(platform.QDPY) {
-		t.Fatalf("expected \"%s\", but got %s", platform.Image(platform.QDPY), qodanaYaml.Linter)
+	if qodanaYaml.Linter != product.Image(product.QDPY) {
+		t.Fatalf("expected \"%s\", but got %s", product.Image(product.QDPY), qodanaYaml.Linter)
 	}
 
 	err = os.RemoveAll(projectPath)
@@ -221,13 +223,13 @@ func TestPullInNative(t *testing.T) {
 }
 
 func TestAllCommandsWithContainer(t *testing.T) {
-	platform.Version = "0.1.0"
+	version.Version = "0.1.0"
 	linter := "registry.jetbrains.team/p/sa/containers/qodana-dotnet:latest"
 
 	token := os.Getenv("QODANA_LICENSE_ONLY_TOKEN")
 	if //goland:noinspection GoBoolExpressions
 	token == "" {
-		t.Skip("set your token here to run the test")
+		t.Skip("set your QODANA_LICENSE_ONLY_TOKEN as env variable to run the test")
 	}
 
 	if os.Getenv("GITHUB_ACTIONS") == "true" {
@@ -238,8 +240,8 @@ func TestAllCommandsWithContainer(t *testing.T) {
 	}
 	//_ = os.Setenv(qodanaCliContainerKeep, "true")
 	//_ = os.Setenv(qodanaCliContainerName, "qodana-cli-test-new1")
-	platform.DisableColor()
-	core.CheckForUpdates(platform.Version)
+	msg.DisableColor()
+	core.CheckForUpdates(version.Version)
 	projectPath := createProject(t, "qodana_scan_python")
 
 	// create temp directory for cache
@@ -270,7 +272,6 @@ func TestAllCommandsWithContainer(t *testing.T) {
 		"-o", resultsPath,
 		"--cache-dir", cachePath,
 		"-v", filepath.Join(projectPath, ".idea") + ":/data/some",
-		"-e", platform.QodanaLicenseOnlyToken + "=" + os.Getenv("QODANA_LICENSE_ONLY_TOKEN"),
 		"--fail-threshold", "5",
 		"--print-problems",
 		"--apply-fixes",
@@ -380,8 +381,7 @@ func TestAllCommandsWithContainer(t *testing.T) {
 func TestScanWithIde(t *testing.T) {
 	log.SetLevel(log.DebugLevel)
 	token := os.Getenv("QODANA_LICENSE_ONLY_TOKEN")
-	if //goland:noinspection GoBoolExpressions
-	token == "" {
+	if token == "" {
 		t.Skip("set your token here to run the test")
 	}
 	projectPath := ".."
@@ -394,13 +394,15 @@ func TestScanWithIde(t *testing.T) {
 
 	command := newScanCommand()
 	command.SetOut(out)
-	command.SetArgs([]string{
-		"-i", projectPath,
-		"-o", resultsPath,
-		"--ide", "QDGO",
-		"--property",
-		"idea.headless.enable.statistics=false",
-	})
+	command.SetArgs(
+		[]string{
+			"-i", projectPath,
+			"-o", resultsPath,
+			"--ide", "QDGO",
+			"--property",
+			"idea.headless.enable.statistics=false",
+		},
+	)
 	err = command.Execute()
 	if err != nil {
 		t.Fatal(err)

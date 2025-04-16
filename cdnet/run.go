@@ -19,29 +19,35 @@ package main
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/JetBrains/qodana-cli/v2024/platform"
-	"github.com/JetBrains/qodana-cli/v2024/sarif"
+	"github.com/JetBrains/qodana-cli/v2025/platform"
+	"github.com/JetBrains/qodana-cli/v2025/platform/nuget"
+	"github.com/JetBrains/qodana-cli/v2025/platform/thirdpartyscan"
+	"github.com/JetBrains/qodana-cli/v2025/platform/utils"
+	"github.com/JetBrains/qodana-cli/v2025/sarif"
 	"os"
 	"path/filepath"
 )
 
-func (o *CltOptions) Setup(_ *platform.QodanaOptions) error {
-	return nil
+type CdnetLinter struct {
 }
 
-func (o *CltOptions) RunAnalysis(opts *platform.QodanaOptions, yaml *platform.QodanaYaml) error {
-	options := &LocalOptions{opts}
-	platform.Bootstrap(yaml.Bootstrap, options.ProjectDir)
-	args, err := o.computeCdnetArgs(opts, options, yaml)
+const cltFingeprint = "contextRegionHash/v1"
+const qodanaFingeprint = "equalIndicator/v1"
+const archive = "clt.zip"
+const moniker = "resharper-clt"
+
+func (l CdnetLinter) RunAnalysis(c thirdpartyscan.Context) error {
+	utils.Bootstrap(c.QodanaYamlConfig().Bootstrap, c.ProjectDir())
+	args, err := l.computeCdnetArgs(c)
 	if err != nil {
 		return err
 	}
-	if platform.IsNugetConfigNeeded() {
-		platform.PrepareNugetConfig(os.Getenv("HOME"))
+	if nuget.IsNugetConfigNeeded() {
+		nuget.PrepareNugetConfig(os.Getenv("HOME"))
 	}
-	platform.UnsetNugetVariables()
-	ret, err := platform.RunCmd(
-		platform.QuoteForWindows(options.ProjectDir),
+	nuget.UnsetNugetVariables()
+	ret, err := utils.RunCmd(
+		utils.QuoteForWindows(c.ProjectDir()),
 		args...,
 	)
 	if err != nil {
@@ -50,15 +56,37 @@ func (o *CltOptions) RunAnalysis(opts *platform.QodanaOptions, yaml *platform.Qo
 	if ret != 0 {
 		return fmt.Errorf("analysis exited with code: %d", ret)
 	}
-	err = patchReport(options)
+	err = patchReport(c)
 	return err
 }
 
-func patchReport(options *LocalOptions) error {
-	if err := copyOriginalReportToLog(options); err != nil {
+func (l CdnetLinter) MountTools(path string) (map[string]string, error) {
+	val := make(map[string]string)
+	val[thirdpartyscan.Clt] = filepath.Join(
+		path,
+		"tools",
+		"netcoreapp3.1",
+		"any",
+		"JetBrains.CommandLine.Products.dll",
+	)
+
+	if _, err := os.Stat(val["clt"]); err != nil {
+		if os.IsNotExist(err) {
+			path := platform.ProcessAuxiliaryTool(archive, moniker, path, Clt)
+			if err := platform.Decompress(path, path); err != nil {
+				return nil, fmt.Errorf("failed to decompress %s archive: %w", moniker, err)
+			}
+		}
+	}
+	return val, nil
+}
+
+func patchReport(c thirdpartyscan.Context) error {
+	sarifPath := platform.GetSarifPath(c.ResultsDir())
+	if err := copyOriginalReportToLog(c.LogDir(), sarifPath); err != nil {
 		return err
 	}
-	finalReport, err := platform.ReadReport(options.GetSarifPath())
+	finalReport, err := platform.ReadReport(sarifPath)
 	if err != nil {
 		return fmt.Errorf("failed to read report: %w", err)
 	}
@@ -87,9 +115,21 @@ func patchReport(options *LocalOptions) error {
 			taxonomy = append(taxonomy, taxa)
 		}
 		run.Tool.Driver.Taxa = taxonomy
+
+		results := make([]sarif.Result, 0)
+		for _, result := range run.Results {
+			if result.PartialFingerprints != nil {
+				if cltValue := result.PartialFingerprints[cltFingeprint]; cltValue != "" && result.PartialFingerprints[qodanaFingeprint] == "" {
+					result.PartialFingerprints[qodanaFingeprint] = cltValue
+					delete(result.PartialFingerprints, cltFingeprint)
+				}
+			}
+			results = append(results, result)
+		}
+		run.Results = results
 	}
 
-	platform.SetVersionControlParams(options.QodanaOptions, platform.GetDeviceIdSalt()[0], finalReport)
+	platform.SetVersionControlParams(c, platform.GetDeviceIdSalt()[0], finalReport)
 
 	// serialize object skipping empty fields
 	fatBytes, err := json.MarshalIndent(finalReport, "", " ")
@@ -97,7 +137,7 @@ func patchReport(options *LocalOptions) error {
 		return fmt.Errorf("error marshalling report: %w", err)
 	}
 
-	f, err := os.Create(options.GetSarifPath())
+	f, err := os.Create(sarifPath)
 	if err != nil {
 		return fmt.Errorf("error creating resulting SARIF file: %w", err)
 	}
@@ -116,9 +156,9 @@ func patchReport(options *LocalOptions) error {
 	return nil
 }
 
-func copyOriginalReportToLog(options *LocalOptions) error {
-	destination := filepath.Join(options.LogDirPath(), "clt.original.sarif.json")
-	if err := platform.CopyFile(options.GetSarifPath(), destination); err != nil {
+func copyOriginalReportToLog(logDir string, sarifPath string) error {
+	destination := filepath.Join(logDir, "clt.original.sarif.json")
+	if err := utils.CopyFile(sarifPath, destination); err != nil {
 		return fmt.Errorf("problem while copying the original CLT report %e", err)
 	}
 	return nil

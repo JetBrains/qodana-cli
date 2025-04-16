@@ -33,8 +33,8 @@
       "primaryPackagePurpose": "SOURCE"
     },
     {
-      "SPDXID": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cdnet",
-      "name": "github.com/JetBrains/qodana-cli/v2024/cdnet",
+      "SPDXID": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cdnet",
+      "name": "github.com/JetBrains/qodana-cli/v2025/cdnet",
       "downloadLocation": "https://github.com/JetBrains/qodana-cli",
       "filesAnalyzed": true,
       "licenseConcluded": "Apache-2.0",
@@ -53,8 +53,8 @@
       "primaryPackagePurpose": "SOURCE"
     },
     {
-      "SPDXID": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cli",
-      "name": "github.com/JetBrains/qodana-cli/v2024/cli",
+      "SPDXID": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cli",
+      "name": "github.com/JetBrains/qodana-cli/v2025/cli",
       "downloadLocation": "https://github.com/JetBrains/qodana-cli",
       "filesAnalyzed": true,
       "licenseConcluded": "Apache-2.0",
@@ -73,8 +73,8 @@
       "primaryPackagePurpose": "SOURCE"
     },
     {
-      "SPDXID": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cloud",
-      "name": "github.com/JetBrains/qodana-cli/v2024/cloud",
+      "SPDXID": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cloud",
+      "name": "github.com/JetBrains/qodana-cli/v2025/cloud",
       "downloadLocation": "https://github.com/JetBrains/qodana-cli",
       "filesAnalyzed": true,
       "licenseConcluded": "Apache-2.0",
@@ -93,8 +93,8 @@
       "primaryPackagePurpose": "SOURCE"
     },
     {
-      "SPDXID": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cmd",
-      "name": "github.com/JetBrains/qodana-cli/v2024/cmd",
+      "SPDXID": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cmd",
+      "name": "github.com/JetBrains/qodana-cli/v2025/cmd",
       "downloadLocation": "https://github.com/JetBrains/qodana-cli",
       "filesAnalyzed": true,
       "licenseConcluded": "Apache-2.0",
@@ -113,8 +113,8 @@
       "primaryPackagePurpose": "SOURCE"
     },
     {
-      "SPDXID": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-core",
-      "name": "github.com/JetBrains/qodana-cli/v2024/core",
+      "SPDXID": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-core",
+      "name": "github.com/JetBrains/qodana-cli/v2025/core",
       "downloadLocation": "https://github.com/JetBrains/qodana-cli",
       "filesAnalyzed": true,
       "licenseConcluded": "Apache-2.0",
@@ -133,8 +133,8 @@
       "primaryPackagePurpose": "SOURCE"
     },
     {
-      "SPDXID": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-platform",
-      "name": "github.com/JetBrains/qodana-cli/v2024/platform",
+      "SPDXID": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-platform",
+      "name": "github.com/JetBrains/qodana-cli/v2025/platform",
       "downloadLocation": "https://github.com/JetBrains/qodana-cli",
       "filesAnalyzed": true,
       "licenseConcluded": "Apache-2.0",
@@ -153,8 +153,8 @@
       "primaryPackagePurpose": "SOURCE"
     },
     {
-      "SPDXID": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-sarif",
-      "name": "github.com/JetBrains/qodana-cli/v2024/sarif",
+      "SPDXID": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-sarif",
+      "name": "github.com/JetBrains/qodana-cli/v2025/sarif",
       "downloadLocation": "https://github.com/JetBrains/qodana-cli",
       "filesAnalyzed": true,
       "licenseConcluded": "Apache-2.0",
@@ -173,8 +173,8 @@
       "primaryPackagePurpose": "SOURCE"
     },
     {
-      "SPDXID": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-tooling",
-      "name": "github.com/JetBrains/qodana-cli/v2024/tooling",
+      "SPDXID": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-tooling",
+      "name": "github.com/JetBrains/qodana-cli/v2025/tooling",
       "downloadLocation": "https://github.com/JetBrains/qodana-cli",
       "filesAnalyzed": true,
       "licenseConcluded": "Apache-2.0",
@@ -3862,7 +3862,7 @@
       "noticeText": "The MIT License (MIT)\n\nCopyright (c) 2013 TOML authors\n\nPermission is hereby granted, free of charge, to any person obtaining a copy\nof this software and associated documentation files (the \"Software\"), to deal\nin the Software without restriction, including without limitation the rights\nto use, copy, modify, merge, publish, distribute, sublicense, and/or sell\ncopies of the Software, and to permit persons to whom the Software is\nfurnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in\nall copies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\nFITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\nAUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\nLIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\nOUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN\nTHE SOFTWARE."
     },
     {
-      "SPDXID": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cloud--Apache-2.0",
+      "SPDXID": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cloud--Apache-2.0",
       "fileName": "./cloud/license_test.go",
       "checksums": [
         {
@@ -3880,7 +3880,7 @@
       "noticeText": "/*\n * Copyright 2021-2024 JetBrains s.r.o.\n *\n * Licensed under the Apache License, Version 2.0 (the \"License\");\n * you may not use this file except in compliance with the License.\n * You may obtain a copy of the License at\n *\n * https://www.apache.org/licenses/LICENSE-2.0\n *\n * Unless required by applicable law or agreed to in writing, software\n * distributed under the License is distributed on an \"AS IS\" BASIS,\n * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.\n * See the License for the specific language governing permissions and\n * limitations under the License.\n */\n\npackage cloud\n\nimport (\n\t\"fmt\"\n\t\"net/http\"\n\t\"net/http/httptest\"\n\t\"os\"\n\t\"strings\"\n\t\"testing\"\n\t\"time\"\n)\n\nfunc TestSetupLicenseToken(t *testing.T) {\n\tfor _, testData := range []struct {\n\t\tname       string\n\t\ttoken      string\n\t\tloToken    string\n\t\tresToken   string\n\t\tsendFus    bool\n\t\tsendReport bool\n\t}{\n\t\t{\n\t\t\tname:       \"no key\",\n\t\t\ttoken:      \"\",\n\t\t\tloToken:    \"\",\n\t\t\tresToken:   \"\",\n\t\t\tsendFus:    true,\n\t\t\tsendReport: false,\n\t\t},\n\t\t{\n\t\t\tname:       \"with token\",\n\t\t\ttoken:      \"a\",\n\t\t\tloToken:    \"\",\n\t\t\tresToken:   \"a\",\n\t\t\tsendFus:    true,\n\t\t\tsendReport: true,\n\t\t},\n\t\t{\n\t\t\tname:       \"with license only token\",\n\t\t\ttoken:      \"\",\n\t\t\tloToken:    \"b\",\n\t\t\tresToken:   \"b\",\n\t\t\tsendFus:    false,\n\t\t\tsendReport: false,\n\t\t},\n\t\t{\n\t\t\tname:       \"both tokens\",\n\t\t\ttoken:      \"a\",\n\t\t\tloToken:    \"b\",\n\t\t\tresToken:   \"a\",\n\t\t\tsendFus:    true,\n\t\t\tsendReport: true,\n\t\t},\n\t} {\n\t\tt.Run(testData.name, func(t *testing.T) {\n\t\t\terr := os.Setenv(QodanaLicenseOnlyToken, testData.loToken)\n\t\t\tif err != nil {\n\t\t\t\tt.Fatal(err)\n\t\t\t}\n\t\t\terr = os.Setenv(QodanaToken, testData.token)\n\t\t\tif err != nil {\n\t\t\t\tt.Fatal(err)\n\t\t\t}\n\t\t\tSetupLicenseToken(testData.token)\n\n\t\t\tif Token.Token != testData.resToken {\n\t\t\t\tt.Errorf(\"expected token to be '%s' got '%s'\", testData.resToken, Token.Token)\n\t\t\t}\n\n\t\t\tsendFUS := Token.IsAllowedToSendFUS()\n\t\t\tif sendFUS != testData.sendFus {\n\t\t\t\tt.Errorf(\"expected allow FUS to be '%t' got '%t'\", testData.sendFus, sendFUS)\n\t\t\t}\n\n\t\t\ttoSendReports := Token.IsAllowedToSendReports()\n\t\t\tif toSendReports != testData.sendReport {\n\t\t\t\tt.Errorf(\"expected allow send report to be '%t' got '%t'\", testData.sendReport, toSendReports)\n\t\t\t}\n\n\t\t\terr = os.Unsetenv(QodanaLicenseOnlyToken)\n\t\t\tif err != nil {\n\t\t\t\tt.Fatal(err)\n\t\t\t}\n\n\t\t\terr = os.Unsetenv(QodanaToken)\n\t\t\tif err != nil {\n\t\t\t\tt.Fatal(err)\n\t\t\t}\n\t\t})\n\t}\n}\n\nfunc TestRequestLicenseData(t *testing.T) {\n\texpectedLicense := \"license data\"\n\trightToken := \"token data\"\n\terr := os.Setenv(QodanaLicenseRequestCooldownEnv, \"2\")\n\tif err != nil {\n\t\tt.Fatal(err)\n\t}\n\terr = os.Setenv(QodanaLicenseRequestTimeoutEnv, \"6\")\n\tif err != nil {\n\t\tt.Fatal(err)\n\t}\n\tfor _, testData := range []struct {\n\t\tname           string\n\t\tdelay          int\n\t\tfailedAttempts int\n\t\tactualAttempts int\n\t\ttoken          string\n\t\tsuccess        bool\n\t}{\n\t\t{\n\t\t\tname:           \"perfect server, right key\",\n\t\t\tdelay:          0,\n\t\t\ttoken:          rightToken,\n\t\t\tfailedAttempts: 0,\n\t\t\tactualAttempts: 1,\n\t\t\tsuccess:        true,\n\t\t},\n\t\t{\n\t\t\tname:           \"perfect server, wrong key\",\n\t\t\tdelay:          0,\n\t\t\tfailedAttempts: 0,\n\t\t\tactualAttempts: 1,\n\t\t\ttoken:          \"wrong\",\n\t\t\tsuccess:        false,\n\t\t},\n\t\t{\n\t\t\tname:           \"lagging server, right key\",\n\t\t\tdelay:          getTimeout() / 2,\n\t\t\tfailedAttempts: 0,\n\t\t\tactualAttempts: 1,\n\t\t\ttoken:          rightToken,\n\t\t\tsuccess:        true,\n\t\t},\n\t\t{\n\t\t\tname:           \"very lagging server, right key\",\n\t\t\tdelay:          getTimeout() * 2,\n\t\t\tfailedAttempts: 0,\n\t\t\tactualAttempts: getAttempts(),\n\t\t\ttoken:          rightToken,\n\t\t\tsuccess:        false,\n\t\t},\n\t\t{\n\t\t\tname:           \"errors on server, right key\",\n\t\t\tdelay:          0,\n\t\t\tfailedAttempts: getAttempts(),\n\t\t\tactualAttempts: getAttempts(),\n\t\t\ttoken:          rightToken,\n\t\t\tsuccess:        false,\n\t\t},\n\t\t{\n\t\t\tname:           \"couple errors on server, right key\",\n\t\t\tdelay:          0,\n\t\t\tfailedAttempts: getAttempts() - 1,\n\t\t\tactualAttempts: getAttempts(),\n\t\t\ttoken:          rightToken,\n\t\t\tsuccess:        true,\n\t\t},\n\t\t{\n\t\t\tname:           \"couple errors on server, wrong key\",\n\t\t\tdelay:          0,\n\t\t\tfailedAttempts: getAttempts() - 1,\n\t\t\tactualAttempts: getAttempts(),\n\t\t\ttoken:          \"wrong\",\n\t\t\tsuccess:        false,\n\t\t},\n\t} {\n\t\tt.Run(testData.name, func(t *testing.T) {\n\t\t\trequestServed := 0\n\t\t\tsvr := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {\n\t\t\t\trequestServed++\n\t\t\t\tif r.URL.Path != qodanaLicenseUri {\n\t\t\t\t\tt.Errorf(\"expected uri to be '%s' got '%s'\", qodanaLicenseUri, r.URL.Path)\n\t\t\t\t}\n\t\t\t\tauthHeader := r.Header.Get(\"Authorization\")\n\t\t\t\texpectedAuth := fmt.Sprintf(\"Bearer %s\", rightToken)\n\t\t\t\ttime.Sleep(time.Duration(testData.delay) * time.Second)\n\t\t\t\tif requestServed <= testData.failedAttempts {\n\t\t\t\t\tw.WriteHeader(http.StatusInternalServerError)\n\t\t\t\t\treturn\n\t\t\t\t}\n\t\t\t\tif authHeader != expectedAuth {\n\t\t\t\t\tw.WriteHeader(http.StatusForbidden)\n\t\t\t\t\treturn\n\t\t\t\t}\n\t\t\t\t_, _ = fmt.Fprint(w, expectedLicense)\n\t\t\t}))\n\t\t\tdefer svr.Close()\n\n\t\t\tapis := QdApiEndpoints{LintersApiUrl: svr.URL}\n\t\t\tres, err := apis.RequestLicenseData(testData.token)\n\t\t\tif err != nil {\n\t\t\t\tif testData.success {\n\t\t\t\t\tt.Errorf(\"requestLicenseData should failed\")\n\t\t\t\t}\n\t\t\t\treturn\n\t\t\t}\n\t\t\tif testData.actualAttempts != requestServed {\n\t\t\t\tt.Errorf(\"expected to be '%d' requests but was '%d'\", testData.actualAttempts, requestServed)\n\t\t\t}\n\t\t\tlicense := strings.TrimSpace(string(res))\n\t\t\tif license != expectedLicense {\n\t\t\t\tt.Errorf(\"expected response to be '%s' got '%s'\", expectedLicense, license)\n\t\t\t}\n\t\t})\n\t}\n}\n\nfunc TestExtractLicenseKey(t *testing.T) {\n\tfor _, testData := range []struct {\n\t\tname        string\n\t\tdata        string\n\t\texpectedKey string\n\t}{\n\t\t{\n\t\t\tname:        \"just a key\",\n\t\t\tdata:        `{ \"licenseKey\": \"key\" }`,\n\t\t\texpectedKey: \"key\",\n\t\t},\n\t\t{\n\t\t\tname:        \"empty json\",\n\t\t\tdata:        `{ }`,\n\t\t\texpectedKey: \"\",\n\t\t},\n\t\t{\n\t\t\tname:        \"just unknown field\",\n\t\t\tdata:        `{ \"unknownField\": true }`,\n\t\t\texpectedKey: \"\",\n\t\t},\n\t\t{\n\t\t\tname: \"unknown field and key\",\n\t\t\tdata: `{ \n\t\t\t\t\t\t\"unknownField\": true,\n\t\t\t\t\t\t\"licenseKey\": \"key\"\n\t\t\t\t\t}`,\n\t\t\texpectedKey: \"key\",\n\t\t},\n\t\t{\n\t\t\tname:        \"almost real world data\",\n\t\t\tdata:        `{\"licenseId\":\"VA5HGQWQH6\",\"licenseKey\":\"VA5HGQWQH6\",\"expirationDate\":\"2023-07-31\",\"licensePlan\":\"EAP_ULTIMATE_PLUS\"}`,\n\t\t\texpectedKey: \"VA5HGQWQH6\",\n\t\t},\n\t} {\n\t\tt.Run(testData.name, func(t *testing.T) {\n\t\t\tdata := DeserializeLicenseData([]byte(testData.data))\n\t\t\tif data.LicenseKey != testData.expectedKey {\n\t\t\t\tt.Errorf(\"expected data to be '%s' got '%s'\", data, testData.expectedKey)\n\t\t\t}\n\t\t})\n\t}\n}"
     },
     {
-      "SPDXID": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cmd--Apache-2.0",
+      "SPDXID": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cmd--Apache-2.0",
       "fileName": "./cmd/contributors.go",
       "checksums": [
         {
@@ -3895,10 +3895,10 @@
       "licenseInfoInFiles": [
         "Apache-2.0"
       ],
-      "noticeText": "/*\n * Copyright 2021-2024 JetBrains s.r.o.\n *\n * Licensed under the Apache License, Version 2.0 (the \"License\");\n * you may not use this file except in compliance with the License.\n * You may obtain a copy of the License at\n *\n * https://www.apache.org/licenses/LICENSE-2.0\n *\n * Unless required by applicable law or agreed to in writing, software\n * distributed under the License is distributed on an \"AS IS\" BASIS,\n * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.\n * See the License for the specific language governing permissions and\n * limitations under the License.\n */\n\npackage cmd\n\nimport (\n\t\"fmt\"\n\n\t\"github.com/JetBrains/qodana-cli/v2024/core\"\n\tlog \"github.com/sirupsen/logrus\"\n\t\"github.com/spf13/cobra\"\n)\n\n// contributorsOptions represents contributor command options.\ntype contributorsOptions struct {\n\tProjectDirs []string\n\tDays        int\n\tOutput      string\n}\n\n// newShowCommand returns a new instance of the show command.\nfunc newContributorsCommand() *cobra.Command {\n\toptions := &contributorsOptions{}\n\tcmd := &cobra.Command{\n\t\tUse:   \"contributors\",\n\t\tShort: \"Calculate active project contributors\",\n\t\tLong: fmt.Sprintf(`\nA command-line helper for Qodana pricing[1] to calculate active contributor(s)[2] in the given local repositories.\n\n[1] This pricing is preliminary and subject to change.\nEarly adopters may receive special offers, which we \nwill announce prior to the commercial release.\n\n[2] An active contributor is anyone who has made a commit to any \nof the projects you’ve registered in Qodana Cloud within the last 90 days, \nregardless of when those commits were originally authored. The number of such \ncontributors will be calculated using both the commit author information \nand the timestamp for when their contribution to the project was pushed.\n\n[3] Ultimate Plus plan currently has a discount, more information can be found on %s\n`, core.PricingUrl),\n\t\tRun: func(cmd *cobra.Command, args []string) {\n\t\t\tif len(options.ProjectDirs) == 0 {\n\t\t\t\toptions.ProjectDirs = append(options.ProjectDirs, \".\")\n\t\t\t}\n\t\t\tcontributors := core.GetContributors(options.ProjectDirs, options.Days, false)\n\t\t\tswitch options.Output {\n\t\t\tcase \"tabular\":\n\t\t\t\tcore.PrintContributorsTable(contributors, options.Days, len(options.ProjectDirs))\n\t\t\t\treturn\n\t\t\tcase \"json\":\n\t\t\t\tout, err := core.ToJSON(contributors)\n\t\t\t\tif err != nil {\n\t\t\t\t\tlog.Fatalf(\"Failed to convert to JSON: %s\", err)\n\t\t\t\t}\n\t\t\t\t_, err = fmt.Fprintln(cmd.OutOrStdout(), out)\n\t\t\t\tif err != nil {\n\t\t\t\t\tlog.Fatalf(\"Failed to write to stdout: %s\", err)\n\t\t\t\t}\n\t\t\t\treturn\n\t\t\tdefault:\n\t\t\t\tlog.Fatalf(\"Unknown output format: %s\", options.Output)\n\t\t\t}\n\t\t},\n\t}\n\tflags := cmd.Flags()\n\tflags.StringArrayVarP(&options.ProjectDirs, \"project-dir\", \"i\", []string{}, \"Project directory, can be specified multiple times to check multiple projects, if not specified, current directory will be used\")\n\tflags.IntVarP(&options.Days, \"days\", \"d\", 90, \"Number of days since when to calculate the number of active contributors\")\n\tflags.StringVarP(&options.Output, \"output\", \"o\", \"tabular\", \"Output format, can be tabular or json\")\n\n\treturn cmd\n}"
+      "noticeText": "/*\n * Copyright 2021-2024 JetBrains s.r.o.\n *\n * Licensed under the Apache License, Version 2.0 (the \"License\");\n * you may not use this file except in compliance with the License.\n * You may obtain a copy of the License at\n *\n * https://www.apache.org/licenses/LICENSE-2.0\n *\n * Unless required by applicable law or agreed to in writing, software\n * distributed under the License is distributed on an \"AS IS\" BASIS,\n * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.\n * See the License for the specific language governing permissions and\n * limitations under the License.\n */\n\npackage cmd\n\nimport (\n\t\"fmt\"\n\n\t\"github.com/JetBrains/qodana-cli/v2025/core\"\n\tlog \"github.com/sirupsen/logrus\"\n\t\"github.com/spf13/cobra\"\n)\n\n// contributorsOptions represents contributor command options.\ntype contributorsOptions struct {\n\tProjectDirs []string\n\tDays        int\n\tOutput      string\n}\n\n// newShowCommand returns a new instance of the show command.\nfunc newContributorsCommand() *cobra.Command {\n\toptions := &contributorsOptions{}\n\tcmd := &cobra.Command{\n\t\tUse:   \"contributors\",\n\t\tShort: \"Calculate active project contributors\",\n\t\tLong: fmt.Sprintf(`\nA command-line helper for Qodana pricing[1] to calculate active contributor(s)[2] in the given local repositories.\n\n[1] This pricing is preliminary and subject to change.\nEarly adopters may receive special offers, which we \nwill announce prior to the commercial release.\n\n[2] An active contributor is anyone who has made a commit to any \nof the projects you’ve registered in Qodana Cloud within the last 90 days, \nregardless of when those commits were originally authored. The number of such \ncontributors will be calculated using both the commit author information \nand the timestamp for when their contribution to the project was pushed.\n\n[3] Ultimate Plus plan currently has a discount, more information can be found on %s\n`, core.PricingUrl),\n\t\tRun: func(cmd *cobra.Command, args []string) {\n\t\t\tif len(options.ProjectDirs) == 0 {\n\t\t\t\toptions.ProjectDirs = append(options.ProjectDirs, \".\")\n\t\t\t}\n\t\t\tcontributors := core.GetContributors(options.ProjectDirs, options.Days, false)\n\t\t\tswitch options.Output {\n\t\t\tcase \"tabular\":\n\t\t\t\tcore.PrintContributorsTable(contributors, options.Days, len(options.ProjectDirs))\n\t\t\t\treturn\n\t\t\tcase \"json\":\n\t\t\t\tout, err := core.ToJSON(contributors)\n\t\t\t\tif err != nil {\n\t\t\t\t\tlog.Fatalf(\"Failed to convert to JSON: %s\", err)\n\t\t\t\t}\n\t\t\t\t_, err = fmt.Fprintln(cmd.OutOrStdout(), out)\n\t\t\t\tif err != nil {\n\t\t\t\t\tlog.Fatalf(\"Failed to write to stdout: %s\", err)\n\t\t\t\t}\n\t\t\t\treturn\n\t\t\tdefault:\n\t\t\t\tlog.Fatalf(\"Unknown output format: %s\", options.Output)\n\t\t\t}\n\t\t},\n\t}\n\tflags := cmd.Flags()\n\tflags.StringArrayVarP(&options.ProjectDirs, \"project-dir\", \"i\", []string{}, \"Project directory, can be specified multiple times to check multiple projects, if not specified, current directory will be used\")\n\tflags.IntVarP(&options.Days, \"days\", \"d\", 90, \"Number of days since when to calculate the number of active contributors\")\n\tflags.StringVarP(&options.Output, \"output\", \"o\", \"tabular\", \"Output format, can be tabular or json\")\n\n\treturn cmd\n}"
     },
     {
-      "SPDXID": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-core--Apache-2.0",
+      "SPDXID": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-core--Apache-2.0",
       "fileName": "./core/license.go",
       "checksums": [
         {
@@ -3913,7 +3913,7 @@
       "licenseInfoInFiles": [
         "Apache-2.0"
       ],
-      "noticeText": "/*\n * Copyright 2021-2024 JetBrains s.r.o.\n *\n * Licensed under the Apache License, Version 2.0 (the \"License\");\n * you may not use this file except in compliance with the License.\n * You may obtain a copy of the License at\n *\n * https://www.apache.org/licenses/LICENSE-2.0\n *\n * Unless required by applicable law or agreed to in writing, software\n * distributed under the License is distributed on an \"AS IS\" BASIS,\n * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.\n * See the License for the specific language governing permissions and\n * limitations under the License.\n */\n\npackage core\n\nimport (\n\t\"errors\"\n\t\"fmt\"\n\t\"github.com/JetBrains/qodana-cli/v2024/cloud\"\n\t\"github.com/JetBrains/qodana-cli/v2024/platform\"\n\t\"log\"\n\t\"os\"\n\t\"strings\"\n)\n\nfunc SetupLicenseAndProjectHash(endpoints *cloud.QdApiEndpoints, token string) {\n\tvar licenseData cloud.LicenseData\n\tif token != \"\" {\n\t\tlicenseData = endpoints.GetLicenseData(token)\n\t\tif licenseData.ProjectIdHash != \"\" {\n\t\t\terr := os.Setenv(platform.QodanaProjectIdHash, licenseData.ProjectIdHash)\n\t\t\tif err != nil {\n\t\t\t\tlog.Fatal(err)\n\t\t\t}\n\t\t}\n\t}\n\t_, exists := os.LookupEnv(platform.QodanaLicense)\n\tif exists {\n\t\treturn\n\t}\n\n\t// community versions works without any license and can't check any license\n\tif Prod.IsCommunity() {\n\t\treturn\n\t}\n\n\t// eap version works with eap's license dependent on build date\n\tif Prod.EAP {\n\t\tif token == \"\" {\n\t\t\tfmt.Printf(cloud.EapWarnTokenMessage, endpoints.RootEndpoint.GetCloudUrl())\n\t\t\tfmt.Println()\n\t\t\tfmt.Println()\n\t\t}\n\t\treturn\n\t}\n\n\t// usual builds should have token and LicenseData for execution\n\tif token == \"\" {\n\t\tlog.Fatalf(cloud.EmptyTokenMessage, endpoints.RootEndpoint.GetCloudUrl())\n\t}\n\n\tlicenseDataResponse, err := endpoints.RequestLicenseData(token)\n\tif errors.Is(err, cloud.TokenDeclinedError) {\n\t\tlog.Fatalf(\"License request: %v\\n%s\", err, cloud.DeclinedTokenErrorMessage)\n\t}\n\tif err != nil {\n\t\terrMessage := fmt.Sprintf(cloud.GeneralLicenseErrorMessage, endpoints.RootEndpoint.GetCloudUrl())\n\t\tlog.Fatalf(\"License request: %v\\n%s\", err, errMessage)\n\t}\n\tlicenseData = cloud.DeserializeLicenseData(licenseDataResponse)\n\tif strings.ToLower(licenseData.LicensePlan) == \"community\" {\n\t\tlog.Fatalf(\"Your Qodana Cloud organization has Community license that doesn’t support \\\"%s\\\" linter, \"+\n\t\t\t\"please try one of the community linters instead: %s or obtain Ultimate \"+\n\t\t\t\"or Ultimate Plus license. Read more about licenses and plans at \"+\n\t\t\t\"https://www.jetbrains.com/help/qodana/pricing.html#pricing-linters-licenses.\",\n\t\t\tProd.getProductNameFromCode(),\n\t\t\tallCommunityNames(),\n\t\t)\n\t}\n\tif licenseData.LicenseKey == \"\" {\n\t\tlog.Fatalf(\"License key should not be empty\\n\")\n\t}\n\terr = os.Setenv(platform.QodanaLicense, licenseData.LicenseKey)\n\tif err != nil {\n\t\tlog.Fatal(err)\n\t}\n}\n\nfunc allCommunityNames() string {\n\tvar nameList []string\n\tfor _, code := range platform.AllSupportedFreeCodes {\n\t\tnameList = append(nameList, \"\\\"\"+getProductNameFromCode(code)+\"\\\"\")\n\t}\n\treturn strings.Join(nameList, \", \")\n}"
+      "noticeText": "/*\n * Copyright 2021-2024 JetBrains s.r.o.\n *\n * Licensed under the Apache License, Version 2.0 (the \"License\");\n * you may not use this file except in compliance with the License.\n * You may obtain a copy of the License at\n *\n * https://www.apache.org/licenses/LICENSE-2.0\n *\n * Unless required by applicable law or agreed to in writing, software\n * distributed under the License is distributed on an \"AS IS\" BASIS,\n * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.\n * See the License for the specific language governing permissions and\n * limitations under the License.\n */\n\npackage core\n\nimport (\n\t\"errors\"\n\t\"fmt\"\n\t\"github.com/JetBrains/qodana-cli/v2025/cloud\"\n\t\"github.com/JetBrains/qodana-cli/v2025/platform\"\n\t\"log\"\n\t\"os\"\n\t\"strings\"\n)\n\nfunc SetupLicenseAndProjectHash(endpoints *cloud.QdApiEndpoints, token string) {\n\tvar licenseData cloud.LicenseData\n\tif token != \"\" {\n\t\tlicenseData = endpoints.GetLicenseData(token)\n\t\tif licenseData.ProjectIdHash != \"\" {\n\t\t\terr := os.Setenv(platform.QodanaProjectIdHash, licenseData.ProjectIdHash)\n\t\t\tif err != nil {\n\t\t\t\tlog.Fatal(err)\n\t\t\t}\n\t\t}\n\t}\n\t_, exists := os.LookupEnv(platform.QodanaLicense)\n\tif exists {\n\t\treturn\n\t}\n\n\t// community versions works without any license and can't check any license\n\tif Prod.IsCommunity() {\n\t\treturn\n\t}\n\n\t// eap version works with eap's license dependent on build date\n\tif Prod.EAP {\n\t\tif token == \"\" {\n\t\t\tfmt.Printf(cloud.EapWarnTokenMessage, endpoints.RootEndpoint.GetCloudUrl())\n\t\t\tfmt.Println()\n\t\t\tfmt.Println()\n\t\t}\n\t\treturn\n\t}\n\n\t// usual builds should have token and LicenseData for execution\n\tif token == \"\" {\n\t\tlog.Fatalf(cloud.EmptyTokenMessage, endpoints.RootEndpoint.GetCloudUrl())\n\t}\n\n\tlicenseDataResponse, err := endpoints.RequestLicenseData(token)\n\tif errors.Is(err, cloud.TokenDeclinedError) {\n\t\tlog.Fatalf(\"License request: %v\\n%s\", err, cloud.DeclinedTokenErrorMessage)\n\t}\n\tif err != nil {\n\t\terrMessage := fmt.Sprintf(cloud.GeneralLicenseErrorMessage, endpoints.RootEndpoint.GetCloudUrl())\n\t\tlog.Fatalf(\"License request: %v\\n%s\", err, errMessage)\n\t}\n\tlicenseData = cloud.DeserializeLicenseData(licenseDataResponse)\n\tif strings.ToLower(licenseData.LicensePlan) == \"community\" {\n\t\tlog.Fatalf(\"Your Qodana Cloud organization has Community license that doesn’t support \\\"%s\\\" linter, \"+\n\t\t\t\"please try one of the community linters instead: %s or obtain Ultimate \"+\n\t\t\t\"or Ultimate Plus license. Read more about licenses and plans at \"+\n\t\t\t\"https://www.jetbrains.com/help/qodana/pricing.html#pricing-linters-licenses.\",\n\t\t\tProd.getProductNameFromCode(),\n\t\t\tallCommunityNames(),\n\t\t)\n\t}\n\tif licenseData.LicenseKey == \"\" {\n\t\tlog.Fatalf(\"License key should not be empty\\n\")\n\t}\n\terr = os.Setenv(platform.QodanaLicense, licenseData.LicenseKey)\n\tif err != nil {\n\t\tlog.Fatal(err)\n\t}\n}\n\nfunc allCommunityNames() string {\n\tvar nameList []string\n\tfor _, code := range platform.AllSupportedFreeCodes {\n\t\tnameList = append(nameList, \"\\\"\"+getProductNameFromCode(code)+\"\\\"\")\n\t}\n\treturn strings.Join(nameList, \", \")\n}"
     },
     {
       "SPDXID": "SPDXRef-github.com-MarvinJWendt-testza-v0.5.2-MIT",
@@ -7039,1068 +7039,1068 @@
     {
       "spdxElementId": "SPDXRef-project",
       "relationshipType": "CONTAINS",
-      "relatedSpdxElement": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cdnet",
+      "relatedSpdxElement": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cdnet",
       "comment": "Module of the project"
     },
     {
       "spdxElementId": "SPDXRef-project",
       "relationshipType": "CONTAINS",
-      "relatedSpdxElement": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cli",
+      "relatedSpdxElement": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cli",
       "comment": "Module of the project"
     },
     {
       "spdxElementId": "SPDXRef-project",
       "relationshipType": "CONTAINS",
-      "relatedSpdxElement": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cloud",
+      "relatedSpdxElement": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cloud",
       "comment": "Module of the project"
     },
     {
       "spdxElementId": "SPDXRef-project",
       "relationshipType": "CONTAINS",
-      "relatedSpdxElement": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cmd",
+      "relatedSpdxElement": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cmd",
       "comment": "Module of the project"
     },
     {
       "spdxElementId": "SPDXRef-project",
       "relationshipType": "CONTAINS",
-      "relatedSpdxElement": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-core",
+      "relatedSpdxElement": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-core",
       "comment": "Module of the project"
     },
     {
       "spdxElementId": "SPDXRef-project",
       "relationshipType": "CONTAINS",
-      "relatedSpdxElement": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-platform",
+      "relatedSpdxElement": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-platform",
       "comment": "Module of the project"
     },
     {
       "spdxElementId": "SPDXRef-project",
       "relationshipType": "CONTAINS",
-      "relatedSpdxElement": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-sarif",
+      "relatedSpdxElement": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-sarif",
       "comment": "Module of the project"
     },
     {
       "spdxElementId": "SPDXRef-project",
       "relationshipType": "CONTAINS",
-      "relatedSpdxElement": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-tooling",
+      "relatedSpdxElement": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-tooling",
       "comment": "Module of the project"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cdnet",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cdnet",
       "relationshipType": "DEPENDS_ON",
-      "relatedSpdxElement": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cdnet-"
+      "relatedSpdxElement": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cdnet-"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cdnet",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cdnet",
       "relationshipType": "DEPENDS_ON",
-      "relatedSpdxElement": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cli-"
+      "relatedSpdxElement": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cli-"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cdnet",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cdnet",
       "relationshipType": "DEPENDS_ON",
-      "relatedSpdxElement": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cloud-"
+      "relatedSpdxElement": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cloud-"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cdnet",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cdnet",
       "relationshipType": "DEPENDS_ON",
-      "relatedSpdxElement": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cmd-"
+      "relatedSpdxElement": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cmd-"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cdnet",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cdnet",
       "relationshipType": "DEPENDS_ON",
-      "relatedSpdxElement": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-core-"
+      "relatedSpdxElement": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-core-"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cdnet",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cdnet",
       "relationshipType": "DEPENDS_ON",
-      "relatedSpdxElement": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-platform-"
+      "relatedSpdxElement": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-platform-"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cdnet",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cdnet",
       "relationshipType": "DEPENDS_ON",
-      "relatedSpdxElement": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-sarif-"
+      "relatedSpdxElement": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-sarif-"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cdnet",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cdnet",
       "relationshipType": "DEPENDS_ON",
-      "relatedSpdxElement": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-tooling-"
+      "relatedSpdxElement": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-tooling-"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cdnet",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cdnet",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-atomicgo.dev-assert-v0.0.2"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cdnet",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cdnet",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-atomicgo.dev-cursor-v0.2.0"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cdnet",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cdnet",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-atomicgo.dev-keyboard-v0.2.9"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cdnet",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cdnet",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-atomicgo.dev-schedule-v0.1.0"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cdnet",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cdnet",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-cloud.google.com-go-v0.110.10"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cdnet",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cdnet",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-cloud.google.com-go-bigquery-v1.8.0"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cdnet",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cdnet",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-cloud.google.com-go-compute-v1.23.3"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cdnet",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cdnet",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-cloud.google.com-go-compute-metadata-v0.2.3"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cdnet",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cdnet",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-cloud.google.com-go-datastore-v1.1.0"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cdnet",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cdnet",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-cloud.google.com-go-firestore-v1.14.0"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cdnet",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cdnet",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-cloud.google.com-go-iam-v1.1.5"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cdnet",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cdnet",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-cloud.google.com-go-longrunning-v0.5.4"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cdnet",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cdnet",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-cloud.google.com-go-pubsub-v1.3.1"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cdnet",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cdnet",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-cloud.google.com-go-storage-v1.35.1"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cdnet",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cdnet",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-dmitri.shuralyov.com-gpu-mtl-v0.0.0-20190408044501-666a987793e9"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cdnet",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cdnet",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-github.com-Azure-go-ansiterm-v0.0.0-20210617225240-d185dfc1b5a1"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cdnet",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cdnet",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-github.com-BurntSushi-toml-v0.3.1"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cdnet",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cdnet",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-github.com-BurntSushi-xgb-v0.0.0-20160522181843-27f122750802"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cdnet",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cdnet",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-github.com-MarvinJWendt-testza-v0.5.2"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cdnet",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cdnet",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-github.com-Microsoft-go-winio-v0.6.1"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cdnet",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cdnet",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-github.com-alessio-shellescape-v1.4.1"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cdnet",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cdnet",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-github.com-armon-go-metrics-v0.4.1"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cdnet",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cdnet",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-github.com-atomicgo-cursor-v0.0.1"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cdnet",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cdnet",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-github.com-boyter-scc-v3-v3.2.0"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cdnet",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cdnet",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-github.com-census-instrumentation-opencensus-proto-v0.2.1"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cdnet",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cdnet",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-github.com-chzyer-logex-v1.1.10"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cdnet",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cdnet",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-github.com-chzyer-readline-v0.0.0-20180603132655-2972be24d48e"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cdnet",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cdnet",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-github.com-chzyer-test-v0.0.0-20180213035817-a1ea475d72b1"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cdnet",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cdnet",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-github.com-client9-misspell-v0.3.4"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cdnet",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cdnet",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-github.com-cncf-udpa-go-v0.0.0-20191209042840-269d4d468f6f"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cdnet",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cdnet",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-github.com-containerd-console-v1.0.3"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cdnet",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cdnet",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-github.com-coreos-go-semver-v0.3.0"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cdnet",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cdnet",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-github.com-coreos-go-systemd-v22-v22.3.2"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cdnet",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cdnet",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-github.com-cpuguy83-go-md2man-v2-v2.0.3"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cdnet",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cdnet",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-github.com-creack-pty-v1.1.18"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cdnet",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cdnet",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-github.com-cucumber-ci-environment-go-v0.0.0-20230911180507-bd001ebc644c"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cdnet",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cdnet",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-github.com-danieljoos-wincred-v1.2.0"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cdnet",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cdnet",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-github.com-davecgh-go-spew-v1.1.2-0.20180830191138-d8f796af33cc"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cdnet",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cdnet",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-github.com-dbaggerman-cuba-v0.3.2"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cdnet",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cdnet",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-github.com-distribution-reference-v0.5.0"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cdnet",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cdnet",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-github.com-docker-cli-v25.0.0+incompatible"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cdnet",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cdnet",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-github.com-docker-distribution-v2.8.3+incompatible"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cdnet",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cdnet",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-github.com-docker-docker-v20.10.23+incompatible"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cdnet",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cdnet",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-github.com-docker-docker-credential-helpers-v0.8.0"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cdnet",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cdnet",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-github.com-docker-go-connections-v0.5.0"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cdnet",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cdnet",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-github.com-docker-go-units-v0.5.0"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cdnet",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cdnet",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-github.com-envoyproxy-go-control-plane-v0.9.4"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cdnet",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cdnet",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-github.com-envoyproxy-protoc-gen-validate-v0.1.0"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cdnet",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cdnet",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-github.com-fatih-color-v1.14.1"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cdnet",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cdnet",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-github.com-frankban-quicktest-v1.14.6"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cdnet",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cdnet",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-github.com-fsnotify-fsnotify-v1.7.0"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cdnet",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cdnet",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-github.com-go-enry-go-enry-v2-v2.8.7"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cdnet",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cdnet",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-github.com-go-enry-go-oniguruma-v1.2.1"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cdnet",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cdnet",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-github.com-go-gl-glfw-v0.0.0-20190409004039-e6da0acd62b1"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cdnet",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cdnet",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-github.com-go-gl-glfw-v3.3-glfw-v0.0.0-20200222043503-6f7a984d4dc4"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cdnet",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cdnet",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-github.com-go-ole-go-ole-v1.2.6"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cdnet",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cdnet",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-github.com-godbus-dbus-v5-v5.1.0"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cdnet",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cdnet",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-github.com-gogo-protobuf-v1.3.2"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cdnet",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cdnet",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-github.com-golang-glog-v0.0.0-20160126235308-23def4e6c14b"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cdnet",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cdnet",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-github.com-golang-groupcache-v0.0.0-20210331224755-41bb18bfe9da"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cdnet",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cdnet",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-github.com-golang-mock-v1.4.4"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cdnet",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cdnet",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-github.com-golang-protobuf-v1.5.3"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cdnet",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cdnet",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-github.com-google-btree-v1.0.0"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cdnet",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cdnet",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-github.com-google-go-cmp-v0.6.0"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cdnet",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cdnet",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-github.com-google-gofuzz-v1.0.0"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cdnet",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cdnet",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-github.com-google-martian-v2.1.0+incompatible"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cdnet",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cdnet",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-github.com-google-martian-v3-v3.0.0"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cdnet",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cdnet",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-github.com-google-pprof-v0.0.0-20200708004538-1a94d8640e99"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cdnet",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cdnet",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-github.com-google-renameio-v0.1.0"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cdnet",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cdnet",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-github.com-google-s2a-go-v0.1.7"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cdnet",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cdnet",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-github.com-google-uuid-v1.6.0"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cdnet",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cdnet",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-github.com-googleapis-enterprise-certificate-proxy-v0.3.2"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cdnet",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cdnet",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-github.com-googleapis-gax-go-v2-v2.12.0"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cdnet",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cdnet",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-github.com-googleapis-google-cloud-go-testing-v0.0.0-20210719221736-1c9a4c676720"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cdnet",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cdnet",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-github.com-gookit-color-v1.5.4"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cdnet",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cdnet",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-github.com-hashicorp-consul-api-v1.25.1"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cdnet",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cdnet",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-github.com-hashicorp-go-cleanhttp-v0.5.2"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cdnet",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cdnet",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-github.com-hashicorp-go-hclog-v1.5.0"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cdnet",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cdnet",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-github.com-hashicorp-go-immutable-radix-v1.3.1"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cdnet",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cdnet",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-github.com-hashicorp-go-rootcerts-v1.0.2"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cdnet",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cdnet",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-github.com-hashicorp-golang-lru-v0.5.4"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cdnet",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cdnet",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-github.com-hashicorp-hcl-v1.0.0"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cdnet",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cdnet",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-github.com-hashicorp-serf-v0.10.1"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cdnet",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cdnet",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-github.com-ianlancetaylor-demangle-v0.0.0-20181102032728-5e5cf60278f6"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cdnet",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cdnet",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-github.com-inconshreveable-mousetrap-v1.1.0"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cdnet",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cdnet",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-github.com-json-iterator-go-v1.1.12"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cdnet",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cdnet",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-github.com-jstemmer-go-junit-report-v0.9.1"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cdnet",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cdnet",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-github.com-karrick-godirwalk-v1.10.12"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cdnet",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cdnet",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-github.com-kisielk-errcheck-v1.5.0"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cdnet",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cdnet",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-github.com-kisielk-gotool-v1.0.0"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cdnet",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cdnet",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-github.com-klauspost-compress-v1.17.0"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cdnet",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cdnet",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-github.com-klauspost-cpuid-v2-v2.2.3"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cdnet",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cdnet",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-github.com-kr-fs-v0.1.0"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cdnet",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cdnet",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-github.com-kr-pretty-v0.3.1"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cdnet",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cdnet",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-github.com-kr-pty-v1.1.1"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cdnet",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cdnet",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-github.com-kr-text-v0.2.0"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cdnet",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cdnet",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-github.com-liamg-clinch-v1.6.6"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cdnet",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cdnet",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-github.com-liamg-tml-v0.3.0"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cdnet",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cdnet",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-github.com-lithammer-fuzzysearch-v1.1.8"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cdnet",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cdnet",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-github.com-lufia-plan9stats-v0.0.0-20211012122336-39d0f177ccd0"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cdnet",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cdnet",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-github.com-magiconair-properties-v1.8.7"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cdnet",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cdnet",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-github.com-mattn-go-colorable-v0.1.13"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cdnet",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cdnet",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-github.com-mattn-go-isatty-v0.0.20"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cdnet",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cdnet",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-github.com-mattn-go-runewidth-v0.0.15"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cdnet",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cdnet",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-github.com-minio-blake2b-simd-v0.0.0-20160723061019-3f5f724cb5b1"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cdnet",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cdnet",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-github.com-mitchellh-go-homedir-v1.1.0"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cdnet",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cdnet",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-github.com-mitchellh-mapstructure-v1.5.0"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cdnet",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cdnet",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-github.com-moby-term-v0.5.0"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cdnet",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cdnet",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-github.com-modern-go-concurrent-v0.0.0-20180306012644-bacd9c7ef1dd"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cdnet",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cdnet",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-github.com-modern-go-reflect2-v1.0.2"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cdnet",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cdnet",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-github.com-morikuni-aec-v1.0.0"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cdnet",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cdnet",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-github.com-nats-io-nats.go-v1.31.0"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cdnet",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cdnet",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-github.com-nats-io-nkeys-v0.4.6"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cdnet",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cdnet",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-github.com-nats-io-nuid-v1.0.1"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cdnet",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cdnet",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-github.com-opencontainers-go-digest-v1.0.0"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cdnet",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cdnet",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-github.com-opencontainers-image-spec-v1.0.2"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cdnet",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cdnet",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-github.com-otiai10-copy-v1.14.0"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cdnet",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cdnet",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-github.com-otiai10-mint-v1.5.1"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cdnet",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cdnet",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-github.com-pelletier-go-toml-v2-v2.1.0"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cdnet",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cdnet",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-github.com-pkg-diff-v0.0.0-20210226163009-20ebb0f2a09e"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cdnet",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cdnet",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-github.com-pkg-errors-v0.9.1"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cdnet",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cdnet",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-github.com-pkg-profile-v1.3.0"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cdnet",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cdnet",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-github.com-pkg-sftp-v1.13.6"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cdnet",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cdnet",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-github.com-pkg-term-v0.0.0-20190109203006-aa71e9d9e942"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cdnet",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cdnet",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-github.com-pmezard-go-difflib-v1.0.1-0.20181226105442-5d4384ee4fb2"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cdnet",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cdnet",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-github.com-power-devops-perfstat-v0.0.0-20210106213030-5aafc221ea8c"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cdnet",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cdnet",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-github.com-prometheus-client_model-v0.0.0-20190812154241-14fe0d1b01d4"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cdnet",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cdnet",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-github.com-pterm-pterm-v0.12.79"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cdnet",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cdnet",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-github.com-reviewdog-go-bitbucket-v0.0.0-20201024094602-708c3f6a7de0"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cdnet",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cdnet",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-github.com-rivo-uniseg-v0.4.4"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cdnet",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cdnet",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-github.com-rogpeppe-go-internal-v1.9.0"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cdnet",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cdnet",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-github.com-rs-zerolog-v1.30.0"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cdnet",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cdnet",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-github.com-russross-blackfriday-v2-v2.1.0"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cdnet",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cdnet",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-github.com-sagikazarmark-crypt-v0.17.0"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cdnet",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cdnet",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-github.com-sagikazarmark-locafero-v0.4.0"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cdnet",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cdnet",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-github.com-sagikazarmark-slog-shim-v0.1.0"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cdnet",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cdnet",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-github.com-sergi-go-diff-v1.2.0"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cdnet",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cdnet",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-github.com-shirou-gopsutil-v3-v3.24.3"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cdnet",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cdnet",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-github.com-shoenig-go-m1cpu-v0.1.6"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cdnet",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cdnet",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-github.com-shoenig-test-v0.6.4"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cdnet",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cdnet",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-github.com-sirupsen-logrus-v1.9.3"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cdnet",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cdnet",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-github.com-sourcegraph-conc-v0.3.0"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cdnet",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cdnet",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-github.com-spf13-afero-v1.11.0"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cdnet",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cdnet",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-github.com-spf13-cast-v1.6.0"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cdnet",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cdnet",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-github.com-spf13-cobra-v1.8.0"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cdnet",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cdnet",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-github.com-spf13-pflag-v1.0.5"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cdnet",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cdnet",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-github.com-spf13-viper-v1.18.2"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cdnet",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cdnet",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-github.com-stretchr-objx-v0.5.2"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cdnet",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cdnet",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-github.com-stretchr-testify-v1.9.0"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cdnet",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cdnet",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-github.com-subosito-gotenv-v1.6.0"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cdnet",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cdnet",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-github.com-tklauser-go-sysconf-v0.3.12"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cdnet",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cdnet",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-github.com-tklauser-numcpus-v0.6.1"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cdnet",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cdnet",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-github.com-xo-terminfo-v0.0.0-20220910002029-abceb7e1c41e"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cdnet",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cdnet",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-github.com-yuin-goldmark-v1.4.13"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cdnet",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cdnet",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-github.com-yusufpapurcu-wmi-v1.2.4"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cdnet",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cdnet",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-github.com-zalando-go-keyring-v0.2.4"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cdnet",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cdnet",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-go.etcd.io-etcd-api-v3-v3.5.10"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cdnet",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cdnet",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-go.etcd.io-etcd-client-pkg-v3-v3.5.10"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cdnet",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cdnet",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-go.etcd.io-etcd-client-v2-v2.305.10"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cdnet",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cdnet",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-go.etcd.io-etcd-client-v3-v3.5.10"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cdnet",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cdnet",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-go.opencensus.io-v0.24.0"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cdnet",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cdnet",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-go.uber.org-atomic-v1.9.0"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cdnet",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cdnet",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-go.uber.org-multierr-v1.9.0"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cdnet",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cdnet",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-go.uber.org-zap-v1.21.0"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cdnet",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cdnet",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-golang.org-x-crypto-v0.21.0"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cdnet",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cdnet",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-golang.org-x-exp-v0.0.0-20230905200255-921286631fa9"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cdnet",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cdnet",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-golang.org-x-image-v0.0.0-20190802002840-cff245a6509b"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cdnet",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cdnet",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-golang.org-x-lint-v0.0.0-20200302205851-738671d3881b"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cdnet",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cdnet",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-golang.org-x-mobile-v0.0.0-20190719004257-d2bd2a29d028"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cdnet",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cdnet",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-golang.org-x-mod-v0.12.0"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cdnet",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cdnet",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-golang.org-x-net-v0.23.0"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cdnet",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cdnet",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-golang.org-x-oauth2-v0.15.0"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cdnet",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cdnet",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-golang.org-x-sync-v0.5.0"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cdnet",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cdnet",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-golang.org-x-sys-v0.18.0"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cdnet",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cdnet",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-golang.org-x-term-v0.18.0"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cdnet",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cdnet",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-golang.org-x-text-v0.14.0"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cdnet",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cdnet",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-golang.org-x-time-v0.5.0"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cdnet",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cdnet",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-golang.org-x-tools-v0.13.0"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cdnet",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cdnet",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-golang.org-x-xerrors-v0.0.0-20220907171357-04be3eba64a2"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cdnet",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cdnet",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-google.golang.org-api-v0.153.0"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cdnet",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cdnet",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-google.golang.org-appengine-v1.6.7"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cdnet",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cdnet",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-google.golang.org-genproto-v0.0.0-20231106174013-bbf56f31fb17"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cdnet",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cdnet",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-google.golang.org-genproto-googleapis-api-v0.0.0-20231106174013-bbf56f31fb17"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cdnet",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cdnet",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-google.golang.org-genproto-googleapis-rpc-v0.0.0-20231120223509-83a465c0220f"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cdnet",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cdnet",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-google.golang.org-grpc-v1.59.0"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cdnet",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cdnet",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-google.golang.org-protobuf-v1.33.0"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cdnet",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cdnet",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-gopkg.in-check.v1-v1.0.0-20190902080502-41f04d3bba15"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cdnet",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cdnet",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-gopkg.in-errgo.v2-v2.1.0"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cdnet",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cdnet",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-gopkg.in-ini.v1-v1.67.0"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cdnet",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cdnet",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-gopkg.in-yaml.v2-v2.4.0"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cdnet",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cdnet",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-gopkg.in-yaml.v3-v3.0.1"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cdnet",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cdnet",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-gotest.tools-v3-v3.5.1"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cdnet",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cdnet",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-honnef.co-go-tools-v0.0.1-2020.1.4"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cdnet",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cdnet",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-rsc.io-binaryregexp-v0.2.0"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cdnet",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cdnet",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-rsc.io-quote-v3-v3.1.0"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cdnet",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cdnet",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-rsc.io-sampler-v1.3.0"
     },
@@ -10210,1747 +10210,1747 @@
       "relatedSpdxElement": "SPDXRef-rsc.io-sampler-v1.3.0"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cli",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cli",
       "relationshipType": "DEPENDS_ON",
-      "relatedSpdxElement": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cdnet-"
+      "relatedSpdxElement": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cdnet-"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cli",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cli",
       "relationshipType": "DEPENDS_ON",
-      "relatedSpdxElement": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cli-"
+      "relatedSpdxElement": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cli-"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cli",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cli",
       "relationshipType": "DEPENDS_ON",
-      "relatedSpdxElement": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cloud-"
+      "relatedSpdxElement": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cloud-"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cli",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cli",
       "relationshipType": "DEPENDS_ON",
-      "relatedSpdxElement": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cmd-"
+      "relatedSpdxElement": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cmd-"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cli",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cli",
       "relationshipType": "DEPENDS_ON",
-      "relatedSpdxElement": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-core-"
+      "relatedSpdxElement": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-core-"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cli",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cli",
       "relationshipType": "DEPENDS_ON",
-      "relatedSpdxElement": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-platform-"
+      "relatedSpdxElement": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-platform-"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cli",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cli",
       "relationshipType": "DEPENDS_ON",
-      "relatedSpdxElement": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-sarif-"
+      "relatedSpdxElement": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-sarif-"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cli",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cli",
       "relationshipType": "DEPENDS_ON",
-      "relatedSpdxElement": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-tooling-"
+      "relatedSpdxElement": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-tooling-"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cli",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cli",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-atomicgo.dev-assert-v0.0.2"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cli",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cli",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-atomicgo.dev-cursor-v0.2.0"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cli",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cli",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-atomicgo.dev-keyboard-v0.2.9"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cli",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cli",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-atomicgo.dev-schedule-v0.1.0"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cli",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cli",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-cloud.google.com-go-v0.110.10"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cli",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cli",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-cloud.google.com-go-bigquery-v1.8.0"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cli",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cli",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-cloud.google.com-go-compute-v1.23.3"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cli",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cli",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-cloud.google.com-go-compute-metadata-v0.2.3"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cli",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cli",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-cloud.google.com-go-datastore-v1.1.0"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cli",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cli",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-cloud.google.com-go-firestore-v1.14.0"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cli",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cli",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-cloud.google.com-go-iam-v1.1.5"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cli",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cli",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-cloud.google.com-go-longrunning-v0.5.4"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cli",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cli",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-cloud.google.com-go-pubsub-v1.3.1"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cli",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cli",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-cloud.google.com-go-storage-v1.35.1"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cli",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cli",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-dmitri.shuralyov.com-gpu-mtl-v0.0.0-20190408044501-666a987793e9"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cli",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cli",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-github.com-Azure-go-ansiterm-v0.0.0-20210617225240-d185dfc1b5a1"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cli",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cli",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-github.com-BurntSushi-toml-v0.3.1"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cli",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cli",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-github.com-BurntSushi-xgb-v0.0.0-20160522181843-27f122750802"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cli",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cli",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-github.com-MarvinJWendt-testza-v0.5.2"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cli",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cli",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-github.com-Microsoft-go-winio-v0.6.1"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cli",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cli",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-github.com-alessio-shellescape-v1.4.1"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cli",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cli",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-github.com-armon-go-metrics-v0.4.1"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cli",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cli",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-github.com-atomicgo-cursor-v0.0.1"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cli",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cli",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-github.com-boyter-scc-v3-v3.2.0"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cli",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cli",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-github.com-census-instrumentation-opencensus-proto-v0.2.1"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cli",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cli",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-github.com-chzyer-logex-v1.1.10"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cli",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cli",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-github.com-chzyer-readline-v0.0.0-20180603132655-2972be24d48e"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cli",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cli",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-github.com-chzyer-test-v0.0.0-20180213035817-a1ea475d72b1"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cli",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cli",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-github.com-client9-misspell-v0.3.4"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cli",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cli",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-github.com-cncf-udpa-go-v0.0.0-20191209042840-269d4d468f6f"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cli",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cli",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-github.com-containerd-console-v1.0.3"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cli",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cli",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-github.com-coreos-go-semver-v0.3.0"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cli",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cli",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-github.com-coreos-go-systemd-v22-v22.3.2"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cli",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cli",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-github.com-cpuguy83-go-md2man-v2-v2.0.3"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cli",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cli",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-github.com-creack-pty-v1.1.18"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cli",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cli",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-github.com-cucumber-ci-environment-go-v0.0.0-20230911180507-bd001ebc644c"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cli",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cli",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-github.com-danieljoos-wincred-v1.2.0"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cli",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cli",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-github.com-davecgh-go-spew-v1.1.2-0.20180830191138-d8f796af33cc"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cli",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cli",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-github.com-dbaggerman-cuba-v0.3.2"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cli",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cli",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-github.com-distribution-reference-v0.5.0"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cli",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cli",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-github.com-docker-cli-v25.0.0+incompatible"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cli",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cli",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-github.com-docker-distribution-v2.8.3+incompatible"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cli",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cli",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-github.com-docker-docker-v20.10.23+incompatible"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cli",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cli",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-github.com-docker-docker-credential-helpers-v0.8.0"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cli",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cli",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-github.com-docker-go-connections-v0.5.0"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cli",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cli",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-github.com-docker-go-units-v0.5.0"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cli",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cli",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-github.com-envoyproxy-go-control-plane-v0.9.4"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cli",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cli",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-github.com-envoyproxy-protoc-gen-validate-v0.1.0"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cli",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cli",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-github.com-fatih-color-v1.14.1"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cli",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cli",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-github.com-frankban-quicktest-v1.14.6"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cli",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cli",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-github.com-fsnotify-fsnotify-v1.7.0"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cli",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cli",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-github.com-go-enry-go-enry-v2-v2.8.7"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cli",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cli",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-github.com-go-enry-go-oniguruma-v1.2.1"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cli",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cli",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-github.com-go-gl-glfw-v0.0.0-20190409004039-e6da0acd62b1"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cli",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cli",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-github.com-go-gl-glfw-v3.3-glfw-v0.0.0-20200222043503-6f7a984d4dc4"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cli",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cli",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-github.com-go-ole-go-ole-v1.2.6"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cli",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cli",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-github.com-godbus-dbus-v5-v5.1.0"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cli",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cli",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-github.com-gogo-protobuf-v1.3.2"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cli",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cli",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-github.com-golang-glog-v0.0.0-20160126235308-23def4e6c14b"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cli",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cli",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-github.com-golang-groupcache-v0.0.0-20210331224755-41bb18bfe9da"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cli",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cli",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-github.com-golang-mock-v1.4.4"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cli",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cli",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-github.com-golang-protobuf-v1.5.3"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cli",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cli",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-github.com-google-btree-v1.0.0"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cli",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cli",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-github.com-google-go-cmp-v0.6.0"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cli",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cli",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-github.com-google-gofuzz-v1.0.0"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cli",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cli",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-github.com-google-martian-v2.1.0+incompatible"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cli",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cli",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-github.com-google-martian-v3-v3.0.0"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cli",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cli",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-github.com-google-pprof-v0.0.0-20200708004538-1a94d8640e99"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cli",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cli",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-github.com-google-renameio-v0.1.0"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cli",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cli",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-github.com-google-s2a-go-v0.1.7"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cli",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cli",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-github.com-google-uuid-v1.6.0"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cli",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cli",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-github.com-googleapis-enterprise-certificate-proxy-v0.3.2"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cli",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cli",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-github.com-googleapis-gax-go-v2-v2.12.0"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cli",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cli",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-github.com-googleapis-google-cloud-go-testing-v0.0.0-20210719221736-1c9a4c676720"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cli",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cli",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-github.com-gookit-color-v1.5.4"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cli",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cli",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-github.com-hashicorp-consul-api-v1.25.1"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cli",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cli",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-github.com-hashicorp-go-cleanhttp-v0.5.2"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cli",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cli",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-github.com-hashicorp-go-hclog-v1.5.0"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cli",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cli",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-github.com-hashicorp-go-immutable-radix-v1.3.1"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cli",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cli",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-github.com-hashicorp-go-rootcerts-v1.0.2"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cli",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cli",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-github.com-hashicorp-golang-lru-v0.5.4"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cli",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cli",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-github.com-hashicorp-hcl-v1.0.0"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cli",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cli",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-github.com-hashicorp-serf-v0.10.1"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cli",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cli",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-github.com-ianlancetaylor-demangle-v0.0.0-20181102032728-5e5cf60278f6"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cli",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cli",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-github.com-inconshreveable-mousetrap-v1.1.0"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cli",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cli",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-github.com-json-iterator-go-v1.1.12"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cli",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cli",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-github.com-jstemmer-go-junit-report-v0.9.1"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cli",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cli",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-github.com-karrick-godirwalk-v1.10.12"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cli",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cli",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-github.com-kisielk-errcheck-v1.5.0"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cli",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cli",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-github.com-kisielk-gotool-v1.0.0"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cli",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cli",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-github.com-klauspost-compress-v1.17.0"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cli",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cli",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-github.com-klauspost-cpuid-v2-v2.2.3"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cli",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cli",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-github.com-kr-fs-v0.1.0"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cli",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cli",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-github.com-kr-pretty-v0.3.1"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cli",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cli",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-github.com-kr-pty-v1.1.1"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cli",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cli",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-github.com-kr-text-v0.2.0"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cli",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cli",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-github.com-liamg-clinch-v1.6.6"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cli",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cli",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-github.com-liamg-tml-v0.3.0"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cli",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cli",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-github.com-lithammer-fuzzysearch-v1.1.8"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cli",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cli",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-github.com-lufia-plan9stats-v0.0.0-20211012122336-39d0f177ccd0"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cli",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cli",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-github.com-magiconair-properties-v1.8.7"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cli",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cli",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-github.com-mattn-go-colorable-v0.1.13"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cli",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cli",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-github.com-mattn-go-isatty-v0.0.20"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cli",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cli",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-github.com-mattn-go-runewidth-v0.0.15"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cli",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cli",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-github.com-minio-blake2b-simd-v0.0.0-20160723061019-3f5f724cb5b1"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cli",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cli",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-github.com-mitchellh-go-homedir-v1.1.0"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cli",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cli",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-github.com-mitchellh-mapstructure-v1.5.0"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cli",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cli",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-github.com-moby-term-v0.5.0"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cli",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cli",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-github.com-modern-go-concurrent-v0.0.0-20180306012644-bacd9c7ef1dd"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cli",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cli",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-github.com-modern-go-reflect2-v1.0.2"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cli",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cli",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-github.com-morikuni-aec-v1.0.0"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cli",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cli",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-github.com-nats-io-nats.go-v1.31.0"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cli",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cli",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-github.com-nats-io-nkeys-v0.4.6"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cli",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cli",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-github.com-nats-io-nuid-v1.0.1"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cli",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cli",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-github.com-opencontainers-go-digest-v1.0.0"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cli",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cli",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-github.com-opencontainers-image-spec-v1.0.2"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cli",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cli",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-github.com-otiai10-copy-v1.14.0"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cli",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cli",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-github.com-otiai10-mint-v1.5.1"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cli",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cli",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-github.com-pelletier-go-toml-v2-v2.1.0"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cli",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cli",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-github.com-pkg-diff-v0.0.0-20210226163009-20ebb0f2a09e"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cli",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cli",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-github.com-pkg-errors-v0.9.1"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cli",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cli",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-github.com-pkg-profile-v1.3.0"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cli",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cli",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-github.com-pkg-sftp-v1.13.6"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cli",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cli",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-github.com-pkg-term-v0.0.0-20190109203006-aa71e9d9e942"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cli",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cli",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-github.com-pmezard-go-difflib-v1.0.1-0.20181226105442-5d4384ee4fb2"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cli",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cli",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-github.com-power-devops-perfstat-v0.0.0-20210106213030-5aafc221ea8c"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cli",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cli",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-github.com-prometheus-client_model-v0.0.0-20190812154241-14fe0d1b01d4"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cli",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cli",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-github.com-pterm-pterm-v0.12.79"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cli",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cli",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-github.com-reviewdog-go-bitbucket-v0.0.0-20201024094602-708c3f6a7de0"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cli",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cli",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-github.com-rivo-uniseg-v0.4.4"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cli",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cli",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-github.com-rogpeppe-go-internal-v1.9.0"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cli",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cli",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-github.com-rs-zerolog-v1.30.0"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cli",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cli",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-github.com-russross-blackfriday-v2-v2.1.0"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cli",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cli",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-github.com-sagikazarmark-crypt-v0.17.0"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cli",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cli",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-github.com-sagikazarmark-locafero-v0.4.0"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cli",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cli",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-github.com-sagikazarmark-slog-shim-v0.1.0"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cli",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cli",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-github.com-sergi-go-diff-v1.2.0"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cli",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cli",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-github.com-shirou-gopsutil-v3-v3.24.3"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cli",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cli",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-github.com-shoenig-go-m1cpu-v0.1.6"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cli",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cli",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-github.com-shoenig-test-v0.6.4"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cli",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cli",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-github.com-sirupsen-logrus-v1.9.3"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cli",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cli",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-github.com-sourcegraph-conc-v0.3.0"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cli",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cli",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-github.com-spf13-afero-v1.11.0"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cli",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cli",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-github.com-spf13-cast-v1.6.0"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cli",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cli",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-github.com-spf13-cobra-v1.8.0"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cli",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cli",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-github.com-spf13-pflag-v1.0.5"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cli",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cli",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-github.com-spf13-viper-v1.18.2"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cli",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cli",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-github.com-stretchr-objx-v0.5.2"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cli",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cli",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-github.com-stretchr-testify-v1.9.0"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cli",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cli",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-github.com-subosito-gotenv-v1.6.0"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cli",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cli",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-github.com-tklauser-go-sysconf-v0.3.12"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cli",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cli",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-github.com-tklauser-numcpus-v0.6.1"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cli",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cli",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-github.com-xo-terminfo-v0.0.0-20220910002029-abceb7e1c41e"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cli",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cli",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-github.com-yuin-goldmark-v1.4.13"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cli",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cli",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-github.com-yusufpapurcu-wmi-v1.2.4"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cli",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cli",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-github.com-zalando-go-keyring-v0.2.4"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cli",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cli",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-go.etcd.io-etcd-api-v3-v3.5.10"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cli",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cli",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-go.etcd.io-etcd-client-pkg-v3-v3.5.10"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cli",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cli",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-go.etcd.io-etcd-client-v2-v2.305.10"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cli",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cli",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-go.etcd.io-etcd-client-v3-v3.5.10"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cli",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cli",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-go.opencensus.io-v0.24.0"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cli",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cli",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-go.uber.org-atomic-v1.9.0"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cli",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cli",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-go.uber.org-multierr-v1.9.0"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cli",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cli",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-go.uber.org-zap-v1.21.0"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cli",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cli",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-golang.org-x-crypto-v0.21.0"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cli",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cli",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-golang.org-x-exp-v0.0.0-20230905200255-921286631fa9"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cli",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cli",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-golang.org-x-image-v0.0.0-20190802002840-cff245a6509b"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cli",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cli",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-golang.org-x-lint-v0.0.0-20200302205851-738671d3881b"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cli",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cli",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-golang.org-x-mobile-v0.0.0-20190719004257-d2bd2a29d028"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cli",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cli",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-golang.org-x-mod-v0.12.0"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cli",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cli",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-golang.org-x-net-v0.23.0"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cli",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cli",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-golang.org-x-oauth2-v0.15.0"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cli",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cli",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-golang.org-x-sync-v0.5.0"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cli",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cli",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-golang.org-x-sys-v0.18.0"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cli",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cli",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-golang.org-x-term-v0.18.0"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cli",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cli",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-golang.org-x-text-v0.14.0"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cli",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cli",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-golang.org-x-time-v0.5.0"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cli",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cli",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-golang.org-x-tools-v0.13.0"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cli",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cli",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-golang.org-x-xerrors-v0.0.0-20220907171357-04be3eba64a2"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cli",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cli",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-google.golang.org-api-v0.153.0"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cli",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cli",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-google.golang.org-appengine-v1.6.7"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cli",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cli",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-google.golang.org-genproto-v0.0.0-20231106174013-bbf56f31fb17"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cli",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cli",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-google.golang.org-genproto-googleapis-api-v0.0.0-20231106174013-bbf56f31fb17"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cli",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cli",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-google.golang.org-genproto-googleapis-rpc-v0.0.0-20231120223509-83a465c0220f"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cli",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cli",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-google.golang.org-grpc-v1.59.0"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cli",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cli",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-google.golang.org-protobuf-v1.33.0"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cli",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cli",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-gopkg.in-check.v1-v1.0.0-20190902080502-41f04d3bba15"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cli",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cli",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-gopkg.in-errgo.v2-v2.1.0"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cli",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cli",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-gopkg.in-ini.v1-v1.67.0"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cli",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cli",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-gopkg.in-yaml.v2-v2.4.0"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cli",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cli",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-gopkg.in-yaml.v3-v3.0.1"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cli",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cli",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-gotest.tools-v3-v3.5.1"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cli",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cli",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-honnef.co-go-tools-v0.0.1-2020.1.4"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cli",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cli",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-rsc.io-binaryregexp-v0.2.0"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cli",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cli",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-rsc.io-quote-v3-v3.1.0"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cli",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cli",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-rsc.io-sampler-v1.3.0"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cloud",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cloud",
       "relationshipType": "DEPENDS_ON",
-      "relatedSpdxElement": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cdnet-"
+      "relatedSpdxElement": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cdnet-"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cloud",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cloud",
       "relationshipType": "DEPENDS_ON",
-      "relatedSpdxElement": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cli-"
+      "relatedSpdxElement": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cli-"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cloud",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cloud",
       "relationshipType": "DEPENDS_ON",
-      "relatedSpdxElement": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cloud-"
+      "relatedSpdxElement": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cloud-"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cloud",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cloud",
       "relationshipType": "DEPENDS_ON",
-      "relatedSpdxElement": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cmd-"
+      "relatedSpdxElement": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cmd-"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cloud",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cloud",
       "relationshipType": "DEPENDS_ON",
-      "relatedSpdxElement": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-core-"
+      "relatedSpdxElement": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-core-"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cloud",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cloud",
       "relationshipType": "DEPENDS_ON",
-      "relatedSpdxElement": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-platform-"
+      "relatedSpdxElement": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-platform-"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cloud",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cloud",
       "relationshipType": "DEPENDS_ON",
-      "relatedSpdxElement": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-sarif-"
+      "relatedSpdxElement": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-sarif-"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cloud",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cloud",
       "relationshipType": "DEPENDS_ON",
-      "relatedSpdxElement": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-tooling-"
+      "relatedSpdxElement": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-tooling-"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cloud",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cloud",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-atomicgo.dev-assert-v0.0.2"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cloud",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cloud",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-atomicgo.dev-cursor-v0.2.0"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cloud",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cloud",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-atomicgo.dev-keyboard-v0.2.9"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cloud",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cloud",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-atomicgo.dev-schedule-v0.1.0"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cloud",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cloud",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-cloud.google.com-go-v0.110.10"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cloud",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cloud",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-cloud.google.com-go-bigquery-v1.8.0"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cloud",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cloud",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-cloud.google.com-go-compute-v1.23.3"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cloud",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cloud",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-cloud.google.com-go-compute-metadata-v0.2.3"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cloud",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cloud",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-cloud.google.com-go-datastore-v1.1.0"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cloud",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cloud",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-cloud.google.com-go-firestore-v1.14.0"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cloud",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cloud",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-cloud.google.com-go-iam-v1.1.5"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cloud",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cloud",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-cloud.google.com-go-longrunning-v0.5.4"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cloud",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cloud",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-cloud.google.com-go-pubsub-v1.3.1"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cloud",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cloud",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-cloud.google.com-go-storage-v1.35.1"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cloud",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cloud",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-dmitri.shuralyov.com-gpu-mtl-v0.0.0-20190408044501-666a987793e9"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cloud",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cloud",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-github.com-Azure-go-ansiterm-v0.0.0-20210617225240-d185dfc1b5a1"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cloud",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cloud",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-github.com-BurntSushi-toml-v0.3.1"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cloud",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cloud",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-github.com-BurntSushi-xgb-v0.0.0-20160522181843-27f122750802"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cloud",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cloud",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-github.com-MarvinJWendt-testza-v0.5.2"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cloud",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cloud",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-github.com-Microsoft-go-winio-v0.6.1"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cloud",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cloud",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-github.com-alessio-shellescape-v1.4.1"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cloud",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cloud",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-github.com-armon-go-metrics-v0.4.1"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cloud",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cloud",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-github.com-atomicgo-cursor-v0.0.1"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cloud",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cloud",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-github.com-boyter-scc-v3-v3.2.0"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cloud",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cloud",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-github.com-census-instrumentation-opencensus-proto-v0.2.1"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cloud",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cloud",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-github.com-chzyer-logex-v1.1.10"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cloud",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cloud",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-github.com-chzyer-readline-v0.0.0-20180603132655-2972be24d48e"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cloud",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cloud",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-github.com-chzyer-test-v0.0.0-20180213035817-a1ea475d72b1"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cloud",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cloud",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-github.com-client9-misspell-v0.3.4"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cloud",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cloud",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-github.com-cncf-udpa-go-v0.0.0-20191209042840-269d4d468f6f"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cloud",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cloud",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-github.com-containerd-console-v1.0.3"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cloud",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cloud",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-github.com-coreos-go-semver-v0.3.0"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cloud",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cloud",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-github.com-coreos-go-systemd-v22-v22.3.2"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cloud",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cloud",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-github.com-cpuguy83-go-md2man-v2-v2.0.3"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cloud",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cloud",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-github.com-creack-pty-v1.1.18"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cloud",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cloud",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-github.com-cucumber-ci-environment-go-v0.0.0-20230911180507-bd001ebc644c"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cloud",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cloud",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-github.com-danieljoos-wincred-v1.2.0"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cloud",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cloud",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-github.com-davecgh-go-spew-v1.1.2-0.20180830191138-d8f796af33cc"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cloud",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cloud",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-github.com-dbaggerman-cuba-v0.3.2"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cloud",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cloud",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-github.com-distribution-reference-v0.5.0"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cloud",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cloud",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-github.com-docker-cli-v25.0.0+incompatible"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cloud",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cloud",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-github.com-docker-distribution-v2.8.3+incompatible"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cloud",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cloud",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-github.com-docker-docker-v20.10.23+incompatible"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cloud",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cloud",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-github.com-docker-docker-credential-helpers-v0.8.0"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cloud",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cloud",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-github.com-docker-go-connections-v0.5.0"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cloud",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cloud",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-github.com-docker-go-units-v0.5.0"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cloud",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cloud",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-github.com-envoyproxy-go-control-plane-v0.9.4"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cloud",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cloud",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-github.com-envoyproxy-protoc-gen-validate-v0.1.0"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cloud",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cloud",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-github.com-fatih-color-v1.14.1"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cloud",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cloud",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-github.com-frankban-quicktest-v1.14.6"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cloud",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cloud",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-github.com-fsnotify-fsnotify-v1.7.0"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cloud",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cloud",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-github.com-go-enry-go-enry-v2-v2.8.7"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cloud",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cloud",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-github.com-go-enry-go-oniguruma-v1.2.1"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cloud",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cloud",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-github.com-go-gl-glfw-v0.0.0-20190409004039-e6da0acd62b1"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cloud",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cloud",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-github.com-go-gl-glfw-v3.3-glfw-v0.0.0-20200222043503-6f7a984d4dc4"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cloud",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cloud",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-github.com-go-ole-go-ole-v1.2.6"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cloud",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cloud",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-github.com-godbus-dbus-v5-v5.1.0"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cloud",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cloud",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-github.com-gogo-protobuf-v1.3.2"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cloud",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cloud",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-github.com-golang-glog-v0.0.0-20160126235308-23def4e6c14b"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cloud",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cloud",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-github.com-golang-groupcache-v0.0.0-20210331224755-41bb18bfe9da"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cloud",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cloud",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-github.com-golang-mock-v1.4.4"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cloud",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cloud",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-github.com-golang-protobuf-v1.5.3"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cloud",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cloud",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-github.com-google-btree-v1.0.0"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cloud",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cloud",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-github.com-google-go-cmp-v0.6.0"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cloud",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cloud",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-github.com-google-gofuzz-v1.0.0"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cloud",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cloud",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-github.com-google-martian-v2.1.0+incompatible"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cloud",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cloud",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-github.com-google-martian-v3-v3.0.0"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cloud",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cloud",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-github.com-google-pprof-v0.0.0-20200708004538-1a94d8640e99"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cloud",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cloud",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-github.com-google-renameio-v0.1.0"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cloud",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cloud",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-github.com-google-s2a-go-v0.1.7"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cloud",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cloud",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-github.com-google-uuid-v1.6.0"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cloud",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cloud",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-github.com-googleapis-enterprise-certificate-proxy-v0.3.2"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cloud",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cloud",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-github.com-googleapis-gax-go-v2-v2.12.0"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cloud",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cloud",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-github.com-googleapis-google-cloud-go-testing-v0.0.0-20210719221736-1c9a4c676720"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cloud",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cloud",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-github.com-gookit-color-v1.5.4"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cloud",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cloud",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-github.com-hashicorp-consul-api-v1.25.1"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cloud",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cloud",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-github.com-hashicorp-go-cleanhttp-v0.5.2"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cloud",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cloud",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-github.com-hashicorp-go-hclog-v1.5.0"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cloud",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cloud",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-github.com-hashicorp-go-immutable-radix-v1.3.1"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cloud",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cloud",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-github.com-hashicorp-go-rootcerts-v1.0.2"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cloud",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cloud",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-github.com-hashicorp-golang-lru-v0.5.4"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cloud",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cloud",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-github.com-hashicorp-hcl-v1.0.0"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cloud",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cloud",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-github.com-hashicorp-serf-v0.10.1"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cloud",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cloud",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-github.com-ianlancetaylor-demangle-v0.0.0-20181102032728-5e5cf60278f6"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cloud",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cloud",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-github.com-inconshreveable-mousetrap-v1.1.0"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cloud",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cloud",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-github.com-json-iterator-go-v1.1.12"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cloud",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cloud",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-github.com-jstemmer-go-junit-report-v0.9.1"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cloud",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cloud",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-github.com-karrick-godirwalk-v1.10.12"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cloud",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cloud",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-github.com-kisielk-errcheck-v1.5.0"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cloud",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cloud",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-github.com-kisielk-gotool-v1.0.0"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cloud",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cloud",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-github.com-klauspost-compress-v1.17.0"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cloud",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cloud",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-github.com-klauspost-cpuid-v2-v2.2.3"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cloud",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cloud",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-github.com-kr-fs-v0.1.0"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cloud",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cloud",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-github.com-kr-pretty-v0.3.1"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cloud",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cloud",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-github.com-kr-pty-v1.1.1"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cloud",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cloud",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-github.com-kr-text-v0.2.0"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cloud",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cloud",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-github.com-liamg-clinch-v1.6.6"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cloud",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cloud",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-github.com-liamg-tml-v0.3.0"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cloud",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cloud",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-github.com-lithammer-fuzzysearch-v1.1.8"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cloud",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cloud",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-github.com-lufia-plan9stats-v0.0.0-20211012122336-39d0f177ccd0"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cloud",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cloud",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-github.com-magiconair-properties-v1.8.7"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cloud",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cloud",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-github.com-mattn-go-colorable-v0.1.13"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cloud",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cloud",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-github.com-mattn-go-isatty-v0.0.20"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cloud",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cloud",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-github.com-mattn-go-runewidth-v0.0.15"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cloud",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cloud",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-github.com-minio-blake2b-simd-v0.0.0-20160723061019-3f5f724cb5b1"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cloud",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cloud",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-github.com-mitchellh-go-homedir-v1.1.0"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cloud",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cloud",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-github.com-mitchellh-mapstructure-v1.5.0"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cloud",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cloud",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-github.com-moby-term-v0.5.0"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cloud",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cloud",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-github.com-modern-go-concurrent-v0.0.0-20180306012644-bacd9c7ef1dd"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cloud",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cloud",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-github.com-modern-go-reflect2-v1.0.2"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cloud",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cloud",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-github.com-morikuni-aec-v1.0.0"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cloud",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cloud",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-github.com-nats-io-nats.go-v1.31.0"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cloud",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cloud",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-github.com-nats-io-nkeys-v0.4.6"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cloud",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cloud",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-github.com-nats-io-nuid-v1.0.1"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cloud",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cloud",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-github.com-opencontainers-go-digest-v1.0.0"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cloud",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cloud",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-github.com-opencontainers-image-spec-v1.0.2"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cloud",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cloud",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-github.com-otiai10-copy-v1.14.0"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cloud",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cloud",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-github.com-otiai10-mint-v1.5.1"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cloud",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cloud",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-github.com-pelletier-go-toml-v2-v2.1.0"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cloud",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cloud",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-github.com-pkg-diff-v0.0.0-20210226163009-20ebb0f2a09e"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cloud",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cloud",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-github.com-pkg-errors-v0.9.1"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cloud",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cloud",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-github.com-pkg-profile-v1.3.0"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cloud",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cloud",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-github.com-pkg-sftp-v1.13.6"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cloud",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cloud",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-github.com-pkg-term-v0.0.0-20190109203006-aa71e9d9e942"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cloud",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cloud",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-github.com-pmezard-go-difflib-v1.0.1-0.20181226105442-5d4384ee4fb2"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cloud",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cloud",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-github.com-power-devops-perfstat-v0.0.0-20210106213030-5aafc221ea8c"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cloud",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cloud",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-github.com-prometheus-client_model-v0.0.0-20190812154241-14fe0d1b01d4"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cloud",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cloud",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-github.com-pterm-pterm-v0.12.79"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cloud",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cloud",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-github.com-reviewdog-go-bitbucket-v0.0.0-20201024094602-708c3f6a7de0"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cloud",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cloud",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-github.com-rivo-uniseg-v0.4.4"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cloud",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cloud",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-github.com-rogpeppe-go-internal-v1.9.0"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cloud",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cloud",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-github.com-rs-zerolog-v1.30.0"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cloud",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cloud",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-github.com-russross-blackfriday-v2-v2.1.0"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cloud",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cloud",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-github.com-sagikazarmark-crypt-v0.17.0"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cloud",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cloud",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-github.com-sagikazarmark-locafero-v0.4.0"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cloud",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cloud",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-github.com-sagikazarmark-slog-shim-v0.1.0"
     },
     {
-      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2024-cloud",
+      "spdxElementId": "SPDXRef-github.com-JetBrains-qodana-cli-v2025-cloud",
       "relationshipType": "DEPENDS_ON",
       "relatedSpdxElement": "SPDXRef-github.com-sergi-go-diff-v1.2.0"
     },

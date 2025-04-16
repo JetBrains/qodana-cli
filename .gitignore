@@ -98,8 +98,10 @@ fabric.properties
 # Editor-based Rest Client
 .idea/httpRequests
 
-# Ignores the whole .idea folder and all .iml files
-.idea/
+# Ignores the whole .idea besides codeStyles
+!idea/
+.idea/*
+!.idea/codeStyles/
 
 # Android studio 3.1+ serialized cache file
 .idea/caches/build_file_checksums.ser
@@ -135,3 +137,4 @@ Temporary Items
 
 # End of https://www.toptal.com/developers/gitignore/api/macos,goland,go
 dist/
+.vscode/

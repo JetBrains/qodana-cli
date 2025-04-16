@@ -1,6 +1,6 @@
-module github.com/JetBrains/qodana-cli/v2024/core
+module github.com/JetBrains/qodana-cli/v2025/core
 
-go 1.22.8
+go 1.24.0
 
 require (
 	github.com/cucumber/ci-environment/go v0.0.0-20230911180507-bd001ebc644c
@@ -15,17 +15,17 @@ require (
 )
 
 replace (
-	github.com/JetBrains/qodana-cli/v2024/cloud => ../cloud
-	github.com/JetBrains/qodana-cli/v2024/cmd => ../cmd
-	github.com/JetBrains/qodana-cli/v2024/core => ../core
-	github.com/JetBrains/qodana-cli/v2024/platform => ../platform
-	github.com/JetBrains/qodana-cli/v2024/sarif => ../sarif
-	github.com/JetBrains/qodana-cli/v2024/tooling => ../tooling
+	github.com/JetBrains/qodana-cli/v2025/cloud => ../cloud
+	github.com/JetBrains/qodana-cli/v2025/cmd => ../cmd
+	github.com/JetBrains/qodana-cli/v2025/core => ../core
+	github.com/JetBrains/qodana-cli/v2025/platform => ../platform
+	github.com/JetBrains/qodana-cli/v2025/sarif => ../sarif
+	github.com/JetBrains/qodana-cli/v2025/tooling => ../tooling
 )
 
 require (
-	github.com/JetBrains/qodana-cli/v2024/cloud v0.0.0-00010101000000-000000000000
-	github.com/JetBrains/qodana-cli/v2024/platform v0.0.0-00010101000000-000000000000
+	github.com/JetBrains/qodana-cli/v2025/cloud v0.0.0-00010101000000-000000000000
+	github.com/JetBrains/qodana-cli/v2025/platform v0.0.0-00010101000000-000000000000
 )
 
 require (
@@ -34,8 +34,8 @@ require (
 	atomicgo.dev/keyboard v0.2.9 // indirect
 	atomicgo.dev/schedule v0.1.0 // indirect
 	github.com/Azure/go-ansiterm v0.0.0-20210617225240-d185dfc1b5a1 // indirect
-	github.com/JetBrains/qodana-cli/v2024/sarif v0.0.0-00010101000000-000000000000 // indirect
-	github.com/JetBrains/qodana-cli/v2024/tooling v0.0.0-00010101000000-000000000000 // indirect
+	github.com/JetBrains/qodana-cli/v2025/sarif v0.0.0-00010101000000-000000000000 // indirect
+	github.com/JetBrains/qodana-cli/v2025/tooling v0.0.0-00010101000000-000000000000 // indirect
 	github.com/Microsoft/go-winio v0.6.1 // indirect
 	github.com/containerd/console v1.0.3 // indirect
 	github.com/containerd/log v0.1.0 // indirect
@@ -45,7 +45,7 @@ require (
 	github.com/docker/docker-credential-helpers v0.8.0 // indirect
 	github.com/docker/go-units v0.5.0 // indirect
 	github.com/felixge/httpsnoop v1.0.4 // indirect
-	github.com/go-enry/go-enry/v2 v2.9.1 // indirect
+	github.com/go-enry/go-enry/v2 v2.9.2 // indirect
 	github.com/go-enry/go-oniguruma v1.2.1 // indirect
 	github.com/go-logr/logr v1.4.2 // indirect
 	github.com/go-logr/stdr v1.2.2 // indirect
@@ -74,7 +74,7 @@ require (
 	github.com/rivo/uniseg v0.4.4 // indirect
 	github.com/shoenig/go-m1cpu v0.1.6 // indirect
 	github.com/spf13/cobra v1.8.1 // indirect
-	github.com/spf13/pflag v1.0.5 // indirect
+	github.com/spf13/pflag v1.0.6 // indirect
 	github.com/tklauser/go-sysconf v0.3.12 // indirect
 	github.com/tklauser/numcpus v0.6.1 // indirect
 	github.com/xo/terminfo v0.0.0-20220910002029-abceb7e1c41e // indirect

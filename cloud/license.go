@@ -20,6 +20,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/JetBrains/qodana-cli/v2025/platform/qdenv"
 	log "github.com/sirupsen/logrus"
 	"io"
 	"net/http"
@@ -56,10 +57,8 @@ const (
 
 	qodanaLicenseRequestCooldown = 60
 
-	qodanaLicenseUri       = "/linters/license-key"
-	QodanaToken            = "QODANA_TOKEN"
-	QodanaLicenseOnlyToken = "QODANA_LICENSE_ONLY_TOKEN"
-	CommunityLicensePlan   = "COMMUNITY"
+	qodanaLicenseUri     = "/linters/license-key"
+	CommunityLicensePlan = "COMMUNITY"
 )
 
 var TokenDeclinedError = errors.New("token was declined by Qodana Cloud server")
@@ -205,16 +204,16 @@ func GetEnvWithDefaultInt(env string, defaultValue int) int {
 	return result
 }
 
-func SetupLicenseToken(token string) {
-	licenseOnlyToken := os.Getenv(QodanaLicenseOnlyToken)
-	if token == "" && licenseOnlyToken != "" {
+func SetupLicenseToken(cloudUploadToken string) {
+	licenseOnlyToken := os.Getenv(qdenv.QodanaLicenseOnlyToken)
+	if cloudUploadToken == "" && licenseOnlyToken != "" {
 		Token = LicenseToken{
 			Token:       licenseOnlyToken,
 			LicenseOnly: true,
 		}
 	} else {
 		Token = LicenseToken{
-			Token:       token,
+			Token:       cloudUploadToken,
 			LicenseOnly: false,
 		}
 	}
@@ -226,7 +225,7 @@ func (endpoints *QdApiEndpoints) GetLicenseData(token string) LicenseData {
 		log.Fatalf("License request: %v\n%s", err, DeclinedTokenErrorMessage)
 	}
 	if err != nil {
-		errMessage := fmt.Sprintf(GeneralLicenseErrorMessage, endpoints.RootEndpoint.GetCloudUrl())
+		errMessage := fmt.Sprintf(GeneralLicenseErrorMessage, endpoints.RootEndpoint.Url)
 		log.Fatalf("License request: %v\n%s", err, errMessage)
 	}
 	return DeserializeLicenseData(licenseDataResponse)

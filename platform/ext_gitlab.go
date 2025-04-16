@@ -19,7 +19,7 @@ package platform
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/JetBrains/qodana-cli/v2024/sarif"
+	"github.com/JetBrains/qodana-cli/v2025/sarif"
 	log "github.com/sirupsen/logrus"
 	"os"
 	"path/filepath"
@@ -91,7 +91,7 @@ func extractLocationProperties(r *sarif.Result) *LocationProperties {
 	}
 }
 
-// sarifResultToCodeClimate converts a SARIF result to a Code Climate issue.
+// sarifResultToCodeClimate converts a SARIF result to a code Climate issue.
 func sarifResultToCodeClimate(r *sarif.Result) CCIssue {
 	loc := Location{
 		Path: "",

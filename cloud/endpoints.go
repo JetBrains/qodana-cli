@@ -20,6 +20,7 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
+	"github.com/JetBrains/qodana-cli/v2025/platform/qdenv"
 	log "github.com/sirupsen/logrus"
 	"io"
 	"net/http"
@@ -29,19 +30,15 @@ import (
 )
 
 const (
-	QodanaEndpointEnv             = "QODANA_ENDPOINT"
-	QodanaCloudRequestCooldownEnv = "QODANA_CLOUD_REQUEST_COOLDOWN"
-	QodanaCloudRequestTimeoutEnv  = "QODANA_CLOUD_REQUEST_TIMEOUT"
-	QodanaCloudRequestRetriesEnv  = "QODANA_CLOUD_REQUEST_RETRIES"
-
-	DefaultEndpoint            = "qodana.cloud"
+	DefaultEndpoint            = "https://qodana.cloud"
 	defaultNumberOfRetries     = 3
 	defaultCooldownTimeSeconds = 30
 	defaultRequestTimeout      = 30
 )
 
+// QdRootEndpoint contains scheme, hostname and port
 type QdRootEndpoint struct {
-	Host string
+	Url string
 }
 
 type QdApiEndpoints struct {
@@ -75,7 +72,7 @@ func GetCloudRootEndpoint() *QdRootEndpoint {
 	if endpoint != nil {
 		return endpoint
 	}
-	userUrl := GetEnvWithDefault(QodanaEndpointEnv, DefaultEndpoint)
+	userUrl := GetEnvWithDefault(qdenv.QodanaEndpointEnv, DefaultEndpoint)
 	host, err := parseRawURL(userUrl)
 	if err != nil {
 		log.Fatal(err)
@@ -91,10 +88,10 @@ func parseRawURL(rawUrl string) (host string, err error) {
 		if repErr != nil {
 			return "", err
 		}
-		return parsedUrl.Host, nil
+		return fmt.Sprintf("%s://%s", parsedUrl.Scheme, parsedUrl.Host), nil
 	}
 
-	return parsedUrl.Host, nil
+	return fmt.Sprintf("%s://%s", parsedUrl.Scheme, parsedUrl.Host), nil
 }
 
 func (endpoints *QdApiEndpoints) NewCloudApiClient(token string) *QdClient {
@@ -108,7 +105,7 @@ func (endpoints *QdApiEndpoints) NewCloudApiClient(token string) *QdClient {
 }
 
 func getRequestTimeout() time.Duration {
-	return time.Duration(GetEnvWithDefaultInt(QodanaCloudRequestTimeoutEnv, defaultRequestTimeout)) * time.Second
+	return time.Duration(GetEnvWithDefaultInt(qdenv.QodanaCloudRequestTimeoutEnv, defaultRequestTimeout)) * time.Second
 }
 
 func (endpoints *QdApiEndpoints) NewLintersApiClient(token string) *QdClient {
@@ -145,8 +142,8 @@ func NewCloudRequest(path string) QdCloudRequest {
 		Path:             path,
 		Method:           "GET",
 		AcceptedStatuses: []int{http.StatusUnauthorized, http.StatusNotFound},
-		Retries:          GetEnvWithDefaultInt(QodanaCloudRequestRetriesEnv, defaultNumberOfRetries),
-		Cooldown:         GetEnvWithDefaultInt(QodanaCloudRequestCooldownEnv, defaultCooldownTimeSeconds),
+		Retries:          GetEnvWithDefaultInt(qdenv.QodanaCloudRequestRetriesEnv, defaultNumberOfRetries),
+		Cooldown:         GetEnvWithDefaultInt(qdenv.QodanaCloudRequestCooldownEnv, defaultCooldownTimeSeconds),
 	}
 }
 

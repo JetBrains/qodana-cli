@@ -1,13 +1,13 @@
-module github.com/JetBrains/qodana-cli/v2024/cdnet
+module github.com/JetBrains/qodana-cli/v2025/cdnet
 
-go 1.22.8
+go 1.24.0
 
 replace (
-	github.com/JetBrains/qodana-cli/v2024/cmd => ../cmd
-	github.com/JetBrains/qodana-cli/v2024/core => ../core
-	github.com/JetBrains/qodana-cli/v2024/platform => ../platform
-	github.com/JetBrains/qodana-cli/v2024/sarif => ../sarif
-	github.com/JetBrains/qodana-cli/v2024/tooling => ../tooling
+	github.com/JetBrains/qodana-cli/v2025/cmd => ../cmd
+	github.com/JetBrains/qodana-cli/v2025/core => ../core
+	github.com/JetBrains/qodana-cli/v2025/platform => ../platform
+	github.com/JetBrains/qodana-cli/v2025/sarif => ../sarif
+	github.com/JetBrains/qodana-cli/v2025/tooling => ../tooling
 )
 
 require (

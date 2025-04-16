@@ -21,7 +21,10 @@ import (
 	"archive/zip"
 	"compress/gzip"
 	"fmt"
-	"github.com/JetBrains/qodana-cli/v2024/tooling"
+	"github.com/JetBrains/qodana-cli/v2025/platform/product"
+	"github.com/JetBrains/qodana-cli/v2025/platform/thirdpartyscan"
+	"github.com/JetBrains/qodana-cli/v2025/platform/utils"
+	"github.com/JetBrains/qodana-cli/v2025/tooling"
 	"io"
 	"log"
 	"os"
@@ -36,35 +39,41 @@ const (
 	baselineCli  = "baseline-cli.jar"
 )
 
-// temporary folder for mounting helper tools in community mode
-var tempMountPath string
+// Mount a third-party linter.
+func extractUtils(linter ThirdPartyLinter, cacheDir string) thirdpartyscan.MountInfo {
+	mountPath := getToolsMountPath(cacheDir)
 
-// extractUtils mounts the helper tools to the temporary folder.
-func extractUtils(options *QodanaOptions) {
-	path, err := getTempDir()
+	javaPath, err := utils.GetJavaExecutablePath()
+	if err != nil {
+		log.Fatal("failed to get java executable path", err)
+	}
+
+	customTools, err := linter.MountTools(mountPath)
 	if err != nil {
 		log.Fatal(err)
 	}
-	linterOptions := options.GetLinterSpecificOptions()
-	if linterOptions == nil {
-		log.Fatal("Linter options are not defined for 3rd party linter")
-	}
-	tempMountPath = path
-	permanentMountPath := getToolsMountPath(options)
 
-	mountInfo := (*linterOptions).GetMountInfo()
-	mountInfo.Converter = ProcessAuxiliaryTool(converterJar, "converter", permanentMountPath, tooling.Converter)
-	mountInfo.Fuser = ProcessAuxiliaryTool(fuserJar, "FUS", permanentMountPath, tooling.Fuser)
-	mountInfo.BaselineCli = ProcessAuxiliaryTool(baselineCli, "baseline-cli", permanentMountPath, tooling.BaselineCli)
-	mountInfo.CustomTools, err = (*linterOptions).MountTools(tempMountPath, permanentMountPath, options)
-	if err != nil {
-		cleanupUtils()
-		log.Fatal(err)
+	converter := ProcessAuxiliaryTool(converterJar, "converter", mountPath, tooling.Converter)
+	fuser := ProcessAuxiliaryTool(fuserJar, "FUS", mountPath, tooling.Fuser)
+	baselineCliJar := ProcessAuxiliaryTool(
+		baselineCli,
+		"baseline-cli",
+		mountPath,
+		tooling.BaselineCli,
+	)
+
+	mountInfo := thirdpartyscan.MountInfo{
+		Converter:   converter,
+		Fuser:       fuser,
+		BaselineCli: baselineCliJar,
+		CustomTools: customTools,
+		JavaPath:    javaPath,
 	}
+	return mountInfo
 }
 
-func getToolsMountPath(options *QodanaOptions) string {
-	mountPath := filepath.Join(options.GetCacheDir(), shortVersion)
+func getToolsMountPath(cacheDir string) string {
+	mountPath := filepath.Join(cacheDir, product.ShortVersion)
 	if _, err := os.Stat(mountPath); err != nil {
 		if os.IsNotExist(err) {
 			err = os.MkdirAll(mountPath, 0755)
@@ -76,38 +85,17 @@ func getToolsMountPath(options *QodanaOptions) string {
 	return mountPath
 }
 
-// cleanupUtils removes the temporary folder with extracted helper tools.
-func cleanupUtils() {
-	if _, err := os.Stat(tempMountPath); err != nil {
-		if os.IsNotExist(err) {
-			return
-		}
-	}
-
-	if err := os.RemoveAll(tempMountPath); err != nil {
-		log.Fatal("Failed to remove temporary folder")
-	}
-}
-
 func ProcessAuxiliaryTool(toolName, moniker, mountPath string, bytes []byte) string {
 	toolPath := filepath.Join(mountPath, toolName)
 	if _, err := os.Stat(toolPath); err != nil {
 		if os.IsNotExist(err) {
-			if err := os.WriteFile(toolPath, bytes, 0644); err != nil { // change the second parameter depending on which tool you have to process
-				cleanupUtils()
+			err := os.WriteFile(toolPath, bytes, 0644)
+			if err != nil { // change the second parameter depending on which tool you have to process
 				log.Fatalf("Failed to write %s : %s", moniker, err)
 			}
 		}
 	}
 	return toolPath
-}
-
-func getTempDir() (string, error) {
-	tmpDir, err := os.MkdirTemp("", "qodana-platform")
-	if err != nil {
-		return "", err
-	}
-	return tmpDir, nil
 }
 
 func Decompress(archivePath string, destPath string) error {

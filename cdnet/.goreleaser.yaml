@@ -1,3 +1,4 @@
+version: 2
 project_name: qodana-cdnet
 builds:
   - env:
@@ -18,8 +19,8 @@ builds:
         - sh -c "set -e; if [ '{{ .Env.SIGN }}' = 'true' -a '{{ .Os }}' = 'darwin' -a '{{ .Arch }}' = 'amd64' ]; then codesign -denoted-content-type=application/x-mac-app-bin -signed-files-dir ./dist/{{ .ProjectName }}_{{ .Os }}_{{ .Arch }}_v1/ './dist/{{ .ProjectName }}_{{ .Os }}_{{ .Arch }}_v1/qodana-cdnet' ; fi"
         - sh -c "set -e; if [ '{{ .Env.SIGN }}' = 'true' -a '{{ .Os }}' = 'darwin' -a '{{ .Arch }}' = 'arm64' ]; then codesign -denoted-content-type=application/x-mac-app-bin -signed-files-dir ./dist/{{ .ProjectName }}_{{ .Os }}_{{ .Arch }}_v8.0/ './dist/{{ .ProjectName }}_{{ .Os }}_{{ .Arch }}/qodana-cdnet' ; fi"
 snapshot:
-  name_template: "{{ incpatch .Version }}-next"
+  version_template: "{{ incpatch .Version }}-next"
 archives:
   -
-    format: binary
+    formats: [ 'binary' ]
     name_template: "{{ .Binary }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}"

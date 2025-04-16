@@ -17,7 +17,8 @@
 package cmd
 
 import (
-	"github.com/JetBrains/qodana-cli/v2024/platform"
+	"github.com/JetBrains/qodana-cli/v2025/platform"
+	"github.com/JetBrains/qodana-cli/v2025/platform/commoncontext"
 	"github.com/spf13/cobra"
 )
 
@@ -38,6 +39,6 @@ func newViewCommand() *cobra.Command {
 		},
 	}
 	flags := cmd.Flags()
-	flags.StringVarP(&options.SarifFile, "sarif-file", "f", platform.QodanaSarifName, "Path to the SARIF file")
+	flags.StringVarP(&options.SarifFile, "sarif-file", "f", commoncontext.QodanaSarifName, "Path to the SARIF file")
 	return cmd
 }

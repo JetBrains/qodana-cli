@@ -17,6 +17,8 @@
 package platform
 
 import (
+	"github.com/JetBrains/qodana-cli/v2025/platform/qdenv"
+	"github.com/JetBrains/qodana-cli/v2025/platform/utils"
 	"os"
 	"path/filepath"
 	"reflect"
@@ -45,31 +47,29 @@ func TestFetchPublisher(t *testing.T) {
 
 func TestGetPublisherArgs(t *testing.T) {
 	// Set up test options
-	opts := &QodanaOptions{
+	publisher := Publisher{
+		ResultsDir: filepath.FromSlash("/path/to/results"),
+		LogDir:     "",
 		AnalysisId: "test-analysis-id",
-		ProjectDir: "/path/to/project",
-		ResultsDir: "/path/to/results",
-		ReportDir:  "/path/to/report",
 	}
 
 	// Set up test environment variables
-	err := os.Setenv(QodanaToolEnv, "test-tool")
+	err := os.Setenv(qdenv.QodanaToolEnv, "test-tool")
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	java, _ := getJavaExecutablePath()
+	java, _ := utils.GetJavaExecutablePath()
 	// Call the function being tested
-	publisherArgs := getPublisherArgs(java, "test-publisher.jar", opts, "test-token", "test-endpoint")
+	publisherArgs := getPublisherArgs(java, "test-publisher.jar", publisher, "test-token", "test-endpoint")
 
 	// Assert that the expected arguments are present
 	expectedArgs := []string{
-		java,
+		utils.QuoteForWindows(java),
 		"-jar",
 		"test-publisher.jar",
 		"--analysis-id", "test-analysis-id",
-		"--sources-path", "/path/to/project",
-		"--report-path", filepath.FromSlash("/path/to/report/results"),
+		"--report-path", filepath.FromSlash("/path/to/results"),
 		"--token", "test-token",
 		"--tool", "test-tool",
 		"--endpoint", "test-endpoint",

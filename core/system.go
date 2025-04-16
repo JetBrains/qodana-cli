@@ -21,9 +21,19 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/JetBrains/qodana-cli/v2024/platform"
+	"github.com/JetBrains/qodana-cli/v2025/core/corescan"
+	"github.com/JetBrains/qodana-cli/v2025/platform"
+	"github.com/JetBrains/qodana-cli/v2025/platform/effectiveconfig"
+	"github.com/JetBrains/qodana-cli/v2025/platform/git"
+	"github.com/JetBrains/qodana-cli/v2025/platform/msg"
+	"github.com/JetBrains/qodana-cli/v2025/platform/nuget"
+	"github.com/JetBrains/qodana-cli/v2025/platform/qdenv"
+	"github.com/JetBrains/qodana-cli/v2025/platform/qdyaml"
+	"github.com/JetBrains/qodana-cli/v2025/platform/utils"
 	cienvironment "github.com/cucumber/ci-environment/go"
 	"github.com/docker/docker/client"
+	"github.com/pterm/pterm"
+	log "github.com/sirupsen/logrus"
 	"io"
 	"net/http"
 	"os"
@@ -31,30 +41,28 @@ import (
 	"path/filepath"
 	"runtime"
 	"strings"
-
-	"github.com/pterm/pterm"
-
-	log "github.com/sirupsen/logrus"
 )
 
 var (
 	// DisableCheckUpdates flag to disable checking for updates
 	DisableCheckUpdates = false
 
-	scanStages []string
 	releaseUrl = "https://api.github.com/repos/JetBrains/qodana-cli/releases/latest"
 )
 
 // CheckForUpdates check GitHub https://github.com/JetBrains/qodana-cli/ for the latest version of CLI release.
 func CheckForUpdates(currentVersion string) {
-	if currentVersion == "dev" || strings.HasSuffix(currentVersion, "nightly") || platform.IsContainer() || cienvironment.DetectCIEnvironment() != nil || DisableCheckUpdates {
+	if currentVersion == "dev" || strings.HasSuffix(
+		currentVersion,
+		"nightly",
+	) || qdenv.IsContainer() || cienvironment.DetectCIEnvironment() != nil || DisableCheckUpdates {
 		return
 	}
 	latestVersion := getLatestVersion()
 	if latestVersion != "" && latestVersion != currentVersion {
-		platform.WarningMessage(
+		msg.WarningMessage(
 			"New version of %s CLI is available: %s. See https://jb.gg/qodana-cli/update\n",
-			platform.PrimaryBold("qodana"),
+			msg.PrimaryBold("qodana"),
 			latestVersion,
 		)
 		DisableCheckUpdates = true
@@ -105,64 +113,6 @@ func OpenDir(path string) error {
 	return exec.Command(cmd, args...).Start()
 }
 
-// prepareHost gets the current user, creates the necessary folders for the analysis.
-func prepareHost(opts *QodanaOptions) {
-	if opts.ClearCache {
-		err := os.RemoveAll(opts.CacheDir)
-		if err != nil {
-			log.Errorf("Could not clear local Qodana cache: %s", err)
-		}
-	}
-	platform.WarnIfPrivateFeedDetected(opts.Linter, opts.ProjectDir)
-	if platform.IsNugetConfigNeeded() {
-		platform.PrepareNugetConfig(os.Getenv("HOME"))
-	}
-	if err := os.MkdirAll(opts.CacheDir, os.ModePerm); err != nil {
-		log.Fatal("couldn't create a directory ", err.Error())
-	}
-	if err := os.MkdirAll(opts.ResultsDir, os.ModePerm); err != nil {
-		log.Fatal("couldn't create a directory ", err.Error())
-	}
-	if opts.Linter != "" {
-		PrepareContainerEnvSettings()
-	}
-	if opts.Ide != "" {
-		if platform.Contains(platform.AllNativeCodes, strings.TrimSuffix(opts.Ide, EapSuffix)) {
-			platform.PrintProcess(func(spinner *pterm.SpinnerPrinter) {
-				if spinner != nil {
-					spinner.ShowTimer = false // We will update interactive spinner
-				}
-				opts.Ide = downloadAndInstallIDE(opts, opts.GetQodanaSystemDir(), spinner)
-				fixWindowsPlugins(opts.Ide)
-			}, fmt.Sprintf("Downloading %s", opts.Ide), fmt.Sprintf("downloading IDE distribution to %s", opts.GetQodanaSystemDir()))
-		} else {
-			val, exists := os.LookupEnv(platform.QodanaDistEnv)
-			if !exists || val == "" {
-				log.Fatalf("Product code %s is not supported. ", opts.Ide)
-			} else if opts.Ide != val {
-				log.Fatalf("--ide argument '%s' doesn't match env variable %s value '%s'", opts.Ide, platform.QodanaDistEnv, val)
-			}
-		}
-		prepareLocalIdeSettings(opts)
-	}
-	if opts.RequiresToken(Prod.IsCommunity() || Prod.EAP) {
-		opts.ValidateToken(false)
-	}
-}
-
-// fixWindowsPlugins quick-fix for Windows 241 distributions
-func fixWindowsPlugins(ideDir string) {
-	if runtime.GOOS == "windows" && strings.Contains(ideDir, "241") {
-		pluginsClasspath := filepath.Join(ideDir, "plugins", "plugin-classpath.txt")
-		if _, err := os.Stat(pluginsClasspath); err == nil {
-			err = os.Remove(pluginsClasspath)
-			if err != nil {
-				log.Warnf("Failed to remove plugin-classpath.txt: %v", err)
-			}
-		}
-	}
-}
-
 // IsHomeDirectory returns true if the given path is the user's home directory.
 func IsHomeDirectory(path string) bool {
 	absPath, err := filepath.Abs(path)
@@ -177,97 +127,96 @@ func IsHomeDirectory(path string) bool {
 }
 
 // RunAnalysis runs the linter with the given options.
-func RunAnalysis(ctx context.Context, options *QodanaOptions) int {
+func RunAnalysis(ctx context.Context, c corescan.Context) int {
 	log.Debug("Running analysis with options")
-	options.LogOptions()
-	prepareHost(options)
+	platform.LogContext(&c)
 
-	if !isInstalled("git") && (options.FullHistory || options.Commit != "" || options.DiffStart != "" || options.DiffEnd != "") {
+	if !utils.IsInstalled("git") && (c.FullHistory() || c.Commit() != "" || c.DiffStart() != "" || c.DiffEnd() != "") {
 		log.Fatal("Cannot use git related functionality without a git executable")
 	}
 
-	if strings.HasPrefix(options.Commit, "CI") {
-		options.Commit = strings.TrimPrefix(options.Commit, "CI")
-	}
-	startHash, err := options.StartHash()
+	startHash, err := c.StartHash()
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	scenario := options.determineRunScenario(startHash != "")
-	if scenario != runScenarioDefault && !platform.GitRevisionExists(options.ProjectDir, startHash, options.LogDirPath()) {
-		platform.WarningMessageCI("Cannot run analysis for commit %s because it doesn't exist in the repository. Check that you retrieve the full git history before running Qodana.", startHash)
-		scenario = runScenarioDefault
-		options.ResetScanScenarioOptions()
+	scenario := c.DetermineRunScenario(startHash != "")
+	if scenario != corescan.RunScenarioDefault && !git.RevisionExists(c.ProjectDir(), startHash, c.LogDir()) {
+		msg.WarningMessageCI(
+			"Cannot run analysis for commit %s because it doesn't exist in the repository. Check that you retrieve the full git history before running Qodana.",
+			startHash,
+		)
+		scenario = corescan.RunScenarioDefault
+
+		// backoff to regular analysis
+		c = c.BackoffToDefaultAnalysisBecauseOfMissingCommit()
 	}
 
-	installPlugins(options, options.QdConfig.Plugins)
+	installPlugins(c)
 	// this way of running needs to do bootstrap twice on different commits and will do it internally
-	if scenario != runScenarioScoped && options.Ide != "" {
-		platform.Bootstrap(options.QdConfig.Bootstrap, options.ProjectDir)
+	if scenario != corescan.RunScenarioScoped && c.Ide() != "" {
+		utils.Bootstrap(c.QodanaYamlConfig().Bootstrap, c.ProjectDir())
 	}
 	switch scenario {
-	case runScenarioFullHistory:
-		return runWithFullHistory(ctx, options, startHash)
-	case runScenarioLocalChanges:
-		return runLocalChanges(ctx, options, startHash)
-	case runScenarioScoped:
-		return runScopeScript(ctx, options, startHash)
-	case runScenarioDefault:
-		return runQodana(ctx, options)
+	case corescan.RunScenarioFullHistory:
+		return runWithFullHistory(ctx, c, startHash)
+	case corescan.RunScenarioLocalChanges:
+		return runLocalChanges(ctx, c, startHash)
+	case corescan.RunScenarioScoped:
+		return runScopeScript(ctx, c, startHash)
+	case corescan.RunScenarioDefault:
+		return runQodana(ctx, c)
 	default:
 		log.Fatalf("Unknown run scenario %s", scenario)
 		panic("Unreachable")
 	}
 }
 
-func runLocalChanges(ctx context.Context, options *QodanaOptions, startHash string) int {
+func runLocalChanges(ctx context.Context, c corescan.Context, startHash string) int {
 	var exitCode int
 	gitReset := false
-	r, err := platform.GitCurrentRevision(options.ProjectDir, options.LogDirPath())
+	r, err := git.CurrentRevision(c.ProjectDir(), c.LogDir())
 	if err != nil {
 		log.Fatal(err)
 	}
-	if options.DiffEnd != "" && options.DiffEnd != r {
-		platform.WarningMessage("Cannot run local-changes because --diff-end is %s and HEAD is %s", options.DiffEnd, r)
+	if c.DiffEnd() != "" && c.DiffEnd() != r {
+		msg.WarningMessage("Cannot run local-changes because --diff-end is %s and HEAD is %s", c.DiffEnd(), r)
 	} else {
-		err := platform.GitReset(options.ProjectDir, startHash, options.LogDirPath())
+		err := git.Reset(c.ProjectDir(), startHash, c.LogDir())
 		if err != nil {
-			platform.WarningMessage("Could not reset git repository, no --commit option will be applied: %s", err)
+			msg.WarningMessage("Could not reset git repository, no --commit option will be applied: %s", err)
 		} else {
-			options.Script = "local-changes"
+			c = c.ForcedLocalChanges()
 			gitReset = true
 		}
 	}
 
-	exitCode = runQodana(ctx, options)
+	exitCode = runQodana(ctx, c)
 
 	if gitReset {
-		_ = platform.GitResetBack(options.ProjectDir, options.LogDirPath())
+		_ = git.ResetBack(c.ProjectDir(), c.LogDir())
 	}
 	return exitCode
 }
 
-func runWithFullHistory(ctx context.Context, options *QodanaOptions, startHash string) int {
-	remoteUrl, err := platform.GitRemoteUrl(options.ProjectDir, options.LogDirPath())
+func runWithFullHistory(ctx context.Context, c corescan.Context, startHash string) int {
+	remoteUrl, err := git.RemoteUrl(c.ProjectDir(), c.LogDir())
 	if err != nil {
 		log.Fatal(err)
 	}
-	branch, err := platform.GitBranch(options.ProjectDir, options.LogDirPath())
+	branch, err := git.Branch(c.ProjectDir(), c.LogDir())
 	if err != nil {
 		log.Fatal(err)
 	}
 	if remoteUrl == "" && branch == "" {
 		log.Fatal("Please check that project is located within the Git repo")
 	}
-	options.Setenv(platform.QodanaRemoteUrl, remoteUrl)
-	options.Setenv(platform.QodanaBranch, branch)
 
-	err = platform.GitClean(options.ProjectDir, options.LogDirPath())
+	err = git.Clean(c.ProjectDir(), c.LogDir())
 	if err != nil {
 		log.Fatal(err)
 	}
-	revisions := platform.GitRevisions(options.ProjectDir)
+	revisions := git.Revisions(c.ProjectDir())
 	allCommits := len(revisions)
 	counter := 0
 	var exitCode int
@@ -284,33 +233,33 @@ func runWithFullHistory(ctx context.Context, options *QodanaOptions, startHash s
 
 	for _, revision := range revisions {
 		counter++
-		options.Setenv(platform.QodanaRevision, revision)
-		platform.WarningMessage("[%d/%d] Running analysis for revision %s", counter+1, allCommits, revision)
-		err = platform.GitCheckout(options.ProjectDir, revision, true, options.LogDirPath())
+
+		msg.WarningMessage("[%d/%d] Running analysis for revision %s", counter+1, allCommits, revision)
+		err = git.CheckoutAndUpdateSubmodule(c.ProjectDir(), revision, true, c.LogDir())
 		if err != nil {
 			log.Fatal(err)
 		}
-		platform.EmptyMessage()
+		msg.EmptyMessage()
 
-		exitCode = runQodana(ctx, options)
-		options.Unsetenv(platform.QodanaRevision)
+		contextForAnalysis := c.WithVcsEnvForFullHistoryAnalysisIteration(remoteUrl, branch, revision)
+		exitCode = runQodana(ctx, contextForAnalysis)
 	}
-	err = platform.GitCheckout(options.ProjectDir, branch, true, options.LogDirPath())
+	err = git.CheckoutAndUpdateSubmodule(c.ProjectDir(), branch, true, c.LogDir())
 	if err != nil {
 		log.Fatal(err)
 	}
 	return exitCode
 }
 
-func runScopeScript(ctx context.Context, options *QodanaOptions, startHash string) int {
+func runScopeScript(ctx context.Context, c corescan.Context, startHash string) int {
 	// don't run this logic when we're about to launch a container - it's just double work
-	if options.Ide == "" {
-		return runQodana(ctx, options)
+	if c.Ide() == "" {
+		return runQodana(ctx, c)
 	}
 	var err error
-	end := options.DiffEnd
+	end := c.DiffEnd()
 	if end == "" {
-		end, err = platform.GitCurrentRevision(options.ProjectDir, options.LogDirPath())
+		end, err = git.CurrentRevision(c.ProjectDir(), c.LogDir())
 		if err != nil {
 			log.Fatal(err)
 		}
@@ -319,16 +268,16 @@ func runScopeScript(ctx context.Context, options *QodanaOptions, startHash strin
 	if startHash == "" || end == "" {
 		log.Fatal("No commits given. Consider passing --commit or --diff-start and --diff-end (optional) with the range of commits to analyze.")
 	}
-	changedFiles, err := platform.GitChangedFiles(options.ProjectDir, startHash, end, options.LogDirPath())
+	changedFiles, err := git.ComputeChangedFiles(c.ProjectDir(), startHash, end, c.LogDir())
 	if err != nil {
 		log.Fatal(err)
 	}
 	if len(changedFiles.Files) == 0 {
 		log.Warnf("Nothing to compare between %s and %s", startHash, end)
-		return platform.QodanaEmptyChangesetExitCodePlaceholder
+		return utils.QodanaEmptyChangesetExitCodePlaceholder
 	}
 
-	scopeFile, err := writeChangesFile(options, changedFiles)
+	scopeFile, err := writeChangesFile(c, changedFiles)
 	if err != nil {
 		log.Fatal("Failed to prepare diff run ", err)
 	}
@@ -336,36 +285,50 @@ func runScopeScript(ctx context.Context, options *QodanaOptions, startHash strin
 		_ = os.Remove(scopeFile)
 	}()
 
-	fixesStrategy := options.FixesStrategy
-	applyFixes := options.ApplyFixes
-	cleanup := options.Cleanup
-	resultsDir := options.ResultsDir
-	showReport := options.ShowReport
-	saveReportOpt := options.SaveReport
-	props := options.Property
-	baseline := options.Baseline
-
-	runFunc := func(hash string) (bool, int) {
-		e := platform.GitCheckout(options.ProjectDir, hash, true, options.LogDirPath())
+	runFunc := func(hash string, c corescan.Context) (bool, int) {
+		e := git.CheckoutAndUpdateSubmodule(c.ProjectDir(), hash, true, c.LogDir())
 		if e != nil {
 			log.Fatalf("Cannot checkout commit %s: %v", hash, e)
 		}
 
-		prepareDirectories(
-			options.CacheDir,
-			options.LogDirPath(),
-			options.ConfDirPath(),
-		)
 		log.Infof("Analysing %s", hash)
 
-		configAtHash, e := platform.GetQodanaYaml(options.ProjectDir)
-		if e != nil {
-			log.Warnf("Could not read qodana yaml at %s: %v. Using last known config", hash, e)
-			configAtHash = options.QdConfig
+		// for CLI, we use only bootstrap from this effective yaml
+		// all other fields are used from the one (effective aswell) obtained at the start
+		localQodanaYamlFullPath := qdyaml.GetLocalNotEffectiveQodanaYamlFullPath(
+			c.ProjectDir(),
+			c.CustomLocalQodanaYamlPath(),
+		)
+		effectiveConfigDir, cleanup, err := utils.CreateTempDir("qd-effective-config-")
+		if err != nil {
+			log.Fatalf("Failed to create Qodana effective config directory: %v", err)
 		}
-		platform.Bootstrap(configAtHash.Bootstrap, options.ProjectDir)
+		defer cleanup()
 
-		exitCode := runQodana(ctx, options)
+		effectiveConfigFiles, err := effectiveconfig.CreateEffectiveConfigFiles(
+			localQodanaYamlFullPath,
+			c.GlobalConfigurationsDir(),
+			c.GlobalConfigurationId(),
+			c.Prod().JbrJava(),
+			effectiveConfigDir,
+			c.LogDir(),
+		)
+		if err != nil {
+			log.Fatalf("Failed to load Qodana configuration during analysis of commit %s: %v", hash, err)
+		}
+
+		// if local qodana yaml doesn't exist on revision, for bootstrap fallback to the one constructed at the start
+		var bootstrap string
+		if c.LocalQodanaYamlExists() {
+			yaml := qdyaml.LoadQodanaYamlByFullPath(effectiveConfigFiles.EffectiveQodanaYamlPath)
+			bootstrap = yaml.Bootstrap
+		} else {
+			bootstrap = c.QodanaYamlConfig().Bootstrap
+		}
+		utils.Bootstrap(bootstrap, c.ProjectDir())
+
+		contextForAnalysis := c.WithEffectiveConfigurationDirOnRevision(effectiveConfigFiles.ConfigDir)
+		exitCode := runQodana(ctx, contextForAnalysis)
 		if !(exitCode == 0 || exitCode == 255) {
 			log.Errorf("Qodana analysis on %s exited with code %d. Aborting", hash, exitCode)
 			return true, exitCode
@@ -373,61 +336,31 @@ func runScopeScript(ctx context.Context, options *QodanaOptions, startHash strin
 		return false, exitCode
 	}
 
-	options.Script = platform.QuoteForWindows("scoped:" + scopeFile)
-	options.ShowReport = false
-	options.SaveReport = false
-
-	startDir := filepath.Join(resultsDir, "start")
-	options.Property = append(
-		options.Property,
-		"-Dqodana.skip.result=true",               // don't print results
-		"-Dqodana.skip.coverage.computation=true") // don't compute coverage on first pass
-	options.Baseline = ""
-	options.ResultsDir = startDir
-	options.ApplyFixes = false
-	options.Cleanup = false
-	options.FixesStrategy = "none" // this option is deprecated, but the only way to overwrite the possible yaml value
-
-	stop, code := runFunc(startHash)
+	startRunContext := c.FirstStageOfScopedScript(scopeFile)
+	stop, code := runFunc(startHash, startRunContext)
 	if stop {
 		return code
 	}
 
-	startSarif := options.GetSarifPath()
+	startSarif := platform.GetSarifPath(startRunContext.ResultsDir())
 
-	endDir := filepath.Join(resultsDir, "end")
-	options.Property = append(
-		props,
-		"-Dqodana.skip.preamble=true", // don't print the QD logo again
-		"-Didea.headless.enable.statistics=false",                   // disable statistics for second run
-		fmt.Sprintf("-Dqodana.scoped.baseline.path=%s", startSarif), // disable statistics for second run
-		"-Dqodana.skip.coverage.issues.reporting=true",              // don't report coverage issues on the second pass, but allow numbers to be computed
-	)
-	options.Baseline = baseline
-	options.ResultsDir = endDir
-	options.ApplyFixes = applyFixes
-	options.Cleanup = cleanup
-	options.FixesStrategy = fixesStrategy
-
-	stop, code = runFunc(end)
+	endRunContext := c.SecondStageOfScopedScript(scopeFile, startSarif)
+	stop, code = runFunc(end, endRunContext)
 	if stop {
 		return code
 	}
 
-	err = platform.CopyDir(options.ResultsDir, resultsDir)
+	err = utils.CopyDir(endRunContext.ResultsDir(), c.ResultsDir())
 	if err != nil {
 		log.Fatal(err)
 	}
-	options.ResultsDir = resultsDir
-	options.ShowReport = showReport
-	options.SaveReport = saveReportOpt
 
-	saveReport(options)
+	saveReport(c)
 	return code
 }
 
 // writeChangesFile creates a temp file containing the changes between diffStart and diffEnd
-func writeChangesFile(options *QodanaOptions, changedFiles platform.ChangedFiles) (string, error) {
+func writeChangesFile(c corescan.Context, changedFiles git.ChangedFiles) (string, error) {
 	file, err := os.CreateTemp("", "diff-scope.txt")
 	if err != nil {
 		return "", err
@@ -448,7 +381,7 @@ func writeChangesFile(options *QodanaOptions, changedFiles platform.ChangedFiles
 		return "", fmt.Errorf("failed to write scope file: %w", err)
 	}
 
-	err = platform.CopyFile(file.Name(), filepath.Join(options.LogDirPath(), "changes.json"))
+	err = utils.CopyFile(file.Name(), filepath.Join(c.LogDir(), "changes.json"))
 	if err != nil {
 		return "", err
 	}
@@ -456,14 +389,14 @@ func writeChangesFile(options *QodanaOptions, changedFiles platform.ChangedFiles
 	return file.Name(), nil
 }
 
-func runQodana(ctx context.Context, options *QodanaOptions) int {
+func runQodana(ctx context.Context, c corescan.Context) int {
 	var exitCode int
 	var err error
-	if options.Linter != "" {
-		exitCode = runQodanaContainer(ctx, options)
-	} else if options.Ide != "" {
-		platform.UnsetNugetVariables() // TODO: get rid of it from 241 release
-		exitCode, err = runQodanaLocal(options)
+	if c.Linter() != "" {
+		exitCode = runQodanaContainer(ctx, c)
+	} else if c.Ide() != "" {
+		nuget.UnsetNugetVariables() // TODO: get rid of it from 241 release
+		exitCode, err = runQodanaLocal(c)
 		if err != nil {
 			log.Fatal(err)
 		}
@@ -475,7 +408,7 @@ func runQodana(ctx context.Context, options *QodanaOptions) int {
 }
 
 // followLinter follows the linter logs and prints the progress.
-func followLinter(client *client.Client, containerName string, progress *pterm.SpinnerPrinter) {
+func followLinter(client *client.Client, containerName string, progress *pterm.SpinnerPrinter, scanStages []string) {
 	reader, err := client.ContainerLogs(context.Background(), containerName, containerLogsOptions)
 	if err != nil {
 		log.Fatal(err.Error())
@@ -487,7 +420,7 @@ func followLinter(client *client.Client, containerName string, progress *pterm.S
 		}
 	}(reader)
 	scanner := bufio.NewScanner(reader)
-	interactive := platform.IsInteractive()
+	interactive := msg.IsInteractive()
 	for scanner.Scan() {
 		line := scanner.Text()
 		if !interactive && len(line) >= dockerSpecialCharsLength {
@@ -497,21 +430,21 @@ func followLinter(client *client.Client, containerName string, progress *pterm.S
 		line = strings.TrimSuffix(line, "\n")
 		if err == nil || len(line) > 0 {
 			if strings.Contains(line, "Starting up") {
-				platform.UpdateText(progress, scanStages[2])
+				msg.UpdateText(progress, scanStages[2])
 			}
 			if strings.Contains(line, "The Project opening stage completed in") {
-				platform.UpdateText(progress, scanStages[3])
+				msg.UpdateText(progress, scanStages[3])
 			}
 			if strings.Contains(line, "The Project configuration stage completed in") {
-				platform.UpdateText(progress, scanStages[4])
+				msg.UpdateText(progress, scanStages[4])
 			}
 			if strings.Contains(line, "Detailed summary") {
-				platform.UpdateText(progress, scanStages[5])
-				if !platform.IsInteractive() {
-					platform.EmptyMessage()
+				msg.UpdateText(progress, scanStages[5])
+				if !msg.IsInteractive() {
+					msg.EmptyMessage()
 				}
 			}
-			platform.PrintLinterLog(line)
+			msg.PrintLinterLog(line)
 		}
 		if err != nil {
 			if err != io.EOF {
@@ -522,8 +455,8 @@ func followLinter(client *client.Client, containerName string, progress *pterm.S
 	}
 }
 
-func resetScanStages() {
-	scanStages = []string{
+func getScanStages() []string {
+	scanStages := []string{
 		"Preparing Qodana Docker images",
 		"Starting the analysis engine",
 		"Opening the project",
@@ -531,29 +464,43 @@ func resetScanStages() {
 		"Analyzing the project",
 		"Preparing the report",
 	}
+	for i, stage := range scanStages {
+		scanStages[i] = msg.PrimaryBold("[%d/%d] ", i+1, len(scanStages)+1) + msg.Primary(stage)
+	}
+	return scanStages
 }
 
-const (
-	m2    = ".m2"
-	nuget = "nuget"
-)
-
 // saveReport saves web files to expect, and generates json.
-func saveReport(opts *QodanaOptions) {
-	if !(platform.IsContainer() && (opts.SaveReport || opts.ShowReport)) {
+func saveReport(c corescan.Context) {
+	prod := c.Prod()
+	if !(qdenv.IsContainer() && (c.SaveReport() || c.ShowReport())) {
 		return
 	}
 
-	reportConverter := filepath.Join(Prod.IdeBin(), "intellij-report-converter.jar")
+	reportConverter := filepath.Join(prod.IdeBin(), "intellij-report-converter.jar")
 	if _, err := os.Stat(reportConverter); os.IsNotExist(err) {
 		log.Fatal("Not able to save the report: report-converter is missing")
 		return
 	}
 	log.Println("Generating HTML report ...")
-	if res, err := platform.RunCmd("", platform.QuoteForWindows(Prod.JbrJava()), "-jar", platform.QuoteForWindows(reportConverter), "-s", platform.QuoteForWindows(opts.ProjectDir), "-d", platform.QuoteForWindows(opts.ResultsDir), "-o", platform.QuoteForWindows(opts.ReportResultsPath()), "-n", "result-allProblems.json", "-f"); res > 0 || err != nil {
+	if res, err := utils.RunCmd(
+		"",
+		utils.QuoteForWindows(prod.JbrJava()),
+		"-jar",
+		utils.QuoteForWindows(reportConverter),
+		"-s",
+		utils.QuoteForWindows(c.ProjectDir()),
+		"-d",
+		utils.QuoteForWindows(c.ResultsDir()),
+		"-o",
+		utils.QuoteForWindows(platform.ReportResultsPath(c.ReportDir())),
+		"-n",
+		"result-allProblems.json",
+		"-f",
+	); res > 0 || err != nil {
 		os.Exit(res)
 	}
-	err := platform.CopyDir(filepath.Join(Prod.Home, "web"), opts.ReportDir)
+	err := utils.CopyDir(filepath.Join(prod.Home, "web"), c.ReportDir())
 	if err != nil {
 		log.Fatal("Not able to save the report: ", err)
 		return

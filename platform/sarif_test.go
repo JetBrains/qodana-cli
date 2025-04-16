@@ -17,6 +17,8 @@
 package platform
 
 import (
+	"github.com/JetBrains/qodana-cli/v2025/platform/thirdpartyscan"
+	"github.com/JetBrains/qodana-cli/v2025/platform/utils"
 	"os"
 	"path/filepath"
 	"strings"
@@ -66,23 +68,22 @@ func TestMergeSarifReports(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	err = CopyDir(filepath.Join(testdataPath, "merge"), filepath.Join(dir, "tmp"))
+	err = utils.CopyDir(filepath.Join(testdataPath, "merge"), filepath.Join(dir, "tmp"))
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	opts := DefineOptions(func() ThirdPartyOptions {
-		return &TestOptions{
-			linterInfo: &LinterInfo{
-				ProductCode:   toolCode,
-				LinterName:    toolDesc,
-				LinterVersion: "",
-			},
-		}
-	})
-	opts.ResultsDir = dir
-	opts.ProjectDir = dir
-	_, err = MergeSarifReports(opts, "01234")
+	context := thirdpartyscan.ContextBuilder{
+		ProjectDir: dir,
+		ResultsDir: dir,
+		LinterInfo: thirdpartyscan.LinterInfo{
+			ProductCode:   toolCode,
+			LinterName:    toolDesc,
+			LinterVersion: "",
+		},
+	}.Build()
+
+	_, err = MergeSarifReports(context, "01234")
 	if err != nil {
 		t.Fatal(err)
 	}

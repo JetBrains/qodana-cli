@@ -1,0 +1,6 @@
+{
+  "local": {
+    "filename": "qodana.yaml",
+    "content": "version: 1.0\n\nimports:\n  - inner.yaml\n\nide: QDJVM\n\nlinter: jetbrains/qodana-jvm:latest\n\ninclude:\n  # from root\n  - name: InspectionA\n  - name: InspectionB #from root\n\n#this is a failure conditions section\nfailureConditions:\n  # this is a severityThresholds section\n  severityThresholds:\n    any: 1 #from root\n    critical: 2 # from root"
+  }
+}

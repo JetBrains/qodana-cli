@@ -25,8 +25,9 @@ package platform
 import (
 	"crypto/md5"
 	"encoding/hex"
-	"github.com/JetBrains/qodana-cli/v2024/cloud"
-	cp "github.com/otiai10/copy"
+	"github.com/JetBrains/qodana-cli/v2025/cloud"
+	"github.com/JetBrains/qodana-cli/v2025/platform/qdenv"
+	"github.com/JetBrains/qodana-cli/v2025/platform/utils"
 	log "github.com/sirupsen/logrus"
 	"io"
 	"net/http"
@@ -37,8 +38,14 @@ import (
 const PublisherJarName = "publisher-cli.jar"
 const PublisherVersion = "2.1.31"
 
+type Publisher struct {
+	ResultsDir string
+	LogDir     string
+	AnalysisId string
+}
+
 // SendReport sends report to Qodana Cloud.
-func SendReport(opts *QodanaOptions, token string, publisherPath string, javaPath string) {
+func SendReport(publisher Publisher, token string, publisherPath string, javaPath string) {
 	if _, err := os.Stat(publisherPath); os.IsNotExist(err) {
 		err := os.MkdirAll(filepath.Dir(publisherPath), os.ModePerm)
 		if err != nil {
@@ -49,39 +56,31 @@ func SendReport(opts *QodanaOptions, token string, publisherPath string, javaPat
 	if _, err := os.Stat(publisherPath); os.IsNotExist(err) {
 		log.Fatalf("Not able to send the report: %s is missing", publisherPath)
 	}
-	if !IsContainer() {
-		if _, err := os.Stat(opts.ReportResultsPath()); os.IsNotExist(err) {
-			if err := os.MkdirAll(opts.ReportResultsPath(), os.ModePerm); err != nil {
-				log.Fatalf("failed to create directory: %v", err)
-			}
-		}
-		source := filepath.Join(opts.ResultsDir, "qodana.sarif.json")
-		destination := filepath.Join(opts.ReportResultsPath(), "qodana.sarif.json")
 
-		if err := cp.Copy(source, destination); err != nil {
-			log.Fatal(err)
-		}
-	}
-
-	publisherCommand := getPublisherArgs(javaPath, publisherPath, opts, token, cloud.GetCloudApiEndpoints().CloudApiUrl)
-	if _, _, res, err := LaunchAndLog(opts, "publisher", publisherCommand...); res > 0 || err != nil {
+	publisherCommand := getPublisherArgs(
+		javaPath,
+		publisherPath,
+		publisher,
+		token,
+		cloud.GetCloudApiEndpoints().CloudApiUrl,
+	)
+	if _, _, res, err := utils.LaunchAndLog(publisher.LogDir, "publisher", publisherCommand...); res > 0 || err != nil {
 		os.Exit(res)
 	}
 }
 
 // getPublisherArgs returns args for the publisher.
-func getPublisherArgs(java string, publisher string, opts *QodanaOptions, token string, endpoint string) []string {
+func getPublisherArgs(java string, publisherPath string, publisher Publisher, token string, endpoint string) []string {
 	publisherArgs := []string{
-		QuoteForWindows(java),
+		utils.QuoteForWindows(java),
 		"-jar",
-		QuoteForWindows(publisher),
-		"--analysis-id", opts.AnalysisId,
-		"--sources-path", QuoteForWindows(opts.ProjectDir),
-		"--report-path", QuoteForWindows(opts.ReportResultsPath()),
+		utils.QuoteForWindows(publisherPath),
+		"--analysis-id", publisher.AnalysisId,
+		"--report-path", utils.QuoteForWindows(publisher.ResultsDir),
 		"--token", token,
 	}
 	var tools []string
-	tool := os.Getenv(QodanaToolEnv)
+	tool := os.Getenv(qdenv.QodanaToolEnv)
 	if tool != "" {
 		tools = []string{tool}
 	}
@@ -105,7 +104,7 @@ func fetchPublisher(path string) {
 	if _, err := os.Stat(path); err == nil {
 		return
 	}
-	err := DownloadFile(path, getPublisherUrl(jarVersion), nil)
+	err := utils.DownloadFile(path, getPublisherUrl(jarVersion), nil)
 	if err != nil {
 		log.Fatal(err)
 	}

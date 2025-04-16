@@ -1,10 +1,10 @@
-module github.com/JetBrains/qodana-cli/v2024/platform
+module github.com/JetBrains/qodana-cli/v2025/platform
 
-go 1.22.8
+go 1.24.0
 
 require (
 	github.com/cucumber/ci-environment/go v0.0.0-20230911180507-bd001ebc644c
-	github.com/go-enry/go-enry/v2 v2.9.1
+	github.com/go-enry/go-enry/v2 v2.9.2
 	github.com/google/uuid v1.6.0
 	github.com/liamg/clinch v1.6.6
 	github.com/mattn/go-isatty v0.0.20
@@ -18,18 +18,18 @@ require (
 )
 
 replace (
-	github.com/JetBrains/qodana-cli/v2024/cloud => ../cloud
-	github.com/JetBrains/qodana-cli/v2024/platform => ../platform
-	github.com/JetBrains/qodana-cli/v2024/sarif => ../sarif
-	github.com/JetBrains/qodana-cli/v2024/tooling => ../tooling
+	github.com/JetBrains/qodana-cli/v2025/cloud => ../cloud
+	github.com/JetBrains/qodana-cli/v2025/platform => ../platform
+	github.com/JetBrains/qodana-cli/v2025/sarif => ../sarif
+	github.com/JetBrains/qodana-cli/v2025/tooling => ../tooling
 )
 
 require (
-	github.com/JetBrains/qodana-cli/v2024/cloud v0.0.0-00010101000000-000000000000
-	github.com/JetBrains/qodana-cli/v2024/sarif v0.0.0-00010101000000-000000000000
-	github.com/JetBrains/qodana-cli/v2024/tooling v0.0.0-00010101000000-000000000000
+	github.com/JetBrains/qodana-cli/v2025/cloud v0.0.0-00010101000000-000000000000
+	github.com/JetBrains/qodana-cli/v2025/sarif v0.0.0-00010101000000-000000000000
+	github.com/JetBrains/qodana-cli/v2025/tooling v0.0.0-00010101000000-000000000000
 	github.com/reviewdog/go-bitbucket v0.0.0-20201024094602-708c3f6a7de0
-	github.com/spf13/pflag v1.0.5
+	github.com/spf13/pflag v1.0.6
 	golang.org/x/exp v0.0.0-20230905200255-921286631fa9
 )
 

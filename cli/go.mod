@@ -1,13 +1,13 @@
-module github.com/JetBrains/qodana-cli/v2024/cli
+module github.com/JetBrains/qodana-cli/v2025/cli
 
-go 1.22.8
+go 1.24.0
 
 require (
 	github.com/boyter/scc/v3 v3.4.0 // indirect
 	github.com/cucumber/ci-environment/go v0.0.0-20230911180507-bd001ebc644c // indirect
 	github.com/docker/cli v25.0.0+incompatible // indirect
 	github.com/docker/docker v25.0.6+incompatible // indirect; DO NOT UPDATE: breaking changes
-	github.com/go-enry/go-enry/v2 v2.9.1 // indirect
+	github.com/go-enry/go-enry/v2 v2.9.2 // indirect
 	github.com/google/uuid v1.6.0 // indirect
 	github.com/liamg/clinch v1.6.6 // indirect
 	github.com/mattn/go-isatty v0.0.20 // indirect
@@ -22,18 +22,18 @@ require (
 )
 
 replace (
-	github.com/JetBrains/qodana-cli/v2024/cloud => ../cloud
-	github.com/JetBrains/qodana-cli/v2024/cmd => ../cmd
-	github.com/JetBrains/qodana-cli/v2024/core => ../core
-	github.com/JetBrains/qodana-cli/v2024/platform => ../platform
-	github.com/JetBrains/qodana-cli/v2024/sarif => ../sarif
-	github.com/JetBrains/qodana-cli/v2024/tooling => ../tooling
+	github.com/JetBrains/qodana-cli/v2025/cloud => ../cloud
+	github.com/JetBrains/qodana-cli/v2025/cmd => ../cmd
+	github.com/JetBrains/qodana-cli/v2025/core => ../core
+	github.com/JetBrains/qodana-cli/v2025/platform => ../platform
+	github.com/JetBrains/qodana-cli/v2025/sarif => ../sarif
+	github.com/JetBrains/qodana-cli/v2025/tooling => ../tooling
 )
 
 require (
-	github.com/JetBrains/qodana-cli/v2024/cmd v0.0.0-00010101000000-000000000000
-	github.com/JetBrains/qodana-cli/v2024/core v0.0.0-00010101000000-000000000000
-	github.com/JetBrains/qodana-cli/v2024/platform v0.0.0-00010101000000-000000000000
+	github.com/JetBrains/qodana-cli/v2025/cmd v0.0.0-00010101000000-000000000000
+	github.com/JetBrains/qodana-cli/v2025/core v0.0.0-00010101000000-000000000000
+	github.com/JetBrains/qodana-cli/v2025/platform v0.0.0-00010101000000-000000000000
 )
 
 require (
@@ -42,9 +42,9 @@ require (
 	atomicgo.dev/keyboard v0.2.9 // indirect
 	atomicgo.dev/schedule v0.1.0 // indirect
 	github.com/Azure/go-ansiterm v0.0.0-20210617225240-d185dfc1b5a1 // indirect
-	github.com/JetBrains/qodana-cli/v2024/cloud v0.0.0-00010101000000-000000000000 // indirect
-	github.com/JetBrains/qodana-cli/v2024/sarif v0.0.0-00010101000000-000000000000 // indirect
-	github.com/JetBrains/qodana-cli/v2024/tooling v0.0.0-00010101000000-000000000000 // indirect
+	github.com/JetBrains/qodana-cli/v2025/cloud v0.0.0-00010101000000-000000000000 // indirect
+	github.com/JetBrains/qodana-cli/v2025/sarif v0.0.0-00010101000000-000000000000 // indirect
+	github.com/JetBrains/qodana-cli/v2025/tooling v0.0.0-00010101000000-000000000000 // indirect
 	github.com/Microsoft/go-winio v0.6.1 // indirect
 	github.com/boyter/gocodewalker v1.3.4 // indirect
 	github.com/containerd/console v1.0.3 // indirect
@@ -90,7 +90,7 @@ require (
 	github.com/sourcegraph/conc v0.3.0 // indirect
 	github.com/spf13/afero v1.11.0 // indirect
 	github.com/spf13/cast v1.6.0 // indirect
-	github.com/spf13/pflag v1.0.5 // indirect
+	github.com/spf13/pflag v1.0.6 // indirect
 	github.com/subosito/gotenv v1.6.0 // indirect
 	github.com/tklauser/go-sysconf v0.3.12 // indirect
 	github.com/tklauser/numcpus v0.6.1 // indirect

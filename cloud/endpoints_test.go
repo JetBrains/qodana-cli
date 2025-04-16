@@ -20,6 +20,7 @@ import (
 	"crypto/tls"
 	"errors"
 	"fmt"
+	"github.com/JetBrains/qodana-cli/v2025/platform/qdenv"
 	log "github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
 	"net/http"
@@ -29,60 +30,74 @@ import (
 	"testing"
 )
 
+//goland:noinspection ALL
 func TestEndpoint(t *testing.T) {
 	for _, testData := range []struct {
 		name  string
 		input string
-		host  string
+		url   string
 		error bool
 	}{
 		{
 			name:  "default",
 			input: "",
-			host:  DefaultEndpoint,
+			url:   DefaultEndpoint,
 		},
 		{
-			name:  "with schema",
-			input: "https://qodana.cloud",
-			host:  DefaultEndpoint,
+			name:  "without schema",
+			input: "qodana.cloud",
+			url:   DefaultEndpoint,
+		},
+		{
+			name:  "with http",
+			input: "http://qodana.cloud",
+			url:   "http://qodana.cloud",
+		},
+		{
+			name:  "with port",
+			input: "http://localhost:8080",
+			url:   "http://localhost:8080",
 		},
 		{
 			name:  "with path",
 			input: "https://qodana.cloud/api/v1",
-			host:  DefaultEndpoint,
+			url:   DefaultEndpoint,
 		},
 		{
 			name:  "custom domain",
 			input: "https://qodana.company.com/api/v1",
-			host:  "qodana.company.com",
+			url:   "https://qodana.company.com",
 		},
 		{
 			name:  "not domain",
 			input: ":hsa/sdf",
-			host:  "",
 			error: true,
 		},
 	} {
-		t.Run(testData.name, func(t *testing.T) {
-			t.Cleanup(func() {
-				log.StandardLogger().ExitFunc = os.Exit
-				endpoint = nil
-			})
+		t.Run(
+			testData.name, func(t *testing.T) {
+				t.Cleanup(
+					func() {
+						log.StandardLogger().ExitFunc = os.Exit
+						endpoint = nil
+					},
+				)
 
-			if testData.input != "" {
-				t.Setenv(QodanaEndpointEnv, testData.input)
-			}
-			var fatal = false
-			log.StandardLogger().ExitFunc = func(int) { fatal = true }
+				if testData.input != "" {
+					t.Setenv(qdenv.QodanaEndpointEnv, testData.input)
+				}
+				var fatal = false
+				log.StandardLogger().ExitFunc = func(int) { fatal = true }
 
-			cloudEndpoint := GetCloudRootEndpoint()
-			if testData.error && !fatal {
-				t.Errorf("Should be fatal")
-			}
-			if !testData.error && cloudEndpoint.Host != testData.host {
-				assert.Equal(t, testData.host, cloudEndpoint.Host)
-			}
-		})
+				cloudEndpoint := GetCloudRootEndpoint()
+				if testData.error && !fatal {
+					t.Errorf("Should be fatal")
+				}
+				if !testData.error && cloudEndpoint.Url != testData.url {
+					assert.Equal(t, testData.url, cloudEndpoint.Url)
+				}
+			},
+		)
 	}
 }
 
@@ -163,22 +178,33 @@ func TestObtainEndpointAPI(t *testing.T) {
 			success:       true,
 		},
 	} {
-		t.Run(testData.name, func(t *testing.T) {
-			t.Cleanup(func() {
-				endpoint = nil
-				endpointApis = nil
-			})
-			cloudEndpoint, apiEndpoints, err := runRequest(t, testData.cooldown, testData.failedAttempts, testData.response)
-			assert.Equal(t, err == nil, testData.success)
-			if testData.success {
-				assert.Equal(t, *apiEndpoints, QdApiEndpoints{
-					RootEndpoint:  cloudEndpoint,
-					CloudApiUrl:   testData.cloudApiUrl,
-					LintersApiUrl: testData.lintersApiUrl,
-				})
-			}
+		t.Run(
+			testData.name, func(t *testing.T) {
+				t.Cleanup(
+					func() {
+						endpoint = nil
+						endpointApis = nil
+					},
+				)
+				cloudEndpoint, apiEndpoints, err := runRequest(
+					t,
+					testData.cooldown,
+					testData.failedAttempts,
+					testData.response,
+				)
+				assert.Equal(t, err == nil, testData.success)
+				if testData.success {
+					assert.Equal(
+						t, *apiEndpoints, QdApiEndpoints{
+							RootEndpoint:  cloudEndpoint,
+							CloudApiUrl:   testData.cloudApiUrl,
+							LintersApiUrl: testData.lintersApiUrl,
+						},
+					)
+				}
 
-		})
+			},
+		)
 	}
 }
 
@@ -234,44 +260,55 @@ func TestWrongVersion(t *testing.T) {
 			versions:   []string{"2.10", "3.13"},
 		},
 	} {
-		t.Run(testData.name, func(t *testing.T) {
-			t.Cleanup(func() {
-				endpoint = nil
-				endpointApis = nil
-			})
-			_, _, err := runRequest(t, 0, 0, testData.response)
+		t.Run(
+			testData.name, func(t *testing.T) {
+				t.Cleanup(
+					func() {
+						endpoint = nil
+						endpointApis = nil
+					},
+				)
+				_, _, err := runRequest(t, 0, 0, testData.response)
 
-			var versionError *ApiVersionMismatchError
-			res := errors.As(err, &versionError)
-			if !res {
-				t.Errorf("Should be version error")
-			}
-			assert.Equal(t, *versionError, ApiVersionMismatchError{
-				ApiKind:           testData.errorOnApi,
-				SupportedVersions: testData.versions,
-			})
-		})
+				var versionError *ApiVersionMismatchError
+				res := errors.As(err, &versionError)
+				if !res {
+					t.Errorf("Should be version error")
+				}
+				assert.Equal(
+					t, *versionError, ApiVersionMismatchError{
+						ApiKind:           testData.errorOnApi,
+						SupportedVersions: testData.versions,
+					},
+				)
+			},
+		)
 	}
 }
 
-func runRequest(t *testing.T,
+func runRequest(
+	t *testing.T,
 	cooldown int,
 	failedAttempts int,
 	response string,
 ) (*QdRootEndpoint, *QdApiEndpoints, error) {
 	requestServed := 0
-	svr := httptest.NewTLSServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		requestServed++
-		if r.URL.Path != VersionsURI {
-			t.Errorf("expected uri to be '%s' got '%s'", VersionsURI, r.URL.Path)
-		}
-		if requestServed <= failedAttempts {
-			w.WriteHeader(http.StatusInternalServerError)
-			return
-		}
+	svr := httptest.NewTLSServer(
+		http.HandlerFunc(
+			func(w http.ResponseWriter, r *http.Request) {
+				requestServed++
+				if r.URL.Path != VersionsURI {
+					t.Errorf("expected uri to be '%s' got '%s'", VersionsURI, r.URL.Path)
+				}
+				if requestServed <= failedAttempts {
+					w.WriteHeader(http.StatusInternalServerError)
+					return
+				}
 
-		_, _ = fmt.Fprint(w, response)
-	}))
+				_, _ = fmt.Fprint(w, response)
+			},
+		),
+	)
 	defer svr.Close()
 	client := http.Client{
 		Transport: &http.Transport{
@@ -280,8 +317,8 @@ func runRequest(t *testing.T,
 			},
 		},
 	}
-	t.Setenv(QodanaCloudRequestCooldownEnv, strconv.Itoa(cooldown))
-	t.Setenv(QodanaEndpointEnv, svr.URL)
+	t.Setenv(qdenv.QodanaCloudRequestCooldownEnv, strconv.Itoa(cooldown))
+	t.Setenv(qdenv.QodanaEndpointEnv, svr.URL)
 	cloudEndpoint := GetCloudRootEndpoint()
 	apiEndpoints, err := cloudEndpoint.requestApiEndpointsCustomClient(&client)
 	return cloudEndpoint, apiEndpoints, err

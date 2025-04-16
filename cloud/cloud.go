@@ -25,11 +25,7 @@ import (
 // GetCloudTeamsPageUrl returns the team page URL on Qodana Cloud
 func (endpoint *QdRootEndpoint) GetCloudTeamsPageUrl(origin string, path string) string {
 	name := filepath.Base(path)
-	return fmt.Sprintf("https://%s/?origin=%s&name=%s", endpoint.Host, origin, name)
-}
-
-func (endpoint *QdRootEndpoint) GetCloudUrl() string {
-	return fmt.Sprintf("https://%s", endpoint.Host)
+	return fmt.Sprintf("%s/?origin=%s&name=%s", endpoint.Url, origin, name)
 }
 
 func (client *QdClient) RequestProjectName() (string, error) {

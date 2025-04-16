@@ -18,8 +18,8 @@ package main
 
 import (
 	"fmt"
-	"github.com/JetBrains/qodana-cli/v2024/platform"
-	platformcmd "github.com/JetBrains/qodana-cli/v2024/platform/cmd"
+	"github.com/JetBrains/qodana-cli/v2025/platform"
+	"github.com/JetBrains/qodana-cli/v2025/platform/thirdpartyscan"
 	log "github.com/sirupsen/logrus"
 	"os"
 	"os/exec"
@@ -37,22 +37,19 @@ func TestLinterRun(t *testing.T) {
 	defer deferredCleanup(projectPath)
 	outputDir := filepath.Join(os.TempDir(), "cdnet-output")
 	defer deferredCleanup(outputDir)
+	cacheDir := filepath.Join(os.TempDir(), "cdnetTmp")
+	defer deferredCleanup(cacheDir)
 
-	options := platform.DefineOptions(func() platform.ThirdPartyOptions {
-		return &CltOptions{
-			LinterInfo: &platform.LinterInfo{
-				ProductCode:   productCode,
-				LinterName:    linterName,
-				LinterVersion: "2023.3",
-				IsEap:         true,
-			},
-		}
-	})
+	linterInfo := thirdpartyscan.LinterInfo{
+		ProductCode:   productCode,
+		LinterName:    linterName,
+		LinterVersion: "2023.3",
+		IsEap:         true,
+	}
 
-	command := platformcmd.NewScanCommand(options)
-	command.SetArgs([]string{"-i", projectPath, "-o", outputDir, "--no-build"})
+	command := platform.NewThirdPartyScanCommand(CdnetLinter{}, linterInfo)
+	command.SetArgs([]string{"-i", projectPath, "-o", outputDir, "--cache-dir", cacheDir, "--no-build"})
 	err := command.Execute()
-	defer deferredCleanup(options.CacheDir)
 	if err != nil {
 		t.Fatal(err)
 	}

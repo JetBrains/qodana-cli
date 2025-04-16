@@ -19,7 +19,9 @@ package platform
 import (
 	"context"
 	"fmt"
-	"github.com/JetBrains/qodana-cli/v2024/sarif"
+	"github.com/JetBrains/qodana-cli/v2025/platform/msg"
+	"github.com/JetBrains/qodana-cli/v2025/platform/qdenv"
+	"github.com/JetBrains/qodana-cli/v2025/sarif"
 	bbapi "github.com/reviewdog/go-bitbucket" // adapted from https://raw.githubusercontent.com/reviewdog/reviewdog/master/LICENSE
 	log "github.com/sirupsen/logrus"
 	"io"
@@ -63,10 +65,10 @@ var (
 	}
 )
 
-// sendBitBucketReport sends annotations to BitBucket Code Insights
+// sendBitBucketReport sends annotations to BitBucket code Insights
 func sendBitBucketReport(annotations []bbapi.ReportAnnotation, toolName, cloudUrl, reportId string) error {
 	client, ctx := getBitBucketClient(), getBitBucketContext()
-	repoOwner, repoName, sha := getBitBucketRepoOwner(), getBitBucketRepoName(), getBitBucketCommit()
+	repoOwner, repoName, sha := qdenv.GetBitBucketRepoOwner(), qdenv.GetBitBucketRepoName(), qdenv.GetBitBucketCommit()
 	_, resp, err := client.
 		ReportsApi.CreateOrUpdateReport(ctx, repoOwner, repoName, sha, reportId).
 		Body(buildReport(toolName, annotations, cloudUrl)).
@@ -105,11 +107,13 @@ func getBitBucketContext() context.Context {
 		os.Getenv("QD_BITBUCKET_PASSWORD"),
 		os.Getenv("QD_BITBUCKET_TOKEN")
 	if user != "" && password != "" {
-		ctx = context.WithValue(ctx, bbapi.ContextBasicAuth,
+		ctx = context.WithValue(
+			ctx, bbapi.ContextBasicAuth,
 			bbapi.BasicAuth{
 				UserName: user,
 				Password: password,
-			})
+			},
+		)
 	}
 	if token != "" {
 		ctx = context.WithValue(ctx, bbapi.ContextAccessToken, token)
@@ -117,7 +121,7 @@ func getBitBucketContext() context.Context {
 	return ctx
 }
 
-// buildReport builds a report to be sent to BitBucket Code Insights
+// buildReport builds a report to be sent to BitBucket code Insights
 func buildReport(toolName string, annotations []bbapi.ReportAnnotation, cloudUrl string) bbapi.Report {
 	var result string
 	if len(annotations) == 0 {
@@ -132,12 +136,12 @@ func buildReport(toolName string, annotations []bbapi.ReportAnnotation, cloudUrl
 	data.SetReporter(bitBucketReporter)
 	data.SetLogoUrl(bitBucketAvatar)
 	data.SetLink(cloudUrl)
-	data.SetDetails(getProblemsFoundMessage(len(annotations)))
+	data.SetDetails(msg.GetProblemsFoundMessage(len(annotations)))
 	data.SetResult(result)
 	return *data
 }
 
-// buildAnnotation builds an annotation to be sent to BitBucket Code Insights
+// buildAnnotation builds an annotation to be sent to BitBucket code Insights
 func buildAnnotation(r *sarif.Result, ruleDescription string, reportLink string) bbapi.ReportAnnotation {
 	bbSeverity, ok := toBitBucketSeverity[getSeverity(r)]
 	if !ok {
@@ -176,9 +180,9 @@ func getBitBucketClient() *bbapi.APIClient {
 		URL:         "https://api.bitbucket.org/2.0",
 		Description: `HTTPS API endpoint`,
 	}
-	if isBitBucket() {
+	if qdenv.IsBitBucket() {
 		var proxyURL *url.URL
-		if isBitBucketPipe() {
+		if qdenv.IsBitBucketPipe() {
 			proxyURL, _ = url.Parse(pipeProxyURL)
 		} else {
 			proxyURL, _ = url.Parse(pipelineProxyURL)
