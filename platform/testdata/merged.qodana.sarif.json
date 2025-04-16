@@ -212,7 +212,7 @@
     "driver": {
      "fullName": "Qodana for C/C++ (CMake)",
      "language": "en-US",
-     "name": "QDCL",
+     "name": "QDCLC",
      "rules": [
       {
        "id": "misc-throw-by-value-catch-by-reference",

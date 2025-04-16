@@ -2,12 +2,12 @@ package main
 
 import (
 	"fmt"
-	"github.com/JetBrains/qodana-cli/v2025/platform/thirdpartyscan"
 	"os"
-	"os/exec"
 	"path/filepath"
 	"strings"
 	"testing"
+
+	"github.com/JetBrains/qodana-cli/v2025/platform/thirdpartyscan"
 
 	"github.com/JetBrains/qodana-cli/v2025/platform"
 	log "github.com/sirupsen/logrus"
@@ -19,24 +19,27 @@ func TestLinterRun(t *testing.T) {
 		t.Skip()
 	}
 	log.SetLevel(log.DebugLevel)
-	projectPath := createNativeProject(t, "cpp-demo")
-	defer deferredCleanup(projectPath)
-	outputDir := filepath.Join(os.TempDir(), "clang-output")
-	defer deferredCleanup(outputDir)
-	cacheDir := filepath.Join(os.TempDir(), "clangTmp")
-	defer deferredCleanup(cacheDir)
+
+	projectDir := t.TempDir()
+
+	err := os.CopyFS(projectDir, os.DirFS("testdata/TestLinterRun"))
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	outputDir := filepath.Join(projectDir, ".linter-output")
+	cacheDir := filepath.Join(projectDir, ".linter-cache")
 
 	linterInfo := thirdpartyscan.LinterInfo{
 		ProductCode:   productCode,
 		LinterName:    linterName,
-		LinterVersion: "2023.3",
+		LinterVersion: version,
 		IsEap:         true,
 	}
 
 	command := platform.NewThirdPartyScanCommand(ClangLinter{}, linterInfo)
-	command.SetArgs([]string{"-i", projectPath, "-o", outputDir, "--cache-dir", cacheDir})
-	err := command.Execute()
-	defer deferredCleanup(cacheDir)
+	command.SetArgs([]string{"-i", projectDir, "-o", outputDir, "--cache-dir", cacheDir})
+	err = command.Execute()
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -57,7 +60,7 @@ func TestLinterRun(t *testing.T) {
 		fmt.Println("Found issues: ", resultsSize)
 	}
 
-	resultAllProblems, err := os.ReadFile(filepath.Join(outputDir, "report", "results", "result-allProblems.json"))
+	resultAllProblems, err := os.ReadFile(filepath.Join(outputDir, "report", "result-allProblems.json"))
 	if err != nil {
 		t.Fatal("Error reading all problems file", err)
 	}
@@ -66,39 +69,4 @@ func TestLinterRun(t *testing.T) {
 	if strings.Contains(allProblems, `"listProblem":[]`) {
 		t.Fatal("All problems file is empty")
 	}
-}
-
-func deferredCleanup(path string) {
-	err := os.RemoveAll(path)
-	if err != nil {
-		log.Fatal(err)
-	}
-}
-
-func createNativeProject(t *testing.T, name string) string {
-	home, err := os.UserHomeDir()
-	if err != nil {
-		t.Fatal(err)
-	}
-	location := filepath.Join(home, ".qodana_scan_", name)
-	err = gitClone("https://github.com/qodana/cpp-demo", location)
-	if err != nil {
-		t.Fatal(err)
-	}
-	return location
-}
-
-func gitClone(repoURL, directory string) error {
-	if _, err := os.Stat(directory); !os.IsNotExist(err) {
-		err = os.RemoveAll(directory)
-		if err != nil {
-			return err
-		}
-	}
-	cmd := exec.Command("git", "clone", repoURL, directory)
-	err := cmd.Run()
-	if err != nil {
-		return err
-	}
-	return nil
 }

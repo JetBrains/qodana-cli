@@ -185,7 +185,7 @@ func GetProductNameFromCode(code string) string {
 		return "Qodana for .NET"
 	case QDNETC:
 		return "Qodana Community for .NET"
-	case QDCL:
+	case QDCLC:
 		return "Qodana for C/C++"
 	case QDPY:
 		return "Qodana for Python"

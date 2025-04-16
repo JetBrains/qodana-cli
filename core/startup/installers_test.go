@@ -54,6 +54,12 @@ func DownloadAndInstallIDE(ideName string, t *testing.T) {
 		t.Fatal(err)
 	}
 	tempDir := filepath.Join(homeDir, ".qodana_scan_", "ideTest")
+	err = os.RemoveAll(tempDir)
+	if err != nil {
+		msg.ErrorMessage("Cannot remove previous temp dir: %s", err)
+		t.Fail()
+	}
+
 	err = os.MkdirAll(tempDir, 0755)
 	if err != nil {
 		msg.ErrorMessage("Cannot create temp dir: %s", err)

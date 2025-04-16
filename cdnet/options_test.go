@@ -389,7 +389,7 @@ func TestGetArgsThirdPartyLinters(t *testing.T) {
 			name: "(clang) compile commands",
 			cb: corescan.ContextBuilder{
 				ClangCompileCommands: "compile_commands.json",
-				Linter:               product.DockerImageMap[product.QDCL],
+				Linter:               product.DockerImageMap[product.QDCLC],
 			},
 			expected: []string{
 				"--compile-commands", "compile_commands.json",
@@ -399,7 +399,7 @@ func TestGetArgsThirdPartyLinters(t *testing.T) {
 			name: "(clang) clang args",
 			cb: corescan.ContextBuilder{
 				ClangArgs: "-I/usr/include",
-				Linter:    product.DockerImageMap[product.QDCL],
+				Linter:    product.DockerImageMap[product.QDCLC],
 			},
 			expected: []string{
 				"--clang-args", "-I/usr/include",

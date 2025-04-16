@@ -154,7 +154,7 @@ func GetIdeArgs(c corescan.Context) []string {
 
 	// TODO : think how it could be better handled in presence of random 3rd party linters
 	prod := product.GuessProductCode(c.Ide(), c.Linter())
-	if prod == product.QDNETC || prod == product.QDCL {
+	if prod == product.QDNETC || prod == product.QDCLC {
 		// third party common options
 		if c.NoStatistics() {
 			arguments = append(arguments, "--no-statistics")
