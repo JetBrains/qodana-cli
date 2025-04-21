@@ -6,7 +6,7 @@ FROM node:$NODE_TAG AS node_base
 FROM golang:$GO_TAG
 
 # renovate: datasource=npm depName=eslint
-ENV ESLINT_VERSION="9.24.0"
+ENV ESLINT_VERSION="9.25.1"
 # renovate: datasource=npm depName=pnpm
 ENV PNPM_VERSION="10.8.1"
 

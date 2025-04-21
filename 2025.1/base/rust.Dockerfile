@@ -2,7 +2,7 @@ ARG RUST_TAG="1.86-slim-bookworm"
 FROM rust:$RUST_TAG
 
 # renovate: datasource=npm depName=eslint
-ENV ESLINT_VERSION="9.24.0"
+ENV ESLINT_VERSION="9.25.1"
 # renovate: datasource=npm depName=pnpm
 ENV PNPM_VERSION="10.8.1"
 
