@@ -62,7 +62,7 @@ func SendReport(publisher Publisher, token string, publisherPath string, javaPat
 		publisherPath,
 		publisher,
 		token,
-		cloud.GetCloudApiEndpoints().CloudApiUrl,
+		cloud.DefaultEndpoint,
 	)
 	if _, _, res, err := utils.LaunchAndLog(publisher.LogDir, "publisher", publisherCommand...); res > 0 || err != nil {
 		os.Exit(res)
@@ -90,7 +90,7 @@ func getPublisherArgs(java string, publisherPath string, publisher Publisher, to
 		}
 	}
 	if endpoint != "" {
-		publisherArgs = append(publisherArgs, "--endpoint", endpoint)
+		publisherArgs = append(publisherArgs, "--qodana-endpoint", endpoint)
 	}
 	return publisherArgs
 }
