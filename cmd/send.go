@@ -27,7 +27,6 @@ import (
 	"github.com/google/uuid"
 	"github.com/spf13/cobra"
 	"os"
-	"path/filepath"
 )
 
 // newShowCommand returns a new instance of the show command.
@@ -57,9 +56,6 @@ If you are using other Qodana Cloud instance than https://qodana.cloud/, overrid
 				cliOptions.ConfigName,
 			)
 
-			var publisherPath string
-			publisherPath = filepath.Join(commonCtx.ConfDirPath(), platform.PublisherJarName)
-
 			publisher := platform.Publisher{
 				ResultsDir: commonCtx.ResultsDir,
 				LogDir:     commonCtx.LogDir(),
@@ -73,7 +69,6 @@ If you are using other Qodana Cloud instance than https://qodana.cloud/, overrid
 			platform.SendReport(
 				publisher,
 				tokenloader.ValidateCloudToken(commonCtx, false),
-				publisherPath,
 				java,
 			)
 		},

@@ -25,18 +25,16 @@ package platform
 import (
 	"crypto/md5"
 	"encoding/hex"
-	"github.com/JetBrains/qodana-cli/v2025/cloud"
-	"github.com/JetBrains/qodana-cli/v2025/platform/qdenv"
-	"github.com/JetBrains/qodana-cli/v2025/platform/utils"
-	log "github.com/sirupsen/logrus"
 	"io"
 	"net/http"
 	"os"
-	"path/filepath"
-)
 
-const PublisherJarName = "publisher-cli.jar"
-const PublisherVersion = "3.0.3"
+	"github.com/JetBrains/qodana-cli/v2025/cloud"
+	"github.com/JetBrains/qodana-cli/v2025/platform/qdenv"
+	"github.com/JetBrains/qodana-cli/v2025/platform/utils"
+	"github.com/JetBrains/qodana-cli/v2025/tooling"
+	log "github.com/sirupsen/logrus"
+)
 
 type Publisher struct {
 	ResultsDir string
@@ -45,17 +43,24 @@ type Publisher struct {
 }
 
 // SendReport sends report to Qodana Cloud.
-func SendReport(publisher Publisher, token string, publisherPath string, javaPath string) {
-	if _, err := os.Stat(publisherPath); os.IsNotExist(err) {
-		err := os.MkdirAll(filepath.Dir(publisherPath), os.ModePerm)
+func SendReport(publisher Publisher, token string, javaPath string) {
+	fp, err := os.CreateTemp("", "qodana-publisher")
+	if err != nil {
+		log.Fatalf("Failed to create a temporary file: %s", err)
+	}
+	publisherPath := fp.Name()
+	err = fp.Close()
+	if err != nil {
+		log.Fatalf("Failed to close temporary file %q: %s", fp.Name(), err)
+	}
+	defer func() {
+		err = os.Remove(fp.Name())
 		if err != nil {
-			log.Fatalf("failed to create directory: %v", err)
+			log.Fatalf("Failed to remove temporary file %q: %s", fp.Name(), err)
 		}
-		fetchPublisher(publisherPath)
-	}
-	if _, err := os.Stat(publisherPath); os.IsNotExist(err) {
-		log.Fatalf("Not able to send the report: %s is missing", publisherPath)
-	}
+	}()
+
+	fetchPublisher(publisherPath)
 
 	publisherCommand := getPublisherArgs(
 		javaPath,
@@ -100,15 +105,21 @@ func getPublisherUrl(version string) string {
 }
 
 func fetchPublisher(path string) {
-	jarVersion := PublisherVersion
-	if _, err := os.Stat(path); err == nil {
-		return
-	}
-	err := utils.DownloadFile(path, getPublisherUrl(jarVersion), nil)
+	fp, err := os.Create(path)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatal("Error while creating %q: %s", path, err)
 	}
-	verifyMd5Hash(jarVersion, path)
+	defer func() {
+		err := fp.Close()
+		if err != nil {
+			log.Fatalf("Error while closing %q: %s", path, err)
+		}
+	}()
+
+	_, err = fp.Write(tooling.PublisherCli)
+	if err != nil {
+		log.Fatalf("Error while writing %q: %s", path, err)
+	}
 }
 
 func verifyMd5Hash(version string, path string) {
