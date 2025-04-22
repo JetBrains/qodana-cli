@@ -36,7 +36,7 @@ import (
 )
 
 const PublisherJarName = "publisher-cli.jar"
-const PublisherVersion = "2.1.31"
+const PublisherVersion = "3.0.3"
 
 type Publisher struct {
 	ResultsDir string
