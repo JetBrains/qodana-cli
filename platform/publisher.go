@@ -23,10 +23,6 @@
 package platform
 
 import (
-	"crypto/md5"
-	"encoding/hex"
-	"io"
-	"net/http"
 	"os"
 
 	"github.com/JetBrains/qodana-cli/v2025/cloud"
@@ -60,7 +56,7 @@ func SendReport(publisher Publisher, token string, javaPath string) {
 		}
 	}()
 
-	fetchPublisher(publisherPath)
+	extractPublisher(publisherPath)
 
 	publisherCommand := getPublisherArgs(
 		javaPath,
@@ -100,11 +96,7 @@ func getPublisherArgs(java string, publisherPath string, publisher Publisher, to
 	return publisherArgs
 }
 
-func getPublisherUrl(version string) string {
-	return "https://packages.jetbrains.team/maven/p/ij/intellij-dependencies/org/jetbrains/qodana/publisher-cli/" + version + "/publisher-cli-" + version + ".jar"
-}
-
-func fetchPublisher(path string) {
+func extractPublisher(path string) {
 	fp, err := os.Create(path)
 	if err != nil {
 		log.Fatalf("Error while creating %q: %s", path, err)
@@ -119,51 +111,5 @@ func fetchPublisher(path string) {
 	_, err = fp.Write(tooling.PublisherCli)
 	if err != nil {
 		log.Fatalf("Error while writing %q: %s", path, err)
-	}
-}
-
-func verifyMd5Hash(version string, path string) {
-	if _, err := os.Stat(path); err != nil {
-		log.Fatal(err)
-	}
-	url := getPublisherUrl(version) + ".md5"
-	resp, err := http.Get(url)
-	if err != nil {
-		log.Fatalf("Error downloading md5 hash: %v", err)
-	}
-	defer func(Body io.ReadCloser) {
-		err := Body.Close()
-		if err != nil {
-			log.Fatal(err)
-		}
-	}(resp.Body)
-
-	body, err := io.ReadAll(resp.Body)
-	if err != nil {
-		log.Fatalf("Error reading md5 hash: %v", err)
-	}
-
-	downloadedMd5 := string(body)
-	fileContent, err := os.ReadFile(path)
-	if err != nil {
-		log.Fatalf("Error reading file: %v", err)
-	}
-
-	hasher := md5.New()
-	_, err = hasher.Write(fileContent)
-	if err != nil {
-		log.Fatalf("Error computing md5 hash: %v", err)
-	}
-
-	computedMd5 := hex.EncodeToString(hasher.Sum(nil))
-
-	if computedMd5 != downloadedMd5 {
-		err = os.Remove(path)
-		if err != nil {
-			log.Fatalf("Please remove file, since md5 doesn't match: %s", path)
-		}
-		log.Fatal("The provided file and the file from the link have different md5 hashes")
-	} else {
-		log.Debug("Obtained publisher " + version + " and successfully checked md5 hash")
 	}
 }
