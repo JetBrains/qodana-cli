@@ -107,7 +107,7 @@ func getPublisherUrl(version string) string {
 func fetchPublisher(path string) {
 	fp, err := os.Create(path)
 	if err != nil {
-		log.Fatal("Error while creating %q: %s", path, err)
+		log.Fatalf("Error while creating %q: %s", path, err)
 	}
 	defer func() {
 		err := fp.Close()
