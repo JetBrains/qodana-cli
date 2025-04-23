@@ -38,7 +38,7 @@ func TestFetchPublisher(t *testing.T) {
 		}
 	}(tempDir) // clean up
 	path := filepath.Join(tempDir, "publisher.jar")
-	fetchPublisher(path)
+	extractPublisher(path)
 
 	if _, err := os.Stat(path); os.IsNotExist(err) {
 		t.Fatalf("fetchPublisher() failed, expected %v to exists, got error: %v", path, err)
@@ -72,7 +72,7 @@ func TestGetPublisherArgs(t *testing.T) {
 		"--report-path", filepath.FromSlash("/path/to/results"),
 		"--token", "test-token",
 		"--tool", "test-tool",
-		"--endpoint", "test-endpoint",
+		"--qodana-endpoint", "test-endpoint",
 	}
 	if !reflect.DeepEqual(publisherArgs, expectedArgs) {
 		t.Errorf("getPublisherArgs returned incorrect arguments: got %v, expected %v", publisherArgs, expectedArgs)
