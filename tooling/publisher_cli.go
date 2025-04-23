@@ -2,7 +2,6 @@ package tooling
 
 import _ "embed"
 
-//go:generate go run scripts/download-publisher-cli.go 3.0.3
-
+//go:generate go run scripts/download-resource.go publisher-cli.jar
 //go:embed publisher-cli.jar
 var PublisherCli []byte
