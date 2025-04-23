@@ -63,7 +63,7 @@ func SendReport(publisher Publisher, token string, javaPath string) {
 		publisherPath,
 		publisher,
 		token,
-		cloud.DefaultEndpoint,
+		cloud.GetCloudRootEndpoint().Url,
 	)
 	if _, _, res, err := utils.LaunchAndLog(publisher.LogDir, "publisher", publisherCommand...); res > 0 || err != nil {
 		os.Exit(res)
