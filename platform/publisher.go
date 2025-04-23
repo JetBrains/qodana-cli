@@ -40,19 +40,19 @@ type Publisher struct {
 
 // SendReport sends report to Qodana Cloud.
 func SendReport(publisher Publisher, token string, javaPath string) {
-	fp, err := os.CreateTemp("", "qodana-publisher")
+	file, err := os.CreateTemp("", "qodana-publisher.jar")
 	if err != nil {
 		log.Fatalf("Failed to create a temporary file: %s", err)
 	}
-	publisherPath := fp.Name()
-	err = fp.Close()
+	publisherPath := file.Name()
+	err = file.Close()
 	if err != nil {
-		log.Fatalf("Failed to close temporary file %q: %s", fp.Name(), err)
+		log.Fatalf("Failed to close temporary file %q: %s", file.Name(), err)
 	}
 	defer func() {
-		err = os.Remove(fp.Name())
+		err = os.Remove(file.Name())
 		if err != nil {
-			log.Fatalf("Failed to remove temporary file %q: %s", fp.Name(), err)
+			log.Fatalf("Failed to remove temporary file %q: %s", file.Name(), err)
 		}
 	}()
 
@@ -97,18 +97,18 @@ func getPublisherArgs(java string, publisherPath string, publisher Publisher, to
 }
 
 func extractPublisher(path string) {
-	fp, err := os.Create(path)
+	file, err := os.Create(path)
 	if err != nil {
 		log.Fatalf("Error while creating %q: %s", path, err)
 	}
 	defer func() {
-		err := fp.Close()
+		err := file.Close()
 		if err != nil {
 			log.Fatalf("Error while closing %q: %s", path, err)
 		}
 	}()
 
-	_, err = fp.Write(tooling.PublisherCli)
+	_, err = file.Write(tooling.PublisherCli)
 	if err != nil {
 		log.Fatalf("Error while writing %q: %s", path, err)
 	}
