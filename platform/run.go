@@ -223,10 +223,10 @@ func sendReportToQodanaServer(c thirdpartyscan.Context) {
 			LogDir:     c.LogDir(),
 			AnalysisId: c.AnalysisId(),
 		}
+
 		SendReport(
 			publisher,
 			cloud.Token.Token,
-			utils.QuoteForWindows(filepath.Join(c.CacheDir(), PublisherJarName)),
 			utils.QuoteForWindows(c.MountInfo().JavaPath),
 		)
 	} else {
