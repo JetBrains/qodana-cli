@@ -23,8 +23,8 @@ import (
 )
 
 const (
-	ReleaseVersion = "2024.3"
-	ShortVersion   = "243"
+	ReleaseVersion = "2025.1"
+	ShortVersion   = "251"
 	IsReleased     = true
 
 	EapSuffix  = "-EAP"
@@ -50,8 +50,8 @@ const (
 
 var (
 	VersionsMap = map[string]string{
-		ReleaseVer: "2024.2",
-		EapVer:     "2024.3",
+		ReleaseVer: "2025.1",
+		EapVer:     "2025.1",
 	}
 
 	Products = map[string]string{
