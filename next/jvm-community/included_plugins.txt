@@ -25,3 +25,4 @@ org.jetbrains.idea.maven.server.api
 org.jetbrains.idea.reposearch
 org.jetbrains.kotlin
 org.jetbrains.plugins.gradle
+com.intellij.json

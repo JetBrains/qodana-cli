@@ -17,3 +17,4 @@ com.jetbrains.pycharm.community.customization
 com.jetbrains.pycharm.community.sharedIndexes.bundled
 org.toml.lang
 com.intellij.dev
+com.intellij.json
