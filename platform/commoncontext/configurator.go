@@ -18,14 +18,13 @@ package commoncontext
 
 import (
 	"bytes"
+	"github.com/JetBrains/qodana-cli/v2025/platform/strutil"
 	"io"
 	"os"
 	"path/filepath"
 	"slices"
 	"sort"
 	"strings"
-
-	"github.com/JetBrains/qodana-cli/v2025/platform/utils"
 
 	"github.com/go-enry/go-enry/v2"
 
@@ -197,13 +196,13 @@ func readIdeaDir(project string) []string {
 			}
 			text := string(iml)
 			if strings.Contains(text, "JAVA_MODULE") {
-				languages = utils.Append(languages, "Java")
+				languages = strutil.Append(languages, "Java")
 			}
 			if strings.Contains(text, "PYTHON_MODULE") {
-				languages = utils.Append(languages, "Python")
+				languages = strutil.Append(languages, "Python")
 			}
 			if strings.Contains(text, "Go") {
-				languages = utils.Append(languages, "Go")
+				languages = strutil.Append(languages, "Go")
 			}
 		}
 	}

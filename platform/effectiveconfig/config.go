@@ -21,6 +21,7 @@ import (
 	"fmt"
 	"github.com/JetBrains/qodana-cli/v2025/platform/msg"
 	"github.com/JetBrains/qodana-cli/v2025/platform/qdyaml"
+	"github.com/JetBrains/qodana-cli/v2025/platform/strutil"
 	"github.com/JetBrains/qodana-cli/v2025/platform/utils"
 	"github.com/JetBrains/qodana-cli/v2025/tooling"
 	log "github.com/sirupsen/logrus"
@@ -162,9 +163,9 @@ func configurationLoaderCliArgs(
 
 	var err error
 	args := []string{
-		utils.QuoteIfSpace(utils.QuoteForWindows(jrePath)),
+		strutil.QuoteIfSpace(strutil.QuoteForWindows(jrePath)),
 		"-jar",
-		utils.QuoteForWindows(configLoaderCliJarPath),
+		strutil.QuoteForWindows(configLoaderCliJarPath),
 	}
 
 	effectiveConfigDirAbs, err := filepath.Abs(effectiveConfigDir)
@@ -176,7 +177,7 @@ func configurationLoaderCliArgs(
 		)
 		return nil, err
 	}
-	args = append(args, "--effective-config-out-dir", utils.QuoteForWindows(effectiveConfigDirAbs))
+	args = append(args, "--effective-config-out-dir", strutil.QuoteForWindows(effectiveConfigDirAbs))
 
 	if localQodanaYamlPath != "" {
 		localQodanaYamlPathAbs, err := filepath.Abs(localQodanaYamlPath)
@@ -188,7 +189,11 @@ func configurationLoaderCliArgs(
 			)
 			return nil, err
 		}
-		args = append(args, "--local-qodana-yaml", utils.QuoteIfSpace(utils.QuoteForWindows(localQodanaYamlPathAbs)))
+		args = append(
+			args,
+			"--local-qodana-yaml",
+			strutil.QuoteIfSpace(strutil.QuoteForWindows(localQodanaYamlPathAbs)),
+		)
 	}
 
 	if globalConfigurationsFile != "" {
@@ -204,11 +209,11 @@ func configurationLoaderCliArgs(
 		args = append(
 			args,
 			"--global-configs-file",
-			utils.QuoteIfSpace(utils.QuoteForWindows(globalConfigurationsFileAbs)),
+			strutil.QuoteIfSpace(strutil.QuoteForWindows(globalConfigurationsFileAbs)),
 		)
 	}
 	if globalConfigId != "" {
-		args = append(args, "--global-config-id", utils.QuoteIfSpace(utils.QuoteForWindows(globalConfigId)))
+		args = append(args, "--global-config-id", strutil.QuoteIfSpace(strutil.QuoteForWindows(globalConfigId)))
 	}
 	return args, nil
 }

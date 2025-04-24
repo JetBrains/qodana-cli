@@ -17,6 +17,7 @@
 package git
 
 import (
+	"github.com/JetBrains/qodana-cli/v2025/platform/strutil"
 	"github.com/JetBrains/qodana-cli/v2025/platform/utils"
 	log "github.com/sirupsen/logrus"
 	"strings"
@@ -102,7 +103,7 @@ func Clean(cwd string, logdir string) error {
 
 // Revisions returns the list of commits of the git repository in chronological order.
 func Revisions(cwd string) []string {
-	return utils.Reverse(Log(cwd, "%H", 0))
+	return strutil.Reverse(Log(cwd, "%H", 0))
 }
 
 // Root returns absolute path of repo root

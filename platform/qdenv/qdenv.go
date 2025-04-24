@@ -18,12 +18,14 @@ package qdenv
 
 import (
 	"fmt"
-	"github.com/JetBrains/qodana-cli/v2025/platform/version"
-	cienvironment "github.com/cucumber/ci-environment/go"
-	log "github.com/sirupsen/logrus"
 	"net/url"
 	"os"
 	"strings"
+
+	"github.com/JetBrains/qodana-cli/v2025/platform/strutil"
+	"github.com/JetBrains/qodana-cli/v2025/platform/version"
+	cienvironment "github.com/cucumber/ci-environment/go"
+	log "github.com/sirupsen/logrus"
 )
 
 const (
@@ -244,9 +246,9 @@ func GetBitBucketRepoFullName() string {
 }
 
 func GetBitBucketRepoOwner() string {
-	return strings.Split(GetBitBucketRepoFullName(), "/")[0]
+	return strutil.SafeSplit(GetBitBucketRepoFullName(), "/", 0)
 }
 
 func GetBitBucketRepoName() string {
-	return strings.Split(GetBitBucketRepoFullName(), "/")[1]
+	return strutil.SafeSplit(GetBitBucketRepoFullName(), "/", 1)
 }

@@ -22,6 +22,7 @@ import (
 	"github.com/JetBrains/qodana-cli/v2025/platform/msg"
 	"github.com/JetBrains/qodana-cli/v2025/platform/product"
 	"github.com/JetBrains/qodana-cli/v2025/platform/qdyaml"
+	"github.com/JetBrains/qodana-cli/v2025/platform/strutil"
 	"github.com/JetBrains/qodana-cli/v2025/platform/utils"
 	"github.com/pterm/pterm"
 	log "github.com/sirupsen/logrus"
@@ -48,7 +49,7 @@ func GetAnalyzer(path string, token string) string {
 				for _, language := range languages {
 					if i, err := product.LangsProductCodes[language]; err {
 						for _, l := range i {
-							analyzers = utils.Append(analyzers, l)
+							analyzers = strutil.Append(analyzers, l)
 						}
 					}
 				}
@@ -57,12 +58,12 @@ func GetAnalyzer(path string, token string) string {
 				}
 			}
 			// breaking change will not be backported to 241
-			if (utils.Contains(analyzers, product.QDAND) || utils.Contains(
+			if (strutil.Contains(analyzers, product.QDAND) || strutil.Contains(
 				analyzers,
 				product.QDANDC,
 			)) && isAndroidProject(path) {
-				analyzers = utils.Remove(analyzers, product.QDAND)
-				analyzers = utils.Remove(analyzers, product.QDANDC)
+				analyzers = strutil.Remove(analyzers, product.QDAND)
+				analyzers = strutil.Remove(analyzers, product.QDANDC)
 				analyzers = append([]string{product.QDAND, product.QDANDC}, analyzers...)
 			}
 		}, "Scanning project", "",
@@ -98,7 +99,7 @@ func filterByLicensePlan(codes []string, token string) []string {
 	if licensePlan := cloud.GetCloudApiEndpoints().GetLicensePlan(token); licensePlan == cloud.CommunityLicensePlan {
 		var filteredCodes []string
 		for _, code := range codes {
-			if utils.Contains(product.AllSupportedFreeCodes, code) {
+			if strutil.Contains(product.AllSupportedFreeCodes, code) {
 				filteredCodes = append(filteredCodes, code)
 			}
 		}

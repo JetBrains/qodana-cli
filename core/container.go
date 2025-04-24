@@ -21,23 +21,24 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
-	"github.com/JetBrains/qodana-cli/v2025/core/corescan"
-	"github.com/JetBrains/qodana-cli/v2025/platform/msg"
-	"github.com/JetBrains/qodana-cli/v2025/platform/product"
-	"github.com/JetBrains/qodana-cli/v2025/platform/qdcontainer"
-	"github.com/JetBrains/qodana-cli/v2025/platform/qdenv"
-	"github.com/JetBrains/qodana-cli/v2025/platform/utils"
-	"github.com/JetBrains/qodana-cli/v2025/platform/version"
-	"github.com/docker/docker/api/types/backend"
-	"github.com/docker/docker/api/types/registry"
-	"github.com/docker/go-connections/nat"
-	"github.com/pterm/pterm"
 	"io"
 	"os"
 	"path/filepath"
 	"runtime"
 	"strconv"
 	"strings"
+
+	"github.com/JetBrains/qodana-cli/v2025/core/corescan"
+	"github.com/JetBrains/qodana-cli/v2025/platform/msg"
+	"github.com/JetBrains/qodana-cli/v2025/platform/product"
+	"github.com/JetBrains/qodana-cli/v2025/platform/qdcontainer"
+	"github.com/JetBrains/qodana-cli/v2025/platform/qdenv"
+	"github.com/JetBrains/qodana-cli/v2025/platform/strutil"
+	"github.com/JetBrains/qodana-cli/v2025/platform/version"
+	"github.com/docker/docker/api/types/backend"
+	"github.com/docker/docker/api/types/registry"
+	"github.com/docker/go-connections/nat"
+	"github.com/pterm/pterm"
 
 	cliconfig "github.com/docker/cli/cli/config"
 
@@ -135,14 +136,14 @@ func checkImage(linter string) {
 		msg.WarningMessageCI(
 			"You are running a Qodana linter without an exact version tag: %s \n   Consider pinning the version in your configuration to ensure version compatibility: %s\n",
 			linter,
-			strings.Join([]string{strings.Split(linter, ":")[0], product.ReleaseVersion}, ":"),
+			strings.Join([]string{strutil.SafeSplit(linter, ":", 0), product.ReleaseVersion}, ":"),
 		)
 	} else if !isCompatibleLinter(linter) {
 		msg.WarningMessageCI(
 			"You are using a non-compatible Qodana linter %s with the current CLI (%s) \n   Consider updating CLI or using a compatible linter %s \n",
 			linter,
 			version.Version,
-			strings.Join([]string{strings.Split(linter, ":")[0], product.ReleaseVersion}, ":"),
+			strings.Join([]string{strutil.SafeSplit(linter, ":", 0), product.ReleaseVersion}, ":"),
 		)
 	}
 }
@@ -200,7 +201,7 @@ func PullImage(client *client.Client, image string) {
 }
 
 func isDockerUnauthorizedError(errMsg string) bool {
-	errMsg = utils.Lower(errMsg)
+	errMsg = strutil.Lower(errMsg)
 	return strings.Contains(errMsg, "unauthorized") || strings.Contains(errMsg, "denied") || strings.Contains(
 		errMsg,
 		"forbidden",
@@ -215,7 +216,9 @@ func pullImage(ctx context.Context, client *client.Client, image string) {
 		if err != nil {
 			log.Fatal(err)
 		}
-		registryHostname := strings.Split(image, "/")[0]
+
+		registryHostname := strutil.SafeSplit(image, "/", 0)
+
 		a, err := cfg.GetAuthConfig(registryHostname)
 		if err != nil {
 			log.Fatal("can't load the auth config", err)
@@ -493,12 +496,18 @@ func runContainer(ctx context.Context, client *client.Client, opts *backend.Cont
 
 // extractDockerVolumes extracts the source and target of the volume to mount.
 func extractDockerVolumes(volume string) (string, string) {
-	split := strings.Split(volume, ":")
-	if len(split) == 2 {
-		return split[0], split[1]
-	} else if //goland:noinspection GoBoolExpressions
+	if //goland:noinspection GoBoolExpressions
 	runtime.GOOS == "windows" {
-		return fmt.Sprintf("%s:%s", split[0], split[1]), split[2]
+		parts := strings.Split(volume, ":")
+		if len(parts) >= 3 {
+			return fmt.Sprintf("%s:%s", parts[0], parts[1]), parts[2]
+		}
+	} else {
+		source := strutil.SafeSplit(volume, ":", 0)
+		target := strutil.SafeSplit(volume, ":", 1)
+		if source != "" && target != "" {
+			return source, target
+		}
 	}
 	return "", ""
 }

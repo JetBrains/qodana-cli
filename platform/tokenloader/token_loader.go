@@ -18,17 +18,19 @@ package tokenloader
 
 import (
 	"fmt"
+	"os"
+	"strings"
+
 	"github.com/JetBrains/qodana-cli/v2025/cloud"
 	"github.com/JetBrains/qodana-cli/v2025/platform/git"
 	"github.com/JetBrains/qodana-cli/v2025/platform/msg"
 	"github.com/JetBrains/qodana-cli/v2025/platform/product"
 	"github.com/JetBrains/qodana-cli/v2025/platform/qdenv"
+	"github.com/JetBrains/qodana-cli/v2025/platform/strutil"
 	"github.com/JetBrains/qodana-cli/v2025/platform/utils"
 	"github.com/pterm/pterm"
 	log "github.com/sirupsen/logrus"
 	"github.com/zalando/go-keyring"
-	"os"
-	"strings"
 )
 
 const keyringDefaultService = "qodana-cli"
@@ -57,8 +59,8 @@ func IsCloudTokenRequired(tokenLoader CloudTokenLoader, forceIsCommunityOrEap bo
 	}
 
 	isQodanaLicenseSet := os.Getenv(qdenv.QodanaLicense) != ""
-	isFreeAnalyzer := utils.Contains(append(product.AllSupportedFreeImages, product.AllSupportedFreeCodes...), analyzer)
-	isEapAnalyzer := strings.Contains(utils.Lower(analyzer), "eap")
+	isFreeAnalyzer := strutil.Contains(append(product.AllSupportedFreeImages, product.AllSupportedFreeCodes...), analyzer)
+	isEapAnalyzer := strings.Contains(strutil.Lower(analyzer), "eap")
 	if isQodanaLicenseSet || isFreeAnalyzer || isEapAnalyzer || forceIsCommunityOrEap {
 		return false
 	}

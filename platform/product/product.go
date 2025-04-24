@@ -17,9 +17,9 @@
 package product
 
 import (
+	"github.com/JetBrains/qodana-cli/v2025/platform/strutil"
 	"strings"
 
-	"github.com/JetBrains/qodana-cli/v2025/platform/utils"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -169,5 +169,5 @@ func GuessProductCode(ide string, linter string) string {
 }
 
 func IsNativeAnalyzer(analyzer string) bool {
-	return utils.Contains(AllNativeCodes, analyzer)
+	return strutil.Contains(AllNativeCodes, analyzer)
 }

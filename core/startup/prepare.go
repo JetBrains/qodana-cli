@@ -25,8 +25,8 @@ import (
 	"github.com/JetBrains/qodana-cli/v2025/platform/product"
 	"github.com/JetBrains/qodana-cli/v2025/platform/qdcontainer"
 	"github.com/JetBrains/qodana-cli/v2025/platform/qdenv"
+	"github.com/JetBrains/qodana-cli/v2025/platform/strutil"
 	"github.com/JetBrains/qodana-cli/v2025/platform/tokenloader"
-	"github.com/JetBrains/qodana-cli/v2025/platform/utils"
 	cp "github.com/otiai10/copy"
 	"github.com/pterm/pterm"
 	log "github.com/sirupsen/logrus"
@@ -76,7 +76,7 @@ func PrepareHost(commonCtx commoncontext.Context) PreparedHost {
 		qdcontainer.PrepareContainerEnvSettings()
 	}
 	if commonCtx.Ide != "" {
-		if utils.Contains(product.AllNativeCodes, strings.TrimSuffix(commonCtx.Ide, product.EapSuffix)) {
+		if strutil.Contains(product.AllNativeCodes, strings.TrimSuffix(commonCtx.Ide, product.EapSuffix)) {
 			msg.PrintProcess(
 				func(spinner *pterm.SpinnerPrinter) {
 					if spinner != nil {
