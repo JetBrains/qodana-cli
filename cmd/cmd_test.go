@@ -223,7 +223,6 @@ func TestPullInNative(t *testing.T) {
 }
 
 func TestAllCommandsWithContainer(t *testing.T) {
-	t.Skip("Muted until 2025.1 linters are not released")
 	version.Version = "0.1.0"
 	linter := "registry.jetbrains.team/p/sa/containers/qodana-dotnet:latest"
 
@@ -380,7 +379,6 @@ func TestAllCommandsWithContainer(t *testing.T) {
 }
 
 func TestScanWithIde(t *testing.T) {
-	t.Skip("Muted until 2025.1 linters are not released")
 	log.SetLevel(log.DebugLevel)
 	token := os.Getenv("QODANA_LICENSE_ONLY_TOKEN")
 	if token == "" {
