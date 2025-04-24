@@ -37,9 +37,6 @@ jobs:
           touch cdnet/clt.zip tooling/baseline-cli.jar tooling/intellij-report-converter.jar tooling/qodana-fuser.jar
           rm go.work && mv go.work.github go.work
         shell: bash
-      - name: Download config-loader-cli.jar
-        run: chmod +x download_deps.sh && ./download_deps.sh
-        shell: bash
       - name: Set up gotestfmt
         uses: gotesttools/gotestfmt-action@v2
         with:
@@ -53,7 +50,10 @@ jobs:
       - name: Build
         # Build everything that will be tested. Although go test performs a build itself, gotestfmt will panic on a
         # failed build.
-        run: go build -v $(go list -m)
+        run: |
+          go generate -v $(go list -f '{{.Dir}}/...' -m)
+          go build -v $(go list -f '{{.Dir}}/...' -m)
+        shell: bash
       - name: Run tests (with coverage)
         if: ${{ matrix.os != 'windows-latest' }}
         run: |

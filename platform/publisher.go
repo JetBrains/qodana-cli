@@ -23,20 +23,14 @@
 package platform
 
 import (
-	"crypto/md5"
-	"encoding/hex"
+	"os"
+
 	"github.com/JetBrains/qodana-cli/v2025/cloud"
 	"github.com/JetBrains/qodana-cli/v2025/platform/qdenv"
 	"github.com/JetBrains/qodana-cli/v2025/platform/utils"
+	"github.com/JetBrains/qodana-cli/v2025/tooling"
 	log "github.com/sirupsen/logrus"
-	"io"
-	"net/http"
-	"os"
-	"path/filepath"
 )
-
-const PublisherJarName = "publisher-cli.jar"
-const PublisherVersion = "2.1.31"
 
 type Publisher struct {
 	ResultsDir string
@@ -45,24 +39,31 @@ type Publisher struct {
 }
 
 // SendReport sends report to Qodana Cloud.
-func SendReport(publisher Publisher, token string, publisherPath string, javaPath string) {
-	if _, err := os.Stat(publisherPath); os.IsNotExist(err) {
-		err := os.MkdirAll(filepath.Dir(publisherPath), os.ModePerm)
+func SendReport(publisher Publisher, token string, javaPath string) {
+	file, err := os.CreateTemp("", "qodana-publisher.jar")
+	if err != nil {
+		log.Fatalf("Failed to create a temporary file: %s", err)
+	}
+	publisherPath := file.Name()
+	err = file.Close()
+	if err != nil {
+		log.Fatalf("Failed to close temporary file %q: %s", file.Name(), err)
+	}
+	defer func() {
+		err = os.Remove(file.Name())
 		if err != nil {
-			log.Fatalf("failed to create directory: %v", err)
+			log.Fatalf("Failed to remove temporary file %q: %s", file.Name(), err)
 		}
-		fetchPublisher(publisherPath)
-	}
-	if _, err := os.Stat(publisherPath); os.IsNotExist(err) {
-		log.Fatalf("Not able to send the report: %s is missing", publisherPath)
-	}
+	}()
+
+	extractPublisher(publisherPath)
 
 	publisherCommand := getPublisherArgs(
 		javaPath,
 		publisherPath,
 		publisher,
 		token,
-		cloud.GetCloudApiEndpoints().CloudApiUrl,
+		cloud.GetCloudRootEndpoint().Url,
 	)
 	if _, _, res, err := utils.LaunchAndLog(publisher.LogDir, "publisher", publisherCommand...); res > 0 || err != nil {
 		os.Exit(res)
@@ -90,69 +91,25 @@ func getPublisherArgs(java string, publisherPath string, publisher Publisher, to
 		}
 	}
 	if endpoint != "" {
-		publisherArgs = append(publisherArgs, "--endpoint", endpoint)
+		publisherArgs = append(publisherArgs, "--qodana-endpoint", endpoint)
 	}
 	return publisherArgs
 }
 
-func getPublisherUrl(version string) string {
-	return "https://packages.jetbrains.team/maven/p/ij/intellij-dependencies/org/jetbrains/qodana/publisher-cli/" + version + "/publisher-cli-" + version + ".jar"
-}
-
-func fetchPublisher(path string) {
-	jarVersion := PublisherVersion
-	if _, err := os.Stat(path); err == nil {
-		return
-	}
-	err := utils.DownloadFile(path, getPublisherUrl(jarVersion), nil)
+func extractPublisher(path string) {
+	file, err := os.Create(path)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("Error while creating %q: %s", path, err)
 	}
-	verifyMd5Hash(jarVersion, path)
-}
-
-func verifyMd5Hash(version string, path string) {
-	if _, err := os.Stat(path); err != nil {
-		log.Fatal(err)
-	}
-	url := getPublisherUrl(version) + ".md5"
-	resp, err := http.Get(url)
-	if err != nil {
-		log.Fatalf("Error downloading md5 hash: %v", err)
-	}
-	defer func(Body io.ReadCloser) {
-		err := Body.Close()
+	defer func() {
+		err := file.Close()
 		if err != nil {
-			log.Fatal(err)
+			log.Fatalf("Error while closing %q: %s", path, err)
 		}
-	}(resp.Body)
+	}()
 
-	body, err := io.ReadAll(resp.Body)
+	_, err = file.Write(tooling.PublisherCli)
 	if err != nil {
-		log.Fatalf("Error reading md5 hash: %v", err)
-	}
-
-	downloadedMd5 := string(body)
-	fileContent, err := os.ReadFile(path)
-	if err != nil {
-		log.Fatalf("Error reading file: %v", err)
-	}
-
-	hasher := md5.New()
-	_, err = hasher.Write(fileContent)
-	if err != nil {
-		log.Fatalf("Error computing md5 hash: %v", err)
-	}
-
-	computedMd5 := hex.EncodeToString(hasher.Sum(nil))
-
-	if computedMd5 != downloadedMd5 {
-		err = os.Remove(path)
-		if err != nil {
-			log.Fatalf("Please remove file, since md5 doesn't match: %s", path)
-		}
-		log.Fatal("The provided file and the file from the link have different md5 hashes")
-	} else {
-		log.Debug("Obtained publisher " + version + " and successfully checked md5 hash")
+		log.Fatalf("Error while writing %q: %s", path, err)
 	}
 }

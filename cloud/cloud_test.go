@@ -45,7 +45,7 @@ func TestGetProjectByBadToken(t *testing.T) {
 
 // debug purpose only
 func TestGetProjectByStaging(t *testing.T) {
-	endpoint := QdRootEndpoint{Host: "cloud.sssa-stgn.aws.intellij.net"}
+	endpoint := QdRootEndpoint{Url: "https://cloud.sssa-stgn.aws.intellij.net"}
 	token := os.Getenv("QODANA_TOKEN")
 	if token == "" {
 		t.Skip()
@@ -86,18 +86,20 @@ func TestGetReportUrl(t *testing.T) {
 			expectedReport: "",
 		},
 	} {
-		t.Run(tc.name, func(t *testing.T) {
-			dir := t.TempDir()
-			jsonFile := filepath.Join(dir, openInIdeJson)
-			jsonFileData, _ := json.Marshal(tc.jsonData)
-			if err := os.WriteFile(jsonFile, jsonFileData, 0644); err != nil {
-				t.Fatal(err)
-			}
+		t.Run(
+			tc.name, func(t *testing.T) {
+				dir := t.TempDir()
+				jsonFile := filepath.Join(dir, openInIdeJson)
+				jsonFileData, _ := json.Marshal(tc.jsonData)
+				if err := os.WriteFile(jsonFile, jsonFileData, 0644); err != nil {
+					t.Fatal(err)
+				}
 
-			actual := GetReportUrl(dir)
-			if actual != tc.expectedReport {
-				t.Fatalf("Expected \"%s\" but got \"%s\"", tc.expectedReport, actual)
-			}
-		})
+				actual := GetReportUrl(dir)
+				if actual != tc.expectedReport {
+					t.Fatalf("Expected \"%s\" but got \"%s\"", tc.expectedReport, actual)
+				}
+			},
+		)
 	}
 }

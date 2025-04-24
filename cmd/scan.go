@@ -186,6 +186,9 @@ func checkExitCode(exitCode int, c corescan.Context) {
 	} else if exitCode == utils.QodanaTimeoutExitCodePlaceholder {
 		msg.ErrorMessage("Qodana analysis reached timeout %s", c.GetAnalysisTimeout())
 		os.Exit(c.AnalysisTimeoutExitCode())
+	} else if exitCode == utils.QodanaEmptyChangesetExitCodePlaceholder {
+		msg.ErrorMessage("Nothing to analyse. Exiting with %s", utils.QodanaSuccessExitCode)
+		os.Exit(utils.QodanaSuccessExitCode)
 	} else if exitCode != utils.QodanaSuccessExitCode && exitCode != utils.QodanaFailThresholdExitCode {
 		msg.ErrorMessage("Qodana exited with code %d", exitCode)
 		msg.WarningMessage("Check ./logs/ in the results directory for more information")

@@ -33,6 +33,7 @@ func CheckEAP(buildDateStr string, isEap bool) {
 		return
 	}
 
+	//golang:noinspection GoDfaErrorMayBeNotNil
 	deadline := buildDate.AddDate(0, 0, 60)
 	now := time.Now()
 	if now.After(deadline) {

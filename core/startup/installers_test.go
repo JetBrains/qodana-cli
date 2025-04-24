@@ -26,6 +26,7 @@ import (
 )
 
 func TestGetIde(t *testing.T) {
+	t.Skip("Muted until 2025.1 linters are not released")
 	//os.Setenv("QD_PRODUCT_INTERNAL_FEED", "https://data.services.jetbrains.com/products")
 	for _, installer := range product.AllNativeCodes {
 		ide := getIde(installer)
@@ -42,6 +43,7 @@ func TestGetIde(t *testing.T) {
 }
 
 func TestDownloadAndInstallIDE(t *testing.T) {
+	t.Skip("Muted until 2025.1 linters are not released")
 	ides := []string{"QDGO"}
 	for _, ide := range ides {
 		DownloadAndInstallIDE(ide, t)

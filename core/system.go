@@ -265,7 +265,19 @@ func runScopeScript(ctx context.Context, c corescan.Context, startHash string) i
 		}
 	}
 
-	scopeFile, err := writeChangesFile(c, startHash, end)
+	if startHash == "" || end == "" {
+		log.Fatal("No commits given. Consider passing --commit or --diff-start and --diff-end (optional) with the range of commits to analyze.")
+	}
+	changedFiles, err := git.ComputeChangedFiles(c.ProjectDir(), startHash, end, c.LogDir())
+	if err != nil {
+		log.Fatal(err)
+	}
+	if len(changedFiles.Files) == 0 {
+		log.Warnf("Nothing to compare between %s and %s", startHash, end)
+		return utils.QodanaEmptyChangesetExitCodePlaceholder
+	}
+
+	scopeFile, err := writeChangesFile(c, changedFiles)
 	if err != nil {
 		log.Fatal("Failed to prepare diff run ", err)
 	}
@@ -348,18 +360,7 @@ func runScopeScript(ctx context.Context, c corescan.Context, startHash string) i
 }
 
 // writeChangesFile creates a temp file containing the changes between diffStart and diffEnd
-func writeChangesFile(c corescan.Context, start string, end string) (string, error) {
-	if start == "" || end == "" {
-		return "", fmt.Errorf("no commits given")
-	}
-	changedFiles, err := git.ComputeChangedFiles(c.ProjectDir(), start, end, c.LogDir())
-	if err != nil {
-		return "", err
-	}
-
-	if len(changedFiles.Files) == 0 {
-		return "", fmt.Errorf("nothing to compare between %s and %s", start, end)
-	}
+func writeChangesFile(c corescan.Context, changedFiles git.ChangedFiles) (string, error) {
 	file, err := os.CreateTemp("", "diff-scope.txt")
 	if err != nil {
 		return "", err
