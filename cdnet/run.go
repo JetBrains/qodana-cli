@@ -72,8 +72,8 @@ func (l CdnetLinter) MountTools(path string) (map[string]string, error) {
 
 	if _, err := os.Stat(val["clt"]); err != nil {
 		if os.IsNotExist(err) {
-			path := platform.ProcessAuxiliaryTool(archive, moniker, path, Clt)
-			if err := platform.Decompress(path, path); err != nil {
+			archivePath := platform.ProcessAuxiliaryTool(archive, moniker, path, Clt)
+			if err := platform.Decompress(archivePath, path); err != nil {
 				return nil, fmt.Errorf("failed to decompress %s archive: %w", moniker, err)
 			}
 		}

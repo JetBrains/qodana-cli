@@ -58,12 +58,12 @@ jobs:
         if: ${{ matrix.os != 'windows-latest' }}
         run: |
           set -euo pipefail
-          go test -json -v $(go list -f '{{.Dir}}/...' -m | xargs) -coverprofile coverage-${{ matrix.os }}.out 2>&1 | tee /tmp/gotest.log | gotestfmt
+          go test -json -v $(go list -f '{{.Dir}}/...' -m) -coverprofile coverage-${{ matrix.os }}.out 2>&1 | tee /tmp/gotest.log | gotestfmt
         env:
           QODANA_LICENSE_ONLY_TOKEN: ${{ secrets.QODANA_LICENSE_ONLY_TOKEN }}
       - name: Run tests (with coverage) for Windows
         if: ${{ matrix.os == 'windows-latest' }}
-        run: go test -v $(go list -f '{{.Dir}}/...' -m | ForEach-Object { $_ }) -coverprofile coverage-${{ matrix.os }}.out
+        run: go test -v $(go list -f '{{.Dir}}/...' -m) -coverprofile coverage-${{ matrix.os }}.out
         env:
           QODANA_LICENSE_ONLY_TOKEN: ${{ secrets.QODANA_LICENSE_ONLY_TOKEN }}
 

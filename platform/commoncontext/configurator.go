@@ -18,12 +18,14 @@ package commoncontext
 
 import (
 	"bytes"
-	"github.com/JetBrains/qodana-cli/v2025/platform/utils"
 	"io"
 	"os"
 	"path/filepath"
+	"slices"
 	"sort"
 	"strings"
+
+	"github.com/JetBrains/qodana-cli/v2025/platform/utils"
 
 	"github.com/go-enry/go-enry/v2"
 
@@ -69,6 +71,7 @@ func recognizeDirLanguages(projectPath string) ([]string, error) {
 			}
 
 			relpath, err := filepath.Rel(projectPath, path)
+			relpath = filepath.ToSlash(relpath) // enry always uses forward slashes for regex matching
 			if err != nil {
 				return nil
 			}
@@ -78,7 +81,7 @@ func recognizeDirLanguages(projectPath string) ([]string, error) {
 			}
 
 			if f.IsDir() {
-				relpath = relpath + string(os.PathSeparator)
+				relpath += "/"
 			}
 			if isInIgnoredDirectory(path) || enry.IsVendor(relpath) || enry.IsDotFile(relpath) ||
 				enry.IsDocumentation(relpath) || enry.IsConfiguration(relpath) ||
@@ -136,6 +139,7 @@ func recognizeDirLanguages(projectPath string) ([]string, error) {
 		languages = append(languages, langCount.Language)
 	}
 
+	slices.Sort(languages)
 	return languages, nil
 }
 

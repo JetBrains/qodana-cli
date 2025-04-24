@@ -19,8 +19,13 @@ package platform
 import (
 	"errors"
 	"fmt"
+	"os"
+	"path"
+	"path/filepath"
+	"strings"
+
 	"github.com/JetBrains/qodana-cli/v2025/cloud"
-	"github.com/JetBrains/qodana-cli/v2025/platform/cmd"
+	platformcmd "github.com/JetBrains/qodana-cli/v2025/platform/cmd"
 	"github.com/JetBrains/qodana-cli/v2025/platform/commoncontext"
 	"github.com/JetBrains/qodana-cli/v2025/platform/effectiveconfig"
 	"github.com/JetBrains/qodana-cli/v2025/platform/msg"
@@ -31,10 +36,6 @@ import (
 	"github.com/JetBrains/qodana-cli/v2025/platform/utils"
 	"github.com/JetBrains/qodana-cli/v2025/tooling"
 	log "github.com/sirupsen/logrus"
-	"os"
-	"path"
-	"path/filepath"
-	"strings"
 )
 
 func RunThirdPartyLinterAnalysis(
@@ -45,8 +46,8 @@ func RunThirdPartyLinterAnalysis(
 	var err error
 
 	commonCtx := commoncontext.Compute(
-		cliOptions.Linter,
-		cliOptions.Ide,
+		"",
+		linterInfo.ProductCode,
 		cliOptions.CacheDir,
 		cliOptions.ResultsDir,
 		cliOptions.ReportDir,

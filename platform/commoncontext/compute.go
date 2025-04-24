@@ -20,18 +20,19 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"fmt"
+	"os"
+	"path/filepath"
+
 	"github.com/JetBrains/qodana-cli/v2025/platform/msg"
 	"github.com/JetBrains/qodana-cli/v2025/platform/product"
 	"github.com/JetBrains/qodana-cli/v2025/platform/qdcontainer"
 	"github.com/JetBrains/qodana-cli/v2025/platform/qdenv"
 	"github.com/JetBrains/qodana-cli/v2025/platform/qdyaml"
-	"os"
-	"path/filepath"
 )
 
 func Compute(
-	linterFromCliOptions string,
-	ideFromCliOptions string,
+	overrideLinter string,
+	overrideIde string,
 	cacheDirFromCliOptions string,
 	resultsDirFromCliOptions string,
 	reportDirFromCliOptions string,
@@ -40,13 +41,15 @@ func Compute(
 	projectDir string,
 	localNotEffectiveQodanaYamlPathInProject string,
 ) Context {
-	linter, ide := computeActualLinterAndIde(
-		linterFromCliOptions,
-		ideFromCliOptions,
-		qodanaCloudToken,
-		projectDir,
-		localNotEffectiveQodanaYamlPathInProject,
-	)
+	linter, ide := overrideLinter, overrideIde
+	if linter == "" && ide == "" {
+		linter, ide = getLinterAndIdeFromProject(
+			qodanaCloudToken,
+			projectDir,
+			localNotEffectiveQodanaYamlPathInProject,
+		)
+	}
+
 	qodanaId := computeId(linter, ide, projectDir)
 	systemDir := computeQodanaSystemDir(cacheDirFromCliOptions)
 	linterDir := filepath.Join(systemDir, qodanaId)
@@ -69,49 +72,43 @@ func Compute(
 	return commonCtx
 }
 
-func computeActualLinterAndIde(
-	linterFromCliOptions string,
-	ideFromCliOptions string,
+func getLinterAndIdeFromProject(
 	qodanaCloudToken string,
 	projectDir string,
 	localNotEffectiveQodanaYamlPathInProject string,
-) (string, string) {
-	linter := linterFromCliOptions
-	ide := ideFromCliOptions
-
-	if linter == "" && ide == "" {
-		qodanaYamlPath := qdyaml.GetLocalNotEffectiveQodanaYamlFullPath(
-			projectDir,
+) (linter string, ide string) {
+	qodanaYamlPath := qdyaml.GetLocalNotEffectiveQodanaYamlFullPath(
+		projectDir,
+		localNotEffectiveQodanaYamlPathInProject,
+	)
+	qodanaYaml := qdyaml.LoadQodanaYamlByFullPath(qodanaYamlPath)
+	if qodanaYaml.Linter == "" && qodanaYaml.Ide == "" {
+		msg.WarningMessage(
+			"No valid `linter:` or `ide:` field found in %s. Have you run %s? Running that for you...",
+			msg.PrimaryBold(localNotEffectiveQodanaYamlPathInProject),
+			msg.PrimaryBold("qodana init"),
+		)
+		analyzer := GetAnalyzer(projectDir, qodanaCloudToken)
+		if product.IsNativeAnalyzer(analyzer) {
+			ide = analyzer
+		} else {
+			linter = analyzer
+		}
+	} else if qodanaYaml.Linter != "" && qodanaYaml.Ide != "" {
+		msg.ErrorMessage(
+			"You have both `linter:` (%s) and `ide:` (%s) fields set in %s. Modify the configuration file to keep one of them",
+			qodanaYaml.Linter,
+			qodanaYaml.Ide,
 			localNotEffectiveQodanaYamlPathInProject,
 		)
-		qodanaYaml := qdyaml.LoadQodanaYamlByFullPath(qodanaYamlPath)
-		if qodanaYaml.Linter == "" && qodanaYaml.Ide == "" {
-			msg.WarningMessage(
-				"No valid `linter:` or `ide:` field found in %s. Have you run %s? Running that for you...",
-				msg.PrimaryBold(localNotEffectiveQodanaYamlPathInProject),
-				msg.PrimaryBold("qodana init"),
-			)
-			analyzer := GetAnalyzer(projectDir, qodanaCloudToken)
-			if product.IsNativeAnalyzer(analyzer) {
-				ide = analyzer
-			} else {
-				linter = analyzer
-			}
-		} else if qodanaYaml.Linter != "" && qodanaYaml.Ide != "" {
-			msg.ErrorMessage(
-				"You have both `linter:` (%s) and `ide:` (%s) fields set in %s. Modify the configuration file to keep one of them",
-				qodanaYaml.Linter,
-				qodanaYaml.Ide,
-				localNotEffectiveQodanaYamlPathInProject,
-			)
-			os.Exit(1)
-		}
-		if qodanaYaml.Linter != "" {
-			linter = qodanaYaml.Linter
-		} else if qodanaYaml.Ide != "" {
-			ide = qodanaYaml.Ide
-		}
+		os.Exit(1)
 	}
+	if qodanaYaml.Linter != "" {
+		linter = qodanaYaml.Linter
+	} else if qodanaYaml.Ide != "" {
+		ide = qodanaYaml.Ide
+	}
+
 	return linter, ide
 }
 
