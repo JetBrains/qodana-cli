@@ -43,3 +43,7 @@ com.intellij.jsonpath
 com.intellij.hardcodedPasswords
 com.jetbrains.codeWithMe
 com.intellij.database
+intellij.grid.core.impl
+intellij.grid.impl
+intellij.grid.plugin
+intellij.charts
