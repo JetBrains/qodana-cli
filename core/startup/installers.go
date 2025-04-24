@@ -22,6 +22,7 @@ import (
 	"fmt"
 	"github.com/JetBrains/qodana-cli/v2025/platform/msg"
 	"github.com/JetBrains/qodana-cli/v2025/platform/product"
+	"github.com/JetBrains/qodana-cli/v2025/platform/strutil"
 	"github.com/JetBrains/qodana-cli/v2025/platform/utils"
 	cp "github.com/otiai10/copy"
 	"github.com/pterm/pterm"
@@ -140,7 +141,7 @@ func getIde(productCode string) *ReleaseDownloadInfo {
 		return nil
 	}
 
-	if !utils.Contains(product.AllNativeCodes, productCode) {
+	if !strutil.Contains(product.AllNativeCodes, productCode) {
 		msg.ErrorMessage("Product code is not supported: ", originalCode)
 		return nil
 	}
@@ -213,7 +214,7 @@ func getIde(productCode string) *ReleaseDownloadInfo {
 
 // installIdeWindowsExe is used as a fallback, since it needs installation privileges and alters the registry
 func installIdeWindowsExe(archivePath string, targetDir string) error {
-	_, err := exec.Command(archivePath, "/S", fmt.Sprintf("/D=%s", utils.QuoteForWindows(targetDir))).Output()
+	_, err := exec.Command(archivePath, "/S", fmt.Sprintf("/D=%s", strutil.QuoteForWindows(targetDir))).Output()
 	if err != nil {
 		return fmt.Errorf("%s: %s", archivePath, err)
 	}
@@ -227,9 +228,9 @@ func installIdeFromZip(archivePath string, targetDir string) error {
 	_, err := exec.Command(
 		"tar",
 		"-xf",
-		utils.QuoteForWindows(archivePath),
+		strutil.QuoteForWindows(archivePath),
 		"-C",
-		utils.QuoteForWindows(targetDir),
+		strutil.QuoteForWindows(targetDir),
 	).Output()
 	if err != nil {
 		return fmt.Errorf("tar: %s", err)

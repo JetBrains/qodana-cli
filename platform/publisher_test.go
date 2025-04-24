@@ -18,6 +18,7 @@ package platform
 
 import (
 	"github.com/JetBrains/qodana-cli/v2025/platform/qdenv"
+	"github.com/JetBrains/qodana-cli/v2025/platform/strutil"
 	"github.com/JetBrains/qodana-cli/v2025/platform/utils"
 	"os"
 	"path/filepath"
@@ -65,7 +66,7 @@ func TestGetPublisherArgs(t *testing.T) {
 
 	// Assert that the expected arguments are present
 	expectedArgs := []string{
-		utils.QuoteForWindows(java),
+		strutil.QuoteForWindows(java),
 		"-jar",
 		"test-publisher.jar",
 		"--analysis-id", "test-analysis-id",

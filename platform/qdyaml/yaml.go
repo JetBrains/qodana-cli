@@ -19,7 +19,7 @@ package qdyaml
 import (
 	"bytes"
 	"errors"
-	"github.com/JetBrains/qodana-cli/v2025/platform/utils"
+	"github.com/JetBrains/qodana-cli/v2025/platform/strutil"
 	log "github.com/sirupsen/logrus"
 	"gopkg.in/yaml.v3"
 	"os"
@@ -373,49 +373,49 @@ func LoadQodanaYamlByFullPath(fullPath string) QodanaYaml {
 func (q *QodanaYaml) Sort() *QodanaYaml {
 	sort.Slice(
 		q.Includes, func(i, j int) bool {
-			return utils.Lower(q.Includes[i].Name) < utils.Lower(q.Includes[j].Name)
+			return strutil.Lower(q.Includes[i].Name) < strutil.Lower(q.Includes[j].Name)
 		},
 	)
 	sort.Slice(
 		q.Excludes, func(i, j int) bool {
-			return utils.Lower(q.Excludes[i].Name) < utils.Lower(q.Excludes[j].Name)
+			return strutil.Lower(q.Excludes[i].Name) < strutil.Lower(q.Excludes[j].Name)
 		},
 	)
 	for _, rule := range q.LicenseRules {
 		sort.Slice(
 			rule.Keys, func(i, j int) bool {
-				return utils.Lower(rule.Keys[i]) < utils.Lower(rule.Keys[j])
+				return strutil.Lower(rule.Keys[i]) < strutil.Lower(rule.Keys[j])
 			},
 		)
 		sort.Slice(
 			rule.Allowed, func(i, j int) bool {
-				return utils.Lower(rule.Allowed[i]) < utils.Lower(rule.Allowed[j])
+				return strutil.Lower(rule.Allowed[i]) < strutil.Lower(rule.Allowed[j])
 			},
 		)
 		sort.Slice(
 			rule.Prohibited, func(i, j int) bool {
-				return utils.Lower(rule.Prohibited[i]) < utils.Lower(rule.Prohibited[j])
+				return strutil.Lower(rule.Prohibited[i]) < strutil.Lower(rule.Prohibited[j])
 			},
 		)
 	}
 	sort.Slice(
 		q.DependencyIgnores, func(i, j int) bool {
-			return utils.Lower(q.DependencyIgnores[i].Name) < utils.Lower(q.DependencyIgnores[j].Name)
+			return strutil.Lower(q.DependencyIgnores[i].Name) < strutil.Lower(q.DependencyIgnores[j].Name)
 		},
 	)
 	sort.Slice(
 		q.DependencyOverrides, func(i, j int) bool {
-			return utils.Lower(q.DependencyOverrides[i].Name) < utils.Lower(q.DependencyOverrides[j].Name)
+			return strutil.Lower(q.DependencyOverrides[i].Name) < strutil.Lower(q.DependencyOverrides[j].Name)
 		},
 	)
 	sort.Slice(
 		q.CustomDependencies, func(i, j int) bool {
-			return utils.Lower(q.CustomDependencies[i].Name) < utils.Lower(q.CustomDependencies[j].Name)
+			return strutil.Lower(q.CustomDependencies[i].Name) < strutil.Lower(q.CustomDependencies[j].Name)
 		},
 	)
 	sort.Slice(
 		q.Plugins, func(i, j int) bool {
-			return utils.Lower(q.Plugins[i].Id) < utils.Lower(q.Plugins[j].Id)
+			return strutil.Lower(q.Plugins[i].Id) < strutil.Lower(q.Plugins[j].Id)
 		},
 	)
 	return q
@@ -435,7 +435,7 @@ func WriteQodanaLinterToYamlFile(qodanaYamlFullPath string, linter string, allPr
 		q.Version = "1.0"
 	}
 	q.Sort()
-	if utils.Contains(allProductCodes, linter) {
+	if strutil.Contains(allProductCodes, linter) {
 		q.Ide = linter
 	} else {
 		q.Linter = linter

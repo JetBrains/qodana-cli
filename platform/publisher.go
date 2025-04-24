@@ -23,6 +23,7 @@
 package platform
 
 import (
+	"github.com/JetBrains/qodana-cli/v2025/platform/strutil"
 	"os"
 
 	"github.com/JetBrains/qodana-cli/v2025/cloud"
@@ -73,11 +74,11 @@ func SendReport(publisher Publisher, token string, javaPath string) {
 // getPublisherArgs returns args for the publisher.
 func getPublisherArgs(java string, publisherPath string, publisher Publisher, token string, endpoint string) []string {
 	publisherArgs := []string{
-		utils.QuoteForWindows(java),
+		strutil.QuoteForWindows(java),
 		"-jar",
-		utils.QuoteForWindows(publisherPath),
+		strutil.QuoteForWindows(publisherPath),
 		"--analysis-id", publisher.AnalysisId,
-		"--report-path", utils.QuoteForWindows(publisher.ResultsDir),
+		"--report-path", strutil.QuoteForWindows(publisher.ResultsDir),
 		"--token", token,
 	}
 	var tools []string

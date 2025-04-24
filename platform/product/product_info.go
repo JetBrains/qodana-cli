@@ -21,6 +21,7 @@ import (
 	"fmt"
 	"github.com/JetBrains/qodana-cli/v2025/platform/msg"
 	"github.com/JetBrains/qodana-cli/v2025/platform/qdenv"
+	"github.com/JetBrains/qodana-cli/v2025/platform/strutil"
 	"github.com/JetBrains/qodana-cli/v2025/platform/utils"
 	"os"
 	"path/filepath"
@@ -155,7 +156,7 @@ func (p Product) IsCommunity() bool {
 	if p.Code == "" {
 		return true
 	}
-	if utils.Contains(AllSupportedFreeCodes, p.Code) {
+	if strutil.Contains(AllSupportedFreeCodes, p.Code) {
 		return true
 	}
 	return false
