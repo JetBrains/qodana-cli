@@ -5,15 +5,104 @@
 package main
 
 import (
+	"crypto/sha256"
 	"encoding/hex"
 	"encoding/json"
+	"errors"
 	"flag"
+	"fmt"
+	"io"
 	"log"
+	"net/http"
 	"os"
+	"strconv"
 	"strings"
-
-	"github.com/JetBrains/qodana-cli/v2024/platform"
 )
+
+// GetSha256 computes a hash sum for a byte stream.
+func GetSha256(stream io.Reader) (result [32]byte, err error) {
+	hasher := sha256.New()
+	_, err = io.Copy(hasher, stream)
+	if err != nil {
+		return result, err
+	}
+
+	copy(result[:], hasher.Sum(nil))
+	return result, nil
+}
+
+// GetFileSha256 computes a hash sum from an existing file.
+func GetFileSha256(path string) (result [32]byte, err error) {
+	reader, err := os.Open(path)
+	if err != nil {
+		return result, err
+	}
+	defer func() {
+		err = errors.Join(err, reader.Close())
+	}()
+
+	return GetSha256(reader)
+}
+
+// DownloadFile downloads a file from a given URL to a given filepath.
+func DownloadFile(filepath string, url string) error {
+	response, err := http.Head(url)
+	if err != nil {
+		return fmt.Errorf("error making HEAD request: %w", err)
+	}
+
+	sizeStr := response.Header.Get("Content-Length")
+	if sizeStr == "" {
+		sizeStr = "-1"
+	}
+	size, err := strconv.Atoi(sizeStr)
+	if err != nil {
+		return fmt.Errorf("error converting Content-Length to integer: %w", err)
+	}
+
+	resp, err := http.Get(url)
+	if err != nil {
+		return fmt.Errorf("error making GET request: %w", err)
+	}
+	defer func(Body io.ReadCloser) {
+		if err := Body.Close(); err != nil {
+			fmt.Printf("Error while closing HTTP stream: %v\n", err)
+		}
+	}(resp.Body)
+
+	out, err := os.Create(filepath)
+	if err != nil {
+		return fmt.Errorf("error creating file: %w", err)
+	}
+	defer func(out *os.File) {
+		if err := out.Close(); err != nil {
+			fmt.Printf("Error while closing output file: %v\n", err)
+		}
+	}(out)
+
+	buffer := make([]byte, 1024)
+	total := 0
+	for {
+		length, err := resp.Body.Read(buffer)
+		if err != nil && err != io.EOF {
+			return fmt.Errorf("error reading response body: %w", err)
+		}
+		total += length
+		if length == 0 {
+			break
+		}
+		if _, err = out.Write(buffer[:length]); err != nil {
+			return fmt.Errorf("error writing to file: %w", err)
+		}
+	}
+
+	// Check if the size matches, but only if the Content-Length header was present and valid
+	if size > 0 && total != size {
+		return fmt.Errorf("downloaded file size doesn't match expected size, got %d, expected %d", total, size)
+	}
+
+	return nil
+}
 
 type Resource struct {
 	Url     string `json:"url"`
@@ -54,7 +143,7 @@ func main() {
 	_, err = os.Stat(path)
 	if err == nil && !force {
 		// If a file is already downloaded, check its hash sum and exit early
-		actualSha256Bytes, err := platform.GetFileSha256(path)
+		actualSha256Bytes, err := GetFileSha256(path)
 		if err != nil {
 			log.Fatalf("Error while calculating SHA-256: %s", err)
 		}
@@ -65,12 +154,12 @@ func main() {
 		}
 	}
 
-	err = platform.DownloadFile(path, resolvedUrl, nil)
+	err = DownloadFile(path, resolvedUrl)
 	if err != nil {
 		log.Fatalf("Error while downloading %s: %s", resolvedUrl, err)
 	}
 
-	actualSha256Bytes, err := platform.GetFileSha256(path)
+	actualSha256Bytes, err := GetFileSha256(path)
 	if err != nil {
 		log.Fatalf("Error while calculating SHA-256: %s", err)
 	}
