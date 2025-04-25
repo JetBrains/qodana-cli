@@ -68,7 +68,6 @@ func TestGetPublisherArgs(t *testing.T) {
 		"-jar",
 		"test-publisher.jar",
 		"--analysis-id", "test-analysis-id",
-		"--sources-path", "/path/to/project",
 		"--report-path", filepath.FromSlash("/path/to/report/results"),
 		"--token", "test-token",
 		"--tool", "test-tool",
