@@ -177,7 +177,7 @@ func defineResultAndCacheDir(options *QodanaOptions) {
 func sendReportToQodanaServer(options *QodanaOptions, mountInfo *MountInfo) {
 	if cloud.Token.IsAllowedToSendReports() {
 		fmt.Println("Publishing report ...")
-		SendReport(options, cloud.Token.Token, QuoteForWindows(filepath.Join(options.CacheDir, PublisherJarName)), QuoteForWindows(mountInfo.JavaPath))
+		SendReport(options, cloud.Token.Token, QuoteForWindows(mountInfo.JavaPath))
 	} else {
 		fmt.Println("Skipping report publishing")
 	}

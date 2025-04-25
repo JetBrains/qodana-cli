@@ -23,7 +23,6 @@ import (
 	"github.com/JetBrains/qodana-cli/v2024/platform"
 	"github.com/google/uuid"
 	"github.com/spf13/cobra"
-	"path/filepath"
 )
 
 // newShowCommand returns a new instance of the show command.
@@ -32,23 +31,16 @@ func newSendCommand() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "send",
 		Short: "Send a Qodana report to Cloud",
-		Long: fmt.Sprintf(`Send the report (qodana.sarif.json and other analysis results) to Qodana Cloud. 
+		Long: fmt.Sprintf(`Send the report (qodana.sarif.json and other analysis results) to Qodana Cloud.
 
 If report directory is not specified, the latest report will be fetched from the default linter results location.
 
 If you are using other Qodana Cloud instance than https://qodana.cloud/, override it by declaring the %s environment variable.`, platform.PrimaryBold(cloud.QodanaEndpointEnv)),
 		Run: func(cmd *cobra.Command, args []string) {
 			options.FetchAnalyzerSettings()
-			var publisherPath string
-			if platform.IsContainer() {
-				publisherPath = filepath.Join(core.Prod.IdeBin(), platform.PublisherJarName) // TODO : what to do with PROD
-			} else {
-				publisherPath = filepath.Join(options.ConfDirPath(), platform.PublisherJarName)
-			}
 			platform.SendReport(
 				options,
 				options.ValidateToken(false),
-				publisherPath,
 				core.Prod.JbrJava(),
 			)
 		},
