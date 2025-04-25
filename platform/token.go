@@ -89,7 +89,7 @@ func (o *QodanaOptions) getTokenFromKeychain(refresh bool) string {
 
 func (o *QodanaOptions) getTokenFromUserInput(requiresToken bool) string {
 	if IsInteractive() && requiresToken {
-		WarningMessage(cloud.EmptyTokenMessage, cloud.GetCloudRootEndpoint().GetCloudUrl())
+		WarningMessage(cloud.EmptyTokenMessage, cloud.GetCloudRootEndpoint().Url)
 		var token string
 		for {
 			token = setupToken(o.ProjectDir, o.Id(), o.LogDirPath())
@@ -122,7 +122,7 @@ func ValidateTokenPrintProject(token string) {
 		os.Exit(1)
 	} else {
 		if !IsContainer() {
-			SuccessMessage("Linked %s project: %s", cloud.GetCloudRootEndpoint().Host, projectName)
+			SuccessMessage("Linked %s project: %s", cloud.GetCloudRootEndpoint().Url, projectName)
 		}
 	}
 }

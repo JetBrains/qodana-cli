@@ -56,7 +56,7 @@ func SetupLicenseAndProjectHash(endpoints *cloud.QdApiEndpoints, token string) {
 	// eap version works with eap's license dependent on build date
 	if Prod.EAP {
 		if token == "" {
-			fmt.Printf(cloud.EapWarnTokenMessage, endpoints.RootEndpoint.GetCloudUrl())
+			fmt.Printf(cloud.EapWarnTokenMessage, endpoints.RootEndpoint.Url)
 			fmt.Println()
 			fmt.Println()
 		}
@@ -65,7 +65,7 @@ func SetupLicenseAndProjectHash(endpoints *cloud.QdApiEndpoints, token string) {
 
 	// usual builds should have token and LicenseData for execution
 	if token == "" {
-		log.Fatalf(cloud.EmptyTokenMessage, endpoints.RootEndpoint.GetCloudUrl())
+		log.Fatalf(cloud.EmptyTokenMessage, endpoints.RootEndpoint.Url)
 	}
 
 	licenseDataResponse, err := endpoints.RequestLicenseData(token)
@@ -73,7 +73,7 @@ func SetupLicenseAndProjectHash(endpoints *cloud.QdApiEndpoints, token string) {
 		log.Fatalf("License request: %v\n%s", err, cloud.DeclinedTokenErrorMessage)
 	}
 	if err != nil {
-		errMessage := fmt.Sprintf(cloud.GeneralLicenseErrorMessage, endpoints.RootEndpoint.GetCloudUrl())
+		errMessage := fmt.Sprintf(cloud.GeneralLicenseErrorMessage, endpoints.RootEndpoint.Url)
 		log.Fatalf("License request: %v\n%s", err, errMessage)
 	}
 	licenseData = cloud.DeserializeLicenseData(licenseDataResponse)

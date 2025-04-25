@@ -34,14 +34,15 @@ const (
 	QodanaCloudRequestTimeoutEnv  = "QODANA_CLOUD_REQUEST_TIMEOUT"
 	QodanaCloudRequestRetriesEnv  = "QODANA_CLOUD_REQUEST_RETRIES"
 
-	DefaultEndpoint            = "qodana.cloud"
+	DefaultEndpoint            = "https://qodana.cloud"
 	defaultNumberOfRetries     = 3
 	defaultCooldownTimeSeconds = 30
 	defaultRequestTimeout      = 30
 )
 
+// QdRootEndpoint contains scheme, hostname and port
 type QdRootEndpoint struct {
-	Host string
+	Url string
 }
 
 type QdApiEndpoints struct {
@@ -91,10 +92,10 @@ func parseRawURL(rawUrl string) (host string, err error) {
 		if repErr != nil {
 			return "", err
 		}
-		return parsedUrl.Host, nil
+		return fmt.Sprintf("%s://%s", parsedUrl.Scheme, parsedUrl.Host), nil
 	}
 
-	return parsedUrl.Host, nil
+	return fmt.Sprintf("%s://%s", parsedUrl.Scheme, parsedUrl.Host), nil
 }
 
 func (endpoints *QdApiEndpoints) NewCloudApiClient(token string) *QdClient {
