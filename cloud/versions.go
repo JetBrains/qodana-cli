@@ -48,7 +48,8 @@ func (e *ApiVersionMismatchError) Error() string {
 		e.ApiKind,
 		e.SupportedVersions,
 		RequiredMajorVersion,
-		MinimumRequiredMinorVersion)
+		MinimumRequiredMinorVersion,
+	)
 }
 
 func ToCloudVersion(version string) (APIVersion, error) {
@@ -109,7 +110,7 @@ func (endpoint *QdRootEndpoint) requestApiEndpoints() (*QdApiEndpoints, error) {
 func (endpoint *QdRootEndpoint) requestApiEndpointsCustomClient(httpClient *http.Client) (*QdApiEndpoints, error) {
 	client := QdClient{
 		httpClient: httpClient,
-		apiUrl:     fmt.Sprintf("https://%s", endpoint.Host),
+		apiUrl:     endpoint.Url,
 	}
 
 	request := NewCloudRequest(VersionsURI)

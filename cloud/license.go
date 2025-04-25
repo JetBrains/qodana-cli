@@ -226,7 +226,7 @@ func (endpoints *QdApiEndpoints) GetLicenseData(token string) LicenseData {
 		log.Fatalf("License request: %v\n%s", err, DeclinedTokenErrorMessage)
 	}
 	if err != nil {
-		errMessage := fmt.Sprintf(GeneralLicenseErrorMessage, endpoints.RootEndpoint.GetCloudUrl())
+		errMessage := fmt.Sprintf(GeneralLicenseErrorMessage, endpoints.RootEndpoint.Url)
 		log.Fatalf("License request: %v\n%s", err, errMessage)
 	}
 	return DeserializeLicenseData(licenseDataResponse)
