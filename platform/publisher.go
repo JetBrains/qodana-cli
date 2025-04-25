@@ -79,7 +79,6 @@ func getPublisherArgs(java string, publisher string, opts *QodanaOptions, token 
 		"-jar",
 		QuoteForWindows(publisher),
 		"--analysis-id", opts.AnalysisId,
-		"--sources-path", QuoteForWindows(opts.ProjectDir),
 		"--report-path", QuoteForWindows(opts.ReportResultsPath()),
 		"--token", token,
 	}
