@@ -46,7 +46,7 @@ func createFileLoggers(logDir string) (chan string, chan string) {
 
 func logToFile(fileName string, logChannel chan string) {
 	for logItem := range logChannel {
-		if err := strutil.AppendToFile(fileName, logItem); err != nil {
+		if err := utils.AppendToFile(fileName, logItem); err != nil {
 			log.Error(err)
 		}
 	}
