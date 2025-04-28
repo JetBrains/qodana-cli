@@ -18,7 +18,6 @@ package corescan
 
 import (
 	"fmt"
-	"github.com/JetBrains/qodana-cli/v2025/platform"
 	"github.com/JetBrains/qodana-cli/v2025/platform/qdenv"
 	"github.com/JetBrains/qodana-cli/v2025/platform/version"
 	"golang.org/x/exp/maps"
@@ -234,7 +233,7 @@ func Test_ExtractEnvironmentVariables(t *testing.T) {
 					{
 						name: "Container",
 						set:  func(k string, v string) { c = c.withEnv(k, v, false) },
-						get:  func(k string) string { return platform.GetEnv(c, k) },
+						get:  func(k string) string { return qdenv.GetEnv(c, k) },
 					},
 					{
 						name: "Local",
@@ -244,6 +243,8 @@ func Test_ExtractEnvironmentVariables(t *testing.T) {
 				} {
 					t.Run(
 						environment.name, func(t *testing.T) {
+							qdenv.InitializeQodanaGlobalEnv(qdenv.EmptyEnvProvider())
+
 							qdenv.ExtractQodanaEnvironment(environment.set)
 							currentQodanaEnv := environment.get(qdenv.QodanaEnv)
 							if currentQodanaEnv != tc.envExpected {

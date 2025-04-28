@@ -42,6 +42,8 @@ func RunThirdPartyLinterAnalysis(
 	linter ThirdPartyLinter,
 	linterInfo thirdpartyscan.LinterInfo,
 ) (int, error) {
+	qdenv.InitializeQodanaGlobalEnv(cliOptions)
+
 	var err error
 
 	commonCtx := commoncontext.Compute(
@@ -50,7 +52,7 @@ func RunThirdPartyLinterAnalysis(
 		cliOptions.CacheDir,
 		cliOptions.ResultsDir,
 		cliOptions.ReportDir,
-		GetEnvWithOsEnv(cliOptions, qdenv.QodanaToken),
+		qdenv.GetQodanaGlobalEnv(qdenv.QodanaToken),
 		cliOptions.ClearCache,
 		cliOptions.ProjectDir,
 		cliOptions.ConfigName,

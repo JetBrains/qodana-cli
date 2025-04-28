@@ -26,7 +26,6 @@ import (
 	"github.com/JetBrains/qodana-cli/v2025/platform/utils"
 	"github.com/google/uuid"
 	"github.com/spf13/cobra"
-	"os"
 )
 
 // newShowCommand returns a new instance of the show command.
@@ -44,13 +43,15 @@ If you are using other Qodana Cloud instance than https://qodana.cloud/, overrid
 			msg.PrimaryBold(qdenv.QodanaEndpointEnv),
 		),
 		Run: func(cmd *cobra.Command, args []string) {
+			qdenv.InitializeQodanaGlobalEnv(qdenv.EmptyEnvProvider())
+
 			commonCtx := commoncontext.Compute(
 				cliOptions.Linter,
 				"",
 				"",
 				cliOptions.ResultsDir,
 				cliOptions.ReportDir,
-				os.Getenv(qdenv.QodanaToken),
+				qdenv.GetQodanaGlobalEnv(qdenv.QodanaToken),
 				false,
 				cliOptions.ProjectDir,
 				cliOptions.ConfigName,

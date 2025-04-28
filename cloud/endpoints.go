@@ -72,7 +72,10 @@ func GetCloudRootEndpoint() *QdRootEndpoint {
 	if endpoint != nil {
 		return endpoint
 	}
-	userUrl := GetEnvWithDefault(qdenv.QodanaEndpointEnv, DefaultEndpoint)
+	userUrl := qdenv.GetQodanaGlobalEnv(qdenv.QodanaEndpointEnv)
+	if userUrl == "" {
+		userUrl = DefaultEndpoint
+	}
 	host, err := parseRawURL(userUrl)
 	if err != nil {
 		log.Fatal(err)

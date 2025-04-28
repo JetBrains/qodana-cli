@@ -89,6 +89,7 @@ func TestEndpoint(t *testing.T) {
 				var fatal = false
 				log.StandardLogger().ExitFunc = func(int) { fatal = true }
 
+				qdenv.InitializeQodanaGlobalEnv(qdenv.EmptyEnvProvider())
 				cloudEndpoint := GetCloudRootEndpoint()
 				if testData.error && !fatal {
 					t.Errorf("Should be fatal")
@@ -319,6 +320,7 @@ func runRequest(
 	}
 	t.Setenv(qdenv.QodanaCloudRequestCooldownEnv, strconv.Itoa(cooldown))
 	t.Setenv(qdenv.QodanaEndpointEnv, svr.URL)
+	qdenv.InitializeQodanaGlobalEnv(qdenv.EmptyEnvProvider())
 	cloudEndpoint := GetCloudRootEndpoint()
 	apiEndpoints, err := cloudEndpoint.requestApiEndpointsCustomClient(&client)
 	return cloudEndpoint, apiEndpoints, err
