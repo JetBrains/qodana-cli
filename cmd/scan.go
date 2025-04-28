@@ -49,6 +49,8 @@ Note that most options can be configured via qodana.yaml (https://www.jetbrains.
 But you can always override qodana.yaml options with the following command-line options.
 `,
 		Run: func(cmd *cobra.Command, args []string) {
+			qdenv.InitializeQodanaGlobalEnv(cliOptions)
+
 			ctx := cmd.Context()
 
 			commonCtx := commoncontext.Compute(
@@ -57,7 +59,7 @@ But you can always override qodana.yaml options with the following command-line 
 				cliOptions.CacheDir,
 				cliOptions.ResultsDir,
 				cliOptions.ReportDir,
-				platform.GetEnvWithOsEnv(cliOptions, qdenv.QodanaToken),
+				qdenv.GetQodanaGlobalEnv(qdenv.QodanaToken),
 				cliOptions.ClearCache,
 				cliOptions.ProjectDir,
 				cliOptions.ConfigName,

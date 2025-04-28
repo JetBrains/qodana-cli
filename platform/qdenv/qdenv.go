@@ -29,7 +29,6 @@ import (
 const (
 	// QodanaLicenseOnlyToken !!! QODANA_LICENSE_ONLY_TOKEN is accessed only by env !!!
 	QodanaLicenseOnlyToken        = "QODANA_LICENSE_ONLY_TOKEN"
-	QodanaToken                   = "QODANA_TOKEN"
 	QodanaRemoteUrl               = "QODANA_REMOTE_URL"
 	QodanaDockerEnv               = "QODANA_DOCKER"
 	QodanaToolEnv                 = "QODANA_TOOL"
@@ -55,11 +54,72 @@ const (
 	QodanaNugetName               = "QODANA_NUGET_NAME"
 	GemHome                       = "GEM_HOME"
 	BundleAppConfig               = "BUNDLE_APP_CONFIG"
-	QodanaEndpointEnv             = "QODANA_ENDPOINT"
 	QodanaCloudRequestCooldownEnv = "QODANA_CLOUD_REQUEST_COOLDOWN"
 	QodanaCloudRequestTimeoutEnv  = "QODANA_CLOUD_REQUEST_TIMEOUT"
 	QodanaCloudRequestRetriesEnv  = "QODANA_CLOUD_REQUEST_RETRIES"
+
+	// QodanaEndpointEnv QodanaToken properties accessed only by GetQodanaGlobalEnv
+	QodanaEndpointEnv = "QODANA_ENDPOINT"
+	QodanaToken       = "QODANA_TOKEN"
 )
+
+type qodanaGlobalEnv struct {
+	env map[string]string
+}
+
+// globalEnv some env values which are relevant both for CLI and docker runs are stored and accessed with global variable
+var globalEnv *qodanaGlobalEnv
+
+func InitializeQodanaGlobalEnv(provider EnvProvider) {
+	globalEnv = &qodanaGlobalEnv{
+		env: map[string]string{
+			QodanaEndpointEnv: GetEnvWithOsEnv(provider, QodanaEndpointEnv),
+			QodanaToken:       GetEnvWithOsEnv(provider, QodanaToken),
+		},
+	}
+}
+
+func GetQodanaGlobalEnv(key string) string {
+	if globalEnv == nil {
+		log.Fatal("Qodana inner env is not initialized")
+	}
+	if value, exists := globalEnv.env[key]; exists {
+		return value
+	}
+	return ""
+}
+
+type EnvProvider interface {
+	Env() []string
+}
+
+type emptyEnvProvider struct {
+}
+
+func (e emptyEnvProvider) Env() []string {
+	return []string{}
+}
+
+func EmptyEnvProvider() EnvProvider {
+	return emptyEnvProvider{}
+}
+
+func GetEnv(provider EnvProvider, key string) string {
+	for _, e := range provider.Env() {
+		if strings.HasPrefix(e, key) {
+			return strings.TrimPrefix(e, key+"=")
+		}
+	}
+	return ""
+}
+
+func GetEnvWithOsEnv(provider EnvProvider, key string) string {
+	envFromProvider := GetEnv(provider, key)
+	if envFromProvider != "" {
+		return envFromProvider
+	}
+	return os.Getenv(key)
+}
 
 func SetEnv(key string, value string) {
 	log.Debugf("Setting %s=%s", key, value)
@@ -81,7 +141,7 @@ func ExtractQodanaEnvironment(setEnvironmentFunc func(string, string)) {
 	if license := os.Getenv(QodanaLicense); license != "" {
 		setEnvironmentFunc(QodanaLicense, license)
 	}
-	if endpoint := os.Getenv(QodanaEndpointEnv); endpoint != "" {
+	if endpoint := GetQodanaGlobalEnv(QodanaEndpointEnv); endpoint != "" {
 		setEnvironmentFunc(QodanaEndpointEnv, endpoint)
 	}
 	if remoteUrl := os.Getenv(QodanaRemoteUrl); remoteUrl != "" {

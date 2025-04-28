@@ -21,6 +21,7 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
+	"github.com/JetBrains/qodana-cli/v2025/cloud"
 	"github.com/JetBrains/qodana-cli/v2025/core/corescan"
 	"github.com/JetBrains/qodana-cli/v2025/platform/msg"
 	"github.com/JetBrains/qodana-cli/v2025/platform/product"
@@ -29,6 +30,7 @@ import (
 	"github.com/JetBrains/qodana-cli/v2025/platform/utils"
 	"github.com/JetBrains/qodana-cli/v2025/platform/version"
 	"github.com/docker/docker/api/types/backend"
+	"github.com/docker/docker/api/types/network"
 	"github.com/docker/docker/api/types/registry"
 	"github.com/docker/go-connections/nat"
 	"github.com/pterm/pterm"
@@ -381,21 +383,30 @@ func getDockerOptions(c corescan.Context) *backend.ContainerCreateConfig {
 			containerJvmDebugPort: struct{}{},
 		}
 	}
-	var hostConfig *container.HostConfig
+
+	var capAdd []string
+	var securityOpt []string
+	var networkMode container.NetworkMode
+
 	if strings.Contains(c.Linter(), "dotnet") {
-		hostConfig = &container.HostConfig{
-			AutoRemove:   os.Getenv(qdenv.QodanaCliContainerKeep) == "",
-			Mounts:       volumes,
-			CapAdd:       []string{"SYS_PTRACE"},
-			SecurityOpt:  []string{"seccomp=unconfined"},
-			PortBindings: portBindings,
-		}
-	} else {
-		hostConfig = &container.HostConfig{
-			AutoRemove:   os.Getenv(qdenv.QodanaCliContainerKeep) == "",
-			Mounts:       volumes,
-			PortBindings: portBindings,
-		}
+		capAdd = []string{"SYS_PTRACE"}
+		securityOpt = []string{"seccomp=unconfined"}
+	}
+
+	// See QD-11584 for reasoning
+	//goland:noinspection HttpUrlsUsage
+	isLocalHttpCloud := strings.HasPrefix(cloud.GetCloudRootEndpoint().Url, "http://")
+	if isLocalHttpCloud {
+		networkMode = network.NetworkHost
+	}
+
+	var hostConfig = &container.HostConfig{
+		AutoRemove:   os.Getenv(qdenv.QodanaCliContainerKeep) == "",
+		Mounts:       volumes,
+		CapAdd:       capAdd,
+		SecurityOpt:  securityOpt,
+		PortBindings: portBindings,
+		NetworkMode:  networkMode,
 	}
 
 	return &backend.ContainerCreateConfig{

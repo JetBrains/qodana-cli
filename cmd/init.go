@@ -26,7 +26,6 @@ import (
 	"github.com/JetBrains/qodana-cli/v2025/platform/tokenloader"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
-	"os"
 	"path/filepath"
 )
 
@@ -38,6 +37,8 @@ func newInitCommand() *cobra.Command {
 		Short: "Configure a project for Qodana",
 		Long:  `Configure a project for Qodana: prepare Qodana configuration file by analyzing the project structure and generating a default configuration qodana.yaml file.`,
 		Run: func(cmd *cobra.Command, args []string) {
+			qdenv.InitializeQodanaGlobalEnv(qdenv.EmptyEnvProvider())
+
 			localQodanaYamlFullPath := qdyaml.GetLocalNotEffectiveQodanaYamlFullPath(
 				cliOptions.ProjectDir,
 				cliOptions.ConfigName,
@@ -63,7 +64,7 @@ func newInitCommand() *cobra.Command {
 				) {
 					return
 				}
-				token := os.Getenv(qdenv.QodanaToken)
+				token := qdenv.GetQodanaGlobalEnv(qdenv.QodanaToken)
 				analyzer := commoncontext.GetAnalyzer(cliOptions.ProjectDir, token)
 
 				qdyaml.WriteQodanaLinterToYamlFile(
@@ -103,7 +104,7 @@ func newInitCommand() *cobra.Command {
 				"",
 				"",
 				"",
-				os.Getenv(qdenv.QodanaToken),
+				qdenv.GetQodanaGlobalEnv(qdenv.QodanaToken),
 				false,
 				cliOptions.ProjectDir,
 				cliOptions.ConfigName,
