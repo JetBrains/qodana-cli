@@ -37,6 +37,13 @@ func touch(t *testing.T, path string) {
 	}
 }
 
+func symlink(t *testing.T, source string, path string) {
+	err := os.Symlink(source, path)
+	if err != nil {
+		t.Fatalf("Failed to create symlink: %s", err)
+	}
+}
+
 func TestCanonicalNoop(t *testing.T) {
 	tempDir := tempDir(t)
 	expected := tempDir + filepath.FromSlash("/file")
@@ -112,7 +119,7 @@ func TestCanonicalTrailingSymlink(t *testing.T) {
 	expected := tempDir + filepath.FromSlash("/dir")
 	query := tempDir + filepath.FromSlash("/symlink")
 	mkdirp(t, expected)
-	os.Symlink("dir", query)
+	symlink(t, "dir", query)
 	actual, err := Canonical(query)
 
 	assert.NoError(t, err)
@@ -123,7 +130,7 @@ func TestCanonicalNonTrailingSymlink(t *testing.T) {
 	tempDir := tempDir(t)
 	expected := tempDir + filepath.FromSlash("/dir/nested")
 	mkdirp(t, expected)
-	os.Symlink("dir", tempDir+filepath.FromSlash("/symlink"))
+	symlink(t, "dir", tempDir+filepath.FromSlash("/symlink"))
 	actual, err := Canonical(tempDir + filepath.FromSlash("/symlink/nested"))
 
 	assert.NoError(t, err)
@@ -138,7 +145,7 @@ func TestCanonicalSymlinkDotDot(t *testing.T) {
 	tempDir := tempDir(t)
 	mkdirp(t, tempDir+filepath.FromSlash("/1/1.1"))
 	mkdirp(t, tempDir+filepath.FromSlash("/2"))
-	os.Symlink(tempDir+filepath.FromSlash("/1/1.1"), tempDir+filepath.FromSlash("/2/2.1"))
+	symlink(t, tempDir+filepath.FromSlash("/1/1.1"), tempDir+filepath.FromSlash("/2/2.1"))
 
 	expected := tempDir + filepath.FromSlash("/1")
 	actual, err := Canonical(tempDir + filepath.FromSlash("/2/2.1/.."))
