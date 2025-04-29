@@ -3,6 +3,7 @@ package utils
 import (
 	"os"
 	"path/filepath"
+	"runtime"
 
 	"testing"
 
@@ -84,21 +85,45 @@ func TestCanonicalTrailingSlash(t *testing.T) {
 	assert.Equal(t, expected, actual)
 }
 
-func TestCanonicalDot1(t *testing.T) {
+func TestCanonicalMultipleSlashes(t *testing.T) {
 	tempDir := tempDir(t)
-	expected := tempDir + filepath.FromSlash("/dir")
-	mkdirp(t, expected)
-	actual, err := Canonical(tempDir + filepath.FromSlash("/dir/."))
+	expected := tempDir + filepath.FromSlash("/file")
+	touch(t, expected)
+	actual, err := Canonical(tempDir + filepath.FromSlash("////file"))
 
 	assert.NoError(t, err)
 	assert.Equal(t, expected, actual)
 }
 
-func TestCanonicalDot2(t *testing.T) {
+func TestCanonicalWrongSlash(t *testing.T) {
+	if runtime.GOOS != "windows" {
+		t.Skip("Only relevant to Windows")
+	}
+
+	tempDir := tempDir(t)
+	expected := tempDir + filepath.FromSlash("/file")
+	touch(t, expected)
+	actual, err := Canonical(tempDir + "/file")
+
+	assert.NoError(t, err)
+	assert.Equal(t, expected, actual)
+}
+
+func TestCanonicalDot(t *testing.T) {
 	tempDir := tempDir(t)
 	expected := tempDir + filepath.FromSlash("/dir/file")
 	touch(t, expected)
 	actual, err := Canonical(tempDir + filepath.FromSlash("/dir/./file"))
+
+	assert.NoError(t, err)
+	assert.Equal(t, expected, actual)
+}
+
+func TestCanonicalTrailingDot(t *testing.T) {
+	tempDir := tempDir(t)
+	expected := tempDir + filepath.FromSlash("/dir")
+	mkdirp(t, expected)
+	actual, err := Canonical(tempDir + filepath.FromSlash("/dir/."))
 
 	assert.NoError(t, err)
 	assert.Equal(t, expected, actual)
@@ -126,7 +151,7 @@ func TestCanonicalTrailingSymlink(t *testing.T) {
 	assert.Equal(t, expected, actual)
 }
 
-func TestCanonicalNonTrailingSymlink(t *testing.T) {
+func TestCanonicalSymlink(t *testing.T) {
 	tempDir := tempDir(t)
 	expected := tempDir + filepath.FromSlash("/dir/nested")
 	mkdirp(t, expected)
@@ -149,6 +174,18 @@ func TestCanonicalSymlinkDotDot(t *testing.T) {
 
 	expected := tempDir + filepath.FromSlash("/1")
 	actual, err := Canonical(tempDir + filepath.FromSlash("/2/2.1/.."))
+
+	assert.NoError(t, err)
+	assert.Equal(t, expected, actual)
+}
+
+func TestCanonicalCaseInsenitiveSymlink(t *testing.T) {
+	tempDir := tempDir(t)
+	expected := tempDir + filepath.FromSlash("/dir")
+	query := tempDir + filepath.FromSlash("/symlink")
+	mkdirp(t, expected)
+	symlink(t, "DIR", query)
+	actual, err := Canonical(query)
 
 	assert.NoError(t, err)
 	assert.Equal(t, expected, actual)
