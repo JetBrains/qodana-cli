@@ -11,9 +11,10 @@ import (
 )
 
 func tempDir(t *testing.T) string {
-	result, err := Canonical(t.TempDir()) // temp dir path is runtime dependent and is not part of tests
+	dir := t.TempDir()
+	result, err := Canonical(dir) // temp dir path is runtime dependent and is not part of tests
 	if err != nil {
-		t.Fatalf("Failed to make path to temp dir canonical: %s", err)
+		t.Fatalf("Failed to make path to temp dir %q canonical: %s", dir, err)
 	}
 	return result
 }
@@ -36,6 +37,23 @@ func touch(t *testing.T, path string) {
 	if err != nil {
 		t.Fatalf("Failed to close file %s: %s", path, err)
 	}
+}
+
+func isTestDirCaseSensitive(t *testing.T) bool {
+	dir := t.TempDir()
+	dir1 := filepath.Join(dir, "A")
+	dir2 := filepath.Join(dir, "a")
+
+	mkdirp(t, dir1)
+	_, err := os.Stat(dir2)
+	if os.IsNotExist(err) {
+		return true
+	}
+	if err != nil {
+		t.Fatalf("Error in Stat(%s): %s", dir2, err)
+	}
+
+	return false
 }
 
 func symlink(t *testing.T, source string, path string) {
@@ -65,7 +83,11 @@ func TestCanonicalNotFound(t *testing.T) {
 	assert.Equal(t, actual, "")
 }
 
-func TestCanonicalCase(t *testing.T) {
+func TestCanonicalCaseInsensitive(t *testing.T) {
+	if isTestDirCaseSensitive(t) {
+		t.Skip("Not relevant on case-sensitive filesystems")
+	}
+
 	tempDir := tempDir(t)
 	expected := tempDir + filepath.FromSlash("/Aa")
 	touch(t, expected)
@@ -180,6 +202,10 @@ func TestCanonicalSymlinkDotDot(t *testing.T) {
 }
 
 func TestCanonicalCaseInsenitiveSymlink(t *testing.T) {
+	if isTestDirCaseSensitive(t) {
+		t.Skip("Not relevant on case-sensitive filesystems")
+	}
+
 	tempDir := tempDir(t)
 	expected := tempDir + filepath.FromSlash("/dir")
 	query := tempDir + filepath.FromSlash("/symlink")
