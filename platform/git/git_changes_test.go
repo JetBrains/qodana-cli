@@ -18,13 +18,14 @@ package git
 
 import (
 	"encoding/json"
-	log "github.com/sirupsen/logrus"
-	"github.com/stretchr/testify/assert"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"strings"
 	"testing"
+
+	log "github.com/sirupsen/logrus"
+	"github.com/stretchr/testify/assert"
 )
 
 type TestConfig struct {
@@ -256,6 +257,33 @@ func TestChangesCalculation(t *testing.T) {
 				assert.Equal(t, strings.TrimSpace(tc.result), string(jsonCommits))
 			},
 		)
+	}
+}
+
+func TestNonCanonicalCaseInsensitivePaths(t *testing.T) {
+	originalRepoDir := createRepo(t, TestConfig{
+		initialContent:  "initial",
+		modifiedContent: "modified",
+		action:          "modify",
+	})
+	originalDirName := filepath.Base(originalRepoDir)
+	if strings.ToUpper(originalDirName) == strings.ToLower(originalDirName) {
+		t.Fatalf("Cannot run test: 'createRepo()' returned a directory name that does not contain letters")
+	}
+
+	dirNames := []string{strings.ToUpper(originalDirName), strings.ToLower(originalDirName)}
+	for _, dirName := range dirNames {
+		repoDir := filepath.Join(filepath.Dir(originalRepoDir), dirName)
+		_, err := os.Stat(repoDir)
+		if os.IsNotExist(err) {
+			t.Skip("This filesystem is not case-insensitive")
+		} else {
+			assert.NoError(t, err)
+		}
+
+		changedFiles, err := ComputeChangedFiles(repoDir, "HEAD", "HEAD~1", t.TempDir())
+		assert.NoError(t, err)
+		assert.NotEmpty(t, changedFiles.Files)
 	}
 }
 
