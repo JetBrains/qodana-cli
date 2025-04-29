@@ -106,3 +106,43 @@ func TestCanonicalDotDot(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, expected, actual)
 }
+
+func TestCanonicalTrailingSymlink(t *testing.T) {
+	tempDir := tempDir(t)
+	expected := tempDir + filepath.FromSlash("/dir")
+	query := tempDir + filepath.FromSlash("/symlink")
+	mkdirp(t, expected)
+	os.Symlink("dir", query)
+	actual, err := Canonical(query)
+
+	assert.NoError(t, err)
+	assert.Equal(t, expected, actual)
+}
+
+func TestCanonicalNonTrailingSymlink(t *testing.T) {
+	tempDir := tempDir(t)
+	expected := tempDir + filepath.FromSlash("/dir/nested")
+	mkdirp(t, expected)
+	os.Symlink("dir", tempDir+filepath.FromSlash("/symlink"))
+	actual, err := Canonical(tempDir + filepath.FromSlash("/symlink/nested"))
+
+	assert.NoError(t, err)
+	assert.Equal(t, expected, actual)
+}
+
+func TestCanonicalSymlinkDotDot(t *testing.T) {
+	// dir  1
+	// dir  1/1.1
+	// dir  2
+	// link 2/2.1 -> 1/1.1
+	tempDir := tempDir(t)
+	mkdirp(t, tempDir+filepath.FromSlash("/1/1.1"))
+	mkdirp(t, tempDir+filepath.FromSlash("/2"))
+	os.Symlink(tempDir+filepath.FromSlash("/1/1.1"), tempDir+filepath.FromSlash("/2/2.1"))
+
+	expected := tempDir + filepath.FromSlash("/1")
+	actual, err := Canonical(tempDir + filepath.FromSlash("/2/2.1/.."))
+
+	assert.NoError(t, err)
+	assert.Equal(t, expected, actual)
+}
