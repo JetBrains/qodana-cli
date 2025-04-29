@@ -228,3 +228,22 @@ func TestCanonicalRelative(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, expected, actual)
 }
+
+func TestCanonicalRelativeSymlinkDotDot(t *testing.T) {
+	// dir  1
+	// dir  1/1.1
+	// dir  2
+	// link 2/2.1 -> 1/1.1
+	tempDir := tempDir(t)
+	mkdirp(t, tempDir+filepath.FromSlash("/1/1.1"))
+	mkdirp(t, tempDir+filepath.FromSlash("/2"))
+	symlink(t, tempDir+filepath.FromSlash("/1/1.1"), tempDir+filepath.FromSlash("/2/2.1"))
+
+	expected := tempDir + filepath.FromSlash("/1")
+
+	t.Chdir(tempDir)
+	actual, err := Canonical(filepath.FromSlash("2/2.1/.."))
+
+	assert.NoError(t, err)
+	assert.Equal(t, expected, actual)
+}

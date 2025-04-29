@@ -5,10 +5,20 @@ import (
 	"syscall"
 	"unsafe"
 
+	"os"
+
 	"golang.org/x/sys/windows"
 )
 
 func Canonical(path string) (result string, err error) {
+	if !filepath.IsAbs(path) {
+		cwd, err := os.Getwd()
+		if err != nil {
+			return "", err
+		}
+		path = cwd + string(os.PathSeparator) + path
+	}
+
 	utf16path, err := windows.UTF16PtrFromString(path)
 	if err != nil {
 		return "", err
