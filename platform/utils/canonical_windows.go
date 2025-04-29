@@ -58,5 +58,9 @@ func Canonical(path string) (result string, err error) {
 		return "", err
 	}
 
-	return filepath.Clean(windows.UTF16ToString(utf16result)), nil
+	result, err = filepath.EvalSymlinks(windows.UTF16ToString(utf16result))
+	if err != nil {
+		return "", err
+	}
+	return result, err
 }
