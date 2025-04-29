@@ -216,3 +216,15 @@ func TestCanonicalCaseInsenitiveSymlink(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, expected, actual)
 }
+
+func TestCanonicalRelative(t *testing.T) {
+	tempDir := tempDir(t)
+	expected := tempDir + filepath.FromSlash("/dir")
+	mkdirp(t, expected)
+
+	t.Chdir(tempDir)
+	actual, err := Canonical("dir")
+
+	assert.NoError(t, err)
+	assert.Equal(t, expected, actual)
+}
