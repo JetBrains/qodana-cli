@@ -10,12 +10,22 @@ import (
 	"golang.org/x/sys/windows"
 )
 
-func Canonical(path string) (result string, err error) {
+// CanonicalPath produces a standard, or "canonical" form of a path.
+// A canonical path has the following properties:
+// - is absolute;
+// - contains no directory traversal segments such as `.` and `..`;
+// - contains no symbolic links;
+// - has normalized case, in filesystems which are case-insensitive;
+// - contains no repeated path separators;
+// - all path separators are backslashes.
+// Since producing a canonical path implies resolution of symlinks, the path must exist to be canonicalized.
+func CanonicalPath(path string) (result string, err error) {
 	if !filepath.IsAbs(path) {
 		cwd, err := os.Getwd()
 		if err != nil {
 			return "", err
 		}
+		// Do not use `filepath.Join`: it would call `Clean` on the result, breaking paths like `symlink/..`
 		path = cwd + string(os.PathSeparator) + path
 	}
 

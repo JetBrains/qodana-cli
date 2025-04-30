@@ -12,7 +12,7 @@ import (
 
 func tempDir(t *testing.T) string {
 	dir := t.TempDir()
-	result, err := Canonical(dir) // temp dir path is runtime dependent and is not part of tests
+	result, err := CanonicalPath(dir) // temp dir path is runtime dependent and is not part of tests
 	if err != nil {
 		t.Fatalf("Failed to make path to temp dir %q canonical: %s", dir, err)
 	}
@@ -63,27 +63,27 @@ func symlink(t *testing.T, source string, path string) {
 	}
 }
 
-func TestCanonicalNoop(t *testing.T) {
+func TestCanonicalPathNoop(t *testing.T) {
 	tempDir := tempDir(t)
 	expected := tempDir + filepath.FromSlash("/file")
 	touch(t, expected)
-	actual, err := Canonical(expected)
+	actual, err := CanonicalPath(expected)
 
 	assert.NoError(t, err)
 	assert.Equal(t, expected, actual)
 }
 
-func TestCanonicalNotFound(t *testing.T) {
+func TestCanonicalPathNotFound(t *testing.T) {
 	tempDir := tempDir(t)
 	expected := tempDir + filepath.FromSlash("/missing")
 	// touch(t, expected)
-	actual, err := Canonical(expected)
+	actual, err := CanonicalPath(expected)
 
 	assert.True(t, os.IsNotExist(err))
 	assert.Equal(t, actual, "")
 }
 
-func TestCanonicalCaseInsensitive(t *testing.T) {
+func TestCanonicalPathCaseInsensitive(t *testing.T) {
 	if isTestDirCaseSensitive(t) {
 		t.Skip("Not relevant on case-sensitive filesystems")
 	}
@@ -91,33 +91,33 @@ func TestCanonicalCaseInsensitive(t *testing.T) {
 	tempDir := tempDir(t)
 	expected := tempDir + filepath.FromSlash("/Aa")
 	touch(t, expected)
-	actual, err := Canonical(tempDir + filepath.FromSlash("/aA"))
+	actual, err := CanonicalPath(tempDir + filepath.FromSlash("/aA"))
 
 	assert.NoError(t, err)
 	assert.Equal(t, expected, actual)
 }
 
-func TestCanonicalTrailingSlash(t *testing.T) {
+func TestCanonicalPathTrailingSlash(t *testing.T) {
 	tempDir := tempDir(t)
 	expected := tempDir + filepath.FromSlash("/dir")
 	mkdirp(t, expected)
-	actual, err := Canonical(tempDir + filepath.FromSlash("/dir/"))
+	actual, err := CanonicalPath(tempDir + filepath.FromSlash("/dir/"))
 
 	assert.NoError(t, err)
 	assert.Equal(t, expected, actual)
 }
 
-func TestCanonicalMultipleSlashes(t *testing.T) {
+func TestCanonicalPathMultipleSlashes(t *testing.T) {
 	tempDir := tempDir(t)
 	expected := tempDir + filepath.FromSlash("/file")
 	touch(t, expected)
-	actual, err := Canonical(tempDir + filepath.FromSlash("////file"))
+	actual, err := CanonicalPath(tempDir + filepath.FromSlash("////file"))
 
 	assert.NoError(t, err)
 	assert.Equal(t, expected, actual)
 }
 
-func TestCanonicalWrongSlash(t *testing.T) {
+func TestCanonicalPathWrongSlash(t *testing.T) {
 	if runtime.GOOS != "windows" {
 		t.Skip("Only relevant to Windows")
 	}
@@ -125,66 +125,66 @@ func TestCanonicalWrongSlash(t *testing.T) {
 	tempDir := tempDir(t)
 	expected := tempDir + filepath.FromSlash("/file")
 	touch(t, expected)
-	actual, err := Canonical(tempDir + "/file")
+	actual, err := CanonicalPath(tempDir + "/file")
 
 	assert.NoError(t, err)
 	assert.Equal(t, expected, actual)
 }
 
-func TestCanonicalDot(t *testing.T) {
+func TestCanonicalPathDot(t *testing.T) {
 	tempDir := tempDir(t)
 	expected := tempDir + filepath.FromSlash("/dir/file")
 	touch(t, expected)
-	actual, err := Canonical(tempDir + filepath.FromSlash("/dir/./file"))
+	actual, err := CanonicalPath(tempDir + filepath.FromSlash("/dir/./file"))
 
 	assert.NoError(t, err)
 	assert.Equal(t, expected, actual)
 }
 
-func TestCanonicalTrailingDot(t *testing.T) {
+func TestCanonicalPathTrailingDot(t *testing.T) {
 	tempDir := tempDir(t)
 	expected := tempDir + filepath.FromSlash("/dir")
 	mkdirp(t, expected)
-	actual, err := Canonical(tempDir + filepath.FromSlash("/dir/."))
+	actual, err := CanonicalPath(tempDir + filepath.FromSlash("/dir/."))
 
 	assert.NoError(t, err)
 	assert.Equal(t, expected, actual)
 }
 
-func TestCanonicalDotDot(t *testing.T) {
+func TestCanonicalPathDotDot(t *testing.T) {
 	tempDir := tempDir(t)
 	expected := tempDir + filepath.FromSlash("/dir")
 	mkdirp(t, expected)
-	actual, err := Canonical(tempDir + filepath.FromSlash("/dir/../dir"))
+	actual, err := CanonicalPath(tempDir + filepath.FromSlash("/dir/../dir"))
 
 	assert.NoError(t, err)
 	assert.Equal(t, expected, actual)
 }
 
-func TestCanonicalTrailingSymlink(t *testing.T) {
+func TestCanonicalPathTrailingSymlink(t *testing.T) {
 	tempDir := tempDir(t)
 	expected := tempDir + filepath.FromSlash("/dir")
 	query := tempDir + filepath.FromSlash("/symlink")
 	mkdirp(t, expected)
 	symlink(t, "dir", query)
-	actual, err := Canonical(query)
+	actual, err := CanonicalPath(query)
 
 	assert.NoError(t, err)
 	assert.Equal(t, expected, actual)
 }
 
-func TestCanonicalSymlink(t *testing.T) {
+func TestCanonicalPathSymlink(t *testing.T) {
 	tempDir := tempDir(t)
 	expected := tempDir + filepath.FromSlash("/dir/nested")
 	mkdirp(t, expected)
 	symlink(t, "dir", tempDir+filepath.FromSlash("/symlink"))
-	actual, err := Canonical(tempDir + filepath.FromSlash("/symlink/nested"))
+	actual, err := CanonicalPath(tempDir + filepath.FromSlash("/symlink/nested"))
 
 	assert.NoError(t, err)
 	assert.Equal(t, expected, actual)
 }
 
-func TestCanonicalSymlinkDotDot(t *testing.T) {
+func TestCanonicalPathSymlinkDotDot(t *testing.T) {
 	// dir  1
 	// dir  1/1.1
 	// dir  2
@@ -195,13 +195,13 @@ func TestCanonicalSymlinkDotDot(t *testing.T) {
 	symlink(t, tempDir+filepath.FromSlash("/1/1.1"), tempDir+filepath.FromSlash("/2/2.1"))
 
 	expected := tempDir + filepath.FromSlash("/1")
-	actual, err := Canonical(tempDir + filepath.FromSlash("/2/2.1/.."))
+	actual, err := CanonicalPath(tempDir + filepath.FromSlash("/2/2.1/.."))
 
 	assert.NoError(t, err)
 	assert.Equal(t, expected, actual)
 }
 
-func TestCanonicalCaseInsenitiveSymlink(t *testing.T) {
+func TestCanonicalPathCaseInsenitiveSymlink(t *testing.T) {
 	if isTestDirCaseSensitive(t) {
 		t.Skip("Not relevant on case-sensitive filesystems")
 	}
@@ -211,25 +211,25 @@ func TestCanonicalCaseInsenitiveSymlink(t *testing.T) {
 	query := tempDir + filepath.FromSlash("/symlink")
 	mkdirp(t, expected)
 	symlink(t, "DIR", query)
-	actual, err := Canonical(query)
+	actual, err := CanonicalPath(query)
 
 	assert.NoError(t, err)
 	assert.Equal(t, expected, actual)
 }
 
-func TestCanonicalRelative(t *testing.T) {
+func TestCanonicalPathRelative(t *testing.T) {
 	tempDir := tempDir(t)
 	expected := tempDir + filepath.FromSlash("/dir")
 	mkdirp(t, expected)
 
 	t.Chdir(tempDir)
-	actual, err := Canonical("dir")
+	actual, err := CanonicalPath("dir")
 
 	assert.NoError(t, err)
 	assert.Equal(t, expected, actual)
 }
 
-func TestCanonicalRelativeSymlinkDotDot(t *testing.T) {
+func TestCanonicalPathRelativeSymlinkDotDot(t *testing.T) {
 	// dir  1
 	// dir  1/1.1
 	// dir  2
@@ -242,7 +242,7 @@ func TestCanonicalRelativeSymlinkDotDot(t *testing.T) {
 	expected := tempDir + filepath.FromSlash("/1")
 
 	t.Chdir(tempDir)
-	actual, err := Canonical(filepath.FromSlash("2/2.1/.."))
+	actual, err := CanonicalPath(filepath.FromSlash("2/2.1/.."))
 
 	assert.NoError(t, err)
 	assert.Equal(t, expected, actual)

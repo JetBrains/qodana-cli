@@ -53,7 +53,7 @@ type ChangedFiles struct {
 }
 
 func ComputeChangedFiles(cwd string, diffStart string, diffEnd string, logdir string) (ChangedFiles, error) {
-	absCwd, err := utils.Canonical(cwd)
+	absCwd, err := utils.CanonicalPath(cwd)
 	if err != nil {
 		return ChangedFiles{}, err
 	}
@@ -61,7 +61,7 @@ func ComputeChangedFiles(cwd string, diffStart string, diffEnd string, logdir st
 	if err != nil {
 		return ChangedFiles{}, err
 	}
-	absRepoRoot, err := utils.Canonical(repoRoot)
+	absRepoRoot, err := utils.CanonicalPath(repoRoot)
 	if err != nil {
 		return ChangedFiles{}, err
 	}
