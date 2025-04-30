@@ -3,7 +3,6 @@ package utils
 import (
 	"path/filepath"
 	"syscall"
-	"unsafe"
 
 	"os"
 
@@ -34,46 +33,26 @@ func CanonicalPath(path string) (result string, err error) {
 		return "", err
 	}
 
-	kernel32Dll := windows.NewLazySystemDLL("kernel32.dll")
-	GetShortPathNameW := kernel32Dll.NewProc("GetShortPathNameW")
-	GetLongPathNameW := kernel32Dll.NewProc("GetLongPathNameW")
-
 	// Convert to a short path
-	requiredSize, _, err := GetShortPathNameW.Call(
-		uintptr(unsafe.Pointer(utf16path)),
-		uintptr(unsafe.Pointer(nil)),
-		uintptr(0),
-	)
+	size, err := windows.GetShortPathName(utf16path, nil, 0)
 	if err != nil && err != syscall.Errno(0) {
 		return "", err
 	}
-	utf16shortPath := make([]uint16, requiredSize)
+	utf16shortPath := make([]uint16, size)
 
-	_, _, err = GetShortPathNameW.Call(
-		uintptr(unsafe.Pointer(utf16path)),
-		uintptr(unsafe.Pointer(&utf16shortPath[0])),
-		uintptr(requiredSize),
-	)
+	_, err = windows.GetShortPathName(utf16path, &utf16shortPath[0], size)
 	if err != nil && err != syscall.Errno(0) {
 		return "", err
 	}
 
 	// Convert back to a long path
-	requiredSize, _, err = GetLongPathNameW.Call(
-		uintptr(unsafe.Pointer(&utf16shortPath[0])),
-		uintptr(unsafe.Pointer(nil)),
-		uintptr(0),
-	)
+	size, err = windows.GetLongPathName(&utf16shortPath[0], nil, 0)
 	if err != nil && err != syscall.Errno(0) {
 		return "", err
 	}
-	utf16result := make([]uint16, requiredSize)
+	utf16result := make([]uint16, size)
 
-	_, _, err = GetLongPathNameW.Call(
-		uintptr(unsafe.Pointer(&utf16shortPath[0])),
-		uintptr(unsafe.Pointer(&utf16result[0])),
-		uintptr(requiredSize),
-	)
+	_, err = windows.GetLongPathName(&utf16shortPath[0], &utf16result[0], size)
 	if err != nil && err != syscall.Errno(0) {
 		return "", err
 	}
