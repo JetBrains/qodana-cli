@@ -1,4 +1,8 @@
 name: 'post-release'
+permissions:
+  contents: write
+  pull-requests: write
+  packages: read
 on:
   release:
     types: [released]
