@@ -17,13 +17,6 @@
 package main
 
 import (
-	"fmt"
-	"io"
-	"log"
-	"os"
-	"os/signal"
-	"syscall"
-
 	"github.com/JetBrains/qodana-cli/v2025/cmd"
 	"github.com/JetBrains/qodana-cli/v2025/platform/process"
 )
