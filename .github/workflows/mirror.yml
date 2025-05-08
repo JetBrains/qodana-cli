@@ -20,6 +20,7 @@ jobs:
         with:
           fetch-depth: 0
           persist-credentials: false
+          fetch-tags: 'true'
       - name: Mirror
         env:
           MR_PAT: ${{ secrets.MR_PAT }}
@@ -28,4 +29,4 @@ jobs:
           git remote add mirror https://x-access-token:${MR_PAT}@github.com/jetbrains/qodana-cli-ci.git
           git push --force mirror main
           git push --force mirror '2*'
-          git push --force --tags mirror
+          git push --force mirror --tags
