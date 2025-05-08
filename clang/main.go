@@ -1,12 +1,9 @@
 package main
 
 import (
-	"fmt"
-	log "github.com/sirupsen/logrus"
-	"io"
 	"os"
-	"os/signal"
-	"syscall"
+
+	"github.com/JetBrains/qodana-cli/v2025/platform/process"
 )
 
 const (
@@ -20,14 +17,6 @@ var buildDateStr = "2024-04-05T10:52:23Z"
 
 // noinspection GoUnusedFunction
 func main() {
-	InterruptChannel = make(chan os.Signal, 1)
-	signal.Notify(InterruptChannel, os.Interrupt)
-	signal.Notify(InterruptChannel, syscall.SIGINT, syscall.SIGTERM)
-	go func() {
-		<-InterruptChannel
-		fmt.Println("Interrupting Qodana...")
-		log.SetOutput(io.Discard)
-		os.Exit(0)
-	}()
+	process.Init()
 	Execute(productCode, linterName, version, buildDateStr, true)
 }

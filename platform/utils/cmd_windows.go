@@ -20,8 +20,10 @@
 package utils
 
 import (
+	log "github.com/sirupsen/logrus"
 	"os"
 	"os/exec"
+	"strconv"
 	"strings"
 	"syscall"
 )
@@ -37,4 +39,27 @@ func prepareWinCmd(args ...string) *exec.Cmd {
 	var cmd = exec.Command(comSpec)
 	cmd.SysProcAttr = &syscall.SysProcAttr{CmdLine: "/C \"" + commandLine + "\""}
 	return cmd
+}
+
+func RequestTermination(proc *os.Process) error {
+	command := exec.Command("taskkill.exe", "/pid", strconv.Itoa(proc.Pid))
+	output, err := command.CombinedOutput()
+	log.Debugf("%s: %s", command.String(), output)
+
+	if exitErr, ok := err.(*exec.ExitError); ok {
+		if exitErr.ExitCode() == 1 {
+			// Exit code 1 could mean at least:
+			// - access denied
+			// - the process can only be terminated forcefully
+			// if the process can only be terminated forcefully, this is considered a "we tried" scenario
+			// and no error should be returned. other errors with this exit code are logged and ignored.
+			return nil
+		}
+		if exitErr.ExitCode() == 128 {
+			// process not found (supposedly already exited)
+			return os.ErrProcessDone
+		}
+	}
+
+	return err
 }
