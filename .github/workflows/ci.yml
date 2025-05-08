@@ -7,7 +7,36 @@ on:
   pull_request:
 
 jobs:
-  # lint: disabled as golangci-lint is not yet ready for Go workspaces
+  detect-modules:
+    if: github.repository == 'jetbrains/qodana-cli'
+    runs-on: ubuntu-latest
+    outputs:
+      modules: ${{ steps.set-modules.outputs.modules }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: ${{ env.GO_VERSION }}
+      - id: set-modules
+        run: echo "modules=$(go list -m -json | jq -s '.' | jq -c '[.[].Dir]')" >> $GITHUB_OUTPUT
+
+  golangci-lint:
+    if: github.repository == 'jetbrains/qodana-cli'
+    needs: detect-modules
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        modules: ${{ fromJSON(needs.detect-modules.outputs.modules) }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: ${{ env.GO_VERSION }}
+      - name: golangci-lint ${{ matrix.modules }}
+        uses: golangci/golangci-lint-action@v8
+        with:
+          version: ${{ env.GOLANGCI_LINT_VERSION }}
+          working-directory: ${{ matrix.modules }}
   test:
     name: "Test (⚙️ ${{ matrix.os }}, 🐳 ${{ matrix.container-engine }})"
     uses: ./.github/workflows/test.yaml
