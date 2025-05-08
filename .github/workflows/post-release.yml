@@ -8,6 +8,7 @@ on:
     types: [released]
 jobs:
   github-actions:
+    if: github.repository == 'jetbrains/qodana-cli'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -34,7 +35,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GH_PAT }}
   winget:
     runs-on: ubuntu-latest
-    if: github.event.release.name != 'nightly'
+    if: github.event.release.name != 'nightly' && github.repository == 'jetbrains/qodana-cli'
     steps:
       - run: >
           set -e &&

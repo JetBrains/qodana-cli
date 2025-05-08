@@ -9,6 +9,7 @@ on:
 jobs:
   # lint: disabled as golangci-lint is not yet ready for Go workspaces
   test:
+    if: github.repository == 'jetbrains/qodana-cli'
     runs-on: ${{ matrix.os }}
     permissions:
       checks: write
@@ -68,6 +69,7 @@ jobs:
           QODANA_LICENSE_ONLY_TOKEN: ${{ secrets.QODANA_LICENSE_ONLY_TOKEN }}
 
   code-quality:
+    if: github.repository == 'jetbrains/qodana-cli'
     runs-on: ubuntu-latest
     permissions:
       checks: write
