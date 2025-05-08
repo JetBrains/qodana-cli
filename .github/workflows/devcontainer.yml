@@ -26,4 +26,6 @@ jobs:
         with:
           context: .devcontainer
           push: true
-          tags: registry.jetbrains.team/p/sa/public/godevcontainer:1.${{ github.run_number }}
+          tags: |
+            registry.jetbrains.team/p/sa/public/godevcontainer:1.${{ github.run_number }}
+            registry.jetbrains.team/p/sa/public/godevcontainer:latest
