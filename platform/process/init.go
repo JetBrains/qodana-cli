@@ -10,6 +10,7 @@ import (
 	"os"
 	"os/signal"
 	"syscall"
+	"time"
 )
 
 // Init runs miscellaneous process-wide utility code.
@@ -26,6 +27,9 @@ func Init() {
 		core.CheckForUpdates(version.Version)
 		core.ContainerCleanup()
 		_ = msg.QodanaSpinner.Stop()
+		// Sleep for a second to allow other functions monitoring signals elsewhere to do their thing.
+		// A future rewrite of the subprocess API should incorporate a more structured signal handling.
+		time.Sleep(1 * time.Second)
 		os.Exit(0)
 	}()
 }
