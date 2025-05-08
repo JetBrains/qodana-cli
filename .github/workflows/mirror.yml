@@ -19,10 +19,12 @@ jobs:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
-      - env:
+      - name: Mirror
+        env:
           MR_PAT: ${{ secrets.MR_PAT }}
         run: |
-          git remote add mirror           https://x-access-token:${MR_PAT}@github.com/jetbrains/qodana-cli-ci.git
+          git ls-remote https://x-access-token:${MR_PAT}@github.com/jetbrains/qodana-cli-ci.git
+          git remote add mirror https://x-access-token:${MR_PAT}@github.com/jetbrains/qodana-cli-ci.git
           git push --force mirror main
           git push --force mirror '2*'
           git push --tags mirror
