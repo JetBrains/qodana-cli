@@ -50,7 +50,10 @@ func main() {
 			log.Fatal(err)
 		}
 	} else {
-		utils.WalkArchive(archivePath, callback)
+		err = utils.WalkArchive(archivePath, callback)
+		if err != nil {
+			log.Fatal(err)
+		}
 	}
 
 	err = os.WriteFile("clang-tidy.sha256.bin", hash[:], 0666)
@@ -59,7 +62,10 @@ func main() {
 	}
 
 	// Normalize the input archive name
-	utils.CopyFile(archivePath, "clang-tidy.archive")
+	err = utils.CopyFile(archivePath, "clang-tidy.archive")
+	if err != nil {
+		log.Fatal(err)
+	}
 
 	_, err = fmt.Fprintf(os.Stderr, "sha256 of the contents of %q: %s\n", archivePath, hex.EncodeToString(hash[:]))
 	if err != nil {

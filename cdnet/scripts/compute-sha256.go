@@ -45,7 +45,10 @@ func main() {
 			log.Fatal(err)
 		}
 	} else {
-		utils.WalkZipArchive("clt.zip", callback)
+		err = utils.WalkZipArchive("clt.zip", callback)
+		if err != nil {
+			log.Fatal(err)
+		}
 	}
 
 	err = os.WriteFile("clt.sha256.bin", hash[:], 0666)
