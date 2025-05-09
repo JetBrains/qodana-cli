@@ -236,9 +236,8 @@ func installIdeFromZip(archivePath string, targetDir string) error {
 		strutil.QuoteForWindows(targetDir),
 	).Output()
 	if err != nil {
-		log.Fatal(err)
+		return fmt.Errorf("tar: %s", err)
 	}
-
 	return nil
 }
 
