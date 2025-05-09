@@ -18,6 +18,7 @@ package platform
 
 import (
 	"github.com/JetBrains/qodana-cli/v2025/platform/qdenv"
+	"github.com/JetBrains/qodana-cli/v2025/platform/strutil"
 	"github.com/JetBrains/qodana-cli/v2025/platform/utils"
 	"os"
 	"path/filepath"
@@ -38,7 +39,7 @@ func TestFetchPublisher(t *testing.T) {
 		}
 	}(tempDir) // clean up
 	path := filepath.Join(tempDir, "publisher.jar")
-	fetchPublisher(path)
+	extractPublisher(path)
 
 	if _, err := os.Stat(path); os.IsNotExist(err) {
 		t.Fatalf("fetchPublisher() failed, expected %v to exists, got error: %v", path, err)
@@ -65,14 +66,14 @@ func TestGetPublisherArgs(t *testing.T) {
 
 	// Assert that the expected arguments are present
 	expectedArgs := []string{
-		utils.QuoteForWindows(java),
+		strutil.QuoteForWindows(java),
 		"-jar",
 		"test-publisher.jar",
 		"--analysis-id", "test-analysis-id",
 		"--report-path", filepath.FromSlash("/path/to/results"),
 		"--token", "test-token",
 		"--tool", "test-tool",
-		"--endpoint", "test-endpoint",
+		"--qodana-endpoint", "test-endpoint",
 	}
 	if !reflect.DeepEqual(publisherArgs, expectedArgs) {
 		t.Errorf("getPublisherArgs returned incorrect arguments: got %v, expected %v", publisherArgs, expectedArgs)

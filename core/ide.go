@@ -22,6 +22,7 @@ import (
 	"github.com/JetBrains/qodana-cli/v2025/platform"
 	"github.com/JetBrains/qodana-cli/v2025/platform/product"
 	"github.com/JetBrains/qodana-cli/v2025/platform/qdcontainer"
+	"github.com/JetBrains/qodana-cli/v2025/platform/strutil"
 	"github.com/JetBrains/qodana-cli/v2025/platform/utils"
 	"os"
 	"path/filepath"
@@ -76,14 +77,14 @@ func runQodanaLocal(c corescan.Context) (int, error) {
 }
 
 func getIdeRunCommand(c corescan.Context) []string {
-	args := []string{utils.QuoteIfSpace(c.Prod().IdeScript)}
+	args := []string{strutil.QuoteIfSpace(c.Prod().IdeScript)}
 	if !c.Prod().Is242orNewer() {
 		args = append(args, "inspect")
 	}
 	args = append(args, "qodana")
 
 	args = append(args, GetIdeArgs(c)...)
-	args = append(args, utils.QuoteIfSpace(c.ProjectDir()), utils.QuoteIfSpace(c.ResultsDir()))
+	args = append(args, strutil.QuoteIfSpace(c.ProjectDir()), strutil.QuoteIfSpace(c.ResultsDir()))
 	return args
 }
 
@@ -91,22 +92,22 @@ func getIdeRunCommand(c corescan.Context) []string {
 func GetIdeArgs(c corescan.Context) []string {
 	arguments := make([]string, 0)
 	if c.CustomLocalQodanaYamlPath() != "" {
-		arguments = append(arguments, "--config", utils.QuoteForWindows(c.CustomLocalQodanaYamlPath()))
+		arguments = append(arguments, "--config", strutil.QuoteForWindows(c.CustomLocalQodanaYamlPath()))
 	}
 	if c.Linter() != "" && c.SaveReport() {
 		arguments = append(arguments, "--save-report")
 	}
 	if c.SourceDirectory() != "" {
-		arguments = append(arguments, "--source-directory", utils.QuoteForWindows(c.SourceDirectory()))
+		arguments = append(arguments, "--source-directory", strutil.QuoteForWindows(c.SourceDirectory()))
 	}
 	if c.DisableSanity() {
 		arguments = append(arguments, "--disable-sanity")
 	}
 	if c.ProfileName() != "" {
-		arguments = append(arguments, "--profile-name", utils.QuoteIfSpace(c.ProfileName()))
+		arguments = append(arguments, "--profile-name", strutil.QuoteIfSpace(c.ProfileName()))
 	}
 	if c.ProfilePath() != "" {
-		arguments = append(arguments, "--profile-path", utils.QuoteForWindows(c.ProfilePath()))
+		arguments = append(arguments, "--profile-path", strutil.QuoteForWindows(c.ProfilePath()))
 	}
 	if c.RunPromo() != "" {
 		arguments = append(arguments, "--run-promo", c.RunPromo())
@@ -115,7 +116,7 @@ func GetIdeArgs(c corescan.Context) []string {
 		arguments = append(arguments, "--script", c.Script())
 	}
 	if c.Baseline() != "" {
-		arguments = append(arguments, "--baseline", utils.QuoteForWindows(c.Baseline()))
+		arguments = append(arguments, "--baseline", strutil.QuoteForWindows(c.Baseline()))
 	}
 	if c.BaselineIncludeAbsent() {
 		arguments = append(arguments, "--baseline-include-absent")
@@ -154,7 +155,7 @@ func GetIdeArgs(c corescan.Context) []string {
 
 	// TODO : think how it could be better handled in presence of random 3rd party linters
 	prod := product.GuessProductCode(c.Ide(), c.Linter())
-	if prod == product.QDNETC || prod == product.QDCL {
+	if prod == product.QDNETC || prod == product.QDCLC {
 		// third party common options
 		if c.NoStatistics() {
 			arguments = append(arguments, "--no-statistics")
@@ -162,10 +163,10 @@ func GetIdeArgs(c corescan.Context) []string {
 		if prod == product.QDNETC {
 			// cdnet options
 			if c.CdnetSolution() != "" {
-				arguments = append(arguments, "--solution", utils.QuoteForWindows(c.CdnetSolution()))
+				arguments = append(arguments, "--solution", strutil.QuoteForWindows(c.CdnetSolution()))
 			}
 			if c.CdnetProject() != "" {
-				arguments = append(arguments, "--project", utils.QuoteForWindows(c.CdnetProject()))
+				arguments = append(arguments, "--project", strutil.QuoteForWindows(c.CdnetProject()))
 			}
 			if c.CdnetConfiguration() != "" {
 				arguments = append(arguments, "--configuration", c.CdnetConfiguration())
@@ -179,7 +180,7 @@ func GetIdeArgs(c corescan.Context) []string {
 		} else {
 			// clang options
 			if c.ClangCompileCommands() != "" {
-				arguments = append(arguments, "--compile-commands", utils.QuoteForWindows(c.ClangCompileCommands()))
+				arguments = append(arguments, "--compile-commands", strutil.QuoteForWindows(c.ClangCompileCommands()))
 			}
 			if c.ClangArgs() != "" {
 				arguments = append(arguments, "--clang-args", c.ClangArgs())
@@ -222,7 +223,7 @@ func GetIdeArgs(c corescan.Context) []string {
 			arguments = append(arguments, "--property="+property)
 		}
 	} else if c.Prod().Is251orNewer() {
-		arguments = append(arguments, "--config-dir", utils.QuoteForWindows(c.EffectiveConfigurationDir()))
+		arguments = append(arguments, "--config-dir", strutil.QuoteForWindows(c.EffectiveConfigurationDir()))
 	}
 	return arguments
 }
@@ -257,9 +258,9 @@ func installPlugins(c corescan.Context) {
 		log.Printf("Installing plugin %s", plugin.Id)
 		if res, err := utils.RunCmd(
 			"",
-			utils.QuoteIfSpace(c.Prod().IdeScript),
+			strutil.QuoteIfSpace(c.Prod().IdeScript),
 			"installPlugins",
-			utils.QuoteIfSpace(plugin.Id),
+			strutil.QuoteIfSpace(plugin.Id),
 		); res > 0 || err != nil {
 			os.Exit(res)
 		}

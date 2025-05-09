@@ -29,6 +29,7 @@ import (
 	"github.com/JetBrains/qodana-cli/v2025/platform/nuget"
 	"github.com/JetBrains/qodana-cli/v2025/platform/qdenv"
 	"github.com/JetBrains/qodana-cli/v2025/platform/qdyaml"
+	"github.com/JetBrains/qodana-cli/v2025/platform/strutil"
 	"github.com/JetBrains/qodana-cli/v2025/platform/utils"
 	cienvironment "github.com/cucumber/ci-environment/go"
 	"github.com/docker/docker/client"
@@ -265,7 +266,19 @@ func runScopeScript(ctx context.Context, c corescan.Context, startHash string) i
 		}
 	}
 
-	scopeFile, err := writeChangesFile(c, startHash, end)
+	if startHash == "" || end == "" {
+		log.Fatal("No commits given. Consider passing --commit or --diff-start and --diff-end (optional) with the range of commits to analyze.")
+	}
+	changedFiles, err := git.ComputeChangedFiles(c.ProjectDir(), startHash, end, c.LogDir())
+	if err != nil {
+		log.Fatal(err)
+	}
+	if len(changedFiles.Files) == 0 {
+		log.Warnf("Nothing to compare between %s and %s", startHash, end)
+		return utils.QodanaEmptyChangesetExitCodePlaceholder
+	}
+
+	scopeFile, err := writeChangesFile(c, changedFiles)
 	if err != nil {
 		log.Fatal("Failed to prepare diff run ", err)
 	}
@@ -348,18 +361,7 @@ func runScopeScript(ctx context.Context, c corescan.Context, startHash string) i
 }
 
 // writeChangesFile creates a temp file containing the changes between diffStart and diffEnd
-func writeChangesFile(c corescan.Context, start string, end string) (string, error) {
-	if start == "" || end == "" {
-		return "", fmt.Errorf("no commits given")
-	}
-	changedFiles, err := git.ComputeChangedFiles(c.ProjectDir(), start, end, c.LogDir())
-	if err != nil {
-		return "", err
-	}
-
-	if len(changedFiles.Files) == 0 {
-		return "", fmt.Errorf("nothing to compare between %s and %s", start, end)
-	}
+func writeChangesFile(c corescan.Context, changedFiles git.ChangedFiles) (string, error) {
 	file, err := os.CreateTemp("", "diff-scope.txt")
 	if err != nil {
 		return "", err
@@ -484,15 +486,15 @@ func saveReport(c corescan.Context) {
 	log.Println("Generating HTML report ...")
 	if res, err := utils.RunCmd(
 		"",
-		utils.QuoteForWindows(prod.JbrJava()),
+		strutil.QuoteForWindows(prod.JbrJava()),
 		"-jar",
-		utils.QuoteForWindows(reportConverter),
+		strutil.QuoteForWindows(reportConverter),
 		"-s",
-		utils.QuoteForWindows(c.ProjectDir()),
+		strutil.QuoteForWindows(c.ProjectDir()),
 		"-d",
-		utils.QuoteForWindows(c.ResultsDir()),
+		strutil.QuoteForWindows(c.ResultsDir()),
 		"-o",
-		utils.QuoteForWindows(platform.ReportResultsPath(c.ReportDir())),
+		strutil.QuoteForWindows(platform.ReportResultsPath(c.ReportDir())),
 		"-n",
 		"result-allProblems.json",
 		"-f",

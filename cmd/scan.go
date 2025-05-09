@@ -49,6 +49,8 @@ Note that most options can be configured via qodana.yaml (https://www.jetbrains.
 But you can always override qodana.yaml options with the following command-line options.
 `,
 		Run: func(cmd *cobra.Command, args []string) {
+			qdenv.InitializeQodanaGlobalEnv(cliOptions)
+
 			ctx := cmd.Context()
 
 			commonCtx := commoncontext.Compute(
@@ -57,7 +59,7 @@ But you can always override qodana.yaml options with the following command-line 
 				cliOptions.CacheDir,
 				cliOptions.ResultsDir,
 				cliOptions.ReportDir,
-				platform.GetEnvWithOsEnv(cliOptions, qdenv.QodanaToken),
+				qdenv.GetQodanaGlobalEnv(qdenv.QodanaToken),
 				cliOptions.ClearCache,
 				cliOptions.ProjectDir,
 				cliOptions.ConfigName,
@@ -186,6 +188,9 @@ func checkExitCode(exitCode int, c corescan.Context) {
 	} else if exitCode == utils.QodanaTimeoutExitCodePlaceholder {
 		msg.ErrorMessage("Qodana analysis reached timeout %s", c.GetAnalysisTimeout())
 		os.Exit(c.AnalysisTimeoutExitCode())
+	} else if exitCode == utils.QodanaEmptyChangesetExitCodePlaceholder {
+		msg.ErrorMessage("Nothing to analyse. Exiting with %s", utils.QodanaSuccessExitCode)
+		os.Exit(utils.QodanaSuccessExitCode)
 	} else if exitCode != utils.QodanaSuccessExitCode && exitCode != utils.QodanaFailThresholdExitCode {
 		msg.ErrorMessage("Qodana exited with code %d", exitCode)
 		msg.WarningMessage("Check ./logs/ in the results directory for more information")

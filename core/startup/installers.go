@@ -20,6 +20,13 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"fmt"
+	"github.com/JetBrains/qodana-cli/v2025/platform/msg"
+	"github.com/JetBrains/qodana-cli/v2025/platform/product"
+	"github.com/JetBrains/qodana-cli/v2025/platform/strutil"
+	"github.com/JetBrains/qodana-cli/v2025/platform/utils"
+	cp "github.com/otiai10/copy"
+	"github.com/pterm/pterm"
+	log "github.com/sirupsen/logrus"
 	"io"
 	"math/rand"
 	"os"
@@ -27,13 +34,6 @@ import (
 	"path/filepath"
 	"runtime"
 	"strings"
-
-	"github.com/JetBrains/qodana-cli/v2025/platform/msg"
-	"github.com/JetBrains/qodana-cli/v2025/platform/product"
-	"github.com/JetBrains/qodana-cli/v2025/platform/utils"
-	cp "github.com/otiai10/copy"
-	"github.com/pterm/pterm"
-	log "github.com/sirupsen/logrus"
 )
 
 func downloadAndInstallIDE(
@@ -141,18 +141,18 @@ func getIde(productCode string) *ReleaseDownloadInfo {
 		return nil
 	}
 
-	if !utils.Contains(product.AllNativeCodes, productCode) {
+	if !strutil.Contains(product.AllNativeCodes, productCode) {
 		msg.ErrorMessage("Product code is not supported: ", originalCode)
 		return nil
 	}
 
 	prod, err := GetProductByCode(product.Products[productCode])
-	if err != nil || prod == nil {
-		errorMessage := ""
-		if err != nil {
-			errorMessage = err.Error()
-		}
-		msg.ErrorMessage("Error while obtaining the Product info: " + errorMessage)
+	if err != nil {
+		msg.ErrorMessage("Error while obtaining the product info: " + err.Error())
+		return nil
+	}
+	if prod == nil {
+		msg.ErrorMessage("Product info is not found for code: ", originalCode)
 		return nil
 	}
 
@@ -214,7 +214,7 @@ func getIde(productCode string) *ReleaseDownloadInfo {
 
 // installIdeWindowsExe is used as a fallback, since it needs installation privileges and alters the registry
 func installIdeWindowsExe(archivePath string, targetDir string) error {
-	_, err := exec.Command(archivePath, "/S", fmt.Sprintf("/D=%s", utils.QuoteForWindows(targetDir))).Output()
+	_, err := exec.Command(archivePath, "/S", fmt.Sprintf("/D=%s", strutil.QuoteForWindows(targetDir))).Output()
 	if err != nil {
 		return fmt.Errorf("%s: %s", archivePath, err)
 	}
@@ -228,24 +228,13 @@ func installIdeFromZip(archivePath string, targetDir string) error {
 	if err := os.MkdirAll(targetDir, os.ModePerm); err != nil {
 		log.Fatal("couldn't create a directory ", err.Error())
 	}
-
-	err := utils.WalkZipArchive(archivePath, func(localPath string, info os.FileInfo, contents io.Reader) {
-		path := filepath.Join(targetDir, localPath)
-		if info.IsDir() {
-			if err := os.Mkdir(path, info.Mode()); err != nil {
-				log.Fatalf("couldn't create directory %q: %s", path, err)
-			}
-		} else {
-			writer, err := os.OpenFile(path, os.O_WRONLY|os.O_CREATE, info.Mode())
-			if err != nil {
-				log.Fatalf("couldn't create file %q: %s", path, err)
-			}
-			_, err = io.Copy(writer, contents)
-			if err != nil {
-				log.Fatalf("couldn't extract file %q: %s", localPath, err)
-			}
-		}
-	})
+	_, err := exec.Command(
+		"tar",
+		"-xf",
+		strutil.QuoteForWindows(archivePath),
+		"-C",
+		strutil.QuoteForWindows(targetDir),
+	).Output()
 	if err != nil {
 		log.Fatal(err)
 	}

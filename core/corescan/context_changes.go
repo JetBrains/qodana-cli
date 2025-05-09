@@ -20,7 +20,7 @@ import (
 	"fmt"
 	"github.com/JetBrains/qodana-cli/v2025/core/startup"
 	"github.com/JetBrains/qodana-cli/v2025/platform/qdenv"
-	"github.com/JetBrains/qodana-cli/v2025/platform/utils"
+	"github.com/JetBrains/qodana-cli/v2025/platform/strutil"
 	"path/filepath"
 	"strings"
 )
@@ -53,7 +53,7 @@ func (c Context) BackoffToDefaultAnalysisBecauseOfMissingCommit() Context {
 }
 
 func (c Context) FirstStageOfScopedScript(scopeFile string) Context {
-	c.script = utils.QuoteForWindows("scoped:" + scopeFile)
+	c.script = strutil.QuoteForWindows("scoped:" + scopeFile)
 
 	startDir := filepath.Join(c.ResultsDir(), "start")
 	c.showReport = false
@@ -73,7 +73,7 @@ func (c Context) FirstStageOfScopedScript(scopeFile string) Context {
 }
 
 func (c Context) SecondStageOfScopedScript(scopeFile string, startSarif string) Context {
-	c.script = utils.QuoteForWindows("scoped:" + scopeFile)
+	c.script = strutil.QuoteForWindows("scoped:" + scopeFile)
 
 	endDir := filepath.Join(c.ResultsDir(), "end")
 

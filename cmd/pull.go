@@ -24,7 +24,6 @@ import (
 	"github.com/docker/docker/client"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
-	"os"
 )
 
 // newPullCommand returns a new instance of the show command.
@@ -35,13 +34,15 @@ func newPullCommand() *cobra.Command {
 		Short: "Pull latest version of linter",
 		Long:  `An alternative to pull an image.`,
 		Run: func(cmd *cobra.Command, args []string) {
+			qdenv.InitializeQodanaGlobalEnv(qdenv.EmptyEnvProvider())
+
 			commonCtx := commoncontext.Compute(
 				cliOptions.Linter,
 				"",
 				"",
 				"",
 				"",
-				os.Getenv(qdenv.QodanaToken),
+				qdenv.GetQodanaGlobalEnv(qdenv.QodanaToken),
 				false,
 				cliOptions.ProjectDir,
 				cliOptions.ConfigName,

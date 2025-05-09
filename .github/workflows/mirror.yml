@@ -1,0 +1,32 @@
+name: mirror
+permissions:
+  contents: write
+  pull-requests: write
+  packages: read
+on:
+  push:
+    branches:
+      - main
+      - '2*'
+    tags:
+      - '*'
+
+jobs:
+  mirror:
+    if: github.repository == 'jetbrains/qodana-cli'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+          fetch-tags: 'true'
+      - name: Mirror
+        env:
+          MR_PAT: ${{ secrets.MR_PAT }}
+        run: |
+          git ls-remote https://x-access-token:${MR_PAT}@github.com/jetbrains/qodana-cli-ci.git
+          git remote add mirror https://x-access-token:${MR_PAT}@github.com/jetbrains/qodana-cli-ci.git
+          git push --force mirror main
+          git push --force mirror '2*'
+          git push --force mirror --tags

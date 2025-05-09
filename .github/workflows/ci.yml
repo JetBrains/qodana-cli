@@ -6,13 +6,10 @@ on:
       - main
   pull_request:
 
-defaults:
-  run:
-    shell: "bash --noprofile --norc -euo pipefail {0}"
-
 jobs:
   # lint: disabled as golangci-lint is not yet ready for Go workspaces
   test:
+    if: github.repository == 'jetbrains/qodana-cli'
     runs-on: ${{ matrix.os }}
     permissions:
       checks: write
@@ -49,8 +46,7 @@ jobs:
           clang/clang-tidy-windows-arm64.zip
           clang/clang-tidy-darwin-amd64.tar.gz
           clang/clang-tidy-darwin-arm64.tar.gz
-      - name: Download config-loader-cli.jar
-        run: chmod +x download_deps.sh && ./download_deps.sh
+        shell: bash
       - name: Set up gotestfmt
         uses: gotesttools/gotestfmt-action@v2
         with:
@@ -65,14 +61,21 @@ jobs:
         # Build everything that will be tested. Although go test performs a build itself, gotestfmt will panic on a
         # failed build.
         run: |
-          go generate -v $(go list -m)
-          go build -v $(go list -m)
+          go generate -v $(go list -f '{{.Dir}}/...' -m)
+          go build -v $(go list -f '{{.Dir}}/...' -m)
       - name: Run tests (with coverage)
-        run: go test -json -v $(go list -f '{{.Dir}}/...' -m) -coverprofile coverage-${{ matrix.os }}.out 2>&1 | tee /tmp/gotest.log | gotestfmt
+        if: ${{ matrix.os != 'windows-latest' }}
+        run: |
+          set -euo pipefail
+          go test -json -v $(go list -f '{{.Dir}}/...' -m) -coverprofile coverage-${{ matrix.os }}.out 2>&1 | tee /tmp/gotest.log | gotestfmt
         env:
           QODANA_LICENSE_ONLY_TOKEN: ${{ secrets.QODANA_LICENSE_ONLY_TOKEN }}
+      - name: Run tests (with coverage) for Windows
+        if: ${{ matrix.os == 'windows-latest' }}
+        run: go test -v $(go list -f '{{.Dir}}/...' -m) -coverprofile coverage-${{ matrix.os }}.out
 
   code-quality:
+    if: github.repository == 'jetbrains/qodana-cli'
     runs-on: ubuntu-latest
     permissions:
       checks: write

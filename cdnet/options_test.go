@@ -23,8 +23,8 @@ import (
 	"github.com/JetBrains/qodana-cli/v2025/platform/product"
 	"github.com/JetBrains/qodana-cli/v2025/platform/qdcontainer"
 	"github.com/JetBrains/qodana-cli/v2025/platform/qdyaml"
+	"github.com/JetBrains/qodana-cli/v2025/platform/strutil"
 	"github.com/JetBrains/qodana-cli/v2025/platform/thirdpartyscan"
-	"github.com/JetBrains/qodana-cli/v2025/platform/utils"
 	"github.com/stretchr/testify/assert"
 	"reflect"
 	"testing"
@@ -292,7 +292,7 @@ func TestComputeCdnetArgs(t *testing.T) {
 				context := tt.cb.Build()
 				args, err := CdnetLinter{}.computeCdnetArgs(context)
 
-				if utils.Contains(tt.expectedArgs, "--LogFolder=\"log\"") {
+				if strutil.Contains(tt.expectedArgs, "--LogFolder=\"log\"") {
 					for i, arg := range tt.expectedArgs {
 						if arg == "--LogFolder=\"log\"" {
 							tt.expectedArgs[i] = "--LogFolder=\"" + logDir + "\""
@@ -389,7 +389,7 @@ func TestGetArgsThirdPartyLinters(t *testing.T) {
 			name: "(clang) compile commands",
 			cb: corescan.ContextBuilder{
 				ClangCompileCommands: "compile_commands.json",
-				Linter:               product.DockerImageMap[product.QDCL],
+				Linter:               product.DockerImageMap[product.QDCLC],
 			},
 			expected: []string{
 				"--compile-commands", "compile_commands.json",
@@ -399,7 +399,7 @@ func TestGetArgsThirdPartyLinters(t *testing.T) {
 			name: "(clang) clang args",
 			cb: corescan.ContextBuilder{
 				ClangArgs: "-I/usr/include",
-				Linter:    product.DockerImageMap[product.QDCL],
+				Linter:    product.DockerImageMap[product.QDCLC],
 			},
 			expected: []string{
 				"--clang-args", "-I/usr/include",

@@ -30,14 +30,15 @@ import (
 )
 
 const (
-	DefaultEndpoint            = "qodana.cloud"
+	DefaultEndpoint            = "https://qodana.cloud"
 	defaultNumberOfRetries     = 3
 	defaultCooldownTimeSeconds = 30
 	defaultRequestTimeout      = 30
 )
 
+// QdRootEndpoint contains scheme, hostname and port
 type QdRootEndpoint struct {
-	Host string
+	Url string
 }
 
 type QdApiEndpoints struct {
@@ -71,7 +72,10 @@ func GetCloudRootEndpoint() *QdRootEndpoint {
 	if endpoint != nil {
 		return endpoint
 	}
-	userUrl := GetEnvWithDefault(qdenv.QodanaEndpointEnv, DefaultEndpoint)
+	userUrl := qdenv.GetQodanaGlobalEnv(qdenv.QodanaEndpointEnv)
+	if userUrl == "" {
+		userUrl = DefaultEndpoint
+	}
 	host, err := parseRawURL(userUrl)
 	if err != nil {
 		log.Fatal(err)
@@ -87,10 +91,10 @@ func parseRawURL(rawUrl string) (host string, err error) {
 		if repErr != nil {
 			return "", err
 		}
-		return parsedUrl.Host, nil
+		return fmt.Sprintf("%s://%s", parsedUrl.Scheme, parsedUrl.Host), nil
 	}
 
-	return parsedUrl.Host, nil
+	return fmt.Sprintf("%s://%s", parsedUrl.Scheme, parsedUrl.Host), nil
 }
 
 func (endpoints *QdApiEndpoints) NewCloudApiClient(token string) *QdClient {
@@ -202,9 +206,9 @@ func (client *QdClient) doRequestAttempt(request *QdCloudRequest) ([]byte, error
 		}
 	}(resp.Body)
 
-	responseBody, responseErr := io.ReadAll(resp.Body)
-	if responseErr != nil {
-		return nil, responseErr
+	responseBody, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return nil, err
 	}
 
 	if resp.StatusCode >= http.StatusOK && resp.StatusCode < http.StatusMultipleChoices {

@@ -44,7 +44,7 @@ func TestMergeSarifReports(t *testing.T) {
 	if err := os.Setenv("QODANA_REVISION", "bar"); err != nil {
 		t.Fail()
 	}
-	toolCode := "QDCL"
+	toolCode := "QDCLC"
 	toolDesc := "Qodana for C/C++ (CMake)"
 	workingDir, err := os.Getwd()
 	if err != nil {

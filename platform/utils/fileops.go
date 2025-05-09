@@ -23,12 +23,11 @@ import (
 	"crypto/sha256"
 	"errors"
 	"fmt"
+	log "github.com/sirupsen/logrus"
 	"io"
 	"os"
 	"path/filepath"
 	"strings"
-
-	log "github.com/sirupsen/logrus"
 )
 
 // CopyFile copies a file from src to dst.
@@ -118,7 +117,7 @@ func GetFileSha256(path string) (result [32]byte, err error) {
 	return GetSha256(reader)
 }
 
-// WalkArchiveCallback will be called for each archived item, e.g. in WalkArchiveFiles.
+// WalkArchiveCallback will be called for each archived item, e.g. in WalkArchive.
 // Parameters:
 // - path: relative path of an item within the archive
 // - info: `os.FileInfo` for the item
@@ -133,6 +132,8 @@ func WalkArchive(path string, callback WalkArchiveCallback) error {
 	switch filepath.Ext(path) {
 	case ".zip", ".sit":
 		implFunc = WalkZipArchive
+	case ".tgz":
+		implFunc = WalkTarGzArchive
 	case ".gz":
 		switch filepath.Ext(strings.TrimSuffix(path, ".gz")) {
 		case ".tar":
@@ -147,7 +148,7 @@ func WalkArchive(path string, callback WalkArchiveCallback) error {
 	return implFunc(path, callback)
 }
 
-// WalkZipArchive implements WalkArchiveFiles for .zip.
+// WalkZipArchive implements WalkArchive for .zip.
 func WalkZipArchive(path string, callback WalkArchiveCallback) (err error) {
 	zipReader, err := zip.OpenReader(path)
 	if err != nil {
@@ -188,7 +189,7 @@ func WalkZipArchive(path string, callback WalkArchiveCallback) (err error) {
 	return nil
 }
 
-// WalkTarGzArchive implements WalkArchiveFiles for .tar.gz.
+// WalkTarGzArchive implements WalkArchive for .tar.gz.
 func WalkTarGzArchive(path string, callback WalkArchiveCallback) (err error) {
 	reader, err := os.Open(path)
 	if err != nil {

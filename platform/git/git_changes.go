@@ -19,7 +19,7 @@ package git
 import (
 	"bufio"
 	"fmt"
-	"github.com/JetBrains/qodana-cli/v2025/platform/utils"
+	"github.com/JetBrains/qodana-cli/v2025/platform/strutil"
 	log "github.com/sirupsen/logrus"
 	"io"
 	"os"
@@ -85,7 +85,7 @@ func ComputeChangedFiles(cwd string, diffStart string, diffEnd string, logdir st
 
 	_, _, err = gitRun(
 		cwd,
-		[]string{"diff", diffStart, diffEnd, "--unified=0", "--no-renames", ">", utils.QuoteIfSpace(filePath)},
+		[]string{"diff", diffStart, diffEnd, "--unified=0", "--no-renames", ">", strutil.QuoteIfSpace(filePath)},
 		logdir,
 	)
 	if err != nil {

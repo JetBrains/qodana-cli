@@ -22,7 +22,6 @@ import (
 	"github.com/JetBrains/qodana-cli/v2025/platform/qdenv"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
-	"os"
 )
 
 // newShowCommand returns a new instance of the show command.
@@ -38,13 +37,15 @@ be viewed via the file:// protocol (by double-clicking the index.html file).
 https://www.jetbrains.com/help/qodana/html-report.html
 This command serves the Qodana report locally and opens a browser to it.`,
 		Run: func(cmd *cobra.Command, args []string) {
+			qdenv.InitializeQodanaGlobalEnv(qdenv.EmptyEnvProvider())
+
 			commonCtx := commoncontext.Compute(
 				cliOptions.Linter,
 				"",
 				"",
 				cliOptions.ResultsDir,
 				cliOptions.ReportDir,
-				os.Getenv(qdenv.QodanaToken),
+				qdenv.GetQodanaGlobalEnv(qdenv.QodanaToken),
 				false,
 				cliOptions.ProjectDir,
 				cliOptions.ConfigName,

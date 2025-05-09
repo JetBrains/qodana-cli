@@ -18,10 +18,6 @@ package utils
 
 import (
 	"fmt"
-	"github.com/JetBrains/qodana-cli/v2025/platform/msg"
-	"github.com/JetBrains/qodana-cli/v2025/platform/qdenv"
-	"github.com/pterm/pterm"
-	"github.com/shirou/gopsutil/v3/process"
 	"io"
 	"net/http"
 	"os"
@@ -31,42 +27,14 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/JetBrains/qodana-cli/v2025/platform/msg"
+	"github.com/JetBrains/qodana-cli/v2025/platform/qdenv"
+	"github.com/JetBrains/qodana-cli/v2025/platform/strutil"
+	"github.com/pterm/pterm"
+	"github.com/shirou/gopsutil/v3/process"
+
 	log "github.com/sirupsen/logrus"
 )
-
-// Lower a shortcut to strings.ToLower.
-func Lower(s string) string {
-	return strings.ToLower(s)
-}
-
-// Contains checks if a string is in a given slice.
-func Contains(s []string, str string) bool {
-	for _, v := range s {
-		if v == str {
-			return true
-		}
-	}
-	return false
-}
-
-// Append appends a string to a slice if it's not already there.
-//
-//goland:noinspection GoUnnecessarilyExportedIdentifiers
-func Append(slice []string, elems ...string) []string {
-	if !Contains(slice, elems[0]) {
-		slice = append(slice, elems[0])
-	}
-	return slice
-}
-
-func Remove(s []string, r string) []string {
-	for i, v := range s {
-		if v == r {
-			return append(s[:i], s[i+1:]...)
-		}
-	}
-	return s
-}
 
 // CheckDirFiles checks if a directory contains files.
 func CheckDirFiles(dir string) bool {
@@ -86,7 +54,7 @@ func FindFiles(root string, extensions []string) []string {
 				return err
 			}
 			fileExtension := filepath.Ext(path)
-			if Contains(extensions, fileExtension) {
+			if strutil.Contains(extensions, fileExtension) {
 				files = append(files, path)
 			}
 
@@ -97,44 +65,6 @@ func FindFiles(root string, extensions []string) []string {
 		log.Fatal(err)
 	}
 	return files
-}
-
-// QuoteIfSpace wraps in '"' if '`s`' Contains space.
-func QuoteIfSpace(s string) string {
-	if isStringQuoted(s) {
-		return s
-	}
-	if strings.Contains(s, " ") {
-		return "\"" + s + "\""
-	} else {
-		return s
-	}
-}
-
-// QuoteForWindows wraps s in quotes if s contains a typical Windows batch special char and isn't yet quoted.
-func QuoteForWindows(s string) string {
-	if isStringQuoted(s) {
-		return s
-	}
-	if runtime.GOOS == "windows" && containsWinSpecialChar(s) {
-		return `"` + s + `"`
-	}
-	return s
-}
-
-func isStringQuoted(s string) bool {
-	return strings.HasPrefix(s, "\"") && strings.HasSuffix(s, "\"")
-}
-
-// containsWinSpecialChar returns true if s contains any common Windows batch special char that requires quoting.
-func containsWinSpecialChar(s string) bool {
-	specialChars := []string{" ", "(", ")", "^", "&", "|", "<", ">"}
-	for _, c := range specialChars {
-		if strings.Contains(s, c) {
-			return true
-		}
-	}
-	return false
 }
 
 func GetJavaExecutablePath() (string, error) {
@@ -268,14 +198,6 @@ func DownloadFile(filepath string, url string, spinner *pterm.SpinnerPrinter) er
 	}
 
 	return nil
-}
-
-// Reverse reverses the given string slice.
-func Reverse(s []string) []string {
-	for i, j := 0, len(s)-1; i < j; i, j = i+1, j-1 {
-		s[i], s[j] = s[j], s[i]
-	}
-	return s
 }
 
 func GetDefaultUser() string {

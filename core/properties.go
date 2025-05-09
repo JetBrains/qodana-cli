@@ -24,7 +24,7 @@ import (
 	"github.com/JetBrains/qodana-cli/v2025/platform/product"
 	"github.com/JetBrains/qodana-cli/v2025/platform/qdenv"
 	"github.com/JetBrains/qodana-cli/v2025/platform/qdyaml"
-	"github.com/JetBrains/qodana-cli/v2025/platform/utils"
+	"github.com/JetBrains/qodana-cli/v2025/platform/strutil"
 	log "github.com/sirupsen/logrus"
 	"os"
 	"path/filepath"
@@ -45,29 +45,29 @@ func getPropertiesMap(
 		"-Didea.headless.enable.statistics":    strconv.FormatBool(cloud.Token.IsAllowedToSendFUS()),
 		"-Didea.headless.statistics.device.id": deviceIdSalt[0],
 		"-Didea.headless.statistics.salt":      deviceIdSalt[1],
-		"-Dqodana.automation.guid":             utils.QuoteIfSpace(analysisId),
+		"-Dqodana.automation.guid":             strutil.QuoteIfSpace(analysisId),
 		"-XX:MaxRAMPercentage":                 "70", //only in docker?
 	}
 	if coverageDir != "" {
-		properties["-Dqodana.coverage.input"] = utils.QuoteIfSpace(coverageDir)
+		properties["-Dqodana.coverage.input"] = strutil.QuoteIfSpace(coverageDir)
 	}
 	if len(plugins) > 0 {
 		properties["-Didea.required.plugins.id"] = strings.Join(plugins, ",")
 	}
 	if prefix == "Rider" {
 		if dotNet.Project != "" {
-			properties["-Dqodana.net.project"] = utils.QuoteIfSpace(dotNet.Project)
+			properties["-Dqodana.net.project"] = strutil.QuoteIfSpace(dotNet.Project)
 		} else if dotNet.Solution != "" {
-			properties["-Dqodana.net.solution"] = utils.QuoteIfSpace(dotNet.Solution)
+			properties["-Dqodana.net.solution"] = strutil.QuoteIfSpace(dotNet.Solution)
 		}
 		if dotNet.Configuration != "" {
-			properties["-Dqodana.net.configuration"] = utils.QuoteIfSpace(dotNet.Configuration)
+			properties["-Dqodana.net.configuration"] = strutil.QuoteIfSpace(dotNet.Configuration)
 		}
 		if dotNet.Platform != "" {
-			properties["-Dqodana.net.platform"] = utils.QuoteIfSpace(dotNet.Platform)
+			properties["-Dqodana.net.platform"] = strutil.QuoteIfSpace(dotNet.Platform)
 		}
 		if dotNet.Frameworks != "" {
-			properties["-Dqodana.net.targetFrameworks"] = utils.QuoteIfSpace(dotNet.Frameworks)
+			properties["-Dqodana.net.targetFrameworks"] = strutil.QuoteIfSpace(dotNet.Frameworks)
 		} else if qdenv.IsContainer() {
 			// We don't want to scan .NET Framework projects in Linux containers
 			properties["-Dqodana.net.targetFrameworks"] = "!net48;!net472;!net471;!net47;!net462;!net461;!net46;!net452;!net451;!net45;!net403;!net40;!net35;!net20;!net11"
@@ -79,15 +79,15 @@ func getPropertiesMap(
 	return properties
 }
 
-// GetCommonProperties Common part for installPlugins and qodana executuion
+// GetCommonProperties computes common properties for installPlugins and qodana executuion
 func GetCommonProperties(c corescan.Context) []string {
 	systemDir := filepath.Join(c.CacheDir(), "idea", c.Prod().GetVersionBranch())
 	pluginsDir := filepath.Join(c.CacheDir(), "plugins", c.Prod().GetVersionBranch())
 	lines := []string{
-		fmt.Sprintf("-Didea.config.path=%s", utils.QuoteIfSpace(c.ConfigDir())),
-		fmt.Sprintf("-Didea.system.path=%s", utils.QuoteIfSpace(systemDir)),
-		fmt.Sprintf("-Didea.plugins.path=%s", utils.QuoteIfSpace(pluginsDir)),
-		fmt.Sprintf("-Didea.log.path=%s", utils.QuoteIfSpace(c.LogDir())),
+		fmt.Sprintf("-Didea.config.path=%s", strutil.QuoteIfSpace(c.ConfigDir())),
+		fmt.Sprintf("-Didea.system.path=%s", strutil.QuoteIfSpace(systemDir)),
+		fmt.Sprintf("-Didea.plugins.path=%s", strutil.QuoteIfSpace(pluginsDir)),
+		fmt.Sprintf("-Didea.log.path=%s", strutil.QuoteIfSpace(c.LogDir())),
 	}
 	treatAsRelease := os.Getenv(qdenv.QodanaTreatAsRelease)
 	if treatAsRelease == "true" {
@@ -123,7 +123,7 @@ func GetScanProperties(c corescan.Context) []string {
 
 	lines = append(
 		lines,
-		fmt.Sprintf("-Xlog:gc*:%s", utils.QuoteIfSpace(filepath.Join(c.LogDir(), "gc.log"))),
+		fmt.Sprintf("-Xlog:gc*:%s", strutil.QuoteIfSpace(filepath.Join(c.LogDir(), "gc.log"))),
 	)
 
 	if c.JvmDebugPort() > 0 {
@@ -140,7 +140,7 @@ func GetScanProperties(c corescan.Context) []string {
 
 	cliProps, flags := c.PropertiesAndFlags()
 	for _, f := range flags {
-		if f != "" && !utils.Contains(lines, f) {
+		if f != "" && !strutil.Contains(lines, f) {
 			lines = append(lines, f)
 		}
 	}

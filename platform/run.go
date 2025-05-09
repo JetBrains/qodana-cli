@@ -19,8 +19,14 @@ package platform
 import (
 	"errors"
 	"fmt"
+	"github.com/JetBrains/qodana-cli/v2025/platform/strutil"
+	"os"
+	"path"
+	"path/filepath"
+	"strings"
+
 	"github.com/JetBrains/qodana-cli/v2025/cloud"
-	"github.com/JetBrains/qodana-cli/v2025/platform/cmd"
+	platformcmd "github.com/JetBrains/qodana-cli/v2025/platform/cmd"
 	"github.com/JetBrains/qodana-cli/v2025/platform/commoncontext"
 	"github.com/JetBrains/qodana-cli/v2025/platform/effectiveconfig"
 	"github.com/JetBrains/qodana-cli/v2025/platform/msg"
@@ -31,10 +37,6 @@ import (
 	"github.com/JetBrains/qodana-cli/v2025/platform/utils"
 	"github.com/JetBrains/qodana-cli/v2025/tooling"
 	log "github.com/sirupsen/logrus"
-	"os"
-	"path"
-	"path/filepath"
-	"strings"
 )
 
 func RunThirdPartyLinterAnalysis(
@@ -42,15 +44,17 @@ func RunThirdPartyLinterAnalysis(
 	linter ThirdPartyLinter,
 	linterInfo thirdpartyscan.LinterInfo,
 ) (int, error) {
+	qdenv.InitializeQodanaGlobalEnv(cliOptions)
+
 	var err error
 
 	commonCtx := commoncontext.Compute(
-		cliOptions.Linter,
-		cliOptions.Ide,
+		"",
+		linterInfo.ProductCode,
 		cliOptions.CacheDir,
 		cliOptions.ResultsDir,
 		cliOptions.ReportDir,
-		GetEnvWithOsEnv(cliOptions, qdenv.QodanaToken),
+		qdenv.GetQodanaGlobalEnv(qdenv.QodanaToken),
 		cliOptions.ClearCache,
 		cliOptions.ProjectDir,
 		cliOptions.ConfigName,
@@ -217,11 +221,11 @@ func sendReportToQodanaServer(c thirdpartyscan.Context) {
 			LogDir:     c.LogDir(),
 			AnalysisId: c.AnalysisId(),
 		}
+
 		SendReport(
 			publisher,
 			cloud.Token.Token,
-			utils.QuoteForWindows(filepath.Join(c.CacheDir(), PublisherJarName)),
-			utils.QuoteForWindows(c.MountInfo().JavaPath),
+			strutil.QuoteForWindows(c.MountInfo().JavaPath),
 		)
 	} else {
 		fmt.Println("Skipping report publishing")
@@ -297,15 +301,15 @@ func convertReportToCloudFormat(context thirdpartyscan.Context) error {
 
 func converterArgs(options thirdpartyscan.Context, mountInfo thirdpartyscan.MountInfo) []string {
 	return []string{
-		utils.QuoteForWindows(mountInfo.JavaPath),
+		strutil.QuoteForWindows(mountInfo.JavaPath),
 		"-jar",
-		utils.QuoteForWindows(mountInfo.Converter),
+		strutil.QuoteForWindows(mountInfo.Converter),
 		"-s",
-		utils.QuoteForWindows(options.ProjectDir()),
+		strutil.QuoteForWindows(options.ProjectDir()),
 		"-d",
-		utils.QuoteForWindows(options.ResultsDir()),
+		strutil.QuoteForWindows(options.ResultsDir()),
 		"-o",
-		utils.QuoteForWindows(options.ReportDir()),
+		strutil.QuoteForWindows(options.ReportDir()),
 		"-n",
 		"result-allProblems.json",
 		"-f",
