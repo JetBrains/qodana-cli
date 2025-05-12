@@ -198,7 +198,7 @@ func getCwdPath(cwd string) (string, error) {
 // handleSignals handles the signals from the subprocess
 func handleSignals(cmd *exec.Cmd, waitCh <-chan error, timeout time.Duration, timeoutExitCode int) (int, error) {
 	sigChan := make(chan os.Signal, 1)
-	signal.Notify(sigChan)
+	signal.Notify(sigChan, os.Interrupt, syscall.SIGINT, syscall.SIGTERM)
 	defer func() {
 		signal.Stop(sigChan) // Use Stop to prevent panics
 		close(sigChan)
@@ -208,15 +208,15 @@ func handleSignals(cmd *exec.Cmd, waitCh <-chan error, timeout time.Duration, ti
 
 	for {
 		select {
-		case sig := <-sigChan:
-			if err := cmd.Process.Signal(sig); err != nil && !errors.Is(
+		case <-sigChan:
+			if err := RequestTermination(cmd.Process); err != nil && !errors.Is(
 				err,
 				os.ErrProcessDone,
 			) { // Use errors.Is for semantic comparison
-				log.Error("Error sending signal: ", sig, err)
+				log.Error("Error terminating process: ", err)
 			}
 		case <-timeoutCh:
-			if err := cmd.Process.Signal(syscall.SIGTERM); err != nil {
+			if err := RequestTermination(cmd.Process); err != nil {
 				log.Fatal("failed to kill process on timeout: ", err)
 			}
 			_, _ = cmd.Process.Wait()
