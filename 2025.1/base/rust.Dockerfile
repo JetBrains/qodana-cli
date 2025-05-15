@@ -1,4 +1,4 @@
-ARG RUST_TAG="1.86-slim-bookworm"
+ARG RUST_TAG="1.87-slim-bookworm"
 FROM rust:$RUST_TAG
 
 # renovate: datasource=npm depName=eslint
