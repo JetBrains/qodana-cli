@@ -124,6 +124,7 @@ type QodanaYamlConfig struct {
 	Plugins    []qdyaml.Plugin
 	Properties map[string]string
 	DotNet     qdyaml.DotNet
+	Cpp        qdyaml.Cpp
 }
 
 func YamlConfig(yaml qdyaml.QodanaYaml) QodanaYamlConfig {
@@ -132,6 +133,7 @@ func YamlConfig(yaml qdyaml.QodanaYaml) QodanaYamlConfig {
 		Plugins:    yaml.Plugins,
 		Properties: yaml.Properties,
 		DotNet:     yaml.DotNet,
+		Cpp:        yaml.Cpp,
 	}
 }
 

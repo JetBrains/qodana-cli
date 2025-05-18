@@ -36,6 +36,7 @@ import (
 func getPropertiesMap(
 	prefix string,
 	dotNet qdyaml.DotNet,
+	cpp qdyaml.Cpp,
 	deviceIdSalt []string,
 	plugins []string,
 	analysisId string,
@@ -71,6 +72,11 @@ func getPropertiesMap(
 		} else if qdenv.IsContainer() {
 			// We don't want to scan .NET Framework projects in Linux containers
 			properties["-Dqodana.net.targetFrameworks"] = "!net48;!net472;!net471;!net47;!net462;!net461;!net46;!net452;!net451;!net45;!net403;!net40;!net35;!net20;!net11"
+		}
+	}
+	if prefix == "CLion" {
+		if cpp.CMakeProfile != "" {
+			properties["-Dqodana.cpp.cmake.profile"] = strutil.QuoteIfSpace(cpp.CMakeProfile)
 		}
 	}
 
@@ -117,6 +123,7 @@ func GetScanProperties(c corescan.Context) []string {
 	yaml := c.QodanaYamlConfig()
 	yamlProps := yaml.Properties
 	dotNetOptions := yaml.DotNet
+	cppOptions := yaml.Cpp
 	plugins := getPluginIds(yaml.Plugins)
 
 	lines := GetCommonProperties(c)
@@ -148,6 +155,7 @@ func GetScanProperties(c corescan.Context) []string {
 	props := getPropertiesMap(
 		c.Prod().ParentPrefix(),
 		dotNetOptions,
+		cppOptions,
 		platform.GetDeviceIdSalt(),
 		plugins,
 		c.AnalysisId(),

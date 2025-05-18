@@ -82,6 +82,9 @@ type QodanaYaml struct {
 	// DotNet is the configuration for .NET solutions and projects (either a solution name or a project name).
 	DotNet DotNet `yaml:"dotnet,omitempty"`
 
+	// DotNet is the configuration for .NET solutions and projects (either a solution name or a project name).
+	Cpp Cpp `yaml:"cpp,omitempty"`
+
 	// ProjectJdk is the configuration for the project JDK.
 	ProjectJdk string `yaml:"projectJDK,omitempty"`
 
@@ -256,6 +259,12 @@ type DotNet struct {
 
 	// Frameworks is a semicolon-separated list of target framework monikers (TFM) to be analyzed.
 	Frameworks string `yaml:"frameworks,omitempty"`
+}
+
+//goland:noinspection GoUnnecessarilyExportedIdentifiers
+type Cpp struct {
+	// CMakeProfile corresponds to one of the CMake Profiles in CLion.
+	CMakeProfile string `yaml:"cmake-profile,omitempty"`
 }
 
 type FailureConditions struct {
