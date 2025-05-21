@@ -59,14 +59,15 @@ var (
 		QDJVMC: "IIC",
 		// QDAND: // don't use it right now
 		// QDANDC: // don't use it right now
-		QDPHP: "PS",
-		QDJS:  "WS",
-		QDNET: "RD",
-		QDPY:  "PCP",
-		QDPYC: "PCC",
-		QDGO:  "GO",
-		QDRST: "RR",
-		QDCPP: "CL",
+		QDPHP:  "PS",
+		QDJS:   "WS",
+		QDNET:  "RD",
+		QDPY:   "PCP",
+		QDPYC:  "PCC",
+		QDGO:   "GO",
+		QDRUBY: "RM",
+		QDRST:  "RR",
+		QDCPP:  "CL",
 	}
 
 	DockerImageMap = map[string]string{
@@ -83,6 +84,7 @@ var (
 		QDJVM:  "jetbrains/qodana-jvm:",
 		QDJVMC: "jetbrains/qodana-jvm-community:",
 		QDCL:   "jetbrains/qodana-clang:",
+		QDRUBY: "jetbrains/qodana-ruby:",
 		//QDRST:  "jetbrains/qodana-rust:",
 	}
 
@@ -120,9 +122,10 @@ var LangsProductCodes = map[string][]string{
 	"Visual Basic .NET": {QDNET, QDNETC},
 	"C":                 {QDCPP, QDCL, QDNET},
 	"C++":               {QDCPP, QDCL, QDNET},
+	"Ruby":              {QDRUBY},
 }
 
-var AllSupportedPaidCodes = []string{QDJVM, QDPHP, QDPY, QDJS, QDGO, QDNET, QDAND, QDCPP}
+var AllSupportedPaidCodes = []string{QDJVM, QDPHP, QDPY, QDJS, QDGO, QDNET, QDAND, QDCPP, QDRUBY}
 var AllSupportedFreeCodes = []string{QDJVMC, QDPYC, QDANDC, QDNETC, QDCL}
 
 var AllFixesSupportedProducts = []string{QDJVM, QDNET, QDPY, QDJS, QDPHP, QDGO, QDAND, QDRUBY}
