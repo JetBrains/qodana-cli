@@ -13,121 +13,46 @@ on:
     - cron: '0 0 * * 1'
 
 jobs:
-  build243:
-    name: "2024.3"
-    strategy:
-      matrix:
-        platform: [ linux/amd64 ]  # linux/arm64
-        linter: [ android-community, android, dotnet, go, js, jvm, jvm-community, php, python, python-community, dotnet-community, cpp, cnova ]
+  glob-releases:
+    name: Collect releases for checking
     runs-on: ubuntu-latest
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-      - uses: dorny/paths-filter@v3
-        id: changes
-        with:
-          filters: |
-            dockerfile:
-              - '2024.3/${{ matrix.linter }}/Dockerfile'
-      - if: steps.changes.outputs.dockerfile == 'true'
-        name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
-      - if: steps.changes.outputs.dockerfile == 'true'
-        name: Build
-        uses: docker/build-push-action@v6
-        with:
-          tags: jetbrains/qodana-${{ matrix.linter }}:2024.3
-          context: 2024.3/${{ matrix.linter }}
-          platforms: ${{ matrix.platform }}
-          push: false
-          cache-from: type=gha
-          cache-to: type=gha,mode=max,ignore-error=true
+    outputs:
+      releases: ${{ steps.main.outputs.releases }}
 
-  build242:
-    name: "2024.2"
-    strategy:
-      matrix:
-        platform: [ linux/amd64 ]  # linux/arm64
-        linter: [ android-community, android, dotnet, go, js, jvm, jvm-community, php, python, python-community, dotnet-community, cpp, cnova ]
-    runs-on: ubuntu-latest
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-      - uses: dorny/paths-filter@v3
-        id: changes
+      - uses: actions/checkout@v4
         with:
-          filters: |
-            dockerfile:
-              - '2024.2/${{ matrix.linter }}/Dockerfile'
-      - if: steps.changes.outputs.dockerfile == 'true'
-        name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
-      - if: steps.changes.outputs.dockerfile == 'true'
-        name: Build
-        uses: docker/build-push-action@v6
+          fetch-depth: 0  # Download history, needed for .github/scripts/release-matrix.py
+      - uses: actions/setup-python@v5
         with:
-          tags: jetbrains/qodana-${{ matrix.linter }}:2024.1
-          context: 2024.2/${{ matrix.linter }}
-          platforms: ${{ matrix.platform }}
-          push: false
-          cache-from: type=gha
-          cache-to: type=gha,mode=max,ignore-error=true
+          python-version: "3.13"
+      - name: Collect releases for checking
+        id: main
+        run: |
+          set -euo pipefail
+          echo -n "releases="                      >> "$GITHUB_OUTPUT"
+          python .github/scripts/release-matrix.py >> "$GITHUB_OUTPUT"
 
-  build241:
-    name: "2024.1"
+  build:
+    name: Test Build
+    needs: glob-releases
     strategy:
       matrix:
-        platform: [ linux/amd64 ]  # linux/arm64
-        linter: [ android-community, dotnet, go, js, jvm, jvm-community, php, python, python-community, dotnet-community, cpp ]
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-      - uses: dorny/paths-filter@v3
-        id: changes
-        with:
-          filters: |
-            dockerfile:
-              - '2024.1/${{ matrix.linter }}/Dockerfile'
-      - if: steps.changes.outputs.dockerfile == 'true'
-        name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
-      - if: steps.changes.outputs.dockerfile == 'true'
-        name: Build
-        uses: docker/build-push-action@v6
-        with:
-          tags: jetbrains/qodana-${{ matrix.linter }}:2024.1
-          context: 2024.1/${{ matrix.linter }}
-          platforms: ${{ matrix.platform }}
-          push: false
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
+        include: ${{ fromJSON(needs.glob-releases.outputs.releases) }}
+        #exclude:  # not supported: `include` is applied over top per GitHub spec.
+        # Use `exclude` list inside .github/scripts/release-matrix to exclude releases.
+    runs-on: ${{ matrix.runner }}
 
-  build233:
-    name: "2023.3"
-    strategy:
-      matrix:
-        platform: [ linux/amd64 ]  # linux/arm64
-        linter: [ android-community, dotnet, go, js, jvm, jvm-community, php, python, python-community, dotnet-community ]
-    runs-on: ubuntu-latest
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-      - uses: dorny/paths-filter@v3
-        id: changes
-        with:
-          filters: |
-            dockerfile:
-              - '2023.3/${{ matrix.linter }}/Dockerfile'
-      - if: steps.changes.outputs.dockerfile == 'true'
-        name: Set up Docker Buildx
+      - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
-      - if: steps.changes.outputs.dockerfile == 'true'
-        name: Build
+      - name: Build
         uses: docker/build-push-action@v6
         with:
-          tags: jetbrains/qodana-${{ matrix.linter }}:2023.3
-          context: 2023.3/${{ matrix.linter }}
+          tags: jetbrains/qodana-${{ matrix.linter }}:${{ matrix.version }}
+          context: ${{ matrix.version }}/${{ matrix.linter }}
           platforms: ${{ matrix.platform }}
           push: false
           cache-from: type=gha
