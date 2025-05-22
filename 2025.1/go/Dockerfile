@@ -34,7 +34,8 @@ RUN --mount=target=/var/lib/apt/lists,type=cache,sharing=locked \
         git-lfs \
         gnupg2 \
         locales \
-        procps && \
+        procps \
+        jq && \
     echo 'en_US.UTF-8 UTF-8' > /etc/locale.gen && locale-gen && \
     apt-get autoremove -y && apt-get clean && \
     chmod 777 -R $HOME && \
@@ -56,26 +57,82 @@ RUN ln -s /usr/local/lib/node_modules/npm/bin/npm-cli.js /usr/local/bin/npm && \
     npm install -g eslint@$ESLINT_VERSION pnpm@$PNPM_VERSION && npm config set update-notifier false && \
     chmod 777 -R "$HOME/.npm" "$HOME/.npmrc"
 
-ARG QD_RELEASE="2025.1"
+ARG QD_RELEASE=""
 ENV QD_VERSION="2025.1" QD_IMAGE="go"
-ARG QD_BUILD="QDGO-$QD_RELEASE"
+ARG QD_CODE="QDGO"
 # hadolint ignore=DL3003,SC2043
 RUN set -ex && \
     dpkgArch="$(dpkg --print-architecture)" && \
     case "$dpkgArch" in \
         "amd64") \
             OS_ARCH_SUFFIX=""; \
+            RELEASES_DIST_KEY="linux"; \
             ;; \
         "arm64") \
             OS_ARCH_SUFFIX="-aarch64"; \
+            RELEASES_DIST_KEY="linuxARM64"; \
             ;; \
         *) echo "Unsupported architecture $dpkgArch" >&2; exit 1 ;; \
     esac && \
-    QD_NAME="qodana-$QD_BUILD$OS_ARCH_SUFFIX" \
-    QD_URL="https://download.jetbrains.com/qodana/$QD_RELEASE/$QD_NAME.tar.gz" && \
+    if [ -z "$QD_RELEASE" ]; then \
+        case "$QD_CODE" in \
+            "QDNET") \
+                RELEASE_CODE="RD"; \
+                ;; \
+            "QDGO") \
+                RELEASE_CODE="GO"; \
+                ;; \
+            "QDJS") \
+                RELEASE_CODE="WS"; \
+                ;; \
+            "QDJVM" | "QDAND") \
+                RELEASE_CODE="IIU"; \
+                ;; \
+            "QDJVMC" | "QDANDC") \
+                RELEASE_CODE="IIC"; \
+                ;; \
+            "QDPHP") \
+                RELEASE_CODE="PS"; \
+                ;; \
+            "QDPY") \
+                RELEASE_CODE="PCP"; \
+                ;; \
+            "QDPYC") \
+                RELEASE_CODE="PCC"; \
+                ;; \
+            "QDCPP") \
+                RELEASE_CODE="CL"; \
+                ;; \
+            *) echo "Unrecognized product code $QD_CODE" >&2; exit 1 ;; \
+        esac && \
+        RELEASE_JSON=$(\
+            curl https://raw.githubusercontent.com/JetBrains/qodana-docker/refs/heads/main/feed/releases.json |\
+            jq "[\
+                .[] |\
+                select(.Code==\"$RELEASE_CODE\") |\
+                .Releases |\
+                sort_by(.Type, .Date) |\
+                .[] |\
+                select(.MajorVersion==\"$QD_VERSION\")\
+            ] | .[-1]" \
+        ) && \
+        if [ "$RELEASE_JSON" = "null" ]; then \
+            echo "No release found for $RELEASE_CODE ($QD_CODE) $QD_VERSION in https://raw.githubusercontent.com/JetBrains/qodana-docker/refs/heads/main/feed/releases.json" \
+                >&2 && exit 1; \
+        fi && \
+        QD_BUILD="$QD_CODE-$(echo "$RELEASE_JSON" | jq -r '.Build')" && \
+        QD_NAME="qodana-$QD_BUILD$OS_ARCH_SUFFIX" && \
+        QD_URL=$(echo "$RELEASE_JSON" | jq -r ".Downloads.$RELEASES_DIST_KEY.Link") && \
+        QD_CHECKSUM_URL=$(echo "$RELEASE_JSON" | jq -r ".Downloads.$RELEASES_DIST_KEY.ChecksumLink"); \
+    else \
+        QD_BUILD="$QD_CODE-$QD_RELEASE" && \
+        QD_NAME="qodana-$QD_BUILD$OS_ARCH_SUFFIX" && \
+        QD_URL="https://download.jetbrains.com/qodana/$QD_RELEASE/$QD_NAME.tar.gz" && \
+        QD_CHECKSUM_URL="$QD_URL.sha256"; \
+    fi && \
     curl -fsSL "$QD_URL" -o "/tmp/$QD_NAME.tar.gz" \
-               "$QD_URL.sha256" -o "/tmp/$QD_NAME.tar.gz.sha256" \
-               "$QD_URL.sha256.asc" -o "/tmp/$QD_NAME.tar.gz.sha256.asc" && \
+               "$QD_CHECKSUM_URL" -o "/tmp/$QD_NAME.tar.gz.sha256" \
+               "$QD_CHECKSUM_URL.asc" -o "/tmp/$QD_NAME.tar.gz.sha256.asc" && \
     GNUPGHOME="$(mktemp -d)" && \
     export GNUPGHOME && \
     for key in \
@@ -85,7 +142,8 @@ RUN set -ex && \
         gpg --batch --keyserver "keyserver.ubuntu.com" --recv-keys "$key" ; \
     done && \
     gpg --verify "/tmp/$QD_NAME.tar.gz.sha256.asc" "/tmp/$QD_NAME.tar.gz.sha256" && \
-    (cd /tmp && sha256sum --check --status "$QD_NAME.tar.gz.sha256") && \
+    echo "$(cat "/tmp/$QD_NAME.tar.gz.sha256" | awk '{ print $1 }') */tmp/$QD_NAME.tar.gz" |\
+        sha256sum --check && \
     mkdir -p /tmp/qd && tar -xzf "/tmp/$QD_NAME.tar.gz" --directory /tmp/qd  && \
     mv /tmp/qd/qodana-QD* "$QODANA_DIST" && \
     chmod +x "$QODANA_DIST"/bin/*.sh "$QODANA_DIST"/bin/qodana && \

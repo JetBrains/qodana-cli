@@ -28,7 +28,8 @@ RUN --mount=target=/var/lib/apt/lists,type=cache,sharing=locked \
         git-lfs \
         gnupg2 \
         locales \
-        procps && \
+        procps \
+        jq && \
     echo 'en_US.UTF-8 UTF-8' > /etc/locale.gen && locale-gen && \
     apt-get autoremove -y && apt-get clean && \
     chmod 777 -R $HOME && \

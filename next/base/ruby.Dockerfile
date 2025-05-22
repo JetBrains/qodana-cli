@@ -32,7 +32,8 @@ RUN --mount=target=/var/lib/apt/lists,type=cache,sharing=locked \
         gnupg2 \
         locales \
         procps \
-        build-essential && \
+        build-essential \
+        jq && \
     echo 'en_US.UTF-8 UTF-8' > /etc/locale.gen && locale-gen && \
     apt-get autoremove -y && apt-get clean && \
     echo 'root:x:0:0:root:/root:/bin/bash' > /etc/passwd && chmod 666 /etc/passwd && \

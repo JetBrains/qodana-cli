@@ -22,4 +22,8 @@ RUN ln -s /usr/local/lib/node_modules/npm/bin/npm-cli.js /usr/local/bin/npm && \
     yarn --version && \
     npm install -g eslint@$ESLINT_VERSION pnpm@$PNPM_VERSION && npm config set update-notifier false && \
     mkdir -p $RIDER_UNREAL_ROOT && \
-    chmod 777 -R "$HOME/.npm" "$HOME/.npmrc"
+    chmod 777 -R "$HOME/.npm" "$HOME/.npmrc" && \
+    apt-get update && \
+    DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
+        jq && \
+    apt-get autoremove -y && apt-get clean

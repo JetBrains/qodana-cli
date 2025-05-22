@@ -19,7 +19,8 @@ RUN --mount=target=/var/lib/apt/lists,type=cache,sharing=locked \
       libglib2.0-0 \
       libsm6 \
       libxext6 \
-      libxrender1 && \
+      libxrender1 \
+      jq && \
     mkdir -m 777 -p $QODANA_DATA/cache && \
     dpkgArch="$(dpkg --print-architecture)" && \
     case "$dpkgArch" in \
