@@ -17,3 +17,7 @@
 package version
 
 var Version = "dev"
+
+//goland:noinspection GoUnusedFunction
+func bypassCoverProblemForVersion() {
+}

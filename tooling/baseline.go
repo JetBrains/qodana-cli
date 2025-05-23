@@ -20,3 +20,7 @@ import _ "embed"
 
 //go:embed baseline-cli.jar
 var BaselineCli []byte
+
+//goland:noinspection GoUnusedFunction
+func bypassCoverProblem() {
+}
