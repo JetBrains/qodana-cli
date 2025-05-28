@@ -108,6 +108,9 @@ RUN set -ex && \
             "QDCPP") \
                 RELEASE_CODE="CL"; \
                 ;; \
+            "QDRUBY") \
+                RELEASE_CODE="RM"; \
+                ;; \
             *) echo "Unrecognized product code $QD_CODE" >&2; exit 1 ;; \
         esac && \
         RELEASE_JSON=$(\
