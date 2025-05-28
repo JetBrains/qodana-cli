@@ -76,7 +76,19 @@ func ideBin(home string) string {
 }
 
 func (p Product) CustomPluginsPath() string {
-	return filepath.Join(p.Home, "custom-plugins")
+	base, err := os.UserConfigDir()
+	if err != nil {
+		log.Fatal(err)
+	}
+	return filepath.Join(base, "JetBrains", "Qodana", p.Code, p.GetVersionBranch(), "custom-plugins")
+}
+
+func (p Product) DisabledPluginsFilePath() string {
+	base, err := os.UserConfigDir()
+	if err != nil {
+		log.Fatal(err)
+	}
+	return filepath.Join(base, "JetBrains", "Qodana", p.Code, p.GetVersionBranch(), "disabled_plugins.txt")
 }
 
 func (p Product) javaHome() string {

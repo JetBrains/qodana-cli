@@ -141,6 +141,15 @@ func prepareLocalIdeSettingsAndGetQodanaCloudUploadToken(
 		SyncConfigCache(prod, commonCtx.ConfDirPath(), commonCtx.CacheDir, true)
 		CreateUser("/etc/passwd")
 	}
+
+	if runtime.GOOS == "darwin" && commonCtx.Ide != "" {
+		if info := getIde(commonCtx.Ide); info != nil {
+			err := downloadCustomPlugins(info.Link, filepath.Dir(prod.CustomPluginsPath()), nil)
+			if err != nil {
+				log.Warning("Error while downloading custom plugins: " + err.Error())
+			}
+		}
+	}
 	return prod, token
 }
 
@@ -198,23 +207,11 @@ func prepareDirectories(prod product.Product, cacheDir string, logDir string, co
 	ideaOptions := filepath.Join(confDir, "options")
 	MakeDirAll(ideaOptions)
 	addKeepassIDEConfig(ideaOptions)
-
-	setDisabledPluginsTxt(prod, confDir)
 }
 
 func MakeDirAll(dir string) {
 	if _, err := os.Stat(dir); os.IsNotExist(err) {
 		if err := os.MkdirAll(dir, 0o755); err != nil {
-			log.Fatal(err)
-		}
-	}
-}
-
-func setDisabledPluginsTxt(prod product.Product, confDir string) {
-	disabledPluginsPathSrc := filepath.Join(prod.Home, "disabled_plugins.txt")
-	disabledPluginsPathDst := filepath.Join(confDir, "disabled_plugins.txt")
-	if _, err := os.Stat(disabledPluginsPathSrc); err == nil {
-		if err := cp.Copy(disabledPluginsPathSrc, disabledPluginsPathDst); err != nil {
 			log.Fatal(err)
 		}
 	}

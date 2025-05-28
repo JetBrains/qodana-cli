@@ -117,10 +117,6 @@ func downloadAndInstallIDE(
 		if dirs, err := filepath.Glob(filepath.Join(installDir, "*.app")); err == nil && len(dirs) == 1 {
 			installDir = filepath.Join(dirs[0], "Contents")
 		}
-		err = downloadCustomPlugins(ideUrl, installDir, spinner)
-		if err != nil {
-			log.Warning("Error while downloading custom plugins: " + err.Error())
-		}
 	}
 
 	return installDir
@@ -323,20 +319,27 @@ func verifySha256(checksumFile string, checkSumUrl string, filePath string) {
 	log.Info("Checksum of downloaded IDE was verified")
 }
 
-func downloadCustomPlugins(ideUrl string, installDir string, spinner *pterm.SpinnerPrinter) error {
+func downloadCustomPlugins(ideUrl string, targetDir string, spinner *pterm.SpinnerPrinter) error {
 	pluginsUrl := getPluginsURL(ideUrl)
-	log.Debugf("Downloading custom plugins from %s", pluginsUrl)
-	archivePath := filepath.Join(installDir, "custom-plugins.zip")
+	log.Debugf("Downloading custom plugins from %s to %s", pluginsUrl, targetDir)
+
+	if err := os.MkdirAll(targetDir, os.ModePerm); err != nil {
+		return fmt.Errorf("couldn't create a directory %s: %v", targetDir, err)
+	}
+
+	archivePath := filepath.Join(targetDir, "custom-plugins.zip")
 	err := utils.DownloadFile(archivePath, pluginsUrl, spinner)
 	if err != nil {
 		return fmt.Errorf("error while downloading plugins: %v", err)
 	}
-	_, err = exec.Command("tar", "-xf", archivePath, "-C", installDir).Output()
+
+	_, err = exec.Command("tar", "-xf", archivePath, "-C", targetDir).Output()
 	if err != nil {
 		return fmt.Errorf("tar: %s", err)
 	}
-	disabledPluginsPath := filepath.Join(installDir, "custom-plugins", "disabled_plugins.txt")
-	err = cp.Copy(disabledPluginsPath, filepath.Join(installDir, "disabled_plugins.txt"))
+
+	disabledPluginsPath := filepath.Join(targetDir, "custom-plugins", "disabled_plugins.txt")
+	err = cp.Copy(disabledPluginsPath, filepath.Join(targetDir, "disabled_plugins.txt"))
 	if err != nil {
 		return fmt.Errorf("error while copying plugins: %s", err)
 	}
