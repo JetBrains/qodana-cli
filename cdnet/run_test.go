@@ -23,11 +23,11 @@ func TestMountTools(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	path := mountInfo[thirdpartyscan.Clang]
+	path := mountInfo[thirdpartyscan.Clt]
 	expectedHash := CltSha256
 	actualHash, err := utils.GetFileSha256(path)
 	if err != nil {
 		t.Fatal(err)
 	}
-	assert.Equal(t, expectedHash, actualHash)
+	assert.Equal(t, expectedHash, actualHash[:])
 }

@@ -29,5 +29,5 @@ func TestMountTools(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	assert.Equal(t, expectedHash, actualHash)
+	assert.Equal(t, expectedHash, actualHash[:])
 }
