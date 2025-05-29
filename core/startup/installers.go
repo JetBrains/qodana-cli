@@ -218,6 +218,9 @@ func installIdeWindowsExe(archivePath string, targetDir string) error {
 }
 
 func installIdeFromZip(archivePath string, targetDir string) error {
+	if err := os.RemoveAll(targetDir); err != nil {
+		log.Fatal("couldn't clean target directory ", err.Error())
+	}
 	if err := os.MkdirAll(targetDir, os.ModePerm); err != nil {
 		log.Fatal("couldn't create a directory ", err.Error())
 	}

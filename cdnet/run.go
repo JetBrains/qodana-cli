@@ -19,14 +19,17 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+	"os"
+	"path/filepath"
+
+	_ "embed"
+
 	"github.com/JetBrains/qodana-cli/v2025/platform"
 	"github.com/JetBrains/qodana-cli/v2025/platform/nuget"
 	"github.com/JetBrains/qodana-cli/v2025/platform/strutil"
 	"github.com/JetBrains/qodana-cli/v2025/platform/thirdpartyscan"
 	"github.com/JetBrains/qodana-cli/v2025/platform/utils"
 	"github.com/JetBrains/qodana-cli/v2025/sarif"
-	"os"
-	"path/filepath"
 )
 
 type CdnetLinter struct {
@@ -61,19 +64,23 @@ func (l CdnetLinter) RunAnalysis(c thirdpartyscan.Context) error {
 	return err
 }
 
+var CltDllRelativePath = "tools/netcoreapp3.1/any/JetBrains.CommandLine.Products.dll"
+
+//go:generate go run scripts/compute-sha256.go tools/netcoreapp3.1/any/JetBrains.CommandLine.Products.dll
+
+//go:embed clt.zip
+var CltArchive []byte
+
+//go:embed clt.sha256.bin
+var CltSha256 []byte
+
 func (l CdnetLinter) MountTools(path string) (map[string]string, error) {
 	val := make(map[string]string)
-	val[thirdpartyscan.Clt] = filepath.Join(
-		path,
-		"tools",
-		"netcoreapp3.1",
-		"any",
-		"JetBrains.CommandLine.Products.dll",
-	)
+	val[thirdpartyscan.Clt] = filepath.Join(path, CltDllRelativePath)
 
 	if _, err := os.Stat(val["clt"]); err != nil {
 		if os.IsNotExist(err) {
-			archivePath := platform.ProcessAuxiliaryTool(archive, moniker, path, Clt)
+			archivePath := platform.ProcessAuxiliaryTool(archive, moniker, path, CltArchive)
 			if err := platform.Decompress(archivePath, path); err != nil {
 				return nil, fmt.Errorf("failed to decompress %s archive: %w", moniker, err)
 			}
