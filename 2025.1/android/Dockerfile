@@ -38,7 +38,7 @@ RUN --mount=target=/var/lib/apt/lists,type=cache,sharing=locked \
     mkdir -p -m 777 "$HOME/.m2" "$HOME/.m2/repository"
 
 # renovate: datasource=npm depName=eslint
-ENV ESLINT_VERSION="9.27.0"
+ENV ESLINT_VERSION="9.28.0"
 # renovate: datasource=npm depName=pnpm
 ENV PNPM_VERSION="10.11.0"
 
