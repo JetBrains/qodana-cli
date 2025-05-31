@@ -15,18 +15,23 @@ jobs:
   mirror:
     if: github.repository == 'jetbrains/qodana-cli'
     runs-on: ubuntu-latest
+
     steps:
-    - uses: actions/checkout@v4
-      with:
-        fetch-depth: 0
-        persist-credentials: false
-        fetch-tags: true
-    - name: Create local main branch
-      run: |
-        git branch -f main origin/main    
-    - name: Mirror everything
-      env:
-        MR_PAT: ${{ secrets.MR_PAT }}
-      run: |
-        git remote add mirror https://x-access-token:${MR_PAT}@github.com/jetbrains/qodana-cli-ci.git
-        git push --mirror mirror
+      - name: Checkout full history
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+          fetch-tags: true
+
+      - name: Push origin/main and origin/2* to mirror
+        env:
+          MR_PAT: ${{ secrets.MR_PAT }}
+        run: |
+          git remote add mirror https://x-access-token:${MR_PAT}@github.com/jetbrains/qodana-cli-ci.git
+          git push --force mirror origin/main:refs/heads/main
+          for R in $(git for-each-ref --format='%(refname:short)' refs/remotes/origin/2*); do
+            BR=${R#origin/}
+            git push --force mirror "origin/${BR}:refs/heads/${BR}"
+          done
+          git push --force mirror --tags
