@@ -77,6 +77,10 @@ func ideBin(home string) string {
 }
 
 func (p Product) CustomPluginsPath() string {
+	if qdenv.IsContainer() {
+		return filepath.Join(p.Home, "custom-plugins")
+	}
+
 	base, err := os.UserConfigDir()
 	if err != nil {
 		log.Fatal(err)
@@ -85,6 +89,10 @@ func (p Product) CustomPluginsPath() string {
 }
 
 func (p Product) DisabledPluginsFilePath() string {
+	if qdenv.IsContainer() {
+		return filepath.Join(p.Home, "disabled_plugins.txt")
+	}
+
 	base, err := os.UserConfigDir()
 	if err != nil {
 		log.Fatal(err)
