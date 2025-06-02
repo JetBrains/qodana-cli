@@ -99,7 +99,7 @@ func Image(code string) string {
 		!IsReleased {
 			return val + ReleaseVersion + "-eap"
 		}
-		if code == QDNETC || code == QDCLC {
+		if code == QDNETC || code == QDCLC || code == QDRUBY || code == QDCPP {
 			return val + ReleaseVersion + "-eap"
 		}
 		return val + ReleaseVersion
