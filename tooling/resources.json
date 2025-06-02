@@ -6,7 +6,7 @@
     },
     "publisher-cli.jar": {
         "url": "https://packages.jetbrains.team/maven/p/ij/intellij-dependencies/org/jetbrains/qodana/publisher-cli/$version/publisher-cli-$version.jar",
-        "version": "3.0.3",
-        "sha256": "13a5b208d593abe97305915e8cd9062012ef3ff430a4ec3cd29d2714abe1d3b4"
+        "version": "3.0.7",
+        "sha256": "c71bcacc942846cd5d063f21163886ae846f31e92e4ff13700b4467aadb445f4"
     }
 }
