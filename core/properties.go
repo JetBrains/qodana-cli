@@ -139,7 +139,7 @@ func GetScanProperties(c corescan.Context) []string {
 	}
 	disabledPluginsFile := c.Prod().DisabledPluginsFilePath()
 	if _, err := os.Stat(disabledPluginsFile); err == nil {
-		lines = append(lines, fmt.Sprintf("-Ddisabled.plugins.file.path=%s", strutil.QuoteIfSpace(disabledPluginsFile)))
+		lines = append(lines, fmt.Sprintf("-Ddisabled.plugins.file.path=%s", disabledPluginsFile))
 	}
 
 	cliProps, flags := c.PropertiesAndFlags()
