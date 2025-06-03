@@ -1,0 +1,12 @@
+<component name="ProjectRunConfigurationManager">
+  <configuration default="false" name="Run --ide QDGO " type="GoApplicationRunConfiguration" factoryName="Go Application">
+    <module name="qodana-cli" />
+    <working_directory value="$PROJECT_DIR$" />
+    <parameters value="--ide QDGO" />
+    <kind value="PACKAGE" />
+    <package value="github.com/JetBrains/qodana-cli/v2025/cli" />
+    <directory value="$PROJECT_DIR$" />
+    <filePath value="$PROJECT_DIR$/cli/main.go" />
+    <method v="2" />
+  </configuration>
+</component>
