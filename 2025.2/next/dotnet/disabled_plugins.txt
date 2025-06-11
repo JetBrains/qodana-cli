@@ -1,0 +1,1 @@
+intellij.rider.plugins.cwm

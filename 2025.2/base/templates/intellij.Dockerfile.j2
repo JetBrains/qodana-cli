@@ -1,0 +1,144 @@
+ARG QD_RELEASE=""
+ENV QD_VERSION="{{ qd_release }}" QD_IMAGE="{{ qd_image }}"
+ARG QD_CODE="{{ qd_code }}"
+# hadolint ignore=DL3003,SC2043
+RUN set -ex && \
+    dpkgArch="$(dpkg --print-architecture)" && \
+    case "$dpkgArch" in \
+        "amd64") \
+            OS_ARCH_SUFFIX=""; \
+            RELEASES_DIST_KEY="linux"; \
+            ;; \
+        "arm64") \
+            OS_ARCH_SUFFIX="-aarch64"; \
+            RELEASES_DIST_KEY="linuxARM64"; \
+            ;; \
+        *) echo "Unsupported architecture $dpkgArch" >&2; exit 1 ;; \
+    esac && \
+    if [ -z "$QD_RELEASE" ]; then \
+        case "$QD_CODE" in \
+            "QDNET") \
+                RELEASE_CODE="RD"; \
+                ;; \
+            "QDGO") \
+                RELEASE_CODE="GO"; \
+                ;; \
+            "QDJS") \
+                RELEASE_CODE="WS"; \
+                ;; \
+            "QDJVM" | "QDAND") \
+                RELEASE_CODE="IIU"; \
+                ;; \
+            "QDJVMC" | "QDANDC") \
+                RELEASE_CODE="IIC"; \
+                ;; \
+            "QDPHP") \
+                RELEASE_CODE="PS"; \
+                ;; \
+            "QDPY") \
+                RELEASE_CODE="PCP"; \
+                ;; \
+            "QDPYC") \
+                RELEASE_CODE="PCC"; \
+                ;; \
+            "QDCPP") \
+                RELEASE_CODE="CL"; \
+                ;; \
+            *) echo "Unrecognized product code $QD_CODE" >&2; exit 1 ;; \
+        esac && \
+        RELEASE_JSON=$(\
+            curl https://raw.githubusercontent.com/JetBrains/qodana-docker/refs/heads/main/feed/releases.json |\
+            jq "[\
+                .[] |\
+                select(.Code==\"$RELEASE_CODE\") |\
+                .Releases |\
+                sort_by(.Type, .Date) |\
+                .[] |\
+                select(.MajorVersion==\"$QD_VERSION\")\
+            ] | .[-1]" \
+        ) && \
+        if [ "$RELEASE_JSON" = "null" ]; then \
+            echo "No release found for $RELEASE_CODE ($QD_CODE) $QD_VERSION in https://raw.githubusercontent.com/JetBrains/qodana-docker/refs/heads/main/feed/releases.json" \
+                >&2 && exit 1; \
+        fi && \
+        QD_BUILD="$QD_CODE-$(echo "$RELEASE_JSON" | jq -r '.Build')" && \
+        QD_NAME="qodana-$QD_BUILD$OS_ARCH_SUFFIX" && \
+        QD_URL=$(echo "$RELEASE_JSON" | jq -r ".Downloads.$RELEASES_DIST_KEY.Link") && \
+        QD_CHECKSUM_URL=$(echo "$RELEASE_JSON" | jq -r ".Downloads.$RELEASES_DIST_KEY.ChecksumLink"); \
+    else \
+        QD_BUILD="$QD_CODE-$QD_RELEASE" && \
+        QD_NAME="qodana-$QD_BUILD$OS_ARCH_SUFFIX" && \
+        QD_URL="https://download.jetbrains.com/qodana/$QD_RELEASE/$QD_NAME.tar.gz" && \
+        QD_CHECKSUM_URL="$QD_URL.sha256"; \
+    fi && \
+    curl -fsSL "$QD_URL" -o "/tmp/$QD_NAME.tar.gz" \
+               "$QD_CHECKSUM_URL" -o "/tmp/$QD_NAME.tar.gz.sha256" \
+               "$QD_CHECKSUM_URL.asc" -o "/tmp/$QD_NAME.tar.gz.sha256.asc" && \
+    GNUPGHOME="$(mktemp -d)" && \
+    export GNUPGHOME && \
+    for key in \
+        "B46DC71E03FEEB7F89D1F2491F7A8F87B9D8F501" \
+      ; do \
+        gpg --batch --keyserver "hkps://keys.openpgp.org" --recv-keys "$key" || \
+        gpg --batch --keyserver "keyserver.ubuntu.com" --recv-keys "$key" ; \
+    done && \
+    gpg --verify "/tmp/$QD_NAME.tar.gz.sha256.asc" "/tmp/$QD_NAME.tar.gz.sha256" && \
+    echo "$(cat "/tmp/$QD_NAME.tar.gz.sha256" | awk '{ print $1 }') */tmp/$QD_NAME.tar.gz" |\
+        sha256sum --check && \
+    mkdir -p /tmp/qd && tar -xzf "/tmp/$QD_NAME.tar.gz" --directory /tmp/qd  && \
+    mv /tmp/qd/qodana-QD* "$QODANA_DIST" && \
+    chmod +x "$QODANA_DIST"/bin/*.sh "$QODANA_DIST"/bin/qodana && \
+    update-alternatives --install /usr/bin/java java "$JAVA_HOME/bin/java" 0 && \
+    update-alternatives --install /usr/bin/javac javac "$JAVA_HOME/bin/javac" 0 && \
+    update-alternatives --set java "$JAVA_HOME/bin/java" && \
+    update-alternatives --set javac "$JAVA_HOME/bin/javac" && \
+    apt-get purge --auto-remove -y gnupg2 && \
+    rm -rf /var/cache/apt /var/lib/apt/ /tmp/* "$GNUPGHOME"
+{% if variant == "android" %}
+{% raw %}
+ENV ANDROID_SDK_ROOT="/opt/android-sdk" ANDROID_USER_HOME="$QODANA_DATA/cache/android"
+ENV ANDROID_HOME="$ANDROID_SDK_ROOT"
+ENV ANDROID_SDK_TOOLS="$ANDROID_SDK_ROOT/cmdline-tools/tools/bin" QODANA_CORETTO_SDK_11="/root/.jdks/corretto-11" QODANA_CORETTO_SDK_17="/root/.jdks/corretto-17"
+# IDE includes JDK17 by default since 2022, so we need additional JDK for the most projects
+COPY --from=amazoncorretto:11.0.26 /usr/lib/jvm/java-11-amazon-corretto $QODANA_CORETTO_SDK_11
+COPY --from=amazoncorretto:17.0.14 /usr/lib/jvm/java-17-amazon-corretto $QODANA_CORETTO_SDK_17
+
+ARG ANDROID_SDK_VERSION="9123335"
+ARG ANDROID_SDK_SHA256="0bebf59339eaa534f4217f8aa0972d14dc49e7207be225511073c661ae01da0a"
+ARG ANDROID_API_LEVEL="33"
+SHELL ["/bin/bash", "-o", "pipefail", "-c"]
+# hadolint ignore=SC2174
+RUN --mount=target=/var/lib/apt/lists,type=cache,sharing=locked \
+    --mount=target=/var/cache/apt,type=cache,sharing=locked \
+    apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends unzip && \
+    mkdir -m 777 -p $QODANA_DATA/cache $ANDROID_USER_HOME $ANDROID_SDK_ROOT $ANDROID_SDK_ROOT/cmdline-tools $ANDROID_SDK_ROOT/platforms $ANDROID_SDK_ROOT/ndk && \
+    echo "${ANDROID_SDK_SHA256} /tmp/android.zip" > /tmp/shasum && \
+    curl -fsSL -o /tmp/android.zip  \
+      "https://dl.google.com/android/repository/commandlinetools-linux-${ANDROID_SDK_VERSION}_latest.zip" && \
+    sha256sum --check --status /tmp/shasum && \
+    unzip -q /tmp/android.zip -d ${ANDROID_SDK_ROOT}/cmdline-tools && \
+    mv ${ANDROID_SDK_ROOT}/cmdline-tools/cmdline-tools ${ANDROID_SDK_ROOT}/cmdline-tools/tools && \
+    echo y | ${ANDROID_SDK_TOOLS}/sdkmanager "platforms;android-${ANDROID_API_LEVEL}" && \
+    chmod 777 -R $ANDROID_SDK_ROOT $HOME/.jdks/ && \
+    apt-get purge --auto-remove -y unzip && \
+    rm -rf /tmp/*{% endraw %}{% endif %}
+{% if variant == "ruby" or variant == "dotnet" or variant == "cpp" %}{% raw %}ARG PRIVILEGED="false"
+ARG SUDO_SHA256="7b8c75a374a81689a1082044bada5e6e46597d3c5f4d13c19d841746520cfcb6"
+RUN if [ "$PRIVILEGED" = "true" ]; then \
+        apt-get update && \
+        apt-get install -y sudo && \
+        useradd -m -u 1001 -U qodana && \
+        passwd -d qodana && \
+        echo 'qodana ALL=(ALL) NOPASSWD:ALL' >> /etc/sudoers && \
+        chmod 777 /etc/passwd && \
+        rm -rf /var/cache/apt /var/lib/apt/ /tmp/*; \
+    else \
+        curl -fsSL "https://raw.githubusercontent.com/JetBrains/qodana-docker/refs/heads/main/sudo" -o /usr/bin/sudo && \
+        echo "${SUDO_SHA256} /usr/bin/sudo" > /tmp/sudo.shasum && \
+        sha256sum --check --status /tmp/sudo.shasum && \
+        chmod +x /usr/bin/sudo; \
+    fi{% endraw %}
+{% endif %}
+LABEL maintainer="qodana-support@jetbrains.com" description="{{ description }}"
+WORKDIR /data/project
+ENTRYPOINT ["/opt/idea/bin/qodana"]

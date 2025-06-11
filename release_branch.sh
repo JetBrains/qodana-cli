@@ -1,4 +1,5 @@
 #!/bin/bash
+set -euo pipefail
 
 # Check if a release name is provided
 if [ -z "$1" ]; then

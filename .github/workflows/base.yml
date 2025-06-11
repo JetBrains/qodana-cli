@@ -19,7 +19,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        version: ["next", "2025.1"]
+        version: ["next", "2025.1", "2025.2"]
         group: ["default", "more", "clang", "ruby"]
     runs-on: ubuntu-latest
     steps:
