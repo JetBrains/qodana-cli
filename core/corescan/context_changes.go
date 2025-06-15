@@ -94,8 +94,8 @@ func (c Context) FirstStageOfReverseScopedScript(scopeFile string) Context {
 	startDir := filepath.Join(c.ResultsDir(), "start")
 	properties := []string{"-Dqodana.skip.result.strategy=ANY"} // finish only in case of none issues found
 
-	if !c.applyFixes && !c.cleanup {
-		reducedScope := filepath.Join(c.ResultsDir(), "reduced-scope.json")
+	if !c.BaselineIncludeAbsent() {
+		reducedScope := filepath.Join(startDir, "reduced-scope.json")
 		properties = append(properties, "-Dqodana.reduced.scope.path="+reducedScope)
 		c.reducedScopePath = reducedScope
 	}

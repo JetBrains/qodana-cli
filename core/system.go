@@ -469,7 +469,14 @@ func prepareArtifactPaths(
 }
 
 func checkReverseScopeScriptFinished(ctx corescan.Context) bool {
-	return getInvocationProperties(ctx.ResultsDir()).AdditionalProperties["qodana.result.skipped"] == "true"
+	value := getInvocationProperties(ctx.ResultsDir()).AdditionalProperties["qodana.result.skipped"]
+	if strValue, ok := value.(string); ok {
+		return strValue == "true"
+	}
+	if boolValue, ok := value.(bool); ok {
+		return boolValue
+	}
+	return false
 }
 
 func copyAndSaveReport(lastContext corescan.Context, c corescan.Context) {
