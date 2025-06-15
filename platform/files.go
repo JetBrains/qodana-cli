@@ -71,6 +71,10 @@ func GetTmpResultsDir(resultsDir string) string {
 	return path.Join(resultsDir, "tmp")
 }
 
+func GetCoverageArtifactsPath(resultsDir string) string {
+	return path.Join(resultsDir, "coverage")
+}
+
 func GetSarifPath(resultsDir string) string {
 	return path.Join(resultsDir, "qodana.sarif.json")
 }

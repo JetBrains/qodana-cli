@@ -52,6 +52,7 @@ type CliOptions struct {
 	DiffStart                 string
 	DiffEnd                   string
 	ForceLocalChangesScript   bool
+	ReversePrAnalysis         bool
 	AnalysisId                string
 	Env_                      []string
 	Volumes                   []string
@@ -267,6 +268,12 @@ func ComputeFlags(cmd *cobra.Command, options *CliOptions) error {
 		"force-local-changes-script",
 		false,
 		"Override the default run-scenario for diff runs to always use the local-changes script",
+	)
+	flags.BoolVar(
+		&options.ReversePrAnalysis,
+		"reverse",
+		false,
+		"Override the default run-scenario for diff runs to always use the reverse-scoped script",
 	)
 
 	flags.IntVar(&options.JvmDebugPort, "jvm-debug-port", -1, "Enable JVM remote debug under given port")

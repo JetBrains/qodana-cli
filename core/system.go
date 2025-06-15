@@ -155,7 +155,7 @@ func RunAnalysis(ctx context.Context, c corescan.Context) int {
 
 	installPlugins(c)
 	// this way of running needs to do bootstrap twice on different commits and will do it internally
-	if scenario != corescan.RunScenarioScoped && c.Ide() != "" {
+	if !corescan.IsScopedScenario(scenario) && c.Ide() != "" {
 		utils.Bootstrap(c.QodanaYamlConfig().Bootstrap, c.ProjectDir())
 	}
 	switch scenario {
@@ -165,6 +165,8 @@ func RunAnalysis(ctx context.Context, c corescan.Context) int {
 		return runLocalChanges(ctx, c, startHash)
 	case corescan.RunScenarioScoped:
 		return runScopeScript(ctx, c, startHash)
+	case corescan.RunScenarioReversedScoped:
+		return reversedScopeScript(ctx, c, startHash)
 	case corescan.RunScenarioDefault:
 		return runQodana(ctx, c)
 	default:
@@ -252,13 +254,19 @@ func runWithFullHistory(ctx context.Context, c corescan.Context, startHash strin
 	return exitCode
 }
 
-func runScopeScript(ctx context.Context, c corescan.Context, startHash string) int {
+func runScopedAnalysis(
+	ctx context.Context,
+	c corescan.Context,
+	startHash string,
+	end string,
+	runSequence func(string, string, string, corescan.Context, func(string, corescan.Context) (bool, int)) int,
+) int {
 	// don't run this logic when we're about to launch a container - it's just double work
 	if c.Ide() == "" {
 		return runQodana(ctx, c)
 	}
 	var err error
-	end := c.DiffEnd()
+
 	if end == "" {
 		end, err = git.CurrentRevision(c.ProjectDir(), c.LogDir())
 		if err != nil {
@@ -337,27 +345,140 @@ func runScopeScript(ctx context.Context, c corescan.Context, startHash string) i
 		return false, exitCode
 	}
 
-	startRunContext := c.FirstStageOfScopedScript(scopeFile)
-	stop, code := runFunc(startHash, startRunContext)
-	if stop {
+	return runSequence(startHash, end, scopeFile, c, runFunc)
+}
+
+func runScopeScript(ctx context.Context, c corescan.Context, startHash string) int {
+	return runScopedAnalysis(
+		ctx,
+		c,
+		startHash,
+		c.DiffEnd(),
+		scopeAnalysis(),
+	)
+}
+
+func scopeAnalysis() func(
+	startHash string,
+	end string,
+	scopeFile string,
+	c corescan.Context,
+	runFunc func(string, corescan.Context) (bool, int),
+) int {
+	return func(
+		startHash, end, scopeFile string,
+		c corescan.Context,
+		runFunc func(string, corescan.Context) (bool, int),
+	) int {
+		startRunContext := c.FirstStageOfScopedScript(scopeFile)
+		stop, code := runFunc(startHash, startRunContext)
+		if stop {
+			return code
+		}
+
+		startSarif := platform.GetSarifPath(startRunContext.ResultsDir())
+
+		endRunContext := c.SecondStageOfScopedScript(scopeFile, startSarif)
+		stop, code = runFunc(end, endRunContext)
+		if stop {
+			return code
+		}
+
+		copyAndSaveReport(endRunContext, c)
 		return code
 	}
+}
 
-	startSarif := platform.GetSarifPath(startRunContext.ResultsDir())
+func reversedScopeScript(ctx context.Context, c corescan.Context, startHash string) int {
+	return runScopedAnalysis(
+		ctx,
+		c,
+		startHash,
+		c.DiffEnd(),
+		reverseScopeAnalysis(),
+	)
+}
 
-	endRunContext := c.SecondStageOfScopedScript(scopeFile, startSarif)
-	stop, code = runFunc(end, endRunContext)
-	if stop {
+func reverseScopeAnalysis() func(
+	startHash string,
+	endHash string,
+	scopeFile string,
+	c corescan.Context,
+	runFunc func(string, corescan.Context) (bool, int),
+) int {
+	return func(
+		startHash, endHash, scopeFile string,
+		c corescan.Context,
+		runFunc func(string, corescan.Context) (bool, int),
+	) int {
+		var code int
+		var stop bool
+		// analyze new code (endHash)
+		newCodeContext := c.FirstStageOfReverseScopedScript(scopeFile)
+		if stop, code = runFunc(endHash, newCodeContext); stop {
+			return code
+		}
+
+		currentContext := newCodeContext
+		if checkReverseScopeScriptFinished(currentContext) {
+			copyAndSaveReport(currentContext, c)
+			return code
+		}
+
+		scopeFile, coverageArtifactsPath, newCodeSarif := prepareArtifactPaths(newCodeContext, scopeFile)
+
+		// analyze old code (startHash)
+		startRunContext := c.SecondStageOfReverseScopedScript(scopeFile, newCodeSarif, coverageArtifactsPath)
+		if stop, code = runFunc(startHash, startRunContext); stop {
+			return code
+		}
+
+		currentContext = startRunContext
+		if checkReverseScopeScriptFinished(currentContext) {
+			copyAndSaveReport(currentContext, c)
+			return code
+		}
+
+		// fixes on new code (endHash)
+		if shouldApplyFixes := c.ApplyFixes() || c.Cleanup(); shouldApplyFixes {
+			fixesContext := c.ThirdStageOfReverseScopedScript(scopeFile, newCodeSarif, coverageArtifactsPath)
+			if stop, code = runFunc(endHash, fixesContext); stop {
+				return code
+			}
+			currentContext = fixesContext
+		}
+
+		copyAndSaveReport(currentContext, c)
 		return code
 	}
+}
 
-	err = utils.CopyDir(endRunContext.ResultsDir(), c.ResultsDir())
+func prepareArtifactPaths(
+	newCodeContext corescan.Context,
+	originalScopeFile string,
+) (scopeFile, coverageArtifactsPath, newCodeSarif string) {
+	scopeFile = originalScopeFile
+	if reducedPath := newCodeContext.ReducedScopePath(); reducedPath != "" {
+		scopeFile = reducedPath
+	}
+
+	coverageArtifactsPath = platform.GetCoverageArtifactsPath(newCodeContext.ResultsDir())
+	newCodeSarif = platform.GetSarifPath(newCodeContext.ResultsDir())
+
+	return scopeFile, coverageArtifactsPath, newCodeSarif
+}
+
+func checkReverseScopeScriptFinished(ctx corescan.Context) bool {
+	return getInvocationProperties(ctx.ResultsDir()).AdditionalProperties["qodana.result.skipped"] == "true"
+}
+
+func copyAndSaveReport(lastContext corescan.Context, c corescan.Context) {
+	err := utils.CopyDir(lastContext.ResultsDir(), c.ResultsDir())
 	if err != nil {
 		log.Fatal(err)
 	}
 
 	saveReport(c)
-	return code
 }
 
 // writeChangesFile creates a temp file containing the changes between diffStart and diffEnd

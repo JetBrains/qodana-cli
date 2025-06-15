@@ -21,6 +21,9 @@ import (
 	"github.com/JetBrains/qodana-cli/v2025/core/startup"
 	"github.com/JetBrains/qodana-cli/v2025/platform/qdenv"
 	"github.com/JetBrains/qodana-cli/v2025/platform/strutil"
+	"github.com/JetBrains/qodana-cli/v2025/platform/utils"
+	log "github.com/sirupsen/logrus"
+	"os"
 	"path/filepath"
 	"strings"
 )
@@ -56,19 +59,15 @@ func (c Context) FirstStageOfScopedScript(scopeFile string) Context {
 	c.script = strutil.QuoteForWindows("scoped:" + scopeFile)
 
 	startDir := filepath.Join(c.ResultsDir(), "start")
-	c.showReport = false
-	c.showReport = false
-	c = c.withAddedProperties(
-		"-Dqodana.skip.result=true",               // don't print results
+	c = c.prepareContext(
+		true,
+		"-Dqodana.skip.result=true", // don't print results
 		"-Dqodana.skip.coverage.computation=true", // don't compute coverage on first pass
 	)
 	c.baseline = ""
 	c.resultsDir = startDir
 	startup.MakeDirAll(c.LogDir()) // need to prepare new result and log dir
 
-	c.applyFixes = false
-	c.cleanup = false
-	c.fixesStrategy = "none" // this option is deprecated, but the only way to overwrite the possible yaml value
 	return c
 }
 
@@ -77,17 +76,87 @@ func (c Context) SecondStageOfScopedScript(scopeFile string, startSarif string) 
 
 	endDir := filepath.Join(c.ResultsDir(), "end")
 
-	c = c.withAddedProperties(
-		"-Dqodana.skip.preamble=true",                               // don't print the QD logo again
+	c = c.prepareContext(
+		false,
+		"-Dqodana.skip.preamble=true", // don't print the QD logo again
 		"-Didea.headless.enable.statistics=false",                   // disable statistics for second run
 		fmt.Sprintf("-Dqodana.scoped.baseline.path=%s", startSarif), // disable statistics for second run
 		"-Dqodana.skip.coverage.issues.reporting=true",              // don't report coverage issues on the second pass, but allow numbers to be computed
 	)
 	c.resultsDir = endDir
 	startup.MakeDirAll(c.LogDir()) // need to prepare new result and log dir
-	c.showReport = false
-	c.saveReport = false
 	return c
+}
+
+func (c Context) FirstStageOfReverseScopedScript(scopeFile string) Context {
+	c.script = strutil.QuoteForWindows("reverse-scoped:NEW," + scopeFile)
+
+	startDir := filepath.Join(c.ResultsDir(), "start")
+	properties := []string{"-Dqodana.skip.result.strategy=ANY"} // finish only in case of none issues found
+
+	if !c.applyFixes && !c.cleanup {
+		reducedScope := filepath.Join(c.ResultsDir(), "reduced-scope.json")
+		properties = append(properties, "-Dqodana.reduced.scope.path="+reducedScope)
+		c.reducedScopePath = reducedScope
+	}
+	c = c.prepareContext(true, properties...)
+
+	c.resultsDir = startDir
+	startup.MakeDirAll(c.LogDir()) // need to prepare new result and log dir
+
+	return c
+}
+
+func (c Context) SecondStageOfReverseScopedScript(scopeFile string, startSarif string, coveragePath string) Context {
+	c.script = strutil.QuoteForWindows("reverse-scoped:OLD," + scopeFile)
+
+	endDir := filepath.Join(c.ResultsDir(), "end")
+
+	resultStrategy := "FIXABLE" // continue if any fixable issues found
+	if !c.applyFixes && !c.cleanup {
+		resultStrategy = "NEVER" // finish right afterwards
+	}
+	properties := []string{
+		"-Dqodana.skip.preamble=true",             // don't print the QD logo again
+		"-Didea.headless.enable.statistics=false", // disable statistics for second run
+		fmt.Sprintf("-Dqodana.skip.result.strategy=%s", resultStrategy),
+		fmt.Sprintf("-Dqodana.scoped.baseline.path=%s", startSarif),
+	}
+
+	c = c.prepareContext(true, properties...)
+	c.resultsDir = endDir
+	startup.MakeDirAll(c.LogDir()) // need to prepare new result and log dir
+	c.copyCoverageFromNewStage(coveragePath)
+	return c
+}
+
+func (c Context) ThirdStageOfReverseScopedScript(scopeFile string, startSarif string, coveragePath string) Context {
+	c.script = strutil.QuoteForWindows("reverse-scoped:FIXES," + scopeFile)
+
+	endDir := filepath.Join(c.ResultsDir(), "fixes")
+
+	properties := []string{
+		"-Dqodana.skip.preamble=true",             // don't print the QD logo again
+		"-Didea.headless.enable.statistics=false", // disable statistics for second run
+		"-Dqodana.skip.result.strategy=NEVER",     // finish right afterwards
+		fmt.Sprintf("-Dqodana.scoped.baseline.path=%s", startSarif),
+	}
+
+	c = c.prepareContext(false, properties...)
+	c.resultsDir = endDir
+	startup.MakeDirAll(c.LogDir()) // need to prepare new result and log dir
+	c.copyCoverageFromNewStage(coveragePath)
+	return c
+}
+
+func (c Context) copyCoverageFromNewStage(coverageDataPath string) {
+	if info, err := os.Stat(coverageDataPath); err == nil && info.IsDir() {
+		startup.MakeDirAll(c.ResultsDir())
+		targetCoveragePath := filepath.Join(c.ResultsDir(), "coverage")
+		if err := utils.CopyDir(coverageDataPath, targetCoveragePath); err != nil {
+			log.Fatalf("Failed to copy coverage data from %s to %s: %v", coverageDataPath, targetCoveragePath, err)
+		}
+	}
 }
 
 func (c Context) ForcedLocalChanges() Context {
@@ -129,5 +198,17 @@ func (c Context) withEnv(key string, value string, override bool) Context {
 	}
 
 	c._env = envs
+	return c
+}
+
+func (c Context) prepareContext(skipFixes bool, propertiesToAdd ...string) Context {
+	c = c.withAddedProperties(propertiesToAdd...)
+	c.showReport = false
+	c.saveReport = false
+	if skipFixes {
+		c.applyFixes = false
+		c.cleanup = false
+		c.fixesStrategy = "none" // this option is deprecated, but the only way to overwrite the possible yaml value
+	}
 	return c
 }
