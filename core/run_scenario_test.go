@@ -108,6 +108,19 @@ func TestQodanaOptions_determineRunScenario(t *testing.T) {
 			want: corescan.RunScenarioScoped,
 		},
 		{
+			name: "with reversed scope",
+			args: args{
+				c: corescan.ContextBuilder{
+					Prod: product.Product{
+						Code: product.QDJVM,
+					},
+					ReversePrAnalysis: true,
+				},
+				hasStartHash: true,
+			},
+			want: corescan.RunScenarioReversedScoped,
+		},
+		{
 			name: "forced script",
 			args: args{
 				c: corescan.ContextBuilder{

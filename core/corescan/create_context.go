@@ -81,6 +81,7 @@ func CreateContext(
 		DiffStart:                 cliOptions.DiffStart,
 		DiffEnd:                   cliOptions.DiffEnd,
 		ForceLocalChangesScript:   cliOptions.ForceLocalChangesScript,
+		ReversePrAnalysis:         cliOptions.ReversePrAnalysis,
 		AnalysisId:                cliOptions.AnalysisId,
 		Volumes:                   cliOptions.Volumes,
 		User:                      cliOptions.User,
