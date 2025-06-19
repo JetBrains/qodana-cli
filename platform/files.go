@@ -20,7 +20,6 @@ import (
 	"bytes"
 	"fmt"
 	log "github.com/sirupsen/logrus"
-	"path"
 	"path/filepath"
 	"reflect"
 	"text/tabwriter"
@@ -68,17 +67,17 @@ func ReportResultsPath(reportDir string) string {
 }
 
 func GetTmpResultsDir(resultsDir string) string {
-	return path.Join(resultsDir, "tmp")
+	return filepath.Join(resultsDir, "tmp")
 }
 
 func GetCoverageArtifactsPath(resultsDir string) string {
-	return path.Join(resultsDir, "coverage")
+	return filepath.Join(resultsDir, "coverage")
 }
 
 func GetSarifPath(resultsDir string) string {
-	return path.Join(resultsDir, "qodana.sarif.json")
+	return filepath.Join(resultsDir, "qodana.sarif.json")
 }
 
 func GetShortSarifPath(resultsDir string) string {
-	return path.Join(resultsDir, "qodana-short.sarif.json")
+	return filepath.Join(resultsDir, "qodana-short.sarif.json")
 }
