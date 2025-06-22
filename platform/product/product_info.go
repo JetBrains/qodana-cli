@@ -21,7 +21,6 @@ import (
 	"fmt"
 	"github.com/JetBrains/qodana-cli/v2025/platform/msg"
 	"github.com/JetBrains/qodana-cli/v2025/platform/qdenv"
-	"github.com/JetBrains/qodana-cli/v2025/platform/strutil"
 	"github.com/JetBrains/qodana-cli/v2025/platform/utils"
 	"os"
 	"path/filepath"
@@ -33,6 +32,7 @@ import (
 )
 
 type Product struct {
+	Analyzer       Analyzer
 	Name           string
 	IdeCode        string
 	Code           string
@@ -172,16 +172,6 @@ func (p Product) ParentPrefix() string {
 	}
 }
 
-func (p Product) IsCommunity() bool {
-	if p.Code == "" {
-		return true
-	}
-	if strutil.Contains(AllSupportedFreeCodes, p.Code) {
-		return true
-	}
-	return false
-}
-
 func (p Product) GetProductNameFromCode() string {
 	return GetProductNameFromCode(p.Code)
 }
@@ -273,7 +263,7 @@ type InfoJson struct {
 	Launch        []Launch `json:"launch"`
 }
 
-func GuessProduct(idePath string) Product {
+func GuessProduct(idePath string, analyzer Analyzer) Product {
 	homePath := idePath
 	if //goland:noinspection GoBoolExpressions
 	runtime.GOOS == "darwin" {
@@ -331,9 +321,10 @@ func GuessProduct(idePath string) Product {
 	code := toQodanaCode(ideCode)
 	name := GetProductNameFromCode(code)
 	build := productInfo.BuildNumber
-	eap := isEap(*productInfo)
+	eap := IsEap(productInfo)
 
 	prod := Product{
+		Analyzer:       analyzer,
 		Name:           name,
 		IdeCode:        ideCode,
 		Code:           code,
@@ -382,7 +373,7 @@ func toQodanaCode(baseProduct string) string {
 	}
 }
 
-func isEap(info InfoJson) bool {
+func IsEap(info *InfoJson) bool {
 	treatAsRelease := os.Getenv(qdenv.QodanaTreatAsRelease)
 	if treatAsRelease == "true" {
 		return true

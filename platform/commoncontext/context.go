@@ -17,14 +17,14 @@
 package commoncontext
 
 import (
+	"github.com/JetBrains/qodana-cli/v2025/platform/product"
 	"github.com/JetBrains/qodana-cli/v2025/platform/qdenv"
 	"os"
 	"path/filepath"
 )
 
 type Context struct {
-	Linter          string
-	Ide             string
+	Analyzer        product.Analyzer
 	IsClearCache    bool
 	CacheDir        string
 	ProjectDir      string
@@ -58,9 +58,8 @@ func (c Context) GetLinterDir() string {
 CloudTokenLoader
 */
 
-func (c Context) GetQodanaToken() string { return c.QodanaToken }
-func (c Context) GetId() string          { return c.Id }
-func (c Context) GetIde() string         { return c.Ide }
-func (c Context) GetLinter() string      { return c.Linter }
-func (c Context) GetProjectDir() string  { return c.ProjectDir }
-func (c Context) GetLogDir() string      { return c.LogDir() }
+func (c Context) GetQodanaToken() string        { return c.QodanaToken }
+func (c Context) GetId() string                 { return c.Id }
+func (c Context) GetAnalyzer() product.Analyzer { return c.Analyzer }
+func (c Context) GetProjectDir() string         { return c.ProjectDir }
+func (c Context) GetLogDir() string             { return c.LogDir() }

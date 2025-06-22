@@ -48,8 +48,7 @@ func CreateContext(
 	}
 
 	return ContextBuilder{
-		Linter:                    commonCtx.Linter,
-		Ide:                       commonCtx.Ide,
+		Analyser:                  commonCtx.Analyzer,
 		Id:                        commonCtx.Id,
 		IdeDir:                    preparedHost.IdeDir,
 		EffectiveConfigurationDir: effectiveConfigurationDir,

@@ -50,7 +50,7 @@ func SetupLicenseAndProjectHash(prod product.Product, endpoints *cloud.QdApiEndp
 	}
 
 	// community versions works without any license and can't check any license
-	if prod.IsCommunity() {
+	if !prod.Analyzer.GetLinter().IsPaid {
 		return
 	}
 
@@ -99,8 +99,8 @@ func SetupLicenseAndProjectHash(prod product.Product, endpoints *cloud.QdApiEndp
 
 func allCommunityNames() string {
 	var nameList []string
-	for _, code := range product.AllSupportedFreeCodes {
-		nameList = append(nameList, "\""+product.GetProductNameFromCode(code)+"\"")
+	for _, linter := range product.AllSupportedFreeLinters {
+		nameList = append(nameList, "\""+linter.PresentableName+"\"")
 	}
 	return strings.Join(nameList, ", ")
 }

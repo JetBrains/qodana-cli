@@ -18,13 +18,13 @@ package corescan
 
 import (
 	"fmt"
+	"github.com/JetBrains/qodana-cli/v2025/platform/commoncontext"
 	"github.com/JetBrains/qodana-cli/v2025/platform/msg"
 	"github.com/JetBrains/qodana-cli/v2025/platform/product"
 	"github.com/JetBrains/qodana-cli/v2025/platform/qdyaml"
 	"math"
 	"os"
 	"path/filepath"
-	"slices"
 	"strings"
 	"time"
 )
@@ -58,8 +58,7 @@ type RunScenario = string
 //
 // !!!KEEP IT IMMUTABLE!!!
 type Context struct {
-	linter                    string
-	ide                       string
+	analyser                  commoncontext.Analyzer
 	id                        string
 	ideDir                    string
 	effectiveConfigurationDir string
@@ -138,8 +137,7 @@ func YamlConfig(yaml qdyaml.QodanaYaml) QodanaYamlConfig {
 	}
 }
 
-func (c Context) Linter() string                     { return c.linter }
-func (c Context) Ide() string                        { return c.ide }
+func (c Context) Analyser() commoncontext.Analyzer   { return c.analyser }
 func (c Context) Id() string                         { return c.id }
 func (c Context) IdeDir() string                     { return c.ideDir }
 func (c Context) EffectiveConfigurationDir() string  { return c.effectiveConfigurationDir }
@@ -201,7 +199,7 @@ func (c Context) Property() []string                 { return arrayCopy(c._prope
 func (c Context) Volumes() []string                  { return arrayCopy(c._volumes) }
 
 type ContextBuilder struct {
-	Linter                    string
+	Analyser                  commoncontext.Analyzer
 	Ide                       string
 	Id                        string
 	IdeDir                    string
@@ -265,8 +263,7 @@ type ContextBuilder struct {
 
 func (b ContextBuilder) Build() Context {
 	return Context{
-		linter:                    b.Linter,
-		ide:                       b.Ide,
+		analyser:                  b.Analyser,
 		id:                        b.Id,
 		ideDir:                    b.IdeDir,
 		effectiveConfigurationDir: b.EffectiveConfigurationDir,
@@ -367,21 +364,11 @@ func (c Context) DetermineRunScenario(hasStartHash bool) RunScenario {
 	}
 }
 
-func (c Context) IsNative() bool {
-	return c.Ide() != ""
-}
-
 func (c Context) VmOptionsPath() string {
 	return filepath.Join(c.ConfigDir(), "ide.vmoptions")
 }
 func (c Context) InstallPluginsVmOptionsPath() string {
 	return filepath.Join(c.ConfigDir(), "install_plugins.vmoptions")
-}
-
-func (c Context) FixesSupported() bool {
-	productCode := product.GuessProductCode(c.Ide(), c.Linter())
-	// productCode == "" could be anything
-	return slices.Contains(product.AllFixesSupportedProducts, productCode) || productCode == ""
 }
 
 func (c Context) PropertiesAndFlags() (map[string]string, []string) {

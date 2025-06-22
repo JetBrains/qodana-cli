@@ -71,7 +71,7 @@ But you can always override qodana.yaml options with the following command-line 
 
 			effectiveConfigFiles := effectiveconfig.Files{}
 			qodanaYamlConfig := corescan.QodanaYamlConfig{}
-			if commonCtx.Ide != "" {
+			if !commonCtx.Analyzer.IsContainer() {
 				var err error
 				localQodanaYamlFullPath := qdyaml.GetLocalNotEffectiveQodanaYamlFullPath(
 					commonCtx.ProjectDir,

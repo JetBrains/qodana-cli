@@ -25,7 +25,6 @@ import (
 	"github.com/JetBrains/qodana-cli/v2025/platform/product"
 	"github.com/JetBrains/qodana-cli/v2025/platform/qdcontainer"
 	"github.com/JetBrains/qodana-cli/v2025/platform/qdenv"
-	"github.com/JetBrains/qodana-cli/v2025/platform/strutil"
 	"github.com/JetBrains/qodana-cli/v2025/platform/tokenloader"
 	cp "github.com/otiai10/copy"
 	"github.com/pterm/pterm"
@@ -59,7 +58,7 @@ func PrepareHost(commonCtx commoncontext.Context) PreparedHost {
 			log.Errorf("Could not clear local Qodana cache: %s", err)
 		}
 	}
-	nuget.WarnIfPrivateFeedDetected(commonCtx.Linter, commonCtx.ProjectDir)
+	nuget.WarnIfPrivateFeedDetected(commonCtx.Analyzer, commonCtx.ProjectDir)
 	if nuget.IsNugetConfigNeeded() {
 		nuget.PrepareNugetConfig(os.Getenv("HOME"))
 	}
@@ -72,40 +71,29 @@ func PrepareHost(commonCtx commoncontext.Context) PreparedHost {
 	if err := os.MkdirAll(commonCtx.ReportDir, os.ModePerm); err != nil {
 		log.Fatal("couldn't create a directory ", err.Error())
 	}
-	if commonCtx.Linter != "" {
-		qdcontainer.PrepareContainerEnvSettings()
+
+	if commonCtx.Analyzer.DownloadDist() {
+		linter := commonCtx.Analyzer.GetLinter()
+		msg.PrintProcess(
+			func(spinner *pterm.SpinnerPrinter) {
+				if spinner != nil {
+					spinner.ShowTimer = false // We will update interactive spinner
+				}
+				ideDir = downloadAndInstallIDE(commonCtx.Analyzer, commonCtx.QodanaSystemDir, spinner)
+				fixWindowsPlugins(ideDir)
+			},
+			fmt.Sprintf("Downloading %s", linter.Name),
+			fmt.Sprintf("downloading IDE distribution to %s", commonCtx.QodanaSystemDir),
+		)
 	}
-	if commonCtx.Ide != "" {
-		if strutil.Contains(product.AllNativeCodes, strings.TrimSuffix(commonCtx.Ide, product.EapSuffix)) {
-			msg.PrintProcess(
-				func(spinner *pterm.SpinnerPrinter) {
-					if spinner != nil {
-						spinner.ShowTimer = false // We will update interactive spinner
-					}
-					ideDir = downloadAndInstallIDE(commonCtx.Ide, commonCtx.Linter, commonCtx.QodanaSystemDir, spinner)
-					fixWindowsPlugins(ideDir)
-				},
-				fmt.Sprintf("Downloading %s", commonCtx.Ide),
-				fmt.Sprintf("downloading IDE distribution to %s", commonCtx.QodanaSystemDir),
-			)
-		} else {
-			val, exists := os.LookupEnv(qdenv.QodanaDistEnv)
-			if !exists || val == "" {
-				log.Fatalf("Product code %s is not supported. ", commonCtx.Ide)
-			} else if commonCtx.Ide != val {
-				log.Fatalf(
-					"--ide argument '%s' doesn't match env variable %s value '%s'",
-					commonCtx.Ide,
-					qdenv.QodanaDistEnv,
-					val,
-				)
-			}
-			ideDir = val
-		}
+
+	if commonCtx.Analyzer.IsContainer() {
+		qdcontainer.PrepareContainerEnvSettings()
+	} else {
 		prod, cloudUploadToken = prepareLocalIdeSettingsAndGetQodanaCloudUploadToken(commonCtx, ideDir)
 	}
 
-	if tokenloader.IsCloudTokenRequired(commonCtx, prod.IsCommunity() || prod.IsEap) {
+	if tokenloader.IsCloudTokenRequired(commonCtx) {
 		cloudUploadToken = tokenloader.ValidateCloudToken(commonCtx, false)
 	}
 
@@ -121,10 +109,10 @@ func prepareLocalIdeSettingsAndGetQodanaCloudUploadToken(
 	commonCtx commoncontext.Context,
 	ideDir string,
 ) (product.Product, string) {
-	prod := product.GuessProduct(ideDir)
+	prod := product.GuessProduct(ideDir, commonCtx.Analyzer)
 
 	qdenv.ExtractQodanaEnvironment(qdenv.SetEnv)
-	isTokenRequired := tokenloader.IsCloudTokenRequired(commonCtx, prod.IsEap || prod.IsCommunity())
+	isTokenRequired := tokenloader.IsCloudTokenRequired(commonCtx)
 	token := tokenloader.LoadCloudUploadToken(commonCtx, false, isTokenRequired, true)
 	cloud.SetupLicenseToken(token)
 	SetupLicenseAndProjectHash(prod, cloud.GetCloudApiEndpoints(), cloud.Token.Token)
@@ -142,8 +130,8 @@ func prepareLocalIdeSettingsAndGetQodanaCloudUploadToken(
 		CreateUser("/etc/passwd")
 	}
 
-	if runtime.GOOS == "darwin" && commonCtx.Ide != "" {
-		if info := getIde(commonCtx.Ide); info != nil {
+	if runtime.GOOS == "darwin" && !commonCtx.Analyzer.IsContainer() {
+		if info := getIde(commonCtx.Analyzer); info != nil {
 			err := downloadCustomPlugins(info.Link, filepath.Dir(prod.CustomPluginsPath()), nil)
 			if err != nil {
 				log.Warning("Error while downloading custom plugins: " + err.Error())

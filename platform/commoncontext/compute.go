@@ -41,16 +41,17 @@ func Compute(
 	projectDir string,
 	localNotEffectiveQodanaYamlPathInProject string,
 ) Context {
-	linter, ide := overrideLinter, overrideIde
-	if linter == "" && ide == "" {
-		linter, ide = getLinterAndIdeFromProject(
+	analyzer := GuessAnalyzerFromEnvAndCLI(overrideIde, overrideLinter)
+
+	if analyzer == nil {
+		analyzer = getAnalyzerFromProject(
 			qodanaCloudToken,
 			projectDir,
 			localNotEffectiveQodanaYamlPathInProject,
 		)
 	}
 
-	qodanaId := computeId(linter, ide, projectDir)
+	qodanaId := computeId(analyzer, projectDir)
 	systemDir := computeQodanaSystemDir(cacheDirFromCliOptions)
 	linterDir := filepath.Join(systemDir, qodanaId)
 	resultsDir := computeResultsDir(resultsDirFromCliOptions, linterDir)
@@ -58,8 +59,7 @@ func Compute(
 	reportDir := computeReportDir(reportDirFromCliOptions, resultsDir)
 
 	commonCtx := Context{
-		Linter:          linter,
-		Ide:             ide,
+		Analyzer:        analyzer,
 		IsClearCache:    clearCache,
 		CacheDir:        cacheDir,
 		ProjectDir:      projectDir,
@@ -72,11 +72,11 @@ func Compute(
 	return commonCtx
 }
 
-func getLinterAndIdeFromProject(
+func getAnalyzerFromProject(
 	qodanaCloudToken string,
 	projectDir string,
 	localNotEffectiveQodanaYamlPathInProject string,
-) (linter string, ide string) {
+) product.Analyzer {
 	qodanaYamlPath := qdyaml.GetLocalNotEffectiveQodanaYamlFullPath(
 		projectDir,
 		localNotEffectiveQodanaYamlPathInProject,
@@ -88,12 +88,8 @@ func getLinterAndIdeFromProject(
 			msg.PrimaryBold(localNotEffectiveQodanaYamlPathInProject),
 			msg.PrimaryBold("qodana init"),
 		)
-		analyzer := GetAnalyzer(projectDir, qodanaCloudToken)
-		if product.IsNativeAnalyzer(analyzer) {
-			ide = analyzer
-		} else {
-			linter = analyzer
-		}
+		return SelectAnalyzerForPath(projectDir, qodanaCloudToken)
+
 	} else if qodanaYaml.Linter != "" && qodanaYaml.Ide != "" {
 		msg.ErrorMessage(
 			"You have both `linter:` (%s) and `ide:` (%s) fields set in %s. Modify the configuration file to keep one of them",
@@ -104,26 +100,25 @@ func getLinterAndIdeFromProject(
 		os.Exit(1)
 	}
 	if qodanaYaml.Linter != "" {
-		linter = qodanaYaml.Linter
-	} else if qodanaYaml.Ide != "" {
-		ide = qodanaYaml.Ide
+		return &product.DockerAnalyzer{
+			Linter: product.GuessLinter("", qodanaYaml.Linter),
+			Image:  qodanaYaml.Linter,
+		}
 	}
 
-	return linter, ide
+	// qodanaYaml.Ide not equal to ""
+	return &product.NativeAnalyzer{
+		Linter: product.GuessLinter("", qodanaYaml.Linter),
+		Ide:    qodanaYaml.Ide,
+	}
 }
 
-func computeId(linter string, ide string, projectDir string) string {
-	var analyzer string
-	if linter != "" {
-		analyzer = linter
-	} else if ide != "" {
-		analyzer = ide
-	}
+func computeId(analyzer product.Analyzer, projectDir string) string {
 	length := 7
 	projectAbs, _ := filepath.Abs(projectDir)
 	id := fmt.Sprintf(
 		"%s-%s",
-		getHash(analyzer)[0:length+1],
+		getHash(analyzer.Name())[0:length+1],
 		getHash(projectAbs)[0:length+1],
 	)
 	return id

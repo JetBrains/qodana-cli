@@ -20,6 +20,7 @@ import (
 	"bufio"
 	"fmt"
 	"github.com/JetBrains/qodana-cli/v2025/cloud"
+	"github.com/JetBrains/qodana-cli/v2025/platform/commoncontext"
 	"github.com/JetBrains/qodana-cli/v2025/platform/product"
 	"github.com/JetBrains/qodana-cli/v2025/platform/qdenv"
 	log "github.com/sirupsen/logrus"
@@ -43,13 +44,13 @@ func UnsetNugetVariables() {
 	}
 }
 
-func isNonNativeDotnetLinter(linter string) bool {
-	return strings.Contains(linter, product.DockerImageMap[product.QDNET]) ||
-		strings.Contains(linter, product.DockerImageMap[product.QDNETC])
+func isNonNativeDotnetLinter(analyser commoncontext.Analyzer) bool {
+	return analyser.IsContainer() &&
+		(analyser.GetLinter() == product.DotNetLinter || analyser.GetLinter() == product.DotNetCommunityLinter)
 }
 
-func WarnIfPrivateFeedDetected(linter string, projectPath string) {
-	if !isNonNativeDotnetLinter(linter) {
+func WarnIfPrivateFeedDetected(analyzer commoncontext.Analyzer, projectPath string) {
+	if !isNonNativeDotnetLinter(analyzer) {
 		return
 	}
 	configFileNames := []string{nugetConfigName, nugetConfigNamePascalCase}
