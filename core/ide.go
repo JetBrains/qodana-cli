@@ -109,7 +109,7 @@ func GetIdeArgs(c corescan.Context) []string {
 	if c.CustomLocalQodanaYamlPath() != "" {
 		arguments = append(arguments, "--config", strutil.QuoteForWindows(c.CustomLocalQodanaYamlPath()))
 	}
-	if c.Linter() != "" && c.SaveReport() {
+	if c.Analyser().IsContainer() && c.SaveReport() {
 		arguments = append(arguments, "--save-report")
 	}
 	if c.SourceDirectory() != "" {
@@ -140,7 +140,8 @@ func GetIdeArgs(c corescan.Context) []string {
 		arguments = append(arguments, "--fail-threshold", c.FailThreshold())
 	}
 
-	if c.FixesSupported() {
+	linter := c.Analyser().GetLinter()
+	if linter.SupportFixes {
 		applyFixes := c.ApplyFixes()
 		cleanup := c.Cleanup()
 		if c.FixesStrategy() != "" {
@@ -153,7 +154,7 @@ func GetIdeArgs(c corescan.Context) []string {
 				break
 			}
 		}
-		if c.Ide() != "" && c.Prod().Is233orNewer() {
+		if !c.Analyser().IsContainer() && c.Prod().Is233orNewer() {
 			if applyFixes {
 				arguments = append(arguments, "--apply-fixes")
 			} else if cleanup {
@@ -169,13 +170,12 @@ func GetIdeArgs(c corescan.Context) []string {
 	}
 
 	// TODO : think how it could be better handled in presence of random 3rd party linters
-	prod := product.GuessProductCode(c.Ide(), c.Linter())
-	if prod == product.QDNETC || prod == product.QDCLC {
+	if linter == product.DotNetCommunityLinter || linter == product.ClangLinter {
 		// third party common options
 		if c.NoStatistics() {
 			arguments = append(arguments, "--no-statistics")
 		}
-		if prod == product.QDNETC {
+		if linter == product.DotNetCommunityLinter {
 			// cdnet options
 			if c.CdnetSolution() != "" {
 				arguments = append(arguments, "--solution", strutil.QuoteForWindows(c.CdnetSolution()))
@@ -203,7 +203,7 @@ func GetIdeArgs(c corescan.Context) []string {
 		}
 	}
 
-	if c.Ide() == "" {
+	if c.Analyser().IsContainer() {
 		if startHash, err := c.StartHash(); startHash != "" && err == nil && c.Script() == "default" {
 			arguments = append(arguments, "--diff-start", startHash)
 		}
@@ -261,7 +261,7 @@ func postAnalysis(c corescan.Context) {
 
 // installPlugins runs plugin installer for every plugin id in qodana.yaml.
 func installPlugins(c corescan.Context) {
-	if !c.IsNative() {
+	if c.Analyser().IsContainer() {
 		return
 	}
 

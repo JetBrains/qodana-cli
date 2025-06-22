@@ -17,25 +17,67 @@
 package commoncontext
 
 import (
+	"errors"
 	"fmt"
 	"github.com/JetBrains/qodana-cli/v2025/cloud"
 	"github.com/JetBrains/qodana-cli/v2025/platform/msg"
 	"github.com/JetBrains/qodana-cli/v2025/platform/product"
+	"github.com/JetBrains/qodana-cli/v2025/platform/qdenv"
 	"github.com/JetBrains/qodana-cli/v2025/platform/qdyaml"
-	"github.com/JetBrains/qodana-cli/v2025/platform/strutil"
 	"github.com/JetBrains/qodana-cli/v2025/platform/utils"
 	"github.com/pterm/pterm"
 	log "github.com/sirupsen/logrus"
 	"net/http"
 	"os"
 	"path/filepath"
+	"slices"
 	"strings"
 	"time"
 )
 
-// GetAnalyzer gets linter for the given path
-func GetAnalyzer(path string, token string) string {
-	var analyzers []string
+func GuessAnalyzerFromEnvAndCLI(ide string, linter string) product.Analyzer {
+	dist, exists := os.LookupEnv(qdenv.QodanaDistEnv)
+	if exists && dist != "" {
+		productInfo, err := product.ReadIdeProductInfo(dist)
+		if err != nil {
+			log.Fatalf("Can't read product-info.json: %v ", err)
+		}
+
+		info := product.FindLinterPropertiesByProductInfo(productInfo.ProductCode)
+		if info == nil {
+			log.Fatalf("Product dist %s is not recognised as valid.", dist)
+			return nil
+		}
+		return &product.PathNativeAnalyzer{
+			Linter: info.Linter,
+			Path:   dist,
+			IsEap:  product.IsEap(productInfo),
+		}
+	}
+
+	if linter != "" {
+		return &product.DockerAnalyzer{
+			Linter: product.GuessLinter("", linter),
+			Image:  linter,
+		}
+	}
+
+	if ide != "" {
+		linter := product.GuessLinter(ide, "")
+		if linter == product.UnknownLinter {
+			log.Fatalf("Product code %s is not supported. ", ide)
+		}
+		return &product.NativeAnalyzer{
+			Linter: linter,
+			Ide:    ide,
+		}
+	}
+	return nil
+}
+
+// SelectAnalyzerForPath gets linter for the given path
+func SelectAnalyzerForPath(path string, token string) product.Analyzer {
+	var linters []product.Linter
 	msg.PrintProcess(
 		func(_ *pterm.SpinnerPrinter) {
 			languages := readIdeaDir(path)
@@ -47,24 +89,31 @@ func GetAnalyzer(path string, token string) string {
 			} else {
 				msg.WarningMessage("Detected technologies: " + strings.Join(languages, ", ") + "\n")
 				for _, language := range languages {
-					if i, err := product.LangsProductCodes[language]; err {
+					if i, err := product.LangsToLinters[language]; err {
 						for _, l := range i {
-							analyzers = strutil.Append(analyzers, l)
+							linters = append(linters, l)
 						}
 					}
 				}
-				if len(analyzers) == 0 {
-					analyzers = product.AllCodes
+				if len(linters) == 0 {
+					linters = product.AllLinters
 				}
 			}
 			// breaking change will not be backported to 241
-			if (strutil.Contains(analyzers, product.QDAND) || strutil.Contains(
-				analyzers,
-				product.QDANDC,
-			)) && isAndroidProject(path) {
-				analyzers = strutil.Remove(analyzers, product.QDAND)
-				analyzers = strutil.Remove(analyzers, product.QDANDC)
-				analyzers = append([]string{product.QDAND, product.QDANDC}, analyzers...)
+			if (slices.Contains(linters, product.AndroidCommunityLinter) ||
+				slices.Contains(linters, product.AndroidLinter)) &&
+				isAndroidProject(path) {
+
+				filteredLinters := make([]product.Linter, 0, len(linters))
+				for _, l := range linters {
+					if l != product.AndroidLinter && l != product.AndroidCommunityLinter {
+						filteredLinters = append(filteredLinters, l)
+					}
+				}
+				linters = append(
+					[]product.Linter{product.AndroidLinter, product.AndroidCommunityLinter},
+					filteredLinters...,
+				)
 			}
 		}, "Scanning project", "",
 	)
@@ -79,9 +128,9 @@ func GetAnalyzer(path string, token string) string {
 	}
 
 	interactive := msg.IsInteractive()
-	analyzers = filterByLicensePlan(analyzers, token)
-	analyzer := selectAnalyzer(path, analyzers, interactive, selector)
-	if analyzer == "" {
+	linters = filterByLicensePlan(linters, token)
+	analyzer, err := selectAnalyzer(path, linters, interactive, selector)
+	if err != nil {
 		msg.ErrorMessage("Could not configure project as it is not supported by Qodana")
 		msg.WarningMessage("See https://www.jetbrains.com/help/qodana/supported-technologies.html for more details")
 		os.Exit(1)
@@ -90,22 +139,21 @@ func GetAnalyzer(path string, token string) string {
 	return analyzer
 }
 
-// filterCommunityCodes filters out codes that are available with a community license
-func filterByLicensePlan(codes []string, token string) []string {
+func filterByLicensePlan(linters []product.Linter, token string) []product.Linter {
 	if token == "" {
-		return codes
+		return linters
 	}
 	cloud.SetupLicenseToken(token)
 	if licensePlan := cloud.GetCloudApiEndpoints().GetLicensePlan(token); licensePlan == cloud.CommunityLicensePlan {
-		var filteredCodes []string
-		for _, code := range codes {
-			if strutil.Contains(product.AllSupportedFreeCodes, code) {
-				filteredCodes = append(filteredCodes, code)
+		var filteredCodes []product.Linter
+		for _, linter := range linters {
+			if !linter.IsPaid {
+				filteredCodes = append(filteredCodes, linter)
 			}
 		}
 		return filteredCodes
 	}
-	return codes
+	return linters
 }
 
 // GetAndSaveDotNetConfig gets .NET config for the given path and saves configName
@@ -129,39 +177,52 @@ func GetAndSaveDotNetConfig(projectDir string, qodanaYamlFullPath string) bool {
 	return qdyaml.SetQodanaDotNet(qodanaYamlFullPath, dotnet)
 }
 
-func selectAnalyzer(path string, analyzers []string, interactive bool, selectFunc func([]string) string) string {
-	var analyzer string
-	if len(analyzers) == 0 && !interactive {
-		return ""
+func selectAnalyzer(
+	path string,
+	linters []product.Linter,
+	interactive bool,
+	selectFunc func([]string) string,
+) (product.Analyzer, error) {
+	var distribution product.Analyzer
+	if len(linters) == 0 && !interactive {
+		return nil, errors.New("not supported")
 	}
 
-	selection, choices := analyzerToSelect(analyzers, path)
+	selection, choices := analyzerToSelect(linters, path)
 	log.Debugf("Detected products: %s", strings.Join(choices, ", "))
 
 	if len(choices) == 1 || !interactive {
-		analyzer = selection[choices[0]]
+		distribution = selection[choices[0]]
 	} else {
 		choice := selectFunc(choices)
 		if choice == "" {
-			return ""
+			return nil, errors.New("failed choosing analyzer")
 		}
-		analyzer = selection[choice]
+		distribution = selection[choice]
 	}
-	return analyzer
+	return distribution, nil
 }
 
-func analyzerToSelect(analyzers []string, path string) (map[string]string, []string) {
-	analyzersMap := make(map[string]string)
-	analyzersList := make([]string, 0, len(analyzers))
-	for _, a := range analyzers {
-		if product.IsNativeAnalyzer(a) {
-			if isNativeRequired(path, a) {
-				analyzersMap[a+" (Native)"] = a
-				analyzersList = append(analyzersList, a+" (Native)")
+func analyzerToSelect(linters []product.Linter, path string) (map[string]product.Analyzer, []string) {
+	analyzersMap := make(map[string]product.Analyzer)
+	analyzersList := make([]string, 0, len(linters))
+	for _, linter := range linters {
+		if linter.SupportNative {
+			if isNativeRequired(path, linter) {
+				key := linter.PresentableName + " (Native)"
+				analyzersMap[key] = &product.DockerAnalyzer{
+					Linter: linter,
+					Image:  linter.Image(),
+				}
+				analyzersList = append(analyzersList, key)
 			}
 		}
-		analyzersMap[product.Image(a)+" (Docker)"] = product.Image(a)
-		analyzersList = append(analyzersList, product.Image(a)+" (Docker)")
+		dockerKey := linter.PresentableName + " (Docker)"
+		analyzersMap[dockerKey] = &product.NativeAnalyzer{
+			Linter: linter,
+			Ide:    linter.ProductCode,
+		}
+		analyzersList = append(analyzersList, dockerKey)
 	}
 	return analyzersMap, analyzersList
 }

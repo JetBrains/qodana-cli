@@ -41,7 +41,7 @@ func TestQodanaOptions_guessProduct(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(
 			tt.name, func(t *testing.T) {
-				if got := product.GuessProductCode(tt.ide, tt.linter); got != tt.expected {
+				if got := product.GuessLinter(tt.ide, tt.linter); got != tt.expected {
 					t.Errorf("QodanaOptions.guessProduct() = %v, want %v", got, tt.expected)
 				}
 			},

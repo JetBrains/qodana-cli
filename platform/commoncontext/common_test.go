@@ -44,66 +44,81 @@ func TestSelectAnalyzer(t *testing.T) {
 	tests := []struct {
 		name             string
 		pathMaker        func(string) error
-		analyzers        []string
+		analyzers        []product.Linter
 		interactive      bool
 		selectFunc       func([]string) string
-		expectedAnalyzer string
+		expectedAnalyzer product.Analyzer
 	}{
 		{
 			name:             "Empty Analyzers Non-interactive",
 			pathMaker:        nonNativePathMaker,
-			analyzers:        []string{},
+			analyzers:        []product.Linter{},
 			interactive:      false,
 			selectFunc:       nil,
-			expectedAnalyzer: "",
+			expectedAnalyzer: nil,
 		},
 		{
-			name:             "Multiple Analyzers Non-interactive",
-			pathMaker:        nonNativePathMaker,
-			analyzers:        product.AllCodes,
-			interactive:      false,
-			selectFunc:       nil,
-			expectedAnalyzer: product.Image(product.AllCodes[0]),
+			name:        "Multiple Analyzers Non-interactive",
+			pathMaker:   nonNativePathMaker,
+			analyzers:   product.AllLinters,
+			interactive: false,
+			selectFunc:  nil,
+			expectedAnalyzer: &product.DockerAnalyzer{
+				Linter: product.AllLinters[0],
+				Image:  product.AllLinters[0].Image(),
+			},
 		},
 		{
-			name:             "Single .NET Analyzer Interactive Non Native",
-			pathMaker:        nonNativePathMaker,
-			analyzers:        []string{product.QDNET},
-			interactive:      true,
-			selectFunc:       func(choices []string) string { return choices[0] },
-			expectedAnalyzer: product.Image(product.QDNET),
+			name:        "Single .NET Analyzer Interactive Non Native",
+			pathMaker:   nonNativePathMaker,
+			analyzers:   []product.Linter{product.DotNetLinter},
+			interactive: true,
+			selectFunc:  func(choices []string) string { return choices[0] },
+			expectedAnalyzer: &product.DockerAnalyzer{
+				Linter: product.DotNetLinter,
+				Image:  product.DotNetLinter.Image(),
+			},
 		},
 		{
-			name:             "Single .NET Analyzer Interactive Native",
-			pathMaker:        nativePathMaker,
-			analyzers:        []string{product.QDNET},
-			interactive:      true,
-			selectFunc:       func(choices []string) string { return choices[0] },
-			expectedAnalyzer: product.QDNET,
+			name:        "Single .NET Analyzer Interactive Native",
+			pathMaker:   nativePathMaker,
+			analyzers:   []product.Linter{product.DotNetLinter},
+			interactive: true,
+			selectFunc:  func(choices []string) string { return choices[0] },
+			expectedAnalyzer: &product.NativeAnalyzer{
+				Linter: product.DotNetLinter,
+				Ide:    product.DotNetLinter.ProductCode,
+			},
 		},
 		{
-			name:             "Single .NET Community Analyzer Interactive Native",
-			pathMaker:        nativePathMaker,
-			analyzers:        []string{product.QDNETC},
-			interactive:      true,
-			selectFunc:       func(choices []string) string { return choices[0] },
-			expectedAnalyzer: product.Image(product.QDNETC),
+			name:        "Single .NET Community Analyzer Interactive Native",
+			pathMaker:   nativePathMaker,
+			analyzers:   []product.Linter{product.DotNetCommunityLinter},
+			interactive: true,
+			selectFunc:  func(choices []string) string { return choices[0] },
+			expectedAnalyzer: &product.NativeAnalyzer{
+				Linter: product.DotNetCommunityLinter,
+				Ide:    product.DotNetCommunityLinter.ProductCode,
+			},
 		},
 		{
-			name:             "Multiple Analyzers Interactive",
-			pathMaker:        nonNativePathMaker,
-			analyzers:        product.AllCodes,
-			interactive:      true,
-			selectFunc:       func(choices []string) string { return choices[0] },
-			expectedAnalyzer: product.Image(product.AllCodes[0]),
+			name:        "Multiple Analyzers Interactive",
+			pathMaker:   nonNativePathMaker,
+			analyzers:   product.AllLinters,
+			interactive: true,
+			selectFunc:  func(choices []string) string { return choices[0] },
+			expectedAnalyzer: &product.DockerAnalyzer{
+				Linter: product.AllLinters[0],
+				Image:  product.AllLinters[0].Image(),
+			},
 		},
 		{
 			name:             "Empty Choice Interactive",
 			pathMaker:        nonNativePathMaker,
-			analyzers:        product.AllCodes,
+			analyzers:        product.AllLinters,
 			interactive:      true,
 			selectFunc:       func(choices []string) string { return "" },
-			expectedAnalyzer: "",
+			expectedAnalyzer: nil,
 		},
 	}
 
@@ -121,7 +136,8 @@ func TestSelectAnalyzer(t *testing.T) {
 					}
 				}(dir)
 				_ = test.pathMaker(dir)
-				got := selectAnalyzer(dir, test.analyzers, test.interactive, test.selectFunc)
+				got, err := selectAnalyzer(dir, test.analyzers, test.interactive, test.selectFunc)
+				assert.Equal(t, nil, err)
 				assert.Equal(t, test.expectedAnalyzer, got)
 			},
 		)

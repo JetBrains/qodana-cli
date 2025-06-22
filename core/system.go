@@ -152,7 +152,7 @@ func RunAnalysis(ctx context.Context, c corescan.Context) int {
 
 	installPlugins(c)
 	// this way of running needs to do bootstrap twice on different commits and will do it internally
-	if !corescan.IsScopedScenario(scenario) && c.Ide() != "" {
+	if !corescan.IsScopedScenario(scenario) && !c.Analyser().IsContainer() {
 		utils.Bootstrap(c.QodanaYamlConfig().Bootstrap, c.ProjectDir())
 	}
 	switch scenario {
@@ -256,18 +256,15 @@ func runWithFullHistory(ctx context.Context, c corescan.Context, startHash strin
 func runQodana(ctx context.Context, c corescan.Context) int {
 	var exitCode int
 	var err error
-	if c.Linter() != "" {
+	if c.Analyser().IsContainer() {
 		exitCode = runQodanaContainer(ctx, c)
-	} else if c.Ide() != "" {
+	} else {
 		nuget.UnsetNugetVariables() // TODO: get rid of it from 241 release
 		exitCode, err = runQodanaLocal(c)
 		if err != nil {
 			log.Fatal(err)
 		}
-	} else {
-		log.Fatal("No linter or IDE specified")
 	}
-
 	return exitCode
 }
 

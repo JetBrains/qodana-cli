@@ -19,6 +19,7 @@ package cmd
 import (
 	"github.com/JetBrains/qodana-cli/v2025/core"
 	"github.com/JetBrains/qodana-cli/v2025/platform/commoncontext"
+	"github.com/JetBrains/qodana-cli/v2025/platform/product"
 	"github.com/JetBrains/qodana-cli/v2025/platform/qdcontainer"
 	"github.com/JetBrains/qodana-cli/v2025/platform/qdenv"
 	"github.com/docker/docker/client"
@@ -47,7 +48,8 @@ func newPullCommand() *cobra.Command {
 				cliOptions.ProjectDir,
 				cliOptions.ConfigName,
 			)
-			if commonCtx.Ide != "" {
+			analyzer, ok := commonCtx.Analyzer.(*product.DockerAnalyzer)
+			if !ok {
 				log.Println("Native mode is used, skipping pull")
 			} else {
 				qdcontainer.PrepareContainerEnvSettings()
@@ -55,7 +57,7 @@ func newPullCommand() *cobra.Command {
 				if err != nil {
 					log.Fatal("couldn't connect to container engine ", err)
 				}
-				core.PullImage(containerClient, commonCtx.Linter)
+				core.PullImage(containerClient, analyzer.Image)
 			}
 		},
 	}

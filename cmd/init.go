@@ -20,7 +20,6 @@ import (
 	"fmt"
 	"github.com/JetBrains/qodana-cli/v2025/platform/commoncontext"
 	"github.com/JetBrains/qodana-cli/v2025/platform/msg"
-	"github.com/JetBrains/qodana-cli/v2025/platform/product"
 	"github.com/JetBrains/qodana-cli/v2025/platform/qdenv"
 	"github.com/JetBrains/qodana-cli/v2025/platform/qdyaml"
 	"github.com/JetBrains/qodana-cli/v2025/platform/tokenloader"
@@ -65,18 +64,14 @@ func newInitCommand() *cobra.Command {
 					return
 				}
 				token := qdenv.GetQodanaGlobalEnv(qdenv.QodanaToken)
-				analyzer := commoncontext.GetAnalyzer(cliOptions.ProjectDir, token)
+				analyzer := commoncontext.SelectAnalyzerForPath(cliOptions.ProjectDir, token)
 
-				qdyaml.WriteQodanaLinterToYamlFile(
+				writeQodanaLinterToYamlFile(
 					localQodanaYamlFullPath,
 					analyzer,
-					product.AllCodes,
 				)
-				if product.IsNativeAnalyzer(analyzer) {
-					ide = analyzer
-				} else {
-					linter = analyzer
-				}
+
+				checkToken(analyzer, cliOptions)
 			} else {
 				msg.EmptyMessage()
 				var analyzer string
@@ -97,21 +92,6 @@ func newInitCommand() *cobra.Command {
 				}
 			}
 			msg.PrintFile(localQodanaYamlFullPath)
-
-			commonCtx := commoncontext.Compute(
-				linter,
-				ide,
-				"",
-				"",
-				"",
-				qdenv.GetQodanaGlobalEnv(qdenv.QodanaToken),
-				false,
-				cliOptions.ProjectDir,
-				cliOptions.ConfigName,
-			)
-			if tokenloader.IsCloudTokenRequired(commonCtx, false) {
-				tokenloader.ValidateCloudToken(commonCtx, cliOptions.Force)
-			}
 		},
 	}
 	flags := cmd.Flags()
@@ -130,6 +110,31 @@ func newInitCommand() *cobra.Command {
 		"Set a custom configuration file instead of 'qodana.yaml'. Relative paths in the configuration will be based on the project directory.",
 	)
 	return cmd
+}
+
+func checkToken(analyser commoncontext.Analyzer, cliOptions *initOptions) {
+	commonCtx := commoncontext.Context{
+		Analyzer:    analyser,
+		ProjectDir:  cliOptions.ProjectDir,
+		QodanaToken: qdenv.GetQodanaGlobalEnv(qdenv.QodanaToken),
+	}
+	if tokenloader.IsCloudTokenRequired(commonCtx) {
+		tokenloader.ValidateCloudToken(commonCtx, cliOptions.Force)
+	}
+}
+
+// WriteQodanaLinterToYamlFile adds the linter to the qodana.yaml file.
+func writeQodanaLinterToYamlFile(qodanaYamlFullPath string, analyser commoncontext.Analyzer) {
+	q := qdyaml.LoadQodanaYamlByFullPath(qodanaYamlFullPath)
+	if q.Version == "" {
+		q.Version = "1.0"
+	}
+	q.Sort()
+	analyser.InitYaml(q)
+	err := q.WriteConfig(qodanaYamlFullPath)
+	if err != nil {
+		log.Fatalf("writeConfig: %v", err)
+	}
 }
 
 type initOptions struct {

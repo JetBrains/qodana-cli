@@ -18,19 +18,16 @@ package tokenloader
 
 import (
 	"fmt"
-	"os"
-	"strings"
-
 	"github.com/JetBrains/qodana-cli/v2025/cloud"
+	"github.com/JetBrains/qodana-cli/v2025/platform/commoncontext"
 	"github.com/JetBrains/qodana-cli/v2025/platform/git"
 	"github.com/JetBrains/qodana-cli/v2025/platform/msg"
-	"github.com/JetBrains/qodana-cli/v2025/platform/product"
 	"github.com/JetBrains/qodana-cli/v2025/platform/qdenv"
-	"github.com/JetBrains/qodana-cli/v2025/platform/strutil"
 	"github.com/JetBrains/qodana-cli/v2025/platform/utils"
 	"github.com/pterm/pterm"
 	log "github.com/sirupsen/logrus"
 	"github.com/zalando/go-keyring"
+	"os"
 )
 
 const keyringDefaultService = "qodana-cli"
@@ -39,39 +36,23 @@ type CloudTokenLoader interface {
 	GetQodanaToken() string
 
 	GetId() string
-	GetIde() string
-	GetLinter() string
+	GetAnalyzer() commoncontext.Analyzer
 
 	GetProjectDir() string
 	GetLogDir() string
 }
 
-func IsCloudTokenRequired(tokenLoader CloudTokenLoader, forceIsCommunityOrEap bool) bool {
+func IsCloudTokenRequired(tokenLoader CloudTokenLoader) bool {
 	if tokenLoader.GetQodanaToken() != "" || os.Getenv(qdenv.QodanaLicenseOnlyToken) != "" {
 		return true
 	}
 
-	var analyzer string
-	if tokenLoader.GetLinter() != "" {
-		analyzer = tokenLoader.GetLinter()
-	} else if tokenLoader.GetIde() != "" {
-		analyzer = tokenLoader.GetIde()
-	}
-
 	isQodanaLicenseSet := os.Getenv(qdenv.QodanaLicense) != ""
-	isFreeAnalyzer := strutil.Contains(append(product.AllSupportedFreeImages, product.AllSupportedFreeCodes...), analyzer)
-	isEapAnalyzer := strings.Contains(strutil.Lower(analyzer), "eap")
-	if isQodanaLicenseSet || isFreeAnalyzer || isEapAnalyzer || forceIsCommunityOrEap {
-		return false
-	}
+	analyzer := tokenLoader.GetAnalyzer()
+	isFreeAnalyzer := !analyzer.GetLinter().IsPaid
+	isEapAnalyzer := analyzer.IsEAP()
 
-	for _, e := range product.AllSupportedPaidCodes {
-		if strings.HasPrefix(product.Image(e), tokenLoader.GetLinter()) || strings.HasPrefix(e, tokenLoader.GetIde()) {
-			return true
-		}
-	}
-
-	return false
+	return !(isQodanaLicenseSet || isFreeAnalyzer || isEapAnalyzer)
 }
 
 func LoadCloudUploadToken(tokenLoader CloudTokenLoader, refresh bool, requiresToken bool, interactive bool) string {

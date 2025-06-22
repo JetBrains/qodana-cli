@@ -19,9 +19,18 @@ package product
 import (
 	"github.com/JetBrains/qodana-cli/v2025/platform/strutil"
 	"strings"
-
-	log "github.com/sirupsen/logrus"
 )
+
+type Linter struct {
+	Name            string
+	PresentableName string
+	ProductCode     string
+	DockerImage     string
+	SupportNative   bool
+	IsPaid          bool
+	SupportFixes    bool
+	EapOnly         bool
+}
 
 const (
 	ReleaseVersion = "2025.1"
@@ -50,6 +59,163 @@ const (
 )
 
 var (
+	UnknownLinter = Linter{}
+
+	JvmLinter = Linter{
+		PresentableName: "Qodana Ultimate for JVM",
+		Name:            "qodana-jvm",
+		ProductCode:     QDJVM,
+		DockerImage:     "jetbrains/qodana-jvm",
+		SupportNative:   true,
+		IsPaid:          true,
+		SupportFixes:    true,
+		EapOnly:         false,
+	}
+
+	JvmCommunityLinter = Linter{
+		PresentableName: "Qodana Community for JVM",
+		Name:            "qodana-jvm-community",
+		ProductCode:     QDJVMC,
+		DockerImage:     "jetbrains/qodana-jvm-community",
+		SupportNative:   true,
+		IsPaid:          false,
+		SupportFixes:    false,
+		EapOnly:         false,
+	}
+
+	AndroidLinter = Linter{
+		PresentableName: "Qodana for Android",
+		Name:            "qodana-android",
+		ProductCode:     QDAND,
+		DockerImage:     "jetbrains/qodana-android",
+		SupportNative:   false,
+		IsPaid:          true,
+		SupportFixes:    true,
+		EapOnly:         false,
+	}
+
+	AndroidCommunityLinter = Linter{
+		PresentableName: "Qodana Community for Android",
+		Name:            "qodana-jvm-community",
+		ProductCode:     QDJVMC,
+		DockerImage:     "jetbrains/qodana-jvm-android",
+		SupportNative:   true,
+		IsPaid:          false,
+		SupportFixes:    false,
+		EapOnly:         false,
+	}
+
+	PhpLinter = Linter{
+		PresentableName: "Qodana for PHP",
+		Name:            "qodana-php",
+		ProductCode:     QDPHP,
+		DockerImage:     "jetbrains/qodana-php",
+		SupportNative:   true,
+		IsPaid:          true,
+		SupportFixes:    true,
+		EapOnly:         false,
+	}
+
+	PythonLinter = Linter{
+		PresentableName: "Qodana for Python",
+		Name:            "qodana-python",
+		ProductCode:     QDPY,
+		DockerImage:     "jetbrains/qodana-python",
+		SupportNative:   true,
+		IsPaid:          true,
+		SupportFixes:    true,
+		EapOnly:         false,
+	}
+
+	PythonCommunityLinter = Linter{
+		PresentableName: "Qodana Community for Python",
+		Name:            "qodana-python-community",
+		ProductCode:     QDPYC,
+		DockerImage:     "jetbrains/qodana-python-community",
+		SupportNative:   true,
+		IsPaid:          false,
+		SupportFixes:    false,
+		EapOnly:         false,
+	}
+
+	JsLinter = Linter{
+		PresentableName: "Qodana for JS",
+		Name:            "qodana-js",
+		ProductCode:     QDJS,
+		DockerImage:     "jetbrains/qodana-js",
+		SupportNative:   true,
+		IsPaid:          true,
+		SupportFixes:    true,
+		EapOnly:         false,
+	}
+
+	DotNetLinter = Linter{
+		PresentableName: "Qodana for .NET",
+		Name:            "qodana-dotnet",
+		ProductCode:     QDNET,
+		DockerImage:     "jetbrains/qodana-dotnet",
+		SupportNative:   true,
+		IsPaid:          true,
+		SupportFixes:    true,
+		EapOnly:         false,
+	}
+
+	RubyLinter = Linter{
+		PresentableName: "Qodana for Ruby",
+		Name:            "qodana-ruby",
+		ProductCode:     QDRUBY,
+		DockerImage:     "jetbrains/qodana-ruby",
+		SupportNative:   false,
+		IsPaid:          true,
+		SupportFixes:    true,
+		EapOnly:         true,
+	}
+
+	CppLinter = Linter{
+		PresentableName: "Qodana for C/C++",
+		Name:            "qodana-cpp",
+		ProductCode:     QDCPP,
+		DockerImage:     "jetbrains/qodana-cpp",
+		SupportNative:   false,
+		IsPaid:          true,
+		SupportFixes:    false,
+		EapOnly:         true,
+	}
+
+	GoLinter = Linter{
+		PresentableName: "Qodana for Go",
+		Name:            "qodana-go",
+		ProductCode:     QDGO,
+		DockerImage:     "jetbrains/qodana-go",
+		SupportNative:   true,
+		IsPaid:          true,
+		SupportFixes:    true,
+		EapOnly:         false,
+	}
+
+	DotNetCommunityLinter = Linter{
+		PresentableName: "Qodana Community for .NET",
+		Name:            "qodana-dotnet-community",
+		ProductCode:     QDNETC,
+		DockerImage:     "jetbrains/qodana-dotnet-community",
+		SupportNative:   false,
+		IsPaid:          false,
+		SupportFixes:    false,
+		EapOnly:         true,
+	}
+
+	//unfinished
+	ClangLinter = Linter{
+		PresentableName: "Qodana Community for .NET",
+		Name:            "qodana-dotnet-community",
+		ProductCode:     QDNETC,
+		DockerImage:     "jetbrains/qodana-dotnet-community",
+		SupportNative:   false,
+		IsPaid:          false,
+		SupportFixes:    false,
+		EapOnly:         true,
+	}
+
 	VersionsMap = map[string]string{
 		ReleaseVer: "2025.1",
 		EapVer:     "2024.3",
@@ -71,104 +237,137 @@ var (
 		QDCPP:  "CL",
 	}
 
-	DockerImageMap = map[string]string{
-		QDAND:  "jetbrains/qodana-android:",
-		QDANDC: "jetbrains/qodana-jvm-android:",
-		QDPHP:  "jetbrains/qodana-php:",
-		QDJS:   "jetbrains/qodana-js:",
-		QDNET:  "jetbrains/qodana-dotnet:",
-		QDCPP:  "jetbrains/qodana-cpp:",
-		QDNETC: "jetbrains/qodana-cdnet:",
-		QDPY:   "jetbrains/qodana-python:",
-		QDPYC:  "jetbrains/qodana-python-community:",
-		QDGO:   "jetbrains/qodana-go:",
-		QDJVM:  "jetbrains/qodana-jvm:",
-		QDJVMC: "jetbrains/qodana-jvm-community:",
-		QDCLC:  "jetbrains/qodana-clang:",
-		QDRUBY: "jetbrains/qodana-ruby:",
-		//QDRST:  "jetbrains/qodana-rust:",
-	}
-
 	// AllNativeCodes is a list of all supported Qodana linters product codes
 	AllNativeCodes = []string{QDNET, QDJVM, QDJVMC, QDGO, QDPY, QDPYC, QDJS, QDPHP}
+
+	AllLinters = []Linter{
+		JvmLinter,
+		JvmCommunityLinter,
+		AndroidLinter,
+		AndroidCommunityLinter,
+		PhpLinter,
+		PythonLinter,
+		PythonCommunityLinter,
+		JsLinter,
+		DotNetLinter,
+		RubyLinter,
+		CppLinter,
+		GoLinter,
+		DotNetCommunityLinter,
+		ClangLinter,
+	}
 )
 
-func Image(code string) string {
-	if val, ok := DockerImageMap[code]; ok {
-		if //goland:noinspection GoBoolExpressions
-		!IsReleased {
-			return val + ReleaseVersion + "-eap"
-		}
-		if code == QDNETC || code == QDCLC || code == QDRUBY || code == QDCPP {
-			return val + ReleaseVersion + "-eap"
-		}
-		return val + ReleaseVersion
-	} else {
-		log.Fatal("Unknown code: " + code)
-		return ""
+func (linter *Linter) Image() string {
+	//goland:noinspection GoBoolExpressions
+	if !IsReleased || linter.EapOnly {
+		return linter.DockerImage + ":" + ReleaseVersion + "-eap"
 	}
+	return linter.DockerImage + ":" + ReleaseVersion
 }
 
-// LangsProductCodes is a map of languages to linters.
-var LangsProductCodes = map[string][]string{
-	"Java":              {QDJVM, QDJVMC, QDAND, QDANDC},
-	"Kotlin":            {QDJVM, QDJVMC, QDAND, QDANDC},
-	"PHP":               {QDPHP},
-	"Python":            {QDPY, QDPYC},
-	"JavaScript":        {QDJS},
-	"TypeScript":        {QDJS},
-	"Go":                {QDGO},
-	"C#":                {QDNET, QDNETC},
-	"F#":                {QDNET},
-	"Visual Basic .NET": {QDNET, QDNETC},
-	"C":                 {QDCPP, QDCLC, QDNET},
-	"C++":               {QDCPP, QDCLC, QDNET},
-	"Ruby":              {QDRUBY},
+// LangsToLinters is a map of languages to linters.
+var LangsToLinters = map[string][]Linter{
+	"Java": {
+		JvmLinter,
+		JvmCommunityLinter,
+		AndroidLinter,
+		AndroidCommunityLinter,
+	},
+	"Kotlin": {
+		JvmLinter,
+		JvmCommunityLinter,
+		AndroidLinter,
+		AndroidCommunityLinter,
+	},
+	"PHP":               {PhpLinter},
+	"Python":            {PythonLinter, PythonCommunityLinter},
+	"JavaScript":        {JsLinter},
+	"TypeScript":        {JsLinter},
+	"Go":                {GoLinter},
+	"C#":                {DotNetLinter, DotNetCommunityLinter},
+	"F#":                {DotNetLinter},
+	"Visual Basic .NET": {DotNetLinter, DotNetCommunityLinter},
+	"C":                 {CppLinter, ClangLinter, DotNetLinter},
+	"C++":               {CppLinter, ClangLinter, DotNetLinter},
+	"Ruby":              {RubyLinter},
 }
 
-var AllSupportedPaidCodes = []string{QDJVM, QDPHP, QDPY, QDJS, QDGO, QDNET, QDAND, QDCPP, QDRUBY}
-var AllSupportedFreeCodes = []string{QDJVMC, QDPYC, QDANDC, QDNETC, QDCLC}
+var AllSupportedPaidLinters = allLintersFiltered(AllLinters, func(linter *Linter) bool { return linter.IsPaid })
+var AllSupportedFreeLinters = allLintersFiltered(AllLinters, func(linter *Linter) bool { return !linter.IsPaid })
 
 var AllFixesSupportedProducts = []string{QDJVM, QDNET, QDPY, QDJS, QDPHP, QDGO, QDAND, QDRUBY}
 
-func allImages(codes []string) []string {
+func allImages(linters []Linter) []string {
 	var images []string
-	for _, code := range codes {
-		images = append(images, Image(code))
+	for _, linter := range linters {
+		images = append(images, linter.Image())
 	}
 	return images
 }
 
-var AllSupportedFreeImages = allImages(AllSupportedFreeCodes)
+func allLintersFiltered(linters []Linter, filter func(linter *Linter) bool) []Linter {
+	var filtered []Linter
+	for i := range linters {
+		if filter(&linters[i]) {
+			filtered = append(filtered, linters[i])
+		}
+	}
+	return filtered
+}
 
 // AllImages is a list of all supported linters.
-var AllImages = append(allImages(AllSupportedPaidCodes), AllSupportedFreeImages...)
+var AllImages = allImages(AllLinters)
 
-// AllCodes is a list of codes for all supported linters.
-var AllCodes = append(AllSupportedPaidCodes, AllSupportedFreeCodes...)
+// FindByImageName returns the Linter for a given Docker image name
+func FindByImageName(image string) Linter {
+	if image == "" {
+		return UnknownLinter
+	}
+	for _, linter := range AllLinters {
+		if strings.Contains(image, linter.DockerImage) {
+			return linter
+		}
+	}
+	return UnknownLinter
+}
 
-func GuessProductCode(ide string, linter string) string {
+// FindByProductCode returns the Linter for a given product code
+func FindByProductCode(product string) Linter {
+	if product == "" {
+		return UnknownLinter
+	}
+	for _, linter := range AllLinters {
+		if product == linter.ProductCode {
+			return linter
+		}
+	}
+	return UnknownLinter
+}
+
+// GuessLinter returns the Linter based on IDE product code or Docker image name
+func GuessLinter(ide string, linterParam string) Linter {
 	if ide != "" {
 		productCode := strings.TrimSuffix(ide, EapSuffix)
-		if _, ok := Products[productCode]; ok {
-			return productCode
+		for _, linter := range AllLinters {
+			if productCode == linter.ProductCode {
+				return linter
+			}
 		}
-		return ""
-	} else if linter != "" {
-		// if Linter contains registry.jetbrains.team/p/sa/containers/ or https://registry.jetbrains.team/p/sa/containers/
-		// then replace it with jetbrains/ and do the comparison
-		linter := strings.TrimPrefix(linter, "https://")
-		if strings.HasPrefix(linter, "registry.jetbrains.team/p/sa/containers/") {
-			linter = strings.TrimPrefix(linter, "registry.jetbrains.team/p/sa/containers/")
-			linter = "jetbrains/" + linter
+		return UnknownLinter
+	} else if linterParam != "" {
+		linterParam := strings.TrimPrefix(linterParam, "https://")
+		if strings.HasPrefix(linterParam, "registry.jetbrains.team/p/sa/containers/") {
+			linterParam = strings.TrimPrefix(linterParam, "registry.jetbrains.team/p/sa/containers/")
+			linterParam = "jetbrains/" + linterParam
 		}
-		for k, v := range DockerImageMap {
-			if strings.HasPrefix(linter, v) {
-				return k
+		for _, linter := range AllLinters {
+			if strings.HasPrefix(linterParam, linter.DockerImage) {
+				return linter
 			}
 		}
 	}
-	return ""
+	return UnknownLinter
 }
 
 func IsNativeAnalyzer(analyzer string) bool {

@@ -70,6 +70,10 @@ var (
 
 // runQodanaContainer runs the analysis in a Docker container from a Qodana image.
 func runQodanaContainer(ctx context.Context, c corescan.Context) int {
+	dockerAnalyzer, ok := c.Analyser().(*product.DockerAnalyzer)
+	if !ok {
+		log.Fatalf("Context is not a DockerAnalyzer")
+	}
 	docker := qdcontainer.GetContainerClient()
 	info, err := docker.Info(ctx)
 	if err != nil {
@@ -83,14 +87,15 @@ func runQodanaContainer(ctx context.Context, c corescan.Context) int {
 
 	scanStages := getScanStages()
 
+	image := dockerAnalyzer.Image
 	if c.SkipPull() {
-		checkImage(c.Linter())
+		checkImage(image)
 	} else {
-		PullImage(docker, c.Linter())
+		PullImage(docker, image)
 	}
 	progress, _ := msg.StartQodanaSpinner(scanStages[0])
 
-	dockerConfig := getDockerOptions(c)
+	dockerConfig := getDockerOptions(c, image)
 	log.Debugf("docker command to run: %s", generateDebugDockerRunCommand(dockerConfig))
 
 	msg.UpdateText(progress, scanStages[1])
@@ -105,7 +110,7 @@ func runQodanaContainer(ctx context.Context, c corescan.Context) int {
 	if progress != nil {
 		_ = progress.Stop()
 	}
-	checkImage(c.Linter())
+	checkImage(image)
 	return int(exitCode)
 }
 
@@ -274,7 +279,7 @@ func CheckContainerEngineMemory() {
 }
 
 // getDockerOptions returns qodana docker container options.
-func getDockerOptions(c corescan.Context) *backend.ContainerCreateConfig {
+func getDockerOptions(c corescan.Context, image string) *backend.ContainerCreateConfig {
 	cmdOpts := GetIdeArgs(c)
 
 	updateScanContextEnv := func(key string, value string) { c = c.WithEnvExtractedFromOsEnv(key, value) }
@@ -363,7 +368,7 @@ func getDockerOptions(c corescan.Context) *backend.ContainerCreateConfig {
 			log.Fatal("couldn't parse volume ", volume)
 		}
 	}
-	log.Debugf("image: %s", c.Linter())
+	log.Debugf("image: %s", c.Analyser())
 	log.Debugf("container name: %s", containerName)
 	log.Debugf("user: %s", c.User())
 	log.Debugf("volumes: %v", volumes)
@@ -391,7 +396,7 @@ func getDockerOptions(c corescan.Context) *backend.ContainerCreateConfig {
 	var securityOpt []string
 	var networkMode container.NetworkMode
 
-	if strings.Contains(c.Linter(), "dotnet") {
+	if strings.Contains(image, "dotnet") {
 		capAdd = []string{"SYS_PTRACE"}
 		securityOpt = []string{"seccomp=unconfined"}
 	}
@@ -415,7 +420,7 @@ func getDockerOptions(c corescan.Context) *backend.ContainerCreateConfig {
 	return &backend.ContainerCreateConfig{
 		Name: containerName,
 		Config: &container.Config{
-			Image:        c.Linter(),
+			Image:        image,
 			Cmd:          cmdOpts,
 			Tty:          msg.IsInteractive(),
 			AttachStdout: true,

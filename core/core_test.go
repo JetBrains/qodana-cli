@@ -935,7 +935,7 @@ func TestQodanaOptions_RequiresToken(t *testing.T) {
 		},
 		{
 			"QDPYC docker",
-			product.Image(product.QDPYC),
+			product.QodanaPythonLinter.Image(),
 			"",
 			false,
 		},
@@ -980,8 +980,7 @@ func TestQodanaOptions_RequiresToken(t *testing.T) {
 				} else if tt.name == qdenv.QodanaLicense {
 					t.Setenv(qdenv.QodanaLicense, "test")
 				}
-				emptyProd := product.Product{}
-				result := tokenloader.IsCloudTokenRequired(initArgs, emptyProd.IsEap || emptyProd.IsCommunity())
+				result := tokenloader.IsCloudTokenRequired(initArgs)
 				assert.Equal(t, tt.expected, result)
 			},
 		)

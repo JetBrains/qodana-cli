@@ -27,8 +27,8 @@ import (
 	"sync"
 )
 
-func isNativeRequired(projectDir string, ide string) bool {
-	if ide != product.QDNET {
+func isNativeRequired(projectDir string, linter product.Linter) bool {
+	if linter != product.DotNetLinter {
 		return false
 	}
 	return containsUnityProjects(projectDir) || containsDotNetFxProjects(projectDir)

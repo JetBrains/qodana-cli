@@ -20,6 +20,7 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"fmt"
+	"github.com/JetBrains/qodana-cli/v2025/platform/commoncontext"
 	"github.com/JetBrains/qodana-cli/v2025/platform/msg"
 	"github.com/JetBrains/qodana-cli/v2025/platform/product"
 	"github.com/JetBrains/qodana-cli/v2025/platform/strutil"
@@ -37,18 +38,14 @@ import (
 )
 
 func downloadAndInstallIDE(
-	ide string,
-	linter string,
+	analyser commoncontext.Analyzer,
 	baseDir string,
 	spinner *pterm.SpinnerPrinter,
 ) string {
-	if ide == "" || product.GuessProductCode(ide, linter) == "" {
-		log.Fatalf("Product code is not defined or not supported, exiting")
-	}
 	var ideUrl string
 	checkSumUrl := ""
 
-	releaseDownloadInfo := getIde(ide)
+	releaseDownloadInfo := getIde(analyser)
 	if releaseDownloadInfo == nil {
 		log.Fatalf("Error while obtaining the URL for the supplied IDE, exiting")
 	} else {
@@ -124,31 +121,32 @@ func downloadAndInstallIDE(
 }
 
 //goland:noinspection GoBoolExpressions
-func getIde(productCode string) *ReleaseDownloadInfo {
-	originalCode := productCode
+func getIde(analyzer commoncontext.Analyzer) *ReleaseDownloadInfo {
+
 	dist := product.ReleaseVer
-	if strings.HasSuffix(productCode, product.EapSuffix) {
+	if analyzer.IsEAP() {
 		dist = product.EapVer
-		productCode = strings.TrimSuffix(productCode, product.EapSuffix)
 	}
-
-	if _, ok := product.Products[productCode]; !ok {
-		msg.ErrorMessage("Product code doesnt exist: ", originalCode)
+	name := analyzer.GetLinter().Name
+	if !analyzer.GetLinter().SupportNative {
+		msg.ErrorMessage("Native mode for linter %s is not supported", name)
 		return nil
 	}
 
-	if !strutil.Contains(product.AllNativeCodes, productCode) {
-		msg.ErrorMessage("Product code is not supported: ", originalCode)
+	linterProperties := product.FindLinterProperties(analyzer.GetLinter())
+	if linterProperties == nil {
+		msg.ErrorMessage("Native mode for linter %s is not supported", name)
 		return nil
 	}
 
-	prod, err := GetProductByCode(product.Products[productCode])
+	feedProductCode := linterProperties.FeedProductCode
+	prod, err := GetProductByCode(feedProductCode)
 	if err != nil {
 		msg.ErrorMessage("Error while obtaining the product info: " + err.Error())
 		return nil
 	}
 	if prod == nil {
-		msg.ErrorMessage("Product info is not found for code: ", originalCode)
+		msg.ErrorMessage("Product info is not found for code: ", feedProductCode)
 		return nil
 	}
 
@@ -197,14 +195,14 @@ func getIde(productCode string) *ReleaseDownloadInfo {
 	if !ok {
 		msg.ErrorMessage(
 			"%s %s (%s) is not available or not supported for the current platform",
-			productCode,
+			feedProductCode,
 			*release.Version,
 			dist,
 		)
 		return nil
 	}
 
-	log.Debug(fmt.Sprintf("%s %s %s %s URL: %s", productCode, dist, *release.Version, downloadType, res.Link))
+	log.Debug(fmt.Sprintf("%s %s %s %s URL: %s", feedProductCode, dist, *release.Version, downloadType, res.Link))
 	return &res
 }
 

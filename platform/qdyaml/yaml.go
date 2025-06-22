@@ -428,24 +428,6 @@ func (q *QodanaYaml) IsDotNet() bool {
 	)
 }
 
-// WriteQodanaLinterToYamlFile adds the linter to the qodana.yaml file.
-func WriteQodanaLinterToYamlFile(qodanaYamlFullPath string, linter string, allProductCodes []string) {
-	q := LoadQodanaYamlByFullPath(qodanaYamlFullPath)
-	if q.Version == "" {
-		q.Version = "1.0"
-	}
-	q.Sort()
-	if strutil.Contains(allProductCodes, linter) {
-		q.Ide = linter
-	} else {
-		q.Linter = linter
-	}
-	err := q.WriteConfig(qodanaYamlFullPath)
-	if err != nil {
-		log.Fatalf("writeConfig: %v", err)
-	}
-}
-
 // SetQodanaDotNet adds the .NET configuration to the qodana.yaml file.
 func SetQodanaDotNet(qodanaYamlFullPath string, dotNet *DotNet) bool {
 	q := LoadQodanaYamlByFullPath(qodanaYamlFullPath)
