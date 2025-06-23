@@ -75,7 +75,7 @@ func TestCliArgs(t *testing.T) {
 				ProjectDir:            projectDir,
 				CacheDir:              cacheDir,
 				ResultsDir:            resultsDir,
-				Linter:                "jetbrains/qodana-jvm:latest",
+				Analyser:              product.JvmLinter.DockerAnalyzer(),
 				SourceDirectory:       "./src",
 				DisableSanity:         true,
 				RunPromo:              "true",
@@ -130,7 +130,7 @@ func TestCliArgs(t *testing.T) {
 				ResultsDir:  resultsDir,
 				ProfileName: "separated words",
 				Property:    []string{"qodana.format=SARIF_AND_PROJECT_STRUCTURE", "qodana.variable.format=JSON"},
-				Ide:         prod.Home,
+				Analyser:    product.JvmLinter.NativeAnalyzer(),
 			},
 			res: []string{
 				filepath.FromSlash("/opt/idea/bin/idea.sh"),
@@ -150,6 +150,7 @@ func TestCliArgs(t *testing.T) {
 				CacheDir:      cacheDir,
 				ResultsDir:    resultsDir,
 				FixesStrategy: "apply",
+				Analyser:      product.JvmLinter.DockerAnalyzer(),
 			},
 			res: []string{
 				filepath.FromSlash("/opt/idea/bin/idea.sh"),
@@ -168,6 +169,7 @@ func TestCliArgs(t *testing.T) {
 				CacheDir:      cacheDir,
 				ResultsDir:    resultsDir,
 				FixesStrategy: "cleanup",
+				Analyser:      product.JvmLinter.DockerAnalyzer(),
 			},
 			res: []string{
 				filepath.FromSlash("/opt/idea/bin/idea.sh"),
@@ -186,7 +188,7 @@ func TestCliArgs(t *testing.T) {
 				CacheDir:      cacheDir,
 				ResultsDir:    resultsDir,
 				FixesStrategy: "apply",
-				Ide:           "/opt/idea/233",
+				Analyser:      product.JvmLinter.NativeAnalyzer(),
 			},
 			res: []string{
 				filepath.FromSlash("/opt/idea/bin/idea.sh"),
@@ -205,7 +207,7 @@ func TestCliArgs(t *testing.T) {
 				CacheDir:      cacheDir,
 				ResultsDir:    resultsDir,
 				FixesStrategy: "cleanup",
-				Ide:           "/opt/idea/233",
+				Analyser:      product.JvmLinter.NativeAnalyzer(),
 			},
 			res: []string{
 				filepath.FromSlash("/opt/idea/bin/idea.sh"),
@@ -224,7 +226,7 @@ func TestCliArgs(t *testing.T) {
 				CacheDir:      cacheDir,
 				ResultsDir:    resultsDir,
 				FixesStrategy: "cleanup",
-				Ide:           "/opt/idea/243",
+				Analyser:      product.JvmLinter.NativeAnalyzer(),
 			},
 			res: []string{
 				filepath.FromSlash("/opt/idea/bin/idea.sh"),
@@ -243,7 +245,7 @@ func TestCliArgs(t *testing.T) {
 				ResultsDir:                resultsDir,
 				FixesStrategy:             "cleanup",
 				EffectiveConfigurationDir: "/qdconfig",
-				Ide:                       "/opt/idea/251",
+				Analyser:                  product.JvmLinter.NativeAnalyzer(),
 			},
 			res: []string{
 				filepath.FromSlash("/opt/idea/bin/idea.sh"),
@@ -272,7 +274,8 @@ func TestCliArgs(t *testing.T) {
 
 func TestScanFlags_Script(t *testing.T) {
 	b := corescan.ContextBuilder{
-		Script: "custom-script:parameters",
+		Script:   "custom-script:parameters",
+		Analyser: product.PhpLinter.NativeAnalyzer(),
 	}
 	expected := []string{
 		"--script",
@@ -294,7 +297,7 @@ func TestLegacyFixStrategies(t *testing.T) {
 			name: "apply fixes for a container",
 			c: corescan.ContextBuilder{
 				ApplyFixes: true,
-				Ide:        "",
+				Analyser:   product.PhpLinter.DockerAnalyzer(),
 			},
 			expected: []string{
 				"--fixes-strategy",
@@ -304,8 +307,8 @@ func TestLegacyFixStrategies(t *testing.T) {
 		{
 			name: "cleanup for a container",
 			c: corescan.ContextBuilder{
-				Cleanup: true,
-				Ide:     "",
+				Cleanup:  true,
+				Analyser: product.PhpLinter.DockerAnalyzer(),
 			},
 			expected: []string{
 				"--fixes-strategy",
@@ -316,7 +319,7 @@ func TestLegacyFixStrategies(t *testing.T) {
 			name: "apply fixes for new IDE",
 			c: corescan.ContextBuilder{
 				ApplyFixes: true,
-				Ide:        "QDPHP",
+				Analyser:   product.PhpLinter.NativeAnalyzer(),
 			},
 			expected: []string{
 				"--apply-fixes",
@@ -325,8 +328,8 @@ func TestLegacyFixStrategies(t *testing.T) {
 		{
 			name: "fixes for unavailable IDE",
 			c: corescan.ContextBuilder{
-				Cleanup: true,
-				Ide:     "QDCPP",
+				Cleanup:  true,
+				Analyser: product.CppLinter.NativeAnalyzer(),
 			},
 			expected: []string{},
 		},
@@ -336,7 +339,7 @@ func TestLegacyFixStrategies(t *testing.T) {
 		t.Run(
 			tt.name, func(t *testing.T) {
 				c := tt.c
-				if c.Ide == "QDPHP" {
+				if c.Analyser.GetLinter().ProductCode == "QDPHP" {
 					c.Prod.Version = "2023.3"
 				} else {
 					c.Prod.Version = "2023.2"
@@ -769,8 +772,9 @@ func Test_ideaExitCode(t *testing.T) {
 
 func TestSetupLicense(t *testing.T) {
 	prod := product.Product{
-		Code:  "QDJVM",
-		IsEap: false,
+		Code:     "QDJVM",
+		IsEap:    false,
+		Analyzer: product.JvmLinter.NativeAnalyzer(),
 	}
 	for _, tc := range []struct {
 		name            string
@@ -923,19 +927,19 @@ func TestQodanaOptions_RequiresToken(t *testing.T) {
 	}{
 		{
 			qdenv.QodanaToken,
-			"",
+			product.PythonLinter.Image(),
 			"",
 			true,
 		},
 		{
 			qdenv.QodanaLicense,
-			"",
+			product.PythonLinter.Image(),
 			"",
 			false,
 		},
 		{
 			"QDPYC docker",
-			product.QodanaPythonLinter.Image(),
+			product.PythonCommunityLinter.Image(),
 			"",
 			false,
 		},
@@ -961,18 +965,7 @@ func TestQodanaOptions_RequiresToken(t *testing.T) {
 
 		t.Run(
 			tt.name, func(t *testing.T) {
-				initArgs := commoncontext.Context{
-					Linter:          tt.linter,
-					Ide:             tt.ide,
-					IsClearCache:    false,
-					CacheDir:        "",
-					ProjectDir:      "",
-					ResultsDir:      "",
-					ReportDir:       "",
-					QodanaSystemDir: "",
-					Id:              "",
-					QodanaToken:     "",
-				}
+				initArgs := commoncontext.Compute(tt.linter, tt.ide, "", "", "", "", false, "", "")
 
 				if tt.name == qdenv.QodanaToken {
 					t.Setenv(qdenv.QodanaToken, "test")
@@ -1016,7 +1009,6 @@ func Test_Properties(t *testing.T) {
 	resultsDir := tmpDir
 	cacheDir := tmpDir
 
-	t.Setenv(qdenv.QodanaDistEnv, projectDir)
 	t.Setenv(qdenv.QodanaConfEnv, projectDir)
 	t.Setenv(qdenv.QodanaDockerEnv, "true")
 	t.Setenv("DEVICEID", "FAKE")

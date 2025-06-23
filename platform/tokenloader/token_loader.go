@@ -19,9 +19,9 @@ package tokenloader
 import (
 	"fmt"
 	"github.com/JetBrains/qodana-cli/v2025/cloud"
-	"github.com/JetBrains/qodana-cli/v2025/platform/commoncontext"
 	"github.com/JetBrains/qodana-cli/v2025/platform/git"
 	"github.com/JetBrains/qodana-cli/v2025/platform/msg"
+	"github.com/JetBrains/qodana-cli/v2025/platform/product"
 	"github.com/JetBrains/qodana-cli/v2025/platform/qdenv"
 	"github.com/JetBrains/qodana-cli/v2025/platform/utils"
 	"github.com/pterm/pterm"
@@ -36,7 +36,7 @@ type CloudTokenLoader interface {
 	GetQodanaToken() string
 
 	GetId() string
-	GetAnalyzer() commoncontext.Analyzer
+	GetAnalyzer() product.Analyzer
 
 	GetProjectDir() string
 	GetLogDir() string

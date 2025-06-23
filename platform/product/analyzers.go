@@ -28,7 +28,7 @@ type Analyzer interface {
 	IsEAP() bool
 	Name() string
 	DownloadDist() bool
-	InitYaml(yaml qdyaml.QodanaYaml)
+	InitYaml(yaml qdyaml.QodanaYaml) qdyaml.QodanaYaml
 }
 
 type DockerAnalyzer struct {
@@ -56,8 +56,9 @@ func (a *DockerAnalyzer) DownloadDist() bool {
 	return false
 }
 
-func (a *DockerAnalyzer) InitYaml(yaml qdyaml.QodanaYaml) {
+func (a *DockerAnalyzer) InitYaml(yaml qdyaml.QodanaYaml) qdyaml.QodanaYaml {
 	yaml.Linter = a.Image
+	return yaml
 }
 
 type NativeAnalyzer struct {
@@ -85,8 +86,9 @@ func (a *NativeAnalyzer) DownloadDist() bool {
 	return true
 }
 
-func (a *NativeAnalyzer) InitYaml(yaml qdyaml.QodanaYaml) {
+func (a *NativeAnalyzer) InitYaml(yaml qdyaml.QodanaYaml) qdyaml.QodanaYaml {
 	yaml.Ide = a.Ide
+	return yaml
 }
 
 type PathNativeAnalyzer struct {
@@ -115,6 +117,7 @@ func (a *PathNativeAnalyzer) DownloadDist() bool {
 	return false
 }
 
-func (a *PathNativeAnalyzer) InitYaml(yaml qdyaml.QodanaYaml) {
+func (a *PathNativeAnalyzer) InitYaml(_ qdyaml.QodanaYaml) qdyaml.QodanaYaml {
 	log.Fatalf("Customised path can't be stored to Yaml")
+	return qdyaml.QodanaYaml{}
 }

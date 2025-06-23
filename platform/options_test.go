@@ -18,6 +18,7 @@ package platform
 
 import (
 	"github.com/JetBrains/qodana-cli/v2025/platform/commoncontext"
+	"github.com/JetBrains/qodana-cli/v2025/platform/product"
 	"github.com/stretchr/testify/assert"
 	"os"
 	"testing"
@@ -71,8 +72,8 @@ func TestFetchAnalyzerSettings(t *testing.T) {
 				projectDir,
 				"",
 			)
-
-			assert.Equal(t, expectedIde, commonCtx.Ide)
+			expected := &product.NativeAnalyzer{Linter: product.UnknownLinter, Ide: expectedIde}
+			assert.Equal(t, expected, commonCtx.Analyzer)
 
 			if err := cleanupTest(projectDir); err != nil {
 				t.Fatal(err)
@@ -104,7 +105,8 @@ func TestFetchAnalyzerSettings(t *testing.T) {
 				"",
 			)
 
-			assert.Equal(t, expectedIde, commonCtx.Ide)
+			expected := &product.NativeAnalyzer{Linter: product.UnknownLinter, Ide: expectedIde}
+			assert.Equal(t, expected, commonCtx.Analyzer)
 
 			if err := cleanupTest(projectDir); err != nil {
 				t.Fatal(err)
@@ -136,7 +138,8 @@ func TestFetchAnalyzerSettings(t *testing.T) {
 				fileName,
 			)
 
-			assert.Equal(t, expectedIde, commonCtx.Ide)
+			expected := &product.NativeAnalyzer{Linter: product.UnknownLinter, Ide: expectedIde}
+			assert.Equal(t, expected, commonCtx.Analyzer)
 
 			if err := cleanupTest(projectDir); err != nil {
 				t.Fatal(err)

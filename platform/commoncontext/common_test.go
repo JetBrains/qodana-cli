@@ -96,9 +96,9 @@ func TestSelectAnalyzer(t *testing.T) {
 			analyzers:   []product.Linter{product.DotNetCommunityLinter},
 			interactive: true,
 			selectFunc:  func(choices []string) string { return choices[0] },
-			expectedAnalyzer: &product.NativeAnalyzer{
+			expectedAnalyzer: &product.DockerAnalyzer{
 				Linter: product.DotNetCommunityLinter,
-				Ide:    product.DotNetCommunityLinter.ProductCode,
+				Image:  product.DotNetCommunityLinter.Image(),
 			},
 		},
 		{
@@ -136,8 +136,7 @@ func TestSelectAnalyzer(t *testing.T) {
 					}
 				}(dir)
 				_ = test.pathMaker(dir)
-				got, err := selectAnalyzer(dir, test.analyzers, test.interactive, test.selectFunc)
-				assert.Equal(t, nil, err)
+				got := selectAnalyzer(dir, test.analyzers, test.interactive, test.selectFunc)
 				assert.Equal(t, test.expectedAnalyzer, got)
 			},
 		)

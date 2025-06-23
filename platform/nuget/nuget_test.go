@@ -18,7 +18,6 @@ package nuget
 
 import (
 	"bufio"
-	"github.com/JetBrains/qodana-cli/v2025/platform/product"
 	"github.com/JetBrains/qodana-cli/v2025/platform/qdenv"
 	"os"
 	"path/filepath"
@@ -133,39 +132,5 @@ func TestPrepareNugetConfig(t *testing.T) {
 	text = strings.TrimSuffix(text, "\n")
 	if text != expected {
 		t.Fatalf("got:\n%s\n\nwant:\n%s", text, expected)
-	}
-}
-
-func TestIsNonNativeDotnetLinter(t *testing.T) {
-	testCases := []struct {
-		name     string
-		expected bool
-	}{
-		{
-			name:     "",
-			expected: false,
-		},
-		{
-			name:     product.DockerImageMap[product.QDNET],
-			expected: true,
-		},
-		{
-			name:     product.DockerImageMap[product.QDNETC],
-			expected: true,
-		},
-		{
-			name:     product.DockerImageMap[product.QDAND],
-			expected: false,
-		},
-	}
-	for _, test := range testCases {
-		t.Run(
-			test.name, func(t *testing.T) {
-				result := isNonNativeDotnetLinter(test.name)
-				if result != test.expected {
-					t.Errorf("got/want mismatch, got %v, want %v", result, test.expected)
-				}
-			},
-		)
 	}
 }
