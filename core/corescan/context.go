@@ -358,6 +358,8 @@ func (c Context) DetermineRunScenario(hasStartHash bool) RunScenario {
 		return RunScenarioDefault
 	case c.ForceLocalChangesScript():
 		return RunScenarioLocalChanges
+	case c.Ide() == "":
+		return RunScenarioScoped
 	case c.ReversePrAnalysis():
 		return RunScenarioReversedScoped
 	default:

@@ -17,6 +17,7 @@
 package core
 
 import (
+	"context"
 	"github.com/JetBrains/qodana-cli/v2025/core/corescan"
 	"github.com/JetBrains/qodana-cli/v2025/platform"
 	"github.com/JetBrains/qodana-cli/v2025/platform/product"
@@ -26,6 +27,18 @@ import (
 	"strings"
 	"testing"
 )
+
+type MockAnalysisRunner struct {
+	MockFunc func(hash string, c corescan.Context) (bool, int)
+}
+
+func NewMockAnalysisRunner(mockFunc func(hash string, c corescan.Context) (bool, int)) AnalysisRunner {
+	return &MockAnalysisRunner{MockFunc: mockFunc}
+}
+
+func (r *MockAnalysisRunner) RunFunc(hash string, _ context.Context, c corescan.Context) (bool, int) {
+	return r.MockFunc(hash, c)
+}
 
 func TestScopedScript(t *testing.T) {
 	testCases := []struct {
@@ -84,7 +97,7 @@ func TestScopedScript(t *testing.T) {
 				resultsDir := filepath.Join(tempDir, "results")
 				logDir := filepath.Join(resultsDir, "log")
 
-				ctx := corescan.ContextBuilder{
+				c := corescan.ContextBuilder{
 					ProjectDir: projectDir,
 					ResultsDir: resultsDir,
 					LogDir:     logDir,
@@ -97,22 +110,17 @@ func TestScopedScript(t *testing.T) {
 				hashes := []string{}
 				params := [][]string{}
 
-				runFunc := func(hash string, c corescan.Context) (bool, int) {
-					calls++
-					hashes = append(hashes, hash)
-					params = append(params, c.Property())
-					_ = os.MkdirAll(c.ResultsDir(), 0755)
-					return tc.runFunc(hash, c)
-				}
-
-				scopeAnalysisFunc := scopeAnalysis()
-				exitCode := scopeAnalysisFunc(
-					"startHash",
-					"endHash",
-					"scope",
-					ctx,
-					runFunc,
+				runner := NewMockAnalysisRunner(
+					func(hash string, c corescan.Context) (bool, int) {
+						calls++
+						hashes = append(hashes, hash)
+						params = append(params, c.Property())
+						_ = os.MkdirAll(c.ResultsDir(), 0755)
+						return tc.runFunc(hash, c)
+					},
 				)
+				sequenceRunner := &ScopeSequenceRunner{}
+				exitCode := sequenceRunner.RunSequence("startHash", "endHash", "scope", context.Background(), c, runner)
 
 				expectedParams := tc.expectedParamsFunc(resultsDir)
 				assert.Equal(t, tc.expectedCalls, calls, "Expected %d calls", tc.expectedCalls)
@@ -356,7 +364,7 @@ func TestReverseScopedScript(t *testing.T) {
 				resultsDir := filepath.Join(tempDir, "results")
 				logDir := filepath.Join(resultsDir, "log")
 
-				ctx := corescan.ContextBuilder{
+				c := corescan.ContextBuilder{
 					ProjectDir: projectDir,
 					ResultsDir: resultsDir,
 					LogDir:     logDir,
@@ -374,27 +382,22 @@ func TestReverseScopedScript(t *testing.T) {
 				scripts := []string{}
 				firstDir := ""
 
-				runFunc := func(hash string, c corescan.Context) (bool, int) {
-					calls++
-					scripts = append(scripts, normalizeScriptForTesting(c.Script()))
-					hashes = append(hashes, hash)
-					params = append(params, c.Property())
-					if calls == 1 {
-						firstDir = c.ResultsDir()
-					}
-					_ = os.MkdirAll(c.ResultsDir(), 0755)
-					tc.createShortSarif(c.ResultsDir(), calls)
-					return tc.runFunc(hash, c)
-				}
-
-				scopeAnalysisFunc := reverseScopeAnalysis()
-				exitCode := scopeAnalysisFunc(
-					"startHash",
-					"endHash",
-					"scope",
-					ctx,
-					runFunc,
+				runner := NewMockAnalysisRunner(
+					func(hash string, c corescan.Context) (bool, int) {
+						calls++
+						scripts = append(scripts, normalizeScriptForTesting(c.Script()))
+						hashes = append(hashes, hash)
+						params = append(params, c.Property())
+						if calls == 1 {
+							firstDir = c.ResultsDir()
+						}
+						_ = os.MkdirAll(c.ResultsDir(), 0755)
+						tc.createShortSarif(c.ResultsDir(), calls)
+						return tc.runFunc(hash, c)
+					},
 				)
+				sequenceRunner := &ReverseScopeSequenceRunner{}
+				exitCode := sequenceRunner.RunSequence("startHash", "endHash", "scope", context.Background(), c, runner)
 
 				expectedParams := tc.expectedParamsFunc(firstDir)
 				assert.Equal(t, tc.expectedCalls, calls, "Expected %d calls", tc.expectedCalls)
