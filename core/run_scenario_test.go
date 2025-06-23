@@ -41,6 +41,7 @@ func TestQodanaOptions_determineRunScenario(t *testing.T) {
 					Prod: product.Product{
 						Code: product.QDNET,
 					},
+					Ide: "smth",
 				},
 				hasStartHash: true,
 			},
@@ -54,6 +55,7 @@ func TestQodanaOptions_determineRunScenario(t *testing.T) {
 					Prod: product.Product{
 						Code: product.QDJVM,
 					},
+					Ide: "smth",
 				},
 				hasStartHash: true,
 			},
@@ -66,6 +68,7 @@ func TestQodanaOptions_determineRunScenario(t *testing.T) {
 					Prod: product.Product{
 						Code: product.QDNET,
 					},
+					Ide: "smth",
 				},
 				hasStartHash: false,
 			},
@@ -78,6 +81,7 @@ func TestQodanaOptions_determineRunScenario(t *testing.T) {
 					Prod: product.Product{
 						Code: product.QDJVM,
 					},
+					Ide: "smth",
 				},
 				hasStartHash: false,
 			},
@@ -90,6 +94,7 @@ func TestQodanaOptions_determineRunScenario(t *testing.T) {
 					Prod: product.Product{
 						Code: product.QDNET,
 					},
+					Ide: "smth",
 				},
 				hasStartHash: true,
 			},
@@ -102,6 +107,7 @@ func TestQodanaOptions_determineRunScenario(t *testing.T) {
 					Prod: product.Product{
 						Code: product.QDJVM,
 					},
+					Ide: "smth",
 				},
 				hasStartHash: true,
 			},
@@ -114,6 +120,7 @@ func TestQodanaOptions_determineRunScenario(t *testing.T) {
 					Prod: product.Product{
 						Code: product.QDJVM,
 					},
+					Ide:               "smth",
 					ReversePrAnalysis: true,
 				},
 				hasStartHash: true,
@@ -128,10 +135,36 @@ func TestQodanaOptions_determineRunScenario(t *testing.T) {
 					Prod: product.Product{
 						Code: product.QDJVM,
 					},
+					Ide: "smth",
 				},
 				hasStartHash: true,
 			},
 			want: corescan.RunScenarioLocalChanges,
+		},
+		{
+			name: "with start hash but no IDE (container to be launched)",
+			args: args{
+				c: corescan.ContextBuilder{
+					Prod: product.Product{
+						Code: product.QDJVM,
+					},
+				},
+				hasStartHash: true,
+			},
+			want: corescan.RunScenarioDefault,
+		},
+		{
+			name: "with reversed scope but no IDE (container to be launched)",
+			args: args{
+				c: corescan.ContextBuilder{
+					Prod: product.Product{
+						Code: product.QDJVM,
+					},
+					ReversePrAnalysis: true,
+				},
+				hasStartHash: true,
+			},
+			want: corescan.RunScenarioDefault,
 		},
 	}
 	for _, tt := range tests {
