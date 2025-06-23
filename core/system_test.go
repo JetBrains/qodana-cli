@@ -107,8 +107,8 @@ func TestScopedScript(t *testing.T) {
 				}.Build()
 
 				calls := 0
-				hashes := []string{}
-				params := [][]string{}
+				var hashes []string
+				var params [][]string
 
 				runner := NewMockAnalysisRunner(
 					func(hash string, c corescan.Context) (bool, int) {
@@ -377,9 +377,9 @@ func TestReverseScopedScript(t *testing.T) {
 				}.Build()
 
 				calls := 0
-				hashes := []string{}
-				params := [][]string{}
-				scripts := []string{}
+				var hashes []string
+				var params [][]string
+				var scripts []string
 				firstDir := ""
 
 				runner := NewMockAnalysisRunner(
