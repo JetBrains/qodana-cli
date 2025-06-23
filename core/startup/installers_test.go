@@ -27,13 +27,13 @@ import (
 
 func TestGetIde(t *testing.T) {
 	//os.Setenv("QD_PRODUCT_INTERNAL_FEED", "https://data.services.jetbrains.com/products")
-	for _, installer := range product.AllNativeCodes {
-		ide := getIde(installer)
+	for _, linter := range product.AllNativeLinters {
+		ide := getIde(&product.NativeAnalyzer{Linter: linter, Ide: linter.ProductCode})
 		if ide == nil {
 			t.Fail()
 		}
 		if runtime.GOOS != "darwin" {
-			eap := getIde(installer + "-EAP")
+			eap := getIde(&product.NativeAnalyzer{Linter: linter, Ide: linter.ProductCode + "-EAP"})
 			if eap == nil {
 				t.Fail()
 			}
@@ -42,13 +42,13 @@ func TestGetIde(t *testing.T) {
 }
 
 func TestDownloadAndInstallIDE(t *testing.T) {
-	ides := []string{"QDGO"}
-	for _, ide := range ides {
-		DownloadAndInstallIDE(ide, t)
+	linters := []product.Linter{product.GoLinter}
+	for _, linter := range linters {
+		DownloadAndInstallIDE(linter, t)
 	}
 }
 
-func DownloadAndInstallIDE(ideName string, t *testing.T) {
+func DownloadAndInstallIDE(linter product.Linter, t *testing.T) {
 	homeDir, err := os.UserHomeDir()
 	if err != nil {
 		t.Fatal(err)
@@ -66,10 +66,10 @@ func DownloadAndInstallIDE(ideName string, t *testing.T) {
 		t.Fail()
 	}
 
-	ide := downloadAndInstallIDE(ideName, "", tempDir, nil)
+	ide := downloadAndInstallIDE(&product.NativeAnalyzer{Linter: linter, Ide: linter.ProductCode}, tempDir, nil)
 
 	if ide == "" {
-		msg.ErrorMessage("Cannot install %s", ideName)
+		msg.ErrorMessage("Cannot install %s", linter.Name)
 		t.Fail()
 	}
 	prod, err := product.ReadIdeProductInfo(ide)

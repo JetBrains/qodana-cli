@@ -17,7 +17,6 @@
 package commoncontext
 
 import (
-	"errors"
 	"fmt"
 	"github.com/JetBrains/qodana-cli/v2025/cloud"
 	"github.com/JetBrains/qodana-cli/v2025/platform/msg"
@@ -129,13 +128,13 @@ func SelectAnalyzerForPath(path string, token string) product.Analyzer {
 
 	interactive := msg.IsInteractive()
 	linters = filterByLicensePlan(linters, token)
-	analyzer, err := selectAnalyzer(path, linters, interactive, selector)
-	if err != nil {
+	analyzer := selectAnalyzer(path, linters, interactive, selector)
+	if analyzer == nil {
 		msg.ErrorMessage("Could not configure project as it is not supported by Qodana")
 		msg.WarningMessage("See https://www.jetbrains.com/help/qodana/supported-technologies.html for more details")
 		os.Exit(1)
 	}
-	msg.SuccessMessage("Selected %s", analyzer)
+	msg.SuccessMessage("Selected '%s'", analyzer.GetLinter().PresentableName)
 	return analyzer
 }
 
@@ -182,10 +181,10 @@ func selectAnalyzer(
 	linters []product.Linter,
 	interactive bool,
 	selectFunc func([]string) string,
-) (product.Analyzer, error) {
+) product.Analyzer {
 	var distribution product.Analyzer
 	if len(linters) == 0 && !interactive {
-		return nil, errors.New("not supported")
+		return nil
 	}
 
 	selection, choices := analyzerToSelect(linters, path)
@@ -196,11 +195,11 @@ func selectAnalyzer(
 	} else {
 		choice := selectFunc(choices)
 		if choice == "" {
-			return nil, errors.New("failed choosing analyzer")
+			return nil
 		}
 		distribution = selection[choice]
 	}
-	return distribution, nil
+	return distribution
 }
 
 func analyzerToSelect(linters []product.Linter, path string) (map[string]product.Analyzer, []string) {
@@ -210,17 +209,17 @@ func analyzerToSelect(linters []product.Linter, path string) (map[string]product
 		if linter.SupportNative {
 			if isNativeRequired(path, linter) {
 				key := linter.PresentableName + " (Native)"
-				analyzersMap[key] = &product.DockerAnalyzer{
+				analyzersMap[key] = &product.NativeAnalyzer{
 					Linter: linter,
-					Image:  linter.Image(),
+					Ide:    linter.ProductCode,
 				}
 				analyzersList = append(analyzersList, key)
 			}
 		}
 		dockerKey := linter.PresentableName + " (Docker)"
-		analyzersMap[dockerKey] = &product.NativeAnalyzer{
+		analyzersMap[dockerKey] = &product.DockerAnalyzer{
 			Linter: linter,
-			Ide:    linter.ProductCode,
+			Image:  linter.Image(),
 		}
 		analyzersList = append(analyzersList, dockerKey)
 	}

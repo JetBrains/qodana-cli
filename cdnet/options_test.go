@@ -329,7 +329,7 @@ func TestGetArgsThirdPartyLinters(t *testing.T) {
 			name: "not sending statistics",
 			cb: corescan.ContextBuilder{
 				NoStatistics: true,
-				Linter:       product.DockerImageMap[product.QDNETC],
+				Analyser:     product.DotNetCommunityLinter.DockerAnalyzer(),
 			},
 			expected: []string{
 				"--no-statistics",
@@ -339,7 +339,7 @@ func TestGetArgsThirdPartyLinters(t *testing.T) {
 			name: "(cdnet) solution",
 			cb: corescan.ContextBuilder{
 				CdnetSolution: "solution.sln",
-				Linter:        product.DockerImageMap[product.QDNETC],
+				Analyser:      product.DotNetCommunityLinter.DockerAnalyzer(),
 			},
 			expected: []string{
 				"--solution", "solution.sln",
@@ -349,7 +349,7 @@ func TestGetArgsThirdPartyLinters(t *testing.T) {
 			name: "(cdnet) project",
 			cb: corescan.ContextBuilder{
 				CdnetProject: "project.csproj",
-				Linter:       product.DockerImageMap[product.QDNETC],
+				Analyser:     product.DotNetCommunityLinter.DockerAnalyzer(),
 			},
 			expected: []string{
 				"--project", "project.csproj",
@@ -359,7 +359,7 @@ func TestGetArgsThirdPartyLinters(t *testing.T) {
 			name: "(cdnet) configuration",
 			cb: corescan.ContextBuilder{
 				CdnetConfiguration: "Debug",
-				Linter:             product.DockerImageMap[product.QDNETC],
+				Analyser:           product.DotNetCommunityLinter.DockerAnalyzer(),
 			},
 			expected: []string{
 				"--configuration", "Debug",
@@ -369,7 +369,7 @@ func TestGetArgsThirdPartyLinters(t *testing.T) {
 			name: "(cdnet) platform",
 			cb: corescan.ContextBuilder{
 				CdnetPlatform: "x64",
-				Linter:        product.DockerImageMap[product.QDNETC],
+				Analyser:      product.DotNetCommunityLinter.DockerAnalyzer(),
 			},
 			expected: []string{
 				"--platform", "x64",
@@ -379,7 +379,7 @@ func TestGetArgsThirdPartyLinters(t *testing.T) {
 			name: "(cdnet) no build",
 			cb: corescan.ContextBuilder{
 				CdnetNoBuild: true,
-				Linter:       product.DockerImageMap[product.QDNETC],
+				Analyser:     product.DotNetCommunityLinter.DockerAnalyzer(),
 			},
 			expected: []string{
 				"--no-build",
@@ -389,7 +389,7 @@ func TestGetArgsThirdPartyLinters(t *testing.T) {
 			name: "(clang) compile commands",
 			cb: corescan.ContextBuilder{
 				ClangCompileCommands: "compile_commands.json",
-				Linter:               product.DockerImageMap[product.QDCLC],
+				Analyser:             product.ClangLinter.DockerAnalyzer(),
 			},
 			expected: []string{
 				"--compile-commands", "compile_commands.json",
@@ -399,7 +399,7 @@ func TestGetArgsThirdPartyLinters(t *testing.T) {
 			name: "(clang) clang args",
 			cb: corescan.ContextBuilder{
 				ClangArgs: "-I/usr/include",
-				Linter:    product.DockerImageMap[product.QDCLC],
+				Analyser:  product.ClangLinter.DockerAnalyzer(),
 			},
 			expected: []string{
 				"--clang-args", "-I/usr/include",
@@ -409,7 +409,7 @@ func TestGetArgsThirdPartyLinters(t *testing.T) {
 			name: "using flag in non 3rd party linter",
 			cb: corescan.ContextBuilder{
 				NoStatistics: true,
-				Ide:          product.QDNET,
+				Analyser:     product.DotNetLinter.NativeAnalyzer(),
 			},
 			expected: []string{},
 		},
@@ -419,9 +419,9 @@ func TestGetArgsThirdPartyLinters(t *testing.T) {
 		t.Run(
 			tt.name, func(t *testing.T) {
 				contextBuilder := tt.cb
-				if contextBuilder.Ide != "" {
-					contextBuilder.Prod.Code = contextBuilder.Ide
-				}
+				//if contextBuilder.Ide != "" {
+				//	contextBuilder.Prod.Code = contextBuilder.Ide
+				//}
 
 				context := contextBuilder.Build()
 				actual := core.GetIdeArgs(context)

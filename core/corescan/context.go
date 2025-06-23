@@ -18,7 +18,6 @@ package corescan
 
 import (
 	"fmt"
-	"github.com/JetBrains/qodana-cli/v2025/platform/commoncontext"
 	"github.com/JetBrains/qodana-cli/v2025/platform/msg"
 	"github.com/JetBrains/qodana-cli/v2025/platform/product"
 	"github.com/JetBrains/qodana-cli/v2025/platform/qdyaml"
@@ -58,7 +57,7 @@ type RunScenario = string
 //
 // !!!KEEP IT IMMUTABLE!!!
 type Context struct {
-	analyser                  commoncontext.Analyzer
+	analyser                  product.Analyzer
 	id                        string
 	ideDir                    string
 	effectiveConfigurationDir string
@@ -137,7 +136,7 @@ func YamlConfig(yaml qdyaml.QodanaYaml) QodanaYamlConfig {
 	}
 }
 
-func (c Context) Analyser() commoncontext.Analyzer   { return c.analyser }
+func (c Context) Analyser() product.Analyzer         { return c.analyser }
 func (c Context) Id() string                         { return c.id }
 func (c Context) IdeDir() string                     { return c.ideDir }
 func (c Context) EffectiveConfigurationDir() string  { return c.effectiveConfigurationDir }
@@ -199,8 +198,7 @@ func (c Context) Property() []string                 { return arrayCopy(c._prope
 func (c Context) Volumes() []string                  { return arrayCopy(c._volumes) }
 
 type ContextBuilder struct {
-	Analyser                  commoncontext.Analyzer
-	Ide                       string
+	Analyser                  product.Analyzer
 	Id                        string
 	IdeDir                    string
 	EffectiveConfigurationDir string

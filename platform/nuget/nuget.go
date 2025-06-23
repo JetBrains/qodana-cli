@@ -20,7 +20,6 @@ import (
 	"bufio"
 	"fmt"
 	"github.com/JetBrains/qodana-cli/v2025/cloud"
-	"github.com/JetBrains/qodana-cli/v2025/platform/commoncontext"
 	"github.com/JetBrains/qodana-cli/v2025/platform/product"
 	"github.com/JetBrains/qodana-cli/v2025/platform/qdenv"
 	log "github.com/sirupsen/logrus"
@@ -44,12 +43,12 @@ func UnsetNugetVariables() {
 	}
 }
 
-func isNonNativeDotnetLinter(analyser commoncontext.Analyzer) bool {
+func isNonNativeDotnetLinter(analyser product.Analyzer) bool {
 	return analyser.IsContainer() &&
 		(analyser.GetLinter() == product.DotNetLinter || analyser.GetLinter() == product.DotNetCommunityLinter)
 }
 
-func WarnIfPrivateFeedDetected(analyzer commoncontext.Analyzer, projectPath string) {
+func WarnIfPrivateFeedDetected(analyzer product.Analyzer, projectPath string) {
 	if !isNonNativeDotnetLinter(analyzer) {
 		return
 	}

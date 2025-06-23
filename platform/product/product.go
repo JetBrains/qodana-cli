@@ -96,10 +96,10 @@ var (
 
 	AndroidCommunityLinter = Linter{
 		PresentableName: "Qodana Community for Android",
-		Name:            "qodana-jvm-community",
-		ProductCode:     QDJVMC,
+		Name:            "qodana-jvm-android",
+		ProductCode:     QDANDC,
 		DockerImage:     "jetbrains/qodana-jvm-android",
-		SupportNative:   true,
+		SupportNative:   false,
 		IsPaid:          false,
 		SupportFixes:    false,
 		EapOnly:         false,
@@ -204,12 +204,11 @@ var (
 		EapOnly:         true,
 	}
 
-	//unfinished
 	ClangLinter = Linter{
-		PresentableName: "Qodana Community for .NET",
-		Name:            "qodana-dotnet-community",
-		ProductCode:     QDNETC,
-		DockerImage:     "jetbrains/qodana-dotnet-community",
+		PresentableName: "Qodana Community for C/C++",
+		Name:            "qodana-clang",
+		ProductCode:     QDCLC,
+		DockerImage:     "jetbrains/qodana-clang",
 		SupportNative:   false,
 		IsPaid:          false,
 		SupportFixes:    false,
@@ -240,23 +239,38 @@ var (
 	// AllNativeCodes is a list of all supported Qodana linters product codes
 	AllNativeCodes = []string{QDNET, QDJVM, QDJVMC, QDGO, QDPY, QDPYC, QDJS, QDPHP}
 
+	// AllLinters Order is important for detection
 	AllLinters = []Linter{
-		JvmLinter,
 		JvmCommunityLinter,
-		AndroidLinter,
+		JvmLinter,
 		AndroidCommunityLinter,
+		AndroidLinter,
 		PhpLinter,
-		PythonLinter,
 		PythonCommunityLinter,
+		PythonLinter,
 		JsLinter,
+		DotNetCommunityLinter,
 		DotNetLinter,
 		RubyLinter,
 		CppLinter,
 		GoLinter,
-		DotNetCommunityLinter,
 		ClangLinter,
 	}
 )
+
+func (linter *Linter) NativeAnalyzer() Analyzer {
+	return &NativeAnalyzer{
+		Linter: *linter,
+		Ide:    linter.ProductCode,
+	}
+}
+
+func (linter *Linter) DockerAnalyzer() Analyzer {
+	return &DockerAnalyzer{
+		Linter: *linter,
+		Image:  linter.Image(),
+	}
+}
 
 func (linter *Linter) Image() string {
 	//goland:noinspection GoBoolExpressions
@@ -295,6 +309,7 @@ var LangsToLinters = map[string][]Linter{
 
 var AllSupportedPaidLinters = allLintersFiltered(AllLinters, func(linter *Linter) bool { return linter.IsPaid })
 var AllSupportedFreeLinters = allLintersFiltered(AllLinters, func(linter *Linter) bool { return !linter.IsPaid })
+var AllNativeLinters = allLintersFiltered(AllLinters, func(linter *Linter) bool { return linter.SupportNative })
 
 var AllFixesSupportedProducts = []string{QDJVM, QDNET, QDPY, QDJS, QDPHP, QDGO, QDAND, QDRUBY}
 
@@ -345,6 +360,7 @@ func FindByProductCode(product string) Linter {
 	return UnknownLinter
 }
 
+// TODO check
 // GuessLinter returns the Linter based on IDE product code or Docker image name
 func GuessLinter(ide string, linterParam string) Linter {
 	if ide != "" {

@@ -20,7 +20,6 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"fmt"
-	"github.com/JetBrains/qodana-cli/v2025/platform/commoncontext"
 	"github.com/JetBrains/qodana-cli/v2025/platform/msg"
 	"github.com/JetBrains/qodana-cli/v2025/platform/product"
 	"github.com/JetBrains/qodana-cli/v2025/platform/strutil"
@@ -38,7 +37,7 @@ import (
 )
 
 func downloadAndInstallIDE(
-	analyser commoncontext.Analyzer,
+	analyser product.Analyzer,
 	baseDir string,
 	spinner *pterm.SpinnerPrinter,
 ) string {
@@ -121,7 +120,7 @@ func downloadAndInstallIDE(
 }
 
 //goland:noinspection GoBoolExpressions
-func getIde(analyzer commoncontext.Analyzer) *ReleaseDownloadInfo {
+func getIde(analyzer product.Analyzer) *ReleaseDownloadInfo {
 
 	dist := product.ReleaseVer
 	if analyzer.IsEAP() {

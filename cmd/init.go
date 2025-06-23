@@ -20,6 +20,7 @@ import (
 	"fmt"
 	"github.com/JetBrains/qodana-cli/v2025/platform/commoncontext"
 	"github.com/JetBrains/qodana-cli/v2025/platform/msg"
+	"github.com/JetBrains/qodana-cli/v2025/platform/product"
 	"github.com/JetBrains/qodana-cli/v2025/platform/qdenv"
 	"github.com/JetBrains/qodana-cli/v2025/platform/qdyaml"
 	"github.com/JetBrains/qodana-cli/v2025/platform/tokenloader"
@@ -112,7 +113,7 @@ func newInitCommand() *cobra.Command {
 	return cmd
 }
 
-func checkToken(analyser commoncontext.Analyzer, cliOptions *initOptions) {
+func checkToken(analyser product.Analyzer, cliOptions *initOptions) {
 	commonCtx := commoncontext.Context{
 		Analyzer:    analyser,
 		ProjectDir:  cliOptions.ProjectDir,
@@ -124,13 +125,13 @@ func checkToken(analyser commoncontext.Analyzer, cliOptions *initOptions) {
 }
 
 // WriteQodanaLinterToYamlFile adds the linter to the qodana.yaml file.
-func writeQodanaLinterToYamlFile(qodanaYamlFullPath string, analyser commoncontext.Analyzer) {
+func writeQodanaLinterToYamlFile(qodanaYamlFullPath string, analyser product.Analyzer) {
 	q := qdyaml.LoadQodanaYamlByFullPath(qodanaYamlFullPath)
 	if q.Version == "" {
 		q.Version = "1.0"
 	}
 	q.Sort()
-	analyser.InitYaml(q)
+	q = analyser.InitYaml(q)
 	err := q.WriteConfig(qodanaYamlFullPath)
 	if err != nil {
 		log.Fatalf("writeConfig: %v", err)
