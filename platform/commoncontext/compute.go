@@ -20,14 +20,13 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"fmt"
-	"os"
-	"path/filepath"
-
 	"github.com/JetBrains/qodana-cli/v2025/platform/msg"
 	"github.com/JetBrains/qodana-cli/v2025/platform/product"
 	"github.com/JetBrains/qodana-cli/v2025/platform/qdcontainer"
 	"github.com/JetBrains/qodana-cli/v2025/platform/qdenv"
 	"github.com/JetBrains/qodana-cli/v2025/platform/qdyaml"
+	"os"
+	"path/filepath"
 )
 
 func Compute(
@@ -99,18 +98,7 @@ func getAnalyzerFromProject(
 		)
 		os.Exit(1)
 	}
-	if qodanaYaml.Linter != "" {
-		return &product.DockerAnalyzer{
-			Linter: product.GuessLinter("", qodanaYaml.Linter),
-			Image:  qodanaYaml.Linter,
-		}
-	}
-
-	// qodanaYaml.Ide not equal to ""
-	return &product.NativeAnalyzer{
-		Linter: product.GuessLinter("", qodanaYaml.Linter),
-		Ide:    qodanaYaml.Ide,
-	}
+	return GuessAnalyzerFromParams(qodanaYaml.Ide, qodanaYaml.Linter)
 }
 
 func computeId(analyzer product.Analyzer, projectDir string) string {

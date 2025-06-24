@@ -17,7 +17,6 @@
 package product
 
 import (
-	"github.com/JetBrains/qodana-cli/v2025/platform/strutil"
 	"strings"
 )
 
@@ -220,25 +219,6 @@ var (
 		EapVer:     "2024.3",
 	}
 
-	Products = map[string]string{
-		QDJVM:  "IIU",
-		QDJVMC: "IIC",
-		// QDAND: // don't use it right now
-		// QDANDC: // don't use it right now
-		QDPHP:  "PS",
-		QDJS:   "WS",
-		QDNET:  "RD",
-		QDPY:   "PCP",
-		QDPYC:  "PCC",
-		QDGO:   "GO",
-		QDRUBY: "RM",
-		QDRST:  "RR",
-		QDCPP:  "CL",
-	}
-
-	// AllNativeCodes is a list of all supported Qodana linters product codes
-	AllNativeCodes = []string{QDNET, QDJVM, QDJVMC, QDGO, QDPY, QDPYC, QDJS, QDPHP}
-
 	// AllLinters Order is important for detection
 	AllLinters = []Linter{
 		JvmCommunityLinter,
@@ -261,7 +241,7 @@ var (
 func (linter *Linter) NativeAnalyzer() Analyzer {
 	return &NativeAnalyzer{
 		Linter: *linter,
-		Ide:    linter.ProductCode,
+		Eap:    linter.EapOnly,
 	}
 }
 
@@ -307,16 +287,21 @@ var LangsToLinters = map[string][]Linter{
 	"Ruby":              {RubyLinter},
 }
 
-var AllSupportedPaidLinters = allLintersFiltered(AllLinters, func(linter *Linter) bool { return linter.IsPaid })
 var AllSupportedFreeLinters = allLintersFiltered(AllLinters, func(linter *Linter) bool { return !linter.IsPaid })
 var AllNativeLinters = allLintersFiltered(AllLinters, func(linter *Linter) bool { return linter.SupportNative })
-
-var AllFixesSupportedProducts = []string{QDJVM, QDNET, QDPY, QDJS, QDPHP, QDGO, QDAND, QDRUBY}
 
 func allImages(linters []Linter) []string {
 	var images []string
 	for _, linter := range linters {
 		images = append(images, linter.Image())
+	}
+	return images
+}
+
+func allProductCodes(linters []Linter) []string {
+	var images []string
+	for _, linter := range linters {
+		images = append(images, linter.ProductCode)
 	}
 	return images
 }
@@ -333,59 +318,30 @@ func allLintersFiltered(linters []Linter, filter func(linter *Linter) bool) []Li
 
 // AllImages is a list of all supported linters.
 var AllImages = allImages(AllLinters)
+var AllNativeProductCodes = allProductCodes(AllNativeLinters)
 
-// FindByImageName returns the Linter for a given Docker image name
-func FindByImageName(image string) Linter {
-	if image == "" {
-		return UnknownLinter
+func FindLinterByImage(image string) Linter {
+	image = strings.TrimPrefix(image, "https://")
+	//goland:noinspection HttpUrlsUsage
+	image = strings.TrimPrefix(image, "http://")
+	if strings.HasPrefix(image, "registry.jetbrains.team/p/sa/containers/") {
+		image = strings.TrimPrefix(image, "registry.jetbrains.team/p/sa/containers/")
+		image = "jetbrains/" + image
 	}
 	for _, linter := range AllLinters {
-		if strings.Contains(image, linter.DockerImage) {
+		if strings.HasPrefix(image, linter.DockerImage) {
 			return linter
 		}
 	}
 	return UnknownLinter
 }
 
-// FindByProductCode returns the Linter for a given product code
-func FindByProductCode(product string) Linter {
-	if product == "" {
-		return UnknownLinter
-	}
+func FindLinterByProductCode(productCode string) Linter {
+	productCode = strings.TrimSuffix(productCode, EapSuffix)
 	for _, linter := range AllLinters {
-		if product == linter.ProductCode {
+		if productCode == linter.ProductCode {
 			return linter
 		}
 	}
 	return UnknownLinter
-}
-
-// TODO check
-// GuessLinter returns the Linter based on IDE product code or Docker image name
-func GuessLinter(ide string, linterParam string) Linter {
-	if ide != "" {
-		productCode := strings.TrimSuffix(ide, EapSuffix)
-		for _, linter := range AllLinters {
-			if productCode == linter.ProductCode {
-				return linter
-			}
-		}
-		return UnknownLinter
-	} else if linterParam != "" {
-		linterParam := strings.TrimPrefix(linterParam, "https://")
-		if strings.HasPrefix(linterParam, "registry.jetbrains.team/p/sa/containers/") {
-			linterParam = strings.TrimPrefix(linterParam, "registry.jetbrains.team/p/sa/containers/")
-			linterParam = "jetbrains/" + linterParam
-		}
-		for _, linter := range AllLinters {
-			if strings.HasPrefix(linterParam, linter.DockerImage) {
-				return linter
-			}
-		}
-	}
-	return UnknownLinter
-}
-
-func IsNativeAnalyzer(analyzer string) bool {
-	return strutil.Contains(AllNativeCodes, analyzer)
 }

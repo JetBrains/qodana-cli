@@ -17,32 +17,80 @@
 package core
 
 import (
+	"github.com/JetBrains/qodana-cli/v2025/platform/commoncontext"
 	"github.com/JetBrains/qodana-cli/v2025/platform/product"
 	"testing"
 )
 
-func TestQodanaOptions_guessProduct(t *testing.T) {
+func TestQodanaOptions_GuessAnalyzerFromParams(t *testing.T) {
 	tests := []struct {
 		name     string
 		ide      string
 		linter   string
-		expected string
+		expected product.Analyzer
 	}{
-		{"IDE defined", "QDNET", "", "QDNET"},
-		{"IDE defined with EapSuffix", "QDNET-EAP", "", "QDNET"},
-		{"IDE defined not in Products", "NEVERGONNAGIVEYOUUP", "", ""},
-		{"Linter defined", "", "jetbrains/qodana-dotnet:2023.3-eap", "QDNET"},
-		{"TC defined", "", "registry.jetbrains.team/p/sa/containers/qodana-php:2023.3-rc", "QDPHP"},
-		{"Both defined", "QDNET", "jetbrains/qodana-php:2023.3-eap", "QDNET"},
-		{"Unknown linter defined", "", "jetbrains/qodana-unknown:2023.3-eap", ""},
-		{"None defined", "", "", ""},
+		{
+			"IDE defined",
+			"QDNET",
+			"",
+			product.DotNetLinter.NativeAnalyzer(),
+		},
+		{
+			"IDE defined with EapSuffix",
+			"QDNET-EAP",
+			"",
+			&product.NativeAnalyzer{Linter: product.DotNetLinter, Eap: true},
+		},
+		{
+			"Linter defined",
+			"",
+			"jetbrains/qodana-dotnet:2023.3-eap",
+			&product.DockerAnalyzer{Linter: product.DotNetLinter, Image: "jetbrains/qodana-dotnet:2023.3-eap"},
+		},
+		{
+			"TC defined",
+			"",
+			"registry.jetbrains.team/p/sa/containers/qodana-php:2023.3-rc",
+			&product.DockerAnalyzer{
+				Linter: product.PhpLinter,
+				Image:  "registry.jetbrains.team/p/sa/containers/qodana-php:2023.3-rc",
+			},
+		},
+
+		{
+			"Both defined",
+			"QDNET",
+			"jetbrains/qodana-php:2023.3-eap",
+			product.DotNetLinter.NativeAnalyzer(),
+		},
+		{
+			"Unknown linter defined",
+			"",
+			"jetbrains/qodana-unknown:2023.3-eap",
+			&product.DockerAnalyzer{
+				Linter: product.UnknownLinter,
+				Image:  "jetbrains/qodana-unknown:2023.3-eap",
+			},
+		},
+		{
+			"None defined", "", "", nil,
+		},
 	}
 
 	for _, tt := range tests {
 		t.Run(
 			tt.name, func(t *testing.T) {
-				if got := product.GuessLinter(tt.ide, tt.linter); got.ProductCode != tt.expected {
-					t.Errorf("QodanaOptions.guessProduct() = %v, want %v", got, tt.expected)
+				analyzer := commoncontext.GuessAnalyzerFromParams(
+					tt.ide,
+					tt.linter,
+				)
+				if analyzer == nil {
+					if tt.expected != nil {
+						t.Errorf("Expected linetr to be %s, got nil", tt.expected.Name())
+						return
+					}
+				} else if analyzer.GetLinter() != tt.expected.GetLinter() || analyzer.Name() != tt.expected.Name() {
+					t.Errorf("Expected linetr to be %s, got %v", tt.expected.Name(), analyzer.Name())
 				}
 			},
 		)

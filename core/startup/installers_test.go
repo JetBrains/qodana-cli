@@ -28,12 +28,12 @@ import (
 func TestGetIde(t *testing.T) {
 	//os.Setenv("QD_PRODUCT_INTERNAL_FEED", "https://data.services.jetbrains.com/products")
 	for _, linter := range product.AllNativeLinters {
-		ide := getIde(&product.NativeAnalyzer{Linter: linter, Ide: linter.ProductCode})
+		ide := getIde(linter.NativeAnalyzer())
 		if ide == nil {
 			t.Fail()
 		}
 		if runtime.GOOS != "darwin" {
-			eap := getIde(&product.NativeAnalyzer{Linter: linter, Ide: linter.ProductCode + "-EAP"})
+			eap := getIde(&product.NativeAnalyzer{Linter: linter, Eap: true})
 			if eap == nil {
 				t.Fail()
 			}
@@ -66,7 +66,7 @@ func DownloadAndInstallIDE(linter product.Linter, t *testing.T) {
 		t.Fail()
 	}
 
-	ide := downloadAndInstallIDE(&product.NativeAnalyzer{Linter: linter, Ide: linter.ProductCode}, tempDir, nil)
+	ide := downloadAndInstallIDE(linter.NativeAnalyzer(), tempDir, nil)
 
 	if ide == "" {
 		msg.ErrorMessage("Cannot install %s", linter.Name)

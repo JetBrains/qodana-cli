@@ -52,7 +52,7 @@ func TestFetchAnalyzerSettings(t *testing.T) {
 	t.Run(
 		"qodana.yaml exists", func(t *testing.T) {
 			projectDir := "./testData/project_with_qodana_yaml"
-			expectedIde := "expectedIde"
+			expectedIde := product.QDJVM
 			fileName := "qodana.yaml"
 			data := "ide: " + expectedIde
 
@@ -72,7 +72,7 @@ func TestFetchAnalyzerSettings(t *testing.T) {
 				projectDir,
 				"",
 			)
-			expected := &product.NativeAnalyzer{Linter: product.UnknownLinter, Ide: expectedIde}
+			expected := &product.NativeAnalyzer{Linter: product.JvmLinter, Eap: false}
 			assert.Equal(t, expected, commonCtx.Analyzer)
 
 			if err := cleanupTest(projectDir); err != nil {
@@ -84,7 +84,7 @@ func TestFetchAnalyzerSettings(t *testing.T) {
 	t.Run(
 		"qodana.yml exists", func(t *testing.T) {
 			projectDir := "./testData/project_with_qodana_yml"
-			expectedIde := "expectedIde_yml"
+			expectedIde := product.QDJS + product.EapSuffix
 			fileName := "qodana.yml"
 			data := "ide: " + expectedIde
 
@@ -105,7 +105,7 @@ func TestFetchAnalyzerSettings(t *testing.T) {
 				"",
 			)
 
-			expected := &product.NativeAnalyzer{Linter: product.UnknownLinter, Ide: expectedIde}
+			expected := &product.NativeAnalyzer{Linter: product.JsLinter, Eap: true}
 			assert.Equal(t, expected, commonCtx.Analyzer)
 
 			if err := cleanupTest(projectDir); err != nil {
@@ -117,7 +117,7 @@ func TestFetchAnalyzerSettings(t *testing.T) {
 	t.Run(
 		"configName is set", func(t *testing.T) {
 			projectDir := "./testData/project_with_custom_qodana_yaml"
-			expectedIde := "expectedIde_custom"
+			expectedIde := product.QDGO
 			fileName := "custom_qodana.yaml"
 			data := "ide: " + expectedIde
 
@@ -138,7 +138,7 @@ func TestFetchAnalyzerSettings(t *testing.T) {
 				fileName,
 			)
 
-			expected := &product.NativeAnalyzer{Linter: product.UnknownLinter, Ide: expectedIde}
+			expected := &product.NativeAnalyzer{Linter: product.GoLinter, Eap: false}
 			assert.Equal(t, expected, commonCtx.Analyzer)
 
 			if err := cleanupTest(projectDir); err != nil {
