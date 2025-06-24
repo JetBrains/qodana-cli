@@ -419,9 +419,6 @@ func TestGetArgsThirdPartyLinters(t *testing.T) {
 		t.Run(
 			tt.name, func(t *testing.T) {
 				contextBuilder := tt.cb
-				//if contextBuilder.Ide != "" {
-				//	contextBuilder.Prod.Code = contextBuilder.Ide
-				//}
 
 				context := contextBuilder.Build()
 				actual := core.GetIdeArgs(context)

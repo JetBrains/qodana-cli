@@ -353,7 +353,7 @@ func (c Context) DetermineRunScenario(hasStartHash bool) RunScenario {
 		return RunScenarioDefault
 	case c.ForceLocalChangesScript():
 		return RunScenarioLocalChanges
-	case c.Ide() == "":
+	case c.analyser.IsContainer():
 		return RunScenarioDefault
 	case c.ReversePrAnalysis():
 		return RunScenarioReversedScoped

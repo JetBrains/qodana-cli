@@ -88,9 +88,8 @@ func runQodanaContainer(ctx context.Context, c corescan.Context) int {
 	scanStages := getScanStages()
 
 	image := dockerAnalyzer.Image
-	if c.SkipPull() {
-		checkImage(image)
-	} else {
+	CheckImage(image)
+	if !c.SkipPull() {
 		PullImage(docker, image)
 	}
 	progress, _ := msg.StartQodanaSpinner(scanStages[0])
@@ -110,7 +109,6 @@ func runQodanaContainer(ctx context.Context, c corescan.Context) int {
 	if progress != nil {
 		_ = progress.Stop()
 	}
-	checkImage(image)
 	return int(exitCode)
 }
 
@@ -129,8 +127,8 @@ func isCompatibleLinter(linter string) bool {
 	return strings.Contains(linter, product.ReleaseVersion)
 }
 
-// checkImage checks the linter image and prints warnings if necessary.
-func checkImage(linter string) {
+// CheckImage checks the linter image and prints warnings if necessary.
+func CheckImage(linter string) {
 	if strings.Contains(version.Version, "nightly") || strings.Contains(version.Version, "dev") {
 		return
 	}
@@ -197,7 +195,6 @@ func encodeAuthToBase64(authConfig registry.AuthConfig) (string, error) {
 
 // PullImage pulls docker image and prints the process.
 func PullImage(client *client.Client, image string) {
-	checkImage(image)
 	msg.PrintProcess(
 		func(_ *pterm.SpinnerPrinter) {
 			pullImage(context.Background(), client, image)
@@ -215,7 +212,7 @@ func isDockerUnauthorizedError(errMsg string) bool {
 	)
 }
 
-// PullImage pulls docker image.
+// pullImage pulls docker image.
 func pullImage(ctx context.Context, client *client.Client, image string) {
 	reader, err := client.ImagePull(ctx, image, types.ImagePullOptions{})
 	if err != nil && isDockerUnauthorizedError(err.Error()) {
@@ -368,7 +365,7 @@ func getDockerOptions(c corescan.Context, image string) *backend.ContainerCreate
 			log.Fatal("couldn't parse volume ", volume)
 		}
 	}
-	log.Debugf("image: %s", c.Analyser())
+	log.Debugf("image: %s", image)
 	log.Debugf("container name: %s", containerName)
 	log.Debugf("user: %s", c.User())
 	log.Debugf("volumes: %v", volumes)

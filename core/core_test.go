@@ -339,7 +339,7 @@ func TestLegacyFixStrategies(t *testing.T) {
 		t.Run(
 			tt.name, func(t *testing.T) {
 				c := tt.c
-				if c.Analyser.GetLinter().ProductCode == "QDPHP" {
+				if c.Analyser.GetLinter() == product.PhpLinter {
 					c.Prod.Version = "2023.3"
 				} else {
 					c.Prod.Version = "2023.2"
