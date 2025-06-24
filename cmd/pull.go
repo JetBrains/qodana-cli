@@ -57,6 +57,7 @@ func newPullCommand() *cobra.Command {
 				if err != nil {
 					log.Fatal("couldn't connect to container engine ", err)
 				}
+				core.CheckImage(analyzer.Image)
 				core.PullImage(containerClient, analyzer.Image)
 			}
 		},

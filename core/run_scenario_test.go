@@ -41,7 +41,7 @@ func TestQodanaOptions_determineRunScenario(t *testing.T) {
 					Prod: product.Product{
 						Code: product.QDNET,
 					},
-					Ide: "smth",
+					Analyser: &product.PathNativeAnalyzer{Path: "smth"},
 				},
 				hasStartHash: true,
 			},
@@ -55,7 +55,7 @@ func TestQodanaOptions_determineRunScenario(t *testing.T) {
 					Prod: product.Product{
 						Code: product.QDJVM,
 					},
-					Ide: "smth",
+					Analyser: &product.PathNativeAnalyzer{Path: "smth"},
 				},
 				hasStartHash: true,
 			},
@@ -68,7 +68,7 @@ func TestQodanaOptions_determineRunScenario(t *testing.T) {
 					Prod: product.Product{
 						Code: product.QDNET,
 					},
-					Ide: "smth",
+					Analyser: &product.PathNativeAnalyzer{Path: "smth"},
 				},
 				hasStartHash: false,
 			},
@@ -81,7 +81,7 @@ func TestQodanaOptions_determineRunScenario(t *testing.T) {
 					Prod: product.Product{
 						Code: product.QDJVM,
 					},
-					Ide: "smth",
+					Analyser: &product.PathNativeAnalyzer{Path: "smth"},
 				},
 				hasStartHash: false,
 			},
@@ -94,7 +94,7 @@ func TestQodanaOptions_determineRunScenario(t *testing.T) {
 					Prod: product.Product{
 						Code: product.QDNET,
 					},
-					Ide: "smth",
+					Analyser: &product.PathNativeAnalyzer{Path: "smth"},
 				},
 				hasStartHash: true,
 			},
@@ -107,7 +107,7 @@ func TestQodanaOptions_determineRunScenario(t *testing.T) {
 					Prod: product.Product{
 						Code: product.QDJVM,
 					},
-					Ide: "smth",
+					Analyser: &product.PathNativeAnalyzer{Path: "smth"},
 				},
 				hasStartHash: true,
 			},
@@ -120,7 +120,7 @@ func TestQodanaOptions_determineRunScenario(t *testing.T) {
 					Prod: product.Product{
 						Code: product.QDJVM,
 					},
-					Ide:               "smth",
+					Analyser:          &product.PathNativeAnalyzer{Path: "smth"},
 					ReversePrAnalysis: true,
 				},
 				hasStartHash: true,
@@ -135,7 +135,7 @@ func TestQodanaOptions_determineRunScenario(t *testing.T) {
 					Prod: product.Product{
 						Code: product.QDJVM,
 					},
-					Ide: "smth",
+					Analyser: &product.PathNativeAnalyzer{Path: "smth"},
 				},
 				hasStartHash: true,
 			},
@@ -148,6 +148,7 @@ func TestQodanaOptions_determineRunScenario(t *testing.T) {
 					Prod: product.Product{
 						Code: product.QDJVM,
 					},
+					Analyser: product.JvmLinter.DockerAnalyzer(),
 				},
 				hasStartHash: true,
 			},
@@ -161,6 +162,7 @@ func TestQodanaOptions_determineRunScenario(t *testing.T) {
 						Code: product.QDJVM,
 					},
 					ReversePrAnalysis: true,
+					Analyser:          product.JvmLinter.DockerAnalyzer(),
 				},
 				hasStartHash: true,
 			},

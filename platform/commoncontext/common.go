@@ -47,7 +47,7 @@ func GuessAnalyzerFromEnvAndCLI(ide string, linter string) product.Analyzer {
 	return GuessAnalyzerFromParams(ide, linter)
 }
 
-func GuessAnalyzerFromParams(ide string, linter string) product.Analyzer {
+func GuessAnalyzerFromParams(ide string, image string) product.Analyzer {
 	if ide != "" {
 		linter := product.FindLinterByProductCode(ide)
 		if linter == product.UnknownLinter {
@@ -69,10 +69,10 @@ func GuessAnalyzerFromParams(ide string, linter string) product.Analyzer {
 		}
 	}
 
-	if linter != "" {
+	if image != "" {
 		return &product.DockerAnalyzer{
-			Linter: product.FindLinterByImage(linter),
-			Image:  linter,
+			Linter: product.FindLinterByImage(image),
+			Image:  image,
 		}
 	}
 

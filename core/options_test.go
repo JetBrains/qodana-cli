@@ -17,8 +17,14 @@
 package core
 
 import (
+	"encoding/json"
 	"github.com/JetBrains/qodana-cli/v2025/platform/commoncontext"
 	"github.com/JetBrains/qodana-cli/v2025/platform/product"
+	"github.com/JetBrains/qodana-cli/v2025/platform/qdenv"
+	"github.com/sirupsen/logrus"
+	"os"
+	"path/filepath"
+	"runtime"
 	"testing"
 )
 
@@ -95,4 +101,100 @@ func TestQodanaOptions_GuessAnalyzerFromParams(t *testing.T) {
 			},
 		)
 	}
+}
+
+func TestNativePathAnalyzerParams(t *testing.T) {
+	distPath, err := os.MkdirTemp("", "TestNativePathAnalyzerParamsDist")
+	if err != nil {
+		t.FailNow()
+	}
+	makeFakeProductInfo(distPath, product.JvmLinterProperties.ProductInfoJsonCode)
+
+	defer func(path string) {
+		_ = os.RemoveAll(path)
+	}(distPath)
+
+	tests := []struct {
+		name            string
+		ide             string
+		linter          string
+		qodana_dist_env string
+	}{
+		{
+			"Pass through ENV",
+			"",
+			"",
+			distPath,
+		},
+		{
+			"Pass through --ide",
+			distPath,
+			"",
+			"",
+		},
+		{
+			"Pass through --ide and dist",
+			distPath + "ignored",
+			"",
+			distPath,
+		},
+		{
+			"Unknown dist",
+			"",
+			"",
+			distPath + "wrong",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(
+			tt.name, func(t *testing.T) {
+				t.Setenv(qdenv.QodanaDistEnv, tt.qodana_dist_env)
+				if tt.name == "Unknown dist" {
+					defer func() { logrus.StandardLogger().ExitFunc = nil }()
+					var fatal bool
+					logrus.StandardLogger().ExitFunc = func(int) { fatal = true }
+					commoncontext.GuessAnalyzerFromEnvAndCLI(
+						tt.ide,
+						tt.linter,
+					)
+					if !fatal {
+						t.FailNow()
+					}
+					return
+				}
+
+				expected := product.PathNativeAnalyzer{
+					Linter: product.JvmLinter,
+					Path:   distPath,
+					IsEap:  false,
+				}
+				analyzer := commoncontext.GuessAnalyzerFromEnvAndCLI(
+					tt.ide,
+					tt.linter,
+				)
+
+				pathNativeAnalyzer, ok := analyzer.(*product.PathNativeAnalyzer)
+				if !ok {
+					t.FailNow()
+				}
+				if *pathNativeAnalyzer != expected {
+					t.Fatalf("Expected to be %v, got %v", expected, pathNativeAnalyzer)
+				}
+			},
+		)
+	}
+}
+
+func makeFakeProductInfo(ideDir string, productCode string) {
+	if //goland:noinspection ALL
+	runtime.GOOS == "darwin" {
+		ideDir = filepath.Join(ideDir, "Resources")
+	}
+	_ = os.MkdirAll(ideDir, 0755)
+	productInfo := product.InfoJson{
+		ProductCode: productCode,
+	}
+	productInfoBytes, _ := json.Marshal(productInfo)
+	_ = os.WriteFile(filepath.Join(ideDir, "product-info.json"), productInfoBytes, 0644)
 }
