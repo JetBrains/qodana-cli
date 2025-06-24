@@ -31,6 +31,7 @@ type Analyzer interface {
 	InitYaml(yaml qdyaml.QodanaYaml) qdyaml.QodanaYaml
 }
 
+// DockerAnalyzer can have UnknownLinter as Linter value
 type DockerAnalyzer struct {
 	Linter Linter
 	Image  string
@@ -61,9 +62,10 @@ func (a *DockerAnalyzer) InitYaml(yaml qdyaml.QodanaYaml) qdyaml.QodanaYaml {
 	return yaml
 }
 
+// NativeAnalyzer can't be UnknownLinter
 type NativeAnalyzer struct {
 	Linter Linter
-	Ide    string
+	Eap    bool
 }
 
 func (a *NativeAnalyzer) IsContainer() bool {
@@ -71,11 +73,17 @@ func (a *NativeAnalyzer) IsContainer() bool {
 }
 
 func (a *NativeAnalyzer) IsEAP() bool {
-	return strings.Contains(strings.ToLower(a.Ide), "eap")
+	return a.Eap
 }
 
 func (a *NativeAnalyzer) Name() string {
-	return a.Ide
+	return a.withEap()
+}
+func (a *NativeAnalyzer) withEap() string {
+	if a.Eap {
+		return a.Linter.ProductCode + EapSuffix
+	}
+	return a.Linter.ProductCode
 }
 
 func (a *NativeAnalyzer) GetLinter() Linter {
@@ -87,7 +95,7 @@ func (a *NativeAnalyzer) DownloadDist() bool {
 }
 
 func (a *NativeAnalyzer) InitYaml(yaml qdyaml.QodanaYaml) qdyaml.QodanaYaml {
-	yaml.Ide = a.Ide
+	yaml.Ide = a.withEap()
 	return yaml
 }
 

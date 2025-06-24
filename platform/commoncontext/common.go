@@ -37,41 +37,63 @@ import (
 func GuessAnalyzerFromEnvAndCLI(ide string, linter string) product.Analyzer {
 	dist, exists := os.LookupEnv(qdenv.QodanaDistEnv)
 	if exists && dist != "" {
-		productInfo, err := product.ReadIdeProductInfo(dist)
+		analyzer, err := BuildPathNativeAnalyzer(dist)
 		if err != nil {
-			log.Fatalf("Can't read product-info.json: %v ", err)
+			log.Fatalf("Env %s doesn't point to valid distribution: %s", qdenv.QodanaDistEnv, err)
+		}
+		return analyzer
+	}
+
+	return GuessAnalyzerFromParams(ide, linter)
+}
+
+func GuessAnalyzerFromParams(ide string, linter string) product.Analyzer {
+	if ide != "" {
+		linter := product.FindLinterByProductCode(ide)
+		if linter == product.UnknownLinter {
+			//legacy
+			log.Warnf(
+				"--ide value %s is not recognised as product code, trying to interpret as path to distribution\n",
+				ide,
+			)
+			analyzer, err := BuildPathNativeAnalyzer(ide)
+			if err != nil {
+				log.Fatalf("Flag --ide doesn't point to valid distribution: %s", err)
+			}
+			return analyzer
 		}
 
-		info := product.FindLinterPropertiesByProductInfo(productInfo.ProductCode)
-		if info == nil {
-			log.Fatalf("Product dist %s is not recognised as valid.", dist)
-			return nil
-		}
-		return &product.PathNativeAnalyzer{
-			Linter: info.Linter,
-			Path:   dist,
-			IsEap:  product.IsEap(productInfo),
+		return &product.NativeAnalyzer{
+			Linter: linter,
+			Eap:    strings.Contains(ide, product.EapSuffix),
 		}
 	}
 
 	if linter != "" {
 		return &product.DockerAnalyzer{
-			Linter: product.GuessLinter("", linter),
+			Linter: product.FindLinterByImage(linter),
 			Image:  linter,
 		}
 	}
 
-	if ide != "" {
-		linter := product.GuessLinter(ide, "")
-		if linter == product.UnknownLinter {
-			log.Fatalf("Product code %s is not supported. ", ide)
-		}
-		return &product.NativeAnalyzer{
-			Linter: linter,
-			Ide:    ide,
-		}
-	}
 	return nil
+}
+
+func BuildPathNativeAnalyzer(dist string) (product.Analyzer, error) {
+	productInfo, err := product.ReadIdeProductInfo(dist)
+	if err != nil {
+		return nil, fmt.Errorf("can't read product-info.json: %v ", err)
+	}
+
+	info, err := product.FindLinterPropertiesByProductInfo(productInfo.ProductCode)
+	if err != nil {
+		return nil, fmt.Errorf("product dist %s is not recognised as valid: %v", dist, err)
+	}
+	return &product.PathNativeAnalyzer{
+		Linter: info.Linter,
+		Path:   dist,
+		IsEap:  product.IsEap(productInfo),
+	}, nil
 }
 
 // SelectAnalyzerForPath gets linter for the given path
@@ -211,7 +233,7 @@ func analyzerToSelect(linters []product.Linter, path string) (map[string]product
 				key := linter.PresentableName + " (Native)"
 				analyzersMap[key] = &product.NativeAnalyzer{
 					Linter: linter,
-					Ide:    linter.ProductCode,
+					Eap:    linter.EapOnly,
 				}
 				analyzersList = append(analyzersList, key)
 			}

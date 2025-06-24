@@ -110,7 +110,7 @@ func ComputeFlags(cmd *cobra.Command, options *CliOptions) error {
 		os.Getenv(qdenv.QodanaDistEnv),
 		fmt.Sprintf(
 			"Use to run Qodana without a container. Not compatible with --linter option. Available codes are %s, add -EAP part to obtain EAP versions",
-			strings.Join(product.AllNativeCodes, ", "),
+			strings.Join(product.AllNativeProductCodes, ", "),
 		),
 	)
 

@@ -16,6 +16,8 @@
 
 package product
 
+import "fmt"
+
 type IntellijLinterProperties struct {
 	Linter
 	ProductInfoJsonCode string
@@ -146,11 +148,11 @@ func FindLinterProperties(linter Linter) *IntellijLinterProperties {
 	return nil
 }
 
-func FindLinterPropertiesByProductInfo(productInfoCode string) *IntellijLinterProperties {
+func FindLinterPropertiesByProductInfo(productInfoCode string) (*IntellijLinterProperties, error) {
 	for _, properties := range AllLinterProperties {
 		if properties.ProductInfoJsonCode == productInfoCode {
-			return &properties
+			return &properties, nil
 		}
 	}
-	return nil
+	return nil, fmt.Errorf("linter for product code %s not found", productInfoCode)
 }
