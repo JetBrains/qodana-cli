@@ -20,15 +20,12 @@ import (
 	"bufio"
 	"context"
 	"encoding/json"
-	"fmt"
 	"github.com/JetBrains/qodana-cli/v2025/core/corescan"
 	"github.com/JetBrains/qodana-cli/v2025/platform"
-	"github.com/JetBrains/qodana-cli/v2025/platform/effectiveconfig"
 	"github.com/JetBrains/qodana-cli/v2025/platform/git"
 	"github.com/JetBrains/qodana-cli/v2025/platform/msg"
 	"github.com/JetBrains/qodana-cli/v2025/platform/nuget"
 	"github.com/JetBrains/qodana-cli/v2025/platform/qdenv"
-	"github.com/JetBrains/qodana-cli/v2025/platform/qdyaml"
 	"github.com/JetBrains/qodana-cli/v2025/platform/strutil"
 	"github.com/JetBrains/qodana-cli/v2025/platform/utils"
 	cienvironment "github.com/cucumber/ci-environment/go"
@@ -155,7 +152,7 @@ func RunAnalysis(ctx context.Context, c corescan.Context) int {
 
 	installPlugins(c)
 	// this way of running needs to do bootstrap twice on different commits and will do it internally
-	if scenario != corescan.RunScenarioScoped && c.Ide() != "" {
+	if !corescan.IsScopedScenario(scenario) && c.Ide() != "" {
 		utils.Bootstrap(c.QodanaYamlConfig().Bootstrap, c.ProjectDir())
 	}
 	switch scenario {
@@ -164,7 +161,11 @@ func RunAnalysis(ctx context.Context, c corescan.Context) int {
 	case corescan.RunScenarioLocalChanges:
 		return runLocalChanges(ctx, c, startHash)
 	case corescan.RunScenarioScoped:
-		return runScopeScript(ctx, c, startHash)
+		analyzer := NewScopedAnalyzer(ctx, c, startHash, c.DiffEnd(), defaultRunner)
+		return analyzer.RunAnalysis()
+	case corescan.RunScenarioReversedScoped:
+		analyzer := NewReverseScopedAnalyzer(ctx, c, startHash, c.DiffEnd(), defaultRunner)
+		return analyzer.RunAnalysis()
 	case corescan.RunScenarioDefault:
 		return runQodana(ctx, c)
 	default:
@@ -250,144 +251,6 @@ func runWithFullHistory(ctx context.Context, c corescan.Context, startHash strin
 		log.Fatal(err)
 	}
 	return exitCode
-}
-
-func runScopeScript(ctx context.Context, c corescan.Context, startHash string) int {
-	// don't run this logic when we're about to launch a container - it's just double work
-	if c.Ide() == "" {
-		return runQodana(ctx, c)
-	}
-	var err error
-	end := c.DiffEnd()
-	if end == "" {
-		end, err = git.CurrentRevision(c.ProjectDir(), c.LogDir())
-		if err != nil {
-			log.Fatal(err)
-		}
-	}
-
-	if startHash == "" || end == "" {
-		log.Fatal("No commits given. Consider passing --commit or --diff-start and --diff-end (optional) with the range of commits to analyze.")
-	}
-	changedFiles, err := git.ComputeChangedFiles(c.ProjectDir(), startHash, end, c.LogDir())
-	if err != nil {
-		log.Fatal(err)
-	}
-	if len(changedFiles.Files) == 0 {
-		log.Warnf("Nothing to compare between %s and %s", startHash, end)
-		return utils.QodanaEmptyChangesetExitCodePlaceholder
-	}
-
-	scopeFile, err := writeChangesFile(c, changedFiles)
-	if err != nil {
-		log.Fatal("Failed to prepare diff run ", err)
-	}
-	defer func() {
-		_ = os.Remove(scopeFile)
-	}()
-
-	runFunc := func(hash string, c corescan.Context) (bool, int) {
-		e := git.CheckoutAndUpdateSubmodule(c.ProjectDir(), hash, true, c.LogDir())
-		if e != nil {
-			log.Fatalf("Cannot checkout commit %s: %v", hash, e)
-		}
-
-		log.Infof("Analysing %s", hash)
-
-		// for CLI, we use only bootstrap from this effective yaml
-		// all other fields are used from the one (effective aswell) obtained at the start
-		localQodanaYamlFullPath := qdyaml.GetLocalNotEffectiveQodanaYamlFullPath(
-			c.ProjectDir(),
-			c.CustomLocalQodanaYamlPath(),
-		)
-		effectiveConfigDir, cleanup, err := utils.CreateTempDir("qd-effective-config-")
-		if err != nil {
-			log.Fatalf("Failed to create Qodana effective config directory: %v", err)
-		}
-		defer cleanup()
-
-		effectiveConfigFiles, err := effectiveconfig.CreateEffectiveConfigFiles(
-			localQodanaYamlFullPath,
-			c.GlobalConfigurationsDir(),
-			c.GlobalConfigurationId(),
-			c.Prod().JbrJava(),
-			effectiveConfigDir,
-			c.LogDir(),
-		)
-		if err != nil {
-			log.Fatalf("Failed to load Qodana configuration during analysis of commit %s: %v", hash, err)
-		}
-
-		// if local qodana yaml doesn't exist on revision, for bootstrap fallback to the one constructed at the start
-		var bootstrap string
-		if c.LocalQodanaYamlExists() {
-			yaml := qdyaml.LoadQodanaYamlByFullPath(effectiveConfigFiles.EffectiveQodanaYamlPath)
-			bootstrap = yaml.Bootstrap
-		} else {
-			bootstrap = c.QodanaYamlConfig().Bootstrap
-		}
-		utils.Bootstrap(bootstrap, c.ProjectDir())
-
-		contextForAnalysis := c.WithEffectiveConfigurationDirOnRevision(effectiveConfigFiles.ConfigDir)
-		exitCode := runQodana(ctx, contextForAnalysis)
-		if !(exitCode == 0 || exitCode == 255) {
-			log.Errorf("Qodana analysis on %s exited with code %d. Aborting", hash, exitCode)
-			return true, exitCode
-		}
-		return false, exitCode
-	}
-
-	startRunContext := c.FirstStageOfScopedScript(scopeFile)
-	stop, code := runFunc(startHash, startRunContext)
-	if stop {
-		return code
-	}
-
-	startSarif := platform.GetSarifPath(startRunContext.ResultsDir())
-
-	endRunContext := c.SecondStageOfScopedScript(scopeFile, startSarif)
-	stop, code = runFunc(end, endRunContext)
-	if stop {
-		return code
-	}
-
-	err = utils.CopyDir(endRunContext.ResultsDir(), c.ResultsDir())
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	saveReport(c)
-	return code
-}
-
-// writeChangesFile creates a temp file containing the changes between diffStart and diffEnd
-func writeChangesFile(c corescan.Context, changedFiles git.ChangedFiles) (string, error) {
-	file, err := os.CreateTemp("", "diff-scope.txt")
-	if err != nil {
-		return "", err
-	}
-	defer func() {
-		err := file.Close()
-		if err != nil {
-			log.Warn("Failed to close scope file ", err)
-		}
-	}()
-
-	jsonChanges, err := json.MarshalIndent(changedFiles, "", "  ")
-	if err != nil {
-		return "", err
-	}
-	_, err = file.WriteString(string(jsonChanges))
-	if err != nil {
-		return "", fmt.Errorf("failed to write scope file: %w", err)
-	}
-
-	err = utils.CopyFile(file.Name(), filepath.Join(c.LogDir(), "changes.json"))
-	if err != nil {
-		return "", err
-	}
-
-	return file.Name(), nil
 }
 
 func runQodana(ctx context.Context, c corescan.Context) int {

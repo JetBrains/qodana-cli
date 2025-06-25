@@ -30,10 +30,11 @@ import (
 )
 
 const (
-	RunScenarioDefault      = "default"
-	RunScenarioFullHistory  = "full-history"
-	RunScenarioLocalChanges = "local-changes"
-	RunScenarioScoped       = "scope"
+	RunScenarioDefault        = "default"
+	RunScenarioFullHistory    = "full-history"
+	RunScenarioLocalChanges   = "local-changes"
+	RunScenarioScoped         = "scope"
+	RunScenarioReversedScoped = "reversed-scope"
 )
 
 type RunScenario = string
@@ -94,6 +95,8 @@ type Context struct {
 	diffStart                 string
 	diffEnd                   string
 	forceLocalChangesScript   bool
+	reversePrAnalysis         bool
+	reducedScopePath          string
 	analysisId                string
 	_volumes                  []string
 	user                      string
@@ -170,6 +173,8 @@ func (c Context) Commit() string                     { return c.commit }
 func (c Context) DiffStart() string                  { return c.diffStart }
 func (c Context) DiffEnd() string                    { return c.diffEnd }
 func (c Context) ForceLocalChangesScript() bool      { return c.forceLocalChangesScript }
+func (c Context) ReducedScopePath() string           { return c.reducedScopePath }
+func (c Context) ReversePrAnalysis() bool            { return c.reversePrAnalysis }
 func (c Context) AnalysisId() string                 { return c.analysisId }
 func (c Context) User() string                       { return c.user }
 func (c Context) PrintProblems() bool                { return c.printProblems }
@@ -229,6 +234,7 @@ type ContextBuilder struct {
 	DiffStart                 string
 	DiffEnd                   string
 	ForceLocalChangesScript   bool
+	ReversePrAnalysis         bool
 	AnalysisId                string
 	Volumes                   []string
 	User                      string
@@ -292,6 +298,7 @@ func (b ContextBuilder) Build() Context {
 		diffStart:                 b.DiffStart,
 		diffEnd:                   b.DiffEnd,
 		forceLocalChangesScript:   b.ForceLocalChangesScript,
+		reversePrAnalysis:         b.ReversePrAnalysis,
 		analysisId:                b.AnalysisId,
 		_volumes:                  b.Volumes,
 		user:                      b.User,
@@ -351,6 +358,10 @@ func (c Context) DetermineRunScenario(hasStartHash bool) RunScenario {
 		return RunScenarioDefault
 	case c.ForceLocalChangesScript():
 		return RunScenarioLocalChanges
+	case c.Ide() == "":
+		return RunScenarioDefault
+	case c.ReversePrAnalysis():
+		return RunScenarioReversedScoped
 	default:
 		return RunScenarioScoped
 	}
@@ -401,4 +412,8 @@ func (c Context) LocalQodanaYamlExists() bool {
 	}
 	info, _ := os.Stat(path)
 	return info != nil
+}
+
+func IsScopedScenario(scenario string) bool {
+	return scenario == RunScenarioScoped || scenario == RunScenarioReversedScoped
 }

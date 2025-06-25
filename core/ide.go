@@ -24,8 +24,8 @@ import (
 	"github.com/JetBrains/qodana-cli/v2025/platform/qdcontainer"
 	"github.com/JetBrains/qodana-cli/v2025/platform/strutil"
 	"github.com/JetBrains/qodana-cli/v2025/platform/utils"
+	"github.com/JetBrains/qodana-cli/v2025/sarif"
 	"os"
-	"path/filepath"
 	"strconv"
 	"strings"
 	"time"
@@ -38,7 +38,7 @@ func getIdeExitCode(resultsDir string, c int) (res int) {
 	if c != 0 {
 		return c
 	}
-	s, err := platform.ReadReport(filepath.Join(resultsDir, "qodana-short.sarif.json"))
+	s, err := platform.ReadReport(platform.GetShortSarifPath(resultsDir))
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -53,6 +53,21 @@ func getIdeExitCode(resultsDir string, c int) (res int) {
 	}
 	log.Printf("IDE process exit code: %d", c)
 	return c
+}
+
+// getInvocationProperties gets invocation properties from SARIF.
+func getInvocationProperties(resultsDir string) *sarif.PropertyBag {
+	s, err := platform.ReadReport(platform.GetShortSarifPath(resultsDir))
+	if err != nil {
+		log.Fatal(err)
+	}
+	if len(s.Runs) > 0 && len(s.Runs[0].Invocations) > 0 {
+		if s.Runs[0].Invocations[0].Properties == nil {
+			return &sarif.PropertyBag{}
+		}
+		return s.Runs[0].Invocations[0].Properties
+	}
+	return &sarif.PropertyBag{}
 }
 
 func runQodanaLocal(c corescan.Context) (int, error) {
