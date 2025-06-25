@@ -161,11 +161,11 @@ func RunAnalysis(ctx context.Context, c corescan.Context) int {
 	case corescan.RunScenarioLocalChanges:
 		return runLocalChanges(ctx, c, startHash)
 	case corescan.RunScenarioScoped:
-		analyzer := NewScopedAnalyzer(defaultRunner)
-		return analyzer.RunAnalysis(ctx, c, startHash, c.DiffEnd())
+		analyzer := NewScopedAnalyzer(ctx, c, startHash, c.DiffEnd(), defaultRunner)
+		return analyzer.RunAnalysis()
 	case corescan.RunScenarioReversedScoped:
-		analyzer := NewReverseScopedAnalyzer(defaultRunner)
-		return analyzer.RunAnalysis(ctx, c, startHash, c.DiffEnd())
+		analyzer := NewReverseScopedAnalyzer(ctx, c, startHash, c.DiffEnd(), defaultRunner)
+		return analyzer.RunAnalysis()
 	case corescan.RunScenarioDefault:
 		return runQodana(ctx, c)
 	default:

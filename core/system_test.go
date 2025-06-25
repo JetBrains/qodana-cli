@@ -119,8 +119,15 @@ func TestScopedScript(t *testing.T) {
 						return tc.runFunc(hash, c)
 					},
 				)
-				sequenceRunner := &ScopeSequenceRunner{}
-				exitCode := sequenceRunner.RunSequence("startHash", "endHash", "scope", context.Background(), c, runner)
+				sequenceRunner := &ScopeSequenceRunner{
+					SequenceRunnerBase: SequenceRunnerBase{
+						ctx:       context.Background(),
+						c:         c,
+						startHash: "startHash",
+						endHash:   "endHash",
+					},
+				}
+				exitCode := sequenceRunner.RunSequence("scope", runner)
 
 				expectedParams := tc.expectedParamsFunc(resultsDir)
 				assert.Equal(t, tc.expectedCalls, calls, "Expected %d calls", tc.expectedCalls)
@@ -396,8 +403,15 @@ func TestReverseScopedScript(t *testing.T) {
 						return tc.runFunc(hash, c)
 					},
 				)
-				sequenceRunner := &ReverseScopeSequenceRunner{}
-				exitCode := sequenceRunner.RunSequence("startHash", "endHash", "scope", context.Background(), c, runner)
+				sequenceRunner := &ReverseScopeSequenceRunner{
+					SequenceRunnerBase: SequenceRunnerBase{
+						ctx:       context.Background(),
+						c:         c,
+						startHash: "startHash",
+						endHash:   "endHash",
+					},
+				}
+				exitCode := sequenceRunner.RunSequence("scope", runner)
 
 				expectedParams := tc.expectedParamsFunc(firstDir)
 				assert.Equal(t, tc.expectedCalls, calls, "Expected %d calls", tc.expectedCalls)

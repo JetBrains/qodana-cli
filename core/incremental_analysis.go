@@ -21,6 +21,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/JetBrains/qodana-cli/v2025/core/corescan"
+	"github.com/JetBrains/qodana-cli/v2025/core/startup"
 	"github.com/JetBrains/qodana-cli/v2025/platform"
 	"github.com/JetBrains/qodana-cli/v2025/platform/effectiveconfig"
 	"github.com/JetBrains/qodana-cli/v2025/platform/git"
@@ -31,7 +32,7 @@ import (
 	"path/filepath"
 )
 
-var defaultRunner = &DefaultAnalysisRunner{}
+var defaultRunner = &defaultAnalysisRunner{}
 
 // AnalysisRunner defines the interface for logic on running analysis on commits
 type AnalysisRunner interface {
@@ -39,17 +40,13 @@ type AnalysisRunner interface {
 }
 
 // DefaultAnalysisRunner is the production implementation of RunFunc
-type DefaultAnalysisRunner struct {
-}
+type defaultAnalysisRunner struct{}
 
 // SequenceRunner defines the interface for different sequence analysis strategies
 type SequenceRunner interface {
-	RunSequence(
-		startHash, endHash, scopeFile string,
-		ctx context.Context,
-		c corescan.Context,
-		runner AnalysisRunner,
-	) int
+	RunSequence(scopeFile string, runner AnalysisRunner) int
+	GetParams() (corescan.Context, string, string)
+	ComputeEndHash() string
 }
 
 // ScopedAnalyzer contains the common logic and coordinates the analysis
@@ -58,51 +55,82 @@ type ScopedAnalyzer struct {
 	sequenceRunner SequenceRunner
 }
 
+type SequenceRunnerBase struct {
+	ctx                context.Context
+	c                  corescan.Context
+	startHash, endHash string
+}
+
 // ScopeSequenceRunner implements the original scope analysis (old commit comes first, new commit comes last)
-type ScopeSequenceRunner struct{}
+type ScopeSequenceRunner struct {
+	SequenceRunnerBase
+}
 
 // ReverseScopeSequenceRunner implements the reverse scope analysis
-type ReverseScopeSequenceRunner struct{}
+type ReverseScopeSequenceRunner struct {
+	SequenceRunnerBase
+}
 
 // NewScopedAnalyzer creates a new ScopedAnalyzer with the original sequence runner
-func NewScopedAnalyzer(runner AnalysisRunner) *ScopedAnalyzer {
+func NewScopedAnalyzer(
+	ctx context.Context,
+	c corescan.Context,
+	startHash, endHash string,
+	runner AnalysisRunner,
+) *ScopedAnalyzer {
 	return &ScopedAnalyzer{
-		runner:         runner,
-		sequenceRunner: &ScopeSequenceRunner{},
+		runner: runner,
+		sequenceRunner: &ScopeSequenceRunner{
+			SequenceRunnerBase: SequenceRunnerBase{
+				ctx:       ctx,
+				c:         c,
+				startHash: startHash,
+				endHash:   endHash,
+			},
+		},
 	}
 }
 
 // NewReverseScopedAnalyzer creates a new ScopedAnalyzer with the reversed sequence runner
-func NewReverseScopedAnalyzer(runner AnalysisRunner) *ScopedAnalyzer {
-	return &ScopedAnalyzer{
-		runner:         runner,
-		sequenceRunner: &ReverseScopeSequenceRunner{},
-	}
-}
-
-func (sa *ScopedAnalyzer) RunAnalysis(
+func NewReverseScopedAnalyzer(
 	ctx context.Context,
 	c corescan.Context,
-	startHash, end string,
-) int {
+	startHash, endHash string,
+	runner AnalysisRunner,
+) *ScopedAnalyzer {
 	var err error
-	if end == "" {
-		end, err = git.CurrentRevision(c.ProjectDir(), c.LogDir())
+	if endHash == "" {
+		endHash, err = git.CurrentRevision(c.ProjectDir(), c.LogDir())
 		if err != nil {
 			log.Fatal(err)
 		}
 	}
+	return &ScopedAnalyzer{
+		runner: runner,
+		sequenceRunner: &ReverseScopeSequenceRunner{
+			SequenceRunnerBase: SequenceRunnerBase{
+				ctx:       ctx,
+				c:         c,
+				startHash: startHash,
+				endHash:   endHash,
+			},
+		},
+	}
+}
 
-	if startHash == "" || end == "" {
+func (sa *ScopedAnalyzer) RunAnalysis() int {
+	c, startHash, endHash := sa.sequenceRunner.GetParams()
+	var err error
+	if startHash == "" || endHash == "" {
 		log.Fatal("No commits given. Consider passing --commit or --diff-start and --diff-end (optional) with the range of commits to analyze.")
 	}
 
-	changedFiles, err := git.ComputeChangedFiles(c.ProjectDir(), startHash, end, c.LogDir())
+	changedFiles, err := git.ComputeChangedFiles(c.ProjectDir(), startHash, endHash, c.LogDir())
 	if err != nil {
 		log.Fatal(err)
 	}
 	if len(changedFiles.Files) == 0 {
-		log.Warnf("Nothing to compare between %s and %s", startHash, end)
+		log.Warnf("Nothing to compare between %s and %s", startHash, endHash)
 		return utils.QodanaEmptyChangesetExitCodePlaceholder
 	}
 
@@ -114,10 +142,10 @@ func (sa *ScopedAnalyzer) RunAnalysis(
 		_ = os.Remove(scopeFile)
 	}()
 
-	return sa.sequenceRunner.RunSequence(startHash, end, scopeFile, ctx, c, sa.runner)
+	return sa.sequenceRunner.RunSequence(scopeFile, sa.runner)
 }
 
-func (r *DefaultAnalysisRunner) RunFunc(hash string, ctx context.Context, c corescan.Context) (bool, int) {
+func (r *defaultAnalysisRunner) RunFunc(hash string, ctx context.Context, c corescan.Context) (bool, int) {
 	e := git.CheckoutAndUpdateSubmodule(c.ProjectDir(), hash, true, c.LogDir())
 	if e != nil {
 		log.Fatalf("Cannot checkout commit %s: %v", hash, e)
@@ -169,11 +197,10 @@ func (r *DefaultAnalysisRunner) RunFunc(hash string, ctx context.Context, c core
 }
 
 func (r *ScopeSequenceRunner) RunSequence(
-	startHash, endHash, scopeFile string,
-	ctx context.Context,
-	c corescan.Context,
+	scopeFile string,
 	runner AnalysisRunner,
 ) int {
+	ctx, c, startHash, endHash := computeSequenceParams(&r.SequenceRunnerBase)
 	startRunContext := c.FirstStageOfScopedScript(scopeFile)
 	stop, code := runner.RunFunc(startHash, ctx, startRunContext)
 	if stop {
@@ -193,14 +220,13 @@ func (r *ScopeSequenceRunner) RunSequence(
 }
 
 func (r *ReverseScopeSequenceRunner) RunSequence(
-	startHash, endHash, scopeFile string,
-	ctx context.Context,
-	c corescan.Context,
+	scopeFile string,
 	runner AnalysisRunner,
 ) int {
 	var code int
 	var stop bool
 
+	ctx, c, startHash, endHash := computeSequenceParams(&r.SequenceRunnerBase)
 	newCodeContext := c.FirstStageOfReverseScopedScript(scopeFile)
 	if stop, code = runner.RunFunc(endHash, ctx, newCodeContext); stop {
 		return code
@@ -214,7 +240,8 @@ func (r *ReverseScopeSequenceRunner) RunSequence(
 
 	scopeFile, coverageArtifactsPath, newCodeSarif := prepareArtifactPaths(newCodeContext, scopeFile)
 
-	startRunContext := c.SecondStageOfReverseScopedScript(scopeFile, newCodeSarif, coverageArtifactsPath)
+	startRunContext := c.SecondStageOfReverseScopedScript(scopeFile, newCodeSarif)
+	copyCoverageFromNewStage(coverageArtifactsPath, startRunContext.ResultsDir())
 	if stop, code = runner.RunFunc(startHash, ctx, startRunContext); stop {
 		return code
 	}
@@ -226,7 +253,8 @@ func (r *ReverseScopeSequenceRunner) RunSequence(
 	}
 
 	if shouldApplyFixes := c.ApplyFixes() || c.Cleanup(); shouldApplyFixes {
-		fixesContext := c.ThirdStageOfReverseScopedScript(scopeFile, newCodeSarif, coverageArtifactsPath)
+		fixesContext := c.ThirdStageOfReverseScopedScript(scopeFile, newCodeSarif)
+		copyCoverageFromNewStage(coverageArtifactsPath, fixesContext.ResultsDir())
 		if stop, code = runner.RunFunc(endHash, ctx, fixesContext); stop {
 			return code
 		}
@@ -235,6 +263,27 @@ func (r *ReverseScopeSequenceRunner) RunSequence(
 
 	copyAndSaveReport(currentContext, c)
 	return code
+}
+
+func computeSequenceParams(r *SequenceRunnerBase) (context.Context, corescan.Context, string, string) {
+	return r.ctx, r.c, r.startHash, r.ComputeEndHash()
+}
+
+func (r *SequenceRunnerBase) GetParams() (corescan.Context, string, string) {
+	return r.c, r.startHash, r.ComputeEndHash()
+}
+
+func (r *SequenceRunnerBase) ComputeEndHash() string {
+	endHash := r.endHash
+	var err error
+	if endHash == "" {
+		endHash, err = git.CurrentRevision(r.c.ProjectDir(), r.c.LogDir())
+		if err != nil {
+			log.Fatal(err)
+		}
+		r.endHash = endHash
+	}
+	return endHash
 }
 
 func prepareArtifactPaths(
@@ -300,4 +349,14 @@ func writeChangesFile(c corescan.Context, changedFiles git.ChangedFiles) (string
 	}
 
 	return file.Name(), nil
+}
+
+func copyCoverageFromNewStage(coverageDataPath string, resultsDir string) {
+	if info, err := os.Stat(coverageDataPath); err == nil && info.IsDir() {
+		startup.MakeDirAll(resultsDir)
+		targetCoveragePath := filepath.Join(resultsDir, "coverage")
+		if err := utils.CopyDir(coverageDataPath, targetCoveragePath); err != nil {
+			log.Fatalf("Failed to copy coverage data from %s to %s: %v", coverageDataPath, targetCoveragePath, err)
+		}
+	}
 }

@@ -21,9 +21,6 @@ import (
 	"github.com/JetBrains/qodana-cli/v2025/core/startup"
 	"github.com/JetBrains/qodana-cli/v2025/platform/qdenv"
 	"github.com/JetBrains/qodana-cli/v2025/platform/strutil"
-	"github.com/JetBrains/qodana-cli/v2025/platform/utils"
-	log "github.com/sirupsen/logrus"
-	"os"
 	"path/filepath"
 	"strings"
 )
@@ -107,7 +104,7 @@ func (c Context) FirstStageOfReverseScopedScript(scopeFile string) Context {
 	return c
 }
 
-func (c Context) SecondStageOfReverseScopedScript(scopeFile string, startSarif string, coveragePath string) Context {
+func (c Context) SecondStageOfReverseScopedScript(scopeFile string, startSarif string) Context {
 	c.script = strutil.QuoteForWindows("reverse-scoped:OLD," + scopeFile)
 
 	endDir := filepath.Join(c.ResultsDir(), "end")
@@ -126,11 +123,10 @@ func (c Context) SecondStageOfReverseScopedScript(scopeFile string, startSarif s
 	c = c.prepareContext(true, properties...)
 	c.resultsDir = endDir
 	startup.MakeDirAll(c.LogDir()) // need to prepare new result and log dir
-	c.copyCoverageFromNewStage(coveragePath)
 	return c
 }
 
-func (c Context) ThirdStageOfReverseScopedScript(scopeFile string, startSarif string, coveragePath string) Context {
+func (c Context) ThirdStageOfReverseScopedScript(scopeFile string, startSarif string) Context {
 	c.script = strutil.QuoteForWindows("reverse-scoped:FIXES," + scopeFile)
 
 	endDir := filepath.Join(c.ResultsDir(), "fixes")
@@ -145,18 +141,8 @@ func (c Context) ThirdStageOfReverseScopedScript(scopeFile string, startSarif st
 	c = c.prepareContext(false, properties...)
 	c.resultsDir = endDir
 	startup.MakeDirAll(c.LogDir()) // need to prepare new result and log dir
-	c.copyCoverageFromNewStage(coveragePath)
-	return c
-}
 
-func (c Context) copyCoverageFromNewStage(coverageDataPath string) {
-	if info, err := os.Stat(coverageDataPath); err == nil && info.IsDir() {
-		startup.MakeDirAll(c.ResultsDir())
-		targetCoveragePath := filepath.Join(c.ResultsDir(), "coverage")
-		if err := utils.CopyDir(coverageDataPath, targetCoveragePath); err != nil {
-			log.Fatalf("Failed to copy coverage data from %s to %s: %v", coverageDataPath, targetCoveragePath, err)
-		}
-	}
+	return c
 }
 
 func (c Context) ForcedLocalChanges() Context {
