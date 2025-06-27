@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"github.com/JetBrains/qodana-cli/v2025/platform/product"
 	"os"
 	"path/filepath"
 	"strings"
@@ -32,10 +33,11 @@ func TestLinterRun(t *testing.T) {
 	cacheDir := filepath.Join(projectDir, ".linter-cache")
 
 	linterInfo := thirdpartyscan.LinterInfo{
-		ProductCode:   productCode,
-		LinterName:    linterName,
-		LinterVersion: version,
-		IsEap:         true,
+		ProductCode:           product.ClangLinter.ProductCode,
+		LinterName:            product.ClangLinter.Name,
+		LinterPresentableName: product.ClangLinter.PresentableName,
+		LinterVersion:         version,
+		IsEap:                 true,
 	}
 
 	command := platform.NewThirdPartyScanCommand(ClangLinter{}, linterInfo)
