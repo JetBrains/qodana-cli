@@ -157,9 +157,8 @@ func TestInitCommand(t *testing.T) {
 
 	qodanaYaml := qdyaml.LoadQodanaYamlByFullPath(updatedQodanaYamlPath)
 
-	image := product.PythonLinter.Image()
-	if qodanaYaml.Linter != image {
-		t.Fatalf("expected \"%s\", but got %s", image, qodanaYaml.Linter)
+	if qodanaYaml.Linter != product.PythonLinter.Name {
+		t.Fatalf("expected \"%s\", but got %s", product.PythonLinter.Name, qodanaYaml.Linter)
 	}
 
 	err = os.RemoveAll(projectPath)

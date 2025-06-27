@@ -318,6 +318,16 @@ func allLintersFiltered(linters []Linter, filter func(linter *Linter) bool) []Li
 
 // AllImages is a list of all supported linters.
 var AllImages = allImages(AllLinters)
+var AllNames = allNames(AllLinters)
+
+func allNames(linters []Linter) []string {
+	var names []string
+	for _, linter := range linters {
+		names = append(names, linter.Name)
+	}
+	return names
+}
+
 var AllNativeProductCodes = allProductCodes(AllNativeLinters)
 
 func FindLinterByImage(image string) Linter {
@@ -340,6 +350,16 @@ func FindLinterByProductCode(productCode string) Linter {
 	productCode = strings.TrimSuffix(productCode, EapSuffix)
 	for _, linter := range AllLinters {
 		if productCode == linter.ProductCode {
+			return linter
+		}
+	}
+	return UnknownLinter
+}
+
+func FindLinterByName(name string) Linter {
+	name = strings.TrimSuffix(name, EapSuffix)
+	for _, linter := range AllLinters {
+		if name == linter.Name {
 			return linter
 		}
 	}

@@ -6,11 +6,6 @@ import (
 	"github.com/JetBrains/qodana-cli/v2025/platform/process"
 )
 
-const (
-	productCode = "QDCLC"
-	linterName  = "Qodana Community for C/C++"
-)
-
 var InterruptChannel chan os.Signal
 var version = "2023.3"
 var buildDateStr = "2024-04-05T10:52:23Z"
@@ -18,5 +13,5 @@ var buildDateStr = "2024-04-05T10:52:23Z"
 // noinspection GoUnusedFunction
 func main() {
 	process.Init()
-	Execute(productCode, linterName, version, buildDateStr, true)
+	Execute(version, buildDateStr, true)
 }

@@ -49,8 +49,10 @@ func RunThirdPartyLinterAnalysis(
 	var err error
 
 	commonCtx := commoncontext.Compute(
+		linterInfo.LinterName,
 		"",
-		linterInfo.ProductCode,
+		"",
+		"",
 		cliOptions.CacheDir,
 		cliOptions.ResultsDir,
 		cliOptions.ReportDir,
@@ -246,7 +248,7 @@ func copyQodanaYamlToLogDir(qodanaYamlFullPath string, logDir string) error {
 func printQodanaLogo(logDir string, cacheDir string, linterInfo thirdpartyscan.LinterInfo) {
 	fmt.Println("\nLog directory: " + logDir)
 	fmt.Println("Cache directory: " + cacheDir)
-	fmt.Print(qodanaLogo(linterInfo.LinterName, linterInfo.LinterVersion, linterInfo.IsEap))
+	fmt.Print(qodanaLogo(linterInfo.LinterPresentableName, linterInfo.LinterVersion, linterInfo.IsEap))
 }
 
 // qodanaLogo prepares the info message for the tool

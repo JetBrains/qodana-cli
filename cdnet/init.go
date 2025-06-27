@@ -19,20 +19,22 @@ package main
 import (
 	"github.com/JetBrains/qodana-cli/v2025/cmd"
 	"github.com/JetBrains/qodana-cli/v2025/platform"
+	"github.com/JetBrains/qodana-cli/v2025/platform/product"
 	"github.com/JetBrains/qodana-cli/v2025/platform/thirdpartyscan"
 	"github.com/spf13/cobra"
 )
 
-func Execute(productCode string, linterName string, linterVersion string, buildDateStr string, isEap bool) {
+func Execute(linterVersion string, buildDateStr string, isEap bool) {
 	platform.CheckEAP(buildDateStr, isEap)
 
 	linter := CdnetLinter{}
 
 	linterInfo := thirdpartyscan.LinterInfo{
-		ProductCode:   productCode,
-		LinterName:    linterName,
-		LinterVersion: linterVersion,
-		IsEap:         isEap,
+		ProductCode:           product.DotNetCommunityLinter.ProductCode,
+		LinterPresentableName: product.DotNetCommunityLinter.PresentableName,
+		LinterName:            product.DotNetCommunityLinter.Name,
+		LinterVersion:         linterVersion,
+		IsEap:                 isEap,
 	}
 
 	commands := make([]*cobra.Command, 1)

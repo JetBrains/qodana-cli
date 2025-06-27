@@ -39,7 +39,7 @@ func NewThirdPartyScanCommand(linter ThirdPartyLinter, linterInfo thirdpartyscan
 
 Note that most options can be configured via qodana.yaml (https://www.jetbrains.com/help/qodana/qodana-yaml.html) file.
 But you can always override qodana.yaml options with the following command-line options.
-`, linterInfo.LinterName,
+`, linterInfo.LinterPresentableName,
 		),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			log.SetFormatter(&log.TextFormatter{DisableQuote: true, DisableTimestamp: true})
@@ -64,6 +64,12 @@ But you can always override qodana.yaml options with the following command-line 
 	}
 	if cliOptions.Ide != "" {
 		msg.WarningMessage("Warning: --ide option is ignored when running a third-party linter.")
+	}
+	if cliOptions.Image != "" {
+		msg.WarningMessage("Warning: --image option is ignored when running a third-party linter.")
+	}
+	if cliOptions.WithinDocker != "" {
+		msg.WarningMessage("Warning: --within-docker option is ignored when running a third-party linter.")
 	}
 
 	return c

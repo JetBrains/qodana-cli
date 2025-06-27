@@ -58,7 +58,7 @@ func (a *DockerAnalyzer) DownloadDist() bool {
 }
 
 func (a *DockerAnalyzer) InitYaml(yaml qdyaml.QodanaYaml) qdyaml.QodanaYaml {
-	yaml.Linter = a.Image
+	yaml.Linter = a.Linter.Name
 	return yaml
 }
 
@@ -95,7 +95,7 @@ func (a *NativeAnalyzer) DownloadDist() bool {
 }
 
 func (a *NativeAnalyzer) InitYaml(yaml qdyaml.QodanaYaml) qdyaml.QodanaYaml {
-	yaml.Ide = a.withEap()
+	yaml.Linter = a.Linter.Name
 	return yaml
 }
 
