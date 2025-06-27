@@ -56,6 +56,8 @@ But you can always override qodana.yaml options with the following command-line 
 			commonCtx := commoncontext.Compute(
 				cliOptions.Linter,
 				cliOptions.Ide,
+				cliOptions.Image,
+				cliOptions.WithinDocker,
 				cliOptions.CacheDir,
 				cliOptions.ResultsDir,
 				cliOptions.ReportDir,

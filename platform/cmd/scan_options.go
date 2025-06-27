@@ -34,6 +34,8 @@ type CliOptions struct {
 	ReportDir                 string
 	CoverageDir               string
 	Linter                    string
+	Image                     string
+	WithinDocker              string
 	Ide                       string
 	SourceDirectory           string
 	DisableSanity             bool
@@ -98,7 +100,24 @@ func ComputeFlags(cmd *cobra.Command, options *CliOptions) error {
 			"linter",
 			"l",
 			"",
-			"Use to run Qodana in a container (default). Choose linter (image) to use. Not compatible with --ide option. Available images are: "+strings.Join(
+			"Defines the linter to be used for analysis. In case this parameter is not specified \nhere and in qodana.yaml Qodana will try to define linter basing on project content. Available values: "+strings.Join(
+				product.AllNames,
+				", ",
+			)+"\n!Legacy note!: This parameter till 2025.2 version was used to define linter image. This behavior is deprecated but supported for backward compatibility. Please use --linter and --within-docker=true or --image instead.",
+		)
+
+		flags.StringVar(
+			&options.WithinDocker,
+			"within-docker",
+			"",
+			"Defines if analysis is performed within a docker container or not. \nSet to 'false' for performing analysis in native mode. Set to 'true' for performing analysis within docker container. \nThe image for container creation will be chosen in an automated way based on the value of --linter param, for example, jetbrains/qodana-jvm for --linter==qodana-jvm.\nDefault value is defined dynamically by analysis of the current environment and project. \nPlease note that for some linters native mode is not yet available.  ",
+		)
+
+		flags.StringVar(
+			&options.Image,
+			"image",
+			"",
+			"Defines an image to be used for analysis execution.\nOverrides --within-docker to true value. Overrides --linter to preinstalled linter within image.\nAvailable images are: "+strings.Join(
 				product.AllImages,
 				", ",
 			),
@@ -373,6 +392,10 @@ func ComputeFlags(cmd *cobra.Command, options *CliOptions) error {
 	cmd.MarkFlagsMutuallyExclusive("apply-fixes", "cleanup")
 
 	err = cmd.Flags().MarkDeprecated("fixes-strategy", "use --apply-fixes / --cleanup instead")
+	err = cmd.Flags().MarkDeprecated(
+		"ide",
+		"use --linter with corresponding liter type and --within-docker=false instead",
+	)
 	if err != nil {
 		return err
 	}

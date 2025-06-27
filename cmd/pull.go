@@ -40,6 +40,8 @@ func newPullCommand() *cobra.Command {
 			commonCtx := commoncontext.Compute(
 				cliOptions.Linter,
 				"",
+				cliOptions.Image,
+				"true",
 				"",
 				"",
 				"",
@@ -64,6 +66,7 @@ func newPullCommand() *cobra.Command {
 	}
 	flags := cmd.Flags()
 	flags.StringVarP(&cliOptions.Linter, "linter", "l", "", "Override linter to use")
+	flags.StringVarP(&cliOptions.Image, "image", "", "", "Image to pull")
 	flags.StringVarP(&cliOptions.ProjectDir, "project-dir", "i", ".", "Root directory of the inspected project")
 	flags.StringVar(
 		&cliOptions.ConfigName,
@@ -76,6 +79,7 @@ func newPullCommand() *cobra.Command {
 
 type pullOptions struct {
 	Linter     string
+	Image      string
 	ProjectDir string
 	ConfigName string
 }

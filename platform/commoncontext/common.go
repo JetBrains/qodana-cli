@@ -34,7 +34,12 @@ import (
 	"time"
 )
 
-func GuessAnalyzerFromEnvAndCLI(ide string, linter string) product.Analyzer {
+func GuessAnalyzerFromEnvAndCLI(
+	ide string,
+	linter string,
+	image string,
+	withinDocker string,
+) product.Analyzer {
 	dist, exists := os.LookupEnv(qdenv.QodanaDistEnv)
 	if exists && dist != "" {
 		analyzer, err := BuildPathNativeAnalyzer(dist)
@@ -43,15 +48,37 @@ func GuessAnalyzerFromEnvAndCLI(ide string, linter string) product.Analyzer {
 		}
 		return analyzer
 	}
+	if linter != "" && ide != "" {
+		log.Fatalf(
+			"You have both `--linter:` (%s) and `--ide:` (%s) specified. Please remove --ide it's deprecated.",
+			linter,
+			ide,
+		)
+		return nil
+	}
 
-	return GuessAnalyzerFromParams(ide, linter)
+	if image != "" && ide != "" {
+		log.Fatalf(
+			"You have both `--image:` (%s) and `--ide:` (%s) specified. Please remove --ide it's deprecated.",
+			image,
+			ide,
+		)
+		return nil
+	}
+
+	return guessAnalyzerFromParams(ide, linter, image, withinDocker)
 }
 
-func GuessAnalyzerFromParams(ide string, image string) product.Analyzer {
+func guessAnalyzerFromParams(
+	ide string,
+	linterParam string,
+	image string,
+	withinDocker string,
+) product.Analyzer {
 	if ide != "" {
 		linter := product.FindLinterByProductCode(ide)
 		if linter == product.UnknownLinter {
-			//legacy
+			//legacy support
 			log.Warnf(
 				"--ide value %s is not recognised as product code, trying to interpret as path to distribution\n",
 				ide,
@@ -76,6 +103,47 @@ func GuessAnalyzerFromParams(ide string, image string) product.Analyzer {
 		}
 	}
 
+	if linterParam != "" {
+		return GuessAnalyzerByLinterParam(linterParam, withinDocker)
+	}
+
+	return nil
+}
+
+func GuessAnalyzerByLinterParam(linterParam string, withinDocker string) product.Analyzer {
+	linter := product.FindLinterByName(linterParam)
+	if linter == product.UnknownLinter {
+		//legacy support - linter param with image values
+		linterLikeImage := product.FindLinterByImage(linterParam)
+		if linterLikeImage != product.UnknownLinter {
+			msg.WarningMessage("Linter %s has image value, please use --image param\n", linterParam)
+			return &product.DockerAnalyzer{
+				Linter: linterLikeImage,
+				Image:  linterParam,
+			}
+		}
+		log.Fatalf(
+			"Unknown value for `linter` param: %s. If the passewd value is custom dcoker image, please use --image param instead.",
+			linterParam,
+		)
+		return nil
+	}
+
+	withinContainerLower := strings.ToLower(withinDocker)
+	if withinDocker == "" || withinContainerLower == "true" {
+		return &product.DockerAnalyzer{
+			Linter: linter,
+			Image:  linter.Image(),
+		}
+	} else if withinContainerLower == "false" {
+		//goland:noinspection GoBoolExpressions
+		return &product.NativeAnalyzer{
+			Linter: linter,
+			Eap:    !product.IsReleased || linter.EapOnly,
+		}
+	} else {
+		log.Fatalf("Wrong value for within-docker param: %s. Use true/false.", withinDocker)
+	}
 	return nil
 }
 

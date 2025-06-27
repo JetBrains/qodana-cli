@@ -965,7 +965,7 @@ func TestQodanaOptions_RequiresToken(t *testing.T) {
 
 		t.Run(
 			tt.name, func(t *testing.T) {
-				initArgs := commoncontext.Compute(tt.linter, tt.ide, "", "", "", "", false, "", "")
+				initArgs := commoncontext.Compute(tt.linter, tt.ide, "", "", "", "", "", "", false, "", "")
 
 				if tt.name == qdenv.QodanaToken {
 					t.Setenv(qdenv.QodanaToken, "test")
@@ -1103,6 +1103,8 @@ func Test_Properties(t *testing.T) {
 				}
 
 				commonCtx := commoncontext.Compute(
+					"",
+					"",
 					"jetbrains/qodana-dotnet:latest",
 					"",
 					cacheDir,
