@@ -49,6 +49,8 @@ If you are using other Qodana Cloud instance than https://qodana.cloud/, overrid
 				cliOptions.Linter,
 				"",
 				"",
+				"",
+				"",
 				cliOptions.ResultsDir,
 				cliOptions.ReportDir,
 				qdenv.GetQodanaGlobalEnv(qdenv.QodanaToken),

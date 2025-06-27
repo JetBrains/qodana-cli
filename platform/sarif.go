@@ -188,8 +188,8 @@ func SetVersionControlParams(c thirdpartyscan.Context, deviceId string, finalRep
 	if linterInfo.ProductCode != "" {
 		finalReport.Runs[0].Tool.Driver.Name = linterInfo.ProductCode
 	}
-	if linterInfo.LinterName != "" {
-		finalReport.Runs[0].Tool.Driver.FullName = linterInfo.LinterName
+	if linterInfo.LinterPresentableName != "" {
+		finalReport.Runs[0].Tool.Driver.FullName = linterInfo.LinterPresentableName
 	}
 	if linterInfo.LinterVersion != "" {
 		finalReport.Runs[0].Tool.Driver.Version = linterInfo.LinterVersion

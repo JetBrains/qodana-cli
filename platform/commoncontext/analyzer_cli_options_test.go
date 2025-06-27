@@ -14,11 +14,10 @@
  * limitations under the License.
  */
 
-package core
+package commoncontext
 
 import (
 	"encoding/json"
-	"github.com/JetBrains/qodana-cli/v2025/platform/commoncontext"
 	"github.com/JetBrains/qodana-cli/v2025/platform/product"
 	"github.com/JetBrains/qodana-cli/v2025/platform/qdenv"
 	"github.com/sirupsen/logrus"
@@ -28,71 +27,30 @@ import (
 	"testing"
 )
 
-func TestQodanaOptions_GuessAnalyzerFromParams(t *testing.T) {
-	tests := []struct {
-		name     string
-		ide      string
-		linter   string
-		expected product.Analyzer
-	}{
-		{
-			"IDE defined",
-			"QDNET",
-			"",
-			product.DotNetLinter.NativeAnalyzer(),
-		},
-		{
-			"IDE defined with EapSuffix",
-			"QDNET-EAP",
-			"",
-			&product.NativeAnalyzer{Linter: product.DotNetLinter, Eap: true},
-		},
-		{
-			"Linter defined",
-			"",
-			"jetbrains/qodana-dotnet:2023.3-eap",
-			&product.DockerAnalyzer{Linter: product.DotNetLinter, Image: "jetbrains/qodana-dotnet:2023.3-eap"},
-		},
-		{
-			"TC defined",
-			"",
-			"registry.jetbrains.team/p/sa/containers/qodana-php:2023.3-rc",
-			&product.DockerAnalyzer{
-				Linter: product.PhpLinter,
-				Image:  "registry.jetbrains.team/p/sa/containers/qodana-php:2023.3-rc",
-			},
-		},
+// Test this case on yaml is future effort due to communication with cloud
+var NoneTest = TestCase{
+	name:     "No parameters defined",
+	expected: nil,
+}
 
-		{
-			"Both defined",
-			"QDNET",
-			"jetbrains/qodana-php:2023.3-eap",
-			product.DotNetLinter.NativeAnalyzer(),
-		},
-		{
-			"Unknown linter defined",
-			"",
-			"jetbrains/qodana-unknown:2023.3-eap",
-			&product.DockerAnalyzer{
-				Linter: product.UnknownLinter,
-				Image:  "jetbrains/qodana-unknown:2023.3-eap",
-			},
-		},
-		{
-			"None defined", "", "", nil,
-		},
-	}
-
-	for _, tt := range tests {
+func TestAnalyzerCliOptions(t *testing.T) {
+	for _, tt := range append(optionsTests, NoneTest) {
 		t.Run(
 			tt.name, func(t *testing.T) {
-				analyzer := commoncontext.GuessAnalyzerFromParams(
-					tt.ide,
-					tt.linter,
-				)
+				var fatal bool
+				if tt.failure {
+					defer func() { logrus.StandardLogger().ExitFunc = nil }()
+					logrus.StandardLogger().ExitFunc = func(int) { fatal = true }
+				}
+
+				analyzer := GuessAnalyzerFromEnvAndCLI(tt.ide, tt.linter, tt.image, tt.withinDocker)
+				if tt.failure && !fatal {
+					t.Errorf("Expected failure case, got %v", analyzer.Name())
+					return
+				}
 				if analyzer == nil {
 					if tt.expected != nil {
-						t.Errorf("Expected linetr to be %s, got nil", tt.expected.Name())
+						t.Errorf("Expected linter to be %s, got nil", tt.expected.Name())
 						return
 					}
 				} else if analyzer.GetLinter() != tt.expected.GetLinter() || analyzer.Name() != tt.expected.Name() {
@@ -154,10 +112,7 @@ func TestNativePathAnalyzerParams(t *testing.T) {
 					defer func() { logrus.StandardLogger().ExitFunc = nil }()
 					var fatal bool
 					logrus.StandardLogger().ExitFunc = func(int) { fatal = true }
-					commoncontext.GuessAnalyzerFromEnvAndCLI(
-						tt.ide,
-						tt.linter,
-					)
+					GuessAnalyzerFromEnvAndCLI(tt.ide, tt.linter, "", "")
 					if !fatal {
 						t.FailNow()
 					}
@@ -169,10 +124,7 @@ func TestNativePathAnalyzerParams(t *testing.T) {
 					Path:   distPath,
 					IsEap:  false,
 				}
-				analyzer := commoncontext.GuessAnalyzerFromEnvAndCLI(
-					tt.ide,
-					tt.linter,
-				)
+				analyzer := GuessAnalyzerFromEnvAndCLI(tt.ide, tt.linter, "", "")
 
 				pathNativeAnalyzer, ok := analyzer.(*product.PathNativeAnalyzer)
 				if !ok {

@@ -77,9 +77,9 @@ func TestMergeSarifReports(t *testing.T) {
 		ProjectDir: dir,
 		ResultsDir: dir,
 		LinterInfo: thirdpartyscan.LinterInfo{
-			ProductCode:   toolCode,
-			LinterName:    toolDesc,
-			LinterVersion: "",
+			ProductCode:           toolCode,
+			LinterPresentableName: toolDesc,
+			LinterVersion:         "",
 		},
 	}.Build()
 

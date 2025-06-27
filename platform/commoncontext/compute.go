@@ -25,6 +25,7 @@ import (
 	"github.com/JetBrains/qodana-cli/v2025/platform/qdcontainer"
 	"github.com/JetBrains/qodana-cli/v2025/platform/qdenv"
 	"github.com/JetBrains/qodana-cli/v2025/platform/qdyaml"
+	log "github.com/sirupsen/logrus"
 	"os"
 	"path/filepath"
 )
@@ -32,6 +33,8 @@ import (
 func Compute(
 	overrideLinter string,
 	overrideIde string,
+	overrideImage string,
+	overrideWithinDocker string,
 	cacheDirFromCliOptions string,
 	resultsDirFromCliOptions string,
 	reportDirFromCliOptions string,
@@ -40,7 +43,7 @@ func Compute(
 	projectDir string,
 	localNotEffectiveQodanaYamlPathInProject string,
 ) Context {
-	analyzer := GuessAnalyzerFromEnvAndCLI(overrideIde, overrideLinter)
+	analyzer := GuessAnalyzerFromEnvAndCLI(overrideIde, overrideLinter, overrideImage, overrideWithinDocker)
 
 	if analyzer == nil {
 		analyzer = getAnalyzerFromProject(
@@ -81,24 +84,42 @@ func getAnalyzerFromProject(
 		localNotEffectiveQodanaYamlPathInProject,
 	)
 	qodanaYaml := qdyaml.LoadQodanaYamlByFullPath(qodanaYamlPath)
-	if qodanaYaml.Linter == "" && qodanaYaml.Ide == "" {
+	if qodanaYaml.Linter == "" && qodanaYaml.Ide == "" && qodanaYaml.Image == "" {
 		msg.WarningMessage(
-			"No valid `linter:` or `ide:` field found in %s. Have you run %s? Running that for you...",
+			"No valid `linter:` or `image:` field found in %s. Have you run %s? Running that for you...",
 			msg.PrimaryBold(localNotEffectiveQodanaYamlPathInProject),
 			msg.PrimaryBold("qodana init"),
 		)
 		return SelectAnalyzerForPath(projectDir, qodanaCloudToken)
+	}
+	if qodanaYaml.Ide != "" {
+		msg.WarningMessage(
+			"`ide:` field in %s is deprecated. Please use `--linter` and `--within-container=false` instead.",
+			qodanaYamlPath,
+		)
+	}
 
-	} else if qodanaYaml.Linter != "" && qodanaYaml.Ide != "" {
-		msg.ErrorMessage(
+	if qodanaYaml.Linter != "" && qodanaYaml.Ide != "" {
+		log.Fatalf(
 			"You have both `linter:` (%s) and `ide:` (%s) fields set in %s. Modify the configuration file to keep one of them",
 			qodanaYaml.Linter,
 			qodanaYaml.Ide,
+			qodanaYamlPath,
+		)
+		return nil
+	}
+
+	if qodanaYaml.Image != "" && qodanaYaml.Ide != "" {
+		log.Fatalf(
+			"You have both `image:` (%s) and `ide:` (%s) fields set in %s. Modify the configuration file to keep one of them",
+			qodanaYaml.Image,
+			qodanaYaml.Ide,
 			localNotEffectiveQodanaYamlPathInProject,
 		)
-		os.Exit(1)
+		return nil
 	}
-	return GuessAnalyzerFromParams(qodanaYaml.Ide, qodanaYaml.Linter)
+
+	return guessAnalyzerFromParams(qodanaYaml.Ide, qodanaYaml.Linter, qodanaYaml.Image, qodanaYaml.WithinDocker)
 }
 
 func computeId(analyzer product.Analyzer, projectDir string) string {

@@ -49,6 +49,7 @@ func cleanupTest(projectDir string) error {
 }
 
 func TestFetchAnalyzerSettings(t *testing.T) {
+
 	t.Run(
 		"qodana.yaml exists", func(t *testing.T) {
 			projectDir := "./testData/project_with_qodana_yaml"
@@ -62,6 +63,8 @@ func TestFetchAnalyzerSettings(t *testing.T) {
 			}
 
 			commonCtx := commoncontext.Compute(
+				"",
+				"",
 				"",
 				"",
 				"",
@@ -100,6 +103,8 @@ func TestFetchAnalyzerSettings(t *testing.T) {
 				"",
 				"",
 				"",
+				"",
+				"",
 				false,
 				projectDir,
 				"",
@@ -127,6 +132,8 @@ func TestFetchAnalyzerSettings(t *testing.T) {
 			}
 
 			commonCtx := commoncontext.Compute(
+				"",
+				"",
 				"",
 				"",
 				"",

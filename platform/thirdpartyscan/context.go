@@ -42,10 +42,11 @@ type MountInfo struct {
 
 // LinterInfo is a struct that contains all the information about the linter.
 type LinterInfo struct {
-	ProductCode   string
-	LinterName    string
-	LinterVersion string
-	IsEap         bool
+	ProductCode           string
+	LinterPresentableName string
+	LinterName            string
+	LinterVersion         string
+	IsEap                 bool
 }
 
 // Context

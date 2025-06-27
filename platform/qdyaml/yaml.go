@@ -52,6 +52,12 @@ type QodanaYaml struct {
 	// Linter to run.
 	Linter string `yaml:"linter,omitempty"`
 
+	// Image to use.
+	Image string `yaml:"image,omitempty"`
+
+	//WithinDocker defines if analysis should be performed in a container.
+	WithinDocker string `yaml:"withinDocker,omitempty"`
+
 	// IDE to run.
 	Ide string `yaml:"ide,omitempty"`
 
