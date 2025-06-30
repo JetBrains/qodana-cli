@@ -70,9 +70,9 @@ func downloadAndInstallIDE(
 	}
 
 	downloadedIdePath := filepath.Join(baseDir, fileName)
-	err := utils.DownloadFile(downloadedIdePath, ideUrl, spinner)
+	err := utils.DownloadFile(downloadedIdePath, ideUrl, getInternalAuth(), spinner)
 	if err != nil {
-		log.Fatalf("Error while downloading IDE: %v", err)
+		log.Fatalf("Error while downloading linter: %v", err)
 	}
 
 	defer func(filePath string) {
@@ -274,7 +274,7 @@ func installIdeMacOS(archivePath string, targetDir string) error {
 }
 
 func verifySha256(checksumFile string, checkSumUrl string, filePath string) {
-	err := utils.DownloadFile(checksumFile, checkSumUrl, nil)
+	err := utils.DownloadFile(checksumFile, checkSumUrl, getInternalAuth(), nil)
 	if err != nil {
 		log.Fatalf("Error while downloading checksum for IDE: %v", err)
 	}
@@ -329,7 +329,7 @@ func downloadCustomPlugins(ideUrl string, targetDir string, spinner *pterm.Spinn
 	}
 
 	archivePath := filepath.Join(targetDir, "custom-plugins.zip")
-	err := utils.DownloadFile(archivePath, pluginsUrl, spinner)
+	err := utils.DownloadFile(archivePath, pluginsUrl, getInternalAuth(), spinner)
 	if err != nil {
 		return fmt.Errorf("error while downloading plugins: %v", err)
 	}
