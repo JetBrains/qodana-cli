@@ -128,8 +128,15 @@ func LaunchAndLog(logDir string, executable string, args ...string) (string, str
 }
 
 // DownloadFile downloads a file from a given URL to a given filepath.
-func DownloadFile(filepath string, url string, spinner *pterm.SpinnerPrinter) error {
-	response, err := http.Head(url)
+func DownloadFile(filepath string, url string, auth string, spinner *pterm.SpinnerPrinter) error {
+	headReq, err := http.NewRequest("HEAD", url, nil)
+	if err != nil {
+		return fmt.Errorf("error creating HEAD request: %w", err)
+	}
+	if auth != "" {
+		headReq.Header.Add("Authorization", fmt.Sprintf("Bearer %s", auth))
+	}
+	response, err := http.DefaultClient.Do(headReq)
 	if err != nil {
 		return fmt.Errorf("error making HEAD request: %w", err)
 	}
@@ -143,9 +150,20 @@ func DownloadFile(filepath string, url string, spinner *pterm.SpinnerPrinter) er
 		return fmt.Errorf("error converting Content-Length to integer: %w", err)
 	}
 
-	resp, err := http.Get(url)
+	getReq, err := http.NewRequest("GET", url, nil)
+	if err != nil {
+		return fmt.Errorf("error creating GET request: %w", err)
+	}
+	if auth != "" {
+		getReq.Header.Add("Authorization", fmt.Sprintf("Bearer %s", auth))
+	}
+	resp, err := http.DefaultClient.Do(getReq)
 	if err != nil {
 		return fmt.Errorf("error making GET request: %w", err)
+	}
+
+	if resp.StatusCode != 200 {
+		return fmt.Errorf("wrong response code: %s", resp.Status)
 	}
 	defer func(Body io.ReadCloser) {
 		if err := Body.Close(); err != nil {

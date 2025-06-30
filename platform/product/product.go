@@ -216,7 +216,7 @@ var (
 
 	VersionsMap = map[string]string{
 		ReleaseVer: "2025.1",
-		EapVer:     "2024.3",
+		EapVer:     "2025.1",
 	}
 
 	// AllLinters Order is important for detection

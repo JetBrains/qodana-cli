@@ -39,6 +39,13 @@ func getProductFeed() string {
 	return "https://raw.githubusercontent.com/JetBrains/qodana-docker/main/feed/releases.json"
 }
 
+func getInternalAuth() string {
+	if auth := os.Getenv("QD_PRODUCT_INTERNAL_AUTH"); auth != "" {
+		return auth
+	}
+	return ""
+}
+
 type Product struct {
 	Code     string
 	Releases []ReleaseInfo
@@ -76,7 +83,7 @@ func GetProductByCode(code string) (*Product, error) {
 
 	path := filepath.Join(tempDir, "productInfo.json")
 
-	if err := utils.DownloadFile(path, getProductFeed(), nil); err != nil {
+	if err := utils.DownloadFile(path, getProductFeed(), "", nil); err != nil {
 		return nil, err
 	}
 
