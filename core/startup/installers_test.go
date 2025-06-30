@@ -66,17 +66,27 @@ func DownloadAndInstallIDE(linter product.Linter, t *testing.T) {
 		t.Fail()
 	}
 
-	ide := downloadAndInstallIDE(linter.NativeAnalyzer(), tempDir, nil)
+	analyzer := linter.NativeAnalyzer()
+	ide := downloadAndInstallIDE(analyzer, tempDir, nil)
 
 	if ide == "" {
 		msg.ErrorMessage("Cannot install %s", linter.Name)
 		t.Fail()
 	}
-	prod, err := product.ReadIdeProductInfo(ide)
-	if err != nil || prod == nil {
+	prodInfo, err := product.ReadIdeProductInfo(ide)
+	if err != nil || prodInfo == nil {
 		t.Fatalf("Failed to read IDE product info: %v", err)
 	}
-	if prod.ProductCode == "" {
-		t.Fail()
+	prod := product.GuessProduct(ide, analyzer)
+
+	prepareCustomPlugins(prod)
+	disabledPluginsFilePath := prod.DisabledPluginsFilePath()
+	if _, err := os.Stat(disabledPluginsFilePath); err != nil {
+		t.Fatalf("Cannot find disabled plugins file: %s", disabledPluginsFilePath)
+	}
+
+	customPluginsFilePath := prod.CustomPluginsPath()
+	if _, err := os.Stat(customPluginsFilePath); err != nil {
+		t.Fatalf("Cannot find custom plugins folder: %s", customPluginsFilePath)
 	}
 }
