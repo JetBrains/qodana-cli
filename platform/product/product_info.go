@@ -77,7 +77,7 @@ func ideBin(home string) string {
 }
 
 func (p Product) CustomPluginsPath() string {
-	if qdenv.IsContainer() {
+	if qdenv.IsContainer() || runtime.GOOS != "darwin" {
 		return filepath.Join(p.Home, "custom-plugins")
 	}
 
@@ -89,7 +89,7 @@ func (p Product) CustomPluginsPath() string {
 }
 
 func (p Product) DisabledPluginsFilePath() string {
-	if qdenv.IsContainer() {
+	if qdenv.IsContainer() || runtime.GOOS != "darwin" {
 		return filepath.Join(p.Home, "disabled_plugins.txt")
 	}
 

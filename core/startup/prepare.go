@@ -130,15 +130,19 @@ func prepareLocalIdeSettingsAndGetQodanaCloudUploadToken(
 		CreateUser("/etc/passwd")
 	}
 
-	if runtime.GOOS == "darwin" && !commonCtx.Analyzer.IsContainer() {
-		if info := getIde(commonCtx.Analyzer); info != nil {
+	prepareCustomPlugins(prod)
+	return prod, token
+}
+
+func prepareCustomPlugins(prod product.Product) {
+	if runtime.GOOS == "darwin" && !prod.Analyzer.IsContainer() {
+		if info := getIde(prod.Analyzer); info != nil {
 			err := downloadCustomPlugins(info.Link, filepath.Dir(prod.CustomPluginsPath()), nil)
 			if err != nil {
 				log.Warning("Error while downloading custom plugins: " + err.Error())
 			}
 		}
 	}
-	return prod, token
 }
 
 func prepareContainerSpecificDirectories(prod product.Product, cacheDir string, confDir string) {
