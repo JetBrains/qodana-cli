@@ -72,11 +72,23 @@ func DownloadAndInstallIDE(linter product.Linter, t *testing.T) {
 		msg.ErrorMessage("Cannot install %s", linter.Name)
 		t.Fail()
 	}
-	prod, err := product.ReadIdeProductInfo(ide)
-	if err != nil || prod == nil {
+	productInfo, err := product.ReadIdeProductInfo(ide)
+	if err != nil || productInfo == nil {
 		t.Fatalf("Failed to read IDE product info: %v", err)
 	}
-	if prod.ProductCode == "" {
+	if productInfo.ProductCode == "" {
+		t.Fail()
+	}
+
+	product := product.GuessProduct(ide, nil)
+
+	disabledPluginsFilePath := product.DisabledPluginsFilePath()
+	if _, err := os.Stat(disabledPluginsFilePath); err != nil {
+		t.Fail()
+	}
+
+	customPluginsFilePath := product.CustomPluginsPath()
+	if _, err := os.Stat(customPluginsFilePath); err != nil {
 		t.Fail()
 	}
 }
