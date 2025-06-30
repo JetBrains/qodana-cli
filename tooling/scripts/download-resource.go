@@ -65,7 +65,7 @@ func main() {
 		}
 	}
 
-	err = utils.DownloadFile(path, resolvedUrl, nil)
+	err = utils.DownloadFile(path, resolvedUrl, "", nil)
 	if err != nil {
 		log.Fatalf("Error while downloading %s: %s", resolvedUrl, err)
 	}
