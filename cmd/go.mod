@@ -9,7 +9,7 @@ require (
 	github.com/JetBrains/qodana-cli/v2025/core v0.0.0-00010101000000-000000000000
 	github.com/JetBrains/qodana-cli/v2025/platform v0.0.0-00010101000000-000000000000
 	github.com/boyter/scc/v3 v3.4.0
-	github.com/docker/docker v25.0.6+incompatible // DO NOT UPDATE: breaking changes
+	github.com/docker/docker v28.3.0+incompatible // DO NOT UPDATE: breaking changes
 	github.com/sirupsen/logrus v1.9.3
 	github.com/spf13/cobra v1.8.1
 	github.com/spf13/viper v1.19.0
@@ -38,6 +38,8 @@ require (
 	github.com/boyter/gocodewalker v1.3.4 // indirect
 	github.com/cenkalti/backoff/v4 v4.3.0 // indirect
 	github.com/containerd/console v1.0.3 // indirect
+	github.com/containerd/errdefs v1.0.0 // indirect
+	github.com/containerd/errdefs/pkg v0.3.0 // indirect
 	github.com/cucumber/ci-environment/go v0.0.0-20230911180507-bd001ebc644c // indirect
 	github.com/danieljoos/wincred v1.2.2 // indirect
 	github.com/danwakefield/fnmatch v0.0.0-20160403171240-cbb64ac3d964 // indirect
@@ -68,6 +70,8 @@ require (
 	github.com/mattn/go-isatty v0.0.20 // indirect
 	github.com/mattn/go-runewidth v0.0.16 // indirect
 	github.com/mitchellh/mapstructure v1.5.0 // indirect
+	github.com/moby/docker-image-spec v1.3.1 // indirect
+	github.com/moby/sys/atomicwriter v0.1.0 // indirect
 	github.com/moby/term v0.5.0 // indirect
 	github.com/modern-go/concurrent v0.0.0-20180306012644-bacd9c7ef1dd // indirect
 	github.com/modern-go/reflect2 v1.0.2 // indirect
