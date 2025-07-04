@@ -151,8 +151,8 @@ RUN set -ex && \
         QD_CHECKSUM_URL=$(echo "$RELEASE_JSON" | jq -r ".Downloads.$RELEASES_DIST_KEY.ChecksumLink"); \
     else \
         QD_BUILD="$QD_CODE-$QD_RELEASE" && \
-        QD_NAME="qodana-$QD_BUILD$OS_ARCH_SUFFIX" && \
-        QD_URL="https://download.jetbrains.com/qodana/$QD_RELEASE/$QD_NAME.tar.gz" && \
+        QD_NAME="qodana-$QD_RELEASE$OS_ARCH_SUFFIX" && \
+        QD_URL="https://download.jetbrains.com/qodana/$QD_VERSION/$QD_NAME.tar.gz" && \
         QD_CHECKSUM_URL="$QD_URL.sha256"; \
     fi && \
     curl -fsSL "$QD_URL" -o "/tmp/$QD_NAME.tar.gz" \
