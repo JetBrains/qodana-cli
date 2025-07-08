@@ -4,12 +4,12 @@ go 1.24.0
 
 require (
 	github.com/cucumber/ci-environment/go v0.0.0-20230911180507-bd001ebc644c
-	github.com/docker/cli v25.0.0+incompatible
+	github.com/docker/cli v28.3.1+incompatible
 	github.com/docker/docker v25.0.6+incompatible // DO NOT UPDATE: breaking changes
 	github.com/docker/go-connections v0.5.0
 	github.com/otiai10/copy v1.14.1
 	github.com/pterm/pterm v0.12.80
-	github.com/shirou/gopsutil/v3 v3.24.5
+	github.com/shirou/gopsutil/v3 v3.24.5 // indirect
 	github.com/sirupsen/logrus v1.9.3
 	github.com/stretchr/testify v1.10.0
 )
@@ -26,6 +26,8 @@ replace (
 require (
 	github.com/JetBrains/qodana-cli/v2025/cloud v0.0.0-00010101000000-000000000000
 	github.com/JetBrains/qodana-cli/v2025/platform v0.0.0-00010101000000-000000000000
+	github.com/JetBrains/qodana-cli/v2025/sarif v0.0.0-00010101000000-000000000000
+	golang.org/x/exp v0.0.0-20230905200255-921286631fa9
 )
 
 require (
@@ -34,7 +36,6 @@ require (
 	atomicgo.dev/keyboard v0.2.9 // indirect
 	atomicgo.dev/schedule v0.1.0 // indirect
 	github.com/Azure/go-ansiterm v0.0.0-20210617225240-d185dfc1b5a1 // indirect
-	github.com/JetBrains/qodana-cli/v2025/sarif v0.0.0-00010101000000-000000000000 // indirect
 	github.com/JetBrains/qodana-cli/v2025/tooling v0.0.0-00010101000000-000000000000 // indirect
 	github.com/Microsoft/go-winio v0.6.1 // indirect
 	github.com/containerd/console v1.0.3 // indirect
