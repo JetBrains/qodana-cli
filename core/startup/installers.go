@@ -207,9 +207,13 @@ func getIde(analyzer product.Analyzer) *ReleaseDownloadInfo {
 
 // installIdeWindowsExe is used as a fallback, since it needs installation privileges and alters the registry
 func installIdeWindowsExe(archivePath string, targetDir string) error {
-	_, err := exec.Command(archivePath, "/S", fmt.Sprintf("/D=%s", strutil.QuoteForWindows(targetDir))).Output()
+	output, err := exec.Command(
+		archivePath,
+		"/S",
+		fmt.Sprintf("/D=%s", strutil.QuoteForWindows(targetDir)),
+	).CombinedOutput()
 	if err != nil {
-		return fmt.Errorf("%s: %s", archivePath, err)
+		return fmt.Errorf("%s: %s. Output: %s", archivePath, err, string(output))
 	}
 	return nil
 }
@@ -221,15 +225,15 @@ func installIdeFromZip(archivePath string, targetDir string) error {
 	if err := os.MkdirAll(targetDir, os.ModePerm); err != nil {
 		log.Fatal("couldn't create a directory ", err.Error())
 	}
-	_, err := exec.Command(
+	output, err := exec.Command(
 		"tar",
 		"-xf",
 		strutil.QuoteForWindows(archivePath),
 		"-C",
 		strutil.QuoteForWindows(targetDir),
-	).Output()
+	).CombinedOutput()
 	if err != nil {
-		return fmt.Errorf("tar: %s", err)
+		return fmt.Errorf("tar: %s. Output: %s", err, string(output))
 	}
 	return nil
 }
@@ -238,9 +242,17 @@ func installIdeFromTar(archivePath string, targetDir string) error {
 	if err := os.MkdirAll(targetDir, os.ModePerm); err != nil {
 		log.Fatal("couldn't create a directory ", err.Error())
 	}
-	_, err := exec.Command("tar", "-xf", archivePath, "-C", targetDir, "--strip-components", "1").Output()
+	output, err := exec.Command(
+		"tar",
+		"-xf",
+		archivePath,
+		"-C",
+		targetDir,
+		"--strip-components",
+		"1",
+	).CombinedOutput()
 	if err != nil {
-		return fmt.Errorf("tar: %s", err)
+		return fmt.Errorf("tar: %s. Output: %s", err, string(output))
 	}
 	return nil
 }
