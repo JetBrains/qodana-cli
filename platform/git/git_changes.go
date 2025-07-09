@@ -20,6 +20,7 @@ import (
 	"bufio"
 	"fmt"
 	"github.com/JetBrains/qodana-cli/v2025/platform/strutil"
+	"github.com/JetBrains/qodana-cli/v2025/platform/utils"
 	log "github.com/sirupsen/logrus"
 	"io"
 	"os"
@@ -51,17 +52,8 @@ type ChangedFiles struct {
 	Files []*ChangedFile `json:"files"`
 }
 
-func computeAbsPath(cwd string) (string, error) {
-	cwd, err := filepath.EvalSymlinks(cwd)
-	if err != nil {
-		return "", err
-	}
-	cwdAbs, err := filepath.Abs(cwd)
-	return cwdAbs, err
-}
-
 func ComputeChangedFiles(cwd string, diffStart string, diffEnd string, logdir string) (ChangedFiles, error) {
-	absCwd, err := computeAbsPath(cwd)
+	absCwd, err := utils.CanonicalPath(cwd)
 	if err != nil {
 		return ChangedFiles{}, err
 	}
@@ -69,7 +61,7 @@ func ComputeChangedFiles(cwd string, diffStart string, diffEnd string, logdir st
 	if err != nil {
 		return ChangedFiles{}, err
 	}
-	absRepoRoot, err := computeAbsPath(repoRoot)
+	absRepoRoot, err := utils.CanonicalPath(repoRoot)
 	if err != nil {
 		return ChangedFiles{}, err
 	}
