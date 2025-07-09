@@ -12,7 +12,6 @@ hg4idea
 tanvd.grazi
 intellij.indexing.shared.core
 intellij.webp
-AntSupport
 DevKit
 JUnit
 TestNG-J
@@ -28,8 +27,6 @@ com.intellij.uiDesigner
 org.intellij.groovy
 org.jetbrains.idea.eclipse
 org.jetbrains.idea.maven
-org.jetbrains.idea.maven.model
-org.jetbrains.idea.maven.server.api
 org.jetbrains.idea.reposearch
 org.jetbrains.kotlin
 org.jetbrains.plugins.gradle

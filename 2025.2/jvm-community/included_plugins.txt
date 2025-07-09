@@ -3,7 +3,6 @@ org.intellij.intelliLang
 org.editorconfig.editorconfigjetbrains
 Git4Idea
 hg4idea
-AntSupport
 DevKit
 JUnit
 Lombook Plugin
@@ -20,9 +19,7 @@ com.intellij.uiDesigner
 org.intellij.groovy
 org.jetbrains.idea.eclipse
 org.jetbrains.idea.maven
-org.jetbrains.idea.maven.model
-org.jetbrains.idea.maven.server.api
 org.jetbrains.idea.reposearch
 org.jetbrains.kotlin
 org.jetbrains.plugins.gradle
-com.intellij.json
+com.intellij.modules.json

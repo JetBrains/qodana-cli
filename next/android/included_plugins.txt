@@ -19,7 +19,6 @@ intellij.charts
 intellij.indexing.shared.core
 intellij.indexing.shared
 intellij.ktor
-AntSupport
 Coverage
 DevKit
 JUnit
@@ -66,8 +65,6 @@ org.jetbrains.idea.maven
 org.jetbrains.idea.maven.ext
 org.jetbrains.idea.gradle.ext
 org.jetbrains.idea.gradle.dsl
-org.jetbrains.idea.maven.model
-org.jetbrains.idea.maven.server.api
 org.jetbrains.idea.reposearch
 org.jetbrains.kotlin
 org.jetbrains.plugins.gradle
