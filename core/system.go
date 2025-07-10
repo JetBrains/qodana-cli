@@ -20,18 +20,6 @@ import (
 	"bufio"
 	"context"
 	"encoding/json"
-	"github.com/JetBrains/qodana-cli/v2025/core/corescan"
-	"github.com/JetBrains/qodana-cli/v2025/platform"
-	"github.com/JetBrains/qodana-cli/v2025/platform/git"
-	"github.com/JetBrains/qodana-cli/v2025/platform/msg"
-	"github.com/JetBrains/qodana-cli/v2025/platform/nuget"
-	"github.com/JetBrains/qodana-cli/v2025/platform/qdenv"
-	"github.com/JetBrains/qodana-cli/v2025/platform/strutil"
-	"github.com/JetBrains/qodana-cli/v2025/platform/utils"
-	cienvironment "github.com/cucumber/ci-environment/go"
-	"github.com/docker/docker/client"
-	"github.com/pterm/pterm"
-	log "github.com/sirupsen/logrus"
 	"io"
 	"net/http"
 	"os"
@@ -39,6 +27,20 @@ import (
 	"path/filepath"
 	"runtime"
 	"strings"
+
+	"github.com/JetBrains/qodana-cli/v2025/core/corescan"
+	"github.com/JetBrains/qodana-cli/v2025/platform"
+	"github.com/JetBrains/qodana-cli/v2025/platform/git"
+	"github.com/JetBrains/qodana-cli/v2025/platform/msg"
+	"github.com/JetBrains/qodana-cli/v2025/platform/nuget"
+	"github.com/JetBrains/qodana-cli/v2025/platform/product"
+	"github.com/JetBrains/qodana-cli/v2025/platform/qdenv"
+	"github.com/JetBrains/qodana-cli/v2025/platform/strutil"
+	"github.com/JetBrains/qodana-cli/v2025/platform/utils"
+	cienvironment "github.com/cucumber/ci-environment/go"
+	"github.com/docker/docker/client"
+	"github.com/pterm/pterm"
+	log "github.com/sirupsen/logrus"
 )
 
 var (
@@ -154,6 +156,11 @@ func RunAnalysis(ctx context.Context, c corescan.Context) int {
 	// this way of running needs to do bootstrap twice on different commits and will do it internally
 	if !corescan.IsScopedScenario(scenario) && !c.Analyser().IsContainer() {
 		utils.Bootstrap(c.QodanaYamlConfig().Bootstrap, c.ProjectDir())
+
+		err := preRunActions(ctx, c)
+		if err != nil {
+			log.Fatal("Error while running pre-run actions: ", err)
+		}
 	}
 	switch scenario {
 	case corescan.RunScenarioFullHistory:
@@ -366,4 +373,35 @@ func saveReport(c corescan.Context) {
 		log.Fatal("Not able to save the report: ", err)
 		return
 	}
+}
+
+// preRunActions runs linter-specific activities immediately before analysis. If analysis needs to be aborted due to
+// user error, the function should use `log.Fatal` directly.
+func preRunActions(ctx context.Context, c corescan.Context) (err error) {
+	switch c.Analyser().GetLinter().ProductCode {
+	case product.QDCPP:
+		return preRunActionsCpp(ctx, c)
+	default:
+		return nil
+	}
+}
+
+func preRunActionsCpp(ctx context.Context, c corescan.Context) (err error) {
+	cacheFiles, err := filepath.Glob("*/CMakeCache.txt")
+	if err != nil {
+		return err
+	}
+
+	if len(cacheFiles) != 0 {
+		var cacheDirs []string
+		for _, cacheFile := range cacheFiles {
+			cacheDirs = append(cacheDirs, filepath.Dir(cacheFile))
+		}
+		log.Fatalf(
+			"Found existing CMake cache files in %v. Please remove all CMake caches before runnning analysis.",
+			cacheDirs,
+		)
+	}
+
+	return nil
 }
