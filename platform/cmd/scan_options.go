@@ -100,27 +100,27 @@ func ComputeFlags(cmd *cobra.Command, options *CliOptions) error {
 			"linter",
 			"l",
 			"",
-			"Defines the linter to be used for analysis. In case this parameter is not specified \nhere and in qodana.yaml Qodana will try to define linter basing on project content. Available values: "+strings.Join(
+			"Defines the linter to be used for analysis. Default value is determined based on project files. \nAvailable values: "+strings.Join(
 				product.AllNames,
 				", ",
-			)+"\n!Legacy note!: This parameter till 2025.2 version was used to define linter image. This behavior is deprecated but supported for backward compatibility. Please use --linter and --within-docker=true or --image instead.",
+			)+". \n!Legacy note!: Until version 2025.2 this parameter was used to define a docker image. This behavior is deprecated but supported for backward compatibility. Please use parameters --linter and --within-docker=true or --image instead.",
 		)
 
 		flags.StringVar(
 			&options.WithinDocker,
 			"within-docker",
 			"",
-			"Defines if analysis is performed within a docker container or not. \nSet to 'false' for performing analysis in native mode. Set to 'true' for performing analysis within docker container. \nThe image for container creation will be chosen in an automated way based on the value of --linter param, for example, jetbrains/qodana-jvm for --linter==qodana-jvm.\nDefault value is defined dynamically by analysis of the current environment and project. \nPlease note that for some linters native mode is not yet available.  ",
+			"Defines if analysis is performed within a docker container or not. \nSet to 'false' for performing analysis in native mode. Set to 'true' for performing analysis within a docker container. \nThe image for container creation will be chosen automatically based on the value of the --linter param (e.g. jetbrains/qodana-jvm for --linter=qodana-jvm). \nDefault value is defined dynamically depending on the current environment and project.",
 		)
 
 		flags.StringVar(
 			&options.Image,
 			"image",
 			"",
-			"Defines an image to be used for analysis execution.\nOverrides --within-docker to true value. Overrides --linter to preinstalled within image linter.\nAvailable images are: "+strings.Join(
+			"Defines an image to be used for analysis execution. \nSets --within-docker=true. Sets --linter to the one preinstalled within the image. \nAvailable images are: "+strings.Join(
 				product.AllImages,
 				", ",
-			),
+			)+".",
 		)
 	}
 	flags.StringVar(

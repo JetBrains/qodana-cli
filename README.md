@@ -174,16 +174,16 @@ qodana scan [flags]
 #### Options
 
 ```
-  -l, --linter string                            Defines the linter to be used for analysis. In case this parameter is not specified will try to define linter basing on project content. 
+  -l, --linter string                            Defines the linter to be used for analysis. Default value is determined based on project files. 
                                                  Available values: qodana-jvm-community, qodana-jvm, qodana-jvm-android, qodana-android, qodana-php, qodana-python-community, qodana-python, qodana-js, qodana-dotnet-community, qodana-dotnet, qodana-ruby, qodana-cpp, qodana-go, qodana-clang
-                                                 !Legacy note!: This parameter till an including 2025.1 version was used to define linter image. This behavior is deprecated but supported for backward compatibility. Please use paramters --linter and --within-docker=true or --image instead.
+                                                 !Legacy note!: Until version 2025.2 this parameter was used to define a docker image. This behavior is deprecated but supported for backward compatibility. Please use parameters --linter and --within-docker=true or --image instead.
       --within-docker string                     Defines if analysis is performed within a docker container or not. 
-                                                 Set to 'false' for performing analysis in native mode. Set to 'true' for performing analysis within docker container. 
-                                                 The image for container creation will be chosen in an automated way based on the value of --linter param, for example, jetbrains/qodana-jvm for --linter=qodana-jvm.
-                                                 Default value is defined dynamically by analysis of the current environment and project. 
+                                                 Set to 'false' for performing analysis in native mode. Set to 'true' for performing analysis within a docker container. 
+                                                 The image for container creation will be chosen automatically based on the value of the --linter param (e.g. jetbrains/qodana-jvm for --linter=qodana-jvm).
+                                                 Default value is defined dynamically depending on the current environment and project. 
       --image string                             Defines an image to be used for analysis execution.
-                                                 Overrides --within-docker to true value. Overrides --linter to preinstalled within image linter.
-                                                 Available images are: jetbrains/qodana-jvm-community, jetbrains/qodana-jvm, jetbrains/qodana-python, jetbrains/qodana-dotnet and etc...
+                                                 Sets --within-docker=true. Sets --linter to the one preinstalled within the image.
+                                                 Available images are: jetbrains/qodana-jvm-community, jetbrains/qodana-jvm, jetbrains/qodana-python, jetbrains/qodana-dotnet, etc...
   -i, --project-dir string                       Root directory of the inspected project (default ".")
   -o, --results-dir string                       Override directory to save Qodana inspection results to (default <userCacheDir>/JetBrains/<linter>/results)
       --cache-dir string                         Override cache directory (default <userCacheDir>/JetBrains/<linter>/cache)
