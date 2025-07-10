@@ -140,7 +140,7 @@ var optionsTests = []TestCase{
 		expected:     &product.DockerAnalyzer{Linter: product.GoLinter, Image: "jetbrains/qodana-go:2025.2"},
 	},
 	{
-		name:         "Known linter passed --linter, --within-container empty",
+		name:         "Known linter passed --linter, --within-docker empty",
 		ide:          "",
 		linter:       "qodana-js",
 		image:        "",
@@ -152,7 +152,7 @@ var optionsTests = []TestCase{
 		},
 	},
 	{
-		name:         "Known linter passed --linter, --within-container=false",
+		name:         "Known linter passed --linter, --within-docker=false",
 		ide:          "",
 		linter:       "qodana-js",
 		image:        "",
@@ -161,7 +161,7 @@ var optionsTests = []TestCase{
 		expected:     &product.NativeAnalyzer{Linter: product.JsLinter, Eap: false},
 	},
 	{
-		name:         "Known linter passed --linter, --within-container=false, eap only linter",
+		name:         "Known linter passed --linter, --within-docker=false, eap only linter",
 		ide:          "",
 		linter:       "qodana-cpp",
 		image:        "",
@@ -170,7 +170,7 @@ var optionsTests = []TestCase{
 		expected:     &product.NativeAnalyzer{Linter: product.CppLinter, Eap: true},
 	},
 	{
-		name:         "Known linter passed --linter, --within-container=true",
+		name:         "Known linter passed --linter, --within-docker=true",
 		ide:          "",
 		linter:       "qodana-js",
 		image:        "",

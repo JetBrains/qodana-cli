@@ -94,7 +94,7 @@ func getAnalyzerFromProject(
 	}
 	if qodanaYaml.Ide != "" {
 		msg.WarningMessage(
-			"`ide:` field in %s is deprecated. Please use `--linter` and `--within-container=false` instead.",
+			"`ide:` field in %s is deprecated. Please use `--linter` and `--within-docker=false` instead.",
 			qodanaYamlPath,
 		)
 	}
