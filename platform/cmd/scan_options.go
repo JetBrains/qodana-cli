@@ -117,7 +117,7 @@ func ComputeFlags(cmd *cobra.Command, options *CliOptions) error {
 			&options.Image,
 			"image",
 			"",
-			"Defines an image to be used for analysis execution.\nOverrides --within-docker to true value. Overrides --linter to preinstalled linter within image.\nAvailable images are: "+strings.Join(
+			"Defines an image to be used for analysis execution.\nOverrides --within-docker to true value. Overrides --linter to preinstalled within image linter.\nAvailable images are: "+strings.Join(
 				product.AllImages,
 				", ",
 			),
@@ -394,7 +394,7 @@ func ComputeFlags(cmd *cobra.Command, options *CliOptions) error {
 	err = cmd.Flags().MarkDeprecated("fixes-strategy", "use --apply-fixes / --cleanup instead")
 	err = cmd.Flags().MarkDeprecated(
 		"ide",
-		"use --linter with corresponding liter type and --within-docker=false instead",
+		"use --linter with corresponding linter type and --within-docker=false instead",
 	)
 	if err != nil {
 		return err

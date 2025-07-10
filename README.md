@@ -174,8 +174,16 @@ qodana scan [flags]
 #### Options
 
 ```
-  -l, --linter string                            Use to run Qodana in a container (default). Choose linter (image) to use. Not compatible with --ide option. Available images are: jetbrains/qodana-jvm, jetbrains/qodana-php, jetbrains/qodana-python, jetbrains/qodana-js, jetbrains/qodana-go, jetbrains/qodana-dotnet, jetbrains/qodana-cpp, jetbrains/qodana-jvm-community, jetbrains/qodana-python-community, jetbrains/qodana-jvm-android, jetbrains/qodana-cdnet
-      --ide string                               Use to run Qodana without a container. Not compatible with --linter option. Available codes are QDNET, add -EAP part to obtain EAP versions
+  -l, --linter string                            Defines the linter to be used for analysis. In case this parameter is not specified will try to define linter basing on project content. 
+                                                 Available values: qodana-jvm-community, qodana-jvm, qodana-jvm-android, qodana-android, qodana-php, qodana-python-community, qodana-python, qodana-js, qodana-dotnet-community, qodana-dotnet, qodana-ruby, qodana-cpp, qodana-go, qodana-clang
+                                                 !Legacy note!: This parameter till an including 2025.1 version was used to define linter image. This behavior is deprecated but supported for backward compatibility. Please use paramters --linter and --within-docker=true or --image instead.
+      --within-docker string                     Defines if analysis is performed within a docker container or not. 
+                                                 Set to 'false' for performing analysis in native mode. Set to 'true' for performing analysis within docker container. 
+                                                 The image for container creation will be chosen in an automated way based on the value of --linter param, for example, jetbrains/qodana-jvm for --linter=qodana-jvm.
+                                                 Default value is defined dynamically by analysis of the current environment and project. 
+      --image string                             Defines an image to be used for analysis execution.
+                                                 Overrides --within-docker to true value. Overrides --linter to preinstalled within image linter.
+                                                 Available images are: jetbrains/qodana-jvm-community, jetbrains/qodana-jvm, jetbrains/qodana-python, jetbrains/qodana-dotnet and etc...
   -i, --project-dir string                       Root directory of the inspected project (default ".")
   -o, --results-dir string                       Override directory to save Qodana inspection results to (default <userCacheDir>/JetBrains/<linter>/results)
       --cache-dir string                         Override cache directory (default <userCacheDir>/JetBrains/<linter>/cache)
@@ -212,6 +220,7 @@ qodana scan [flags]
   -v, --volume stringArray                       Only for container runs. Define additional volumes for the Qodana container (you can use the flag multiple times)
   -u, --user string                              Only for container runs. User to run Qodana container as. Please specify user id – '$UID' or user id and group id $(id -u):$(id -g). Use 'root' to run as the root user (default: <the current user>)
       --skip-pull                                Only for container runs. Skip pulling the latest Qodana container
+      --ide string                               Deprecated. Used to run Qodana without a docker container. Not compatible with --linter option. 
   -h, --help                                     help for scan
 ```
 
