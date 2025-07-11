@@ -83,7 +83,7 @@ RUN --mount=target=/var/lib/apt/lists,type=cache,sharing=locked \
     rm -rf /tmp/*
 
 # renovate: datasource=npm depName=eslint
-ENV ESLINT_VERSION="9.28.0"
+ENV ESLINT_VERSION="9.31.0"
 # renovate: datasource=npm depName=pnpm
 ENV PNPM_VERSION="10.13.1"
 
