@@ -20,6 +20,7 @@ import (
 	"github.com/JetBrains/qodana-cli/v2025/platform/msg"
 	"github.com/JetBrains/qodana-cli/v2025/platform/product"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"runtime"
 	"testing"
@@ -88,5 +89,97 @@ func DownloadAndInstallIDE(linter product.Linter, t *testing.T) {
 	customPluginsFilePath := prod.CustomPluginsPath()
 	if _, err := os.Stat(customPluginsFilePath); err != nil {
 		t.Fatalf("Cannot find custom plugins folder: %s", customPluginsFilePath)
+	}
+}
+
+// Create a target directory for extraction
+func TestInstallIdeFromZip(t *testing.T) {
+	tests := []struct {
+		name       string
+		useSymlink bool
+	}{
+		{
+			name:       "regular directory",
+			useSymlink: false,
+		},
+		{
+			name:       "symlink directory",
+			useSymlink: true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(
+			tt.name, func(t *testing.T) {
+				// Create a temporary directory for the test
+				tempDir, err := os.MkdirTemp("", "qodana_test_")
+				if err != nil {
+					t.Fatalf("Failed to create temporary directory: %v", err)
+				}
+				defer func(path string) {
+					_ = os.RemoveAll(path)
+				}(tempDir)
+
+				// Create a source directory with test files
+				sourceDir := filepath.Join(tempDir, "source")
+				err = os.MkdirAll(sourceDir, 0755)
+				if err != nil {
+					t.Fatalf("Failed to create source directory: %v", err)
+				}
+
+				// Create a test file in the source directory
+				testFilePath := filepath.Join(sourceDir, "test.txt")
+				err = os.WriteFile(testFilePath, []byte("test content"), 0644)
+				if err != nil {
+					t.Fatalf("Failed to create test file: %v", err)
+				}
+
+				// Create an archive file from the source directory
+				zipFilePath := filepath.Join(tempDir, "test.tar.gz")
+				cmd := exec.Command("tar", "-cf", zipFilePath, "-C", sourceDir, ".")
+				output, err := cmd.CombinedOutput()
+				if err != nil {
+					t.Fatalf("Failed to create archive file: %v, output: %s", err, string(output))
+				}
+
+				// Create a target directory for extraction
+				targetDir := filepath.Join(tempDir, "target")
+				if tt.useSymlink {
+					err := os.MkdirAll(targetDir, 0755)
+					if err != nil {
+						t.Fatalf("Failed to create folder for symlink: %v", err)
+					}
+					symlinkDir := filepath.Join(tempDir, "symlink")
+					if err := os.Symlink(targetDir, symlinkDir); err != nil {
+						t.Fatalf("Failed to create symlink: %v", err)
+					}
+					targetDir = filepath.Join(symlinkDir, "target")
+				}
+
+				// Call the function under test
+				err = installIdeFromZip(zipFilePath, targetDir)
+				if err != nil {
+					t.Fatalf("installIdeFromZip failed: %v", err)
+				}
+
+				// Verify that the file was extracted correctly
+				extractedFilePath := filepath.Join(targetDir, "test.txt")
+				if _, err := os.Stat(extractedFilePath); os.IsNotExist(err) {
+					t.Fatalf("Expected file %s was not extracted", extractedFilePath)
+				}
+
+				// Verify the content of the extracted file
+				content, err := os.ReadFile(extractedFilePath)
+				if err != nil {
+					t.Fatalf("Failed to read extracted file: %v", err)
+				}
+				if string(content) != "test content" {
+					t.Fatalf(
+						"Extracted file content does not match. Expected 'test content', got '%s'",
+						string(content),
+					)
+				}
+			},
+		)
 	}
 }

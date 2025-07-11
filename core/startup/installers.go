@@ -220,21 +220,38 @@ func installIdeWindowsExe(archivePath string, targetDir string) error {
 
 func installIdeFromZip(archivePath string, targetDir string) error {
 	if err := os.RemoveAll(targetDir); err != nil {
-		log.Fatal("couldn't clean target directory ", err.Error())
+		return fmt.Errorf("couldn't clean target directory: %w", err)
 	}
-	if err := os.MkdirAll(targetDir, os.ModePerm); err != nil {
-		log.Fatal("couldn't create a directory ", err.Error())
+
+	//temp dir is required cause tar fails to extract over symlink directories
+	tempDir := filepath.Join(os.TempDir(), fmt.Sprintf("qodana_linter_%d", rand.Int()))
+	defer func() {
+		if err := os.RemoveAll(tempDir); err != nil {
+			log.Warningf("couldn't clean temp directory: %s", err.Error())
+		}
+	}()
+
+	err := os.MkdirAll(tempDir, os.ModePerm)
+	if err != nil {
+		return fmt.Errorf("couldn't create a temporary directory %w", err)
 	}
+
 	output, err := exec.Command(
 		"tar",
 		"-xf",
 		strutil.QuoteForWindows(archivePath),
 		"-C",
-		strutil.QuoteForWindows(targetDir),
+		strutil.QuoteForWindows(tempDir),
 	).CombinedOutput()
 	if err != nil {
-		return fmt.Errorf("tar: %s. Output: %s", err, string(output))
+		return fmt.Errorf("extracting files error: %w. Output: %s", err, string(output))
 	}
+
+	err = os.Rename(tempDir, targetDir)
+	if err != nil {
+		return fmt.Errorf("error moving linter files from temp to target: %w", err)
+	}
+
 	return nil
 }
 
