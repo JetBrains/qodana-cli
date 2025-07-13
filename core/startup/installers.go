@@ -20,6 +20,7 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"fmt"
+	"github.com/JetBrains/qodana-cli/v2025/platform"
 	"github.com/JetBrains/qodana-cli/v2025/platform/msg"
 	"github.com/JetBrains/qodana-cli/v2025/platform/product"
 	"github.com/JetBrains/qodana-cli/v2025/platform/strutil"
@@ -225,13 +226,14 @@ func installIdeFromZip(archivePath string, targetDir string) error {
 
 	//temp dir is required cause tar fails to extract over symlink directories
 	tempDir := filepath.Join(os.TempDir(), fmt.Sprintf("qodana_linter_%d", rand.Int()))
+
+	err := os.MkdirAll(tempDir, 0700)
 	defer func() {
 		if err := os.RemoveAll(tempDir); err != nil {
 			log.Warningf("couldn't clean temp directory: %s", err.Error())
 		}
 	}()
 
-	err := os.MkdirAll(tempDir, os.ModePerm)
 	if err != nil {
 		return fmt.Errorf("couldn't create a temporary directory %w", err)
 	}
@@ -250,6 +252,12 @@ func installIdeFromZip(archivePath string, targetDir string) error {
 	err = os.Rename(tempDir, targetDir)
 	if err != nil {
 		return fmt.Errorf("error moving linter files from temp to target: %w", err)
+	}
+	if runtime.GOOS != "windows" { // on Windows
+		err = platform.ChangePermissionsRecursivelyUnix(targetDir, 0755)
+		if err != nil {
+			return fmt.Errorf("error moving linter files from temp to target: %w", err)
+		}
 	}
 
 	return nil

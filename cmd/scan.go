@@ -112,7 +112,7 @@ But you can always override qodana.yaml options with the following command-line 
 
 			exitCode := core.RunAnalysis(ctx, scanContext)
 			if qdenv.IsContainer() {
-				err := platform.ChangePermissionsRecursively(scanContext.ResultsDir())
+				err := platform.ChangeResultsPermissionsRecursively(scanContext.ResultsDir())
 				if err != nil {
 					msg.ErrorMessage("Unable to change permissions in %s: %s", scanContext.ResultsDir(), err)
 				}

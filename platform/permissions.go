@@ -22,34 +22,53 @@ import (
 	"runtime"
 )
 
-// ChangePermissionsRecursively changes the permissions of the given
+// ChangeResultsPermissionsRecursively changes the permissions of the given
 // directory and all its contents to allow read and write
 // permissions for files, and appropriate permissions for directories.
-func ChangePermissionsRecursively(path string) error {
+func ChangeResultsPermissionsRecursively(path string) error {
 	//goland:noinspection GoBoolExpressions
 	if runtime.GOOS == "windows" {
 		return nil
 	}
-	return filepath.Walk(path, func(path string, info os.FileInfo, err error) error {
-		if err != nil {
-			return err
-		}
+	return filepath.Walk(
+		path, func(path string, info os.FileInfo, err error) error {
+			if err != nil {
+				return err
+			}
 
-		var perm os.FileMode
-		if info.IsDir() {
-			// Set directory permissions to read, write, and
-			// execute for owner and group, read and execute for others
-			perm = 0775
-		} else {
-			// Set file permissions to read and write for owner, group, and others
-			perm = 0666
-		}
+			var perm os.FileMode
+			if info.IsDir() {
+				// Set directory permissions to read, write, and
+				// execute for owner and group, read and execute for others
+				perm = 0775
+			} else {
+				// Set file permissions to read and write for owner, group, and others
+				perm = 0666
+			}
 
-		err = os.Chmod(path, perm)
-		if err != nil {
-			return err
-		}
+			err = os.Chmod(path, perm)
+			if err != nil {
+				return err
+			}
 
-		return nil
-	})
+			return nil
+		},
+	)
+}
+
+func ChangePermissionsRecursivelyUnix(path string, perm os.FileMode) error {
+	return filepath.Walk(
+		path, func(path string, info os.FileInfo, err error) error {
+			if err != nil {
+				return err
+			}
+
+			err = os.Chmod(path, perm)
+			if err != nil {
+				return err
+			}
+
+			return nil
+		},
+	)
 }
