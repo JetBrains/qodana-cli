@@ -164,8 +164,18 @@ func TestInstallIdeFromZip(t *testing.T) {
 
 				// Verify that the file was extracted correctly
 				extractedFilePath := filepath.Join(targetDir, "test.txt")
-				if _, err := os.Stat(extractedFilePath); os.IsNotExist(err) {
+				stat, err := os.Stat(extractedFilePath)
+				if os.IsNotExist(err) {
 					t.Fatalf("Expected file %s was not extracted", extractedFilePath)
+				}
+				if runtime.GOOS == "windows" {
+					if stat.Mode().Perm() != 0666 {
+						t.Errorf("Expected file permissions 0666, got %v", stat.Mode().Perm())
+					}
+				} else {
+					if stat.Mode().Perm() != 0755 {
+						t.Errorf("Expected file permissions 0755, got %v", stat.Mode().Perm())
+					}
 				}
 
 				// Verify the content of the extracted file

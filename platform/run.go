@@ -279,7 +279,7 @@ func changeResultDirPermissionsInContainer(resultDir string) {
 	if !qdenv.IsContainer() {
 		return
 	}
-	err := ChangePermissionsRecursively(resultDir)
+	err := ChangeResultsPermissionsRecursively(resultDir)
 	if err != nil {
 		msg.ErrorMessage("Unable to change permissions in %s: %s", resultDir, err)
 	}
