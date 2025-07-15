@@ -5,7 +5,7 @@ updates:
     commit-message:
       prefix: "QD-8148"
     schedule:
-      interval: weekly
+      interval: monthly
     groups:
       dependencies:
         patterns:
@@ -15,7 +15,7 @@ updates:
     commit-message:
       prefix: "QD-8148"
     schedule:
-      interval: weekly
+      interval: monthly
     groups:
       dependencies:
         patterns:
@@ -25,7 +25,7 @@ updates:
     commit-message:
       prefix: "QD-8148"
     schedule:
-      interval: weekly
+      interval: monthly
     groups:
       dependencies:
         patterns:
@@ -35,7 +35,7 @@ updates:
     commit-message:
       prefix: "QD-8148"
     schedule:
-      interval: weekly
+      interval: monthly
     groups:
       dependencies:
         patterns:
@@ -55,7 +55,7 @@ updates:
     commit-message:
       prefix: "QD-8148"
     schedule:
-      interval: weekly
+      interval: monthly
     groups:
       dependencies:
         patterns:
@@ -65,7 +65,7 @@ updates:
     commit-message:
       prefix: "QD-8148"
     schedule:
-      interval: weekly
+      interval: monthly
     groups:
       dependencies:
         patterns:
@@ -75,7 +75,7 @@ updates:
     commit-message:
         prefix: "QD-8148"
     schedule:
-        interval: weekly
+        interval: monthly
     groups:
         dependencies:
           patterns:
@@ -85,7 +85,7 @@ updates:
     commit-message:
       prefix: "QD-8148"
     schedule:
-      interval: weekly
+      interval: monthly
     groups:
       dependencies:
         patterns:
@@ -95,7 +95,7 @@ updates:
     commit-message:
       prefix: "QD-8148"
     schedule:
-      interval: weekly
+      interval: monthly
     groups:
       dependencies:
         patterns:
@@ -105,7 +105,7 @@ updates:
     commit-message:
       prefix: "QD-8148"
     schedule:
-      interval: weekly
+      interval: monthly
     groups:
       dependencies:
         patterns:
