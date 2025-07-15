@@ -225,9 +225,7 @@ func installIdeFromZip(archivePath string, targetDir string) error {
 	}
 
 	//temp dir is required cause tar fails to extract over symlink directories
-	tempDir := filepath.Join(os.TempDir(), fmt.Sprintf("qodana_linter_%d", rand.Int()))
-
-	err := os.MkdirAll(tempDir, 0700)
+	tempDir, err := os.MkdirTemp("", "qodana_linter")
 	defer func() {
 		if err := os.RemoveAll(tempDir); err != nil {
 			log.Warningf("couldn't clean temp directory: %s", err.Error())
@@ -253,7 +251,7 @@ func installIdeFromZip(archivePath string, targetDir string) error {
 	if err != nil {
 		return fmt.Errorf("error moving linter files from temp to target: %w", err)
 	}
-	if runtime.GOOS != "windows" { // on Windows
+	if runtime.GOOS != "windows" {
 		err = platform.ChangePermissionsRecursivelyUnix(targetDir, 0755)
 		if err != nil {
 			return fmt.Errorf("error moving linter files from temp to target: %w", err)
