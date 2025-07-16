@@ -224,13 +224,14 @@ func TestPullInNative(t *testing.T) {
 
 func TestAllCommandsWithContainer(t *testing.T) {
 	version.Version = "0.1.0"
-	linter := "registry.jetbrains.team/p/sa/containers/qodana-dotnet:latest"
+	image := "registry.jetbrains.team/p/sa/containers/qodana-dotnet:latest"
 
-	token := os.Getenv("QODANA_LICENSE_ONLY_TOKEN")
-	if //goland:noinspection GoBoolExpressions
-	token == "" {
-		t.Skip("set your QODANA_LICENSE_ONLY_TOKEN as env variable to run the test")
-	}
+	t.Skip("Until implement way to choose automatically custom image repo for tests")
+	//token := os.Getenv("QODANA_LICENSE_ONLY_TOKEN")
+	//if //goland:noinspection GoBoolExpressions
+	//token == "" {
+	//	t.Skip("set your QODANA_LICENSE_ONLY_TOKEN as env variable to run the test")
+	//}
 
 	if os.Getenv("GITHUB_ACTIONS") == "true" {
 		//goland:noinspection GoBoolExpressions
@@ -260,7 +261,7 @@ func TestAllCommandsWithContainer(t *testing.T) {
 	out := bytes.NewBufferString("")
 	command := newPullCommand()
 	command.SetOut(out)
-	command.SetArgs([]string{"-i", projectPath, "-l", linter})
+	command.SetArgs([]string{"-i", projectPath, "--image", image})
 	err = command.Execute()
 	if err != nil {
 		t.Fatal(err)
@@ -291,7 +292,7 @@ func TestAllCommandsWithContainer(t *testing.T) {
 
 	// second scan with a configuration and cache
 	yamlFile := filepath.Join(projectPath, "qodana.yml")
-	err = os.WriteFile(yamlFile, []byte(fmt.Sprintf("linter: %s", linter)), 0o755)
+	err = os.WriteFile(yamlFile, []byte(fmt.Sprintf("image: %s", image)), 0o755)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -320,7 +321,7 @@ func TestAllCommandsWithContainer(t *testing.T) {
 	out = bytes.NewBufferString("")
 	command = newShowCommand()
 	command.SetOut(out)
-	command.SetArgs([]string{"-i", projectPath, "-d", "-l", linter})
+	command.SetArgs([]string{"-i", projectPath, "-d", "--image", image})
 	err = command.Execute()
 	if err != nil {
 		t.Fatal(err)

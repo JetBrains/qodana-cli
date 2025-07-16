@@ -30,6 +30,7 @@ type TestCase struct {
 	expected     product.Analyzer
 }
 
+//goland:noinspection ALL
 var optionsTests = []TestCase{
 	{
 		name:         "--ide passed",
@@ -148,7 +149,7 @@ var optionsTests = []TestCase{
 		failure:      false,
 		expected: &product.DockerAnalyzer{
 			Linter: product.JsLinter,
-			Image:  "jetbrains/qodana-js:" + product.ReleaseVersion,
+			Image:  product.JsLinter.Image(),
 		},
 	},
 	{
@@ -158,7 +159,7 @@ var optionsTests = []TestCase{
 		image:        "",
 		withinDocker: "false",
 		failure:      false,
-		expected:     &product.NativeAnalyzer{Linter: product.JsLinter, Eap: false},
+		expected:     &product.NativeAnalyzer{Linter: product.JsLinter, Eap: !product.IsReleased},
 	},
 	{
 		name:         "Known linter passed --linter, --within-docker=false, eap only linter",
@@ -167,7 +168,7 @@ var optionsTests = []TestCase{
 		image:        "",
 		withinDocker: "false",
 		failure:      false,
-		expected:     &product.NativeAnalyzer{Linter: product.CppLinter, Eap: true},
+		expected:     &product.NativeAnalyzer{Linter: product.CppLinter, Eap: product.CppLinter.EapOnly},
 	},
 	{
 		name:         "Known linter passed --linter, --within-docker=true",
@@ -178,7 +179,7 @@ var optionsTests = []TestCase{
 		failure:      false,
 		expected: &product.DockerAnalyzer{
 			Linter: product.JsLinter,
-			Image:  "jetbrains/qodana-js:" + product.ReleaseVersion,
+			Image:  product.JsLinter.Image(),
 		},
 	},
 	{
