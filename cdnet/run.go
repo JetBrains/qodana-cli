@@ -167,7 +167,7 @@ func patchReport(c thirdpartyscan.Context) error {
 func copyOriginalReportToLog(logDir string, sarifPath string) error {
 	destination := filepath.Join(logDir, "clt.original.sarif.json")
 	if err := utils.CopyFile(sarifPath, destination); err != nil {
-		return fmt.Errorf("problem while copying the original CLT report %e", err)
+		return fmt.Errorf("problem while copying the original CLT report: %w", err)
 	}
 	return nil
 }
