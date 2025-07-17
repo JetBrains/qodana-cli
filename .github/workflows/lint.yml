@@ -11,7 +11,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        release: [ "2025.1" ]
+        release: [ "2025.1", "2025.2" ]
     steps:
       - name: Checkout
         uses: actions/checkout@v4

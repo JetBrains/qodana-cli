@@ -9,9 +9,13 @@
     "description": "Qodana Community for Android (https://jb.gg/qodana-android)",
     "from": "jvm-community"
   },
+  "cpp": {
+    "qd_code": "QDCPP",
+    "description": "Qodana for C++ (https://jb.gg/qodana-cpp)"
+  },
   "cpp-community": {
-    "qd_code": "QDCL",
-    "description": "Qodana for C/C++ (https://jb.gg/qodana-clang)",
+    "qd_code": "QDCLC",
+    "description": "Qodana Community for C/C++ (https://jb.gg/qodana-clang)",
     "is_third_party": true
   },
   "dotnet": {
@@ -50,5 +54,9 @@
   "python-community": {
     "qd_code": "QDPYC",
     "description": "Qodana Community for Python (https://jb.gg/qodana-python)"
+  },
+  "ruby": {
+    "qd_code": "QDRUBY",
+    "description": "Qodana for Ruby (https://jb.gg/qodana-ruby)"
   }
 }

@@ -10,8 +10,8 @@
     "from": "jvm-community"
   },
   "cpp-community": {
-    "qd_code": "QDCL",
-    "description": "Qodana for C/C++ (https://jb.gg/qodana-clang)",
+    "qd_code": "QDCLC",
+    "description": "Qodana Community for C/C++ (https://jb.gg/qodana-clang)",
     "is_third_party": true
   },
   "dotnet": {
