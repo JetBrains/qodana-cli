@@ -51,6 +51,7 @@ jobs:
         uses: gotesttools/gotestfmt-action@v2
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
+      - run: go install github.com/mfridman/tparse@latest
       - if: ${{ matrix.os == 'ubuntu-latest' }}
         uses: docker/login-action@v3
         with:
@@ -73,7 +74,7 @@ jobs:
           QODANA_LICENSE_ONLY_TOKEN: ${{ secrets.QODANA_LICENSE_ONLY_TOKEN }}
       - name: Run tests (with coverage) for Windows
         if: ${{ matrix.os == 'windows-latest' }}
-        run: go test -v $(go list -f '{{.Dir}}/...' -m) -coverprofile coverage-${{ matrix.os }}.out
+        run: go test -v -json $(go list -f '{{.Dir}}/...' -m) -coverprofile coverage-${{ matrix.os }}.out | tparse -all -follow
         env:
           QODANA_LICENSE_ONLY_TOKEN: ${{ secrets.QODANA_LICENSE_ONLY_TOKEN }}
 
