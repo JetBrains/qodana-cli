@@ -184,6 +184,7 @@ qodana scan [flags]
       --image string                             Defines an image to be used for analysis execution.
                                                  Sets --within-docker=true. Sets --linter to the one preinstalled within the image.
                                                  Available images are: jetbrains/qodana-jvm-community, jetbrains/qodana-jvm, jetbrains/qodana-python, jetbrains/qodana-dotnet, etc...
+                                                 Full list of images is available at https://hub.docker.com/u/jetbrains?search=qodana .
   -i, --project-dir string                       Root directory of the inspected project (default ".")
   -o, --results-dir string                       Override directory to save Qodana inspection results to (default <userCacheDir>/JetBrains/<linter>/results)
       --cache-dir string                         Override cache directory (default <userCacheDir>/JetBrains/<linter>/cache)
