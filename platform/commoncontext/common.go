@@ -123,7 +123,7 @@ func GuessAnalyzerByLinterParam(linterParam string, withinDocker string) product
 			}
 		}
 		log.Fatalf(
-			"Unknown value for `linter` param: %s. If the passewd value is custom dcoker image, please use --image param instead.",
+			"Unrecognized '--linter' value '%s'. Hint: If the provided value is a custom doсker image, please use '--image' instead.",
 			linterParam,
 		)
 		return nil

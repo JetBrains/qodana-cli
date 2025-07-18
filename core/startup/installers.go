@@ -142,17 +142,17 @@ func getIde(analyzer product.Analyzer) *ReleaseDownloadInfo {
 	feedProductCode := linterProperties.FeedProductCode
 	prod, err := GetProductByCode(feedProductCode)
 	if err != nil {
-		msg.ErrorMessage("Error while obtaining the product info: " + err.Error())
+		msg.ErrorMessage("Error while obtaining the product info: %s", err)
 		return nil
 	}
 	if prod == nil {
-		msg.ErrorMessage("Product info is not found for code: ", feedProductCode)
+		msg.ErrorMessage("Product info is not found for code: %s", feedProductCode)
 		return nil
 	}
 
 	release := SelectLatestCompatibleRelease(prod, dist)
 	if release == nil {
-		msg.ErrorMessage("Error while obtaining the release type: ", dist)
+		msg.ErrorMessage("Error while obtaining the release type: %s", dist)
 		return nil
 	}
 
