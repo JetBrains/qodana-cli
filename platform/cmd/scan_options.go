@@ -118,7 +118,7 @@ func ComputeFlags(cmd *cobra.Command, options *CliOptions) error {
 			"image",
 			"",
 			"Defines an image to be used for analysis execution. \nSets --within-docker=true. Sets --linter to the one preinstalled within the image. \nAvailable images are: jetbrains/qodana-jvm"+
-				product.JvmLinter.Image()+", "+product.DotNetLinter.Image()+", etc... Full list of images is available at https://hub.docker.com/u/jetbrains?search=qodana .",
+				product.JvmLinter.Image()+", "+product.DotNetLinter.Image()+", etc. Full list of images is available at https://hub.docker.com/u/jetbrains?search=qodana .",
 		)
 	}
 	flags.StringVar(
