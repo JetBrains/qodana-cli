@@ -194,9 +194,9 @@ var (
 
 	DotNetCommunityLinter = Linter{
 		PresentableName: "Qodana Community for .NET",
-		Name:            "qodana-dotnet-community",
+		Name:            "qodana-cdnet",
 		ProductCode:     QDNETC,
-		DockerImage:     "jetbrains/qodana-dotnet-community",
+		DockerImage:     "jetbrains/qodana-cdnet",
 		SupportNative:   false,
 		IsPaid:          false,
 		SupportFixes:    false,
