@@ -175,7 +175,7 @@ qodana scan [flags]
 
 ```
   -l, --linter string                            Defines the linter to be used for analysis. Default value is determined based on project files. 
-                                                 Available values: qodana-jvm-community, qodana-jvm, qodana-jvm-android, qodana-android, qodana-php, qodana-python-community, qodana-python, qodana-js, qodana-dotnet-community, qodana-dotnet, qodana-ruby, qodana-cpp, qodana-go, qodana-clang
+                                                 Available values: qodana-jvm-community, qodana-jvm, qodana-jvm-android, qodana-android, qodana-php, qodana-python-community, qodana-python, qodana-js, qodana-cdnet, qodana-dotnet, qodana-ruby, qodana-cpp, qodana-go, qodana-clang
                                                  !Legacy note!: Until version 2025.2 this parameter was used to define a docker image. This behavior is deprecated but supported for backward compatibility. Please use parameters --linter and --within-docker=true or --image instead.
       --within-docker string                     Defines if analysis is performed within a docker container or not. 
                                                  Set to 'false' for performing analysis in native mode. Set to 'true' for performing analysis within a docker container. 
