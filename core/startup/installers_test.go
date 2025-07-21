@@ -17,24 +17,28 @@
 package startup
 
 import (
+	"fmt"
 	"github.com/JetBrains/qodana-cli/v2025/platform/msg"
 	"github.com/JetBrains/qodana-cli/v2025/platform/product"
 	"os"
 	"path/filepath"
-	"runtime"
 	"testing"
 )
 
 func TestGetIde(t *testing.T) {
-	//os.Setenv("QD_PRODUCT_INTERNAL_FEED", "https://data.services.jetbrains.com/products")
+	t.Setenv(
+		"QD_PRODUCT_INTERNAL_FEED",
+		fmt.Sprintf("https://packages.jetbrains.team/files/p/sa/qdist/%s/feed.json", product.ReleaseVersion),
+	)
 	for _, linter := range product.AllNativeLinters {
-		ide := getIde(linter.NativeAnalyzer())
-		if ide == nil {
+		eap := getIde(&product.NativeAnalyzer{Linter: linter, Eap: true})
+		if eap == nil {
 			t.Fail()
 		}
-		if runtime.GOOS != "darwin" {
-			eap := getIde(&product.NativeAnalyzer{Linter: linter, Eap: true})
-			if eap == nil {
+
+		if product.IsReleased {
+			ide := getIde(linter.NativeAnalyzer())
+			if ide == nil {
 				t.Fail()
 			}
 		}
