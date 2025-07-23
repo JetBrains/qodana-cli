@@ -14,7 +14,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-MESSAGE="This Qodana image is non-privileged and does not support sudo, please use the jetbrains/$QD_IMAGE:$QD_VERSION-privileged image if you need elevated privileges"
+MESSAGE="This Qodana image is non-privileged and does not support sudo, please use the jetbrains/qodana-$QD_IMAGE:$QD_VERSION-privileged image if you need elevated privileges"
 
 if [ -n "$TEAMCITY_VERSION" ]; then
     # TeamCity

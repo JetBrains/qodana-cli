@@ -176,7 +176,7 @@ RUN set -ex && \
     rm -rf /var/cache/apt /var/lib/apt/ /tmp/* "$GNUPGHOME"
 
 ARG PRIVILEGED="false"
-ARG SUDO_SHA256="7b8c75a374a81689a1082044bada5e6e46597d3c5f4d13c19d841746520cfcb6"
+ARG SUDO_SHA256="79eef9ec144c99809c3f037b17ec0936555d7e526ac0b2688eaa8b77e1452e4f"
 RUN if [ "$PRIVILEGED" = "true" ]; then \
         apt-get update && \
         apt-get install -y sudo && \
