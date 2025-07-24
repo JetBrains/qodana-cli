@@ -146,13 +146,13 @@ func getIde(analyzer product.Analyzer) *ReleaseDownloadInfo {
 		return nil
 	}
 	if prod == nil {
-		msg.ErrorMessage("Product info is not found for code: ", feedProductCode)
+		msg.ErrorMessage("Product info is not found for code '%s'", feedProductCode)
 		return nil
 	}
 
 	release := SelectLatestCompatibleRelease(prod, dist)
 	if release == nil {
-		msg.ErrorMessage("Error while obtaining the release type: ", dist)
+		msg.ErrorMessage("Could not find a %s version for '%s'", dist, linterProperties.PresentableName)
 		return nil
 	}
 
