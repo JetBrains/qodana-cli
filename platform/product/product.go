@@ -175,7 +175,7 @@ var (
 		Name:            "qodana-cpp",
 		ProductCode:     QDCPP,
 		DockerImage:     "jetbrains/qodana-cpp",
-		SupportNative:   false,
+		SupportNative:   true,
 		IsPaid:          true,
 		SupportFixes:    false,
 		EapOnly:         true,
