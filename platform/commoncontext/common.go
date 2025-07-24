@@ -18,7 +18,15 @@ package commoncontext
 
 import (
 	"fmt"
+	"net/http"
+	"os"
+	"path/filepath"
+	"slices"
+	"strings"
+	"time"
+
 	"github.com/JetBrains/qodana-cli/v2025/cloud"
+	"github.com/JetBrains/qodana-cli/v2025/platform/algorithm"
 	"github.com/JetBrains/qodana-cli/v2025/platform/msg"
 	"github.com/JetBrains/qodana-cli/v2025/platform/product"
 	"github.com/JetBrains/qodana-cli/v2025/platform/qdenv"
@@ -26,12 +34,6 @@ import (
 	"github.com/JetBrains/qodana-cli/v2025/platform/utils"
 	"github.com/pterm/pterm"
 	log "github.com/sirupsen/logrus"
-	"net/http"
-	"os"
-	"path/filepath"
-	"slices"
-	"strings"
-	"time"
 )
 
 func GuessAnalyzerFromEnvAndCLI(
@@ -206,6 +208,7 @@ func SelectAnalyzerForPath(path string, token string) product.Analyzer {
 			}
 		}, "Scanning project", "",
 	)
+	linters = algorithm.Unique(linters)
 
 	selector := func(choices []string) string {
 		choice, err := msg.QodanaInteractiveSelect.WithOptions(choices).Show()
