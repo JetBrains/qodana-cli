@@ -2,4 +2,5 @@
 *.zip
 
 ## go generate artifacs
-*.sha256.bin
+clt.sha256.bin
+clt.path.txt
