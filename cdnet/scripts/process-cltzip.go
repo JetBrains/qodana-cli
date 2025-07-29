@@ -18,7 +18,7 @@ var dllPathRegex = regexp.MustCompile(DLL_PATH_PATTERN)
 
 func main() {
 	// Find and hash commandline tools DLL inside the archive
-	var dllPath *string = nil
+	var dllPath = ""
 	var dllHash [32]byte
 	callback := func(path string, info os.FileInfo, stream io.Reader) {
 		if info.IsDir() {
@@ -28,10 +28,10 @@ func main() {
 			return
 		}
 
-		if dllPath != nil {
-			log.Fatalf("Found multiple matches for `%s` inside clt.zip: '%s', '%s'.", DLL_PATH_PATTERN, *dllPath, path)
+		if dllPath != "" {
+			log.Fatalf("Found multiple matches for `%s` inside clt.zip: '%s', '%s'.", DLL_PATH_PATTERN, dllPath, path)
 		}
-		dllPath = &path
+		dllPath = path
 
 		err := (error)(nil)
 		dllHash, err = utils.GetSha256(stream)
@@ -55,7 +55,7 @@ func main() {
 		if err != nil {
 			log.Fatal(err)
 		}
-		if dllPath == nil {
+		if dllPath == "" {
 			log.Fatalf("Could not find a file matching `%s` DLL inside clt.zip.", DLL_PATH_PATTERN)
 		}
 	}
@@ -65,12 +65,12 @@ func main() {
 		log.Fatal(err)
 	}
 
-	_, err = fmt.Fprintf(os.Stderr, "sha256 of clt.zip/%s: %s\n", *dllPath, hex.EncodeToString(dllHash[:]))
+	_, err = fmt.Fprintf(os.Stderr, "sha256 of clt.zip/%s: %s\n", dllPath, hex.EncodeToString(dllHash[:]))
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	err = os.WriteFile("clt.path.txt", []byte(*dllPath), 0666)
+	err = os.WriteFile("clt.path.txt", []byte(dllPath), 0666)
 	if err != nil {
 		log.Fatal(err)
 	}
