@@ -238,7 +238,7 @@ func (p Product) Is251orNewer() bool {
 func (p Product) isNotOlderThan(version int) bool {
 	number, err := strconv.Atoi(p.GetVersionBranch())
 	if err != nil {
-		msg.WarningMessage("Invalid version: ", err)
+		msg.WarningMessage("Invalid version: %s", err)
 		return false
 	}
 	return number >= version
