@@ -64,15 +64,16 @@ func (l CdnetLinter) RunAnalysis(c thirdpartyscan.Context) error {
 	return err
 }
 
-var CltDllRelativePath = "tools/netcoreapp3.1/any/JetBrains.CommandLine.Products.dll"
-
-//go:generate go run scripts/compute-sha256.go tools/netcoreapp3.1/any/JetBrains.CommandLine.Products.dll
+//go:generate go run scripts/process-cltzip.go
 
 //go:embed clt.zip
 var CltArchive []byte
 
 //go:embed clt.sha256.bin
 var CltSha256 []byte
+
+//go:embed clt.path.txt
+var CltDllRelativePath string
 
 func (l CdnetLinter) MountTools(path string) (map[string]string, error) {
 	val := make(map[string]string)
