@@ -19,6 +19,7 @@ func main() {
 
 	// Compute hash for the clang-tidy binary
 	var hash [32]byte
+	var targetPathFound = false
 	callback := func(path string, info os.FileInfo, stream io.Reader) {
 		if info.IsDir() {
 			return
@@ -27,6 +28,7 @@ func main() {
 			return
 		}
 
+		targetPathFound = true
 		err := (error)(nil)
 		hash, err = utils.GetSha256(stream)
 		if err != nil {
@@ -48,6 +50,9 @@ func main() {
 		err = utils.WalkZipArchive("clt.zip", callback)
 		if err != nil {
 			log.Fatal(err)
+		}
+		if !targetPathFound {
+			log.Fatalf("Could not find path '%s' within clt.zip", targetPath)
 		}
 	}
 
