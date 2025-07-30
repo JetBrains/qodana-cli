@@ -19,6 +19,7 @@ package startup
 import (
 	"crypto/sha256"
 	"encoding/hex"
+	"errors"
 	"fmt"
 	"github.com/JetBrains/qodana-cli/v2025/platform"
 	"github.com/JetBrains/qodana-cli/v2025/platform/msg"
@@ -29,6 +30,7 @@ import (
 	"github.com/pterm/pterm"
 	log "github.com/sirupsen/logrus"
 	"io"
+	"io/fs"
 	"math/rand"
 	"os"
 	"os/exec"
@@ -248,9 +250,16 @@ func installIdeFromZip(archivePath string, targetDir string) error {
 	}
 
 	err = os.Rename(tempDir, targetDir)
-	if err != nil {
-		return fmt.Errorf("error moving linter files from temp to target: %w", err)
+	if err != nil { // Trying to fallback if rename failed https://youtrack.jetbrains.com/issue/QD-12252
+		log.Warningf("Error moving linter files from temp to target: %s. Trying to copy instead.", err)
+		_, err := os.Stat(targetDir)
+		if !errors.Is(err, fs.ErrNotExist) {
+			return fmt.Errorf("target directory for linter already exists: %s", targetDir)
+		}
+		err = cp.Copy(tempDir, targetDir)
+		return fmt.Errorf("error copying linter files from temp to target: %w", err)
 	}
+
 	if runtime.GOOS != "windows" {
 		err = platform.ChangePermissionsRecursivelyUnix(targetDir, 0755)
 		if err != nil {
