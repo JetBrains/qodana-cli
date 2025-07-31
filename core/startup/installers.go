@@ -257,7 +257,9 @@ func installIdeFromZip(archivePath string, targetDir string) error {
 			return fmt.Errorf("target directory for linter already exists: %s", targetDir)
 		}
 		err = cp.Copy(tempDir, targetDir)
-		return fmt.Errorf("error copying linter files from temp to target: %w", err)
+		if err != nil {
+			return fmt.Errorf("error copying linter files from temp to target: %w", err)
+		}
 	}
 
 	if runtime.GOOS != "windows" {
