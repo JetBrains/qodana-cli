@@ -299,14 +299,6 @@ func analyzerToSelect(linters []product.Linter, path string) (map[string]product
 	analyzersMap := make(map[string]product.Analyzer)
 	analyzersList := make([]string, 0, len(linters))
 	for _, linter := range linters {
-		if linter.SupportNative {
-			key := linter.PresentableName + " (Native)"
-			analyzersMap[key] = &product.NativeAnalyzer{
-				Linter: linter,
-				Eap:    linter.EapOnly,
-			}
-			analyzersList = append(analyzersList, key)
-		}
 		if !isNativeRequired(path, linter) {
 			dockerKey := linter.PresentableName + " (Docker)"
 			analyzersMap[dockerKey] = &product.DockerAnalyzer{
@@ -314,6 +306,14 @@ func analyzerToSelect(linters []product.Linter, path string) (map[string]product
 				Image:  linter.Image(),
 			}
 			analyzersList = append(analyzersList, dockerKey)
+		}
+		if linter.SupportNative {
+			key := linter.PresentableName + " (Native)"
+			analyzersMap[key] = &product.NativeAnalyzer{
+				Linter: linter,
+				Eap:    linter.EapOnly,
+			}
+			analyzersList = append(analyzersList, key)
 		}
 	}
 	return analyzersMap, analyzersList
