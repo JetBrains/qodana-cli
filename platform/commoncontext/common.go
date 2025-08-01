@@ -18,7 +18,15 @@ package commoncontext
 
 import (
 	"fmt"
+	"net/http"
+	"os"
+	"path/filepath"
+	"slices"
+	"strings"
+	"time"
+
 	"github.com/JetBrains/qodana-cli/v2025/cloud"
+	"github.com/JetBrains/qodana-cli/v2025/platform/algorithm"
 	"github.com/JetBrains/qodana-cli/v2025/platform/msg"
 	"github.com/JetBrains/qodana-cli/v2025/platform/product"
 	"github.com/JetBrains/qodana-cli/v2025/platform/qdenv"
@@ -26,12 +34,6 @@ import (
 	"github.com/JetBrains/qodana-cli/v2025/platform/utils"
 	"github.com/pterm/pterm"
 	log "github.com/sirupsen/logrus"
-	"net/http"
-	"os"
-	"path/filepath"
-	"slices"
-	"strings"
-	"time"
 )
 
 func GuessAnalyzerFromEnvAndCLI(
@@ -206,6 +208,7 @@ func SelectAnalyzerForPath(path string, token string) product.Analyzer {
 			}
 		}, "Scanning project", "",
 	)
+	linters = algorithm.Unique(linters)
 
 	selector := func(choices []string) string {
 		choice, err := msg.QodanaInteractiveSelect.WithOptions(choices).Show()
@@ -296,22 +299,22 @@ func analyzerToSelect(linters []product.Linter, path string) (map[string]product
 	analyzersMap := make(map[string]product.Analyzer)
 	analyzersList := make([]string, 0, len(linters))
 	for _, linter := range linters {
-		if linter.SupportNative {
-			if isNativeRequired(path, linter) {
-				key := linter.PresentableName + " (Native)"
-				analyzersMap[key] = &product.NativeAnalyzer{
-					Linter: linter,
-					Eap:    linter.EapOnly,
-				}
-				analyzersList = append(analyzersList, key)
+		if !isNativeRequired(path, linter) {
+			dockerKey := linter.PresentableName + " (Docker)"
+			analyzersMap[dockerKey] = &product.DockerAnalyzer{
+				Linter: linter,
+				Image:  linter.Image(),
 			}
+			analyzersList = append(analyzersList, dockerKey)
 		}
-		dockerKey := linter.PresentableName + " (Docker)"
-		analyzersMap[dockerKey] = &product.DockerAnalyzer{
-			Linter: linter,
-			Image:  linter.Image(),
+		if linter.SupportNative {
+			key := linter.PresentableName + " (Native)"
+			analyzersMap[key] = &product.NativeAnalyzer{
+				Linter: linter,
+				Eap:    linter.EapOnly,
+			}
+			analyzersList = append(analyzersList, key)
 		}
-		analyzersList = append(analyzersList, dockerKey)
 	}
 	return analyzersMap, analyzersList
 }

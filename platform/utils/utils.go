@@ -141,7 +141,7 @@ func DownloadFile(filepath string, url string, auth string, spinner *pterm.Spinn
 		return fmt.Errorf("error making HEAD request: %w", err)
 	}
 	if response.StatusCode != http.StatusOK {
-		return fmt.Errorf("wrong response code on HEAD request: %s", response.Status)
+		return fmt.Errorf("response from %s (HEAD): %s", url, response.Status)
 	}
 
 	sizeStr := response.Header.Get("Content-Length")
@@ -166,7 +166,7 @@ func DownloadFile(filepath string, url string, auth string, spinner *pterm.Spinn
 	}
 
 	if resp.StatusCode != http.StatusOK {
-		return fmt.Errorf("wrong response code: %s", resp.Status)
+		return fmt.Errorf("response from %s (GET): %s", url, resp.Status)
 	}
 	defer func(Body io.ReadCloser) {
 		if err := Body.Close(); err != nil {
