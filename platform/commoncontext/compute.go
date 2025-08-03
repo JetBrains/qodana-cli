@@ -53,6 +53,55 @@ func Compute(
 		)
 	}
 
+	return computeCommon(
+		analyzer,
+		projectDir,
+		cacheDirFromCliOptions,
+		resultsDirFromCliOptions,
+		reportDirFromCliOptions,
+		clearCache,
+		qodanaCloudToken,
+	)
+}
+
+func Compute3rdParty(
+	linterName string,
+	isEap bool,
+	cacheDirFromCliOptions string,
+	resultsDirFromCliOptions string,
+	reportDirFromCliOptions string,
+	qodanaCloudToken string,
+	clearCache bool,
+	projectDir string,
+) Context {
+	linter := product.FindLinterByName(linterName)
+	if linter == product.UnknownLinter {
+		log.Fatalf("Unsupported 3rd party linter name detected: %s", linterName)
+	}
+	analyzer := &product.NativeAnalyzer{
+		Linter: linter,
+		Eap:    isEap,
+	}
+	return computeCommon(
+		analyzer,
+		projectDir,
+		cacheDirFromCliOptions,
+		resultsDirFromCliOptions,
+		reportDirFromCliOptions,
+		clearCache,
+		qodanaCloudToken,
+	)
+}
+
+func computeCommon(
+	analyzer product.Analyzer,
+	projectDir string,
+	cacheDirFromCliOptions string,
+	resultsDirFromCliOptions string,
+	reportDirFromCliOptions string,
+	clearCache bool,
+	qodanaCloudToken string,
+) Context {
 	qodanaId := computeId(analyzer, projectDir)
 	systemDir := computeQodanaSystemDir(cacheDirFromCliOptions)
 	linterDir := filepath.Join(systemDir, qodanaId)

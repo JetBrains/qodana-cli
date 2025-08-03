@@ -48,18 +48,15 @@ func RunThirdPartyLinterAnalysis(
 
 	var err error
 
-	commonCtx := commoncontext.Compute(
+	commonCtx := commoncontext.Compute3rdParty(
 		linterInfo.LinterName,
-		"",
-		"",
-		"",
+		linterInfo.IsEap,
 		cliOptions.CacheDir,
 		cliOptions.ResultsDir,
 		cliOptions.ReportDir,
 		qdenv.GetQodanaGlobalEnv(qdenv.QodanaToken),
 		cliOptions.ClearCache,
 		cliOptions.ProjectDir,
-		cliOptions.ConfigName,
 	)
 	commonCtx, err = correctInitArgsForThirdParty(commonCtx)
 	if err != nil {
