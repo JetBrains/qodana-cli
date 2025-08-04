@@ -72,6 +72,7 @@ func worker(
 	finished := make(chan bool)
 	signal.Notify(quit, os.Interrupt)
 
+	testClangTidyArch(c)
 	go func() {
 		for counter, fileWithHeader := range filesAndCompilers {
 			select {
@@ -113,6 +114,27 @@ func worker(
 		return
 	case <-finished:
 		return
+	}
+}
+
+func testClangTidyArch(
+	c thirdpartyscan.Context,
+) {
+	args := []string{
+		"/usr/share/file",
+		strutil.QuoteIfSpace(c.ClangPath()),
+	}
+
+	stdout, stderr, _, _ := utils.RunCmdRedirectOutput(
+		strutil.QuoteIfSpace(c.ProjectDir()),
+		args...,
+	)
+
+	if stderr != "" {
+		log.Debug(stderr)
+	}
+	if stdout != "" {
+		log.Debug(stdout)
 	}
 }
 
