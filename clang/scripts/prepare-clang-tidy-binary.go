@@ -4,19 +4,21 @@ package main
 
 import (
 	"encoding/hex"
+	"errors"
 	"fmt"
 	"io"
+	"io/fs"
 	"log"
 	"os"
-	"runtime"
+	"strings"
 
 	"github.com/JetBrains/qodana-cli/v2025/platform/utils"
 )
 
-func main() {
+func processArchive(targetOs string, targetArch string) {
 	// find the correct archive to prepare.
-	archivePath := fmt.Sprintf("clang-tidy-%s-%s", runtime.GOOS, runtime.GOARCH)
-	if runtime.GOOS == "windows" {
+	archivePath := fmt.Sprintf("clang-tidy-%s-%s", targetOs, targetArch)
+	if targetOs == "windows" {
 		archivePath += ".zip"
 	} else {
 		archivePath += ".tar.gz"
@@ -24,6 +26,7 @@ func main() {
 
 	// Compute hash for the clang-tidy binary
 	var hash [32]byte
+	hashedPath := ""
 	callback := func(path string, info os.FileInfo, stream io.Reader) {
 		if info.IsDir() {
 			return
@@ -32,6 +35,7 @@ func main() {
 			return
 		}
 
+		hashedPath = path
 		err := (error)(nil)
 		hash, err = utils.GetSha256(stream)
 		if err != nil {
@@ -40,6 +44,13 @@ func main() {
 	}
 
 	stat, err := os.Stat(archivePath)
+	if errors.Is(err, fs.ErrNotExist) {
+		_, err = fmt.Fprintf(os.Stderr, "skipping archive %q: file does not exist\n", archivePath)
+		if err != nil {
+			log.Fatal(err)
+		}
+		return
+	}
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -54,21 +65,35 @@ func main() {
 		if err != nil {
 			log.Fatal(err)
 		}
+		if hashedPath == "" {
+			log.Fatalf("Could not find a clang-tidy executable in %q", archivePath)
+		}
 	}
 
-	err = os.WriteFile("clang-tidy.sha256.bin", hash[:], 0666)
+	hashFile := fmt.Sprintf("%s.sha256.bin", archivePath)
+	err = os.WriteFile(hashFile, hash[:], 0666)
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	// Normalize the input archive name
-	err = utils.CopyFile(archivePath, "clang-tidy.archive")
+	_, err = fmt.Fprintf(os.Stderr, "sha256 of %s/%s: %s\n", archivePath, hashedPath, hex.EncodeToString(hash[:]))
 	if err != nil {
 		log.Fatal(err)
 	}
+}
 
-	_, err = fmt.Fprintf(os.Stderr, "sha256 of the contents of %q: %s\n", archivePath, hex.EncodeToString(hash[:]))
-	if err != nil {
-		log.Fatal(err)
+var TARGET_PLATFORMS = []string{
+	"darwin/amd64",
+	"darwin/arm64",
+	"linux/amd64",
+	"linux/arm64",
+	"windows/amd64",
+	"windows/arm64",
+}
+
+func main() {
+	for _, platform := range TARGET_PLATFORMS {
+		platformParts := strings.Split(platform, "/")
+		processArchive(platformParts[0], platformParts[1])
 	}
 }
