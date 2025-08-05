@@ -29,7 +29,7 @@ require (
 	github.com/JetBrains/qodana-cli/v2025/core v0.0.0-00010101000000-000000000000
 	github.com/JetBrains/qodana-cli/v2025/sarif v0.0.0-00010101000000-000000000000
 	github.com/JetBrains/qodana-cli/v2025/tooling v0.0.0-00010101000000-000000000000
-	github.com/docker/docker v25.0.6+incompatible
+	github.com/docker/docker v28.3.3+incompatible
 	github.com/reviewdog/go-bitbucket v0.0.0-20201024094602-708c3f6a7de0
 	github.com/shirou/gopsutil/v3 v3.24.5
 	golang.org/x/sys v0.33.0
@@ -43,6 +43,8 @@ require (
 	github.com/Azure/go-ansiterm v0.0.0-20210617225240-d185dfc1b5a1 // indirect
 	github.com/Microsoft/go-winio v0.6.2 // indirect
 	github.com/containerd/console v1.0.3 // indirect
+	github.com/containerd/errdefs v1.0.0 // indirect
+	github.com/containerd/errdefs/pkg v0.3.0 // indirect
 	github.com/containerd/log v0.1.0 // indirect
 	github.com/danieljoos/wincred v1.2.2 // indirect
 	github.com/davecgh/go-spew v1.1.2-0.20180830191138-d8f796af33cc // indirect
@@ -65,6 +67,8 @@ require (
 	github.com/lithammer/fuzzysearch v1.1.8 // indirect
 	github.com/lufia/plan9stats v0.0.0-20211012122336-39d0f177ccd0 // indirect
 	github.com/mattn/go-runewidth v0.0.16 // indirect
+	github.com/moby/docker-image-spec v1.3.1 // indirect
+	github.com/moby/sys/atomicwriter v0.1.0 // indirect
 	github.com/moby/term v0.5.0 // indirect
 	github.com/morikuni/aec v1.0.0 // indirect
 	github.com/opencontainers/go-digest v1.0.0 // indirect
