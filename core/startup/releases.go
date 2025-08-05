@@ -126,5 +126,10 @@ func SelectLatestCompatibleRelease(prod *Product, reqType string) *ReleaseInfo {
 		}
 	}
 
+	//fallback to eap
+	if latestRelease == nil && reqType == product.ReleaseVer {
+		latestRelease = SelectLatestCompatibleRelease(prod, product.EapVer)
+	}
+
 	return latestRelease
 }
