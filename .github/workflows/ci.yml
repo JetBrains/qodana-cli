@@ -84,9 +84,9 @@ jobs:
         run: go test -v -json $(go list -f '{{.Dir}}/...' -m) -coverprofile coverage-${{ matrix.os }}.out | tparse -all -follow
         env:
           QODANA_LICENSE_ONLY_TOKEN: ${{ secrets.QODANA_LICENSE_ONLY_TOKEN }}
-          GOROOT: /path/to/go
-          GOPATH: /home/runner/go
-          PATH: /path/to/go/bin:${{ env.PATH }}
+          GOROOT: ${{ env.GOROOT }}
+          GOPATH: ${{ env.GOPATH }}
+          PATH: ${{ env.PATH }}
 
   code-quality:
     if: github.repository == 'jetbrains/qodana-cli'
