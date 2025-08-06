@@ -28,10 +28,14 @@ import (
 )
 
 func TestGetIde(t *testing.T) {
-	t.Setenv(
-		"QD_PRODUCT_INTERNAL_FEED",
-		fmt.Sprintf("https://packages.jetbrains.team/files/p/sa/qdist/%s/feed.json", product.ReleaseVersion),
-	)
+	//goland:noinspection GoBoolExpressions
+	if !product.IsReleased {
+		t.Setenv(
+			"QD_PRODUCT_INTERNAL_FEED",
+			fmt.Sprintf("https://packages.jetbrains.team/files/p/sa/qdist/%s/feed.json", product.ReleaseVersion),
+		)
+	}
+
 	for _, linter := range product.AllNativeLinters {
 		eap := getIde(&product.NativeAnalyzer{Linter: linter, Eap: true})
 		if eap == nil {
