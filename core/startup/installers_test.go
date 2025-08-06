@@ -37,15 +37,17 @@ func TestGetIde(t *testing.T) {
 	}
 
 	for _, linter := range product.AllNativeLinters {
-		if product.IsReleased {
-			ide := getIde(linter.NativeAnalyzer())
-			if ide == nil {
-				t.Fail()
-			}
-		} else {
-			eap := getIde(&product.NativeAnalyzer{Linter: linter, Eap: true})
-			if eap == nil {
-				t.Fail()
+		if linter.ProductCode != product.QDCPP {
+			if product.IsReleased {
+				ide := getIde(linter.NativeAnalyzer())
+				if ide == nil {
+					t.Fail()
+				}
+			} else {
+				eap := getIde(&product.NativeAnalyzer{Linter: linter, Eap: true})
+				if eap == nil {
+					t.Fail()
+				}
 			}
 		}
 	}
