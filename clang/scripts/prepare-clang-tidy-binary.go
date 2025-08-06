@@ -1,11 +1,15 @@
+//go:build ignore
+
 // Find the correct archive for this system, rename it to something that go:embed will pick up, and compute its sha-256
 // sum.
 package main
 
 import (
 	"encoding/hex"
+	"errors"
 	"fmt"
 	"io"
+	"io/fs"
 	"log"
 	"os"
 	"runtime"
@@ -14,10 +18,22 @@ import (
 )
 
 func main() {
+	targetOs := runtime.GOOS
+	if override := os.Getenv("TARGETOS"); override != "" {
+		targetOs = override
+	}
+
+	targetArch := runtime.GOARCH
+	if override := os.Getenv("TARGETARCH"); override != "" {
+		targetArch = override
+	}
+
 	// find the correct archive to prepare.
-	archivePath := fmt.Sprintf("clang-tidy-%s-%s", runtime.GOOS, runtime.GOARCH)
-	if runtime.GOOS == "windows" {
+	archivePath := fmt.Sprintf("clang-tidy-%s-%s", targetOs, targetArch)
+	binaryPath := "bin/clang-tidy"
+	if targetOs == "windows" {
 		archivePath += ".zip"
+		binaryPath += ".exe"
 	} else {
 		archivePath += ".tar.gz"
 	}
@@ -28,7 +44,7 @@ func main() {
 		if info.IsDir() {
 			return
 		}
-		if path != "bin/clang-tidy" && path != "bin/clang-tidy.exe" {
+		if path != binaryPath {
 			return
 		}
 
@@ -40,6 +56,13 @@ func main() {
 	}
 
 	stat, err := os.Stat(archivePath)
+	if errors.Is(err, fs.ErrNotExist) {
+		_, err = fmt.Fprintf(os.Stderr, "skipping archive %q: file does not exist\n", archivePath)
+		if err != nil {
+			log.Fatal(err)
+		}
+		return
+	}
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -56,18 +79,13 @@ func main() {
 		}
 	}
 
-	err = os.WriteFile("clang-tidy.sha256.bin", hash[:], 0666)
+	hashFile := fmt.Sprintf("%s.sha256.bin", archivePath)
+	err = os.WriteFile(hashFile, hash[:], 0666)
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	// Normalize the input archive name
-	err = utils.CopyFile(archivePath, "clang-tidy.archive")
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	_, err = fmt.Fprintf(os.Stderr, "sha256 of the contents of %q: %s\n", archivePath, hex.EncodeToString(hash[:]))
+	_, err = fmt.Fprintf(os.Stderr, "sha256 of %s/%s: %s\n", archivePath, binaryPath, hex.EncodeToString(hash[:]))
 	if err != nil {
 		log.Fatal(err)
 	}

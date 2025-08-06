@@ -3,6 +3,8 @@ project_name: qodana-clang
 builds:
   - env:
       - CGO_ENABLED=0
+      - TARGETOS={{.Os}}
+      - TARGETARCH={{.Arch}}
     goos:
       - linux
       - windows
@@ -13,14 +15,16 @@ builds:
     ldflags:
       - -s -w -X main.version={{ .Env.VERSION }} -X main.buildDateStr={{ .Date }}
     hooks:
+      pre:
+        - cmd: | # Run 'go generate'
+            go run ../scripts/generate-recursive.go
       post:
-        - sh -c "set -e; if [ '{{ .Env.SIGN }}' = 'true' -a '{{ .Os }}' = 'windows' -a '{{ .Arch }}' = 'amd64' ]; then codesign -signed-files-dir ./dist/{{ .ProjectName }}_{{ .Os }}_{{ .Arch }}_v1/ './dist/{{ .ProjectName }}_{{ .Os }}_{{ .Arch }}_v1/qodana-clang.exe' ; fi"
-        - sh -c "set -e; if [ '{{ .Env.SIGN }}' = 'true' -a '{{ .Os }}' = 'windows' -a '{{ .Arch }}' = 'arm64' ]; then codesign -signed-files-dir ./dist/{{ .ProjectName }}_{{ .Os }}_{{ .Arch }}_v8.0/ './dist/{{ .ProjectName }}_{{ .Os }}_{{ .Arch }}/qodana-clang.exe' ; fi"
-        - sh -c "set -e; if [ '{{ .Env.SIGN }}' = 'true' -a '{{ .Os }}' = 'darwin' -a '{{ .Arch }}' = 'amd64' ]; then codesign -denoted-content-type=application/x-mac-app-bin -signed-files-dir ./dist/{{ .ProjectName }}_{{ .Os }}_{{ .Arch }}_v1/ './dist/{{ .ProjectName }}_{{ .Os }}_{{ .Arch }}_v1/qodana-clang' ; fi"
-        - sh -c "set -e; if [ '{{ .Env.SIGN }}' = 'true' -a '{{ .Os }}' = 'darwin' -a '{{ .Arch }}' = 'arm64' ]; then codesign -denoted-content-type=application/x-mac-app-bin -signed-files-dir ./dist/{{ .ProjectName }}_{{ .Os }}_{{ .Arch }}_v8.0/ './dist/{{ .ProjectName }}_{{ .Os }}_{{ .Arch }}/qodana-clang' ; fi"
+        - cmd: go run ../scripts/sign.go {{ .ProjectName }}
 snapshot:
   version_template: "{{ incpatch .Version }}-next"
 archives:
-  -
-    formats: [ 'binary' ]
+  - formats: [ 'binary' ]
     name_template: "{{ .Binary }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}"
+git:
+  ignore_tags:
+    - nightly
