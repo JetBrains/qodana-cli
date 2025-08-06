@@ -1,3 +1,5 @@
+//go:build ignore
+
 // Find the correct archive for this system, rename it to something that go:embed will pick up, and compute its sha-256
 // sum.
 package main
@@ -14,10 +16,22 @@ import (
 )
 
 func main() {
+	targetOs := runtime.GOOS
+	if override := os.Getenv("TARGETOS"); override != "" {
+		targetOs = override
+	}
+
+	targetArch := runtime.GOARCH
+	if override := os.Getenv("TARGETARCH"); override != "" {
+		targetArch = override
+	}
+
 	// find the correct archive to prepare.
-	archivePath := fmt.Sprintf("clang-tidy-%s-%s", runtime.GOOS, runtime.GOARCH)
-	if runtime.GOOS == "windows" {
+	archivePath := fmt.Sprintf("clang-tidy-%s-%s", targetOs, targetArch)
+	binaryPath := "bin/clang-tidy"
+	if targetOs == "windows" {
 		archivePath += ".zip"
+		binaryPath += ".exe"
 	} else {
 		archivePath += ".tar.gz"
 	}
@@ -28,7 +42,7 @@ func main() {
 		if info.IsDir() {
 			return
 		}
-		if path != "bin/clang-tidy" && path != "bin/clang-tidy.exe" {
+		if path != binaryPath {
 			return
 		}
 
@@ -67,7 +81,7 @@ func main() {
 		log.Fatal(err)
 	}
 
-	_, err = fmt.Fprintf(os.Stderr, "sha256 of the contents of %q: %s\n", archivePath, hex.EncodeToString(hash[:]))
+	_, err = fmt.Fprintf(os.Stderr, "sha256 of the contents of %s/%s: %s\n", archivePath, binaryPath, hex.EncodeToString(hash[:]))
 	if err != nil {
 		log.Fatal(err)
 	}
