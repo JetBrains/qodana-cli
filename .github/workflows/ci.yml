@@ -28,6 +28,13 @@ jobs:
         with:
           cache-dependency-path: "**/*.sum"
           go-version-file: go.work
+      - name: Set GOROOT and PATH from setup-go (Windows)
+        if: runner.os == 'Windows'
+        run: |
+          echo "GOROOT=$(go env GOROOT)" | Out-File -FilePath $env:GITHUB_ENV -Append
+          echo "GOPATH=$(go env GOPATH)" | Out-File -FilePath $env:GITHUB_ENV -Append
+          echo "PATH=$env:PATH" | Out-File -FilePath $env:GITHUB_ENV -Append
+        shell: pwsh
       - name: Set up Java 17 for config-loader-cli.jar
         uses: actions/setup-java@v4
         with:
@@ -77,6 +84,9 @@ jobs:
         run: go test -v -json $(go list -f '{{.Dir}}/...' -m) -coverprofile coverage-${{ matrix.os }}.out | tparse -all -follow
         env:
           QODANA_LICENSE_ONLY_TOKEN: ${{ secrets.QODANA_LICENSE_ONLY_TOKEN }}
+          GOROOT: ${{ env.GOROOT }}
+          GOPATH: ${{ env.GOPATH }}
+          PATH: ${{ env.PATH }}
 
   code-quality:
     if: github.repository == 'jetbrains/qodana-cli'
