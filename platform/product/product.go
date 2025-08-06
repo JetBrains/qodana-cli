@@ -34,7 +34,7 @@ type Linter struct {
 const (
 	ReleaseVersion = "2025.2"
 	ShortVersion   = "252"
-	IsReleased     = false
+	IsReleased     = true
 
 	EapSuffix  = "-EAP"
 	ReleaseVer = "release"
@@ -215,7 +215,7 @@ var (
 	}
 
 	VersionsMap = map[string]string{
-		ReleaseVer: "2025.1",
+		ReleaseVer: "2025.2",
 		EapVer:     "2025.2",
 	}
 
