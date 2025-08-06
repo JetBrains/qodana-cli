@@ -28,20 +28,26 @@ import (
 )
 
 func TestGetIde(t *testing.T) {
-	t.Setenv(
-		"QD_PRODUCT_INTERNAL_FEED",
-		fmt.Sprintf("https://packages.jetbrains.team/files/p/sa/qdist/%s/feed.json", product.ReleaseVersion),
-	)
-	for _, linter := range product.AllNativeLinters {
-		eap := getIde(&product.NativeAnalyzer{Linter: linter, Eap: true})
-		if eap == nil {
-			t.Fail()
-		}
+	//goland:noinspection GoBoolExpressions
+	if !product.IsReleased {
+		t.Setenv(
+			"QD_PRODUCT_INTERNAL_FEED",
+			fmt.Sprintf("https://packages.jetbrains.team/files/p/sa/qdist/%s/feed.json", product.ReleaseVersion),
+		)
+	}
 
-		if product.IsReleased {
-			ide := getIde(linter.NativeAnalyzer())
-			if ide == nil {
-				t.Fail()
+	for _, linter := range product.AllNativeLinters {
+		if linter.ProductCode != product.QDCPP {
+			if product.IsReleased {
+				ide := getIde(linter.NativeAnalyzer())
+				if ide == nil {
+					t.Fail()
+				}
+			} else {
+				eap := getIde(&product.NativeAnalyzer{Linter: linter, Eap: true})
+				if eap == nil {
+					t.Fail()
+				}
 			}
 		}
 	}
