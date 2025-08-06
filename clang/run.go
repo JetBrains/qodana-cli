@@ -49,12 +49,6 @@ func (l ClangLinter) RunAnalysis(c thirdpartyscan.Context) error {
 
 //go:generate go run scripts/prepare-clang-tidy-binary.go
 
-//go:embed clang-tidy.archive
-var ClangTidyArchive []byte
-
-//go:embed clang-tidy.sha256.bin
-var ClangTidySha256 []byte
-
 func (l ClangLinter) MountTools(path string) (map[string]string, error) {
 	clang := thirdpartyscan.Clang
 

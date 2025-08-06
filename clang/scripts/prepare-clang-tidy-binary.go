@@ -6,8 +6,10 @@ package main
 
 import (
 	"encoding/hex"
+	"errors"
 	"fmt"
 	"io"
+	"io/fs"
 	"log"
 	"os"
 	"runtime"
@@ -54,6 +56,13 @@ func main() {
 	}
 
 	stat, err := os.Stat(archivePath)
+	if errors.Is(err, fs.ErrNotExist) {
+		_, err = fmt.Fprintf(os.Stderr, "skipping archive %q: file does not exist\n", archivePath)
+		if err != nil {
+			log.Fatal(err)
+		}
+		return
+	}
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -70,18 +79,13 @@ func main() {
 		}
 	}
 
-	err = os.WriteFile("clang-tidy.sha256.bin", hash[:], 0666)
+	hashFile := fmt.Sprintf("%s.sha256.bin", archivePath)
+	err = os.WriteFile(hashFile, hash[:], 0666)
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	// Normalize the input archive name
-	err = utils.CopyFile(archivePath, "clang-tidy.archive")
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	_, err = fmt.Fprintf(os.Stderr, "sha256 of the contents of %s/%s: %s\n", archivePath, binaryPath, hex.EncodeToString(hash[:]))
+	_, err = fmt.Fprintf(os.Stderr, "sha256 of %s/%s: %s\n", archivePath, binaryPath, hex.EncodeToString(hash[:]))
 	if err != nil {
 		log.Fatal(err)
 	}
