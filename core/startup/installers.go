@@ -238,15 +238,21 @@ func installIdeFromZip(archivePath string, targetDir string) error {
 		return fmt.Errorf("couldn't create a temporary directory %w", err)
 	}
 
-	output, err := exec.Command(
+	command := exec.Command(
 		"tar",
 		"-xf",
 		strutil.QuoteForWindows(archivePath),
 		"-C",
 		strutil.QuoteForWindows(tempDir),
-	).CombinedOutput()
+	)
+	output, err := command.CombinedOutput()
 	if err != nil {
-		return fmt.Errorf("extracting files error: %w. Output: %s", err, string(output))
+		return fmt.Errorf(
+			"extracting files error: %w. Command: '%s'. Output: %s",
+			err,
+			command.String(),
+			string(output),
+		)
 	}
 
 	err = os.Rename(tempDir, targetDir)
