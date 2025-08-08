@@ -91,7 +91,7 @@ func QuoteForWindows2(s string) string {
 		return s
 	}
 	if runtime.GOOS == "windows" {
-		return strings.Replace(s, " ", "^ ", -1)
+		return strings.Replace(s, " ", "` ", -1)
 	}
 	return s
 }
