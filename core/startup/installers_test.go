@@ -108,14 +108,22 @@ func TestInstallIdeFromZip(t *testing.T) {
 	tests := []struct {
 		name       string
 		useSymlink bool
+		dirPattern string
 	}{
 		{
 			name:       "regular directory",
 			useSymlink: false,
+			dirPattern: "qodana_test",
 		},
 		{
 			name:       "symlink directory",
 			useSymlink: true,
+			dirPattern: "qodana_test",
+		},
+		{
+			name:       "arch path with space",
+			useSymlink: true,
+			dirPattern: "qodana _test",
 		},
 	}
 
@@ -123,7 +131,7 @@ func TestInstallIdeFromZip(t *testing.T) {
 		t.Run(
 			tt.name, func(t *testing.T) {
 				// Create a temporary directory for the test
-				tempDir, err := os.MkdirTemp("", "qodana_test_")
+				tempDir, err := os.MkdirTemp("", tt.dirPattern)
 				if err != nil {
 					t.Fatalf("Failed to create temporary directory: %v", err)
 				}
