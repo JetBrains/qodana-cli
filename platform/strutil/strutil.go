@@ -86,6 +86,16 @@ func QuoteForWindows(s string) string {
 	return s
 }
 
+func QuoteForWindows2(s string) string {
+	if IsStringQuoted(s) {
+		return s
+	}
+	if runtime.GOOS == "windows" {
+		return strings.Replace(s, " ", "^ ", -1)
+	}
+	return s
+}
+
 // IsStringQuoted checks if a string is already quoted with double quotes.
 func IsStringQuoted(s string) bool {
 	return strings.HasPrefix(s, "\"") && strings.HasSuffix(s, "\"")

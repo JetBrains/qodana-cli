@@ -241,7 +241,7 @@ func installIdeFromZip(archivePath string, targetDir string) error {
 	command := exec.Command(
 		"tar",
 		"-xf",
-		strutil.QuoteForWindows(archivePath),
+		strutil.QuoteForWindows2(archivePath),
 		"-C",
 		strutil.QuoteForWindows(tempDir),
 	)
