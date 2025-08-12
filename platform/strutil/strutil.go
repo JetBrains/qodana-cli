@@ -86,6 +86,14 @@ func QuoteForWindows(s string) string {
 	return s
 }
 
+// GetQuotedPath returns a quoted path for the current OS.
+func GetQuotedPath(path string) string {
+	if runtime.GOOS == "windows" {
+		return QuoteForWindows(path)
+	}
+	return QuoteIfSpace(path)
+}
+
 // IsStringQuoted checks if a string is already quoted with double quotes.
 func IsStringQuoted(s string) bool {
 	return strings.HasPrefix(s, "\"") && strings.HasSuffix(s, "\"")

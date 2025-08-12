@@ -213,7 +213,7 @@ func getIde(analyzer product.Analyzer) *ReleaseDownloadInfo {
 func installIdeWindowsExe(archivePath string, targetDir string) error {
 	stdout, stderr, _, err := utils.RunCmdRedirectOutput(
 		"",
-		archivePath,
+		strutil.QuoteForWindows(archivePath),
 		"/S",
 		fmt.Sprintf("/D=%s", strutil.QuoteForWindows(targetDir)),
 	)
@@ -239,14 +239,13 @@ func installIdeFromZip(archivePath string, targetDir string) error {
 	if err != nil {
 		return fmt.Errorf("couldn't create a temporary directory %w", err)
 	}
-
 	stdout, stderr, _, err := utils.RunCmdRedirectOutput(
 		"",
 		"tar",
 		"-xf",
-		archivePath,
+		strutil.GetQuotedPath(archivePath),
 		"-C",
-		tempDir,
+		strutil.GetQuotedPath(tempDir),
 	)
 	if err != nil {
 		return fmt.Errorf("extracting files error: %w. Stdout: %s. Stderr: %s", err, stdout, stderr)
@@ -283,9 +282,9 @@ func installIdeFromTar(archivePath string, targetDir string) error {
 		"",
 		"tar",
 		"-xf",
-		archivePath,
+		strutil.GetQuotedPath(archivePath),
 		"-C",
-		targetDir,
+		strutil.GetQuotedPath(targetDir),
 		"--strip-components",
 		"1",
 	)
@@ -385,7 +384,7 @@ func downloadCustomPlugins(ideUrl string, targetDir string, spinner *pterm.Spinn
 		return fmt.Errorf("error while downloading plugins: %v", err)
 	}
 
-	_, err = utils.RunCmd("", "tar", "-xf", archivePath, "-C", targetDir)
+	_, err = utils.RunCmd("", "tar", "-xf", strutil.GetQuotedPath(archivePath), "-C", strutil.GetQuotedPath(targetDir))
 	if err != nil {
 		return fmt.Errorf("tar: %s", err)
 	}
