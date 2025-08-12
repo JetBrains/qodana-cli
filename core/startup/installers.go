@@ -21,14 +21,6 @@ import (
 	"encoding/hex"
 	"errors"
 	"fmt"
-	"github.com/JetBrains/qodana-cli/v2025/platform"
-	"github.com/JetBrains/qodana-cli/v2025/platform/msg"
-	"github.com/JetBrains/qodana-cli/v2025/platform/product"
-	"github.com/JetBrains/qodana-cli/v2025/platform/strutil"
-	"github.com/JetBrains/qodana-cli/v2025/platform/utils"
-	cp "github.com/otiai10/copy"
-	"github.com/pterm/pterm"
-	log "github.com/sirupsen/logrus"
 	"io"
 	"io/fs"
 	"math/rand"
@@ -37,6 +29,15 @@ import (
 	"path/filepath"
 	"runtime"
 	"strings"
+
+	"github.com/JetBrains/qodana-cli/v2025/platform"
+	"github.com/JetBrains/qodana-cli/v2025/platform/msg"
+	"github.com/JetBrains/qodana-cli/v2025/platform/product"
+	"github.com/JetBrains/qodana-cli/v2025/platform/strutil"
+	"github.com/JetBrains/qodana-cli/v2025/platform/utils"
+	cp "github.com/otiai10/copy"
+	"github.com/pterm/pterm"
+	log "github.com/sirupsen/logrus"
 )
 
 func downloadAndInstallIDE(
@@ -210,13 +211,14 @@ func getIde(analyzer product.Analyzer) *ReleaseDownloadInfo {
 
 // installIdeWindowsExe is used as a fallback, since it needs installation privileges and alters the registry
 func installIdeWindowsExe(archivePath string, targetDir string) error {
-	output, err := exec.Command(
+	stdout, stderr, _, err := utils.RunCmdRedirectOutput(
+		"",
 		archivePath,
 		"/S",
 		fmt.Sprintf("/D=%s", strutil.QuoteForWindows(targetDir)),
-	).CombinedOutput()
+	)
 	if err != nil {
-		return fmt.Errorf("%s: %s. Output: %s", archivePath, err, string(output))
+		return fmt.Errorf("%s: %s. Stdout: %s. Stderr: %s", archivePath, err, stdout, stderr)
 	}
 	return nil
 }
@@ -238,15 +240,16 @@ func installIdeFromZip(archivePath string, targetDir string) error {
 		return fmt.Errorf("couldn't create a temporary directory %w", err)
 	}
 
-	output, err := exec.Command(
+	stdout, stderr, _, err := utils.RunCmdRedirectOutput(
+		"",
 		"tar",
 		"-xf",
-		strutil.QuoteForWindows(archivePath),
+		archivePath,
 		"-C",
-		strutil.QuoteForWindows(tempDir),
-	).CombinedOutput()
+		tempDir,
+	)
 	if err != nil {
-		return fmt.Errorf("extracting files error: %w. Output: %s", err, string(output))
+		return fmt.Errorf("extracting files error: %w. Stdout: %s. Stderr: %s", err, stdout, stderr)
 	}
 
 	err = os.Rename(tempDir, targetDir)
@@ -276,7 +279,8 @@ func installIdeFromTar(archivePath string, targetDir string) error {
 	if err := os.MkdirAll(targetDir, os.ModePerm); err != nil {
 		log.Fatal("couldn't create a directory ", err.Error())
 	}
-	output, err := exec.Command(
+	stdout, stderr, _, err := utils.RunCmdRedirectOutput(
+		"",
 		"tar",
 		"-xf",
 		archivePath,
@@ -284,9 +288,10 @@ func installIdeFromTar(archivePath string, targetDir string) error {
 		targetDir,
 		"--strip-components",
 		"1",
-	).CombinedOutput()
+	)
+
 	if err != nil {
-		return fmt.Errorf("tar: %s. Output: %s", err, string(output))
+		return fmt.Errorf("tar: %s. Stdout: %s. Stderr: %s", err, stdout, stderr)
 	}
 	return nil
 }
@@ -380,7 +385,7 @@ func downloadCustomPlugins(ideUrl string, targetDir string, spinner *pterm.Spinn
 		return fmt.Errorf("error while downloading plugins: %v", err)
 	}
 
-	_, err = exec.Command("tar", "-xf", archivePath, "-C", targetDir).Output()
+	_, err = utils.RunCmd("", "tar", "-xf", archivePath, "-C", targetDir)
 	if err != nil {
 		return fmt.Errorf("tar: %s", err)
 	}
