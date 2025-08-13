@@ -67,7 +67,7 @@ func newInitCommand() *cobra.Command {
 				token := qdenv.GetQodanaGlobalEnv(qdenv.QodanaToken)
 				analyzer := commoncontext.SelectAnalyzerForPath(cliOptions.ProjectDir, token)
 
-				writeQodanaLinterToYamlFile(
+				writeQodanaLinterToYamlFileWithWarning(
 					localQodanaYamlFullPath,
 					analyzer,
 				)
@@ -124,15 +124,15 @@ func checkToken(analyser product.Analyzer, cliOptions *initOptions) {
 	}
 }
 
-// WriteQodanaLinterToYamlFile adds the linter to the qodana.yaml file.
-func writeQodanaLinterToYamlFile(qodanaYamlFullPath string, analyser product.Analyzer) {
+// WriteQodanaLinterToYamlFile adds the linter to the qodana.yaml file, also adds warning about sensetive information
+func writeQodanaLinterToYamlFileWithWarning(qodanaYamlFullPath string, analyser product.Analyzer) {
 	q := qdyaml.LoadQodanaYamlByFullPath(qodanaYamlFullPath)
 	if q.Version == "" {
 		q.Version = "1.0"
 	}
 	q.Sort()
 	q = analyser.InitYaml(q)
-	err := q.WriteConfig(qodanaYamlFullPath)
+	err := q.WriteConfigWithWarning(qodanaYamlFullPath)
 	if err != nil {
 		log.Fatalf("writeConfig: %v", err)
 	}
