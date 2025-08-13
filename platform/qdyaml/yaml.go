@@ -147,6 +147,29 @@ func (q *QodanaYaml) WriteConfig(path string) error {
 	return nil
 }
 
+const warningComment = `#################################################################################
+#              WARNING: Do not store sensitive information in this file,        #
+#               as its contents will be included in the Qodana report.          #
+#################################################################################
+`
+
+// WriteConfigWithWarning writes QodanaYaml with warning to the given path
+func (q *QodanaYaml) WriteConfigWithWarning(path string) error {
+	var b bytes.Buffer
+	yamlEncoder := yaml.NewEncoder(&b)
+	yamlEncoder.SetIndent(2)
+	err := yamlEncoder.Encode(&q)
+	if err != nil {
+		return err
+	}
+	out := append([]byte(warningComment), b.Bytes()...)
+	err = os.WriteFile(path, out, 0o600)
+	if err != nil {
+		log.Fatalf("Marshal: %v", err)
+	}
+	return nil
+}
+
 // Profile A profile is some template set of checks to run with Qodana analysis.
 //
 //goland:noinspection GoUnnecessarilyExportedIdentifiers
