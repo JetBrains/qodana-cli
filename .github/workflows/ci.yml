@@ -24,6 +24,9 @@ jobs:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
+      - name: Setup oldest Docker
+        uses: ./.github/actions/setup-oldest-docker
+        if: runner.os != 'macOS'  # docker/setup-docker-action does not support macOS
       - uses: actions/setup-go@v5
         with:
           cache-dependency-path: "**/*.sum"
