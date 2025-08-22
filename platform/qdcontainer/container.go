@@ -19,14 +19,17 @@ package qdcontainer
 import (
 	"context"
 	"errors"
-	"github.com/JetBrains/qodana-cli/v2025/platform/msg"
-	"github.com/JetBrains/qodana-cli/v2025/platform/qdenv"
-	"github.com/docker/docker/client"
-	log "github.com/sirupsen/logrus"
 	"os"
 	"os/exec"
 	"runtime"
 	"strings"
+
+	"github.com/JetBrains/qodana-cli/v2025/platform/msg"
+	"github.com/JetBrains/qodana-cli/v2025/platform/qdenv"
+	"github.com/docker/cli/cli/command"
+	"github.com/docker/cli/cli/flags"
+	"github.com/docker/docker/client"
+	log "github.com/sirupsen/logrus"
 )
 
 const (
@@ -115,7 +118,29 @@ func CheckContainerEngineMemory() {
 
 // GetContainerClient getContainerClient returns a docker client.
 func GetContainerClient() *client.Client {
-	docker, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
+	cli, err := command.NewDockerCli()
+	if err != nil {
+		log.Fatal("couldn't create Docker CLI: ", err)
+	}
+	opts := flags.NewClientOptions()
+	if err := cli.Initialize(opts); err != nil {
+		log.Fatal("couldn't initialize Docker CLI: ", err)
+	}
+	apiClient := cli.Client()
+	// apiClient always implements the Client interface
+	// client/interface_stable.go
+	// var _ APIClient = &Client{}
+	c, ok := apiClient.(*client.Client)
+	if !ok {
+		log.Warn("Initialising light version of docker client, some docker configuration could be missing")
+		return GetLightContainerClient()
+	}
+	return c
+}
+
+// GetLightContainerClient returns a docker client without looking through docker config
+func GetLightContainerClient() *client.Client {
+	docker, err := client.NewClientWithOpts(client.FromEnv)
 	if err != nil {
 		log.Fatal("couldn't create container client ", err)
 	}
