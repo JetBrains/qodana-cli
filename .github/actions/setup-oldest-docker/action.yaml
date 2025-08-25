@@ -1,0 +1,81 @@
+name: Setup oldest Docker
+description: Install oldest supported version of Docker
+runs:
+  using: composite
+  steps:
+    - uses: actions/setup-python@v5
+      with:
+        python-version: '3.13'
+
+    - name: Install dependencies
+      shell: bash
+      run: pip install natsort htmllistparse
+
+    - name: Determine oldest supported Docker Engine version
+      uses: mathiasvr/command-output@v2.0.0
+      id: oldest-docker-version
+      with:
+        shell: python
+        run: |
+          import json
+          import platform
+          import re
+          from urllib.request import urlopen
+
+          import htmllistparse
+          from natsort import natsorted
+
+
+          def os():
+              RENAME = {
+                  "Darwin": "mac",
+                  "Linux": "linux",
+                  "Windows": "win",
+              }
+
+              return RENAME[platform.system()]
+
+
+          def arch():
+              RENAME = {
+                  "AMD64": "x86_64",
+                  "x86_64": "x86_64",
+                  "arm64": "aarch64",
+              }
+
+              return RENAME[platform.machine()]
+
+
+          def latest_binary(release, os, arch):
+              """For a given X.Y release, find the latest X.Y.Z released binary."""
+              re_target_binary_name = re.compile(fr"docker-({re.escape(release)}\.\d+)")
+
+              _, binary_releases = htmllistparse.fetch_listing(f"https://download.docker.com/{os}/static/stable/{arch}/")
+              matching_versions = []
+              for binary_release in binary_releases:
+                  filename = binary_release.name
+                  if m := re_target_binary_name.match(filename):
+                      matching_versions.append(m[1])
+
+              matching_versions = natsorted(matching_versions)
+              assert len(matching_versions) >= 1  # At least one binary release is available
+              return matching_versions[-1]
+
+
+          def oldest_release():
+              """Find the oldest X.Y release of docker that has not reached EOL."""
+              releases = urlopen("https://endoflife.date/api/v1/products/docker-engine/").read()
+              releases = json.loads(releases)
+              releases = releases["result"]["releases"]
+
+              supported_releases = list(filter(lambda x: x["isEol"] == False, releases))
+              supported_releases = natsorted(x["name"] for x in supported_releases)
+              assert len(supported_releases) >= 1  # At least one release is not EOL
+
+              return supported_releases[0]
+
+          print(latest_binary(oldest_release(), os=os(), arch=arch()))
+
+    - uses: docker/setup-docker-action@v4
+      with:
+        version: v${{ steps.oldest-docker-version.outputs.stdout }}
