@@ -18,12 +18,14 @@ jobs:
     strategy:
       matrix:
         include:
-          - os: ubuntu-latest
-            docker-version: latest
           - os: macos-latest
             docker-version: default
           - os: windows-latest
             docker-version: latest
+          - os: ubuntu-latest
+            docker-version: latest
+          - os: ubuntu-latest
+            docker-version: v25.0  # See also: https://endoflife.date/docker-engine
 
   code-quality:
     if: github.repository == 'jetbrains/qodana-cli'
