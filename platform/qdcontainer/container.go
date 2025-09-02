@@ -115,7 +115,7 @@ func CheckContainerEngineMemory() {
 
 // GetContainerClient getContainerClient returns a docker client.
 func GetContainerClient() *client.Client {
-	docker, err := client.NewClientWithOpts(client.FromEnv)
+	docker, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
 	if err != nil {
 		log.Fatal("couldn't create container client ", err)
 	}
