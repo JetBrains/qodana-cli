@@ -21,14 +21,16 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
-	"github.com/JetBrains/qodana-cli/v2025/cloud"
-	"github.com/docker/docker/api/types/network"
 	"io"
 	"os"
 	"path/filepath"
 	"runtime"
 	"strconv"
 	"strings"
+
+	"github.com/JetBrains/qodana-cli/v2025/cloud"
+	"github.com/docker/docker/api/types/image"
+	"github.com/docker/docker/api/types/network"
 
 	"github.com/JetBrains/qodana-cli/v2025/core/corescan"
 	"github.com/JetBrains/qodana-cli/v2025/platform/msg"
@@ -44,7 +46,6 @@ import (
 
 	cliconfig "github.com/docker/cli/cli/config"
 
-	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/container"
 	"github.com/docker/docker/api/types/mount"
 	"github.com/docker/docker/client"
@@ -213,15 +214,15 @@ func isDockerUnauthorizedError(errMsg string) bool {
 }
 
 // pullImage pulls docker image.
-func pullImage(ctx context.Context, client *client.Client, image string) {
-	reader, err := client.ImagePull(ctx, image, types.ImagePullOptions{})
+func pullImage(ctx context.Context, client *client.Client, ref string) {
+	reader, err := client.ImagePull(ctx, ref, image.PullOptions{})
 	if err != nil && isDockerUnauthorizedError(err.Error()) {
 		cfg, err := cliconfig.Load("")
 		if err != nil {
 			log.Fatal(err)
 		}
 
-		registryHostname := strutil.SafeSplit(image, "/", 0)
+		registryHostname := strutil.SafeSplit(ref, "/", 0)
 
 		a, err := cfg.GetAuthConfig(registryHostname)
 		if err != nil {
@@ -231,7 +232,7 @@ func pullImage(ctx context.Context, client *client.Client, image string) {
 		if err != nil {
 			log.Fatal("can't encode auth to base64", err)
 		}
-		reader, err = client.ImagePull(ctx, image, types.ImagePullOptions{RegistryAuth: encodedAuth})
+		reader, err = client.ImagePull(ctx, ref, image.PullOptions{RegistryAuth: encodedAuth})
 		if err != nil {
 			log.Fatal("can't pull image from the private registry", err)
 		}
