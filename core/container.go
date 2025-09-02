@@ -24,6 +24,7 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"regexp"
 	"runtime"
 	"strconv"
 	"strings"
@@ -38,6 +39,7 @@ import (
 	"github.com/JetBrains/qodana-cli/v2025/platform/qdcontainer"
 	"github.com/JetBrains/qodana-cli/v2025/platform/qdenv"
 	"github.com/JetBrains/qodana-cli/v2025/platform/strutil"
+	"github.com/JetBrains/qodana-cli/v2025/platform/utils"
 	"github.com/JetBrains/qodana-cli/v2025/platform/version"
 	"github.com/docker/docker/api/types/backend"
 	"github.com/docker/docker/api/types/registry"
@@ -424,11 +426,25 @@ func getDockerOptions(c corescan.Context, image string) *backend.ContainerCreate
 			AttachStdout: true,
 			AttachStderr: true,
 			Env:          dockerEnv,
-			User:         c.User(),
+			User:         selectUser(image, c.User()),
 			ExposedPorts: exposedPorts,
 		},
 		HostConfig: hostConfig,
 	}
+}
+
+var rePrivilegedImage = regexp.MustCompile(`^(jetbrains|registry.jetbrains.team)/.+-privileged.*$`)
+
+func selectUser(image string, userFromContext string) string {
+	if userFromContext == "auto" {
+		if !rePrivilegedImage.MatchString(image) {
+			return utils.GetDefaultUser()
+		}
+
+		return "" // Do not specify -u on the command line.
+	}
+
+	return userFromContext // Do not modify explicit user input
 }
 
 func generateDebugDockerRunCommand(cfg *backend.ContainerCreateConfig) string {

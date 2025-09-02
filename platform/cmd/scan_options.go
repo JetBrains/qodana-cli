@@ -20,7 +20,6 @@ import (
 	"fmt"
 	"github.com/JetBrains/qodana-cli/v2025/platform/product"
 	"github.com/JetBrains/qodana-cli/v2025/platform/qdenv"
-	"github.com/JetBrains/qodana-cli/v2025/platform/utils"
 	"github.com/google/uuid"
 	"github.com/spf13/cobra"
 	"os"
@@ -338,8 +337,10 @@ func ComputeFlags(cmd *cobra.Command, options *CliOptions) error {
 			&options.User,
 			"user",
 			"u",
-			utils.GetDefaultUser(),
-			"Only for container runs. User to run Qodana container as. Please specify user id – '$UID' or user id and group id $(id -u):$(id -g). Use 'root' to run as the root user (default: the current user)",
+			"auto",
+			"Only for container runs. Override user inside the Qodana container. "+
+				"Format: uid[:gid] (e.g. '0:0' for root, '$(id -u):$(id -g)' for current user). "+
+				"Default: current system user, or root in privileged images",
 		)
 		flags.BoolVar(
 			&options.SkipPull,
