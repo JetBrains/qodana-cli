@@ -85,7 +85,7 @@ func PrepareContainerEnvSettings() {
 // CheckContainerEngineMemory applicable only for Docker Desktop,
 // (has the default limit of 2GB which can be not enough when Gradle runs inside a container).
 func CheckContainerEngineMemory() {
-	docker := GetContainerClient()
+	docker := NewContainerClient()
 	goos := runtime.GOOS
 	if //goland:noinspection GoBoolExpressions
 	goos != "windows" && goos != "darwin" {
@@ -116,8 +116,8 @@ func CheckContainerEngineMemory() {
 	}
 }
 
-// GetContainerClient getContainerClient returns a docker client.
-func GetContainerClient() *client.Client {
+// NewContainerClient getContainerClient returns a docker client.
+func NewContainerClient() client.APIClient {
 	cli, err := command.NewDockerCli()
 	if err != nil {
 		log.Fatal("couldn't create Docker CLI: ", err)
@@ -127,22 +127,6 @@ func GetContainerClient() *client.Client {
 		log.Fatal("couldn't initialize Docker CLI: ", err)
 	}
 	apiClient := cli.Client()
-	// apiClient always implements the Client interface
-	// client/interface_stable.go
-	// var _ APIClient = &Client{}
-	c, ok := apiClient.(*client.Client)
-	if !ok {
-		log.Warn("Initialising light version of docker client, some docker configuration could be missing")
-		return GetLightContainerClient()
-	}
-	return c
-}
-
-// GetLightContainerClient returns a docker client without looking through docker config
-func GetLightContainerClient() *client.Client {
-	docker, err := client.NewClientWithOpts(client.FromEnv)
-	if err != nil {
-		log.Fatal("couldn't create container client ", err)
-	}
-	return docker
+	apiClient.NegotiateAPIVersion(context.TODO())
+	return apiClient
 }
