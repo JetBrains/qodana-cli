@@ -19,14 +19,17 @@ package qdcontainer
 import (
 	"context"
 	"errors"
-	"github.com/JetBrains/qodana-cli/v2025/platform/msg"
-	"github.com/JetBrains/qodana-cli/v2025/platform/qdenv"
-	"github.com/docker/docker/client"
-	log "github.com/sirupsen/logrus"
 	"os"
 	"os/exec"
 	"runtime"
 	"strings"
+
+	"github.com/JetBrains/qodana-cli/v2025/platform/msg"
+	"github.com/JetBrains/qodana-cli/v2025/platform/qdenv"
+	"github.com/docker/cli/cli/command"
+	"github.com/docker/cli/cli/flags"
+	"github.com/docker/docker/client"
+	log "github.com/sirupsen/logrus"
 )
 
 const (
@@ -82,7 +85,7 @@ func PrepareContainerEnvSettings() {
 // CheckContainerEngineMemory applicable only for Docker Desktop,
 // (has the default limit of 2GB which can be not enough when Gradle runs inside a container).
 func CheckContainerEngineMemory() {
-	docker := GetContainerClient()
+	docker := NewContainerClient()
 	goos := runtime.GOOS
 	if //goland:noinspection GoBoolExpressions
 	goos != "windows" && goos != "darwin" {
@@ -113,11 +116,17 @@ func CheckContainerEngineMemory() {
 	}
 }
 
-// GetContainerClient getContainerClient returns a docker client.
-func GetContainerClient() *client.Client {
-	docker, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
+// NewContainerClient getContainerClient returns a docker client.
+func NewContainerClient() client.APIClient {
+	cli, err := command.NewDockerCli()
 	if err != nil {
-		log.Fatal("couldn't create container client ", err)
+		log.Fatal("couldn't create Docker CLI: ", err)
 	}
-	return docker
+	opts := flags.NewClientOptions()
+	if err := cli.Initialize(opts); err != nil {
+		log.Fatal("couldn't initialize Docker CLI: ", err)
+	}
+	apiClient := cli.Client()
+	apiClient.NegotiateAPIVersion(context.TODO())
+	return apiClient
 }
