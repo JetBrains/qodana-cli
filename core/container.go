@@ -77,7 +77,7 @@ func runQodanaContainer(ctx context.Context, c corescan.Context) int {
 	if !ok {
 		log.Fatalf("Context is not a DockerAnalyzer")
 	}
-	docker := qdcontainer.GetContainerClient()
+	docker := qdcontainer.NewContainerClient()
 	info, err := docker.Info(ctx)
 	if err != nil {
 		log.Fatal("Couldn't retrieve Docker daemon information", err)
@@ -197,7 +197,7 @@ func encodeAuthToBase64(authConfig registry.AuthConfig) (string, error) {
 }
 
 // PullImage pulls docker image and prints the process.
-func PullImage(client *client.Client, image string) {
+func PullImage(client client.APIClient, image string) {
 	msg.PrintProcess(
 		func(_ *pterm.SpinnerPrinter) {
 			pullImage(context.Background(), client, image)
@@ -216,7 +216,7 @@ func isDockerUnauthorizedError(errMsg string) bool {
 }
 
 // pullImage pulls docker image.
-func pullImage(ctx context.Context, client *client.Client, ref string) {
+func pullImage(ctx context.Context, client client.APIClient, ref string) {
 	reader, err := client.ImagePull(ctx, ref, image.PullOptions{})
 	if err != nil && isDockerUnauthorizedError(err.Error()) {
 		cfg, err := cliconfig.Load("")
@@ -255,7 +255,7 @@ func pullImage(ctx context.Context, client *client.Client, ref string) {
 // ContainerCleanup cleans up Qodana containers.
 func ContainerCleanup() {
 	if containerName != "qodana-cli" { // if containerName is not set, it means that the container was not created!
-		docker := qdcontainer.GetContainerClient()
+		docker := qdcontainer.NewContainerClient()
 		ctx := context.Background()
 		containers, err := docker.ContainerList(ctx, container.ListOptions{})
 		if err != nil {
@@ -493,7 +493,7 @@ func generateDebugDockerRunCommand(cfg *backend.ContainerCreateConfig) string {
 }
 
 // getContainerExitCode returns the exit code of the docker container.
-func getContainerExitCode(ctx context.Context, client *client.Client, id string) int64 {
+func getContainerExitCode(ctx context.Context, client client.APIClient, id string) int64 {
 	statusCh, errCh := client.ContainerWait(ctx, id, container.WaitConditionNextExit)
 	select {
 	case err := <-errCh:
@@ -507,7 +507,7 @@ func getContainerExitCode(ctx context.Context, client *client.Client, id string)
 }
 
 // runContainer runs the container.
-func runContainer(ctx context.Context, client *client.Client, opts *backend.ContainerCreateConfig) {
+func runContainer(ctx context.Context, client client.APIClient, opts *backend.ContainerCreateConfig) {
 	createResp, err := client.ContainerCreate(
 		ctx,
 		opts.Config,
