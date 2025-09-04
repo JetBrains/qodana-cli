@@ -1,4 +1,5 @@
 version: 2
+pro: true
 project_name: qodana
 builds:
   - env:
@@ -110,11 +111,11 @@ release:
     - glob: dist/upload/**
   footer: |
     ## Install
-    
+
     > 💡 The Qodana CLI is distributed and run as a binary. The Qodana linters with inspections are [Docker Images](https://www.jetbrains.com/help/qodana/docker-images.html) or, starting from version `2023.2`, your local/downloaded by CLI IDE installations (experimental support).
     > - To run Qodana with a container (the default mode in CLI), you must have Docker or Podman installed and running locally to support this: https://www.docker.com/get-started, and, if you are using Linux, you should be able to run Docker from the current (non-root) user (https://docs.docker.com/engine/install/linux-postinstall/#manage-docker-as-a-non-root-user)
     > - To run Qodana without a container, you must have the IDE installed locally to provide the IDE installation path to the CLI or specify the product code, and CLI will try to download the IDE automatically (experimental support).
-    
+
     #### macOS and Linux
     ##### Install with [Homebrew](https://brew.sh) (recommended)
     ```console
@@ -128,7 +129,7 @@ release:
     ```
     curl -fsSL https://jb.gg/qodana-cli/install | bash -s -- nightly
     ```
-    
+
     #### Windows
     ##### Install with [Windows Package Manager](https://learn.microsoft.com/en-us/windows/package-manager/winget/) (recommended)
     ```console
@@ -143,10 +144,10 @@ release:
     scoop bucket add jetbrains https://github.com/JetBrains/scoop-utils
     scoop install qodana
     ```
-    
+
     #### Anywhere else
     Alternatively, you can install the latest binary (or the apt/rpm/deb/archlinux package) from this page.
-    
+
     ## Update
     Update to the latest version depends on how you choose to install `qodana` on your machine.
     #### Update with [Homebrew](https://brew.sh)
@@ -177,12 +178,12 @@ git:
   ignore_tags:
     - nightly
 report_sizes: true
-nightly:
+nightly:  # goreleaser pro-specific
   version_template: '{{ incpatch .Version }}-nightly'
   tag_name: nightly
   publish_release: true
   keep_single_release: true
-after:
+after:  # goreleaser pro-specific
   hooks:
     - sh -c "
       set -e;
