@@ -18,6 +18,11 @@ package startup
 
 import (
 	"fmt"
+	"os"
+	"path/filepath"
+	"runtime"
+	"strings"
+
 	"github.com/JetBrains/qodana-cli/v2025/cloud"
 	"github.com/JetBrains/qodana-cli/v2025/platform/commoncontext"
 	"github.com/JetBrains/qodana-cli/v2025/platform/msg"
@@ -29,10 +34,6 @@ import (
 	cp "github.com/otiai10/copy"
 	"github.com/pterm/pterm"
 	log "github.com/sirupsen/logrus"
-	"os"
-	"path/filepath"
-	"runtime"
-	"strings"
 )
 
 const (
@@ -91,6 +92,8 @@ func PrepareHost(commonCtx commoncontext.Context) PreparedHost {
 		qdcontainer.PrepareContainerEnvSettings()
 	} else {
 		prod, cloudUploadToken = prepareLocalIdeSettingsAndGetQodanaCloudUploadToken(commonCtx, ideDir)
+		// in case of container run the token passed directly (ref - core/container.go#getDockerOptions)
+		prepareQodanaTokenForNative(cloudUploadToken)
 	}
 
 	if tokenloader.IsCloudTokenRequired(commonCtx) {
@@ -132,6 +135,16 @@ func prepareLocalIdeSettingsAndGetQodanaCloudUploadToken(
 
 	prepareCustomPlugins(prod)
 	return prod, token
+}
+
+func prepareQodanaTokenForNative(token string) {
+	_, isSet := os.LookupEnv(qdenv.QodanaToken)
+	if !isSet {
+		err := os.Setenv(qdenv.QodanaToken, token)
+		if err != nil {
+			log.Fatal("Cannot set QODANA_TOKEN environment variable. The result may not be uploaded to the Qodana cloud.")
+		}
+	}
 }
 
 func prepareCustomPlugins(prod product.Product) {
