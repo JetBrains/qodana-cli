@@ -54,7 +54,11 @@ func newPullCommand() *cobra.Command {
 				log.Println("Native mode is used, skipping pull")
 			} else {
 				qdcontainer.PrepareContainerEnvSettings()
-				client := qdcontainer.NewContainerClient()
+				client, err := qdcontainer.NewContainerClient(cmd.Context())
+				if err != nil {
+					log.Fatalf("Failed to initialize Docker API: %s", err)
+				}
+
 				core.CheckImage(analyzer.Image)
 				core.PullImage(client, analyzer.Image)
 			}

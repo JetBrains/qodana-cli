@@ -77,7 +77,11 @@ func runQodanaContainer(ctx context.Context, c corescan.Context) int {
 	if !ok {
 		log.Fatalf("Context is not a DockerAnalyzer")
 	}
-	docker := qdcontainer.NewContainerClient()
+	docker, err := qdcontainer.NewContainerClient(ctx)
+	if err != nil {
+		log.Fatal("Couldn't retrieve Docker daemon information", err)
+	}
+
 	info, err := docker.Info(ctx)
 	if err != nil {
 		log.Fatal("Couldn't retrieve Docker daemon information", err)
@@ -255,8 +259,12 @@ func pullImage(ctx context.Context, client client.APIClient, ref string) {
 // ContainerCleanup cleans up Qodana containers.
 func ContainerCleanup() {
 	if containerName != "qodana-cli" { // if containerName is not set, it means that the container was not created!
-		docker := qdcontainer.NewContainerClient()
 		ctx := context.Background()
+		docker, err := qdcontainer.NewContainerClient(ctx)
+		if err != nil {
+			log.Fatal("failed to initialize Docker API:", err)
+		}
+
 		containers, err := docker.ContainerList(ctx, container.ListOptions{})
 		if err != nil {
 			log.Fatal("couldn't get the running containers ", err)
@@ -270,12 +278,6 @@ func ContainerCleanup() {
 			}
 		}
 	}
-}
-
-// CheckContainerEngineMemory applicable only for Docker Desktop,
-// (has the default limit of 2GB which can be not enough when Gradle runs inside a container).
-func CheckContainerEngineMemory() {
-	qdcontainer.CheckContainerEngineMemory()
 }
 
 // getDockerOptions returns qodana docker container options.

@@ -197,7 +197,7 @@ func checkExitCode(exitCode int, c corescan.Context) {
 		msg.ErrorMessage("Qodana exited with code %d", exitCode)
 		msg.WarningMessage("Check ./logs/ in the results directory for more information")
 		if exitCode == utils.QodanaOutOfMemoryExitCode {
-			core.CheckContainerEngineMemory()
+			msg.ErrorMessage("Qodana was terminated after running out of memory.")
 		} else if msg.AskUserConfirm(fmt.Sprintf("Do you want to open %s", c.ResultsDir())) {
 			err := core.OpenDir(c.ResultsDir())
 			if err != nil {
