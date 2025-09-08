@@ -1,0 +1,7 @@
+# Use LF line endings
+* text=auto eol=lf
+
+# Automatic merge settings for auto-generated Go files
+# See also: https://gabnotes.org/posts/merge-conflicts-in-gosum
+go.sum merge=union
+go.work.sum merge=union
