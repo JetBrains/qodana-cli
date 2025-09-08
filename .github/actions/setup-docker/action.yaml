@@ -26,7 +26,9 @@ runs:
         QUERY: ${{ inputs.version }}
       with:
         shell: python
-        run: |
+        # Note: in VS Code, consider installing `harrydowning.yaml-embedded-languages` to enable code highlighting
+        # in the embedded python code.
+        run: | # python
           import json
           import platform
           import re
