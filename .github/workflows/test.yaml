@@ -12,10 +12,6 @@ on:
         default: default
         description: Docker engine version
     secrets:
-      SPACE_USERNAME:
-        required: true
-      SPACE_PASSWORD:
-        required: true
       QODANA_LICENSE_ONLY_TOKEN:
         required: true
   workflow_dispatch:
@@ -26,31 +22,31 @@ jobs:
     name: Run tests
     runs-on: ${{ inputs.os }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
         with:
           fetch-depth: 0
+
       - name: Setup Docker
         if: inputs.docker-version != 'default'
         uses: ./.github/actions/setup-docker
         with:
           version: ${{ inputs.docker-version }}
-      - uses: actions/setup-go@v5
+
+      - name: Setup Go
+        uses: actions/setup-go@v5
         with:
           cache-dependency-path: "**/*.sum"
           go-version-file: go.work
-      - name: Set GOROOT and PATH from setup-go (Windows)
-        if: runner.os == 'Windows'
-        run: |
-          echo "GOROOT=$(go env GOROOT)" | Out-File -FilePath $env:GITHUB_ENV -Append
-          echo "GOPATH=$(go env GOPATH)" | Out-File -FilePath $env:GITHUB_ENV -Append
-          echo "PATH=$env:PATH" | Out-File -FilePath $env:GITHUB_ENV -Append
-        shell: pwsh
+
       - name: Set up Java 17 for config-loader-cli.jar
-        uses: actions/setup-java@v4
+        uses: actions/setup-java@v5
         with:
-          distribution: "temurin" # Use the Temurin JDK distribution
-          java-version: "17" # Java version 17
-      - name: Overwrite tools (to run tests only on gh repo)
+          distribution: temurin
+          java-version: 17
+
+      - name: Create mock artifact dependencies
+        # Note: these dependencies contain closed-source code and are not currently available on Github.
+        shell: bash
         run: >-
           touch
           cdnet/clt.zip
@@ -63,37 +59,26 @@ jobs:
           clang/clang-tidy-windows-arm64.zip
           clang/clang-tidy-darwin-amd64.tar.gz
           clang/clang-tidy-darwin-arm64.tar.gz
-        shell: bash
-      - name: Set up gotestfmt
-        uses: gotesttools/gotestfmt-action@v2
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-      - run: go install github.com/mfridman/tparse@latest
-      - if: ${{ inputs.os == 'ubuntu-latest' }}
-        uses: docker/login-action@v3
-        with:
-          registry: registry.jetbrains.team
-          username: ${{ secrets.SPACE_USERNAME }}
-          password: ${{ secrets.SPACE_PASSWORD }}
+
+      - name: Install test dependencies
+        run: go install github.com/mfridman/tparse@latest
+
       - name: Build
         # Build everything that will be tested. Although go test performs a build itself, gotestfmt will panic on a
         # failed build.
+        shell: bash
         run: |
           go generate -v $(go list -f '{{.Dir}}/...' -m)
           go build -v $(go list -f '{{.Dir}}/...' -m)
+
+      - name: Export GOROOT and GOPATH
         shell: bash
-      - name: Run tests (with coverage)
-        if: ${{ inputs.os != 'windows-latest' }}
         run: |
-          set -euo pipefail
-          go test -json -v $(go list -f '{{.Dir}}/...' -m) -coverprofile coverage-${{ inputs.os }}.out 2>&1 | tee /tmp/gotest.log | gotestfmt
-        env:
-          QODANA_LICENSE_ONLY_TOKEN: ${{ secrets.QODANA_LICENSE_ONLY_TOKEN }}
-      - name: Run tests (with coverage) for Windows
-        if: ${{ inputs.os == 'windows-latest' }}
+          echo "GOROOT=$(go env GOROOT)" >> "$GITHUB_ENV"
+          echo "GOPATH=$(go env GOPATH)" >> "$GITHUB_ENV"
+
+      - name: Run tests
         run: go test -v -json $(go list -f '{{.Dir}}/...' -m) -coverprofile coverage-${{ inputs.os }}.out | tparse -all -follow
         env:
           QODANA_LICENSE_ONLY_TOKEN: ${{ secrets.QODANA_LICENSE_ONLY_TOKEN }}
-          GOROOT: ${{ env.GOROOT }}
-          GOPATH: ${{ env.GOPATH }}
-          PATH: ${{ env.PATH }}
+
