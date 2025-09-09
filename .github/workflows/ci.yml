@@ -18,8 +18,8 @@ jobs:
     strategy:
       matrix:
         include:
-          - os: macos-latest
-            docker-version: default
+          - os: macos-13  # macos-13 is the only macOS github runner supporting Docker.
+            docker-version: latest
           - os: windows-latest
             docker-version: latest
           - os: ubuntu-latest

@@ -9,7 +9,7 @@ on:
         description: OS for the runner
       docker-version:
         type: string
-        default: default
+        default: latest
         description: Docker engine version
     secrets:
       SPACE_USERNAME:
@@ -30,7 +30,6 @@ jobs:
         with:
           fetch-depth: 0
       - name: Setup Docker
-        if: inputs.docker-version != 'default'
         uses: ./.github/actions/setup-docker
         with:
           version: ${{ inputs.docker-version }}
