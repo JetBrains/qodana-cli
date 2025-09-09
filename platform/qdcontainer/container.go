@@ -62,7 +62,6 @@ func PrepareContainerEnvSettings() {
 func checkEngineMemory() {
 	docker, err := NewContainerClient(context.Background())
 	if err != nil {
-		log.Warn("THIS IS ERROR")
 		log.Fatal(err)
 	}
 
