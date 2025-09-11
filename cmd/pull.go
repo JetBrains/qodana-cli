@@ -22,7 +22,6 @@ import (
 	"github.com/JetBrains/qodana-cli/v2025/platform/product"
 	"github.com/JetBrains/qodana-cli/v2025/platform/qdcontainer"
 	"github.com/JetBrains/qodana-cli/v2025/platform/qdenv"
-	"github.com/docker/docker/client"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 )
@@ -55,12 +54,13 @@ func newPullCommand() *cobra.Command {
 				log.Println("Native mode is used, skipping pull")
 			} else {
 				qdcontainer.PrepareContainerEnvSettings()
-				containerClient, err := client.NewClientWithOpts(client.FromEnv)
+				client, err := qdcontainer.NewContainerClient(cmd.Context())
 				if err != nil {
-					log.Fatal("couldn't connect to container engine ", err)
+					log.Fatalf("Failed to initialize Docker API: %s", err)
 				}
+
 				core.CheckImage(analyzer.Image)
-				core.PullImage(containerClient, analyzer.Image)
+				core.PullImage(client, analyzer.Image)
 			}
 		},
 	}

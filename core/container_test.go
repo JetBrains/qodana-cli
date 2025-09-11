@@ -2,8 +2,11 @@ package core
 
 import (
 	"fmt"
-	"github.com/JetBrains/qodana-cli/v2025/platform/product"
 	"testing"
+
+	"github.com/JetBrains/qodana-cli/v2025/platform/product"
+	"github.com/JetBrains/qodana-cli/v2025/platform/utils"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestImageChecks(t *testing.T) {
@@ -59,4 +62,24 @@ func TestImageChecks(t *testing.T) {
 			},
 		)
 	}
+}
+
+func TestSelectUser(t *testing.T) {
+	// auto implies selecting a user automatically for non-priveleged images
+	assert.Equal(t, selectUser("jetbrains/qodana-cpp:2025.2-eap-clang18", "auto"), utils.GetDefaultUser())
+	assert.Equal(t, selectUser("jetbrains/qodana-cpp:2025.2-eap-clang18-privileged", "auto"), "")
+
+	// Explicitly specified UIDs should not be overridden
+	assert.Equal(t, selectUser("jetbrains/qodana-cpp:2025.2-eap-clang18", "0"), "0")
+	assert.Equal(t, selectUser("jetbrains/qodana-cpp:2025.2-eap-clang18-privileged", "0"), "0")
+	assert.Equal(t, selectUser("jetbrains/qodana-cpp:2025.2-eap-clang18", "1337"), "1337")
+	assert.Equal(t, selectUser("jetbrains/qodana-cpp:2025.2-eap-clang18-privileged", "1337"), "1337")
+
+	// Internal registry is supported
+	assert.Equal(t, selectUser("registry.jetbrains.team/qodana-cpp:2025.2-eap-clang18", "auto"), utils.GetDefaultUser())
+	assert.Equal(t, selectUser("registry.jetbrains.team/qodana-cpp:2025.2-eap-clang18-privileged", "auto"), "")
+
+	// User-specified images are unaffected
+	assert.Equal(t, selectUser("myregistry.local/qodana-cpp:2025.2-eap-clang18", "auto"), utils.GetDefaultUser())
+	assert.Equal(t, selectUser("myregistry.local/qodana-cpp:2025.2-eap-clang18-privileged", "auto"), utils.GetDefaultUser())
 }
