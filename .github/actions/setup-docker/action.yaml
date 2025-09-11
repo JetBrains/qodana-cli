@@ -6,7 +6,7 @@ description: |
 inputs:
   version:
     required: true
-    default: default
+    default: latest
     description: Either "latest", or "[v]major[.minor[.patch]]" version for Docker Engine.
 runs:
   using: composite

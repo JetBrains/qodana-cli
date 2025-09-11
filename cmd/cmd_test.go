@@ -208,6 +208,16 @@ func TestContributorsCommand(t *testing.T) {
 	}
 }
 
+func TestPullImage(t *testing.T) {
+	command := newPullCommand()
+	command.SetArgs([]string{"--image", "hello-world"})
+
+	err := command.Execute()
+	if err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestPullInNative(t *testing.T) {
 	projectPath := createProject(t, "qodana_scan_python_native")
 	yamlFile := filepath.Join(projectPath, "qodana.yaml")

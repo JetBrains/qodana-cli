@@ -18,15 +18,18 @@ package qdcontainer
 
 import (
 	"context"
-	"errors"
+	"fmt"
+	"os"
+	"runtime"
+
 	"github.com/JetBrains/qodana-cli/v2025/platform/msg"
-	"github.com/JetBrains/qodana-cli/v2025/platform/qdenv"
+	"github.com/docker/cli/cli/command"
+	docker_cli_config "github.com/docker/cli/cli/config"
+	"github.com/docker/cli/cli/flags"
+	"github.com/docker/docker/api/types/system"
 	"github.com/docker/docker/client"
 	log "github.com/sirupsen/logrus"
-	"os"
-	"os/exec"
-	"runtime"
-	"strings"
+	"gopkg.in/yaml.v3"
 )
 
 const (
@@ -38,51 +41,30 @@ const (
 	DataGlobalConfigDir  = "/data/qodana-global-config/" // when container is launched by CLI, qodana-global-configurations.yaml file is mounted here
 )
 
-func checkRequiredToolInstalled(tool string) bool {
-	_, err := exec.LookPath(tool)
-	return err == nil
-}
-
 func PrepareContainerEnvSettings() {
-	var tool string
-	if os.Getenv(qdenv.QodanaCliUsePodman) == "" && checkRequiredToolInstalled("docker") {
-		tool = "docker"
-	} else if checkRequiredToolInstalled("podman") {
-		tool = "podman"
-	} else {
+	ctx := context.Background()
+	_, err := NewContainerClient(ctx)
+	if err != nil {
 		msg.ErrorMessage(
-			"Docker (or podman) is not installed on the system or can't be found in PATH, refer to https://www.docker.com/get-started for installing it",
+			"An error occured while connecting to Docker: %s\n"+
+				"Make sure that Docker or Podman is installed and a socket is available. If Docker is already "+
+				"running, consider setting DOCKER_HOST variable explicitly.",
+			err,
 		)
 		os.Exit(1)
 	}
-	cmd := exec.Command(tool, "ps")
-	if err := cmd.Run(); err != nil {
-		var exiterr *exec.ExitError
-		if errors.As(err, &exiterr) {
-			if strings.Contains(string(exiterr.Stderr), "permission denied") {
-				msg.ErrorMessage(
-					"Qodana container can't be run by the current user. Please fix the container engine configuration.",
-				)
-				msg.WarningMessage("https://docs.docker.com/engine/install/linux-postinstall/#manage-docker-as-a-non-root-user")
-				os.Exit(1)
-			} else {
-				msg.ErrorMessage(
-					"'%s ps' exited with exit code %d, perhaps docker daemon is not running?",
-					tool,
-					exiterr.ExitCode(),
-				)
-			}
-			os.Exit(1)
-		}
-		log.Fatal(err)
-	}
-	CheckContainerEngineMemory()
+
+	checkEngineMemory()
 }
 
-// CheckContainerEngineMemory applicable only for Docker Desktop,
+// checkEngineMemory applicable only for Docker Desktop,
 // (has the default limit of 2GB which can be not enough when Gradle runs inside a container).
-func CheckContainerEngineMemory() {
-	docker := GetContainerClient()
+func checkEngineMemory() {
+	docker, err := NewContainerClient(context.Background())
+	if err != nil {
+		log.Fatal(err)
+	}
+
 	goos := runtime.GOOS
 	if //goland:noinspection GoBoolExpressions
 	goos != "windows" && goos != "darwin" {
@@ -113,11 +95,40 @@ func CheckContainerEngineMemory() {
 	}
 }
 
-// GetContainerClient getContainerClient returns a docker client.
-func GetContainerClient() *client.Client {
-	docker, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
+// NewContainerClient getContainerClient returns a docker client.
+func NewContainerClient(ctx context.Context) (client.APIClient, error) {
+	logWarnWriter := log.StandardLogger().WriterLevel(log.WarnLevel)
+	configFile := docker_cli_config.LoadDefaultConfigFile(logWarnWriter)
+	logWarnWriter.Close()
+	clientOptions := flags.NewClientOptions()
+
+	apiClient, err := command.NewAPIClientFromFlags(clientOptions, configFile)
 	if err != nil {
-		log.Fatal("couldn't create container client ", err)
+		return nil, fmt.Errorf("failed to create Docker API client: %w", err)
 	}
-	return docker
+	apiClient.NegotiateAPIVersion(ctx)
+
+	// A succesfull call to info is an indication that the client has connected to the socket successfully.
+	info, err := apiClient.Info(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("failed to initialize Docker API: %w", err)
+	}
+
+	logClientInfo(info)
+
+	return apiClient, nil
+}
+
+func logClientInfo(info system.Info) {
+	if log.GetLevel() < log.DebugLevel {
+		return
+	}
+
+	marshalledInfo, err := yaml.Marshal(info)
+	if err != nil {
+		log.Errorf("Failed to print info from Docker API: %s", err)
+		return
+	}
+
+	log.Debugf("Docker API client info:\n%s", marshalledInfo)
 }
