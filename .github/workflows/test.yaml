@@ -1,16 +1,16 @@
 name: "Tests"
-run-name: "Tests (os: ${{ inputs.os }}, docker: ${{ inputs.docker-version }})"
+run-name: "Test (⚙️ ${{ inputs.os }}, 🐳 ${{ inputs.container-engine }})"
 on:
   workflow_call:
     inputs: &inputs
       os:
         type: string
         default: ubuntu-latest
-        description: OS for the runner
-      docker-version:
+        description: Runner OS
+      container-engine:
         type: string
-        default: latest
-        description: Docker engine version
+        default: docker@latest
+        description: Container engine type and version. See .github/actions/setup-container-engine for more info.
     secrets:
       QODANA_LICENSE_ONLY_TOKEN:
         required: true
@@ -19,7 +19,7 @@ on:
 
 jobs:
   test:
-    name: Run tests
+    name: Test
     runs-on: ${{ inputs.os }}
     timeout-minutes: 30
     steps:
@@ -27,10 +27,10 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Setup Docker
-        uses: ./.github/actions/setup-docker
+      - name: Setup container engine
+        uses: ./.github/actions/setup-container-engine
         with:
-          version: ${{ inputs.docker-version }}
+          version: ${{ inputs.container-engine }}
 
       - name: Setup Go
         uses: actions/setup-go@v5
