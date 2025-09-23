@@ -1,13 +1,10 @@
 name: Setup Docker
-description: |
-  Install a version of Docker Engine.
-
-  This action uses docker/setup-docker-action internally, but accepts major and minor releases without a patch version.
+description: Install Docker engine.
 inputs:
   version:
     required: true
     default: latest
-    description: Either "latest", or "[v]major[.minor[.patch]]" version for Docker Engine.
+    description: Either "latest", or "[v]major[.minor[.patch]]" version of the engine.
 runs:
   using: composite
   steps:
@@ -19,15 +16,13 @@ runs:
       shell: bash
       run: pip install natsort htmllistparse
 
-    - name: Normalize supplied version
+    - name: Normalize version
       uses: mathiasvr/command-output@v2.0.0
       id: normalize-version
       env:
         QUERY: ${{ inputs.version }}
       with:
         shell: python
-        # Note: in VS Code, consider installing `harrydowning.yaml-embedded-languages` to enable code highlighting
-        # in the embedded python code.
         run: | # python
           import json
           import platform
@@ -98,5 +93,6 @@ runs:
       with:
         version: ${{ steps.normalize-version.outputs.stdout }}
 
-    - run: docker version
+    - name: Docker version
       shell: bash
+      run: docker version --format '{{.Server.Version}}'
