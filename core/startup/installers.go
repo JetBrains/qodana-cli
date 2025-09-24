@@ -19,15 +19,14 @@ package startup
 import (
 	"crypto/sha256"
 	"encoding/hex"
-	"errors"
 	"fmt"
 	"io"
-	"io/fs"
 	"math/rand"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"runtime"
+	"strconv"
 	"strings"
 
 	"github.com/JetBrains/qodana-cli/v2025/platform"
@@ -223,45 +222,56 @@ func installIdeWindowsExe(archivePath string, targetDir string) error {
 	return nil
 }
 
-func installIdeFromZip(archivePath string, targetDir string) error {
-	if err := os.RemoveAll(targetDir); err != nil {
-		return fmt.Errorf("couldn't clean target directory: %w", err)
+func extractArchive(archivePath string, targetDir string, stripComponents int) error {
+	targetBasename := filepath.Base(targetDir)
+	if targetBasename == "." || targetBasename == "/" {
+		return fmt.Errorf("invalid target directory")
 	}
 
-	//temp dir is required cause tar fails to extract over symlink directories
-	tempDir, err := os.MkdirTemp("", "qodana_linter")
+	tempDir, err := os.MkdirTemp("", fmt.Sprintf("%s-*.partial", targetBasename))
+	if err != nil {
+		return fmt.Errorf("failed to create temporary directory for extraction: %w", err)
+	}
 	defer func() {
 		if err := os.RemoveAll(tempDir); err != nil {
-			log.Warningf("couldn't clean temp directory: %s", err.Error())
+			log.Warningf("failed to remove temporary directory: %s", err.Error())
 		}
 	}()
 
+	tarExe, err := exec.LookPath("tar")
 	if err != nil {
-		return fmt.Errorf("couldn't create a temporary directory %w", err)
-	}
-	stdout, stderr, _, err := utils.RunCmdRedirectOutput(
-		"",
-		"tar",
-		"-xf",
-		strutil.GetQuotedPath(archivePath),
-		"-C",
-		strutil.GetQuotedPath(tempDir),
-	)
-	if err != nil {
-		return fmt.Errorf("extracting files error: %w. Stdout: %s. Stderr: %s", err, stdout, stderr)
+		return fmt.Errorf("could not find 'tar': %w", err)
 	}
 
+	tarArgv := []string{tarExe, "-xf", strutil.GetQuotedPath(archivePath), "-C", strutil.GetQuotedPath(tempDir)}
+	if stripComponents > 0 {
+		tarArgv = append(tarArgv, "--strip-components", strconv.Itoa(stripComponents))
+	}
+
+	stdout, stderr, _, err := utils.RunCmdRedirectOutput("", tarArgv...)
+	if err != nil {
+		return fmt.Errorf("failed to extract: %w. Stdout: %s. Stderr: %s", err, stdout, stderr)
+	}
+
+	if err := os.RemoveAll(targetDir); err != nil {
+		return fmt.Errorf("failed to remove existing target directory: %w", err)
+	}
 	err = os.Rename(tempDir, targetDir)
 	if err != nil { // Trying to fallback if rename failed https://youtrack.jetbrains.com/issue/QD-12252
 		log.Warningf("Error moving linter files from temp to target: %s. Trying to copy instead.", err)
-		_, err := os.Stat(targetDir)
-		if !errors.Is(err, fs.ErrNotExist) {
-			return fmt.Errorf("target directory for linter already exists: %s", targetDir)
-		}
 		err = cp.Copy(tempDir, targetDir)
 		if err != nil {
 			return fmt.Errorf("error copying linter files from temp to target: %w", err)
 		}
+	}
+
+	return nil
+}
+
+func installIdeFromZip(archivePath string, targetDir string) error {
+	err := extractArchive(archivePath, targetDir, 0)
+	if err != nil {
+		return err
 	}
 
 	if runtime.GOOS != "windows" {
@@ -275,24 +285,7 @@ func installIdeFromZip(archivePath string, targetDir string) error {
 }
 
 func installIdeFromTar(archivePath string, targetDir string) error {
-	if err := os.MkdirAll(targetDir, os.ModePerm); err != nil {
-		log.Fatal("couldn't create a directory ", err.Error())
-	}
-	stdout, stderr, _, err := utils.RunCmdRedirectOutput(
-		"",
-		"tar",
-		"-xf",
-		strutil.GetQuotedPath(archivePath),
-		"-C",
-		strutil.GetQuotedPath(targetDir),
-		"--strip-components",
-		"1",
-	)
-
-	if err != nil {
-		return fmt.Errorf("tar: %s. Stdout: %s. Stderr: %s", err, stdout, stderr)
-	}
-	return nil
+	return extractArchive(archivePath, targetDir, 1)
 }
 
 func installIdeMacOS(archivePath string, targetDir string) error {
