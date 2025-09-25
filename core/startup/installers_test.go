@@ -17,14 +17,20 @@
 package startup
 
 import (
+	"archive/tar"
+	"compress/gzip"
 	"fmt"
-	"github.com/JetBrains/qodana-cli/v2025/platform/msg"
-	"github.com/JetBrains/qodana-cli/v2025/platform/product"
+	"io"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"runtime"
 	"testing"
+
+	"github.com/JetBrains/qodana-cli/v2025/platform/msg"
+	"github.com/JetBrains/qodana-cli/v2025/platform/product"
+	"github.com/JetBrains/qodana-cli/v2025/platform/utils"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestGetIde(t *testing.T) {
@@ -211,4 +217,75 @@ func TestInstallIdeFromZip(t *testing.T) {
 			},
 		)
 	}
+}
+
+func sampleArchive(t *testing.T) string {
+	tempdir := t.TempDir()
+	archivePath := filepath.Join(tempdir, "example.tar.gz")
+	out, err := os.Create(archivePath)
+	assert.NoError(t, err)
+	defer func() {
+		assert.NoError(t, out.Close())
+	}()
+
+	gw := gzip.NewWriter(out)
+	defer func() {
+		assert.NoError(t, gw.Close())
+	}()
+	tw := tar.NewWriter(gw)
+	defer func() {
+		assert.NoError(t, tw.Close())
+	}()
+
+	exampleFile := filepath.Join(tempdir, "example.txt")
+	err = utils.AppendToFile(exampleFile, "Hello world")
+	assert.NoError(t, err)
+
+	exampleFileData, err := os.Open(exampleFile)
+	defer func() {
+		assert.NoError(t, exampleFileData.Close())
+	}()
+	assert.NoError(t, err)
+
+	exampleFileStat, err := exampleFileData.Stat()
+	assert.NoError(t, err)
+	exampleFileTarHeader, err := tar.FileInfoHeader(exampleFileStat, "")
+	assert.NoError(t, err)
+
+	err = tw.WriteHeader(exampleFileTarHeader)
+	assert.NoError(t, err)
+
+	_, err = io.Copy(tw, exampleFileData)
+	assert.NoError(t, err)
+
+	return archivePath
+}
+
+func TestExtractArchive(t *testing.T) {
+	archive := sampleArchive(t)
+
+	tempDir := t.TempDir()
+	targetDir := filepath.Join(tempDir, "extracted")
+	err := extractArchive(archive, targetDir, 0)
+	assert.NoError(t, err)
+
+	assert.DirExists(t, targetDir)
+
+	exampleFile := filepath.Join(targetDir, "example.txt")
+	assert.FileExists(t, exampleFile)
+
+	contents, err := os.ReadFile(exampleFile)
+	assert.NoError(t, err)
+	assert.Equal(t, string(contents), "Hello world")
+}
+
+func TestExtractArchiveBadPath(t *testing.T) {
+	archive := sampleArchive(t)
+
+	tempDir := t.TempDir()
+	targetDir := filepath.Join(tempDir, "extracted")
+
+	t.Setenv("PATH", "")
+	err := extractArchive(archive, targetDir, 0)
+	assert.Error(t, err)
 }
