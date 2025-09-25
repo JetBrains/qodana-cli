@@ -225,6 +225,7 @@ func installIdeWindowsExe(archivePath string, targetDir string) error {
 func extractArchive(archivePath string, targetDir string, stripComponents int) error {
 	targetBasename := filepath.Base(targetDir)
 	if targetBasename == "." || targetBasename == "/" {
+		// filepath.Base returns either "." or "/" when the path has no basename.
 		return fmt.Errorf("invalid target directory")
 	}
 
