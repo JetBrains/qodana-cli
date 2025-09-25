@@ -9,23 +9,25 @@ on:
 jobs:
   # lint: disabled as golangci-lint is not yet ready for Go workspaces
   test:
-    name: "Tests (os: ${{ matrix.os }}, docker: ${{ matrix.docker-version }})"
+    name: "Test (⚙️ ${{ matrix.os }}, 🐳 ${{ matrix.container-engine }})"
     uses: ./.github/workflows/test.yaml
     with:
       os: ${{ matrix.os }}
-      docker-version: ${{ matrix.docker-version }}
+      container-engine: ${{ matrix.container-engine }}
     secrets: inherit
     strategy:
       matrix:
         include:
           - os: macos-13  # macos-13 is the only macOS github runner supporting Docker.
-            docker-version: latest
+            container-engine: docker@latest
           - os: windows-latest
-            docker-version: latest
+            container-engine: docker@latest
           - os: ubuntu-latest
-            docker-version: latest
+            container-engine: docker@latest
           - os: ubuntu-latest
-            docker-version: v25.0  # See also: https://endoflife.date/docker-engine
+            container-engine: podman@latest
+          - os: ubuntu-latest
+            container-engine: docker@v25.0  # See also: https://endoflife.date/docker-engine
 
   code-quality:
     if: github.repository == 'jetbrains/qodana-cli'
