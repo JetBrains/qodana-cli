@@ -1,0 +1,60 @@
+name: Setup Container Engine
+description: Install Docker or Podman engine and enable an appropriate Docker CLI context.
+inputs:
+  version:
+    required: true
+    default: docker@latest
+    description: |
+      Engine version of format [<type>@]<version>, where:
+        - type: either "docker" or "podman" (default: docker)
+        - version: either "latest" or "[v]major[.minor[.patch]]" version of the engine.
+
+      Default: docker@latest
+runs:
+  using: composite
+  steps:
+    - name: Parse version
+      uses: mathiasvr/command-output@v2.0.0
+      id: parse-version
+      env:
+        INPUT_VERSION: ${{ inputs.version }}
+      with:
+        shell: python
+        # Note: in VS Code, consider installing `harrydowning.yaml-embedded-languages` to enable code highlighting
+        # in the embedded python code.
+        run: | # python
+          import os
+          import sys
+
+          version_string = os.getenv("INPUT_VERSION") or sys.argv[1]
+          parts = version_string.lower().split("@", 1)
+
+          if len(parts) == 1:
+            engine = "docker"
+            version = parts[0]
+          else:
+            engine = parts[0]
+            version = parts[1]
+
+          if engine not in {"docker", "podman"}:
+            print(f"Unrecognized engine type '{engine}'", file=sys.stderr)
+            sys.exit(1)
+
+          print(f"ENGINE_TYPE={engine}")
+          print(f"ENGINE_VERSION={version}")
+
+    - name: Parse version
+      shell: bash
+      run: echo "${{ steps.parse-version.outputs.stdout }}" >> "$GITHUB_ENV"
+
+    - name: Setup Docker
+      if: env.ENGINE_TYPE == 'docker'
+      uses: ./.github/actions/setup-docker
+      with:
+        version: ${{ env.ENGINE_VERSION }}
+
+    - name: Setup Podman
+      if: env.ENGINE_TYPE == 'podman'
+      uses: ./.github/actions/setup-podman
+      with:
+        version: ${{ env.ENGINE_VERSION }}
