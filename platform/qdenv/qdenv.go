@@ -42,7 +42,6 @@ const (
 	QodanaRevision                = "QODANA_REVISION"
 	QodanaCliContainerName        = "QODANA_CLI_CONTAINER_NAME"
 	QodanaCliContainerKeep        = "QODANA_CLI_CONTAINER_KEEP"
-	QodanaCliUsePodman            = "QODANA_CLI_USE_PODMAN"
 	QodanaDistEnv                 = "QODANA_DIST"
 	QodanaCorettoSdk              = "QODANA_CORETTO_SDK"
 	AndroidSdkRoot                = "ANDROID_SDK_ROOT"

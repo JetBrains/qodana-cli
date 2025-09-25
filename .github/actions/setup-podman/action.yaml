@@ -1,0 +1,98 @@
+name: Setup Podman
+description: Install Podman
+inputs:
+  version:
+    required: true
+    default: latest
+    description: Engine version
+runs:
+  using: composite
+  steps:
+    - name: Set up Docker APT repository
+      shell: bash
+      run: | # shell
+        set -euo pipefail
+
+        # See https://docs.docker.com/engine/install/ubuntu/#install-using-the-repository
+        sudo apt-get update
+        sudo apt-get install ca-certificates curl
+        sudo install -m 0755 -d /etc/apt/keyrings
+        sudo curl -fsSL https://download.docker.com/linux/ubuntu/gpg -o /etc/apt/keyrings/docker.asc
+        sudo chmod a+r /etc/apt/keyrings/docker.asc
+
+        # Add the repository to Apt sources:
+        echo \
+          "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/ubuntu \
+          $(. /etc/os-release && echo "${UBUNTU_CODENAME:-$VERSION_CODENAME}") stable" | \
+          sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
+        sudo apt-get update
+
+    - name: Install Docker CLI
+      shell: bash
+      run: sudo apt-get install docker-ce-cli
+
+    - name: Install Podman Engine
+      shell: bash
+      run: | # shell
+        set -euo pipefail
+
+        BASE_URL="https://github.com/mgoltzsche/podman-static/releases/latest/download"
+        if [[ "${{ inputs.version }}" != "latest" ]]; then
+          BASE_URL="https://github.com/mgoltzsche/podman-static/releases/download/v${{ inputs.version }}"
+        fi
+
+        ARCHIVE_NAME="podman-linux-$(dpkg --print-architecture)"
+
+        cd /tmp
+        curl -L "${BASE_URL}/${ARCHIVE_NAME}.tar.gz" \
+          | tar -xz
+        sudo rsync -av "${ARCHIVE_NAME}/etc/" /etc
+        sudo rsync -av "${ARCHIVE_NAME}/usr/" /usr
+
+        sudo podman version
+
+    - shell: bash
+      name: Start Podman Engine
+      run: | # shell
+        podman_version=$(sudo podman version --format="{{.Server.Version}}")
+        export podman_socket="/var/run/podman-${podman_version}.sock"
+
+        export TIMEOUT=$(($(date +%s) + 30))  # 30 seconds in the future
+        function await() {
+          exit_code=0
+          echo "Polling: $@" >&2
+          while true; do
+            if (( $(date +%s) >= $TIMEOUT )); then
+              echo "Timeout reached!" >&2
+              return 1
+            fi
+
+            "$@" || exit_code=$?
+            if [[ $exit_code == 0 ]]; then
+              break
+            fi
+
+            sleep 1
+          done
+        }
+
+        sudo podman system service --time=0 "unix://${podman_socket}" &
+
+        sudo groupadd -f docker
+        sudo usermod -aG docker $USER
+        newgrp docker
+
+        # Await socket creation
+        await test -S "${podman_socket}"
+        sudo chgrp docker "${podman_socket}"
+        sudo chmod 660 "${podman_socket}"
+
+        docker context create --docker "host=unix://${podman_socket}" "podman-${podman_version}"
+        docker context use "podman-${podman_version}"
+
+        # Await start of engine
+        await docker ps
+
+    - name: Podman version
+      shell: bash
+      run: docker version --format '{{.Server.Version}}'
