@@ -23,7 +23,7 @@ jobs:
         run: |
           cd common && node update-cli.js && cd ..
           npm ci
-          npm run build && npm run -w scan package && npm run -w vsts package
+          npm run build && npm run -w scan package && npm run -w vsts package && npm run -w gitlab package
           git config user.name qodana-bot
           git config user.email qodana-support@jetbrains.com
           git checkout -b next
