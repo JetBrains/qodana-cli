@@ -19,14 +19,15 @@ package product
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/JetBrains/qodana-cli/v2025/platform/msg"
-	"github.com/JetBrains/qodana-cli/v2025/platform/qdenv"
-	"github.com/JetBrains/qodana-cli/v2025/platform/utils"
 	"os"
 	"path/filepath"
 	"runtime"
 	"strconv"
 	"strings"
+
+	"github.com/JetBrains/qodana-cli/v2025/platform/msg"
+	"github.com/JetBrains/qodana-cli/v2025/platform/qdenv"
+	"github.com/JetBrains/qodana-cli/v2025/platform/utils"
 
 	log "github.com/sirupsen/logrus"
 )
@@ -275,6 +276,14 @@ func GuessProduct(idePath string, analyzer Analyzer) Product {
 	if homePath == "" {
 		if home, ok := os.LookupEnv(qdenv.QodanaDistEnv); ok {
 			homePath = home
+			// Apply macOS app bundle detection to the environment variable path as well
+			if //goland:noinspection GoBoolExpressions
+			runtime.GOOS == "darwin" {
+				contentsDir := filepath.Join(homePath, "Contents")
+				if _, err := os.Stat(contentsDir); err == nil {
+					homePath = contentsDir
+				}
+			}
 		} else if qdenv.IsContainer() {
 			homePath = "/opt/idea"
 		} else { // guess from the executable location
@@ -400,6 +409,10 @@ func IsEap(info *InfoJson) bool {
 func ReadIdeProductInfo(ideDir string) (*InfoJson, error) {
 	if //goland:noinspection ALL
 	runtime.GOOS == "darwin" {
+		contentsDir := filepath.Join(ideDir, "Contents")
+		if _, err := os.Stat(contentsDir); err == nil {
+			ideDir = contentsDir
+		}
 		ideDir = filepath.Join(ideDir, "Resources")
 	}
 	productInfo := filepath.Join(ideDir, "product-info.json")
