@@ -4,12 +4,12 @@ profile:
   path: a-profile.yaml
 
 include:
-  # from root
-  - name: InspectionA
-  - name: InspectionB #from root
   # from inner
   - name: InspectionC # from inner
   - name: InspectionD
+  # from root
+  - name: InspectionA
+  - name: InspectionB #from root
 
 #this is a failure conditions section
 failureConditions:

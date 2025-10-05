@@ -21,12 +21,12 @@
         "L_OVER_G",
         "LG",
         "LG",
-        "L",
-        "L",
-        "L",
         "G",
         "G",
         "G",
+        "L",
+        "L",
+        "L",
         "LG",
         "LG",
         "LG",
@@ -37,6 +37,6 @@
         "G"
       ]
     },
-    "content": "version: 1.0\n\nprofile:\n  path: b-profile.yaml\n\ninclude:\n  # from local\n  - name: InspectionA\n  - name: InspectionB #from local\n  # from global\n  - name: InspectionC # from global\n  - name: InspectionD\n\n#this is a failure conditions section\nfailureConditions:\n  # this is a severityThresholds section\n  severityThresholds:\n    any: 1 #from local\n    critical: 2 # from local\n    moderate: 3 # moderate is global"
+    "content": "version: 1.0\n\nprofile:\n  path: b-profile.yaml\n\ninclude:\n  # from global\n  - name: InspectionC # from global\n  - name: InspectionD\n  # from local\n  - name: InspectionA\n  - name: InspectionB #from local\n\n#this is a failure conditions section\nfailureConditions:\n  # this is a severityThresholds section\n  severityThresholds:\n    any: 1 #from local\n    critical: 2 # from local\n    moderate: 3 # moderate is global"
   }
 }
