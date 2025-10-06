@@ -39,7 +39,7 @@ jobs:
       contents: write
       security-events: write
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
         with:
           fetch-depth: 0
       - name: Overwrite tools (to run tests only on gh repo)
@@ -60,7 +60,7 @@ jobs:
           registry: registry.jetbrains.team
           username: ${{ secrets.SPACE_USERNAME }}
           password: ${{ secrets.SPACE_PASSWORD }}
-      - uses: actions/setup-go@v5
+      - uses: actions/setup-go@v6
         with:
           cache-dependency-path: "**/*.sum"
           go-version-file: go.work
@@ -95,7 +95,7 @@ jobs:
 #      packages: read
 #    if: github.ref == 'refs/heads/main'
 #    steps:
-#      - uses: actions/checkout@v4
+#      - uses: actions/checkout@v5
 #        with:
 #          fetch-depth: 0
 #      - name: Overwrite tools (to run tests only on gh repo)
@@ -118,7 +118,7 @@ jobs:
 #            os: [ubuntu-latest, macos-latest]
 #    runs-on: ${{ matrix.os }}
 #    steps:
-#      - uses: actions/checkout@v4
+#      - uses: actions/checkout@v5
 #      - run: |
 #          ./install
 #          ./install nightly
