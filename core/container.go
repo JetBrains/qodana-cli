@@ -301,7 +301,7 @@ func getDockerOptions(c corescan.Context, image string) *backend.ContainerCreate
 	if err != nil {
 		log.Fatal("couldn't get abs path for cache", err)
 	}
-	projectPath, err := filepath.Abs(c.ProjectDir())
+	projectRootPath, err := filepath.Abs(c.ProjectRoot())
 	if err != nil {
 		log.Fatal("couldn't get abs path for project", err)
 	}
@@ -325,8 +325,8 @@ func getDockerOptions(c corescan.Context, image string) *backend.ContainerCreate
 		},
 		{
 			Type:   mount.TypeBind,
-			Source: projectPath,
-			Target: qdcontainer.DataProjectDir,
+			Source: projectRootPath,
+			Target: qdcontainer.MountDir,
 		},
 		{
 			Type:   mount.TypeBind,

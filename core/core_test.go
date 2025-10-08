@@ -19,6 +19,17 @@ package core
 import (
 	"errors"
 	"fmt"
+	"net/http"
+	"net/http/httptest"
+	"os"
+	"os/exec"
+	"path/filepath"
+	"reflect"
+	"runtime"
+	"sort"
+	"testing"
+	"time"
+
 	"github.com/JetBrains/qodana-cli/v2025/cloud"
 	"github.com/JetBrains/qodana-cli/v2025/core/corescan"
 	"github.com/JetBrains/qodana-cli/v2025/core/startup"
@@ -32,16 +43,6 @@ import (
 	"github.com/JetBrains/qodana-cli/v2025/platform/tokenloader"
 	"github.com/JetBrains/qodana-cli/v2025/platform/utils"
 	log "github.com/sirupsen/logrus"
-	"net/http"
-	"net/http/httptest"
-	"os"
-	"os/exec"
-	"path/filepath"
-	"reflect"
-	"runtime"
-	"sort"
-	"testing"
-	"time"
 
 	"github.com/stretchr/testify/assert"
 )
@@ -73,6 +74,7 @@ func TestCliArgs(t *testing.T) {
 			majorVersion: "2024.2",
 			cb: corescan.ContextBuilder{
 				ProjectDir:            projectDir,
+				ProjectRoot:           projectDir,
 				CacheDir:              cacheDir,
 				ResultsDir:            resultsDir,
 				Analyser:              product.JvmLinter.DockerAnalyzer(),
@@ -147,6 +149,7 @@ func TestCliArgs(t *testing.T) {
 			majorVersion: "2024.2",
 			cb: corescan.ContextBuilder{
 				ProjectDir:    projectDir,
+				ProjectRoot:   projectDir,
 				CacheDir:      cacheDir,
 				ResultsDir:    resultsDir,
 				FixesStrategy: "apply",
@@ -166,6 +169,7 @@ func TestCliArgs(t *testing.T) {
 			majorVersion: "2024.3",
 			cb: corescan.ContextBuilder{
 				ProjectDir:    projectDir,
+				ProjectRoot:   projectDir,
 				CacheDir:      cacheDir,
 				ResultsDir:    resultsDir,
 				FixesStrategy: "cleanup",
@@ -965,7 +969,7 @@ func TestQodanaOptions_RequiresToken(t *testing.T) {
 
 		t.Run(
 			tt.name, func(t *testing.T) {
-				initArgs := commoncontext.Compute(tt.linter, tt.ide, "", "", "", "", "", "", false, "", "")
+				initArgs := commoncontext.Compute(tt.linter, tt.ide, "", "", "", "", "", "", false, "", "", "")
 
 				if tt.name == qdenv.QodanaToken {
 					t.Setenv(qdenv.QodanaToken, "test")
@@ -1112,6 +1116,7 @@ func Test_Properties(t *testing.T) {
 					"",
 					"",
 					false,
+					projectDir,
 					projectDir,
 					"",
 				)

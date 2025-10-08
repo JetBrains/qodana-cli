@@ -22,12 +22,6 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"github.com/JetBrains/qodana-cli/v2025/core"
-	"github.com/JetBrains/qodana-cli/v2025/platform/msg"
-	"github.com/JetBrains/qodana-cli/v2025/platform/product"
-	"github.com/JetBrains/qodana-cli/v2025/platform/qdyaml"
-	"github.com/JetBrains/qodana-cli/v2025/platform/version"
-	log "github.com/sirupsen/logrus"
 	"io"
 	"os"
 	"os/exec"
@@ -35,6 +29,13 @@ import (
 	"runtime"
 	"strings"
 	"testing"
+
+	"github.com/JetBrains/qodana-cli/v2025/core"
+	"github.com/JetBrains/qodana-cli/v2025/platform/msg"
+	"github.com/JetBrains/qodana-cli/v2025/platform/product"
+	"github.com/JetBrains/qodana-cli/v2025/platform/qdyaml"
+	"github.com/JetBrains/qodana-cli/v2025/platform/version"
+	log "github.com/sirupsen/logrus"
 )
 
 func createProject(t *testing.T, name string) string {
@@ -408,6 +409,7 @@ func TestScanWithIde(t *testing.T) {
 	command.SetArgs(
 		[]string{
 			"-i", projectPath,
+			"--project-root", projectPath,
 			"-o", resultsPath,
 			"--ide", "QDGO",
 			"--property",

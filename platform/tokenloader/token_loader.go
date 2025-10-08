@@ -18,6 +18,8 @@ package tokenloader
 
 import (
 	"fmt"
+	"os"
+
 	"github.com/JetBrains/qodana-cli/v2025/cloud"
 	"github.com/JetBrains/qodana-cli/v2025/platform/git"
 	"github.com/JetBrains/qodana-cli/v2025/platform/msg"
@@ -27,7 +29,6 @@ import (
 	"github.com/pterm/pterm"
 	log "github.com/sirupsen/logrus"
 	"github.com/zalando/go-keyring"
-	"os"
 )
 
 const keyringDefaultService = "qodana-cli"
@@ -38,6 +39,7 @@ type CloudTokenLoader interface {
 	GetId() string
 	GetAnalyzer() product.Analyzer
 
+	GetProjectRoot() string
 	GetProjectDir() string
 	GetLogDir() string
 }
@@ -62,7 +64,12 @@ func LoadCloudUploadToken(tokenLoader CloudTokenLoader, refresh bool, requiresTo
 	}
 	if interactive && requiresToken {
 		fetcherFromUserInput := func(_ bool) string {
-			return getTokenFromUserInput(tokenLoader.GetProjectDir(), tokenLoader.GetId(), tokenLoader.GetLogDir())
+			return getTokenFromUserInput(
+				tokenLoader.GetProjectDir(),
+				tokenLoader.GetProjectRoot(),
+				tokenLoader.GetId(),
+				tokenLoader.GetLogDir(),
+			)
 		}
 		tokenFetchers = append(tokenFetchers, fetcherFromUserInput)
 	}
@@ -116,22 +123,22 @@ func getCloudToken(id string) (string, error) {
 	return secret, nil
 }
 
-func setupToken(path string, id string, logdir string) string {
+func setupToken(projectDir string, projectRoot, id string, logdir string) string {
 	openCloud := msg.AskUserConfirm("Do you want to open the team page to get the token?")
 	if openCloud {
-		origin, err := git.RemoteUrl(path, logdir)
+		origin, err := git.RemoteUrl(projectRoot, logdir)
 		if err != nil {
 			msg.ErrorMessage("%s", err)
 			return ""
 		}
-		err = utils.OpenBrowser(cloud.GetCloudRootEndpoint().GetCloudTeamsPageUrl(origin, path))
+		err = utils.OpenBrowser(cloud.GetCloudRootEndpoint().GetCloudTeamsPageUrl(origin, projectDir))
 		if err != nil {
 			msg.ErrorMessage("%s", err)
 			return ""
 		}
 	}
 	token, err := pterm.DefaultInteractiveTextInput.WithMask("*").WithTextStyle(msg.PrimaryStyle).Show(
-		fmt.Sprintf(">  Enter the token (will be used for %s; enter 'q' to exit)", msg.PrimaryBold(path)),
+		fmt.Sprintf(">  Enter the token (will be used for %s; enter 'q' to exit)", msg.PrimaryBold(projectDir)),
 	)
 	if token == "q" {
 		return "q"
@@ -182,12 +189,12 @@ func getTokenFromKeychain(refresh bool, id string) string {
 	return ""
 }
 
-func getTokenFromUserInput(projectDir string, id string, logDir string) string {
+func getTokenFromUserInput(projectDir string, projectRoot string, id string, logDir string) string {
 	if msg.IsInteractive() {
 		msg.WarningMessage(cloud.EmptyTokenMessage, cloud.GetCloudRootEndpoint().Url)
 		var token string
 		for {
-			token = setupToken(projectDir, id, logDir)
+			token = setupToken(projectDir, projectRoot, id, logDir)
 			if token == "q" {
 				return ""
 			}

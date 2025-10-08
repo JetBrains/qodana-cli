@@ -25,6 +25,7 @@ import (
 
 	"github.com/JetBrains/qodana-cli/v2025/cloud"
 	"github.com/JetBrains/qodana-cli/v2025/platform/commoncontext"
+	"github.com/JetBrains/qodana-cli/v2025/platform/git"
 	"github.com/JetBrains/qodana-cli/v2025/platform/msg"
 	"github.com/JetBrains/qodana-cli/v2025/platform/nuget"
 	"github.com/JetBrains/qodana-cli/v2025/platform/product"
@@ -99,6 +100,7 @@ func PrepareHost(commonCtx commoncontext.Context) PreparedHost {
 	if tokenloader.IsCloudTokenRequired(commonCtx) {
 		cloudUploadToken = tokenloader.ValidateCloudToken(commonCtx, false)
 	}
+	checkVcsSameAsProjectRoot(commonCtx)
 
 	result := PreparedHost{
 		IdeDir:            ideDir,
@@ -325,6 +327,22 @@ func fixWindowsPlugins(ideDir string) {
 			if err != nil {
 				log.Warnf("Failed to remove plugin-classpath.txt: %v", err)
 			}
+		}
+	}
+}
+
+func checkVcsSameAsProjectRoot(ctx commoncontext.Context) {
+	if vcsRoot, err := git.Root(ctx.ProjectRoot, ctx.LogDir()); err == nil {
+		vcsRootAbs, err1 := filepath.Abs(vcsRoot)
+		projectRootAbs, err2 := filepath.Abs(ctx.ProjectRoot)
+		if err1 != nil || err2 != nil {
+			log.Warnf("Failed to resolve absolute paths for git root check: vcs=%v, proj=%v", err1, err2)
+		} else if vcsRootAbs != projectRootAbs {
+			log.Warnf(
+				"The git root directory is different from the project root directory. This may lead to incorrect results. VCS root: %s, project root: %s",
+				vcsRootAbs,
+				projectRootAbs,
+			)
 		}
 	}
 }

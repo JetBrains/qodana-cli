@@ -18,11 +18,12 @@ package corescan
 
 import (
 	"fmt"
+	"path/filepath"
+	"strings"
+
 	"github.com/JetBrains/qodana-cli/v2025/core/startup"
 	"github.com/JetBrains/qodana-cli/v2025/platform/qdenv"
 	"github.com/JetBrains/qodana-cli/v2025/platform/strutil"
-	"path/filepath"
-	"strings"
 )
 
 // All changes of Context must be defined clearly by usecase and business logic
@@ -158,7 +159,7 @@ func (c Context) WithEffectiveConfigurationDirOnRevision(effectiveConfigurationD
 	return c
 }
 
-func (c Context) withAddedProperties(propertiesToAdd ...string) Context {
+func (c Context) WithAddedProperties(propertiesToAdd ...string) Context {
 	props := c.Property()
 	props = append(props, propertiesToAdd...)
 	c._property = props
@@ -188,7 +189,7 @@ func (c Context) withEnv(key string, value string, override bool) Context {
 }
 
 func (c Context) prepareContext(skipFixes bool, propertiesToAdd ...string) Context {
-	c = c.withAddedProperties(propertiesToAdd...)
+	c = c.WithAddedProperties(propertiesToAdd...)
 	c.showReport = false
 	c.saveReport = false
 	if skipFixes {

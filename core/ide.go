@@ -17,6 +17,12 @@
 package core
 
 import (
+	"os"
+	"path/filepath"
+	"strconv"
+	"strings"
+	"time"
+
 	"github.com/JetBrains/qodana-cli/v2025/core/corescan"
 	"github.com/JetBrains/qodana-cli/v2025/core/startup"
 	"github.com/JetBrains/qodana-cli/v2025/platform"
@@ -25,10 +31,6 @@ import (
 	"github.com/JetBrains/qodana-cli/v2025/platform/strutil"
 	"github.com/JetBrains/qodana-cli/v2025/platform/utils"
 	"github.com/JetBrains/qodana-cli/v2025/sarif"
-	"os"
-	"strconv"
-	"strings"
-	"time"
 
 	log "github.com/sirupsen/logrus"
 )
@@ -138,6 +140,18 @@ func GetIdeArgs(c corescan.Context) []string {
 	}
 	if c.FailThreshold() != "" {
 		arguments = append(arguments, "--fail-threshold", c.FailThreshold())
+	}
+	if c.ProjectRoot() != c.ProjectDir() {
+		rootAbs, _ := filepath.Abs(c.ProjectRoot())
+		projAbs, _ := filepath.Abs(c.ProjectDir())
+		rel, _ := filepath.Rel(rootAbs, projAbs)
+		if rel != "." {
+			rel = filepath.ToSlash(rel)
+			if c.Analyser().IsContainer() {
+				arguments = append(arguments, "--project-dir", qdcontainer.MountDir+"/"+rel)
+			}
+			c.WithAddedProperties("-Dqodana.path.to.project.dir.from.project.root=" + rel)
+		}
 	}
 
 	linter := c.Analyser().GetLinter()

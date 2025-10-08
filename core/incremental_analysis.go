@@ -20,6 +20,9 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"os"
+	"path/filepath"
+
 	"github.com/JetBrains/qodana-cli/v2025/core/corescan"
 	"github.com/JetBrains/qodana-cli/v2025/core/startup"
 	"github.com/JetBrains/qodana-cli/v2025/platform"
@@ -28,8 +31,6 @@ import (
 	"github.com/JetBrains/qodana-cli/v2025/platform/qdyaml"
 	"github.com/JetBrains/qodana-cli/v2025/platform/utils"
 	log "github.com/sirupsen/logrus"
-	"os"
-	"path/filepath"
 )
 
 var defaultRunner = &defaultAnalysisRunner{}
@@ -100,7 +101,7 @@ func NewReverseScopedAnalyzer(
 ) *ScopedAnalyzer {
 	var err error
 	if endHash == "" {
-		endHash, err = git.CurrentRevision(c.ProjectDir(), c.LogDir())
+		endHash, err = git.CurrentRevision(c.ProjectRoot(), c.LogDir())
 		if err != nil {
 			log.Fatal(err)
 		}
@@ -125,7 +126,7 @@ func (sa *ScopedAnalyzer) RunAnalysis() int {
 		log.Fatal("No commits given. Consider passing --commit or --diff-start and --diff-end (optional) with the range of commits to analyze.")
 	}
 
-	changedFiles, err := git.ComputeChangedFiles(c.ProjectDir(), startHash, endHash, c.LogDir())
+	changedFiles, err := git.ComputeChangedFiles(c.ProjectRoot(), startHash, endHash, c.LogDir())
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -146,7 +147,7 @@ func (sa *ScopedAnalyzer) RunAnalysis() int {
 }
 
 func (r *defaultAnalysisRunner) RunFunc(hash string, ctx context.Context, c corescan.Context) (bool, int) {
-	e := git.CheckoutAndUpdateSubmodule(c.ProjectDir(), hash, true, c.LogDir())
+	e := git.CheckoutAndUpdateSubmodule(c.ProjectRoot(), hash, true, c.LogDir())
 	if e != nil {
 		log.Fatalf("Cannot checkout commit %s: %v", hash, e)
 	}
@@ -185,6 +186,7 @@ func (r *defaultAnalysisRunner) RunFunc(hash string, ctx context.Context, c core
 	} else {
 		bootstrap = c.QodanaYamlConfig().Bootstrap
 	}
+	// TODO: mention that bootstrap should be relative to the project path
 	utils.Bootstrap(bootstrap, c.ProjectDir())
 
 	contextForAnalysis := c.WithEffectiveConfigurationDirOnRevision(effectiveConfigFiles.ConfigDir)
@@ -277,7 +279,7 @@ func (r *SequenceRunnerBase) ComputeEndHash() string {
 	endHash := r.endHash
 	var err error
 	if endHash == "" {
-		endHash, err = git.CurrentRevision(r.c.ProjectDir(), r.c.LogDir())
+		endHash, err = git.CurrentRevision(r.c.ProjectRoot(), r.c.LogDir())
 		if err != nil {
 			log.Fatal(err)
 		}

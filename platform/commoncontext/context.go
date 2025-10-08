@@ -17,16 +17,18 @@
 package commoncontext
 
 import (
-	"github.com/JetBrains/qodana-cli/v2025/platform/product"
-	"github.com/JetBrains/qodana-cli/v2025/platform/qdenv"
 	"os"
 	"path/filepath"
+
+	"github.com/JetBrains/qodana-cli/v2025/platform/product"
+	"github.com/JetBrains/qodana-cli/v2025/platform/qdenv"
 )
 
 type Context struct {
 	Analyzer        product.Analyzer
 	IsClearCache    bool
 	CacheDir        string
+	ProjectRoot     string
 	ProjectDir      string
 	ResultsDir      string
 	ReportDir       string
@@ -62,4 +64,5 @@ func (c Context) GetQodanaToken() string        { return c.QodanaToken }
 func (c Context) GetId() string                 { return c.Id }
 func (c Context) GetAnalyzer() product.Analyzer { return c.Analyzer }
 func (c Context) GetProjectDir() string         { return c.ProjectDir }
+func (c Context) GetProjectRoot() string        { return c.ProjectRoot }
 func (c Context) GetLogDir() string             { return c.LogDir() }

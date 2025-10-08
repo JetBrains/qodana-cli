@@ -17,13 +17,14 @@
 package corescan
 
 import (
+	"path/filepath"
+	"strings"
+
 	"github.com/JetBrains/qodana-cli/v2025/core/startup"
 	"github.com/JetBrains/qodana-cli/v2025/platform/cmd"
 	"github.com/JetBrains/qodana-cli/v2025/platform/commoncontext"
 	"github.com/JetBrains/qodana-cli/v2025/platform/qdcontainer"
 	"github.com/JetBrains/qodana-cli/v2025/platform/qdenv"
-	"path/filepath"
-	"strings"
 )
 
 func CreateContext(
