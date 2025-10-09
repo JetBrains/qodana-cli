@@ -339,7 +339,7 @@ func checkVcsSameAsRepositoryRoot(ctx commoncontext.Context) {
 			log.Warnf("Failed to resolve absolute paths for git root check: vcs=%v, proj=%v", err1, err2)
 		} else if vcsRootAbs != repositoryRootAbs {
 			log.Warnf(
-				"The git root directory is different from the project root directory. This may lead to incorrect results. VCS root: %s, project root: %s",
+				"The git root directory is different from the repository root directory. This may lead to incorrect results. VCS root: %s, repository root: %s",
 				vcsRootAbs,
 				repositoryRootAbs,
 			)

@@ -159,7 +159,7 @@ func (c Context) WithEffectiveConfigurationDirOnRevision(effectiveConfigurationD
 	return c
 }
 
-func (c Context) WithAddedProperties(propertiesToAdd ...string) Context {
+func (c Context) withAddedProperties(propertiesToAdd ...string) Context {
 	props := c.Property()
 	props = append(props, propertiesToAdd...)
 	c._property = props
@@ -189,7 +189,7 @@ func (c Context) withEnv(key string, value string, override bool) Context {
 }
 
 func (c Context) prepareContext(skipFixes bool, propertiesToAdd ...string) Context {
-	c = c.WithAddedProperties(propertiesToAdd...)
+	c = c.withAddedProperties(propertiesToAdd...)
 	c.showReport = false
 	c.saveReport = false
 	if skipFixes {
