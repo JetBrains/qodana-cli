@@ -101,7 +101,7 @@ func NewReverseScopedAnalyzer(
 ) *ScopedAnalyzer {
 	var err error
 	if endHash == "" {
-		endHash, err = git.CurrentRevision(c.ProjectRoot(), c.LogDir())
+		endHash, err = git.CurrentRevision(c.RepositoryRoot(), c.LogDir())
 		if err != nil {
 			log.Fatal(err)
 		}
@@ -126,7 +126,7 @@ func (sa *ScopedAnalyzer) RunAnalysis() int {
 		log.Fatal("No commits given. Consider passing --commit or --diff-start and --diff-end (optional) with the range of commits to analyze.")
 	}
 
-	changedFiles, err := git.ComputeChangedFiles(c.ProjectRoot(), startHash, endHash, c.LogDir())
+	changedFiles, err := git.ComputeChangedFiles(c.RepositoryRoot(), startHash, endHash, c.LogDir())
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -147,7 +147,7 @@ func (sa *ScopedAnalyzer) RunAnalysis() int {
 }
 
 func (r *defaultAnalysisRunner) RunFunc(hash string, ctx context.Context, c corescan.Context) (bool, int) {
-	e := git.CheckoutAndUpdateSubmodule(c.ProjectRoot(), hash, true, c.LogDir())
+	e := git.CheckoutAndUpdateSubmodule(c.RepositoryRoot(), hash, true, c.LogDir())
 	if e != nil {
 		log.Fatalf("Cannot checkout commit %s: %v", hash, e)
 	}
@@ -279,7 +279,7 @@ func (r *SequenceRunnerBase) ComputeEndHash() string {
 	endHash := r.endHash
 	var err error
 	if endHash == "" {
-		endHash, err = git.CurrentRevision(r.c.ProjectRoot(), r.c.LogDir())
+		endHash, err = git.CurrentRevision(r.c.RepositoryRoot(), r.c.LogDir())
 		if err != nil {
 			log.Fatal(err)
 		}

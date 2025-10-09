@@ -56,6 +56,7 @@ func CreateContext(
 		Prod:                      preparedHost.Prod,
 		QodanaUploadToken:         preparedHost.QodanaUploadToken,
 		ProjectDir:                commonCtx.ProjectDir,
+		RepositoryRoot:            commonCtx.RepositoryRoot,
 		ResultsDir:                commonCtx.ResultsDir,
 		ConfigDir:                 commonCtx.ConfDirPath(),
 		LogDir:                    commonCtx.LogDir(),

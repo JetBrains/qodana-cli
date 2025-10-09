@@ -58,7 +58,7 @@ func RunThirdPartyLinterAnalysis(
 		qdenv.GetQodanaGlobalEnv(qdenv.QodanaToken),
 		cliOptions.ClearCache,
 		cliOptions.ProjectDir,
-		cliOptions.ProjectRoot,
+		cliOptions.RepositoryRoot,
 	)
 	commonCtx, err = correctInitArgsForThirdParty(commonCtx)
 	if err != nil {

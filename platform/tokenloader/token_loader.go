@@ -39,7 +39,7 @@ type CloudTokenLoader interface {
 	GetId() string
 	GetAnalyzer() product.Analyzer
 
-	GetProjectRoot() string
+	GetRepositoryRoot() string
 	GetProjectDir() string
 	GetLogDir() string
 }
@@ -66,7 +66,7 @@ func LoadCloudUploadToken(tokenLoader CloudTokenLoader, refresh bool, requiresTo
 		fetcherFromUserInput := func(_ bool) string {
 			return getTokenFromUserInput(
 				tokenLoader.GetProjectDir(),
-				tokenLoader.GetProjectRoot(),
+				tokenLoader.GetRepositoryRoot(),
 				tokenLoader.GetId(),
 				tokenLoader.GetLogDir(),
 			)
@@ -123,10 +123,10 @@ func getCloudToken(id string) (string, error) {
 	return secret, nil
 }
 
-func setupToken(projectDir string, projectRoot, id string, logdir string) string {
+func setupToken(projectDir string, repositoryRoot, id string, logdir string) string {
 	openCloud := msg.AskUserConfirm("Do you want to open the team page to get the token?")
 	if openCloud {
-		origin, err := git.RemoteUrl(projectRoot, logdir)
+		origin, err := git.RemoteUrl(repositoryRoot, logdir)
 		if err != nil {
 			msg.ErrorMessage("%s", err)
 			return ""
@@ -189,12 +189,12 @@ func getTokenFromKeychain(refresh bool, id string) string {
 	return ""
 }
 
-func getTokenFromUserInput(projectDir string, projectRoot string, id string, logDir string) string {
+func getTokenFromUserInput(projectDir string, repositoryRoot string, id string, logDir string) string {
 	if msg.IsInteractive() {
 		msg.WarningMessage(cloud.EmptyTokenMessage, cloud.GetCloudRootEndpoint().Url)
 		var token string
 		for {
-			token = setupToken(projectDir, projectRoot, id, logDir)
+			token = setupToken(projectDir, repositoryRoot, id, logDir)
 			if token == "q" {
 				return ""
 			}

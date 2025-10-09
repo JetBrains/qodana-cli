@@ -43,7 +43,7 @@ func Compute(
 	qodanaCloudToken string,
 	clearCache bool,
 	projectDir string,
-	projectRoot string,
+	repositoryRoot string,
 	localNotEffectiveQodanaYamlPathInProject string,
 ) Context {
 	analyzer := GuessAnalyzerFromEnvAndCLI(overrideIde, overrideLinter, overrideImage, overrideWithinDocker)
@@ -59,7 +59,7 @@ func Compute(
 	return computeCommon(
 		analyzer,
 		projectDir,
-		projectRoot,
+		repositoryRoot,
 		cacheDirFromCliOptions,
 		resultsDirFromCliOptions,
 		reportDirFromCliOptions,
@@ -77,7 +77,7 @@ func Compute3rdParty(
 	qodanaCloudToken string,
 	clearCache bool,
 	projectDir string,
-	projectRoot string,
+	repositoryRoot string,
 ) Context {
 	linter := product.FindLinterByName(linterName)
 	if linter == product.UnknownLinter {
@@ -90,7 +90,7 @@ func Compute3rdParty(
 	return computeCommon(
 		analyzer,
 		projectDir,
-		projectRoot,
+		repositoryRoot,
 		cacheDirFromCliOptions,
 		resultsDirFromCliOptions,
 		reportDirFromCliOptions,
@@ -102,7 +102,7 @@ func Compute3rdParty(
 func computeCommon(
 	analyzer product.Analyzer,
 	projectDir string,
-	projectRoot string,
+	repositoryRoot string,
 	cacheDirFromCliOptions string,
 	resultsDirFromCliOptions string,
 	reportDirFromCliOptions string,
@@ -116,19 +116,19 @@ func computeCommon(
 	cacheDir := computeCacheDir(cacheDirFromCliOptions, linterDir)
 	reportDir := computeReportDir(reportDirFromCliOptions, resultsDir)
 
-	if projectRoot == "" {
-		projectRoot = projectDir
-	} else if projectRoot != projectDir {
-		rootAbs, err1 := filepath.Abs(projectRoot)
+	if repositoryRoot == "" {
+		repositoryRoot = projectDir
+	} else if repositoryRoot != projectDir {
+		rootAbs, err1 := filepath.Abs(repositoryRoot)
 		projAbs, err2 := filepath.Abs(projectDir)
 		if err1 != nil || err2 != nil {
-			log.Fatalf("Failed to resolve absolute paths: root=%v, proj=%v", err1, err2)
+			log.Fatalf("Failed to resolve absolute paths: repository-root=%v, project-dir=%v", err1, err2)
 		}
 		if rel, err := filepath.Rel(rootAbs, projAbs); err != nil || strings.HasPrefix(rel, "..") {
 			log.Fatalf(
-				"The project directory must be located inside the VCS root directory.\nProjectDir: %s\nProjectRoot: %s",
-				projectDir,
-				projectRoot,
+				"The project directory must be located inside repository root. Please, specify correct --repository-root argument. ProjectDir: %s. RepositoryRoot: %s",
+				projAbs,
+				rootAbs,
 			)
 		}
 	}
@@ -138,7 +138,7 @@ func computeCommon(
 		IsClearCache:    clearCache,
 		CacheDir:        cacheDir,
 		ProjectDir:      projectDir,
-		ProjectRoot:     projectRoot,
+		RepositoryRoot:  repositoryRoot,
 		ResultsDir:      resultsDir,
 		QodanaSystemDir: systemDir,
 		ReportDir:       reportDir,

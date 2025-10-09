@@ -28,7 +28,7 @@ type Context struct {
 	Analyzer        product.Analyzer
 	IsClearCache    bool
 	CacheDir        string
-	ProjectRoot     string
+	RepositoryRoot  string
 	ProjectDir      string
 	ResultsDir      string
 	ReportDir       string
@@ -64,5 +64,5 @@ func (c Context) GetQodanaToken() string        { return c.QodanaToken }
 func (c Context) GetId() string                 { return c.Id }
 func (c Context) GetAnalyzer() product.Analyzer { return c.Analyzer }
 func (c Context) GetProjectDir() string         { return c.ProjectDir }
-func (c Context) GetProjectRoot() string        { return c.ProjectRoot }
+func (c Context) GetRepositoryRoot() string     { return c.RepositoryRoot }
 func (c Context) GetLogDir() string             { return c.LogDir() }

@@ -94,14 +94,14 @@ func runQodanaContainer(ctx context.Context, c corescan.Context) int {
 
 	scanStages := getScanStages()
 
-	image := dockerAnalyzer.Image
-	CheckImage(image)
+	dockerImage := dockerAnalyzer.Image
+	CheckImage(dockerImage)
 	if !c.SkipPull() {
-		PullImage(docker, image)
+		PullImage(docker, dockerImage)
 	}
 	progress, _ := msg.StartQodanaSpinner(scanStages[0])
 
-	dockerConfig := getDockerOptions(c, image)
+	dockerConfig := getDockerOptions(c, dockerImage)
 	log.Debugf("docker command to run: %s", generateDebugDockerRunCommand(dockerConfig))
 
 	msg.UpdateText(progress, scanStages[1])
@@ -301,7 +301,7 @@ func getDockerOptions(c corescan.Context, image string) *backend.ContainerCreate
 	if err != nil {
 		log.Fatal("couldn't get abs path for cache", err)
 	}
-	projectRootPath, err := filepath.Abs(c.ProjectRoot())
+	repositoryRootPath, err := filepath.Abs(c.RepositoryRoot())
 	if err != nil {
 		log.Fatal("couldn't get abs path for project", err)
 	}
@@ -325,7 +325,7 @@ func getDockerOptions(c corescan.Context, image string) *backend.ContainerCreate
 		},
 		{
 			Type:   mount.TypeBind,
-			Source: projectRootPath,
+			Source: repositoryRootPath,
 			Target: qdcontainer.MountDir,
 		},
 		{

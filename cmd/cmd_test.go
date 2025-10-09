@@ -409,7 +409,7 @@ func TestScanWithIde(t *testing.T) {
 	command.SetArgs(
 		[]string{
 			"-i", projectPath,
-			"--project-root", projectPath,
+			"--repository-root", projectPath,
 			"-o", resultsPath,
 			"--ide", "QDGO",
 			"--property",

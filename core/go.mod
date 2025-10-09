@@ -16,7 +16,6 @@ require (
 
 replace (
 	github.com/JetBrains/qodana-cli/v2025/cloud => ../cloud
-	github.com/JetBrains/qodana-cli/v2025/cmd => ../cmd
 	github.com/JetBrains/qodana-cli/v2025/core => ../core
 	github.com/JetBrains/qodana-cli/v2025/platform => ../platform
 	github.com/JetBrains/qodana-cli/v2025/sarif => ../sarif

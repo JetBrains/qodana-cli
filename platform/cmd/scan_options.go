@@ -31,7 +31,7 @@ type CliOptions struct {
 	ResultsDir                string
 	CacheDir                  string
 	ProjectDir                string
-	ProjectRoot               string
+	RepositoryRoot            string
 	ReportDir                 string
 	CoverageDir               string
 	Linter                    string
@@ -134,10 +134,10 @@ func ComputeFlags(cmd *cobra.Command, options *CliOptions) error {
 
 	flags.StringVarP(&options.ProjectDir, "project-dir", "i", ".", "Root directory of the inspected project")
 	flags.StringVar(
-		&options.ProjectRoot,
-		"project-root",
+		&options.RepositoryRoot,
+		"repository-root",
 		".",
-		"Directory to be used as a VCS root for Qodana. Should be the ancestor of project-dir",
+		"Path to the root of the Git repository. This directory must be the same as --project-dir or a subdirectory within it..",
 	)
 	flags.StringVarP(
 		&options.ResultsDir,

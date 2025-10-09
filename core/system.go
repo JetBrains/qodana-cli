@@ -140,7 +140,7 @@ func RunAnalysis(ctx context.Context, c corescan.Context) int {
 	}
 
 	scenario := c.DetermineRunScenario(startHash != "")
-	if scenario != corescan.RunScenarioDefault && !git.RevisionExists(c.ProjectRoot(), startHash, c.LogDir()) {
+	if scenario != corescan.RunScenarioDefault && !git.RevisionExists(c.RepositoryRoot(), startHash, c.LogDir()) {
 		msg.WarningMessageCI(
 			"Cannot run analysis for commit %s because it doesn't exist in the repository. Check that you retrieve the full git history before running Qodana.",
 			startHash,
@@ -178,14 +178,14 @@ func RunAnalysis(ctx context.Context, c corescan.Context) int {
 func runLocalChanges(ctx context.Context, c corescan.Context, startHash string) int {
 	var exitCode int
 	gitReset := false
-	r, err := git.CurrentRevision(c.ProjectRoot(), c.LogDir())
+	r, err := git.CurrentRevision(c.RepositoryRoot(), c.LogDir())
 	if err != nil {
 		log.Fatal(err)
 	}
 	if c.DiffEnd() != "" && c.DiffEnd() != r {
 		msg.WarningMessage("Cannot run local-changes because --diff-end is %s and HEAD is %s", c.DiffEnd(), r)
 	} else {
-		err := git.Reset(c.ProjectRoot(), startHash, c.LogDir())
+		err := git.Reset(c.RepositoryRoot(), startHash, c.LogDir())
 		if err != nil {
 			msg.WarningMessage("Could not reset git repository, no --commit option will be applied: %s", err)
 		} else {
@@ -197,29 +197,29 @@ func runLocalChanges(ctx context.Context, c corescan.Context, startHash string) 
 	exitCode = runQodana(ctx, c)
 
 	if gitReset {
-		_ = git.ResetBack(c.ProjectRoot(), c.LogDir())
+		_ = git.ResetBack(c.RepositoryRoot(), c.LogDir())
 	}
 	return exitCode
 }
 
 func runWithFullHistory(ctx context.Context, c corescan.Context, startHash string) int {
-	remoteUrl, err := git.RemoteUrl(c.ProjectRoot(), c.LogDir())
+	remoteUrl, err := git.RemoteUrl(c.RepositoryRoot(), c.LogDir())
 	if err != nil {
 		log.Fatal(err)
 	}
-	branch, err := git.Branch(c.ProjectRoot(), c.LogDir())
+	branch, err := git.Branch(c.RepositoryRoot(), c.LogDir())
 	if err != nil {
 		log.Fatal(err)
 	}
 	if remoteUrl == "" && branch == "" {
-		log.Fatal("Please check that project is located within the Git repo. If you specified --project-root option, check that it points to the right directory.")
+		log.Fatal("Please check that project is located within the Git repo. If you specified --repository-root option, check that it points to the right directory.")
 	}
 
-	err = git.Clean(c.ProjectRoot(), c.LogDir())
+	err = git.Clean(c.RepositoryRoot(), c.LogDir())
 	if err != nil {
 		log.Fatal(err)
 	}
-	revisions := git.Revisions(c.ProjectRoot())
+	revisions := git.Revisions(c.RepositoryRoot())
 	allCommits := len(revisions)
 	counter := 0
 	var exitCode int
@@ -238,7 +238,7 @@ func runWithFullHistory(ctx context.Context, c corescan.Context, startHash strin
 		counter++
 
 		msg.WarningMessage("[%d/%d] Running analysis for revision %s", counter+1, allCommits, revision)
-		err = git.CheckoutAndUpdateSubmodule(c.ProjectRoot(), revision, true, c.LogDir())
+		err = git.CheckoutAndUpdateSubmodule(c.RepositoryRoot(), revision, true, c.LogDir())
 		if err != nil {
 			log.Fatal(err)
 		}
@@ -247,7 +247,7 @@ func runWithFullHistory(ctx context.Context, c corescan.Context, startHash strin
 		contextForAnalysis := c.WithVcsEnvForFullHistoryAnalysisIteration(remoteUrl, branch, revision)
 		exitCode = runQodana(ctx, contextForAnalysis)
 	}
-	err = git.CheckoutAndUpdateSubmodule(c.ProjectRoot(), branch, true, c.LogDir())
+	err = git.CheckoutAndUpdateSubmodule(c.RepositoryRoot(), branch, true, c.LogDir())
 	if err != nil {
 		log.Fatal(err)
 	}

@@ -100,7 +100,7 @@ func PrepareHost(commonCtx commoncontext.Context) PreparedHost {
 	if tokenloader.IsCloudTokenRequired(commonCtx) {
 		cloudUploadToken = tokenloader.ValidateCloudToken(commonCtx, false)
 	}
-	checkVcsSameAsProjectRoot(commonCtx)
+	checkVcsSameAsRepositoryRoot(commonCtx)
 
 	result := PreparedHost{
 		IdeDir:            ideDir,
@@ -331,17 +331,17 @@ func fixWindowsPlugins(ideDir string) {
 	}
 }
 
-func checkVcsSameAsProjectRoot(ctx commoncontext.Context) {
-	if vcsRoot, err := git.Root(ctx.ProjectRoot, ctx.LogDir()); err == nil {
+func checkVcsSameAsRepositoryRoot(ctx commoncontext.Context) {
+	if vcsRoot, err := git.Root(ctx.RepositoryRoot, ctx.LogDir()); err == nil {
 		vcsRootAbs, err1 := filepath.Abs(vcsRoot)
-		projectRootAbs, err2 := filepath.Abs(ctx.ProjectRoot)
+		repositoryRootAbs, err2 := filepath.Abs(ctx.RepositoryRoot)
 		if err1 != nil || err2 != nil {
 			log.Warnf("Failed to resolve absolute paths for git root check: vcs=%v, proj=%v", err1, err2)
-		} else if vcsRootAbs != projectRootAbs {
+		} else if vcsRootAbs != repositoryRootAbs {
 			log.Warnf(
 				"The git root directory is different from the project root directory. This may lead to incorrect results. VCS root: %s, project root: %s",
 				vcsRootAbs,
-				projectRootAbs,
+				repositoryRootAbs,
 			)
 		}
 	}

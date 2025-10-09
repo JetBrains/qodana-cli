@@ -65,7 +65,7 @@ But you can always override qodana.yaml options with the following command-line 
 				qdenv.GetQodanaGlobalEnv(qdenv.QodanaToken),
 				cliOptions.ClearCache,
 				cliOptions.ProjectDir,
-				cliOptions.ProjectRoot,
+				cliOptions.RepositoryRoot,
 				cliOptions.ConfigName,
 			)
 			oldReportUrl := cloud.GetReportUrl(commonCtx.ResultsDir)

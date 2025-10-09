@@ -18,7 +18,6 @@ package core
 
 import (
 	"os"
-	"path/filepath"
 	"strconv"
 	"strings"
 	"time"
@@ -141,17 +140,12 @@ func GetIdeArgs(c corescan.Context) []string {
 	if c.FailThreshold() != "" {
 		arguments = append(arguments, "--fail-threshold", c.FailThreshold())
 	}
-	if c.ProjectRoot() != c.ProjectDir() {
-		rootAbs, _ := filepath.Abs(c.ProjectRoot())
-		projAbs, _ := filepath.Abs(c.ProjectDir())
-		rel, _ := filepath.Rel(rootAbs, projAbs)
-		if rel != "." {
-			rel = filepath.ToSlash(rel)
-			if c.Analyser().IsContainer() {
-				arguments = append(arguments, "--project-dir", qdcontainer.MountDir+"/"+rel)
-			}
-			c.WithAddedProperties("-Dqodana.path.to.project.dir.from.project.root=" + rel)
+	if rel := c.ProjectDirPathRelativeToRepositoryRoot(); rel != "" && rel != "." {
+		if c.Analyser().IsContainer() {
+			// it is safe to use / here because it's a path inside the container
+			arguments = append(arguments, "--project-dir", qdcontainer.MountDir+"/"+rel)
 		}
+		arguments = append(arguments, "--property=qodana.path.to.project.dir.from.project.root="+rel)
 	}
 
 	linter := c.Analyser().GetLinter()
