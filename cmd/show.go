@@ -50,6 +50,7 @@ This command serves the Qodana report locally and opens a browser to it.`,
 				qdenv.GetQodanaGlobalEnv(qdenv.QodanaToken),
 				false,
 				cliOptions.ProjectDir,
+				"",
 				cliOptions.ConfigName,
 			)
 			if cliOptions.OpenDir {

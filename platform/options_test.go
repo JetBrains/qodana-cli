@@ -17,11 +17,12 @@
 package platform
 
 import (
+	"os"
+	"testing"
+
 	"github.com/JetBrains/qodana-cli/v2025/platform/commoncontext"
 	"github.com/JetBrains/qodana-cli/v2025/platform/product"
 	"github.com/stretchr/testify/assert"
-	"os"
-	"testing"
 )
 
 func setupTest(projectDir string, fileName string, data string) (*os.File, error) {
@@ -73,6 +74,7 @@ func TestFetchAnalyzerSettings(t *testing.T) {
 				"",
 				false,
 				projectDir,
+				projectDir,
 				"",
 			)
 			expected := &product.NativeAnalyzer{Linter: product.JvmLinter, Eap: false}
@@ -106,6 +108,7 @@ func TestFetchAnalyzerSettings(t *testing.T) {
 				"",
 				"",
 				false,
+				projectDir,
 				projectDir,
 				"",
 			)
@@ -141,6 +144,7 @@ func TestFetchAnalyzerSettings(t *testing.T) {
 				"",
 				"",
 				false,
+				projectDir,
 				projectDir,
 				fileName,
 			)

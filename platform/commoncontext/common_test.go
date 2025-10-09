@@ -17,14 +17,16 @@
 package commoncontext
 
 import (
-	"github.com/JetBrains/qodana-cli/v2025/platform/product"
-	"github.com/JetBrains/qodana-cli/v2025/platform/utils"
-	"github.com/stretchr/testify/assert"
 	"os"
 	"path/filepath"
 	"reflect"
 	"runtime"
 	"testing"
+
+	"github.com/JetBrains/qodana-cli/v2025/platform/product"
+	"github.com/JetBrains/qodana-cli/v2025/platform/utils"
+	"github.com/sirupsen/logrus"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestSelectAnalyzer(t *testing.T) {
@@ -207,5 +209,94 @@ func Test_runCmd(t *testing.T) {
 				},
 			)
 		}
+	}
+}
+
+func TestComputeCommonRepositoryRootValidation(t *testing.T) {
+	for _, tc := range []struct {
+		name             string
+		projectDir       string
+		repositoryRoot   string
+		expectRepoEqProj bool
+		failure          bool
+	}{
+		{
+			name:             "RepositoryRoot equals ProjectDir",
+			projectDir:       "/test/project",
+			repositoryRoot:   "/test/project",
+			expectRepoEqProj: true,
+			failure:          false,
+		},
+		{
+			name:             "RepositoryRoot is parent of ProjectDir",
+			projectDir:       "/test/project/subdir",
+			repositoryRoot:   "/test/project",
+			expectRepoEqProj: false,
+			failure:          false,
+		},
+		{
+			name:             "RepositoryRoot empty defaults to ProjectDir",
+			projectDir:       "/test/project",
+			repositoryRoot:   "",
+			expectRepoEqProj: true,
+			failure:          false,
+		},
+		{
+			name:             "ProjectDir is sibling of RepositoryRoot - should fail",
+			projectDir:       "/test/project1",
+			repositoryRoot:   "/test/project2",
+			expectRepoEqProj: false,
+			failure:          true,
+		},
+		{
+			name:             "ProjectDir is parent of RepositoryRoot - should fail",
+			projectDir:       "/test/project",
+			repositoryRoot:   "/test/project/subdir",
+			expectRepoEqProj: false,
+			failure:          true,
+		},
+	} {
+		t.Run(
+			tc.name, func(t *testing.T) {
+				var fatal bool
+				if tc.failure {
+					defer func() { logrus.StandardLogger().ExitFunc = nil }()
+					logrus.StandardLogger().ExitFunc = func(int) { fatal = true }
+				}
+
+				ctx := computeCommon(
+					product.JvmLinter.DockerAnalyzer(),
+					tc.projectDir,
+					tc.repositoryRoot,
+					"",
+					"",
+					"",
+					false,
+					"",
+				)
+
+				if tc.failure && !fatal {
+					t.Errorf("Expected fatal error but got ctx: %v", ctx)
+					return
+				}
+
+				if tc.failure && fatal {
+					return
+				}
+
+				if tc.expectRepoEqProj {
+					if ctx.RepositoryRoot != ctx.ProjectDir {
+						t.Errorf(
+							"Expected RepositoryRoot to equal ProjectDir. Got RepositoryRoot=%s, ProjectDir=%s",
+							ctx.RepositoryRoot, ctx.ProjectDir,
+						)
+					}
+				} else {
+					if ctx.RepositoryRoot == ctx.ProjectDir {
+						t.Errorf("Expected RepositoryRoot to differ from ProjectDir. Got both=%s", ctx.RepositoryRoot)
+					}
+				}
+			},
+		)
 	}
 }

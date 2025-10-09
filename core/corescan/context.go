@@ -18,14 +18,15 @@ package corescan
 
 import (
 	"fmt"
-	"github.com/JetBrains/qodana-cli/v2025/platform/msg"
-	"github.com/JetBrains/qodana-cli/v2025/platform/product"
-	"github.com/JetBrains/qodana-cli/v2025/platform/qdyaml"
 	"math"
 	"os"
 	"path/filepath"
 	"strings"
 	"time"
+
+	"github.com/JetBrains/qodana-cli/v2025/platform/msg"
+	"github.com/JetBrains/qodana-cli/v2025/platform/product"
+	"github.com/JetBrains/qodana-cli/v2025/platform/qdyaml"
 )
 
 const (
@@ -68,6 +69,7 @@ type Context struct {
 	prod                      product.Product
 	qodanaUploadToken         string
 	projectDir                string
+	repositoryRoot            string
 	resultsDir                string
 	configDir                 string
 	logDir                    string
@@ -147,6 +149,7 @@ func (c Context) QodanaYamlConfig() QodanaYamlConfig { return c.qodanaYamlConfig
 func (c Context) Prod() product.Product              { return c.prod }
 func (c Context) QodanaUploadToken() string          { return c.qodanaUploadToken }
 func (c Context) ProjectDir() string                 { return c.projectDir }
+func (c Context) RepositoryRoot() string             { return c.repositoryRoot }
 func (c Context) ResultsDir() string                 { return c.resultsDir }
 func (c Context) ConfigDir() string                  { return c.configDir }
 func (c Context) LogDir() string                     { return c.logDir }
@@ -205,6 +208,7 @@ type ContextBuilder struct {
 	Prod                      product.Product
 	QodanaUploadToken         string
 	ProjectDir                string
+	RepositoryRoot            string
 	ResultsDir                string
 	ConfigDir                 string
 	LogDir                    string
@@ -268,6 +272,7 @@ func (b ContextBuilder) Build() Context {
 		prod:                      b.Prod,
 		qodanaUploadToken:         b.QodanaUploadToken,
 		projectDir:                b.ProjectDir,
+		repositoryRoot:            b.RepositoryRoot,
 		resultsDir:                b.ResultsDir,
 		configDir:                 b.ConfigDir,
 		logDir:                    b.LogDir,
@@ -397,6 +402,14 @@ func (c Context) LocalQodanaYamlExists() bool {
 	}
 	info, _ := os.Stat(path)
 	return info != nil
+}
+
+func (c Context) ProjectDirPathRelativeToRepositoryRoot() string {
+	rootAbs, _ := filepath.Abs(c.RepositoryRoot())
+	projAbs, _ := filepath.Abs(c.ProjectDir())
+	rel, _ := filepath.Rel(rootAbs, projAbs)
+	rel = filepath.ToSlash(rel)
+	return rel
 }
 
 func IsScopedScenario(scenario string) bool {

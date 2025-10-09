@@ -18,6 +18,9 @@ package cmd
 
 import (
 	"fmt"
+	"os"
+	"path/filepath"
+
 	"github.com/JetBrains/qodana-cli/v2025/cloud"
 	"github.com/JetBrains/qodana-cli/v2025/core/corescan"
 	"github.com/JetBrains/qodana-cli/v2025/core/startup"
@@ -30,8 +33,6 @@ import (
 	"github.com/JetBrains/qodana-cli/v2025/platform/qdyaml"
 	"github.com/JetBrains/qodana-cli/v2025/platform/utils"
 	log "github.com/sirupsen/logrus"
-	"os"
-	"path/filepath"
 
 	"github.com/JetBrains/qodana-cli/v2025/core"
 	"github.com/spf13/cobra"
@@ -64,6 +65,7 @@ But you can always override qodana.yaml options with the following command-line 
 				qdenv.GetQodanaGlobalEnv(qdenv.QodanaToken),
 				cliOptions.ClearCache,
 				cliOptions.ProjectDir,
+				cliOptions.RepositoryRoot,
 				cliOptions.ConfigName,
 			)
 			oldReportUrl := cloud.GetReportUrl(commonCtx.ResultsDir)

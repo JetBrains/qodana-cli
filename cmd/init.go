@@ -18,6 +18,8 @@ package cmd
 
 import (
 	"fmt"
+	"path/filepath"
+
 	"github.com/JetBrains/qodana-cli/v2025/platform/commoncontext"
 	"github.com/JetBrains/qodana-cli/v2025/platform/msg"
 	"github.com/JetBrains/qodana-cli/v2025/platform/product"
@@ -26,7 +28,6 @@ import (
 	"github.com/JetBrains/qodana-cli/v2025/platform/tokenloader"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
-	"path/filepath"
 )
 
 // newInitCommand returns a new instance of the show command.

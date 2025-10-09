@@ -47,6 +47,7 @@ func newPullCommand() *cobra.Command {
 				qdenv.GetQodanaGlobalEnv(qdenv.QodanaToken),
 				false,
 				cliOptions.ProjectDir,
+				"",
 				cliOptions.ConfigName,
 			)
 			analyzer, ok := commonCtx.Analyzer.(*product.DockerAnalyzer)

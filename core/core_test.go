@@ -19,6 +19,17 @@ package core
 import (
 	"errors"
 	"fmt"
+	"net/http"
+	"net/http/httptest"
+	"os"
+	"os/exec"
+	"path/filepath"
+	"reflect"
+	"runtime"
+	"sort"
+	"testing"
+	"time"
+
 	"github.com/JetBrains/qodana-cli/v2025/cloud"
 	"github.com/JetBrains/qodana-cli/v2025/core/corescan"
 	"github.com/JetBrains/qodana-cli/v2025/core/startup"
@@ -32,16 +43,6 @@ import (
 	"github.com/JetBrains/qodana-cli/v2025/platform/tokenloader"
 	"github.com/JetBrains/qodana-cli/v2025/platform/utils"
 	log "github.com/sirupsen/logrus"
-	"net/http"
-	"net/http/httptest"
-	"os"
-	"os/exec"
-	"path/filepath"
-	"reflect"
-	"runtime"
-	"sort"
-	"testing"
-	"time"
 
 	"github.com/stretchr/testify/assert"
 )
@@ -73,6 +74,7 @@ func TestCliArgs(t *testing.T) {
 			majorVersion: "2024.2",
 			cb: corescan.ContextBuilder{
 				ProjectDir:            projectDir,
+				RepositoryRoot:        projectDir,
 				CacheDir:              cacheDir,
 				ResultsDir:            resultsDir,
 				Analyser:              product.JvmLinter.DockerAnalyzer(),
@@ -125,12 +127,13 @@ func TestCliArgs(t *testing.T) {
 			name:         "arguments with spaces, no properties for local runs",
 			majorVersion: "2024.1",
 			cb: corescan.ContextBuilder{
-				ProjectDir:  projectDir,
-				CacheDir:    cacheDir,
-				ResultsDir:  resultsDir,
-				ProfileName: "separated words",
-				Property:    []string{"qodana.format=SARIF_AND_PROJECT_STRUCTURE", "qodana.variable.format=JSON"},
-				Analyser:    product.JvmLinter.NativeAnalyzer(),
+				ProjectDir:     projectDir,
+				RepositoryRoot: projectDir,
+				CacheDir:       cacheDir,
+				ResultsDir:     resultsDir,
+				ProfileName:    "separated words",
+				Property:       []string{"qodana.format=SARIF_AND_PROJECT_STRUCTURE", "qodana.variable.format=JSON"},
+				Analyser:       product.JvmLinter.NativeAnalyzer(),
 			},
 			res: []string{
 				filepath.FromSlash("/opt/idea/bin/idea.sh"),
@@ -146,11 +149,12 @@ func TestCliArgs(t *testing.T) {
 			name:         "deprecated --fixes-strategy=apply",
 			majorVersion: "2024.2",
 			cb: corescan.ContextBuilder{
-				ProjectDir:    projectDir,
-				CacheDir:      cacheDir,
-				ResultsDir:    resultsDir,
-				FixesStrategy: "apply",
-				Analyser:      product.JvmLinter.DockerAnalyzer(),
+				ProjectDir:     projectDir,
+				RepositoryRoot: projectDir,
+				CacheDir:       cacheDir,
+				ResultsDir:     resultsDir,
+				FixesStrategy:  "apply",
+				Analyser:       product.JvmLinter.DockerAnalyzer(),
 			},
 			res: []string{
 				filepath.FromSlash("/opt/idea/bin/idea.sh"),
@@ -165,11 +169,12 @@ func TestCliArgs(t *testing.T) {
 			name:         "deprecated --fixes-strategy=cleanup",
 			majorVersion: "2024.3",
 			cb: corescan.ContextBuilder{
-				ProjectDir:    projectDir,
-				CacheDir:      cacheDir,
-				ResultsDir:    resultsDir,
-				FixesStrategy: "cleanup",
-				Analyser:      product.JvmLinter.DockerAnalyzer(),
+				ProjectDir:     projectDir,
+				RepositoryRoot: projectDir,
+				CacheDir:       cacheDir,
+				ResultsDir:     resultsDir,
+				FixesStrategy:  "cleanup",
+				Analyser:       product.JvmLinter.DockerAnalyzer(),
 			},
 			res: []string{
 				filepath.FromSlash("/opt/idea/bin/idea.sh"),
@@ -184,11 +189,12 @@ func TestCliArgs(t *testing.T) {
 			name:         "--fixes-strategy=apply for new versions",
 			majorVersion: "2023.3",
 			cb: corescan.ContextBuilder{
-				ProjectDir:    projectDir,
-				CacheDir:      cacheDir,
-				ResultsDir:    resultsDir,
-				FixesStrategy: "apply",
-				Analyser:      product.JvmLinter.NativeAnalyzer(),
+				ProjectDir:     projectDir,
+				RepositoryRoot: projectDir,
+				CacheDir:       cacheDir,
+				ResultsDir:     resultsDir,
+				FixesStrategy:  "apply",
+				Analyser:       product.JvmLinter.NativeAnalyzer(),
 			},
 			res: []string{
 				filepath.FromSlash("/opt/idea/bin/idea.sh"),
@@ -203,11 +209,12 @@ func TestCliArgs(t *testing.T) {
 			name:         "--fixes-strategy=cleanup for new versions",
 			majorVersion: "2023.3",
 			cb: corescan.ContextBuilder{
-				ProjectDir:    projectDir,
-				CacheDir:      cacheDir,
-				ResultsDir:    resultsDir,
-				FixesStrategy: "cleanup",
-				Analyser:      product.JvmLinter.NativeAnalyzer(),
+				ProjectDir:     projectDir,
+				RepositoryRoot: projectDir,
+				CacheDir:       cacheDir,
+				ResultsDir:     resultsDir,
+				FixesStrategy:  "cleanup",
+				Analyser:       product.JvmLinter.NativeAnalyzer(),
 			},
 			res: []string{
 				filepath.FromSlash("/opt/idea/bin/idea.sh"),
@@ -222,11 +229,12 @@ func TestCliArgs(t *testing.T) {
 			name:         "no --config-dir in <251",
 			majorVersion: "2024.3",
 			cb: corescan.ContextBuilder{
-				ProjectDir:    projectDir,
-				CacheDir:      cacheDir,
-				ResultsDir:    resultsDir,
-				FixesStrategy: "cleanup",
-				Analyser:      product.JvmLinter.NativeAnalyzer(),
+				ProjectDir:     projectDir,
+				RepositoryRoot: projectDir,
+				CacheDir:       cacheDir,
+				ResultsDir:     resultsDir,
+				FixesStrategy:  "cleanup",
+				Analyser:       product.JvmLinter.NativeAnalyzer(),
 			},
 			res: []string{
 				filepath.FromSlash("/opt/idea/bin/idea.sh"),
@@ -241,6 +249,7 @@ func TestCliArgs(t *testing.T) {
 			majorVersion: "2025.1",
 			cb: corescan.ContextBuilder{
 				ProjectDir:                projectDir,
+				RepositoryRoot:            projectDir,
 				CacheDir:                  cacheDir,
 				ResultsDir:                resultsDir,
 				FixesStrategy:             "cleanup",
@@ -254,6 +263,47 @@ func TestCliArgs(t *testing.T) {
 				"--config-dir",
 				"/qdconfig",
 				projectDir,
+				resultsDir,
+			},
+		},
+		{
+			name:         "ProjectDir subdirectory of RepositoryRoot in container",
+			majorVersion: "2025.3",
+			cb: corescan.ContextBuilder{
+				ProjectDir:     filepath.Join(projectDir, "subproject"),
+				RepositoryRoot: projectDir,
+				CacheDir:       cacheDir,
+				ResultsDir:     resultsDir,
+				Analyser:       product.JvmLinter.DockerAnalyzer(),
+			},
+			res: []string{
+				filepath.FromSlash("/opt/idea/bin/idea.sh"),
+				"qodana",
+				"--project-dir",
+				qdcontainer.MountDir + "/subproject",
+				"--property=qodana.path.to.project.dir.from.project.root=subproject",
+				filepath.Join(projectDir, "subproject"),
+				resultsDir,
+			},
+		},
+		{
+			name:         "ProjectDir subdirectory of RepositoryRoot in native",
+			majorVersion: "2025.3",
+			cb: corescan.ContextBuilder{
+				ProjectDir:                filepath.Join(projectDir, "subproject"),
+				RepositoryRoot:            projectDir,
+				CacheDir:                  cacheDir,
+				ResultsDir:                resultsDir,
+				EffectiveConfigurationDir: "/qdconfig",
+				Analyser:                  product.JvmLinter.NativeAnalyzer(),
+			},
+			res: []string{
+				filepath.FromSlash("/opt/idea/bin/idea.sh"),
+				"qodana",
+				"--property=qodana.path.to.project.dir.from.project.root=subproject",
+				"--config-dir",
+				"/qdconfig",
+				filepath.Join(projectDir, "subproject"),
 				resultsDir,
 			},
 		},
@@ -965,7 +1015,7 @@ func TestQodanaOptions_RequiresToken(t *testing.T) {
 
 		t.Run(
 			tt.name, func(t *testing.T) {
-				initArgs := commoncontext.Compute(tt.linter, tt.ide, "", "", "", "", "", "", false, "", "")
+				initArgs := commoncontext.Compute(tt.linter, tt.ide, "", "", "", "", "", "", false, "", "", "")
 
 				if tt.name == qdenv.QodanaToken {
 					t.Setenv(qdenv.QodanaToken, "test")
@@ -1112,6 +1162,7 @@ func Test_Properties(t *testing.T) {
 					"",
 					"",
 					false,
+					projectDir,
 					projectDir,
 					"",
 				)

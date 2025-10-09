@@ -33,7 +33,7 @@ import (
 )
 
 const (
-	DataProjectDir       = "/data/project"
+	MountDir             = "/data/project"
 	DataResultsDir       = "/data/results"
 	DataResultsReportDir = "/data/results/report"
 	DataCacheDir         = "/data/cache"
