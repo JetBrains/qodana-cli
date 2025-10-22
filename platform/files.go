@@ -19,11 +19,12 @@ package platform
 import (
 	"bytes"
 	"fmt"
-	log "github.com/sirupsen/logrus"
 	"path/filepath"
 	"reflect"
 	"text/tabwriter"
 	"unsafe"
+
+	log "github.com/sirupsen/logrus"
 )
 
 func LogContext(contextPointer any) {

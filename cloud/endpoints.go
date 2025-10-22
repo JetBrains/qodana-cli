@@ -20,13 +20,14 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
-	"github.com/JetBrains/qodana-cli/v2025/platform/qdenv"
-	log "github.com/sirupsen/logrus"
 	"io"
 	"net/http"
 	"net/url"
 	"slices"
 	"time"
+
+	"github.com/JetBrains/qodana-cli/v2025/platform/qdenv"
+	log "github.com/sirupsen/logrus"
 )
 
 const (

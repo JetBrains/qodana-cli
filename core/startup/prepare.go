@@ -122,7 +122,7 @@ func prepareLocalIdeSettingsAndGetQodanaCloudUploadToken(
 	cloud.SetupLicenseToken(token)
 	SetupLicenseAndProjectHash(prod, cloud.GetCloudApiEndpoints(), cloud.Token.Token)
 
-	prepareDirectories(prod, commonCtx.CacheDir, commonCtx.LogDir(), commonCtx.ConfDirPath())
+	prepareDirectories(commonCtx.CacheDir, commonCtx.LogDir(), commonCtx.ConfDirPath())
 
 	if qdenv.IsContainer() {
 		prepareContainerSpecificDirectories(prod, commonCtx.CacheDir, commonCtx.ConfDirPath())
@@ -207,7 +207,7 @@ func prepareContainerSpecificDirectories(prod product.Product, cacheDir string, 
 	}
 }
 
-func prepareDirectories(prod product.Product, cacheDir string, logDir string, confDir string) {
+func prepareDirectories(cacheDir string, logDir string, confDir string) {
 	MakeDirAll(cacheDir)
 	MakeDirAll(logDir)
 

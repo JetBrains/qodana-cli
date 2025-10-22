@@ -17,12 +17,13 @@
 package platform
 
 import (
-	"github.com/JetBrains/qodana-cli/v2025/platform/qdyaml"
-	"github.com/JetBrains/qodana-cli/v2025/platform/thirdpartyscan"
 	"os"
 	"path/filepath"
 	"sort"
 	"testing"
+
+	"github.com/JetBrains/qodana-cli/v2025/platform/qdyaml"
+	"github.com/JetBrains/qodana-cli/v2025/platform/thirdpartyscan"
 )
 
 func TestFailureThresholds(t *testing.T) {

@@ -18,6 +18,9 @@ package main
 
 import (
 	"fmt"
+	"reflect"
+	"testing"
+
 	"github.com/JetBrains/qodana-cli/v2025/core"
 	"github.com/JetBrains/qodana-cli/v2025/core/corescan"
 	"github.com/JetBrains/qodana-cli/v2025/platform/product"
@@ -26,8 +29,6 @@ import (
 	"github.com/JetBrains/qodana-cli/v2025/platform/strutil"
 	"github.com/JetBrains/qodana-cli/v2025/platform/thirdpartyscan"
 	"github.com/stretchr/testify/assert"
-	"reflect"
-	"testing"
 )
 
 func createDefaultYaml(sln string, prj string, cfg string, plt string) thirdpartyscan.QodanaYamlConfig {

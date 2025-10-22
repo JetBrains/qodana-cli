@@ -18,9 +18,10 @@ package cloud
 
 import (
 	"encoding/json"
-	log "github.com/sirupsen/logrus"
 	"os"
 	"path/filepath"
+
+	log "github.com/sirupsen/logrus"
 )
 
 const openInIdeJson = "open-in-ide.json"

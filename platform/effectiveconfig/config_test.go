@@ -17,12 +17,13 @@
 package effectiveconfig
 
 import (
-	"github.com/JetBrains/qodana-cli/v2025/platform/utils"
-	"github.com/stretchr/testify/assert"
 	"os"
 	"path/filepath"
 	"strings"
 	"testing"
+
+	"github.com/JetBrains/qodana-cli/v2025/platform/utils"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestSuccess(t *testing.T) {

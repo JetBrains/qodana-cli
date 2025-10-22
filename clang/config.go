@@ -2,9 +2,10 @@ package main
 
 import (
 	"fmt"
+	"strings"
+
 	"github.com/JetBrains/qodana-cli/v2025/platform/thirdpartyscan"
 	"github.com/JetBrains/qodana-cli/v2025/platform/utils"
-	"strings"
 )
 
 // Find qodana.yaml, run bootstrap, find enabled checks and return them formatted as an argument for clang-tidy.

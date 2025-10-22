@@ -35,8 +35,12 @@ func initGitRepo(t *testing.T, path string) {
 	if err := cmd.Run(); err != nil {
 		t.Fatalf("Failed to initialize git repo: %v", err)
 	}
-	exec.Command("git", "-C", path, "config", "user.email", "qodana.support@jetbrains.com").Run()
-	exec.Command("git", "-C", path, "config", "user.name", "Qodana test").Run()
+	if err := exec.Command("git", "-C", path, "config", "user.email", "qodana.support@jetbrains.com").Run(); err != nil {
+		t.Fatalf("Failed to set git config user.email: %v", err)
+	}
+	if err := exec.Command("git", "-C", path, "config", "user.name", "Qodana test").Run(); err != nil {
+		t.Fatalf("Failed to set git config user.name: %v", err)
+	}
 }
 
 func createGitCommit(t *testing.T, path string) {
@@ -45,9 +49,10 @@ func createGitCommit(t *testing.T, path string) {
 		t.Fatalf("Failed to create test file: %v", err)
 	}
 
-	exec.Command("git", "-C", path, "add", ".").Run()
-	cmd := exec.Command("git", "-C", path, "commit", "-m", "test commit")
-	if err := cmd.Run(); err != nil {
+	if err := exec.Command("git", "-C", path, "add", ".").Run(); err != nil {
+		t.Fatalf("Failed to add files to git: %v", err)
+	}
+	if err := exec.Command("git", "-C", path, "commit", "-m", "test commit").Run(); err != nil {
 		t.Fatalf("Failed to create git commit: %v", err)
 	}
 }

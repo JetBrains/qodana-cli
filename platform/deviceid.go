@@ -19,10 +19,11 @@ package platform
 import (
 	"crypto/md5"
 	"fmt"
-	"github.com/JetBrains/qodana-cli/v2025/platform/qdenv"
 	"os"
 	"os/exec"
 	"strings"
+
+	"github.com/JetBrains/qodana-cli/v2025/platform/qdenv"
 )
 
 // GetDeviceIdSalt set consistent device.id based on given repo upstream #SA-391.

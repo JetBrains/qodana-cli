@@ -18,9 +18,10 @@ package platform
 
 import (
 	"fmt"
+	"time"
+
 	"github.com/JetBrains/qodana-cli/v2025/platform/qdenv"
 	log "github.com/sirupsen/logrus"
-	"time"
 )
 
 func CheckEAP(buildDateStr string, isEap bool) {

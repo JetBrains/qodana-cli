@@ -19,16 +19,17 @@ package platform
 import (
 	"context"
 	"fmt"
-	"github.com/JetBrains/qodana-cli/v2025/platform/msg"
-	"github.com/JetBrains/qodana-cli/v2025/platform/qdenv"
-	"github.com/JetBrains/qodana-cli/v2025/sarif"
-	bbapi "github.com/reviewdog/go-bitbucket" // adapted from https://raw.githubusercontent.com/reviewdog/reviewdog/master/LICENSE
-	log "github.com/sirupsen/logrus"
 	"io"
 	"net/http"
 	"net/url"
 	"os"
 	"time"
+
+	"github.com/JetBrains/qodana-cli/v2025/platform/msg"
+	"github.com/JetBrains/qodana-cli/v2025/platform/qdenv"
+	"github.com/JetBrains/qodana-cli/v2025/sarif"
+	bbapi "github.com/reviewdog/go-bitbucket" // adapted from https://raw.githubusercontent.com/reviewdog/reviewdog/master/LICENSE
+	log "github.com/sirupsen/logrus"
 )
 
 const (

@@ -19,10 +19,11 @@ package platform
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/JetBrains/qodana-cli/v2025/sarif"
-	log "github.com/sirupsen/logrus"
 	"os"
 	"path/filepath"
+
+	"github.com/JetBrains/qodana-cli/v2025/sarif"
+	log "github.com/sirupsen/logrus"
 )
 
 // https://docs.gitlab.com/ee/ci/testing/code_quality.html#implement-a-custom-tool

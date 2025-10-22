@@ -18,8 +18,9 @@ package platform
 
 import (
 	"fmt"
-	"github.com/JetBrains/qodana-cli/v2025/platform/thirdpartyscan"
 	"strconv"
+
+	"github.com/JetBrains/qodana-cli/v2025/platform/thirdpartyscan"
 )
 
 const severityAny = "any"

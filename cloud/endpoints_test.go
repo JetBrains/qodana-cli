@@ -20,14 +20,15 @@ import (
 	"crypto/tls"
 	"errors"
 	"fmt"
-	"github.com/JetBrains/qodana-cli/v2025/platform/qdenv"
-	log "github.com/sirupsen/logrus"
-	"github.com/stretchr/testify/assert"
 	"net/http"
 	"net/http/httptest"
 	"os"
 	"strconv"
 	"testing"
+
+	"github.com/JetBrains/qodana-cli/v2025/platform/qdenv"
+	log "github.com/sirupsen/logrus"
+	"github.com/stretchr/testify/assert"
 )
 
 //goland:noinspection ALL
