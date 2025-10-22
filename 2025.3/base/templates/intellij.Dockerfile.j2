@@ -3,52 +3,56 @@ ENV QD_VERSION="{{ qd_release }}" QD_IMAGE="{{ qd_image }}"
 ARG QD_CODE="{{ qd_code }}"
 ARG IDE_RELEASE_FEED="https://raw.githubusercontent.com/JetBrains/qodana-docker/refs/heads/main/feed/releases.json"
 # hadolint ignore=DL3003,SC2043
-RUN set -ex && \
-    dpkgArch="$(dpkg --print-architecture)" && \
-    case "$dpkgArch" in \
-        "amd64") \
-            OS_ARCH_SUFFIX=""; \
-            RELEASES_DIST_KEY="linux"; \
-            ;; \
-        "arm64") \
-            OS_ARCH_SUFFIX="-aarch64"; \
-            RELEASES_DIST_KEY="linuxARM64"; \
-            ;; \
-        *) echo "Unsupported architecture $dpkgArch" >&2; exit 1 ;; \
-    esac && \
-    if [ -z "$QD_RELEASE" ]; then \
-        case "$QD_CODE" in \
-            "QDNET") \
-                RELEASE_CODE="RD"; \
-                ;; \
-            "QDGO") \
-                RELEASE_CODE="GO"; \
-                ;; \
-            "QDJS") \
-                RELEASE_CODE="WS"; \
-                ;; \
-            "QDJVM" | "QDAND") \
-                RELEASE_CODE="IIU"; \
-                ;; \
-            "QDJVMC" | "QDANDC") \
-                RELEASE_CODE="IIC"; \
-                ;; \
-            "QDPHP") \
-                RELEASE_CODE="PS"; \
-                ;; \
-            "QDPY") \
-                RELEASE_CODE="PCP"; \
-                ;; \
-            "QDPYC") \
-                RELEASE_CODE="PCC"; \
-                ;; \
-            "QDCPP") \
-                RELEASE_CODE="CL"; \
-                ;; \
-            *) echo "Unrecognized product code $QD_CODE" >&2; exit 1 ;; \
-        esac && \
+RUN bash <<-"EOF"
+    set -euxo pipefail
+
+    dpkgArch="$(dpkg --print-architecture)"
+    case "$dpkgArch" in
+        "amd64")
+            OS_ARCH_SUFFIX="";
+            RELEASES_DIST_KEY="linux";
+            ;;
+        "arm64")
+            OS_ARCH_SUFFIX="-aarch64";
+            RELEASES_DIST_KEY="linuxARM64";
+            ;;
+        *) echo "Unsupported architecture $dpkgArch" >&2; exit 1 ;;
+    esac
+
+    if [ -z "$QD_RELEASE" ]; then
+        case "$QD_CODE" in
+            "QDNET")
+                RELEASE_CODE="RD";
+                ;;
+            "QDGO")
+                RELEASE_CODE="GO";
+                ;;
+            "QDJS")
+                RELEASE_CODE="WS";
+                ;;
+            "QDJVM" | "QDAND")
+                RELEASE_CODE="IIU";
+                ;;
+            "QDJVMC" | "QDANDC")
+                RELEASE_CODE="IIC";
+                ;;
+            "QDPHP")
+                RELEASE_CODE="PS";
+                ;;
+            "QDPY")
+                RELEASE_CODE="PCP";
+                ;;
+            "QDPYC")
+                RELEASE_CODE="PCC";
+                ;;
+            "QDCPP")
+                RELEASE_CODE="CL";
+                ;;
+            *) echo "Unrecognized product code $QD_CODE" >&2; exit 1 ;;
+        esac
+
         RELEASE_JSON=$(\
-            curl $IDE_RELEASE_FEED |\
+            curl -L $IDE_RELEASE_FEED |\
             jq "[\
                 .[] |\
                 select(.Code==\"$RELEASE_CODE\") |\
@@ -56,45 +60,45 @@ RUN set -ex && \
                 sort_by(.Type, .Date) |\
                 .[] |\
                 select(.MajorVersion==\"$QD_VERSION\")\
-            ] | .[-1]" \
-        ) && \
-        if [ "$RELEASE_JSON" = "null" ]; then \
-            echo "No release found for $RELEASE_CODE ($QD_CODE) $QD_VERSION in $IDE_RELEASE_FEED" \
-                >&2 && exit 1; \
-        fi && \
-        QD_BUILD="$QD_CODE-$(echo "$RELEASE_JSON" | jq -r '.Build')" && \
-        QD_NAME="qodana-$QD_BUILD$OS_ARCH_SUFFIX" && \
-        QD_URL=$(echo "$RELEASE_JSON" | jq -r ".Downloads.$RELEASES_DIST_KEY.Link") && \
-        QD_CHECKSUM_URL=$(echo "$RELEASE_JSON" | jq -r ".Downloads.$RELEASES_DIST_KEY.ChecksumLink"); \
-    else \
-        QD_BUILD="$QD_CODE-$QD_RELEASE" && \
-        QD_NAME="qodana-$QD_RELEASE$OS_ARCH_SUFFIX" && \
-        QD_URL="https://download.jetbrains.com/qodana/$QD_VERSION/$QD_NAME.tar.gz" && \
-        QD_CHECKSUM_URL="$QD_URL.sha256"; \
-    fi && \
-    curl -fsSL "$QD_URL" -o "/tmp/$QD_NAME.tar.gz" \
-               "$QD_CHECKSUM_URL" -o "/tmp/$QD_NAME.tar.gz.sha256" \
-               "$QD_CHECKSUM_URL.asc" -o "/tmp/$QD_NAME.tar.gz.sha256.asc" && \
-    GNUPGHOME="$(mktemp -d)" && \
-    export GNUPGHOME && \
-    for key in \
-        "B46DC71E03FEEB7F89D1F2491F7A8F87B9D8F501" \
-      ; do \
-        gpg --batch --keyserver "hkps://keys.openpgp.org" --recv-keys "$key" || \
-        gpg --batch --keyserver "keyserver.ubuntu.com" --recv-keys "$key" ; \
-    done && \
-    gpg --verify "/tmp/$QD_NAME.tar.gz.sha256.asc" "/tmp/$QD_NAME.tar.gz.sha256" && \
-    echo "$(cat "/tmp/$QD_NAME.tar.gz.sha256" | awk '{ print $1 }') */tmp/$QD_NAME.tar.gz" |\
-        sha256sum --check && \
-    mkdir -p /tmp/qd && tar -xzf "/tmp/$QD_NAME.tar.gz" --directory /tmp/qd  && \
-    mv /tmp/qd/qodana-QD* "$QODANA_DIST" && \
-    chmod +x "$QODANA_DIST"/bin/*.sh "$QODANA_DIST"/bin/qodana && \
-    update-alternatives --install /usr/bin/java java "$JAVA_HOME/bin/java" 0 && \
-    update-alternatives --install /usr/bin/javac javac "$JAVA_HOME/bin/javac" 0 && \
-    update-alternatives --set java "$JAVA_HOME/bin/java" && \
-    update-alternatives --set javac "$JAVA_HOME/bin/javac" && \
-    apt-get purge --auto-remove -y gnupg2 && \
+            ] | .[-1]"\
+        )
+        if [ "$RELEASE_JSON" = "null" ]; then
+            echo "No release found for $RELEASE_CODE ($QD_CODE) $QD_VERSION in $IDE_RELEASE_FEED" >&2 && exit 1
+        fi
+        QD_BUILD="$QD_CODE-$(echo "$RELEASE_JSON" | jq -r '.Build')"
+        QD_NAME="qodana-$QD_BUILD$OS_ARCH_SUFFIX"
+        QD_URL=$(echo "$RELEASE_JSON" | jq -r ".Downloads.$RELEASES_DIST_KEY.Link")
+        QD_CHECKSUM_URL=$(echo "$RELEASE_JSON" | jq -r ".Downloads.$RELEASES_DIST_KEY.ChecksumLink")
+    else
+        QD_BUILD="$QD_CODE-$QD_RELEASE"
+        QD_NAME="qodana-$QD_RELEASE$OS_ARCH_SUFFIX"
+        QD_URL="https://download.jetbrains.com/qodana/$QD_VERSION/$QD_NAME.tar.gz"
+        QD_CHECKSUM_URL="$QD_URL.sha256"
+    fi
+
+    curl -fsSL "$QD_URL" -o "/tmp/$QD_NAME.tar.gz"
+               "$QD_CHECKSUM_URL" -o "/tmp/$QD_NAME.tar.gz.sha256"
+               "$QD_CHECKSUM_URL.asc" -o "/tmp/$QD_NAME.tar.gz.sha256.asc"
+
+    export GNUPGHOME="$(mktemp -d)"
+    for key in "B46DC71E03FEEB7F89D1F2491F7A8F87B9D8F501"; do
+        gpg --batch --keyserver "hkps://keys.openpgp.org" --recv-keys "$key" ||
+        gpg --batch --keyserver "keyserver.ubuntu.com" --recv-keys "$key"
+    done
+
+    gpg --verify "/tmp/$QD_NAME.tar.gz.sha256.asc" "/tmp/$QD_NAME.tar.gz.sha256"
+    echo "$(cat "/tmp/$QD_NAME.tar.gz.sha256" | awk '{ print $1 }') */tmp/$QD_NAME.tar.gz" | sha256sum --check
+    mkdir -p /tmp/qd && tar -xzf "/tmp/$QD_NAME.tar.gz" --directory /tmp/qd
+    mv /tmp/qd/qodana-QD* "$QODANA_DIST"
+    chmod +x "$QODANA_DIST"/bin/*.sh "$QODANA_DIST"/bin/qodana
+    update-alternatives --install /usr/bin/java java "$JAVA_HOME/bin/java" 0
+    update-alternatives --install /usr/bin/javac javac "$JAVA_HOME/bin/javac" 0
+    update-alternatives --set java "$JAVA_HOME/bin/java"
+    update-alternatives --set javac "$JAVA_HOME/bin/javac"
+    apt-get purge --auto-remove -y gnupg2
     rm -rf /var/cache/apt /var/lib/apt/ /tmp/* "$GNUPGHOME"
+EOF
+
 {% if variant == "android" %}
 {% raw %}
 ENV ANDROID_SDK_ROOT="/opt/android-sdk" ANDROID_USER_HOME="$QODANA_DATA/cache/android"
