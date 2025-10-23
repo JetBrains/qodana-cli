@@ -12,9 +12,9 @@ import (
 	"github.com/JetBrains/qodana-cli/v2025/platform/utils"
 )
 
-const DLL_PATH_PATTERN = `^tools/[^/]+/any/JetBrains\.CommandLine\.Products\.dll$`
+const DllPathPattern = `^tools/[^/]+/any/JetBrains\.CommandLine\.Products\.dll$`
 
-var dllPathRegex = regexp.MustCompile(DLL_PATH_PATTERN)
+var dllPathRegex = regexp.MustCompile(DllPathPattern)
 
 func main() {
 	// Find and hash commandline tools DLL inside the archive
@@ -29,7 +29,7 @@ func main() {
 		}
 
 		if dllPath != "" {
-			log.Fatalf("Found multiple matches for `%s` inside clt.zip: '%s', '%s'.", DLL_PATH_PATTERN, dllPath, path)
+			log.Fatalf("Found multiple matches for `%s` inside clt.zip: '%s', '%s'.", DllPathPattern, dllPath, path)
 		}
 		dllPath = path
 
@@ -56,7 +56,7 @@ func main() {
 			log.Fatal(err)
 		}
 		if dllPath == "" {
-			log.Fatalf("Could not find a file matching `%s` DLL inside clt.zip.", DLL_PATH_PATTERN)
+			log.Fatalf("Could not find a file matching `%s` DLL inside clt.zip.", DllPathPattern)
 		}
 	}
 

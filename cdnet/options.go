@@ -18,10 +18,11 @@ package main
 
 import (
 	"fmt"
+	"strings"
+
 	"github.com/JetBrains/qodana-cli/v2025/platform"
 	"github.com/JetBrains/qodana-cli/v2025/platform/strutil"
 	"github.com/JetBrains/qodana-cli/v2025/platform/thirdpartyscan"
-	"strings"
 )
 
 func (l CdnetLinter) computeCdnetArgs(c thirdpartyscan.Context) ([]string, error) {

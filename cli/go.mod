@@ -5,8 +5,8 @@ go 1.24.0
 require (
 	github.com/boyter/scc/v3 v3.4.0 // indirect
 	github.com/cucumber/ci-environment/go v0.0.0-20230911180507-bd001ebc644c // indirect
-	github.com/docker/cli v28.3.3+incompatible // indirect
-	github.com/docker/docker v28.3.3+incompatible // indirect
+	github.com/docker/cli v28.4.0+incompatible // indirect
+	github.com/docker/docker v28.4.0+incompatible // indirect
 	github.com/go-enry/go-enry/v2 v2.9.2 // indirect
 	github.com/google/uuid v1.6.0 // indirect
 	github.com/liamg/clinch v1.6.6 // indirect
@@ -65,7 +65,6 @@ require (
 	github.com/go-logr/stdr v1.2.2 // indirect
 	github.com/go-ole/go-ole v1.2.6 // indirect
 	github.com/godbus/dbus/v5 v5.1.0 // indirect
-	github.com/gogo/protobuf v1.3.2 // indirect
 	github.com/gookit/color v1.5.4 // indirect
 	github.com/grpc-ecosystem/grpc-gateway/v2 v2.27.2 // indirect
 	github.com/hashicorp/hcl v1.0.0 // indirect

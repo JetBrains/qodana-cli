@@ -21,16 +21,17 @@ import (
 	"archive/zip"
 	"compress/gzip"
 	"fmt"
-	"github.com/JetBrains/qodana-cli/v2025/platform/product"
-	"github.com/JetBrains/qodana-cli/v2025/platform/thirdpartyscan"
-	"github.com/JetBrains/qodana-cli/v2025/platform/utils"
-	"github.com/JetBrains/qodana-cli/v2025/tooling"
 	"io"
 	"log"
 	"os"
 	"path/filepath"
 	"runtime"
 	"strings"
+
+	"github.com/JetBrains/qodana-cli/v2025/platform/product"
+	"github.com/JetBrains/qodana-cli/v2025/platform/thirdpartyscan"
+	"github.com/JetBrains/qodana-cli/v2025/platform/utils"
+	"github.com/JetBrains/qodana-cli/v2025/tooling"
 )
 
 const (

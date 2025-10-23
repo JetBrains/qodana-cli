@@ -20,14 +20,16 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"fmt"
+	"os"
+	"path/filepath"
+	"strings"
+
 	"github.com/JetBrains/qodana-cli/v2025/platform/msg"
 	"github.com/JetBrains/qodana-cli/v2025/platform/product"
 	"github.com/JetBrains/qodana-cli/v2025/platform/qdcontainer"
 	"github.com/JetBrains/qodana-cli/v2025/platform/qdenv"
 	"github.com/JetBrains/qodana-cli/v2025/platform/qdyaml"
 	log "github.com/sirupsen/logrus"
-	"os"
-	"path/filepath"
 )
 
 func Compute(
@@ -41,6 +43,7 @@ func Compute(
 	qodanaCloudToken string,
 	clearCache bool,
 	projectDir string,
+	repositoryRoot string,
 	localNotEffectiveQodanaYamlPathInProject string,
 ) Context {
 	analyzer := GuessAnalyzerFromEnvAndCLI(overrideIde, overrideLinter, overrideImage, overrideWithinDocker)
@@ -56,6 +59,7 @@ func Compute(
 	return computeCommon(
 		analyzer,
 		projectDir,
+		repositoryRoot,
 		cacheDirFromCliOptions,
 		resultsDirFromCliOptions,
 		reportDirFromCliOptions,
@@ -73,6 +77,7 @@ func Compute3rdParty(
 	qodanaCloudToken string,
 	clearCache bool,
 	projectDir string,
+	repositoryRoot string,
 ) Context {
 	linter := product.FindLinterByName(linterName)
 	if linter == product.UnknownLinter {
@@ -85,6 +90,7 @@ func Compute3rdParty(
 	return computeCommon(
 		analyzer,
 		projectDir,
+		repositoryRoot,
 		cacheDirFromCliOptions,
 		resultsDirFromCliOptions,
 		reportDirFromCliOptions,
@@ -96,6 +102,7 @@ func Compute3rdParty(
 func computeCommon(
 	analyzer product.Analyzer,
 	projectDir string,
+	repositoryRoot string,
 	cacheDirFromCliOptions string,
 	resultsDirFromCliOptions string,
 	reportDirFromCliOptions string,
@@ -109,11 +116,29 @@ func computeCommon(
 	cacheDir := computeCacheDir(cacheDirFromCliOptions, linterDir)
 	reportDir := computeReportDir(reportDirFromCliOptions, resultsDir)
 
+	if repositoryRoot == "" {
+		repositoryRoot = projectDir
+	} else if repositoryRoot != projectDir {
+		rootAbs, err1 := filepath.Abs(repositoryRoot)
+		projAbs, err2 := filepath.Abs(projectDir)
+		if err1 != nil || err2 != nil {
+			log.Fatalf("Failed to resolve absolute paths: repository-root=%v, project-dir=%v", err1, err2)
+		}
+		if rel, err := filepath.Rel(rootAbs, projAbs); err != nil || strings.HasPrefix(rel, "..") {
+			log.Fatalf(
+				"The project directory must be located inside repository root. Please, specify correct --repository-root argument. ProjectDir: %s. RepositoryRoot: %s",
+				projAbs,
+				rootAbs,
+			)
+		}
+	}
+
 	commonCtx := Context{
 		Analyzer:        analyzer,
 		IsClearCache:    clearCache,
 		CacheDir:        cacheDir,
 		ProjectDir:      projectDir,
+		RepositoryRoot:  repositoryRoot,
 		ResultsDir:      resultsDir,
 		QodanaSystemDir: systemDir,
 		ReportDir:       reportDir,

@@ -18,6 +18,12 @@ package core
 
 import (
 	"fmt"
+	"os"
+	"path/filepath"
+	"sort"
+	"strconv"
+	"strings"
+
 	"github.com/JetBrains/qodana-cli/v2025/cloud"
 	"github.com/JetBrains/qodana-cli/v2025/core/corescan"
 	"github.com/JetBrains/qodana-cli/v2025/platform"
@@ -26,11 +32,6 @@ import (
 	"github.com/JetBrains/qodana-cli/v2025/platform/qdyaml"
 	"github.com/JetBrains/qodana-cli/v2025/platform/strutil"
 	log "github.com/sirupsen/logrus"
-	"os"
-	"path/filepath"
-	"sort"
-	"strconv"
-	"strings"
 )
 
 func getPropertiesMap(

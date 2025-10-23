@@ -17,9 +17,10 @@
 package product
 
 import (
+	"strings"
+
 	"github.com/JetBrains/qodana-cli/v2025/platform/qdyaml"
 	log "github.com/sirupsen/logrus"
-	"strings"
 )
 
 type Analyzer interface {

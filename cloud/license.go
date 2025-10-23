@@ -20,13 +20,14 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/JetBrains/qodana-cli/v2025/platform/qdenv"
-	log "github.com/sirupsen/logrus"
 	"io"
 	"net/http"
 	"os"
 	"strconv"
 	"time"
+
+	"github.com/JetBrains/qodana-cli/v2025/platform/qdenv"
+	log "github.com/sirupsen/logrus"
 )
 
 type LicenseData struct {

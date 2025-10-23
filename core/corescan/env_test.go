@@ -18,11 +18,12 @@ package corescan
 
 import (
 	"fmt"
+	"os"
+	"testing"
+
 	"github.com/JetBrains/qodana-cli/v2025/platform/qdenv"
 	"github.com/JetBrains/qodana-cli/v2025/platform/version"
 	"golang.org/x/exp/maps"
-	"os"
-	"testing"
 )
 
 func unsetTeamcityVariables() {

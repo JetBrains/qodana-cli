@@ -19,14 +19,15 @@ package git
 import (
 	"bufio"
 	"fmt"
-	"github.com/JetBrains/qodana-cli/v2025/platform/strutil"
-	log "github.com/sirupsen/logrus"
 	"io"
 	"os"
 	"path/filepath"
 	"regexp"
 	"sort"
 	"strings"
+
+	"github.com/JetBrains/qodana-cli/v2025/platform/strutil"
+	log "github.com/sirupsen/logrus"
 )
 
 type ChangedRegion struct {

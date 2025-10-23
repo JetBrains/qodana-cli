@@ -19,11 +19,12 @@ package core
 import (
 	"encoding/json"
 	"fmt"
+	"sort"
+	"strings"
+
 	"github.com/JetBrains/qodana-cli/v2025/cloud"
 	"github.com/JetBrains/qodana-cli/v2025/platform/git"
 	"github.com/JetBrains/qodana-cli/v2025/platform/strutil"
-	"sort"
-	"strings"
 )
 
 // various variables for parsing git log output.

@@ -18,13 +18,14 @@ package commoncontext
 
 import (
 	"encoding/json"
-	"github.com/JetBrains/qodana-cli/v2025/platform/product"
-	"github.com/JetBrains/qodana-cli/v2025/platform/qdenv"
-	"github.com/sirupsen/logrus"
 	"os"
 	"path/filepath"
 	"runtime"
 	"testing"
+
+	"github.com/JetBrains/qodana-cli/v2025/platform/product"
+	"github.com/JetBrains/qodana-cli/v2025/platform/qdenv"
+	"github.com/sirupsen/logrus"
 )
 
 // Test this case on yaml is future effort due to communication with cloud
@@ -73,10 +74,10 @@ func TestNativePathAnalyzerParams(t *testing.T) {
 	}(distPath)
 
 	tests := []struct {
-		name            string
-		ide             string
-		linter          string
-		qodana_dist_env string
+		name          string
+		ide           string
+		linter        string
+		qodanaDistEnv string
 	}{
 		{
 			"Pass through ENV",
@@ -107,7 +108,7 @@ func TestNativePathAnalyzerParams(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(
 			tt.name, func(t *testing.T) {
-				t.Setenv(qdenv.QodanaDistEnv, tt.qodana_dist_env)
+				t.Setenv(qdenv.QodanaDistEnv, tt.qodanaDistEnv)
 				if tt.name == "Unknown dist" {
 					defer func() { logrus.StandardLogger().ExitFunc = nil }()
 					var fatal bool

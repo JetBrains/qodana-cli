@@ -23,11 +23,12 @@ import (
 	"crypto/sha256"
 	"errors"
 	"fmt"
-	log "github.com/sirupsen/logrus"
 	"io"
 	"os"
 	"path/filepath"
 	"strings"
+
+	log "github.com/sirupsen/logrus"
 )
 
 // CopyFile copies a file from src to dst.

@@ -19,14 +19,15 @@ package nuget
 import (
 	"bufio"
 	"fmt"
-	"github.com/JetBrains/qodana-cli/v2025/cloud"
-	"github.com/JetBrains/qodana-cli/v2025/platform/product"
-	"github.com/JetBrains/qodana-cli/v2025/platform/qdenv"
-	log "github.com/sirupsen/logrus"
 	"os"
 	"path/filepath"
 	"regexp"
 	"strings"
+
+	"github.com/JetBrains/qodana-cli/v2025/cloud"
+	"github.com/JetBrains/qodana-cli/v2025/platform/product"
+	"github.com/JetBrains/qodana-cli/v2025/platform/qdenv"
+	log "github.com/sirupsen/logrus"
 )
 
 const (

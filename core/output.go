@@ -18,9 +18,10 @@ package core
 
 import (
 	"fmt"
+	"strconv"
+
 	"github.com/JetBrains/qodana-cli/v2025/platform/msg"
 	"github.com/pterm/pterm"
-	"strconv"
 )
 
 var PricingUrl = "https://www.jetbrains.com/qodana/buy/"

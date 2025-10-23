@@ -17,9 +17,10 @@
 package thirdpartyscan
 
 import (
+	"regexp"
+
 	"github.com/JetBrains/qodana-cli/v2025/platform/product"
 	"github.com/JetBrains/qodana-cli/v2025/platform/qdyaml"
-	"regexp"
 )
 
 const Clang = "clang"

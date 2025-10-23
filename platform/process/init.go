@@ -1,16 +1,17 @@
 package process
 
 import (
-	"github.com/JetBrains/qodana-cli/v2025/core"
-	"github.com/JetBrains/qodana-cli/v2025/platform/commoncontext"
-	"github.com/JetBrains/qodana-cli/v2025/platform/msg"
-	"github.com/JetBrains/qodana-cli/v2025/platform/version"
 	"io"
 	"log"
 	"os"
 	"os/signal"
 	"syscall"
 	"time"
+
+	"github.com/JetBrains/qodana-cli/v2025/core"
+	"github.com/JetBrains/qodana-cli/v2025/platform/commoncontext"
+	"github.com/JetBrains/qodana-cli/v2025/platform/msg"
+	"github.com/JetBrains/qodana-cli/v2025/platform/version"
 )
 
 // Init runs miscellaneous process-wide utility code.
