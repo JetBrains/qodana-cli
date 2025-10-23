@@ -19,13 +19,14 @@ package qdyaml
 import (
 	"bytes"
 	"errors"
-	"github.com/JetBrains/qodana-cli/v2025/platform/strutil"
-	log "github.com/sirupsen/logrus"
-	"gopkg.in/yaml.v3"
 	"os"
 	"path/filepath"
 	"sort"
 	"strings"
+
+	"github.com/JetBrains/qodana-cli/v2025/platform/strutil"
+	log "github.com/sirupsen/logrus"
+	"gopkg.in/yaml.v3"
 )
 
 // QodanaYaml A standard qodana.yaml (or qodana.yml) format for Qodana configuration.

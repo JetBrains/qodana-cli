@@ -18,11 +18,12 @@ package nuget
 
 import (
 	"bufio"
-	"github.com/JetBrains/qodana-cli/v2025/platform/qdenv"
 	"os"
 	"path/filepath"
 	"strings"
 	"testing"
+
+	"github.com/JetBrains/qodana-cli/v2025/platform/qdenv"
 )
 
 func createTempFileWithContent(content string) string {

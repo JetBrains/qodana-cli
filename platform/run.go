@@ -19,11 +19,12 @@ package platform
 import (
 	"errors"
 	"fmt"
-	"github.com/JetBrains/qodana-cli/v2025/platform/strutil"
 	"os"
 	"path"
 	"path/filepath"
 	"strings"
+
+	"github.com/JetBrains/qodana-cli/v2025/platform/strutil"
 
 	"github.com/JetBrains/qodana-cli/v2025/cloud"
 	platformcmd "github.com/JetBrains/qodana-cli/v2025/platform/cmd"
@@ -57,6 +58,7 @@ func RunThirdPartyLinterAnalysis(
 		qdenv.GetQodanaGlobalEnv(qdenv.QodanaToken),
 		cliOptions.ClearCache,
 		cliOptions.ProjectDir,
+		cliOptions.RepositoryRoot,
 	)
 	commonCtx, err = correctInitArgsForThirdParty(commonCtx)
 	if err != nil {

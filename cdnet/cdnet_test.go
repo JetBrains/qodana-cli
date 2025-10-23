@@ -18,11 +18,12 @@ package main
 
 import (
 	"fmt"
-	"github.com/JetBrains/qodana-cli/v2025/platform/product"
 	"os"
 	"path/filepath"
 	"strings"
 	"testing"
+
+	"github.com/JetBrains/qodana-cli/v2025/platform/product"
 
 	"github.com/JetBrains/qodana-cli/v2025/platform/thirdpartyscan"
 
@@ -56,7 +57,19 @@ func TestLinterRun(t *testing.T) {
 	}
 
 	command := platform.NewThirdPartyScanCommand(CdnetLinter{}, linterInfo)
-	command.SetArgs([]string{"-i", projectDir, "-o", outputDir, "--cache-dir", cacheDir, "--no-build"})
+	command.SetArgs(
+		[]string{
+			"-i",
+			projectDir,
+			"--repository-root",
+			projectDir,
+			"-o",
+			outputDir,
+			"--cache-dir",
+			cacheDir,
+			"--no-build",
+		},
+	)
 	err = command.Execute()
 	if err != nil {
 		t.Fatal(err)

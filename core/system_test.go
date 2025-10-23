@@ -18,14 +18,15 @@ package core
 
 import (
 	"context"
-	"github.com/JetBrains/qodana-cli/v2025/core/corescan"
-	"github.com/JetBrains/qodana-cli/v2025/platform"
-	"github.com/JetBrains/qodana-cli/v2025/platform/product"
-	"github.com/stretchr/testify/assert"
 	"os"
 	"path/filepath"
 	"strings"
 	"testing"
+
+	"github.com/JetBrains/qodana-cli/v2025/core/corescan"
+	"github.com/JetBrains/qodana-cli/v2025/platform"
+	"github.com/JetBrains/qodana-cli/v2025/platform/product"
+	"github.com/stretchr/testify/assert"
 )
 
 type MockAnalysisRunner struct {

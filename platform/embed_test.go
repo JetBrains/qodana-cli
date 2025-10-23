@@ -17,9 +17,10 @@
 package platform
 
 import (
-	"github.com/JetBrains/qodana-cli/v2025/platform/thirdpartyscan"
 	"os"
 	"testing"
+
+	"github.com/JetBrains/qodana-cli/v2025/platform/thirdpartyscan"
 )
 
 func TestMount(t *testing.T) {

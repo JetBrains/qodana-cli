@@ -18,11 +18,12 @@ package corescan
 
 import (
 	"fmt"
+	"path/filepath"
+	"strings"
+
 	"github.com/JetBrains/qodana-cli/v2025/core/startup"
 	"github.com/JetBrains/qodana-cli/v2025/platform/qdenv"
 	"github.com/JetBrains/qodana-cli/v2025/platform/strutil"
-	"path/filepath"
-	"strings"
 )
 
 // All changes of Context must be defined clearly by usecase and business logic

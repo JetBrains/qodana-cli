@@ -17,12 +17,13 @@
 package commoncontext
 
 import (
-	"github.com/JetBrains/qodana-cli/v2025/platform/qdyaml"
-	"github.com/sirupsen/logrus"
-	"gopkg.in/yaml.v3"
 	"os"
 	"path/filepath"
 	"testing"
+
+	"github.com/JetBrains/qodana-cli/v2025/platform/qdyaml"
+	"github.com/sirupsen/logrus"
+	"gopkg.in/yaml.v3"
 )
 
 func TestAnalyzerQodanaYamlOptions(t *testing.T) {

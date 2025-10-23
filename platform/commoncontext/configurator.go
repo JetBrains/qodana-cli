@@ -18,7 +18,6 @@ package commoncontext
 
 import (
 	"bytes"
-	"github.com/JetBrains/qodana-cli/v2025/platform/strutil"
 	"io"
 	"os"
 	"path/filepath"
@@ -26,8 +25,8 @@ import (
 	"sort"
 	"strings"
 
+	"github.com/JetBrains/qodana-cli/v2025/platform/strutil"
 	"github.com/go-enry/go-enry/v2"
-
 	log "github.com/sirupsen/logrus"
 )
 

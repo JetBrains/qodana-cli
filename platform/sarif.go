@@ -19,6 +19,12 @@ package platform
 import (
 	"encoding/json"
 	"fmt"
+	"os"
+	"path/filepath"
+	"sort"
+	"strings"
+	"time"
+
 	"github.com/JetBrains/qodana-cli/v2025/platform/msg"
 	"github.com/JetBrains/qodana-cli/v2025/platform/qdenv"
 	"github.com/JetBrains/qodana-cli/v2025/platform/thirdpartyscan"
@@ -26,11 +32,6 @@ import (
 	"github.com/google/uuid"
 	bbapi "github.com/reviewdog/go-bitbucket"
 	log "github.com/sirupsen/logrus"
-	"os"
-	"path/filepath"
-	"sort"
-	"strings"
-	"time"
 )
 
 // https://www.jetbrains.com/help/qodana/qodana-sarif-output.html
@@ -64,7 +65,7 @@ func MergeSarifReports(c thirdpartyscan.Context, deviceId string) (int, error) {
 	ch := make(chan *sarif.Report)
 	go collectReports(files, ch)
 	finalReport, err := mergeReports(ch)
-	if err != nil {
+	if err != nil || finalReport == nil {
 		return 0, fmt.Errorf("Error merging SARIF files: %s\n", err)
 	}
 

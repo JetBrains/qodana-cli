@@ -24,7 +24,7 @@ import (
 
 	"github.com/JetBrains/qodana-cli/v2025/platform/msg"
 	"github.com/docker/cli/cli/command"
-	docker_cli_config "github.com/docker/cli/cli/config"
+	dockerCliConfig "github.com/docker/cli/cli/config"
 	"github.com/docker/cli/cli/flags"
 	"github.com/docker/docker/api/types/system"
 	"github.com/docker/docker/client"
@@ -33,7 +33,7 @@ import (
 )
 
 const (
-	DataProjectDir       = "/data/project"
+	MountDir             = "/data/project"
 	DataResultsDir       = "/data/results"
 	DataResultsReportDir = "/data/results/report"
 	DataCacheDir         = "/data/cache"
@@ -98,8 +98,11 @@ func checkEngineMemory() {
 // NewContainerClient getContainerClient returns a docker client.
 func NewContainerClient(ctx context.Context) (client.APIClient, error) {
 	logWarnWriter := log.StandardLogger().WriterLevel(log.WarnLevel)
-	configFile := docker_cli_config.LoadDefaultConfigFile(logWarnWriter)
-	logWarnWriter.Close()
+	configFile := dockerCliConfig.LoadDefaultConfigFile(logWarnWriter)
+	err := logWarnWriter.Close()
+	if err != nil {
+		log.Warnf("Failed to close log writer: %s", err)
+	}
 	clientOptions := flags.NewClientOptions()
 
 	apiClient, err := command.NewAPIClientFromFlags(clientOptions, configFile)

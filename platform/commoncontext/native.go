@@ -19,12 +19,13 @@ package commoncontext
 // currently contains only the logic for .NET products
 import (
 	"bufio"
-	"github.com/JetBrains/qodana-cli/v2025/platform/product"
-	log "github.com/sirupsen/logrus"
 	"os"
 	"path/filepath"
 	"strings"
 	"sync"
+
+	"github.com/JetBrains/qodana-cli/v2025/platform/product"
+	log "github.com/sirupsen/logrus"
 )
 
 func isNativeRequired(projectDir string, linter product.Linter) bool {

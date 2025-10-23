@@ -17,10 +17,11 @@
 package git
 
 import (
+	"strings"
+
 	"github.com/JetBrains/qodana-cli/v2025/platform/strutil"
 	"github.com/JetBrains/qodana-cli/v2025/platform/utils"
 	log "github.com/sirupsen/logrus"
-	"strings"
 )
 
 // gitRun runs the git command in the given directory and returns an error if any.
