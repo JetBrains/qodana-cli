@@ -63,7 +63,9 @@ func TestCheckVcsSameAsRepositoryRoot(t *testing.T) {
 	}
 
 	tmpDir := filepath.Join(os.TempDir(), "vcsRootTest")
-	defer os.RemoveAll(tmpDir)
+	defer func(path string) {
+		_ = os.RemoveAll(path)
+	}(tmpDir)
 
 	for _, tc := range []struct {
 		name           string

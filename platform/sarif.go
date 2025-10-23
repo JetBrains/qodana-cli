@@ -65,7 +65,7 @@ func MergeSarifReports(c thirdpartyscan.Context, deviceId string) (int, error) {
 	ch := make(chan *sarif.Report)
 	go collectReports(files, ch)
 	finalReport, err := mergeReports(ch)
-	if err != nil {
+	if err != nil || finalReport == nil {
 		return 0, fmt.Errorf("Error merging SARIF files: %s\n", err)
 	}
 

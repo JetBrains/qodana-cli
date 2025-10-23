@@ -99,7 +99,10 @@ func checkEngineMemory() {
 func NewContainerClient(ctx context.Context) (client.APIClient, error) {
 	logWarnWriter := log.StandardLogger().WriterLevel(log.WarnLevel)
 	configFile := dockerCliConfig.LoadDefaultConfigFile(logWarnWriter)
-	logWarnWriter.Close()
+	err := logWarnWriter.Close()
+	if err != nil {
+		log.Warnf("Failed to close log writer: %s", err)
+	}
 	clientOptions := flags.NewClientOptions()
 
 	apiClient, err := command.NewAPIClientFromFlags(clientOptions, configFile)
