@@ -18,6 +18,8 @@ package cmd
 
 import (
 	"fmt"
+	"os"
+
 	"github.com/JetBrains/qodana-cli/v2025/core"
 	"github.com/JetBrains/qodana-cli/v2025/platform/msg"
 	"github.com/JetBrains/qodana-cli/v2025/platform/qdenv"
@@ -25,7 +27,6 @@ import (
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
-	"os"
 )
 
 // isHelpOrVersion checks if only help was requested.

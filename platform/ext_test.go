@@ -18,9 +18,10 @@ package platform
 
 import (
 	"encoding/json"
-	bbapi "github.com/reviewdog/go-bitbucket"
 	"reflect"
 	"testing"
+
+	bbapi "github.com/reviewdog/go-bitbucket"
 )
 
 // Mock SARIF file data

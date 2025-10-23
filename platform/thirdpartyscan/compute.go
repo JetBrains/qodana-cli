@@ -17,10 +17,11 @@
 package thirdpartyscan
 
 import (
-	"github.com/JetBrains/qodana-cli/v2025/platform/cmd"
-	"github.com/JetBrains/qodana-cli/v2025/platform/commoncontext"
 	"path/filepath"
 	"strings"
+
+	"github.com/JetBrains/qodana-cli/v2025/platform/cmd"
+	"github.com/JetBrains/qodana-cli/v2025/platform/commoncontext"
 )
 
 func ComputeContext(

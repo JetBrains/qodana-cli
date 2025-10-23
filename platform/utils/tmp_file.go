@@ -18,8 +18,9 @@ package utils
 
 import (
 	"fmt"
-	log "github.com/sirupsen/logrus"
 	"os"
+
+	log "github.com/sirupsen/logrus"
 )
 
 func CreateTempDir(name string) (string, func(), error) {

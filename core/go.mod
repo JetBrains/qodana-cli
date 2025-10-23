@@ -5,7 +5,7 @@ go 1.24.0
 require (
 	github.com/cucumber/ci-environment/go v0.0.0-20230911180507-bd001ebc644c
 	github.com/docker/cli v28.4.0+incompatible
-	github.com/docker/docker v28.3.3+incompatible
+	github.com/docker/docker v28.4.0+incompatible
 	github.com/docker/go-connections v0.5.0
 	github.com/otiai10/copy v1.14.1
 	github.com/pterm/pterm v0.12.80
@@ -16,7 +16,6 @@ require (
 
 replace (
 	github.com/JetBrains/qodana-cli/v2025/cloud => ../cloud
-	github.com/JetBrains/qodana-cli/v2025/cmd => ../cmd
 	github.com/JetBrains/qodana-cli/v2025/core => ../core
 	github.com/JetBrains/qodana-cli/v2025/platform => ../platform
 	github.com/JetBrains/qodana-cli/v2025/sarif => ../sarif
@@ -58,7 +57,6 @@ require (
 	github.com/go-logr/stdr v1.2.2 // indirect
 	github.com/go-ole/go-ole v1.2.6 // indirect
 	github.com/godbus/dbus/v5 v5.1.0 // indirect
-	github.com/gogo/protobuf v1.3.2 // indirect
 	github.com/google/uuid v1.6.0 // indirect
 	github.com/gookit/color v1.5.4 // indirect
 	github.com/grpc-ecosystem/grpc-gateway/v2 v2.27.2 // indirect
@@ -81,7 +79,7 @@ require (
 	github.com/pkg/errors v0.9.1 // indirect
 	github.com/pmezard/go-difflib v1.0.1-0.20181226105442-5d4384ee4fb2 // indirect
 	github.com/power-devops/perfstat v0.0.0-20210106213030-5aafc221ea8c // indirect
-	github.com/prometheus/client_golang v1.1.0 // indirect
+	github.com/prometheus/client_golang v1.11.1 // indirect
 	github.com/reviewdog/go-bitbucket v0.0.0-20201024094602-708c3f6a7de0 // indirect
 	github.com/rivo/uniseg v0.4.7 // indirect
 	github.com/shoenig/go-m1cpu v0.1.6 // indirect

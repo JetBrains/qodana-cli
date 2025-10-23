@@ -23,11 +23,11 @@
 package platform
 
 import (
-	"github.com/JetBrains/qodana-cli/v2025/platform/strutil"
 	"os"
 
 	"github.com/JetBrains/qodana-cli/v2025/cloud"
 	"github.com/JetBrains/qodana-cli/v2025/platform/qdenv"
+	"github.com/JetBrains/qodana-cli/v2025/platform/strutil"
 	"github.com/JetBrains/qodana-cli/v2025/platform/utils"
 	"github.com/JetBrains/qodana-cli/v2025/tooling"
 	log "github.com/sirupsen/logrus"

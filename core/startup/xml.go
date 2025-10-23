@@ -18,6 +18,7 @@ package startup
 
 import (
 	"fmt"
+
 	"github.com/JetBrains/qodana-cli/v2025/platform/qdcontainer"
 )
 

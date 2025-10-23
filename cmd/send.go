@@ -18,6 +18,7 @@ package cmd
 
 import (
 	"fmt"
+
 	"github.com/JetBrains/qodana-cli/v2025/platform"
 	"github.com/JetBrains/qodana-cli/v2025/platform/commoncontext"
 	"github.com/JetBrains/qodana-cli/v2025/platform/msg"
@@ -56,6 +57,7 @@ If you are using other Qodana Cloud instance than https://qodana.cloud/, overrid
 				qdenv.GetQodanaGlobalEnv(qdenv.QodanaToken),
 				false,
 				cliOptions.ProjectDir,
+				"",
 				cliOptions.ConfigName,
 			)
 

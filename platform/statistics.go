@@ -19,6 +19,12 @@ package platform
 import (
 	"encoding/json"
 	"fmt"
+	"os"
+	"path/filepath"
+	"runtime"
+	"sync"
+	"time"
+
 	"github.com/JetBrains/qodana-cli/v2025/cloud"
 	"github.com/JetBrains/qodana-cli/v2025/platform/strutil"
 	"github.com/JetBrains/qodana-cli/v2025/platform/thirdpartyscan"
@@ -26,11 +32,6 @@ import (
 	"github.com/JetBrains/qodana-cli/v2025/tooling"
 	"github.com/google/uuid"
 	log "github.com/sirupsen/logrus"
-	"os"
-	"path/filepath"
-	"runtime"
-	"sync"
-	"time"
 )
 
 var wg sync.WaitGroup

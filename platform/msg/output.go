@@ -18,10 +18,11 @@ package msg
 
 import (
 	"fmt"
-	"github.com/JetBrains/qodana-cli/v2025/platform/qdenv"
-	cienvironment "github.com/cucumber/ci-environment/go"
 	"os"
 	"strings"
+
+	"github.com/JetBrains/qodana-cli/v2025/platform/qdenv"
+	cienvironment "github.com/cucumber/ci-environment/go"
 
 	"github.com/liamg/clinch/terminal"
 	"github.com/mattn/go-isatty"

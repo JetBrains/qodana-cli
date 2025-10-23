@@ -20,7 +20,6 @@ import (
 	bt "bytes"
 	"errors"
 	"fmt"
-	log "github.com/sirupsen/logrus"
 	"io"
 	"math"
 	"os"
@@ -30,6 +29,8 @@ import (
 	"strings"
 	"syscall"
 	"time"
+
+	log "github.com/sirupsen/logrus"
 )
 
 const (

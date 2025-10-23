@@ -18,18 +18,20 @@ package platformcmd
 
 import (
 	"fmt"
+	"os"
+	"strings"
+
 	"github.com/JetBrains/qodana-cli/v2025/platform/product"
 	"github.com/JetBrains/qodana-cli/v2025/platform/qdenv"
 	"github.com/google/uuid"
 	"github.com/spf13/cobra"
-	"os"
-	"strings"
 )
 
 type CliOptions struct {
 	ResultsDir                string
 	CacheDir                  string
 	ProjectDir                string
+	RepositoryRoot            string
 	ReportDir                 string
 	CoverageDir               string
 	Linter                    string
@@ -131,6 +133,12 @@ func ComputeFlags(cmd *cobra.Command, options *CliOptions) error {
 	)
 
 	flags.StringVarP(&options.ProjectDir, "project-dir", "i", ".", "Root directory of the inspected project")
+	flags.StringVar(
+		&options.RepositoryRoot,
+		"repository-root",
+		".",
+		"Path to the root of the Git repository. This directory must be the same as --project-dir or a subdirectory within it..",
+	)
 	flags.StringVarP(
 		&options.ResultsDir,
 		"results-dir",
@@ -304,7 +312,7 @@ func ComputeFlags(cmd *cobra.Command, options *CliOptions) error {
 		&options.ClangCompileCommands,
 		"compile-commands",
 		"./build/compile_commands.json",
-		"[qodana-clang specific] Path to compile_commands.json",
+		"[qodana-clang specific] Path to compile_commands.json. Should be relative to the project directory.",
 	)
 	flags.StringVar(&options.ClangArgs, "clang-args", "", "[qodana-clang specific] Additional arguments for clang")
 	flags.StringVar(&options.CdnetSolution, "solution", "", "[qodana-cdnet specific] Relative path to solution file")

@@ -3,12 +3,13 @@ package main
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/JetBrains/qodana-cli/v2025/platform/utils"
-	log "github.com/sirupsen/logrus"
 	"os"
 	"path/filepath"
 	"regexp"
 	"strings"
+
+	"github.com/JetBrains/qodana-cli/v2025/platform/utils"
+	log "github.com/sirupsen/logrus"
 )
 
 type Command struct {

@@ -25,6 +25,7 @@ import (
 
 	"github.com/JetBrains/qodana-cli/v2025/cloud"
 	"github.com/JetBrains/qodana-cli/v2025/platform/commoncontext"
+	"github.com/JetBrains/qodana-cli/v2025/platform/git"
 	"github.com/JetBrains/qodana-cli/v2025/platform/msg"
 	"github.com/JetBrains/qodana-cli/v2025/platform/nuget"
 	"github.com/JetBrains/qodana-cli/v2025/platform/product"
@@ -99,6 +100,7 @@ func PrepareHost(commonCtx commoncontext.Context) PreparedHost {
 	if tokenloader.IsCloudTokenRequired(commonCtx) {
 		cloudUploadToken = tokenloader.ValidateCloudToken(commonCtx, false)
 	}
+	checkVcsSameAsRepositoryRoot(commonCtx)
 
 	result := PreparedHost{
 		IdeDir:            ideDir,
@@ -120,7 +122,7 @@ func prepareLocalIdeSettingsAndGetQodanaCloudUploadToken(
 	cloud.SetupLicenseToken(token)
 	SetupLicenseAndProjectHash(prod, cloud.GetCloudApiEndpoints(), cloud.Token.Token)
 
-	prepareDirectories(prod, commonCtx.CacheDir, commonCtx.LogDir(), commonCtx.ConfDirPath())
+	prepareDirectories(commonCtx.CacheDir, commonCtx.LogDir(), commonCtx.ConfDirPath())
 
 	if qdenv.IsContainer() {
 		prepareContainerSpecificDirectories(prod, commonCtx.CacheDir, commonCtx.ConfDirPath())
@@ -205,7 +207,7 @@ func prepareContainerSpecificDirectories(prod product.Product, cacheDir string, 
 	}
 }
 
-func prepareDirectories(prod product.Product, cacheDir string, logDir string, confDir string) {
+func prepareDirectories(cacheDir string, logDir string, confDir string) {
 	MakeDirAll(cacheDir)
 	MakeDirAll(logDir)
 
@@ -325,6 +327,22 @@ func fixWindowsPlugins(ideDir string) {
 			if err != nil {
 				log.Warnf("Failed to remove plugin-classpath.txt: %v", err)
 			}
+		}
+	}
+}
+
+func checkVcsSameAsRepositoryRoot(ctx commoncontext.Context) {
+	if vcsRoot, err := git.Root(ctx.RepositoryRoot, ctx.LogDir()); err == nil {
+		vcsRootAbs, err1 := filepath.Abs(vcsRoot)
+		repositoryRootAbs, err2 := filepath.Abs(ctx.RepositoryRoot)
+		if err1 != nil || err2 != nil {
+			log.Warnf("Failed to resolve absolute paths for git root check: vcs=%v, proj=%v", err1, err2)
+		} else if vcsRootAbs != repositoryRootAbs {
+			log.Warnf(
+				"The git root directory is different from the repository root directory. This may lead to incorrect results. VCS root: %s, repository root: %s",
+				vcsRootAbs,
+				repositoryRootAbs,
+			)
 		}
 	}
 }
