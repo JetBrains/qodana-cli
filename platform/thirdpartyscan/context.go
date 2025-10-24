@@ -68,29 +68,31 @@ type LinterInfo struct {
 //
 // !!!KEEP IT IMMUTABLE!!!
 type Context struct {
-	linterInfo            LinterInfo
-	mountInfo             MountInfo
-	cloudData             ThirdPartyStartupCloudData
-	projectDir            string
-	resultsDir            string
-	reportDir             string
-	logDir                string
-	cacheDir              string
-	clangCompileCommands  string
-	clangArgs             string
-	property              []string
-	cdnetSolution         string
-	cdnetProject          string
-	cdnetConfiguration    string
-	cdnetPlatform         string
-	noStatistics          bool
-	cdnetNoBuild          bool
-	analysisId            string
-	baseline              string
-	baselineIncludeAbsent bool
-	failThreshold         string
-	qodanaYaml            qdyaml.QodanaYaml
-	qodanaYamlConfig      QodanaYamlConfig
+	linterInfo                LinterInfo
+	mountInfo                 MountInfo
+	cloudData                 ThirdPartyStartupCloudData
+	projectDir                string
+	resultsDir                string
+	reportDir                 string
+	logDir                    string
+	cacheDir                  string
+	clangCompileCommands      string
+	clangArgs                 string
+	property                  []string
+	cdnetSolution             string
+	cdnetProject              string
+	cdnetConfiguration        string
+	cdnetPlatform             string
+	noStatistics              bool
+	cdnetNoBuild              bool
+	analysisId                string
+	baseline                  string
+	baselineIncludeAbsent     bool
+	failThreshold             string
+	generateCodeClimateReport bool
+	sendBitBucketInsights     bool
+	qodanaYaml                qdyaml.QodanaYaml
+	qodanaYamlConfig          QodanaYamlConfig
 }
 
 type QodanaYamlConfig struct {
@@ -116,54 +118,58 @@ func YamlConfig(yaml qdyaml.QodanaYaml) QodanaYamlConfig {
 }
 
 type ContextBuilder struct {
-	LinterInfo            LinterInfo
-	MountInfo             MountInfo
-	CloudData             ThirdPartyStartupCloudData
-	ProjectDir            string
-	ResultsDir            string
-	ReportDir             string
-	LogDir                string
-	CacheDir              string
-	ClangCompileCommands  string
-	ClangArgs             string
-	Property              []string
-	CdnetSolution         string
-	CdnetProject          string
-	CdnetConfiguration    string
-	CdnetPlatform         string
-	NoStatistics          bool
-	CdnetNoBuild          bool
-	AnalysisId            string
-	Baseline              string
-	BaselineIncludeAbsent bool
-	FailThreshold         string
-	QodanaYamlConfig      QodanaYamlConfig
+	LinterInfo                LinterInfo
+	MountInfo                 MountInfo
+	CloudData                 ThirdPartyStartupCloudData
+	ProjectDir                string
+	ResultsDir                string
+	ReportDir                 string
+	LogDir                    string
+	CacheDir                  string
+	ClangCompileCommands      string
+	ClangArgs                 string
+	Property                  []string
+	CdnetSolution             string
+	CdnetProject              string
+	CdnetConfiguration        string
+	CdnetPlatform             string
+	NoStatistics              bool
+	CdnetNoBuild              bool
+	AnalysisId                string
+	Baseline                  string
+	BaselineIncludeAbsent     bool
+	FailThreshold             string
+	GenerateCodeClimateReport bool
+	SendBitBucketInsights     bool
+	QodanaYamlConfig          QodanaYamlConfig
 }
 
 func (b ContextBuilder) Build() Context {
 	return Context{
-		linterInfo:            b.LinterInfo,
-		mountInfo:             b.MountInfo,
-		cloudData:             b.CloudData,
-		projectDir:            b.ProjectDir,
-		resultsDir:            b.ResultsDir,
-		reportDir:             b.ReportDir,
-		logDir:                b.LogDir,
-		cacheDir:              b.CacheDir,
-		clangCompileCommands:  b.ClangCompileCommands,
-		clangArgs:             b.ClangArgs,
-		property:              b.Property,
-		cdnetSolution:         b.CdnetSolution,
-		cdnetProject:          b.CdnetProject,
-		cdnetConfiguration:    b.CdnetConfiguration,
-		cdnetPlatform:         b.CdnetPlatform,
-		noStatistics:          b.NoStatistics,
-		cdnetNoBuild:          b.CdnetNoBuild,
-		analysisId:            b.AnalysisId,
-		baseline:              b.Baseline,
-		baselineIncludeAbsent: b.BaselineIncludeAbsent,
-		failThreshold:         b.FailThreshold,
-		qodanaYamlConfig:      b.QodanaYamlConfig,
+		linterInfo:                b.LinterInfo,
+		mountInfo:                 b.MountInfo,
+		cloudData:                 b.CloudData,
+		projectDir:                b.ProjectDir,
+		resultsDir:                b.ResultsDir,
+		reportDir:                 b.ReportDir,
+		logDir:                    b.LogDir,
+		cacheDir:                  b.CacheDir,
+		clangCompileCommands:      b.ClangCompileCommands,
+		clangArgs:                 b.ClangArgs,
+		property:                  b.Property,
+		cdnetSolution:             b.CdnetSolution,
+		cdnetProject:              b.CdnetProject,
+		cdnetConfiguration:        b.CdnetConfiguration,
+		cdnetPlatform:             b.CdnetPlatform,
+		noStatistics:              b.NoStatistics,
+		cdnetNoBuild:              b.CdnetNoBuild,
+		analysisId:                b.AnalysisId,
+		baseline:                  b.Baseline,
+		baselineIncludeAbsent:     b.BaselineIncludeAbsent,
+		generateCodeClimateReport: b.GenerateCodeClimateReport,
+		sendBitBucketInsights:     b.SendBitBucketInsights,
+		failThreshold:             b.FailThreshold,
+		qodanaYamlConfig:          b.QodanaYamlConfig,
 	}
 }
 
@@ -187,6 +193,8 @@ func (c Context) AnalysisId() string                    { return c.analysisId }
 func (c Context) Baseline() string                      { return c.baseline }
 func (c Context) BaselineIncludeAbsent() bool           { return c.baselineIncludeAbsent }
 func (c Context) FailThreshold() string                 { return c.failThreshold }
+func (c Context) GenerateCodeClimateReport() bool       { return c.generateCodeClimateReport }
+func (c Context) SendBitBucketInsights() bool           { return c.sendBitBucketInsights }
 func (c Context) QodanaYamlConfig() QodanaYamlConfig    { return c.qodanaYamlConfig }
 
 func (c Context) Property() []string {
