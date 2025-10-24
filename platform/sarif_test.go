@@ -130,3 +130,50 @@ func TestMergeSarifReports(t *testing.T) {
 func normalize(s string) string {
 	return strings.NewReplacer("\r\n", "\n", "\r", "\n").Replace(s)
 }
+
+func TestMakeShortSarif(t *testing.T) {
+	workingDir, err := os.Getwd()
+	if err != nil {
+		t.Fatalf("Failed to get working directory: %v", err)
+	}
+
+	testdataPath := filepath.Join(workingDir, "testdata", "short-sarif")
+	sarifPath := filepath.Join(testdataPath, "qodana.sarif.json")
+	expectedShortSarifPath := filepath.Join(testdataPath, "qodana-short.sarif.json")
+
+	// Create temp directory for output
+	dir, err := os.MkdirTemp("", "test-short-sarif")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer func(path string) {
+		err := os.RemoveAll(path)
+		if err != nil {
+			t.Fatal(err)
+		}
+	}(dir)
+
+	outputPath := filepath.Join(dir, "output-short.sarif.json")
+
+	err = MakeShortSarif(sarifPath, outputPath)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	actual, err := os.ReadFile(outputPath)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	expected, err := os.ReadFile(expectedShortSarifPath)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	expString := normalize(string(expected))
+	actString := normalize(string(actual))
+
+	if expString != actString {
+		t.Fatalf("Files are not equal. Length: expected %d vs actual %d", len(expString), len(actString))
+	}
+}
