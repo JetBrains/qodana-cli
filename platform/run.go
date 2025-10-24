@@ -147,6 +147,19 @@ func RunThirdPartyLinterAnalysis(
 		return 1, err
 	}
 	sendReportToQodanaServer(context)
+	newReportUrl := cloud.GetReportUrl(context.ResultsDir())
+	ProcessSarif(
+		filepath.Join(context.ResultsDir(), commoncontext.QodanaSarifName),
+		context.AnalysisId(),
+		newReportUrl,
+		false,
+		context.GenerateCodeClimateReport(),
+		context.SendBitBucketInsights(),
+	)
+	err = writeShortSarifReport(context)
+	if err != nil {
+		log.Warnf("Problems writing short SARIF report: %v", err)
+	}
 	return analysisResult, nil
 }
 
@@ -313,4 +326,12 @@ func converterArgs(options thirdpartyscan.Context, mountInfo thirdpartyscan.Moun
 		"result-allProblems.json",
 		"-f",
 	}
+}
+
+// TODO: think about removing short sarif generation from ultimate
+func writeShortSarifReport(context thirdpartyscan.Context) error {
+	outputPath := GetShortSarifPath(context.ResultsDir())
+	sarifPath := GetSarifPath(context.ResultsDir())
+	log.Debugf("Creating short SARIF report at %s from %s...", outputPath, sarifPath)
+	return MakeShortSarif(sarifPath, outputPath)
 }
