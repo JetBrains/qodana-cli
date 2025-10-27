@@ -1,8 +1,8 @@
 {
     "config-loader-cli.jar": {
         "url": "https://packages.jetbrains.team/maven/p/ij/intellij-dependencies/org/jetbrains/qodana/config-loader-cli/$version/config-loader-cli-$version.jar",
-        "version": "0.0.28",
-        "sha256": "50deca4bfde0c8ec1110fbd3ca18055f6b26152463c18c8155e993400adbffc4"
+        "version": "0.0.35",
+        "sha256": "0149c953a28a12b94bde058527e7755abbae6a3da20bd04a8e144c4fd028e500"
     },
     "publisher-cli.jar": {
         "url": "https://packages.jetbrains.team/maven/p/ij/intellij-dependencies/org/jetbrains/qodana/publisher-cli/$version/publisher-cli-$version.jar",

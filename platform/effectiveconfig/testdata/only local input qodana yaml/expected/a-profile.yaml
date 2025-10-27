@@ -2,6 +2,17 @@ name: qodana.recommended
 baseProfile: Project Default
 
 groups:
+  - groupId: NonReSharperInspections
+    groups:
+      - ALL
+      - '!ReSharperInspections'
+      - '!QodanaDotNetInspections'
+
+  - groupId: LowSeverity
+    groups:
+      - 'severity:WEAK WARNING'
+      - 'severity:HINT'
+      - 'severity:TYPO'
   - groupId: ReSharperInspections # ReSharper inspections are enabled by default
     groups:
       - 'category:C++'
@@ -110,19 +121,12 @@ groups:
       - RiderStaticSanityInspections # Inspections that appear in sanity profile
       - 'severity:INFORMATION' # Qodana doesn't run "invisible" and "technical" in IDE inspections
       - 'severity:TEXT ATTRIBUTES' # Qodana don't run "invisible" and "technical" in IDE inspections
-  - groupId: NonReSharperInspections
-    groups:
-      - ALL
-      - '!ReSharperInspections'
-      - '!QodanaDotNetInspections'
-
-  - groupId: LowSeverity
-    groups:
-      - 'severity:WEAK WARNING'
-      - 'severity:HINT'
-      - 'severity:TYPO'
 
 inspections:
+  - group: LowSeverity # CLT doesn't provide them by default
+    enabled: false
+  - group: NonReSharperInspections
+    enabled: false
   - group: DotnetExcluded
     enabled: false
   - group: QodanaDotNetInspections # Explicitly enable coverage and dependency vulnerability analysis by default
@@ -135,7 +139,3 @@ inspections:
       - '**/*.DotSettings' # Ignore .DotSettings files by default
       - 'scope#$gitignore' # $gitignore scope available only in qodana execution
       - 'scope#$UnrealEngine' # Ignore Unreal Engine files by default
-  - group: LowSeverity # CLT doesn't provide them by default
-    enabled: false
-  - group: NonReSharperInspections
-    enabled: false

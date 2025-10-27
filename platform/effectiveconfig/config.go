@@ -275,18 +275,18 @@ func verifyEffectiveQodanaYamlIdeAndLinterMatchLocal(
 		failedToCreateEffectiveConfigurationMessage := "Failed to create effective configuration"
 
 		topMessageTemplate := "'%s: %s' is specified in one of files provided by 'imports' from " + localQodanaYamlPathFromRoot + " '%s' is required in root qodana.yaml"
-		bottomMessageTemplate := "Add `ide: %s` to " + localQodanaYamlPathFromRoot
+		bottomMessageTemplate := "Add `%s: %s` to " + localQodanaYamlPathFromRoot
 		if effectiveIde != localQodanaYaml.Ide {
 			msg.ErrorMessage(failedToCreateEffectiveConfigurationMessage)
 			msg.ErrorMessage(topMessageTemplate, "ide", effectiveIde, "ide")
-			msg.ErrorMessage(bottomMessageTemplate, effectiveIde)
+			msg.ErrorMessage(bottomMessageTemplate, "ide", effectiveIde)
 			return errors.New("effective.qodana.yaml `ide` doesn't match root qodana.yaml `ide`")
 		}
 		//goland:noinspection GoDfaConstantCondition
 		if effectiveLinter != localQodanaYaml.Linter {
 			msg.ErrorMessage(failedToCreateEffectiveConfigurationMessage)
 			msg.ErrorMessage(topMessageTemplate, "linter", effectiveLinter, "linter")
-			msg.ErrorMessage(bottomMessageTemplate, effectiveLinter)
+			msg.ErrorMessage(bottomMessageTemplate, "linter", effectiveLinter)
 			return errors.New("effective.qodana.yaml `linter` doesn't match root qodana.yaml `linter`")
 		}
 	}
