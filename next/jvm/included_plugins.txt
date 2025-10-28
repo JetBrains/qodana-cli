@@ -98,3 +98,4 @@ com.deadlock.scsyntax
 com.intellij.mcpServer
 com.intellij.jsonpath
 com.intellij.hardcodedPasswords
+org.intellij.plugins.markdown
