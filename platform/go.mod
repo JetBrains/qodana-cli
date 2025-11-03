@@ -29,7 +29,7 @@ require (
 	github.com/JetBrains/qodana-cli/v2025/core v0.0.0-00010101000000-000000000000
 	github.com/JetBrains/qodana-cli/v2025/sarif v0.0.0-00010101000000-000000000000
 	github.com/JetBrains/qodana-cli/v2025/tooling v0.0.0-00010101000000-000000000000
-	github.com/docker/cli v28.4.0+incompatible
+	github.com/docker/cli v28.5.1+incompatible
 	github.com/docker/docker v28.4.0+incompatible
 	github.com/reviewdog/go-bitbucket v0.0.0-20201024094602-708c3f6a7de0
 	github.com/shirou/gopsutil/v3 v3.24.5
