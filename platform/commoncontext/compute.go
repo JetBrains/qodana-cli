@@ -24,6 +24,7 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/JetBrains/qodana-cli/v2025/platform/git"
 	"github.com/JetBrains/qodana-cli/v2025/platform/msg"
 	"github.com/JetBrains/qodana-cli/v2025/platform/product"
 	"github.com/JetBrains/qodana-cli/v2025/platform/qdcontainer"
@@ -116,9 +117,32 @@ func computeCommon(
 	cacheDir := computeCacheDir(cacheDirFromCliOptions, linterDir)
 	reportDir := computeReportDir(reportDirFromCliOptions, resultsDir)
 
+	commonCtx := Context{
+		Analyzer:        analyzer,
+		IsClearCache:    clearCache,
+		CacheDir:        cacheDir,
+		ProjectDir:      projectDir,
+		ResultsDir:      resultsDir,
+		QodanaSystemDir: systemDir,
+		ReportDir:       reportDir,
+		Id:              qodanaId,
+		QodanaToken:     qodanaCloudToken,
+	}
+
+	fmt.Printf("%q\n", repositoryRoot)
+	fmt.Printf("%q\n", projectDir)
 	if repositoryRoot == "" {
-		repositoryRoot = projectDir
-	} else if repositoryRoot != projectDir {
+		var err error // This is stupid
+		repositoryRoot, err = git.Root(projectDir, commonCtx.LogDir())
+
+		if err != nil {
+			repositoryRoot = projectDir
+		}
+	}
+
+	fmt.Printf("%q\n", repositoryRoot)
+	fmt.Printf("%q\n", projectDir)
+	if repositoryRoot != projectDir {
 		rootAbs, err1 := filepath.Abs(repositoryRoot)
 		projAbs, err2 := filepath.Abs(projectDir)
 		if err1 != nil || err2 != nil {
@@ -133,18 +157,7 @@ func computeCommon(
 		}
 	}
 
-	commonCtx := Context{
-		Analyzer:        analyzer,
-		IsClearCache:    clearCache,
-		CacheDir:        cacheDir,
-		ProjectDir:      projectDir,
-		RepositoryRoot:  repositoryRoot,
-		ResultsDir:      resultsDir,
-		QodanaSystemDir: systemDir,
-		ReportDir:       reportDir,
-		Id:              qodanaId,
-		QodanaToken:     qodanaCloudToken,
-	}
+	commonCtx.RepositoryRoot = repositoryRoot
 	return commonCtx
 }
 

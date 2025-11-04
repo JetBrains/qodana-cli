@@ -136,7 +136,7 @@ func ComputeFlags(cmd *cobra.Command, options *CliOptions) error {
 	flags.StringVar(
 		&options.RepositoryRoot,
 		"repository-root",
-		".",
+		"",
 		"Path to the root of the Git repository. This directory must be the same as --project-dir or a subdirectory within it..",
 	)
 	flags.StringVarP(
