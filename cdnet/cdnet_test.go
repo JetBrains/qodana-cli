@@ -59,14 +59,9 @@ func TestLinterRun(t *testing.T) {
 	command := platform.NewThirdPartyScanCommand(CdnetLinter{}, linterInfo)
 	command.SetArgs(
 		[]string{
-			"-i",
-			projectDir,
-			"--repository-root",
-			projectDir,
-			"-o",
-			outputDir,
-			"--cache-dir",
-			cacheDir,
+			"-i", projectDir,
+			"-o", outputDir,
+			"--cache-dir", cacheDir,
 			"--no-build",
 		},
 	)
