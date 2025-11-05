@@ -132,11 +132,12 @@ func computeCommon(
 	fmt.Printf("%q\n", repositoryRoot)
 	fmt.Printf("%q\n", projectDir)
 	if repositoryRoot == "" {
-		var err error // This is stupid
-		repositoryRoot, err = git.Root(projectDir, commonCtx.LogDir())
+		vcsRoot, err := git.Root(projectDir, commonCtx.LogDir())
 
 		if err != nil {
 			repositoryRoot = projectDir
+		} else {
+			repositoryRoot = vcsRoot
 		}
 	}
 
