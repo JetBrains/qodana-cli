@@ -23,6 +23,7 @@ import (
 	"testing"
 
 	log "github.com/sirupsen/logrus"
+	"github.com/stretchr/testify/assert"
 )
 
 const (
@@ -73,6 +74,12 @@ func TestGitFunctionalityChange(t *testing.T) {
 	if dontExists {
 		t.Fatalf("Revision %v is found in project %v", MALFORMED, projectPath)
 	}
+}
+
+func TestGitRunReportsErrors(t *testing.T) {
+	tempDir := t.TempDir()
+	_, _, err := gitRun(tempDir, []string{"bad-command"}, tempDir)
+	assert.Error(t, err)
 }
 
 func deferredCleanup(path string) {
