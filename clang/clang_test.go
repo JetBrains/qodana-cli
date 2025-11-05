@@ -40,7 +40,11 @@ func TestLinterRun(t *testing.T) {
 	}
 
 	command := platform.NewThirdPartyScanCommand(ClangLinter{}, linterInfo)
-	command.SetArgs([]string{"-i", projectDir, "-o", outputDir, "--cache-dir", cacheDir})
+	command.SetArgs([]string{
+		"-i", projectDir,
+		"-o", outputDir,
+		"--cache-dir", cacheDir,
+	})
 	err = command.Execute()
 	if err != nil {
 		t.Fatal(err)
