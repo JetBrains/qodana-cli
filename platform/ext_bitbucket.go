@@ -220,7 +220,7 @@ func getBitBucketClient() *bbapi.APIClient {
 
 // checkBitBucketApiError checks if the API call was successful
 func checkBitBucketApiError(err error, resp *http.Response, expectedCode int) error {
-	selfHostedHint := "\n\nNote: If you are using BitBucket Data Center/Server (self-hosted), " +
+	selfHostedHint := "Note: If you are using BitBucket Data Center/Server (self-hosted), " +
 		"please set the QD_BITBUCKET_URL environment variable to your BitBucket API endpoint " +
 		"(e.g., QD_BITBUCKET_URL=https://bitbucket.example.com/rest/api/1.0). " +
 		"Read more at https://developer.atlassian.com/server/bitbucket/rest/v1000/intro/"
@@ -232,7 +232,7 @@ func checkBitBucketApiError(err error, resp *http.Response, expectedCode int) er
 		body, _ := io.ReadAll(resp.Body)
 		log.Debugf("Unexpected response: %s", body)
 		return fmt.Errorf(
-			"BitBucket API returned unexpected status code %d (expected %d)%s",
+			"BitBucket API returned unexpected status code %d (expected %d)\n\n%s",
 			resp.StatusCode, expectedCode, selfHostedHint,
 		)
 	}
