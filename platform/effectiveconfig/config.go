@@ -156,7 +156,10 @@ func configurationLoaderCliArgs(
 	effectiveConfigDir string,
 ) ([]string, error) {
 	if jrePath == "" {
-		return nil, fmt.Errorf("JRE not found. Required for effective configuration creation")
+		return nil, fmt.Errorf(
+			"JRE not found. Required for effective configuration creation. " +
+				"See requirements in our documentation: https://www.jetbrains.com/help/qodana/deploy-qodana.html",
+		)
 	}
 	if configLoaderCliJarPath == "" {
 		return nil, fmt.Errorf("config-loader-cli.jar not found. Required for effective configuration creation")
