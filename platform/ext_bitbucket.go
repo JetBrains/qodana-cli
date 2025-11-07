@@ -19,16 +19,18 @@ package platform
 import (
 	"context"
 	"fmt"
+	"io"
+	"net/http"
+	"net/url"
+	"os"
+	"strings"
+	"time"
+
 	"github.com/JetBrains/qodana-cli/v2025/platform/msg"
 	"github.com/JetBrains/qodana-cli/v2025/platform/qdenv"
 	"github.com/JetBrains/qodana-cli/v2025/sarif"
 	bbapi "github.com/reviewdog/go-bitbucket" // adapted from https://raw.githubusercontent.com/reviewdog/reviewdog/master/LICENSE
 	log "github.com/sirupsen/logrus"
-	"io"
-	"net/http"
-	"net/url"
-	"os"
-	"time"
 )
 
 const (
@@ -176,8 +178,25 @@ func getBitBucketClient() *bbapi.APIClient {
 	config.HTTPClient = &http.Client{
 		Timeout: httpTimeout,
 	}
+
+	apiURL := os.Getenv("QD_BITBUCKET_URL")
+	if apiURL == "" {
+		if gitOrigin := os.Getenv("BITBUCKET_GIT_HTTP_ORIGIN"); gitOrigin != "" {
+			if parsedURL, err := url.Parse(gitOrigin); err == nil {
+				if !strings.Contains(parsedURL.Host, "bitbucket.org") {
+					// Construct API URL for self-hosted BitBucket Data Center/Server
+					// Reference: https://developer.atlassian.com/server/bitbucket/rest/v1000/intro/
+					apiURL = fmt.Sprintf("%s://%s/rest/api/1.0", parsedURL.Scheme, parsedURL.Host)
+				}
+			}
+		}
+		if apiURL == "" {
+			apiURL = "https://api.bitbucket.org/2.0"
+		}
+	}
+
 	server := bbapi.ServerConfiguration{
-		URL:         "https://api.bitbucket.org/2.0",
+		URL:         apiURL,
 		Description: `HTTPS API endpoint`,
 	}
 	if qdenv.IsBitBucket() {
@@ -201,13 +220,21 @@ func getBitBucketClient() *bbapi.APIClient {
 
 // checkBitBucketApiError checks if the API call was successful
 func checkBitBucketApiError(err error, resp *http.Response, expectedCode int) error {
+	selfHostedHint := "Note: If you are using BitBucket Data Center/Server (self-hosted), " +
+		"please set the QD_BITBUCKET_URL environment variable to your BitBucket API endpoint " +
+		"(e.g., QD_BITBUCKET_URL=https://bitbucket.example.com/rest/api/1.0). " +
+		"Read more at https://developer.atlassian.com/server/bitbucket/rest/v1000/intro/"
+
 	if err != nil {
-		return fmt.Errorf("bitbucket Cloud API error: %w", err)
+		return fmt.Errorf("BitBucket API error: %w%s", err, selfHostedHint)
 	}
 	if resp != nil && resp.StatusCode != expectedCode {
 		body, _ := io.ReadAll(resp.Body)
 		log.Debugf("Unexpected response: %s", body)
-		return fmt.Errorf("bitbucket Cloud API error: %w", err)
+		return fmt.Errorf(
+			"BitBucket API returned unexpected status code %d (expected %d)\n\n%s",
+			resp.StatusCode, expectedCode, selfHostedHint,
+		)
 	}
 	return nil
 }
