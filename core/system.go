@@ -345,6 +345,14 @@ func saveReport(c corescan.Context) {
 		return
 	}
 	log.Println("Generating HTML report ...")
+	javaPath := prod.JbrJava()
+	if javaPath == "" {
+		log.Error(
+			"HTML report is not generated because Java is not installed. " +
+				"See requirements in our documentation: https://www.jetbrains.com/help/qodana/deploy-qodana.html",
+		)
+		return
+	}
 	if res, err := utils.RunCmd(
 		"",
 		strutil.QuoteForWindows(prod.JbrJava()),

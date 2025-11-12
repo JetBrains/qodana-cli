@@ -46,7 +46,11 @@ func extractUtils(linter ThirdPartyLinter, cacheDir string) thirdpartyscan.Mount
 
 	javaPath, err := utils.GetJavaExecutablePath()
 	if err != nil {
-		log.Fatal("failed to get java executable path", err)
+		log.Fatalf(
+			"Java is not installed or not accessible from PATH: %s. "+
+				"See requirements in our documentation: https://www.jetbrains.com/help/qodana/deploy-qodana.html",
+			err,
+		)
 	}
 
 	customTools, err := linter.MountTools(mountPath)
