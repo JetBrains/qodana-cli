@@ -129,8 +129,6 @@ func computeCommon(
 		QodanaToken:     qodanaCloudToken,
 	}
 
-	fmt.Printf("%q\n", repositoryRoot)
-	fmt.Printf("%q\n", projectDir)
 	if repositoryRoot == "" {
 		vcsRoot, err := git.Root(projectDir, commonCtx.LogDir())
 
@@ -141,8 +139,6 @@ func computeCommon(
 		}
 	}
 
-	fmt.Printf("%q\n", repositoryRoot)
-	fmt.Printf("%q\n", projectDir)
 	if repositoryRoot != projectDir {
 		rootAbs, err1 := filepath.Abs(repositoryRoot)
 		projAbs, err2 := filepath.Abs(projectDir)
