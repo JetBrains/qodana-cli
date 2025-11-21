@@ -17,6 +17,7 @@
 package git
 
 import (
+	"fmt"
 	"strings"
 
 	"github.com/JetBrains/qodana-cli/v2025/platform/strutil"
@@ -33,7 +34,7 @@ func gitRun(cwd string, command []string, logdir string) (string, string, error)
 		log.Errorf("Failed to create git logger: %v", err)
 		return "", "", err
 	}
-	stdout, stderr, _, err := utils.RunCmdRedirectOutput(cwd, args...)
+	stdout, stderr, exitCode, err := utils.RunCmdRedirectOutput(cwd, args...)
 	if logger != nil {
 		logger.Printf("Executing command: %v", args)
 		logger.Println(stdout)
@@ -45,8 +46,13 @@ func gitRun(cwd string, command []string, logdir string) (string, string, error)
 			log.Error(stderr)
 		}
 	}
+	if exitCode != 0 {
+		err := fmt.Errorf("command %s exited with code %d", strings.Join(args, " "), exitCode)
+		log.Errorf("%s", err)
+		return stdout, stderr, err
+	}
 	if err != nil {
-		log.Errorf("Error executing git command %s: %s", strings.Join(args, " "), err)
+		log.Errorf("An internal error occured while executing %s: %s", strings.Join(args, " "), err)
 		return stdout, stderr, err
 	}
 	return stdout, stderr, nil
