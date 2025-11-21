@@ -3,7 +3,7 @@ updates:
   - package-ecosystem: github-actions
     directory: /
     commit-message:
-      prefix: ":arrow_up:"
+      prefix: ":arrow_up: QD-12983"
     schedule:
       interval: weekly
     groups:
@@ -12,7 +12,7 @@ updates:
           - "*"
 
   - package-ecosystem: gomod
-    directories: 
+    directories:
       - cdnet
       - cli
       - cloud
@@ -21,7 +21,7 @@ updates:
       - platform
       - sarif
     commit-message:
-      prefix: ":arrow_up:"
+      prefix: ":arrow_up: QD-12983"
     schedule:
       interval: weekly
     groups:
