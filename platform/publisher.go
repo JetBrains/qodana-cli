@@ -41,6 +41,12 @@ type Publisher struct {
 
 // SendReport sends report to Qodana Cloud.
 func SendReport(publisher Publisher, token string, javaPath string) {
+	if javaPath == "" {
+		log.Fatal(
+			"Java is required to send reports to Qodana Cloud without linter execution. " +
+				"See requirements in our documentation: https://www.jetbrains.com/help/qodana/deploy-qodana.html",
+		)
+	}
 	file, err := os.CreateTemp("", "qodana-publisher.jar")
 	if err != nil {
 		log.Fatalf("Failed to create a temporary file: %s", err)
