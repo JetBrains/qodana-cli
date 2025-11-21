@@ -89,6 +89,56 @@ runs:
           else:
               fail(f"Cannot normalize version '{query}'")
 
+    - if: runner.os == 'macOS'
+      name: Install compatible version of QEMU for macOS
+      # Workaround for QEMU failures when starting Docker via Lima on a GitHub-hosted runner.
+      # I found no issue for this, but this is the same workaround used in https://github.com/lima-vm/lima.
+      shell: bash
+      run: | # shell
+        set -euxo pipefail
+
+        brew-install() {
+          # Install a specific package version from Homebrew.
+          #
+          # This script was adapted from https://github.com/lima-vm/lima/blob/master/hack/brew-install-version.sh,
+          # licensed from the Lima authors under Apache-2.0.
+          FORMULA="$1"
+          VERSION="$2"
+
+          TEMP_DIR=$(mktemp -d "brew-install")
+          trap "rm -rf $TEMP_DIR" RETURN
+
+          HOMEBREW_DIR="$TEMP_DIR/homebrew-core"
+          git clone --filter=tree:0 https://github.com/Homebrew/homebrew-core "$HOMEBREW_DIR"
+
+          export HOMEBREW_NO_AUTO_UPDATE=1
+          export HOMEBREW_NO_INSTALL_UPGRADE=1
+          export HOMEBREW_NO_INSTALL_CLEANUP=1
+
+          TAP=lima/tap
+          if ! brew tap | grep -q "^${TAP}\$"; then
+            brew tap-new "$TAP"
+          fi
+
+          # Get the latest commit id for the commit that updated this bottle
+          SHA=$(git -C "$HOMEBREW_DIR" log --max-count 1 --grep "^${FORMULA}: update ${VERSION} bottle" --format="%H")
+          if [[ -z $SHA ]]; then
+            echo "${FORMULA} ${VERSION} not found"
+            exit 1
+          fi
+
+          OUTPUT="$(brew --repo "$TAP")/Formula/${FORMULA}.rb"
+          RAW="https://raw.githubusercontent.com/Homebrew/homebrew-core"
+          curl -s "${RAW}/${SHA}/Formula/${FORMULA::1}/${FORMULA}.rb" -o "$OUTPUT"
+
+          if brew ls -1 | grep -q "^${FORMULA}\$"; then
+            brew uninstall "$FORMULA" --ignore-dependencies
+          fi
+          brew install "${TAP}/${FORMULA}"
+        }
+
+        brew-install qemu 10.1.1
+
     - uses: docker/setup-docker-action@v4
       with:
         version: ${{ steps.normalize-version.outputs.stdout }}

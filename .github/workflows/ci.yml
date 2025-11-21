@@ -18,7 +18,7 @@ jobs:
     strategy:
       matrix:
         include:
-          - os: macos-13  # macos-13 is the only macOS github runner supporting Docker.
+          - os: macos-15-large  # Only intel-based macOS runners support virtualization for Docker.
             container-engine: docker@latest
           - os: windows-latest
             container-engine: docker@latest
