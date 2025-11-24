@@ -126,14 +126,14 @@ func prepareLocalIdeSettingsAndGetQodanaCloudUploadToken(
 
 	if qdenv.IsContainer() {
 		prepareContainerSpecificDirectories(prod, commonCtx.CacheDir, commonCtx.ConfDirPath())
-
-		err := SyncIdeaCache(commonCtx.CacheDir, commonCtx.ProjectDir, false)
-		if err != nil {
-			log.Warnf("failed to sync .idea directory: %v", err)
-		}
-		SyncConfigCache(prod, commonCtx.ConfDirPath(), commonCtx.CacheDir, true)
 		CreateUser("/etc/passwd")
 	}
+
+	err := SyncIdeaCache(commonCtx.CacheDir, commonCtx.ProjectDir, false)
+	if err != nil {
+		log.Warnf("failed to sync .idea directory: %v", err)
+	}
+	SyncConfigCache(prod, commonCtx.ConfDirPath(), commonCtx.CacheDir, true)
 
 	prepareCustomPlugins(prod)
 	return prod, token
