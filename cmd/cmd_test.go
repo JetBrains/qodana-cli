@@ -35,6 +35,7 @@ import (
 	"github.com/JetBrains/qodana-cli/v2025/platform/product"
 	"github.com/JetBrains/qodana-cli/v2025/platform/qdyaml"
 	"github.com/JetBrains/qodana-cli/v2025/platform/version"
+	cp "github.com/otiai10/copy"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -417,6 +418,49 @@ func TestScanWithIde(t *testing.T) {
 		},
 	)
 	err = command.Execute()
+	if err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestCacheSync(t *testing.T) {
+	log.SetLevel(log.DebugLevel)
+	err := os.Setenv("QODANA_LICENSE_ONLY_TOKEN", "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJwcm9qZWN0IjoiTXJMVzQiLCJvcmdhbml6YXRpb24iOiIzb0RycCIsInRva2VuIjoiUTZKb2wifQ.YYsQlsly4pTOeIQ0crGumsYVmIGg-LNwYsprZh30LG8")
+	if err != nil {
+		t.Fatal(err)
+	}
+	token := os.Getenv("QODANA_LICENSE_ONLY_TOKEN")
+	if token == "" {
+		t.Skip("set your token here to run the test")
+	}
+	projectPath := t.TempDir()
+	err = cp.Copy(filepath.Join("testdata", "synccache"), projectPath)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	runNativeScan(t, projectPath)
+	err = os.RemoveAll(filepath.Join(projectPath, ".idea"))
+	if err != nil {
+		log.Errorf("Failed to remove directory: %v", err)
+	}
+	runNativeScan(t, projectPath)
+}
+
+func runNativeScan(t *testing.T, projectPath string) {
+	out := bytes.NewBufferString("")
+
+	command := newScanCommand()
+	command.SetOut(out)
+	command.SetArgs(
+		[]string{
+			"-i", projectPath,
+			"--within-docker", "false",
+			"--cache-dir", filepath.Join(projectPath, "cache"),
+			"--linter", "qodana-jvm",
+		},
+	)
+	err := command.Execute()
 	if err != nil {
 		t.Fatal(err)
 	}

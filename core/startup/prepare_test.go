@@ -154,3 +154,154 @@ func TestCheckVcsSameAsRepositoryRoot(t *testing.T) {
 		)
 	}
 }
+
+func TestSyncCacheSyncIdea(t *testing.T) {
+	testProjectDir, commonCtx := setupIdeaSyncTestData(t)
+	commonCtx.CacheDir = filepath.Join("testdata", "synccache", "syncidea", "cache")
+
+	SyncCache(commonCtx, product.Product{})
+
+	expectedFile := filepath.Join(testProjectDir, ".idea", "cached.xml")
+	checkFileExists(t, expectedFile, true)
+}
+
+func TestSyncCacheSyncIdeaNoOverwrite(t *testing.T) {
+	testProjectDir, commonCtx := setupIdeaSyncTestData(t)
+	createIdeaFolderWithUncachedXml(t, testProjectDir)
+
+	commonCtx.CacheDir = filepath.Join("testdata", "synccache", "syncidea", "cache")
+
+	SyncCache(commonCtx, product.Product{})
+
+	expectedFile := filepath.Join(testProjectDir, ".idea", "uncached.xml")
+	checkFileExists(t, expectedFile, true)
+
+	unexpectedFile := filepath.Join(testProjectDir, ".idea", "cached.xml")
+	checkFileExists(t, unexpectedFile, false)
+}
+
+func TestSyncCacheSyncNoCacheNoProblem(t *testing.T) {
+	testProjectDir, commonCtx := setupIdeaSyncTestData(t)
+	createIdeaFolderWithUncachedXml(t, testProjectDir)
+
+	commonCtx.CacheDir = filepath.Join(os.TempDir(), ".qodana_sync_cache_sync_idea_no_cache2_test")
+
+	SyncCache(commonCtx, product.Product{})
+
+	expectedFile := filepath.Join(testProjectDir, ".idea", "uncached.xml")
+	checkFileExists(t, expectedFile, true)
+}
+
+func TestSyncCacheSyncConfig(t *testing.T) {
+	testCases := []struct {
+		name           string
+		baseScriptName string
+	}{
+		{
+			name:           "Idea",
+			baseScriptName: product.Idea,
+		},
+		{
+			name:           "PyCharm",
+			baseScriptName: product.PyCharm,
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			testJdkTableXmlSync(t, tc)
+			testNoOverwriteJdkTableXml(t, tc)
+		})
+	}
+}
+
+func testNoOverwriteJdkTableXml(t *testing.T, tc struct {
+	name           string
+	baseScriptName string
+}) {
+	outputJdkTable, commonCtx, prod := setupCommonTestEnvForConfigSync(t, tc)
+
+	err := os.WriteFile(outputJdkTable, []byte("uncached"), 0o644)
+	SyncCache(commonCtx, prod)
+
+	content, err := os.ReadFile(outputJdkTable)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	expected := "uncached"
+	if string(content) != expected {
+		t.Errorf("expected %q, got %q", expected, string(content))
+	}
+}
+
+func testJdkTableXmlSync(t *testing.T, tc struct {
+	name           string
+	baseScriptName string
+}) {
+	outputJdkTable, commonCtx, prod := setupCommonTestEnvForConfigSync(t, tc)
+
+	SyncCache(commonCtx, prod)
+
+	content, err := os.ReadFile(outputJdkTable)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	expected := "cached"
+	if string(content) != expected {
+		t.Errorf("expected %q, got %q", expected, string(content))
+	}
+}
+
+func setupIdeaSyncTestData(t *testing.T) (string, commoncontext.Context) {
+	testProjectDir := filepath.Join(t.TempDir())
+	return testProjectDir, commoncontext.Context{
+		ProjectDir: testProjectDir,
+	}
+}
+
+func checkFileExists(t *testing.T, filePath string, shouldExist bool) {
+	_, err := os.Stat(filePath)
+	if shouldExist && os.IsNotExist(err) {
+		t.Fatalf("file does not exist: %s", filePath)
+	}
+	if !shouldExist && os.IsExist(err) {
+		t.Fatalf("file should not exist: %s", filePath)
+	}
+}
+
+func createIdeaFolderWithUncachedXml(t *testing.T, testProjectDir string) {
+	err := os.MkdirAll(testProjectDir+"/.idea", 0o755)
+	if err != nil {
+		t.Fatal(err)
+	}
+	err = os.WriteFile(testProjectDir+"/.idea/uncached.xml", []byte{}, 0o755)
+	if err != nil {
+		t.Fatal(err)
+	}
+}
+
+func setupCommonTestEnvForConfigSync(t *testing.T, tc struct {
+	name           string
+	baseScriptName string
+}) (string, commoncontext.Context, product.Product) {
+	prod := product.Product{BaseScriptName: tc.baseScriptName, Version: "2025.3"}
+
+	testConfDir := t.TempDir()
+	err := os.MkdirAll(testConfDir+"/253/config/options", 0o755)
+	if err != nil {
+		t.Fatal(err)
+	}
+	outputJdkTable := filepath.Join(testConfDir, "253", "config", "options", "jdk.table.xml")
+
+	cacheDir := filepath.Join("testdata", "synccache", "syncconfig", "cache")
+
+	commonCtx := commoncontext.Context{
+		QodanaSystemDir: testConfDir,
+		Id:              "253",
+		CacheDir:        cacheDir,
+	}
+
+	return outputJdkTable, commonCtx, prod
+}

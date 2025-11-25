@@ -129,14 +129,18 @@ func prepareLocalIdeSettingsAndGetQodanaCloudUploadToken(
 		CreateUser("/etc/passwd")
 	}
 
+	SyncCache(commonCtx, prod)
+
+	prepareCustomPlugins(prod)
+	return prod, token
+}
+
+func SyncCache(commonCtx commoncontext.Context, prod product.Product) {
 	err := SyncIdeaCache(commonCtx.CacheDir, commonCtx.ProjectDir, false)
 	if err != nil {
 		log.Warnf("failed to sync .idea directory: %v", err)
 	}
 	SyncConfigCache(prod, commonCtx.ConfDirPath(), commonCtx.CacheDir, true)
-
-	prepareCustomPlugins(prod)
-	return prod, token
 }
 
 func prepareQodanaTokenForNative(token string) {
