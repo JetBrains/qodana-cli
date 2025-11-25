@@ -425,16 +425,12 @@ func TestScanWithIde(t *testing.T) {
 
 func TestCacheSync(t *testing.T) {
 	log.SetLevel(log.DebugLevel)
-	err := os.Setenv("QODANA_LICENSE_ONLY_TOKEN", "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJwcm9qZWN0IjoiTXJMVzQiLCJvcmdhbml6YXRpb24iOiIzb0RycCIsInRva2VuIjoiUTZKb2wifQ.YYsQlsly4pTOeIQ0crGumsYVmIGg-LNwYsprZh30LG8")
-	if err != nil {
-		t.Fatal(err)
-	}
 	token := os.Getenv("QODANA_LICENSE_ONLY_TOKEN")
 	if token == "" {
 		t.Skip("set your token here to run the test")
 	}
 	projectPath := t.TempDir()
-	err = cp.Copy(filepath.Join("testdata", "synccache"), projectPath)
+	err := cp.Copy(filepath.Join("testdata", "synccache"), projectPath)
 	if err != nil {
 		t.Fatal(err)
 	}
