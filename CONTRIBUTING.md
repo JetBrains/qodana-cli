@@ -20,6 +20,18 @@ Clone the project anywhere:
 git clone git@github.com:JetBrains/qodana-cli.git
 ```
 
+Prepare embedded tools:
+
+1. `cd` into the `tooling` directory
+2. Run `go run scripts/download-resource.go config-loader-cli.jar` and `go run scripts/download-resource.go publisher-cli.jar`
+3. Either run if you don't test the related functionality:
+   ```
+   touch baseline-cli.jar intellij-report-converter.jar qodana-fuser.jar
+   ```
+   or go to the [latest qodana-cli build](https://buildserver.labs.intellij.net/buildConfiguration/StaticAnalysis_Base_Nightlyclimain) 
+   (internal only), go to `dependencies` tab and download the artifacts you need.
+4. `cd` back to the root directory
+
 `cd` into the `cli` directory and run for debug:
 
 ```sh
@@ -48,6 +60,17 @@ Dry-run goreleaser:
 ```sh
 goreleaser release --snapshot --clean
 ```
+
+## Test 3rd party linters
+
+Inside 3rd party linters docker image the different qodana-cli executable is used. To build it:
+1. `cd` into the 3rd party linter directory (for this example, we will use cdnet - clang is the same)
+2. Download the linter binary from the [latest qodana-cdnet build](https://buildserver.labs.intellij.net/buildConfiguration/ijplatform_master_QodanaCdNetBinary#all-projects) (internal only).
+   To do this, open the latest build, go to `dependencies` tab, download `*.nupkg` file from the first dependency, place it in the current directory and rename it to `clt.zip`
+3. Run `go generate`
+4. Change the date in [main.go](cdnet/main.go) to more recent one (you will get rid of EAP error)
+5. Build the executable `env GOOS=linux CGO_ENABLED=0 go build -o qd-custom`
+6. To replace the executable in docker image, see `'Patching' an existing Qodana image` section below. Note, that the `qodana-cdnet` image has qodana executable in `/opt/qodana/qodana` path.
 
 ## Create a commit
 
