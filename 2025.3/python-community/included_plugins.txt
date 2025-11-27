@@ -13,8 +13,11 @@ hg4idea
 tanvd.grazi
 intellij.indexing.shared.core
 PythonCore
-com.jetbrains.pycharm.community.customization
-com.jetbrains.pycharm.community.sharedIndexes.bundled
 org.toml.lang
 com.intellij.dev
 com.intellij.modules.json
+com.intellij.notebooks.core
+com.jetbrains.pycharm.pro.customization
+intellij.jupyter
+intellij.pycharm.community.customization.shared
+org.intellij.plugins.markdown
