@@ -10,25 +10,8 @@ RUN chmod +x $QODANA_DIST/bin/*.sh $QODANA_DIST/bin/qodana && \
     update-alternatives --set java $JAVA_HOME/bin/java && \
     update-alternatives --set javac $JAVA_HOME/bin/javac && \
     rm -rf /var/cache/apt /var/lib/apt/ /tmp/*  && \
-    apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends unzip build-essential && \
-    plugin=$(curl -fSsL https://plugins.jetbrains.com/plugins/nightly/22407 | \
-        awk 'BEGIN { RS="<idea-plugin"; FS="<download-url>|</download-url>" } /<version>233\./ && !found { print $2; found=1; }') && \
-    curl -fSsL -o /tmp/plugin.zip "$plugin" && unzip /tmp/plugin.zip && mv intellij-rust $QODANA_DIST/plugins/ && \
-    apt-get purge --auto-remove -y unzip && \
+    apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends build-essential && \
     rm -rf /var/cache/apt /var/lib/apt/ /tmp/*
-
-ARG PRIVILEGED="true"
-RUN if [ "$PRIVILEGED" = "true" ]; then \
-        apt-get update && \
-        apt-get install -y sudo && \
-        useradd -m -u 1001 -U qodana && \
-        passwd -d qodana && \
-        echo 'qodana ALL=(ALL) NOPASSWD:ALL' >> /etc/sudoers && \
-        chmod 777 /etc/passwd && \
-        rm -rf /var/cache/apt /var/lib/apt/ /tmp/*; \
-    else \
-        echo "Skipping privileged commands because PRIVILEGED is not set to true."; \
-    fi
 
 LABEL maintainer="qodana-support@jetbrains.com" description="Qodana for Rust (https://jb.gg/qodana-rust)"
 WORKDIR /data/project
