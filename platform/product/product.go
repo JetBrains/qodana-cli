@@ -192,6 +192,17 @@ var (
 		EapOnly:         false,
 	}
 
+	RustLinter = Linter{
+		PresentableName: "Qodana for Rust",
+		Name:            "qodana-rust",
+		ProductCode:     QDRST,
+		DockerImage:     "jetbrains/qodana-rust",
+		SupportNative:   false,
+		IsPaid:          true,
+		SupportFixes:    false,
+		EapOnly:         true,
+	}
+
 	DotNetCommunityLinter = Linter{
 		PresentableName: "Qodana Community for .NET",
 		Name:            "qodana-cdnet",
@@ -234,6 +245,7 @@ var (
 		RubyLinter,
 		CppLinter,
 		GoLinter,
+		RustLinter,
 		ClangLinter,
 	}
 )
@@ -285,6 +297,7 @@ var LangsToLinters = map[string][]Linter{
 	"C":                 {CppLinter, ClangLinter, DotNetLinter},
 	"C++":               {CppLinter, ClangLinter, DotNetLinter},
 	"Ruby":              {RubyLinter},
+	"Rust":              {RustLinter},
 }
 
 var AllSupportedFreeLinters = allLintersFiltered(AllLinters, func(linter *Linter) bool { return !linter.IsPaid })
