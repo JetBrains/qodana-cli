@@ -123,6 +123,14 @@ var (
 		ScriptName:          "goland",
 	}
 
+	RustLinterProperties = IntellijLinterProperties{
+		Linter:              RustLinter,
+		ProductInfoJsonCode: "RR",
+		FeedProductCode:     "RR",
+		VmOptionsEnv:        "RUSTROVER_VM_OPTIONS",
+		ScriptName:          "rustrover",
+	}
+
 	AllLinterProperties = []IntellijLinterProperties{
 		JvmLinterProperties,
 		JvmCommunityLinterProperties,
@@ -136,6 +144,7 @@ var (
 		RubyLinterProperties,
 		CppLinterProperties,
 		GoLinterProperties,
+		RustLinterProperties,
 	}
 )
 
