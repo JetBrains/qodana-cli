@@ -1,4 +1,4 @@
-import cli.CLI
+import cli.GoReleaser
 import jetbrains.buildServer.configs.kotlin.*
 
 /*
@@ -26,6 +26,7 @@ To debug in IntelliJ Idea, open the 'Maven Projects' tool window (View
 version = "2024.07"
 
 project {
-    description = "CLI"
-    subProject(CLI)
+    description = "Various products built from https://github.com/jetbrains/qodana-cli"
+    buildType(GoReleaser("cli", "", arguments = listOf()))
+    buildType(GoReleaser("cli", "main", arguments = listOf("--nightly", "--skip=chocolatey,nfpm,homebrew,scoop,snapcraft")))
 }

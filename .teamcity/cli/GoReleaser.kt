@@ -1,11 +1,9 @@
 package cli
 
-import jetbrains.buildServer.configs.kotlin.BuildType
-import jetbrains.buildServer.configs.kotlin.CheckoutMode
-import jetbrains.buildServer.configs.kotlin.DslContext
-import jetbrains.buildServer.configs.kotlin.ParameterDisplay
+import jetbrains.buildServer.configs.kotlin.*
 import jetbrains.buildServer.configs.kotlin.buildFeatures.commitStatusPublisher
-import jetbrains.buildServer.configs.kotlin.buildFeatures.dockerRegistryConnections
+import jetbrains.buildServer.configs.kotlin.buildFeatures.dockerSupport
+import jetbrains.buildServer.configs.kotlin.buildFeatures.sshAgent
 import jetbrains.buildServer.configs.kotlin.buildSteps.ScriptBuildStep
 import jetbrains.buildServer.configs.kotlin.buildSteps.python
 import jetbrains.buildServer.configs.kotlin.buildSteps.qodana
@@ -88,20 +86,24 @@ class GoReleaser(
     }
 
     steps {
+        denestFileArtifacts()
+
         if (releaseType.isNightlyOrRelease() && isCli) {
             script {
                 scriptContent = """
                     git tag -d nightly || true
                     git fetch --tags
+                    git remote remove origin && git remote add origin $CLI_GITHUB_REPO_URL.git
                 """.trimIndent()
                 workingDir = wd
             }
         }
         script {
             name = "Run 'go generate'"
-            scriptContent = """
-                go generate -v $(go list -f '{{.Dir}}/...' -m)
-            """.trimIndent()
+            workingDir = wd
+            // list dependent packages and filter out the ones outside the repo:
+            // go list -f {{.Dir}} -deps | grep "^$(git rev-parse --show-toplevel)/"
+            scriptContent = "go generate -v -x $(go list -m -f {{.Dir}} | xargs -I{} go list -e -find {}/...)"
 
             useGoDevContainerDockerImage()
         }
@@ -189,17 +191,21 @@ class GoReleaser(
     }
 
     features {
-        dockerRegistryConnections {
+        sshAgent {
+            teamcitySshKey = "default teamcity key"
+        }
+        dockerSupport {
             loginToRegistry = on {
                 dockerRegistryId = "PROJECT_EXT_775"
             }
         }
         if (releaseType.isNightlyOrRelease() && isCli) {
             commitStatusPublisher {
-                vcsRootExtId = "${DslContext.settingsRoot.id}"
                 publisher = github {
                     githubUrl = "https://api.github.com"
-                    authType = vcsRoot()
+                    authType = personalToken {
+                        token = GH_JETBRAINS_PAT
+                    }
                 }
             }
         }
@@ -221,7 +227,7 @@ class GoReleaser(
 
 private fun getProductCode(wd: String): String {
     return when (wd) {
-        "clang" -> "QDCL"
+        "clang" -> "QDCLC"
         "cdnet" -> "QDNETC"
         else -> ""
     }
