@@ -94,7 +94,7 @@ If you are a core maintainer and want to release a new version, all you need to 
   ```
   git checkout 241 && git tag -a vX.X.X -m "vX.X.X" && git push origin vX.X.X
   ```
-2. Trigger [release job](https://buildserver.labs.intellij.net/buildConfiguration/StaticAnalysis_Base_Releasecli) **in the release branch** (e.g. `241`)
+2. Trigger [release job](https://buildserver.labs.intellij.net/buildConfiguration/StaticAnalysis_Cli_Releasecli) **in the release branch** (e.g. `241`)
 3. The release will be published to:
 - [`JetBrains/qodana-cli`](https://github.com/JetBrains/qodana-cli/releases/) release page
 - [Chocolatey](https://community.chocolatey.org/packages/qodana) registry
