@@ -1,0 +1,51 @@
+name: stale
+
+on:
+  schedule:
+    - cron: 0 9 * * *
+  workflow_dispatch:
+
+permissions:
+  issues: write
+  pull-requests: write
+
+jobs:
+  stale:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/stale@v10
+        with:
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
+          days-before-issue-stale: -1
+          days-before-issue-close: -1
+          days-before-pr-stale: 7
+          days-before-pr-close: 3
+          stale-pr-label: stale
+          stale-pr-message: |
+            This pull request has been automatically marked as stale because it has not had recent activity for 7 days.
+            
+            **What happens next?**
+            - If this PR is still relevant, please add a comment or push new commits to keep it active
+            - If no activity occurs within 3 days, this PR will be automatically closed
+            - You can always reopen the PR later if needed
+            - You can also add a label 'wip' to keep the PR open
+            
+            Thank you for your contribution! 🙏
+          
+          close-pr-message: |
+            This pull request has been automatically closed due to inactivity.
+            
+            **Don't worry!** You can always:
+            - Reopen this PR if you want to continue working on it
+            - Create a new PR with your changes
+            - Reach out to the maintainers if you need help
+            
+            Thank you for your contribution! 🙏
+          
+          exempt-pr-labels: pinned,security,dependencies,work-in-progress,wip,do-not-close
+          exempt-draft-pr: true 
+          exempt-all-pr-milestones: true
+          ascending: true
+          remove-stale-when-updated: true
+          debug-only: false
+          operations-per-run: 30
