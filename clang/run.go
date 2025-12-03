@@ -56,10 +56,9 @@ func (l ClangLinter) MountTools(path string) (map[string]string, error) {
 	val[clang] = getBinaryPath(path)
 
 	_, err := os.Stat(val[clang])
-	isBinaryOk := true
+	isBinaryOk := !os.IsNotExist(err)
 
-	if os.IsNotExist(err) {
-		isBinaryOk = false
+	if !isBinaryOk {
 	} else if err != nil {
 		return nil, err
 	} else {
@@ -115,7 +114,7 @@ func getBinaryPath(toolsPath string) string {
 	return binaryPath
 }
 
-func fixupClangLinterTaxa(sarifPath string, err error) error {
+func fixupClangLinterTaxa(sarifPath string, _ error) error {
 	r, err := platform.ReadReport(sarifPath)
 	if err != nil {
 		log.Errorf("Error reading SARIF reports: %s", err)
@@ -123,7 +122,7 @@ func fixupClangLinterTaxa(sarifPath string, err error) error {
 	}
 
 	for _, taxa := range r.Runs[0].Tool.Driver.Taxa {
-		if taxa.Relationships != nil && len(taxa.Relationships) == 1 &&
+		if len(taxa.Relationships) == 1 &&
 			taxa.Relationships[0].Target != nil && taxa.Relationships[0].Target.Id == taxa.Id {
 			taxa.Relationships[0].Target.Id = r.Runs[0].Tool.Driver.Taxa[0].Id
 		}

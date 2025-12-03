@@ -54,7 +54,7 @@ func IsCloudTokenRequired(tokenLoader CloudTokenLoader) bool {
 	isFreeAnalyzer := !analyzer.GetLinter().IsPaid
 	isEapAnalyzer := analyzer.IsEAP()
 
-	return !(isQodanaLicenseSet || isFreeAnalyzer || isEapAnalyzer)
+	return !isQodanaLicenseSet && !isFreeAnalyzer && !isEapAnalyzer
 }
 
 func LoadCloudUploadToken(tokenLoader CloudTokenLoader, refresh bool, requiresToken bool, interactive bool) string {
