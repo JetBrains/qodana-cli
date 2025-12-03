@@ -28,7 +28,7 @@ Prepare embedded tools:
    ```
    touch baseline-cli.jar intellij-report-converter.jar qodana-fuser.jar
    ```
-   or go to the [latest qodana-cli build](https://buildserver.labs.intellij.net/buildConfiguration/StaticAnalysis_Base_Nightlyclimain) 
+   or go to the [latest qodana-cli build](https://buildserver.labs.intellij.net/buildConfiguration/StaticAnalysis_Cli_Nightlyclimain) 
    (internal only), go to `dependencies` tab and download the artifacts you need.
 4. `cd` back to the root directory
 
@@ -117,7 +117,7 @@ If you are a core maintainer and want to release a new version, all you need to 
   ```
   git checkout 241 && git tag -a vX.X.X -m "vX.X.X" && git push origin vX.X.X
   ```
-2. Trigger [release job](https://buildserver.labs.intellij.net/buildConfiguration/StaticAnalysis_Base_Releasecli) **in the release branch** (e.g. `241`)
+2. Trigger [release job](https://buildserver.labs.intellij.net/buildConfiguration/StaticAnalysis_Cli_Releasecli) **in the release branch** (e.g. `241`)
 3. The release will be published to:
 - [`JetBrains/qodana-cli`](https://github.com/JetBrains/qodana-cli/releases/) release page
 - [Chocolatey](https://community.chocolatey.org/packages/qodana) registry
