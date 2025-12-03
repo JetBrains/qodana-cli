@@ -68,7 +68,7 @@ Inside 3rd party linters docker image the different qodana-cli executable is use
 2. Download the linter binary from the [latest qodana-cdnet build](https://buildserver.labs.intellij.net/buildConfiguration/ijplatform_master_QodanaCdNetBinary#all-projects) (internal only).
    To do this, open the latest build, go to `dependencies` tab, download `*.nupkg` file from the first dependency, place it in the current directory and rename it to `clt.zip`
 3. Run `go generate`
-4. Change the date in [main.go](cdnet/main.go) to more recent one (you will get rid of EAP error)
+4. Change the `buildDateStr` variable in [main.go](cdnet/main.go) to a more recent date (e.g., update it from "2023-12-05T10:52:23Z" to today's date in the same format) to avoid EAP expiration errors.
 5. Build the executable `env GOOS=linux CGO_ENABLED=0 go build -o qd-custom`
 6. To replace the executable in docker image, see `'Patching' an existing Qodana image` section below. Note, that the `qodana-cdnet` image has qodana executable in `/opt/qodana/qodana` path.
 
