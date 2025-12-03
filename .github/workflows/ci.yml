@@ -33,15 +33,25 @@ jobs:
         run: >-
           touch
           cdnet/clt.zip
+          cdnet/clt.path.txt
+          cdnet/clt.sha256.bin
           tooling/baseline-cli.jar
+          tooling/config-loader-cli.jar
           tooling/intellij-report-converter.jar
+          tooling/publisher-cli.jar
           tooling/qodana-fuser.jar
           clang/clang-tidy-linux-amd64.tar.gz
+          clang/clang-tidy-linux-amd64.tar.gz.sha256.bin
           clang/clang-tidy-linux-arm64.tar.gz
+          clang/clang-tidy-linux-arm64.tar.gz.sha256.bin
           clang/clang-tidy-windows-amd64.zip
+          clang/clang-tidy-windows-amd64.zip.sha256.bin
           clang/clang-tidy-windows-arm64.zip
+          clang/clang-tidy-windows-arm64.zip.sha256.bin
           clang/clang-tidy-darwin-amd64.tar.gz
+          clang/clang-tidy-darwin-amd64.tar.gz.sha256.bin
           clang/clang-tidy-darwin-arm64.tar.gz
+          clang/clang-tidy-darwin-arm64.tar.gz.sha256.bin
         shell: bash
       - uses: actions/setup-go@v5
         with:
@@ -89,15 +99,25 @@ jobs:
         run: >-
           touch
           cdnet/clt.zip
+          cdnet/clt.path.txt
+          cdnet/clt.sha256.bin
           tooling/baseline-cli.jar
+          tooling/config-loader-cli.jar
           tooling/intellij-report-converter.jar
+          tooling/publisher-cli.jar
           tooling/qodana-fuser.jar
           clang/clang-tidy-linux-amd64.tar.gz
+          clang/clang-tidy-linux-amd64.tar.gz.sha256.bin
           clang/clang-tidy-linux-arm64.tar.gz
+          clang/clang-tidy-linux-arm64.tar.gz.sha256.bin
           clang/clang-tidy-windows-amd64.zip
+          clang/clang-tidy-windows-amd64.zip.sha256.bin
           clang/clang-tidy-windows-arm64.zip
+          clang/clang-tidy-windows-arm64.zip.sha256.bin
           clang/clang-tidy-darwin-amd64.tar.gz
+          clang/clang-tidy-darwin-amd64.tar.gz.sha256.bin
           clang/clang-tidy-darwin-arm64.tar.gz
+          clang/clang-tidy-darwin-arm64.tar.gz.sha256.bin
       - uses: docker/login-action@v3
         with:
           registry: registry.jetbrains.team
