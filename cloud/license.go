@@ -62,7 +62,7 @@ const (
 	CommunityLicensePlan = "COMMUNITY"
 )
 
-var TokenDeclinedError = errors.New("token was declined by Qodana Cloud server")
+var ErrTokenDeclined = errors.New("token was declined by Qodana Cloud server")
 
 var EmptyTokenMessage = `Starting from version 2023.2 release versions of Qodana Linters require connection to Qodana Cloud. 
 To continue using Qodana, please ensure you have an access token and provide the token as the QODANA_TOKEN environment variable.
@@ -113,7 +113,7 @@ func (endpoints *QdApiEndpoints) RequestLicenseData(token string) ([]byte, error
 	cooldown := getCooldown()
 	for i := 1; i <= attempts; i++ {
 		license, err := requestLicenseDataAttempt(endpoints.LintersApiUrl, token)
-		if errors.Is(err, TokenDeclinedError) {
+		if errors.Is(err, ErrTokenDeclined) {
 			return nil, err
 		}
 		if err != nil {
@@ -144,30 +144,30 @@ func requestLicenseDataAttempt(endpoint string, token string) ([]byte, error) {
 	url := fmt.Sprintf("%s%s", endpoint, qodanaLicenseUri)
 	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
-		return nil, fmt.Errorf("License request failed\n. %w", err)
+		return nil, fmt.Errorf("license request failed\n. %w", err)
 	}
 	authHeaderValue := fmt.Sprintf("Bearer %s", token)
 
 	req.Header.Set("Authorization", authHeaderValue)
 	resp, err := client.Do(req)
 	if err != nil {
-		return nil, fmt.Errorf("License request failed\n. %w", err)
+		return nil, fmt.Errorf("license request failed\n. %w", err)
 	}
 	defer func(Body io.ReadCloser) {
 		_ = Body.Close()
 	}(resp.Body)
 	bodyText, err := io.ReadAll(resp.Body)
 	if err != nil {
-		return nil, fmt.Errorf("Reading license response failed\n. %w", err)
+		return nil, fmt.Errorf("reading license response failed\n. %w", err)
 	}
 	if resp.StatusCode == 401 || resp.StatusCode == 404 {
-		return nil, TokenDeclinedError
+		return nil, ErrTokenDeclined
 	}
 	if resp.StatusCode == 200 {
 		return bodyText, nil
 	}
 	return nil, fmt.Errorf(
-		"License request failed. Response code: %d\nLicense response data:\n%s",
+		"license request failed. Response code: %d\nLicense response data:\n%s",
 		resp.StatusCode,
 		string(bodyText),
 	)
@@ -222,7 +222,7 @@ func SetupLicenseToken(cloudUploadToken string) {
 
 func (endpoints *QdApiEndpoints) GetLicenseData(token string) LicenseData {
 	licenseDataResponse, err := endpoints.RequestLicenseData(token)
-	if errors.Is(err, TokenDeclinedError) {
+	if errors.Is(err, ErrTokenDeclined) {
 		log.Fatalf("License request: %v\n%s", err, DeclinedTokenErrorMessage)
 	}
 	if err != nil {
