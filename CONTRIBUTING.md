@@ -63,7 +63,7 @@ goreleaser release --snapshot --clean
 
 ## Test 3rd party linters
 
-Inside 3rd party linters docker image the different qodana-cli executable is used. To build it:
+Inside 3rd party linters docker image a different qodana-cli executable is used. To build it:
 1. `cd` into the 3rd party linter directory (for this example, we will use cdnet - clang is the same)
 2. Download the linter binary from the [latest qodana-cdnet build](https://buildserver.labs.intellij.net/buildConfiguration/ijplatform_master_QodanaCdNetBinary#all-projects) (internal only).
    To do this, open the latest build, go to `dependencies` tab, download `*.nupkg` file from the first dependency, place it in the current directory and rename it to `clt.zip`
