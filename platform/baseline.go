@@ -35,9 +35,7 @@ func computeBaselinePrintResults(c thirdpartyscan.Context, thresholds map[string
 		strutil.QuoteForWindows(sarifPath),
 	}
 	severities := thresholdsToArgs(thresholds)
-	for _, sev := range severities {
-		args = append(args, sev)
-	}
+	args = append(args, severities...)
 	if c.Baseline() != "" {
 		args = append(args, "-b", strutil.QuoteForWindows(c.Baseline()))
 	}
