@@ -70,7 +70,7 @@ Inside 3rd party linters docker image a different qodana-cli executable is used.
 3. Run `go generate`
 4. Change the `buildDateStr` variable in [main.go](cdnet/main.go) to a more recent date (e.g., update it from "2023-12-05T10:52:23Z" to today's date in the same format) to avoid EAP expiration errors.
 5. Build the executable `env GOOS=linux CGO_ENABLED=0 go build -o qd-custom`
-6. To replace the executable in docker image, see `'Patching' an existing Qodana image` section below. Note, that the `qodana-cdnet` image has qodana executable in `/opt/qodana/qodana` path.
+6. To replace the executable in docker image, see `'Patching' an existing Qodana image` section below. Note that the `qodana-cdnet` image has qodana executable in `/opt/qodana/qodana` path.
 
 ## Create a commit
 
