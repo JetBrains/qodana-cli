@@ -1,8 +1,8 @@
 package main
 
 import (
-	"github.com/JetBrains/qodana-cli/v2025/platform"
-	"github.com/JetBrains/qodana-cli/v2025/platform/thirdpartyscan"
+	"github.com/JetBrains/qodana-cli/internal/platform"
+	"github.com/JetBrains/qodana-cli/internal/platform/thirdpartyscan"
 )
 
 func mergeSarifReports(c thirdpartyscan.Context) (int, error) {

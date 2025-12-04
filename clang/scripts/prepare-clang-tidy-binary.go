@@ -14,7 +14,7 @@ import (
 	"os"
 	"runtime"
 
-	"github.com/JetBrains/qodana-cli/v2025/platform/utils"
+	"github.com/JetBrains/qodana-cli/internal/platform/utils"
 )
 
 func main() {
