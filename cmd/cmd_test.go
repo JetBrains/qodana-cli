@@ -392,6 +392,7 @@ func TestAllCommandsWithContainer(t *testing.T) {
 }
 
 func TestScanWithIde(t *testing.T) {
+	product.RequireNightlyAuth(t)
 	log.SetLevel(log.DebugLevel)
 	token := os.Getenv("QODANA_LICENSE_ONLY_TOKEN")
 	if token == "" {
@@ -424,6 +425,7 @@ func TestScanWithIde(t *testing.T) {
 }
 
 func TestCacheSync(t *testing.T) {
+	product.RequireNightlyAuth(t)
 	log.SetLevel(log.DebugLevel)
 	token := os.Getenv("QODANA_LICENSE_ONLY_TOKEN")
 	if token == "" {
