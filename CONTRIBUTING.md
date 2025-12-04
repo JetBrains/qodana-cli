@@ -22,7 +22,7 @@ git clone git@github.com:JetBrains/qodana-cli.git
 
 Prepare embedded tools:
 
-1. `cd` into the `tooling` directory
+1. `cd` into the `internal/tooling` directory
 2. Run `go run scripts/download-resource.go config-loader-cli.jar` and `go run scripts/download-resource.go publisher-cli.jar`
 3. Either run if you don't test the related functionality:
    ```
@@ -46,13 +46,13 @@ go build -o qd main.go
 
 Test your code with coverage:
 ```sh
-go test -v $(go list -f '{{.Dir}}/...' -m)
+go test -v ./...
 ```
 
 Test your code with a human-readable report (requires `go install github.com/mfridman/tparse@latest`):
 ```shell
 export GITHUB_ACTIONS=true # skip third-party linter tests
-set -o pipefail && go test -json -v $(go list -f '{{.Dir}}/...' -m) | tparse -all
+set -o pipefail && go test -json -v ./... | tparse -all
 ```
 
 Dry-run goreleaser:

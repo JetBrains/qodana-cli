@@ -3,7 +3,7 @@ package main
 import (
 	"os"
 
-	"github.com/JetBrains/qodana-cli/v2025/platform/process"
+	"github.com/JetBrains/qodana-cli/internal/platform/process"
 )
 
 var InterruptChannel chan os.Signal
