@@ -121,7 +121,7 @@ func SelectLatestCompatibleRelease(prod *Product, reqType string) *ReleaseInfo {
 
 	for i := 0; i < len(prod.Releases); i++ {
 		release := &prod.Releases[i]
-		if *release.MajorVersion == product.VersionsMap[reqType] && release.Type == reqType && (latestRelease == nil || release.Date > latestDate) {
+		if *release.MajorVersion == product.ReleaseVersion && release.Type == reqType && (latestRelease == nil || release.Date > latestDate) {
 			latestRelease = release
 			latestDate = release.Date
 		}
