@@ -7,7 +7,6 @@ on:
   pull_request:
 
 jobs:
-  # lint: disabled as golangci-lint is not yet ready for Go workspaces
   test:
     name: "Test (⚙️ ${{ matrix.os }}, 🐳 ${{ matrix.container-engine }})"
     uses: ./.github/workflows/test.yaml
@@ -45,15 +44,25 @@ jobs:
         run: >-
           touch
           cdnet/clt.zip
-          tooling/baseline-cli.jar
-          tooling/intellij-report-converter.jar
-          tooling/qodana-fuser.jar
+          cdnet/clt.sha256.bin
+          cdnet/clt.path.txt
+          internal/tooling/baseline-cli.jar
+          internal/tooling/intellij-report-converter.jar
+          internal/tooling/qodana-fuser.jar
+          internal/tooling/config-loader-cli.jar
+          internal/tooling/publisher-cli.jar
           clang/clang-tidy-linux-amd64.tar.gz
+          clang/clang-tidy-linux-amd64.tar.gz.sha256.bin
           clang/clang-tidy-linux-arm64.tar.gz
+          clang/clang-tidy-linux-arm64.tar.gz.sha256.bin
           clang/clang-tidy-windows-amd64.zip
+          clang/clang-tidy-windows-amd64.zip.sha256.bin
           clang/clang-tidy-windows-arm64.zip
+          clang/clang-tidy-windows-arm64.zip.sha256.bin
           clang/clang-tidy-darwin-amd64.tar.gz
+          clang/clang-tidy-darwin-amd64.tar.gz.sha256.bin
           clang/clang-tidy-darwin-arm64.tar.gz
+          clang/clang-tidy-darwin-arm64.tar.gz.sha256.bin
       - uses: docker/login-action@v3
         with:
           registry: registry.jetbrains.team
@@ -62,7 +71,7 @@ jobs:
       - uses: actions/setup-go@v6
         with:
           cache-dependency-path: "**/*.sum"
-          go-version-file: go.work
+          go-version-file: go.mod
       - uses: JetBrains/qodana-action@main
         env:
           QODANA_TOKEN: ${{ secrets.QODANA_TOKEN }}

@@ -21,13 +21,13 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/JetBrains/qodana-cli/v2025/core"
-	"github.com/JetBrains/qodana-cli/v2025/core/corescan"
-	"github.com/JetBrains/qodana-cli/v2025/platform/product"
-	"github.com/JetBrains/qodana-cli/v2025/platform/qdcontainer"
-	"github.com/JetBrains/qodana-cli/v2025/platform/qdyaml"
-	"github.com/JetBrains/qodana-cli/v2025/platform/strutil"
-	"github.com/JetBrains/qodana-cli/v2025/platform/thirdpartyscan"
+	"github.com/JetBrains/qodana-cli/internal/core"
+	"github.com/JetBrains/qodana-cli/internal/core/corescan"
+	"github.com/JetBrains/qodana-cli/internal/platform/product"
+	"github.com/JetBrains/qodana-cli/internal/platform/qdcontainer"
+	"github.com/JetBrains/qodana-cli/internal/platform/qdyaml"
+	"github.com/JetBrains/qodana-cli/internal/platform/strutil"
+	"github.com/JetBrains/qodana-cli/internal/platform/thirdpartyscan"
 	"github.com/stretchr/testify/assert"
 )
 

@@ -11,10 +11,10 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/JetBrains/qodana-cli/v2025/platform"
-	"github.com/JetBrains/qodana-cli/v2025/platform/strutil"
-	"github.com/JetBrains/qodana-cli/v2025/platform/thirdpartyscan"
-	"github.com/JetBrains/qodana-cli/v2025/platform/utils"
+	"github.com/JetBrains/qodana-cli/internal/platform"
+	"github.com/JetBrains/qodana-cli/internal/platform/strutil"
+	"github.com/JetBrains/qodana-cli/internal/platform/thirdpartyscan"
+	"github.com/JetBrains/qodana-cli/internal/platform/utils"
 	"github.com/briandowns/spinner"
 	log "github.com/sirupsen/logrus"
 )
