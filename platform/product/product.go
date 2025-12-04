@@ -32,9 +32,9 @@ type Linter struct {
 }
 
 const (
-	ReleaseVersion = "2025.2"
-	ShortVersion   = "252"
-	IsReleased     = true
+	ReleaseVersion = "2025.3"
+	ShortVersion   = "253"
+	IsReleased     = false
 
 	EapSuffix  = "-EAP"
 	ReleaseVer = "release"
@@ -212,11 +212,6 @@ var (
 		IsPaid:          false,
 		SupportFixes:    false,
 		EapOnly:         true,
-	}
-
-	VersionsMap = map[string]string{
-		ReleaseVer: "2025.2",
-		EapVer:     "2025.2",
 	}
 
 	// AllLinters Order is important for detection

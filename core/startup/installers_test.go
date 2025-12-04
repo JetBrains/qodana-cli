@@ -19,7 +19,6 @@ package startup
 import (
 	"archive/tar"
 	"compress/gzip"
-	"fmt"
 	"io"
 	"os"
 	"os/exec"
@@ -34,13 +33,7 @@ import (
 )
 
 func TestGetIde(t *testing.T) {
-	//goland:noinspection GoBoolExpressions
-	if !product.IsReleased {
-		t.Setenv(
-			"QD_PRODUCT_INTERNAL_FEED",
-			fmt.Sprintf("https://packages.jetbrains.team/files/p/sa/qdist/%s/feed.json", product.ReleaseVersion),
-		)
-	}
+	product.RequireNightlyAuth(t)
 
 	for _, linter := range product.AllNativeLinters {
 		if linter.ProductCode != product.QDCPP {
@@ -60,6 +53,7 @@ func TestGetIde(t *testing.T) {
 }
 
 func TestDownloadAndInstallIDE(t *testing.T) {
+	product.RequireNightlyAuth(t)
 	linters := []product.Linter{product.GoLinter}
 	for _, linter := range linters {
 		DownloadAndInstallIDE(linter, t)
