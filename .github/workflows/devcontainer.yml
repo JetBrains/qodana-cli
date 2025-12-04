@@ -12,7 +12,6 @@ permissions:
 
 jobs:
   docker:
-    if: github.repository == 'jetbrains/qodana-cli'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6

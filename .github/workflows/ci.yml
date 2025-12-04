@@ -30,7 +30,6 @@ jobs:
             container-engine: docker@v25.0  # See also: https://endoflife.date/docker-engine
 
   code-quality:
-    if: github.repository == 'jetbrains/qodana-cli'
     runs-on: ubuntu-latest
     permissions:
       checks: write
