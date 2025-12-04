@@ -9,7 +9,7 @@ import (
 	"os"
 	"regexp"
 
-	"github.com/JetBrains/qodana-cli/v2025/platform/utils"
+	"github.com/JetBrains/qodana-cli/internal/platform/utils"
 )
 
 const DllPathPattern = `^tools/[^/]+/any/JetBrains\.CommandLine\.Products\.dll$`

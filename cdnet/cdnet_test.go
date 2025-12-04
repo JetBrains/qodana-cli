@@ -23,11 +23,11 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/JetBrains/qodana-cli/v2025/platform/product"
+	"github.com/JetBrains/qodana-cli/internal/platform/product"
 
-	"github.com/JetBrains/qodana-cli/v2025/platform/thirdpartyscan"
+	"github.com/JetBrains/qodana-cli/internal/platform/thirdpartyscan"
 
-	"github.com/JetBrains/qodana-cli/v2025/platform"
+	"github.com/JetBrains/qodana-cli/internal/platform"
 	log "github.com/sirupsen/logrus"
 )
 

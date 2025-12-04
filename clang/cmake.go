@@ -8,7 +8,7 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/JetBrains/qodana-cli/v2025/platform/utils"
+	"github.com/JetBrains/qodana-cli/internal/platform/utils"
 	log "github.com/sirupsen/logrus"
 )
 
