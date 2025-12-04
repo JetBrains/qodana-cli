@@ -172,13 +172,14 @@ func prepareContainerSpecificDirectories(prod product.Product, cacheDir string, 
 	userPrefsDir := filepath.Join(homeDir, ".java", ".userPrefs")
 	MakeDirAll(userPrefsDir)
 
-	if prod.BaseScriptName == product.Rider {
+	switch prod.BaseScriptName {
+	case product.Rider:
 		nugetDir := filepath.Join(cacheDir, nugetDir)
 		if err := os.Setenv("NUGET_PACKAGES", nugetDir); err != nil {
 			log.Fatal(err)
 		}
 		MakeDirAll(nugetDir)
-	} else if prod.BaseScriptName == product.Idea {
+	case product.Idea:
 		MakeDirAll(filepath.Join(cacheDir, m2))
 		if err = os.Setenv("GRADLE_USER_HOME", filepath.Join(cacheDir, "gradle")); err != nil {
 			log.Fatal(err)
@@ -238,7 +239,7 @@ func addKeepassIDEConfig(ideaOptions string) {
 func SyncConfigCache(prod product.Product, confDirPath string, cacheDir string, fromCache bool) {
 	isIdea := prod.BaseScriptName == product.Idea
 	isPyCharm := prod.BaseScriptName == product.PyCharm
-	if !(isIdea || isPyCharm) {
+	if !isIdea && !isPyCharm {
 		return
 	}
 

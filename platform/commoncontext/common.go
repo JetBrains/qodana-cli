@@ -181,9 +181,7 @@ func SelectAnalyzerForPath(path string, token string) product.Analyzer {
 				msg.WarningMessage("Detected technologies: " + strings.Join(languages, ", ") + "\n")
 				for _, language := range languages {
 					if i, err := product.LangsToLinters[language]; err {
-						for _, l := range i {
-							linters = append(linters, l)
-						}
+						linters = append(linters, i...)
 					}
 				}
 				if len(linters) == 0 {

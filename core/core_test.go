@@ -1017,10 +1017,11 @@ func TestQodanaOptions_RequiresToken(t *testing.T) {
 			tt.name, func(t *testing.T) {
 				initArgs := commoncontext.Compute(tt.linter, tt.ide, "", "", "", "", "", "", false, "", "", "")
 
-				if tt.name == qdenv.QodanaToken {
+				switch tt.name {
+				case qdenv.QodanaToken:
 					t.Setenv(qdenv.QodanaToken, "test")
 					initArgs.QodanaToken = "test"
-				} else if tt.name == qdenv.QodanaLicense {
+				case qdenv.QodanaLicense:
 					t.Setenv(qdenv.QodanaLicense, "test")
 				}
 				result := tokenloader.IsCloudTokenRequired(initArgs)

@@ -71,7 +71,7 @@ func SetupLicenseAndProjectHash(prod product.Product, endpoints *cloud.QdApiEndp
 	}
 
 	licenseDataResponse, err := endpoints.RequestLicenseData(token)
-	if errors.Is(err, cloud.TokenDeclinedError) {
+	if errors.Is(err, cloud.ErrTokenDeclined) {
 		log.Fatalf("License request: %v\n%s", err, cloud.DeclinedTokenErrorMessage)
 	}
 	if err != nil {

@@ -262,11 +262,12 @@ func printLines(content string, contextLine int, line int, skipHighlight bool) {
 
 // GetProblemsFoundMessage returns a message about the number of problems found, used in CLI and BitBucket report.
 func GetProblemsFoundMessage(newProblems int) string {
-	if newProblems == 0 {
+	switch newProblems {
+	case 0:
 		return "It seems all right 👌 No new problems found according to the checks applied"
-	} else if newProblems == 1 {
-		return fmt.Sprintf("Found 1 new problem according to the checks applied")
-	} else {
+	case 1:
+		return "Found 1 new problem according to the checks applied"
+	default:
 		return fmt.Sprintf("Found %d new problems according to the checks applied", newProblems)
 	}
 }

@@ -43,10 +43,7 @@ func CreateContext(
 		}
 	}
 
-	commit := cliOptions.Commit
-	if strings.HasPrefix(commit, "CI") {
-		commit = strings.TrimPrefix(commit, "CI")
-	}
+	commit := strings.TrimPrefix(cliOptions.Commit, "CI")
 
 	return ContextBuilder{
 		Analyser:                  commonCtx.Analyzer,

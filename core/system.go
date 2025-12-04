@@ -335,7 +335,7 @@ func getScanStages() []string {
 // saveReport saves web files to expect, and generates json.
 func saveReport(c corescan.Context) {
 	prod := c.Prod()
-	if !(qdenv.IsContainer() && (c.SaveReport() || c.ShowReport())) {
+	if !qdenv.IsContainer() || (!c.SaveReport() && !c.ShowReport()) {
 		return
 	}
 

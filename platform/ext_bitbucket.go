@@ -154,7 +154,9 @@ func buildAnnotation(r *sarif.Result, ruleDescription string, reportLink string)
 	data := bbapi.NewReportAnnotation()
 	data.SetExternalId(getFingerprint(r))
 	data.SetAnnotationType(bitBucketAnnotationType)
-	data.SetSummary(fmt.Sprintf("%s: %s", r.RuleId, r.Message.Text))
+	if r.Message != nil {
+		data.SetSummary(fmt.Sprintf("%s: %s", r.RuleId, r.Message.Text))
+	}
 	data.SetDetails(ruleDescription)
 	data.SetSeverity(bbSeverity)
 

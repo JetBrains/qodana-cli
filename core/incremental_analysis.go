@@ -191,7 +191,7 @@ func (r *defaultAnalysisRunner) RunFunc(hash string, ctx context.Context, c core
 
 	contextForAnalysis := c.WithEffectiveConfigurationDirOnRevision(effectiveConfigFiles.ConfigDir)
 	exitCode := runQodana(ctx, contextForAnalysis)
-	if !(exitCode == 0 || exitCode == 255) {
+	if exitCode != 0 && exitCode != 255 {
 		log.Errorf("Qodana analysis on %s exited with code %d. Aborting", hash, exitCode)
 		return true, exitCode
 	}

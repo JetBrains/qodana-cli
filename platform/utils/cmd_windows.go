@@ -1,5 +1,4 @@
 //go:build windows
-// +build windows
 
 /*
  * Copyright 2021-2024 JetBrains s.r.o.

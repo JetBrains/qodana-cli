@@ -52,10 +52,10 @@ func isCommandRequested(commands []*cobra.Command, args []string) string {
 
 // setDefaultCommandIfNeeded sets default scan command if no other command is requested.
 func setDefaultCommandIfNeeded(rootCmd *cobra.Command, args []string) {
-	if !(isHelpOrVersion(args) || isCommandRequested(
+	if !isHelpOrVersion(args) && isCommandRequested(
 		rootCmd.Commands(),
 		args[1:],
-	) != "" || isCompletionRequested(args)) {
+	) == "" && !isCompletionRequested(args) {
 		newArgs := append([]string{"scan"}, args[1:]...)
 		rootCmd.SetArgs(newArgs)
 	}

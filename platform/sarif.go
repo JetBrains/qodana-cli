@@ -55,18 +55,18 @@ func MergeSarifReports(c thirdpartyscan.Context, deviceId string) (int, error) {
 	files, err := findSarifFiles(tmpResultsDir)
 	sort.Strings(files)
 	if err != nil {
-		return 0, fmt.Errorf("Error locating SARIF files: %s\n", err)
+		return 0, fmt.Errorf("error locating SARIF files: %s", err)
 	}
 
 	if len(files) == 0 {
-		return 0, fmt.Errorf("No SARIF files (file names ending with .sarif.json) found in %s\n", tmpResultsDir)
+		return 0, fmt.Errorf("no SARIF files (file names ending with .sarif.json) found in %s", tmpResultsDir)
 	}
 
 	ch := make(chan *sarif.Report)
 	go collectReports(files, ch)
 	finalReport, err := mergeReports(ch)
 	if err != nil || finalReport == nil {
-		return 0, fmt.Errorf("Error merging SARIF files: %s\n", err)
+		return 0, fmt.Errorf("error merging SARIF files: %s", err)
 	}
 
 	for _, result := range finalReport.Runs[0].Results {
@@ -130,12 +130,12 @@ func WriteReport(path string, finalReport *sarif.Report) error {
 	// serialize object skipping empty fields
 	fatBytes, err := json.MarshalIndent(finalReport, "", " ")
 	if err != nil {
-		return fmt.Errorf("Error marshalling report: %s\n", err)
+		return fmt.Errorf("error marshalling report: %s", err)
 	}
 
 	f, err := os.Create(path)
 	if err != nil {
-		return fmt.Errorf("Error creating resulting SARIF file: %s\n", err)
+		return fmt.Errorf("error creating resulting SARIF file: %s", err)
 	}
 
 	defer func(f *os.File) {
@@ -147,7 +147,7 @@ func WriteReport(path string, finalReport *sarif.Report) error {
 
 	_, err = f.Write(fatBytes)
 	if err != nil {
-		return fmt.Errorf("Error writing resulting SARIF file: %s\n", err)
+		return fmt.Errorf("error writing resulting SARIF file: %s", err)
 	}
 	return nil
 }

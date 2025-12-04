@@ -138,9 +138,7 @@ func runClangTidy(
 	args = append(args, input.Headers...)
 	args = append(args, input.File)
 	args = append(args, "--quiet")
-	for _, arg := range strings.Split(c.ClangArgs(), " ") {
-		args = append(args, arg)
-	}
+	args = append(args, strings.Split(c.ClangArgs(), " ")...)
 	stdout, stderr, _, err := utils.RunCmdRedirectOutput(
 		strutil.QuoteIfSpace(c.ProjectDir()),
 		args...,
