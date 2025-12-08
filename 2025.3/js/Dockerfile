@@ -121,8 +121,8 @@ RUN bash <<-"EOF"
         QD_CHECKSUM_URL="$QD_URL.sha256"
     fi
 
-    curl -fsSL "$QD_URL" -o "/tmp/$QD_NAME.tar.gz"
-               "$QD_CHECKSUM_URL" -o "/tmp/$QD_NAME.tar.gz.sha256"
+    curl -fsSL "$QD_URL" -o "/tmp/$QD_NAME.tar.gz" \
+               "$QD_CHECKSUM_URL" -o "/tmp/$QD_NAME.tar.gz.sha256" \
                "$QD_CHECKSUM_URL.asc" -o "/tmp/$QD_NAME.tar.gz.sha256.asc"
 
     export GNUPGHOME="$(mktemp -d)"
