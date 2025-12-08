@@ -58,6 +58,12 @@ func gitRun(cwd string, command []string, logdir string) (string, string, error)
 	return stdout, stderr, nil
 }
 
+// RevParse converts any commit reference (hash, branch name, tag name, etc.) to a full SHA1 commit hash.
+func RevParse(cwd string, ref string, logdir string) (string, error) {
+	stdout, _, err := gitRun(cwd, []string{"rev-parse", "--verify", "--quiet", "--end-of-options", ref}, logdir)
+	return strings.TrimSpace(stdout), err
+}
+
 // Reset resets the git repository to the given commit.
 func Reset(cwd string, sha string, logdir string) error {
 	_, _, err := gitRun(cwd, []string{"reset", "--soft", sha}, logdir)
