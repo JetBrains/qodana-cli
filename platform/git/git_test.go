@@ -17,9 +17,11 @@
 package git
 
 import (
+	"fmt"
 	"os"
 	"os/exec"
 	"path/filepath"
+	"regexp"
 	"testing"
 
 	log "github.com/sirupsen/logrus"
@@ -82,6 +84,48 @@ func TestGitRunReportsErrors(t *testing.T) {
 	assert.Error(t, err)
 }
 
+func TestRevParse(t *testing.T) {
+	reSha1 := regexp.MustCompile("^[0-9a-f]{40}$")
+	logdir := t.TempDir()
+
+	dir := gitInit(t)
+	gitCommitAll(t, dir, "commit")
+
+	// Resolving head
+	headSha, err := RevParse(dir, "HEAD", logdir)
+	assert.NoError(t, err)
+	assert.Regexp(t, reSha1, headSha)
+
+	// Resolving branch
+	branchSha1, err := RevParse(dir, "main", logdir)
+	assert.NoError(t, err)
+	assert.Equal(t, headSha, branchSha1)
+
+	branchSha2, err := RevParse(dir, "refs/heads/main", logdir)
+	assert.NoError(t, err)
+	assert.Equal(t, headSha, branchSha2)
+
+	// Resolving tag
+	git(t, dir, []string{"tag", "v1.0.0"})
+	tagSha1, err := RevParse(dir, "v1.0.0", logdir)
+	assert.NoError(t, err)
+	assert.Equal(t, headSha, tagSha1)
+
+	tagSha2, err := RevParse(dir, "refs/tags/v1.0.0", logdir)
+	assert.NoError(t, err)
+	assert.Equal(t, headSha, tagSha2)
+
+	// Resolving short SHA1
+	shortSha, err := RevParse(dir, headSha[:5], logdir)
+	assert.NoError(t, err)
+	assert.Equal(t, headSha, shortSha)
+
+	// Resolving full SHA1
+	headShaSha, err := RevParse(dir, headSha, logdir)
+	assert.NoError(t, err)
+	assert.Equal(t, headSha, headShaSha)
+}
+
 func deferredCleanup(path string) {
 	err := os.RemoveAll(path)
 	if err != nil {
@@ -127,4 +171,25 @@ func gitClone(repoURL, directory string, revision string, branch string) error {
 		return err
 	}
 	return nil
+}
+
+func gitInit(t *testing.T) string {
+	dir := t.TempDir()
+	git(t, dir, []string{"init", "--initial-branch=main"})
+	return dir
+}
+
+func gitCommitAll(t *testing.T, cwd string, message string) {
+	git(t, cwd, []string{"commit", "--all", "--allow-empty", "--allow-empty-message", "--message", message})
+}
+
+func git(t *testing.T, cwd string, command []string) string {
+	logdir := t.TempDir()
+	defer assert.NoError(t, os.RemoveAll(logdir))
+
+	command = append([]string{"-c", "user.name=Test", "-c", "user.email="}, command...)
+	stdout, stderr, err := gitRun(cwd, command, logdir)
+	assert.NoError(t, err)
+	fmt.Print(stderr)
+	return stdout
 }

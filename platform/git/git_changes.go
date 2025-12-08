@@ -84,9 +84,23 @@ func ComputeChangedFiles(cwd string, diffStart string, diffEnd string, logdir st
 		return ChangedFiles{}, fmt.Errorf("failed to close file %s: %w", filePath, err)
 	}
 
+	// Rev-parsing references in advance helps with clearer error messages and in case references could be confused
+	// with `git diff` options.
+	diffStartSha, err := RevParse(cwd, diffStart, logdir)
+	if err != nil {
+		return ChangedFiles{}, err
+	}
+	log.Debugf("Resolved git ref %q as %s", diffStart, diffStartSha)
+
+	diffEndSha, err := RevParse(cwd, diffEnd, logdir)
+	if err != nil {
+		return ChangedFiles{}, err
+	}
+	log.Debugf("Resolved git ref %q as %s", diffEnd, diffEndSha)
+
 	_, _, err = gitRun(
 		cwd,
-		[]string{"diff", diffStart, diffEnd, "--unified=0", "--no-renames", ">", strutil.QuoteIfSpace(filePath)},
+		[]string{"diff", diffStartSha, diffEndSha, "--unified=0", "--no-renames", ">", strutil.QuoteIfSpace(filePath)},
 		logdir,
 	)
 	if err != nil {
