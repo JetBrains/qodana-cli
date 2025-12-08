@@ -10,7 +10,7 @@ require (
 	github.com/mattn/go-isatty v0.0.20
 	github.com/pterm/pterm v0.12.82
 	github.com/sirupsen/logrus v1.9.3
-	github.com/spf13/cobra v1.10.1
+	github.com/spf13/cobra v1.10.2
 	github.com/stretchr/testify v1.11.1
 	github.com/zalando/go-keyring v0.2.6
 	gopkg.in/yaml.v3 v3.0.1
@@ -33,7 +33,7 @@ require (
 	github.com/docker/docker v28.4.0+incompatible
 	github.com/reviewdog/go-bitbucket v0.0.0-20201024094602-708c3f6a7de0
 	github.com/shirou/gopsutil/v3 v3.24.5
-	golang.org/x/sys v0.38.0
+	golang.org/x/sys v0.39.0
 )
 
 require (
