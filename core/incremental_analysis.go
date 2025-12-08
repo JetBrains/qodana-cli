@@ -120,18 +120,28 @@ func NewReverseScopedAnalyzer(
 }
 
 func (sa *ScopedAnalyzer) RunAnalysis() int {
-	c, startHash, endHash := sa.sequenceRunner.GetParams()
+	c, startRef, endRef := sa.sequenceRunner.GetParams()
 	var err error
-	if startHash == "" || endHash == "" {
+	if startRef == "" || endRef == "" {
 		log.Fatal("No commits given. Consider passing --commit or --diff-start and --diff-end (optional) with the range of commits to analyze.")
 	}
 
-	changedFiles, err := git.ComputeChangedFiles(c.RepositoryRoot(), startHash, endHash, c.LogDir())
+	startSha, err := git.RevParse(c.RepositoryRoot(), startRef, c.LogDir())
+	if err != nil {
+		log.Fatalf("Failed to calculate analysis scope: %q is not a valid commit ref.", startRef)
+	}
+
+	endSha, err := git.RevParse(c.RepositoryRoot(), endRef, c.LogDir())
+	if err != nil {
+		log.Fatalf("Failed to calculate analysis scope: %q is not a valid commit ref.", endRef)
+	}
+
+	changedFiles, err := git.ComputeChangedFiles(c.RepositoryRoot(), startSha, endSha, c.LogDir())
 	if err != nil {
 		log.Fatal(err)
 	}
 	if len(changedFiles.Files) == 0 {
-		log.Warnf("Nothing to compare between %s and %s", startHash, endHash)
+		log.Warnf("Nothing to compare between %s and %s", startRef, endRef)
 		return utils.QodanaEmptyChangesetExitCodePlaceholder
 	}
 
