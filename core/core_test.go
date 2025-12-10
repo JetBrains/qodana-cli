@@ -47,18 +47,12 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestCliArgs(t *testing.T) {
+func TestDockerCliArgs(t *testing.T) {
 	dir, _ := os.Getwd()
 	projectDir := filepath.Join(dir, "project")
 	cacheDir := filepath.Join(dir, "cache")
 	resultsDir := filepath.Join(dir, "results")
 
-	home := string(os.PathSeparator) + "opt" + string(os.PathSeparator) + "idea"
-	ideScript := filepath.Join(home, "bin", "idea.sh")
-	prod := product.Product{
-		IdeScript: ideScript,
-		Home:      home,
-	}
 	err := os.Unsetenv(qdenv.QodanaDockerEnv)
 	if err != nil {
 		t.Fatal(err)
@@ -98,8 +92,6 @@ func TestCliArgs(t *testing.T) {
 				ApplyFixes:            true,
 			},
 			res: []string{
-				filepath.FromSlash("/opt/idea/bin/idea.sh"),
-				"qodana",
 				"--save-report",
 				"--source-directory",
 				"./src",
@@ -119,6 +111,138 @@ func TestCliArgs(t *testing.T) {
 				"id",
 				"--property=foo.baz=bar",
 				"--property=foo.bar=baz",
+			},
+		},
+		{
+			name:         "deprecated --fixes-strategy=apply",
+			majorVersion: "2024.2",
+			cb: corescan.ContextBuilder{
+				ProjectDir:     projectDir,
+				RepositoryRoot: projectDir,
+				CacheDir:       cacheDir,
+				ResultsDir:     resultsDir,
+				FixesStrategy:  "apply",
+				Analyser:       product.JvmLinter.DockerAnalyzer(),
+			},
+			res: []string{
+				"--fixes-strategy",
+				"apply",
+			},
+		},
+		{
+			name:         "deprecated --fixes-strategy=cleanup",
+			majorVersion: "2024.3",
+			cb: corescan.ContextBuilder{
+				ProjectDir:     projectDir,
+				RepositoryRoot: projectDir,
+				CacheDir:       cacheDir,
+				ResultsDir:     resultsDir,
+				FixesStrategy:  "cleanup",
+				Analyser:       product.JvmLinter.DockerAnalyzer(),
+			},
+			res: []string{
+				"--fixes-strategy",
+				"cleanup",
+			},
+		},
+		{
+			name:         "ProjectDir subdirectory of RepositoryRoot in container",
+			majorVersion: "2025.3",
+			cb: corescan.ContextBuilder{
+				ProjectDir:     filepath.Join(projectDir, "subproject"),
+				RepositoryRoot: projectDir,
+				CacheDir:       cacheDir,
+				ResultsDir:     resultsDir,
+				Analyser:       product.JvmLinter.DockerAnalyzer(),
+			},
+			res: []string{
+				"--project-dir",
+				qdcontainer.MountDir + "/subproject",
+				"--repository-root",
+				qdcontainer.MountDir,
+			},
+		},
+	} {
+		t.Run(
+			tc.name, func(t *testing.T) {
+				tc.cb.Prod.Version = tc.majorVersion
+				context := tc.cb.Build()
+				args := GetIdeArgs(context)
+				assert.Equal(t, tc.res, args)
+			},
+		)
+	}
+}
+
+func TestCliArgs(t *testing.T) {
+	dir, _ := os.Getwd()
+	projectDir := filepath.Join(dir, "project")
+	cacheDir := filepath.Join(dir, "cache")
+	resultsDir := filepath.Join(dir, "results")
+
+	home := string(os.PathSeparator) + "opt" + string(os.PathSeparator) + "idea"
+	ideScript := filepath.Join(home, "bin", "idea.sh")
+	prod := product.Product{
+		IdeScript: ideScript,
+		Home:      home,
+	}
+	err := os.Unsetenv(qdenv.QodanaDockerEnv)
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, tc := range []struct {
+		name         string
+		majorVersion string
+		cb           corescan.ContextBuilder
+		res          []string
+	}{
+		{
+			name:         "typical set up",
+			majorVersion: "2025.3",
+			cb: corescan.ContextBuilder{
+				ProjectDir:                projectDir,
+				RepositoryRoot:            projectDir,
+				CacheDir:                  cacheDir,
+				ResultsDir:                resultsDir,
+				EffectiveConfigurationDir: "/qdconfig",
+				Analyser:                  product.JvmLinter.NativeAnalyzer(),
+				SourceDirectory:           "./src",
+				DisableSanity:             true,
+				RunPromo:                  "true",
+				Baseline:                  "qodana.sarif.json",
+				BaselineIncludeAbsent:     true,
+				SaveReport:                true,
+				ShowReport:                true,
+				Port:                      8888,
+				Property:                  []string{"foo.baz=bar", "foo.bar=baz"},
+				Script:                    "default",
+				FailThreshold:             "0",
+				AnalysisId:                "id",
+				Env:                       []string{"A=B"},
+				Volumes:                   []string{"/tmp/foo:/tmp/foo"},
+				User:                      "1001:1001",
+				PrintProblems:             true,
+				ProfileName:               "Default",
+				ApplyFixes:                true,
+			},
+			res: []string{
+				filepath.FromSlash("/opt/idea/bin/idea.sh"),
+				"qodana",
+				"--source-directory",
+				"./src",
+				"--disable-sanity",
+				"--profile-name",
+				"Default",
+				"--run-promo",
+				"true",
+				"--baseline",
+				"qodana.sarif.json",
+				"--baseline-include-absent",
+				"--fail-threshold",
+				"0",
+				"--apply-fixes",
+				"--config-dir",
+				"/qdconfig",
 				projectDir,
 				resultsDir,
 			},
@@ -141,46 +265,6 @@ func TestCliArgs(t *testing.T) {
 				"qodana",
 				"--profile-name",
 				"\"separated words\"",
-				projectDir,
-				resultsDir,
-			},
-		},
-		{
-			name:         "deprecated --fixes-strategy=apply",
-			majorVersion: "2024.2",
-			cb: corescan.ContextBuilder{
-				ProjectDir:     projectDir,
-				RepositoryRoot: projectDir,
-				CacheDir:       cacheDir,
-				ResultsDir:     resultsDir,
-				FixesStrategy:  "apply",
-				Analyser:       product.JvmLinter.DockerAnalyzer(),
-			},
-			res: []string{
-				filepath.FromSlash("/opt/idea/bin/idea.sh"),
-				"qodana",
-				"--fixes-strategy",
-				"apply",
-				projectDir,
-				resultsDir,
-			},
-		},
-		{
-			name:         "deprecated --fixes-strategy=cleanup",
-			majorVersion: "2024.3",
-			cb: corescan.ContextBuilder{
-				ProjectDir:     projectDir,
-				RepositoryRoot: projectDir,
-				CacheDir:       cacheDir,
-				ResultsDir:     resultsDir,
-				FixesStrategy:  "cleanup",
-				Analyser:       product.JvmLinter.DockerAnalyzer(),
-			},
-			res: []string{
-				filepath.FromSlash("/opt/idea/bin/idea.sh"),
-				"qodana",
-				"--fixes-strategy",
-				"cleanup",
 				projectDir,
 				resultsDir,
 			},
@@ -263,27 +347,6 @@ func TestCliArgs(t *testing.T) {
 				"--config-dir",
 				"/qdconfig",
 				projectDir,
-				resultsDir,
-			},
-		},
-		{
-			name:         "ProjectDir subdirectory of RepositoryRoot in container",
-			majorVersion: "2025.3",
-			cb: corescan.ContextBuilder{
-				ProjectDir:     filepath.Join(projectDir, "subproject"),
-				RepositoryRoot: projectDir,
-				CacheDir:       cacheDir,
-				ResultsDir:     resultsDir,
-				Analyser:       product.JvmLinter.DockerAnalyzer(),
-			},
-			res: []string{
-				filepath.FromSlash("/opt/idea/bin/idea.sh"),
-				"qodana",
-				"--project-dir",
-				qdcontainer.MountDir + "/subproject",
-				"--repository-root",
-				qdcontainer.MountDir,
-				filepath.Join(projectDir, "subproject"),
 				resultsDir,
 			},
 		},
@@ -1036,16 +1099,16 @@ func TestQodanaOptions_RequiresToken(t *testing.T) {
 
 func propertiesFixture(enableStats bool, additionalProperties []string) []string {
 	properties := []string{
-		fmt.Sprintf("-Didea.config.path=%s", filepath.Join(os.TempDir(), "entrypoint", "project")),
+		fmt.Sprintf("-Didea.config.path=%s", filepath.Join(os.TempDir(), "entrypoint", "root", "project")),
 		fmt.Sprintf("-Didea.headless.enable.statistics=%t", enableStats),
 		"-Didea.headless.statistics.device.id=FAKE",
 		"-Didea.headless.statistics.salt=FAKE",
 		"-Dqodana.automation.guid=FAKE",
 		fmt.Sprintf("-Dqodana.coverage.input=%s", qdcontainer.DataCoverageDir),
-		fmt.Sprintf("-Didea.log.path=%s", filepath.Join(os.TempDir(), "entrypoint", "project", "log")),
-		fmt.Sprintf("-Didea.plugins.path=%s", filepath.Join(os.TempDir(), "entrypoint", "project", "plugins", "233")),
-		fmt.Sprintf("-Didea.system.path=%s", filepath.Join(os.TempDir(), "entrypoint", "project", "idea", "233")),
-		fmt.Sprintf("-Xlog:gc*:%s", filepath.Join(os.TempDir(), "entrypoint", "project", "log", "gc.log")),
+		fmt.Sprintf("-Didea.log.path=%s", filepath.Join(os.TempDir(), "entrypoint", "results", "log")),
+		fmt.Sprintf("-Didea.plugins.path=%s", filepath.Join(os.TempDir(), "entrypoint", "cache", "plugins", "233")),
+		fmt.Sprintf("-Didea.system.path=%s", filepath.Join(os.TempDir(), "entrypoint", "cache", "idea", "233")),
+		fmt.Sprintf("-Xlog:gc*:%s", filepath.Join(os.TempDir(), "entrypoint", "results", "log", "gc.log")),
 		"-XX:MaxRAMPercentage=70",
 	}
 	properties = append(properties, additionalProperties...)
@@ -1055,11 +1118,11 @@ func propertiesFixture(enableStats bool, additionalProperties []string) []string
 
 func Test_Properties(t *testing.T) {
 	tmpDir := filepath.Join(os.TempDir(), "entrypoint")
-	repositoryRoot := tmpDir
+	repositoryRoot := filepath.Join(tmpDir, "root")
 	relativePath := "project"
-	projectDir := filepath.Join(tmpDir, relativePath)
-	resultsDir := projectDir
-	cacheDir := projectDir
+	projectDir := filepath.Join(repositoryRoot, relativePath)
+	resultsDir := filepath.Join(tmpDir, "results")
+	cacheDir := filepath.Join(tmpDir, "cache")
 
 	t.Setenv(qdenv.QodanaConfEnv, projectDir)
 	t.Setenv(qdenv.QodanaDockerEnv, "true")
