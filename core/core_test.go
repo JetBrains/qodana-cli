@@ -281,7 +281,8 @@ func TestCliArgs(t *testing.T) {
 				"qodana",
 				"--project-dir",
 				qdcontainer.MountDir + "/subproject",
-				"--property=qodana.path.to.project.dir.from.project.root=subproject",
+				"--repository-root",
+				qdcontainer.MountDir,
 				filepath.Join(projectDir, "subproject"),
 				resultsDir,
 			},
@@ -300,7 +301,6 @@ func TestCliArgs(t *testing.T) {
 			res: []string{
 				filepath.FromSlash("/opt/idea/bin/idea.sh"),
 				"qodana",
-				"--property=qodana.path.to.project.dir.from.project.root=subproject",
 				"--config-dir",
 				"/qdconfig",
 				filepath.Join(projectDir, "subproject"),
@@ -1036,16 +1036,16 @@ func TestQodanaOptions_RequiresToken(t *testing.T) {
 
 func propertiesFixture(enableStats bool, additionalProperties []string) []string {
 	properties := []string{
-		fmt.Sprintf("-Didea.config.path=%s", filepath.Join(os.TempDir(), "entrypoint")),
+		fmt.Sprintf("-Didea.config.path=%s", filepath.Join(os.TempDir(), "entrypoint", "project")),
 		fmt.Sprintf("-Didea.headless.enable.statistics=%t", enableStats),
 		"-Didea.headless.statistics.device.id=FAKE",
 		"-Didea.headless.statistics.salt=FAKE",
 		"-Dqodana.automation.guid=FAKE",
 		fmt.Sprintf("-Dqodana.coverage.input=%s", qdcontainer.DataCoverageDir),
-		fmt.Sprintf("-Didea.log.path=%s", filepath.Join(os.TempDir(), "entrypoint", "log")),
-		fmt.Sprintf("-Didea.plugins.path=%s", filepath.Join(os.TempDir(), "entrypoint", "plugins", "233")),
-		fmt.Sprintf("-Didea.system.path=%s", filepath.Join(os.TempDir(), "entrypoint", "idea", "233")),
-		fmt.Sprintf("-Xlog:gc*:%s", filepath.Join(os.TempDir(), "entrypoint", "log", "gc.log")),
+		fmt.Sprintf("-Didea.log.path=%s", filepath.Join(os.TempDir(), "entrypoint", "project", "log")),
+		fmt.Sprintf("-Didea.plugins.path=%s", filepath.Join(os.TempDir(), "entrypoint", "project", "plugins", "233")),
+		fmt.Sprintf("-Didea.system.path=%s", filepath.Join(os.TempDir(), "entrypoint", "project", "idea", "233")),
+		fmt.Sprintf("-Xlog:gc*:%s", filepath.Join(os.TempDir(), "entrypoint", "project", "log", "gc.log")),
 		"-XX:MaxRAMPercentage=70",
 	}
 	properties = append(properties, additionalProperties...)
@@ -1055,9 +1055,11 @@ func propertiesFixture(enableStats bool, additionalProperties []string) []string
 
 func Test_Properties(t *testing.T) {
 	tmpDir := filepath.Join(os.TempDir(), "entrypoint")
-	projectDir := tmpDir
-	resultsDir := tmpDir
-	cacheDir := tmpDir
+	repositoryRoot := tmpDir
+	relativePath := "project"
+	projectDir := filepath.Join(tmpDir, relativePath)
+	resultsDir := projectDir
+	cacheDir := projectDir
 
 	t.Setenv(qdenv.QodanaConfEnv, projectDir)
 	t.Setenv(qdenv.QodanaDockerEnv, "true")
@@ -1070,48 +1072,54 @@ func Test_Properties(t *testing.T) {
 	}
 
 	for _, tc := range []struct {
-		name          string
-		cliProperties []string
-		qodanaYaml    string
-		isContainer   bool
-		expected      []string
+		name              string
+		cliProperties     []string
+		qodanaYaml        string
+		isContainer       bool
+		useRepositoryRoot bool
+		expected          []string
 	}{
 		{
-			name:          "no overrides, just defaults and .NET project",
-			cliProperties: []string{},
-			qodanaYaml:    "dotnet:\n   project: project.csproj",
-			isContainer:   false,
-			expected:      propertiesFixture(true, []string{"-Dqodana.net.project=project.csproj"}),
+			name:              "no overrides, just defaults and .NET project",
+			cliProperties:     []string{},
+			qodanaYaml:        "dotnet:\n   project: project.csproj",
+			isContainer:       false,
+			useRepositoryRoot: false,
+			expected:          propertiesFixture(true, []string{"-Dqodana.net.project=project.csproj"}),
 		},
 		{
-			name:          "target frameworks set in YAML",
-			cliProperties: []string{},
-			qodanaYaml:    "dotnet:\n   frameworks: net5.0;net6.0",
-			isContainer:   false,
-			expected:      propertiesFixture(true, []string{"-Dqodana.net.targetFrameworks=net5.0;net6.0"}),
+			name:              "target frameworks set in YAML",
+			cliProperties:     []string{},
+			qodanaYaml:        "dotnet:\n   frameworks: net5.0;net6.0",
+			isContainer:       false,
+			useRepositoryRoot: false,
+			expected:          propertiesFixture(true, []string{"-Dqodana.net.targetFrameworks=net5.0;net6.0"}),
 		},
 		{
-			name:          "target frameworks set in YAML in container",
-			cliProperties: []string{},
-			qodanaYaml:    "dotnet:\n   frameworks: net5.0;net6.0",
-			isContainer:   true,
-			expected:      propertiesFixture(true, []string{"-Dqodana.net.targetFrameworks=net5.0;net6.0"}),
+			name:              "target frameworks set in YAML in container",
+			cliProperties:     []string{},
+			qodanaYaml:        "dotnet:\n   frameworks: net5.0;net6.0",
+			isContainer:       true,
+			useRepositoryRoot: false,
+			expected:          propertiesFixture(true, []string{"-Dqodana.net.targetFrameworks=net5.0;net6.0"}),
 		},
 		{
-			name:          "target frameworks not set in container",
-			cliProperties: []string{},
-			qodanaYaml:    "",
-			isContainer:   true,
+			name:              "target frameworks not set in container",
+			cliProperties:     []string{},
+			qodanaYaml:        "",
+			isContainer:       true,
+			useRepositoryRoot: false,
 			expected: propertiesFixture(
 				true,
 				[]string{"-Dqodana.net.targetFrameworks=!net48;!net472;!net471;!net47;!net462;!net461;!net46;!net452;!net451;!net45;!net403;!net40;!net35;!net20;!net11"},
 			),
 		},
 		{
-			name:          "add one CLI property and .NET solution settings",
-			cliProperties: []string{"-xa", "idea.some.custom.property=1"},
-			qodanaYaml:    "dotnet:\n   solution: solution.sln\n   configuration: Release\n   platform: x64",
-			isContainer:   false,
+			name:              "add one CLI property and .NET solution settings",
+			cliProperties:     []string{"-xa", "idea.some.custom.property=1"},
+			qodanaYaml:        "dotnet:\n   solution: solution.sln\n   configuration: Release\n   platform: x64",
+			isContainer:       false,
+			useRepositoryRoot: false,
 			expected: append(
 				propertiesFixture(
 					true,
@@ -1133,11 +1141,23 @@ func Test_Properties(t *testing.T) {
 				"properties:\n" +
 				"  idea.headless.enable.statistics: true\n" +
 				"  idea.application.info.value: 0\n",
-			isContainer: false,
+			isContainer:       false,
+			useRepositoryRoot: false,
 			expected: append(
 				[]string{
 					"-Didea.application.info.value=0",
 				}, propertiesFixture(false, []string{})...,
+			),
+		},
+		{
+			name:              "different repositoryRoot adds project root property",
+			cliProperties:     []string{},
+			qodanaYaml:        "",
+			isContainer:       false,
+			useRepositoryRoot: true,
+			expected: propertiesFixture(
+				true,
+				[]string{fmt.Sprintf("-Dqodana.path.to.project.dir.from.project.root=%s", relativePath)},
 			),
 		},
 	} {
@@ -1152,6 +1172,13 @@ func Test_Properties(t *testing.T) {
 					}
 				}
 
+				usedRepositoryRoot := ""
+				if tc.useRepositoryRoot {
+					usedRepositoryRoot = repositoryRoot
+				} else {
+					usedRepositoryRoot = projectDir
+				}
+
 				commonCtx := commoncontext.Compute(
 					"",
 					"",
@@ -1163,7 +1190,7 @@ func Test_Properties(t *testing.T) {
 					"",
 					false,
 					projectDir,
-					projectDir,
+					usedRepositoryRoot,
 					"",
 				)
 

@@ -41,6 +41,7 @@ func getPropertiesMap(
 	plugins []string,
 	analysisId string,
 	coverageDir string,
+	repositoryRoot string,
 ) map[string]string {
 	properties := map[string]string{
 		"-Didea.headless.enable.statistics":    strconv.FormatBool(cloud.Token.IsAllowedToSendFUS()),
@@ -51,6 +52,9 @@ func getPropertiesMap(
 	}
 	if coverageDir != "" {
 		properties["-Dqodana.coverage.input"] = strutil.QuoteIfSpace(coverageDir)
+	}
+	if repositoryRoot != "" && repositoryRoot != "." {
+		properties["-Dqodana.path.to.project.dir.from.project.root"] = strutil.QuoteIfSpace(repositoryRoot)
 	}
 	if len(plugins) > 0 {
 		properties["-Didea.required.plugins.id"] = strings.Join(plugins, ",")
@@ -157,6 +161,7 @@ func GetScanProperties(c corescan.Context) []string {
 		plugins,
 		c.AnalysisId(),
 		c.CoverageDir(),
+		c.ProjectDirPathRelativeToRepositoryRoot(),
 	)
 	for k, v := range yamlProps { // qodana.yaml – overrides vmoptions
 		if !strings.HasPrefix(k, "-") {

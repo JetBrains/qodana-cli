@@ -144,8 +144,8 @@ func GetIdeArgs(c corescan.Context) []string {
 		if c.Analyser().IsContainer() {
 			// it is safe to use / here because it's a path inside the container
 			arguments = append(arguments, "--project-dir", qdcontainer.MountDir+"/"+rel)
+			arguments = append(arguments, "--repository-root", qdcontainer.MountDir)
 		}
-		arguments = append(arguments, "--property=qodana.path.to.project.dir.from.project.root="+rel)
 	}
 
 	linter := c.Analyser().GetLinter()
