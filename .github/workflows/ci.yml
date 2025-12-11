@@ -7,7 +7,6 @@ on:
   pull_request:
 
 jobs:
-  # lint: disabled as golangci-lint is not yet ready for Go workspaces
   test:
     name: "Test (⚙️ ${{ matrix.os }}, 🐳 ${{ matrix.container-engine }})"
     uses: ./.github/workflows/test.yaml
@@ -41,19 +40,7 @@ jobs:
       - uses: actions/checkout@v6
         with:
           fetch-depth: 0
-      - name: Overwrite tools (to run tests only on gh repo)
-        run: >-
-          touch
-          cdnet/clt.zip
-          tooling/baseline-cli.jar
-          tooling/intellij-report-converter.jar
-          tooling/qodana-fuser.jar
-          clang/clang-tidy-linux-amd64.tar.gz
-          clang/clang-tidy-linux-arm64.tar.gz
-          clang/clang-tidy-windows-amd64.zip
-          clang/clang-tidy-windows-arm64.zip
-          clang/clang-tidy-darwin-amd64.tar.gz
-          clang/clang-tidy-darwin-arm64.tar.gz
+      - uses: ./.github/actions/mock-dependencies
       - uses: docker/login-action@v3
         with:
           registry: registry.jetbrains.team
@@ -62,7 +49,7 @@ jobs:
       - uses: actions/setup-go@v6
         with:
           cache-dependency-path: "**/*.sum"
-          go-version-file: go.work
+          go-version-file: go.mod
       - uses: JetBrains/qodana-action@main
         env:
           QODANA_TOKEN: ${{ secrets.QODANA_TOKEN }}
@@ -79,6 +66,23 @@ jobs:
           languages: go
       - uses: github/codeql-action/autobuild@v4
       - uses: github/codeql-action/analyze@v4
+
+  golangci-lint:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v6
+      - uses: ./.github/actions/mock-dependencies
+      - name: Setup Go
+        uses: actions/setup-go@v6
+        with:
+          cache-dependency-path: "**/*.sum"
+          go-version-file: go.mod
+      - name: golangci-lint
+        uses: golangci/golangci-lint-action@v9
+        with:
+          version: v2.6
 
 #  release-nightly:
 #    runs-on: sre-eqx-kata

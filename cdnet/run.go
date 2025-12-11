@@ -24,12 +24,12 @@ import (
 
 	_ "embed"
 
-	"github.com/JetBrains/qodana-cli/v2025/platform"
-	"github.com/JetBrains/qodana-cli/v2025/platform/nuget"
-	"github.com/JetBrains/qodana-cli/v2025/platform/strutil"
-	"github.com/JetBrains/qodana-cli/v2025/platform/thirdpartyscan"
-	"github.com/JetBrains/qodana-cli/v2025/platform/utils"
-	"github.com/JetBrains/qodana-cli/v2025/sarif"
+	"github.com/JetBrains/qodana-cli/internal/platform"
+	"github.com/JetBrains/qodana-cli/internal/platform/nuget"
+	"github.com/JetBrains/qodana-cli/internal/platform/strutil"
+	"github.com/JetBrains/qodana-cli/internal/platform/thirdpartyscan"
+	"github.com/JetBrains/qodana-cli/internal/platform/utils"
+	"github.com/JetBrains/qodana-cli/internal/sarif"
 )
 
 type CdnetLinter struct {

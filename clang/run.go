@@ -10,9 +10,9 @@ import (
 
 	_ "embed"
 
-	"github.com/JetBrains/qodana-cli/v2025/platform"
-	"github.com/JetBrains/qodana-cli/v2025/platform/thirdpartyscan"
-	"github.com/JetBrains/qodana-cli/v2025/platform/utils"
+	"github.com/JetBrains/qodana-cli/internal/platform"
+	"github.com/JetBrains/qodana-cli/internal/platform/thirdpartyscan"
+	"github.com/JetBrains/qodana-cli/internal/platform/utils"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -39,8 +39,7 @@ func (l ClangLinter) RunAnalysis(c thirdpartyscan.Context) error {
 	}
 
 	sarifPath := platform.GetSarifPath(c.ResultsDir())
-	err = fixupClangLinterTaxa(sarifPath, err)
-	if err != nil {
+	if err = fixupClangLinterTaxa(sarifPath); err != nil {
 		return err
 	}
 
@@ -56,7 +55,7 @@ func (l ClangLinter) MountTools(path string) (map[string]string, error) {
 	val[clang] = getBinaryPath(path)
 
 	_, err := os.Stat(val[clang])
-	isBinaryOk := true
+	var isBinaryOk bool
 
 	if os.IsNotExist(err) {
 		isBinaryOk = false
@@ -115,7 +114,7 @@ func getBinaryPath(toolsPath string) string {
 	return binaryPath
 }
 
-func fixupClangLinterTaxa(sarifPath string, err error) error {
+func fixupClangLinterTaxa(sarifPath string) error {
 	r, err := platform.ReadReport(sarifPath)
 	if err != nil {
 		log.Errorf("Error reading SARIF reports: %s", err)
@@ -123,7 +122,7 @@ func fixupClangLinterTaxa(sarifPath string, err error) error {
 	}
 
 	for _, taxa := range r.Runs[0].Tool.Driver.Taxa {
-		if taxa.Relationships != nil && len(taxa.Relationships) == 1 &&
+		if len(taxa.Relationships) == 1 &&
 			taxa.Relationships[0].Target != nil && taxa.Relationships[0].Target.Id == taxa.Id {
 			taxa.Relationships[0].Target.Id = r.Runs[0].Tool.Driver.Taxa[0].Id
 		}

@@ -17,10 +17,10 @@
 package main
 
 import (
-	"github.com/JetBrains/qodana-cli/v2025/cmd"
-	"github.com/JetBrains/qodana-cli/v2025/platform"
-	"github.com/JetBrains/qodana-cli/v2025/platform/product"
-	"github.com/JetBrains/qodana-cli/v2025/platform/thirdpartyscan"
+	"github.com/JetBrains/qodana-cli/internal/cmd"
+	"github.com/JetBrains/qodana-cli/internal/platform"
+	"github.com/JetBrains/qodana-cli/internal/platform/product"
+	"github.com/JetBrains/qodana-cli/internal/platform/thirdpartyscan"
 	"github.com/spf13/cobra"
 )
 

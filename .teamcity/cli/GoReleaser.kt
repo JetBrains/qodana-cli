@@ -95,9 +95,7 @@ class GoReleaser(
         script {
             name = "Run 'go generate'"
             workingDir = wd
-            // list dependent packages and filter out the ones outside the repo:
-            // go list -f {{.Dir}} -deps | grep "^$(git rev-parse --show-toplevel)/"
-            scriptContent = "go generate -v -x $(go list -m -f {{.Dir}} | xargs -I{} go list -e -find {}/...)"
+            scriptContent = "go generate -v -x ./..."
 
             useGoDevContainerDockerImage()
         }

@@ -8,7 +8,7 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/JetBrains/qodana-cli/v2025/platform/utils"
+	"github.com/JetBrains/qodana-cli/internal/platform/utils"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -59,7 +59,7 @@ func getFilesAndCompilers(compileCommands string) ([]FileWithHeaders, error) {
 		var compiler string
 		trimmedCommand := strings.TrimSpace(cmd.Command)
 		if trimmedCommand == "" {
-			if cmd.Arguments == nil || len(cmd.Arguments) == 0 {
+			if len(cmd.Arguments) == 0 {
 				log.Warn("Empty command and arguments for file in compilation db: ", cmd.File)
 				continue
 			}

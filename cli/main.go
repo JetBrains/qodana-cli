@@ -17,8 +17,8 @@
 package main
 
 import (
-	"github.com/JetBrains/qodana-cli/v2025/cmd"
-	"github.com/JetBrains/qodana-cli/v2025/platform/process"
+	"github.com/JetBrains/qodana-cli/internal/cmd"
+	"github.com/JetBrains/qodana-cli/internal/platform/process"
 )
 
 func main() {

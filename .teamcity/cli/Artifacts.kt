@@ -73,7 +73,7 @@ fun Dependencies.getQodanaToolingArtifacts(tool: String = "cli") {
     artifacts(AbsoluteId("StaticAnalysis_Base_Build_baseline_cli")) {
         buildRule = lastSuccessful()
         artifactRules = """
-            baseline-cli-*.jar => tooling/baseline-cli.jar$DENEST_SUFFIX/
+            baseline-cli-*.jar => internal/tooling/baseline-cli.jar$DENEST_SUFFIX/
         """.trimIndent()
         if (tool != "cli") {
             artifactRules += "\n\n$THIRD_PARTY_LICENSES_RULE"
@@ -82,7 +82,7 @@ fun Dependencies.getQodanaToolingArtifacts(tool: String = "cli") {
     artifacts(AbsoluteId("StaticAnalysis_Base_Build_fuser")) {
         buildRule = lastSuccessful()
         artifactRules = """
-            qodana-fuser-*.jar => tooling/qodana-fuser.jar$DENEST_SUFFIX/
+            qodana-fuser-*.jar => internal/tooling/qodana-fuser.jar$DENEST_SUFFIX/
         """.trimIndent()
         if (tool != "cli") {
             artifactRules += "\n\n$THIRD_PARTY_LICENSES_RULE"
@@ -91,7 +91,7 @@ fun Dependencies.getQodanaToolingArtifacts(tool: String = "cli") {
     artifacts(AbsoluteId("StaticAnalysis_Build_UiAndConverter")) {
         buildRule = tag("readyForTest", "+:*")
         artifactRules = """
-            intellij-report-converter.jar=>tooling/intellij-report-converter.jar$DENEST_SUFFIX/
+            intellij-report-converter.jar=>internal/tooling/intellij-report-converter.jar$DENEST_SUFFIX/
         """.trimIndent()
         if (tool != "cli") {
             artifactRules += "\n\n$THIRD_PARTY_LICENSES_RULE"

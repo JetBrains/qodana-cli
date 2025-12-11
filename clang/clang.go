@@ -11,10 +11,10 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/JetBrains/qodana-cli/v2025/platform"
-	"github.com/JetBrains/qodana-cli/v2025/platform/strutil"
-	"github.com/JetBrains/qodana-cli/v2025/platform/thirdpartyscan"
-	"github.com/JetBrains/qodana-cli/v2025/platform/utils"
+	"github.com/JetBrains/qodana-cli/internal/platform"
+	"github.com/JetBrains/qodana-cli/internal/platform/strutil"
+	"github.com/JetBrains/qodana-cli/internal/platform/thirdpartyscan"
+	"github.com/JetBrains/qodana-cli/internal/platform/utils"
 	"github.com/briandowns/spinner"
 	log "github.com/sirupsen/logrus"
 )
@@ -138,9 +138,7 @@ func runClangTidy(
 	args = append(args, input.Headers...)
 	args = append(args, input.File)
 	args = append(args, "--quiet")
-	for _, arg := range strings.Split(c.ClangArgs(), " ") {
-		args = append(args, arg)
-	}
+	args = append(args, strings.Split(c.ClangArgs(), " ")...)
 	stdout, stderr, _, err := utils.RunCmdRedirectOutput(
 		strutil.QuoteIfSpace(c.ProjectDir()),
 		args...,
