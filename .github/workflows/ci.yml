@@ -4,7 +4,39 @@ on:
   push:
     branches:
       - main
+    paths-ignore:
+      - '**.md'
+      - '.github/dependabot.yml'
+      - '.github/ISSUE_TEMPLATE/**'
+      - '.github/pull_request_template.md'
+      - '.github/SECURITY.md'
+      - '.github/CODE_OF_CONDUCT.md'
+      - '.devcontainer/**'
+      - '.gitattributes'
+      - '.idea/**'
+      - '.mailmap'
+      - '.run/**'
+      - '.teamcity/**'
+      - 'LICENSE'
+      - 'qodana.spdx.json'
+      - 'bots.json'
   pull_request:
+    paths-ignore:
+      - '**.md'
+      - '.github/dependabot.yml'
+      - '.github/ISSUE_TEMPLATE/**'
+      - '.github/pull_request_template.md'
+      - '.github/SECURITY.md'
+      - '.github/CODE_OF_CONDUCT.md'
+      - '.devcontainer/**'
+      - '.gitattributes'
+      - '.idea/**'
+      - '.mailmap'
+      - '.run/**'
+      - '.teamcity/**'
+      - 'LICENSE'
+      - 'qodana.spdx.json'
+      - 'bots.json'
 
 jobs:
   test:
