@@ -41,6 +41,9 @@ func newClocCommand() *cobra.Command {
 			processor.Format = options.Output
 			processor.Cocomo = true
 			processor.DirFilePaths = options.ProjectDirs
+			if processor.ConfigureLimits != nil {
+				processor.ConfigureLimits()
+			}
 			processor.ConfigureGc()
 			processor.ConfigureLazy(true)
 			processor.Process()
