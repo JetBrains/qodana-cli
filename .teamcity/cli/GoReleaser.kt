@@ -103,11 +103,30 @@ class GoReleaser(
         script {
             name = "Run GoReleaser"
             workingDir = wd
-            scriptContent = """
-                export GORELEASER_CURRENT_TAG=${'$'}(git describe --tags ${'$'}(git rev-list --tags --max-count=1))
-                goreleaser release --clean ${arguments.joinToString(" ")} --skip=publish
-                go test
-            """.trimIndent()
+            scriptContent = if (releaseType.isNightlyOrRelease()) {
+                """
+                    set -e
+                    curl -fsSL -o /usr/local/bin/codesign https://codesign-distribution.labs.jb.gg/codesign-client-linux-amd64
+                    curl -fsSL -o /tmp/codesign.sha256 https://codesign-distribution.labs.jb.gg/codesign-client-linux-amd64.sha256
+                    curl -fsSL -o /tmp/codesign.sha256.asc https://codesign-distribution.labs.jb.gg/codesign-client-linux-amd64.sha256.asc
+                    chmod +x /usr/local/bin/codesign
+                    curl -fsSL https://download-cdn.jetbrains.com/KEYS | gpg --import -
+                    gpg --batch --verify /tmp/codesign.sha256.asc /tmp/codesign.sha256
+                    cd /usr/local/bin && sha256sum -c /tmp/codesign.sha256
+                    codesign --version
+                    cd -
+                    
+                    export GORELEASER_CURRENT_TAG=${'$'}(git describe --tags ${'$'}(git rev-list --tags --max-count=1))
+                    goreleaser release --clean ${arguments.joinToString(" ")} --skip=publish
+                    go test
+                """.trimIndent()
+            } else {
+                """
+                    export GORELEASER_CURRENT_TAG=${'$'}(git describe --tags ${'$'}(git rev-list --tags --max-count=1))
+                    goreleaser release --clean ${arguments.joinToString(" ")} --skip=publish
+                    go test
+                """.trimIndent()
+            }
 
             if ("--skip=publish" !in arguments) {
                 scriptContent += "\n" + """
@@ -229,7 +248,7 @@ private fun getProductCode(wd: String): String {
 }
 
 private fun ScriptBuildStep.useGoDevContainerDockerImage() {
-    dockerImage = "registry.jetbrains.team/p/sa/containers/godevcontainer:latest"
+    dockerImage = "registry.jetbrains.team/p/sa/public/godevcontainer:latest"
     dockerImagePlatform = ScriptBuildStep.ImagePlatform.Linux
     dockerRunParameters =
         "--privileged -v /var/run/docker.sock:/var/run/docker.sock -e GOFLAGS=-buildvcs=false  -e VERSION=%build.number%"
