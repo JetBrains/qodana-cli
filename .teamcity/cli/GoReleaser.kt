@@ -36,7 +36,8 @@ class GoReleaser(
     private val branch: String = "main",
     private val buildPattern: String = "",
     private val arguments: List<String> = listOf("--snapshot", "--skip=publish"),
-    private val qodanaToken: String = ""
+    private val qodanaToken: String = "",
+    private val enableTriggers: Boolean = true
 ) : BuildType({
     val isCli = wd == "cli"
 
@@ -166,18 +167,20 @@ class GoReleaser(
         }
     }
 
-    triggers {
-        vcs {
-            branchFilter = "+:$branch"
-        }
-        if (releaseType.isNightlyOrRelease()) {
-            schedule {
-                schedulingPolicy = daily {
-                    hour = 3
-                }
+    if (enableTriggers) {
+        triggers {
+            vcs {
                 branchFilter = "+:$branch"
-                triggerBuild = always()
-                withPendingChangesOnly = true
+            }
+            if (releaseType.isNightlyOrRelease()) {
+                schedule {
+                    schedulingPolicy = daily {
+                        hour = 3
+                    }
+                    branchFilter = "+:$branch"
+                    triggerBuild = always()
+                    withPendingChangesOnly = true
+                }
             }
         }
     }

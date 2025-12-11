@@ -118,9 +118,11 @@ jobs:
         with:
           version: v2.6
 
-  goreleaser-build:
-    name: "GoReleaser (build)"
+  goreleaser:
+    name: "GoReleaser (${{ github.ref == 'refs/heads/main' && 'nightly' || 'build' }})"
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
     steps:
       - uses: actions/checkout@v6
         with:
@@ -130,7 +132,9 @@ jobs:
         with:
           cache-dependency-path: "**/*.sum"
           go-version-file: go.mod
-      - uses: goreleaser/goreleaser-action@v6
+      - name: Build
+        if: github.ref != 'refs/heads/main'
+        uses: goreleaser/goreleaser-action@v6
         with:
           distribution: goreleaser-pro
           version: "~> v2"
@@ -138,36 +142,18 @@ jobs:
           args: build --snapshot --clean
         env:
           GORELEASER_KEY: ${{ secrets.GORELEASER_KEY }}
-
-#  release-nightly:
-#    runs-on: sre-eqx-kata
-#    needs: [ test, code-quality ]
-#    container:
-#      image: ghcr.io/jetbrains/qodana-cli/devcontainer:latest
-#    permissions:
-#      checks: write
-#      pull-requests: write
-#      actions: read
-#      contents: write
-#      security-events: write
-#      packages: read
-#    if: github.ref == 'refs/heads/main'
-#    steps:
-#      - uses: actions/checkout@v6
-#        with:
-#          fetch-depth: 0
-#      - name: Overwrite tools (to run tests only on gh repo)
-#        run: |
-#          touch cdnet/clt.zip tooling/baseline-cli.jar tooling/intellij-report-converter.jar tooling/qodana-fuser.jar
-#      - run: |
-#          ./download_deps.sh
-#          export TARGETARCH=$(uname -m)
-#          curl -fsSL "https://codesign-distribution.labs.jb.gg/codesign-client-linux-$TARGETARCH" -o /usr/local/bin/codesign || true
-#          chmod +x /usr/local/bin/codesign || true
-#          cd cli && goreleaser release --clean --nightly --skip=chocolatey,nfpm,homebrew,scoop,snapcraft
-#        env:
-#          GH_TOKEN: ${{ github.token }}
-#          GORELEASER_KEY: ${{ secrets.GORELEASER_KEY }}
+      - name: Release nightly
+        if: github.ref == 'refs/heads/main'
+        uses: goreleaser/goreleaser-action@v6
+        with:
+          distribution: goreleaser-pro
+          version: "~> v2"
+          workdir: cli
+          args: release --nightly --clean --skip=chocolatey,nfpm,homebrew,scoop,snapcraft
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GORELEASER_KEY: ${{ secrets.GORELEASER_KEY }}
+          SKIP_CODESIGN: "true"
 
 #  install-script-check:
 #    strategy:
