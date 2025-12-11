@@ -221,7 +221,7 @@ func testNoOverwriteJdkTableXml(t *testing.T, tc struct {
 }) {
 	outputJdkTable, commonCtx, prod := setupCommonTestEnvForConfigSync(t, tc)
 
-	err := os.WriteFile(outputJdkTable, []byte("uncached"), 0o644)
+	_ = os.WriteFile(outputJdkTable, []byte("uncached"), 0o644)
 	SyncCache(commonCtx, prod)
 
 	content, err := os.ReadFile(outputJdkTable)

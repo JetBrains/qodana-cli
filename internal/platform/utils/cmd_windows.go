@@ -1,5 +1,4 @@
 //go:build windows
-// +build windows
 
 /*
  * Copyright 2021-2024 JetBrains s.r.o.
@@ -20,12 +19,13 @@
 package utils
 
 import (
-	log "github.com/sirupsen/logrus"
 	"os"
 	"os/exec"
 	"strconv"
 	"strings"
 	"syscall"
+
+	log "github.com/sirupsen/logrus"
 )
 
 // prepareWinCmd fixes cmd, so it can be run with a space in the batch or args path,
