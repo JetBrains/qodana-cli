@@ -61,6 +61,7 @@ jobs:
             container-engine: docker@v25.0  # See also: https://endoflife.date/docker-engine
 
   code-quality:
+    name: "Qodana"
     runs-on: ubuntu-latest
     permissions:
       checks: write
@@ -100,6 +101,7 @@ jobs:
       - uses: github/codeql-action/analyze@v4
 
   golangci-lint:
+    name: "Golangci-lint"
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -115,6 +117,27 @@ jobs:
         uses: golangci/golangci-lint-action@v9
         with:
           version: v2.6
+
+  goreleaser-build:
+    name: "GoReleaser (build)"
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+      - uses: ./.github/actions/mock-dependencies
+      - uses: actions/setup-go@v6
+        with:
+          cache-dependency-path: "**/*.sum"
+          go-version-file: go.mod
+      - uses: goreleaser/goreleaser-action@v6
+        with:
+          distribution: goreleaser-pro
+          version: "~> v2"
+          workdir: cli
+          args: build --snapshot --clean
+        env:
+          GORELEASER_KEY: ${{ secrets.GORELEASER_KEY }}
 
 #  release-nightly:
 #    runs-on: sre-eqx-kata
