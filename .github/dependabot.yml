@@ -12,14 +12,7 @@ updates:
           - "*"
 
   - package-ecosystem: gomod
-    directories:
-      - cdnet
-      - cli
-      - cloud
-      - cmd
-      - core
-      - platform
-      - sarif
+    directory: /
     commit-message:
       prefix: ":arrow_up: QD-12983"
     schedule:
