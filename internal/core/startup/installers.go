@@ -59,11 +59,12 @@ func downloadAndInstallIDE(
 	fileExt := filepath.Ext(fileName)
 	installDir := filepath.Join(baseDir, strings.TrimSuffix(fileName, fileExt))
 	if _, err := os.Stat(installDir); err == nil {
-		if runtime.GOOS == "windows" {
+		switch runtime.GOOS {
+		case "windows":
 			if dirs, err := filepath.Glob(filepath.Join(installDir, "*")); err == nil && len(dirs) == 1 {
 				installDir = dirs[0]
 			}
-		} else if runtime.GOOS == "darwin" {
+		case "darwin":
 			if dirs, err := filepath.Glob(filepath.Join(installDir, "*.app")); err == nil && len(dirs) == 1 {
 				installDir = filepath.Join(dirs[0], "Contents")
 			}
@@ -109,11 +110,12 @@ func downloadAndInstallIDE(
 		log.Fatalf("Error while unpacking: %v", err)
 	}
 
-	if runtime.GOOS == "windows" {
+	switch runtime.GOOS {
+	case "windows":
 		if dirs, err := filepath.Glob(filepath.Join(installDir, "*")); err == nil && len(dirs) == 1 {
 			installDir = dirs[0]
 		}
-	} else if runtime.GOOS == "darwin" {
+	case "darwin":
 		if dirs, err := filepath.Glob(filepath.Join(installDir, "*.app")); err == nil && len(dirs) == 1 {
 			installDir = filepath.Join(dirs[0], "Contents")
 		}

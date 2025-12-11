@@ -44,31 +44,7 @@ jobs:
           distribution: temurin
           java-version: 17
 
-      - name: Create mock artifact dependencies
-        # Note: these dependencies contain closed-source code and are not currently available on Github.
-        shell: bash
-        run: >-
-          touch
-          cdnet/clt.zip
-          cdnet/clt.sha256.bin
-          cdnet/clt.path.txt
-          internal/tooling/baseline-cli.jar
-          internal/tooling/intellij-report-converter.jar
-          internal/tooling/qodana-fuser.jar
-          internal/tooling/config-loader-cli.jar
-          internal/tooling/publisher-cli.jar
-          clang/clang-tidy-linux-amd64.tar.gz
-          clang/clang-tidy-linux-amd64.tar.gz.sha256.bin
-          clang/clang-tidy-linux-arm64.tar.gz
-          clang/clang-tidy-linux-arm64.tar.gz.sha256.bin
-          clang/clang-tidy-windows-amd64.zip
-          clang/clang-tidy-windows-amd64.zip.sha256.bin
-          clang/clang-tidy-windows-arm64.zip
-          clang/clang-tidy-windows-arm64.zip.sha256.bin
-          clang/clang-tidy-darwin-amd64.tar.gz
-          clang/clang-tidy-darwin-amd64.tar.gz.sha256.bin
-          clang/clang-tidy-darwin-arm64.tar.gz
-          clang/clang-tidy-darwin-arm64.tar.gz.sha256.bin
+      - uses: ./.github/actions/mock-dependencies
 
       - name: Install test dependencies
         run: go install github.com/mfridman/tparse@latest

@@ -92,7 +92,6 @@ type Context struct {
 	failThreshold             string
 	generateCodeClimateReport bool
 	sendBitBucketInsights     bool
-	qodanaYaml                qdyaml.QodanaYaml
 	qodanaYamlConfig          QodanaYamlConfig
 }
 

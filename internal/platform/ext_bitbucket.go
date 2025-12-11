@@ -158,8 +158,7 @@ func buildAnnotation(r *sarif.Result, ruleDescription string, reportLink string)
 	data.SetDetails(ruleDescription)
 	data.SetSeverity(bbSeverity)
 
-	//goland:noinspection GoDfaConstantCondition
-	if r != nil && r.Locations != nil && len(r.Locations) > 0 && r.Locations[0].PhysicalLocation != nil {
+	if len(r.Locations) > 0 && r.Locations[0].PhysicalLocation != nil {
 		location := r.Locations[0].PhysicalLocation
 		if location.Region != nil {
 			data.SetLine(int32(location.Region.StartLine))

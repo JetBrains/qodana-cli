@@ -21,7 +21,7 @@ import (
 	"strings"
 
 	"github.com/JetBrains/qodana-cli/internal/core/startup"
-	"github.com/JetBrains/qodana-cli/internal/platform/cmd"
+	platformcmd "github.com/JetBrains/qodana-cli/internal/platform/cmd"
 	"github.com/JetBrains/qodana-cli/internal/platform/commoncontext"
 	"github.com/JetBrains/qodana-cli/internal/platform/qdcontainer"
 	"github.com/JetBrains/qodana-cli/internal/platform/qdenv"
@@ -43,10 +43,7 @@ func CreateContext(
 		}
 	}
 
-	commit := cliOptions.Commit
-	if strings.HasPrefix(commit, "CI") {
-		commit = strings.TrimPrefix(commit, "CI")
-	}
+	commit := strings.TrimPrefix(cliOptions.Commit, "CI")
 
 	return ContextBuilder{
 		Analyser:                  commonCtx.Analyzer,

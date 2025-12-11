@@ -398,17 +398,19 @@ func ComputeFlags(cmd *cobra.Command, options *CliOptions) error {
 	cmd.MarkFlagsMutuallyExclusive("profile-name", "profile-path")
 	cmd.MarkFlagsMutuallyExclusive("apply-fixes", "cleanup")
 
-	err = cmd.Flags().MarkDeprecated("fixes-strategy", "use --apply-fixes / --cleanup instead")
-	err = cmd.Flags().MarkDeprecated(
-		"ide",
-		"use --linter with corresponding linter type and --within-docker=false instead",
-	)
-	if err != nil {
+	if err = cmd.Flags().MarkDeprecated("fixes-strategy", "use --apply-fixes / --cleanup instead"); err != nil {
 		return err
 	}
-	err = cmd.Flags().MarkHidden("jvm-debug-port")
-	err = cmd.Flags().MarkHidden("force-local-changes-script")
-	if err != nil {
+	if err = cmd.Flags().MarkDeprecated(
+		"ide",
+		"use --linter with corresponding linter type and --within-docker=false instead",
+	); err != nil {
+		return err
+	}
+	if err = cmd.Flags().MarkHidden("jvm-debug-port"); err != nil {
+		return err
+	}
+	if err = cmd.Flags().MarkHidden("force-local-changes-script"); err != nil {
 		return err
 	}
 	return nil
