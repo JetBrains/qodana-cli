@@ -28,5 +28,5 @@ version = "2024.07"
 project {
     description = "Various products built from https://github.com/jetbrains/qodana-cli"
     buildType(GoReleaser("cli", "", arguments = listOf()))
-    buildType(GoReleaser("cli", "main", arguments = listOf("--nightly", "--skip=chocolatey,nfpm,homebrew,scoop,snapcraft")))
+    buildType(GoReleaser("cli", "main", arguments = listOf("--nightly", "--skip=chocolatey,nfpm,homebrew,scoop,snapcraft"), enableTriggers = false))  // Triggers handled by GitHub Actions
 }
