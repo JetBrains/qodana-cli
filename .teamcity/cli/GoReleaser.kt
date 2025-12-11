@@ -228,7 +228,7 @@ private fun getProductCode(wd: String): String {
 }
 
 private fun ScriptBuildStep.useGoDevContainerDockerImage() {
-    dockerImage = "registry.jetbrains.team/p/sa/containers/godevcontainer:latest"
+    dockerImage = "registry.jetbrains.team/p/sa/public/godevcontainer:latest"
     dockerImagePlatform = ScriptBuildStep.ImagePlatform.Linux
     dockerRunParameters =
         "--privileged -v /var/run/docker.sock:/var/run/docker.sock -e GOFLAGS=-buildvcs=false  -e VERSION=%build.number%"
