@@ -80,6 +80,7 @@ func loadEnv(path string) {
 		if line == "" || strings.HasPrefix(line, "#") {
 			continue
 		}
+		line = strings.TrimPrefix(line, "export ")
 		if k, v, ok := strings.Cut(line, "="); ok {
 			if os.Getenv(k) == "" {
 				os.Setenv(k, v)
