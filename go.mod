@@ -8,7 +8,7 @@ require (
 	github.com/cucumber/ci-environment/go v0.0.0-20230911180507-bd001ebc644c
 	github.com/docker/cli v28.4.0+incompatible
 	github.com/docker/docker v28.4.0+incompatible
-	github.com/docker/go-connections v0.5.0
+	github.com/docker/go-connections v0.6.0
 	github.com/go-enry/go-enry/v2 v2.9.2
 	github.com/google/uuid v1.6.0
 	github.com/liamg/clinch v1.6.6
