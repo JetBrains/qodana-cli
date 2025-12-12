@@ -140,28 +140,25 @@ jobs:
           internal/tooling/qodana-fuser.jar
       - name: Download CLI dependencies
         run: go generate -v ./internal/tooling/...
-      - name: Build
+      - name: Build CLI only
         if: github.ref != 'refs/heads/main'
         uses: goreleaser/goreleaser-action@v6
         with:
           distribution: goreleaser-pro
           version: "~> v2"
-          workdir: cli
-          args: build --snapshot --clean
+          args: build --snapshot --clean --id cli
         env:
           GORELEASER_KEY: ${{ secrets.GORELEASER_KEY }}
-      - name: Release nightly
+      - name: Release nightly CLI only
         if: github.ref == 'refs/heads/main'
         uses: goreleaser/goreleaser-action@v6
         with:
           distribution: goreleaser-pro
           version: "~> v2"
-          workdir: cli
-          args: release --nightly --clean --skip=chocolatey,nfpm,homebrew,scoop,snapcraft
+          args: release --nightly --clean --skip=chocolatey,nfpm,homebrew,scoop,snapcraft --id cli
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GORELEASER_KEY: ${{ secrets.GORELEASER_KEY }}
-          SKIP_CODESIGN: "true"
 
 #  install-script-check:
 #    strategy:
