@@ -12,11 +12,12 @@ import (
 )
 
 func main() {
-	if len(os.Args) != 2 {
-		log.Fatal("usage: go run sign.go <PROJECT-NAME>")
+	if len(os.Args) != 3 {
+		log.Fatal("usage: go run sign-unified.go <BUILD-ID> <BINARY-NAME>")
 	}
 
-	project := os.Args[1]
+	buildID := os.Args[1]
+	binaryName := os.Args[2]
 
 	targetOs := runtime.GOOS
 	if override := os.Getenv("TARGETOS"); override != "" {
@@ -61,8 +62,8 @@ func main() {
 		log.Fatalf("Unsupported OS '%s'", targetOs)
 	}
 
-	dir := fmt.Sprintf("./dist/%s_%s_%s%s", project, targetOs, targetArch, dirSuffix)
-	exe := fmt.Sprintf("%sqodana-clang%s", dir, exeExtension)
+	dir := fmt.Sprintf("./dist/%s_%s_%s%s", buildID, targetOs, targetArch, dirSuffix)
+	exe := fmt.Sprintf("%s%s%s", dir, binaryName, exeExtension)
 
 	command := slices.Concat([]string{"codesign"}, extraArgs, []string{
 		"-signed-files-dir", dir,
