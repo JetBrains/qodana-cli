@@ -4,7 +4,7 @@ go 1.25.2
 
 require (
 	github.com/boyter/scc/v3 v3.6.0
-	github.com/briandowns/spinner v1.23.0
+	github.com/briandowns/spinner v1.23.2
 	github.com/cucumber/ci-environment/go v0.0.0-20230911180507-bd001ebc644c
 	github.com/docker/cli v28.4.0+incompatible
 	github.com/docker/docker v28.4.0+incompatible
@@ -18,12 +18,12 @@ require (
 	github.com/reviewdog/go-bitbucket v0.0.0-20201024094602-708c3f6a7de0
 	github.com/shirou/gopsutil/v3 v3.24.5
 	github.com/sirupsen/logrus v1.9.3
-	github.com/spf13/cobra v1.10.1
+	github.com/spf13/cobra v1.10.2
 	github.com/spf13/viper v1.21.0
 	github.com/stretchr/testify v1.11.1
 	github.com/zalando/go-keyring v0.2.6
 	golang.org/x/exp v0.0.0-20230905200255-921286631fa9
-	golang.org/x/sys v0.38.0
+	golang.org/x/sys v0.39.0
 	gopkg.in/yaml.v3 v3.0.1
 )
 
