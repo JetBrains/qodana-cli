@@ -8,7 +8,7 @@ By participating in this project, you agree to abide our [Code of conduct](.gith
 
 Prerequisites:
 
-- [Go 1.21+](https://golang.org/doc/install)
+- [Go 1.25+](https://golang.org/doc/install)
 
 Other things you might need to develop:
 
@@ -20,17 +20,42 @@ Clone the project anywhere:
 git clone git@github.com:JetBrains/qodana-cli.git
 ```
 
-Prepare embedded tools:
+### Set up environment secrets
 
-1. `cd` into the `internal/tooling` directory
-2. Run `go run scripts/download-resource.go config-loader-cli.jar` and `go run scripts/download-resource.go publisher-cli.jar`
-3. Either run if you don't test the related functionality:
+Create a `.env` file in the repository root (it's gitignored):
+
+```sh
+cp .env.example .env
+```
+
+Edit `.env` and add your tokens:
+- `TEAMCITY_TOKEN` – for downloading closed-source dependencies (internal only, get from [TeamCity profile](https://buildserver.labs.intellij.net/profile.html?item=accessTokens))
+- `QODANA_LICENSE_ONLY_TOKEN` – for running tests that require license validation (get a temporary token from Qodana Cloud)
+
+### Prepare embedded tools
+
+**For JetBrains employees (with VPN access):**
+
+Run the download script to fetch all closed-source dependencies from TeamCity:
+```sh
+go run scripts/download-deps.go
+```
+
+Then download the public Maven JARs:
+```sh
+go generate ./internal/tooling/...
+```
+
+**For external contributors:**
+
+1. Create empty stubs for closed-source JARs (tests using them will be skipped):
+   ```sh
+   touch internal/tooling/baseline-cli.jar internal/tooling/intellij-report-converter.jar internal/tooling/qodana-fuser.jar
    ```
-   touch baseline-cli.jar intellij-report-converter.jar qodana-fuser.jar
+2. Download public JARs via go generate:
+   ```sh
+   go generate ./internal/tooling/...
    ```
-   or go to the [latest qodana-cli build](https://buildserver.labs.intellij.net/buildConfiguration/StaticAnalysis_Cli_Nightlyclimain) 
-   (internal only), go to `dependencies` tab and download the artifacts you need.
-4. `cd` back to the root directory
 
 `cd` into the `cli` directory and run for debug:
 
@@ -50,9 +75,14 @@ go test -v ./...
 ```
 
 Test your code with a human-readable report (requires `go install github.com/mfridman/tparse@latest`):
-```shell
-export GITHUB_ACTIONS=true # skip third-party linter tests
-set -o pipefail && go test -json -v ./... | tparse -all
+```sh
+go test -timeout 0 -json -v ./... > test.json 2>&1; tparse -all -file=test.json
+```
+
+To skip third-party linter tests (if you don't have cdnet/clang dependencies):
+```sh
+export GITHUB_ACTIONS=true
+go test -v ./...
 ```
 
 Dry-run goreleaser:
@@ -63,14 +93,37 @@ goreleaser release --snapshot --clean
 
 ## Test 3rd party linters
 
+### Prerequisites
+
+Install required tools via Homebrew (macOS):
+```sh
+brew install cmake dotnet openjdk@17
+```
+
+### Running tests locally
+
+**For JetBrains employees:**
+
+1. Ensure `.env` is configured with `TEAMCITY_TOKEN` and `QODANA_LICENSE_ONLY_TOKEN`
+2. Download all dependencies:
+   ```sh
+   go run scripts/download-deps.go
+   go generate ./...
+   ```
+3. Run all tests with Java 17:
+   ```sh
+   source .env
+   go test -timeout 0 -v ./...
+   ```
+
+### Building a custom 3rd party linter
+
 Inside 3rd party linters docker image a different qodana-cli executable is used. To build it:
-1. `cd` into the 3rd party linter directory (for this example, we will use cdnet - clang is the same)
-2. Download the linter binary from the [latest qodana-cdnet build](https://buildserver.labs.intellij.net/buildConfiguration/ijplatform_master_QodanaCdNetBinary#all-projects) (internal only).
-   To do this, open the latest build, go to `dependencies` tab, download `*.nupkg` file from the first dependency, place it in the current directory and rename it to `clt.zip`
-3. Run `go generate`
-4. Change the `buildDateStr` variable in [main.go](cdnet/main.go) to a more recent date (e.g., update it from "2023-12-05T10:52:23Z" to today's date in the same format) to avoid EAP expiration errors.
-5. Build the executable `env GOOS=linux CGO_ENABLED=0 go build -o qd-custom`
-6. To replace the executable in docker image, see `'Patching' an existing Qodana image` section below. Note that the `qodana-cdnet` image has qodana executable in `/opt/qodana/qodana` path.
+1. `cd` into the 3rd party linter directory (e.g., `cdnet` or `clang`)
+2. Ensure dependencies are downloaded (see above) and run `go generate`
+3. Change the `buildDateStr` variable in [main.go](cdnet/main.go) to a more recent date (e.g., update it from "2023-12-05T10:52:23Z" to today's date in the same format) to avoid EAP expiration errors
+4. Build the executable: `env GOOS=linux CGO_ENABLED=0 go build -o qd-custom`
+5. To replace the executable in docker image, see `'Patching' an existing Qodana image` section below. Note that the `qodana-cdnet` image has qodana executable in `/opt/qodana/qodana` path
 
 ## Create a commit
 
