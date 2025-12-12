@@ -7,7 +7,7 @@ builds:
       - TARGETOS={{.Os}}
       - TARGETARCH={{.Arch}}
     ldflags:
-      - -X github.com/JetBrains/qodana-cli/v2025/platform/version.Version={{ .Version }}
+      - -X github.com/JetBrains/qodana-cli/internal/platform/version.Version={{ .Version }}
     goos:
       - linux
       - darwin
