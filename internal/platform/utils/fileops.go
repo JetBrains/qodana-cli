@@ -217,6 +217,9 @@ func WalkTarGzArchive(path string, callback WalkArchiveCallback) (err error) {
 		} else if err != nil {
 			log.Fatalf("tar error while reading contents of %q: %s", path, err)
 		}
+		if header == nil {
+			continue
+		}
 
 		if !filepath.IsLocal(header.Name) {
 			// path is not safe: either empty, has invalid name, or navigates to outside the parent dir

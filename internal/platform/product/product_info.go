@@ -316,6 +316,9 @@ func GuessProduct(idePath string, analyzer Analyzer) Product {
 	if err != nil {
 		log.Fatalf("Can't read product-info.json: %v ", err)
 	}
+	if productInfo == nil {
+		log.Fatal("Product info is nil")
+	}
 
 	version := productInfo.Version
 	ideCode := productInfo.ProductCode

@@ -241,7 +241,7 @@ func printPath(path string, line int, column int) {
 func printLines(content string, contextLine int, line int, skipHighlight bool) {
 	lines := strings.Split(content, "\n")
 
-	if lines[len(lines)-1] == "" {
+	if len(lines) > 0 && lines[len(lines)-1] == "" {
 		// Remove the last empty line if content ends with a newline
 		lines = lines[:len(lines)-1]
 	}

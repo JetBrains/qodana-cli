@@ -347,6 +347,9 @@ func ProcessSarif(sarifPath, analysisId, reportUrl string, printProblems, codeCl
 	if err != nil {
 		log.Fatal(err)
 	}
+	if s == nil {
+		log.Fatal("SARIF report is nil")
+	}
 	var codeClimateIssues = make([]CCIssue, 0)
 	var codeInsightIssues = make([]bbapi.ReportAnnotation, 0)
 	rulesDescriptions := make(map[string]string)

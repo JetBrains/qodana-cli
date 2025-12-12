@@ -43,6 +43,9 @@ func getIdeExitCode(resultsDir string, c int) (res int) {
 	if err != nil {
 		log.Fatal(err)
 	}
+	if s == nil {
+		log.Fatal("SARIF report is nil")
+	}
 	if len(s.Runs) > 0 && len(s.Runs[0].Invocations) > 0 {
 		res := int(s.Runs[0].Invocations[0].ExitCode)
 		if res < utils.QodanaSuccessExitCode || res > utils.QodanaFailThresholdExitCode {
@@ -61,6 +64,9 @@ func getInvocationProperties(resultsDir string) *sarif.PropertyBag {
 	s, err := platform.ReadReport(platform.GetShortSarifPath(resultsDir))
 	if err != nil {
 		log.Fatal(err)
+	}
+	if s == nil {
+		log.Fatal("SARIF report is nil")
 	}
 	if len(s.Runs) > 0 && len(s.Runs[0].Invocations) > 0 {
 		if s.Runs[0].Invocations[0].Properties == nil {
