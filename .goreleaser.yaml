@@ -59,7 +59,7 @@ builds:
       - arm64
     hooks:
       post:
-        - cmd: go run ./scripts/sign-unified.go clang qodana-clang
+        - cmd: go run ./scripts/sign.go clang qodana-clang
 
   - id: cdnet
     binary: qodana-cdnet
@@ -79,7 +79,7 @@ builds:
       - arm64
     hooks:
       post:
-        - cmd: go run ./scripts/sign-unified.go cdnet qodana-cdnet
+        - cmd: go run ./scripts/sign.go cdnet qodana-cdnet
 
 archives:
   - id: cli
