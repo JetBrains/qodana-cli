@@ -38,7 +38,7 @@ type CliOptions struct {
 	Image                     string
 	WithinDocker              string
 	Ide                       string
-	SourceDirectory           string
+	OnlyDirectory             string
 	DisableSanity             bool
 	ProfileName               string
 	ProfilePath               string
@@ -232,9 +232,15 @@ func ComputeFlags(cmd *cobra.Command, options *CliOptions) error {
 		false,
 		"Skip running the inspections configured by the sanity profile",
 	)
-	flags.StringVarP(
-		&options.SourceDirectory,
+	flags.StringVar(
+		&options.OnlyDirectory,
 		"source-directory",
+		"",
+		"Deprecated. Use --only-directory instead.",
+	)
+	flags.StringVarP(
+		&options.OnlyDirectory,
+		"only-directory",
 		"d",
 		"",
 		"Directory inside the project-dir directory must be inspected. If not specified, the whole project is inspected",
@@ -397,6 +403,7 @@ func ComputeFlags(cmd *cobra.Command, options *CliOptions) error {
 	cmd.MarkFlagsMutuallyExclusive("commit", "script", "diff-start")
 	cmd.MarkFlagsMutuallyExclusive("profile-name", "profile-path")
 	cmd.MarkFlagsMutuallyExclusive("apply-fixes", "cleanup")
+	cmd.MarkFlagsMutuallyExclusive("source-directory", "only-directory")
 
 	err = cmd.Flags().MarkDeprecated("fixes-strategy", "use --apply-fixes / --cleanup instead")
 	err = cmd.Flags().MarkDeprecated(
@@ -404,6 +411,12 @@ func ComputeFlags(cmd *cobra.Command, options *CliOptions) error {
 		"use --linter with corresponding linter type and --within-docker=false instead",
 	)
 	if err != nil {
+		return err
+	}
+	if err = cmd.Flags().MarkDeprecated(
+		"source-directory",
+		"--source-directory is deprecated, use --only-directory instead",
+	); err != nil {
 		return err
 	}
 	err = cmd.Flags().MarkHidden("jvm-debug-port")
