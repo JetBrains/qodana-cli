@@ -203,7 +203,7 @@ qodana scan [flags]
       --commit --full-history                    Base changes commit to reset to, resets git and runs an incremental analysis: analysis will be run only on changed files since the given commit. If combined with --full-history, full history analysis will be started from the given commit.
       --fail-threshold string                    Set the number of problems that will serve as a quality gate. If this number is reached, the inspection run is terminated with a non-zero exit code
       --disable-sanity                           Skip running the inspections configured by the sanity profile
-  -d, --source-directory string                  Directory inside the project-dir directory must be inspected. If not specified, the whole project is inspected
+  -d, --only-directory string                    Directory inside the project-dir directory must be inspected. If not specified, the whole project is inspected
   -n, --profile-name string                      Profile name defined in the project
   -p, --profile-path string                      Path to the profile file
       --run-promo string                         Set to 'true' to have the application run the inspections configured by the promo profile; set to 'false' otherwise (default: 'true' only if Qodana is executed with the default profile)

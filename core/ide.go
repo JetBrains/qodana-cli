@@ -113,8 +113,8 @@ func GetIdeArgs(c corescan.Context) []string {
 	if c.Analyser().IsContainer() && c.SaveReport() {
 		arguments = append(arguments, "--save-report")
 	}
-	if c.SourceDirectory() != "" {
-		arguments = append(arguments, "--source-directory", strutil.QuoteForWindows(c.SourceDirectory()))
+	if c.OnlyDirectory() != "" {
+		arguments = append(arguments, "--only-directory", strutil.QuoteForWindows(c.OnlyDirectory()))
 	}
 	if c.DisableSanity() {
 		arguments = append(arguments, "--disable-sanity")

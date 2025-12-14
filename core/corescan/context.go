@@ -77,7 +77,7 @@ type Context struct {
 	cacheDir                  string
 	reportDir                 string
 	coverageDir               string
-	sourceDirectory           string
+	onlyDirectory             string
 	_env                      []string
 	disableSanity             bool
 	profileName               string
@@ -157,7 +157,7 @@ func (c Context) QodanaSystemDir() string            { return c.qodanaSystemDir 
 func (c Context) CacheDir() string                   { return c.cacheDir }
 func (c Context) ReportDir() string                  { return c.reportDir }
 func (c Context) CoverageDir() string                { return c.coverageDir }
-func (c Context) SourceDirectory() string            { return c.sourceDirectory }
+func (c Context) OnlyDirectory() string              { return c.onlyDirectory }
 func (c Context) DisableSanity() bool                { return c.disableSanity }
 func (c Context) ProfileName() string                { return c.profileName }
 func (c Context) ProfilePath() string                { return c.profilePath }
@@ -216,7 +216,7 @@ type ContextBuilder struct {
 	CacheDir                  string
 	ReportDir                 string
 	CoverageDir               string
-	SourceDirectory           string
+	OnlyDirectory             string
 	Env                       []string
 	DisableSanity             bool
 	ProfileName               string
@@ -280,7 +280,7 @@ func (b ContextBuilder) Build() Context {
 		cacheDir:                  b.CacheDir,
 		reportDir:                 b.ReportDir,
 		coverageDir:               b.CoverageDir,
-		sourceDirectory:           b.SourceDirectory,
+		onlyDirectory:             b.OnlyDirectory,
 		_env:                      b.Env,
 		disableSanity:             b.DisableSanity,
 		profileName:               b.ProfileName,

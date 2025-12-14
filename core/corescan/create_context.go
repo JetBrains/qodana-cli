@@ -64,7 +64,7 @@ func CreateContext(
 		CacheDir:                  commonCtx.CacheDir,
 		ReportDir:                 commonCtx.ReportDir,
 		CoverageDir:               coverageDir,
-		SourceDirectory:           cliOptions.SourceDirectory,
+		OnlyDirectory:             cliOptions.OnlyDirectory,
 		Env:                       cliOptions.Env_,
 		DisableSanity:             cliOptions.DisableSanity,
 		ProfileName:               cliOptions.ProfileName,
