@@ -64,6 +64,13 @@ jobs:
           echo "GOPATH=$(go env GOPATH)" >> "$GITHUB_ENV"
 
       - name: Run tests
-        run: go test -v -json ./... -timeout 0 -coverprofile coverage-${{ inputs.os }}.out | tparse -all -follow
+        run: go test -v -json ./... -timeout 0 -coverpkg=./... -coverprofile=coverage-${{ inputs.os }}.out | tparse -all -follow
         env:
           QODANA_LICENSE_ONLY_TOKEN: ${{ secrets.QODANA_LICENSE_ONLY_TOKEN }}
+
+      - name: Upload coverage
+        uses: actions/upload-artifact@v6
+        if: always()
+        with:
+          name: coverage-${{ inputs.os }}-${{ inputs.container-engine }}
+          path: coverage-${{ inputs.os }}.out
