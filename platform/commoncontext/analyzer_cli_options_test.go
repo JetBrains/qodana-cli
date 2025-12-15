@@ -79,6 +79,7 @@ func TestNativePathAnalyzerParams(t *testing.T) {
 		linter         string
 		qodanaDistEnv  string
 		expectedLinter product.Linter
+		fatal          bool
 		setup          func(t *testing.T)
 	}{
 		{
@@ -87,6 +88,7 @@ func TestNativePathAnalyzerParams(t *testing.T) {
 			"",
 			distPath,
 			product.JvmLinter,
+			false,
 			func(t *testing.T) {},
 		},
 		{
@@ -95,6 +97,7 @@ func TestNativePathAnalyzerParams(t *testing.T) {
 			"",
 			"",
 			product.JvmLinter,
+			false,
 			func(t *testing.T) {},
 		},
 		{
@@ -103,6 +106,7 @@ func TestNativePathAnalyzerParams(t *testing.T) {
 			"",
 			distPath,
 			product.JvmLinter,
+			false,
 			func(t *testing.T) {},
 		},
 		{
@@ -111,6 +115,7 @@ func TestNativePathAnalyzerParams(t *testing.T) {
 			"",
 			distPath + "wrong",
 			product.JvmLinter,
+			true,
 			func(t *testing.T) {},
 		},
 		{
@@ -119,8 +124,20 @@ func TestNativePathAnalyzerParams(t *testing.T) {
 			"",
 			distPath,
 			product.JvmCommunityLinter,
+			false,
 			func(t *testing.T) {
 				makeDistFlavourFile(distPath, product.JvmCommunityLinter.ProductCode)
+			},
+		},
+		{
+			"Pass through dist & flavour - unknown dist",
+			distPath,
+			"",
+			distPath,
+			product.UnknownLinter,
+			true,
+			func(t *testing.T) {
+				makeDistFlavourFile(distPath, "wrong code")
 			},
 		},
 	}
@@ -132,7 +149,7 @@ func TestNativePathAnalyzerParams(t *testing.T) {
 					tt.setup(t)
 				}
 				t.Setenv(qdenv.QodanaDistEnv, tt.qodanaDistEnv)
-				if tt.name == "Unknown dist" {
+				if tt.fatal {
 					defer func() { logrus.StandardLogger().ExitFunc = nil }()
 					var fatal bool
 					logrus.StandardLogger().ExitFunc = func(int) { fatal = true }
