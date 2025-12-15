@@ -74,40 +74,63 @@ func TestNativePathAnalyzerParams(t *testing.T) {
 	}(distPath)
 
 	tests := []struct {
-		name          string
-		ide           string
-		linter        string
-		qodanaDistEnv string
+		name           string
+		ide            string
+		linter         string
+		qodanaDistEnv  string
+		expectedLinter product.Linter
+		setup          func(t *testing.T)
 	}{
 		{
 			"Pass through ENV",
 			"",
 			"",
 			distPath,
+			product.JvmLinter,
+			func(t *testing.T) {},
 		},
 		{
 			"Pass through --ide",
 			distPath,
 			"",
 			"",
+			product.JvmLinter,
+			func(t *testing.T) {},
 		},
 		{
 			"Pass through --ide and dist",
 			distPath + "ignored",
 			"",
 			distPath,
+			product.JvmLinter,
+			func(t *testing.T) {},
 		},
 		{
 			"Unknown dist",
 			"",
 			"",
 			distPath + "wrong",
+			product.JvmLinter,
+			func(t *testing.T) {},
+		},
+		{
+			"Pass through dist & flavour",
+			distPath,
+			"",
+			distPath,
+			product.JvmCommunityLinter,
+			func(t *testing.T) {
+				makeDistFlavourFile(distPath, product.JvmCommunityLinter.ProductCode)
+			},
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(
 			tt.name, func(t *testing.T) {
+				if tt.setup != nil {
+					tt.setup(t)
+				}
 				t.Setenv(qdenv.QodanaDistEnv, tt.qodanaDistEnv)
 				if tt.name == "Unknown dist" {
 					defer func() { logrus.StandardLogger().ExitFunc = nil }()
@@ -121,7 +144,7 @@ func TestNativePathAnalyzerParams(t *testing.T) {
 				}
 
 				expected := product.PathNativeAnalyzer{
-					Linter: product.JvmLinter,
+					Linter: tt.expectedLinter,
 					Path:   distPath,
 					IsEap:  false,
 				}
@@ -137,6 +160,16 @@ func TestNativePathAnalyzerParams(t *testing.T) {
 			},
 		)
 	}
+}
+
+func makeDistFlavourFile(distPath string, productCode string) {
+	bytes := []byte(productCode)
+	ideDir := distPath
+	if //goland:noinspection ALL
+	runtime.GOOS == "darwin" {
+		ideDir = filepath.Join(distPath, "Resources")
+	}
+	_ = os.WriteFile(filepath.Join(ideDir, "dist.flavour.txt"), bytes, 0644)
 }
 
 func makeFakeProductInfo(ideDir string, productCode string) {
