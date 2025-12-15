@@ -327,7 +327,11 @@ func GuessProduct(idePath string, analyzer Analyzer) Product {
 		code = toQodanaCode(ideCode)
 	}
 
-	name := GetProductNameFromCode(code)
+	linter := FindLinterByProductCode(code)
+	if linter == UnknownLinter {
+		log.Fatalf("Unknown product code %s", code)
+	}
+	name := linter.PresentableName
 	build := productInfo.BuildNumber
 	eap := IsEap(productInfo)
 
