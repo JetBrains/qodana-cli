@@ -130,6 +130,17 @@ func TestNativePathAnalyzerParams(t *testing.T) {
 			},
 		},
 		{
+			"Pass through dist & flavour with trailing newline",
+			distPath,
+			"",
+			distPath,
+			product.JvmCommunityLinter,
+			false,
+			func(t *testing.T) {
+				makeDistFlavourFile(distPath, product.JvmCommunityLinter.ProductCode+"\n")
+			},
+		},
+		{
 			"Pass through dist & flavour - unknown dist",
 			distPath,
 			"",
