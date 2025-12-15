@@ -52,7 +52,7 @@ func createGitCommit(t *testing.T, path string) {
 	if err := exec.Command("git", "-C", path, "add", ".").Run(); err != nil {
 		t.Fatalf("Failed to add files to git: %v", err)
 	}
-	if err := exec.Command("git", "-C", path, "commit", "-m", "test commit").Run(); err != nil {
+	if err := exec.Command("git", "-C", path, "-c", "commit.gpgsign=false", "commit", "-m", "test commit").Run(); err != nil {
 		t.Fatalf("Failed to create git commit: %v", err)
 	}
 }
@@ -304,4 +304,68 @@ func setupCommonTestEnvForConfigSync(t *testing.T, tc struct {
 	}
 
 	return outputJdkTable, commonCtx, prod
+}
+
+func TestMakeDirAll(t *testing.T) {
+	t.Run("creates nested directories", func(t *testing.T) {
+		tmpDir := t.TempDir()
+		targetDir := filepath.Join(tmpDir, "a", "b", "c")
+		MakeDirAll(targetDir)
+		if _, err := os.Stat(targetDir); os.IsNotExist(err) {
+			t.Errorf("MakeDirAll failed to create directory: %s", targetDir)
+		}
+	})
+
+	t.Run("handles existing directory", func(t *testing.T) {
+		tmpDir := t.TempDir()
+		MakeDirAll(tmpDir) // Should not panic
+	})
+}
+
+func TestWriteFileIfNewPrepare(t *testing.T) {
+	t.Run("creates new file", func(t *testing.T) {
+		tmpDir := t.TempDir()
+		targetFile := filepath.Join(tmpDir, "new_file.txt")
+		content := "test content"
+		writeFileIfNew(targetFile, content)
+		data, err := os.ReadFile(targetFile)
+		if err != nil {
+			t.Fatalf("Failed to read file: %v", err)
+		}
+		if string(data) != content {
+			t.Errorf("Expected content %q, got %q", content, string(data))
+		}
+	})
+
+	t.Run("does not overwrite existing file", func(t *testing.T) {
+		tmpDir := t.TempDir()
+		targetFile := filepath.Join(tmpDir, "existing_file.txt")
+		originalContent := "original"
+		if err := os.WriteFile(targetFile, []byte(originalContent), 0644); err != nil {
+			t.Fatalf("Failed to create file: %v", err)
+		}
+		writeFileIfNew(targetFile, "new content")
+		data, err := os.ReadFile(targetFile)
+		if err != nil {
+			t.Fatalf("Failed to read file: %v", err)
+		}
+		if string(data) != originalContent {
+			t.Errorf("File was overwritten, expected %q, got %q", originalContent, string(data))
+		}
+	})
+}
+
+func TestPrepareDirectories(t *testing.T) {
+	tmpDir := t.TempDir()
+	resultsDir := filepath.Join(tmpDir, "results")
+	logDir := filepath.Join(tmpDir, "log")
+	confDir := filepath.Join(tmpDir, "config")
+
+	prepareDirectories(resultsDir, logDir, confDir)
+
+	for _, dir := range []string{resultsDir, logDir, confDir} {
+		if _, err := os.Stat(dir); os.IsNotExist(err) {
+			t.Errorf("prepareDirectories failed to create directory: %s", dir)
+		}
+	}
 }
