@@ -316,10 +316,17 @@ func GuessProduct(idePath string, analyzer Analyzer) Product {
 	if err != nil {
 		log.Fatalf("Can't read product-info.json: %v ", err)
 	}
+	flavourProductCode := ReadDistFlavour(homePath)
 
 	version := productInfo.Version
 	ideCode := productInfo.ProductCode
-	code := toQodanaCode(ideCode)
+	var code string
+	if flavourProductCode != "" {
+		code = flavourProductCode
+	} else {
+		code = toQodanaCode(ideCode)
+	}
+
 	name := GetProductNameFromCode(code)
 	build := productInfo.BuildNumber
 	eap := IsEap(productInfo)
@@ -417,6 +424,24 @@ func ReadIdeProductInfo(ideDir string) (*InfoJson, error) {
 		return nil, err
 	}
 	return &productInfoJson, nil
+}
+
+// ReadDistFlavour returns more specific product code.
+// QDJVM could be packed as QDJVM, QDJVMC, QDAND, QDANDC
+func ReadDistFlavour(ideDir string) string {
+	if //goland:noinspection ALL
+	runtime.GOOS == "darwin" {
+		ideDir = filepath.Join(ideDir, "Resources")
+	}
+	productFlavourFile := filepath.Join(ideDir, "dist.flavour.txt")
+	if _, err := os.Stat(productFlavourFile); err != nil {
+		return ""
+	}
+	productFlavour, err := os.ReadFile(productFlavourFile)
+	if err != nil {
+		return ""
+	}
+	return string(productFlavour)
 }
 
 func findIde(dir string) string {
