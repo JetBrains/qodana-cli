@@ -158,6 +158,9 @@ func BuildPathNativeAnalyzer(dist string) (product.Analyzer, error) {
 	flavourProductCode := product.ReadDistFlavour(dist)
 	if flavourProductCode != "" {
 		linter := product.FindLinterByProductCode(flavourProductCode)
+		if linter == product.UnknownLinter {
+			log.Fatalf("Unknown product code %s", flavourProductCode)
+		}
 		return &product.PathNativeAnalyzer{
 			Linter: linter,
 			Path:   dist,
