@@ -245,3 +245,306 @@ func TestPrintSarifProblem(t *testing.T) {
 		}, "", ""))
 	})
 }
+
+func TestRunGUID(t *testing.T) {
+	t.Run("from env", func(t *testing.T) {
+		_ = os.Setenv("QODANA_AUTOMATION_GUID", "test-guid-123")
+		defer func() {
+			_ = os.Unsetenv("QODANA_AUTOMATION_GUID")
+		}()
+		assert.Equal(t, "test-guid-123", RunGUID())
+	})
+
+	t.Run("generated when not set", func(t *testing.T) {
+		_ = os.Unsetenv("QODANA_AUTOMATION_GUID")
+		guid := RunGUID()
+		assert.NotEmpty(t, guid)
+		assert.Len(t, guid, 36)
+	})
+}
+
+func TestReportId(t *testing.T) {
+	t.Run("from env", func(t *testing.T) {
+		_ = os.Setenv("QODANA_REPORT_ID", "custom-report-id")
+		defer func() {
+			_ = os.Unsetenv("QODANA_REPORT_ID")
+		}()
+		assert.Equal(t, "custom-report-id", ReportId("project"))
+	})
+
+	t.Run("generated from project", func(t *testing.T) {
+		_ = os.Unsetenv("QODANA_REPORT_ID")
+		_ = os.Unsetenv("QODANA_PROJECT_ID")
+		id := ReportId("myproject")
+		assert.Contains(t, id, "myproject/qodana/")
+	})
+
+	t.Run("generated from project id env", func(t *testing.T) {
+		_ = os.Unsetenv("QODANA_REPORT_ID")
+		_ = os.Setenv("QODANA_PROJECT_ID", "env-project")
+		defer func() {
+			_ = os.Unsetenv("QODANA_PROJECT_ID")
+		}()
+		id := ReportId("ignored")
+		assert.Contains(t, id, "env-project/qodana/")
+	})
+}
+
+func TestJobUrl(t *testing.T) {
+	t.Run("from env", func(t *testing.T) {
+		_ = os.Setenv("QODANA_JOB_URL", "https://example.com/job/123")
+		defer func() {
+			_ = os.Unsetenv("QODANA_JOB_URL")
+		}()
+		assert.Equal(t, "https://example.com/job/123", JobUrl())
+	})
+
+	t.Run("empty when not set", func(t *testing.T) {
+		_ = os.Unsetenv("QODANA_JOB_URL")
+		assert.Equal(t, "", JobUrl())
+	})
+}
+
+func TestGetSeverity(t *testing.T) {
+	tests := []struct {
+		name     string
+		result   *sarif.Result
+		expected string
+	}{
+		{
+			name: "from qodanaSeverity property",
+			result: &sarif.Result{
+				Properties: &sarif.PropertyBag{
+					AdditionalProperties: map[string]interface{}{
+						"qodanaSeverity": "Critical",
+					},
+				},
+			},
+			expected: "Critical",
+		},
+		{
+			name: "from level when no properties",
+			result: &sarif.Result{
+				Level: "error",
+			},
+			expected: "error",
+		},
+		{
+			name:     "default note when nothing set",
+			result:   &sarif.Result{},
+			expected: "note",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			assert.Equal(t, tt.expected, getSeverity(tt.result))
+		})
+	}
+}
+
+func TestRemoveDuplicates(t *testing.T) {
+	t.Run("empty slice", func(t *testing.T) {
+		result := removeDuplicates([]sarif.Result{})
+		assert.Empty(t, result)
+	})
+
+	t.Run("no fingerprints", func(t *testing.T) {
+		results := []sarif.Result{
+			{RuleId: "rule1"},
+			{RuleId: "rule2"},
+		}
+		filtered := removeDuplicates(results)
+		assert.Len(t, filtered, 2)
+	})
+
+	t.Run("removes duplicates by fingerprint", func(t *testing.T) {
+		results := []sarif.Result{
+			{
+				RuleId:              "rule1",
+				PartialFingerprints: map[string]string{"equalIndicator/v2": "fp1"},
+			},
+			{
+				RuleId:              "rule1",
+				PartialFingerprints: map[string]string{"equalIndicator/v2": "fp1"},
+			},
+			{
+				RuleId:              "rule2",
+				PartialFingerprints: map[string]string{"equalIndicator/v2": "fp2"},
+			},
+		}
+		filtered := removeDuplicates(results)
+		assert.Len(t, filtered, 2)
+	})
+}
+
+func TestGetFingerprint(t *testing.T) {
+	t.Run("v2 fingerprint", func(t *testing.T) {
+		r := &sarif.Result{
+			PartialFingerprints: map[string]string{
+				"equalIndicator/v2": "fingerprint-v2",
+				"equalIndicator/v1": "fingerprint-v1",
+			},
+		}
+		assert.Equal(t, "fingerprint-v2", getFingerprint(r))
+	})
+
+	t.Run("v1 fingerprint fallback", func(t *testing.T) {
+		r := &sarif.Result{
+			PartialFingerprints: map[string]string{
+				"equalIndicator/v1": "fingerprint-v1",
+			},
+		}
+		assert.Equal(t, "fingerprint-v1", getFingerprint(r))
+	})
+}
+
+func TestFindSarifFiles(t *testing.T) {
+	dir, err := os.MkdirTemp("", "sarif-test")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer func() {
+		_ = os.RemoveAll(dir)
+	}()
+
+	if err := os.WriteFile(filepath.Join(dir, "report1.sarif.json"), []byte("{}"), 0644); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(dir, "report2.SARIF.JSON"), []byte("{}"), 0644); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(dir, "notasarif.json"), []byte("{}"), 0644); err != nil {
+		t.Fatal(err)
+	}
+
+	files, err := findSarifFiles(dir)
+	assert.NoError(t, err)
+	assert.Len(t, files, 2)
+}
+
+func TestReadReportFromString(t *testing.T) {
+	sarifJson := `{"$schema":"https://raw.githubusercontent.com/oasis-tcs/sarif-spec/master/Schemata/sarif-schema-2.1.0.json","version":"2.1.0","runs":[]}`
+
+	report, err := ReadReportFromString(sarifJson)
+	assert.NoError(t, err)
+	assert.NotNil(t, report)
+	assert.Equal(t, "2.1.0", report.Version)
+}
+
+func TestWriteReport(t *testing.T) {
+	dir := t.TempDir()
+	path := filepath.Join(dir, "test-report.sarif.json")
+
+	report := &sarif.Report{
+		Version: "2.1.0",
+		Schema:  "https://raw.githubusercontent.com/oasis-tcs/sarif-spec/master/Schemata/sarif-schema-2.1.0.json",
+		Runs:    []sarif.Run{},
+	}
+
+	err := WriteReport(path, report)
+	assert.NoError(t, err)
+
+	_, err = os.Stat(path)
+	assert.NoError(t, err)
+}
+
+func TestReadReport(t *testing.T) {
+	dir := t.TempDir()
+	path := filepath.Join(dir, "test.sarif.json")
+
+	sarifContent := `{"$schema":"https://schema.json","version":"2.1.0","runs":[]}`
+	if err := os.WriteFile(path, []byte(sarifContent), 0644); err != nil {
+		t.Fatal(err)
+	}
+
+	report, err := ReadReport(path)
+	assert.NoError(t, err)
+	assert.NotNil(t, report)
+	assert.Equal(t, "2.1.0", report.Version)
+}
+
+func TestMakeShortSarif_Additional(t *testing.T) {
+	dir := t.TempDir()
+	sarifPath := filepath.Join(dir, "qodana.sarif.json")
+	shortPath := filepath.Join(dir, "qodana-short.sarif.json")
+
+	sarifContent := `{
+		"$schema":"https://schema.json",
+		"version":"2.1.0",
+		"runs":[{
+			"tool":{"driver":{"name":"test"}},
+			"results":[],
+			"invocations":[{"executionSuccessful":true}]
+		}]
+	}`
+	if err := os.WriteFile(sarifPath, []byte(sarifContent), 0644); err != nil {
+		t.Fatal(err)
+	}
+
+	err := MakeShortSarif(sarifPath, shortPath)
+	assert.NoError(t, err)
+
+	_, err = os.Stat(shortPath)
+	assert.NoError(t, err)
+}
+
+func TestGetShortSarifPath(t *testing.T) {
+	path := GetShortSarifPath("/results")
+	assert.Contains(t, path, "qodana-short.sarif.json")
+}
+
+func TestGetSarifPath(t *testing.T) {
+	path := GetSarifPath("/results")
+	assert.Contains(t, path, "qodana.sarif.json")
+}
+
+func TestGetRuleDescription(t *testing.T) {
+	report := &sarif.Report{
+		Runs: []sarif.Run{
+			{
+				Tool: &sarif.Tool{
+					Extensions: []sarif.ToolComponent{
+						{
+							Rules: []sarif.ReportingDescriptor{
+								{
+									Id: "TEST001",
+									ShortDescription: &sarif.MultiformatMessageString{
+										Text: "Test rule description",
+									},
+								},
+								{
+									Id: "TEST002",
+									ShortDescription: &sarif.MultiformatMessageString{
+										Text: "Another rule",
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+	}
+
+	t.Run("existing rule", func(t *testing.T) {
+		desc := getRuleDescription(report, "TEST001")
+		assert.Equal(t, "Test rule description", desc)
+	})
+
+	t.Run("another existing rule", func(t *testing.T) {
+		desc := getRuleDescription(report, "TEST002")
+		assert.Equal(t, "Another rule", desc)
+	})
+
+	t.Run("non-existent rule", func(t *testing.T) {
+		desc := getRuleDescription(report, "NONEXISTENT")
+		assert.Empty(t, desc)
+	})
+
+	t.Run("empty report", func(t *testing.T) {
+		emptyReport := &sarif.Report{}
+		desc := getRuleDescription(emptyReport, "TEST001")
+		assert.Empty(t, desc)
+	})
+}

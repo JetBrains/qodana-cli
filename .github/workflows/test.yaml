@@ -67,6 +67,7 @@ jobs:
         run: go test -v -json ./... -timeout 0 -coverpkg=./... -coverprofile=coverage-${{ inputs.os }}.out | tparse -all -follow
         env:
           QODANA_LICENSE_ONLY_TOKEN: ${{ secrets.QODANA_LICENSE_ONLY_TOKEN }}
+          QODANA_TEST_CONTAINER: ${{ inputs.os == 'ubuntu-latest' && inputs.container-engine == 'docker@latest' && '1' || '' }}
 
       - name: Upload coverage
         uses: actions/upload-artifact@v6

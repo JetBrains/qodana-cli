@@ -1098,6 +1098,43 @@ func TestQodanaOptions_RequiresToken(t *testing.T) {
 	}
 }
 
+func TestGetPluginIds(t *testing.T) {
+	tests := []struct {
+		name     string
+		plugins  []qdyaml.Plugin
+		expected []string
+	}{
+		{
+			name:     "empty plugins",
+			plugins:  []qdyaml.Plugin{},
+			expected: []string{},
+		},
+		{
+			name: "single plugin",
+			plugins: []qdyaml.Plugin{
+				{Id: "plugin1"},
+			},
+			expected: []string{"plugin1"},
+		},
+		{
+			name: "multiple plugins",
+			plugins: []qdyaml.Plugin{
+				{Id: "plugin1"},
+				{Id: "plugin2"},
+				{Id: "plugin3"},
+			},
+			expected: []string{"plugin1", "plugin2", "plugin3"},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result := getPluginIds(tt.plugins)
+			assert.Equal(t, tt.expected, result)
+		})
+	}
+}
+
 func propertiesFixture(enableStats bool, additionalProperties []string) []string {
 	properties := []string{
 		fmt.Sprintf("-Didea.config.path=%s", filepath.Join(os.TempDir(), "entrypoint", "root", "project")),

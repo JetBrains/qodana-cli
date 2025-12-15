@@ -481,3 +481,62 @@ func createEmptyShortSarif(path string) {
 			}`
 	_ = os.WriteFile(platform.GetShortSarifPath(path), []byte(shortSarifContent), 0644)
 }
+
+func TestIsHomeDirectory(t *testing.T) {
+	home, err := os.UserHomeDir()
+	if err != nil {
+		t.Skip("cannot get home directory")
+	}
+
+	tests := []struct {
+		path     string
+		expected bool
+	}{
+		{home, true},
+		{filepath.Join(home, "subdir"), false},
+		{"/tmp", false},
+		{"/nonexistent/path", false},
+		{".", false},
+	}
+	for _, tt := range tests {
+		t.Run(tt.path, func(t *testing.T) {
+			result := IsHomeDirectory(tt.path)
+			assert.Equal(t, tt.expected, result)
+		})
+	}
+}
+
+func TestOpenDir(t *testing.T) {
+	t.Run("open existing directory", func(t *testing.T) {
+		dir := t.TempDir()
+		_ = OpenDir(dir)
+	})
+}
+
+func TestGetScanStages(t *testing.T) {
+	stages := getScanStages()
+	assert.Len(t, stages, 6)
+	assert.Contains(t, stages[0], "Preparing Qodana Docker images")
+	assert.Contains(t, stages[5], "Preparing the report")
+}
+
+func TestCheckForUpdates(t *testing.T) {
+	t.Run("dev version skips check", func(t *testing.T) {
+		DisableCheckUpdates = false
+		CheckForUpdates("dev")
+		assert.False(t, DisableCheckUpdates)
+	})
+
+	t.Run("nightly version skips check", func(t *testing.T) {
+		DisableCheckUpdates = false
+		CheckForUpdates("1.0.0-nightly")
+		assert.False(t, DisableCheckUpdates)
+	})
+}
+
+func TestGetLatestVersion(t *testing.T) {
+	version := getLatestVersion()
+	if version != "" {
+		assert.NotContains(t, version, "v")
+	}
+}

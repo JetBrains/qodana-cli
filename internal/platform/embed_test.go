@@ -61,3 +61,63 @@ func (mockThirdPartyLinter) MountTools(_ string) (map[string]string, error) {
 func (mockThirdPartyLinter) RunAnalysis(_ thirdpartyscan.Context) error {
 	return nil
 }
+
+func TestGetToolsMountPath(t *testing.T) {
+	dir := t.TempDir()
+	path := getToolsMountPath(dir)
+	if path == "" {
+		t.Error("getToolsMountPath returned empty string")
+	}
+
+	if _, err := os.Stat(path); os.IsNotExist(err) {
+		t.Error("getToolsMountPath did not create directory")
+	}
+}
+
+func TestProcessAuxiliaryTool(t *testing.T) {
+	dir := t.TempDir()
+	testBytes := []byte("test content")
+
+	path := ProcessAuxiliaryTool("test.jar", "test", dir, testBytes)
+
+	if path == "" {
+		t.Error("ProcessAuxiliaryTool returned empty path")
+	}
+
+	content, err := os.ReadFile(path)
+	if err != nil {
+		t.Errorf("Failed to read created file: %v", err)
+	}
+
+	if string(content) != string(testBytes) {
+		t.Error("File content mismatch")
+	}
+
+	path2 := ProcessAuxiliaryTool("test.jar", "test", dir, testBytes)
+	if path != path2 {
+		t.Error("ProcessAuxiliaryTool should return same path on re-run")
+	}
+}
+
+func TestIsInDirectory(t *testing.T) {
+	tests := []struct {
+		name     string
+		base     string
+		target   string
+		expected bool
+	}{
+		{"same dir", "/a/b", "/a/b/file.txt", true},
+		{"subdirectory", "/a/b", "/a/b/c/file.txt", true},
+		{"different dir", "/a/b", "/a/c/file.txt", false},
+		{"parent dir", "/a/b/c", "/a/b/file.txt", false},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result := isInDirectory(tt.base, tt.target)
+			if result != tt.expected {
+				t.Errorf("isInDirectory(%s, %s) = %v, want %v", tt.base, tt.target, result, tt.expected)
+			}
+		})
+	}
+}
