@@ -1,7 +1,6 @@
 org.intellij.qodana
 org.intellij.intelliLang
 com.intellij.configurationScript
-com.intellij.properties
 com.intellij.platform.images
 org.editorconfig.editorconfigjetbrains
 org.jetbrains.plugins.yaml
@@ -30,7 +29,6 @@ intellij.prettierJS
 org.intellij.plugins.postcss
 org.jetbrains.plugins.sass
 com.deadlock.scsyntax
-org.jetbrains.plugins.stylus
 com.intellij.tailwindcss
 tslint
 org.jetbrains.plugins.vue

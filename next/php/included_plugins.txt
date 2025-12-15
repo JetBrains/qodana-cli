@@ -1,7 +1,6 @@
 org.intellij.qodana
 org.intellij.intelliLang
 com.intellij.configurationScript
-com.intellij.properties
 com.intellij.platform.images
 org.editorconfig.editorconfigjetbrains
 org.jetbrains.plugins.yaml
@@ -14,9 +13,7 @@ hg4idea
 HtmlTools
 tanvd.grazi
 com.intellij.database
-intellij.grid.core.impl
-intellij.grid.impl
-intellij.charts
+intellij.grid.plugin
 intellij.indexing.shared.core
 intellij.indexing.shared
 gherkin

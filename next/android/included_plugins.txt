@@ -13,9 +13,7 @@ hg4idea
 HtmlTools
 tanvd.grazi
 com.intellij.database
-intellij.grid.core.impl
-intellij.grid.impl
-intellij.charts
+intellij.grid.plugin
 intellij.indexing.shared.core
 intellij.indexing.shared
 intellij.ktor
@@ -47,7 +45,6 @@ com.intellij.microservices.jvm
 com.intellij.persistence
 com.intellij.platform.images
 com.intellij.properties
-com.intellij.reactivestreams
 com.intellij.spring
 com.intellij.spring.boot
 com.intellij.spring.boot.initializr
@@ -62,7 +59,6 @@ com.intellij.velocity
 org.intellij.groovy
 org.jetbrains.idea.eclipse
 org.jetbrains.idea.maven
-org.jetbrains.idea.maven.ext
 org.jetbrains.idea.gradle.ext
 org.jetbrains.idea.gradle.dsl
 org.jetbrains.idea.reposearch

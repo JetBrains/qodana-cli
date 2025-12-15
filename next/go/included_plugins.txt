@@ -1,7 +1,6 @@
 org.intellij.qodana
 org.intellij.intelliLang
 com.intellij.configurationScript
-com.intellij.properties
 com.intellij.platform.images
 org.editorconfig.editorconfigjetbrains
 org.jetbrains.plugins.yaml
@@ -18,15 +17,11 @@ org.jetbrains.plugins.go.ide
 org.jetbrains.plugins.go.sharedIndexes.bundled
 com.intellij.plugins.dependencyAnalysis
 org.jetbrains.security.package-checker
-NodeJS
 JavaScriptDebugger
 JavaScript
 JSIntentionPowerPack
 XPathView
 com.intellij.css
-org.jetbrains.plugins.less
-org.jetbrains.plugins.sass
-org.jetbrains.plugins.vue
 org.intellij.plugins.postcss
 com.jetbrains.restClient
 org.intellij.kotlinScripting
@@ -43,7 +38,4 @@ com.intellij.jsonpath
 com.intellij.hardcodedPasswords
 com.jetbrains.codeWithMe
 com.intellij.database
-intellij.grid.core.impl
-intellij.grid.impl
 intellij.grid.plugin
-intellij.charts
