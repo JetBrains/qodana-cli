@@ -155,6 +155,16 @@ func BuildPathNativeAnalyzer(dist string) (product.Analyzer, error) {
 		return nil, fmt.Errorf("can't read product-info.json: %v ", err)
 	}
 
+	flavourProductCode := product.ReadDistFlavour(dist)
+	if flavourProductCode != "" {
+		linter := product.FindLinterByProductCode(flavourProductCode)
+		return &product.PathNativeAnalyzer{
+			Linter: linter,
+			Path:   dist,
+			IsEap:  product.IsEap(productInfo),
+		}, nil
+	}
+
 	info, err := product.FindLinterPropertiesByProductInfo(productInfo.ProductCode)
 	if err != nil {
 		return nil, fmt.Errorf("product dist %s is not recognised as valid: %v", dist, err)
