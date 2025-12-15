@@ -43,7 +43,11 @@ jobs:
     name: "Lint"
     runs-on: ubuntu-latest
     permissions:
+      checks: write
+      pull-requests: write
+      actions: read
       contents: read
+      security-events: write
     steps:
       - uses: actions/checkout@v6
       - uses: ./.github/actions/mock-dependencies
