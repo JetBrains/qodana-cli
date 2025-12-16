@@ -14,7 +14,7 @@ func processConfig(c thirdpartyscan.Context) (string, error) {
 	var includeRules []string
 
 	yaml := c.QodanaYamlConfig()
-	var checks = ""
+	var checks string
 	utils.Bootstrap(yaml.Bootstrap, c.ProjectDir())
 	if yaml.Version != "" || len(yaml.Includes) > 0 || len(yaml.Excludes) > 0 {
 		fmt.Println("Found qodana.yaml. Note that only bootstrap command and inspection names from include and exclude sections are supported.")
@@ -45,6 +45,10 @@ func processConfig(c thirdpartyscan.Context) (string, error) {
 		checks = fmt.Sprintf("--checks=%s", plusChecks)
 	} else if minusChecks != "" {
 		checks = fmt.Sprintf("--checks=%s", minusChecks)
+	} else {
+		// Default to all checks when no configuration is provided
+		// This is needed because recent clang-tidy versions enable no checks by default
+		checks = "--checks=*"
 	}
 	return checks, nil
 }
