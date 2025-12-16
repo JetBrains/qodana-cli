@@ -45,6 +45,7 @@ jobs:
         with:
           push: ${{ github.ref == 'refs/heads/main' }}
           workdir: dockerfiles/base
+          source: .
           targets: ${{ matrix.group }}
           set: |
             *.cache-from=type=gha,scope=provenance
