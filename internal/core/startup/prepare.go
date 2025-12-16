@@ -116,7 +116,7 @@ func prepareLocalIdeSettingsAndGetQodanaCloudUploadToken(
 ) (product.Product, string) {
 	prod := product.GuessProduct(ideDir, commonCtx.Analyzer)
 
-	qdenv.ExtractQodanaEnvironment(qdenv.SetEnv)
+	qdenv.ExtractQodanaEnvironment(git.GetGitEnv(commonCtx.RepositoryRoot, commonCtx.LogDir()), qdenv.SetEnv)
 	isTokenRequired := tokenloader.IsCloudTokenRequired(commonCtx)
 	token := tokenloader.LoadCloudUploadToken(commonCtx, false, isTokenRequired, true)
 	cloud.SetupLicenseToken(token)
