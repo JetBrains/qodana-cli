@@ -30,7 +30,7 @@ jobs:
           sudo rm -rf "/usr/local/share/boost"
           sudo rm -rf "$AGENT_TOOLSDIRECTORY"
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v3
       - name: Set up Docker Buildx
@@ -41,7 +41,7 @@ jobs:
           username: ${{ secrets.SPACE_USERNAME }}
           password: ${{ secrets.SPACE_PASSWORD }}
       - name: Build and push
-        uses: docker/bake-action@v5
+        uses: docker/bake-action@v6
         with:
           push: ${{ github.ref == 'refs/heads/main' }}
           workdir: dockerfiles/base
