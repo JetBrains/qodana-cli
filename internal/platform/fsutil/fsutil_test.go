@@ -18,11 +18,11 @@ func tempFs(t *testing.T, paths []string) fs.FS {
 		parents, filename := filepath.Split(path)
 
 		if parents != "" {
-			os.MkdirAll(parents, os.ModePerm)
+			require.NoError(t, os.MkdirAll(parents, os.ModePerm))
 		}
 
 		if filename != "" {
-			Touch(path)
+			require.NoError(t, Touch(path))
 		}
 	}
 
