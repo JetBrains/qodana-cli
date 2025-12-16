@@ -5,6 +5,7 @@ import (
 	"os"
 	"path/filepath"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/require"
 )
@@ -109,6 +110,9 @@ func TestTouch(t *testing.T) {
 		path := dir + "/file"
 
 		require.NoError(t, Touch(path))
+
+		thePast := time.Unix(875545200, 0)
+		require.NoError(t, os.Chtimes(path, thePast, thePast))
 
 		stat1, err := os.Stat(path)
 		require.NoError(t, err)
