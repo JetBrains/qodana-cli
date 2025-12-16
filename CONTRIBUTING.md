@@ -9,10 +9,12 @@ By participating in this project, you agree to abide our [Code of conduct](.gith
 Prerequisites:
 
 - [Go 1.25+](https://golang.org/doc/install)
+- [Docker](https://docs.docker.com/get-docker/)
 
 Other things you might need to develop:
 
 - [GoLand](https://www.jetbrains.com/go/) (it's [free for open-source development](https://www.jetbrains.com/community/opensource/))
+- [IntelliJ IDEA](https://www.jetbrains.com/idea/) (it's [free for open-source development](https://www.jetbrains.com/community/opensource/))
 
 Clone the project anywhere:
 
@@ -124,6 +126,34 @@ Inside 3rd party linters docker image a different qodana-cli executable is used.
 3. Change the `buildDateStr` variable in [main.go](cdnet/main.go) to a more recent date (e.g., update it from "2023-12-05T10:52:23Z" to today's date in the same format) to avoid EAP expiration errors
 4. Build the executable: `env GOOS=linux CGO_ENABLED=0 go build -o qd-custom`
 5. To replace the executable in docker image, see `'Patching' an existing Qodana image` section below. Note that the `qodana-cdnet` image has qodana executable in `/opt/qodana/qodana` path
+
+## Working with Docker images
+
+### Build Docker images
+
+With [Docker Bake](https://docs.docker.com/build/bake/) you can build all base images at once:
+
+```shell
+cd dockerfiles/base && docker buildx bake
+```
+
+### Verify product feed
+
+`cd` into `.github/scripts` and run the script to check product feed if you edited something in `feed/releases.json`:
+
+```shell
+cd .github/scripts && node verifyChecksums.js
+```
+
+### Generate Dockerfiles
+
+To generate Dockerfiles for a release:
+
+```shell
+./scripts/dockerfiles.py dockerfiles
+```
+
+To add a newly released product, check `dockerfiles/public.json`.
 
 ## Create a commit
 

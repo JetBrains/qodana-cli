@@ -23,3 +23,104 @@ updates:
           - "*"
         exclude-patterns:
           - "*docker*"
+
+  - package-ecosystem: docker
+    directory: /dockerfiles/android-community
+    commit-message:
+      prefix: "QD-8148"
+    schedule:
+      interval: monthly
+    groups:
+      dependencies:
+        patterns:
+          - "*"
+  - package-ecosystem: docker
+    directory: /dockerfiles/dotnet
+    commit-message:
+      prefix: "QD-8148"
+    schedule:
+      interval: monthly
+    groups:
+      dependencies:
+        patterns:
+          - "*"
+  - package-ecosystem: docker
+    directory: /dockerfiles/dotnet-community
+    commit-message:
+      prefix: "QD-8148"
+    schedule:
+      interval: monthly
+    groups:
+      dependencies:
+        patterns:
+          - "*"
+  - package-ecosystem: docker
+    directory: /dockerfiles/go
+    commit-message:
+      prefix: "QD-8148"
+    schedule:
+      interval: weekly
+    groups:
+      dependencies:
+        patterns:
+          - "*"
+  - package-ecosystem: docker
+    directory: /dockerfiles/js
+    commit-message:
+      prefix: "QD-8148"
+    schedule:
+      interval: monthly
+    groups:
+      dependencies:
+        patterns:
+          - "*"
+  - package-ecosystem: docker
+    directory: /dockerfiles/jvm
+    commit-message:
+      prefix: "QD-8148"
+    schedule:
+      interval: monthly
+    groups:
+      dependencies:
+        patterns:
+          - "*"
+  - package-ecosystem: docker
+    directory: /dockerfiles/jvm-community
+    commit-message:
+      prefix: "QD-8148"
+    schedule:
+      interval: monthly
+    groups:
+      dependencies:
+        patterns:
+          - "*"
+  - package-ecosystem: docker
+    directory: /dockerfiles/php
+    commit-message:
+      prefix: "QD-8148"
+    schedule:
+      interval: monthly
+    groups:
+      dependencies:
+        patterns:
+          - "*"
+  - package-ecosystem: docker
+    directory: /dockerfiles/python
+    commit-message:
+      prefix: "QD-8148"
+    schedule:
+      interval: monthly
+    groups:
+      dependencies:
+        patterns:
+          - "*"
+  - package-ecosystem: docker
+    directory: /dockerfiles/python-community
+    commit-message:
+      prefix: "QD-8148"
+    schedule:
+      interval: monthly
+    groups:
+      dependencies:
+        patterns:
+          - "*"

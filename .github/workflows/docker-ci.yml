@@ -1,0 +1,59 @@
+name: '🐳 Build'
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+    paths:
+      - 'dockerfiles/**/Dockerfile'
+  pull_request:
+    paths:
+      - 'dockerfiles/**/Dockerfile'
+  schedule:
+    - cron: '0 0 * * 1'
+
+jobs:
+  glob-releases:
+    name: Collect releases for checking
+    runs-on: ubuntu-latest
+    outputs:
+      releases: ${{ steps.main.outputs.releases }}
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Download history, needed for .github/scripts/release-matrix.py
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+      - name: Collect releases for checking
+        id: main
+        run: |
+          set -euo pipefail
+          echo -n "releases="                      >> "$GITHUB_OUTPUT"
+          python .github/scripts/release-matrix.py >> "$GITHUB_OUTPUT"
+
+  build:
+    name: Test Build
+    needs: glob-releases
+    if: ${{ needs.glob-releases.outputs.releases != '[]' }}
+    strategy:
+      matrix:
+        include: ${{ fromJSON(needs.glob-releases.outputs.releases) }}
+    runs-on: ${{ matrix.runner }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+      - name: Build
+        uses: docker/build-push-action@v6
+        with:
+          tags: jetbrains/qodana-${{ matrix.linter }}:latest
+          context: dockerfiles/${{ matrix.linter }}
+          platforms: ${{ matrix.platform }}
+          push: false
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
