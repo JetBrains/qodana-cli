@@ -445,7 +445,7 @@ func ReadDistFlavour(ideDir string) string {
 	if err != nil {
 		return ""
 	}
-	return string(productFlavour)
+	return strings.TrimSpace(string(productFlavour))
 }
 
 func findIde(dir string) string {
