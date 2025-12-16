@@ -1,40 +1,52 @@
-name: 'Lint'
+name: '🐳 Lint'
 on:
   pull_request:
     paths:
-      - '**/Dockerfile'
-      - '**/Dockerfile.j2'
+      - 'dockerfiles/**/*.Dockerfile'
+      - 'dockerfiles/**/*.j2'
+      - 'scripts/dockerfiles.py'
 
 jobs:
   lint:
     name: lint
     runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        release: [ "2025.1", "2025.2" ]
     steps:
       - name: Checkout
         uses: actions/checkout@v4
         with:
           ref: ${{ github.head_ref }}
+      - name: Check if Dockerfiles exist
+        id: check
+        run: |
+          if find dockerfiles -name "Dockerfile" -type f | grep -q .; then
+            echo "has_dockerfiles=true" >> $GITHUB_OUTPUT
+          else
+            echo "has_dockerfiles=false" >> $GITHUB_OUTPUT
+            echo "No Dockerfiles found in dockerfiles/ directory, skipping generation"
+          fi
       - uses: dorny/paths-filter@v3
+        if: steps.check.outputs.has_dockerfiles == 'true'
         id: changes
         with:
           filters: |
             dockerfiles:
-              - '${{ matrix.release }}/**'
-      - if: steps.changes.outputs.dockerfiles == 'true'
-        run: ./dockerfiles.py ${{ matrix.release }}
+              - 'dockerfiles/**'
+      - name: Install dependencies
+        if: steps.check.outputs.has_dockerfiles == 'true' && steps.changes.outputs.dockerfiles == 'true'
+        run: pip install jinja2
+      - name: Generate Dockerfiles
+        if: steps.check.outputs.has_dockerfiles == 'true' && steps.changes.outputs.dockerfiles == 'true'
+        run: ./scripts/dockerfiles.py dockerfiles
       - name: Compare the expected and actual directories
+        if: steps.check.outputs.has_dockerfiles == 'true' && steps.changes.outputs.dockerfiles == 'true'
         run: |
           git status
-          if [ "$(git status --porcelain ${{ matrix.release }} | wc -l)" -gt "0" ]; then
+          if [ "$(git status --porcelain dockerfiles | wc -l)" -gt "0" ]; then
               echo "Detected uncommitted changes after build. See status below:"
-              git diff --ignore-space-at-eol HEAD -- ${{ matrix.release }}
+              git diff --ignore-space-at-eol HEAD -- dockerfiles
               git config user.name github-actions
               git config user.email github-actions@github.com
               git add .
-              git commit -m "QD-8148 Update \`${{ matrix.release }}\` Dockerfiles"
+              git commit -m "QD-8148 Update Dockerfiles"
               git push
           fi
-        if: steps.changes.outputs.dockerfiles == 'true'

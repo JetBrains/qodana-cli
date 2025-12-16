@@ -150,7 +150,7 @@ cd .github/scripts && node verifyChecksums.js
 To generate Dockerfiles for a release:
 
 ```shell
-./dockerfiles.py dockerfiles
+./scripts/dockerfiles.py dockerfiles
 ```
 
 To add a newly released product, check `dockerfiles/public.json`.

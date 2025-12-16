@@ -1,4 +1,4 @@
-name: 'Feed'
+name: '🐳 Feed'
 on:
   workflow_dispatch:
   push:
