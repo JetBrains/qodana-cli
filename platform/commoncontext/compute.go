@@ -22,7 +22,6 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
-	"strings"
 
 	"github.com/JetBrains/qodana-cli/v2025/platform/git"
 	"github.com/JetBrains/qodana-cli/v2025/platform/msg"
@@ -141,25 +140,64 @@ func computeCommon(
 		}
 	}
 
-	fmt.Printf("%q\n", repositoryRoot)
-	fmt.Printf("%q\n", projectDir)
-	if repositoryRoot != projectDir {
-		rootAbs, err1 := filepath.Abs(repositoryRoot)
-		projAbs, err2 := filepath.Abs(projectDir)
-		if err1 != nil || err2 != nil {
-			log.Fatalf("Failed to resolve absolute paths: repository-root=%v, project-dir=%v", err1, err2)
-		}
-		if rel, err := filepath.Rel(rootAbs, projAbs); err != nil || strings.HasPrefix(rel, "..") {
-			log.Fatalf(
-				"The project directory must be located inside repository root. Please, specify correct --repository-root argument. ProjectDir: %s. RepositoryRoot: %s",
-				projAbs,
-				rootAbs,
-			)
-		}
+	// Normalize repositoryRoot to be a substring of projectDir path
+	// This handles case-insensitive filesystems where /tmp/PROJECT and /tmp/project are the same
+	normalizedRepoRoot, err := normalizeRepositoryRoot(projectDir, repositoryRoot)
+	if err != nil {
+		log.Fatalf(
+			"The project directory must be located inside repository root. Please, specify correct --repository-root argument. ProjectDir: %s. RepositoryRoot: %s",
+			projectDir,
+			repositoryRoot,
+		)
 	}
 
-	commonCtx.RepositoryRoot = repositoryRoot
+	log.Debugf("Repository root: %q\n", repositoryRoot)
+	log.Debugf("Normalized repository root: %q\n", normalizedRepoRoot)
+	log.Debugf("Project root: %q\n", projectDir)
+
+	commonCtx.RepositoryRoot = normalizedRepoRoot
 	return commonCtx
+}
+
+// normalizeRepositoryRoot checks if projectDir is inside or equal to repositoryRoot and returns
+// the repositoryRoot path as it appears in projectDir (to handle case-insensitive filesystems).
+// Returns error if projectDir is not inside repositoryRoot.
+func normalizeRepositoryRoot(projectDir, repositoryRoot string) (string, error) {
+	projectDirAbs, err := filepath.Abs(projectDir)
+	if err != nil {
+		return "", err
+	}
+	repoRootAbs, err := filepath.Abs(repositoryRoot)
+	if err != nil {
+		return "", err
+	}
+
+	repoRootInfo, err := os.Stat(repoRootAbs)
+	if err != nil {
+		return "", err
+	}
+
+	// Walk up from projectDir to find the directory that matches repositoryRoot
+	// Return the path as it appears in projectDir's path
+	current := projectDirAbs
+	for {
+		currentInfo, err := os.Stat(current)
+		if err != nil {
+			return "", err
+		}
+
+		if os.SameFile(currentInfo, repoRootInfo) {
+			// Found the matching directory - return current path (from projectDir's perspective)
+			return current, nil
+		}
+
+		parent := filepath.Dir(current)
+		if parent == current {
+			// Reached root without finding repositoryRoot
+			return "", fmt.Errorf("projectDir is not inside repositoryRoot")
+		}
+		current = parent
+	}
 }
 
 func getAnalyzerFromProject(
