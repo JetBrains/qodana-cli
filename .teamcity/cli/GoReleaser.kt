@@ -106,9 +106,15 @@ class GoReleaser(
             scriptContent = if (releaseType.isNightlyOrRelease()) {
                 """
                     set -e
-                    curl -fsSL -o /usr/local/bin/codesign https://codesign-distribution.labs.jb.gg/codesign-client-linux-amd64
-                    curl -fsSL -o /tmp/codesign.sha256 https://codesign-distribution.labs.jb.gg/codesign-client-linux-amd64.sha256
-                    curl -fsSL -o /tmp/codesign.sha256.asc https://codesign-distribution.labs.jb.gg/codesign-client-linux-amd64.sha256.asc
+                    ARCH=${'$'}(uname -m)
+                    case ${'$'}ARCH in
+                        x86_64) ARCH_SUFFIX="amd64" ;;
+                        aarch64|arm64) ARCH_SUFFIX="arm64" ;;
+                        *) echo "Unsupported architecture: ${'$'}ARCH"; exit 1 ;;
+                    esac
+                    curl -fsSL -o /usr/local/bin/codesign https://codesign-distribution.labs.jb.gg/codesign-client-linux-${'$'}ARCH_SUFFIX
+                    curl -fsSL -o /tmp/codesign.sha256 https://codesign-distribution.labs.jb.gg/codesign-client-linux-${'$'}ARCH_SUFFIX.sha256
+                    curl -fsSL -o /tmp/codesign.sha256.asc https://codesign-distribution.labs.jb.gg/codesign-client-linux-${'$'}ARCH_SUFFIX.sha256.asc
                     chmod +x /usr/local/bin/codesign
                     curl -fsSL https://download-cdn.jetbrains.com/KEYS | gpg --import -
                     gpg --batch --verify /tmp/codesign.sha256.asc /tmp/codesign.sha256
