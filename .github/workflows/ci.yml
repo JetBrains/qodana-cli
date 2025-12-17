@@ -169,7 +169,7 @@ jobs:
         with:
           distribution: goreleaser-pro
           version: "~> v2"
-          args: release --nightly --clean --skip=chocolatey,nfpm,homebrew,scoop,snapcraft --id cli
+          args: release --nightly --clean --skip=chocolatey,nfpm,homebrew,scoop,snapcraft
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GORELEASER_KEY: ${{ secrets.GORELEASER_KEY }}
