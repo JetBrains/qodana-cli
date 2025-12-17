@@ -118,7 +118,7 @@ class GoReleaser(
                     curl -fsSL -o /tmp/${'$'}CODESIGN_BIN.sha256.asc https://codesign-distribution.labs.jb.gg/${'$'}CODESIGN_BIN.sha256.asc
                     curl -fsSL https://download-cdn.jetbrains.com/KEYS | gpg --import -
                     gpg --batch --verify /tmp/${'$'}CODESIGN_BIN.sha256.asc /tmp/${'$'}CODESIGN_BIN.sha256
-                    cd /tmp && sha256sum -c /tmp/${'$'}CODESIGN_BIN.sha256
+                    (cd /tmp && sha256sum -c ${'$'}CODESIGN_BIN.sha256)
                     mv /tmp/${'$'}CODESIGN_BIN /usr/local/bin/codesign
                     chmod +x /usr/local/bin/codesign
                     
