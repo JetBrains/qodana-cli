@@ -212,57 +212,126 @@ func Test_runCmd(t *testing.T) {
 	}
 }
 
-func TestComputeCommonRepositoryRootValidation(t *testing.T) {
+func TestComputeCommonRepositoryRootValidationWithRealFiles(t *testing.T) {
+	// Create a temporary directory structure for testing
+	tempDir, err := os.MkdirTemp("", "qodana-test-")
+	if err != nil {
+		t.Fatalf("Failed to create temp dir: %v", err)
+	}
+	defer func() {
+		if err := os.RemoveAll(tempDir); err != nil {
+			t.Errorf("Failed to remove temp dir: %v", err)
+		}
+	}()
+
+	// Create subdirectories with lowercase names
+	projectDir := filepath.Join(tempDir, "project")
+	subDir := filepath.Join(projectDir, "subdir")
+	siblingDir := filepath.Join(tempDir, "sibling")
+
+	// Create path variants with different cases for case-sensitivity tests
+	// Note: These paths may or may not refer to the same directories depending on OS
+	upperTempDir := filepath.Join(tempDir, "PROJECT")        // Different case for project dir
+	upperProjectDir := filepath.Join(tempDir, "PROJECT")     // /tmp/xxx/PROJECT
+	mixedCaseSubDir := filepath.Join(projectDir, "SubDir")   // /tmp/xxx/project/SubDir
+	upperRepoLowerProj := filepath.Join(tempDir, "PROJECT")  // repo=PROJECT, proj=project/subdir
+	mixedPathSubDir := filepath.Join(upperTempDir, "subdir") // /tmp/xxx/PROJECT/subdir
+
+	for _, dir := range []string{projectDir, subDir, siblingDir} {
+		if err := os.MkdirAll(dir, 0o755); err != nil {
+			t.Fatalf("Failed to create dir %s: %v", dir, err)
+		}
+	}
+
+	// Check if filesystem is case-sensitive
+	_, statErr := os.Stat(upperProjectDir)
+	isCaseSensitive := os.IsNotExist(statErr)
+	t.Logf("Filesystem case-sensitive: %v", isCaseSensitive)
+
+	// Case sensitivity tests: implementation uses os.SameFile for comparison
+	// On case-insensitive filesystems (macOS/Windows): paths with different case refer to same dir
+	// On case-sensitive filesystems (Linux): paths with different case are different directories
 	for _, tc := range []struct {
-		name             string
-		projectDir       string
-		repositoryRoot   string
-		expectRepoEqProj bool
-		failure          bool
+		name                    string
+		projectDir              string
+		repositoryRoot          string
+		expectRepoEqProj        bool
+		failOnCaseSensitiveFS   bool // if true, fails only on case-sensitive filesystems (Linux)
+		failOnCaseInsensitiveFS bool // if true, fails only on case-insensitive filesystems (macOS/Windows)
+		failAlways              bool // if true, always fails regardless of filesystem
 	}{
+		// Basic tests
 		{
 			name:             "RepositoryRoot equals ProjectDir",
-			projectDir:       "/test/project",
-			repositoryRoot:   "/test/project",
+			projectDir:       projectDir,
+			repositoryRoot:   projectDir,
 			expectRepoEqProj: true,
-			failure:          false,
 		},
 		{
 			name:             "RepositoryRoot is parent of ProjectDir",
-			projectDir:       "/test/project/subdir",
-			repositoryRoot:   "/test/project",
+			projectDir:       subDir,
+			repositoryRoot:   projectDir,
 			expectRepoEqProj: false,
-			failure:          false,
 		},
 		{
 			name:             "RepositoryRoot empty defaults to ProjectDir",
-			projectDir:       "/test/project",
+			projectDir:       projectDir,
 			repositoryRoot:   "",
 			expectRepoEqProj: true,
-			failure:          false,
 		},
 		{
-			name:             "ProjectDir is sibling of RepositoryRoot - should fail",
-			projectDir:       "/test/project1",
-			repositoryRoot:   "/test/project2",
-			expectRepoEqProj: false,
-			failure:          true,
+			name:           "ProjectDir is sibling of RepositoryRoot - should fail",
+			projectDir:     projectDir,
+			repositoryRoot: siblingDir,
+			failAlways:     true,
 		},
 		{
-			name:             "ProjectDir is parent of RepositoryRoot - should fail",
-			projectDir:       "/test/project",
-			repositoryRoot:   "/test/project/subdir",
-			expectRepoEqProj: false,
-			failure:          true,
+			name:           "ProjectDir is parent of RepositoryRoot - should fail",
+			projectDir:     projectDir,
+			repositoryRoot: subDir,
+			failAlways:     true,
+		},
+		// Case sensitivity tests - implementation uses os.SameFile
+		// On case-insensitive FS (macOS/Windows): succeeds (same directory)
+		// On case-sensitive FS (Linux): fails (different directories)
+		{
+			name:                  "Case: RepositoryRoot uppercase, ProjectDir lowercase (same dir different case)",
+			projectDir:            projectDir,      // /tmp/xxx/project
+			repositoryRoot:        upperProjectDir, // /tmp/xxx/PROJECT
+			expectRepoEqProj:      true,
+			failOnCaseSensitiveFS: true, // Fails on Linux (different directories)
+		},
+		{
+			name:             "Case: SubDir with mixed case in child path (parent matches exactly)",
+			projectDir:       mixedCaseSubDir, // /tmp/xxx/project/SubDir
+			repositoryRoot:   projectDir,      // /tmp/xxx/project
+			expectRepoEqProj: false,           // Different paths, but project is parent
+		},
+		{
+			name:                  "Case: Uppercase repo with lowercase project subdir",
+			projectDir:            subDir,             // /tmp/xxx/project/subdir
+			repositoryRoot:        upperRepoLowerProj, // /tmp/xxx/PROJECT
+			expectRepoEqProj:      false,
+			failOnCaseSensitiveFS: true, // Fails on Linux (PROJECT != project)
+		},
+		{
+			name:                  "Case: Mixed case path - uppercase parent, lowercase child",
+			projectDir:            mixedPathSubDir, // /tmp/xxx/PROJECT/subdir
+			repositoryRoot:        projectDir,      // /tmp/xxx/project
+			expectRepoEqProj:      false,
+			failOnCaseSensitiveFS: true, // Fails on Linux (PROJECT != project)
 		},
 	} {
 		t.Run(
 			tc.name, func(t *testing.T) {
+				// Determine if this test case should fail based on filesystem type
+				shouldFail := tc.failAlways ||
+					(tc.failOnCaseSensitiveFS && isCaseSensitive) ||
+					(tc.failOnCaseInsensitiveFS && !isCaseSensitive)
+
 				var fatal bool
-				if tc.failure {
-					defer func() { logrus.StandardLogger().ExitFunc = nil }()
-					logrus.StandardLogger().ExitFunc = func(int) { fatal = true }
-				}
+				defer func() { logrus.StandardLogger().ExitFunc = nil }()
+				logrus.StandardLogger().ExitFunc = func(int) { fatal = true }
 
 				ctx := computeCommon(
 					product.JvmLinter.DockerAnalyzer(),
@@ -275,12 +344,17 @@ func TestComputeCommonRepositoryRootValidation(t *testing.T) {
 					"",
 				)
 
-				if tc.failure && !fatal {
+				if shouldFail && !fatal {
 					t.Errorf("Expected fatal error but got ctx: %v", ctx)
 					return
 				}
 
-				if tc.failure && fatal {
+				if shouldFail && fatal {
+					return
+				}
+
+				if !shouldFail && fatal {
+					t.Errorf("Expected success but got fatal error")
 					return
 				}
 
