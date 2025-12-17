@@ -6,6 +6,7 @@ import (
 
 	"github.com/JetBrains/qodana-cli/internal/platform/thirdpartyscan"
 	"github.com/JetBrains/qodana-cli/internal/platform/utils"
+	log "github.com/sirupsen/logrus"
 )
 
 // Find qodana.yaml, run bootstrap, find enabled checks and return them formatted as an argument for clang-tidy.
@@ -23,12 +24,14 @@ func processConfig(c thirdpartyscan.Context) (string, error) {
 				continue
 			}
 			if strings.ContainsAny(include.Name, "\"") {
+				log.Warnf("Skipping include rule with invalid characters: %s", include.Name)
 				continue
 			}
 			includeRules = append(includeRules, include.Name)
 		}
 		for _, exclude := range yaml.Excludes {
 			if strings.ContainsAny(exclude.Name, "\"") {
+				log.Warnf("Skipping exclude rule with invalid characters: %s", exclude.Name)
 				continue
 			}
 			excludeRules = append(excludeRules, exclude.Name)
@@ -44,7 +47,7 @@ func processConfig(c thirdpartyscan.Context) (string, error) {
 	} else if plusChecks != "" {
 		checks = fmt.Sprintf("--checks=%s", plusChecks)
 	} else if minusChecks != "" {
-		checks = fmt.Sprintf("--checks=%s", minusChecks)
+		checks = fmt.Sprintf("--checks=*,%s", minusChecks)
 	} else {
 		// Default to all checks when no configuration is provided
 		// This is needed because recent clang-tidy versions enable no checks by default
