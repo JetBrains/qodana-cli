@@ -105,9 +105,8 @@ RUN echo "deb https://apt.llvm.org/bookworm llvm-toolchain-bookworm-$CLANG main"
 
 ENV PATH=$PATH:$DOTNET_ROOT:$DOTNET_ROOT/tools
 RUN set -ex &&  \
-    docker -h && choco -h && dotnet -h && goreleaser -h && gh --version &&  \
+    docker -h && choco -h && dotnet -h && goreleaser -h && gh --version && gpg --version &&  \
     git config --global --add safe.directory '*' && \
-    apt-get purge --auto-remove -y gnupg && \
-    rm -rf /var/cache/apt /var/lib/apt/ /tmp/* "$GNUPGHOME"
+    rm -rf /var/cache/apt /var/lib/apt/ /tmp/*
 
 LABEL maintainer="qodana-support@jetbrains.com" description="https://github.com/jetbrains/qodana-cli dev container"
