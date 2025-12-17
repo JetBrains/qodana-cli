@@ -84,7 +84,9 @@ func newTestRepo(t *testing.T) *testRepo {
 func (r *testRepo) commit(t *testing.T, name, email string) {
 	r.counter++
 	file := filepath.Join(r.dir, "file.txt")
-	os.WriteFile(file, []byte{byte(r.counter)}, 0644)
+	if err := os.WriteFile(file, []byte{byte(r.counter)}, 0644); err != nil {
+		t.Fatal(err)
+	}
 	runGit(t, r.dir, nil, "add", ".")
 	runGit(
 		t,
