@@ -99,7 +99,13 @@ class GoReleaser(
             scriptContent = if (releaseType.isNightlyOrRelease()) {
                 """
                     set -e
-                    go generate -v ../internal/tooling/...
+                    if [ -f "../.goreleaser.yaml" ]; then
+                        GORELEASER_CONFIG="../.goreleaser.yaml"
+                        go generate -v ../internal/tooling/...
+                    else
+                        GORELEASER_CONFIG=".goreleaser.yaml"
+                        go generate -v ./internal/tooling/...
+                    fi
                     
                     ARCH=${'$'}(uname -m)
                     case ${'$'}ARCH in
@@ -118,23 +124,29 @@ class GoReleaser(
                     chmod +x /usr/local/bin/codesign
                     
                     export GORELEASER_CURRENT_TAG=${'$'}(git describe --tags ${'$'}(git rev-list --tags --max-count=1))
-                    goreleaser release --clean ${arguments.joinToString(" ")} --skip=publish
+                    goreleaser release --config ${'$'}GORELEASER_CONFIG --clean ${arguments.joinToString(" ")} --skip=publish
                     go test
                 """.trimIndent()
             } else {
                 """
                     set -e
-                    go generate -v ../internal/tooling/...
+                    if [ -f "../.goreleaser.yaml" ]; then
+                        GORELEASER_CONFIG="../.goreleaser.yaml"
+                        go generate -v ../internal/tooling/...
+                    else
+                        GORELEASER_CONFIG=".goreleaser.yaml"
+                        go generate -v ./internal/tooling/...
+                    fi
                     
                     export GORELEASER_CURRENT_TAG=${'$'}(git describe --tags ${'$'}(git rev-list --tags --max-count=1))
-                    goreleaser release --clean ${arguments.joinToString(" ")} --skip=publish
+                    goreleaser release --config ${'$'}GORELEASER_CONFIG --clean ${arguments.joinToString(" ")} --skip=publish
                     go test
                 """.trimIndent()
             }
 
             if ("--skip=publish" !in arguments) {
                 scriptContent += "\n" + """
-                    goreleaser release --clean ${arguments.joinToString(" ")}
+                    goreleaser release --config ${'$'}GORELEASER_CONFIG --clean ${arguments.joinToString(" ")}
                 """.trimIndent()
             }
 
