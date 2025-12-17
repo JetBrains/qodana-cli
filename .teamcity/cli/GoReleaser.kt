@@ -112,15 +112,16 @@ class GoReleaser(
                         aarch64|arm64) ARCH_SUFFIX="arm64" ;;
                         *) echo "Unsupported architecture: ${'$'}ARCH"; exit 1 ;;
                     esac
-                    curl -fsSL -o /usr/local/bin/codesign https://codesign-distribution.labs.jb.gg/codesign-client-linux-${'$'}ARCH_SUFFIX
-                    curl -fsSL -o /tmp/codesign.sha256 https://codesign-distribution.labs.jb.gg/codesign-client-linux-${'$'}ARCH_SUFFIX.sha256
-                    curl -fsSL -o /tmp/codesign.sha256.asc https://codesign-distribution.labs.jb.gg/codesign-client-linux-${'$'}ARCH_SUFFIX.sha256.asc
-                    chmod +x /usr/local/bin/codesign
+                    CODESIGN_BIN="codesign-client-linux-${'$'}ARCH_SUFFIX"
+                    curl -fsSL -o /tmp/${'$'}CODESIGN_BIN https://codesign-distribution.labs.jb.gg/${'$'}CODESIGN_BIN
+                    curl -fsSL -o /tmp/${'$'}CODESIGN_BIN.sha256 https://codesign-distribution.labs.jb.gg/${'$'}CODESIGN_BIN.sha256
+                    curl -fsSL -o /tmp/${'$'}CODESIGN_BIN.sha256.asc https://codesign-distribution.labs.jb.gg/${'$'}CODESIGN_BIN.sha256.asc
                     curl -fsSL https://download-cdn.jetbrains.com/KEYS | gpg --import -
-                    gpg --batch --verify /tmp/codesign.sha256.asc /tmp/codesign.sha256
-                    cd /usr/local/bin && sha256sum -c /tmp/codesign.sha256
+                    gpg --batch --verify /tmp/${'$'}CODESIGN_BIN.sha256.asc /tmp/${'$'}CODESIGN_BIN.sha256
+                    cd /tmp && sha256sum -c /tmp/${'$'}CODESIGN_BIN.sha256
+                    mv /tmp/${'$'}CODESIGN_BIN /usr/local/bin/codesign
+                    chmod +x /usr/local/bin/codesign
                     codesign --version
-                    cd -
                     
                     export GORELEASER_CURRENT_TAG=${'$'}(git describe --tags ${'$'}(git rev-list --tags --max-count=1))
                     goreleaser release --clean ${arguments.joinToString(" ")} --skip=publish
