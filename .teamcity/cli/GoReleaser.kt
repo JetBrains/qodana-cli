@@ -94,18 +94,13 @@ class GoReleaser(
             }
         }
         script {
-            name = "Run 'go generate'"
-            workingDir = wd
-            scriptContent = "go generate -v -x ./..."
-
-            useGoDevContainerDockerImage()
-        }
-        script {
             name = "Run GoReleaser"
             workingDir = wd
             scriptContent = if (releaseType.isNightlyOrRelease()) {
                 """
                     set -e
+                    go generate -v ../internal/tooling/...
+                    
                     ARCH=${'$'}(uname -m)
                     case ${'$'}ARCH in
                         x86_64) ARCH_SUFFIX="amd64" ;;
@@ -128,6 +123,9 @@ class GoReleaser(
                 """.trimIndent()
             } else {
                 """
+                    set -e
+                    go generate -v ../internal/tooling/...
+                    
                     export GORELEASER_CURRENT_TAG=${'$'}(git describe --tags ${'$'}(git rev-list --tags --max-count=1))
                     goreleaser release --clean ${arguments.joinToString(" ")} --skip=publish
                     go test
