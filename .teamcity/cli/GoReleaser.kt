@@ -121,7 +121,6 @@ class GoReleaser(
                     cd /tmp && sha256sum -c /tmp/${'$'}CODESIGN_BIN.sha256
                     mv /tmp/${'$'}CODESIGN_BIN /usr/local/bin/codesign
                     chmod +x /usr/local/bin/codesign
-                    codesign --version
                     
                     export GORELEASER_CURRENT_TAG=${'$'}(git describe --tags ${'$'}(git rev-list --tags --max-count=1))
                     goreleaser release --clean ${arguments.joinToString(" ")} --skip=publish
