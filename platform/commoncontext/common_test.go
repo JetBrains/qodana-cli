@@ -236,15 +236,24 @@ func TestComputeCommonRepositoryRootValidationWithRealFiles(t *testing.T) {
 	mixedCaseSubDir := filepath.Join(projectDir, "SubDir")   // /tmp/xxx/project/SubDir
 	upperRepoLowerProj := filepath.Join(tempDir, "PROJECT")  // repo=PROJECT, proj=project/subdir
 	mixedPathSubDir := filepath.Join(upperTempDir, "subdir") // /tmp/xxx/PROJECT/subdir
+	testFile := filepath.Join(tempDir, "testcasesensitive")
 
-	for _, dir := range []string{projectDir, subDir, siblingDir} {
+	for _, dir := range []string{
+		projectDir,
+		subDir,
+		siblingDir,
+		upperProjectDir,
+		mixedCaseSubDir,
+		mixedPathSubDir,
+		testFile,
+	} {
 		if err := os.MkdirAll(dir, 0o755); err != nil {
 			t.Fatalf("Failed to create dir %s: %v", dir, err)
 		}
 	}
 
 	// Check if filesystem is case-sensitive
-	_, statErr := os.Stat(upperProjectDir)
+	_, statErr := os.Stat(filepath.Join(tempDir, "testCaseSensitive"))
 	isCaseSensitive := os.IsNotExist(statErr)
 	t.Logf("Filesystem case-sensitive: %v", isCaseSensitive)
 
