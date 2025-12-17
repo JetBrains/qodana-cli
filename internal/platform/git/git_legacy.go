@@ -38,7 +38,7 @@ func RemoteUrlLegacy(cwd string) string {
 
 // Log returns the git log of the given repository in the given format.
 func Log(cwd string, format string, since int) []string {
-	args := []string{"--no-pager", "log", "--all", "--no-use-mailmap"}
+	args := []string{"--no-pager", "log", "--all"}
 	if format != "" {
 		args = append(args, "--pretty=format:"+format)
 	}
