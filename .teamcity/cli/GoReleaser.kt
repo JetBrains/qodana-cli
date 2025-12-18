@@ -107,10 +107,12 @@ class GoReleaser(
                         PREFIX="."
                     fi
                     
-                    # main branch: internal/tooling, 253 branch: tooling
+                    # dirty workarounds until we move to github or support 253
                     if [ -d "${'$'}PREFIX/internal/tooling" ] && ls ${'$'}PREFIX/internal/tooling/*.go >/dev/null 2>&1; then
                         go generate -v ${'$'}PREFIX/internal/tooling/...
                     elif [ -d "${'$'}PREFIX/tooling" ]; then
+                        # Copy JARs from internal/tooling to tooling (artifacts are downloaded to internal/tooling)
+                        cp ${'$'}PREFIX/internal/tooling/*.jar ${'$'}PREFIX/tooling/ 2>/dev/null || true
                         (cd ${'$'}PREFIX/tooling && go generate -v ./...)
                     fi
                     
@@ -149,6 +151,8 @@ class GoReleaser(
                     if [ -d "${'$'}PREFIX/internal/tooling" ] && ls ${'$'}PREFIX/internal/tooling/*.go >/dev/null 2>&1; then
                         go generate -v ${'$'}PREFIX/internal/tooling/...
                     elif [ -d "${'$'}PREFIX/tooling" ]; then
+                        # Copy JARs from internal/tooling to tooling (artifacts are downloaded to internal/tooling)
+                        cp ${'$'}PREFIX/internal/tooling/*.jar ${'$'}PREFIX/tooling/ 2>/dev/null || true
                         (cd ${'$'}PREFIX/tooling && go generate -v ./...)
                     fi
                     
