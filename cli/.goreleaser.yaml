@@ -16,10 +16,6 @@ builds:
       - amd64
       - arm64
     hooks:
-      pre:
-        - cmd: | # Run 'go generate'
-            go run ../scripts/generate-recursive.go
-          output: true
       post:
         - cmd: | # check if the version was set correctly
             bash -c "
