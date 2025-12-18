@@ -193,13 +193,6 @@ class GoReleaser(
                     fi
                     
                     export GORELEASER_CURRENT_TAG=${'$'}(git describe --tags ${'$'}(git rev-list --tags --max-count=1))
-                    goreleaser release --config ${'$'}GORELEASER_CONFIG --clean ${arguments.joinToString(" ")} --skip=publish
-                    go test
-                """.trimIndent()
-            }
-
-            if ("--skip=publish" !in arguments) {
-                scriptContent += "\n" + """
                     goreleaser release --config ${'$'}GORELEASER_CONFIG --clean ${arguments.joinToString(" ")}
                 """.trimIndent()
             }
