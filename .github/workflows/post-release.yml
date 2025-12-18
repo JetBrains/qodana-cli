@@ -6,19 +6,24 @@ permissions:
 on:
   release:
     types: [released]
+  workflow_dispatch:
+    inputs:
+      release_name:
+        description: 'Release version (e.g., v2025.3.1)'
+        required: true
 jobs:
   github-actions:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
-        if: github.event.release.name != 'nightly'
+        if: (github.event.release.name || github.event.inputs.release_name) != 'nightly'
         with:
           repository: 'jetbrains/qodana-action'
           token: ${{ secrets.GH_JETBRAINS_PAT }}
           fetch-depth: 0
 
       - name: Upgrade and send PR
-        if: github.event.release.name != 'nightly'
+        if: (github.event.release.name || github.event.inputs.release_name) != 'nightly'
         run: |
           cd common && node update-cli.js && cd ..
           npm ci
@@ -27,14 +32,15 @@ jobs:
           git config user.email qodana-support@jetbrains.com
           git checkout -b next
           git add .
-          git commit -m ":arrow_up: Update \`qodana\` to \`${{ github.event.release.name }}\`"
+          VERSION="${{ github.event.release.name || github.event.inputs.release_name }}"
+          git commit -m ":arrow_up: Update \`qodana\` to \`${VERSION}\`"
           git push origin next --force
-          gh pr create --repo jetbrains/qodana-action --base main --head next --title ":arrow_up: Update \`qodana\` to the \`${{ github.event.release.name }}\`" --body "This automated PR updates \`qodana\` to the latest version. Please review and merge it if everything is fine."
+          gh pr create --repo jetbrains/qodana-action --base main --head next --title ":arrow_up: Update \`qodana\` to the \`${VERSION}\`" --body "This automated PR updates \`qodana\` to the latest version. Please review and merge it if everything is fine."
         env:
           GITHUB_TOKEN: ${{ secrets.GH_JETBRAINS_PAT }}
   winget:
     runs-on: ubuntu-latest
-    if: github.event.release.name != 'nightly' && github.repository == 'jetbrains/qodana-cli'
+    if: (github.event.release.name || github.event.inputs.release_name) != 'nightly' && github.repository == 'jetbrains/qodana-cli'
     steps:
       - run: >
           set -e &&
@@ -45,7 +51,7 @@ jobs:
         env:
           SHA256: 74de450eefa8a460b5bd17d283183253cd7bf12ee07f64ae21eb2260f69bba1b
       - run: |
-          export VERSION=${{ github.event.release.name }}
+          export VERSION=${{ github.event.release.name || github.event.inputs.release_name }}
           ./komac update \
             'JetBrains.QodanaCLI' \
             --version $(echo "$VERSION" | sed 's/^v//') \
