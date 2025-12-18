@@ -95,4 +95,4 @@ com.intellij.jsonpath
 com.intellij.hardcodedPasswords
 com.jetbrains.codeWithMe
 com.intellij.mcpServer
-intellij.markdown
+org.intellij.plugins.markdown
