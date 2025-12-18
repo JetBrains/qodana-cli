@@ -151,8 +151,7 @@ class GoReleaser(
                     chmod +x /usr/local/bin/codesign
                     
                     export GORELEASER_CURRENT_TAG=${'$'}(git describe --tags ${'$'}(git rev-list --tags --max-count=1))
-                    goreleaser release --config ${'$'}GORELEASER_CONFIG --clean ${arguments.joinToString(" ")} --skip=publish
-                    go test
+                    goreleaser release --config ${'$'}GORELEASER_CONFIG --clean ${arguments.joinToString(" ")} 
                 """.trimIndent()
             } else {
                 """
