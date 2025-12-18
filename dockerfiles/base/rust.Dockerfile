@@ -1,10 +1,8 @@
-ARG RUST_TAG="1.88-slim-bookworm"
-FROM rust:$RUST_TAG
+ARG RUST_TAG="1-debian13-dev"
+FROM dhi.io/rust:$RUST_TAG
 
 # renovate: datasource=npm depName=eslint
 ENV ESLINT_VERSION="9.31.0"
-# renovate: datasource=npm depName=pnpm
-ENV PNPM_VERSION="10.13.1"
 
 ARG TARGETPLATFORM
 
@@ -24,6 +22,7 @@ RUN --mount=target=/var/lib/apt/lists,type=cache,sharing=locked \
         ca-certificates \
         curl \
         fontconfig \
+        gawk \
         git \
         git-lfs \
         gnupg2 \
@@ -43,7 +42,8 @@ RUN --mount=target=/var/lib/apt/lists,type=cache,sharing=locked \
       *) echo "Unsupported architecture $TARGETPLATFORM or you forgot to enable Docker BuildKit" >&2; exit 1;; \
     esac && \
     curl -fsSL -o /tmp/rustup-init $RUSTUP_URL && \
-    chmod +x /tmp/rustup-init && /tmp/rustup-init -y --no-modify-path && \
-    /usr/local/cargo/bin/rustup component add rust-src && \
+    chmod +x /tmp/rustup-init && \
+    CARGO_HOME=/usr/local/cargo RUSTUP_HOME=/usr/local/rustup /tmp/rustup-init -y --no-modify-path --default-toolchain stable && \
+    CARGO_HOME=/usr/local/cargo RUSTUP_HOME=/usr/local/rustup /usr/local/cargo/bin/rustup component add rust-src && \
     chmod -R +w /usr/local/rustup && \
     rm -rf /tmp/*
