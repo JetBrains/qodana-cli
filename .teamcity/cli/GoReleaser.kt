@@ -101,10 +101,17 @@ class GoReleaser(
                     set -e
                     if [ -f "../.goreleaser.yaml" ]; then
                         GORELEASER_CONFIG="../.goreleaser.yaml"
-                        go generate -v ../internal/tooling/...
+                        PREFIX=".."
                     else
                         GORELEASER_CONFIG=".goreleaser.yaml"
-                        go generate -v ./internal/tooling/...
+                        PREFIX="."
+                    fi
+                    
+                    # main branch: internal/tooling, 253 branch: tooling
+                    if [ -d "${'$'}PREFIX/internal/tooling" ] && ls ${'$'}PREFIX/internal/tooling/*.go >/dev/null 2>&1; then
+                        go generate -v ${'$'}PREFIX/internal/tooling/...
+                    elif [ -d "${'$'}PREFIX/tooling" ]; then
+                        (cd ${'$'}PREFIX/tooling && go generate -v ./...)
                     fi
                     
                     ARCH=${'$'}(uname -m)
@@ -132,10 +139,17 @@ class GoReleaser(
                     set -e
                     if [ -f "../.goreleaser.yaml" ]; then
                         GORELEASER_CONFIG="../.goreleaser.yaml"
-                        go generate -v ../internal/tooling/...
+                        PREFIX=".."
                     else
                         GORELEASER_CONFIG=".goreleaser.yaml"
-                        go generate -v ./internal/tooling/...
+                        PREFIX="."
+                    fi
+                    
+                    # main branch: internal/tooling, 253 branch: tooling
+                    if [ -d "${'$'}PREFIX/internal/tooling" ] && ls ${'$'}PREFIX/internal/tooling/*.go >/dev/null 2>&1; then
+                        go generate -v ${'$'}PREFIX/internal/tooling/...
+                    elif [ -d "${'$'}PREFIX/tooling" ]; then
+                        (cd ${'$'}PREFIX/tooling && go generate -v ./...)
                     fi
                     
                     export GORELEASER_CURRENT_TAG=${'$'}(git describe --tags ${'$'}(git rev-list --tags --max-count=1))
