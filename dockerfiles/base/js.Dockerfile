@@ -1,10 +1,8 @@
-ARG NODE_TAG="22-bookworm-slim"
-FROM node:$NODE_TAG
+ARG NODE_TAG="22-debian13-dev"
+FROM dhi.io/node:$NODE_TAG
 
 # renovate: datasource=npm depName=eslint
 ENV ESLINT_VERSION="9.31.0"
-# renovate: datasource=npm depName=pnpm
-ENV PNPM_VERSION="10.13.1"
 
 ENV HOME="/root" \
     LC_ALL="en_US.UTF-8" \
@@ -24,6 +22,7 @@ RUN --mount=target=/var/lib/apt/lists,type=cache,sharing=locked \
         ca-certificates \
         curl \
         fontconfig \
+        gawk \
         git \
         git-lfs \
         gnupg2 \
@@ -36,7 +35,7 @@ RUN --mount=target=/var/lib/apt/lists,type=cache,sharing=locked \
     chmod 777 -R $HOME && \
     echo 'root:x:0:0:root:/root:/bin/bash' > /etc/passwd && chmod 666 /etc/passwd && \
     git config --global --add safe.directory '*' && \
-    npm install -g eslint@$ESLINT_VERSION pnpm@$PNPM_VERSION && npm config set update-notifier false && \
+    npm install -g eslint@$ESLINT_VERSION && npm config set update-notifier false && \
     chmod 777 -R "$HOME/.npm" "$HOME/.npmrc"
 
 ENV PATH="/opt/yarn/bin:$PATH"
