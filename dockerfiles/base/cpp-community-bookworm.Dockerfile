@@ -1,6 +1,5 @@
-ARG BASE_TAG="trixie"
-FROM dhi.io/debian-base:$BASE_TAG
-ARG CLANG="20"
+FROM debian:bookworm-slim
+ARG CLANG="18"
 
 ENV HOME="/root" \
     LC_ALL="en_US.UTF-8" \
@@ -45,11 +44,12 @@ RUN --mount=target=/var/lib/apt/lists,type=cache,sharing=locked \
     echo 'root:x:0:0:root:/root:/bin/bash' > /etc/passwd && chmod 666 /etc/passwd && \
     git config --global --add safe.directory '*'
 
-RUN echo "deb https://apt.llvm.org/trixie/ llvm-toolchain-trixie-${CLANG} main" > /etc/apt/sources.list.d/llvm.list && \
+RUN echo "deb https://apt.llvm.org/bookworm/ llvm-toolchain-bookworm-${CLANG} main" > /etc/apt/sources.list.d/llvm.list && \
     curl -s https://apt.llvm.org/llvm-snapshot.gpg.key | gpg --dearmor > /etc/apt/trusted.gpg.d/llvm.gpg && \
+    apt-key adv --keyserver keyserver.ubuntu.com --recv-keys "15CF4D18AF4F7421" && \
     apt-get -qq update && \
     apt-get install -qqy -t \
-      llvm-toolchain-trixie-$CLANG \
+      llvm-toolchain-bookworm-$CLANG \
       clang-$CLANG \
       clang-tidy-$CLANG \
       clang-format-$CLANG \
@@ -64,3 +64,4 @@ RUN echo "deb https://apt.llvm.org/trixie/ llvm-toolchain-trixie-${CLANG} main" 
     ln -sf clang++ /usr/bin/g++ && \
     rm -rf /var/lib/apt/lists/* && \
     apt-get autoremove -y && apt-get clean
+

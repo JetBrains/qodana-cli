@@ -15,18 +15,17 @@
 #
 # This Dockerfile is for https://github.com/jetbrains/qodana-cli dev container.
 
-FROM golang:bookworm
+FROM dhi.io/golang:1.25-debian13-dev
 ARG TARGETARCH
 ARG CLANG=16
 ENV TARGETARCH=$TARGETARCH \
     CLANG=$CLANG
 ENV CHOCO_VERSION=2.2.2 \
     GH_VERSION=2.41.0
-ENV MONO_REPO="https://download.mono-project.com/repo/debian" \
-    MONO_KEY="3FA7E0328081BFF6A14DA29AA6A19B38D3D831EF"
+ENV MONO_REPO="https://download.mono-project.com/repo/debian"
 
-RUN set -ex &&  \
-    apt-get update && apt-get install -y --no-install-recommends \
+RUN set -ex && ln -s /usr/bin/which.debianutils /usr/bin/which && \
+    apt-get update && apt-get install -y --no-install-recommends init-system-helpers gzip wget \
       apt-transport-https \
       autoconf \
       automake \
@@ -40,6 +39,7 @@ RUN set -ex &&  \
       make \
       patch \
       libc6-dev \
+      libicu76 \
       git \
       git-lfs \
       default-jre \
@@ -47,9 +47,8 @@ RUN set -ex &&  \
 
 # note: choco is required for the full goreleaser functionality
 RUN set -ex &&  \
-    mkdir -p /tmp /opt/chocolatey &&  \
-    gpg --homedir /tmp --no-default-keyring --keyring /usr/share/keyrings/mono-official-archive-keyring.gpg  \
-        --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys $MONO_KEY &&  \
+    mkdir -p /tmp /opt/chocolatey /usr/local/bin &&  \
+    curl -fsSL https://download.mono-project.com/repo/xamarin.gpg | gpg --dearmor > /usr/share/keyrings/mono-official-archive-keyring.gpg &&  \
     echo "deb [trusted=yes] https://repo.goreleaser.com/apt/ /" | tee /etc/apt/sources.list.d/goreleaser.list &&  \
     echo "deb [signed-by=/usr/share/keyrings/mono-official-archive-keyring.gpg] $MONO_REPO stable-buster main" |  \
         tee /etc/apt/sources.list.d/mono-official-stable.list &&  \
