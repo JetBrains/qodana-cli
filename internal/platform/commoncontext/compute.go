@@ -120,7 +120,6 @@ func computeCommon(
 		Analyzer:        analyzer,
 		IsClearCache:    clearCache,
 		CacheDir:        cacheDir,
-		ProjectDir:      projectDir,
 		ResultsDir:      resultsDir,
 		QodanaSystemDir: systemDir,
 		ReportDir:       reportDir,
@@ -138,21 +137,29 @@ func computeCommon(
 		}
 	}
 
+	normalizedProjectDir, err := normalizePath(projectDir)
+	if err != nil {
+		log.Fatalf("Can not normalize project dir %s: %v", projectDir, err)
+	}
+
 	// Normalize repositoryRoot to be a substring of projectDir path
 	// This handles case-insensitive filesystems where /tmp/PROJECT and /tmp/project are the same
-	normalizedRepoRoot, err := normalizeRepositoryRoot(projectDir, repositoryRoot)
+	normalizedRepoRoot, err := normalizeRepositoryRoot(normalizedProjectDir, repositoryRoot)
 	if err != nil {
 		log.Fatalf(
-			"The project directory must be located inside repository root. Please, specify correct --repository-root argument. ProjectDir: %s. RepositoryRoot: %s",
-			projectDir,
-			repositoryRoot,
+			"The project directory must be located inside repository root. Please, specify correct --repository-root argument. ProjectDir: %s. RepositoryRoot: %s. Error: %v",
+			normalizedProjectDir,
+			normalizedRepoRoot,
+			err,
 		)
 	}
 
-	log.Debugf("Repository root: %q\n", repositoryRoot)
-	log.Debugf("Normalized repository root: %q\n", normalizedRepoRoot)
-	log.Debugf("Project root: %q\n", projectDir)
+	log.Debugf("Repository root: %q", repositoryRoot)
+	log.Debugf("Normalized repository root: %q", normalizedRepoRoot)
+	log.Debugf("Project root: %q", projectDir)
+	log.Debugf("Normalized project root: %q", normalizedProjectDir)
 
+	commonCtx.ProjectDir = normalizedProjectDir
 	commonCtx.RepositoryRoot = normalizedRepoRoot
 	return commonCtx
 }
@@ -161,27 +168,23 @@ func computeCommon(
 // the repositoryRoot path as it appears in projectDir (to handle case-insensitive filesystems).
 // Returns error if projectDir is not inside repositoryRoot.
 func normalizeRepositoryRoot(projectDir, repositoryRoot string) (string, error) {
-	projectDirAbs, err := filepath.Abs(projectDir)
+	normalizedRepoRoot, err := normalizePath(repositoryRoot)
 	if err != nil {
-		return "", err
-	}
-	repoRootAbs, err := filepath.Abs(repositoryRoot)
-	if err != nil {
-		return "", err
+		return repositoryRoot, err
 	}
 
-	repoRootInfo, err := os.Stat(repoRootAbs)
+	repoRootInfo, err := os.Stat(normalizedRepoRoot)
 	if err != nil {
-		return "", err
+		return repositoryRoot, err
 	}
 
 	// Walk up from projectDir to find the directory that matches repositoryRoot
 	// Return the path as it appears in projectDir's path
-	current := projectDirAbs
+	current := projectDir
 	for {
 		currentInfo, err := os.Stat(current)
 		if err != nil {
-			return "", err
+			return repositoryRoot, err
 		}
 
 		if os.SameFile(currentInfo, repoRootInfo) {
@@ -192,10 +195,18 @@ func normalizeRepositoryRoot(projectDir, repositoryRoot string) (string, error) 
 		parent := filepath.Dir(current)
 		if parent == current {
 			// Reached root without finding repositoryRoot
-			return "", fmt.Errorf("projectDir is not inside repositoryRoot")
+			return normalizedRepoRoot, fmt.Errorf("projectDir is not inside repositoryRoot")
 		}
 		current = parent
 	}
+}
+
+func normalizePath(path string) (string, error) {
+	pathWithoutSymlinks, err := filepath.EvalSymlinks(path)
+	if err != nil {
+		return "", err
+	}
+	return filepath.Abs(pathWithoutSymlinks)
 }
 
 func getAnalyzerFromProject(
