@@ -111,6 +111,8 @@ class GoReleaser(
                     if [ -d "${'$'}PREFIX/internal/tooling" ] && ls ${'$'}PREFIX/internal/tooling/*.go >/dev/null 2>&1; then
                         go generate -v ${'$'}PREFIX/internal/tooling/...
                     elif [ -d "${'$'}PREFIX/tooling" ]; then
+                        # Copy JARs from internal/tooling (where TC artifacts are downloaded) to tooling
+                        cp -v ${'$'}PREFIX/internal/tooling/*.jar ${'$'}PREFIX/tooling/ 2>/dev/null || true
                         (cd ${'$'}PREFIX/tooling && go generate -v ./...)
                     fi
                     
@@ -149,6 +151,8 @@ class GoReleaser(
                     if [ -d "${'$'}PREFIX/internal/tooling" ] && ls ${'$'}PREFIX/internal/tooling/*.go >/dev/null 2>&1; then
                         go generate -v ${'$'}PREFIX/internal/tooling/...
                     elif [ -d "${'$'}PREFIX/tooling" ]; then
+                        # Copy JARs from internal/tooling (where TC artifacts are downloaded) to tooling
+                        cp -v ${'$'}PREFIX/internal/tooling/*.jar ${'$'}PREFIX/tooling/ 2>/dev/null || true
                         (cd ${'$'}PREFIX/tooling && go generate -v ./...)
                     fi
                     
