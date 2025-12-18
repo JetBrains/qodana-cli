@@ -121,6 +121,17 @@ class GoReleaser(
                             fi
                         done
                         (cd ${'$'}PREFIX/tooling && go generate -v ./...)
+                    elif [ -d "../tooling" ]; then
+                        # Branch 253 structure: tooling/ at root, running from cli/
+                        for jar in baseline-cli.jar qodana-fuser.jar intellij-report-converter.jar; do
+                            if [ -f "../internal/tooling/${'$'}jar" ]; then
+                                cp -v "../internal/tooling/${'$'}jar" "../tooling/"
+                            else
+                                echo "ERROR: ../internal/tooling/${'$'}jar not found" >&2
+                                ls -la ../internal/tooling/ >&2 || true
+                            fi
+                        done
+                        (cd ../tooling && go generate -v ./...)
                     fi
                     
                     ARCH=${'$'}(uname -m)
@@ -168,6 +179,17 @@ class GoReleaser(
                             fi
                         done
                         (cd ${'$'}PREFIX/tooling && go generate -v ./...)
+                    elif [ -d "../tooling" ]; then
+                        # Branch 253 structure: tooling/ at root, running from cli/
+                        for jar in baseline-cli.jar qodana-fuser.jar intellij-report-converter.jar; do
+                            if [ -f "../internal/tooling/${'$'}jar" ]; then
+                                cp -v "../internal/tooling/${'$'}jar" "../tooling/"
+                            else
+                                echo "ERROR: ../internal/tooling/${'$'}jar not found" >&2
+                                ls -la ../internal/tooling/ >&2 || true
+                            fi
+                        done
+                        (cd ../tooling && go generate -v ./...)
                     fi
                     
                     export GORELEASER_CURRENT_TAG=${'$'}(git describe --tags ${'$'}(git rev-list --tags --max-count=1))
