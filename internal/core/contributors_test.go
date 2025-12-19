@@ -72,3 +72,136 @@ func countContributors(matches func(contributor) bool, contributors []contributo
 	}
 	return result
 }
+
+func TestAuthorGetId(t *testing.T) {
+	tests := []struct {
+		name     string
+		author   author
+		expected string
+	}{
+		{
+			name:     "email present",
+			author:   author{Email: "test@example.com", Username: "testuser"},
+			expected: "test@example.com",
+		},
+		{
+			name:     "email empty",
+			author:   author{Email: "", Username: "testuser"},
+			expected: "testuser",
+		},
+		{
+			name:     "both empty",
+			author:   author{Email: "", Username: ""},
+			expected: "",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := tt.author.getId(); got != tt.expected {
+				t.Errorf("getId() = %v, want %v", got, tt.expected)
+			}
+		})
+	}
+}
+
+func TestAuthorIsBot(t *testing.T) {
+	tests := []struct {
+		name     string
+		author   author
+		expected bool
+	}{
+		{
+			name:     "github bot",
+			author:   author{Email: "something[bot]@users.noreply.github.com"},
+			expected: true,
+		},
+		{
+			name:     "dependabot",
+			author:   author{Email: "dependabot[bot]@users.noreply.github.com"},
+			expected: true,
+		},
+		{
+			name:     "regular user",
+			author:   author{Email: "user@example.com"},
+			expected: false,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := tt.author.isBot(); got != tt.expected {
+				t.Errorf("isBot() = %v, want %v", got, tt.expected)
+			}
+		})
+	}
+}
+
+func TestToJSON(t *testing.T) {
+	contributors := []contributor{
+		{
+			Author:   &author{Email: "test@example.com", Username: "test"},
+			Count:    5,
+			Projects: []string{"/project1"},
+			Commits:  []commit{{Sha256: "abc123", Date: "2023-01-01"}},
+		},
+	}
+
+	result, err := ToJSON(contributors)
+	if err != nil {
+		t.Fatalf("ToJSON returned error: %v", err)
+	}
+
+	if result == "" {
+		t.Error("ToJSON returned empty string")
+	}
+}
+
+func TestParseCommitsEdgeCases(t *testing.T) {
+	tests := []struct {
+		name        string
+		input       []string
+		excludeBots bool
+		wantCount   int
+	}{
+		{
+			name:        "invalid format",
+			input:       []string{"invalid-line"},
+			excludeBots: false,
+			wantCount:   0,
+		},
+		{
+			name:        "excludes qodana bot",
+			input:       []string{"qodana-support@jetbrains.com||Qodana Bot||abc123||2023-01-01"},
+			excludeBots: false,
+			wantCount:   0,
+		},
+		{
+			name:        "excludes github bot when flag set",
+			input:       []string{"dependabot[bot]@users.noreply.github.com||dependabot[bot]||abc123||2023-01-01"},
+			excludeBots: true,
+			wantCount:   0,
+		},
+		{
+			name:        "includes github bot when flag not set",
+			input:       []string{"dependabot[bot]@users.noreply.github.com||dependabot[bot]||abc123||2023-01-01"},
+			excludeBots: false,
+			wantCount:   1,
+		},
+		{
+			name:        "empty input",
+			input:       []string{},
+			excludeBots: false,
+			wantCount:   0,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			commits := parseCommits(tt.input, tt.excludeBots)
+			if len(commits) != tt.wantCount {
+				t.Errorf("parseCommits() returned %d commits, want %d", len(commits), tt.wantCount)
+			}
+		})
+	}
+}

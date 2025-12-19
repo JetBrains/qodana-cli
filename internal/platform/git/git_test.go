@@ -187,9 +187,150 @@ func git(t *testing.T, cwd string, command []string) string {
 	logdir := t.TempDir()
 	defer assert.NoError(t, os.RemoveAll(logdir))
 
-	command = append([]string{"-c", "user.name=Test", "-c", "user.email="}, command...)
+	command = append(
+		[]string{
+			"-c",
+			"user.name=Test",
+			"-c",
+			"user.email=test@test.com",
+			"-c",
+			"commit.gpgsign=false",
+			"-c",
+			"tag.gpgsign=false",
+		}, command...,
+	)
 	stdout, stderr, err := gitRun(cwd, command, logdir)
 	assert.NoError(t, err)
 	fmt.Print(stderr)
 	return stdout
+}
+
+func TestReset(t *testing.T) {
+	dir := gitInit(t)
+	gitCommitAll(t, dir, "commit")
+	logdir := t.TempDir()
+
+	headSha, err := RevParse(dir, "HEAD", logdir)
+	assert.NoError(t, err)
+
+	gitCommitAll(t, dir, "commit")
+
+	err = Reset(dir, headSha, logdir)
+	assert.NoError(t, err)
+}
+
+func TestCheckout(t *testing.T) {
+	dir := gitInit(t)
+	gitCommitAll(t, dir, "commit")
+	logdir := t.TempDir()
+
+	git(t, dir, []string{"checkout", "-b", "test-branch"})
+	gitCommitAll(t, dir, "commit")
+
+	err := checkout(dir, "main", false, logdir)
+	assert.NoError(t, err)
+
+	err = checkout(dir, "test-branch", true, logdir)
+	assert.NoError(t, err)
+}
+
+func TestClean(t *testing.T) {
+	dir := gitInit(t)
+	gitCommitAll(t, dir, "commit")
+	logdir := t.TempDir()
+
+	if err := os.WriteFile(filepath.Join(dir, "untracked.txt"), []byte("test"), 0644); err != nil {
+		t.Fatal(err)
+	}
+
+	err := Clean(dir, logdir)
+	assert.NoError(t, err)
+
+	_, err = os.Stat(filepath.Join(dir, "untracked.txt"))
+	assert.True(t, os.IsNotExist(err))
+}
+
+func TestRevisions(t *testing.T) {
+	dir := gitInit(t)
+	gitCommitAll(t, dir, "commit")
+	gitCommitAll(t, dir, "commit")
+	gitCommitAll(t, dir, "commit")
+
+	revisions := Revisions(dir)
+	assert.GreaterOrEqual(t, len(revisions), 3)
+}
+
+func TestRemoteUrl(t *testing.T) {
+	logdir := t.TempDir()
+	dir := gitInit(t)
+	gitCommitAll(t, dir, "commit")
+
+	git(t, dir, []string{"remote", "add", "origin", "https://github.com/test/repo.git"})
+
+	url, err := RemoteUrl(dir, logdir)
+	assert.NoError(t, err)
+	assert.Equal(t, "https://github.com/test/repo.git", url)
+}
+
+func TestBranch(t *testing.T) {
+	logdir := t.TempDir()
+	dir := gitInit(t)
+	gitCommitAll(t, dir, "commit")
+
+	branch, err := Branch(dir, logdir)
+	assert.NoError(t, err)
+	assert.Equal(t, "main", branch)
+}
+
+func TestCurrentRevision(t *testing.T) {
+	logdir := t.TempDir()
+	dir := gitInit(t)
+	gitCommitAll(t, dir, "commit")
+
+	rev, err := CurrentRevision(dir, logdir)
+	assert.NoError(t, err)
+	assert.Len(t, rev, 40)
+}
+
+func TestSubmoduleUpdate(t *testing.T) {
+	dir := gitInit(t)
+	gitCommitAll(t, dir, "commit")
+	logdir := t.TempDir()
+
+	err := submoduleUpdate(dir, false, logdir)
+	assert.NoError(t, err)
+
+	err = submoduleUpdate(dir, true, logdir)
+	assert.NoError(t, err)
+}
+
+func TestResetBack(t *testing.T) {
+	dir := gitInit(t)
+	gitCommitAll(t, dir, "commit")
+	logdir := t.TempDir()
+
+	headSha, _ := RevParse(dir, "HEAD", logdir)
+	gitCommitAll(t, dir, "second-commit")
+	err := Reset(dir, headSha, logdir)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	err = ResetBack(dir, logdir)
+	assert.NoError(t, err)
+}
+
+func TestCheckoutAndUpdateSubmodule(t *testing.T) {
+	dir := gitInit(t)
+	gitCommitAll(t, dir, "commit")
+	logdir := t.TempDir()
+
+	git(t, dir, []string{"checkout", "-b", "test-branch"})
+	gitCommitAll(t, dir, "branch-commit")
+
+	err := CheckoutAndUpdateSubmodule(dir, "main", false, logdir)
+	assert.NoError(t, err)
+
+	err = CheckoutAndUpdateSubmodule(dir, "test-branch", true, logdir)
+	assert.NoError(t, err)
 }
