@@ -37,7 +37,7 @@ func getProductFeed() string {
 	if feed := os.Getenv("QD_PRODUCT_INTERNAL_FEED"); feed != "" {
 		return feed
 	}
-	return "https://raw.githubusercontent.com/JetBrains/qodana-docker/main/feed/releases.json"
+	return "https://raw.githubusercontent.com/JetBrains/qodana-cli/main/feed/releases.json"
 }
 
 func getInternalAuth() string {
