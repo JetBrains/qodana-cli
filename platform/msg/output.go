@@ -240,11 +240,13 @@ func printPath(path string, line int, column int) {
 // printLines prints the lines of the problem.
 func printLines(content string, contextLine int, line int, skipHighlight bool) {
 	lines := strings.Split(content, "\n")
-	lineCount := len(lines)
-	if content[len(content)-1] == '\n' {
-		lineCount -= 1 // Remove the last empty line if content ends with a newline
+
+	if lines[len(lines)-1] == "" {
+		// Remove the last empty line if content ends with a newline
+		lines = lines[:len(lines)-1]
 	}
-	for i := 0; i < lineCount; i++ {
+
+	for i := 0; i < len(lines); i++ {
 		var printLine string
 		currentLine := contextLine + i
 		if skipHighlight {

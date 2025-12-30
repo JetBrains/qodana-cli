@@ -377,7 +377,10 @@ func ProcessSarif(sarifPath, analysisId, reportUrl string, printProblems, codeCl
 					codeInsightIssues = append(codeInsightIssues, buildAnnotation(&r, ruleDescription, reportUrl))
 				}
 				if printProblems {
-					printSarifProblem(&r, ruleId, message)
+					err = printSarifProblem(&r, ruleId, message)
+					if err != nil {
+						log.Debugf("Failed to print result: %s", err)
+					}
 				}
 			}
 		}
@@ -403,30 +406,40 @@ func ProcessSarif(sarifPath, analysisId, reportUrl string, printProblems, codeCl
 	}
 }
 
-func printSarifProblem(r *sarif.Result, ruleId, message string) {
-	if r.Locations[0].PhysicalLocation != nil {
-		msg.PrintProblem(
-			ruleId,
-			getSeverity(r),
-			message,
-			r.Locations[0].PhysicalLocation.ArtifactLocation.Uri,
-			int(r.Locations[0].PhysicalLocation.Region.StartLine),
-			int(r.Locations[0].PhysicalLocation.Region.StartColumn),
-			int(r.Locations[0].PhysicalLocation.ContextRegion.StartLine),
-			r.Locations[0].PhysicalLocation.ContextRegion.Snippet.Text,
-		)
-	} else {
-		msg.PrintProblem(
-			ruleId,
-			getSeverity(r),
-			message,
-			"",
-			0,
-			0,
-			0,
-			"",
-		)
+func printSarifProblem(r *sarif.Result, ruleId, message string) error {
+	if r == nil {
+		return fmt.Errorf("r must not be nil")
 	}
+
+	path := ""
+	line := 0
+	column := 0
+	contextLine := 0
+	contextText := ""
+
+	if len(r.Locations) > 0 && r.Locations[0].PhysicalLocation != nil {
+		location := r.Locations[0].PhysicalLocation
+
+		if location.ArtifactLocation != nil {
+			path = location.ArtifactLocation.Uri
+		}
+
+		if location.Region != nil {
+			line = int(location.Region.StartLine)
+			column = int(location.Region.StartColumn)
+		}
+
+		if location.ContextRegion != nil {
+			contextLine = int(location.ContextRegion.StartLine)
+
+			if location.ContextRegion.Snippet != nil {
+				contextText = location.ContextRegion.Snippet.Text
+			}
+		}
+	}
+
+	msg.PrintProblem(ruleId, getSeverity(r), message, path, line, column, contextLine, contextText)
+	return nil
 }
 
 // getFingerprint returns the fingerprint of the Qodana (or not) SARIF result.
