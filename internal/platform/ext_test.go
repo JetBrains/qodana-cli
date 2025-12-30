@@ -18,8 +18,16 @@ package platform
 
 import (
 	"encoding/json"
+	"errors"
+	"io"
+	"net/http"
+	"os"
+	"path/filepath"
 	"reflect"
+	"strings"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 
 	bbapi "github.com/reviewdog/go-bitbucket"
 )
@@ -332,3 +340,66 @@ func TestSarifResultToCodeClimate(t *testing.T) {
 //		t.Errorf("Failed to send BitBucket report: %v", err)
 //	}
 //}
+
+func TestCheckBitBucketApiError(t *testing.T) {
+	t.Run("no error with correct status code", func(t *testing.T) {
+		resp := &http.Response{StatusCode: 200}
+		err := checkBitBucketApiError(nil, resp, 200)
+		assert.NoError(t, err)
+	})
+
+	t.Run("returns error when err is not nil", func(t *testing.T) {
+		apiErr := errors.New("connection failed")
+		err := checkBitBucketApiError(apiErr, nil, 200)
+		assert.Error(t, err)
+		assert.Contains(t, err.Error(), "BitBucket API error")
+		assert.Contains(t, err.Error(), "connection failed")
+	})
+
+	t.Run("returns error on unexpected status code", func(t *testing.T) {
+		resp := &http.Response{
+			StatusCode: 404,
+			Body:       io.NopCloser(strings.NewReader("Not Found")),
+		}
+		err := checkBitBucketApiError(nil, resp, 200)
+		assert.Error(t, err)
+		assert.Contains(t, err.Error(), "unexpected status code 404")
+		assert.Contains(t, err.Error(), "expected 200")
+	})
+
+	t.Run("returns nil when resp is nil", func(t *testing.T) {
+		err := checkBitBucketApiError(nil, nil, 200)
+		assert.NoError(t, err)
+	})
+}
+
+func TestWriteGlCodeQualityReport(t *testing.T) {
+	t.Run("writes issues to file", func(t *testing.T) {
+		tmpDir := t.TempDir()
+		sarifPath := filepath.Join(tmpDir, "qodana.sarif.json")
+
+		issues := []CCIssue{
+			{
+				CheckName:   "TestRule",
+				Description: "Test description",
+				Fingerprint: "abc123",
+				Severity:    codeClimateMajor,
+				Location:    Location{Path: "test.go", Lines: Line{Begin: 10}},
+			},
+		}
+
+		err := writeGlCodeQualityReport(issues, sarifPath)
+		assert.NoError(t, err)
+
+		// Verify file was created
+		outputFile := filepath.Join(tmpDir, glCodeQualityReport)
+		_, err = os.Stat(outputFile)
+		assert.NoError(t, err)
+
+		// Verify content
+		content, err := os.ReadFile(outputFile)
+		assert.NoError(t, err)
+		assert.Contains(t, string(content), "TestRule")
+		assert.Contains(t, string(content), "Test description")
+	})
+}
