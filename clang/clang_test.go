@@ -1,17 +1,33 @@
 package main
 
 import (
+	"embed"
 	"fmt"
+	"io/fs"
 	"os"
 	"path/filepath"
 	"strings"
 	"testing"
 
 	"github.com/JetBrains/qodana-cli/internal/platform"
+	"github.com/JetBrains/qodana-cli/internal/platform/fsutil"
 	"github.com/JetBrains/qodana-cli/internal/platform/product"
 	"github.com/JetBrains/qodana-cli/internal/platform/thirdpartyscan"
 	log "github.com/sirupsen/logrus"
+	"github.com/stretchr/testify/require"
 )
+
+//go:embed all:testdata/TestLinterRun
+var _testDataRoot embed.FS
+var testDataRoot = func() fs.FS {
+	// remove a prefix
+	result, err := fsutil.SubDir(_testDataRoot, "testdata")
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	return result
+}()
 
 func TestLinterRun(t *testing.T) {
 	// skip this test on GitHub due to missing artifacts
@@ -23,10 +39,9 @@ func TestLinterRun(t *testing.T) {
 
 	projectDir := t.TempDir()
 
-	err := os.CopyFS(projectDir, os.DirFS("testdata/TestLinterRun"))
-	if err != nil {
-		t.Fatal(err)
-	}
+	testData, err := fsutil.SubDir(testDataRoot, "TestLinterRun")
+	require.NoError(t, err)
+	require.NoError(t, os.CopyFS(projectDir, testData))
 
 	outputDir := filepath.Join(projectDir, ".linter-output")
 	cacheDir := filepath.Join(projectDir, ".linter-cache")
