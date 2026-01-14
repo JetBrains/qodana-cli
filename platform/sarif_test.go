@@ -24,6 +24,8 @@ import (
 
 	"github.com/JetBrains/qodana-cli/v2025/platform/thirdpartyscan"
 	"github.com/JetBrains/qodana-cli/v2025/platform/utils"
+	"github.com/JetBrains/qodana-cli/v2025/sarif"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestMergeSarifReports(t *testing.T) {
@@ -176,4 +178,70 @@ func TestMakeShortSarif(t *testing.T) {
 	if expString != actString {
 		t.Fatalf("Files are not equal. Length: expected %d vs actual %d", len(expString), len(actString))
 	}
+}
+
+func TestPrintSarifProblem(t *testing.T) {
+	t.Run("Happy path", func(t *testing.T) {
+		assert.NoError(t, printSarifProblem(&sarif.Result{
+			Locations: []sarif.Location{
+				{
+					PhysicalLocation: &sarif.PhysicalLocation{
+						ArtifactLocation: &sarif.ArtifactLocation{
+							Uri: "example.cpp",
+						},
+						Region: &sarif.Region{
+							StartLine:   15,
+							StartColumn: 1,
+						},
+						ContextRegion: &sarif.Region{
+							StartLine: 10,
+							Snippet: &sarif.ArtifactContent{
+								Text: "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod\n" +
+									"tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim\n" +
+									"veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea\n" +
+									"commodo consequat. Duis aute irure dolor in reprehenderit in\n" +
+									"voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint\n" +
+									"occaecat cupidatat non proident, sunt in culpa qui officia deserunt\n" +
+									"mollit anim id est laborum.",
+							},
+						},
+					},
+				},
+			},
+		}, "", ""))
+	})
+
+	t.Run("Result is nil", func(t *testing.T) {
+		assert.Error(t, printSarifProblem(nil, "", ""))
+	})
+	t.Run("Result is empty", func(t *testing.T) {
+		assert.NoError(t, printSarifProblem(&sarif.Result{}, "", ""))
+	})
+	t.Run("Result contains no physical locations", func(t *testing.T) {
+		assert.NoError(t, printSarifProblem(&sarif.Result{
+			Locations: []sarif.Location{
+				{},
+			},
+		}, "", ""))
+	})
+	t.Run("Physical location is empty", func(t *testing.T) {
+		assert.NoError(t, printSarifProblem(&sarif.Result{
+			Locations: []sarif.Location{
+				{
+					PhysicalLocation: &sarif.PhysicalLocation{},
+				},
+			},
+		}, "", ""))
+	})
+	t.Run("Context region contains no snippet", func(t *testing.T) {
+		assert.NoError(t, printSarifProblem(&sarif.Result{
+			Locations: []sarif.Location{
+				{
+					PhysicalLocation: &sarif.PhysicalLocation{
+						ContextRegion: &sarif.Region{},
+					},
+				},
+			},
+		}, "", ""))
+	})
 }
