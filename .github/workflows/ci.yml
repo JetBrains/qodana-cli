@@ -119,11 +119,13 @@ jobs:
       - name: Merge coverage reports
         run: |
           mkdir -p .qodana/code-coverage
-          find coverage-reports -name "*.out" -exec cat {} \; > .qodana/code-coverage/coverage.out
+          echo "mode: set" > .qodana/code-coverage/coverage.out
+          find coverage-reports -name "*.out" -exec tail -n +2 {} \; >> .qodana/code-coverage/coverage.out
       - uses: JetBrains/qodana-action@main
         env:
           QODANA_TOKEN: ${{ secrets.QODANA_TOKEN }}
         with:
+          args: --baseline,.github/qodana.sarif.json
           use-nightly: true
           pr-mode: false
           upload-result: true

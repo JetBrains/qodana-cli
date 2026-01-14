@@ -288,6 +288,64 @@ func TestWrongVersion(t *testing.T) {
 	}
 }
 
+func TestNewLintersApiClient(t *testing.T) {
+	endpoints := &QdApiEndpoints{
+		RootEndpoint:  &QdRootEndpoint{Url: "https://qodana.cloud"},
+		LintersApiUrl: "https://linters.api.url/v1",
+		CloudApiUrl:   "https://cloud.api.url/v1",
+	}
+
+	t.Run("creates client with token", func(t *testing.T) {
+		client := endpoints.NewLintersApiClient("test-token")
+		assert.NotNil(t, client)
+		assert.Equal(t, "https://linters.api.url/v1", client.apiUrl)
+		assert.Equal(t, "test-token", client.token)
+		assert.NotNil(t, client.httpClient)
+	})
+
+	t.Run("creates client without token", func(t *testing.T) {
+		client := endpoints.NewLintersApiClient("")
+		assert.NotNil(t, client)
+		assert.Equal(t, "", client.token)
+	})
+}
+
+func TestNewCloudApiClient(t *testing.T) {
+	endpoints := &QdApiEndpoints{
+		RootEndpoint:  &QdRootEndpoint{Url: "https://qodana.cloud"},
+		LintersApiUrl: "https://linters.api.url/v1",
+		CloudApiUrl:   "https://cloud.api.url/v1",
+	}
+
+	t.Run("creates client with token", func(t *testing.T) {
+		client := endpoints.NewCloudApiClient("test-token")
+		assert.NotNil(t, client)
+		assert.Equal(t, "https://cloud.api.url/v1", client.apiUrl)
+		assert.Equal(t, "test-token", client.token)
+	})
+}
+
+func TestAPIError(t *testing.T) {
+	err := &APIError{
+		StatusCode: 404,
+		Message:    "Not found",
+	}
+	assert.Equal(t, "response code '404', message 'Not found'", err.Error())
+}
+
+func TestNewCloudRequest(t *testing.T) {
+	t.Cleanup(func() {
+		_ = os.Unsetenv(qdenv.QodanaCloudRequestRetriesEnv)
+		_ = os.Unsetenv(qdenv.QodanaCloudRequestCooldownEnv)
+	})
+
+	request := NewCloudRequest("/test/path")
+	assert.Equal(t, "/test/path", request.Path)
+	assert.Equal(t, "GET", request.Method)
+	assert.Contains(t, request.AcceptedStatuses, http.StatusUnauthorized)
+	assert.Contains(t, request.AcceptedStatuses, http.StatusNotFound)
+}
+
 func runRequest(
 	t *testing.T,
 	cooldown int,

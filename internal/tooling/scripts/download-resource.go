@@ -1,3 +1,5 @@
+//go:build ignore
+
 // usage: go run scripts/download-resource.go [--force] <path>
 // download-resource.go reads a config called "resources.json" in the working directory and downloads a file specified
 // by <path> from the url specified in the config. When creating or updating entries, use --force to rewrite the hash

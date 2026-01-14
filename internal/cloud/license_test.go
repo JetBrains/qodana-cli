@@ -278,3 +278,56 @@ func TestExtractLicenseKey(t *testing.T) {
 		)
 	}
 }
+
+func TestGetLicensePlan(t *testing.T) {
+	expectedPlan := "ULTIMATE_PLUS"
+	svr := httptest.NewServer(
+		http.HandlerFunc(
+			func(w http.ResponseWriter, r *http.Request) {
+				if r.URL.Path != qodanaLicenseUri {
+					t.Errorf("expected uri to be '%s' got '%s'", qodanaLicenseUri, r.URL.Path)
+				}
+				_, _ = fmt.Fprintf(w, `{"licenseId":"test","licenseKey":"key","licensePlan":"%s"}`, expectedPlan)
+			},
+		),
+	)
+	defer svr.Close()
+
+	apis := QdApiEndpoints{LintersApiUrl: svr.URL}
+	plan := apis.GetLicensePlan("test-token")
+	if plan != expectedPlan {
+		t.Errorf("expected plan '%s' got '%s'", expectedPlan, plan)
+	}
+}
+
+func TestDeserializeLicenseDataFields(t *testing.T) {
+	data := `{
+		"licenseId": "ABC123",
+		"licenseKey": "KEY456",
+		"expirationDate": "2025-12-31",
+		"projectIdHash": "proj_hash",
+		"organizationIdHash": "org_hash",
+		"licensePlan": "ULTIMATE"
+	}`
+
+	result := DeserializeLicenseData([]byte(data))
+
+	if result.LicenseID != "ABC123" {
+		t.Errorf("LicenseID: expected 'ABC123' got '%s'", result.LicenseID)
+	}
+	if result.LicenseKey != "KEY456" {
+		t.Errorf("LicenseKey: expected 'KEY456' got '%s'", result.LicenseKey)
+	}
+	if result.ExpirationDate != "2025-12-31" {
+		t.Errorf("ExpirationDate: expected '2025-12-31' got '%s'", result.ExpirationDate)
+	}
+	if result.ProjectIdHash != "proj_hash" {
+		t.Errorf("ProjectIdHash: expected 'proj_hash' got '%s'", result.ProjectIdHash)
+	}
+	if result.OrganisationIdHash != "org_hash" {
+		t.Errorf("OrganisationIdHash: expected 'org_hash' got '%s'", result.OrganisationIdHash)
+	}
+	if result.LicensePlan != "ULTIMATE" {
+		t.Errorf("LicensePlan: expected 'ULTIMATE' got '%s'", result.LicensePlan)
+	}
+}

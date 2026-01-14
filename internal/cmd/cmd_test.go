@@ -39,6 +39,89 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
+func TestIsHelpOrVersion(t *testing.T) {
+	tests := []struct {
+		args     []string
+		expected bool
+	}{
+		{[]string{"qodana", "--help"}, true},
+		{[]string{"qodana", "-h"}, true},
+		{[]string{"qodana", "help"}, true},
+		{[]string{"qodana", "--version"}, true},
+		{[]string{"qodana", "-v"}, true},
+		{[]string{"qodana", "scan"}, false},
+		{[]string{"qodana"}, false},
+		{[]string{"qodana", "--help", "extra"}, false},
+	}
+	for _, tt := range tests {
+		if result := isHelpOrVersion(tt.args); result != tt.expected {
+			t.Errorf("isHelpOrVersion(%v) = %v, want %v", tt.args, result, tt.expected)
+		}
+	}
+}
+
+func TestIsCompletionRequested(t *testing.T) {
+	tests := []struct {
+		args     []string
+		expected bool
+	}{
+		{[]string{"qodana", "completion"}, true},
+		{[]string{"qodana", "completion", "bash"}, true},
+		{[]string{"qodana", "scan"}, false},
+		{[]string{"qodana"}, false},
+	}
+	for _, tt := range tests {
+		if result := isCompletionRequested(tt.args); result != tt.expected {
+			t.Errorf("isCompletionRequested(%v) = %v, want %v", tt.args, result, tt.expected)
+		}
+	}
+}
+
+func TestIsCommandRequested(t *testing.T) {
+	rootCmd := newRootCommand()
+	rootCmd.AddCommand(newScanCommand())
+	rootCmd.AddCommand(newInitCommand())
+	rootCmd.AddCommand(newPullCommand())
+	tests := []struct {
+		args     []string
+		expected string
+	}{
+		{[]string{"scan"}, "scan"},
+		{[]string{"init"}, "init"},
+		{[]string{"pull"}, "pull"},
+		{[]string{"--help"}, ""},
+		{[]string{"unknown"}, ""},
+	}
+	for _, tt := range tests {
+		if result := isCommandRequested(rootCmd.Commands(), tt.args); result != tt.expected {
+			t.Errorf("isCommandRequested(..., %v) = %v, want %v", tt.args, result, tt.expected)
+		}
+	}
+}
+
+func TestSetDefaultCommandIfNeeded(t *testing.T) {
+	tests := []struct {
+		name string
+		args []string
+	}{
+		{"no args adds scan", []string{"qodana", "-i", "."}},
+		{"help flag unchanged", []string{"qodana", "--help"}},
+		{"version flag unchanged", []string{"qodana", "-v"}},
+		{"scan command unchanged", []string{"qodana", "scan", "-i", "."}},
+		{"init command unchanged", []string{"qodana", "init"}},
+	}
+	for _, tt := range tests {
+		t.Run(
+			tt.name, func(t *testing.T) {
+				rootCmd := newRootCommand()
+				rootCmd.AddCommand(newScanCommand())
+				rootCmd.AddCommand(newInitCommand())
+				setDefaultCommandIfNeeded(rootCmd, tt.args)
+			},
+		)
+	}
+}
+
 func createProject(t *testing.T, name string) string {
 	location := filepath.Join(os.TempDir(), ".qodana_scan_", name)
 	err := os.MkdirAll(location, 0o755)
@@ -235,21 +318,17 @@ func TestPullInNative(t *testing.T) {
 }
 
 func TestAllCommandsWithContainer(t *testing.T) {
+	// Only run this test when explicitly enabled via environment variable
+	if os.Getenv("QODANA_TEST_CONTAINER") == "" {
+		t.Skip("Skipping container test (set QODANA_TEST_CONTAINER=1 to enable)")
+	}
+
 	version.Version = "0.1.0"
-	image := "registry.jetbrains.team/p/sa/containers/qodana-dotnet:latest"
+	image := "jetbrains/qodana-jvm-community:latest"
 
-	t.Skip("Until implement way to choose automatically custom image repo for tests")
-	//token := os.Getenv("QODANA_LICENSE_ONLY_TOKEN")
-	//if //goland:noinspection GoBoolExpressions
-	//token == "" {
-	//	t.Skip("set your QODANA_LICENSE_ONLY_TOKEN as env variable to run the test")
-	//}
-
-	if os.Getenv("GITHUB_ACTIONS") == "true" {
-		//goland:noinspection GoBoolExpressions
-		if _, err := exec.LookPath("docker"); err != nil || runtime.GOOS != "linux" {
-			t.Skip(err)
-		}
+	token := os.Getenv("QODANA_LICENSE_ONLY_TOKEN")
+	if token != "" {
+		image = "jetbrains/qodana-dotnet:latest"
 	}
 	//_ = os.Setenv(qodanaCliContainerKeep, "true")
 	//_ = os.Setenv(qodanaCliContainerName, "qodana-cli-test-new1")
@@ -333,7 +412,7 @@ func TestAllCommandsWithContainer(t *testing.T) {
 	out = bytes.NewBufferString("")
 	command = newShowCommand()
 	command.SetOut(out)
-	command.SetArgs([]string{"-i", projectPath, "-d", "--image", image})
+	command.SetArgs([]string{"-i", projectPath, "-d", "--linter", image})
 	err = command.Execute()
 	if err != nil {
 		t.Fatal(err)

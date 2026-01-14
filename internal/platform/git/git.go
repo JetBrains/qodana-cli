@@ -72,7 +72,7 @@ func Reset(cwd string, sha string, logdir string) error {
 
 // ResetBack aborts the git reset.
 func ResetBack(cwd string, logdir string) error {
-	_, _, err := gitRun(cwd, []string{"reset", "'HEAD@{1}'"}, logdir)
+	_, _, err := gitRun(cwd, []string{"reset", "HEAD@{1}"}, logdir)
 	return err
 }
 

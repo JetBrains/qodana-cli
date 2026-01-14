@@ -1,3 +1,5 @@
+//go:build ignore
+
 // Compute SHA-256 checksum for clt.zip artifact.
 package main
 

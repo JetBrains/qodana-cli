@@ -78,6 +78,63 @@ func TestCheckForPrivateFeed(t *testing.T) {
 	}
 }
 
+func TestQodanaNugetVarsSet(t *testing.T) {
+	// Save original values
+	originalUrl := os.Getenv(qdenv.QodanaNugetUrl)
+	originalUser := os.Getenv(qdenv.QodanaNugetUser)
+	originalPassword := os.Getenv(qdenv.QodanaNugetPassword)
+	defer func() {
+		_ = os.Setenv(qdenv.QodanaNugetUrl, originalUrl)
+		_ = os.Setenv(qdenv.QodanaNugetUser, originalUser)
+		_ = os.Setenv(qdenv.QodanaNugetPassword, originalPassword)
+	}()
+
+	t.Run("all vars set", func(t *testing.T) {
+		_ = os.Setenv(qdenv.QodanaNugetUrl, "https://nuget.example.com")
+		_ = os.Setenv(qdenv.QodanaNugetUser, "user")
+		_ = os.Setenv(qdenv.QodanaNugetPassword, "password")
+		if !qodanaNugetVarsSet() {
+			t.Error("expected qodanaNugetVarsSet() to return true when all vars are set")
+		}
+	})
+
+	t.Run("missing url", func(t *testing.T) {
+		_ = os.Setenv(qdenv.QodanaNugetUrl, "")
+		_ = os.Setenv(qdenv.QodanaNugetUser, "user")
+		_ = os.Setenv(qdenv.QodanaNugetPassword, "password")
+		if qodanaNugetVarsSet() {
+			t.Error("expected qodanaNugetVarsSet() to return false when url is missing")
+		}
+	})
+
+	t.Run("missing user", func(t *testing.T) {
+		_ = os.Setenv(qdenv.QodanaNugetUrl, "https://nuget.example.com")
+		_ = os.Setenv(qdenv.QodanaNugetUser, "")
+		_ = os.Setenv(qdenv.QodanaNugetPassword, "password")
+		if qodanaNugetVarsSet() {
+			t.Error("expected qodanaNugetVarsSet() to return false when user is missing")
+		}
+	})
+
+	t.Run("missing password", func(t *testing.T) {
+		_ = os.Setenv(qdenv.QodanaNugetUrl, "https://nuget.example.com")
+		_ = os.Setenv(qdenv.QodanaNugetUser, "user")
+		_ = os.Setenv(qdenv.QodanaNugetPassword, "")
+		if qodanaNugetVarsSet() {
+			t.Error("expected qodanaNugetVarsSet() to return false when password is missing")
+		}
+	})
+
+	t.Run("all vars empty", func(t *testing.T) {
+		_ = os.Setenv(qdenv.QodanaNugetUrl, "")
+		_ = os.Setenv(qdenv.QodanaNugetUser, "")
+		_ = os.Setenv(qdenv.QodanaNugetPassword, "")
+		if qodanaNugetVarsSet() {
+			t.Error("expected qodanaNugetVarsSet() to return false when all vars are empty")
+		}
+	})
+}
+
 func TestPrepareNugetConfig(t *testing.T) {
 	_ = os.Setenv(qdenv.QodanaNugetName, "qdn")
 	_ = os.Setenv(qdenv.QodanaNugetUrl, "test_url")

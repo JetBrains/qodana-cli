@@ -17,6 +17,8 @@
 package commoncontext
 
 import (
+	"net/http"
+	"net/http/httptest"
 	"os"
 	"path/filepath"
 	"reflect"
@@ -382,4 +384,64 @@ func TestComputeCommonRepositoryRootValidationWithRealFiles(t *testing.T) {
 			},
 		)
 	}
+}
+
+func TestIsAndroidProject(t *testing.T) {
+	t.Run("android project", func(t *testing.T) {
+		dir := t.TempDir()
+		manifestDir := filepath.Join(dir, "app", "src", "main")
+		if err := os.MkdirAll(manifestDir, 0755); err != nil {
+			t.Fatal(err)
+		}
+		if err := os.WriteFile(filepath.Join(manifestDir, "AndroidManifest.xml"), []byte("<manifest/>"), 0644); err != nil {
+			t.Fatal(err)
+		}
+		assert.True(t, isAndroidProject(dir))
+	})
+
+	t.Run("non-android project", func(t *testing.T) {
+		dir := t.TempDir()
+		if err := os.WriteFile(filepath.Join(dir, "main.go"), []byte("package main"), 0644); err != nil {
+			t.Fatal(err)
+		}
+		assert.False(t, isAndroidProject(dir))
+	})
+
+	t.Run("empty project", func(t *testing.T) {
+		dir := t.TempDir()
+		assert.False(t, isAndroidProject(dir))
+	})
+}
+
+func TestNoCache(t *testing.T) {
+	handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+	})
+
+	wrappedHandler := noCache(handler)
+
+	t.Run("sets cache control headers", func(t *testing.T) {
+		req := httptest.NewRequest("GET", "/", nil)
+		rr := httptest.NewRecorder()
+
+		wrappedHandler.ServeHTTP(rr, req)
+
+		assert.Equal(t, http.StatusOK, rr.Code)
+		assert.Equal(t, "no-cache, private, max-age=0", rr.Header().Get("Cache-Control"))
+		assert.Equal(t, "no-cache", rr.Header().Get("Pragma"))
+		assert.Equal(t, "0", rr.Header().Get("X-Accel-Expires"))
+		assert.NotEmpty(t, rr.Header().Get("Expires"))
+	})
+
+	t.Run("removes etag headers from request", func(t *testing.T) {
+		req := httptest.NewRequest("GET", "/", nil)
+		req.Header.Set("If-None-Match", "some-etag")
+		req.Header.Set("If-Modified-Since", "some-date")
+		rr := httptest.NewRecorder()
+
+		wrappedHandler.ServeHTTP(rr, req)
+
+		assert.Empty(t, req.Header.Get("If-None-Match"))
+		assert.Empty(t, req.Header.Get("If-Modified-Since"))
+	})
 }
