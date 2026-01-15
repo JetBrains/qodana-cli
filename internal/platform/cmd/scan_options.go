@@ -170,13 +170,13 @@ func ComputeFlags(cmd *cobra.Command, options *CliOptions) error {
 		&options.GenerateCodeClimateReport,
 		"code-climate",
 		qdenv.IsGitLab(),
-		"Generate a code Climate report in SARIF format (compatible with GitLab code Quality), will be saved to the results directory (default true if Qodana is executed on GitLab CI)",
+		"Generate a Code Climate report in SARIF format (compatible with GitLab code Quality), will be saved to the results directory (default true if Qodana is executed on GitLab CI)",
 	)
 	flags.BoolVar(
 		&options.SendBitBucketInsights,
 		"bitbucket-insights",
 		qdenv.IsBitBucket(),
-		"Send the results BitBucket code Insights, no additional configuration required if ran in BitBucket Pipelines (default true if Qodana is executed on BitBucket Pipelines)",
+		"Send the results BitBucket Code Insights, no additional configuration required if ran in BitBucket Pipelines (default true if Qodana is executed on BitBucket Pipelines)",
 	)
 	flags.BoolVar(&options.ClearCache, "clear-cache", false, "Clear the local Qodana cache before running the analysis")
 	flags.BoolVarP(&options.ShowReport, "show-report", "w", false, "Serve HTML report on port")
@@ -312,7 +312,7 @@ func ComputeFlags(cmd *cobra.Command, options *CliOptions) error {
 		&options.NoStatistics,
 		"no-statistics",
 		false,
-		"[qodana-clang/qodana-dotner]Disable sending anonymous statistics",
+		"[qodana-clang/qodana-dotnet] Disable sending anonymous statistics",
 	)
 	flags.StringVar(
 		&options.ClangCompileCommands,

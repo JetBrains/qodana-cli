@@ -18,15 +18,18 @@ qodana scan --show-report
 
 You can also add the linter by its name with the `--linter` option (e.g. `--linter jetbrains/qodana-js`).
 
-**Table of Contents**
-
-<!-- toc -->
-- [Installation](#Installation)
-- [Usage](#usage)
-- [Configuration](#configuration)
-- [Why](#why)
-
-<!-- tocstop -->
+<!-- TOC -->
+  * [Installation](#installation)
+      * [macOS and Linux](#macos-and-linux)
+      * [Windows](#windows)
+      * [Anywhere else](#anywhere-else)
+  * [Usage](#usage)
+    * [Prepare your project](#prepare-your-project)
+    * [Analyze your project](#analyze-your-project)
+    * [View the report](#view-the-report)
+  * [Configuration](#configuration)
+  * [Why](#why)
+<!-- TOC -->
 
 ![qodana](https://user-images.githubusercontent.com/13538286/151153050-934c0f41-e059-480a-a89f-cd4b2ca7a930.gif)
 
@@ -125,21 +128,19 @@ using [`qodana.yaml` ](https://www.jetbrains.com/help/qodana/qodana-yaml.html) t
 > - Windows: `%LOCALAPPDATA%\`
 > Also, you can just run `qodana show -d` to open the directory with the latest Qodana report.
 
-### init
+## init
 
 Configure a project for Qodana
 
-#### Synopsis
+### Synopsis
 
-Configure a project for Qodana:
-prepare Qodana configuration file by analyzing the project structure
-and generating a default configuration qodana.yaml file.
+Configure a project for Qodana: prepare Qodana configuration file by analyzing the project structure and generating a default configuration qodana.yaml file.
 
-```shell
+```
 qodana init [flags]
 ```
 
-#### Options
+### Options
 
 ```
       --config string        Set a custom configuration file instead of 'qodana.yaml'. Relative paths in the configuration will be based on the project directory.
@@ -148,178 +149,239 @@ qodana init [flags]
   -i, --project-dir string   Root directory of the project to configure (default ".")
 ```
 
-### scan
+### Options inherited from parent commands
+
+```
+      --disable-update-checks   Disable check for updates
+      --log-level string        Set log-level for output (default "error")
+```
+
+## scan
 
 Scan project with Qodana
 
-#### Synopsis
+### Synopsis
 
-Scan a project with Qodana.
-It runs one of Qodana Docker's images
-(https://www.jetbrains.com/help/qodana/docker-images.html) and reports the results.
+Scan a project with Qodana. It runs one of Qodana's Docker images (https://www.jetbrains.com/help/qodana/docker-images.html) and reports the results.
 
 Note that most options can be configured via qodana.yaml (https://www.jetbrains.com/help/qodana/qodana-yaml.html) file.
 But you can always override qodana.yaml options with the following command-line options.
 
-Supply the qodana project token by declaring `QODANA_TOKEN` as environment variable.
-
-If you are using another Qodana Cloud instance than https://qodana.cloud/, override it by declaring `QODANA_ENDPOINT` as environment variable.
-
-
-```shell
+```
 qodana scan [flags]
 ```
 
-#### Options
+### Options
 
 ```
-  -l, --linter string                            Defines the linter to be used for analysis. Default value is determined based on project files. 
-                                                 Available values: qodana-jvm-community, qodana-jvm, qodana-jvm-android, qodana-android, qodana-php, qodana-python-community, qodana-python, qodana-js, qodana-cdnet, qodana-dotnet, qodana-ruby, qodana-cpp, qodana-go, qodana-clang
-                                                 !Legacy note!: Until version 2025.2 this parameter was used to define a docker image. This behavior is deprecated but supported for backward compatibility. Please use parameters --linter and --within-docker=true or --image instead.
-      --within-docker string                     Defines if analysis is performed within a docker container or not. 
-                                                 Set to 'false' for performing analysis in native mode. Set to 'true' for performing analysis within a docker container. 
-                                                 The image for container creation will be chosen automatically based on the value of the --linter param (e.g. jetbrains/qodana-jvm for --linter=qodana-jvm).
-                                                 Default value is defined dynamically depending on the current environment and project. 
-      --image string                             Defines an image to be used for analysis execution.
-                                                 Sets --within-docker=true. Sets --linter to the one preinstalled within the image.
-                                                 Available images are: jetbrains/qodana-jvm-community, jetbrains/qodana-jvm, jetbrains/qodana-python, jetbrains/qodana-dotnet, etc.
-                                                 Full list of images is available at https://hub.docker.com/u/jetbrains?search=qodana .
-  -i, --project-dir string                       Root directory of the inspected project (default ".")
-  -o, --results-dir string                       Override directory to save Qodana inspection results to (default <userCacheDir>/JetBrains/<linter>/results)
-      --cache-dir string                         Override cache directory (default <userCacheDir>/JetBrains/<linter>/cache)
-  -r, --report-dir string                        Override directory to save Qodana HTML report to (default <userCacheDir>/JetBrains/<linter>/results/report)
-      --print-problems                           Print all found problems by Qodana in the CLI output
-      --code-climate                             Generate a Code Climate report in SARIF format (compatible with GitLab Code Quality), will be saved to the results directory (default true if Qodana is executed on GitLab CI)
-      --bitbucket-insights                       Send the results BitBucket Code Insights, no additional configuration required if ran in BitBucket Pipelines (default true if Qodana is executed on BitBucket Pipelines)
-      --clear-cache                              Clear the local Qodana cache before running the analysis
-  -w, --show-report                              Serve HTML report on port
-      --port int                                 Port to serve the report on (default 8080)
-      --config string                            Set a custom configuration file instead of 'qodana.yaml'. Relative paths in the configuration will be based on the project directory.
-  -a, --analysis-id string                       Unique report identifier (GUID) to be used by Qodana Cloud (default "<generated-value>")
-  -b, --baseline string                          Provide the path to an existing SARIF report to be used in the baseline state calculation
-      --baseline-include-absent                  Include in the output report the results from the baseline run that are absent in the current run
-      --full-history --commit                    Go through the full commit history and run the analysis on each commit. If combined with --commit, analysis will be started from the given commit. Could take a long time.
-      --commit --full-history                    Base changes commit to reset to, resets git and runs an incremental analysis: analysis will be run only on changed files since the given commit. If combined with --full-history, full history analysis will be started from the given commit.
-      --fail-threshold string                    Set the number of problems that will serve as a quality gate. If this number is reached, the inspection run is terminated with a non-zero exit code
-      --disable-sanity                           Skip running the inspections configured by the sanity profile
-  -d, --only-directory string                    Directory inside the project-dir directory must be inspected. If not specified, the whole project is inspected
-  -n, --profile-name string                      Profile name defined in the project
-  -p, --profile-path string                      Path to the profile file
-      --run-promo string                         Set to 'true' to have the application run the inspections configured by the promo profile; set to 'false' otherwise (default: 'true' only if Qodana is executed with the default profile)
-      --script string                            Override the run scenario (default "default")
-      --coverage-dir string                      Directory with coverage data to process
-      --apply-fixes                              Apply all available quick-fixes, including cleanup
-      --cleanup                                  Run project cleanup
-      --property stringArray                     Set a JVM property to be used while running Qodana using the --property property.name=value1,value2,...,valueN notation
-  -s, --save-report                              Generate HTML report (default true)
-      --timeout int                              Qodana analysis time limit in milliseconds. If reached, the analysis is terminated, process exits with code timeout-exit-code. Negative – no timeout (default -1)
-      --timeout-exit-code int                    See timeout option (default 1)
-      --diff-start string                        Commit to start an diff run from. Only files changed between --diff-start and --diff-end will be analysed.
-      --diff-end string                          Commit to end an diff run on. Only files changed between --diff-start and --diff-end will be analysed.
-  -e, --env stringArray                          Only for container runs. Define additional environment variables for the Qodana container (you can use the flag multiple times). CLI is not reading full host environment variables and does not pass it to the Qodana container for security reasons
-  -v, --volume stringArray                       Only for container runs. Define additional volumes for the Qodana container (you can use the flag multiple times)
-  -u, --user string                              Only for container runs. User to run Qodana container as. Please specify user id – '$UID' or user id and group id $(id -u):$(id -g). Use 'root' to run as the root user (default: <the current user>)
-      --skip-pull                                Only for container runs. Skip pulling the latest Qodana container
-      --ide string                               Deprecated. Used to run Qodana without a docker container. Not compatible with --linter option. 
-  -h, --help                                     help for scan
+  -l, --linter string             Defines the linter to be used for analysis. Default value is determined based on project files. 
+                                  Available values: qodana-jvm-community, qodana-jvm, qodana-jvm-android, qodana-android, qodana-php, qodana-python-community, qodana-python, qodana-js, qodana-cdnet, qodana-dotnet, qodana-ruby, qodana-cpp, qodana-go, qodana-rust, qodana-clang. 
+                                  !Legacy note!: Until version 2025.2 this parameter was used to define a docker image. This behavior is deprecated but supported for backward compatibility. Please use parameters --linter and --within-docker=true or --image instead.
+      --within-docker string      Defines if analysis is performed within a docker container or not. 
+                                  Set to 'false' for performing analysis in native mode. Set to 'true' for performing analysis within a docker container. 
+                                  The image for container creation will be chosen automatically based on the value of the --linter param (e.g. jetbrains/qodana-jvm for --linter=qodana-jvm). 
+                                  Default value is defined dynamically depending on the current environment and project.
+      --image string              Defines an image to be used for analysis execution. 
+                                  Sets --within-docker=true. Sets --linter to the one preinstalled within the image. 
+                                  Available images are: jetbrains/qodana-jvm:2025.3-eap, jetbrains/qodana-dotnet:2025.3-eap, etc. Full list of images is available at https://hub.docker.com/u/jetbrains?search=qodana .
+  -i, --project-dir string        Root directory of the inspected project (default ".")
+      --repository-root string    Path to the root of the Git repository. This directory must be the same as --project-dir or contain the project directory inside it.
+  -o, --results-dir string        Override directory to save Qodana inspection results to (default <userCacheDir>/JetBrains/<linter>/results)
+      --cache-dir string          Override cache directory (default <userCacheDir>/JetBrains/<linter>/cache)
+  -r, --report-dir string         Override directory to save Qodana HTML report to (default <userCacheDir>/JetBrains/<linter>/results/report)
+      --print-problems            Print all found problems by Qodana in the CLI output
+      --code-climate              Generate a Code Climate report in SARIF format (compatible with GitLab code Quality), will be saved to the results directory (default true if Qodana is executed on GitLab CI)
+      --bitbucket-insights        Send the results BitBucket Code Insights, no additional configuration required if ran in BitBucket Pipelines (default true if Qodana is executed on BitBucket Pipelines)
+      --clear-cache               Clear the local Qodana cache before running the analysis
+  -w, --show-report               Serve HTML report on port
+      --port int                  Port to serve the report on (default 8080)
+      --config string             Set a custom configuration file instead of 'qodana.yaml'. Relative paths in the configuration will be based on the project directory.
+  -a, --analysis-id string        Unique report identifier (GUID) to be used by Qodana Cloud
+  -b, --baseline string           Provide the path to an existing SARIF report to be used in the baseline state calculation
+      --baseline-include-absent   Include in the output report the results from the baseline run that are absent in the current run
+      --full-history --commit     Go through the full commit history and run the analysis on each commit. If combined with --commit, analysis will be started from the given commit. Could take a long time.
+      --commit --full-history     Base changes commit to reset to, resets git and starts a diff run: analysis will be run only on changed files since the given commit. If combined with --full-history, full history analysis will be started from the given commit.
+      --fail-threshold string     Set the number of problems that will serve as a quality gate. If this number is reached, the inspection run is terminated with a non-zero exit code
+      --disable-sanity            Skip running the inspections configured by the sanity profile
+  -d, --only-directory string     Directory inside the project-dir directory must be inspected. If not specified, the whole project is inspected
+  -n, --profile-name string       Profile name defined in the project
+  -p, --profile-path string       Path to the profile file
+      --run-promo string          Set to 'true' to have the application run the inspections configured by the promo profile; set to 'false' otherwise (default: 'true' only if Qodana is executed with the default profile)
+      --script string             Override the run scenario (default "default")
+      --coverage-dir string       Directory with coverage data to process
+      --apply-fixes               Apply all available quick-fixes, including cleanup
+      --cleanup                   Run project cleanup
+      --property stringArray      Set a JVM property to be used while running Qodana using the --property property.name=value1,value2,...,valueN notation
+  -s, --save-report               Generate HTML report (default true)
+      --timeout int               Qodana analysis time limit in milliseconds. If reached, the analysis is terminated, process exits with code timeout-exit-code. Negative – no timeout (default -1)
+      --timeout-exit-code int     See timeout option (default 1)
+      --diff-start string         Commit to start a diff run from. Only files changed between --diff-start and --diff-end will be analysed.
+      --diff-end string           Commit to end a diff run on. Only files changed between --diff-start and --diff-end will be analysed.
+      --reverse                   Override the default run-scenario for diff runs to always use the reverse-scoped script
+      --no-statistics             [qodana-clang/qodana-dotnet] Disable sending anonymous statistics
+      --compile-commands string   [qodana-clang specific] Path to compile_commands.json. Should be relative to the project directory. (default "./build/compile_commands.json")
+      --clang-args string         [qodana-clang specific] Additional arguments for clang
+      --solution string           [qodana-cdnet specific] Relative path to solution file
+      --project string            [qodana-cdnet specific] Relative path to project file
+      --configuration string      [qodana-cdnet specific] Build configuration
+      --platform string           [qodana-cdnet specific] Build platform
+      --no-build                  [qodana-cdnet specific] Do not build the project before analysis
+  -e, --env stringArray           Only for container runs. Define additional environment variables for the Qodana container (you can use the flag multiple times). CLI is not reading full host environment variables and does not pass it to the Qodana container for security reasons
+  -v, --volume stringArray        Only for container runs. Define additional volumes for the Qodana container (you can use the flag multiple times)
+  -u, --user string               Only for container runs. Override user inside the Qodana container. Format: uid[:gid] (e.g. '0:0' for root, '$(id -u):$(id -g)' for current user). Default: current system user, or root in privileged images (default "auto")
+      --skip-pull                 Only for container runs. Skip pulling the latest Qodana container
+  -h, --help                      help for scan
 ```
 
-### show
+### Options inherited from parent commands
+
+```
+      --disable-update-checks   Disable check for updates
+      --log-level string        Set log-level for output (default "error")
+```
+
+## show
 
 Show a Qodana report
 
-#### Synopsis
+### Synopsis
 
-Show (serve) the latest Qodana report.
+Show (serve) the latest Qodana report. Or open the results directory if the flag is set.
 
 Due to JavaScript security restrictions, the generated report cannot
-be viewed via the file:// protocol (by double-clicking the index.html file).  
-https://www.jetbrains.com/help/qodana/html-report.html 
+be viewed via the file:// protocol (by double-clicking the index.html file).
+https://www.jetbrains.com/help/qodana/html-report.html
 This command serves the Qodana report locally and opens a browser to it.
 
-```shell
+```
 qodana show [flags]
 ```
 
-#### Options
+### Options
 
 ```
+      --config string        Set a custom configuration file instead of 'qodana.yaml'. Relative paths in the configuration will be based on the project directory.
   -d, --dir-only             Open report directory only, don't serve it
   -h, --help                 help for show
   -l, --linter string        Override linter to use
   -p, --port int             Specify port to serve report at (default 8080)
   -i, --project-dir string   Root directory of the inspected project (default ".")
-  -r, --report-dir string    Specify HTML report path (the one with index.html inside) (default <userCacheDir>/JetBrains/<linter>/results/report)
+  -r, --report-dir string    Override directory to save Qodana HTML report to (default <userCacheDir>/JetBrains/<linter>/results/report)
+  -o, --results-dir string   Override directory to save Qodana inspection results to (default <userCacheDir>/JetBrains/<linter>/results)
 ```
 
-### send
+### Options inherited from parent commands
+
+```
+      --disable-update-checks   Disable check for updates
+      --log-level string        Set log-level for output (default "error")
+```
+
+## send
 
 Send a Qodana report to Cloud
 
-#### Synopsis
+### Synopsis
 
-Send the report (qodana.sarif.json and other analysis results) to Qodana Cloud.
+Send the report (qodana.sarif.json and other analysis results) to Qodana Cloud. 
 
 If report directory is not specified, the latest report will be fetched from the default linter results location.
 
-Supply the qodana project token by declaring `QODANA_TOKEN` as environment variable.
+If you are using other Qodana Cloud instance than https://qodana.cloud/, override it by declaring the QODANA_ENDPOINT environment variable.
 
-If you are using another Qodana Cloud instance than https://qodana.cloud/, override it by declaring `QODANA_ENDPOINT` as environment variable.
-
-```shell
+```
 qodana send [flags]
 ```
 
-#### Options
+### Options
 
 ```
+  -a, --analysis-id string   Unique report identifier (GUID) to be used by Qodana Cloud
+      --config string        Set a custom configuration file instead of 'qodana.yaml'. Relative paths in the configuration will be based on the project directory.
   -h, --help                 help for send
   -l, --linter string        Override linter to use
   -i, --project-dir string   Root directory of the inspected project (default ".")
-  -r, --report-dir string    Specify HTML report path (the one with index.html inside)  (default "/Users/tv/Library/Caches/JetBrains/Qodana/e3b0c442-250e5c26/results/report")
-  -o, --results-dir string   Override directory to save Qodana inspection results to (default "/Users/tv/Library/Caches/JetBrains/Qodana/e3b0c442-250e5c26/results")
-  -y, --yaml-name string     Override qodana.yaml name
+  -r, --report-dir string    Override directory to save Qodana HTML report to (default <userCacheDir>/JetBrains/<linter>/results/report)
+  -o, --results-dir string   Override directory to save Qodana inspection results to (default <userCacheDir>/JetBrains/<linter>/results)
 ```
 
-### view
+### Options inherited from parent commands
+
+```
+      --disable-update-checks   Disable check for updates
+      --log-level string        Set log-level for output (default "error")
+```
+
+## pull
+
+Pull latest version of linter
+
+### Synopsis
+
+An alternative to pull an image.
+
+```
+qodana pull [flags]
+```
+
+### Options
+
+```
+      --config string        Set a custom configuration file instead of 'qodana.yaml'. Relative paths in the configuration will be based on the project directory.
+  -h, --help                 help for pull
+      --image string         Image to pull
+  -l, --linter string        Override linter to use
+  -i, --project-dir string   Root directory of the inspected project (default ".")
+```
+
+### Options inherited from parent commands
+
+```
+      --disable-update-checks   Disable check for updates
+      --log-level string        Set log-level for output (default "error")
+```
+
+## view
 
 View SARIF files in CLI
 
-#### Synopsis
+### Synopsis
 
 Preview all problems found in SARIF files in CLI.
 
-```shell
+```
 qodana view [flags]
 ```
 
-#### Options
+### Options
 
 ```
   -h, --help                help for view
-  -f, --sarif-file string   Path to the SARIF file (default "./qodana.sarif.json")
+  -f, --sarif-file string   Path to the SARIF file (default "qodana.sarif.json")
 ```
 
-### contributors
+### Options inherited from parent commands
 
-A command-line helper for Qodana pricing to calculate active contributors* in the given repository.
+```
+      --disable-update-checks   Disable check for updates
+      --log-level string        Set log-level for output (default "error")
+```
 
-#### Synopsis
+## contributors
 
-* An active contributor is anyone who has made a commit to any
-  of the projects you’ve registered in Qodana Cloud within the last 90 days,
-  regardless of when those commits were originally authored. The number of such
-  contributors will be calculated using both the commit author information
-  and the timestamp for when their contribution to the project was pushed.
+Calculate active project contributors
 
-** Ultimate Plus plan currently has a discount, more information can be found on https://www.jetbrains.com/qodana/buy/
+### Synopsis
 
+A command-line helper for Qodana pricing[1] to calculate active contributor(s)[2] in the given local repositories.
 
-```shell
+[1] More information about available Qodana plans can be found at https://www.jetbrains.com/qodana/buy/
+
+```
 qodana contributors [flags]
 ```
 
-#### Options
+### Options
 
 ```
   -d, --days int                  Number of days since when to calculate the number of active contributors (default 90)
@@ -328,22 +390,38 @@ qodana contributors [flags]
   -i, --project-dir stringArray   Project directory, can be specified multiple times to check multiple projects, if not specified, current directory will be used
 ```
 
-### cloc
+### Options inherited from parent commands
+
+```
+      --disable-update-checks   Disable check for updates
+      --log-level string        Set log-level for output (default "error")
+```
+
+## cloc
+
+Calculate lines of code for projects with boyter/scc
+
+### Synopsis
 
 A command-line helper for project statistics: languages, lines of code. Powered by boyter/scc. For contributors, use "qodana contributors" command.
 
-#### Synopsis
-
-```shell
+```
 qodana cloc [flags]
 ```
 
-#### Options
+### Options
 
 ```
   -h, --help                      help for cloc
   -o, --output string             Output format, can be [tabular, wide, json, csv, csv-stream, cloc-yaml, html, html-table, sql, sql-insert, openmetrics] (default "tabular")
   -i, --project-dir stringArray   Project directory, can be specified multiple times to check multiple projects, if not specified, current directory will be used
+```
+
+### Options inherited from parent commands
+
+```
+      --disable-update-checks   Disable check for updates
+      --log-level string        Set log-level for output (default "error")
 ```
 
 ## Why

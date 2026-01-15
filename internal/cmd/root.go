@@ -122,6 +122,11 @@ func newRootCommand() *cobra.Command {
 
 var rootCommand = newRootCommand()
 
+// GetRootCommand returns the root command for documentation generation.
+func GetRootCommand() *cobra.Command {
+	return rootCommand
+}
+
 // InitCli adds all child commands to the root command.
 func InitCli() {
 	rootCommand.AddCommand(

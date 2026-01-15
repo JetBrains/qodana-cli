@@ -1,0 +1,22 @@
+name: '📖 Docs'
+on:
+  pull_request:
+    paths:
+      - 'internal/cmd/**'
+      - 'internal/platform/cmd/**'
+      - 'scripts/generate-docs.go'
+      - 'README.md'
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    name: Check README.md
+    steps:
+      - uses: actions/checkout@v6
+      - uses: ./.github/actions/mock-dependencies
+      - uses: actions/setup-go@v6
+        with:
+          cache-dependency-path: "**/*.sum"
+          go-version-file: go.mod
+      - name: Check README.md is up to date
+        run: go run scripts/generate-docs.go --check
