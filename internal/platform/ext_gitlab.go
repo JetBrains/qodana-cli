@@ -92,7 +92,7 @@ func extractLocationProperties(r *sarif.Result) *LocationProperties {
 	}
 }
 
-// sarifResultToCodeClimate converts a SARIF result to a code Climate issue.
+// sarifResultToCodeClimate converts a SARIF result to a Code Climate issue.
 func sarifResultToCodeClimate(r *sarif.Result) CCIssue {
 	loc := Location{
 		Path: "",
