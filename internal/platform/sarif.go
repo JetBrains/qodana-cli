@@ -448,11 +448,10 @@ func getFingerprint(r *sarif.Result) string {
 		fingerprint, ok := r.PartialFingerprints["equalIndicator/v2"]
 		if ok {
 			return fingerprint
-		} else {
-			fingerprint, ok = r.PartialFingerprints["equalIndicator/v1"]
-			if ok {
-				return fingerprint
-			}
+		}
+		fingerprint, ok = r.PartialFingerprints["equalIndicator/v1"]
+		if ok {
+			return fingerprint
 		}
 	}
 	log.Fatalf("failed to get fingerprint from result: %v", r)

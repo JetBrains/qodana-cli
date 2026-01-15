@@ -400,7 +400,6 @@ func getPluginsURL(ideUrl string) string {
 		return strings.Replace(pluginsUrl, ".sit", "-custom-plugins.zip", 1)
 	} else if strings.Contains(pluginsUrl, ".win.zip") {
 		return strings.Replace(pluginsUrl, ".win.zip", "-custom-plugins.zip", 1)
-	} else {
-		return strings.Replace(pluginsUrl, ".tar.gz", "-custom-plugins.zip", 1)
 	}
+	return strings.Replace(pluginsUrl, ".tar.gz", "-custom-plugins.zip", 1)
 }

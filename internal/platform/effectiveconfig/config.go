@@ -249,6 +249,7 @@ func getEffectiveQodanaYamlData(effectiveConfigDir string) (Files, error) {
 	}, nil
 }
 
+//goland:noinspection GoRedundantElseInIf
 func isFileExists(path string) bool {
 	if _, err := os.Stat(path); err == nil {
 		return true

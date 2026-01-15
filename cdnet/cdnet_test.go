@@ -82,9 +82,8 @@ func TestLinterRun(t *testing.T) {
 	resultsSize := len(r.Runs[0].Results)
 	if resultsSize == 0 {
 		t.Fatal("No results found in SARIF file")
-	} else {
-		fmt.Println("Found issues: ", resultsSize)
 	}
+	fmt.Println("Found issues: ", resultsSize)
 
 	resultAllProblems, err := os.ReadFile(filepath.Join(outputDir, "report", "result-allProblems.json"))
 	if err != nil {

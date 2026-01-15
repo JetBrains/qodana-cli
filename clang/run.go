@@ -48,6 +48,7 @@ func (l ClangLinter) RunAnalysis(c thirdpartyscan.Context) error {
 
 //go:generate go run scripts/prepare-clang-tidy-binary.go
 
+//goland:noinspection GoRedundantElseInIf
 func (l ClangLinter) MountTools(path string) (map[string]string, error) {
 	clang := thirdpartyscan.Clang
 
