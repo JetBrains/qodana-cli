@@ -56,6 +56,11 @@ jobs:
         with:
           cache-dependency-path: "**/*.sum"
           go-version-file: go.mod
+      - name: Download CLI dependencies
+        # Golangci-lint, in their infinite wisdom, do not allow you to disable typecheck.
+        # Because of this, the project NEEDS to be compileable to be linted.
+        # https://golangci-lint.run/docs/welcome/faq/#why-do-you-have-typecheck-errors
+        run: go generate -v ./internal/tooling/...
       - name: golangci-lint
         uses: golangci/golangci-lint-action@v9
         with:
@@ -151,9 +156,7 @@ jobs:
         shell: bash
         run: >-
           touch
-          internal/tooling/baseline-cli.jar
           internal/tooling/intellij-report-converter.jar
-          internal/tooling/qodana-fuser.jar
       - name: Download CLI dependencies
         run: go generate -v ./internal/tooling/...
       - name: Build CLI only

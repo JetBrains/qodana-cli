@@ -18,5 +18,6 @@ package tooling
 
 import _ "embed"
 
+//go:generate go run scripts/download-resource.go baseline-cli.jar
 //go:embed baseline-cli.jar
 var BaselineCli []byte

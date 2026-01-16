@@ -27,8 +27,6 @@ type artifact struct {
 }
 
 var toolingArtifacts = []artifact{
-	{"StaticAnalysis_Base_Build_baseline_cli", `baseline-cli-[^"]*\.jar`, "", "internal/tooling/baseline-cli.jar"},
-	{"StaticAnalysis_Base_Build_fuser", `qodana-fuser-[^"]*\.jar`, "", "internal/tooling/qodana-fuser.jar"},
 	{"StaticAnalysis_Build_UiAndConverter", "intellij-report-converter.jar", "", "internal/tooling/intellij-report-converter.jar"},
 }
 

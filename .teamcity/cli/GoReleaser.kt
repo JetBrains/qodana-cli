@@ -106,13 +106,13 @@ class GoReleaser(
                         GORELEASER_CONFIG=".goreleaser.yaml"
                         PREFIX="."
                     fi
-                    
+
                     # dirty workarounds until we move to github or support 253
                     if [ -d "${'$'}PREFIX/internal/tooling" ] && ls ${'$'}PREFIX/internal/tooling/*.go >/dev/null 2>&1; then
                         go generate -v ${'$'}PREFIX/internal/tooling/...
                     elif [ -d "${'$'}PREFIX/tooling" ]; then
                         # Copy JARs from internal/tooling to tooling (artifacts are downloaded to internal/tooling)
-                        for jar in baseline-cli.jar qodana-fuser.jar intellij-report-converter.jar; do
+                        for jar in intellij-report-converter.jar; do
                             if [ -f "${'$'}PREFIX/internal/tooling/${'$'}jar" ]; then
                                 cp -v "${'$'}PREFIX/internal/tooling/${'$'}jar" "${'$'}PREFIX/tooling/"
                             else
@@ -123,7 +123,7 @@ class GoReleaser(
                         (cd ${'$'}PREFIX/tooling && go generate -v ./...)
                     elif [ -d "../tooling" ]; then
                         # Branch 253 structure: tooling/ at root, running from cli/
-                        for jar in baseline-cli.jar qodana-fuser.jar intellij-report-converter.jar; do
+                        for jar in intellij-report-converter.jar; do
                             if [ -f "../internal/tooling/${'$'}jar" ]; then
                                 cp -v "../internal/tooling/${'$'}jar" "../tooling/"
                             else
@@ -133,7 +133,7 @@ class GoReleaser(
                         done
                         (cd ../tooling && go generate -v ./...)
                     fi
-                    
+
                     ARCH=${'$'}(uname -m)
                     case ${'$'}ARCH in
                         x86_64) ARCH_SUFFIX="amd64" ;;
@@ -149,9 +149,9 @@ class GoReleaser(
                     (cd /tmp && sha256sum -c ${'$'}CODESIGN_BIN.sha256)
                     mv /tmp/${'$'}CODESIGN_BIN /usr/local/bin/codesign
                     chmod +x /usr/local/bin/codesign
-                    
+
                     export GORELEASER_CURRENT_TAG=${'$'}(git describe --tags ${'$'}(git rev-list --tags --max-count=1))
-                    goreleaser release --config ${'$'}GORELEASER_CONFIG --clean ${arguments.joinToString(" ")} 
+                    goreleaser release --config ${'$'}GORELEASER_CONFIG --clean ${arguments.joinToString(" ")}
                 """.trimIndent()
             } else {
                 """
@@ -163,13 +163,13 @@ class GoReleaser(
                         GORELEASER_CONFIG=".goreleaser.yaml"
                         PREFIX="."
                     fi
-                    
+
                     # dirty workarounds until we move to github or support 253
                     if [ -d "${'$'}PREFIX/internal/tooling" ] && ls ${'$'}PREFIX/internal/tooling/*.go >/dev/null 2>&1; then
                         go generate -v ${'$'}PREFIX/internal/tooling/...
                     elif [ -d "${'$'}PREFIX/tooling" ]; then
                         # Copy JARs from internal/tooling to tooling (artifacts are downloaded to internal/tooling)
-                        for jar in baseline-cli.jar qodana-fuser.jar intellij-report-converter.jar; do
+                        for jar in intellij-report-converter.jar; do
                             if [ -f "${'$'}PREFIX/internal/tooling/${'$'}jar" ]; then
                                 cp -v "${'$'}PREFIX/internal/tooling/${'$'}jar" "${'$'}PREFIX/tooling/"
                             else
@@ -180,7 +180,7 @@ class GoReleaser(
                         (cd ${'$'}PREFIX/tooling && go generate -v ./...)
                     elif [ -d "../tooling" ]; then
                         # Branch 253 structure: tooling/ at root, running from cli/
-                        for jar in baseline-cli.jar qodana-fuser.jar intellij-report-converter.jar; do
+                        for jar in intellij-report-converter.jar; do
                             if [ -f "../internal/tooling/${'$'}jar" ]; then
                                 cp -v "../internal/tooling/${'$'}jar" "../tooling/"
                             else
@@ -190,7 +190,7 @@ class GoReleaser(
                         done
                         (cd ../tooling && go generate -v ./...)
                     fi
-                    
+
                     export GORELEASER_CURRENT_TAG=${'$'}(git describe --tags ${'$'}(git rev-list --tags --max-count=1))
                     goreleaser release --config ${'$'}GORELEASER_CONFIG --clean ${arguments.joinToString(" ")}
                 """.trimIndent()

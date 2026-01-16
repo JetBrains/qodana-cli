@@ -52,7 +52,7 @@ go generate ./internal/tooling/...
 
 1. Create empty stubs for closed-source JARs (tests using them will be skipped):
    ```sh
-   touch internal/tooling/baseline-cli.jar internal/tooling/intellij-report-converter.jar internal/tooling/qodana-fuser.jar
+   touch internal/tooling/intellij-report-converter.jar
    ```
 2. Download public JARs via go generate:
    ```sh

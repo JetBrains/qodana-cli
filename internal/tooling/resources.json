@@ -8,5 +8,15 @@
         "url": "https://packages.jetbrains.team/maven/p/ij/intellij-dependencies/org/jetbrains/qodana/publisher-cli/$version/publisher-cli-$version.jar",
         "version": "3.0.11",
         "sha256": "b95f2168d4dcd2ded275aaee943aafc408ffb3d99b4e38b0f6a322e419a8af8f"
+    },
+    "baseline-cli.jar": {
+        "url": "https://packages.jetbrains.team/maven/p/ij/intellij-dependencies/com/jetbrains/qodana/baseline-cli/$version/baseline-cli-$version.jar",
+        "version": "1.0.4",
+        "sha256": "57066f56c2c2356e127c6d621f849fd8daf8b101a1219c368d5fb70b9e7299e7"
+    },
+    "qodana-fuser.jar": {
+        "url": "https://packages.jetbrains.team/maven/p/ij/intellij-dependencies/org/jetbrains/qodana/qodana-fuser/$version/qodana-fuser-$version.jar",
+        "version": "1.0.26",
+        "sha256": "bb1c9d85d4a095c0b3329f37ffdbd400e12823062a2db4b79129ee2a157c618a"
     }
 }
