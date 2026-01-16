@@ -102,10 +102,9 @@ func submoduleUpdate(cwd string, force bool, logdir string) error {
 	if !force {
 		_, _, err := gitRun(cwd, []string{"submodule", "update", "--init", "--recursive"}, logdir)
 		return err
-	} else {
-		_, _, err := gitRun(cwd, []string{"submodule", "update", "--init", "--recursive", "--force"}, logdir)
-		return err
 	}
+	_, _, err := gitRun(cwd, []string{"submodule", "update", "--init", "--recursive", "--force"}, logdir)
+	return err
 }
 
 // Clean cleans the git repository.

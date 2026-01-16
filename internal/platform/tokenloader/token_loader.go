@@ -96,11 +96,10 @@ func ValidateTokenPrintProject(token string) {
 	if projectName, err := client.RequestProjectName(); err != nil {
 		msg.ErrorMessage(cloud.InvalidTokenMessage)
 		os.Exit(1)
-	} else {
-		if !qdenv.IsContainer() {
-			msg.SuccessMessage("Linked %s project: %s", cloud.GetCloudRootEndpoint().Url, projectName)
-		}
+	} else if !qdenv.IsContainer() {
+		msg.SuccessMessage("Linked %s project: %s", cloud.GetCloudRootEndpoint().Url, projectName)
 	}
+
 }
 
 // saveCloudToken saves token to the system keyring
@@ -150,20 +149,19 @@ func setupToken(projectDir string, repositoryRoot, id string, logdir string) str
 	if token == "" {
 		msg.ErrorMessage("Token cannot be empty")
 		return ""
-	} else {
-		client := cloud.GetCloudApiEndpoints().NewCloudApiClient(token)
-		_, err := client.RequestProjectName()
-		if err != nil {
-			msg.ErrorMessage("Invalid token, try again")
-			return ""
-		}
-		err = saveCloudToken(id, token)
-		if err != nil {
-			msg.ErrorMessage("Failed to save credentials: %s", err)
-			return ""
-		}
-		return token
 	}
+	client := cloud.GetCloudApiEndpoints().NewCloudApiClient(token)
+	_, err = client.RequestProjectName()
+	if err != nil {
+		msg.ErrorMessage("Invalid token, try again")
+		return ""
+	}
+	err = saveCloudToken(id, token)
+	if err != nil {
+		msg.ErrorMessage("Failed to save credentials: %s", err)
+		return ""
+	}
+	return token
 }
 
 func getTokenFromKeychain(refresh bool, id string) string {

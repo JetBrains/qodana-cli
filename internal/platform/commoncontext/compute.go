@@ -293,9 +293,8 @@ func computeResultsDir(resultsDirFromCliOptions string, linterDir string) string
 	}
 	if qdenv.IsContainer() {
 		return qdcontainer.DataResultsDir
-	} else {
-		return filepath.Join(linterDir, "results")
 	}
+	return filepath.Join(linterDir, "results")
 }
 
 func computeCacheDir(cacheDirFromCliOptions string, linterDir string) string {
@@ -304,9 +303,8 @@ func computeCacheDir(cacheDirFromCliOptions string, linterDir string) string {
 	}
 	if qdenv.IsContainer() {
 		return qdcontainer.DataCacheDir
-	} else {
-		return filepath.Join(linterDir, "cache")
 	}
+	return filepath.Join(linterDir, "cache")
 }
 
 func computeReportDir(reportDirFromCliOptions string, resultsDir string) string {
@@ -315,7 +313,6 @@ func computeReportDir(reportDirFromCliOptions string, resultsDir string) string 
 	}
 	if qdenv.IsContainer() {
 		return qdcontainer.DataResultsReportDir
-	} else {
-		return filepath.Join(resultsDir, "report")
 	}
+	return filepath.Join(resultsDir, "report")
 }

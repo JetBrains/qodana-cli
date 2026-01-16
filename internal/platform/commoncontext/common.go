@@ -143,9 +143,8 @@ func GuessAnalyzerByLinterParam(linterParam string, withinDocker string) product
 			Linter: linter,
 			Eap:    !product.IsReleased || linter.EapOnly,
 		}
-	} else {
-		log.Fatalf("Wrong value for within-docker param: %s. Use true/false.", withinDocker)
 	}
+	log.Fatalf("Wrong value for within-docker param: %s. Use true/false.", withinDocker)
 	return nil
 }
 
@@ -361,23 +360,22 @@ func openReport(cloudUrl string, path string, port int) {
 			}
 		}
 		return
-	} else {
-		url := fmt.Sprintf("http://localhost:%d", port)
-		go func() {
-			resp, err := http.Get(url)
-			if err == nil && resp.StatusCode == 200 {
-				err := utils.OpenBrowser(url)
-				if err != nil {
-					return
-				}
+	}
+	url := fmt.Sprintf("http://localhost:%d", port)
+	go func() {
+		resp, err := http.Get(url)
+		if err == nil && resp.StatusCode == 200 {
+			err := utils.OpenBrowser(url)
+			if err != nil {
+				return
 			}
-		}()
-		http.Handle("/", noCache(http.FileServer(http.Dir(path))))
-		err := http.ListenAndServe(fmt.Sprintf(":%d", port), nil)
-		if err != nil {
-			msg.WarningMessage("Problem serving report, %s\n", err.Error())
-			return
 		}
+	}()
+	http.Handle("/", noCache(http.FileServer(http.Dir(path))))
+	err := http.ListenAndServe(fmt.Sprintf(":%d", port), nil)
+	if err != nil {
+		msg.WarningMessage("Problem serving report, %s\n", err.Error())
+		return
 	}
 	_, _ = fmt.Scan()
 }
