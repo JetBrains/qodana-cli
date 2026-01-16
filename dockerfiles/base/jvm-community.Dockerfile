@@ -1,5 +1,5 @@
-ARG BASE_TAG="bookworm-slim"
-FROM debian:$BASE_TAG
+ARG BASE_TAG="trixie"
+FROM dhi.io/debian-base:$BASE_TAG
 
 ENV HOME="/root" \
     LC_ALL="en_US.UTF-8" \
@@ -19,6 +19,7 @@ RUN --mount=target=/var/lib/apt/lists,type=cache,sharing=locked \
         ca-certificates \
         curl \
         fontconfig \
+        gawk \
         git \
         git-lfs \
         gnupg2 \
