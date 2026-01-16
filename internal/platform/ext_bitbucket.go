@@ -67,7 +67,7 @@ var (
 	}
 )
 
-// sendBitBucketReport sends annotations to BitBucket code Insights
+// sendBitBucketReport sends annotations to BitBucket Code Insights
 func sendBitBucketReport(annotations []bbapi.ReportAnnotation, toolName, cloudUrl, reportId string) error {
 	client, ctx := getBitBucketClient(), getBitBucketContext()
 	repoOwner, repoName, sha := qdenv.GetBitBucketRepoOwner(), qdenv.GetBitBucketRepoName(), qdenv.GetBitBucketCommit()
@@ -123,7 +123,7 @@ func getBitBucketContext() context.Context {
 	return ctx
 }
 
-// buildReport builds a report to be sent to BitBucket code Insights
+// buildReport builds a report to be sent to BitBucket Code Insights
 func buildReport(toolName string, annotations []bbapi.ReportAnnotation, cloudUrl string) bbapi.Report {
 	var result string
 	if len(annotations) == 0 {
@@ -143,7 +143,7 @@ func buildReport(toolName string, annotations []bbapi.ReportAnnotation, cloudUrl
 	return *data
 }
 
-// buildAnnotation builds an annotation to be sent to BitBucket code Insights
+// buildAnnotation builds an annotation to be sent to BitBucket Code Insights
 func buildAnnotation(r *sarif.Result, ruleDescription string, reportLink string) bbapi.ReportAnnotation {
 	bbSeverity, ok := toBitBucketSeverity[getSeverity(r)]
 	if !ok {
