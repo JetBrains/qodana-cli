@@ -151,9 +151,7 @@ jobs:
         shell: bash
         run: >-
           touch
-          internal/tooling/baseline-cli.jar
           internal/tooling/intellij-report-converter.jar
-          internal/tooling/qodana-fuser.jar
       - name: Download CLI dependencies
         run: go generate -v ./internal/tooling/...
       - name: Build CLI only
