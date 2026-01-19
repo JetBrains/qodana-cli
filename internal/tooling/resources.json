@@ -18,5 +18,10 @@
         "url": "https://packages.jetbrains.team/maven/p/ij/intellij-dependencies/org/jetbrains/qodana/qodana-fuser/$version/qodana-fuser-$version.jar",
         "version": "1.0.26",
         "sha256": "bb1c9d85d4a095c0b3329f37ffdbd400e12823062a2db4b79129ee2a157c618a"
+    },
+    "intellij-report-converter.jar": {
+        "url": "https://packages.jetbrains.team/maven/p/ij/intellij-dependencies/org/jetbrains/qodana/intellij-report-converter/$version/intellij-report-converter-$version.jar",
+        "version": "0.11.76",
+        "sha256": "702ac7673cc4c2884cc81a5f203c16fb4d22b10b6ab515af101c62d2713902ab"
     }
 }

@@ -287,7 +287,6 @@ class GoReleaser(
         }
     }
     dependencies {
-        getQodanaToolingArtifacts(tool = wd)
         when (wd) {
             "clang" -> getClangArtifacts()
             "cdnet" -> getDotNetArtifacts(branch, tool = wd)
