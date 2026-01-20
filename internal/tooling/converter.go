@@ -18,6 +18,6 @@ package tooling
 
 import _ "embed"
 
-//go:generate go run scripts/download-resource.go intellij-report-converter.jar
+//go:generate go run download-resource.go -artifact intellij-report-converter
 //go:embed intellij-report-converter.jar
 var Converter []byte

@@ -189,3 +189,17 @@ $RECYCLE.BIN/
 dist/
 .vscode/
 .env
+
+# Junie workspace
+.junie/
+
+# Generated binaries
+/cli/cli
+/cli/qd
+
+# Cli generated .idea
+/cli/.idea
+
+# Platform logs
+/platform/*-err.log
+/platform/*-out.log
