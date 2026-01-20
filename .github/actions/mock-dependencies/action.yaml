@@ -14,7 +14,6 @@ runs:
         cdnet/clt.zip
         cdnet/clt.sha256.bin
         cdnet/clt.path.txt
-        internal/tooling/intellij-report-converter.jar
         clang/clang-tidy-linux-amd64.tar.gz
         clang/clang-tidy-linux-amd64.tar.gz.sha256.bin
         clang/clang-tidy-linux-arm64.tar.gz

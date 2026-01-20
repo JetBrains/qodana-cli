@@ -26,21 +26,52 @@ type artifact struct {
 	destPath    string
 }
 
-var toolingArtifacts = []artifact{
-	{"StaticAnalysis_Build_UiAndConverter", "intellij-report-converter.jar", "", "internal/tooling/intellij-report-converter.jar"},
-}
-
 var clangArtifacts = []artifact{
-	{"ijplatform_master_CIDR_ExternalTools_VanillaClangTidyAll", `clang-tidy-[^"]*-linux-x64\.tar\.gz`, "", "clang/clang-tidy-linux-amd64.tar.gz"},
-	{"ijplatform_master_CIDR_ExternalTools_VanillaClangTidyAll", `clang-tidy-[^"]*-linux-aarch64\.tar\.gz`, "", "clang/clang-tidy-linux-arm64.tar.gz"},
-	{"ijplatform_master_CIDR_ExternalTools_VanillaClangTidyAll", `clang-tidy-[^"]*-mac-x64\.tar\.gz`, "", "clang/clang-tidy-darwin-amd64.tar.gz"},
-	{"ijplatform_master_CIDR_ExternalTools_VanillaClangTidyAll", `clang-tidy-[^"]*-mac-aarch64\.tar\.gz`, "", "clang/clang-tidy-darwin-arm64.tar.gz"},
-	{"ijplatform_master_CIDR_ExternalTools_VanillaClangTidyAll", `clang-tidy-[^"]*-win-x64\.zip`, "", "clang/clang-tidy-windows-amd64.zip"},
-	{"ijplatform_master_CIDR_ExternalTools_VanillaClangTidyAll", `clang-tidy-[^"]*-win-aarch64\.zip`, "", "clang/clang-tidy-windows-arm64.zip"},
+	{
+		"ijplatform_master_CIDR_ExternalTools_VanillaClangTidyAll",
+		`clang-tidy-[^"]*-linux-x64\.tar\.gz`,
+		"",
+		"clang/clang-tidy-linux-amd64.tar.gz",
+	},
+	{
+		"ijplatform_master_CIDR_ExternalTools_VanillaClangTidyAll",
+		`clang-tidy-[^"]*-linux-aarch64\.tar\.gz`,
+		"",
+		"clang/clang-tidy-linux-arm64.tar.gz",
+	},
+	{
+		"ijplatform_master_CIDR_ExternalTools_VanillaClangTidyAll",
+		`clang-tidy-[^"]*-mac-x64\.tar\.gz`,
+		"",
+		"clang/clang-tidy-darwin-amd64.tar.gz",
+	},
+	{
+		"ijplatform_master_CIDR_ExternalTools_VanillaClangTidyAll",
+		`clang-tidy-[^"]*-mac-aarch64\.tar\.gz`,
+		"",
+		"clang/clang-tidy-darwin-arm64.tar.gz",
+	},
+	{
+		"ijplatform_master_CIDR_ExternalTools_VanillaClangTidyAll",
+		`clang-tidy-[^"]*-win-x64\.zip`,
+		"",
+		"clang/clang-tidy-windows-amd64.zip",
+	},
+	{
+		"ijplatform_master_CIDR_ExternalTools_VanillaClangTidyAll",
+		`clang-tidy-[^"]*-win-aarch64\.zip`,
+		"",
+		"clang/clang-tidy-windows-arm64.zip",
+	},
 }
 
 var cdnetArtifacts = []artifact{
-	{"ijplatform_master_Net_PostCompile_TriggerAllInstallers", `JetBrains\.ReSharper\.GlobalTools\.[^"]*\.nupkg`, "Artifacts.InstallersPortablesZips", "cdnet/clt.zip"},
+	{
+		"ijplatform_master_Net_PostCompile_TriggerAllInstallers",
+		`JetBrains\.ReSharper\.GlobalTools\.[^"]*\.nupkg`,
+		"Artifacts.InstallersPortablesZips",
+		"cdnet/clt.zip",
+	},
 }
 
 func main() {
@@ -97,7 +128,12 @@ func download(a artifact, dest string) error {
 	if a.subPath != "" {
 		urlPath = a.subPath + "/" + artifactName
 	}
-	url := fmt.Sprintf("%s/app/rest/builds/buildType:%s,status:SUCCESS,count:1/artifacts/content/%s", buildserver, a.buildTypeID, urlPath)
+	url := fmt.Sprintf(
+		"%s/app/rest/builds/buildType:%s,status:SUCCESS,count:1/artifacts/content/%s",
+		buildserver,
+		a.buildTypeID,
+		urlPath,
+	)
 
 	log.Printf("Downloading %s", a.destPath)
 	if err := os.MkdirAll(filepath.Dir(dest), 0755); err != nil {

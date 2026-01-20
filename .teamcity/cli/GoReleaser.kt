@@ -107,33 +107,6 @@ class GoReleaser(
                         PREFIX="."
                     fi
 
-                    # dirty workarounds until we move to github or support 253
-                    if [ -d "${'$'}PREFIX/internal/tooling" ] && ls ${'$'}PREFIX/internal/tooling/*.go >/dev/null 2>&1; then
-                        go generate -v ${'$'}PREFIX/internal/tooling/...
-                    elif [ -d "${'$'}PREFIX/tooling" ]; then
-                        # Copy JARs from internal/tooling to tooling (artifacts are downloaded to internal/tooling)
-                        for jar in intellij-report-converter.jar; do
-                            if [ -f "${'$'}PREFIX/internal/tooling/${'$'}jar" ]; then
-                                cp -v "${'$'}PREFIX/internal/tooling/${'$'}jar" "${'$'}PREFIX/tooling/"
-                            else
-                                echo "ERROR: ${'$'}PREFIX/internal/tooling/${'$'}jar not found" >&2
-                                ls -la ${'$'}PREFIX/internal/tooling/ >&2 || true
-                            fi
-                        done
-                        (cd ${'$'}PREFIX/tooling && go generate -v ./...)
-                    elif [ -d "../tooling" ]; then
-                        # Branch 253 structure: tooling/ at root, running from cli/
-                        for jar in intellij-report-converter.jar; do
-                            if [ -f "../internal/tooling/${'$'}jar" ]; then
-                                cp -v "../internal/tooling/${'$'}jar" "../tooling/"
-                            else
-                                echo "ERROR: ../internal/tooling/${'$'}jar not found" >&2
-                                ls -la ../internal/tooling/ >&2 || true
-                            fi
-                        done
-                        (cd ../tooling && go generate -v ./...)
-                    fi
-
                     ARCH=${'$'}(uname -m)
                     case ${'$'}ARCH in
                         x86_64) ARCH_SUFFIX="amd64" ;;
@@ -162,33 +135,6 @@ class GoReleaser(
                     else
                         GORELEASER_CONFIG=".goreleaser.yaml"
                         PREFIX="."
-                    fi
-
-                    # dirty workarounds until we move to github or support 253
-                    if [ -d "${'$'}PREFIX/internal/tooling" ] && ls ${'$'}PREFIX/internal/tooling/*.go >/dev/null 2>&1; then
-                        go generate -v ${'$'}PREFIX/internal/tooling/...
-                    elif [ -d "${'$'}PREFIX/tooling" ]; then
-                        # Copy JARs from internal/tooling to tooling (artifacts are downloaded to internal/tooling)
-                        for jar in intellij-report-converter.jar; do
-                            if [ -f "${'$'}PREFIX/internal/tooling/${'$'}jar" ]; then
-                                cp -v "${'$'}PREFIX/internal/tooling/${'$'}jar" "${'$'}PREFIX/tooling/"
-                            else
-                                echo "ERROR: ${'$'}PREFIX/internal/tooling/${'$'}jar not found" >&2
-                                ls -la ${'$'}PREFIX/internal/tooling/ >&2 || true
-                            fi
-                        done
-                        (cd ${'$'}PREFIX/tooling && go generate -v ./...)
-                    elif [ -d "../tooling" ]; then
-                        # Branch 253 structure: tooling/ at root, running from cli/
-                        for jar in intellij-report-converter.jar; do
-                            if [ -f "../internal/tooling/${'$'}jar" ]; then
-                                cp -v "../internal/tooling/${'$'}jar" "../tooling/"
-                            else
-                                echo "ERROR: ../internal/tooling/${'$'}jar not found" >&2
-                                ls -la ../internal/tooling/ >&2 || true
-                            fi
-                        done
-                        (cd ../tooling && go generate -v ./...)
                     fi
 
                     export GORELEASER_CURRENT_TAG=${'$'}(git describe --tags ${'$'}(git rev-list --tags --max-count=1))
@@ -287,7 +233,6 @@ class GoReleaser(
         }
     }
     dependencies {
-        getQodanaToolingArtifacts(tool = wd)
         when (wd) {
             "clang" -> getClangArtifacts()
             "cdnet" -> getDotNetArtifacts(branch, tool = wd)

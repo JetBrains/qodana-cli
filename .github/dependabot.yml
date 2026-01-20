@@ -124,3 +124,13 @@ updates:
       dependencies:
         patterns:
           - "*"
+  - package-ecosystem: maven
+    directory: /internal/tooling
+    commit-message:
+      prefix: ":arrow_up: QD-12983"
+    schedule:
+      interval: weekly
+    groups:
+      dependencies:
+        patterns:
+          - "*"
