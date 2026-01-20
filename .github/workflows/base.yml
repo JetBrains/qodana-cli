@@ -20,7 +20,19 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        group: ["default", "more", "clang", "ruby"]
+        group:
+          - jvm        # jvm-community → jvm → python-community → python
+          - dotnet     # dotnet-community → dotnet
+          - clang      # clang 20, 21 (Trixie)
+          - clang-16   # clang 16 (Bookworm)
+          - clang-17   # clang 17 (Bookworm)
+          - clang-18   # clang 18 (Bookworm)
+          - clang-19   # clang 19 (Bookworm)
+          - go         # standalone
+          - js         # standalone
+          - php        # standalone
+          - rust       # standalone
+          - ruby       # ruby 3.2, 3.3, 3.4
     runs-on: ubuntu-latest
     steps:
       - name: Clean up
@@ -40,6 +52,11 @@ jobs:
           registry: registry.jetbrains.team
           username: ${{ secrets.SPACE_USERNAME }}
           password: ${{ secrets.SPACE_PASSWORD }}
+      - uses: docker/login-action@v3
+        with:
+          registry: dhi.io
+          username: ${{ secrets.DHI_USERNAME }}
+          password: ${{ secrets.DHI_PASSWORD }}
       - name: Build and push
         uses: docker/bake-action@v6
         with:
