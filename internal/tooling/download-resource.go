@@ -48,10 +48,14 @@ type Dependency struct {
 func main() {
 	artifactId := flag.String("artifact", "", "Artifact ID to download")
 	flag.Parse()
+	if *artifactId == "" {
+		log.Fatalf("the -artifact flag is required")
+	}
 
 	project := parsePomXml()
 	repoURL := project.Repositories[0].URL
 
+	artifactFound := false
 	for _, dep := range project.Dependencies {
 		if dep.ArtifactID != *artifactId {
 			continue
@@ -70,8 +74,13 @@ func main() {
 		log.Printf("Downloading %s to internal/tooling/%s", url, destFile)
 
 		if err := downloadFile(url, destFile); err != nil {
-			log.Printf("Error downloading %s: %v", url, err)
+			log.Fatalf("Error downloading %s: %v", url, err)
 		}
+		artifactFound = true
+	}
+
+	if artifactFound == false {
+		log.Fatalf("Requested artifact %s not found in pom.xml", *artifactId)
 	}
 }
 
@@ -79,8 +88,7 @@ func parsePomXml() Project {
 	pomFileName := "pom.xml"
 
 	_, err := os.Stat(pomFileName)
-	os.IsNotExist(err)
-	if err != nil {
+	if err != nil && os.IsNotExist(err) {
 		log.Fatalf("internal/tooling/pom.xml does not exist: %v", err)
 	}
 
