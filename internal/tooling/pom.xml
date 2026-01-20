@@ -31,6 +31,8 @@
         </repository>
     </repositories>
 
+    <!-- Dependencies downloaded by the download-resource.go script during go generate.
+         Note: the dependencies are stored in a pom.xml file because they are watched and updated by dependabot. -->
     <dependencies>
         <dependency>
             <groupId>org.jetbrains.qodana</groupId>
