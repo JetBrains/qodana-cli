@@ -32,6 +32,7 @@ const (
 	// QodanaLicenseOnlyToken !!! QODANA_LICENSE_ONLY_TOKEN is accessed only by env !!!
 	QodanaLicenseOnlyToken        = "QODANA_LICENSE_ONLY_TOKEN"
 	QodanaRemoteUrl               = "QODANA_REMOTE_URL"
+	QodanaRepoUrl                 = "QODANA_REPO_URL"
 	QodanaDockerEnv               = "QODANA_DOCKER"
 	QodanaToolEnv                 = "QODANA_TOOL"
 	QodanaConfEnv                 = "QODANA_CONF"
@@ -63,6 +64,14 @@ const (
 	QodanaEndpointEnv = "QODANA_ENDPOINT"
 	QodanaToken       = "QODANA_TOKEN"
 )
+
+// GitEnv contains information about the current git repository.
+type GitEnv struct {
+	RemoteUrl     string
+	RepositoryUrl string
+	Branch        string
+	Revision      string
+}
 
 type qodanaGlobalEnv struct {
 	env map[string]string
@@ -138,7 +147,7 @@ func IsContainer() bool {
 }
 
 // ExtractQodanaEnvironment extracts Qodana environment variables from the current environment.
-func ExtractQodanaEnvironment(setEnvironmentFunc func(string, string)) {
+func ExtractQodanaEnvironment(gitEnv GitEnv, setEnvironmentFunc func(string, string)) {
 	if license := os.Getenv(QodanaLicense); license != "" {
 		setEnvironmentFunc(QodanaLicense, license)
 	}
@@ -178,7 +187,29 @@ func ExtractQodanaEnvironment(setEnvironmentFunc func(string, string)) {
 		qEnv = "bitbucket"
 		setEnvironmentFunc(QodanaJobUrl, GetBitBucketJobUrl())
 	}
+	setDefaultQodanaGitEnvironment(gitEnv, setEnvironmentFunc)
 	setEnvironmentFunc(QodanaEnv, fmt.Sprintf("%s:%s", qEnv, version.Version))
+}
+
+func setDefaultQodanaGitEnvironment(gitEnv GitEnv, setEnvironmentFunc func(string, string)) {
+	if remoteUrl := os.Getenv(QodanaRemoteUrl); remoteUrl == "" {
+		if gitEnv.RemoteUrl != "" {
+			setEnvironmentFunc(QodanaRemoteUrl, gitEnv.RemoteUrl)
+		}
+		if gitEnv.RepositoryUrl != "" {
+			setEnvironmentFunc(QodanaRepoUrl, gitEnv.RepositoryUrl)
+		}
+	}
+	if branch := os.Getenv(QodanaBranch); branch == "" {
+		if gitEnv.Branch != "" {
+			setEnvironmentFunc(QodanaBranch, gitEnv.Branch)
+		}
+	}
+	if revision := os.Getenv(QodanaRevision); revision == "" {
+		if gitEnv.Revision != "" {
+			setEnvironmentFunc(QodanaRevision, gitEnv.Revision)
+		}
+	}
 }
 
 func GetCIName(ci *cienvironment.CiEnvironment) string {
