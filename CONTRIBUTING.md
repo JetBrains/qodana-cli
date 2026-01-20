@@ -50,14 +50,11 @@ go generate ./internal/tooling/...
 
 **For external contributors:**
 
-1. Create empty stubs for closed-source JARs (tests using them will be skipped):
-   ```sh
-   touch internal/tooling/intellij-report-converter.jar
-   ```
-2. Download public JARs via go generate:
-   ```sh
-   go generate ./internal/tooling/...
-   ```
+Download public JARs via go generate:
+
+```sh
+go generate ./internal/tooling/...
+```
 
 `cd` into the `cli` directory and run for debug:
 
@@ -65,8 +62,8 @@ go generate ./internal/tooling/...
 go run main.go
 ```
 
-Build a binary with
-
+Build a binary with:
+ 
 ```sh
 go build -o qd main.go
 ```

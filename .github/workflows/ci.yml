@@ -152,11 +152,6 @@ jobs:
         with:
           cache-dependency-path: "**/*.sum"
           go-version-file: go.mod
-      - name: Mock closed-source dependencies
-        shell: bash
-        run: >-
-          touch
-          internal/tooling/intellij-report-converter.jar
       - name: Download CLI dependencies
         run: go generate -v ./internal/tooling/...
       - name: Build CLI only

@@ -69,18 +69,6 @@ fun BuildSteps.denestFileArtifacts(searchStartDir: String = "%teamcity.build.che
 
 internal const val THIRD_PARTY_LICENSES_RULE = "**/*third-party-libraries.json=>licenses/"
 
-fun Dependencies.getQodanaToolingArtifacts(tool: String = "cli") {
-    artifacts(AbsoluteId("StaticAnalysis_Build_UiAndConverter")) {
-        buildRule = tag("readyForTest", "+:*")
-        artifactRules = """
-            intellij-report-converter.jar=>internal/tooling/intellij-report-converter.jar$DENEST_SUFFIX/
-        """.trimIndent()
-        if (tool != "cli") {
-            artifactRules += "\n\n$THIRD_PARTY_LICENSES_RULE"
-        }
-    }
-}
-
 fun Dependencies.getClangArtifacts() {
     artifacts(AbsoluteId(clangId)) {
         buildRule = lastSuccessful()
