@@ -1,7 +1,7 @@
 ARG QD_RELEASE=""
 ENV QD_VERSION="{{ qd_release }}" QD_IMAGE="{{ qd_image }}"
 ARG QD_CODE="{{ qd_code }}"
-ARG IDE_RELEASE_FEED="https://raw.githubusercontent.com/JetBrains/qodana-docker/refs/heads/main/feed/releases.json"
+ARG IDE_RELEASE_FEED="https://raw.githubusercontent.com/JetBrains/qodana-cli/refs/heads/main/feed/releases.json"
 # hadolint ignore=DL3003,SC2043
 RUN set -ex && \
     dpkgArch="$(dpkg --print-architecture)" && \
