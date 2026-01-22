@@ -57,7 +57,7 @@
         <dependency>
             <groupId>org.jetbrains.qodana</groupId>
             <artifactId>intellij-report-converter</artifactId>
-            <version>0.11.76</version>
+            <version>0.11.76.1</version>
         </dependency>
     </dependencies>
 </project>
