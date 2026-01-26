@@ -69,6 +69,9 @@ func ComputeContext(
 		FailThreshold:             cliOptions.FailThreshold,
 		GenerateCodeClimateReport: cliOptions.GenerateCodeClimateReport,
 		SendBitBucketInsights:     cliOptions.SendBitBucketInsights,
+		SaveReport:                cliOptions.SaveReport,
+		ShowReport:                cliOptions.ShowReport,
+		Port:                      cliOptions.Port,
 		QodanaYamlConfig:          qodanaYamlConfig,
 	}.Build()
 }

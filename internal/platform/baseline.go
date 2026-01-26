@@ -22,15 +22,16 @@ import (
 	"github.com/JetBrains/qodana-cli/internal/platform/strutil"
 	"github.com/JetBrains/qodana-cli/internal/platform/thirdpartyscan"
 	"github.com/JetBrains/qodana-cli/internal/platform/utils"
+	"github.com/JetBrains/qodana-cli/internal/tooling"
 )
 
 // computeBaselinePrintResults runs SARIF analysis (compares with baseline and prints the result)=
 func computeBaselinePrintResults(c thirdpartyscan.Context, thresholds map[string]string) (int, error) {
 	sarifPath := GetSarifPath(c.ResultsDir())
 	args := []string{
-		strutil.QuoteForWindows(c.MountInfo().JavaPath),
+		tooling.GetQodanaJBRPath(),
 		"-jar",
-		strutil.QuoteForWindows(c.MountInfo().BaselineCli),
+		tooling.BaselineCli.GetLibPath(c.CacheDir()),
 		"-r",
 		strutil.QuoteForWindows(sarifPath),
 	}

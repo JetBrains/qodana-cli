@@ -330,18 +330,18 @@ func analyzerToSelect(linters []product.Linter, path string) (map[string]product
 }
 
 // ShowReport serves the Qodana report
-func ShowReport(resultsDir string, reportPath string, port int) {
+func ShowReport(resultsDir string, reportDir string, port int) {
 	cloudUrl := cloud.GetReportUrl(resultsDir)
 	if cloudUrl != "" {
-		openReport(cloudUrl, reportPath, port)
+		openReport(cloudUrl, reportDir, port)
 	} else {
 		msg.WarningMessage("Press Ctrl+C to stop serving the report\n")
 		msg.PrintProcess(
 			func(_ *pterm.SpinnerPrinter) {
-				if _, err := os.Stat(reportPath); os.IsNotExist(err) {
+				if _, err := os.Stat(reportDir); os.IsNotExist(err) {
 					log.Fatal("Qodana report not found. Get a report by running `qodana scan`")
 				}
-				openReport("", reportPath, port)
+				openReport("", reportDir, port)
 			},
 			fmt.Sprintf("Showing Qodana report from %s", fmt.Sprintf("http://localhost:%d/", port)),
 			"",

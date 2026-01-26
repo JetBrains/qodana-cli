@@ -89,10 +89,10 @@ But you can always override qodana.yaml options with the following command-line 
 				defer cleanup()
 
 				effectiveConfigFiles, err = effectiveconfig.CreateEffectiveConfigFiles(
+					commonCtx.CacheDir,
 					localQodanaYamlFullPath,
 					cliOptions.GlobalConfigurationsDir,
 					cliOptions.GlobalConfigurationId,
-					preparedHost.Prod.JbrJava(),
 					effectiveConfigDir,
 					commonCtx.LogDir(),
 				)
@@ -130,17 +130,20 @@ But you can always override qodana.yaml options with the following command-line 
 				scanContext.SendBitBucketInsights(),
 			)
 
-			showReport := scanContext.ShowReport()
-			if msg.IsInteractive() {
-				showReport = msg.AskUserConfirm("Do you want to open the latest report")
-			}
-
 			if newReportUrl != oldReportUrl && newReportUrl != "" && !qdenv.IsContainer() {
 				msg.SuccessMessage("Report is successfully uploaded to %s", newReportUrl)
 			}
 
+			showReport := scanContext.ShowReport()
+			if msg.IsInteractive() {
+				showReport = msg.AskUserConfirm("Do you want to open the latest report")
+			}
 			if showReport {
-				commoncontext.ShowReport(scanContext.ResultsDir(), scanContext.ReportDir(), scanContext.Port())
+				commoncontext.ShowReport(
+					scanContext.ResultsDir(),
+					scanContext.ReportDir(),
+					scanContext.Port(),
+				)
 			} else if !qdenv.IsContainer() && msg.IsInteractive() {
 				msg.WarningMessage(
 					"To view the Qodana report later, run %s in the current directory or add %s flag to %s",
@@ -149,7 +152,6 @@ But you can always override qodana.yaml options with the following command-line 
 					msg.PrimaryBold("qodana scan"),
 				)
 			}
-
 			if exitCode == utils.QodanaFailThresholdExitCode {
 				msg.EmptyMessage()
 				msg.ErrorMessage("The number of problems exceeds the fail threshold")

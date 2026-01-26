@@ -77,12 +77,13 @@ func TestSuccess(t *testing.T) {
 
 				effectiveConfigDir := t.TempDir()
 				logDir := t.TempDir()
+				cacheDir := t.TempDir()
 
 				configFiles, err := CreateEffectiveConfigFiles(
+					cacheDir,
 					tc.localQodanaYaml,
 					tc.globalConfigurationsDir,
 					tc.globalConfigurationId,
-					"java",
 					effectiveConfigDir,
 					logDir,
 				)
@@ -185,12 +186,13 @@ func TestError(t *testing.T) {
 
 				effectiveConfigDir := t.TempDir()
 				logDir := t.TempDir()
+				cacheDir := t.TempDir()
 
 				configFiles, err := CreateEffectiveConfigFiles(
+					cacheDir,
 					tc.localQodanaYaml,
 					tc.globalConfigurationsDir,
 					tc.globalConfigurationId,
-					"java",
 					effectiveConfigDir,
 					logDir,
 				)

@@ -663,7 +663,7 @@ func Test_createUser(t *testing.T) {
 }
 
 func Test_syncIdeaCache(t *testing.T) {
-	tmpDir := filepath.Join(os.TempDir(), "cache")
+	tmpDir := t.TempDir()
 
 	t.Run(
 		"NotExist", func(t *testing.T) {

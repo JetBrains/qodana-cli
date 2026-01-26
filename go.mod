@@ -5,6 +5,7 @@ go 1.25.2
 require (
 	github.com/boyter/scc/v3 v3.6.0
 	github.com/briandowns/spinner v1.23.2
+	github.com/codeclysm/extract/v4 v4.0.0
 	github.com/cucumber/ci-environment/go v0.0.0-20230911180507-bd001ebc644c
 	github.com/docker/cli v28.4.0+incompatible
 	github.com/docker/docker v28.5.2+incompatible
@@ -13,6 +14,7 @@ require (
 	github.com/google/uuid v1.6.0
 	github.com/liamg/clinch v1.6.6
 	github.com/mattn/go-isatty v0.0.20
+	github.com/opencontainers/image-spec v1.0.2
 	github.com/otiai10/copy v1.14.1
 	github.com/pterm/pterm v0.12.82
 	github.com/reviewdog/go-bitbucket v0.0.0-20201024094602-708c3f6a7de0
@@ -42,7 +44,6 @@ require (
 	github.com/containerd/errdefs v1.0.0 // indirect
 	github.com/containerd/errdefs/pkg v0.3.0 // indirect
 	github.com/containerd/log v0.1.0 // indirect
-	github.com/cpuguy83/go-md2man/v2 v2.0.6 // indirect
 	github.com/danieljoos/wincred v1.2.2 // indirect
 	github.com/danwakefield/fnmatch v0.0.0-20160403171240-cbb64ac3d964 // indirect
 	github.com/davecgh/go-spew v1.1.2-0.20180830191138-d8f796af33cc // indirect
@@ -64,8 +65,11 @@ require (
 	github.com/gookit/color v1.5.4 // indirect
 	github.com/gorilla/mux v1.8.1 // indirect
 	github.com/grpc-ecosystem/grpc-gateway/v2 v2.27.2 // indirect
+	github.com/h2non/filetype v1.1.3 // indirect
 	github.com/inconshreveable/mousetrap v1.1.0 // indirect
 	github.com/json-iterator/go v1.1.12 // indirect
+	github.com/juju/errors v1.0.0 // indirect
+	github.com/klauspost/compress v1.15.13 // indirect
 	github.com/klauspost/cpuid/v2 v2.2.5 // indirect
 	github.com/liamg/tml v0.3.0 // indirect
 	github.com/lithammer/fuzzysearch v1.1.8 // indirect
@@ -80,7 +84,6 @@ require (
 	github.com/modern-go/reflect2 v1.0.2 // indirect
 	github.com/morikuni/aec v1.0.0 // indirect
 	github.com/opencontainers/go-digest v1.0.0 // indirect
-	github.com/opencontainers/image-spec v1.0.2 // indirect
 	github.com/otiai10/mint v1.6.3 // indirect
 	github.com/pelletier/go-toml/v2 v2.2.4 // indirect
 	github.com/pkg/errors v0.9.1 // indirect
@@ -88,7 +91,6 @@ require (
 	github.com/power-devops/perfstat v0.0.0-20210106213030-5aafc221ea8c // indirect
 	github.com/prometheus/client_golang v1.11.1 // indirect
 	github.com/rogpeppe/go-internal v1.14.1 // indirect
-	github.com/russross/blackfriday/v2 v2.1.0 // indirect
 	github.com/sagikazarmark/locafero v0.11.0 // indirect
 	github.com/sergi/go-diff v1.3.2-0.20230802210424-5b0b94c5c0d3 // indirect
 	github.com/shoenig/go-m1cpu v0.1.6 // indirect
@@ -100,6 +102,7 @@ require (
 	github.com/theupdateframework/notary v0.7.0 // indirect
 	github.com/tklauser/go-sysconf v0.3.12 // indirect
 	github.com/tklauser/numcpus v0.6.1 // indirect
+	github.com/ulikunitz/xz v0.5.12 // indirect
 	github.com/xo/terminfo v0.0.0-20220910002029-abceb7e1c41e // indirect
 	github.com/yusufpapurcu/wmi v1.2.4 // indirect
 	go.opentelemetry.io/auto/sdk v1.1.0 // indirect

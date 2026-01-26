@@ -1,3 +1,5 @@
+//go:build linux && arm64
+
 /*
  * Copyright 2021-2024 JetBrains s.r.o.
  *
@@ -16,8 +18,7 @@
 
 package tooling
 
-import _ "embed"
+import "embed"
 
-//go:generate go run download-resource.go -artifact intellij-report-converter
-//go:embed intellij-report-converter.jar
-var Converter []byte
+//go:embed qodana-jbrs/linux-arm64/*.tar.gz
+var embeddedJBR embed.FS

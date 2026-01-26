@@ -17,6 +17,7 @@
 package platform
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"os"
@@ -27,8 +28,12 @@ import (
 
 	"github.com/JetBrains/qodana-cli/internal/platform/msg"
 	"github.com/JetBrains/qodana-cli/internal/platform/qdenv"
+	"github.com/JetBrains/qodana-cli/internal/platform/strutil"
 	"github.com/JetBrains/qodana-cli/internal/platform/thirdpartyscan"
+	"github.com/JetBrains/qodana-cli/internal/platform/utils"
 	"github.com/JetBrains/qodana-cli/internal/sarif"
+	"github.com/JetBrains/qodana-cli/internal/tooling"
+	"github.com/codeclysm/extract/v4"
 	"github.com/google/uuid"
 	bbapi "github.com/reviewdog/go-bitbucket"
 	log "github.com/sirupsen/logrus"
@@ -471,4 +476,35 @@ func getSeverity(r *sarif.Result) string {
 		return r.Level.(string)
 	}
 	return sarifNote
+}
+
+// SaveReport converts the report and copies UI files
+func SaveReport(resultDir string, reportDir string, cacheDir string) {
+	log.Println("Generating HTML report ...")
+	if res, err := utils.RunCmd(
+		"",
+		tooling.GetQodanaJBRPath(),
+		"-jar",
+		tooling.ReportConverter.GetLibPath(cacheDir),
+		"-d",
+		strutil.QuoteForWindows(resultDir),
+		"-o",
+		strutil.QuoteForWindows(ReportResultsPath(reportDir)),
+	); res > 0 || err != nil {
+		os.Exit(res)
+	}
+
+	webUiJar, err := os.Open(tooling.QodanaWebUi.GetLibPath(cacheDir))
+	if err != nil {
+		log.Fatalf("Failed to open web-ui jar: %s", err)
+	}
+	defer func() {
+		if err := webUiJar.Close(); err != nil {
+			log.Errorf("Failed to close web-ui jar: %s", err)
+		}
+	}()
+
+	if err := extract.Zip(context.Background(), webUiJar, reportDir, nil); err != nil {
+		log.Fatalf("Failed to extract web-ui files: %s", err)
+	}
 }

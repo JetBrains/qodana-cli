@@ -87,7 +87,9 @@ func runQodanaLocal(c corescan.Context) (int, error) {
 		return res, err
 	}
 
-	saveReport(c)
+	if c.SaveReport() || c.ShowReport() {
+		platform.SaveReport(c.ResultsDir(), c.ReportDir(), c.CacheDir())
+	}
 	postAnalysis(c)
 	return res, err
 }

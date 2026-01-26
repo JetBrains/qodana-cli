@@ -34,7 +34,6 @@ import (
 	"github.com/JetBrains/qodana-cli/internal/platform/msg"
 	"github.com/JetBrains/qodana-cli/internal/platform/nuget"
 	"github.com/JetBrains/qodana-cli/internal/platform/qdenv"
-	"github.com/JetBrains/qodana-cli/internal/platform/strutil"
 	"github.com/JetBrains/qodana-cli/internal/platform/utils"
 	cienvironment "github.com/cucumber/ci-environment/go"
 	"github.com/docker/docker/client"
@@ -330,49 +329,4 @@ func getScanStages() []string {
 		scanStages[i] = msg.PrimaryBold("[%d/%d] ", i+1, len(scanStages)+1) + msg.Primary(stage)
 	}
 	return scanStages
-}
-
-// saveReport saves web files to expect, and generates json.
-func saveReport(c corescan.Context) {
-	prod := c.Prod()
-	if !qdenv.IsContainer() || (!c.SaveReport() && !c.ShowReport()) {
-		return
-	}
-
-	reportConverter := filepath.Join(prod.IdeBin(), "intellij-report-converter.jar")
-	if _, err := os.Stat(reportConverter); os.IsNotExist(err) {
-		log.Fatal("Not able to save the report: report-converter is missing")
-		return
-	}
-	log.Println("Generating HTML report ...")
-	javaPath := prod.JbrJava()
-	if javaPath == "" {
-		log.Error(
-			"HTML report is not generated because Java is not installed. " +
-				"See requirements in our documentation: https://www.jetbrains.com/help/qodana/deploy-qodana.html",
-		)
-		return
-	}
-	if res, err := utils.RunCmd(
-		"",
-		strutil.QuoteForWindows(prod.JbrJava()),
-		"-jar",
-		strutil.QuoteForWindows(reportConverter),
-		"-s",
-		strutil.QuoteForWindows(c.ProjectDir()),
-		"-d",
-		strutil.QuoteForWindows(c.ResultsDir()),
-		"-o",
-		strutil.QuoteForWindows(platform.ReportResultsPath(c.ReportDir())),
-		"-n",
-		"result-allProblems.json",
-		"-f",
-	); res > 0 || err != nil {
-		os.Exit(res)
-	}
-	err := utils.CopyDir(filepath.Join(prod.Home, "web"), c.ReportDir())
-	if err != nil {
-		log.Fatal("Not able to save the report: ", err)
-		return
-	}
 }

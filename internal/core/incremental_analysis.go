@@ -177,10 +177,10 @@ func (r *defaultAnalysisRunner) RunFunc(hash string, ctx context.Context, c core
 	defer cleanup()
 
 	effectiveConfigFiles, err := effectiveconfig.CreateEffectiveConfigFiles(
+		c.CacheDir(),
 		localQodanaYamlFullPath,
 		c.GlobalConfigurationsDir(),
 		c.GlobalConfigurationId(),
-		c.Prod().JbrJava(),
 		effectiveConfigDir,
 		c.LogDir(),
 	)
@@ -330,7 +330,9 @@ func copyAndSaveReport(lastContext corescan.Context, c corescan.Context) {
 		log.Fatal(err)
 	}
 
-	saveReport(c)
+	if c.SaveReport() || c.ShowReport() {
+		platform.SaveReport(c.ResultsDir(), c.ReportDir(), c.CacheDir())
+	}
 }
 
 // writeChangesFile creates a temp file containing the changes between diffStart and diffEnd
