@@ -78,12 +78,53 @@ func ResetBack(cwd string, logdir string) error {
 
 // CheckoutAndUpdateSubmodule performs a git checkout to the specified rev and updates submodules recursively, QD-10767.
 func CheckoutAndUpdateSubmodule(cwd string, where string, force bool, logdir string) error {
-	err := checkout(cwd, where, force, logdir)
-	if err != nil {
+	if err := checkout(cwd, where, force, logdir); err != nil {
+		return wrapShallowCheckoutError(cwd, where, err, logdir)
+	}
+
+	if err := submoduleUpdate(cwd, force, logdir); err != nil {
+		return wrapShallowSubmoduleError(cwd, err, logdir)
+	}
+
+	return nil
+}
+
+// isShallowRepo checks if the repository is a shallow clone.
+func isShallowRepo(cwd string, logdir string) bool {
+	stdout, _, err := gitRun(cwd, []string{"rev-parse", "--is-shallow-repository"}, logdir)
+	return err == nil && strings.TrimSpace(stdout) == "true"
+}
+
+// wrapShallowCheckoutError wraps checkout errors with helpful context if the repo is shallow.
+func wrapShallowCheckoutError(cwd string, target string, err error, logdir string) error {
+	if !isShallowRepo(cwd, logdir) {
 		return err
 	}
-	err = submoduleUpdate(cwd, force, logdir)
+
+	_, _, verifyErr := gitRun(cwd, []string{"rev-parse", "--verify", "--quiet", target}, logdir)
+	if verifyErr != nil {
+		return fmt.Errorf(
+			"cannot checkout '%s': the repository is a shallow clone and missing this commit. "+
+				"This typically happens in CI environments that clone with --depth=1. "+
+				"To fix this, run 'git fetch --unshallow' or clone without --depth. "+
+				"If you have submodules, also run 'git submodule foreach git fetch --unshallow'",
+			target)
+	}
 	return err
+}
+
+// wrapShallowSubmoduleError wraps submodule update errors with helpful context.
+func wrapShallowSubmoduleError(cwd string, err error, logdir string) error {
+	if isShallowRepo(cwd, logdir) {
+		return fmt.Errorf("%w. The repository is a shallow clone. "+
+			"To fix this, run 'git fetch --unshallow' and 'git submodule foreach git fetch --unshallow', "+
+			"or clone without --depth", err)
+	}
+
+	// Even if main repo is not shallow, submodules might be shallow or have other issues
+	return fmt.Errorf("%w. If you have shallow clones, "+
+		"run 'git fetch --unshallow' and 'git submodule foreach git fetch --unshallow', "+
+		"or clone without --depth", err)
 }
 
 // checkout checks out the given commit / branch.

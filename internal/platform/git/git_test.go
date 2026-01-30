@@ -24,6 +24,7 @@ import (
 	"regexp"
 	"testing"
 
+	"github.com/JetBrains/qodana-cli/internal/testutil"
 	log "github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
 )
@@ -197,6 +198,8 @@ func git(t *testing.T, cwd string, command []string) string {
 			"commit.gpgsign=false",
 			"-c",
 			"tag.gpgsign=false",
+			"-c",
+			"protocol.file.allow=always",
 		}, command...,
 	)
 	stdout, stderr, err := gitRun(cwd, command, logdir)
@@ -333,4 +336,46 @@ func TestCheckoutAndUpdateSubmodule(t *testing.T) {
 
 	err = CheckoutAndUpdateSubmodule(dir, "test-branch", true, logdir)
 	assert.NoError(t, err)
+}
+
+func TestCheckoutAndUpdateSubmodule_SubmoduleNotCheckedOut(t *testing.T) {
+	logdir := t.TempDir()
+	repo := testutil.SampleRepoWithSubmodule(t).Clone()
+
+	err := CheckoutAndUpdateSubmodule(repo.Dir(), "v1", true, logdir)
+	assert.Error(t, err)
+	println(err.Error())
+	assert.Contains(t, err.Error(), "shallow clone")
+	assert.Contains(t, err.Error(), "git fetch --unshallow")
+}
+
+func TestCheckoutAndUpdateSubmodule_ShallowRepoAndSubmoduleNotCheckedOut(t *testing.T) {
+	logdir := t.TempDir()
+	repo := testutil.SampleRepoWithSubmodule(t).CloneShallow()
+
+	err := CheckoutAndUpdateSubmodule(repo.Dir(), "v1", true, logdir)
+	assert.Error(t, err)
+	println(err.Error())
+	assert.Contains(t, err.Error(), "shallow clone")
+	assert.Contains(t, err.Error(), "git fetch --unshallow")
+}
+
+func TestCheckoutAndUpdateSubmodule_ShallowSubmodule(t *testing.T) {
+	logdir := t.TempDir()
+	repo := testutil.SampleRepoWithSubmodule(t).CloneShallow()
+	submodule := repo.Submodule("submodule")
+
+	// Get submodule remote URL before removing it
+	submoduleOrigin := submodule.OriginURL()
+
+	// Replace submodule with shallow clone
+	err := os.RemoveAll(submodule.Dir())
+	assert.NoError(t, err)
+	repo.Run("clone", "--depth=1", submoduleOrigin, "submodule")
+
+	err = CheckoutAndUpdateSubmodule(repo.Dir(), "v1", true, logdir)
+	assert.Error(t, err)
+	println(err.Error())
+	assert.Contains(t, err.Error(), "shallow clone")
+	assert.Contains(t, err.Error(), "git submodule foreach git fetch --unshallow")
 }
