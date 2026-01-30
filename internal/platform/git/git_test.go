@@ -338,15 +338,29 @@ func TestCheckoutAndUpdateSubmodule(t *testing.T) {
 	assert.NoError(t, err)
 }
 
-func TestCheckoutAndUpdateSubmodule_FullSubmodule(t *testing.T) {
+func TestCheckoutAndUpdateSubmodule_SubmoduleNotCheckedOut(t *testing.T) {
+	logdir := t.TempDir()
+	repo := testutil.SampleRepoWithSubmodule(t).Clone()
+
+	err := CheckoutAndUpdateSubmodule(repo.Dir(), "v1", true, logdir)
+	assert.Error(t, err)
+	println(err.Error())
+	assert.Contains(t, err.Error(), "shallow clone")
+	assert.Contains(t, err.Error(), "git fetch --unshallow")
+}
+
+func TestCheckoutAndUpdateSubmodule_ShallowRepoAndSubmoduleNotCheckedOut(t *testing.T) {
 	logdir := t.TempDir()
 	repo := testutil.SampleRepoWithSubmodule(t).CloneShallow()
 
 	err := CheckoutAndUpdateSubmodule(repo.Dir(), "v1", true, logdir)
 	assert.Error(t, err)
+	println(err.Error())
+	assert.Contains(t, err.Error(), "shallow clone")
+	assert.Contains(t, err.Error(), "git fetch --unshallow")
 }
 
-func TestCheckoutAndUpdateSubmodule_ShallowMissingCommit(t *testing.T) {
+func TestCheckoutAndUpdateSubmodule_ShallowSubmodule(t *testing.T) {
 	logdir := t.TempDir()
 	repo := testutil.SampleRepoWithSubmodule(t).CloneShallow()
 	submodule := repo.Submodule("submodule")
@@ -361,4 +375,7 @@ func TestCheckoutAndUpdateSubmodule_ShallowMissingCommit(t *testing.T) {
 
 	err = CheckoutAndUpdateSubmodule(repo.Dir(), "v1", true, logdir)
 	assert.Error(t, err)
+	println(err.Error())
+	assert.Contains(t, err.Error(), "shallow clone")
+	assert.Contains(t, err.Error(), "git submodule foreach git fetch --unshallow")
 }

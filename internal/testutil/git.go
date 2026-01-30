@@ -173,7 +173,7 @@ func (g *GitRepo) Clone() *GitRepo {
 	g.t.Helper()
 	dir := g.t.TempDir()
 	clone := &GitRepo{t: g.t, dir: dir}
-	clone.Run("clone", g.dir, ".")
+	clone.Run("clone", "file://"+g.dir, ".")
 	return clone
 }
 
@@ -181,7 +181,7 @@ func (g *GitRepo) CloneShallow() *GitRepo {
 	g.t.Helper()
 	dir := g.t.TempDir()
 	clone := &GitRepo{t: g.t, dir: dir}
-	clone.Run("clone", "--depth=1", g.dir, ".")
+	clone.Run("clone", "--depth=1", "file://"+g.dir, ".")
 	return clone
 }
 
@@ -189,7 +189,7 @@ func (g *GitRepo) CloneRecursive() *GitRepo {
 	g.t.Helper()
 	dir := g.t.TempDir()
 	clone := &GitRepo{t: g.t, dir: dir}
-	clone.Run("clone", "--recursive", g.dir, ".")
+	clone.Run("clone", "--recursive", "file://"+g.dir, ".")
 	return clone
 }
 
