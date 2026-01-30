@@ -28,6 +28,7 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"time"
 )
 
 type Project struct {
@@ -60,17 +61,20 @@ func main() {
 		if dep.ArtifactID != *artifactId {
 			continue
 		}
+		sanitizedArtifactID := filepath.Base(dep.ArtifactID)
+		sanitizedGroupID := filepath.Base(dep.GroupID)
+		sanitizedVersion := filepath.Base(dep.Version)
 		url := fmt.Sprintf(
 			"%s/%s/%s/%s/%s-%s.jar",
 			strings.TrimSuffix(repoURL, "/"),
-			strings.ReplaceAll(dep.GroupID, ".", "/"),
-			dep.ArtifactID,
-			dep.Version,
-			dep.ArtifactID,
-			dep.Version,
+			strings.ReplaceAll(sanitizedGroupID, ".", "/"),
+			sanitizedArtifactID,
+			sanitizedVersion,
+			sanitizedArtifactID,
+			sanitizedVersion,
 		)
 
-		destFile := filepath.Join(".", dep.ArtifactID+".jar")
+		destFile := filepath.Join(".", sanitizedArtifactID+".jar")
 		log.Printf("Downloading %s to tooling/%s", url, destFile)
 
 		if err := downloadFile(url, destFile); err != nil {
@@ -110,7 +114,11 @@ func parsePomXml() Project {
 }
 
 func downloadFile(url, dest string) error {
-	resp, err := http.Get(url)
+	client := &http.Client{
+		Timeout: 10 * time.Second,
+	}
+
+	resp, err := client.Get(url)
 	if err != nil {
 		return err
 	}
