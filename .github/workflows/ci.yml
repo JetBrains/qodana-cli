@@ -46,9 +46,6 @@ jobs:
         run: >-
           touch
           cdnet/clt.zip
-          tooling/baseline-cli.jar
-          tooling/intellij-report-converter.jar
-          tooling/qodana-fuser.jar
           clang/clang-tidy-linux-amd64.tar.gz
           clang/clang-tidy-linux-arm64.tar.gz
           clang/clang-tidy-windows-amd64.zip
