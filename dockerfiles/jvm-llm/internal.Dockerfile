@@ -16,7 +16,8 @@ RUN chmod +x $QODANA_DIST/bin/*.sh $QODANA_DIST/bin/qodana && \
 # Install Claude Code
 RUN curl -fsSL https://claude.ai/install.sh | bash && \
     chmod 777 -R $HOME && \
-    npm i -g @openai/codex
+    npm i -g @openai/codex && \
+    npm i -g mcp-remote
 
 
 LABEL maintainer="qodana-support@jetbrains.com" description="Qodana for JVM with Claude Code (https://jb.gg/qodana-jvm)"
