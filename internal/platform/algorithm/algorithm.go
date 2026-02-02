@@ -1,5 +1,6 @@
 package algorithm
 
+// Filter removes each item from `iterable` for which `predicate` returns `false`.
 func Filter[T any](iterable []T, predicate func(T) bool) []T {
 	var result []T
 	for _, item := range iterable {
@@ -11,6 +12,7 @@ func Filter[T any](iterable []T, predicate func(T) bool) []T {
 	return result
 }
 
+// Unique removes all duplicates from `iterable`, keeping first occurence only.
 func Unique[T comparable](iterable []T) []T {
 	seen := map[T]bool{}
 	predicate := func(item T) bool {

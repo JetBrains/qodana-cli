@@ -117,3 +117,10 @@ func Reverse(s []string) []string {
 	}
 	return s
 }
+
+// GetLines splits a string into lines. Equivalent to strings.Split except the trailing newline does not produce a line
+// (as per POSIX spec). Use this to parse output of commands that print lines to stdout.
+func GetLines(s string) []string {
+	s = strings.TrimSuffix(s, "\n")
+	return strings.Split(s, "\n")
+}

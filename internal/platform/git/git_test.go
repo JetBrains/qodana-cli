@@ -17,7 +17,6 @@
 package git
 
 import (
-	"fmt"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -88,40 +87,40 @@ func TestRevParse(t *testing.T) {
 	reSha1 := regexp.MustCompile("^[0-9a-f]{40}$")
 	logdir := t.TempDir()
 
-	dir := gitInit(t)
-	gitCommitAll(t, dir, "commit")
+	repo := NewGitRepo(t)
+	repo.CommitAll("commit")
 
 	// Resolving head
-	headSha, err := RevParse(dir, "HEAD", logdir)
+	headSha, err := RevParse(repo.Dir(), "HEAD", logdir)
 	assert.NoError(t, err)
 	assert.Regexp(t, reSha1, headSha)
 
 	// Resolving branch
-	branchSha1, err := RevParse(dir, "main", logdir)
+	branchSha1, err := RevParse(repo.Dir(), "main", logdir)
 	assert.NoError(t, err)
 	assert.Equal(t, headSha, branchSha1)
 
-	branchSha2, err := RevParse(dir, "refs/heads/main", logdir)
+	branchSha2, err := RevParse(repo.Dir(), "refs/heads/main", logdir)
 	assert.NoError(t, err)
 	assert.Equal(t, headSha, branchSha2)
 
 	// Resolving tag
-	git(t, dir, []string{"tag", "v1.0.0"})
-	tagSha1, err := RevParse(dir, "v1.0.0", logdir)
+	repo.Tag("v1.0.0")
+	tagSha1, err := RevParse(repo.Dir(), "v1.0.0", logdir)
 	assert.NoError(t, err)
 	assert.Equal(t, headSha, tagSha1)
 
-	tagSha2, err := RevParse(dir, "refs/tags/v1.0.0", logdir)
+	tagSha2, err := RevParse(repo.Dir(), "refs/tags/v1.0.0", logdir)
 	assert.NoError(t, err)
 	assert.Equal(t, headSha, tagSha2)
 
 	// Resolving short SHA1
-	shortSha, err := RevParse(dir, headSha[:5], logdir)
+	shortSha, err := RevParse(repo.Dir(), headSha[:5], logdir)
 	assert.NoError(t, err)
 	assert.Equal(t, headSha, shortSha)
 
 	// Resolving full SHA1
-	headShaSha, err := RevParse(dir, headSha, logdir)
+	headShaSha, err := RevParse(repo.Dir(), headSha, logdir)
 	assert.NoError(t, err)
 	assert.Equal(t, headSha, headShaSha)
 }
@@ -173,164 +172,278 @@ func gitClone(repoURL, directory string, revision string, branch string) error {
 	return nil
 }
 
-func gitInit(t *testing.T) string {
-	dir := t.TempDir()
-	git(t, dir, []string{"init", "--initial-branch=main"})
-	return dir
-}
-
-func gitCommitAll(t *testing.T, cwd string, message string) {
-	git(t, cwd, []string{"commit", "--all", "--allow-empty", "--allow-empty-message", "--message", message})
-}
-
-func git(t *testing.T, cwd string, command []string) string {
-	logdir := t.TempDir()
-	defer assert.NoError(t, os.RemoveAll(logdir))
-
-	command = append(
-		[]string{
-			"-c",
-			"user.name=Test",
-			"-c",
-			"user.email=test@test.com",
-			"-c",
-			"commit.gpgsign=false",
-			"-c",
-			"tag.gpgsign=false",
-		}, command...,
-	)
-	stdout, stderr, err := gitRun(cwd, command, logdir)
-	assert.NoError(t, err)
-	fmt.Print(stderr)
-	return stdout
-}
-
 func TestReset(t *testing.T) {
-	dir := gitInit(t)
-	gitCommitAll(t, dir, "commit")
+	repo := NewGitRepo(t)
+	repo.CommitAll("commit")
 	logdir := t.TempDir()
 
-	headSha, err := RevParse(dir, "HEAD", logdir)
+	headSha, err := RevParse(repo.Dir(), "HEAD", logdir)
 	assert.NoError(t, err)
 
-	gitCommitAll(t, dir, "commit")
+	repo.CommitAll("commit")
 
-	err = Reset(dir, headSha, logdir)
+	err = Reset(repo.Dir(), headSha, logdir)
 	assert.NoError(t, err)
 }
 
 func TestCheckout(t *testing.T) {
-	dir := gitInit(t)
-	gitCommitAll(t, dir, "commit")
+	repo := NewGitRepo(t)
+	repo.CommitAll("commit")
 	logdir := t.TempDir()
 
-	git(t, dir, []string{"checkout", "-b", "test-branch"})
-	gitCommitAll(t, dir, "commit")
+	repo.Run("checkout", "-b", "test-branch")
+	repo.CommitAll("commit")
 
-	err := checkout(dir, "main", false, logdir)
+	err := checkout(repo.Dir(), "main", false, logdir)
 	assert.NoError(t, err)
 
-	err = checkout(dir, "test-branch", true, logdir)
+	err = checkout(repo.Dir(), "test-branch", true, logdir)
 	assert.NoError(t, err)
 }
 
 func TestClean(t *testing.T) {
-	dir := gitInit(t)
-	gitCommitAll(t, dir, "commit")
+	repo := NewGitRepo(t)
+	repo.CommitAll("commit")
 	logdir := t.TempDir()
 
-	if err := os.WriteFile(filepath.Join(dir, "untracked.txt"), []byte("test"), 0644); err != nil {
-		t.Fatal(err)
-	}
+	repo.WriteFile("untracked.txt", "test")
 
-	err := Clean(dir, logdir)
+	err := Clean(repo.Dir(), logdir)
 	assert.NoError(t, err)
 
-	_, err = os.Stat(filepath.Join(dir, "untracked.txt"))
+	_, err = os.Stat(filepath.Join(repo.Dir(), "untracked.txt"))
 	assert.True(t, os.IsNotExist(err))
 }
 
 func TestRevisions(t *testing.T) {
-	dir := gitInit(t)
-	gitCommitAll(t, dir, "commit")
-	gitCommitAll(t, dir, "commit")
-	gitCommitAll(t, dir, "commit")
+	repo := NewGitRepo(t)
+	repo.CommitAll("commit")
+	repo.CommitAll("commit")
+	repo.CommitAll("commit")
 
-	revisions := Revisions(dir)
+	revisions := Revisions(repo.Dir())
 	assert.GreaterOrEqual(t, len(revisions), 3)
 }
 
 func TestRemoteUrl(t *testing.T) {
 	logdir := t.TempDir()
-	dir := gitInit(t)
-	gitCommitAll(t, dir, "commit")
+	repo := NewGitRepo(t)
+	repo.CommitAll("commit")
 
-	git(t, dir, []string{"remote", "add", "origin", "https://github.com/test/repo.git"})
+	repo.Run("remote", "add", "origin", "https://github.com/test/repo.git")
 
-	url, err := RemoteUrl(dir, logdir)
+	url, err := RemoteUrl(repo.Dir(), logdir)
 	assert.NoError(t, err)
 	assert.Equal(t, "https://github.com/test/repo.git", url)
 }
 
 func TestBranch(t *testing.T) {
 	logdir := t.TempDir()
-	dir := gitInit(t)
-	gitCommitAll(t, dir, "commit")
+	repo := NewGitRepo(t)
+	repo.CommitAll("commit")
 
-	branch, err := Branch(dir, logdir)
+	branch, err := Branch(repo.Dir(), logdir)
 	assert.NoError(t, err)
 	assert.Equal(t, "main", branch)
 }
 
 func TestCurrentRevision(t *testing.T) {
 	logdir := t.TempDir()
-	dir := gitInit(t)
-	gitCommitAll(t, dir, "commit")
+	repo := NewGitRepo(t)
+	repo.CommitAll("commit")
 
-	rev, err := CurrentRevision(dir, logdir)
+	rev, err := CurrentRevision(repo.Dir(), logdir)
 	assert.NoError(t, err)
 	assert.Len(t, rev, 40)
 }
 
 func TestSubmoduleUpdate(t *testing.T) {
-	dir := gitInit(t)
-	gitCommitAll(t, dir, "commit")
+	repo := NewGitRepo(t)
+	repo.CommitAll("commit")
 	logdir := t.TempDir()
 
-	err := submoduleUpdate(dir, false, logdir)
+	err := submoduleUpdate(repo.Dir(), false, logdir)
 	assert.NoError(t, err)
 
-	err = submoduleUpdate(dir, true, logdir)
+	err = submoduleUpdate(repo.Dir(), true, logdir)
 	assert.NoError(t, err)
 }
 
 func TestResetBack(t *testing.T) {
-	dir := gitInit(t)
-	gitCommitAll(t, dir, "commit")
+	repo := NewGitRepo(t)
+	repo.CommitAll("commit")
 	logdir := t.TempDir()
 
-	headSha, _ := RevParse(dir, "HEAD", logdir)
-	gitCommitAll(t, dir, "second-commit")
-	err := Reset(dir, headSha, logdir)
+	headSha, _ := RevParse(repo.Dir(), "HEAD", logdir)
+	repo.CommitAll("second-commit")
+	err := Reset(repo.Dir(), headSha, logdir)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	err = ResetBack(dir, logdir)
+	err = ResetBack(repo.Dir(), logdir)
 	assert.NoError(t, err)
 }
 
 func TestCheckoutAndUpdateSubmodule(t *testing.T) {
-	dir := gitInit(t)
-	gitCommitAll(t, dir, "commit")
+	repo := NewGitRepo(t)
+	repo.CommitAll("commit")
 	logdir := t.TempDir()
 
-	git(t, dir, []string{"checkout", "-b", "test-branch"})
-	gitCommitAll(t, dir, "branch-commit")
+	repo.Run("checkout", "-b", "test-branch")
+	repo.CommitAll("branch-commit")
 
-	err := CheckoutAndUpdateSubmodule(dir, "main", false, logdir)
+	err := CheckoutAndUpdateSubmodule(repo.Dir(), "main", false, logdir)
 	assert.NoError(t, err)
 
-	err = CheckoutAndUpdateSubmodule(dir, "test-branch", true, logdir)
+	err = CheckoutAndUpdateSubmodule(repo.Dir(), "test-branch", true, logdir)
 	assert.NoError(t, err)
+}
+
+func TestCheckoutAndUpdateSubmodule_SubmoduleNotCheckedOut(t *testing.T) {
+	GitAllowFileProtocol(t)
+	logdir := t.TempDir()
+	repo := SampleRepoWithSubmodule(t).Clone()
+
+	// Submodule is not initialized after non-recursive clone.
+	// CheckoutAndUpdateSubmodule should initialize and checkout it.
+	err := CheckoutAndUpdateSubmodule(repo.Dir(), "v1", true, logdir)
+	assert.NoError(t, err)
+	assert.Equal(t, "content-v1", repo.Submodule("submodule").ReadFile("file.txt"))
+}
+
+func TestCheckoutAndUpdateSubmodule_ShallowRepoAndSubmoduleNotCheckedOut(t *testing.T) {
+	GitAllowFileProtocol(t)
+	logdir := t.TempDir()
+	repo := SampleRepoWithSubmodule(t).CloneShallow()
+
+	err := CheckoutAndUpdateSubmodule(repo.Dir(), "v1", true, logdir)
+	assert.Error(t, err)
+	println(err.Error())
+	assert.Contains(t, err.Error(), "shallow")
+}
+
+func TestCheckoutAndUpdateSubmodule_ShallowSubmodule(t *testing.T) {
+	GitAllowFileProtocol(t)
+	logdir := t.TempDir()
+	repo := SampleRepoWithSubmodule(t).CloneShallow()
+	submodule := repo.Submodule("submodule")
+
+	// Get submodule remote URL before removing it
+	submoduleOrigin := submodule.OriginURL()
+
+	// Replace submodule with shallow clone
+	err := os.RemoveAll(submodule.Dir())
+	assert.NoError(t, err)
+	repo.Run("clone", "--depth=1", submoduleOrigin, "submodule")
+
+	err = CheckoutAndUpdateSubmodule(repo.Dir(), "v1", true, logdir)
+	assert.Error(t, err)
+	println(err.Error())
+}
+
+// TestCheckoutAndUpdateSubmodule_OrphanedGitmodulesEntry tests the case where
+// .gitmodules declares a submodule that doesn't exist in git cache.
+// This can happen when a user manually edits .gitmodules without running git submodule add.
+func TestCheckoutAndUpdateSubmodule_OrphanedGitmodulesEntry(t *testing.T) {
+	GitAllowFileProtocol(t)
+	logdir := t.TempDir()
+	repo := SampleRepoWithSubmodule(t).CloneRecursive()
+
+	// Add a fake submodule entry to .gitmodules without actually adding it to git cache
+	gitmodules := repo.ReadFile(".gitmodules")
+	gitmodules += `
+[submodule "fake-submodule"]
+	path = fake/path
+	url = https://example.com/fake.git
+`
+	repo.WriteFile(".gitmodules", gitmodules)
+	repo.CommitAll("add orphaned gitmodules entry")
+
+	// CheckoutAndUpdateSubmodule should succeed - it should ignore the orphaned entry
+	err := CheckoutAndUpdateSubmodule(repo.Dir(), "HEAD", true, logdir)
+	assert.NoError(t, err)
+}
+
+// TestCheckoutAndUpdateSubmodule_OrphanedCacheEntry tests the case where
+// git cache has a submodule that's not declared in .gitmodules.
+// This can happen when a user removes the .gitmodules entry but doesn't properly remove the submodule.
+func TestCheckoutAndUpdateSubmodule_OrphanedCacheEntry(t *testing.T) {
+	GitAllowFileProtocol(t)
+	logdir := t.TempDir()
+	repo := SampleRepoWithSubmodule(t).CloneRecursive()
+
+	// Remove the submodule entry from .gitmodules but keep it in git cache
+	repo.Run("config", "--file", ".gitmodules", "--remove-section", "submodule.submodule")
+	repo.CommitAll("remove gitmodules entry but keep cache")
+
+	// CheckoutAndUpdateSubmodule should succeed - it should ignore the orphaned cache entry
+	err := CheckoutAndUpdateSubmodule(repo.Dir(), "HEAD", true, logdir)
+	assert.NoError(t, err)
+}
+
+// TestCheckoutAndUpdateSubmodule_SubmoduleNameDiffersFromPath tests the case where
+// a submodule has a name that differs from its path (e.g., nested paths like libs/utils/helper).
+func TestCheckoutAndUpdateSubmodule_SubmoduleNameDiffersFromPath(t *testing.T) {
+	GitAllowFileProtocol(t)
+	logdir := t.TempDir()
+
+	// Create a submodule origin
+	subOrigin := SampleRepo(t)
+
+	// Create main repo with a submodule where name differs from path
+	mainOrigin := NewBareGitRepo(t)
+	mainWork := mainOrigin.Clone()
+	mainWork.WriteFile("main.txt", "content")
+	mainWork.CommitAll("initial")
+
+	// Add submodule with name "my-lib" at path "libs/utils/helper"
+	mainWork.AddSubmoduleWithName(subOrigin.Dir(), "libs/utils/helper", "my-lib")
+	mainWork.Submodule("libs/utils/helper").Checkout("v1")
+	mainWork.CommitAll("v1")
+	mainWork.Tag("v1")
+
+	mainWork.Submodule("libs/utils/helper").Checkout("v2")
+	mainWork.CommitAll("v2")
+	mainWork.Tag("v2")
+	mainWork.PushAll()
+
+	// Clone and test checkout
+	repo := mainOrigin.CloneRecursive()
+
+	// Checkout v1 - submodule should be updated to v1
+	err := CheckoutAndUpdateSubmodule(repo.Dir(), "v1", true, logdir)
+	assert.NoError(t, err)
+	assert.Equal(t, "content-v1", repo.Submodule("libs/utils/helper").ReadFile("file.txt"))
+
+	// Checkout v2 - submodule should be updated to v2
+	err = CheckoutAndUpdateSubmodule(repo.Dir(), "v2", true, logdir)
+	assert.NoError(t, err)
+	assert.Equal(t, "content-v2", repo.Submodule("libs/utils/helper").ReadFile("file.txt"))
+}
+
+func TestGetDeclaredSubmodules_NoEmptyStrings(t *testing.T) {
+	logdir := t.TempDir()
+	repo := SampleRepoWithSubmodule(t).CloneRecursive()
+
+	submodules, err := getDeclaredSubmodules(repo.Dir(), logdir)
+	assert.NoError(t, err)
+	assert.NotEmpty(t, submodules)
+
+	for i, path := range submodules {
+		assert.NotEmpty(t, path, "getDeclaredSubmodules returned empty string at index %d", i)
+	}
+}
+
+func TestGetSubmodules_NoEmptyStrings(t *testing.T) {
+	logdir := t.TempDir()
+	repo := SampleRepoWithSubmodule(t).CloneRecursive()
+
+	submodules, err := getSubmodules(repo.Dir(), logdir)
+	assert.NoError(t, err)
+	assert.NotEmpty(t, submodules)
+
+	for i, path := range submodules {
+		assert.NotEmpty(t, path, "getSubmodules returned empty string at index %d", i)
+	}
 }
