@@ -18,6 +18,7 @@ package tooling
 
 import _ "embed"
 
+//go:generate go run download-resource.go -artifact qodana-fuser
 //go:embed qodana-fuser.jar
 var Fuser []byte
 
