@@ -17,13 +17,33 @@
 package git
 
 import (
+	"errors"
 	"fmt"
+	"io/fs"
+	"os"
+	"path/filepath"
 	"strings"
 
+	"github.com/JetBrains/qodana-cli/internal/platform/algorithm"
 	"github.com/JetBrains/qodana-cli/internal/platform/strutil"
 	"github.com/JetBrains/qodana-cli/internal/platform/utils"
 	log "github.com/sirupsen/logrus"
 )
+
+// GitError is returned by gitRun when git has returned a non-zero exit code.
+type GitError struct {
+	Args     []string
+	ExitCode int
+	Stderr   string
+}
+
+func (e *GitError) CommandLine() string {
+	return strings.Join(e.Args, " ")
+}
+
+func (e *GitError) Error() string {
+	return fmt.Sprintf("%s exited with code %d\n  stderr: %s", e.CommandLine(), e.ExitCode, e.Stderr)
+}
 
 // gitRun runs the git command in the given directory and returns an error if any.
 func gitRun(cwd string, command []string, logdir string) (string, string, error) {
@@ -47,7 +67,11 @@ func gitRun(cwd string, command []string, logdir string) (string, string, error)
 		}
 	}
 	if exitCode != 0 {
-		err := fmt.Errorf("command %s exited with code %d", strings.Join(args, " "), exitCode)
+		err := &GitError{
+			Args:     args,
+			ExitCode: exitCode,
+			Stderr:   stderr,
+		}
 		log.Errorf("%s", err)
 		return stdout, stderr, err
 	}
@@ -77,13 +101,129 @@ func ResetBack(cwd string, logdir string) error {
 }
 
 // CheckoutAndUpdateSubmodule performs a git checkout to the specified rev and updates submodules recursively, QD-10767.
-func CheckoutAndUpdateSubmodule(cwd string, where string, force bool, logdir string) error {
-	err := checkout(cwd, where, force, logdir)
+func CheckoutAndUpdateSubmodule(cwd string, ref string, force bool, logdir string) error {
+	// Checkout the root repository
+	if _, err := RevParse(cwd, ref, logdir); err != nil {
+		// It would be impossible to checkout this commit if it's not rev-parseable.
+		errMessage := fmt.Sprintf("cannot checkout: cannot resolve reference '%s'", ref)
+
+		if isShallowClone(cwd, logdir) {
+			errMessage += "\n  Hint: you appear to be working in a shallow clone. Consider running 'git fetch --unshallow' or checking out without '--depth'."
+		}
+
+		return errors.New(errMessage)
+	}
+
+	if err := checkout(cwd, ref, force, logdir); err != nil {
+		return err
+	}
+
+	if err := updateSubmodules(cwd, force, logdir); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// updateSubmodules performs a recursive submodule update to the ref specified in git cache.
+func updateSubmodules(root string, force bool, logdir string) error {
+	// Note: git submodule update is not used because it fails on corrupted repositories where .gitmodules data does not
+	// match git cache. This can often happen when a user removes a submodule incorrectly.
+	submodules, err := getSubmodules(root, logdir)
 	if err != nil {
 		return err
 	}
-	err = submoduleUpdate(cwd, force, logdir)
-	return err
+
+	for _, path := range submodules {
+		fullPath := filepath.Join(root, path)
+
+		updateArgs := []string{"submodule", "update", "--init"}
+		if force {
+			updateArgs = append(updateArgs, "--force")
+		}
+		updateArgs = append(updateArgs, "--", path)
+
+		_, _, err := gitRun(root, updateArgs, logdir)
+		if err != nil {
+			return fmt.Errorf("failed to update submodule %q: %w", path, err)
+		}
+
+		// Recurse down
+		err = updateSubmodules(fullPath, force, logdir)
+		if err != nil {
+			return fmt.Errorf("failed to update submodules of %q: %w", fullPath, err)
+		}
+	}
+
+	return nil
+}
+
+func getDeclaredSubmodules(cwd string, logdir string) ([]string, error) {
+	_, err := os.Stat(filepath.Join(cwd, ".gitmodules"))
+	if errors.Is(err, fs.ErrNotExist) {
+		return []string{}, nil
+	}
+	if err != nil {
+		return nil, err
+	}
+
+	stdout, _, err := gitRun(cwd, []string{"config", "get", "--file", ".gitmodules", "--regexp", "--all", ".path$"}, logdir)
+	if err != nil {
+		var gitErr *GitError
+		if errors.As(err, &gitErr) && gitErr.ExitCode == 1 {
+			// no items found - .gitmodules may be empty
+			return []string{}, nil
+		}
+		return nil, err
+	}
+	return strutil.GetLines(stdout), nil
+}
+
+// getSubmodules returns all submodules of a repository (non-recursive). Only submodules that are present in BOTH
+// .gitmodules and git cache are reported.
+func getSubmodules(cwd string, logdir string) ([]string, error) {
+	declaredSubmodules, err := getDeclaredSubmodules(cwd, logdir)
+	if err != nil {
+		return nil, err
+	}
+	return algorithm.Filter(declaredSubmodules, func(path string) bool {
+		mode, err := getObjectMode(cwd, path, logdir)
+		if err != nil {
+			log.Debugf("Ignoring declared submodule %q: ls-files failed: %v", path, err)
+			return false
+		}
+		if mode != 160000 {
+			log.Debugf("Ignoring declared submodule %q: git cache reports mode %d (expected 160000)", path, mode)
+			return false
+		}
+
+		return true
+	}), nil
+}
+
+func getObjectMode(cwd string, path string, logdir string) (int, error) {
+	stdout, _, err := gitRun(cwd, []string{"ls-files", "--format=%(objectmode)", "--", path}, logdir)
+	if err != nil {
+		return 0, err
+	}
+	stdout = strings.TrimSpace(stdout)
+
+	if stdout == "" {
+		return 0, nil
+	}
+
+	mode := 0
+	if _, err = fmt.Sscanf(stdout, "%d", &mode); err != nil {
+		return 0, err
+	}
+
+	return mode, nil
+}
+
+// isShallowClone checks if the repository is a shallow clone.
+func isShallowClone(cwd string, logdir string) bool {
+	stdout, _, err := gitRun(cwd, []string{"rev-parse", "--is-shallow-repository"}, logdir)
+	return err == nil && strings.TrimSpace(stdout) == "true"
 }
 
 // checkout checks out the given commit / branch.
