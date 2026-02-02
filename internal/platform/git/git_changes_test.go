@@ -19,12 +19,10 @@ package git
 import (
 	"encoding/json"
 	"os"
-	"os/exec"
 	"path/filepath"
 	"strings"
 	"testing"
 
-	log "github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -261,85 +259,42 @@ func TestChangesCalculation(t *testing.T) {
 }
 
 func createRepo(t *testing.T, tc TestConfig) string {
-	// Step 1: Create a new directory for the repository
-	repoDir, err := os.MkdirTemp("", "testrepo")
-	assert.NoError(t, err)
+	repo := NewGitRepo(t)
 
-	// Step 2: Initialize a new Git repository
-	cmd := exec.Command("git", "init")
-	runGit(t, cmd, repoDir)
-
-	// File name
+	// File paths
 	fileName := "file.txt"
 	fileName2 := "file2.txt"
-	absolutePath := filepath.Join(repoDir, fileName)
-	absolutePath2 := filepath.Join(repoDir, fileName2)
 
 	if tc.action == "subfolder_move" {
-		err = os.MkdirAll(filepath.Join(repoDir, "subfolder"), 0755)
+		err := os.MkdirAll(filepath.Join(repo.Dir(), "subfolder"), 0755)
 		assert.NoError(t, err)
-		absolutePath2 = filepath.Join(repoDir, "subfolder", fileName2)
+		fileName2 = "subfolder/file2.txt"
 	}
 
-	// Step 3: Create the first file and commit it if initial content is not empty
+	// Create the first file and commit it
 	initialFileName := fileName
 	if tc.initialContent == "" {
 		initialFileName = "file2.txt"
 	}
-	err = os.WriteFile(filepath.Join(repoDir, initialFileName), []byte(tc.initialContent), 0644)
-	assert.NoError(t, err)
+	repo.WriteFile(initialFileName, tc.initialContent)
+	repo.CommitAll("initial")
 
-	cmd = exec.Command("git", "add", initialFileName)
-	runGit(t, cmd, repoDir)
-
-	cmd = exec.Command("git", "config", "user.email", "you@example.com")
-	runGit(t, cmd, repoDir)
-
-	cmd = exec.Command("git", "config", "user.name", "name")
-	runGit(t, cmd, repoDir)
-
-	cmd = exec.Command("git", "config", "commit.gpgsign", "false")
-	runGit(t, cmd, repoDir)
-
-	cmd = exec.Command("git", "commit", "-m", "Initial commit")
-	runGit(t, cmd, repoDir)
-
-	// Step 4: Perform the action specified
+	// Perform the action specified
 	switch tc.action {
 	case "modify":
-		err = os.WriteFile(absolutePath, []byte(tc.modifiedContent), 0644)
-		assert.NoError(t, err)
-	case "move":
-		cmd = exec.Command("git", "mv", absolutePath, absolutePath2)
-		runGit(t, cmd, repoDir)
-	case "subfolder_move":
-		cmd = exec.Command("git", "mv", absolutePath, absolutePath2)
-		runGit(t, cmd, repoDir)
+		repo.WriteFile(fileName, tc.modifiedContent)
+	case "move", "subfolder_move":
+		repo.Run("mv", fileName, fileName2)
 	case "delete":
-		err = os.Remove(absolutePath)
+		err := os.Remove(filepath.Join(repo.Dir(), fileName))
 		assert.NoError(t, err)
 	case "rename":
-		err = os.Rename(absolutePath, absolutePath2)
+		err := os.Rename(filepath.Join(repo.Dir(), fileName), filepath.Join(repo.Dir(), fileName2))
 		assert.NoError(t, err)
 	case "create":
-		err = os.WriteFile(absolutePath, []byte(tc.modifiedContent), 0644)
-		assert.NoError(t, err)
+		repo.WriteFile(fileName, tc.modifiedContent)
 	}
 
-	// Step 5: Stage changes and commit
-	cmd = exec.Command("git", "add", "-A")
-	runGit(t, cmd, repoDir)
-
-	cmd = exec.Command("git", "commit", "-m", tc.action+" file")
-	runGit(t, cmd, repoDir)
-
-	return repoDir
-}
-
-func runGit(t *testing.T, cmd *exec.Cmd, repoDir string) {
-	cmd.Dir = repoDir
-	err := cmd.Run()
-	out, _ := cmd.CombinedOutput()
-	log.Info(string(out))
-	assert.NoError(t, err)
+	repo.CommitAll(tc.action + " file")
+	return repo.Dir()
 }

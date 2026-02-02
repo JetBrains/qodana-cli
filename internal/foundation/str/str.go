@@ -53,3 +53,14 @@ func Reverse(s []string) []string {
 	}
 	return s
 }
+
+// GetLines splits a string into lines by removing the trailing \n from each line.
+// A final trailing \n does not produce an empty trailing element (POSIX line semantics).
+// Empty lines in the middle are preserved as "".
+func GetLines(s string) []string {
+	if s == "" {
+		return nil
+	}
+	s = strings.TrimSuffix(s, "\n")
+	return strings.Split(s, "\n")
+}
