@@ -212,7 +212,7 @@ func getIde(analyzer product.Analyzer) *ReleaseDownloadInfo {
 // installIdeWindowsExe is used as a fallback, since it needs installation privileges and alters the registry
 func installIdeWindowsExe(archivePath string, targetDir string) error {
 	stdout, stderr, _, err := utils.ExecRedirectOutput(
-		"",
+		".",
 		archivePath,
 		"/S",
 		fmt.Sprintf("/D=%s", targetDir),
