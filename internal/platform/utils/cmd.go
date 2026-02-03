@@ -80,8 +80,8 @@ func RunCmd(cwd string, args ...string) (int, error) {
 // RunCmdWithTimeout executes subprocess with forwarding of signals, and returns its exit code.
 func RunCmdWithTimeout(
 	cwd string,
-	stdout *os.File,
-	stderr *os.File,
+	stdout io.Writer,
+	stderr io.Writer,
 	timeout time.Duration,
 	timeoutExitCode int,
 	args ...string,
@@ -127,61 +127,11 @@ func RunCmdWithTimeout(
 	return handleSignals(cmd, waitCh, timeout, timeoutExitCode)
 }
 
-// closePipe closes the pipe
-func closePipe(file *os.File) {
-	err := file.Close()
-	if err != nil {
-		log.Error(err)
-	}
-}
-
 // RunCmdRedirectOutput executes subprocess with forwarding of signals, returns stdout, stderr and exit code.
 func RunCmdRedirectOutput(cwd string, args ...string) (string, string, int, error) {
-	outReader, outWriter, err := os.Pipe()
-	if err != nil {
-		return "", "", -1, fmt.Errorf("failed to create stdout pipe: %w", err)
-	}
-	defer closePipe(outReader)
-	errReader, errWriter, err := os.Pipe()
-	if err != nil {
-		return "", "", -1, fmt.Errorf("failed to create stderr pipe: %w", err)
-	}
-	defer closePipe(errReader)
-
-	outChannel := make(chan string)
-	errChannel := make(chan string)
-
-	go copyToChannel(outReader, outChannel)
-	go copyToChannel(errReader, errChannel)
-
-	res, err := RunCmdWithTimeout(cwd, outWriter, errWriter, time.Duration(math.MaxInt64), 1, args...)
-	closePipes(outWriter, errWriter)
-	stdout := <-outChannel
-	stderr := <-errChannel
-	return stdout, stderr, res, err
-}
-
-// closePipes closes the pairs of pipes
-func closePipes(outWriter *os.File, errWriter *os.File) {
-	err := outWriter.Close()
-	if err != nil {
-		log.Error("Error while closing stdout: ", err)
-	}
-	err = errWriter.Close()
-	if err != nil {
-		log.Error("Error while closing stderr: ", err)
-	}
-}
-
-// copyToChannel copies the content of a Reader to a channel
-func copyToChannel(reader io.Reader, ch chan<- string) {
-	var buf bt.Buffer
-	_, err := io.Copy(&buf, reader)
-	if err != nil {
-		log.Error(err)
-	}
-	ch <- buf.String()
-	close(ch)
+	var stdout, stderr bt.Buffer
+	res, err := RunCmdWithTimeout(cwd, &stdout, &stderr, time.Duration(math.MaxInt64), 1, args...)
+	return stdout.String(), stderr.String(), res, err
 }
 
 // getCwdPath gets the current working directory path
@@ -241,7 +191,7 @@ func handleSignals(cmd *exec.Cmd, waitCh <-chan error, timeout time.Duration, ti
 	}
 }
 
-func readAndWrite(pipe io.ReadCloser, output *os.File) {
+func readAndWrite(pipe io.ReadCloser, output io.Writer) {
 	buf := make([]byte, 1024)
 	for {
 		n, err := pipe.Read(buf)

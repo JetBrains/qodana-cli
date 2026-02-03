@@ -77,33 +77,3 @@ func TestGetCwdPath(t *testing.T) {
 	})
 }
 
-func TestClosePipe(t *testing.T) {
-	t.Run("nil pipe", func(t *testing.T) {
-		closePipe(nil)
-	})
-}
-
-func TestClosePipes(t *testing.T) {
-	t.Run("nil pipes", func(t *testing.T) {
-		closePipes(nil, nil)
-	})
-}
-
-func TestCopyToChannel(t *testing.T) {
-	ch := make(chan string, 10)
-	reader, writer, _ := os.Pipe()
-
-	go func() {
-		_, _ = writer.WriteString("test line\n")
-		_ = writer.Close()
-	}()
-
-	copyToChannel(reader, ch)
-	// copyToChannel closes the channel, so we just read from it
-
-	var result string
-	for line := range ch {
-		result += line
-	}
-	assert.Contains(t, result, "test line")
-}
