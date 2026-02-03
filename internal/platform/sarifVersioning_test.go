@@ -64,7 +64,7 @@ func TestGetBranchName(t *testing.T) {
 }
 
 func runCommand(t *testing.T, cwd string, command string) (string, string) {
-	stdout, stderr, ret, err := utils.RunCmdRedirectOutput(cwd, "sh", "-c", command)
+	stdout, stderr, ret, err := utils.ExecRedirectOutput(cwd, "sh", "-c", command)
 	if err != nil {
 		t.Fatal(err)
 	}

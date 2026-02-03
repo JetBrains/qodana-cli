@@ -50,7 +50,7 @@ func (l CdnetLinter) RunAnalysis(c thirdpartyscan.Context) error {
 		nuget.PrepareNugetConfig(os.Getenv("HOME"))
 	}
 	nuget.UnsetNugetVariables()
-	ret, err := utils.RunCmd(
+	ret, err := utils.Exec(
 		strutil.QuoteForWindows(c.ProjectDir()),
 		args...,
 	)

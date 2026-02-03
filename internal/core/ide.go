@@ -74,7 +74,7 @@ func getInvocationProperties(resultsDir string) *sarif.PropertyBag {
 func runQodanaLocal(c corescan.Context) (int, error) {
 	writeProperties(c)
 	args := getIdeRunCommand(c)
-	ideProcess, err := utils.RunCmdWithTimeout(
+	ideProcess, err := utils.ExecWithTimeout(
 		"",
 		os.Stdout, os.Stderr,
 		c.GetAnalysisTimeout(),
@@ -279,7 +279,7 @@ func installPlugins(c corescan.Context) {
 	}
 	for _, plugin := range plugins {
 		log.Printf("Installing plugin %s", plugin.Id)
-		if res, err := utils.RunCmd(
+		if res, err := utils.Exec(
 			"",
 			strutil.QuoteIfSpace(c.Prod().IdeScript),
 			"installPlugins",
