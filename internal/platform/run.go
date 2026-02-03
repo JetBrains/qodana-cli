@@ -24,8 +24,6 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/JetBrains/qodana-cli/internal/platform/strutil"
-
 	"github.com/JetBrains/qodana-cli/internal/cloud"
 	platformcmd "github.com/JetBrains/qodana-cli/internal/platform/cmd"
 	"github.com/JetBrains/qodana-cli/internal/platform/commoncontext"
@@ -239,7 +237,7 @@ func sendReportToQodanaServer(c thirdpartyscan.Context) {
 		SendReport(
 			publisher,
 			cloud.Token.Token,
-			strutil.QuoteForWindows(c.MountInfo().JavaPath),
+			c.MountInfo().JavaPath,
 		)
 	} else {
 		fmt.Println("Skipping report publishing")
@@ -315,15 +313,15 @@ func convertReportToCloudFormat(context thirdpartyscan.Context) error {
 
 func converterArgs(options thirdpartyscan.Context, mountInfo thirdpartyscan.MountInfo) []string {
 	return []string{
-		strutil.QuoteForWindows(mountInfo.JavaPath),
+		mountInfo.JavaPath,
 		"-jar",
-		strutil.QuoteForWindows(mountInfo.Converter),
+		mountInfo.Converter,
 		"-s",
-		strutil.QuoteForWindows(options.ProjectDir()),
+		options.ProjectDir(),
 		"-d",
-		strutil.QuoteForWindows(options.ResultsDir()),
+		options.ResultsDir(),
 		"-o",
-		strutil.QuoteForWindows(options.ReportDir()),
+		options.ReportDir(),
 		"-n",
 		"result-allProblems.json",
 		"-f",

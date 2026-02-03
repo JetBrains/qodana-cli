@@ -19,17 +19,9 @@
 package utils
 
 import (
-	"log"
 	"os"
-	"os/exec"
 	"syscall"
 )
-
-//goland:noinspection GoUnusedParameter
-func prepareWinCmd(args ...string) *exec.Cmd {
-	log.Fatal("Function should not be called on non-windows platforms")
-	return nil
-}
 
 func RequestTermination(proc *os.Process) error {
 	return proc.Signal(syscall.SIGTERM)

@@ -32,7 +32,6 @@ import (
 	"github.com/JetBrains/qodana-cli/internal/platform"
 	"github.com/JetBrains/qodana-cli/internal/platform/msg"
 	"github.com/JetBrains/qodana-cli/internal/platform/product"
-	"github.com/JetBrains/qodana-cli/internal/platform/strutil"
 	"github.com/JetBrains/qodana-cli/internal/platform/utils"
 	cp "github.com/otiai10/copy"
 	"github.com/pterm/pterm"
@@ -212,11 +211,11 @@ func getIde(analyzer product.Analyzer) *ReleaseDownloadInfo {
 
 // installIdeWindowsExe is used as a fallback, since it needs installation privileges and alters the registry
 func installIdeWindowsExe(archivePath string, targetDir string) error {
-	stdout, stderr, _, err := utils.RunCmdRedirectOutput(
-		"",
-		strutil.QuoteForWindows(archivePath),
+	stdout, stderr, _, err := utils.ExecRedirectOutput(
+		".",
+		archivePath,
 		"/S",
-		fmt.Sprintf("/D=%s", strutil.QuoteForWindows(targetDir)),
+		fmt.Sprintf("/D=%s", targetDir),
 	)
 	if err != nil {
 		return fmt.Errorf("%s: %s. Stdout: %s. Stderr: %s", archivePath, err, stdout, stderr)
@@ -246,12 +245,12 @@ func extractArchive(archivePath string, targetDir string, stripComponents int) e
 		return fmt.Errorf("could not find 'tar': %w", err)
 	}
 
-	tarArgv := []string{tarExe, "-xf", strutil.GetQuotedPath(archivePath), "-C", strutil.GetQuotedPath(tempDir)}
+	tarArgv := []string{tarExe, "-xf", archivePath, "-C", tempDir}
 	if stripComponents > 0 {
 		tarArgv = append(tarArgv, "--strip-components", strconv.Itoa(stripComponents))
 	}
 
-	stdout, stderr, _, err := utils.RunCmdRedirectOutput("", tarArgv...)
+	stdout, stderr, _, err := utils.ExecRedirectOutput(".", tarArgv...)
 	if err != nil {
 		return fmt.Errorf("failed to extract: %w. Stdout: %s. Stderr: %s", err, stdout, stderr)
 	}
@@ -380,7 +379,7 @@ func downloadCustomPlugins(ideUrl string, targetDir string, spinner *pterm.Spinn
 		return fmt.Errorf("error while downloading plugins: %v", err)
 	}
 
-	_, err = utils.RunCmd("", "tar", "-xf", strutil.GetQuotedPath(archivePath), "-C", strutil.GetQuotedPath(targetDir))
+	_, err = utils.Exec(".", "tar", "-xf", archivePath, "-C", targetDir)
 	if err != nil {
 		return fmt.Errorf("tar: %s", err)
 	}
