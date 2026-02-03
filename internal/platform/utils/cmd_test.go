@@ -54,8 +54,8 @@ func TestExecRedirectOutput(t *testing.T) {
 	})
 
 	t.Run("capture stderr", func(t *testing.T) {
-		// Use sh -c to redirect echo to stderr
-		stdout, stderr, exitCode, err := ExecRedirectOutput(".", "sh", "-c", "echo test >&2")
+		// Use RunShellRedirectOutput to redirect echo to stderr
+		stdout, stderr, exitCode, err := RunShellRedirectOutput(".", "echo test >&2")
 		assert.NoError(t, err)
 		assert.Equal(t, 0, exitCode)
 		assert.Empty(t, stdout)
