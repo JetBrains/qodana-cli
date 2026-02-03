@@ -23,7 +23,6 @@ import (
 	"testing"
 
 	"github.com/JetBrains/qodana-cli/internal/platform/qdenv"
-	"github.com/JetBrains/qodana-cli/internal/platform/strutil"
 	"github.com/JetBrains/qodana-cli/internal/platform/utils"
 	"github.com/stretchr/testify/assert"
 )
@@ -69,7 +68,7 @@ func TestGetPublisherArgs(t *testing.T) {
 
 	// Assert that the expected arguments are present
 	expectedArgs := []string{
-		strutil.QuoteForWindows(java),
+		java,
 		"-jar",
 		"test-publisher.jar",
 		"--analysis-id", "test-analysis-id",

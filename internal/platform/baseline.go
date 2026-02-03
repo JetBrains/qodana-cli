@@ -19,7 +19,6 @@ package platform
 import (
 	"fmt"
 
-	"github.com/JetBrains/qodana-cli/internal/platform/strutil"
 	"github.com/JetBrains/qodana-cli/internal/platform/thirdpartyscan"
 	"github.com/JetBrains/qodana-cli/internal/platform/utils"
 )
@@ -28,16 +27,16 @@ import (
 func computeBaselinePrintResults(c thirdpartyscan.Context, thresholds map[string]string) (int, error) {
 	sarifPath := GetSarifPath(c.ResultsDir())
 	args := []string{
-		strutil.QuoteForWindows(c.MountInfo().JavaPath),
+		c.MountInfo().JavaPath,
 		"-jar",
-		strutil.QuoteForWindows(c.MountInfo().BaselineCli),
+		c.MountInfo().BaselineCli,
 		"-r",
-		strutil.QuoteForWindows(sarifPath),
+		sarifPath,
 	}
 	severities := thresholdsToArgs(thresholds)
 	args = append(args, severities...)
 	if c.Baseline() != "" {
-		args = append(args, "-b", strutil.QuoteForWindows(c.Baseline()))
+		args = append(args, "-b", c.Baseline())
 	}
 	if c.BaselineIncludeAbsent() {
 		args = append(args, "-i")

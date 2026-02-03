@@ -26,7 +26,6 @@ import (
 
 	"github.com/JetBrains/qodana-cli/internal/platform"
 	"github.com/JetBrains/qodana-cli/internal/platform/nuget"
-	"github.com/JetBrains/qodana-cli/internal/platform/strutil"
 	"github.com/JetBrains/qodana-cli/internal/platform/thirdpartyscan"
 	"github.com/JetBrains/qodana-cli/internal/platform/utils"
 	"github.com/JetBrains/qodana-cli/internal/sarif"
@@ -51,7 +50,7 @@ func (l CdnetLinter) RunAnalysis(c thirdpartyscan.Context) error {
 	}
 	nuget.UnsetNugetVariables()
 	ret, err := utils.Exec(
-		strutil.QuoteForWindows(c.ProjectDir()),
+		c.ProjectDir(),
 		args...,
 	)
 	if err != nil {
