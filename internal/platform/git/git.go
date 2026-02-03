@@ -167,7 +167,7 @@ func getDeclaredSubmodules(cwd string, logdir string) ([]string, error) {
 		return nil, err
 	}
 
-	stdout, _, err := gitRun(cwd, []string{"config", "get", "--file", ".gitmodules", "--regexp", "--all", "'.path$'"}, logdir)
+	stdout, _, err := gitRun(cwd, []string{"config", "get", "--file", ".gitmodules", "--regexp", "--all", ".path$"}, logdir)
 	if err != nil {
 		var gitErr *GitError
 		if errors.As(err, &gitErr) && gitErr.ExitCode == 1 {
@@ -202,7 +202,7 @@ func getSubmodules(cwd string, logdir string) ([]string, error) {
 }
 
 func getObjectMode(cwd string, path string, logdir string) (int, error) {
-	stdout, _, err := gitRun(cwd, []string{"ls-files", "--format='%(objectmode)'", "--", path}, logdir)
+	stdout, _, err := gitRun(cwd, []string{"ls-files", "--format=%(objectmode)", "--", path}, logdir)
 	if err != nil {
 		return 0, err
 	}
