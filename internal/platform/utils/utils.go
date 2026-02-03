@@ -69,7 +69,7 @@ func FindFiles(root string, extensions []string) []string {
 
 func GetJavaExecutablePath() (string, error) {
 	// java outputs settings to stderr, not stdout
-	_, stderr, ret, err := RunCmdRedirectOutput("", "java", "-XshowSettings:properties", "-version")
+	_, stderr, ret, err := RunCmdRedirectOutput(".", "java", "-XshowSettings:properties", "-version")
 	if err != nil || ret != 0 {
 		return "", fmt.Errorf(
 			"failed to get JAVA_HOME: %w, %d. Check that java executable is accessible from the PATH",
@@ -107,7 +107,7 @@ func GetJavaExecutablePath() (string, error) {
 
 // LaunchAndLog launches a process and logs its output.
 func LaunchAndLog(logDir string, executable string, args ...string) (string, string, int, error) {
-	stdout, stderr, ret, err := RunCmdRedirectOutput("", args...)
+	stdout, stderr, ret, err := RunCmdRedirectOutput(".", args...)
 	if err != nil {
 		log.Error(fmt.Errorf("failed to run %s: %w", executable, err))
 		return "", "", ret, err

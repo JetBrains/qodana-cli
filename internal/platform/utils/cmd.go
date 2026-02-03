@@ -85,6 +85,9 @@ func RunCmdWithTimeout(
 	timeoutExitCode int,
 	args ...string,
 ) (int, error) {
+	if cwd == "" {
+		return 1, fmt.Errorf("cwd must not be empty")
+	}
 	if len(args) == 0 {
 		return 1, fmt.Errorf("no command provided")
 	}
@@ -92,10 +95,7 @@ func RunCmdWithTimeout(
 	cmd := exec.Command(args[0], args[1:]...)
 	cmd.Stdout = stdout
 	cmd.Stderr = stderr
-	var err error
-	if cmd.Dir, err = getCwdPath(cwd); err != nil {
-		return 1, err
-	}
+	cmd.Dir = cwd
 	cmd.Stdin = bt.NewBuffer([]byte{})
 	if err := cmd.Start(); err != nil {
 		return 1, fmt.Errorf("failed to start command: %w", err)
@@ -115,18 +115,6 @@ func RunCmdRedirectOutput(cwd string, args ...string) (string, string, int, erro
 	var stdout, stderr bt.Buffer
 	res, err := RunCmdWithTimeout(cwd, &stdout, &stderr, time.Duration(math.MaxInt64), 1, args...)
 	return stdout.String(), stderr.String(), res, err
-}
-
-// getCwdPath gets the current working directory path
-func getCwdPath(cwd string) (string, error) {
-	if cwd != "" {
-		return cwd, nil
-	}
-	wd, err := os.Getwd()
-	if err != nil {
-		return "", fmt.Errorf("failed to get current working directory: %w", err)
-	}
-	return wd, nil
 }
 
 // handleSignals handles the signals from the subprocess
