@@ -75,7 +75,7 @@ func runQodanaLocal(c corescan.Context) (int, error) {
 	writeProperties(c)
 	args := getIdeRunCommand(c)
 	ideProcess, err := utils.ExecWithTimeout(
-		"",
+		".",
 		os.Stdout, os.Stderr,
 		c.GetAnalysisTimeout(),
 		utils.QodanaTimeoutExitCodePlaceholder,
