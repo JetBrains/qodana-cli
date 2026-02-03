@@ -213,7 +213,10 @@ func getObjectMode(cwd string, path string, logdir string) (int, error) {
 	}
 
 	mode := 0
-	fmt.Sscanf(stdout, "%d", &mode)
+	if _, err = fmt.Sscanf(stdout, "%d", &mode); err != nil {
+		return 0, err
+	}
+
 	return mode, nil
 }
 

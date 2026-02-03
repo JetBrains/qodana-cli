@@ -23,7 +23,9 @@ func GitAllowFileProtocol(t *testing.T) {
 	count := 0
 	countStr := os.Getenv("GIT_CONFIG_COUNT")
 	if countStr != "" {
-		fmt.Sscanf(countStr, "%d", &count)
+		if _, err := fmt.Sscanf(countStr, "%d", &count); err != nil {
+			t.Fatalf("Scanf failed while parsing the value of GIT_CONFIG_COUNT, which was %s: %s", countStr, err)
+		}
 	}
 
 	t.Setenv(fmt.Sprintf("GIT_CONFIG_KEY_%d", count), "protocol.file.allow")
