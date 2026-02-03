@@ -54,18 +54,7 @@ func Bootstrap(command string, project string) {
 	if command == "" {
 		return
 	}
-	var executor string
-	var flag string
-	switch runtime.GOOS {
-	case "windows":
-		executor = "cmd"
-		flag = "/c"
-	default:
-		executor = "sh"
-		flag = "-c"
-	}
-
-	if res, err := Exec(project, executor, flag, command); res > 0 || err != nil {
+	if res, err := RunShell(project, command); res > 0 || err != nil {
 		log.Printf("Provided bootstrap command finished with error: %d. Exiting...", res)
 		os.Exit(res)
 	}
@@ -117,6 +106,26 @@ func ExecRedirectOutput(cwd string, args ...string) (string, string, int, error)
 	return stdout.String(), stderr.String(), res, err
 }
 
+// RunShell executes a shell command (using cmd on Windows, sh on other platforms).
+func RunShell(cwd string, command string) (int, error) {
+	args := getSystemShellArgv(command)
+	return Exec(cwd, args...)
+}
+
+// RunShellRedirectOutput executes a shell command and captures stdout/stderr.
+func RunShellRedirectOutput(cwd string, command string) (string, string, int, error) {
+	args := getSystemShellArgv(command)
+	return ExecRedirectOutput(cwd, args...)
+}
+
+// getSystemShellArgv the arguments to invoke the system shell with the specified command.
+func getSystemShellArgv(command string) []string {
+	if runtime.GOOS == "windows" {
+		return []string{"cmd", "/c", command}
+	}
+	return []string{"sh", "-c", command}
+}
+
 // handleSignals handles the signals from the subprocess
 func handleSignals(cmd *exec.Cmd, waitCh <-chan error, timeout time.Duration, timeoutExitCode int) (int, error) {
 	sigChan := make(chan os.Signal, 1)
@@ -161,4 +170,3 @@ func handleSignals(cmd *exec.Cmd, waitCh <-chan error, timeout time.Duration, ti
 		}
 	}
 }
-
