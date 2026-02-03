@@ -422,7 +422,7 @@ func TestCheckoutAndUpdateSubmodule_SubmoduleNameDiffersFromPath(t *testing.T) {
 	assert.Equal(t, "content-v2", repo.Submodule("libs/utils/helper").ReadFile("file.txt"))
 }
 
-func TestGetDeclaredSubmodules_NoEmptyStrings(t *testing.T) {
+func TestGetDeclaredSubmodules(t *testing.T) {
 	logdir := t.TempDir()
 	repo := SampleRepoWithSubmodule(t).CloneRecursive()
 
@@ -435,7 +435,7 @@ func TestGetDeclaredSubmodules_NoEmptyStrings(t *testing.T) {
 	}
 }
 
-func TestGetSubmodules_NoEmptyStrings(t *testing.T) {
+func TestGetSubmodules(t *testing.T) {
 	logdir := t.TempDir()
 	repo := SampleRepoWithSubmodule(t).CloneRecursive()
 
