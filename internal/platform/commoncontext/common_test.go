@@ -200,7 +200,7 @@ func Test_runCmd(t *testing.T) {
 		}{
 			{"true", []string{"true"}, 0},
 			{"false", []string{"false"}, 1},
-			{"exit 255", []string{"exit 255"}, 255},
+			{"exit 255", []string{"sh", "-c", "exit 255"}, 255},
 		} {
 			t.Run(
 				tc.name, func(t *testing.T) {

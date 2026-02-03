@@ -26,7 +26,6 @@ import (
 	"os/exec"
 	"os/signal"
 	"runtime"
-	"strings"
 	"syscall"
 	"time"
 
@@ -66,7 +65,7 @@ func Bootstrap(command string, project string) {
 		flag = "-c"
 	}
 
-	if res, err := RunCmd(project, executor, flag, "\""+command+"\""); res > 0 || err != nil {
+	if res, err := RunCmd(project, executor, flag, command); res > 0 || err != nil {
 		log.Printf("Provided bootstrap command finished with error: %d. Exiting...", res)
 		os.Exit(res)
 	}
@@ -86,25 +85,14 @@ func RunCmdWithTimeout(
 	timeoutExitCode int,
 	args ...string,
 ) (int, error) {
-	log.Debugf("Running command: %v", args)
-	cmd := exec.Command("bash", "-c", strings.Join(args, " ")) // TODO : Viktor told about set -e
-	var stdoutPipe, stderrPipe io.ReadCloser
-	var err error
-	if //goland:noinspection GoBoolExpressions
-	runtime.GOOS == "windows" {
-		cmd = prepareWinCmd(args...)
-		stdoutPipe, err = cmd.StdoutPipe()
-		if err != nil {
-			return 1, fmt.Errorf("failed to get stdout pipe: %w", err)
-		}
-		stderrPipe, err = cmd.StderrPipe()
-		if err != nil {
-			return 1, fmt.Errorf("failed to get stderr pipe: %w", err)
-		}
-	} else {
-		cmd.Stdout = stdout
-		cmd.Stderr = stderr
+	if len(args) == 0 {
+		return 1, fmt.Errorf("no command provided")
 	}
+	log.Debugf("Running command: %v", args)
+	cmd := exec.Command(args[0], args[1:]...)
+	cmd.Stdout = stdout
+	cmd.Stderr = stderr
+	var err error
 	if cmd.Dir, err = getCwdPath(cwd); err != nil {
 		return 1, err
 	}
@@ -119,11 +107,6 @@ func RunCmdWithTimeout(
 		close(waitCh)
 	}()
 
-	if //goland:noinspection GoBoolExpressions
-	runtime.GOOS == "windows" {
-		go readAndWrite(stdoutPipe, stdout)
-		go readAndWrite(stderrPipe, stderr)
-	}
 	return handleSignals(cmd, waitCh, timeout, timeoutExitCode)
 }
 
@@ -191,22 +174,3 @@ func handleSignals(cmd *exec.Cmd, waitCh <-chan error, timeout time.Duration, ti
 	}
 }
 
-func readAndWrite(pipe io.ReadCloser, output io.Writer) {
-	buf := make([]byte, 1024)
-	for {
-		n, err := pipe.Read(buf)
-		if n > 0 {
-			_, writeErr := output.Write(buf[:n])
-			if writeErr != nil {
-				log.Printf("failed to write to output: %v", writeErr)
-				break
-			}
-		}
-		if err != nil {
-			if err != io.EOF {
-				log.Printf("error reading from pipe: %v", err)
-			}
-			break
-		}
-	}
-}
