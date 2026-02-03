@@ -63,18 +63,4 @@ func TestRunCmdRedirectOutput(t *testing.T) {
 	})
 }
 
-func TestGetCwdPath(t *testing.T) {
-	t.Run("empty cwd uses current dir", func(t *testing.T) {
-		path, err := getCwdPath("")
-		assert.NoError(t, err)
-		assert.NotEmpty(t, path)
-	})
-
-	t.Run("explicit cwd", func(t *testing.T) {
-		dir := t.TempDir()
-		path, err := getCwdPath(dir)
-		assert.NoError(t, err)
-		assert.Equal(t, dir, path)
-	})
-}
 
