@@ -140,7 +140,7 @@ func runClangTidy(
 	args = append(args, "--quiet")
 	args = append(args, strings.Split(c.ClangArgs(), " ")...)
 	stdout, stderr, _, err := utils.ExecRedirectOutput(
-		strutil.QuoteIfSpace(c.ProjectDir()),
+		c.ProjectDir(),
 		args...,
 	)
 	if stderr != "" {
