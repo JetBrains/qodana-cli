@@ -18,35 +18,35 @@ func TestBootstrap(t *testing.T) {
 	})
 }
 
-func TestRunCmd(t *testing.T) {
+func TestExec(t *testing.T) {
 	t.Run("successful command", func(t *testing.T) {
-		exitCode, err := RunCmd(".", "echo", "test")
+		exitCode, err := Exec(".", "echo", "test")
 		assert.NoError(t, err)
 		assert.Equal(t, 0, exitCode)
 	})
 
 	t.Run("command not found", func(t *testing.T) {
-		exitCode, _ := RunCmd(".", "nonexistent_command_xyz")
+		exitCode, _ := Exec(".", "nonexistent_command_xyz")
 		assert.NotEqual(t, 0, exitCode)
 	})
 }
 
-func TestRunCmdWithTimeout(t *testing.T) {
+func TestExecWithTimeout(t *testing.T) {
 	t.Run("command finishes before timeout", func(t *testing.T) {
-		exitCode, err := RunCmdWithTimeout(".", os.Stdout, os.Stderr, 5*time.Second, 99, "echo", "test")
+		exitCode, err := ExecWithTimeout(".", os.Stdout, os.Stderr, 5*time.Second, 99, "echo", "test")
 		assert.NoError(t, err)
 		assert.Equal(t, 0, exitCode)
 	})
 
 	t.Run("timeout", func(t *testing.T) {
-		exitCode, _ := RunCmdWithTimeout(".", os.Stdout, os.Stderr, 100*time.Millisecond, 99, "sleep", "5")
+		exitCode, _ := ExecWithTimeout(".", os.Stdout, os.Stderr, 100*time.Millisecond, 99, "sleep", "5")
 		assert.Equal(t, 99, exitCode)
 	})
 }
 
-func TestRunCmdRedirectOutput(t *testing.T) {
+func TestExecRedirectOutput(t *testing.T) {
 	t.Run("capture stdout", func(t *testing.T) {
-		stdout, stderr, exitCode, err := RunCmdRedirectOutput(".", "echo", "test")
+		stdout, stderr, exitCode, err := ExecRedirectOutput(".", "echo", "test")
 		assert.NoError(t, err)
 		assert.Equal(t, 0, exitCode)
 		assert.Contains(t, stdout, "test")
@@ -55,7 +55,7 @@ func TestRunCmdRedirectOutput(t *testing.T) {
 
 	t.Run("capture stderr", func(t *testing.T) {
 		// Use sh -c to redirect echo to stderr
-		stdout, stderr, exitCode, err := RunCmdRedirectOutput(".", "sh", "-c", "echo test >&2")
+		stdout, stderr, exitCode, err := ExecRedirectOutput(".", "sh", "-c", "echo test >&2")
 		assert.NoError(t, err)
 		assert.Equal(t, 0, exitCode)
 		assert.Empty(t, stdout)

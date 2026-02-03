@@ -65,19 +65,19 @@ func Bootstrap(command string, project string) {
 		flag = "-c"
 	}
 
-	if res, err := RunCmd(project, executor, flag, command); res > 0 || err != nil {
+	if res, err := Exec(project, executor, flag, command); res > 0 || err != nil {
 		log.Printf("Provided bootstrap command finished with error: %d. Exiting...", res)
 		os.Exit(res)
 	}
 }
 
-// RunCmd executes subprocess with forwarding of signals, and returns its exit code.
-func RunCmd(cwd string, args ...string) (int, error) {
-	return RunCmdWithTimeout(cwd, os.Stdout, os.Stderr, time.Duration(math.MaxInt64), 1, args...)
+// Exec executes subprocess with forwarding of signals, and returns its exit code.
+func Exec(cwd string, args ...string) (int, error) {
+	return ExecWithTimeout(cwd, os.Stdout, os.Stderr, time.Duration(math.MaxInt64), 1, args...)
 }
 
-// RunCmdWithTimeout executes subprocess with forwarding of signals, and returns its exit code.
-func RunCmdWithTimeout(
+// ExecWithTimeout executes subprocess with forwarding of signals, and returns its exit code.
+func ExecWithTimeout(
 	cwd string,
 	stdout io.Writer,
 	stderr io.Writer,
@@ -110,10 +110,10 @@ func RunCmdWithTimeout(
 	return handleSignals(cmd, waitCh, timeout, timeoutExitCode)
 }
 
-// RunCmdRedirectOutput executes subprocess with forwarding of signals, returns stdout, stderr and exit code.
-func RunCmdRedirectOutput(cwd string, args ...string) (string, string, int, error) {
+// ExecRedirectOutput executes subprocess with forwarding of signals, returns stdout, stderr and exit code.
+func ExecRedirectOutput(cwd string, args ...string) (string, string, int, error) {
 	var stdout, stderr bt.Buffer
-	res, err := RunCmdWithTimeout(cwd, &stdout, &stderr, time.Duration(math.MaxInt64), 1, args...)
+	res, err := ExecWithTimeout(cwd, &stdout, &stderr, time.Duration(math.MaxInt64), 1, args...)
 	return stdout.String(), stderr.String(), res, err
 }
 

@@ -204,7 +204,7 @@ func Test_runCmd(t *testing.T) {
 		} {
 			t.Run(
 				tc.name, func(t *testing.T) {
-					got, _ := utils.RunCmd(".", tc.cmd...)
+					got, _ := utils.Exec(".", tc.cmd...)
 					if got != tc.res {
 						t.Errorf("runCmd: %v, Got: %v, Expected: %v", tc.cmd, got, tc.res)
 					}

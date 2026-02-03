@@ -353,7 +353,7 @@ func saveReport(c corescan.Context) {
 		)
 		return
 	}
-	if res, err := utils.RunCmd(
+	if res, err := utils.Exec(
 		"",
 		strutil.QuoteForWindows(prod.JbrJava()),
 		"-jar",

@@ -83,7 +83,7 @@ func GetVersionDetails(pwd string) (sarif.VersionControlDetails, error) {
 }
 
 func getRepositoryUri(pwd string) (string, error) {
-	uri, stderr, ret, err := utils.RunCmdRedirectOutput(pwd, "git", "ls-remote", "--get-url")
+	uri, stderr, ret, err := utils.ExecRedirectOutput(pwd, "git", "ls-remote", "--get-url")
 	if err != nil {
 		return "", err
 	}
@@ -105,7 +105,7 @@ func getRepositoryUri(pwd string) (string, error) {
 }
 
 func getRevisionId(pwd string) (string, error) {
-	rev, _, ret, err := utils.RunCmdRedirectOutput(pwd, "git", "rev-parse", "HEAD")
+	rev, _, ret, err := utils.ExecRedirectOutput(pwd, "git", "rev-parse", "HEAD")
 	if err != nil {
 		return "", err
 	}
@@ -117,13 +117,13 @@ func getRevisionId(pwd string) (string, error) {
 
 func getBranchName(pwd string) (string, error) {
 	// note: git branch --show-current not used because the flag is too recent at the time of writing
-	branch, _, ret, err := utils.RunCmdRedirectOutput(pwd, "git", "rev-parse", "--abbrev-ref", "HEAD")
+	branch, _, ret, err := utils.ExecRedirectOutput(pwd, "git", "rev-parse", "--abbrev-ref", "HEAD")
 	if err != nil {
 		return "", err
 	}
 	if ret == 128 {
 		// this approach covers some corner cases, notably when no commits exist
-		branch, _, ret, err = utils.RunCmdRedirectOutput(pwd, "git", "symbolic-ref", "--short", "HEAD")
+		branch, _, ret, err = utils.ExecRedirectOutput(pwd, "git", "symbolic-ref", "--short", "HEAD")
 		if err != nil {
 			return "", err
 		}
@@ -140,7 +140,7 @@ func getBranchName(pwd string) (string, error) {
 }
 
 func getLastAuthorName(pwd string) string {
-	name, _, ret, err := utils.RunCmdRedirectOutput(pwd, "git", "log", "-1", "--pretty=format:%an")
+	name, _, ret, err := utils.ExecRedirectOutput(pwd, "git", "log", "-1", "--pretty=format:%an")
 	if err != nil || ret != 0 {
 		return ""
 	}
@@ -148,7 +148,7 @@ func getLastAuthorName(pwd string) string {
 }
 
 func getAuthorEmail(pwd string) string {
-	email, _, ret, err := utils.RunCmdRedirectOutput(pwd, "git", "log", "-1", "--pretty=format:%ae")
+	email, _, ret, err := utils.ExecRedirectOutput(pwd, "git", "log", "-1", "--pretty=format:%ae")
 	if err != nil || ret != 0 {
 		return ""
 	}
