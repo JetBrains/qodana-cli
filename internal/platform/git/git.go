@@ -192,6 +192,8 @@ func getSubmodules(cwd string, logdir string) ([]string, error) {
 			log.Debugf("Ignoring declared submodule %q: ls-files failed: %v", path, err)
 			return false
 		}
+		// 160000 is a special mode that git cache reports for files which are actually submodules.
+		// See https://devops.stackexchange.com/a/5380
 		if mode != 160000 {
 			log.Debugf("Ignoring declared submodule %q: git cache reports mode %d (expected 160000)", path, mode)
 			return false
