@@ -17,6 +17,7 @@
 package strutil
 
 import (
+	"runtime"
 	"strings"
 )
 
@@ -74,6 +75,25 @@ func QuoteIfSpace(s string) string {
 	return s
 }
 
+// QuoteForWindows wraps s in quotes if s contains a typical Windows batch special char and isn't yet quoted.
+func QuoteForWindows(s string) string {
+	if IsStringQuoted(s) {
+		return s
+	}
+	if runtime.GOOS == "windows" && ContainsWinSpecialChar(s) {
+		return `"` + s + `"`
+	}
+	return s
+}
+
+// GetQuotedPath returns a quoted path for the current OS.
+func GetQuotedPath(path string) string {
+	if runtime.GOOS == "windows" {
+		return QuoteForWindows(path)
+	}
+	return QuoteIfSpace(path)
+}
+
 // IsStringQuoted checks if a string is already quoted with double quotes.
 func IsStringQuoted(s string) bool {
 	return strings.HasPrefix(s, "\"") && strings.HasSuffix(s, "\"")
@@ -96,11 +116,4 @@ func Reverse(s []string) []string {
 		s[i], s[j] = s[j], s[i]
 	}
 	return s
-}
-
-// GetLines splits a string into lines. Equivalent to strings.Split except the trailing newline does not produce a line
-// (as per POSIX spec). Use this to parse output of commands that print lines to stdout.
-func GetLines(s string) []string {
-	s = strings.TrimSuffix(s, "\n")
-	return strings.Split(s, "\n")
 }

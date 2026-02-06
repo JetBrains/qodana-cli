@@ -17,6 +17,7 @@
 package strutil
 
 import (
+	"runtime"
 	"testing"
 )
 
@@ -217,6 +218,32 @@ func TestContainsWinSpecialChar(t *testing.T) {
 	}
 }
 
+func TestQuoteForWindows(t *testing.T) {
+	assert := func(input, expected string) {
+		if result := QuoteForWindows(input); result != expected {
+			t.Errorf("QuoteForWindows(%q) = %q, want %q", input, result, expected)
+		}
+	}
+	assert("hello", "hello")
+	assert("\"already quoted\"", "\"already quoted\"")
+	if runtime.GOOS == "windows" {
+		assert("hello world", "\"hello world\"")
+	} else {
+		assert("hello world", "hello world")
+	}
+}
+
+func TestGetQuotedPath(t *testing.T) {
+	result := GetQuotedPath("path with space")
+	expected := "\"path with space\""
+	if result != expected {
+		t.Errorf("GetQuotedPath(%q) = %q, want %q", "path with space", result, expected)
+	}
+	if result := GetQuotedPath("nospace"); result != "nospace" {
+		t.Errorf("GetQuotedPath(%q) = %q, want %q", "nospace", result, "nospace")
+	}
+}
+
 func TestReverse(t *testing.T) {
 	tests := []struct {
 		name     string
@@ -241,37 +268,6 @@ func TestReverse(t *testing.T) {
 			for i, v := range result {
 				if v != tt.expected[i] {
 					t.Errorf("Reverse(%v)[%d] = %q, want %q", tt.input, i, v, tt.expected[i])
-				}
-			}
-		})
-	}
-}
-
-func TestGetLines(t *testing.T) {
-	tests := []struct {
-		name     string
-		input    string
-		expected []string
-	}{
-		{"empty string", "", []string{""}},
-		{"single line no newline", "hello", []string{"hello"}},
-		{"single line with newline", "hello\n", []string{"hello"}},
-		{"multiple lines no trailing newline", "a\nb\nc", []string{"a", "b", "c"}},
-		{"multiple lines with trailing newline", "a\nb\nc\n", []string{"a", "b", "c"}},
-		{"only newline", "\n", []string{""}},
-		{"empty lines in middle", "a\n\nb", []string{"a", "", "b"}},
-		{"empty lines in middle with trailing", "a\n\nb\n", []string{"a", "", "b"}},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			result := GetLines(tt.input)
-			if len(result) != len(tt.expected) {
-				t.Errorf("GetLines(%q) length = %d, want %d; got %q", tt.input, len(result), len(tt.expected), result)
-				return
-			}
-			for i, v := range result {
-				if v != tt.expected[i] {
-					t.Errorf("GetLines(%q)[%d] = %q, want %q", tt.input, i, v, tt.expected[i])
 				}
 			}
 		})

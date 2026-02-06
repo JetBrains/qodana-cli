@@ -26,6 +26,7 @@ import (
 	"sort"
 	"strings"
 
+	"github.com/JetBrains/qodana-cli/internal/platform/strutil"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -75,6 +76,13 @@ func ComputeChangedFiles(cwd string, diffStart string, diffEnd string, logdir st
 	}
 
 	filePath, _ := filepath.Abs(filepath.Join(logdir, "git-diff.log"))
+	file, err := os.Create(filePath)
+	if err != nil {
+		return ChangedFiles{}, fmt.Errorf("failed to create file %s: %w", filePath, err)
+	}
+	if err = file.Close(); err != nil {
+		return ChangedFiles{}, fmt.Errorf("failed to close file %s: %w", filePath, err)
+	}
 
 	// Rev-parsing references in advance helps with clearer error messages and in case references could be confused
 	// with `git diff` options.
@@ -90,18 +98,13 @@ func ComputeChangedFiles(cwd string, diffStart string, diffEnd string, logdir st
 	}
 	log.Debugf("Resolved git ref %q as %s", diffEnd, diffEndSha)
 
-	stdout, _, err := gitRun(
+	_, _, err = gitRun(
 		cwd,
-		[]string{"diff", diffStartSha, diffEndSha, "--unified=0", "--no-renames"},
+		[]string{"diff", diffStartSha, diffEndSha, "--unified=0", "--no-renames", ">", strutil.QuoteIfSpace(filePath)},
 		logdir,
 	)
 	if err != nil {
 		return ChangedFiles{}, err
-	}
-
-	// Write diff output to file
-	if err = os.WriteFile(filePath, []byte(stdout), 0644); err != nil {
-		return ChangedFiles{}, fmt.Errorf("failed to write diff to file %s: %w", filePath, err)
 	}
 	return parseDiff(filePath, absRepoRoot, absCwd)
 }

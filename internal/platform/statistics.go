@@ -26,6 +26,7 @@ import (
 	"time"
 
 	"github.com/JetBrains/qodana-cli/internal/cloud"
+	"github.com/JetBrains/qodana-cli/internal/platform/strutil"
 	"github.com/JetBrains/qodana-cli/internal/platform/thirdpartyscan"
 	"github.com/JetBrains/qodana-cli/internal/platform/utils"
 	"github.com/JetBrains/qodana-cli/internal/tooling"
@@ -97,13 +98,13 @@ func sendFuserEvents(
 	}
 
 	args := []string{
-		mountInfo.JavaPath,
+		strutil.QuoteForWindows(mountInfo.JavaPath),
 		"-jar",
-		mountInfo.Fuser,
+		strutil.QuoteForWindows(mountInfo.Fuser),
 		deviceId,
 		linterInfo.ProductCode,
 		linterInfo.LinterVersion,
-		fileName,
+		strutil.QuoteForWindows(fileName),
 	}
 	if os.Getenv("GO_TESTING") == "true" {
 		args = append(args, "true")

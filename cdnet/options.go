@@ -21,6 +21,7 @@ import (
 	"strings"
 
 	"github.com/JetBrains/qodana-cli/internal/platform"
+	"github.com/JetBrains/qodana-cli/internal/platform/strutil"
 	"github.com/JetBrains/qodana-cli/internal/platform/thirdpartyscan"
 )
 
@@ -71,9 +72,9 @@ func (l CdnetLinter) computeCdnetArgs(c thirdpartyscan.Context) ([]string, error
 
 	args := []string{
 		"dotnet",
-		mountInfo.CustomTools[thirdpartyscan.Clt],
+		strutil.QuoteForWindows(mountInfo.CustomTools[thirdpartyscan.Clt]),
 		"inspectcode",
-		target,
+		strutil.QuoteForWindows(target),
 		"-o=\"" + sarifPath + "\"",
 		"-f=\"Qodana\"",
 		"--LogFolder=\"" + c.LogDir() + "\"",

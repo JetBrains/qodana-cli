@@ -26,6 +26,7 @@ import (
 	"os/exec"
 	"os/signal"
 	"runtime"
+	"strings"
 	"syscall"
 	"time"
 
@@ -54,37 +55,59 @@ func Bootstrap(command string, project string) {
 	if command == "" {
 		return
 	}
-	if res, err := RunShell(project, command); res > 0 || err != nil {
+	var executor string
+	var flag string
+	switch runtime.GOOS {
+	case "windows":
+		executor = "cmd"
+		flag = "/c"
+	default:
+		executor = "sh"
+		flag = "-c"
+	}
+
+	if res, err := RunCmd(project, executor, flag, "\""+command+"\""); res > 0 || err != nil {
 		log.Printf("Provided bootstrap command finished with error: %d. Exiting...", res)
 		os.Exit(res)
 	}
 }
 
-// Exec executes subprocess with forwarding of signals, and returns its exit code.
-func Exec(cwd string, args ...string) (int, error) {
-	return ExecWithTimeout(cwd, os.Stdout, os.Stderr, time.Duration(math.MaxInt64), 1, args...)
+// RunCmd executes subprocess with forwarding of signals, and returns its exit code.
+func RunCmd(cwd string, args ...string) (int, error) {
+	return RunCmdWithTimeout(cwd, os.Stdout, os.Stderr, time.Duration(math.MaxInt64), 1, args...)
 }
 
-// ExecWithTimeout executes subprocess with forwarding of signals, and returns its exit code.
-func ExecWithTimeout(
+// RunCmdWithTimeout executes subprocess with forwarding of signals, and returns its exit code.
+func RunCmdWithTimeout(
 	cwd string,
-	stdout io.Writer,
-	stderr io.Writer,
+	stdout *os.File,
+	stderr *os.File,
 	timeout time.Duration,
 	timeoutExitCode int,
 	args ...string,
 ) (int, error) {
-	if cwd == "" {
-		return 1, fmt.Errorf("cwd must not be empty")
-	}
-	if len(args) == 0 {
-		return 1, fmt.Errorf("no command provided")
-	}
 	log.Debugf("Running command: %v", args)
-	cmd := exec.Command(args[0], args[1:]...)
-	cmd.Stdout = stdout
-	cmd.Stderr = stderr
-	cmd.Dir = cwd
+	cmd := exec.Command("bash", "-c", strings.Join(args, " ")) // TODO : Viktor told about set -e
+	var stdoutPipe, stderrPipe io.ReadCloser
+	var err error
+	if //goland:noinspection GoBoolExpressions
+	runtime.GOOS == "windows" {
+		cmd = prepareWinCmd(args...)
+		stdoutPipe, err = cmd.StdoutPipe()
+		if err != nil {
+			return 1, fmt.Errorf("failed to get stdout pipe: %w", err)
+		}
+		stderrPipe, err = cmd.StderrPipe()
+		if err != nil {
+			return 1, fmt.Errorf("failed to get stderr pipe: %w", err)
+		}
+	} else {
+		cmd.Stdout = stdout
+		cmd.Stderr = stderr
+	}
+	if cmd.Dir, err = getCwdPath(cwd); err != nil {
+		return 1, err
+	}
 	cmd.Stdin = bt.NewBuffer([]byte{})
 	if err := cmd.Start(); err != nil {
 		return 1, fmt.Errorf("failed to start command: %w", err)
@@ -96,34 +119,81 @@ func ExecWithTimeout(
 		close(waitCh)
 	}()
 
+	if //goland:noinspection GoBoolExpressions
+	runtime.GOOS == "windows" {
+		go readAndWrite(stdoutPipe, stdout)
+		go readAndWrite(stderrPipe, stderr)
+	}
 	return handleSignals(cmd, waitCh, timeout, timeoutExitCode)
 }
 
-// ExecRedirectOutput executes subprocess with forwarding of signals, returns stdout, stderr and exit code.
-func ExecRedirectOutput(cwd string, args ...string) (string, string, int, error) {
-	var stdout, stderr bt.Buffer
-	res, err := ExecWithTimeout(cwd, &stdout, &stderr, time.Duration(math.MaxInt64), 1, args...)
-	return stdout.String(), stderr.String(), res, err
-}
-
-// RunShell executes a shell command (using cmd on Windows, sh on other platforms).
-func RunShell(cwd string, command string) (int, error) {
-	args := getSystemShellArgv(command)
-	return Exec(cwd, args...)
-}
-
-// RunShellRedirectOutput executes a shell command and captures stdout/stderr.
-func RunShellRedirectOutput(cwd string, command string) (string, string, int, error) {
-	args := getSystemShellArgv(command)
-	return ExecRedirectOutput(cwd, args...)
-}
-
-// getSystemShellArgv the arguments to invoke the system shell with the specified command.
-func getSystemShellArgv(command string) []string {
-	if runtime.GOOS == "windows" {
-		return []string{"cmd", "/c", command}
+// closePipe closes the pipe
+func closePipe(file *os.File) {
+	err := file.Close()
+	if err != nil {
+		log.Error(err)
 	}
-	return []string{"sh", "-c", command}
+}
+
+// RunCmdRedirectOutput executes subprocess with forwarding of signals, returns stdout, stderr and exit code.
+func RunCmdRedirectOutput(cwd string, args ...string) (string, string, int, error) {
+	outReader, outWriter, err := os.Pipe()
+	if err != nil {
+		return "", "", -1, fmt.Errorf("failed to create stdout pipe: %w", err)
+	}
+	defer closePipe(outReader)
+	errReader, errWriter, err := os.Pipe()
+	if err != nil {
+		return "", "", -1, fmt.Errorf("failed to create stderr pipe: %w", err)
+	}
+	defer closePipe(errReader)
+
+	outChannel := make(chan string)
+	errChannel := make(chan string)
+
+	go copyToChannel(outReader, outChannel)
+	go copyToChannel(errReader, errChannel)
+
+	res, err := RunCmdWithTimeout(cwd, outWriter, errWriter, time.Duration(math.MaxInt64), 1, args...)
+	closePipes(outWriter, errWriter)
+	stdout := <-outChannel
+	stderr := <-errChannel
+	return stdout, stderr, res, err
+}
+
+// closePipes closes the pairs of pipes
+func closePipes(outWriter *os.File, errWriter *os.File) {
+	err := outWriter.Close()
+	if err != nil {
+		log.Error("Error while closing stdout: ", err)
+	}
+	err = errWriter.Close()
+	if err != nil {
+		log.Error("Error while closing stderr: ", err)
+	}
+}
+
+// copyToChannel copies the content of a Reader to a channel
+func copyToChannel(reader io.Reader, ch chan<- string) {
+	var buf bt.Buffer
+	_, err := io.Copy(&buf, reader)
+	if err != nil {
+		log.Error(err)
+	}
+	ch <- buf.String()
+	close(ch)
+}
+
+// getCwdPath gets the current working directory path
+func getCwdPath(cwd string) (string, error) {
+	if cwd != "" {
+		return cwd, nil
+	}
+	wd, err := os.Getwd()
+	if err != nil {
+		return "", fmt.Errorf("failed to get current working directory: %w", err)
+	}
+	return wd, nil
 }
 
 // handleSignals handles the signals from the subprocess
@@ -150,7 +220,7 @@ func handleSignals(cmd *exec.Cmd, waitCh <-chan error, timeout time.Duration, ti
 			if err := RequestTermination(cmd.Process); err != nil {
 				log.Fatal("failed to kill process on timeout: ", err)
 			}
-			<-waitCh
+			_, _ = cmd.Process.Wait()
 			return timeoutExitCode, nil
 		case ret := <-waitCh:
 			var exitError *exec.ExitError
@@ -167,6 +237,26 @@ func handleSignals(cmd *exec.Cmd, waitCh <-chan error, timeout time.Duration, ti
 				log.Println(ret)
 			}
 			return cmd.ProcessState.ExitCode(), ret
+		}
+	}
+}
+
+func readAndWrite(pipe io.ReadCloser, output *os.File) {
+	buf := make([]byte, 1024)
+	for {
+		n, err := pipe.Read(buf)
+		if n > 0 {
+			_, writeErr := output.Write(buf[:n])
+			if writeErr != nil {
+				log.Printf("failed to write to output: %v", writeErr)
+				break
+			}
+		}
+		if err != nil {
+			if err != io.EOF {
+				log.Printf("error reading from pipe: %v", err)
+			}
+			break
 		}
 	}
 }
