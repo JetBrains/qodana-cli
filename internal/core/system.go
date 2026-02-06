@@ -34,6 +34,7 @@ import (
 	"github.com/JetBrains/qodana-cli/internal/platform/msg"
 	"github.com/JetBrains/qodana-cli/internal/platform/nuget"
 	"github.com/JetBrains/qodana-cli/internal/platform/qdenv"
+	"github.com/JetBrains/qodana-cli/internal/platform/strutil"
 	"github.com/JetBrains/qodana-cli/internal/platform/utils"
 	cienvironment "github.com/cucumber/ci-environment/go"
 	"github.com/docker/docker/client"
@@ -352,17 +353,17 @@ func saveReport(c corescan.Context) {
 		)
 		return
 	}
-	if res, err := utils.Exec(
+	if res, err := utils.RunCmd(
 		"",
-		prod.JbrJava(),
+		strutil.QuoteForWindows(prod.JbrJava()),
 		"-jar",
-		reportConverter,
+		strutil.QuoteForWindows(reportConverter),
 		"-s",
-		c.ProjectDir(),
+		strutil.QuoteForWindows(c.ProjectDir()),
 		"-d",
-		c.ResultsDir(),
+		strutil.QuoteForWindows(c.ResultsDir()),
 		"-o",
-		platform.ReportResultsPath(c.ReportDir()),
+		strutil.QuoteForWindows(platform.ReportResultsPath(c.ReportDir())),
 		"-n",
 		"result-allProblems.json",
 		"-f",

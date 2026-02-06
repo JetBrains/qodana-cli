@@ -34,7 +34,7 @@ func gitRun(cwd string, command []string, logdir string) (string, string, error)
 		log.Errorf("Failed to create git logger: %v", err)
 		return "", "", err
 	}
-	stdout, stderr, exitCode, err := utils.ExecRedirectOutput(cwd, args...)
+	stdout, stderr, exitCode, err := utils.RunCmdRedirectOutput(cwd, args...)
 	if logger != nil {
 		logger.Printf("Executing command: %v", args)
 		logger.Println(stdout)

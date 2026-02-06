@@ -27,6 +27,7 @@ import (
 
 	"github.com/JetBrains/qodana-cli/internal/cloud"
 	"github.com/JetBrains/qodana-cli/internal/platform/qdenv"
+	"github.com/JetBrains/qodana-cli/internal/platform/strutil"
 	"github.com/JetBrains/qodana-cli/internal/platform/utils"
 	"github.com/JetBrains/qodana-cli/internal/tooling"
 	log "github.com/sirupsen/logrus"
@@ -79,11 +80,11 @@ func SendReport(publisher Publisher, token string, javaPath string) {
 // getPublisherArgs returns args for the publisher.
 func getPublisherArgs(java string, publisherPath string, publisher Publisher, token string, endpoint string) []string {
 	publisherArgs := []string{
-		java,
+		strutil.QuoteForWindows(java),
 		"-jar",
-		publisherPath,
+		strutil.QuoteForWindows(publisherPath),
 		"--analysis-id", publisher.AnalysisId,
-		"--report-path", publisher.ResultsDir,
+		"--report-path", strutil.QuoteForWindows(publisher.ResultsDir),
 		"--token", token,
 	}
 	var tools []string
