@@ -23,8 +23,8 @@ import (
 	"testing"
 
 	"github.com/JetBrains/qodana-cli/internal/platform/qdenv"
-	"github.com/JetBrains/qodana-cli/internal/platform/strutil"
 	"github.com/JetBrains/qodana-cli/internal/platform/utils"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestFetchPublisher(t *testing.T) {
@@ -61,13 +61,14 @@ func TestGetPublisherArgs(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	java, _ := utils.GetJavaExecutablePath()
+	java, err := utils.GetJavaExecutablePath()
+	assert.NoError(t, err)
 	// Call the function being tested
 	publisherArgs := getPublisherArgs(java, "test-publisher.jar", publisher, "test-token", "test-endpoint")
 
 	// Assert that the expected arguments are present
 	expectedArgs := []string{
-		strutil.QuoteForWindows(java),
+		java,
 		"-jar",
 		"test-publisher.jar",
 		"--analysis-id", "test-analysis-id",

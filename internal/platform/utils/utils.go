@@ -68,15 +68,8 @@ func FindFiles(root string, extensions []string) []string {
 }
 
 func GetJavaExecutablePath() (string, error) {
-	var java string
-	var err error
-	var ret int
-	//goland:noinspection GoBoolExpressions
-	if runtime.GOOS == "windows" {
-		java, _, ret, err = RunCmdRedirectOutput("", "java -XshowSettings:properties -version 2>&1 | findstr java.home")
-	} else {
-		java, _, ret, err = RunCmdRedirectOutput("", "java -XshowSettings:properties -version 2>&1 | grep java.home")
-	}
+	// java outputs settings to stderr, not stdout
+	_, stderr, ret, err := ExecRedirectOutput(".", "java", "-XshowSettings:properties", "-version")
 	if err != nil || ret != 0 {
 		return "", fmt.Errorf(
 			"failed to get JAVA_HOME: %w, %d. Check that java executable is accessible from the PATH",
@@ -84,32 +77,37 @@ func GetJavaExecutablePath() (string, error) {
 			ret,
 		)
 	}
-	split := strings.Split(java, "=")
-	if len(split) < 2 {
+
+	// Parse stderr to find java.home line
+	var javaHome string
+	for _, line := range strutil.GetLines(stderr) {
+		if strings.Contains(line, "java.home") {
+			split := strings.SplitN(line, "=", 2)
+			if len(split) >= 2 {
+				javaHome = strings.TrimSpace(split[1])
+				break
+			}
+		}
+	}
+
+	if javaHome == "" {
 		return "", fmt.Errorf(
-			"failed to get JAVA_HOME: %s. Check that java executable is accessible from the PATH",
-			java,
+			"error while getting JAVA_HOME: java -XshowSettings:properties -version did not report java.home\n"+
+				"  stderr: %s",
+			stderr,
 		)
 	}
 
-	javaHome := split[1]
-	javaHome = strings.Trim(javaHome, "\r\n ")
-
-	var javaExecFileName string
-	//goland:noinspection GoBoolExpressions
+	javaExecutablePath := filepath.Join(javaHome, "bin", "java")
 	if runtime.GOOS == "windows" {
-		javaExecFileName = "java.exe"
-	} else {
-		javaExecFileName = "java"
+		javaExecutablePath += ".exe"
 	}
-
-	javaExecutablePath := filepath.Join(javaHome, "bin", javaExecFileName)
 	return javaExecutablePath, nil
 }
 
 // LaunchAndLog launches a process and logs its output.
 func LaunchAndLog(logDir string, executable string, args ...string) (string, string, int, error) {
-	stdout, stderr, ret, err := RunCmdRedirectOutput("", args...)
+	stdout, stderr, ret, err := ExecRedirectOutput(".", args...)
 	if err != nil {
 		log.Error(fmt.Errorf("failed to run %s: %w", executable, err))
 		return "", "", ret, err
