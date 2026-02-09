@@ -12,7 +12,6 @@ import (
 	"time"
 
 	"github.com/JetBrains/qodana-cli/internal/platform"
-	"github.com/JetBrains/qodana-cli/internal/platform/strutil"
 	"github.com/JetBrains/qodana-cli/internal/platform/thirdpartyscan"
 	"github.com/JetBrains/qodana-cli/internal/platform/utils"
 	"github.com/briandowns/spinner"
@@ -128,12 +127,12 @@ func runClangTidy(
 	stdoutChannel chan string,
 ) error {
 	args := []string{
-		strutil.QuoteIfSpace(c.ClangPath()),
+		c.ClangPath(),
 		checks,
 		"-p",
-		strutil.QuoteIfSpace(c.ClangCompileCommands()),
+		c.ClangCompileCommands(),
 		"--export-sarif",
-		strutil.QuoteIfSpace(path.Join(tmpResultsDir, fmt.Sprintf("%d.sarif.json", counter))),
+		path.Join(tmpResultsDir, fmt.Sprintf("%d.sarif.json", counter)),
 	}
 	args = append(args, input.Headers...)
 	args = append(args, input.File)

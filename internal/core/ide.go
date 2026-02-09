@@ -28,7 +28,6 @@ import (
 	"github.com/JetBrains/qodana-cli/internal/platform"
 	"github.com/JetBrains/qodana-cli/internal/platform/product"
 	"github.com/JetBrains/qodana-cli/internal/platform/qdcontainer"
-	"github.com/JetBrains/qodana-cli/internal/platform/strutil"
 	"github.com/JetBrains/qodana-cli/internal/platform/utils"
 	"github.com/JetBrains/qodana-cli/internal/sarif"
 
@@ -96,14 +95,14 @@ func runQodanaLocal(c corescan.Context) (int, error) {
 }
 
 func getIdeRunCommand(c corescan.Context) []string {
-	args := []string{strutil.QuoteIfSpace(c.Prod().IdeScript)}
+	args := []string{c.Prod().IdeScript}
 	if !c.Prod().Is242orNewer() {
 		args = append(args, "inspect")
 	}
 	args = append(args, "qodana")
 
 	args = append(args, GetIdeArgs(c)...)
-	args = append(args, strutil.QuoteIfSpace(c.ProjectDir()), strutil.QuoteIfSpace(c.ResultsDir()))
+	args = append(args, c.ProjectDir(), c.ResultsDir())
 	return args
 }
 
@@ -123,7 +122,7 @@ func GetIdeArgs(c corescan.Context) []string {
 		arguments = append(arguments, "--disable-sanity")
 	}
 	if c.ProfileName() != "" {
-		arguments = append(arguments, "--profile-name", strutil.QuoteIfSpace(c.ProfileName()))
+		arguments = append(arguments, "--profile-name", c.ProfileName())
 	}
 	if c.ProfilePath() != "" {
 		arguments = append(arguments, "--profile-path", c.ProfilePath())
@@ -284,9 +283,9 @@ func installPlugins(c corescan.Context) error {
 		log.Printf("Installing plugin %s", plugin.Id)
 		if res, err := utils.Exec(
 			".",
-			strutil.QuoteIfSpace(c.Prod().IdeScript),
+			c.Prod().IdeScript,
 			"installPlugins",
-			strutil.QuoteIfSpace(plugin.Id),
+			plugin.Id,
 		); res > 0 || err != nil {
 			return fmt.Errorf("failed to install plugin %s: exit code %d: %w", plugin.Id, res, err)
 		}
