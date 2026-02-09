@@ -330,7 +330,9 @@ func copyAndSaveReport(lastContext corescan.Context, c corescan.Context) {
 		log.Fatal(err)
 	}
 
-	saveReport(c)
+	if err := saveReport(c); err != nil {
+		log.Fatalf("Failed to save report: %v", err)
+	}
 }
 
 // writeChangesFile creates a temp file containing the changes between diffStart and diffEnd

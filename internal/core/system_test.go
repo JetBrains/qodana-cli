@@ -20,12 +20,14 @@ import (
 	"context"
 	"os"
 	"path/filepath"
+	"runtime"
 	"strings"
 	"testing"
 
 	"github.com/JetBrains/qodana-cli/internal/core/corescan"
 	"github.com/JetBrains/qodana-cli/internal/platform"
 	"github.com/JetBrains/qodana-cli/internal/platform/product"
+	"github.com/JetBrains/qodana-cli/internal/platform/qdenv"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -480,6 +482,57 @@ func createEmptyShortSarif(path string) {
 				]
 			}`
 	_ = os.WriteFile(platform.GetShortSarifPath(path), []byte(shortSarifContent), 0644)
+}
+
+func TestSaveReport(t *testing.T) {
+	//goland:noinspection GoBoolExpressions
+	if runtime.GOOS == "windows" {
+		t.Skip("test uses a shell script as a fake java")
+	}
+
+	tmpDir := t.TempDir()
+	home := filepath.Join(tmpDir, "ide")
+
+	// Create fake java executable
+	var javaPath string
+	//goland:noinspection GoBoolExpressions
+	if runtime.GOOS == "darwin" {
+		javaPath = filepath.Join(home, "jbr", "Contents", "Home", "bin", "java")
+	} else {
+		javaPath = filepath.Join(home, "jbr", "bin", "java")
+	}
+	assert.NoError(t, os.MkdirAll(filepath.Dir(javaPath), 0o755))
+	assert.NoError(t, os.WriteFile(javaPath, []byte("#!/bin/sh\nexit 0\n"), 0o755))
+
+	// Create fake report converter jar (just needs to exist)
+	binDir := filepath.Join(home, "bin")
+	assert.NoError(t, os.MkdirAll(binDir, 0o755))
+	assert.NoError(t, os.WriteFile(filepath.Join(binDir, "intellij-report-converter.jar"), []byte{}, 0o644))
+
+	// Create web dir for CopyDir
+	assert.NoError(t, os.MkdirAll(filepath.Join(home, "web"), 0o755))
+
+	projectDir := filepath.Join(tmpDir, "project")
+	resultsDir := filepath.Join(tmpDir, "results")
+	reportDir := filepath.Join(tmpDir, "report")
+	assert.NoError(t, os.MkdirAll(projectDir, 0o755))
+	assert.NoError(t, os.MkdirAll(resultsDir, 0o755))
+	assert.NoError(t, os.MkdirAll(reportDir, 0o755))
+
+	t.Setenv(qdenv.QodanaDockerEnv, "true")
+
+	ctx := corescan.ContextBuilder{
+		Analyser: product.JvmLinter.NativeAnalyzer(),
+		Prod: product.Product{
+			Home: home,
+		},
+		ProjectDir: projectDir,
+		ResultsDir: resultsDir,
+		ReportDir:  reportDir,
+		SaveReport: true,
+	}.Build()
+
+	assert.NoError(t, saveReport(ctx))
 }
 
 func TestIsHomeDirectory(t *testing.T) {

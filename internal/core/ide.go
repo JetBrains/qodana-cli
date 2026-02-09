@@ -17,6 +17,7 @@
 package core
 
 import (
+	"fmt"
 	"os"
 	"strconv"
 	"strings"
@@ -87,7 +88,9 @@ func runQodanaLocal(c corescan.Context) (int, error) {
 		return res, err
 	}
 
-	saveReport(c)
+	if err := saveReport(c); err != nil {
+		log.Fatalf("Failed to save report: %v", err)
+	}
 	postAnalysis(c)
 	return res, err
 }
@@ -268,9 +271,9 @@ func postAnalysis(c corescan.Context) {
 }
 
 // installPlugins runs plugin installer for every plugin id in qodana.yaml.
-func installPlugins(c corescan.Context) {
+func installPlugins(c corescan.Context) error {
 	if c.Analyser().IsContainer() {
-		return
+		return nil
 	}
 
 	plugins := c.QodanaYamlConfig().Plugins
@@ -280,12 +283,13 @@ func installPlugins(c corescan.Context) {
 	for _, plugin := range plugins {
 		log.Printf("Installing plugin %s", plugin.Id)
 		if res, err := utils.Exec(
-			"",
+			".",
 			strutil.QuoteIfSpace(c.Prod().IdeScript),
 			"installPlugins",
 			strutil.QuoteIfSpace(plugin.Id),
 		); res > 0 || err != nil {
-			os.Exit(res)
+			return fmt.Errorf("failed to install plugin %s: exit code %d: %w", plugin.Id, res, err)
 		}
 	}
+	return nil
 }

@@ -20,6 +20,7 @@ import (
 	"bufio"
 	"context"
 	"encoding/json"
+	"fmt"
 	"io"
 	"net/http"
 	"os"
@@ -150,7 +151,9 @@ func RunAnalysis(ctx context.Context, c corescan.Context) int {
 		c = c.BackoffToDefaultAnalysisBecauseOfMissingCommit()
 	}
 
-	installPlugins(c)
+	if err := installPlugins(c); err != nil {
+		log.Fatalf("Failed to install plugins: %v", err)
+	}
 	// this way of running needs to do bootstrap twice on different commits and will do it internally
 	if !corescan.IsScopedScenario(scenario) && !c.Analyser().IsContainer() {
 		utils.Bootstrap(c.QodanaYamlConfig().Bootstrap, c.ProjectDir())
@@ -332,16 +335,15 @@ func getScanStages() []string {
 }
 
 // saveReport saves web files to expect, and generates json.
-func saveReport(c corescan.Context) {
+func saveReport(c corescan.Context) error {
 	prod := c.Prod()
 	if !qdenv.IsContainer() || (!c.SaveReport() && !c.ShowReport()) {
-		return
+		return nil
 	}
 
 	reportConverter := filepath.Join(prod.IdeBin(), "intellij-report-converter.jar")
 	if _, err := os.Stat(reportConverter); os.IsNotExist(err) {
-		log.Fatal("Not able to save the report: report-converter is missing")
-		return
+		return fmt.Errorf("not able to save the report: report-converter is missing")
 	}
 	log.Println("Generating HTML report ...")
 	javaPath := prod.JbrJava()
@@ -350,10 +352,10 @@ func saveReport(c corescan.Context) {
 			"HTML report is not generated because Java is not installed. " +
 				"See requirements in our documentation: https://www.jetbrains.com/help/qodana/deploy-qodana.html",
 		)
-		return
+		return nil
 	}
 	if res, err := utils.Exec(
-		"",
+		".",
 		prod.JbrJava(),
 		"-jar",
 		reportConverter,
@@ -367,11 +369,10 @@ func saveReport(c corescan.Context) {
 		"result-allProblems.json",
 		"-f",
 	); res > 0 || err != nil {
-		os.Exit(res)
+		return fmt.Errorf("report converter failed: exit code %d: %w", res, err)
 	}
-	err := utils.CopyDir(filepath.Join(prod.Home, "web"), c.ReportDir())
-	if err != nil {
-		log.Fatal("Not able to save the report: ", err)
-		return
+	if err := utils.CopyDir(filepath.Join(prod.Home, "web"), c.ReportDir()); err != nil {
+		return fmt.Errorf("not able to save the report: %w", err)
 	}
+	return nil
 }

@@ -18,8 +18,12 @@ package startup
 
 import (
 	"archive/tar"
+	"archive/zip"
 	"compress/gzip"
+	"fmt"
 	"io"
+	"net/http"
+	"net/http/httptest"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -282,4 +286,60 @@ func TestExtractArchiveBadPath(t *testing.T) {
 	t.Setenv("PATH", "")
 	err := extractArchive(archive, targetDir, 0)
 	assert.Error(t, err)
+}
+
+func TestDownloadCustomPlugins(t *testing.T) {
+	//goland:noinspection GoBoolExpressions
+	if runtime.GOOS == "windows" {
+		t.Skip("tar on Windows may not support this archive format")
+	}
+
+	// Create a zip archive containing custom-plugins/disabled_plugins.txt
+	archiveDir := t.TempDir()
+	archivePath := filepath.Join(archiveDir, "plugins.zip")
+	zipFile, err := os.Create(archivePath)
+	assert.NoError(t, err)
+	zw := zip.NewWriter(zipFile)
+	w, err := zw.Create("custom-plugins/disabled_plugins.txt")
+	assert.NoError(t, err)
+	_, err = w.Write([]byte("disabled.plugin.id\n"))
+	assert.NoError(t, err)
+	assert.NoError(t, zw.Close())
+	assert.NoError(t, zipFile.Close())
+
+	archiveBytes, err := os.ReadFile(archivePath)
+	assert.NoError(t, err)
+
+	// Serve the archive over HTTP.
+	// downloadCustomPlugins transforms ideUrl by replacing .tar.gz with -custom-plugins.zip,
+	// so we serve at the transformed path.
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Length", fmt.Sprintf("%d", len(archiveBytes)))
+		_, _ = w.Write(archiveBytes)
+	}))
+	defer server.Close()
+
+	targetDir := filepath.Join(t.TempDir(), "plugins")
+	// ideUrl must end with .tar.gz so getPluginsURL replaces it with -custom-plugins.zip
+	err = downloadCustomPlugins(server.URL+"/ide.tar.gz", targetDir, nil)
+	assert.NoError(t, err)
+	assert.FileExists(t, filepath.Join(targetDir, "disabled_plugins.txt"))
+}
+
+func TestInstallIdeWindowsExe(t *testing.T) {
+	//goland:noinspection GoBoolExpressions
+	if runtime.GOOS != "windows" {
+		t.Skip("installIdeWindowsExe is Windows-only")
+	}
+
+	// On Windows: create a batch file that acts as a silent installer (just exits 0)
+	tmpDir := t.TempDir()
+	fakeExe := filepath.Join(tmpDir, "installer.bat")
+	assert.NoError(t, os.WriteFile(fakeExe, []byte("@exit /b 0\r\n"), 0o755))
+
+	targetDir := filepath.Join(tmpDir, "installed")
+	assert.NoError(t, os.MkdirAll(targetDir, 0o755))
+
+	err := installIdeWindowsExe(fakeExe, targetDir)
+	assert.NoError(t, err)
 }
