@@ -290,8 +290,8 @@ func TestExtractArchiveBadPath(t *testing.T) {
 
 func TestDownloadCustomPlugins(t *testing.T) {
 	//goland:noinspection GoBoolExpressions
-	if runtime.GOOS == "windows" {
-		t.Skip("tar on Windows may not support this archive format")
+	if runtime.GOOS != "darwin" {
+		t.Skip("downloadCustomPlugins is only used on macOS")
 	}
 
 	// Create a zip archive containing custom-plugins/disabled_plugins.txt
@@ -310,20 +310,25 @@ func TestDownloadCustomPlugins(t *testing.T) {
 	archiveBytes, err := os.ReadFile(archivePath)
 	assert.NoError(t, err)
 
-	// Serve the archive over HTTP.
-	// downloadCustomPlugins transforms ideUrl by replacing .tar.gz with -custom-plugins.zip,
-	// so we serve at the transformed path.
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Length", fmt.Sprintf("%d", len(archiveBytes)))
 		_, _ = w.Write(archiveBytes)
 	}))
 	defer server.Close()
 
-	targetDir := filepath.Join(t.TempDir(), "plugins")
-	// ideUrl must end with .tar.gz so getPluginsURL replaces it with -custom-plugins.zip
-	err = downloadCustomPlugins(server.URL+"/ide.tar.gz", targetDir, nil)
-	assert.NoError(t, err)
-	assert.FileExists(t, filepath.Join(targetDir, "disabled_plugins.txt"))
+	// downloadCustomPlugins is only called on macOS, where IDE URLs use .sit extensions.
+	t.Run(".sit", func(t *testing.T) {
+		targetDir := filepath.Join(t.TempDir(), "plugins")
+		err := downloadCustomPlugins(server.URL+"/ide.sit", targetDir, nil)
+		assert.NoError(t, err)
+		assert.FileExists(t, filepath.Join(targetDir, "disabled_plugins.txt"))
+	})
+	t.Run("-aarch64.sit", func(t *testing.T) {
+		targetDir := filepath.Join(t.TempDir(), "plugins")
+		err := downloadCustomPlugins(server.URL+"/ide-aarch64.sit", targetDir, nil)
+		assert.NoError(t, err)
+		assert.FileExists(t, filepath.Join(targetDir, "disabled_plugins.txt"))
+	})
 }
 
 func TestInstallIdeWindowsExe(t *testing.T) {
