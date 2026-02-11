@@ -27,16 +27,14 @@ import (
 
 // gitRun runs the git command in the given directory and returns an error if any.
 func gitRun(cwd string, command []string, logdir string) (string, string, error) {
-	args := []string{"git"}
-	args = append(args, command...)
 	logger, err := LOGGER.GetLogger(logdir, "git")
 	if err != nil {
 		log.Errorf("Failed to create git logger: %v", err)
 		return "", "", err
 	}
-	stdout, stderr, exitCode, err := utils.ExecRedirectOutput(cwd, args...)
+	stdout, stderr, exitCode, err := utils.ExecRedirectOutput(cwd, "git", command...)
 	if logger != nil {
-		logger.Printf("Executing command: %v", args)
+		logger.Printf("Executing command: git %v", command)
 		logger.Println(stdout)
 	}
 	if stderr != "" {
@@ -47,12 +45,12 @@ func gitRun(cwd string, command []string, logdir string) (string, string, error)
 		}
 	}
 	if exitCode != 0 {
-		err := fmt.Errorf("command %s exited with code %d", strings.Join(args, " "), exitCode)
+		err := fmt.Errorf("command git %s exited with code %d", strings.Join(command, " "), exitCode)
 		log.Errorf("%s", err)
 		return stdout, stderr, err
 	}
 	if err != nil {
-		log.Errorf("An internal error occured while executing %s: %s", strings.Join(args, " "), err)
+		log.Errorf("An internal error occured while executing git %s: %s", strings.Join(command, " "), err)
 		return stdout, stderr, err
 	}
 	return stdout, stderr, nil

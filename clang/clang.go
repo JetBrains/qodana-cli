@@ -126,8 +126,8 @@ func runClangTidy(
 	stderrChannel chan string,
 	stdoutChannel chan string,
 ) error {
+	clangPath := c.ClangPath()
 	args := []string{
-		c.ClangPath(),
 		checks,
 		"-p",
 		c.ClangCompileCommands(),
@@ -140,7 +140,7 @@ func runClangTidy(
 	args = append(args, strings.Split(c.ClangArgs(), " ")...)
 	stdout, stderr, _, err := utils.ExecRedirectOutput(
 		c.ProjectDir(),
-		args...,
+		clangPath, args...,
 	)
 	if stderr != "" {
 		log.Debug(stderr)

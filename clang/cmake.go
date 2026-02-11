@@ -85,8 +85,7 @@ func getFilesAndCompilers(compileCommands string) ([]FileWithHeaders, error) {
 
 // askCompiler asks the compiler for the include directories
 func askCompiler(compiler string, headerType string) ([]string, error) {
-	args := []string{compiler, headerType}
-	_, stderr, _, err := utils.ExecRedirectOutput(".", args...)
+	_, stderr, _, err := utils.ExecRedirectOutput(".", compiler, headerType)
 	if err != nil {
 		return nil, err
 	}

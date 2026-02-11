@@ -1,6 +1,7 @@
 package utils
 
 import (
+	"errors"
 	"os"
 	"testing"
 	"time"
@@ -26,8 +27,15 @@ func TestExec(t *testing.T) {
 	})
 
 	t.Run("command not found", func(t *testing.T) {
-		exitCode, _ := Exec(".", "nonexistent_command_xyz")
-		assert.NotEqual(t, 0, exitCode)
+		exitCode, err := Exec(".", "nonexistent_command_xyz")
+		assert.Error(t, err)
+		assert.Equal(t, QodanaInternalErrorExitCode, exitCode)
+	})
+
+	t.Run("empty cwd", func(t *testing.T) {
+		exitCode, err := Exec("", "echo", "test")
+		assert.True(t, errors.Is(err, os.ErrInvalid))
+		assert.Equal(t, QodanaInternalErrorExitCode, exitCode)
 	})
 }
 

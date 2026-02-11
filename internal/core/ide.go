@@ -79,7 +79,7 @@ func runQodanaLocal(c corescan.Context) (int, error) {
 		os.Stdout, os.Stderr,
 		c.GetAnalysisTimeout(),
 		utils.QodanaTimeoutExitCodePlaceholder,
-		args...,
+		args[0], args[1:]...,
 	)
 	res := getIdeExitCode(c.ResultsDir(), ideProcess)
 	if res > utils.QodanaSuccessExitCode && res != utils.QodanaFailThresholdExitCode {

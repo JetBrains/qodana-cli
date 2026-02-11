@@ -245,12 +245,12 @@ func extractArchive(archivePath string, targetDir string, stripComponents int) e
 		return fmt.Errorf("could not find 'tar': %w", err)
 	}
 
-	tarArgv := []string{tarExe, "-xf", archivePath, "-C", tempDir}
+	tarArgv := []string{"-xf", archivePath, "-C", tempDir}
 	if stripComponents > 0 {
 		tarArgv = append(tarArgv, "--strip-components", strconv.Itoa(stripComponents))
 	}
 
-	stdout, stderr, _, err := utils.ExecRedirectOutput(".", tarArgv...)
+	stdout, stderr, _, err := utils.ExecRedirectOutput(".", tarExe, tarArgv...)
 	if err != nil {
 		return fmt.Errorf("failed to extract: %w. Stdout: %s. Stderr: %s", err, stdout, stderr)
 	}

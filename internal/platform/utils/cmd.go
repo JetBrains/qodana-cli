@@ -47,6 +47,9 @@ const (
 	// QodanaEmptyChangesetExitCodePlaceholder is not a real exit code (it is not obtained from IDE process! and not returned from CLI)
 	// Placeholder used to identify the case when the changeset for scoped analysis is empty
 	QodanaEmptyChangesetExitCodePlaceholder = 2000
+	// QodanaInternalErrorExitCode is returned when the CLI itself fails (e.g. invalid arguments, failed to start process).
+	// It is not a real process exit code. Use this to distinguish CLI errors from subprocess exit codes.
+	QodanaInternalErrorExitCode = math.MinInt
 )
 
 // Bootstrap takes the given command (from CLI or qodana.yaml) and runs it.
@@ -61,8 +64,8 @@ func Bootstrap(command string, project string) {
 }
 
 // Exec executes subprocess with forwarding of signals, and returns its exit code.
-func Exec(cwd string, args ...string) (int, error) {
-	return ExecWithTimeout(cwd, os.Stdout, os.Stderr, time.Duration(math.MaxInt64), 1, args...)
+func Exec(cwd string, arg0 string, argv ...string) (int, error) {
+	return ExecWithTimeout(cwd, os.Stdout, os.Stderr, time.Duration(math.MaxInt64), 1, arg0, argv...)
 }
 
 // ExecWithTimeout executes subprocess with forwarding of signals, and returns its exit code.
@@ -72,22 +75,20 @@ func ExecWithTimeout(
 	stderr io.Writer,
 	timeout time.Duration,
 	timeoutExitCode int,
-	args ...string,
+	arg0 string,
+	argv ...string,
 ) (int, error) {
 	if cwd == "" {
-		return 1, fmt.Errorf("cwd must not be empty")
+		return QodanaInternalErrorExitCode, fmt.Errorf("cwd must not be empty: %w", os.ErrInvalid)
 	}
-	if len(args) == 0 {
-		return 1, fmt.Errorf("no command provided")
-	}
-	log.Debugf("Running command: %v", args)
-	cmd := exec.Command(args[0], args[1:]...)
+	log.Debugf("Running command: %s %v", arg0, argv)
+	cmd := exec.Command(arg0, argv...)
 	cmd.Stdout = stdout
 	cmd.Stderr = stderr
 	cmd.Dir = cwd
 	cmd.Stdin = bt.NewBuffer([]byte{})
 	if err := cmd.Start(); err != nil {
-		return 1, fmt.Errorf("failed to start command: %w", err)
+		return QodanaInternalErrorExitCode, fmt.Errorf("failed to start command: %w", err)
 	}
 
 	waitCh := make(chan error, 1)
@@ -100,22 +101,22 @@ func ExecWithTimeout(
 }
 
 // ExecRedirectOutput executes subprocess with forwarding of signals, returns stdout, stderr and exit code.
-func ExecRedirectOutput(cwd string, args ...string) (string, string, int, error) {
+func ExecRedirectOutput(cwd string, arg0 string, argv ...string) (string, string, int, error) {
 	var stdout, stderr bt.Buffer
-	res, err := ExecWithTimeout(cwd, &stdout, &stderr, time.Duration(math.MaxInt64), 1, args...)
+	res, err := ExecWithTimeout(cwd, &stdout, &stderr, time.Duration(math.MaxInt64), 1, arg0, argv...)
 	return stdout.String(), stderr.String(), res, err
 }
 
 // RunShell executes a shell command (using cmd on Windows, sh on other platforms).
 func RunShell(cwd string, command string) (int, error) {
-	args := getSystemShellArgv(command)
-	return Exec(cwd, args...)
+	argv := getSystemShellArgv(command)
+	return Exec(cwd, argv[0], argv[1:]...)
 }
 
 // RunShellRedirectOutput executes a shell command and captures stdout/stderr.
 func RunShellRedirectOutput(cwd string, command string) (string, string, int, error) {
-	args := getSystemShellArgv(command)
-	return ExecRedirectOutput(cwd, args...)
+	argv := getSystemShellArgv(command)
+	return ExecRedirectOutput(cwd, argv[0], argv[1:]...)
 }
 
 // getSystemShellArgv the arguments to invoke the system shell with the specified command.

@@ -51,7 +51,7 @@ func (l CdnetLinter) RunAnalysis(c thirdpartyscan.Context) error {
 	nuget.UnsetNugetVariables()
 	ret, err := utils.Exec(
 		c.ProjectDir(),
-		args...,
+		args[0], args[1:]...,
 	)
 	if err != nil {
 		return err
