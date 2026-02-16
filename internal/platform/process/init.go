@@ -11,7 +11,6 @@ import (
 	"github.com/JetBrains/qodana-cli/internal/core"
 	"github.com/JetBrains/qodana-cli/internal/platform/commoncontext"
 	"github.com/JetBrains/qodana-cli/internal/platform/msg"
-	"github.com/JetBrains/qodana-cli/internal/platform/version"
 )
 
 // Init runs miscellaneous process-wide utility code.
@@ -25,7 +24,7 @@ func Init() {
 		<-commoncontext.InterruptChannel
 		msg.WarningMessage("Interrupting Qodana...")
 		log.SetOutput(io.Discard)
-		core.CheckForUpdates(version.Version)
+		core.PrintUpdateNotice()
 		core.ContainerCleanup()
 		_ = msg.QodanaSpinner.Stop()
 		// Sleep for a second to allow other functions monitoring signals elsewhere to do their thing.

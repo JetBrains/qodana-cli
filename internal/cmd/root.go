@@ -66,14 +66,14 @@ func Execute() {
 	if !qdenv.IsContainer() && os.Geteuid() == 0 {
 		msg.WarningMessage("Running the tool as root is dangerous: please run it as a regular user")
 	}
-	go core.CheckForUpdates(version.Version)
+	core.StartUpdateCheck(version.Version)
 	if !msg.IsInteractive() || os.Getenv("NO_COLOR") != "" { // http://no-color.org
 		msg.DisableColor()
 	}
 
 	setDefaultCommandIfNeeded(rootCommand, os.Args)
 	if err := rootCommand.Execute(); err != nil {
-		core.CheckForUpdates(version.Version)
+		core.PrintUpdateNotice()
 		_, err = fmt.Fprintf(os.Stderr, "error running command: %s\n", err)
 		if err != nil {
 			return
@@ -81,7 +81,7 @@ func Execute() {
 		os.Exit(1)
 	}
 
-	core.CheckForUpdates(version.Version)
+	core.PrintUpdateNotice()
 }
 
 // newRootCommand constructs root command.
