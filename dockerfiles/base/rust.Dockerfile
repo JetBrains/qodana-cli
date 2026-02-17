@@ -28,6 +28,7 @@ RUN --mount=target=/var/lib/apt/lists,type=cache,sharing=locked \
         git-lfs \
         gnupg2 \
         locales \
+        openssh-client \
         pkg-config \
         procps \
         jq && \
