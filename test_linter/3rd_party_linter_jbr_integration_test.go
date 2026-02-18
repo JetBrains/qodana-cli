@@ -45,8 +45,8 @@ func TestQodanaCppWithMockedCloud(t *testing.T) {
 	if testing.Short() {
 		t.Skip("Skipping integration test in short mode")
 	}
-	if runtime.GOOS == "windows" {
-		t.Skip("Skipping integration test on Windows")
+	if runtime.GOOS != "linux" {
+		t.Skipf("Skipping integration test on %s (linux only)", runtime.GOOS)
 	}
 
 	ctx := context.Background()
