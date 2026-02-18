@@ -21,6 +21,7 @@ import (
 	"os"
 	"path/filepath"
 	"runtime"
+	"slices"
 	"strings"
 
 	"github.com/JetBrains/qodana-cli/internal/cloud"
@@ -313,10 +314,8 @@ func CreateUser(fn string) {
 		log.Fatal(err)
 	}
 	lines := strings.Split(strings.TrimSpace(string(data)), "\n")
-	for _, line := range lines {
-		if line == idea {
-			return
-		}
+	if slices.Contains(lines, idea) {
+		return
 	}
 	if err = os.WriteFile(fn, []byte(strings.Join(append(lines, idea), "\n")), 0o777); err != nil {
 		log.Fatal(err)

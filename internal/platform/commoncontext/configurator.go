@@ -43,12 +43,10 @@ var ignoredDirectories = []string{
 
 // isInIgnoredDirectory returns true if the given path should be ignored by the configurator.
 func isInIgnoredDirectory(path string) bool {
-	parts := strings.Split(path, string(os.PathSeparator))
-	for _, part := range parts {
-		for _, ignored := range ignoredDirectories {
-			if part == ignored {
-				return true
-			}
+	parts := strings.SplitSeq(path, string(os.PathSeparator))
+	for part := range parts {
+		if slices.Contains(ignoredDirectories, part) {
+			return true
 		}
 	}
 	return false
@@ -160,10 +158,7 @@ func readFile(path string, limit int64) ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
-	size := st.Size()
-	if size > limit {
-		size = limit
-	}
+	size := min(st.Size(), limit)
 	buf := bytes.NewBuffer(nil)
 	buf.Grow(int(size))
 	_, err = io.Copy(buf, io.LimitReader(f, limit))

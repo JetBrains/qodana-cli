@@ -19,6 +19,7 @@ package cmd
 import (
 	"fmt"
 	"os"
+	"slices"
 
 	"github.com/JetBrains/qodana-cli/internal/core"
 	"github.com/JetBrains/qodana-cli/internal/platform/msg"
@@ -41,10 +42,8 @@ func isCompletionRequested(args []string) bool {
 // isCommandRequested checks if any command is requested.
 func isCommandRequested(commands []*cobra.Command, args []string) string {
 	for _, c := range commands {
-		for _, a := range args {
-			if c.Name() == a {
-				return c.Name()
-			}
+		if slices.Contains(args, c.Name()) {
+			return c.Name()
 		}
 	}
 	return ""
