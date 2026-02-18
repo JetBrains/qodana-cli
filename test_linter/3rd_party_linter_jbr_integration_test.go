@@ -11,6 +11,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"runtime"
 	"strings"
 	"testing"
 	"time"
@@ -43,6 +44,9 @@ const (
 func TestQodanaCppWithMockedCloud(t *testing.T) {
 	if testing.Short() {
 		t.Skip("Skipping integration test in short mode")
+	}
+	if runtime.GOOS == "windows" {
+		t.Skip("Skipping integration test on Windows")
 	}
 
 	ctx := context.Background()
