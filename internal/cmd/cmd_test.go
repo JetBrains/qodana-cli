@@ -282,7 +282,7 @@ func TestContributorsCommand(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	mapData := make(map[string]interface{})
+	mapData := make(map[string]any)
 	err = json.Unmarshal(output, &mapData)
 	if err != nil {
 		t.Fatal(err)
@@ -383,7 +383,7 @@ func TestAllCommandsWithContainer(t *testing.T) {
 
 	// second scan with a configuration and cache
 	yamlFile := filepath.Join(projectPath, "qodana.yml")
-	err = os.WriteFile(yamlFile, []byte(fmt.Sprintf("image: %s", image)), 0o755)
+	err = os.WriteFile(yamlFile, fmt.Appendf(nil, "image: %s", image), 0o755)
 	if err != nil {
 		t.Fatal(err)
 	}

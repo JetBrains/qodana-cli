@@ -86,7 +86,7 @@ func getLatestVersion() string {
 	if err != nil {
 		return ""
 	}
-	result := make(map[string]interface{})
+	result := make(map[string]any)
 	err = json.Unmarshal(bodyText, &result)
 	if err != nil {
 		return ""
