@@ -43,7 +43,7 @@ jobs:
     name: "Lint"
     runs-on: ubuntu-latest
     env:
-      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      GITHUB_TOKEN: ${{ secrets.QODANA_JBR_TOKEN }}
     permissions:
       checks: write
       pull-requests: write
@@ -145,7 +145,7 @@ jobs:
     name: "GoReleaser (${{ github.ref == 'refs/heads/main' && 'nightly' || 'build' }})"
     runs-on: ubuntu-latest
     env:
-      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      GITHUB_TOKEN: ${{ secrets.QODANA_JBR_TOKEN }}
     permissions:
       contents: write
     steps:
