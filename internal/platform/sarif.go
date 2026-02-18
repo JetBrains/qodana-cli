@@ -494,7 +494,8 @@ func SaveReport(resultDir string, reportDir string, cacheDir string) {
 		os.Exit(res)
 	}
 
-	webUiJar, err := os.Open(tooling.QodanaWebUi.GetLibPath(cacheDir))
+	webUiJarPath := strings.Trim(tooling.QodanaWebUi.GetLibPath(cacheDir), "\"")
+	webUiJar, err := os.Open(webUiJarPath)
 	if err != nil {
 		log.Fatalf("Failed to open web-ui jar: %s", err)
 	}
@@ -504,7 +505,19 @@ func SaveReport(resultDir string, reportDir string, cacheDir string) {
 		}
 	}()
 
-	if err := extract.Zip(context.Background(), webUiJar, reportDir, nil); err != nil {
+	rename := func(path string) string {
+		const prefix = "web-ui/"
+		if !strings.HasPrefix(path, prefix) {
+			return ""
+		}
+		trimmed := strings.TrimPrefix(path, prefix)
+		if trimmed == "" {
+			return ""
+		}
+		return trimmed
+	}
+
+	if err := extract.Zip(context.Background(), webUiJar, reportDir, rename); err != nil {
 		log.Fatalf("Failed to extract web-ui files: %s", err)
 	}
 }
