@@ -140,7 +140,7 @@ func RunThirdPartyLinterAnalysis(
 		}
 	}
 	if context.SaveReport() || context.ShowReport() {
-		SaveReport(context.ResultsDir(), context.ReportDir(), context.CacheDir())
+		commoncontext.SaveReport(context.ResultsDir(), context.ReportDir(), context.CacheDir())
 	}
 	sendReportToQodanaServer(context)
 	newReportUrl := cloud.GetReportUrl(context.ResultsDir())
@@ -157,24 +157,13 @@ func RunThirdPartyLinterAnalysis(
 		log.Warnf("Problems writing short SARIF report: %v", err)
 	}
 
-	showReport := context.ShowReport()
-	if msg.IsInteractive() {
-		showReport = msg.AskUserConfirm("Do you want to open the latest report")
-	}
-	if showReport {
-		commoncontext.ShowReport(
-			context.ResultsDir(),
-			context.ReportDir(),
-			context.Port(),
-		)
-	} else if !qdenv.IsContainer() && msg.IsInteractive() {
-		msg.WarningMessage(
-			"To view the Qodana report later, run %s in the current directory or add %s flag to %s",
-			msg.PrimaryBold("qodana show"),
-			msg.PrimaryBold("--show-report"),
-			msg.PrimaryBold("qodana scan"),
-		)
-	}
+	commoncontext.InteractiveShowReport(
+		context.ShowReport(),
+		context.CacheDir(),
+		context.ResultsDir(),
+		context.ReportDir(),
+		context.Port(),
+	)
 	return analysisResult, nil
 }
 

@@ -39,14 +39,14 @@ const (
 	qodanaScanTimeout       = 5 * time.Minute
 )
 
-// TestQodanaCppWithMockedCloud tests qodana scan and send commands
+// TestQodana3rdPartyLinterWithMockedCloud tests qodana scan and send commands
 // while mocking qodana.cloud API responses using a Python mock server
-func TestQodanaCppWithMockedCloud(t *testing.T) {
+func TestQodana3rdPartyLinterWithMockedCloud(t *testing.T) {
 	if testing.Short() {
 		t.Skip("Skipping integration test in short mode")
 	}
-	if runtime.GOOS != "linux" {
-		t.Skipf("Skipping integration test on %s (linux only)", runtime.GOOS)
+	if os.Getenv("CI") == "true" && runtime.GOOS != "linux" {
+		t.Skip("Skipping integration test on non linux CI")
 	}
 
 	ctx := context.Background()
@@ -585,29 +585,26 @@ func verifyQodanaFuserCalls(t *testing.T, requests []MockRequest) {
 func verifyIntellijReportConverter(t *testing.T, ctx context.Context, cli *client.Client, containerID string) {
 	t.Helper()
 	t.Log("Verifying IntelliJ report converter output...")
-	reportDir := "/workspace/results/report"
+	converterReportResultsDir := "/workspace/results/report/results"
 	verifyFileExists := func(filename string) {
 		output := execInContainer(
 			t, ctx, cli, containerID,
-			[]string{"sh", "-c", fmt.Sprintf("test -f %s/%s && echo ok || echo missing", reportDir, filename)},
+			[]string{
+				"sh", "-c", fmt.Sprintf(
+					"test -f %s/%s && echo ok || echo missing",
+					converterReportResultsDir, filename,
+				),
+			},
 			false, true,
 		)
-		assert.Contains(t, output, "ok", "%s should exist in %s", filename, reportDir)
+		assert.Contains(t, output, "ok", "%s should exist in %s", filename, converterReportResultsDir)
 	}
 
-	verifyDirectoryExists := func(dirname string) {
-		output := execInContainer(
-			t, ctx, cli, containerID,
-			[]string{"sh", "-c", fmt.Sprintf("test -d %s/%s && echo ok || echo missing", reportDir, dirname)},
-			false, true,
-		)
-		assert.Contains(t, output, "ok", "%s directory should exist in %s", dirname, reportDir)
-	}
-
-	verifyFileExists("idea.html")
-	verifyFileExists("index.html")
-	verifyDirectoryExists("js")
-	verifyDirectoryExists("css")
+	verifyFileExists("result-allProblems.json")
+	verifyFileExists("metaInformation.json")
+	verifyFileExists("coverageInformation.json")
+	verifyFileExists("sanity.json")
+	verifyFileExists("promo.json")
 
 	t.Log("✓ IntelliJ report converter output verified")
 }

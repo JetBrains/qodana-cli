@@ -17,6 +17,7 @@
 package commoncontext
 
 import (
+	"context"
 	"fmt"
 	"net/http"
 	"os"
@@ -31,7 +32,10 @@ import (
 	"github.com/JetBrains/qodana-cli/internal/platform/product"
 	"github.com/JetBrains/qodana-cli/internal/platform/qdenv"
 	"github.com/JetBrains/qodana-cli/internal/platform/qdyaml"
+	"github.com/JetBrains/qodana-cli/internal/platform/strutil"
 	"github.com/JetBrains/qodana-cli/internal/platform/utils"
+	"github.com/JetBrains/qodana-cli/internal/tooling"
+	"github.com/codeclysm/extract/v4"
 	"github.com/pterm/pterm"
 	log "github.com/sirupsen/logrus"
 )
@@ -329,8 +333,25 @@ func analyzerToSelect(linters []product.Linter, path string) (map[string]product
 	return analyzersMap, analyzersList
 }
 
+// SaveReport converts analysis output into the HTML report.
+func SaveReport(resultDir string, reportDir string, cacheDir string) {
+	log.Println("Generating HTML report ...")
+	if res, err := utils.RunCmd(
+		"",
+		tooling.GetQodanaJBRPath(),
+		"-jar",
+		tooling.ReportConverter.GetLibPath(cacheDir),
+		"-d",
+		strutil.QuoteForWindows(resultDir),
+		"-o",
+		strutil.QuoteForWindows(filepath.Join(reportDir, "results")),
+	); res > 0 || err != nil {
+		os.Exit(res)
+	}
+}
+
 // ShowReport serves the Qodana report
-func ShowReport(resultsDir string, reportDir string, port int) {
+func ShowReport(cacheDir string, resultsDir string, reportDir string, port int) {
 	cloudUrl := cloud.GetReportUrl(resultsDir)
 	if cloudUrl != "" {
 		openReport(cloudUrl, reportDir, port)
@@ -341,11 +362,56 @@ func ShowReport(resultsDir string, reportDir string, port int) {
 				if _, err := os.Stat(reportDir); os.IsNotExist(err) {
 					log.Fatal("Qodana report not found. Get a report by running `qodana scan`")
 				}
+				unpackWebUI(cacheDir, reportDir)
 				openReport("", reportDir, port)
 			},
 			fmt.Sprintf("Showing Qodana report from %s", fmt.Sprintf("http://localhost:%d/", port)),
 			"",
 		)
+	}
+}
+
+// InteractiveShowReport prompts to open a report and shows a hint when declined.
+func InteractiveShowReport(showReport bool, cacheDir string, resultsDir string, reportDir string, port int) {
+	if msg.IsInteractive() {
+		showReport = msg.AskUserConfirm("Do you want to open the latest report")
+	}
+	if showReport {
+		ShowReport(cacheDir, resultsDir, reportDir, port)
+		return
+	}
+	if !qdenv.IsContainer() && msg.IsInteractive() {
+		msg.WarningMessage(
+			"To view the Qodana report later, run %s in the current directory or add %s flag to %s",
+			msg.PrimaryBold("qodana show"),
+			msg.PrimaryBold("--show-report"),
+			msg.PrimaryBold("qodana scan"),
+		)
+	}
+}
+
+// unpackWebUI unpacks WebUI for local report viewing
+func unpackWebUI(cacheDir string, reportDir string) {
+	webUiJarPath := tooling.QodanaWebUi.GetLibPath(cacheDir)
+	webUiJar, err := os.Open(webUiJarPath)
+	if err != nil {
+		log.Fatalf("Failed to open web-ui jar: %s", err)
+	}
+	defer func() {
+		if err := webUiJar.Close(); err != nil {
+			log.Errorf("Failed to close web-ui jar: %s", err)
+		}
+	}()
+
+	rename := func(path string) string {
+		if trimmed, ok := strings.CutPrefix(path, "web-ui/"); ok && trimmed != "" {
+			return trimmed
+		}
+		return ""
+	}
+
+	if err := extract.Zip(context.Background(), webUiJar, reportDir, rename); err != nil {
+		log.Fatalf("Failed to extract web-ui files: %s", err)
 	}
 }
 
