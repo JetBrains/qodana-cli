@@ -19,4 +19,4 @@ jobs:
           cache-dependency-path: "**/*.sum"
           go-version-file: go.mod
       - name: Check README.md is up to date
-        run: go run scripts/generate-docs.go --check
+        run: go generate ./... && go run scripts/generate-docs.go --check
