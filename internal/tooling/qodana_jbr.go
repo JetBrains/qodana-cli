@@ -40,10 +40,10 @@ var (
 	qodanaJBRPath     string
 )
 
-func GetQodanaJBRPath() string {
+func GetQodanaJBRPath(cacheDir string) string {
 	qodanaJBRPathOnce.Do(
 		func() {
-			path, err := computeQodanaJbrExecutablePath()
+			path, err := computeQodanaJbrExecutablePath(cacheDir)
 			if err != nil {
 				log.Fatalf("failed to compute Qodana JBR path: %v", err)
 			}
@@ -55,11 +55,11 @@ func GetQodanaJBRPath() string {
 
 // computeQodanaJbrExecutablePath detects the system's GOOS/GOARCH, unpacks the appropriate JRE,
 // and returns the path to the java executable
-func computeQodanaJbrExecutablePath() (string, error) {
+func computeQodanaJbrExecutablePath(cacheDir string) (string, error) {
 	goos := runtime.GOOS
 
 	embeddedArchivePath := findEmbeddedArchive(embeddedJBR)
-	jbrCacheDir := getJBRCacheDir()
+	jbrCacheDir := filepath.Join(cacheDir, "qodana-jbr")
 	archiveName := filepath.Base(embeddedArchivePath)
 	extractDir := filepath.Join(jbrCacheDir, strings.TrimSuffix(archiveName, ".tar.gz"))
 
@@ -136,12 +136,4 @@ func findEmbeddedArchive(embedFS embed.FS) string {
 		log.Fatalf("expected exactly 1 embedded JBR archive, got %d: %v", len(matches), matches)
 	}
 	return matches[0]
-}
-
-func getJBRCacheDir() string {
-	cacheDir, err := os.UserCacheDir()
-	if err != nil {
-		cacheDir = os.TempDir()
-	}
-	return filepath.Join(cacheDir, "JetBrains", "Qodana", "JBR")
 }

@@ -127,12 +127,6 @@ func ensureQodanaBinary(t *testing.T) string {
 		"qodana-cli",
 	)
 
-	// Check if binary already exists
-	if _, err := os.Stat(distPath); err == nil {
-		t.Logf("Using existing Linux binary: %s", distPath)
-		return distPath
-	}
-
 	// Build Linux binary using go build directly from test directory
 	t.Log("Building qodana-cli Linux binary from test directory...")
 

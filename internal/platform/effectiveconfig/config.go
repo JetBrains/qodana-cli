@@ -75,7 +75,7 @@ func CreateEffectiveConfigFiles(
 	}
 
 	args, err := configurationLoaderCliArgs(
-		tooling.ConfigLoaderCli.GetLibPath(cacheDir),
+		cacheDir,
 		localQodanaYamlFullPath,
 		globalConfigurationsFile,
 		globalConfigId,
@@ -110,7 +110,7 @@ func CreateEffectiveConfigFiles(
 }
 
 func configurationLoaderCliArgs(
-	configLoaderCliJarPath string,
+	cacheDir string,
 	localQodanaYamlPath string,
 	globalConfigurationsFile string,
 	globalConfigId string,
@@ -118,9 +118,9 @@ func configurationLoaderCliArgs(
 ) ([]string, error) {
 	var err error
 	args := []string{
-		tooling.GetQodanaJBRPath(),
+		tooling.GetQodanaJBRPath(cacheDir),
 		"-jar",
-		strutil.QuoteForWindows(configLoaderCliJarPath),
+		strutil.QuoteForWindows(tooling.ConfigLoaderCli.GetLibPath(cacheDir)),
 	}
 
 	effectiveConfigDirAbs, err := filepath.Abs(effectiveConfigDir)

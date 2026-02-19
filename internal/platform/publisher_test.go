@@ -39,15 +39,16 @@ func TestGetPublisherArgs(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+	cacheDir := t.TempDir()
 
 	// Call the function being tested
-	publisherArgs := getPublisherArgs("test-publisher.jar", publisher, "test-token", "test-endpoint")
+	publisherArgs := getPublisherArgs(cacheDir, publisher, "test-token", "test-endpoint")
 
 	// Assert that the expected arguments are present
 	expectedArgs := []string{
-		tooling.GetQodanaJBRPath(),
+		tooling.GetQodanaJBRPath(cacheDir),
 		"-jar",
-		"test-publisher.jar",
+		tooling.PublisherCli.GetLibPath(cacheDir),
 		"--analysis-id", "test-analysis-id",
 		"--report-path", filepath.FromSlash("/path/to/results"),
 		"--token", "test-token",

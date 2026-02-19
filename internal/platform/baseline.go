@@ -29,7 +29,7 @@ import (
 func computeBaselinePrintResults(c thirdpartyscan.Context, thresholds map[string]string) (int, error) {
 	sarifPath := GetSarifPath(c.ResultsDir())
 	args := []string{
-		tooling.GetQodanaJBRPath(),
+		tooling.GetQodanaJBRPath(c.CacheDir()),
 		"-jar",
 		tooling.BaselineCli.GetLibPath(c.CacheDir()),
 		"-r",

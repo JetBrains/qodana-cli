@@ -338,7 +338,7 @@ func SaveReport(resultDir string, reportDir string, cacheDir string) {
 	log.Println("Generating HTML report ...")
 	if res, err := utils.RunCmd(
 		"",
-		tooling.GetQodanaJBRPath(),
+		tooling.GetQodanaJBRPath(cacheDir),
 		"-jar",
 		tooling.ReportConverter.GetLibPath(cacheDir),
 		"-d",

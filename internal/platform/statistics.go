@@ -97,7 +97,7 @@ func sendFuserEvents(
 	}
 
 	args := []string{
-		tooling.GetQodanaJBRPath(),
+		tooling.GetQodanaJBRPath(c.CacheDir()),
 		"-jar",
 		tooling.Fuser.GetLibPath(c.CacheDir()),
 		deviceId,

@@ -40,10 +40,9 @@ type Publisher struct {
 
 // SendReport sends report to Qodana Cloud.
 func SendReport(cacheDir string, publisher Publisher, token string) {
-	publisherPath := tooling.PublisherCli.GetLibPath(cacheDir)
 
 	publisherCommand := getPublisherArgs(
-		publisherPath,
+		cacheDir,
 		publisher,
 		token,
 		cloud.GetCloudRootEndpoint().Url,
@@ -54,11 +53,11 @@ func SendReport(cacheDir string, publisher Publisher, token string) {
 }
 
 // getPublisherArgs returns args for the publisher.
-func getPublisherArgs(publisherPath string, publisher Publisher, token string, endpoint string) []string {
+func getPublisherArgs(cacheDir string, publisher Publisher, token string, endpoint string) []string {
 	publisherArgs := []string{
-		tooling.GetQodanaJBRPath(),
+		tooling.GetQodanaJBRPath(cacheDir),
 		"-jar",
-		publisherPath,
+		tooling.PublisherCli.GetLibPath(cacheDir),
 		"--analysis-id", publisher.AnalysisId,
 		"--report-path", strutil.QuoteForWindows(publisher.ResultsDir),
 		"--token", token,
