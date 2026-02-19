@@ -162,7 +162,7 @@ func RunThirdPartyLinterAnalysis(
 		context.CacheDir(),
 		context.ResultsDir(),
 		context.ReportDir(),
-		context.Port(),
+		context.ShowReportPort(),
 	)
 	return analysisResult, nil
 }

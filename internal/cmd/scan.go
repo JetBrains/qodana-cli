@@ -144,7 +144,7 @@ But you can always override qodana.yaml options with the following command-line 
 				scanContext.CacheDir(),
 				scanContext.ResultsDir(),
 				scanContext.ReportDir(),
-				scanContext.Port(),
+				scanContext.ShowReportPort(),
 			)
 			if exitCode == utils.QodanaFailThresholdExitCode {
 				msg.EmptyMessage()

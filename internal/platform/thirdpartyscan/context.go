@@ -90,7 +90,7 @@ type Context struct {
 	sendBitBucketInsights     bool
 	saveReport                bool
 	showReport                bool
-	port                      int
+	showReportPort            int
 	qodanaYamlConfig          QodanaYamlConfig
 }
 
@@ -142,7 +142,7 @@ type ContextBuilder struct {
 	SendBitBucketInsights     bool
 	SaveReport                bool
 	ShowReport                bool
-	Port                      int
+	ShowReportPort            int
 	QodanaYamlConfig          QodanaYamlConfig
 }
 
@@ -173,7 +173,7 @@ func (b ContextBuilder) Build() Context {
 		failThreshold:             b.FailThreshold,
 		saveReport:                b.SaveReport,
 		showReport:                b.ShowReport,
-		port:                      b.Port,
+		showReportPort:            b.ShowReportPort,
 		qodanaYamlConfig:          b.QodanaYamlConfig,
 	}
 }
@@ -202,7 +202,7 @@ func (c Context) GenerateCodeClimateReport() bool       { return c.generateCodeC
 func (c Context) SendBitBucketInsights() bool           { return c.sendBitBucketInsights }
 func (c Context) SaveReport() bool                      { return c.saveReport }
 func (c Context) ShowReport() bool                      { return c.showReport }
-func (c Context) Port() int                             { return c.port }
+func (c Context) ShowReportPort() int                   { return c.showReportPort }
 func (c Context) QodanaYamlConfig() QodanaYamlConfig    { return c.qodanaYamlConfig }
 
 func (c Context) Property() []string {

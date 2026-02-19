@@ -71,7 +71,7 @@ func ComputeContext(
 		SendBitBucketInsights:     cliOptions.SendBitBucketInsights,
 		SaveReport:                cliOptions.SaveReport,
 		ShowReport:                cliOptions.ShowReport,
-		Port:                      cliOptions.Port,
+		ShowReportPort:            cliOptions.GetShowReportPort(),
 		QodanaYamlConfig:          qodanaYamlConfig,
 	}.Build()
 }
