@@ -43,15 +43,19 @@ var (
 func GetQodanaJBRPath() string {
 	qodanaJBRPathOnce.Do(
 		func() {
-			qodanaJBRPath = strutil.QuoteForWindows(computeQodanaJBRPath()) // computes once per process
+			path, err := computeQodanaJbrExecutablePath()
+			if err != nil {
+				log.Fatalf("failed to compute Qodana JBR path: %v", err)
+			}
+			qodanaJBRPath = strutil.QuoteForWindows(path)
 		},
 	)
 	return qodanaJBRPath
 }
 
-// computeQodanaJBRPath detects the system's GOOS/GOARCH, unpacks the appropriate JRE,
+// computeQodanaJbrExecutablePath detects the system's GOOS/GOARCH, unpacks the appropriate JRE,
 // and returns the path to the java executable
-func computeQodanaJBRPath() string {
+func computeQodanaJbrExecutablePath() (string, error) {
 	goos := runtime.GOOS
 
 	embeddedArchivePath := findEmbeddedArchive(embeddedJBR)
@@ -59,33 +63,59 @@ func computeQodanaJBRPath() string {
 	archiveName := filepath.Base(embeddedArchivePath)
 	extractDir := filepath.Join(jbrCacheDir, strings.TrimSuffix(archiveName, ".tar.gz"))
 
-	javaExec := getJavaExecutablePath(extractDir, goos)
-	if _, err := os.Stat(javaExec); err == nil {
-		return javaExec
-	}
-
-	// Need to extract
-	file, err := embeddedJBR.Open(embeddedArchivePath)
-	if err != nil {
-		log.Fatalf("failed to open embedded JBR: %v", err)
-	}
-	defer func(file fs.File) {
-		err := file.Close()
+	if _, err := os.Stat(extractDir); os.IsNotExist(err) {
+		file, err := embeddedJBR.Open(embeddedArchivePath)
 		if err != nil {
-			log.Printf("WARN: failed to close embedded JBR: %v", err)
+			return "", fmt.Errorf("failed to open embedded JBR: %w", err)
 		}
-	}(file)
+		defer func(file fs.File) {
+			err := file.Close()
+			if err != nil {
+				log.Printf("WARN: failed to close embedded JBR: %v", err)
+			}
+		}(file)
 
-	if err := extractTarGzReader(file, extractDir); err != nil {
-		log.Fatalf("failed to extract embedded JBR: %v", err)
+		if err := extractTarGzReader(file, extractDir); err != nil {
+			return "", fmt.Errorf("failed to extract embedded JBR: %w", err)
+		}
 	}
 
-	javaExec = getJavaExecutablePath(extractDir, goos)
+	entries, err := os.ReadDir(extractDir)
+	if err != nil {
+		return "", fmt.Errorf("failed to read extracted JBR directory: %w", err)
+	}
+
+	var jbrRoot string
+	for _, entry := range entries {
+		if entry.IsDir() && (strings.Contains(entry.Name(), "jbrsdk") || strings.Contains(entry.Name(), "jbr")) {
+			jbrRoot = filepath.Join(extractDir, entry.Name())
+			break
+		}
+	}
+
+	if jbrRoot == "" {
+		return "", fmt.Errorf("failed to find JBR root directory in extracted archive")
+	}
+
+	var javaExec string
+	switch goos {
+	case "windows":
+		javaExec = filepath.Join(jbrRoot, "bin", "java.exe")
+	case "darwin":
+		javaExec = filepath.Join(jbrRoot, "Contents", "Home", "bin", "java")
+		if _, err := os.Stat(javaExec); err == nil {
+			return javaExec, nil
+		}
+		javaExec = filepath.Join(jbrRoot, "bin", "java")
+	default:
+		javaExec = filepath.Join(jbrRoot, "bin", "java")
+	}
+
 	if _, err := os.Stat(javaExec); err == nil {
-		return javaExec
+		return javaExec, nil
 	}
-	log.Fatalf("failed to find java executable in extracted JBR: %v", err)
-	return ""
+
+	return "", fmt.Errorf("failed to find java executable at expected location: %s", javaExec)
 }
 
 // extractTarGzReader extracts a tar.gz archive from a reader to the specified directory
@@ -114,49 +144,4 @@ func getJBRCacheDir() string {
 		cacheDir = os.TempDir()
 	}
 	return filepath.Join(cacheDir, "JetBrains", "Qodana", "JBR")
-}
-
-// getJavaExecutablePath returns the expected path to the java executable
-func getJavaExecutablePath(extractDir, goos string) string {
-	// Find the JBR directory (typically named like qodana-jbrsdk-25.0.1-*)
-	entries, err := os.ReadDir(extractDir)
-	if err != nil {
-		return ""
-	}
-
-	var jbrRoot string
-	for _, entry := range entries {
-		if entry.IsDir() && (strings.Contains(entry.Name(), "jbrsdk") || strings.Contains(entry.Name(), "jbr")) {
-			jbrRoot = filepath.Join(extractDir, entry.Name())
-			break
-		}
-	}
-
-	if jbrRoot == "" {
-		return ""
-	}
-
-	// Construct path based on OS
-	var javaExec string
-	switch goos {
-	case "windows":
-		javaExec = filepath.Join(jbrRoot, "bin", "java.exe")
-	default: // darwin, linux and others
-		javaExec = filepath.Join(jbrRoot, "bin", "java")
-	}
-
-	// Check if standard location exists
-	if _, err := os.Stat(javaExec); err == nil {
-		return javaExec
-	}
-
-	// For some macOS distributions, check Contents/Home structure
-	if goos == "darwin" {
-		altPath := filepath.Join(jbrRoot, "Contents", "Home", "bin", "java")
-		if _, err := os.Stat(altPath); err == nil {
-			return altPath
-		}
-	}
-
-	return javaExec
 }

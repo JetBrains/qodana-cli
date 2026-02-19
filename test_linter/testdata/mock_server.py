@@ -8,6 +8,7 @@ import gzip
 import json
 import os
 import re
+import signal
 import ssl
 import subprocess
 import threading
@@ -280,24 +281,6 @@ def parse_json_body(body):
     except (json.JSONDecodeError, TypeError):
         return None
 
-def load_fus_config():
-    """Load FUS config JSON from the shared testdata file."""
-    try:
-        with open(FUS_CONFIG_FILE, "r") as f:
-            return json.load(f)
-    except Exception as e:
-        log(f"Failed to load FUS config from {FUS_CONFIG_FILE}: {e}")
-        return None
-
-def load_fus_groups():
-    """Load FUS groups JSON from the shared testdata file."""
-    try:
-        with open(FUS_GROUPS_FILE, "r") as f:
-            return json.load(f)
-    except Exception as e:
-        log(f"Failed to load FUS groups from {FUS_GROUPS_FILE}: {e}")
-        return None
-
 def generate_tls_files():
     """Generate a self-signed TLS cert and key using openssl."""
     san = ",".join(f"DNS:{host}" for host in TLS_HOSTS)
@@ -459,7 +442,7 @@ class MockHandler(BaseHTTPRequestHandler):
 
 def main():
     """Start the mock server."""
-    host = "0.0.0.0"
+    host = "127.0.0.1"
     http_port = 80
     https_port = 443
 
@@ -474,6 +457,14 @@ def main():
     context.load_cert_chain(certfile=TLS_CERT_FILE, keyfile=TLS_KEY_FILE)
     https_server.socket = context.wrap_socket(https_server.socket, server_side=True)
 
+    def shutdown_handler(signum, frame):
+        log("Received SIGINT, shutting down...")
+        http_server.shutdown()
+        https_server.shutdown()
+        sys.exit(0)
+
+    signal.signal(signal.SIGINT, shutdown_handler)
+
     threading.Thread(target=https_server.serve_forever, daemon=True).start()
 
     log(f"Starting mock HTTPS server on {host}:{https_port}")
@@ -482,4 +473,4 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    sys.exit(main())

@@ -26,7 +26,7 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
-	"strings"
+	"regexp"
 	"time"
 )
 
@@ -63,7 +63,6 @@ func parseGitHubReleaseForTag(releaseTag string) Release {
 	}
 
 	req.Header.Set("Accept", "application/vnd.github+json")
-	req.Header.Set("User-Agent", "download-resource/1.0")
 
 	token := os.Getenv("GITHUB_TOKEN")
 	if token == "" {
@@ -77,7 +76,7 @@ func parseGitHubReleaseForTag(releaseTag string) Release {
 	}
 	defer resp.Body.Close()
 
-	if resp.StatusCode < 200 || resp.StatusCode > 299 {
+	if resp.StatusCode != 200 {
 		body, _ := io.ReadAll(resp.Body)
 		log.Fatalf("GitHub API error %s: %s", resp.Status, strings.TrimSpace(string(body)))
 	}
@@ -154,8 +153,7 @@ func downloadReleaseAssetByID(
 		log.Fatalf("Error creating request %s: %v", apiURL, err)
 	}
 
-	req.Header.Set("User-Agent", "qodana-jbr-downloader/1.0")
-	req.Header.Set("Authorization", "token "+githubToken)
+	req.Header.Set("Authorization", "Bearer "+githubToken)
 	req.Header.Set("Accept", "application/octet-stream")
 
 	resp, err := client.Do(req)
@@ -194,29 +192,28 @@ func downloadReleaseAssetByID(
 	}
 }
 
-func detectOsArchTargetForAsset(name string) (goos string, goarch string) {
-	l := strings.ToLower(name)
+var osArchPattern = regexp.MustCompile(`-(osx|linux|windows)-(x64|aarch64)-`)
 
-	// OS
-	switch {
-	case strings.Contains(l, "-osx-"):
-		goos = "darwin"
-	case strings.Contains(l, "-linux-"):
-		goos = "linux"
-	case strings.Contains(l, "-windows-"):
-		goos = "windows"
-	default:
-		log.Fatalf("Unsupported OS in asset name: %s", name)
+func detectOsArchTargetForAsset(name string) (goos string, goarch string) {
+	matches := osArchPattern.FindStringSubmatch(name)
+	if matches == nil {
+		log.Fatalf("Unsupported OS/arch in asset name: %s", name)
 	}
 
-	// Arch
-	switch {
-	case strings.Contains(l, "-x64-"):
+	switch matches[1] {
+	case "osx":
+		goos = "darwin"
+	case "linux":
+		goos = "linux"
+	case "windows":
+		goos = "windows"
+	}
+
+	switch matches[2] {
+	case "x64":
 		goarch = "amd64"
-	case strings.Contains(l, "-aarch64-"):
+	case "aarch64":
 		goarch = "arm64"
-	default:
-		log.Fatalf("Unsupported arch in asset name: %s", name)
 	}
 
 	return goos, goarch
