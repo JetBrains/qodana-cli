@@ -28,8 +28,17 @@ import (
 //go:embed testdata/mock_server.py
 var mockServerPy string
 
-//go:embed testdata/mocked-results.tar.gz
-var resultsTarGz []byte
+//go:embed testdata/mocked-results/qodana.sarif.json
+var qodanaSarifJSON []byte
+
+//go:embed testdata/mocked-results/qodana.sarif-baseline.json
+var qodanaSarifBaselineJSON []byte
+
+//go:embed testdata/mocked-results/qodana-short.sarif.json
+var qodanaShortSarifJSON []byte
+
+//go:embed testdata/mocked-results/log/idea.log
+var ideaLog []byte
 
 const (
 	testContainerImage      = "python:3.13-slim"
@@ -433,18 +442,13 @@ func getContainerEnv() []string {
 func setupWorkspace(t *testing.T, ctx context.Context, cli *client.Client, containerID, qodanaBinaryPath string) {
 	t.Helper()
 
-	execInContainer(t, ctx, cli, containerID, []string{"mkdir", "-p", "/workspace"})
+	execInContainer(t, ctx, cli, containerID, []string{"mkdir", "-p", "/workspace/results/log"})
 
-	// Copy and unpack results tar.gz
-	copyFileToContainer(t, ctx, cli, containerID, "/tmp/results.tar.gz", resultsTarGz)
-	execInContainer(t, ctx, cli, containerID, []string{"mkdir", "-p", "/workspace/results"})
-	execInContainer(
-		t,
-		ctx,
-		cli,
-		containerID,
-		[]string{"tar", "-xzf", "/tmp/results.tar.gz", "-C", "/workspace/results"},
-	)
+	// Copy individual result files
+	copyFileToContainer(t, ctx, cli, containerID, "/workspace/results/qodana.sarif.json", qodanaSarifJSON)
+	copyFileToContainer(t, ctx, cli, containerID, "/workspace/results/qodana.sarif-baseline.json", qodanaSarifBaselineJSON)
+	copyFileToContainer(t, ctx, cli, containerID, "/workspace/results/qodana-short.sarif.json", qodanaShortSarifJSON)
+	copyFileToContainer(t, ctx, cli, containerID, "/workspace/results/log/idea.log", ideaLog)
 
 	qodanaBinary, err := os.ReadFile(qodanaBinaryPath)
 	require.NoError(t, err)
