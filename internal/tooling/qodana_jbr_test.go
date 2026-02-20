@@ -24,7 +24,7 @@ import (
 
 func TestGetQodanaJBRPath(t *testing.T) {
 	// Get the JBR path
-	javaPath := GetQodanaJBRPath()
+	javaPath := GetQodanaJBRPath(t.TempDir())
 
 	if javaPath == "" {
 		t.Fatal("Java path is empty")
