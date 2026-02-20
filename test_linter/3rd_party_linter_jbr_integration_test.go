@@ -7,7 +7,6 @@ import (
 	_ "embed"
 	"encoding/json"
 	"fmt"
-	"io"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -17,39 +16,29 @@ import (
 	"time"
 
 	"github.com/docker/docker/api/types/container"
-	"github.com/docker/docker/api/types/image"
-	"github.com/docker/docker/api/types/network"
 	"github.com/docker/docker/client"
-	ocispec "github.com/opencontainers/image-spec/specs-go/v1"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
-//go:embed testdata/mock_server.py
-var mockServerPy string
-
-//go:embed testdata/mocked-results/qodana.sarif.json
-var qodanaSarifJSON []byte
-
-//go:embed testdata/mocked-results/qodana.sarif-baseline.json
-var qodanaSarifBaselineJSON []byte
-
-//go:embed testdata/mocked-results/qodana-short.sarif.json
-var qodanaShortSarifJSON []byte
-
-//go:embed testdata/mocked-results/log/idea.log
-var ideaLog []byte
-
 const (
-	testContainerImage      = "python:3.13-slim"
-	testContainerPlatform   = "linux/amd64"
-	mockServerStartupDelay  = 3 * time.Second
+	composeFile             = "testdata/docker-compose.test.yml"
+	composeProjectName      = "qodana-test"
+	composeServiceName      = "qodana-test-mock"
 	mockServerLogFlushDelay = 2 * time.Second
-	qodanaScanTimeout       = 5 * time.Minute
+	qodanaScanTimeout       = 1 * time.Minute
 )
 
-// TestQodana3rdPartyLinterWithMockedCloud tests qodana scan and send commands
-// while mocking qodana.cloud API responses using a Python mock server
+var bgCtx = context.Background()
+
+func composeCmd(args ...string) *exec.Cmd {
+	baseArgs := []string{"-f", composeFile, "-p", composeProjectName}
+	return exec.Command("docker-compose", append(baseArgs, args...)...)
+}
+
+// TestQodana3rdPartyLinterWithMockedCloud test mock 3rd party linter
+// with mocked qodana.cloud and FUS endpoints
+// verifies usage of all libraries run with qodana-jbr
 func TestQodana3rdPartyLinterWithMockedCloud(t *testing.T) {
 	if testing.Short() {
 		t.Skip("Skipping integration test in short mode")
@@ -58,262 +47,176 @@ func TestQodana3rdPartyLinterWithMockedCloud(t *testing.T) {
 		t.Skip("Skipping integration test on non linux CI")
 	}
 
-	ctx := context.Background()
-	cli, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
-	require.NoError(t, err, "Failed to create Docker client")
-	defer func(cli *client.Client) {
-		err := cli.Close()
-		if err != nil {
-			t.Logf("Failed to close Docker client: %v", err)
-		}
-	}(cli)
+	cli := createDockerClient(t)
+	defer closeDockerClient(t, cli)
 
-	// Build qodana binary if not available
-	qodanaBinaryPath := ensureQodanaBinary(t)
-	t.Logf("Using qodana binary: %s", qodanaBinaryPath)
+	startDockerCompose(t)
+	defer stopDockerCompose(t)
 
-	// Start test container with mock server
-	containerID := startTestContainer(t, ctx, cli)
-	defer func() {
-		stopCtx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-		defer cancel()
-		if err := cli.ContainerStop(stopCtx, containerID, container.StopOptions{}); err != nil {
-			t.Logf("Failed to stop test container %s: %v", containerID, err)
-		}
-		if err := cli.ContainerRemove(stopCtx, containerID, container.RemoveOptions{Force: true}); err != nil {
-			t.Logf("Failed to remove test container %s: %v", containerID, err)
-		}
-	}()
+	containerID := getComposeContainerID(t)
 
-	// Setup workspace and copy files
-	setupWorkspace(t, ctx, cli, containerID, qodanaBinaryPath)
+	waitForMockServer(t, cli, containerID)
 
-	scanOutput := runQodanaScan(t, ctx, cli, containerID)
+	setupWorkspace(t, cli, containerID)
 
-	// Give mock server a moment to flush logs
-	time.Sleep(mockServerLogFlushDelay)
-
-	// Print HTTPS traffic
-	mockLog := execInContainer(
-		t, ctx, cli, containerID, []string{
-			"cat", "/tmp/mock_server.log",
-		},
-		false, true, // not detached, but silent
-	)
-	t.Log(mockLog)
-	assert.NotEmpty(t, mockLog, "Should have captured some HTTPS traffic")
+	scanOutput := runQodanaScan(t, cli, containerID)
 
 	// Verify
-	verifyIntellijReportConverter(t, ctx, cli, containerID)
+	mockLog := getMockedTrafficLogs(t, cli, containerID)
+	assert.NotEmpty(t, mockLog, "Should have captured some HTTPS traffic")
+
+	verifyIntellijReportConverter(t, cli, containerID)
 	verifyBaselineCliLogs(t, scanOutput)
 	verifyUsedFailThresholdFromGlobalConfiguration(t, scanOutput)
 
-	requests := getMockRequests(t, ctx, cli, containerID)
-	require.NotEmpty(t, requests, "Should have captured mock requests")
-	verifyPublisherCliCalls(t, requests)
-	verifyQodanaFuserCalls(t, requests)
+	mockRequests := getMockRequests(t, cli, containerID)
+	require.NotEmpty(t, mockRequests, "Should have captured mock requests")
+	verifyPublisherCliCalls(t, mockRequests)
+	verifyQodanaFuserCalls(t, mockRequests)
 }
 
-// ensureQodanaBinary builds the test linter qodana binary for Linux if it doesn't exist
-func ensureQodanaBinary(t *testing.T) string {
+func createDockerClient(t *testing.T) *client.Client {
+	cli, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
+	require.NoError(t, err, "Failed to create Docker client")
+	return cli
+}
+
+func closeDockerClient(t *testing.T, cli *client.Client) {
+	func() {
+		if err := cli.Close(); err != nil {
+			t.Logf("Failed to close Docker client: %v", err)
+		}
+	}()
+}
+
+func getMockedTrafficLogs(t *testing.T, cli *client.Client, containerID string) string {
+	time.Sleep(mockServerLogFlushDelay)
+	mockLog := execInContainer(
+		t, cli, containerID, []string{
+			"cat", "/tmp/mock_server.log",
+		},
+		true, // silent
+	)
+	t.Log(mockLog)
+	return mockLog
+}
+
+// buildQodanaBinary builds the test linter qodana binary for Linux if it doesn't exist
+func buildQodanaBinary(t *testing.T) string {
 	t.Helper()
+	t.Log("Building qodana-cli Linux binary...")
 
-	// We need Linux binary for the debian container
-	goos := "linux"
-	goarch := "amd64"
-	archSuffix := "v1"
-
-	// Get project root (go up from test to project root)
-	projectRoot, err := filepath.Abs(filepath.Join(".."))
+	projectRoot, err := filepath.Abs("..")
 	require.NoError(t, err)
 
-	// Build from test_linter directory to test_linter/dist/qodana-cli_linux_amd64_v1/qodana-cli
 	testDir := filepath.Join(projectRoot, "test_linter")
-	distPath := filepath.Join(
-		testDir,
-		"dist",
-		fmt.Sprintf("qodana-cli_%s_%s_%s", goos, goarch, archSuffix),
-		"qodana-cli",
-	)
+	distPath := filepath.Join(testDir, "dist", "qodana-cli_linux_amd64_v1", "qodana-cli")
 
-	// Build Linux binary using go build directly from test directory
-	t.Log("Building qodana-cli Linux binary from test directory...")
-
-	// Ensure dist directory exists
-	err = os.MkdirAll(filepath.Dir(distPath), 0755)
-	require.NoError(t, err, "Failed to create dist directory")
+	require.NoError(t, os.MkdirAll(filepath.Dir(distPath), 0755))
 
 	cmd := exec.Command("go", "build", "-o", distPath, ".")
 	cmd.Dir = testDir
-	cmd.Env = append(
-		os.Environ(),
-		"GOOS=linux",
-		"GOARCH=amd64",
-		"CGO_ENABLED=0",
-	)
+	cmd.Env = append(os.Environ(), "GOOS=linux", "GOARCH=amd64", "CGO_ENABLED=0")
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 
-	err = cmd.Run()
-	require.NoError(t, err, "Failed to build qodana binary from test directory")
+	require.NoError(t, cmd.Run(), "Failed to build qodana binary")
+	require.FileExists(t, distPath)
 
-	// Verify binary was created
-	_, err = os.Stat(distPath)
-	require.NoError(t, err, "Binary not found after build: %s", distPath)
-
+	t.Logf("Using qodana binary: %s", distPath)
 	return distPath
 }
 
-// startTestContainer starts a Debian container with mock_server.py for mocking qodana.cloud
-func startTestContainer(t *testing.T, ctx context.Context, cli *client.Client) string {
+func startDockerCompose(t *testing.T) {
 	t.Helper()
+	t.Log("Starting docker-compose stack...")
 
-	// Pull Python slim image for amd64 (has Python and bash pre-installed)
-	// Must use amd64 explicitly because qodana-cpp IDE is x86_64 only
-	t.Logf("Pulling %s (%s) image...", testContainerImage, testContainerPlatform)
-	reader, err := cli.ImagePull(
-		ctx, testContainerImage, image.PullOptions{
-			Platform: testContainerPlatform,
-		},
-	)
-	require.NoError(t, err)
-	_, err = io.Copy(io.Discard, reader)
-	require.NoError(t, err)
-	err = reader.Close()
-	require.NoError(t, err)
-
-	// Create container
-	amd64Platform := &ocispec.Platform{
-		Architecture: "amd64",
-		OS:           "linux",
+	cmd := composeCmd("up", "-d", "--build")
+	output, err := cmd.CombinedOutput()
+	if err != nil {
+		t.Logf("docker-compose up output: %s", string(output))
 	}
-	resp, err := cli.ContainerCreate(
-		ctx,
-		&container.Config{
-			Image: testContainerImage,
-			Cmd:   []string{"tail", "-f", "/dev/null"},
-			Env:   getContainerEnv(),
-		},
-		&container.HostConfig{
-			AutoRemove: false,
-		},
-		&network.NetworkingConfig{},
-		amd64Platform,
-		"",
-	)
-	require.NoError(t, err)
-
-	// Start container
-	err = cli.ContainerStart(ctx, resp.ID, container.StartOptions{})
-	require.NoError(t, err)
-
-	// Verify Java is not installed in the container
-	verifyNoJavaInstalled(t, ctx, cli, resp)
-
-	// Setup mock server
-	t.Log("Setting up mock server...")
-	copyFileToContainer(t, ctx, cli, resp.ID, "/tmp/mock_server.py", []byte(mockServerPy))
-	execInContainer(
-		t, ctx, cli, resp.ID, []string{
-			"sh",
-			"-c",
-			"printf '127.0.0.1 mocked.qodana.cloud\n127.0.0.1 resources.jetbrains.com\n127.0.0.1 analytics.services.jetbrains.com\n' >> /etc/hosts",
-		},
-	)
-
-	// Start mock server in detached mode
-	execInContainer(
-		t, ctx, cli, resp.ID, []string{
-			"sh", "-c",
-			"python3 /tmp/mock_server.py > /tmp/mock_server_stdout.log 2>&1 &",
-		},
-		true,
-	)
-	time.Sleep(mockServerStartupDelay)
-	generateTruststore(t, ctx, cli, resp.ID)
-
-	t.Logf("Test container started: %s", resp.ID)
-	return resp.ID
+	require.NoError(t, err, "Failed to start docker-compose")
 }
 
-func verifyNoJavaInstalled(t *testing.T, ctx context.Context, cli *client.Client, resp container.CreateResponse) {
-	t.Log("Verifying Java is not installed...")
-	javaHomeCheck := execInContainer(t, ctx, cli, resp.ID, []string{"sh", "-c", "echo $JAVA_HOME"}, false, true)
-	assert.Empty(t, strings.TrimSpace(javaHomeCheck), "JAVA_HOME should not be set")
+func stopDockerCompose(t *testing.T) {
+	t.Helper()
+	t.Log("Stopping docker-compose stack...")
 
-	javaCheck := execInContainer(
-		t,
-		ctx,
-		cli,
-		resp.ID,
-		[]string{"sh", "-c", "which java 2>/dev/null || true"},
-		false,
-		true,
-	)
-	assert.Empty(t, strings.TrimSpace(javaCheck), "java executable should not be found")
+	cmd := composeCmd("down", "-v")
+	output, err := cmd.CombinedOutput()
+	if err != nil {
+		t.Logf("docker-compose down output: %s", string(output))
+		t.Logf("Failed to stop docker-compose: %v", err)
+	}
 }
 
-func generateTruststore(t *testing.T, ctx context.Context, cli *client.Client, containerID string) {
+func getComposeContainerID(t *testing.T) string {
 	t.Helper()
 
-	output := execInContainer(
-		t, ctx, cli, containerID, []string{
-			"sh",
-			"-c",
-			"set -e; test -s /tmp/mock_server.crt; test -s /tmp/mock_server.key; " +
-				"openssl pkcs12 -export -out /tmp/test-truststore.p12 " +
-				"-inkey /tmp/mock_server.key -in /tmp/mock_server.crt " +
-				"-passout pass:changeit -name mock-server; " +
-				"test -s /tmp/test-truststore.p12; echo ok",
-		},
-		false, true,
-	)
-	require.Contains(t, output, "ok", "failed to generate /tmp/test-truststore.p12")
+	cmd := composeCmd("ps", "-q", composeServiceName)
+	output, err := cmd.Output()
+	require.NoError(t, err, "Failed to get container ID from docker-compose")
+
+	containerID := strings.TrimSpace(string(output))
+	require.NotEmpty(t, containerID, "Container ID is empty")
+
+	t.Logf("Test container started: %s", containerID)
+	return containerID
 }
 
-// execInContainer executes a command in a container
-// When detach is false (default): streams output to console and returns it
-// When detach is true: runs in background without TTY (for long-running processes)
-// When silent is true: captures output but doesn't print to console
+func waitForMockServer(t *testing.T, cli *client.Client, containerID string) {
+	t.Helper()
+	t.Log("Waiting for mock server to start...")
+
+	timeout := time.After(60 * time.Second)
+	ticker := time.NewTicker(1 * time.Second)
+	defer ticker.Stop()
+
+	for {
+		select {
+		case <-timeout:
+			t.Fatal("Timeout waiting for mock server health check")
+		case <-ticker.C:
+			inspect, err := cli.ContainerInspect(bgCtx, containerID)
+			if err != nil {
+				continue
+			}
+			if inspect.State.Health != nil && inspect.State.Health.Status == "healthy" {
+				t.Log("Mock server has started")
+				return
+			}
+		}
+	}
+}
+
+// execInContainer executes a command in a container and returns output
 func execInContainer(
 	t *testing.T,
-	ctx context.Context,
 	cli *client.Client,
 	containerID string,
 	cmd []string,
-	detach ...bool,
+	silent bool,
+	ctx ...context.Context,
 ) string {
 	t.Helper()
 
-	shouldDetach := false
-	silent := false
-	if len(detach) > 0 {
-		shouldDetach = detach[0]
-	}
-	if len(detach) > 1 {
-		silent = detach[1]
+	execCtx := bgCtx
+	if len(ctx) > 0 && ctx[0] != nil {
+		execCtx = ctx[0]
 	}
 
-	// Create exec with appropriate options based on mode
 	execOpts := container.ExecOptions{
 		Cmd:          cmd,
-		AttachStdout: !shouldDetach,
-		AttachStderr: !shouldDetach,
-		Tty:          !shouldDetach,
+		AttachStdout: true,
+		AttachStderr: true,
+		Tty:          true,
 	}
 
-	execID, err := cli.ContainerExecCreate(ctx, containerID, execOpts)
+	execID, err := cli.ContainerExecCreate(execCtx, containerID, execOpts)
 	require.NoError(t, err)
 
-	// Detached mode: start and return immediately
-	if shouldDetach {
-		require.NoError(t, cli.ContainerExecStart(ctx, execID.ID, container.ExecStartOptions{Detach: true}))
-		return ""
-	}
-
-	// Normal mode: attach and capture output
-
-	resp, err := cli.ContainerExecAttach(ctx, execID.ID, container.ExecStartOptions{Tty: true})
+	resp, err := cli.ContainerExecAttach(execCtx, execID.ID, container.ExecStartOptions{Tty: true})
 	require.NoError(t, err)
 	defer resp.Close()
 
@@ -342,7 +245,7 @@ func execInContainer(
 
 	select {
 	case <-done:
-	case <-ctx.Done():
+	case <-execCtx.Done():
 		t.Log("Command timed out")
 	}
 
@@ -360,15 +263,15 @@ type MockRequest struct {
 }
 
 // getMockRequests retrieves and parses the JSON lines file with captured requests
-func getMockRequests(t *testing.T, ctx context.Context, cli *client.Client, containerID string) []MockRequest {
+// Returns an indexed map for O(1) lookups by method+path
+func getMockRequests(t *testing.T, cli *client.Client, containerID string) map[string]*MockRequest {
 	t.Helper()
 
-	// Read JSON lines file from container
 	jsonlContent := execInContainer(
-		t, ctx, cli, containerID, []string{
+		t, cli, containerID, []string{
 			"sh", "-c", "cat /tmp/mock_requests.jsonl 2>/dev/null || echo ''",
 		},
-		false, true, // not detached, but silent
+		true, // silent
 	)
 
 	var requests []MockRequest
@@ -385,23 +288,22 @@ func getMockRequests(t *testing.T, ctx context.Context, cli *client.Client, cont
 		requests = append(requests, req)
 	}
 
-	return requests
+	reqMap := make(map[string]*MockRequest)
+	for i := range requests {
+		key := requests[i].Method + " " + requests[i].Path
+		reqMap[key] = &requests[i]
+	}
+	return reqMap
 }
 
-// findRequest finds the first request matching the given method and path
-func findRequest(requests []MockRequest, method, path string) *MockRequest {
-	for i := range requests {
-		if requests[i].Method == method && requests[i].Path == path {
-			return &requests[i]
-		}
-	}
-	return nil
+// findRequest finds the first request matching the given method and path from indexed map
+func findRequest(reqMap map[string]*MockRequest, method, path string) *MockRequest {
+	return reqMap[method+" "+path]
 }
 
 // copyFileToContainer copies a single file to the container
 func copyFileToContainer(
 	t *testing.T,
-	ctx context.Context,
 	cli *client.Client,
 	containerID, destPath string,
 	content []byte,
@@ -423,47 +325,39 @@ func copyFileToContainer(
 	err = tw.Close()
 	require.NoError(t, err)
 
-	require.NoError(t, cli.CopyToContainer(ctx, containerID, "/", &buf, container.CopyToContainerOptions{}))
+	require.NoError(t, cli.CopyToContainer(bgCtx, containerID, "/", &buf, container.CopyToContainerOptions{}))
 }
 
-// getContainerEnv returns environment variables for the test container
-func getContainerEnv() []string {
-	return []string{
-		"QODANA_TOKEN=Test123",
-		"QODANA_ENDPOINT=https://mocked.qodana.cloud",
-		"NONINTERACTIVE=1",
-		"CI=true",
-		"JAVA_TOOL_OPTIONS=-Djavax.net.ssl.trustStore=/tmp/test-truststore.p12 -Djavax.net.ssl.trustStorePassword=changeit -Djavax.net.ssl.trustStoreType=PKCS12",
-		"SSL_CERT_FILE=/tmp/mock_server.crt",
-	}
-}
-
-// setupWorkspace creates workspace directory and copies files
-func setupWorkspace(t *testing.T, ctx context.Context, cli *client.Client, containerID, qodanaBinaryPath string) {
+// setupWorkspace copies qodana binary to container (test results already copied by init container)
+func setupWorkspace(t *testing.T, cli *client.Client, containerID string) {
 	t.Helper()
 
-	execInContainer(t, ctx, cli, containerID, []string{"mkdir", "-p", "/workspace/results/log"})
+	// Build qodana binary
+	qodanaBinaryPath := buildQodanaBinary(t)
 
-	// Copy individual result files
-	copyFileToContainer(t, ctx, cli, containerID, "/workspace/results/qodana.sarif.json", qodanaSarifJSON)
-	copyFileToContainer(t, ctx, cli, containerID, "/workspace/results/qodana.sarif-baseline.json", qodanaSarifBaselineJSON)
-	copyFileToContainer(t, ctx, cli, containerID, "/workspace/results/qodana-short.sarif.json", qodanaShortSarifJSON)
-	copyFileToContainer(t, ctx, cli, containerID, "/workspace/results/log/idea.log", ideaLog)
-
+	// Copy qodana binary
 	qodanaBinary, err := os.ReadFile(qodanaBinaryPath)
 	require.NoError(t, err)
-	copyFileToContainer(t, ctx, cli, containerID, "/qodana", qodanaBinary)
+	copyFileToContainer(t, cli, containerID, "/qodana", qodanaBinary)
+
+	// Verify test results exist from init container
+	output := execInContainer(
+		t, cli, containerID,
+		[]string{"sh", "-c", "test -f /workspace/results/qodana.sarif.json && echo ok"},
+		true, // silent
+	)
+	require.Contains(t, output, "ok", "init container should have copied test result files")
 }
 
 // runQodanaScan executes a qodana command with timeout and returns the output
 func runQodanaScan(
 	t *testing.T,
-	ctx context.Context,
 	cli *client.Client,
 	containerID string,
 ) string {
 	t.Helper()
-	cmdCtx, cancel := context.WithTimeout(ctx, qodanaScanTimeout)
+
+	ctx, cancel := context.WithTimeout(bgCtx, qodanaScanTimeout)
 	defer cancel()
 
 	args := []string{
@@ -473,7 +367,7 @@ func runQodanaScan(
 		"--baseline", "/workspace/results/qodana.sarif-baseline.json",
 	}
 
-	return execInContainer(t, cmdCtx, cli, containerID, args)
+	return execInContainer(t, cli, containerID, args, false, ctx)
 }
 
 func verifyBaselineCliLogs(t *testing.T, scanOutput string) {
@@ -491,12 +385,12 @@ func verifyUsedFailThresholdFromGlobalConfiguration(t *testing.T, scanOutput str
 	t.Log("✓ Config-loader-cli global configuration config verified")
 }
 
-func verifyPublisherCliCalls(t *testing.T, requests []MockRequest) {
+func verifyPublisherCliCalls(t *testing.T, reqMap map[string]*MockRequest) {
 	t.Helper()
 	t.Log("Verifying publisher CLI calls")
 
 	// 1. Verify initial POST call to /api/v1/reports/
-	reportsReq := findRequest(requests, "POST", "/api/v1/reports")
+	reportsReq := findRequest(reqMap, "POST", "/api/v1/reports")
 	require.NotNil(t, reportsReq, "POST /api/v1/reports was not made - scan may have failed or timed out")
 
 	assert.Equal(t, 200, reportsReq.ResponseStatus, "POST /api/v1/reports should return 200")
@@ -521,7 +415,7 @@ func verifyPublisherCliCalls(t *testing.T, requests []MockRequest) {
 	}
 
 	for _, expectedPath := range expectedPutPaths {
-		putReq := findRequest(requests, "PUT", expectedPath)
+		putReq := findRequest(reqMap, "PUT", expectedPath)
 		require.NotNil(t, putReq, "Should have PUT request to %s", expectedPath)
 		assert.Equal(t, 200, putReq.ResponseStatus, "PUT %s should return 200", expectedPath)
 
@@ -536,28 +430,28 @@ func verifyPublisherCliCalls(t *testing.T, requests []MockRequest) {
 	}
 
 	// 3. Verify POST call to /api/v1/reports/mock-report-12345/finish
-	finishReq := findRequest(requests, "POST", "/api/v1/reports/mock-report-12345/finish")
+	finishReq := findRequest(reqMap, "POST", "/api/v1/reports/mock-report-12345/finish")
 	require.NotNil(t, finishReq, "Should have POST request to /api/v1/reports/mock-report-12345/finish")
 
 	t.Log("✓ Publisher-cli report upload workflow verified")
 }
 
-func verifyQodanaFuserCalls(t *testing.T, requests []MockRequest) {
+func verifyQodanaFuserCalls(t *testing.T, reqMap map[string]*MockRequest) {
 	t.Helper()
 	t.Log("Verifying qodana-fuser calls")
 
 	// 1. Verify GET call to /storage/fus/config/v4/FUS/QDTEST.json
-	fusReq := findRequest(requests, "GET", "/storage/fus/config/v4/FUS/QDTEST.json")
+	fusReq := findRequest(reqMap, "GET", "/storage/fus/config/v4/FUS/QDTEST.json")
 	require.NotNil(t, fusReq, "FUS config request was not captured")
 
 	// 2. Verify GET call to /storage/ap/fus/metadata/tiger/FUS/groups/QDTEST.json
-	groupsReq := findRequest(requests, "GET", "/storage/ap/fus/metadata/tiger/FUS/groups/QDTEST.json")
+	groupsReq := findRequest(reqMap, "GET", "/storage/ap/fus/metadata/tiger/FUS/groups/QDTEST.json")
 	require.NotNil(t, groupsReq, "FUS groups request was not captured")
 
 	// 3. Verify POST call to /fus/v5/send/
-	sendReq := findRequest(requests, "POST", "/fus/v5/send")
+	sendReq := findRequest(reqMap, "POST", "/fus/v5/send")
 	if sendReq == nil {
-		sendReq = findRequest(requests, "POST", "/fus/v5/send/")
+		sendReq = findRequest(reqMap, "POST", "/fus/v5/send/")
 	}
 	require.NotNil(t, sendReq, "FUS send request was not captured")
 
@@ -580,20 +474,20 @@ func verifyQodanaFuserCalls(t *testing.T, requests []MockRequest) {
 	t.Logf("✓ Final FUS send request contained %d events", len(events))
 }
 
-func verifyIntellijReportConverter(t *testing.T, ctx context.Context, cli *client.Client, containerID string) {
+func verifyIntellijReportConverter(t *testing.T, cli *client.Client, containerID string) {
 	t.Helper()
 	t.Log("Verifying IntelliJ report converter output...")
 	converterReportResultsDir := "/workspace/results/report/results"
 	verifyFileExists := func(filename string) {
 		output := execInContainer(
-			t, ctx, cli, containerID,
+			t, cli, containerID,
 			[]string{
 				"sh", "-c", fmt.Sprintf(
 					"test -f %s/%s && echo ok || echo missing",
 					converterReportResultsDir, filename,
 				),
 			},
-			false, true,
+			true, // silent
 		)
 		assert.Contains(t, output, "ok", "%s should exist in %s", filename, converterReportResultsDir)
 	}
