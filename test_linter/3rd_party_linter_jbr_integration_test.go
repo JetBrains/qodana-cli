@@ -32,8 +32,8 @@ const (
 var bgCtx = context.Background()
 
 func composeCmd(args ...string) *exec.Cmd {
-	baseArgs := []string{"-f", composeFile, "-p", composeProjectName}
-	return exec.Command("docker-compose", append(baseArgs, args...)...)
+	baseArgs := []string{"compose", "-f", composeFile, "-p", composeProjectName}
+	return exec.Command("docker", append(baseArgs, args...)...)
 }
 
 // TestQodana3rdPartyLinterWithMockedCloud test mock 3rd party linter
