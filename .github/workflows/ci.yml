@@ -156,7 +156,7 @@ jobs:
         run: go generate -v ./internal/tooling/...
       - name: Build CLI only
         if: github.ref != 'refs/heads/main'
-        uses: goreleaser/goreleaser-action@v6
+        uses: goreleaser/goreleaser-action@v7
         with:
           distribution: goreleaser-pro
           version: "~> v2"
@@ -165,7 +165,7 @@ jobs:
           GORELEASER_KEY: ${{ secrets.GORELEASER_KEY }}
       - name: Release nightly CLI only
         if: github.ref == 'refs/heads/main'
-        uses: goreleaser/goreleaser-action@v6
+        uses: goreleaser/goreleaser-action@v7
         with:
           distribution: goreleaser-pro
           version: "~> v2"
