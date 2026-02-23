@@ -160,11 +160,23 @@ func getComposeContainerID(t *testing.T) string {
 	containerID := strings.TrimSpace(string(output))
 	require.NotEmpty(t, containerID, "Container ID is empty")
 
+	// Wait a bit for container to be fully registered
+	time.Sleep(2 * time.Second)
+
+	// Verify container is accessible via docker CLI
+	cmd = exec.Command("docker", "inspect", containerID, "--format", "{{.State.Status}}")
+	statusOut, err := cmd.Output()
+	if err != nil {
+		t.Logf("docker inspect failed: %v", err)
+	} else {
+		t.Logf("Container status via CLI: %s", strings.TrimSpace(string(statusOut)))
+	}
+
 	t.Logf("Test container started: %s", containerID)
 	return containerID
 }
 
-func waitForMockServer(t *testing.T, cli *client.Client, containerID string) {
+func waitForMockServer(t *testing.T, _ *client.Client, containerID string) {
 	t.Helper()
 	t.Log("Waiting for mock server to start...")
 
@@ -181,21 +193,19 @@ func waitForMockServer(t *testing.T, cli *client.Client, containerID string) {
 			t.Logf("Container logs:\n%s", string(logs))
 			t.Fatal("Timeout waiting for mock server health check")
 		case <-ticker.C:
-			inspect, err := cli.ContainerInspect(bgCtx, containerID)
+			// Use CLI instead of Go SDK - more reliable across Docker versions
+			cmd := exec.Command("docker", "inspect", containerID, "--format", "{{.State.Health.Status}}")
+			output, err := cmd.Output()
 			if err != nil {
-				t.Logf("Container inspect error: %v", err)
+				t.Logf("docker inspect error: %v", err)
 				continue
 			}
-			if !inspect.State.Running {
-				cmd := exec.Command("docker", "logs", containerID)
-				logs, _ := cmd.CombinedOutput()
-				t.Logf("Container stopped. Logs:\n%s", string(logs))
-				t.Fatal("Container stopped unexpectedly")
-			}
-			if inspect.State.Health != nil && inspect.State.Health.Status == "healthy" {
+			status := strings.TrimSpace(string(output))
+			if status == "healthy" {
 				t.Log("Mock server has started")
 				return
 			}
+			t.Logf("Health status: %s", status)
 		}
 	}
 }
