@@ -10,7 +10,6 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
-	"runtime"
 	"strings"
 	"testing"
 	"time"
@@ -43,11 +42,8 @@ func TestQodana3rdPartyLinterWithMockedCloud(t *testing.T) {
 	if testing.Short() {
 		t.Skip("Skipping integration test in short mode")
 	}
-	if os.Getenv("CI") == "true" && runtime.GOOS != "linux" {
-		t.Skip("Skipping container test on non-linux CI")
-	}
-	if err := exec.Command("podman", "version").Run(); err == nil {
-		t.Skip("Skipping container test (podman not supported)")
+	if os.Getenv("QODANA_TEST_CONTAINER") == "" {
+		t.Skip("Skipping container test (set QODANA_TEST_CONTAINER=1 to enable)")
 	}
 
 	cli := createDockerClient(t)
