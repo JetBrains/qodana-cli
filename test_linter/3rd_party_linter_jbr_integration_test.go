@@ -46,7 +46,7 @@ func TestQodana3rdPartyLinterWithMockedCloud(t *testing.T) {
 	if os.Getenv("CI") == "true" && runtime.GOOS != "linux" {
 		t.Skip("Skipping container test on non-linux CI")
 	}
-	if strings.ToLower(os.Getenv("container")) == "podman" {
+	if err := exec.Command("podman", "version").Run(); err == nil {
 		t.Skip("Skipping container test (podman not supported)")
 	}
 
