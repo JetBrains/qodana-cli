@@ -35,21 +35,28 @@ services:
       - /bin/sh
       - -c
       - |
-        set -e
+        echo "Container starting..."
         unset SSL_CERT_FILE
-        apt-get update && apt-get install -y iptables
+        echo "Installing Flask..."
         uv pip install --system flask
+        echo "Flask installed"
         export SSL_CERT_FILE=/tmp/mock_server.crt
         cat >> /etc/hosts << EOF
         127.0.0.1 mocked.qodana.cloud
         127.0.0.1 resources.jetbrains.com
         127.0.0.1 analytics.services.jetbrains.com
         EOF
-        echo "Setting up iptables rules..."
-        iptables -t nat -A OUTPUT -p tcp -d mocked.qodana.cloud --dport 443 -j REDIRECT --to-ports 8443 || echo "iptables failed, continuing..."
-        iptables -t nat -A OUTPUT -p tcp -d resources.jetbrains.com --dport 443 -j REDIRECT --to-ports 8443 || echo "iptables failed, continuing..."
-        iptables -t nat -A OUTPUT -p tcp -d analytics.services.jetbrains.com --dport 443 -j REDIRECT --to-ports 8443 || echo "iptables failed, continuing..."
-        echo "Starting mock server..."
+        echo "Installing iptables..."
+        (apt-get update -qq && apt-get install -y -qq iptables 2>&1) || echo "iptables installation failed, skipping..."
+        if command -v iptables >/dev/null 2>&1; then
+          echo "Setting up iptables rules..."
+          iptables -t nat -A OUTPUT -p tcp -d mocked.qodana.cloud --dport 443 -j REDIRECT --to-ports 8443 2>&1 || echo "iptables rule 1 failed"
+          iptables -t nat -A OUTPUT -p tcp -d resources.jetbrains.com --dport 443 -j REDIRECT --to-ports 8443 2>&1 || echo "iptables rule 2 failed"
+          iptables -t nat -A OUTPUT -p tcp -d analytics.services.jetbrains.com --dport 443 -j REDIRECT --to-ports 8443 2>&1 || echo "iptables rule 3 failed"
+        else
+          echo "iptables not available, skipping port redirect"
+        fi
+        echo "Starting mock server on port 8443..."
         exec python3 /app/mock_server.py
     environment:
       - QODANA_TOKEN=Test123

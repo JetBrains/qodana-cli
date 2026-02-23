@@ -165,21 +165,29 @@ func getComposeContainerID(t *testing.T) string {
 	containerID := strings.TrimSpace(string(output))
 	require.NotEmpty(t, containerID, "Container ID is empty")
 
+	// Wait a moment for container to stabilize
+	time.Sleep(2 * time.Second)
+
 	// Check if container is actually running
 	cmd = exec.Command("docker", "inspect", containerID, "--format={{.State.Status}}")
 	statusOutput, err := cmd.Output()
 	if err != nil {
 		t.Logf("Failed to inspect container: %v", err)
-	} else {
-		status := strings.TrimSpace(string(statusOutput))
-		t.Logf("Container %s status: %s", containerID, status)
-		if status != "running" {
-			// Get logs if container died
-			cmd := exec.Command("docker", "logs", containerID)
-			logs, _ := cmd.CombinedOutput()
-			t.Logf("Container logs (died):\n%s", string(logs))
-			t.Fatalf("Container is not running, status: %s", status)
-		}
+		// Get logs from compose
+		cmd = composeCmd("logs", composeServiceName)
+		logs, _ := cmd.CombinedOutput()
+		t.Logf("Docker-compose logs:\n%s", string(logs))
+		t.Fatalf("Container disappeared: %v", err)
+	}
+
+	status := strings.TrimSpace(string(statusOutput))
+	t.Logf("Container %s status: %s", containerID, status)
+	if status != "running" {
+		// Get logs if container died
+		cmd := exec.Command("docker", "logs", containerID)
+		logs, _ := cmd.CombinedOutput()
+		t.Logf("Container logs (died):\n%s", string(logs))
+		t.Fatalf("Container is not running, status: %s", status)
 	}
 
 	t.Logf("Test container started: %s", containerID)
