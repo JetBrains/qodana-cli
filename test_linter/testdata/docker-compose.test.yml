@@ -59,10 +59,10 @@ services:
     working_dir: /workspace
     healthcheck:
       test: ["CMD", "python3", "-c", "import urllib.request; urllib.request.urlopen('https://127.0.0.1:443/health', context=__import__('ssl')._create_unverified_context())"]
-      interval: 1s
-      timeout: 2s
-      retries: 30
-      start_period: 5s
+      interval: 2s
+      timeout: 3s
+      retries: 60
+      start_period: 30s
     cap_add:
       - NET_ADMIN
 
