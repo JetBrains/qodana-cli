@@ -347,11 +347,13 @@ def fus_dictionaries():
 
 def main():
     """Start the HTTPS mock server."""
-    log("Starting mock HTTPS server on 127.0.0.1:443")
+    import os
+    port = int(os.environ.get('MOCK_SERVER_PORT', '443'))
+    log(f"Starting mock HTTPS server on 127.0.0.1:{port}")
     context = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
     context.load_cert_chain(certfile=TLS_CERT_FILE, keyfile=TLS_KEY_FILE)
     log("Mock server ready")
-    app.run(host='127.0.0.1', port=443, debug=False, use_reloader=False, ssl_context=context)
+    app.run(host='127.0.0.1', port=port, debug=False, use_reloader=False, ssl_context=context)
 
 
 if __name__ == "__main__":

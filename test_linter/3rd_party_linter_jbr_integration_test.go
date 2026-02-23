@@ -151,12 +151,36 @@ func stopDockerCompose(t *testing.T) {
 func getComposeContainerID(t *testing.T) string {
 	t.Helper()
 
-	cmd := composeCmd("ps", "-q", composeServiceName)
-	output, err := cmd.Output()
+	// First check if service is running
+	cmd := composeCmd("ps", "-a", composeServiceName)
+	output, err := cmd.CombinedOutput()
+	require.NoError(t, err, "Failed to get container status from docker-compose")
+	t.Logf("Container status:\n%s", string(output))
+
+	// Get container ID
+	cmd = composeCmd("ps", "-q", composeServiceName)
+	output, err = cmd.Output()
 	require.NoError(t, err, "Failed to get container ID from docker-compose")
 
 	containerID := strings.TrimSpace(string(output))
 	require.NotEmpty(t, containerID, "Container ID is empty")
+
+	// Check if container is actually running
+	cmd = exec.Command("docker", "inspect", containerID, "--format={{.State.Status}}")
+	statusOutput, err := cmd.Output()
+	if err != nil {
+		t.Logf("Failed to inspect container: %v", err)
+	} else {
+		status := strings.TrimSpace(string(statusOutput))
+		t.Logf("Container %s status: %s", containerID, status)
+		if status != "running" {
+			// Get logs if container died
+			cmd := exec.Command("docker", "logs", containerID)
+			logs, _ := cmd.CombinedOutput()
+			t.Logf("Container logs (died):\n%s", string(logs))
+			t.Fatalf("Container is not running, status: %s", status)
+		}
+	}
 
 	t.Logf("Test container started: %s", containerID)
 	return containerID
@@ -197,9 +221,26 @@ func waitForMockServer(t *testing.T, cli *client.Client, containerID string) {
 		case <-ticker.C:
 			inspect, err := cli.ContainerInspect(bgCtx, containerID)
 			if err != nil {
-				t.Logf("ContainerInspect error: %v", err)
-				continue
+				// Container might have died
+				cmd := composeCmd("ps", "-a", composeServiceName)
+				output, _ := cmd.CombinedOutput()
+				t.Logf("Container inspect failed, compose status:\n%s", string(output))
+
+				cmd = exec.Command("docker", "logs", containerID)
+				logs, _ := cmd.CombinedOutput()
+				t.Logf("Container logs (before death):\n%s", string(logs))
+				t.Fatalf("Container no longer exists or is not accessible: %v", err)
 			}
+
+			// Check if container is still running
+			if !inspect.State.Running {
+				cmd := exec.Command("docker", "logs", containerID)
+				logs, _ := cmd.CombinedOutput()
+				t.Logf("Container died. Exit code: %d", inspect.State.ExitCode)
+				t.Logf("Container logs:\n%s", string(logs))
+				t.Fatalf("Container stopped running. Exit code: %d, Error: %s", inspect.State.ExitCode, inspect.State.Error)
+			}
+
 			if inspect.State.Health != nil && inspect.State.Health.Status == "healthy" {
 				t.Log("Mock server has started")
 				return

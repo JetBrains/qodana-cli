@@ -43,6 +43,9 @@ services:
         127.0.0.1 resources.jetbrains.com
         127.0.0.1 analytics.services.jetbrains.com
         EOF
+        iptables -t nat -A OUTPUT -p tcp -d mocked.qodana.cloud --dport 443 -j REDIRECT --to-ports 8443
+        iptables -t nat -A OUTPUT -p tcp -d resources.jetbrains.com --dport 443 -j REDIRECT --to-ports 8443
+        iptables -t nat -A OUTPUT -p tcp -d analytics.services.jetbrains.com --dport 443 -j REDIRECT --to-ports 8443
         exec python3 /app/mock_server.py
     environment:
       - QODANA_TOKEN=Test123
@@ -51,6 +54,7 @@ services:
       - CI=true
       - JAVA_TOOL_OPTIONS=-Djavax.net.ssl.trustStore=/tmp/test-truststore.p12 -Djavax.net.ssl.trustStorePassword=changeit -Djavax.net.ssl.trustStoreType=PKCS12
       - SSL_CERT_FILE=/tmp/mock_server.crt
+      - MOCK_SERVER_PORT=8443
     volumes:
       - ./mock_server.py:/app/mock_server.py:ro
       - qodana-workspace:/workspace
@@ -58,7 +62,7 @@ services:
       - tmp-certs:/tmp
     working_dir: /workspace
     healthcheck:
-      test: ["CMD", "python3", "-c", "import urllib.request; urllib.request.urlopen('https://127.0.0.1:443/health', context=__import__('ssl')._create_unverified_context())"]
+      test: ["CMD", "python3", "-c", "import urllib.request; urllib.request.urlopen('https://127.0.0.1:8443/health', context=__import__('ssl')._create_unverified_context())"]
       interval: 2s
       timeout: 3s
       retries: 60
