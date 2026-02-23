@@ -1,8 +1,6 @@
 package main
 
 import (
-	"archive/tar"
-	"bytes"
 	"context"
 	_ "embed"
 	"encoding/json"
@@ -14,8 +12,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/docker/docker/api/types/container"
-	"github.com/docker/docker/client"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -27,8 +23,6 @@ const (
 	mockServerLogFlushDelay = 2 * time.Second
 	qodanaScanTimeout       = 1 * time.Minute
 )
-
-var bgCtx = context.Background()
 
 func composeCmd(args ...string) *exec.Cmd {
 	baseArgs := []string{"compose", "-f", composeFile, "-p", composeProjectName}
@@ -69,20 +63,6 @@ func TestQodana3rdPartyLinterWithMockedCloud(t *testing.T) {
 	require.NotEmpty(t, mockRequests, "Should have captured mock requests")
 	verifyPublisherCliCalls(t, mockRequests)
 	verifyQodanaFuserCalls(t, mockRequests)
-}
-
-func createDockerClient(t *testing.T) *client.Client {
-	cli, err := client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
-	require.NoError(t, err, "Failed to create Docker client")
-	return cli
-}
-
-func closeDockerClient(t *testing.T, cli *client.Client) {
-	func() {
-		if err := cli.Close(); err != nil {
-			t.Logf("Failed to close Docker client: %v", err)
-		}
-	}()
 }
 
 func getMockedTrafficLogs(t *testing.T, containerID string) string {
@@ -204,68 +184,6 @@ func waitForMockServer(t *testing.T, containerID string) {
 	}
 }
 
-// execInContainer executes a command in a container and returns output
-func execInContainer(
-	t *testing.T,
-	cli *client.Client,
-	containerID string,
-	cmd []string,
-	silent bool,
-	ctx ...context.Context,
-) string {
-	t.Helper()
-
-	execCtx := bgCtx
-	if len(ctx) > 0 && ctx[0] != nil {
-		execCtx = ctx[0]
-	}
-
-	execOpts := container.ExecOptions{
-		Cmd:          cmd,
-		AttachStdout: true,
-		AttachStderr: true,
-		Tty:          true,
-	}
-
-	execID, err := cli.ContainerExecCreate(execCtx, containerID, execOpts)
-	require.NoError(t, err)
-
-	resp, err := cli.ContainerExecAttach(execCtx, execID.ID, container.ExecStartOptions{Tty: true})
-	require.NoError(t, err)
-	defer resp.Close()
-
-	var output bytes.Buffer
-	buf := make([]byte, 4096)
-	done := make(chan struct{})
-
-	go func() {
-		defer close(done)
-		for {
-			n, err := resp.Reader.Read(buf)
-			if n > 0 {
-				if !silent {
-					_, err := os.Stdout.Write(buf[:n])
-					if err != nil {
-						return
-					}
-				}
-				output.Write(buf[:n])
-			}
-			if err != nil {
-				return
-			}
-		}
-	}()
-
-	select {
-	case <-done:
-	case <-execCtx.Done():
-		t.Log("Command timed out")
-	}
-
-	return output.String()
-}
-
 // MockRequest represents a captured request/response from the mock server
 type MockRequest struct {
 	Timestamp      string      `json:"timestamp"`
@@ -317,33 +235,6 @@ func getMockRequests(t *testing.T, containerID string) map[string]*MockRequest {
 // findRequest finds the first request matching the given method and path from indexed map
 func findRequest(reqMap map[string]*MockRequest, method, path string) *MockRequest {
 	return reqMap[method+" "+path]
-}
-
-// copyFileToContainer copies a single file to the container
-func copyFileToContainer(
-	t *testing.T,
-	cli *client.Client,
-	containerID, destPath string,
-	content []byte,
-) {
-	t.Helper()
-
-	var buf bytes.Buffer
-	tw := tar.NewWriter(&buf)
-	err := tw.WriteHeader(
-		&tar.Header{
-			Name: strings.TrimPrefix(destPath, "/"),
-			Mode: 0755,
-			Size: int64(len(content)),
-		},
-	)
-	require.NoError(t, err)
-	_, err = tw.Write(content)
-	require.NoError(t, err)
-	err = tw.Close()
-	require.NoError(t, err)
-
-	require.NoError(t, cli.CopyToContainer(bgCtx, containerID, "/", &buf, container.CopyToContainerOptions{}))
 }
 
 // setupWorkspace copies qodana binary to container (test results already copied by init container)
