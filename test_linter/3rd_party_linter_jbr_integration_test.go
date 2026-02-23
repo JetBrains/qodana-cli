@@ -132,9 +132,7 @@ func startDockerCompose(t *testing.T) {
 
 	cmd := composeCmd("up", "-d", "--build")
 	output, err := cmd.CombinedOutput()
-	if err != nil {
-		t.Logf("docker-compose up output: %s", string(output))
-	}
+	t.Logf("docker-compose up output: %s", string(output))
 	require.NoError(t, err, "Failed to start docker-compose")
 }
 
@@ -175,10 +173,31 @@ func waitForMockServer(t *testing.T, cli *client.Client, containerID string) {
 	for {
 		select {
 		case <-timeout:
+			// Log container state before failing
+			inspect, _ := cli.ContainerInspect(bgCtx, containerID)
+			if inspect.State.Health != nil {
+				t.Logf("Health status: %s", inspect.State.Health.Status)
+				if len(inspect.State.Health.Log) > 0 {
+					lastCheck := inspect.State.Health.Log[len(inspect.State.Health.Log)-1]
+					t.Logf("Last health check: exit=%d, output=%s", lastCheck.ExitCode, lastCheck.Output)
+				}
+			}
+			t.Logf("Container state: running=%v, status=%s", inspect.State.Running, inspect.State.Status)
+
+			// Get docker-compose logs
+			cmd := composeCmd("logs", composeServiceName)
+			composeLogsOutput, _ := cmd.CombinedOutput()
+			t.Logf("Docker-compose logs:\n%s", string(composeLogsOutput))
+
+			// Get container logs
+			logs := execInContainer(t, cli, containerID, []string{"cat", "/tmp/mock_server.log"}, true)
+			t.Logf("Container logs:\n%s", logs)
+
 			t.Fatal("Timeout waiting for mock server health check")
 		case <-ticker.C:
 			inspect, err := cli.ContainerInspect(bgCtx, containerID)
 			if err != nil {
+				t.Logf("ContainerInspect error: %v", err)
 				continue
 			}
 			if inspect.State.Health != nil && inspect.State.Health.Status == "healthy" {
