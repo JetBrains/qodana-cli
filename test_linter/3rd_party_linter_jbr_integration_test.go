@@ -169,17 +169,28 @@ func waitForMockServer(t *testing.T, cli *client.Client, containerID string) {
 	t.Log("Waiting for mock server to start...")
 
 	timeout := time.After(60 * time.Second)
-	ticker := time.NewTicker(1 * time.Second)
+	ticker := time.NewTicker(2 * time.Second)
 	defer ticker.Stop()
 
 	for {
 		select {
 		case <-timeout:
+			// Dump container logs on timeout
+			cmd := exec.Command("docker", "logs", containerID)
+			logs, _ := cmd.CombinedOutput()
+			t.Logf("Container logs:\n%s", string(logs))
 			t.Fatal("Timeout waiting for mock server health check")
 		case <-ticker.C:
 			inspect, err := cli.ContainerInspect(bgCtx, containerID)
 			if err != nil {
+				t.Logf("Container inspect error: %v", err)
 				continue
+			}
+			if !inspect.State.Running {
+				cmd := exec.Command("docker", "logs", containerID)
+				logs, _ := cmd.CombinedOutput()
+				t.Logf("Container stopped. Logs:\n%s", string(logs))
+				t.Fatal("Container stopped unexpectedly")
 			}
 			if inspect.State.Health != nil && inspect.State.Health.Status == "healthy" {
 				t.Log("Mock server has started")
