@@ -35,7 +35,9 @@ services:
       - /bin/sh
       - -c
       - |
+        set -e
         unset SSL_CERT_FILE
+        apt-get update && apt-get install -y iptables
         uv pip install --system flask
         export SSL_CERT_FILE=/tmp/mock_server.crt
         cat >> /etc/hosts << EOF
@@ -43,9 +45,11 @@ services:
         127.0.0.1 resources.jetbrains.com
         127.0.0.1 analytics.services.jetbrains.com
         EOF
-        iptables -t nat -A OUTPUT -p tcp -d mocked.qodana.cloud --dport 443 -j REDIRECT --to-ports 8443
-        iptables -t nat -A OUTPUT -p tcp -d resources.jetbrains.com --dport 443 -j REDIRECT --to-ports 8443
-        iptables -t nat -A OUTPUT -p tcp -d analytics.services.jetbrains.com --dport 443 -j REDIRECT --to-ports 8443
+        echo "Setting up iptables rules..."
+        iptables -t nat -A OUTPUT -p tcp -d mocked.qodana.cloud --dport 443 -j REDIRECT --to-ports 8443 || echo "iptables failed, continuing..."
+        iptables -t nat -A OUTPUT -p tcp -d resources.jetbrains.com --dport 443 -j REDIRECT --to-ports 8443 || echo "iptables failed, continuing..."
+        iptables -t nat -A OUTPUT -p tcp -d analytics.services.jetbrains.com --dport 443 -j REDIRECT --to-ports 8443 || echo "iptables failed, continuing..."
+        echo "Starting mock server..."
         exec python3 /app/mock_server.py
     environment:
       - QODANA_TOKEN=Test123

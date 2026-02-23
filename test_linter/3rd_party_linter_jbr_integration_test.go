@@ -198,15 +198,19 @@ func waitForMockServer(t *testing.T, cli *client.Client, containerID string) {
 		select {
 		case <-timeout:
 			// Log container state before failing
-			inspect, _ := cli.ContainerInspect(bgCtx, containerID)
-			if inspect.State.Health != nil {
-				t.Logf("Health status: %s", inspect.State.Health.Status)
-				if len(inspect.State.Health.Log) > 0 {
-					lastCheck := inspect.State.Health.Log[len(inspect.State.Health.Log)-1]
-					t.Logf("Last health check: exit=%d, output=%s", lastCheck.ExitCode, lastCheck.Output)
+			inspect, inspectErr := cli.ContainerInspect(bgCtx, containerID)
+			if inspectErr != nil {
+				t.Logf("Failed to inspect container on timeout: %v", inspectErr)
+			} else if inspect.State != nil {
+				if inspect.State.Health != nil {
+					t.Logf("Health status: %s", inspect.State.Health.Status)
+					if len(inspect.State.Health.Log) > 0 {
+						lastCheck := inspect.State.Health.Log[len(inspect.State.Health.Log)-1]
+						t.Logf("Last health check: exit=%d, output=%s", lastCheck.ExitCode, lastCheck.Output)
+					}
 				}
+				t.Logf("Container state: running=%v, status=%s", inspect.State.Running, inspect.State.Status)
 			}
-			t.Logf("Container state: running=%v, status=%s", inspect.State.Running, inspect.State.Status)
 
 			// Get docker-compose logs
 			cmd := composeCmd("logs", composeServiceName)
@@ -230,6 +234,12 @@ func waitForMockServer(t *testing.T, cli *client.Client, containerID string) {
 				logs, _ := cmd.CombinedOutput()
 				t.Logf("Container logs (before death):\n%s", string(logs))
 				t.Fatalf("Container no longer exists or is not accessible: %v", err)
+			}
+
+			// Check if State is available
+			if inspect.State == nil {
+				t.Logf("Container inspect returned nil State")
+				continue
 			}
 
 			// Check if container is still running
