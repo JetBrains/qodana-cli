@@ -283,6 +283,9 @@ func runQodanaScan(t *testing.T, containerID string) string {
 
 	cmd := exec.CommandContext(ctx, args[0], args[1:]...)
 	output, err := cmd.CombinedOutput()
+	if err != nil {
+		t.Logf("Qodana scan output:\n%s", string(output))
+	}
 	require.NoError(t, err, "Qodana scan failed")
 	return string(output)
 }
