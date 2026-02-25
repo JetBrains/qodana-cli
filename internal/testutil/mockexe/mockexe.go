@@ -15,6 +15,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"runtime"
 	"strings"
 	"sync"
 	"testing"
@@ -67,8 +68,17 @@ func StartCallbackServer(t testing.TB, listenAddr string, handler func(inv *Call
 // addr baked in via -ldflags. An optional platform in "os/arch" format
 // (e.g. "linux/arm64") enables cross-compilation with CGO disabled.
 // An empty platform targets the host.
-func BuildCallbackClient(t testing.TB, destPath string, addr string, platform string) {
+func BuildCallbackClient(t testing.TB, destPath string, addr string, platform string) string {
 	t.Helper()
+
+	// Determine the target OS to decide if .exe suffix is needed.
+	targetOS := runtime.GOOS
+	if platform != "" {
+		targetOS, _, _ = strings.Cut(platform, "/")
+	}
+	if targetOS == "windows" && filepath.Ext(destPath) == "" {
+		destPath += ".exe"
+	}
 
 	if err := os.MkdirAll(filepath.Dir(destPath), 0o755); err != nil {
 		t.Fatalf("mockexe: creating directory for %s: %v", destPath, err)
@@ -91,6 +101,7 @@ func BuildCallbackClient(t testing.TB, destPath string, addr string, platform st
 	if out, err := cmd.CombinedOutput(); err != nil {
 		t.Fatalf("mockexe: building callback client: %v\n%s", err, out)
 	}
+	return destPath
 }
 
 // CreateMockExe builds a callback-client binary at destPath with the
@@ -105,7 +116,5 @@ func CreateMockExe(t testing.TB, destPath string, handler func(ctx *CallContext)
 	t.Helper()
 
 	addr := StartCallbackServer(t, "127.0.0.1:0", handler)
-	BuildCallbackClient(t, destPath, addr, "")
-
-	return destPath
+	return BuildCallbackClient(t, destPath, addr, "")
 }

@@ -4,6 +4,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"runtime"
 	"testing"
 
 	"github.com/JetBrains/qodana-cli/internal/testutil/mockexe"
@@ -47,6 +48,10 @@ func TestNative_ExitCodeForwarded(t *testing.T) {
 
 func skipIfNoDocker(t *testing.T) {
 	t.Helper()
+	//goland:noinspection GoBoolExpressions
+	if runtime.GOOS == "windows" && os.Getenv("CI") != "" {
+		t.Skip("CI Windows runner uses Windows containers; Linux containers unavailable")
+	}
 	if _, err := exec.LookPath("docker"); err != nil {
 		t.Skip("docker not available")
 	}
