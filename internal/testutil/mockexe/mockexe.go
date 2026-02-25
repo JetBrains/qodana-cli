@@ -54,7 +54,9 @@ func StartCallbackServer(t testing.TB, listenAddr string, handler func(inv *Call
 	go acceptLoop(ln, t, handler, &wg)
 
 	t.Cleanup(func() {
-		ln.Close()
+		if err := ln.Close(); err != nil {
+			t.Logf("mockexe: closing listener: %v", err)
+		}
 		wg.Wait()
 	})
 

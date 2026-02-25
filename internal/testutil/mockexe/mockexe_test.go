@@ -71,7 +71,9 @@ func TestCreateMockExe_MultipleInvocations(t *testing.T) {
 
 func TestCreateMockExe_Stdout(t *testing.T) {
 	binPath := mockexe.CreateMockExe(t, filepath.Join(t.TempDir(), "myexe"), func(ctx *mockexe.CallContext) int {
-		fmt.Fprint(ctx.Stdout, "hello from mock")
+		if _, err := fmt.Fprint(ctx.Stdout, "hello from mock"); err != nil {
+			ctx.T.Fatalf("writing to stdout: %v", err)
+		}
 		return 0
 	})
 	out, err := exec.Command(binPath).Output()
@@ -81,7 +83,9 @@ func TestCreateMockExe_Stdout(t *testing.T) {
 
 func TestCreateMockExe_Stderr(t *testing.T) {
 	binPath := mockexe.CreateMockExe(t, filepath.Join(t.TempDir(), "myexe"), func(ctx *mockexe.CallContext) int {
-		fmt.Fprint(ctx.Stderr, "error output")
+		if _, err := fmt.Fprint(ctx.Stderr, "error output"); err != nil {
+			ctx.T.Fatalf("writing to stderr: %v", err)
+		}
 		return 0
 	})
 	cmd := exec.Command(binPath)
