@@ -76,7 +76,7 @@ func TestDocker_ExitCodeForwarded(t *testing.T) {
 
 	_, err := mocklinter.RunContainer(t, binaryPath)
 	require.Error(t, err)
-	var exitErr *exec.ExitError
+	var exitErr *mocklinter.ContainerExitError
 	require.ErrorAs(t, err, &exitErr)
 	assert.Equal(t, 7, exitErr.ExitCode())
 }
