@@ -22,12 +22,14 @@ import (
 	"path/filepath"
 	"runtime"
 	"strings"
+	"sync/atomic"
 	"testing"
 
 	"github.com/JetBrains/qodana-cli/internal/core/corescan"
 	"github.com/JetBrains/qodana-cli/internal/platform"
 	"github.com/JetBrains/qodana-cli/internal/platform/product"
 	"github.com/JetBrains/qodana-cli/internal/platform/qdenv"
+	"github.com/JetBrains/qodana-cli/internal/testutil/mockexe"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -485,24 +487,23 @@ func createEmptyShortSarif(path string) {
 }
 
 func TestSaveReport(t *testing.T) {
-	//goland:noinspection GoBoolExpressions
-	if runtime.GOOS == "windows" {
-		t.Skip("test uses a shell script as a fake java")
-	}
-
 	tmpDir := t.TempDir()
 	home := filepath.Join(tmpDir, "ide")
 
-	// Create fake java executable
+	// Create fake java executable at the path that JbrJava() computes per platform
 	var javaPath string
 	//goland:noinspection GoBoolExpressions
-	if runtime.GOOS == "darwin" {
+	switch runtime.GOOS {
+	case "darwin":
 		javaPath = filepath.Join(home, "jbr", "Contents", "Home", "bin", "java")
-	} else {
+	default:
 		javaPath = filepath.Join(home, "jbr", "bin", "java")
 	}
-	assert.NoError(t, os.MkdirAll(filepath.Dir(javaPath), 0o755))
-	assert.NoError(t, os.WriteFile(javaPath, []byte("#!/bin/sh\nexit 0\n"), 0o755))
+	var javaInvoked atomic.Bool
+	mockexe.CreateMockExe(t, javaPath, func(ctx *mockexe.CallContext) int {
+		javaInvoked.Store(true)
+		return 0
+	})
 
 	// Create fake report converter jar (just needs to exist)
 	binDir := filepath.Join(home, "bin")
@@ -533,6 +534,7 @@ func TestSaveReport(t *testing.T) {
 	}.Build()
 
 	assert.NoError(t, saveReport(ctx))
+	assert.True(t, javaInvoked.Load(), "java mock was not invoked")
 }
 
 func TestIsHomeDirectory(t *testing.T) {

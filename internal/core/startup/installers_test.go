@@ -28,11 +28,13 @@ import (
 	"os/exec"
 	"path/filepath"
 	"runtime"
+	"sync/atomic"
 	"testing"
 
 	"github.com/JetBrains/qodana-cli/internal/platform/msg"
 	"github.com/JetBrains/qodana-cli/internal/platform/product"
 	"github.com/JetBrains/qodana-cli/internal/platform/utils"
+	"github.com/JetBrains/qodana-cli/internal/testutil/mockexe"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -337,14 +339,17 @@ func TestInstallIdeWindowsExe(t *testing.T) {
 		t.Skip("installIdeWindowsExe is Windows-only")
 	}
 
-	// On Windows: create a batch file that acts as a silent installer (just exits 0)
 	tmpDir := t.TempDir()
-	fakeExe := filepath.Join(tmpDir, "installer.bat")
-	assert.NoError(t, os.WriteFile(fakeExe, []byte("@exit /b 0\r\n"), 0o755))
+	var invoked atomic.Bool
+	fakeExe := mockexe.CreateMockExe(t, filepath.Join(tmpDir, "installer.exe"), func(ctx *mockexe.CallContext) int {
+		invoked.Store(true)
+		return 0
+	})
 
 	targetDir := filepath.Join(tmpDir, "installed")
 	assert.NoError(t, os.MkdirAll(targetDir, 0o755))
 
 	err := installIdeWindowsExe(fakeExe, targetDir)
 	assert.NoError(t, err)
+	assert.True(t, invoked.Load(), "installer mock was not invoked")
 }

@@ -4,13 +4,14 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
-	"runtime"
 	"strings"
+	"sync/atomic"
 	"testing"
 
 	"github.com/JetBrains/qodana-cli/internal/platform"
 	"github.com/JetBrains/qodana-cli/internal/platform/product"
 	"github.com/JetBrains/qodana-cli/internal/platform/thirdpartyscan"
+	"github.com/JetBrains/qodana-cli/internal/testutil/mockexe"
 	"github.com/stretchr/testify/assert"
 	log "github.com/sirupsen/logrus"
 )
@@ -81,35 +82,22 @@ func TestLinterRun(t *testing.T) {
 }
 
 func TestRunClangTidy_PathWithSpaces(t *testing.T) {
-	//goland:noinspection GoBoolExpressions
-	if runtime.GOOS == "windows" {
-		t.Skip("test uses a shell script as a fake clang-tidy")
-	}
-
 	tmpDir := t.TempDir()
 
 	// Place the fake clang-tidy in a directory with spaces
 	toolDir := filepath.Join(tmpDir, "My Tools")
-	assert.NoError(t, os.MkdirAll(toolDir, 0o755))
-
-	fakeClangTidy := filepath.Join(toolDir, "clang-tidy")
-	// Script writes an empty SARIF to the --export-sarif path (arg after --export-sarif flag)
-	script := `#!/bin/sh
-for arg; do
-  prev_was_export=false
-done
-# Parse --export-sarif argument
-i=0
-for arg; do
-  if [ "$prev" = "--export-sarif" ]; then
-    echo '{}' > "$arg"
-    exit 0
-  fi
-  prev="$arg"
-done
-exit 0
-`
-	assert.NoError(t, os.WriteFile(fakeClangTidy, []byte(script), 0o755))
+	var invoked atomic.Bool
+	fakeClangTidy := mockexe.CreateMockExe(t, filepath.Join(toolDir, "clang-tidy"), func(ctx *mockexe.CallContext) int {
+		invoked.Store(true)
+		for i, arg := range ctx.Argv {
+			if arg == "--export-sarif" && i+1 < len(ctx.Argv) {
+				_ = os.MkdirAll(filepath.Dir(ctx.Argv[i+1]), 0o755)
+				_ = os.WriteFile(ctx.Argv[i+1], []byte("{}"), 0o644)
+				break
+			}
+		}
+		return 0
+	})
 
 	// compile_commands.json in a directory with spaces
 	projectDir := filepath.Join(tmpDir, "my project")
@@ -143,4 +131,5 @@ exit 0
 		stdoutCh,
 	)
 	assert.NoError(t, err)
+	assert.True(t, invoked.Load(), "clang-tidy mock was not invoked")
 }

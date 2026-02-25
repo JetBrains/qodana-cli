@@ -3,37 +3,53 @@ package core
 import (
 	"os"
 	"path/filepath"
-	"runtime"
 	"testing"
 
 	"github.com/JetBrains/qodana-cli/internal/core/corescan"
 	"github.com/JetBrains/qodana-cli/internal/platform/product"
 	"github.com/JetBrains/qodana-cli/internal/platform/qdyaml"
+	"github.com/JetBrains/qodana-cli/internal/testutil/mockexe"
+	"github.com/JetBrains/qodana-cli/internal/testutil/mocklinter"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
-func TestInstallPlugins(t *testing.T) {
-	//goland:noinspection GoBoolExpressions
-	if runtime.GOOS == "windows" {
-		t.Skip("test uses a shell script as a fake IDE")
+// mockIdeHandler is a handler that behaves like a real IDE: it writes
+// qodana-short.sarif.json to the results directory (the last argv element).
+func mockIdeHandler(ctx *mockexe.CallContext) int {
+	resultsDir := ctx.Argv[len(ctx.Argv)-1]
+	sarifContent := `{"runs": [{"invocations": [{"exitCode": 0}]}]}`
+	if err := os.MkdirAll(resultsDir, 0o755); err != nil {
+		return 1
 	}
+	if err := os.WriteFile(
+		filepath.Join(resultsDir, "qodana-short.sarif.json"),
+		[]byte(sarifContent), 0o644,
+	); err != nil {
+		return 1
+	}
+	return 0
+}
+
+func TestInstallPlugins(t *testing.T) {
+	exePath := mocklinter.Native(t, func(ctx *mockexe.CallContext) int {
+		require.Contains(ctx.T, ctx.Argv, "installPlugins")
+		require.Contains(ctx.T, ctx.Argv, "test-plugin")
+		return 0
+	})
 
 	tmpDir := t.TempDir()
-
-	ideScript := filepath.Join(tmpDir, "idea.sh")
-	err := os.WriteFile(ideScript, []byte("#!/bin/sh\nexit 0\n"), 0o755)
-	assert.NoError(t, err)
-
 	configDir := filepath.Join(tmpDir, "config")
 	assert.NoError(t, os.MkdirAll(configDir, 0o755))
 
 	ctx := corescan.ContextBuilder{
-		Analyser: product.JvmLinter.NativeAnalyzer(),
+		Analyser: mocklinter.Linter.NativeAnalyzer(),
 		Prod: product.Product{
-			IdeScript:      ideScript,
+			IdeScript:      exePath,
 			BaseScriptName: product.Idea,
-			Code:           product.QDJVM,
-			Build:          "242.1234",
+			Code:           mocklinter.Linter.ProductCode,
+			Build:          mocklinter.MockBuild,
+			Version:        mocklinter.MockVersion,
 		},
 		ConfigDir: configDir,
 		LogDir:    filepath.Join(tmpDir, "log"),
@@ -47,34 +63,31 @@ func TestInstallPlugins(t *testing.T) {
 }
 
 func TestInstallPlugins_PathWithSpaces(t *testing.T) {
-	//goland:noinspection GoBoolExpressions
-	if runtime.GOOS == "windows" {
-		t.Skip("test uses a shell script as a fake IDE")
-	}
-
 	tmpDir := t.TempDir()
 
-	// Place the IDE script in a directory with spaces
+	// Place mock IDE in a directory with spaces.
 	dirWithSpaces := filepath.Join(tmpDir, "My IDE")
-	assert.NoError(t, os.MkdirAll(dirWithSpaces, 0o755))
+	handler := func(ctx *mockexe.CallContext) int {
+		require.Contains(ctx.T, ctx.Argv, "installPlugins")
+		require.Contains(ctx.T, ctx.Argv, "test-plugin")
+		return 0
+	}
+	ideScript := mockexe.CreateMockExe(t, filepath.Join(dirWithSpaces, "idea"), handler)
 
-	ideScript := filepath.Join(dirWithSpaces, "idea.sh")
-	assert.NoError(t, os.WriteFile(ideScript, []byte("#!/bin/sh\nexit 0\n"), 0o755))
-
-	configDir := filepath.Join(tmpDir, "config")
+	configDir := filepath.Join(tmpDir, "my config")
 	assert.NoError(t, os.MkdirAll(configDir, 0o755))
 
 	ctx := corescan.ContextBuilder{
-		Analyser: product.JvmLinter.NativeAnalyzer(),
+		Analyser: mocklinter.Linter.NativeAnalyzer(),
 		Prod: product.Product{
 			IdeScript:      ideScript,
 			BaseScriptName: product.Idea,
-			Code:           product.QDJVM,
-			Build:          "242.1234",
+			Code:           mocklinter.Linter.ProductCode,
+			Build:          mocklinter.MockBuild,
 		},
 		ConfigDir: configDir,
-		LogDir:    filepath.Join(tmpDir, "log"),
-		CacheDir:  filepath.Join(tmpDir, "cache"),
+		LogDir:    filepath.Join(tmpDir, "my log"),
+		CacheDir:  filepath.Join(tmpDir, "my cache"),
 		QodanaYamlConfig: corescan.QodanaYamlConfig{
 			Plugins: []qdyaml.Plugin{{Id: "test-plugin"}},
 		},
@@ -84,10 +97,7 @@ func TestInstallPlugins_PathWithSpaces(t *testing.T) {
 }
 
 func TestRunQodanaLocal(t *testing.T) {
-	//goland:noinspection GoBoolExpressions
-	if runtime.GOOS == "windows" {
-		t.Skip("test uses a shell script as a fake IDE")
-	}
+	exePath := mocklinter.Native(t, mockIdeHandler)
 
 	tmpDir := t.TempDir()
 	projectDir := filepath.Join(tmpDir, "project")
@@ -99,24 +109,14 @@ func TestRunQodanaLocal(t *testing.T) {
 		assert.NoError(t, os.MkdirAll(dir, 0o755))
 	}
 
-	// Pre-create the short SARIF file that getIdeExitCode reads after the process finishes
-	sarifContent := `{"runs": [{"invocations": [{"exitCode": 0}]}]}`
-	assert.NoError(t, os.WriteFile(
-		filepath.Join(resultsDir, "qodana-short.sarif.json"),
-		[]byte(sarifContent), 0o644))
-
-	// Create a fake IDE script that exits 0
-	ideScript := filepath.Join(tmpDir, "idea.sh")
-	assert.NoError(t, os.WriteFile(ideScript, []byte("#!/bin/sh\nexit 0\n"), 0o755))
-
 	ctx := corescan.ContextBuilder{
-		Analyser: product.JvmLinter.NativeAnalyzer(),
+		Analyser: mocklinter.Linter.NativeAnalyzer(),
 		Prod: product.Product{
-			IdeScript:      ideScript,
+			IdeScript:      exePath,
 			BaseScriptName: product.Idea,
-			Code:           product.QDJVM,
-			Build:          "242.1234",
-			Version:        "2024.2",
+			Code:           mocklinter.Linter.ProductCode,
+			Build:          mocklinter.MockBuild,
+			Version:        mocklinter.MockVersion,
 		},
 		ProjectDir: projectDir,
 		ResultsDir: resultsDir,
@@ -131,12 +131,13 @@ func TestRunQodanaLocal(t *testing.T) {
 }
 
 func TestRunQodanaLocal_PathWithSpaces(t *testing.T) {
-	//goland:noinspection GoBoolExpressions
-	if runtime.GOOS == "windows" {
-		t.Skip("test uses a shell script as a fake IDE")
-	}
-
 	tmpDir := t.TempDir()
+
+	// Build mock IDE in a directory with spaces — requires manual Product
+	// construction because mocklinter.Native() picks its own temp path.
+	dirWithSpaces := filepath.Join(tmpDir, "My IDE")
+	ideScript := mockexe.CreateMockExe(t, filepath.Join(dirWithSpaces, "idea"), mockIdeHandler)
+
 	projectDir := filepath.Join(tmpDir, "my project")
 	resultsDir := filepath.Join(tmpDir, "my results")
 	configDir := filepath.Join(tmpDir, "my config")
@@ -146,24 +147,14 @@ func TestRunQodanaLocal_PathWithSpaces(t *testing.T) {
 		assert.NoError(t, os.MkdirAll(dir, 0o755))
 	}
 
-	sarifContent := `{"runs": [{"invocations": [{"exitCode": 0}]}]}`
-	assert.NoError(t, os.WriteFile(
-		filepath.Join(resultsDir, "qodana-short.sarif.json"),
-		[]byte(sarifContent), 0o644))
-
-	dirWithSpaces := filepath.Join(tmpDir, "My IDE")
-	assert.NoError(t, os.MkdirAll(dirWithSpaces, 0o755))
-	ideScript := filepath.Join(dirWithSpaces, "idea.sh")
-	assert.NoError(t, os.WriteFile(ideScript, []byte("#!/bin/sh\nexit 0\n"), 0o755))
-
 	ctx := corescan.ContextBuilder{
-		Analyser: product.JvmLinter.NativeAnalyzer(),
+		Analyser: mocklinter.Linter.NativeAnalyzer(),
 		Prod: product.Product{
 			IdeScript:      ideScript,
 			BaseScriptName: product.Idea,
-			Code:           product.QDJVM,
-			Build:          "242.1234",
-			Version:        "2024.2",
+			Code:           mocklinter.Linter.ProductCode,
+			Build:          mocklinter.MockBuild,
+			Version:        mocklinter.MockVersion,
 		},
 		ProjectDir: projectDir,
 		ResultsDir: resultsDir,
