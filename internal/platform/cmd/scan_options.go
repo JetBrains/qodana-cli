@@ -185,10 +185,10 @@ func ComputeFlags(cmd *cobra.Command, options *CliOptions) error {
 	flags.IntVar(
 		&options.Port,
 		"port",
-		8080,
+		0,
 		"Port to serve the report on (DEPRECATED, use --show-report-port instead)",
 	)
-	flags.IntVar(&options.ShowReportPort, "show-report-port", 8080, "Port to serve the report on")
+	flags.IntVar(&options.ShowReportPort, "show-report-port", 0, "Port to serve the report on")
 	flags.StringVar(
 		&options.ConfigName,
 		"config",
@@ -437,13 +437,14 @@ func ComputeFlags(cmd *cobra.Command, options *CliOptions) error {
 	return nil
 }
 
-// GetShowReportPort returns --show-report-port or --port as a fallback for backwards compatibility
+// GetShowReportPort returns --show-report-port or --port or default as a fallback for backwards compatibility
 func (o CliOptions) GetShowReportPort() int {
 	if o.ShowReportPort != 0 {
 		return o.ShowReportPort
 	}
 	if o.Port != 0 {
 		log.Warn("Flag --port is deprecated, use --show-report-port instead")
+		return o.Port
 	}
-	return o.Port
+	return 8080
 }

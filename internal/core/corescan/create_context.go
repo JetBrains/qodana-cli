@@ -71,7 +71,7 @@ func CreateContext(
 		BaselineIncludeAbsent:     cliOptions.BaselineIncludeAbsent,
 		SaveReport:                cliOptions.SaveReport,
 		ShowReport:                cliOptions.ShowReport,
-		ShowReportPort:            cliOptions.ShowReportPort,
+		ShowReportPort:            cliOptions.GetShowReportPort(),
 		Property:                  cliOptions.Property,
 		Script:                    cliOptions.Script,
 		FailThreshold:             cliOptions.FailThreshold,

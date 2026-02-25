@@ -134,13 +134,8 @@ But you can always override qodana.yaml options with the following command-line 
 				msg.SuccessMessage("Report is successfully uploaded to %s", newReportUrl)
 			}
 
-			showReport := scanContext.ShowReport()
-			if msg.IsInteractive() {
-				showReport = msg.AskUserConfirm("Do you want to open the latest report")
-			}
-
 			commoncontext.InteractiveShowReport(
-				showReport,
+				scanContext.ShowReport(),
 				scanContext.CacheDir(),
 				scanContext.ResultsDir(),
 				scanContext.ReportDir(),
