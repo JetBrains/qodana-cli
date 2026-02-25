@@ -27,7 +27,11 @@ func acceptLoop(ln net.Listener, t testing.TB, handler func(ctx *CallContext) in
 }
 
 func serveCallback(conn net.Conn, t testing.TB, handler func(ctx *CallContext) int) {
-	defer conn.Close()
+	defer func() {
+		if err := conn.Close(); err != nil {
+			log.Errorf("mockexe: closing connection: %v", err)
+		}
+	}()
 
 	// Read init frame.
 	typ, payload, err := ReadFrame(conn)
@@ -71,7 +75,9 @@ func serveCallback(conn net.Conn, t testing.TB, handler func(ctx *CallContext) i
 	exitCode := callHandlerSafe(ctx, handler)
 
 	// Close stdin reader so receiveStdin can finish if handler didn't drain it.
-	pr.Close()
+	if err := pr.Close(); err != nil {
+		log.Errorf("mockexe: closing stdin pipe reader: %v", err)
+	}
 	stdinWg.Wait()
 
 	// Send stdout/stderr EOF and exit frame.
@@ -98,7 +104,9 @@ func receiveStdin(conn net.Conn, pw *io.PipeWriter) {
 			continue
 		}
 		if len(payload) == 0 {
-			pw.Close()
+			if err := pw.Close(); err != nil {
+				log.Errorf("mockexe: closing stdin pipe writer: %v", err)
+			}
 			return
 		}
 		if _, err := pw.Write(payload); err != nil {

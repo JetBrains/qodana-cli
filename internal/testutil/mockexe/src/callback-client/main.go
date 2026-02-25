@@ -38,9 +38,15 @@ func run() int {
 		fmt.Fprintf(os.Stderr, "mockexe: cannot connect to %s: %v\n", addr, err)
 		return 1
 	}
-	defer conn.Close()
+	defer func() {
+		if err := conn.Close(); err != nil {
+			fmt.Fprintf(os.Stderr, "mockexe: closing connection: %v\n", err)
+		}
+	}()
 
-	_ = conn.SetDeadline(time.Now().Add(callbackTimeout))
+	if err := conn.SetDeadline(time.Now().Add(callbackTimeout)); err != nil {
+		fmt.Fprintf(os.Stderr, "mockexe: setting deadline: %v\n", err)
+	}
 
 	// Send init frame.
 	init := mockexe.InitPayload{Argv: os.Args, Env: os.Environ()}
@@ -68,11 +74,15 @@ func run() int {
 		switch typ {
 		case mockexe.FrameStdout:
 			if len(payload) > 0 {
-				os.Stdout.Write(payload)
+				if _, err := os.Stdout.Write(payload); err != nil {
+					fmt.Fprintf(os.Stderr, "mockexe: writing stdout: %v\n", err)
+				}
 			}
 		case mockexe.FrameStderr:
 			if len(payload) > 0 {
-				os.Stderr.Write(payload)
+				if _, err := os.Stderr.Write(payload); err != nil {
+					fmt.Fprintf(os.Stderr, "mockexe: writing stderr: %v\n", err)
+				}
 			}
 		case mockexe.FrameExit:
 			return mockexe.UnmarshalExitCode(payload)
@@ -86,12 +96,18 @@ func forwardStdin(conn net.Conn, mu *sync.Mutex) {
 		n, err := os.Stdin.Read(buf)
 		if n > 0 {
 			mu.Lock()
-			_ = mockexe.WriteFrame(conn, mockexe.FrameStdin, buf[:n])
+			if wErr := mockexe.WriteFrame(conn, mockexe.FrameStdin, buf[:n]); wErr != nil {
+				mu.Unlock()
+				fmt.Fprintf(os.Stderr, "mockexe: forwarding stdin: %v\n", wErr)
+				return
+			}
 			mu.Unlock()
 		}
 		if err != nil {
 			mu.Lock()
-			_ = mockexe.WriteFrame(conn, mockexe.FrameStdin, nil)
+			if wErr := mockexe.WriteFrame(conn, mockexe.FrameStdin, nil); wErr != nil {
+				fmt.Fprintf(os.Stderr, "mockexe: sending stdin EOF: %v\n", wErr)
+			}
 			mu.Unlock()
 			return
 		}

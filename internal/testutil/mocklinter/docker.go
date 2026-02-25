@@ -35,7 +35,11 @@ func Docker(t testing.TB, handler func(ctx *mockexe.CallContext) int) string {
 	if err != nil {
 		t.Fatalf("mocklinter: resolving temp dir: %v", err)
 	}
-	t.Cleanup(func() { os.RemoveAll(tmpDir) })
+	t.Cleanup(func() {
+		if err := os.RemoveAll(tmpDir); err != nil {
+			t.Logf("mocklinter: removing temp dir %s: %v", tmpDir, err)
+		}
+	})
 
 	binaryPath := filepath.Join(tmpDir, "callback-client-linux")
 	mockexe.BuildCallbackClient(t, binaryPath, "host.docker.internal:"+port,

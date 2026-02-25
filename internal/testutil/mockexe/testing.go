@@ -30,9 +30,9 @@ type skipNowSentinel struct{}
 // and delegates all safe methods automatically.
 type MockExeT struct{ testing.TB }
 
-func (s *MockExeT) FailNow()                            { s.TB.Fail(); panic(failNowSentinel{}) }
-func (s *MockExeT) Fatal(args ...any)                    { s.TB.Error(args...); panic(failNowSentinel{}) }
-func (s *MockExeT) Fatalf(format string, args ...any)    { s.TB.Errorf(format, args...); panic(failNowSentinel{}) }
-func (s *MockExeT) SkipNow()                             { panic(skipNowSentinel{}) }
-func (s *MockExeT) Skip(args ...any)                     { s.TB.Log(args...); panic(skipNowSentinel{}) }
-func (s *MockExeT) Skipf(format string, args ...any)     { s.TB.Logf(format, args...); panic(skipNowSentinel{}) }
+func (s *MockExeT) FailNow()                         { s.Fail(); panic(failNowSentinel{}) }
+func (s *MockExeT) Fatal(args ...any)                  { s.Error(args...); panic(failNowSentinel{}) }
+func (s *MockExeT) Fatalf(format string, args ...any)  { s.Errorf(format, args...); panic(failNowSentinel{}) }
+func (s *MockExeT) SkipNow()                           { panic(skipNowSentinel{}) }
+func (s *MockExeT) Skip(args ...any)                   { s.Log(args...); panic(skipNowSentinel{}) }
+func (s *MockExeT) Skipf(format string, args ...any)   { s.Logf(format, args...); panic(skipNowSentinel{}) }
