@@ -17,11 +17,7 @@ func TestContextBuilder_Build(t *testing.T) {
 			IsEap:                 false,
 		},
 		MountInfo: MountInfo{
-			Converter:   "/path/to/converter",
-			Fuser:       "/path/to/fuser",
-			BaselineCli: "/path/to/baseline",
 			CustomTools: map[string]string{Clang: "/usr/bin/clang"},
-			JavaPath:    "/path/to/java",
 		},
 		CloudData: ThirdPartyStartupCloudData{
 			LicensePlan:   "COMMUNITY",
@@ -57,7 +53,6 @@ func TestContextBuilder_Build(t *testing.T) {
 	ctx := builder.Build()
 
 	assert.Equal(t, "QDCLC", ctx.LinterInfo().ProductCode)
-	assert.Equal(t, "/path/to/converter", ctx.MountInfo().Converter)
 	assert.Equal(t, "COMMUNITY", ctx.CloudData().LicensePlan)
 	assert.Equal(t, "/project", ctx.ProjectDir())
 	assert.Equal(t, "/results", ctx.ResultsDir())
@@ -117,10 +112,12 @@ func TestLinterInfo_GetMajorVersion(t *testing.T) {
 		{"", "2025.3"},
 	}
 	for _, tt := range tests {
-		t.Run(tt.version, func(t *testing.T) {
-			info := LinterInfo{LinterVersion: tt.version}
-			assert.Equal(t, tt.expected, info.GetMajorVersion())
-		})
+		t.Run(
+			tt.version, func(t *testing.T) {
+				info := LinterInfo{LinterVersion: tt.version}
+				assert.Equal(t, tt.expected, info.GetMajorVersion())
+			},
+		)
 	}
 }
 
@@ -138,5 +135,3 @@ func TestYamlConfig(t *testing.T) {
 	assert.Equal(t, 5, *config.FailThreshold)
 	assert.Equal(t, "test.sln", config.DotNet.Solution)
 }
-
-

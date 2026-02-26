@@ -28,66 +28,21 @@ import (
 	"runtime"
 	"strings"
 
-	"github.com/JetBrains/qodana-cli/internal/platform/product"
 	"github.com/JetBrains/qodana-cli/internal/platform/thirdpartyscan"
-	"github.com/JetBrains/qodana-cli/internal/platform/utils"
 	"github.com/JetBrains/qodana-cli/internal/tooling"
-)
-
-const (
-	converterJar = "intellij-report-converter.jar"
-	fuserJar     = "qodana-fuser.jar"
-	baselineCli  = "baseline-cli.jar"
 )
 
 // Mount a third-party linter.
 func extractUtils(linter ThirdPartyLinter, cacheDir string) thirdpartyscan.MountInfo {
-	mountPath := getToolsMountPath(cacheDir)
-
-	javaPath, err := utils.GetJavaExecutablePath()
-	if err != nil {
-		log.Fatalf(
-			"Java is not installed or not accessible from PATH: %s. "+
-				"See requirements in our documentation: https://www.jetbrains.com/help/qodana/deploy-qodana.html",
-			err,
-		)
-	}
-
+	mountPath := tooling.GetToolsMountPath(cacheDir)
 	customTools, err := linter.MountTools(mountPath)
 	if err != nil {
 		log.Fatal(err)
 	}
-
-	converter := ProcessAuxiliaryTool(converterJar, "converter", mountPath, tooling.Converter)
-	fuser := ProcessAuxiliaryTool(fuserJar, "FUS", mountPath, tooling.Fuser)
-	baselineCliJar := ProcessAuxiliaryTool(
-		baselineCli,
-		"baseline-cli",
-		mountPath,
-		tooling.BaselineCli,
-	)
-
 	mountInfo := thirdpartyscan.MountInfo{
-		Converter:   converter,
-		Fuser:       fuser,
-		BaselineCli: baselineCliJar,
 		CustomTools: customTools,
-		JavaPath:    javaPath,
 	}
 	return mountInfo
-}
-
-func getToolsMountPath(cacheDir string) string {
-	mountPath := filepath.Join(cacheDir, product.ShortVersion)
-	if _, err := os.Stat(mountPath); err != nil {
-		if os.IsNotExist(err) {
-			err = os.MkdirAll(mountPath, 0755)
-			if err != nil {
-				log.Fatal(err)
-			}
-		}
-	}
-	return mountPath
 }
 
 func ProcessAuxiliaryTool(toolName, moniker, mountPath string, bytes []byte) string {

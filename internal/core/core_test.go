@@ -79,7 +79,7 @@ func TestDockerCliArgs(t *testing.T) {
 				BaselineIncludeAbsent: true,
 				SaveReport:            true,
 				ShowReport:            true,
-				Port:                  8888,
+				ShowReportPort:        8888,
 				Property:              []string{"foo.baz=bar", "foo.bar=baz"},
 				Script:                "default",
 				FailThreshold:         "0",
@@ -213,7 +213,7 @@ func TestCliArgs(t *testing.T) {
 				BaselineIncludeAbsent:     true,
 				SaveReport:                true,
 				ShowReport:                true,
-				Port:                      8888,
+				ShowReportPort:            8888,
 				Property:                  []string{"foo.baz=bar", "foo.bar=baz"},
 				Script:                    "default",
 				FailThreshold:             "0",
@@ -663,7 +663,7 @@ func Test_createUser(t *testing.T) {
 }
 
 func Test_syncIdeaCache(t *testing.T) {
-	tmpDir := filepath.Join(os.TempDir(), "cache")
+	tmpDir := t.TempDir()
 
 	t.Run(
 		"NotExist", func(t *testing.T) {

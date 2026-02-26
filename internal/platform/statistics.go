@@ -38,8 +38,8 @@ var wg sync.WaitGroup
 
 const qodanaProjectId = "system_qdcld_project_id"
 
-func createFuserEventChannel(events *[]tooling.FuserEvent) chan tooling.FuserEvent {
-	ch := make(chan tooling.FuserEvent)
+func createFuserEventChannel(events *[]FuserEvent) chan FuserEvent {
+	ch := make(chan FuserEvent)
 	guid := uuid.New().String()
 	go func() {
 		for event := range ch {
@@ -52,13 +52,12 @@ func createFuserEventChannel(events *[]tooling.FuserEvent) chan tooling.FuserEve
 }
 
 func sendFuserEvents(
-	ch chan tooling.FuserEvent,
-	events *[]tooling.FuserEvent,
+	ch chan FuserEvent,
+	events *[]FuserEvent,
 	c thirdpartyscan.Context,
 	deviceId string,
 ) {
 	linterInfo := c.LinterInfo()
-	mountInfo := c.MountInfo()
 	wg.Wait()
 	close(ch)
 	if c.NoStatistics() {
@@ -98,9 +97,9 @@ func sendFuserEvents(
 	}
 
 	args := []string{
-		strutil.QuoteForWindows(mountInfo.JavaPath),
+		tooling.GetQodanaJBRPath(c.CacheDir()),
 		"-jar",
-		strutil.QuoteForWindows(mountInfo.Fuser),
+		tooling.Fuser.GetLibPath(c.CacheDir()),
 		deviceId,
 		linterInfo.ProductCode,
 		linterInfo.LinterVersion,
@@ -124,10 +123,10 @@ func commonEventData(linterInfo thirdpartyscan.LinterInfo, projectIdHash string)
 	return eventData
 }
 
-func logProjectOpen(ch chan tooling.FuserEvent, linterInfo thirdpartyscan.LinterInfo, projectIdHash string) {
+func logProjectOpen(ch chan FuserEvent, linterInfo thirdpartyscan.LinterInfo, projectIdHash string) {
 	wg.Add(1)
 	eventData := commonEventData(linterInfo, projectIdHash)
-	ch <- tooling.FuserEvent{
+	ch <- FuserEvent{
 		GroupId:   "qd.cl.lifecycle",
 		EventName: "project.opened",
 		EventData: eventData,
@@ -136,10 +135,10 @@ func logProjectOpen(ch chan tooling.FuserEvent, linterInfo thirdpartyscan.Linter
 	}
 }
 
-func logProjectClose(ch chan tooling.FuserEvent, linterInfo thirdpartyscan.LinterInfo, projectIdHash string) {
+func logProjectClose(ch chan FuserEvent, linterInfo thirdpartyscan.LinterInfo, projectIdHash string) {
 	wg.Add(1)
 	eventData := commonEventData(linterInfo, projectIdHash)
-	ch <- tooling.FuserEvent{
+	ch <- FuserEvent{
 		GroupId:   "qd.cl.lifecycle",
 		EventName: "project.closed",
 		EventData: eventData,
@@ -148,16 +147,25 @@ func logProjectClose(ch chan tooling.FuserEvent, linterInfo thirdpartyscan.Linte
 	}
 }
 
-func logOs(ch chan tooling.FuserEvent, linterInfo thirdpartyscan.LinterInfo, projectIdHash string) {
+func logOs(ch chan FuserEvent, linterInfo thirdpartyscan.LinterInfo, projectIdHash string) {
 	wg.Add(1)
 	eventData := commonEventData(linterInfo, projectIdHash)
 	eventData["name"] = runtime.GOOS
 	eventData["arch"] = runtime.GOARCH
-	ch <- tooling.FuserEvent{
+	ch <- FuserEvent{
 		GroupId:   "qd.cl.system.os",
 		EventName: "os.name",
 		EventData: eventData,
 		Time:      currentTimestamp(),
 		State:     true,
 	}
+}
+
+type FuserEvent struct {
+	GroupId   string            `json:"groupId,omitempty"`
+	EventName string            `json:"eventName,omitempty"`
+	Time      int64             `json:"time,omitempty"`
+	State     bool              `json:"state"`
+	EventData map[string]string `json:"eventData,omitempty"`
+	SessionId string            `json:"sessionId,omitempty"`
 }

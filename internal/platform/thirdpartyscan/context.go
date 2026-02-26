@@ -34,11 +34,7 @@ type ThirdPartyStartupCloudData struct {
 
 // MountInfo is a struct that contains all the helper tools to run a Qodana linter.
 type MountInfo struct {
-	Converter   string
-	Fuser       string
-	BaselineCli string
 	CustomTools map[string]string
-	JavaPath    string
 }
 
 // LinterInfo is a struct that contains all the information about the linter.
@@ -92,6 +88,9 @@ type Context struct {
 	failThreshold             string
 	generateCodeClimateReport bool
 	sendBitBucketInsights     bool
+	saveReport                bool
+	showReport                bool
+	showReportPort            int
 	qodanaYamlConfig          QodanaYamlConfig
 }
 
@@ -141,6 +140,9 @@ type ContextBuilder struct {
 	FailThreshold             string
 	GenerateCodeClimateReport bool
 	SendBitBucketInsights     bool
+	SaveReport                bool
+	ShowReport                bool
+	ShowReportPort            int
 	QodanaYamlConfig          QodanaYamlConfig
 }
 
@@ -169,6 +171,9 @@ func (b ContextBuilder) Build() Context {
 		generateCodeClimateReport: b.GenerateCodeClimateReport,
 		sendBitBucketInsights:     b.SendBitBucketInsights,
 		failThreshold:             b.FailThreshold,
+		saveReport:                b.SaveReport,
+		showReport:                b.ShowReport,
+		showReportPort:            b.ShowReportPort,
 		qodanaYamlConfig:          b.QodanaYamlConfig,
 	}
 }
@@ -195,6 +200,9 @@ func (c Context) BaselineIncludeAbsent() bool           { return c.baselineInclu
 func (c Context) FailThreshold() string                 { return c.failThreshold }
 func (c Context) GenerateCodeClimateReport() bool       { return c.generateCodeClimateReport }
 func (c Context) SendBitBucketInsights() bool           { return c.sendBitBucketInsights }
+func (c Context) SaveReport() bool                      { return c.saveReport }
+func (c Context) ShowReport() bool                      { return c.showReport }
+func (c Context) ShowReportPort() int                   { return c.showReportPort }
 func (c Context) QodanaYamlConfig() QodanaYamlConfig    { return c.qodanaYamlConfig }
 
 func (c Context) Property() []string {

@@ -30,7 +30,6 @@ import (
 	"github.com/JetBrains/qodana-cli/internal/platform/strutil"
 	"github.com/JetBrains/qodana-cli/internal/platform/utils"
 	"github.com/JetBrains/qodana-cli/internal/tooling"
-	log "github.com/sirupsen/logrus"
 )
 
 type Publisher struct {
@@ -40,34 +39,10 @@ type Publisher struct {
 }
 
 // SendReport sends report to Qodana Cloud.
-func SendReport(publisher Publisher, token string, javaPath string) {
-	if javaPath == "" {
-		log.Fatal(
-			"Java is required to send reports to Qodana Cloud without linter execution. " +
-				"See requirements in our documentation: https://www.jetbrains.com/help/qodana/deploy-qodana.html",
-		)
-	}
-	file, err := os.CreateTemp("", "qodana-publisher.jar")
-	if err != nil {
-		log.Fatalf("Failed to create a temporary file: %s", err)
-	}
-	publisherPath := file.Name()
-	err = file.Close()
-	if err != nil {
-		log.Fatalf("Failed to close temporary file %q: %s", file.Name(), err)
-	}
-	defer func() {
-		err = os.Remove(file.Name())
-		if err != nil {
-			log.Fatalf("Failed to remove temporary file %q: %s", file.Name(), err)
-		}
-	}()
-
-	extractPublisher(publisherPath)
+func SendReport(cacheDir string, publisher Publisher, token string) {
 
 	publisherCommand := getPublisherArgs(
-		javaPath,
-		publisherPath,
+		cacheDir,
 		publisher,
 		token,
 		cloud.GetCloudRootEndpoint().Url,
@@ -78,11 +53,11 @@ func SendReport(publisher Publisher, token string, javaPath string) {
 }
 
 // getPublisherArgs returns args for the publisher.
-func getPublisherArgs(java string, publisherPath string, publisher Publisher, token string, endpoint string) []string {
+func getPublisherArgs(cacheDir string, publisher Publisher, token string, endpoint string) []string {
 	publisherArgs := []string{
-		strutil.QuoteForWindows(java),
+		tooling.GetQodanaJBRPath(cacheDir),
 		"-jar",
-		strutil.QuoteForWindows(publisherPath),
+		tooling.PublisherCli.GetLibPath(cacheDir),
 		"--analysis-id", publisher.AnalysisId,
 		"--report-path", strutil.QuoteForWindows(publisher.ResultsDir),
 		"--token", token,
@@ -101,22 +76,4 @@ func getPublisherArgs(java string, publisherPath string, publisher Publisher, to
 		publisherArgs = append(publisherArgs, "--qodana-endpoint", endpoint)
 	}
 	return publisherArgs
-}
-
-func extractPublisher(path string) {
-	file, err := os.Create(path)
-	if err != nil {
-		log.Fatalf("Error while creating %q: %s", path, err)
-	}
-	defer func() {
-		err := file.Close()
-		if err != nil {
-			log.Fatalf("Error while closing %q: %s", path, err)
-		}
-	}()
-
-	_, err = file.Write(tooling.PublisherCli)
-	if err != nil {
-		log.Fatalf("Error while writing %q: %s", path, err)
-	}
 }
