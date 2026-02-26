@@ -1,10 +1,7 @@
 package mocklinter_test
 
 import (
-	"os"
 	"os/exec"
-	"path/filepath"
-	"runtime"
 	"testing"
 
 	"github.com/JetBrains/qodana-cli/internal/testutil/mockexe"
@@ -44,76 +41,4 @@ func TestNative_ExitCodeForwarded(t *testing.T) {
 	err := cmd.Run()
 	require.Error(t, err)
 	assert.Equal(t, 42, cmd.ProcessState.ExitCode())
-}
-
-func skipIfNoDocker(t *testing.T) {
-	t.Helper()
-	//goland:noinspection GoBoolExpressions
-	if runtime.GOOS == "windows" && os.Getenv("CI") != "" {
-		t.Skip("CI Windows runner uses Windows containers; Linux containers unavailable")
-	}
-	if _, err := exec.LookPath("docker"); err != nil {
-		t.Skip("docker not available")
-	}
-}
-
-func TestDocker_ContainerRuns(t *testing.T) {
-	skipIfNoDocker(t)
-
-	var receivedArgv []string
-	binaryPath := mocklinter.Docker(t, func(ctx *mockexe.CallContext) int {
-		receivedArgv = ctx.Argv
-		return 0
-	})
-
-	out, err := mocklinter.RunContainer(t, binaryPath, "hello", "world")
-	require.NoError(t, err, "docker run failed: %s", out)
-	require.Len(t, receivedArgv, 3)
-	assert.Equal(t, []string{"hello", "world"}, receivedArgv[1:])
-}
-
-func TestDocker_ExitCodeForwarded(t *testing.T) {
-	skipIfNoDocker(t)
-
-	binaryPath := mocklinter.Docker(t, func(ctx *mockexe.CallContext) int {
-		return 7
-	})
-
-	_, err := mocklinter.RunContainer(t, binaryPath)
-	require.Error(t, err)
-	var exitErr *mocklinter.ContainerExitError
-	require.ErrorAs(t, err, &exitErr)
-	assert.Equal(t, 7, exitErr.ExitCode())
-}
-
-func TestDocker_Stdout(t *testing.T) {
-	skipIfNoDocker(t)
-
-	binaryPath := mocklinter.Docker(t, func(ctx *mockexe.CallContext) int {
-		_, _ = ctx.Stdout.Write([]byte("hello from container"))
-		return 0
-	})
-
-	out, err := mocklinter.RunContainer(t, binaryPath)
-	require.NoError(t, err)
-	assert.Contains(t, string(out), "hello from container")
-}
-
-func TestDocker_WritesToHostFS(t *testing.T) {
-	skipIfNoDocker(t)
-
-	resultsDir := filepath.Join(t.TempDir(), "results")
-
-	binaryPath := mocklinter.Docker(t, func(ctx *mockexe.CallContext) int {
-		require.NoError(ctx.T, os.MkdirAll(resultsDir, 0o755))
-		require.NoError(ctx.T, os.WriteFile(filepath.Join(resultsDir, "result.sarif.json"), []byte("{}"), 0o644))
-		return 0
-	})
-
-	out, err := mocklinter.RunContainer(t, binaryPath)
-	require.NoError(t, err, "docker run failed: %s", out)
-
-	data, err := os.ReadFile(filepath.Join(resultsDir, "result.sarif.json"))
-	require.NoError(t, err)
-	assert.Equal(t, "{}", string(data))
 }

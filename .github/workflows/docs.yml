@@ -11,6 +11,8 @@ jobs:
   check:
     runs-on: ubuntu-latest
     name: Check README.md
+    env:
+      GITHUB_TOKEN: ${{ secrets.QODANA_JBR_TOKEN }}
     steps:
       - uses: actions/checkout@v6
       - uses: ./.github/actions/mock-dependencies
@@ -19,4 +21,4 @@ jobs:
           cache-dependency-path: "**/*.sum"
           go-version-file: go.mod
       - name: Check README.md is up to date
-        run: go run scripts/generate-docs.go --check
+        run: go generate ./... && go run scripts/generate-docs.go --check

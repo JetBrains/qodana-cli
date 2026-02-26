@@ -84,7 +84,6 @@ func main() {
 	log.Printf("Downloading dependencies to %s", repoRoot)
 
 	var all []artifact
-	all = append(all, toolingArtifacts...)
 	all = append(all, clangArtifacts...)
 	all = append(all, cdnetArtifacts...)
 

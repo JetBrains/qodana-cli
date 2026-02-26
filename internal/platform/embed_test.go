@@ -18,30 +18,22 @@ package platform
 
 import (
 	"os"
+	"path/filepath"
 	"testing"
 
 	"github.com/JetBrains/qodana-cli/internal/platform/thirdpartyscan"
+	"github.com/JetBrains/qodana-cli/internal/tooling"
 )
 
 func TestMount(t *testing.T) {
 	linter := mockThirdPartyLinter{}
-	tempCacheDir, _ := os.MkdirTemp("", "qodana-platform")
-	defer func() {
-		_ = os.RemoveAll(tempCacheDir)
-	}()
+	tempCacheDir := t.TempDir()
+	mountPath := tooling.GetToolsMountPath(tempCacheDir)
+	_ = os.WriteFile(filepath.Join(mountPath, "tool.lib"), []byte("test"), 0644)
 
 	mountInfo := extractUtils(linter, tempCacheDir)
-	if mountInfo.Converter == "" {
-		t.Error("extractUtils() failed")
-	}
 
-	list := []string{mountInfo.Converter, mountInfo.Fuser, mountInfo.BaselineCli}
-	// TODO: should be per-linter test as well
-	for _, v := range mountInfo.CustomTools {
-		list = append(list, v)
-	}
-
-	for _, p := range list {
+	for _, p := range mountInfo.CustomTools {
 		_, err := os.Stat(p)
 		if err != nil {
 			if os.IsNotExist(err) {
@@ -54,8 +46,10 @@ func TestMount(t *testing.T) {
 type mockThirdPartyLinter struct {
 }
 
-func (mockThirdPartyLinter) MountTools(_ string) (map[string]string, error) {
-	return make(map[string]string), nil
+func (mockThirdPartyLinter) MountTools(path string) (map[string]string, error) {
+	val := make(map[string]string)
+	val[thirdpartyscan.Clt] = filepath.Join(path, "tool.lib")
+	return val, nil
 }
 
 func (mockThirdPartyLinter) RunAnalysis(_ thirdpartyscan.Context) error {
@@ -64,7 +58,7 @@ func (mockThirdPartyLinter) RunAnalysis(_ thirdpartyscan.Context) error {
 
 func TestGetToolsMountPath(t *testing.T) {
 	dir := t.TempDir()
-	path := getToolsMountPath(dir)
+	path := tooling.GetToolsMountPath(dir)
 	if path == "" {
 		t.Error("getToolsMountPath returned empty string")
 	}
@@ -113,11 +107,13 @@ func TestIsInDirectory(t *testing.T) {
 	}
 
 	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			result := isInDirectory(tt.base, tt.target)
-			if result != tt.expected {
-				t.Errorf("isInDirectory(%s, %s) = %v, want %v", tt.base, tt.target, result, tt.expected)
-			}
-		})
+		t.Run(
+			tt.name, func(t *testing.T) {
+				result := isInDirectory(tt.base, tt.target)
+				if result != tt.expected {
+					t.Errorf("isInDirectory(%s, %s) = %v, want %v", tt.base, tt.target, result, tt.expected)
+				}
+			},
+		)
 	}
 }

@@ -87,7 +87,7 @@ type Context struct {
 	baselineIncludeAbsent     bool
 	saveReport                bool
 	showReport                bool
-	port                      int
+	showReportPort            int
 	_property                 []string
 	script                    string
 	failThreshold             string
@@ -166,7 +166,7 @@ func (c Context) Baseline() string                   { return c.baseline }
 func (c Context) BaselineIncludeAbsent() bool        { return c.baselineIncludeAbsent }
 func (c Context) SaveReport() bool                   { return c.saveReport }
 func (c Context) ShowReport() bool                   { return c.showReport }
-func (c Context) Port() int                          { return c.port }
+func (c Context) ShowReportPort() int                { return c.showReportPort }
 func (c Context) Script() string                     { return c.script }
 func (c Context) FailThreshold() string              { return c.failThreshold }
 func (c Context) Commit() string                     { return c.commit }
@@ -226,7 +226,7 @@ type ContextBuilder struct {
 	BaselineIncludeAbsent     bool
 	SaveReport                bool
 	ShowReport                bool
-	Port                      int
+	ShowReportPort            int
 	Property                  []string
 	Script                    string
 	FailThreshold             string
@@ -290,7 +290,7 @@ func (b ContextBuilder) Build() Context {
 		baselineIncludeAbsent:     b.BaselineIncludeAbsent,
 		saveReport:                b.SaveReport,
 		showReport:                b.ShowReport,
-		port:                      b.Port,
+		showReportPort:            b.ShowReportPort,
 		_property:                 b.Property,
 		script:                    b.Script,
 		failThreshold:             b.FailThreshold,

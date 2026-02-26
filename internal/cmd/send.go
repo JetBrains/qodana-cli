@@ -24,7 +24,6 @@ import (
 	"github.com/JetBrains/qodana-cli/internal/platform/msg"
 	"github.com/JetBrains/qodana-cli/internal/platform/qdenv"
 	"github.com/JetBrains/qodana-cli/internal/platform/tokenloader"
-	"github.com/JetBrains/qodana-cli/internal/platform/utils"
 	"github.com/google/uuid"
 	"github.com/spf13/cobra"
 )
@@ -67,14 +66,10 @@ If you are using other Qodana Cloud instance than https://qodana.cloud/, overrid
 				AnalysisId: cliOptions.AnalysisId,
 			}
 
-			java := ""
-			if utils.IsInstalled("java") {
-				java = "java"
-			}
 			platform.SendReport(
+				commonCtx.CacheDir,
 				publisher,
 				tokenloader.ValidateCloudToken(commonCtx, false),
-				java,
 			)
 		},
 	}

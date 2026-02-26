@@ -60,6 +60,7 @@ This command serves the Qodana report locally and opens a browser to it.`,
 				}
 			} else {
 				commoncontext.ShowReport(
+					commonCtx.CacheDir,
 					commonCtx.ResultsDir,
 					commonCtx.ReportDir,
 					cliOptions.Port,

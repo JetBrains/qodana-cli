@@ -70,7 +70,8 @@ func TestLinterRun(t *testing.T) {
 	}
 	fmt.Println("Found issues: ", resultsSize)
 
-	resultAllProblems, err := os.ReadFile(filepath.Join(outputDir, "report", "result-allProblems.json"))
+	reportDir := filepath.Join(outputDir, "report")
+	resultAllProblems, err := os.ReadFile(filepath.Join(platform.ReportResultsPath(reportDir), "result-allProblems.json"))
 	if err != nil {
 		t.Fatal("Error reading all problems file", err)
 	}

@@ -24,6 +24,7 @@ import (
 	"github.com/JetBrains/qodana-cli/internal/platform/product"
 	"github.com/JetBrains/qodana-cli/internal/platform/qdenv"
 	"github.com/google/uuid"
+	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 )
 
@@ -47,7 +48,8 @@ type CliOptions struct {
 	BaselineIncludeAbsent     bool
 	SaveReport                bool
 	ShowReport                bool
-	Port                      int
+	ShowReportPort            int
+	Port                      int //DEPRECATED
 	Property                  []string
 	Script                    string
 	FailThreshold             string
@@ -180,7 +182,13 @@ func ComputeFlags(cmd *cobra.Command, options *CliOptions) error {
 	)
 	flags.BoolVar(&options.ClearCache, "clear-cache", false, "Clear the local Qodana cache before running the analysis")
 	flags.BoolVarP(&options.ShowReport, "show-report", "w", false, "Serve HTML report on port")
-	flags.IntVar(&options.Port, "port", 8080, "Port to serve the report on")
+	flags.IntVar(
+		&options.Port,
+		"port",
+		0,
+		"Port to serve the report on (DEPRECATED, use --show-report-port instead)",
+	)
+	flags.IntVar(&options.ShowReportPort, "show-report-port", 0, "Port to serve the report on")
 	flags.StringVar(
 		&options.ConfigName,
 		"config",
@@ -427,4 +435,16 @@ func ComputeFlags(cmd *cobra.Command, options *CliOptions) error {
 		return err
 	}
 	return nil
+}
+
+// GetShowReportPort returns --show-report-port or --port or default as a fallback for backwards compatibility
+func (o CliOptions) GetShowReportPort() int {
+	if o.ShowReportPort != 0 {
+		return o.ShowReportPort
+	}
+	if o.Port != 0 {
+		log.Warn("Flag --port is deprecated, use --show-report-port instead")
+		return o.Port
+	}
+	return 8080
 }

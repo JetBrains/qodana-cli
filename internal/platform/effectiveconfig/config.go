@@ -40,10 +40,10 @@ type Files struct {
 }
 
 func CreateEffectiveConfigFiles(
+	cacheDir string,
 	localQodanaYamlFullPath string,
 	globalConfigurationsDir string,
 	globalConfigId string,
-	jrePath string,
 	effectiveConfigDir string,
 	logDir string,
 ) (Files, error) {
@@ -73,25 +73,8 @@ func CreateEffectiveConfigFiles(
 		}
 	}
 
-	configLoaderTempDir, cleanup, err := utils.CreateTempDir("config-loader-cli")
-	if err != nil {
-		return Files{}, err
-	}
-	defer cleanup()
-
-	configLoaderCliJar, err := createConfigLoaderCliJar(configLoaderTempDir)
-	if err != nil {
-		return Files{}, err
-	}
-	defer func(name string) {
-		err := os.Remove(name)
-		if err != nil {
-			log.Warnf("Failed to delete config-loader-cli.jar: %v", err)
-		}
-	}(configLoaderCliJar)
 	args, err := configurationLoaderCliArgs(
-		jrePath,
-		configLoaderCliJar,
+		cacheDir,
 		localQodanaYamlFullPath,
 		globalConfigurationsFile,
 		globalConfigId,
@@ -125,49 +108,18 @@ func CreateEffectiveConfigFiles(
 	return effectiveQodanaYamlData, nil
 }
 
-func createConfigLoaderCliJar(dir string) (string, error) {
-	configLoaderCliJarPath := filepath.Join(dir, "config-loader-cli.jar")
-	if isFileExists(configLoaderCliJarPath) {
-		err := os.Remove(configLoaderCliJarPath)
-		if err != nil {
-			return "", fmt.Errorf("failed to delete existing config-loader-cli.jar: %v", err)
-		}
-	}
-	err := os.MkdirAll(filepath.Dir(configLoaderCliJarPath), 0755)
-	if err != nil {
-		return "", fmt.Errorf("failed to create directory for config-loader-cli.jar: %v", err)
-	}
-	log.Debugf("creating config-loader-cli.jar at '%s'", configLoaderCliJarPath)
-	err = os.WriteFile(configLoaderCliJarPath, tooling.ConfigLoaderCli, 0644)
-	if err != nil {
-		return "", fmt.Errorf("failed to write config-loader-cli.jar content to %s: %v", configLoaderCliJarPath, err)
-	}
-	return configLoaderCliJarPath, nil
-}
-
 func configurationLoaderCliArgs(
-	jrePath string,
-	configLoaderCliJarPath string,
+	cacheDir string,
 	localQodanaYamlPath string,
 	globalConfigurationsFile string,
 	globalConfigId string,
 	effectiveConfigDir string,
 ) ([]string, error) {
-	if jrePath == "" {
-		return nil, fmt.Errorf(
-			"JRE not found. Required for effective configuration creation. " +
-				"See requirements in our documentation: https://www.jetbrains.com/help/qodana/deploy-qodana.html",
-		)
-	}
-	if configLoaderCliJarPath == "" {
-		return nil, fmt.Errorf("config-loader-cli.jar not found. Required for effective configuration creation")
-	}
-
 	var err error
 	args := []string{
-		jrePath,
+		tooling.GetQodanaJBRPath(cacheDir),
 		"-jar",
-		configLoaderCliJarPath,
+		tooling.ConfigLoaderCli.GetLibPath(cacheDir),
 	}
 
 	effectiveConfigDirAbs, err := filepath.Abs(effectiveConfigDir)

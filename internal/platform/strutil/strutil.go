@@ -17,6 +17,7 @@
 package strutil
 
 import (
+	"runtime"
 	"strings"
 )
 
@@ -72,6 +73,25 @@ func QuoteIfSpace(s string) string {
 		return "\"" + s + "\""
 	}
 	return s
+}
+
+// QuoteForWindows wraps s in quotes if s contains a typical Windows batch special char and isn't yet quoted.
+func QuoteForWindows(s string) string {
+	if IsStringQuoted(s) {
+		return s
+	}
+	if runtime.GOOS == "windows" && ContainsWinSpecialChar(s) {
+		return `"` + s + `"`
+	}
+	return s
+}
+
+// GetQuotedPath returns a quoted path for the current OS.
+func GetQuotedPath(path string) string {
+	if runtime.GOOS == "windows" {
+		return QuoteForWindows(path)
+	}
+	return QuoteIfSpace(path)
 }
 
 // IsStringQuoted checks if a string is already quoted with double quotes.

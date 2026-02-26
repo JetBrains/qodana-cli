@@ -1,0 +1,1872 @@
+{
+  "$schema": "https://raw.githubusercontent.com/schemastore/schemastore/master/src/schemas/json/sarif-2.1.0-rtm.5.json",
+  "version": "2.1.0",
+  "runs": [
+    {
+      "tool": {
+        "driver": {
+          "name": "QDCPP",
+          "fullName": "Qodana for C/C++",
+          "version": "253.29649",
+          "rules": [
+            {
+              "id": "CppUnusedIncludeDirective",
+              "shortDescription": {
+                "text": "Possibly unused #include directive"
+              },
+              "fullDescription": {
+                "text": "Possibly unused #include directive",
+                "markdown": "Possibly unused #include directive"
+              },
+              "defaultConfiguration": {
+                "enabled": true,
+                "level": "warning",
+                "parameters": {
+                  "suppressToolId": "CppUnusedIncludeDirective",
+                  "ideaSeverity": "WARNING",
+                  "qodanaSeverity": "High",
+                  "codeQualityCategory": "Unspecified"
+                }
+              },
+              "relationships": [
+                {
+                  "target": {
+                    "id": "C_C++/Potential Code Quality Issues",
+                    "index": 5,
+                    "toolComponent": {
+                      "name": "QDCPP"
+                    }
+                  },
+                  "kinds": [
+                    "superset"
+                  ]
+                }
+              ]
+            },
+            {
+              "id": "CppParameterNeverUsed",
+              "shortDescription": {
+                "text": "Parameter is never used"
+              },
+              "fullDescription": {
+                "text": "Function parameter is never used",
+                "markdown": "Function parameter is never used"
+              },
+              "defaultConfiguration": {
+                "enabled": true,
+                "level": "note",
+                "parameters": {
+                  "suppressToolId": "CppParameterNeverUsed",
+                  "ideaSeverity": "HINT",
+                  "qodanaSeverity": "Info",
+                  "codeQualityCategory": "Unspecified"
+                }
+              },
+              "relationships": [
+                {
+                  "target": {
+                    "id": "C_C++/Potential Code Quality Issues",
+                    "index": 5,
+                    "toolComponent": {
+                      "name": "QDCPP"
+                    }
+                  },
+                  "kinds": [
+                    "superset"
+                  ]
+                }
+              ]
+            },
+            {
+              "id": "CppLocalVariableMayBeConst",
+              "shortDescription": {
+                "text": "Local variable can be made const"
+              },
+              "fullDescription": {
+                "text": "Local variable can be made const",
+                "markdown": "Local variable can be made const"
+              },
+              "defaultConfiguration": {
+                "enabled": true,
+                "level": "note",
+                "parameters": {
+                  "suppressToolId": "CppLocalVariableMayBeConst",
+                  "ideaSeverity": "HINT",
+                  "qodanaSeverity": "Info",
+                  "codeQualityCategory": "Unspecified"
+                }
+              },
+              "relationships": [
+                {
+                  "target": {
+                    "id": "C_C++/Common Practices and Code Improvements",
+                    "index": 4,
+                    "toolComponent": {
+                      "name": "QDCPP"
+                    }
+                  },
+                  "kinds": [
+                    "superset"
+                  ]
+                }
+              ]
+            },
+            {
+              "id": "CppDeclaratorNeverUsed",
+              "shortDescription": {
+                "text": "Declarator is never used"
+              },
+              "fullDescription": {
+                "text": "A declarator is never used",
+                "markdown": "A declarator is never used"
+              },
+              "defaultConfiguration": {
+                "enabled": true,
+                "level": "warning",
+                "parameters": {
+                  "suppressToolId": "CppDeclaratorNeverUsed",
+                  "ideaSeverity": "WARNING",
+                  "qodanaSeverity": "High",
+                  "codeQualityCategory": "Unspecified"
+                }
+              },
+              "relationships": [
+                {
+                  "target": {
+                    "id": "C_C++/Potential Code Quality Issues",
+                    "index": 5,
+                    "toolComponent": {
+                      "name": "QDCPP"
+                    }
+                  },
+                  "kinds": [
+                    "superset"
+                  ]
+                }
+              ]
+            },
+            {
+              "id": "CppUseAuto",
+              "shortDescription": {
+                "text": "Type can be replaced with auto"
+              },
+              "fullDescription": {
+                "text": "Type can be replaced with 'auto'",
+                "markdown": "Type can be replaced with 'auto'"
+              },
+              "defaultConfiguration": {
+                "enabled": true,
+                "level": "note",
+                "parameters": {
+                  "suppressToolId": "CppUseAuto",
+                  "ideaSeverity": "HINT",
+                  "qodanaSeverity": "Info",
+                  "codeQualityCategory": "Unspecified"
+                }
+              },
+              "relationships": [
+                {
+                  "target": {
+                    "id": "C_C++/Syntax Style/Use preferred 'auto' style",
+                    "index": 58,
+                    "toolComponent": {
+                      "name": "QDCPP"
+                    }
+                  },
+                  "kinds": [
+                    "superset"
+                  ]
+                }
+              ]
+            },
+            {
+              "id": "CppParameterMayBeConst",
+              "shortDescription": {
+                "text": "Parameter can be made const"
+              },
+              "fullDescription": {
+                "text": "Parameter can be made const",
+                "markdown": "Parameter can be made const"
+              },
+              "defaultConfiguration": {
+                "enabled": true,
+                "level": "note",
+                "parameters": {
+                  "suppressToolId": "CppParameterMayBeConst",
+                  "ideaSeverity": "HINT",
+                  "qodanaSeverity": "Info",
+                  "codeQualityCategory": "Unspecified"
+                }
+              },
+              "relationships": [
+                {
+                  "target": {
+                    "id": "C_C++/Common Practices and Code Improvements",
+                    "index": 4,
+                    "toolComponent": {
+                      "name": "QDCPP"
+                    }
+                  },
+                  "kinds": [
+                    "superset"
+                  ]
+                }
+              ]
+            },
+            {
+              "id": "CppPassValueParameterByConstReference",
+              "shortDescription": {
+                "text": "Pass value parameters by const reference"
+              },
+              "fullDescription": {
+                "text": "Parameter of a type that is expensive to copy is passed by value, but it can be passed by const reference instead",
+                "markdown": "Parameter of a type that is expensive to copy is passed by value, but it can be passed by const reference instead"
+              },
+              "defaultConfiguration": {
+                "enabled": true,
+                "level": "note",
+                "parameters": {
+                  "suppressToolId": "CppPassValueParameterByConstReference",
+                  "ideaSeverity": "WEAK WARNING",
+                  "qodanaSeverity": "Moderate",
+                  "codeQualityCategory": "Unspecified"
+                }
+              },
+              "relationships": [
+                {
+                  "target": {
+                    "id": "C_C++/Common Practices and Code Improvements",
+                    "index": 4,
+                    "toolComponent": {
+                      "name": "QDCPP"
+                    }
+                  },
+                  "kinds": [
+                    "superset"
+                  ]
+                }
+              ]
+            }
+          ],
+          "taxa": [
+            {
+              "id": "Pandas",
+              "name": "Pandas"
+            },
+            {
+              "id": "Python",
+              "name": "Python"
+            },
+            {
+              "id": "C_C++",
+              "name": "C/C++"
+            },
+            {
+              "id": "C_C++/Compiler Issues",
+              "name": "Compiler Issues",
+              "relationships": [
+                {
+                  "target": {
+                    "id": "C_C++",
+                    "index": 2,
+                    "toolComponent": {
+                      "name": "QDCPP"
+                    }
+                  },
+                  "kinds": [
+                    "superset"
+                  ]
+                }
+              ]
+            },
+            {
+              "id": "C_C++/Common Practices and Code Improvements",
+              "name": "Common Practices and Code Improvements",
+              "relationships": [
+                {
+                  "target": {
+                    "id": "C_C++",
+                    "index": 2,
+                    "toolComponent": {
+                      "name": "QDCPP"
+                    }
+                  },
+                  "kinds": [
+                    "superset"
+                  ]
+                }
+              ]
+            },
+            {
+              "id": "C_C++/Potential Code Quality Issues",
+              "name": "Potential Code Quality Issues",
+              "relationships": [
+                {
+                  "target": {
+                    "id": "C_C++",
+                    "index": 2,
+                    "toolComponent": {
+                      "name": "QDCPP"
+                    }
+                  },
+                  "kinds": [
+                    "superset"
+                  ]
+                }
+              ]
+            },
+            {
+              "id": "Dockerfile",
+              "name": "Dockerfile"
+            },
+            {
+              "id": "Shell script",
+              "name": "Shell script"
+            },
+            {
+              "id": "JavaScript and TypeScript",
+              "name": "JavaScript and TypeScript"
+            },
+            {
+              "id": "JavaScript and TypeScript/Unit testing",
+              "name": "Unit testing",
+              "relationships": [
+                {
+                  "target": {
+                    "id": "JavaScript and TypeScript",
+                    "index": 8,
+                    "toolComponent": {
+                      "name": "QDCPP"
+                    }
+                  },
+                  "kinds": [
+                    "superset"
+                  ]
+                }
+              ]
+            },
+            {
+              "id": "Angular",
+              "name": "Angular"
+            },
+            {
+              "id": "MySQL",
+              "name": "MySQL"
+            },
+            {
+              "id": "Devicetree",
+              "name": "Devicetree"
+            },
+            {
+              "id": "Sass_SCSS",
+              "name": "Sass/SCSS"
+            },
+            {
+              "id": "HTML",
+              "name": "HTML"
+            },
+            {
+              "id": "JavaScript and TypeScript/Unused symbols",
+              "name": "Unused symbols",
+              "relationships": [
+                {
+                  "target": {
+                    "id": "JavaScript and TypeScript",
+                    "index": 8,
+                    "toolComponent": {
+                      "name": "QDCPP"
+                    }
+                  },
+                  "kinds": [
+                    "superset"
+                  ]
+                }
+              ]
+            },
+            {
+              "id": "JavaScript and TypeScript/Data flow",
+              "name": "Data flow",
+              "relationships": [
+                {
+                  "target": {
+                    "id": "JavaScript and TypeScript",
+                    "index": 8,
+                    "toolComponent": {
+                      "name": "QDCPP"
+                    }
+                  },
+                  "kinds": [
+                    "superset"
+                  ]
+                }
+              ]
+            },
+            {
+              "id": "PostCSS",
+              "name": "PostCSS"
+            },
+            {
+              "id": "JavaScript and TypeScript/Bitwise operation issues",
+              "name": "Bitwise operation issues",
+              "relationships": [
+                {
+                  "target": {
+                    "id": "JavaScript and TypeScript",
+                    "index": 8,
+                    "toolComponent": {
+                      "name": "QDCPP"
+                    }
+                  },
+                  "kinds": [
+                    "superset"
+                  ]
+                }
+              ]
+            },
+            {
+              "id": "JavaScript and TypeScript/General",
+              "name": "General",
+              "relationships": [
+                {
+                  "target": {
+                    "id": "JavaScript and TypeScript",
+                    "index": 8,
+                    "toolComponent": {
+                      "name": "QDCPP"
+                    }
+                  },
+                  "kinds": [
+                    "superset"
+                  ]
+                }
+              ]
+            },
+            {
+              "id": "JavaScript and TypeScript/ES2015 migration aids",
+              "name": "ES2015 migration aids",
+              "relationships": [
+                {
+                  "target": {
+                    "id": "JavaScript and TypeScript",
+                    "index": 8,
+                    "toolComponent": {
+                      "name": "QDCPP"
+                    }
+                  },
+                  "kinds": [
+                    "superset"
+                  ]
+                }
+              ]
+            },
+            {
+              "id": "C_C++/Redundancies in Code",
+              "name": "Redundancies in Code",
+              "relationships": [
+                {
+                  "target": {
+                    "id": "C_C++",
+                    "index": 2,
+                    "toolComponent": {
+                      "name": "QDCPP"
+                    }
+                  },
+                  "kinds": [
+                    "superset"
+                  ]
+                }
+              ]
+            },
+            {
+              "id": "General",
+              "name": "General"
+            },
+            {
+              "id": "HTML/Accessibility",
+              "name": "Accessibility",
+              "relationships": [
+                {
+                  "target": {
+                    "id": "HTML",
+                    "index": 14,
+                    "toolComponent": {
+                      "name": "QDCPP"
+                    }
+                  },
+                  "kinds": [
+                    "superset"
+                  ]
+                }
+              ]
+            },
+            {
+              "id": "JavaScript and TypeScript/React",
+              "name": "React",
+              "relationships": [
+                {
+                  "target": {
+                    "id": "JavaScript and TypeScript",
+                    "index": 8,
+                    "toolComponent": {
+                      "name": "QDCPP"
+                    }
+                  },
+                  "kinds": [
+                    "superset"
+                  ]
+                }
+              ]
+            },
+            {
+              "id": "JavaScript and TypeScript/Validity issues",
+              "name": "Validity issues",
+              "relationships": [
+                {
+                  "target": {
+                    "id": "JavaScript and TypeScript",
+                    "index": 8,
+                    "toolComponent": {
+                      "name": "QDCPP"
+                    }
+                  },
+                  "kinds": [
+                    "superset"
+                  ]
+                }
+              ]
+            },
+            {
+              "id": "JavaScript and TypeScript/Potentially confusing code constructs",
+              "name": "Potentially confusing code constructs",
+              "relationships": [
+                {
+                  "target": {
+                    "id": "JavaScript and TypeScript",
+                    "index": 8,
+                    "toolComponent": {
+                      "name": "QDCPP"
+                    }
+                  },
+                  "kinds": [
+                    "superset"
+                  ]
+                }
+              ]
+            },
+            {
+              "id": "CSS",
+              "name": "CSS"
+            },
+            {
+              "id": "CSS/Invalid elements",
+              "name": "Invalid elements",
+              "relationships": [
+                {
+                  "target": {
+                    "id": "CSS",
+                    "index": 27,
+                    "toolComponent": {
+                      "name": "QDCPP"
+                    }
+                  },
+                  "kinds": [
+                    "superset"
+                  ]
+                }
+              ]
+            },
+            {
+              "id": "SQL",
+              "name": "SQL"
+            },
+            {
+              "id": "C_C++/Data Flow Analysis",
+              "name": "Data Flow Analysis",
+              "relationships": [
+                {
+                  "target": {
+                    "id": "C_C++",
+                    "index": 2,
+                    "toolComponent": {
+                      "name": "QDCPP"
+                    }
+                  },
+                  "kinds": [
+                    "superset"
+                  ]
+                }
+              ]
+            },
+            {
+              "id": "JavaScript and TypeScript/Try statement issues",
+              "name": "Try statement issues",
+              "relationships": [
+                {
+                  "target": {
+                    "id": "JavaScript and TypeScript",
+                    "index": 8,
+                    "toolComponent": {
+                      "name": "QDCPP"
+                    }
+                  },
+                  "kinds": [
+                    "superset"
+                  ]
+                }
+              ]
+            },
+            {
+              "id": "YAML",
+              "name": "YAML"
+            },
+            {
+              "id": "JavaScript and TypeScript/Control flow issues",
+              "name": "Control flow issues",
+              "relationships": [
+                {
+                  "target": {
+                    "id": "JavaScript and TypeScript",
+                    "index": 8,
+                    "toolComponent": {
+                      "name": "QDCPP"
+                    }
+                  },
+                  "kinds": [
+                    "superset"
+                  ]
+                }
+              ]
+            },
+            {
+              "id": "XML",
+              "name": "XML"
+            },
+            {
+              "id": "JavaScript and TypeScript/Potentially undesirable code constructs",
+              "name": "Potentially undesirable code constructs",
+              "relationships": [
+                {
+                  "target": {
+                    "id": "JavaScript and TypeScript",
+                    "index": 8,
+                    "toolComponent": {
+                      "name": "QDCPP"
+                    }
+                  },
+                  "kinds": [
+                    "superset"
+                  ]
+                }
+              ]
+            },
+            {
+              "id": "CSS/Code style issues",
+              "name": "Code style issues",
+              "relationships": [
+                {
+                  "target": {
+                    "id": "CSS",
+                    "index": 27,
+                    "toolComponent": {
+                      "name": "QDCPP"
+                    }
+                  },
+                  "kinds": [
+                    "superset"
+                  ]
+                }
+              ]
+            },
+            {
+              "id": "C_C++/Syntax Style",
+              "name": "Syntax Style",
+              "relationships": [
+                {
+                  "target": {
+                    "id": "C_C++",
+                    "index": 2,
+                    "toolComponent": {
+                      "name": "QDCPP"
+                    }
+                  },
+                  "kinds": [
+                    "superset"
+                  ]
+                }
+              ]
+            },
+            {
+              "id": "C_C++/Syntax Style/Use preferred braces style",
+              "name": "Use preferred braces style",
+              "relationships": [
+                {
+                  "target": {
+                    "id": "C_C++/Syntax Style",
+                    "index": 37,
+                    "toolComponent": {
+                      "name": "QDCPP"
+                    }
+                  },
+                  "kinds": [
+                    "superset"
+                  ]
+                }
+              ]
+            },
+            {
+              "id": "Less",
+              "name": "Less"
+            },
+            {
+              "id": "JavaScript and TypeScript/Probable bugs",
+              "name": "Probable bugs",
+              "relationships": [
+                {
+                  "target": {
+                    "id": "JavaScript and TypeScript",
+                    "index": 8,
+                    "toolComponent": {
+                      "name": "QDCPP"
+                    }
+                  },
+                  "kinds": [
+                    "superset"
+                  ]
+                }
+              ]
+            },
+            {
+              "id": "RegExp",
+              "name": "RegExp"
+            },
+            {
+              "id": "JavaScript and TypeScript/Code style issues",
+              "name": "Code style issues",
+              "relationships": [
+                {
+                  "target": {
+                    "id": "JavaScript and TypeScript",
+                    "index": 8,
+                    "toolComponent": {
+                      "name": "QDCPP"
+                    }
+                  },
+                  "kinds": [
+                    "superset"
+                  ]
+                }
+              ]
+            },
+            {
+              "id": "JavaScript and TypeScript/Assignment issues",
+              "name": "Assignment issues",
+              "relationships": [
+                {
+                  "target": {
+                    "id": "JavaScript and TypeScript",
+                    "index": 8,
+                    "toolComponent": {
+                      "name": "QDCPP"
+                    }
+                  },
+                  "kinds": [
+                    "superset"
+                  ]
+                }
+              ]
+            },
+            {
+              "id": "CSS/Probable bugs",
+              "name": "Probable bugs",
+              "relationships": [
+                {
+                  "target": {
+                    "id": "CSS",
+                    "index": 27,
+                    "toolComponent": {
+                      "name": "QDCPP"
+                    }
+                  },
+                  "kinds": [
+                    "superset"
+                  ]
+                }
+              ]
+            },
+            {
+              "id": "JavaScript and TypeScript/TypeScript",
+              "name": "TypeScript",
+              "relationships": [
+                {
+                  "target": {
+                    "id": "JavaScript and TypeScript",
+                    "index": 8,
+                    "toolComponent": {
+                      "name": "QDCPP"
+                    }
+                  },
+                  "kinds": [
+                    "superset"
+                  ]
+                }
+              ]
+            },
+            {
+              "id": "JavaScript and TypeScript/Switch statement issues",
+              "name": "Switch statement issues",
+              "relationships": [
+                {
+                  "target": {
+                    "id": "JavaScript and TypeScript",
+                    "index": 8,
+                    "toolComponent": {
+                      "name": "QDCPP"
+                    }
+                  },
+                  "kinds": [
+                    "superset"
+                  ]
+                }
+              ]
+            },
+            {
+              "id": "JavaScript and TypeScript/DOM issues",
+              "name": "DOM issues",
+              "relationships": [
+                {
+                  "target": {
+                    "id": "JavaScript and TypeScript",
+                    "index": 8,
+                    "toolComponent": {
+                      "name": "QDCPP"
+                    }
+                  },
+                  "kinds": [
+                    "superset"
+                  ]
+                }
+              ]
+            },
+            {
+              "id": "JavaScript and TypeScript/Async code and promises",
+              "name": "Async code and promises",
+              "relationships": [
+                {
+                  "target": {
+                    "id": "JavaScript and TypeScript",
+                    "index": 8,
+                    "toolComponent": {
+                      "name": "QDCPP"
+                    }
+                  },
+                  "kinds": [
+                    "superset"
+                  ]
+                }
+              ]
+            },
+            {
+              "id": "Code Coverage",
+              "name": "Code Coverage"
+            },
+            {
+              "id": "JavaScript and TypeScript/Imports and dependencies",
+              "name": "Imports and dependencies",
+              "relationships": [
+                {
+                  "target": {
+                    "id": "JavaScript and TypeScript",
+                    "index": 8,
+                    "toolComponent": {
+                      "name": "QDCPP"
+                    }
+                  },
+                  "kinds": [
+                    "superset"
+                  ]
+                }
+              ]
+            },
+            {
+              "id": "C_C++/Static Analysis Tools",
+              "name": "Static Analysis Tools",
+              "relationships": [
+                {
+                  "target": {
+                    "id": "C_C++",
+                    "index": 2,
+                    "toolComponent": {
+                      "name": "QDCPP"
+                    }
+                  },
+                  "kinds": [
+                    "superset"
+                  ]
+                }
+              ]
+            },
+            {
+              "id": "Ini files",
+              "name": "Ini files"
+            },
+            {
+              "id": "JavaScript and TypeScript/Naming conventions",
+              "name": "Naming conventions",
+              "relationships": [
+                {
+                  "target": {
+                    "id": "JavaScript and TypeScript",
+                    "index": 8,
+                    "toolComponent": {
+                      "name": "QDCPP"
+                    }
+                  },
+                  "kinds": [
+                    "superset"
+                  ]
+                }
+              ]
+            },
+            {
+              "id": "C_C++/Formatting",
+              "name": "Formatting",
+              "relationships": [
+                {
+                  "target": {
+                    "id": "C_C++",
+                    "index": 2,
+                    "toolComponent": {
+                      "name": "QDCPP"
+                    }
+                  },
+                  "kinds": [
+                    "superset"
+                  ]
+                }
+              ]
+            },
+            {
+              "id": "C_C++/Formatting/Incorrect spacing",
+              "name": "Incorrect spacing",
+              "relationships": [
+                {
+                  "target": {
+                    "id": "C_C++/Formatting",
+                    "index": 54,
+                    "toolComponent": {
+                      "name": "QDCPP"
+                    }
+                  },
+                  "kinds": [
+                    "superset"
+                  ]
+                }
+              ]
+            },
+            {
+              "id": "JavaScript and TypeScript/Code quality tools",
+              "name": "Code quality tools",
+              "relationships": [
+                {
+                  "target": {
+                    "id": "JavaScript and TypeScript",
+                    "index": 8,
+                    "toolComponent": {
+                      "name": "QDCPP"
+                    }
+                  },
+                  "kinds": [
+                    "superset"
+                  ]
+                }
+              ]
+            },
+            {
+              "id": "C_C++/General",
+              "name": "General",
+              "relationships": [
+                {
+                  "target": {
+                    "id": "C_C++",
+                    "index": 2,
+                    "toolComponent": {
+                      "name": "QDCPP"
+                    }
+                  },
+                  "kinds": [
+                    "superset"
+                  ]
+                }
+              ]
+            },
+            {
+              "id": "C_C++/Syntax Style/Use preferred 'auto' style",
+              "name": "Use preferred 'auto' style",
+              "relationships": [
+                {
+                  "target": {
+                    "id": "C_C++/Syntax Style",
+                    "index": 37,
+                    "toolComponent": {
+                      "name": "QDCPP"
+                    }
+                  },
+                  "kinds": [
+                    "superset"
+                  ]
+                }
+              ]
+            },
+            {
+              "id": "JavaScript and TypeScript/Function metrics",
+              "name": "Function metrics",
+              "relationships": [
+                {
+                  "target": {
+                    "id": "JavaScript and TypeScript",
+                    "index": 8,
+                    "toolComponent": {
+                      "name": "QDCPP"
+                    }
+                  },
+                  "kinds": [
+                    "superset"
+                  ]
+                }
+              ]
+            },
+            {
+              "id": "JSON and JSON5",
+              "name": "JSON and JSON5"
+            },
+            {
+              "id": "JSONPath",
+              "name": "JSONPath"
+            },
+            {
+              "id": "C_C++/Syntax Style/Use preferred initialization style",
+              "name": "Use preferred initialization style",
+              "relationships": [
+                {
+                  "target": {
+                    "id": "C_C++/Syntax Style",
+                    "index": 37,
+                    "toolComponent": {
+                      "name": "QDCPP"
+                    }
+                  },
+                  "kinds": [
+                    "superset"
+                  ]
+                }
+              ]
+            },
+            {
+              "id": "Docker-compose",
+              "name": "Docker-compose"
+            },
+            {
+              "id": "Oracle",
+              "name": "Oracle"
+            },
+            {
+              "id": "Internationalization",
+              "name": "Internationalization"
+            },
+            {
+              "id": "MongoJS",
+              "name": "MongoJS"
+            },
+            {
+              "id": "Vue",
+              "name": "Vue"
+            },
+            {
+              "id": "TOML",
+              "name": "TOML"
+            },
+            {
+              "id": "C_C++/Syntax Style/Use preferred declaration style",
+              "name": "Use preferred declaration style",
+              "relationships": [
+                {
+                  "target": {
+                    "id": "C_C++/Syntax Style",
+                    "index": 37,
+                    "toolComponent": {
+                      "name": "QDCPP"
+                    }
+                  },
+                  "kinds": [
+                    "superset"
+                  ]
+                }
+              ]
+            },
+            {
+              "id": "Version control",
+              "name": "Version control"
+            },
+            {
+              "id": "CMake",
+              "name": "CMake"
+            },
+            {
+              "id": "CMake/General",
+              "name": "General",
+              "relationships": [
+                {
+                  "target": {
+                    "id": "CMake",
+                    "index": 71,
+                    "toolComponent": {
+                      "name": "QDCPP"
+                    }
+                  },
+                  "kinds": [
+                    "superset"
+                  ]
+                }
+              ]
+            },
+            {
+              "id": "Makefile",
+              "name": "Makefile"
+            },
+            {
+              "id": "JavaScript and TypeScript/Flow type checker",
+              "name": "Flow type checker",
+              "relationships": [
+                {
+                  "target": {
+                    "id": "JavaScript and TypeScript",
+                    "index": 8,
+                    "toolComponent": {
+                      "name": "QDCPP"
+                    }
+                  },
+                  "kinds": [
+                    "superset"
+                  ]
+                }
+              ]
+            },
+            {
+              "id": "Requirements",
+              "name": "Requirements"
+            },
+            {
+              "id": "Structural search",
+              "name": "Structural search"
+            },
+            {
+              "id": "C_C++/Syntax Style/Use preferred cv-qualifiers style",
+              "name": "Use preferred cv-qualifiers style",
+              "relationships": [
+                {
+                  "target": {
+                    "id": "C_C++/Syntax Style",
+                    "index": 37,
+                    "toolComponent": {
+                      "name": "QDCPP"
+                    }
+                  },
+                  "kinds": [
+                    "superset"
+                  ]
+                }
+              ]
+            },
+            {
+              "id": "JavaScript and TypeScript/Node.js",
+              "name": "Node.js",
+              "relationships": [
+                {
+                  "target": {
+                    "id": "JavaScript and TypeScript",
+                    "index": 8,
+                    "toolComponent": {
+                      "name": "QDCPP"
+                    }
+                  },
+                  "kinds": [
+                    "superset"
+                  ]
+                }
+              ]
+            },
+            {
+              "id": "C_C++/Syntax Style/Use preferred include directive style",
+              "name": "Use preferred include directive style",
+              "relationships": [
+                {
+                  "target": {
+                    "id": "C_C++/Syntax Style",
+                    "index": 37,
+                    "toolComponent": {
+                      "name": "QDCPP"
+                    }
+                  },
+                  "kinds": [
+                    "superset"
+                  ]
+                }
+              ]
+            },
+            {
+              "id": "RELAX NG",
+              "name": "RELAX NG"
+            },
+            {
+              "id": "C_C++/Syntax Style/Use preferred overriding function style",
+              "name": "Use preferred overriding function style",
+              "relationships": [
+                {
+                  "target": {
+                    "id": "C_C++/Syntax Style",
+                    "index": 37,
+                    "toolComponent": {
+                      "name": "QDCPP"
+                    }
+                  },
+                  "kinds": [
+                    "superset"
+                  ]
+                }
+              ]
+            },
+            {
+              "id": "GitLab CI_CD",
+              "name": "GitLab CI/CD"
+            },
+            {
+              "id": "Qodana",
+              "name": "Qodana"
+            },
+            {
+              "id": "CSS/Code quality tools",
+              "name": "Code quality tools",
+              "relationships": [
+                {
+                  "target": {
+                    "id": "CSS",
+                    "index": 27,
+                    "toolComponent": {
+                      "name": "QDCPP"
+                    }
+                  },
+                  "kinds": [
+                    "superset"
+                  ]
+                }
+              ]
+            },
+            {
+              "id": "PostgreSQL",
+              "name": "PostgreSQL"
+            },
+            {
+              "id": "SQL server",
+              "name": "SQL server"
+            },
+            {
+              "id": "C_C++/Constraints Violations",
+              "name": "Constraints Violations",
+              "relationships": [
+                {
+                  "target": {
+                    "id": "C_C++",
+                    "index": 2,
+                    "toolComponent": {
+                      "name": "QDCPP"
+                    }
+                  },
+                  "kinds": [
+                    "superset"
+                  ]
+                }
+              ]
+            }
+          ],
+          "language": "en-US",
+          "contents": [
+            "localizedData",
+            "nonLocalizedData"
+          ],
+          "isComprehensive": false
+        },
+        "extensions": [
+          {
+            "name": "PythonCore",
+            "version": "253.29649.0",
+            "rules": [],
+            "language": "en-US",
+            "contents": [
+              "localizedData",
+              "nonLocalizedData"
+            ],
+            "isComprehensive": false
+          },
+          {
+            "name": "Docker",
+            "version": "253.29649.0",
+            "rules": [],
+            "language": "en-US",
+            "contents": [
+              "localizedData",
+              "nonLocalizedData"
+            ],
+            "isComprehensive": false
+          },
+          {
+            "name": "com.jetbrains.sh",
+            "version": "253.29649.0",
+            "rules": [],
+            "language": "en-US",
+            "contents": [
+              "localizedData",
+              "nonLocalizedData"
+            ],
+            "isComprehensive": false
+          },
+          {
+            "name": "Karma",
+            "version": "253.29649.0",
+            "rules": [],
+            "language": "en-US",
+            "contents": [
+              "localizedData",
+              "nonLocalizedData"
+            ],
+            "isComprehensive": false
+          },
+          {
+            "name": "AngularJS",
+            "version": "253.29649.0",
+            "rules": [],
+            "language": "en-US",
+            "contents": [
+              "localizedData",
+              "nonLocalizedData"
+            ],
+            "isComprehensive": false
+          },
+          {
+            "name": "com.intellij.database",
+            "version": "253.29649.0",
+            "rules": [],
+            "language": "en-US",
+            "contents": [
+              "localizedData",
+              "nonLocalizedData"
+            ],
+            "isComprehensive": false
+          },
+          {
+            "name": "com.intellij.dts",
+            "version": "253.29649.0",
+            "rules": [],
+            "language": "en-US",
+            "contents": [
+              "localizedData",
+              "nonLocalizedData"
+            ],
+            "isComprehensive": false
+          },
+          {
+            "name": "org.jetbrains.plugins.sass",
+            "version": "253.29649.0",
+            "rules": [],
+            "language": "en-US",
+            "contents": [
+              "localizedData",
+              "nonLocalizedData"
+            ],
+            "isComprehensive": false
+          },
+          {
+            "name": "com.intellij",
+            "version": "253.29649",
+            "rules": [],
+            "language": "en-US",
+            "contents": [
+              "localizedData",
+              "nonLocalizedData"
+            ],
+            "isComprehensive": false
+          },
+          {
+            "name": "JavaScript",
+            "version": "253.29649.0",
+            "rules": [],
+            "language": "en-US",
+            "contents": [
+              "localizedData",
+              "nonLocalizedData"
+            ],
+            "isComprehensive": false
+          },
+          {
+            "name": "org.intellij.plugins.postcss",
+            "version": "253.29649.0",
+            "rules": [],
+            "language": "en-US",
+            "contents": [
+              "localizedData",
+              "nonLocalizedData"
+            ],
+            "isComprehensive": false
+          },
+          {
+            "name": "HtmlTools",
+            "version": "253.29649.0",
+            "rules": [],
+            "language": "en-US",
+            "contents": [
+              "localizedData",
+              "nonLocalizedData"
+            ],
+            "isComprehensive": false
+          },
+          {
+            "name": "com.intellij.css",
+            "version": "253.29649.0",
+            "rules": [],
+            "language": "en-US",
+            "contents": [
+              "localizedData",
+              "nonLocalizedData"
+            ],
+            "isComprehensive": false
+          },
+          {
+            "name": "org.jetbrains.plugins.clion.radler",
+            "version": "253.29649.0",
+            "rules": [],
+            "language": "en-US",
+            "contents": [
+              "localizedData",
+              "nonLocalizedData"
+            ],
+            "isComprehensive": false
+          },
+          {
+            "name": "org.jetbrains.plugins.yaml",
+            "version": "253.29649.0",
+            "rules": [],
+            "language": "en-US",
+            "contents": [
+              "localizedData",
+              "nonLocalizedData"
+            ],
+            "isComprehensive": false
+          },
+          {
+            "name": "org.jetbrains.plugins.less",
+            "version": "253.29649.0",
+            "rules": [],
+            "language": "en-US",
+            "contents": [
+              "localizedData",
+              "nonLocalizedData"
+            ],
+            "isComprehensive": false
+          },
+          {
+            "name": "org.intellij.qodana",
+            "version": "253.29649.0",
+            "rules": [],
+            "language": "en-US",
+            "contents": [
+              "localizedData",
+              "nonLocalizedData"
+            ],
+            "isComprehensive": false
+          },
+          {
+            "name": "com.jetbrains.plugins.ini4idea",
+            "version": "253.29649.0",
+            "rules": [],
+            "language": "en-US",
+            "contents": [
+              "localizedData",
+              "nonLocalizedData"
+            ],
+            "isComprehensive": false
+          },
+          {
+            "name": "tslint",
+            "version": "253.29649.0",
+            "rules": [],
+            "language": "en-US",
+            "contents": [
+              "localizedData",
+              "nonLocalizedData"
+            ],
+            "isComprehensive": false
+          },
+          {
+            "name": "com.intellij.modules.json",
+            "version": "253.29649.0",
+            "rules": [],
+            "language": "en-US",
+            "contents": [
+              "localizedData",
+              "nonLocalizedData"
+            ],
+            "isComprehensive": false
+          },
+          {
+            "name": "com.intellij.jsonpath",
+            "version": "253.29649.0",
+            "rules": [],
+            "language": "en-US",
+            "contents": [
+              "localizedData",
+              "nonLocalizedData"
+            ],
+            "isComprehensive": false
+          },
+          {
+            "name": "org.jetbrains.plugins.vue",
+            "version": "253.29649.0",
+            "rules": [],
+            "language": "en-US",
+            "contents": [
+              "localizedData",
+              "nonLocalizedData"
+            ],
+            "isComprehensive": false
+          },
+          {
+            "name": "org.toml.lang",
+            "version": "253.29649.0",
+            "rules": [],
+            "language": "en-US",
+            "contents": [
+              "localizedData",
+              "nonLocalizedData"
+            ],
+            "isComprehensive": false
+          },
+          {
+            "name": "com.intellij.cmake",
+            "version": "253.29649.0",
+            "rules": [],
+            "language": "en-US",
+            "contents": [
+              "localizedData",
+              "nonLocalizedData"
+            ],
+            "isComprehensive": false
+          },
+          {
+            "name": "name.kropp.intellij.makefile",
+            "version": "253.29649.0",
+            "rules": [],
+            "language": "en-US",
+            "contents": [
+              "localizedData",
+              "nonLocalizedData"
+            ],
+            "isComprehensive": false
+          },
+          {
+            "name": "org.jetbrains.plugins.gitlab",
+            "version": "253.29649.0",
+            "rules": [],
+            "language": "en-US",
+            "contents": [
+              "localizedData",
+              "nonLocalizedData"
+            ],
+            "isComprehensive": false
+          },
+          {
+            "name": "com.intellij.stylelint",
+            "version": "253.29649.0",
+            "rules": [],
+            "language": "en-US",
+            "contents": [
+              "localizedData",
+              "nonLocalizedData"
+            ],
+            "isComprehensive": false
+          },
+          {
+            "name": "intellij.webpack",
+            "version": "253.29649.0",
+            "rules": [],
+            "language": "en-US",
+            "contents": [
+              "localizedData",
+              "nonLocalizedData"
+            ],
+            "isComprehensive": false
+          }
+        ]
+      },
+      "invocations": [
+        {
+          "exitCode": 0,
+          "executionSuccessful": true
+        }
+      ],
+      "language": "en-US",
+      "versionControlProvenance": [
+        {
+          "revisionId": "4ade8e128cc2dd0f80f8c7142985f9e49fb86abf",
+          "branch": "andrzejewski/qodana-jbr",
+          "properties": {
+            "repoUrl": "",
+            "lastAuthorName": "Jakub Andrzejewski",
+            "vcsType": "Git",
+            "lastAuthorEmail": "jakub.andrzejewski@jetbrains.com"
+          }
+        }
+      ],
+      "originalUriBaseIds": {
+        "PROJECTROOT": {
+          "description": {
+            "text": "The root directory of the repository or workspace (--repository-root qodana CLI parameter)"
+          }
+        },
+        "SRCROOT": {
+          "uri": "internal/core/testdata/cpp-project/",
+          "uriBaseId": "PROJECTROOT",
+          "description": {
+            "text": "The subdirectory within the project that was analyzed (--project-dir qodana CLI parameter)"
+          }
+        }
+      },
+      "results": [
+        {
+          "ruleId": "CppLocalVariableMayBeConst",
+          "kind": "fail",
+          "level": "note",
+          "message": {
+            "text": "Local variable 'result' can be made const",
+            "markdown": "Local variable 'result' can be made const"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "main.cpp",
+                  "uriBaseId": "SRCROOT"
+                },
+                "region": {
+                  "startLine": 8,
+                  "startColumn": 9,
+                  "charOffset": 187,
+                  "charLength": 6,
+                  "snippet": {
+                    "text": "result"
+                  },
+                  "sourceLanguage": "C++"
+                },
+                "contextRegion": {
+                  "startLine": 6,
+                  "startColumn": 1,
+                  "charOffset": 90,
+                  "charLength": 133,
+                  "snippet": {
+                    "text": "int calculateSum(int a, int b) {\n    int unusedVar = 42;  // This will trigger a warning\n    int result = a + b;\n    return result;\n}"
+                  },
+                  "sourceLanguage": "C++"
+                }
+              }
+            }
+          ],
+          "partialFingerprints": {
+            "equalIndicator/v2": "9b3b3a16c4b2b441",
+            "equalIndicator/v1": "0460f23fb2dc0c97ed60b4ad4b1d4dd25c58998dff876fc9a896ab113c885efd"
+          },
+          "properties": {
+            "ideaSeverity": "INFORMATION",
+            "qodanaSeverity": "Info",
+            "problemType": "REGULAR",
+            "tags": [
+              "C++"
+            ]
+          }
+        },
+        {
+          "ruleId": "CppLocalVariableMayBeConst",
+          "kind": "fail",
+          "level": "note",
+          "message": {
+            "text": "Local variable 'sum' can be made const",
+            "markdown": "Local variable 'sum' can be made const"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "main.cpp",
+                  "uriBaseId": "SRCROOT"
+                },
+                "region": {
+                  "startLine": 28,
+                  "startColumn": 9,
+                  "charOffset": 608,
+                  "charLength": 3,
+                  "snippet": {
+                    "text": "sum"
+                  },
+                  "sourceLanguage": "C++"
+                },
+                "contextRegion": {
+                  "startLine": 26,
+                  "startColumn": 1,
+                  "charOffset": 559,
+                  "charLength": 125,
+                  "snippet": {
+                    "text": "    int z = 30;  // Unused variable\n    \n    int sum = calculateSum(x, y);\n    std::cout << \"Sum: \" << sum << std::endl;\n    "
+                  },
+                  "sourceLanguage": "C++"
+                }
+              }
+            }
+          ],
+          "partialFingerprints": {
+            "equalIndicator/v2": "ae507af2ce059ecb",
+            "equalIndicator/v1": "62c15cb651bf460b1946af75aee40ee4abb1cf6aeb5f5a086b00af5fa08abe7f"
+          },
+          "properties": {
+            "ideaSeverity": "INFORMATION",
+            "qodanaSeverity": "Info",
+            "problemType": "REGULAR",
+            "tags": [
+              "C++"
+            ]
+          }
+        },
+        {
+          "ruleId": "CppLocalVariableMayBeConst",
+          "kind": "fail",
+          "level": "note",
+          "message": {
+            "text": "Local variable 'y' can be made const",
+            "markdown": "Local variable 'y' can be made const"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "main.cpp",
+                  "uriBaseId": "SRCROOT"
+                },
+                "region": {
+                  "startLine": 25,
+                  "startColumn": 9,
+                  "charOffset": 551,
+                  "charLength": 1,
+                  "snippet": {
+                    "text": "y"
+                  },
+                  "sourceLanguage": "C++"
+                },
+                "contextRegion": {
+                  "startLine": 23,
+                  "startColumn": 1,
+                  "charOffset": 514,
+                  "charLength": 85,
+                  "snippet": {
+                    "text": "int main() {\n    int x = 10;\n    int y = 20;\n    int z = 30;  // Unused variable\n    "
+                  },
+                  "sourceLanguage": "C++"
+                }
+              }
+            }
+          ],
+          "partialFingerprints": {
+            "equalIndicator/v2": "6a292c3058fb2b31",
+            "equalIndicator/v1": "86b196249ee7cba6c1dcc3e97f50e1fac2d2f88a947998cae63bcacfca0ed13f"
+          },
+          "properties": {
+            "ideaSeverity": "INFORMATION",
+            "qodanaSeverity": "Info",
+            "problemType": "REGULAR",
+            "tags": [
+              "C++"
+            ]
+          }
+        },
+        {
+          "ruleId": "CppLocalVariableMayBeConst",
+          "kind": "fail",
+          "level": "note",
+          "message": {
+            "text": "Local variable 'x' can be made const",
+            "markdown": "Local variable 'x' can be made const"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "main.cpp",
+                  "uriBaseId": "SRCROOT"
+                },
+                "region": {
+                  "startLine": 24,
+                  "startColumn": 9,
+                  "charOffset": 535,
+                  "charLength": 1,
+                  "snippet": {
+                    "text": "x"
+                  },
+                  "sourceLanguage": "C++"
+                },
+                "contextRegion": {
+                  "startLine": 22,
+                  "startColumn": 1,
+                  "charOffset": 513,
+                  "charLength": 81,
+                  "snippet": {
+                    "text": "\nint main() {\n    int x = 10;\n    int y = 20;\n    int z = 30;  // Unused variable"
+                  },
+                  "sourceLanguage": "C++"
+                }
+              }
+            }
+          ],
+          "partialFingerprints": {
+            "equalIndicator/v2": "4bd1fd9010f54336",
+            "equalIndicator/v1": "8f2614ccd0cdea16ac0da144676cee2fc172d0431f0a56face16ba06875a6df3"
+          },
+          "properties": {
+            "ideaSeverity": "INFORMATION",
+            "qodanaSeverity": "Info",
+            "problemType": "REGULAR",
+            "tags": [
+              "C++"
+            ]
+          }
+        }
+      ],
+      "automationDetails": {
+        "id": "QodanaTestProject/qodana/2026-02-04",
+        "guid": "d863019d-0528-4260-8349-ba16badd1204",
+        "properties": {
+          "jobUrl": "",
+          "analysisKind": "regular"
+        }
+      },
+      "newlineSequences": [
+        "\r\n",
+        "\n"
+      ],
+      "properties": {
+        "qodana.coverage.files.provided": false,
+        "configProfile": "absent",
+        "deviceId": "200820300000000-a1d5-f44c-662f-b5bdbf518aab",
+        "qodanaNewResultSummary": {
+          "high": 5,
+          "info": 10,
+          "total": 15
+        }
+      }
+    }
+  ]
+}

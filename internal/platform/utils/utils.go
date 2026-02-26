@@ -67,44 +67,6 @@ func FindFiles(root string, extensions []string) []string {
 	return files
 }
 
-func GetJavaExecutablePath() (string, error) {
-	// java outputs settings to stderr, not stdout
-	_, stderr, ret, err := ExecRedirectOutput(".", "java", "-XshowSettings:properties", "-version")
-	if err != nil || ret != 0 {
-		return "", fmt.Errorf(
-			"failed to get JAVA_HOME: %w, %d. Check that java executable is accessible from the PATH",
-			err,
-			ret,
-		)
-	}
-
-	// Parse stderr to find java.home line
-	var javaHome string
-	for _, line := range strutil.GetLines(stderr) {
-		if strings.Contains(line, "java.home") {
-			split := strings.SplitN(line, "=", 2)
-			if len(split) >= 2 {
-				javaHome = strings.TrimSpace(split[1])
-				break
-			}
-		}
-	}
-
-	if javaHome == "" {
-		return "", fmt.Errorf(
-			"error while getting JAVA_HOME: java -XshowSettings:properties -version did not report java.home\n"+
-				"  stderr: %s",
-			stderr,
-		)
-	}
-
-	javaExecutablePath := filepath.Join(javaHome, "bin", "java")
-	if runtime.GOOS == "windows" {
-		javaExecutablePath += ".exe"
-	}
-	return javaExecutablePath, nil
-}
-
 // LaunchAndLog launches a process and logs its output.
 func LaunchAndLog(logDir string, executable string, args ...string) (string, string, int, error) {
 	stdout, stderr, ret, err := ExecRedirectOutput(".", args[0], args[1:]...)

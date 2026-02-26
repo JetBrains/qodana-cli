@@ -356,7 +356,7 @@ func saveReport(c corescan.Context) error {
 	}
 	if res, err := utils.Exec(
 		".",
-		prod.JbrJava(),
+		javaPath,
 		"-jar",
 		reportConverter,
 		"-s",

@@ -22,7 +22,6 @@ import (
 	"os"
 	"path"
 	"path/filepath"
-	"strings"
 
 	"github.com/JetBrains/qodana-cli/internal/cloud"
 	platformcmd "github.com/JetBrains/qodana-cli/internal/platform/cmd"
@@ -34,7 +33,6 @@ import (
 	"github.com/JetBrains/qodana-cli/internal/platform/thirdpartyscan"
 	"github.com/JetBrains/qodana-cli/internal/platform/tokenloader"
 	"github.com/JetBrains/qodana-cli/internal/platform/utils"
-	"github.com/JetBrains/qodana-cli/internal/tooling"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -85,10 +83,10 @@ func RunThirdPartyLinterAnalysis(
 	defer cleanup()
 
 	qodanaConfigEffectiveFiles, err := effectiveconfig.CreateEffectiveConfigFiles(
+		commonCtx.CacheDir,
 		localQodanaYamlFullPath,
 		cliOptions.GlobalConfigurationsDir,
 		cliOptions.GlobalConfigurationId,
-		mountInfo.JavaPath,
 		effectiveDir,
 		commonCtx.LogDir(),
 	)
@@ -112,7 +110,7 @@ func RunThirdPartyLinterAnalysis(
 
 	LogContext(&context)
 
-	events := make([]tooling.FuserEvent, 0)
+	events := make([]FuserEvent, 0)
 	eventsCh := createFuserEventChannel(&events)
 
 	projectIdHash := thirdPartyCloudData.ProjectIdHash
@@ -127,7 +125,6 @@ func RunThirdPartyLinterAnalysis(
 		msg.ErrorMessage(err.Error())
 		return 1, err
 	}
-	log.Debugf("Java executable path: %s", mountInfo.JavaPath)
 
 	thresholds := getFailureThresholds(context)
 	var analysisResult int
@@ -142,9 +139,8 @@ func RunThirdPartyLinterAnalysis(
 			return 1, err
 		}
 	}
-	if err = convertReportToCloudFormat(context); err != nil {
-		msg.ErrorMessage(err.Error())
-		return 1, err
+	if context.SaveReport() || context.ShowReport() {
+		commoncontext.SaveReport(context.ResultsDir(), context.ReportDir(), context.CacheDir())
 	}
 	sendReportToQodanaServer(context)
 	newReportUrl := cloud.GetReportUrl(context.ResultsDir())
@@ -160,6 +156,14 @@ func RunThirdPartyLinterAnalysis(
 	if err != nil {
 		log.Warnf("Problems writing short SARIF report: %v", err)
 	}
+
+	commoncontext.InteractiveShowReport(
+		context.ShowReport(),
+		context.CacheDir(),
+		context.ResultsDir(),
+		context.ReportDir(),
+		context.ShowReportPort(),
+	)
 	return analysisResult, nil
 }
 
@@ -235,9 +239,9 @@ func sendReportToQodanaServer(c thirdpartyscan.Context) {
 		}
 
 		SendReport(
+			c.CacheDir(),
 			publisher,
 			cloud.Token.Token,
-			c.MountInfo().JavaPath,
 		)
 	} else {
 		fmt.Println("Skipping report publishing")
@@ -292,39 +296,6 @@ func changeResultDirPermissionsInContainer(resultDir string) {
 	err := ChangeResultsPermissionsRecursively(resultDir)
 	if err != nil {
 		msg.ErrorMessage("Unable to change permissions in %s: %s", resultDir, err)
-	}
-}
-
-func convertReportToCloudFormat(context thirdpartyscan.Context) error {
-	log.Debugf("Generating report to %s...", context.ReportDir())
-	args := converterArgs(context, context.MountInfo())
-	stdout, _, res, err := utils.LaunchAndLog(context.LogDir(), "converter", args...)
-	if res != 0 {
-		return fmt.Errorf("converter exited with non-zero status code: %d", res)
-	}
-	if err != nil {
-		return fmt.Errorf("error while running converter: %s", err)
-	}
-	if strings.Contains(stdout, "java.lang") {
-		return fmt.Errorf("exception occured while generating report: %s", stdout)
-	}
-	return nil
-}
-
-func converterArgs(options thirdpartyscan.Context, mountInfo thirdpartyscan.MountInfo) []string {
-	return []string{
-		mountInfo.JavaPath,
-		"-jar",
-		mountInfo.Converter,
-		"-s",
-		options.ProjectDir(),
-		"-d",
-		options.ResultsDir(),
-		"-o",
-		options.ReportDir(),
-		"-n",
-		"result-allProblems.json",
-		"-f",
 	}
 }
 

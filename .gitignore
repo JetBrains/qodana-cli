@@ -5,7 +5,10 @@
 .qodana
 *.zip
 *.jar
+*.tar.gz
 qodana
+internal/tooling/qodana-jbrs
+internal/tooling/libs
 ### Go ###
 # Binaries for programs and plugins
 *.exe
@@ -204,8 +207,6 @@ dist/
 /platform/*-err.log
 /platform/*-out.log
 
-# Test temp files
-.tmp/
 
 # Claude Code local files
 # see https://code.claude.com/docs/en/settings#configuration-scopes
