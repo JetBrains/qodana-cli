@@ -49,6 +49,7 @@ builds:
       - CGO_ENABLED=0
       - TARGETOS={{.Os}}
       - TARGETARCH={{.Arch}}
+      - VERSION={{ envOrDefault "VERSION" "DEV" }}
     ldflags:
       - -s -w -X main.version={{ .Env.VERSION }} -X main.buildDateStr={{ .Date }}
     goos:
@@ -70,6 +71,7 @@ builds:
       - CGO_ENABLED=0
       - TARGETOS={{.Os}}
       - TARGETARCH={{.Arch}}
+      - VERSION={{ envOrDefault "VERSION" "DEV" }}
     ldflags:
       - -s -w -X main.version={{ .Env.VERSION }} -X main.buildDateStr={{ .Date }}
     goos:

@@ -26,6 +26,7 @@ import (
 	"github.com/JetBrains/qodana-cli/internal/core/corescan"
 	"github.com/JetBrains/qodana-cli/internal/core/startup"
 	"github.com/JetBrains/qodana-cli/internal/platform"
+	"github.com/JetBrains/qodana-cli/internal/platform/commoncontext"
 	"github.com/JetBrains/qodana-cli/internal/platform/product"
 	"github.com/JetBrains/qodana-cli/internal/platform/qdcontainer"
 	"github.com/JetBrains/qodana-cli/internal/platform/utils"
@@ -87,8 +88,8 @@ func runQodanaLocal(c corescan.Context) (int, error) {
 		return res, err
 	}
 
-	if err := saveReport(c); err != nil {
-		log.Fatalf("Failed to save report: %v", err)
+	if c.SaveReport() || c.ShowReport() {
+		commoncontext.SaveReport(c.ResultsDir(), c.ReportDir(), c.CacheDir())
 	}
 	postAnalysis(c)
 	return res, err
