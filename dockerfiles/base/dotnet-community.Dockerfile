@@ -1,5 +1,5 @@
-ARG BASE_TAG="bookworm-slim"
-FROM debian:$BASE_TAG
+ARG BASE_TAG="trixie"
+FROM dhi.io/debian-base:$BASE_TAG
 ARG DEBIAN_FRONTEND=noninteractive
 
 ENV HOME="/root" \
@@ -43,7 +43,13 @@ RUN --mount=target=/var/lib/apt/lists,type=cache,sharing=locked \
         locales \
         openssh-client \
         procps \
-        software-properties-common
+        libc6 \
+        libgcc-s1 \
+        libgssapi-krb5-2 \
+        libicu76 \
+        libssl3 \
+        libstdc++6 \
+        zlib1g
 
     echo 'en_US.UTF-8 UTF-8' > /etc/locale.gen
     locale-gen
@@ -52,17 +58,6 @@ RUN --mount=target=/var/lib/apt/lists,type=cache,sharing=locked \
     chmod 666 /etc/passwd
 
     git config --global --add safe.directory '*'
-
-    # Install .NET SDKs ------------------------------------------------------------------------------------------------
-    # System dependencies (see https://learn.microsoft.com/en-gb/dotnet/core/install/linux-debian?tabs=dotnet10#dependencies)
-    apt-get install -y --no-install-recommends \
-        libc6 \
-        libgcc-s1 \
-        libgssapi-krb5-2 \
-        libicu72 \
-        libssl3 \
-        libstdc++6 \
-        zlib1g
 
     # Download and verify install script
     dotnet_install_sh_url="https://raw.githubusercontent.com/dotnet/install-scripts/$DOTNET_INSTALL_SH_REVISION/src/dotnet-install.sh"
