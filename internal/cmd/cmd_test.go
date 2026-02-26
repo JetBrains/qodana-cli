@@ -333,7 +333,7 @@ func TestAllCommandsWithContainer(t *testing.T) {
 	//_ = os.Setenv(qodanaCliContainerKeep, "true")
 	//_ = os.Setenv(qodanaCliContainerName, "qodana-cli-test-new1")
 	msg.DisableColor()
-	core.CheckForUpdates(version.Version)
+	core.StartUpdateCheck(version.Version)
 	projectPath := createProject(t, "qodana_scan_python")
 
 	// create temp directory for cache

@@ -519,24 +519,3 @@ func TestGetScanStages(t *testing.T) {
 	assert.Contains(t, stages[0], "Preparing Qodana Docker images")
 	assert.Contains(t, stages[5], "Preparing the report")
 }
-
-func TestCheckForUpdates(t *testing.T) {
-	t.Run("dev version skips check", func(t *testing.T) {
-		DisableCheckUpdates = false
-		CheckForUpdates("dev")
-		assert.False(t, DisableCheckUpdates)
-	})
-
-	t.Run("nightly version skips check", func(t *testing.T) {
-		DisableCheckUpdates = false
-		CheckForUpdates("1.0.0-nightly")
-		assert.False(t, DisableCheckUpdates)
-	})
-}
-
-func TestGetLatestVersion(t *testing.T) {
-	version := getLatestVersion()
-	if version != "" {
-		assert.NotContains(t, version, "v")
-	}
-}

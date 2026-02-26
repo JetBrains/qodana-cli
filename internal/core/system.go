@@ -19,9 +19,7 @@ package core
 import (
 	"bufio"
 	"context"
-	"encoding/json"
 	"io"
-	"net/http"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -35,64 +33,10 @@ import (
 	"github.com/JetBrains/qodana-cli/internal/platform/nuget"
 	"github.com/JetBrains/qodana-cli/internal/platform/qdenv"
 	"github.com/JetBrains/qodana-cli/internal/platform/utils"
-	cienvironment "github.com/cucumber/ci-environment/go"
 	"github.com/docker/docker/client"
 	"github.com/pterm/pterm"
 	log "github.com/sirupsen/logrus"
 )
-
-var (
-	// DisableCheckUpdates flag to disable checking for updates
-	DisableCheckUpdates = false
-
-	releaseUrl = "https://api.github.com/repos/JetBrains/qodana-cli/releases/latest"
-)
-
-// CheckForUpdates check GitHub https://github.com/JetBrains/qodana-cli/ for the latest version of CLI release.
-func CheckForUpdates(currentVersion string) {
-	if currentVersion == "dev" || strings.HasSuffix(
-		currentVersion,
-		"nightly",
-	) || qdenv.IsContainer() || cienvironment.DetectCIEnvironment() != nil || DisableCheckUpdates {
-		return
-	}
-	latestVersion := getLatestVersion()
-	if latestVersion != "" && latestVersion != currentVersion {
-		msg.WarningMessage(
-			"New version of %s CLI is available: %s. See https://jb.gg/qodana-cli/update\n",
-			msg.PrimaryBold("qodana"),
-			latestVersion,
-		)
-		DisableCheckUpdates = true
-	}
-}
-
-// getLatestVersion returns the latest published version of the CLI.
-func getLatestVersion() string {
-	resp, err := http.Get(releaseUrl)
-	if err != nil {
-		return ""
-	}
-	defer func(Body io.ReadCloser) {
-		err := Body.Close()
-		if err != nil {
-			return
-		}
-	}(resp.Body)
-	if resp.StatusCode < 200 || resp.StatusCode > 299 {
-		return ""
-	}
-	bodyText, err := io.ReadAll(resp.Body)
-	if err != nil {
-		return ""
-	}
-	result := make(map[string]interface{})
-	err = json.Unmarshal(bodyText, &result)
-	if err != nil {
-		return ""
-	}
-	return strings.TrimPrefix(result["tag_name"].(string), "v")
-}
 
 // OpenDir opens directory in the default file manager
 func OpenDir(path string) error {
