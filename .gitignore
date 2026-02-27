@@ -5,7 +5,10 @@
 .qodana
 *.zip
 *.jar
+*.tar.gz
 qodana
+internal/tooling/qodana-jbrs
+internal/tooling/libs
 ### Go ###
 # Binaries for programs and plugins
 *.exe

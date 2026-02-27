@@ -1,4 +1,4 @@
-ARG GO_TAG="1.24-bookworm"
+ARG GO_TAG="1.26-bookworm"
 ARG NODE_TAG="22-bookworm-slim"
 FROM node:$NODE_TAG AS node_base
 FROM golang:$GO_TAG

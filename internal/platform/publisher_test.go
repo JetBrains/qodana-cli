@@ -23,29 +23,8 @@ import (
 	"testing"
 
 	"github.com/JetBrains/qodana-cli/internal/platform/qdenv"
-	"github.com/JetBrains/qodana-cli/internal/platform/strutil"
-	"github.com/JetBrains/qodana-cli/internal/platform/utils"
+	"github.com/JetBrains/qodana-cli/internal/tooling"
 )
-
-func TestFetchPublisher(t *testing.T) {
-	tempDir, err := os.MkdirTemp("", "test")
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	defer func(path string) {
-		err := os.RemoveAll(path)
-		if err != nil {
-			t.Fatal(err)
-		}
-	}(tempDir) // clean up
-	path := filepath.Join(tempDir, "publisher.jar")
-	extractPublisher(path)
-
-	if _, err := os.Stat(path); os.IsNotExist(err) {
-		t.Fatalf("fetchPublisher() failed, expected %v to exists, got error: %v", path, err)
-	}
-}
 
 func TestGetPublisherArgs(t *testing.T) {
 	// Set up test options
@@ -60,16 +39,16 @@ func TestGetPublisherArgs(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+	cacheDir := t.TempDir()
 
-	java, _ := utils.GetJavaExecutablePath()
 	// Call the function being tested
-	publisherArgs := getPublisherArgs(java, "test-publisher.jar", publisher, "test-token", "test-endpoint")
+	publisherArgs := getPublisherArgs(cacheDir, publisher, "test-token", "test-endpoint")
 
 	// Assert that the expected arguments are present
 	expectedArgs := []string{
-		strutil.QuoteForWindows(java),
+		tooling.GetQodanaJBRPath(cacheDir),
 		"-jar",
-		"test-publisher.jar",
+		tooling.PublisherCli.GetLibPath(cacheDir),
 		"--analysis-id", "test-analysis-id",
 		"--report-path", filepath.FromSlash("/path/to/results"),
 		"--token", "test-token",

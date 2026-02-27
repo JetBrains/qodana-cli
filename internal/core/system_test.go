@@ -440,10 +440,8 @@ func normalizeScriptForTesting(script string) string {
 		}
 	}
 
-	if strings.HasPrefix(script, "scoped:") {
-		filePath := strings.TrimPrefix(script, "scoped:")
-		fileName := filepath.Base(filePath)
-		return "scoped:" + fileName
+	if after, ok := strings.CutPrefix(script, "scoped:"); ok {
+		return "scoped:" + filepath.Base(after)
 	}
 
 	return script

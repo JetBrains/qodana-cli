@@ -2,6 +2,7 @@ package utils
 
 import (
 	"os"
+	"strings"
 	"testing"
 	"time"
 
@@ -101,9 +102,9 @@ func TestCopyToChannel(t *testing.T) {
 	copyToChannel(reader, ch)
 	// copyToChannel closes the channel, so we just read from it
 
-	var result string
+	var result strings.Builder
 	for line := range ch {
-		result += line
+		result.WriteString(line)
 	}
-	assert.Contains(t, result, "test line")
+	assert.Contains(t, result.String(), "test line")
 }

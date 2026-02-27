@@ -85,13 +85,13 @@ var (
 )
 
 // Primary prints a message in the Primary style.
-func Primary(text string, a ...interface{}) string {
+func Primary(text string, a ...any) string {
 	text = fmt.Sprintf(text, a...)
 	return PrimaryStyle.Sprint(text)
 }
 
 // PrimaryBold prints a message in the primary bold style.
-func PrimaryBold(text string, a ...interface{}) string {
+func PrimaryBold(text string, a ...any) string {
 	text = fmt.Sprintf(text, a...)
 	return primaryBoldStyle.Sprint(text)
 }
@@ -102,27 +102,27 @@ func EmptyMessage() {
 }
 
 // SuccessMessage prints a success message with the icon.
-func SuccessMessage(message string, a ...interface{}) {
+func SuccessMessage(message string, a ...any) {
 	message = fmt.Sprintf(message, a...)
 	icon := pterm.Green("✓ ")
 	pterm.Println(icon, Primary(message))
 }
 
 // WarningMessage prints a warning message with the icon.
-func WarningMessage(message string, a ...interface{}) {
+func WarningMessage(message string, a ...any) {
 	message = fmt.Sprintf(message, a...)
 	icon := warningStyle.Sprint("\n! ")
 	pterm.Println(icon, Primary(message))
 }
 
 // WarningMessageCI prints a warning message to the CI environment (additional highlighting).
-func WarningMessageCI(message string, a ...interface{}) {
+func WarningMessageCI(message string, a ...any) {
 	message = fmt.Sprintf(message, a...)
 	pterm.Println(formatMessageForCI("warning", "%s", message))
 }
 
 // ErrorMessage prints an error message with the icon.
-func ErrorMessage(message string, a ...interface{}) {
+func ErrorMessage(message string, a ...any) {
 	message = fmt.Sprintf(message, a...)
 	icon := errorStyle.Sprint("✗ ")
 	pterm.Println(icon, errorStyle.Sprint(message))
@@ -275,7 +275,7 @@ func GetProblemsFoundMessage(newProblems int) string {
 }
 
 // formatMessageForCI formats the message for the CI environment.
-func formatMessageForCI(level, format string, a ...interface{}) string {
+func formatMessageForCI(level, format string, a ...any) string {
 	message := fmt.Sprintf(format, a...)
 	ci := cienvironment.DetectCIEnvironment()
 	if ci != nil {

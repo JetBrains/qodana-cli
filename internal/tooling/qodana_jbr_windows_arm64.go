@@ -1,3 +1,5 @@
+//go:build windows && arm64
+
 /*
  * Copyright 2021-2024 JetBrains s.r.o.
  *
@@ -16,8 +18,7 @@
 
 package tooling
 
-import _ "embed"
+import "embed"
 
-//go:generate go run download-resource.go -artifact config-loader-cli
-//go:embed config-loader-cli.jar
-var ConfigLoaderCli []byte
+//go:embed qodana-jbrs/windows-arm64/*.tar.gz
+var embeddedJBR embed.FS

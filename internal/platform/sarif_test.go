@@ -315,7 +315,7 @@ func TestGetSeverity(t *testing.T) {
 			name: "from qodanaSeverity property",
 			result: &sarif.Result{
 				Properties: &sarif.PropertyBag{
-					AdditionalProperties: map[string]interface{}{
+					AdditionalProperties: map[string]any{
 						"qodanaSeverity": "Critical",
 					},
 				},
