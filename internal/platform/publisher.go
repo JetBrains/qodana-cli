@@ -27,7 +27,6 @@ import (
 
 	"github.com/JetBrains/qodana-cli/internal/cloud"
 	"github.com/JetBrains/qodana-cli/internal/platform/qdenv"
-	"github.com/JetBrains/qodana-cli/internal/platform/strutil"
 	"github.com/JetBrains/qodana-cli/internal/platform/utils"
 	"github.com/JetBrains/qodana-cli/internal/tooling"
 )
@@ -59,7 +58,7 @@ func getPublisherArgs(cacheDir string, publisher Publisher, token string, endpoi
 		"-jar",
 		tooling.PublisherCli.GetLibPath(cacheDir),
 		"--analysis-id", publisher.AnalysisId,
-		"--report-path", strutil.QuoteForWindows(publisher.ResultsDir),
+		"--report-path", publisher.ResultsDir,
 		"--token", token,
 	}
 	var tools []string

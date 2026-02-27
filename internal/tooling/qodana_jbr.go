@@ -29,7 +29,6 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/JetBrains/qodana-cli/internal/platform/strutil"
 	"github.com/codeclysm/extract/v4"
 )
 
@@ -47,7 +46,7 @@ func GetQodanaJBRPath(cacheDir string) string {
 			if err != nil {
 				log.Fatalf("failed to compute Qodana JBR path: %v", err)
 			}
-			qodanaJBRPath = strutil.QuoteForWindows(path)
+			qodanaJBRPath = path
 		},
 	)
 	return qodanaJBRPath

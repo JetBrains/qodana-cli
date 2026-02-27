@@ -264,7 +264,7 @@ func TestCliArgs(t *testing.T) {
 				"inspect",
 				"qodana",
 				"--profile-name",
-				"\"separated words\"",
+				"separated words",
 				projectDir,
 				resultsDir,
 			},
@@ -370,6 +370,26 @@ func TestCliArgs(t *testing.T) {
 				resultsDir,
 			},
 		},
+		{
+			name:         "paths with spaces are not quoted for exec",
+			majorVersion: "2025.3",
+			cb: corescan.ContextBuilder{
+				ProjectDir:                filepath.FromSlash("/home/user/my project"),
+				RepositoryRoot:            filepath.FromSlash("/home/user/my project"),
+				CacheDir:                  cacheDir,
+				ResultsDir:                filepath.FromSlash("/home/user/my results"),
+				EffectiveConfigurationDir: filepath.FromSlash("/home/user/my config"),
+				Analyser:                  product.JvmLinter.NativeAnalyzer(),
+			},
+			res: []string{
+				filepath.FromSlash("/opt/idea/bin/idea.sh"),
+				"qodana",
+				"--config-dir",
+				filepath.FromSlash("/home/user/my config"),
+				filepath.FromSlash("/home/user/my project"),
+				filepath.FromSlash("/home/user/my results"),
+			},
+		},
 	} {
 		t.Run(
 			tc.name, func(t *testing.T) {
@@ -383,6 +403,62 @@ func TestCliArgs(t *testing.T) {
 			},
 		)
 	}
+}
+
+func TestCliArgs_IdeScriptWithSpaces(t *testing.T) {
+	home := filepath.FromSlash("/opt/My IDE")
+	ideScript := filepath.Join(home, "bin", "idea.sh")
+	ctx := corescan.ContextBuilder{
+		ProjectDir:     filepath.FromSlash("/home/user/project"),
+		RepositoryRoot: filepath.FromSlash("/home/user/project"),
+		ResultsDir:     filepath.FromSlash("/home/user/results"),
+		CacheDir:       filepath.FromSlash("/home/user/cache"),
+		Analyser:       product.JvmLinter.NativeAnalyzer(),
+		Prod: product.Product{
+			IdeScript: ideScript,
+			Home:      home,
+			Version:   "2025.3",
+		},
+	}.Build()
+
+	args := getIdeRunCommand(ctx)
+	// With exec.Command, each arg is a separate argv element.
+	// Paths must NOT be wrapped in quotes — that would embed literal " characters.
+	assert.Equal(t, ideScript, args[0], "IDE script path should not be quoted")
+	assert.Equal(t, filepath.FromSlash("/home/user/project"), args[len(args)-2], "project dir should not be quoted")
+	assert.Equal(t, filepath.FromSlash("/home/user/results"), args[len(args)-1], "results dir should not be quoted")
+}
+
+func TestCliArgs_ProfileNameWithSpaces(t *testing.T) {
+	home := filepath.FromSlash("/opt/idea")
+	ideScript := filepath.Join(home, "bin", "idea.sh")
+
+	ctx := corescan.ContextBuilder{
+		ProjectDir:     filepath.FromSlash("/home/user/project"),
+		RepositoryRoot: filepath.FromSlash("/home/user/project"),
+		ResultsDir:     filepath.FromSlash("/home/user/results"),
+		CacheDir:       filepath.FromSlash("/home/user/cache"),
+		ProfileName:    "My Custom Profile",
+		Analyser:       product.JvmLinter.NativeAnalyzer(),
+		Prod: product.Product{
+			IdeScript: ideScript,
+			Home:      home,
+			Version:   "2025.3",
+		},
+	}.Build()
+
+	args := getIdeRunCommand(ctx)
+	// With exec.Command, each arg is a separate argv element — the OS handles separation.
+	// Embedding literal quotes would make the IDE see the profile name as
+	// "My Custom Profile" (with quotes) instead of My Custom Profile.
+	for i, arg := range args {
+		if arg == "--profile-name" {
+			assert.Equal(t, "My Custom Profile", args[i+1],
+				"profile name should not have embedded quotes for exec.Command")
+			return
+		}
+	}
+	t.Fatal("--profile-name not found in args")
 }
 
 func TestScanFlags_Script(t *testing.T) {

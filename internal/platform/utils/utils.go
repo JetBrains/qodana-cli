@@ -69,7 +69,7 @@ func FindFiles(root string, extensions []string) []string {
 
 // LaunchAndLog launches a process and logs its output.
 func LaunchAndLog(logDir string, executable string, args ...string) (string, string, int, error) {
-	stdout, stderr, ret, err := RunCmdRedirectOutput("", args...)
+	stdout, stderr, ret, err := ExecRedirectOutput(".", args[0], args[1:]...)
 	if err != nil {
 		log.Error(fmt.Errorf("failed to run %s: %w", executable, err))
 		return "", "", ret, err

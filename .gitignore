@@ -206,3 +206,8 @@ dist/
 # Platform logs
 /platform/*-err.log
 /platform/*-out.log
+
+
+# Claude Code local files
+# see https://code.claude.com/docs/en/settings#configuration-scopes
+.claude/*.local.*

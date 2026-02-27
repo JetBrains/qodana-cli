@@ -26,7 +26,6 @@ import (
 	"time"
 
 	"github.com/JetBrains/qodana-cli/internal/cloud"
-	"github.com/JetBrains/qodana-cli/internal/platform/strutil"
 	"github.com/JetBrains/qodana-cli/internal/platform/thirdpartyscan"
 	"github.com/JetBrains/qodana-cli/internal/platform/utils"
 	"github.com/JetBrains/qodana-cli/internal/tooling"
@@ -103,7 +102,7 @@ func sendFuserEvents(
 		deviceId,
 		linterInfo.ProductCode,
 		linterInfo.LinterVersion,
-		strutil.QuoteForWindows(fileName),
+		fileName,
 	}
 	if os.Getenv("GO_TESTING") == "true" {
 		args = append(args, "true")

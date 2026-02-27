@@ -17,6 +17,7 @@
 package core
 
 import (
+	"fmt"
 	"os"
 	"strconv"
 	"strings"
@@ -28,7 +29,6 @@ import (
 	"github.com/JetBrains/qodana-cli/internal/platform/commoncontext"
 	"github.com/JetBrains/qodana-cli/internal/platform/product"
 	"github.com/JetBrains/qodana-cli/internal/platform/qdcontainer"
-	"github.com/JetBrains/qodana-cli/internal/platform/strutil"
 	"github.com/JetBrains/qodana-cli/internal/platform/utils"
 	"github.com/JetBrains/qodana-cli/internal/sarif"
 
@@ -75,12 +75,12 @@ func getInvocationProperties(resultsDir string) *sarif.PropertyBag {
 func runQodanaLocal(c corescan.Context) (int, error) {
 	writeProperties(c)
 	args := getIdeRunCommand(c)
-	ideProcess, err := utils.RunCmdWithTimeout(
-		"",
+	ideProcess, err := utils.ExecWithTimeout(
+		".",
 		os.Stdout, os.Stderr,
 		c.GetAnalysisTimeout(),
 		utils.QodanaTimeoutExitCodePlaceholder,
-		args...,
+		args[0], args[1:]...,
 	)
 	res := getIdeExitCode(c.ResultsDir(), ideProcess)
 	if res > utils.QodanaSuccessExitCode && res != utils.QodanaFailThresholdExitCode {
@@ -96,14 +96,14 @@ func runQodanaLocal(c corescan.Context) (int, error) {
 }
 
 func getIdeRunCommand(c corescan.Context) []string {
-	args := []string{strutil.QuoteIfSpace(c.Prod().IdeScript)}
+	args := []string{c.Prod().IdeScript}
 	if !c.Prod().Is242orNewer() {
 		args = append(args, "inspect")
 	}
 	args = append(args, "qodana")
 
 	args = append(args, GetIdeArgs(c)...)
-	args = append(args, strutil.QuoteIfSpace(c.ProjectDir()), strutil.QuoteIfSpace(c.ResultsDir()))
+	args = append(args, c.ProjectDir(), c.ResultsDir())
 	return args
 }
 
@@ -111,22 +111,22 @@ func getIdeRunCommand(c corescan.Context) []string {
 func GetIdeArgs(c corescan.Context) []string {
 	arguments := make([]string, 0)
 	if c.CustomLocalQodanaYamlPath() != "" {
-		arguments = append(arguments, "--config", strutil.QuoteForWindows(c.CustomLocalQodanaYamlPath()))
+		arguments = append(arguments, "--config", c.CustomLocalQodanaYamlPath())
 	}
 	if c.Analyser().IsContainer() && c.SaveReport() {
 		arguments = append(arguments, "--save-report")
 	}
 	if c.OnlyDirectory() != "" {
-		arguments = append(arguments, "--only-directory", strutil.QuoteForWindows(c.OnlyDirectory()))
+		arguments = append(arguments, "--only-directory", c.OnlyDirectory())
 	}
 	if c.DisableSanity() {
 		arguments = append(arguments, "--disable-sanity")
 	}
 	if c.ProfileName() != "" {
-		arguments = append(arguments, "--profile-name", strutil.QuoteIfSpace(c.ProfileName()))
+		arguments = append(arguments, "--profile-name", c.ProfileName())
 	}
 	if c.ProfilePath() != "" {
-		arguments = append(arguments, "--profile-path", strutil.QuoteForWindows(c.ProfilePath()))
+		arguments = append(arguments, "--profile-path", c.ProfilePath())
 	}
 	if c.RunPromo() != "" {
 		arguments = append(arguments, "--run-promo", c.RunPromo())
@@ -135,7 +135,7 @@ func GetIdeArgs(c corescan.Context) []string {
 		arguments = append(arguments, "--script", c.Script())
 	}
 	if c.Baseline() != "" {
-		arguments = append(arguments, "--baseline", strutil.QuoteForWindows(c.Baseline()))
+		arguments = append(arguments, "--baseline", c.Baseline())
 	}
 	if c.BaselineIncludeAbsent() {
 		arguments = append(arguments, "--baseline-include-absent")
@@ -189,10 +189,10 @@ func GetIdeArgs(c corescan.Context) []string {
 		if linter == product.DotNetCommunityLinter {
 			// cdnet options
 			if c.CdnetSolution() != "" {
-				arguments = append(arguments, "--solution", strutil.QuoteForWindows(c.CdnetSolution()))
+				arguments = append(arguments, "--solution", c.CdnetSolution())
 			}
 			if c.CdnetProject() != "" {
-				arguments = append(arguments, "--project", strutil.QuoteForWindows(c.CdnetProject()))
+				arguments = append(arguments, "--project", c.CdnetProject())
 			}
 			if c.CdnetConfiguration() != "" {
 				arguments = append(arguments, "--configuration", c.CdnetConfiguration())
@@ -206,7 +206,7 @@ func GetIdeArgs(c corescan.Context) []string {
 		} else {
 			// clang options
 			if c.ClangCompileCommands() != "" {
-				arguments = append(arguments, "--compile-commands", strutil.QuoteForWindows(c.ClangCompileCommands()))
+				arguments = append(arguments, "--compile-commands", c.ClangCompileCommands())
 			}
 			if c.ClangArgs() != "" {
 				arguments = append(arguments, "--clang-args", c.ClangArgs())
@@ -249,7 +249,7 @@ func GetIdeArgs(c corescan.Context) []string {
 			arguments = append(arguments, "--property="+property)
 		}
 	} else if c.Prod().Is251orNewer() {
-		arguments = append(arguments, "--config-dir", strutil.QuoteForWindows(c.EffectiveConfigurationDir()))
+		arguments = append(arguments, "--config-dir", c.EffectiveConfigurationDir())
 	}
 	return arguments
 }
@@ -271,9 +271,9 @@ func postAnalysis(c corescan.Context) {
 }
 
 // installPlugins runs plugin installer for every plugin id in qodana.yaml.
-func installPlugins(c corescan.Context) {
+func installPlugins(c corescan.Context) error {
 	if c.Analyser().IsContainer() {
-		return
+		return nil
 	}
 
 	plugins := c.QodanaYamlConfig().Plugins
@@ -282,13 +282,14 @@ func installPlugins(c corescan.Context) {
 	}
 	for _, plugin := range plugins {
 		log.Printf("Installing plugin %s", plugin.Id)
-		if res, err := utils.RunCmd(
-			"",
-			strutil.QuoteIfSpace(c.Prod().IdeScript),
+		if res, err := utils.Exec(
+			".",
+			c.Prod().IdeScript,
 			"installPlugins",
-			strutil.QuoteIfSpace(plugin.Id),
+			plugin.Id,
 		); res > 0 || err != nil {
-			os.Exit(res)
+			return fmt.Errorf("failed to install plugin %s: exit code %d: %w", plugin.Id, res, err)
 		}
 	}
+	return nil
 }

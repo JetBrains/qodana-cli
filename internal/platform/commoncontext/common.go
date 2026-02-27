@@ -32,7 +32,6 @@ import (
 	"github.com/JetBrains/qodana-cli/internal/platform/product"
 	"github.com/JetBrains/qodana-cli/internal/platform/qdenv"
 	"github.com/JetBrains/qodana-cli/internal/platform/qdyaml"
-	"github.com/JetBrains/qodana-cli/internal/platform/strutil"
 	"github.com/JetBrains/qodana-cli/internal/platform/utils"
 	"github.com/JetBrains/qodana-cli/internal/tooling"
 	"github.com/codeclysm/extract/v4"
@@ -336,15 +335,15 @@ func analyzerToSelect(linters []product.Linter, path string) (map[string]product
 // SaveReport converts analysis output into the HTML report.
 func SaveReport(resultDir string, reportDir string, cacheDir string) {
 	log.Println("Generating HTML report ...")
-	if res, err := utils.RunCmd(
-		"",
+	if res, err := utils.Exec(
+		".",
 		tooling.GetQodanaJBRPath(cacheDir),
 		"-jar",
 		tooling.ReportConverter.GetLibPath(cacheDir),
 		"-d",
-		strutil.QuoteForWindows(resultDir),
+		resultDir,
 		"-o",
-		strutil.QuoteForWindows(filepath.Join(reportDir, "results")),
+		filepath.Join(reportDir, "results"),
 	); res > 0 || err != nil {
 		os.Exit(res)
 	}
