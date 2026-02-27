@@ -63,6 +63,8 @@ func TestSuccess(t *testing.T) {
 		},
 	}
 
+	sharedCacheDir := t.TempDir()
+
 	for _, tc := range testCases {
 		t.Run(
 			tc.testCaseName, func(t *testing.T) {
@@ -77,12 +79,13 @@ func TestSuccess(t *testing.T) {
 
 				effectiveConfigDir := t.TempDir()
 				logDir := t.TempDir()
+				cacheDir := sharedCacheDir
 
 				configFiles, err := CreateEffectiveConfigFiles(
+					cacheDir,
 					tc.localQodanaYaml,
 					tc.globalConfigurationsDir,
 					tc.globalConfigurationId,
-					"java",
 					effectiveConfigDir,
 					logDir,
 				)
@@ -171,6 +174,8 @@ func TestError(t *testing.T) {
 		},
 	}
 
+	sharedCacheDir := t.TempDir()
+
 	for _, tc := range testCases {
 		t.Run(
 			tc.testCaseName, func(t *testing.T) {
@@ -185,12 +190,13 @@ func TestError(t *testing.T) {
 
 				effectiveConfigDir := t.TempDir()
 				logDir := t.TempDir()
+				cacheDir := sharedCacheDir
 
 				configFiles, err := CreateEffectiveConfigFiles(
+					cacheDir,
 					tc.localQodanaYaml,
 					tc.globalConfigurationsDir,
 					tc.globalConfigurationId,
-					"java",
 					effectiveConfigDir,
 					logDir,
 				)

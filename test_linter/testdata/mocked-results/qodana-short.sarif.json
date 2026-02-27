@@ -1,0 +1,78 @@
+{
+ "runs": [
+  {
+   "automationDetails": {
+    "guid": "d863019d-0528-4260-8349-ba16badd1204",
+    "id": "QodanaTestProject/qodana/2026-02-04",
+    "properties": {
+     "analysisKind": "regular",
+     "jobUrl": ""
+    }
+   },
+   "invocations": [
+    {
+     "endTimeUtc": "0001-01-01T00:00:00Z",
+     "executionSuccessful": true,
+     "startTimeUtc": "0001-01-01T00:00:00Z"
+    }
+   ],
+   "language": "en-US",
+   "newlineSequences": [
+    "\r\n",
+    "\n"
+   ],
+   "originalUriBaseIds": {
+    "PROJECTROOT": {
+     "description": {
+      "text": "The root directory of the repository or workspace (--repository-root qodana CLI parameter)"
+     }
+    },
+    "SRCROOT": {
+     "description": {
+      "text": "The subdirectory within the project that was analyzed (--project-dir qodana CLI parameter)"
+     },
+     "uri": "internal/core/testdata/cpp-project/",
+     "uriBaseId": "PROJECTROOT"
+    }
+   },
+   "properties": {
+    "configProfile": "absent",
+    "deviceId": "200820300000000-a1d5-f44c-662f-b5bdbf518aab",
+    "qodana.coverage.files.provided": false,
+    "qodanaNewResultSummary": {
+     "high": 5,
+     "info": 10,
+     "total": 15
+    }
+   },
+   "results": [],
+   "tool": {
+    "driver": {
+     "contents": [
+      "localizedData",
+      "nonLocalizedData"
+     ],
+     "fullName": "Qodana for C/C++",
+     "language": "en-US",
+     "name": "QDCPP",
+     "version": "253.29649"
+    }
+   },
+   "versionControlProvenance": [
+    {
+     "branch": "andrzejewski/qodana-jbr",
+     "properties": {
+      "lastAuthorEmail": "jakub.andrzejewski@jetbrains.com",
+      "lastAuthorName": "Jakub Andrzejewski",
+      "repoUrl": "",
+      "vcsType": "Git"
+     },
+     "repositoryUri": "",
+     "revisionId": "4ade8e128cc2dd0f80f8c7142985f9e49fb86abf"
+    }
+   ]
+  }
+ ],
+ "$schema": "https://raw.githubusercontent.com/schemastore/schemastore/master/src/schemas/json/sarif-2.1.0-rtm.5.json",
+ "version": "2.1.0"
+}

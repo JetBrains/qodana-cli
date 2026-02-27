@@ -1,0 +1,1183 @@
+2026-02-04 12:32:21,169 [      4]   INFO - #c.i.p.i.b.AppStarter - ------------------------------------------------------ IDE STARTED ------------------------------------------------------
+2026-02-04 12:32:21,170 [      5]   INFO - #c.i.p.i.b.AppStarter - skipping shell environment: the IDE is likely launched from a terminal (SHLVL=2)
+2026-02-04 12:32:21,171 [      6]   INFO - #c.i.p.i.b.AppStarter - Will skip the config import to directory "/Users/jacob/Library/Caches/JetBrains/Qodana/dff3951f-e0b590d2/config" (exists = true). Current entries: "options", "ssl", "tasks", "event-log-metadata", "workspace", "resharper-host", "early-access-registry.txt", "ide.vmoptions".
+2026-02-04 12:32:21,189 [     24]   INFO - #c.i.p.i.b.AppStarter - JNA library (64-bit) loaded in 20 ms
+2026-02-04 12:32:21,191 [     26]   INFO - #c.i.p.i.b.AppStarter - IDE: Qodana for C/C++ (build #QDCPP-253.29649, Wed, 4 Feb 2026 12:32:21 +0100)
+2026-02-04 12:32:21,191 [     26]   INFO - #c.i.p.i.b.AppStarter - OS: macOS (26.2)
+2026-02-04 12:32:21,191 [     26]   INFO - #c.i.p.i.b.AppStarter - JRE: 21.0.9+10-b1163.88, aarch64 (JetBrains s.r.o.)
+2026-02-04 12:32:21,191 [     26]   INFO - #c.i.p.i.b.AppStarter - JVM: 21.0.9+10-b1163.88 (OpenJDK 64-Bit Server VM)
+2026-02-04 12:32:21,192 [     27]   INFO - #c.i.p.i.b.AppStarter - PID: 17037
+2026-02-04 12:32:21,202 [     37]   INFO - #c.i.p.i.b.AppStarter - JVM options: [abort, vfprintf, -XX:ErrorFile=/Users/jacob/java_error_in_clion_%p.log, -XX:HeapDumpPath=/Users/jacob/java_error_in_clion.hprof, -Xms256m, -Xss2m, -XX:NewSize=128m, -XX:MaxNewSize=128m, -XX:JbrShrinkingGcMaxHeapFreeRatio=40, -XX:ReservedCodeCacheSize=512m, -XX:+HeapDumpOnOutOfMemoryError, -XX:-OmitStackTraceInFastThrow, -XX:CICompilerCount=2, -XX:+IgnoreUnrecognizedVMOptions, -XX:+UnlockDiagnosticVMOptions, -XX:TieredOldPercentage=100000, -ea, -Dsun.io.useCanonCaches=false, -Dsun.java2d.metal=true, -Djbr.catch.SIGABRT=true, -Djdk.http.auth.tunneling.disabledSchemes="", -Djdk.attach.allowAttachSelf=true, -Djdk.module.illegalAccess.silent=true, -Djdk.nio.maxCachedBufferSize=2097152, -Djava.util.zip.use.nio.for.zip.file.access=true, -Dkotlinx.coroutines.debug=off, -Djava.nio.file.spi.DefaultFileSystemProvider=com.intellij.platform.core.nio.fs.MultiRoutingFileSystemProvider, -Dintellij.plugins.custom.built.in.repository.url=https://buildserver.labs.intellij.net/guestAuth/repository/download/ijplatform_IjPlatform253_CIDR_CLion_InstallersBuild/842820546:id/CL-plugins/plugins.xml,https://buildserver.labs.intellij.net/guestAuth/repository/download/ijplatform_IjPlatform253_CIDR_CLion_InstallersBuild/842820546:id/CL-plugins/auto-uploading/plugins.xml, -Dapple.awt.application.appearance=system, -Ddisabled.plugins.file.path=/Users/jacob/Library/Application Support/JetBrains/Qodana/QDCPP/253/disabled_plugins.txt, -Didea.config.path=/Users/jacob/Library/Caches/JetBrains/Qodana/dff3951f-e0b590d2/config, -Didea.headless.enable.statistics=true, -Didea.headless.statistics.device.id=200820300000000-a1d5-f44c-662f-b5bdbf518aab, -Didea.headless.statistics.salt=0afcf0c792b43f5e5c4b24b06bb997ca, -Didea.log.path=/tmp/resultdir/log, -Didea.plugins.path=/Users/jacob/Library/Caches/JetBrains/Qodana/dff3951f-e0b590d2/cache/plugins/253, -Didea.system.path=/Users/jacob/Library/Caches/JetBrains/Qodana/dff3951f-e0b590d2/cache/idea/253, -Dplugin.path=/Users/jacob/Library/Application Support/JetBrains/Qodana/QDCPP/253/custom-plugins/disabled_plugins.txt, -Dqodana.automation.guid=d863019d-0528-4260-8349-ba16badd1204, -Dqodana.coverage.input=/Users/jacob/Projects/qodana-cli/internal/core/testdata/cpp-project/.qodana/code-coverage, -Dqodana.path.to.project.dir.from.project.root=internal/core/testdata/cpp-project, -XX:MaxRAMPercentage=70, -Xlog:gc*:/tmp/resultdir/log/gc.log, -Djb.vmOptionsFile=/Users/jacob/Library/Caches/JetBrains/Qodana/dff3951f-e0b590d2/config/ide.vmoptions, -Djava.system.class.loader=com.intellij.util.lang.PathClassLoader, -Didea.vendor.name=JetBrains, -Didea.paths.selector=CLion2025.3, -Djna.boot.library.path=/Users/jacob/Library/Caches/JetBrains/Qodana/qodana-QDCPP-253.29649.102-aarch64/CLion.app/Contents/lib/jna/aarch64, -Djna.nosys=true, -Djna.noclasspath=true, -Dpty4j.preferred.native.folder=/Users/jacob/Library/Caches/JetBrains/Qodana/qodana-QDCPP-253.29649.102-aarch64/CLion.app/Contents/lib/pty4j, -Dio.netty.allocator.type=pooled, -Dskiko.library.path=/Users/jacob/Library/Caches/JetBrains/Qodana/qodana-QDCPP-253.29649.102-aarch64/CLion.app/Contents/lib/skiko-awt-runtime-all, -Dintellij.platform.runtime.repository.path=/Users/jacob/Library/Caches/JetBrains/Qodana/qodana-QDCPP-253.29649.102-aarch64/CLion.app/Contents/modules/module-descriptors.dat, -Didea.platform.prefix=CLion, -DactionSystem.update.actions.warn.dataRules.on.edt=false, -Dsplash=true, -Daether.connector.resumeDownloads=false, -Dcompose.swing.render.on.graphics=true, --add-opens=java.base/java.io=ALL-UNNAMED, --add-opens=java.base/java.lang=ALL-UNNAMED, --add-opens=java.base/java.lang.ref=ALL-UNNAMED, --add-opens=java.base/java.lang.reflect=ALL-UNNAMED, --add-opens=java.base/java.net=ALL-UNNAMED, --add-opens=java.base/java.nio=ALL-UNNAMED, --add-opens=java.base/java.nio.charset=ALL-UNNAMED, --add-opens=java.base/java.text=ALL-UNNAMED, --add-opens=java.base/java.time=ALL-UNNAMED, --add-opens=java.base/java.util=ALL-UNNAMED, --add-opens=java.base/java.util.concurrent=ALL-UNNAMED, --add-opens=java.base/java.util.concurrent.atomic=ALL-UNNAMED, --add-opens=java.base/java.util.concurrent.locks=ALL-UNNAMED, --add-opens=java.base/jdk.internal.ref=ALL-UNNAMED, --add-opens=java.base/jdk.internal.vm=ALL-UNNAMED, --add-opens=java.base/sun.net.dns=ALL-UNNAMED, --add-opens=java.base/sun.nio=ALL-UNNAMED, --add-opens=java.base/sun.nio.ch=ALL-UNNAMED, --add-opens=java.base/sun.nio.fs=ALL-UNNAMED, --add-opens=java.base/sun.security.ssl=ALL-UNNAMED, --add-opens=java.base/sun.security.util=ALL-UNNAMED, --add-opens=java.desktop/com.apple.eawt=ALL-UNNAMED, --add-opens=java.desktop/com.apple.eawt.event=ALL-UNNAMED, --add-opens=java.desktop/com.apple.laf=ALL-UNNAMED, --add-opens=java.desktop/com.sun.java.swing=ALL-UNNAMED, --add-opens=java.desktop/java.awt=ALL-UNNAMED, --add-opens=java.desktop/java.awt.dnd.peer=ALL-UNNAMED, --add-opens=java.desktop/java.awt.event=ALL-UNNAMED, --add-opens=java.desktop/java.awt.font=ALL-UNNAMED, --add-opens=java.desktop/java.awt.image=ALL-UNNAMED, --add-opens=java.desktop/java.awt.peer=ALL-UNNAMED, --add-opens=java.desktop/javax.swing=ALL-UNNAMED, --add-opens=java.desktop/javax.swing.plaf.basic=ALL-UNNAMED, --add-opens=java.desktop/javax.swing.text=ALL-UNNAMED, --add-opens=java.desktop/javax.swing.text.html=ALL-UNNAMED, --add-opens=java.desktop/javax.swing.text.html.parser=ALL-UNNAMED, --add-opens=java.desktop/sun.awt=ALL-UNNAMED, --add-opens=java.desktop/sun.awt.datatransfer=ALL-UNNAMED, --add-opens=java.desktop/sun.awt.image=ALL-UNNAMED, --add-opens=java.desktop/sun.font=ALL-UNNAMED, --add-opens=java.desktop/sun.java2d=ALL-UNNAMED, --add-opens=java.desktop/sun.lwawt=ALL-UNNAMED, --add-opens=java.desktop/sun.lwawt.macosx=ALL-UNNAMED, --add-opens=java.desktop/sun.swing=ALL-UNNAMED, --add-opens=java.management/sun.management=ALL-UNNAMED, --add-opens=jdk.attach/sun.tools.attach=ALL-UNNAMED, --add-opens=jdk.compiler/com.sun.tools.javac.api=ALL-UNNAMED, --add-opens=jdk.internal.jvmstat/sun.jvmstat.monitor=ALL-UNNAMED, --add-opens=jdk.jdi/com.sun.tools.jdi=ALL-UNNAMED, -Dqodana.application=true, -Dintellij.platform.load.app.info.from.resources=true, -Dfus.internal.reduce.initial.delay=true, -Didea.headless.statistics.max.files.to.send=5000, -Djava.awt.headless=true, -Didea.qodana.thirdpartyplugins.accept=true, -Dide.warmup.use.predicates=false, -Dvcs.log.index.enable=false, -Didea.job.launcher.without.timeout=true, -Dscanning.in.smart.mode=false, -Deap.login.enabled=false, -Dsdk.download.consent=true, -Dide.activity.tracking.enable.debug=true, -Deslint.service.expiration.timeout.ms=5000, -Dphp.additional.library.manager.new.updater=true, -Dide.region.url.mapping.expiration.timeout=7200, -Dexternal.system.auto.import.headless.async=true, -Dmaven.default.headless.import=true, -Dide.do.not.check.ls.on.startup=true, -Dintellij.console.use.severe.log.level=true, -Didea.suppressed.plugins.set.selector=radler, -Dqodana.product.name=Qodana for C/C++, -Dqodana.build.number=QDCPP-253.29649, -Dqodana.eap=true, -Dide.native.launcher=true]
+2026-02-04 12:32:21,202 [     37]   INFO - #c.i.p.i.b.AppStarter - args: qodana --config-dir /var/folders/78/_c93j0jj5bs8tr7h_dth0_540000gn/T/qd-effective-config-1592750387 /Users/jacob/Projects/qodana-cli/internal/core/testdata/cpp-project /tmp/resultdir
+2026-02-04 12:32:21,202 [     37]   INFO - #c.i.p.i.b.AppStarter - library path: /Users/jacob/Library/Java/Extensions:/Library/Java/Extensions:/Network/Library/Java/Extensions:/System/Library/Java/Extensions:/usr/lib/java:.
+2026-02-04 12:32:21,202 [     37]   INFO - #c.i.p.i.b.AppStarter - boot library path: /Users/jacob/Library/Caches/JetBrains/Qodana/qodana-QDCPP-253.29649.102-aarch64/CLion.app/Contents/jbr/Contents/Home/lib
+2026-02-04 12:32:21,204 [     39]   INFO - #c.i.p.i.b.AppStarter - locale=pl_PL JNU=UTF-8 file.encoding=UTF-8
+    idea.home.path=/Users/jacob/Library/Caches/JetBrains/Qodana/qodana-QDCPP-253.29649.102-aarch64/CLion.app/Contents
+    idea.config.path=/Users/jacob/Library/Caches/JetBrains/Qodana/dff3951f-e0b590d2/config
+    idea.system.path=/Users/jacob/Library/Caches/JetBrains/Qodana/dff3951f-e0b590d2/cache/idea/253
+    idea.plugins.path=/Users/jacob/Library/Caches/JetBrains/Qodana/dff3951f-e0b590d2/cache/plugins/253 -> java.nio.file.NoSuchFileException: /Users/jacob/Library/Caches/JetBrains/Qodana/dff3951f-e0b590d2/cache/plugins/253
+    idea.log.path=/tmp/resultdir/log -> /private/tmp/resultdir/log
+2026-02-04 12:32:21,205 [     40]   INFO - #c.i.p.i.b.AppStarter - CPU cores: 16; ForkJoinPool.commonPool: java.util.concurrent.ForkJoinPool@3ad7cab2[Running, parallelism = 16, size = 0, active = 0, running = 0, steals = 0, tasks = 0, submissions = 0]; factory: com.intellij.concurrency.IdeaForkJoinWorkerThreadFactory@5802c663
+2026-02-04 12:32:21,343 [    178]   INFO - #c.i.i.p.PluginManager - Plugin set resolution:
+Module intellij.json.frontend.split is not enabled because dependency intellij.platform.frontend.split is not available
+Module intellij.yaml.frontend.split is not enabled because dependency intellij.platform.frontend.split is not available
+Module intellij.terminal.frontend.split is not enabled because dependency intellij.platform.frontend.split is not available
+Module intellij.kotlin.dev is not enabled because dependency org.jetbrains.kotlin is not available
+Module intellij.groovy.dev is not enabled because dependency org.intellij.groovy is not available
+Module intellij.java.dev is not enabled because dependency com.intellij.java is not available
+Module intellij.sh.markdown is not enabled because dependency org.intellij.plugins.markdown is not available
+Module intellij.xml.langInjection.xpath is not enabled because dependency XPathView is not available
+Module intellij.yaml.helm is not enabled because dependency org.jetbrains.plugins.go-template is not available
+Module intellij.platform.identifiers.highlighting.backend is not enabled because dependency com.jetbrains.codeWithMe is not available
+Module intellij.css.watcher is not enabled because dependency com.intellij.plugins.watcher is not available
+Module intellij.css.frontend.split is not enabled because dependency intellij.platform.frontend.split is not available
+Module intellij.less/watcher is not enabled because dependency com.intellij.plugins.watcher is not available
+Module intellij.sass.watcher is not enabled because dependency com.intellij.plugins.watcher is not available
+Module intellij.sass.frontend.split is not enabled because dependency intellij.css.frontend.split is not available
+Module intellij.database.trialPromotion.idesWithFreeTier is not enabled because dependency intellij.platform.trialPromotion.idesWithFreeTier is not available
+Module intellij.database.frontend.split is not enabled because dependency intellij.platform.frontend.split is not available
+Module intellij.database.completionMlRanking is not enabled because dependency com.intellij.completion.ml.ranking is not available
+Module intellij.database.java is not enabled because dependency com.intellij.java is not available
+Module intellij.database.grazie is not enabled because dependency tanvd.grazi is not available
+Module intellij.database.diagrams is not enabled because dependency com.intellij.diagram is not available
+Module intellij.remoteRun.gradle is not enabled because dependency org.jetbrains.plugins.gradle is not available
+Module intellij.remoteRun.maven is not enabled because dependency org.jetbrains.idea.maven is not available
+Module intellij.remoteRun.terminal.backend.split is not enabled because dependency intellij.terminal.backend.split is not available
+Module intellij.webDeployment/phpStorm is not enabled because dependency com.intellij.modules.phpstorm is not available
+Module intellij.python.ml.features is not enabled because dependency intellij.platform.ml.logs is not available
+Module intellij.python.markdown is not enabled because dependency org.intellij.plugins.markdown is not available
+Module intellij.python.grazie is not enabled because dependency tanvd.grazi is not available
+Module intellij.python.featuresTrainer is not enabled because dependency training is not available
+Module intellij.python.community.plugin.java is not enabled because dependency com.intellij.java is not available
+Module intellij.python.community.plugin.minorRider is not enabled because dependency com.intellij.modules.rider is not available
+Module intellij.toml.grazie is not enabled because dependency tanvd.grazi is not available
+Module intellij.toml.frontend.split is not enabled because dependency intellij.platform.frontend.split is not available
+Module intellij.clouds.docker.file.frontend.split is not enabled because dependency intellij.platform.frontend.split is not available
+Module intellij.remoteRun.gradle.docker is not enabled because dependency org.jetbrains.plugins.gradle is not available
+Module intellij.clouds.docker.java is not enabled because dependency com.intellij.java is not available
+Module intellij.rider.plugins.rdclient.performance is not enabled because dependency com.jetbrains.performancePlugin is not available
+Module intellij.clion.radler.performance is not enabled because dependency intellij.rider.plugins.rdclient.performance is not available
+Module intellij.clion.radler.cwm is not enabled because dependency intellij.platform.backend.split is not available
+Module intellij.rider.appender.grazie is not enabled because dependency tanvd.grazi is not available
+Module intellij.rider.cwm.core is not enabled because dependency intellij.platform.backend.split is not available
+Module intellij.sh.frontend.split is not enabled because dependency intellij.platform.frontend.split is not available
+Module intellij.clion.test.catch.legacy is not enabled because dependency intellij.c.core is not available
+Module intellij.clion.test.boost.legacy is not enabled because dependency intellij.c.core is not available
+Module intellij.cmake.rider is not enabled because dependency intellij.rider is not available
+Module intellij.cmake.oc is not enabled because dependency intellij.c.core is not available
+Module intellij.cidr.clangd.legacyBridge is not enabled because dependency intellij.c.core is not available
+Module intellij.clion.test.doctest.legacy is not enabled because dependency intellij.c.core is not available
+Module intellij.clion.wizard.aipromo is not enabled because dependency intellij.llmInstaller is not available
+Module intellij.clion.west.textmate is not enabled because dependency intellij.textmate is not available
+Module intellij.clion.mcp is not enabled because dependency com.intellij.mcpServer is not available
+Module intellij.clion.dfa.bridge is not enabled because dependency intellij.c.core is not available
+Module intellij.clion.oc is not enabled because dependency intellij.c.core is not available
+Module intellij.clion.java is not enabled because dependency com.intellij.java is not available
+Module intellij.cidr.completionMlRanking is not enabled because dependency com.intellij.completion.ml.ranking is not available
+Module intellij.cidr.clangd.clangFormat is not enabled because dependency intellij.c.core is not available
+Module intellij.clion.featuresTrainer is not enabled because dependency training is not available
+Module intellij.clion.radler.featuresTrainer is not enabled because dependency intellij.clion.featuresTrainer is not available
+Module intellij.clion.ide.featuresTrainer is not enabled because dependency intellij.clion.featuresTrainer is not available
+Module intellij.javascript.debugger.webstorm.specific is not enabled because dependency com.intellij.modules.webstorm is not available
+Module intellij.javascript.debugger.javaee is not enabled because dependency intellij.javaee.platform is not available
+Module intellij.javascript.debugger.javaee.jsp is not enabled because dependency intellij.javascript.debugger.javaee is not available
+Module intellij.javascript.java is not enabled because dependency com.intellij.java is not available
+Module intellij.javascript.sharedIndexes is not enabled because dependency intellij.indexing.shared.core is not available
+Module intellij.javascript.sharedIndexes.generator is not enabled because dependency intellij.javascript.sharedIndexes is not available
+Module intellij.javascript.devkit is not enabled because dependency intellij.devkit.core is not available
+Module intellij.javascript.backend/diagrams is not enabled because dependency com.intellij.diagram is not available
+Module intellij.qodana.jvm.swagger is not enabled because dependency com.intellij.swagger is not available
+Module intellij.qodana.jvm.maven is not enabled because dependency org.jetbrains.idea.maven is not available
+Module intellij.qodana.jvm.java is not enabled because dependency com.intellij.java is not available
+Module intellij.qodana.jvm.kotlin is not enabled because dependency org.jetbrains.kotlin is not available
+Module intellij.qodana.jvm.groovy is not enabled because dependency org.intellij.groovy is not available
+Module intellij.qodana.jvm.gradle is not enabled because dependency intellij.qodana.jvm.java is not available
+Module intellij.qodana.jvm.dev is not enabled because dependency intellij.java.dev is not available
+Module intellij.qodana.inspectionKts.kotlin is not enabled because dependency org.jetbrains.kotlin is not available
+Module intellij.qodana.jvm.coverage is not enabled because dependency com.intellij.java is not available
+Module intellij.qodana.python.coverage is not enabled because dependency intellij.python is not available
+Module intellij.qodana.php is not enabled because dependency com.jetbrains.php is not available
+Module intellij.qodana.go is not enabled because dependency intellij.go.coverage is not available
+Module intellij.vuejs.markdown is not enabled because dependency intellij.markdown is not available
+Module intellij.clion.test.google.legacy is not enabled because dependency intellij.c.core is not available
+2026-02-04 12:32:21,355 [    190]   INFO - #c.i.i.p.PluginManager - Loaded bundled plugins: IDEA CORE (253.29649), C/C++ Language Support (253.29649.0), JSON (253.29649.0), YAML (253.29649.0), CMake (253.29649.0), Qt (253.29649.0), Database Tools and SQL (253.29649.0), JavaScript and TypeScript (253.29649.0), Terminal (253.29649.0), Python Community Edition (253.29649.0), DevKit Runtime (253.29649.0), Shell Script (253.29649.0), Data Editor Support (253.29649.0), Qodana (253.29649.0), Copyright (253.29649.0), Ini (253.29649.0), Japanese Language Pack / 日本語言語パック (253.29649.0), Chinese (Simplified) Language Pack / 中文语言包 (253.29649.0), CSS (253.29649.0), Less (253.29649.0), Sass (253.29649.0), Images (253.29649.0), JavaScript Debugger (253.29649.0), HTML Tools (253.29649.0), SSH Remote Run (253.29649.0), FTP/SFTP/WebDAV Connectivity (253.29649.0), Toml (253.29649.0), JSONPath (253.29649.0), Makefile Language (253.29649.0), PostCSS (253.29649.0), Docker (253.29649.0), CLion (253.29649.0), Native Debugging Support (253.29649.0), CIDR-ParallelStacks (253.29649.0), CLion Catch (253.29649.0), CLion Boost.Test (253.29649.0), Clangd Support (253.29649.0), CLion Doctest (253.29649.0), Compilation Database (253.29649.0), CLion Diagnostics (253.29649.0), Custom Defined Compiler Support (253.29649.0), Devicetree (253.29649.0), C/C++ Package Manager (253.29649.0), CLion Integration for Zephyr® Project (253.29649.0), Meson (253.29649.0), Embedded Development Support (253.29649.0), Makefile (253.29649.0), Git (253.29649.0), GitLab (253.29649.0), QML (253.29649.0), Webpack (253.29649.0), TSLint (253.29649.0), Tailwind CSS (253.29649.0), Styled Components & Styled JSX (253.29649.0), Polymer & Web Components (253.29649.0), React (253.29649.0), Stylelint (253.29649.0), Vite (253.29649.0), Prettier (253.29649.0), Next.js (253.29649.0), Karma (253.29649.0), Node.js (253.29649.0), JavaScript Intention Power Pack (253.29649.0), Configuration Script (253.29649.0), LinkerScript (253.29649.0), Vue.js (253.29649.0), CLion Google Testing and Mocking Framework (253.29649.0), Angular (253.29649.0)
+2026-02-04 12:32:21,356 [    191]   INFO - #c.i.i.p.PluginManager - Disabled plugins: Async Profiler for IDE Performance Testing (253.29649.0), CLion CTest (253.29649.0), Remote Development Gateway (253.29649.0), Dev Containers (253.29649.0), Subversion (253.29649.0), QtCreator Keymap (253.29649.0), CLion Solarized Color Scheme (253.29649.0), Code With Me (253.29649.0), Blackboard Color Scheme (253.29649.0), Perforce Helix Core (253.29649.0), Eclipse Keymap (253.29649.0), Natural Languages (253.29649.0), Dawn Color Scheme (253.29649.0), Xcode Color Scheme (253.29649.0), XPathView + XSLT (253.29649.0), All Hallow's Eve Color Scheme (253.29649.0), Remote Development Server (253.29649.0), Espresso Color Scheme (253.29649.0), Korean Language Pack / 한국어 언어 팩 (253.29649.0), Completion Stats Collector (253.29649.0), VibrantInk Color Scheme (253.29649.0), Xcode Keymap (253.29649.0), Cobalt Color Scheme (253.29649.0), Twilight Color Scheme (253.29649.0), Performance Testing (253.29649.0), HTTP Client (253.29649.0), MCP Server (253.29649.0), Machine Learning Code Completion (253.29649.0), Visual Studio Keymap (253.29649.0), Backup and Sync (253.29649.0), Time Tracking (253.29649.0), GitHub Color Scheme (253.29649.0), ReSharper Keymap (253.29649.0), Station (253.29649.0), Remote Execution Agent (253.29649.0), IDE Features Trainer (253.29649.0), Diagrams (253.29649.0), NetBeans Keymap (253.29649.0), Mercurial (253.29649.0), PlatformIO for CLion (253.29649.0), Task Management (253.29649.0), C/C++ Language Support via Classic Engine (253.29649.0), Node.js Remote Interpreter (253.29649.0), Railscasts Color Scheme (253.29649.0), Markdown (253.29649.0), Rust (253.29649.0), WarmNeon Color Scheme (253.29649.0), Modal Commit Interface (253.29649.0), Evaluation Plugin (253.29649.0), CLion Performance Testing (253.29649.0), Machine Learning in Search Everywhere (253.29649.0), Monokai Color Scheme (253.29649.0), TextMate Bundles (253.29649.0), Serial Port Monitor (253.29649.0), Full Line Code Completion (253.29649.0), GitHub (253.29649.0), Machine Learning Code Completion Models (253.29649.0)
+2026-02-04 12:32:21,429 [    264]   INFO - #c.i.c.r.c.l.RadBackendFromPluginDir - Pointing R# host directory into the plugin:  /Users/jacob/Library/Caches/JetBrains/Qodana/qodana-QDCPP-253.29649.102-aarch64/CLion.app/Contents/plugins/clion-radler/DotFiles
+2026-02-04 12:32:21,433 [    268]   INFO - STDOUT - Installation home directory: file:////Users/jacob/Library/Caches/JetBrains/Qodana/qodana-QDCPP-253.29649.102-aarch64/CLion.app/Contents
+2026-02-04 12:32:21,433 [    268]   INFO - STDOUT - System directory: file:////Users/jacob/Library/Caches/JetBrains/Qodana/dff3951f-e0b590d2/cache/idea/253
+2026-02-04 12:32:21,433 [    268]   INFO - STDOUT - Config directory: file:////Users/jacob/Library/Caches/JetBrains/Qodana/dff3951f-e0b590d2/config
+2026-02-04 12:32:21,433 [    268]   INFO - STDOUT - Log directory: file:////tmp/resultdir/log
+2026-02-04 12:32:21,434 [    269]   INFO - #o.j.q.s.i.s.QodanaApplicationStarter - Command line arguments: [qodana, --config-dir, /var/folders/78/_c93j0jj5bs8tr7h_dth0_540000gn/T/qd-effective-config-1592750387, /Users/jacob/Projects/qodana-cli/internal/core/testdata/cpp-project, /tmp/resultdir]
+2026-02-04 12:32:21,441 [    276]   INFO - #c.i.u.i.PageCacheUtils - File page caching params:
+	DEFAULT_PAGE_SIZE: 10485760
+	Direct memory to use, max: 48096083968
+	FilePageCache: regular
+	Regular FilePageCache: 629145600 bytes
+	DirectByteBuffers pool: 104857600 bytes
+2026-02-04 12:32:21,442 [    277]   INFO - #c.j.r.p.ProtocolManager - Create protocol...
+2026-02-04 12:32:21,454 [    289]   INFO - STDOUT - Debug | ByteBufferAsyncProcessor  | 21:DefaultDispatcher-worker-4 | PAUSE ('Socket not connected') :: {id = FrontendToBackend/Sender, state = 'Initialized'} 
+2026-02-04 12:32:21,456 [    291]   INFO - STDOUT - Debug | Server                    | 61:FrontendToBackend | FrontendToBackend: listening /127.0.0.1:58660 
+2026-02-04 12:32:21,465 [    300]   INFO - #c.j.r.p.ProtocolManager - Run ReSharper process...
+2026-02-04 12:32:21,469 [    304]   INFO - #c.j.r.NetCoreRuntime - Loading bundled runtime from path "/Users/jacob/Library/Caches/JetBrains/Qodana/qodana-QDCPP-253.29649.102-aarch64/CLion.app/Contents/plugins/clion-radler/DotFiles/macos-arm64/dotnet/dotnet".
+2026-02-04 12:32:21,472 [    307]   INFO - #c.j.r.CrossgenRunUtil - tryGetNiFile took 1ms
+2026-02-04 12:32:21,472 [    307]   INFO - #c.j.r.p.ReSharperProcess - * adding directory with expanded DLLs for the main backend dir: /Users/jacob/Library/Caches/JetBrains/Qodana/qodana-QDCPP-253.29649.102-aarch64/CLion.app/Contents/plugins/clion-radler/DotFiles.
+2026-02-04 12:32:21,472 [    307]   INFO - #c.j.r.p.ReSharperProcess - Start analyzing IntelliJ Plugin: com.intellij ("/Users/jacob/Library/Caches/JetBrains/Qodana/qodana-QDCPP-253.29649.102-aarch64/CLion.app/Contents/lib")
+2026-02-04 12:32:21,472 [    307]   INFO - #c.j.r.p.ReSharperProcess - Idea Plugin: com.intellij (/Users/jacob/Library/Caches/JetBrains/Qodana/qodana-QDCPP-253.29649.102-aarch64/CLion.app/Contents/lib)
+2026-02-04 12:32:21,474 [    309]   INFO - #c.j.r.p.ReSharperProcess - Start analyzing IntelliJ Plugin: org.jetbrains.plugins.clion.radler ("/Users/jacob/Library/Caches/JetBrains/Qodana/qodana-QDCPP-253.29649.102-aarch64/CLion.app/Contents/plugins/clion-radler")
+2026-02-04 12:32:21,474 [    309]   INFO - #c.j.r.p.ReSharperProcess - Idea Plugin: org.jetbrains.plugins.clion.radler (/Users/jacob/Library/Caches/JetBrains/Qodana/qodana-QDCPP-253.29649.102-aarch64/CLion.app/Contents/plugins/clion-radler)
+2026-02-04 12:32:21,474 [    309]   INFO - #c.j.r.p.ReSharperProcess - * skipping directory with expanded DLLs for a set of full Rider.Backend plugins (reason: duplicates the main backend dir): /Users/jacob/Library/Caches/JetBrains/Qodana/qodana-QDCPP-253.29649.102-aarch64/CLion.app/Contents/plugins/clion-radler/DotFiles.
+2026-02-04 12:32:21,474 [    309]   INFO - #c.j.r.p.ReSharperProcess - Start analyzing IntelliJ Plugin: com.intellij.modules.json ("/Users/jacob/Library/Caches/JetBrains/Qodana/qodana-QDCPP-253.29649.102-aarch64/CLion.app/Contents/plugins/json")
+2026-02-04 12:32:21,474 [    309]   INFO - #c.j.r.p.ReSharperProcess - Idea Plugin: com.intellij.modules.json (/Users/jacob/Library/Caches/JetBrains/Qodana/qodana-QDCPP-253.29649.102-aarch64/CLion.app/Contents/plugins/json)
+2026-02-04 12:32:21,474 [    309]   INFO - #c.j.r.p.ReSharperProcess - Start analyzing IntelliJ Plugin: org.jetbrains.plugins.yaml ("/Users/jacob/Library/Caches/JetBrains/Qodana/qodana-QDCPP-253.29649.102-aarch64/CLion.app/Contents/plugins/yaml")
+2026-02-04 12:32:21,474 [    309]   INFO - #c.j.r.p.ReSharperProcess - Idea Plugin: org.jetbrains.plugins.yaml (/Users/jacob/Library/Caches/JetBrains/Qodana/qodana-QDCPP-253.29649.102-aarch64/CLion.app/Contents/plugins/yaml)
+2026-02-04 12:32:21,474 [    309]   INFO - #c.j.r.p.ReSharperProcess - Start analyzing IntelliJ Plugin: com.intellij.cmake ("/Users/jacob/Library/Caches/JetBrains/Qodana/qodana-QDCPP-253.29649.102-aarch64/CLion.app/Contents/plugins/cmake")
+2026-02-04 12:32:21,474 [    309]   INFO - #c.j.r.p.ReSharperProcess - Idea Plugin: com.intellij.cmake (/Users/jacob/Library/Caches/JetBrains/Qodana/qodana-QDCPP-253.29649.102-aarch64/CLion.app/Contents/plugins/cmake)
+2026-02-04 12:32:21,474 [    309]   INFO - #c.j.r.p.ReSharperProcess - Start analyzing IntelliJ Plugin: com.intellij.qt ("/Users/jacob/Library/Caches/JetBrains/Qodana/qodana-QDCPP-253.29649.102-aarch64/CLion.app/Contents/plugins/qt-plugin")
+2026-02-04 12:32:21,474 [    309]   INFO - #c.j.r.p.ReSharperProcess - Idea Plugin: com.intellij.qt (/Users/jacob/Library/Caches/JetBrains/Qodana/qodana-QDCPP-253.29649.102-aarch64/CLion.app/Contents/plugins/qt-plugin)
+2026-02-04 12:32:21,474 [    309]   INFO - #c.j.r.p.ReSharperProcess - Start analyzing IntelliJ Plugin: com.intellij.database ("/Users/jacob/Library/Caches/JetBrains/Qodana/qodana-QDCPP-253.29649.102-aarch64/CLion.app/Contents/plugins/DatabaseTools")
+2026-02-04 12:32:21,474 [    309]   INFO - #c.j.r.p.ReSharperProcess - Idea Plugin: com.intellij.database (/Users/jacob/Library/Caches/JetBrains/Qodana/qodana-QDCPP-253.29649.102-aarch64/CLion.app/Contents/plugins/DatabaseTools)
+2026-02-04 12:32:21,474 [    309]   INFO - #c.j.r.p.ReSharperProcess - Start analyzing IntelliJ Plugin: JavaScript ("/Users/jacob/Library/Caches/JetBrains/Qodana/qodana-QDCPP-253.29649.102-aarch64/CLion.app/Contents/plugins/javascript-plugin")
+2026-02-04 12:32:21,474 [    309]   INFO - #c.j.r.p.ReSharperProcess - Idea Plugin: JavaScript (/Users/jacob/Library/Caches/JetBrains/Qodana/qodana-QDCPP-253.29649.102-aarch64/CLion.app/Contents/plugins/javascript-plugin)
+2026-02-04 12:32:21,475 [    310]   INFO - #c.j.r.p.ReSharperProcess - * adding project templates directory: /Users/jacob/Library/Caches/JetBrains/Qodana/qodana-QDCPP-253.29649.102-aarch64/CLion.app/Contents/plugins/javascript-plugin/projectTemplates
+2026-02-04 12:32:21,475 [    310]   INFO - #c.j.r.p.ReSharperProcess - Start analyzing IntelliJ Plugin: org.jetbrains.plugins.terminal ("/Users/jacob/Library/Caches/JetBrains/Qodana/qodana-QDCPP-253.29649.102-aarch64/CLion.app/Contents/plugins/terminal")
+2026-02-04 12:32:21,475 [    310]   INFO - #c.j.r.p.ReSharperProcess - Idea Plugin: org.jetbrains.plugins.terminal (/Users/jacob/Library/Caches/JetBrains/Qodana/qodana-QDCPP-253.29649.102-aarch64/CLion.app/Contents/plugins/terminal)
+2026-02-04 12:32:21,475 [    310]   INFO - #c.j.r.p.ReSharperProcess - Start analyzing IntelliJ Plugin: PythonCore ("/Users/jacob/Library/Caches/JetBrains/Qodana/qodana-QDCPP-253.29649.102-aarch64/CLion.app/Contents/plugins/python-ce")
+2026-02-04 12:32:21,475 [    310]   INFO - #c.j.r.p.ReSharperProcess - Idea Plugin: PythonCore (/Users/jacob/Library/Caches/JetBrains/Qodana/qodana-QDCPP-253.29649.102-aarch64/CLion.app/Contents/plugins/python-ce)
+2026-02-04 12:32:21,475 [    310]   INFO - #c.j.r.p.ReSharperProcess - Start analyzing IntelliJ Plugin: com.intellij.dev ("/Users/jacob/Library/Caches/JetBrains/Qodana/qodana-QDCPP-253.29649.102-aarch64/CLion.app/Contents/plugins/dev")
+2026-02-04 12:32:21,475 [    310]   INFO - #c.j.r.p.ReSharperProcess - Idea Plugin: com.intellij.dev (/Users/jacob/Library/Caches/JetBrains/Qodana/qodana-QDCPP-253.29649.102-aarch64/CLion.app/Contents/plugins/dev)
+2026-02-04 12:32:21,475 [    310]   INFO - #c.j.r.p.ReSharperProcess - Start analyzing IntelliJ Plugin: com.jetbrains.sh ("/Users/jacob/Library/Caches/JetBrains/Qodana/qodana-QDCPP-253.29649.102-aarch64/CLion.app/Contents/plugins/sh-plugin")
+2026-02-04 12:32:21,475 [    310]   INFO - #c.j.r.p.ReSharperProcess - Idea Plugin: com.jetbrains.sh (/Users/jacob/Library/Caches/JetBrains/Qodana/qodana-QDCPP-253.29649.102-aarch64/CLion.app/Contents/plugins/sh-plugin)
+2026-02-04 12:32:21,475 [    310]   INFO - #c.j.r.p.ReSharperProcess - Start analyzing IntelliJ Plugin: intellij.grid.plugin ("/Users/jacob/Library/Caches/JetBrains/Qodana/qodana-QDCPP-253.29649.102-aarch64/CLion.app/Contents/plugins/grid-plugin")
+2026-02-04 12:32:21,475 [    310]   INFO - #c.j.r.p.ReSharperProcess - Idea Plugin: intellij.grid.plugin (/Users/jacob/Library/Caches/JetBrains/Qodana/qodana-QDCPP-253.29649.102-aarch64/CLion.app/Contents/plugins/grid-plugin)
+2026-02-04 12:32:21,475 [    310]   INFO - #c.j.r.p.ReSharperProcess - Start analyzing IntelliJ Plugin: org.intellij.qodana ("/Users/jacob/Library/Caches/JetBrains/Qodana/qodana-QDCPP-253.29649.102-aarch64/CLion.app/Contents/plugins/qodana")
+2026-02-04 12:32:21,475 [    310]   INFO - #c.j.r.p.ReSharperProcess - Idea Plugin: org.intellij.qodana (/Users/jacob/Library/Caches/JetBrains/Qodana/qodana-QDCPP-253.29649.102-aarch64/CLion.app/Contents/plugins/qodana)
+2026-02-04 12:32:21,475 [    310]   INFO - #c.j.r.p.ReSharperProcess - Start analyzing IntelliJ Plugin: com.intellij.copyright ("/Users/jacob/Library/Caches/JetBrains/Qodana/qodana-QDCPP-253.29649.102-aarch64/CLion.app/Contents/plugins/copyright")
+2026-02-04 12:32:21,475 [    310]   INFO - #c.j.r.p.ReSharperProcess - Idea Plugin: com.intellij.copyright (/Users/jacob/Library/Caches/JetBrains/Qodana/qodana-QDCPP-253.29649.102-aarch64/CLion.app/Contents/plugins/copyright)
+2026-02-04 12:32:21,475 [    310]   INFO - #c.j.r.p.ReSharperProcess - Start analyzing IntelliJ Plugin: com.jetbrains.plugins.ini4idea ("/Users/jacob/Library/Caches/JetBrains/Qodana/qodana-QDCPP-253.29649.102-aarch64/CLion.app/Contents/plugins/ini")
+2026-02-04 12:32:21,475 [    310]   INFO - #c.j.r.p.ReSharperProcess - Idea Plugin: com.jetbrains.plugins.ini4idea (/Users/jacob/Library/Caches/JetBrains/Qodana/qodana-QDCPP-253.29649.102-aarch64/CLion.app/Contents/plugins/ini)
+2026-02-04 12:32:21,475 [    310]   INFO - #c.j.r.p.ReSharperProcess - Start analyzing IntelliJ Plugin: com.intellij.ja ("/Users/jacob/Library/Caches/JetBrains/Qodana/qodana-QDCPP-253.29649.102-aarch64/CLion.app/Contents/plugins/localization-ja")
+2026-02-04 12:32:21,475 [    310]   INFO - #c.j.r.p.ReSharperProcess - Idea Plugin: com.intellij.ja (/Users/jacob/Library/Caches/JetBrains/Qodana/qodana-QDCPP-253.29649.102-aarch64/CLion.app/Contents/plugins/localization-ja)
+2026-02-04 12:32:21,476 [    311]   INFO - #c.j.r.p.ReSharperProcess - * adding directory with ad-hoc DLLs for a simplified Rider.Backend plugin: /Users/jacob/Library/Caches/JetBrains/Qodana/qodana-QDCPP-253.29649.102-aarch64/CLion.app/Contents/plugins/localization-ja/dotnet.
+2026-02-04 12:32:21,476 [    311]   INFO - #c.j.r.p.ReSharperProcess - Start analyzing IntelliJ Plugin: com.intellij.zh ("/Users/jacob/Library/Caches/JetBrains/Qodana/qodana-QDCPP-253.29649.102-aarch64/CLion.app/Contents/plugins/localization-zh")
+2026-02-04 12:32:21,476 [    311]   INFO - #c.j.r.p.ReSharperProcess - Idea Plugin: com.intellij.zh (/Users/jacob/Library/Caches/JetBrains/Qodana/qodana-QDCPP-253.29649.102-aarch64/CLion.app/Contents/plugins/localization-zh)
+2026-02-04 12:32:21,476 [    311]   INFO - #c.j.r.p.ReSharperProcess - * adding directory with ad-hoc DLLs for a simplified Rider.Backend plugin: /Users/jacob/Library/Caches/JetBrains/Qodana/qodana-QDCPP-253.29649.102-aarch64/CLion.app/Contents/plugins/localization-zh/dotnet.
+2026-02-04 12:32:21,476 [    311]   INFO - #c.j.r.p.ReSharperProcess - Start analyzing IntelliJ Plugin: com.intellij.css ("/Users/jacob/Library/Caches/JetBrains/Qodana/qodana-QDCPP-253.29649.102-aarch64/CLion.app/Contents/plugins/css-plugin")
+2026-02-04 12:32:21,476 [    311]   INFO - #c.j.r.p.ReSharperProcess - Idea Plugin: com.intellij.css (/Users/jacob/Library/Caches/JetBrains/Qodana/qodana-QDCPP-253.29649.102-aarch64/CLion.app/Contents/plugins/css-plugin)
+2026-02-04 12:32:21,476 [    311]   INFO - #c.j.r.p.ReSharperProcess - Start analyzing IntelliJ Plugin: org.jetbrains.plugins.less ("/Users/jacob/Library/Caches/JetBrains/Qodana/qodana-QDCPP-253.29649.102-aarch64/CLion.app/Contents/plugins/less")
+2026-02-04 12:32:21,476 [    311]   INFO - #c.j.r.p.ReSharperProcess - Idea Plugin: org.jetbrains.plugins.less (/Users/jacob/Library/Caches/JetBrains/Qodana/qodana-QDCPP-253.29649.102-aarch64/CLion.app/Contents/plugins/less)
+2026-02-04 12:32:21,476 [    311]   INFO - #c.j.r.p.ReSharperProcess - Start analyzing IntelliJ Plugin: org.jetbrains.plugins.sass ("/Users/jacob/Library/Caches/JetBrains/Qodana/qodana-QDCPP-253.29649.102-aarch64/CLion.app/Contents/plugins/sass-plugin")
+2026-02-04 12:32:21,476 [    311]   INFO - #c.j.r.p.ReSharperProcess - Idea Plugin: org.jetbrains.plugins.sass (/Users/jacob/Library/Caches/JetBrains/Qodana/qodana-QDCPP-253.29649.102-aarch64/CLion.app/Contents/plugins/sass-plugin)
+2026-02-04 12:32:21,476 [    311]   INFO - #c.j.r.p.ReSharperProcess - Start analyzing IntelliJ Plugin: com.intellij.platform.images ("/Users/jacob/Library/Caches/JetBrains/Qodana/qodana-QDCPP-253.29649.102-aarch64/CLion.app/Contents/plugins/platform-images")
+2026-02-04 12:32:21,476 [    311]   INFO - #c.j.r.p.ReSharperProcess - Idea Plugin: com.intellij.platform.images (/Users/jacob/Library/Caches/JetBrains/Qodana/qodana-QDCPP-253.29649.102-aarch64/CLion.app/Contents/plugins/platform-images)
+2026-02-04 12:32:21,476 [    311]   INFO - #c.j.r.p.ReSharperProcess - Start analyzing IntelliJ Plugin: JavaScriptDebugger ("/Users/jacob/Library/Caches/JetBrains/Qodana/qodana-QDCPP-253.29649.102-aarch64/CLion.app/Contents/plugins/javascript-debugger")
+2026-02-04 12:32:21,476 [    311]   INFO - #c.j.r.p.ReSharperProcess - Idea Plugin: JavaScriptDebugger (/Users/jacob/Library/Caches/JetBrains/Qodana/qodana-QDCPP-253.29649.102-aarch64/CLion.app/Contents/plugins/javascript-debugger)
+2026-02-04 12:32:21,476 [    311]   INFO - #c.j.r.p.ReSharperProcess - Start analyzing IntelliJ Plugin: HtmlTools ("/Users/jacob/Library/Caches/JetBrains/Qodana/qodana-QDCPP-253.29649.102-aarch64/CLion.app/Contents/plugins/html-tools")
+2026-02-04 12:32:21,476 [    311]   INFO - #c.j.r.p.ReSharperProcess - Idea Plugin: HtmlTools (/Users/jacob/Library/Caches/JetBrains/Qodana/qodana-QDCPP-253.29649.102-aarch64/CLion.app/Contents/plugins/html-tools)
+2026-02-04 12:32:21,476 [    311]   INFO - #c.j.r.p.ReSharperProcess - Start analyzing IntelliJ Plugin: org.jetbrains.plugins.remote-run ("/Users/jacob/Library/Caches/JetBrains/Qodana/qodana-QDCPP-253.29649.102-aarch64/CLion.app/Contents/plugins/remoteRun")
+2026-02-04 12:32:21,476 [    311]   INFO - #c.j.r.p.ReSharperProcess - Idea Plugin: org.jetbrains.plugins.remote-run (/Users/jacob/Library/Caches/JetBrains/Qodana/qodana-QDCPP-253.29649.102-aarch64/CLion.app/Contents/plugins/remoteRun)
+2026-02-04 12:32:21,477 [    312]   INFO - #c.j.r.p.ReSharperProcess - Start analyzing IntelliJ Plugin: com.jetbrains.plugins.webDeployment ("/Users/jacob/Library/Caches/JetBrains/Qodana/qodana-QDCPP-253.29649.102-aarch64/CLion.app/Contents/plugins/webDeployment")
+2026-02-04 12:32:21,477 [    312]   INFO - #c.j.r.p.ReSharperProcess - Idea Plugin: com.jetbrains.plugins.webDeployment (/Users/jacob/Library/Caches/JetBrains/Qodana/qodana-QDCPP-253.29649.102-aarch64/CLion.app/Contents/plugins/webDeployment)
+2026-02-04 12:32:21,477 [    312]   INFO - #c.j.r.p.ReSharperProcess - Start analyzing IntelliJ Plugin: org.toml.lang ("/Users/jacob/Library/Caches/JetBrains/Qodana/qodana-QDCPP-253.29649.102-aarch64/CLion.app/Contents/plugins/toml")
+2026-02-04 12:32:21,477 [    312]   INFO - #c.j.r.p.ReSharperProcess - Idea Plugin: org.toml.lang (/Users/jacob/Library/Caches/JetBrains/Qodana/qodana-QDCPP-253.29649.102-aarch64/CLion.app/Contents/plugins/toml)
+2026-02-04 12:32:21,477 [    312]   INFO - #c.j.r.p.ReSharperProcess - Start analyzing IntelliJ Plugin: com.intellij.jsonpath ("/Users/jacob/Library/Caches/JetBrains/Qodana/qodana-QDCPP-253.29649.102-aarch64/CLion.app/Contents/plugins/jsonpath")
+2026-02-04 12:32:21,477 [    312]   INFO - #c.j.r.p.ReSharperProcess - Idea Plugin: com.intellij.jsonpath (/Users/jacob/Library/Caches/JetBrains/Qodana/qodana-QDCPP-253.29649.102-aarch64/CLion.app/Contents/plugins/jsonpath)
+2026-02-04 12:32:21,477 [    312]   INFO - #c.j.r.p.ReSharperProcess - Start analyzing IntelliJ Plugin: name.kropp.intellij.makefile ("/Users/jacob/Library/Caches/JetBrains/Qodana/qodana-QDCPP-253.29649.102-aarch64/CLion.app/Contents/plugins/makefile")
+2026-02-04 12:32:21,477 [    312]   INFO - #c.j.r.p.ReSharperProcess - Idea Plugin: name.kropp.intellij.makefile (/Users/jacob/Library/Caches/JetBrains/Qodana/qodana-QDCPP-253.29649.102-aarch64/CLion.app/Contents/plugins/makefile)
+2026-02-04 12:32:21,477 [    312]   INFO - #c.j.r.p.ReSharperProcess - Start analyzing IntelliJ Plugin: org.intellij.plugins.postcss ("/Users/jacob/Library/Caches/JetBrains/Qodana/qodana-QDCPP-253.29649.102-aarch64/CLion.app/Contents/plugins/postcss")
+2026-02-04 12:32:21,477 [    312]   INFO - #c.j.r.p.ReSharperProcess - Idea Plugin: org.intellij.plugins.postcss (/Users/jacob/Library/Caches/JetBrains/Qodana/qodana-QDCPP-253.29649.102-aarch64/CLion.app/Contents/plugins/postcss)
+2026-02-04 12:32:21,477 [    312]   INFO - #c.j.r.p.ReSharperProcess - Start analyzing IntelliJ Plugin: Docker ("/Users/jacob/Library/Caches/JetBrains/Qodana/qodana-QDCPP-253.29649.102-aarch64/CLion.app/Contents/plugins/clouds-docker-impl")
+2026-02-04 12:32:21,477 [    312]   INFO - #c.j.r.p.ReSharperProcess - Idea Plugin: Docker (/Users/jacob/Library/Caches/JetBrains/Qodana/qodana-QDCPP-253.29649.102-aarch64/CLion.app/Contents/plugins/clouds-docker-impl)
+2026-02-04 12:32:21,477 [    312]   INFO - #c.j.r.p.ReSharperProcess - Start analyzing IntelliJ Plugin: com.intellij.clion ("/Users/jacob/Library/Caches/JetBrains/Qodana/qodana-QDCPP-253.29649.102-aarch64/CLion.app/Contents/plugins/clion")
+2026-02-04 12:32:21,477 [    312]   INFO - #c.j.r.p.ReSharperProcess - Idea Plugin: com.intellij.clion (/Users/jacob/Library/Caches/JetBrains/Qodana/qodana-QDCPP-253.29649.102-aarch64/CLion.app/Contents/plugins/clion)
+2026-02-04 12:32:21,477 [    312]   INFO - #c.j.r.p.ReSharperProcess - Start analyzing IntelliJ Plugin: com.intellij.nativeDebug ("/Users/jacob/Library/Caches/JetBrains/Qodana/qodana-QDCPP-253.29649.102-aarch64/CLion.app/Contents/plugins/nativeDebug-plugin")
+2026-02-04 12:32:21,477 [    312]   INFO - #c.j.r.p.ReSharperProcess - Idea Plugin: com.intellij.nativeDebug (/Users/jacob/Library/Caches/JetBrains/Qodana/qodana-QDCPP-253.29649.102-aarch64/CLion.app/Contents/plugins/nativeDebug-plugin)
+2026-02-04 12:32:21,477 [    312]   INFO - #c.j.r.p.ReSharperProcess - Start analyzing IntelliJ Plugin: com.intellij.cidr.parallelStacks ("/Users/jacob/Library/Caches/JetBrains/Qodana/qodana-QDCPP-253.29649.102-aarch64/CLion.app/Contents/plugins/cidr-parallelStacks")
+2026-02-04 12:32:21,478 [    313]   INFO - #c.j.r.p.ReSharperProcess - Idea Plugin: com.intellij.cidr.parallelStacks (/Users/jacob/Library/Caches/JetBrains/Qodana/qodana-QDCPP-253.29649.102-aarch64/CLion.app/Contents/plugins/cidr-parallelStacks)
+2026-02-04 12:32:21,478 [    313]   INFO - #c.j.r.p.ReSharperProcess - Start analyzing IntelliJ Plugin: org.jetbrains.plugins.clion.test.catch ("/Users/jacob/Library/Caches/JetBrains/Qodana/qodana-QDCPP-253.29649.102-aarch64/CLion.app/Contents/plugins/clion-test-catch")
+2026-02-04 12:32:21,478 [    313]   INFO - #c.j.r.p.ReSharperProcess - Idea Plugin: org.jetbrains.plugins.clion.test.catch (/Users/jacob/Library/Caches/JetBrains/Qodana/qodana-QDCPP-253.29649.102-aarch64/CLion.app/Contents/plugins/clion-test-catch)
+2026-02-04 12:32:21,478 [    313]   INFO - #c.j.r.p.ReSharperProcess - Start analyzing IntelliJ Plugin: org.jetbrains.plugins.clion.test.boost ("/Users/jacob/Library/Caches/JetBrains/Qodana/qodana-QDCPP-253.29649.102-aarch64/CLion.app/Contents/plugins/clion-test-boost")
+2026-02-04 12:32:21,478 [    313]   INFO - #c.j.r.p.ReSharperProcess - Idea Plugin: org.jetbrains.plugins.clion.test.boost (/Users/jacob/Library/Caches/JetBrains/Qodana/qodana-QDCPP-253.29649.102-aarch64/CLion.app/Contents/plugins/clion-test-boost)
+2026-02-04 12:32:21,478 [    313]   INFO - #c.j.r.p.ReSharperProcess - Start analyzing IntelliJ Plugin: com.intellij.cidr.lang.clangd ("/Users/jacob/Library/Caches/JetBrains/Qodana/qodana-QDCPP-253.29649.102-aarch64/CLion.app/Contents/plugins/cidr-clangd")
+2026-02-04 12:32:21,478 [    313]   INFO - #c.j.r.p.ReSharperProcess - Idea Plugin: com.intellij.cidr.lang.clangd (/Users/jacob/Library/Caches/JetBrains/Qodana/qodana-QDCPP-253.29649.102-aarch64/CLion.app/Contents/plugins/cidr-clangd)
+2026-02-04 12:32:21,478 [    313]   INFO - #c.j.r.p.ReSharperProcess - Start analyzing IntelliJ Plugin: org.jetbrains.plugins.clion.test.doctest ("/Users/jacob/Library/Caches/JetBrains/Qodana/qodana-QDCPP-253.29649.102-aarch64/CLion.app/Contents/plugins/clion-test-doctest")
+2026-02-04 12:32:21,478 [    313]   INFO - #c.j.r.p.ReSharperProcess - Idea Plugin: org.jetbrains.plugins.clion.test.doctest (/Users/jacob/Library/Caches/JetBrains/Qodana/qodana-QDCPP-253.29649.102-aarch64/CLion.app/Contents/plugins/clion-test-doctest)
+2026-02-04 12:32:21,478 [    313]   INFO - #c.j.r.p.ReSharperProcess - Start analyzing IntelliJ Plugin: com.intellij.clion-compdb ("/Users/jacob/Library/Caches/JetBrains/Qodana/qodana-QDCPP-253.29649.102-aarch64/CLion.app/Contents/plugins/clion-compdb")
+2026-02-04 12:32:21,478 [    313]   INFO - #c.j.r.p.ReSharperProcess - Idea Plugin: com.intellij.clion-compdb (/Users/jacob/Library/Caches/JetBrains/Qodana/qodana-QDCPP-253.29649.102-aarch64/CLion.app/Contents/plugins/clion-compdb)
+2026-02-04 12:32:21,478 [    313]   INFO - #c.j.r.p.ReSharperProcess - Start analyzing IntelliJ Plugin: com.intellij.cpp-diagnostics ("/Users/jacob/Library/Caches/JetBrains/Qodana/qodana-QDCPP-253.29649.102-aarch64/CLion.app/Contents/plugins/clion-diagnostics")
+2026-02-04 12:32:21,478 [    313]   INFO - #c.j.r.p.ReSharperProcess - Idea Plugin: com.intellij.cpp-diagnostics (/Users/jacob/Library/Caches/JetBrains/Qodana/qodana-QDCPP-253.29649.102-aarch64/CLion.app/Contents/plugins/clion-diagnostics)
+2026-02-04 12:32:21,478 [    313]   INFO - #c.j.r.p.ReSharperProcess - Start analyzing IntelliJ Plugin: com.intellij.cidr.compiler.custom ("/Users/jacob/Library/Caches/JetBrains/Qodana/qodana-QDCPP-253.29649.102-aarch64/CLion.app/Contents/plugins/cidr-compiler-custom")
+2026-02-04 12:32:21,478 [    313]   INFO - #c.j.r.p.ReSharperProcess - Idea Plugin: com.intellij.cidr.compiler.custom (/Users/jacob/Library/Caches/JetBrains/Qodana/qodana-QDCPP-253.29649.102-aarch64/CLion.app/Contents/plugins/cidr-compiler-custom)
+2026-02-04 12:32:21,478 [    313]   INFO - #c.j.r.p.ReSharperProcess - Start analyzing IntelliJ Plugin: com.intellij.dts ("/Users/jacob/Library/Caches/JetBrains/Qodana/qodana-QDCPP-253.29649.102-aarch64/CLion.app/Contents/plugins/dts")
+2026-02-04 12:32:21,478 [    313]   INFO - #c.j.r.p.ReSharperProcess - Idea Plugin: com.intellij.dts (/Users/jacob/Library/Caches/JetBrains/Qodana/qodana-QDCPP-253.29649.102-aarch64/CLion.app/Contents/plugins/dts)
+2026-02-04 12:32:21,479 [    314]   INFO - #c.j.r.p.ReSharperProcess - Start analyzing IntelliJ Plugin: com.jetbrains.clion.plugins.packageManager ("/Users/jacob/Library/Caches/JetBrains/Qodana/qodana-QDCPP-253.29649.102-aarch64/CLion.app/Contents/plugins/clion-packageManager")
+2026-02-04 12:32:21,479 [    314]   INFO - #c.j.r.p.ReSharperProcess - Idea Plugin: com.jetbrains.clion.plugins.packageManager (/Users/jacob/Library/Caches/JetBrains/Qodana/qodana-QDCPP-253.29649.102-aarch64/CLion.app/Contents/plugins/clion-packageManager)
+2026-02-04 12:32:21,479 [    314]   INFO - #c.j.r.p.ReSharperProcess - Start analyzing IntelliJ Plugin: com.intellij.clion.west ("/Users/jacob/Library/Caches/JetBrains/Qodana/qodana-QDCPP-253.29649.102-aarch64/CLion.app/Contents/plugins/clion-west")
+2026-02-04 12:32:21,479 [    314]   INFO - #c.j.r.p.ReSharperProcess - Idea Plugin: com.intellij.clion.west (/Users/jacob/Library/Caches/JetBrains/Qodana/qodana-QDCPP-253.29649.102-aarch64/CLion.app/Contents/plugins/clion-west)
+2026-02-04 12:32:21,479 [    314]   INFO - #c.j.r.p.ReSharperProcess - Start analyzing IntelliJ Plugin: com.intellij.clion.meson ("/Users/jacob/Library/Caches/JetBrains/Qodana/qodana-QDCPP-253.29649.102-aarch64/CLion.app/Contents/plugins/clion-meson")
+2026-02-04 12:32:21,479 [    314]   INFO - #c.j.r.p.ReSharperProcess - Idea Plugin: com.intellij.clion.meson (/Users/jacob/Library/Caches/JetBrains/Qodana/qodana-QDCPP-253.29649.102-aarch64/CLion.app/Contents/plugins/clion-meson)
+2026-02-04 12:32:21,479 [    314]   INFO - #c.j.r.p.ReSharperProcess - Start analyzing IntelliJ Plugin: com.intellij.clion.embedded ("/Users/jacob/Library/Caches/JetBrains/Qodana/qodana-QDCPP-253.29649.102-aarch64/CLion.app/Contents/plugins/clion-embedded")
+2026-02-04 12:32:21,479 [    314]   INFO - #c.j.r.p.ReSharperProcess - Idea Plugin: com.intellij.clion.embedded (/Users/jacob/Library/Caches/JetBrains/Qodana/qodana-QDCPP-253.29649.102-aarch64/CLion.app/Contents/plugins/clion-embedded)
+2026-02-04 12:32:21,479 [    314]   INFO - #c.j.r.p.ReSharperProcess - Start analyzing IntelliJ Plugin: com.intellij.clion-makefile ("/Users/jacob/Library/Caches/JetBrains/Qodana/qodana-QDCPP-253.29649.102-aarch64/CLion.app/Contents/plugins/clion-makefile")
+2026-02-04 12:32:21,479 [    314]   INFO - #c.j.r.p.ReSharperProcess - Idea Plugin: com.intellij.clion-makefile (/Users/jacob/Library/Caches/JetBrains/Qodana/qodana-QDCPP-253.29649.102-aarch64/CLion.app/Contents/plugins/clion-makefile)
+2026-02-04 12:32:21,479 [    314]   INFO - #c.j.r.p.ReSharperProcess - Start analyzing IntelliJ Plugin: Git4Idea ("/Users/jacob/Library/Caches/JetBrains/Qodana/qodana-QDCPP-253.29649.102-aarch64/CLion.app/Contents/plugins/vcs-git")
+2026-02-04 12:32:21,479 [    314]   INFO - #c.j.r.p.ReSharperProcess - Idea Plugin: Git4Idea (/Users/jacob/Library/Caches/JetBrains/Qodana/qodana-QDCPP-253.29649.102-aarch64/CLion.app/Contents/plugins/vcs-git)
+2026-02-04 12:32:21,479 [    314]   INFO - #c.j.r.p.ReSharperProcess - Start analyzing IntelliJ Plugin: org.jetbrains.plugins.gitlab ("/Users/jacob/Library/Caches/JetBrains/Qodana/qodana-QDCPP-253.29649.102-aarch64/CLion.app/Contents/plugins/vcs-gitlab")
+2026-02-04 12:32:21,479 [    314]   INFO - #c.j.r.p.ReSharperProcess - Idea Plugin: org.jetbrains.plugins.gitlab (/Users/jacob/Library/Caches/JetBrains/Qodana/qodana-QDCPP-253.29649.102-aarch64/CLion.app/Contents/plugins/vcs-gitlab)
+2026-02-04 12:32:21,479 [    314]   INFO - #c.j.r.p.ReSharperProcess - Start analyzing IntelliJ Plugin: com.intellij.lang.qml ("/Users/jacob/Library/Caches/JetBrains/Qodana/qodana-QDCPP-253.29649.102-aarch64/CLion.app/Contents/plugins/qml-plugin")
+2026-02-04 12:32:21,479 [    314]   INFO - #c.j.r.p.ReSharperProcess - Idea Plugin: com.intellij.lang.qml (/Users/jacob/Library/Caches/JetBrains/Qodana/qodana-QDCPP-253.29649.102-aarch64/CLion.app/Contents/plugins/qml-plugin)
+2026-02-04 12:32:21,479 [    314]   INFO - #c.j.r.p.ReSharperProcess - Start analyzing IntelliJ Plugin: intellij.webpack ("/Users/jacob/Library/Caches/JetBrains/Qodana/qodana-QDCPP-253.29649.102-aarch64/CLion.app/Contents/plugins/webpack")
+2026-02-04 12:32:21,479 [    314]   INFO - #c.j.r.p.ReSharperProcess - Idea Plugin: intellij.webpack (/Users/jacob/Library/Caches/JetBrains/Qodana/qodana-QDCPP-253.29649.102-aarch64/CLion.app/Contents/plugins/webpack)
+2026-02-04 12:32:21,479 [    314]   INFO - #c.j.r.p.ReSharperProcess - Start analyzing IntelliJ Plugin: tslint ("/Users/jacob/Library/Caches/JetBrains/Qodana/qodana-QDCPP-253.29649.102-aarch64/CLion.app/Contents/plugins/tslint")
+2026-02-04 12:32:21,479 [    314]   INFO - #c.j.r.p.ReSharperProcess - Idea Plugin: tslint (/Users/jacob/Library/Caches/JetBrains/Qodana/qodana-QDCPP-253.29649.102-aarch64/CLion.app/Contents/plugins/tslint)
+2026-02-04 12:32:21,479 [    314]   INFO - #c.j.r.p.ReSharperProcess - Start analyzing IntelliJ Plugin: com.intellij.tailwindcss ("/Users/jacob/Library/Caches/JetBrains/Qodana/qodana-QDCPP-253.29649.102-aarch64/CLion.app/Contents/plugins/tailwindcss")
+2026-02-04 12:32:21,479 [    314]   INFO - #c.j.r.p.ReSharperProcess - Idea Plugin: com.intellij.tailwindcss (/Users/jacob/Library/Caches/JetBrains/Qodana/qodana-QDCPP-253.29649.102-aarch64/CLion.app/Contents/plugins/tailwindcss)
+2026-02-04 12:32:21,480 [    315]   INFO - #c.j.r.p.ReSharperProcess - Start analyzing IntelliJ Plugin: com.deadlock.scsyntax ("/Users/jacob/Library/Caches/JetBrains/Qodana/qodana-QDCPP-253.29649.102-aarch64/CLion.app/Contents/plugins/styled-components")
+2026-02-04 12:32:21,480 [    315]   INFO - #c.j.r.p.ReSharperProcess - Idea Plugin: com.deadlock.scsyntax (/Users/jacob/Library/Caches/JetBrains/Qodana/qodana-QDCPP-253.29649.102-aarch64/CLion.app/Contents/plugins/styled-components)
+2026-02-04 12:32:21,480 [    315]   INFO - #c.j.r.p.ReSharperProcess - Start analyzing IntelliJ Plugin: com.intellij.plugins.webcomponents ("/Users/jacob/Library/Caches/JetBrains/Qodana/qodana-QDCPP-253.29649.102-aarch64/CLion.app/Contents/plugins/webComponents")
+2026-02-04 12:32:21,480 [    315]   INFO - #c.j.r.p.ReSharperProcess - Idea Plugin: com.intellij.plugins.webcomponents (/Users/jacob/Library/Caches/JetBrains/Qodana/qodana-QDCPP-253.29649.102-aarch64/CLion.app/Contents/plugins/webComponents)
+2026-02-04 12:32:21,480 [    315]   INFO - #c.j.r.p.ReSharperProcess - Start analyzing IntelliJ Plugin: com.intellij.react ("/Users/jacob/Library/Caches/JetBrains/Qodana/qodana-QDCPP-253.29649.102-aarch64/CLion.app/Contents/plugins/react")
+2026-02-04 12:32:21,480 [    315]   INFO - #c.j.r.p.ReSharperProcess - Idea Plugin: com.intellij.react (/Users/jacob/Library/Caches/JetBrains/Qodana/qodana-QDCPP-253.29649.102-aarch64/CLion.app/Contents/plugins/react)
+2026-02-04 12:32:21,480 [    315]   INFO - #c.j.r.p.ReSharperProcess - Start analyzing IntelliJ Plugin: com.intellij.stylelint ("/Users/jacob/Library/Caches/JetBrains/Qodana/qodana-QDCPP-253.29649.102-aarch64/CLion.app/Contents/plugins/stylelint")
+2026-02-04 12:32:21,480 [    315]   INFO - #c.j.r.p.ReSharperProcess - Idea Plugin: com.intellij.stylelint (/Users/jacob/Library/Caches/JetBrains/Qodana/qodana-QDCPP-253.29649.102-aarch64/CLion.app/Contents/plugins/stylelint)
+2026-02-04 12:32:21,480 [    315]   INFO - #c.j.r.p.ReSharperProcess - Start analyzing IntelliJ Plugin: intellij.vitejs ("/Users/jacob/Library/Caches/JetBrains/Qodana/qodana-QDCPP-253.29649.102-aarch64/CLion.app/Contents/plugins/vitejs")
+2026-02-04 12:32:21,480 [    315]   INFO - #c.j.r.p.ReSharperProcess - Idea Plugin: intellij.vitejs (/Users/jacob/Library/Caches/JetBrains/Qodana/qodana-QDCPP-253.29649.102-aarch64/CLion.app/Contents/plugins/vitejs)
+2026-02-04 12:32:21,480 [    315]   INFO - #c.j.r.p.ReSharperProcess - Start analyzing IntelliJ Plugin: intellij.prettierJS ("/Users/jacob/Library/Caches/JetBrains/Qodana/qodana-QDCPP-253.29649.102-aarch64/CLion.app/Contents/plugins/prettierJS")
+2026-02-04 12:32:21,480 [    315]   INFO - #c.j.r.p.ReSharperProcess - Idea Plugin: intellij.prettierJS (/Users/jacob/Library/Caches/JetBrains/Qodana/qodana-QDCPP-253.29649.102-aarch64/CLion.app/Contents/plugins/prettierJS)
+2026-02-04 12:32:21,480 [    315]   INFO - #c.j.r.p.ReSharperProcess - Start analyzing IntelliJ Plugin: intellij.nextjs ("/Users/jacob/Library/Caches/JetBrains/Qodana/qodana-QDCPP-253.29649.102-aarch64/CLion.app/Contents/plugins/nextjs")
+2026-02-04 12:32:21,480 [    315]   INFO - #c.j.r.p.ReSharperProcess - Idea Plugin: intellij.nextjs (/Users/jacob/Library/Caches/JetBrains/Qodana/qodana-QDCPP-253.29649.102-aarch64/CLion.app/Contents/plugins/nextjs)
+2026-02-04 12:32:21,480 [    315]   INFO - #c.j.r.p.ReSharperProcess - Start analyzing IntelliJ Plugin: Karma ("/Users/jacob/Library/Caches/JetBrains/Qodana/qodana-QDCPP-253.29649.102-aarch64/CLion.app/Contents/plugins/karma")
+2026-02-04 12:32:21,480 [    315]   INFO - #c.j.r.p.ReSharperProcess - Idea Plugin: Karma (/Users/jacob/Library/Caches/JetBrains/Qodana/qodana-QDCPP-253.29649.102-aarch64/CLion.app/Contents/plugins/karma)
+2026-02-04 12:32:21,480 [    315]   INFO - #c.j.r.p.ReSharperProcess - Start analyzing IntelliJ Plugin: NodeJS ("/Users/jacob/Library/Caches/JetBrains/Qodana/qodana-QDCPP-253.29649.102-aarch64/CLion.app/Contents/plugins/nodeJS")
+2026-02-04 12:32:21,480 [    315]   INFO - #c.j.r.p.ReSharperProcess - Idea Plugin: NodeJS (/Users/jacob/Library/Caches/JetBrains/Qodana/qodana-QDCPP-253.29649.102-aarch64/CLion.app/Contents/plugins/nodeJS)
+2026-02-04 12:32:21,480 [    315]   INFO - #c.j.r.p.ReSharperProcess - Start analyzing IntelliJ Plugin: JSIntentionPowerPack ("/Users/jacob/Library/Caches/JetBrains/Qodana/qodana-QDCPP-253.29649.102-aarch64/CLion.app/Contents/plugins/javascript-intentions")
+2026-02-04 12:32:21,480 [    315]   INFO - #c.j.r.p.ReSharperProcess - Idea Plugin: JSIntentionPowerPack (/Users/jacob/Library/Caches/JetBrains/Qodana/qodana-QDCPP-253.29649.102-aarch64/CLion.app/Contents/plugins/javascript-intentions)
+2026-02-04 12:32:21,481 [    316]   INFO - #c.j.r.p.ReSharperProcess - Start analyzing IntelliJ Plugin: com.intellij.configurationScript ("/Users/jacob/Library/Caches/JetBrains/Qodana/qodana-QDCPP-253.29649.102-aarch64/CLion.app/Contents/plugins/configurationScript")
+2026-02-04 12:32:21,481 [    316]   INFO - #c.j.r.p.ReSharperProcess - Idea Plugin: com.intellij.configurationScript (/Users/jacob/Library/Caches/JetBrains/Qodana/qodana-QDCPP-253.29649.102-aarch64/CLion.app/Contents/plugins/configurationScript)
+2026-02-04 12:32:21,481 [    316]   INFO - #c.j.r.p.ReSharperProcess - Start analyzing IntelliJ Plugin: com.jetbrains.linkerscript ("/Users/jacob/Library/Caches/JetBrains/Qodana/qodana-QDCPP-253.29649.102-aarch64/CLion.app/Contents/plugins/cidr-linkerscript")
+2026-02-04 12:32:21,481 [    316]   INFO - #c.j.r.p.ReSharperProcess - Idea Plugin: com.jetbrains.linkerscript (/Users/jacob/Library/Caches/JetBrains/Qodana/qodana-QDCPP-253.29649.102-aarch64/CLion.app/Contents/plugins/cidr-linkerscript)
+2026-02-04 12:32:21,481 [    316]   INFO - #c.j.r.p.ReSharperProcess - Start analyzing IntelliJ Plugin: org.jetbrains.plugins.vue ("/Users/jacob/Library/Caches/JetBrains/Qodana/qodana-QDCPP-253.29649.102-aarch64/CLion.app/Contents/plugins/vuejs-plugin")
+2026-02-04 12:32:21,481 [    316]   INFO - #c.j.r.p.ReSharperProcess - Idea Plugin: org.jetbrains.plugins.vue (/Users/jacob/Library/Caches/JetBrains/Qodana/qodana-QDCPP-253.29649.102-aarch64/CLion.app/Contents/plugins/vuejs-plugin)
+2026-02-04 12:32:21,481 [    316]   INFO - #c.j.r.p.ReSharperProcess - Start analyzing IntelliJ Plugin: org.jetbrains.plugins.clion.test.google ("/Users/jacob/Library/Caches/JetBrains/Qodana/qodana-QDCPP-253.29649.102-aarch64/CLion.app/Contents/plugins/clion-test-google")
+2026-02-04 12:32:21,481 [    316]   INFO - #c.j.r.p.ReSharperProcess - Idea Plugin: org.jetbrains.plugins.clion.test.google (/Users/jacob/Library/Caches/JetBrains/Qodana/qodana-QDCPP-253.29649.102-aarch64/CLion.app/Contents/plugins/clion-test-google)
+2026-02-04 12:32:21,481 [    316]   INFO - #c.j.r.p.ReSharperProcess - Start analyzing IntelliJ Plugin: AngularJS ("/Users/jacob/Library/Caches/JetBrains/Qodana/qodana-QDCPP-253.29649.102-aarch64/CLion.app/Contents/plugins/angular")
+2026-02-04 12:32:21,481 [    316]   INFO - #c.j.r.p.ReSharperProcess - Idea Plugin: AngularJS (/Users/jacob/Library/Caches/JetBrains/Qodana/qodana-QDCPP-253.29649.102-aarch64/CLion.app/Contents/plugins/angular)
+2026-02-04 12:32:21,481 [    316]   INFO - #c.j.r.p.ReSharperProcess - Start analyzing IntelliJ Plugin: com.jetbrains.performancePlugin.async ("/Users/jacob/Library/Caches/JetBrains/Qodana/qodana-QDCPP-253.29649.102-aarch64/CLion.app/Contents/plugins/performanceTesting-async")
+2026-02-04 12:32:21,481 [    316]   INFO - #c.j.r.p.ReSharperProcess - Idea Plugin: com.jetbrains.performancePlugin.async (/Users/jacob/Library/Caches/JetBrains/Qodana/qodana-QDCPP-253.29649.102-aarch64/CLion.app/Contents/plugins/performanceTesting-async)
+2026-02-04 12:32:21,481 [    316]   INFO - #c.j.r.p.ReSharperProcess - - com.jetbrains.performancePlugin.async is disabled, skipping
+2026-02-04 12:32:21,481 [    316]   INFO - #c.j.r.p.ReSharperProcess - Start analyzing IntelliJ Plugin: org.jetbrains.plugins.clion.ctest ("/Users/jacob/Library/Caches/JetBrains/Qodana/qodana-QDCPP-253.29649.102-aarch64/CLion.app/Contents/plugins/clion-test-ctest")
+2026-02-04 12:32:21,481 [    316]   INFO - #c.j.r.p.ReSharperProcess - Idea Plugin: org.jetbrains.plugins.clion.ctest (/Users/jacob/Library/Caches/JetBrains/Qodana/qodana-QDCPP-253.29649.102-aarch64/CLion.app/Contents/plugins/clion-test-ctest)
+2026-02-04 12:32:21,481 [    316]   INFO - #c.j.r.p.ReSharperProcess - - org.jetbrains.plugins.clion.ctest is disabled, skipping
+2026-02-04 12:32:21,481 [    316]   INFO - #c.j.r.p.ReSharperProcess - Start analyzing IntelliJ Plugin: com.jetbrains.gateway ("/Users/jacob/Library/Caches/JetBrains/Qodana/qodana-QDCPP-253.29649.102-aarch64/CLion.app/Contents/plugins/gateway-plugin")
+2026-02-04 12:32:21,481 [    316]   INFO - #c.j.r.p.ReSharperProcess - Idea Plugin: com.jetbrains.gateway (/Users/jacob/Library/Caches/JetBrains/Qodana/qodana-QDCPP-253.29649.102-aarch64/CLion.app/Contents/plugins/gateway-plugin)
+2026-02-04 12:32:21,481 [    316]   INFO - #c.j.r.p.ReSharperProcess - - com.jetbrains.gateway is disabled, skipping
+2026-02-04 12:32:21,481 [    316]   INFO - #c.j.r.p.ReSharperProcess - Start analyzing IntelliJ Plugin: org.jetbrains.plugins.docker.gateway ("/Users/jacob/Library/Caches/JetBrains/Qodana/qodana-QDCPP-253.29649.102-aarch64/CLion.app/Contents/plugins/clouds-docker-gateway")
+2026-02-04 12:32:21,481 [    316]   INFO - #c.j.r.p.ReSharperProcess - Idea Plugin: org.jetbrains.plugins.docker.gateway (/Users/jacob/Library/Caches/JetBrains/Qodana/qodana-QDCPP-253.29649.102-aarch64/CLion.app/Contents/plugins/clouds-docker-gateway)
+2026-02-04 12:32:21,481 [    316]   INFO - #c.j.r.p.ReSharperProcess - - org.jetbrains.plugins.docker.gateway is disabled, skipping
+2026-02-04 12:32:21,481 [    316]   INFO - #c.j.r.p.ReSharperProcess - Start analyzing IntelliJ Plugin: Subversion ("/Users/jacob/Library/Caches/JetBrains/Qodana/qodana-QDCPP-253.29649.102-aarch64/CLion.app/Contents/plugins/vcs-svn")
+2026-02-04 12:32:21,481 [    316]   INFO - #c.j.r.p.ReSharperProcess - Idea Plugin: Subversion (/Users/jacob/Library/Caches/JetBrains/Qodana/qodana-QDCPP-253.29649.102-aarch64/CLion.app/Contents/plugins/vcs-svn)
+2026-02-04 12:32:21,481 [    316]   INFO - #c.j.r.p.ReSharperProcess - - Subversion is disabled, skipping
+2026-02-04 12:32:21,481 [    316]   INFO - #c.j.r.p.ReSharperProcess - Start analyzing IntelliJ Plugin: com.intellij.plugins.qtcreatorkeymap ("/Users/jacob/Library/Caches/JetBrains/Qodana/qodana-QDCPP-253.29649.102-aarch64/CLion.app/Contents/plugins/keymap-qtcreator")
+2026-02-04 12:32:21,481 [    316]   INFO - #c.j.r.p.ReSharperProcess - Idea Plugin: com.intellij.plugins.qtcreatorkeymap (/Users/jacob/Library/Caches/JetBrains/Qodana/qodana-QDCPP-253.29649.102-aarch64/CLion.app/Contents/plugins/keymap-qtcreator)
+2026-02-04 12:32:21,481 [    316]   INFO - #c.j.r.p.ReSharperProcess - - com.intellij.plugins.qtcreatorkeymap is disabled, skipping
+2026-02-04 12:32:21,481 [    316]   INFO - #c.j.r.p.ReSharperProcess - Start analyzing IntelliJ Plugin: com.intellij.plugins.cidr.solarized.colorscheme ("/Users/jacob/Library/Caches/JetBrains/Qodana/qodana-QDCPP-253.29649.102-aarch64/CLion.app/Contents/plugins/color-scheme-solarized-cidr")
+2026-02-04 12:32:21,481 [    316]   INFO - #c.j.r.p.ReSharperProcess - Idea Plugin: com.intellij.plugins.cidr.solarized.colorscheme (/Users/jacob/Library/Caches/JetBrains/Qodana/qodana-QDCPP-253.29649.102-aarch64/CLion.app/Contents/plugins/color-scheme-solarized-cidr)
+2026-02-04 12:32:21,481 [    316]   INFO - #c.j.r.p.ReSharperProcess - - com.intellij.plugins.cidr.solarized.colorscheme is disabled, skipping
+2026-02-04 12:32:21,481 [    316]   INFO - #c.j.r.p.ReSharperProcess - Start analyzing IntelliJ Plugin: com.jetbrains.codeWithMe ("/Users/jacob/Library/Caches/JetBrains/Qodana/qodana-QDCPP-253.29649.102-aarch64/CLion.app/Contents/plugins/cwm-plugin")
+2026-02-04 12:32:21,481 [    316]   INFO - #c.j.r.p.ReSharperProcess - Idea Plugin: com.jetbrains.codeWithMe (/Users/jacob/Library/Caches/JetBrains/Qodana/qodana-QDCPP-253.29649.102-aarch64/CLion.app/Contents/plugins/cwm-plugin)
+2026-02-04 12:32:21,481 [    316]   INFO - #c.j.r.p.ReSharperProcess - - com.jetbrains.codeWithMe is disabled, skipping
+2026-02-04 12:32:21,481 [    316]   INFO - #c.j.r.p.ReSharperProcess - Start analyzing IntelliJ Plugin: com.intellij.plugins.blackboard.colorscheme ("/Users/jacob/Library/Caches/JetBrains/Qodana/qodana-QDCPP-253.29649.102-aarch64/CLion.app/Contents/plugins/color-scheme-blackboard")
+2026-02-04 12:32:21,481 [    316]   INFO - #c.j.r.p.ReSharperProcess - Idea Plugin: com.intellij.plugins.blackboard.colorscheme (/Users/jacob/Library/Caches/JetBrains/Qodana/qodana-QDCPP-253.29649.102-aarch64/CLion.app/Contents/plugins/color-scheme-blackboard)
+2026-02-04 12:32:21,481 [    316]   INFO - #c.j.r.p.ReSharperProcess - - com.intellij.plugins.blackboard.colorscheme is disabled, skipping
+2026-02-04 12:32:21,481 [    316]   INFO - #c.j.r.p.ReSharperProcess - Start analyzing IntelliJ Plugin: PerforceDirectPlugin ("/Users/jacob/Library/Caches/JetBrains/Qodana/qodana-QDCPP-253.29649.102-aarch64/CLion.app/Contents/plugins/vcs-perforce")
+2026-02-04 12:32:21,482 [    317]   INFO - #c.j.r.p.ReSharperProcess - Idea Plugin: PerforceDirectPlugin (/Users/jacob/Library/Caches/JetBrains/Qodana/qodana-QDCPP-253.29649.102-aarch64/CLion.app/Contents/plugins/vcs-perforce)
+2026-02-04 12:32:21,482 [    317]   INFO - #c.j.r.p.ReSharperProcess - - PerforceDirectPlugin is disabled, skipping
+2026-02-04 12:32:21,482 [    317]   INFO - #c.j.r.p.ReSharperProcess - Start analyzing IntelliJ Plugin: com.intellij.plugins.eclipsekeymap ("/Users/jacob/Library/Caches/JetBrains/Qodana/qodana-QDCPP-253.29649.102-aarch64/CLion.app/Contents/plugins/keymap-eclipse")
+2026-02-04 12:32:21,482 [    317]   INFO - #c.j.r.p.ReSharperProcess - Idea Plugin: com.intellij.plugins.eclipsekeymap (/Users/jacob/Library/Caches/JetBrains/Qodana/qodana-QDCPP-253.29649.102-aarch64/CLion.app/Contents/plugins/keymap-eclipse)
+2026-02-04 12:32:21,482 [    317]   INFO - #c.j.r.p.ReSharperProcess - - com.intellij.plugins.eclipsekeymap is disabled, skipping
+2026-02-04 12:32:21,482 [    317]   INFO - #c.j.r.p.ReSharperProcess - Start analyzing IntelliJ Plugin: tanvd.grazi ("/Users/jacob/Library/Caches/JetBrains/Qodana/qodana-QDCPP-253.29649.102-aarch64/CLion.app/Contents/plugins/grazie")
+2026-02-04 12:32:21,482 [    317]   INFO - #c.j.r.p.ReSharperProcess - Idea Plugin: tanvd.grazi (/Users/jacob/Library/Caches/JetBrains/Qodana/qodana-QDCPP-253.29649.102-aarch64/CLion.app/Contents/plugins/grazie)
+2026-02-04 12:32:21,482 [    317]   INFO - #c.j.r.p.ReSharperProcess - - tanvd.grazi is disabled, skipping
+2026-02-04 12:32:21,482 [    317]   INFO - #c.j.r.p.ReSharperProcess - Start analyzing IntelliJ Plugin: com.intellij.plugins.dawm.colorscheme ("/Users/jacob/Library/Caches/JetBrains/Qodana/qodana-QDCPP-253.29649.102-aarch64/CLion.app/Contents/plugins/color-scheme-dawn")
+2026-02-04 12:32:21,482 [    317]   INFO - #c.j.r.p.ReSharperProcess - Idea Plugin: com.intellij.plugins.dawm.colorscheme (/Users/jacob/Library/Caches/JetBrains/Qodana/qodana-QDCPP-253.29649.102-aarch64/CLion.app/Contents/plugins/color-scheme-dawn)
+2026-02-04 12:32:21,482 [    317]   INFO - #c.j.r.p.ReSharperProcess - - com.intellij.plugins.dawm.colorscheme is disabled, skipping
+2026-02-04 12:32:21,482 [    317]   INFO - #c.j.r.p.ReSharperProcess - Start analyzing IntelliJ Plugin: com.intellij.plugins.xcode.colorscheme ("/Users/jacob/Library/Caches/JetBrains/Qodana/qodana-QDCPP-253.29649.102-aarch64/CLion.app/Contents/plugins/color-scheme-xcode")
+2026-02-04 12:32:21,482 [    317]   INFO - #c.j.r.p.ReSharperProcess - Idea Plugin: com.intellij.plugins.xcode.colorscheme (/Users/jacob/Library/Caches/JetBrains/Qodana/qodana-QDCPP-253.29649.102-aarch64/CLion.app/Contents/plugins/color-scheme-xcode)
+2026-02-04 12:32:21,482 [    317]   INFO - #c.j.r.p.ReSharperProcess - - com.intellij.plugins.xcode.colorscheme is disabled, skipping
+2026-02-04 12:32:21,482 [    317]   INFO - #c.j.r.p.ReSharperProcess - Start analyzing IntelliJ Plugin: XPathView ("/Users/jacob/Library/Caches/JetBrains/Qodana/qodana-QDCPP-253.29649.102-aarch64/CLion.app/Contents/plugins/xpath")
+2026-02-04 12:32:21,482 [    317]   INFO - #c.j.r.p.ReSharperProcess - Idea Plugin: XPathView (/Users/jacob/Library/Caches/JetBrains/Qodana/qodana-QDCPP-253.29649.102-aarch64/CLion.app/Contents/plugins/xpath)
+2026-02-04 12:32:21,482 [    317]   INFO - #c.j.r.p.ReSharperProcess - - XPathView is disabled, skipping
+2026-02-04 12:32:21,482 [    317]   INFO - #c.j.r.p.ReSharperProcess - Start analyzing IntelliJ Plugin: com.intellij.plugins.all_hallows_eve.colorscheme ("/Users/jacob/Library/Caches/JetBrains/Qodana/qodana-QDCPP-253.29649.102-aarch64/CLion.app/Contents/plugins/color-scheme-all_hallows_eve")
+2026-02-04 12:32:21,482 [    317]   INFO - #c.j.r.p.ReSharperProcess - Idea Plugin: com.intellij.plugins.all_hallows_eve.colorscheme (/Users/jacob/Library/Caches/JetBrains/Qodana/qodana-QDCPP-253.29649.102-aarch64/CLion.app/Contents/plugins/color-scheme-all_hallows_eve)
+2026-02-04 12:32:21,482 [    317]   INFO - #c.j.r.p.ReSharperProcess - - com.intellij.plugins.all_hallows_eve.colorscheme is disabled, skipping
+2026-02-04 12:32:21,482 [    317]   INFO - #c.j.r.p.ReSharperProcess - Start analyzing IntelliJ Plugin: com.jetbrains.remoteDevServer ("/Users/jacob/Library/Caches/JetBrains/Qodana/qodana-QDCPP-253.29649.102-aarch64/CLion.app/Contents/plugins/remote-dev-server")
+2026-02-04 12:32:21,482 [    317]   INFO - #c.j.r.p.ReSharperProcess - Idea Plugin: com.jetbrains.remoteDevServer (/Users/jacob/Library/Caches/JetBrains/Qodana/qodana-QDCPP-253.29649.102-aarch64/CLion.app/Contents/plugins/remote-dev-server)
+2026-02-04 12:32:21,482 [    317]   INFO - #c.j.r.p.ReSharperProcess - - com.jetbrains.remoteDevServer is disabled, skipping
+2026-02-04 12:32:21,482 [    317]   INFO - #c.j.r.p.ReSharperProcess - Start analyzing IntelliJ Plugin: com.intellij.plugins.espresso.colorscheme ("/Users/jacob/Library/Caches/JetBrains/Qodana/qodana-QDCPP-253.29649.102-aarch64/CLion.app/Contents/plugins/color-scheme-espresso")
+2026-02-04 12:32:21,482 [    317]   INFO - #c.j.r.p.ReSharperProcess - Idea Plugin: com.intellij.plugins.espresso.colorscheme (/Users/jacob/Library/Caches/JetBrains/Qodana/qodana-QDCPP-253.29649.102-aarch64/CLion.app/Contents/plugins/color-scheme-espresso)
+2026-02-04 12:32:21,482 [    317]   INFO - #c.j.r.p.ReSharperProcess - - com.intellij.plugins.espresso.colorscheme is disabled, skipping
+2026-02-04 12:32:21,482 [    317]   INFO - #c.j.r.p.ReSharperProcess - Start analyzing IntelliJ Plugin: com.intellij.ko ("/Users/jacob/Library/Caches/JetBrains/Qodana/qodana-QDCPP-253.29649.102-aarch64/CLion.app/Contents/plugins/localization-ko")
+2026-02-04 12:32:21,482 [    317]   INFO - #c.j.r.p.ReSharperProcess - Idea Plugin: com.intellij.ko (/Users/jacob/Library/Caches/JetBrains/Qodana/qodana-QDCPP-253.29649.102-aarch64/CLion.app/Contents/plugins/localization-ko)
+2026-02-04 12:32:21,482 [    317]   INFO - #c.j.r.p.ReSharperProcess - - com.intellij.ko is disabled, skipping
+2026-02-04 12:32:21,482 [    317]   INFO - #c.j.r.p.ReSharperProcess - Start analyzing IntelliJ Plugin: com.intellij.stats.completion ("/Users/jacob/Library/Caches/JetBrains/Qodana/qodana-QDCPP-253.29649.102-aarch64/CLion.app/Contents/plugins/statsCollector")
+2026-02-04 12:32:21,482 [    317]   INFO - #c.j.r.p.ReSharperProcess - Idea Plugin: com.intellij.stats.completion (/Users/jacob/Library/Caches/JetBrains/Qodana/qodana-QDCPP-253.29649.102-aarch64/CLion.app/Contents/plugins/statsCollector)
+2026-02-04 12:32:21,482 [    317]   INFO - #c.j.r.p.ReSharperProcess - - com.intellij.stats.completion is disabled, skipping
+2026-02-04 12:32:21,482 [    317]   INFO - #c.j.r.p.ReSharperProcess - Start analyzing IntelliJ Plugin: com.intellij.plugins.vibrantink.colorscheme ("/Users/jacob/Library/Caches/JetBrains/Qodana/qodana-QDCPP-253.29649.102-aarch64/CLion.app/Contents/plugins/color-scheme-vibrant_ink")
+2026-02-04 12:32:21,482 [    317]   INFO - #c.j.r.p.ReSharperProcess - Idea Plugin: com.intellij.plugins.vibrantink.colorscheme (/Users/jacob/Library/Caches/JetBrains/Qodana/qodana-QDCPP-253.29649.102-aarch64/CLion.app/Contents/plugins/color-scheme-vibrant_ink)
+2026-02-04 12:32:21,482 [    317]   INFO - #c.j.r.p.ReSharperProcess - - com.intellij.plugins.vibrantink.colorscheme is disabled, skipping
+2026-02-04 12:32:21,482 [    317]   INFO - #c.j.r.p.ReSharperProcess - Start analyzing IntelliJ Plugin: com.intellij.plugins.xcodekeymap ("/Users/jacob/Library/Caches/JetBrains/Qodana/qodana-QDCPP-253.29649.102-aarch64/CLion.app/Contents/plugins/keymap-xcode")
+2026-02-04 12:32:21,482 [    317]   INFO - #c.j.r.p.ReSharperProcess - Idea Plugin: com.intellij.plugins.xcodekeymap (/Users/jacob/Library/Caches/JetBrains/Qodana/qodana-QDCPP-253.29649.102-aarch64/CLion.app/Contents/plugins/keymap-xcode)
+2026-02-04 12:32:21,482 [    317]   INFO - #c.j.r.p.ReSharperProcess - - com.intellij.plugins.xcodekeymap is disabled, skipping
+2026-02-04 12:32:21,482 [    317]   INFO - #c.j.r.p.ReSharperProcess - Start analyzing IntelliJ Plugin: com.intellij.plugins.cobalt.colorscheme ("/Users/jacob/Library/Caches/JetBrains/Qodana/qodana-QDCPP-253.29649.102-aarch64/CLion.app/Contents/plugins/color-scheme-cobalt")
+2026-02-04 12:32:21,482 [    317]   INFO - #c.j.r.p.ReSharperProcess - Idea Plugin: com.intellij.plugins.cobalt.colorscheme (/Users/jacob/Library/Caches/JetBrains/Qodana/qodana-QDCPP-253.29649.102-aarch64/CLion.app/Contents/plugins/color-scheme-cobalt)
+2026-02-04 12:32:21,482 [    317]   INFO - #c.j.r.p.ReSharperProcess - - com.intellij.plugins.cobalt.colorscheme is disabled, skipping
+2026-02-04 12:32:21,482 [    317]   INFO - #c.j.r.p.ReSharperProcess - Start analyzing IntelliJ Plugin: com.intellij.plugins.twilight.colorscheme ("/Users/jacob/Library/Caches/JetBrains/Qodana/qodana-QDCPP-253.29649.102-aarch64/CLion.app/Contents/plugins/color-scheme-twilight")
+2026-02-04 12:32:21,482 [    317]   INFO - #c.j.r.p.ReSharperProcess - Idea Plugin: com.intellij.plugins.twilight.colorscheme (/Users/jacob/Library/Caches/JetBrains/Qodana/qodana-QDCPP-253.29649.102-aarch64/CLion.app/Contents/plugins/color-scheme-twilight)
+2026-02-04 12:32:21,482 [    317]   INFO - #c.j.r.p.ReSharperProcess - - com.intellij.plugins.twilight.colorscheme is disabled, skipping
+2026-02-04 12:32:21,482 [    317]   INFO - #c.j.r.p.ReSharperProcess - Start analyzing IntelliJ Plugin: com.jetbrains.performancePlugin ("/Users/jacob/Library/Caches/JetBrains/Qodana/qodana-QDCPP-253.29649.102-aarch64/CLion.app/Contents/plugins/performanceTesting")
+2026-02-04 12:32:21,482 [    317]   INFO - #c.j.r.p.ReSharperProcess - Idea Plugin: com.jetbrains.performancePlugin (/Users/jacob/Library/Caches/JetBrains/Qodana/qodana-QDCPP-253.29649.102-aarch64/CLion.app/Contents/plugins/performanceTesting)
+2026-02-04 12:32:21,483 [    318]   INFO - #c.j.r.p.ReSharperProcess - - com.jetbrains.performancePlugin is disabled, skipping
+2026-02-04 12:32:21,483 [    318]   INFO - #c.j.r.p.ReSharperProcess - Start analyzing IntelliJ Plugin: com.jetbrains.restClient ("/Users/jacob/Library/Caches/JetBrains/Qodana/qodana-QDCPP-253.29649.102-aarch64/CLion.app/Contents/plugins/restClient")
+2026-02-04 12:32:21,483 [    318]   INFO - #c.j.r.p.ReSharperProcess - Idea Plugin: com.jetbrains.restClient (/Users/jacob/Library/Caches/JetBrains/Qodana/qodana-QDCPP-253.29649.102-aarch64/CLion.app/Contents/plugins/restClient)
+2026-02-04 12:32:21,483 [    318]   INFO - #c.j.r.p.ReSharperProcess - - com.jetbrains.restClient is disabled, skipping
+2026-02-04 12:32:21,483 [    318]   INFO - #c.j.r.p.ReSharperProcess - Start analyzing IntelliJ Plugin: com.intellij.mcpServer ("/Users/jacob/Library/Caches/JetBrains/Qodana/qodana-QDCPP-253.29649.102-aarch64/CLion.app/Contents/plugins/mcpserver")
+2026-02-04 12:32:21,483 [    318]   INFO - #c.j.r.p.ReSharperProcess - Idea Plugin: com.intellij.mcpServer (/Users/jacob/Library/Caches/JetBrains/Qodana/qodana-QDCPP-253.29649.102-aarch64/CLion.app/Contents/plugins/mcpserver)
+2026-02-04 12:32:21,483 [    318]   INFO - #c.j.r.p.ReSharperProcess - - com.intellij.mcpServer is disabled, skipping
+2026-02-04 12:32:21,483 [    318]   INFO - #c.j.r.p.ReSharperProcess - Start analyzing IntelliJ Plugin: com.intellij.completion.ml.ranking ("/Users/jacob/Library/Caches/JetBrains/Qodana/qodana-QDCPP-253.29649.102-aarch64/CLion.app/Contents/plugins/completionMlRanking")
+2026-02-04 12:32:21,483 [    318]   INFO - #c.j.r.p.ReSharperProcess - Idea Plugin: com.intellij.completion.ml.ranking (/Users/jacob/Library/Caches/JetBrains/Qodana/qodana-QDCPP-253.29649.102-aarch64/CLion.app/Contents/plugins/completionMlRanking)
+2026-02-04 12:32:21,483 [    318]   INFO - #c.j.r.p.ReSharperProcess - - com.intellij.completion.ml.ranking is disabled, skipping
+2026-02-04 12:32:21,483 [    318]   INFO - #c.j.r.p.ReSharperProcess - Start analyzing IntelliJ Plugin: com.intellij.plugins.visualstudiokeymap ("/Users/jacob/Library/Caches/JetBrains/Qodana/qodana-QDCPP-253.29649.102-aarch64/CLion.app/Contents/plugins/keymap-visualStudio")
+2026-02-04 12:32:21,483 [    318]   INFO - #c.j.r.p.ReSharperProcess - Idea Plugin: com.intellij.plugins.visualstudiokeymap (/Users/jacob/Library/Caches/JetBrains/Qodana/qodana-QDCPP-253.29649.102-aarch64/CLion.app/Contents/plugins/keymap-visualStudio)
+2026-02-04 12:32:21,483 [    318]   INFO - #c.j.r.p.ReSharperProcess - - com.intellij.plugins.visualstudiokeymap is disabled, skipping
+2026-02-04 12:32:21,483 [    318]   INFO - #c.j.r.p.ReSharperProcess - Start analyzing IntelliJ Plugin: com.intellij.settingsSync ("/Users/jacob/Library/Caches/JetBrains/Qodana/qodana-QDCPP-253.29649.102-aarch64/CLion.app/Contents/plugins/settingsSync")
+2026-02-04 12:32:21,483 [    318]   INFO - #c.j.r.p.ReSharperProcess - Idea Plugin: com.intellij.settingsSync (/Users/jacob/Library/Caches/JetBrains/Qodana/qodana-QDCPP-253.29649.102-aarch64/CLion.app/Contents/plugins/settingsSync)
+2026-02-04 12:32:21,483 [    318]   INFO - #c.j.r.p.ReSharperProcess - - com.intellij.settingsSync is disabled, skipping
+2026-02-04 12:32:21,483 [    318]   INFO - #c.j.r.p.ReSharperProcess - Start analyzing IntelliJ Plugin: com.intellij.tasks.timeTracking ("/Users/jacob/Library/Caches/JetBrains/Qodana/qodana-QDCPP-253.29649.102-aarch64/CLion.app/Contents/plugins/tasks-timeTracking")
+2026-02-04 12:32:21,483 [    318]   INFO - #c.j.r.p.ReSharperProcess - Idea Plugin: com.intellij.tasks.timeTracking (/Users/jacob/Library/Caches/JetBrains/Qodana/qodana-QDCPP-253.29649.102-aarch64/CLion.app/Contents/plugins/tasks-timeTracking)
+2026-02-04 12:32:21,483 [    318]   INFO - #c.j.r.p.ReSharperProcess - - com.intellij.tasks.timeTracking is disabled, skipping
+2026-02-04 12:32:21,483 [    318]   INFO - #c.j.r.p.ReSharperProcess - Start analyzing IntelliJ Plugin: com.intellij.plugins.github.colorscheme ("/Users/jacob/Library/Caches/JetBrains/Qodana/qodana-QDCPP-253.29649.102-aarch64/CLion.app/Contents/plugins/color-scheme-github")
+2026-02-04 12:32:21,483 [    318]   INFO - #c.j.r.p.ReSharperProcess - Idea Plugin: com.intellij.plugins.github.colorscheme (/Users/jacob/Library/Caches/JetBrains/Qodana/qodana-QDCPP-253.29649.102-aarch64/CLion.app/Contents/plugins/color-scheme-github)
+2026-02-04 12:32:21,483 [    318]   INFO - #c.j.r.p.ReSharperProcess - - com.intellij.plugins.github.colorscheme is disabled, skipping
+2026-02-04 12:32:21,483 [    318]   INFO - #c.j.r.p.ReSharperProcess - Start analyzing IntelliJ Plugin: com.intellij.plugins.resharperkeymap ("/Users/jacob/Library/Caches/JetBrains/Qodana/qodana-QDCPP-253.29649.102-aarch64/CLion.app/Contents/plugins/keymap-resharper")
+2026-02-04 12:32:21,483 [    318]   INFO - #c.j.r.p.ReSharperProcess - Idea Plugin: com.intellij.plugins.resharperkeymap (/Users/jacob/Library/Caches/JetBrains/Qodana/qodana-QDCPP-253.29649.102-aarch64/CLion.app/Contents/plugins/keymap-resharper)
+2026-02-04 12:32:21,483 [    318]   INFO - #c.j.r.p.ReSharperProcess - - com.intellij.plugins.resharperkeymap is disabled, skipping
+2026-02-04 12:32:21,483 [    318]   INFO - #c.j.r.p.ReSharperProcess - Start analyzing IntelliJ Plugin: com.jetbrains.station ("/Users/jacob/Library/Caches/JetBrains/Qodana/qodana-QDCPP-253.29649.102-aarch64/CLion.app/Contents/plugins/station-plugin")
+2026-02-04 12:32:21,483 [    318]   INFO - #c.j.r.p.ReSharperProcess - Idea Plugin: com.jetbrains.station (/Users/jacob/Library/Caches/JetBrains/Qodana/qodana-QDCPP-253.29649.102-aarch64/CLion.app/Contents/plugins/station-plugin)
+2026-02-04 12:32:21,483 [    318]   INFO - #c.j.r.p.ReSharperProcess - - com.jetbrains.station is disabled, skipping
+2026-02-04 12:32:21,483 [    318]   INFO - #c.j.r.p.ReSharperProcess - Start analyzing IntelliJ Plugin: intellij.platform.ijent.impl ("/Users/jacob/Library/Caches/JetBrains/Qodana/qodana-QDCPP-253.29649.102-aarch64/CLion.app/Contents/plugins/platform-ijent-impl")
+2026-02-04 12:32:21,483 [    318]   INFO - #c.j.r.p.ReSharperProcess - Idea Plugin: intellij.platform.ijent.impl (/Users/jacob/Library/Caches/JetBrains/Qodana/qodana-QDCPP-253.29649.102-aarch64/CLion.app/Contents/plugins/platform-ijent-impl)
+2026-02-04 12:32:21,483 [    318]   INFO - #c.j.r.p.ReSharperProcess - - intellij.platform.ijent.impl is disabled, skipping
+2026-02-04 12:32:21,483 [    318]   INFO - #c.j.r.p.ReSharperProcess - Start analyzing IntelliJ Plugin: training ("/Users/jacob/Library/Caches/JetBrains/Qodana/qodana-QDCPP-253.29649.102-aarch64/CLion.app/Contents/plugins/featuresTrainer")
+2026-02-04 12:32:21,483 [    318]   INFO - #c.j.r.p.ReSharperProcess - Idea Plugin: training (/Users/jacob/Library/Caches/JetBrains/Qodana/qodana-QDCPP-253.29649.102-aarch64/CLion.app/Contents/plugins/featuresTrainer)
+2026-02-04 12:32:21,483 [    318]   INFO - #c.j.r.p.ReSharperProcess - - training is disabled, skipping
+2026-02-04 12:32:21,483 [    318]   INFO - #c.j.r.p.ReSharperProcess - Start analyzing IntelliJ Plugin: com.intellij.diagram ("/Users/jacob/Library/Caches/JetBrains/Qodana/qodana-QDCPP-253.29649.102-aarch64/CLion.app/Contents/plugins/uml")
+2026-02-04 12:32:21,483 [    318]   INFO - #c.j.r.p.ReSharperProcess - Idea Plugin: com.intellij.diagram (/Users/jacob/Library/Caches/JetBrains/Qodana/qodana-QDCPP-253.29649.102-aarch64/CLion.app/Contents/plugins/uml)
+2026-02-04 12:32:21,483 [    318]   INFO - #c.j.r.p.ReSharperProcess - - com.intellij.diagram is disabled, skipping
+2026-02-04 12:32:21,483 [    318]   INFO - #c.j.r.p.ReSharperProcess - Start analyzing IntelliJ Plugin: com.intellij.plugins.netbeanskeymap ("/Users/jacob/Library/Caches/JetBrains/Qodana/qodana-QDCPP-253.29649.102-aarch64/CLion.app/Contents/plugins/keymap-netbeans")
+2026-02-04 12:32:21,483 [    318]   INFO - #c.j.r.p.ReSharperProcess - Idea Plugin: com.intellij.plugins.netbeanskeymap (/Users/jacob/Library/Caches/JetBrains/Qodana/qodana-QDCPP-253.29649.102-aarch64/CLion.app/Contents/plugins/keymap-netbeans)
+2026-02-04 12:32:21,483 [    318]   INFO - #c.j.r.p.ReSharperProcess - - com.intellij.plugins.netbeanskeymap is disabled, skipping
+2026-02-04 12:32:21,483 [    318]   INFO - #c.j.r.p.ReSharperProcess - Start analyzing IntelliJ Plugin: hg4idea ("/Users/jacob/Library/Caches/JetBrains/Qodana/qodana-QDCPP-253.29649.102-aarch64/CLion.app/Contents/plugins/vcs-hg")
+2026-02-04 12:32:21,483 [    318]   INFO - #c.j.r.p.ReSharperProcess - Idea Plugin: hg4idea (/Users/jacob/Library/Caches/JetBrains/Qodana/qodana-QDCPP-253.29649.102-aarch64/CLion.app/Contents/plugins/vcs-hg)
+2026-02-04 12:32:21,483 [    318]   INFO - #c.j.r.p.ReSharperProcess - - hg4idea is disabled, skipping
+2026-02-04 12:32:21,483 [    318]   INFO - #c.j.r.p.ReSharperProcess - Start analyzing IntelliJ Plugin: intellij.clion.embedded.platformio ("/Users/jacob/Library/Caches/JetBrains/Qodana/qodana-QDCPP-253.29649.102-aarch64/CLion.app/Contents/plugins/clion-embedded-platformio")
+2026-02-04 12:32:21,483 [    318]   INFO - #c.j.r.p.ReSharperProcess - Idea Plugin: intellij.clion.embedded.platformio (/Users/jacob/Library/Caches/JetBrains/Qodana/qodana-QDCPP-253.29649.102-aarch64/CLion.app/Contents/plugins/clion-embedded-platformio)
+2026-02-04 12:32:21,483 [    318]   INFO - #c.j.r.p.ReSharperProcess - - intellij.clion.embedded.platformio is disabled, skipping
+2026-02-04 12:32:21,483 [    318]   INFO - #c.j.r.p.ReSharperProcess - Start analyzing IntelliJ Plugin: com.intellij.tasks ("/Users/jacob/Library/Caches/JetBrains/Qodana/qodana-QDCPP-253.29649.102-aarch64/CLion.app/Contents/plugins/tasks")
+2026-02-04 12:32:21,483 [    318]   INFO - #c.j.r.p.ReSharperProcess - Idea Plugin: com.intellij.tasks (/Users/jacob/Library/Caches/JetBrains/Qodana/qodana-QDCPP-253.29649.102-aarch64/CLion.app/Contents/plugins/tasks)
+2026-02-04 12:32:21,483 [    318]   INFO - #c.j.r.p.ReSharperProcess - - com.intellij.tasks is disabled, skipping
+2026-02-04 12:32:21,484 [    319]   INFO - #c.j.r.p.ReSharperProcess - Start analyzing IntelliJ Plugin: com.intellij.cidr.lang ("/Users/jacob/Library/Caches/JetBrains/Qodana/qodana-QDCPP-253.29649.102-aarch64/CLion.app/Contents/plugins/c")
+2026-02-04 12:32:21,484 [    319]   INFO - #c.j.r.p.ReSharperProcess - Idea Plugin: com.intellij.cidr.lang (/Users/jacob/Library/Caches/JetBrains/Qodana/qodana-QDCPP-253.29649.102-aarch64/CLion.app/Contents/plugins/c)
+2026-02-04 12:32:21,484 [    319]   INFO - #c.j.r.p.ReSharperProcess - - com.intellij.cidr.lang is disabled, skipping
+2026-02-04 12:32:21,484 [    319]   INFO - #c.j.r.p.ReSharperProcess - Start analyzing IntelliJ Plugin: org.jetbrains.plugins.node-remote-interpreter ("/Users/jacob/Library/Caches/JetBrains/Qodana/qodana-QDCPP-253.29649.102-aarch64/CLion.app/Contents/plugins/nodeJS-remoteInterpreter")
+2026-02-04 12:32:21,484 [    319]   INFO - #c.j.r.p.ReSharperProcess - Idea Plugin: org.jetbrains.plugins.node-remote-interpreter (/Users/jacob/Library/Caches/JetBrains/Qodana/qodana-QDCPP-253.29649.102-aarch64/CLion.app/Contents/plugins/nodeJS-remoteInterpreter)
+2026-02-04 12:32:21,484 [    319]   INFO - #c.j.r.p.ReSharperProcess - - org.jetbrains.plugins.node-remote-interpreter is disabled, skipping
+2026-02-04 12:32:21,484 [    319]   INFO - #c.j.r.p.ReSharperProcess - Start analyzing IntelliJ Plugin: com.intellij.plugins.rails_casts.colorscheme ("/Users/jacob/Library/Caches/JetBrains/Qodana/qodana-QDCPP-253.29649.102-aarch64/CLion.app/Contents/plugins/color-scheme-rails_casts")
+2026-02-04 12:32:21,484 [    319]   INFO - #c.j.r.p.ReSharperProcess - Idea Plugin: com.intellij.plugins.rails_casts.colorscheme (/Users/jacob/Library/Caches/JetBrains/Qodana/qodana-QDCPP-253.29649.102-aarch64/CLion.app/Contents/plugins/color-scheme-rails_casts)
+2026-02-04 12:32:21,484 [    319]   INFO - #c.j.r.p.ReSharperProcess - - com.intellij.plugins.rails_casts.colorscheme is disabled, skipping
+2026-02-04 12:32:21,484 [    319]   INFO - #c.j.r.p.ReSharperProcess - Start analyzing IntelliJ Plugin: org.intellij.plugins.markdown ("/Users/jacob/Library/Caches/JetBrains/Qodana/qodana-QDCPP-253.29649.102-aarch64/CLion.app/Contents/plugins/markdown")
+2026-02-04 12:32:21,484 [    319]   INFO - #c.j.r.p.ReSharperProcess - Idea Plugin: org.intellij.plugins.markdown (/Users/jacob/Library/Caches/JetBrains/Qodana/qodana-QDCPP-253.29649.102-aarch64/CLion.app/Contents/plugins/markdown)
+2026-02-04 12:32:21,484 [    319]   INFO - #c.j.r.p.ReSharperProcess - - org.intellij.plugins.markdown is disabled, skipping
+2026-02-04 12:32:21,484 [    319]   INFO - #c.j.r.p.ReSharperProcess - Start analyzing IntelliJ Plugin: com.jetbrains.rust ("/Users/jacob/Library/Caches/JetBrains/Qodana/qodana-QDCPP-253.29649.102-aarch64/CLion.app/Contents/plugins/intellij-rust")
+2026-02-04 12:32:21,484 [    319]   INFO - #c.j.r.p.ReSharperProcess - Idea Plugin: com.jetbrains.rust (/Users/jacob/Library/Caches/JetBrains/Qodana/qodana-QDCPP-253.29649.102-aarch64/CLion.app/Contents/plugins/intellij-rust)
+2026-02-04 12:32:21,484 [    319]   INFO - #c.j.r.p.ReSharperProcess - - com.jetbrains.rust is disabled, skipping
+2026-02-04 12:32:21,484 [    319]   INFO - #c.j.r.p.ReSharperProcess - Start analyzing IntelliJ Plugin: com.intellij.plugins.warmneon.colorscheme ("/Users/jacob/Library/Caches/JetBrains/Qodana/qodana-QDCPP-253.29649.102-aarch64/CLion.app/Contents/plugins/color-scheme-warmNeon")
+2026-02-04 12:32:21,484 [    319]   INFO - #c.j.r.p.ReSharperProcess - Idea Plugin: com.intellij.plugins.warmneon.colorscheme (/Users/jacob/Library/Caches/JetBrains/Qodana/qodana-QDCPP-253.29649.102-aarch64/CLion.app/Contents/plugins/color-scheme-warmNeon)
+2026-02-04 12:32:21,484 [    319]   INFO - #c.j.r.p.ReSharperProcess - - com.intellij.plugins.warmneon.colorscheme is disabled, skipping
+2026-02-04 12:32:21,484 [    319]   INFO - #c.j.r.p.ReSharperProcess - Start analyzing IntelliJ Plugin: intellij.git.commit.modal ("/Users/jacob/Library/Caches/JetBrains/Qodana/qodana-QDCPP-253.29649.102-aarch64/CLion.app/Contents/plugins/vcs-git-commit-modal")
+2026-02-04 12:32:21,484 [    319]   INFO - #c.j.r.p.ReSharperProcess - Idea Plugin: intellij.git.commit.modal (/Users/jacob/Library/Caches/JetBrains/Qodana/qodana-QDCPP-253.29649.102-aarch64/CLion.app/Contents/plugins/vcs-git-commit-modal)
+2026-02-04 12:32:21,484 [    319]   INFO - #c.j.r.p.ReSharperProcess - - intellij.git.commit.modal is disabled, skipping
+2026-02-04 12:32:21,484 [    319]   INFO - #c.j.r.p.ReSharperProcess - Start analyzing IntelliJ Plugin: com.intellij.completion.evaluation ("/Users/jacob/Library/Caches/JetBrains/Qodana/qodana-QDCPP-253.29649.102-aarch64/CLion.app/Contents/plugins/evaluationPlugin")
+2026-02-04 12:32:21,484 [    319]   INFO - #c.j.r.p.ReSharperProcess - Idea Plugin: com.intellij.completion.evaluation (/Users/jacob/Library/Caches/JetBrains/Qodana/qodana-QDCPP-253.29649.102-aarch64/CLion.app/Contents/plugins/evaluationPlugin)
+2026-02-04 12:32:21,484 [    319]   INFO - #c.j.r.p.ReSharperProcess - - com.intellij.completion.evaluation is disabled, skipping
+2026-02-04 12:32:21,484 [    319]   INFO - #c.j.r.p.ReSharperProcess - Start analyzing IntelliJ Plugin: com.intellij.clion.performanceTesting ("/Users/jacob/Library/Caches/JetBrains/Qodana/qodana-QDCPP-253.29649.102-aarch64/CLion.app/Contents/plugins/clion-performanceTesting")
+2026-02-04 12:32:21,484 [    319]   INFO - #c.j.r.p.ReSharperProcess - Idea Plugin: com.intellij.clion.performanceTesting (/Users/jacob/Library/Caches/JetBrains/Qodana/qodana-QDCPP-253.29649.102-aarch64/CLion.app/Contents/plugins/clion-performanceTesting)
+2026-02-04 12:32:21,484 [    319]   INFO - #c.j.r.p.ReSharperProcess - - com.intellij.clion.performanceTesting is disabled, skipping
+2026-02-04 12:32:21,484 [    319]   INFO - #c.j.r.p.ReSharperProcess - Start analyzing IntelliJ Plugin: com.intellij.searcheverywhere.ml ("/Users/jacob/Library/Caches/JetBrains/Qodana/qodana-QDCPP-253.29649.102-aarch64/CLion.app/Contents/plugins/searchEverywhereMl")
+2026-02-04 12:32:21,484 [    319]   INFO - #c.j.r.p.ReSharperProcess - Idea Plugin: com.intellij.searcheverywhere.ml (/Users/jacob/Library/Caches/JetBrains/Qodana/qodana-QDCPP-253.29649.102-aarch64/CLion.app/Contents/plugins/searchEverywhereMl)
+2026-02-04 12:32:21,484 [    319]   INFO - #c.j.r.p.ReSharperProcess - - com.intellij.searcheverywhere.ml is disabled, skipping
+2026-02-04 12:32:21,484 [    319]   INFO - #c.j.r.p.ReSharperProcess - Start analyzing IntelliJ Plugin: com.intellij.plugins.monokai.colorscheme ("/Users/jacob/Library/Caches/JetBrains/Qodana/qodana-QDCPP-253.29649.102-aarch64/CLion.app/Contents/plugins/color-scheme-monokai")
+2026-02-04 12:32:21,484 [    319]   INFO - #c.j.r.p.ReSharperProcess - Idea Plugin: com.intellij.plugins.monokai.colorscheme (/Users/jacob/Library/Caches/JetBrains/Qodana/qodana-QDCPP-253.29649.102-aarch64/CLion.app/Contents/plugins/color-scheme-monokai)
+2026-02-04 12:32:21,484 [    319]   INFO - #c.j.r.p.ReSharperProcess - - com.intellij.plugins.monokai.colorscheme is disabled, skipping
+2026-02-04 12:32:21,484 [    319]   INFO - #c.j.r.p.ReSharperProcess - Start analyzing IntelliJ Plugin: org.jetbrains.plugins.textmate ("/Users/jacob/Library/Caches/JetBrains/Qodana/qodana-QDCPP-253.29649.102-aarch64/CLion.app/Contents/plugins/textmate-plugin")
+2026-02-04 12:32:21,484 [    319]   INFO - #c.j.r.p.ReSharperProcess - Idea Plugin: org.jetbrains.plugins.textmate (/Users/jacob/Library/Caches/JetBrains/Qodana/qodana-QDCPP-253.29649.102-aarch64/CLion.app/Contents/plugins/textmate-plugin)
+2026-02-04 12:32:21,484 [    319]   INFO - #c.j.r.p.ReSharperProcess - - org.jetbrains.plugins.textmate is disabled, skipping
+2026-02-04 12:32:21,484 [    319]   INFO - #c.j.r.p.ReSharperProcess - Start analyzing IntelliJ Plugin: SerialPortMonitor ("/Users/jacob/Library/Caches/JetBrains/Qodana/qodana-QDCPP-253.29649.102-aarch64/CLion.app/Contents/plugins/serial-monitor")
+2026-02-04 12:32:21,484 [    319]   INFO - #c.j.r.p.ReSharperProcess - Idea Plugin: SerialPortMonitor (/Users/jacob/Library/Caches/JetBrains/Qodana/qodana-QDCPP-253.29649.102-aarch64/CLion.app/Contents/plugins/serial-monitor)
+2026-02-04 12:32:21,484 [    319]   INFO - #c.j.r.p.ReSharperProcess - - SerialPortMonitor is disabled, skipping
+2026-02-04 12:32:21,484 [    319]   INFO - #c.j.r.p.ReSharperProcess - Start analyzing IntelliJ Plugin: org.jetbrains.completion.full.line ("/Users/jacob/Library/Caches/JetBrains/Qodana/qodana-QDCPP-253.29649.102-aarch64/CLion.app/Contents/plugins/fullLine")
+2026-02-04 12:32:21,484 [    319]   INFO - #c.j.r.p.ReSharperProcess - Idea Plugin: org.jetbrains.completion.full.line (/Users/jacob/Library/Caches/JetBrains/Qodana/qodana-QDCPP-253.29649.102-aarch64/CLion.app/Contents/plugins/fullLine)
+2026-02-04 12:32:21,484 [    319]   INFO - #c.j.r.p.ReSharperProcess - - org.jetbrains.completion.full.line is disabled, skipping
+2026-02-04 12:32:21,484 [    319]   INFO - #c.j.r.p.ReSharperProcess - Start analyzing IntelliJ Plugin: org.jetbrains.plugins.github ("/Users/jacob/Library/Caches/JetBrains/Qodana/qodana-QDCPP-253.29649.102-aarch64/CLion.app/Contents/plugins/vcs-github")
+2026-02-04 12:32:21,484 [    319]   INFO - #c.j.r.p.ReSharperProcess - Idea Plugin: org.jetbrains.plugins.github (/Users/jacob/Library/Caches/JetBrains/Qodana/qodana-QDCPP-253.29649.102-aarch64/CLion.app/Contents/plugins/vcs-github)
+2026-02-04 12:32:21,484 [    319]   INFO - #c.j.r.p.ReSharperProcess - - org.jetbrains.plugins.github is disabled, skipping
+2026-02-04 12:32:21,484 [    319]   INFO - #c.j.r.p.ReSharperProcess - Start analyzing IntelliJ Plugin: com.intellij.completion.ml.ranking.models ("/Users/jacob/Library/Caches/JetBrains/Qodana/qodana-QDCPP-253.29649.102-aarch64/CLion.app/Contents/plugins/completionMlRankingModels")
+2026-02-04 12:32:21,484 [    319]   INFO - #c.j.r.p.ReSharperProcess - Idea Plugin: com.intellij.completion.ml.ranking.models (/Users/jacob/Library/Caches/JetBrains/Qodana/qodana-QDCPP-253.29649.102-aarch64/CLion.app/Contents/plugins/completionMlRankingModels)
+2026-02-04 12:32:21,484 [    319]   INFO - #c.j.r.p.ReSharperProcess - - com.intellij.completion.ml.ranking.models is disabled, skipping
+2026-02-04 12:32:21,484 [    319]   INFO - #c.j.r.p.ReSharperProcess - Starting resharper settings import
+2026-02-04 12:32:21,484 [    319]   INFO - #c.j.r.AssemblyExecutionContext$Companion - SET DOTNET_GCHeapCount = 2
+2026-02-04 12:32:21,523 [    358]   INFO - #c.j.r.p.LocaleHelper - Cache locale file doesn't exist. return default value
+2026-02-04 12:32:21,523 [    358]   INFO - #c.j.r.p.ReSharperProcess - Start /Users/jacob/Library/Caches/JetBrains/Qodana/qodana-QDCPP-253.29649.102-aarch64/CLion.app/Contents/plugins/clion-radler/DotFiles/macos-arm64/Rider.Backend --runtimeconfig /Users/jacob/Library/Caches/JetBrains/Qodana/qodana-QDCPP-253.29649.102-aarch64/CLion.app/Contents/plugins/clion-radler/DotFiles/Rider.Backend.netcore.runtimeconfig.json --Port=58660
+2026-02-04 12:32:21,536 [    371]   INFO - #c.j.r.p.ReSharperProcess - Log directory created: /tmp/resultdir/log
+2026-02-04 12:32:21,540 [    375]   INFO - #c.j.r.p.ReSharperProcess - Rider backend PID: 17038
+2026-02-04 12:32:21,541 [    376]   INFO - #c.j.r.p.ProtocolManager - Create protocol host...
+2026-02-04 12:32:21,542 [    377]   INFO - c.i.p.i.IdeFingerprint - Calculated dependencies fingerprint in 123 ms (hash=2vu43k92dbxo6, buildTime=1770204741, appVersion=QDCPP-253.29649)
+2026-02-04 12:32:21,567 [    402]   INFO - #c.i.o.u.LowMemoryWatcherManager - Use ExponentiallySmoothingTracker(90000 ms)
+2026-02-04 12:32:21,570 [    405]   INFO - #c.i.o.u.LowMemoryWatcherManager - Subscribing to MemoryPool[G1 Old Gen]{max: 48117055488, threshold: 45711200256 (0.95 * max)}
+2026-02-04 12:32:21,573 [    408]   INFO - #c.i.o.u.LowMemoryWatcherManager - Schedule GC-time updating: each 15000ms
+2026-02-04 12:32:21,611 [    446]   INFO - #c.i.p.e.i.f.EelMultiRoutingFileSystemBackendInitializationService - Eel MultiRoutingFileSystem backend is initialized
+2026-02-04 12:32:21,627 [    462]   INFO - #c.i.a.o.PathMacrosImpl - Loaded path macros: {}
+2026-02-04 12:32:21,641 [    476]   INFO - #c.i.o.v.n.i.VfsData - Use SoftReference in VFS cache: true
+2026-02-04 12:32:21,672 [    507]   INFO - c.i.o.u.r.overrides - Plugin org.jetbrains.plugins.clion.radler overrides the registry key code.vision.performance.watcher.enabled declared by plugin com.intellij.
+2026-02-04 12:32:21,672 [    507]   WARN - c.i.o.u.r.overrides - Conflicting registry key definition for key rd.client.patch.engine.enable.unique.document.id: it was defined by plugin org.jetbrains.plugins.clion.radler but redefined by plugin org.jetbrains.plugins.clion.radler. Consider adding overrides="true" for one of the plugins, see the documentation for com.intellij.openapi.util.registry.RegistryKeyBean.overrides for more details.
+2026-02-04 12:32:21,672 [    507]   INFO - c.i.o.u.r.overrides - Plugin org.jetbrains.plugins.clion.radler overrides the registry key rdclient.patch.engine.new.async.request.executor.enabled declared by plugin org.jetbrains.plugins.clion.radler.
+2026-02-04 12:32:21,676 [    511]   INFO - #c.i.o.v.n.p.PersistentFSLoader - VFS uses names enumerator over mmapped file
+2026-02-04 12:32:21,676 [    511]   INFO - c.i.o.u.r.overrides - Plugin org.jetbrains.plugins.clion.radler overrides the registry key rd.enable.call.hierarchy declared by plugin org.jetbrains.plugins.clion.radler.
+2026-02-04 12:32:21,676 [    511]   INFO - c.i.o.u.r.overrides - Plugin org.jetbrains.plugins.clion.radler overrides the registry key rdclient.patch.engine.enabled declared by plugin org.jetbrains.plugins.clion.radler.
+2026-02-04 12:32:21,676 [    511]   INFO - c.i.o.u.r.overrides - Plugin org.jetbrains.plugins.clion.radler overrides the registry key rdct.new.async.actions.fastUpdate declared by plugin com.intellij.
+2026-02-04 12:32:21,676 [    511]   INFO - c.i.o.u.r.overrides - Plugin org.jetbrains.plugins.clion.radler overrides the registry key rdct.new.async.actions.delegation declared by plugin org.jetbrains.plugins.clion.radler.
+2026-02-04 12:32:21,676 [    511]   INFO - #c.i.o.v.n.p.PersistentFSLoader - VFS uses streamlined attributes storage (over mmapped file)
+2026-02-04 12:32:21,676 [    511]   INFO - c.i.o.u.r.overrides - Plugin org.jetbrains.plugins.clion.radler overrides the registry key resharper.cpp.frontend.typing.assist.enabled declared by plugin org.jetbrains.plugins.clion.radler.
+2026-02-04 12:32:21,676 [    511]   INFO - c.i.o.u.r.overrides - Plugin org.jetbrains.plugins.clion.radler overrides the registry key rider.cpp.enable.ctd declared by plugin org.jetbrains.plugins.clion.radler.
+2026-02-04 12:32:21,676 [    511]   INFO - #c.i.o.v.n.p.PersistentFSLoader - VFS uses OverMMappedFile(pageSize=67108864, acquireStorageOwnership=true) storage for main file records table
+2026-02-04 12:32:21,678 [    513]   INFO - #c.i.o.v.n.p.PersistentFSLoader - VFS uses content storage over memory-mapped file, with compression algo: LZ4[ > 8000b ]
+2026-02-04 12:32:21,701 [    536]   INFO - #c.i.c.r.c.l.RadInitialConfigurator - Starting initial configuration...
+2026-02-04 12:32:21,702 [    537]   INFO - #c.i.p.k.b.BackendKernelServiceKt - Backend started Kernel
+2026-02-04 12:32:21,703 [    538]   INFO - #c.i.o.v.n.p.PersistentFSLoader - VFS: impl (expected) version=846400, 69547 file records, 20 content blobs
+2026-02-04 12:32:21,705 [    540]   INFO - #c.i.l.LocalizationStateServiceImpl - [i18n] Localization property from registry is null
+2026-02-04 12:32:21,706 [    541]   INFO - #c.i.i.p.ExpiredPluginsState - Plugins to skip: []
+2026-02-04 12:32:21,708 [    543]   INFO - #c.i.i.s.StatisticsRegionSettingsServiceImpl - Statistics. Region code is europe
+2026-02-04 12:32:21,709 [    544]   INFO - #c.j.r.p.ProtocolManagerInitializer - Initialize protocol manager...
+2026-02-04 12:32:21,709 [    544]   INFO - #c.j.r.p.ProtocolManager - Initialize protocol manager
+2026-02-04 12:32:21,709 [    544]   INFO - #c.j.r.p.ProtocolManager - Initialize 1 hosts
+2026-02-04 12:32:21,714 [    549]   INFO - #c.i.o.v.n.p.FSRecordsImpl - VFS initialized: 41 ms, 0 failed attempts, 0 error(s) were recovered
+2026-02-04 12:32:21,717 [    552]   INFO - #c.i.p.trialPromotion - IDE is not managed
+2026-02-04 12:32:21,717 [    552]   INFO - #c.i.c.l.CLionLanguagePluginSwitcherService - Using Radler C/C++ language engine
+2026-02-04 12:32:21,717 [    552]   INFO - #c.i.c.l.CLionLanguagePluginSwitcherService - isRemoteDevHost = false
+2026-02-04 12:32:21,723 [    558]   INFO - #c.i.i.s.e.StatisticsEventLoggerProvider - Initialize event logger provider for 'FUS'
+2026-02-04 12:32:21,724 [    559]   INFO - #c.i.o.v.n.p.PersistentFSImpl - VFS.MAX_FILE_LENGTH_TO_CACHE: 1048576
+2026-02-04 12:32:21,726 [    561]   INFO - #c.i.i.s.e.StatisticsEventLoggerProvider - Initialize event logger provider for 'MP'
+2026-02-04 12:32:21,726 [    561]   INFO - #c.i.i.s.e.StatisticsEventLoggerProvider - Initialize event logger provider for 'TRACE'
+2026-02-04 12:32:21,727 [    562]   INFO - #c.i.i.s.e.StatisticsEventLoggerProvider - Initialize event logger provider for 'ML'
+2026-02-04 12:32:21,734 [    569]   INFO - #c.i.o.v.n.p.FSRecordsImpl - VFS scanned: file-by-name index was populated
+2026-02-04 12:32:21,768 [    603]   INFO - #c.i.o.v.n.p.FSRecords - VFS health-check enabled: first after 600000 ms, and each following 43200000 ms, wrap in RA: true
+2026-02-04 12:32:21,771 [    606]   INFO - #c.j.r.u.i.LogCleanupActivity - Log directory cleanup started for directory: /private/tmp/resultdir/log, files older than PT72H
+2026-02-04 12:32:21,773 [    608]   INFO - #c.j.r.u.i.LogCleanupActivity - Log directory cleanup finished
+2026-02-04 12:32:21,780 [    615]   INFO - #c.j.r.p.DelayedServerWire - Start delivering messages for wire: FrontendToBackend
+2026-02-04 12:32:21,806 [    641]   INFO - #c.i.u.n.s.CertificateManager - Default SSL context initialized
+2026-02-04 12:32:21,822 [    657]   INFO - #o.j.i.BuiltInServerManager - built-in server started, port 63344
+2026-02-04 12:32:21,836 [    671]   INFO - #c.i.u.i.c.d.IndexWriter - Use com.intellij.util.indexing.contentQueue.dev.MultiThreadedWithSuspendIndexWriter@3d28894c as (parallel) index writer implementation
+2026-02-04 12:32:21,837 [    672]   INFO - #c.i.u.i.i.SlruIndexStorageCacheProvider - SLRU cache will be used for indexes
+2026-02-04 12:32:21,837 [    672]   INFO - #c.i.u.i.i.MapIndexStorageCacheProvider$Companion - Default index storage cache provider [com.intellij.util.indexing.impl.SlruIndexStorageCacheProvider@6cb1176] is used
+2026-02-04 12:32:21,837 [    672]   INFO - #c.i.o.v.i.l.NativeFileWatcherImpl - Native file watcher is disabled
+2026-02-04 12:32:21,838 [    673]   INFO - #c.i.u.i.FileBasedIndexImpl - Loading indexes
+2026-02-04 12:32:21,842 [    677]   INFO - #c.i.u.i.PersistentDirtyFilesQueue - Dirty file ids read. Size: 3. Index: 3 Path: /Users/jacob/Library/Caches/JetBrains/Qodana/dff3951f-e0b590d2/cache/idea/253/index/dirty-file-ids.
+2026-02-04 12:32:21,850 [    685]   INFO - #c.i.u.i.i.s.IndexStorageLayoutLocator - Layout 'default' will be used to for 'SchemaTypeInheritance' index (applicable providers: [default, fake-storage])
+2026-02-04 12:32:21,850 [    685]   INFO - #c.i.u.i.i.s.IndexStorageLayoutLocator - Layout 'default' will be used to for 'XmlNamespaces' index (applicable providers: [default, fake-storage])
+2026-02-04 12:32:21,850 [    685]   INFO - #c.i.u.i.i.s.IndexStorageLayoutLocator - Layout 'default' will be used to for 'sql.routine.index' index (applicable providers: [default, fake-storage])
+2026-02-04 12:32:21,850 [    685]   INFO - #c.i.u.i.i.s.IndexStorageLayoutLocator - Layout 'default' will be used to for 'XmlTagNames' index (applicable providers: [default, fake-storage])
+2026-02-04 12:32:21,850 [    685]   INFO - #c.i.u.i.i.s.IndexStorageLayoutLocator - Layout 'default' will be used to for 'sql.types.count.index' index (applicable providers: [default, fake-storage])
+2026-02-04 12:32:21,851 [    686]   INFO - #c.i.u.i.i.s.IndexStorageLayoutLocator - Layout 'default' will be used to for 'Py.setuptools.namespace' index (applicable providers: [default, fake-storage])
+2026-02-04 12:32:21,851 [    686]   INFO - #c.i.u.i.i.s.IndexStorageLayoutLocator - Layout 'default' will be used to for 'Py.module.name' index (applicable providers: [default, fake-storage])
+2026-02-04 12:32:21,851 [    686]   INFO - #c.i.u.i.i.s.IndexStorageLayoutLocator - Layout 'default' will be used to for 'HashFragmentIndex' index (applicable providers: [default, fake-storage])
+2026-02-04 12:32:21,851 [    686]   INFO - #c.i.u.i.i.s.IndexStorageLayoutLocator - Layout 'default' will be used to for 'TodoIndex' index (applicable providers: [default, fake-storage])
+2026-02-04 12:32:21,851 [    686]   INFO - #c.i.u.i.i.s.IndexStorageLayoutLocator - Layout 'default' will be used to for 'fileIncludes' index (applicable providers: [default, fake-storage])
+2026-02-04 12:32:21,852 [    687]   INFO - #c.i.u.i.i.s.IndexStorageLayoutLocator - Layout 'default' will be used to for 'filetypes' index (applicable providers: [default, fake-storage])
+2026-02-04 12:32:21,852 [    687]   INFO - #c.i.u.i.i.s.IndexStorageLayoutLocator - Layout 'default' will be used to for 'IdIndex' index (applicable providers: [default, fake-storage]), shards = 1
+2026-02-04 12:32:21,853 [    688]   INFO - #c.i.u.i.i.s.IndexStorageLayoutLocator - Layout 'default' will be used to for 'Stubs' index (applicable providers: [default, fake-storage])
+2026-02-04 12:32:21,853 [    688]   INFO - #c.i.f.n.TrigramIndexFilter - Filter exclude extensions is enabled: CustomizableExcludeExtensions([])
+2026-02-04 12:32:21,853 [    688]   INFO - #c.i.u.i.i.s.IndexStorageLayoutLocator - Layout 'default' will be used to for 'Trigram.Index' index (applicable providers: [default, fake-storage]), shards = 1
+2026-02-04 12:32:21,853 [    688]   INFO - #c.i.u.i.i.s.IndexStorageLayoutLocator - Layout 'default' will be used to for 'FilenameIndex' index (applicable providers: [default, fake-storage])
+2026-02-04 12:32:21,855 [    690]   INFO - #c.i.u.i.i.s.IndexStorageLayoutLocator - Layout 'default' will be used to for 'html5.custom.attributes.index' index (applicable providers: [default, fake-storage])
+2026-02-04 12:32:21,858 [    693]   INFO - #c.i.u.i.i.s.IndexStorageLayoutLocator - Layout 'default' will be used to for 'FrameworkDetectionIndex' index (applicable providers: [default, fake-storage])
+2026-02-04 12:32:21,872 [    707]   INFO - #c.i.u.i.i.s.IndexStorageLayoutLocator - Layout 'default' will be used to for 'RelaxSymbolIndex' index (applicable providers: [default, fake-storage])
+2026-02-04 12:32:21,874 [    709]   INFO - #c.i.u.i.i.s.IndexStorageLayoutLocator - Layout 'default' will be used to for 'DomFileIndex' index (applicable providers: [default, fake-storage])
+2026-02-04 12:32:21,883 [    718]   INFO - #c.i.u.i.i.s.IndexStorageLayoutLocator - Layout 'default' will be used to for 'css.template.selectors' index (applicable providers: [default, fake-storage])
+2026-02-04 12:32:21,884 [    719]   INFO - #c.i.u.i.i.s.IndexStorageLayoutLocator - Layout 'default' will be used to for 'HtmlTagIdIndex' index (applicable providers: [default, fake-storage])
+2026-02-04 12:32:21,884 [    719]   INFO - #c.i.u.i.i.s.IndexStorageLayoutLocator - Layout 'default' will be used to for 'CssIndex' index (applicable providers: [default, fake-storage])
+2026-02-04 12:32:21,885 [    720]   INFO - #c.i.u.i.i.s.IndexStorageLayoutLocator - Layout 'default' will be used to for 'json.file.root.values' index (applicable providers: [default, fake-storage])
+2026-02-04 12:32:21,885 [    720]   INFO - #c.i.u.i.i.s.IndexStorageLayoutLocator - Layout 'default' will be used to for 'clang.format.lightIndex' index (applicable providers: [default, fake-storage])
+2026-02-04 12:32:21,886 [    721]   INFO - #c.i.u.i.i.s.IndexStorageLayoutLocator - Layout 'default' will be used to for 'js.test.names' index (applicable providers: [default, fake-storage])
+2026-02-04 12:32:21,886 [    721]   INFO - #c.i.u.i.i.s.IndexStorageLayoutLocator - Layout 'default' will be used to for 'CompassFunctionsIndex' index (applicable providers: [default, fake-storage])
+2026-02-04 12:32:21,887 [    722]   INFO - #c.i.u.i.i.s.IndexStorageLayoutLocator - Layout 'default' will be used to for 'js.package.index' index (applicable providers: [default, fake-storage])
+2026-02-04 12:32:21,888 [    723]   INFO - #c.i.u.i.i.s.IndexStorageLayoutLocator - Layout 'default' will be used to for 'js.custom.single.entry.index' index (applicable providers: [default, fake-storage])
+2026-02-04 12:32:21,890 [    725]   INFO - #c.i.u.i.i.s.IndexStorageLayoutLocator - Layout 'default' will be used to for 'js.implicit.elements.index' index (applicable providers: [default, fake-storage])
+2026-02-04 12:32:21,896 [    731]   INFO - #c.i.u.i.i.s.IndexStorageLayoutLocator - Layout 'default' will be used to for 'HtmlScriptSrcIndex' index (applicable providers: [default, fake-storage])
+2026-02-04 12:32:21,896 [    731]   INFO - #c.i.u.i.i.s.IndexStorageLayoutLocator - Layout 'default' will be used to for 'js.test.names.extensible' index (applicable providers: [default, fake-storage])
+2026-02-04 12:32:21,897 [    732]   INFO - #c.i.u.i.i.s.IndexStorageLayoutLocator - Layout 'default' will be used to for 'TypeScriptExternalPathCandidates' index (applicable providers: [default, fake-storage])
+2026-02-04 12:32:21,897 [    732]   INFO - #c.i.u.i.i.s.IndexStorageLayoutLocator - Layout 'default' will be used to for 'js.string.literal.words.index' index (applicable providers: [default, fake-storage])
+2026-02-04 12:32:21,902 [    737]   INFO - #c.i.u.i.i.s.IndexStorageLayoutLocator - Layout 'default' will be used to for 'WebComponentsIndex' index (applicable providers: [default, fake-storage])
+2026-02-04 12:32:21,902 [    737]   INFO - #c.i.u.i.i.s.IndexStorageLayoutLocator - Layout 'default' will be used to for 'VueComponentStylesIndex' index (applicable providers: [default, fake-storage])
+2026-02-04 12:32:21,903 [    738]   INFO - #c.i.u.i.i.s.IndexStorageLayoutLocator - Layout 'default' will be used to for 'VueNoScriptFilesIndex' index (applicable providers: [default, fake-storage])
+2026-02-04 12:32:21,908 [    743]   INFO - #c.i.u.i.FileBasedIndexImpl - Indices to be built:FilenameIndex(v = 258)
+2026-02-04 12:32:21,908 [    743]   INFO - #c.i.u.i.FileBasedIndexImpl - Using simple flusher for indexes
+2026-02-04 12:32:21,930 [    765]   INFO - #c.i.u.i.IndexDataInitializer - Index data initialization done: 90 ms. Initialized indexes: [FilenameIndex, sql.types.count.index, filetypes, sql.routine.index, Py.setuptools.namespace, Trigram.Index, Py.module.name, html5.custom.attributes.index, XmlTagNames, SchemaTypeInheritance, XmlNamespaces, RelaxSymbolIndex, DomFileIndex, css.template.selectors, IdIndex, HashFragmentIndex, FrameworkDetectionIndex, fileIncludes, TodoIndex, js.implicit.elements.index, js.custom.single.entry.index, js.test.names, js.package.index, CompassFunctionsIndex, clang.format.lightIndex, CssIndex, json.file.root.values, HtmlTagIdIndex, VueNoScriptFilesIndex, VueComponentStylesIndex, WebComponentsIndex, js.string.literal.words.index, js.test.names.extensible, TypeScriptExternalPathCandidates, HtmlScriptSrcIndex, Stubs].
+2026-02-04 12:32:21,998 [    833]   INFO - #c.i.u.i.IndexDataInitializer - Index data initialization done: 68 ms. Initialized stub indexes: {angular2.metadata.function.index, vue.id.index, js.exported.index, amd.requirePaths.index, Py.class.super, Scss.function, es6.exported.index, Css.custom.mixin, vue.options.index, vue.mixin.binding.index, angular2.source.module.index, ts.global.exported.index, js.amd.modules, Css.ampersand.selector, Css.custom.property, angular2.metadata.directive.index, JS.class.super, ts.external.module.name.index, vue.global.filters.index, Py.class.shortNameInsensitive, angular2.ivy.pipe.index, Python.Decorator, JS.class.implements, angular2.js.html.custom-property.index, angular2.source.directive.index, angular2.source.pipe.index, dom.elementClass, angular2.ivy.module.index, js.typedef.index2, sql.table.shortName, js.symbol.index2, js.export.default.react.component.index, vue.global.directives.index, Py.variable.shortName, js.symbol.qualified.names.index, ts.external.module.index, Less.mixins, Scss.variable, Css.custom.variable, JS.subclass.stub.index, postcss.custom.selector, JS.framework.markers.index, angular2.metadata.node.index, amd.baseUrl.index, es6.assignment.index, Css.id, redis.dml.shortName, dom.namespaceKey, Py.module.attribute, angular2.js.css.custom-property.index, js.element.qualifiedName, js.nonglobal.symbol.index, JS.global.qualified.elements, dts.label_index, angular2.metadata.pipe.index, angular2.metadata.className.index, vue.url.index, js.generics.index, js.lazy.packages, Scss.placeholder.selector, Py.function.shortName, js.doc.modules, ini.property.key, js.namespace.index, postcss.custom.media, es6.side.effect.import.index, js.used.remote.modules, sql.names, Less.variables, Py.class.attributes, Css.class, js.gcl.modules, angular2.symbol.index, js.qualified.shortName, js.local.namespace.members.index, angular2.ivy.directive.index, Py.class.shortName, Scss.mixin, Py.TypeAliasName, js.class.index2, js.imported.bindings.index, Css.attr, vue.extends.binding.index, vue.composition.app.index, ts.local.classes, makefile.target.index, angular2.templateUrl.index, ts.embedded.content.index, sql.column.name, angular2.metadata.module.index, JS.base.types.index, vuex.store.index, js.global.symbol.index, vue.components.index}.
+2026-02-04 12:32:22,034 [    869]   INFO - o.j.q.s.i.r.cloud - QODANA_TOKEN environment variable is not defined
+2026-02-04 12:32:22,043 [    878]   INFO - STDOUT - By using this linter, you agree to
+2026-02-04 12:32:22,043 [    878]   INFO - STDOUT - - JetBrains Privacy Policy (https://jb.gg/jetbrains-privacy-policy)
+2026-02-04 12:32:22,043 [    878]   INFO - STDOUT - - JETBRAINS EAP USER AGREEMENT (https://jb.gg/jetbrains-user-eap)
+2026-02-04 12:32:22,043 [    878]   INFO - STDOUT - 
+2026-02-04 12:32:22,043 [    878]   INFO - STDOUT - The linter includes an evaluation license.
+2026-02-04 12:32:22,043 [    878]   INFO - STDOUT - The license will expire on April 5, 2026.
+2026-02-04 12:32:22,043 [    878]   INFO - STDOUT - Please ensure you pull a new image on time.
+2026-02-04 12:32:22,043 [    878]   INFO - STDOUT - Qodana license plan: Ultimate Plus
+2026-02-04 12:32:22,049 [    884]   WARN - org.jline - Unable to create a system terminal, creating a dumb terminal (enable debug logging for more information)
+2026-02-04 12:32:22,076 [    911]   WARN - org.jline - Unable to create a system terminal, creating a dumb terminal (enable debug logging for more information)
+2026-02-04 12:32:22,078 [    913]   INFO - STDOUT -                                         
+2026-02-04 12:32:22,078 [    913]   INFO - STDOUT -           _              _       
+2026-02-04 12:32:22,078 [    913]   INFO - STDOUT -          /\ \           /\ \        Qodana for C/C++ 2025.3.2 EAP
+2026-02-04 12:32:22,078 [    913]   INFO - STDOUT -         /  \ \         /  \ \       Documentation
+2026-02-04 12:32:22,078 [    913]   INFO - STDOUT -        / /\ \ \       / /\ \ \      https://jb.gg/qodana-docs
+2026-02-04 12:32:22,078 [    913]   INFO - STDOUT -       / / /\ \ \     / / /\ \ \     Contact us at
+2026-02-04 12:32:22,078 [    913]   INFO - STDOUT -      / / /  \ \_\   / / /  \ \_\    qodana-support@jetbrains.com
+2026-02-04 12:32:22,078 [    913]   INFO - STDOUT -     / / / _ / / /  / / /   / / /    Or via our issue tracker
+2026-02-04 12:32:22,078 [    913]   INFO - STDOUT -    / / / /\ \/ /  / / /   / / /     https://jb.gg/qodana-issue
+2026-02-04 12:32:22,078 [    913]   INFO - STDOUT -   / / /__\ \ \/  / / /___/ / /      Or share your feedback at our forum
+2026-02-04 12:32:22,078 [    913]   INFO - STDOUT -  / / /____\ \ \ / / /____\/ /       https://jb.gg/qodana-forum
+2026-02-04 12:32:22,078 [    913]   INFO - STDOUT -  \/________\_\/ \/_________/     
+2026-02-04 12:32:22,078 [    913]   INFO - STDOUT -                                                    
+2026-02-04 12:32:22,078 [    913]   INFO - STDOUT -                                         
+2026-02-04 12:32:22,078 [    913]   INFO - STDOUT - Starting up Qodana for C/C++ 2025.3.2 EAP (build QDCPP-253.29649)…done.
+2026-02-04 12:32:22,684 [   1519]   WARN - #c.i.o.e.c.i.EditorColorsManagerImpl - resource not found: colorSchemes/SqlDefault.xml
+2026-02-04 12:32:22,684 [   1519]   WARN - #c.i.o.e.c.i.EditorColorsManagerImpl - resource not found: colorSchemes/sassDefault.xml
+2026-02-04 12:32:22,686 [   1521]   WARN - #c.i.o.e.c.i.EditorColorsManagerImpl - resource not found: colorSchemes/SqlDarcula.xml
+2026-02-04 12:32:22,708 [   1543]   INFO - #c.i.u.s.JBUIScale - Computed user scale factor: 1.0 (JRE-managed HiDPI)
+2026-02-04 12:32:22,859 [   1694]   INFO - #c.j.r.a.ActionsOverrider - Action manager created. Traversing IDE backends: []
+2026-02-04 12:32:31,787 [  10622]   INFO - #c.i.f.ProductivityFeaturesRegistryImpl - Feature with id 'codeassists.context.actions' is overridden by: id = [codeassists.context.actions], displayName = [null], groupId = [codeassists], usageCount = [0]
+2026-02-04 12:32:31,787 [  10622]   INFO - #c.i.f.ProductivityFeaturesRegistryImpl - Feature with id 'codeassists.generate.code' is overridden by: id = [codeassists.generate.code], displayName = [null], groupId = [codeassists], usageCount = [0]
+2026-02-04 12:32:31,787 [  10622]   INFO - #c.i.f.ProductivityFeaturesRegistryImpl - Feature with id 'codeassists.quickdefinition' is overridden by: id = [codeassists.quickdefinition], displayName = [null], groupId = [codeassists], usageCount = [0]
+2026-02-04 12:33:13,820 [  52655]   INFO - #o.j.q.s.i.r.ConsoleLog - Preparing for the Project opening stage ...
+2026-02-04 12:33:13,820 [  52655]   INFO - STDOUT - Opening project…Preparing for the Project opening stage ...
+2026-02-04 12:33:13,846 [  52681]   INFO - #c.i.i.i.ProjectUtil - Opening existing project with .idea at /Users/jacob/Projects/qodana-cli/internal/core/testdata/cpp-project
+2026-02-04 12:33:13,860 [  52695]   INFO - #c.i.p.p.ProjectEntitiesStorage - Creating entity for project ProjectId(id=db8098tpovbgnleqdh8g)
+2026-02-04 12:33:13,866 [  52701]   INFO - #c.i.p.p.ProjectEntitiesStorage - Entity for project ProjectId(id=db8098tpovbgnleqdh8g) created successfully
+2026-02-04 12:33:13,877 [  52712]   INFO - #c.j.r.p.SolutionInitializerService - Create protocol solution...
+2026-02-04 12:33:13,877 [  52712]   INFO - #c.j.r.p.ProtocolManager - GetOrCreate protocolHost...
+2026-02-04 12:33:13,882 [  52717]   INFO - #c.j.r.p.c.SolutionHost - Putting protocol solution...
+2026-02-04 12:33:13,885 [  52720]   INFO - #c.j.r.p.SolutionInitializerService - Protocol solution created, initialize protocol components...
+2026-02-04 12:33:13,888 [  52723]   INFO - #c.j.r.a.ActionsOverrider - IDE backend created com.jetbrains.rider.services.RiderDefaultBackend@10364098
+2026-02-04 12:33:13,888 [  52723]   INFO - #c.j.r.a.ActionsOverrider - com.jetbrains.rider.services.RiderDefaultBackend@10364098 will be initialized now because the action manager is already initialized
+2026-02-04 12:33:13,893 [  52728]   INFO - #c.i.c.ComponentStoreImpl - Project store initialization started for path: /Users/jacob/Projects/qodana-cli/internal/core/testdata/cpp-project and template: null
+2026-02-04 12:33:13,906 [  52741]   INFO - #c.i.c.ComponentStoreImpl - Project store initialized with paths: [Macro(key=$PROJECT_CONFIG_DIR$, value=/Users/jacob/Projects/qodana-cli/internal/core/testdata/cpp-project/.idea), Macro(key=$WORKSPACE_FILE$, value=/Users/jacob/Projects/qodana-cli/internal/core/testdata/cpp-project/.idea/workspace.xml), Macro(key=$PROJECT_FILE$, value=/Users/jacob/Projects/qodana-cli/internal/core/testdata/cpp-project/.idea/misc.xml), Macro(key=$CACHE_FILE$, value=/Users/jacob/Library/Caches/JetBrains/Qodana/dff3951f-e0b590d2/cache/idea/253/projects/cpp-project.49cc8fd9/cache-state.xml), Macro(key=$PRODUCT_WORKSPACE_FILE$, value=/Users/jacob/Library/Caches/JetBrains/Qodana/dff3951f-e0b590d2/config/workspace/38tEhAbcrgJfddcHzNBi887ESW5.xml)]
+2026-02-04 12:33:14,013 [  52848]   INFO - #c.i.w.i.i.WorkspaceModelImpl - Load workspace model from cache in 90 ms
+2026-02-04 12:33:14,022 [  52857]   INFO - #c.i.w.i.i.j.s.JpsGlobalModelSynchronizerImpl - Loading global entities com.intellij.platform.workspace.jps.entities.SdkEntity from files
+2026-02-04 12:33:14,022 [  52857]   INFO - #c.i.w.i.i.j.s.JpsGlobalModelSynchronizerImpl - Loading global entities com.intellij.platform.workspace.jps.entities.LibraryEntity from files
+2026-02-04 12:33:14,026 [  52861]   INFO - #c.i.w.i.i.GlobalWorkspaceModel - Project QodanaTestProject is added to the list of initializing and open projects
+2026-02-04 12:33:14,087 [  52922]   INFO - #c.i.w.i.i.EntitiesOrphanageImpl - Update orphanage. 0 modules added
+2026-02-04 12:33:14,088 [  52923]   INFO - #c.i.w.i.i.WorkspaceModelImpl - Project model updated to version 2 in 21 ms: Sync global entities with project: QodanaTestProject
+2026-02-04 12:33:14,139 [  52974]   INFO - #c.i.c.m.CodeInsightContextEnabling - multiverse is enabled
+2026-02-04 12:33:14,212 [  53047]   INFO - #c.i.c.r.c.p.RadProjectModelHost - Processing project root change event (version: 1, has WA: true)
+2026-02-04 12:33:14,212 [  53047]   INFO - #c.i.w.i.i.EntitiesOrphanageImpl - Update orphanage. 0 modules added
+2026-02-04 12:33:14,216 [  53051]   INFO - #c.i.w.i.i.WorkspaceModelImpl - Project model updated to version 3 in 28 ms: Add project root /Users/jacob/Projects/qodana-cli/internal/core/testdata/cpp-project to project QodanaTestProject
+2026-02-04 12:33:14,216 [  53051]   INFO - #c.i.o.p.i.ProjectManagerImpl - Project QodanaTestProject was added to the list of open projects
+2026-02-04 12:33:14,235 [  53070]   INFO - #c.i.p.c.ProjectCodeStyleSettingsManager - Initialized from default code style settings.
+2026-02-04 12:33:14,236 [  53071]   INFO - #c.j.r.f.RiderSolutionStatisticsIdListener - Sending ProjectCacheFileName to backend
+2026-02-04 12:33:14,238 [  53073]   INFO - #c.j.r.p.SolutionInitializerService - Finish initialization
+2026-02-04 12:33:14,309 [  53144]   INFO - #c.i.o.p.MergingQueueGuiExecutor - Running task: (dumb mode task) com.intellij.openapi.project.InitialDumbTaskRequiredForSmartMode@2c343dfc
+2026-02-04 12:33:14,317 [  53152]   INFO - #c.i.o.p.DumbServiceMergingTaskQueue - Initializing DumbServiceMergingTaskQueue...
+2026-02-04 12:33:14,329 [  53164]   INFO - #c.i.o.p.InitialDumbTaskRequiredForSmartMode - Running task required for smart mode: com.intellij.util.indexing.ProjectFileBasedIndexStartupActivity@75a75d0c
+2026-02-04 12:33:14,329 [  53164]   INFO - STDOUT - 'dumb-mode' is in progress...
+2026-02-04 12:33:14,335 [  53170]   INFO - #c.i.u.i.FileBasedIndexImpl - Indexes are already loaded
+2026-02-04 12:33:14,336 [  53171]   INFO - #c.i.u.i.PersistentDirtyFilesQueue - Dirty file ids read. Size: 0. Index: 0 Path: /Users/jacob/Library/Caches/JetBrains/Qodana/dff3951f-e0b590d2/cache/idea/253/index/dirty-file-queues/49cc8fd9.
+2026-02-04 12:33:14,349 [  53184]   INFO - #c.i.u.i.p.IncrementalProjectIndexableFilesFilterHolder - PersistentProjectIndexableFilesFilterFactory is chosen as indexable files filter factory for project: QodanaTestProject
+2026-02-04 12:33:14,374 [  53209]   INFO - #c.i.c.c.p.CppDummyCommonProtocolActivity - [Cpp] Running 'common.protocol' activity
+2026-02-04 12:33:14,375 [  53210]   INFO - #c.i.u.i.FileBasedIndexImpl - Indexes are already loaded
+2026-02-04 12:33:14,381 [  53216]   INFO - #c.i.u.i.d.AppIndexingDependenciesService - Invalidating all indexing flags. Reason: App fingerprint changed: FingerprintImpl(fingerprint=-4726247691099927857) to FingerprintImpl(fingerprint=-4779607534580104138)
+2026-02-04 12:33:14,382 [  53217]   INFO - #c.i.c.r.c.s.m.RadMigrateCodeStyleAction - Check migration Classic->Nova
+2026-02-04 12:33:14,404 [  53239]   INFO - #c.i.u.i.UnindexedFilesScanner - Full scanning on startup will NOT be skipped for project QodanaTestProject because of following unsatisfied conditions:
+FILTER_IS_NOT_UP_TO_DATE: Persistent indexable files filter is NOT up-to-date because of following unsatisfied conditions: [FILTER_IS_NOT_INVALIDATED, INDEXING_REQUEST_ID_DID_NOT_CHANGE_AFTER_LAST_SCANNING]
+2026-02-04 12:33:14,404 [  53239]   INFO - #c.i.o.e.s.p.m.ExternalProjectsDataStorage - Load external projects data in 11 millis (read time: 1)
+2026-02-04 12:33:14,406 [  53241]   INFO - #c.j.p.s.PythonHeadlessSdkUpdater - Waiting for Updating Python interpreter tasks...
+2026-02-04 12:33:14,407 [  53242]   INFO - #c.i.o.v.i.p.NewMappings - VCS Root: [Git] - [/Users/jacob/Projects/qodana-cli]
+2026-02-04 12:33:14,409 [  53244]   INFO - #c.i.c.c.CppDummyCommonActivity - [Cpp] Running 'common' activity  (mode: monolith)
+2026-02-04 12:33:14,409 [  53244]   INFO - #c.i.p.c.s.s.i.Cache - No cache for LocalEelDescriptor, will fill
+2026-02-04 12:33:14,409 [  53244]   INFO - #c.i.p.c.s.s.i.Cache - Starting update for LocalEelDescriptor
+2026-02-04 12:33:14,411 [  53246]   INFO - #c.j.p.s.PythonHeadlessSdkUpdater - Completed waiting for Updating Python interpreter tasks in 0 ms
+2026-02-04 12:33:14,415 [  53250]   INFO - #c.i.o.p.InitialDumbTaskRequiredForSmartMode - Finished task required for smart mode: com.intellij.util.indexing.ProjectFileBasedIndexStartupActivity@75a75d0c
+2026-02-04 12:33:14,415 [  53250]   INFO - #c.i.o.p.InitialDumbTaskRequiredForSmartMode - Running task required for smart mode: com.intellij.util.indexing.FileBasedIndexInfrastructureExtensionStartup@405ce182
+2026-02-04 12:33:14,415 [  53250]   INFO - #c.i.o.p.InitialDumbTaskRequiredForSmartMode - Finished task required for smart mode: com.intellij.util.indexing.FileBasedIndexInfrastructureExtensionStartup@405ce182
+2026-02-04 12:33:14,415 [  53250]   INFO - #c.i.o.p.InitialDumbTaskRequiredForSmartMode - Running task required for smart mode: com.intellij.util.indexing.DumbModeWhileScanningSubscriber@70647e69
+2026-02-04 12:33:14,416 [  53251]   INFO - #c.i.o.p.UnindexedFilesScannerExecutor - [49cc8fd9] Running task: com.intellij.util.indexing.UnindexedFilesScannerExecutorImpl$ScheduledScanningTask@561f90d9
+2026-02-04 12:33:14,416 [  53251]   INFO - #c.i.o.p.InitialDumbTaskRequiredForSmartMode - Finished task required for smart mode: com.intellij.util.indexing.DumbModeWhileScanningSubscriber@70647e69
+2026-02-04 12:33:14,417 [  53252]   INFO - #c.i.o.p.MergingQueueGuiExecutor - Task finished: (dumb mode task) com.intellij.openapi.project.InitialDumbTaskRequiredForSmartMode@2c343dfc
+2026-02-04 12:33:14,419 [  53254]   INFO - c.j.cidr - clangd modules path: /Users/jacob/Library/Caches/JetBrains/Qodana/dff3951f-e0b590d2/cache/idea/253/caches/clangd_modules/49cc8fd9
+2026-02-04 12:33:14,419 [  53254]   INFO - c.j.cidr - clangd cpp20 modules path: /Users/jacob/Library/Caches/JetBrains/Qodana/dff3951f-e0b590d2/cache/idea/253/caches/clangd_modules/49cc8fd9/cpp20
+2026-02-04 12:33:14,424 [  53259]   INFO - #c.i.u.i.UnindexedFilesScanner - [49cc8fd9] scanning stage (scanning id=0): DelayedPushProperties
+2026-02-04 12:33:14,430 [  53265]   INFO - #c.i.u.i.FileBasedIndexImpl - Indexes are already loaded
+2026-02-04 12:33:14,441 [  53276]   INFO - #c.i.o.u.r.RegistryValue - Registry value 'clang.parameter.info' has changed to 'true' by SYSTEM
+2026-02-04 12:33:14,441 [  53276]   INFO - #c.i.p.d.i.f.FrontendXBreakpointManager - Breakpoint created for XBreakpointId(uid=1)
+2026-02-04 12:33:14,441 [  53276]   INFO - #c.i.p.d.i.f.FrontendXBreakpointManager - Breakpoint created for XBreakpointId(uid=2)
+2026-02-04 12:33:14,441 [  53276]   INFO - #c.i.p.d.i.f.FrontendXBreakpointManager - Breakpoint created for XBreakpointId(uid=3)
+2026-02-04 12:33:14,441 [  53276]   INFO - #c.i.p.d.i.f.FrontendXBreakpointManager - Breakpoint created for XBreakpointId(uid=4)
+2026-02-04 12:33:14,442 [  53277]   INFO - #c.i.c.w.WestProjectPathService - Computed West config parent: null
+2026-02-04 12:33:14,452 [  53287]   INFO - #git4idea.commands.GitHandler - [/Users/jacob/Projects/qodana-cli/internal/core/testdata/cpp-project] git -c core.quotepath=false -c log.showSignature=false version
+2026-02-04 12:33:14,453 [  53288]   INFO - c.j.c.l.d.c.c.l.ClangDaemonContextImpl - Using clangd from: /Users/jacob/Library/Caches/JetBrains/Qodana/qodana-QDCPP-253.29649.102-aarch64/CLion.app/Contents/bin/clang/mac/aarch64/bin/clangd
+2026-02-04 12:33:14,458 [  53293]   INFO - #c.i.c.r.c.e.RadInitCodeEditorSettingsStartupActivity - Clearing existing lowPriorityProtocolStorage of 59 elements, keeping only app-wide settings
+2026-02-04 12:33:14,467 [  53302]   INFO - #c.i.o.a.i.NonBlockingReadActionImpl - OTel monitoring for NonBlockingReadAction is enabled
+2026-02-04 12:33:14,482 [  53317]   INFO - c.j.c.l.d.c.c.l.ClangDaemonContextImpl - Using clangd from: /Users/jacob/Library/Caches/JetBrains/Qodana/qodana-QDCPP-253.29649.102-aarch64/CLion.app/Contents/bin/clang/mac/aarch64/bin/clangd
+2026-02-04 12:33:14,484 [  53319]   INFO - #c.i.o.p.DumbServiceImpl - exit dumb mode [QodanaTestProject]
+2026-02-04 12:33:14,488 [  53323]   INFO - STDOUT - [IDE]: Task 'Analyzing project to enable smart features' ended
+2026-02-04 12:33:14,504 [  53339]   INFO - #c.i.u.i.UnindexedFilesScanner - [49cc8fd9] Started scanning for indexing of QodanaTestProject. Reason: On project open
+2026-02-04 12:33:14,507 [  53342]   INFO - #c.i.u.i.UnindexedFilesScanner - [49cc8fd9] scanning stage (scanning id=0): CreatingIterators
+2026-02-04 12:33:14,512 [  53347]   INFO - #c.i.i.s.IdeStartupScripts - 0 startup script(s) found
+2026-02-04 12:33:14,518 [  53353]   INFO - #c.i.j.d.b.r.HostToClientMessagingService - New subscription for ClientId(value=Host)
+2026-02-04 12:33:14,522 [  53357]   INFO - #c.i.j.d.f.r.HostRequestListenerActivity - Connected to host
+2026-02-04 12:33:14,523 [  53358]   INFO - #c.i.u.i.UnindexedFilesScanner - [49cc8fd9] scanning stage (scanning id=0): CollectingIndexableFiles
+2026-02-04 12:33:14,525 [  53360]   INFO - #c.i.d.PerformanceWatcherImpl - Post-startup activities under progress took 257ms; general responsiveness: ok; EDT responsiveness: ok
+2026-02-04 12:33:14,526 [  53361]   INFO - #c.i.u.i.UnindexedFilesScanner - Scanning of QodanaTestProject uses 16 scanning threads
+2026-02-04 12:33:14,550 [  53385] SEVERE - #c.i.r.r.d.s.SpellCheckerProtocolListener - Cannot find service com.intellij.spellchecker.engine.SpellCheckerEngine (classloader=PluginClassLoader(plugin=ContentModuleDescriptor(id=intellij.spellchecker) <- PluginMainDescriptor(name=IDEA CORE, id=com.intellij, version=253.29649, isBundled=true, path=~/Library/Caches/JetBrains/Qodana/qodana-QDCPP-253.29649.102-aarch64/CLion.app/Contents/lib), packagePrefix=null, state=active, parents=ContentModuleDescriptor(id=intellij.libraries.lucene.common) <- PluginMainDescriptor(name=IDEA CORE, id=com.intellij, version=253.29649, isBundled=true, path=~/Library/Caches/JetBrains/Qodana/qodana-QDCPP-253.29649.102-aarch64/CLion.app/Contents/lib), ContentModuleDescriptor(id=intellij.platform.backend) <- PluginMainDescriptor(name=IDEA CORE, id=com.intellij, version=253.29649, isBundled=true, path=~/Library/Caches/JetBrains/Qodana/qodana-QDCPP-253.29649.102-aarch64/CLion.app/Contents/lib), ContentModuleDescriptor(id=intellij.platform.vcs.impl) <- PluginMainDescriptor(name=IDEA CORE, id=com.intellij, version=253.29649, isBundled=true, path=~/Library/Caches/JetBrains/Qodana/qodana-QDCPP-253.29649.102-aarch64/CLion.app/Contents/lib), ), serviceContainer=Project(name=QodanaTestProject, containerState=COMPONENT_CREATED, componentStore=/Users/jacob/Projects/qodana-cli/internal/core/testdata/cpp-project), serviceContainerClass=com.intellij.openapi.project.impl.ProjectImpl)
+java.lang.IllegalStateException: Cannot find service com.intellij.spellchecker.engine.SpellCheckerEngine (classloader=PluginClassLoader(plugin=ContentModuleDescriptor(id=intellij.spellchecker) <- PluginMainDescriptor(name=IDEA CORE, id=com.intellij, version=253.29649, isBundled=true, path=~/Library/Caches/JetBrains/Qodana/qodana-QDCPP-253.29649.102-aarch64/CLion.app/Contents/lib), packagePrefix=null, state=active, parents=ContentModuleDescriptor(id=intellij.libraries.lucene.common) <- PluginMainDescriptor(name=IDEA CORE, id=com.intellij, version=253.29649, isBundled=true, path=~/Library/Caches/JetBrains/Qodana/qodana-QDCPP-253.29649.102-aarch64/CLion.app/Contents/lib), ContentModuleDescriptor(id=intellij.platform.backend) <- PluginMainDescriptor(name=IDEA CORE, id=com.intellij, version=253.29649, isBundled=true, path=~/Library/Caches/JetBrains/Qodana/qodana-QDCPP-253.29649.102-aarch64/CLion.app/Contents/lib), ContentModuleDescriptor(id=intellij.platform.vcs.impl) <- PluginMainDescriptor(name=IDEA CORE, id=com.intellij, version=253.29649, isBundled=true, path=~/Library/Caches/JetBrains/Qodana/qodana-QDCPP-253.29649.102-aarch64/CLion.app/Contents/lib), ), serviceContainer=Project(name=QodanaTestProject, containerState=COMPONENT_CREATED, componentStore=/Users/jacob/Projects/qodana-cli/internal/core/testdata/cpp-project), serviceContainerClass=com.intellij.openapi.project.impl.ProjectImpl)
+	at com.intellij.openapi.components.ServicesKt.serviceNotFoundError(services.kt:37)
+	at com.intellij.spellchecker.SpellCheckerManager.fullConfigurationReload(SpellCheckerManager.kt:489)
+	at com.intellij.spellchecker.SpellCheckerManager.<init>(SpellCheckerManager.kt:79)
+	at java.base/java.lang.invoke.MethodHandle.invokeWithArguments(MethodHandle.java:733)
+	at com.intellij.platform.instanceContainer.instantiation.InstantiateKt.instantiate$lambda$0(instantiate.kt:46)
+	at com.intellij.platform.instanceContainer.instantiation.InstantiateKt.instantiate$lambda$3$0(instantiate.kt:288)
+	at com.intellij.platform.instanceContainer.instantiation.InstantiateKt.withStoredTemporaryContext(instantiate.kt:304)
+	at com.intellij.platform.instanceContainer.instantiation.InstantiateKt.instantiate(instantiate.kt:287)
+	at com.intellij.platform.instanceContainer.instantiation.InstantiateKt.instantiate(instantiate.kt:39)
+	at com.intellij.serviceContainer.LightServiceInstanceSupport$LightServiceInstanceInitializer.createInstance(LightServiceInstanceSupport.kt:43)
+	at com.intellij.platform.instanceContainer.internal.LazyInstanceHolder$initialize$1$1.invokeSuspend(LazyInstanceHolder.kt:165)
+	at com.intellij.platform.instanceContainer.internal.LazyInstanceHolder$initialize$1$1.invoke(LazyInstanceHolder.kt)
+	at com.intellij.platform.instanceContainer.internal.LazyInstanceHolder$initialize$1$1.invoke(LazyInstanceHolder.kt)
+	at kotlinx.coroutines.intrinsics.UndispatchedKt.startUndispatchedOrReturn(Undispatched.kt:44)
+	at kotlinx.coroutines.BuildersKt__Builders_commonKt.withContext(Builders.common.kt:166)
+	at kotlinx.coroutines.BuildersKt.withContext(Unknown Source)
+	at com.intellij.platform.instanceContainer.internal.LazyInstanceHolder$initialize$1.invokeSuspend(LazyInstanceHolder.kt:163)
+	at com.intellij.platform.instanceContainer.internal.LazyInstanceHolder$initialize$1.invoke(LazyInstanceHolder.kt)
+	at com.intellij.platform.instanceContainer.internal.LazyInstanceHolder$initialize$1.invoke(LazyInstanceHolder.kt)
+	at kotlinx.coroutines.intrinsics.UndispatchedKt.startCoroutineUndispatched(Undispatched.kt:20)
+	at kotlinx.coroutines.CoroutineStart.invoke(CoroutineStart.kt:360)
+	at kotlinx.coroutines.AbstractCoroutine.start(AbstractCoroutine.kt:134)
+	at kotlinx.coroutines.BuildersKt__Builders_commonKt.launch(Builders.common.kt:52)
+	at kotlinx.coroutines.BuildersKt.launch(Unknown Source)
+	at com.intellij.platform.instanceContainer.internal.LazyInstanceHolder.initialize(LazyInstanceHolder.kt:148)
+	at com.intellij.platform.instanceContainer.internal.LazyInstanceHolder.access$initialize(LazyInstanceHolder.kt:15)
+	at com.intellij.platform.instanceContainer.internal.LazyInstanceHolder.tryInitialize(LazyInstanceHolder.kt:138)
+	at com.intellij.platform.instanceContainer.internal.LazyInstanceHolder.getInstance(LazyInstanceHolder.kt:96)
+	at com.intellij.platform.instanceContainer.internal.LazyInstanceHolder.getInstanceInCallerContext$suspendImpl(LazyInstanceHolder.kt:88)
+	at com.intellij.platform.instanceContainer.internal.LazyInstanceHolder.getInstanceInCallerContext(LazyInstanceHolder.kt)
+	at com.intellij.serviceContainer.ComponentManagerImplKt$doGetOrCreateInstanceBlocking$1.invokeSuspend(ComponentManagerImpl.kt:1561)
+	at kotlin.coroutines.jvm.internal.BaseContinuationImpl.resumeWith(ContinuationImpl.kt:34)
+	at kotlinx.coroutines.DispatchedTask.run(DispatchedTask.kt:100)
+	at kotlinx.coroutines.EventLoopImplBase.processNextEvent(EventLoop.common.kt:263)
+	at kotlinx.coroutines.BlockingCoroutine.joinBlocking(Builders.kt:112)
+	at kotlinx.coroutines.BuildersKt__BuildersKt.runBlocking$BuildersKt__BuildersKt(Builders.kt:85)
+	at kotlinx.coroutines.BuildersKt__BuildersKt.runBlockingWithParallelismCompensation(Builders.kt:61)
+	at kotlinx.coroutines.BuildersKt.runBlockingWithParallelismCompensation(Unknown Source)
+	at kotlinx.coroutines.internal.intellij.IntellijCoroutines.runBlockingWithParallelismCompensation(intellij.kt:48)
+	at com.intellij.util.IntelliJCoroutinesFacade.runBlockingWithParallelismCompensation(IntelliJCoroutinesFacade.kt:35)
+	at com.intellij.serviceContainer.ComponentManagerImplKt.runBlockingInitialization$lambda$0(ComponentManagerImpl.kt:1692)
+	at com.intellij.openapi.progress.ContextKt.prepareThreadContext$lambda$0(context.kt:83)
+	at com.intellij.concurrency.ThreadContext.resetThreadContext(threadContext.kt:294)
+	at com.intellij.openapi.progress.ContextKt.prepareThreadContext(context.kt:82)
+	at com.intellij.serviceContainer.ComponentManagerImplKt.runBlockingInitialization(ComponentManagerImpl.kt:1677)
+	at com.intellij.serviceContainer.ComponentManagerImplKt.doGetOrCreateInstanceBlocking(ComponentManagerImpl.kt:1560)
+	at com.intellij.serviceContainer.ComponentManagerImplKt.getOrCreateInstanceBlocking(ComponentManagerImpl.kt:1549)
+	at com.intellij.serviceContainer.ComponentManagerImpl.doGetService(ComponentManagerImpl.kt:715)
+	at com.intellij.serviceContainer.ComponentManagerImpl.getService(ComponentManagerImpl.kt:653)
+	at com.intellij.spellchecker.SpellCheckerManager$Companion.getInstance(SpellCheckerManager.kt:487)
+	at com.intellij.rider.rdclient.dotnet.spellchecker.SpellCheckerProtocolListener.performSafeInit(SpellCheckerHost.kt:95)
+	at com.intellij.rider.rdclient.dotnet.spellchecker.SpellCheckerProtocolListener.extensionCreated$lambda$0(SpellCheckerHost.kt:85)
+	at com.intellij.openapi.application.TransactionGuardImpl.runWithWritingAllowed(TransactionGuardImpl.java:239)
+	at com.intellij.openapi.application.TransactionGuardImpl.access$100(TransactionGuardImpl.java:25)
+	at com.intellij.openapi.application.TransactionGuardImpl$1.run(TransactionGuardImpl.java:201)
+	at com.intellij.openapi.application.impl.AppImplKt$runnableUnitFunction$1.invoke(appImpl.kt:124)
+	at com.intellij.openapi.application.impl.AppImplKt$runnableUnitFunction$1.invoke(appImpl.kt:124)
+	at com.intellij.platform.locking.impl.NestedLocksThreadingSupport.doRunWriteIntentReadAction(NestedLocksThreadingSupport.kt:737)
+	at com.intellij.platform.locking.impl.NestedLocksThreadingSupport.runPreventiveWriteIntentReadAction(NestedLocksThreadingSupport.kt:711)
+	at com.intellij.platform.locking.impl.NestedLocksThreadingSupport.runWriteIntentReadAction(NestedLocksThreadingSupport.kt:665)
+	at com.intellij.openapi.application.impl.ApplicationImpl.runIntendedWriteActionOnCurrentThread(ApplicationImpl.java:1048)
+	at com.intellij.openapi.application.impl.ApplicationImpl$7.lambda$run$0(ApplicationImpl.java:602)
+	at com.intellij.concurrency.ThreadContext.installThreadContext(threadContext.kt:305)
+	at com.intellij.openapi.application.impl.ApplicationImpl$7.run(ApplicationImpl.java:600)
+	at com.intellij.util.concurrency.ChildContext$runInChildContext$1.invoke(propagation.kt:167)
+	at com.intellij.util.concurrency.ChildContext$runInChildContext$1.invoke(propagation.kt:167)
+	at com.intellij.util.concurrency.ChildContext.runInChildContext(propagation.kt:173)
+	at com.intellij.util.concurrency.ChildContext.runInChildContext(propagation.kt:167)
+	at com.intellij.util.concurrency.ContextRunnable.lambda$run$0(ContextRunnable.java:26)
+	at com.intellij.concurrency.ThreadContext.resetThreadContext(threadContext.kt:294)
+	at com.intellij.util.concurrency.ContextRunnable.run(ContextRunnable.java:25)
+	at com.intellij.openapi.application.impl.NonBlockingFlushQueue.runNextEvent$lambda$1$1$0(NonBlockingFlushQueue.kt:334)
+	at com.intellij.openapi.progress.impl.CoreProgressManager.computePrioritized(CoreProgressManager.java:901)
+	at com.intellij.openapi.application.impl.NonBlockingFlushQueue.runNextEvent$lambda$1$1(NonBlockingFlushQueue.kt:333)
+	at com.intellij.concurrency.ThreadContext.resetThreadContext(threadContext.kt:294)
+	at com.intellij.openapi.application.impl.NonBlockingFlushQueue.runNextEvent$lambda$1(NonBlockingFlushQueue.kt:330)
+	at com.intellij.platform.locking.impl.NestedLocksThreadingSupport.tryRunWriteIntentReadAction(NestedLocksThreadingSupport.kt:690)
+	at com.intellij.openapi.application.impl.NonBlockingFlushQueue.runNextEvent(NonBlockingFlushQueue.kt:326)
+	at com.intellij.openapi.application.impl.NonBlockingFlushQueue.flushNow(NonBlockingFlushQueue.kt:305)
+	at com.intellij.openapi.application.impl.NonBlockingFlushQueue.FLUSH_NOW$lambda$0(NonBlockingFlushQueue.kt:167)
+	at java.desktop/java.awt.event.InvocationEvent.dispatch(InvocationEvent.java:318)
+	at java.desktop/java.awt.EventQueue.dispatchEventImpl(EventQueue.java:781)
+	at java.desktop/java.awt.EventQueue$4.run(EventQueue.java:728)
+	at java.desktop/java.awt.EventQueue$4.run(EventQueue.java:722)
+	at java.base/java.security.AccessController.doPrivileged(AccessController.java:400)
+	at java.base/java.security.ProtectionDomain$JavaSecurityAccessImpl.doIntersectionPrivilege(ProtectionDomain.java:87)
+	at java.desktop/java.awt.EventQueue.dispatchEvent(EventQueue.java:750)
+	at com.intellij.ide.IdeEventQueue.defaultDispatchEvent(IdeEventQueue.kt:664)
+	at com.intellij.ide.IdeEventQueue._dispatchEvent(IdeEventQueue.kt:517)
+	at com.intellij.ide.IdeEventQueue.dispatchEvent$lambda$0$0$0(IdeEventQueue.kt:333)
+	at com.intellij.ide.IdeEventQueueKt.performActivity$lambda$1(IdeEventQueue.kt:1065)
+	at com.intellij.openapi.application.TransactionGuardImpl.performActivity(TransactionGuardImpl.java:109)
+	at com.intellij.ide.IdeEventQueueKt.performActivity(IdeEventQueue.kt:1065)
+	at com.intellij.ide.IdeEventQueue.dispatchEvent$lambda$0(IdeEventQueue.kt:331)
+	at com.intellij.ide.IdeEventQueue.dispatchEvent(IdeEventQueue.kt:371)
+	at java.desktop/java.awt.EventDispatchThread.pumpOneEventForFilters(EventDispatchThread.java:207)
+	at java.desktop/java.awt.EventDispatchThread.pumpEventsForFilter(EventDispatchThread.java:128)
+	at java.desktop/java.awt.EventDispatchThread.pumpEventsForHierarchy(EventDispatchThread.java:117)
+	at java.desktop/java.awt.EventDispatchThread.pumpEvents(EventDispatchThread.java:113)
+	at java.desktop/java.awt.EventDispatchThread.pumpEvents(EventDispatchThread.java:105)
+	at java.desktop/java.awt.EventDispatchThread.run(EventDispatchThread.java:92)
+2026-02-04 12:33:14,553 [  53388] SEVERE - #c.i.r.r.d.s.SpellCheckerProtocolListener - Qodana for C/C++ 2025.3.2 EAP  Build #QDCPP-253.29649
+2026-02-04 12:33:14,553 [  53388] SEVERE - #c.i.r.r.d.s.SpellCheckerProtocolListener - JDK: 21.0.9; VM: OpenJDK 64-Bit Server VM; Vendor: JetBrains s.r.o.
+2026-02-04 12:33:14,553 [  53388] SEVERE - #c.i.r.r.d.s.SpellCheckerProtocolListener - OS: Mac OS X
+2026-02-04 12:33:14,553 [  53388] SEVERE - #c.i.r.r.d.s.SpellCheckerProtocolListener - Last Action: 
+2026-02-04 12:33:14,563 [  53398]   INFO - #c.i.p.u.i.s.e.DurableEnumeratorFactory - [enumerator.mmapped]: .valueHashToId (in memory) was filled (10 records)
+2026-02-04 12:33:14,564 [  53399]   INFO - #c.j.c.c.c.p.CMakePresetLoader - CMake presets files do not exist
+2026-02-04 12:33:14,572 [  53407]   INFO - #c.i.d.u.SqlDialects - SQL dialects initialized in 17 ms
+2026-02-04 12:33:14,598 [  53433]   INFO - #git4idea.commands.GitHandler - git version 2.50.1 (Apple Git-155)
+2026-02-04 12:33:14,599 [  53434]   INFO - #git4idea.config.GitExecutableFileTester - Git version for /usr/bin/git: 2.50.1.0 (UNIX)
+2026-02-04 12:33:14,602 [  53437]   INFO - #c.i.c.r.c.p.RadProjectModelHost - Processing initialized workspace (version: 2, has WA: false)
+2026-02-04 12:33:14,602 [  53437]   INFO - #c.i.c.r.c.p.RadProjectModelHost - Scheduling C++ project model sync (with version = 2)
+2026-02-04 12:33:14,604 [  53439]   INFO - #c.i.c.w.c.WestConfigService - Installing West Config listener
+2026-02-04 12:33:14,605 [  53440]   INFO - #c.j.c.c.c.w.CMakeWorkspaceWatcher - Waiting for startup futures to complete
+2026-02-04 12:33:14,633 [  53468]   INFO - #c.i.u.s.JBUIScale - System scale factor: 1.0 (JRE-managed HiDPI)
+2026-02-04 12:33:15,104 [  53939]   INFO - #c.i.c.r.c.p.RadProjectModelHost - Trying to build snapshot with version = 2
+2026-02-04 12:33:15,111 [  53946]   INFO - STDOUT - [IDE]: Task 'Checking environment...' started
+2026-02-04 12:33:15,113 [  53948]   INFO - STDOUT - [IDE]: Task 'Checking environment...' ended in 2 ms
+2026-02-04 12:33:15,118 [  53953]   INFO - #c.i.r.c.c.p.RadProjectSnapshotBuilder - Content iteration took 3.907541ms (added 0 new files of 11 total files in content)
+2026-02-04 12:33:15,119 [  53954]   INFO - #c.i.c.r.c.p.RadProjectModelHost - C++ project model snapshot calculated in 14ms
+2026-02-04 12:33:15,119 [  53954]   INFO - #c.i.c.r.c.p.RadProjectModelHost - Sending updates, project model has 1 sources and 0 weak sources (version: 2)
+2026-02-04 12:33:15,121 [  53956]   INFO - #c.i.c.r.c.p.RadProjectModelHost - Processing changed resolve configuration (version: 3, has WA: true)
+2026-02-04 12:33:15,121 [  53956]   INFO - #c.i.c.r.c.p.RadProjectModelHost - Scheduling C++ project model sync (with version = 3)
+2026-02-04 12:33:15,123 [  53958]   INFO - #c.i.c.r.c.p.RadProjectModelHost - C++ project model updated in 3ms
+2026-02-04 12:33:15,165 [  54000]   INFO - #c.i.c.r.c.p.RadProjectModelHost - Processing project root change event (version: 4, has WA: true)
+2026-02-04 12:33:15,165 [  54000]   INFO - #c.i.c.r.c.p.RadProjectModelHost - Scheduling C++ project model sync (with version = 4)
+2026-02-04 12:33:15,173 [  54008]   INFO - #c.i.c.r.c.p.RadProjectModelHost - Backend project reloaded (version: 2)
+2026-02-04 12:33:15,179 [  54014]   INFO - #c.j.c.c.c.p.CMakePresetLoader - CMake presets files do not exist
+2026-02-04 12:33:15,204 [  54039]   INFO - #c.i.c.r.c.p.RadProjectModelHost - Backend project reloaded (version: 2)
+2026-02-04 12:33:15,255 [  54090]   INFO - #c.i.o.p.DumbServiceImpl - enter dumb mode [QodanaTestProject]
+2026-02-04 12:33:15,261 [  54096] SEVERE - #c.i.o.progress - 'runBlockingCancellable' is forbidden in the Write Action because it may start a long-running computation. This can cause UI freezes.
+Consider running this 'runBlockingCancellable' under a read action outside your Write Action'
+java.lang.IllegalStateException: 'runBlockingCancellable' is forbidden in the Write Action because it may start a long-running computation. This can cause UI freezes.
+Consider running this 'runBlockingCancellable' under a read action outside your Write Action'
+	at com.intellij.openapi.progress.CoroutinesKt.assertBackgroundThreadAndNoWriteAction(coroutines.kt:587)
+	at com.intellij.openapi.progress.CoroutinesKt.runBlockingCancellable(coroutines.kt:133)
+	at com.intellij.openapi.progress.CoroutinesKt.runBlockingMaybeCancellable(coroutines.kt:197)
+	at com.jetbrains.cidr.cpp.cmake.workspace.CMakeWorkspaceWatcher$MyFilesModificationsListener.watchedFilesChanged(CMakeWorkspaceWatcher.kt:690)
+	at com.jetbrains.cidr.FilesModificationsListener$1$1.afterVfsChange(FilesModificationsListener.java:86)
+	at com.intellij.openapi.vfs.newvfs.AsyncEventSupport.invokeAppliers(AsyncEventSupport.java:166)
+	at com.intellij.openapi.vfs.newvfs.AsyncEventSupport$2.lambda$afterVfsChange$1(AsyncEventSupport.java:117)
+	at com.intellij.openapi.application.impl.TransferredWriteActionServiceImpl.runOnEdtWithTransferredWriteActionAndWait$lambda$0(TransferredWriteActionServiceImpl.kt:11)
+	at com.intellij.openapi.application.TransactionGuardImpl.performActivity(TransactionGuardImpl.java:117)
+	at com.intellij.openapi.application.TransactionGuardImpl.performUserActivity(TransactionGuardImpl.java:98)
+	at com.intellij.openapi.application.impl.InternalThreading.invokeAndWaitWithTransferredWriteAction$lambda$2$0(appImpl.kt:201)
+	at com.intellij.platform.locking.impl.NestedLocksThreadingSupport.allowTakingLocksInsideAndRun(NestedLocksThreadingSupport.kt:1452)
+	at com.intellij.openapi.application.impl.InternalThreading.invokeAndWaitWithTransferredWriteAction$lambda$2(appImpl.kt:197)
+	at com.intellij.util.concurrency.ChildContext$runInChildContext$1.invoke(propagation.kt:167)
+	at com.intellij.util.concurrency.ChildContext$runInChildContext$1.invoke(propagation.kt:167)
+	at com.intellij.util.concurrency.ChildContext.runInChildContext$lambda$1(propagation.kt:177)
+	at com.intellij.util.concurrency.Propagation$runAsCoroutine$deferred$1.invokeSuspend(propagation.kt:413)
+	at com.intellij.util.concurrency.Propagation$runAsCoroutine$deferred$1.invoke(propagation.kt)
+	at com.intellij.util.concurrency.Propagation$runAsCoroutine$deferred$1.invoke(propagation.kt)
+	at kotlinx.coroutines.intrinsics.UndispatchedKt.startCoroutineUndispatched(Undispatched.kt:20)
+	at kotlinx.coroutines.CoroutineStart.invoke(CoroutineStart.kt:360)
+	at kotlinx.coroutines.AbstractCoroutine.start(AbstractCoroutine.kt:134)
+	at kotlinx.coroutines.BuildersKt__Builders_commonKt.async(Builders.common.kt:87)
+	at kotlinx.coroutines.BuildersKt.async(Unknown Source)
+	at com.intellij.util.concurrency.Propagation.runAsCoroutine(propagation.kt:408)
+	at com.intellij.util.concurrency.ChildContext.runInChildContext(propagation.kt:177)
+	at com.intellij.util.concurrency.ChildContext.runInChildContext(propagation.kt:167)
+	at com.intellij.util.concurrency.ContextRunnable.lambda$run$0(ContextRunnable.java:26)
+	at com.intellij.concurrency.ThreadContext.resetThreadContext(threadContext.kt:294)
+	at com.intellij.util.concurrency.ContextRunnable.run(ContextRunnable.java:25)
+	at com.intellij.platform.locking.impl.NestedLocksThreadingSupport$transferWriteActionAndBlock$2.run(NestedLocksThreadingSupport.kt:1745)
+	at com.intellij.openapi.application.impl.InternalThreading$TransferredWriteActionEvent$Companion.execute(appImpl.kt:233)
+	at com.intellij.openapi.application.impl.InternalThreading$TransferredWriteActionEvent._init_$lambda$0(appImpl.kt:226)
+	at java.desktop/java.awt.event.InvocationEvent.dispatch(InvocationEvent.java:318)
+	at java.desktop/java.awt.EventQueue.dispatchEventImpl(EventQueue.java:781)
+	at java.desktop/java.awt.EventQueue$4.run(EventQueue.java:728)
+	at java.desktop/java.awt.EventQueue$4.run(EventQueue.java:722)
+	at java.base/java.security.AccessController.doPrivileged(AccessController.java:400)
+	at java.base/java.security.ProtectionDomain$JavaSecurityAccessImpl.doIntersectionPrivilege(ProtectionDomain.java:87)
+	at java.desktop/java.awt.EventQueue.dispatchEvent(EventQueue.java:750)
+	at com.intellij.ide.IdeEventQueue.defaultDispatchEvent(IdeEventQueue.kt:664)
+	at com.intellij.ide.IdeEventQueue._dispatchEvent(IdeEventQueue.kt:517)
+	at com.intellij.ide.IdeEventQueue.dispatchEvent$lambda$0$0$0$0(IdeEventQueue.kt:337)
+	at com.intellij.openapi.progress.impl.CoreProgressManager.computePrioritized(CoreProgressManager.java:901)
+	at com.intellij.ide.IdeEventQueue.dispatchEvent$lambda$0$0$0(IdeEventQueue.kt:336)
+	at com.intellij.ide.IdeEventQueueKt.performActivity$lambda$1(IdeEventQueue.kt:1065)
+	at com.intellij.openapi.application.TransactionGuardImpl.performActivity(TransactionGuardImpl.java:109)
+	at com.intellij.ide.IdeEventQueueKt.performActivity(IdeEventQueue.kt:1065)
+	at com.intellij.ide.IdeEventQueue.dispatchEvent$lambda$0(IdeEventQueue.kt:331)
+	at com.intellij.ide.IdeEventQueue.dispatchEvent(IdeEventQueue.kt:371)
+	at java.desktop/java.awt.EventDispatchThread.pumpOneEventForFilters(EventDispatchThread.java:207)
+	at java.desktop/java.awt.EventDispatchThread.pumpEventsForFilter(EventDispatchThread.java:128)
+	at java.desktop/java.awt.EventDispatchThread.pumpEventsForHierarchy(EventDispatchThread.java:117)
+	at java.desktop/java.awt.EventDispatchThread.pumpEvents(EventDispatchThread.java:113)
+	at java.desktop/java.awt.EventDispatchThread.pumpEvents(EventDispatchThread.java:105)
+	at java.desktop/java.awt.EventDispatchThread.run(EventDispatchThread.java:92)
+2026-02-04 12:33:15,261 [  54096] SEVERE - #c.i.o.progress - Qodana for C/C++ 2025.3.2 EAP  Build #QDCPP-253.29649
+2026-02-04 12:33:15,261 [  54096] SEVERE - #c.i.o.progress - JDK: 21.0.9; VM: OpenJDK 64-Bit Server VM; Vendor: JetBrains s.r.o.
+2026-02-04 12:33:15,261 [  54096] SEVERE - #c.i.o.progress - OS: Mac OS X
+2026-02-04 12:33:15,261 [  54096] SEVERE - #c.i.o.progress - Plugin to blame: CMake version: 253.29649.0
+2026-02-04 12:33:15,261 [  54096] SEVERE - #c.i.o.progress - Last Action: 
+2026-02-04 12:33:15,290 [  54125]   INFO - #c.i.o.p.MergingQueueGuiExecutor - Running task: (dumb mode task) com.intellij.openapi.roots.impl.PushedFilePropertiesUpdaterImpl$MyDumbModeTask@58e80d98 (reason: Push on VFS changes)
+2026-02-04 12:33:15,296 [  54131]   INFO - #c.i.c.r.c.p.RadProjectModelHost - Processing VFS change (version: 5, has WA: false)
+2026-02-04 12:33:15,296 [  54131]   INFO - #c.i.c.r.c.p.RadProjectModelHost - Scheduling C++ project model sync (with version = 5)
+2026-02-04 12:33:15,307 [  54142]   INFO - #c.i.o.p.MergingQueueGuiExecutor - Task finished: (dumb mode task) com.intellij.openapi.roots.impl.PushedFilePropertiesUpdaterImpl$MyDumbModeTask@58e80d98 (reason: Push on VFS changes)
+2026-02-04 12:33:15,307 [  54142]   INFO - #c.i.o.p.MergingQueueGuiExecutor - Running task: (dumb mode task) UnindexedFilesIndexer[QodanaTestProject, reasons: [On refresh of files in QodanaTestProject]]
+2026-02-04 12:33:15,342 [  54177]   INFO - #c.j.r.p.w.i.WorkspaceModelUpdater - Sync started...
+2026-02-04 12:33:15,351 [  54186]   INFO - #c.i.w.i.i.EntitiesOrphanageImpl - Update orphanage. 0 modules added
+2026-02-04 12:33:15,351 [  54186]   INFO - #c.i.w.i.i.WorkspaceModelImpl - Project model updated to version 4: Catching up
+2026-02-04 12:33:15,352 [  54187]   INFO - #c.j.r.p.w.i.WorkspaceModelUpdater - Replacing strategy. Initial strategy statistics: 
+Add, last batch time: 81ms (count: 5), total time: 81ms (count: 5)
+Remove, last batch time: 0ms (count: 0), total time: 0ms (count: 0)
+ExpandCompleted, last batch time: 0ms (count: 0), total time: 0ms (count: 0)
+
+2026-02-04 12:33:15,354 [  54189]   INFO - #c.j.r.p.w.i.WorkspaceModelUpdater - Sync finished in 11 ms
+2026-02-04 12:33:15,450 [  54285]   INFO - #c.j.c.cpp - Using CMake file-based API for profile Debug, generation directory: cmake-build-debug. CMake version: 4.1.2
+2026-02-04 12:33:15,454 [  54289]   INFO - #c.j.c.c.c.p.CMakePythonSdkService - No Python SDK found
+2026-02-04 12:33:15,455 [  54290]   INFO - #c.j.c.c.c.CMakeRunner - Executing CMake: /Users/jacob/Library/Caches/JetBrains/Qodana/qodana-QDCPP-253.29649.102-aarch64/CLion.app/Contents/bin/cmake/mac/aarch64/bin/cmake -DCMAKE_BUILD_TYPE=Debug -DCMAKE_MAKE_PROGRAM=/Users/jacob/Library/Caches/JetBrains/Qodana/qodana-QDCPP-253.29649.102-aarch64/CLion.app/Contents/bin/ninja/mac/aarch64/ninja -G Ninja -S /Users/jacob/Projects/qodana-cli/internal/core/testdata/cpp-project -B /Users/jacob/Projects/qodana-cli/internal/core/testdata/cpp-project/cmake-build-debug
+2026-02-04 12:33:15,456 [  54291]   INFO - #c.j.r.p.SolutionLifecycleHost - Full cold solution load with caches took 1561 milliseconds.
+2026-02-04 12:33:15,797 [  54632]   INFO - #c.i.c.r.c.p.RadProjectModelHost - Trying to build snapshot with version = 5
+2026-02-04 12:33:15,808 [  54643]   INFO - #c.i.r.c.c.p.RadProjectSnapshotBuilder - Content iteration took 9.588291ms (added 2 new files of 44 total files in content)
+2026-02-04 12:33:15,808 [  54643]   INFO - #c.i.c.r.c.p.RadProjectModelHost - C++ project model snapshot calculated in 11ms
+2026-02-04 12:33:15,808 [  54643]   INFO - #c.i.c.r.c.p.RadProjectModelHost - Sending updates, project model has 1 sources and 2 weak sources (version: 5)
+2026-02-04 12:33:15,809 [  54644]   INFO - #c.i.c.r.c.p.RadProjectModelHost - C++ project model updated in 0ms
+2026-02-04 12:33:15,836 [  54671]   INFO - #c.i.c.r.c.p.RadProjectModelHost - Backend project reloaded (version: 5)
+2026-02-04 12:33:15,858 [  54693]   INFO - #c.i.p.c.s.s.SystemPythonServiceImplKt - pythons refreshed
+2026-02-04 12:33:15,859 [  54694]   INFO - #c.i.p.c.s.s.i.Cache - End update for LocalEelDescriptor
+2026-02-04 12:33:15,866 [  54701]   INFO - #c.i.c.r.c.p.RadProjectModelHost - Processing project root change event (version: 6, has WA: true)
+2026-02-04 12:33:15,866 [  54701]   INFO - #c.i.c.r.c.p.RadProjectModelHost - Scheduling C++ project model sync (with version = 6)
+2026-02-04 12:33:15,941 [  54776]   INFO - #c.i.u.i.UnindexedFilesScanner - [49cc8fd9] Scanning completed for QodanaTestProject. Number of scanned files: 40249; number of files for indexing: 0
+2026-02-04 12:33:15,941 [  54776]   INFO - #c.i.o.p.InitialVfsRefreshService - 49cc8fd9: marking roots for initial VFS refresh
+2026-02-04 12:33:15,957 [  54792]   INFO - #c.i.o.p.InitialVfsRefreshService - 49cc8fd9: starting initial VFS refresh of 7 roots
+2026-02-04 12:33:15,962 [  54797]   INFO - #c.j.r.p.w.i.WorkspaceModelUpdater - Update finished:
+Add, last batch time: 4ms (count: 6), total time: 4ms (count: 6)
+Remove, last batch time: 0ms (count: 0), total time: 0ms (count: 0)
+ExpandCompleted, last batch time: 0ms (count: 0), total time: 0ms (count: 0)
+
+2026-02-04 12:33:15,964 [  54799]   INFO - #c.i.w.i.i.EntitiesOrphanageImpl - Update orphanage. 0 modules added
+2026-02-04 12:33:15,964 [  54799]   INFO - #c.i.w.i.i.WorkspaceModelImpl - Project model updated to version 5: Apply 6 changes to workspace model
+2026-02-04 12:33:15,966 [  54801]   INFO - #c.j.r.p.w.i.WorkspaceModelUpdater - performUpdate finished in 9 ms, total time 9 ms
+2026-02-04 12:33:16,368 [  55203]   INFO - #c.i.c.r.c.p.RadProjectModelHost - Trying to build snapshot with version = 6
+2026-02-04 12:33:16,369 [  55204]   INFO - #c.i.r.c.c.p.RadProjectSnapshotBuilder - Content iteration took 707.792us (added 2 new files of 44 total files in content)
+2026-02-04 12:33:16,369 [  55204]   INFO - #c.i.c.r.c.p.RadProjectModelHost - C++ project model snapshot calculated in 1ms
+2026-02-04 12:33:16,369 [  55204]   INFO - #c.i.c.r.c.p.RadProjectModelHost - Sending updates, project model has 1 sources and 2 weak sources (version: 6)
+2026-02-04 12:33:16,369 [  55204]   INFO - #c.i.c.r.c.p.RadProjectModelHost - C++ project model updated in 0ms
+2026-02-04 12:33:16,372 [  55207]   INFO - #c.i.c.r.c.p.RadProjectModelHost - Backend project reloaded (version: 6)
+2026-02-04 12:33:16,477 [  55312]   INFO - #c.j.r.p.w.i.WorkspaceModelUpdater - performUpdate finished in 0 ms, total time 9 ms
+2026-02-04 12:33:16,504 [  55339]   INFO - #c.i.o.p.InitialVfsRefreshService - 49cc8fd9: initial VFS refresh finished in 546 ms
+2026-02-04 12:33:16,507 [  55342]   INFO - #c.i.u.i.PerProjectIndexingQueue - Finished for QodanaTestProject. No files to index with loading content.
+2026-02-04 12:33:16,507 [  55342]   INFO - #c.i.o.p.UnindexedFilesScannerExecutor - [49cc8fd9] Task finished (scanning id=0): com.intellij.util.indexing.UnindexedFilesScannerExecutorImpl$ScheduledScanningTask@561f90d9
+2026-02-04 12:33:16,507 [  55342]   INFO - #c.i.u.i.FileBasedIndexImpl - Indexes are already loaded
+2026-02-04 12:33:16,515 [  55350]   INFO - #c.i.u.i.c.IndexUpdateRunner - Using 16 workers for indexing and 4 for writing indexes
+2026-02-04 12:33:16,550 [  55385]   INFO - #c.i.u.i.ProjectChangedFilesScanner - Retrieving changed during indexing files of QodanaTestProject : 30 to update, calculated in 33ms
+2026-02-04 12:33:16,568 [  55403]   INFO - #c.i.u.i.c.IndexUpdateRunner - Coroutine 10 finished gracefully
+2026-02-04 12:33:16,568 [  55403]   INFO - #c.i.u.i.c.IndexUpdateRunner - Coroutine 15 finished gracefully
+2026-02-04 12:33:16,568 [  55403]   INFO - #c.i.u.i.c.IndexUpdateRunner - Coroutine 13 finished gracefully
+2026-02-04 12:33:16,568 [  55403]   INFO - #c.i.u.i.c.IndexUpdateRunner - Coroutine 3 finished gracefully
+2026-02-04 12:33:16,568 [  55403]   INFO - #c.i.u.i.c.IndexUpdateRunner - Coroutine 14 finished gracefully
+2026-02-04 12:33:16,568 [  55403]   INFO - #c.i.u.i.c.IndexUpdateRunner - Coroutine 4 finished gracefully
+2026-02-04 12:33:16,568 [  55403]   INFO - #c.i.u.i.c.IndexUpdateRunner - Coroutine 2 finished gracefully
+2026-02-04 12:33:16,568 [  55403]   INFO - #c.i.u.i.c.IndexUpdateRunner - Coroutine 7 finished gracefully
+2026-02-04 12:33:16,569 [  55404]   INFO - #c.i.u.i.c.IndexUpdateRunner - Coroutine 12 finished gracefully
+2026-02-04 12:33:16,570 [  55405]   INFO - #c.i.u.i.c.IndexUpdateRunner - Coroutine 9 finished gracefully
+2026-02-04 12:33:16,571 [  55406]   INFO - #c.i.u.i.c.IndexUpdateRunner - Coroutine 6 finished gracefully
+2026-02-04 12:33:16,573 [  55408]   INFO - #c.i.u.i.c.IndexUpdateRunner - Coroutine 1 finished gracefully
+2026-02-04 12:33:16,573 [  55408]   INFO - #c.i.u.i.c.IndexUpdateRunner - Coroutine 8 finished gracefully
+2026-02-04 12:33:16,583 [  55418]   INFO - #c.i.u.i.c.IndexUpdateRunner - Coroutine 11 finished gracefully
+2026-02-04 12:33:16,603 [  55438]   INFO - #c.i.u.i.c.IndexUpdateRunner - Coroutine 0 finished gracefully
+2026-02-04 12:33:16,642 [  55477]   INFO - #c.j.c.c.c.CMakeRunner - Killing CMake process tree on exit
+2026-02-04 12:33:16,648 [  55483]   INFO - #c.i.u.i.c.IndexUpdateRunner - Coroutine 5 finished gracefully
+2026-02-04 12:33:16,687 [  55522]   INFO - #c.i.u.i.UnindexedFilesIndexer - Finished for QodanaTestProject. Unindexed files update took 179ms; general responsiveness: ok; EDT responsiveness: ok
+2026-02-04 12:33:16,687 [  55522]   INFO - #c.i.o.p.MergingQueueGuiExecutor - Task finished: (dumb mode task) UnindexedFilesIndexer[QodanaTestProject, reasons: [On refresh of files in QodanaTestProject]]
+2026-02-04 12:33:16,687 [  55522]   INFO - #c.i.o.p.MergingQueueGuiExecutor - Running task: (dumb mode task) com.intellij.openapi.roots.impl.PushedFilePropertiesUpdaterImpl$MyDumbModeTask@7c98e9aa (reason: Push on VFS changes)
+2026-02-04 12:33:16,688 [  55523]   INFO - #c.i.o.p.UnindexedFilesScannerExecutor - [49cc8fd9] Running task: com.intellij.util.indexing.UnindexedFilesScannerExecutorImpl$ScheduledScanningTask@4d88729d
+2026-02-04 12:33:16,688 [  55523]   INFO - #c.i.o.p.UnindexedFilesScannerExecutor - [49cc8fd9] Skipping task: com.intellij.util.indexing.UnindexedFilesScannerExecutorImpl$ScheduledScanningTask@4d88729d
+2026-02-04 12:33:16,689 [  55524]   INFO - #c.i.o.p.MergingQueueGuiExecutor - Task finished: (dumb mode task) com.intellij.openapi.roots.impl.PushedFilePropertiesUpdaterImpl$MyDumbModeTask@7c98e9aa (reason: Push on VFS changes)
+2026-02-04 12:33:16,689 [  55524]   INFO - #c.i.o.p.DumbServiceImpl - exit dumb mode [QodanaTestProject]
+2026-02-04 12:33:16,689 [  55524]   INFO - STDOUT - [IDE]: Task 'Analyzing project to enable smart features' ended
+2026-02-04 12:33:16,690 [  55525]   INFO - STDOUT - 'dumb-mode' is completed.
+2026-02-04 12:33:16,690 [  55525]   INFO - STDOUT - 'background activities start' is in progress...
+2026-02-04 12:33:16,842 [  55677]   INFO - #c.j.c.c.c.CMakeRunner - CMake exit code: 0 for command: /Users/jacob/Library/Caches/JetBrains/Qodana/qodana-QDCPP-253.29649.102-aarch64/CLion.app/Contents/bin/cmake/mac/aarch64/bin/cmake -DCMAKE_BUILD_TYPE=Debug -DCMAKE_MAKE_PROGRAM=/Users/jacob/Library/Caches/JetBrains/Qodana/qodana-QDCPP-253.29649.102-aarch64/CLion.app/Contents/bin/ninja/mac/aarch64/ninja -G Ninja -S /Users/jacob/Projects/qodana-cli/internal/core/testdata/cpp-project -B /Users/jacob/Projects/qodana-cli/internal/core/testdata/cpp-project/cmake-build-debug
+2026-02-04 12:33:16,843 [  55678]   INFO - #c.j.c.cpp - CMake generation for Debug took 1 s 392 ms
+2026-02-04 12:33:16,860 [  55695]   INFO - #c.j.c.cpp - CMake API targets for "Debug" read in 8 ms
+2026-02-04 12:33:16,861 [  55696]   INFO - #c.j.c.cpp - Time spent to remove sources and dependency files 1 ms
+2026-02-04 12:33:16,861 [  55696]   INFO - #c.j.c.cpp - CMake generation took 1 s 423 ms; total time during this session: 1 s 423 ms
+2026-02-04 12:33:16,862 [  55697]   INFO - #c.i.c.m.CodeInsightContextEnabling - multiverse is enabled
+2026-02-04 12:33:16,971 [  55806]   INFO - #c.j.c.l.w.compiler - libc++.modules.json was not found.
+2026-02-04 12:33:16,999 [  55834]   INFO - #c.j.c.c.c.w.CMakeWorkspace - Updating CMake workspace took 135 ms
+2026-02-04 12:33:17,029 [  55864]   INFO - #c.i.j.n.n.WorkingDirectoryDependentNpmPackageVersionManager - Version fetched successfully: 11.8.0; command: /opt/homebrew/bin/npm --version, duration: 201ms
+2026-02-04 12:33:17,075 [  55910]   INFO - #c.j.p.p.PyPIPackageCache - Loaded 731256 packages from /Users/jacob/Library/Caches/JetBrains/Qodana/dff3951f-e0b590d2/cache/idea/253/python_packages/pypi-cache.json
+2026-02-04 12:33:17,084 [  55919]   INFO - #c.i.o.p.DumbServiceImpl - enter dumb mode [QodanaTestProject]
+2026-02-04 12:33:17,087 [  55922]   INFO - #c.i.o.p.MergingQueueGuiExecutor - Running task: (dumb mode task) com.intellij.openapi.roots.impl.PushedFilePropertiesUpdaterImpl$MyDumbModeTask@42a902d6 (reason: Push on VFS changes)
+2026-02-04 12:33:17,088 [  55923]   INFO - #c.i.o.p.MergingQueueGuiExecutor - Task finished: (dumb mode task) com.intellij.openapi.roots.impl.PushedFilePropertiesUpdaterImpl$MyDumbModeTask@42a902d6 (reason: Push on VFS changes)
+2026-02-04 12:33:17,088 [  55923]   INFO - #c.i.o.p.DumbServiceImpl - exit dumb mode [QodanaTestProject]
+2026-02-04 12:33:17,089 [  55924]   INFO - STDOUT - [IDE]: Task 'Analyzing project to enable smart features' ended
+2026-02-04 12:33:17,096 [  55931]   INFO - #c.i.w.i.i.EntitiesOrphanageImpl - Update orphanage. 0 modules added
+2026-02-04 12:33:17,096 [  55931]   INFO - #c.i.w.i.i.WorkspaceModelImpl - Project model updated to version 6 in 1 ms: CIDR: apply roots
+2026-02-04 12:33:17,101 [  55936]   INFO - #c.j.cidr - The time taken to discover the test framework from the context:3 ms
+2026-02-04 12:33:17,165 [  56000]   INFO - #c.j.c.c.c.w.CMakeWorkspace - Reloading CMake project took 2 s 549 ms
+2026-02-04 12:33:19,533 [  58368]   INFO - #c.i.w.i.i.EntitiesOrphanageImpl - Update orphanage. 0 modules added
+2026-02-04 12:33:19,533 [  58368]   INFO - #c.i.w.i.i.WorkspaceModelImpl - Project model updated to version 7 in 1 ms: Add project root /Users/jacob/Projects/qodana-cli/internal/core/testdata/cpp-project to project QodanaTestProject
+2026-02-04 12:33:19,541 [  58376]   INFO - #c.j.p.p.p.PypiPackageCache$Companion - Reloading Pypi package cache
+2026-02-04 12:33:19,541 [  58376]   INFO - #c.j.p.p.p.PypiPackageCache$Companion - Loading python packages from PyPi Repository
+2026-02-04 12:33:19,542 [  58377]   INFO - #c.j.p.p.PyPIPackageUtil - Fetching index of all packages available on https://pypi.org/simple/
+2026-02-04 12:33:19,542 [  58377]   INFO - #c.j.p.p.PyPIPackageUtil - Fetching index of all packages available on https://pypi.org/simple/
+2026-02-04 12:33:19,542 [  58377]   INFO - #o.j.q.s.QodanaLinterBackgroundStartupActivity - Executed Qodana backgroundPostStartupActivity
+2026-02-04 12:33:19,542 [  58377]   INFO - STDOUT - 'background activities start' is completed.
+2026-02-04 12:33:19,542 [  58377]   INFO - STDOUT - 'sync-project-model' is in progress...
+2026-02-04 12:33:19,543 [  58378]   INFO - #c.i.w.i.i.GlobalWorkspaceModel - Sync global entities with mutable entity storage
+2026-02-04 12:33:19,544 [  58379]   INFO - #c.i.w.i.i.j.s.JpsProjectModelSynchronizer - Attempt 1: Apply JPS storage (iml files)
+2026-02-04 12:33:19,546 [  58381]   INFO - #c.i.w.i.i.EntitiesOrphanageImpl - Update orphanage. 0 modules added
+2026-02-04 12:33:19,547 [  58382]   INFO - #c.i.w.i.i.WorkspaceModelImpl - Project model updated to version 8
+2026-02-04 12:33:19,547 [  58382]   INFO - #c.i.w.i.i.j.s.JpsProjectModelSynchronizer - Attempt 1: Changes were successfully applied
+2026-02-04 12:33:19,551 [  58386]   INFO - #c.i.w.i.i.EntitiesOrphanageImpl - Update orphanage. 0 modules added
+2026-02-04 12:33:19,551 [  58386]   INFO - #c.i.w.i.i.WorkspaceModelImpl - Project model updated to version 9 in 1 ms: CIDR: apply roots
+2026-02-04 12:33:19,551 [  58386]   INFO - #c.i.w.i.i.j.s.DelayedProjectSynchronizer$Util - Workspace model loaded from cache. Syncing real project state into workspace model in 16 ms. Thread[#70,DefaultDispatcher-worker-18,5,main]
+2026-02-04 12:33:19,551 [  58386]   INFO - STDOUT - 'sync-project-model' is completed.
+2026-02-04 12:33:19,553 [  58388]   INFO - STDOUT - 'Awaits CLion backend activities' is in progress...
+2026-02-04 12:33:19,553 [  58388]   INFO - #c.i.c.r.c.i.RadHeadlessStartupManager - Awaiting solution analysis host ready...
+2026-02-04 12:33:19,554 [  58389]   INFO - #c.i.c.r.c.i.RadHeadlessStartupManager - Awaiting solution analysis host ready... done (389.25us)
+2026-02-04 12:33:19,554 [  58389]   INFO - #c.i.c.r.c.i.RadHeadlessStartupManager - Awaiting backend startup...
+2026-02-04 12:33:19,554 [  58389]   INFO - #c.i.c.r.c.i.RadHeadlessStartupManager - Awaiting backend startup... done (80.833us)
+2026-02-04 12:33:19,554 [  58389]   INFO - #c.i.c.r.c.i.RadHeadlessStartupManager - Awaiting backend to finish configuration...
+2026-02-04 12:33:19,554 [  58389]   INFO - #c.i.c.r.c.i.RadHeadlessStartupManager - Awaiting smart mode...
+2026-02-04 12:33:19,554 [  58389]   INFO - #c.i.c.r.c.i.RadHeadlessStartupManager - Awaiting smart mode... done (39.458us)
+2026-02-04 12:33:19,555 [  58390]   INFO - #c.i.c.r.c.i.RadHeadlessStartupManager - Awaiting backend project model...
+2026-02-04 12:33:19,555 [  58390]   INFO - #c.i.c.r.c.i.RadHeadlessStartupManager - Wait for Project model...
+2026-02-04 12:33:19,555 [  58390]   INFO - #c.i.c.r.c.i.RadHeadlessStartupManager - Wait for Project model: all frontend documents are committed
+2026-02-04 12:33:19,555 [  58390]   INFO - #c.i.c.r.c.i.RadHeadlessStartupManager - Wait for Project model: source generators...
+2026-02-04 12:33:19,555 [  58390]   INFO - #c.i.c.r.c.i.RadHeadlessStartupManager - Wait for Project model: source generators are ready
+2026-02-04 12:33:19,555 [  58390]   INFO - #c.i.c.r.c.i.RadHeadlessStartupManager - WaitBackend: syncImpulse sending
+2026-02-04 12:33:19,559 [  58394]   INFO - #c.i.c.r.c.i.RadHeadlessStartupManager - WaitBackend: syncImpulse completed
+2026-02-04 12:33:19,559 [  58394]   INFO - #c.i.c.r.c.i.RadHeadlessStartupManager - Wait for Project model: waitBackend finished
+2026-02-04 12:33:19,559 [  58394]   INFO - #c.i.c.r.c.i.RadHeadlessStartupManager - Wait for Project model: FileSystemTracker is ready
+2026-02-04 12:33:19,559 [  58394]   INFO - #c.i.c.r.c.i.RadHeadlessStartupManager - Wait for Project model: VfsWatchRootHost is ready
+2026-02-04 12:33:19,559 [  58394]   INFO - #c.i.c.r.c.i.RadHeadlessStartupManager - Wait for Workspace Model...
+2026-02-04 12:33:19,559 [  58394]   INFO - #c.i.c.r.c.i.RadHeadlessStartupManager - Wait for Workspace Model: model ready
+2026-02-04 12:33:19,559 [  58394]   INFO - #c.i.c.r.c.i.RadHeadlessStartupManager - Project model ready in 4 ms
+2026-02-04 12:33:19,560 [  58395]   INFO - #c.i.c.r.c.i.RadHeadlessStartupManager - Awaiting backend project model... done (5.003ms)
+2026-02-04 12:33:19,560 [  58395]   INFO - #c.i.c.r.c.i.RadHeadlessStartupManager - Awaiting backend caches...
+2026-02-04 12:33:19,560 [  58395]   INFO - #c.j.r.p.w.i.WorkspaceModelUpdater - performUpdate finished in 0 ms, total time 10 ms
+2026-02-04 12:33:19,567 [  58402]   INFO - #c.i.c.r.c.i.RadHeadlessStartupManager - Awaiting backend caches... done (7.727ms)
+2026-02-04 12:33:19,568 [  58403]   INFO - #c.i.c.r.c.i.RadHeadlessStartupManager - Awaiting backend to finish configuration... done (13.407709ms)
+2026-02-04 12:33:19,568 [  58403]   INFO - #c.i.c.r.c.i.RadHeadlessStartupManager - Awaiting sync points...
+2026-02-04 12:33:19,569 [  58404]   INFO - #c.i.c.r.c.i.RadHeadlessStartupManager - Awaiting sync points... done (1.205209ms)
+2026-02-04 12:33:19,569 [  58404]   INFO - #c.i.c.r.c.i.RadHeadlessStartupManager - Await for synced project
+2026-02-04 12:33:19,569 [  58404]   INFO - #c.i.c.r.c.i.RadHeadlessStartupManager - Awaiting build tools...
+2026-02-04 12:33:19,570 [  58405]   INFO - #c.i.c.r.c.i.RadHeadlessStartupManager - Awaiting build tools... done (459us)
+2026-02-04 12:33:19,570 [  58405]   INFO - #c.i.c.r.c.i.RadHeadlessStartupManager - Awaiting any OC resolve configurations...
+2026-02-04 12:33:19,571 [  58406]   INFO - #c.i.c.r.c.i.RadHeadlessStartupManager - Found 1 configurations: qodana_test | Debug
+2026-02-04 12:33:19,571 [  58406]   INFO - #c.i.c.r.c.i.RadHeadlessStartupManager - Awaiting any OC resolve configurations... done (233.167us)
+2026-02-04 12:33:19,571 [  58406]   INFO - #c.i.c.r.c.i.RadHeadlessStartupManager - Awaiting Progress Manager
+2026-02-04 12:33:19,571 [  58406]   INFO - #c.i.c.r.c.i.RadHeadlessStartupManager - Progress Manager has no more active tasks
+2026-02-04 12:33:19,571 [  58406]   INFO - STDOUT - 'Awaits CLion backend activities' is completed.
+2026-02-04 12:33:19,573 [  58408]   INFO - #c.i.w.i.i.j.s.JpsGlobalModelSynchronizerImpl - Saving global entities com.intellij.platform.workspace.jps.entities.SdkEntity to files
+2026-02-04 12:33:19,573 [  58408]   INFO - #c.i.w.i.i.j.s.JpsGlobalModelSynchronizerImpl - Saving global entities com.intellij.platform.workspace.jps.entities.LibraryEntity to files
+2026-02-04 12:33:19,608 [  58443]   INFO - #c.i.a.o.PathMacrosImpl - Saved path macros: {}
+2026-02-04 12:33:19,627 [  58462]   INFO - #c.i.w.i.i.j.s.JpsGlobalModelSynchronizerImpl - Saving global entities com.intellij.platform.workspace.jps.entities.SdkEntity to files
+2026-02-04 12:33:19,627 [  58462]   INFO - #c.i.w.i.i.j.s.JpsGlobalModelSynchronizerImpl - Saving global entities com.intellij.platform.workspace.jps.entities.LibraryEntity to files
+2026-02-04 12:33:19,632 [  58467]   INFO - #c.i.a.o.PathMacrosImpl - Saved path macros: {}
+2026-02-04 12:33:19,642 [  58477]   WARN - #c.i.s.ComponentManagerImpl - Suppressed a frequent exception logged for the 2nd time: Cannot find service com.intellij.spellchecker.engine.SpellCheckerEngine (classloader=PluginClassLoader(plugin=ContentModuleDescriptor(id=intellij.spellchecker) <- PluginMainDescriptor(name=IDEA CORE, id=com.intellij, version=253.29649, isBundled=true, path=~/Library/Caches/JetBrains/Qodana/qodana...
+2026-02-04 12:33:19,661 [  58496]   INFO - #c.j.r.p.w.i.WorkspaceModelUpdater - performUpdate finished in 0 ms, total time 10 ms
+2026-02-04 12:33:19,803 [  58638]   INFO - #c.i.c.ComponentStoreImpl - Saving Project(name=QodanaTestProject, containerState=COMPONENT_CREATED, componentStore=/Users/jacob/Projects/qodana-cli/internal/core/testdata/cpp-project)RunManager took 120 ms
+2026-02-04 12:33:19,809 [  58644]   INFO - STDOUT - Configuration phase 0 is completed. Initiating another phase to cover possible side effects...
+2026-02-04 12:33:19,809 [  58644]   INFO - STDOUT - All configuration phases are completed.
+2026-02-04 12:33:19,837 [  58672]   INFO - #o.j.q.s.i.r.ConsoleLog - The Project opening stage completed in 6s
+2026-02-04 12:33:19,837 [  58672]   INFO - STDOUT - The Project opening stage completed in 6s
+2026-02-04 12:33:19,837 [  58672]   INFO - STDOUT - done.
+2026-02-04 12:33:20,429 [  59264]   INFO - #c.j.p.p.p.PypiPackageCache$Companion - Loaded 734545 python packages from PyPi Repository
+2026-02-04 12:33:21,902 [  60737]   INFO - #c.i.o.p.DumbServiceImpl - enter dumb mode [QodanaTestProject]
+2026-02-04 12:33:21,908 [  60743]   INFO - #o.j.q.s.i.r.ConsoleLog - Preparing for the Project configuration stage ...
+2026-02-04 12:33:21,908 [  60743]   INFO - STDOUT - Preparing for the Project configuration stage ...
+2026-02-04 12:33:21,908 [  60743]   INFO - STDOUT - 'dumb-mode' is in progress...
+2026-02-04 12:33:21,909 [  60744]   INFO - #c.i.o.p.MergingQueueGuiExecutor - Running task: (dumb mode task) com.intellij.openapi.roots.impl.PushedFilePropertiesUpdaterImpl$MyDumbModeTask@1caa141a (reason: Push on VFS changes)
+2026-02-04 12:33:21,910 [  60745]   INFO - #c.i.o.p.MergingQueueGuiExecutor - Task finished: (dumb mode task) com.intellij.openapi.roots.impl.PushedFilePropertiesUpdaterImpl$MyDumbModeTask@1caa141a (reason: Push on VFS changes)
+2026-02-04 12:33:21,911 [  60746]   INFO - #c.i.o.p.DumbServiceImpl - exit dumb mode [QodanaTestProject]
+2026-02-04 12:33:21,911 [  60746]   INFO - STDOUT - [IDE]: Task 'Analyzing project to enable smart features' ended
+2026-02-04 12:33:21,911 [  60746]   INFO - STDOUT - 'dumb-mode' is completed.
+2026-02-04 12:33:21,911 [  60746]   INFO - #c.i.w.i.i.j.s.JpsGlobalModelSynchronizerImpl - Saving global entities com.intellij.platform.workspace.jps.entities.SdkEntity to files
+2026-02-04 12:33:21,911 [  60746]   INFO - #c.i.w.i.i.j.s.JpsGlobalModelSynchronizerImpl - Saving global entities com.intellij.platform.workspace.jps.entities.LibraryEntity to files
+2026-02-04 12:33:21,923 [  60758]   INFO - #c.i.a.o.PathMacrosImpl - Saved path macros: {}
+2026-02-04 12:33:21,929 [  60764]   INFO - #c.i.w.i.i.j.s.JpsGlobalModelSynchronizerImpl - Saving global entities com.intellij.platform.workspace.jps.entities.SdkEntity to files
+2026-02-04 12:33:21,929 [  60764]   INFO - #c.i.w.i.i.j.s.JpsGlobalModelSynchronizerImpl - Saving global entities com.intellij.platform.workspace.jps.entities.LibraryEntity to files
+2026-02-04 12:33:21,935 [  60770]   INFO - #c.i.a.o.PathMacrosImpl - Saved path macros: {}
+2026-02-04 12:33:21,939 [  60774]   INFO - STDOUT - Configuration phase 0 is completed. Initiating another phase to cover possible side effects...
+2026-02-04 12:33:21,939 [  60774]   INFO - STDOUT - All configuration phases are completed.
+2026-02-04 12:33:21,949 [  60784]   INFO - #o.j.q.s.i.r.s.QodanaProjectLoader - Configured project
+2026-02-04 12:33:21,976 [  60811]   INFO - #o.j.q.s.i.r.ConsoleLog - The Project configuration stage completed in 68ms
+2026-02-04 12:33:21,976 [  60811]   INFO - STDOUT - The Project configuration stage completed in 68ms
+2026-02-04 12:33:21,977 [  60812]   INFO - o.j.q.i.linter - Loading dynamic inspections (FlexInspect)
+2026-02-04 12:33:21,977 [  60812]   INFO - o.j.q.i.linter - FlexInspect: finished loading
+- total number of inspection.kts files: 0}
+- number of compiled inspection.kts files: 0}
+- number of inspections from compiled inspection.kts files: 0}
+- number of failed to compile inspection.kts files: 0} 
+2026-02-04 12:33:22,169 [  61004]   WARN - #c.i.c.i.YamlInspectionProfileImpl - Unknown scope format: test:*..*
+com.intellij.psi.search.scope.packageSet.ParsingException: Unknown scope type at position 1
+	at com.intellij.psi.search.scope.packageSet.PackageSetFactoryImpl$Parser.error(PackageSetFactoryImpl.java:209)
+	at com.intellij.psi.search.scope.packageSet.PackageSetFactoryImpl$Parser.parsePattern(PackageSetFactoryImpl.java:134)
+	at com.intellij.psi.search.scope.packageSet.PackageSetFactoryImpl$Parser.parseTerm(PackageSetFactoryImpl.java:121)
+	at com.intellij.psi.search.scope.packageSet.PackageSetFactoryImpl$Parser.parseIntersection(PackageSetFactoryImpl.java:99)
+	at com.intellij.psi.search.scope.packageSet.PackageSetFactoryImpl$Parser.parseUnion(PackageSetFactoryImpl.java:89)
+	at com.intellij.psi.search.scope.packageSet.PackageSetFactoryImpl$Parser.parse(PackageSetFactoryImpl.java:82)
+	at com.intellij.psi.search.scope.packageSet.PackageSetFactoryImpl.compile(PackageSetFactoryImpl.java:71)
+	at com.intellij.codeInspection.inspectionProfile.YamlInspectionProfileImpl.parsePattern(YamlInspectionProfileImpl.kt:288)
+	at com.intellij.codeInspection.inspectionProfile.YamlInspectionProfileImpl.createScope(YamlInspectionProfileImpl.kt:280)
+	at com.intellij.codeInspection.inspectionProfile.YamlInspectionProfileImpl.buildEffectiveProfile(YamlInspectionProfileImpl.kt:209)
+	at org.jetbrains.qodana.staticAnalysis.profile.providers.QodanaEmbeddedProfilesProvider.provideProfile(QodanaEmbeddedProfilesProvider.kt:40)
+	at org.jetbrains.qodana.staticAnalysis.profile.QodanaInspectionProfileProvider.runProviders(QodanaInspectionProfileProvider.java:22)
+	at org.jetbrains.qodana.staticAnalysis.profile.QodanaInspectionProfileManager.getProfile(QodanaInspectionProfileManager.kt:107)
+	at org.jetbrains.qodana.staticAnalysis.profile.QodanaProjectInspectionProfileManager.getProfile(QodanaInspectionProfileManager.kt:163)
+	at org.jetbrains.qodana.staticAnalysis.profile.QodanaInspectionProfileManager.getQodanaProfile(QodanaInspectionProfileManager.kt:111)
+	at org.jetbrains.qodana.staticAnalysis.inspections.runner.QodanaInspectionProfileLoader.loadProfileByName(QodanaInspectionProfileLoader.kt:14)
+	at org.jetbrains.qodana.staticAnalysis.inspections.runner.QodanaInspectionProfileLoader.loadProfileByName(QodanaInspectionProfileLoader.kt:12)
+	at com.intellij.codeInspection.InspectionProfileLoader.tryLoadProfileByNameOrPath(InspectionProfileLoader.java:21)
+	at org.jetbrains.qodana.staticAnalysis.inspections.runner.startup.LoadedProfileKt.loadBaseProfile$lambda$0(LoadedProfile.kt:53)
+	at kotlinx.coroutines.InterruptibleKt.runInterruptibleInExpectedContext(Interruptible.kt:48)
+	at kotlinx.coroutines.InterruptibleKt.access$runInterruptibleInExpectedContext(Interruptible.kt:1)
+	at kotlinx.coroutines.InterruptibleKt$runInterruptible$2.invokeSuspend(Interruptible.kt:40)
+	at kotlin.coroutines.jvm.internal.BaseContinuationImpl.resumeWith(ContinuationImpl.kt:34)
+	at kotlinx.coroutines.DispatchedTask.run(DispatchedTask.kt:100)
+	at kotlinx.coroutines.internal.SoftLimitedDispatcher$Worker.run(SoftLimitedDispatcher.kt:130)
+	at kotlinx.coroutines.scheduling.TaskImpl.run(Tasks.kt:89)
+	at kotlinx.coroutines.scheduling.CoroutineScheduler.runSafely(CoroutineScheduler.kt:610)
+	at kotlinx.coroutines.scheduling.CoroutineScheduler$Worker.executeTask(CoroutineScheduler.kt:1188)
+	at kotlinx.coroutines.scheduling.CoroutineScheduler$Worker.runWorker(CoroutineScheduler.kt:775)
+	at kotlinx.coroutines.scheduling.CoroutineScheduler$Worker.run(CoroutineScheduler.kt:762)
+2026-02-04 12:33:22,343 [  61178]   INFO - STDOUT - Initializing project…Inspecting with the 'qodana.starter' profile
+2026-02-04 12:33:22,356 [  61191]   INFO - #o.j.q.s.p.QodanaProfile - The 'qodana.sanity' profile is configured for sanity checks
+2026-02-04 12:33:22,371 [  61206]   WARN - #c.i.c.i.YamlInspectionProfileImpl - Unknown scope format: test:*..*
+com.intellij.psi.search.scope.packageSet.ParsingException: Unknown scope type at position 1
+	at com.intellij.psi.search.scope.packageSet.PackageSetFactoryImpl$Parser.error(PackageSetFactoryImpl.java:209)
+	at com.intellij.psi.search.scope.packageSet.PackageSetFactoryImpl$Parser.parsePattern(PackageSetFactoryImpl.java:134)
+	at com.intellij.psi.search.scope.packageSet.PackageSetFactoryImpl$Parser.parseTerm(PackageSetFactoryImpl.java:121)
+	at com.intellij.psi.search.scope.packageSet.PackageSetFactoryImpl$Parser.parseIntersection(PackageSetFactoryImpl.java:99)
+	at com.intellij.psi.search.scope.packageSet.PackageSetFactoryImpl$Parser.parseUnion(PackageSetFactoryImpl.java:89)
+	at com.intellij.psi.search.scope.packageSet.PackageSetFactoryImpl$Parser.parse(PackageSetFactoryImpl.java:82)
+	at com.intellij.psi.search.scope.packageSet.PackageSetFactoryImpl.compile(PackageSetFactoryImpl.java:71)
+	at com.intellij.codeInspection.inspectionProfile.YamlInspectionProfileImpl.parsePattern(YamlInspectionProfileImpl.kt:288)
+	at com.intellij.codeInspection.inspectionProfile.YamlInspectionProfileImpl.createScope(YamlInspectionProfileImpl.kt:280)
+	at com.intellij.codeInspection.inspectionProfile.YamlInspectionProfileImpl.buildEffectiveProfile(YamlInspectionProfileImpl.kt:209)
+	at org.jetbrains.qodana.staticAnalysis.profile.providers.QodanaEmbeddedProfilesProvider.provideProfile(QodanaEmbeddedProfilesProvider.kt:40)
+	at org.jetbrains.qodana.staticAnalysis.profile.QodanaInspectionProfileProvider.runProviders(QodanaInspectionProfileProvider.java:22)
+	at org.jetbrains.qodana.staticAnalysis.profile.QodanaInspectionProfileManager.getProfile(QodanaInspectionProfileManager.kt:107)
+	at org.jetbrains.qodana.staticAnalysis.profile.QodanaProjectInspectionProfileManager.getProfile(QodanaInspectionProfileManager.kt:163)
+	at org.jetbrains.qodana.staticAnalysis.profile.QodanaInspectionProfileManager.getQodanaProfile(QodanaInspectionProfileManager.kt:111)
+	at org.jetbrains.qodana.staticAnalysis.inspections.runner.QodanaInspectionProfileLoader.loadProfileByName(QodanaInspectionProfileLoader.kt:14)
+	at org.jetbrains.qodana.staticAnalysis.profile.QodanaProfile$Companion.create(QodanaProfile.kt:63)
+	at org.jetbrains.qodana.staticAnalysis.inspections.runner.startup.QodanaInIdeRunContextFactory.openRunContext(QodanaInIdeRunContextFactory.kt:32)
+	at org.jetbrains.qodana.staticAnalysis.inspections.runner.startup.PreconfiguredRunContextFactory.openRunContext(PreconfiguredRunContextFactory.kt:33)
+	at org.jetbrains.qodana.staticAnalysis.inspections.runner.startup.DefaultRunContextFactory.openRunContext(QodanaRunContextFactory.kt:51)
+	at org.jetbrains.qodana.staticAnalysis.inspections.runner.startup.DefaultRunContextFactory$openRunContext$1.invokeSuspend(QodanaRunContextFactory.kt)
+	at kotlin.coroutines.jvm.internal.BaseContinuationImpl.resumeWith(ContinuationImpl.kt:34)
+	at kotlinx.coroutines.DispatchedTask.run(DispatchedTask.kt:100)
+	at kotlinx.coroutines.scheduling.CoroutineScheduler.runSafely(CoroutineScheduler.kt:610)
+	at kotlinx.coroutines.scheduling.CoroutineScheduler$Worker.runDefaultDispatcherTask(CoroutineScheduler.kt:1194)
+	at kotlinx.coroutines.scheduling.CoroutineScheduler$Worker.executeTask(CoroutineScheduler.kt:906)
+	at kotlinx.coroutines.scheduling.CoroutineScheduler$Worker.runWorker(CoroutineScheduler.kt:775)
+	at kotlinx.coroutines.scheduling.CoroutineScheduler$Worker.run(CoroutineScheduler.kt:762)
+2026-02-04 12:33:22,382 [  61217]   INFO - #o.j.q.s.p.QodanaProfile - The 'qodana.recommended' profile is configured for promo checks
+2026-02-04 12:33:22,571 [  61406]   WARN - #c.j.q.s.m.SarifReport - Missing description for tool MysqlLoadDataPath in taxonomy MySQL
+2026-02-04 12:33:22,582 [  61417]   WARN - #c.j.q.s.m.SarifReport - Missing description for tool MysqlSpaceAfterFunctionName in taxonomy MySQL
+2026-02-04 12:33:22,602 [  61437]   WARN - #c.j.q.s.m.SarifReport - Missing description for tool MysqlParsing in taxonomy MySQL
+2026-02-04 12:33:22,615 [  61450]   WARN - #c.j.q.s.m.SarifReport - Missing description for tool PyPep8Naming in taxonomy Python
+2026-02-04 12:33:22,646 [  61481]   WARN - #c.j.q.s.m.SarifReport - Missing description for tool SqlMissingBody in taxonomy Oracle
+2026-02-04 12:33:22,646 [  61481]   WARN - #c.j.q.s.m.SarifReport - Missing description for tool SqlUnmatchedForwardDeclaration in taxonomy Oracle
+2026-02-04 12:33:22,652 [  61487]   WARN - #c.j.q.s.m.SarifReport - Missing description for tool MongoJSResolve in taxonomy MongoJS
+2026-02-04 12:33:22,670 [  61505]   WARN - #c.j.q.s.m.SarifReport - Missing description for tool MongoJSDeprecation in taxonomy MongoJS
+2026-02-04 12:33:22,675 [  61510]   WARN - #c.j.q.s.m.SarifReport - Missing description for tool PgSelectFromProcedure in taxonomy PostgreSQL
+2026-02-04 12:33:22,678 [  61513]   WARN - #c.j.q.s.m.SarifReport - Missing description for tool PyShadowingBuiltins in taxonomy Python
+2026-02-04 12:33:22,678 [  61513]   WARN - #c.j.q.s.m.SarifReport - Missing description for tool MssqlBuiltin in taxonomy SQL server
+2026-02-04 12:33:22,682 [  61517]   WARN - #c.j.q.s.m.SarifReport - Missing description for tool MsOrderBy in taxonomy SQL server
+2026-02-04 12:33:22,689 [  61524]   WARN - #c.j.q.s.m.SarifReport - Missing description for tool SqlOverload in taxonomy Oracle
+2026-02-04 12:33:22,793 [  61628]   INFO - #o.j.q.s.i.r.ConsoleLog - Preparing for the Project analysis stage ...
+2026-02-04 12:33:22,793 [  61628]   INFO - STDOUT - Preparing for the Project analysis stage ...
+2026-02-04 12:33:22,797 [  61632]   INFO - #c.i.a.AnalysisScope - Scanning scope took 2 ms
+2026-02-04 12:33:22,807 [  61642]   INFO - #c.j.c.l.i.ClangdIndexerExecutionPlan - Advising the analysis scope started!
+2026-02-04 12:33:22,808 [  61643]   INFO - #c.j.c.l.i.ClangdIndexerExecutionPlan - Advising the analysis scope finished!
+2026-02-04 12:33:23,554 [  62389]   INFO - c.j.c.l.d.c.c.l.s.ClangServerAccessorImpl - started clangd version 22.0.0 (8adf2ec3dd7c1db472258206702f826e92baa2fe based on LLVM 825c956c64eb703a1874116df5bf894159f51aae revision)
+2026-02-04 12:33:23,561 [  62396]   INFO - c.j.c.l.d.c.c.l.s.ClangServerAccessorImpl - started clangd version 22.0.0 (8adf2ec3dd7c1db472258206702f826e92baa2fe based on LLVM 825c956c64eb703a1874116df5bf894159f51aae revision)
+2026-02-04 12:33:23,929 [  62764]   WARN - c.j.c.l.d.c.c.l.c.ClangClient - clionPublishDFAInputTuples: no corresponding dfa response for file file:///Users/jacob/Projects/qodana-cli/internal/core/testdata/cpp-project/main.cpp
+2026-02-04 12:33:24,010 [  62845]   INFO - STDOUT - Analyzing code 1%
+2026-02-04 12:33:24,021 [  62856]   INFO - #o.j.q.s.i.r.AsyncInspectionToolResultWriter - Async result writer started
+2026-02-04 12:33:24,023 [  62858]   WARN - #c.j.c.l.i.ClangdIndexerBatchInspectionsCoordinatorImpl - Unexpected inspection: Clazy
+2026-02-04 12:33:24,903 [  63738]   INFO - #o.j.q.s.i.r.ConsoleLog - The Project analysis stage completed in 2s
+2026-02-04 12:33:24,903 [  63738]   INFO - STDOUT - The Project analysis stage completed in 2s
+2026-02-04 12:33:24,911 [  63746]   INFO - #o.j.q.s.s.n.RuntimeNotificationCollector$NotificationReportContributor - No tool errors to report to sarif file
+2026-02-04 12:33:24,911 [  63746]   WARN - #o.j.q.s.s.GitReportContributor - Unable to find the remote url, please set the environment variable QODANA_REMOTE_URL
+2026-02-04 12:33:24,911 [  63746]   WARN - #o.j.q.s.s.GitReportContributor - Unable to parse the repository url, please set the environment variable QODANA_REPO_URL, should start with https://
+2026-02-04 12:33:24,945 [  63780]   INFO - STDOUT - 
+2026-02-04 12:33:24,945 [  63780]   INFO - STDOUT - Qodana - Detailed summary
+2026-02-04 12:33:24,945 [  63780]   INFO - STDOUT - Analysis results: 15 problems detected
+2026-02-04 12:33:24,945 [  63780]   INFO - STDOUT - By severity: High - 5, Info - 10
+2026-02-04 12:33:24,945 [  63780]   INFO - STDOUT - ----------------------------------------------------------------------------
+2026-02-04 12:33:24,945 [  63780]   INFO - STDOUT - Name                                                Severity  Problems count
+2026-02-04 12:33:24,945 [  63780]   INFO - STDOUT - ----------------------------------------------------------------------------
+2026-02-04 12:33:24,945 [  63780]   INFO - STDOUT - Declarator is never used                                High               3
+2026-02-04 12:33:24,945 [  63780]   INFO - STDOUT - Clang-Tidy                                              High               1
+2026-02-04 12:33:24,945 [  63780]   INFO - STDOUT - Possibly unused #include directive                      High               1
+2026-02-04 12:33:24,945 [  63780]   INFO - STDOUT - Local variable can be made const                        Info               4
+2026-02-04 12:33:24,946 [  63781]   INFO - STDOUT - Parameter can be made const                             Info               3
+2026-02-04 12:33:24,946 [  63781]   INFO - STDOUT - Parameter is never used                                 Info               1
+2026-02-04 12:33:24,946 [  63781]   INFO - STDOUT - Pass value parameters by const reference                Info               1
+2026-02-04 12:33:24,946 [  63781]   INFO - STDOUT - Type can be replaced with auto                          Info               1
+2026-02-04 12:33:24,946 [  63781]   INFO - STDOUT - ----------------------------------------------------------------------------
+2026-02-04 12:33:24,946 [  63781]   INFO - STDOUT - 
+2026-02-04 12:33:24,946 [  63781]   INFO - STDOUT - 
+2026-02-04 12:33:24,971 [  63806]   INFO - #o.j.q.s.i.r.QodanaInspectionApplication - sessionId: 26020411-f7a6b87b2a1b
+2026-02-04 12:33:24,987 [  63822]   INFO - #c.i.u.i.PersistentDirtyFilesQueue - Dirty file ids stored. Size: 0. Index: 3 Path: /Users/jacob/Library/Caches/JetBrains/Qodana/dff3951f-e0b590d2/cache/idea/253/index/dirty-file-queues/49cc8fd9
+2026-02-04 12:33:24,988 [  63823]   INFO - #c.i.p.p.ProjectEntitiesStorage - Project ProjectId(id=db8098tpovbgnleqdh8g) is disposed, removing entity
+2026-02-04 12:33:24,989 [  63824]   INFO - #c.i.p.d.i.f.FrontendXBreakpointManager - Breakpoint removed for XBreakpointId(uid=1)
+2026-02-04 12:33:24,989 [  63824]   INFO - #c.i.p.d.i.f.FrontendXBreakpointManager - Breakpoint removed for XBreakpointId(uid=2)
+2026-02-04 12:33:24,989 [  63824]   INFO - #c.i.p.d.i.f.FrontendXBreakpointManager - Breakpoint removed for XBreakpointId(uid=3)
+2026-02-04 12:33:24,989 [  63824]   INFO - #c.i.p.d.i.f.FrontendXBreakpointManager - Breakpoint removed for XBreakpointId(uid=4)
+2026-02-04 12:33:24,989 [  63824]   INFO - #c.j.c.l.i.ClangdIndexerBatchInspectionsCoordinatorImpl - Unique Parses/Total Parses = 1 / 1
+2026-02-04 12:33:24,991 [  63826]   INFO - #c.i.j.d.b.r.HostToClientMessagingSession - Shutting down client ClientId(value=Host) communication
+2026-02-04 12:33:24,994 [  63829]   INFO - #c.i.w.i.i.GlobalWorkspaceModel - Project QodanaTestProject is removed from the list of initializing and open projects. Project was disposed.
+2026-02-04 12:33:24,995 [  63830]   INFO - #c.j.r.p.c.SolutionHost - Sending 'close' signal...
+2026-02-04 12:33:24,995 [  63830]   INFO - #c.j.r.p.c.SolutionHost - Clearing protocol solution...
+2026-02-04 12:33:24,995 [  63830]   INFO - #c.j.r.p.ProtocolManager - Release protocolHost...
+2026-02-04 12:33:25,007 [  63842]   INFO - c.j.c.l.d.c.c.l.s.ClangServerAccessorImpl - Received stop signal for main (isThisCrash = false, isThisShutDown = false)
+2026-02-04 12:33:25,009 [  63844]   INFO - c.j.c.l.d.c.c.l.s.ClangServerAccessorImpl - Received stop signal for indexer-stateless (isThisCrash = false, isThisShutDown = false)
+2026-02-04 12:33:25,024 [  63859]   INFO - #c.i.w.i.i.j.s.JpsGlobalModelSynchronizerImpl - Saving global entities com.intellij.platform.workspace.jps.entities.SdkEntity to files
+2026-02-04 12:33:25,024 [  63859]   INFO - #c.i.w.i.i.j.s.JpsGlobalModelSynchronizerImpl - Saving global entities com.intellij.platform.workspace.jps.entities.LibraryEntity to files
+2026-02-04 12:33:25,028 [  63863]   INFO - #c.i.a.o.PathMacrosImpl - Saved path macros: {}
+2026-02-04 12:33:25,032 [  63867]   INFO - c.j.r.p.c.ShellHost#RiderBackend 0 - Request to shutdown host process RiderBackend 0
+2026-02-04 12:33:25,046 [  63881]   INFO - #c.i.i.s.e.u.EventLogExternalUploader - Statistics. Started external process for uploading event log
+2026-02-04 12:33:25,052 [  63887]   INFO - #c.i.o.f.i.FileTypeDetectionService - 292 auto-detected files. Detection took 184 ms
+2026-02-04 12:33:25,054 [  63889]   INFO - #o.j.i.BuiltInServer - web server stopped
+2026-02-04 12:33:25,055 [  63890]   INFO - c.j.r.f.S.Server - FrontendToBackend: start terminating lifetime
+2026-02-04 12:33:25,060 [  63895]   INFO - c.j.r.f.S.Server - FrontendToBackend: termination finished
+2026-02-04 12:33:25,061 [  63896]   INFO - #c.i.u.i.FileBasedIndexImpl - Index dispose started
+2026-02-04 12:33:25,064 [  63899]   INFO - #c.i.u.i.PersistentDirtyFilesQueue - Dirty file ids stored. Size: 37. Index: 37 Path: /Users/jacob/Library/Caches/JetBrains/Qodana/dff3951f-e0b590d2/cache/idea/253/index/dirty-file-ids
+2026-02-04 12:33:25,072 [  63907]   INFO - #c.i.p.s.StubIndexImpl - StubIndexExtension-s were unloaded
+2026-02-04 12:33:25,072 [  63907]   INFO - #c.i.p.s.SerializationManagerImpl - Start shutting down /Users/jacob/Library/Caches/JetBrains/Qodana/dff3951f-e0b590d2/cache/idea/253/index/rep.names
+2026-02-04 12:33:25,072 [  63907]   INFO - #c.i.p.s.SerializationManagerImpl - Finished shutting down /Users/jacob/Library/Caches/JetBrains/Qodana/dff3951f-e0b590d2/cache/idea/253/index/rep.names
+2026-02-04 12:33:25,072 [  63907]   INFO - #c.i.u.i.FileBasedIndexImpl - Index dispose completed in 11ms.
+2026-02-04 12:33:25,077 [  63912]   INFO - #c.i.o.v.n.p.PersistentFSImpl - VFS dispose started
+2026-02-04 12:33:25,077 [  63912]   INFO - #c.i.o.v.n.p.FSRecordsImpl - VFS closing
+2026-02-04 12:33:25,078 [  63913]   INFO - #c.i.o.v.n.p.PersistentFSImpl - VFS dispose completed in 1 ms.
+2026-02-04 12:33:25,087 [  63922]   INFO - #c.i.p.i.b.AppStarter - ------------------------------------------------------ IDE SHUTDOWN ------------------------------------------------------
