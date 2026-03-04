@@ -336,7 +336,7 @@ func analyzerToSelect(linters []product.Linter, path string) (map[string]product
 func SaveReport(resultDir string, reportDir string, cacheDir string) {
 	log.Println("Generating HTML report ...")
 	if res, err := utils.Exec(
-		"",
+		".",
 		tooling.GetQodanaJBRPath(cacheDir),
 		"-jar",
 		tooling.ReportConverter.GetLibPath(cacheDir),
