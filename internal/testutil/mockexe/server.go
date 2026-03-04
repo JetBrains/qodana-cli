@@ -2,6 +2,7 @@ package mockexe
 
 import (
 	"encoding/json"
+	"errors"
 	"io"
 	"net"
 	"runtime"
@@ -16,6 +17,9 @@ func acceptLoop(ln net.Listener, t testing.TB, handler func(ctx *CallContext) in
 	for {
 		conn, err := ln.Accept()
 		if err != nil {
+			if !errors.Is(err, net.ErrClosed) {
+				log.Errorf("mockexe: accept error: %v", err)
+			}
 			return
 		}
 		wg.Add(1)
@@ -101,6 +105,7 @@ func receiveStdin(conn net.Conn, pw *io.PipeWriter) {
 			return
 		}
 		if typ != FrameStdin {
+			log.Warnf("mockexe: receiveStdin: unexpected frame type 0x%02x, ignoring", typ)
 			continue
 		}
 		if len(payload) == 0 {
