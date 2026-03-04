@@ -2,6 +2,7 @@ package mockexe
 
 import (
 	"encoding/binary"
+	"fmt"
 	"io"
 	"sync"
 )
@@ -29,8 +30,11 @@ func MarshalExitCode(code int) []byte {
 }
 
 // UnmarshalExitCode decodes a 4-byte big-endian FrameExit payload into an exit code.
-func UnmarshalExitCode(payload []byte) int {
-	return int(binary.BigEndian.Uint32(payload))
+func UnmarshalExitCode(payload []byte) (int, error) {
+	if len(payload) != 4 {
+		return 1, fmt.Errorf("expected 4-byte exit code, got %d bytes", len(payload))
+	}
+	return int(binary.BigEndian.Uint32(payload)), nil
 }
 
 // ReadFrame reads a single frame from the wire: 1-byte type + 4-byte big-endian length + payload.

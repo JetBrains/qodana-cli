@@ -85,7 +85,12 @@ func run() int {
 				}
 			}
 		case mockexe.FrameExit:
-			return mockexe.UnmarshalExitCode(payload)
+			code, err := mockexe.UnmarshalExitCode(payload)
+			if err != nil {
+				fmt.Fprintf(os.Stderr, "mockexe: %v\n", err)
+				return 1
+			}
+			return code
 		}
 	}
 }
