@@ -71,10 +71,18 @@ func StartCallbackServer(t testing.TB, listenAddr string, handler func(inv *Call
 func BuildCallbackClient(t testing.TB, destPath string, addr string, platform string) string {
 	t.Helper()
 
-	// Determine the target OS to decide if .exe suffix is needed.
-	targetOS := runtime.GOOS
+	// Parse platform and determine the target OS for .exe suffix.
+	var goos, goarch string
 	if platform != "" {
-		targetOS, _, _ = strings.Cut(platform, "/")
+		var ok bool
+		goos, goarch, ok = strings.Cut(platform, "/")
+		if !ok {
+			t.Fatalf("mockexe: invalid platform %q (want os/arch)", platform)
+		}
+	}
+	targetOS := runtime.GOOS
+	if goos != "" {
+		targetOS = goos
 	}
 	if targetOS == "windows" && filepath.Ext(destPath) == "" {
 		destPath += ".exe"
@@ -91,11 +99,7 @@ func BuildCallbackClient(t testing.TB, destPath string, addr string, platform st
 		CallbackClientPkg,
 	)
 	cmd.Env = append(os.Environ(), "CGO_ENABLED=0")
-	if platform != "" {
-		goos, goarch, ok := strings.Cut(platform, "/")
-		if !ok {
-			t.Fatalf("mockexe: invalid platform %q (want os/arch)", platform)
-		}
+	if goos != "" {
 		cmd.Env = append(cmd.Env, "GOOS="+goos, "GOARCH="+goarch)
 	}
 	if out, err := cmd.CombinedOutput(); err != nil {
