@@ -5,7 +5,7 @@ import (
 	"errors"
 	"io"
 	"net"
-	"runtime"
+	"runtime/debug"
 	"strings"
 	"sync"
 	"testing"
@@ -129,9 +129,7 @@ func callHandlerSafe(ctx *CallContext, handler func(ctx *CallContext) int) (exit
 			case skipNowSentinel:
 				exitCode = 0
 			default:
-				buf := make([]byte, 4096)
-				n := runtime.Stack(buf, false)
-				ctx.T.Logf("mockexe handler panicked: %v\n%s", r, buf[:n])
+				ctx.T.Logf("mockexe handler panicked: %v\n%s", r, debug.Stack())
 				exitCode = 1
 			}
 		}
