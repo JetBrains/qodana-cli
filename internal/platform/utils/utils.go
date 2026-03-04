@@ -69,7 +69,7 @@ func FindFiles(root string, extensions []string) []string {
 
 // LaunchAndLog launches a process and logs its output.
 // The actual executable is args[0]; logLabel is only used for log file names.
-func LaunchAndLog(logDir string, logLabel string, args ...string) (string, string, int, error) {
+func LaunchAndLog(logDir string, logLabel string, args []string) (string, string, int, error) {
 	stdout, stderr, ret, err := ExecRedirectOutput(".", args[0], args[1:]...)
 	if err != nil {
 		log.Error(fmt.Errorf("failed to run %s: %w", logLabel, err))

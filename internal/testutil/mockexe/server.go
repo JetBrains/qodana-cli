@@ -97,6 +97,8 @@ func serveCallback(conn net.Conn, t testing.TB, handler func(ctx *CallContext) i
 	}
 }
 
+// receiveStdin is the sole goroutine that calls ReadFrame on conn.
+// The handler reads from the io.Pipe, not from conn directly.
 func receiveStdin(conn net.Conn, pw *io.PipeWriter) {
 	for {
 		typ, payload, err := ReadFrame(conn)

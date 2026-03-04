@@ -74,9 +74,9 @@ func (l CdnetLinter) computeCdnetArgs(c thirdpartyscan.Context) ([]string, error
 		mountInfo.CustomTools[thirdpartyscan.Clt],
 		"inspectcode",
 		target,
-		"-o=\"" + sarifPath + "\"",
-		"-f=\"Qodana\"",
-		"--LogFolder=\"" + c.LogDir() + "\"",
+		"-o=" + sarifPath,
+		"-f=Qodana",
+		"--LogFolder=" + c.LogDir(),
 	}
 	if props != "" {
 		args = append(args, "--properties:"+props)

@@ -20,7 +20,6 @@ import (
 	"bufio"
 	"context"
 	"encoding/json"
-	"fmt"
 	"io"
 	"net/http"
 	"os"
@@ -332,49 +331,4 @@ func getScanStages() []string {
 		scanStages[i] = msg.PrimaryBold("[%d/%d] ", i+1, len(scanStages)+1) + msg.Primary(stage)
 	}
 	return scanStages
-}
-
-// saveReport saves web files to expect, and generates json.
-func saveReport(c corescan.Context) error {
-	prod := c.Prod()
-	if !qdenv.IsContainer() || (!c.SaveReport() && !c.ShowReport()) {
-		return nil
-	}
-
-	reportConverter := filepath.Join(prod.IdeBin(), "intellij-report-converter.jar")
-	if _, err := os.Stat(reportConverter); os.IsNotExist(err) {
-		return fmt.Errorf("not able to save the report: report-converter is missing")
-	}
-	log.Println("Generating HTML report ...")
-	javaPath := prod.JbrJava()
-	if javaPath == "" {
-		log.Error(
-			"HTML report is not generated because Java is not installed. " +
-				"See requirements in our documentation: https://www.jetbrains.com/help/qodana/deploy-qodana.html",
-		)
-		return nil
-	}
-	if res, err := utils.Exec(
-		".",
-		javaPath,
-		"-jar",
-		reportConverter,
-		"-s",
-		c.ProjectDir(),
-		"-d",
-		c.ResultsDir(),
-		"-o",
-		platform.ReportResultsPath(c.ReportDir()),
-		"-n",
-		"result-allProblems.json",
-		"-f",
-	); err != nil {
-		return fmt.Errorf("report converter failed: %w", err)
-	} else if res > 0 {
-		return fmt.Errorf("report converter failed: exit code %d", res)
-	}
-	if err := utils.CopyDir(filepath.Join(prod.Home, "web"), c.ReportDir()); err != nil {
-		return fmt.Errorf("not able to save the report: %w", err)
-	}
-	return nil
 }

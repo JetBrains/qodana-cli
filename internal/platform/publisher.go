@@ -46,7 +46,7 @@ func SendReport(cacheDir string, publisher Publisher, token string) {
 		token,
 		cloud.GetCloudRootEndpoint().Url,
 	)
-	if _, _, res, err := utils.LaunchAndLog(publisher.LogDir, "publisher", publisherCommand...); res > 0 || err != nil {
+	if _, _, res, err := utils.LaunchAndLog(publisher.LogDir, "publisher", publisherCommand); res > 0 || err != nil {
 		os.Exit(res)
 	}
 }

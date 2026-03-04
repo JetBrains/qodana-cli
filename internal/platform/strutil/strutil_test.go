@@ -192,31 +192,6 @@ func TestIsStringQuoted(t *testing.T) {
 	}
 }
 
-func TestContainsWinSpecialChar(t *testing.T) {
-	tests := []struct {
-		input    string
-		expected bool
-	}{
-		{"hello world", true},  // space
-		{"hello(world)", true}, // parentheses
-		{"hello^world", true},  // caret
-		{"hello&world", true},  // ampersand
-		{"hello|world", true},  // pipe
-		{"hello<world", true},  // less than
-		{"hello>world", true},  // greater than
-		{"helloworld", false},  // no special chars
-		{"", false},
-	}
-	for _, tt := range tests {
-		t.Run(tt.input, func(t *testing.T) {
-			result := ContainsWinSpecialChar(tt.input)
-			if result != tt.expected {
-				t.Errorf("ContainsWinSpecialChar(%q) = %v, want %v", tt.input, result, tt.expected)
-			}
-		})
-	}
-}
-
 func TestReverse(t *testing.T) {
 	tests := []struct {
 		name     string

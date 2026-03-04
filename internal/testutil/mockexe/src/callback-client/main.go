@@ -8,7 +8,6 @@ import (
 	"fmt"
 	"net"
 	"os"
-	"sync"
 	"time"
 
 	"github.com/JetBrains/qodana-cli/internal/testutil/mockexe"
@@ -64,9 +63,9 @@ func run() int {
 		return 1
 	}
 
-	// Forward stdin in a background goroutine.
-	var writeMu sync.Mutex
-	go forwardStdin(conn, &writeMu)
+	// Forward stdin in a background goroutine. This is the sole writer to conn;
+	// the main goroutine only reads frames.
+	go forwardStdin(conn)
 
 	// Read frames from server until Exit.
 	for {
@@ -99,25 +98,20 @@ func run() int {
 	}
 }
 
-func forwardStdin(conn net.Conn, mu *sync.Mutex) {
+func forwardStdin(conn net.Conn) {
 	buf := make([]byte, stdinBufSize)
 	for {
 		n, err := os.Stdin.Read(buf)
 		if n > 0 {
-			mu.Lock()
 			if wErr := mockexe.WriteFrame(conn, mockexe.FrameStdin, buf[:n]); wErr != nil {
-				mu.Unlock()
 				fmt.Fprintf(os.Stderr, "mockexe: forwarding stdin: %v\n", wErr)
 				return
 			}
-			mu.Unlock()
 		}
 		if err != nil {
-			mu.Lock()
 			if wErr := mockexe.WriteFrame(conn, mockexe.FrameStdin, nil); wErr != nil {
 				fmt.Fprintf(os.Stderr, "mockexe: sending stdin EOF: %v\n", wErr)
 			}
-			mu.Unlock()
 			return
 		}
 	}

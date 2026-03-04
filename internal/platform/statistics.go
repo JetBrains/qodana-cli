@@ -107,7 +107,7 @@ func sendFuserEvents(
 	if os.Getenv("GO_TESTING") == "true" {
 		args = append(args, "true")
 	}
-	_, _, _, _ = utils.LaunchAndLog(c.LogDir(), "fuser", args...)
+	_, _, _, _ = utils.LaunchAndLog(c.LogDir(), "fuser", args)
 }
 
 func currentTimestamp() int64 {

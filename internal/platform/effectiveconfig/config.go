@@ -85,7 +85,7 @@ func CreateEffectiveConfigFiles(
 	}
 
 	log.Debugf("Creating effective configuration in '%s' directory, args: %v", effectiveConfigDir, args)
-	if _, _, res, err := utils.LaunchAndLog(logDir, "config-loader-cli", args...); res > 0 || err != nil {
+	if _, _, res, err := utils.LaunchAndLog(logDir, "config-loader-cli", args); res > 0 || err != nil {
 		if err == nil {
 			err = errors.New("failed to create effective configuration")
 		} else {

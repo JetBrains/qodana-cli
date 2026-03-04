@@ -42,7 +42,7 @@ func computeBaselinePrintResults(c thirdpartyscan.Context, thresholds map[string
 	if c.BaselineIncludeAbsent() {
 		args = append(args, "-i")
 	}
-	_, _, ret, err := utils.LaunchAndLog(c.LogDir(), "baseline", args...)
+	_, _, ret, err := utils.LaunchAndLog(c.LogDir(), "baseline", args)
 	if err != nil {
 		return -1, fmt.Errorf("error while running baseline-cli: %w", err)
 	}
