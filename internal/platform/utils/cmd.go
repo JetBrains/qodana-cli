@@ -86,7 +86,6 @@ func ExecWithTimeout(
 	cmd.Stdout = stdout
 	cmd.Stderr = stderr
 	cmd.Dir = cwd
-	cmd.Stdin = bt.NewBuffer([]byte{})
 	if err := cmd.Start(); err != nil {
 		return QodanaInternalErrorExitCode, fmt.Errorf("failed to start command: %w", err)
 	}
