@@ -211,3 +211,4 @@ dist/
 # Claude Code local files
 # see https://code.claude.com/docs/en/settings#configuration-scopes
 .claude/*.local.*
+CLAUDE.local.md
