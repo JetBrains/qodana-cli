@@ -46,6 +46,7 @@ func run() int {
 
 	if err := conn.SetDeadline(time.Now().Add(callbackTimeout)); err != nil {
 		fmt.Fprintf(os.Stderr, "mockexe: setting deadline: %v\n", err)
+		return 1
 	}
 
 	// Send init frame.
