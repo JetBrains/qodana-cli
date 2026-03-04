@@ -287,8 +287,10 @@ func installPlugins(c corescan.Context) error {
 			c.Prod().IdeScript,
 			"installPlugins",
 			plugin.Id,
-		); res > 0 || err != nil {
-			return fmt.Errorf("failed to install plugin %s: exit code %d: %w", plugin.Id, res, err)
+		); err != nil {
+			return fmt.Errorf("failed to install plugin %s: %w", plugin.Id, err)
+		} else if res > 0 {
+			return fmt.Errorf("failed to install plugin %s: exit code %d", plugin.Id, res)
 		}
 	}
 	return nil

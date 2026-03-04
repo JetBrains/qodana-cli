@@ -368,8 +368,10 @@ func saveReport(c corescan.Context) error {
 		"-n",
 		"result-allProblems.json",
 		"-f",
-	); res > 0 || err != nil {
-		return fmt.Errorf("report converter failed: exit code %d: %w", res, err)
+	); err != nil {
+		return fmt.Errorf("report converter failed: %w", err)
+	} else if res > 0 {
+		return fmt.Errorf("report converter failed: exit code %d", res)
 	}
 	if err := utils.CopyDir(filepath.Join(prod.Home, "web"), c.ReportDir()); err != nil {
 		return fmt.Errorf("not able to save the report: %w", err)
