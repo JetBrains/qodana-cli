@@ -110,7 +110,10 @@ func TestCreateMockExe_Env(t *testing.T) {
 func TestCreateMockExe_Stdin(t *testing.T) {
 	var receivedInput string
 	binPath := mockexe.CreateMockExe(t, filepath.Join(t.TempDir(), "myexe"), func(ctx *mockexe.CallContext) int {
-		data, _ := io.ReadAll(ctx.Stdin)
+		data, err := io.ReadAll(ctx.Stdin)
+		if err != nil {
+			ctx.T.Fatalf("reading stdin: %v", err)
+		}
 		receivedInput = string(data)
 		return 0
 	})
