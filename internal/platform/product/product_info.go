@@ -22,6 +22,7 @@ import (
 	"os"
 	"path/filepath"
 	"runtime"
+	"slices"
 	"strconv"
 	"strings"
 
@@ -395,10 +396,8 @@ func IsEap(info *InfoJson) bool {
 		for _, command := range launch.CustomCommands {
 			for _, cmd := range command.Commands {
 				if cmd == "qodana" {
-					for _, arg := range command.AdditionalJvmArguments {
-						if arg == "-Dqodana.eap=true" {
-							return true
-						}
+					if slices.Contains(command.AdditionalJvmArguments, "-Dqodana.eap=true") {
+						return true
 					}
 				}
 			}

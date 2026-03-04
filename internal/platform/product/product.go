@@ -342,8 +342,8 @@ func FindLinterByImage(image string) Linter {
 	image = strings.TrimPrefix(image, "https://")
 	//goland:noinspection HttpUrlsUsage
 	image = strings.TrimPrefix(image, "http://")
-	if strings.HasPrefix(image, "registry.jetbrains.team/p/sa/containers/") {
-		image = strings.TrimPrefix(image, "registry.jetbrains.team/p/sa/containers/")
+	if after, ok := strings.CutPrefix(image, "registry.jetbrains.team/p/sa/containers/"); ok {
+		image = after
 		image = "jetbrains/" + image
 	}
 	for _, linter := range AllLinters {

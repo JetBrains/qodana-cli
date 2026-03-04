@@ -73,7 +73,7 @@ func GetVersionDetails(pwd string) (sarif.VersionControlDetails, error) {
 	}
 
 	ret.Properties = &sarif.PropertyBag{}
-	ret.Properties.AdditionalProperties = map[string]interface{}{
+	ret.Properties.AdditionalProperties = map[string]any{
 		"repoUrl":         ret.RepositoryUri,
 		"vcsType":         "Git",
 		"lastAuthorName":  getLastAuthorName(pwd),

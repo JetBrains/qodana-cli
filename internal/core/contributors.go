@@ -79,7 +79,7 @@ type contributor struct {
 
 // ToJSON returns the JSON representation of the list of contributors.
 func ToJSON(contributors []contributor) (string, error) {
-	output := map[string]interface{}{
+	output := map[string]any{
 		"total":        len(contributors),
 		"contributors": contributors,
 	}

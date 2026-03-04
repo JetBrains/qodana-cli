@@ -181,7 +181,7 @@ func SetVersionControlParams(c thirdpartyscan.Context, deviceId string, finalRep
 
 	if deviceId != "" {
 		finalReport.Runs[0].Properties = &sarif.PropertyBag{}
-		finalReport.Runs[0].Properties.AdditionalProperties = map[string]interface{}{
+		finalReport.Runs[0].Properties.AdditionalProperties = map[string]any{
 			"deviceId": deviceId,
 		}
 	}
@@ -200,7 +200,7 @@ func SetVersionControlParams(c thirdpartyscan.Context, deviceId string, finalRep
 		Guid: RunGUID(),
 		Id:   ReportId(linterInfo.ProductCode),
 		Properties: &sarif.PropertyBag{
-			AdditionalProperties: map[string]interface{}{
+			AdditionalProperties: map[string]any{
 				"jobUrl": JobUrl(),
 			},
 		},

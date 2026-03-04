@@ -42,7 +42,7 @@ func (client *QdClient) RequestProjectName() (string, error) {
 }
 
 func parseProjectName(data []byte) (string, error) {
-	var answer map[string]interface{}
+	var answer map[string]any
 	if err := json.Unmarshal(data, &answer); err != nil {
 		return "", fmt.Errorf("response '%s': %w", string(data), err)
 	}

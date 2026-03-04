@@ -18,6 +18,7 @@ package strutil
 
 import (
 	"runtime"
+	"slices"
 	"strings"
 )
 
@@ -38,12 +39,7 @@ func Lower(s string) string {
 
 // Contains checks if a string is in a given slice.
 func Contains(s []string, str string) bool {
-	for _, v := range s {
-		if v == str {
-			return true
-		}
-	}
-	return false
+	return slices.Contains(s, str)
 }
 
 // Append appends a string to a slice if it's not already there.

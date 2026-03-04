@@ -85,10 +85,7 @@ func sendBitBucketReport(annotations []bbapi.ReportAnnotation, toolName, cloudUr
 			log.Debugf("Warning: Only first 1000 of %d annotations will be sent", len(annotations))
 		}
 		for i := 0; i < totalAnnotations; i += 100 {
-			j := i + 100
-			if j > totalAnnotations {
-				j = totalAnnotations
-			}
+			j := min(i+100, totalAnnotations)
 			_, resp, err := client.ReportsApi.
 				BulkCreateOrUpdateAnnotations(ctx, repoOwner, repoName, sha, reportId).
 				Body(annotations[i:j]).

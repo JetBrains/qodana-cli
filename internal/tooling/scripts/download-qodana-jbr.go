@@ -47,16 +47,23 @@ type Asset struct {
 }
 
 func main() {
-	ghToken := os.Getenv("GITHUB_TOKEN")
-	if ghToken == "" {
-		log.Fatalf("GITHUB_TOKEN is not set (required to access GitHub API for qodana-jbr repo)")
-	}
-
-	rel := parseGitHubReleaseForTag(JBR_VERSION_TAG)
+	ghToken := getGitHubToken()
+	rel := parseGitHubReleaseForTag(JBR_VERSION_TAG, ghToken)
 	downloadJBRAssets(rel.Assets, ghToken)
 }
 
-func parseGitHubReleaseForTag(releaseTag string) Release {
+func getGitHubToken() string {
+	token := os.Getenv("QODANA_JBR_GITHUB_TOKEN")
+	if token == "" {
+		token = os.Getenv("GITHUB_TOKEN")
+	}
+	if token == "" {
+		log.Fatalf("QODANA_JBR_GITHUB_TOKEN or GITHUB_TOKEN is not set (required to access GitHub API for qodana-jbr repo)")
+	}
+	return token
+}
+
+func parseGitHubReleaseForTag(releaseTag string, token string) Release {
 	assetsList := "https://api.github.com/repos/JetBrains/qodana-jbr/releases/tags/" + releaseTag
 	req, err := http.NewRequest(http.MethodGet, assetsList, nil)
 	if err != nil {
@@ -64,11 +71,6 @@ func parseGitHubReleaseForTag(releaseTag string) Release {
 	}
 
 	req.Header.Set("Accept", "application/vnd.github+json")
-
-	token := os.Getenv("GITHUB_TOKEN")
-	if token == "" {
-		log.Fatalf("GITHUB_TOKEN is not set (required to access GitHub API for this repo/release)")
-	}
 	req.Header.Set("Authorization", "token "+token)
 
 	resp, err := http.DefaultClient.Do(req)

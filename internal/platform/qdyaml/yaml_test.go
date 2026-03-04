@@ -127,16 +127,16 @@ script:
 					Name: "qodana.starter",
 				},
 				Script: Script{
-					Name: "migrate-classes", Parameters: map[string]interface{}{
+					Name: "migrate-classes", Parameters: map[string]any{
 						"include-mapping": "Java EE to Jakarta EE",
-						"mapping": []interface{}{
-							map[string]interface{}{
+						"mapping": []any{
+							map[string]any{
 								"old-name":  "javax.management.j2ee",
 								"new-name":  "jakarta.management.j2ee",
 								"type":      "package",
 								"recursive": "true",
 							},
-							map[string]interface{}{
+							map[string]any{
 								"old-name": "javax.annotation.security.DenyAll",
 								"new-name": "jakarta.annotation.security.DenyAll",
 								"type":     "class",

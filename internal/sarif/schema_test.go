@@ -9,20 +9,20 @@ import (
 
 func TestPropertyBag_MarshalJSON(t *testing.T) {
 	tests := []struct {
-		name     string
-		pb       PropertyBag
-		checkFn  func(t *testing.T, data []byte)
+		name    string
+		pb      PropertyBag
+		checkFn func(t *testing.T, data []byte)
 	}{
 		{
 			name: "with additional properties",
 			pb: PropertyBag{
-				AdditionalProperties: map[string]interface{}{
+				AdditionalProperties: map[string]any{
 					"key1": "value1",
 					"key2": 42,
 				},
 			},
 			checkFn: func(t *testing.T, data []byte) {
-				var m map[string]interface{}
+				var m map[string]any
 				err := json.Unmarshal(data, &m)
 				assert.NoError(t, err)
 				assert.Equal(t, "value1", m["key1"])
@@ -35,25 +35,25 @@ func TestPropertyBag_MarshalJSON(t *testing.T) {
 				Tags: []string{"tag1", "tag2"},
 			},
 			checkFn: func(t *testing.T, data []byte) {
-				var m map[string]interface{}
+				var m map[string]any
 				err := json.Unmarshal(data, &m)
 				assert.NoError(t, err)
-				tags := m["tags"].([]interface{})
+				tags := m["tags"].([]any)
 				assert.Len(t, tags, 2)
 			},
 		},
 		{
 			name: "with both properties and tags",
 			pb: PropertyBag{
-				AdditionalProperties: map[string]interface{}{"foo": "bar"},
+				AdditionalProperties: map[string]any{"foo": "bar"},
 				Tags:                 []string{"mytag"},
 			},
 			checkFn: func(t *testing.T, data []byte) {
-				var m map[string]interface{}
+				var m map[string]any
 				err := json.Unmarshal(data, &m)
 				assert.NoError(t, err)
 				assert.Equal(t, "bar", m["foo"])
-				tags := m["tags"].([]interface{})
+				tags := m["tags"].([]any)
 				assert.Len(t, tags, 1)
 			},
 		},
@@ -77,9 +77,9 @@ func TestPropertyBag_MarshalJSON(t *testing.T) {
 
 func TestPropertyBag_UnmarshalJSON(t *testing.T) {
 	tests := []struct {
-		name     string
-		json     string
-		checkFn  func(t *testing.T, pb *PropertyBag)
+		name    string
+		json    string
+		checkFn func(t *testing.T, pb *PropertyBag)
 	}{
 		{
 			name: "with additional properties",
@@ -128,7 +128,7 @@ func TestPropertyBag_UnmarshalJSON(t *testing.T) {
 
 func TestPropertyBag_RoundTrip(t *testing.T) {
 	original := PropertyBag{
-		AdditionalProperties: map[string]interface{}{
+		AdditionalProperties: map[string]any{
 			"severity": "high",
 			"count":    float64(5),
 		},
@@ -146,5 +146,3 @@ func TestPropertyBag_RoundTrip(t *testing.T) {
 	assert.Equal(t, original.AdditionalProperties["severity"], restored.AdditionalProperties["severity"])
 	assert.Equal(t, original.AdditionalProperties["count"], restored.AdditionalProperties["count"])
 }
-
-
