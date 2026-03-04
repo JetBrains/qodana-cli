@@ -49,6 +49,7 @@ const (
 	QodanaEmptyChangesetExitCodePlaceholder = 2000
 	// QodanaInternalErrorExitCode is returned when the CLI itself fails (e.g. invalid arguments, failed to start process).
 	// It is not a real process exit code. Use this to distinguish CLI errors from subprocess exit codes.
+	// math.MinInt is chosen to never collide with real exit codes (0-255 on Unix, 0-65535 on Windows).
 	QodanaInternalErrorExitCode = math.MinInt
 )
 

@@ -18,9 +18,9 @@ const (
 )
 
 // Linter returns a product.Linter representing a mock analysis tool.
-// Returns a fresh copy each time to prevent cross-test mutation.
-func Linter() product.Linter {
-	return product.Linter{
+// Returns a fresh instance each time to prevent cross-test mutation.
+func Linter() *product.Linter {
+	return &product.Linter{
 		Name:            "qodana-mock",
 		PresentableName: "Qodana for Mocking",
 		ProductCode:     "QDMOCK",
