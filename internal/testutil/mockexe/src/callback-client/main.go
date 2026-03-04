@@ -14,7 +14,10 @@ import (
 	"github.com/JetBrains/qodana-cli/internal/testutil/mockexe"
 )
 
-const callbackTimeout = 30 * time.Second
+const (
+	callbackTimeout = 30 * time.Second
+	stdinBufSize    = 32 << 10 // 32 KB
+)
 
 // addr is the callback server address (host:port), set at build time
 // via -ldflags "-X main.addr=...". MOCKEXE_ADDR env var takes precedence.
@@ -97,7 +100,7 @@ func run() int {
 }
 
 func forwardStdin(conn net.Conn, mu *sync.Mutex) {
-	buf := make([]byte, 32*1024)
+	buf := make([]byte, stdinBufSize)
 	for {
 		n, err := os.Stdin.Read(buf)
 		if n > 0 {
