@@ -37,6 +37,10 @@ func UnmarshalExitCode(payload []byte) (int, error) {
 	return int(binary.BigEndian.Uint32(payload)), nil
 }
 
+// maxPayloadSize is the upper bound on a single frame payload (64 MB).
+// Prevents OOM from malformed length fields.
+const maxPayloadSize = 64 << 20
+
 // ReadFrame reads a single frame from the wire: 1-byte type + 4-byte big-endian length + payload.
 func ReadFrame(r io.Reader) (byte, []byte, error) {
 	var header [5]byte
@@ -45,6 +49,9 @@ func ReadFrame(r io.Reader) (byte, []byte, error) {
 	}
 	typ := header[0]
 	length := binary.BigEndian.Uint32(header[1:])
+	if length > maxPayloadSize {
+		return 0, nil, fmt.Errorf("frame payload %d bytes exceeds limit %d", length, maxPayloadSize)
+	}
 	payload := make([]byte, length)
 	if length > 0 {
 		if _, err := io.ReadFull(r, payload); err != nil {
