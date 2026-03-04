@@ -17,16 +17,19 @@ const (
 	MockVersion = "2026.1"
 )
 
-// Linter is a product.Linter representing a mock analysis tool.
-var Linter = product.Linter{
-	Name:            "qodana-mock",
-	PresentableName: "Qodana for Mocking",
-	ProductCode:     "QDMOCK",
-	DockerImage:     "local/qodana-mock",
-	SupportNative:   true,
-	IsPaid:          false,
-	SupportFixes:    false,
-	EapOnly:         false,
+// Linter returns a product.Linter representing a mock analysis tool.
+// Returns a fresh copy each time to prevent cross-test mutation.
+func Linter() product.Linter {
+	return product.Linter{
+		Name:            "qodana-mock",
+		PresentableName: "Qodana for Mocking",
+		ProductCode:     "QDMOCK",
+		DockerImage:     "local/qodana-mock",
+		SupportNative:   true,
+		IsPaid:          false,
+		SupportFixes:    false,
+		EapOnly:         false,
+	}
 }
 
 // Native creates a mock native analyzer exe. The handler runs in the test

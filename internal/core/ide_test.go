@@ -43,11 +43,11 @@ func TestInstallPlugins(t *testing.T) {
 	assert.NoError(t, os.MkdirAll(configDir, 0o755))
 
 	ctx := corescan.ContextBuilder{
-		Analyser: mocklinter.Linter.NativeAnalyzer(),
+		Analyser: mocklinter.Linter().NativeAnalyzer(),
 		Prod: product.Product{
 			IdeScript:      exePath,
 			BaseScriptName: product.Idea,
-			Code:           mocklinter.Linter.ProductCode,
+			Code:           mocklinter.Linter().ProductCode,
 			Build:          mocklinter.MockBuild,
 			Version:        mocklinter.MockVersion,
 		},
@@ -78,11 +78,11 @@ func TestInstallPlugins_PathWithSpaces(t *testing.T) {
 	assert.NoError(t, os.MkdirAll(configDir, 0o755))
 
 	ctx := corescan.ContextBuilder{
-		Analyser: mocklinter.Linter.NativeAnalyzer(),
+		Analyser: mocklinter.Linter().NativeAnalyzer(),
 		Prod: product.Product{
 			IdeScript:      ideScript,
 			BaseScriptName: product.Idea,
-			Code:           mocklinter.Linter.ProductCode,
+			Code:           mocklinter.Linter().ProductCode,
 			Build:          mocklinter.MockBuild,
 		},
 		ConfigDir: configDir,
@@ -110,11 +110,11 @@ func TestRunQodanaLocal(t *testing.T) {
 	}
 
 	ctx := corescan.ContextBuilder{
-		Analyser: mocklinter.Linter.NativeAnalyzer(),
+		Analyser: mocklinter.Linter().NativeAnalyzer(),
 		Prod: product.Product{
 			IdeScript:      exePath,
 			BaseScriptName: product.Idea,
-			Code:           mocklinter.Linter.ProductCode,
+			Code:           mocklinter.Linter().ProductCode,
 			Build:          mocklinter.MockBuild,
 			Version:        mocklinter.MockVersion,
 		},
@@ -148,11 +148,11 @@ func TestRunQodanaLocal_PathWithSpaces(t *testing.T) {
 	}
 
 	ctx := corescan.ContextBuilder{
-		Analyser: mocklinter.Linter.NativeAnalyzer(),
+		Analyser: mocklinter.Linter().NativeAnalyzer(),
 		Prod: product.Product{
 			IdeScript:      ideScript,
 			BaseScriptName: product.Idea,
-			Code:           mocklinter.Linter.ProductCode,
+			Code:           mocklinter.Linter().ProductCode,
 			Build:          mocklinter.MockBuild,
 			Version:        mocklinter.MockVersion,
 		},
