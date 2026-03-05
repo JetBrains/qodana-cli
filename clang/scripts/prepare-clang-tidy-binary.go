@@ -14,8 +14,8 @@ import (
 	"os"
 	"runtime"
 
-	"github.com/JetBrains/qodana-cli/internal/coreutils/archive"
-	"github.com/JetBrains/qodana-cli/internal/coreutils/hash"
+	"github.com/JetBrains/qodana-cli/internal/foundation/archive"
+	"github.com/JetBrains/qodana-cli/internal/foundation/hash"
 )
 
 func main() {

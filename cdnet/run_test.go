@@ -4,7 +4,7 @@ import (
 	"os"
 	"testing"
 
-	"github.com/JetBrains/qodana-cli/internal/coreutils/hash"
+	"github.com/JetBrains/qodana-cli/internal/foundation/hash"
 	"github.com/JetBrains/qodana-cli/internal/platform/thirdpartyscan"
 	"github.com/stretchr/testify/assert"
 )

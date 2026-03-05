@@ -25,7 +25,7 @@ import (
 	"runtime"
 	"testing"
 
-	"github.com/JetBrains/qodana-cli/internal/coreutils/exec"
+	"github.com/JetBrains/qodana-cli/internal/foundation/exec"
 	"github.com/JetBrains/qodana-cli/internal/platform/product"
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"

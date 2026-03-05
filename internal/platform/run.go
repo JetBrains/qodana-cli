@@ -24,7 +24,7 @@ import (
 	"path/filepath"
 
 	"github.com/JetBrains/qodana-cli/internal/cloud"
-	"github.com/JetBrains/qodana-cli/internal/coreutils/fs"
+	"github.com/JetBrains/qodana-cli/internal/foundation/fs"
 	platformcmd "github.com/JetBrains/qodana-cli/internal/platform/cmd"
 	"github.com/JetBrains/qodana-cli/internal/platform/commoncontext"
 	"github.com/JetBrains/qodana-cli/internal/platform/effectiveconfig"

@@ -22,7 +22,7 @@ import (
 	"os"
 	"strings"
 
-	"github.com/JetBrains/qodana-cli/internal/coreutils/str"
+	"github.com/JetBrains/qodana-cli/internal/foundation/str"
 	"github.com/JetBrains/qodana-cli/internal/platform/version"
 	cienvironment "github.com/cucumber/ci-environment/go"
 	log "github.com/sirupsen/logrus"

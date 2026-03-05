@@ -24,8 +24,8 @@ import (
 
 	_ "embed"
 
-	"github.com/JetBrains/qodana-cli/internal/coreutils/exec"
-	"github.com/JetBrains/qodana-cli/internal/coreutils/fs"
+	"github.com/JetBrains/qodana-cli/internal/foundation/exec"
+	"github.com/JetBrains/qodana-cli/internal/foundation/fs"
 	"github.com/JetBrains/qodana-cli/internal/platform"
 	"github.com/JetBrains/qodana-cli/internal/platform/nuget"
 	"github.com/JetBrains/qodana-cli/internal/platform/thirdpartyscan"

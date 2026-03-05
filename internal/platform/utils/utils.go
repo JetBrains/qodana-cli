@@ -27,9 +27,9 @@ import (
 	"strconv"
 	"strings"
 
-	coreexec "github.com/JetBrains/qodana-cli/internal/coreutils/exec"
-	"github.com/JetBrains/qodana-cli/internal/coreutils/fs"
-	"github.com/JetBrains/qodana-cli/internal/coreutils/str"
+	fexec "github.com/JetBrains/qodana-cli/internal/foundation/exec"
+	"github.com/JetBrains/qodana-cli/internal/foundation/fs"
+	"github.com/JetBrains/qodana-cli/internal/foundation/str"
 	"github.com/JetBrains/qodana-cli/internal/platform/msg"
 	"github.com/JetBrains/qodana-cli/internal/platform/qdenv"
 	"github.com/pterm/pterm"
@@ -43,7 +43,7 @@ func Bootstrap(command string, project string) {
 	if command == "" {
 		return
 	}
-	if res, err := coreexec.RunShell(project, command); res > 0 || err != nil {
+	if res, err := fexec.RunShell(project, command); res > 0 || err != nil {
 		log.Printf("Provided bootstrap command finished with error: %d. Exiting...", res)
 		os.Exit(res)
 	}
@@ -74,7 +74,7 @@ func FindFiles(root string, extensions []string) []string {
 // LaunchAndLog launches a process and logs its output.
 // The actual executable is args[0]; logLabel is only used for log file names.
 func LaunchAndLog(logDir string, logLabel string, args []string) (string, string, int, error) {
-	stdout, stderr, ret, err := coreexec.ExecRedirectOutput(".", args[0], args[1:]...)
+	stdout, stderr, ret, err := fexec.ExecRedirectOutput(".", args[0], args[1:]...)
 	if err != nil {
 		log.Error(fmt.Errorf("failed to run %s: %w", logLabel, err))
 		return "", "", ret, err

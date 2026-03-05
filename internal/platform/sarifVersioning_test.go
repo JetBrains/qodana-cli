@@ -17,7 +17,7 @@
 package platform
 
 import (
-	"github.com/JetBrains/qodana-cli/internal/coreutils/exec"
+	"github.com/JetBrains/qodana-cli/internal/foundation/exec"
 	"os"
 	"testing"
 )

@@ -22,7 +22,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/JetBrains/qodana-cli/internal/coreutils/fs"
+	"github.com/JetBrains/qodana-cli/internal/foundation/fs"
 	"github.com/JetBrains/qodana-cli/internal/platform/thirdpartyscan"
 	"github.com/JetBrains/qodana-cli/internal/sarif"
 	"github.com/stretchr/testify/assert"

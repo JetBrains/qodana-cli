@@ -1,7 +1,7 @@
 package main
 
 import (
-	"github.com/JetBrains/qodana-cli/internal/coreutils/exec"
+	"github.com/JetBrains/qodana-cli/internal/foundation/exec"
 	"fmt"
 	"os"
 	"os/signal"
@@ -12,7 +12,7 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/JetBrains/qodana-cli/internal/coreutils/fs"
+	"github.com/JetBrains/qodana-cli/internal/foundation/fs"
 	"github.com/JetBrains/qodana-cli/internal/platform"
 	"github.com/JetBrains/qodana-cli/internal/platform/thirdpartyscan"
 	"github.com/briandowns/spinner"

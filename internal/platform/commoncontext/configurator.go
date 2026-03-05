@@ -25,7 +25,7 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/JetBrains/qodana-cli/internal/coreutils/str"
+	"github.com/JetBrains/qodana-cli/internal/foundation/algorithm"
 	"github.com/go-enry/go-enry/v2"
 	log "github.com/sirupsen/logrus"
 )
@@ -190,13 +190,13 @@ func readIdeaDir(project string) []string {
 			}
 			text := string(iml)
 			if strings.Contains(text, "JAVA_MODULE") {
-				languages = str.Append(languages, "Java")
+				languages = algorithm.AppendUnique(languages, "Java")
 			}
 			if strings.Contains(text, "PYTHON_MODULE") {
-				languages = str.Append(languages, "Python")
+				languages = algorithm.AppendUnique(languages, "Python")
 			}
 			if strings.Contains(text, "Go") {
-				languages = str.Append(languages, "Go")
+				languages = algorithm.AppendUnique(languages, "Go")
 			}
 		}
 	}

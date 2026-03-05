@@ -1,5 +1,17 @@
 package algorithm
 
+import "slices"
+
+// AppendUnique appends elements to a slice only if they are not already present.
+func AppendUnique[T comparable](slice []T, elems ...T) []T {
+	for _, e := range elems {
+		if !slices.Contains(slice, e) {
+			slice = append(slice, e)
+		}
+	}
+	return slice
+}
+
 func Filter[T any](iterable []T, predicate func(T) bool) []T {
 	var result []T
 	for _, item := range iterable {

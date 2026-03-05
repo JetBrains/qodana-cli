@@ -6,6 +6,38 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+func TestAppendUnique(t *testing.T) {
+	t.Run("append new element", func(t *testing.T) {
+		result := AppendUnique([]string{"a", "b"}, "c")
+		assert.Equal(t, []string{"a", "b", "c"}, result)
+	})
+
+	t.Run("append existing element", func(t *testing.T) {
+		result := AppendUnique([]string{"a", "b"}, "a")
+		assert.Equal(t, []string{"a", "b"}, result)
+	})
+
+	t.Run("append multiple elements", func(t *testing.T) {
+		result := AppendUnique([]string{"a"}, "b", "c", "a")
+		assert.Equal(t, []string{"a", "b", "c"}, result)
+	})
+
+	t.Run("append to empty slice", func(t *testing.T) {
+		result := AppendUnique([]string{}, "a")
+		assert.Equal(t, []string{"a"}, result)
+	})
+
+	t.Run("append all duplicates", func(t *testing.T) {
+		result := AppendUnique([]string{"a", "b"}, "a", "b")
+		assert.Equal(t, []string{"a", "b"}, result)
+	})
+
+	t.Run("generic ints", func(t *testing.T) {
+		result := AppendUnique([]int{1, 2}, 3, 2, 4)
+		assert.Equal(t, []int{1, 2, 3, 4}, result)
+	})
+}
+
 func TestFilter(t *testing.T) {
 	t.Run("filter even numbers", func(t *testing.T) {
 		nums := []int{1, 2, 3, 4, 5, 6}

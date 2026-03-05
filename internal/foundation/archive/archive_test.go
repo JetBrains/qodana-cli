@@ -9,7 +9,7 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/JetBrains/qodana-cli/internal/coreutils/archive"
+	"github.com/JetBrains/qodana-cli/internal/foundation/archive"
 	"github.com/stretchr/testify/assert"
 )
 

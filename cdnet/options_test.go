@@ -23,7 +23,7 @@ import (
 
 	"github.com/JetBrains/qodana-cli/internal/core"
 	"github.com/JetBrains/qodana-cli/internal/core/corescan"
-	"github.com/JetBrains/qodana-cli/internal/coreutils/str"
+	"github.com/JetBrains/qodana-cli/internal/foundation/str"
 	"github.com/JetBrains/qodana-cli/internal/platform/product"
 	"github.com/JetBrains/qodana-cli/internal/platform/qdcontainer"
 	"github.com/JetBrains/qodana-cli/internal/platform/qdyaml"

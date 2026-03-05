@@ -1,6 +1,10 @@
 package exitcodes
 
-import "math"
+import (
+	"math"
+
+	"github.com/JetBrains/qodana-cli/internal/foundation/exec"
+)
 
 const (
 	// QodanaSuccessExitCode is Qodana exit code when the analysis is successfully completed.
@@ -8,7 +12,7 @@ const (
 	// QodanaFailThresholdExitCode same as QodanaSuccessExitCode, but the threshold is set and exceeded.
 	QodanaFailThresholdExitCode = 255
 	// QodanaOutOfMemoryExitCode reports an interrupted process, sometimes because of an OOM.
-	QodanaOutOfMemoryExitCode = 137
+	QodanaOutOfMemoryExitCode = exec.OomExitCode
 	// QodanaEapLicenseExpiredExitCode reports an expired license.
 	QodanaEapLicenseExpiredExitCode = 7
 	// QodanaTimeoutExitCodePlaceholder is not a real exit code (it is not obtained from IDE process! and not returned from CLI)

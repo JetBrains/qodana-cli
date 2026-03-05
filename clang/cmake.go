@@ -1,7 +1,7 @@
 package main
 
 import (
-	"github.com/JetBrains/qodana-cli/internal/coreutils/exec"
+	"github.com/JetBrains/qodana-cli/internal/foundation/exec"
 	"encoding/json"
 	"fmt"
 	"os"

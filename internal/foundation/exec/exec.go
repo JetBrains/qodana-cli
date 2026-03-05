@@ -20,8 +20,8 @@ import (
 // (e.g., failed to start process). math.MinInt avoids colliding with real exit codes.
 const internalErrorExitCode = math.MinInt
 
-// oomExitCode is the conventional exit code for processes killed by OOM killer.
-const oomExitCode = 137
+// OomExitCode is the conventional exit code for processes killed by OOM killer.
+const OomExitCode = 137
 
 // Exec executes subprocess with forwarding of signals, and returns its exit code.
 func Exec(cwd string, arg0 string, argv ...string) (int, error) {
@@ -121,7 +121,7 @@ func handleSignals(cmd *exec.Cmd, waitCh <-chan error, timeout time.Duration, ti
 					return waitStatus.ExitStatus(), nil
 				}
 				log.Println("Process killed (OOM?)")
-				return oomExitCode, nil
+				return OomExitCode, nil
 			}
 			if ret != nil {
 				log.Println(ret)

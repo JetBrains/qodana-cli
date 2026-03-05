@@ -26,7 +26,7 @@ import (
 	"github.com/JetBrains/qodana-cli/internal/core/corescan"
 	"github.com/JetBrains/qodana-cli/internal/core/exitcodes"
 	"github.com/JetBrains/qodana-cli/internal/core/startup"
-	"github.com/JetBrains/qodana-cli/internal/coreutils/fs"
+	"github.com/JetBrains/qodana-cli/internal/foundation/fs"
 	"github.com/JetBrains/qodana-cli/internal/platform"
 	"github.com/JetBrains/qodana-cli/internal/platform/commoncontext"
 	"github.com/JetBrains/qodana-cli/internal/platform/effectiveconfig"

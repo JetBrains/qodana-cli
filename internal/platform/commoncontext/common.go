@@ -27,8 +27,8 @@ import (
 	"time"
 
 	"github.com/JetBrains/qodana-cli/internal/cloud"
-	"github.com/JetBrains/qodana-cli/internal/coreutils/algorithm"
-	"github.com/JetBrains/qodana-cli/internal/coreutils/exec"
+	"github.com/JetBrains/qodana-cli/internal/foundation/algorithm"
+	"github.com/JetBrains/qodana-cli/internal/foundation/exec"
 	"github.com/JetBrains/qodana-cli/internal/platform/msg"
 	"github.com/JetBrains/qodana-cli/internal/platform/product"
 	"github.com/JetBrains/qodana-cli/internal/platform/qdenv"

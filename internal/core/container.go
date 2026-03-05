@@ -34,7 +34,7 @@ import (
 	"github.com/docker/docker/api/types/network"
 
 	"github.com/JetBrains/qodana-cli/internal/core/corescan"
-	"github.com/JetBrains/qodana-cli/internal/coreutils/str"
+	"github.com/JetBrains/qodana-cli/internal/foundation/str"
 	"github.com/JetBrains/qodana-cli/internal/platform/msg"
 	"github.com/JetBrains/qodana-cli/internal/platform/product"
 	"github.com/JetBrains/qodana-cli/internal/platform/qdcontainer"
@@ -212,7 +212,7 @@ func PullImage(client client.APIClient, image string) {
 }
 
 func isDockerUnauthorizedError(errMsg string) bool {
-	errMsg = str.Lower(errMsg)
+	errMsg = strings.ToLower(errMsg)
 	return strings.Contains(errMsg, "unauthorized") || strings.Contains(errMsg, "denied") || strings.Contains(
 		errMsg,
 		"forbidden",

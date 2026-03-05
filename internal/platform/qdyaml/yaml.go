@@ -24,7 +24,6 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/JetBrains/qodana-cli/internal/coreutils/str"
 	log "github.com/sirupsen/logrus"
 	"gopkg.in/yaml.v3"
 )
@@ -403,49 +402,49 @@ func LoadQodanaYamlByFullPath(fullPath string) QodanaYaml {
 func (q *QodanaYaml) Sort() *QodanaYaml {
 	sort.Slice(
 		q.Includes, func(i, j int) bool {
-			return str.Lower(q.Includes[i].Name) < str.Lower(q.Includes[j].Name)
+			return strings.ToLower(q.Includes[i].Name) < strings.ToLower(q.Includes[j].Name)
 		},
 	)
 	sort.Slice(
 		q.Excludes, func(i, j int) bool {
-			return str.Lower(q.Excludes[i].Name) < str.Lower(q.Excludes[j].Name)
+			return strings.ToLower(q.Excludes[i].Name) < strings.ToLower(q.Excludes[j].Name)
 		},
 	)
 	for _, rule := range q.LicenseRules {
 		sort.Slice(
 			rule.Keys, func(i, j int) bool {
-				return str.Lower(rule.Keys[i]) < str.Lower(rule.Keys[j])
+				return strings.ToLower(rule.Keys[i]) < strings.ToLower(rule.Keys[j])
 			},
 		)
 		sort.Slice(
 			rule.Allowed, func(i, j int) bool {
-				return str.Lower(rule.Allowed[i]) < str.Lower(rule.Allowed[j])
+				return strings.ToLower(rule.Allowed[i]) < strings.ToLower(rule.Allowed[j])
 			},
 		)
 		sort.Slice(
 			rule.Prohibited, func(i, j int) bool {
-				return str.Lower(rule.Prohibited[i]) < str.Lower(rule.Prohibited[j])
+				return strings.ToLower(rule.Prohibited[i]) < strings.ToLower(rule.Prohibited[j])
 			},
 		)
 	}
 	sort.Slice(
 		q.DependencyIgnores, func(i, j int) bool {
-			return str.Lower(q.DependencyIgnores[i].Name) < str.Lower(q.DependencyIgnores[j].Name)
+			return strings.ToLower(q.DependencyIgnores[i].Name) < strings.ToLower(q.DependencyIgnores[j].Name)
 		},
 	)
 	sort.Slice(
 		q.DependencyOverrides, func(i, j int) bool {
-			return str.Lower(q.DependencyOverrides[i].Name) < str.Lower(q.DependencyOverrides[j].Name)
+			return strings.ToLower(q.DependencyOverrides[i].Name) < strings.ToLower(q.DependencyOverrides[j].Name)
 		},
 	)
 	sort.Slice(
 		q.CustomDependencies, func(i, j int) bool {
-			return str.Lower(q.CustomDependencies[i].Name) < str.Lower(q.CustomDependencies[j].Name)
+			return strings.ToLower(q.CustomDependencies[i].Name) < strings.ToLower(q.CustomDependencies[j].Name)
 		},
 	)
 	sort.Slice(
 		q.Plugins, func(i, j int) bool {
-			return str.Lower(q.Plugins[i].Id) < str.Lower(q.Plugins[j].Id)
+			return strings.ToLower(q.Plugins[i].Id) < strings.ToLower(q.Plugins[j].Id)
 		},
 	)
 	return q

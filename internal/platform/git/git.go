@@ -20,8 +20,8 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/JetBrains/qodana-cli/internal/coreutils/exec"
-	"github.com/JetBrains/qodana-cli/internal/coreutils/str"
+	"github.com/JetBrains/qodana-cli/internal/foundation/exec"
+	"github.com/JetBrains/qodana-cli/internal/foundation/str"
 	log "github.com/sirupsen/logrus"
 )
 

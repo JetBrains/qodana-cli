@@ -23,7 +23,8 @@ import (
 	"strings"
 
 	"github.com/JetBrains/qodana-cli/internal/cloud"
-	"github.com/JetBrains/qodana-cli/internal/coreutils/str"
+	"github.com/JetBrains/qodana-cli/internal/foundation/algorithm"
+	"github.com/JetBrains/qodana-cli/internal/foundation/str"
 	"github.com/JetBrains/qodana-cli/internal/platform/git"
 )
 
@@ -128,7 +129,7 @@ func GetContributors(repoDirs []string, days int, excludeBots bool) []contributo
 			authorId := c.Author.getId()
 			if i, ok := contributorMap[authorId]; ok {
 				i.Count++
-				i.Projects = str.Append(i.Projects, repoDir)
+				i.Projects = algorithm.AppendUnique(i.Projects, repoDir)
 				i.Commits = append(i.Commits, c)
 			} else {
 				contributorMap[authorId] = &contributor{

@@ -10,7 +10,7 @@ import (
 
 	_ "embed"
 
-	"github.com/JetBrains/qodana-cli/internal/coreutils/hash"
+	"github.com/JetBrains/qodana-cli/internal/foundation/hash"
 	"github.com/JetBrains/qodana-cli/internal/platform"
 	"github.com/JetBrains/qodana-cli/internal/platform/thirdpartyscan"
 	log "github.com/sirupsen/logrus"
