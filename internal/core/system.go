@@ -150,7 +150,9 @@ func RunAnalysis(ctx context.Context, c corescan.Context) int {
 		c = c.BackoffToDefaultAnalysisBecauseOfMissingCommit()
 	}
 
-	installPlugins(c)
+	if err := installPlugins(c); err != nil {
+		log.Fatalf("Failed to install plugins: %v", err)
+	}
 	// this way of running needs to do bootstrap twice on different commits and will do it internally
 	if !corescan.IsScopedScenario(scenario) && !c.Analyser().IsContainer() {
 		utils.Bootstrap(c.QodanaYamlConfig().Bootstrap, c.ProjectDir())

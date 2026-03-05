@@ -24,7 +24,6 @@ import (
 	"path/filepath"
 
 	"github.com/JetBrains/qodana-cli/internal/platform/product"
-	"github.com/JetBrains/qodana-cli/internal/platform/strutil"
 )
 
 //go:generate go run scripts/download-libs.go
@@ -45,7 +44,7 @@ const (
 func (library Library) GetLibPath(cacheDir string) string {
 	matchedFile := findLibFile(library)
 	libPath := extractLib(cacheDir, matchedFile)
-	return strutil.QuoteForWindows(libPath)
+	return libPath
 }
 
 func findLibFile(library Library) string {
