@@ -47,23 +47,11 @@ type Asset struct {
 }
 
 func main() {
-	ghToken := getGitHubToken()
-	rel := parseGitHubReleaseForTag(JBR_VERSION_TAG, ghToken)
-	downloadJBRAssets(rel.Assets, ghToken)
+	rel := parseGitHubReleaseForTag(JBR_VERSION_TAG)
+	downloadJBRAssets(rel.Assets)
 }
 
-func getGitHubToken() string {
-	token := os.Getenv("QODANA_JBR_GITHUB_TOKEN")
-	if token == "" {
-		token = os.Getenv("GITHUB_TOKEN")
-	}
-	if token == "" {
-		log.Fatalf("QODANA_JBR_GITHUB_TOKEN or GITHUB_TOKEN is not set (required to access GitHub API for qodana-jbr repo)")
-	}
-	return token
-}
-
-func parseGitHubReleaseForTag(releaseTag string, token string) Release {
+func parseGitHubReleaseForTag(releaseTag string) Release {
 	assetsList := "https://api.github.com/repos/JetBrains/qodana-jbr/releases/tags/" + releaseTag
 	req, err := http.NewRequest(http.MethodGet, assetsList, nil)
 	if err != nil {
@@ -71,7 +59,6 @@ func parseGitHubReleaseForTag(releaseTag string, token string) Release {
 	}
 
 	req.Header.Set("Accept", "application/vnd.github+json")
-	req.Header.Set("Authorization", "token "+token)
 
 	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
@@ -104,7 +91,7 @@ func parseGitHubReleaseForTag(releaseTag string, token string) Release {
 	return rel
 }
 
-func downloadJBRAssets(assets []Asset, ghToken string) {
+func downloadJBRAssets(assets []Asset) {
 	client := &http.Client{Timeout: 30 * time.Second}
 	baseDir := "qodana-jbrs"
 
@@ -140,14 +127,14 @@ func downloadJBRAssets(assets []Asset, ghToken string) {
 		}
 
 		fmt.Printf("DOWNLOADING: %s\n", a.Name)
-		downloadReleaseAssetByID(client, a.ID, dstPath, ghToken)
+		downloadReleaseAssetByID(client, a.ID, dstPath)
 	}
 }
 
 func downloadReleaseAssetByID(
 	client *http.Client,
 	assetID int64,
-	destPath, githubToken string,
+	destPath string,
 ) {
 	apiURL := fmt.Sprintf("https://api.github.com/repos/JetBrains/qodana-jbr/releases/assets/%d", assetID)
 
@@ -156,7 +143,6 @@ func downloadReleaseAssetByID(
 		log.Fatalf("Error creating request %s: %v", apiURL, err)
 	}
 
-	req.Header.Set("Authorization", "Bearer "+githubToken)
 	req.Header.Set("Accept", "application/octet-stream")
 
 	resp, err := client.Do(req)
