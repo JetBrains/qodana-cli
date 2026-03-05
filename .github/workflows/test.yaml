@@ -48,6 +48,14 @@ jobs:
 
       - uses: ./.github/actions/mock-dependencies
 
+      - name: Cache JBR build artifacts
+        uses: actions/cache@v4
+        with:
+          path: .cache/jbr
+          key: qodana-jbr-${{ runner.os }}-${{ hashFiles('internal/tooling/scripts/build-qodana-jbr.go', 'internal/tooling/scripts/pom.xml') }}
+          restore-keys: |
+            qodana-jbr-${{ runner.os }}-
+
       - name: Install test dependencies
         run: go install github.com/mfridman/tparse@latest
 

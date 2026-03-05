@@ -9,6 +9,7 @@
 qodana
 internal/tooling/qodana-jbrs
 internal/tooling/libs
+.cache/jbr
 ### Go ###
 # Binaries for programs and plugins
 *.exe

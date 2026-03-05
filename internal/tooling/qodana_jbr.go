@@ -32,7 +32,7 @@ import (
 	"github.com/codeclysm/extract/v4"
 )
 
-//go:generate go run scripts/download-qodana-jbr.go
+//go:generate go run scripts/build-qodana-jbr.go
 
 var (
 	qodanaJBRPathOnce sync.Once

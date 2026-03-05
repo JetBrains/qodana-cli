@@ -1,6 +1,9 @@
 version: 2
 pro: true
 project_name: qodana
+before:
+  hooks:
+    - go generate -v github.com/JetBrains/qodana-cli/internal/tooling/...
 builds:
   - id: cli
     binary: qodana
