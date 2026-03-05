@@ -19,7 +19,6 @@ package platform
 import (
 	"fmt"
 
-	"github.com/JetBrains/qodana-cli/internal/platform/strutil"
 	"github.com/JetBrains/qodana-cli/internal/platform/thirdpartyscan"
 	"github.com/JetBrains/qodana-cli/internal/platform/utils"
 	"github.com/JetBrains/qodana-cli/internal/tooling"
@@ -33,17 +32,17 @@ func computeBaselinePrintResults(c thirdpartyscan.Context, thresholds map[string
 		"-jar",
 		tooling.BaselineCli.GetLibPath(c.CacheDir()),
 		"-r",
-		strutil.QuoteForWindows(sarifPath),
+		sarifPath,
 	}
 	severities := thresholdsToArgs(thresholds)
 	args = append(args, severities...)
 	if c.Baseline() != "" {
-		args = append(args, "-b", strutil.QuoteForWindows(c.Baseline()))
+		args = append(args, "-b", c.Baseline())
 	}
 	if c.BaselineIncludeAbsent() {
 		args = append(args, "-i")
 	}
-	_, _, ret, err := utils.LaunchAndLog(c.LogDir(), "baseline", args...)
+	_, _, ret, err := utils.LaunchAndLog(c.LogDir(), "baseline", args)
 	if err != nil {
 		return -1, fmt.Errorf("error while running baseline-cli: %w", err)
 	}

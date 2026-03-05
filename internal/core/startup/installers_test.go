@@ -18,17 +18,23 @@ package startup
 
 import (
 	"archive/tar"
+	"archive/zip"
 	"compress/gzip"
+	"fmt"
 	"io"
+	"net/http"
+	"net/http/httptest"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"runtime"
+	"sync/atomic"
 	"testing"
 
 	"github.com/JetBrains/qodana-cli/internal/platform/msg"
 	"github.com/JetBrains/qodana-cli/internal/platform/product"
 	"github.com/JetBrains/qodana-cli/internal/platform/utils"
+	"github.com/JetBrains/qodana-cli/internal/testutil/mockexe"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -282,4 +288,68 @@ func TestExtractArchiveBadPath(t *testing.T) {
 	t.Setenv("PATH", "")
 	err := extractArchive(archive, targetDir, 0)
 	assert.Error(t, err)
+}
+
+func TestDownloadCustomPlugins(t *testing.T) {
+	//goland:noinspection GoBoolExpressions
+	if runtime.GOOS != "darwin" {
+		t.Skip("downloadCustomPlugins is only used on macOS")
+	}
+
+	// Create a zip archive containing custom-plugins/disabled_plugins.txt
+	archiveDir := t.TempDir()
+	archivePath := filepath.Join(archiveDir, "plugins.zip")
+	zipFile, err := os.Create(archivePath)
+	assert.NoError(t, err)
+	zw := zip.NewWriter(zipFile)
+	w, err := zw.Create("custom-plugins/disabled_plugins.txt")
+	assert.NoError(t, err)
+	_, err = w.Write([]byte("disabled.plugin.id\n"))
+	assert.NoError(t, err)
+	assert.NoError(t, zw.Close())
+	assert.NoError(t, zipFile.Close())
+
+	archiveBytes, err := os.ReadFile(archivePath)
+	assert.NoError(t, err)
+
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Length", fmt.Sprintf("%d", len(archiveBytes)))
+		_, _ = w.Write(archiveBytes)
+	}))
+	defer server.Close()
+
+	// downloadCustomPlugins is only called on macOS, where IDE URLs use .sit extensions.
+	t.Run(".sit", func(t *testing.T) {
+		targetDir := filepath.Join(t.TempDir(), "plugins")
+		err := downloadCustomPlugins(server.URL+"/ide.sit", targetDir, nil)
+		assert.NoError(t, err)
+		assert.FileExists(t, filepath.Join(targetDir, "disabled_plugins.txt"))
+	})
+	t.Run("-aarch64.sit", func(t *testing.T) {
+		targetDir := filepath.Join(t.TempDir(), "plugins")
+		err := downloadCustomPlugins(server.URL+"/ide-aarch64.sit", targetDir, nil)
+		assert.NoError(t, err)
+		assert.FileExists(t, filepath.Join(targetDir, "disabled_plugins.txt"))
+	})
+}
+
+func TestInstallIdeWindowsExe(t *testing.T) {
+	//goland:noinspection GoBoolExpressions
+	if runtime.GOOS != "windows" {
+		t.Skip("installIdeWindowsExe is Windows-only")
+	}
+
+	tmpDir := t.TempDir()
+	var invoked atomic.Bool
+	fakeExe := mockexe.CreateMockExe(t, filepath.Join(tmpDir, "installer.exe"), func(ctx *mockexe.CallContext) int {
+		invoked.Store(true)
+		return 0
+	})
+
+	targetDir := filepath.Join(tmpDir, "installed")
+	assert.NoError(t, os.MkdirAll(targetDir, 0o755))
+
+	err := installIdeWindowsExe(fakeExe, targetDir)
+	assert.NoError(t, err)
+	assert.True(t, invoked.Load(), "installer mock was not invoked")
 }

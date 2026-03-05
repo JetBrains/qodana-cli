@@ -193,24 +193,24 @@ func TestReadIdeaDir(t *testing.T) {
 func Test_runCmd(t *testing.T) {
 	if //goland:noinspection ALL
 	runtime.GOOS == "linux" || runtime.GOOS == "darwin" {
-		for _, tc := range []struct {
-			name string
-			cmd  []string
-			res  int
-		}{
-			{"true", []string{"true"}, 0},
-			{"false", []string{"false"}, 1},
-			{"exit 255", []string{"exit 255"}, 255},
-		} {
-			t.Run(
-				tc.name, func(t *testing.T) {
-					got, _ := utils.RunCmd("", tc.cmd...)
-					if got != tc.res {
-						t.Errorf("runCmd: %v, Got: %v, Expected: %v", tc.cmd, got, tc.res)
-					}
-				},
-			)
-		}
+		t.Run("true", func(t *testing.T) {
+			got, _ := utils.Exec(".", "true")
+			if got != 0 {
+				t.Errorf("Exec true: Got: %v, Expected: 0", got)
+			}
+		})
+		t.Run("false", func(t *testing.T) {
+			got, _ := utils.Exec(".", "false")
+			if got != 1 {
+				t.Errorf("Exec false: Got: %v, Expected: 1", got)
+			}
+		})
+		t.Run("exit 255", func(t *testing.T) {
+			got, _ := utils.RunShell(".", "exit 255")
+			if got != 255 {
+				t.Errorf("RunShell exit 255: Got: %v, Expected: 255", got)
+			}
+		})
 	}
 }
 
