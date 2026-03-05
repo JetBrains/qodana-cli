@@ -178,7 +178,7 @@ var (
 		SupportNative:   true,
 		IsPaid:          true,
 		SupportFixes:    false,
-		EapOnly:         true,
+		EapOnly:         false,
 	}
 
 	GoLinter = Linter{
