@@ -47,11 +47,23 @@ type Asset struct {
 }
 
 func main() {
-	rel := parseGitHubReleaseForTag(JBR_VERSION_TAG)
-	downloadJBRAssets(rel.Assets)
+	ghToken := getGitHubToken()
+	rel := parseGitHubReleaseForTag(JBR_VERSION_TAG, ghToken)
+	downloadJBRAssets(rel.Assets, ghToken)
 }
 
-func parseGitHubReleaseForTag(releaseTag string) Release {
+func getGitHubToken() string {
+	token := os.Getenv("QODANA_JBR_GITHUB_TOKEN")
+	if token == "" {
+		token = os.Getenv("GITHUB_TOKEN")
+	}
+	if token == "" {
+		log.Println(("Warning: QODANA_JBR_GITHUB_TOKEN or GITHUB_TOKEN is not set (unathenticated requests can suffer from GitHub rate limiting)"))
+	}
+	return token
+}
+
+func parseGitHubReleaseForTag(releaseTag string, ghToken string) Release {
 	assetsList := "https://api.github.com/repos/JetBrains/qodana-jbr/releases/tags/" + releaseTag
 	req, err := http.NewRequest(http.MethodGet, assetsList, nil)
 	if err != nil {
@@ -59,7 +71,9 @@ func parseGitHubReleaseForTag(releaseTag string) Release {
 	}
 
 	req.Header.Set("Accept", "application/vnd.github+json")
-
+	if ghToken != "" {
+		req.Header.Set("Authorization", "Bearer "+ghToken)
+	}
 	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
 		log.Fatalf("Error downloading %s: %v", assetsList, err)
@@ -91,7 +105,7 @@ func parseGitHubReleaseForTag(releaseTag string) Release {
 	return rel
 }
 
-func downloadJBRAssets(assets []Asset) {
+func downloadJBRAssets(assets []Asset, ghToken string) {
 	client := &http.Client{Timeout: 30 * time.Second}
 	baseDir := "qodana-jbrs"
 
@@ -127,14 +141,14 @@ func downloadJBRAssets(assets []Asset) {
 		}
 
 		fmt.Printf("DOWNLOADING: %s\n", a.Name)
-		downloadReleaseAssetByID(client, a.ID, dstPath)
+		downloadReleaseAssetByID(client, a.ID, dstPath, ghToken)
 	}
 }
 
 func downloadReleaseAssetByID(
 	client *http.Client,
 	assetID int64,
-	destPath string,
+	destPath, ghToken string,
 ) {
 	apiURL := fmt.Sprintf("https://api.github.com/repos/JetBrains/qodana-jbr/releases/assets/%d", assetID)
 
@@ -143,6 +157,9 @@ func downloadReleaseAssetByID(
 		log.Fatalf("Error creating request %s: %v", apiURL, err)
 	}
 
+	if ghToken != "" {
+		req.Header.Set("Authorization", "Bearer "+ghToken)
+	}
 	req.Header.Set("Accept", "application/octet-stream")
 
 	resp, err := client.Do(req)
