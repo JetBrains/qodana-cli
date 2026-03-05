@@ -23,7 +23,6 @@ import (
 
 	"github.com/JetBrains/qodana-cli/internal/core/startup"
 	"github.com/JetBrains/qodana-cli/internal/platform/qdenv"
-	"github.com/JetBrains/qodana-cli/internal/platform/strutil"
 )
 
 // All changes of Context must be defined clearly by usecase and business logic
@@ -54,7 +53,7 @@ func (c Context) BackoffToDefaultAnalysisBecauseOfMissingCommit() Context {
 }
 
 func (c Context) FirstStageOfScopedScript(scopeFile string) Context {
-	c.script = strutil.QuoteForWindows("scoped:" + scopeFile)
+	c.script = "scoped:" + scopeFile
 
 	startDir := filepath.Join(c.ResultsDir(), "start")
 	c = c.prepareContext(
@@ -70,7 +69,7 @@ func (c Context) FirstStageOfScopedScript(scopeFile string) Context {
 }
 
 func (c Context) SecondStageOfScopedScript(scopeFile string, startSarif string) Context {
-	c.script = strutil.QuoteForWindows("scoped:" + scopeFile)
+	c.script = "scoped:" + scopeFile
 
 	endDir := filepath.Join(c.ResultsDir(), "end")
 
@@ -87,7 +86,7 @@ func (c Context) SecondStageOfScopedScript(scopeFile string, startSarif string) 
 }
 
 func (c Context) FirstStageOfReverseScopedScript(scopeFile string) Context {
-	c.script = strutil.QuoteForWindows("reverse-scoped:NEW," + scopeFile)
+	c.script = "reverse-scoped:NEW," + scopeFile
 
 	startDir := filepath.Join(c.ResultsDir(), "start")
 	properties := []string{"-Dqodana.skip.result.strategy=ANY"} // finish only in case of none issues found
@@ -106,7 +105,7 @@ func (c Context) FirstStageOfReverseScopedScript(scopeFile string) Context {
 }
 
 func (c Context) SecondStageOfReverseScopedScript(scopeFile string, startSarif string) Context {
-	c.script = strutil.QuoteForWindows("reverse-scoped:OLD," + scopeFile)
+	c.script = "reverse-scoped:OLD," + scopeFile
 
 	endDir := filepath.Join(c.ResultsDir(), "end")
 
@@ -128,7 +127,7 @@ func (c Context) SecondStageOfReverseScopedScript(scopeFile string, startSarif s
 }
 
 func (c Context) ThirdStageOfReverseScopedScript(scopeFile string, startSarif string) Context {
-	c.script = strutil.QuoteForWindows("reverse-scoped:FIXES," + scopeFile)
+	c.script = "reverse-scoped:FIXES," + scopeFile
 
 	endDir := filepath.Join(c.ResultsDir(), "fixes")
 

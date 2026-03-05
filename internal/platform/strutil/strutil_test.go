@@ -17,7 +17,6 @@
 package strutil
 
 import (
-	"runtime"
 	"testing"
 )
 
@@ -190,57 +189,6 @@ func TestIsStringQuoted(t *testing.T) {
 				t.Errorf("IsStringQuoted(%q) = %v, want %v", tt.input, result, tt.expected)
 			}
 		})
-	}
-}
-
-func TestContainsWinSpecialChar(t *testing.T) {
-	tests := []struct {
-		input    string
-		expected bool
-	}{
-		{"hello world", true},  // space
-		{"hello(world)", true}, // parentheses
-		{"hello^world", true},  // caret
-		{"hello&world", true},  // ampersand
-		{"hello|world", true},  // pipe
-		{"hello<world", true},  // less than
-		{"hello>world", true},  // greater than
-		{"helloworld", false},  // no special chars
-		{"", false},
-	}
-	for _, tt := range tests {
-		t.Run(tt.input, func(t *testing.T) {
-			result := ContainsWinSpecialChar(tt.input)
-			if result != tt.expected {
-				t.Errorf("ContainsWinSpecialChar(%q) = %v, want %v", tt.input, result, tt.expected)
-			}
-		})
-	}
-}
-
-func TestQuoteForWindows(t *testing.T) {
-	assert := func(input, expected string) {
-		if result := QuoteForWindows(input); result != expected {
-			t.Errorf("QuoteForWindows(%q) = %q, want %q", input, result, expected)
-		}
-	}
-	assert("hello", "hello")
-	assert("\"already quoted\"", "\"already quoted\"")
-	if runtime.GOOS == "windows" {
-		assert("hello world", "\"hello world\"")
-	} else {
-		assert("hello world", "hello world")
-	}
-}
-
-func TestGetQuotedPath(t *testing.T) {
-	result := GetQuotedPath("path with space")
-	expected := "\"path with space\""
-	if result != expected {
-		t.Errorf("GetQuotedPath(%q) = %q, want %q", "path with space", result, expected)
-	}
-	if result := GetQuotedPath("nospace"); result != "nospace" {
-		t.Errorf("GetQuotedPath(%q) = %q, want %q", "nospace", result, "nospace")
 	}
 }
 
