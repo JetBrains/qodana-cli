@@ -367,6 +367,7 @@ func TestAllCommandsWithContainer(t *testing.T) {
 		"--fail-threshold", "5",
 		"--print-problems",
 		"--apply-fixes",
+		"--image", image,
 		"--property",
 		"idea.headless.enable.statistics=false",
 	}
