@@ -20,8 +20,8 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/JetBrains/qodana-cli/internal/platform/strutil"
-	"github.com/JetBrains/qodana-cli/internal/platform/utils"
+	"github.com/JetBrains/qodana-cli/internal/coreutils/exec"
+	"github.com/JetBrains/qodana-cli/internal/coreutils/str"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -32,7 +32,7 @@ func gitRun(cwd string, command []string, logdir string) (string, string, error)
 		log.Errorf("Failed to create git logger: %v", err)
 		return "", "", err
 	}
-	stdout, stderr, exitCode, err := utils.ExecRedirectOutput(cwd, "git", command...)
+	stdout, stderr, exitCode, err := exec.ExecRedirectOutput(cwd, "git", command...)
 	if logger != nil {
 		logger.Printf("Executing command: git %v", command)
 		logger.Println(stdout)
@@ -113,7 +113,7 @@ func Clean(cwd string, logdir string) error {
 
 // Revisions returns the list of commits of the git repository in chronological order.
 func Revisions(cwd string) []string {
-	return strutil.Reverse(Log(cwd, "%H", 0))
+	return str.Reverse(Log(cwd, "%H", 0))
 }
 
 // Root returns absolute path of repo root

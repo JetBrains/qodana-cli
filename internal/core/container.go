@@ -34,11 +34,11 @@ import (
 	"github.com/docker/docker/api/types/network"
 
 	"github.com/JetBrains/qodana-cli/internal/core/corescan"
+	"github.com/JetBrains/qodana-cli/internal/coreutils/str"
 	"github.com/JetBrains/qodana-cli/internal/platform/msg"
 	"github.com/JetBrains/qodana-cli/internal/platform/product"
 	"github.com/JetBrains/qodana-cli/internal/platform/qdcontainer"
 	"github.com/JetBrains/qodana-cli/internal/platform/qdenv"
-	"github.com/JetBrains/qodana-cli/internal/platform/strutil"
 	"github.com/JetBrains/qodana-cli/internal/platform/utils"
 	"github.com/JetBrains/qodana-cli/internal/platform/version"
 	"github.com/docker/docker/api/types/backend"
@@ -148,14 +148,14 @@ func CheckImage(linter string) {
 		msg.WarningMessageCI(
 			"You are running a Qodana linter without an exact version tag: %s \n   Consider pinning the version in your configuration to ensure version compatibility: %s\n",
 			linter,
-			strings.Join([]string{strutil.SafeSplit(linter, ":", 0), product.ReleaseVersion}, ":"),
+			strings.Join([]string{str.SafeSplit(linter, ":", 0), product.ReleaseVersion}, ":"),
 		)
 	} else if !isCompatibleLinter(linter) {
 		msg.WarningMessageCI(
 			"You are using a non-compatible Qodana linter %s with the current CLI (%s) \n   Consider updating CLI or using a compatible linter %s \n",
 			linter,
 			version.Version,
-			strings.Join([]string{strutil.SafeSplit(linter, ":", 0), product.ReleaseVersion}, ":"),
+			strings.Join([]string{str.SafeSplit(linter, ":", 0), product.ReleaseVersion}, ":"),
 		)
 	}
 }
@@ -212,7 +212,7 @@ func PullImage(client client.APIClient, image string) {
 }
 
 func isDockerUnauthorizedError(errMsg string) bool {
-	errMsg = strutil.Lower(errMsg)
+	errMsg = str.Lower(errMsg)
 	return strings.Contains(errMsg, "unauthorized") || strings.Contains(errMsg, "denied") || strings.Contains(
 		errMsg,
 		"forbidden",
@@ -228,7 +228,7 @@ func pullImage(ctx context.Context, client client.APIClient, ref string) {
 			log.Fatal(err)
 		}
 
-		registryHostname := strutil.SafeSplit(ref, "/", 0)
+		registryHostname := str.SafeSplit(ref, "/", 0)
 
 		a, err := cfg.GetAuthConfig(registryHostname)
 		if err != nil {
@@ -535,8 +535,8 @@ func extractDockerVolumes(volume string) (string, string) {
 			return fmt.Sprintf("%s:%s", parts[0], parts[1]), parts[2]
 		}
 	} else {
-		source := strutil.SafeSplit(volume, ":", 0)
-		target := strutil.SafeSplit(volume, ":", 1)
+		source := str.SafeSplit(volume, ":", 0)
+		target := str.SafeSplit(volume, ":", 1)
 		if source != "" && target != "" {
 			return source, target
 		}

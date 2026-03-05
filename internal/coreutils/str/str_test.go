@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package strutil
+package str
 
 import (
 	"testing"

@@ -25,8 +25,8 @@ import (
 	"runtime"
 	"testing"
 
+	"github.com/JetBrains/qodana-cli/internal/coreutils/exec"
 	"github.com/JetBrains/qodana-cli/internal/platform/product"
-	"github.com/JetBrains/qodana-cli/internal/platform/utils"
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
 )
@@ -194,19 +194,19 @@ func Test_runCmd(t *testing.T) {
 	if //goland:noinspection ALL
 	runtime.GOOS == "linux" || runtime.GOOS == "darwin" {
 		t.Run("true", func(t *testing.T) {
-			got, _ := utils.Exec(".", "true")
+			got, _ := exec.Exec(".", "true")
 			if got != 0 {
 				t.Errorf("Exec true: Got: %v, Expected: 0", got)
 			}
 		})
 		t.Run("false", func(t *testing.T) {
-			got, _ := utils.Exec(".", "false")
+			got, _ := exec.Exec(".", "false")
 			if got != 1 {
 				t.Errorf("Exec false: Got: %v, Expected: 1", got)
 			}
 		})
 		t.Run("exit 255", func(t *testing.T) {
-			got, _ := utils.RunShell(".", "exit 255")
+			got, _ := exec.RunShell(".", "exit 255")
 			if got != 255 {
 				t.Errorf("RunShell exit 255: Got: %v, Expected: 255", got)
 			}

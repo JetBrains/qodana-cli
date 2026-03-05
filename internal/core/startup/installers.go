@@ -29,6 +29,7 @@ import (
 	"strconv"
 	"strings"
 
+	coreexec "github.com/JetBrains/qodana-cli/internal/coreutils/exec"
 	"github.com/JetBrains/qodana-cli/internal/platform"
 	"github.com/JetBrains/qodana-cli/internal/platform/msg"
 	"github.com/JetBrains/qodana-cli/internal/platform/product"
@@ -211,7 +212,7 @@ func getIde(analyzer product.Analyzer) *ReleaseDownloadInfo {
 
 // installIdeWindowsExe is used as a fallback, since it needs installation privileges and alters the registry
 func installIdeWindowsExe(archivePath string, targetDir string) error {
-	stdout, stderr, _, err := utils.ExecRedirectOutput(
+	stdout, stderr, _, err := coreexec.ExecRedirectOutput(
 		".",
 		archivePath,
 		"/S",
@@ -250,7 +251,7 @@ func extractArchive(archivePath string, targetDir string, stripComponents int) e
 		tarArgv = append(tarArgv, "--strip-components", strconv.Itoa(stripComponents))
 	}
 
-	stdout, stderr, _, err := utils.ExecRedirectOutput(".", tarExe, tarArgv...)
+	stdout, stderr, _, err := coreexec.ExecRedirectOutput(".", tarExe, tarArgv...)
 	if err != nil {
 		return fmt.Errorf("failed to extract: %w. Stdout: %s. Stderr: %s", err, stdout, stderr)
 	}
@@ -379,7 +380,7 @@ func downloadCustomPlugins(ideUrl string, targetDir string, spinner *pterm.Spinn
 		return fmt.Errorf("error while downloading plugins: %v", err)
 	}
 
-	_, err = utils.Exec(".", "tar", "-xf", archivePath, "-C", targetDir)
+	_, err = coreexec.Exec(".", "tar", "-xf", archivePath, "-C", targetDir)
 	if err != nil {
 		return fmt.Errorf("tar: %s", err)
 	}

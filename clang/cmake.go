@@ -1,6 +1,7 @@
 package main
 
 import (
+	"github.com/JetBrains/qodana-cli/internal/coreutils/exec"
 	"encoding/json"
 	"fmt"
 	"os"
@@ -8,7 +9,6 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/JetBrains/qodana-cli/internal/platform/utils"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -85,7 +85,7 @@ func getFilesAndCompilers(compileCommands string) ([]FileWithHeaders, error) {
 
 // askCompiler asks the compiler for the include directories
 func askCompiler(compiler string, headerType string) ([]string, error) {
-	_, stderr, _, err := utils.ExecRedirectOutput(".", compiler, headerType)
+	_, stderr, _, err := exec.ExecRedirectOutput(".", compiler, headerType)
 	if err != nil {
 		return nil, err
 	}

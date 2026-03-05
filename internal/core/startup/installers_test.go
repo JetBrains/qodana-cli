@@ -31,9 +31,9 @@ import (
 	"sync/atomic"
 	"testing"
 
+	"github.com/JetBrains/qodana-cli/internal/coreutils/fs"
 	"github.com/JetBrains/qodana-cli/internal/platform/msg"
 	"github.com/JetBrains/qodana-cli/internal/platform/product"
-	"github.com/JetBrains/qodana-cli/internal/platform/utils"
 	"github.com/JetBrains/qodana-cli/internal/testutil/mockexe"
 	"github.com/stretchr/testify/assert"
 )
@@ -238,7 +238,7 @@ func sampleArchive(t *testing.T) string {
 	}()
 
 	exampleFile := filepath.Join(tempdir, "example.txt")
-	err = utils.AppendToFile(exampleFile, "Hello world")
+	err = fs.AppendToFile(exampleFile, "Hello world")
 	assert.NoError(t, err)
 
 	exampleFileData, err := os.Open(exampleFile)

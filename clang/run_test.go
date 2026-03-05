@@ -4,8 +4,8 @@ import (
 	"os"
 	"testing"
 
+	"github.com/JetBrains/qodana-cli/internal/coreutils/hash"
 	"github.com/JetBrains/qodana-cli/internal/platform/thirdpartyscan"
-	"github.com/JetBrains/qodana-cli/internal/platform/utils"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -25,7 +25,7 @@ func TestMountTools(t *testing.T) {
 
 	path := mountInfo[thirdpartyscan.Clang]
 	expectedHash := ClangTidySha256
-	actualHash, err := utils.GetFileSha256(path)
+	actualHash, err := hash.GetFileSha256(path)
 	if err != nil {
 		t.Fatal(err)
 	}

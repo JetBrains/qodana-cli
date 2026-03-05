@@ -27,22 +27,26 @@ import (
 	"strconv"
 	"strings"
 
+	coreexec "github.com/JetBrains/qodana-cli/internal/coreutils/exec"
+	"github.com/JetBrains/qodana-cli/internal/coreutils/fs"
+	"github.com/JetBrains/qodana-cli/internal/coreutils/str"
 	"github.com/JetBrains/qodana-cli/internal/platform/msg"
 	"github.com/JetBrains/qodana-cli/internal/platform/qdenv"
-	"github.com/JetBrains/qodana-cli/internal/platform/strutil"
 	"github.com/pterm/pterm"
 	"github.com/shirou/gopsutil/v3/process"
 
 	log "github.com/sirupsen/logrus"
 )
 
-// CheckDirFiles checks if a directory contains files.
-func CheckDirFiles(dir string) bool {
-	files, err := os.ReadDir(dir)
-	if err != nil {
-		return false
+// Bootstrap takes the given command (from CLI or qodana.yaml) and runs it.
+func Bootstrap(command string, project string) {
+	if command == "" {
+		return
 	}
-	return len(files) > 0
+	if res, err := coreexec.RunShell(project, command); res > 0 || err != nil {
+		log.Printf("Provided bootstrap command finished with error: %d. Exiting...", res)
+		os.Exit(res)
+	}
 }
 
 // FindFiles returns a slice of files with the given extensions from the given root (recursive).
@@ -54,7 +58,7 @@ func FindFiles(root string, extensions []string) []string {
 				return err
 			}
 			fileExtension := filepath.Ext(path)
-			if strutil.Contains(extensions, fileExtension) {
+			if str.Contains(extensions, fileExtension) {
 				files = append(files, path)
 			}
 
@@ -70,7 +74,7 @@ func FindFiles(root string, extensions []string) []string {
 // LaunchAndLog launches a process and logs its output.
 // The actual executable is args[0]; logLabel is only used for log file names.
 func LaunchAndLog(logDir string, logLabel string, args []string) (string, string, int, error) {
-	stdout, stderr, ret, err := ExecRedirectOutput(".", args[0], args[1:]...)
+	stdout, stderr, ret, err := coreexec.ExecRedirectOutput(".", args[0], args[1:]...)
 	if err != nil {
 		log.Error(fmt.Errorf("failed to run %s: %w", logLabel, err))
 		return "", "", ret, err
@@ -79,10 +83,10 @@ func LaunchAndLog(logDir string, logLabel string, args []string) (string, string
 	if stderr != "" {
 		_, _ = fmt.Fprintln(os.Stderr, stderr)
 	}
-	if err := AppendToFile(filepath.Join(logDir, logLabel+"-out.log"), stdout); err != nil {
+	if err := fs.AppendToFile(filepath.Join(logDir, logLabel+"-out.log"), stdout); err != nil {
 		log.Error(err)
 	}
-	if err := AppendToFile(filepath.Join(logDir, logLabel+"-err.log"), stderr); err != nil {
+	if err := fs.AppendToFile(filepath.Join(logDir, logLabel+"-err.log"), stderr); err != nil {
 		log.Error(err)
 	}
 	return stdout, stderr, ret, nil

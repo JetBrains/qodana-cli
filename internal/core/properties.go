@@ -26,11 +26,11 @@ import (
 
 	"github.com/JetBrains/qodana-cli/internal/cloud"
 	"github.com/JetBrains/qodana-cli/internal/core/corescan"
+	"github.com/JetBrains/qodana-cli/internal/coreutils/str"
 	"github.com/JetBrains/qodana-cli/internal/platform"
 	"github.com/JetBrains/qodana-cli/internal/platform/product"
 	"github.com/JetBrains/qodana-cli/internal/platform/qdenv"
 	"github.com/JetBrains/qodana-cli/internal/platform/qdyaml"
-	"github.com/JetBrains/qodana-cli/internal/platform/strutil"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -47,32 +47,32 @@ func getPropertiesMap(
 		"-Didea.headless.enable.statistics":    strconv.FormatBool(cloud.Token.IsAllowedToSendFUS()),
 		"-Didea.headless.statistics.device.id": deviceIdSalt[0],
 		"-Didea.headless.statistics.salt":      deviceIdSalt[1],
-		"-Dqodana.automation.guid":             strutil.QuoteIfSpace(analysisId),
+		"-Dqodana.automation.guid":             str.QuoteIfSpace(analysisId),
 		"-XX:MaxRAMPercentage":                 "70", //only in docker?
 	}
 	if coverageDir != "" {
-		properties["-Dqodana.coverage.input"] = strutil.QuoteIfSpace(coverageDir)
+		properties["-Dqodana.coverage.input"] = str.QuoteIfSpace(coverageDir)
 	}
 	if repositoryRoot != "" && repositoryRoot != "." {
-		properties["-Dqodana.path.to.project.dir.from.project.root"] = strutil.QuoteIfSpace(repositoryRoot)
+		properties["-Dqodana.path.to.project.dir.from.project.root"] = str.QuoteIfSpace(repositoryRoot)
 	}
 	if len(plugins) > 0 {
 		properties["-Didea.required.plugins.id"] = strings.Join(plugins, ",")
 	}
 	if prefix == "Rider" {
 		if dotNet.Project != "" {
-			properties["-Dqodana.net.project"] = strutil.QuoteIfSpace(dotNet.Project)
+			properties["-Dqodana.net.project"] = str.QuoteIfSpace(dotNet.Project)
 		} else if dotNet.Solution != "" {
-			properties["-Dqodana.net.solution"] = strutil.QuoteIfSpace(dotNet.Solution)
+			properties["-Dqodana.net.solution"] = str.QuoteIfSpace(dotNet.Solution)
 		}
 		if dotNet.Configuration != "" {
-			properties["-Dqodana.net.configuration"] = strutil.QuoteIfSpace(dotNet.Configuration)
+			properties["-Dqodana.net.configuration"] = str.QuoteIfSpace(dotNet.Configuration)
 		}
 		if dotNet.Platform != "" {
-			properties["-Dqodana.net.platform"] = strutil.QuoteIfSpace(dotNet.Platform)
+			properties["-Dqodana.net.platform"] = str.QuoteIfSpace(dotNet.Platform)
 		}
 		if dotNet.Frameworks != "" {
-			properties["-Dqodana.net.targetFrameworks"] = strutil.QuoteIfSpace(dotNet.Frameworks)
+			properties["-Dqodana.net.targetFrameworks"] = str.QuoteIfSpace(dotNet.Frameworks)
 		} else if qdenv.IsContainer() {
 			// We don't want to scan .NET Framework projects in Linux containers
 			properties["-Dqodana.net.targetFrameworks"] = "!net48;!net472;!net471;!net47;!net462;!net461;!net46;!net452;!net451;!net45;!net403;!net40;!net35;!net20;!net11"
@@ -89,10 +89,10 @@ func GetCommonProperties(c corescan.Context) []string {
 	systemDir := filepath.Join(c.CacheDir(), "idea", c.Prod().GetVersionBranch())
 	pluginsDir := filepath.Join(c.CacheDir(), "plugins", c.Prod().GetVersionBranch())
 	lines := []string{
-		fmt.Sprintf("-Didea.config.path=%s", strutil.QuoteIfSpace(c.ConfigDir())),
-		fmt.Sprintf("-Didea.system.path=%s", strutil.QuoteIfSpace(systemDir)),
-		fmt.Sprintf("-Didea.plugins.path=%s", strutil.QuoteIfSpace(pluginsDir)),
-		fmt.Sprintf("-Didea.log.path=%s", strutil.QuoteIfSpace(c.LogDir())),
+		fmt.Sprintf("-Didea.config.path=%s", str.QuoteIfSpace(c.ConfigDir())),
+		fmt.Sprintf("-Didea.system.path=%s", str.QuoteIfSpace(systemDir)),
+		fmt.Sprintf("-Didea.plugins.path=%s", str.QuoteIfSpace(pluginsDir)),
+		fmt.Sprintf("-Didea.log.path=%s", str.QuoteIfSpace(c.LogDir())),
 	}
 	treatAsRelease := os.Getenv(qdenv.QodanaTreatAsRelease)
 	if treatAsRelease == "true" {
@@ -128,7 +128,7 @@ func GetScanProperties(c corescan.Context) []string {
 
 	lines = append(
 		lines,
-		fmt.Sprintf("-Xlog:gc*:%s", strutil.QuoteIfSpace(filepath.Join(c.LogDir(), "gc.log"))),
+		fmt.Sprintf("-Xlog:gc*:%s", str.QuoteIfSpace(filepath.Join(c.LogDir(), "gc.log"))),
 	)
 
 	if c.JvmDebugPort() > 0 {
@@ -149,7 +149,7 @@ func GetScanProperties(c corescan.Context) []string {
 
 	cliProps, flags := c.PropertiesAndFlags()
 	for _, f := range flags {
-		if f != "" && !strutil.Contains(lines, f) {
+		if f != "" && !str.Contains(lines, f) {
 			lines = append(lines, f)
 		}
 	}

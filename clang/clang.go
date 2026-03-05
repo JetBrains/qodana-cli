@@ -1,6 +1,7 @@
 package main
 
 import (
+	"github.com/JetBrains/qodana-cli/internal/coreutils/exec"
 	"fmt"
 	"os"
 	"os/signal"
@@ -11,9 +12,9 @@ import (
 	"sync/atomic"
 	"time"
 
+	"github.com/JetBrains/qodana-cli/internal/coreutils/fs"
 	"github.com/JetBrains/qodana-cli/internal/platform"
 	"github.com/JetBrains/qodana-cli/internal/platform/thirdpartyscan"
-	"github.com/JetBrains/qodana-cli/internal/platform/utils"
 	"github.com/briandowns/spinner"
 	log "github.com/sirupsen/logrus"
 )
@@ -46,7 +47,7 @@ func createFileLoggers(logDir string) (chan string, chan string) {
 
 func logToFile(fileName string, logChannel chan string) {
 	for logItem := range logChannel {
-		if err := utils.AppendToFile(fileName, logItem); err != nil {
+		if err := fs.AppendToFile(fileName, logItem); err != nil {
 			log.Error(err)
 		}
 	}
@@ -138,7 +139,7 @@ func runClangTidy(
 	args = append(args, input.File)
 	args = append(args, "--quiet")
 	args = append(args, strings.Split(c.ClangArgs(), " ")...)
-	stdout, stderr, _, err := utils.ExecRedirectOutput(
+	stdout, stderr, _, err := exec.ExecRedirectOutput(
 		c.ProjectDir(),
 		clangPath, args...,
 	)

@@ -24,7 +24,7 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/JetBrains/qodana-cli/internal/platform/strutil"
+	"github.com/JetBrains/qodana-cli/internal/coreutils/str"
 	log "github.com/sirupsen/logrus"
 	"gopkg.in/yaml.v3"
 )
@@ -403,49 +403,49 @@ func LoadQodanaYamlByFullPath(fullPath string) QodanaYaml {
 func (q *QodanaYaml) Sort() *QodanaYaml {
 	sort.Slice(
 		q.Includes, func(i, j int) bool {
-			return strutil.Lower(q.Includes[i].Name) < strutil.Lower(q.Includes[j].Name)
+			return str.Lower(q.Includes[i].Name) < str.Lower(q.Includes[j].Name)
 		},
 	)
 	sort.Slice(
 		q.Excludes, func(i, j int) bool {
-			return strutil.Lower(q.Excludes[i].Name) < strutil.Lower(q.Excludes[j].Name)
+			return str.Lower(q.Excludes[i].Name) < str.Lower(q.Excludes[j].Name)
 		},
 	)
 	for _, rule := range q.LicenseRules {
 		sort.Slice(
 			rule.Keys, func(i, j int) bool {
-				return strutil.Lower(rule.Keys[i]) < strutil.Lower(rule.Keys[j])
+				return str.Lower(rule.Keys[i]) < str.Lower(rule.Keys[j])
 			},
 		)
 		sort.Slice(
 			rule.Allowed, func(i, j int) bool {
-				return strutil.Lower(rule.Allowed[i]) < strutil.Lower(rule.Allowed[j])
+				return str.Lower(rule.Allowed[i]) < str.Lower(rule.Allowed[j])
 			},
 		)
 		sort.Slice(
 			rule.Prohibited, func(i, j int) bool {
-				return strutil.Lower(rule.Prohibited[i]) < strutil.Lower(rule.Prohibited[j])
+				return str.Lower(rule.Prohibited[i]) < str.Lower(rule.Prohibited[j])
 			},
 		)
 	}
 	sort.Slice(
 		q.DependencyIgnores, func(i, j int) bool {
-			return strutil.Lower(q.DependencyIgnores[i].Name) < strutil.Lower(q.DependencyIgnores[j].Name)
+			return str.Lower(q.DependencyIgnores[i].Name) < str.Lower(q.DependencyIgnores[j].Name)
 		},
 	)
 	sort.Slice(
 		q.DependencyOverrides, func(i, j int) bool {
-			return strutil.Lower(q.DependencyOverrides[i].Name) < strutil.Lower(q.DependencyOverrides[j].Name)
+			return str.Lower(q.DependencyOverrides[i].Name) < str.Lower(q.DependencyOverrides[j].Name)
 		},
 	)
 	sort.Slice(
 		q.CustomDependencies, func(i, j int) bool {
-			return strutil.Lower(q.CustomDependencies[i].Name) < strutil.Lower(q.CustomDependencies[j].Name)
+			return str.Lower(q.CustomDependencies[i].Name) < str.Lower(q.CustomDependencies[j].Name)
 		},
 	)
 	sort.Slice(
 		q.Plugins, func(i, j int) bool {
-			return strutil.Lower(q.Plugins[i].Id) < strutil.Lower(q.Plugins[j].Id)
+			return str.Lower(q.Plugins[i].Id) < str.Lower(q.Plugins[j].Id)
 		},
 	)
 	return q

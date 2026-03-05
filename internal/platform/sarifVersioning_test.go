@@ -17,10 +17,9 @@
 package platform
 
 import (
+	"github.com/JetBrains/qodana-cli/internal/coreutils/exec"
 	"os"
 	"testing"
-
-	"github.com/JetBrains/qodana-cli/internal/platform/utils"
 )
 
 func TestGetBranchName(t *testing.T) {
@@ -64,7 +63,7 @@ func TestGetBranchName(t *testing.T) {
 }
 
 func runCommand(t *testing.T, cwd string, command string) (string, string) {
-	stdout, stderr, ret, err := utils.RunShellRedirectOutput(cwd, command)
+	stdout, stderr, ret, err := exec.RunShellRedirectOutput(cwd, command)
 	if err != nil {
 		t.Fatal(err)
 	}
