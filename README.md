@@ -183,7 +183,7 @@ qodana scan [flags]
                                   Default value is defined dynamically depending on the current environment and project.
       --image string              Defines an image to be used for analysis execution. 
                                   Sets --within-docker=true. Sets --linter to the one preinstalled within the image. 
-                                  Available images are: jetbrains/qodana-jvm:2025.3-eap, jetbrains/qodana-dotnet:2025.3-eap, etc. Full list of images is available at https://hub.docker.com/u/jetbrains?search=qodana .
+                                  Available images are: jetbrains/qodana-jvm:2026.1-eap, jetbrains/qodana-dotnet:2025.3, etc. Full list of images is available at https://hub.docker.com/u/jetbrains?search=qodana .
   -i, --project-dir string        Root directory of the inspected project (default ".")
       --repository-root string    Path to the root of the Git repository. This directory must be the same as --project-dir or contain the project directory inside it.
   -o, --results-dir string        Override directory to save Qodana inspection results to (default <userCacheDir>/JetBrains/<linter>/results)
