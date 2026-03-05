@@ -3,6 +3,7 @@ package thirdpartyscan
 import (
 	"testing"
 
+	"github.com/JetBrains/qodana-cli/internal/platform/product"
 	"github.com/JetBrains/qodana-cli/internal/platform/qdyaml"
 	"github.com/stretchr/testify/assert"
 )
@@ -108,8 +109,8 @@ func TestLinterInfo_GetMajorVersion(t *testing.T) {
 		{"2024.1", "2024.1"},
 		{"2024.1.5", "2024.1"},
 		{"2024.1-eap", "2024.1"},
-		{"invalid", "2025.3"},
-		{"", "2025.3"},
+		{"invalid", product.ReleaseVersion},
+		{"", product.ReleaseVersion},
 	}
 	for _, tt := range tests {
 		t.Run(

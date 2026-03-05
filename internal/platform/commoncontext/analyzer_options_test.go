@@ -164,11 +164,11 @@ var optionsTests = []TestCase{
 	{
 		name:         "Known linter passed --linter, --within-docker=false, eap only linter",
 		ide:          "",
-		linter:       "qodana-cpp",
+		linter:       "qodana-rust",
 		image:        "",
 		withinDocker: "false",
 		failure:      false,
-		expected:     &product.NativeAnalyzer{Linter: product.CppLinter, Eap: product.CppLinter.EapOnly},
+		expected:     &product.NativeAnalyzer{Linter: product.RustLinter, Eap: product.RustLinter.EapOnly},
 	},
 	{
 		name:         "Known linter passed --linter, --within-docker=true",
