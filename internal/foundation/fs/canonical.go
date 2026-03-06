@@ -137,12 +137,24 @@ func resolveImpl(absPath string, weak bool) (string, error) {
 }
 
 // appendTail joins the resolved prefix with the current component and any
-// remaining components, cleaning . and .. in the non-existent tail.
+// remaining components. The tail is kept as-is (no Clean) because unresolved
+// components might be symlinks, making lexical .. collapsing incorrect.
 func appendTail(resolved, current string, remaining []string) string {
-	parts := append([]string{current}, remaining...)
-	tail := filepath.Join(parts...)
-	// Clean collapses . and .. within the tail.
-	return filepath.Join(resolved, filepath.Clean(tail))
+	sep := string(os.PathSeparator)
+	var b strings.Builder
+	b.WriteString(resolved)
+	if resolved != "/" {
+		b.WriteString(sep)
+	}
+	b.WriteString(current)
+	for _, r := range remaining {
+		if r == "" {
+			continue
+		}
+		b.WriteString(sep)
+		b.WriteString(r)
+	}
+	return b.String()
 }
 
 // splitPath splits a path into its components, removing empty strings
