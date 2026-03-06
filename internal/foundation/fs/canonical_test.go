@@ -565,10 +565,15 @@ func TestWeaklyCanonical_DotDotInTail(t *testing.T) {
 	tmp := canonicalTempDir(t)
 	mkdirp(t, filepath.Join(tmp, "existing"))
 
-	// missing/../other in the non-existent tail should be cleaned to just "other"
-	actual, err := WeaklyCanonical(filepath.Join(tmp, "existing", "missing", "..", "other"))
+	// .. in the non-existent tail is preserved because "missing" could be a
+	// symlink, making lexical collapsing incorrect.
+	query := filepath.Join(tmp, "existing") + string(os.PathSeparator) +
+		"missing" + string(os.PathSeparator) + ".." + string(os.PathSeparator) + "other"
+	actual, err := WeaklyCanonical(query)
 	require.NoError(t, err)
-	assert.Equal(t, filepath.Join(tmp, "existing", "other"), actual)
+	expected := filepath.Join(tmp, "existing") + string(os.PathSeparator) +
+		"missing" + string(os.PathSeparator) + ".." + string(os.PathSeparator) + "other"
+	assert.Equal(t, expected, actual)
 }
 
 func TestWeaklyCanonical_CaseNormalized(t *testing.T) {

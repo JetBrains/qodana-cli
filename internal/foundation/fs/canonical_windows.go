@@ -97,8 +97,10 @@ func WeaklyCanonical(path string) (string, error) {
 			if canonErr != nil {
 				canonical = built
 			}
-			tail := filepath.Clean(filepath.Join(components[i:]...))
-			return filepath.Join(canonical, tail), nil
+			// Keep tail as-is (no Clean) — unresolved components might be
+			// symlinks, making lexical .. collapsing incorrect.
+			tail := strings.Join(components[i:], string(os.PathSeparator))
+			return canonical + string(os.PathSeparator) + tail, nil
 		}
 		built = next
 		lastExisting = i + 1
