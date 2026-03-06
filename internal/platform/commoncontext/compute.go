@@ -255,7 +255,10 @@ func getAnalyzerFromProject(
 
 func computeId(analyzer product.Analyzer, projectDir string) string {
 	length := 7
-	projectAbs, _ := filepath.Abs(projectDir)
+	projectAbs, err := fs.Canonical(projectDir)
+	if err != nil {
+		projectAbs = projectDir
+	}
 	id := fmt.Sprintf(
 		"%s-%s",
 		getHash(analyzer.Name())[0:length+1],
