@@ -20,6 +20,7 @@ package main
 
 import (
 	"crypto/sha512"
+	"bytes"
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
@@ -29,6 +30,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"regexp"
 	"runtime"
 	"sort"
 	"strings"
@@ -74,7 +76,7 @@ func main() {
 
 	repoRoot := findRepoRoot()
 	cacheDir := filepath.Join(repoRoot, ".cache", "jbr")
-	embedDir := "qodana-jbrs" // relative to CWD (internal/tooling)
+	embedDir := filepath.Join(scriptDir(), "..", "qodana-jbrs")
 
 	// Fetch upstream checksums for all platforms (parallel, lightweight)
 	upstreamSHA := fetchAllUpstreamChecksums(version, build)
@@ -135,16 +137,18 @@ func detectJBRVersion() (version, build string) {
 	tagName := fetchLatestJBRTag()
 	tagName = strings.TrimPrefix(tagName, "jbr-release-")
 
-	idx := strings.LastIndex(tagName, "b")
-	if idx <= 0 {
-		log.Fatalf("Cannot parse JBR tag %q: no build separator 'b' found", tagName)
+	// Expected format: "<version>b<build>", e.g. "25.0.2b329.66"
+	jbrTagRe := regexp.MustCompile(`^(\d+\.\d+\.\d+)(b\d+\.\d+)$`)
+	m := jbrTagRe.FindStringSubmatch(tagName)
+	if m == nil {
+		log.Fatalf("Cannot parse JBR tag %q: expected format like '25.0.2b329.66'", tagName)
 	}
 
 	if version == "" {
-		version = tagName[:idx]
+		version = m[1]
 	}
 	if build == "" {
-		build = tagName[idx:]
+		build = m[2]
 	}
 	return version, build
 }
@@ -285,7 +289,14 @@ func fetchUpstreamChecksum(version, flavor, build string) string {
 	if len(parts) == 0 {
 		log.Fatalf("Empty checksum response from %s", url)
 	}
-	return parts[0]
+	sha := parts[0]
+	if len(sha) != 128 {
+		log.Fatalf("Invalid SHA-512 from %s: expected 128 hex chars, got %d (%q)", url, len(sha), sha)
+	}
+	if _, err := hex.DecodeString(sha); err != nil {
+		log.Fatalf("Invalid SHA-512 hex from %s: %v", url, err)
+	}
+	return sha
 }
 
 // Cache validation ============================================================================
@@ -347,11 +358,17 @@ func ensurePlatformSrc(cacheDir, version, build string, p platform, expectedSHA 
 	}
 
 	// Remove the downloaded archive — we only need the extracted tree
-	os.Remove(archivePath)
+	if err := os.Remove(archivePath); err != nil {
+		log.Printf("WARN: failed to remove archive %s: %v", archivePath, err)
+	}
 
 	// Clear stale build/ and dist/ since src changed
-	os.RemoveAll(filepath.Join(pDir, "build"))
-	os.RemoveAll(filepath.Join(pDir, "dist"))
+	if err := os.RemoveAll(filepath.Join(pDir, "build")); err != nil {
+		log.Printf("WARN: failed to remove build dir: %v", err)
+	}
+	if err := os.RemoveAll(filepath.Join(pDir, "dist")); err != nil {
+		log.Printf("WARN: failed to remove dist dir: %v", err)
+	}
 
 	// Write SHA marker (src is now valid; build/dist will be written by buildPlatform)
 	writeFile(filepath.Join(pDir, "upstream.sha512"), expectedSHA)
@@ -397,10 +414,11 @@ func buildPlatform(jlinkBin, modules, cacheDir string, p platform, version, buil
 		"--strip-debug",
 		"--output", buildDir,
 	)
-	cmd.Stdout = os.Stdout
-	cmd.Stderr = os.Stderr
+	var jlinkOut bytes.Buffer
+	cmd.Stdout = &jlinkOut
+	cmd.Stderr = &jlinkOut
 	if err := cmd.Run(); err != nil {
-		log.Fatalf("jlink failed for %s: %v", p.flavor, err)
+		log.Fatalf("jlink failed for %s: %v\nOutput:\n%s", p.flavor, err, jlinkOut.String())
 	}
 
 	// Package into dist/
@@ -411,7 +429,7 @@ func buildPlatform(jlinkBin, modules, cacheDir string, p platform, version, buil
 		log.Fatalf("Failed to create dist dir: %v", err)
 	}
 	archiveName := fmt.Sprintf("qodana-jbrsdk-%s-%s-%s.tar.gz", version, p.flavor, build)
-	topDir := archiveName[:len(archiveName)-len(".tar.gz")]
+	topDir := strings.TrimSuffix(archiveName, ".tar.gz")
 	if err := archive.CreateTarGz(buildDir, filepath.Join(distDir, archiveName), topDir); err != nil {
 		log.Fatalf("Failed to create archive for %s: %v", p.flavor, err)
 	}
@@ -650,7 +668,15 @@ func findFirstTarGz(dir string) string {
 }
 
 
-// Repo root detection =========================================================================
+// Path helpers ================================================================================
+
+func scriptDir() string {
+	_, filename, _, ok := runtime.Caller(0)
+	if !ok {
+		log.Fatal("Cannot determine script location via runtime.Caller")
+	}
+	return filepath.Dir(filename)
+}
 
 func findRepoRoot() string {
 	out, err := exec.Command("git", "rev-parse", "--show-toplevel").Output()
@@ -658,6 +684,9 @@ func findRepoRoot() string {
 		return strings.TrimSpace(string(out))
 	}
 	log.Printf("WARN: git rev-parse failed (%v), defaulting to current directory for cache root", err)
-	cwd, _ := os.Getwd()
+	cwd, cwdErr := os.Getwd()
+	if cwdErr != nil {
+		log.Fatalf("Cannot determine repo root: git rev-parse failed (%v) and os.Getwd failed (%v)", err, cwdErr)
+	}
 	return cwd
 }
