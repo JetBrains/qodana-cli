@@ -205,7 +205,7 @@ func getEffectiveQodanaYamlData(effectiveConfigDir string) (Files, error) {
 func isFileExists(path string) bool {
 	if _, err := os.Stat(path); err == nil {
 		return true
-	} else if os.IsNotExist(err) {
+	} else if errors.Is(err, os.ErrNotExist) {
 		return false
 	} else {
 		log.Fatalf("Failed to verify existence of file %s: %s", path, err)

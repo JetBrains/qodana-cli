@@ -18,6 +18,7 @@ package startup
 
 import (
 	"bytes"
+	"errors"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -303,10 +304,10 @@ func setupIdeaSyncTestData(t *testing.T) (string, commoncontext.Context) {
 
 func checkFileExists(t *testing.T, filePath string, shouldExist bool) {
 	_, err := os.Stat(filePath)
-	if shouldExist && os.IsNotExist(err) {
+	if shouldExist && errors.Is(err, os.ErrNotExist) {
 		t.Fatalf("file does not exist: %s", filePath)
 	}
-	if !shouldExist && os.IsExist(err) {
+	if !shouldExist && errors.Is(err, os.ErrExist) {
 		t.Fatalf("file should not exist: %s", filePath)
 	}
 }
@@ -351,7 +352,7 @@ func TestMakeDirAll(t *testing.T) {
 		tmpDir := t.TempDir()
 		targetDir := filepath.Join(tmpDir, "a", "b", "c")
 		MakeDirAll(targetDir)
-		if _, err := os.Stat(targetDir); os.IsNotExist(err) {
+		if _, err := os.Stat(targetDir); errors.Is(err, os.ErrNotExist) {
 			t.Errorf("MakeDirAll failed to create directory: %s", targetDir)
 		}
 	})
@@ -404,7 +405,7 @@ func TestPrepareDirectories(t *testing.T) {
 	prepareDirectories(resultsDir, logDir, confDir)
 
 	for _, dir := range []string{resultsDir, logDir, confDir} {
-		if _, err := os.Stat(dir); os.IsNotExist(err) {
+		if _, err := os.Stat(dir); errors.Is(err, os.ErrNotExist) {
 			t.Errorf("prepareDirectories failed to create directory: %s", dir)
 		}
 	}

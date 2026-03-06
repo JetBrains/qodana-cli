@@ -93,7 +93,7 @@ func resolveImpl(absPath string, weak bool) (string, error) {
 		// Look up the actual on-disk name (normalizes case on case-insensitive FS).
 		actualName, err := findEntry(resolved, comp)
 		if err != nil {
-			if weak && os.IsNotExist(err) {
+			if weak && errors.Is(err, os.ErrNotExist) {
 				return appendTail(resolved, comp, queue), nil
 			}
 			return "", err
@@ -103,7 +103,7 @@ func resolveImpl(absPath string, weak bool) (string, error) {
 
 		info, err := os.Lstat(next)
 		if err != nil {
-			if weak && os.IsNotExist(err) {
+			if weak && errors.Is(err, os.ErrNotExist) {
 				return appendTail(resolved, comp, queue), nil
 			}
 			return "", err
@@ -170,7 +170,9 @@ func findEntry(dir, name string) (result string, err error) {
 		return "", err
 	}
 	defer func() {
-		err = errors.Join(err, d.Close())
+		if closeErr := d.Close(); closeErr != nil && err == nil {
+			err = closeErr
+		}
 	}()
 
 	lowerName := strings.ToLower(name)

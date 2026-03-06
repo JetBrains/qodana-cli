@@ -17,6 +17,7 @@
 package commoncontext
 
 import (
+	"errors"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -40,7 +41,7 @@ func TestCanonical_CaseNormalization(t *testing.T) {
 	if err := os.MkdirAll(testDir, 0o755); err != nil {
 		t.Fatal(err)
 	}
-	if _, err := os.Stat(filepath.Join(tmp, "casetest")); os.IsNotExist(err) {
+	if _, err := os.Stat(filepath.Join(tmp, "casetest")); errors.Is(err, os.ErrNotExist) {
 		t.Skip("not relevant on case-sensitive filesystems")
 	}
 
@@ -287,7 +288,7 @@ func TestComputeCommonRepositoryRootValidationWithRealFiles(t *testing.T) {
 
 	// Check if filesystem is case-sensitive
 	_, statErr := os.Stat(filepath.Join(tempDir, "testCaseSensitive"))
-	isCaseSensitive := os.IsNotExist(statErr)
+	isCaseSensitive := errors.Is(statErr, os.ErrNotExist)
 	t.Logf("Filesystem case-sensitive: %v", isCaseSensitive)
 
 	// Case sensitivity tests: implementation uses os.SameFile for comparison
