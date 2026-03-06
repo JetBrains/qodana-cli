@@ -17,6 +17,7 @@
 package platform
 
 import (
+	"errors"
 	"os"
 	"path/filepath"
 	"strings"
@@ -93,7 +94,7 @@ func TestMergeSarifReports(t *testing.T) {
 	// check if file exists
 	_, err = os.Stat(filepath.Join(dir, "qodana.sarif.json"))
 	if err != nil {
-		if os.IsNotExist(err) {
+		if errors.Is(err, os.ErrNotExist) {
 			t.Fatal("Resulting SARIF file not found")
 		}
 	}

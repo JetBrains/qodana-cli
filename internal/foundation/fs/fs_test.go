@@ -3,6 +3,7 @@ package fs
 import (
 	"os"
 	"path/filepath"
+	"runtime"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -46,6 +47,21 @@ func TestCopyDir(t *testing.T) {
 
 	data, _ = os.ReadFile(filepath.Join(dstDir, "copied", "subdir", "file2.txt"))
 	assert.Equal(t, "content2", string(data))
+}
+
+func TestCopyDir_ReadDirError(t *testing.T) {
+	if runtime.GOOS == "windows" {
+		t.Skip("permission-based test not reliable on Windows")
+	}
+	srcDir := t.TempDir()
+	_ = os.WriteFile(filepath.Join(srcDir, "file.txt"), []byte("data"), 0o644)
+
+	// Remove read permission so ReadDir fails.
+	assert.NoError(t, os.Chmod(srcDir, 0o000))
+	t.Cleanup(func() { _ = os.Chmod(srcDir, 0o755) })
+
+	err := CopyDir(srcDir, filepath.Join(t.TempDir(), "dst"))
+	assert.Error(t, err)
 }
 
 func TestAppendToFile(t *testing.T) {
