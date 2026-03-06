@@ -17,6 +17,7 @@
 package startup
 
 import (
+	"errors"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -194,7 +195,7 @@ func prepareContainerSpecificDirectories(prod product.Product, cacheDir string, 
 
 	if prod.BaseScriptName == product.Idea {
 		mavenRootDir := filepath.Join(homeDir, ".m2")
-		if _, err = os.Stat(mavenRootDir); os.IsNotExist(err) {
+		if _, err = os.Stat(mavenRootDir); errors.Is(err, os.ErrNotExist) {
 			if err = os.MkdirAll(mavenRootDir, 0o755); err != nil {
 				log.Fatal(err)
 			}
@@ -224,7 +225,7 @@ func prepareDirectories(cacheDir string, logDir string, confDir string) {
 }
 
 func MakeDirAll(dir string) {
-	if _, err := os.Stat(dir); os.IsNotExist(err) {
+	if _, err := os.Stat(dir); errors.Is(err, os.ErrNotExist) {
 		if err := os.MkdirAll(dir, 0o755); err != nil {
 			log.Fatal(err)
 		}
@@ -248,17 +249,17 @@ func SyncConfigCache(prod product.Product, confDirPath string, cacheDir string, 
 	jdkTableFile := filepath.Join(confDirPath, "options", "jdk.table.xml")
 	cacheFile := filepath.Join(cacheDir, "config", prod.GetVersionBranch(), "jdk.table.xml")
 	if fromCache {
-		if _, err := os.Stat(cacheFile); os.IsNotExist(err) {
+		if _, err := os.Stat(cacheFile); errors.Is(err, os.ErrNotExist) {
 			return
 		}
-		if _, err := os.Stat(jdkTableFile); os.IsNotExist(err) {
+		if _, err := os.Stat(jdkTableFile); errors.Is(err, os.ErrNotExist) {
 			if err := cp.Copy(cacheFile, jdkTableFile); err != nil {
 				log.Fatal(err)
 			}
 			log.Debugf("SDK table is synced from cache")
 		}
 	} else {
-		if _, err := os.Stat(jdkTableFile); os.IsNotExist(err) {
+		if _, err := os.Stat(jdkTableFile); errors.Is(err, os.ErrNotExist) {
 			log.Debugf("SDK table isnt't stored to cache, file doesn't exist")
 		} else {
 			if err := cp.Copy(jdkTableFile, cacheFile); err != nil {
@@ -283,7 +284,7 @@ func SyncIdeaCache(from string, to string, overwrite bool) error {
 		},
 	}
 	src := filepath.Join(from, ".idea")
-	if _, err := os.Stat(src); os.IsNotExist(err) {
+	if _, err := os.Stat(src); errors.Is(err, os.ErrNotExist) {
 		return fmt.Errorf("source .idea directory does not exist: %s", src)
 	}
 	dst := filepath.Join(to, ".idea")
@@ -296,7 +297,7 @@ func SyncIdeaCache(from string, to string, overwrite bool) error {
 }
 
 func writeFileIfNew(filepath string, content string) {
-	if _, err := os.Stat(filepath); os.IsNotExist(err) {
+	if _, err := os.Stat(filepath); errors.Is(err, os.ErrNotExist) {
 		if err := os.WriteFile(filepath, []byte(content), 0o755); err != nil {
 			log.Fatal(err)
 		}

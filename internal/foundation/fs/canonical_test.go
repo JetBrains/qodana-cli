@@ -1,6 +1,7 @@
 package fs
 
 import (
+	"errors"
 	"os"
 	"path/filepath"
 	"runtime"
@@ -44,7 +45,7 @@ func isTestDirCaseSensitive(t *testing.T) bool {
 	dir := t.TempDir()
 	mkdirp(t, filepath.Join(dir, "A"))
 	_, err := os.Stat(filepath.Join(dir, "a"))
-	if os.IsNotExist(err) {
+	if errors.Is(err, os.ErrNotExist) {
 		return true
 	}
 	require.NoError(t, err)
@@ -63,7 +64,7 @@ func skipIfCaseSensitive(t *testing.T) {
 func TestCanonical_NonExistentPath(t *testing.T) {
 	tmp := canonicalTempDir(t)
 	_, err := Canonical(filepath.Join(tmp, "missing"))
-	assert.True(t, os.IsNotExist(err), "expected IsNotExist, got: %v", err)
+	assert.True(t, errors.Is(err, os.ErrNotExist), "expected IsNotExist, got: %v", err)
 }
 
 func TestCanonical_NonExistentIntermediateDir(t *testing.T) {
