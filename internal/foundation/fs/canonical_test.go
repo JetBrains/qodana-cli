@@ -497,3 +497,99 @@ func TestCanonical_DevNull(t *testing.T) {
 	require.NoError(t, err)
 	assert.Equal(t, "/dev/null", actual)
 }
+
+// WeaklyCanonical tests ====================================================
+
+func TestWeaklyCanonical_FullyExists(t *testing.T) {
+	tmp := canonicalTempDir(t)
+	expected := filepath.Join(tmp, "dir", "file")
+	touch(t, expected)
+
+	actual, err := WeaklyCanonical(expected)
+	require.NoError(t, err)
+	assert.Equal(t, expected, actual)
+}
+
+func TestWeaklyCanonical_MissingTail(t *testing.T) {
+	tmp := canonicalTempDir(t)
+	mkdirp(t, filepath.Join(tmp, "dir"))
+
+	actual, err := WeaklyCanonical(filepath.Join(tmp, "dir", "missing", "file"))
+	require.NoError(t, err)
+	assert.Equal(t, filepath.Join(tmp, "dir", "missing", "file"), actual)
+}
+
+func TestWeaklyCanonical_MissingMultipleComponents(t *testing.T) {
+	tmp := canonicalTempDir(t)
+	mkdirp(t, filepath.Join(tmp, "existing"))
+
+	actual, err := WeaklyCanonical(filepath.Join(tmp, "existing", "a", "b", "c"))
+	require.NoError(t, err)
+	assert.Equal(t, filepath.Join(tmp, "existing", "a", "b", "c"), actual)
+}
+
+func TestWeaklyCanonical_EntirelyMissing(t *testing.T) {
+	// When nothing exists except root, we still get an absolute cleaned path.
+	actual, err := WeaklyCanonical("/nonexistent/path/to/file")
+	require.NoError(t, err)
+	assert.Equal(t, "/nonexistent/path/to/file", actual)
+}
+
+func TestWeaklyCanonical_EmptyString(t *testing.T) {
+	_, err := WeaklyCanonical("")
+	assert.Error(t, err)
+}
+
+func TestWeaklyCanonical_Relative(t *testing.T) {
+	tmp := canonicalTempDir(t)
+	mkdirp(t, filepath.Join(tmp, "dir"))
+
+	t.Chdir(tmp)
+	actual, err := WeaklyCanonical(filepath.Join("dir", "missing"))
+	require.NoError(t, err)
+	assert.Equal(t, filepath.Join(tmp, "dir", "missing"), actual)
+}
+
+func TestWeaklyCanonical_SymlinkThenMissing(t *testing.T) {
+	tmp := canonicalTempDir(t)
+	target := filepath.Join(tmp, "real")
+	mkdirp(t, target)
+	makeSymlink(t, "real", filepath.Join(tmp, "link"))
+
+	actual, err := WeaklyCanonical(filepath.Join(tmp, "link", "missing"))
+	require.NoError(t, err)
+	assert.Equal(t, filepath.Join(tmp, "real", "missing"), actual)
+}
+
+func TestWeaklyCanonical_DotDotInTail(t *testing.T) {
+	tmp := canonicalTempDir(t)
+	mkdirp(t, filepath.Join(tmp, "existing"))
+
+	// missing/../other in the non-existent tail should be cleaned to just "other"
+	actual, err := WeaklyCanonical(filepath.Join(tmp, "existing", "missing", "..", "other"))
+	require.NoError(t, err)
+	assert.Equal(t, filepath.Join(tmp, "existing", "other"), actual)
+}
+
+func TestWeaklyCanonical_CaseNormalized(t *testing.T) {
+	skipIfCaseSensitive(t)
+
+	tmp := canonicalTempDir(t)
+	mkdirp(t, filepath.Join(tmp, "Dir"))
+
+	// Existing prefix gets case-normalized; tail preserves input case.
+	actual, err := WeaklyCanonical(filepath.Join(tmp, "dIR", "Missing"))
+	require.NoError(t, err)
+	assert.Equal(t, filepath.Join(tmp, "Dir", "Missing"), actual)
+}
+
+func TestWeaklyCanonical_BrokenSymlink(t *testing.T) {
+	tmp := canonicalTempDir(t)
+	makeSymlink(t, "nonexistent", filepath.Join(tmp, "broken"))
+
+	// Broken symlink: the symlink itself exists but its target doesn't.
+	// WeaklyCanonical should not error — it returns the resolved prefix + the name.
+	actual, err := WeaklyCanonical(filepath.Join(tmp, "broken"))
+	require.NoError(t, err)
+	assert.Equal(t, filepath.Join(tmp, "nonexistent"), actual)
+}
