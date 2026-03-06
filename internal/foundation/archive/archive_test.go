@@ -7,10 +7,12 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"runtime"
 	"testing"
 
 	"github.com/JetBrains/qodana-cli/internal/foundation/archive"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestWalkZipArchive(t *testing.T) {
@@ -177,6 +179,111 @@ func TestExtractTarGz(t *testing.T) {
 		err := archive.ExtractTarGz("/nonexistent.tar.gz", t.TempDir(), false)
 		assert.Error(t, err)
 	})
+}
+
+// createMaliciousTarGz builds a tar.gz with arbitrary headers for security testing.
+type tarEntry struct {
+	header  tar.Header
+	content []byte
+}
+
+func createTarGzFromEntries(t *testing.T, entries []tarEntry) string {
+	t.Helper()
+	dir := t.TempDir()
+	tgzPath := filepath.Join(dir, "malicious.tar.gz")
+
+	f, err := os.Create(tgzPath)
+	require.NoError(t, err)
+	gw := gzip.NewWriter(f)
+	tw := tar.NewWriter(gw)
+
+	for _, e := range entries {
+		h := e.header
+		if h.Size == 0 && len(e.content) > 0 {
+			h.Size = int64(len(e.content))
+		}
+		require.NoError(t, tw.WriteHeader(&h))
+		if len(e.content) > 0 {
+			_, err := tw.Write(e.content)
+			require.NoError(t, err)
+		}
+	}
+
+	require.NoError(t, tw.Close())
+	require.NoError(t, gw.Close())
+	require.NoError(t, f.Close())
+	return tgzPath
+}
+
+func TestExtractTarGz_PathTraversal(t *testing.T) {
+	tgzPath := createTarGzFromEntries(t, []tarEntry{
+		{header: tar.Header{Name: "../../etc/passwd", Typeflag: tar.TypeReg, Mode: 0644}, content: []byte("pwned")},
+	})
+	destDir := t.TempDir()
+
+	err := archive.ExtractTarGz(tgzPath, destDir, false)
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "path traversal")
+}
+
+func TestExtractTarGz_PathTraversal_StripTopDir(t *testing.T) {
+	tgzPath := createTarGzFromEntries(t, []tarEntry{
+		{header: tar.Header{Name: "topdir/../../etc/passwd", Typeflag: tar.TypeReg, Mode: 0644}, content: []byte("pwned")},
+	})
+	destDir := t.TempDir()
+
+	err := archive.ExtractTarGz(tgzPath, destDir, true)
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "path traversal")
+}
+
+func TestExtractTarGz_SymlinkEscape(t *testing.T) {
+	if runtime.GOOS == "windows" {
+		t.Skip("symlinks require elevated privileges on Windows")
+	}
+
+	tgzPath := createTarGzFromEntries(t, []tarEntry{
+		{header: tar.Header{Name: "evil", Typeflag: tar.TypeSymlink, Linkname: "../../tmp"}},
+	})
+	destDir := t.TempDir()
+
+	err := archive.ExtractTarGz(tgzPath, destDir, false)
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "escapes dest dir")
+}
+
+func TestExtractTarGz_SymlinkThenFile(t *testing.T) {
+	if runtime.GOOS == "windows" {
+		t.Skip("symlinks require elevated privileges on Windows")
+	}
+
+	tgzPath := createTarGzFromEntries(t, []tarEntry{
+		{header: tar.Header{Name: "evil", Typeflag: tar.TypeSymlink, Linkname: "/tmp"}},
+		{header: tar.Header{Name: "evil/payload.txt", Typeflag: tar.TypeReg, Mode: 0644}, content: []byte("pwned")},
+	})
+	destDir := t.TempDir()
+
+	err := archive.ExtractTarGz(tgzPath, destDir, false)
+	assert.Error(t, err)
+}
+
+func TestExtractTarGz_ValidSymlink(t *testing.T) {
+	if runtime.GOOS == "windows" {
+		t.Skip("symlinks require elevated privileges on Windows")
+	}
+
+	tgzPath := createTarGzFromEntries(t, []tarEntry{
+		{header: tar.Header{Name: "file.txt", Typeflag: tar.TypeReg, Mode: 0644}, content: []byte("hello")},
+		{header: tar.Header{Name: "link.txt", Typeflag: tar.TypeSymlink, Linkname: "file.txt"}},
+	})
+	destDir := t.TempDir()
+
+	err := archive.ExtractTarGz(tgzPath, destDir, false)
+	assert.NoError(t, err)
+
+	target, err := os.Readlink(filepath.Join(destDir, "link.txt"))
+	assert.NoError(t, err)
+	assert.Equal(t, "file.txt", target)
 }
 
 func TestCreateTarGz(t *testing.T) {

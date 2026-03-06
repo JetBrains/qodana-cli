@@ -127,6 +127,12 @@ func WalkTarGzArchive(path string, callback WalkArchiveCallback) (err error) {
 	return nil
 }
 
+func isPathWithinDir(path, dir string) bool {
+	cleanDir := filepath.Clean(dir)
+	cleanPath := filepath.Clean(path)
+	return cleanPath == cleanDir || strings.HasPrefix(cleanPath, cleanDir+string(os.PathSeparator))
+}
+
 // ExtractTarGz extracts a .tar.gz file to destDir. If stripTopDir is true, the first
 // path component is removed from each entry (e.g., "jbrsdk-25.0.2-linux-x64-b329.72/bin/java" -> "bin/java").
 func ExtractTarGz(archivePath, destDir string, stripTopDir bool) (err error) {
@@ -148,6 +154,12 @@ func ExtractTarGz(archivePath, destDir string, stripTopDir bool) (err error) {
 
 	if err := os.MkdirAll(destDir, 0o755); err != nil {
 		return fmt.Errorf("failed to create dest dir %s: %w", destDir, err)
+	}
+	// Resolve destDir to a canonical path so EvalSymlinks comparisons work
+	// on systems where temp dirs contain symlinks (e.g. macOS /var -> /private/var).
+	destDir, err = filepath.EvalSymlinks(destDir)
+	if err != nil {
+		return fmt.Errorf("failed to resolve dest dir %s: %w", destDir, err)
 	}
 
 	tr := tar.NewReader(gz)
@@ -174,20 +186,28 @@ func ExtractTarGz(archivePath, destDir string, stripTopDir bool) (err error) {
 
 		target := filepath.Join(destDir, name)
 
-		// Prevent path traversal
-		if !strings.HasPrefix(filepath.Clean(target), filepath.Clean(destDir)+string(os.PathSeparator)) &&
-			filepath.Clean(target) != filepath.Clean(destDir) {
+		if !isPathWithinDir(target, destDir) {
 			return fmt.Errorf("tar entry %q attempts path traversal", hdr.Name)
 		}
 
 		switch hdr.Typeflag {
 		case tar.TypeDir:
+			if resolved, err := filepath.EvalSymlinks(filepath.Dir(target)); err == nil {
+				if !isPathWithinDir(resolved, destDir) {
+					return fmt.Errorf("tar entry %q resolves outside dest dir via symlink", hdr.Name)
+				}
+			}
 			if err := os.MkdirAll(target, os.FileMode(hdr.Mode)|0o755); err != nil {
 				return fmt.Errorf("failed to create dir %s: %w", target, err)
 			}
 		case tar.TypeReg:
 			if err := os.MkdirAll(filepath.Dir(target), 0o755); err != nil {
 				return fmt.Errorf("failed to create parent dir for %s: %w", target, err)
+			}
+			if resolved, err := filepath.EvalSymlinks(filepath.Dir(target)); err == nil {
+				if !isPathWithinDir(resolved, destDir) {
+					return fmt.Errorf("tar entry %q resolves outside dest dir via symlink", hdr.Name)
+				}
 			}
 			outFile, err := os.OpenFile(target, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, os.FileMode(hdr.Mode))
 			if err != nil {
@@ -200,6 +220,10 @@ func ExtractTarGz(archivePath, destDir string, stripTopDir bool) (err error) {
 				return fmt.Errorf("failed to close %s: %w", target, err)
 			}
 		case tar.TypeSymlink:
+			resolvedLink := filepath.Join(filepath.Dir(target), hdr.Linkname)
+			if !isPathWithinDir(resolvedLink, destDir) {
+				return fmt.Errorf("tar entry %q has symlink target %q that escapes dest dir", hdr.Name, hdr.Linkname)
+			}
 			// Symlinks may fail on Windows; best-effort
 			_ = os.Symlink(hdr.Linkname, target)
 		}
