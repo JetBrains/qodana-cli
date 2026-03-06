@@ -476,3 +476,25 @@ func TestNoCache(t *testing.T) {
 		assert.Empty(t, req.Header.Get("If-Modified-Since"))
 	})
 }
+
+func TestComputeId_SymlinkSameDir(t *testing.T) {
+	tmp := t.TempDir()
+	tmp, err := filepath.EvalSymlinks(tmp) // handle macOS /var -> /private/var
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	realDir := filepath.Join(tmp, "project")
+	if err := os.MkdirAll(realDir, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	linkDir := filepath.Join(tmp, "link")
+	if err := os.Symlink(realDir, linkDir); err != nil {
+		t.Fatal(err)
+	}
+
+	analyzer := product.JvmLinter.NativeAnalyzer()
+	idReal := computeId(analyzer, realDir)
+	idLink := computeId(analyzer, linkDir)
+	assert.Equal(t, idReal, idLink, "computeId should produce the same ID for a symlink and its target")
+}
