@@ -12,6 +12,7 @@ require (
 	github.com/docker/go-connections v0.6.0
 	github.com/go-enry/go-enry/v2 v2.9.3
 	github.com/google/uuid v1.6.0
+	github.com/imroc/req/v3 v3.57.0
 	github.com/liamg/clinch v1.6.6
 	github.com/mattn/go-isatty v0.0.20
 	github.com/otiai10/copy v1.14.1
@@ -36,6 +37,7 @@ require (
 	github.com/Azure/go-ansiterm v0.0.0-20210617225240-d185dfc1b5a1 // indirect
 	github.com/Microsoft/go-winio v0.6.2 // indirect
 	github.com/agnivade/levenshtein v1.2.2-0.20250519083737-420867539855 // indirect
+	github.com/andybalholm/brotli v1.2.0 // indirect
 	github.com/boyter/gocodewalker v1.5.1 // indirect
 	github.com/cenkalti/backoff/v5 v5.0.3 // indirect
 	github.com/clipperhouse/uax29/v2 v2.2.0 // indirect
@@ -62,14 +64,16 @@ require (
 	github.com/go-ole/go-ole v1.2.6 // indirect
 	github.com/go-viper/mapstructure/v2 v2.4.0 // indirect
 	github.com/godbus/dbus/v5 v5.1.0 // indirect
+	github.com/google/go-querystring v1.1.0 // indirect
 	github.com/gookit/color v1.5.4 // indirect
 	github.com/gorilla/mux v1.8.1 // indirect
 	github.com/grpc-ecosystem/grpc-gateway/v2 v2.27.2 // indirect
 	github.com/h2non/filetype v1.1.3 // indirect
+	github.com/icholy/digest v1.1.0 // indirect
 	github.com/inconshreveable/mousetrap v1.1.0 // indirect
 	github.com/json-iterator/go v1.1.12 // indirect
 	github.com/juju/errors v1.0.0 // indirect
-	github.com/klauspost/compress v1.15.13 // indirect
+	github.com/klauspost/compress v1.18.2 // indirect
 	github.com/klauspost/cpuid/v2 v2.2.5 // indirect
 	github.com/liamg/tml v0.3.0 // indirect
 	github.com/lithammer/fuzzysearch v1.1.8 // indirect
@@ -91,6 +95,9 @@ require (
 	github.com/pmezard/go-difflib v1.0.1-0.20181226105442-5d4384ee4fb2 // indirect
 	github.com/power-devops/perfstat v0.0.0-20210106213030-5aafc221ea8c // indirect
 	github.com/prometheus/client_golang v1.11.1 // indirect
+	github.com/quic-go/qpack v0.6.0 // indirect
+	github.com/quic-go/quic-go v0.57.1 // indirect
+	github.com/refraction-networking/utls v1.8.1 // indirect
 	github.com/rogpeppe/go-internal v1.14.1 // indirect
 	github.com/russross/blackfriday/v2 v2.1.0 // indirect
 	github.com/sagikazarmark/locafero v0.11.0 // indirect
@@ -120,17 +127,16 @@ require (
 	go.opentelemetry.io/otel/trace v1.38.0 // indirect
 	go.opentelemetry.io/proto/otlp v1.7.1 // indirect
 	go.yaml.in/yaml/v3 v3.0.4 // indirect
-	golang.org/x/crypto v0.45.0 // indirect
-	golang.org/x/net v0.47.0 // indirect
+	golang.org/x/crypto v0.46.0 // indirect
+	golang.org/x/net v0.48.0 // indirect
 	golang.org/x/oauth2 v0.30.0 // indirect
-	golang.org/x/sync v0.18.0 // indirect
-	golang.org/x/term v0.37.0 // indirect
-	golang.org/x/text v0.31.0 // indirect
-	golang.org/x/time v0.5.0 // indirect
+	golang.org/x/sync v0.19.0 // indirect
+	golang.org/x/term v0.38.0 // indirect
+	golang.org/x/text v0.32.0 // indirect
+	golang.org/x/time v0.12.0 // indirect
 	google.golang.org/genproto/googleapis/api v0.0.0-20250825161204-c5933d9347a5 // indirect
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20250825161204-c5933d9347a5 // indirect
 	google.golang.org/grpc v1.75.0 // indirect
 	google.golang.org/protobuf v1.36.8 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
-	gotest.tools/v3 v3.5.1 // indirect
 )

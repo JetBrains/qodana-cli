@@ -19,14 +19,10 @@
 package main
 
 import (
-	"crypto/sha512"
 	"bytes"
-	"encoding/hex"
-	"encoding/json"
+	"crypto/sha512"
 	"fmt"
-	"io"
 	"log"
-	"net/http"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -37,8 +33,11 @@ import (
 	"sync"
 	"time"
 
+	"github.com/JetBrains/qodana-cli/internal/foundation/algorithm"
 	"github.com/JetBrains/qodana-cli/internal/foundation/archive"
 	"github.com/JetBrains/qodana-cli/internal/foundation/fs"
+	"github.com/JetBrains/qodana-cli/internal/foundation/web"
+	"github.com/imroc/req/v3"
 )
 
 // Configuration ===============================================================================
@@ -71,7 +70,12 @@ var platforms = []platform{
 // If mismatch or missing → re-download, re-extract, rebuild, re-dist.
 
 func main() {
-	version, build := detectJBRVersion()
+	client := web.NewClient(10 * time.Minute)
+	if token := os.Getenv("GITHUB_TOKEN"); token != "" {
+		client.SetCommonBearerAuthToken(token)
+	}
+
+	version, build := detectJBRVersion(client)
 	log.Printf("JBR version: %s, build: %s", version, build)
 
 	repoRoot := findRepoRoot()
@@ -79,7 +83,7 @@ func main() {
 	embedDir := filepath.Join(scriptDir(), "..", "qodana-jbrs")
 
 	// Fetch upstream checksums for all platforms (parallel, lightweight)
-	upstreamSHA := fetchAllUpstreamChecksums(version, build)
+	upstreamSHA := fetchAllUpstreamChecksums(client, version, build)
 
 	// Check if all platforms are up to date
 	if allPlatformsCurrent(cacheDir, upstreamSHA) {
@@ -90,7 +94,7 @@ func main() {
 
 	// Ensure host JBR is available for jlink/jdeps tools
 	hostPlatform := findHostPlatform()
-	ensurePlatformSrc(cacheDir, version, build, hostPlatform, upstreamSHA[hostPlatform.flavor])
+	ensurePlatformSrc(client, cacheDir, version, build, hostPlatform, upstreamSHA[hostPlatform.flavor])
 	jlinkBin := findBinary(platformSrcDir(cacheDir, hostPlatform), "jlink")
 	jdepsBin := findBinary(platformSrcDir(cacheDir, hostPlatform), "jdeps")
 	log.Printf("Host JBR tools: jlink=%s, jdeps=%s", jlinkBin, jdepsBin)
@@ -100,7 +104,7 @@ func main() {
 	log.Printf("Required modules: %s", modules)
 
 	// Ensure all platforms have src/ extracted (parallel)
-	ensureAllPlatformSrcs(cacheDir, version, build, upstreamSHA)
+	ensureAllPlatformSrcs(client, cacheDir, version, build, upstreamSHA)
 
 	// Build each platform that needs it
 	for _, p := range platforms {
@@ -127,14 +131,14 @@ type ghRelease struct {
 	TagName string `json:"tag_name"`
 }
 
-func detectJBRVersion() (version, build string) {
+func detectJBRVersion(client *req.Client) (version, build string) {
 	version = os.Getenv("QODANA_JBR_VERSION")
 	build = os.Getenv("QODANA_JBR_BUILD")
 	if version != "" && build != "" {
 		return version, build
 	}
 
-	tagName := fetchLatestJBRTag()
+	tagName := fetchLatestJBRTag(client)
 	tagName = strings.TrimPrefix(tagName, "jbr-release-")
 
 	// Expected format: "<version>b<build>", e.g. "25.0.2b329.66"
@@ -153,42 +157,30 @@ func detectJBRVersion() (version, build string) {
 	return version, build
 }
 
-func fetchLatestJBRTag() string {
-	req, err := http.NewRequest(http.MethodGet, jbrGitHubAPI, nil)
-	if err != nil {
-		log.Fatalf("Error creating request: %v", err)
-	}
-	req.Header.Set("Accept", "application/vnd.github+json")
-
-	if token := os.Getenv("GITHUB_TOKEN"); token != "" {
-		req.Header.Set("Authorization", "token "+token)
-	}
-
-	resp, err := http.DefaultClient.Do(req)
+func fetchLatestJBRTag(client *req.Client) string {
+	var rel ghRelease
+	resp, err := client.R().
+		SetHeader("Accept", "application/vnd.github+json").
+		SetSuccessResult(&rel).
+		Get(jbrGitHubAPI)
 	if err != nil {
 		log.Fatalf("Error fetching JBR releases: %v", err)
 	}
-	defer resp.Body.Close()
 
-	if resp.StatusCode == 403 || resp.StatusCode == 429 {
-		body, _ := io.ReadAll(resp.Body)
+	switch resp.GetStatusCode() {
+	case 200:
+		// ok
+	case 403, 429:
 		log.Fatalf(
 			"GitHub API rate limit hit (HTTP %d). Set GITHUB_TOKEN env var for authenticated access.\nResponse: %s",
-			resp.StatusCode, strings.TrimSpace(string(body)),
+			resp.GetStatusCode(), strings.TrimSpace(resp.String()),
 		)
-	}
-	if resp.StatusCode == 401 {
+	case 401:
 		log.Fatalf("GitHub API unauthorized (HTTP 401). Check your GITHUB_TOKEN env var.")
-	}
-	if resp.StatusCode != 200 {
-		body, _ := io.ReadAll(resp.Body)
-		log.Fatalf("GitHub API error (HTTP %d): %s", resp.StatusCode, strings.TrimSpace(string(body)))
+	default:
+		log.Fatalf("GitHub API error (HTTP %d): %s", resp.GetStatusCode(), strings.TrimSpace(resp.String()))
 	}
 
-	var rel ghRelease
-	if err := json.NewDecoder(resp.Body).Decode(&rel); err != nil {
-		log.Fatalf("Error decoding GitHub API response: %v", err)
-	}
 	if rel.TagName == "" {
 		log.Fatal("GitHub API returned empty tag_name for latest JBR release")
 	}
@@ -222,7 +214,7 @@ func findHostPlatform() platform {
 		}
 	}
 	log.Fatalf("Host platform %s-%s not in supported platforms", runtime.GOOS, runtime.GOARCH)
-	return platform{}
+	return platform{} // unreachable
 }
 
 func platformDir(cacheDir string, p platform) string {
@@ -243,58 +235,31 @@ func jbrChecksumURL(version, flavor, build string) string {
 
 // Upstream checksum fetching ==================================================================
 
-func fetchAllUpstreamChecksums(version, build string) map[string]string {
+func fetchAllUpstreamChecksums(client *req.Client, version, build string) map[string]string {
 	result := make(map[string]string)
 	var mu sync.Mutex
-	var wg sync.WaitGroup
-
-	for _, p := range platforms {
-		wg.Add(1)
-		go func(p platform) {
-			defer wg.Done()
-			sha := fetchUpstreamChecksum(version, p.flavor, build)
-			mu.Lock()
-			result[p.flavor] = sha
-			mu.Unlock()
-		}(p)
-	}
-	wg.Wait()
+	algorithm.ForEachBounded(platforms, len(platforms), func(p platform) {
+		sha := fetchUpstreamChecksum(client, version, p.flavor, build)
+		mu.Lock()
+		result[p.flavor] = sha
+		mu.Unlock()
+	})
 	return result
 }
 
-func fetchUpstreamChecksum(version, flavor, build string) string {
+func fetchUpstreamChecksum(client *req.Client, version, flavor, build string) string {
 	url := jbrChecksumURL(version, flavor, build)
-	req, err := http.NewRequest(http.MethodGet, url, nil)
-	if err != nil {
-		log.Fatalf("Error creating checksum request: %v", err)
-	}
-
-	resp, err := http.DefaultClient.Do(req)
+	resp, err := client.R().Get(url)
 	if err != nil {
 		log.Fatalf("Error fetching checksum %s: %v", url, err)
 	}
-	defer resp.Body.Close()
-
-	if resp.StatusCode != 200 {
-		log.Fatalf("Failed to fetch checksum %s: HTTP %d", url, resp.StatusCode)
+	if resp.GetStatusCode() != 200 {
+		log.Fatalf("Failed to fetch checksum %s: HTTP %d", url, resp.GetStatusCode())
 	}
 
-	body, err := io.ReadAll(resp.Body)
+	sha, err := web.ParseChecksumLine(resp.String(), 128)
 	if err != nil {
-		log.Fatalf("Error reading checksum %s: %v", url, err)
-	}
-
-	// Format: "<hex>  <filename>" — take just the hex part
-	parts := strings.Fields(strings.TrimSpace(string(body)))
-	if len(parts) == 0 {
-		log.Fatalf("Empty checksum response from %s", url)
-	}
-	sha := parts[0]
-	if len(sha) != 128 {
-		log.Fatalf("Invalid SHA-512 from %s: expected 128 hex chars, got %d (%q)", url, len(sha), sha)
-	}
-	if _, err := hex.DecodeString(sha); err != nil {
-		log.Fatalf("Invalid SHA-512 hex from %s: %v", url, err)
+		log.Fatalf("Invalid checksum from %s: %v", url, err)
 	}
 	return sha
 }
@@ -327,7 +292,7 @@ func hasDist(pDir string) bool {
 
 // Download + extract ==========================================================================
 
-func ensurePlatformSrc(cacheDir, version, build string, p platform, expectedSHA string) {
+func ensurePlatformSrc(client *req.Client, cacheDir, version, build string, p platform, expectedSHA string) {
 	pDir := platformDir(cacheDir, p)
 	srcDir := filepath.Join(pDir, "src")
 
@@ -346,7 +311,9 @@ func ensurePlatformSrc(cacheDir, version, build string, p platform, expectedSHA 
 	url := jbrArchiveURL(version, p.flavor, build)
 	archivePath := filepath.Join(pDir, "upstream.tar.gz")
 	log.Printf("DOWNLOADING: %s", filepath.Base(url))
-	downloadAndVerify(url, archivePath, expectedSHA)
+	if err := web.DownloadAndVerify(client, url, archivePath, expectedSHA, sha512.New); err != nil {
+		log.Fatalf("Failed to download %s: %v", url, err)
+	}
 
 	// Extract (strip top-level directory)
 	log.Printf("EXTRACTING: %s -> %s", filepath.Base(url), srcDir)
@@ -374,20 +341,10 @@ func ensurePlatformSrc(cacheDir, version, build string, p platform, expectedSHA 
 	writeFile(filepath.Join(pDir, "upstream.sha512"), expectedSHA)
 }
 
-func ensureAllPlatformSrcs(cacheDir, version, build string, upstreamSHA map[string]string) {
-	var wg sync.WaitGroup
-	sem := make(chan struct{}, 3)
-
-	for _, p := range platforms {
-		wg.Add(1)
-		go func(p platform) {
-			defer wg.Done()
-			sem <- struct{}{}
-			defer func() { <-sem }()
-			ensurePlatformSrc(cacheDir, version, build, p, upstreamSHA[p.flavor])
-		}(p)
-	}
-	wg.Wait()
+func ensureAllPlatformSrcs(client *req.Client, cacheDir, version, build string, upstreamSHA map[string]string) {
+	algorithm.ForEachBounded(platforms, 3, func(p platform) {
+		ensurePlatformSrc(client, cacheDir, version, build, p, upstreamSHA[p.flavor])
+	})
 }
 
 // Build =======================================================================================
@@ -476,18 +433,10 @@ func findBinary(dir, name string) string {
 		binName = name + ".exe"
 	}
 
-	var found string
-	err := filepath.Walk(dir, func(path string, info os.FileInfo, err error) error {
-		if err != nil {
-			return err
-		}
-		if !info.IsDir() && info.Name() == binName {
-			found = path
-			return filepath.SkipAll
-		}
-		return nil
+	found, err := fs.FindInTree(dir, func(path string, info os.FileInfo) bool {
+		return !info.IsDir() && info.Name() == binName
 	})
-	if err != nil && found == "" {
+	if err != nil {
 		log.Fatalf("Error searching for %s in %s: %v", binName, dir, err)
 	}
 	if found == "" {
@@ -503,18 +452,10 @@ func findBinary(dir, name string) string {
 }
 
 func findJmodsDir(dir string) string {
-	var found string
-	err := filepath.Walk(dir, func(path string, info os.FileInfo, err error) error {
-		if err != nil {
-			return err
-		}
-		if info.IsDir() && info.Name() == "jmods" {
-			found = path
-			return filepath.SkipAll
-		}
-		return nil
+	found, err := fs.FindInTree(dir, func(path string, info os.FileInfo) bool {
+		return info.IsDir() && info.Name() == "jmods"
 	})
-	if err != nil && found == "" {
+	if err != nil {
 		log.Fatalf("Error searching for jmods in %s: %v", dir, err)
 	}
 	if found == "" {
@@ -582,59 +523,6 @@ func runJdeps(jdepsBin, jarPath string) []string {
 	return modules
 }
 
-// Download + verification =====================================================================
-
-// downloadAndVerify streams url to destPath while computing SHA-512, then verifies.
-func downloadAndVerify(url, destPath, expectedSHA string) {
-	client := &http.Client{Timeout: 10 * time.Minute}
-	req, err := http.NewRequest(http.MethodGet, url, nil)
-	if err != nil {
-		log.Fatalf("Error creating request %s: %v", url, err)
-	}
-
-	resp, err := client.Do(req)
-	if err != nil {
-		log.Fatalf("Error downloading %s: %v", url, err)
-	}
-	defer resp.Body.Close()
-
-	if resp.StatusCode != 200 {
-		log.Fatalf("Download failed for %s: HTTP %d", url, resp.StatusCode)
-	}
-
-	tmp := destPath + ".part"
-	if err := os.MkdirAll(filepath.Dir(destPath), 0o755); err != nil {
-		log.Fatalf("Failed to create directory for %s: %v", destPath, err)
-	}
-
-	out, err := os.Create(tmp)
-	if err != nil {
-		log.Fatalf("Failed to create file %s: %v", tmp, err)
-	}
-
-	hasher := sha512.New()
-	_, copyErr := io.Copy(io.MultiWriter(out, hasher), resp.Body)
-	closeErr := out.Close()
-	if copyErr != nil {
-		os.Remove(tmp)
-		log.Fatalf("Failed to download %s: %v", url, copyErr)
-	}
-	if closeErr != nil {
-		os.Remove(tmp)
-		log.Fatalf("Failed to close %s: %v", tmp, closeErr)
-	}
-
-	actualSHA := hex.EncodeToString(hasher.Sum(nil))
-	if actualSHA != expectedSHA {
-		os.Remove(tmp)
-		log.Fatalf("SHA-512 mismatch for %s:\n  expected: %s\n  actual:   %s", filepath.Base(url), expectedSHA, actualSHA)
-	}
-
-	if err := os.Rename(tmp, destPath); err != nil {
-		log.Fatalf("Failed to rename %s -> %s: %v", tmp, destPath, err)
-	}
-}
-
 // File utilities ==============================================================================
 
 func readFile(path string) string {
@@ -666,7 +554,6 @@ func findFirstTarGz(dir string) string {
 	}
 	return ""
 }
-
 
 // Path helpers ================================================================================
 
