@@ -529,10 +529,17 @@ func TestWeaklyCanonical_MissingMultipleComponents(t *testing.T) {
 }
 
 func TestWeaklyCanonical_EntirelyMissing(t *testing.T) {
-	// When nothing exists except root, we still get an absolute cleaned path.
-	actual, err := WeaklyCanonical("/nonexistent/path/to/file")
+	// Build a platform-appropriate absolute path that doesn't exist.
+	var query string
+	if runtime.GOOS == "windows" {
+		vol := filepath.VolumeName(os.TempDir())
+		query = vol + string(os.PathSeparator) + filepath.Join("nonexistent", "path", "to", "file")
+	} else {
+		query = "/nonexistent/path/to/file"
+	}
+	actual, err := WeaklyCanonical(query)
 	require.NoError(t, err)
-	assert.Equal(t, "/nonexistent/path/to/file", actual)
+	assert.Equal(t, query, actual)
 }
 
 func TestWeaklyCanonical_EmptyString(t *testing.T) {
