@@ -101,16 +101,16 @@ class GoReleaser(
                     set -e
 
                     # download required dependencies
-                    pushd .
-                    DIR_NAME="${'$'}(basename "${'$'}PWD")"
-                    if [ "${'$'}DIR_NAME" = "cli" ] || [ "${'$'}DIR_NAME" = "clang" ] || [ "${'$'}DIR_NAME" = "cdnet" ]; then
-                        cd ..
-                    fi
-                    # 253
-                    [ -d "./tooling" ] && go generate ./tooling
-                    # main
-                    [ -d "./internal/tooling" ] && go generate ./internal/tooling
-                    popd
+                    (
+                        DIR_NAME="${'$'}(basename "${'$'}PWD")"
+                        if [ "${'$'}DIR_NAME" = "cli" ] || [ "${'$'}DIR_NAME" = "clang" ] || [ "${'$'}DIR_NAME" = "cdnet" ]; then
+                            cd ..
+                        fi
+                        # 253
+                        [ -d "./tooling" ] && go generate ./tooling
+                        # main
+                        [ -d "./internal/tooling" ] && go generate ./internal/tooling
+                    )
 
                     # run goreleaser
                     if [ -f "../.goreleaser.yaml" ]; then
