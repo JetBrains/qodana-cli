@@ -20,7 +20,8 @@ func Contains(s []string, str string) bool {
 	return slices.Contains(s, str)
 }
 
-// Remove removes a string from a slice.
+// Remove removes the first occurrence of r from s and returns the shortened slice.
+// The returned slice shares the underlying array with s, so s should not be used after calling Remove.
 func Remove(s []string, r string) []string {
 	for i, v := range s {
 		if v == r {
@@ -47,7 +48,7 @@ func IsStringQuoted(s string) bool {
 	return strings.HasPrefix(s, "\"") && strings.HasSuffix(s, "\"")
 }
 
-// Reverse reverses the given string slice.
+// Reverse reverses the given string slice in-place and returns it.
 func Reverse(s []string) []string {
 	for i, j := 0, len(s)-1; i < j; i, j = i+1, j-1 {
 		s[i], s[j] = s[j], s[i]
