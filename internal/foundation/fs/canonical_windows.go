@@ -69,15 +69,9 @@ func WeaklyCanonical(path string) (string, error) {
 	// Walk components to find the longest existing prefix.
 	vol := filepath.VolumeName(path)
 	rest := path[len(vol):]
-	components := filepath.SplitList(rest)
-	if len(components) == 0 {
-		components = strings.Split(rest, string(os.PathSeparator))
-	} else {
-		components = strings.Split(rest, string(os.PathSeparator))
-	}
+	components := strings.Split(rest, string(os.PathSeparator))
 
 	built := vol + string(os.PathSeparator)
-	lastExisting := 0
 
 	for i, comp := range components {
 		if comp == "" || comp == "." {
@@ -85,7 +79,6 @@ func WeaklyCanonical(path string) (string, error) {
 		}
 		if comp == ".." {
 			built = filepath.Dir(built)
-			lastExisting = i + 1
 			continue
 		}
 		next := filepath.Join(built, comp)
@@ -101,16 +94,10 @@ func WeaklyCanonical(path string) (string, error) {
 			return canonical + string(os.PathSeparator) + tail, nil
 		}
 		built = next
-		lastExisting = i + 1
 	}
-	_ = lastExisting
 
-	// Everything existed — canonicalize the whole thing.
-	resolved, err := filepath.EvalSymlinks(built)
-	if err != nil {
-		return "", err
-	}
-	return normalizeCaseWindows(resolved)
+	// Everything existed — normalize case.
+	return normalizeCaseWindows(built)
 }
 
 // normalizeCaseWindows normalizes filename case on Windows using the
