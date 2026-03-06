@@ -17,6 +17,7 @@
 package git
 
 import (
+	"errors"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -146,7 +147,7 @@ func createNativeProject(t *testing.T, name string) string {
 }
 
 func gitClone(repoURL, directory string, revision string, branch string) error {
-	if _, err := os.Stat(directory); !os.IsNotExist(err) {
+	if _, err := os.Stat(directory); !errors.Is(err, os.ErrNotExist) {
 		err = os.RemoveAll(directory)
 		if err != nil {
 			return err
@@ -212,7 +213,7 @@ func TestClean(t *testing.T) {
 	assert.NoError(t, err)
 
 	_, err = os.Stat(filepath.Join(repo.Dir(), "untracked.txt"))
-	assert.True(t, os.IsNotExist(err))
+	assert.True(t, errors.Is(err, os.ErrNotExist))
 }
 
 func TestRevisions(t *testing.T) {

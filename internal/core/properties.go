@@ -17,6 +17,7 @@
 package core
 
 import (
+	"errors"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -187,7 +188,7 @@ func GetScanProperties(c corescan.Context) []string {
 
 func getCustomPluginPaths(prod product.Product) string {
 	path := prod.CustomPluginsPath()
-	if _, err := os.Stat(path); os.IsNotExist(err) {
+	if _, err := os.Stat(path); errors.Is(err, os.ErrNotExist) {
 		return ""
 	}
 

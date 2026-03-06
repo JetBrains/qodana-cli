@@ -194,7 +194,7 @@ func correctInitArgsForThirdParty(commonCtx commoncontext.Context) (commoncontex
 		tmpResultsDir,
 	}
 	for _, dir := range directories {
-		if _, err := os.Stat(dir); os.IsNotExist(err) {
+		if _, err := os.Stat(dir); errors.Is(err, os.ErrNotExist) {
 			if err := os.MkdirAll(dir, 0755); err != nil {
 				return empty, fmt.Errorf("failed to create directory %s: %w", dir, err)
 			}

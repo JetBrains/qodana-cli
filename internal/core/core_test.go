@@ -606,7 +606,7 @@ func Test_setDeviceID(t *testing.T) {
 		}
 	}()
 	actualDeviceIdSalt := platform.GetDeviceIdSalt()
-	if _, err := os.Stat(filepath.Join(tmpDir, ".git", "config")); !os.IsNotExist(err) {
+	if _, err := os.Stat(filepath.Join(tmpDir, ".git", "config")); !errors.Is(err, os.ErrNotExist) {
 		t.Errorf("Case: %s: /tmp/entrypoint/.git/config got created, when it should not", tc)
 	}
 	expectedDeviceIdSalt := []string{
@@ -789,7 +789,7 @@ func Test_syncIdeaCache(t *testing.T) {
 				t.Fatalf("syncIdeaCache failed: %v", err)
 			}
 
-			if _, err := os.Stat(filepath.Join(tmpDir, "1", ".idea", "dir1", "dir2")); os.IsNotExist(err) {
+			if _, err := os.Stat(filepath.Join(tmpDir, "1", ".idea", "dir1", "dir2")); errors.Is(err, os.ErrNotExist) {
 				t.Errorf("Resulting folder .idea/dir1/dir2 not found")
 			}
 			got, err := os.ReadFile(filepath.Join(tmpDir, "2", ".idea", "dir1", "file2"))
@@ -857,7 +857,7 @@ func Test_syncIdeaCache(t *testing.T) {
 				t.Fatalf("syncIdeaCache failed: %v", err)
 			}
 
-			if _, err := os.Stat(filepath.Join(tmpDir, "1", ".idea", "dir1", "dir2")); os.IsNotExist(err) {
+			if _, err := os.Stat(filepath.Join(tmpDir, "1", ".idea", "dir1", "dir2")); errors.Is(err, os.ErrNotExist) {
 				t.Errorf("Resulting folder .idea/dir1/dir2 not found")
 			}
 			got, err := os.ReadFile(filepath.Join(tmpDir, "2", ".idea", "dir1", "file2"))

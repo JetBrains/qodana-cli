@@ -20,6 +20,7 @@ import (
 	"archive/tar"
 	"archive/zip"
 	"compress/gzip"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -190,7 +191,7 @@ func TestInstallIdeFromZip(t *testing.T) {
 				// Verify that the file was extracted correctly
 				extractedFilePath := filepath.Join(targetDir, "test.txt")
 				stat, err := os.Stat(extractedFilePath)
-				if os.IsNotExist(err) {
+				if errors.Is(err, os.ErrNotExist) {
 					t.Fatalf("Expected file %s was not extracted", extractedFilePath)
 				}
 				if runtime.GOOS == "windows" {

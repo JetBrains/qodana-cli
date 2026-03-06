@@ -19,7 +19,6 @@ package git
 import (
 	"errors"
 	"fmt"
-	"io/fs"
 	"os"
 	"path/filepath"
 	"strings"
@@ -158,7 +157,7 @@ func updateSubmodules(root string, force bool, logdir string) error {
 
 func getDeclaredSubmodules(cwd string, logdir string) ([]string, error) {
 	_, err := os.Stat(filepath.Join(cwd, ".gitmodules"))
-	if errors.Is(err, fs.ErrNotExist) {
+	if errors.Is(err, os.ErrNotExist) {
 		return []string{}, nil
 	}
 	if err != nil {
