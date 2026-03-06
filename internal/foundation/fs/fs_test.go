@@ -146,6 +146,45 @@ func TestSameFile(t *testing.T) {
 	})
 }
 
+func TestFindInTree(t *testing.T) {
+	dir := t.TempDir()
+	_ = os.MkdirAll(filepath.Join(dir, "a", "b"), 0755)
+	_ = os.WriteFile(filepath.Join(dir, "a", "target.txt"), []byte("found"), 0644)
+	_ = os.WriteFile(filepath.Join(dir, "a", "b", "other.txt"), []byte("other"), 0644)
+	_ = os.MkdirAll(filepath.Join(dir, "jmods"), 0755)
+
+	t.Run("find file by name", func(t *testing.T) {
+		path, err := FindInTree(dir, func(p string, info os.FileInfo) bool {
+			return !info.IsDir() && info.Name() == "target.txt"
+		})
+		assert.NoError(t, err)
+		assert.Equal(t, filepath.Join(dir, "a", "target.txt"), path)
+	})
+
+	t.Run("find directory by name", func(t *testing.T) {
+		path, err := FindInTree(dir, func(p string, info os.FileInfo) bool {
+			return info.IsDir() && info.Name() == "jmods"
+		})
+		assert.NoError(t, err)
+		assert.Equal(t, filepath.Join(dir, "jmods"), path)
+	})
+
+	t.Run("no match", func(t *testing.T) {
+		path, err := FindInTree(dir, func(p string, info os.FileInfo) bool {
+			return info.Name() == "nonexistent"
+		})
+		assert.NoError(t, err)
+		assert.Empty(t, path)
+	})
+
+	t.Run("nonexistent root", func(t *testing.T) {
+		_, err := FindInTree("/nonexistent/root", func(p string, info os.FileInfo) bool {
+			return true
+		})
+		assert.Error(t, err)
+	})
+}
+
 func TestCreateTempDir(t *testing.T) {
 	dir, cleanup, err := CreateTempDir("test-prefix")
 	assert.NoError(t, err)
