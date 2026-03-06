@@ -1,6 +1,8 @@
 package algorithm
 
 import (
+	"sync"
+	"sync/atomic"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -99,6 +101,61 @@ func TestUnique(t *testing.T) {
 		nums := []int{}
 		result := Unique(nums)
 		assert.Empty(t, result)
+	})
+}
+
+func TestForEachBounded(t *testing.T) {
+	t.Run("processes all items", func(t *testing.T) {
+		var count atomic.Int32
+		items := []int{1, 2, 3, 4, 5}
+		ForEachBounded(items, 2, func(n int) {
+			count.Add(1)
+		})
+		assert.Equal(t, int32(5), count.Load())
+	})
+
+	t.Run("respects concurrency limit", func(t *testing.T) {
+		var active atomic.Int32
+		var maxActive atomic.Int32
+		var mu sync.Mutex
+
+		items := make([]int, 20)
+		for i := range items {
+			items[i] = i
+		}
+
+		ForEachBounded(items, 3, func(n int) {
+			cur := active.Add(1)
+			mu.Lock()
+			if cur > maxActive.Load() {
+				maxActive.Store(cur)
+			}
+			mu.Unlock()
+
+			// Simulate work so goroutines overlap
+			for i := 0; i < 100_000; i++ {
+			}
+
+			active.Add(-1)
+		})
+
+		assert.LessOrEqual(t, maxActive.Load(), int32(3))
+		assert.Equal(t, int32(0), active.Load())
+	})
+
+	t.Run("empty slice", func(t *testing.T) {
+		ForEachBounded([]int{}, 3, func(n int) {
+			t.Fatal("should not be called")
+		})
+	})
+
+	t.Run("single item", func(t *testing.T) {
+		var called bool
+		ForEachBounded([]string{"hello"}, 1, func(s string) {
+			assert.Equal(t, "hello", s)
+			called = true
+		})
+		assert.True(t, called)
 	})
 }
 
