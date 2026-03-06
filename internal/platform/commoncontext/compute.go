@@ -128,6 +128,10 @@ func computeCommon(
 		QodanaToken:     qodanaCloudToken,
 	}
 
+	if projectDir == "" {
+		projectDir = "."
+	}
+
 	if repositoryRoot == "" {
 		vcsRoot, err := git.Root(projectDir, commonCtx.LogDir())
 
@@ -136,10 +140,6 @@ func computeCommon(
 		} else {
 			repositoryRoot = vcsRoot
 		}
-	}
-
-	if projectDir == "" {
-		projectDir = "."
 	}
 	normalizedProjectDir, err := fs.Canonical(projectDir)
 	if err != nil {
