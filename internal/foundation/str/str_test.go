@@ -111,6 +111,7 @@ func TestQuoteIfSpace(t *testing.T) {
 		{"", ""},
 		{"path/to/file", "path/to/file"},
 		{"path/to/my file", "\"path/to/my file\""},
+		{`say "hello" world`, `"say \"hello\" world"`},
 	}
 	for _, tt := range tests {
 		t.Run(tt.input, func(t *testing.T) {

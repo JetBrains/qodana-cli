@@ -36,7 +36,8 @@ func QuoteIfSpace(s string) string {
 		return s
 	}
 	if strings.Contains(s, " ") {
-		return "\"" + s + "\""
+		escaped := strings.ReplaceAll(s, `"`, `\"`)
+		return "\"" + escaped + "\""
 	}
 	return s
 }
