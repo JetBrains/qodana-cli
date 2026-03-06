@@ -160,20 +160,36 @@ func splitPath(path string) []string {
 	return strings.Split(path, string(os.PathSeparator))
 }
 
-// findEntry looks up a directory entry by name with case-insensitive fallback.
-// On case-sensitive filesystems this finds an exact match; on case-insensitive
-// ones it returns the actual on-disk name.
+// findEntry looks up a directory entry by name, returning the actual on-disk name.
+// It uses Readdirnames for a single-pass scan, returning early on exact match
+// (common on case-sensitive FS) or falling back to case-insensitive match.
 func findEntry(dir, name string) (string, error) {
-	entries, err := os.ReadDir(dir)
+	d, err := os.Open(dir)
 	if err != nil {
 		return "", err
 	}
+	defer d.Close()
 
 	lowerName := strings.ToLower(name)
-	for _, e := range entries {
-		if strings.ToLower(e.Name()) == lowerName {
-			return e.Name(), nil
+	caseMatch := ""
+
+	for {
+		names, err := d.Readdirnames(256)
+		for _, n := range names {
+			if n == name {
+				return n, nil // exact match — return immediately
+			}
+			if caseMatch == "" && strings.ToLower(n) == lowerName {
+				caseMatch = n
+			}
 		}
+		if err != nil {
+			break
+		}
+	}
+
+	if caseMatch != "" {
+		return caseMatch, nil
 	}
 
 	return "", &os.PathError{
