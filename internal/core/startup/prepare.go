@@ -25,6 +25,7 @@ import (
 	"strings"
 
 	"github.com/JetBrains/qodana-cli/internal/cloud"
+	"github.com/JetBrains/qodana-cli/internal/foundation/fs"
 	"github.com/JetBrains/qodana-cli/internal/platform/commoncontext"
 	"github.com/JetBrains/qodana-cli/internal/platform/git"
 	"github.com/JetBrains/qodana-cli/internal/platform/msg"
@@ -337,15 +338,11 @@ func fixWindowsPlugins(ideDir string) {
 
 func checkVcsSameAsRepositoryRoot(ctx commoncontext.Context) {
 	if vcsRoot, err := git.Root(ctx.RepositoryRoot, ctx.LogDir()); err == nil {
-		vcsRootAbs, err1 := filepath.Abs(vcsRoot)
-		repositoryRootAbs, err2 := filepath.Abs(ctx.RepositoryRoot)
-		if err1 != nil || err2 != nil {
-			log.Warnf("Failed to resolve absolute paths for git root check: vcs=%v, proj=%v", err1, err2)
-		} else if vcsRootAbs != repositoryRootAbs {
+		if !fs.SameFile(vcsRoot, ctx.RepositoryRoot) {
 			log.Warnf(
 				"The git root directory is different from the repository root directory. This may lead to incorrect results. VCS root: %s, repository root: %s",
-				vcsRootAbs,
-				repositoryRootAbs,
+				vcsRoot,
+				ctx.RepositoryRoot,
 			)
 		}
 	}

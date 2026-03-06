@@ -258,6 +258,62 @@ func TestChangesCalculation(t *testing.T) {
 	}
 }
 
+func TestComputeChangedFiles_ProjectDirViaSymlink(t *testing.T) {
+	repo := NewGitRepo(t)
+	subDir := filepath.Join(repo.Dir(), "sub")
+	if err := os.MkdirAll(subDir, 0o755); err != nil {
+		t.Fatal(err)
+	}
+
+	repo.WriteFile("sub/file.txt", "initial")
+	repo.CommitAll("initial")
+	repo.WriteFile("sub/file.txt", "modified")
+	repo.CommitAll("modify")
+
+	// Create a symlink to the subdirectory
+	linkDir := filepath.Join(t.TempDir(), "link")
+	if err := os.Symlink(subDir, linkDir); err != nil {
+		t.Fatal(err)
+	}
+
+	changes, err := ComputeChangedFiles(linkDir, "HEAD~1", "HEAD", t.TempDir())
+	assert.NoError(t, err)
+	assert.NotEmpty(t, changes.Files, "Expected changed files when accessing project dir via symlink")
+}
+
+func TestComputeChangedFiles_PrefixBoundary(t *testing.T) {
+	// Repo has two subdirs: "sub" and "subExtra".
+	// Changes in "subExtra/leak.txt" should NOT appear when querying from "sub",
+	// because strings.HasPrefix(".../subExtra/leak.txt", ".../sub") is true
+	// when the trailing separator is missing.
+	repo := NewGitRepo(t)
+
+	if err := os.MkdirAll(filepath.Join(repo.Dir(), "sub"), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.MkdirAll(filepath.Join(repo.Dir(), "subExtra"), 0o755); err != nil {
+		t.Fatal(err)
+	}
+
+	repo.WriteFile("sub/keep.txt", "initial")
+	repo.WriteFile("subExtra/leak.txt", "initial")
+	repo.CommitAll("initial")
+
+	repo.WriteFile("subExtra/leak.txt", "modified")
+	repo.CommitAll("modify subExtra only")
+
+	cwd := filepath.Join(repo.Dir(), "sub")
+	changes, err := ComputeChangedFiles(cwd, "HEAD~1", "HEAD", t.TempDir())
+	assert.NoError(t, err)
+
+	for _, f := range changes.Files {
+		assert.False(t,
+			strings.Contains(f.Path, "subExtra"),
+			"File from 'subExtra' leaked into 'sub' query: %s", f.Path,
+		)
+	}
+}
+
 func createRepo(t *testing.T, tc TestConfig) string {
 	repo := NewGitRepo(t)
 

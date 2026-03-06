@@ -23,6 +23,7 @@ import (
 	"os"
 	"path/filepath"
 
+	"github.com/JetBrains/qodana-cli/internal/foundation/fs"
 	"github.com/JetBrains/qodana-cli/internal/platform/git"
 	"github.com/JetBrains/qodana-cli/internal/platform/msg"
 	"github.com/JetBrains/qodana-cli/internal/platform/product"
@@ -137,7 +138,10 @@ func computeCommon(
 		}
 	}
 
-	normalizedProjectDir, err := normalizePath(projectDir)
+	if projectDir == "" {
+		projectDir = "."
+	}
+	normalizedProjectDir, err := fs.Canonical(projectDir)
 	if err != nil {
 		log.Fatalf("Can not normalize project dir %s: %v", projectDir, err)
 	}
@@ -168,7 +172,7 @@ func computeCommon(
 // the repositoryRoot path as it appears in projectDir (to handle case-insensitive filesystems).
 // Returns error if projectDir is not inside repositoryRoot.
 func normalizeRepositoryRoot(projectDir, repositoryRoot string) (string, error) {
-	normalizedRepoRoot, err := normalizePath(repositoryRoot)
+	normalizedRepoRoot, err := fs.Canonical(repositoryRoot)
 	if err != nil {
 		return repositoryRoot, err
 	}
@@ -199,14 +203,6 @@ func normalizeRepositoryRoot(projectDir, repositoryRoot string) (string, error) 
 		}
 		current = parent
 	}
-}
-
-func normalizePath(path string) (string, error) {
-	pathWithoutSymlinks, err := filepath.EvalSymlinks(path)
-	if err != nil {
-		return "", err
-	}
-	return filepath.Abs(pathWithoutSymlinks)
 }
 
 func getAnalyzerFromProject(
