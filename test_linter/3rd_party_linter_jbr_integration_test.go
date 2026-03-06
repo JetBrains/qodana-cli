@@ -8,6 +8,8 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+
+	"github.com/JetBrains/qodana-cli/internal/foundation/fs"
 	"strings"
 	"testing"
 	"time"
@@ -79,7 +81,7 @@ func buildQodanaBinary(t *testing.T) string {
 	t.Helper()
 	t.Log("Building qodana-cli Linux binary...")
 
-	projectRoot, err := filepath.Abs("..")
+	projectRoot, err := fs.Canonical("..")
 	require.NoError(t, err)
 
 	testDir := filepath.Join(projectRoot, "test_linter")
