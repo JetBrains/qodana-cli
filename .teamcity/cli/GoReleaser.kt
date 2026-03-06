@@ -98,7 +98,7 @@ class GoReleaser(
             workingDir = wd
             scriptContent = if (releaseType.isNightlyOrRelease()) {
                 """
-                    set -e
+                    set -ex
 
                     # download required dependencies
                     (
