@@ -24,7 +24,9 @@ import (
 	"path/filepath"
 
 	"github.com/JetBrains/qodana-cli/internal/core/corescan"
+	"github.com/JetBrains/qodana-cli/internal/core/exitcodes"
 	"github.com/JetBrains/qodana-cli/internal/core/startup"
+	"github.com/JetBrains/qodana-cli/internal/foundation/fs"
 	"github.com/JetBrains/qodana-cli/internal/platform"
 	"github.com/JetBrains/qodana-cli/internal/platform/commoncontext"
 	"github.com/JetBrains/qodana-cli/internal/platform/effectiveconfig"
@@ -143,7 +145,7 @@ func (sa *ScopedAnalyzer) RunAnalysis() int {
 	}
 	if len(changedFiles.Files) == 0 {
 		log.Warnf("Nothing to compare between %s and %s", startRef, endRef)
-		return utils.QodanaEmptyChangesetExitCodePlaceholder
+		return exitcodes.QodanaEmptyChangesetExitCodePlaceholder
 	}
 
 	scopeFile, err := writeChangesFile(c, changedFiles)
@@ -171,7 +173,7 @@ func (r *defaultAnalysisRunner) RunFunc(hash string, ctx context.Context, c core
 		c.ProjectDir(),
 		c.CustomLocalQodanaYamlPath(),
 	)
-	effectiveConfigDir, cleanup, err := utils.CreateTempDir("qd-effective-config-")
+	effectiveConfigDir, cleanup, err := fs.CreateTempDir("qd-effective-config-")
 	if err != nil {
 		log.Fatalf("Failed to create Qodana effective config directory: %v", err)
 	}
@@ -326,7 +328,7 @@ func shouldProceedToNextStage(ctx corescan.Context) bool {
 }
 
 func copyAndSaveReport(lastContext corescan.Context, c corescan.Context) {
-	err := utils.CopyDir(lastContext.ResultsDir(), c.ResultsDir())
+	err := fs.CopyDir(lastContext.ResultsDir(), c.ResultsDir())
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -358,7 +360,7 @@ func writeChangesFile(c corescan.Context, changedFiles git.ChangedFiles) (string
 		return "", fmt.Errorf("failed to write scope file: %w", err)
 	}
 
-	err = utils.CopyFile(file.Name(), filepath.Join(c.LogDir(), "changes.json"))
+	err = fs.CopyFile(file.Name(), filepath.Join(c.LogDir(), "changes.json"))
 	if err != nil {
 		return "", err
 	}
@@ -370,7 +372,7 @@ func copyCoverageFromNewStage(coverageDataPath string, resultsDir string) {
 	if info, err := os.Stat(coverageDataPath); err == nil && info.IsDir() {
 		startup.MakeDirAll(resultsDir)
 		targetCoveragePath := filepath.Join(resultsDir, "coverage")
-		if err := utils.CopyDir(coverageDataPath, targetCoveragePath); err != nil {
+		if err := fs.CopyDir(coverageDataPath, targetCoveragePath); err != nil {
 			log.Fatalf("Failed to copy coverage data from %s to %s: %v", coverageDataPath, targetCoveragePath, err)
 		}
 	}

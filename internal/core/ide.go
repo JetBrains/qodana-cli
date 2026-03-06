@@ -24,7 +24,9 @@ import (
 	"time"
 
 	"github.com/JetBrains/qodana-cli/internal/core/corescan"
+	"github.com/JetBrains/qodana-cli/internal/core/exitcodes"
 	"github.com/JetBrains/qodana-cli/internal/core/startup"
+	"github.com/JetBrains/qodana-cli/internal/foundation/exec"
 	"github.com/JetBrains/qodana-cli/internal/platform"
 	"github.com/JetBrains/qodana-cli/internal/platform/commoncontext"
 	"github.com/JetBrains/qodana-cli/internal/platform/product"
@@ -46,7 +48,7 @@ func getIdeExitCode(resultsDir string, c int) (res int) {
 	}
 	if len(s.Runs) > 0 && len(s.Runs[0].Invocations) > 0 {
 		res := int(s.Runs[0].Invocations[0].ExitCode)
-		if res < utils.QodanaSuccessExitCode || res > utils.QodanaFailThresholdExitCode {
+		if res < exitcodes.QodanaSuccessExitCode || res > exitcodes.QodanaFailThresholdExitCode {
 			log.Printf("Wrong exitCode in sarif: %d", res)
 			return 1
 		}
@@ -75,15 +77,15 @@ func getInvocationProperties(resultsDir string) *sarif.PropertyBag {
 func runQodanaLocal(c corescan.Context) (int, error) {
 	writeProperties(c)
 	args := getIdeRunCommand(c)
-	ideProcess, err := utils.ExecWithTimeout(
+	ideProcess, err := exec.ExecWithTimeout(
 		".",
 		os.Stdout, os.Stderr,
 		c.GetAnalysisTimeout(),
-		utils.QodanaTimeoutExitCodePlaceholder,
+		exitcodes.QodanaTimeoutExitCodePlaceholder,
 		args[0], args[1:]...,
 	)
 	res := getIdeExitCode(c.ResultsDir(), ideProcess)
-	if res > utils.QodanaSuccessExitCode && res != utils.QodanaFailThresholdExitCode {
+	if res > exitcodes.QodanaSuccessExitCode && res != exitcodes.QodanaFailThresholdExitCode {
 		postAnalysis(c)
 		return res, err
 	}
@@ -282,7 +284,7 @@ func installPlugins(c corescan.Context) error {
 	}
 	for _, plugin := range plugins {
 		log.Printf("Installing plugin %s", plugin.Id)
-		if res, err := utils.Exec(
+		if res, err := exec.Exec(
 			".",
 			c.Prod().IdeScript,
 			"installPlugins",

@@ -24,6 +24,8 @@ import (
 
 	_ "embed"
 
+	"github.com/JetBrains/qodana-cli/internal/foundation/exec"
+	"github.com/JetBrains/qodana-cli/internal/foundation/fs"
 	"github.com/JetBrains/qodana-cli/internal/platform"
 	"github.com/JetBrains/qodana-cli/internal/platform/nuget"
 	"github.com/JetBrains/qodana-cli/internal/platform/thirdpartyscan"
@@ -49,7 +51,7 @@ func (l CdnetLinter) RunAnalysis(c thirdpartyscan.Context) error {
 		nuget.PrepareNugetConfig(os.Getenv("HOME"))
 	}
 	nuget.UnsetNugetVariables()
-	ret, err := utils.Exec(
+	ret, err := exec.Exec(
 		c.ProjectDir(),
 		args[0], args[1:]...,
 	)
@@ -166,7 +168,7 @@ func patchReport(c thirdpartyscan.Context) error {
 
 func copyOriginalReportToLog(logDir string, sarifPath string) error {
 	destination := filepath.Join(logDir, "clt.original.sarif.json")
-	if err := utils.CopyFile(sarifPath, destination); err != nil {
+	if err := fs.CopyFile(sarifPath, destination); err != nil {
 		return fmt.Errorf("problem while copying the original CLT report: %w", err)
 	}
 	return nil

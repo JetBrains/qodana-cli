@@ -1,4 +1,4 @@
-package utils
+package exec
 
 import (
 	"errors"
@@ -8,16 +8,6 @@ import (
 
 	"github.com/stretchr/testify/assert"
 )
-
-func TestBootstrap(t *testing.T) {
-	t.Run("empty command", func(t *testing.T) {
-		Bootstrap("", ".")
-	})
-
-	t.Run("echo command", func(t *testing.T) {
-		Bootstrap("echo test", t.TempDir())
-	})
-}
 
 func TestExec(t *testing.T) {
 	t.Run("successful command", func(t *testing.T) {
@@ -29,13 +19,13 @@ func TestExec(t *testing.T) {
 	t.Run("command not found", func(t *testing.T) {
 		exitCode, err := Exec(".", "nonexistent_command_xyz")
 		assert.Error(t, err)
-		assert.Equal(t, QodanaInternalErrorExitCode, exitCode)
+		assert.Equal(t, internalErrorExitCode, exitCode)
 	})
 
 	t.Run("empty cwd", func(t *testing.T) {
 		exitCode, err := Exec("", "echo", "test")
 		assert.True(t, errors.Is(err, os.ErrInvalid))
-		assert.Equal(t, QodanaInternalErrorExitCode, exitCode)
+		assert.Equal(t, internalErrorExitCode, exitCode)
 	})
 }
 
