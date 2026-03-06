@@ -3,6 +3,7 @@
 package fs
 
 import (
+	"errors"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -163,12 +164,14 @@ func splitPath(path string) []string {
 // findEntry looks up a directory entry by name, returning the actual on-disk name.
 // It uses Readdirnames for a single-pass scan, returning early on exact match
 // (common on case-sensitive FS) or falling back to case-insensitive match.
-func findEntry(dir, name string) (string, error) {
+func findEntry(dir, name string) (result string, err error) {
 	d, err := os.Open(dir)
 	if err != nil {
 		return "", err
 	}
-	defer d.Close()
+	defer func() {
+		err = errors.Join(err, d.Close())
+	}()
 
 	lowerName := strings.ToLower(name)
 	caseMatch := ""
