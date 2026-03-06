@@ -40,7 +40,10 @@ func CopyDir(src string, dst string) error {
 	if err != nil {
 		return err
 	}
-	directory, _ := os.ReadDir(src)
+	directory, err := os.ReadDir(src)
+	if err != nil {
+		return err
+	}
 	for _, item := range directory {
 		srcPath := filepath.Join(src, item.Name())
 		dstPath := filepath.Join(dst, item.Name())
@@ -108,6 +111,26 @@ func SameFile(a, b string) bool {
 		return false
 	}
 	return os.SameFile(infoA, infoB)
+}
+
+// FindInTree walks dir and returns the first path matching the predicate.
+// Returns ("", nil) if not found.
+func FindInTree(dir string, match func(path string, info os.FileInfo) bool) (string, error) {
+	var found string
+	err := filepath.Walk(dir, func(path string, info os.FileInfo, err error) error {
+		if err != nil {
+			return err
+		}
+		if match(path, info) {
+			found = path
+			return filepath.SkipAll
+		}
+		return nil
+	})
+	if err != nil {
+		return "", err
+	}
+	return found, nil
 }
 
 // CreateTempDir creates a temporary directory with the given name prefix.
