@@ -222,7 +222,7 @@ func TestExtractTarGz_PathTraversal(t *testing.T) {
 	destDir := t.TempDir()
 
 	err := archive.ExtractTarGz(tgzPath, destDir, false)
-	assert.Error(t, err)
+	require.Error(t, err)
 	assert.Contains(t, err.Error(), "path traversal")
 }
 
@@ -233,7 +233,7 @@ func TestExtractTarGz_PathTraversal_StripTopDir(t *testing.T) {
 	destDir := t.TempDir()
 
 	err := archive.ExtractTarGz(tgzPath, destDir, true)
-	assert.Error(t, err)
+	require.Error(t, err)
 	assert.Contains(t, err.Error(), "path traversal")
 }
 
@@ -248,8 +248,24 @@ func TestExtractTarGz_SymlinkEscape(t *testing.T) {
 	destDir := t.TempDir()
 
 	err := archive.ExtractTarGz(tgzPath, destDir, false)
-	assert.Error(t, err)
+	require.Error(t, err)
 	assert.Contains(t, err.Error(), "escapes dest dir")
+}
+
+func TestExtractTarGz_SymlinkAbsoluteTarget(t *testing.T) {
+	if runtime.GOOS == "windows" {
+		t.Skip("symlinks require elevated privileges on Windows")
+	}
+
+	// Absolute Linkname — filepath.Join swallows the leading "/" so the syntactic
+	// check sees destDir/tmp, but os.Symlink creates a link pointing to /tmp.
+	tgzPath := createTarGzFromEntries(t, []tarEntry{
+		{header: tar.Header{Name: "escape", Typeflag: tar.TypeSymlink, Linkname: "/tmp"}},
+	})
+	destDir := t.TempDir()
+
+	err := archive.ExtractTarGz(tgzPath, destDir, false)
+	assert.Error(t, err)
 }
 
 func TestExtractTarGz_SymlinkThenFile(t *testing.T) {
@@ -260,6 +276,24 @@ func TestExtractTarGz_SymlinkThenFile(t *testing.T) {
 	tgzPath := createTarGzFromEntries(t, []tarEntry{
 		{header: tar.Header{Name: "evil", Typeflag: tar.TypeSymlink, Linkname: "/tmp"}},
 		{header: tar.Header{Name: "evil/payload.txt", Typeflag: tar.TypeReg, Mode: 0644}, content: []byte("pwned")},
+	})
+	destDir := t.TempDir()
+
+	err := archive.ExtractTarGz(tgzPath, destDir, false)
+	assert.Error(t, err)
+}
+
+func TestExtractTarGz_SymlinkParentChain(t *testing.T) {
+	if runtime.GOOS == "windows" {
+		t.Skip("symlinks require elevated privileges on Windows")
+	}
+
+	// Attack: create a directory, then a symlink inside it pointing outside destDir,
+	// then place a symlink whose parent path traverses through the escaping symlink.
+	tgzPath := createTarGzFromEntries(t, []tarEntry{
+		{header: tar.Header{Name: "subdir/", Typeflag: tar.TypeDir, Mode: 0755}},
+		{header: tar.Header{Name: "subdir/link", Typeflag: tar.TypeSymlink, Linkname: "/tmp"}},
+		{header: tar.Header{Name: "subdir/link/evil", Typeflag: tar.TypeSymlink, Linkname: "payload"}},
 	})
 	destDir := t.TempDir()
 

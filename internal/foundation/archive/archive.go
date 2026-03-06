@@ -220,7 +220,20 @@ func ExtractTarGz(archivePath, destDir string, stripTopDir bool) (err error) {
 				return fmt.Errorf("failed to close %s: %w", target, err)
 			}
 		case tar.TypeSymlink:
-			resolvedLink := filepath.Join(filepath.Dir(target), hdr.Linkname)
+			if filepath.IsAbs(hdr.Linkname) {
+				return fmt.Errorf("tar entry %q has absolute symlink target %q", hdr.Name, hdr.Linkname)
+			}
+			if err := os.MkdirAll(filepath.Dir(target), 0o755); err != nil {
+				return fmt.Errorf("failed to create parent dir for symlink %s: %w", target, err)
+			}
+			resolvedParent, err := filepath.EvalSymlinks(filepath.Dir(target))
+			if err != nil {
+				return fmt.Errorf("tar entry %q: failed to resolve parent dir: %w", hdr.Name, err)
+			}
+			if !isPathWithinDir(resolvedParent, destDir) {
+				return fmt.Errorf("tar entry %q resolves outside dest dir via symlink", hdr.Name)
+			}
+			resolvedLink := filepath.Join(resolvedParent, hdr.Linkname)
 			if !isPathWithinDir(resolvedLink, destDir) {
 				return fmt.Errorf("tar entry %q has symlink target %q that escapes dest dir", hdr.Name, hdr.Linkname)
 			}
