@@ -24,6 +24,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/JetBrains/qodana-cli/internal/foundation/fs"
 	"github.com/JetBrains/qodana-cli/internal/platform/msg"
 	"github.com/JetBrains/qodana-cli/internal/platform/product"
 	"github.com/JetBrains/qodana-cli/internal/platform/qdyaml"
@@ -405,11 +406,16 @@ func (c Context) LocalQodanaYamlExists() bool {
 }
 
 func (c Context) ProjectDirPathRelativeToRepositoryRoot() string {
-	rootAbs, _ := filepath.Abs(c.RepositoryRoot())
-	projAbs, _ := filepath.Abs(c.ProjectDir())
-	rel, _ := filepath.Rel(rootAbs, projAbs)
-	rel = filepath.ToSlash(rel)
-	return rel
+	rootCanonical, err := fs.Canonical(c.RepositoryRoot())
+	if err != nil {
+		rootCanonical, _ = filepath.Abs(c.RepositoryRoot())
+	}
+	projCanonical, err := fs.Canonical(c.ProjectDir())
+	if err != nil {
+		projCanonical, _ = filepath.Abs(c.ProjectDir())
+	}
+	rel, _ := filepath.Rel(rootCanonical, projCanonical)
+	return filepath.ToSlash(rel)
 }
 
 func IsScopedScenario(scenario string) bool {
