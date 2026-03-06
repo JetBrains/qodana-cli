@@ -17,7 +17,6 @@
 package strutil
 
 import (
-	"runtime"
 	"slices"
 	"strings"
 )
@@ -71,39 +70,9 @@ func QuoteIfSpace(s string) string {
 	return s
 }
 
-// QuoteForWindows wraps s in quotes if s contains a typical Windows batch special char and isn't yet quoted.
-func QuoteForWindows(s string) string {
-	if IsStringQuoted(s) {
-		return s
-	}
-	if runtime.GOOS == "windows" && ContainsWinSpecialChar(s) {
-		return `"` + s + `"`
-	}
-	return s
-}
-
-// GetQuotedPath returns a quoted path for the current OS.
-func GetQuotedPath(path string) string {
-	if runtime.GOOS == "windows" {
-		return QuoteForWindows(path)
-	}
-	return QuoteIfSpace(path)
-}
-
 // IsStringQuoted checks if a string is already quoted with double quotes.
 func IsStringQuoted(s string) bool {
 	return strings.HasPrefix(s, "\"") && strings.HasSuffix(s, "\"")
-}
-
-// ContainsWinSpecialChar returns true if s contains any common Windows batch special char that requires quoting.
-func ContainsWinSpecialChar(s string) bool {
-	specialChars := []string{" ", "(", ")", "^", "&", "|", "<", ">"}
-	for _, c := range specialChars {
-		if strings.Contains(s, c) {
-			return true
-		}
-	}
-	return false
 }
 
 // Reverse reverses the given string slice.
