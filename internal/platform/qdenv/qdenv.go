@@ -22,7 +22,7 @@ import (
 	"os"
 	"strings"
 
-	"github.com/JetBrains/qodana-cli/internal/platform/strutil"
+	"github.com/JetBrains/qodana-cli/internal/foundation/str"
 	"github.com/JetBrains/qodana-cli/internal/platform/version"
 	cienvironment "github.com/cucumber/ci-environment/go"
 	log "github.com/sirupsen/logrus"
@@ -306,9 +306,9 @@ func GetBitBucketRepoFullName() string {
 }
 
 func GetBitBucketRepoOwner() string {
-	return strutil.SafeSplit(GetBitBucketRepoFullName(), "/", 0)
+	return str.SafeSplit(GetBitBucketRepoFullName(), "/", 0)
 }
 
 func GetBitBucketRepoName() string {
-	return strutil.SafeSplit(GetBitBucketRepoFullName(), "/", 1)
+	return str.SafeSplit(GetBitBucketRepoFullName(), "/", 1)
 }

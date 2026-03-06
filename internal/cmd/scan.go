@@ -23,15 +23,16 @@ import (
 
 	"github.com/JetBrains/qodana-cli/internal/cloud"
 	"github.com/JetBrains/qodana-cli/internal/core/corescan"
+	"github.com/JetBrains/qodana-cli/internal/core/exitcodes"
 	"github.com/JetBrains/qodana-cli/internal/core/startup"
+	"github.com/JetBrains/qodana-cli/internal/foundation/fs"
 	"github.com/JetBrains/qodana-cli/internal/platform"
-	"github.com/JetBrains/qodana-cli/internal/platform/cmd"
+	platformcmd "github.com/JetBrains/qodana-cli/internal/platform/cmd"
 	"github.com/JetBrains/qodana-cli/internal/platform/commoncontext"
 	"github.com/JetBrains/qodana-cli/internal/platform/effectiveconfig"
 	"github.com/JetBrains/qodana-cli/internal/platform/msg"
 	"github.com/JetBrains/qodana-cli/internal/platform/qdenv"
 	"github.com/JetBrains/qodana-cli/internal/platform/qdyaml"
-	"github.com/JetBrains/qodana-cli/internal/platform/utils"
 	log "github.com/sirupsen/logrus"
 
 	"github.com/JetBrains/qodana-cli/internal/core"
@@ -82,7 +83,7 @@ But you can always override qodana.yaml options with the following command-line 
 					cliOptions.ConfigName,
 				)
 
-				effectiveConfigDir, cleanup, err := utils.CreateTempDir("qd-effective-config")
+				effectiveConfigDir, cleanup, err := fs.CreateTempDir("qd-effective-config")
 				if err != nil {
 					log.Fatalf("Failed to create effective config directory: %v", err)
 				}
@@ -141,7 +142,7 @@ But you can always override qodana.yaml options with the following command-line 
 				scanContext.ReportDir(),
 				scanContext.ShowReportPort(),
 			)
-			if exitCode == utils.QodanaFailThresholdExitCode {
+			if exitCode == exitcodes.QodanaFailThresholdExitCode {
 				msg.EmptyMessage()
 				msg.ErrorMessage("The number of problems exceeds the fail threshold")
 				os.Exit(exitCode)
@@ -166,30 +167,30 @@ func checkProjectDir(projectDir string) {
 			os.Exit(0)
 		}
 	}
-	if !utils.CheckDirFiles(projectDir) {
+	if !fs.CheckDirFiles(projectDir) {
 		msg.ErrorMessage("No files to check with Qodana found in %s", projectDir)
 		os.Exit(1)
 	}
 }
 
 func checkExitCode(exitCode int, c corescan.Context) {
-	if exitCode == utils.QodanaEapLicenseExpiredExitCode && msg.IsInteractive() {
+	if exitCode == exitcodes.QodanaEapLicenseExpiredExitCode && msg.IsInteractive() {
 		msg.EmptyMessage()
 		msg.ErrorMessage(
 			"Your license expired: update your license or token. If you are using EAP, make sure you are using the latest CLI version and update to the latest linter by running %s ",
 			msg.PrimaryBold("qodana init"),
 		)
 		os.Exit(exitCode)
-	} else if exitCode == utils.QodanaTimeoutExitCodePlaceholder {
+	} else if exitCode == exitcodes.QodanaTimeoutExitCodePlaceholder {
 		msg.ErrorMessage("Qodana analysis reached timeout %s", c.GetAnalysisTimeout())
 		os.Exit(c.AnalysisTimeoutExitCode())
-	} else if exitCode == utils.QodanaEmptyChangesetExitCodePlaceholder {
-		msg.ErrorMessage("Nothing to analyse. Exiting with %s", utils.QodanaSuccessExitCode)
-		os.Exit(utils.QodanaSuccessExitCode)
-	} else if exitCode != utils.QodanaSuccessExitCode && exitCode != utils.QodanaFailThresholdExitCode {
+	} else if exitCode == exitcodes.QodanaEmptyChangesetExitCodePlaceholder {
+		msg.ErrorMessage("Nothing to analyse. Exiting with %s", exitcodes.QodanaSuccessExitCode)
+		os.Exit(exitcodes.QodanaSuccessExitCode)
+	} else if exitCode != exitcodes.QodanaSuccessExitCode && exitCode != exitcodes.QodanaFailThresholdExitCode {
 		msg.ErrorMessage("Qodana exited with code %d", exitCode)
 		msg.WarningMessage("Check ./logs/ in the results directory for more information")
-		if exitCode == utils.QodanaOutOfMemoryExitCode {
+		if exitCode == exitcodes.QodanaOutOfMemoryExitCode {
 			msg.ErrorMessage("Qodana was terminated after running out of memory.")
 		} else if msg.AskUserConfirm(fmt.Sprintf("Do you want to open %s", c.ResultsDir())) {
 			err := core.OpenDir(c.ResultsDir())

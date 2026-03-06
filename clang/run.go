@@ -10,9 +10,9 @@ import (
 
 	_ "embed"
 
+	"github.com/JetBrains/qodana-cli/internal/foundation/hash"
 	"github.com/JetBrains/qodana-cli/internal/platform"
 	"github.com/JetBrains/qodana-cli/internal/platform/thirdpartyscan"
-	"github.com/JetBrains/qodana-cli/internal/platform/utils"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -63,7 +63,7 @@ func (l ClangLinter) MountTools(path string) (map[string]string, error) {
 	} else if err != nil {
 		return nil, err
 	} else {
-		hash, err := utils.GetFileSha256(val[clang])
+		hash, err := hash.GetFileSha256(val[clang])
 		if err != nil {
 			log.Warningf("getting sha256 of %q failed: %s", val[clang], err)
 			isBinaryOk = false
