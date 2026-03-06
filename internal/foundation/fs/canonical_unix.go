@@ -1,4 +1,4 @@
-//go:build !windows
+//go:build unix
 
 package fs
 
@@ -73,12 +73,13 @@ func WeaklyCanonical(path string) (string, error) {
 // When weak is true, non-existent components are appended cleaned instead of
 // causing an error.
 func resolveImpl(absPath string, weak bool) (string, error) {
-	components := splitPath(absPath)
+	queue := splitPath(absPath)
 	resolved := "/"
 	symlinkCount := 0
 
-	for i := 0; i < len(components); i++ {
-		comp := components[i]
+	for len(queue) > 0 {
+		comp := queue[0]
+		queue = queue[1:]
 
 		if comp == "" || comp == "." {
 			continue
@@ -92,7 +93,7 @@ func resolveImpl(absPath string, weak bool) (string, error) {
 		actualName, err := findEntry(resolved, comp)
 		if err != nil {
 			if weak && os.IsNotExist(err) {
-				return appendTail(resolved, comp, components[i+1:]), nil
+				return appendTail(resolved, comp, queue), nil
 			}
 			return "", err
 		}
@@ -102,7 +103,7 @@ func resolveImpl(absPath string, weak bool) (string, error) {
 		info, err := os.Lstat(next)
 		if err != nil {
 			if weak && os.IsNotExist(err) {
-				return appendTail(resolved, comp, components[i+1:]), nil
+				return appendTail(resolved, comp, queue), nil
 			}
 			return "", err
 		}
@@ -118,16 +119,12 @@ func resolveImpl(absPath string, weak bool) (string, error) {
 				return "", err
 			}
 
-			// Prepend remaining components after the symlink target.
-			remaining := components[i+1:]
-			targetComponents := splitPath(target)
-			components = append(targetComponents, remaining...)
-			i = -1 // restart loop (i++ will make it 0)
+			// Prepend symlink target components before the remaining queue.
+			queue = append(splitPath(target), queue...)
 
 			if filepath.IsAbs(target) {
 				resolved = "/"
 			}
-			// If relative, resolved stays at current built path.
 		} else {
 			resolved = next
 		}
