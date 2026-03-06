@@ -35,8 +35,8 @@ import (
 	"sync"
 	"time"
 
-	"github.com/JetBrains/qodana-cli/internal/coreutils/archive"
-	"github.com/JetBrains/qodana-cli/internal/coreutils/fs"
+	"github.com/JetBrains/qodana-cli/internal/foundation/archive"
+	"github.com/JetBrains/qodana-cli/internal/foundation/fs"
 )
 
 // Configuration ===============================================================================
