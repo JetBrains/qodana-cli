@@ -70,8 +70,9 @@ func WeaklyCanonical(path string) (string, error) {
 	vol := filepath.VolumeName(path)
 	rest := path[len(vol):]
 	components := strings.Split(rest, string(os.PathSeparator))
+	sep := string(os.PathSeparator)
 
-	built := vol + string(os.PathSeparator)
+	built := vol + sep
 
 	for i, comp := range components {
 		if comp == "" || comp == "." {
@@ -82,18 +83,40 @@ func WeaklyCanonical(path string) (string, error) {
 			continue
 		}
 		next := filepath.Join(built, comp)
-		if _, statErr := os.Lstat(next); statErr != nil {
-			// This component doesn't exist — canonicalize what we have and append the rest.
+
+		// Resolve symlinks for existing components so that the canonical
+		// prefix reflects the real target, not the symlink name.
+		resolved, evalErr := filepath.EvalSymlinks(next)
+		if evalErr != nil {
+			// EvalSymlinks failed — either the component doesn't exist, or
+			// it's a symlink whose target is missing (broken symlink).
+			// If it's a symlink, read its target and treat the result as
+			// a non-existent path from the current prefix.
+			if info, lstatErr := os.Lstat(next); lstatErr == nil && info.Mode()&os.ModeSymlink != 0 {
+				target, readErr := os.Readlink(next)
+				if readErr == nil {
+					if !filepath.IsAbs(target) {
+						target = filepath.Join(built, target)
+					}
+					tail := strings.Join(components[i+1:], sep)
+					if tail != "" {
+						target = target + sep + tail
+					}
+					return WeaklyCanonical(target)
+				}
+			}
+			// Component doesn't exist — canonicalize what we have and append the rest.
 			canonical, canonErr := normalizeCaseWindows(built)
 			if canonErr != nil {
 				canonical = built
 			}
-			// Keep tail as-is (no Clean) — unresolved components might be
-			// symlinks, making lexical .. collapsing incorrect.
-			tail := strings.Join(components[i:], string(os.PathSeparator))
-			return canonical + string(os.PathSeparator) + tail, nil
+			tail := strings.Join(components[i:], sep)
+			if strings.HasSuffix(canonical, sep) {
+				return canonical + tail, nil
+			}
+			return canonical + sep + tail, nil
 		}
-		built = next
+		built = resolved
 	}
 
 	// Everything existed — normalize case.
