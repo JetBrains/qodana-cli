@@ -66,7 +66,7 @@ func ComputeChangedFiles(cwd string, diffStart string, diffEnd string, logdir st
 		return ChangedFiles{}, err
 	}
 
-	filePath, _ := filepath.Abs(filepath.Join(logdir, "git-diff.log"))
+	filePath, _ := fs.WeaklyCanonical(filepath.Join(logdir, "git-diff.log"))
 
 	// Rev-parsing references in advance helps with clearer error messages and in case references could be confused
 	// with `git diff` options.

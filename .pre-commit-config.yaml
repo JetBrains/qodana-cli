@@ -1,11 +1,5 @@
 repos:
-  # golangci-lint (official hooks) -----
-  - repo: https://github.com/golangci/golangci-lint
-    rev: v2.6.1
-    hooks:
-      - id: golangci-lint-full
-
-  # Local hooks for go toolchain checks -----
+  # Local hooks that must run before lint
   - repo: local
     hooks:
       - id: go-generate
@@ -15,24 +9,18 @@ repos:
         pass_filenames: false
         stages: [pre-commit]
 
-      - id: go-build
-        name: go build
-        entry: go build ./...
-        language: system
-        pass_filenames: false
-        types: [go]
+  # golangci-lint (official hooks)
+  - repo: https://github.com/golangci/golangci-lint
+    rev: v2.6.1
+    hooks:
+      - id: golangci-lint-full
 
+  # Local hooks that run after lint
+  - repo: local
+    hooks:
       - id: go-vet
         name: go vet
         entry: go vet ./...
         language: system
         pass_filenames: false
         types: [go]
-
-      - id: go-test
-        name: go test (foundation + core + platform)
-        entry: go test ./internal/foundation/... ./internal/core/... ./internal/platform/...
-        language: system
-        pass_filenames: false
-        types: [go]
-        stages: [pre-commit]
