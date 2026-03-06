@@ -53,3 +53,16 @@ func Reverse(s []string) []string {
 	}
 	return s
 }
+
+// GetLines splits a string into lines.
+// A "line" is defined as a sequence of characters followed by either:
+//   - A newline character `\n`
+//   - The end of the string
+// This means that a string ending in \n will not produce an empty line at the last element of result.
+func GetLines(s string) []string {
+	if s == "" {
+		return nil
+	}
+	s = strings.TrimSuffix(s, "\n")
+	return strings.Split(s, "\n")
+}
