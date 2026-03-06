@@ -23,10 +23,10 @@ import (
 
 	"github.com/JetBrains/qodana-cli/internal/core"
 	"github.com/JetBrains/qodana-cli/internal/core/corescan"
+	"github.com/JetBrains/qodana-cli/internal/foundation/str"
 	"github.com/JetBrains/qodana-cli/internal/platform/product"
 	"github.com/JetBrains/qodana-cli/internal/platform/qdcontainer"
 	"github.com/JetBrains/qodana-cli/internal/platform/qdyaml"
-	"github.com/JetBrains/qodana-cli/internal/platform/strutil"
 	"github.com/JetBrains/qodana-cli/internal/platform/thirdpartyscan"
 	"github.com/stretchr/testify/assert"
 )
@@ -293,7 +293,7 @@ func TestComputeCdnetArgs(t *testing.T) {
 				context := tt.cb.Build()
 				args, err := CdnetLinter{}.computeCdnetArgs(context)
 
-				if strutil.Contains(tt.expectedArgs, "--LogFolder=log") {
+				if str.Contains(tt.expectedArgs, "--LogFolder=log") {
 					for i, arg := range tt.expectedArgs {
 						if arg == "--LogFolder=log" {
 							tt.expectedArgs[i] = "--LogFolder=" + logDir

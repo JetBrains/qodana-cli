@@ -22,8 +22,8 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/JetBrains/qodana-cli/internal/foundation/fs"
 	"github.com/JetBrains/qodana-cli/internal/platform/thirdpartyscan"
-	"github.com/JetBrains/qodana-cli/internal/platform/utils"
 	"github.com/JetBrains/qodana-cli/internal/sarif"
 	"github.com/stretchr/testify/assert"
 )
@@ -71,7 +71,7 @@ func TestMergeSarifReports(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	err = utils.CopyDir(filepath.Join(testdataPath, "merge"), filepath.Join(dir, "tmp"))
+	err = fs.CopyDir(filepath.Join(testdataPath, "merge"), filepath.Join(dir, "tmp"))
 	if err != nil {
 		t.Fatal(err)
 	}

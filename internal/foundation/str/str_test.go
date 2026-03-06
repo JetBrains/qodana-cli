@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package strutil
+package str
 
 import (
 	"testing"
@@ -47,27 +47,6 @@ func TestSafeSplit(t *testing.T) {
 	}
 }
 
-func TestLower(t *testing.T) {
-	tests := []struct {
-		input    string
-		expected string
-	}{
-		{"HELLO", "hello"},
-		{"Hello", "hello"},
-		{"hello", "hello"},
-		{"", ""},
-		{"123ABC", "123abc"},
-	}
-	for _, tt := range tests {
-		t.Run(tt.input, func(t *testing.T) {
-			result := Lower(tt.input)
-			if result != tt.expected {
-				t.Errorf("Lower(%q) = %q, want %q", tt.input, result, tt.expected)
-			}
-		})
-	}
-}
-
 func TestContains(t *testing.T) {
 	tests := []struct {
 		name     string
@@ -87,33 +66,6 @@ func TestContains(t *testing.T) {
 			result := Contains(tt.slice, tt.str)
 			if result != tt.expected {
 				t.Errorf("Contains(%v, %q) = %v, want %v", tt.slice, tt.str, result, tt.expected)
-			}
-		})
-	}
-}
-
-func TestAppend(t *testing.T) {
-	tests := []struct {
-		name     string
-		slice    []string
-		elem     string
-		expected []string
-	}{
-		{"append new element", []string{"a", "b"}, "c", []string{"a", "b", "c"}},
-		{"append existing element", []string{"a", "b"}, "a", []string{"a", "b"}},
-		{"append to empty slice", []string{}, "a", []string{"a"}},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			result := Append(tt.slice, tt.elem)
-			if len(result) != len(tt.expected) {
-				t.Errorf("Append(%v, %q) length = %d, want %d", tt.slice, tt.elem, len(result), len(tt.expected))
-				return
-			}
-			for i, v := range result {
-				if v != tt.expected[i] {
-					t.Errorf("Append(%v, %q)[%d] = %q, want %q", tt.slice, tt.elem, i, v, tt.expected[i])
-				}
 			}
 		})
 	}

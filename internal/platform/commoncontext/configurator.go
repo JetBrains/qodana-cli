@@ -25,7 +25,7 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/JetBrains/qodana-cli/internal/platform/strutil"
+	"github.com/JetBrains/qodana-cli/internal/foundation/algorithm"
 	"github.com/go-enry/go-enry/v2"
 	log "github.com/sirupsen/logrus"
 )
@@ -190,13 +190,13 @@ func readIdeaDir(project string) []string {
 			}
 			text := string(iml)
 			if strings.Contains(text, "JAVA_MODULE") {
-				languages = strutil.Append(languages, "Java")
+				languages = algorithm.AppendUnique(languages, "Java")
 			}
 			if strings.Contains(text, "PYTHON_MODULE") {
-				languages = strutil.Append(languages, "Python")
+				languages = algorithm.AppendUnique(languages, "Python")
 			}
 			if strings.Contains(text, "Go") {
-				languages = strutil.Append(languages, "Go")
+				languages = algorithm.AppendUnique(languages, "Go")
 			}
 		}
 	}

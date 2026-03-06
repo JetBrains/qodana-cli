@@ -11,7 +11,8 @@ import (
 	"os"
 	"regexp"
 
-	"github.com/JetBrains/qodana-cli/internal/platform/utils"
+	"github.com/JetBrains/qodana-cli/internal/foundation/archive"
+	"github.com/JetBrains/qodana-cli/internal/foundation/hash"
 )
 
 const DllPathPattern = `^tools/[^/]+/any/JetBrains\.CommandLine\.Products\.dll$`
@@ -36,7 +37,7 @@ func main() {
 		dllPath = path
 
 		err := (error)(nil)
-		dllHash, err = utils.GetSha256(stream)
+		dllHash, err = hash.GetSha256(stream)
 		if err != nil {
 			log.Fatalf("sha256 error: %s", err)
 		}
@@ -53,7 +54,7 @@ func main() {
 			log.Fatal(err)
 		}
 	} else {
-		err = utils.WalkZipArchive("clt.zip", callback)
+		err = archive.WalkZipArchive("clt.zip", callback)
 		if err != nil {
 			log.Fatal(err)
 		}

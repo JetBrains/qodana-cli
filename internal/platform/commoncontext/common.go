@@ -27,7 +27,8 @@ import (
 	"time"
 
 	"github.com/JetBrains/qodana-cli/internal/cloud"
-	"github.com/JetBrains/qodana-cli/internal/platform/algorithm"
+	"github.com/JetBrains/qodana-cli/internal/foundation/algorithm"
+	"github.com/JetBrains/qodana-cli/internal/foundation/exec"
 	"github.com/JetBrains/qodana-cli/internal/platform/msg"
 	"github.com/JetBrains/qodana-cli/internal/platform/product"
 	"github.com/JetBrains/qodana-cli/internal/platform/qdenv"
@@ -335,7 +336,7 @@ func analyzerToSelect(linters []product.Linter, path string) (map[string]product
 // SaveReport converts analysis output into the HTML report.
 func SaveReport(resultDir string, reportDir string, cacheDir string) {
 	log.Println("Generating HTML report ...")
-	if res, err := utils.Exec(
+	if res, err := exec.Exec(
 		".",
 		tooling.GetQodanaJBRPath(cacheDir),
 		"-jar",

@@ -24,6 +24,7 @@ import (
 	"path/filepath"
 
 	"github.com/JetBrains/qodana-cli/internal/cloud"
+	"github.com/JetBrains/qodana-cli/internal/foundation/fs"
 	platformcmd "github.com/JetBrains/qodana-cli/internal/platform/cmd"
 	"github.com/JetBrains/qodana-cli/internal/platform/commoncontext"
 	"github.com/JetBrains/qodana-cli/internal/platform/effectiveconfig"
@@ -32,7 +33,6 @@ import (
 	"github.com/JetBrains/qodana-cli/internal/platform/qdyaml"
 	"github.com/JetBrains/qodana-cli/internal/platform/thirdpartyscan"
 	"github.com/JetBrains/qodana-cli/internal/platform/tokenloader"
-	"github.com/JetBrains/qodana-cli/internal/platform/utils"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -76,7 +76,7 @@ func RunThirdPartyLinterAnalysis(
 		cliOptions.ConfigName,
 	)
 
-	effectiveDir, cleanup, err := utils.CreateTempDir("qodana-effective-config")
+	effectiveDir, cleanup, err := fs.CreateTempDir("qodana-effective-config")
 	if err != nil {
 		return 1, fmt.Errorf("failed to create qodana effective configuration dir %v", err)
 	}
@@ -252,7 +252,7 @@ func copyQodanaYamlToLogDir(qodanaYamlFullPath string, logDir string) error {
 	if _, err := os.Stat(qodanaYamlFullPath); errors.Is(err, os.ErrNotExist) {
 		return nil
 	}
-	if err := utils.CopyFile(qodanaYamlFullPath, path.Join(logDir, "qodana.yaml")); err != nil {
+	if err := fs.CopyFile(qodanaYamlFullPath, path.Join(logDir, "qodana.yaml")); err != nil {
 		log.Errorf("Error while copying qodana.yaml: %s", err)
 		return err
 	}

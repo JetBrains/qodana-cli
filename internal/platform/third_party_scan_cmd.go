@@ -20,10 +20,10 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/JetBrains/qodana-cli/internal/core/exitcodes"
 	platformcmd "github.com/JetBrains/qodana-cli/internal/platform/cmd"
 	"github.com/JetBrains/qodana-cli/internal/platform/msg"
 	"github.com/JetBrains/qodana-cli/internal/platform/thirdpartyscan"
-	"github.com/JetBrains/qodana-cli/internal/platform/utils"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 )
@@ -46,7 +46,7 @@ But you can always override qodana.yaml options with the following command-line 
 			exitCode, err := RunThirdPartyLinterAnalysis(*cliOptions, linter, linterInfo)
 
 			log.Debug("exitCode: ", exitCode)
-			if exitCode == utils.QodanaFailThresholdExitCode {
+			if exitCode == exitcodes.QodanaFailThresholdExitCode {
 				msg.EmptyMessage()
 				msg.ErrorMessage("The number of problems exceeds the fail threshold")
 				os.Exit(exitCode)

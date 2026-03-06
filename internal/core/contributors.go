@@ -23,8 +23,9 @@ import (
 	"strings"
 
 	"github.com/JetBrains/qodana-cli/internal/cloud"
+	"github.com/JetBrains/qodana-cli/internal/foundation/algorithm"
+	"github.com/JetBrains/qodana-cli/internal/foundation/str"
 	"github.com/JetBrains/qodana-cli/internal/platform/git"
-	"github.com/JetBrains/qodana-cli/internal/platform/strutil"
 )
 
 // various variables for parsing git log output.
@@ -59,7 +60,7 @@ func (a *author) getId() string {
 
 // isBot returns true if the author is a bot.
 func (a *author) isBot() bool {
-	return strings.HasSuffix(a.Email, cloud.GitHubBotSuffix) || strutil.Contains(cloud.CommonGitBots, a.Email)
+	return strings.HasSuffix(a.Email, cloud.GitHubBotSuffix) || str.Contains(cloud.CommonGitBots, a.Email)
 }
 
 // commit struct represents a git commit.
@@ -128,7 +129,7 @@ func GetContributors(repoDirs []string, days int, excludeBots bool) []contributo
 			authorId := c.Author.getId()
 			if i, ok := contributorMap[authorId]; ok {
 				i.Count++
-				i.Projects = strutil.Append(i.Projects, repoDir)
+				i.Projects = algorithm.AppendUnique(i.Projects, repoDir)
 				i.Commits = append(i.Commits, c)
 			} else {
 				contributorMap[authorId] = &contributor{
