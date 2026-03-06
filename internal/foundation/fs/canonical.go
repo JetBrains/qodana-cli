@@ -31,7 +31,7 @@ func Canonical(path string) (string, error) {
 
 	trailingSlash := len(path) > 1 && path[len(path)-1] == os.PathSeparator
 
-	result, err := resolve(path)
+	result, err := resolveImpl(path, false)
 	if err != nil {
 		return "", err
 	}
@@ -50,10 +50,29 @@ func Canonical(path string) (string, error) {
 	return result, nil
 }
 
-// resolve implements realpath-like component-by-component resolution.
-// It walks each component of the absolute path, resolving symlinks and
-// normalizing case as it goes.
-func resolve(absPath string) (string, error) {
+// WeaklyCanonical is like Canonical but does not require the full path to exist.
+// It canonicalizes the longest existing prefix, then appends the remaining
+// non-existent tail (cleaned of . and .. segments).
+func WeaklyCanonical(path string) (string, error) {
+	if path == "" {
+		return "", fmt.Errorf("weakly canonical: empty path")
+	}
+
+	if !filepath.IsAbs(path) {
+		cwd, err := os.Getwd()
+		if err != nil {
+			return "", err
+		}
+		path = cwd + string(os.PathSeparator) + path
+	}
+
+	return resolveImpl(path, true)
+}
+
+// resolveImpl implements realpath-like component-by-component resolution.
+// When weak is true, non-existent components are appended cleaned instead of
+// causing an error.
+func resolveImpl(absPath string, weak bool) (string, error) {
 	components := splitPath(absPath)
 	resolved := "/"
 	symlinkCount := 0
@@ -72,6 +91,9 @@ func resolve(absPath string) (string, error) {
 		// Look up the actual on-disk name (normalizes case on case-insensitive FS).
 		actualName, err := findEntry(resolved, comp)
 		if err != nil {
+			if weak && os.IsNotExist(err) {
+				return appendTail(resolved, comp, components[i+1:]), nil
+			}
 			return "", err
 		}
 
@@ -79,6 +101,9 @@ func resolve(absPath string) (string, error) {
 
 		info, err := os.Lstat(next)
 		if err != nil {
+			if weak && os.IsNotExist(err) {
+				return appendTail(resolved, comp, components[i+1:]), nil
+			}
 			return "", err
 		}
 
@@ -109,6 +134,15 @@ func resolve(absPath string) (string, error) {
 	}
 
 	return resolved, nil
+}
+
+// appendTail joins the resolved prefix with the current component and any
+// remaining components, cleaning . and .. in the non-existent tail.
+func appendTail(resolved, current string, remaining []string) string {
+	parts := append([]string{current}, remaining...)
+	tail := filepath.Join(parts...)
+	// Clean collapses . and .. within the tail.
+	return filepath.Join(resolved, filepath.Clean(tail))
 }
 
 // splitPath splits a path into its components, removing empty strings
