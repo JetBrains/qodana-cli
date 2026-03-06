@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 	"syscall"
 
 	"golang.org/x/sys/windows"
@@ -39,6 +40,76 @@ func Canonical(path string) (string, error) {
 		return "", err
 	}
 
+	return normalizeCaseWindows(resolved)
+}
+
+// WeaklyCanonical is like Canonical but does not require the full path to exist.
+// It canonicalizes the longest existing prefix, then appends the remaining
+// non-existent tail (cleaned of . and .. segments).
+func WeaklyCanonical(path string) (string, error) {
+	if path == "" {
+		return "", fmt.Errorf("weakly canonical: empty path")
+	}
+
+	if !filepath.IsAbs(path) {
+		cwd, err := os.Getwd()
+		if err != nil {
+			return "", err
+		}
+		path = cwd + string(os.PathSeparator) + path
+	}
+
+	// Try the full path first — fast path when everything exists.
+	result, err := filepath.EvalSymlinks(path)
+	if err == nil {
+		result, err = filepath.Abs(result)
+		if err == nil {
+			return normalizeCaseWindows(result)
+		}
+	}
+
+	// Walk components to find the longest existing prefix.
+	vol := filepath.VolumeName(path)
+	rest := path[len(vol):]
+	components := filepath.SplitList(rest)
+	if len(components) == 0 {
+		components = strings.Split(rest, string(os.PathSeparator))
+	} else {
+		components = strings.Split(rest, string(os.PathSeparator))
+	}
+
+	built := vol + string(os.PathSeparator)
+	lastExisting := 0
+
+	for i, comp := range components {
+		if comp == "" || comp == "." {
+			continue
+		}
+		if comp == ".." {
+			built = filepath.Dir(built)
+			lastExisting = i + 1
+			continue
+		}
+		next := filepath.Join(built, comp)
+		if _, statErr := os.Lstat(next); statErr != nil {
+			// This component doesn't exist — canonicalize what we have and append the rest.
+			canonical, canonErr := normalizeCaseWindows(built)
+			if canonErr != nil {
+				canonical = built
+			}
+			tail := filepath.Clean(filepath.Join(components[i:]...))
+			return filepath.Join(canonical, tail), nil
+		}
+		built = next
+		lastExisting = i + 1
+	}
+	_ = lastExisting
+
+	// Everything existed — canonicalize the whole thing.
+	resolved, err := filepath.EvalSymlinks(built)
+	if err != nil {
+		return "", err
+	}
 	return normalizeCaseWindows(resolved)
 }
 
