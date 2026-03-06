@@ -26,10 +26,41 @@ import (
 	"testing"
 
 	"github.com/JetBrains/qodana-cli/internal/foundation/exec"
+	"github.com/JetBrains/qodana-cli/internal/foundation/fs"
 	"github.com/JetBrains/qodana-cli/internal/platform/product"
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
 )
+
+func TestCanonical_CaseNormalization(t *testing.T) {
+	tmp := t.TempDir()
+
+	// Check if filesystem is case-sensitive
+	testDir := filepath.Join(tmp, "CaseTest")
+	if err := os.MkdirAll(testDir, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := os.Stat(filepath.Join(tmp, "casetest")); os.IsNotExist(err) {
+		t.Skip("not relevant on case-sensitive filesystems")
+	}
+
+	// Create dir with specific casing
+	myDir := filepath.Join(tmp, "MyDir")
+	if err := os.MkdirAll(myDir, 0o755); err != nil {
+		t.Fatal(err)
+	}
+
+	// Query with wrong casing
+	wrongCase := filepath.Join(tmp, "mydir")
+	result, err := fs.Canonical(wrongCase)
+	if err != nil {
+		t.Fatalf("fs.Canonical failed: %v", err)
+	}
+
+	// The result should have the on-disk casing "MyDir", not "mydir"
+	assert.Contains(t, result, "MyDir",
+		"fs.Canonical should normalize case to on-disk casing; got %q", result)
+}
 
 func TestSelectAnalyzer(t *testing.T) {
 	nativePathMaker := func(dir string) error {

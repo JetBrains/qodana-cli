@@ -26,6 +26,7 @@ import (
 	"sort"
 	"strings"
 
+	"github.com/JetBrains/qodana-cli/internal/foundation/fs"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -51,17 +52,8 @@ type ChangedFiles struct {
 	Files []*ChangedFile `json:"files"`
 }
 
-func computeAbsPath(cwd string) (string, error) {
-	cwd, err := filepath.EvalSymlinks(cwd)
-	if err != nil {
-		return "", err
-	}
-	cwdAbs, err := filepath.Abs(cwd)
-	return cwdAbs, err
-}
-
 func ComputeChangedFiles(cwd string, diffStart string, diffEnd string, logdir string) (ChangedFiles, error) {
-	absCwd, err := computeAbsPath(cwd)
+	absCwd, err := fs.Canonical(cwd)
 	if err != nil {
 		return ChangedFiles{}, err
 	}
@@ -69,7 +61,7 @@ func ComputeChangedFiles(cwd string, diffStart string, diffEnd string, logdir st
 	if err != nil {
 		return ChangedFiles{}, err
 	}
-	absRepoRoot, err := computeAbsPath(repoRoot)
+	absRepoRoot, err := fs.Canonical(repoRoot)
 	if err != nil {
 		return ChangedFiles{}, err
 	}
@@ -188,7 +180,7 @@ func parseDiff(diffPath string, repoRoot string, cwd string) (ChangedFiles, erro
 			}
 		}
 		path := filepath.Join(repoRoot, fileName)
-		if strings.HasPrefix(path, cwd) { // take changes only inside project
+		if path == cwd || strings.HasPrefix(path, cwd+string(os.PathSeparator)) { // take changes only inside project
 			files = append(
 				files, &ChangedFile{
 					Path:    path,

@@ -155,6 +155,46 @@ func TestCheckVcsSameAsRepositoryRoot(t *testing.T) {
 	}
 }
 
+func TestCheckVcsSameAsRepositoryRoot_Symlink(t *testing.T) {
+	if _, err := exec.LookPath("git"); err != nil {
+		t.Skip("git is not available, skipping test")
+	}
+
+	tmp := t.TempDir()
+	realDir := filepath.Join(tmp, "real")
+	if err := os.MkdirAll(realDir, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	initGitRepo(t, realDir)
+	createGitCommit(t, realDir)
+
+	linkDir := filepath.Join(tmp, "link")
+	if err := os.Symlink(realDir, linkDir); err != nil {
+		t.Fatal(err)
+	}
+
+	// Resolve symlinks in realDir to handle macOS /var -> /private/var.
+	realDirResolved, _ := filepath.EvalSymlinks(realDir)
+
+	var buf bytes.Buffer
+	log.SetOutput(&buf)
+	defer log.SetOutput(os.Stderr)
+
+	ctx := commoncontext.Context{
+		Analyzer:       product.JvmLinter.DockerAnalyzer(),
+		ProjectDir:     realDirResolved,
+		RepositoryRoot: linkDir, // symlink to the same dir
+	}
+	checkVcsSameAsRepositoryRoot(ctx)
+
+	logOutput := buf.String()
+	hasWarning := strings.Contains(logOutput, "level=warning") &&
+		strings.Contains(logOutput, "git root directory is different")
+	if hasWarning {
+		t.Errorf("Got spurious warning when VCS root is accessed via symlink. Log output: %s", logOutput)
+	}
+}
+
 func TestSyncCacheSyncIdea(t *testing.T) {
 	testProjectDir, commonCtx := setupIdeaSyncTestData(t)
 	commonCtx.CacheDir = filepath.Join("testdata", "synccache", "syncidea", "cache")

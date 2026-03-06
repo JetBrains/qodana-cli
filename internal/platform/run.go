@@ -171,12 +171,12 @@ func correctInitArgsForThirdParty(commonCtx commoncontext.Context) (commoncontex
 	empty := commoncontext.Context{}
 	var err error
 
-	if commonCtx.ResultsDir, err = filepath.Abs(commonCtx.ResultsDir); err != nil {
-		return empty, fmt.Errorf("failed to get absolute path to results directory: %w", err)
+	if commonCtx.ResultsDir, err = fs.WeaklyCanonical(commonCtx.ResultsDir); err != nil {
+		return empty, fmt.Errorf("failed to get canonical path for results directory: %w", err)
 	}
 
-	if commonCtx.ReportDir, err = filepath.Abs(commonCtx.ReportDir); err != nil {
-		return empty, fmt.Errorf("failed to get absolute path to report directory: %w", err)
+	if commonCtx.ReportDir, err = fs.WeaklyCanonical(commonCtx.ReportDir); err != nil {
+		return empty, fmt.Errorf("failed to get canonical path for report directory: %w", err)
 	}
 
 	tmpResultsDir := GetTmpResultsDir(commonCtx.ResultsDir)

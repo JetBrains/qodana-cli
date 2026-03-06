@@ -36,9 +36,6 @@ func touch(t *testing.T, path string) {
 
 func makeSymlink(t *testing.T, target, linkPath string) {
 	t.Helper()
-	if runtime.GOOS == "windows" {
-		t.Skip("symlinks require elevated privileges on Windows")
-	}
 	require.NoError(t, os.Symlink(target, linkPath))
 }
 

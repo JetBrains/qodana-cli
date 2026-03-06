@@ -508,3 +508,32 @@ func TestArrayCopy(t *testing.T) {
 	assert.Equal(t, "a", original[0])
 	assert.Equal(t, "modified", copied[0])
 }
+
+func TestProjectDirPathRelativeToRepositoryRoot_Symlink(t *testing.T) {
+	tmp := t.TempDir()
+
+	// Resolve tmp to handle macOS /var -> /private/var
+	tmp, err := filepath.EvalSymlinks(tmp)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	realRoot := filepath.Join(tmp, "root")
+	subDir := filepath.Join(realRoot, "sub")
+	if err := os.MkdirAll(subDir, 0o755); err != nil {
+		t.Fatal(err)
+	}
+
+	linkRoot := filepath.Join(tmp, "link")
+	if err := os.Symlink(realRoot, linkRoot); err != nil {
+		t.Fatal(err)
+	}
+
+	ctx := ContextBuilder{
+		RepositoryRoot: linkRoot,
+		ProjectDir:     subDir,
+	}.Build()
+
+	rel := ctx.ProjectDirPathRelativeToRepositoryRoot()
+	assert.Equal(t, "sub", rel)
+}
