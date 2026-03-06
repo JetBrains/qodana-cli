@@ -1,5 +1,5 @@
 repos:
-  # Local hooks that must run before lint
+  # Run before tools that may require generated code ===================================================================
   - repo: local
     hooks:
       - id: go-generate
@@ -8,14 +8,13 @@ repos:
         language: system
         pass_filenames: false
         stages: [pre-commit]
+  # ====================================================================================================================
 
-  # golangci-lint (official hooks)
   - repo: https://github.com/golangci/golangci-lint
     rev: v2.6.1
     hooks:
       - id: golangci-lint-full
 
-  # Local hooks that run after lint
   - repo: local
     hooks:
       - id: go-vet
