@@ -108,9 +108,10 @@ func TestForEachBounded(t *testing.T) {
 	t.Run("processes all items", func(t *testing.T) {
 		var count atomic.Int32
 		items := []int{1, 2, 3, 4, 5}
-		ForEachBounded(items, 2, func(n int) {
+		err := ForEachBounded(items, 2, func(n int) {
 			count.Add(1)
 		})
+		assert.NoError(t, err)
 		assert.Equal(t, int32(5), count.Load())
 	})
 
@@ -123,7 +124,7 @@ func TestForEachBounded(t *testing.T) {
 			items[i] = i
 		}
 
-		ForEachBounded(items, 3, func(n int) {
+		err := ForEachBounded(items, 3, func(n int) {
 			cur := active.Add(1)
 			for {
 				old := maxActive.Load()
@@ -138,44 +139,47 @@ func TestForEachBounded(t *testing.T) {
 			active.Add(-1)
 		})
 
+		assert.NoError(t, err)
 		assert.LessOrEqual(t, maxActive.Load(), int32(3))
 		assert.Equal(t, int32(0), active.Load())
 	})
 
 	t.Run("empty slice", func(t *testing.T) {
-		ForEachBounded([]int{}, 3, func(n int) {
+		err := ForEachBounded([]int{}, 3, func(n int) {
 			t.Fatal("should not be called")
 		})
+		assert.NoError(t, err)
 	})
 
 	t.Run("single item", func(t *testing.T) {
 		var called bool
-		ForEachBounded([]string{"hello"}, 1, func(s string) {
+		err := ForEachBounded([]string{"hello"}, 1, func(s string) {
 			assert.Equal(t, "hello", s)
 			called = true
 		})
+		assert.NoError(t, err)
 		assert.True(t, called)
 	})
 
-	t.Run("zero concurrency does not deadlock", func(t *testing.T) {
-		var count atomic.Int32
-		ForEachBounded([]int{1, 2, 3}, 0, func(n int) {
-			count.Add(1)
+	t.Run("zero concurrency returns error", func(t *testing.T) {
+		err := ForEachBounded([]int{1, 2, 3}, 0, func(n int) {
+			t.Fatal("should not be called")
 		})
-		assert.Equal(t, int32(3), count.Load())
+		assert.Error(t, err)
+		assert.Contains(t, err.Error(), "maxConcurrency must be > 0")
 	})
 
-	t.Run("negative concurrency does not deadlock", func(t *testing.T) {
-		var count atomic.Int32
-		ForEachBounded([]int{1, 2}, -5, func(n int) {
-			count.Add(1)
+	t.Run("negative concurrency returns error", func(t *testing.T) {
+		err := ForEachBounded([]int{1, 2}, -5, func(n int) {
+			t.Fatal("should not be called")
 		})
-		assert.Equal(t, int32(2), count.Load())
+		assert.Error(t, err)
+		assert.Contains(t, err.Error(), "maxConcurrency must be > 0")
 	})
 
 	t.Run("single panic is re-raised", func(t *testing.T) {
 		assert.PanicsWithValue(t, "boom", func() {
-			ForEachBounded([]int{1}, 2, func(n int) {
+			_ = ForEachBounded([]int{1}, 2, func(n int) {
 				panic("boom")
 			})
 		})
@@ -183,7 +187,7 @@ func TestForEachBounded(t *testing.T) {
 
 	t.Run("multiple panics are re-raised", func(t *testing.T) {
 		assert.Panics(t, func() {
-			ForEachBounded([]int{1, 2, 3, 4}, 4, func(n int) {
+			_ = ForEachBounded([]int{1, 2, 3, 4}, 4, func(n int) {
 				panic("boom")
 			})
 		})

@@ -44,9 +44,10 @@ func Unique[T comparable](iterable []T) []T {
 
 // ForEachBounded runs fn for each item with at most maxConcurrency goroutines.
 // Blocks until all complete. Panics from fn are caught and re-panicked in the caller.
-func ForEachBounded[T any](items []T, maxConcurrency int, fn func(T)) {
+// Returns an error if maxConcurrency is not positive.
+func ForEachBounded[T any](items []T, maxConcurrency int, fn func(T)) error {
 	if maxConcurrency <= 0 {
-		maxConcurrency = 1
+		return fmt.Errorf("ForEachBounded: maxConcurrency must be > 0, got %d", maxConcurrency)
 	}
 
 	var wg sync.WaitGroup
@@ -79,4 +80,5 @@ func ForEachBounded[T any](items []T, maxConcurrency int, fn func(T)) {
 	if len(panics) > 1 {
 		panic(fmt.Sprintf("multiple panics (%d): %v", len(panics), panics))
 	}
+	return nil
 }

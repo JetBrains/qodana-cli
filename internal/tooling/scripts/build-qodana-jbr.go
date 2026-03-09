@@ -91,18 +91,20 @@ func main() {
 	// Ensure all platforms have src/ extracted (parallel)
 	ensureAllPlatformSrcs(cacheDir, version, build, upstreamSHA)
 
-	// Build each platform that needs it
-	for _, p := range platforms {
+	// Build each platform that needs it (parallel, concurrency 3)
+	if err := algorithm.ForEachBounded(platforms, 3, func(p platform) {
 		pDir := platformDir(cacheDir, p)
 		sha := upstreamSHA[p.flavor]
 
 		if readFile(filepath.Join(pDir, "upstream.sha512")) == sha && hasDist(pDir) {
 			log.Printf("OK, SKIPPED: %s-%s", p.goos, p.goarch)
-			continue
+			return
 		}
 
 		buildPlatform(jlinkBin, modules, cacheDir, p, version, build)
 		log.Printf("BUILT: %s-%s", p.goos, p.goarch)
+	}); err != nil {
+		log.Fatalf("ForEachBounded error building platforms: %v", err)
 	}
 
 	linkAllToEmbed(cacheDir, embedDir)
@@ -158,7 +160,10 @@ func fetchLatestJBRTag() string {
 	}
 	defer resp.Body.Close()
 
-	body, _ := io.ReadAll(resp.Body)
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		log.Fatalf("Error reading GitHub API response: %v", err)
+	}
 
 	switch resp.StatusCode {
 	case 200:
@@ -220,12 +225,14 @@ func jbrChecksumURL(version, flavor, build string) string {
 func fetchAllUpstreamChecksums(version, build string) map[string]string {
 	result := make(map[string]string)
 	var mu sync.Mutex
-	algorithm.ForEachBounded(platforms, len(platforms), func(p platform) {
+	if err := algorithm.ForEachBounded(platforms, len(platforms), func(p platform) {
 		sha := fetchUpstreamChecksum(version, p.flavor, build)
 		mu.Lock()
 		result[p.flavor] = sha
 		mu.Unlock()
-	})
+	}); err != nil {
+		log.Fatalf("ForEachBounded error fetching checksums: %v", err)
+	}
 	return result
 }
 
@@ -337,9 +344,11 @@ func ensurePlatformSrc(cacheDir, version, build string, p platform, expectedSHA 
 }
 
 func ensureAllPlatformSrcs(cacheDir, version, build string, upstreamSHA map[string]string) {
-	algorithm.ForEachBounded(platforms, 3, func(p platform) {
+	if err := algorithm.ForEachBounded(platforms, 3, func(p platform) {
 		ensurePlatformSrc(cacheDir, version, build, p, upstreamSHA[p.flavor])
-	})
+	}); err != nil {
+		log.Fatalf("ForEachBounded error ensuring platform srcs: %v", err)
+	}
 }
 
 // Build =======================================================================================
