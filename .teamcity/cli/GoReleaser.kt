@@ -98,7 +98,7 @@ class GoReleaser(
             workingDir = wd
             scriptContent = if (releaseType.isNightlyOrRelease()) {
                 """
-                    set -ex
+                    set -e
 
                     # download required dependencies
                     (
@@ -107,9 +107,13 @@ class GoReleaser(
                             cd ..
                         fi
                         # 253
-                        [ -d "./tooling" ] && go generate ./tooling
+                        if [ -d "./tooling" ]; then
+                            go generate ./tooling
+                        fi
                         # main
-                        [ -d "./internal/tooling" ] && go generate ./internal/tooling
+                        if [ -d "./internal/tooling" ]; then
+                            go generate ./internal/tooling
+                        fi
                     )
 
                     # run goreleaser
