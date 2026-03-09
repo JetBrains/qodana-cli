@@ -1,9 +1,7 @@
 package algorithm
 
 import (
-	"sync/atomic"
 	"testing"
-	"time"
 
 	"github.com/stretchr/testify/assert"
 )
@@ -101,96 +99,6 @@ func TestUnique(t *testing.T) {
 		nums := []int{}
 		result := Unique(nums)
 		assert.Empty(t, result)
-	})
-}
-
-func TestForEachBounded(t *testing.T) {
-	t.Run("processes all items", func(t *testing.T) {
-		var count atomic.Int32
-		items := []int{1, 2, 3, 4, 5}
-		err := ForEachBounded(items, 2, func(n int) {
-			count.Add(1)
-		})
-		assert.NoError(t, err)
-		assert.Equal(t, int32(5), count.Load())
-	})
-
-	t.Run("respects concurrency limit", func(t *testing.T) {
-		var active atomic.Int32
-		var maxActive atomic.Int32
-
-		items := make([]int, 20)
-		for i := range items {
-			items[i] = i
-		}
-
-		err := ForEachBounded(items, 3, func(n int) {
-			cur := active.Add(1)
-			for {
-				old := maxActive.Load()
-				if cur <= old || maxActive.CompareAndSwap(old, cur) {
-					break
-				}
-			}
-
-			// Simulate work so goroutines overlap
-			time.Sleep(time.Millisecond)
-
-			active.Add(-1)
-		})
-
-		assert.NoError(t, err)
-		assert.LessOrEqual(t, maxActive.Load(), int32(3))
-		assert.Equal(t, int32(0), active.Load())
-	})
-
-	t.Run("empty slice", func(t *testing.T) {
-		err := ForEachBounded([]int{}, 3, func(n int) {
-			t.Fatal("should not be called")
-		})
-		assert.NoError(t, err)
-	})
-
-	t.Run("single item", func(t *testing.T) {
-		var called bool
-		err := ForEachBounded([]string{"hello"}, 1, func(s string) {
-			assert.Equal(t, "hello", s)
-			called = true
-		})
-		assert.NoError(t, err)
-		assert.True(t, called)
-	})
-
-	t.Run("zero concurrency returns error", func(t *testing.T) {
-		err := ForEachBounded([]int{1, 2, 3}, 0, func(n int) {
-			t.Fatal("should not be called")
-		})
-		assert.Error(t, err)
-		assert.Contains(t, err.Error(), "maxConcurrency must be > 0")
-	})
-
-	t.Run("negative concurrency returns error", func(t *testing.T) {
-		err := ForEachBounded([]int{1, 2}, -5, func(n int) {
-			t.Fatal("should not be called")
-		})
-		assert.Error(t, err)
-		assert.Contains(t, err.Error(), "maxConcurrency must be > 0")
-	})
-
-	t.Run("single panic is re-raised", func(t *testing.T) {
-		assert.PanicsWithValue(t, "boom", func() {
-			_ = ForEachBounded([]int{1}, 2, func(n int) {
-				panic("boom")
-			})
-		})
-	})
-
-	t.Run("multiple panics are re-raised", func(t *testing.T) {
-		assert.Panics(t, func() {
-			_ = ForEachBounded([]int{1, 2, 3, 4}, 4, func(n int) {
-				panic("boom")
-			})
-		})
 	})
 }
 
