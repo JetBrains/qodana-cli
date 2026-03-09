@@ -3,7 +3,7 @@ pro: true
 project_name: qodana
 before:
   hooks:
-    - go generate -v github.com/JetBrains/qodana-cli/internal/tooling/...
+    - go generate -v ./...
 builds:
   - id: cli
     binary: qodana
@@ -22,6 +22,8 @@ builds:
       - amd64
       - arm64
     hooks:
+      pre:
+        - cmd: go generate -v ./internal/tooling/...
       post:
         - cmd: |
             bash -c "
@@ -63,6 +65,8 @@ builds:
       - amd64
       - arm64
     hooks:
+      pre:
+        - cmd: go generate -v ./clang/...
       post:
         - cmd: go run ./scripts/sign.go clang qodana-clang
 
