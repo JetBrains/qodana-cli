@@ -26,10 +26,3 @@ runs:
         clang/clang-tidy-darwin-amd64.tar.gz.sha256.bin
         clang/clang-tidy-darwin-arm64.tar.gz
         clang/clang-tidy-darwin-arm64.tar.gz.sha256.bin
-    - name: Create mock JBR archives
-      shell: bash
-      run: |
-        for dir in linux-amd64 linux-arm64 darwin-amd64 darwin-arm64 windows-amd64 windows-arm64; do
-          mkdir -p internal/tooling/qodana-jbrs/$dir
-          echo "mock" | gzip > internal/tooling/qodana-jbrs/$dir/placeholder.tar.gz
-        done
