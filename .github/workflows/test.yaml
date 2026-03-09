@@ -44,7 +44,7 @@ jobs:
       - name: Set up Java 17 for config-loader-cli.jar
         uses: actions/setup-java@v5
         with:
-          distribution: temurin
+          distribution: ${{ runner.arch == 'ARM64' && runner.os == 'Windows' && 'microsoft' || 'temurin' }}
           java-version: 17
 
       - uses: ./.github/actions/mock-dependencies
