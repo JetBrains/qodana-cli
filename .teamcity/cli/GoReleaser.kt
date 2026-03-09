@@ -107,9 +107,13 @@ class GoReleaser(
                             cd ..
                         fi
                         # 253
-                        [ -d "./tooling" ] && go generate ./tooling || true
+                        if [ -d "./tooling" ]; then
+                            go generate ./tooling
+                        fi
                         # main
-                        [ -d "./internal/tooling" ] && go generate ./internal/tooling || true
+                        if [ -d "./internal/tooling" ]; then
+                            go generate ./internal/tooling
+                        fi
                     )
 
                     # run goreleaser
