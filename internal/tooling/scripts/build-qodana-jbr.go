@@ -19,10 +19,8 @@ import (
 	"runtime"
 	"sort"
 	"strings"
-	"sync"
 	"time"
 
-	"github.com/JetBrains/qodana-cli/internal/foundation/algorithm"
 	"github.com/JetBrains/qodana-cli/internal/foundation/archive"
 	"github.com/JetBrains/qodana-cli/internal/foundation/fs"
 )
@@ -66,49 +64,47 @@ func main() {
 	cacheDir := filepath.Join(repoRoot, ".cache", "jbr")
 	embedDir := filepath.Join(repoRoot, "internal", "tooling", "qodana-jbrs")
 
-	// Fetch upstream checksums for all platforms (parallel, lightweight)
-	upstreamSHA := fetchAllUpstreamChecksums(version, build)
+	target := resolveTargetPlatform()
+	hostPlatform := findHostPlatform()
+	log.Printf("Host: %s/%s, Target: %s/%s", hostPlatform.goos, hostPlatform.goarch, target.goos, target.goarch)
 
-	// Check if all platforms are up to date
-	if allPlatformsCurrent(cacheDir, upstreamSHA) {
-		linkAllToEmbed(cacheDir, embedDir)
-		log.Println("All JBR archives up to date, skipping build")
+	// Fetch upstream checksum for target
+	targetSHA := fetchUpstreamChecksum(version, target.flavor, build)
+
+	// Check if target is already up to date
+	tDir := platformDir(cacheDir, target)
+	if readFile(filepath.Join(tDir, "upstream.sha512")) == targetSHA && hasDist(tDir) {
+		linkToEmbed(cacheDir, embedDir, target)
+		log.Printf("JBR for %s/%s is up to date", target.goos, target.goarch)
 		return
 	}
 
-	// Ensure host JBR is available for jlink/jdeps tools
-	hostPlatform := findHostPlatform()
-	ensurePlatformSrc(cacheDir, version, build, hostPlatform, upstreamSHA[hostPlatform.flavor])
+	// Ensure host JBR source is available (for jlink/jdeps tools)
+	hostSHA := targetSHA
+	if hostPlatform != target {
+		hostSHA = fetchUpstreamChecksum(version, hostPlatform.flavor, build)
+	}
+	ensurePlatformSrc(cacheDir, version, build, hostPlatform, hostSHA)
 	jlinkBin := findBinary(platformSrcDir(cacheDir, hostPlatform), "jlink")
 	jdepsBin := findBinary(platformSrcDir(cacheDir, hostPlatform), "jdeps")
 	log.Printf("Host JBR tools: jlink=%s, jdeps=%s", jlinkBin, jdepsBin)
 
-	// Run jdeps on all JARs to determine required modules
+	// Ensure target JBR source is available (for jmods)
+	if hostPlatform != target {
+		ensurePlatformSrc(cacheDir, version, build, target, targetSHA)
+	}
+
+	// Determine required modules
 	libsDir := filepath.Join(repoRoot, "internal", "tooling", "libs")
 	modules := runJdepsOnAllJars(jdepsBin, libsDir)
 	log.Printf("Required modules: %s", modules)
 
-	// Ensure all platforms have src/ extracted (parallel)
-	ensureAllPlatformSrcs(cacheDir, version, build, upstreamSHA)
+	// Build
+	buildPlatform(jlinkBin, modules, cacheDir, target, version, build)
+	log.Printf("BUILT: %s/%s", target.goos, target.goarch)
 
-	// Build each platform that needs it (parallel, concurrency 3)
-	if err := algorithm.ForEachBounded(platforms, 3, func(p platform) {
-		pDir := platformDir(cacheDir, p)
-		sha := upstreamSHA[p.flavor]
-
-		if readFile(filepath.Join(pDir, "upstream.sha512")) == sha && hasDist(pDir) {
-			log.Printf("OK, SKIPPED: %s-%s", p.goos, p.goarch)
-			return
-		}
-
-		buildPlatform(jlinkBin, modules, cacheDir, p, version, build)
-		log.Printf("BUILT: %s-%s", p.goos, p.goarch)
-	}); err != nil {
-		log.Fatalf("ForEachBounded error building platforms: %v", err)
-	}
-
-	linkAllToEmbed(cacheDir, embedDir)
-	log.Println("Done building all qodana-jbr archives")
+	linkToEmbed(cacheDir, embedDir, target)
+	log.Printf("Done building qodana-jbr for %s/%s", target.goos, target.goarch)
 }
 
 // Version detection ===========================================================================
@@ -194,13 +190,31 @@ func fetchLatestJBRTag() string {
 
 // Platform helpers ============================================================================
 
+func resolveTargetPlatform() platform {
+	targetOS := os.Getenv("TARGETOS")
+	if targetOS == "" {
+		targetOS = runtime.GOOS
+	}
+	targetArch := os.Getenv("TARGETARCH")
+	if targetArch == "" {
+		targetArch = runtime.GOARCH
+	}
+	for _, p := range platforms {
+		if p.goos == targetOS && p.goarch == targetArch {
+			return p
+		}
+	}
+	log.Fatalf("Unsupported target platform: %s/%s", targetOS, targetArch)
+	return platform{}
+}
+
 func findHostPlatform() platform {
 	for _, p := range platforms {
 		if p.goos == runtime.GOOS && p.goarch == runtime.GOARCH {
 			return p
 		}
 	}
-	log.Fatalf("Host platform %s-%s not in supported platforms", runtime.GOOS, runtime.GOARCH)
+	log.Fatalf("Host platform %s/%s not in supported platforms", runtime.GOOS, runtime.GOARCH)
 	return platform{} // unreachable
 }
 
@@ -221,20 +235,6 @@ func jbrChecksumURL(version, flavor, build string) string {
 }
 
 // Upstream checksum fetching ==================================================================
-
-func fetchAllUpstreamChecksums(version, build string) map[string]string {
-	result := make(map[string]string)
-	var mu sync.Mutex
-	if err := algorithm.ForEachBounded(platforms, len(platforms), func(p platform) {
-		sha := fetchUpstreamChecksum(version, p.flavor, build)
-		mu.Lock()
-		result[p.flavor] = sha
-		mu.Unlock()
-	}); err != nil {
-		log.Fatalf("ForEachBounded error fetching checksums: %v", err)
-	}
-	return result
-}
 
 func fetchUpstreamChecksum(version, flavor, build string) string {
 	checksumURL := jbrChecksumURL(version, flavor, build)
@@ -264,17 +264,6 @@ func fetchUpstreamChecksum(version, flavor, build string) string {
 }
 
 // Cache validation ============================================================================
-
-func allPlatformsCurrent(cacheDir string, upstreamSHA map[string]string) bool {
-	for _, p := range platforms {
-		pDir := platformDir(cacheDir, p)
-		cached := readFile(filepath.Join(pDir, "upstream.sha512"))
-		if cached != upstreamSHA[p.flavor] || !hasDist(pDir) {
-			return false
-		}
-	}
-	return true
-}
 
 func hasDist(pDir string) bool {
 	entries, err := os.ReadDir(filepath.Join(pDir, "dist"))
@@ -343,14 +332,6 @@ func ensurePlatformSrc(cacheDir, version, build string, p platform, expectedSHA 
 	writeFile(filepath.Join(pDir, "upstream.sha512"), expectedSHA)
 }
 
-func ensureAllPlatformSrcs(cacheDir, version, build string, upstreamSHA map[string]string) {
-	if err := algorithm.ForEachBounded(platforms, 3, func(p platform) {
-		ensurePlatformSrc(cacheDir, version, build, p, upstreamSHA[p.flavor])
-	}); err != nil {
-		log.Fatalf("ForEachBounded error ensuring platform srcs: %v", err)
-	}
-}
-
 // Build =======================================================================================
 
 func buildPlatform(jlinkBin, modules, cacheDir string, p platform, version, build string) {
@@ -365,7 +346,7 @@ func buildPlatform(jlinkBin, modules, cacheDir string, p platform, version, buil
 	if err := os.RemoveAll(buildDir); err != nil {
 		log.Fatalf("Failed to clean build dir: %v", err)
 	}
-	log.Printf("Running jlink for %s-%s (%s)", p.goos, p.goarch, p.flavor)
+	log.Printf("Running jlink for %s/%s (%s)", p.goos, p.goarch, p.flavor)
 	cmd := exec.Command(jlinkBin,
 		"--module-path", jmodsDir,
 		"--compress=zip-6",
@@ -398,33 +379,31 @@ func buildPlatform(jlinkBin, modules, cacheDir string, p platform, version, buil
 
 // Embed linking ===============================================================================
 
-func linkAllToEmbed(cacheDir, embedDir string) {
-	for _, p := range platforms {
-		distDir := filepath.Join(platformDir(cacheDir, p), "dist")
-		srcArchive := findFirstTarGz(distDir)
-		if srcArchive == "" {
-			log.Fatalf("No dist archive found for %s-%s", p.goos, p.goarch)
-		}
+func linkToEmbed(cacheDir, embedDir string, p platform) {
+	distDir := filepath.Join(platformDir(cacheDir, p), "dist")
+	srcArchive := findFirstTarGz(distDir)
+	if srcArchive == "" {
+		log.Fatalf("No dist archive found for %s/%s", p.goos, p.goarch)
+	}
 
-		dstDir := filepath.Join(embedDir, fmt.Sprintf("%s-%s", p.goos, p.goarch))
-		dst := filepath.Join(dstDir, filepath.Base(srcArchive))
+	dstDir := filepath.Join(embedDir, fmt.Sprintf("%s-%s", p.goos, p.goarch))
+	dst := filepath.Join(dstDir, filepath.Base(srcArchive))
 
-		if fs.SameFile(srcArchive, dst) {
-			continue
-		}
+	if fs.SameFile(srcArchive, dst) {
+		return
+	}
 
-		if err := fs.CleanDirectory(dstDir); err != nil {
-			log.Fatalf("Failed to clean embed dir %s: %v", dstDir, err)
-		}
-		if err := os.MkdirAll(dstDir, 0o755); err != nil {
-			log.Fatalf("Failed to create embed dir %s: %v", dstDir, err)
-		}
+	if err := fs.CleanDirectory(dstDir); err != nil {
+		log.Fatalf("Failed to clean embed dir %s: %v", dstDir, err)
+	}
+	if err := os.MkdirAll(dstDir, 0o755); err != nil {
+		log.Fatalf("Failed to create embed dir %s: %v", dstDir, err)
+	}
 
-		if err := os.Link(srcArchive, dst); err != nil {
-			log.Printf("Hardlink failed (%v), falling back to copy: %s -> %s", err, srcArchive, dst)
-			if err := fs.CopyFile(srcArchive, dst); err != nil {
-				log.Fatalf("Failed to copy %s -> %s: %v", srcArchive, dst, err)
-			}
+	if err := os.Link(srcArchive, dst); err != nil {
+		log.Printf("Hardlink failed (%v), falling back to copy: %s -> %s", err, srcArchive, dst)
+		if err := fs.CopyFile(srcArchive, dst); err != nil {
+			log.Fatalf("Failed to copy %s -> %s: %v", srcArchive, dst, err)
 		}
 	}
 }
