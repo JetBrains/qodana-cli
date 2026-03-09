@@ -58,15 +58,7 @@ jobs:
         with:
           cache-dependency-path: "**/*.sum"
           go-version-file: go.mod
-      - name: Cache JBR build artifacts
-        # Performance hint only — the build script validates upstream SHA-512 checksums
-        # internally and will re-download/rebuild on mismatch regardless of cache state.
-        uses: actions/cache@v4
-        with:
-          path: .cache/jbr
-          key: qodana-jbr-${{ runner.os }}-${{ hashFiles('internal/tooling/scripts/build-qodana-jbr.go', 'internal/tooling/scripts/pom.xml') }}
-          restore-keys: |
-            qodana-jbr-${{ runner.os }}-
+      - uses: ./.github/actions/cache-jbr
       - name: Download CLI dependencies
         # Golangci-lint, in their infinite wisdom, do not allow you to disable typecheck.
         # Because of this, the project NEEDS to be compileable to be linted.
@@ -165,15 +157,7 @@ jobs:
         with:
           cache-dependency-path: "**/*.sum"
           go-version-file: go.mod
-      - name: Cache JBR build artifacts
-        # Performance hint only — the build script validates upstream SHA-512 checksums
-        # internally and will re-download/rebuild on mismatch regardless of cache state.
-        uses: actions/cache@v4
-        with:
-          path: .cache/jbr
-          key: qodana-jbr-${{ runner.os }}-${{ hashFiles('internal/tooling/scripts/build-qodana-jbr.go', 'internal/tooling/scripts/pom.xml') }}
-          restore-keys: |
-            qodana-jbr-${{ runner.os }}-
+      - uses: ./.github/actions/cache-jbr
       - name: Download CLI dependencies
         run: go generate -v ./internal/tooling/...
       - name: Build CLI only

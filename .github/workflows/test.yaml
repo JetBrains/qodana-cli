@@ -48,15 +48,7 @@ jobs:
 
       - uses: ./.github/actions/mock-dependencies
 
-      - name: Cache JBR build artifacts
-        # Performance hint only — the build script validates upstream SHA-512 checksums
-        # internally and will re-download/rebuild on mismatch regardless of cache state.
-        uses: actions/cache@v4
-        with:
-          path: .cache/jbr
-          key: qodana-jbr-${{ runner.os }}-${{ hashFiles('internal/tooling/scripts/build-qodana-jbr.go', 'internal/tooling/scripts/pom.xml') }}
-          restore-keys: |
-            qodana-jbr-${{ runner.os }}-
+      - uses: ./.github/actions/cache-jbr
 
       - name: Install test dependencies
         run: go install github.com/mfridman/tparse@latest
