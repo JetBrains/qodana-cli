@@ -1,9 +1,6 @@
 version: 2
 pro: true
 project_name: qodana
-before:
-  hooks:
-    - go generate -v ./...
 builds:
   - id: cli
     binary: qodana
@@ -23,7 +20,7 @@ builds:
       - arm64
     hooks:
       pre:
-        - cmd: go generate -v ./internal/tooling/...
+        - cmd: go generate -v ./...
       post:
         - cmd: |
             bash -c "
@@ -66,7 +63,7 @@ builds:
       - arm64
     hooks:
       pre:
-        - cmd: go generate -v ./clang/...
+        - cmd: go generate -v ./...
       post:
         - cmd: go run ./scripts/sign.go clang qodana-clang
 
@@ -89,6 +86,8 @@ builds:
       - amd64
       - arm64
     hooks:
+      pre:
+        - cmd: go generate -v ./...
       post:
         - cmd: go run ./scripts/sign.go cdnet qodana-cdnet
 
