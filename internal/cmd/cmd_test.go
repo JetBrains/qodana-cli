@@ -288,6 +288,7 @@ func TestContributorsCommand(t *testing.T) {
 }
 
 func TestPullImage(t *testing.T) {
+	testutil.Need(t, testutil.Docker)
 	command := newPullCommand()
 	command.SetArgs([]string{"--image", "hello-world"})
 
@@ -312,7 +313,7 @@ func TestPullInNative(t *testing.T) {
 }
 
 func TestAllCommandsWithContainer(t *testing.T) {
-	testutil.Need(t, testutil.Docker)
+	testutil.Need(t, testutil.Docker, testutil.ContainerTests)
 
 	version.Version = "0.1.0"
 	image := "jetbrains/qodana-jvm-community:latest"

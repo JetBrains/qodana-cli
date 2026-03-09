@@ -16,9 +16,10 @@ type Flag struct {
 }
 
 var (
-	Docker    = Flag{"Docker", "QT_ENABLE_DOCKER"}
-	ClangDeps = Flag{"ClangDeps", "QT_ENABLE_CLANG_DEPS"}
-	CdnetDeps = Flag{"CdnetDeps", "QT_ENABLE_CDNET_DEPS"}
+	Docker         = Flag{"Docker", "QT_ENABLE_DOCKER"}
+	ContainerTests = Flag{"ContainerTests", "QT_ENABLE_CONTAINER_TESTS"}
+	ClangDeps      = Flag{"ClangDeps", "QT_ENABLE_CLANG_DEPS"}
+	CdnetDeps      = Flag{"CdnetDeps", "QT_ENABLE_CDNET_DEPS"}
 )
 
 // Need skips the test if any of the given flags are disabled.

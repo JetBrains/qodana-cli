@@ -73,6 +73,7 @@ jobs:
         env:
           QODANA_LICENSE_ONLY_TOKEN: ${{ secrets.QODANA_LICENSE_ONLY_TOKEN }}
           QT_ENABLE_DOCKER: ${{ inputs.container-engine != 'none' && '1' || '0' }}
+          QT_ENABLE_CONTAINER_TESTS: ${{ inputs.os == 'ubuntu-latest' && inputs.container-engine == 'docker@latest' && '1' || '0' }}
           QT_ENABLE_CLANG_DEPS: '0'
           QT_ENABLE_CDNET_DEPS: '0'
 

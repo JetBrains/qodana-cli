@@ -37,7 +37,7 @@ func TestQodana3rdPartyLinterWithMockedCloud(t *testing.T) {
 	if testing.Short() {
 		t.Skip("Skipping integration test in short mode")
 	}
-	testutil.Need(t, testutil.Docker)
+	testutil.Need(t, testutil.Docker, testutil.ContainerTests)
 
 	startDockerCompose(t)
 	defer stopDockerCompose(t)
