@@ -109,10 +109,14 @@ class GoReleaser(
                         # 253
                         if [ -d "./tooling" ]; then
                             go generate ./tooling
+                        else
+                            :
                         fi
                         # main
                         if [ -d "./internal/tooling" ]; then
                             go generate ./internal/tooling
+                        else
+                            :
                         fi
                     )
 
@@ -147,6 +151,27 @@ class GoReleaser(
             } else {
                 """
                     set -e
+
+                    # download required dependencies
+                    (
+                        DIR_NAME="${'$'}(basename "${'$'}PWD")"
+                        if [ "${'$'}DIR_NAME" = "cli" ] || [ "${'$'}DIR_NAME" = "clang" ] || [ "${'$'}DIR_NAME" = "cdnet" ]; then
+                            cd ..
+                        fi
+                        # 253
+                        if [ -d "./tooling" ]; then
+                            go generate ./tooling
+                        else
+                            :
+                        fi
+                        # main
+                        if [ -d "./internal/tooling" ]; then
+                            go generate ./internal/tooling
+                        else
+                            :
+                        fi
+                    )
+
                     if [ -f "../.goreleaser.yaml" ]; then
                         GORELEASER_CONFIG="../.goreleaser.yaml"
                         PREFIX=".."
