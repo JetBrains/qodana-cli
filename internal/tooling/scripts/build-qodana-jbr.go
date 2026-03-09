@@ -529,33 +529,25 @@ func downloadAndVerify(url, destPath, expectedHex string, newHash func() hash.Ha
 		return fmt.Errorf("downloading %s: HTTP %d", url, resp.StatusCode)
 	}
 
-	tmp := destPath + ".part"
-	out, err := os.Create(tmp)
+	w, err := fs.CreateAtomic(destPath, 0o644)
 	if err != nil {
-		return fmt.Errorf("creating %s: %w", tmp, err)
+		return fmt.Errorf("creating atomic writer for %s: %w", destPath, err)
 	}
 
 	hasher := newHash()
-	_, copyErr := io.Copy(io.MultiWriter(out, hasher), resp.Body)
-	closeErr := out.Close()
-	if copyErr != nil {
-		os.Remove(tmp)
-		return fmt.Errorf("writing %s: %w", tmp, copyErr)
-	}
-	if closeErr != nil {
-		os.Remove(tmp)
-		return fmt.Errorf("closing %s: %w", tmp, closeErr)
+	if _, err := io.Copy(io.MultiWriter(w, hasher), resp.Body); err != nil {
+		w.Abort()
+		return fmt.Errorf("writing %s: %w", destPath, err)
 	}
 
 	actualHex := hex.EncodeToString(hasher.Sum(nil))
 	if actualHex != expectedHex {
-		os.Remove(tmp)
+		w.Abort()
 		return fmt.Errorf("hash mismatch for %s: expected %s, got %s", filepath.Base(url), expectedHex, actualHex)
 	}
 
-	if err := os.Rename(tmp, destPath); err != nil {
-		os.Remove(tmp)
-		return fmt.Errorf("renaming %s → %s: %w", tmp, destPath, err)
+	if err := w.Close(); err != nil {
+		return fmt.Errorf("committing %s: %w", destPath, err)
 	}
 	return nil
 }
@@ -590,7 +582,7 @@ func writeFile(path string, content string) {
 	if err := os.MkdirAll(filepath.Dir(path), 0o755); err != nil {
 		log.Fatalf("Failed to create dir for %s: %v", path, err)
 	}
-	if err := os.WriteFile(path, []byte(content), 0o644); err != nil {
+	if err := fs.WriteFileAtomic(path, []byte(content), 0o644); err != nil {
 		log.Fatalf("Failed to write %s: %v", path, err)
 	}
 }
