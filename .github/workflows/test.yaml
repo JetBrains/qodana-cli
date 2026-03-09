@@ -48,7 +48,7 @@ jobs:
 
       - uses: ./.github/actions/mock-dependencies
 
-      - uses: ./.github/actions/cache-jbr
+      - uses: ./.github/actions/qodana-build-cache
 
       - name: Install test dependencies
         run: go install github.com/mfridman/tparse@latest

@@ -242,11 +242,11 @@ class GoReleaser(
         }
         if (isCli) {
             buildCache {
-                name = "qodana-jbr-cache"
+                name = "qodana-build-cache"
                 publish = true
                 publishOnlyChanged = true
                 use = true
-                rules = ".cache/jbr"
+                rules = ".cache"
             }
         }
         if (releaseType.isNightlyOrRelease() && isCli) {

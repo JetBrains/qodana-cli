@@ -58,7 +58,7 @@ jobs:
         with:
           cache-dependency-path: "**/*.sum"
           go-version-file: go.mod
-      - uses: ./.github/actions/cache-jbr
+      - uses: ./.github/actions/qodana-build-cache
       - name: Download CLI dependencies
         # Golangci-lint, in their infinite wisdom, do not allow you to disable typecheck.
         # Because of this, the project NEEDS to be compileable to be linted.
@@ -163,7 +163,7 @@ jobs:
         with:
           cache-dependency-path: "**/*.sum"
           go-version-file: go.mod
-      - uses: ./.github/actions/cache-jbr
+      - uses: ./.github/actions/qodana-build-cache
       - name: Download CLI dependencies
         run: go generate -v ./internal/tooling/...
       - name: Build CLI only
