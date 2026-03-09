@@ -98,8 +98,8 @@ jobs:
             container-engine: docker@latest
           - os: macos-15                 # arm64 — no Docker (nested virt unsupported on GH runners)
             container-engine: none
-          - os: windows-11-arm           # arm64
-            container-engine: docker@latest
+          - os: windows-11-arm           # arm64 — no Docker (no static binaries for Windows ARM64)
+            container-engine: none
 
   code-quality:
     name: "Qodana"
