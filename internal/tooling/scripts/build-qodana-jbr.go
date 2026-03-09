@@ -70,12 +70,13 @@ var platforms = []platform{
 // If mismatch or missing → re-download, re-extract, rebuild, re-dist.
 
 func main() {
-	client := web.NewClient(10 * time.Minute)
+	ghClient := web.NewClient(10 * time.Minute)
 	if token := os.Getenv("GITHUB_TOKEN"); token != "" {
-		client.SetCommonBearerAuthToken(token)
+		ghClient.SetCommonBearerAuthToken(token)
 	}
+	dlClient := web.NewClient(10 * time.Minute)
 
-	version, build := detectJBRVersion(client)
+	version, build := detectJBRVersion(ghClient)
 	log.Printf("JBR version: %s, build: %s", version, build)
 
 	repoRoot := findRepoRoot()
@@ -83,7 +84,7 @@ func main() {
 	embedDir := filepath.Join(scriptDir(), "..", "qodana-jbrs")
 
 	// Fetch upstream checksums for all platforms (parallel, lightweight)
-	upstreamSHA := fetchAllUpstreamChecksums(client, version, build)
+	upstreamSHA := fetchAllUpstreamChecksums(dlClient, version, build)
 
 	// Check if all platforms are up to date
 	if allPlatformsCurrent(cacheDir, upstreamSHA) {
@@ -94,17 +95,18 @@ func main() {
 
 	// Ensure host JBR is available for jlink/jdeps tools
 	hostPlatform := findHostPlatform()
-	ensurePlatformSrc(client, cacheDir, version, build, hostPlatform, upstreamSHA[hostPlatform.flavor])
+	ensurePlatformSrc(dlClient, cacheDir, version, build, hostPlatform, upstreamSHA[hostPlatform.flavor])
 	jlinkBin := findBinary(platformSrcDir(cacheDir, hostPlatform), "jlink")
 	jdepsBin := findBinary(platformSrcDir(cacheDir, hostPlatform), "jdeps")
 	log.Printf("Host JBR tools: jlink=%s, jdeps=%s", jlinkBin, jdepsBin)
 
 	// Run jdeps on all JARs to determine required modules
-	modules := runJdepsOnAllJars(jdepsBin)
+	libsDir := filepath.Join(scriptDir(), "..", "libs")
+	modules := runJdepsOnAllJars(jdepsBin, libsDir)
 	log.Printf("Required modules: %s", modules)
 
 	// Ensure all platforms have src/ extracted (parallel)
-	ensureAllPlatformSrcs(client, cacheDir, version, build, upstreamSHA)
+	ensureAllPlatformSrcs(dlClient, cacheDir, version, build, upstreamSHA)
 
 	// Build each platform that needs it
 	for _, p := range platforms {
@@ -117,7 +119,6 @@ func main() {
 		}
 
 		buildPlatform(jlinkBin, modules, cacheDir, p, version, build)
-		writeFile(filepath.Join(pDir, "upstream.sha512"), sha)
 		log.Printf("BUILT: %s-%s", p.goos, p.goarch)
 	}
 
@@ -191,25 +192,9 @@ func fetchLatestJBRTag(client *req.Client) string {
 
 // Platform helpers ============================================================================
 
-func goosGoarchToFlavor(goos, goarch string) string {
-	osName := goos
-	if goos == "darwin" {
-		osName = "osx"
-	}
-	archName := goarch
-	switch goarch {
-	case "amd64":
-		archName = "x64"
-	case "arm64":
-		archName = "aarch64"
-	}
-	return osName + "-" + archName
-}
-
 func findHostPlatform() platform {
-	flavor := goosGoarchToFlavor(runtime.GOOS, runtime.GOARCH)
 	for _, p := range platforms {
-		if p.flavor == flavor {
+		if p.goos == runtime.GOOS && p.goarch == runtime.GOARCH {
 			return p
 		}
 	}
@@ -427,6 +412,7 @@ func linkAllToEmbed(cacheDir, embedDir string) {
 
 // Tool discovery ==============================================================================
 
+// findBinary searches for a binary by name in dir. Uses host OS convention (.exe on Windows).
 func findBinary(dir, name string) string {
 	binName := name
 	if runtime.GOOS == "windows" {
@@ -466,8 +452,7 @@ func findJmodsDir(dir string) string {
 
 // jdeps =======================================================================================
 
-func runJdepsOnAllJars(jdepsBin string) string {
-	libsDir := "libs"
+func runJdepsOnAllJars(jdepsBin, libsDir string) string {
 	entries, err := os.ReadDir(libsDir)
 	if err != nil {
 		log.Fatalf("Failed to read libs directory %s: %v", libsDir, err)
