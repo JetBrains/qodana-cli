@@ -1,7 +1,6 @@
 package algorithm
 
 import (
-	"sync"
 	"sync/atomic"
 	"testing"
 	"time"
@@ -118,7 +117,6 @@ func TestForEachBounded(t *testing.T) {
 	t.Run("respects concurrency limit", func(t *testing.T) {
 		var active atomic.Int32
 		var maxActive atomic.Int32
-		var mu sync.Mutex
 
 		items := make([]int, 20)
 		for i := range items {
@@ -127,11 +125,12 @@ func TestForEachBounded(t *testing.T) {
 
 		ForEachBounded(items, 3, func(n int) {
 			cur := active.Add(1)
-			mu.Lock()
-			if cur > maxActive.Load() {
-				maxActive.Store(cur)
+			for {
+				old := maxActive.Load()
+				if cur <= old || maxActive.CompareAndSwap(old, cur) {
+					break
+				}
 			}
-			mu.Unlock()
 
 			// Simulate work so goroutines overlap
 			time.Sleep(time.Millisecond)
