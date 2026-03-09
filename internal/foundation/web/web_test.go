@@ -19,56 +19,6 @@ func TestNewClient(t *testing.T) {
 	}
 }
 
-func TestDownload(t *testing.T) {
-	content := "hello world download test"
-	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.Write([]byte(content))
-	}))
-	defer server.Close()
-
-	client := NewClient(10 * time.Second)
-	dest := filepath.Join(t.TempDir(), "downloaded.txt")
-
-	if err := Download(client, server.URL, dest); err != nil {
-		t.Fatalf("Download failed: %v", err)
-	}
-
-	data, err := os.ReadFile(dest)
-	if err != nil {
-		t.Fatalf("reading downloaded file: %v", err)
-	}
-	if string(data) != content {
-		t.Fatalf("content mismatch: got %q, want %q", string(data), content)
-	}
-
-	// .part file should not exist
-	if _, err := os.Stat(dest + ".part"); !os.IsNotExist(err) {
-		t.Fatal(".part file should not exist after successful download")
-	}
-}
-
-func TestDownloadHTTPError(t *testing.T) {
-	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.WriteHeader(http.StatusNotFound)
-	}))
-	defer server.Close()
-
-	client := NewClient(10 * time.Second)
-	dest := filepath.Join(t.TempDir(), "should-not-exist.txt")
-
-	err := Download(client, server.URL, dest)
-	if err == nil {
-		t.Fatal("expected error for HTTP 404")
-	}
-
-	if _, statErr := os.Stat(dest); !os.IsNotExist(statErr) {
-		t.Fatal("file should not exist after failed download")
-	}
-	if _, statErr := os.Stat(dest + ".part"); !os.IsNotExist(statErr) {
-		t.Fatal(".part file should not exist after failed download")
-	}
-}
-
 func TestDownloadAndVerifySHA512(t *testing.T) {
 	content := []byte("verified download content")
 	hasher := sha512.New()

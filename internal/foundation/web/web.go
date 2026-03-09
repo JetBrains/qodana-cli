@@ -20,31 +20,6 @@ func NewClient(timeout time.Duration) *req.Client {
 		SetUserAgent("qodana-cli")
 }
 
-// Download streams url to destPath using atomic write (.part → rename).
-// Creates parent directories as needed.
-func Download(client *req.Client, url, destPath string) error {
-	if err := os.MkdirAll(filepath.Dir(destPath), 0o755); err != nil {
-		return fmt.Errorf("creating directory for %s: %w", destPath, err)
-	}
-
-	tmp := destPath + ".part"
-	resp, err := client.R().SetOutputFile(tmp).Get(url)
-	if err != nil {
-		os.Remove(tmp)
-		return fmt.Errorf("downloading %s: %w", url, err)
-	}
-	if resp.GetStatusCode() != 200 {
-		os.Remove(tmp)
-		return fmt.Errorf("downloading %s: HTTP %d", url, resp.GetStatusCode())
-	}
-
-	if err := os.Rename(tmp, destPath); err != nil {
-		os.Remove(tmp)
-		return fmt.Errorf("renaming %s → %s: %w", tmp, destPath, err)
-	}
-	return nil
-}
-
 // DownloadAndVerify downloads url to destPath with atomic write (.part → rename),
 // computing a hash during streaming and verifying against expectedHex.
 // The newHash parameter specifies the hash algorithm (e.g. sha512.New, sha256.New).
@@ -101,12 +76,12 @@ func ParseChecksumLine(line string, expectedLen int) (string, error) {
 	if len(parts) == 0 {
 		return "", fmt.Errorf("empty checksum line")
 	}
-	hex_ := parts[0]
-	if len(hex_) != expectedLen {
-		return "", fmt.Errorf("expected %d hex chars, got %d (%q)", expectedLen, len(hex_), hex_)
+	hexStr := parts[0]
+	if len(hexStr) != expectedLen {
+		return "", fmt.Errorf("expected %d hex chars, got %d (%q)", expectedLen, len(hexStr), hexStr)
 	}
-	if _, err := hex.DecodeString(hex_); err != nil {
+	if _, err := hex.DecodeString(hexStr); err != nil {
 		return "", fmt.Errorf("invalid hex: %w", err)
 	}
-	return hex_, nil
+	return hexStr, nil
 }
