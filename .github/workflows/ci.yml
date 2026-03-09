@@ -94,6 +94,12 @@ jobs:
             container-engine: podman@latest
           - os: ubuntu-latest
             container-engine: docker@v25.0  # See also: https://endoflife.date/docker-engine
+          - os: ubuntu-24.04-arm        # arm64
+            container-engine: docker@latest
+          - os: macos-15                 # arm64 Apple Silicon
+            container-engine: docker@latest
+          - os: windows-11-arm           # arm64
+            container-engine: docker@latest
 
   code-quality:
     name: "Qodana"

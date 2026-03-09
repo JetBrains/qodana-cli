@@ -9,6 +9,6 @@ runs:
       uses: actions/cache@v4
       with:
         path: .cache/jbr
-        key: qodana-jbr-${{ runner.os }}-${{ hashFiles('internal/tooling/scripts/build-qodana-jbr.go', 'internal/tooling/scripts/pom.xml') }}
+        key: qodana-jbr-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('internal/tooling/scripts/build-qodana-jbr.go', 'internal/tooling/scripts/pom.xml') }}
         restore-keys: |
-          qodana-jbr-${{ runner.os }}-
+          qodana-jbr-${{ runner.os }}-${{ runner.arch }}-
