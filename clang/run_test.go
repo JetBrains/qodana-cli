@@ -1,19 +1,16 @@
 package main
 
 import (
-	"os"
 	"testing"
 
 	"github.com/JetBrains/qodana-cli/internal/foundation/hash"
 	"github.com/JetBrains/qodana-cli/internal/platform/thirdpartyscan"
+	"github.com/JetBrains/qodana-cli/internal/testutil"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestMountTools(t *testing.T) {
-	// skip this test on GitHub due to missing artifacts
-	if os.Getenv("GITHUB_ACTIONS") == "true" {
-		t.Skip()
-	}
+	testutil.Need(t, testutil.ClangDeps)
 
 	linter := ClangLinter{}
 	tempdir := t.TempDir()

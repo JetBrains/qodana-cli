@@ -24,14 +24,13 @@ import (
 	"fmt"
 	"io"
 	"os"
-	"os/exec"
 	"path/filepath"
-	"runtime"
 	"strings"
 	"testing"
 
 	"github.com/JetBrains/qodana-cli/internal/core"
 	"github.com/JetBrains/qodana-cli/internal/platform/msg"
+	"github.com/JetBrains/qodana-cli/internal/testutil"
 	"github.com/JetBrains/qodana-cli/internal/platform/product"
 	"github.com/JetBrains/qodana-cli/internal/platform/qdyaml"
 	"github.com/JetBrains/qodana-cli/internal/platform/version"
@@ -253,12 +252,7 @@ func TestInitCommand(t *testing.T) {
 }
 
 func TestExclusiveFixesCommand(t *testing.T) {
-	if os.Getenv("GITHUB_ACTIONS") == "true" {
-		//goland:noinspection GoBoolExpressions
-		if _, err := exec.LookPath("docker"); err != nil || runtime.GOOS != "linux" {
-			t.Skip(err)
-		}
-	}
+	testutil.Need(t, testutil.Docker)
 	out := bytes.NewBufferString("")
 	command := newScanCommand()
 	command.SetOut(out)
@@ -318,10 +312,7 @@ func TestPullInNative(t *testing.T) {
 }
 
 func TestAllCommandsWithContainer(t *testing.T) {
-	// Only run this test when explicitly enabled via environment variable
-	if os.Getenv("QODANA_TEST_CONTAINER") == "" {
-		t.Skip("Skipping container test (set QODANA_TEST_CONTAINER=1 to enable)")
-	}
+	testutil.Need(t, testutil.Docker)
 
 	version.Version = "0.1.0"
 	image := "jetbrains/qodana-jvm-community:latest"
