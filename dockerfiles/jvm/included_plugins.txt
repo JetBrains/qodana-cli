@@ -96,3 +96,4 @@ com.intellij.hardcodedPasswords
 com.jetbrains.codeWithMe
 com.intellij.mcpServer
 org.intellij.plugins.markdown
+com.intellij.copyright
