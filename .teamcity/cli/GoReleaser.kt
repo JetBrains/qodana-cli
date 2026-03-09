@@ -109,14 +109,10 @@ class GoReleaser(
                         # 253
                         if [ -d "./tooling" ]; then
                             go generate ./tooling
-                        else
-                            :
                         fi
                         # main
                         if [ -d "./internal/tooling" ]; then
                             go generate ./internal/tooling
-                        else
-                            :
                         fi
                     )
 
@@ -161,14 +157,10 @@ class GoReleaser(
                         # 253
                         if [ -d "./tooling" ]; then
                             go generate ./tooling
-                        else
-                            :
                         fi
                         # main
                         if [ -d "./internal/tooling" ]; then
                             go generate ./internal/tooling
-                        else
-                            :
                         fi
                     )
 
