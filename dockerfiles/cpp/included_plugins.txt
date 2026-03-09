@@ -19,7 +19,7 @@ org.jetbrains.plugins.terminal
 name.kropp.intellij.makefile
 org.intellij.intelliLang
 Docker
-com.intellij.cidr.base
+com.intellij.cidr.lang
 com.intellij.cidr.lang.clangd
 com.intellij.clion.west
 com.intellij.clion
@@ -58,7 +58,6 @@ intellij.nextjs
 Karma
 JSIntentionPowerPack
 com.jetbrains.linkerscript
-intellij.rider.cpp.debugger
 AngularJS
 com.jetbrains.codeWithMe
 com.intellij.modules.python
