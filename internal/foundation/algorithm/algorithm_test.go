@@ -4,6 +4,7 @@ import (
 	"sync"
 	"sync/atomic"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 )
@@ -133,8 +134,7 @@ func TestForEachBounded(t *testing.T) {
 			mu.Unlock()
 
 			// Simulate work so goroutines overlap
-			for i := 0; i < 100_000; i++ {
-			}
+			time.Sleep(time.Millisecond)
 
 			active.Add(-1)
 		})
@@ -156,6 +156,38 @@ func TestForEachBounded(t *testing.T) {
 			called = true
 		})
 		assert.True(t, called)
+	})
+
+	t.Run("zero concurrency does not deadlock", func(t *testing.T) {
+		var count atomic.Int32
+		ForEachBounded([]int{1, 2, 3}, 0, func(n int) {
+			count.Add(1)
+		})
+		assert.Equal(t, int32(3), count.Load())
+	})
+
+	t.Run("negative concurrency does not deadlock", func(t *testing.T) {
+		var count atomic.Int32
+		ForEachBounded([]int{1, 2}, -5, func(n int) {
+			count.Add(1)
+		})
+		assert.Equal(t, int32(2), count.Load())
+	})
+
+	t.Run("single panic is re-raised", func(t *testing.T) {
+		assert.PanicsWithValue(t, "boom", func() {
+			ForEachBounded([]int{1}, 2, func(n int) {
+				panic("boom")
+			})
+		})
+	})
+
+	t.Run("multiple panics are re-raised", func(t *testing.T) {
+		assert.Panics(t, func() {
+			ForEachBounded([]int{1, 2, 3, 4}, 4, func(n int) {
+				panic("boom")
+			})
+		})
 	})
 }
 

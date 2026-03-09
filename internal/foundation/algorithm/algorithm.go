@@ -1,6 +1,7 @@
 package algorithm
 
 import (
+	"fmt"
 	"slices"
 	"sync"
 )
@@ -42,18 +43,40 @@ func Unique[T comparable](iterable []T) []T {
 }
 
 // ForEachBounded runs fn for each item with at most maxConcurrency goroutines.
-// Blocks until all complete.
+// Blocks until all complete. Panics from fn are caught and re-panicked in the caller.
 func ForEachBounded[T any](items []T, maxConcurrency int, fn func(T)) {
+	if maxConcurrency <= 0 {
+		maxConcurrency = 1
+	}
+
 	var wg sync.WaitGroup
 	sem := make(chan struct{}, maxConcurrency)
+
+	var mu sync.Mutex
+	var panics []any
+
 	for _, item := range items {
 		wg.Add(1)
 		go func(v T) {
 			defer wg.Done()
 			sem <- struct{}{}
 			defer func() { <-sem }()
+			defer func() {
+				if r := recover(); r != nil {
+					mu.Lock()
+					panics = append(panics, r)
+					mu.Unlock()
+				}
+			}()
 			fn(v)
 		}(item)
 	}
 	wg.Wait()
+
+	if len(panics) == 1 {
+		panic(panics[0])
+	}
+	if len(panics) > 1 {
+		panic(fmt.Sprintf("multiple panics (%d): %v", len(panics), panics))
+	}
 }
