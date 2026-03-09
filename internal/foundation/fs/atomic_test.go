@@ -1,7 +1,6 @@
 package fs
 
 import (
-	"fmt"
 	"os"
 	"path/filepath"
 	"sync"
@@ -9,6 +8,13 @@ import (
 
 	"github.com/stretchr/testify/assert"
 )
+
+func noTempFilesLeft(t *testing.T, dir string) {
+	t.Helper()
+	matches, err := filepath.Glob(filepath.Join(dir, "*.temp"))
+	assert.NoError(t, err)
+	assert.Empty(t, matches, "leftover temp files in %s", dir)
+}
 
 func TestCreateAtomic(t *testing.T) {
 	t.Run("write and close commits file", func(t *testing.T) {
@@ -28,10 +34,7 @@ func TestCreateAtomic(t *testing.T) {
 		assert.NoError(t, err)
 		assert.Equal(t, "hello", string(data))
 
-		// temp file should be gone
-		tmpPath := fmt.Sprintf("%s.%d.temp", path, os.Getpid())
-		_, err = os.Stat(tmpPath)
-		assert.True(t, os.IsNotExist(err))
+		noTempFilesLeft(t, dir)
 	})
 
 	t.Run("abort discards temp file", func(t *testing.T) {
@@ -49,9 +52,7 @@ func TestCreateAtomic(t *testing.T) {
 		_, err = os.Stat(path)
 		assert.True(t, os.IsNotExist(err))
 
-		tmpPath := fmt.Sprintf("%s.%d.temp", path, os.Getpid())
-		_, err = os.Stat(tmpPath)
-		assert.True(t, os.IsNotExist(err))
+		noTempFilesLeft(t, dir)
 	})
 
 	t.Run("concurrent writes produce valid file", func(t *testing.T) {
@@ -64,17 +65,15 @@ func TestCreateAtomic(t *testing.T) {
 			wg.Add(1)
 			go func() {
 				defer wg.Done()
-				// All goroutines share the same PID, so they compete on the same temp path.
-				// The result should still be a valid, complete file.
 				w, err := CreateAtomic(path, 0644)
 				if err != nil {
-					return // another goroutine may have truncated the temp file
+					return
 				}
 				if _, err := w.Write([]byte(content)); err != nil {
 					_ = w.Abort()
 					return
 				}
-				_ = w.Close() // rename may fail if another goroutine renamed first — that's OK
+				_ = w.Close()
 			}()
 		}
 		wg.Wait()
@@ -82,6 +81,8 @@ func TestCreateAtomic(t *testing.T) {
 		data, err := os.ReadFile(path)
 		assert.NoError(t, err)
 		assert.Equal(t, content, string(data))
+
+		noTempFilesLeft(t, dir)
 	})
 }
 

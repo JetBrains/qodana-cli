@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"path/filepath"
 )
 
 // AtomicWriter writes to a temporary file and atomically renames it to the
@@ -15,15 +16,20 @@ type AtomicWriter struct {
 }
 
 // CreateAtomic creates a new atomic writer for the given path.
-// Writes go to <path>.<pid>.temp; Close renames to the final path.
+// Writes go to a unique temp file in the same directory; Close renames to the final path.
+// Safe for concurrent use: each call gets its own temp file.
 // The caller must call Close (to commit) or Abort (to discard).
 func CreateAtomic(path string, perm os.FileMode) (*AtomicWriter, error) {
-	tmpPath := fmt.Sprintf("%s.%d.temp", path, os.Getpid())
-	f, err := os.OpenFile(tmpPath, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, perm)
+	dir := filepath.Dir(path)
+	f, err := os.CreateTemp(dir, filepath.Base(path)+".*.temp")
 	if err != nil {
-		return nil, fmt.Errorf("creating temp file %s: %w", tmpPath, err)
+		return nil, fmt.Errorf("creating temp file for %s: %w", path, err)
 	}
-	return &AtomicWriter{path: path, tmpPath: tmpPath, file: f}, nil
+	if err := f.Chmod(perm); err != nil {
+		return nil, errors.Join(fmt.Errorf("setting permissions on %s: %w", f.Name(), err),
+			f.Close(), os.Remove(f.Name()))
+	}
+	return &AtomicWriter{path: path, tmpPath: f.Name(), file: f}, nil
 }
 
 // Write implements io.Writer.
