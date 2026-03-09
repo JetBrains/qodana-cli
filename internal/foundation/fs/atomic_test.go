@@ -44,7 +44,7 @@ func TestCreateAtomic(t *testing.T) {
 		_, err = w.Write([]byte("should not persist"))
 		assert.NoError(t, err)
 
-		w.Abort()
+		assert.NoError(t, w.Abort())
 
 		_, err = os.Stat(path)
 		assert.True(t, os.IsNotExist(err))
@@ -71,7 +71,7 @@ func TestCreateAtomic(t *testing.T) {
 					return // another goroutine may have truncated the temp file
 				}
 				if _, err := w.Write([]byte(content)); err != nil {
-					w.Abort()
+					_ = w.Abort()
 					return
 				}
 				_ = w.Close() // rename may fail if another goroutine renamed first — that's OK

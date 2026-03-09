@@ -1,6 +1,7 @@
 package fs
 
 import (
+	"errors"
 	"fmt"
 	"os"
 )
@@ -33,25 +34,24 @@ func (w *AtomicWriter) Write(p []byte) (int, error) {
 // Close syncs, closes the temp file, and atomically renames it to the target.
 func (w *AtomicWriter) Close() error {
 	if err := w.file.Sync(); err != nil {
-		w.file.Close()
-		os.Remove(w.tmpPath)
-		return fmt.Errorf("syncing %s: %w", w.tmpPath, err)
+		return errors.Join(fmt.Errorf("syncing %s: %w", w.tmpPath, err), w.cleanup())
 	}
 	if err := w.file.Close(); err != nil {
-		os.Remove(w.tmpPath)
-		return fmt.Errorf("closing %s: %w", w.tmpPath, err)
+		return errors.Join(fmt.Errorf("closing %s: %w", w.tmpPath, err), os.Remove(w.tmpPath))
 	}
 	if err := os.Rename(w.tmpPath, w.path); err != nil {
-		os.Remove(w.tmpPath)
-		return fmt.Errorf("renaming %s → %s: %w", w.tmpPath, w.path, err)
+		return errors.Join(fmt.Errorf("renaming %s → %s: %w", w.tmpPath, w.path, err), os.Remove(w.tmpPath))
 	}
 	return nil
 }
 
 // Abort discards the temp file without renaming.
-func (w *AtomicWriter) Abort() {
-	w.file.Close()
-	os.Remove(w.tmpPath)
+func (w *AtomicWriter) Abort() error {
+	return w.cleanup()
+}
+
+func (w *AtomicWriter) cleanup() error {
+	return errors.Join(w.file.Close(), os.Remove(w.tmpPath))
 }
 
 // WriteFileAtomic writes data to path atomically via a temp file.
@@ -61,8 +61,7 @@ func WriteFileAtomic(path string, data []byte, perm os.FileMode) error {
 		return err
 	}
 	if _, err := w.Write(data); err != nil {
-		w.Abort()
-		return err
+		return errors.Join(err, w.Abort())
 	}
 	return w.Close()
 }

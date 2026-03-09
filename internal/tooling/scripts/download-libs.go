@@ -148,7 +148,7 @@ func downloadFile(url string) {
 	}
 
 	if _, err = io.Copy(out, resp.Body); err != nil {
-		out.Abort()
+		_ = out.Abort()
 		log.Fatalf("Failed to write to %s: %v", dest, err)
 	}
 	if err := out.Close(); err != nil {

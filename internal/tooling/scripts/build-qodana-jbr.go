@@ -5,6 +5,7 @@ package main
 import (
 	"bytes"
 	"crypto/sha512"
+	"errors"
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
@@ -536,14 +537,12 @@ func downloadAndVerify(url, destPath, expectedHex string, newHash func() hash.Ha
 
 	hasher := newHash()
 	if _, err := io.Copy(io.MultiWriter(w, hasher), resp.Body); err != nil {
-		w.Abort()
-		return fmt.Errorf("writing %s: %w", destPath, err)
+		return errors.Join(fmt.Errorf("writing %s: %w", destPath, err), w.Abort())
 	}
 
 	actualHex := hex.EncodeToString(hasher.Sum(nil))
 	if actualHex != expectedHex {
-		w.Abort()
-		return fmt.Errorf("hash mismatch for %s: expected %s, got %s", filepath.Base(url), expectedHex, actualHex)
+		return errors.Join(fmt.Errorf("hash mismatch for %s: expected %s, got %s", filepath.Base(url), expectedHex, actualHex), w.Abort())
 	}
 
 	if err := w.Close(); err != nil {

@@ -80,7 +80,7 @@ var (
 		log.Fatalf("Failed to create bots.go: %v", err)
 	}
 	if err = tmpl.Execute(file, botList); err != nil {
-		file.Abort()
+		_ = file.Abort()
 		log.Fatalf("Failed to execute template: %v", err)
 	}
 	if err := file.Close(); err != nil {
