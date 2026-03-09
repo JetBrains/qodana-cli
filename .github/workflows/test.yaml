@@ -49,6 +49,8 @@ jobs:
       - uses: ./.github/actions/mock-dependencies
 
       - name: Cache JBR build artifacts
+        # Performance hint only — the build script validates upstream SHA-512 checksums
+        # internally and will re-download/rebuild on mismatch regardless of cache state.
         uses: actions/cache@v4
         with:
           path: .cache/jbr
