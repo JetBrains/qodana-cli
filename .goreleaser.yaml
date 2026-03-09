@@ -20,7 +20,7 @@ builds:
       - arm64
     hooks:
       pre:
-        - cmd: go generate -v ./...
+        - cmd: go generate -v ./cli/... ./internal/...
       post:
         - cmd: |
             bash -c "
@@ -63,7 +63,7 @@ builds:
       - arm64
     hooks:
       pre:
-        - cmd: go generate -v ./...
+        - cmd: go generate -v ./clang/... ./internal/...
       post:
         - cmd: go run ./scripts/sign.go clang qodana-clang
 
@@ -87,7 +87,7 @@ builds:
       - arm64
     hooks:
       pre:
-        - cmd: go generate -v ./...
+        - cmd: go generate -v ./cdnet/... ./internal/...
       post:
         - cmd: go run ./scripts/sign.go cdnet qodana-cdnet
 
