@@ -6,6 +6,7 @@ import jetbrains.buildServer.configs.kotlin.DslContext
 import jetbrains.buildServer.configs.kotlin.ParameterDisplay
 import jetbrains.buildServer.configs.kotlin.buildFeatures.commitStatusPublisher
 import jetbrains.buildServer.configs.kotlin.buildFeatures.dockerRegistryConnections
+import jetbrains.buildServer.configs.kotlin.buildFeatures.gitHubAppBuildScopedToken
 import jetbrains.buildServer.configs.kotlin.buildSteps.ScriptBuildStep
 import jetbrains.buildServer.configs.kotlin.buildSteps.python
 import jetbrains.buildServer.configs.kotlin.buildSteps.qodana
@@ -59,9 +60,6 @@ class GoReleaser(
             password("env.CHOCOLATEY_API_KEY", CHOCO_API_KEY, display = ParameterDisplay.HIDDEN)
         } else {
             param("env.CHOCOLATEY_API_KEY", "")
-        }
-        if (releaseType.isNightlyOrRelease() && isCli) {
-            password("env.GITHUB_TOKEN", GH_JETBRAINS_PAT, display = ParameterDisplay.HIDDEN)
         }
 
         checkbox("skip.qodana", if (isCli || branch == "main") "false" else "true")
@@ -202,6 +200,14 @@ class GoReleaser(
                     authType = vcsRoot()
                 }
             }
+        }
+        gitHubAppBuildScopedToken {
+            parameterName = "env.GITHUB_TOKEN" // add "env." prefix to make it an environmental variable
+            connectionId = "PROJECT_EXT_2867" // GitHub App connection ID
+            // The repository name format is "myRepo1" for "https://github.com/myUser/myRepo1"
+            targetRepositories = """
+                qodana-cli
+            """.trimIndent()
         }
     }
     dependencies {
