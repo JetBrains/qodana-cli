@@ -209,6 +209,7 @@ class GoReleaser(
                 qodana-cli
                 scoop-utils
                 homebrew-utils
+                qodana-action
             """.trimIndent()
         }
     }
