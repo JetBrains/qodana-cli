@@ -210,9 +210,7 @@ class GoReleaser(
             commitStatusPublisher {
                 publisher = github {
                     githubUrl = "https://api.github.com"
-                    authType = storedToken {
-                        tokenId = "tc_token_id:CID_2b2c4934ac9c9e2917bbc1559f41d1af:-1:4d9ff001-46e2-40d1-8296-bc6b66f2b4f9"
-                    }
+                    authType = vcsRoot()
                 }
             }
         }
@@ -222,6 +220,9 @@ class GoReleaser(
             // The repository name format is "myRepo1" for "https://github.com/myUser/myRepo1"
             targetRepositories = """
                 qodana-cli
+                scoop-utils
+                homebrew-utils
+                qodana-action
             """.trimIndent()
         }
     }
