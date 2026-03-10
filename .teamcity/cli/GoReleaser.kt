@@ -207,6 +207,9 @@ class GoReleaser(
             // The repository name format is "myRepo1" for "https://github.com/myUser/myRepo1"
             targetRepositories = """
                 qodana-cli
+                scoop-utils
+                homebrew-utils
+                qodana-action
             """.trimIndent()
         }
     }
