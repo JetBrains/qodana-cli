@@ -53,6 +53,8 @@ org.jetbrains.plugins.sass
 org.jetbrains.plugins.vue
 org.intellij.plugins.postcss
 com.intellij.plugins.dependencyAnalysis
+intellij.opengrep
+intellij.rml.dfa.taint
 com.jetbrains.restClient
 com.intellij.modules.rider.cpp.core
 com.intellij.hardcodedPasswords

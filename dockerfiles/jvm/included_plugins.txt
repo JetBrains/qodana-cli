@@ -23,6 +23,8 @@ JUnit
 Lombook Plugin
 TestNG-J
 XPathView
+intellij.opengrep
+intellij.rml.dfa.taint
 com.intellij.aop
 com.intellij.beanValidation
 com.intellij.cdi
