@@ -56,7 +56,6 @@ class GoReleaser(
 
     params {
         password("env.CHOCOLATEY_API_KEY", CHOCO_API_KEY, display = ParameterDisplay.HIDDEN)
-//        password("env.GITHUB_TOKEN", GH_JETBRAINS_PAT, display = ParameterDisplay.HIDDEN)
 
         checkbox("skip.qodana", if (isCli || branch == "main") "false" else "true")
         checkbox("env.SIGN", "false")
