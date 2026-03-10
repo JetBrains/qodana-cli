@@ -3,6 +3,7 @@ package cli
 import jetbrains.buildServer.configs.kotlin.*
 import jetbrains.buildServer.configs.kotlin.buildFeatures.commitStatusPublisher
 import jetbrains.buildServer.configs.kotlin.buildFeatures.dockerSupport
+import jetbrains.buildServer.configs.kotlin.buildFeatures.gitHubAppBuildScopedToken
 import jetbrains.buildServer.configs.kotlin.buildFeatures.sshAgent
 import jetbrains.buildServer.configs.kotlin.buildSteps.ScriptBuildStep
 import jetbrains.buildServer.configs.kotlin.buildSteps.python
@@ -55,7 +56,6 @@ class GoReleaser(
 
     params {
         password("env.CHOCOLATEY_API_KEY", CHOCO_API_KEY, display = ParameterDisplay.HIDDEN)
-        password("env.GITHUB_TOKEN", GH_JETBRAINS_PAT, display = ParameterDisplay.HIDDEN)
 
         checkbox("skip.qodana", if (isCli || branch == "main") "false" else "true")
         checkbox("env.SIGN", "false")
@@ -210,11 +210,19 @@ class GoReleaser(
             commitStatusPublisher {
                 publisher = github {
                     githubUrl = "https://api.github.com"
-                    authType = personalToken {
-                        token = GH_JETBRAINS_PAT
+                    authType = storedToken {
+                        tokenId = "tc_token_id:CID_2b2c4934ac9c9e2917bbc1559f41d1af:-1:4d9ff001-46e2-40d1-8296-bc6b66f2b4f9"
                     }
                 }
             }
+        }
+        gitHubAppBuildScopedToken {
+            parameterName = "env.GITHUB_TOKEN" // add "env." prefix to make it an environmental variable
+            connectionId = "PROJECT_EXT_2867" // GitHub App connection ID
+            // The repository name format is "myRepo1" for "https://github.com/myUser/myRepo1"
+            targetRepositories = """
+                qodana-cli
+            """.trimIndent()
         }
     }
     dependencies {
