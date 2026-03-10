@@ -23,6 +23,7 @@ com.intellij.cidr.lang
 com.intellij.cidr.lang.clangd
 com.intellij.clion.west
 com.intellij.clion
+com.intellij.cmake
 com.intellij.clion-compdb
 com.intellij.cpp-diagnostics
 com.intellij.cidr.compiler.custom
