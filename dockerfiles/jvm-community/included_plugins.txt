@@ -2,7 +2,6 @@ org.intellij.qodana
 org.intellij.intelliLang
 org.editorconfig.editorconfigjetbrains
 Git4Idea
-hg4idea
 DevKit
 JUnit
 Lombook Plugin
