@@ -5,9 +5,9 @@ package main
 import (
 	"bytes"
 	"crypto/sha512"
-	"errors"
 	"encoding/hex"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"hash"
 	"io"
@@ -32,18 +32,25 @@ const jbrBaseURL = "https://cache-redirector.jetbrains.com/intellij-jbr"
 const jbrGitHubAPI = "https://api.github.com/repos/JetBrains/JetBrainsRuntime/releases/latest"
 
 type platform struct {
-	flavor string
 	goos   string
 	goarch string
 }
 
-var platforms = []platform{
-	{"linux-x64", "linux", "amd64"},
-	{"linux-aarch64", "linux", "arm64"},
-	{"osx-x64", "darwin", "amd64"},
-	{"osx-aarch64", "darwin", "arm64"},
-	{"windows-x64", "windows", "amd64"},
-	{"windows-aarch64", "windows", "arm64"},
+var goosToJBR = map[string]string{
+	"linux": "linux", "darwin": "osx", "windows": "windows",
+}
+var goarchToJBR = map[string]string{
+	"amd64": "x64", "arm64": "aarch64",
+}
+
+// jbrFlavor returns the JBR archive flavor string (e.g. "linux-x64", "osx-aarch64").
+func jbrFlavor(p platform) string {
+	os, ok1 := goosToJBR[p.goos]
+	arch, ok2 := goarchToJBR[p.goarch]
+	if !ok1 || !ok2 {
+		log.Fatalf("unsupported platform: %s/%s", p.goos, p.goarch)
+	}
+	return os + "-" + arch
 }
 
 // Cache layout (.cache/jbr/{goos}-{goarch}/):
@@ -70,7 +77,7 @@ func main() {
 	log.Printf("Host: %s/%s, Target: %s/%s", hostPlatform.goos, hostPlatform.goarch, target.goos, target.goarch)
 
 	// Fetch upstream checksum for target
-	targetSHA := fetchUpstreamChecksum(version, target.flavor, build)
+	targetSHA := fetchUpstreamChecksum(version, jbrFlavor(target), build)
 
 	// Check if target is already up to date
 	tDir := platformDir(cacheDir, target)
@@ -83,7 +90,7 @@ func main() {
 	// Ensure host JBR source is available (for jlink/jdeps tools)
 	hostSHA := targetSHA
 	if hostPlatform != target {
-		hostSHA = fetchUpstreamChecksum(version, hostPlatform.flavor, build)
+		hostSHA = fetchUpstreamChecksum(version, jbrFlavor(hostPlatform), build)
 	}
 	ensurePlatformSrc(cacheDir, version, build, hostPlatform, hostSHA)
 	jlinkBin := findBinary(platformSrcDir(cacheDir, hostPlatform), "jlink")
@@ -200,23 +207,15 @@ func resolveTargetPlatform() platform {
 	if targetArch == "" {
 		targetArch = runtime.GOARCH
 	}
-	for _, p := range platforms {
-		if p.goos == targetOS && p.goarch == targetArch {
-			return p
-		}
-	}
-	log.Fatalf("Unsupported target platform: %s/%s", targetOS, targetArch)
-	return platform{}
+	p := platform{targetOS, targetArch}
+	jbrFlavor(p) // validate early
+	return p
 }
 
 func findHostPlatform() platform {
-	for _, p := range platforms {
-		if p.goos == runtime.GOOS && p.goarch == runtime.GOARCH {
-			return p
-		}
-	}
-	log.Fatalf("Host platform %s/%s not in supported platforms", runtime.GOOS, runtime.GOARCH)
-	return platform{} // unreachable
+	p := platform{runtime.GOOS, runtime.GOARCH}
+	jbrFlavor(p) // validate early
+	return p
 }
 
 func platformDir(cacheDir string, p platform) string {
@@ -297,7 +296,7 @@ func ensurePlatformSrc(cacheDir, version, build string, p platform, expectedSHA 
 		log.Fatalf("Failed to create platform dir %s: %v", pDir, err)
 	}
 
-	url := jbrArchiveURL(version, p.flavor, build)
+	url := jbrArchiveURL(version, jbrFlavor(p), build)
 	archivePath := filepath.Join(pDir, "upstream.tar.gz")
 	log.Printf("DOWNLOADING: %s", filepath.Base(url))
 	if err := downloadAndVerify(url, archivePath, expectedSHA, sha512.New); err != nil {
@@ -347,7 +346,7 @@ func buildPlatform(jlinkBin, modules, cacheDir string, p platform, version, buil
 	if err := os.RemoveAll(buildDir); err != nil {
 		log.Fatalf("Failed to clean build dir: %v", err)
 	}
-	log.Printf("Running jlink for %s/%s (%s)", p.goos, p.goarch, p.flavor)
+	log.Printf("Running jlink for %s/%s (%s)", p.goos, p.goarch, jbrFlavor(p))
 	cmd := exec.Command(jlinkBin,
 		"--module-path", jmodsDir,
 		"--compress=zip-6",
@@ -361,7 +360,7 @@ func buildPlatform(jlinkBin, modules, cacheDir string, p platform, version, buil
 	cmd.Stdout = &jlinkOut
 	cmd.Stderr = &jlinkOut
 	if err := cmd.Run(); err != nil {
-		log.Fatalf("jlink failed for %s: %v\nOutput:\n%s", p.flavor, err, jlinkOut.String())
+		log.Fatalf("jlink failed for %s: %v\nOutput:\n%s", jbrFlavor(p), err, jlinkOut.String())
 	}
 
 	// Package into dist/
@@ -371,10 +370,10 @@ func buildPlatform(jlinkBin, modules, cacheDir string, p platform, version, buil
 	if err := os.MkdirAll(distDir, 0o755); err != nil {
 		log.Fatalf("Failed to create dist dir: %v", err)
 	}
-	archiveName := fmt.Sprintf("qodana-jbrsdk-%s-%s-%s.tar.gz", version, p.flavor, build)
+	archiveName := fmt.Sprintf("qodana-jbrsdk-%s-%s-%s.tar.gz", version, jbrFlavor(p), build)
 	topDir := strings.TrimSuffix(archiveName, ".tar.gz")
 	if err := archive.CreateTarGz(buildDir, filepath.Join(distDir, archiveName), topDir); err != nil {
-		log.Fatalf("Failed to create archive for %s: %v", p.flavor, err)
+		log.Fatalf("Failed to create archive for %s: %v", jbrFlavor(p), err)
 	}
 }
 
@@ -382,9 +381,19 @@ func buildPlatform(jlinkBin, modules, cacheDir string, p platform, version, buil
 
 func linkToEmbed(cacheDir, embedDir string, p platform) {
 	distDir := filepath.Join(platformDir(cacheDir, p), "dist")
-	srcArchive := findFirstTarGz(distDir)
+	entries, err := os.ReadDir(distDir)
+	if err != nil {
+		log.Fatalf("No dist archive found for %s/%s: %v", p.goos, p.goarch, err)
+	}
+	var srcArchive string
+	for _, e := range entries {
+		if strings.HasSuffix(e.Name(), ".tar.gz") {
+			srcArchive = filepath.Join(distDir, e.Name())
+			break
+		}
+	}
 	if srcArchive == "" {
-		log.Fatalf("No dist archive found for %s/%s", p.goos, p.goarch)
+		log.Fatalf("No .tar.gz archive found in %s for %s/%s", distDir, p.goos, p.goarch)
 	}
 
 	dstDir := filepath.Join(embedDir, fmt.Sprintf("%s-%s", p.goos, p.goarch))
@@ -411,42 +420,41 @@ func linkToEmbed(cacheDir, embedDir string, p platform) {
 
 // Tool discovery ==============================================================================
 
-// findBinary searches for a binary by name in dir. Uses host OS convention (.exe on Windows).
-func findBinary(dir, name string) string {
-	binName := name
+// JBR layout: binaries and jmods live at the root on Linux/Windows,
+// under Contents/Home/ on macOS.
+var jbrHomePrefixes = []string{"", filepath.Join("Contents", "Home")}
+
+// findBinary locates a JBR binary by name in srcDir using known JBR layout paths.
+// Uses host OS convention (.exe on Windows) since the binary runs on the host.
+func findBinary(srcDir, name string) string {
 	if runtime.GOOS == "windows" {
-		binName = name + ".exe"
+		name += ".exe"
 	}
-
-	found, err := fs.FindInTree(dir, func(path string, info os.FileInfo) bool {
-		return !info.IsDir() && info.Name() == binName
-	})
-	if err != nil {
-		log.Fatalf("Error searching for %s in %s: %v", binName, dir, err)
-	}
-	if found == "" {
-		log.Fatalf("Binary %s not found in %s", binName, dir)
-	}
-
-	if runtime.GOOS != "windows" {
-		if err := os.Chmod(found, 0o755); err != nil {
-			log.Printf("WARN: failed to chmod %s: %v", found, err)
+	for _, prefix := range jbrHomePrefixes {
+		p := filepath.Join(srcDir, prefix, "bin", name)
+		if info, err := os.Stat(p); err == nil && !info.IsDir() {
+			if runtime.GOOS != "windows" {
+				if err := os.Chmod(p, 0o755); err != nil {
+					log.Printf("WARN: failed to chmod %s: %v", p, err)
+				}
+			}
+			return p
 		}
 	}
-	return found
+	log.Fatalf("binary %s not found in %s (tried bin/ and Contents/Home/bin/)", name, srcDir)
+	return ""
 }
 
-func findJmodsDir(dir string) string {
-	found, err := fs.FindInTree(dir, func(path string, info os.FileInfo) bool {
-		return info.IsDir() && info.Name() == "jmods"
-	})
-	if err != nil {
-		log.Fatalf("Error searching for jmods in %s: %v", dir, err)
+// findJmodsDir locates the jmods directory in srcDir using known JBR layout paths.
+func findJmodsDir(srcDir string) string {
+	for _, prefix := range jbrHomePrefixes {
+		p := filepath.Join(srcDir, prefix, "jmods")
+		if info, err := os.Stat(p); err == nil && info.IsDir() {
+			return p
+		}
 	}
-	if found == "" {
-		log.Fatalf("jmods directory not found in %s", dir)
-	}
-	return found
+	log.Fatalf("jmods directory not found in %s (tried jmods/ and Contents/Home/jmods/)", srcDir)
+	return ""
 }
 
 // jdeps =======================================================================================
@@ -584,19 +592,6 @@ func writeFile(path string, content string) {
 	if err := fs.WriteFileAtomic(path, []byte(content), 0o644); err != nil {
 		log.Fatalf("Failed to write %s: %v", path, err)
 	}
-}
-
-func findFirstTarGz(dir string) string {
-	entries, err := os.ReadDir(dir)
-	if err != nil {
-		return ""
-	}
-	for _, e := range entries {
-		if strings.HasSuffix(e.Name(), ".tar.gz") {
-			return filepath.Join(dir, e.Name())
-		}
-	}
-	return ""
 }
 
 // Path helpers ================================================================================

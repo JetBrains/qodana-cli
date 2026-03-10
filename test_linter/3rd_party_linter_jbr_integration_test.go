@@ -12,7 +12,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/JetBrains/qodana-cli/internal/testutil"
+	"github.com/JetBrains/qodana-cli/internal/testutil/needs"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -37,7 +37,7 @@ func TestQodana3rdPartyLinterWithMockedCloud(t *testing.T) {
 	if testing.Short() {
 		t.Skip("Skipping integration test in short mode")
 	}
-	testutil.Need(t, testutil.Docker, testutil.ContainerTests)
+	needs.Need(t, needs.Docker, needs.ContainerTests)
 
 	startDockerCompose(t)
 	defer stopDockerCompose(t)

@@ -26,12 +26,12 @@ import (
 	"github.com/JetBrains/qodana-cli/internal/platform"
 	"github.com/JetBrains/qodana-cli/internal/platform/product"
 	"github.com/JetBrains/qodana-cli/internal/platform/thirdpartyscan"
-	"github.com/JetBrains/qodana-cli/internal/testutil"
+	"github.com/JetBrains/qodana-cli/internal/testutil/needs"
 	log "github.com/sirupsen/logrus"
 )
 
 func TestLinterRun(t *testing.T) {
-	testutil.Need(t, testutil.CdnetDeps)
+	needs.Need(t, needs.CdnetDeps)
 	log.SetLevel(log.DebugLevel)
 
 	projectDir := t.TempDir()

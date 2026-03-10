@@ -5,12 +5,12 @@ import (
 
 	"github.com/JetBrains/qodana-cli/internal/foundation/hash"
 	"github.com/JetBrains/qodana-cli/internal/platform/thirdpartyscan"
-	"github.com/JetBrains/qodana-cli/internal/testutil"
+	"github.com/JetBrains/qodana-cli/internal/testutil/needs"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestMountTools(t *testing.T) {
-	testutil.Need(t, testutil.CdnetDeps)
+	needs.Need(t, needs.CdnetDeps)
 
 	linter := CdnetLinter{}
 	tempdir := t.TempDir()
