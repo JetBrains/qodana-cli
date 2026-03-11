@@ -96,7 +96,7 @@ goreleaser release --snapshot --clean
 
 Install required tools via Homebrew (macOS):
 ```sh
-brew install cmake dotnet openjdk@17
+brew install cmake dotnet openjdk@21
 ```
 
 ### Running tests locally
@@ -109,7 +109,7 @@ brew install cmake dotnet openjdk@17
    go run scripts/download-deps.go
    go generate ./...
    ```
-3. Run all tests with Java 17:
+3. Run all tests with Java 21:
    ```sh
    source .env
    go test -timeout 0 -v ./...

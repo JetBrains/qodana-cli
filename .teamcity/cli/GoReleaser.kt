@@ -1,6 +1,7 @@
 package cli
 
 import jetbrains.buildServer.configs.kotlin.*
+import jetbrains.buildServer.configs.kotlin.buildFeatures.buildCache
 import jetbrains.buildServer.configs.kotlin.buildFeatures.commitStatusPublisher
 import jetbrains.buildServer.configs.kotlin.buildFeatures.dockerSupport
 import jetbrains.buildServer.configs.kotlin.buildFeatures.gitHubAppBuildScopedToken
@@ -237,6 +238,15 @@ class GoReleaser(
         dockerSupport {
             loginToRegistry = on {
                 dockerRegistryId = "PROJECT_EXT_775"
+            }
+        }
+        if (isCli) {
+            buildCache {
+                name = "qodana-build-cache"
+                publish = true
+                publishOnlyChanged = true
+                use = true
+                rules = ".cache"
             }
         }
         if (releaseType.isNightlyOrRelease() && isCli) {

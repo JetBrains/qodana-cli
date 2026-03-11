@@ -40,7 +40,10 @@ func CopyDir(src string, dst string) error {
 	if err != nil {
 		return err
 	}
-	directory, _ := os.ReadDir(src)
+	directory, err := os.ReadDir(src)
+	if err != nil {
+		return err
+	}
 	for _, item := range directory {
 		srcPath := filepath.Join(src, item.Name())
 		dstPath := filepath.Join(dst, item.Name())

@@ -21,9 +21,11 @@ package main
 
 import (
 	"encoding/json"
-	"io/ioutil"
+	"log"
 	"os"
 	"text/template"
+
+	"github.com/JetBrains/qodana-cli/internal/foundation/fs"
 )
 
 type BotList struct {
@@ -33,10 +35,12 @@ type BotList struct {
 //go:generate go run generate-bots.go
 func main() {
 	var botList BotList
-	data, _ := ioutil.ReadFile("../bots.json")
-	err := json.Unmarshal(data, &botList)
+	data, err := os.ReadFile("../bots.json")
 	if err != nil {
-		return
+		log.Fatalf("Failed to read bots.json: %v", err)
+	}
+	if err := json.Unmarshal(data, &botList); err != nil {
+		log.Fatalf("Failed to parse bots.json: %v", err)
 	}
 	const goFileTemplate = `/*
  * Copyright 2021-2023 JetBrains s.r.o.
@@ -67,10 +71,19 @@ var (
 	}
 )
 `
-	tmpl, _ := template.New("test").Parse(goFileTemplate)
-	file, _ := os.Create("../cloud/bots.go")
-	err = tmpl.Execute(file, botList)
+	tmpl, err := template.New("bots").Parse(goFileTemplate)
 	if err != nil {
-		return
+		log.Fatalf("Failed to parse template: %v", err)
+	}
+	file, err := fs.CreateAtomic("../cloud/bots.go", 0o644)
+	if err != nil {
+		log.Fatalf("Failed to create bots.go: %v", err)
+	}
+	if err = tmpl.Execute(file, botList); err != nil {
+		_ = file.Abort()
+		log.Fatalf("Failed to execute template: %v", err)
+	}
+	if err := file.Close(); err != nil {
+		log.Fatalf("Failed to commit bots.go: %v", err)
 	}
 }

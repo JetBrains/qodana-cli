@@ -25,6 +25,7 @@ import (
 	"log"
 	"os"
 	"path/filepath"
+	"regexp"
 	"runtime"
 	"strings"
 	"sync"
@@ -32,7 +33,9 @@ import (
 	"github.com/codeclysm/extract/v4"
 )
 
-//go:generate go run scripts/download-qodana-jbr.go
+var jbrRootDirRe = regexp.MustCompile(`^(qodana-)?jbrsdk-`)
+
+//go:generate go run scripts/build-qodana-jbr.go
 
 var (
 	qodanaJBRPathOnce sync.Once
@@ -86,7 +89,7 @@ func computeQodanaJbrExecutablePath(cacheDir string) (string, error) {
 
 	var jbrRoot string
 	for _, entry := range entries {
-		if entry.IsDir() && (strings.Contains(entry.Name(), "jbrsdk") || strings.Contains(entry.Name(), "jbr")) {
+		if entry.IsDir() && jbrRootDirRe.MatchString(entry.Name()) {
 			jbrRoot = filepath.Join(extractDir, entry.Name())
 			break
 		}

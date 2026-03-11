@@ -1,0 +1,14 @@
+name: Cache build artifacts
+description: Restore/save the .cache directory for build artifact caching
+runs:
+  using: composite
+  steps:
+    - name: Cache build artifacts
+      # Performance hint only — build scripts validate checksums internally
+      # and will re-download/rebuild on mismatch regardless of cache state.
+      uses: actions/cache@v4
+      with:
+        path: .cache
+        key: qodana-cache-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('internal/tooling/scripts/**') }}
+        restore-keys: |
+          qodana-cache-${{ runner.os }}-${{ runner.arch }}-

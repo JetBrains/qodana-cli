@@ -24,9 +24,7 @@ import (
 	"fmt"
 	"io"
 	"os"
-	"os/exec"
 	"path/filepath"
-	"runtime"
 	"strings"
 	"testing"
 
@@ -35,6 +33,7 @@ import (
 	"github.com/JetBrains/qodana-cli/internal/platform/product"
 	"github.com/JetBrains/qodana-cli/internal/platform/qdyaml"
 	"github.com/JetBrains/qodana-cli/internal/platform/version"
+	"github.com/JetBrains/qodana-cli/internal/testutil/needs"
 	cp "github.com/otiai10/copy"
 	log "github.com/sirupsen/logrus"
 )
@@ -253,12 +252,7 @@ func TestInitCommand(t *testing.T) {
 }
 
 func TestExclusiveFixesCommand(t *testing.T) {
-	if os.Getenv("GITHUB_ACTIONS") == "true" {
-		//goland:noinspection GoBoolExpressions
-		if _, err := exec.LookPath("docker"); err != nil || runtime.GOOS != "linux" {
-			t.Skip(err)
-		}
-	}
+	needs.Need(t, needs.Docker)
 	out := bytes.NewBufferString("")
 	command := newScanCommand()
 	command.SetOut(out)
@@ -294,6 +288,7 @@ func TestContributorsCommand(t *testing.T) {
 }
 
 func TestPullImage(t *testing.T) {
+	needs.Need(t, needs.Docker)
 	command := newPullCommand()
 	command.SetArgs([]string{"--image", "hello-world"})
 
@@ -318,10 +313,7 @@ func TestPullInNative(t *testing.T) {
 }
 
 func TestAllCommandsWithContainer(t *testing.T) {
-	// Only run this test when explicitly enabled via environment variable
-	if os.Getenv("QODANA_TEST_CONTAINER") == "" {
-		t.Skip("Skipping container test (set QODANA_TEST_CONTAINER=1 to enable)")
-	}
+	needs.Need(t, needs.Docker, needs.ContainerTests)
 
 	version.Version = "0.1.0"
 	image := "jetbrains/qodana-jvm-community:latest"
