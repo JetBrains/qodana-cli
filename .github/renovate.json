@@ -12,6 +12,15 @@
         "#\\s*renovate:\\s*datasource=(?<datasource>.*?) depName=(?<depName>.*?)( versioning=(?<versioning>.*?))?\\sENV .*?_VERSION=\"?(?<currentValue>.*?)\"?\\s"
       ],
       "versioningTemplate": "{{#if versioning}}{{versioning}}{{else}}semver{{/if}}"
+    },
+    {
+      "fileMatch": [
+        "internal/tooling/scripts/build-qodana-jbr\\.go$"
+      ],
+      "matchStrings": [
+        "renovate:\\s*datasource=(?<datasource>.*?) depName=(?<depName>.*?)\\n.*?\"(?<currentValue>.*?)\""
+      ],
+      "versioningTemplate": "regex:^jbr-release-(?<major>\\d+)\\.(?<minor>\\d+)\\.(?<patch>\\d+)b(?<build>.*)$"
     }
   ],
   "packageRules": [

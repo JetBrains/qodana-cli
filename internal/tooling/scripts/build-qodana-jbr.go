@@ -6,7 +6,6 @@ import (
 	"bytes"
 	"crypto/sha512"
 	"encoding/hex"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"hash"
@@ -29,7 +28,8 @@ import (
 // Configuration ===============================================================================
 
 const jbrBaseURL = "https://cache-redirector.jetbrains.com/intellij-jbr"
-const jbrGitHubAPI = "https://api.github.com/repos/JetBrains/JetBrainsRuntime/releases/latest"
+// renovate: datasource=github-releases depName=JetBrains/JetBrainsRuntime
+const jbrDefaultTag = "jbr-release-25.0.2b329.72"
 
 type platform struct {
 	goos   string
@@ -117,10 +117,6 @@ func main() {
 
 // Version detection ===========================================================================
 
-type ghRelease struct {
-	TagName string `json:"tag_name"`
-}
-
 func detectJBRVersion() (version, build string) {
 	version = os.Getenv("QODANA_JBR_VERSION")
 	build = os.Getenv("QODANA_JBR_BUILD")
@@ -128,14 +124,13 @@ func detectJBRVersion() (version, build string) {
 		return version, build
 	}
 
-	tagName := fetchLatestJBRTag()
-	tagName = strings.TrimPrefix(tagName, "jbr-release-")
+	tagName := strings.TrimPrefix(jbrDefaultTag, "jbr-release-")
 
-	// Expected format: "<version>b<build>", e.g. "25.0.2b329.66"
+	// Expected format: "<version>b<build>", e.g. "25.0.2b329.72"
 	jbrTagRe := regexp.MustCompile(`^(\d+\.\d+\.\d+)(b\d+\.\d+)$`)
 	m := jbrTagRe.FindStringSubmatch(tagName)
 	if m == nil {
-		log.Fatalf("Cannot parse JBR tag %q: expected format like '25.0.2b329.66'", tagName)
+		log.Fatalf("Cannot parse JBR tag %q: expected format like '25.0.2b329.72'", tagName)
 	}
 
 	if version == "" {
@@ -145,55 +140,6 @@ func detectJBRVersion() (version, build string) {
 		build = m[2]
 	}
 	return version, build
-}
-
-func fetchLatestJBRTag() string {
-	req, err := http.NewRequest(http.MethodGet, jbrGitHubAPI, nil)
-	if err != nil {
-		log.Fatalf("Error creating request: %v", err)
-	}
-	req.Header.Set("Accept", "application/vnd.github+json")
-	req.Header.Set("User-Agent", "qodana-cli")
-	if token := os.Getenv("GITHUB_TOKEN"); token != "" {
-		req.Header.Set("Authorization", "Bearer "+token)
-	}
-
-	resp, err := httpClient.Do(req)
-	if err != nil {
-		log.Fatalf("Error fetching JBR releases: %v", err)
-	}
-	defer resp.Body.Close()
-
-	body, err := io.ReadAll(resp.Body)
-	if err != nil {
-		log.Fatalf("Error reading GitHub API response: %v", err)
-	}
-
-	switch resp.StatusCode {
-	case 200:
-		// ok
-	case 403, 429:
-		log.Fatalf(
-			"GitHub API rate limit hit (HTTP %d). Set GITHUB_TOKEN env var for authenticated access.\nResponse: %s",
-			resp.StatusCode, strings.TrimSpace(string(body)),
-		)
-	case 401:
-		log.Fatalf("GitHub API unauthorized (HTTP 401). Check your GITHUB_TOKEN env var.")
-	default:
-		log.Fatalf("GitHub API error (HTTP %d): %s", resp.StatusCode, strings.TrimSpace(string(body)))
-	}
-
-	var rel ghRelease
-	if err := json.Unmarshal(body, &rel); err != nil {
-		log.Fatalf("Error parsing GitHub API response: %v", err)
-	}
-
-	if rel.TagName == "" {
-		log.Fatal("GitHub API returned empty tag_name for latest JBR release")
-	}
-
-	log.Printf("Detected latest JBR release tag: %s", rel.TagName)
-	return rel.TagName
 }
 
 // Platform helpers ============================================================================
