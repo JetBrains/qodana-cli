@@ -26,12 +26,12 @@ func Canonical(path string) (string, error) {
 		return "", err
 	}
 
-	resolved, err := filepath.EvalSymlinks(path)
+	resolved, err := filepath.EvalSymlinks(path) //nolint:forbidigo // OS-mediated resolution; symlinks resolved before Clean
 	if err != nil {
 		return "", err
 	}
 
-	resolved, err = filepath.Abs(resolved)
+	resolved, err = filepath.Abs(resolved) //nolint:forbidigo // after EvalSymlinks; symlinks already resolved
 	if err != nil {
 		return "", err
 	}
@@ -61,9 +61,9 @@ func weaklyCanonicalImpl(path string, depth int) (string, error) {
 	}
 
 	// Try the full path first — fast path when everything exists.
-	result, err := filepath.EvalSymlinks(path)
+	result, err := filepath.EvalSymlinks(path) //nolint:forbidigo // OS-mediated resolution
 	if err == nil {
-		result, err = filepath.Abs(result)
+		result, err = filepath.Abs(result) //nolint:forbidigo // after EvalSymlinks
 		if err == nil {
 			return normalizeCaseWindows(result)
 		}
@@ -82,14 +82,14 @@ func weaklyCanonicalImpl(path string, depth int) (string, error) {
 			continue
 		}
 		if comp == ".." {
-			built = filepath.Dir(built)
+			built = Dir(built)
 			continue
 		}
-		next := filepath.Join(built, comp)
+		next := Join(built, comp)
 
 		// Resolve symlinks for existing components so that the canonical
 		// prefix reflects the real target, not the symlink name.
-		resolved, evalErr := filepath.EvalSymlinks(next)
+		resolved, evalErr := filepath.EvalSymlinks(next) //nolint:forbidigo // OS-mediated resolution
 		if evalErr != nil {
 			// EvalSymlinks failed — either the component doesn't exist, or
 			// it's a symlink whose target is missing (broken symlink).
@@ -99,7 +99,7 @@ func weaklyCanonicalImpl(path string, depth int) (string, error) {
 				target, readErr := os.Readlink(next)
 				if readErr == nil {
 					if !filepath.IsAbs(target) {
-						target = filepath.Join(built, target)
+						target = Join(built, target)
 					}
 					tail := strings.Join(components[i+1:], sep)
 					if tail != "" {

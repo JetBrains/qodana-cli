@@ -131,3 +131,75 @@ func TestMakeAbsolute_DriveRelative(t *testing.T) {
 	require.NoError(t, err)
 	assert.Equal(t, filepath.Join(tmp, "file"), result)
 }
+
+// Join tests ===============================================================
+
+func TestJoin_Basic(t *testing.T) {
+	sep := string(os.PathSeparator)
+	assert.Equal(t, "a"+sep+"b", Join("a", "b"))
+	assert.Equal(t, "a"+sep+"b"+sep+"c", Join("a", "b", "c"))
+}
+
+func TestJoin_EmptyElements(t *testing.T) {
+	sep := string(os.PathSeparator)
+	assert.Equal(t, "a"+sep+"b", Join("a", "", "b"))
+	assert.Equal(t, "a", Join("", "a", ""))
+	assert.Equal(t, "", Join("", "", ""))
+	assert.Equal(t, "", Join())
+}
+
+func TestJoin_PreservesAbsolute(t *testing.T) {
+	sep := string(os.PathSeparator)
+	if runtime.GOOS == "windows" {
+		assert.Equal(t, `C:\Users\foo`, Join(`C:\Users`, "foo"))
+	} else {
+		assert.Equal(t, "/usr"+sep+"bin", Join("/usr", "bin"))
+		assert.Equal(t, "/a", Join("/", "a"))
+	}
+}
+
+func TestJoin_CollapsesDuplicateSeparators(t *testing.T) {
+	sep := string(os.PathSeparator)
+	assert.Equal(t, "a"+sep+"b", Join("a"+sep, sep+"b"))
+}
+
+func TestJoin_PreservesDotDot(t *testing.T) {
+	sep := string(os.PathSeparator)
+	// Unlike filepath.Join, we do NOT collapse .. — that's the whole point.
+	assert.Equal(t, "a"+sep+"link"+sep+"..", Join("a", "link", ".."))
+}
+
+func TestJoin_NoTrailingSeparator(t *testing.T) {
+	sep := string(os.PathSeparator)
+	result := Join("a", "b"+sep)
+	assert.Equal(t, "a"+sep+"b", result)
+}
+
+// Dir tests ================================================================
+
+func TestDir_Basic(t *testing.T) {
+	sep := string(os.PathSeparator)
+	assert.Equal(t, "a", Dir("a"+sep+"b"))
+	assert.Equal(t, "a"+sep+"b", Dir("a"+sep+"b"+sep+"c"))
+}
+
+func TestDir_Root(t *testing.T) {
+	if runtime.GOOS == "windows" {
+		assert.Equal(t, `C:\`, Dir(`C:\foo`))
+		assert.Equal(t, `C:\`, Dir(`C:\`))
+	} else {
+		assert.Equal(t, "/", Dir("/foo"))
+		assert.Equal(t, "/", Dir("/"))
+	}
+}
+
+func TestDir_NoSeparator(t *testing.T) {
+	assert.Equal(t, ".", Dir("foo"))
+	assert.Equal(t, ".", Dir("."))
+}
+
+func TestDir_PreservesDotDot(t *testing.T) {
+	sep := string(os.PathSeparator)
+	// Unlike filepath.Dir, we do NOT resolve .. — that's the whole point.
+	assert.Equal(t, "a"+sep+"link", Dir("a"+sep+"link"+sep+".."))
+}

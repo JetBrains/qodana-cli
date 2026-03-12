@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"io"
 	"os"
-	"path/filepath"
 )
 
 // CopyFile copies a file from src to dst using streaming (not loading entire file into memory).
@@ -45,8 +44,8 @@ func CopyDir(src string, dst string) error {
 		return err
 	}
 	for _, item := range directory {
-		srcPath := filepath.Join(src, item.Name())
-		dstPath := filepath.Join(dst, item.Name())
+		srcPath := Join(src, item.Name())
+		dstPath := Join(dst, item.Name())
 		if item.IsDir() {
 			err = CopyDir(srcPath, dstPath)
 			if err != nil {
@@ -95,7 +94,7 @@ func CleanDirectory(dir string) error {
 		return err
 	}
 	for _, e := range entries {
-		p := filepath.Join(dir, e.Name())
+		p := Join(dir, e.Name())
 		if err := os.RemoveAll(p); err != nil {
 			return fmt.Errorf("failed to remove %s: %w", p, err)
 		}

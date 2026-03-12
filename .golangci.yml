@@ -11,3 +11,20 @@ linters:
           msg: "use errors.Is(err, os.ErrNotExist) instead — os.IsNotExist does not unwrap multi-errors"
         - pattern: ^os\.IsExist$
           msg: "use errors.Is(err, os.ErrExist) instead — os.IsExist does not unwrap multi-errors"
+        - pattern: ^path/filepath\.Clean$
+          msg: "filepath.Clean collapses symlink/.. lexically — use manual path handling"
+        - pattern: ^path/filepath\.Join$
+          msg: "filepath.Join calls Clean — use fs.Join or string concatenation with os.PathSeparator"
+        - pattern: ^path/filepath\.Abs$
+          msg: "filepath.Abs calls Clean — use fs.MakeAbsolute"
+        - pattern: ^path/filepath\.Rel$
+          msg: "filepath.Rel calls Clean — avoid in symlink-aware code"
+        - pattern: ^path/filepath\.Dir$
+          msg: "filepath.Dir calls Clean — use fs.Dir"
+        - pattern: ^path/filepath\.EvalSymlinks$
+          msg: "filepath.EvalSymlinks returns a Clean'd path — use fs.Canonical instead"
+  exclusions:
+    rules:
+      - linters: [forbidigo]
+        path-except: "internal/foundation/fs/"
+        text: "filepath\\.(Clean|Join|Abs|Rel|Dir|EvalSymlinks)"

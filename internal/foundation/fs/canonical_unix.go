@@ -80,7 +80,7 @@ func resolveImpl(absPath string, weak bool) (string, error) {
 			continue
 		}
 		if comp == ".." {
-			resolved = filepath.Dir(resolved)
+			resolved = Dir(resolved)
 			continue
 		}
 
@@ -93,7 +93,7 @@ func resolveImpl(absPath string, weak bool) (string, error) {
 			return "", err
 		}
 
-		next := filepath.Join(resolved, actualName)
+		next := Join(resolved, actualName)
 
 		info, err := os.Lstat(next)
 		if err != nil {
@@ -191,14 +191,14 @@ func findEntry(dir, name string) (result string, err error) {
 		// Only accept a case-insensitive match if the filesystem actually
 		// treats them as equivalent. On a case-sensitive FS, Lstat with the
 		// requested (possibly wrong-case) name will fail.
-		if _, err := os.Lstat(filepath.Join(dir, name)); err == nil {
+		if _, err := os.Lstat(Join(dir, name)); err == nil {
 			return caseMatch, nil
 		}
 	}
 
 	return "", &os.PathError{
 		Op:   "canonical",
-		Path: filepath.Join(dir, name),
+		Path: Join(dir, name),
 		Err:  os.ErrNotExist,
 	}
 }
