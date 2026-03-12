@@ -168,11 +168,7 @@ func findEntry(dir, name string) (result string, err error) {
 	if err != nil {
 		return "", err
 	}
-	defer func() {
-		if closeErr := d.Close(); closeErr != nil && err == nil {
-			err = closeErr
-		}
-	}()
+	defer func() { err = errors.Join(err, d.Close()) }()
 
 	lowerName := strings.ToLower(name)
 	caseInsensitiveMatch := ""
