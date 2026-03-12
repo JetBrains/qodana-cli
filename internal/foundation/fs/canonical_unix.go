@@ -89,7 +89,7 @@ func resolveImpl(absPath string, weak bool) (string, error) {
 		actualName, err := findEntry(resolved, comp)
 		if err != nil {
 			if weak && errors.Is(err, os.ErrNotExist) {
-				return appendTail(resolved, comp, queue), nil
+				return joinTail(resolved, comp, queue), nil
 			}
 			return "", err
 		}
@@ -99,7 +99,7 @@ func resolveImpl(absPath string, weak bool) (string, error) {
 		info, err := os.Lstat(next)
 		if err != nil {
 			if weak && errors.Is(err, os.ErrNotExist) {
-				return appendTail(resolved, comp, queue), nil
+				return joinTail(resolved, comp, queue), nil
 			}
 			return "", err
 		}
@@ -129,25 +129,11 @@ func resolveImpl(absPath string, weak bool) (string, error) {
 	return resolved, nil
 }
 
-// appendTail joins the resolved prefix with the current component and any
-// remaining components. The tail is kept as-is (no Clean) because unresolved
-// components might be symlinks, making lexical .. collapsing incorrect.
-func appendTail(resolved, current string, remaining []string) string {
-	sep := string(os.PathSeparator)
-	var b strings.Builder
-	b.WriteString(resolved)
-	if resolved != "/" {
-		b.WriteString(sep)
-	}
-	b.WriteString(current)
-	for _, r := range remaining {
-		if r == "" {
-			continue
-		}
-		b.WriteString(sep)
-		b.WriteString(r)
-	}
-	return b.String()
+// joinTail joins a resolved prefix, a current component, and any remaining
+// queue components using the safe Join (no filepath.Clean).
+func joinTail(resolved, current string, remaining []string) string {
+	tail := Join(remaining...)
+	return Join(resolved, current, tail)
 }
 
 // splitPath splits a path by the OS separator. Empty strings from leading
