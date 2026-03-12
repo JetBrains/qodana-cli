@@ -170,7 +170,7 @@ func findEntry(dir, name string) (result string, err error) {
 	}()
 
 	lowerName := strings.ToLower(name)
-	caseMatch := ""
+	caseInsensitiveMatch := ""
 
 	for {
 		names, err := d.Readdirnames(256) // batch size: read up to 256 entries per syscall
@@ -178,8 +178,8 @@ func findEntry(dir, name string) (result string, err error) {
 			if n == name {
 				return n, nil // exact match — return immediately
 			}
-			if caseMatch == "" && strings.ToLower(n) == lowerName {
-				caseMatch = n
+			if caseInsensitiveMatch == "" && strings.ToLower(n) == lowerName {
+				caseInsensitiveMatch = n
 			}
 		}
 		if err != nil {
@@ -187,12 +187,12 @@ func findEntry(dir, name string) (result string, err error) {
 		}
 	}
 
-	if caseMatch != "" {
+	if caseInsensitiveMatch != "" {
 		// Only accept a case-insensitive match if the filesystem actually
 		// treats them as equivalent. On a case-sensitive FS, Lstat with the
 		// requested (possibly wrong-case) name will fail.
 		if _, err := os.Lstat(filepath.Join(dir, name)); err == nil {
-			return caseMatch, nil
+			return caseInsensitiveMatch, nil
 		}
 	}
 
