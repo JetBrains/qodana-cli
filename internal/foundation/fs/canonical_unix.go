@@ -22,12 +22,9 @@ func Canonical(path string) (string, error) {
 		return "", fmt.Errorf("canonical: empty path")
 	}
 
-	if !filepath.IsAbs(path) {
-		cwd, err := os.Getwd()
-		if err != nil {
-			return "", err
-		}
-		path = cwd + string(os.PathSeparator) + path
+	path, err := MakeAbsolute(path)
+	if err != nil {
+		return "", err
 	}
 
 	trailingSlash := len(path) > 1 && path[len(path)-1] == os.PathSeparator
@@ -59,12 +56,9 @@ func WeaklyCanonical(path string) (string, error) {
 		return "", fmt.Errorf("weakly canonical: empty path")
 	}
 
-	if !filepath.IsAbs(path) {
-		cwd, err := os.Getwd()
-		if err != nil {
-			return "", err
-		}
-		path = cwd + string(os.PathSeparator) + path
+	path, err := MakeAbsolute(path)
+	if err != nil {
+		return "", err
 	}
 
 	return resolveImpl(path, true)
@@ -194,7 +188,12 @@ func findEntry(dir, name string) (result string, err error) {
 	}
 
 	if caseMatch != "" {
-		return caseMatch, nil
+		// Only accept a case-insensitive match if the filesystem actually
+		// treats them as equivalent. On a case-sensitive FS, Lstat with the
+		// requested (possibly wrong-case) name will fail.
+		if _, err := os.Lstat(filepath.Join(dir, name)); err == nil {
+			return caseMatch, nil
+		}
 	}
 
 	return "", &os.PathError{
