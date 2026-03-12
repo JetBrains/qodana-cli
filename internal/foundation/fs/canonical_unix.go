@@ -173,7 +173,7 @@ func findEntry(dir, name string) (result string, err error) {
 	caseMatch := ""
 
 	for {
-		names, err := d.Readdirnames(256)
+		names, err := d.Readdirnames(256) // batch size: read up to 256 entries per syscall
 		for _, n := range names {
 			if n == name {
 				return n, nil // exact match — return immediately
