@@ -41,7 +41,7 @@ func Canonical(path string) (string, error) {
 
 // WeaklyCanonical is like Canonical but does not require the full path to exist.
 // It canonicalizes the longest existing prefix, then appends the remaining
-// non-existent tail (cleaned of . and .. segments).
+// non-existent tail preserved as-is (no lexical cleaning).
 func WeaklyCanonical(path string) (string, error) {
 	if path == "" {
 		return "", fmt.Errorf("weakly canonical: empty path")
