@@ -74,22 +74,22 @@ func resolveImpl(absPath string, weak bool) (string, error) {
 	symlinkCount := 0
 
 	for len(queue) > 0 {
-		comp := queue[0]
+		component := queue[0]
 		queue = queue[1:]
 
-		if comp == "" || comp == "." {
+		if component == "" || component == "." {
 			continue
 		}
-		if comp == ".." {
+		if component == ".." {
 			resolved = filepath.Dir(resolved)
 			continue
 		}
 
 		// Look up the actual on-disk name (normalizes case on case-insensitive FS).
-		actualName, err := findEntry(resolved, comp)
+		actualName, err := findEntry(resolved, component)
 		if err != nil {
 			if weak && errors.Is(err, os.ErrNotExist) {
-				return joinTail(resolved, comp, queue), nil
+				return joinTail(resolved, component, queue), nil
 			}
 			return "", err
 		}
@@ -99,7 +99,7 @@ func resolveImpl(absPath string, weak bool) (string, error) {
 		info, err := os.Lstat(next)
 		if err != nil {
 			if weak && errors.Is(err, os.ErrNotExist) {
-				return joinTail(resolved, comp, queue), nil
+				return joinTail(resolved, component, queue), nil
 			}
 			return "", err
 		}
