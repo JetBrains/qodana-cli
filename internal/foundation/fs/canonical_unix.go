@@ -66,7 +66,7 @@ func WeaklyCanonical(path string) (string, error) {
 }
 
 // resolveImpl implements realpath-like component-by-component resolution.
-// When weak is true, non-existent components are appended cleaned instead of
+// When weak is true, non-existent components are appended as-is instead of
 // causing an error.
 func resolveImpl(absPath string, weak bool) (string, error) {
 	queue := splitPath(absPath)
