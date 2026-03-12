@@ -557,7 +557,8 @@ func TestCanonical_RootRelativePath(t *testing.T) {
 	}
 
 	tmp := canonicalTempDir(t)
-	// Strip the volume name to get a root-relative path: C:\foo\bar -> \foo\bar
+	// Ensure CWD is on the same drive as tmp so the root-relative path resolves there.
+	t.Chdir(tmp)
 	vol := filepath.VolumeName(tmp)
 	rootRelative := tmp[len(vol):]
 
@@ -572,6 +573,7 @@ func TestWeaklyCanonical_RootRelativePath(t *testing.T) {
 	}
 
 	tmp := canonicalTempDir(t)
+	t.Chdir(tmp)
 	vol := filepath.VolumeName(tmp)
 	rootRelative := tmp[len(vol):]
 
