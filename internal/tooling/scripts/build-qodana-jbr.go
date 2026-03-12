@@ -293,13 +293,23 @@ func buildPlatform(jlinkBin, modules, cacheDir string, p platform, version, buil
 		log.Fatalf("Failed to clean build dir: %v", err)
 	}
 	log.Printf("Running jlink for %s/%s (%s)", p.goos, p.goarch, jbrFlavor(p))
+	// Use --strip-java-debug-attributes instead of --strip-debug.
+	//
+	// In JDK 13+, --strip-debug strips both Java debug attributes (line numbers, local
+	// variables, etc.) AND native debug symbols (via objcopy). The native stripping requires
+	// a platform-matching objcopy, which fails during cross-compilation — e.g., a Linux host
+	// cannot strip Windows or macOS native binaries, causing "Duplicate entry" jlink errors.
+	//
+	// --strip-java-debug-attributes strips only Java bytecode debug info, which is safe for
+	// cross-compilation and accounts for the bulk of the size reduction. The native debug
+	// symbols left unstripped are negligible in size for a minimal JRE.
 	cmd := exec.Command(jlinkBin,
 		"--module-path", jmodsDir,
 		"--compress=zip-6",
 		"--add-modules", modules,
 		"--no-header-files",
 		"--no-man-pages",
-		"--strip-debug",
+		"--strip-java-debug-attributes",
 		"--output", buildDir,
 	)
 	var jlinkOut bytes.Buffer
