@@ -59,6 +59,13 @@ func skipIfCaseSensitive(t *testing.T) {
 	}
 }
 
+func skipIfCaseInsensitive(t *testing.T) {
+	t.Helper()
+	if !isTestDirCaseSensitive(t) {
+		t.Skip("not relevant on case-insensitive filesystems")
+	}
+}
+
 // Category 1: Input validation =============================================
 
 func TestCanonical_NonExistentPath(t *testing.T) {
@@ -385,6 +392,32 @@ func TestCanonical_DeepSymlinkChain(t *testing.T) {
 	assert.Equal(t, target, actual)
 }
 
+func TestWeaklyCanonical_CircularSymlink(t *testing.T) {
+	tmp := canonicalTempDir(t)
+	makeSymlink(t, "b", filepath.Join(tmp, "a"))
+	makeSymlink(t, "a", filepath.Join(tmp, "b"))
+
+	_, err := WeaklyCanonical(filepath.Join(tmp, "a"))
+	assert.Error(t, err, "circular symlink must return error, not infinite loop")
+}
+
+func TestWeaklyCanonical_SelfReferentialSymlink(t *testing.T) {
+	tmp := canonicalTempDir(t)
+	makeSymlink(t, "self", filepath.Join(tmp, "self"))
+
+	_, err := WeaklyCanonical(filepath.Join(tmp, "self"))
+	assert.Error(t, err, "self-referential symlink must return error, not infinite loop")
+}
+
+func TestWeaklyCanonical_CircularSymlinkWithTail(t *testing.T) {
+	tmp := canonicalTempDir(t)
+	makeSymlink(t, "b", filepath.Join(tmp, "a"))
+	makeSymlink(t, "a", filepath.Join(tmp, "b"))
+
+	_, err := WeaklyCanonical(filepath.Join(tmp, "a", "child"))
+	assert.Error(t, err, "circular symlink with tail must return error, not infinite loop")
+}
+
 // Category 6: Non-directory in path (ENOTDIR) ==============================
 
 func TestCanonical_FileAsDirectory(t *testing.T) {
@@ -453,6 +486,53 @@ func TestCanonical_CaseInsensitiveIntermediate(t *testing.T) {
 	assert.Equal(t, expected, actual)
 }
 
+func TestCanonical_CaseSensitiveNoFallback(t *testing.T) {
+	skipIfCaseInsensitive(t)
+
+	tmp := canonicalTempDir(t)
+	mkdirp(t, filepath.Join(tmp, "foo"))
+
+	// Wrong case must NOT silently resolve on a case-sensitive FS.
+	_, err := Canonical(filepath.Join(tmp, "Foo"))
+	assert.True(t, errors.Is(err, os.ErrNotExist), "expected ErrNotExist, got: %v", err)
+}
+
+func TestCanonical_CaseSensitiveExactMatch(t *testing.T) {
+	skipIfCaseInsensitive(t)
+
+	tmp := canonicalTempDir(t)
+	expected := filepath.Join(tmp, "Foo")
+	mkdirp(t, expected)
+
+	actual, err := Canonical(expected)
+	require.NoError(t, err)
+	assert.Equal(t, expected, actual)
+}
+
+func TestCanonical_CaseSensitiveIntermediate(t *testing.T) {
+	skipIfCaseInsensitive(t)
+
+	tmp := canonicalTempDir(t)
+	touch(t, filepath.Join(tmp, "lower", "child"))
+
+	// Wrong case on intermediate component must fail on case-sensitive FS.
+	_, err := Canonical(filepath.Join(tmp, "Lower", "child"))
+	assert.True(t, errors.Is(err, os.ErrNotExist), "expected ErrNotExist, got: %v", err)
+}
+
+func TestWeaklyCanonical_CaseSensitiveNoFallback(t *testing.T) {
+	skipIfCaseInsensitive(t)
+
+	tmp := canonicalTempDir(t)
+	mkdirp(t, filepath.Join(tmp, "foo"))
+
+	// "Foo" must NOT match "foo" on a case-sensitive FS.
+	// WeaklyCanonical treats the non-matching component as non-existent.
+	actual, err := WeaklyCanonical(filepath.Join(tmp, "Foo", "missing"))
+	require.NoError(t, err)
+	assert.Equal(t, filepath.Join(tmp, "Foo", "missing"), actual)
+}
+
 // Category 8: Windows-specific =============================================
 
 func TestCanonical_WrongSlash(t *testing.T) {
@@ -466,6 +546,61 @@ func TestCanonical_WrongSlash(t *testing.T) {
 
 	// Use forward slashes on Windows
 	query := strings.ReplaceAll(expected, `\`, `/`)
+	actual, err := Canonical(query)
+	require.NoError(t, err)
+	assert.Equal(t, expected, actual)
+}
+
+func TestCanonical_RootRelativePath(t *testing.T) {
+	if runtime.GOOS != "windows" {
+		t.Skip("only relevant on Windows")
+	}
+
+	tmp := canonicalTempDir(t)
+	// Strip the volume name to get a root-relative path: C:\foo\bar -> \foo\bar
+	vol := filepath.VolumeName(tmp)
+	rootRelative := tmp[len(vol):]
+
+	actual, err := Canonical(rootRelative)
+	require.NoError(t, err)
+	assert.Equal(t, tmp, actual)
+}
+
+func TestWeaklyCanonical_RootRelativePath(t *testing.T) {
+	if runtime.GOOS != "windows" {
+		t.Skip("only relevant on Windows")
+	}
+
+	tmp := canonicalTempDir(t)
+	vol := filepath.VolumeName(tmp)
+	rootRelative := tmp[len(vol):]
+
+	// Existing path
+	actual, err := WeaklyCanonical(rootRelative)
+	require.NoError(t, err)
+	assert.Equal(t, tmp, actual)
+
+	// With non-existent tail
+	query := rootRelative + string(os.PathSeparator) + "missing"
+	actual, err = WeaklyCanonical(query)
+	require.NoError(t, err)
+	assert.Equal(t, filepath.Join(tmp, "missing"), actual)
+}
+
+func TestCanonical_DriveRelativePath(t *testing.T) {
+	if runtime.GOOS != "windows" {
+		t.Skip("only relevant on Windows")
+	}
+
+	tmp := canonicalTempDir(t)
+	expected := filepath.Join(tmp, "file")
+	touch(t, expected)
+
+	// Drive-relative: C:path where C is the current drive.
+	vol := filepath.VolumeName(tmp)
+	t.Chdir(tmp)
+	query := vol + "file"
+
 	actual, err := Canonical(query)
 	require.NoError(t, err)
 	assert.Equal(t, expected, actual)
