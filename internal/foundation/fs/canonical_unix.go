@@ -5,6 +5,7 @@ package fs
 import (
 	"errors"
 	"fmt"
+	"iter"
 	"os"
 	"path/filepath"
 	"strings"
@@ -155,6 +156,24 @@ func splitPath(path string) []string {
 	return strings.Split(path, string(os.PathSeparator))
 }
 
+// readdirnames returns an iterator over all entry names in an open directory,
+// reading in batches of 256 per syscall.
+func readdirnames(d *os.File) iter.Seq[string] {
+	return func(yield func(string) bool) {
+		for {
+			names, err := d.Readdirnames(256)
+			for _, n := range names {
+				if !yield(n) {
+					return
+				}
+			}
+			if err != nil {
+				return
+			}
+		}
+	}
+}
+
 // findEntry looks up a directory entry by name, returning the actual on-disk name.
 // It uses Readdirnames for a single-pass scan, returning early on exact match
 // (common on case-sensitive FS) or falling back to case-insensitive match.
@@ -172,18 +191,12 @@ func findEntry(dir, name string) (result string, err error) {
 	lowerName := strings.ToLower(name)
 	caseInsensitiveMatch := ""
 
-	for {
-		names, err := d.Readdirnames(256) // batch size: read up to 256 entries per syscall
-		for _, n := range names {
-			if n == name {
-				return n, nil // exact match — return immediately
-			}
-			if caseInsensitiveMatch == "" && strings.ToLower(n) == lowerName {
-				caseInsensitiveMatch = n
-			}
+	for n := range readdirnames(d) {
+		if n == name {
+			return n, nil // exact match — return immediately
 		}
-		if err != nil {
-			break
+		if caseInsensitiveMatch == "" && strings.ToLower(n) == lowerName {
+			caseInsensitiveMatch = n
 		}
 	}
 
