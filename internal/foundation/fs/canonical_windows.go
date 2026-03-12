@@ -10,6 +10,8 @@ import (
 	"golang.org/x/sys/windows"
 )
 
+const maxSymlinkFollows = 255
+
 // Canonical returns the canonical form of path: absolute, with all symlinks
 // resolved, dot/dotdot segments eliminated, redundant separators removed,
 // and filename case normalized on case-insensitive filesystems.
@@ -19,13 +21,9 @@ func Canonical(path string) (string, error) {
 		return "", fmt.Errorf("canonical: empty path")
 	}
 
-	if !filepath.IsAbs(path) {
-		cwd, err := os.Getwd()
-		if err != nil {
-			return "", err
-		}
-		// Do not use filepath.Join: it calls Clean, which collapses symlink/.. lexically.
-		path = cwd + string(os.PathSeparator) + path
+	path, err := MakeAbsolute(path)
+	if err != nil {
+		return "", err
 	}
 
 	resolved, err := filepath.EvalSymlinks(path)
@@ -49,12 +47,17 @@ func WeaklyCanonical(path string) (string, error) {
 		return "", fmt.Errorf("weakly canonical: empty path")
 	}
 
-	if !filepath.IsAbs(path) {
-		cwd, err := os.Getwd()
-		if err != nil {
-			return "", err
-		}
-		path = cwd + string(os.PathSeparator) + path
+	path, err := MakeAbsolute(path)
+	if err != nil {
+		return "", err
+	}
+
+	return weaklyCanonicalImpl(path, 0)
+}
+
+func weaklyCanonicalImpl(path string, depth int) (string, error) {
+	if depth > maxSymlinkFollows {
+		return "", &os.PathError{Op: "weakly canonical", Path: path, Err: syscall.ELOOP}
 	}
 
 	// Try the full path first — fast path when everything exists.
@@ -102,7 +105,7 @@ func WeaklyCanonical(path string) (string, error) {
 					if tail != "" {
 						target = target + sep + tail
 					}
-					return WeaklyCanonical(target)
+					return weaklyCanonicalImpl(target, depth+1)
 				}
 			}
 			// Component doesn't exist — canonicalize what we have and append the rest.
