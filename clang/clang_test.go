@@ -12,15 +12,13 @@ import (
 	"github.com/JetBrains/qodana-cli/internal/platform/product"
 	"github.com/JetBrains/qodana-cli/internal/platform/thirdpartyscan"
 	"github.com/JetBrains/qodana-cli/internal/testutil/mockexe"
-	"github.com/stretchr/testify/assert"
+	"github.com/JetBrains/qodana-cli/internal/testutil/needs"
 	log "github.com/sirupsen/logrus"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestLinterRun(t *testing.T) {
-	// skip this test on GitHub due to missing artifacts
-	if os.Getenv("GITHUB_ACTIONS") == "true" {
-		t.Skip()
-	}
+	needs.Need(t, needs.ClangDeps)
 
 	log.SetLevel(log.DebugLevel)
 

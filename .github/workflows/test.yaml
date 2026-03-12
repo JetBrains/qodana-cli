@@ -10,7 +10,7 @@ on:
       container-engine:
         type: string
         default: docker@latest
-        description: Container engine type and version. See .github/actions/setup-container-engine for more info.
+        description: Container engine type and version. Use "none" to skip container setup. See .github/actions/setup-container-engine for more info.
     secrets:
       QODANA_LICENSE_ONLY_TOKEN:
         required: true
@@ -30,6 +30,7 @@ jobs:
           fetch-depth: 0
 
       - name: Setup container engine
+        if: inputs.container-engine != 'none'
         uses: ./.github/actions/setup-container-engine
         with:
           version: ${{ inputs.container-engine }}
@@ -40,13 +41,15 @@ jobs:
           cache-dependency-path: "**/*.sum"
           go-version-file: go.mod
 
-      - name: Set up Java 17 for config-loader-cli.jar
+      - name: Set up Java 21 for config-loader-cli.jar
         uses: actions/setup-java@v5
         with:
           distribution: temurin
-          java-version: 17
+          java-version: 21
 
       - uses: ./.github/actions/mock-dependencies
+
+      - uses: ./.github/actions/qodana-build-cache
 
       - name: Install test dependencies
         run: go install github.com/mfridman/tparse@latest
@@ -69,7 +72,10 @@ jobs:
         run: go test -v -json ./... -timeout 0 -coverpkg=./... -coverprofile=coverage-${{ inputs.os }}.out | tparse -all -follow
         env:
           QODANA_LICENSE_ONLY_TOKEN: ${{ secrets.QODANA_LICENSE_ONLY_TOKEN }}
-          QODANA_TEST_CONTAINER: ${{ inputs.os == 'ubuntu-latest' && inputs.container-engine == 'docker@latest' && '1' || '' }}
+          QT_ENABLE_DOCKER: ${{ inputs.container-engine != 'none' && '1' || '0' }}
+          QT_ENABLE_CONTAINER_TESTS: ${{ inputs.os == 'ubuntu-latest' && inputs.container-engine == 'docker@latest' && '1' || '0' }}
+          QT_ENABLE_CLANG_DEPS: '0'
+          QT_ENABLE_CDNET_DEPS: '0'
 
       - name: Upload coverage
         uses: actions/upload-artifact@v6

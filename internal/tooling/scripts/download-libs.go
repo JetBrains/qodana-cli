@@ -28,6 +28,8 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+
+	"github.com/JetBrains/qodana-cli/internal/foundation/fs"
 )
 
 //go:embed pom.xml
@@ -140,14 +142,16 @@ func downloadFile(url string) {
 	}
 
 	dest := filepath.Join(libsDir, filepath.Base(url))
-	out, err := os.Create(dest)
+	out, err := fs.CreateAtomic(dest, 0o644)
 	if err != nil {
 		log.Fatalf("Failed to create file %s: %v", dest, err)
 	}
-	defer out.Close()
 
-	_, err = io.Copy(out, resp.Body)
-	if err != nil {
+	if _, err = io.Copy(out, resp.Body); err != nil {
+		_ = out.Abort()
 		log.Fatalf("Failed to write to %s: %v", dest, err)
+	}
+	if err := out.Close(); err != nil {
+		log.Fatalf("Failed to commit %s: %v", dest, err)
 	}
 }

@@ -1,6 +1,7 @@
 package cli
 
 import jetbrains.buildServer.configs.kotlin.*
+import jetbrains.buildServer.configs.kotlin.buildFeatures.buildCache
 import jetbrains.buildServer.configs.kotlin.buildFeatures.commitStatusPublisher
 import jetbrains.buildServer.configs.kotlin.buildFeatures.dockerSupport
 import jetbrains.buildServer.configs.kotlin.buildFeatures.gitHubAppBuildScopedToken
@@ -147,6 +148,23 @@ class GoReleaser(
             } else {
                 """
                     set -e
+
+                    # download required dependencies
+                    (
+                        DIR_NAME="${'$'}(basename "${'$'}PWD")"
+                        if [ "${'$'}DIR_NAME" = "cli" ] || [ "${'$'}DIR_NAME" = "clang" ] || [ "${'$'}DIR_NAME" = "cdnet" ]; then
+                            cd ..
+                        fi
+                        # 253
+                        if [ -d "./tooling" ]; then
+                            go generate ./tooling
+                        fi
+                        # main
+                        if [ -d "./internal/tooling" ]; then
+                            go generate ./internal/tooling
+                        fi
+                    )
+
                     if [ -f "../.goreleaser.yaml" ]; then
                         GORELEASER_CONFIG="../.goreleaser.yaml"
                         PREFIX=".."
@@ -237,6 +255,15 @@ class GoReleaser(
         dockerSupport {
             loginToRegistry = on {
                 dockerRegistryId = "PROJECT_EXT_775"
+            }
+        }
+        if (isCli) {
+            buildCache {
+                name = "qodana-build-cache"
+                publish = true
+                publishOnlyChanged = true
+                use = true
+                rules = ".cache"
             }
         }
         if (releaseType.isNightlyOrRelease() && isCli) {

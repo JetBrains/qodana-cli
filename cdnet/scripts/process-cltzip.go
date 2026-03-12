@@ -12,6 +12,7 @@ import (
 	"regexp"
 
 	"github.com/JetBrains/qodana-cli/internal/foundation/archive"
+	"github.com/JetBrains/qodana-cli/internal/foundation/fs"
 	"github.com/JetBrains/qodana-cli/internal/foundation/hash"
 )
 
@@ -63,7 +64,7 @@ func main() {
 		}
 	}
 
-	err = os.WriteFile("clt.sha256.bin", dllHash[:], 0666)
+	err = fs.WriteFileAtomic("clt.sha256.bin", dllHash[:], 0666)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -73,7 +74,7 @@ func main() {
 		log.Fatal(err)
 	}
 
-	err = os.WriteFile("clt.path.txt", []byte(dllPath), 0666)
+	err = fs.WriteFileAtomic("clt.path.txt", []byte(dllPath), 0666)
 	if err != nil {
 		log.Fatal(err)
 	}

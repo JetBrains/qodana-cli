@@ -20,11 +20,13 @@ import (
 	"context"
 	"testing"
 
+	"github.com/JetBrains/qodana-cli/internal/testutil/needs"
 	log "github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestClientCreationKeepsLogLevel(t *testing.T) {
+	needs.Need(t, needs.Docker)
 	// There are a bunch of ways to initialize the Docker API and some of them produce unexpected side effects.
 	for _, level := range log.AllLevels {
 		log.SetLevel(level)

@@ -23,19 +23,15 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/JetBrains/qodana-cli/internal/platform/product"
-
-	"github.com/JetBrains/qodana-cli/internal/platform/thirdpartyscan"
-
 	"github.com/JetBrains/qodana-cli/internal/platform"
+	"github.com/JetBrains/qodana-cli/internal/platform/product"
+	"github.com/JetBrains/qodana-cli/internal/platform/thirdpartyscan"
+	"github.com/JetBrains/qodana-cli/internal/testutil/needs"
 	log "github.com/sirupsen/logrus"
 )
 
 func TestLinterRun(t *testing.T) {
-	// skip test on GH, since required jars are not there
-	if os.Getenv("GITHUB_ACTIONS") == "true" {
-		t.Skip()
-	}
+	needs.Need(t, needs.CdnetDeps)
 	log.SetLevel(log.DebugLevel)
 
 	projectDir := t.TempDir()
