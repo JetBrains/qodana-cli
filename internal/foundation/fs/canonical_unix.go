@@ -51,7 +51,7 @@ func Canonical(path string) (string, error) {
 
 // WeaklyCanonical is like Canonical but does not require the full path to exist.
 // It canonicalizes the longest existing prefix, then appends the remaining
-// non-existent tail (cleaned of . and .. segments).
+// non-existent tail preserved as-is (no lexical cleaning).
 func WeaklyCanonical(path string) (string, error) {
 	if path == "" {
 		return "", fmt.Errorf("weakly canonical: empty path")
@@ -150,8 +150,8 @@ func appendTail(resolved, current string, remaining []string) string {
 	return b.String()
 }
 
-// splitPath splits a path into its components, removing empty strings
-// from repeated separators but preserving them for processing.
+// splitPath splits a path by the OS separator. Empty strings from leading
+// or repeated separators are preserved; the caller skips them.
 func splitPath(path string) []string {
 	return strings.Split(path, string(os.PathSeparator))
 }
