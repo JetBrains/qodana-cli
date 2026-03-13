@@ -1,0 +1,11 @@
+# Test container for case-insensitive filesystem tests.
+# The test creates a VFAT image and mounts it inside the container.
+#
+# Privileged mode is required because mount(2) is blocked by Docker's
+# default seccomp profile AND AppArmor policy, even with CAP_SYS_ADMIN.
+services:
+  test:
+    build: .
+    container_name: test
+    network_mode: none
+    privileged: true
