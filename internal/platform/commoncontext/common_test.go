@@ -499,3 +499,11 @@ func TestComputeId_SymlinkSameDir(t *testing.T) {
 	idLink := computeId(analyzer, linkDir)
 	assert.Equal(t, idReal, idLink, "computeId should produce the same ID for a symlink and its target")
 }
+
+func TestComputeId_EmptyProjectDir(t *testing.T) {
+	analyzer := product.JvmLinter.NativeAnalyzer()
+	idDot := computeId(analyzer, ".")
+	idEmpty := computeId(analyzer, "")
+	assert.Equal(t, idDot, idEmpty,
+		"empty projectDir should resolve identically to '.'")
+}

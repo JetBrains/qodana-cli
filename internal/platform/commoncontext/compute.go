@@ -110,6 +110,10 @@ func computeCommon(
 	clearCache bool,
 	qodanaCloudToken string,
 ) Context {
+	if projectDir == "" {
+		projectDir = "."
+	}
+
 	qodanaId := computeId(analyzer, projectDir)
 	systemDir := computeQodanaSystemDir(cacheDirFromCliOptions)
 	linterDir := filepath.Join(systemDir, qodanaId)
@@ -126,10 +130,6 @@ func computeCommon(
 		ReportDir:       reportDir,
 		Id:              qodanaId,
 		QodanaToken:     qodanaCloudToken,
-	}
-
-	if projectDir == "" {
-		projectDir = "."
 	}
 
 	if repositoryRoot == "" {
@@ -254,6 +254,9 @@ func getAnalyzerFromProject(
 }
 
 func computeId(analyzer product.Analyzer, projectDir string) string {
+	if projectDir == "" {
+		projectDir = "."
+	}
 	length := 7
 	projectAbs, err := fs.Canonical(projectDir)
 	if err != nil {
