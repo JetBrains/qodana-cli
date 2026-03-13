@@ -18,6 +18,7 @@ package tooling
 
 import (
 	"embed"
+	"errors"
 	"io/fs"
 	"log"
 	"os"
@@ -63,7 +64,7 @@ func extractLib(cacheDir string, matchedFile string) string {
 	libFileName := filepath.Base(matchedFile)
 	libPath := filepath.Join(GetToolsMountPath(cacheDir), libFileName)
 	if _, err := os.Stat(libPath); err != nil {
-		if os.IsNotExist(err) {
+		if errors.Is(err, os.ErrNotExist) {
 			jarFileBytes, err := libs.ReadFile(matchedFile)
 			if err != nil {
 				log.Fatalf("Failed to read %s library: %s", libFileName, err)
@@ -80,7 +81,7 @@ func extractLib(cacheDir string, matchedFile string) string {
 func GetToolsMountPath(cacheDir string) string {
 	mountPath := filepath.Join(cacheDir, product.ShortVersion)
 	if _, err := os.Stat(mountPath); err != nil {
-		if os.IsNotExist(err) {
+		if errors.Is(err, os.ErrNotExist) {
 			err = os.MkdirAll(mountPath, 0755)
 			if err != nil {
 				log.Fatal(err)

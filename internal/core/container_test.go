@@ -3,6 +3,7 @@ package core
 import (
 	"encoding/base64"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -222,7 +223,7 @@ func TestRemovePortSocket(t *testing.T) {
 	assert.NoError(t, err)
 
 	_, err = os.Stat(portFile)
-	assert.True(t, os.IsNotExist(err))
+	assert.True(t, errors.Is(err, os.ErrNotExist))
 }
 
 func TestFixDarwinCaches(t *testing.T) {

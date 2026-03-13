@@ -18,6 +18,7 @@ package main
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -81,7 +82,7 @@ func (l CdnetLinter) MountTools(path string) (map[string]string, error) {
 	val[thirdpartyscan.Clt] = filepath.Join(path, CltDllRelativePath)
 
 	if _, err := os.Stat(val["clt"]); err != nil {
-		if os.IsNotExist(err) {
+		if errors.Is(err, os.ErrNotExist) {
 			archivePath := platform.ProcessAuxiliaryTool(archive, moniker, path, CltArchive)
 			if err := platform.Decompress(archivePath, path); err != nil {
 				return nil, fmt.Errorf("failed to decompress %s archive: %w", moniker, err)

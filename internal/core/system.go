@@ -24,11 +24,11 @@ import (
 	"net/http"
 	"os"
 	"os/exec"
-	"path/filepath"
 	"runtime"
 	"strings"
 
 	"github.com/JetBrains/qodana-cli/internal/core/corescan"
+	"github.com/JetBrains/qodana-cli/internal/foundation/fs"
 	"github.com/JetBrains/qodana-cli/internal/platform"
 	"github.com/JetBrains/qodana-cli/internal/platform/git"
 	"github.com/JetBrains/qodana-cli/internal/platform/msg"
@@ -113,15 +113,11 @@ func OpenDir(path string) error {
 
 // IsHomeDirectory returns true if the given path is the user's home directory.
 func IsHomeDirectory(path string) bool {
-	absPath, err := filepath.Abs(path)
-	if err != nil {
-		return false
-	}
 	home, err := os.UserHomeDir()
 	if err != nil {
 		return false
 	}
-	return absPath == home
+	return fs.SameFile(path, home)
 }
 
 // RunAnalysis runs the linter with the given options.

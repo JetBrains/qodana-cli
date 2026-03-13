@@ -20,6 +20,7 @@ import (
 	"fmt"
 	"path/filepath"
 
+	"github.com/JetBrains/qodana-cli/internal/foundation/fs"
 	"github.com/JetBrains/qodana-cli/internal/platform/commoncontext"
 	"github.com/JetBrains/qodana-cli/internal/platform/msg"
 	"github.com/JetBrains/qodana-cli/internal/platform/product"
@@ -52,7 +53,7 @@ func newInitCommand() *cobra.Command {
 			ide := qodanaYaml.Ide
 			linter := qodanaYaml.Linter
 			if (linter == "" && ide == "") || cliOptions.Force {
-				absPath, err := filepath.Abs(cliOptions.ProjectDir)
+				absPath, err := fs.Canonical(cliOptions.ProjectDir)
 				if err != nil {
 					log.Fatal(err)
 				}
