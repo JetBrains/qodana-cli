@@ -5,10 +5,10 @@ on:
     branches:
       - main
     paths:
-      - 'feed/releases.json'
+      - 'feed/*.releases.json'
   pull_request:
     paths:
-      - 'feed/releases.json'
+      - 'feed/*.releases.json'
 
 jobs:
   verify-links:

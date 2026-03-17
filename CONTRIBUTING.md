@@ -136,7 +136,7 @@ cd dockerfiles/base && docker buildx bake
 
 ### Verify product feed
 
-`cd` into `.github/scripts` and run the script to check product feed if you edited something in `feed/releases.json`:
+`cd` into `.github/scripts` and run the script to check product feed if you edited something in `feed/` directory:
 
 ```shell
 cd .github/scripts && node verifyChecksums.js
