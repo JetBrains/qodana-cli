@@ -17,7 +17,11 @@ import (
 // on the parent directory, not READ) and reads the canonical path from /proc/self/fd.
 // The kernel populates the dentry with the on-disk name, so readlink returns the
 // correct casing on case-insensitive filesystems (ext4 casefold, VFAT).
-func findEntry(dir, name string) (result string, err error) {
+//
+// If readlink on /proc/self/fd fails (e.g. /proc unavailable or restricted),
+// it falls back to the portable Readdirnames-based scan, which requires READ
+// permission on the parent directory.
+func findEntry(dir, name string) (string, error) {
 	path := filepath.Join(dir, name)
 
 	fd, err := unix.Open(path, unix.O_PATH|unix.O_NOFOLLOW, 0)
@@ -27,11 +31,14 @@ func findEntry(dir, name string) (result string, err error) {
 		}
 		return "", err
 	}
-	defer func() { err = errors.Join(err, unix.Close(fd)) }()
 
-	realPath, err := os.Readlink(fmt.Sprintf("/proc/self/fd/%d", fd))
-	if err != nil {
-		return "", err
+	realPath, readlinkErr := os.Readlink(fmt.Sprintf("/proc/self/fd/%d", fd))
+	closeErr := unix.Close(fd)
+	if readlinkErr != nil {
+		return findEntryByReaddir(dir, name)
+	}
+	if closeErr != nil {
+		return "", closeErr
 	}
 
 	return filepath.Base(realPath), nil
