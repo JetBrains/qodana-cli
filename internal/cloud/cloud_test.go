@@ -19,52 +19,72 @@ package cloud
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
 	"net/http"
+	"net/http/httptest"
 	"os"
 	"path/filepath"
 	"testing"
 )
 
 func TestGetProjectByBadToken(t *testing.T) {
-	apis := QdApiEndpoints{CloudApiUrl: "https://api.qodana.cloud/v1"}
-	client := apis.NewCloudApiClient("bad_token")
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusUnauthorized)
+		_, _ = w.Write([]byte(`{"message":"Unauthorized"}`))
+	}))
+	defer server.Close()
+
+	client := &QdClient{
+		apiUrl:     server.URL,
+		httpClient: server.Client(),
+		token:      "bad_token",
+	}
+
 	_, err := client.RequestProjectName()
 	if err == nil {
-		t.Errorf("Did not expect request success: %v", err)
+		t.Fatal("Expected error for bad token")
 	}
-	var v *APIError
-	switch {
-	case errors.As(err, &v):
-		if v.StatusCode != http.StatusUnauthorized {
-			t.Errorf("Expected status code %d, got %d. Message %s", http.StatusUnauthorized, v.StatusCode, v.Message)
-		}
-	default:
-		t.Errorf("Unknown result type")
+
+	var apiErr *APIError
+	if !errors.As(err, &apiErr) {
+		t.Fatalf("Expected *APIError, got %T: %v", err, err)
+	}
+	if apiErr.StatusCode != http.StatusUnauthorized {
+		t.Errorf("Expected status %d, got %d. Message: %s", http.StatusUnauthorized, apiErr.StatusCode, apiErr.Message)
 	}
 }
 
-// debug purpose only
 func TestGetProjectByStaging(t *testing.T) {
-	endpoint := QdRootEndpoint{Url: "https://cloud.sssa-stgn.aws.intellij.net"}
-	token := os.Getenv("QODANA_TOKEN")
-	if token == "" {
-		t.Skip()
-	}
-	endpoints, err := endpoint.requestApiEndpoints()
+	var server *httptest.Server
+	server = httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		switch r.URL.Path {
+		case VersionsURI:
+			resp := fmt.Sprintf(`{
+				"api":     {"versions": [{"version": "1.0", "url": "%s/v1"}]},
+				"linters": {"versions": [{"version": "1.0", "url": "%s/v1"}]}
+			}`, server.URL, server.URL)
+			_, _ = w.Write([]byte(resp))
+		case "/v1/projects":
+			_, _ = w.Write([]byte(`{"name":"test-project"}`))
+		default:
+			w.WriteHeader(http.StatusNotFound)
+		}
+	}))
+	defer server.Close()
+
+	endpoint := QdRootEndpoint{Url: server.URL}
+	endpoints, err := endpoint.requestApiEndpointsCustomClient(server.Client())
 	if err != nil {
-		t.Errorf("Unexpected error: %v", err)
+		t.Fatalf("Unexpected error requesting API endpoints: %v", err)
 	}
 
-	client := endpoints.NewCloudApiClient(token)
-	_, err = client.RequestProjectName()
-	var v *APIError
-	switch {
-	case errors.As(err, &v):
-		if v.StatusCode > http.StatusBadRequest {
-			t.Errorf("Expected status code %d, got %d", http.StatusBadRequest, v.StatusCode)
-		}
-	default:
-		t.Error("Unknown result type")
+	client := endpoints.NewCloudApiClient("test-token")
+	name, err := client.RequestProjectName()
+	if err != nil {
+		t.Fatalf("Unexpected error requesting project name: %v", err)
+	}
+	if name != "test-project" {
+		t.Errorf("Expected project name %q, got %q", "test-project", name)
 	}
 }
 
