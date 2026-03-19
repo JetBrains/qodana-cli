@@ -20,26 +20,36 @@ import (
 	"encoding/json"
 	"errors"
 	"net/http"
+	"net/http/httptest"
 	"os"
 	"path/filepath"
 	"testing"
 )
 
 func TestGetProjectByBadToken(t *testing.T) {
-	apis := QdApiEndpoints{CloudApiUrl: "https://api.qodana.cloud/v1"}
-	client := apis.NewCloudApiClient("bad_token")
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusUnauthorized)
+		_, _ = w.Write([]byte(`{"message":"Unauthorized"}`))
+	}))
+	defer server.Close()
+
+	client := &QdClient{
+		apiUrl:     server.URL,
+		httpClient: server.Client(),
+		token:      "bad_token",
+	}
+
 	_, err := client.RequestProjectName()
 	if err == nil {
-		t.Errorf("Did not expect request success: %v", err)
+		t.Fatal("Expected error for bad token")
 	}
-	var v *APIError
-	switch {
-	case errors.As(err, &v):
-		if v.StatusCode != http.StatusUnauthorized {
-			t.Errorf("Expected status code %d, got %d. Message %s", http.StatusUnauthorized, v.StatusCode, v.Message)
-		}
-	default:
-		t.Errorf("Unknown result type")
+
+	var apiErr *APIError
+	if !errors.As(err, &apiErr) {
+		t.Fatalf("Expected *APIError, got %T: %v", err, err)
+	}
+	if apiErr.StatusCode != http.StatusUnauthorized {
+		t.Errorf("Expected status %d, got %d. Message: %s", http.StatusUnauthorized, apiErr.StatusCode, apiErr.Message)
 	}
 }
 
