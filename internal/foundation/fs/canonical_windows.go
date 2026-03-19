@@ -6,8 +6,6 @@ import (
 	"path/filepath"
 	"strings"
 	"syscall"
-
-	"golang.org/x/sys/windows"
 )
 
 const maxSymlinkFollows = 255
@@ -126,40 +124,30 @@ func weaklyCanonicalImpl(path string, depth int) (string, error) {
 	return normalizeCaseWindows(built)
 }
 
-// normalizeCaseWindows normalizes filename case on Windows using the
-// GetShortPathName -> GetLongPathName round-trip. This forces Windows to
-// return the actual on-disk casing for each path component.
+// normalizeCaseWindows normalizes filename case on Windows by looking up
+// each path component via FindFirstFileW, which returns the on-disk name
+// regardless of 8.3 name generation settings.
 func normalizeCaseWindows(absPath string) (string, error) {
-	if _, err := os.Lstat(absPath); err != nil {
-		return "", err
+	vol := filepath.VolumeName(absPath)
+	if vol == "" {
+		return absPath, nil
 	}
 
-	utf16Path, err := windows.UTF16PtrFromString(absPath)
-	if err != nil {
-		return "", err
+	rest := absPath[len(vol):]
+	components := strings.Split(rest, string(os.PathSeparator))
+
+	built := strings.ToUpper(vol) + string(os.PathSeparator)
+
+	for _, comp := range components {
+		if comp == "" {
+			continue
+		}
+		actual, err := findEntry(built, comp)
+		if err != nil {
+			return "", err
+		}
+		built = filepath.Join(built, actual)
 	}
 
-	// Get short path name.
-	shortSize, err := windows.GetShortPathName(utf16Path, nil, 0)
-	if err != nil && err != syscall.Errno(0) {
-		return "", err
-	}
-	shortBuf := make([]uint16, shortSize)
-	_, err = windows.GetShortPathName(utf16Path, &shortBuf[0], shortSize)
-	if err != nil && err != syscall.Errno(0) {
-		return "", err
-	}
-
-	// Convert back to long path name (this returns proper casing).
-	longSize, err := windows.GetLongPathName(&shortBuf[0], nil, 0)
-	if err != nil && err != syscall.Errno(0) {
-		return "", err
-	}
-	longBuf := make([]uint16, longSize)
-	_, err = windows.GetLongPathName(&shortBuf[0], &longBuf[0], longSize)
-	if err != nil && err != syscall.Errno(0) {
-		return "", err
-	}
-
-	return windows.UTF16ToString(longBuf), nil
+	return built, nil
 }
