@@ -147,7 +147,15 @@ cd .github/scripts && node verifyChecksums.js
 To generate Dockerfiles for a release:
 
 ```shell
-./scripts/dockerfiles.py dockerfiles
+./scripts/dockerfiles.py 2026.1
+```
+
+Replace `2026.1` with the desired Qodana major version.
+
+To validate that all download URLs in generated Dockerfiles exist:
+
+```shell
+./scripts/validate-dockerfiles-urls.py
 ```
 
 To add a newly released product, check `dockerfiles/public.json`.

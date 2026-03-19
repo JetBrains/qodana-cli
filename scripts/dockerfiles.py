@@ -3,7 +3,7 @@
 Generate JetBrains Qodana Dockerfiles
 
 Usage:
-    python dockerfiles.py dockerfiles
+    python dockerfiles.py 2026.1
 """
 import argparse
 import json
@@ -18,41 +18,95 @@ from jinja2 import Environment, FileSystemLoader, Template, select_autoescape
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-def parse_args() -> str:
+def load_release_info(qd_code: str, qd_version: str) -> Dict[str, Any]:
     """
-    Parse command-line arguments and return the release directory path.
+    Load release information from local feed files for the specified product and version.
+
+    Args:
+        qd_code (str): The Qodana product code (e.g., "QDGO", "QDJVM").
+        qd_version (str): The Qodana major version (e.g., "2026.1").
 
     Returns:
-        str: The path to the release directory.
+        Dict[str, Any]: A dictionary containing "build" and "downloads" keys,
+                        or an empty dict if the release cannot be found.
+    """
+    # Map QD_CODE to feed file name
+    # Note: QDAND and QDANDC use JVM and JVM-Community feeds respectively
+    product_mapping = {
+        "QDGO": "go",
+        "QDJS": "js",
+        "QDJVM": "jvm",
+        "QDJVMC": "jvm-community",
+        "QDAND": "jvm",           # Android uses JVM feed
+        "QDANDC": "jvm-community", # Android Community uses JVM-Community feed
+        "QDNET": "dotnet",
+        "QDPHP": "php",
+        "QDPY": "python",
+        "QDPYC": "python-community",
+        "QDCPP": "cpp",
+        "QDRUBY": "ruby",
+    }
+
+    product_name = product_mapping.get(qd_code)
+    if not product_name:
+        logger.warning("Unknown product code '%s'. Skipping release info lookup.", qd_code)
+        return {}
+
+    feed_path = os.path.join("feed", f"qodana-{product_name}.releases.json")
+
+    if not os.path.isfile(feed_path):
+        logger.warning("Feed file '%s' not found for product '%s'. Skipping.", feed_path, qd_code)
+        return {}
+
+    try:
+        with open(feed_path, "r", encoding="utf-8") as f:
+            feed_data = json.load(f)
+    except (json.JSONDecodeError, OSError) as e:
+        logger.warning("Error reading feed file '%s': %s. Skipping.", feed_path, e)
+        return {}
+
+    releases = feed_data.get("Releases", [])
+    if not releases:
+        logger.warning("No releases found in feed file '%s'. Skipping.", feed_path)
+        return {}
+
+    # Sort releases by Type and Date, then filter by MajorVersion
+    sorted_releases = sorted(releases, key=lambda r: (r.get("Type", ""), r.get("Date", "")))
+    matching_releases = [r for r in sorted_releases if r.get("MajorVersion") == qd_version]
+
+    if not matching_releases:
+        logger.warning(
+            "No release found for %s version %s in %s. Skipping.",
+            qd_code, qd_version, feed_path
+        )
+        return {}
+
+    # Take the latest matching release
+    latest_release = matching_releases[-1]
+
+    return {
+        "build": latest_release.get("Build", ""),
+        "downloads": latest_release.get("Downloads", {})
+    }
+
+def parse_args() -> str:
+    """
+    Parse command-line arguments and return the Qodana version.
+
+    Returns:
+        str: The Qodana major version (e.g., "2026.1").
     """
     parser = argparse.ArgumentParser(description="Generate Dockerfiles from base templates.")
     parser.add_argument(
-        "release_dir",
-        help="Path to the release directory containing public.json and template files."
+        "qd_version",
+        help="Qodana major version (e.g., 2026.1)."
     )
     args = parser.parse_args()
-    return args.release_dir
+    return args.qd_version
 
-def validate_release_dir(release_dir: str) -> None:
+def load_variants() -> Dict[str, Any]:
     """
-    Validate that the release directory exists and is a directory.
-
-    Args:
-        release_dir (str): The path to the release directory.
-
-    Raises:
-        SystemExit: If the directory does not exist.
-    """
-    if not os.path.isdir(release_dir):
-        logger.error("Release directory '%s' doesn't exist.", release_dir)
-        sys.exit(1)
-
-def load_variants(release_dir: str) -> Dict[str, Any]:
-    """
-    Load variant definitions from public.json in the release directory.
-
-    Args:
-        release_dir (str): The path to the release directory.
+    Load variant definitions from dockerfiles/public.json.
 
     Returns:
         Dict[str, Any]: A dictionary of variants from the JSON file.
@@ -60,7 +114,7 @@ def load_variants(release_dir: str) -> Dict[str, Any]:
     Raises:
         SystemExit: If the file is missing, cannot be read, or is invalid JSON.
     """
-    public_json_path = os.path.join(release_dir, "public.json")
+    public_json_path = "dockerfiles/public.json"
     if not os.path.isfile(public_json_path):
         logger.error("'%s' not found.", public_json_path)
         sys.exit(1)
@@ -155,7 +209,7 @@ def generate_variant_dockerfile(
     base_dockerfile_dir: str,
     intellij_template: Template,
     thirdparty_template: Template,
-    release_dir: str
+    qd_version: str
 ) -> str:
     """
     Generate the final Dockerfile content for a specific variant.
@@ -166,7 +220,7 @@ def generate_variant_dockerfile(
         base_dockerfile_dir (str): Path to the directory containing base Dockerfiles.
         intellij_template (Template): Jinja2 template for IntelliJ-based variants.
         thirdparty_template (Template): Jinja2 template for third-party variants.
-        release_dir (str): The main release directory path.
+        qd_version (str): The Qodana major version (e.g., "2026.1").
 
     Returns:
         str: The final Dockerfile content, or an empty string if an error occurred.
@@ -187,25 +241,47 @@ def generate_variant_dockerfile(
         logger.error("Error processing base Dockerfile for variant '%s': %s", variant, e)
         return ""
 
-    template = thirdparty_template if data.get("is_third_party", False) else intellij_template
-    snippet = template.render(
-        qd_release=release_dir,
-        qd_code=data.get("qd_code", ""),
-        description=data.get("description", ""),
-        variant=variant.split("-")[0],
-        qd_image=variant
-    )
+    is_third_party = data.get("is_third_party", False)
+    qd_code = data.get("qd_code", "")
+
+    if is_third_party:
+        # Third-party variants don't need release info from feeds
+        template = thirdparty_template
+        snippet = template.render(
+            qd_version=qd_version,
+            qd_code=qd_code,
+            description=data.get("description", ""),
+            variant=variant.split("-")[0],
+            qd_image=variant
+        )
+    else:
+        # For IntelliJ-based variants (not third-party), load release info from local feeds
+        release_info = load_release_info(qd_code, qd_version)
+        if not release_info:
+            # If we can't find release info, skip this variant
+            logger.warning("Skipping variant '%s' due to missing release information.", variant)
+            return ""
+
+        template = intellij_template
+        snippet = template.render(
+            qd_version=qd_version,
+            qd_code=qd_code,
+            qd_build=release_info.get("build", ""),
+            qd_downloads=release_info.get("downloads", {}),
+            description=data.get("description", ""),
+            variant=variant.split("-")[0],
+            qd_image=variant
+        )
 
     final_dockerfile = processed_base_content.rstrip() + "\n\n" + snippet
     return final_dockerfile
 
-def write_dockerfile(variant: str, release_dir: str, dockerfile_content: str) -> None:
+def write_dockerfile(variant: str, dockerfile_content: str) -> None:
     """
     Write the final Dockerfile content to the appropriate output directory.
 
     Args:
         variant (str): The variant name.
-        release_dir (str): The path to the release directory.
         dockerfile_content (str): The complete Dockerfile content to write.
     """
     if not dockerfile_content:
@@ -214,7 +290,7 @@ def write_dockerfile(variant: str, release_dir: str, dockerfile_content: str) ->
     generated_disclaimer = "# This file was generated by https://github.com/JetBrains/qodana-cli/blob/main/scripts/dockerfiles.py. DO NOT EDIT MANUALLY."
     dockerfile_content = f"{generated_disclaimer}\n\n{dockerfile_content}"
 
-    out_dir = os.path.join(release_dir, variant)
+    out_dir = os.path.join("dockerfiles", variant)
     out_path = os.path.join(out_dir, "Dockerfile")
 
     os.makedirs(out_dir, exist_ok=True)
@@ -229,18 +305,17 @@ def main() -> None:
     """
     Main entry point: parse arguments, load variants, load templates, and generate Dockerfiles.
     """
-    release_dir = parse_args()
-    validate_release_dir(release_dir)
-    variants = load_variants(release_dir)
+    qd_version = parse_args()
+    variants = load_variants()
 
     env = create_jinja_environment()
 
-    intellij_template_path = os.path.join(release_dir, "base", "templates", "intellij.Dockerfile.j2")
-    thirdparty_template_path = os.path.join(release_dir, "base", "templates", "thirdparty.Dockerfile.j2")
+    intellij_template_path = "dockerfiles/base/templates/intellij.Dockerfile.j2"
+    thirdparty_template_path = "dockerfiles/base/templates/thirdparty.Dockerfile.j2"
     intellij_template = load_template(env, intellij_template_path)
     thirdparty_template = load_template(env, thirdparty_template_path)
 
-    base_dockerfile_dir = os.path.join(release_dir, "base")
+    base_dockerfile_dir = "dockerfiles/base"
 
     for variant, data in variants.items():
         dockerfile_content = generate_variant_dockerfile(
@@ -249,9 +324,9 @@ def main() -> None:
             base_dockerfile_dir,
             intellij_template,
             thirdparty_template,
-            release_dir
+            qd_version
         )
-        write_dockerfile(variant, release_dir, dockerfile_content)
+        write_dockerfile(variant, dockerfile_content)
 
 if __name__ == "__main__":
     main()
