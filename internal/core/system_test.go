@@ -18,6 +18,8 @@ package core
 
 import (
 	"context"
+	"net/http"
+	"net/http/httptest"
 	"os"
 	"path/filepath"
 	"strings"
@@ -533,8 +535,15 @@ func TestCheckForUpdates(t *testing.T) {
 }
 
 func TestGetLatestVersion(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		_, _ = w.Write([]byte(`{"tag_name": "v2025.1.5"}`))
+	}))
+	defer server.Close()
+
+	orig := releaseUrl
+	releaseUrl = server.URL
+	defer func() { releaseUrl = orig }()
+
 	version := getLatestVersion()
-	if version != "" {
-		assert.NotContains(t, version, "v")
-	}
+	assert.Equal(t, "2025.1.5", version)
 }
