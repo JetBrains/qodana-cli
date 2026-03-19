@@ -34,7 +34,13 @@ func findEntry(dir, name string) (string, error) {
 	//   bytes 4-7:            int32  attr_dataoffset (relative to byte 4)
 	//   bytes 8-11:           uint32 attr_length (includes null terminator)
 	//   bytes 4+offset .. :   null-terminated name string
-	buf := make([]byte, 4+8+256)
+	//
+	// ATTR_CMN_NAME can return up to NAME_MAX*3+1 bytes (766 bytes):
+	// the kernel converts the on-disk name to UTF-8, and the conversion
+	// can expand up to 3x (NAME_MAX=255 on macOS), plus a NUL terminator.
+	// See getattrlist(2) documentation for ATTR_CMN_NAME.
+	const nameMax = 255
+	buf := make([]byte, 4+8+nameMax*3+1)
 
 	if err := getattrlistCall(path, &attrList, buf, unix.FSOPT_NOFOLLOW); err != nil {
 		if errors.Is(err, syscall.ENOENT) {
