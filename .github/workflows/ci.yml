@@ -185,6 +185,10 @@ jobs:
           args: build --snapshot --clean --id cli
         env:
           GORELEASER_KEY: ${{ secrets.GORELEASER_KEY }}
+      - name: Patch goreleaser nightly config
+        if: steps.nightly.outputs.is_nightly == 'true'
+        run: |
+          sed -i "s/tag_name: nightly/tag_name: ${{ steps.nightly.outputs.tag }}/" .goreleaser.yaml
       - name: Release nightly CLI only
         if: steps.nightly.outputs.is_nightly == 'true'
         uses: goreleaser/goreleaser-action@v6
@@ -195,7 +199,6 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GORELEASER_KEY: ${{ secrets.GORELEASER_KEY }}
-          NIGHTLY_TAG: ${{ steps.nightly.outputs.tag }}
           NIGHTLY_VERSION: ${{ steps.nightly.outputs.version }}
 
 #  install-script-check:
