@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - main
+      - '[0-9][0-9][0-9]'
     paths-ignore:
       - '**.md'
       - '.github/dependabot.yml'
@@ -142,7 +143,7 @@ jobs:
           path: "${{ runner.temp }}/qodana/results"
 
   goreleaser:
-    name: "GoReleaser (${{ github.ref == 'refs/heads/main' && 'nightly' || 'build' }})"
+    name: "GoReleaser (${{ github.event_name == 'push' && 'nightly' || 'build' }})"
     runs-on: ubuntu-latest
     env:
       GITHUB_TOKEN: ${{ secrets.QODANA_JBR_TOKEN }}
@@ -158,8 +159,25 @@ jobs:
           go-version-file: go.mod
       - name: Download CLI dependencies
         run: go generate -v ./internal/tooling/...
+      - name: Determine nightly params
+        id: nightly
+        if: github.event_name == 'push'
+        run: |
+          BRANCH="${GITHUB_REF#refs/heads/}"
+          if [[ "$BRANCH" == "main" ]]; then
+            echo "tag=2026.1-nightly" >> "$GITHUB_OUTPUT"
+            echo "version=2026.1-nightly" >> "$GITHUB_OUTPUT"
+            echo "is_nightly=true" >> "$GITHUB_OUTPUT"
+          elif [[ "$BRANCH" =~ ^[0-9]{3}$ ]]; then
+            V="20${BRANCH:0:2}.${BRANCH:2}"
+            echo "tag=${V}-nightly" >> "$GITHUB_OUTPUT"
+            echo "version=${V}-nightly" >> "$GITHUB_OUTPUT"
+            echo "is_nightly=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "is_nightly=false" >> "$GITHUB_OUTPUT"
+          fi
       - name: Build CLI only
-        if: github.ref != 'refs/heads/main'
+        if: steps.nightly.outputs.is_nightly != 'true'
         uses: goreleaser/goreleaser-action@v6
         with:
           distribution: goreleaser-pro
@@ -168,7 +186,7 @@ jobs:
         env:
           GORELEASER_KEY: ${{ secrets.GORELEASER_KEY }}
       - name: Release nightly CLI only
-        if: github.ref == 'refs/heads/main'
+        if: steps.nightly.outputs.is_nightly == 'true'
         uses: goreleaser/goreleaser-action@v6
         with:
           distribution: goreleaser-pro
@@ -177,6 +195,8 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GORELEASER_KEY: ${{ secrets.GORELEASER_KEY }}
+          NIGHTLY_TAG: ${{ steps.nightly.outputs.tag }}
+          NIGHTLY_VERSION: ${{ steps.nightly.outputs.version }}
 
 #  install-script-check:
 #    strategy:
