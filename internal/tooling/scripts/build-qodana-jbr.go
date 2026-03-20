@@ -22,6 +22,7 @@ import (
 	"time"
 
 	"github.com/JetBrains/qodana-cli/internal/foundation/archive"
+	"github.com/JetBrains/qodana-cli/internal/foundation/flock"
 	"github.com/JetBrains/qodana-cli/internal/foundation/fs"
 )
 
@@ -87,32 +88,46 @@ func main() {
 		return
 	}
 
-	// Ensure host JBR source is available (for jlink/jdeps tools)
-	hostSHA := targetSHA
-	if hostPlatform != target {
-		hostSHA = fetchUpstreamChecksum(version, jbrFlavor(hostPlatform), build)
+	// Acquire an exclusive file lock to prevent concurrent builds for the same target.
+	// Goreleaser runs pre-hooks for cli/clang/cdnet in parallel, and all trigger this script.
+	lockPath := filepath.Join(tDir, "build.lock")
+	if err := flock.With(lockPath, func() {
+		// Re-check after acquiring lock — another process may have built while we waited.
+		if readFile(filepath.Join(tDir, "upstream.sha512")) == targetSHA && hasDist(tDir) {
+			linkToEmbed(cacheDir, embedDir, target)
+			log.Printf("JBR for %s/%s is up to date (built by another process)", target.goos, target.goarch)
+			return
+		}
+
+		// Ensure host JBR source is available (for jlink/jdeps tools)
+		hostSHA := targetSHA
+		if hostPlatform != target {
+			hostSHA = fetchUpstreamChecksum(version, jbrFlavor(hostPlatform), build)
+		}
+		ensurePlatformSrc(cacheDir, version, build, hostPlatform, hostSHA)
+		jlinkBin := findBinary(platformSrcDir(cacheDir, hostPlatform), "jlink")
+		jdepsBin := findBinary(platformSrcDir(cacheDir, hostPlatform), "jdeps")
+		log.Printf("Host JBR tools: jlink=%s, jdeps=%s", jlinkBin, jdepsBin)
+
+		// Ensure target JBR source is available (for jmods)
+		if hostPlatform != target {
+			ensurePlatformSrc(cacheDir, version, build, target, targetSHA)
+		}
+
+		// Determine required modules
+		libsDir := filepath.Join(repoRoot, "internal", "tooling", "libs")
+		modules := runJdepsOnAllJars(jdepsBin, libsDir)
+		log.Printf("Required modules: %s", modules)
+
+		// Build
+		buildPlatform(jlinkBin, modules, cacheDir, target, version, build)
+		log.Printf("BUILT: %s/%s", target.goos, target.goarch)
+
+		linkToEmbed(cacheDir, embedDir, target)
+		log.Printf("Done building qodana-jbr for %s/%s", target.goos, target.goarch)
+	}); err != nil {
+		log.Fatalf("Build lock failed: %v", err)
 	}
-	ensurePlatformSrc(cacheDir, version, build, hostPlatform, hostSHA)
-	jlinkBin := findBinary(platformSrcDir(cacheDir, hostPlatform), "jlink")
-	jdepsBin := findBinary(platformSrcDir(cacheDir, hostPlatform), "jdeps")
-	log.Printf("Host JBR tools: jlink=%s, jdeps=%s", jlinkBin, jdepsBin)
-
-	// Ensure target JBR source is available (for jmods)
-	if hostPlatform != target {
-		ensurePlatformSrc(cacheDir, version, build, target, targetSHA)
-	}
-
-	// Determine required modules
-	libsDir := filepath.Join(repoRoot, "internal", "tooling", "libs")
-	modules := runJdepsOnAllJars(jdepsBin, libsDir)
-	log.Printf("Required modules: %s", modules)
-
-	// Build
-	buildPlatform(jlinkBin, modules, cacheDir, target, version, build)
-	log.Printf("BUILT: %s/%s", target.goos, target.goarch)
-
-	linkToEmbed(cacheDir, embedDir, target)
-	log.Printf("Done building qodana-jbr for %s/%s", target.goos, target.goarch)
 }
 
 // Version detection ===========================================================================

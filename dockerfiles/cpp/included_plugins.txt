@@ -60,7 +60,6 @@ Karma
 JSIntentionPowerPack
 com.jetbrains.linkerscript
 AngularJS
-com.jetbrains.codeWithMe
 com.intellij.modules.python
 com.jetbrains.plugins.ini4idea
 intellij.grid.plugin

@@ -9,7 +9,6 @@ com.jetbrains.plugins.ini4idea
 com.jetbrains.sh
 com.intellij.css
 Git4Idea
-hg4idea
 HtmlTools
 tanvd.grazi
 com.intellij.database
@@ -46,7 +45,6 @@ com.intellij.plugins.webcomponents
 com.dmarcotte.handlebars
 Karma
 W3Validators
-com.intellij.plugins.html.instantEditing
 com.intellij.css
 org.jetbrains.plugins.less
 org.jetbrains.plugins.sass
