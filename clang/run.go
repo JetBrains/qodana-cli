@@ -3,6 +3,7 @@ package main
 import (
 	"bytes"
 	"encoding/hex"
+	"errors"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -58,7 +59,7 @@ func (l ClangLinter) MountTools(path string) (map[string]string, error) {
 	_, err := os.Stat(val[clang])
 	var isBinaryOk bool
 
-	if os.IsNotExist(err) {
+	if errors.Is(err, os.ErrNotExist) {
 		isBinaryOk = false
 	} else if err != nil {
 		return nil, err
@@ -104,7 +105,7 @@ func getBinaryPath(toolsPath string) string {
 		binaryPath += ".exe"
 	}
 
-	if _, err := os.Stat(binaryPath); os.IsNotExist(err) {
+	if _, err := os.Stat(binaryPath); errors.Is(err, os.ErrNotExist) {
 		binaryPath = filepath.Join(toolsPath, "bin", binaryName)
 		//goland:noinspection GoBoolExpressions
 		if runtime.GOOS == "windows" {

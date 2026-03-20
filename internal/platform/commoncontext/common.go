@@ -18,6 +18,7 @@ package commoncontext
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"net/http"
 	"os"
@@ -359,7 +360,7 @@ func ShowReport(cacheDir string, resultsDir string, reportDir string, port int) 
 		msg.WarningMessage("Press Ctrl+C to stop serving the report\n")
 		msg.PrintProcess(
 			func(_ *pterm.SpinnerPrinter) {
-				if _, err := os.Stat(reportDir); os.IsNotExist(err) {
+				if _, err := os.Stat(reportDir); errors.Is(err, os.ErrNotExist) {
 					log.Fatal("Qodana report not found. Get a report by running `qodana scan`")
 				}
 				unpackWebUI(cacheDir, reportDir)

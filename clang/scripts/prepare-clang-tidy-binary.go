@@ -9,7 +9,6 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"io/fs"
 	"log"
 	"os"
 	"runtime"
@@ -57,7 +56,7 @@ func main() {
 	}
 
 	stat, err := os.Stat(archivePath)
-	if errors.Is(err, fs.ErrNotExist) {
+	if errors.Is(err, os.ErrNotExist) {
 		_, err = fmt.Fprintf(os.Stderr, "skipping archive %q: file does not exist\n", archivePath)
 		if err != nil {
 			log.Fatal(err)

@@ -20,6 +20,7 @@ import (
 	"archive/tar"
 	"archive/zip"
 	"compress/gzip"
+	"errors"
 	"fmt"
 	"io"
 	"log"
@@ -48,7 +49,7 @@ func extractUtils(linter ThirdPartyLinter, cacheDir string) thirdpartyscan.Mount
 func ProcessAuxiliaryTool(toolName, moniker, mountPath string, bytes []byte) string {
 	toolPath := filepath.Join(mountPath, toolName)
 	if _, err := os.Stat(toolPath); err != nil {
-		if os.IsNotExist(err) {
+		if errors.Is(err, os.ErrNotExist) {
 			err := os.WriteFile(toolPath, bytes, 0644)
 			if err != nil { // change the second parameter depending on which tool you have to process
 				log.Fatalf("Failed to write %s : %s", moniker, err)

@@ -17,6 +17,7 @@
 package effectiveconfig
 
 import (
+	"errors"
 	"os"
 	"path/filepath"
 	"strings"
@@ -217,7 +218,7 @@ func TestError(t *testing.T) {
 }
 
 func verifyDirectoriesContentEqual(t *testing.T, expectedDir string, actualDir string) {
-	if _, err := os.Stat(actualDir); os.IsNotExist(err) {
+	if _, err := os.Stat(actualDir); errors.Is(err, os.ErrNotExist) {
 		t.Fatalf("actualDir does not exist: %s", actualDir)
 	}
 	// Collect files and directories from a given base directory.

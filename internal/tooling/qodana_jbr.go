@@ -19,6 +19,7 @@ package tooling
 import (
 	"context"
 	"embed"
+	"errors"
 	"fmt"
 	"io"
 	"io/fs"
@@ -65,7 +66,7 @@ func computeQodanaJbrExecutablePath(cacheDir string) (string, error) {
 	archiveName := filepath.Base(embeddedArchivePath)
 	extractDir := filepath.Join(jbrCacheDir, strings.TrimSuffix(archiveName, ".tar.gz"))
 
-	if _, err := os.Stat(extractDir); os.IsNotExist(err) {
+	if _, err := os.Stat(extractDir); errors.Is(err, os.ErrNotExist) {
 		file, err := embeddedJBR.Open(embeddedArchivePath)
 		if err != nil {
 			return "", fmt.Errorf("failed to open embedded JBR: %w", err)
