@@ -165,7 +165,7 @@ func getDeclaredSubmodules(cwd string, logdir string) ([]string, error) {
 		return nil, err
 	}
 
-	stdout, _, err := gitRun(cwd, []string{"config", "get", "--file", ".gitmodules", "--regexp", "--all", ".path$"}, logdir)
+	stdout, _, err := gitRun(cwd, []string{"config", "--null", "--get-regexp", "--file", ".gitmodules", ".path$"}, logdir)
 	if err != nil {
 		var gitErr *GitError
 		if errors.As(err, &gitErr) && gitErr.ExitCode == 1 {
@@ -174,7 +174,16 @@ func getDeclaredSubmodules(cwd string, logdir string) ([]string, error) {
 		}
 		return nil, err
 	}
-	return str.GetLines(stdout), nil
+	// --null output: "submodule.foo.path\npath/to/foo\0submodule.bar.path\npath/to/bar\0"
+	// Split by \0 into entries, then split each entry at \n to extract the value (path).
+	var paths []string
+	stdout = strings.TrimSuffix(stdout, "\x00")
+	for _, entry := range strings.Split(stdout, "\x00") {
+		if _, value, ok := strings.Cut(entry, "\n"); ok {
+			paths = append(paths, value)
+		}
+	}
+	return paths, nil
 }
 
 // getSubmodules returns all submodules of a repository (non-recursive). Only submodules that are present in BOTH
