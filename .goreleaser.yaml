@@ -245,11 +245,11 @@ changelog:
 git:
   ignore_tags:
     - nightly
-    - '*-nightly'
+    - 'v*-nightly'
 report_sizes: true
 nightly:
   version_template: '{{ .Env.NIGHTLY_VERSION }}'
-  tag_name: 2026.1-nightly
+  tag_name: nightly
   publish_release: true
   keep_single_release: true
 after:

@@ -165,12 +165,12 @@ jobs:
         run: |
           BRANCH="${GITHUB_REF#refs/heads/}"
           if [[ "$BRANCH" == "main" ]]; then
-            echo "tag=2026.1-nightly" >> "$GITHUB_OUTPUT"
+            echo "tag=v2026.1-nightly" >> "$GITHUB_OUTPUT"
             echo "version=2026.1-nightly" >> "$GITHUB_OUTPUT"
             echo "is_nightly=true" >> "$GITHUB_OUTPUT"
           elif [[ "$BRANCH" =~ ^[0-9]{3}$ ]]; then
             V="20${BRANCH:0:2}.${BRANCH:2}"
-            echo "tag=${V}-nightly" >> "$GITHUB_OUTPUT"
+            echo "tag=v${V}-nightly" >> "$GITHUB_OUTPUT"
             echo "version=${V}-nightly" >> "$GITHUB_OUTPUT"
             echo "is_nightly=true" >> "$GITHUB_OUTPUT"
           else
