@@ -255,7 +255,7 @@ git:
 report_sizes: true
 nightly:
   version_template: '{{ .Env.NIGHTLY_VERSION }}'
-  tag_name: '{{ .Env.NIGHTLY_TAG }}'
+  tag_name: 2026.1-nightly
   publish_release: true
   keep_single_release: true
 after:
@@ -265,5 +265,5 @@ after:
       if [ '{{ .IsSnapshot }}' = 'false' -a \"\$SIGN\" = 'true' ];
       then
       codesign -gpg-key $FINGERPRINT -signed-files-dir=./dist/ dist/checksums.txt;
-      gh release --repo JetBrains/qodana-cli upload {{ if .IsNightly }}{{ .Env.NIGHTLY_TAG }}{{ else }}v{{ .Version}}{{ end }} dist/checksums.txt.asc;
+      gh release --repo JetBrains/qodana-cli upload {{ if .IsNightly }}{{ .Tag }}{{ else }}v{{ .Version}}{{ end }} dist/checksums.txt.asc;
       fi"
