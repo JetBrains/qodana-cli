@@ -11,6 +11,7 @@ import logging
 import os
 import re
 import sys
+import urllib.request
 from typing import Any, Dict
 
 from jinja2 import Environment, FileSystemLoader, Template, select_autoescape
@@ -20,7 +21,7 @@ logger = logging.getLogger(__name__)
 
 def load_release_info(qd_code: str, qd_version: str) -> Dict[str, Any]:
     """
-    Load release information from local feed files for the specified product and version.
+    Load release information from remote feed URL for the specified product and version.
 
     Args:
         qd_code (str): The Qodana product code (e.g., "QDGO", "QDJVM").
@@ -30,44 +31,47 @@ def load_release_info(qd_code: str, qd_version: str) -> Dict[str, Any]:
         Dict[str, Any]: A dictionary containing "build" and "downloads" keys,
                         or an empty dict if the release cannot be found.
     """
-    # Map QD_CODE to feed file name
+    # Map QD_CODE to full feed name (qodana-*)
     # Note: QDAND and QDANDC use JVM and JVM-Community feeds respectively
     product_mapping = {
-        "QDGO": "go",
-        "QDJS": "js",
-        "QDJVM": "jvm",
-        "QDJVMC": "jvm-community",
-        "QDAND": "jvm",           # Android uses JVM feed
-        "QDANDC": "jvm-community", # Android Community uses JVM-Community feed
-        "QDNET": "dotnet",
-        "QDPHP": "php",
-        "QDPY": "python",
-        "QDPYC": "python-community",
-        "QDCPP": "cpp",
-        "QDRUBY": "ruby",
+        "QDGO": "qodana-go",
+        "QDJS": "qodana-js",
+        "QDJVM": "qodana-jvm",
+        "QDJVMC": "qodana-jvm-community",
+        "QDAND": "qodana-jvm",           # Android uses JVM feed
+        "QDANDC": "qodana-jvm-community", # Android Community uses JVM-Community feed
+        "QDNET": "qodana-dotnet",
+        "QDPHP": "qodana-php",
+        "QDPY": "qodana-python",
+        "QDPYC": "qodana-python-community",
+        "QDCPP": "qodana-cpp",
+        "QDRUBY": "qodana-ruby",
     }
 
-    product_name = product_mapping.get(qd_code)
-    if not product_name:
+    feed_name = product_mapping.get(qd_code)
+    if not feed_name:
         logger.warning("Unknown product code '%s'. Skipping release info lookup.", qd_code)
         return {}
 
-    feed_path = os.path.join("feed", f"qodana-{product_name}.releases.json")
-
-    if not os.path.isfile(feed_path):
-        logger.warning("Feed file '%s' not found for product '%s'. Skipping.", feed_path, qd_code)
-        return {}
+    feed_url = f"https://download.jetbrains.com/qodana/feed/{feed_name}.releases.json"
 
     try:
-        with open(feed_path, "r", encoding="utf-8") as f:
-            feed_data = json.load(f)
-    except (json.JSONDecodeError, OSError) as e:
-        logger.warning("Error reading feed file '%s': %s. Skipping.", feed_path, e)
-        return {}
+        with urllib.request.urlopen(feed_url, timeout=10) as response:
+            feed_data = json.loads(response.read().decode("utf-8"))
+    except urllib.error.HTTPError as e:
+        if e.code == 404:
+            logger.warning("Feed URL '%s' not found (404). Skipping.", feed_url)
+            return {}
+        else:
+            logger.error("HTTP error fetching feed URL '%s': %s", feed_url, e)
+            raise
+    except (urllib.error.URLError, json.JSONDecodeError, OSError) as e:
+        logger.error("Error fetching feed URL '%s': %s", feed_url, e)
+        raise
 
     releases = feed_data.get("Releases", [])
     if not releases:
-        logger.warning("No releases found in feed file '%s'. Skipping.", feed_path)
+        logger.warning("No releases found in feed URL '%s'. Skipping.", feed_url)
         return {}
 
     # Sort releases by Type and Date, then filter by MajorVersion
@@ -76,8 +80,8 @@ def load_release_info(qd_code: str, qd_version: str) -> Dict[str, Any]:
 
     if not matching_releases:
         logger.warning(
-            "No release found for %s version %s in %s. Skipping.",
-            qd_code, qd_version, feed_path
+            "No release found for %s version %s from %s. Skipping.",
+            qd_code, qd_version, feed_url
         )
         return {}
 

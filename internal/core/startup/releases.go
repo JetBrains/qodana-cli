@@ -23,21 +23,31 @@
 package startup
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"io"
 	"net/http"
 	"os"
 	"path/filepath"
+	"time"
 
 	"github.com/JetBrains/qodana-cli/internal/platform/msg"
 	"github.com/JetBrains/qodana-cli/internal/platform/product"
 	"github.com/JetBrains/qodana-cli/internal/platform/utils"
 )
 
+/*
+* QD_PRODUCT_INTERNAL_FEED should point to the feed directory where all used linters
+* have their releases.json files in format <linter_name>.releases.json
+* for example:
+* QD_PRODUCT_INTERNAL_FEED: https://download.jetbrains.com/qodana/internal-feed
+* - qodana-jvm.releases.json
+* - qodana-go.releases.json
+ */
 func getProductFeedURL(linterName string) string {
 	if feed := os.Getenv("QD_PRODUCT_INTERNAL_FEED"); feed != "" {
-		return feed
+		return fmt.Sprintf("%s/%s.releases.json", feed, linterName)
 	}
 	return fmt.Sprintf(
 		"https://download.jetbrains.com/qodana/feed/%s.releases.json",
@@ -90,7 +100,15 @@ func getProductByLinterName(linterName string) (*Product, error) {
 	url := getProductFeedURL(linterName)
 
 	// Check if the product feed exists (404 will happen if native mode is not available for the chosen linter)
-	resp, err := http.Head(url)
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	req, err := http.NewRequestWithContext(ctx, http.MethodHead, url, nil)
+	if err != nil {
+		return nil, err
+	}
+	client := &http.Client{Timeout: 10 * time.Second}
+	resp, err := client.Do(req)
 	if err == nil {
 		defer func(Body io.ReadCloser) {
 			err := Body.Close()
