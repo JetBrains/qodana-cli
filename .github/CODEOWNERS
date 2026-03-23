@@ -13,4 +13,4 @@
 # Docker related files
 *.hcl @JetBrains/qodana-developers
 *Dockerfile @JetBrains/qodana-developers
-releases.json @JetBrains/qodana-developers
+feed/* @JetBrains/qodana-developers

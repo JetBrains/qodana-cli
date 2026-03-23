@@ -1,71 +1,33 @@
 ARG QD_RELEASE=""
-ENV QD_VERSION="{{ qd_release }}" QD_IMAGE="{{ qd_image }}"
+ENV QD_VERSION="{{ qd_version }}" QD_IMAGE="{{ qd_image }}"
 ARG QD_CODE="{{ qd_code }}"
-ARG IDE_RELEASE_FEED="https://raw.githubusercontent.com/JetBrains/qodana-docker/refs/heads/main/feed/releases.json"
+ARG QD_BUILD="{{ qd_build }}"
+ARG QD_DOWNLOAD_URL_LINUX="{{ qd_downloads.get('linux', {}).get('Link', '') }}"
+ARG QD_DOWNLOAD_URL_LINUX_ARM64="{{ qd_downloads.get('linuxARM64', {}).get('Link', '') }}"
+ARG QD_CHECKSUM_URL_LINUX="{{ qd_downloads.get('linux', {}).get('ChecksumLink', '') }}"
+ARG QD_CHECKSUM_URL_LINUX_ARM64="{{ qd_downloads.get('linuxARM64', {}).get('ChecksumLink', '') }}"
 # hadolint ignore=DL3003,SC2043
 RUN set -ex && \
     dpkgArch="$(dpkg --print-architecture)" && \
     case "$dpkgArch" in \
         "amd64") \
             OS_ARCH_SUFFIX=""; \
-            RELEASES_DIST_KEY="linux"; \
+            QD_URL="$QD_DOWNLOAD_URL_LINUX"; \
+            QD_CHECKSUM_URL="$QD_CHECKSUM_URL_LINUX"; \
             ;; \
         "arm64") \
             OS_ARCH_SUFFIX="-aarch64"; \
-            RELEASES_DIST_KEY="linuxARM64"; \
+            QD_URL="$QD_DOWNLOAD_URL_LINUX_ARM64"; \
+            QD_CHECKSUM_URL="$QD_CHECKSUM_URL_LINUX_ARM64"; \
             ;; \
         *) echo "Unsupported architecture $dpkgArch" >&2; exit 1 ;; \
     esac && \
     if [ -z "$QD_RELEASE" ]; then \
-        case "$QD_CODE" in \
-            "QDNET") \
-                RELEASE_CODE="RD"; \
-                ;; \
-            "QDGO") \
-                RELEASE_CODE="GO"; \
-                ;; \
-            "QDJS") \
-                RELEASE_CODE="WS"; \
-                ;; \
-            "QDJVM" | "QDAND") \
-                RELEASE_CODE="IIU"; \
-                ;; \
-            "QDJVMC" | "QDANDC") \
-                RELEASE_CODE="IIC"; \
-                ;; \
-            "QDPHP") \
-                RELEASE_CODE="PS"; \
-                ;; \
-            "QDPY") \
-                RELEASE_CODE="PCP"; \
-                ;; \
-            "QDPYC") \
-                RELEASE_CODE="PCC"; \
-                ;; \
-            "QDCPP") \
-                RELEASE_CODE="CL"; \
-                ;; \
-            *) echo "Unrecognized product code $QD_CODE" >&2; exit 1 ;; \
-        esac && \
-        RELEASE_JSON=$(\
-            curl $IDE_RELEASE_FEED |\
-            jq "[\
-                .[] |\
-                select(.Code==\"$RELEASE_CODE\") |\
-                .Releases |\
-                sort_by(.Type, .Date) |\
-                .[] |\
-                select(.MajorVersion==\"$QD_VERSION\")\
-            ] | .[-1]" \
-        ) && \
-        if [ "$RELEASE_JSON" = "null" ]; then \
-            echo "No release found for $RELEASE_CODE ($QD_CODE) $QD_VERSION in $IDE_RELEASE_FEED" \
-                >&2 && exit 1; \
+        if [ -z "$QD_BUILD" ] || [ -z "$QD_URL" ] || [ -z "$QD_CHECKSUM_URL" ]; then \
+            echo "No release information available for $QD_CODE $QD_VERSION" >&2 && exit 1; \
         fi && \
-        QD_BUILD="$QD_CODE-$(echo "$RELEASE_JSON" | jq -r '.Build')" && \
-        QD_NAME="qodana-$QD_BUILD$OS_ARCH_SUFFIX" && \
-        QD_URL=$(echo "$RELEASE_JSON" | jq -r ".Downloads.$RELEASES_DIST_KEY.Link") && \
-        QD_CHECKSUM_URL=$(echo "$RELEASE_JSON" | jq -r ".Downloads.$RELEASES_DIST_KEY.ChecksumLink"); \
+        QD_BUILD="$QD_CODE-$QD_BUILD" && \
+        QD_NAME="qodana-$QD_BUILD$OS_ARCH_SUFFIX"; \
     else \
         QD_BUILD="$QD_CODE-$QD_RELEASE" && \
         QD_NAME="qodana-$QD_RELEASE$OS_ARCH_SUFFIX" && \
