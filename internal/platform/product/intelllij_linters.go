@@ -21,7 +21,7 @@ import "fmt"
 type IntellijLinterProperties struct {
 	Linter
 	ProductInfoJsonCode string
-	FeedProductCode     string
+	QodanaLinterName    string
 	VmOptionsEnv        string
 	ScriptName          string
 }
@@ -30,7 +30,7 @@ var (
 	JvmLinterProperties = IntellijLinterProperties{
 		Linter:              JvmLinter,
 		ProductInfoJsonCode: "IU",
-		FeedProductCode:     "IIU",
+		QodanaLinterName:    "qodana-jvm",
 		VmOptionsEnv:        "IDEA_VM_OPTIONS",
 		ScriptName:          "idea",
 	}
@@ -38,7 +38,7 @@ var (
 	JvmCommunityLinterProperties = IntellijLinterProperties{
 		Linter:              JvmCommunityLinter,
 		ProductInfoJsonCode: "IC",
-		FeedProductCode:     "IIC",
+		QodanaLinterName:    "qodana-jvm-community",
 		VmOptionsEnv:        "IDEA_VM_OPTIONS",
 		ScriptName:          "idea",
 	}
@@ -46,7 +46,7 @@ var (
 	AndroidLinterProperties = IntellijLinterProperties{
 		Linter:              AndroidLinter,
 		ProductInfoJsonCode: "IU",
-		FeedProductCode:     "",
+		QodanaLinterName:    "qodana-android",
 		VmOptionsEnv:        "IDEA_VM_OPTIONS",
 		ScriptName:          "idea",
 	}
@@ -54,7 +54,7 @@ var (
 	AndroidCommunityLinterProperties = IntellijLinterProperties{
 		Linter:              AndroidCommunityLinter,
 		ProductInfoJsonCode: "IC",
-		FeedProductCode:     "",
+		QodanaLinterName:    "qodana-android-community",
 		VmOptionsEnv:        "IDEA_VM_OPTIONS",
 		ScriptName:          "idea",
 	}
@@ -62,7 +62,7 @@ var (
 	PhpLinterProperties = IntellijLinterProperties{
 		Linter:              PhpLinter,
 		ProductInfoJsonCode: "PS",
-		FeedProductCode:     "PS",
+		QodanaLinterName:    "qodana-php",
 		VmOptionsEnv:        "PHPSTORM_VM_OPTIONS",
 		ScriptName:          "phpstorm",
 	}
@@ -70,7 +70,7 @@ var (
 	PythonLinterProperties = IntellijLinterProperties{
 		Linter:              PythonLinter,
 		ProductInfoJsonCode: "PY",
-		FeedProductCode:     "PCP",
+		QodanaLinterName:    "qodana-python",
 		VmOptionsEnv:        "PYCHARM_VM_OPTIONS",
 		ScriptName:          "pycharm",
 	}
@@ -78,7 +78,7 @@ var (
 	PythonLinterCommunityProperties = IntellijLinterProperties{
 		Linter:              PythonCommunityLinter,
 		ProductInfoJsonCode: "PC",
-		FeedProductCode:     "PCC",
+		QodanaLinterName:    "qodana-python-community",
 		VmOptionsEnv:        "PYCHARM_VM_OPTIONS",
 		ScriptName:          "pycharm",
 	}
@@ -86,7 +86,7 @@ var (
 	JsLinterProperties = IntellijLinterProperties{
 		Linter:              JsLinter,
 		ProductInfoJsonCode: "WS",
-		FeedProductCode:     "WS",
+		QodanaLinterName:    "qodana-js",
 		VmOptionsEnv:        "WEBIDE_VM_OPTIONS",
 		ScriptName:          "webstorm",
 	}
@@ -94,7 +94,7 @@ var (
 	NetLinterProperties = IntellijLinterProperties{
 		Linter:              DotNetLinter,
 		ProductInfoJsonCode: "RD",
-		FeedProductCode:     "RD",
+		QodanaLinterName:    "qodana-dotnet",
 		VmOptionsEnv:        "RIDER_VM_OPTIONS",
 		ScriptName:          "rider",
 	}
@@ -102,7 +102,7 @@ var (
 	RubyLinterProperties = IntellijLinterProperties{
 		Linter:              RubyLinter,
 		ProductInfoJsonCode: "RM",
-		FeedProductCode:     "RM",
+		QodanaLinterName:    "qodana-ruby",
 		VmOptionsEnv:        "RUBYMINE_VM_OPTIONS",
 		ScriptName:          "rubymine",
 	}
@@ -110,7 +110,7 @@ var (
 	CppLinterProperties = IntellijLinterProperties{
 		Linter:              CppLinter,
 		ProductInfoJsonCode: "CL",
-		FeedProductCode:     "CL",
+		QodanaLinterName:    "qodana-cpp",
 		VmOptionsEnv:        "CLION_VM_OPTIONS",
 		ScriptName:          "clion",
 	}
@@ -118,7 +118,7 @@ var (
 	GoLinterProperties = IntellijLinterProperties{
 		Linter:              GoLinter,
 		ProductInfoJsonCode: "GO",
-		FeedProductCode:     "GO",
+		QodanaLinterName:    "qodana-go",
 		VmOptionsEnv:        "GOLAND_VM_OPTIONS",
 		ScriptName:          "goland",
 	}
@@ -126,7 +126,7 @@ var (
 	RustLinterProperties = IntellijLinterProperties{
 		Linter:              RustLinter,
 		ProductInfoJsonCode: "RR",
-		FeedProductCode:     "RR",
+		QodanaLinterName:    "qodana-rust",
 		VmOptionsEnv:        "RUSTROVER_VM_OPTIONS",
 		ScriptName:          "rustrover",
 	}

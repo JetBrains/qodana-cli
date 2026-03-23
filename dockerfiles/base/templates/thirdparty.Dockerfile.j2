@@ -1,5 +1,5 @@
-ARG QD_RELEASE="{{ qd_release }}"
-ENV QD_VERSION="{{ qd_release }}" QD_IMAGE="{{ qd_image }}"
+ARG QD_RELEASE="{{ qd_version }}"
+ENV QD_VERSION="{{ qd_version }}" QD_IMAGE="{{ qd_image }}"
 ARG QD_BUILD="{{ qd_code }}-$QD_RELEASE"
 # hadolint ignore=DL3003,SC2043
 RUN set -ex && \
