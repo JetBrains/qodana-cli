@@ -48,6 +48,7 @@ RUN --mount=target=/var/lib/apt/lists,type=cache,sharing=locked \
         libgssapi-krb5-2 \
         libicu76 \
         libssl3 \
+        libpam-modules \
         libstdc++6 \
         zlib1g
 
