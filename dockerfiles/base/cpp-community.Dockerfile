@@ -38,6 +38,7 @@ RUN --mount=target=/var/lib/apt/lists,type=cache,sharing=locked \
         make \
         patch \
         libc6-dev \
+        libpam-modules \
         locales \
         openssh-client && \
     echo 'en_US.UTF-8 UTF-8' > /etc/locale.gen && locale-gen && \
