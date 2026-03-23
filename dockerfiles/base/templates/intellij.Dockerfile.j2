@@ -90,6 +90,7 @@ ARG SUDO_SHA256="79eef9ec144c99809c3f037b17ec0936555d7e526ac0b2688eaa8b77e1452e4
 RUN if [ "$PRIVILEGED" = "true" ]; then \
         apt-get update && \
         apt-get install -y sudo && \
+        DEBIAN_FRONTEND=noninteractive pam-auth-update --force && \
         useradd -m -u 1001 -U qodana && \
         passwd -d qodana && \
         echo 'qodana ALL=(ALL) NOPASSWD:ALL' >> /etc/sudoers && \
