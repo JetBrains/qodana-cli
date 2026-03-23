@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - main
+      - '[0-9][0-9][0-9]'
   pull_request:
 
 jobs:
@@ -117,7 +118,7 @@ jobs:
           path: "${{ runner.temp }}/qodana/results"
 
   goreleaser:
-    name: "GoReleaser (${{ github.ref == 'refs/heads/main' && 'nightly' || 'build' }})"
+    name: "GoReleaser (${{ github.event_name == 'push' && 'nightly' || 'build' }})"
     runs-on: ubuntu-latest
     env:
       GITHUB_TOKEN: ${{ secrets.QODANA_JBR_TOKEN }}
@@ -134,8 +135,25 @@ jobs:
       - uses: ./.github/actions/qodana-build-cache
       - name: Download CLI dependencies
         run: go generate -v ./internal/tooling/...
+      - name: Determine nightly params
+        id: nightly
+        if: github.event_name == 'push'
+        run: |
+          BRANCH="${GITHUB_REF#refs/heads/}"
+          if [[ "$BRANCH" == "main" ]]; then
+            echo "tag=v2026.2-nightly" >> "$GITHUB_OUTPUT"
+            echo "version=2026.2-nightly" >> "$GITHUB_OUTPUT"
+            echo "is_nightly=true" >> "$GITHUB_OUTPUT"
+          elif [[ "$BRANCH" =~ ^[0-9]{3}$ ]]; then
+            V="20${BRANCH:0:2}.${BRANCH:2}"
+            echo "tag=v${V}-nightly" >> "$GITHUB_OUTPUT"
+            echo "version=${V}-nightly" >> "$GITHUB_OUTPUT"
+            echo "is_nightly=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "is_nightly=false" >> "$GITHUB_OUTPUT"
+          fi
       - name: Build CLI only
-        if: github.ref != 'refs/heads/main'
+        if: steps.nightly.outputs.is_nightly != 'true'
         uses: goreleaser/goreleaser-action@v6
         with:
           distribution: goreleaser-pro
@@ -143,8 +161,12 @@ jobs:
           args: build --snapshot --clean --id cli
         env:
           GORELEASER_KEY: ${{ secrets.GORELEASER_KEY }}
+      - name: Patch goreleaser nightly config
+        if: steps.nightly.outputs.is_nightly == 'true'
+        run: |
+          sed -i "s/tag_name: nightly/tag_name: ${{ steps.nightly.outputs.tag }}/" .goreleaser.yaml
       - name: Release nightly CLI only
-        if: github.ref == 'refs/heads/main'
+        if: steps.nightly.outputs.is_nightly == 'true'
         uses: goreleaser/goreleaser-action@v6
         with:
           distribution: goreleaser-pro
@@ -153,6 +175,7 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GORELEASER_KEY: ${{ secrets.GORELEASER_KEY }}
+          NIGHTLY_VERSION: ${{ steps.nightly.outputs.version }}
 
 #  install-script-check:
 #    strategy:

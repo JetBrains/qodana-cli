@@ -348,6 +348,7 @@ func SaveReport(resultDir string, reportDir string, cacheDir string) {
 	); res > 0 || err != nil {
 		os.Exit(res)
 	}
+	unpackWebUI(cacheDir, reportDir)
 }
 
 // ShowReport serves the Qodana report
@@ -362,7 +363,9 @@ func ShowReport(cacheDir string, resultsDir string, reportDir string, port int) 
 				if _, err := os.Stat(reportDir); os.IsNotExist(err) {
 					log.Fatal("Qodana report not found. Get a report by running `qodana scan`")
 				}
-				unpackWebUI(cacheDir, reportDir)
+				if _, err := os.Stat(filepath.Join(reportDir, "index.html")); os.IsNotExist(err) {
+					unpackWebUI(cacheDir, reportDir)
+				}
 				openReport("", reportDir, port)
 			},
 			fmt.Sprintf("Showing Qodana report from %s", fmt.Sprintf("http://localhost:%d/", port)),
