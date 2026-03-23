@@ -38,7 +38,10 @@ jobs:
         run: pip install jinja2
       - name: Generate Dockerfiles
         if: steps.check.outputs.has_dockerfiles == 'true' && steps.changes.outputs.dockerfiles == 'true'
-        run: ./scripts/dockerfiles.py dockerfiles
+        run: ./scripts/dockerfiles.py 2026.1
+      - name: Verify Dockerfiles links
+        if: steps.check.outputs.has_dockerfiles == 'true' && steps.changes.outputs.dockerfiles == 'true'
+        run: ./scripts/validate-dockerfiles-urls.py
       - name: Compare the expected and actual directories
         if: steps.check.outputs.has_dockerfiles == 'true' && steps.changes.outputs.dockerfiles == 'true'
         run: |

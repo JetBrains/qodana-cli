@@ -1,7 +1,8 @@
 const fs = require('fs');
+const path = require('path');
 const https = require('https');
 
-const jsonFilePath = '../../feed/releases.json';
+const feedDir = '../../feed';
 
 function httpsGet(url) {
     return new Promise((resolve, reject) => {
@@ -27,23 +28,28 @@ async function verifyChecksumLink(link, checksumLink) {
     }
 }
 
-async function verifyChecksums(data) {
-    for (const product of data) {
-        console.log(`::group::Product Code: ${product.Code}`);
-        for (const release of product.Releases) {
-            for (const downloadInfo of Object.values(release.Downloads)) {
-                await verifyChecksumLink(downloadInfo.Link, downloadInfo.ChecksumLink);
-            }
+async function verifyChecksums(product) {
+    console.log(`::group::Product Code: ${product.Code}`);
+    for (const release of product.Releases) {
+        for (const downloadInfo of Object.values(release.Downloads)) {
+            await verifyChecksumLink(downloadInfo.Link, downloadInfo.ChecksumLink);
         }
-        console.log('::endgroup::');
+    }
+    console.log('::endgroup::');
+}
+
+async function verifyAllReleases() {
+    const files = fs.readdirSync(feedDir).filter(f => f.endsWith('.releases.json'));
+
+    for (const file of files) {
+        const filePath = path.join(feedDir, file);
+        const content = fs.readFileSync(filePath, 'utf8');
+        const product = JSON.parse(content);
+        await verifyChecksums(product);
     }
 }
 
-fs.readFile(jsonFilePath, 'utf8', async (err, data) => {
-    if (err) {
-        console.error(`Error reading file from disk: ${err}`);
-    } else {
-        const releasesData = JSON.parse(data);
-        await verifyChecksums(releasesData);
-    }
+verifyAllReleases().catch(err => {
+    console.error(`Error: ${err.message}`);
+    process.exit(1);
 });

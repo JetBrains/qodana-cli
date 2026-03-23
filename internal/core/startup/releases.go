@@ -23,21 +23,36 @@
 package startup
 
 import (
+	"context"
 	"encoding/json"
+	"fmt"
 	"io"
+	"net/http"
 	"os"
 	"path/filepath"
+	"time"
 
 	"github.com/JetBrains/qodana-cli/internal/platform/msg"
 	"github.com/JetBrains/qodana-cli/internal/platform/product"
 	"github.com/JetBrains/qodana-cli/internal/platform/utils"
 )
 
-func getProductFeed() string {
+/*
+* QD_PRODUCT_INTERNAL_FEED should point to the feed directory where all used linters
+* have their releases.json files in format <linter_name>.releases.json
+* for example:
+* QD_PRODUCT_INTERNAL_FEED: https://download.jetbrains.com/qodana/internal-feed
+* - qodana-jvm.releases.json
+* - qodana-go.releases.json
+ */
+func getProductFeedURL(linterName string) string {
 	if feed := os.Getenv("QD_PRODUCT_INTERNAL_FEED"); feed != "" {
-		return feed
+		return fmt.Sprintf("%s/%s.releases.json", feed, linterName)
 	}
-	return "https://raw.githubusercontent.com/JetBrains/qodana-docker/main/feed/releases.json"
+	return fmt.Sprintf(
+		"https://download.jetbrains.com/qodana/feed/%s.releases.json",
+		linterName,
+	)
 }
 
 func getInternalAuth() string {
@@ -68,8 +83,8 @@ type ReleaseDownloadInfo struct {
 	ChecksumLink string `json:"ChecksumLink"`
 }
 
-func GetProductByCode(code string) (*Product, error) {
-	tempDir, err := os.MkdirTemp("", "productByCode")
+func getProductByLinterName(linterName string) (*Product, error) {
+	tempDir, err := os.MkdirTemp("", "productByLinterName")
 	if err != nil {
 		msg.ErrorMessage("Cannot create temp dir", err)
 		return nil, err
@@ -80,11 +95,34 @@ func GetProductByCode(code string) (*Product, error) {
 		if err != nil {
 			msg.ErrorMessage("Cannot clean up temp dir", err)
 		}
-	}(tempDir) // clean up
+	}(tempDir)
+
+	url := getProductFeedURL(linterName)
+
+	// Check if the product feed exists (404 will happen if native mode is not available for the chosen linter)
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	req, err := http.NewRequestWithContext(ctx, http.MethodHead, url, nil)
+	if err != nil {
+		return nil, err
+	}
+	client := &http.Client{Timeout: 10 * time.Second}
+	resp, err := client.Do(req)
+	if err == nil {
+		defer func(Body io.ReadCloser) {
+			err := Body.Close()
+			if err != nil {
+				msg.ErrorMessage("Cannot close response body", err)
+			}
+		}(resp.Body)
+		if resp.StatusCode == http.StatusNotFound {
+			return nil, nil
+		}
+	}
 
 	path := filepath.Join(tempDir, "productInfo.json")
-
-	if err := utils.DownloadFile(path, getProductFeed(), "", nil); err != nil {
+	if err := utils.DownloadFile(path, url, "", nil); err != nil {
 		return nil, err
 	}
 
@@ -101,21 +139,15 @@ func GetProductByCode(code string) (*Product, error) {
 
 	byteValue, _ := io.ReadAll(file)
 
-	var products []Product
-	if err := json.Unmarshal(byteValue, &products); err != nil {
+	var prod Product
+	if err := json.Unmarshal(byteValue, &prod); err != nil {
 		return nil, err
 	}
 
-	for _, prod := range products {
-		if prod.Code == code {
-			return &prod, nil
-		}
-	}
-
-	return nil, nil
+	return &prod, nil
 }
 
-func SelectLatestCompatibleRelease(prod *Product, reqType string) *ReleaseInfo {
+func selectLatestCompatibleRelease(prod *Product, reqType string) *ReleaseInfo {
 	var latestRelease *ReleaseInfo
 	latestDate := ""
 

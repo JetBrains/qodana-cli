@@ -143,18 +143,23 @@ func getIde(analyzer product.Analyzer) *ReleaseDownloadInfo {
 		return nil
 	}
 
-	feedProductCode := linterProperties.FeedProductCode
-	prod, err := GetProductByCode(feedProductCode)
+	qodanaLinterName := linterProperties.QodanaLinterName
+	if qodanaLinterName == "" {
+		msg.ErrorMessage("Native mode for linter %s is not supported (no feed available)", name)
+		return nil
+	}
+
+	prod, err := getProductByLinterName(qodanaLinterName)
 	if err != nil {
 		msg.ErrorMessage("Error while obtaining the product info: %s", err)
 		return nil
 	}
 	if prod == nil {
-		msg.ErrorMessage("Product info is not found for code: %s", feedProductCode)
+		msg.ErrorMessage("Feed file not found for linter '%s' (native mode not available yet)", qodanaLinterName)
 		return nil
 	}
 
-	release := SelectLatestCompatibleRelease(prod, dist)
+	release := selectLatestCompatibleRelease(prod, dist)
 	if release == nil {
 		msg.ErrorMessage("Could not find a %s version for '%s'", dist, linterProperties.PresentableName)
 		return nil
@@ -199,14 +204,14 @@ func getIde(analyzer product.Analyzer) *ReleaseDownloadInfo {
 	if !ok {
 		msg.ErrorMessage(
 			"%s %s (%s) is not available or not supported for the current platform",
-			feedProductCode,
+			qodanaLinterName,
 			*release.Version,
 			dist,
 		)
 		return nil
 	}
 
-	log.Debug(fmt.Sprintf("%s %s %s %s URL: %s", feedProductCode, dist, *release.Version, downloadType, res.Link))
+	log.Debug(fmt.Sprintf("%s %s %s %s URL: %s", qodanaLinterName, dist, *release.Version, downloadType, res.Link))
 	return &res
 }
 
