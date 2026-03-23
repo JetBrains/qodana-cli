@@ -1,4 +1,4 @@
-FROM registry.jetbrains.team/p/sa/containers/qodana:jvm-base-latest
+FROM registry.jetbrains.team/p/sa/containers/qodana:jvm-base-261
 
 ARG TARGETPLATFORM
 ARG DEVICEID

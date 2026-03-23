@@ -3,7 +3,7 @@ group "all" {
     "jvm-community", "jvm", "python-community", "python",
     "dotnet-community", "dotnet",
     "cpp-community", "cpp", "cpp-community-bookworm", "cpp-bookworm",
-    "go-base-latest", "js-base-latest", "php-base-latest", "rust-base-latest",
+    "go-base-261", "js-base-261", "php-base-261", "rust-base-261",
     "ruby3x"
   ]
 }
@@ -30,30 +30,30 @@ group "clang" {
 
 # Clang Bookworm - split by version for max parallelism
 group "clang-16" {
-  targets = ["cpp-community-bookworm-16-latest", "cpp-base-bookworm-16-latest"]
+  targets = ["cpp-community-bookworm-16-261", "cpp-base-bookworm-16-261"]
 }
 group "clang-17" {
-  targets = ["cpp-community-bookworm-17-latest", "cpp-base-bookworm-17-latest"]
+  targets = ["cpp-community-bookworm-17-261", "cpp-base-bookworm-17-261"]
 }
 group "clang-18" {
-  targets = ["cpp-community-bookworm-18-latest", "cpp-base-bookworm-18-latest"]
+  targets = ["cpp-community-bookworm-18-261", "cpp-base-bookworm-18-261"]
 }
 group "clang-19" {
-  targets = ["cpp-community-bookworm-19-latest", "cpp-base-bookworm-19-latest"]
+  targets = ["cpp-community-bookworm-19-261", "cpp-base-bookworm-19-261"]
 }
 
 # Standalone images - each in own job for parallelism
 group "go" {
-  targets = ["go-base-latest"]
+  targets = ["go-base-261"]
 }
 group "js" {
-  targets = ["js-base-latest"]
+  targets = ["js-base-261"]
 }
 group "php" {
-  targets = ["php-base-latest"]
+  targets = ["php-base-261"]
 }
 group "rust" {
-  targets = ["rust-base-latest"]
+  targets = ["rust-base-261"]
 }
 
 # Ruby versions share base, build together
@@ -63,7 +63,7 @@ group "ruby" {
 
 target "jvm-community" {
   tags = [
-    "registry.jetbrains.team/p/sa/containers/qodana:jvm-community-base-latest"
+    "registry.jetbrains.team/p/sa/containers/qodana:jvm-community-base-261"
   ]
   platforms = ["linux/amd64", "linux/arm64"]
   dockerfile = "jvm-community.Dockerfile"
@@ -74,7 +74,7 @@ target "jvm" {
     jvm-community = "target:jvm-community"
   }
   tags = [
-    "registry.jetbrains.team/p/sa/containers/qodana:jvm-base-latest"
+    "registry.jetbrains.team/p/sa/containers/qodana:jvm-base-261"
   ]
   platforms = ["linux/amd64", "linux/arm64"]
   dockerfile = "jvm.Dockerfile"
@@ -85,7 +85,7 @@ target "python-community" {
     jvm-community = "target:jvm-community"
   }
   tags = [
-    "registry.jetbrains.team/p/sa/containers/qodana:python-community-base-latest"
+    "registry.jetbrains.team/p/sa/containers/qodana:python-community-base-261"
   ]
   platforms = ["linux/amd64", "linux/arm64"]
   dockerfile = "python-community.Dockerfile"
@@ -96,32 +96,32 @@ target "python" {
     python-community = "target:python-community"
   }
   tags = [
-    "registry.jetbrains.team/p/sa/containers/qodana:python-base-latest"
+    "registry.jetbrains.team/p/sa/containers/qodana:python-base-261"
   ]
   platforms = ["linux/amd64", "linux/arm64"]
   dockerfile = "python.Dockerfile"
 }
 
-target "go-base-latest" {
-  tags = ["registry.jetbrains.team/p/sa/containers/qodana:go-base-latest"]
+target "go-base-261" {
+  tags = ["registry.jetbrains.team/p/sa/containers/qodana:go-base-261"]
   platforms = ["linux/amd64", "linux/arm64"]
   dockerfile = "go.Dockerfile"
 }
 
-target "js-base-latest" {
-  tags = ["registry.jetbrains.team/p/sa/containers/qodana:js-base-latest"]
+target "js-base-261" {
+  tags = ["registry.jetbrains.team/p/sa/containers/qodana:js-base-261"]
   platforms = ["linux/amd64", "linux/arm64"]
   dockerfile = "js.Dockerfile"
 }
 
-target "php-base-latest" {
-  tags = ["registry.jetbrains.team/p/sa/containers/qodana:php-base-latest"]
+target "php-base-261" {
+  tags = ["registry.jetbrains.team/p/sa/containers/qodana:php-base-261"]
   platforms = ["linux/amd64", "linux/arm64"]
   dockerfile = "php.Dockerfile"
 }
 
-target "rust-base-latest" {
-  tags = ["registry.jetbrains.team/p/sa/containers/qodana:rust-base-latest"]
+target "rust-base-261" {
+  tags = ["registry.jetbrains.team/p/sa/containers/qodana:rust-base-261"]
   platforms = ["linux/amd64", "linux/arm64"]
   dockerfile = "rust.Dockerfile"
 }
@@ -130,9 +130,9 @@ target "cpp-community" {
   matrix = {
     clang = ["20", "21"]
   }
-  name = "cpp-community-${clang}-latest"
+  name = "cpp-community-${clang}-261"
   tags = [
-    "registry.jetbrains.team/p/sa/containers/qodana:cpp-community-base-${clang}-latest"
+    "registry.jetbrains.team/p/sa/containers/qodana:cpp-community-base-${clang}-261"
   ]
   platforms = ["linux/amd64", "linux/arm64"]
   dockerfile = "cpp-community.Dockerfile"
@@ -143,14 +143,14 @@ target "cpp-community" {
 
 target "cpp" {
   contexts = {
-    cpp-community = "target:cpp-community-${clang}-latest"
+    cpp-community = "target:cpp-community-${clang}-261"
   }
   matrix = {
     clang = ["20", "21"]
   }
-  name = "cpp-base-${clang}-latest"
+  name = "cpp-base-${clang}-261"
   tags = [
-    "registry.jetbrains.team/p/sa/containers/qodana:cpp-base-${clang}-latest"
+    "registry.jetbrains.team/p/sa/containers/qodana:cpp-base-${clang}-261"
   ]
   platforms = ["linux/amd64", "linux/arm64"]
   dockerfile = "cpp.Dockerfile"
@@ -164,9 +164,9 @@ target "cpp-community-bookworm" {
   matrix = {
     clang = ["16", "17", "18", "19"]
   }
-  name = "cpp-community-bookworm-${clang}-latest"
+  name = "cpp-community-bookworm-${clang}-261"
   tags = [
-    "registry.jetbrains.team/p/sa/containers/qodana:cpp-community-base-${clang}-latest"
+    "registry.jetbrains.team/p/sa/containers/qodana:cpp-community-base-${clang}-261"
   ]
   platforms = ["linux/amd64", "linux/arm64"]
   dockerfile = "cpp-community-bookworm.Dockerfile"
@@ -177,14 +177,14 @@ target "cpp-community-bookworm" {
 
 target "cpp-bookworm" {
   contexts = {
-    cpp-community = "target:cpp-community-bookworm-${clang}-latest"
+    cpp-community = "target:cpp-community-bookworm-${clang}-261"
   }
   matrix = {
     clang = ["16", "17", "18", "19"]
   }
-  name = "cpp-base-bookworm-${clang}-latest"
+  name = "cpp-base-bookworm-${clang}-261"
   tags = [
-    "registry.jetbrains.team/p/sa/containers/qodana:cpp-base-${clang}-latest"
+    "registry.jetbrains.team/p/sa/containers/qodana:cpp-base-${clang}-261"
   ]
   platforms = ["linux/amd64", "linux/arm64"]
   dockerfile = "cpp.Dockerfile"
@@ -195,7 +195,7 @@ target "cpp-bookworm" {
 
 target "dotnet-community" {
   tags = [
-    "registry.jetbrains.team/p/sa/containers/qodana:dotnet-community-base-latest"
+    "registry.jetbrains.team/p/sa/containers/qodana:dotnet-community-base-261"
   ]
   platforms = ["linux/amd64", "linux/arm64"]
   dockerfile = "dotnet-community.Dockerfile"
@@ -206,7 +206,7 @@ target "dotnet" {
     dotnet-community = "target:dotnet-community"
   }
   tags = [
-    "registry.jetbrains.team/p/sa/containers/qodana:dotnet-base-latest"
+    "registry.jetbrains.team/p/sa/containers/qodana:dotnet-base-261"
   ]
   platforms = ["linux/amd64", "linux/arm64"]
   dockerfile = "dotnet.Dockerfile"
@@ -218,7 +218,7 @@ target "ruby3x" {
   }
   name = "ruby-base-3${version}"
   tags = [
-    "registry.jetbrains.team/p/sa/containers/qodana:ruby-base-3.${version}-latest"
+    "registry.jetbrains.team/p/sa/containers/qodana:ruby-base-3.${version}-261"
   ]
   platforms = ["linux/amd64", "linux/arm64"]
   dockerfile = "ruby.Dockerfile"
