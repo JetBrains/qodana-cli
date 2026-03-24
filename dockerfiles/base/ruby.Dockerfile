@@ -32,7 +32,6 @@ RUN --mount=target=/var/lib/apt/lists,type=cache,sharing=locked \
         locales \
         openssh-client \
         procps \
-        libpam-modules \
         build-essential \
         jq && \
     echo 'en_US.UTF-8 UTF-8' > /etc/locale.gen && locale-gen && \
