@@ -262,9 +262,8 @@ def generate_variant_dockerfile(
         # For IntelliJ-based variants (not third-party), load release info from local feeds
         release_info = load_release_info(qd_code, qd_version)
         if not release_info:
-            # If we can't find release info, skip this variant
-            logger.warning("Skipping variant '%s' due to missing release information.", variant)
-            return ""
+            logger.info("No release info for '%s' — Dockerfile will resolve at build time.", variant)
+            release_info = {"build": "", "downloads": {}}
 
         template = intellij_template
         snippet = template.render(
