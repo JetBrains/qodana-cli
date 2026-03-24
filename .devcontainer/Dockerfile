@@ -15,18 +15,18 @@
 #
 # This Dockerfile is for https://github.com/jetbrains/qodana-cli dev container.
 
-FROM dhi.io/golang:1.25-debian13-dev
+FROM golang:bookworm
 ARG TARGETARCH
 ARG CLANG=16
 ENV TARGETARCH=$TARGETARCH \
     CLANG=$CLANG
 ENV CHOCO_VERSION=2.2.2 \
-    GH_VERSION=2.41.0 \
-    GORELEASER_VERSION=2.14.3
-ENV MONO_REPO="https://download.mono-project.com/repo/debian"
+    GH_VERSION=2.41.0
+ENV MONO_REPO="https://download.mono-project.com/repo/debian" \
+    MONO_KEY="3FA7E0328081BFF6A14DA29AA6A19B38D3D831EF"
 
-RUN set -ex && ln -s /usr/bin/which.debianutils /usr/bin/which && \
-    apt-get update && apt-get install -y --no-install-recommends init-system-helpers gzip wget \
+RUN set -ex &&  \
+    apt-get update && apt-get install -y --no-install-recommends \
       apt-transport-https \
       autoconf \
       automake \
@@ -40,7 +40,6 @@ RUN set -ex && ln -s /usr/bin/which.debianutils /usr/bin/which && \
       make \
       patch \
       libc6-dev \
-      libicu76 \
       git \
       git-lfs \
       default-jre \
@@ -48,13 +47,13 @@ RUN set -ex && ln -s /usr/bin/which.debianutils /usr/bin/which && \
 
 # note: choco is required for the full goreleaser functionality
 RUN set -ex &&  \
-    mkdir -p /tmp /opt/chocolatey /usr/local/bin &&  \
-    echo "deb [trusted=yes] $MONO_REPO stable-buster main" |  \
+    mkdir -p /tmp /opt/chocolatey &&  \
+    gpg --homedir /tmp --no-default-keyring --keyring /usr/share/keyrings/mono-official-archive-keyring.gpg  \
+        --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys $MONO_KEY &&  \
+    echo "deb [trusted=yes] https://repo.goreleaser.com/apt/ /" | tee /etc/apt/sources.list.d/goreleaser.list &&  \
+    echo "deb [signed-by=/usr/share/keyrings/mono-official-archive-keyring.gpg] $MONO_REPO stable-buster main" |  \
         tee /etc/apt/sources.list.d/mono-official-stable.list &&  \
-    apt-get update && apt-get install --no-install-recommends mono-devel -y &&  \
-    GOARCH=$([ "$TARGETARCH" = "amd64" ] && echo "x86_64" || echo "$TARGETARCH") &&  \
-    curl -sfL "https://github.com/goreleaser/goreleaser-pro/releases/download/v${GORELEASER_VERSION}/goreleaser-pro_Linux_${GOARCH}.tar.gz" |  \
-        tar -xz -C /usr/local/bin goreleaser &&  \
+    apt-get update && apt-get install --no-install-recommends goreleaser-pro mono-devel -y &&  \
     curl -sL "https://github.com/chocolatey/choco/releases/download/$CHOCO_VERSION/chocolatey.v$CHOCO_VERSION.tar.gz" |  \
         tar -xz -C "/opt/chocolatey" &&  \
     echo '#!/bin/bash' >> /usr/local/bin/choco &&  \
