@@ -1,62 +1,19 @@
 group "all" {
-  targets = [
-    "jvm-community", "jvm", "python-community", "python",
-    "dotnet-community", "dotnet",
-    "cpp-community", "cpp", "cpp-community-bookworm", "cpp-bookworm",
-    "go-base-261", "js-base-261", "php-base-261", "rust-base-261",
-    "ruby3x"
-  ]
+  targets = ["jvm-community", "jvm", "python", "python-community", "other", "cpp", "cpp-community", "ruby3x", "dotnet", "dotnet-community"]
 }
 
-# Default group for `docker buildx bake` without args
 group "default" {
-  targets = ["jvm-community", "jvm", "python-community", "python"]
+  targets = ["jvm-community", "jvm", "python-community", "python", "dotnet-community", "dotnet"]
 }
 
-# JVM chain: jvm-community is base for jvm and python-community
-group "jvm" {
-  targets = ["jvm-community", "jvm", "python-community", "python"]
+group "more" {
+  targets = ["other"]
 }
 
-# .NET chain
-group "dotnet" {
-  targets = ["dotnet-community", "dotnet"]
-}
-
-# Clang Trixie (20, 21) - fast, modern LLVM
 group "clang" {
   targets = ["cpp", "cpp-community"]
 }
 
-# Clang Bookworm - split by version for max parallelism
-group "clang-16" {
-  targets = ["cpp-community-bookworm-16-261", "cpp-base-bookworm-16-261"]
-}
-group "clang-17" {
-  targets = ["cpp-community-bookworm-17-261", "cpp-base-bookworm-17-261"]
-}
-group "clang-18" {
-  targets = ["cpp-community-bookworm-18-261", "cpp-base-bookworm-18-261"]
-}
-group "clang-19" {
-  targets = ["cpp-community-bookworm-19-261", "cpp-base-bookworm-19-261"]
-}
-
-# Standalone images - each in own job for parallelism
-group "go" {
-  targets = ["go-base-261"]
-}
-group "js" {
-  targets = ["js-base-261"]
-}
-group "php" {
-  targets = ["php-base-261"]
-}
-group "rust" {
-  targets = ["rust-base-261"]
-}
-
-# Ruby versions share base, build together
 group "ruby" {
   targets = ["ruby3x"]
 }
@@ -102,33 +59,21 @@ target "python" {
   dockerfile = "python.Dockerfile"
 }
 
-target "go-base-261" {
-  tags = ["registry.jetbrains.team/p/sa/containers/qodana:go-base-261"]
+target "other" {
+  name = "${edition}-base-261"
+  matrix = {
+    edition = ["go", "js", "php", "rust", "ruby"]
+  }
+  tags = [
+    "registry.jetbrains.team/p/sa/containers/qodana:${edition}-base-261"
+  ]
   platforms = ["linux/amd64", "linux/arm64"]
-  dockerfile = "go.Dockerfile"
-}
-
-target "js-base-261" {
-  tags = ["registry.jetbrains.team/p/sa/containers/qodana:js-base-261"]
-  platforms = ["linux/amd64", "linux/arm64"]
-  dockerfile = "js.Dockerfile"
-}
-
-target "php-base-261" {
-  tags = ["registry.jetbrains.team/p/sa/containers/qodana:php-base-261"]
-  platforms = ["linux/amd64", "linux/arm64"]
-  dockerfile = "php.Dockerfile"
-}
-
-target "rust-base-261" {
-  tags = ["registry.jetbrains.team/p/sa/containers/qodana:rust-base-261"]
-  platforms = ["linux/amd64", "linux/arm64"]
-  dockerfile = "rust.Dockerfile"
+  dockerfile = "${edition}.Dockerfile"
 }
 
 target "cpp-community" {
   matrix = {
-    clang = ["20", "21"]
+    clang = ["15", "16", "17", "18"]
   }
   name = "cpp-community-${clang}-261"
   tags = [
@@ -146,43 +91,9 @@ target "cpp" {
     cpp-community = "target:cpp-community-${clang}-261"
   }
   matrix = {
-    clang = ["20", "21"]
+    clang = ["15", "16", "17", "18"]
   }
   name = "cpp-base-${clang}-261"
-  tags = [
-    "registry.jetbrains.team/p/sa/containers/qodana:cpp-base-${clang}-261"
-  ]
-  platforms = ["linux/amd64", "linux/arm64"]
-  dockerfile = "cpp.Dockerfile"
-  args = {
-    CLANG = clang
-  }
-}
-
-# Bookworm-based cpp for clang 16-19 (LLVM apt doesn't have these for Trixie)
-target "cpp-community-bookworm" {
-  matrix = {
-    clang = ["16", "17", "18", "19"]
-  }
-  name = "cpp-community-bookworm-${clang}-261"
-  tags = [
-    "registry.jetbrains.team/p/sa/containers/qodana:cpp-community-base-${clang}-261"
-  ]
-  platforms = ["linux/amd64", "linux/arm64"]
-  dockerfile = "cpp-community-bookworm.Dockerfile"
-  args = {
-    CLANG = clang
-  }
-}
-
-target "cpp-bookworm" {
-  contexts = {
-    cpp-community = "target:cpp-community-bookworm-${clang}-261"
-  }
-  matrix = {
-    clang = ["16", "17", "18", "19"]
-  }
-  name = "cpp-base-bookworm-${clang}-261"
   tags = [
     "registry.jetbrains.team/p/sa/containers/qodana:cpp-base-${clang}-261"
   ]
@@ -214,7 +125,7 @@ target "dotnet" {
 
 target "ruby3x" {
   matrix = {
-    version = ["2", "3", "4"]
+    version = ["1", "2", "3", "4"]
   }
   name = "ruby-base-3${version}"
   tags = [
@@ -223,6 +134,6 @@ target "ruby3x" {
   platforms = ["linux/amd64", "linux/arm64"]
   dockerfile = "ruby.Dockerfile"
   args = {
-    RUBY_TAG = "3.${version}-debian13-dev"
+    RUBY_TAG = "3.${version}-slim-bookworm"
   }
 }
