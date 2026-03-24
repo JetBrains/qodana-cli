@@ -15,7 +15,6 @@ ARG PRIVILEGED="true"
 RUN if [ "$PRIVILEGED" = "true" ]; then \
         apt-get update && \
         apt-get install -y sudo && \
-        DEBIAN_FRONTEND=noninteractive pam-auth-update --force && \
         useradd -m -u 1001 -U qodana && \
         passwd -d qodana && \
         echo 'qodana ALL=(ALL) NOPASSWD:ALL' >> /etc/sudoers && \
