@@ -118,6 +118,9 @@ func configurationLoaderCliArgs(
 	var err error
 	args := []string{
 		tooling.GetQodanaJBRPath(cacheDir),
+		// config-loader-cli -> Clikt -> Mordant -> JNA
+		// https://ajalt.github.io/mordant/guide/#__tabbed_1_2
+		"--enable-native-access=ALL-UNNAMED",
 		"-jar",
 		tooling.ConfigLoaderCli.GetLibPath(cacheDir),
 	}
