@@ -89,7 +89,7 @@ func CheckDirFiles(dir string) bool {
 func CleanDirectory(dir string) error {
 	entries, err := os.ReadDir(dir)
 	if err != nil {
-		if os.IsNotExist(err) {
+		if errors.Is(err, os.ErrNotExist) {
 			return nil
 		}
 		return err

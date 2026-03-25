@@ -1,0 +1,25 @@
+repos:
+  # Run before tools that may require generated code ===================================================================
+  - repo: local
+    hooks:
+      - id: go-generate
+        name: go generate (tooling)
+        entry: go generate -v ./internal/tooling/...
+        language: system
+        pass_filenames: false
+        stages: [pre-commit]
+  # ====================================================================================================================
+
+  - repo: https://github.com/golangci/golangci-lint
+    rev: v2.6.1
+    hooks:
+      - id: golangci-lint-full
+
+  - repo: local
+    hooks:
+      - id: go-vet
+        name: go vet
+        entry: go vet ./...
+        language: system
+        pass_filenames: false
+        types: [go]

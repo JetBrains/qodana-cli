@@ -17,6 +17,7 @@
 package platform
 
 import (
+	"errors"
 	"os"
 	"path/filepath"
 	"testing"
@@ -36,7 +37,7 @@ func TestMount(t *testing.T) {
 	for _, p := range mountInfo.CustomTools {
 		_, err := os.Stat(p)
 		if err != nil {
-			if os.IsNotExist(err) {
+			if errors.Is(err, os.ErrNotExist) {
 				t.Error("Unpacking failed")
 			}
 		}
@@ -63,7 +64,7 @@ func TestGetToolsMountPath(t *testing.T) {
 		t.Error("getToolsMountPath returned empty string")
 	}
 
-	if _, err := os.Stat(path); os.IsNotExist(err) {
+	if _, err := os.Stat(path); errors.Is(err, os.ErrNotExist) {
 		t.Error("getToolsMountPath did not create directory")
 	}
 }
