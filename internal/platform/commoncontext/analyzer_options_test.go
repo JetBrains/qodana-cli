@@ -162,13 +162,13 @@ var optionsTests = []TestCase{
 		expected:     &product.NativeAnalyzer{Linter: product.JsLinter, Eap: !product.IsReleased},
 	},
 	{
-		name:         "Known linter passed --linter, --within-docker=false, eap only linter",
+		name:         "Known linter passed --linter, --within-docker=false, cpp linter",
 		ide:          "",
 		linter:       "qodana-cpp",
 		image:        "",
 		withinDocker: "false",
 		failure:      false,
-		expected:     &product.NativeAnalyzer{Linter: product.CppLinter, Eap: product.CppLinter.EapOnly},
+		expected:     &product.NativeAnalyzer{Linter: product.CppLinter, Eap: !product.IsReleased || product.CppLinter.EapOnly},
 	},
 	{
 		name:         "Known linter passed --linter, --within-docker=true",
