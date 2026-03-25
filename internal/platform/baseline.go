@@ -29,11 +29,11 @@ func computeBaselinePrintResults(c thirdpartyscan.Context, thresholds map[string
 	sarifPath := GetSarifPath(c.ResultsDir())
 	args := []string{
 		tooling.GetQodanaJBRPath(c.CacheDir()),
-		"-jar",
-		tooling.BaselineCli.GetLibPath(c.CacheDir()),
 		// baseline-cli -> Clikt -> Mordant -> JNA
 		// https://ajalt.github.io/mordant/guide/#__tabbed_1_2
 		"--enable-native-access=ALL-UNNAMED",
+		"-jar",
+		tooling.BaselineCli.GetLibPath(c.CacheDir()),
 		"-r",
 		sarifPath,
 	}
