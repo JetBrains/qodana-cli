@@ -1,6 +1,7 @@
 package fs
 
 import (
+	"errors"
 	"os"
 	"path/filepath"
 	"sync"
@@ -50,7 +51,7 @@ func TestCreateAtomic(t *testing.T) {
 		assert.NoError(t, w.Abort())
 
 		_, err = os.Stat(path)
-		assert.True(t, os.IsNotExist(err))
+		assert.True(t, errors.Is(err, os.ErrNotExist))
 
 		noTempFilesLeft(t, dir)
 	})

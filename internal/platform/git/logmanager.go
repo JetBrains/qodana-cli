@@ -17,6 +17,7 @@
 package git
 
 import (
+	"errors"
 	"os"
 	"path/filepath"
 	"sync"
@@ -50,7 +51,7 @@ func (lm *LoggerManager) GetLogger(logdir string, command string) (*logrus.Logge
 
 	logger := logrus.New()
 
-	if _, err := os.Stat(logdir); os.IsNotExist(err) {
+	if _, err := os.Stat(logdir); errors.Is(err, os.ErrNotExist) {
 		// When docker being launched, directory does not get created, returning nil
 		return nil, nil
 	}

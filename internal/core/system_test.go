@@ -506,6 +506,23 @@ func TestIsHomeDirectory(t *testing.T) {
 	}
 }
 
+func TestIsHomeDirectory_ViaSymlink(t *testing.T) {
+	home, err := os.UserHomeDir()
+	if err != nil {
+		t.Skip("cannot get home directory")
+	}
+
+	tmp := t.TempDir()
+	link := filepath.Join(tmp, "home-link")
+	if err := os.Symlink(home, link); err != nil {
+		t.Fatal(err)
+	}
+
+	if !IsHomeDirectory(link) {
+		t.Error("IsHomeDirectory should return true for a symlink pointing to the home directory")
+	}
+}
+
 func TestOpenDir(t *testing.T) {
 	t.Run("open existing directory", func(t *testing.T) {
 		dir := t.TempDir()

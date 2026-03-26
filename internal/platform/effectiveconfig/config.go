@@ -22,6 +22,7 @@ import (
 	"os"
 	"path/filepath"
 
+	"github.com/JetBrains/qodana-cli/internal/foundation/fs"
 	"github.com/JetBrains/qodana-cli/internal/platform/msg"
 	"github.com/JetBrains/qodana-cli/internal/platform/qdyaml"
 	"github.com/JetBrains/qodana-cli/internal/platform/utils"
@@ -118,11 +119,14 @@ func configurationLoaderCliArgs(
 	var err error
 	args := []string{
 		tooling.GetQodanaJBRPath(cacheDir),
+		// config-loader-cli -> Clikt -> Mordant -> JNA
+		// https://ajalt.github.io/mordant/guide/#__tabbed_1_2
+		"--enable-native-access=ALL-UNNAMED",
 		"-jar",
 		tooling.ConfigLoaderCli.GetLibPath(cacheDir),
 	}
 
-	effectiveConfigDirAbs, err := filepath.Abs(effectiveConfigDir)
+	effectiveConfigDirAbs, err := fs.WeaklyCanonical(effectiveConfigDir)
 	if err != nil {
 		err := fmt.Errorf(
 			"failed to compute absolute path of effective configuration directory %s: %v",
@@ -134,7 +138,7 @@ func configurationLoaderCliArgs(
 	args = append(args, "--effective-config-out-dir", effectiveConfigDirAbs)
 
 	if localQodanaYamlPath != "" {
-		localQodanaYamlPathAbs, err := filepath.Abs(localQodanaYamlPath)
+		localQodanaYamlPathAbs, err := fs.WeaklyCanonical(localQodanaYamlPath)
 		if err != nil {
 			err := fmt.Errorf(
 				"failed to compute absolute path of local qodana.yaml file %s: %v",
@@ -151,7 +155,7 @@ func configurationLoaderCliArgs(
 	}
 
 	if globalConfigurationsFile != "" {
-		globalConfigurationsFileAbs, err := filepath.Abs(globalConfigurationsFile)
+		globalConfigurationsFileAbs, err := fs.WeaklyCanonical(globalConfigurationsFile)
 		if err != nil {
 			err := fmt.Errorf(
 				"failed to compute absolute path of global configurations file %s: %v",
@@ -204,7 +208,7 @@ func getEffectiveQodanaYamlData(effectiveConfigDir string) (Files, error) {
 func isFileExists(path string) bool {
 	if _, err := os.Stat(path); err == nil {
 		return true
-	} else if os.IsNotExist(err) {
+	} else if errors.Is(err, os.ErrNotExist) {
 		return false
 	} else {
 		log.Fatalf("Failed to verify existence of file %s: %s", path, err)

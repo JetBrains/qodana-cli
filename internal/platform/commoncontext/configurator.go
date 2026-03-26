@@ -18,6 +18,7 @@ package commoncontext
 
 import (
 	"bytes"
+	"errors"
 	"io"
 	"os"
 	"path/filepath"
@@ -170,7 +171,7 @@ func readIdeaDir(project string) []string {
 	var languages []string
 	var files []string
 	root := filepath.Join(project, ".idea")
-	if _, err := os.Stat(root); os.IsNotExist(err) {
+	if _, err := os.Stat(root); errors.Is(err, os.ErrNotExist) {
 		return languages
 	}
 	err := filepath.Walk(

@@ -17,6 +17,7 @@
 package commoncontext
 
 import (
+	"errors"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -26,10 +27,41 @@ import (
 	"testing"
 
 	"github.com/JetBrains/qodana-cli/internal/foundation/exec"
+	"github.com/JetBrains/qodana-cli/internal/foundation/fs"
 	"github.com/JetBrains/qodana-cli/internal/platform/product"
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
 )
+
+func TestCanonical_CaseNormalization(t *testing.T) {
+	tmp := t.TempDir()
+
+	// Check if filesystem is case-sensitive
+	testDir := filepath.Join(tmp, "CaseTest")
+	if err := os.MkdirAll(testDir, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := os.Stat(filepath.Join(tmp, "casetest")); errors.Is(err, os.ErrNotExist) {
+		t.Skip("not relevant on case-sensitive filesystems")
+	}
+
+	// Create dir with specific casing
+	myDir := filepath.Join(tmp, "MyDir")
+	if err := os.MkdirAll(myDir, 0o755); err != nil {
+		t.Fatal(err)
+	}
+
+	// Query with wrong casing
+	wrongCase := filepath.Join(tmp, "mydir")
+	result, err := fs.Canonical(wrongCase)
+	if err != nil {
+		t.Fatalf("fs.Canonical failed: %v", err)
+	}
+
+	// The result should have the on-disk casing "MyDir", not "mydir"
+	assert.Contains(t, result, "MyDir",
+		"fs.Canonical should normalize case to on-disk casing; got %q", result)
+}
 
 func TestSelectAnalyzer(t *testing.T) {
 	nativePathMaker := func(dir string) error {
@@ -256,7 +288,7 @@ func TestComputeCommonRepositoryRootValidationWithRealFiles(t *testing.T) {
 
 	// Check if filesystem is case-sensitive
 	_, statErr := os.Stat(filepath.Join(tempDir, "testCaseSensitive"))
-	isCaseSensitive := os.IsNotExist(statErr)
+	isCaseSensitive := errors.Is(statErr, os.ErrNotExist)
 	t.Logf("Filesystem case-sensitive: %v", isCaseSensitive)
 
 	// Case sensitivity tests: implementation uses os.SameFile for comparison
@@ -444,4 +476,34 @@ func TestNoCache(t *testing.T) {
 		assert.Empty(t, req.Header.Get("If-None-Match"))
 		assert.Empty(t, req.Header.Get("If-Modified-Since"))
 	})
+}
+
+func TestComputeId_SymlinkSameDir(t *testing.T) {
+	tmp := t.TempDir()
+	tmp, err := filepath.EvalSymlinks(tmp) // handle macOS /var -> /private/var
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	realDir := filepath.Join(tmp, "project")
+	if err := os.MkdirAll(realDir, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	linkDir := filepath.Join(tmp, "link")
+	if err := os.Symlink(realDir, linkDir); err != nil {
+		t.Fatal(err)
+	}
+
+	analyzer := product.JvmLinter.NativeAnalyzer()
+	idReal := computeId(analyzer, realDir)
+	idLink := computeId(analyzer, linkDir)
+	assert.Equal(t, idReal, idLink, "computeId should produce the same ID for a symlink and its target")
+}
+
+func TestComputeId_EmptyProjectDir(t *testing.T) {
+	analyzer := product.JvmLinter.NativeAnalyzer()
+	idDot := computeId(analyzer, ".")
+	idEmpty := computeId(analyzer, "")
+	assert.Equal(t, idDot, idEmpty,
+		"empty projectDir should resolve identically to '.'")
 }

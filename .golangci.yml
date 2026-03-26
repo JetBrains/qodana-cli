@@ -1,0 +1,13 @@
+version: "2"
+
+linters:
+  enable:
+    - forbidigo
+  settings:
+    forbidigo:
+      analyze-types: true
+      forbid:
+        - pattern: ^os\.IsNotExist$
+          msg: "use errors.Is(err, os.ErrNotExist) instead — os.IsNotExist does not unwrap multi-errors"
+        - pattern: ^os\.IsExist$
+          msg: "use errors.Is(err, os.ErrExist) instead — os.IsExist does not unwrap multi-errors"

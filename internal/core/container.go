@@ -34,6 +34,7 @@ import (
 	"github.com/docker/docker/api/types/network"
 
 	"github.com/JetBrains/qodana-cli/internal/core/corescan"
+	"github.com/JetBrains/qodana-cli/internal/foundation/fs"
 	"github.com/JetBrains/qodana-cli/internal/foundation/str"
 	"github.com/JetBrains/qodana-cli/internal/platform/msg"
 	"github.com/JetBrains/qodana-cli/internal/platform/product"
@@ -297,21 +298,21 @@ func getDockerOptions(c corescan.Context, image string) *backend.ContainerCreate
 		dockerEnv = append(dockerEnv, fmt.Sprintf("%s=%s", qdenv.QodanaLicenseOnlyToken, qodanaLicenseOnlyToken))
 	}
 
-	cachePath, err := filepath.Abs(c.CacheDir())
+	cachePath, err := fs.Canonical(c.CacheDir())
 	if err != nil {
-		log.Fatal("couldn't get abs path for cache", err)
+		log.Fatal("couldn't get canonical path for cache", err)
 	}
-	repositoryRootPath, err := filepath.Abs(c.RepositoryRoot())
+	repositoryRootPath, err := fs.Canonical(c.RepositoryRoot())
 	if err != nil {
-		log.Fatal("couldn't get abs path for project", err)
+		log.Fatal("couldn't get canonical path for project", err)
 	}
-	resultsPath, err := filepath.Abs(c.ResultsDir())
+	resultsPath, err := fs.Canonical(c.ResultsDir())
 	if err != nil {
-		log.Fatal("couldn't get abs path for results", err)
+		log.Fatal("couldn't get canonical path for results", err)
 	}
-	reportPath, err := filepath.Abs(c.ReportDir())
+	reportPath, err := fs.Canonical(c.ReportDir())
 	if err != nil {
-		log.Fatal("couldn't get abs path for report", err)
+		log.Fatal("couldn't get canonical path for report", err)
 	}
 	containerName = os.Getenv(qdenv.QodanaCliContainerName)
 	if containerName == "" {
@@ -340,7 +341,7 @@ func getDockerOptions(c corescan.Context, image string) *backend.ContainerCreate
 		},
 	}
 	if c.GlobalConfigurationsDir() != "" {
-		globalConfigDirAbsPath, err := filepath.Abs(c.GlobalConfigurationsDir())
+		globalConfigDirAbsPath, err := fs.Canonical(c.GlobalConfigurationsDir())
 		if err != nil {
 			log.Fatalf(
 				"Failed to get absolute path for global configurations file %s: %s",
