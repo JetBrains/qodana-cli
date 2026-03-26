@@ -32,8 +32,8 @@ type Linter struct {
 }
 
 const (
-	ReleaseVersion = "2025.3"
-	ShortVersion   = "253"
+	ReleaseVersion = "2026.2"
+	ShortVersion   = "262"
 	IsReleased     = false
 
 	EapSuffix  = "-EAP"
@@ -178,7 +178,7 @@ var (
 		SupportNative:   true,
 		IsPaid:          true,
 		SupportFixes:    false,
-		EapOnly:         true,
+		EapOnly:         false,
 	}
 
 	GoLinter = Linter{
