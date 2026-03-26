@@ -350,11 +350,12 @@ func TestAllCommandsWithContainer(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	// scan without configuration
+	// scan without configuration (use explicit --image to avoid auto-detecting an unpublished image)
 	scanArgs := []string{
 		"-i", projectPath,
 		"-o", resultsPath,
 		"--cache-dir", cachePath,
+		"--image", image,
 		"-v", filepath.Join(projectPath, ".idea") + ":/data/some",
 		"--fail-threshold", "5",
 		"--print-problems",
