@@ -364,7 +364,7 @@ func ShowReport(cacheDir string, resultsDir string, reportDir string, port int) 
 				if _, err := os.Stat(reportDir); errors.Is(err, os.ErrNotExist) {
 					log.Fatal("Qodana report not found. Get a report by running `qodana scan`")
 				}
-				if _, err := os.Stat(filepath.Join(reportDir, "index.html")); os.IsNotExist(err) {
+				if _, err := os.Stat(filepath.Join(reportDir, "index.html")); errors.Is(err, os.ErrNotExist) {
 					unpackWebUI(cacheDir, reportDir)
 				}
 				openReport("", reportDir, port)
