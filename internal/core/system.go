@@ -36,7 +36,7 @@ import (
 	"github.com/JetBrains/qodana-cli/internal/platform/qdenv"
 	"github.com/JetBrains/qodana-cli/internal/platform/utils"
 	cienvironment "github.com/cucumber/ci-environment/go"
-	"github.com/docker/docker/client"
+	dockerclient "github.com/moby/moby/client"
 	"github.com/pterm/pterm"
 	log "github.com/sirupsen/logrus"
 )
@@ -271,7 +271,7 @@ func runQodana(ctx context.Context, c corescan.Context) int {
 }
 
 // followLinter follows the linter logs and prints the progress.
-func followLinter(client client.APIClient, containerName string, progress *pterm.SpinnerPrinter, scanStages []string) {
+func followLinter(client dockerclient.APIClient, containerName string, progress *pterm.SpinnerPrinter, scanStages []string) {
 	reader, err := client.ContainerLogs(context.Background(), containerName, containerLogsOptions)
 	if err != nil {
 		log.Fatal(err.Error())

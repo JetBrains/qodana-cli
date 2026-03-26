@@ -22,6 +22,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"net/netip"
 	"os"
 	"path/filepath"
 	"regexp"
@@ -30,9 +31,6 @@ import (
 	"strings"
 
 	"github.com/JetBrains/qodana-cli/internal/cloud"
-	"github.com/docker/docker/api/types/image"
-	"github.com/docker/docker/api/types/network"
-
 	"github.com/JetBrains/qodana-cli/internal/core/corescan"
 	"github.com/JetBrains/qodana-cli/internal/foundation/str"
 	"github.com/JetBrains/qodana-cli/internal/platform/msg"
@@ -41,16 +39,13 @@ import (
 	"github.com/JetBrains/qodana-cli/internal/platform/qdenv"
 	"github.com/JetBrains/qodana-cli/internal/platform/utils"
 	"github.com/JetBrains/qodana-cli/internal/platform/version"
-	"github.com/docker/docker/api/types/backend"
-	"github.com/docker/docker/api/types/registry"
-	"github.com/docker/go-connections/nat"
-	"github.com/pterm/pterm"
-
 	cliconfig "github.com/docker/cli/cli/config"
-
-	"github.com/docker/docker/api/types/container"
-	"github.com/docker/docker/api/types/mount"
-	"github.com/docker/docker/client"
+	"github.com/moby/moby/api/types/container"
+	"github.com/moby/moby/api/types/mount"
+	"github.com/moby/moby/api/types/network"
+	"github.com/moby/moby/api/types/registry"
+	dockerclient "github.com/moby/moby/client"
+	"github.com/pterm/pterm"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -62,7 +57,7 @@ const (
 )
 
 var (
-	containerLogsOptions = container.LogsOptions{
+	containerLogsOptions = dockerclient.ContainerLogsOptions{
 		ShowStdout: true,
 		ShowStderr: true,
 		Follow:     true,
@@ -82,11 +77,11 @@ func runQodanaContainer(ctx context.Context, c corescan.Context) int {
 		log.Fatal("Couldn't retrieve Docker daemon information", err)
 	}
 
-	info, err := docker.Info(ctx)
+	info, err := docker.Info(ctx, dockerclient.InfoOptions{})
 	if err != nil {
 		log.Fatal("Couldn't retrieve Docker daemon information", err)
 	}
-	if info.OSType != "linux" {
+	if info.Info.OSType != "linux" {
 		msg.ErrorMessage("Container engine is not running a Linux platform, other platforms are not supported by Qodana")
 		return 1
 	}
@@ -201,7 +196,7 @@ func encodeAuthToBase64(authConfig registry.AuthConfig) (string, error) {
 }
 
 // PullImage pulls docker image and prints the process.
-func PullImage(client client.APIClient, image string) {
+func PullImage(client dockerclient.APIClient, image string) {
 	msg.PrintProcess(
 		func(_ *pterm.SpinnerPrinter) {
 			pullImage(context.Background(), client, image)
@@ -220,8 +215,8 @@ func isDockerUnauthorizedError(errMsg string) bool {
 }
 
 // pullImage pulls docker image.
-func pullImage(ctx context.Context, client client.APIClient, ref string) {
-	reader, err := client.ImagePull(ctx, ref, image.PullOptions{})
+func pullImage(ctx context.Context, client dockerclient.APIClient, ref string) {
+	reader, err := client.ImagePull(ctx, ref, dockerclient.ImagePullOptions{})
 	if err != nil && isDockerUnauthorizedError(err.Error()) {
 		cfg, err := cliconfig.Load("")
 		if err != nil {
@@ -238,7 +233,7 @@ func pullImage(ctx context.Context, client client.APIClient, ref string) {
 		if err != nil {
 			log.Fatal("can't encode auth to base64", err)
 		}
-		reader, err = client.ImagePull(ctx, ref, image.PullOptions{RegistryAuth: encodedAuth})
+		reader, err = client.ImagePull(ctx, ref, dockerclient.ImagePullOptions{RegistryAuth: encodedAuth})
 		if err != nil {
 			log.Fatal("can't pull image from the private registry", err)
 		}
@@ -265,13 +260,13 @@ func ContainerCleanup() {
 			log.Fatal("failed to initialize Docker API:", err)
 		}
 
-		containers, err := docker.ContainerList(ctx, container.ListOptions{})
+		containers, err := docker.ContainerList(ctx, dockerclient.ContainerListOptions{})
 		if err != nil {
 			log.Fatal("couldn't get the running containers ", err)
 		}
-		for _, c := range containers {
+		for _, c := range containers.Items {
 			if c.Names[0] == fmt.Sprintf("/%s", containerName) {
-				err = docker.ContainerStop(context.Background(), c.Names[0], container.StopOptions{})
+				_, err = docker.ContainerStop(context.Background(), c.Names[0], dockerclient.ContainerStopOptions{})
 				if err != nil {
 					log.Fatal("couldn't stop the container ", err)
 				}
@@ -281,7 +276,7 @@ func ContainerCleanup() {
 }
 
 // getDockerOptions returns qodana docker container options.
-func getDockerOptions(c corescan.Context, image string) *backend.ContainerCreateConfig {
+func getDockerOptions(c corescan.Context, image string) *dockerclient.ContainerCreateOptions {
 	cmdOpts := GetIdeArgs(c)
 
 	updateScanContextEnv := func(key string, value string) { c = c.WithEnvExtractedFromOsEnv(key, value) }
@@ -376,21 +371,22 @@ func getDockerOptions(c corescan.Context, image string) *backend.ContainerCreate
 	log.Debugf("volumes: %v", volumes)
 	log.Debugf("cmd: %v", cmdOpts)
 
-	portBindings := make(nat.PortMap)
-	exposedPorts := make(nat.PortSet)
+	portBindings := make(network.PortMap)
+	exposedPorts := make(network.PortSet)
 
 	if c.JvmDebugPort() > 0 {
 		log.Infof("Enabling JVM debug on port %d", c.JvmDebugPort())
-		portBindings = nat.PortMap{
-			containerJvmDebugPort: []nat.PortBinding{
+		debugPort := network.MustParsePort(containerJvmDebugPort + "/tcp")
+		portBindings = network.PortMap{
+			debugPort: []network.PortBinding{
 				{
-					HostIP:   "0.0.0.0",
+					HostIP:   netip.MustParseAddr("0.0.0.0"),
 					HostPort: strconv.Itoa(c.JvmDebugPort()),
 				},
 			},
 		}
-		exposedPorts = nat.PortSet{
-			containerJvmDebugPort: struct{}{},
+		exposedPorts = network.PortSet{
+			debugPort: struct{}{},
 		}
 	}
 
@@ -419,7 +415,7 @@ func getDockerOptions(c corescan.Context, image string) *backend.ContainerCreate
 		NetworkMode:  networkMode,
 	}
 
-	return &backend.ContainerCreateConfig{
+	return &dockerclient.ContainerCreateOptions{
 		Name: containerName,
 		Config: &container.Config{
 			Image:        image,
@@ -449,7 +445,7 @@ func selectUser(image string, userFromContext string) string {
 	return userFromContext // Do not modify explicit user input
 }
 
-func generateDebugDockerRunCommand(cfg *backend.ContainerCreateConfig) string {
+func generateDebugDockerRunCommand(cfg *dockerclient.ContainerCreateOptions) string {
 	var cmdBuilder strings.Builder
 	cmdBuilder.WriteString("docker run ")
 	if cfg.HostConfig != nil && cfg.HostConfig.AutoRemove {
@@ -495,33 +491,26 @@ func generateDebugDockerRunCommand(cfg *backend.ContainerCreateConfig) string {
 }
 
 // getContainerExitCode returns the exit code of the docker container.
-func getContainerExitCode(ctx context.Context, client client.APIClient, id string) int64 {
-	statusCh, errCh := client.ContainerWait(ctx, id, container.WaitConditionNextExit)
+func getContainerExitCode(ctx context.Context, client dockerclient.APIClient, id string) int64 {
+	waitCh := client.ContainerWait(ctx, id, dockerclient.ContainerWaitOptions{Condition: container.WaitConditionNextExit})
 	select {
-	case err := <-errCh:
+	case err := <-waitCh.Error:
 		if err != nil {
 			log.Fatal("container hasn't finished ", err)
 		}
-	case status := <-statusCh:
+	case status := <-waitCh.Result:
 		return status.StatusCode
 	}
 	return 0
 }
 
 // runContainer runs the container.
-func runContainer(ctx context.Context, client client.APIClient, opts *backend.ContainerCreateConfig) {
-	createResp, err := client.ContainerCreate(
-		ctx,
-		opts.Config,
-		opts.HostConfig,
-		nil,
-		nil,
-		opts.Name,
-	)
+func runContainer(ctx context.Context, client dockerclient.APIClient, opts *dockerclient.ContainerCreateOptions) {
+	createResp, err := client.ContainerCreate(ctx, *opts)
 	if err != nil {
 		log.Fatal("couldn't create the container ", err)
 	}
-	if err = client.ContainerStart(ctx, createResp.ID, container.StartOptions{}); err != nil {
+	if _, err = client.ContainerStart(ctx, createResp.ID, dockerclient.ContainerStartOptions{}); err != nil {
 		log.Fatal("couldn't bootstrap the container ", err)
 	}
 }
