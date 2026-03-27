@@ -2,6 +2,40 @@
   "Code": "QDPYC",
   "Releases": [
     {
+      "Date": "2024-05-23",
+      "Type": "release",
+      "Downloads": {
+        "linux": {
+          "Link": "https://download.jetbrains.com/qodana/2024.1/qodana-QDPYC-241.17568.172.tar.gz",
+          "ChecksumLink": "https://download.jetbrains.com/qodana/2024.1/qodana-QDPYC-241.17568.172.tar.gz.sha256"
+        },
+        "linuxARM64": {
+          "Link": "https://download.jetbrains.com/qodana/2024.1/qodana-QDPYC-241.17568.172-aarch64.tar.gz",
+          "ChecksumLink": "https://download.jetbrains.com/qodana/2024.1/qodana-QDPYC-241.17568.172-aarch64.tar.gz.sha256"
+        },
+        "windowsZip": {
+          "Link": "https://download.jetbrains.com/qodana/2024.1/qodana-QDPYC-241.17568.172.win.zip",
+          "ChecksumLink": "https://download.jetbrains.com/qodana/2024.1/qodana-QDPYC-241.17568.172.win.zip.sha256"
+        },
+        "windowsZipARM64": {
+          "Link": "https://download.jetbrains.com/qodana/2024.1/qodana-QDPYC-241.17568.172-aarch64.win.zip",
+          "ChecksumLink": "https://download.jetbrains.com/qodana/2024.1/qodana-QDPYC-241.17568.172-aarch64.win.zip.sha256"
+        },
+        "macSit": {
+          "Link": "https://download.jetbrains.com/qodana/2024.1/qodana-QDPYC-241.17568.172.sit",
+          "ChecksumLink": "https://download.jetbrains.com/qodana/2024.1/qodana-QDPYC-241.17568.172.sit.sha256"
+        },
+        "macSitM1": {
+          "Link": "https://download.jetbrains.com/qodana/2024.1/qodana-QDPYC-241.17568.172-aarch64.sit",
+          "ChecksumLink": "https://download.jetbrains.com/qodana/2024.1/qodana-QDPYC-241.17568.172-aarch64.sit.sha256"
+        }
+      },
+      "Version": "2024.1.6",
+      "MajorVersion": "2024.1",
+      "Build": "241.17568",
+      "PrintableReleaseType": null
+    },
+    {
       "Date": "2024-12-02",
       "Type": "release",
       "Downloads": {
@@ -104,6 +138,40 @@
       "PrintableReleaseType": null
     },
     {
+      "Date": "2025-02-19",
+      "Type": "release",
+      "Downloads": {
+        "linux": {
+          "Link": "https://download.jetbrains.com/qodana/2024.3/qodana-QDPYC-243.25481.166.tar.gz",
+          "ChecksumLink": "https://download.jetbrains.com/qodana/2024.3/qodana-QDPYC-243.25481.166.tar.gz.sha256"
+        },
+        "linuxARM64": {
+          "Link": "https://download.jetbrains.com/qodana/2024.3/qodana-QDPYC-243.25481.166-aarch64.tar.gz",
+          "ChecksumLink": "https://download.jetbrains.com/qodana/2024.3/qodana-QDPYC-243.25481.166-aarch64.tar.gz.sha256"
+        },
+        "windowsZip": {
+          "Link": "https://download.jetbrains.com/qodana/2024.3/qodana-QDPYC-243.25481.166.win.zip",
+          "ChecksumLink": "https://download.jetbrains.com/qodana/2024.3/qodana-QDPYC-243.25481.166.win.zip.sha256"
+        },
+        "windowsZipARM64": {
+          "Link": "https://download.jetbrains.com/qodana/2024.3/qodana-QDPYC-243.25481.166-aarch64.win.zip",
+          "ChecksumLink": "https://download.jetbrains.com/qodana/2024.3/qodana-QDPYC-243.25481.166-aarch64.win.zip.sha256"
+        },
+        "macSit": {
+          "Link": "https://download.jetbrains.com/qodana/2024.3/qodana-QDPYC-243.25481.166.sit",
+          "ChecksumLink": "https://download.jetbrains.com/qodana/2024.3/qodana-QDPYC-243.25481.166.sit.sha256"
+        },
+        "macSitM1": {
+          "Link": "https://download.jetbrains.com/qodana/2024.3/qodana-QDPYC-243.25481.166-aarch64.sit",
+          "ChecksumLink": "https://download.jetbrains.com/qodana/2024.3/qodana-QDPYC-243.25481.166-aarch64.sit.sha256"
+        }
+      },
+      "Version": "2024.3.5",
+      "MajorVersion": "2024.3",
+      "Build": "243.25481",
+      "PrintableReleaseType": null
+    },
+    {
       "Date": "2025-04-24",
       "Type": "release",
       "Downloads": {
@@ -135,6 +203,40 @@
       "Version": "2025.1.0",
       "MajorVersion": "2025.1",
       "Build": "251.25440",
+      "PrintableReleaseType": null
+    },
+    {
+      "Date": "2025-05-05",
+      "Type": "release",
+      "Downloads": {
+        "linux": {
+          "Link": "https://download.jetbrains.com/qodana/2025.1/qodana-QDPYC-251.25776.111.tar.gz",
+          "ChecksumLink": "https://download.jetbrains.com/qodana/2025.1/qodana-QDPYC-251.25776.111.tar.gz.sha256"
+        },
+        "linuxARM64": {
+          "Link": "https://download.jetbrains.com/qodana/2025.1/qodana-QDPYC-251.25776.111-aarch64.tar.gz",
+          "ChecksumLink": "https://download.jetbrains.com/qodana/2025.1/qodana-QDPYC-251.25776.111-aarch64.tar.gz.sha256"
+        },
+        "windowsZip": {
+          "Link": "https://download.jetbrains.com/qodana/2025.1/qodana-QDPYC-251.25776.111.win.zip",
+          "ChecksumLink": "https://download.jetbrains.com/qodana/2025.1/qodana-QDPYC-251.25776.111.win.zip.sha256"
+        },
+        "windowsZipARM64": {
+          "Link": "https://download.jetbrains.com/qodana/2025.1/qodana-QDPYC-251.25776.111-aarch64.win.zip",
+          "ChecksumLink": "https://download.jetbrains.com/qodana/2025.1/qodana-QDPYC-251.25776.111-aarch64.win.zip.sha256"
+        },
+        "macSit": {
+          "Link": "https://download.jetbrains.com/qodana/2025.1/qodana-QDPYC-251.25776.111.sit",
+          "ChecksumLink": "https://download.jetbrains.com/qodana/2025.1/qodana-QDPYC-251.25776.111.sit.sha256"
+        },
+        "macSitM1": {
+          "Link": "https://download.jetbrains.com/qodana/2025.1/qodana-QDPYC-251.25776.111-aarch64.sit",
+          "ChecksumLink": "https://download.jetbrains.com/qodana/2025.1/qodana-QDPYC-251.25776.111-aarch64.sit.sha256"
+        }
+      },
+      "Version": "2025.1.1",
+      "MajorVersion": "2025.1",
+      "Build": "251.25776",
       "PrintableReleaseType": null
     },
     {
