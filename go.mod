@@ -22,7 +22,7 @@ require (
 	github.com/spf13/cobra v1.10.2
 	github.com/spf13/viper v1.21.0
 	github.com/stretchr/testify v1.11.1
-	github.com/zalando/go-keyring v0.2.7
+	github.com/zalando/go-keyring v0.2.8
 	golang.org/x/exp v0.0.0-20230905200255-921286631fa9
 	golang.org/x/sys v0.42.0
 	gopkg.in/yaml.v3 v3.0.1
