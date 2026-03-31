@@ -2,6 +2,8 @@ package main
 
 import (
 	"fmt"
+	"os"
+	"path/filepath"
 	"strings"
 
 	"github.com/JetBrains/qodana-cli/internal/platform/thirdpartyscan"
@@ -49,9 +51,11 @@ func processConfig(c thirdpartyscan.Context) (string, error) {
 	} else if minusChecks != "" {
 		checks = fmt.Sprintf("--checks=*,%s", minusChecks)
 	} else {
-		// Default to all checks when no configuration is provided
-		// This is needed because recent clang-tidy versions enable no checks by default
-		checks = "--checks=*"
+		// Only default to all checks when there is no .clang-tidy config file.
+		// If the project has a .clang-tidy, clang-tidy will use it automatically.
+		if _, err := os.Stat(filepath.Join(c.ProjectDir(), ".clang-tidy")); os.IsNotExist(err) {
+			checks = "--checks=*"
+		}
 	}
 	return checks, nil
 }

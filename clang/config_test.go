@@ -1,6 +1,8 @@
 package main
 
 import (
+	"os"
+	"path/filepath"
 	"testing"
 
 	"github.com/JetBrains/qodana-cli/internal/platform/qdyaml"
@@ -10,18 +12,27 @@ import (
 
 func TestProcessConfig(t *testing.T) {
 	tests := []struct {
-		name     string
-		includes []qdyaml.Clude
-		excludes []qdyaml.Clude
-		version  string
-		expected string
+		name           string
+		includes       []qdyaml.Clude
+		excludes       []qdyaml.Clude
+		version        string
+		expected       string
+		hasClangTidy   bool
 	}{
 		{
-			name:     "no configuration - defaults to all checks",
+			name:     "no configuration, no .clang-tidy - defaults to all checks",
 			includes: nil,
 			excludes: nil,
 			version:  "",
 			expected: "--checks=*",
+		},
+		{
+			name:         "no configuration, has .clang-tidy - respects project config",
+			includes:     nil,
+			excludes:     nil,
+			version:      "",
+			expected:     "",
+			hasClangTidy: true,
 		},
 		{
 			name:     "only includes - enables specified checks",
@@ -101,8 +112,13 @@ func TestProcessConfig(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			projectDir := t.TempDir()
+			if tt.hasClangTidy {
+				err := os.WriteFile(filepath.Join(projectDir, ".clang-tidy"), []byte("Checks: '-*,bugprone-*'\n"), 0644)
+				assert.NoError(t, err)
+			}
 			ctx := thirdpartyscan.ContextBuilder{
-				ProjectDir: t.TempDir(),
+				ProjectDir: projectDir,
 				QodanaYamlConfig: thirdpartyscan.QodanaYamlConfig{
 					Version:  tt.version,
 					Includes: tt.includes,
