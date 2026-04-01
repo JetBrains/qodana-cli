@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 	"sync/atomic"
 	"testing"
 
@@ -95,6 +96,12 @@ func TestAskCompiler(t *testing.T) {
 
 // TestGetFilesAndCompilers tests =====
 
+// toForwardSlash converts backslashes to forward slashes.
+// CMake always uses forward slashes in compile_commands.json, even on Windows.
+func toForwardSlash(s string) string {
+	return strings.ReplaceAll(s, `\`, `/`)
+}
+
 func writeCompileCommands(t *testing.T, dir string, commands []Command) string {
 	t.Helper()
 	data, err := json.Marshal(commands)
@@ -120,7 +127,7 @@ func TestGetFilesAndCompilers(t *testing.T) {
 		ccPath := writeCompileCommands(t, tmpDir, []Command{
 			{
 				Directory: tmpDir,
-				Command:   fmt.Sprintf(`"%s" -c file.cpp`, mockCompiler),
+				Command:   fmt.Sprintf(`"%s" -c file.cpp`, toForwardSlash(mockCompiler)),
 				File:      "file.cpp",
 			},
 		})
@@ -147,7 +154,7 @@ func TestGetFilesAndCompilers(t *testing.T) {
 		ccPath := writeCompileCommands(t, tmpDir, []Command{
 			{
 				Directory: tmpDir,
-				Command:   mockCompiler + " -c file.cpp",
+				Command:   toForwardSlash(mockCompiler) + " -c file.cpp",
 				File:      "file.cpp",
 			},
 		})
@@ -215,12 +222,12 @@ func TestGetFilesAndCompilers(t *testing.T) {
 		ccPath := writeCompileCommands(t, tmpDir, []Command{
 			{
 				Directory: tmpDir,
-				Command:   mockCompiler + " -c a.cpp",
+				Command:   toForwardSlash(mockCompiler) + " -c a.cpp",
 				File:      "a.cpp",
 			},
 			{
 				Directory: tmpDir,
-				Command:   mockCompiler + " -c b.cpp",
+				Command:   toForwardSlash(mockCompiler) + " -c b.cpp",
 				File:      "b.cpp",
 			},
 		})
@@ -247,12 +254,12 @@ func TestGetFilesAndCompilers(t *testing.T) {
 		ccPath := writeCompileCommands(t, tmpDir, []Command{
 			{
 				Directory: tmpDir,
-				Command:   mockCompiler + " -c file.c",
+				Command:   toForwardSlash(mockCompiler) + " -c file.c",
 				File:      "file.c",
 			},
 			{
 				Directory: tmpDir,
-				Command:   mockCompiler + " -c file.cpp",
+				Command:   toForwardSlash(mockCompiler) + " -c file.cpp",
 				File:      "file.cpp",
 			},
 		})
