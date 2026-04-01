@@ -15,6 +15,7 @@ import (
 	"github.com/JetBrains/qodana-cli/internal/testutil/needs"
 	log "github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestLinterRun(t *testing.T) {
@@ -131,4 +132,134 @@ func TestRunClangTidy_PathWithSpaces(t *testing.T) {
 	)
 	assert.NoError(t, err)
 	assert.True(t, invoked.Load(), "clang-tidy mock was not invoked")
+}
+
+func TestRunClangTidy_NoEmptyArgs(t *testing.T) {
+	tests := []struct {
+		name         string
+		checks       string
+		clangArgs    string
+		expectedArgs []string // if non-nil, assert each token appears in captured args
+		expectError  bool
+	}{
+		{
+			name:      "empty checks and empty ClangArgs",
+			checks:    "",
+			clangArgs: "",
+		},
+		{
+			name:      "empty checks with non-empty ClangArgs",
+			checks:    "",
+			clangArgs: "-- -Wall",
+		},
+		{
+			name:      "non-empty ClangArgs with double spaces",
+			checks:    "--checks=*",
+			clangArgs: "-- -Wall  -Werror",
+		},
+		{
+			name:      "whitespace-only ClangArgs",
+			checks:    "--checks=*",
+			clangArgs: "  ",
+		},
+		{
+			name:      "non-empty checks and ClangArgs",
+			checks:    "--checks=*",
+			clangArgs: "-- -Wall",
+		},
+		{
+			name:         "double-quoted path with spaces",
+			checks:       "--checks=*",
+			clangArgs:    `-- -I"/path/with spaces" -Wall`,
+			expectedArgs: []string{"--", "-I/path/with spaces", "-Wall"},
+		},
+		{
+			name:         "single-quoted path with spaces",
+			checks:       "--checks=*",
+			clangArgs:    `-- -I'/path with spaces' -Wall`,
+			expectedArgs: []string{"--", "-I/path with spaces", "-Wall"},
+		},
+		{
+			name:         "backslash-escaped spaces",
+			checks:       "--checks=*",
+			clangArgs:    `-- -I/path/with\ spaces -Wall`,
+			expectedArgs: []string{"--", "-I/path/with spaces", "-Wall"},
+		},
+		{
+			name:        "unclosed quote error",
+			checks:      "--checks=*",
+			clangArgs:   `-- -I"/unclosed`,
+			expectError: true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			tmpDir := t.TempDir()
+
+			toolDir := filepath.Join(tmpDir, "tools")
+			var invoked atomic.Bool
+			var capturedArgs []string
+			fakeClangTidy := mockexe.CreateMockExe(t, filepath.Join(toolDir, "clang-tidy"), func(ctx *mockexe.CallContext) int {
+				invoked.Store(true)
+				capturedArgs = ctx.Argv
+				for i, arg := range ctx.Argv {
+					if arg == "--export-sarif" && i+1 < len(ctx.Argv) {
+						_ = os.MkdirAll(filepath.Dir(ctx.Argv[i+1]), 0o755)
+						_ = os.WriteFile(ctx.Argv[i+1], []byte("{}"), 0o644)
+						break
+					}
+				}
+				return 0
+			})
+
+			projectDir := filepath.Join(tmpDir, "project")
+			assert.NoError(t, os.MkdirAll(projectDir, 0o755))
+			compileCommands := filepath.Join(projectDir, "compile_commands.json")
+			assert.NoError(t, os.WriteFile(compileCommands, []byte("[]"), 0o644))
+
+			resultsDir := filepath.Join(tmpDir, "results")
+			assert.NoError(t, os.MkdirAll(resultsDir, 0o755))
+
+			ctx := thirdpartyscan.ContextBuilder{
+				ProjectDir:           projectDir,
+				ClangCompileCommands: compileCommands,
+				ClangArgs:            tt.clangArgs,
+				MountInfo: thirdpartyscan.MountInfo{
+					CustomTools: map[string]string{
+						thirdpartyscan.Clang: fakeClangTidy,
+					},
+				},
+			}.Build()
+
+			stderrCh := make(chan string, 1)
+			stdoutCh := make(chan string, 1)
+
+			err := runClangTidy(
+				0,
+				FileWithHeaders{File: filepath.Join(projectDir, "test.c")},
+				tt.checks,
+				ctx,
+				resultsDir,
+				stderrCh,
+				stdoutCh,
+			)
+
+			if tt.expectError {
+				assert.Error(t, err)
+				return
+			}
+
+			require.NoError(t, err)
+			require.True(t, invoked.Load(), "clang-tidy mock was not invoked")
+
+			for i, arg := range capturedArgs[1:] {
+				assert.NotEqual(t, "", arg, "argument at index %d is an empty string", i+1)
+			}
+
+			for _, expected := range tt.expectedArgs {
+				assert.Contains(t, capturedArgs, expected, "expected argument %q not found in args", expected)
+			}
+		})
+	}
 }

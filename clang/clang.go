@@ -1,21 +1,21 @@
 package main
 
 import (
-	"github.com/JetBrains/qodana-cli/internal/foundation/exec"
 	"fmt"
 	"os"
 	"os/signal"
 	"path"
 	"runtime"
-	"strings"
 	"sync"
 	"sync/atomic"
 	"time"
 
+	"github.com/JetBrains/qodana-cli/internal/foundation/exec"
 	"github.com/JetBrains/qodana-cli/internal/foundation/fs"
 	"github.com/JetBrains/qodana-cli/internal/platform"
 	"github.com/JetBrains/qodana-cli/internal/platform/thirdpartyscan"
 	"github.com/briandowns/spinner"
+	"github.com/google/shlex"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -128,17 +128,26 @@ func runClangTidy(
 	stdoutChannel chan string,
 ) error {
 	clangPath := c.ClangPath()
-	args := []string{
-		checks,
+	var args []string
+	if checks != "" {
+		args = append(args, checks)
+	}
+	args = append(args,
 		"-p",
 		c.ClangCompileCommands(),
 		"--export-sarif",
 		path.Join(tmpResultsDir, fmt.Sprintf("%d.sarif.json", counter)),
-	}
+	)
 	args = append(args, input.Headers...)
 	args = append(args, input.File)
 	args = append(args, "--quiet")
-	args = append(args, strings.Split(c.ClangArgs(), " ")...)
+	if clangArgs := c.ClangArgs(); clangArgs != "" {
+		splitArgs, err := shlex.Split(clangArgs)
+		if err != nil {
+			return fmt.Errorf("failed to parse clang args %q: %w", clangArgs, err)
+		}
+		args = append(args, splitArgs...)
+	}
 	stdout, stderr, _, err := exec.ExecRedirectOutput(
 		c.ProjectDir(),
 		clangPath, args...,
