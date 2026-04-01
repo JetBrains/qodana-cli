@@ -1,7 +1,6 @@
 package main
 
 import (
-	"github.com/JetBrains/qodana-cli/internal/foundation/exec"
 	"encoding/json"
 	"fmt"
 	"os"
@@ -9,6 +8,8 @@ import (
 	"regexp"
 	"strings"
 
+	"github.com/JetBrains/qodana-cli/internal/foundation/exec"
+	"github.com/google/shlex"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -30,14 +31,13 @@ const (
 	SIE = "End of search list."
 )
 
-func getHeaderType(file string) string {
-	extension := filepath.Ext(file)
+func getHeaderType(file string) []string {
 	nullDevice := os.DevNull
-	switch extension {
+	switch filepath.Ext(file) {
 	case ".c", ".h":
-		return fmt.Sprintf("-E -Wp,-v -xc %s", nullDevice)
+		return []string{"-E", "-Wp,-v", "-xc", nullDevice}
 	default:
-		return fmt.Sprintf("-E -Wp,-v -xc++ %s", nullDevice)
+		return []string{"-E", "-Wp,-v", "-xc++", nullDevice}
 	}
 }
 
@@ -65,17 +65,23 @@ func getFilesAndCompilers(compileCommands string) ([]FileWithHeaders, error) {
 			}
 			compiler = cmd.Arguments[0]
 		} else {
-			compiler = strings.Split(trimmedCommand, " ")[0]
+			parts, err := shlex.Split(trimmedCommand)
+			if err != nil || len(parts) == 0 {
+				log.Warnf("Failed to parse command for file in compilation db: %s", cmd.File)
+				continue
+			}
+			compiler = parts[0]
 		}
 		headerType := getHeaderType(cmd.File)
-		if val, ok := fileHeaderMap[compiler+headerType]; ok {
+		cacheKey := compiler + strings.Join(headerType, " ")
+		if val, ok := fileHeaderMap[cacheKey]; ok {
 			processList = append(processList, FileWithHeaders{File: cmd.File, Headers: val})
 		} else {
 			headers, err := askCompiler(compiler, headerType)
 			if err != nil {
 				return nil, err
 			}
-			fileHeaderMap[compiler+headerType] = headers
+			fileHeaderMap[cacheKey] = headers
 			processList = append(processList, FileWithHeaders{File: cmd.File, Headers: headers})
 		}
 	}
@@ -84,10 +90,13 @@ func getFilesAndCompilers(compileCommands string) ([]FileWithHeaders, error) {
 }
 
 // askCompiler asks the compiler for the include directories
-func askCompiler(compiler string, headerType string) ([]string, error) {
-	_, stderr, _, err := exec.ExecRedirectOutput(".", compiler, headerType)
+func askCompiler(compiler string, headerType []string) ([]string, error) {
+	_, stderr, exitCode, err := exec.ExecRedirectOutput(".", compiler, headerType...)
 	if err != nil {
 		return nil, err
+	}
+	if exitCode != 0 {
+		return nil, fmt.Errorf("compiler %q exited with code %d", compiler, exitCode)
 	}
 	startIndex := strings.Index(stderr, SIS)
 	endIndex := strings.Index(stderr, SIE)

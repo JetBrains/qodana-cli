@@ -54,8 +54,11 @@ func processConfig(c thirdpartyscan.Context) (string, error) {
 	} else {
 		// Only default to all checks when there is no .clang-tidy config file.
 		// If the project has a .clang-tidy, clang-tidy will use it automatically.
-		if _, err := os.Stat(filepath.Join(c.ProjectDir(), ".clang-tidy")); errors.Is(err, os.ErrNotExist) {
+		_, err := os.Stat(filepath.Join(c.ProjectDir(), ".clang-tidy"))
+		if errors.Is(err, os.ErrNotExist) {
 			checks = "--checks=*"
+		} else if err != nil {
+			return "", fmt.Errorf("failed to check for .clang-tidy: %w", err)
 		}
 	}
 	return checks, nil

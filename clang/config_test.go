@@ -35,6 +35,14 @@ func TestProcessConfig(t *testing.T) {
 			hasClangTidy: true,
 		},
 		{
+			name:         "has .clang-tidy with includes - includes take precedence",
+			includes:     []qdyaml.Clude{{Name: "bugprone-*"}},
+			excludes:     nil,
+			version:      "1.0",
+			expected:     "--checks=bugprone-*",
+			hasClangTidy: true,
+		},
+		{
 			name:     "only includes - enables specified checks",
 			includes: []qdyaml.Clude{{Name: "bugprone-*"}},
 			excludes: nil,
