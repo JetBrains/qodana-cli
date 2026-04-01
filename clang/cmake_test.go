@@ -36,7 +36,9 @@ func TestAskCompiler(t *testing.T) {
 		var capturedArgs []string
 		mockCompiler := createMockCompiler(t, filepath.Join(tmpDir, "compiler"), func(ctx *mockexe.CallContext) int {
 			capturedArgs = ctx.Argv
-			_, _ = fmt.Fprint(ctx.Stderr, mockCompilerIncludeResponse)
+			if _, err := fmt.Fprint(ctx.Stderr, mockCompilerIncludeResponse); err != nil {
+				ctx.T.Errorf("failed to write to stderr: %v", err)
+			}
 			return 0
 		})
 
@@ -54,7 +56,9 @@ func TestAskCompiler(t *testing.T) {
 	t.Run("parses include directories from stderr", func(t *testing.T) {
 		tmpDir := t.TempDir()
 		mockCompiler := createMockCompiler(t, filepath.Join(tmpDir, "compiler"), func(ctx *mockexe.CallContext) int {
-			_, _ = fmt.Fprint(ctx.Stderr, mockCompilerIncludeResponse)
+			if _, err := fmt.Fprint(ctx.Stderr, mockCompilerIncludeResponse); err != nil {
+				ctx.T.Errorf("failed to write to stderr: %v", err)
+			}
 			return 0
 		})
 
@@ -67,7 +71,9 @@ func TestAskCompiler(t *testing.T) {
 	t.Run("returns empty headers when no include markers in stderr", func(t *testing.T) {
 		tmpDir := t.TempDir()
 		mockCompiler := createMockCompiler(t, filepath.Join(tmpDir, "compiler"), func(ctx *mockexe.CallContext) int {
-			_, _ = fmt.Fprint(ctx.Stderr, "some unrelated compiler output\n")
+			if _, err := fmt.Fprint(ctx.Stderr, "some unrelated compiler output\n"); err != nil {
+				ctx.T.Errorf("failed to write to stderr: %v", err)
+			}
 			return 0
 		})
 
@@ -105,7 +111,9 @@ func TestGetFilesAndCompilers(t *testing.T) {
 		var invoked atomic.Bool
 		mockCompiler := createMockCompiler(t, filepath.Join(toolDir, "gcc"), func(ctx *mockexe.CallContext) int {
 			invoked.Store(true)
-			_, _ = fmt.Fprint(ctx.Stderr, mockCompilerIncludeResponse)
+			if _, err := fmt.Fprint(ctx.Stderr, mockCompilerIncludeResponse); err != nil {
+				ctx.T.Errorf("failed to write to stderr: %v", err)
+			}
 			return 0
 		})
 
@@ -130,7 +138,9 @@ func TestGetFilesAndCompilers(t *testing.T) {
 		var invoked atomic.Bool
 		mockCompiler := createMockCompiler(t, filepath.Join(tmpDir, "gcc"), func(ctx *mockexe.CallContext) int {
 			invoked.Store(true)
-			_, _ = fmt.Fprint(ctx.Stderr, mockCompilerIncludeResponse)
+			if _, err := fmt.Fprint(ctx.Stderr, mockCompilerIncludeResponse); err != nil {
+				ctx.T.Errorf("failed to write to stderr: %v", err)
+			}
 			return 0
 		})
 
@@ -154,7 +164,9 @@ func TestGetFilesAndCompilers(t *testing.T) {
 		var invoked atomic.Bool
 		mockCompiler := createMockCompiler(t, filepath.Join(tmpDir, "gcc"), func(ctx *mockexe.CallContext) int {
 			invoked.Store(true)
-			_, _ = fmt.Fprint(ctx.Stderr, mockCompilerIncludeResponse)
+			if _, err := fmt.Fprint(ctx.Stderr, mockCompilerIncludeResponse); err != nil {
+				ctx.T.Errorf("failed to write to stderr: %v", err)
+			}
 			return 0
 		})
 
@@ -194,7 +206,9 @@ func TestGetFilesAndCompilers(t *testing.T) {
 		var callCount atomic.Int32
 		mockCompiler := createMockCompiler(t, filepath.Join(tmpDir, "gcc"), func(ctx *mockexe.CallContext) int {
 			callCount.Add(1)
-			_, _ = fmt.Fprint(ctx.Stderr, mockCompilerIncludeResponse)
+			if _, err := fmt.Fprint(ctx.Stderr, mockCompilerIncludeResponse); err != nil {
+				ctx.T.Errorf("failed to write to stderr: %v", err)
+			}
 			return 0
 		})
 
@@ -224,7 +238,9 @@ func TestGetFilesAndCompilers(t *testing.T) {
 		mockCompiler := createMockCompiler(t, filepath.Join(tmpDir, "gcc"), func(ctx *mockexe.CallContext) int {
 			callCount.Add(1)
 			capturedArgs = append(capturedArgs, ctx.Argv)
-			_, _ = fmt.Fprint(ctx.Stderr, mockCompilerIncludeResponse)
+			if _, err := fmt.Fprint(ctx.Stderr, mockCompilerIncludeResponse); err != nil {
+				ctx.T.Errorf("failed to write to stderr: %v", err)
+			}
 			return 0
 		})
 
