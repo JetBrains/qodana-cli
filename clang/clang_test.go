@@ -143,29 +143,34 @@ func TestRunClangTidy_NoEmptyArgs(t *testing.T) {
 		expectError  bool
 	}{
 		{
-			name:      "empty checks and empty ClangArgs",
-			checks:    "",
-			clangArgs: "",
+			name:         "empty checks and empty ClangArgs",
+			checks:       "",
+			clangArgs:    "",
+			expectedArgs: []string{"-p", "--export-sarif", "--quiet"},
 		},
 		{
-			name:      "empty checks with non-empty ClangArgs",
-			checks:    "",
-			clangArgs: "-- -Wall",
+			name:         "empty checks with non-empty ClangArgs",
+			checks:       "",
+			clangArgs:    "-- -Wall",
+			expectedArgs: []string{"-p", "--export-sarif", "--quiet", "--", "-Wall"},
 		},
 		{
-			name:      "non-empty ClangArgs with double spaces",
-			checks:    "--checks=*",
-			clangArgs: "-- -Wall  -Werror",
+			name:         "non-empty ClangArgs with double spaces",
+			checks:       "--checks=*",
+			clangArgs:    "-- -Wall  -Werror",
+			expectedArgs: []string{"--checks=*", "-p", "--export-sarif", "--quiet", "--", "-Wall", "-Werror"},
 		},
 		{
-			name:      "whitespace-only ClangArgs",
-			checks:    "--checks=*",
-			clangArgs: "  ",
+			name:         "whitespace-only ClangArgs",
+			checks:       "--checks=*",
+			clangArgs:    "  ",
+			expectedArgs: []string{"--checks=*", "-p", "--export-sarif", "--quiet"},
 		},
 		{
-			name:      "non-empty checks and ClangArgs",
-			checks:    "--checks=*",
-			clangArgs: "-- -Wall",
+			name:         "non-empty checks and ClangArgs",
+			checks:       "--checks=*",
+			clangArgs:    "-- -Wall",
+			expectedArgs: []string{"--checks=*", "-p", "--export-sarif", "--quiet", "--", "-Wall"},
 		},
 		{
 			name:         "double-quoted path with spaces",
@@ -255,6 +260,13 @@ func TestRunClangTidy_NoEmptyArgs(t *testing.T) {
 
 			for i, arg := range capturedArgs[1:] {
 				assert.NotEqual(t, "", arg, "argument at index %d is an empty string", i+1)
+			}
+
+			if tt.checks == "" {
+				for _, arg := range capturedArgs {
+					assert.False(t, strings.HasPrefix(arg, "--checks="),
+						"empty checks should not produce a --checks= argument, got %q", arg)
+				}
 			}
 
 			for _, expected := range tt.expectedArgs {
