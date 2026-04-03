@@ -83,6 +83,22 @@ func TestAskCompiler(t *testing.T) {
 		assert.Empty(t, headers)
 	})
 
+	t.Run("sets LC_ALL=C to prevent locale-dependent output", func(t *testing.T) {
+		tmpDir := t.TempDir()
+		var capturedEnv map[string]string
+		mockCompiler := createMockCompiler(t, filepath.Join(tmpDir, "compiler"), func(ctx *mockexe.CallContext) int {
+			capturedEnv = ctx.Env
+			if _, err := fmt.Fprint(ctx.Stderr, mockCompilerIncludeResponse); err != nil {
+				ctx.T.Errorf("failed to write to stderr: %v", err)
+			}
+			return 0
+		})
+
+		_, err := askCompiler(mockCompiler, []string{"-E", "-Wp,-v", "-xc++", "/dev/null"})
+		require.NoError(t, err)
+		assert.Equal(t, "C", capturedEnv["LC_ALL"], "LC_ALL must be set to C to ensure English output from GCC")
+	})
+
 	t.Run("returns error on non-zero exit", func(t *testing.T) {
 		tmpDir := t.TempDir()
 		mockCompiler := createMockCompiler(t, filepath.Join(tmpDir, "compiler"), func(ctx *mockexe.CallContext) int {

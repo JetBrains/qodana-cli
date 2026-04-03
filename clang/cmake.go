@@ -26,11 +26,14 @@ type FileWithHeaders struct {
 	Headers []string
 }
 
+// Markers in the compiler's -v stderr output that delimit the include search path list.
 const (
 	SIS = "#include <...> search starts here:"
 	SIE = "End of search list."
 )
 
+// getHeaderType returns compiler flags that cause it to preprocess an empty
+// file and print its include search paths. Uses -xc for C and -xc++ for C++.
 func getHeaderType(file string) []string {
 	nullDevice := os.DevNull
 	switch filepath.Ext(file) {
@@ -89,9 +92,16 @@ func getFilesAndCompilers(compileCommands string) ([]FileWithHeaders, error) {
 	return processList, nil
 }
 
-// askCompiler asks the compiler for the include directories
+// askCompiler retrieves the compiler's built-in system include directories by
+// running it with `-E -Wp,-v -xc /dev/null` (or `-xc++` for C++ files).
+// The -Wp,-v flag tells the preprocessor to print its search paths to stderr,
+// delimited by "#include <...> search starts here:" and "End of search list.".
+// Each discovered path is passed to clang-tidy as --extra-arg=-isystem<path>.
+// See https://gcc.gnu.org/onlinedocs/gcc/Preprocessor-Options.html (-v flag).
 func askCompiler(compiler string, headerType []string) ([]string, error) {
-	_, stderr, exitCode, err := exec.ExecRedirectOutput(".", compiler, headerType...)
+	// Force English output so the SIS/SIE markers are not translated by GCC's gettext.
+	env := append(os.Environ(), "LC_ALL=C")
+	_, stderr, exitCode, err := exec.ExecRedirectOutputWithEnv(".", env, compiler, headerType...)
 	if err != nil {
 		return nil, err
 	}
