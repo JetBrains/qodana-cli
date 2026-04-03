@@ -12,7 +12,65 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-// Find qodana.yaml, run bootstrap, find enabled checks and return them formatted as an argument for clang-tidy.
+// defaultChecks is a curated set of clang-tidy checks enabled when no .clang-tidy
+// config file exists. Covers universally useful categories while excluding
+// platform/codebase-specific ones (llvm-*, fuchsia-*, google-*, etc.) and
+// individual checks that are too noisy without per-project tuning.
+var defaultChecks = strings.Join([]string{
+	"-*", // Disable everything first, then enable curated categories.
+	"bugprone-*",
+	"cert-*",
+	"clang-analyzer-*",
+	"clang-diagnostic-*",
+	"concurrency-*",
+	"misc-*",
+	"modernize-*",
+	"performance-*",
+	"portability-*",
+	"readability-*",
+	// Disabled individual checks (noisy without per-project tuning)
+	"-misc-confusable-identifiers",
+	"-misc-include-cleaner",
+	"-misc-no-recursion",
+	"-misc-non-private-member-variables-in-classes",
+	"-modernize-use-trailing-return-type",
+	"-readability-identifier-length",
+	"-readability-magic-numbers",
+}, ",")
+
+var clangTidyConfigNames = []string{".clang-tidy", "_clang-tidy"}
+
+// findClangTidyConfig walks from startDir toward the filesystem root,
+// looking for a .clang-tidy or _clang-tidy file. Returns true if found.
+// Approximates clang-tidy's parent-directory config file lookup.
+func findClangTidyConfig(startDir string) (bool, error) {
+	dir, err := filepath.Abs(startDir)
+	if err != nil {
+		return false, fmt.Errorf("failed to resolve absolute path for %s: %w", startDir, err)
+	}
+	for {
+		for _, name := range clangTidyConfigNames {
+			_, err := os.Stat(filepath.Join(dir, name))
+			if err == nil {
+				log.Debugf("Found %s in %s", name, dir)
+				return true, nil
+			}
+			if !errors.Is(err, os.ErrNotExist) {
+				// Permission error, broken symlink, etc. — skip, don't abort.
+				log.Debugf("Error checking for %s in %s: %v", name, dir, err)
+			}
+		}
+		parent := filepath.Dir(dir)
+		if parent == dir { // filesystem root
+			return false, nil
+		}
+		dir = parent
+	}
+}
+
+// processConfig reads qodana.yaml includes/excludes, detects .clang-tidy config
+// files in parent directories, and builds the --checks= argument for clang-tidy.
+// When .clang-tidy exists it is the base; otherwise a curated default set is used.
 func processConfig(c thirdpartyscan.Context) (string, error) {
 	var excludeRules []string
 	var includeRules []string
@@ -40,26 +98,31 @@ func processConfig(c thirdpartyscan.Context) (string, error) {
 			excludeRules = append(excludeRules, exclude.Name)
 		}
 	}
-	plusChecks := strings.Join(includeRules, ",")
-	for i, minusCheck := range excludeRules {
-		excludeRules[i] = "-" + minusCheck
+	for i, rule := range excludeRules {
+		excludeRules[i] = "-" + rule
 	}
-	minusChecks := strings.Join(excludeRules, ",")
-	if plusChecks != "" && minusChecks != "" {
-		checks = fmt.Sprintf("--checks=%s,%s", plusChecks, minusChecks)
-	} else if plusChecks != "" {
-		checks = fmt.Sprintf("--checks=%s", plusChecks)
-	} else if minusChecks != "" {
-		checks = fmt.Sprintf("--checks=*,%s", minusChecks)
-	} else {
-		// Only default to all checks when there is no .clang-tidy config file.
-		// If the project has a .clang-tidy, clang-tidy will use it automatically.
-		_, err := os.Stat(filepath.Join(c.ProjectDir(), ".clang-tidy"))
-		if errors.Is(err, os.ErrNotExist) {
-			checks = "--checks=*"
-		} else if err != nil {
-			return "", fmt.Errorf("failed to check for .clang-tidy: %w", err)
-		}
+
+	hasConfig, err := findClangTidyConfig(c.ProjectDir())
+	if err != nil {
+		return "", err
+	}
+
+	// When .clang-tidy exists: it is the base, includes/excludes layer on top.
+	// When no .clang-tidy: defaults are the base, includes/excludes layer on top.
+	parts := make([]string, 0, len(includeRules)+len(excludeRules))
+	parts = append(parts, includeRules...)
+	parts = append(parts, excludeRules...)
+	overrides := strings.Join(parts, ",")
+
+	switch {
+	case hasConfig && overrides != "":
+		checks = fmt.Sprintf("--checks=%s", overrides)
+	case hasConfig:
+		// Let clang-tidy use its own config unmodified.
+	case overrides != "":
+		checks = fmt.Sprintf("--checks=%s,%s", defaultChecks, overrides)
+	default:
+		checks = fmt.Sprintf("--checks=%s", defaultChecks)
 	}
 	return checks, nil
 }
