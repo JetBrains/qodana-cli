@@ -362,7 +362,8 @@ func TestCheckoutAndUpdateSubmodule(t *testing.T) {
 		assert.NoError(t, err)
 
 		submoduleDir := filepath.Join(repo.Dir(), "submodules", "regular")
-		entries, _ := os.ReadDir(submoduleDir)
+		entries, err := os.ReadDir(submoduleDir)
+		assert.NoError(t, err)
 		assert.Empty(t, entries, "submodule directory should remain empty when update is skipped")
 	})
 
