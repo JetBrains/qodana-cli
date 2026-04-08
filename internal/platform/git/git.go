@@ -27,6 +27,7 @@ import (
 	"github.com/JetBrains/qodana-cli/internal/foundation/algorithm"
 	"github.com/JetBrains/qodana-cli/internal/foundation/exec"
 	"github.com/JetBrains/qodana-cli/internal/foundation/str"
+	"github.com/JetBrains/qodana-cli/internal/platform/qdenv"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -115,8 +116,12 @@ func CheckoutAndUpdateSubmodule(cwd string, ref string, force bool, logdir strin
 	if err := checkout(cwd, ref, force, logdir); err != nil {
 		return err
 	}
-
+	if os.Getenv(qdenv.QodanaSkipSubmoduleUpdate) == "true" {
+		log.Infof("Skipping submodule update because %s=true", qdenv.QodanaSkipSubmoduleUpdate)
+		return nil
+	}
 	if err := updateSubmodules(cwd, force, logdir); err != nil {
+		log.Warnf("Failed to update submodules. You can use %s=true to skip submodule update", qdenv.QodanaSkipSubmoduleUpdate)
 		return err
 	}
 
