@@ -23,6 +23,7 @@ import (
 	"regexp"
 	"testing"
 
+	"github.com/JetBrains/qodana-cli/internal/platform/qdenv"
 	log "github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
 )
@@ -348,6 +349,21 @@ func TestCheckoutAndUpdateSubmodule(t *testing.T) {
 
 		err := CheckoutAndUpdateSubmodule(repo.Dir(), "HEAD", true, logdir)
 		assert.NoError(t, err)
+	})
+
+	t.Run("SkipSubmoduleUpdate", func(t *testing.T) {
+		logdir := t.TempDir()
+		repo := SampleRepoWithSubmodule(t).Clone()
+
+		t.Setenv(qdenv.QodanaSkipSubmoduleUpdate, "true")
+
+		err := CheckoutAndUpdateSubmodule(repo.Dir(), "v1", true, logdir)
+		assert.NoError(t, err)
+
+		submoduleDir := filepath.Join(repo.Dir(), "submodules", "regular")
+		entries, err := os.ReadDir(submoduleDir)
+		assert.NoError(t, err)
+		assert.Empty(t, entries, "submodule directory should remain empty when update is skipped")
 	})
 
 	t.Run("OrphanedSubmodule", func(t *testing.T) {
