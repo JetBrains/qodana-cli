@@ -16,7 +16,7 @@ RUN chmod +x $QODANA_DIST/bin/*.sh $QODANA_DIST/bin/qodana && \
 # Install Claude Code
 RUN curl -fsSL https://claude.ai/install.sh | bash && \
     chmod 777 -R $HOME && \
-    npm i -g @openai/codex && \
+    npm i -g @openai/codex@0.117 && \
     npm i -g mcp-remote
 
 
