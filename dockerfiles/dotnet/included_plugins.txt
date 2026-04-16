@@ -76,3 +76,5 @@ com.intellij.rider.godot.community
 com.intellij.rider.godot.gdscript
 com.jetbrains.gateway
 com.jetbrains.rider.frontend
+com.intellij.dfa.analysis
+intellij.opengrep
