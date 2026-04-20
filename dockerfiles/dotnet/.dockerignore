@@ -14,10 +14,7 @@ linux/arm64/web/asset-manifest.json
 linux/arm64/web/preview.html
 linux/arm64/Install-Linux-tar.txt
 linux/arm64/build.txt
-linux/arm64/custom-plugins/opengrep/lib/opengrep-native/rules/**
-!linux/arm64/custom-plugins/opengrep/lib/opengrep-native/rules/.semgrepignore
 linux/arm64/custom-plugins/opengrep/lib/opengrep-native/rules-test/**
-!linux/arm64/custom-plugins/opengrep/lib/opengrep-native/rules-test/.semgrepignore
 linux/amd64/plugins/*
 linux/arm64/plugins/*
 *.tar.gz
