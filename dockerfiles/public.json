@@ -58,5 +58,9 @@
   "ruby": {
     "qd_code": "QDRUBY",
     "description": "Qodana for Ruby (https://jb.gg/qodana-ruby)"
+  },
+  "rust": {
+    "qd_code": "QDRST",
+    "description": "Qodana for Rust (https://jb.gg/qodana-rust)"
   }
 }
