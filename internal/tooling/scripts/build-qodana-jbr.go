@@ -17,6 +17,7 @@ import (
 	"path/filepath"
 	"regexp"
 	"runtime"
+	"slices"
 	"sort"
 	"strings"
 	"time"
@@ -568,7 +569,18 @@ func writeFile(path string, content string) {
 // Path helpers ================================================================================
 
 func findRepoRoot() string {
-	out, err := exec.Command("git", "rev-parse", "--show-toplevel").Output()
+	cmd := exec.Command("git", "rev-parse", "--show-toplevel")
+	// In a linked git worktree, `git commit` exports an absolute GIT_DIR into
+	// the pre-commit hook environment. Once `go generate` cd's into a
+	// subdirectory, that GIT_DIR combined with the missing GIT_WORK_TREE
+	// makes `git rev-parse --show-toplevel` return cwd instead of the
+	// worktree root (documented git behavior — see "The Repository" env vars
+	// in `git help`). Drop GIT_DIR from the subprocess env so git rediscovers
+	// the repo from cwd.
+	cmd.Env = slices.DeleteFunc(os.Environ(), func(e string) bool {
+		return strings.HasPrefix(e, "GIT_DIR=")
+	})
+	out, err := cmd.Output()
 	if err != nil {
 		log.Fatalf("Cannot determine repo root: git rev-parse --show-toplevel failed: %v", err)
 	}
