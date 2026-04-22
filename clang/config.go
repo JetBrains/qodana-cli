@@ -40,29 +40,75 @@ var defaultChecks = strings.Join([]string{
 
 var clangTidyConfigNames = []string{".clang-tidy", "_clang-tidy"}
 
-// findClangTidyConfig walks from startDir toward the filesystem root,
-// looking for a .clang-tidy or _clang-tidy file. Returns true if found.
-// Approximates clang-tidy's parent-directory config file lookup.
-func findClangTidyConfig(startDir string) (bool, error) {
-	dir, err := filepath.Abs(startDir)
-	if err != nil {
-		return false, fmt.Errorf("failed to resolve absolute path for %s: %w", startDir, err)
+const clangTidySearchRootEnv = "QODANA_CLANG_TIDY_SEARCH_ROOT"
+
+// resolvePath returns EvalSymlinks(p) when it succeeds, otherwise Abs(p).
+// EvalSymlinks fails when the path doesn't exist; Abs is good enough there.
+func resolvePath(p string) (string, error) {
+	if resolved, err := filepath.EvalSymlinks(p); err == nil {
+		return resolved, nil
 	}
+	return filepath.Abs(p)
+}
+
+// findClangTidyConfig returns the absolute path of the nearest .clang-tidy
+// or _clang-tidy file reachable from startDir by walking toward the
+// filesystem root. Returns "" if none is found.
+//
+// Matches clang-tidy's own discovery (FileOptionsBaseProvider::addRawFileOptions):
+// walk to the filesystem root, no repo/$HOME boundary. This keeps our
+// scanner profile consistent with whatever clang-tidy itself would pick up.
+//
+// The QODANA_CLANG_TIDY_SEARCH_ROOT env var caps the walk at a specific
+// directory (inclusive: the searchRoot is still checked; its parents are
+// not). If set, startDir must be equal to or a descendant of searchRoot —
+// otherwise this function returns an error. The var is intended for tests;
+// production never sets it. A Warn is logged when it is set so accidental
+// production use is observable.
+//
+// Within a single directory, .clang-tidy is preferred over _clang-tidy
+// (iteration order of clangTidyConfigNames). Upstream clang-tidy only
+// recognizes .clang-tidy; _clang-tidy is a Qodana-specific convenience.
+func findClangTidyConfig(startDir string) (string, error) {
+	dir, err := resolvePath(startDir)
+	if err != nil {
+		return "", fmt.Errorf("failed to resolve path for %s: %w", startDir, err)
+	}
+
+	var searchRoot string
+	if raw := os.Getenv(clangTidySearchRootEnv); raw != "" {
+		searchRoot, err = resolvePath(raw)
+		if err != nil {
+			return "", fmt.Errorf("failed to resolve %s=%q: %w", clangTidySearchRootEnv, raw, err)
+		}
+		log.Warnf("%s is set — this is intended for tests only and restricts .clang-tidy discovery to %s",
+			clangTidySearchRootEnv, searchRoot)
+
+		rel, relErr := filepath.Rel(searchRoot, dir)
+		if relErr != nil || rel == ".." || strings.HasPrefix(rel, ".."+string(filepath.Separator)) {
+			return "", fmt.Errorf("%s=%q is not an ancestor of start dir %q",
+				clangTidySearchRootEnv, searchRoot, dir)
+		}
+	}
+
 	for {
 		for _, name := range clangTidyConfigNames {
-			_, err := os.Stat(filepath.Join(dir, name))
+			candidate := filepath.Join(dir, name)
+			_, err := os.Stat(candidate)
 			if err == nil {
 				log.Debugf("Found %s in %s", name, dir)
-				return true, nil
+				return candidate, nil
 			}
 			if !errors.Is(err, os.ErrNotExist) {
-				// Permission error, broken symlink, etc. — skip, don't abort.
 				log.Debugf("Error checking for %s in %s: %v", name, dir, err)
 			}
 		}
+		if searchRoot != "" && dir == searchRoot {
+			return "", nil
+		}
 		parent := filepath.Dir(dir)
-		if parent == dir { // filesystem root
-			return false, nil
+		if parent == dir {
+			return "", nil
 		}
 		dir = parent
 	}
@@ -102,10 +148,11 @@ func processConfig(c thirdpartyscan.Context) (string, error) {
 		excludeRules[i] = "-" + rule
 	}
 
-	hasConfig, err := findClangTidyConfig(c.ProjectDir())
+	configPath, err := findClangTidyConfig(c.ProjectDir())
 	if err != nil {
 		return "", err
 	}
+	hasConfig := configPath != ""
 
 	// When .clang-tidy exists: it is the base, includes/excludes layer on top.
 	// When no .clang-tidy: defaults are the base, includes/excludes layer on top.

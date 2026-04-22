@@ -101,12 +101,17 @@ func TestAskCompiler(t *testing.T) {
 
 	t.Run("returns error on non-zero exit", func(t *testing.T) {
 		tmpDir := t.TempDir()
+		const stderrMarker = "fatal error: unable to locate system headers"
 		mockCompiler := createMockCompiler(t, filepath.Join(tmpDir, "compiler"), func(ctx *mockexe.CallContext) int {
+			if _, err := fmt.Fprintln(ctx.Stderr, stderrMarker); err != nil {
+				ctx.T.Errorf("failed to write to stderr: %v", err)
+			}
 			return 1
 		})
 
 		_, err := askCompiler(mockCompiler, []string{"-E", "-Wp,-v", "-xc++", "/dev/null"})
-		assert.Error(t, err)
+		assert.ErrorContains(t, err, "exited with code 1")
+		assert.ErrorContains(t, err, stderrMarker)
 	})
 }
 
@@ -224,6 +229,18 @@ func TestGetFilesAndCompilers(t *testing.T) {
 		assert.Empty(t, result, "malformed entry should be skipped")
 	})
 
+	t.Run("skips entry with whitespace-only Command and no Arguments", func(t *testing.T) {
+		tmpDir := t.TempDir()
+
+		ccPath := writeCompileCommands(t, tmpDir, []Command{
+			{Directory: tmpDir, Command: "   ", File: "file.cpp"},
+		})
+
+		result, err := getFilesAndCompilers(ccPath)
+		require.NoError(t, err)
+		assert.Empty(t, result, "whitespace-only command with no arguments should be skipped")
+	})
+
 	t.Run("caches headers per compiler and extension", func(t *testing.T) {
 		tmpDir := t.TempDir()
 		var callCount atomic.Int32
@@ -284,5 +301,39 @@ func TestGetFilesAndCompilers(t *testing.T) {
 		require.NoError(t, err)
 		require.Len(t, result, 2)
 		assert.Equal(t, int32(2), callCount.Load(), "compiler should be called twice for different extensions")
+	})
+}
+
+// TestCompilerCacheKey pins that distinct (compiler, headerType) pairs
+// produce distinct keys. The helper must use an unambiguous delimiter
+// (null byte), because space can appear in both compiler paths and header
+// type tokens.
+func TestCompilerCacheKey(t *testing.T) {
+	t.Run("same inputs produce same key", func(t *testing.T) {
+		a := compilerCacheKey("cc", []string{"-E", "-xc", "/dev/null"})
+		b := compilerCacheKey("cc", []string{"-E", "-xc", "/dev/null"})
+		assert.Equal(t, a, b)
+	})
+
+	t.Run("distinguishes compiler trailing space from headerType leading element", func(t *testing.T) {
+		a := compilerCacheKey("a ", []string{"b"})
+		b := compilerCacheKey("a", []string{" b"})
+		assert.NotEqual(t, a, b,
+			"cache key must distinguish (%q, %v) from (%q, %v)", "a ", []string{"b"}, "a", []string{" b"})
+	})
+
+	t.Run("distinguishes non-empty headerType from suffixed compiler", func(t *testing.T) {
+		a := compilerCacheKey("x", []string{"y"})
+		b := compilerCacheKey("xy", nil)
+		assert.NotEqual(t, a, b,
+			"cache key must distinguish (%q, %v) from (%q, %v)", "x", []string{"y"}, "xy", nil)
+	})
+
+	t.Run("nil headerType is distinct from any non-empty headerType", func(t *testing.T) {
+		nilKey := compilerCacheKey("x", nil)
+		assert.NotEqual(t, nilKey, compilerCacheKey("x", []string{""}),
+			"nil headerType must not collide with []string{\"\"}")
+		assert.NotEqual(t, nilKey, compilerCacheKey("x", []string{"y"}),
+			"nil headerType must not collide with non-empty headerType")
 	})
 }

@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"slices"
 	"strings"
 	"sync/atomic"
 	"testing"
@@ -13,10 +14,30 @@ import (
 	"github.com/JetBrains/qodana-cli/internal/platform/thirdpartyscan"
 	"github.com/JetBrains/qodana-cli/internal/testutil/mockexe"
 	"github.com/JetBrains/qodana-cli/internal/testutil/needs"
+	"github.com/google/shlex"
 	log "github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
+
+// assertArgsSubsequence checks that `expected` tokens appear in `actual`
+// as a subsequence (same relative order, but other tokens may appear
+// between them). This is intentionally not a strict-ordering check: the
+// canonical argv has tokens (e.g. sarif path, include dirs, input file)
+// that are not worth listing in every table case.
+func assertArgsSubsequence(t *testing.T, actual, expected []string) {
+	t.Helper()
+	i := 0
+	for _, got := range actual {
+		if i < len(expected) && got == expected[i] {
+			i++
+		}
+	}
+	if i < len(expected) {
+		t.Errorf("expected subsequence %v, missing %q (or out of order) in %v",
+			expected, expected[i], actual)
+	}
+}
 
 func TestLinterRun(t *testing.T) {
 	needs.Need(t, needs.ClangDeps)
@@ -24,6 +45,7 @@ func TestLinterRun(t *testing.T) {
 	log.SetLevel(log.DebugLevel)
 
 	projectDir := t.TempDir()
+	t.Setenv(clangTidySearchRootEnv, projectDir)
 
 	err := os.CopyFS(projectDir, os.DirFS("testdata/TestLinterRun"))
 	if err != nil {
@@ -257,7 +279,12 @@ func TestRunClangTidy_NoEmptyArgs(t *testing.T) {
 
 			require.NoError(t, err)
 			require.True(t, invoked.Load(), "clang-tidy mock was not invoked")
+			require.NotEmpty(t, capturedArgs, "mock captured no args")
 
+			// Skip capturedArgs[0]: per POSIX argv convention (and the
+			// mockexe CallContext.Argv contract), argv[0] is the program
+			// name exec.Command passed to the process, not an argument the
+			// production code constructed.
 			for i, arg := range capturedArgs[1:] {
 				assert.NotEqual(t, "", arg, "argument at index %d is an empty string", i+1)
 			}
@@ -269,8 +296,36 @@ func TestRunClangTidy_NoEmptyArgs(t *testing.T) {
 				}
 			}
 
-			for _, expected := range tt.expectedArgs {
-				assert.Contains(t, capturedArgs, expected, "expected argument %q not found in args", expected)
+			assertArgsSubsequence(t, capturedArgs, tt.expectedArgs)
+
+			if strings.Contains(tt.clangArgs, "--") {
+				userTokens, splitErr := shlex.Split(tt.clangArgs)
+				require.NoError(t, splitErr)
+				dashDashInTokens := slices.Index(userTokens, "--")
+				require.GreaterOrEqual(t, dashDashInTokens, 0, "test case must contain --")
+
+				dashDashIdx := slices.Index(capturedArgs, "--")
+				quietIdx := slices.Index(capturedArgs, "--quiet")
+				require.GreaterOrEqual(t, dashDashIdx, 0, "captured args must contain --")
+				require.GreaterOrEqual(t, quietIdx, 0, "captured args must contain --quiet")
+				require.Greater(t, dashDashIdx, quietIdx, "--quiet must appear before --")
+
+				for _, tok := range userTokens[dashDashInTokens+1:] {
+					// Search for the user token at an index strictly after the
+					// first `--`. Using slices.Index would return the first
+					// occurrence anywhere, which could land before `--` if the
+					// token happens to coincide with a production-emitted arg
+					// (e.g. `--quiet`).
+					found := false
+					for k := dashDashIdx + 1; k < len(capturedArgs); k++ {
+						if capturedArgs[k] == tok {
+							found = true
+							break
+						}
+					}
+					assert.True(t, found,
+						"user token %q must appear after -- in captured args", tok)
+				}
 			}
 		})
 	}

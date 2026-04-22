@@ -44,6 +44,20 @@ func getHeaderType(file string) []string {
 	}
 }
 
+// compilerCacheKey produces an unambiguous cache key for the (compiler,
+// headerType) pair. A null byte is used as the delimiter because it cannot
+// appear in POSIX paths or shell arguments (and is also absent from Windows
+// paths), so distinct inputs always produce distinct keys.
+func compilerCacheKey(compiler string, headerType []string) string {
+	var b strings.Builder
+	b.WriteString(compiler)
+	for _, h := range headerType {
+		b.WriteByte(0)
+		b.WriteString(h)
+	}
+	return b.String()
+}
+
 // getFilesAndCompilers returns a list of files with their corresponding compiler's include directories
 func getFilesAndCompilers(compileCommands string) ([]FileWithHeaders, error) {
 	data, err := os.ReadFile(compileCommands)
@@ -76,7 +90,7 @@ func getFilesAndCompilers(compileCommands string) ([]FileWithHeaders, error) {
 			compiler = parts[0]
 		}
 		headerType := getHeaderType(cmd.File)
-		cacheKey := compiler + strings.Join(headerType, " ")
+		cacheKey := compilerCacheKey(compiler, headerType)
 		if val, ok := fileHeaderMap[cacheKey]; ok {
 			processList = append(processList, FileWithHeaders{File: cmd.File, Headers: val})
 		} else {
@@ -106,7 +120,8 @@ func askCompiler(compiler string, headerType []string) ([]string, error) {
 		return nil, err
 	}
 	if exitCode != 0 {
-		return nil, fmt.Errorf("compiler %q exited with code %d", compiler, exitCode)
+		return nil, fmt.Errorf("compiler %q exited with code %d\n  stderr: %s",
+			compiler, exitCode, strings.TrimRight(stderr, "\n"))
 	}
 	startIndex := strings.Index(stderr, SIS)
 	endIndex := strings.Index(stderr, SIE)
