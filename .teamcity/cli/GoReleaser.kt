@@ -47,7 +47,7 @@ class GoReleaser(
     name = "${releaseType.name} qodana-$wd"
     description = "${releaseType.name} $arguments build of qodana-$wd for ($CLI_GITHUB_REPO_URL/$branch)"
     maxRunningBuildsPerBranch = if (releaseType != ReleaseType.Snapshot) "*:1" else "*:0"
-    artifactRules = "${wd}/dist => ." + if (!isCli) "\n\n +:*-third-party-libraries.json" else ""
+    artifactRules = "dist => ." + if (!isCli) "\n\n +:*-third-party-libraries.json" else ""
 
     if (buildPattern.isNotEmpty()) {
         buildNumberPattern = buildPattern
@@ -95,17 +95,9 @@ class GoReleaser(
         }
         script {
             name = "Run GoReleaser"
-            workingDir = wd
             scriptContent = if (releaseType.isNightlyOrRelease()) {
                 """
                     set -e
-                    if [ -f "../.goreleaser.yaml" ]; then
-                        GORELEASER_CONFIG="../.goreleaser.yaml"
-                        PREFIX=".."
-                    else
-                        GORELEASER_CONFIG=".goreleaser.yaml"
-                        PREFIX="."
-                    fi
 
                     ARCH=${'$'}(uname -m)
                     case ${'$'}ARCH in
@@ -124,21 +116,14 @@ class GoReleaser(
                     chmod +x /usr/local/bin/codesign
 
                     export GORELEASER_CURRENT_TAG=${'$'}(git describe --tags ${'$'}(git rev-list --tags --max-count=1))
-                    goreleaser release --config ${'$'}GORELEASER_CONFIG --clean ${arguments.joinToString(" ")}
+                    goreleaser release --clean ${arguments.joinToString(" ")}
                 """.trimIndent()
             } else {
                 """
                     set -e
-                    if [ -f "../.goreleaser.yaml" ]; then
-                        GORELEASER_CONFIG="../.goreleaser.yaml"
-                        PREFIX=".."
-                    else
-                        GORELEASER_CONFIG=".goreleaser.yaml"
-                        PREFIX="."
-                    fi
 
                     export GORELEASER_CURRENT_TAG=${'$'}(git describe --tags ${'$'}(git rev-list --tags --max-count=1))
-                    goreleaser release --config ${'$'}GORELEASER_CONFIG --clean ${arguments.joinToString(" ")}
+                    goreleaser release --clean ${arguments.joinToString(" ")}
                 """.trimIndent()
             }
 
