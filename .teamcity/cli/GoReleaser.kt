@@ -49,7 +49,7 @@ class GoReleaser(
     name = "${releaseType.name} qodana-$wd"
     description = "${releaseType.name} $arguments build of qodana-$wd for ($CLI_GITHUB_REPO_URL/$branch)"
     maxRunningBuildsPerBranch = if (releaseType != ReleaseType.Snapshot) "*:1" else "*:0"
-    artifactRules = "${wd}/dist => ." + if (!isCli) "\n\n +:*-third-party-libraries.json" else ""
+    artifactRules = "dist => ." + if (!isCli) "\n\n +:*-third-party-libraries.json" else ""
 
     if (buildPattern.isNotEmpty()) {
         buildNumberPattern = buildPattern
@@ -96,35 +96,9 @@ class GoReleaser(
         }
         script {
             name = "Run GoReleaser"
-            workingDir = wd
             scriptContent = if (releaseType.isNightlyOrRelease()) {
                 """
                     set -e
-
-                    # download required dependencies
-                    (
-                        DIR_NAME="${'$'}(basename "${'$'}PWD")"
-                        if [ "${'$'}DIR_NAME" = "cli" ] || [ "${'$'}DIR_NAME" = "clang" ] || [ "${'$'}DIR_NAME" = "cdnet" ]; then
-                            cd ..
-                        fi
-                        # 253
-                        if [ -d "./tooling" ]; then
-                            go generate ./tooling
-                        fi
-                        # main
-                        if [ -d "./internal/tooling" ]; then
-                            go generate ./internal/tooling
-                        fi
-                    )
-
-                    # run goreleaser
-                    if [ -f "../.goreleaser.yaml" ]; then
-                        GORELEASER_CONFIG="../.goreleaser.yaml"
-                        PREFIX=".."
-                    else
-                        GORELEASER_CONFIG=".goreleaser.yaml"
-                        PREFIX="."
-                    fi
 
                     ARCH=${'$'}(uname -m)
                     case ${'$'}ARCH in
@@ -142,37 +116,13 @@ class GoReleaser(
                     mv /tmp/${'$'}CODESIGN_BIN /usr/local/bin/codesign
                     chmod +x /usr/local/bin/codesign
 
-                    goreleaser release --config ${'$'}GORELEASER_CONFIG --clean ${arguments.joinToString(" ")}
+                    goreleaser release --clean ${arguments.joinToString(" ")}
                 """.trimIndent()
             } else {
                 """
                     set -e
 
-                    # download required dependencies
-                    (
-                        DIR_NAME="${'$'}(basename "${'$'}PWD")"
-                        if [ "${'$'}DIR_NAME" = "cli" ] || [ "${'$'}DIR_NAME" = "clang" ] || [ "${'$'}DIR_NAME" = "cdnet" ]; then
-                            cd ..
-                        fi
-                        # 253
-                        if [ -d "./tooling" ]; then
-                            go generate ./tooling
-                        fi
-                        # main
-                        if [ -d "./internal/tooling" ]; then
-                            go generate ./internal/tooling
-                        fi
-                    )
-
-                    if [ -f "../.goreleaser.yaml" ]; then
-                        GORELEASER_CONFIG="../.goreleaser.yaml"
-                        PREFIX=".."
-                    else
-                        GORELEASER_CONFIG=".goreleaser.yaml"
-                        PREFIX="."
-                    fi
-
-                    goreleaser release --config ${'$'}GORELEASER_CONFIG --clean ${arguments.joinToString(" ")}
+                    goreleaser release --clean ${arguments.joinToString(" ")}
                 """.trimIndent()
             }
 
