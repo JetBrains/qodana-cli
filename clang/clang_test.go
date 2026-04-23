@@ -218,6 +218,34 @@ func TestRunClangTidy_NoEmptyArgs(t *testing.T) {
 			clangArgs:   `-- -I"/unclosed`,
 			expectError: true,
 		},
+		// google/shlex treats `\` as an escape of the next character everywhere,
+		// including inside "..." — unlike POSIX shells. On Windows, a naive
+		// `-I"C:\Path\to\dir"` therefore silently becomes `-IC:Pathtodir`.
+		// Users must either use forward slashes or escape their backslashes.
+		{
+			name:         "Windows path, quoted, single backslashes (mangled)",
+			checks:       "--checks=*",
+			clangArgs:    `-- -I"C:\Projects\qodana-cli" -Wall`,
+			expectedArgs: []string{"--", "-IC:Projectsqodana-cli", "-Wall"},
+		},
+		{
+			name:         "Windows path, quoted, doubled backslashes (works)",
+			checks:       "--checks=*",
+			clangArgs:    `-- -I"C:\\Projects\\qodana-cli" -Wall`,
+			expectedArgs: []string{"--", `-IC:\Projects\qodana-cli`, "-Wall"},
+		},
+		{
+			name:         "Windows path, forward slashes, unquoted (works)",
+			checks:       "--checks=*",
+			clangArgs:    `-- -IC:/Projects/qodana-cli -Wall`,
+			expectedArgs: []string{"--", "-IC:/Projects/qodana-cli", "-Wall"},
+		},
+		{
+			name:         "Windows path, unquoted, single backslashes (mangled)",
+			checks:       "--checks=*",
+			clangArgs:    `-- -IC:\Projects\qodana-cli -Wall`,
+			expectedArgs: []string{"--", "-IC:Projectsqodana-cli", "-Wall"},
+		},
 	}
 
 	for _, tt := range tests {
