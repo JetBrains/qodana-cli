@@ -147,6 +147,7 @@ func TestRunClangTidy_PathWithSpaces(t *testing.T) {
 		0,
 		FileWithHeaders{File: filepath.Join(projectDir, "test.c")},
 		"-checks=-*",
+		"",
 		ctx,
 		resultsDir,
 		stderrCh,
@@ -294,6 +295,7 @@ func TestRunClangTidy_NoEmptyArgs(t *testing.T) {
 				0,
 				FileWithHeaders{File: filepath.Join(projectDir, "test.c")},
 				tt.checks,
+				"",
 				ctx,
 				resultsDir,
 				stderrCh,
@@ -354,6 +356,110 @@ func TestRunClangTidy_NoEmptyArgs(t *testing.T) {
 					assert.True(t, found,
 						"user token %q must appear after -- in captured args", tok)
 				}
+			}
+		})
+	}
+}
+
+func TestRunClangTidy_ConfigFile(t *testing.T) {
+	tests := []struct {
+		name       string
+		configFile string
+		clangArgs  string
+	}{
+		{
+			name:       "configFile set, no ClangArgs",
+			configFile: "/tmp/_clang-tidy",
+			clangArgs:  "",
+		},
+		{
+			name:       "configFile empty",
+			configFile: "",
+			clangArgs:  "",
+		},
+		{
+			name:       "configFile set with user override in ClangArgs",
+			configFile: "/tmp/_clang-tidy",
+			clangArgs:  "-- --config-file=/user/path",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			tmpDir := t.TempDir()
+			toolDir := filepath.Join(tmpDir, "tools")
+			var invoked atomic.Bool
+			var capturedArgs []string
+			fakeClangTidy := mockexe.CreateMockExe(t, filepath.Join(toolDir, "clang-tidy"), func(ctx *mockexe.CallContext) int {
+				invoked.Store(true)
+				capturedArgs = ctx.Argv
+				for i, arg := range ctx.Argv {
+					if arg == "--export-sarif" && i+1 < len(ctx.Argv) {
+						_ = os.MkdirAll(filepath.Dir(ctx.Argv[i+1]), 0o755)
+						_ = os.WriteFile(ctx.Argv[i+1], []byte("{}"), 0o644)
+						break
+					}
+				}
+				return 0
+			})
+
+			projectDir := filepath.Join(tmpDir, "project")
+			require.NoError(t, os.MkdirAll(projectDir, 0o755))
+			compileCommands := filepath.Join(projectDir, "compile_commands.json")
+			require.NoError(t, os.WriteFile(compileCommands, []byte("[]"), 0o644))
+			resultsDir := filepath.Join(tmpDir, "results")
+			require.NoError(t, os.MkdirAll(resultsDir, 0o755))
+
+			ctx := thirdpartyscan.ContextBuilder{
+				ProjectDir:           projectDir,
+				ClangCompileCommands: compileCommands,
+				ClangArgs:            tt.clangArgs,
+				MountInfo: thirdpartyscan.MountInfo{
+					CustomTools: map[string]string{
+						thirdpartyscan.Clang: fakeClangTidy,
+					},
+				},
+			}.Build()
+
+			stderrCh := make(chan string, 1)
+			stdoutCh := make(chan string, 1)
+			err := runClangTidy(
+				0,
+				FileWithHeaders{File: filepath.Join(projectDir, "test.c")},
+				"",
+				tt.configFile,
+				ctx,
+				resultsDir,
+				stderrCh,
+				stdoutCh,
+			)
+			require.NoError(t, err)
+			require.True(t, invoked.Load(), "mock was not invoked")
+
+			configFileTokens := []int{}
+			for i, arg := range capturedArgs {
+				if strings.HasPrefix(arg, "--config-file=") {
+					configFileTokens = append(configFileTokens, i)
+				}
+			}
+
+			switch {
+			case tt.configFile == "" && tt.clangArgs == "":
+				assert.Empty(t, configFileTokens,
+					"no --config-file= token expected when configFile is empty and ClangArgs has none")
+
+			case tt.configFile != "" && tt.clangArgs == "":
+				require.Len(t, configFileTokens, 1)
+				assert.Equal(t, "--config-file="+tt.configFile, capturedArgs[configFileTokens[0]])
+
+			case tt.configFile != "" && strings.Contains(tt.clangArgs, "--config-file"):
+				require.Len(t, configFileTokens, 2,
+					"both qodana's and user's --config-file= should be present")
+				// Qodana's appears first, user's wins via last-occurrence semantics.
+				assert.Equal(t, "--config-file="+tt.configFile, capturedArgs[configFileTokens[0]])
+				assert.Equal(t, "--config-file=/user/path", capturedArgs[configFileTokens[1]])
+				assert.Less(t, configFileTokens[0], configFileTokens[1],
+					"user's --config-file= in ClangArgs must come after qodana's so it wins")
 			}
 		})
 	}

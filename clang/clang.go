@@ -23,10 +23,11 @@ const spinnerIndex = 34
 const spinnerInterval = 100 * time.Millisecond
 
 // runClangTidyUnderProgress runs clang-tidy for each file in filesAndCompilers and shows a progress bar.
-func runClangTidyUnderProgress(c thirdpartyscan.Context, filesAndCompilers []FileWithHeaders, checks string) {
+// configFile, when non-empty, is passed to clang-tidy via --config-file=.
+func runClangTidyUnderProgress(c thirdpartyscan.Context, filesAndCompilers []FileWithHeaders, checks string, configFile string) {
 	spin := initializeSpinner()
 	stdoutChannel, stderrChannel := createFileLoggers(c.LogDir())
-	worker(c, filesAndCompilers, checks, spin, stdoutChannel, stderrChannel)
+	worker(c, filesAndCompilers, checks, configFile, spin, stdoutChannel, stderrChannel)
 }
 
 func initializeSpinner() *spinner.Spinner {
@@ -57,6 +58,7 @@ func worker(
 	c thirdpartyscan.Context,
 	filesAndCompilers []FileWithHeaders,
 	checks string,
+	configFile string,
 	spin *spinner.Spinner,
 	stdoutChannel, stderrChannel chan string,
 ) {
@@ -94,6 +96,7 @@ func worker(
 						counter,
 						input,
 						checks,
+						configFile,
 						c,
 						platform.GetTmpResultsDir(c.ResultsDir()),
 						stderrChannel,
@@ -118,10 +121,16 @@ func worker(
 }
 
 // runClangTidy runs clang-tidy for a single file.
+//
+// configFile, when non-empty, is forwarded as --config-file=<path>. It is
+// inserted before the user's ClangArgs splice so that a user-supplied
+// --config-file=/--config= in ClangArgs wins (clang-tidy's --config-file is
+// a cl::opt — last occurrence wins).
 func runClangTidy(
 	counter int,
 	input FileWithHeaders,
 	checks string,
+	configFile string,
 	c thirdpartyscan.Context,
 	tmpResultsDir string,
 	stderrChannel chan string,
@@ -131,6 +140,9 @@ func runClangTidy(
 	var args []string
 	if checks != "" {
 		args = append(args, checks)
+	}
+	if configFile != "" {
+		args = append(args, "--config-file="+configFile)
 	}
 	args = append(args,
 		"-p",

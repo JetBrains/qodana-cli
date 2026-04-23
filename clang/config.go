@@ -114,15 +114,23 @@ func findClangTidyConfig(startDir string) (string, error) {
 	}
 }
 
-// processConfig reads qodana.yaml includes/excludes, detects .clang-tidy config
-// files in parent directories, and builds the --checks= argument for clang-tidy.
-// When .clang-tidy exists it is the base; otherwise a curated default set is used.
-func processConfig(c thirdpartyscan.Context) (string, error) {
+// processConfig reads qodana.yaml includes/excludes, detects .clang-tidy /
+// _clang-tidy config files in parent directories, and builds the --checks=
+// argument for clang-tidy. When .clang-tidy exists it is the base; otherwise
+// a curated default set is used.
+//
+// The returned configFile is non-empty only when the found config file is
+// named _clang-tidy — clang-tidy's native per-file walk recognizes only
+// .clang-tidy, so _clang-tidy must be passed explicitly via --config-file=.
+// For .clang-tidy we leave configFile empty so clang-tidy's native walk
+// continues to work (this preserves per-directory .clang-tidy discovery for
+// source files in subdirectories). findClangTidyConfig returns an
+// EvalSymlinks-resolved path, so the configFile here is already resolved.
+func processConfig(c thirdpartyscan.Context) (checks string, configFile string, err error) {
 	var excludeRules []string
 	var includeRules []string
 
 	yaml := c.QodanaYamlConfig()
-	var checks string
 	utils.Bootstrap(yaml.Bootstrap, c.ProjectDir())
 	if yaml.Version != "" || len(yaml.Includes) > 0 || len(yaml.Excludes) > 0 {
 		fmt.Println("Found qodana.yaml. Note that only bootstrap command and inspection names from include and exclude sections are supported.")
@@ -150,9 +158,12 @@ func processConfig(c thirdpartyscan.Context) (string, error) {
 
 	configPath, err := findClangTidyConfig(c.ProjectDir())
 	if err != nil {
-		return "", err
+		return "", "", err
 	}
 	hasConfig := configPath != ""
+	if hasConfig && filepath.Base(configPath) == "_clang-tidy" {
+		configFile = configPath
+	}
 
 	// When .clang-tidy exists: it is the base, includes/excludes layer on top.
 	// When no .clang-tidy: defaults are the base, includes/excludes layer on top.
@@ -171,5 +182,5 @@ func processConfig(c thirdpartyscan.Context) (string, error) {
 	default:
 		checks = fmt.Sprintf("--checks=%s", defaultChecks)
 	}
-	return checks, nil
+	return checks, configFile, nil
 }

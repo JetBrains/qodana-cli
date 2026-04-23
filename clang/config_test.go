@@ -52,6 +52,18 @@ func runProcessConfig(
 	excludes []qdyaml.Clude,
 ) string {
 	t.Helper()
+	checks, _ := runProcessConfigFull(t, projectDir, version, includes, excludes)
+	return checks
+}
+
+func runProcessConfigFull(
+	t *testing.T,
+	projectDir string,
+	version string,
+	includes []qdyaml.Clude,
+	excludes []qdyaml.Clude,
+) (checks, configFile string) {
+	t.Helper()
 	ctx := thirdpartyscan.ContextBuilder{
 		ProjectDir: projectDir,
 		QodanaYamlConfig: thirdpartyscan.QodanaYamlConfig{
@@ -60,9 +72,9 @@ func runProcessConfig(
 			Excludes: excludes,
 		},
 	}.Build()
-	result, err := processConfig(ctx)
+	checks, configFile, err := processConfig(ctx)
 	require.NoError(t, err)
-	return result
+	return checks, configFile
 }
 
 // TestFindClangTidyConfig =====
@@ -304,6 +316,58 @@ func TestProcessConfig_ConfigInParent_IncludesAndExcludes(t *testing.T) {
 func TestProcessConfig_UnderscoreClangTidy_DefersToConfig(t *testing.T) {
 	dir := setupProjectDir(t, 1, "_clang-tidy")
 	assert.Equal(t, "", runProcessConfig(t, dir, "", nil, nil))
+}
+
+// TestProcessConfig — configFile return value =====
+
+func TestProcessConfig_ConfigFile_DotClangTidyAtProjectRoot(t *testing.T) {
+	dir := setupProjectDir(t, 0, ".clang-tidy")
+	_, configFile := runProcessConfigFull(t, dir, "", nil, nil)
+	assert.Empty(t, configFile, ".clang-tidy relies on clang-tidy's native walk")
+}
+
+func TestProcessConfig_ConfigFile_DotClangTidyInParent(t *testing.T) {
+	dir := setupProjectDir(t, 1, ".clang-tidy")
+	_, configFile := runProcessConfigFull(t, dir, "", nil, nil)
+	assert.Empty(t, configFile, ".clang-tidy in parent still relies on clang-tidy's native walk")
+}
+
+func TestProcessConfig_ConfigFile_UnderscoreClangTidyAtProjectRoot(t *testing.T) {
+	dir := setupProjectDir(t, 0, "_clang-tidy")
+	_, configFile := runProcessConfigFull(t, dir, "", nil, nil)
+	require.NotEmpty(t, configFile)
+	assert.Equal(t, "_clang-tidy", filepath.Base(configFile))
+	resolvedDir, err := resolvePath(dir)
+	require.NoError(t, err)
+	assert.Equal(t, resolvedDir, filepath.Dir(configFile))
+}
+
+func TestProcessConfig_ConfigFile_UnderscoreClangTidyInParent(t *testing.T) {
+	dir := setupProjectDir(t, 1, "_clang-tidy")
+	_, configFile := runProcessConfigFull(t, dir, "", nil, nil)
+	require.NotEmpty(t, configFile)
+	assert.Equal(t, "_clang-tidy", filepath.Base(configFile))
+}
+
+func TestProcessConfig_ConfigFile_NoConfig(t *testing.T) {
+	dir := setupProjectDir(t, -1, "")
+	_, configFile := runProcessConfigFull(t, dir, "", nil, nil)
+	assert.Empty(t, configFile)
+}
+
+func TestProcessConfig_ConfigFile_UnderscoreClangTidyWithIncludes(t *testing.T) {
+	dir := setupProjectDir(t, 0, "_clang-tidy")
+	checks, configFile := runProcessConfigFull(t, dir, "1.0", []qdyaml.Clude{{Name: "bugprone-*"}}, nil)
+	assert.Equal(t, "--checks=bugprone-*", checks, "overrides layer on top of config")
+	require.NotEmpty(t, configFile)
+	assert.Equal(t, "_clang-tidy", filepath.Base(configFile))
+}
+
+func TestProcessConfig_ConfigFile_DotClangTidyWithIncludes(t *testing.T) {
+	dir := setupProjectDir(t, 0, ".clang-tidy")
+	checks, configFile := runProcessConfigFull(t, dir, "1.0", []qdyaml.Clude{{Name: "bugprone-*"}}, nil)
+	assert.Equal(t, "--checks=bugprone-*", checks)
+	assert.Empty(t, configFile, ".clang-tidy must not set configFile even with overrides")
 }
 
 // TestProcessConfig — filtering edge cases without config =====
