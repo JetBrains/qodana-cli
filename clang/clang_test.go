@@ -378,9 +378,11 @@ func TestRunClangTidy_ConfigFile(t *testing.T) {
 			clangArgs:  "",
 		},
 		{
+			// User's override must come BEFORE -- so clang-tidy sees it.
+			// Tokens after -- are forwarded to the compiler, not clang-tidy.
 			name:       "configFile set with user override in ClangArgs",
 			configFile: "/tmp/_clang-tidy",
-			clangArgs:  "-- --config-file=/user/path",
+			clangArgs:  "--config-file=/user/path",
 		},
 	}
 

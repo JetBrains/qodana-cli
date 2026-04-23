@@ -161,7 +161,10 @@ func processConfig(c thirdpartyscan.Context) (checks string, configFile string, 
 		return "", "", err
 	}
 	hasConfig := configPath != ""
-	if hasConfig && filepath.Base(configPath) == "_clang-tidy" {
+	// clang-tidy's native walk hard-codes ".clang-tidy". Any other filename
+	// (currently just "_clang-tidy") must be forwarded via --config-file=
+	// because clang-tidy's own discovery will not find it.
+	if hasConfig && filepath.Base(configPath) != ".clang-tidy" {
 		configFile = configPath
 	}
 
