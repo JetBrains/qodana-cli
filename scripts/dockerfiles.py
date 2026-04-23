@@ -46,6 +46,7 @@ def load_release_info(qd_code: str, qd_version: str) -> Dict[str, Any]:
         "QDPYC": "qodana-python-community",
         "QDCPP": "qodana-cpp",
         "QDRUBY": "qodana-ruby",
+        "QDRST": "qodana-rust",
     }
 
     feed_name = product_mapping.get(qd_code)
