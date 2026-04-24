@@ -1,0 +1,39 @@
+{
+  "Code": "QDRST",
+  "Releases": [
+    {
+      "Date": "2026-04-24",
+      "Type": "eap",
+      "Downloads": {
+        "linux": {
+          "Link": "https://download.jetbrains.com/qodana/2026.1/qodana-QDRST-261.24231.101.tar.gz",
+          "ChecksumLink": "https://download.jetbrains.com/qodana/2026.1/qodana-QDRST-261.24231.101.tar.gz.sha256"
+        },
+        "linuxARM64": {
+          "Link": "https://download.jetbrains.com/qodana/2026.1/qodana-QDRST-261.24231.101-aarch64.tar.gz",
+          "ChecksumLink": "https://download.jetbrains.com/qodana/2026.1/qodana-QDRST-261.24231.101-aarch64.tar.gz.sha256"
+        },
+        "windowsZip": {
+          "Link": "https://download.jetbrains.com/qodana/2026.1/qodana-QDRST-261.24231.101.win.zip",
+          "ChecksumLink": "https://download.jetbrains.com/qodana/2026.1/qodana-QDRST-261.24231.101.win.zip.sha256"
+        },
+        "windowsZipARM64": {
+          "Link": "https://download.jetbrains.com/qodana/2026.1/qodana-QDRST-261.24231.101-aarch64.win.zip",
+          "ChecksumLink": "https://download.jetbrains.com/qodana/2026.1/qodana-QDRST-261.24231.101-aarch64.win.zip.sha256"
+        },
+        "macSit": {
+          "Link": "https://download.jetbrains.com/qodana/2026.1/qodana-QDRST-261.24231.101.sit",
+          "ChecksumLink": "https://download.jetbrains.com/qodana/2026.1/qodana-QDRST-261.24231.101.sit.sha256"
+        },
+        "macSitM1": {
+          "Link": "https://download.jetbrains.com/qodana/2026.1/qodana-QDRST-261.24231.101-aarch64.sit",
+          "ChecksumLink": "https://download.jetbrains.com/qodana/2026.1/qodana-QDRST-261.24231.101-aarch64.sit.sha256"
+        }
+      },
+      "Version": "2026.1.2",
+      "MajorVersion": "2026.1",
+      "Build": "261.24231",
+      "PrintableReleaseType": null
+    }
+  ]
+}
