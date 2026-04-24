@@ -116,6 +116,10 @@ class GoReleaser(
                     mv /tmp/${'$'}CODESIGN_BIN /usr/local/bin/codesign
                     chmod +x /usr/local/bin/codesign
 
+                    # Serialize tooling downloads before goreleaser's per-target pre-hooks race on shared .part files (QD-14483)
+                    if [ -d ./internal/tooling ]; then go generate ./internal/tooling; fi
+                    if [ -d ./tooling ]; then go generate ./tooling; fi
+
                     goreleaser release --clean ${arguments.joinToString(" ")}
                 """.trimIndent()
             } else {
