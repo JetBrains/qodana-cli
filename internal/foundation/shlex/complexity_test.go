@@ -108,7 +108,7 @@ func TestSplit_IsNotQuadratic(t *testing.T) {
 		samplesPerSize    = 7
 		exponentThreshold = 1.5
 	)
-	inputSizes := []int{100, 300, 1_000, 3_000}
+	inputSizes := []int{10_000, 30_000, 100_000, 300_000, 1_000_000}
 
 	// Warmup: run a couple of calls up front so lazy allocator init
 	// and first-fault costs don't bias the smallest datapoint.
