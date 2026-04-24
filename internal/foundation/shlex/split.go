@@ -7,24 +7,24 @@ import "strings"
 // the full semantics including the three POSIX deviations.
 func Split(s string) ([]string, error) {
 	const (
-		stateWS = iota
+		stateWhitespace = iota
 		stateWord
-		stateSQ
-		stateDQ
+		stateSingleQuote
+		stateDoubleQuote
 	)
 
 	var (
 		out       []string
-		buf       strings.Builder
-		state     = stateWS
+		buffer    strings.Builder
+		state     = stateWhitespace
 		hasToken  bool
-		quoteOpen int // offset of the opening ' or " when in sQ / dQ
+		quoteOpen int // offset of the opening ' or " when in stateSingleQuote / stateDoubleQuote
 	)
 
 	emit := func() {
 		if hasToken {
-			out = append(out, buf.String())
-			buf.Reset()
+			out = append(out, buffer.String())
+			buffer.Reset()
 			hasToken = false
 		}
 	}
@@ -33,67 +33,67 @@ func Split(s string) ([]string, error) {
 		c := s[i]
 		switch state {
 
-		case stateWS:
+		case stateWhitespace:
 			switch {
-			case isWS(c):
+			case isWhitespace(c):
 				// skip
 			case c == '\'':
-				state = stateSQ
+				state = stateSingleQuote
 				hasToken = true
 				quoteOpen = i
 			case c == '"':
-				state = stateDQ
+				state = stateDoubleQuote
 				hasToken = true
 				quoteOpen = i
 			case c == '\\':
 				if i+1 >= len(s) {
 					return nil, &ParseError{Pos: i, Msg: msgTrailingBackslash}
 				}
-				if skipLineCont(s, &i) {
+				if skipLineContinuation(s, &i) {
 					continue
 				}
-				buf.WriteByte(s[i+1])
+				buffer.WriteByte(s[i+1])
 				i++
 				hasToken = true
 				state = stateWord
 			default:
-				buf.WriteByte(c)
+				buffer.WriteByte(c)
 				hasToken = true
 				state = stateWord
 			}
 
 		case stateWord:
 			switch {
-			case isWS(c):
+			case isWhitespace(c):
 				emit()
-				state = stateWS
+				state = stateWhitespace
 			case c == '\'':
-				state = stateSQ
+				state = stateSingleQuote
 				quoteOpen = i
 			case c == '"':
-				state = stateDQ
+				state = stateDoubleQuote
 				quoteOpen = i
 			case c == '\\':
 				if i+1 >= len(s) {
 					return nil, &ParseError{Pos: i, Msg: msgTrailingBackslash}
 				}
-				if skipLineCont(s, &i) {
+				if skipLineContinuation(s, &i) {
 					continue
 				}
-				buf.WriteByte(s[i+1])
+				buffer.WriteByte(s[i+1])
 				i++
 			default:
-				buf.WriteByte(c)
+				buffer.WriteByte(c)
 			}
 
-		case stateSQ:
+		case stateSingleQuote:
 			if c == '\'' {
 				state = stateWord
 			} else {
-				buf.WriteByte(c)
+				buffer.WriteByte(c)
 			}
 
-		case stateDQ:
+		case stateDoubleQuote:
 			switch c {
 			case '"':
 				state = stateWord
@@ -101,44 +101,44 @@ func Split(s string) ([]string, error) {
 				if i+1 >= len(s) {
 					return nil, &ParseError{Pos: i, Msg: msgTrailingBackslash}
 				}
-				if skipLineCont(s, &i) {
+				if skipLineContinuation(s, &i) {
 					continue
 				}
 				n := s[i+1]
 				switch n {
 				case '$', '`', '"', '\\':
-					buf.WriteByte(n)
+					buffer.WriteByte(n)
 					i++
 				default:
 					// Backslash is literal; n is re-processed in the next
 					// iteration by not advancing i here.
-					buf.WriteByte('\\')
+					buffer.WriteByte('\\')
 				}
 			default:
-				buf.WriteByte(c)
+				buffer.WriteByte(c)
 			}
 		}
 	}
 
 	switch state {
-	case stateWS, stateWord:
+	case stateWhitespace, stateWord:
 		emit()
-	case stateSQ:
+	case stateSingleQuote:
 		return nil, &ParseError{Pos: quoteOpen, Msg: msgUnterminatedSingleQuote}
-	case stateDQ:
+	case stateDoubleQuote:
 		return nil, &ParseError{Pos: quoteOpen, Msg: msgUnterminatedDoubleQuote}
 	}
 	return out, nil
 }
 
-func isWS(c byte) bool {
+func isWhitespace(c byte) bool {
 	return c == ' ' || c == '\t' || c == '\n' || c == '\r'
 }
 
-// skipLineCont advances *i past \<LF> or \<CR><LF> (with *i currently at
+// skipLineContinuation advances *i past \<LF> or \<CR><LF> (with *i currently at
 // the backslash) and returns true. Bare \<CR> without a trailing <LF> is
 // NOT a line continuation and returns false. Precondition: *i+1 < len(s).
-func skipLineCont(s string, i *int) bool {
+func skipLineContinuation(s string, i *int) bool {
 	n := s[*i+1]
 	if n == '\n' {
 		*i++
