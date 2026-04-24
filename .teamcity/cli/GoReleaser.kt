@@ -142,7 +142,6 @@ class GoReleaser(
                     mv /tmp/${'$'}CODESIGN_BIN /usr/local/bin/codesign
                     chmod +x /usr/local/bin/codesign
 
-                    export GORELEASER_CURRENT_TAG=${'$'}(git describe --tags ${'$'}(git rev-list --tags --max-count=1))
                     goreleaser release --config ${'$'}GORELEASER_CONFIG --clean ${arguments.joinToString(" ")}
                 """.trimIndent()
             } else {
@@ -173,7 +172,6 @@ class GoReleaser(
                         PREFIX="."
                     fi
 
-                    export GORELEASER_CURRENT_TAG=${'$'}(git describe --tags ${'$'}(git rev-list --tags --max-count=1))
                     goreleaser release --config ${'$'}GORELEASER_CONFIG --clean ${arguments.joinToString(" ")}
                 """.trimIndent()
             }
