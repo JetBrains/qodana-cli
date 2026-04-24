@@ -14,7 +14,7 @@ import (
 	"github.com/JetBrains/qodana-cli/internal/platform/thirdpartyscan"
 	"github.com/JetBrains/qodana-cli/internal/testutil/mockexe"
 	"github.com/JetBrains/qodana-cli/internal/testutil/needs"
-	"github.com/google/shlex"
+	"github.com/JetBrains/qodana-cli/internal/foundation/shlex"
 	log "github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -219,30 +219,32 @@ func TestRunClangTidy_NoEmptyArgs(t *testing.T) {
 			clangArgs:   `-- -I"/unclosed`,
 			expectError: true,
 		},
-		// google/shlex treats `\` as an escape of the next character everywhere,
-		// including inside "..." — unlike POSIX shells. On Windows, a naive
-		// `-I"C:\Path\to\dir"` therefore silently becomes `-IC:Pathtodir`.
-		// Users must either use forward slashes or escape their backslashes.
+		// POSIX rule: inside "...", \ is only an escape before $ ` " \ or
+		// newline. `\P`, `\q` etc. are preserved as-is, so Windows paths
+		// quoted with single backslashes round-trip cleanly. Outside quotes,
+		// `\X` collapses to `X` (POSIX backslash escapes any single char).
 		{
-			name:         "Windows path, quoted, single backslashes (mangled)",
+			name:         "Windows path, quoted, single backslashes (preserved)",
 			checks:       "--checks=*",
 			clangArgs:    `-- -I"C:\Projects\qodana-cli" -Wall`,
-			expectedArgs: []string{"--", "-IC:Projectsqodana-cli", "-Wall"},
+			expectedArgs: []string{"--", `-IC:\Projects\qodana-cli`, "-Wall"},
 		},
 		{
-			name:         "Windows path, quoted, doubled backslashes (works)",
+			name:         "Windows path, quoted, doubled backslashes (one level consumed)",
 			checks:       "--checks=*",
 			clangArgs:    `-- -I"C:\\Projects\\qodana-cli" -Wall`,
 			expectedArgs: []string{"--", `-IC:\Projects\qodana-cli`, "-Wall"},
 		},
 		{
-			name:         "Windows path, forward slashes, unquoted (works)",
+			name:         "Windows path, forward slashes, unquoted",
 			checks:       "--checks=*",
 			clangArgs:    `-- -IC:/Projects/qodana-cli -Wall`,
 			expectedArgs: []string{"--", "-IC:/Projects/qodana-cli", "-Wall"},
 		},
 		{
-			name:         "Windows path, unquoted, single backslashes (mangled)",
+			// Unquoted `\X` -> `X`: this is POSIX-correct (bash does the same)
+			// but rarely what a Windows user wants. Quote the path.
+			name:         "Windows path, unquoted, single backslashes (consumed)",
 			checks:       "--checks=*",
 			clangArgs:    `-- -IC:\Projects\qodana-cli -Wall`,
 			expectedArgs: []string{"--", "-IC:Projectsqodana-cli", "-Wall"},

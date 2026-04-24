@@ -15,7 +15,7 @@ import (
 	"github.com/JetBrains/qodana-cli/internal/platform"
 	"github.com/JetBrains/qodana-cli/internal/platform/thirdpartyscan"
 	"github.com/briandowns/spinner"
-	"github.com/google/shlex"
+	"github.com/JetBrains/qodana-cli/internal/foundation/shlex"
 	log "github.com/sirupsen/logrus"
 )
 

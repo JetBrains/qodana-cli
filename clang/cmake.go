@@ -9,7 +9,7 @@ import (
 	"strings"
 
 	"github.com/JetBrains/qodana-cli/internal/foundation/exec"
-	"github.com/google/shlex"
+	"github.com/JetBrains/qodana-cli/internal/foundation/shlex"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -58,6 +58,38 @@ func compilerCacheKey(compiler string, headerType []string) string {
 	return b.String()
 }
 
+// pickCompiler returns the compiler binary name for a compile_commands.json
+// Command entry. If cmd.Command is present, it is parsed as a POSIX shell
+// command line and the first token is used. If that parse fails or yields
+// no tokens, pickCompiler falls back to cmd.Arguments[0] when available.
+// The second return is false when no compiler can be determined and the
+// entry should be skipped.
+func pickCompiler(cmd Command) (string, bool) {
+	trimmed := strings.TrimSpace(cmd.Command)
+	if trimmed == "" {
+		if len(cmd.Arguments) == 0 {
+			log.Warn("Empty command and arguments for file in compilation db: ", cmd.File)
+			return "", false
+		}
+		return cmd.Arguments[0], true
+	}
+	parts, err := shlex.Split(trimmed)
+	if err != nil {
+		log.Warnf("Failed to parse command for file in compilation db %s: %v", cmd.File, err)
+		if len(cmd.Arguments) > 0 {
+			return cmd.Arguments[0], true
+		}
+		return "", false
+	}
+	if len(parts) == 0 {
+		if len(cmd.Arguments) > 0 {
+			return cmd.Arguments[0], true
+		}
+		return "", false
+	}
+	return parts[0], true
+}
+
 // getFilesAndCompilers returns a list of files with their corresponding compiler's include directories
 func getFilesAndCompilers(compileCommands string) ([]FileWithHeaders, error) {
 	data, err := os.ReadFile(compileCommands)
@@ -73,21 +105,9 @@ func getFilesAndCompilers(compileCommands string) ([]FileWithHeaders, error) {
 	fileHeaderMap := make(map[string][]string)
 
 	for _, cmd := range commands {
-		var compiler string
-		trimmedCommand := strings.TrimSpace(cmd.Command)
-		if trimmedCommand == "" {
-			if len(cmd.Arguments) == 0 {
-				log.Warn("Empty command and arguments for file in compilation db: ", cmd.File)
-				continue
-			}
-			compiler = cmd.Arguments[0]
-		} else {
-			parts, err := shlex.Split(trimmedCommand)
-			if err != nil || len(parts) == 0 {
-				log.Warnf("Failed to parse command for file in compilation db: %s", cmd.File)
-				continue
-			}
-			compiler = parts[0]
+		compiler, ok := pickCompiler(cmd)
+		if !ok {
+			continue
 		}
 		headerType := getHeaderType(cmd.File)
 		cacheKey := compilerCacheKey(compiler, headerType)

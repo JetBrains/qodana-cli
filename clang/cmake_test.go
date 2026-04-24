@@ -337,3 +337,94 @@ func TestCompilerCacheKey(t *testing.T) {
 			"nil headerType must not collide with non-empty headerType")
 	})
 }
+
+// TestPickCompiler pins pickCompiler's contract for every branch: valid
+// shell-parseable Command, empty Command with Arguments fallback, empty
+// Command and no Arguments (skip), shlex-malformed Command with and
+// without Arguments fallback, whitespace-only Command, and quoted
+// Windows path with spaces.
+func TestPickCompiler(t *testing.T) {
+	cases := []struct {
+		name   string
+		cmd    Command
+		want   string
+		wantOK bool
+	}{
+		{
+			name:   "simple_command",
+			cmd:    Command{Command: "gcc -c foo.c", File: "foo.c"},
+			want:   "gcc",
+			wantOK: true,
+		},
+		{
+			name:   "command_with_leading_whitespace",
+			cmd:    Command{Command: "   gcc -c foo.c", File: "foo.c"},
+			want:   "gcc",
+			wantOK: true,
+		},
+		{
+			name: "quoted_windows_path",
+			cmd: Command{
+				Command: `"C:\Program Files\LLVM\bin\clang.exe" -c src\main.c`,
+				File:    "src/main.c",
+			},
+			want:   `C:\Program Files\LLVM\bin\clang.exe`,
+			wantOK: true,
+		},
+		{
+			name: "empty_command_with_arguments_fallback",
+			cmd: Command{
+				Command:   "",
+				Arguments: []string{"clang", "-c", "foo.c"},
+				File:      "foo.c",
+			},
+			want:   "clang",
+			wantOK: true,
+		},
+		{
+			name:   "empty_command_no_arguments_skipped",
+			cmd:    Command{Command: "", File: "foo.c"},
+			want:   "",
+			wantOK: false,
+		},
+		{
+			name: "malformed_with_arguments_falls_back",
+			cmd: Command{
+				Command:   `"unterminated`,
+				Arguments: []string{"clang", "-c", "foo.c"},
+				File:      "foo.c",
+			},
+			want:   "clang",
+			wantOK: true,
+		},
+		{
+			name:   "malformed_no_arguments_skipped",
+			cmd:    Command{Command: `"unterminated`, File: "foo.c"},
+			want:   "",
+			wantOK: false,
+		},
+		{
+			name:   "whitespace_only_command_no_arguments_skipped",
+			cmd:    Command{Command: "   \t  ", File: "foo.c"},
+			want:   "",
+			wantOK: false,
+		},
+		{
+			name: "whitespace_only_command_with_arguments_fallback",
+			cmd: Command{
+				Command:   "   \t  ",
+				Arguments: []string{"gcc"},
+				File:      "foo.c",
+			},
+			want:   "gcc",
+			wantOK: true,
+		},
+	}
+	for _, tt := range cases {
+		t.Run(tt.name, func(t *testing.T) {
+			got, ok := pickCompiler(tt.cmd)
+			assert.Equal(t, tt.wantOK, ok, "ok mismatch")
+			assert.Equal(t, tt.want, got, "compiler mismatch")
+		})
+	}
+}
