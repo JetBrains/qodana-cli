@@ -180,11 +180,17 @@ func TestSplit_IsNotQuadratic(t *testing.T) {
 	}
 
 	timeExponent := complexityExponent(sizes, minNanos)
+	spaceExponent := complexityExponent(sizes, medianBytes)
+
+	// t.Logf is visible under `go test -v` (what CI uses) on both pass
+	// and fail — useful for watching how close the exponent stays to 1
+	// across different runners.
+	t.Logf("runtime exponent=%.3f  allocation exponent=%.3f  (threshold %.1f)\n%s",
+		timeExponent, spaceExponent, exponentThreshold, formatRows())
+
 	assert.Less(t, timeExponent, exponentThreshold,
 		"runtime scales as ~n^%.2f (threshold %.1f) — closer to quadratic than linear:\n%s",
 		timeExponent, exponentThreshold, formatRows())
-
-	spaceExponent := complexityExponent(sizes, medianBytes)
 	assert.Less(t, spaceExponent, exponentThreshold,
 		"allocation scales as ~n^%.2f (threshold %.1f) — closer to quadratic than linear:\n%s",
 		spaceExponent, exponentThreshold, formatRows())
