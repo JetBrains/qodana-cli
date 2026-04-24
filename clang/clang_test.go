@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"slices"
 	"strings"
 	"sync/atomic"
 	"testing"
@@ -13,9 +14,30 @@ import (
 	"github.com/JetBrains/qodana-cli/internal/platform/thirdpartyscan"
 	"github.com/JetBrains/qodana-cli/internal/testutil/mockexe"
 	"github.com/JetBrains/qodana-cli/internal/testutil/needs"
+	"github.com/JetBrains/qodana-cli/internal/foundation/shlex"
 	log "github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
+
+// assertArgsSubsequence checks that `expected` tokens appear in `actual`
+// as a subsequence (same relative order, but other tokens may appear
+// between them). This is intentionally not a strict-ordering check: the
+// canonical argv has tokens (e.g. sarif path, include dirs, input file)
+// that are not worth listing in every table case.
+func assertArgsSubsequence(t *testing.T, actual, expected []string) {
+	t.Helper()
+	i := 0
+	for _, got := range actual {
+		if i < len(expected) && got == expected[i] {
+			i++
+		}
+	}
+	if i < len(expected) {
+		t.Errorf("expected subsequence %v, missing %q (or out of order) in %v",
+			expected, expected[i], actual)
+	}
+}
 
 func TestLinterRun(t *testing.T) {
 	needs.Need(t, needs.ClangDeps)
@@ -23,6 +45,7 @@ func TestLinterRun(t *testing.T) {
 	log.SetLevel(log.DebugLevel)
 
 	projectDir := t.TempDir()
+	t.Setenv(clangTidySearchRootEnv, projectDir)
 
 	err := os.CopyFS(projectDir, os.DirFS("testdata/TestLinterRun"))
 	if err != nil {
@@ -124,6 +147,7 @@ func TestRunClangTidy_PathWithSpaces(t *testing.T) {
 		0,
 		FileWithHeaders{File: filepath.Join(projectDir, "test.c")},
 		"-checks=-*",
+		"",
 		ctx,
 		resultsDir,
 		stderrCh,
@@ -131,4 +155,316 @@ func TestRunClangTidy_PathWithSpaces(t *testing.T) {
 	)
 	assert.NoError(t, err)
 	assert.True(t, invoked.Load(), "clang-tidy mock was not invoked")
+}
+
+func TestRunClangTidy_NoEmptyArgs(t *testing.T) {
+	tests := []struct {
+		name         string
+		checks       string
+		clangArgs    string
+		expectedArgs []string // if non-nil, assert each token appears in captured args
+		expectError  bool
+	}{
+		{
+			name:         "empty checks and empty ClangArgs",
+			checks:       "",
+			clangArgs:    "",
+			expectedArgs: []string{"-p", "--export-sarif", "--quiet"},
+		},
+		{
+			name:         "empty checks with non-empty ClangArgs",
+			checks:       "",
+			clangArgs:    "-- -Wall",
+			expectedArgs: []string{"-p", "--export-sarif", "--quiet", "--", "-Wall"},
+		},
+		{
+			name:         "non-empty ClangArgs with double spaces",
+			checks:       "--checks=*",
+			clangArgs:    "-- -Wall  -Werror",
+			expectedArgs: []string{"--checks=*", "-p", "--export-sarif", "--quiet", "--", "-Wall", "-Werror"},
+		},
+		{
+			name:         "whitespace-only ClangArgs",
+			checks:       "--checks=*",
+			clangArgs:    "  ",
+			expectedArgs: []string{"--checks=*", "-p", "--export-sarif", "--quiet"},
+		},
+		{
+			name:         "non-empty checks and ClangArgs",
+			checks:       "--checks=*",
+			clangArgs:    "-- -Wall",
+			expectedArgs: []string{"--checks=*", "-p", "--export-sarif", "--quiet", "--", "-Wall"},
+		},
+		{
+			name:         "double-quoted path with spaces",
+			checks:       "--checks=*",
+			clangArgs:    `-- -I"/path/with spaces" -Wall`,
+			expectedArgs: []string{"--", "-I/path/with spaces", "-Wall"},
+		},
+		{
+			name:         "single-quoted path with spaces",
+			checks:       "--checks=*",
+			clangArgs:    `-- -I'/path with spaces' -Wall`,
+			expectedArgs: []string{"--", "-I/path with spaces", "-Wall"},
+		},
+		{
+			name:         "backslash-escaped spaces",
+			checks:       "--checks=*",
+			clangArgs:    `-- -I/path/with\ spaces -Wall`,
+			expectedArgs: []string{"--", "-I/path/with spaces", "-Wall"},
+		},
+		{
+			name:        "unclosed quote error",
+			checks:      "--checks=*",
+			clangArgs:   `-- -I"/unclosed`,
+			expectError: true,
+		},
+		// POSIX rule: inside "...", \ is only an escape before $ ` " \ or
+		// newline. `\P`, `\q` etc. are preserved as-is, so Windows paths
+		// quoted with single backslashes round-trip cleanly. Outside quotes,
+		// `\X` collapses to `X` (POSIX backslash escapes any single char).
+		{
+			name:         "Windows path, quoted, single backslashes (preserved)",
+			checks:       "--checks=*",
+			clangArgs:    `-- -I"C:\Projects\qodana-cli" -Wall`,
+			expectedArgs: []string{"--", `-IC:\Projects\qodana-cli`, "-Wall"},
+		},
+		{
+			name:         "Windows path, quoted, doubled backslashes (one level consumed)",
+			checks:       "--checks=*",
+			clangArgs:    `-- -I"C:\\Projects\\qodana-cli" -Wall`,
+			expectedArgs: []string{"--", `-IC:\Projects\qodana-cli`, "-Wall"},
+		},
+		{
+			name:         "Windows path, forward slashes, unquoted",
+			checks:       "--checks=*",
+			clangArgs:    `-- -IC:/Projects/qodana-cli -Wall`,
+			expectedArgs: []string{"--", "-IC:/Projects/qodana-cli", "-Wall"},
+		},
+		{
+			// Unquoted `\X` -> `X`: this is POSIX-correct (bash does the same)
+			// but rarely what a Windows user wants. Quote the path.
+			name:         "Windows path, unquoted, single backslashes (consumed)",
+			checks:       "--checks=*",
+			clangArgs:    `-- -IC:\Projects\qodana-cli -Wall`,
+			expectedArgs: []string{"--", "-IC:Projectsqodana-cli", "-Wall"},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			tmpDir := t.TempDir()
+
+			toolDir := filepath.Join(tmpDir, "tools")
+			var invoked atomic.Bool
+			var capturedArgs []string
+			fakeClangTidy := mockexe.CreateMockExe(t, filepath.Join(toolDir, "clang-tidy"), func(ctx *mockexe.CallContext) int {
+				invoked.Store(true)
+				capturedArgs = ctx.Argv
+				for i, arg := range ctx.Argv {
+					if arg == "--export-sarif" && i+1 < len(ctx.Argv) {
+						_ = os.MkdirAll(filepath.Dir(ctx.Argv[i+1]), 0o755)
+						_ = os.WriteFile(ctx.Argv[i+1], []byte("{}"), 0o644)
+						break
+					}
+				}
+				return 0
+			})
+
+			projectDir := filepath.Join(tmpDir, "project")
+			assert.NoError(t, os.MkdirAll(projectDir, 0o755))
+			compileCommands := filepath.Join(projectDir, "compile_commands.json")
+			assert.NoError(t, os.WriteFile(compileCommands, []byte("[]"), 0o644))
+
+			resultsDir := filepath.Join(tmpDir, "results")
+			assert.NoError(t, os.MkdirAll(resultsDir, 0o755))
+
+			ctx := thirdpartyscan.ContextBuilder{
+				ProjectDir:           projectDir,
+				ClangCompileCommands: compileCommands,
+				ClangArgs:            tt.clangArgs,
+				MountInfo: thirdpartyscan.MountInfo{
+					CustomTools: map[string]string{
+						thirdpartyscan.Clang: fakeClangTidy,
+					},
+				},
+			}.Build()
+
+			stderrCh := make(chan string, 1)
+			stdoutCh := make(chan string, 1)
+
+			err := runClangTidy(
+				0,
+				FileWithHeaders{File: filepath.Join(projectDir, "test.c")},
+				tt.checks,
+				"",
+				ctx,
+				resultsDir,
+				stderrCh,
+				stdoutCh,
+			)
+
+			if tt.expectError {
+				assert.Error(t, err)
+				return
+			}
+
+			require.NoError(t, err)
+			require.True(t, invoked.Load(), "clang-tidy mock was not invoked")
+			require.NotEmpty(t, capturedArgs, "mock captured no args")
+
+			// Skip capturedArgs[0]: per POSIX argv convention (and the
+			// mockexe CallContext.Argv contract), argv[0] is the program
+			// name exec.Command passed to the process, not an argument the
+			// production code constructed.
+			for i, arg := range capturedArgs[1:] {
+				assert.NotEqual(t, "", arg, "argument at index %d is an empty string", i+1)
+			}
+
+			if tt.checks == "" {
+				for _, arg := range capturedArgs {
+					assert.False(t, strings.HasPrefix(arg, "--checks="),
+						"empty checks should not produce a --checks= argument, got %q", arg)
+				}
+			}
+
+			assertArgsSubsequence(t, capturedArgs, tt.expectedArgs)
+
+			if strings.Contains(tt.clangArgs, "--") {
+				userTokens, splitErr := shlex.Split(tt.clangArgs)
+				require.NoError(t, splitErr)
+				dashDashInTokens := slices.Index(userTokens, "--")
+				require.GreaterOrEqual(t, dashDashInTokens, 0, "test case must contain --")
+
+				dashDashIdx := slices.Index(capturedArgs, "--")
+				quietIdx := slices.Index(capturedArgs, "--quiet")
+				require.GreaterOrEqual(t, dashDashIdx, 0, "captured args must contain --")
+				require.GreaterOrEqual(t, quietIdx, 0, "captured args must contain --quiet")
+				require.Greater(t, dashDashIdx, quietIdx, "--quiet must appear before --")
+
+				for _, tok := range userTokens[dashDashInTokens+1:] {
+					// Search for the user token at an index strictly after the
+					// first `--`. Using slices.Index would return the first
+					// occurrence anywhere, which could land before `--` if the
+					// token happens to coincide with a production-emitted arg
+					// (e.g. `--quiet`).
+					found := false
+					for k := dashDashIdx + 1; k < len(capturedArgs); k++ {
+						if capturedArgs[k] == tok {
+							found = true
+							break
+						}
+					}
+					assert.True(t, found,
+						"user token %q must appear after -- in captured args", tok)
+				}
+			}
+		})
+	}
+}
+
+func TestRunClangTidy_ConfigFile(t *testing.T) {
+	tests := []struct {
+		name       string
+		configFile string
+		clangArgs  string
+	}{
+		{
+			name:       "configFile set, no ClangArgs",
+			configFile: "/tmp/_clang-tidy",
+			clangArgs:  "",
+		},
+		{
+			name:       "configFile empty",
+			configFile: "",
+			clangArgs:  "",
+		},
+		{
+			// User's override must come BEFORE -- so clang-tidy sees it.
+			// Tokens after -- are forwarded to the compiler, not clang-tidy.
+			name:       "configFile set with user override in ClangArgs",
+			configFile: "/tmp/_clang-tidy",
+			clangArgs:  "--config-file=/user/path",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			tmpDir := t.TempDir()
+			toolDir := filepath.Join(tmpDir, "tools")
+			var invoked atomic.Bool
+			var capturedArgs []string
+			fakeClangTidy := mockexe.CreateMockExe(t, filepath.Join(toolDir, "clang-tidy"), func(ctx *mockexe.CallContext) int {
+				invoked.Store(true)
+				capturedArgs = ctx.Argv
+				for i, arg := range ctx.Argv {
+					if arg == "--export-sarif" && i+1 < len(ctx.Argv) {
+						_ = os.MkdirAll(filepath.Dir(ctx.Argv[i+1]), 0o755)
+						_ = os.WriteFile(ctx.Argv[i+1], []byte("{}"), 0o644)
+						break
+					}
+				}
+				return 0
+			})
+
+			projectDir := filepath.Join(tmpDir, "project")
+			require.NoError(t, os.MkdirAll(projectDir, 0o755))
+			compileCommands := filepath.Join(projectDir, "compile_commands.json")
+			require.NoError(t, os.WriteFile(compileCommands, []byte("[]"), 0o644))
+			resultsDir := filepath.Join(tmpDir, "results")
+			require.NoError(t, os.MkdirAll(resultsDir, 0o755))
+
+			ctx := thirdpartyscan.ContextBuilder{
+				ProjectDir:           projectDir,
+				ClangCompileCommands: compileCommands,
+				ClangArgs:            tt.clangArgs,
+				MountInfo: thirdpartyscan.MountInfo{
+					CustomTools: map[string]string{
+						thirdpartyscan.Clang: fakeClangTidy,
+					},
+				},
+			}.Build()
+
+			stderrCh := make(chan string, 1)
+			stdoutCh := make(chan string, 1)
+			err := runClangTidy(
+				0,
+				FileWithHeaders{File: filepath.Join(projectDir, "test.c")},
+				"",
+				tt.configFile,
+				ctx,
+				resultsDir,
+				stderrCh,
+				stdoutCh,
+			)
+			require.NoError(t, err)
+			require.True(t, invoked.Load(), "mock was not invoked")
+
+			configFileTokens := []int{}
+			for i, arg := range capturedArgs {
+				if strings.HasPrefix(arg, "--config-file=") {
+					configFileTokens = append(configFileTokens, i)
+				}
+			}
+
+			switch {
+			case tt.configFile == "" && tt.clangArgs == "":
+				assert.Empty(t, configFileTokens,
+					"no --config-file= token expected when configFile is empty and ClangArgs has none")
+
+			case tt.configFile != "" && tt.clangArgs == "":
+				require.Len(t, configFileTokens, 1)
+				assert.Equal(t, "--config-file="+tt.configFile, capturedArgs[configFileTokens[0]])
+
+			case tt.configFile != "" && strings.Contains(tt.clangArgs, "--config-file"):
+				require.Len(t, configFileTokens, 2,
+					"both qodana's and user's --config-file= should be present")
+				// Qodana's appears first, user's wins via last-occurrence semantics.
+				assert.Equal(t, "--config-file="+tt.configFile, capturedArgs[configFileTokens[0]])
+				assert.Equal(t, "--config-file=/user/path", capturedArgs[configFileTokens[1]])
+				assert.Less(t, configFileTokens[0], configFileTokens[1],
+					"user's --config-file= in ClangArgs must come after qodana's so it wins")
+			}
+		})
+	}
 }

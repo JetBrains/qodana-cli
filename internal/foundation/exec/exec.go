@@ -38,6 +38,19 @@ func ExecWithTimeout(
 	arg0 string,
 	argv ...string,
 ) (int, error) {
+	return execWithEnv(cwd, nil, stdout, stderr, timeout, timeoutExitCode, arg0, argv...)
+}
+
+func execWithEnv(
+	cwd string,
+	env []string,
+	stdout io.Writer,
+	stderr io.Writer,
+	timeout time.Duration,
+	timeoutExitCode int,
+	arg0 string,
+	argv ...string,
+) (int, error) {
 	if cwd == "" {
 		return internalErrorExitCode, fmt.Errorf("cwd must not be empty: %w", os.ErrInvalid)
 	}
@@ -46,6 +59,9 @@ func ExecWithTimeout(
 	cmd.Stdout = stdout
 	cmd.Stderr = stderr
 	cmd.Dir = cwd
+	if env != nil {
+		cmd.Env = env
+	}
 	if err := cmd.Start(); err != nil {
 		return internalErrorExitCode, fmt.Errorf("failed to start command: %w", err)
 	}
@@ -63,6 +79,14 @@ func ExecWithTimeout(
 func ExecRedirectOutput(cwd string, arg0 string, argv ...string) (string, string, int, error) {
 	var stdout, stderr bytes.Buffer
 	res, err := ExecWithTimeout(cwd, &stdout, &stderr, time.Duration(math.MaxInt64), 1, arg0, argv...)
+	return stdout.String(), stderr.String(), res, err
+}
+
+// ExecRedirectOutputWithEnv is like ExecRedirectOutput but allows setting the
+// subprocess environment. Pass os.Environ() plus any extra variables.
+func ExecRedirectOutputWithEnv(cwd string, env []string, arg0 string, argv ...string) (string, string, int, error) {
+	var stdout, stderr bytes.Buffer
+	res, err := execWithEnv(cwd, env, &stdout, &stderr, time.Duration(math.MaxInt64), 1, arg0, argv...)
 	return stdout.String(), stderr.String(), res, err
 }
 

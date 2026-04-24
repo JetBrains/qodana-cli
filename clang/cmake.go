@@ -1,7 +1,6 @@
 package main
 
 import (
-	"github.com/JetBrains/qodana-cli/internal/foundation/exec"
 	"encoding/json"
 	"fmt"
 	"os"
@@ -9,6 +8,8 @@ import (
 	"regexp"
 	"strings"
 
+	"github.com/JetBrains/qodana-cli/internal/foundation/exec"
+	"github.com/JetBrains/qodana-cli/internal/foundation/shlex"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -25,20 +26,68 @@ type FileWithHeaders struct {
 	Headers []string
 }
 
+// Markers in the compiler's -v stderr output that delimit the include search path list.
 const (
 	SIS = "#include <...> search starts here:"
 	SIE = "End of search list."
 )
 
-func getHeaderType(file string) string {
-	extension := filepath.Ext(file)
+// getHeaderType returns compiler flags that cause it to preprocess an empty
+// file and print its include search paths. Uses -xc for C and -xc++ for C++.
+func getHeaderType(file string) []string {
 	nullDevice := os.DevNull
-	switch extension {
+	switch filepath.Ext(file) {
 	case ".c", ".h":
-		return fmt.Sprintf("-E -Wp,-v -xc %s", nullDevice)
+		return []string{"-E", "-Wp,-v", "-xc", nullDevice}
 	default:
-		return fmt.Sprintf("-E -Wp,-v -xc++ %s", nullDevice)
+		return []string{"-E", "-Wp,-v", "-xc++", nullDevice}
 	}
+}
+
+// compilerCacheKey produces an unambiguous cache key for the (compiler,
+// headerType) pair. A null byte is used as the delimiter because it cannot
+// appear in POSIX paths or shell arguments (and is also absent from Windows
+// paths), so distinct inputs always produce distinct keys.
+func compilerCacheKey(compiler string, headerType []string) string {
+	var b strings.Builder
+	b.WriteString(compiler)
+	for _, h := range headerType {
+		b.WriteByte(0)
+		b.WriteString(h)
+	}
+	return b.String()
+}
+
+// pickCompiler returns the compiler binary name for a compile_commands.json
+// Command entry. If cmd.Command is present, it is parsed as a POSIX shell
+// command line and the first token is used. If that parse fails or yields
+// no tokens, pickCompiler falls back to cmd.Arguments[0] when available.
+// The second return is false when no compiler can be determined and the
+// entry should be skipped.
+func pickCompiler(cmd Command) (string, bool) {
+	trimmed := strings.TrimSpace(cmd.Command)
+	if trimmed == "" {
+		if len(cmd.Arguments) == 0 {
+			log.Warn("Empty command and arguments for file in compilation db: ", cmd.File)
+			return "", false
+		}
+		return cmd.Arguments[0], true
+	}
+	parts, err := shlex.Split(trimmed)
+	if err != nil {
+		log.Warnf("Failed to parse command for file in compilation db %s: %v", cmd.File, err)
+		if len(cmd.Arguments) > 0 {
+			return cmd.Arguments[0], true
+		}
+		return "", false
+	}
+	if len(parts) == 0 {
+		if len(cmd.Arguments) > 0 {
+			return cmd.Arguments[0], true
+		}
+		return "", false
+	}
+	return parts[0], true
 }
 
 // getFilesAndCompilers returns a list of files with their corresponding compiler's include directories
@@ -56,26 +105,20 @@ func getFilesAndCompilers(compileCommands string) ([]FileWithHeaders, error) {
 	fileHeaderMap := make(map[string][]string)
 
 	for _, cmd := range commands {
-		var compiler string
-		trimmedCommand := strings.TrimSpace(cmd.Command)
-		if trimmedCommand == "" {
-			if len(cmd.Arguments) == 0 {
-				log.Warn("Empty command and arguments for file in compilation db: ", cmd.File)
-				continue
-			}
-			compiler = cmd.Arguments[0]
-		} else {
-			compiler = strings.Split(trimmedCommand, " ")[0]
+		compiler, ok := pickCompiler(cmd)
+		if !ok {
+			continue
 		}
 		headerType := getHeaderType(cmd.File)
-		if val, ok := fileHeaderMap[compiler+headerType]; ok {
+		cacheKey := compilerCacheKey(compiler, headerType)
+		if val, ok := fileHeaderMap[cacheKey]; ok {
 			processList = append(processList, FileWithHeaders{File: cmd.File, Headers: val})
 		} else {
 			headers, err := askCompiler(compiler, headerType)
 			if err != nil {
 				return nil, err
 			}
-			fileHeaderMap[compiler+headerType] = headers
+			fileHeaderMap[cacheKey] = headers
 			processList = append(processList, FileWithHeaders{File: cmd.File, Headers: headers})
 		}
 	}
@@ -83,11 +126,22 @@ func getFilesAndCompilers(compileCommands string) ([]FileWithHeaders, error) {
 	return processList, nil
 }
 
-// askCompiler asks the compiler for the include directories
-func askCompiler(compiler string, headerType string) ([]string, error) {
-	_, stderr, _, err := exec.ExecRedirectOutput(".", compiler, headerType)
+// askCompiler retrieves the compiler's built-in system include directories by
+// running it with `-E -Wp,-v -xc /dev/null` (or `-xc++` for C++ files).
+// The -Wp,-v flag tells the preprocessor to print its search paths to stderr,
+// delimited by "#include <...> search starts here:" and "End of search list.".
+// Each discovered path is passed to clang-tidy as --extra-arg=-isystem<path>.
+// See https://gcc.gnu.org/onlinedocs/gcc/Preprocessor-Options.html (-v flag).
+func askCompiler(compiler string, headerType []string) ([]string, error) {
+	// Force English output so the SIS/SIE markers are not translated by GCC's gettext.
+	env := append(os.Environ(), "LC_ALL=C")
+	_, stderr, exitCode, err := exec.ExecRedirectOutputWithEnv(".", env, compiler, headerType...)
 	if err != nil {
 		return nil, err
+	}
+	if exitCode != 0 {
+		return nil, fmt.Errorf("compiler %q exited with code %d\n  stderr: %s",
+			compiler, exitCode, strings.TrimRight(stderr, "\n"))
 	}
 	startIndex := strings.Index(stderr, SIS)
 	endIndex := strings.Index(stderr, SIE)

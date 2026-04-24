@@ -21,7 +21,7 @@ type ClangLinter struct {
 }
 
 func (l ClangLinter) RunAnalysis(c thirdpartyscan.Context) error {
-	checks, err := processConfig(c)
+	checks, configFile, err := processConfig(c)
 	if err != nil {
 		return err
 	}
@@ -31,7 +31,7 @@ func (l ClangLinter) RunAnalysis(c thirdpartyscan.Context) error {
 		return err
 	}
 
-	runClangTidyUnderProgress(c, filesAndCompilers, checks)
+	runClangTidyUnderProgress(c, filesAndCompilers, checks, configFile)
 
 	_, err = mergeSarifReports(c)
 	if err != nil {
