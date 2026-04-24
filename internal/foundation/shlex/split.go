@@ -120,13 +120,14 @@ func Split(s string) ([]string, error) {
 		}
 	}
 
-	if state == stateSQ {
+	switch state {
+	case stateWS, stateWord:
+		emit()
+	case stateSQ:
 		return nil, &ParseError{Pos: quoteOpen, Msg: msgUnterminatedSingleQuote}
-	}
-	if state == stateDQ {
+	case stateDQ:
 		return nil, &ParseError{Pos: quoteOpen, Msg: msgUnterminatedDoubleQuote}
 	}
-	emit()
 	return out, nil
 }
 
