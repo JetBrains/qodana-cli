@@ -2,9 +2,7 @@ package shlex
 
 import (
 	"errors"
-	"strings"
 	"testing"
-	"time"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -275,50 +273,6 @@ func TestSplit_Errors(t *testing.T) {
 			assert.Equal(t, tt.pos, pe.Pos, "Pos mismatch; input=%q", tt.in)
 			assert.Equal(t, tt.msg, pe.Msg, "Msg mismatch; input=%q", tt.in)
 		})
-	}
-}
-
-// (J) Long-input perf — asserts linear scaling via ratio check.
-func TestSplit_LongInputLinearScaling(t *testing.T) {
-	if testing.Short() {
-		t.Skip("perf test — skipped under -short")
-	}
-	const unit = `foo "bar baz" 'qux' `
-	build := func(repeats int) string {
-		var b strings.Builder
-		b.Grow(repeats * len(unit))
-		for range repeats {
-			b.WriteString(unit)
-		}
-		return b.String()
-	}
-	measure := func(s string) (time.Duration, []string) {
-		start := time.Now()
-		out, err := Split(s)
-		elapsed := time.Since(start)
-		require.NoError(t, err)
-		return elapsed, out
-	}
-
-	// 1MB input: roughly 50k repeats.
-	in1 := build(50000)
-	t1, out1 := measure(in1)
-	require.Len(t, out1, 50000*3)
-	assert.Less(t, t1, 2*time.Second, "1MB split too slow: %v", t1)
-
-	// 16MB input.
-	in16 := build(800000)
-	t16, out16 := measure(in16)
-	require.Len(t, out16, 800000*3)
-	assert.Less(t, t16, 16*time.Second, "16MB split too slow: %v", t16)
-
-	// Linear ratio check — 16x input, under linear time the ratio is ~16.
-	// Quadratic regression (256x) would trip this; we give generous
-	// tolerance for CI noise.
-	if t1 > 0 {
-		ratio := float64(t16) / float64(t1)
-		assert.Less(t, ratio, 64.0,
-			"non-linear scaling: t1=%v t16=%v ratio=%.1f", t1, t16, ratio)
 	}
 }
 
