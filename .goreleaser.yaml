@@ -44,7 +44,7 @@ builds:
           output: true
 
   - id: clang
-    skip: "{{ .IsNightly }}"
+    skip: "{{ not .IsSnapshot }}"
     binary: qodana-clang
     main: ./clang
     env:
@@ -68,7 +68,7 @@ builds:
         - cmd: go run ./scripts/sign.go clang qodana-clang
 
   - id: cdnet
-    skip: "{{ .IsNightly }}"
+    skip: "{{ not .IsSnapshot }}"
     binary: qodana-cdnet
     main: ./cdnet
     env:
