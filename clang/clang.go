@@ -15,7 +15,6 @@ import (
 	"github.com/JetBrains/qodana-cli/internal/platform"
 	"github.com/JetBrains/qodana-cli/internal/platform/thirdpartyscan"
 	"github.com/briandowns/spinner"
-	"github.com/JetBrains/qodana-cli/internal/foundation/shlex"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -24,10 +23,17 @@ const spinnerInterval = 100 * time.Millisecond
 
 // runClangTidyUnderProgress runs clang-tidy for each file in filesAndCompilers and shows a progress bar.
 // configFile, when non-empty, is passed to clang-tidy via --config-file=.
-func runClangTidyUnderProgress(c thirdpartyscan.Context, filesAndCompilers []FileWithHeaders, checks string, configFile string) {
+// extraClangArgs is the already-parsed user --clang-args (see prepareClangArgs).
+func runClangTidyUnderProgress(
+	c thirdpartyscan.Context,
+	filesAndCompilers []FileWithHeaders,
+	checks string,
+	configFile string,
+	extraClangArgs []string,
+) {
 	spin := initializeSpinner()
 	stdoutChannel, stderrChannel := createFileLoggers(c.LogDir())
-	worker(c, filesAndCompilers, checks, configFile, spin, stdoutChannel, stderrChannel)
+	worker(c, filesAndCompilers, checks, configFile, extraClangArgs, spin, stdoutChannel, stderrChannel)
 }
 
 func initializeSpinner() *spinner.Spinner {
@@ -59,6 +65,7 @@ func worker(
 	filesAndCompilers []FileWithHeaders,
 	checks string,
 	configFile string,
+	extraClangArgs []string,
 	spin *spinner.Spinner,
 	stdoutChannel, stderrChannel chan string,
 ) {
@@ -97,6 +104,7 @@ func worker(
 						input,
 						checks,
 						configFile,
+						extraClangArgs,
 						c,
 						platform.GetTmpResultsDir(c.ResultsDir()),
 						stderrChannel,
@@ -128,11 +136,15 @@ func worker(
 // (clang-tidy's --config-file is a cl::opt — last occurrence wins). Tokens
 // after `--` are forwarded to the compiler and do not reach clang-tidy's
 // own option parser.
+//
+// extraClangArgs is the already-parsed user --clang-args (see
+// prepareClangArgs). It is appended verbatim to the argv.
 func runClangTidy(
 	counter int,
 	input FileWithHeaders,
 	checks string,
 	configFile string,
+	extraClangArgs []string,
 	c thirdpartyscan.Context,
 	tmpResultsDir string,
 	stderrChannel chan string,
@@ -155,13 +167,7 @@ func runClangTidy(
 	args = append(args, input.Headers...)
 	args = append(args, input.File)
 	args = append(args, "--quiet")
-	if clangArgs := c.ClangArgs(); clangArgs != "" {
-		splitArgs, err := shlex.Split(clangArgs)
-		if err != nil {
-			return fmt.Errorf("failed to parse clang args %q: %w", clangArgs, err)
-		}
-		args = append(args, splitArgs...)
-	}
+	args = append(args, extraClangArgs...)
 	stdout, stderr, _, err := exec.ExecRedirectOutput(
 		c.ProjectDir(),
 		clangPath, args...,

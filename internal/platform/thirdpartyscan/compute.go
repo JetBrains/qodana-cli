@@ -40,11 +40,6 @@ func ComputeContext(
 		clangCompileCommands = filepath.Clean(clangCompileCommands)
 	}
 
-	clangArgs := cliOptions.ClangArgs
-	if clangArgs != "" {
-		clangArgs = "-- " + clangArgs
-	}
-
 	return ContextBuilder{
 		LinterInfo:                linterInfo,
 		MountInfo:                 mountInfo,
@@ -55,7 +50,7 @@ func ComputeContext(
 		LogDir:                    initArgs.LogDir(),
 		CacheDir:                  initArgs.CacheDir,
 		ClangCompileCommands:      clangCompileCommands,
-		ClangArgs:                 clangArgs,
+		ClangArgs:                 cliOptions.ClangArgs,
 		Property:                  cliOptions.Property,
 		CdnetSolution:             cliOptions.CdnetSolution,
 		CdnetProject:              cliOptions.CdnetProject,

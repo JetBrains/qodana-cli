@@ -8,10 +8,12 @@ import (
 	"os"
 	"path/filepath"
 	"runtime"
+	"slices"
 
 	_ "embed"
 
 	"github.com/JetBrains/qodana-cli/internal/foundation/hash"
+	"github.com/JetBrains/qodana-cli/internal/foundation/shlex"
 	"github.com/JetBrains/qodana-cli/internal/platform"
 	"github.com/JetBrains/qodana-cli/internal/platform/thirdpartyscan"
 	log "github.com/sirupsen/logrus"
@@ -21,6 +23,14 @@ type ClangLinter struct {
 }
 
 func (l ClangLinter) RunAnalysis(c thirdpartyscan.Context) error {
+	// Parse --clang-args first so a malformed value fails the run upfront,
+	// before any shell bootstrap (processConfig calls utils.Bootstrap) or
+	// disk I/O (getFilesAndCompilers reads compile_commands.json).
+	extraClangArgs, err := prepareClangArgs(c.ClangArgs())
+	if err != nil {
+		return err
+	}
+
 	checks, configFile, err := processConfig(c)
 	if err != nil {
 		return err
@@ -31,7 +41,7 @@ func (l ClangLinter) RunAnalysis(c thirdpartyscan.Context) error {
 		return err
 	}
 
-	runClangTidyUnderProgress(c, filesAndCompilers, checks, configFile)
+	runClangTidyUnderProgress(c, filesAndCompilers, checks, configFile, extraClangArgs)
 
 	_, err = mergeSarifReports(c)
 	if err != nil {
@@ -45,6 +55,23 @@ func (l ClangLinter) RunAnalysis(c thirdpartyscan.Context) error {
 	}
 
 	return nil
+}
+
+// prepareClangArgs parses the user's --clang-args value with POSIX-shell
+// rules and prepends "--" when the user did not include their own separator.
+//
+// By default, --clang-args is treated as trailing compiler args (everything
+// after "--"). Users can include "--" themselves to put options before it,
+// reaching clang-tidy's own option parser (e.g. --config-file=).
+func prepareClangArgs(raw string) ([]string, error) {
+	tokens, err := shlex.Split(raw)
+	if err != nil {
+		return nil, fmt.Errorf("invalid --clang-args %q: %w", raw, err)
+	}
+	if len(tokens) > 0 && !slices.Contains(tokens, "--") {
+		tokens = append([]string{"--"}, tokens...)
+	}
+	return tokens, nil
 }
 
 //go:generate go run scripts/prepare-clang-tidy-binary.go

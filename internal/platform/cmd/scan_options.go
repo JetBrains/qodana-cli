@@ -329,9 +329,10 @@ func ComputeFlags(cmd *cobra.Command, options *CliOptions) error {
 		"[qodana-clang specific] Path to compile_commands.json. Should be relative to the project directory.",
 	)
 	flags.StringVar(&options.ClangArgs, "clang-args", "",
-		`[qodana-clang specific] Additional arguments for clang. `+
-			`Tokens are split using POSIX shell quoting rules; `+
-			`e.g. -I"/path/with spaces" or -I"C:\Path\with spaces" on Windows.`)
+		`[qodana-clang specific] Extra arguments for clang. `+
+			`Tokens are split using POSIX shell quoting rules. `+
+			`By default appended after '--' as compiler args; include '--' yourself `+
+			`to pass clang-tidy options first, e.g. '--config-file=X -- -Wno-foo'.`)
 	flags.StringVar(&options.CdnetSolution, "solution", "", "[qodana-cdnet specific] Relative path to solution file")
 	flags.StringVar(&options.CdnetProject, "project", "", "[qodana-cdnet specific] Relative path to project file")
 	flags.StringVar(&options.CdnetConfiguration, "configuration", "", "[qodana-cdnet specific] Build configuration")
