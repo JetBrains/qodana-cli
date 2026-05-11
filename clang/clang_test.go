@@ -122,6 +122,22 @@ func TestPrepareClangArgs(t *testing.T) {
 			want: []string{"--", "--config-file=/tmp/x.tidy"},
 		},
 		{
+			// `--` alone: contains the separator, no prepend. The empty
+			// "before" half just means clang-tidy gets no extra options;
+			// the empty "after" half means the compiler gets no extras.
+			name: "-- alone",
+			raw:  "--",
+			want: []string{"--"},
+		},
+		{
+			// Trailing `--` after compiler-style args: caller explicitly
+			// terminated the splice. No prepend; the empty after-half is
+			// intentional.
+			name: "trailing --",
+			raw:  "-Wall --",
+			want: []string{"-Wall", "--"},
+		},
+		{
 			name:        "unterminated double quote",
 			raw:         `foo "`,
 			expectError: true,
@@ -129,6 +145,11 @@ func TestPrepareClangArgs(t *testing.T) {
 		{
 			name:        "unterminated single quote",
 			raw:         `foo '`,
+			expectError: true,
+		},
+		{
+			name:        "trailing backslash",
+			raw:         `-Wall \`,
 			expectError: true,
 		},
 	}

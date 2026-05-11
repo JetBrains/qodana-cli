@@ -131,11 +131,11 @@ func worker(
 // runClangTidy runs clang-tidy for a single file.
 //
 // configFile, when non-empty, is forwarded as --config-file=<path>. It is
-// inserted before the user's ClangArgs splice so that a user-supplied
-// --config-file= appearing earlier than a `--` separator in ClangArgs wins
-// (clang-tidy's --config-file is a cl::opt — last occurrence wins). Tokens
-// after `--` are forwarded to the compiler and do not reach clang-tidy's
-// own option parser.
+// inserted before the extraClangArgs splice so that a user-supplied
+// --config-file= appearing earlier than a `--` separator in extraClangArgs
+// wins (clang-tidy's --config-file is a cl::opt — last occurrence wins).
+// Tokens after `--` are forwarded to the compiler and do not reach
+// clang-tidy's own option parser.
 //
 // extraClangArgs is the already-parsed user --clang-args (see
 // prepareClangArgs). It is appended verbatim to the argv.
