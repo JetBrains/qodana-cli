@@ -45,8 +45,10 @@ class GoReleaser(
     allowExternalStatus = true
     val releaseType = ReleaseType.fromArguments(arguments)
     id("${if (releaseType.isNightlyOrRelease()) releaseType.name else "Build"}$wd$branch")
-    name = "${releaseType.name} qodana-$wd"
-    description = "${releaseType.name} $arguments build of qodana-$wd for ($CLI_GITHUB_REPO_URL/$branch)"
+    val branchDisplay = if (branch.isEmpty()) "%teamcity.build.branch%" else branch
+    val tagSuffix = if (releaseType.isRelease()) ", tag %release.version%" else ""
+    name = "${releaseType.name} qodana-$wd ($branchDisplay)"
+    description = "${releaseType.name} $arguments build of qodana-$wd (branch $branchDisplay$tagSuffix) — $CLI_GITHUB_REPO_URL/tree/$branchDisplay"
     maxRunningBuildsPerBranch = if (releaseType != ReleaseType.Snapshot) "*:1" else "*:0"
     artifactRules = "dist => ." + if (!isCli) "\n\n +:*-third-party-libraries.json" else ""
 
@@ -63,7 +65,11 @@ class GoReleaser(
         password("env.SERVICE_ACCOUNT_TOKEN", CODESIGN_SERVICE_ACCOUNT_TOKEN, display = ParameterDisplay.HIDDEN)
         param("env.SERVICE_ACCOUNT_NAME", CODESIGN_SERVICE_ACCOUNT_NAME)
         password("env.GORELEASER_KEY", GORELEASER_KEY, display = ParameterDisplay.HIDDEN)
-        param("env.VERSION", "%build.number%")
+        // release.version is set by the "Validate release tag" step's setParameter on release builds,
+        // unconditionally from the git tag (no manual override — git tag is the source of truth per QD-14482).
+        // Hidden from the Run Custom Build dialog; not in env.* namespace because VERSION reaches the
+        // container only via the explicit -e flag in useGoDevContainerDockerImage's dockerRunParameters.
+        text("release.version", "", display = ParameterDisplay.HIDDEN)
         param("env.QODANA_JOB_URL", "%env.BUILD_URL%")
         param("env.GO_TESTING", "true")
         param("env.DEVICEID", "200820300000000-0000-0000-0000-000000000000")
@@ -93,8 +99,34 @@ class GoReleaser(
                 workingDir = wd
             }
         }
+        if (releaseType.isRelease()) {
+            script {
+                name = "Validate release tag"
+                workingDir = wd
+                scriptContent = """
+                    set -e
+                    if ! git describe --tags --exact-match HEAD >/dev/null 2>&1; then
+                      head=${'$'}(git rev-parse HEAD)
+                      branch=${'$'}(git rev-parse --abbrev-ref HEAD 2>/dev/null || echo unknown)
+                      echo "##teamcity[buildProblem description='QD-14482: HEAD ${'$'}head on branch ${'$'}branch is not tagged. Refusing to cut a release.']"
+                      exit 1
+                    fi
+                    tag=${'$'}(git describe --tags --exact-match HEAD)
+                    ver=${'$'}{tag#v}
+                    echo "##teamcity[setParameter name='release.version' value='${'$'}ver']"
+                    echo "##teamcity[buildNumber '${'$'}ver.%build.counter%']"
+                """.trimIndent()
+            }
+        }
         script {
             name = "Run GoReleaser"
+            val versionExpr = if (releaseType.isRelease()) "%release.version%" else "%build.number%"
+            val versionGuard = if (releaseType.isRelease())
+                "if [ -z \"${'$'}VERSION\" ]; then\n" +
+                "                      echo \"##teamcity[buildProblem description='QD-14482: VERSION env is empty in Run GoReleaser — setParameter from Validate release tag did not propagate.']\"\n" +
+                "                      exit 1\n" +
+                "                    fi\n                    "
+                else ""
             scriptContent = if (releaseType.isNightlyOrRelease()) {
                 """
                     set -e
@@ -115,19 +147,21 @@ class GoReleaser(
                     mv /tmp/${'$'}CODESIGN_BIN /usr/local/bin/codesign
                     chmod +x /usr/local/bin/codesign
 
-                    export GORELEASER_CURRENT_TAG=${'$'}(git describe --tags ${'$'}(git rev-list --tags --max-count=1))
-                    goreleaser release --clean ${arguments.joinToString(" ")}
+                    # Serialize tooling downloads before goreleaser's per-target pre-hooks race on shared .part files (QD-14483)
+                    if [ -d ./internal/tooling ]; then go generate ./internal/tooling; fi
+                    if [ -d ./tooling ]; then go generate ./tooling; fi
+
+                    ${versionGuard}goreleaser release --clean ${arguments.joinToString(" ")}
                 """.trimIndent()
             } else {
                 """
                     set -e
 
-                    export GORELEASER_CURRENT_TAG=${'$'}(git describe --tags ${'$'}(git rev-list --tags --max-count=1))
                     goreleaser release --clean ${arguments.joinToString(" ")}
                 """.trimIndent()
             }
 
-            useGoDevContainerDockerImage()
+            useGoDevContainerDockerImage(versionExpr)
         }
         qodana {
             enabled = qodanaToken.isNotEmpty()
@@ -248,9 +282,9 @@ private fun getProductCode(wd: String): String {
     }
 }
 
-private fun ScriptBuildStep.useGoDevContainerDockerImage() {
+private fun ScriptBuildStep.useGoDevContainerDockerImage(versionExpr: String) {
     dockerImage = "registry.jetbrains.team/p/sa/public/godevcontainer:latest"
     dockerImagePlatform = ScriptBuildStep.ImagePlatform.Linux
     dockerRunParameters =
-        "--privileged -v /var/run/docker.sock:/var/run/docker.sock -e GOFLAGS=-buildvcs=false  -e VERSION=%build.number%"
+        "--privileged -v /var/run/docker.sock:/var/run/docker.sock -e GOFLAGS=-buildvcs=false -e VERSION=$versionExpr"
 }
