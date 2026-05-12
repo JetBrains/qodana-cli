@@ -20,16 +20,15 @@ import (
 	"os"
 
 	"github.com/JetBrains/qodana-cli/internal/platform/process"
+	"github.com/JetBrains/qodana-cli/internal/platform/product"
 )
 
 var InterruptChannel chan os.Signal
 var version = "2023.3"
 var buildDateStr = "2023-12-05T10:52:23Z"
 
-//var isEap = true
-
 // noinspection GoUnusedFunction
 func main() {
 	process.Init()
-	Execute(version, buildDateStr, true)
+	Execute(version, buildDateStr, product.DotNetCommunityLinter.EapOnly)
 }
