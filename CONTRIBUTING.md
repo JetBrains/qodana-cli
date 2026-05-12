@@ -120,9 +120,8 @@ brew install cmake dotnet openjdk@21
 Inside 3rd party linters docker image a different qodana-cli executable is used. To build it:
 1. `cd` into the 3rd party linter directory (e.g., `cdnet` or `clang`)
 2. Ensure dependencies are downloaded (see above) and run `go generate`
-3. Change the `buildDateStr` variable in [main.go](cdnet/main.go) to a more recent date (e.g., update it from "2023-12-05T10:52:23Z" to today's date in the same format) to avoid EAP expiration errors
-4. Build the executable: `env GOOS=linux CGO_ENABLED=0 go build -o qd-custom`
-5. To replace the executable in docker image, see `'Patching' an existing Qodana image` section below. Note that the `qodana-cdnet` image has qodana executable in `/opt/qodana/qodana` path
+3. Build the executable: `env GOOS=linux CGO_ENABLED=0 go build -o qd-custom`
+4. To replace the executable in docker image, see `'Patching' an existing Qodana image` section below. Note that the `qodana-cdnet` image has qodana executable in `/opt/qodana/qodana` path
 
 ## Working with Docker images
 
