@@ -211,7 +211,7 @@ var (
 		SupportNative:   false,
 		IsPaid:          false,
 		SupportFixes:    false,
-		EapOnly:         true,
+		EapOnly:         false,
 	}
 
 	ClangLinter = Linter{
