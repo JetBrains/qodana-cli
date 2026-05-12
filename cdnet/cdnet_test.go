@@ -53,7 +53,7 @@ func TestLinterRun(t *testing.T) {
 		LinterPresentableName: product.DotNetCommunityLinter.PresentableName,
 		LinterName:            product.DotNetCommunityLinter.Name,
 		LinterVersion:         version,
-		IsEap:                 true,
+		IsEap:                 product.DotNetCommunityLinter.EapOnly,
 	}
 
 	command := platform.NewThirdPartyScanCommand(CdnetLinter{}, linterInfo)
