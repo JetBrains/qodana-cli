@@ -39,7 +39,7 @@ func TestLinterRun(t *testing.T) {
 		LinterName:            product.ClangLinter.Name,
 		LinterPresentableName: product.ClangLinter.PresentableName,
 		LinterVersion:         version,
-		IsEap:                 true,
+		IsEap:                 product.ClangLinter.EapOnly,
 	}
 
 	command := platform.NewThirdPartyScanCommand(ClangLinter{}, linterInfo)
