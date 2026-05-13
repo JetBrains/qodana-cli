@@ -99,17 +99,17 @@ class GoReleaser(
             // Release-only prelude: validate that HEAD is on a v* tag (excluding *-nightly forms),
             // export VERSION from the tag so goreleaser and clang/cdnet ldflags pick it up, and
             // rewrite the TC build number to the tag. QD-14482.
-            val releaseTagInit = if (releaseType.isRelease())
-                "if ! git describe --tags --exact-match --match 'v*' --exclude '*-nightly' HEAD >/dev/null 2>&1; then\n" +
-                "                      head=${'$'}(git rev-parse HEAD)\n" +
-                "                      branch=${'$'}(git rev-parse --abbrev-ref HEAD 2>/dev/null || echo unknown)\n" +
-                "                      echo \"##teamcity[buildProblem description='QD-14482: HEAD ${'$'}head on branch ${'$'}branch is not on a release tag (v*, excluding *-nightly). Refusing to cut a release.']\"\n" +
-                "                      exit 1\n" +
-                "                    fi\n" +
-                "                    tag=${'$'}(git describe --tags --exact-match --match 'v*' --exclude '*-nightly' HEAD)\n" +
-                "                    export VERSION=\"${'$'}{tag#v}\"\n" +
-                "                    echo \"##teamcity[buildNumber '${'$'}VERSION.%build.counter%']\"\n                    "
-                else ""
+            val releaseTagInit = if (releaseType.isRelease()) """
+                if ! git describe --tags --exact-match --match 'v*' --exclude '*-nightly' HEAD >/dev/null 2>&1; then
+                  head=${'$'}(git rev-parse HEAD)
+                  branch=${'$'}(git rev-parse --abbrev-ref HEAD 2>/dev/null || echo unknown)
+                  echo "##teamcity[buildProblem description='QD-14482: HEAD ${'$'}head on branch ${'$'}branch is not on a release tag (v*, excluding *-nightly). Refusing to cut a release.']"
+                  exit 1
+                fi
+                tag=${'$'}(git describe --tags --exact-match --match 'v*' --exclude '*-nightly' HEAD)
+                export VERSION="${'$'}{tag#v}"
+                echo "##teamcity[buildNumber '${'$'}VERSION.%build.counter%']"
+            """.replaceIndent("                    ").trimStart() else ""
             scriptContent = if (releaseType.isNightlyOrRelease()) {
                 """
                     set -e
@@ -134,7 +134,8 @@ class GoReleaser(
                     if [ -d ./internal/tooling ]; then go generate ./internal/tooling; fi
                     if [ -d ./tooling ]; then go generate ./tooling; fi
 
-                    ${releaseTagInit}goreleaser release --clean ${arguments.joinToString(" ")}
+                    ${releaseTagInit}
+                    goreleaser release --clean ${arguments.joinToString(" ")}
                 """.trimIndent()
             } else {
                 """
