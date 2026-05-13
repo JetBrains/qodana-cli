@@ -100,7 +100,8 @@ class GoReleaser(
         script {
             name = "Run GoReleaser"
             scriptContent = """
-                set -e
+                #!/usr/bin/env bash
+                set -euo pipefail
 
                 if [ "${'$'}RELEASE_TYPE" != "snapshot" ]; then
                   # Install JetBrains codesign client
