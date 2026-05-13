@@ -47,9 +47,8 @@ class GoReleaser(
     val releaseType = ReleaseType.fromArguments(arguments)
     id("${if (releaseType.isNightlyOrRelease()) releaseType.name else "Build"}$wd$branch")
     val branchDisplay = if (branch.isEmpty()) "%teamcity.build.branch%" else branch
-    val tagSuffix = if (releaseType.isRelease()) ", tag %release.version%" else ""
     name = "${releaseType.name} qodana-$wd ($branchDisplay)"
-    description = "${releaseType.name} $arguments build of qodana-$wd (branch $branchDisplay$tagSuffix) — $CLI_GITHUB_REPO_URL/tree/$branchDisplay"
+    description = "${releaseType.name} $arguments build of qodana-$wd (branch $branchDisplay) — $CLI_GITHUB_REPO_URL/tree/$branchDisplay"
     maxRunningBuildsPerBranch = if (releaseType != ReleaseType.Snapshot) "*:1" else "*:0"
     artifactRules = "dist => ." + if (!isCli) "\n\n +:*-third-party-libraries.json" else ""
 
@@ -66,11 +65,7 @@ class GoReleaser(
         password("env.SERVICE_ACCOUNT_TOKEN", CODESIGN_SERVICE_ACCOUNT_TOKEN, display = ParameterDisplay.HIDDEN)
         param("env.SERVICE_ACCOUNT_NAME", CODESIGN_SERVICE_ACCOUNT_NAME)
         password("env.GORELEASER_KEY", GORELEASER_KEY, display = ParameterDisplay.HIDDEN)
-        // release.version is set by the "Validate release tag" step's setParameter on release builds,
-        // unconditionally from the git tag (no manual override — git tag is the source of truth per QD-14482).
-        // Hidden from the Run Custom Build dialog; not in env.* namespace because VERSION reaches the
-        // container only via the explicit -e flag in useGoDevContainerDockerImage's dockerRunParameters.
-        text("release.version", "", display = ParameterDisplay.HIDDEN)
+        param("env.VERSION", "%build.number%")
         param("env.QODANA_JOB_URL", "%env.BUILD_URL%")
         param("env.GO_TESTING", "true")
         param("env.DEVICEID", "200820300000000-0000-0000-0000-000000000000")
@@ -100,35 +95,21 @@ class GoReleaser(
                 workingDir = wd
             }
         }
-        if (releaseType.isRelease()) {
-            script {
-                name = "Validate release tag"
-                workingDir = wd
-                scriptContent = """
-                    set -e
-                    # Only accept v-prefixed release tags (e.g. v2026.1.2, v2025.1-eap); excludes the moving
-                    # 'nightly' tag and v*-nightly forms which would otherwise match --tags --exact-match.
-                    if ! git describe --tags --exact-match --match 'v*' --exclude '*-nightly' HEAD >/dev/null 2>&1; then
-                      head=${'$'}(git rev-parse HEAD)
-                      branch=${'$'}(git rev-parse --abbrev-ref HEAD 2>/dev/null || echo unknown)
-                      echo "##teamcity[buildProblem description='QD-14482: HEAD ${'$'}head on branch ${'$'}branch is not on a release tag (v*, excluding *-nightly). Refusing to cut a release.']"
-                      exit 1
-                    fi
-                    tag=${'$'}(git describe --tags --exact-match --match 'v*' --exclude '*-nightly' HEAD)
-                    ver=${'$'}{tag#v}
-                    echo "##teamcity[setParameter name='release.version' value='${'$'}ver']"
-                    echo "##teamcity[buildNumber '${'$'}ver.%build.counter%']"
-                """.trimIndent()
-            }
-        }
         script {
             name = "Run GoReleaser"
-            val versionExpr = if (releaseType.isRelease()) "%release.version%" else "%build.number%"
-            val versionGuard = if (releaseType.isRelease())
-                "if [ -z \"${'$'}VERSION\" ]; then\n" +
-                "                      echo \"##teamcity[buildProblem description='QD-14482: VERSION env is empty in Run GoReleaser — setParameter from Validate release tag did not propagate.']\"\n" +
+            // Release-only prelude: validate that HEAD is on a v* tag (excluding *-nightly forms),
+            // export VERSION from the tag so goreleaser and clang/cdnet ldflags pick it up, and
+            // rewrite the TC build number to the tag. QD-14482.
+            val releaseTagInit = if (releaseType.isRelease())
+                "if ! git describe --tags --exact-match --match 'v*' --exclude '*-nightly' HEAD >/dev/null 2>&1; then\n" +
+                "                      head=${'$'}(git rev-parse HEAD)\n" +
+                "                      branch=${'$'}(git rev-parse --abbrev-ref HEAD 2>/dev/null || echo unknown)\n" +
+                "                      echo \"##teamcity[buildProblem description='QD-14482: HEAD ${'$'}head on branch ${'$'}branch is not on a release tag (v*, excluding *-nightly). Refusing to cut a release.']\"\n" +
                 "                      exit 1\n" +
-                "                    fi\n                    "
+                "                    fi\n" +
+                "                    tag=${'$'}(git describe --tags --exact-match --match 'v*' --exclude '*-nightly' HEAD)\n" +
+                "                    export VERSION=\"${'$'}{tag#v}\"\n" +
+                "                    echo \"##teamcity[buildNumber '${'$'}VERSION.%build.counter%']\"\n                    "
                 else ""
             scriptContent = if (releaseType.isNightlyOrRelease()) {
                 """
@@ -154,7 +135,7 @@ class GoReleaser(
                     if [ -d ./internal/tooling ]; then go generate ./internal/tooling; fi
                     if [ -d ./tooling ]; then go generate ./tooling; fi
 
-                    ${versionGuard}goreleaser release --clean ${arguments.joinToString(" ")}
+                    ${releaseTagInit}goreleaser release --clean ${arguments.joinToString(" ")}
                 """.trimIndent()
             } else {
                 """
@@ -164,7 +145,7 @@ class GoReleaser(
                 """.trimIndent()
             }
 
-            useGoDevContainerDockerImage(versionExpr)
+            useGoDevContainerDockerImage()
         }
         qodana {
             enabled = qodanaToken.isNotEmpty()
@@ -294,9 +275,9 @@ private fun getProductCode(wd: String): String {
     }
 }
 
-private fun ScriptBuildStep.useGoDevContainerDockerImage(versionExpr: String) {
+private fun ScriptBuildStep.useGoDevContainerDockerImage() {
     dockerImage = "registry.jetbrains.team/p/sa/public/godevcontainer:latest"
     dockerImagePlatform = ScriptBuildStep.ImagePlatform.Linux
     dockerRunParameters =
-        "--privileged -v /var/run/docker.sock:/var/run/docker.sock -e GOFLAGS=-buildvcs=false -e VERSION=$versionExpr"
+        "--privileged -v /var/run/docker.sock:/var/run/docker.sock -e GOFLAGS=-buildvcs=false  -e VERSION=%build.number%"
 }
