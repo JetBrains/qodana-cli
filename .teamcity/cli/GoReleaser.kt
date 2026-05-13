@@ -223,6 +223,7 @@ class GoReleaser(
                 scoop-utils
                 homebrew-utils
                 qodana-action
+                qodana-lsp
             """.trimIndent()
         }
     }
