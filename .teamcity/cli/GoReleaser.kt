@@ -65,6 +65,9 @@ class GoReleaser(
         param("env.SERVICE_ACCOUNT_NAME", CODESIGN_SERVICE_ACCOUNT_NAME)
         password("env.GORELEASER_KEY", GORELEASER_KEY, display = ParameterDisplay.HIDDEN)
         param("env.VERSION", "%build.number%")
+        // Drives the runtime branches inside Run GoReleaser (snapshot / nightly / release). Hidden because
+        // it's intrinsic to the build configuration — never user-tweakable.
+        text("env.RELEASE_TYPE", releaseType.name.lowercase(), display = ParameterDisplay.HIDDEN)
         param("env.QODANA_JOB_URL", "%env.BUILD_URL%")
         param("env.GO_TESTING", "true")
         param("env.DEVICEID", "200820300000000-0000-0000-0000-000000000000")
@@ -96,54 +99,47 @@ class GoReleaser(
         }
         script {
             name = "Run GoReleaser"
-            // Release-only prelude: validate that HEAD is on a v* tag (excluding *-nightly forms),
-            // export VERSION from the tag so goreleaser and clang/cdnet ldflags pick it up, and
-            // rewrite the TC build number to the tag. QD-14482.
-            val releaseTagInit = if (releaseType.isRelease()) """
-                if ! git describe --tags --exact-match --match 'v*' --exclude '*-nightly' HEAD >/dev/null 2>&1; then
-                  head=${'$'}(git rev-parse HEAD)
-                  branch=${'$'}(git rev-parse --abbrev-ref HEAD 2>/dev/null || echo unknown)
-                  echo "##teamcity[buildProblem description='QD-14482: HEAD ${'$'}head on branch ${'$'}branch is not on a release tag (v*, excluding *-nightly). Refusing to cut a release.']"
-                  exit 1
+            scriptContent = """
+                set -e
+
+                if [ "${'$'}RELEASE_TYPE" != "snapshot" ]; then
+                  # Install JetBrains codesign client
+                  ARCH=${'$'}(uname -m)
+                  case ${'$'}ARCH in
+                      x86_64) ARCH_SUFFIX="amd64" ;;
+                      aarch64|arm64) ARCH_SUFFIX="arm64" ;;
+                      *) echo "Unsupported architecture: ${'$'}ARCH"; exit 1 ;;
+                  esac
+                  CODESIGN_BIN="codesign-client-linux-${'$'}ARCH_SUFFIX"
+                  curl -fsSL -o /tmp/${'$'}CODESIGN_BIN https://codesign-distribution.labs.jb.gg/${'$'}CODESIGN_BIN
+                  curl -fsSL -o /tmp/${'$'}CODESIGN_BIN.sha256 https://codesign-distribution.labs.jb.gg/${'$'}CODESIGN_BIN.sha256
+                  curl -fsSL -o /tmp/${'$'}CODESIGN_BIN.sha256.asc https://codesign-distribution.labs.jb.gg/${'$'}CODESIGN_BIN.sha256.asc
+                  curl -fsSL https://download-cdn.jetbrains.com/KEYS | gpg --import -
+                  gpg --batch --verify /tmp/${'$'}CODESIGN_BIN.sha256.asc /tmp/${'$'}CODESIGN_BIN.sha256
+                  (cd /tmp && sha256sum -c ${'$'}CODESIGN_BIN.sha256)
+                  mv /tmp/${'$'}CODESIGN_BIN /usr/local/bin/codesign
+                  chmod +x /usr/local/bin/codesign
+
+                  # QD-14483: serialize tooling downloads before goreleaser's per-target pre-hooks race on shared .part files
+                  if [ -d ./internal/tooling ]; then go generate ./internal/tooling; fi
+                  if [ -d ./tooling ]; then go generate ./tooling; fi
                 fi
-                tag=${'$'}(git describe --tags --exact-match --match 'v*' --exclude '*-nightly' HEAD)
-                export VERSION="${'$'}{tag#v}"
-                echo "##teamcity[buildNumber '${'$'}VERSION.%build.counter%']"
-            """.replaceIndent("                    ").trimStart() else ""
-            scriptContent = if (releaseType.isNightlyOrRelease()) {
-                """
-                    set -e
 
-                    ARCH=${'$'}(uname -m)
-                    case ${'$'}ARCH in
-                        x86_64) ARCH_SUFFIX="amd64" ;;
-                        aarch64|arm64) ARCH_SUFFIX="arm64" ;;
-                        *) echo "Unsupported architecture: ${'$'}ARCH"; exit 1 ;;
-                    esac
-                    CODESIGN_BIN="codesign-client-linux-${'$'}ARCH_SUFFIX"
-                    curl -fsSL -o /tmp/${'$'}CODESIGN_BIN https://codesign-distribution.labs.jb.gg/${'$'}CODESIGN_BIN
-                    curl -fsSL -o /tmp/${'$'}CODESIGN_BIN.sha256 https://codesign-distribution.labs.jb.gg/${'$'}CODESIGN_BIN.sha256
-                    curl -fsSL -o /tmp/${'$'}CODESIGN_BIN.sha256.asc https://codesign-distribution.labs.jb.gg/${'$'}CODESIGN_BIN.sha256.asc
-                    curl -fsSL https://download-cdn.jetbrains.com/KEYS | gpg --import -
-                    gpg --batch --verify /tmp/${'$'}CODESIGN_BIN.sha256.asc /tmp/${'$'}CODESIGN_BIN.sha256
-                    (cd /tmp && sha256sum -c ${'$'}CODESIGN_BIN.sha256)
-                    mv /tmp/${'$'}CODESIGN_BIN /usr/local/bin/codesign
-                    chmod +x /usr/local/bin/codesign
+                if [ "${'$'}RELEASE_TYPE" = "release" ]; then
+                  # QD-14482: enforce a v* release tag at HEAD (excludes the moving 'nightly' tag and v*-nightly forms)
+                  if ! git describe --tags --exact-match --match 'v*' --exclude '*-nightly' HEAD >/dev/null 2>&1; then
+                    head=${'$'}(git rev-parse HEAD)
+                    branch=${'$'}(git rev-parse --abbrev-ref HEAD 2>/dev/null || echo unknown)
+                    echo "##teamcity[buildProblem description='QD-14482: HEAD ${'$'}head on branch ${'$'}branch is not on a release tag (v*, excluding *-nightly). Refusing to cut a release.']"
+                    exit 1
+                  fi
+                  tag=${'$'}(git describe --tags --exact-match --match 'v*' --exclude '*-nightly' HEAD)
+                  export VERSION="${'$'}{tag#v}"
+                  echo "##teamcity[buildNumber '${'$'}VERSION.%build.counter%']"
+                fi
 
-                    # Serialize tooling downloads before goreleaser's per-target pre-hooks race on shared .part files (QD-14483)
-                    if [ -d ./internal/tooling ]; then go generate ./internal/tooling; fi
-                    if [ -d ./tooling ]; then go generate ./tooling; fi
-
-                    ${releaseTagInit}
-                    goreleaser release --clean ${arguments.joinToString(" ")}
-                """.trimIndent()
-            } else {
-                """
-                    set -e
-
-                    goreleaser release --clean ${arguments.joinToString(" ")}
-                """.trimIndent()
-            }
+                goreleaser release --clean ${arguments.joinToString(" ")}
+            """.trimIndent()
 
             useGoDevContainerDockerImage()
         }
