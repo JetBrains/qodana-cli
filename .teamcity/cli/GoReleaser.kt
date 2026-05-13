@@ -105,13 +105,15 @@ class GoReleaser(
                 workingDir = wd
                 scriptContent = """
                     set -e
-                    if ! git describe --tags --exact-match HEAD >/dev/null 2>&1; then
+                    # Only accept v-prefixed release tags (e.g. v2026.1.2, v2025.1-eap); excludes the moving
+                    # 'nightly' tag and v*-nightly forms which would otherwise match --tags --exact-match.
+                    if ! git describe --tags --exact-match --match 'v*' --exclude '*-nightly' HEAD >/dev/null 2>&1; then
                       head=${'$'}(git rev-parse HEAD)
                       branch=${'$'}(git rev-parse --abbrev-ref HEAD 2>/dev/null || echo unknown)
-                      echo "##teamcity[buildProblem description='QD-14482: HEAD ${'$'}head on branch ${'$'}branch is not tagged. Refusing to cut a release.']"
+                      echo "##teamcity[buildProblem description='QD-14482: HEAD ${'$'}head on branch ${'$'}branch is not on a release tag (v*, excluding *-nightly). Refusing to cut a release.']"
                       exit 1
                     fi
-                    tag=${'$'}(git describe --tags --exact-match HEAD)
+                    tag=${'$'}(git describe --tags --exact-match --match 'v*' --exclude '*-nightly' HEAD)
                     ver=${'$'}{tag#v}
                     echo "##teamcity[setParameter name='release.version' value='${'$'}ver']"
                     echo "##teamcity[buildNumber '${'$'}ver.%build.counter%']"
