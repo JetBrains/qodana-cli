@@ -222,7 +222,7 @@ func TestLinterRun(t *testing.T) {
 		LinterName:            product.ClangLinter.Name,
 		LinterPresentableName: product.ClangLinter.PresentableName,
 		LinterVersion:         version,
-		IsEap:                 true,
+		IsEap:                 product.ClangLinter.EapOnly,
 	}
 
 	t.Run("baseline", func(t *testing.T) {
