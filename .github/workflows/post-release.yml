@@ -58,16 +58,14 @@ jobs:
         if: (github.event.release.name || github.event.inputs.release_name) != 'nightly'
         run: |
           node scripts/update-cli.js
-          npm ci
-          npm run build
           git config user.name qodana-bot
           git config user.email qodana-support@jetbrains.com
           git checkout -b bump-cli-version
           git add .
           VERSION="${{ github.event.release.name || github.event.inputs.release_name }}"
-          git commit -m ":arrow_up: Update \`qodana\` to \`${VERSION}\`"
+          git commit -m "chore: update CLI to ${VERSION}"
           git push origin bump-cli-version --force
-          gh pr create --repo jetbrains/qodana-lsp --base main --head bump-cli-version --title ":arrow_up: Update \`qodana\` to the \`${VERSION}\`" --body "This automated PR updates \`qodana\` to the latest version. Please review and merge it if everything is fine."
+          gh pr create --repo jetbrains/qodana-lsp --base main --head bump-cli-version --title "chore: update CLI to ${VERSION}" --body "This automated PR updates \`qodana\` to the latest version. Please review and merge it if everything is fine."
         env:
           GITHUB_TOKEN: ${{ secrets.GH_JETBRAINS_PAT }}
   winget:
