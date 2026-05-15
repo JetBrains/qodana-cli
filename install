@@ -18,12 +18,14 @@
 
 RELEASE=${1}
 TMP_DIR="/tmp/tmpinstalldir"
-OUT_DIR=${2:-"$HOME/.local/bin"}
-OUT_DIR="${OUT_DIR%/}"
 if [ -z "${HOME:-}" ] && [ -z "${2:-}" ]; then
   echo "Error: HOME is not set; pass an explicit install directory as the 2nd arg" >&2
   exit 1
 fi
+OUT_DIR=${2:-"$HOME/.local/bin"}
+while [ "${OUT_DIR}" != "/" ] && [ "${OUT_DIR%/}" != "${OUT_DIR}" ]; do
+  OUT_DIR="${OUT_DIR%/}"
+done
 check_mark="\033[1;32m✓\033[0m"
 
 
