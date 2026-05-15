@@ -177,14 +177,22 @@ jobs:
           GORELEASER_KEY: ${{ secrets.GORELEASER_KEY }}
           NIGHTLY_VERSION: ${{ steps.nightly.outputs.version }}
 
-#  install-script-check:
-#    strategy:
-#        fail-fast: false
-#        matrix:
-#            os: [ubuntu-latest, macos-latest]
-#    runs-on: ${{ matrix.os }}
-#    steps:
-#      - uses: actions/checkout@v6
-#      - run: |
-#          ./install
-#          ./install nightly
+  install-script-check:
+    name: "Install script (${{ matrix.os }})"
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v6
+      - name: Install pinned version (default OUT_DIR)
+        run: |
+          ./install v2026.1.1
+          test -x "$HOME/.local/bin/qodana"
+          "$HOME/.local/bin/qodana" --version
+      - name: Install pinned version with explicit override
+        run: |
+          tmp=$(mktemp -d)
+          ./install v2026.1.1 "$tmp"
+          test -x "$tmp/qodana"
