@@ -23,7 +23,9 @@ import (
 	"io"
 	"net/http"
 	"os"
+	"sort"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/JetBrains/qodana-cli/internal/platform/qdenv"
@@ -141,24 +143,26 @@ func requestLicenseDataAttempt(endpoint string, token string) ([]byte, error) {
 		Timeout: time.Duration(timeout) * time.Second,
 	}
 
+	method := "GET"
 	url := fmt.Sprintf("%s%s", endpoint, qodanaLicenseUri)
-	req, err := http.NewRequest("GET", url, nil)
+	req, err := http.NewRequest(method, url, nil)
 	if err != nil {
-		return nil, fmt.Errorf("license request failed: %w", err)
+		return nil, fmt.Errorf("license request failed (%s %s): %w", method, url, err)
 	}
 	authHeaderValue := fmt.Sprintf("Bearer %s", token)
 
 	req.Header.Set("Authorization", authHeaderValue)
+	headers := formatRequestHeaders(req.Header)
 	resp, err := client.Do(req)
 	if err != nil {
-		return nil, fmt.Errorf("license request failed: %w", err)
+		return nil, fmt.Errorf("license request failed (%s %s, headers: %s): %w", method, url, headers, err)
 	}
 	defer func(Body io.ReadCloser) {
 		_ = Body.Close()
 	}(resp.Body)
 	bodyText, err := io.ReadAll(resp.Body)
 	if err != nil {
-		return nil, fmt.Errorf("reading license response failed: %w", err)
+		return nil, fmt.Errorf("reading license response failed (%s %s, headers: %s): %w", method, url, headers, err)
 	}
 	if resp.StatusCode == 401 || resp.StatusCode == 404 {
 		return nil, ErrTokenDeclined
@@ -167,10 +171,28 @@ func requestLicenseDataAttempt(endpoint string, token string) ([]byte, error) {
 		return bodyText, nil
 	}
 	return nil, fmt.Errorf(
-		"license request failed, response code: %d, license response data: %s",
+		"license request failed (%s %s, headers: %s), response code: %d, license response data: %s",
+		method,
+		url,
+		headers,
 		resp.StatusCode,
 		string(bodyText),
 	)
+}
+
+func formatRequestHeaders(h http.Header) string {
+	keys := make([]string, 0, len(h))
+	for k := range h {
+		keys = append(keys, k)
+	}
+	sort.Strings(keys)
+	parts := make([]string, 0, len(keys))
+	for _, k := range keys {
+		for _, v := range h.Values(k) {
+			parts = append(parts, fmt.Sprintf("%s: %s", k, v))
+		}
+	}
+	return "{" + strings.Join(parts, ", ") + "}"
 }
 
 func getTimeout() int {
