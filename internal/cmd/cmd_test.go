@@ -39,124 +39,156 @@ import (
 	"github.com/spf13/cobra"
 )
 
-func TestIsHelpOrVersion(t *testing.T) {
-	tests := []struct {
-		args     []string
-		expected bool
-	}{
-		{[]string{"qodana", "--help"}, true},
-		{[]string{"qodana", "-h"}, true},
-		{[]string{"qodana", "help"}, true},
-		{[]string{"qodana", "--version"}, true},
-		{[]string{"qodana", "-v"}, true},
-		{[]string{"qodana", "scan"}, false},
-		{[]string{"qodana"}, false},
-		{[]string{"qodana", "--help", "extra"}, false},
-	}
-	for _, tt := range tests {
-		if result := isHelpOrVersion(tt.args); result != tt.expected {
-			t.Errorf("isHelpOrVersion(%v) = %v, want %v", tt.args, result, tt.expected)
+// dispatchTestRoot builds a root command with stub subcommands matching what
+// InitCli registers in production. *ranCmd captures the name of whichever
+// stub's Run executed (empty if none did). The scan stub also exposes a -i
+// shorthand flag so tests can exercise scan flag parsing without pulling in
+// the real scan command's container/native machinery.
+func dispatchTestRoot() (rootCmd *cobra.Command, out *bytes.Buffer, ranCmd *string) {
+	rootCmd = newRootCommand()
+	out = &bytes.Buffer{}
+	rootCmd.SetOut(out)
+	rootCmd.SetErr(out)
+	captured := ""
+	ranCmd = &captured
+	subcommands := []string{"scan", "init", "show", "send", "pull", "view", "contributors", "cloc"}
+	for _, name := range subcommands {
+		n := name
+		stub := &cobra.Command{
+			Use: n,
+			Run: func(cmd *cobra.Command, args []string) { *ranCmd = n },
 		}
-	}
-}
-
-func TestIsCompletionRequested(t *testing.T) {
-	tests := []struct {
-		args     []string
-		expected bool
-	}{
-		{[]string{"qodana", "completion"}, true},
-		{[]string{"qodana", "completion", "bash"}, true},
-		{[]string{"qodana", "scan"}, false},
-		{[]string{"qodana"}, false},
-	}
-	for _, tt := range tests {
-		if result := isCompletionRequested(tt.args); result != tt.expected {
-			t.Errorf("isCompletionRequested(%v) = %v, want %v", tt.args, result, tt.expected)
+		if n == "scan" {
+			stub.Flags().StringP("input", "i", "", "")
 		}
+		rootCmd.AddCommand(stub)
 	}
-}
-
-func TestIsCommandRequested(t *testing.T) {
-	rootCmd := newRootCommand()
-	rootCmd.AddCommand(newScanCommand())
-	rootCmd.AddCommand(newInitCommand())
-	rootCmd.AddCommand(newPullCommand())
-	tests := []struct {
-		args     []string
-		expected string
-	}{
-		{[]string{"scan"}, "scan"},
-		{[]string{"init"}, "init"},
-		{[]string{"pull"}, "pull"},
-		{[]string{"--help"}, ""},
-		{[]string{"unknown"}, ""},
-	}
-	for _, tt := range tests {
-		if result := isCommandRequested(rootCmd.Commands(), tt.args); result != tt.expected {
-			t.Errorf("isCommandRequested(..., %v) = %v, want %v", tt.args, result, tt.expected)
-		}
-	}
-}
-
-func TestSetDefaultCommandIfNeeded(t *testing.T) {
-	tests := []struct {
-		name string
-		args []string
-	}{
-		{"no args adds scan", []string{"qodana", "-i", "."}},
-		{"help flag unchanged", []string{"qodana", "--help"}},
-		{"version flag unchanged", []string{"qodana", "-v"}},
-		{"scan command unchanged", []string{"qodana", "scan", "-i", "."}},
-		{"init command unchanged", []string{"qodana", "init"}},
-	}
-	for _, tt := range tests {
-		t.Run(
-			tt.name, func(t *testing.T) {
-				rootCmd := newRootCommand()
-				rootCmd.AddCommand(newScanCommand())
-				rootCmd.AddCommand(newInitCommand())
-				setDefaultCommandIfNeeded(rootCmd, tt.args)
-			},
-		)
-	}
+	return
 }
 
 // TestQD14791HelpCompletionDispatch regression-locks QD-14791:
 // `qodana help completion` must reach cobra's help subcommand, never scan.
 //
-// This test simulates production by invoking setDefaultCommandIfNeeded with
-// the same arg shape Execute() passes from os.Args, then running cobra
-// dispatch. On the current (pre-removal) code, the helper rewrites args to
-// ["scan", "help", "completion"] and the scan stub runs — the test fails.
-// The follow-up removal commit deletes the helper, deletes this call, and
-// the test passes against cobra-native dispatch.
+// In the commit that added this test, the body included an explicit
+// setDefaultCommandIfNeeded(...) call that demonstrated the bug (the test
+// failed because scan ran). The removal commit deleted that helper and
+// the call line; this test now lives as forward-going regression coverage
+// against cobra-native dispatch.
 func TestQD14791HelpCompletionDispatch(t *testing.T) {
-	rootCmd := newRootCommand()
-	var ranCmd string
-	for _, name := range []string{"scan", "init", "show", "send", "pull", "view", "contributors", "cloc"} {
-		n := name
-		rootCmd.AddCommand(&cobra.Command{
-			Use: n,
-			Run: func(cmd *cobra.Command, args []string) { ranCmd = n },
-		})
-	}
-
-	out := &bytes.Buffer{}
-	rootCmd.SetOut(out)
-	rootCmd.SetErr(out)
+	rootCmd, out, ranCmd := dispatchTestRoot()
 	rootCmd.SetArgs([]string{"help", "completion"})
-	setDefaultCommandIfNeeded(rootCmd, []string{"qodana", "help", "completion"})
 
 	if err := rootCmd.Execute(); err != nil {
 		t.Fatalf("Execute returned error: %v", err)
 	}
-	if ranCmd == "scan" {
+	if *ranCmd == "scan" {
 		t.Fatalf("scan ran for `qodana help completion`; QD-14791 regression.\nCaptured output:\n%s", out.String())
 	}
 	if !strings.Contains(out.String(), "completion") {
 		t.Fatalf("expected completion-related help text in output; got:\n%s", out.String())
 	}
+}
+
+// TestRootDispatchCompletionBash locks in the QD-9907 prior-art path:
+// `qodana completion bash` must produce a bash completion script, not a scan.
+func TestRootDispatchCompletionBash(t *testing.T) {
+	rootCmd, out, ranCmd := dispatchTestRoot()
+	rootCmd.SetArgs([]string{"completion", "bash"})
+
+	if err := rootCmd.Execute(); err != nil {
+		t.Fatalf("Execute returned error: %v", err)
+	}
+	if *ranCmd == "scan" {
+		t.Fatalf("scan ran for `qodana completion bash`; output:\n%s", out.String())
+	}
+	if !strings.Contains(out.String(), "bash completion") {
+		t.Fatalf("expected bash completion script in output; got first 200 bytes:\n%s", firstNBytes(out.String(), 200))
+	}
+}
+
+// TestRootDispatchUnknownSubcommand verifies that an unknown subcommand
+// surfaces cobra's error rather than silently injecting scan.
+func TestRootDispatchUnknownSubcommand(t *testing.T) {
+	rootCmd, _, ranCmd := dispatchTestRoot()
+	rootCmd.SetArgs([]string{"fizzbuzz"})
+	rootCmd.SilenceUsage = true
+
+	err := rootCmd.Execute()
+	if err == nil {
+		t.Fatalf("expected error for unknown subcommand, got nil; ranCmd=%q", *ranCmd)
+	}
+	if !strings.Contains(err.Error(), "fizzbuzz") {
+		t.Fatalf("expected error to mention `fizzbuzz`; got: %v", err)
+	}
+	if *ranCmd != "" {
+		t.Fatalf("no stub should have run for `fizzbuzz`; ran %q", *ranCmd)
+	}
+}
+
+// TestRootDispatchBareInvocation verifies that bare `qodana` shows root
+// help (matches the existing root Run callback's len(args)==0 branch).
+func TestRootDispatchBareInvocation(t *testing.T) {
+	rootCmd, out, ranCmd := dispatchTestRoot()
+	rootCmd.SetArgs([]string{})
+
+	if err := rootCmd.Execute(); err != nil {
+		t.Fatalf("Execute returned error: %v", err)
+	}
+	if *ranCmd != "" {
+		t.Fatalf("no subcommand should run for bare `qodana`; ran %q", *ranCmd)
+	}
+	if !strings.Contains(out.String(), "Qodana CLI") {
+		t.Fatalf("expected root help in output; got first 200 bytes:\n%s", firstNBytes(out.String(), 200))
+	}
+}
+
+// TestRootDispatchShellCompletion covers cobra's hidden shell-completion
+// request command (called by generated completion scripts at every Tab).
+// Before scan injection was removed, `qodana __complete ""` got rewritten
+// to `qodana scan __complete ""`, silently breaking shell completion.
+func TestRootDispatchShellCompletion(t *testing.T) {
+	rootCmd, _, ranCmd := dispatchTestRoot()
+	rootCmd.SetArgs([]string{cobra.ShellCompRequestCmd, ""})
+
+	if err := rootCmd.Execute(); err != nil {
+		t.Fatalf("Execute returned error: %v", err)
+	}
+	if *ranCmd == "scan" {
+		t.Fatalf("scan ran for cobra shell completion request; QD-14813 regression")
+	}
+}
+
+// TestRootDispatchScanFlagValueMatchingSubcommandName verifies cobra parses
+// `scan -i <value>` correctly when <value> happens to equal a registered
+// subcommand name. Pre-removal this was a latent foot-gun in
+// isCommandRequested (it called slices.Contains over the entire arg vector,
+// matching the flag value); post-removal that helper is gone and only
+// cobra's flag parsing decides.
+func TestRootDispatchScanFlagValueMatchingSubcommandName(t *testing.T) {
+	rootCmd, _, ranCmd := dispatchTestRoot()
+	rootCmd.SetArgs([]string{"scan", "-i", "scan"})
+
+	if err := rootCmd.Execute(); err != nil {
+		t.Fatalf("Execute returned error: %v", err)
+	}
+	if *ranCmd != "scan" {
+		t.Fatalf("expected scan stub to run; ran %q", *ranCmd)
+	}
+	scanCmd, _, _ := rootCmd.Find([]string{"scan"})
+	got, err := scanCmd.Flags().GetString("input")
+	if err != nil {
+		t.Fatalf("could not read --input flag: %v", err)
+	}
+	if got != "scan" {
+		t.Fatalf("expected --input value %q, got %q", "scan", got)
+	}
+}
+
+func firstNBytes(s string, n int) string {
+	if len(s) <= n {
+		return s
+	}
+	return s[:n] + "..."
 }
 
 func createProject(t *testing.T, name string) string {
