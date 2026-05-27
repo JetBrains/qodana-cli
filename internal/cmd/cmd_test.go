@@ -36,6 +36,7 @@ import (
 	"github.com/JetBrains/qodana-cli/internal/testutil/needs"
 	cp "github.com/otiai10/copy"
 	log "github.com/sirupsen/logrus"
+	"github.com/spf13/cobra"
 )
 
 func TestIsHelpOrVersion(t *testing.T) {
@@ -118,6 +119,43 @@ func TestSetDefaultCommandIfNeeded(t *testing.T) {
 				setDefaultCommandIfNeeded(rootCmd, tt.args)
 			},
 		)
+	}
+}
+
+// TestQD14791HelpCompletionDispatch regression-locks QD-14791:
+// `qodana help completion` must reach cobra's help subcommand, never scan.
+//
+// This test simulates production by invoking setDefaultCommandIfNeeded with
+// the same arg shape Execute() passes from os.Args, then running cobra
+// dispatch. On the current (pre-removal) code, the helper rewrites args to
+// ["scan", "help", "completion"] and the scan stub runs — the test fails.
+// The follow-up removal commit deletes the helper, deletes this call, and
+// the test passes against cobra-native dispatch.
+func TestQD14791HelpCompletionDispatch(t *testing.T) {
+	rootCmd := newRootCommand()
+	var ranCmd string
+	for _, name := range []string{"scan", "init", "show", "send", "pull", "view", "contributors", "cloc"} {
+		n := name
+		rootCmd.AddCommand(&cobra.Command{
+			Use: n,
+			Run: func(cmd *cobra.Command, args []string) { ranCmd = n },
+		})
+	}
+
+	out := &bytes.Buffer{}
+	rootCmd.SetOut(out)
+	rootCmd.SetErr(out)
+	rootCmd.SetArgs([]string{"help", "completion"})
+	setDefaultCommandIfNeeded(rootCmd, []string{"qodana", "help", "completion"})
+
+	if err := rootCmd.Execute(); err != nil {
+		t.Fatalf("Execute returned error: %v", err)
+	}
+	if ranCmd == "scan" {
+		t.Fatalf("scan ran for `qodana help completion`; QD-14791 regression.\nCaptured output:\n%s", out.String())
+	}
+	if !strings.Contains(out.String(), "completion") {
+		t.Fatalf("expected completion-related help text in output; got:\n%s", out.String())
 	}
 }
 
