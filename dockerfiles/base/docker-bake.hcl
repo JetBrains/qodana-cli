@@ -3,7 +3,7 @@ group "all" {
     "jvm-community", "jvm", "python-community", "python",
     "dotnet-community", "dotnet",
     "cpp-community", "cpp", "cpp-community-bookworm", "cpp-bookworm",
-    "go-base-latest", "js-base-latest", "php-base-latest", "rust-base-latest",
+    "void-base-latest", "go-base-latest", "js-base-latest", "php-base-latest", "rust-base-latest",
     "ruby3x"
   ]
 }
@@ -16,6 +16,11 @@ group "default" {
 # JVM chain: jvm-community is base for jvm and python-community
 group "jvm" {
   targets = ["jvm-community", "jvm", "python-community", "python"]
+}
+
+# VOID chain
+group "void" {
+  targets = ["void-base-latest"]
 }
 
 # .NET chain
@@ -100,6 +105,12 @@ target "python" {
   ]
   platforms = ["linux/amd64", "linux/arm64"]
   dockerfile = "python.Dockerfile"
+}
+
+target "void-base-latest" {
+  tags = ["registry.jetbrains.team/p/sa/containers/qodana:void-base-latest"]
+  platforms = ["linux/amd64", "linux/arm64"]
+  dockerfile = "void.Dockerfile"
 }
 
 target "go-base-latest" {

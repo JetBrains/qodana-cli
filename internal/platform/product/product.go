@@ -254,7 +254,7 @@ var (
 		GoLinter,
 		RustLinter,
 		ClangLinter,
-		VoidLinter
+		VoidLinter,
 	}
 )
 

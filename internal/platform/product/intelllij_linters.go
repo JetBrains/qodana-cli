@@ -153,6 +153,7 @@ var (
 		CppLinterProperties,
 		GoLinterProperties,
 		RustLinterProperties,
+		VoidLinterProperties
 	}
 )
 
