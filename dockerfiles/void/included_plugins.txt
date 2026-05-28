@@ -1,0 +1,4 @@
+org.intellij.qodana
+org.intellij.intelliLang
+intellij.opengrep
+intellij.dfa.analysis.plugin
