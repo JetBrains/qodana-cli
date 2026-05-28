@@ -135,8 +135,8 @@ var (
 		Linter:              VoidLinter,
 		ProductInfoJsonCode: "IV",
 		QodanaLinterName:    "qodana-void",
-		VmOptionsEnv:        "IJ_VOID_VM_OPTIONS",
-		ScriptName:          "ijvoid",
+		VmOptionsEnv:        "IDEA_VM_OPTIONS",
+		ScriptName:          "idea",
 	}
 
 	AllLinterProperties = []IntellijLinterProperties{

@@ -195,6 +195,11 @@ func TestFindLinterByImage(t *testing.T) {
 			expected: GoLinter,
 		},
 		{
+			name:     "find void linter",
+			image:    "jetbrains/qodana-void:latest",
+			expected: VoidLinter,
+		},
+		{
 			name:     "internal registry",
 			image:    "registry.jetbrains.team/p/sa/containers/qodana-jvm:latest",
 			expected: JvmLinter,
@@ -246,6 +251,11 @@ func TestFindLinterByProductCode(t *testing.T) {
 			expected:    PhpLinter,
 		},
 		{
+			name:        "find void linter",
+			productCode: QDIV,
+			expected:    VoidLinter,
+		},
+		{
 			name:        "find with EAP suffix",
 			productCode: QDJVM + EapSuffix,
 			expected:    JvmLinter,
@@ -290,6 +300,11 @@ func TestFindLinterByName(t *testing.T) {
 			name:     "find go linter",
 			input:    "qodana-go",
 			expected: GoLinter,
+		},
+		{
+			name:     "find void linter",
+			input:    "qodana-void",
+			expected: VoidLinter,
 		},
 		{
 			name:     "with EAP suffix",
@@ -412,6 +427,7 @@ func TestGetProductNameFromCode(t *testing.T) {
 		{QDGO, "Qodana for Go"},
 		{QDRST, "Qodana for Rust"},
 		{QDRUBY, "Qodana for Ruby"},
+		{QDIV, "Qodana for IJ Void"},
 		{"UNKNOWN", "Qodana"},
 	}
 
@@ -470,6 +486,7 @@ func TestToQodanaCode(t *testing.T) {
 		{"RM", QDRUBY},
 		{"RR", QDRST},
 		{"CL", QDCPP},
+		{"IV", QDIV},
 		{"XX", "QD"},
 	}
 
