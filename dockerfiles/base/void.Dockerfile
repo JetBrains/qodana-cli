@@ -7,7 +7,7 @@ ARG TARGETPLATFORM
 ENV HOME="/root" LC_ALL="en_US.UTF-8" QODANA_DIST="/opt/idea" QODANA_DATA="/data"
 ENV JAVA_HOME="$QODANA_DIST/jbr" QODANA_DOCKER="true" QODANA_CONF="$HOME/.config/idea"
 
-ENV PATH="$QODANA_DIST/bin:$CARGO_HOME/bin:$PATH"
+ENV PATH="$QODANA_DIST/bin:$PATH"
 
 RUN --mount=target=/var/lib/apt/lists,type=cache,sharing=locked \
     --mount=target=/var/cache/apt,type=cache,sharing=locked <<EOF
