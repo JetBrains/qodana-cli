@@ -234,7 +234,7 @@ var (
 		SupportNative:   false,
 		IsPaid:          false,
 		SupportFixes:    false,
-		EapOnly:         false,
+		EapOnly:         true,
 	}
 
 	// AllLinters Order is important for detection
