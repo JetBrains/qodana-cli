@@ -40,6 +40,7 @@ def load_release_info(qd_code: str, qd_version: str) -> Dict[str, Any]:
         "QDJVMC": "qodana-jvm-community",
         "QDAND": "qodana-jvm",           # Android uses JVM feed
         "QDANDC": "qodana-jvm-community", # Android Community uses JVM-Community feed
+        "QDIV": "qodana-void",
         "QDNET": "qodana-dotnet",
         "QDPHP": "qodana-php",
         "QDPY": "qodana-python",

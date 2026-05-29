@@ -131,6 +131,14 @@ var (
 		ScriptName:          "rustrover",
 	}
 
+	VoidLinterProperties = IntellijLinterProperties{
+		Linter:              VoidLinter,
+		ProductInfoJsonCode: "IV",
+		QodanaLinterName:    "qodana-void",
+		VmOptionsEnv:        "IDEA_VM_OPTIONS",
+		ScriptName:          "idea",
+	}
+
 	AllLinterProperties = []IntellijLinterProperties{
 		JvmLinterProperties,
 		JvmCommunityLinterProperties,
@@ -145,6 +153,7 @@ var (
 		CppLinterProperties,
 		GoLinterProperties,
 		RustLinterProperties,
+		VoidLinterProperties,
 	}
 )
 

@@ -55,6 +55,7 @@ const (
 	QDRUBY = "QDRUBY"
 	QDCLC  = "QDCLC"
 	QDCPP  = "QDCPP"
+	QDIV  = "QDIV"
 )
 
 var (
@@ -225,6 +226,17 @@ var (
 		EapOnly:         false,
 	}
 
+    VoidLinter = Linter{
+		PresentableName: "Qodana for IJ Void",
+		Name:            "qodana-void",
+		ProductCode:     QDIV,
+		DockerImage:     "jetbrains/qodana-void",
+		SupportNative:   false,
+		IsPaid:          false,
+		SupportFixes:    false,
+		EapOnly:         true,
+	}
+
 	// AllLinters Order is important for detection
 	AllLinters = []Linter{
 		JvmCommunityLinter,
@@ -242,6 +254,7 @@ var (
 		GoLinter,
 		RustLinter,
 		ClangLinter,
+		VoidLinter,
 	}
 )
 
