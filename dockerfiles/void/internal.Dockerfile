@@ -12,9 +12,6 @@ update-alternatives --install /usr/bin/javac javac "$JAVA_HOME"/bin/javac 0
 update-alternatives --set java "$JAVA_HOME"/bin/java
 update-alternatives --set javac "$JAVA_HOME"/bin/javac
 rm -rf /var/cache/apt /var/lib/apt/ /tmp/*
-apt-get update
-DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends build-essential
-rm -rf /var/cache/apt /var/lib/apt/ /tmp/*
 EOF
 
 LABEL maintainer="qodana-support@jetbrains.com" description="Qodana for IJ Void (https://jb.gg/qodana-void)"

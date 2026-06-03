@@ -1,4 +1,6 @@
 org.intellij.qodana
 org.intellij.intelliLang
+com.intellij.platform.images
+Git4Idea
 intellij.opengrep
-intellij.dfa.analysis.plugin
+com.intellij.dfa.analysis
