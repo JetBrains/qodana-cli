@@ -125,7 +125,7 @@ updates:
         patterns:
           - "*"
   - package-ecosystem: maven
-    directory: /internal/tooling
+    directory: /internal/tooling/scripts
     commit-message:
       prefix: ":arrow_up: QD-12983"
     schedule:
