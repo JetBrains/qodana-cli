@@ -90,3 +90,5 @@ com.intellij.hardcodedPasswords
 com.intellij.mcpServer
 org.intellij.plugins.markdown
 com.intellij.copyright
+intellij.opengrep
+com.intellij.dfa.analysis
