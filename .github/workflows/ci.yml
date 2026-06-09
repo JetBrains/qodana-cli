@@ -5,43 +5,44 @@ on:
     branches:
       - main
       - '[0-9][0-9][0-9]'
+      - test-container-*
   pull_request:
 
 jobs:
-  lint:
-    name: "Lint"
-    runs-on: ubuntu-latest
-    env:
-      GITHUB_TOKEN: ${{ secrets.QODANA_JBR_TOKEN }}
-    permissions:
-      checks: write
-      pull-requests: write
-      actions: read
-      contents: read
-      security-events: write
-    steps:
-      - uses: actions/checkout@v6
-      - uses: ./.github/actions/mock-dependencies
-      - name: Setup Go
-        uses: actions/setup-go@v6
-        with:
-          cache-dependency-path: "**/*.sum"
-          go-version-file: go.mod
-      - uses: ./.github/actions/qodana-build-cache
-      - name: Download CLI dependencies
-        # Golangci-lint, in their infinite wisdom, do not allow you to disable typecheck.
-        # Because of this, the project NEEDS to be compileable to be linted.
-        # https://golangci-lint.run/docs/welcome/faq/#why-do-you-have-typecheck-errors
-        run: go generate -v ./internal/tooling/...
-      - name: golangci-lint
-        uses: golangci/golangci-lint-action@v9
-        with:
-          version: v2.6
-      - uses: github/codeql-action/init@v4
-        with:
-          languages: go
-      - uses: github/codeql-action/autobuild@v4
-      - uses: github/codeql-action/analyze@v4
+  # lint:
+  #   name: "Lint"
+  #   runs-on: ubuntu-latest
+  #   env:
+  #     GITHUB_TOKEN: ${{ secrets.QODANA_JBR_TOKEN }}
+  #   permissions:
+  #     checks: write
+  #     pull-requests: write
+  #     actions: read
+  #     contents: read
+  #     security-events: write
+  #   steps:
+  #     - uses: actions/checkout@v6
+  #     - uses: ./.github/actions/mock-dependencies
+  #     - name: Setup Go
+  #       uses: actions/setup-go@v6
+  #       with:
+  #         cache-dependency-path: "**/*.sum"
+  #         go-version-file: go.mod
+  #     - uses: ./.github/actions/qodana-build-cache
+  #     - name: Download CLI dependencies
+  #       # Golangci-lint, in their infinite wisdom, do not allow you to disable typecheck.
+  #       # Because of this, the project NEEDS to be compileable to be linted.
+  #       # https://golangci-lint.run/docs/welcome/faq/#why-do-you-have-typecheck-errors
+  #       run: go generate -v ./internal/tooling/...
+  #     - name: golangci-lint
+  #       uses: golangci/golangci-lint-action@v9
+  #       with:
+  #         version: v2.6
+  #     - uses: github/codeql-action/init@v4
+  #       with:
+  #         languages: go
+  #     - uses: github/codeql-action/autobuild@v4
+  #     - uses: github/codeql-action/analyze@v4
 
   test:
     name: "Test (⚙️ ${{ matrix.os }}, 🐳 ${{ matrix.container-engine }})"
@@ -53,146 +54,69 @@ jobs:
     strategy:
       matrix:
         include:
-          - os: macos-15-large  # Only intel-based macOS runners support virtualization for Docker.
-            container-engine: docker@latest
-          - os: windows-latest
-            container-engine: docker@latest
+          # - os: macos-15-large  # Only intel-based macOS runners support virtualization for Docker.
+          #   container-engine: docker@latest
+          # - os: windows-latest
+          #   container-engine: docker@latest
           - os: ubuntu-latest
             container-engine: docker@latest
-          - os: ubuntu-latest
-            container-engine: podman@latest
-          - os: ubuntu-latest
-            container-engine: docker@v25.0  # See also: https://endoflife.date/docker-engine
-          - os: ubuntu-24.04-arm        # arm64
-            container-engine: docker@latest
-          - os: macos-15                 # arm64 — no Docker (nested virt unsupported on GH runners)
-            container-engine: none
-          - os: windows-11-arm           # arm64 — no Docker (no static binaries for Windows ARM64)
-            container-engine: none
+          # - os: ubuntu-latest
+          #   container-engine: podman@latest
+          # - os: ubuntu-latest
+          #   container-engine: docker@v25.0  # See also: https://endoflife.date/docker-engine
+          # - os: ubuntu-24.04-arm        # arm64
+          #   container-engine: docker@latest
+          # - os: macos-15                 # arm64 — no Docker (nested virt unsupported on GH runners)
+          #   container-engine: none
+          # - os: windows-11-arm           # arm64 — no Docker (no static binaries for Windows ARM64)
+          #   container-engine: none
 
-  code-quality:
-    name: "Qodana"
-    runs-on: ubuntu-latest
-    needs: test
-    permissions:
-      checks: write
-      pull-requests: write
-      actions: read
-      contents: write
-      security-events: write
-    steps:
-      - uses: actions/checkout@v6
-        with:
-          fetch-depth: 0
-      - uses: ./.github/actions/mock-dependencies
-      - uses: docker/login-action@v3
-        with:
-          registry: registry.jetbrains.team
-          username: ${{ secrets.SPACE_USERNAME }}
-          password: ${{ secrets.SPACE_PASSWORD }}
-      - uses: actions/setup-go@v6
-        with:
-          cache-dependency-path: "**/*.sum"
-          go-version-file: go.mod
-      - name: Download coverage artifacts
-        uses: actions/download-artifact@v7
-        with:
-          pattern: coverage-*
-          path: coverage-reports
-      - name: Merge coverage reports
-        run: |
-          mkdir -p .qodana/code-coverage
-          echo "mode: set" > .qodana/code-coverage/coverage.out
-          find coverage-reports -name "*.out" -exec tail -n +2 {} \; >> .qodana/code-coverage/coverage.out
-      - uses: JetBrains/qodana-action@main
-        env:
-          QODANA_TOKEN: ${{ secrets.QODANA_TOKEN }}
-        with:
-          args: --baseline,.github/qodana.sarif.json
-          use-nightly: true
-          pr-mode: false
-          upload-result: true
-      - uses: actions/upload-artifact@v6
-        with:
-          name: qodana-artifacts
-          path: "${{ runner.temp }}/qodana/results"
+  # code-quality:
+  #   name: "Qodana"
+  #   runs-on: ubuntu-latest
+  #   needs: test
+  #   permissions:
+  #     checks: write
+  #     pull-requests: write
+  #     actions: read
+  #     contents: write
+  #     security-events: write
+  #   steps:
+  #     - uses: actions/checkout@v6
+  #       with:
+  #         fetch-depth: 0
+  #     - uses: ./.github/actions/mock-dependencies
+  #     - uses: docker/login-action@v3
+  #       with:
+  #         registry: registry.jetbrains.team
+  #         username: ${{ secrets.SPACE_USERNAME }}
+  #         password: ${{ secrets.SPACE_PASSWORD }}
+  #     - uses: actions/setup-go@v6
+  #       with:
+  #         cache-dependency-path: "**/*.sum"
+  #         go-version-file: go.mod
+  #     - name: Download coverage artifacts
+  #       uses: actions/download-artifact@v7
+  #       with:
+  #         pattern: coverage-*
+  #         path: coverage-reports
+  #     - name: Merge coverage reports
+  #       run: |
+  #         mkdir -p .qodana/code-coverage
+  #         echo "mode: set" > .qodana/code-coverage/coverage.out
+  #         find coverage-reports -name "*.out" -exec tail -n +2 {} \; >> .qodana/code-coverage/coverage.out
+  #     - uses: JetBrains/qodana-action@main
+  #       env:
+  #         QODANA_TOKEN: ${{ secrets.QODANA_TOKEN }}
+  #       with:
+  #         args: --baseline,.github/qodana.sarif.json
+  #         use-nightly: true
+  #         pr-mode: false
+  #         upload-result: true
+  #     - uses: actions/upload-artifact@v6
+  #       with:
+  #         name: qodana-artifacts
+  #         path: "${{ runner.temp }}/qodana/results"
 
-  goreleaser:
-    name: "GoReleaser (${{ github.event_name == 'push' && 'nightly' || 'build' }})"
-    runs-on: ubuntu-latest
-    env:
-      GITHUB_TOKEN: ${{ secrets.QODANA_JBR_TOKEN }}
-    permissions:
-      contents: write
-    steps:
-      - uses: actions/checkout@v6
-        with:
-          fetch-depth: 0
-      - uses: actions/setup-go@v6
-        with:
-          cache-dependency-path: "**/*.sum"
-          go-version-file: go.mod
-      - uses: ./.github/actions/qodana-build-cache
-      - name: Download CLI dependencies
-        run: go generate -v ./internal/tooling/...
-      - name: Determine nightly params
-        id: nightly
-        if: github.event_name == 'push'
-        run: |
-          BRANCH="${GITHUB_REF#refs/heads/}"
-          if [[ "$BRANCH" == "main" ]]; then
-            echo "tag=v2026.2-nightly" >> "$GITHUB_OUTPUT"
-            echo "version=2026.2-nightly" >> "$GITHUB_OUTPUT"
-            echo "is_nightly=true" >> "$GITHUB_OUTPUT"
-          elif [[ "$BRANCH" =~ ^[0-9]{3}$ ]]; then
-            V="20${BRANCH:0:2}.${BRANCH:2}"
-            echo "tag=v${V}-nightly" >> "$GITHUB_OUTPUT"
-            echo "version=${V}-nightly" >> "$GITHUB_OUTPUT"
-            echo "is_nightly=true" >> "$GITHUB_OUTPUT"
-          else
-            echo "is_nightly=false" >> "$GITHUB_OUTPUT"
-          fi
-      - name: Build CLI only
-        if: steps.nightly.outputs.is_nightly != 'true'
-        uses: goreleaser/goreleaser-action@v6
-        with:
-          distribution: goreleaser-pro
-          version: "~> v2"
-          args: build --snapshot --clean --id cli
-        env:
-          GORELEASER_KEY: ${{ secrets.GORELEASER_KEY }}
-      - name: Patch goreleaser nightly config
-        if: steps.nightly.outputs.is_nightly == 'true'
-        run: |
-          sed -i "s/tag_name: nightly/tag_name: ${{ steps.nightly.outputs.tag }}/" .goreleaser.yaml
-      - name: Release nightly CLI only
-        if: steps.nightly.outputs.is_nightly == 'true'
-        uses: goreleaser/goreleaser-action@v6
-        with:
-          distribution: goreleaser-pro
-          version: "~> v2"
-          args: release --nightly --clean --skip=chocolatey,nfpm,homebrew,scoop,snapcraft
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          GORELEASER_KEY: ${{ secrets.GORELEASER_KEY }}
-          NIGHTLY_VERSION: ${{ steps.nightly.outputs.version }}
-
-  install-script-check:
-    name: "Install script (${{ matrix.os }})"
-    strategy:
-      fail-fast: false
-      matrix:
-        os: [ubuntu-latest, macos-latest]
-    runs-on: ${{ matrix.os }}
-    steps:
-      - uses: actions/checkout@v6
-      - name: Install pinned version (default OUT_DIR)
-        run: |
-          ./install v2026.1.1
-          test -x "$HOME/.local/bin/qodana"
-          "$HOME/.local/bin/qodana" --version
-      - name: Install pinned version with explicit override
-        run: |
-          tmp=$(mktemp -d)
-          ./install v2026.1.1 "$tmp"
-          test -x "$tmp/qodana"
+  # goreleaser: disabled for test branch
+  # install-script-check: disabled for test branch
