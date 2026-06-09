@@ -42,7 +42,7 @@
         <dependency>
             <groupId>org.jetbrains.qodana</groupId>
             <artifactId>publisher-cli</artifactId>
-            <version>3.0.13</version>
+            <version>3.1.2</version>
         </dependency>
         <dependency>
             <groupId>com.jetbrains.qodana</groupId>
@@ -52,17 +52,17 @@
         <dependency>
             <groupId>org.jetbrains.qodana</groupId>
             <artifactId>qodana-fuser</artifactId>
-            <version>1.0.28</version>
+            <version>1.0.29</version>
         </dependency>
         <dependency>
             <groupId>org.jetbrains.qodana</groupId>
             <artifactId>intellij-report-converter</artifactId>
-            <version>0.12.5</version>
+            <version>0.12.6</version>
         </dependency>
         <dependency>
             <groupId>org.jetbrains.qodana</groupId>
             <artifactId>qodana-web-ui</artifactId>
-            <version>0.12.5</version>
+            <version>0.12.6</version>
         </dependency>
     </dependencies>
 </project>
