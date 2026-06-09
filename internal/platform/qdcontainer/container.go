@@ -26,8 +26,8 @@ import (
 	"github.com/docker/cli/cli/command"
 	dockerCliConfig "github.com/docker/cli/cli/config"
 	"github.com/docker/cli/cli/flags"
-	"github.com/docker/docker/api/types/system"
-	"github.com/docker/docker/client"
+	"github.com/moby/moby/api/types/system"
+	"github.com/moby/moby/client"
 	log "github.com/sirupsen/logrus"
 	"gopkg.in/yaml.v3"
 )
@@ -70,7 +70,7 @@ func checkEngineMemory() {
 	goos != "windows" && goos != "darwin" {
 		return
 	}
-	info, err := docker.Info(context.Background())
+	info, err := docker.Info(context.Background(), client.InfoOptions{})
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -82,9 +82,9 @@ func checkEngineMemory() {
 	case "darwin":
 		helpUrl = "https://docs.docker.com/desktop/settings/mac/#advanced-1"
 	}
-	log.Debug("Docker memory limit is set to ", info.MemTotal/1024/1024, " MB")
+	log.Debug("Docker memory limit is set to ", info.Info.MemTotal/1024/1024, " MB")
 
-	if info.MemTotal < 4*1024*1024*1024 {
+	if info.Info.MemTotal < 4*1024*1024*1024 {
 		msg.WarningMessage(
 			`The container daemon is running with less than 4GB of RAM.
    If you experience issues, consider increasing the container runtime memory limit.
@@ -109,15 +109,17 @@ func NewContainerClient(ctx context.Context) (client.APIClient, error) {
 	if err != nil {
 		return nil, fmt.Errorf("failed to create Docker API client: %w", err)
 	}
-	apiClient.NegotiateAPIVersion(ctx)
+	_, err = apiClient.Ping(ctx, client.PingOptions{NegotiateAPIVersion: true})
+	if err != nil {
+		return nil, fmt.Errorf("failed to negotiate Docker API version: %w", err)
+	}
 
-	// A succesfull call to info is an indication that the client has connected to the socket successfully.
-	info, err := apiClient.Info(ctx)
+	info, err := apiClient.Info(ctx, client.InfoOptions{})
 	if err != nil {
 		return nil, fmt.Errorf("failed to initialize Docker API: %w", err)
 	}
 
-	logClientInfo(info)
+	logClientInfo(info.Info)
 
 	return apiClient, nil
 }
