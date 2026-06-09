@@ -7,14 +7,13 @@ import (
 	"path/filepath"
 	"testing"
 
+	"github.com/JetBrains/qodana-cli/internal/testutil/needs"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
 func TestCanonical_ExecOnlyDir(t *testing.T) {
-	if os.Getuid() == 0 {
-		t.Skip("root bypasses permission checks")
-	}
+	needs.Need(t, needs.NonRoot)
 
 	tmp := canonicalTempDir(t)
 	dir := filepath.Join(tmp, "execonly")
@@ -23,6 +22,14 @@ func TestCanonical_ExecOnlyDir(t *testing.T) {
 
 	require.NoError(t, os.Chmod(dir, 0o111))
 	t.Cleanup(func() { _ = os.Chmod(dir, 0o755) })
+
+	// Precondition: 0o111 must actually deny ReadDir. Root or
+	// CAP_DAC_READ_SEARCH bypass DAC; surface that loudly.
+	if _, err := os.ReadDir(dir); err == nil {
+		t.Fatalf("environment does not enforce 0o111 directory perms "+
+			"(uid=%d, gid=%d); run as non-root user, or set %s=0 to skip",
+			os.Getuid(), os.Getgid(), needs.NonRoot.EnvVar)
+	}
 
 	got, err := Canonical(filepath.Join(dir, "file"))
 	require.NoError(t, err, "Canonical must work with execute-only parent dir")
@@ -30,9 +37,7 @@ func TestCanonical_ExecOnlyDir(t *testing.T) {
 }
 
 func TestWeaklyCanonical_ExecOnlyDir(t *testing.T) {
-	if os.Getuid() == 0 {
-		t.Skip("root bypasses permission checks")
-	}
+	needs.Need(t, needs.NonRoot)
 
 	tmp := canonicalTempDir(t)
 	dir := filepath.Join(tmp, "execonly")
@@ -42,16 +47,20 @@ func TestWeaklyCanonical_ExecOnlyDir(t *testing.T) {
 	require.NoError(t, os.Chmod(dir, 0o111))
 	t.Cleanup(func() { _ = os.Chmod(dir, 0o755) })
 
+	if _, err := os.ReadDir(dir); err == nil {
+		t.Fatalf("environment does not enforce 0o111 directory perms "+
+			"(uid=%d, gid=%d); run as non-root user, or set %s=0 to skip",
+			os.Getuid(), os.Getgid(), needs.NonRoot.EnvVar)
+	}
+
 	got, err := WeaklyCanonical(filepath.Join(dir, "file"))
 	require.NoError(t, err, "WeaklyCanonical must work with execute-only parent dir")
 	assert.Equal(t, filepath.Join(dir, "file"), got)
 }
 
 func TestCanonical_ExecOnlyDirCaseNormalization(t *testing.T) {
+	needs.Need(t, needs.NonRoot)
 	skipIfCaseSensitive(t)
-	if os.Getuid() == 0 {
-		t.Skip("root bypasses permission checks")
-	}
 
 	tmp := canonicalTempDir(t)
 	dir := filepath.Join(tmp, "ExecOnly")
@@ -60,6 +69,12 @@ func TestCanonical_ExecOnlyDirCaseNormalization(t *testing.T) {
 
 	require.NoError(t, os.Chmod(dir, 0o111))
 	t.Cleanup(func() { _ = os.Chmod(dir, 0o755) })
+
+	if _, err := os.ReadDir(dir); err == nil {
+		t.Fatalf("environment does not enforce 0o111 directory perms "+
+			"(uid=%d, gid=%d); run as non-root user, or set %s=0 to skip",
+			os.Getuid(), os.Getgid(), needs.NonRoot.EnvVar)
+	}
 
 	// On a case-insensitive FS, asking for wrong-case "mixedcase" should
 	// still return the on-disk name "MixedCase".

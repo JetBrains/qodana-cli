@@ -20,6 +20,7 @@ var (
 	ClangDeps      = Flag{"ClangDeps", "QT_ENABLE_CLANG_DEPS"}
 	CdnetDeps      = Flag{"CdnetDeps", "QT_ENABLE_CDNET_DEPS"}
 	CasefoldFS     = Flag{"CasefoldFS", "QT_ENABLE_CASEFOLD_FS"}
+	NonRoot        = Flag{"NonRoot", "QT_ENABLE_NON_ROOT"}
 )
 
 // Need skips the test if any of the given flags are disabled.
