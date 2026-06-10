@@ -54,3 +54,11 @@ func TestResolveEnv_FallsBackToFile(t *testing.T) {
 		t.Errorf("resolveEnv = %q, want fromfile", got)
 	}
 }
+
+func TestResolveEnv_ExplicitEmptyOverridesFile(t *testing.T) {
+	t.Setenv("QD_DOWNLOADDEPS_EMPTY", "")
+	file := map[string]string{"QD_DOWNLOADDEPS_EMPTY": "fromfile"}
+	if got := resolveEnv("QD_DOWNLOADDEPS_EMPTY", file); got != "" {
+		t.Errorf("resolveEnv = %q, want empty (explicit empty env must override .env)", got)
+	}
+}

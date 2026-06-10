@@ -4,6 +4,7 @@
 package downloaddeps
 
 import (
+	"errors"
 	"fmt"
 	"net/http"
 	"os"
@@ -57,16 +58,26 @@ func run(client *http.Client, root, configName, goos, goarch, token string, forc
 	if err != nil {
 		return err
 	}
-	if cfg.DestDir == "" || filepath.IsAbs(cfg.DestDir) || strings.Contains(cfg.DestDir, "..") {
+	cleanDest := filepath.Clean(cfg.DestDir)
+	if cfg.DestDir == "" || filepath.IsAbs(cleanDest) || cleanDest == ".." || strings.HasPrefix(cleanDest, ".."+string(filepath.Separator)) {
 		return fmt.Errorf("%s: dest_dir %q must be a relative path under the repo root", configName, cfg.DestDir)
 	}
 
 	names := make([]string, 0, len(cfg.Sha256))
 	for f := range cfg.Sha256 {
+		// Pin filenames become path segments under dest_dir; reject anything that could escape it.
+		if f == "" || f == "." || f == ".." || strings.ContainsAny(f, `/\`) {
+			return fmt.Errorf("%s: invalid file name %q in sha256 map", configName, f)
+		}
 		names = append(names, f)
 	}
 	sort.Strings(names)
 	selected := selectFiles(names, goos, goarch, all)
+
+	if force && !all && len(selected) < len(names) {
+		fmt.Fprintf(os.Stderr, "downloaddeps: %s: refreshing only %d of %d hashes; set QODANA_CLI_DEPS_ALL=1 to refresh every platform\n",
+			configName, len(selected), len(names))
+	}
 
 	if token == "" {
 		if force {
@@ -104,6 +115,8 @@ func run(client *http.Client, root, configName, goos, goarch, token string, forc
 func writePlaceholder(path string) error {
 	if _, err := os.Stat(path); err == nil {
 		return nil
+	} else if !errors.Is(err, os.ErrNotExist) {
+		return err
 	}
 	if err := os.MkdirAll(filepath.Dir(path), 0o755); err != nil {
 		return err

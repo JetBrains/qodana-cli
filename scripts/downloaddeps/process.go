@@ -33,7 +33,7 @@ func processFile(client *http.Client, cfg Config, filename, token, destPath stri
 	}
 	if sha != expected {
 		_ = os.Remove(destPath)
-		return "", fmt.Errorf("%s: sha256 mismatch: got %s, pinned %s (run with --force to update the pin)",
+		return "", fmt.Errorf("%s: sha256 mismatch: got %s, pinned %s (set QODANA_CLI_DEPS_FORCE=1 to refresh the pin)",
 			filename, sha, expected)
 	}
 	return sha, nil

@@ -29,9 +29,11 @@ func loadEnv(path string) map[string]string {
 	return out
 }
 
-// resolveEnv returns the value for key, preferring the real environment over the .env file.
+// resolveEnv returns the value for key, preferring the real environment over the .env file. An
+// explicitly-set variable wins even when empty, so `QODANA_CLI_DEPS_TOKEN= go generate` forces mock
+// mode regardless of what .env holds.
 func resolveEnv(key string, envFile map[string]string) string {
-	if v := os.Getenv(key); v != "" {
+	if v, ok := os.LookupEnv(key); ok {
 		return v
 	}
 	return envFile[key]

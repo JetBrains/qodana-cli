@@ -134,19 +134,13 @@ func TestRun_NormalMode_DownloadsAndVerifies(t *testing.T) {
 func TestRun_CacheHit_NoDownload(t *testing.T) {
 	body := []byte("cached clt")
 	sum := hex.EncodeToString(sha256Sum(body))
-	cfg := Config{Version: "v1", URL: "http://unused/$version/$filename", DestDir: "cdnet",
-		Sha256: map[string]string{"clt.zip": sum}}
-	root := fakeRepo(t, "cdnet", cfg)
-	if err := os.WriteFile(filepath.Join(root, "cdnet", "clt.zip"), body, 0o644); err != nil {
-		t.Fatal(err)
-	}
-
 	hits := 0
 	srv := muxServer(map[string][]byte{"clt.zip": body}, &hits)
 	defer srv.Close()
-	// point the cfg at the server but expect no hit
-	cfg.URL = srv.URL + "/$version/$filename"
-	root = fakeRepo(t, "cdnet", cfg)
+
+	cfg := Config{Version: "v1", URL: srv.URL + "/$version/$filename", DestDir: "cdnet",
+		Sha256: map[string]string{"clt.zip": sum}}
+	root := fakeRepo(t, "cdnet", cfg)
 	if err := os.WriteFile(filepath.Join(root, "cdnet", "clt.zip"), body, 0o644); err != nil {
 		t.Fatal(err)
 	}
@@ -156,6 +150,125 @@ func TestRun_CacheHit_NoDownload(t *testing.T) {
 	}
 	if hits != 0 {
 		t.Errorf("expected cache hit (0 downloads), got %d", hits)
+	}
+}
+
+// clangFiles is the full six-platform key set used by the clang-tidy pin.
+var clangFiles = []string{
+	"clang-tidy-linux-amd64.tar.gz", "clang-tidy-linux-arm64.tar.gz",
+	"clang-tidy-darwin-amd64.tar.gz", "clang-tidy-darwin-arm64.tar.gz",
+	"clang-tidy-windows-amd64.zip", "clang-tidy-windows-arm64.zip",
+}
+
+func TestRun_NoToken_MultiPlatform_OnlyHostPlaceholder(t *testing.T) {
+	sha := map[string]string{}
+	for _, f := range clangFiles {
+		sha[f] = ""
+	}
+	cfg := Config{Version: "v1", URL: "http://unused/$version/$filename", DestDir: "clang", Sha256: sha}
+	root := fakeRepo(t, "clang-tidy", cfg)
+
+	if err := run(http.DefaultClient, root, "clang-tidy", "linux", "amd64", "", false, false); err != nil {
+		t.Fatalf("run: %v", err)
+	}
+	for _, f := range clangFiles {
+		_, err := os.Stat(filepath.Join(root, "clang", f))
+		isHost := f == "clang-tidy-linux-amd64.tar.gz"
+		if isHost && err != nil {
+			t.Errorf("expected host placeholder %s, missing: %v", f, err)
+		}
+		if !isHost && err == nil {
+			t.Errorf("non-host file %s must not be created in placeholder mode", f)
+		}
+	}
+}
+
+func TestRun_NormalMode_MultiPlatform_OnlySelected(t *testing.T) {
+	amd := "clang-tidy-linux-amd64.tar.gz"
+	arm := "clang-tidy-linux-arm64.tar.gz"
+	win := "clang-tidy-windows-amd64.zip"
+	bodies := map[string][]byte{amd: []byte("AMD"), arm: []byte("ARM"), win: []byte("WIN")}
+	sha := map[string]string{}
+	for f, b := range bodies {
+		sha[f] = hex.EncodeToString(sha256Sum(b))
+	}
+	hits := 0
+	srv := muxServer(bodies, &hits)
+	defer srv.Close()
+	cfg := Config{Version: "v1", URL: srv.URL + "/$version/$filename", DestDir: "clang", Sha256: sha}
+	root := fakeRepo(t, "clang-tidy", cfg)
+
+	if err := run(srv.Client(), root, "clang-tidy", "linux", "amd64", "tok", false, false); err != nil {
+		t.Fatalf("run: %v", err)
+	}
+	if hits != 1 {
+		t.Errorf("expected exactly 1 download (host only), got %d", hits)
+	}
+	if _, err := os.Stat(filepath.Join(root, "clang", amd)); err != nil {
+		t.Errorf("host file not downloaded: %v", err)
+	}
+	for _, f := range []string{arm, win} {
+		if _, err := os.Stat(filepath.Join(root, "clang", f)); err == nil {
+			t.Errorf("non-host file %s must not be downloaded", f)
+		}
+	}
+}
+
+func TestRun_MissingConfig_Errors(t *testing.T) {
+	if err := run(http.DefaultClient, t.TempDir(), "nope", "linux", "amd64", "tok", false, false); err == nil {
+		t.Fatal("expected error for missing config, got nil")
+	}
+}
+
+func TestRun_MalformedConfig_Errors(t *testing.T) {
+	root := t.TempDir()
+	ddir := filepath.Join(root, "scripts", "downloaddeps")
+	if err := os.MkdirAll(ddir, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(ddir, "bad.json"), []byte("not json"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	if err := run(http.DefaultClient, root, "bad", "linux", "amd64", "tok", false, false); err == nil {
+		t.Fatal("expected error for malformed config, got nil")
+	}
+}
+
+func TestRun_RejectsBadFilenameKey(t *testing.T) {
+	cfg := Config{Version: "v1", URL: "http://unused/$filename", DestDir: "cdnet",
+		Sha256: map[string]string{"../escape": ""}}
+	root := fakeRepo(t, "cdnet", cfg)
+	if err := run(http.DefaultClient, root, "cdnet", "linux", "amd64", "", false, false); err == nil {
+		t.Fatal("expected error for path-traversal filename key, got nil")
+	}
+}
+
+// TestMain_ForceWithoutTokenFromDotEnv exercises Main's wiring end-to-end: it must locate the repo
+// root via go.mod, read QODANA_CLI_DEPS_FORCE from .env, and fail loud (force without a token).
+func TestMain_ForceWithoutTokenFromDotEnv(t *testing.T) {
+	root := t.TempDir()
+	if err := os.WriteFile(filepath.Join(root, "go.mod"), []byte("module x\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	ddir := filepath.Join(root, "scripts", "downloaddeps")
+	if err := os.MkdirAll(ddir, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	cfg := Config{Version: "v1", URL: "http://unused/$filename", DestDir: "cdnet",
+		Sha256: map[string]string{"clt.zip": ""}}
+	b, _ := json.MarshalIndent(cfg, "", "  ")
+	if err := os.WriteFile(filepath.Join(ddir, "cdnet.json"), b, 0o644); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(root, ".env"), []byte("QODANA_CLI_DEPS_FORCE=1\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	t.Setenv("QODANA_CLI_DEPS_TOKEN", "") // explicit empty: no token regardless of ambient env
+	t.Setenv("QODANA_CLI_DEPS_ALL", "")
+	t.Chdir(root)
+
+	if err := Main("cdnet"); err == nil {
+		t.Fatal("expected force-without-token error driven by .env FORCE, got nil")
 	}
 }
 
