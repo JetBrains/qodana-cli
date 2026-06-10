@@ -14,6 +14,14 @@ func TestInfoString(t *testing.T) {
 	assert.Contains(t, result, "https://jb.gg/qodana-cli")
 }
 
+func TestVersionString(t *testing.T) {
+	result := VersionString("1.0.0", "3.1.2", "0.12.6", "0.12.6")
+	assert.Contains(t, result, "Qodana CLI (1.0.0)")
+	assert.Contains(t, result, "publisher-cli: 3.1.2")
+	assert.Contains(t, result, "intellij-report-converter: 0.12.6")
+	assert.Contains(t, result, "qodana-web-ui: 0.12.6")
+}
+
 func TestPrimary(t *testing.T) {
 	result := Primary("Hello %s", "World")
 	assert.Equal(t, "Hello World", result)

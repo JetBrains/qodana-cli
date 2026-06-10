@@ -55,6 +55,17 @@ func InfoString(version string) string {
 	)
 }
 
+// VersionString returns version information with bundled library versions.
+func VersionString(version string, publisherVersion string, converterVersion string, webUiVersion string) string {
+	result := fmt.Sprintf("Qodana CLI (%s)\n", version)
+	result += "https://jb.gg/qodana-cli\n\n"
+	result += "Bundled libraries:\n"
+	result += fmt.Sprintf("  publisher-cli: %s\n", publisherVersion)
+	result += fmt.Sprintf("  intellij-report-converter: %s\n", converterVersion)
+	result += fmt.Sprintf("  qodana-web-ui: %s\n", webUiVersion)
+	return result
+}
+
 // IsInteractive returns true if the current execution environment is interactive (useful for colors/animations toggle).
 func IsInteractive() bool {
 	return !qdenv.IsContainer() && os.Getenv("NONINTERACTIVE") == "" && (isatty.IsTerminal(os.Stdout.Fd()) || isatty.IsCygwinTerminal(os.Stdout.Fd()))

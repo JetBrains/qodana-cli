@@ -23,6 +23,7 @@ import (
 	"log"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/JetBrains/qodana-cli/internal/platform/product"
 )
@@ -46,6 +47,19 @@ func (library Library) GetLibPath(cacheDir string) string {
 	matchedFile := findLibFile(library)
 	libPath := extractLib(cacheDir, matchedFile)
 	return libPath
+}
+
+func (library Library) GetVersion() string {
+	matchedFile := findLibFile(library)
+	filename := filepath.Base(matchedFile)
+	// Remove .jar extension
+	nameWithoutExt := filename[:len(filename)-4]
+	// Split by dash and get last part (version)
+	parts := strings.Split(nameWithoutExt, "-")
+	if len(parts) >= 2 {
+		return parts[len(parts)-1]
+	}
+	return "unknown"
 }
 
 func findLibFile(library Library) string {

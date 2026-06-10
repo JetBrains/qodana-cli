@@ -25,6 +25,7 @@ import (
 	"github.com/JetBrains/qodana-cli/internal/platform/msg"
 	"github.com/JetBrains/qodana-cli/internal/platform/qdenv"
 	"github.com/JetBrains/qodana-cli/internal/platform/version"
+	"github.com/JetBrains/qodana-cli/internal/tooling"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
@@ -116,6 +117,15 @@ func newRootCommand() *cobra.Command {
 	if err := viper.BindPFlag("log-level", rootCmd.PersistentFlags().Lookup("log-level")); err != nil {
 		log.Fatal(err)
 	}
+
+	// Set custom version template with bundled library versions
+	rootCmd.SetVersionTemplate(msg.VersionString(
+		version.Version,
+		tooling.PublisherCli.GetVersion(),
+		tooling.ReportConverter.GetVersion(),
+		tooling.QodanaWebUi.GetVersion(),
+	))
+
 	return rootCmd
 }
 
