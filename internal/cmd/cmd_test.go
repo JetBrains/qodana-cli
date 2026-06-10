@@ -152,10 +152,19 @@ func TestVersion(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	expected := fmt.Sprintf("qodana version %s\n", version.Version)
 	actual := string(out)
-	if expected != actual {
-		t.Fatalf("expected \"%s\" got \"%s\"", expected, actual)
+	// Verify that output contains expected version components
+	if !strings.Contains(actual, fmt.Sprintf("Qodana CLI (%s)", version.Version)) {
+		t.Fatalf("expected output to contain 'Qodana CLI (%s)', got \"%s\"", version.Version, actual)
+	}
+	if !strings.Contains(actual, "publisher-cli:") {
+		t.Fatalf("expected output to contain 'publisher-cli:', got \"%s\"", actual)
+	}
+	if !strings.Contains(actual, "intellij-report-converter:") {
+		t.Fatalf("expected output to contain 'intellij-report-converter:', got \"%s\"", actual)
+	}
+	if !strings.Contains(actual, "qodana-web-ui:") {
+		t.Fatalf("expected output to contain 'qodana-web-ui:', got \"%s\"", actual)
 	}
 }
 
