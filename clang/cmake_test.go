@@ -428,3 +428,53 @@ func TestPickCompiler(t *testing.T) {
 		})
 	}
 }
+
+// TestPickCompilerFor_Windows guards the Windows path: CMake records the compiler with
+// backslashes (and often an unquoted 8.3 short path), which POSIX shell splitting would
+// mangle into an unrunnable path like C:PROGRA~1LLVMbinCLANG_~1.EXE. (QD-14839)
+func TestPickCompilerFor_Windows(t *testing.T) {
+	cases := []struct {
+		name   string
+		cmd    Command
+		want   string
+		wantOK bool
+	}{
+		{
+			name:   "unquoted_short_path",
+			cmd:    Command{Command: `C:\PROGRA~1\LLVM\bin\CLANG_~1.EXE -E -Wp,-v -xc++ NUL`, File: "main.cpp"},
+			want:   `C:\PROGRA~1\LLVM\bin\CLANG_~1.EXE`,
+			wantOK: true,
+		},
+		{
+			name:   "quoted_path_with_spaces",
+			cmd:    Command{Command: `"C:\Program Files\LLVM\bin\clang++.exe" -std=c++17 -c src\main.cpp`, File: "src/main.cpp"},
+			want:   `C:\Program Files\LLVM\bin\clang++.exe`,
+			wantOK: true,
+		},
+		{
+			name:   "unquoted_path_no_args",
+			cmd:    Command{Command: `C:\tools\clang.exe`, File: "a.c"},
+			want:   `C:\tools\clang.exe`,
+			wantOK: true,
+		},
+		{
+			name:   "unterminated_quote_falls_back_to_arguments",
+			cmd:    Command{Command: `"C:\bad`, Arguments: []string{`C:\tools\clang.exe`, "-c"}, File: "a.c"},
+			want:   `C:\tools\clang.exe`,
+			wantOK: true,
+		},
+		{
+			name:   "unterminated_quote_no_arguments_skipped",
+			cmd:    Command{Command: `"C:\bad`, File: "a.c"},
+			want:   "",
+			wantOK: false,
+		},
+	}
+	for _, tt := range cases {
+		t.Run(tt.name, func(t *testing.T) {
+			got, ok := pickCompilerFor(tt.cmd, "windows")
+			assert.Equal(t, tt.wantOK, ok, "ok mismatch")
+			assert.Equal(t, tt.want, got, "compiler mismatch")
+		})
+	}
+}
