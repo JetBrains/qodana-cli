@@ -292,7 +292,11 @@ func TestLinterRun(t *testing.T) {
 				// The trailing "--" makes everything before it reach
 				// clang-tidy's option parser. -Wno-unused after "--" is a
 				// (no-op) compiler arg.
-				"--clang-args", fmt.Sprintf("--config-file=%s -- -Wno-unused", overridePath),
+				//
+				// --clang-args is split with POSIX shell rules, which would eat the
+				// backslashes of a Windows path; clang-tidy accepts forward slashes on
+				// every platform, so forward-slash the override path to stay portable.
+				"--clang-args", fmt.Sprintf("--config-file=%s -- -Wno-unused", filepath.ToSlash(overridePath)),
 			},
 		)
 		require.NoError(t, command.Execute())
