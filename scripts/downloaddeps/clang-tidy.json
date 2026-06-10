@@ -3,11 +3,11 @@
   "url": "https://packages.jetbrains.team/files/p/sa/qodana-cli-deps/clang-tidy/$version/$filename",
   "dest_dir": "clang",
   "sha256": {
-    "clang-tidy-darwin-amd64.tar.gz": "",
-    "clang-tidy-darwin-arm64.tar.gz": "",
-    "clang-tidy-linux-amd64.tar.gz": "",
-    "clang-tidy-linux-arm64.tar.gz": "",
-    "clang-tidy-windows-amd64.zip": "",
-    "clang-tidy-windows-arm64.zip": ""
+    "clang-tidy-darwin-amd64.tar.gz": "4dad292fd47d3f9a2502022e1e42830327b19921ebd6d92729230147ee33cf87",
+    "clang-tidy-darwin-arm64.tar.gz": "82f62f6313f596188867ae522916d5e088592a385e26ccd692205729a0c832e4",
+    "clang-tidy-linux-amd64.tar.gz": "dea43a4f013db12fd352df6aac2884a760c53dd4eeac1f2e7114a1e74846bf95",
+    "clang-tidy-linux-arm64.tar.gz": "75b12aea3d16bef36b01c4bac2fbd7770587281bbc5a9c6da549247c0bf6ef33",
+    "clang-tidy-windows-amd64.zip": "193d08304dae62f6af0c3f878ee57cb5062a2e857f016efbfd33bbaa7a8bdce5",
+    "clang-tidy-windows-arm64.zip": "f342f448e8e810aafb90d77a0fa8a9204c9a01bc042f0c9ba72264d80a7fd076"
   }
 }
