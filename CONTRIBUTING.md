@@ -38,7 +38,7 @@ Edit `.env` and add your tokens:
 
 `go generate ./...` produces every build-time artifact: the public Maven JARs and, when
 `QODANA_CLI_DEPS_TOKEN` is set, the closed-source clang-tidy / ReSharper CLT archives (downloaded from
-Space and verified against the pins in `scripts/downloaddeps/`). Without the token it writes empty
+Space and verified against the pins `clang/clang-tidy.json` and `cdnet/cdnet.json`). Without the token it writes empty
 placeholders so the project still compiles — the third-party linter tests then skip.
 
 ```sh
@@ -74,6 +74,8 @@ To skip the third-party linter tests (if you don't have the clang/cdnet dependen
 ```sh
 QT_ENABLE_CLANG_DEPS=0 QT_ENABLE_CDNET_DEPS=0 go test -v ./...
 ```
+These tests run on Linux only — qodana-clang/qodana-cdnet are container linters, so the tests are
+compiled out on macOS/Windows (the flags above apply on Linux).
 
 Dry-run goreleaser:
 
@@ -107,15 +109,15 @@ brew install cmake dotnet openjdk@21
 
 ### Bumping a third-party linter version
 
-The pinned versions and SHA-256 hashes live in `scripts/downloaddeps/clang-tidy.json` and
-`scripts/downloaddeps/cdnet.json` (Renovate opens PRs that bump the `version` field). After a version
+The pinned versions and SHA-256 hashes live in `clang/clang-tidy.json` and
+`cdnet/cdnet.json` (Renovate opens PRs that bump the `version` field). After a version
 changes, refresh the hashes from Space and commit the result:
 
 ```sh
 # clang-tidy ships one archive per platform, so --all fetches them all:
-QODANA_CLI_DEPS_FORCE=1 QODANA_CLI_DEPS_ALL=1 go run scripts/download-deps.go clang-tidy
-QODANA_CLI_DEPS_FORCE=1 go run scripts/download-deps.go cdnet
-git diff scripts/downloaddeps/   # only the sha256 values change
+QODANA_CLI_DEPS_FORCE=1 QODANA_CLI_DEPS_ALL=1 go generate ./clang/...
+QODANA_CLI_DEPS_FORCE=1 go generate ./cdnet/...
+git diff clang/clang-tidy.json cdnet/cdnet.json   # only the sha256 values change
 ```
 
 ### Building a custom 3rd party linter

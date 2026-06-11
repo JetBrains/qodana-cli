@@ -40,12 +40,12 @@
     },
     {
       "fileMatch": [
-        "^scripts/downloaddeps/(clang-tidy|cdnet)\\.json$"
+        "^(clang/clang-tidy|cdnet/cdnet)\\.json$"
       ],
       "matchStrings": [
         "\"version\":\\s*\"(?<currentValue>v[^\"]+)\""
       ],
-      "depNameTemplate": "{{{replace 'scripts/downloaddeps/(.+)\\.json' '$1' packageFile}}}",
+      "depNameTemplate": "{{{replace '.*/(.+)\\.json' '$1' packageFile}}}",
       "datasourceTemplate": "custom.qodana-cli-deps",
       "versioningTemplate": "loose"
     }
@@ -69,7 +69,7 @@
       "matchDatasources": ["custom.qodana-cli-deps"],
       "commitMessagePrefix": "QD-14839 ",
       "prBodyNotes": [
-        "After merge, refresh the SHA-256 pins from Space and commit the result: `QODANA_CLI_DEPS_FORCE=1 QODANA_CLI_DEPS_ALL=1 go run scripts/download-deps.go clang-tidy` (clang-tidy) or `QODANA_CLI_DEPS_FORCE=1 go run scripts/download-deps.go cdnet` (cdnet)."
+        "After merge, refresh the SHA-256 pins from Space and commit the result: `QODANA_CLI_DEPS_FORCE=1 QODANA_CLI_DEPS_ALL=1 go generate ./clang/...` (clang-tidy) or `QODANA_CLI_DEPS_FORCE=1 go generate ./cdnet/...` (cdnet)."
       ]
     }
   ],
