@@ -46,18 +46,3 @@ func TestNeed_RunsWhenEnabled(t *testing.T) {
 	Need(t, f)
 	// if we reach here, Need did not skip
 }
-
-func TestFlag_AvailableOn(t *testing.T) {
-	// clang/cdnet linters only run in a Linux container, so their deps flags are linux-only.
-	for _, f := range []Flag{ClangDeps, CdnetDeps} {
-		assert.True(t, f.availableOn("linux"), "%s should be available on linux", f.Name)
-		assert.False(t, f.availableOn("darwin"), "%s should not be available on darwin", f.Name)
-		assert.False(t, f.availableOn("windows"), "%s should not be available on windows", f.Name)
-	}
-	// Platform-agnostic flags are available on every OS.
-	for _, f := range []Flag{Docker, ContainerTests, CasefoldFS} {
-		for _, goos := range []string{"linux", "darwin", "windows"} {
-			assert.True(t, f.availableOn(goos), "%s should be available on %s", f.Name, goos)
-		}
-	}
-}

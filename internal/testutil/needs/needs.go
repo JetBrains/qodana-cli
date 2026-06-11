@@ -2,7 +2,6 @@ package needs
 
 import (
 	"os"
-	"runtime"
 	"testing"
 )
 
@@ -13,36 +12,26 @@ import (
 type Flag struct {
 	Name   string
 	EnvVar string
-	// GOOS, when non-empty, restricts the prerequisite to that OS; Need skips the test on any other
-	// GOOS regardless of the env var. qodana-clang/qodana-cdnet are Linux-container-only.
-	GOOS string
 }
 
 var (
 	Docker         = Flag{Name: "Docker", EnvVar: "QT_ENABLE_DOCKER"}
 	ContainerTests = Flag{Name: "ContainerTests", EnvVar: "QT_ENABLE_CONTAINER_TESTS"}
-	ClangDeps      = Flag{Name: "ClangDeps", EnvVar: "QT_ENABLE_CLANG_DEPS", GOOS: "linux"}
-	CdnetDeps      = Flag{Name: "CdnetDeps", EnvVar: "QT_ENABLE_CDNET_DEPS", GOOS: "linux"}
+	ClangDeps      = Flag{Name: "ClangDeps", EnvVar: "QT_ENABLE_CLANG_DEPS"}
+	CdnetDeps      = Flag{Name: "CdnetDeps", EnvVar: "QT_ENABLE_CDNET_DEPS"}
 	CasefoldFS     = Flag{Name: "CasefoldFS", EnvVar: "QT_ENABLE_CASEFOLD_FS"}
 )
 
-// Need skips the test if any of the given flags are unavailable on this OS or disabled.
+// Need skips the test if any of the given flags are disabled. OS restrictions are expressed by
+// build-constraining the test file (e.g. //go:build linux), not here: qodana-clang/qodana-cdnet
+// linter tests live in linux-only files.
 func Need(t testing.TB, flags ...Flag) {
 	t.Helper()
 	for _, f := range flags {
-		if !f.availableOn(runtime.GOOS) {
-			t.Skipf("skipping: %s only runs on %s (current OS: %s)", f.Name, f.GOOS, runtime.GOOS)
-		}
 		if !f.check(t) {
 			t.Skipf("skipping: requires %s (set %s=1 to enable)", f.Name, f.EnvVar)
 		}
 	}
-}
-
-// availableOn reports whether the flag's prerequisite can exist on goos. An empty GOOS is
-// platform-agnostic and available everywhere.
-func (f Flag) availableOn(goos string) bool {
-	return f.GOOS == "" || f.GOOS == goos
 }
 
 // check reports whether the flag is active and fatals on invalid values.

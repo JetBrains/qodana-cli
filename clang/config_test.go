@@ -1,15 +1,12 @@
 package main
 
 import (
-	"bytes"
 	"os"
-	"os/exec"
 	"path/filepath"
 	"testing"
 
 	"github.com/JetBrains/qodana-cli/internal/platform/qdyaml"
 	"github.com/JetBrains/qodana-cli/internal/platform/thirdpartyscan"
-	"github.com/JetBrains/qodana-cli/internal/testutil/needs"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -415,36 +412,3 @@ func TestProcessConfig_AllIncludesFiltered_WithConfig_DefersToConfig(t *testing.
 	assert.Equal(t, "", result)
 }
 
-// TestDefaultChecks_AcceptedByClangTidy is a smoke test that the curated
-// defaultChecks string is accepted by the real (embedded) clang-tidy. Runs
-// clang-tidy --list-checks --checks=<defaultChecks> and confirms:
-//   - a few expected category names appear in stdout,
-//   - stderr carries no "unknown check" warnings (typo guard).
-func TestDefaultChecks_AcceptedByClangTidy(t *testing.T) {
-	needs.Need(t, needs.ClangDeps)
-
-	tmpDir := t.TempDir()
-	mountInfo, err := ClangLinter{}.MountTools(tmpDir)
-	require.NoError(t, err, "mounting the embedded clang-tidy must succeed when ClangDeps is on")
-	bin := mountInfo[thirdpartyscan.Clang]
-
-	var stdout, stderr bytes.Buffer
-	cmd := exec.Command(bin, "--list-checks", "--checks="+defaultChecks)
-	// Force English output so the typo-guard substring match below is locale-stable.
-	cmd.Env = append(os.Environ(), "LC_ALL=C")
-	cmd.Stdout = &stdout
-	cmd.Stderr = &stderr
-	if err := cmd.Run(); err != nil {
-		t.Fatalf("clang-tidy rejected defaultChecks: %v\nstderr: %s", err, stderr.String())
-	}
-
-	out := stdout.String()
-	for _, want := range []string{"bugprone-", "performance-", "readability-"} {
-		assert.Contains(t, out, want, "enabled check list should contain %q", want)
-	}
-	errOut := stderr.String()
-	assert.NotContains(t, errOut, "unknown check",
-		"defaultChecks must not reference unknown checks; stderr: %s", errOut)
-	assert.NotContains(t, errOut, "does not exist",
-		"defaultChecks must not reference non-existent checks; stderr: %s", errOut)
-}
