@@ -38,7 +38,7 @@ Edit `.env` and add your tokens:
 
 `go generate ./...` produces every build-time artifact: the public Maven JARs and, when
 `QODANA_CLI_DEPS_TOKEN` is set, the closed-source clang-tidy / ReSharper CLT archives (downloaded from
-Space and verified against the pins `clang/clang-tidy.json` and `cdnet/cdnet.json`). Without the token it writes empty
+Space and verified against the `clang/clang-tidy.json` and `cdnet/cdnet.json` pins). Without the token it writes empty
 placeholders so the project still compiles — the third-party linter tests then skip.
 
 ```sh

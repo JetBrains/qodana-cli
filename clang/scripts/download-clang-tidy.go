@@ -71,6 +71,12 @@ func main() {
 		selected = []string{targetArchive()}
 	}
 
+	// A partial --force refresh (one platform) of the multi-platform clang-tidy pin would rewrite
+	// only the host's hash and silently leave the others stale; warn so a maintainer adds --all.
+	if force && !all && len(selected) < len(p.Sha256) {
+		fmt.Fprintf(os.Stderr, "download-clang-tidy: refreshing only %d of %d platform hashes; set QODANA_CLI_DEPS_ALL=1 to refresh all\n", len(selected), len(p.Sha256))
+	}
+
 	if token == "" {
 		if force {
 			log.Fatalf("QODANA_CLI_DEPS_FORCE is set but %s is empty: the auth-only repo cannot be refreshed", tokenEnv)
@@ -200,6 +206,12 @@ func readPin() pin {
 	var p pin
 	if err := json.Unmarshal(data, &p); err != nil {
 		log.Fatalf("parse %s: %s", pinFile, err)
+	}
+	// Pin keys become filenames written next to the pin; reject anything that could escape the dir.
+	for name := range p.Sha256 {
+		if name == "" || name == "." || name == ".." || strings.ContainsAny(name, `/\`) {
+			log.Fatalf("%s: invalid file name %q in sha256 (no path separators allowed)", pinFile, name)
+		}
 	}
 	return p
 }

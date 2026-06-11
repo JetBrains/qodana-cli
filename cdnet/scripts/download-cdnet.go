@@ -165,6 +165,12 @@ func readPin() pin {
 	if err := json.Unmarshal(data, &p); err != nil {
 		log.Fatalf("parse %s: %s", pinFile, err)
 	}
+	// Pin keys become filenames written next to the pin; reject anything that could escape the dir.
+	for name := range p.Sha256 {
+		if name == "" || name == "." || name == ".." || strings.ContainsAny(name, `/\`) {
+			log.Fatalf("%s: invalid file name %q in sha256 (no path separators allowed)", pinFile, name)
+		}
+	}
 	return p
 }
 
