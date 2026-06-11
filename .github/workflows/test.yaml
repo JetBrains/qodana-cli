@@ -32,10 +32,11 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Require the deps token
-        # The real clang/cdnet linter tests always run, so the token is mandatory: a missing one
-        # (e.g. an accidentally-deleted Actions secret) must fail loud here, never silently skip.
-        if: env.QODANA_CLI_DEPS_TOKEN == ''
+      - name: Require the deps token (Linux real-mode)
+        # qodana-clang/qodana-cdnet only run in a Linux container, so the real linter tests run on
+        # Linux only and the deps token is mandatory there. A missing one (e.g. an accidentally-deleted
+        # Actions secret) must fail loud, never silently skip. Other OSes build with placeholder embeds.
+        if: runner.os == 'Linux' && env.QODANA_CLI_DEPS_TOKEN == ''
         shell: bash
         run: |
           echo "::error::QODANA_CLI_DEPS_TOKEN is not set; the real clang/cdnet linter tests cannot run (was the Actions secret deleted?)." >&2
@@ -59,28 +60,10 @@ jobs:
           distribution: temurin
           java-version: 21
 
-      - name: Install Ninja + LLVM (Windows clang real-mode)
-        # cmake defaults to the MSVC generator on Windows, which does not emit compile_commands.json;
-        # the clang TestLinterRun bootstrap needs Ninja + clang to produce it.
-        if: runner.os == 'Windows'
-        shell: pwsh
-        run: |
-          choco install ninja llvm -y
-          clang --version
-          ninja --version
-
-      - name: Force clang/Ninja CMake generator (Windows)
-        if: runner.os == 'Windows'
-        shell: bash
-        run: |
-          {
-            echo "CC=clang"
-            echo "CXX=clang++"
-            echo "CMAKE_GENERATOR=Ninja"
-          } >> "$GITHUB_ENV"
-
       - name: Install .NET 8 (cdnet real-mode)
-        # The pinned ReSharper CLT ships tools/net8.0/...; the cdnet TestLinterRun runs `dotnet <clt.dll>`.
+        # qodana-cdnet runs only in a Linux container, so the cdnet TestLinterRun (which runs
+        # `dotnet <clt.dll>`) is Linux-only; the pinned ReSharper CLT ships tools/net8.0/.
+        if: runner.os == 'Linux'
         uses: actions/setup-dotnet@v4
         with:
           dotnet-version: '8.0.x'
@@ -92,8 +75,11 @@ jobs:
 
       - name: Build
         # Build everything that will be tested. Although go test performs a build itself, gotestfmt will panic on a
-        # failed build.
+        # failed build. The clang/cdnet archives are fetched only on Linux (where their linter tests run);
+        # other OSes build with placeholder embeds, since those linters are container/Linux-only.
         shell: bash
+        env:
+          QODANA_CLI_DEPS_TOKEN: ${{ runner.os == 'Linux' && secrets.QODANA_CLI_DEPS_TOKEN || '' }}
         run: |
           go generate -v ./...
           go build -v ./...
@@ -110,6 +96,7 @@ jobs:
           QODANA_LICENSE_ONLY_TOKEN: ${{ secrets.QODANA_LICENSE_ONLY_TOKEN }}
           QT_ENABLE_DOCKER: ${{ inputs.container-engine != 'none' && '1' || '0' }}
           QT_ENABLE_CONTAINER_TESTS: ${{ inputs.os == 'ubuntu-latest' && inputs.container-engine == 'docker@latest' && '1' || '0' }}
+          # clang/cdnet deps tests are gated to Linux in internal/testutil/needs; they skip on other OSes.
           QT_ENABLE_CLANG_DEPS: '1'
           QT_ENABLE_CDNET_DEPS: '1'
 
