@@ -1,7 +1,6 @@
 {
   "version": "v1.0.0",
   "url": "https://packages.jetbrains.team/files/p/sa/qodana-cli-deps/clang-tidy/$version/$filename",
-  "dest_dir": "clang",
   "sha256": {
     "clang-tidy-darwin-amd64.tar.gz": "4dad292fd47d3f9a2502022e1e42830327b19921ebd6d92729230147ee33cf87",
     "clang-tidy-darwin-arm64.tar.gz": "82f62f6313f596188867ae522916d5e088592a385e26ccd692205729a0c832e4",
