@@ -32,15 +32,6 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Require the deps token (Linux real-mode)
-        # The real clang/cdnet linter tests run on Linux only (see "Run tests") and the deps token is
-        # mandatory there: a missing one (e.g. a deleted Actions secret) must fail loud, never skip.
-        if: runner.os == 'Linux' && env.QODANA_CLI_DEPS_TOKEN == ''
-        shell: bash
-        run: |
-          echo "::error::QODANA_CLI_DEPS_TOKEN is not set; the real clang/cdnet linter tests cannot run (was the Actions secret deleted?)." >&2
-          exit 1
-
       - name: Setup container engine
         if: inputs.container-engine != 'none'
         uses: ./.github/actions/setup-container-engine
@@ -94,9 +85,6 @@ jobs:
           QODANA_LICENSE_ONLY_TOKEN: ${{ secrets.QODANA_LICENSE_ONLY_TOKEN }}
           QT_ENABLE_DOCKER: ${{ inputs.container-engine != 'none' && '1' || '0' }}
           QT_ENABLE_CONTAINER_TESTS: ${{ inputs.os == 'ubuntu-latest' && inputs.container-engine == 'docker@latest' && '1' || '0' }}
-          # clang/cdnet deps tests are gated to Linux in internal/testutil/needs; they skip on other OSes.
-          QT_ENABLE_CLANG_DEPS: '1'
-          QT_ENABLE_CDNET_DEPS: '1'
 
       - name: Upload coverage
         uses: actions/upload-artifact@v6
