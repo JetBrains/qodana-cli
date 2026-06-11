@@ -13,9 +13,8 @@ import (
 type Flag struct {
 	Name   string
 	EnvVar string
-	// GOOS, when non-empty, restricts the prerequisite to that operating system: on any other
-	// GOOS the flag is unavailable and Need skips the test regardless of the env var. qodana-clang
-	// and qodana-cdnet only run inside a Linux container, so their deps flags are linux-only.
+	// GOOS, when non-empty, restricts the prerequisite to that OS; Need skips the test on any other
+	// GOOS regardless of the env var. qodana-clang/qodana-cdnet are Linux-container-only.
 	GOOS string
 }
 

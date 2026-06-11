@@ -33,9 +33,8 @@ jobs:
           fetch-depth: 0
 
       - name: Require the deps token (Linux real-mode)
-        # qodana-clang/qodana-cdnet only run in a Linux container, so the real linter tests run on
-        # Linux only and the deps token is mandatory there. A missing one (e.g. an accidentally-deleted
-        # Actions secret) must fail loud, never silently skip. Other OSes build with placeholder embeds.
+        # The real clang/cdnet linter tests run on Linux only (see "Run tests") and the deps token is
+        # mandatory there: a missing one (e.g. a deleted Actions secret) must fail loud, never skip.
         if: runner.os == 'Linux' && env.QODANA_CLI_DEPS_TOKEN == ''
         shell: bash
         run: |
@@ -61,8 +60,7 @@ jobs:
           java-version: 21
 
       - name: Install .NET 8 (cdnet real-mode)
-        # qodana-cdnet runs only in a Linux container, so the cdnet TestLinterRun (which runs
-        # `dotnet <clt.dll>`) is Linux-only; the pinned ReSharper CLT ships tools/net8.0/.
+        # cdnet's TestLinterRun runs `dotnet <clt.dll>`; the pinned ReSharper CLT targets net8.0.
         if: runner.os == 'Linux'
         uses: actions/setup-dotnet@v4
         with:
@@ -75,8 +73,8 @@ jobs:
 
       - name: Build
         # Build everything that will be tested. Although go test performs a build itself, gotestfmt will panic on a
-        # failed build. The clang/cdnet archives are fetched only on Linux (where their linter tests run);
-        # other OSes build with placeholder embeds, since those linters are container/Linux-only.
+        # failed build. The deps token is passed only on Linux (where the linter tests run); other OSes
+        # build with placeholder embeds.
         shell: bash
         env:
           QODANA_CLI_DEPS_TOKEN: ${{ runner.os == 'Linux' && secrets.QODANA_CLI_DEPS_TOKEN || '' }}
