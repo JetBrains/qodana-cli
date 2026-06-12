@@ -13,6 +13,7 @@ jobs:
     runs-on: ubuntu-latest
     env:
       GITHUB_TOKEN: ${{ secrets.QODANA_JBR_TOKEN }}
+      QODANA_CLI_DEPS_TOKEN: ${{ secrets.QODANA_CLI_DEPS_TOKEN }}
     permissions:
       checks: write
       pull-requests: write
@@ -21,7 +22,6 @@ jobs:
       security-events: write
     steps:
       - uses: actions/checkout@v6
-      - uses: ./.github/actions/mock-dependencies
       - name: Setup Go
         uses: actions/setup-go@v6
         with:
@@ -30,9 +30,10 @@ jobs:
       - uses: ./.github/actions/qodana-build-cache
       - name: Download CLI dependencies
         # Golangci-lint, in their infinite wisdom, do not allow you to disable typecheck.
-        # Because of this, the project NEEDS to be compileable to be linted.
+        # Because of this, the project NEEDS to be compileable to be linted — which needs the real
+        # clang/cdnet //go:embed archives, so generate everything (QODANA_CLI_DEPS_TOKEN required).
         # https://golangci-lint.run/docs/welcome/faq/#why-do-you-have-typecheck-errors
-        run: go generate -v ./internal/tooling/...
+        run: go generate -v ./...
       - name: golangci-lint
         uses: golangci/golangci-lint-action@v9
         with:
@@ -84,7 +85,6 @@ jobs:
       - uses: actions/checkout@v6
         with:
           fetch-depth: 0
-      - uses: ./.github/actions/mock-dependencies
       - uses: docker/login-action@v3
         with:
           registry: registry.jetbrains.team
@@ -94,6 +94,13 @@ jobs:
         with:
           cache-dependency-path: "**/*.sum"
           go-version-file: go.mod
+      - uses: ./.github/actions/qodana-build-cache
+      - name: Download CLI dependencies
+        # Qodana compiles the project in-container, which needs the real clang/cdnet //go:embed archives.
+        env:
+          GITHUB_TOKEN: ${{ secrets.QODANA_JBR_TOKEN }}
+          QODANA_CLI_DEPS_TOKEN: ${{ secrets.QODANA_CLI_DEPS_TOKEN }}
+        run: go generate -v ./...
       - name: Download coverage artifacts
         uses: actions/download-artifact@v7
         with:

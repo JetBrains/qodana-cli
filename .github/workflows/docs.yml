@@ -15,10 +15,12 @@ jobs:
       GITHUB_TOKEN: ${{ secrets.QODANA_JBR_TOKEN }}
     steps:
       - uses: actions/checkout@v6
-      - uses: ./.github/actions/mock-dependencies
       - uses: actions/setup-go@v6
         with:
           cache-dependency-path: "**/*.sum"
           go-version-file: go.mod
       - name: Check README.md is up to date
+        # go generate downloads the real clang/cdnet //go:embed archives (QODANA_CLI_DEPS_TOKEN required).
+        env:
+          QODANA_CLI_DEPS_TOKEN: ${{ secrets.QODANA_CLI_DEPS_TOKEN }}
         run: go generate ./... && go run scripts/generate-docs.go --check
