@@ -31,22 +31,19 @@ cp .env.example .env
 ```
 
 Edit `.env` and add your tokens:
-- `QODANA_CLI_DEPS_TOKEN` – read token for the closed-source linter archives on JetBrains Space (`packages.jetbrains.team/files/p/sa/qodana-cli-deps`). Without it, `go generate` writes empty placeholders and the third-party linter tests skip.
+- `QODANA_CLI_DEPS_TOKEN` – read token for the closed-source linter archives on JetBrains Space (`packages.jetbrains.team/files/p/sa/qodana-cli-deps`). **Required** — without it `go generate` fails (there is no mock fallback).
 - `QODANA_LICENSE_ONLY_TOKEN` – for running tests that require license validation (get a temporary token from Qodana Cloud)
 
 ### Prepare embedded tools
 
-`go generate ./...` produces every build-time artifact: the public Maven JARs and, when
-`QODANA_CLI_DEPS_TOKEN` is set, the closed-source clang-tidy / ReSharper CLT archives (downloaded from
-Space and verified against the `clang/clang-tidy.json` and `cdnet/cdnet.json` pins). Without the token it writes empty
-placeholders so the project still compiles — the third-party linter tests then skip.
+`go generate ./...` produces every build-time artifact: the public Maven JARs and the closed-source
+clang-tidy / ReSharper CLT archives (downloaded from Space and verified against the
+`clang/clang-tidy.json` and `cdnet/cdnet.json` dependency files). `QODANA_CLI_DEPS_TOKEN` is **required** —
+without it `go generate` fails; there is no mock fallback.
 
 ```sh
 go generate ./...
 ```
-
-External contributors (no token) get the public JARs plus placeholders, which is enough to build and run
-the rest of the suite.
 
 `cd` into the `cli` directory and run for debug:
 
@@ -70,7 +67,7 @@ Test your code with a human-readable report (requires `go install github.com/mfr
 go test -timeout 0 -json -v ./... > test.json 2>&1; tparse -all -file=test.json
 ```
 
-To skip the third-party linter tests (if you don't have the clang/cdnet dependencies):
+To skip the third-party linter tests (they are slower and container-based):
 ```sh
 QT_ENABLE_CLANG_DEPS=0 QT_ENABLE_CDNET_DEPS=0 go test -v ./...
 ```
@@ -101,9 +98,10 @@ brew install cmake dotnet openjdk@21
    ```sh
    go generate ./...
    ```
-3. Run all tests with Java 21:
+3. Run all tests with Java 21 (`.env` has no `export`, so `set -a` exports the tokens to `go test`;
+   `go generate` reads `.env` directly and needs no `set -a`):
    ```sh
-   source .env
+   set -a; source .env; set +a
    go test -timeout 0 -v ./...
    ```
 
@@ -114,9 +112,10 @@ The pinned versions and SHA-256 hashes live in `clang/clang-tidy.json` and
 changes, refresh the hashes from Space and commit the result:
 
 ```sh
-# clang-tidy ships one archive per platform, so --all fetches them all:
-QODANA_CLI_DEPS_FORCE=1 QODANA_CLI_DEPS_ALL=1 go generate ./clang/...
-QODANA_CLI_DEPS_FORCE=1 go generate ./cdnet/...
+# clang-tidy ships one archive per platform, so -all refreshes them all. Flags can't pass through
+# `go generate`, so run the scripts directly from the linter dir:
+( cd clang && go run scripts/download-clang-tidy.go -force -all )
+( cd cdnet && go run scripts/download-cdnet.go -force )
 git diff clang/clang-tidy.json cdnet/cdnet.json   # only the sha256 values change
 ```
 
