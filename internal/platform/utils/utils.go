@@ -18,15 +18,13 @@ package utils
 
 import (
 	"fmt"
-	"io"
-	"net/http"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"runtime"
-	"strconv"
 	"strings"
 
+	"github.com/JetBrains/qodana-cli/internal/foundation/download"
 	fexec "github.com/JetBrains/qodana-cli/internal/foundation/exec"
 	"github.com/JetBrains/qodana-cli/internal/foundation/fs"
 	"github.com/JetBrains/qodana-cli/internal/foundation/str"
@@ -92,98 +90,27 @@ func LaunchAndLog(logDir string, logLabel string, args []string) (string, string
 	return stdout, stderr, ret, nil
 }
 
-// DownloadFile downloads a file from a given URL to a given filepath.
+// DownloadFile downloads a file from url to filepath, optionally authenticating with a Bearer token
+// and reporting progress on a spinner. The write is atomic (temp file + rename, via foundation/download).
 func DownloadFile(filepath string, url string, auth string, spinner *pterm.SpinnerPrinter) error {
-	headReq, err := http.NewRequest("HEAD", url, nil)
-	if err != nil {
-		return fmt.Errorf("error creating HEAD request: %w", err)
-	}
-	if auth != "" {
-		headReq.Header.Add("Authorization", fmt.Sprintf("Bearer %s", auth))
-	}
-	response, err := http.DefaultClient.Do(headReq)
-	if err != nil {
-		return fmt.Errorf("error making HEAD request: %w", err)
-	}
-	if response.StatusCode != http.StatusOK {
-		return fmt.Errorf("response from %s (HEAD): %s", url, response.Status)
-	}
-
-	sizeStr := response.Header.Get("Content-Length")
-	if sizeStr == "" {
-		sizeStr = "-1"
-	}
-	size, err := strconv.Atoi(sizeStr)
-	if err != nil {
-		return fmt.Errorf("error converting Content-Length to integer: %w", err)
-	}
-
-	getReq, err := http.NewRequest("GET", url, nil)
-	if err != nil {
-		return fmt.Errorf("error creating GET request: %w", err)
-	}
-	if auth != "" {
-		getReq.Header.Add("Authorization", fmt.Sprintf("Bearer %s", auth))
-	}
-	resp, err := http.DefaultClient.Do(getReq)
-	if err != nil {
-		return fmt.Errorf("error making GET request: %w", err)
-	}
-
-	if resp.StatusCode != http.StatusOK {
-		return fmt.Errorf("response from %s (GET): %s", url, resp.Status)
-	}
-	defer func(Body io.ReadCloser) {
-		if err := Body.Close(); err != nil {
-			fmt.Printf("Error while closing HTTP stream: %v\n", err)
-		}
-	}(resp.Body)
-
-	out, err := os.Create(filepath)
-	if err != nil {
-		return fmt.Errorf("error creating file: %w", err)
-	}
-	defer func(out *os.File) {
-		if err := out.Close(); err != nil {
-			fmt.Printf("Error while closing output file: %v\n", err)
-		}
-	}(out)
-
-	buffer := make([]byte, 1024)
-	total := 0
-	lastTotal := 0
-	text := ""
+	var progress func(downloaded, total int64)
 	if spinner != nil {
-		text = spinner.Text
-	}
-	for {
-		length, err := resp.Body.Read(buffer)
-		if err != nil && err != io.EOF {
-			return fmt.Errorf("error reading response body: %w", err)
-		}
-		total += length
-		if spinner != nil && total-lastTotal > 1024*1024 {
-			lastTotal = total
-			spinner.UpdateText(fmt.Sprintf("%s (%d %%)", text, 100*total/size))
-		}
-		if length == 0 {
-			break
-		}
-		if _, err = out.Write(buffer[:length]); err != nil {
-			return fmt.Errorf("error writing to file: %w", err)
+		baseText := spinner.Text
+		var lastReported int64
+		progress = func(downloaded, total int64) {
+			if total <= 0 {
+				return
+			}
+			// Throttle to ~1 update per MiB; always show the final 100%.
+			if downloaded != total && downloaded-lastReported < 1024*1024 {
+				return
+			}
+			lastReported = downloaded
+			spinner.UpdateText(fmt.Sprintf("%s (%d %%)", baseText, 100*downloaded/total))
 		}
 	}
-
-	// Check if the size matches, but only if the Content-Length header was present and valid
-	if size > 0 && total != size {
-		return fmt.Errorf("downloaded file size doesn't match expected size, got %d, expected %d", total, size)
-	}
-
-	if spinner != nil {
-		spinner.UpdateText(fmt.Sprintf("%s (100 %%)", text))
-	}
-
-	return nil
+	_, err := download.ToFile(url, filepath, download.Options{Bearer: auth, Progress: progress})
+	return err
 }
 
 func GetDefaultUser() string {
