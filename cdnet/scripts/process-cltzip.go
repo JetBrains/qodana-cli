@@ -44,7 +44,7 @@ func main() {
 		}
 	}
 
-	// The download step (download-cdnet.go) guarantees a real archive or fails; a missing or empty
+	// The download step (../scripts/download-deps.go) guarantees a real archive or fails; a missing or empty
 	// clt.zip here means it was skipped (no QODANA_CLI_DEPS_TOKEN) — fail loud rather than mock.
 	stat, err := os.Stat("clt.zip")
 	if err != nil {

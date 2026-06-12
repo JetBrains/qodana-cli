@@ -66,7 +66,7 @@ func (l CdnetLinter) RunAnalysis(c thirdpartyscan.Context) error {
 	return err
 }
 
-//go:generate go run scripts/download-cdnet.go
+//go:generate go run ../scripts/download-deps.go cdnet.json
 //go:generate go run scripts/process-cltzip.go
 
 //go:embed clt.zip

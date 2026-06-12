@@ -56,7 +56,7 @@ func main() {
 		found = true
 	}
 
-	// The download step (download-clang-tidy.go) guarantees a real archive or fails; a missing or
+	// The download step (../scripts/download-deps.go) guarantees a real archive or fails; a missing or
 	// empty file here means it was skipped (no QODANA_CLI_DEPS_TOKEN) — fail loud rather than mock.
 	stat, err := os.Stat(archivePath)
 	if err != nil {

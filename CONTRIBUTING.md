@@ -113,9 +113,9 @@ changes, refresh the hashes from Space and commit the result:
 
 ```sh
 # clang-tidy ships one archive per platform, so --all refreshes them all. Flags can't pass through
-# `go generate`, so run the scripts directly from the linter dir:
-( cd clang && go run scripts/download-clang-tidy.go --force --all )
-( cd cdnet && go run scripts/download-cdnet.go --force )
+# `go generate`, so run the shared script directly from the linter dir:
+( cd clang && go run ../scripts/download-deps.go --force --all clang-tidy.json )
+( cd cdnet && go run ../scripts/download-deps.go --force cdnet.json )
 git diff clang/clang-tidy.json cdnet/cdnet.json   # only the sha256 values change
 ```
 
