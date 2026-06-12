@@ -6,7 +6,6 @@ package main
 
 import (
 	"encoding/hex"
-	"errors"
 	"fmt"
 	"io"
 	"log"
@@ -55,28 +54,17 @@ func main() {
 		}
 	}
 
+	// The download step (download-clang-tidy.go) guarantees a real archive or fails; a missing or
+	// empty file here means it was skipped (no QODANA_CLI_DEPS_TOKEN) — fail loud rather than mock.
 	stat, err := os.Stat(archivePath)
-	if errors.Is(err, os.ErrNotExist) {
-		_, err = fmt.Fprintf(os.Stderr, "skipping archive %q: file does not exist\n", archivePath)
-		if err != nil {
-			log.Fatal(err)
-		}
-		return
-	}
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("%s: the download step must run with QODANA_CLI_DEPS_TOKEN set (%s)", archivePath, err)
 	}
 	if stat.Size() == 0 {
-		// Assume someone does not have clt.zip and just `touch`-ed it to proceed with the build.
-		_, err = fmt.Fprintf(os.Stderr, "%q is a 0-byte file, will generate mock hashsum.\n", archivePath)
-		if err != nil {
-			log.Fatal(err)
-		}
-	} else {
-		err = archive.WalkArchive(archivePath, callback)
-		if err != nil {
-			log.Fatal(err)
-		}
+		log.Fatalf("%s is empty; the download step must run with QODANA_CLI_DEPS_TOKEN set", archivePath)
+	}
+	if err := archive.WalkArchive(archivePath, callback); err != nil {
+		log.Fatal(err)
 	}
 
 	hashFile := fmt.Sprintf("%s.sha256.bin", archivePath)
