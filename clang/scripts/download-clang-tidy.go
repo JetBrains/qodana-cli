@@ -9,8 +9,9 @@
 // QODANA_CLI_DEPS_TOKEN (a JB Space bearer token, from the environment or a repo-root .env) is
 // REQUIRED — without it the build fails; there is no mock fallback. Flags:
 //
-//	-force   re-download and rewrite the dependency's sha256 hash(es)
-//	-all     with -force, refresh every platform's hash, not just this target's
+//	--force   re-download and rewrite the dependency's sha256 hash(es)
+//	--all     operate on every platform's archive, not just this build target's (with --force,
+//	          refresh every platform's hash)
 //
 // See QD-14839.
 package main
@@ -51,11 +52,8 @@ func (d dependency) resolveURL(filename string) string {
 
 func main() {
 	force := flag.Bool("force", false, "re-download and rewrite the dependency's sha256 hash(es)")
-	all := flag.Bool("all", false, "with -force, refresh every platform's hash, not just this target's")
+	all := flag.Bool("all", false, "operate on every platform's archive, not just this build target's")
 	flag.Parse()
-	if *all && !*force {
-		log.Fatal("-all only affects which hashes -force refreshes; it requires -force")
-	}
 
 	token := dotenv.Value(tokenEnv, repoRootEnv())
 	if token == "" {
@@ -78,7 +76,7 @@ func main() {
 	// A partial -force refresh (one platform) of the multi-platform clang-tidy dependency would
 	// rewrite only the host's hash and silently leave the others stale; warn so a maintainer adds -all.
 	if *force && !*all && len(selected) < len(dep.Sha256) {
-		fmt.Fprintf(os.Stderr, "download-clang-tidy: refreshing only %d of %d platform hashes; pass -all to refresh every platform\n", len(selected), len(dep.Sha256))
+		fmt.Fprintf(os.Stderr, "download-clang-tidy: refreshing only %d of %d platform hashes; pass --all to refresh every platform\n", len(selected), len(dep.Sha256))
 	}
 
 	changed := false

@@ -112,10 +112,10 @@ The pinned versions and SHA-256 hashes live in `clang/clang-tidy.json` and
 changes, refresh the hashes from Space and commit the result:
 
 ```sh
-# clang-tidy ships one archive per platform, so -all refreshes them all. Flags can't pass through
+# clang-tidy ships one archive per platform, so --all refreshes them all. Flags can't pass through
 # `go generate`, so run the scripts directly from the linter dir:
-( cd clang && go run scripts/download-clang-tidy.go -force -all )
-( cd cdnet && go run scripts/download-cdnet.go -force )
+( cd clang && go run scripts/download-clang-tidy.go --force --all )
+( cd cdnet && go run scripts/download-cdnet.go --force )
 git diff clang/clang-tidy.json cdnet/cdnet.json   # only the sha256 values change
 ```
 

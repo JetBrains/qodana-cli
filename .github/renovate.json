@@ -69,7 +69,7 @@
       "matchDatasources": ["custom.qodana-cli-deps"],
       "commitMessagePrefix": "QD-14839 ",
       "prBodyNotes": [
-        "After merge, refresh the SHA-256 hashes from Space and commit the result: `(cd clang && go run scripts/download-clang-tidy.go -force -all)` (clang-tidy) or `(cd cdnet && go run scripts/download-cdnet.go -force)` (cdnet)."
+        "After merge, refresh the SHA-256 hashes from Space and commit the result: `(cd clang && go run scripts/download-clang-tidy.go --force --all)` (clang-tidy) or `(cd cdnet && go run scripts/download-cdnet.go --force)` (cdnet)."
       ]
     }
   ],

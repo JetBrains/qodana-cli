@@ -6,7 +6,7 @@
 //
 // clt.zip is platform-agnostic, so there is no build-target selection. QODANA_CLI_DEPS_TOKEN (a JB
 // Space bearer token, from the environment or a repo-root .env) is REQUIRED — without it the build
-// fails; there is no mock fallback. Flag: -force re-downloads and rewrites the dependency's hash.
+// fails; there is no mock fallback. Flag: --force re-downloads and rewrites the dependency's hash.
 //
 // See QD-14839.
 package main
