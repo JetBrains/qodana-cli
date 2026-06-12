@@ -18,6 +18,7 @@ package utils
 
 import (
 	"fmt"
+	"net/http"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -93,15 +94,18 @@ func LaunchAndLog(logDir string, logLabel string, args []string) (string, string
 // DownloadFile downloads a file from url to filepath, optionally authenticating with a Bearer token
 // and reporting progress on a spinner. The write is atomic (temp file + rename, via foundation/download).
 func DownloadFile(filepath string, url string, auth string, spinner *pterm.SpinnerPrinter) error {
+	var baseText string
 	var progress func(downloaded, total int64)
 	if spinner != nil {
-		baseText := spinner.Text
+		baseText = spinner.Text
 		var lastReported int64
 		progress = func(downloaded, total int64) {
+			// No Content-Length (e.g. chunked) → total <= 0, so no mid-stream percentage;
+			// the post-download 100% below still fires.
 			if total <= 0 {
 				return
 			}
-			// Throttle to ~1 update per MiB; always show the final 100%.
+			// Throttle to ~1 update per MiB; the final read (downloaded == total) always passes.
 			if downloaded != total && downloaded-lastReported < 1024*1024 {
 				return
 			}
@@ -109,8 +113,16 @@ func DownloadFile(filepath string, url string, auth string, spinner *pterm.Spinn
 			spinner.UpdateText(fmt.Sprintf("%s (%d %%)", baseText, 100*downloaded/total))
 		}
 	}
-	_, err := download.ToFile(url, filepath, download.Options{Bearer: auth, Progress: progress})
-	return err
+	// Use http.DefaultClient (no overall timeout) to match the prior behavior: runtime IDE/plugin
+	// archives are large and may download slowly, so do not impose foundation/download's default
+	// 10-minute Client.Timeout (which bounds the whole body read).
+	if _, err := download.ToFile(url, filepath, download.Options{Client: http.DefaultClient, Bearer: auth, Progress: progress}); err != nil {
+		return err
+	}
+	if spinner != nil {
+		spinner.UpdateText(fmt.Sprintf("%s (100 %%)", baseText))
+	}
+	return nil
 }
 
 func GetDefaultUser() string {

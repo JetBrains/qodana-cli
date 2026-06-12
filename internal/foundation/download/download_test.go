@@ -76,6 +76,19 @@ func TestToFile_Non200ErrorsAndLeavesNoFile(t *testing.T) {
 	assert.ErrorIs(t, statErr, os.ErrNotExist)
 }
 
+func TestToFile_FailureLeavesExistingFileUntouched(t *testing.T) {
+	dest := filepath.Join(t.TempDir(), "out.bin")
+	require.NoError(t, os.WriteFile(dest, []byte("original"), 0o644))
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		http.Error(w, "nope", http.StatusForbidden)
+	}))
+	defer srv.Close()
+	_, err := ToFile(srv.URL, dest, Options{})
+	require.Error(t, err)
+	got, _ := os.ReadFile(dest)
+	assert.Equal(t, "original", string(got), "a failed download must not clobber the existing file")
+}
+
 func TestToFile_EmptyBodyErrorsAndLeavesNoFile(t *testing.T) {
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {}))
 	defer srv.Close()

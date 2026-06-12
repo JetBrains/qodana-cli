@@ -62,7 +62,7 @@ func main() {
 
 	dep := readDependency()
 
-	// Which archives to fetch: every platform under -all (hash refresh), else just this target's.
+	// Which archives to fetch: every platform under --all, else just this build target's.
 	var selected []string
 	if *all {
 		for f := range dep.Sha256 {
@@ -73,8 +73,8 @@ func main() {
 		selected = []string{targetArchive()}
 	}
 
-	// A partial -force refresh (one platform) of the multi-platform clang-tidy dependency would
-	// rewrite only the host's hash and silently leave the others stale; warn so a maintainer adds -all.
+	// A partial --force refresh (one platform) of the multi-platform clang-tidy dependency would
+	// rewrite only the host's hash and silently leave the others stale; warn so a maintainer adds --all.
 	if *force && !*all && len(selected) < len(dep.Sha256) {
 		fmt.Fprintf(os.Stderr, "download-clang-tidy: refreshing only %d of %d platform hashes; pass --all to refresh every platform\n", len(selected), len(dep.Sha256))
 	}
