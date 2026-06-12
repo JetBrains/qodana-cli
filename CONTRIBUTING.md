@@ -31,29 +31,18 @@ cp .env.example .env
 ```
 
 Edit `.env` and add your tokens:
-- `TEAMCITY_TOKEN` – for downloading closed-source dependencies (internal only, get from [TeamCity profile](https://buildserver.labs.intellij.net/profile.html?item=accessTokens))
+- `QODANA_CLI_DEPS_TOKEN` – read token for the closed-source linter archives on JetBrains Space (`packages.jetbrains.team/files/p/sa/qodana-cli-deps`). **Required** — without it `go generate` fails (there is no mock fallback).
 - `QODANA_LICENSE_ONLY_TOKEN` – for running tests that require license validation (get a temporary token from Qodana Cloud)
 
 ### Prepare embedded tools
 
-**For JetBrains employees (with VPN access):**
-
-Run the download script to fetch all closed-source dependencies from TeamCity:
-```sh
-go run scripts/download-deps.go
-```
-
-Then download the public Maven JARs:
-```sh
-go generate ./internal/tooling/...
-```
-
-**For external contributors:**
-
-Download public JARs via go generate:
+`go generate ./...` produces every build-time artifact: the public Maven JARs and the closed-source
+clang-tidy / ReSharper CLT archives (downloaded from Space and verified against the
+`clang/clang-tidy.json` and `cdnet/cdnet.json` dependency files). `QODANA_CLI_DEPS_TOKEN` is **required** —
+without it `go generate` fails; there is no mock fallback.
 
 ```sh
-go generate ./internal/tooling/...
+go generate ./...
 ```
 
 `cd` into the `cli` directory and run for debug:
@@ -78,11 +67,12 @@ Test your code with a human-readable report (requires `go install github.com/mfr
 go test -timeout 0 -json -v ./... > test.json 2>&1; tparse -all -file=test.json
 ```
 
-To skip third-party linter tests (if you don't have cdnet/clang dependencies):
+To skip the third-party linter tests (they are slower and container-based):
 ```sh
-export GITHUB_ACTIONS=true
-go test -v ./...
+QT_ENABLE_CLANG_DEPS=0 QT_ENABLE_CDNET_DEPS=0 go test -v ./...
 ```
+These tests run on Linux only — qodana-clang/qodana-cdnet are container linters, so the tests are
+compiled out on macOS/Windows (the flags above apply on Linux).
 
 Dry-run goreleaser:
 
@@ -103,17 +93,31 @@ brew install cmake dotnet openjdk@21
 
 **For JetBrains employees:**
 
-1. Ensure `.env` is configured with `TEAMCITY_TOKEN` and `QODANA_LICENSE_ONLY_TOKEN`
+1. Ensure `.env` is configured with `QODANA_CLI_DEPS_TOKEN` and `QODANA_LICENSE_ONLY_TOKEN`
 2. Download all dependencies:
    ```sh
-   go run scripts/download-deps.go
    go generate ./...
    ```
-3. Run all tests with Java 21:
+3. Run all tests with Java 21 (`.env` has no `export`, so `set -a` exports the tokens to `go test`;
+   `go generate` reads `.env` directly and needs no `set -a`):
    ```sh
-   source .env
+   set -a; source .env; set +a
    go test -timeout 0 -v ./...
    ```
+
+### Bumping a third-party linter version
+
+The pinned versions and SHA-256 hashes live in `clang/clang-tidy.json` and
+`cdnet/cdnet.json` (Renovate opens PRs that bump the `version` field). After a version
+changes, refresh the hashes from Space and commit the result:
+
+```sh
+# clang-tidy ships one archive per platform, so --all refreshes them all. Flags can't pass through
+# `go generate`, so run the shared script directly from the linter dir:
+( cd clang && go run ../scripts/download-deps.go --force --all clang-tidy.json )
+( cd cdnet && go run ../scripts/download-deps.go --force cdnet.json )
+git diff clang/clang-tidy.json cdnet/cdnet.json   # only the sha256 values change
+```
 
 ### Building a custom 3rd party linter
 

@@ -15,14 +15,16 @@ type Flag struct {
 }
 
 var (
-	Docker         = Flag{"Docker", "QT_ENABLE_DOCKER"}
-	ContainerTests = Flag{"ContainerTests", "QT_ENABLE_CONTAINER_TESTS"}
-	ClangDeps      = Flag{"ClangDeps", "QT_ENABLE_CLANG_DEPS"}
-	CdnetDeps      = Flag{"CdnetDeps", "QT_ENABLE_CDNET_DEPS"}
-	CasefoldFS     = Flag{"CasefoldFS", "QT_ENABLE_CASEFOLD_FS"}
+	Docker         = Flag{Name: "Docker", EnvVar: "QT_ENABLE_DOCKER"}
+	ContainerTests = Flag{Name: "ContainerTests", EnvVar: "QT_ENABLE_CONTAINER_TESTS"}
+	ClangDeps      = Flag{Name: "ClangDeps", EnvVar: "QT_ENABLE_CLANG_DEPS"}
+	CdnetDeps      = Flag{Name: "CdnetDeps", EnvVar: "QT_ENABLE_CDNET_DEPS"}
+	CasefoldFS     = Flag{Name: "CasefoldFS", EnvVar: "QT_ENABLE_CASEFOLD_FS"}
 )
 
-// Need skips the test if any of the given flags are disabled.
+// Need skips the test if any of the given flags are disabled. OS restrictions are expressed by
+// build-constraining the test file (e.g. //go:build linux), not here: qodana-clang/qodana-cdnet
+// linter tests live in linux-only files.
 func Need(t testing.TB, flags ...Flag) {
 	t.Helper()
 	for _, f := range flags {

@@ -44,24 +44,20 @@ func main() {
 		}
 	}
 
+	// The download step (../scripts/download-deps.go) guarantees a real archive or fails; a missing or empty
+	// clt.zip here means it was skipped (no QODANA_CLI_DEPS_TOKEN) — fail loud rather than mock.
 	stat, err := os.Stat("clt.zip")
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("clt.zip: the download step must run with QODANA_CLI_DEPS_TOKEN set (%s)", err)
 	}
 	if stat.Size() == 0 {
-		// Assume someone does not have clt.zip and just `touch`-ed it to proceed with the build.
-		_, err = fmt.Fprintln(os.Stderr, "clt.zip is a 0-byte file, will generate mock hashsum.")
-		if err != nil {
-			log.Fatal(err)
-		}
-	} else {
-		err = archive.WalkZipArchive("clt.zip", callback)
-		if err != nil {
-			log.Fatal(err)
-		}
-		if dllPath == "" {
-			log.Fatalf("Could not find a file matching `%s` DLL inside clt.zip.", DllPathPattern)
-		}
+		log.Fatal("clt.zip is empty; the download step must run with QODANA_CLI_DEPS_TOKEN set")
+	}
+	if err := archive.WalkZipArchive("clt.zip", callback); err != nil {
+		log.Fatal(err)
+	}
+	if dllPath == "" {
+		log.Fatalf("Could not find a file matching `%s` DLL inside clt.zip.", DllPathPattern)
 	}
 
 	err = fs.WriteFileAtomic("clt.sha256.bin", dllHash[:], 0666)

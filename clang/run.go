@@ -74,6 +74,7 @@ func prepareClangArgs(raw string) ([]string, error) {
 	return tokens, nil
 }
 
+//go:generate go run ../scripts/download-deps.go clang-tidy.json
 //go:generate go run scripts/prepare-clang-tidy-binary.go
 
 //goland:noinspection GoRedundantElseInIf

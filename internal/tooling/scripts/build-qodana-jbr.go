@@ -6,9 +6,7 @@ import (
 	"bytes"
 	"crypto/sha512"
 	"encoding/hex"
-	"errors"
 	"fmt"
-	"hash"
 	"io"
 	"log"
 	"net/http"
@@ -23,6 +21,7 @@ import (
 	"time"
 
 	"github.com/JetBrains/qodana-cli/internal/foundation/archive"
+	"github.com/JetBrains/qodana-cli/internal/foundation/download"
 	"github.com/JetBrains/qodana-cli/internal/foundation/flock"
 	"github.com/JetBrains/qodana-cli/internal/foundation/fs"
 )
@@ -261,7 +260,7 @@ func ensurePlatformSrc(cacheDir, version, build string, p platform, expectedSHA 
 	url := jbrArchiveURL(version, jbrFlavor(p), build)
 	archivePath := filepath.Join(pDir, "upstream.tar.gz")
 	log.Printf("DOWNLOADING: %s", filepath.Base(url))
-	if err := downloadAndVerify(url, archivePath, expectedSHA, sha512.New); err != nil {
+	if _, err := download.ToFile(url, archivePath, download.Options{Client: httpClient, Hash: sha512.New, ExpectedHex: expectedSHA}); err != nil {
 		log.Fatalf("Failed to download %s: %v", url, err)
 	}
 
@@ -488,48 +487,6 @@ func runJdeps(jdepsBin, jarPath string) []string {
 }
 
 // HTTP helpers ================================================================================
-
-// downloadAndVerify downloads url to destPath with atomic write (.part → rename),
-// computing a hash during streaming and verifying against expectedHex.
-func downloadAndVerify(url, destPath, expectedHex string, newHash func() hash.Hash) error {
-	if err := os.MkdirAll(filepath.Dir(destPath), 0o755); err != nil {
-		return fmt.Errorf("creating directory for %s: %w", destPath, err)
-	}
-
-	req, err := http.NewRequest(http.MethodGet, url, nil)
-	if err != nil {
-		return fmt.Errorf("creating request for %s: %w", url, err)
-	}
-	resp, err := httpClient.Do(req)
-	if err != nil {
-		return fmt.Errorf("downloading %s: %w", url, err)
-	}
-	defer resp.Body.Close()
-
-	if resp.StatusCode != 200 {
-		return fmt.Errorf("downloading %s: HTTP %d", url, resp.StatusCode)
-	}
-
-	w, err := fs.CreateAtomic(destPath, 0o644)
-	if err != nil {
-		return fmt.Errorf("creating atomic writer for %s: %w", destPath, err)
-	}
-
-	hasher := newHash()
-	if _, err := io.Copy(io.MultiWriter(w, hasher), resp.Body); err != nil {
-		return errors.Join(fmt.Errorf("writing %s: %w", destPath, err), w.Abort())
-	}
-
-	actualHex := hex.EncodeToString(hasher.Sum(nil))
-	if actualHex != expectedHex {
-		return errors.Join(fmt.Errorf("hash mismatch for %s: expected %s, got %s", filepath.Base(url), expectedHex, actualHex), w.Abort())
-	}
-
-	if err := w.Close(); err != nil {
-		return fmt.Errorf("committing %s: %w", destPath, err)
-	}
-	return nil
-}
 
 // parseChecksumLine parses a "<hex>  <filename>" line and returns the hex portion.
 func parseChecksumLine(line string, expectedLen int) (string, error) {

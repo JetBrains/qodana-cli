@@ -3,6 +3,22 @@
   "extends": [
     "config:base"
   ],
+  "customDatasources": {
+    "qodana-cli-deps": {
+      "defaultRegistryUrlTemplate": "https://packages.jetbrains.team/files/p/sa/qodana-cli-deps/{{packageName}}/versions.json",
+      "format": "json",
+      "transformTemplates": [
+        "{ \"releases\": versions.{ \"version\": $ } }"
+      ]
+    }
+  },
+  "hostRules": [
+    {
+      "matchHost": "packages.jetbrains.team",
+      "authType": "Bearer",
+      "token": "{{ secrets.QODANA_CLI_DEPS_TOKEN }}"
+    }
+  ],
   "regexManagers": [
     {
       "fileMatch": [
@@ -21,6 +37,17 @@
         "renovate:\\s*datasource=(?<datasource>.*?) depName=(?<depName>.*?)\\n.*?\"(?<currentValue>.*?)\""
       ],
       "versioningTemplate": "regex:^jbr-release-(?<major>\\d+)\\.(?<minor>\\d+)\\.(?<patch>\\d+)b(?<build>.*)$"
+    },
+    {
+      "fileMatch": [
+        "^(clang/clang-tidy|cdnet/cdnet)\\.json$"
+      ],
+      "matchStrings": [
+        "\"version\":\\s*\"(?<currentValue>v[^\"]+)\""
+      ],
+      "depNameTemplate": "{{{replace '.*/(.+)\\.json' '$1' packageFile}}}",
+      "datasourceTemplate": "custom.qodana-cli-deps",
+      "versioningTemplate": "loose"
     }
   ],
   "packageRules": [
@@ -37,6 +64,13 @@
     {
       "datasources": ["docker"],
       "paths": ["dockerfiles/**"]
+    },
+    {
+      "matchDatasources": ["custom.qodana-cli-deps"],
+      "commitMessagePrefix": "QD-14839 ",
+      "prBodyNotes": [
+        "After merge, refresh the SHA-256 hashes from Space and commit the result: `(cd clang && go run ../scripts/download-deps.go --force --all clang-tidy.json)` (clang-tidy) or `(cd cdnet && go run ../scripts/download-deps.go --force cdnet.json)` (cdnet)."
+      ]
     }
   ],
   "commitMessagePrefix": "QD-8148 ",

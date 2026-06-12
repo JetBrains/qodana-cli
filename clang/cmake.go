@@ -6,6 +6,7 @@ import (
 	"os"
 	"path/filepath"
 	"regexp"
+	"runtime"
 	"strings"
 
 	"github.com/JetBrains/qodana-cli/internal/foundation/exec"
@@ -59,12 +60,19 @@ func compilerCacheKey(compiler string, headerType []string) string {
 }
 
 // pickCompiler returns the compiler binary name for a compile_commands.json
-// Command entry. If cmd.Command is present, it is parsed as a POSIX shell
-// command line and the first token is used. If that parse fails or yields
-// no tokens, pickCompiler falls back to cmd.Arguments[0] when available.
-// The second return is false when no compiler can be determined and the
-// entry should be skipped.
+// Command entry. See pickCompilerFor for the parsing rules.
 func pickCompiler(cmd Command) (string, bool) {
+	return pickCompilerFor(cmd, runtime.GOOS)
+}
+
+// pickCompilerFor extracts the compiler (first token) from a compile_commands.json
+// Command entry for the given GOOS. On Windows the command holds backslash-separated
+// paths (CMake records e.g. C:\PROGRA~1\LLVM\bin\clang.exe), so it is tokenized with
+// Windows quoting rules; POSIX shell splitting would strip the backslashes. Elsewhere
+// the command is parsed as a POSIX shell line. If the command is empty or cannot be
+// parsed, pickCompilerFor falls back to cmd.Arguments[0] when available; the second
+// return is false when no compiler can be determined and the entry should be skipped.
+func pickCompilerFor(cmd Command, goos string) (string, bool) {
 	trimmed := strings.TrimSpace(cmd.Command)
 	if trimmed == "" {
 		if len(cmd.Arguments) == 0 {
@@ -73,6 +81,18 @@ func pickCompiler(cmd Command) (string, bool) {
 		}
 		return cmd.Arguments[0], true
 	}
+
+	if goos == "windows" {
+		if tok, ok := firstWindowsToken(trimmed); ok {
+			return tok, true
+		}
+		log.Warnf("Failed to parse command for file in compilation db %s", cmd.File)
+		if len(cmd.Arguments) > 0 {
+			return cmd.Arguments[0], true
+		}
+		return "", false
+	}
+
 	parts, err := shlex.Split(trimmed)
 	if err != nil {
 		log.Warnf("Failed to parse command for file in compilation db %s: %v", cmd.File, err)
@@ -88,6 +108,28 @@ func pickCompiler(cmd Command) (string, bool) {
 		return "", false
 	}
 	return parts[0], true
+}
+
+// firstWindowsToken returns the first argument of a Windows command line: a
+// double-quoted span (quotes stripped) or the run of characters up to the first
+// whitespace. Unlike POSIX shell splitting it does not treat '\' as an escape, so
+// backslash paths survive intact. ok is false for an unterminated quote so the
+// caller can fall back to the arguments array.
+func firstWindowsToken(command string) (string, bool) {
+	command = strings.TrimSpace(command)
+	if command == "" {
+		return "", false
+	}
+	if command[0] == '"' {
+		if end := strings.IndexByte(command[1:], '"'); end >= 0 {
+			return command[1 : 1+end], true
+		}
+		return "", false // unterminated quote
+	}
+	if sp := strings.IndexAny(command, " \t"); sp >= 0 {
+		return command[:sp], true
+	}
+	return command, true
 }
 
 // getFilesAndCompilers returns a list of files with their corresponding compiler's include directories

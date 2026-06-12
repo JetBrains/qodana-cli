@@ -1,0 +1,7 @@
+{
+  "version": "v2026.1.2",
+  "url": "https://packages.jetbrains.team/files/p/sa/qodana-cli-deps/cdnet/$version/$filename",
+  "sha256": {
+    "clt.zip": "16e7cc18c00461cc9cd428de186392685d69322e11d479643d34632011cf4462"
+  }
+}
