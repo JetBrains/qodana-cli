@@ -6,64 +6,65 @@
 //
 // Honors TARGETOS/TARGETARCH (set per target by the goreleaser cross-build) over runtime.GOOS/ARCH,
 // matching prepare-clang-tidy-binary.go's archive naming so the downloaded file is the one it hashes.
-// Env (also read from a repo-root .env):
+// QODANA_CLI_DEPS_TOKEN (a JB Space bearer token, from the environment or a repo-root .env) is
+// REQUIRED — without it the build fails; there is no mock fallback. Flags:
 //
-//	QODANA_CLI_DEPS_TOKEN  Space bearer token. Empty => write a 0-byte placeholder so the build still
-//	                       compiles without the closed-source archive (external contributors).
-//	QODANA_CLI_DEPS_FORCE  Re-download and rewrite the pin's hash(es).
-//	QODANA_CLI_DEPS_ALL    With FORCE, refresh every platform's hash, not just this target's.
+//	-force   re-download and rewrite the dependency's sha256 hash(es)
+//	-all     with -force, refresh every platform's hash, not just this target's
 //
 // See QD-14839.
 package main
 
 import (
-	"bufio"
 	"crypto/sha256"
 	"encoding/hex"
 	"encoding/json"
-	"errors"
+	"flag"
 	"fmt"
-	"io"
 	"log"
-	"net/http"
 	"os"
 	"path/filepath"
 	"runtime"
 	"sort"
 	"strings"
-	"time"
 
+	"github.com/JetBrains/qodana-cli/internal/foundation/download"
+	"github.com/JetBrains/qodana-cli/internal/foundation/dotenv"
 	"github.com/JetBrains/qodana-cli/internal/foundation/fs"
 	"github.com/JetBrains/qodana-cli/internal/foundation/hash"
 )
 
 const (
-	pinFile  = "clang-tidy.json"
+	depFile  = "clang-tidy.json"
 	tokenEnv = "QODANA_CLI_DEPS_TOKEN"
 )
 
-type pin struct {
+type dependency struct {
 	Version string            `json:"version"`
 	URL     string            `json:"url"`
 	Sha256  map[string]string `json:"sha256"`
 }
 
-func (p pin) resolveURL(filename string) string {
-	return strings.NewReplacer("$version", p.Version, "$filename", filename).Replace(p.URL)
+func (d dependency) resolveURL(filename string) string {
+	return strings.NewReplacer("$version", d.Version, "$filename", filename).Replace(d.URL)
 }
 
 func main() {
-	env := loadDotenv()
-	token := resolveEnv(tokenEnv, env)
-	force := truthy(resolveEnv("QODANA_CLI_DEPS_FORCE", env))
-	all := truthy(resolveEnv("QODANA_CLI_DEPS_ALL", env))
+	force := flag.Bool("force", false, "re-download and rewrite the dependency's sha256 hash(es)")
+	all := flag.Bool("all", false, "with -force, refresh every platform's hash, not just this target's")
+	flag.Parse()
 
-	p := readPin()
+	token := dotenv.Value(tokenEnv, repoRootEnv())
+	if token == "" {
+		log.Fatalf("%s is required to download the closed-source clang-tidy archive; set it in your environment or a repo-root .env", tokenEnv)
+	}
 
-	// Which archives to fetch: every platform under --all (hash refresh), else just this target's.
+	dep := readDependency()
+
+	// Which archives to fetch: every platform under -all (hash refresh), else just this target's.
 	var selected []string
-	if all {
-		for f := range p.Sha256 {
+	if *all {
+		for f := range dep.Sha256 {
 			selected = append(selected, f)
 		}
 		sort.Strings(selected)
@@ -71,38 +72,26 @@ func main() {
 		selected = []string{targetArchive()}
 	}
 
-	// A partial --force refresh (one platform) of the multi-platform clang-tidy pin would rewrite
-	// only the host's hash and silently leave the others stale; warn so a maintainer adds --all.
-	if force && !all && len(selected) < len(p.Sha256) {
-		fmt.Fprintf(os.Stderr, "download-clang-tidy: refreshing only %d of %d platform hashes; set QODANA_CLI_DEPS_ALL=1 to refresh all\n", len(selected), len(p.Sha256))
+	// A partial -force refresh (one platform) of the multi-platform clang-tidy dependency would
+	// rewrite only the host's hash and silently leave the others stale; warn so a maintainer adds -all.
+	if *force && !*all && len(selected) < len(dep.Sha256) {
+		fmt.Fprintf(os.Stderr, "download-clang-tidy: refreshing only %d of %d platform hashes; pass -all to refresh every platform\n", len(selected), len(dep.Sha256))
 	}
 
-	if token == "" {
-		if force {
-			log.Fatalf("QODANA_CLI_DEPS_FORCE is set but %s is empty: the auth-only repo cannot be refreshed", tokenEnv)
-		}
-		for _, f := range selected {
-			placeholder(f)
-		}
-		fmt.Fprintf(os.Stderr, "download-clang-tidy: no %s set, wrote %d placeholder(s)\n", tokenEnv, len(selected))
-		return
-	}
-
-	client := &http.Client{Timeout: 5 * time.Minute}
 	changed := false
 	for _, f := range selected {
-		expected, ok := p.Sha256[f]
+		expected, ok := dep.Sha256[f]
 		if !ok {
-			log.Fatalf("%s: %q is not pinned", pinFile, f)
+			log.Fatalf("%s: %q is not in the dependency file", depFile, f)
 		}
-		got := fetch(client, p.resolveURL(f), token, f, expected, force)
-		if force {
-			p.Sha256[f] = got
+		got := fetch(dep.resolveURL(f), token, f, expected, *force)
+		if *force {
+			dep.Sha256[f] = got
 			changed = true
 		}
 	}
-	if force && changed {
-		writePin(p)
+	if *force && changed {
+		writeDependency(dep)
 	}
 }
 
@@ -122,117 +111,61 @@ func targetArchive() string {
 	return name + ".tar.gz"
 }
 
-// fetch ensures filename holds the pinned bytes and returns its hex sha256. Normal mode: a cache hit
-// (existing file already matches the pin) skips the download, and a post-download mismatch is fatal
-// (the bad file is removed). Force mode: always downloads and returns the actual hash to re-pin.
-func fetch(client *http.Client, url, token, filename, expected string, force bool) string {
+// fetch ensures filename holds the expected bytes and returns its hex sha256. Normal mode: a cache
+// hit (existing file already matches) skips the download; otherwise download.ToFile verifies against
+// expected and removes the file on mismatch. Force mode: always downloads (no verify) and returns
+// the actual hash to re-record.
+func fetch(url, token, filename, expected string, force bool) string {
 	if !force && expected != "" {
 		if h, err := hash.GetFileSha256(filename); err == nil && hex.EncodeToString(h[:]) == expected {
 			return expected
 		}
 	}
-	got := download(client, url, token, filename)
-	if force {
-		return got
+	opts := download.Options{Bearer: token, Hash: sha256.New}
+	if !force {
+		opts.ExpectedHex = expected
 	}
-	if got != expected {
-		_ = os.Remove(filename)
-		log.Fatalf("%s: sha256 mismatch: got %s, pinned %s (set QODANA_CLI_DEPS_FORCE=1 to refresh)", filename, got, expected)
+	got, err := download.ToFile(url, filename, opts)
+	if err != nil {
+		log.Fatal(err)
 	}
 	return got
 }
 
-// download GETs url (optional Bearer token), writes it to destPath atomically, and returns the hex
-// sha256 of the bytes. A non-200 or empty body is fatal and destPath is left untouched (the atomic
-// writer is aborted, never committing a truncated file).
-func download(client *http.Client, url, token, destPath string) string {
-	req, err := http.NewRequest(http.MethodGet, url, nil)
+func readDependency() dependency {
+	data, err := os.ReadFile(depFile)
 	if err != nil {
 		log.Fatal(err)
 	}
-	if token != "" {
-		req.Header.Set("Authorization", "Bearer "+token)
+	var d dependency
+	if err := json.Unmarshal(data, &d); err != nil {
+		log.Fatalf("parse %s: %s", depFile, err)
 	}
-	resp, err := client.Do(req)
-	if err != nil {
-		log.Fatalf("get %s: %s", url, err)
-	}
-	defer func() { _ = resp.Body.Close() }()
-	if resp.StatusCode != http.StatusOK {
-		body, _ := io.ReadAll(io.LimitReader(resp.Body, 512))
-		log.Fatalf("get %s: HTTP %d: %s", url, resp.StatusCode, body)
-	}
-
-	w, err := fs.CreateAtomic(destPath, 0o644)
-	if err != nil {
-		log.Fatal(err)
-	}
-	h := sha256.New()
-	n, err := io.Copy(io.MultiWriter(w, h), resp.Body)
-	if err != nil {
-		log.Fatal(errors.Join(fmt.Errorf("download %s: %w", url, err), w.Abort()))
-	}
-	if n == 0 {
-		log.Fatal(errors.Join(fmt.Errorf("download %s: empty response", url), w.Abort()))
-	}
-	if err := w.Close(); err != nil { // commit
-		log.Fatal(err)
-	}
-	return hex.EncodeToString(h.Sum(nil))
-}
-
-// placeholder creates a 0-byte file if absent so //go:embed and the build still work without the
-// closed-source archive. An existing (possibly real) archive is left untouched.
-func placeholder(name string) {
-	if _, err := os.Stat(name); err == nil {
-		return
-	} else if !errors.Is(err, os.ErrNotExist) {
-		log.Fatal(err)
-	}
-	f, err := os.OpenFile(name, os.O_CREATE|os.O_WRONLY, 0o644)
-	if err != nil {
-		log.Fatal(err)
-	}
-	if err := f.Close(); err != nil {
-		log.Fatal(err)
-	}
-}
-
-func readPin() pin {
-	data, err := os.ReadFile(pinFile)
-	if err != nil {
-		log.Fatal(err)
-	}
-	var p pin
-	if err := json.Unmarshal(data, &p); err != nil {
-		log.Fatalf("parse %s: %s", pinFile, err)
-	}
-	// Pin keys become filenames written next to the pin; reject anything that could escape the dir.
-	for name := range p.Sha256 {
+	// Dependency keys become filenames written next to the file; reject anything that could escape the dir.
+	for name := range d.Sha256 {
 		if name == "" || name == "." || name == ".." || strings.ContainsAny(name, `/\`) {
-			log.Fatalf("%s: invalid file name %q in sha256 (no path separators allowed)", pinFile, name)
+			log.Fatalf("%s: invalid file name %q in sha256 (no path separators allowed)", depFile, name)
 		}
 	}
-	return p
+	return d
 }
 
-func writePin(p pin) {
-	b, err := json.MarshalIndent(p, "", "  ")
+func writeDependency(d dependency) {
+	b, err := json.MarshalIndent(d, "", "  ")
 	if err != nil {
 		log.Fatal(err)
 	}
-	if err := fs.WriteFileAtomic(pinFile, append(b, '\n'), 0o644); err != nil {
+	if err := fs.WriteFileAtomic(depFile, append(b, '\n'), 0o644); err != nil {
 		log.Fatal(err)
 	}
 }
 
-// loadDotenv parses a repo-root .env (walked up from CWD to the dir holding go.mod) into a map
-// without mutating the process environment. A missing file or root yields an empty map.
-func loadDotenv() map[string]string {
-	out := map[string]string{}
+// repoRootEnv reads the repo-root .env (walking up from CWD to the dir holding go.mod) into a map.
+// go generate runs each directive in its package dir, so the .env lives a couple of levels up.
+func repoRootEnv() map[string]string {
 	dir, err := os.Getwd()
 	if err != nil {
-		return out
+		return nil
 	}
 	for {
 		if _, err := os.Stat(filepath.Join(dir, "go.mod")); err == nil {
@@ -240,35 +173,13 @@ func loadDotenv() map[string]string {
 		}
 		parent := filepath.Dir(dir)
 		if parent == dir {
-			return out
+			return nil
 		}
 		dir = parent
 	}
-	f, err := os.Open(filepath.Join(dir, ".env"))
+	env, err := dotenv.Read(filepath.Join(dir, ".env"))
 	if err != nil {
-		return out
+		log.Fatalf("reading .env: %s", err)
 	}
-	defer func() { _ = f.Close() }()
-	sc := bufio.NewScanner(f)
-	for sc.Scan() {
-		line := strings.TrimSpace(sc.Text())
-		if line == "" || strings.HasPrefix(line, "#") {
-			continue
-		}
-		line = strings.TrimPrefix(line, "export ")
-		if k, v, ok := strings.Cut(line, "="); ok {
-			out[strings.TrimSpace(k)] = strings.TrimSpace(v)
-		}
-	}
-	return out
+	return env
 }
-
-// resolveEnv prefers the real environment over .env; an explicitly-set var wins even when empty.
-func resolveEnv(key string, env map[string]string) string {
-	if v, ok := os.LookupEnv(key); ok {
-		return v
-	}
-	return env[key]
-}
-
-func truthy(v string) bool { return v == "1" || strings.EqualFold(v, "true") }
