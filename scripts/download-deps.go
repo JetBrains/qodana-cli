@@ -37,8 +37,8 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/JetBrains/qodana-cli/internal/foundation/download"
 	"github.com/JetBrains/qodana-cli/internal/foundation/dotenv"
+	"github.com/JetBrains/qodana-cli/internal/foundation/download"
 	"github.com/JetBrains/qodana-cli/internal/foundation/fs"
 	"github.com/JetBrains/qodana-cli/internal/foundation/hash"
 )
@@ -63,7 +63,7 @@ func main() {
 	flag.Parse()
 	pinPath := flag.Arg(0)
 	if pinPath == "" {
-		log.Fatal("usage: go run scripts/download-deps.go [--force] [--all] <pin-file>")
+		log.Fatal("usage: go run download-deps.go [--force] [--all] <pin-file>")
 	}
 
 	token := dotenv.Value(tokenEnv, repoRootEnv())
@@ -72,7 +72,11 @@ func main() {
 	}
 
 	dep := readDependency(pinPath)
-	selected := selectFiles(dep.Sha256, *all)
+	goos, goarch := resolveTarget()
+	selected := selectFiles(dep.Sha256, goos, goarch, *all)
+	if len(selected) == 0 {
+		log.Fatalf("%s: no archive matches build target %s/%s", pinPath, goos, goarch)
+	}
 
 	// A partial --force refresh (one platform) of a multi-platform pin (clang-tidy) would rewrite
 	// only the host's hash and silently leave the others stale; warn so a maintainer adds --all.
@@ -94,17 +98,23 @@ func main() {
 	}
 }
 
-// selectFiles returns the pin's filenames relevant to the current build target: platform-agnostic
-// names plus those whose <os>-<arch> matches TARGETOS/TARGETARCH (or runtime.GOOS/GOARCH). all=true
-// returns every name. The result is sorted for deterministic ordering.
-func selectFiles(sha map[string]string, all bool) []string {
-	goos, goarch := runtime.GOOS, runtime.GOARCH
+// resolveTarget is the build target: TARGETOS/TARGETARCH (set per target by the goreleaser
+// cross-build) falling back to runtime.GOOS/GOARCH.
+func resolveTarget() (goos, goarch string) {
+	goos, goarch = runtime.GOOS, runtime.GOARCH
 	if v := os.Getenv("TARGETOS"); v != "" {
 		goos = v
 	}
 	if v := os.Getenv("TARGETARCH"); v != "" {
 		goarch = v
 	}
+	return goos, goarch
+}
+
+// selectFiles returns the pin's filenames relevant to goos/goarch: platform-agnostic names plus
+// those whose <os>-<arch> matches. all=true returns every name. The result is sorted for
+// deterministic ordering.
+func selectFiles(sha map[string]string, goos, goarch string, all bool) []string {
 	var out []string
 	for name := range sha {
 		if all || matchesTarget(name, goos, goarch) {
