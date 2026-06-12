@@ -28,8 +28,8 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/JetBrains/qodana-cli/internal/foundation/download"
 	"github.com/JetBrains/qodana-cli/internal/foundation/dotenv"
+	"github.com/JetBrains/qodana-cli/internal/foundation/download"
 	"github.com/JetBrains/qodana-cli/internal/foundation/fs"
 	"github.com/JetBrains/qodana-cli/internal/foundation/hash"
 )
@@ -53,6 +53,9 @@ func main() {
 	force := flag.Bool("force", false, "re-download and rewrite the dependency's sha256 hash(es)")
 	all := flag.Bool("all", false, "with -force, refresh every platform's hash, not just this target's")
 	flag.Parse()
+	if *all && !*force {
+		log.Fatal("-all only affects which hashes -force refreshes; it requires -force")
+	}
 
 	token := dotenv.Value(tokenEnv, repoRootEnv())
 	if token == "" {
@@ -113,8 +116,8 @@ func targetArchive() string {
 
 // fetch ensures filename holds the expected bytes and returns its hex sha256. Normal mode: a cache
 // hit (existing file already matches) skips the download; otherwise download.ToFile verifies against
-// expected and removes the file on mismatch. Force mode: always downloads (no verify) and returns
-// the actual hash to re-record.
+// expected and commits no file on mismatch (its atomic temp+rename leaves any existing target
+// untouched). Force mode: always downloads (no verify) and returns the actual hash to re-record.
 func fetch(url, token, filename, expected string, force bool) string {
 	if !force && expected != "" {
 		if h, err := hash.GetFileSha256(filename); err == nil && hex.EncodeToString(h[:]) == expected {

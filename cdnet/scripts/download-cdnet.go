@@ -21,8 +21,8 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/JetBrains/qodana-cli/internal/foundation/download"
 	"github.com/JetBrains/qodana-cli/internal/foundation/dotenv"
+	"github.com/JetBrains/qodana-cli/internal/foundation/download"
 	"github.com/JetBrains/qodana-cli/internal/foundation/fs"
 	"github.com/JetBrains/qodana-cli/internal/foundation/hash"
 )
@@ -67,8 +67,8 @@ func main() {
 
 // fetch ensures filename holds the expected bytes and returns its hex sha256. Normal mode: a cache
 // hit (existing file already matches) skips the download; otherwise download.ToFile verifies against
-// expected and removes the file on mismatch. Force mode: always downloads (no verify) and returns
-// the actual hash to re-record.
+// expected and commits no file on mismatch (its atomic temp+rename leaves any existing target
+// untouched). Force mode: always downloads (no verify) and returns the actual hash to re-record.
 func fetch(url, token, filename, expected string, force bool) string {
 	if !force && expected != "" {
 		if h, err := hash.GetFileSha256(filename); err == nil && hex.EncodeToString(h[:]) == expected {

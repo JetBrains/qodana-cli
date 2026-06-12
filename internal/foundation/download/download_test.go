@@ -86,11 +86,19 @@ func TestToFile_EmptyBodyErrorsAndLeavesNoFile(t *testing.T) {
 	assert.ErrorIs(t, statErr, os.ErrNotExist)
 }
 
-func TestToFile_ProgressReceivesTotals(t *testing.T) {
-	body := make([]byte, 50000)
+func TestToFile_ExpectedHexWithoutHashIsError(t *testing.T) {
 	dest := filepath.Join(t.TempDir(), "out.bin")
-	var lastDone int64
-	_, err := ToFile(serve(t, body, nil), dest, Options{Progress: func(done, total int64) { lastDone = done }})
+	_, err := ToFile(serve(t, []byte("payload"), nil), dest, Options{ExpectedHex: "abc"})
+	require.Error(t, err, "ExpectedHex without Hash must be rejected, not silently unverified")
+}
+
+func TestToFile_ProgressReceivesTotals(t *testing.T) {
+	// Body < 4 KiB so the test server sets Content-Length (no chunked encoding), letting us assert total.
+	body := make([]byte, 2000)
+	dest := filepath.Join(t.TempDir(), "out.bin")
+	var lastDone, lastTotal int64
+	_, err := ToFile(serve(t, body, nil), dest, Options{Progress: func(done, total int64) { lastDone, lastTotal = done, total }})
 	require.NoError(t, err)
 	assert.Equal(t, int64(len(body)), lastDone)
+	assert.Equal(t, int64(len(body)), lastTotal, "Content-Length is reported as total")
 }

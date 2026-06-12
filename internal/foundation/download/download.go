@@ -41,6 +41,9 @@ var defaultClient = &http.Client{Timeout: 10 * time.Minute}
 // (else ""). A non-200 response, an empty body (0 bytes), or an ExpectedHex mismatch is an error and
 // destPath is left untouched.
 func ToFile(url, destPath string, opts Options) (string, error) {
+	if opts.ExpectedHex != "" && opts.Hash == nil {
+		return "", fmt.Errorf("download: ExpectedHex set without Hash; cannot verify %s", url)
+	}
 	client := opts.Client
 	if client == nil {
 		client = defaultClient

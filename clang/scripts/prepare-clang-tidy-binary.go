@@ -39,6 +39,7 @@ func main() {
 
 	// Compute hash for the clang-tidy binary
 	var hashResult [32]byte
+	found := false
 	callback := func(path string, info os.FileInfo, stream io.Reader) {
 		if info.IsDir() {
 			return
@@ -47,11 +48,12 @@ func main() {
 			return
 		}
 
-		err := (error)(nil)
+		var err error
 		hashResult, err = hash.GetSha256(stream)
 		if err != nil {
 			log.Fatalf("sha256 error: %s", err)
 		}
+		found = true
 	}
 
 	// The download step (download-clang-tidy.go) guarantees a real archive or fails; a missing or
@@ -65,6 +67,9 @@ func main() {
 	}
 	if err := archive.WalkArchive(archivePath, callback); err != nil {
 		log.Fatal(err)
+	}
+	if !found {
+		log.Fatalf("%s: %q not found in archive (upstream layout change?)", archivePath, binaryPath)
 	}
 
 	hashFile := fmt.Sprintf("%s.sha256.bin", archivePath)
