@@ -22,14 +22,12 @@ import (
 	_ "embed"
 	"encoding/xml"
 	"fmt"
-	"io"
 	"log"
-	"net/http"
 	"os"
 	"path/filepath"
 	"strings"
 
-	"github.com/JetBrains/qodana-cli/internal/foundation/fs"
+	"github.com/JetBrains/qodana-cli/internal/foundation/download"
 )
 
 //go:embed pom.xml
@@ -131,27 +129,8 @@ func parsePomXml() Project {
 }
 
 func downloadFile(url string) {
-	resp, err := http.Get(url)
-	if err != nil {
-		log.Fatalf("Error downloading %s: %v", url, err)
-	}
-	defer resp.Body.Close()
-
-	if resp.StatusCode != http.StatusOK {
-		log.Fatalf("bad status: %s", resp.Status)
-	}
-
 	dest := filepath.Join(libsDir, filepath.Base(url))
-	out, err := fs.CreateAtomic(dest, 0o644)
-	if err != nil {
-		log.Fatalf("Failed to create file %s: %v", dest, err)
-	}
-
-	if _, err = io.Copy(out, resp.Body); err != nil {
-		_ = out.Abort()
-		log.Fatalf("Failed to write to %s: %v", dest, err)
-	}
-	if err := out.Close(); err != nil {
-		log.Fatalf("Failed to commit %s: %v", dest, err)
+	if _, err := download.ToFile(url, dest, download.Options{}); err != nil {
+		log.Fatalf("Error downloading %s: %v", url, err)
 	}
 }
