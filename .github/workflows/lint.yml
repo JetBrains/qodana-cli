@@ -26,7 +26,7 @@ jobs:
             echo "has_dockerfiles=false" >> $GITHUB_OUTPUT
             echo "No Dockerfiles found in dockerfiles/ directory, skipping generation"
           fi
-      - uses: dorny/paths-filter@v3
+      - uses: dorny/paths-filter@v4
         if: steps.check.outputs.has_dockerfiles == 'true'
         id: changes
         with:
