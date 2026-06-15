@@ -27,10 +27,3 @@ func TestRead_MissingFileIsEmptyNotError(t *testing.T) {
 	require.NoError(t, err)
 	assert.Empty(t, m)
 }
-
-func TestValue_EnvWinsOverFileEvenWhenEmpty(t *testing.T) {
-	t.Setenv("X_DOTENV_TOKEN", "")
-	assert.Equal(t, "", Value("X_DOTENV_TOKEN", map[string]string{"X_DOTENV_TOKEN": "fromfile"}),
-		"an explicitly-set (even empty) env var wins over the file")
-	assert.Equal(t, "fromfile", Value("Y_DOTENV_TOKEN", map[string]string{"Y_DOTENV_TOKEN": "fromfile"}))
-}

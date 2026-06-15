@@ -72,7 +72,7 @@ func main() {
 	// absent, so a developer who exported the token isn't tripped up by an unrelated unreadable .env.
 	token, ok := os.LookupEnv(tokenEnv)
 	if !ok {
-		token = dotenv.Value(tokenEnv, repoRootEnv())
+		token = repoRootEnv()[tokenEnv]
 	}
 	if token == "" {
 		log.Fatalf("%s is required to download %s; set it in your environment or a repo-root .env", tokenEnv, pinPath)

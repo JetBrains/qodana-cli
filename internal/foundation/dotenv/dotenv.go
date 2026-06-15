@@ -21,12 +21,3 @@ func Read(path string) (map[string]string, error) {
 	}
 	return env, nil
 }
-
-// Value returns the value for key, preferring the real environment over the file map. An
-// explicitly-set environment variable wins even when empty (so `KEY= cmd` forces an override).
-func Value(key string, fileEnv map[string]string) string {
-	if v, ok := os.LookupEnv(key); ok {
-		return v
-	}
-	return fileEnv[key]
-}
