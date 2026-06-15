@@ -26,7 +26,6 @@ jobs:
     timeout-minutes: 30
     env:
       GITHUB_TOKEN: ${{ secrets.QODANA_JBR_TOKEN }}
-      QODANA_CLI_DEPS_TOKEN: ${{ secrets.QODANA_CLI_DEPS_TOKEN }}
     steps:
       - uses: actions/checkout@v6
         with:
@@ -64,9 +63,11 @@ jobs:
 
       - name: Build
         # Build everything that will be tested. Although go test performs a build itself, gotestfmt will panic on a
-        # failed build. go generate downloads the real clang/cdnet archives (QODANA_CLI_DEPS_TOKEN, inherited from
-        # the job env, is required on every OS for the //go:embed); the linter *tests* still run on Linux only.
+        # failed build. go generate downloads the real clang/cdnet archives (QODANA_CLI_DEPS_TOKEN is required on
+        # every OS for the //go:embed); the linter *tests* still run on Linux only. Token scoped to this step.
         shell: bash
+        env:
+          QODANA_CLI_DEPS_TOKEN: ${{ secrets.QODANA_CLI_DEPS_TOKEN }}
         run: |
           go generate -v ./...
           go build -v ./...

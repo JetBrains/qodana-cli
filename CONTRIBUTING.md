@@ -209,6 +209,9 @@ If you are a core maintainer and want to release a new version, all you need to 
   git checkout 241 && git tag -a vX.X.X -m "vX.X.X" && git push origin vX.X.X
   ```
 2. Trigger [release job](https://buildserver.labs.intellij.net/buildConfiguration/StaticAnalysis_Cli_Releasecli) **in the release branch** (e.g. `241`)
+   > The release job's goreleaser environment must have `QODANA_CLI_DEPS_TOKEN` set: the clang/cdnet
+   > build hooks now fetch the closed-source archives from JetBrains Space, and there is no mock
+   > fallback — without the token those builds fail.
 3. The release will be published to:
 - [`JetBrains/qodana-cli`](https://github.com/JetBrains/qodana-cli/releases/) release page
 - [Chocolatey](https://community.chocolatey.org/packages/qodana) registry

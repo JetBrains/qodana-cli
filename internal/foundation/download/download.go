@@ -55,6 +55,9 @@ func ToFile(url, destPath string, opts Options) (string, error) {
 	if opts.Bearer != "" {
 		req.Header.Set("Authorization", "Bearer "+opts.Bearer)
 	}
+	// Request identity encoding so the bytes we hash are exactly the artifact bytes: with Go's default
+	// transparent gzip, a proxy serving Content-Encoding: gzip would make the digest not match the pin.
+	req.Header.Set("Accept-Encoding", "identity")
 	resp, err := client.Do(req)
 	if err != nil {
 		return "", fmt.Errorf("get %s: %w", url, err)

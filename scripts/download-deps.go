@@ -61,12 +61,19 @@ func main() {
 	force := flag.Bool("force", false, "re-download and rewrite the pin's sha256 hash(es)")
 	all := flag.Bool("all", false, "operate on every platform's archive, not just the current build target's")
 	flag.Parse()
-	pinPath := flag.Arg(0)
-	if pinPath == "" {
-		log.Fatal("usage: go run download-deps.go [--force] [--all] <pin-file>")
+	if flag.NArg() != 1 {
+		// Go's flag stops at the first non-flag arg, so a flag placed AFTER the pin (e.g.
+		// `... clang-tidy.json --force`) would be silently ignored; reject that, don't no-op.
+		log.Fatal("usage: go run download-deps.go [--force] [--all] <pin-file> (flags must precede the pin file)")
 	}
+	pinPath := flag.Arg(0)
 
-	token := dotenv.Value(tokenEnv, repoRootEnv())
+	// Resolve the token from the real environment first; only read the repo-root .env when it's
+	// absent, so a developer who exported the token isn't tripped up by an unrelated unreadable .env.
+	token, ok := os.LookupEnv(tokenEnv)
+	if !ok {
+		token = dotenv.Value(tokenEnv, repoRootEnv())
+	}
 	if token == "" {
 		log.Fatalf("%s is required to download %s; set it in your environment or a repo-root .env", tokenEnv, pinPath)
 	}
@@ -87,7 +94,13 @@ func main() {
 	dir := filepath.Dir(pinPath)
 	changed := false
 	for _, f := range selected {
-		got := fetch(dep.resolveURL(f), token, filepath.Join(dir, f), dep.Sha256[f], *force)
+		expected := dep.Sha256[f]
+		if !*force && expected == "" {
+			// A blank pinned hash would make download.ToFile skip verification; never embed
+			// an unverified archive on the normal path — require --force to record the hash.
+			log.Fatalf("%s: no pinned sha256 for %q; run --force to record it", pinPath, f)
+		}
+		got := fetch(dep.resolveURL(f), token, filepath.Join(dir, f), expected, *force)
 		if *force {
 			dep.Sha256[f] = got
 			changed = true
