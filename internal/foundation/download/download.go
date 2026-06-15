@@ -19,8 +19,8 @@ import (
 
 // Options configures ToFile. The zero value is a plain, unauthenticated, unverified GET.
 type Options struct {
-	// Client is the HTTP client to use; nil uses a default client with a 10-minute timeout
-	// (large closed-source archives; the timeout is a failure bound on the remote, not a sync).
+	// Client is the HTTP client to use; nil uses a default client with a 10-minute timeout for
+	// large archives.
 	Client *http.Client
 	// Bearer, if non-empty, adds "Authorization: Bearer <Bearer>".
 	Bearer string

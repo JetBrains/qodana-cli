@@ -113,9 +113,8 @@ func DownloadFile(filepath string, url string, auth string, spinner *pterm.Spinn
 			spinner.UpdateText(fmt.Sprintf("%s (%d %%)", baseText, 100*downloaded/total))
 		}
 	}
-	// Use http.DefaultClient (no overall timeout) to match the prior behavior: runtime IDE/plugin
-	// archives are large and may download slowly, so do not impose foundation/download's default
-	// 10-minute Client.Timeout (which bounds the whole body read).
+	// http.DefaultClient (no timeout): runtime IDE/plugin archives can be large and slow, so don't
+	// impose foundation/download's default 10-minute whole-body timeout.
 	if _, err := download.ToFile(url, filepath, download.Options{Client: http.DefaultClient, Bearer: auth, Progress: progress}); err != nil {
 		return err
 	}

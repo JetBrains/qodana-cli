@@ -9,10 +9,8 @@ import (
 	"github.com/subosito/gotenv"
 )
 
-// Read parses the env file at path into a map. A missing file yields an empty map (not an error),
-// so callers can treat "no .env" as "no overrides". It never mutates the process environment
-// (gotenv.Read only opens and parses; only gotenv.Load/Apply call os.Setenv). gotenv.Read returns
-// the raw os.Open error for a missing file, which wraps os.ErrNotExist.
+// Read parses the env file at path into a map, without mutating the process environment. A missing
+// file yields an empty map (not an error), so callers can treat "no .env" as "no overrides".
 func Read(path string) (map[string]string, error) {
 	env, err := gotenv.Read(path)
 	if errors.Is(err, os.ErrNotExist) {
