@@ -27,3 +27,18 @@ func TestRead_MissingFileIsEmptyNotError(t *testing.T) {
 	require.NoError(t, err)
 	assert.Empty(t, m)
 }
+
+// Standard dotenv expansion: a single-quoted value is literal, while an unquoted (or double-quoted)
+// value has $NAME / ${NAME} expanded from the environment. Locks the contract that CONTRIBUTING and
+// .env.example rely on (single-quote a token so a literal $ is not mistaken for a variable reference).
+func TestRead_SingleQuoteKeepsValueLiteral(t *testing.T) {
+	t.Setenv("INJECTED", "boom")
+	dir := t.TempDir()
+	p := filepath.Join(dir, ".env")
+	require.NoError(t, os.WriteFile(p, []byte("LITERAL='tok$INJECTED-end'\nEXPANDED=tok$INJECTED-end\n"), 0o644))
+
+	m, err := Read(p)
+	require.NoError(t, err)
+	assert.Equal(t, "tok$INJECTED-end", m["LITERAL"], "single-quoted value must stay literal")
+	assert.Equal(t, "tokboom-end", m["EXPANDED"], "unquoted value expands $NAME from the environment")
+}

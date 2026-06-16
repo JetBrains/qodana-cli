@@ -34,6 +34,9 @@ Edit `.env` and add your tokens:
 - `QODANA_CLI_DEPS_TOKEN` – read token for the closed-source linter archives on JetBrains Space (`packages.jetbrains.team/files/p/sa/qodana-cli-deps`). **Required** — without it `go generate` fails (there is no mock fallback).
 - `QODANA_LICENSE_ONLY_TOKEN` – for running tests that require license validation (get a temporary token from Qodana Cloud)
 
+Wrap each value in single quotes (`TOKEN='…'`): both `go generate`'s `.env` reader and `set -a; source .env`
+expand `$NAME` in unquoted values, so a literal `$` in a token would otherwise be mangled.
+
 ### Prepare embedded tools
 
 `go generate ./...` produces every build-time artifact: the public Maven JARs and the closed-source
