@@ -58,8 +58,10 @@ jobs:
         if: (github.event.release.name || github.event.inputs.release_name) != 'nightly'
         run: |
           node scripts/update-cli.js
+          cd vscode/qodana
           npm ci
-          npm run build
+          npm run compile
+          cd ../..
           git config user.name qodana-bot
           git config user.email qodana-support@jetbrains.com
           git checkout -b bump-cli-version
