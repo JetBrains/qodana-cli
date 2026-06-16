@@ -23,13 +23,7 @@ func TestCanonical_ExecOnlyDir(t *testing.T) {
 	require.NoError(t, os.Chmod(dir, 0o111))
 	t.Cleanup(func() { _ = os.Chmod(dir, 0o755) })
 
-	// Precondition: 0o111 must actually deny ReadDir. Root or
-	// CAP_DAC_READ_SEARCH bypass DAC; surface that loudly.
-	if _, err := os.ReadDir(dir); err == nil {
-		t.Fatalf("environment does not enforce 0o111 directory perms "+
-			"(uid=%d, gid=%d); run as non-root user, or set %s=0 to skip",
-			os.Getuid(), os.Getgid(), needs.NonRoot.EnvVar)
-	}
+	requireReadDirDenied(t, dir)
 
 	got, err := Canonical(filepath.Join(dir, "file"))
 	require.NoError(t, err, "Canonical must work with execute-only parent dir")
@@ -47,11 +41,7 @@ func TestWeaklyCanonical_ExecOnlyDir(t *testing.T) {
 	require.NoError(t, os.Chmod(dir, 0o111))
 	t.Cleanup(func() { _ = os.Chmod(dir, 0o755) })
 
-	if _, err := os.ReadDir(dir); err == nil {
-		t.Fatalf("environment does not enforce 0o111 directory perms "+
-			"(uid=%d, gid=%d); run as non-root user, or set %s=0 to skip",
-			os.Getuid(), os.Getgid(), needs.NonRoot.EnvVar)
-	}
+	requireReadDirDenied(t, dir)
 
 	got, err := WeaklyCanonical(filepath.Join(dir, "file"))
 	require.NoError(t, err, "WeaklyCanonical must work with execute-only parent dir")
@@ -70,11 +60,7 @@ func TestCanonical_ExecOnlyDirCaseNormalization(t *testing.T) {
 	require.NoError(t, os.Chmod(dir, 0o111))
 	t.Cleanup(func() { _ = os.Chmod(dir, 0o755) })
 
-	if _, err := os.ReadDir(dir); err == nil {
-		t.Fatalf("environment does not enforce 0o111 directory perms "+
-			"(uid=%d, gid=%d); run as non-root user, or set %s=0 to skip",
-			os.Getuid(), os.Getgid(), needs.NonRoot.EnvVar)
-	}
+	requireReadDirDenied(t, dir)
 
 	// On a case-insensitive FS, asking for wrong-case "mixedcase" should
 	// still return the on-disk name "MixedCase".
