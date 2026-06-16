@@ -1,4 +1,7 @@
-ARG GO_TAG="1.26-debian13-dev"
+# DHI golang 1.26.3 shipped libz.so.1 built -z nodlopen (DF_1_NOOPEN), which breaks the
+# IDE JVM's runtime dlopen of libzip.so (QD-14979). Pinned to a known-good digest where
+# the flag is cleared; keep the @sha256 pin — Renovate bumps the digest, the tag stays put.
+ARG GO_TAG="1.26-debian13-dev@sha256:17e7e33c3c31ec622fe56db4e7f20babf8d4829f41a8e6657da5d06b348a5577"
 ARG NODE_TAG="22-debian13-dev"
 FROM dhi.io/node:$NODE_TAG AS node_base
 FROM dhi.io/golang:$GO_TAG
