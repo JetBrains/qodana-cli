@@ -41,7 +41,7 @@ expand `$NAME` in unquoted values, so a literal `$` in a token would otherwise b
 
 `go generate ./...` produces every build-time artifact: the public Maven JARs and the closed-source
 clang-tidy / ReSharper CLT archives (downloaded from Space and verified against the
-`clang/clang-tidy.json` and `cdnet/cdnet.json` dependency files). `QODANA_CLI_DEPS_TOKEN` is **required** —
+`clang/clang-tidy.json` and `cdnet/resharper-clt.json` dependency files). `QODANA_CLI_DEPS_TOKEN` is **required** —
 without it `go generate` fails; there is no mock fallback.
 
 ```sh
@@ -111,15 +111,15 @@ brew install cmake dotnet openjdk@21
 ### Bumping a third-party linter version
 
 The pinned versions and SHA-256 hashes live in `clang/clang-tidy.json` and
-`cdnet/cdnet.json` (Renovate opens PRs that bump the `version` field). After a version
+`cdnet/resharper-clt.json` (Renovate opens PRs that bump the `version` field). After a version
 changes, refresh the hashes from Space and commit the result:
 
 ```sh
 # clang-tidy ships one archive per platform, so --all refreshes them all. Flags can't pass through
 # `go generate`, so run the shared script directly from the linter dir:
 ( cd clang && go run ../scripts/download-deps.go --force --all clang-tidy.json )
-( cd cdnet && go run ../scripts/download-deps.go --force cdnet.json )
-git diff clang/clang-tidy.json cdnet/cdnet.json   # only the sha256 values change
+( cd cdnet && go run ../scripts/download-deps.go --force resharper-clt.json )
+git diff clang/clang-tidy.json cdnet/resharper-clt.json   # only the sha256 values change
 ```
 
 ### Building a custom 3rd party linter

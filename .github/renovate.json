@@ -40,7 +40,7 @@
     },
     {
       "fileMatch": [
-        "^(clang/clang-tidy|cdnet/cdnet)\\.json$"
+        "^(clang/clang-tidy|cdnet/resharper-clt)\\.json$"
       ],
       "matchStrings": [
         "\"version\":\\s*\"(?<currentValue>v[^\"]+)\""
@@ -69,7 +69,7 @@
       "matchDatasources": ["custom.qodana-cli-deps"],
       "commitMessagePrefix": "QD-14839 ",
       "prBodyNotes": [
-        "After merge, refresh the SHA-256 hashes from Space and commit the result: `(cd clang && go run ../scripts/download-deps.go --force --all clang-tidy.json)` (clang-tidy) or `(cd cdnet && go run ../scripts/download-deps.go --force cdnet.json)` (cdnet)."
+        "After merge, refresh the SHA-256 hashes from Space and commit the result: `(cd clang && go run ../scripts/download-deps.go --force --all clang-tidy.json)` (clang-tidy) or `(cd cdnet && go run ../scripts/download-deps.go --force resharper-clt.json)` (cdnet)."
       ]
     }
   ],
