@@ -210,8 +210,8 @@ func GetProductNameFromCode(code string) string {
 		return "Qodana for Ruby"
 	case QDCPP:
 		return "Qodana for C/C++"
-	case QDIV:
-		return "Qodana for IJ Void"
+	case QDPOLY:
+		return "Qodana for any"
 	default:
 		return "Qodana"
 	}
@@ -384,7 +384,7 @@ func toQodanaCode(baseProduct string) string {
 	case "CL":
 		return QDCPP
 	case "IV":
-		return QDIV
+		return QDPOLY
 	default:
 		return "QD"
 	}

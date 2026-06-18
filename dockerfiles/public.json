@@ -63,8 +63,8 @@
     "qd_code": "QDRST",
     "description": "Qodana for Rust (https://jb.gg/qodana-rust)"
   },
-  "void": {
-    "qd_code": "QDIV",
-    "description": "Qodana for IJ Void (https://jb.gg/qodana-void)"
+  "poly": {
+    "qd_code": "QDPOLY",
+    "description": "Qodana for any (https://jb.gg/qodana-poly)"
   }
 }
