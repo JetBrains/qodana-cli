@@ -1,4 +1,4 @@
-FROM registry.jetbrains.team/p/sa/containers/qodana:void-base-latest
+FROM registry.jetbrains.team/p/sa/containers/qodana:poly-base-latest
 
 ARG TARGETPLATFORM
 ARG DEVICEID
