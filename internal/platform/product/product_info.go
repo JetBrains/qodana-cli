@@ -211,7 +211,7 @@ func GetProductNameFromCode(code string) string {
 	case QDCPP:
 		return "Qodana for C/C++"
 	case QDPOLY:
-		return "Qodana for any"
+		return "Qodana Poly"
 	default:
 		return "Qodana"
 	}

@@ -227,7 +227,7 @@ var (
 	}
 
 	PolyLinter = Linter{
-		PresentableName: "Qodana for any",
+		PresentableName: "Qodana Poly",
 		Name:            "qodana-poly",
 		ProductCode:     QDPOLY,
 		DockerImage:     "jetbrains/qodana-poly",

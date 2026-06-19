@@ -427,7 +427,7 @@ func TestGetProductNameFromCode(t *testing.T) {
 		{QDGO, "Qodana for Go"},
 		{QDRST, "Qodana for Rust"},
 		{QDRUBY, "Qodana for Ruby"},
-		{QDPOLY, "Qodana for any"},
+		{QDPOLY, "Qodana Poly"},
 		{"UNKNOWN", "Qodana"},
 	}
 

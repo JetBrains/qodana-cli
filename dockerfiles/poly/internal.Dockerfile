@@ -14,6 +14,6 @@ update-alternatives --set javac "$JAVA_HOME"/bin/javac
 rm -rf /var/cache/apt /var/lib/apt/ /tmp/*
 EOF
 
-LABEL maintainer="qodana-support@jetbrains.com" description="Qodana for any (https://jb.gg/qodana-poly)"
+LABEL maintainer="qodana-support@jetbrains.com" description="Qodana Poly (https://jb.gg/qodana-poly)"
 WORKDIR /data/project
 ENTRYPOINT ["/opt/idea/bin/qodana"]
