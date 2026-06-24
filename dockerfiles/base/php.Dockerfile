@@ -19,10 +19,14 @@ ENV JAVA_HOME="$QODANA_DIST/jbr" \
     PATH="$QODANA_DIST/bin:$PATH"
 
 # hadolint ignore=SC2174,DL3009
+# The dhi.io/php base ships a pre-broken apt state (its gcc-14 has an unsatisfiable binutils dep) that
+# poisons the apt solver; the gated `apt-get --fix-broken install` drops the broken gcc-14 chain (the
+# php image needs no C compiler).
 RUN --mount=target=/var/lib/apt/lists,type=cache,sharing=locked \
     --mount=target=/var/cache/apt,type=cache,sharing=locked \
     rm -f /etc/apt/apt.conf.d/docker-clean && \
     mkdir -m 777 -p /opt $QODANA_DATA $QODANA_CONF && apt-get update && \
+    if ! apt-get check; then apt-get --fix-broken install -y --no-install-recommends; fi && \
     DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
         ca-certificates \
         curl \
