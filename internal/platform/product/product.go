@@ -55,7 +55,7 @@ const (
 	QDRUBY = "QDRUBY"
 	QDCLC  = "QDCLC"
 	QDCPP  = "QDCPP"
-	QDIV  = "QDIV"
+	QDPOLY = "QDPOLY"
 )
 
 var (
@@ -226,11 +226,11 @@ var (
 		EapOnly:         false,
 	}
 
-    VoidLinter = Linter{
-		PresentableName: "Qodana for IJ Void",
-		Name:            "qodana-void",
-		ProductCode:     QDIV,
-		DockerImage:     "jetbrains/qodana-void",
+	PolyLinter = Linter{
+		PresentableName: "Qodana Poly",
+		Name:            "qodana-poly",
+		ProductCode:     QDPOLY,
+		DockerImage:     "jetbrains/qodana-poly",
 		SupportNative:   false,
 		IsPaid:          false,
 		SupportFixes:    false,
@@ -254,7 +254,7 @@ var (
 		GoLinter,
 		RustLinter,
 		ClangLinter,
-		VoidLinter,
+		PolyLinter,
 	}
 )
 

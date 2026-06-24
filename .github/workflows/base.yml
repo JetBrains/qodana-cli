@@ -31,7 +31,7 @@ jobs:
           - clang-19   # clang 19 (Bookworm)
           - go         # standalone
           - js         # standalone
-          - void       # standalone
+          - poly       # standalone
           - php        # standalone
           - rust       # standalone
           - ruby       # ruby 3.2, 3.3, 3.4
