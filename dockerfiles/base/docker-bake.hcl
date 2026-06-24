@@ -198,7 +198,7 @@ target "cpp-bookworm" {
     "registry.jetbrains.team/p/sa/containers/qodana:cpp-base-${clang}-latest"
   ]
   platforms = ["linux/amd64", "linux/arm64"]
-  dockerfile = "cpp.Dockerfile"
+  dockerfile = "cpp-bookworm.Dockerfile"
   args = {
     CLANG = clang
   }

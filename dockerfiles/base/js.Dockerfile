@@ -1,4 +1,4 @@
-ARG NODE_TAG="22-debian13-dev"
+ARG NODE_TAG="22-debian13-dev@sha256:6193eadf230e43b9df82c4340e1f98223d2ef41ec83bde0ba32ccc3dbf11b0b1"
 FROM dhi.io/node:$NODE_TAG
 
 # renovate: datasource=npm depName=eslint
@@ -35,8 +35,10 @@ RUN --mount=target=/var/lib/apt/lists,type=cache,sharing=locked \
     chmod 777 -R $HOME && \
     echo 'root:x:0:0:root:/root:/bin/bash' > /etc/passwd && chmod 666 /etc/passwd && \
     git config --global --add safe.directory '*' && \
+    node --version && \
+    npm --version && \
+    yarn --version && \
     npm install -g eslint@$ESLINT_VERSION && npm config set update-notifier false && \
     chmod 777 -R "$HOME/.npm" "$HOME/.npmrc"
 
-ENV PATH="/opt/yarn/bin:$PATH"
 ENV SKIP_YARN_COREPACK_CHECK=0
