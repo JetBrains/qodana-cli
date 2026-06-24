@@ -47,17 +47,19 @@ RUN --mount=target=/var/lib/apt/lists,type=cache,sharing=locked \
     echo 'root:x:0:0:root:/root:/bin/bash' > /etc/passwd && chmod 666 /etc/passwd && \
     git config --global --add safe.directory '*'
 
+# clang-$CLANG pulls libobjc-<gcc>-dev which `=`-pins stock gcc-14-base, but the DHI hardened base ships
+# the +dhi rebuild, so apt deadlocks ("held broken packages"). On failure, pin the gcc runtime family to
+# the stock Debian origin and retry with --allow-downgrades.
 RUN echo "deb https://apt.llvm.org/trixie/ llvm-toolchain-trixie-${CLANG} main" > /etc/apt/sources.list.d/llvm.list && \
     curl -s https://apt.llvm.org/llvm-snapshot.gpg.key | gpg --dearmor > /etc/apt/trusted.gpg.d/llvm.gpg && \
     apt-get -qq update && \
-    apt-get install -qqy -t \
-      llvm-toolchain-trixie-$CLANG \
-      clang-$CLANG \
-      clang-tidy-$CLANG \
-      clang-format-$CLANG \
-      lld-$CLANG \
-      libc++-$CLANG-dev \
-      libc++abi-$CLANG-dev && \
+    if ! apt-get install -qqy -t llvm-toolchain-trixie-$CLANG \
+      clang-$CLANG clang-tidy-$CLANG clang-format-$CLANG lld-$CLANG libc++-$CLANG-dev libc++abi-$CLANG-dev; then \
+      printf 'Package: gcc-*-base libgcc-* libstdc++* libgomp* libitm* libatomic* libasan* liblsan* libtsan* libubsan* libhwasan* libquadmath* libcc1-* libobjc*\nPin: release o=Debian\nPin-Priority: 1001\n' > /etc/apt/preferences.d/gcc-stock && \
+      apt-get install -qqy -t llvm-toolchain-trixie-$CLANG --allow-downgrades \
+      clang-$CLANG clang-tidy-$CLANG clang-format-$CLANG lld-$CLANG libc++-$CLANG-dev libc++abi-$CLANG-dev && \
+      rm -f /etc/apt/preferences.d/gcc-stock; \
+    fi && \
     for f in /usr/lib/llvm-$CLANG/bin/*; do ln -sf "$f" /usr/bin; done && \
     ln -sf clang /usr/bin/cc && \
     ln -sf clang /usr/bin/c89 && \

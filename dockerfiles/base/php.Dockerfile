@@ -1,4 +1,4 @@
-ARG NODE_TAG="22-debian13-dev"
+ARG NODE_TAG="22-debian13-dev@sha256:6193eadf230e43b9df82c4340e1f98223d2ef41ec83bde0ba32ccc3dbf11b0b1"
 ARG PHP_TAG="8.4-dev"
 ARG COMPOSER_TAG="2.8.10"
 FROM dhi.io/node:$NODE_TAG AS node_base
@@ -19,10 +19,14 @@ ENV JAVA_HOME="$QODANA_DIST/jbr" \
     PATH="$QODANA_DIST/bin:$PATH"
 
 # hadolint ignore=SC2174,DL3009
+# The dhi.io/php base ships a pre-broken apt state (its gcc-14 has an unsatisfiable binutils dep) that
+# poisons the apt solver; the gated `apt-get --fix-broken install` drops the broken gcc-14 chain (the
+# php image needs no C compiler).
 RUN --mount=target=/var/lib/apt/lists,type=cache,sharing=locked \
     --mount=target=/var/cache/apt,type=cache,sharing=locked \
     rm -f /etc/apt/apt.conf.d/docker-clean && \
     mkdir -m 777 -p /opt $QODANA_DATA $QODANA_CONF && apt-get update && \
+    if ! apt-get check; then apt-get --fix-broken install -y --no-install-recommends; fi && \
     DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
         ca-certificates \
         curl \
@@ -45,17 +49,17 @@ RUN --mount=target=/var/lib/apt/lists,type=cache,sharing=locked \
 
 ENV PATH="/opt/yarn/bin:$PATH"
 ENV SKIP_YARN_COREPACK_CHECK=0
-COPY --from=node_base /opt/nodejs/node-*/bin/node /usr/local/bin/
-COPY --from=node_base /opt/nodejs/node-*/include/node /usr/local/include/node
-COPY --from=node_base /opt/nodejs/node-*/lib/node_modules /usr/local/lib/node_modules
-COPY --from=node_base /opt/yarn/ /opt/yarn/
+COPY --from=node_base /usr/bin/node /usr/local/bin/
+COPY --from=node_base /usr/lib/nodejs/npm /usr/local/lib/node_modules/npm
+COPY --from=node_base /usr/lib/nodejs/corepack /usr/local/lib/node_modules/corepack
+COPY --from=node_base /usr/lib/nodejs/yarn /opt/yarn/
 RUN ln -s /usr/local/lib/node_modules/npm/bin/npm-cli.js /usr/local/bin/npm && \
     ln -s /usr/local/lib/node_modules/npm/bin/npx-cli.js /usr/local/bin/npx && \
     ln -s /usr/local/lib/node_modules/corepack/dist/corepack.js /usr/local/bin/corepack && \
-    mkdir -p /opt/yarn/bin && ln -s /opt/yarn/yarn-*/bin/yarn /opt/yarn/bin/ && \
-    ln -s /opt/yarn/yarn-*/bin/yarnpkg /opt/yarn/bin/ && \
     node --version && \
     npm --version && \
+    npx --version && \
+    corepack --version && \
     yarn --version && \
     npm install -g eslint@$ESLINT_VERSION && npm config set update-notifier false && \
     chmod 777 -R "$HOME/.npm" "$HOME/.npmrc"
