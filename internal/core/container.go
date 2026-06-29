@@ -42,6 +42,7 @@ import (
 	"github.com/JetBrains/qodana-cli/internal/platform/qdenv"
 	"github.com/JetBrains/qodana-cli/internal/platform/utils"
 	"github.com/JetBrains/qodana-cli/internal/platform/version"
+	"github.com/containerd/errdefs"
 	"github.com/docker/docker/api/types/backend"
 	"github.com/docker/docker/api/types/registry"
 	"github.com/docker/go-connections/nat"
@@ -203,13 +204,40 @@ func encodeAuthToBase64(authConfig registry.AuthConfig) (string, error) {
 
 // PullImage pulls docker image and prints the process.
 func PullImage(client client.APIClient, image string) {
+	ctx := context.Background()
+	skippedPull := false
+
 	msg.PrintProcess(
 		func(_ *pterm.SpinnerPrinter) {
-			pullImage(context.Background(), client, image)
+			err := pullImage(ctx, client, image)
+			if err == nil {
+				return
+			}
+			if isImagePresent(ctx, client, image) && errdefs.IsNotFound(err) {
+				skippedPull = true
+				return
+			}
+			log.Fatal(err)
 		},
 		fmt.Sprintf("Pulling the image %s", msg.PrimaryBold(image)),
-		"pulling the latest version of linter",
+		"",
 	)
+	if skippedPull {
+		msg.SuccessMessage("Couldn't pull latest version of image %s as it was not found, using local version", msg.PrimaryBold(image))
+	} else {
+		msg.SuccessMessage("Finished pulling the latest version of linter")
+	}
+}
+
+func isImagePresent(ctx context.Context, client client.APIClient, imageName string) bool {
+	if _, err := client.ImageInspect(ctx, imageName); err == nil {
+		return true
+	} else if errdefs.IsNotFound(err) {
+		return false
+	} else {
+		log.Warnf("Can't inspect image %s locally: %s", imageName, err)
+		return false
+	}
 }
 
 func isDockerUnauthorizedError(errMsg string) bool {
@@ -220,41 +248,48 @@ func isDockerUnauthorizedError(errMsg string) bool {
 	)
 }
 
+func loadRegistryAuth(ref string) (string, error) {
+	cfg, err := cliconfig.Load("")
+	if err != nil {
+		return "", err
+	}
+
+	registryHostname := str.SafeSplit(ref, "/", 0)
+
+	a, err := cfg.GetAuthConfig(registryHostname)
+	if err != nil {
+		return "", fmt.Errorf("can't load the auth config: %w", err)
+	}
+	encodedAuth, err := encodeAuthToBase64(registry.AuthConfig(a))
+	if err != nil {
+		return "", fmt.Errorf("can't encode auth to base64: %w", err)
+	}
+	return encodedAuth, nil
+}
+
 // pullImage pulls docker image.
-func pullImage(ctx context.Context, client client.APIClient, ref string) {
+func pullImage(ctx context.Context, client client.APIClient, ref string) error {
 	reader, err := client.ImagePull(ctx, ref, image.PullOptions{})
 	if err != nil && isDockerUnauthorizedError(err.Error()) {
-		cfg, err := cliconfig.Load("")
+		encodedAuth, err := loadRegistryAuth(ref)
 		if err != nil {
-			log.Fatal(err)
-		}
-
-		registryHostname := str.SafeSplit(ref, "/", 0)
-
-		a, err := cfg.GetAuthConfig(registryHostname)
-		if err != nil {
-			log.Fatal("can't load the auth config", err)
-		}
-		encodedAuth, err := encodeAuthToBase64(registry.AuthConfig(a))
-		if err != nil {
-			log.Fatal("can't encode auth to base64", err)
+			return err
 		}
 		reader, err = client.ImagePull(ctx, ref, image.PullOptions{RegistryAuth: encodedAuth})
 		if err != nil {
-			log.Fatal("can't pull image from the private registry", err)
+			return fmt.Errorf("can't pull image from the private registry: %w", err)
 		}
 	} else if err != nil {
-		log.Fatal("can't pull image ", err)
+		return fmt.Errorf("can't pull image: %w", err)
 	}
-	defer func(pull io.ReadCloser) {
-		err := pull.Close()
-		if err != nil {
-			log.Fatal("can't pull image ", err)
-		}
-	}(reader)
 	if _, err = io.Copy(io.Discard, reader); err != nil {
-		log.Fatal("couldn't read the image pull logs ", err)
+		_ = reader.Close()
+		return fmt.Errorf("couldn't read the image pull logs: %w", err)
 	}
+	if err = reader.Close(); err != nil {
+		return fmt.Errorf("can't pull image: %w", err)
+	}
+	return nil
 }
 
 // ContainerCleanup cleans up Qodana containers.
