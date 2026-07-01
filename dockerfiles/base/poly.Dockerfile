@@ -35,6 +35,7 @@ DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
     git-lfs \
     gnupg2 \
     locales \
+    libicu76 \
     openssh-client \
     procps \
     jq
