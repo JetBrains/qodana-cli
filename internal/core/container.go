@@ -20,6 +20,7 @@ import (
 	"context"
 	"encoding/base64"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"os"
@@ -235,9 +236,19 @@ func isDockerUnauthorizedError(errMsg string) bool {
 }
 
 // pullImage pulls docker image.
-func pullImage(ctx context.Context, client client.APIClient, ref string) error {
+func pullImage(ctx context.Context, client client.APIClient, ref string) (err error) {
 	reader, err := client.ImagePull(ctx, ref, image.PullOptions{})
+	defer func() {
+		if reader != nil {
+			err = errors.Join(err, reader.Close())
+		}
+		reader = nil
+	}()
 	if err != nil && isDockerUnauthorizedError(err.Error()) {
+		if reader != nil {
+			_ = reader.Close()
+			reader = nil
+		}
 		cfg, err := cliconfig.Load("")
 		if err != nil {
 			return fmt.Errorf("can't load Docker auth config: %w", err)
@@ -261,11 +272,7 @@ func pullImage(ctx context.Context, client client.APIClient, ref string) error {
 		return fmt.Errorf("can't pull image: %w", err)
 	}
 	if _, err = io.Copy(io.Discard, reader); err != nil {
-		_ = reader.Close()
 		return fmt.Errorf("couldn't read the image pull logs: %w", err)
-	}
-	if err = reader.Close(); err != nil {
-		return fmt.Errorf("can't pull image: %w", err)
 	}
 	return nil
 }
