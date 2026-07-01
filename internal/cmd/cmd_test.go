@@ -20,6 +20,7 @@ package cmd
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -27,13 +28,16 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/JetBrains/qodana-cli/internal/core"
 	"github.com/JetBrains/qodana-cli/internal/platform/msg"
 	"github.com/JetBrains/qodana-cli/internal/platform/product"
+	"github.com/JetBrains/qodana-cli/internal/platform/qdcontainer"
 	"github.com/JetBrains/qodana-cli/internal/platform/qdyaml"
 	"github.com/JetBrains/qodana-cli/internal/platform/version"
 	"github.com/JetBrains/qodana-cli/internal/testutil/needs"
+	imagetypes "github.com/docker/docker/api/types/image"
 	cp "github.com/otiai10/copy"
 	log "github.com/sirupsen/logrus"
 )
@@ -293,6 +297,55 @@ func TestPullImage(t *testing.T) {
 	command.SetArgs([]string{"--image", "hello-world"})
 
 	err := command.Execute()
+	if err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestPullSucceedsWhenImagePresentOnlyLocally(t *testing.T) {
+	needs.Need(t, needs.Docker)
+	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Minute)
+	defer cancel()
+	qdcontainer.PrepareContainerEnvSettings()
+	docker, err := qdcontainer.NewContainerClient(ctx)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	reader, err := docker.ImagePull(ctx, "hello-world", imagetypes.PullOptions{})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	defer func() {
+		if err := reader.Close(); err != nil {
+			t.Fatal(err)
+		}
+	}()
+	if _, err = io.Copy(io.Discard, reader); err != nil {
+		t.Fatal(err)
+	}
+
+	localImage := fmt.Sprintf("qodana-cli-pull-skip-test:%d", time.Now().UnixNano())
+	if err = docker.ImageTag(ctx, "hello-world", localImage); err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(
+		func() {
+			if _, err = docker.ImageRemove(
+				context.Background(),
+				localImage,
+				imagetypes.RemoveOptions{Force: true, PruneChildren: false},
+			); err != nil {
+				t.Logf("failed to remove test image %s: %s", localImage, err)
+			}
+		},
+	)
+
+	command := newPullCommand()
+	command.SetArgs([]string{"--image", localImage})
+
+	err = command.Execute()
 	if err != nil {
 		t.Fatal(err)
 	}
