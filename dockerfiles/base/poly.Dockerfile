@@ -4,6 +4,17 @@ FROM dhi.io/debian-base:$BASE_TAG
 
 ARG TARGETPLATFORM
 
+# See also:
+# https://learn.microsoft.com/en-us/dotnet/core/tools/dotnet-environment-variables#dotnet_root-dotnet_rootx86-dotnet_root_x86-dotnet_root_x64
+# https://learn.microsoft.com/en-gb/dotnet/core/install/linux-scripted-manual#example
+ENV DOTNET_ROOT="/usr/share/dotnet"
+ENV PATH="$PATH:$DOTNET_ROOT:$DOTNET_ROOT/tools"
+
+# Not using the URL https://dot.net/v1/dotnet-install.sh because of https://github.com/dotnet/install-scripts/issues/276
+ARG DOTNET_INSTALL_SH_REVISION="2e497bbe880cf47b209fe0d1f9c5e051916f830e"
+ARG DOTNET_INSTALL_SH_SHA256="3f30fbfa69e182be7e60fd0cd9189c53cb61799b6077159fec74341112f1715e"
+ARG DOTNET_CHANNELS="8.0 9.0 10.0"
+
 ENV HOME="/root" LC_ALL="en_US.UTF-8" QODANA_DIST="/opt/idea" QODANA_DATA="/data"
 ENV JAVA_HOME="$QODANA_DIST/jbr" QODANA_DOCKER="true" QODANA_CONF="$HOME/.config/idea"
 
@@ -35,5 +46,36 @@ chmod 777 -R "$HOME"
 echo 'root:x:0:0:root:/root:/bin/bash' > /etc/passwd
 chmod 666 /etc/passwd
 git config --global --add safe.directory '*'
+
+# Download and verify install script
+dotnet_install_sh_url="https://raw.githubusercontent.com/dotnet/install-scripts/$DOTNET_INSTALL_SH_REVISION/src/dotnet-install.sh"
+curl -L "$dotnet_install_sh_url" -o /tmp/dotnet-install.sh
+actual_sha256=$(sha256sum /tmp/dotnet-install.sh | cut -d ' ' -f1)
+if [ "$DOTNET_INSTALL_SH_SHA256" != "$actual_sha256" ]; then
+    echo "SHA 256 did not match for $dotnet_install_sh_url"
+    echo "  expected: $DOTNET_INSTALL_SH_SHA256"
+    echo "    actual: $actual_sha256"
+    exit 1
+fi
+
+# Install .NET SDKs
+chmod +x /tmp/dotnet-install.sh
+for channel in $DOTNET_CHANNELS; do
+    /tmp/dotnet-install.sh --channel $channel --install-dir "$DOTNET_ROOT"
+done
+
+# Verify that requested SDKs are installed and available
+installed_sdks=$(dotnet --list-sdks)
+for channel in $DOTNET_CHANNELS; do
+    if ! grep -Eq "^$channel" <<< "$installed_sdks"; then
+        echo "Could not find requested channel $channel in the output of 'dotnet --list-sdks':"
+        echo "$installed_sdks"
+        exit 1
+    fi
+done
+
+# ------------------------------------------------------------------------------------------------------------------
+chmod 777 -R "$DOTNET_ROOT" "$HOME"
+
 rm -rf /tmp/*
 EOF
