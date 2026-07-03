@@ -61,13 +61,14 @@ RUN ln -s /usr/local/lib/node_modules/npm/bin/npm-cli.js /usr/local/bin/npm && \
     mkdir -p -m 777 "$HOME/.m2" "$HOME/.m2/repository"
 
 ARG QD_RELEASE=""
-ENV QD_VERSION="2026.1" QD_IMAGE="android"
+ARG QD_VERSION="2026.2"
+ENV QD_VERSION="$QD_VERSION" QD_IMAGE="android"
 ARG QD_CODE="QDAND"
-ARG QD_BUILD="261.25881"
-ARG QD_DOWNLOAD_URL_LINUX="https://download.jetbrains.com/qodana/2026.1/qodana-QDJVM-261.25881.415.tar.gz"
-ARG QD_DOWNLOAD_URL_LINUX_ARM64="https://download.jetbrains.com/qodana/2026.1/qodana-QDJVM-261.25881.415-aarch64.tar.gz"
-ARG QD_CHECKSUM_URL_LINUX="https://download.jetbrains.com/qodana/2026.1/qodana-QDJVM-261.25881.415.tar.gz.sha256"
-ARG QD_CHECKSUM_URL_LINUX_ARM64="https://download.jetbrains.com/qodana/2026.1/qodana-QDJVM-261.25881.415-aarch64.tar.gz.sha256"
+ARG QD_BUILD=""
+ARG QD_DOWNLOAD_URL_LINUX=""
+ARG QD_DOWNLOAD_URL_LINUX_ARM64=""
+ARG QD_CHECKSUM_URL_LINUX=""
+ARG QD_CHECKSUM_URL_LINUX_ARM64=""
 # hadolint ignore=DL3003,SC2043
 RUN set -ex && \
     dpkgArch="$(dpkg --print-architecture)" && \
