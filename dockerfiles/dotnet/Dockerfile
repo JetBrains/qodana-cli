@@ -125,13 +125,14 @@ RUN ln -s /usr/local/lib/node_modules/npm/bin/npm-cli.js /usr/local/bin/npm && \
     apt-get autoremove -y && apt-get clean
 
 ARG QD_RELEASE=""
-ENV QD_VERSION="2026.1" QD_IMAGE="dotnet"
+ARG QD_VERSION="2026.2"
+ENV QD_VERSION="$QD_VERSION" QD_IMAGE="dotnet"
 ARG QD_CODE="QDNET"
-ARG QD_BUILD="261.24105"
-ARG QD_DOWNLOAD_URL_LINUX="https://download.jetbrains.com/qodana/2026.1/qodana-QDNET-261.24105.117.tar.gz"
-ARG QD_DOWNLOAD_URL_LINUX_ARM64="https://download.jetbrains.com/qodana/2026.1/qodana-QDNET-261.24105.117-aarch64.tar.gz"
-ARG QD_CHECKSUM_URL_LINUX="https://download.jetbrains.com/qodana/2026.1/qodana-QDNET-261.24105.117.tar.gz.sha256"
-ARG QD_CHECKSUM_URL_LINUX_ARM64="https://download.jetbrains.com/qodana/2026.1/qodana-QDNET-261.24105.117-aarch64.tar.gz.sha256"
+ARG QD_BUILD=""
+ARG QD_DOWNLOAD_URL_LINUX=""
+ARG QD_DOWNLOAD_URL_LINUX_ARM64=""
+ARG QD_CHECKSUM_URL_LINUX=""
+ARG QD_CHECKSUM_URL_LINUX_ARM64=""
 # hadolint ignore=DL3003,SC2043
 RUN set -ex && \
     dpkgArch="$(dpkg --print-architecture)" && \

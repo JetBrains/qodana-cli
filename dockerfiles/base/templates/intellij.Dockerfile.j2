@@ -1,5 +1,6 @@
 ARG QD_RELEASE=""
-ENV QD_VERSION="{{ qd_version }}" QD_IMAGE="{{ qd_image }}"
+ARG QD_VERSION="{{ qd_version }}"
+ENV QD_VERSION="$QD_VERSION" QD_IMAGE="{{ qd_image }}"
 ARG QD_CODE="{{ qd_code }}"
 ARG QD_BUILD="{{ qd_build }}"
 ARG QD_DOWNLOAD_URL_LINUX="{{ qd_downloads.get('linux', {}).get('Link', '') }}"
