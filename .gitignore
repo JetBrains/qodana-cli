@@ -213,3 +213,8 @@ dist/
 # see https://code.claude.com/docs/en/settings#configuration-scopes
 .claude/*.local.*
 CLAUDE.local.md
+
+# Python (scripts/ tooling and its tests)
+__pycache__/
+*.py[cod]
+.pytest_cache/
