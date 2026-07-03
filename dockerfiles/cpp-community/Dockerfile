@@ -71,8 +71,8 @@ RUN echo "deb https://apt.llvm.org/trixie/ llvm-toolchain-trixie-${CLANG} main" 
     rm -rf /var/lib/apt/lists/* && \
     apt-get autoremove -y && apt-get clean
 
-ARG QD_RELEASE="2026.2"
-ENV QD_VERSION="2026.2" QD_IMAGE="cpp-community"
+ARG QD_RELEASE="2026.1"
+ENV QD_VERSION="2026.1" QD_IMAGE="cpp-community"
 ARG QD_BUILD="QDCLC-$QD_RELEASE"
 # hadolint ignore=DL3003,SC2043
 RUN set -ex && \
