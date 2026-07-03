@@ -6,6 +6,7 @@ on:
       - 'dockerfiles/**/*.j2'
       - 'dockerfiles/public.json'
       - 'scripts/dockerfiles.py'
+      - 'scripts/dockerfiles_test.py'
       - 'scripts/validate_dockerfiles_base.py'
       - 'scripts/validate_dockerfiles_base_test.py'
 
@@ -23,7 +24,7 @@ jobs:
       - name: Validate base image tags
         run: |
           pip install jinja2 pytest
-          pytest scripts/validate_dockerfiles_base_test.py -q
+          pytest scripts/ -q
       - name: Check if Dockerfiles exist
         id: check
         run: |

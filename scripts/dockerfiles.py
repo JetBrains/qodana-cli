@@ -52,8 +52,8 @@ def load_release_info(qd_code: str, qd_version: str) -> Dict[str, Any]:
 
     feed_name = product_mapping.get(qd_code)
     if not feed_name:
-        logger.warning("Unknown product code '%s'. Skipping release info lookup.", qd_code)
-        return {}
+        logger.error("Unknown product code '%s'.", qd_code)
+        raise ValueError(f"Unknown product code '{qd_code}'")
 
     feed_url = f"https://download.jetbrains.com/qodana/feed/{feed_name}.releases.json"
 
@@ -62,18 +62,18 @@ def load_release_info(qd_code: str, qd_version: str) -> Dict[str, Any]:
             feed_data = json.loads(response.read().decode("utf-8"))
     except urllib.error.HTTPError as e:
         if e.code == 404:
-            logger.warning("Feed URL '%s' not found (404). Skipping.", feed_url)
+            # No public feed yet for a pre-release-only linter.
+            logger.warning("Feed URL '%s' not found (404). Using empty fallbacks.", feed_url)
             return {}
-        else:
-            logger.error("HTTP error fetching feed URL '%s': %s", feed_url, e)
-            raise
+        logger.error("HTTP error fetching feed URL '%s': %s", feed_url, e)
+        raise
     except (urllib.error.URLError, json.JSONDecodeError, OSError) as e:
         logger.error("Error fetching feed URL '%s': %s", feed_url, e)
         raise
 
     releases = feed_data.get("Releases", [])
     if not releases:
-        logger.warning("No releases found in feed URL '%s'. Skipping.", feed_url)
+        logger.warning("No releases found in feed URL '%s'. Using empty fallbacks.", feed_url)
         return {}
 
     # Sort releases by Type and Date, then filter by MajorVersion
@@ -192,15 +192,11 @@ def substitute_from_directives(content: str, base_dir: str) -> str:
             identifier = match.group(2)
             file_path = os.path.join(base_dir, f"{identifier}.Dockerfile")
             if os.path.isfile(file_path):
-                try:
-                    with open(file_path, "r", encoding="utf-8") as inc_file:
-                        included_content = inc_file.read()
-                    # Recursively process the included file's content
-                    substituted_content = substitute_from_directives(included_content, base_dir)
-                    new_lines.append(substituted_content.rstrip())
-                except OSError as e:
-                    logger.error("Error reading included file '%s': %s", file_path, e)
-                    new_lines.append(line)
+                with open(file_path, "r", encoding="utf-8") as inc_file:
+                    included_content = inc_file.read()
+                # Recursively process the included file's content
+                substituted_content = substitute_from_directives(included_content, base_dir)
+                new_lines.append(substituted_content.rstrip())
             else:
                 # If no file found, leave the line as is.
                 new_lines.append(line)
@@ -229,23 +225,19 @@ def generate_variant_dockerfile(
         qd_version (str): The Qodana major version (e.g., "2026.1").
 
     Returns:
-        str: The final Dockerfile content, or an empty string if an error occurred.
+        str: The final Dockerfile content. Raises on any error (missing/unreadable base
+        Dockerfile, feed lookup failure, or template render failure).
     """
     base_source = data.get("from", variant)
     base_dockerfile_path = os.path.join(base_dockerfile_dir, f"{base_source}.Dockerfile")
 
     if not os.path.isfile(base_dockerfile_path):
-        logger.warning("Skipping %s: %s not found.", variant, base_dockerfile_path)
-        return ""
+        raise FileNotFoundError(f"base Dockerfile for variant '{variant}' not found: {base_dockerfile_path}")
 
     # Read and process the base Dockerfile content with recursive substitutions
-    try:
-        with open(base_dockerfile_path, "r", encoding="utf-8") as f:
-            base_content = f.read()
-        processed_base_content = substitute_from_directives(base_content, base_dockerfile_dir)
-    except OSError as e:
-        logger.error("Error processing base Dockerfile for variant '%s': %s", variant, e)
-        return ""
+    with open(base_dockerfile_path, "r", encoding="utf-8") as f:
+        base_content = f.read()
+    processed_base_content = substitute_from_directives(base_content, base_dockerfile_dir)
 
     is_third_party = data.get("is_third_party", False)
     qd_code = data.get("qd_code", "")
@@ -261,12 +253,16 @@ def generate_variant_dockerfile(
             qd_image=variant
         )
     else:
-        # For IntelliJ-based variants (not third-party), load release info from local feeds
+        # A missing release renders empty fallbacks rather than failing: a pre-release version has no
+        # feed entry yet, and failing here would deadlock (an RC image can't be built until its dists
+        # are released, but dists can't be validated pre-release without building the image). The
+        # template's release path rebuilds the URL from QD_VERSION + QD_RELEASE (non-release path fails loudly).
         release_info = load_release_info(qd_code, qd_version)
         if not release_info:
-            # If we can't find release info, skip this variant
-            logger.warning("Skipping variant '%s' due to missing release information.", variant)
-            return ""
+            logger.warning(
+                "No public release info for %s %s; generating with empty download fallbacks.",
+                qd_code, qd_version,
+            )
 
         template = intellij_template
         snippet = template.render(
@@ -290,9 +286,6 @@ def write_dockerfile(variant: str, dockerfile_content: str) -> None:
         variant (str): The variant name.
         dockerfile_content (str): The complete Dockerfile content to write.
     """
-    if not dockerfile_content:
-        logger.debug("No Dockerfile content to write for variant '%s'. Skipping.", variant)
-        return
     generated_disclaimer = "# This file was generated by https://github.com/JetBrains/qodana-cli/blob/main/scripts/dockerfiles.py. DO NOT EDIT MANUALLY."
     dockerfile_content = f"{generated_disclaimer}\n\n{dockerfile_content}"
 
@@ -300,12 +293,9 @@ def write_dockerfile(variant: str, dockerfile_content: str) -> None:
     out_path = os.path.join(out_dir, "Dockerfile")
 
     os.makedirs(out_dir, exist_ok=True)
-    try:
-        with open(out_path, "w", encoding="utf-8") as out_file:
-            out_file.write(dockerfile_content)
-        logger.info("Generated %s.", out_path)
-    except OSError as e:
-        logger.error("Error writing output for variant '%s': %s", variant, e)
+    with open(out_path, "w", encoding="utf-8") as out_file:
+        out_file.write(dockerfile_content)
+    logger.info("Generated %s.", out_path)
 
 def main() -> None:
     """
@@ -323,16 +313,26 @@ def main() -> None:
 
     base_dockerfile_dir = "dockerfiles/base"
 
+    failures = []
     for variant, data in variants.items():
-        dockerfile_content = generate_variant_dockerfile(
-            variant,
-            data,
-            base_dockerfile_dir,
-            intellij_template,
-            thirdparty_template,
-            qd_version
-        )
-        write_dockerfile(variant, dockerfile_content)
+        try:
+            dockerfile_content = generate_variant_dockerfile(
+                variant,
+                data,
+                base_dockerfile_dir,
+                intellij_template,
+                thirdparty_template,
+                qd_version
+            )
+            write_dockerfile(variant, dockerfile_content)
+        except Exception:
+            # Aggregate per-variant failures so one run reports all of them instead of aborting on the first.
+            logger.exception("Error generating Dockerfile for '%s'", variant)
+            failures.append(variant)
+
+    if failures:
+        logger.error("Failed to generate/write Dockerfiles for: %s", ", ".join(failures))
+        sys.exit(1)
 
 if __name__ == "__main__":
     main()
