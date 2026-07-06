@@ -28,6 +28,7 @@ RUN --mount=target=/var/lib/apt/lists,type=cache,sharing=locked \
         git \
         git-lfs \
         gnupg2 \
+        gzip \
         locales \
         openssh-client \
         procps \
