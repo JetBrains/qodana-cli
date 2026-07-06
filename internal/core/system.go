@@ -133,7 +133,6 @@ func RunAnalysis(ctx context.Context, c corescan.Context) int {
 	if err != nil {
 		log.Fatal(err)
 	}
-
 	scenario := c.DetermineRunScenario(startHash != "")
 	if scenario != corescan.RunScenarioDefault && !git.RevisionExists(c.RepositoryRoot(), startHash, c.LogDir()) {
 		msg.WarningMessageCI(
@@ -156,8 +155,6 @@ func RunAnalysis(ctx context.Context, c corescan.Context) int {
 	switch scenario {
 	case corescan.RunScenarioFullHistory:
 		return runWithFullHistory(ctx, c, startHash)
-	case corescan.RunScenarioLocalChanges:
-		return runLocalChanges(ctx, c, startHash)
 	case corescan.RunScenarioScoped:
 		analyzer := NewScopedAnalyzer(ctx, c, startHash, c.DiffEnd(), defaultRunner)
 		return analyzer.RunAnalysis()
@@ -170,33 +167,6 @@ func RunAnalysis(ctx context.Context, c corescan.Context) int {
 		log.Fatalf("Unknown run scenario %s", scenario)
 		panic("Unreachable")
 	}
-}
-
-func runLocalChanges(ctx context.Context, c corescan.Context, startHash string) int {
-	var exitCode int
-	gitReset := false
-	r, err := git.CurrentRevision(c.RepositoryRoot(), c.LogDir())
-	if err != nil {
-		log.Fatal(err)
-	}
-	if c.DiffEnd() != "" && c.DiffEnd() != r {
-		msg.WarningMessage("Cannot run local-changes because --diff-end is %s and HEAD is %s", c.DiffEnd(), r)
-	} else {
-		err := git.Reset(c.RepositoryRoot(), startHash, c.LogDir())
-		if err != nil {
-			msg.WarningMessage("Could not reset git repository, no --commit option will be applied: %s", err)
-		} else {
-			c = c.ForcedLocalChanges()
-			gitReset = true
-		}
-	}
-
-	exitCode = runQodana(ctx, c)
-
-	if gitReset {
-		_ = git.ResetBack(c.RepositoryRoot(), c.LogDir())
-	}
-	return exitCode
 }
 
 func runWithFullHistory(ctx context.Context, c corescan.Context, startHash string) int {

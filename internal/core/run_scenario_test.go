@@ -129,20 +129,6 @@ func TestQodanaOptions_determineRunScenario(t *testing.T) {
 			want: corescan.RunScenarioReversedScoped,
 		},
 		{
-			name: "forced script",
-			args: args{
-				c: corescan.ContextBuilder{
-					ForceLocalChangesScript: true,
-					Prod: product.Product{
-						Code: product.QDJVM,
-					},
-					Analyser: &product.PathNativeAnalyzer{Path: "smth"},
-				},
-				hasStartHash: true,
-			},
-			want: corescan.RunScenarioLocalChanges,
-		},
-		{
 			name: "with start hash but no IDE (container to be launched)",
 			args: args{
 				c: corescan.ContextBuilder{

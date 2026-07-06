@@ -25,7 +25,6 @@ import (
 	"time"
 
 	"github.com/JetBrains/qodana-cli/internal/foundation/fs"
-	"github.com/JetBrains/qodana-cli/internal/platform/msg"
 	"github.com/JetBrains/qodana-cli/internal/platform/product"
 	"github.com/JetBrains/qodana-cli/internal/platform/qdyaml"
 )
@@ -33,7 +32,6 @@ import (
 const (
 	RunScenarioDefault        = "default"
 	RunScenarioFullHistory    = "full-history"
-	RunScenarioLocalChanges   = "local-changes"
 	RunScenarioScoped         = "scope"
 	RunScenarioReversedScoped = "reversed-scope"
 )
@@ -95,7 +93,6 @@ type Context struct {
 	commit                    string
 	diffStart                 string
 	diffEnd                   string
-	forceLocalChangesScript   bool
 	reversePrAnalysis         bool
 	reducedScopePath          string
 	analysisId                string
@@ -173,7 +170,6 @@ func (c Context) FailThreshold() string              { return c.failThreshold }
 func (c Context) Commit() string                     { return c.commit }
 func (c Context) DiffStart() string                  { return c.diffStart }
 func (c Context) DiffEnd() string                    { return c.diffEnd }
-func (c Context) ForceLocalChangesScript() bool      { return c.forceLocalChangesScript }
 func (c Context) ReducedScopePath() string           { return c.reducedScopePath }
 func (c Context) ReversePrAnalysis() bool            { return c.reversePrAnalysis }
 func (c Context) AnalysisId() string                 { return c.analysisId }
@@ -234,7 +230,6 @@ type ContextBuilder struct {
 	Commit                    string
 	DiffStart                 string
 	DiffEnd                   string
-	ForceLocalChangesScript   bool
 	ReversePrAnalysis         bool
 	AnalysisId                string
 	Volumes                   []string
@@ -298,7 +293,6 @@ func (b ContextBuilder) Build() Context {
 		commit:                    b.Commit,
 		diffStart:                 b.DiffStart,
 		diffEnd:                   b.DiffEnd,
-		forceLocalChangesScript:   b.ForceLocalChangesScript,
 		reversePrAnalysis:         b.ReversePrAnalysis,
 		analysisId:                b.AnalysisId,
 		_volumes:                  b.Volumes,
@@ -349,16 +343,11 @@ func (c Context) StartHash() (string, error) {
 }
 
 func (c Context) DetermineRunScenario(hasStartHash bool) RunScenario {
-	if c.ForceLocalChangesScript() || c.Script() == "local-changes" {
-		msg.WarningMessage("Using local-changes script is deprecated, please switch to other mechanisms of incremental analysis. Further information - https://www.jetbrains.com/help/qodana/analyze-pr.html")
-	}
 	switch {
 	case c.FullHistory():
 		return RunScenarioFullHistory
 	case !hasStartHash:
 		return RunScenarioDefault
-	case c.ForceLocalChangesScript():
-		return RunScenarioLocalChanges
 	case c.analyser.IsContainer():
 		return RunScenarioDefault
 	case c.ReversePrAnalysis():

@@ -174,20 +174,6 @@ func gitClone(repoURL, directory string, revision string, branch string) error {
 	return nil
 }
 
-func TestReset(t *testing.T) {
-	repo := NewGitRepo(t)
-	repo.CommitAll("commit")
-	logdir := t.TempDir()
-
-	headSha, err := RevParse(repo.Dir(), "HEAD", logdir)
-	assert.NoError(t, err)
-
-	repo.CommitAll("commit")
-
-	err = Reset(repo.Dir(), headSha, logdir)
-	assert.NoError(t, err)
-}
-
 func TestCheckout(t *testing.T) {
 	repo := NewGitRepo(t)
 	repo.CommitAll("commit")
@@ -268,22 +254,6 @@ func TestSubmoduleUpdate(t *testing.T) {
 	assert.NoError(t, err)
 
 	err = submoduleUpdate(repo.Dir(), true, logdir)
-	assert.NoError(t, err)
-}
-
-func TestResetBack(t *testing.T) {
-	repo := NewGitRepo(t)
-	repo.CommitAll("commit")
-	logdir := t.TempDir()
-
-	headSha, _ := RevParse(repo.Dir(), "HEAD", logdir)
-	repo.CommitAll("second-commit")
-	err := Reset(repo.Dir(), headSha, logdir)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	err = ResetBack(repo.Dir(), logdir)
 	assert.NoError(t, err)
 }
 

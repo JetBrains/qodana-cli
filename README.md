@@ -200,7 +200,7 @@ qodana scan [flags]
   -b, --baseline string           Provide the path to an existing SARIF report to be used in the baseline state calculation
       --baseline-include-absent   Include in the output report the results from the baseline run that are absent in the current run
       --full-history --commit     Go through the full commit history and run the analysis on each commit. If combined with --commit, analysis will be started from the given commit. Could take a long time.
-      --commit --full-history     Base changes commit to reset to, resets git and starts a diff run: analysis will be run only on changed files since the given commit. If combined with --full-history, full history analysis will be started from the given commit.
+      --commit --full-history     Commit to start a diff run from. Only files changed between this commit and --diff-end will be analysed. If combined with --full-history, full history analysis will be started from the given commit.
       --fail-threshold string     Set the number of problems that will serve as a quality gate. If this number is reached, the inspection run is terminated with a non-zero exit code
       --disable-sanity            Skip running the inspections configured by the sanity profile
   -d, --only-directory string     Directory inside the project-dir directory must be inspected. If not specified, the whole project is inspected

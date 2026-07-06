@@ -86,18 +86,6 @@ func RevParse(cwd string, ref string, logdir string) (string, error) {
 	return strings.TrimSpace(stdout), err
 }
 
-// Reset resets the git repository to the given commit.
-func Reset(cwd string, sha string, logdir string) error {
-	_, _, err := gitRun(cwd, []string{"reset", "--soft", sha}, logdir)
-	return err
-}
-
-// ResetBack aborts the git reset.
-func ResetBack(cwd string, logdir string) error {
-	_, _, err := gitRun(cwd, []string{"reset", "HEAD@{1}"}, logdir)
-	return err
-}
-
 // CheckoutAndUpdateSubmodule performs a git checkout to the specified rev and updates submodules recursively, QD-10767.
 func CheckoutAndUpdateSubmodule(cwd string, ref string, force bool, logdir string) error {
 	// Checkout the root repository
