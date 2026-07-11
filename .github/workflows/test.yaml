@@ -25,7 +25,7 @@ jobs:
     env:
       GITHUB_TOKEN: ${{ secrets.QODANA_JBR_TOKEN }}
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
         with:
           fetch-depth: 0
 
@@ -78,7 +78,7 @@ jobs:
           QT_ENABLE_CDNET_DEPS: '0'
 
       - name: Upload coverage
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7
         if: always()
         with:
           name: coverage-${{ inputs.os }}-${{ inputs.container-engine }}
