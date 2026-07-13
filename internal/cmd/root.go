@@ -157,6 +157,7 @@ func InitCli() {
 		newViewCommand(),
 		newContributorsCommand(),
 		newClocCommand(),
+		newEdictCommand(),
 	)
 }
 
