@@ -15,7 +15,7 @@ jobs:
   github-actions:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
         if: (github.event.release.name || github.event.inputs.release_name) != 'nightly'
         with:
           repository: 'jetbrains/qodana-action'
@@ -41,7 +41,7 @@ jobs:
   qodana-lsp:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
         if: (github.event.release.name || github.event.inputs.release_name) != 'nightly'
         with:
           repository: 'jetbrains/qodana-lsp'
@@ -50,7 +50,7 @@ jobs:
 
       - name: Setup Node.js
         if: (github.event.release.name || github.event.inputs.release_name) != 'nightly'
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v7
         with:
           node-version: '20'
 
