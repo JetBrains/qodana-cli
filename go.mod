@@ -13,7 +13,7 @@ require (
 	github.com/go-enry/go-enry/v2 v2.9.6
 	github.com/google/uuid v1.6.0
 	github.com/liamg/clinch v1.6.6
-	github.com/mattn/go-isatty v0.0.22
+	github.com/mattn/go-isatty v0.0.23
 	github.com/otiai10/copy v1.14.1
 	github.com/pterm/pterm v0.12.83
 	github.com/reviewdog/go-bitbucket v0.0.0-20201024094602-708c3f6a7de0
@@ -24,7 +24,7 @@ require (
 	github.com/stretchr/testify v1.11.1
 	github.com/zalando/go-keyring v0.2.8
 	golang.org/x/exp v0.0.0-20230905200255-921286631fa9
-	golang.org/x/sys v0.46.0
+	golang.org/x/sys v0.47.0
 	gopkg.in/yaml.v3 v3.0.1
 )
 
