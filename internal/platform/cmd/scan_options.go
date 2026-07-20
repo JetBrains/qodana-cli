@@ -56,7 +56,6 @@ type CliOptions struct {
 	Commit                    string
 	DiffStart                 string
 	DiffEnd                   string
-	ForceLocalChangesScript   bool
 	ReversePrAnalysis         bool
 	AnalysisId                string
 	Env_                      []string
@@ -226,7 +225,7 @@ func ComputeFlags(cmd *cobra.Command, options *CliOptions) error {
 		&options.Commit,
 		"commit",
 		"",
-		"Base changes commit to reset to, resets git and starts a diff run: analysis will be run only on changed files since the given commit. If combined with `--full-history`, full history analysis will be started from the given commit.",
+		"Commit to start a diff run from. Only files changed between this commit and `--diff-end` will be analysed. If combined with `--full-history`, full history analysis will be started from the given commit.",
 	)
 	flags.StringVar(
 		&options.FailThreshold,
@@ -300,12 +299,6 @@ func ComputeFlags(cmd *cobra.Command, options *CliOptions) error {
 		"diff-end",
 		"",
 		"Commit to end a diff run on. Only files changed between --diff-start and --diff-end will be analysed.",
-	)
-	flags.BoolVar(
-		&options.ForceLocalChangesScript,
-		"force-local-changes-script",
-		false,
-		"Override the default run-scenario for diff runs to always use the local-changes script",
 	)
 	flags.BoolVar(
 		&options.ReversePrAnalysis,
@@ -411,7 +404,7 @@ func ComputeFlags(cmd *cobra.Command, options *CliOptions) error {
 		return err
 	}
 
-	cmd.MarkFlagsMutuallyExclusive("script", "force-local-changes-script", "full-history")
+	cmd.MarkFlagsMutuallyExclusive("script", "full-history")
 	cmd.MarkFlagsMutuallyExclusive("commit", "script", "diff-start")
 	cmd.MarkFlagsMutuallyExclusive("profile-name", "profile-path")
 	cmd.MarkFlagsMutuallyExclusive("apply-fixes", "cleanup")
@@ -433,9 +426,6 @@ func ComputeFlags(cmd *cobra.Command, options *CliOptions) error {
 		return err
 	}
 	if err = cmd.Flags().MarkHidden("jvm-debug-port"); err != nil {
-		return err
-	}
-	if err = cmd.Flags().MarkHidden("force-local-changes-script"); err != nil {
 		return err
 	}
 	return nil

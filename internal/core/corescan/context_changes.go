@@ -47,7 +47,6 @@ func (c Context) BackoffToDefaultAnalysisBecauseOfMissingCommit() Context {
 	c.diffStart = ""
 	c.diffEnd = ""
 	c.fullHistory = false
-	c.forceLocalChangesScript = false
 	c.script = ""
 	return c
 }
@@ -142,11 +141,6 @@ func (c Context) ThirdStageOfReverseScopedScript(scopeFile string, startSarif st
 	c.resultsDir = endDir
 	startup.MakeDirAll(c.LogDir()) // need to prepare new result and log dir
 
-	return c
-}
-
-func (c Context) ForcedLocalChanges() Context {
-	c.script = "local-changes"
 	return c
 }
 

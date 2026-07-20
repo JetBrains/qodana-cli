@@ -78,7 +78,6 @@ func CreateContext(
 		Commit:                    commit,
 		DiffStart:                 cliOptions.DiffStart,
 		DiffEnd:                   cliOptions.DiffEnd,
-		ForceLocalChangesScript:   cliOptions.ForceLocalChangesScript,
 		ReversePrAnalysis:         cliOptions.ReversePrAnalysis,
 		AnalysisId:                cliOptions.AnalysisId,
 		Volumes:                   cliOptions.Volumes,

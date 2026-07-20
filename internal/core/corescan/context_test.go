@@ -67,7 +67,6 @@ func TestContextBuilder_Build(t *testing.T) {
 		Commit:                    "abc123",
 		DiffStart:                 "",
 		DiffEnd:                   "def456",
-		ForceLocalChangesScript:   false,
 		ReversePrAnalysis:         false,
 		AnalysisId:                "analysis-1",
 		Volumes:                   []string{"/vol1:/vol1"},
@@ -128,7 +127,6 @@ func TestContextBuilder_Build(t *testing.T) {
 	assert.Equal(t, "abc123", ctx.Commit())
 	assert.Equal(t, "", ctx.DiffStart())
 	assert.Equal(t, "def456", ctx.DiffEnd())
-	assert.False(t, ctx.ForceLocalChangesScript())
 	assert.False(t, ctx.ReversePrAnalysis())
 	assert.Equal(t, "", ctx.ReducedScopePath())
 	assert.Equal(t, "analysis-1", ctx.AnalysisId())
@@ -231,7 +229,6 @@ func TestContext_DetermineRunScenario(t *testing.T) {
 		name         string
 		fullHistory  bool
 		hasStartHash bool
-		forceLocal   bool
 		isContainer  bool
 		reversePr    bool
 		expected     RunScenario
@@ -249,17 +246,9 @@ func TestContext_DetermineRunScenario(t *testing.T) {
 			expected:     RunScenarioDefault,
 		},
 		{
-			name:         "force local changes",
-			fullHistory:  false,
-			hasStartHash: true,
-			forceLocal:   true,
-			expected:     RunScenarioLocalChanges,
-		},
-		{
 			name:         "container mode",
 			fullHistory:  false,
 			hasStartHash: true,
-			forceLocal:   false,
 			isContainer:  true,
 			expected:     RunScenarioDefault,
 		},
@@ -267,7 +256,6 @@ func TestContext_DetermineRunScenario(t *testing.T) {
 			name:         "reverse PR analysis",
 			fullHistory:  false,
 			hasStartHash: true,
-			forceLocal:   false,
 			isContainer:  false,
 			reversePr:    true,
 			expected:     RunScenarioReversedScoped,
@@ -276,7 +264,6 @@ func TestContext_DetermineRunScenario(t *testing.T) {
 			name:         "scoped scenario",
 			fullHistory:  false,
 			hasStartHash: true,
-			forceLocal:   false,
 			isContainer:  false,
 			reversePr:    false,
 			expected:     RunScenarioScoped,
@@ -293,10 +280,9 @@ func TestContext_DetermineRunScenario(t *testing.T) {
 			}
 
 			ctx := ContextBuilder{
-				FullHistory:             tt.fullHistory,
-				ForceLocalChangesScript: tt.forceLocal,
-				ReversePrAnalysis:       tt.reversePr,
-				Analyser:                analyser,
+				FullHistory:       tt.fullHistory,
+				ReversePrAnalysis: tt.reversePr,
+				Analyser:          analyser,
 			}.Build()
 
 			result := ctx.DetermineRunScenario(tt.hasStartHash)
@@ -468,7 +454,6 @@ func TestIsScopedScenario(t *testing.T) {
 		{RunScenarioReversedScoped, true},
 		{RunScenarioDefault, false},
 		{RunScenarioFullHistory, false},
-		{RunScenarioLocalChanges, false},
 	}
 
 	for _, tt := range tests {

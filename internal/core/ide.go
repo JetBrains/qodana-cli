@@ -223,9 +223,6 @@ func GetIdeArgs(c corescan.Context) []string {
 		if c.DiffEnd() != "" && c.Script() == "default" {
 			arguments = append(arguments, "--diff-end", c.DiffEnd())
 		}
-		if c.ForceLocalChangesScript() && c.Script() == "default" {
-			arguments = append(arguments, "--force-local-changes-script")
-		}
 
 		if c.AnalysisId() != "" {
 			arguments = append(arguments, "--analysis-id", c.AnalysisId())
