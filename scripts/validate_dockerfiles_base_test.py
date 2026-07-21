@@ -187,3 +187,27 @@ def test_real_variants_resolve_to_root_dev_tags():
 
 def test_real_base_files_pass():
     assert collect_violations() == []
+
+
+@pytest.mark.parametrize(
+    "qd_code, feed_slug",
+    [("QDAND", "qodana-android.releases.json"), ("QDANDC", "qodana-jvm-android.releases.json")],
+)
+def test_load_release_info_fetches_the_android_feed(monkeypatch, qd_code, feed_slug):
+    # Verify the real URL-building path consumes PRODUCT_MAPPING (not just the static literal).
+    import dockerfiles
+
+    captured = {}
+
+    class _Resp:
+        def __enter__(self): return self
+        def __exit__(self, *a): return False
+        def read(self): return b'{"Releases": []}'
+
+    def _fake_urlopen(url, timeout=None):
+        captured["url"] = url
+        return _Resp()
+
+    monkeypatch.setattr(dockerfiles.urllib.request, "urlopen", _fake_urlopen)
+    dockerfiles.load_release_info(qd_code, "2026.2")
+    assert feed_slug in captured["url"]

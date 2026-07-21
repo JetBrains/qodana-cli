@@ -19,6 +19,24 @@ from jinja2 import Environment, FileSystemLoader, Template, select_autoescape
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
+# Maps QD_CODE to the product feed name (qodana-*) whose releases.json feeds the Dockerfile.
+PRODUCT_MAPPING = {
+    "QDGO": "qodana-go",
+    "QDJS": "qodana-js",
+    "QDJVM": "qodana-jvm",
+    "QDJVMC": "qodana-jvm-community",
+    "QDAND": "qodana-android",
+    "QDANDC": "qodana-jvm-android",
+    "QDPOLY": "qodana-poly",
+    "QDNET": "qodana-dotnet",
+    "QDPHP": "qodana-php",
+    "QDPY": "qodana-python",
+    "QDPYC": "qodana-python-community",
+    "QDCPP": "qodana-cpp",
+    "QDRUBY": "qodana-ruby",
+    "QDRST": "qodana-rust",
+}
+
 def load_release_info(qd_code: str, qd_version: str) -> Dict[str, Any]:
     """
     Load release information from remote feed URL for the specified product and version.
@@ -31,26 +49,7 @@ def load_release_info(qd_code: str, qd_version: str) -> Dict[str, Any]:
         Dict[str, Any]: A dictionary containing "build" and "downloads" keys,
                         or an empty dict if the release cannot be found.
     """
-    # Map QD_CODE to full feed name (qodana-*)
-    # Note: QDAND and QDANDC use JVM and JVM-Community feeds respectively
-    product_mapping = {
-        "QDGO": "qodana-go",
-        "QDJS": "qodana-js",
-        "QDJVM": "qodana-jvm",
-        "QDJVMC": "qodana-jvm-community",
-        "QDAND": "qodana-jvm",           # Android uses JVM feed
-        "QDANDC": "qodana-jvm-community", # Android Community uses JVM-Community feed
-        "QDPOLY": "qodana-poly",
-        "QDNET": "qodana-dotnet",
-        "QDPHP": "qodana-php",
-        "QDPY": "qodana-python",
-        "QDPYC": "qodana-python-community",
-        "QDCPP": "qodana-cpp",
-        "QDRUBY": "qodana-ruby",
-        "QDRST": "qodana-rust",
-    }
-
-    feed_name = product_mapping.get(qd_code)
+    feed_name = PRODUCT_MAPPING.get(qd_code)
     if not feed_name:
         logger.error("Unknown product code '%s'.", qd_code)
         raise ValueError(f"Unknown product code '{qd_code}'")
