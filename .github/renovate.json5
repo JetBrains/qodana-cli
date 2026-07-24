@@ -1,0 +1,96 @@
+{
+  $schema: "https://docs.renovatebot.com/renovate-schema.json",
+  extends: ["config:recommended"],
+
+  // Keep the repo's gitmoji/ticket commit prefixes; don't inject "chore(deps):".
+  semanticCommits: "disabled",
+
+  // Match Dependabot's scope: never touch test fixtures or the TeamCity DSL pom.
+  ignorePaths: [
+    "**/node_modules/**",
+    "**/bower_components/**",
+    "**/vendor/**",
+    "**/examples/**",
+    "**/__tests__/**",
+    "**/test/**",
+    "**/tests/**",
+    "**/__fixtures__/**",
+    "**/testdata/**",
+    ".teamcity/**",
+  ],
+
+  // Supply-chain hardening: ignore any release younger than 7 days.
+  minimumReleaseAge: "7 days",
+  internalChecksFilter: "strict",
+
+  // Auto-merge everything through a PR; CI + the one required review on `main` are the gate.
+  automerge: true,
+  automergeType: "pr",
+  platformAutomerge: true,
+
+  // Auth for the Docker Hardened Images registry (secrets stored in the Renovate dashboard).
+  hostRules: [
+    {
+      matchHost: "dhi.io",
+      hostType: "docker",
+      username: "{{ secrets.DHI_USERNAME }}",
+      password: "{{ secrets.DHI_PASSWORD }}",
+    },
+  ],
+
+  // Renovate owns security updates; the cooldown must not delay a security fix.
+  osvVulnerabilityAlerts: true,
+  vulnerabilityAlerts: {
+    minimumReleaseAge: null,
+    labels: ["security"],
+  },
+
+  customManagers: [
+    {
+      customType: "regex",
+      managerFilePatterns: ["/(^|/)(.*\\.)?Dockerfile$/"],
+      matchStrings: [
+        "#\\s*renovate:\\s*datasource=(?<datasource>.*?) depName=(?<depName>.*?)( versioning=(?<versioning>.*?))?\\sENV .*?_VERSION=\"?(?<currentValue>.*?)\"?\\s",
+      ],
+      versioningTemplate: "{{#if versioning}}{{versioning}}{{else}}semver{{/if}}",
+    },
+    {
+      customType: "regex",
+      managerFilePatterns: ["/internal/tooling/scripts/build-qodana-jbr\\.go$/"],
+      matchStrings: [
+        "renovate:\\s*datasource=(?<datasource>.*?) depName=(?<depName>.*?)\\n.*?\"(?<currentValue>.*?)\"",
+      ],
+      versioningTemplate: "regex:^jbr-release-(?<major>\\d+)\\.(?<minor>\\d+)\\.(?<patch>\\d+)b(?<build>.*)$",
+    },
+  ],
+
+  packageRules: [
+    // Commit-message ticket prefixes inherited from Dependabot.
+    {
+      matchManagers: ["gomod", "github-actions", "maven"],
+      commitMessagePrefix: ":arrow_up: QD-12983",
+    },
+    {
+      matchManagers: ["dockerfile", "custom.regex"],
+      commitMessagePrefix: "QD-8148",
+    },
+
+    // Group non-major updates per ecosystem; majors stay individual (separateMajorMinor defaults to true).
+    { matchManagers: ["gomod"], matchUpdateTypes: ["minor", "patch", "digest"], groupName: "Go modules" },
+    { matchManagers: ["github-actions"], matchUpdateTypes: ["minor", "patch", "digest"], groupName: "GitHub Actions" },
+    { matchManagers: ["maven"], matchUpdateTypes: ["minor", "patch", "digest"], groupName: "Maven dependencies" },
+    { matchManagers: ["dockerfile"], matchUpdateTypes: ["minor", "patch", "digest"], groupName: "Docker images" },
+    { matchManagers: ["custom.regex"], matchUpdateTypes: ["minor", "patch", "digest"], groupName: "Dockerfile tool versions" },
+
+    // Preserved from the previous config (currently dormant — no matching deps yet).
+    {
+      matchDatasources: ["repology"],
+      matchPackageNames: ["/^debian_11\\//"],
+      separateMajorMinor: false,
+      groupName: "debian packages",
+      groupSlug: "debian",
+      matchFileNames: ["dockerfiles/**"],
+    },
+    { matchDatasources: ["docker"], matchFileNames: ["dockerfiles/**"] },
+  ],
+}
