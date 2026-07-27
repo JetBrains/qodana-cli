@@ -37,8 +37,6 @@ import (
 type CdnetLinter struct {
 }
 
-const cltFingeprint = "contextRegionHash/v1"
-const qodanaFingeprint = "equalIndicator/v1"
 const archive = "clt.zip"
 const moniker = "resharper-clt"
 
@@ -129,12 +127,7 @@ func patchReport(c thirdpartyscan.Context) error {
 
 		results := make([]sarif.Result, 0)
 		for _, result := range run.Results {
-			if result.PartialFingerprints != nil {
-				if cltValue := result.PartialFingerprints[cltFingeprint]; cltValue != "" && result.PartialFingerprints[qodanaFingeprint] == "" {
-					result.PartialFingerprints[qodanaFingeprint] = cltValue
-					delete(result.PartialFingerprints, cltFingeprint)
-				}
-			}
+			addQodanaFingerprints(&result)
 			results = append(results, result)
 		}
 		run.Results = results

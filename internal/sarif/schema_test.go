@@ -146,3 +146,29 @@ func TestPropertyBag_RoundTrip(t *testing.T) {
 	assert.Equal(t, original.AdditionalProperties["severity"], restored.AdditionalProperties["severity"])
 	assert.Equal(t, original.AdditionalProperties["count"], restored.AdditionalProperties["count"])
 }
+
+func TestRegion_UnmarshalJSONPreservesExplicitZero(t *testing.T) {
+	var region Region
+	err := json.Unmarshal([]byte(`{"startLine":1,"charOffset":0}`), &region)
+	assert.NoError(t, err)
+
+	assert.True(t, region.HasStartLine())
+	assert.False(t, region.HasStartColumn())
+	assert.False(t, region.HasCharLength())
+	assert.True(t, region.HasCharOffset())
+}
+
+func TestThreadFlowLocation_UnmarshalJSONPreservesExplicitZero(t *testing.T) {
+	var location ThreadFlowLocation
+	err := json.Unmarshal([]byte(`{"executionOrder":0,"index":1}`), &location)
+	assert.NoError(t, err)
+
+	assert.True(t, location.HasExecutionOrder())
+	assert.True(t, location.HasIndex())
+
+	var absentLocation ThreadFlowLocation
+	err = json.Unmarshal([]byte(`{}`), &absentLocation)
+	assert.NoError(t, err)
+	assert.False(t, absentLocation.HasExecutionOrder())
+	assert.False(t, absentLocation.HasIndex())
+}
