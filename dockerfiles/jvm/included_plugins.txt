@@ -61,7 +61,6 @@ org.jetbrains.idea.reposearch
 org.jetbrains.kotlin
 org.jetbrains.plugins.gradle
 com.jetbrains.restWebServices
-com.intellij.plugins.dependencyAnalysis
 org.jetbrains.security.package-checker
 com.intellij.microservices.ui
 NodeJS
