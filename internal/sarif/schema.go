@@ -773,6 +773,10 @@ type Rectangle struct {
 
 // Region A region within an artifact where a result was detected.
 type Region struct {
+	startLineSet   bool
+	startColumnSet bool
+	charLengthSet  bool
+	charOffsetSet  bool
 
 	// The length of the region in bytes.
 	ByteLength int64 `json:"byteLength,omitempty"`
@@ -810,6 +814,55 @@ type Region struct {
 	// The line number of the first character in the region.
 	StartLine int64 `json:"startLine,omitempty"`
 }
+
+// UnmarshalJSON preserves whether optional integer fields were explicitly set
+// to zero. This distinction is required by Qodana's fingerprint algorithm.
+func (r *Region) UnmarshalJSON(data []byte) error {
+	r.startLineSet = false
+	r.startColumnSet = false
+	r.charLengthSet = false
+	r.charOffsetSet = false
+	type regionAlias Region
+	decoded := struct {
+		*regionAlias
+		StartLine   *int64 `json:"startLine"`
+		StartColumn *int64 `json:"startColumn"`
+		CharLength  *int64 `json:"charLength"`
+		CharOffset  *int64 `json:"charOffset"`
+	}{regionAlias: (*regionAlias)(r)}
+	if err := json.Unmarshal(data, &decoded); err != nil {
+		return err
+	}
+	if decoded.StartLine != nil {
+		r.StartLine = *decoded.StartLine
+		r.startLineSet = r.StartLine == 0
+	}
+	if decoded.StartColumn != nil {
+		r.StartColumn = *decoded.StartColumn
+		r.startColumnSet = r.StartColumn == 0
+	}
+	if decoded.CharLength != nil {
+		r.CharLength = *decoded.CharLength
+		r.charLengthSet = r.CharLength == 0
+	}
+	if decoded.CharOffset != nil {
+		r.CharOffset = *decoded.CharOffset
+		r.charOffsetSet = r.CharOffset == 0
+	}
+	return nil
+}
+
+// HasStartLine reports whether startLine has a value, including an explicit zero.
+func (r Region) HasStartLine() bool { return r.startLineSet || r.StartLine != 0 }
+
+// HasStartColumn reports whether startColumn has a value, including an explicit zero.
+func (r Region) HasStartColumn() bool { return r.startColumnSet || r.StartColumn != 0 }
+
+// HasCharLength reports whether charLength has a value, including an explicit zero.
+func (r Region) HasCharLength() bool { return r.charLengthSet || r.CharLength != 0 }
+
+// HasCharOffset reports whether charOffset has a value, including an explicit zero.
+func (r Region) HasCharOffset() bool { return r.charOffsetSet || r.CharOffset != 0 }
 
 // Replacement The replacement of a single region of an artifact.
 type Replacement struct {
@@ -1257,6 +1310,8 @@ type ThreadFlow struct {
 
 // ThreadFlowLocation A location visited by an analysis tool while simulating or monitoring the execution of a program.
 type ThreadFlowLocation struct {
+	executionOrderSet bool
+	indexSet          bool
 
 	// An integer representing the temporal order in which execution reached this location.
 	ExecutionOrder int64 `json:"executionOrder,omitempty"`
@@ -1300,6 +1355,39 @@ type ThreadFlowLocation struct {
 	// A web response associated with this thread flow location.
 	WebResponse *WebResponse `json:"webResponse,omitempty"`
 }
+
+// UnmarshalJSON preserves whether optional integer fields were explicitly set
+// to zero. This distinction is required by Qodana's fingerprint algorithm.
+func (t *ThreadFlowLocation) UnmarshalJSON(data []byte) error {
+	t.executionOrderSet = false
+	t.indexSet = false
+	type threadFlowLocationAlias ThreadFlowLocation
+	decoded := struct {
+		*threadFlowLocationAlias
+		ExecutionOrder *int64 `json:"executionOrder"`
+		Index          *int64 `json:"index"`
+	}{threadFlowLocationAlias: (*threadFlowLocationAlias)(t)}
+	if err := json.Unmarshal(data, &decoded); err != nil {
+		return err
+	}
+	if decoded.ExecutionOrder != nil {
+		t.ExecutionOrder = *decoded.ExecutionOrder
+		t.executionOrderSet = t.ExecutionOrder == 0
+	}
+	if decoded.Index != nil {
+		t.Index = *decoded.Index
+		t.indexSet = t.Index == 0
+	}
+	return nil
+}
+
+// HasExecutionOrder reports whether executionOrder has a value, including an explicit zero.
+func (t ThreadFlowLocation) HasExecutionOrder() bool {
+	return t.executionOrderSet || t.ExecutionOrder != 0
+}
+
+// HasIndex reports whether index has a value, including an explicit zero.
+func (t ThreadFlowLocation) HasIndex() bool { return t.indexSet || t.Index != 0 }
 
 // Tool The analysis tool that was run.
 type Tool struct {
