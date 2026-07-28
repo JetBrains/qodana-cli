@@ -66,6 +66,96 @@ func TestAddQodanaFingerprints(t *testing.T) {
 	)
 }
 
+func TestPatchReportRunsPersistsFingerprintsForResultWithoutFingerprintMap(t *testing.T) {
+	report := sarif.Report{
+		Version: "2.1.0",
+		Runs: []sarif.Run{
+			{
+				Tool: &sarif.Tool{Driver: &sarif.ToolComponent{}},
+				Results: []sarif.Result{
+					regionlessSWEAResult(739),
+				},
+			},
+		},
+	}
+
+	patchReportRuns(&report)
+
+	serialized, err := json.Marshal(report)
+	assert.NoError(t, err)
+	var roundTripped sarif.Report
+	assert.NoError(t, json.Unmarshal(serialized, &roundTripped))
+
+	fingerprints := roundTripped.Runs[0].Results[0].PartialFingerprints
+	assert.Equal(t, "3af1a39b03e19f8b988c940169db75bdd64cc087ed5bc93c3cff641f455e77d0", fingerprints[qodanaFingerprintV1])
+	assert.Equal(t, "7c1b504368ae1993", fingerprints[qodanaFingerprintV2])
+}
+
+func TestPatchReportRunsPersistsTaxaName(t *testing.T) {
+	report := sarif.Report{
+		Version: "2.1.0",
+		Runs: []sarif.Run{
+			{
+				Tool: &sarif.Tool{
+					Driver: &sarif.ToolComponent{
+						Taxa: []sarif.ReportingDescriptor{
+							{Id: "SWEA"},
+						},
+					},
+				},
+			},
+		},
+	}
+
+	patchReportRuns(&report)
+
+	serialized, err := json.Marshal(report)
+	assert.NoError(t, err)
+	var roundTripped sarif.Report
+	assert.NoError(t, json.Unmarshal(serialized, &roundTripped))
+
+	assert.Equal(t, "SWEA", roundTripped.Runs[0].Tool.Driver.Taxa[0].Name)
+}
+
+func TestPatchReportRunsPreservesRuleDefaultConfiguration(t *testing.T) {
+	report := sarif.Report{
+		Version: "2.1.0",
+		Runs: []sarif.Run{
+			{
+				Tool: &sarif.Tool{
+					Driver: &sarif.ToolComponent{
+						Rules: []sarif.ReportingDescriptor{
+							{
+								Id: "RuleWithConfiguration",
+								DefaultConfiguration: &sarif.ReportingConfiguration{
+									Level:      "warning",
+									Rank:       42.5,
+									Parameters: &sarif.PropertyBag{Tags: []string{"parameter"}},
+									Properties: &sarif.PropertyBag{AdditionalProperties: map[string]interface{}{"source": "CLT"}},
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+	}
+
+	patchReportRuns(&report)
+
+	serialized, err := json.Marshal(report)
+	assert.NoError(t, err)
+	var roundTripped sarif.Report
+	assert.NoError(t, json.Unmarshal(serialized, &roundTripped))
+
+	configuration := roundTripped.Runs[0].Tool.Driver.Rules[0].DefaultConfiguration
+	assert.True(t, configuration.Enabled)
+	assert.Equal(t, "warning", configuration.Level)
+	assert.Equal(t, 42.5, configuration.Rank)
+	assert.Equal(t, []string{"parameter"}, configuration.Parameters.Tags)
+	assert.Equal(t, "CLT", configuration.Properties.AdditionalProperties["source"])
+}
+
 func TestFingerprint2011MatchesGuava(t *testing.T) {
 	tests := []struct {
 		length int
