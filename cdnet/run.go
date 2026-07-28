@@ -99,39 +99,7 @@ func patchReport(c thirdpartyscan.Context) error {
 	if err != nil {
 		return fmt.Errorf("failed to read report: %w", err)
 	}
-	for _, run := range finalReport.Runs {
-		rules := make([]sarif.ReportingDescriptor, 0)
-		for _, rule := range run.Tool.Driver.Rules {
-			if rule.FullDescription == nil {
-				rule.FullDescription = rule.ShortDescription
-			}
-			if rule.ShortDescription == nil {
-				rule.ShortDescription = rule.FullDescription
-			}
-
-			rule.DefaultConfiguration = &sarif.ReportingConfiguration{
-				Enabled: true,
-			}
-			rules = append(rules, rule)
-		}
-		run.Tool.Driver.Rules = rules
-
-		taxonomy := make([]sarif.ReportingDescriptor, 0)
-		for _, taxa := range run.Tool.Driver.Taxa {
-			if taxa.Name == "" {
-				taxa.Name = taxa.Id
-			}
-			taxonomy = append(taxonomy, taxa)
-		}
-		run.Tool.Driver.Taxa = taxonomy
-
-		results := make([]sarif.Result, 0)
-		for _, result := range run.Results {
-			addQodanaFingerprints(&result)
-			results = append(results, result)
-		}
-		run.Results = results
-	}
+	patchReportRuns(finalReport)
 
 	platform.SetVersionControlParams(c, platform.GetDeviceIdSalt()[0], finalReport)
 
@@ -158,6 +126,37 @@ func patchReport(c thirdpartyscan.Context) error {
 		return fmt.Errorf("error writing resulting SARIF file: %w", err)
 	}
 	return nil
+}
+
+func patchReportRuns(report *sarif.Report) {
+	for runIndex := range report.Runs {
+		run := &report.Runs[runIndex]
+		for ruleIndex := range run.Tool.Driver.Rules {
+			rule := &run.Tool.Driver.Rules[ruleIndex]
+			if rule.FullDescription == nil {
+				rule.FullDescription = rule.ShortDescription
+			}
+			if rule.ShortDescription == nil {
+				rule.ShortDescription = rule.FullDescription
+			}
+
+			if rule.DefaultConfiguration == nil {
+				rule.DefaultConfiguration = &sarif.ReportingConfiguration{}
+			}
+			rule.DefaultConfiguration.Enabled = true
+		}
+
+		for taxaIndex := range run.Tool.Driver.Taxa {
+			taxa := &run.Tool.Driver.Taxa[taxaIndex]
+			if taxa.Name == "" {
+				taxa.Name = taxa.Id
+			}
+		}
+
+		for resultIndex := range run.Results {
+			addQodanaFingerprints(&run.Results[resultIndex])
+		}
+	}
 }
 
 func copyOriginalReportToLog(logDir string, sarifPath string) error {
