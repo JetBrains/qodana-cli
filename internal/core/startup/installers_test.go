@@ -29,6 +29,7 @@ import (
 	"os/exec"
 	"path/filepath"
 	"runtime"
+	"strings"
 	"sync/atomic"
 	"testing"
 
@@ -291,10 +292,41 @@ func TestExtractArchiveBadPath(t *testing.T) {
 	assert.Error(t, err)
 }
 
+func TestIsCustomPluginsCacheValid(t *testing.T) {
+	pluginsUrl := "https://example.com/qodana-QDJVM-262.9643.87-custom-plugins.zip"
+
+	t.Run("missing cache", func(t *testing.T) {
+		assert.False(t, isCustomPluginsCacheValid(t.TempDir(), pluginsUrl))
+	})
+
+	t.Run("valid cache", func(t *testing.T) {
+		targetDir := t.TempDir()
+		assert.NoError(t, os.MkdirAll(filepath.Join(targetDir, "custom-plugins"), 0o755))
+		assert.NoError(t, os.WriteFile(filepath.Join(targetDir, "disabled_plugins.txt"), []byte("id\n"), 0o644))
+		assert.NoError(t, os.WriteFile(filepath.Join(targetDir, customPluginsSourceFile), []byte(pluginsUrl), 0o644))
+		assert.True(t, isCustomPluginsCacheValid(targetDir, pluginsUrl))
+	})
+
+	t.Run("url mismatch", func(t *testing.T) {
+		targetDir := t.TempDir()
+		assert.NoError(t, os.MkdirAll(filepath.Join(targetDir, "custom-plugins"), 0o755))
+		assert.NoError(t, os.WriteFile(filepath.Join(targetDir, "disabled_plugins.txt"), []byte("id\n"), 0o644))
+		assert.NoError(t, os.WriteFile(filepath.Join(targetDir, customPluginsSourceFile), []byte(pluginsUrl), 0o644))
+		assert.False(t, isCustomPluginsCacheValid(targetDir, pluginsUrl+"-other"))
+	})
+
+	t.Run("legacy cache without source marker", func(t *testing.T) {
+		targetDir := t.TempDir()
+		assert.NoError(t, os.MkdirAll(filepath.Join(targetDir, "custom-plugins"), 0o755))
+		assert.NoError(t, os.WriteFile(filepath.Join(targetDir, "disabled_plugins.txt"), []byte("id\n"), 0o644))
+		assert.False(t, isCustomPluginsCacheValid(targetDir, pluginsUrl))
+	})
+}
+
 func TestDownloadCustomPlugins(t *testing.T) {
 	//goland:noinspection GoBoolExpressions
 	if runtime.GOOS != "darwin" {
-		t.Skip("downloadCustomPlugins is only used on macOS")
+		t.Skip("downloadCustomPlugins uses macOS tar zip extraction")
 	}
 
 	// Create a zip archive containing custom-plugins/disabled_plugins.txt
@@ -313,7 +345,9 @@ func TestDownloadCustomPlugins(t *testing.T) {
 	archiveBytes, err := os.ReadFile(archivePath)
 	assert.NoError(t, err)
 
+	var downloads atomic.Int32
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		downloads.Add(1)
 		w.Header().Set("Content-Length", fmt.Sprintf("%d", len(archiveBytes)))
 		_, _ = w.Write(archiveBytes)
 	}))
@@ -321,16 +355,38 @@ func TestDownloadCustomPlugins(t *testing.T) {
 
 	// downloadCustomPlugins is only called on macOS, where IDE URLs use .sit extensions.
 	t.Run(".sit", func(t *testing.T) {
+		downloads.Store(0)
 		targetDir := filepath.Join(t.TempDir(), "plugins")
 		err := downloadCustomPlugins(server.URL+"/ide.sit", targetDir, nil)
 		assert.NoError(t, err)
 		assert.FileExists(t, filepath.Join(targetDir, "disabled_plugins.txt"))
+		assert.FileExists(t, filepath.Join(targetDir, customPluginsSourceFile))
+		assert.NoFileExists(t, filepath.Join(targetDir, "custom-plugins.zip"))
+		assert.Equal(t, int32(1), downloads.Load())
+
+		err = downloadCustomPlugins(server.URL+"/ide.sit", targetDir, nil)
+		assert.NoError(t, err)
+		assert.Equal(t, int32(1), downloads.Load(), "second call should use cache")
 	})
 	t.Run("-aarch64.sit", func(t *testing.T) {
+		downloads.Store(0)
 		targetDir := filepath.Join(t.TempDir(), "plugins")
 		err := downloadCustomPlugins(server.URL+"/ide-aarch64.sit", targetDir, nil)
 		assert.NoError(t, err)
 		assert.FileExists(t, filepath.Join(targetDir, "disabled_plugins.txt"))
+		assert.Equal(t, int32(1), downloads.Load())
+	})
+	t.Run("re-downloads when url changes", func(t *testing.T) {
+		downloads.Store(0)
+		targetDir := filepath.Join(t.TempDir(), "plugins")
+		assert.NoError(t, downloadCustomPlugins(server.URL+"/ide-262.1.sit", targetDir, nil))
+		assert.Equal(t, int32(1), downloads.Load())
+
+		assert.NoError(t, downloadCustomPlugins(server.URL+"/ide-262.2.sit", targetDir, nil))
+		assert.Equal(t, int32(2), downloads.Load())
+		source, err := os.ReadFile(filepath.Join(targetDir, customPluginsSourceFile))
+		assert.NoError(t, err)
+		assert.Equal(t, server.URL+"/ide-262.2-custom-plugins.zip", strings.TrimSpace(string(source)))
 	})
 }
 

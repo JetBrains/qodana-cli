@@ -371,19 +371,39 @@ func verifySha256(checksumFile string, checkSumUrl string, filePath string) {
 	log.Info("Checksum of downloaded IDE was verified")
 }
 
+// customPluginsSourceFile stores the plugins URL used to populate the cache.
+// Custom plugins live under <code>/<version-branch>/, so the URL (which includes
+// the build number) is what invalidates the cache across patch releases.
+const customPluginsSourceFile = "custom-plugins.source"
+
 func downloadCustomPlugins(ideUrl string, targetDir string, spinner *pterm.SpinnerPrinter) error {
 	pluginsUrl := getPluginsURL(ideUrl)
+	if isCustomPluginsCacheValid(targetDir, pluginsUrl) {
+		log.Debugf("Custom plugins already downloaded from %s to %s, skipping download", pluginsUrl, targetDir)
+		return nil
+	}
+
 	log.Debugf("Downloading custom plugins from %s to %s", pluginsUrl, targetDir)
 
 	if err := os.MkdirAll(targetDir, os.ModePerm); err != nil {
 		return fmt.Errorf("couldn't create a directory %s: %v", targetDir, err)
 	}
 
+	// Drop previous unpack so a build upgrade cannot leave stale plugin jars behind.
+	_ = os.RemoveAll(filepath.Join(targetDir, "custom-plugins"))
+	_ = os.Remove(filepath.Join(targetDir, "disabled_plugins.txt"))
+	_ = os.Remove(filepath.Join(targetDir, customPluginsSourceFile))
+
 	archivePath := filepath.Join(targetDir, "custom-plugins.zip")
 	err := utils.DownloadFile(archivePath, pluginsUrl, getInternalAuth(), spinner)
 	if err != nil {
 		return fmt.Errorf("error while downloading plugins: %v", err)
 	}
+	defer func() {
+		if removeErr := os.Remove(archivePath); removeErr != nil && !os.IsNotExist(removeErr) {
+			log.Warning("Error while removing custom plugins archive: " + removeErr.Error())
+		}
+	}()
 
 	_, err = fexec.Exec(".", "tar", "-xf", archivePath, "-C", targetDir)
 	if err != nil {
@@ -396,7 +416,26 @@ func downloadCustomPlugins(ideUrl string, targetDir string, spinner *pterm.Spinn
 		return fmt.Errorf("error while copying plugins: %s", err)
 	}
 
+	if err := os.WriteFile(filepath.Join(targetDir, customPluginsSourceFile), []byte(pluginsUrl), 0o644); err != nil {
+		return fmt.Errorf("error while writing custom plugins source marker: %v", err)
+	}
+
 	return nil
+}
+
+func isCustomPluginsCacheValid(targetDir string, pluginsUrl string) bool {
+	if _, err := os.Stat(filepath.Join(targetDir, "disabled_plugins.txt")); err != nil {
+		return false
+	}
+	info, err := os.Stat(filepath.Join(targetDir, "custom-plugins"))
+	if err != nil || !info.IsDir() {
+		return false
+	}
+	data, err := os.ReadFile(filepath.Join(targetDir, customPluginsSourceFile))
+	if err != nil {
+		return false
+	}
+	return strings.TrimSpace(string(data)) == pluginsUrl
 }
 
 func getPluginsURL(ideUrl string) string {
