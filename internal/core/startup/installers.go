@@ -19,6 +19,7 @@ package startup
 import (
 	"crypto/sha256"
 	"encoding/hex"
+	"errors"
 	"fmt"
 	"io"
 	"math/rand"
@@ -484,7 +485,7 @@ func installCustomPluginsFromStaging(targetDir string, stagingDir string) error 
 			return fmt.Errorf("failed to move previous custom plugins aside: %w", err)
 		}
 		hadPrevious = true
-	} else if err != nil && !os.IsNotExist(err) {
+	} else if err != nil && !errors.Is(err, os.ErrNotExist) {
 		return fmt.Errorf("failed to stat custom plugins directory: %w", err)
 	}
 
