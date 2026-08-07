@@ -31,6 +31,7 @@ import (
 	"strings"
 
 	fexec "github.com/JetBrains/qodana-cli/internal/foundation/exec"
+	"github.com/JetBrains/qodana-cli/internal/foundation/flock"
 	"github.com/JetBrains/qodana-cli/internal/platform"
 	"github.com/JetBrains/qodana-cli/internal/platform/msg"
 	"github.com/JetBrains/qodana-cli/internal/platform/product"
@@ -377,6 +378,9 @@ func verifySha256(checksumFile string, checkSumUrl string, filePath string) {
 // the build number) is what invalidates the cache across patch releases.
 const customPluginsSourceFile = "custom-plugins.source"
 
+// customPluginsLockFile coordinates concurrent downloads into the same targetDir.
+const customPluginsLockFile = "custom-plugins.lock"
+
 func downloadCustomPlugins(ideUrl string, targetDir string, spinner *pterm.SpinnerPrinter) error {
 	pluginsUrl := getPluginsURL(ideUrl)
 	if isCustomPluginsCacheValid(targetDir, pluginsUrl) {
@@ -384,6 +388,24 @@ func downloadCustomPlugins(ideUrl string, targetDir string, spinner *pterm.Spinn
 		return nil
 	}
 
+	// Exclusive lock so concurrent runs for the same version-branch wait instead of
+	// racing on staging/install. Re-check the cache after acquiring — another process
+	// may have finished the download while we waited.
+	lockPath := filepath.Join(targetDir, customPluginsLockFile)
+	var downloadErr error
+	if err := flock.With(lockPath, func() {
+		if isCustomPluginsCacheValid(targetDir, pluginsUrl) {
+			log.Debugf("Custom plugins already downloaded from %s to %s (updated by another process), skipping download", pluginsUrl, targetDir)
+			return
+		}
+		downloadErr = downloadAndInstallCustomPlugins(pluginsUrl, targetDir, spinner)
+	}); err != nil {
+		return failedCustomPluginsUpdate(pluginsUrl, hasCustomPluginsInstall(targetDir), fmt.Errorf("couldn't acquire custom plugins lock: %w", err))
+	}
+	return downloadErr
+}
+
+func downloadAndInstallCustomPlugins(pluginsUrl string, targetDir string, spinner *pterm.SpinnerPrinter) error {
 	log.Debugf("Downloading custom plugins from %s to %s", pluginsUrl, targetDir)
 	hadPrevious := hasCustomPluginsInstall(targetDir)
 
