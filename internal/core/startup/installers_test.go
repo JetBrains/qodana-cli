@@ -21,8 +21,10 @@ import (
 	"archive/zip"
 	"bytes"
 	"compress/gzip"
+	"encoding/binary"
 	"errors"
 	"fmt"
+	"hash/crc32"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -368,6 +370,34 @@ func captureLogWarnings(t *testing.T) *bytes.Buffer {
 	return &logBuf
 }
 
+// malformedPluginsZipPartialExtract builds a zip whose first member extracts cleanly
+// and whose second member is truncated, so bsdtar exits non-zero after creating
+// custom-plugins/disabled_plugins.txt.
+func malformedPluginsZipPartialExtract(t *testing.T) []byte {
+	t.Helper()
+	localFile := func(name string, data []byte, truncate bool) []byte {
+		nameBytes := []byte(name)
+		crc := crc32.ChecksumIEEE(data)
+		header := make([]byte, 30)
+		binary.LittleEndian.PutUint32(header[0:], 0x04034b50)
+		binary.LittleEndian.PutUint16(header[8:], 0) // stored
+		binary.LittleEndian.PutUint32(header[14:], crc)
+		binary.LittleEndian.PutUint32(header[18:], uint32(len(data)))
+		binary.LittleEndian.PutUint32(header[22:], uint32(len(data)))
+		binary.LittleEndian.PutUint16(header[26:], uint16(len(nameBytes)))
+		out := append(append(header, nameBytes...), data...)
+		if truncate {
+			keep := 30 + len(nameBytes) + max(1, len(data)/3)
+			return out[:keep]
+		}
+		return out
+	}
+	var out []byte
+	out = append(out, localFile("custom-plugins/disabled_plugins.txt", []byte("id\n"), false)...)
+	out = append(out, localFile("custom-plugins/plugin.jar", bytes.Repeat([]byte("J"), 200), true)...)
+	return out
+}
+
 func TestDownloadCustomPlugins(t *testing.T) {
 	//goland:noinspection GoBoolExpressions
 	if runtime.GOOS != "darwin" {
@@ -482,8 +512,28 @@ func TestDownloadCustomPlugins(t *testing.T) {
 		logBuf := captureLogWarnings(t)
 		err := downloadCustomPlugins(bad.URL+"/ide.sit", filepath.Join(t.TempDir(), "plugins"), nil)
 		assert.Error(t, err)
+		assert.Contains(t, err.Error(), "tar: exit code")
 		assert.Contains(t, logBuf.String(), "Failed to update custom plugins")
 		assert.NotContains(t, logBuf.String(), "keeping previously cached plugins")
+	})
+	t.Run("rejects partial extract from malformed archive", func(t *testing.T) {
+		// First local-file entry is intact; second is truncated so bsdtar exits
+		// non-zero after already writing custom-plugins/disabled_plugins.txt.
+		payload := malformedPluginsZipPartialExtract(t)
+		bad := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			w.Header().Set("Content-Length", fmt.Sprintf("%d", len(payload)))
+			_, _ = w.Write(payload)
+		}))
+		defer bad.Close()
+
+		targetDir := filepath.Join(t.TempDir(), "plugins")
+		logBuf := captureLogWarnings(t)
+		err := downloadCustomPlugins(bad.URL+"/ide.sit", targetDir, nil)
+		assert.Error(t, err)
+		assert.Contains(t, err.Error(), "tar: exit code")
+		assert.Contains(t, logBuf.String(), "Failed to update custom plugins")
+		assert.NoFileExists(t, filepath.Join(targetDir, customPluginsSourceFile))
+		assert.NoDirExists(t, filepath.Join(targetDir, "custom-plugins"))
 	})
 	t.Run("removes stale staging directories", func(t *testing.T) {
 		targetDir := filepath.Join(t.TempDir(), "plugins")
