@@ -408,9 +408,14 @@ func downloadCustomPlugins(ideUrl string, targetDir string, spinner *pterm.Spinn
 		return failedCustomPluginsUpdate(pluginsUrl, hadPrevious, fmt.Errorf("error while downloading plugins: %v", err))
 	}
 
-	_, err = fexec.Exec(".", "tar", "-xf", archivePath, "-C", stagingDir)
+	// fexec.Exec returns a nil error for normal non-zero process exits; only the
+	// exit code signals tar failure (e.g. partial extract of a malformed archive).
+	exitCode, err := fexec.Exec(".", "tar", "-xf", archivePath, "-C", stagingDir)
 	if err != nil {
-		return failedCustomPluginsUpdate(pluginsUrl, hadPrevious, fmt.Errorf("tar: %s", err))
+		return failedCustomPluginsUpdate(pluginsUrl, hadPrevious, fmt.Errorf("tar: %w", err))
+	}
+	if exitCode != 0 {
+		return failedCustomPluginsUpdate(pluginsUrl, hadPrevious, fmt.Errorf("tar: exit code %d", exitCode))
 	}
 
 	stagingPlugins := filepath.Join(stagingDir, "custom-plugins")
