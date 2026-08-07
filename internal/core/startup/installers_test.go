@@ -33,8 +33,10 @@ import (
 	"path/filepath"
 	"runtime"
 	"strings"
+	"sync"
 	"sync/atomic"
 	"testing"
+	"time"
 
 	"github.com/JetBrains/qodana-cli/internal/foundation/fs"
 	"github.com/JetBrains/qodana-cli/internal/platform/msg"
@@ -602,6 +604,41 @@ func TestDownloadCustomPlugins(t *testing.T) {
 		assert.Equal(t, string(oldMarker), string(source), "URL marker must stay unchanged")
 		assert.DirExists(t, filepath.Join(targetDir, "custom-plugins", "nested"))
 		assert.NoDirExists(t, filepath.Join(targetDir, "custom-plugins.old"))
+	})
+	t.Run("serializes concurrent downloads", func(t *testing.T) {
+		var concurrentDownloads atomic.Int32
+		var requests atomic.Int32
+		countingServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			requests.Add(1)
+			if concurrentDownloads.Add(1) > 1 {
+				t.Error("overlapping custom-plugins downloads")
+			}
+			defer concurrentDownloads.Add(-1)
+			time.Sleep(200 * time.Millisecond)
+			w.Header().Set("Content-Length", fmt.Sprintf("%d", len(archiveBytes)))
+			_, _ = w.Write(archiveBytes)
+		}))
+		defer countingServer.Close()
+
+		targetDir := filepath.Join(t.TempDir(), "plugins")
+		var wg sync.WaitGroup
+		errs := make(chan error, 2)
+		for range 2 {
+			wg.Add(1)
+			go func() {
+				defer wg.Done()
+				errs <- downloadCustomPlugins(countingServer.URL+"/ide.sit", targetDir, nil)
+			}()
+		}
+		wg.Wait()
+		close(errs)
+		for err := range errs {
+			assert.NoError(t, err)
+		}
+		// One logical download is HEAD+GET; the second waiter should reuse the cache.
+		assert.Equal(t, int32(2), requests.Load())
+		assert.FileExists(t, filepath.Join(targetDir, customPluginsSourceFile))
+		assert.FileExists(t, filepath.Join(targetDir, customPluginsLockFile))
 	})
 }
 
