@@ -19,9 +19,12 @@ package startup
 import (
 	"archive/tar"
 	"archive/zip"
+	"bytes"
 	"compress/gzip"
+	"encoding/binary"
 	"errors"
 	"fmt"
+	"hash/crc32"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -29,13 +32,17 @@ import (
 	"os/exec"
 	"path/filepath"
 	"runtime"
+	"strings"
+	"sync"
 	"sync/atomic"
 	"testing"
+	"time"
 
 	"github.com/JetBrains/qodana-cli/internal/foundation/fs"
 	"github.com/JetBrains/qodana-cli/internal/platform/msg"
 	"github.com/JetBrains/qodana-cli/internal/platform/product"
 	"github.com/JetBrains/qodana-cli/internal/testutil/mockexe"
+	log "github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -291,10 +298,112 @@ func TestExtractArchiveBadPath(t *testing.T) {
 	assert.Error(t, err)
 }
 
+func TestIsCustomPluginsCacheValid(t *testing.T) {
+	pluginsUrl := "https://example.com/qodana-QDJVM-262.9643.87-custom-plugins.zip"
+
+	seedCache := func(t *testing.T, targetDir string, url string, withPlugin bool) {
+		t.Helper()
+		pluginsDir := filepath.Join(targetDir, "custom-plugins")
+		assert.NoError(t, os.MkdirAll(pluginsDir, 0o755))
+		if withPlugin {
+			assert.NoError(t, os.WriteFile(filepath.Join(pluginsDir, "plugin.jar"), []byte("jar"), 0o644))
+		}
+		assert.NoError(t, os.WriteFile(filepath.Join(targetDir, "disabled_plugins.txt"), []byte("id\n"), 0o644))
+		assert.NoError(t, os.WriteFile(filepath.Join(targetDir, customPluginsSourceFile), []byte(url), 0o644))
+	}
+
+	t.Run("missing cache", func(t *testing.T) {
+		assert.False(t, isCustomPluginsCacheValid(t.TempDir(), pluginsUrl))
+	})
+
+	t.Run("valid cache", func(t *testing.T) {
+		targetDir := t.TempDir()
+		seedCache(t, targetDir, pluginsUrl, true)
+		assert.True(t, isCustomPluginsCacheValid(targetDir, pluginsUrl))
+	})
+
+	t.Run("url mismatch", func(t *testing.T) {
+		targetDir := t.TempDir()
+		seedCache(t, targetDir, pluginsUrl, true)
+		assert.False(t, isCustomPluginsCacheValid(targetDir, pluginsUrl+"-other"))
+	})
+
+	t.Run("legacy cache without source marker", func(t *testing.T) {
+		targetDir := t.TempDir()
+		assert.NoError(t, os.MkdirAll(filepath.Join(targetDir, "custom-plugins"), 0o755))
+		assert.NoError(t, os.WriteFile(filepath.Join(targetDir, "custom-plugins", "plugin.jar"), []byte("jar"), 0o644))
+		assert.NoError(t, os.WriteFile(filepath.Join(targetDir, "disabled_plugins.txt"), []byte("id\n"), 0o644))
+		assert.False(t, isCustomPluginsCacheValid(targetDir, pluginsUrl))
+	})
+
+	t.Run("empty custom-plugins directory", func(t *testing.T) {
+		targetDir := t.TempDir()
+		seedCache(t, targetDir, pluginsUrl, false)
+		assert.False(t, isCustomPluginsCacheValid(targetDir, pluginsUrl))
+	})
+
+	t.Run("custom-plugins is a file", func(t *testing.T) {
+		targetDir := t.TempDir()
+		assert.NoError(t, os.WriteFile(filepath.Join(targetDir, "custom-plugins"), []byte("not-a-dir"), 0o644))
+		assert.NoError(t, os.WriteFile(filepath.Join(targetDir, "disabled_plugins.txt"), []byte("id\n"), 0o644))
+		assert.NoError(t, os.WriteFile(filepath.Join(targetDir, customPluginsSourceFile), []byte(pluginsUrl), 0o644))
+		assert.False(t, isCustomPluginsCacheValid(targetDir, pluginsUrl))
+	})
+}
+
+func TestGetPluginsURL(t *testing.T) {
+	assert.Equal(t, "https://example.com/ide-custom-plugins.zip", getPluginsURL("https://example.com/ide.sit"))
+	assert.Equal(t, "https://example.com/ide-custom-plugins.zip", getPluginsURL("https://example.com/ide-aarch64.sit"))
+	assert.Equal(t, "https://example.com/ide-custom-plugins.zip", getPluginsURL("https://example.com/ide.win.zip"))
+	assert.Equal(t, "https://example.com/ide-custom-plugins.zip", getPluginsURL("https://example.com/ide.tar.gz"))
+}
+
+func captureLogWarnings(t *testing.T) *bytes.Buffer {
+	t.Helper()
+	var logBuf bytes.Buffer
+	prevOut := log.StandardLogger().Out
+	prevLevel := log.GetLevel()
+	log.SetOutput(&logBuf)
+	log.SetLevel(log.WarnLevel)
+	t.Cleanup(func() {
+		log.SetOutput(prevOut)
+		log.SetLevel(prevLevel)
+	})
+	return &logBuf
+}
+
+// malformedPluginsZipPartialExtract builds a zip whose first member extracts cleanly
+// and whose second member is truncated, so bsdtar exits non-zero after creating
+// custom-plugins/disabled_plugins.txt.
+func malformedPluginsZipPartialExtract(t *testing.T) []byte {
+	t.Helper()
+	localFile := func(name string, data []byte, truncate bool) []byte {
+		nameBytes := []byte(name)
+		crc := crc32.ChecksumIEEE(data)
+		header := make([]byte, 30)
+		binary.LittleEndian.PutUint32(header[0:], 0x04034b50)
+		binary.LittleEndian.PutUint16(header[8:], 0) // stored
+		binary.LittleEndian.PutUint32(header[14:], crc)
+		binary.LittleEndian.PutUint32(header[18:], uint32(len(data)))
+		binary.LittleEndian.PutUint32(header[22:], uint32(len(data)))
+		binary.LittleEndian.PutUint16(header[26:], uint16(len(nameBytes)))
+		out := append(append(header, nameBytes...), data...)
+		if truncate {
+			keep := 30 + len(nameBytes) + max(1, len(data)/3)
+			return out[:keep]
+		}
+		return out
+	}
+	var out []byte
+	out = append(out, localFile("custom-plugins/disabled_plugins.txt", []byte("id\n"), false)...)
+	out = append(out, localFile("custom-plugins/plugin.jar", bytes.Repeat([]byte("J"), 200), true)...)
+	return out
+}
+
 func TestDownloadCustomPlugins(t *testing.T) {
 	//goland:noinspection GoBoolExpressions
 	if runtime.GOOS != "darwin" {
-		t.Skip("downloadCustomPlugins is only used on macOS")
+		t.Skip("downloadCustomPlugins uses macOS tar zip extraction")
 	}
 
 	// Create a zip archive containing custom-plugins/disabled_plugins.txt
@@ -313,24 +422,223 @@ func TestDownloadCustomPlugins(t *testing.T) {
 	archiveBytes, err := os.ReadFile(archivePath)
 	assert.NoError(t, err)
 
+	var downloads atomic.Int32
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		downloads.Add(1)
 		w.Header().Set("Content-Length", fmt.Sprintf("%d", len(archiveBytes)))
 		_, _ = w.Write(archiveBytes)
 	}))
 	defer server.Close()
 
 	// downloadCustomPlugins is only called on macOS, where IDE URLs use .sit extensions.
+	// DownloadFile issues HEAD then GET, so one logical download is two HTTP requests.
 	t.Run(".sit", func(t *testing.T) {
+		downloads.Store(0)
 		targetDir := filepath.Join(t.TempDir(), "plugins")
 		err := downloadCustomPlugins(server.URL+"/ide.sit", targetDir, nil)
 		assert.NoError(t, err)
 		assert.FileExists(t, filepath.Join(targetDir, "disabled_plugins.txt"))
+		assert.FileExists(t, filepath.Join(targetDir, customPluginsSourceFile))
+		assert.NoFileExists(t, filepath.Join(targetDir, "custom-plugins.zip"))
+		assert.Equal(t, int32(2), downloads.Load())
+
+		err = downloadCustomPlugins(server.URL+"/ide.sit", targetDir, nil)
+		assert.NoError(t, err)
+		assert.Equal(t, int32(2), downloads.Load(), "second call should use cache")
 	})
 	t.Run("-aarch64.sit", func(t *testing.T) {
+		downloads.Store(0)
 		targetDir := filepath.Join(t.TempDir(), "plugins")
 		err := downloadCustomPlugins(server.URL+"/ide-aarch64.sit", targetDir, nil)
 		assert.NoError(t, err)
 		assert.FileExists(t, filepath.Join(targetDir, "disabled_plugins.txt"))
+		assert.Equal(t, int32(2), downloads.Load())
+	})
+	t.Run("re-downloads when url changes", func(t *testing.T) {
+		downloads.Store(0)
+		targetDir := filepath.Join(t.TempDir(), "plugins")
+		assert.NoError(t, downloadCustomPlugins(server.URL+"/ide-262.1.sit", targetDir, nil))
+		assert.Equal(t, int32(2), downloads.Load())
+
+		assert.NoError(t, downloadCustomPlugins(server.URL+"/ide-262.2.sit", targetDir, nil))
+		assert.Equal(t, int32(4), downloads.Load())
+		source, err := os.ReadFile(filepath.Join(targetDir, customPluginsSourceFile))
+		assert.NoError(t, err)
+		assert.Equal(t, server.URL+"/ide-262.2-custom-plugins.zip", strings.TrimSpace(string(source)))
+	})
+	t.Run("keeps previous cache when download fails", func(t *testing.T) {
+		targetDir := filepath.Join(t.TempDir(), "plugins")
+		assert.NoError(t, downloadCustomPlugins(server.URL+"/ide-262.1.sit", targetDir, nil))
+		assert.FileExists(t, filepath.Join(targetDir, "disabled_plugins.txt"))
+		assert.DirExists(t, filepath.Join(targetDir, "custom-plugins"))
+
+		failing := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			http.Error(w, "unavailable", http.StatusInternalServerError)
+		}))
+		defer failing.Close()
+
+		logBuf := captureLogWarnings(t)
+		err := downloadCustomPlugins(failing.URL+"/ide-262.2.sit", targetDir, nil)
+		assert.Error(t, err)
+		assert.Contains(t, logBuf.String(), "keeping previously cached plugins")
+		assert.FileExists(t, filepath.Join(targetDir, "disabled_plugins.txt"))
+		assert.DirExists(t, filepath.Join(targetDir, "custom-plugins"))
+		source, readErr := os.ReadFile(filepath.Join(targetDir, customPluginsSourceFile))
+		assert.NoError(t, readErr)
+		assert.Equal(t, server.URL+"/ide-262.1-custom-plugins.zip", strings.TrimSpace(string(source)))
+		assert.NoFileExists(t, filepath.Join(targetDir, "custom-plugins.old"))
+		matches, globErr := filepath.Glob(filepath.Join(targetDir, "custom-plugins.*.partial"))
+		assert.NoError(t, globErr)
+		assert.Empty(t, matches)
+	})
+	t.Run("logs failure on first install", func(t *testing.T) {
+		failing := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			http.Error(w, "unavailable", http.StatusInternalServerError)
+		}))
+		defer failing.Close()
+
+		logBuf := captureLogWarnings(t)
+		err := downloadCustomPlugins(failing.URL+"/ide.sit", filepath.Join(t.TempDir(), "plugins"), nil)
+		assert.Error(t, err)
+		assert.Contains(t, logBuf.String(), "Failed to update custom plugins")
+		assert.NotContains(t, logBuf.String(), "keeping previously cached plugins")
+	})
+	t.Run("logs failure when archive is corrupt", func(t *testing.T) {
+		bad := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			payload := []byte("not-a-zip")
+			w.Header().Set("Content-Length", fmt.Sprintf("%d", len(payload)))
+			_, _ = w.Write(payload)
+		}))
+		defer bad.Close()
+
+		logBuf := captureLogWarnings(t)
+		err := downloadCustomPlugins(bad.URL+"/ide.sit", filepath.Join(t.TempDir(), "plugins"), nil)
+		assert.Error(t, err)
+		assert.Contains(t, err.Error(), "tar: exit code")
+		assert.Contains(t, logBuf.String(), "Failed to update custom plugins")
+		assert.NotContains(t, logBuf.String(), "keeping previously cached plugins")
+	})
+	t.Run("rejects partial extract from malformed archive", func(t *testing.T) {
+		// First local-file entry is intact; second is truncated so bsdtar exits
+		// non-zero after already writing custom-plugins/disabled_plugins.txt.
+		payload := malformedPluginsZipPartialExtract(t)
+		bad := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			w.Header().Set("Content-Length", fmt.Sprintf("%d", len(payload)))
+			_, _ = w.Write(payload)
+		}))
+		defer bad.Close()
+
+		targetDir := filepath.Join(t.TempDir(), "plugins")
+		logBuf := captureLogWarnings(t)
+		err := downloadCustomPlugins(bad.URL+"/ide.sit", targetDir, nil)
+		assert.Error(t, err)
+		assert.Contains(t, err.Error(), "tar: exit code")
+		assert.Contains(t, logBuf.String(), "Failed to update custom plugins")
+		assert.NoFileExists(t, filepath.Join(targetDir, customPluginsSourceFile))
+		assert.NoDirExists(t, filepath.Join(targetDir, "custom-plugins"))
+	})
+	t.Run("removes stale staging directories", func(t *testing.T) {
+		targetDir := filepath.Join(t.TempDir(), "plugins")
+		assert.NoError(t, os.MkdirAll(targetDir, 0o755))
+		stale := filepath.Join(targetDir, "custom-plugins.12345.partial")
+		assert.NoError(t, os.MkdirAll(filepath.Join(stale, "junk"), 0o755))
+		assert.NoError(t, os.WriteFile(filepath.Join(stale, "junk", "x"), []byte("x"), 0o644))
+
+		assert.NoError(t, downloadCustomPlugins(server.URL+"/ide.sit", targetDir, nil))
+		matches, err := filepath.Glob(filepath.Join(targetDir, "custom-plugins.*.partial"))
+		assert.NoError(t, err)
+		assert.Empty(t, matches)
+		assert.FileExists(t, filepath.Join(targetDir, customPluginsSourceFile))
+	})
+	t.Run("aborts when previous plugins cannot be removed", func(t *testing.T) {
+		targetDir := filepath.Join(t.TempDir(), "plugins")
+		assert.NoError(t, downloadCustomPlugins(server.URL+"/ide-262.1.sit", targetDir, nil))
+		oldMarker, err := os.ReadFile(filepath.Join(targetDir, customPluginsSourceFile))
+		assert.NoError(t, err)
+
+		// Leftover backup that cannot be deleted blocks the update before any swap.
+		backupPlugins := filepath.Join(targetDir, "custom-plugins.old")
+		nested := filepath.Join(backupPlugins, "nested")
+		assert.NoError(t, os.MkdirAll(nested, 0o755))
+		assert.NoError(t, os.WriteFile(filepath.Join(nested, "stuck.txt"), []byte("x"), 0o644))
+		assert.NoError(t, os.Chmod(nested, 0o000))
+		t.Cleanup(func() {
+			_ = os.Chmod(nested, 0o755)
+			_ = os.RemoveAll(backupPlugins)
+		})
+
+		logBuf := captureLogWarnings(t)
+		err = downloadCustomPlugins(server.URL+"/ide-262.2.sit", targetDir, nil)
+		assert.Error(t, err)
+		assert.Contains(t, err.Error(), "failed to remove leftover custom plugins backup")
+		assert.Contains(t, logBuf.String(), "keeping previously cached plugins")
+		source, readErr := os.ReadFile(filepath.Join(targetDir, customPluginsSourceFile))
+		assert.NoError(t, readErr)
+		assert.Equal(t, string(oldMarker), string(source), "URL marker must stay unchanged")
+		assert.DirExists(t, filepath.Join(targetDir, "custom-plugins"))
+	})
+	t.Run("rolls back when old plugins cannot be deleted after swap", func(t *testing.T) {
+		targetDir := filepath.Join(t.TempDir(), "plugins")
+		assert.NoError(t, downloadCustomPlugins(server.URL+"/ide-262.1.sit", targetDir, nil))
+		oldMarker, err := os.ReadFile(filepath.Join(targetDir, customPluginsSourceFile))
+		assert.NoError(t, err)
+
+		// Once moved to custom-plugins.old, this nested dir cannot be removed.
+		nested := filepath.Join(targetDir, "custom-plugins", "nested")
+		assert.NoError(t, os.MkdirAll(nested, 0o755))
+		assert.NoError(t, os.WriteFile(filepath.Join(nested, "stuck.txt"), []byte("x"), 0o644))
+		assert.NoError(t, os.Chmod(nested, 0o000))
+		t.Cleanup(func() {
+			_ = os.Chmod(filepath.Join(targetDir, "custom-plugins", "nested"), 0o755)
+			_ = os.Chmod(filepath.Join(targetDir, "custom-plugins.old", "nested"), 0o755)
+			_ = os.RemoveAll(filepath.Join(targetDir, "custom-plugins.old"))
+		})
+
+		logBuf := captureLogWarnings(t)
+		err = downloadCustomPlugins(server.URL+"/ide-262.2.sit", targetDir, nil)
+		assert.Error(t, err)
+		assert.Contains(t, err.Error(), "failed to remove previous custom plugins")
+		assert.Contains(t, logBuf.String(), "keeping previously cached plugins")
+		source, readErr := os.ReadFile(filepath.Join(targetDir, customPluginsSourceFile))
+		assert.NoError(t, readErr)
+		assert.Equal(t, string(oldMarker), string(source), "URL marker must stay unchanged")
+		assert.DirExists(t, filepath.Join(targetDir, "custom-plugins", "nested"))
+		assert.NoDirExists(t, filepath.Join(targetDir, "custom-plugins.old"))
+	})
+	t.Run("serializes concurrent downloads", func(t *testing.T) {
+		var concurrentDownloads atomic.Int32
+		var requests atomic.Int32
+		countingServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			requests.Add(1)
+			if concurrentDownloads.Add(1) > 1 {
+				t.Error("overlapping custom-plugins downloads")
+			}
+			defer concurrentDownloads.Add(-1)
+			time.Sleep(200 * time.Millisecond)
+			w.Header().Set("Content-Length", fmt.Sprintf("%d", len(archiveBytes)))
+			_, _ = w.Write(archiveBytes)
+		}))
+		defer countingServer.Close()
+
+		targetDir := filepath.Join(t.TempDir(), "plugins")
+		var wg sync.WaitGroup
+		errs := make(chan error, 2)
+		for range 2 {
+			wg.Add(1)
+			go func() {
+				defer wg.Done()
+				errs <- downloadCustomPlugins(countingServer.URL+"/ide.sit", targetDir, nil)
+			}()
+		}
+		wg.Wait()
+		close(errs)
+		for err := range errs {
+			assert.NoError(t, err)
+		}
+		// One logical download is HEAD+GET; the second waiter should reuse the cache.
+		assert.Equal(t, int32(2), requests.Load())
+		assert.FileExists(t, filepath.Join(targetDir, customPluginsSourceFile))
+		assert.FileExists(t, filepath.Join(targetDir, customPluginsLockFile))
 	})
 }
 

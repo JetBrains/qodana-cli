@@ -159,10 +159,9 @@ func prepareQodanaTokenForNative(token string) {
 func prepareCustomPlugins(prod product.Product) {
 	if runtime.GOOS == "darwin" && !prod.Analyzer.IsContainer() {
 		if info := getIde(prod.Analyzer); info != nil {
-			err := downloadCustomPlugins(info.Link, filepath.Dir(prod.CustomPluginsPath()), nil)
-			if err != nil {
-				log.Warning("Error while downloading custom plugins: " + err.Error())
-			}
+			// Failures are logged inside downloadCustomPlugins, including when a
+			// previous cache is kept after an unsuccessful update.
+			_ = downloadCustomPlugins(info.Link, filepath.Dir(prod.CustomPluginsPath()), nil)
 		}
 	}
 }
