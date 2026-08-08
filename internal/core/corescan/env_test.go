@@ -70,13 +70,15 @@ func Test_ExtractEnvironmentVariables(t *testing.T) {
 	}
 
 	for _, tc := range []struct {
-		ci                string
-		variables         map[string]string
-		jobUrlExpected    string
-		envExpected       string
-		remoteUrlExpected string
-		revisionExpected  string
-		branchExpected    string
+		ci                    string
+		variables             map[string]string
+		jobUrlExpected        string
+		envExpected           string
+		remoteUrlExpected     string
+		repositoryUrlExpected string
+		revisionExpected      string
+		branchExpected        string
+		gitEnv                qdenv.GitEnv
 	}{
 		{
 			ci:          "no CI detected",
@@ -213,6 +215,23 @@ func Test_ExtractEnvironmentVariables(t *testing.T) {
 			envExpected:    fmt.Sprintf("bitbucket:%s", version.Version),
 			jobUrlExpected: "https://bitbucket.org/sa/entrypoint/pipelines/results/123456789",
 		},
+		{
+			ci: "local-git",
+			gitEnv: qdenv.GitEnv{
+				RemoteUrl:     "https://qodana.jetbrains.com/never-gonna-give-you-up",
+				RepositoryUrl: "https://qodana.jetbrains.com/never-gonna-give-you-up",
+				Revision:      revisionExpected,
+				Branch:        branchExpected,
+			},
+			variables: map[string]string{
+				qdenv.QodanaEnv: "local-git",
+			},
+			envExpected:           "local-git",
+			remoteUrlExpected:     "https://qodana.jetbrains.com/never-gonna-give-you-up",
+			repositoryUrlExpected: "https://qodana.jetbrains.com/never-gonna-give-you-up",
+			revisionExpected:      revisionExpected,
+			branchExpected:        branchExpected,
+		},
 	} {
 		t.Run(
 			tc.ci, func(t *testing.T) {
@@ -246,7 +265,7 @@ func Test_ExtractEnvironmentVariables(t *testing.T) {
 						environment.name, func(t *testing.T) {
 							qdenv.InitializeQodanaGlobalEnv(qdenv.EmptyEnvProvider())
 
-							qdenv.ExtractQodanaEnvironment(environment.set)
+							qdenv.ExtractQodanaEnvironment(tc.gitEnv, environment.set)
 							currentQodanaEnv := environment.get(qdenv.QodanaEnv)
 							if currentQodanaEnv != tc.envExpected {
 								t.Errorf("%s: Expected %s, got %s", environment.name, tc.envExpected, currentQodanaEnv)
@@ -265,6 +284,14 @@ func Test_ExtractEnvironmentVariables(t *testing.T) {
 									environment.name,
 									tc.remoteUrlExpected,
 									environment.get(qdenv.QodanaRemoteUrl),
+								)
+							}
+							if environment.get(qdenv.QodanaRepoUrl) != tc.repositoryUrlExpected {
+								t.Errorf(
+									"%s: Expected %s, got %s",
+									environment.name,
+									tc.repositoryUrlExpected,
+									environment.get(qdenv.QodanaRepoUrl),
 								)
 							}
 							if environment.get(qdenv.QodanaRevision) != tc.revisionExpected {
