@@ -85,11 +85,11 @@ ARG QD_RELEASE=""
 ARG QD_VERSION="2026.2"
 ENV QD_VERSION="$QD_VERSION" QD_IMAGE="python-community"
 ARG QD_CODE="QDPYC"
-ARG QD_BUILD=""
-ARG QD_DOWNLOAD_URL_LINUX=""
-ARG QD_DOWNLOAD_URL_LINUX_ARM64=""
-ARG QD_CHECKSUM_URL_LINUX=""
-ARG QD_CHECKSUM_URL_LINUX_ARM64=""
+ARG QD_BUILD="262.9611"
+ARG QD_DOWNLOAD_URL_LINUX="https://download.jetbrains.com/qodana/2026.2/qodana-QDPYC-262.9611.33.tar.gz"
+ARG QD_DOWNLOAD_URL_LINUX_ARM64="https://download.jetbrains.com/qodana/2026.2/qodana-QDPYC-262.9611.33-aarch64.tar.gz"
+ARG QD_CHECKSUM_URL_LINUX="https://download.jetbrains.com/qodana/2026.2/qodana-QDPYC-262.9611.33.tar.gz.sha256"
+ARG QD_CHECKSUM_URL_LINUX_ARM64="https://download.jetbrains.com/qodana/2026.2/qodana-QDPYC-262.9611.33-aarch64.tar.gz.sha256"
 # hadolint ignore=DL3003,SC2043
 RUN set -ex && \
     dpkgArch="$(dpkg --print-architecture)" && \
