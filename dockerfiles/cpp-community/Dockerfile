@@ -40,6 +40,7 @@ RUN --mount=target=/var/lib/apt/lists,type=cache,sharing=locked \
         make \
         patch \
         libc6-dev \
+        libicu76 \
         libpam-modules \
         locales \
         openssh-client && \
