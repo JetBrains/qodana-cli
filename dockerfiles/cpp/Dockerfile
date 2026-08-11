@@ -43,6 +43,7 @@ RUN --mount=target=/var/lib/apt/lists,type=cache,sharing=locked \
         make \
         patch \
         libc6-dev \
+        libicu76 \
         libpam-modules \
         locales \
         openssh-client && \
@@ -102,11 +103,11 @@ ARG QD_RELEASE=""
 ARG QD_VERSION="2026.2"
 ENV QD_VERSION="$QD_VERSION" QD_IMAGE="cpp"
 ARG QD_CODE="QDCPP"
-ARG QD_BUILD=""
-ARG QD_DOWNLOAD_URL_LINUX=""
-ARG QD_DOWNLOAD_URL_LINUX_ARM64=""
-ARG QD_CHECKSUM_URL_LINUX=""
-ARG QD_CHECKSUM_URL_LINUX_ARM64=""
+ARG QD_BUILD="262.9601"
+ARG QD_DOWNLOAD_URL_LINUX="https://download.jetbrains.com/qodana/2026.2/qodana-QDCPP-262.9601.29.tar.gz"
+ARG QD_DOWNLOAD_URL_LINUX_ARM64="https://download.jetbrains.com/qodana/2026.2/qodana-QDCPP-262.9601.29-aarch64.tar.gz"
+ARG QD_CHECKSUM_URL_LINUX="https://download.jetbrains.com/qodana/2026.2/qodana-QDCPP-262.9601.29.tar.gz.sha256"
+ARG QD_CHECKSUM_URL_LINUX_ARM64="https://download.jetbrains.com/qodana/2026.2/qodana-QDCPP-262.9601.29-aarch64.tar.gz.sha256"
 # hadolint ignore=DL3003,SC2043
 RUN set -ex && \
     dpkgArch="$(dpkg --print-architecture)" && \
