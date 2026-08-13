@@ -47,10 +47,12 @@ For every Qodana MCP call, route `projectPath` to the analyzed source project. N
 
 A strong signal must be grounded in human material:
 
-- a human review discussion explicitly requesting or confirming a correction; or
+- a human review discussion that requests, identifies, or confirms a correction when interpreted together with its PR context and anchored code change; or
 - a human-authored corrective commit whose message and diff clearly demonstrate the concern.
 
-Accept only findings with concrete source evidence and enough context to describe what the human confirmed. Reject generated-code churn, merges, reverts, cosmetic edits, feature additions, one-off identifier changes, speculative interpretations, and concerns requiring unavailable project intent or runtime information.
+For PRs, evaluate the complete discussion, PR title and body, anchored source, and relevant before-to-after diff together. A discussion does not need to restate the full concern when it clearly identifies or affirms the anchored change as a correction and the combined human-authored context makes the concern unambiguous. Do not reject a finding solely because the discussion is terse. A signal captures a confirmed code concern, so do not require the human material to formulate a reusable rule.
+
+Accept only findings with concrete source evidence and enough combined context to describe what the human confirmed without relying on information outside the supplied material. Reject generated-code churn, merges, reverts, cosmetic edits, feature additions, one-off identifier changes, speculative interpretations, and concerns requiring unavailable project intent or runtime information.
 
 Do not produce a rule name, statement, language, severity, rule ID, or proposed implementation.
 
@@ -112,4 +114,3 @@ Construct the idempotency key from immutable source provenance, work-item ID, si
 For `FromPR`, preserve PR number, title, complete discussion messages, relevant before-to-after diff, and discussion URL. For `FromCommit`, preserve correcting revision, first parent, complete message, validated corrective diff, and commit URL when available.
 
 Do not add a rule, rule ID, or proposed statement to a signal. Keep orchestration identifiers in `provenance`, leave `syntheticExampleIds` empty, and treat successful MCP receipts plus the local commit as the durable outcome.
-
