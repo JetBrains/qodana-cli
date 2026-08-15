@@ -18,5 +18,5 @@ jobs:
         shell: bash
         working-directory: .github/scripts
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
       - run: node verifyChecksums.js
