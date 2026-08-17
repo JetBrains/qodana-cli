@@ -1,0 +1,29 @@
+# TEMPORARY — remove before merging QD-13943.
+# Smoke-tests GitHub App token generation for the post-release workflow.
+# Triggers only on pushes to the QD-13943 branch, mints a scoped token and
+# lists the repositories it can see. It performs NO writes, pushes or PRs.
+name: 'test-app-token'
+on:
+  push:
+    branches: [fix/QD-13943/update-expired-personal-token-with-gh-app]
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Generate GitHub App token
+        id: app-token
+        uses: actions/create-github-app-token@v2
+        with:
+          app-id: ${{ secrets.GH_APP_ID }}
+          private-key: ${{ secrets.GH_APP_PRIVATE_KEY }}
+          owner: jetbrains
+          repositories: |
+            qodana-action
+            qodana-lsp
+
+      - name: Verify token can see target repositories
+        env:
+          GITHUB_TOKEN: ${{ steps.app-token.outputs.token }}
+        run: |
+          echo "Repositories visible to the installation token:"
+          gh api installation/repositories --jq '.repositories[].full_name'
