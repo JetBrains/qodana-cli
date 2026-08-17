@@ -24,6 +24,9 @@ jobs:
           private-key: ${{ secrets.GH_APP_PRIVATE_KEY }}
           owner: jetbrains
           repositories: qodana-action
+          permission-contents: write
+          permission-pull-requests: write
+          permission-workflows: write
 
       - uses: actions/checkout@v6
         if: (github.event.release.name || github.event.inputs.release_name) != 'nightly'
@@ -60,6 +63,9 @@ jobs:
           private-key: ${{ secrets.GH_APP_PRIVATE_KEY }}
           owner: jetbrains
           repositories: qodana-lsp
+          permission-contents: write
+          permission-pull-requests: write
+          permission-workflows: write
 
       - uses: actions/checkout@v6
         if: (github.event.release.name || github.event.inputs.release_name) != 'nightly'
