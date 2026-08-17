@@ -30,7 +30,7 @@ func newEdictCommand() *cobra.Command {
 		Use:   "edict",
 		Short: "Edict commands: extract inspection rules from your development history",
 	}
-	cmd.AddCommand(newEdictSetupCodexCommand())
+	cmd.AddCommand(newEdictSetupCodexCommand(), newEdictMCPCommand())
 	return cmd
 }
 
