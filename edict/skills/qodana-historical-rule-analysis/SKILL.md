@@ -96,7 +96,6 @@ Construct an idempotency key from immutable historical provenance: stored rule I
 
 ```json
 {
-  "schemaVersion": 2,
   "id": "s-<10 lowercase hex>",
   "idempotencyKey": "<stable historical provenance key>",
   "fileRevision": {
@@ -113,7 +112,7 @@ Construct an idempotency key from immutable historical provenance: stored rule I
   },
   "label": "POSITIVE | NEGATIVE",
   "description": "<what this evidence side demonstrates>",
-  "syntheticExampleIds": [],
+  "syntheticExampleId": null,
   "provenance": {
     "ruleId": "<stored rule ID>",
     "historicalSearchId": "<historical search ID>",
@@ -122,7 +121,7 @@ Construct an idempotency key from immutable historical provenance: stored rule I
 }
 ```
 
-Do not add `rule`, `ruleId`, or a proposed rule statement to the signal. Leave `syntheticExampleIds` empty because rules and examples are created only after clustering.
+Do not add `rule`, `ruleId`, or a proposed rule statement to the signal. Leave `syntheticExampleId` null because rules and examples are created only after clustering.
 
 ## Result contract
 
@@ -180,4 +179,3 @@ Do not invent query IDs, revisions, paths, or ranges. Derive signal IDs determin
 - Deduplicate evidence within each query.
 - Submit once per prepared search.
 - Treat the successful MCP receipts and local Git commit as the durable outcome when evidence was found.
-
