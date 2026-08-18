@@ -29,7 +29,7 @@ Stop with a clear error when an input or required MCP tool is unavailable.
    - PR mode: call `mcp__qodana__prepare_pr_analysis`, then call `mcp__qodana__list_pr_analysis_items` starting at offset 0. Continue with every returned `nextOffset` until it is absent. For each page, require the item count to equal the smaller of the requested limit and the number of remaining items. Preserve the ordered union of page items. Require its size to equal `totalWorkItemCount` and require every work-item ID to be distinct before inspection.
    - Commit mode: enumerate the bounded range with read-only `git log`, preserving order and the configured limit. Resolve each commit revision, first parent, complete message, and unified diff with `git show` and `git diff`. Exclude roots, merges, reverts, automated commits, and commits without relevant source changes. Retain eligible packages locally and assign `commit-<first 16 revision characters>` work-item IDs.
 2. Inspect every work item, using the parallel inspection protocol below when applicable. Treat an empty PR batch or eligible commit list as a successful no-op.
-    - PR mode: call `mcp__qodana__get_pr_analysis_item`, read the complete human discussion, and inspect base, comment, and head source with local Git.
+    - PR mode: call `mcp__qodana__get_pr_analysis_item`, read the complete human discussion, and inspect base, comment, and head source with local Git. Use the Qodana Git-backed revision readers only when the required objects are unavailable locally.
     - Commit mode: inspect the complete retained package and compare its parent and commit sides. MCP never stores or returns commit packages.
 3. Verify complete inspection coverage against the paginated prepared set, then collect only accepted strong signals. Coverage bookkeeping is internal; do not create a signal, persisted result, or inbox placeholder for work items without signals.
 4. Validate the signal array exactly once. An empty array is valid.
@@ -52,15 +52,16 @@ When there are two or more work items and subagent tools are available, use suba
 3. Give each worker only inspection work. For every assigned item, the worker must inspect the complete human material and the relevant source before and after the correction:
     - PR mode: the complete discussion, PR context, anchored source at the applicable revisions, and the relevant before-to-after diff.
     - Commit mode: the complete retained commit message and the parent-to-commit source diff.
-    - When a PR revision is absent from the local checkout, use the available Qodana Git-backed revision file and diff readers. Mark the item `BLOCKED` only after both local Git and those revision readers fail; never substitute current-checkout source or treat a missing local object as `NO_SIGNAL`.
+    - Prefer local Git for revision files and diffs. When a PR revision is absent from the local checkout, use the available Qodana Git-backed revision file and diff readers. Mark the item `BLOCKED` only after both sources fail; never substitute current-checkout source or treat a missing local object as completed inspection.
 4. Do not pre-filter or reject an item from discussion text, commit message, title, or metadata alone. Terse human material still requires source and diff inspection.
-5. Require each worker to apply the signal-acceptance checklist independently to every item and return exactly one internal outcome for every assigned work-item ID:
-    - `SIGNALS`: every supported signal object satisfying the signal contract, with a concise evidence-based rationale. Do not return only the most severe or most general finding.
-    - `NO_SIGNAL`: no candidate signals, with a concise reason that identifies which acceptance condition is absent and is grounded in the inspected human material and source change.
-    - `BLOCKED`: inspection could not be completed, identifying the missing material or failed operation.
+5. Require each worker to apply the signal-acceptance checklist independently to every item and return:
+    - the exact ordered `inspectedWorkItemIds` whose human material and source diff were completely inspected;
+    - every supported signal object satisfying the signal contract, with a concise evidence-based rationale; do not return only the most severe or most general finding;
+    - blocked work-item IDs and diagnostics only when inspection could not be completed.
+   Do not create a result, status, explanation, or placeholder for an inspected work item that produced no signal.
 6. Workers must not call either signal-validation tool, write inbox files, modify the rules repository, stage changes, or commit.
 7. The coordinator must maintain an internal coverage ledger and verify that returned work-item IDs exactly equal the prepared set, with no omissions or duplicates. It must also verify that every outcome reflects completed human-material and source-diff inspection.
-8. Retry missing or blocked inspection when possible. If any work item remains missing, duplicated, blocked, or incompletely inspected, stop with a clear error before signal validation. Never interpret incomplete coverage as `NO_SIGNAL`.
+8. Retry missing or blocked inspection when possible. If any work item remains missing, duplicated, blocked, or incompletely inspected, stop with a clear error before signal validation. Never interpret incomplete coverage as successful inspection.
 9. Only after complete coverage may the coordinator combine candidate signals and perform the single validation call required by the workflow. The coordinator must not silently discard or downgrade a worker's `SIGNALS` outcome based on a stricter usefulness, severity, or generalizability judgment. If the coordinator believes a candidate lacks required provenance or contradicts the inspected source, reinspect that item and record the evidence-based decision before excluding it.
 
 If subagent tools are unavailable, follow the same coverage protocol sequentially in the coordinator. For a single work item, inspect it directly without delegation.
@@ -90,7 +91,7 @@ Do not produce a rule name, statement, language, severity, rule ID, or proposed 
 
 When a qualifying correction replaces one source form with another, emit both the tightly bounded `POSITIVE` before evidence and `NEGATIVE` after evidence when both sides are available. For deletion-only or addition-only corrections, emit the supported side. Every qualifying work item must contribute at least one signal.
 
-For commits, `POSITIVE` must use the parent revision and `NEGATIVE` the correcting commit. For PRs, use only paths and revisions belonging to the returned work item.
+For commits, `POSITIVE` must use the parent revision and `NEGATIVE` the correcting commit. For PRs, use only revisions belonging to the returned work item. Evidence may use another repository-relative file changed by the same PR when the complete before-to-after diff for that path directly supports the same human-confirmed correction. Verify cross-file evidence from the exact revisions with local Git, falling back to `mcp__qodana__file_diff` only when those revisions are unavailable locally; do not infer it from the current checkout.
 
 ## Signal contract
 
@@ -153,7 +154,7 @@ For `FromPR`, use this source shape:
 }
 ```
 
-`diffPositiveToNegative` must contain the relevant unified diff with hunk and changed lines. Never put availability diagnostics, revision summaries, placeholders, or text such as `UNAVAILABLE` in this field. If the diff cannot be obtained, the item is `BLOCKED` and must not be persisted.
+`diffPositiveToNegative` must be a canonical unified diff for the exact before/after revisions and paths represented by the source. Prefer verbatim stdout from `git --no-pager diff --no-color --no-ext-diff --unified=200 <before> <after> -- <base-path> <head-path>`. When either revision is unavailable locally, use the verbatim result of `mcp__qodana__file_diff`, which returns the same canonical unified-diff form. Use `mcp__qodana__file_at_ref` only when focused line-numbered source context is needed. Never synthesize, normalize, trim hunk bodies, copy a diff based on path alone, or reuse one work item's diff for another. Never put availability diagnostics, revision summaries, placeholders, or text such as `UNAVAILABLE` in this field. If the canonical diff cannot be obtained from either source, the item is `BLOCKED` and must not be persisted.
 
 For `FromCommit`, preserve correcting revision, first parent, complete message, actual unified corrective diff, and commit URL when available.
 

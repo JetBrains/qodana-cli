@@ -29,7 +29,7 @@ The user does not need to provide these fields in a schema. Use the current file
 5. Verify that the range exists and contains evidence relevant to the label:
    - `POSITIVE` confirms code that violates or should trigger the rule.
    - `NEGATIVE` confirms code that complies with or must not trigger the rule.
-6. Require the absolute path of the locally available rules-repository checkout. Use an explicit invocation value first, then `QODANA_EDICT_RULES_PATH`. Never guess it.
+6. Require the absolute path of the locally available rules-repository checkout. Use an explicit invocation value first, then `QODANA_EDICT_REPOSITORY_PATH`. Never guess it.
 7. Build the inbox record. Use `SubmittedFeedback` source metadata for direct free-form feedback, preserving the user's original statement as `problemMessage` and the exact selected code as `codeSnippet`. Preserve a source URL when the user explicitly identifies a PR or commit.
 8. Construct an idempotency key from the original human statement, label, evidence path, revision, and range. Compute lowercase SHA-256 over its exact UTF-8 bytes; the signal ID is `s-` plus the first 10 hexadecimal characters.
 9. Write the record to `inbox/<signal-id>.json`. Do not overwrite a different existing record.
@@ -55,7 +55,6 @@ This policy is shipped as part of the skill and always applies, even when the pr
 
 ```json
 {
-  "schemaVersion": 2,
   "id": "s-<first 10 lowercase SHA-256 hex characters>",
   "idempotencyKey": "stable key derived from human source and evidence coordinates",
   "fileRevision": {
@@ -71,11 +70,11 @@ This policy is shipped as part of the skill and always applies, even when the pr
   },
   "label": "POSITIVE",
   "description": "what this evidence confirms",
-  "syntheticExampleIds": []
+  "syntheticExampleId": null
 }
 ```
 
-This flat layout follows `clusters/*/signals/*.json`; `schemaVersion`, `idempotencyKey`, and optional orchestration `provenance` are inbox-only fields. Do not add a rule or proposed rule to the signal. When feedback refers to an existing inspection, preserve its actual `inspectionId`, `inspectionName`, and `inspectionDescription`; never synthesize those fields. The signal ID is deterministic; do not invent a random ID. MCP validates schema, containment, stable identity, duplicates, and file hashes. The agent owns file creation and all Git operations. Credentials must come from the process environment or configured Git credential helper and must never be printed or persisted.
+This flat layout follows `clusters/*/signals/*.json`; `idempotencyKey` and optional orchestration `provenance` are inbox-only fields. Do not add a rule or proposed rule to the signal. When feedback refers to an existing inspection, preserve its actual `inspectionId`, `inspectionName`, and `inspectionDescription`; never synthesize those fields. The signal ID is deterministic; do not invent a random ID. MCP validates schema, containment, stable identity, duplicates, and file hashes. The agent owns file creation and all Git operations. Credentials must come from the process environment or configured Git credential helper and must never be printed or persisted.
 
 ## Refusal conditions
 
@@ -89,4 +88,3 @@ Do not commit when:
 - The evidence does not support the proposed rule.
 
 Explain the missing requirement and leave the store unchanged.
-
