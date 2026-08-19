@@ -25,6 +25,7 @@ import (
 	"net/url"
 	"os"
 	"path/filepath"
+	"strings"
 	"time"
 
 	"github.com/JetBrains/qodana-cli/internal/foundation/flock"
@@ -48,6 +49,7 @@ type State struct {
 	LogFile    string    `json:"logFile"`
 	Linter     string    `json:"linter,omitempty"`
 	IDE        string    `json:"ide,omitempty"`
+	RuntimeDir string    `json:"runtimeDir,omitempty"`
 }
 
 type StartOptions struct {
@@ -73,6 +75,7 @@ type LaunchRequest struct {
 type Process interface {
 	PID() int32
 	Executable() string
+	RuntimeDir() string
 	Done() <-chan error
 	Terminate() error
 	Kill() error
@@ -134,6 +137,9 @@ func (s Service) startLocked(ctx context.Context, options StartOptions) (State, 
 		if running {
 			return State{}, fmt.Errorf("state file points to PID %d owned by another process", existing.PID)
 		}
+		if err := removeRuntimeDir(existing.RuntimeDir); err != nil {
+			return State{}, err
+		}
 		if err := os.Remove(options.StateFile); err != nil && !errors.Is(err, os.ErrNotExist) {
 			return State{}, fmt.Errorf("removing stale MCP state: %w", err)
 		}
@@ -170,7 +176,7 @@ func (s Service) startLocked(ctx context.Context, options StartOptions) (State, 
 	state := State{
 		Version: StateVersion, PID: process.PID(), URL: ready.URL,
 		ProjectDir: options.ProjectDir, Executable: process.Executable(), StartedAt: time.Now().UTC(),
-		LogFile: options.LogFile, Linter: options.Linter, IDE: options.IDE,
+		LogFile: options.LogFile, Linter: options.Linter, IDE: options.IDE, RuntimeDir: process.RuntimeDir(),
 	}
 	if err := WriteState(options.StateFile, state); err != nil {
 		s.stopStartedProcess(process)
@@ -270,6 +276,9 @@ func (s Service) stopLocked(ctx context.Context, stateFile string, timeout time.
 		return StatusResult{}, err
 	}
 	if status.Status == "stopped" || status.Status == "stale" {
+		if err := removeRuntimeDir(status.RuntimeDir); err != nil {
+			return status, err
+		}
 		_ = os.Remove(stateFile)
 		status.Status = "stopped"
 		return status, nil
@@ -308,11 +317,29 @@ func (s Service) stopLocked(ctx context.Context, stateFile string, timeout time.
 	}
 
 stopped:
+	if err := removeRuntimeDir(status.RuntimeDir); err != nil {
+		return status, err
+	}
 	if err := os.Remove(stateFile); err != nil && !errors.Is(err, os.ErrNotExist) {
 		return status, fmt.Errorf("removing MCP state: %w", err)
 	}
 	status.Status = "stopped"
 	return status, nil
+}
+
+func removeRuntimeDir(path string) error {
+	if path == "" {
+		return nil
+	}
+	cleanPath := filepath.Clean(path)
+	if filepath.Dir(cleanPath) != filepath.Clean(os.TempDir()) ||
+		!strings.HasPrefix(filepath.Base(cleanPath), "qodana-mcp-config-") {
+		return fmt.Errorf("refusing to remove unexpected MCP runtime directory %s", path)
+	}
+	if err := os.RemoveAll(cleanPath); err != nil {
+		return fmt.Errorf("removing MCP runtime directory: %w", err)
+	}
+	return nil
 }
 
 func (s Service) pollInterval() time.Duration {

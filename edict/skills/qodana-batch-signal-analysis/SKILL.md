@@ -15,8 +15,8 @@ Require:
 
 - A Qodana analysis session ID.
 - Exactly one source mode:
-  - explicit PR numbers or an inclusive date range; or
-  - one bounded Git revision expression.
+   - explicit PR numbers or an inclusive date range; or
+   - one bounded Git revision expression.
 - PR or commit limits.
 - The analyzed source project path for Qodana MCP routing.
 - A local rules-repository checkout when signals must be persisted.
@@ -28,18 +28,19 @@ Stop with a clear error when an input or required MCP tool is unavailable.
 1. Prepare one source mode.
    - PR mode: call `mcp__qodana__prepare_pr_analysis`, then call `mcp__qodana__list_pr_analysis_items` starting at offset 0. Continue with every returned `nextOffset` until it is absent. For each page, require the item count to equal the smaller of the requested limit and the number of remaining items. Preserve the ordered union of page items. Require its size to equal `totalWorkItemCount` and require every work-item ID to be distinct before inspection.
    - Commit mode: enumerate the bounded range with read-only `git log`, preserving order and the configured limit. Resolve each commit revision, first parent, complete message, and unified diff with `git show` and `git diff`. Exclude roots, merges, reverts, automated commits, and commits without relevant source changes. Retain eligible packages locally and assign `commit-<first 16 revision characters>` work-item IDs.
-2. Inspect every work item, using the parallel inspection protocol below when applicable. Treat an empty PR batch or eligible commit list as a successful no-op.
-    - PR mode: call `mcp__qodana__get_pr_analysis_item`, read the complete human discussion, and inspect base, comment, and head source with local Git. Use the Qodana Git-backed revision readers only when the required objects are unavailable locally.
-    - Commit mode: inspect the complete retained package and compare its parent and commit sides. MCP never stores or returns commit packages.
+2. Inspect every work item once, using the parallel inspection protocol below when applicable. Treat an empty PR batch or eligible commit list as a successful no-op.
+   - PR mode: call `mcp__qodana__get_pr_analysis_item`, read the complete human discussion, and inspect base, comment, and head source with local Git. Use the Qodana Git-backed revision readers only when the required objects are unavailable locally.
+   - Commit mode: inspect the complete retained package and compare its parent and commit sides. MCP never stores or returns commit packages.
 3. Verify complete inspection coverage against the paginated prepared set, then collect only accepted strong signals. Coverage bookkeeping is internal; do not create a signal, persisted result, or inbox placeholder for work items without signals.
-4. Validate the signal array exactly once. An empty array is valid.
-    - PR mode: call `mcp__qodana__validate_pr_signals` with the complete ordered `inspectedWorkItemIds` list and `signalsJson`. Validation must fail when coverage is incomplete.
-    - Commit mode: call `mcp__qodana__validate_commit_signals` with the original range and limit plus ordered `itemsJson` and `signalsJson`. This is the only time commit packages are sent to MCP.
-5. If the receipt reports zero signals, finish successfully without writing files.
-6. For every validated signal, write one `inbox/<signal-id>.json` record using the storage contract below.
-7. Call `mcp__qodana__validate_inbox_changes` once with exactly the new paths. Recompute every returned SHA-256.
-8. Stop without staging when validation fails or unrelated staged changes exist. Otherwise stage only validated paths and commit once. Never amend or push.
-9. Report receipt IDs, signal IDs, and the commit SHA.
+4. Before signal validation, construct every prospective inbox record in memory and resolve its complete source metadata, canonical diff, evidence revision, and ranges. Require the candidate-signal count to equal the prospective-record count. If any candidate cannot be materialized exactly, mark its work item blocked and stop; never submit a partial set and discard candidates afterward.
+5. Validate the final signal array exactly once. An empty array is valid.
+   - PR mode: call `mcp__qodana__validate_pr_signals` with the complete ordered `inspectedWorkItemIds` list and `signalsJson`. Validation must fail when coverage is incomplete.
+   - Commit mode: call `mcp__qodana__validate_commit_signals` with the original range and limit plus ordered `itemsJson` and `signalsJson`. This is the only time commit packages are sent to MCP.
+6. If the receipt reports zero signals, finish successfully without writing files.
+7. For every validated signal, write its preconstructed `inbox/<signal-id>.json` record using the storage contract below. The written file count must equal the receipt signal count; never drop a validated signal.
+8. Call `mcp__qodana__validate_inbox_changes` once with exactly the new paths. Require its signal IDs and count to match the signal-validation receipt, then recompute every returned SHA-256.
+9. Stop without staging when validation fails or unrelated staged changes exist. Otherwise stage only validated paths and commit once. Never amend or push.
+10. Report receipt IDs, signal IDs, and the commit SHA.
 
 For every Qodana MCP call, route `projectPath` to the analyzed source project. Never use the rules-repository path or temporary Codex workspace as `projectPath`.
 
@@ -47,22 +48,21 @@ For every Qodana MCP call, route `projectPath` to the analyzed source project. N
 
 When there are two or more work items and subagent tools are available, use subagents. The coordinator must retain ownership of orchestration and finalization while workers perform bounded, independent inspection tasks.
 
-1. Exhaust every work-item page and record the complete ordered set of prepared work-item IDs before inspection. Never infer completeness from the number of items visible in one MCP response.
-2. Partition that set into disjoint, non-empty chunks of at most 8 work items. Keep discussions from one PR together when this does not exceed the limit. Give workers explicit work-item IDs rather than page offsets or inferred ranges. Run additional worker waves until every chunk is complete; never enlarge chunks merely to fit all work into one wave. Use no more workers concurrently than the runtime permits, and assign every work item to exactly one worker.
-3. Give each worker only inspection work. For every assigned item, the worker must inspect the complete human material and the relevant source before and after the correction:
-    - PR mode: the complete discussion, PR context, anchored source at the applicable revisions, and the relevant before-to-after diff.
-    - Commit mode: the complete retained commit message and the parent-to-commit source diff.
-    - Prefer local Git for revision files and diffs. When a PR revision is absent from the local checkout, use the available Qodana Git-backed revision file and diff readers. Mark the item `BLOCKED` only after both sources fail; never substitute current-checkout source or treat a missing local object as completed inspection.
-4. Do not pre-filter or reject an item from discussion text, commit message, title, or metadata alone. Terse human material still requires source and diff inspection.
-5. Require each worker to apply the signal-acceptance checklist independently to every item and return:
-    - the exact ordered `inspectedWorkItemIds` whose human material and source diff were completely inspected;
-    - every supported signal object satisfying the signal contract, with a concise evidence-based rationale; do not return only the most severe or most general finding;
-    - blocked work-item IDs and diagnostics only when inspection could not be completed.
-   Do not create a result, status, explanation, or placeholder for an inspected work item that produced no signal.
-6. Workers must not call either signal-validation tool, write inbox files, modify the rules repository, stage changes, or commit.
-7. The coordinator must maintain an internal coverage ledger and verify that returned work-item IDs exactly equal the prepared set, with no omissions or duplicates. It must also verify that every outcome reflects completed human-material and source-diff inspection.
-8. Retry missing or blocked inspection when possible. If any work item remains missing, duplicated, blocked, or incompletely inspected, stop with a clear error before signal validation. Never interpret incomplete coverage as successful inspection.
-9. Only after complete coverage may the coordinator combine candidate signals and perform the single validation call required by the workflow. The coordinator must not silently discard or downgrade a worker's `SIGNALS` outcome based on a stricter usefulness, severity, or generalizability judgment. If the coordinator believes a candidate lacks required provenance or contradicts the inspected source, reinspect that item and record the evidence-based decision before excluding it.
+1. Partition the prepared set into disjoint, non-empty chunks of at most 8 work items. Keep discussions from one PR together when this does not exceed the limit. Give workers explicit work-item IDs rather than page offsets or inferred ranges. Run additional worker waves until every chunk is complete; never enlarge chunks merely to fit all work into one wave. Use no more workers concurrently than the runtime permits, and assign every work item to exactly one worker.
+2. Give each worker only inspection work. For every assigned item, the worker must inspect the complete human material and the relevant source before and after the correction:
+   - PR mode: the complete discussion, PR context, anchored source at the applicable revisions, and the relevant before-to-after diff.
+   - Commit mode: the complete retained commit message and the parent-to-commit source diff.
+   - Prefer local Git for revision files and diffs. When a PR revision is absent from the local checkout, use the available Qodana Git-backed revision file and diff readers. Mark the item `BLOCKED` only after both sources fail; never substitute current-checkout source or treat a missing local object as completed inspection.
+3. Do not pre-filter or reject an item from discussion text, commit message, title, or metadata alone. Terse human material still requires source and diff inspection.
+4. Require each worker to apply the signal-acceptance checklist independently to every item and return:
+   - the exact ordered `inspectedWorkItemIds` whose human material and source diff were completely inspected;
+   - every supported signal object satisfying the signal contract, with a concise evidence-based rationale; do not return only the most severe or most general finding;
+   - blocked work-item IDs and diagnostics only when inspection could not be completed.
+     Do not create a result, status, explanation, or placeholder for an inspected work item that produced no signal.
+5. Workers must not call either signal-validation tool, write inbox files, modify the rules repository, stage changes, or commit.
+6. The coordinator must maintain an internal coverage ledger and verify that returned work-item IDs exactly equal the prepared set, with no omissions or duplicates. It must also verify that every outcome reflects completed human-material and source-diff inspection.
+7. Retry missing or blocked inspection when possible. If any work item remains missing, duplicated, blocked, or incompletely inspected, stop with a clear error before signal validation. Never interpret incomplete coverage as successful inspection.
+8. Only after complete coverage may the coordinator combine candidate signals and perform the single validation call required by the workflow. The coordinator must not silently discard or downgrade a worker's `SIGNALS` outcome based on a stricter usefulness, severity, or generalizability judgment.
 
 If subagent tools are unavailable, follow the same coverage protocol sequentially in the coordinator. For a single work item, inspect it directly without delegation.
 
@@ -89,7 +89,7 @@ Do not produce a rule name, statement, language, severity, rule ID, or proposed 
 - `POSITIVE`: the problematic form confirmed by the human signal.
 - `NEGATIVE`: the corrected or compliant form confirmed by the human signal.
 
-When a qualifying correction replaces one source form with another, emit both the tightly bounded `POSITIVE` before evidence and `NEGATIVE` after evidence when both sides are available. For deletion-only or addition-only corrections, emit the supported side. Every qualifying work item must contribute at least one signal.
+When a qualifying correction replaces one source form with another, emit both the tightly bounded `POSITIVE` before evidence and `NEGATIVE` after evidence when both sides are available. Every `POSITIVE` range must intersect a removed line in the canonical before-to-after diff, and every `NEGATIVE` range must intersect an added line. For deletion-only or addition-only corrections, emit only the side represented by changed lines; do not encode the absence of code as an evidence range. Every qualifying work item must contribute at least one signal.
 
 For commits, `POSITIVE` must use the parent revision and `NEGATIVE` the correcting commit. For PRs, use only revisions belonging to the returned work item. Evidence may use another repository-relative file changed by the same PR when the complete before-to-after diff for that path directly supports the same human-confirmed correction. Verify cross-file evidence from the exact revisions with local Git, falling back to `mcp__qodana__file_diff` only when those revisions are unavailable locally; do not infer it from the current checkout.
 
@@ -154,7 +154,7 @@ For `FromPR`, use this source shape:
 }
 ```
 
-`diffPositiveToNegative` must be a canonical unified diff for the exact before/after revisions and paths represented by the source. Prefer verbatim stdout from `git --no-pager diff --no-color --no-ext-diff --unified=200 <before> <after> -- <base-path> <head-path>`. When either revision is unavailable locally, use the verbatim result of `mcp__qodana__file_diff`, which returns the same canonical unified-diff form. Use `mcp__qodana__file_at_ref` only when focused line-numbered source context is needed. Never synthesize, normalize, trim hunk bodies, copy a diff based on path alone, or reuse one work item's diff for another. Never put availability diagnostics, revision summaries, placeholders, or text such as `UNAVAILABLE` in this field. If the canonical diff cannot be obtained from either source, the item is `BLOCKED` and must not be persisted.
+`diffPositiveToNegative` must be a complete canonical unified diff for the exact before/after revisions and paths represented by the source. Prefer verbatim stdout from `git --no-pager diff --no-color --no-ext-diff --unified=200 <before> <after> -- <base-path> <head-path>`. When either revision is unavailable locally, use the verbatim result of `mcp__qodana__file_diff`, which returns the same canonical unified-diff form. Use `mcp__qodana__file_at_ref` only when focused line-numbered source context is needed. Never synthesize, normalize, trim hunk bodies, copy a diff based on path alone, or reuse one work item's diff for another. Never put availability diagnostics, revision summaries, placeholders, or text such as `UNAVAILABLE` in this field. If the canonical diff cannot be obtained from either source, the item is `BLOCKED` and must not be persisted.
 
 For `FromCommit`, preserve correcting revision, first parent, complete message, actual unified corrective diff, and commit URL when available.
 

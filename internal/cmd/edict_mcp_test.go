@@ -11,7 +11,21 @@ import (
 	"testing"
 
 	edictmcp "github.com/JetBrains/qodana-cli/edict/mcp"
+	"github.com/JetBrains/qodana-cli/internal/platform/qdenv"
 )
+
+func TestEdictMCPStartDefaultsToQodanaDistribution(t *testing.T) {
+	t.Setenv(qdenv.QodanaDistEnv, "/opt/idea")
+	command := newEdictMCPStartCommand(edictmcp.Service{})
+
+	ide, err := command.Flags().GetString("ide")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if ide != "/opt/idea" {
+		t.Fatalf("expected IDE from %s, got %q", qdenv.QodanaDistEnv, ide)
+	}
+}
 
 func TestEdictMCPStatusWithoutState(t *testing.T) {
 	stateFile := t.TempDir() + "/missing.json"

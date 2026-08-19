@@ -18,6 +18,7 @@ import (
 type fakeProcess struct {
 	pid        int32
 	executable string
+	runtimeDir string
 	done       chan error
 	onStop     func()
 	stopOnce   sync.Once
@@ -27,6 +28,7 @@ type fakeProcess struct {
 
 func (p *fakeProcess) PID() int32         { return p.pid }
 func (p *fakeProcess) Executable() string { return p.executable }
+func (p *fakeProcess) RuntimeDir() string { return p.runtimeDir }
 func (p *fakeProcess) Done() <-chan error { return p.done }
 func (p *fakeProcess) Terminate() error {
 	p.terminated = true
@@ -145,6 +147,11 @@ func TestServiceStartReportsEarlyExit(t *testing.T) {
 func TestServiceStopIsIdempotent(t *testing.T) {
 	dir := t.TempDir()
 	stateFile := filepath.Join(dir, "state.json")
+	runtimeDir, err := os.MkdirTemp("", "qodana-mcp-config-")
+	if err != nil {
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { _ = os.RemoveAll(runtimeDir) })
 	controller := &fakeController{}
 	service := Service{Processes: controller, PollInterval: time.Millisecond}
 
@@ -152,7 +159,10 @@ func TestServiceStopIsIdempotent(t *testing.T) {
 	if err != nil || status.Status != "stopped" {
 		t.Fatalf("unexpected first stop: status=%+v err=%v", status, err)
 	}
-	state := State{Version: StateVersion, PID: 42, Executable: "/qodana", ProjectDir: dir, StartedAt: time.Now()}
+	state := State{
+		Version: StateVersion, PID: 42, Executable: "/qodana", ProjectDir: dir,
+		StartedAt: time.Now(), RuntimeDir: runtimeDir,
+	}
 	if err := WriteState(stateFile, state); err != nil {
 		t.Fatal(err)
 	}
@@ -161,6 +171,9 @@ func TestServiceStopIsIdempotent(t *testing.T) {
 	status, err = service.Stop(context.Background(), stateFile, time.Second)
 	if err != nil || status.Status != "stopped" || !controller.terminated {
 		t.Fatalf("unexpected running stop: status=%+v err=%v", status, err)
+	}
+	if _, err := os.Stat(runtimeDir); !errors.Is(err, os.ErrNotExist) {
+		t.Fatalf("runtime directory was not removed: %v", err)
 	}
 }
 
