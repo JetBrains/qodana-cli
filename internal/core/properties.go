@@ -86,25 +86,27 @@ func getPropertiesMap(
 }
 
 // GetCommonProperties computes common properties for installPlugins and qodana executuion
-func GetCommonProperties(c corescan.Context) []string {
+func GetCommonProperties(c corescan.Context) map[string]string {
 	systemDir := filepath.Join(c.CacheDir(), "idea", c.Prod().GetVersionBranch())
 	pluginsDir := filepath.Join(c.CacheDir(), "plugins", c.Prod().GetVersionBranch())
-	lines := []string{
-		fmt.Sprintf("-Didea.config.path=%s", str.QuoteIfSpace(c.ConfigDir())),
-		fmt.Sprintf("-Didea.system.path=%s", str.QuoteIfSpace(systemDir)),
-		fmt.Sprintf("-Didea.plugins.path=%s", str.QuoteIfSpace(pluginsDir)),
-		fmt.Sprintf("-Didea.log.path=%s", str.QuoteIfSpace(c.LogDir())),
+	properties := map[string]string{
+		"-Didea.config.path":  str.QuoteIfSpace(c.ConfigDir()),
+		"-Didea.system.path":  str.QuoteIfSpace(systemDir),
+		"-Didea.plugins.path": str.QuoteIfSpace(pluginsDir),
+		"-Didea.log.path":     str.QuoteIfSpace(c.LogDir()),
 	}
-	treatAsRelease := os.Getenv(qdenv.QodanaTreatAsRelease)
-	if treatAsRelease == "true" {
-		lines = append(lines, "-Deap.require.license=release")
+	if os.Getenv(qdenv.QodanaTreatAsRelease) == "true" {
+		properties["-Deap.require.license"] = "release"
 	}
 
-	return lines
+	return properties
 }
 
 func GetInstallPluginsProperties(c corescan.Context) []string {
-	lines := GetCommonProperties(c)
+	lines := make([]string, 0)
+	for key, value := range GetCommonProperties(c) {
+		lines = append(lines, fmt.Sprintf("%s=%s", key, value))
+	}
 
 	lines = append(
 		lines,
@@ -125,7 +127,7 @@ func GetScanProperties(c corescan.Context) []string {
 	dotNetOptions := yaml.DotNet
 	plugins := getPluginIds(yaml.Plugins)
 
-	lines := GetCommonProperties(c)
+	lines := make([]string, 0)
 
 	lines = append(
 		lines,
@@ -155,7 +157,8 @@ func GetScanProperties(c corescan.Context) []string {
 		}
 	}
 
-	props := getPropertiesMap(
+	props := GetCommonProperties(c)
+	for key, value := range getPropertiesMap(
 		c.Prod().ParentPrefix(),
 		dotNetOptions,
 		platform.GetDeviceIdSalt(),
@@ -163,7 +166,9 @@ func GetScanProperties(c corescan.Context) []string {
 		c.AnalysisId(),
 		c.CoverageDir(),
 		c.ProjectDirPathRelativeToRepositoryRoot(),
-	)
+	) {
+		props[key] = value
+	}
 	for k, v := range yamlProps { // qodana.yaml – overrides vmoptions
 		if !strings.HasPrefix(k, "-") {
 			k = fmt.Sprintf("-D%s", k)
