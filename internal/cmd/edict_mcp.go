@@ -27,6 +27,7 @@ import (
 
 	edictmcp "github.com/JetBrains/qodana-cli/edict/mcp"
 	"github.com/JetBrains/qodana-cli/internal/foundation/fs"
+	"github.com/JetBrains/qodana-cli/internal/platform/qdenv"
 	"github.com/spf13/cobra"
 )
 
@@ -98,7 +99,12 @@ func newEdictMCPStartCommand(service edictmcp.Service) *cobra.Command {
 	flags := cmd.Flags()
 	flags.StringVarP(&options.ProjectDir, "project-dir", "i", ".", "Root directory of the project")
 	flags.StringVarP(&options.Linter, "linter", "l", "", "Qodana linter to run")
-	flags.StringVar(&options.IDE, "ide", "", "Native IDE product code or path to a local IDE distribution")
+	flags.StringVar(
+		&options.IDE,
+		"ide",
+		os.Getenv(qdenv.QodanaDistEnv),
+		"Native IDE product code or path to a local IDE distribution",
+	)
 	flags.IntVar(&options.Port, "port", 0, "MCP server port; 0 selects an available port")
 	flags.DurationVar(&options.WaitTimeout, "wait-timeout", 90*time.Second, "Maximum time to wait for MCP readiness")
 	flags.StringVar(&options.StateFile, "state-file", "", "Lifecycle state file (defaults to the Qodana user cache)")

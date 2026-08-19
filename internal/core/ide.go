@@ -75,8 +75,7 @@ func getInvocationProperties(resultsDir string) *sarif.PropertyBag {
 }
 
 func runQodanaLocal(c corescan.Context) (int, error) {
-	writeProperties(c)
-	args := getIdeRunCommand(c)
+	args := PrepareIdeRunCommand(c)
 	ideProcess, err := exec.ExecWithTimeout(
 		".",
 		os.Stdout, os.Stderr,
@@ -95,6 +94,13 @@ func runQodanaLocal(c corescan.Context) (int, error) {
 	}
 	postAnalysis(c)
 	return res, err
+}
+
+// PrepareIdeRunCommand writes the IDE VM options required by a native Qodana run
+// and returns the command used to start it.
+func PrepareIdeRunCommand(c corescan.Context) []string {
+	writeProperties(c)
+	return getIdeRunCommand(c)
 }
 
 func getIdeRunCommand(c corescan.Context) []string {

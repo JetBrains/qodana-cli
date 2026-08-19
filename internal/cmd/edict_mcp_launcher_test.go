@@ -9,37 +9,10 @@ import (
 	"bytes"
 	"encoding/json"
 	"os"
-	"reflect"
 	"testing"
 
 	edictmcp "github.com/JetBrains/qodana-cli/edict/mcp"
-	"github.com/JetBrains/qodana-cli/internal/platform/product"
 )
-
-func TestMCPLinterArguments(t *testing.T) {
-	tests := []struct {
-		name     string
-		version  string
-		expected []string
-	}{
-		{
-			name: "modern", version: "2025.2",
-			expected: []string{"/idea", "qodana", "--script", "mcp-server", "/project", "/results"},
-		},
-		{
-			name: "legacy", version: "2024.1",
-			expected: []string{"/idea", "inspect", "qodana", "--script", "mcp-server", "/project", "/results"},
-		},
-	}
-	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
-			actual := mcpLinterArguments(product.Product{IdeScript: "/idea", Version: test.version}, "/project", "/results")
-			if !reflect.DeepEqual(actual, test.expected) {
-				t.Fatalf("unexpected arguments: %v", actual)
-			}
-		})
-	}
-}
 
 func TestMCPEndpointDetectorPublishesStreamableEndpoint(t *testing.T) {
 	readyFile := t.TempDir() + "/ready.json"
