@@ -51,6 +51,42 @@ type PreparedHost struct {
 	Prod              product.Product
 }
 
+// PrepareNativeServiceHost prepares an IDE distribution for a long-running native service.
+// Unlike PrepareHost, it does not perform analysis-specific token, license, VCS, NuGet feed,
+// report, or cache synchronization work.
+func PrepareNativeServiceHost(commonCtx commoncontext.Context) PreparedHost {
+	ideDir := ""
+	for _, dir := range []string{commonCtx.CacheDir, commonCtx.ResultsDir} {
+		if err := os.MkdirAll(dir, os.ModePerm); err != nil {
+			log.Fatalf("couldn't create directory %s: %s", dir, err)
+		}
+	}
+
+	if commonCtx.Analyzer.DownloadDist() {
+		linter := commonCtx.Analyzer.GetLinter()
+		msg.PrintProcess(
+			func(spinner *pterm.SpinnerPrinter) {
+				if spinner != nil {
+					spinner.ShowTimer = false
+				}
+				ideDir = downloadAndInstallIDE(commonCtx.Analyzer, commonCtx.QodanaSystemDir, spinner)
+				fixWindowsPlugins(ideDir)
+			},
+			fmt.Sprintf("Downloading %s", linter.Name),
+			fmt.Sprintf("downloading IDE distribution to %s", commonCtx.QodanaSystemDir),
+		)
+	}
+
+	prod := product.GuessProduct(ideDir, commonCtx.Analyzer)
+	prepareDirectories(commonCtx.CacheDir, commonCtx.LogDir(), commonCtx.ConfDirPath())
+	if qdenv.IsContainer() {
+		prepareContainerSpecificDirectories(prod, commonCtx.CacheDir, commonCtx.ConfDirPath())
+		CreateUser("/etc/passwd")
+	}
+	prepareCustomPlugins(prod)
+	return PreparedHost{IdeDir: ideDir, Prod: prod}
+}
+
 // PrepareHost gets the current user, creates the necessary folders for the analysis.
 func PrepareHost(commonCtx commoncontext.Context) PreparedHost {
 	prod := product.Product{}
