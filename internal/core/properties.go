@@ -35,7 +35,7 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-func getPropertiesMap(
+func getScanPropertiesMap(
 	prefix string,
 	dotNet qdyaml.DotNet,
 	deviceIdSalt []string,
@@ -85,8 +85,58 @@ func getPropertiesMap(
 	return properties
 }
 
-// GetCommonProperties computes common properties for installPlugins and qodana executuion
-func GetCommonProperties(c corescan.Context) map[string]string {
+type propertyMaps struct {
+	common        map[string]string
+	scan          map[string]string
+	yamlOverrides map[string]string
+	cliOverrides  map[string]string
+	flags         []string
+}
+
+func createPropertyMaps(c corescan.Context) propertyMaps {
+	yaml := c.QodanaYamlConfig()
+	cliOverrides, flags := c.PropertiesAndFlags()
+
+	return propertyMaps{
+		common: getCommonProperties(c),
+		scan: getScanPropertiesMap(
+			c.Prod().ParentPrefix(),
+			yaml.DotNet,
+			platform.GetDeviceIdSalt(),
+			getPluginIds(yaml.Plugins),
+			c.AnalysisId(),
+			c.CoverageDir(),
+			c.ProjectDirPathRelativeToRepositoryRoot(),
+		),
+		yamlOverrides: normalizeProperties(yaml.Properties),
+		cliOverrides:  normalizeProperties(cliOverrides),
+		flags:         flags,
+	}
+}
+
+func normalizeProperties(properties map[string]string) map[string]string {
+	normalized := make(map[string]string, len(properties))
+	for key, value := range properties {
+		if !strings.HasPrefix(key, "-") {
+			key = fmt.Sprintf("-D%s", key)
+		}
+		normalized[key] = value
+	}
+	return normalized
+}
+
+func mergePropertyMaps(maps ...map[string]string) map[string]string {
+	merged := make(map[string]string)
+	for _, properties := range maps {
+		for key, value := range properties {
+			merged[key] = value
+		}
+	}
+	return merged
+}
+
+// getCommonProperties computes common properties for installPlugins and qodana executuion
+func getCommonProperties(c corescan.Context) map[string]string {
 	systemDir := filepath.Join(c.CacheDir(), "idea", c.Prod().GetVersionBranch())
 	pluginsDir := filepath.Join(c.CacheDir(), "plugins", c.Prod().GetVersionBranch())
 	properties := map[string]string{
@@ -103,18 +153,26 @@ func GetCommonProperties(c corescan.Context) map[string]string {
 }
 
 func GetInstallPluginsProperties(c corescan.Context) []string {
-	lines := make([]string, 0)
-	for key, value := range GetCommonProperties(c) {
+	propertyMaps := createPropertyMaps(c)
+	properties := propertyMaps.common
+	// if yaml/cli overrides some param, take it into account
+	for key, value := range mergePropertyMaps(
+		propertyMaps.yamlOverrides,
+		propertyMaps.cliOverrides,
+	) {
+		if _, isCommonProperty := propertyMaps.common[key]; isCommonProperty {
+			properties[key] = value
+		}
+	}
+	properties["-Didea.headless.enable.statistics"] = "false"
+	properties["-Dqodana.application"] = "true"
+	properties["-Dintellij.platform.load.app.info.from.resources"] = "true"
+	properties["-Dqodana.build.number"] = fmt.Sprintf("%s-%s", c.Prod().IdeCode, c.Prod().Build)
+
+	lines := make([]string, 0, len(properties))
+	for key, value := range properties {
 		lines = append(lines, fmt.Sprintf("%s=%s", key, value))
 	}
-
-	lines = append(
-		lines,
-		"-Didea.headless.enable.statistics=false",
-		"-Dqodana.application=true",
-		"-Dintellij.platform.load.app.info.from.resources=true",
-		fmt.Sprintf("-Dqodana.build.number=%s-%s", c.Prod().IdeCode, c.Prod().Build),
-	)
 
 	sort.Strings(lines)
 	return lines
@@ -122,10 +180,7 @@ func GetInstallPluginsProperties(c corescan.Context) []string {
 
 // GetScanProperties writes key=value `props` to file `f` having later key occurrence win
 func GetScanProperties(c corescan.Context) []string {
-	yaml := c.QodanaYamlConfig()
-	yamlProps := yaml.Properties
-	dotNetOptions := yaml.DotNet
-	plugins := getPluginIds(yaml.Plugins)
+	propertyMaps := createPropertyMaps(c)
 
 	lines := make([]string, 0)
 
@@ -150,37 +205,18 @@ func GetScanProperties(c corescan.Context) []string {
 		lines = append(lines, fmt.Sprintf("-Ddisabled.plugins.file.path=%s", disabledPluginsFile))
 	}
 
-	cliProps, flags := c.PropertiesAndFlags()
-	for _, f := range flags {
+	for _, f := range propertyMaps.flags {
 		if f != "" && !str.Contains(lines, f) {
 			lines = append(lines, f)
 		}
 	}
 
-	props := GetCommonProperties(c)
-	for key, value := range getPropertiesMap(
-		c.Prod().ParentPrefix(),
-		dotNetOptions,
-		platform.GetDeviceIdSalt(),
-		plugins,
-		c.AnalysisId(),
-		c.CoverageDir(),
-		c.ProjectDirPathRelativeToRepositoryRoot(),
-	) {
-		props[key] = value
-	}
-	for k, v := range yamlProps { // qodana.yaml – overrides vmoptions
-		if !strings.HasPrefix(k, "-") {
-			k = fmt.Sprintf("-D%s", k)
-		}
-		props[k] = v
-	}
-	for k, v := range cliProps { // CLI – overrides anything
-		if !strings.HasPrefix(k, "-") {
-			k = fmt.Sprintf("-D%s", k)
-		}
-		props[k] = v
-	}
+	props := mergePropertyMaps(
+		propertyMaps.common,
+		propertyMaps.scan,
+		propertyMaps.yamlOverrides,
+		propertyMaps.cliOverrides,
+	)
 
 	for k, v := range props {
 		lines = append(lines, fmt.Sprintf("%s=%s", k, v))
