@@ -121,21 +121,25 @@ func createPropertyMaps(c corescan.Context) propertyMaps {
 	}
 }
 
-// getCommonProperties computes common properties for installPlugins and qodana executuion
+// getCommonProperties computes common properties for installPlugins and qodana execution.
 func getCommonProperties(c corescan.Context) map[string]string {
-	systemDir := filepath.Join(c.CacheDir(), "idea", c.Prod().GetVersionBranch())
-	pluginsDir := filepath.Join(c.CacheDir(), "plugins", c.Prod().GetVersionBranch())
-	properties := map[string]string{
-		"-Didea.config.path":  str.QuoteIfSpace(c.ConfigDir()),
-		"-Didea.system.path":  str.QuoteIfSpace(systemDir),
-		"-Didea.plugins.path": str.QuoteIfSpace(pluginsDir),
-		"-Didea.log.path":     str.QuoteIfSpace(c.LogDir()),
-	}
+	properties := getIdePathProperties(c)
 	if os.Getenv(qdenv.QodanaTreatAsRelease) == "true" {
 		properties["-Deap.require.license"] = "release"
 	}
 
 	return properties
+}
+
+func getIdePathProperties(c corescan.Context) map[string]string {
+	systemDir := filepath.Join(c.CacheDir(), "idea", c.Prod().GetVersionBranch())
+	pluginsDir := filepath.Join(c.CacheDir(), "plugins", c.Prod().GetVersionBranch())
+	return map[string]string{
+		"-Didea.config.path":  str.QuoteIfSpace(c.ConfigDir()),
+		"-Didea.system.path":  str.QuoteIfSpace(systemDir),
+		"-Didea.plugins.path": str.QuoteIfSpace(pluginsDir),
+		"-Didea.log.path":     str.QuoteIfSpace(c.LogDir()),
+	}
 }
 
 func GetInstallPluginsProperties(c corescan.Context) []string {
@@ -212,6 +216,26 @@ func GetScanProperties(c corescan.Context) []string {
 	return lines
 }
 
+// GetNativeServiceProperties returns only the VM options needed to start a
+// long-running IDE service with Qodana's configured plugin locations.
+func GetNativeServiceProperties(c corescan.Context) []string {
+	properties := getIdePathProperties(c)
+	lines := make([]string, 0, len(properties)+1)
+	for key, value := range properties {
+		lines = append(lines, fmt.Sprintf("%s=%s", key, value))
+	}
+	lines = append(lines, "-Didea.headless.enable.statistics=false")
+	if customPluginPathsValue := getCustomPluginPaths(c.Prod()); customPluginPathsValue != "" {
+		lines = append(lines, fmt.Sprintf("-Dplugin.path=%s", customPluginPathsValue))
+	}
+	disabledPluginsFile := c.Prod().DisabledPluginsFilePath()
+	if _, err := os.Stat(disabledPluginsFile); err == nil {
+		lines = append(lines, fmt.Sprintf("-Ddisabled.plugins.file.path=%s", disabledPluginsFile))
+	}
+	sort.Strings(lines)
+	return lines
+}
+
 func getCustomPluginPaths(prod product.Product) string {
 	path := prod.CustomPluginsPath()
 	if _, err := os.Stat(path); errors.Is(err, os.ErrNotExist) {
@@ -231,7 +255,14 @@ func getCustomPluginPaths(prod product.Product) string {
 
 // writeProperties writes the given key=value `props` to file `f` (sets the environment variable)
 func writeProperties(c corescan.Context) { // opts.confDirPath(Prod().version)  opts.vmOptionsPath(Prod().version)
-	properties := GetScanProperties(c)
+	writeVmOptions(c, GetScanProperties(c))
+}
+
+func writeNativeServiceProperties(c corescan.Context) {
+	writeVmOptions(c, GetNativeServiceProperties(c))
+}
+
+func writeVmOptions(c corescan.Context, properties []string) {
 	err := os.WriteFile(c.VmOptionsPath(), []byte(strings.Join(properties, "\n")), 0o644)
 	if err != nil {
 		log.Fatal(err)
