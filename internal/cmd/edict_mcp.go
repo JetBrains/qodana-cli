@@ -21,14 +21,21 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
+	"io"
 	"os"
 	"path/filepath"
+	"text/tabwriter"
 	"time"
 
 	edictmcp "github.com/JetBrains/qodana-cli/edict/mcp"
 	"github.com/JetBrains/qodana-cli/internal/foundation/fs"
 	"github.com/JetBrains/qodana-cli/internal/platform/qdenv"
 	"github.com/spf13/cobra"
+)
+
+const (
+	mcpOutputTabular = "tabular"
+	mcpOutputJSON    = "json"
 )
 
 func newEdictMCPCommand() *cobra.Command {
@@ -118,6 +125,7 @@ type edictMCPStateOptions struct {
 	ProjectDir string
 	StateFile  string
 	Timeout    time.Duration
+	Output     string
 }
 
 func newEdictMCPStatusCommand(service edictmcp.Service) *cobra.Command {
@@ -134,10 +142,17 @@ func newEdictMCPStatusCommand(service edictmcp.Service) *cobra.Command {
 			if err != nil {
 				return err
 			}
-			return writeJSON(cmd, status)
+			return writeMCPStatus(cmd, status, options.Output)
 		},
 	}
 	addEdictMCPStateFlags(cmd, options, false)
+	cmd.Flags().StringVarP(
+		&options.Output,
+		"output",
+		"o",
+		mcpOutputTabular,
+		"Output format, can be tabular or json",
+	)
 	return cmd
 }
 
@@ -226,4 +241,76 @@ func writeJSON(cmd *cobra.Command, value any) error {
 	encoder := json.NewEncoder(cmd.OutOrStdout())
 	encoder.SetEscapeHTML(false)
 	return encoder.Encode(value)
+}
+
+func writeMCPStatus(cmd *cobra.Command, status edictmcp.StatusResult, output string) error {
+	switch output {
+	case mcpOutputTabular:
+		return writeMCPStatusTable(cmd.OutOrStdout(), status)
+	case mcpOutputJSON:
+		return writeJSON(cmd, status)
+	default:
+		return fmt.Errorf("unknown output format %q; use tabular or json", output)
+	}
+}
+
+func writeMCPStatusTable(output io.Writer, status edictmcp.StatusResult) error {
+	pid := ""
+	if status.PID > 0 {
+		pid = fmt.Sprint(status.PID)
+	}
+	started := ""
+	if !status.StartedAt.IsZero() {
+		started = status.StartedAt.Local().Format(time.RFC3339)
+	}
+	linterLabel, linter := "Linter", status.Linter
+	if linter == "" {
+		linterLabel, linter = "IDE", status.IDE
+	}
+
+	rows := []struct {
+		label string
+		value string
+	}{
+		{"Status", printableMCPStatus(status.Status)},
+		{"Endpoint", status.URL},
+		{"PID", pid},
+		{"Project", status.ProjectDir},
+		{"Started", started},
+		{linterLabel, linter},
+		{"Log", status.LogFile},
+		{"State", status.StateFile},
+	}
+
+	writer := tabwriter.NewWriter(output, 0, 4, 2, ' ', 0)
+	if _, err := fmt.Fprintln(writer, "Edict MCP server"); err != nil {
+		return err
+	}
+	if _, err := fmt.Fprintln(writer); err != nil {
+		return err
+	}
+	for _, row := range rows {
+		if row.value == "" {
+			continue
+		}
+		if _, err := fmt.Fprintf(writer, "%s:\t%s\n", row.label, row.value); err != nil {
+			return err
+		}
+	}
+	return writer.Flush()
+}
+
+func printableMCPStatus(status string) string {
+	switch status {
+	case "running":
+		return "✓ running"
+	case "stopped":
+		return "stopped"
+	case "stale":
+		return "! stale (process is no longer running)"
+	case "pid-reused":
+		return "! PID reused (state does not match process)"
+	default:
+		return status
+	}
 }

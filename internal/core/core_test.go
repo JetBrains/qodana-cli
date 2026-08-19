@@ -27,6 +27,7 @@ import (
 	"reflect"
 	"runtime"
 	"sort"
+	"strings"
 	"testing"
 	"time"
 
@@ -427,6 +428,37 @@ func TestCliArgs_IdeScriptWithSpaces(t *testing.T) {
 	assert.Equal(t, ideScript, args[0], "IDE script path should not be quoted")
 	assert.Equal(t, filepath.FromSlash("/home/user/project"), args[len(args)-2], "project dir should not be quoted")
 	assert.Equal(t, filepath.FromSlash("/home/user/results"), args[len(args)-1], "results dir should not be quoted")
+}
+
+func TestNativeServicePropertiesContainOnlyRuntimeSetup(t *testing.T) {
+	t.Setenv(qdenv.QodanaDockerEnv, "true")
+	t.Setenv(qdenv.QodanaTreatAsRelease, "true")
+	home := t.TempDir()
+	customPlugin := filepath.Join(home, "custom-plugins", "qodana-agents")
+	if err := os.MkdirAll(customPlugin, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(home, "disabled_plugins.txt"), nil, 0o600); err != nil {
+		t.Fatal(err)
+	}
+	context := corescan.ContextBuilder{
+		Prod: product.Product{
+			Home: home, Version: "2025.2",
+		},
+		CacheDir:  t.TempDir(),
+		ConfigDir: t.TempDir(),
+		LogDir:    t.TempDir(),
+	}.Build()
+
+	properties := strings.Join(GetNativeServiceProperties(context), "\n")
+	assert.Contains(t, properties, "-Didea.config.path=")
+	assert.Contains(t, properties, "-Didea.plugins.path=")
+	assert.Contains(t, properties, "-Dplugin.path="+customPlugin)
+	assert.Contains(t, properties, "-Ddisabled.plugins.file.path="+filepath.Join(home, "disabled_plugins.txt"))
+	assert.Contains(t, properties, "-Didea.headless.enable.statistics=false")
+	assert.NotContains(t, properties, "qodana.automation")
+	assert.NotContains(t, properties, "qodana.coverage")
+	assert.NotContains(t, properties, "eap.require.license")
 }
 
 func TestCliArgs_ProfileNameWithSpaces(t *testing.T) {

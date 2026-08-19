@@ -35,10 +35,7 @@ import (
 	"github.com/JetBrains/qodana-cli/internal/foundation/fs"
 	platformcmd "github.com/JetBrains/qodana-cli/internal/platform/cmd"
 	"github.com/JetBrains/qodana-cli/internal/platform/commoncontext"
-	"github.com/JetBrains/qodana-cli/internal/platform/effectiveconfig"
-	"github.com/JetBrains/qodana-cli/internal/platform/product"
 	"github.com/JetBrains/qodana-cli/internal/platform/qdenv"
-	"github.com/JetBrains/qodana-cli/internal/platform/qdyaml"
 	"github.com/shirou/gopsutil/v3/process"
 )
 
@@ -53,12 +50,11 @@ func (qodanaMCPLauncher) Launch(_ context.Context, request edictmcp.LaunchReques
 		return nil, fmt.Errorf("--port is not supported by the '%s' linter script; use --port=0", mcpServerScript)
 	}
 
-	qdenv.InitializeQodanaGlobalEnv(qdenv.EmptyEnvProvider())
 	scanContext, runtimeDir, cleanup, err := prepareMCPScanContext(request)
 	if err != nil {
 		return nil, err
 	}
-	arguments := core.PrepareIdeRunCommand(scanContext)
+	arguments := core.PrepareNativeServiceRunCommand(scanContext)
 
 	logFile, err := os.OpenFile(request.LogFile, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0o600)
 	if err != nil {
@@ -85,32 +81,19 @@ func (qodanaMCPLauncher) Launch(_ context.Context, request edictmcp.LaunchReques
 }
 
 func prepareMCPScanContext(request edictmcp.LaunchRequest) (corescan.Context, string, func(), error) {
+	if request.Linter == "" && request.IDE == "" && os.Getenv(qdenv.QodanaDistEnv) == "" {
+		return corescan.Context{}, "", func() {},
+			fmt.Errorf("MCP startup requires --ide, --linter, or %s", qdenv.QodanaDistEnv)
+	}
 	commonCtx := computeNativeMCPContext(request)
 	if commonCtx.Analyzer.IsContainer() {
 		return corescan.Context{}, "", func() {},
 			fmt.Errorf("the MCP server requires a native linter or IDE distribution")
 	}
-	preparedHost := startup.PrepareHost(commonCtx)
-	effectiveConfigDir, cleanup, err := fs.CreateTempDir("qodana-mcp-config")
+	preparedHost := startup.PrepareNativeServiceHost(commonCtx)
+	configDir, cleanup, err := fs.CreateTempDir("qodana-mcp-config")
 	if err != nil {
 		return corescan.Context{}, "", func() {}, fmt.Errorf("creating MCP configuration directory: %w", err)
-	}
-	localQodanaYaml := qdyaml.GetLocalNotEffectiveQodanaYamlFullPath(request.ProjectDir, "")
-	effectiveConfigFiles, err := effectiveconfig.CreateEffectiveConfigFiles(
-		commonCtx.CacheDir,
-		localQodanaYaml,
-		"",
-		"",
-		effectiveConfigDir,
-		commonCtx.LogDir(),
-	)
-	if err != nil {
-		cleanup()
-		return corescan.Context{}, "", func() {}, fmt.Errorf("creating effective MCP configuration: %w", err)
-	}
-	qodanaYamlConfig := corescan.QodanaYamlConfig{}
-	if effectiveConfigFiles.EffectiveQodanaYamlPath != "" {
-		qodanaYamlConfig = corescan.YamlConfig(qdyaml.LoadQodanaYamlByFullPath(effectiveConfigFiles.EffectiveQodanaYamlPath))
 	}
 	cliOptions := platformcmd.CliOptions{
 		ProjectDir:   request.ProjectDir,
@@ -123,26 +106,18 @@ func prepareMCPScanContext(request edictmcp.LaunchRequest) (corescan.Context, st
 		cliOptions,
 		commonCtx,
 		preparedHost,
-		qodanaYamlConfig,
-		effectiveConfigFiles.ConfigDir,
+		corescan.QodanaYamlConfig{},
+		configDir,
 	)
-	return scanContext, effectiveConfigDir, cleanup, nil
+	return scanContext, configDir, cleanup, nil
 }
 
 func computeNativeMCPContext(request edictmcp.LaunchRequest) commoncontext.Context {
-	commonCtx := commoncontext.Compute(
+	return commoncontext.Compute(
 		request.Linter, request.IDE, "", "false",
-		"", "", "", qdenv.GetQodanaGlobalEnv(qdenv.QodanaToken), false,
-		request.ProjectDir, "", "",
+		"", "", "", "", false,
+		request.ProjectDir, request.ProjectDir, "",
 	)
-	if commonCtx.Analyzer.IsContainer() && commonCtx.Analyzer.GetLinter() != product.UnknownLinter {
-		commonCtx = commoncontext.Compute(
-			commonCtx.Analyzer.GetLinter().Name, "", "", "false",
-			"", "", "", qdenv.GetQodanaGlobalEnv(qdenv.QodanaToken), false,
-			request.ProjectDir, "", "",
-		)
-	}
-	return commonCtx
 }
 
 type mcpEndpointDetector struct {

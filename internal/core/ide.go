@@ -103,6 +103,13 @@ func PrepareIdeRunCommand(c corescan.Context) []string {
 	return getIdeRunCommand(c)
 }
 
+// PrepareNativeServiceRunCommand writes the minimal IDE VM options required by
+// a long-running native service and returns the command used to start it.
+func PrepareNativeServiceRunCommand(c corescan.Context) []string {
+	writeNativeServiceProperties(c)
+	return getIdeRunCommand(c)
+}
+
 func getIdeRunCommand(c corescan.Context) []string {
 	args := []string{c.Prod().IdeScript}
 	if !c.Prod().Is242orNewer() {

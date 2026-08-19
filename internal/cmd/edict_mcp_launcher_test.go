@@ -9,10 +9,39 @@ import (
 	"bytes"
 	"encoding/json"
 	"os"
+	"strings"
 	"testing"
 
 	edictmcp "github.com/JetBrains/qodana-cli/edict/mcp"
+	"github.com/JetBrains/qodana-cli/internal/platform/qdenv"
 )
+
+func TestPrepareMCPScanContextRequiresDistribution(t *testing.T) {
+	t.Setenv(qdenv.QodanaDistEnv, "")
+	_, _, cleanup, err := prepareMCPScanContext(edictmcp.LaunchRequest{ProjectDir: t.TempDir()})
+	cleanup()
+	if err == nil || !strings.Contains(err.Error(), "MCP startup requires") {
+		t.Fatalf("expected missing distribution error, got %v", err)
+	}
+}
+
+func TestComputeNativeMCPContextSkipsCloudAndVCSSetup(t *testing.T) {
+	t.Setenv(qdenv.QodanaDistEnv, "")
+	t.Setenv(qdenv.QodanaToken, "must-not-be-loaded")
+	projectDir := t.TempDir()
+
+	commonCtx := computeNativeMCPContext(edictmcp.LaunchRequest{
+		ProjectDir: projectDir,
+		Linter:     "qodana-jvm",
+	})
+
+	if commonCtx.QodanaToken != "" {
+		t.Fatalf("MCP context unexpectedly loaded a cloud token")
+	}
+	if commonCtx.RepositoryRoot != commonCtx.ProjectDir {
+		t.Fatalf("MCP context unexpectedly discovered a VCS root: %q", commonCtx.RepositoryRoot)
+	}
+}
 
 func TestMCPEndpointDetectorPublishesStreamableEndpoint(t *testing.T) {
 	readyFile := t.TempDir() + "/ready.json"
