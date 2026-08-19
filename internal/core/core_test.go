@@ -1430,3 +1430,25 @@ func Test_Properties(t *testing.T) {
 		t.Fatal(err)
 	}
 }
+
+func TestPluginProperties_ReceiveYamlCommonPropertyOverrides(t *testing.T) {
+	context := corescan.ContextBuilder{
+		ConfigDir: filepath.Join(t.TempDir(), "config"),
+		LogDir:    filepath.Join(t.TempDir(), "log"),
+		CacheDir:  filepath.Join(t.TempDir(), "cache"),
+		Prod: product.Product{
+			Version: "2023.3",
+		},
+		QodanaYamlConfig: corescan.QodanaYamlConfig{
+			Properties: map[string]string{
+				"idea.config.path": ".qodana/config/idea",
+			},
+		},
+	}.Build()
+
+	pluginProperties := GetInstallPluginsProperties(context)
+	scanProperties := GetScanProperties(context)
+	expected := "-Didea.config.path=.qodana/config/idea"
+	assert.Contains(t, pluginProperties, expected)
+	assert.Contains(t, scanProperties, expected)
+}
