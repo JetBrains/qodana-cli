@@ -123,7 +123,7 @@ type Context struct {
 type QodanaYamlConfig struct {
 	Bootstrap  string
 	Plugins    []qdyaml.Plugin
-	Properties map[string]string
+	Properties map[string]string // values are in -Dproperty.name -> value format
 	DotNet     qdyaml.DotNet
 }
 
@@ -131,7 +131,7 @@ func YamlConfig(yaml qdyaml.QodanaYaml) QodanaYamlConfig {
 	return QodanaYamlConfig{
 		Bootstrap:  yaml.Bootstrap,
 		Plugins:    yaml.Plugins,
-		Properties: yaml.Properties,
+		Properties: normalizeYamlProperties(yaml.Properties),
 		DotNet:     yaml.DotNet,
 	}
 }
@@ -370,7 +370,7 @@ func (c Context) PropertiesAndFlags() (map[string]string, []string) {
 	for _, arg := range c.Property() {
 		kv := strings.SplitN(arg, "=", 2)
 		if len(kv) == 2 {
-			props[kv[0]] = kv[1]
+			props[normalizePropertyKey(kv[0])] = kv[1]
 		} else {
 			flagsArr = append(flagsArr, arg)
 		}

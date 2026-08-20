@@ -27,15 +27,17 @@ import (
 
 	"github.com/JetBrains/qodana-cli/internal/cloud"
 	"github.com/JetBrains/qodana-cli/internal/core/corescan"
+	"github.com/JetBrains/qodana-cli/internal/foundation/algorithm"
 	"github.com/JetBrains/qodana-cli/internal/foundation/str"
 	"github.com/JetBrains/qodana-cli/internal/platform"
 	"github.com/JetBrains/qodana-cli/internal/platform/product"
 	"github.com/JetBrains/qodana-cli/internal/platform/qdenv"
 	"github.com/JetBrains/qodana-cli/internal/platform/qdyaml"
 	log "github.com/sirupsen/logrus"
+	"golang.org/x/exp/maps"
 )
 
-func getPropertiesMap(
+func getScanPropertiesMap(
 	prefix string,
 	dotNet qdyaml.DotNet,
 	deviceIdSalt []string,
@@ -85,34 +87,71 @@ func getPropertiesMap(
 	return properties
 }
 
-// GetCommonProperties computes common properties for installPlugins and qodana executuion
-func GetCommonProperties(c corescan.Context) []string {
+type propertyMaps struct {
+	common        map[string]string
+	scan          map[string]string
+	yamlOverrides map[string]string
+	cliOverrides  map[string]string
+	flags         []string
+}
+
+func createPropertyMaps(c corescan.Context) propertyMaps {
+	yaml := c.QodanaYamlConfig()
+	cliOverrides, flags := c.PropertiesAndFlags()
+
+	return propertyMaps{
+		common: getCommonProperties(c),
+		scan: getScanPropertiesMap(
+			c.Prod().ParentPrefix(),
+			yaml.DotNet,
+			platform.GetDeviceIdSalt(),
+			getPluginIds(yaml.Plugins),
+			c.AnalysisId(),
+			c.CoverageDir(),
+			c.ProjectDirPathRelativeToRepositoryRoot(),
+		),
+		yamlOverrides: yaml.Properties,
+		cliOverrides:  cliOverrides,
+		flags:         flags,
+	}
+}
+
+// getCommonProperties computes common properties for installPlugins and qodana executuion
+func getCommonProperties(c corescan.Context) map[string]string {
 	systemDir := filepath.Join(c.CacheDir(), "idea", c.Prod().GetVersionBranch())
 	pluginsDir := filepath.Join(c.CacheDir(), "plugins", c.Prod().GetVersionBranch())
-	lines := []string{
-		fmt.Sprintf("-Didea.config.path=%s", str.QuoteIfSpace(c.ConfigDir())),
-		fmt.Sprintf("-Didea.system.path=%s", str.QuoteIfSpace(systemDir)),
-		fmt.Sprintf("-Didea.plugins.path=%s", str.QuoteIfSpace(pluginsDir)),
-		fmt.Sprintf("-Didea.log.path=%s", str.QuoteIfSpace(c.LogDir())),
+	properties := map[string]string{
+		"-Didea.config.path":  str.QuoteIfSpace(c.ConfigDir()),
+		"-Didea.system.path":  str.QuoteIfSpace(systemDir),
+		"-Didea.plugins.path": str.QuoteIfSpace(pluginsDir),
+		"-Didea.log.path":     str.QuoteIfSpace(c.LogDir()),
 	}
-	treatAsRelease := os.Getenv(qdenv.QodanaTreatAsRelease)
-	if treatAsRelease == "true" {
-		lines = append(lines, "-Deap.require.license=release")
+	if os.Getenv(qdenv.QodanaTreatAsRelease) == "true" {
+		properties["-Deap.require.license"] = "release"
 	}
 
-	return lines
+	return properties
 }
 
 func GetInstallPluginsProperties(c corescan.Context) []string {
-	lines := GetCommonProperties(c)
+	propertyMaps := createPropertyMaps(c)
+	overrides := maps.Clone(propertyMaps.yamlOverrides)
+	maps.Copy(overrides, propertyMaps.cliOverrides)
+	properties := algorithm.MapValues(propertyMaps.common, func(key, value string) string {
+		if override, ok := overrides[key]; ok {
+			return override
+		}
+		return value
+	})
+	properties["-Didea.headless.enable.statistics"] = "false"
+	properties["-Dqodana.application"] = "true"
+	properties["-Dintellij.platform.load.app.info.from.resources"] = "true"
+	properties["-Dqodana.build.number"] = fmt.Sprintf("%s-%s", c.Prod().IdeCode, c.Prod().Build)
 
-	lines = append(
-		lines,
-		"-Didea.headless.enable.statistics=false",
-		"-Dqodana.application=true",
-		"-Dintellij.platform.load.app.info.from.resources=true",
-		fmt.Sprintf("-Dqodana.build.number=%s-%s", c.Prod().IdeCode, c.Prod().Build),
-	)
+	lines := make([]string, 0, len(properties))
+	for key, value := range properties {
+		lines = append(lines, fmt.Sprintf("%s=%s", key, value))
+	}
 
 	sort.Strings(lines)
 	return lines
@@ -120,12 +159,9 @@ func GetInstallPluginsProperties(c corescan.Context) []string {
 
 // GetScanProperties writes key=value `props` to file `f` having later key occurrence win
 func GetScanProperties(c corescan.Context) []string {
-	yaml := c.QodanaYamlConfig()
-	yamlProps := yaml.Properties
-	dotNetOptions := yaml.DotNet
-	plugins := getPluginIds(yaml.Plugins)
+	propertyMaps := createPropertyMaps(c)
 
-	lines := GetCommonProperties(c)
+	lines := make([]string, 0)
 
 	lines = append(
 		lines,
@@ -148,34 +184,16 @@ func GetScanProperties(c corescan.Context) []string {
 		lines = append(lines, fmt.Sprintf("-Ddisabled.plugins.file.path=%s", disabledPluginsFile))
 	}
 
-	cliProps, flags := c.PropertiesAndFlags()
-	for _, f := range flags {
+	for _, f := range propertyMaps.flags {
 		if f != "" && !str.Contains(lines, f) {
 			lines = append(lines, f)
 		}
 	}
 
-	props := getPropertiesMap(
-		c.Prod().ParentPrefix(),
-		dotNetOptions,
-		platform.GetDeviceIdSalt(),
-		plugins,
-		c.AnalysisId(),
-		c.CoverageDir(),
-		c.ProjectDirPathRelativeToRepositoryRoot(),
-	)
-	for k, v := range yamlProps { // qodana.yaml – overrides vmoptions
-		if !strings.HasPrefix(k, "-") {
-			k = fmt.Sprintf("-D%s", k)
-		}
-		props[k] = v
-	}
-	for k, v := range cliProps { // CLI – overrides anything
-		if !strings.HasPrefix(k, "-") {
-			k = fmt.Sprintf("-D%s", k)
-		}
-		props[k] = v
-	}
+	props := maps.Clone(propertyMaps.common)
+	maps.Copy(props, propertyMaps.scan)
+	maps.Copy(props, propertyMaps.yamlOverrides)
+	maps.Copy(props, propertyMaps.cliOverrides)
 
 	for k, v := range props {
 		lines = append(lines, fmt.Sprintf("%s=%s", k, v))

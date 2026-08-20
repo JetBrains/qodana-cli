@@ -453,8 +453,10 @@ func TestCliArgs_ProfileNameWithSpaces(t *testing.T) {
 	// "My Custom Profile" (with quotes) instead of My Custom Profile.
 	for i, arg := range args {
 		if arg == "--profile-name" {
-			assert.Equal(t, "My Custom Profile", args[i+1],
-				"profile name should not have embedded quotes for exec.Command")
+			assert.Equal(
+				t, "My Custom Profile", args[i+1],
+				"profile name should not have embedded quotes for exec.Command",
+			)
 			return
 		}
 	}
@@ -1204,16 +1206,26 @@ func TestGetPluginIds(t *testing.T) {
 	}
 
 	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			result := getPluginIds(tt.plugins)
-			assert.Equal(t, tt.expected, result)
-		})
+		t.Run(
+			tt.name, func(t *testing.T) {
+				result := getPluginIds(tt.plugins)
+				assert.Equal(t, tt.expected, result)
+			},
+		)
 	}
 }
 
 func propertiesFixture(enableStats bool, additionalProperties []string) []string {
+	return propertiesFixtureWithConfigPath(
+		enableStats,
+		filepath.Join(os.TempDir(), "entrypoint", "root", "project"),
+		additionalProperties,
+	)
+}
+
+func propertiesFixtureWithConfigPath(enableStats bool, configPath string, additionalProperties []string) []string {
 	properties := []string{
-		fmt.Sprintf("-Didea.config.path=%s", filepath.Join(os.TempDir(), "entrypoint", "root", "project")),
+		fmt.Sprintf("-Didea.config.path=%s", configPath),
 		fmt.Sprintf("-Didea.headless.enable.statistics=%t", enableStats),
 		"-Didea.headless.statistics.device.id=FAKE",
 		"-Didea.headless.statistics.salt=FAKE",
@@ -1327,6 +1339,18 @@ func Test_Properties(t *testing.T) {
 			),
 		},
 		{
+			name:              "CLI overrides common configuration path",
+			cliProperties:     []string{"idea.config.path=.qodana\\config\\idea"},
+			qodanaYaml:        "",
+			isContainer:       false,
+			useRepositoryRoot: false,
+			expected: propertiesFixtureWithConfigPath(
+				true,
+				".qodana\\config\\idea",
+				[]string{},
+			),
+		},
+		{
 			name:              "different repositoryRoot adds project root property",
 			cliProperties:     []string{},
 			qodanaYaml:        "",
@@ -1405,4 +1429,26 @@ func Test_Properties(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+}
+
+func TestPluginProperties_ReceiveYamlCommonPropertyOverrides(t *testing.T) {
+	context := corescan.ContextBuilder{
+		ConfigDir: filepath.Join(t.TempDir(), "config"),
+		LogDir:    filepath.Join(t.TempDir(), "log"),
+		CacheDir:  filepath.Join(t.TempDir(), "cache"),
+		Prod: product.Product{
+			Version: "2023.3",
+		},
+		QodanaYamlConfig: corescan.YamlConfig(qdyaml.QodanaYaml{
+			Properties: map[string]string{
+				"idea.config.path": ".qodana/config/idea",
+			},
+		}),
+	}.Build()
+
+	pluginProperties := GetInstallPluginsProperties(context)
+	scanProperties := GetScanProperties(context)
+	expected := "-Didea.config.path=.qodana/config/idea"
+	assert.Contains(t, pluginProperties, expected)
+	assert.Contains(t, scanProperties, expected)
 }
