@@ -27,12 +27,14 @@ import (
 
 	"github.com/JetBrains/qodana-cli/internal/cloud"
 	"github.com/JetBrains/qodana-cli/internal/core/corescan"
+	"github.com/JetBrains/qodana-cli/internal/foundation/algorithm"
 	"github.com/JetBrains/qodana-cli/internal/foundation/str"
 	"github.com/JetBrains/qodana-cli/internal/platform"
 	"github.com/JetBrains/qodana-cli/internal/platform/product"
 	"github.com/JetBrains/qodana-cli/internal/platform/qdenv"
 	"github.com/JetBrains/qodana-cli/internal/platform/qdyaml"
 	log "github.com/sirupsen/logrus"
+	"golang.org/x/exp/maps"
 )
 
 func getScanPropertiesMap(
@@ -125,16 +127,6 @@ func normalizeProperties(properties map[string]string) map[string]string {
 	return normalized
 }
 
-func mergePropertyMaps(maps ...map[string]string) map[string]string {
-	merged := make(map[string]string)
-	for _, properties := range maps {
-		for key, value := range properties {
-			merged[key] = value
-		}
-	}
-	return merged
-}
-
 // getCommonProperties computes common properties for installPlugins and qodana executuion
 func getCommonProperties(c corescan.Context) map[string]string {
 	systemDir := filepath.Join(c.CacheDir(), "idea", c.Prod().GetVersionBranch())
@@ -154,16 +146,14 @@ func getCommonProperties(c corescan.Context) map[string]string {
 
 func GetInstallPluginsProperties(c corescan.Context) []string {
 	propertyMaps := createPropertyMaps(c)
-	properties := propertyMaps.common
-	// if yaml/cli overrides some param, take it into account
-	for key, value := range mergePropertyMaps(
-		propertyMaps.yamlOverrides,
-		propertyMaps.cliOverrides,
-	) {
-		if _, isCommonProperty := propertyMaps.common[key]; isCommonProperty {
-			properties[key] = value
+	overrides := maps.Clone(propertyMaps.yamlOverrides)
+	maps.Copy(overrides, propertyMaps.cliOverrides)
+	properties := algorithm.MapValues(propertyMaps.common, func(key, value string) string {
+		if override, ok := overrides[key]; ok {
+			return override
 		}
-	}
+		return value
+	})
 	properties["-Didea.headless.enable.statistics"] = "false"
 	properties["-Dqodana.application"] = "true"
 	properties["-Dintellij.platform.load.app.info.from.resources"] = "true"
@@ -211,12 +201,10 @@ func GetScanProperties(c corescan.Context) []string {
 		}
 	}
 
-	props := mergePropertyMaps(
-		propertyMaps.common,
-		propertyMaps.scan,
-		propertyMaps.yamlOverrides,
-		propertyMaps.cliOverrides,
-	)
+	props := maps.Clone(propertyMaps.common)
+	maps.Copy(props, propertyMaps.scan)
+	maps.Copy(props, propertyMaps.yamlOverrides)
+	maps.Copy(props, propertyMaps.cliOverrides)
 
 	for k, v := range props {
 		lines = append(lines, fmt.Sprintf("%s=%s", k, v))
