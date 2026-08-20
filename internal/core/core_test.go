@@ -1439,11 +1439,11 @@ func TestPluginProperties_ReceiveYamlCommonPropertyOverrides(t *testing.T) {
 		Prod: product.Product{
 			Version: "2023.3",
 		},
-		QodanaYamlConfig: corescan.QodanaYamlConfig{
+		QodanaYamlConfig: corescan.YamlConfig(qdyaml.QodanaYaml{
 			Properties: map[string]string{
 				"idea.config.path": ".qodana/config/idea",
 			},
-		},
+		}),
 	}.Build()
 
 	pluginProperties := GetInstallPluginsProperties(context)
