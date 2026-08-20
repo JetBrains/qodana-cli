@@ -110,21 +110,10 @@ func createPropertyMaps(c corescan.Context) propertyMaps {
 			c.CoverageDir(),
 			c.ProjectDirPathRelativeToRepositoryRoot(),
 		),
-		yamlOverrides: normalizeProperties(yaml.Properties),
-		cliOverrides:  normalizeProperties(cliOverrides),
+		yamlOverrides: yaml.Properties,
+		cliOverrides:  cliOverrides,
 		flags:         flags,
 	}
-}
-
-func normalizeProperties(properties map[string]string) map[string]string {
-	normalized := make(map[string]string, len(properties))
-	for key, value := range properties {
-		if !strings.HasPrefix(key, "-") {
-			key = fmt.Sprintf("-D%s", key)
-		}
-		normalized[key] = value
-	}
-	return normalized
 }
 
 // getCommonProperties computes common properties for installPlugins and qodana executuion
