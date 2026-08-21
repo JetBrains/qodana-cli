@@ -50,6 +50,7 @@ func (qodanaMCPLauncher) Launch(_ context.Context, request edictmcp.LaunchReques
 		return nil, fmt.Errorf("--port is not supported by the '%s' linter script; use --port=0", mcpServerScript)
 	}
 
+	qdenv.InitializeQodanaGlobalEnv(qdenv.EmptyEnvProvider())
 	scanContext, runtimeDir, cleanup, err := prepareMCPScanContext(request)
 	if err != nil {
 		return nil, err
@@ -115,7 +116,7 @@ func prepareMCPScanContext(request edictmcp.LaunchRequest) (corescan.Context, st
 func computeNativeMCPContext(request edictmcp.LaunchRequest) commoncontext.Context {
 	return commoncontext.Compute(
 		request.Linter, request.IDE, "", "false",
-		"", "", "", "", false,
+		"", "", "", qdenv.GetQodanaGlobalEnv(qdenv.QodanaToken), false,
 		request.ProjectDir, request.ProjectDir, "",
 	)
 }

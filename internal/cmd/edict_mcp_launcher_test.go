@@ -25,9 +25,10 @@ func TestPrepareMCPScanContextRequiresDistribution(t *testing.T) {
 	}
 }
 
-func TestComputeNativeMCPContextSkipsCloudAndVCSSetup(t *testing.T) {
+func TestComputeNativeMCPContextLoadsTokenWithoutVCSDiscovery(t *testing.T) {
 	t.Setenv(qdenv.QodanaDistEnv, "")
-	t.Setenv(qdenv.QodanaToken, "must-not-be-loaded")
+	t.Setenv(qdenv.QodanaToken, "license-token")
+	qdenv.InitializeQodanaGlobalEnv(qdenv.EmptyEnvProvider())
 	projectDir := t.TempDir()
 
 	commonCtx := computeNativeMCPContext(edictmcp.LaunchRequest{
@@ -35,8 +36,8 @@ func TestComputeNativeMCPContextSkipsCloudAndVCSSetup(t *testing.T) {
 		Linter:     "qodana-jvm",
 	})
 
-	if commonCtx.QodanaToken != "" {
-		t.Fatalf("MCP context unexpectedly loaded a cloud token")
+	if commonCtx.QodanaToken != "license-token" {
+		t.Fatalf("MCP context did not retain the token required for licensing")
 	}
 	if commonCtx.RepositoryRoot != commonCtx.ProjectDir {
 		t.Fatalf("MCP context unexpectedly discovered a VCS root: %q", commonCtx.RepositoryRoot)

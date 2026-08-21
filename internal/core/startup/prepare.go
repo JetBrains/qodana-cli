@@ -52,8 +52,9 @@ type PreparedHost struct {
 }
 
 // PrepareNativeServiceHost prepares an IDE distribution for a long-running native service.
-// Unlike PrepareHost, it does not perform analysis-specific token, license, VCS, NuGet feed,
-// report, or cache synchronization work.
+// Unlike PrepareHost, it does not perform VCS, NuGet feed, report, or cache synchronization work.
+// It does initialize the Qodana license because paid IDE modules are resolved before the MCP
+// script factory is discovered.
 func PrepareNativeServiceHost(commonCtx commoncontext.Context) PreparedHost {
 	ideDir := ""
 	for _, dir := range []string{commonCtx.CacheDir, commonCtx.ResultsDir} {
@@ -78,6 +79,8 @@ func PrepareNativeServiceHost(commonCtx commoncontext.Context) PreparedHost {
 	}
 
 	prod := product.GuessProduct(ideDir, commonCtx.Analyzer)
+	cloud.SetupLicenseToken(commonCtx.QodanaToken)
+	SetupLicenseAndProjectHash(prod, cloud.GetCloudApiEndpoints(), cloud.Token.Token)
 	prepareDirectories(commonCtx.CacheDir, commonCtx.LogDir(), commonCtx.ConfDirPath())
 	if qdenv.IsContainer() {
 		prepareContainerSpecificDirectories(prod, commonCtx.CacheDir, commonCtx.ConfDirPath())
