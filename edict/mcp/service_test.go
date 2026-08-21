@@ -86,7 +86,7 @@ func TestServiceStartWaitsForReadinessAndWritesState(t *testing.T) {
 		Launcher: fakeLauncher{process: process, launch: func(request LaunchRequest) {
 			go func() {
 				time.Sleep(20 * time.Millisecond)
-				if err := os.WriteFile(request.ReadyFile, []byte(`{"status":"ready","url":"http://127.0.0.1:64342/mcp"}`), 0o600); err != nil {
+				if err := WriteReady(request.ReadyFile, Ready{Status: "ready", URL: "http://127.0.0.1:64342/mcp"}); err != nil {
 					t.Error(err)
 				}
 			}()
