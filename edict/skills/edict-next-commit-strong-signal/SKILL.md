@@ -1,9 +1,9 @@
 ---
-name: qodana-commit-strong-signal
+name: edict-next-commit-strong-signal
 description: Convert free-form human feedback and current code context into one verified positive or negative strong signal for a Qodana static-analysis rule, then commit it to the configured rules repository. Use only when explicitly installed and invoked for a Qodana manual-commit session; do not use for speculative analysis, previews, or automated signal discovery.
 ---
 
-# Commit a Qodana Strong Signal
+# Commit a Edict Next Strong Signal
 
 Convert free-form user feedback into exactly one strong signal. Treat the explicit submission request as the human confirmation, and resolve the structured rule, label, evidence, and provenance from the feedback plus the current agent context.
 
@@ -48,7 +48,7 @@ This policy is shipped as part of the skill and always applies, even when the pr
 - Record one evidence side per signal with an immutable full revision, minimal relevant one-based inclusive ranges, the original human provenance, and an evidence-specific description.
 - Do not create or update clusters, synthetic examples, inspections, or unrelated repository metadata.
 - Do not overwrite a different record. If the deterministic path already contains byte-identical content, report it as already persisted without committing.
-- Create one non-empty commit with subject `Add Qodana strong signal <signal-id>`. The commit must contain exactly the single validated path.
+- Create one non-empty commit with subject `Add Edict Next strong signal <signal-id>`. The commit must contain exactly the single validated path.
 - Never amend or push. Do not use broad staging commands such as `git add .` or `git add -A`.
 
 ## Submission payload
