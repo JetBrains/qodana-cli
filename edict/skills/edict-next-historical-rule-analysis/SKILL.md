@@ -1,9 +1,9 @@
 ---
-name: qodana-historical-rule-analysis
+name: edict-next-historical-rule-analysis
 description: Enrich selected stored Qodana rules with human-confirmed commit evidence from a bounded Git range. Use only when explicitly invoked with stored rule IDs, a Qodana historical-analysis session ID, and the historical MCP tools.
 ---
 
-# Qodana Historical Rule Analysis
+# Edict Next Historical Rule Analysis
 
 Search bounded repository history for corrective commits supporting selected stored rules. A stored rule comes exclusively from `clusters/<rule-id>/description.json` and has `id`, `description`, `language`, and `previousIds`. Do not derive the search rule from inbox signals, cluster signals, or a fresh analysis batch. Do not discover unrelated rules, rewrite or group rules, generate examples, or implement inspections.
 
@@ -53,7 +53,7 @@ This policy is shipped as part of the skill and always applies, even when the pr
 - Store one signal per evidence side, with an immutable full revision, minimal relevant one-based inclusive ranges, human commit provenance, and an evidence-specific description.
 - Do not create or update clusters, synthetic examples, inspections, or unrelated repository metadata.
 - Do not overwrite a different record. Byte-identical deterministic records are already persisted and require no new commit.
-- After MCP validation and hash verification, create at most one non-empty commit for the search with subject `Add Qodana historical evidence (<historical-search-id>)`. The commit must contain exactly the validated paths.
+- After MCP validation and hash verification, create at most one non-empty commit for the search with subject `Add Edict Next historical evidence (<historical-search-id>)`. The commit must contain exactly the validated paths.
 - Never amend or push. Do not use broad staging commands such as `git add .` or `git add -A`.
 
 ## Evidence acceptance
