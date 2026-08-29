@@ -1,49 +1,40 @@
 ---
 name: edict-next-run
-description: Orchestrate an Edict Next run from run start and worktree creation through clustering, bounded per-cluster generation, final validation, commit, and push.
+description: Run Edict Next from run start through routing, generation, validation, commit, and push.
 ---
 
 # Edict Next Run
 
-Start the run yourself and take the Edict source repository, workspace, inspected Ultimate project, project revision, and concurrency limit from the start response. A prompt may repeat these parameters, but the response is authoritative.
-Own the filesystem and Git workflow. MCP snapshots and validates state but does not create worktrees, edit files, commit, or push.
+The Qodana script prompt supplies the source repository, workspace, inspected project, and concurrency limit. When the
+skill is invoked directly against the standalone Qodana MCP server instead, call
+`mcp__qodana__edict_next_start_run` and use its returned parameters. Own the filesystem and Git workflow. Every MCP
+response has an authoritative `nextAction`; follow it.
 
-## Start-of-run MCP contract
+Keep `<workspace>/run-state.md` as the restart point. Record the worktree and branch, current batch path, remaining and
+completed cluster ids, active scratch directories, last MCP response, and exact next step. Update it after every batch,
+cluster-task result, and repository validation. Re-read it after interruption or context compaction.
 
-`mcp__qodana__edict_next_start_run`
+1. Create a worktree below the supplied workspace from the source repository's current revision. Use branch
+   `edict-next/YYYY-MM-DD`, adding `-2`, `-3`, and so on when needed. Make every repository change in this worktree.
+2. Call `mcp__qodana__edict_next_prepare_pipeline(worktreePath, workspacePath)` exactly once. It validates timeout
+   configuration, prepares retrieval, snapshots the original and rolling repository state, and returns the first
+   alphabetical batch of up to 50 JVM Signals.
+3. While `nextAction` is `PROCESS_BATCH`, launch exactly one fresh `$edict-next-batch` task with the returned
+   `batchPath`, worktree, and inspected project. Never overlap batches. Continue with the next path it returns.
+   `START_GENERATION` means the JVM inbox is empty. Stop the run if internal retrieval retries are exhausted.
+4. Enumerate every `Pending` cluster after distribution. For each, create a private scratch directory below the
+   workspace and launch a fresh `$edict-next-cluster-generation` task with only that cluster directory, its scratch
+   directory, and the inspected project. Allow at most `maxConcurrentClusterTasks` tasks concurrently. Track every task
+   to completion; do not let one cluster failure cancel unrelated clusters.
+5. After all cluster tasks finish, call `mcp__qodana__edict_next_validate_repository`. It materializes recorded
+   decisions, infers predecessor fallback for missing decisions, validates the complete worktree against the original
+   snapshot, writes `edict-next-verification.csv`, and exports the embedding cache.
+6. On `REPAIR_REPOSITORY`, repair only reported cluster-local problems and validate again. Abort on lost or multiply
+   owned Signals or examples. Only `PUBLISH` permits commit and push.
+7. Commit every worktree change and push the branch. For a direct MCP run, call
+   `mcp__qodana__edict_next_validate_completion` afterward; `FINISH_RUN` completes the run, while
+   `REPAIR_REPOSITORY` requires repair, validation, commit, push, and completion again. The Qodana script revalidates
+   automatically when its Codex session ends. Hand back every cluster's status, history, and generated inspection.
 
-- Input: optionally `sourceRepositoryPath`; omit it to use the Edict repository configured for the Qodana process.
-- Output: `sourceRepository`, `workspaceRoot`, `projectPath`, `projectRevision`, `maxConcurrentClusterTasks`, and `tookOverPreviousRun`.
-- Effect: registers a fresh run against the open Qodana project and creates the agent workspace. Nothing is read from or written to the Edict source repository. Starting always takes over, so `tookOverPreviousRun: true` only reports that an interrupted session left a run behind; it is not an error and requires no cleanup.
-- Next action: create the worktree below `workspaceRoot` and use these parameters for the rest of the run. Every other `edict_next` operation fails with "No Edict Next run is active" until this call succeeds.
-
-## Final-validation MCP contract
-
-`mcp__qodana__edict_next_validate_repository`
-
-- Input: none; it validates the worktree registered by the clustering prepare call.
-- Output: `success`, `summary`, and zero or more `issues`, each with `path` and `message`.
-- Effect: read-only worktree validation against the captured Signal baseline and the accumulated examples. It records whether the session has most recently passed final validation, reports a short statistics table to stdout, and writes `edict-next-verification.csv` to the Qodana results directory.
-- Next action: publish only after a response with `success: true`. Any repair invalidates the practical result, so call this operation again before commit and push.
-
-## Completion MCP contract
-
-`mcp__qodana__edict_next_validate_completion`
-
-- Input: none; it revalidates the same worktree after publication.
-- Output: `success`, `summary`, and zero or more `issues`, in the same shape as final validation.
-- Effect: read-only. It confirms that the published state is exactly the state that passed final validation. A run that never passed final validation returns `success: false` instead of failing.
-- Next action: report the summary and every issue. A response with `success: false` means the published state is not the validated one and the run failed, even though the branch was pushed.
-
-## Workflow
-
-1. Call `mcp__qodana__edict_next_start_run`. Stop the run if it fails; no other operation can succeed without it.
-2. Create a Git worktree below `workspaceRoot` from the current revision of `sourceRepository`. Create a branch named `edict-next/YYYY-MM-DD`; if it exists locally or remotely, append `-2`, `-3`, and so on. Make every repository change in this worktree.
-3. Invoke `$edict-next-clustering` with the worktree and workspace. It produces a lineage-blind validated partition and a lossless evidence catalog without changing the worktree. Stop the run if partition validation fails.
-4. After the evidence catalog and generation-task files are complete, remove the old `clusters/` contents and the JVM Signal files selected from `inbox/`. Leave non-JVM inbox Signals untouched. Keep `inspections/` until reuse decisions finish. Launch one task per validated partition group and explicitly invoke `$edict-next-cluster-generation` with its generation-task JSON. Run at most `maxConcurrentClusterTasks` tasks concurrently. Each task assigns its cluster identity, ancestry, and description, then owns only that cluster and the inspection file it selects.
-5. After all tasks finish, resolve duplicate rule IDs, then make `inspections/` contain exactly one `<ruleId>.inspection.kts` for each `Generated` cluster and no orphan inspection files.
-6. Call `mcp__qodana__edict_next_validate_repository`. For cluster-local failures, launch bounded repair tasks that preserve all Signals and examples, change the cluster to `NotGenerated`, clear inspection metadata, remove its candidate and inspection files, and append the reason to `history.md`. Revalidate. For missing/duplicate Signals or bad ancestry, abort without publishing; automated global repair is a TODO.
-7. Only after successful final validation, commit every worktree change and push the new branch to the source repository's configured remote. Do not publish an unvalidated state.
-8. Call `mcp__qodana__edict_next_validate_completion` and report its result.
-
-Do not modify the inspected Ultimate project. Do not add or run tests. Do not modify the source checkout outside the worktree.
+Do not modify the inspected project or the source checkout outside the worktree. Do not add or run tests. Do
+not publish a repository state that has not passed the final validation.
