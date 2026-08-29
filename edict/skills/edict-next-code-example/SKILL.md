@@ -10,9 +10,9 @@ description: Assign or create one mandatory Edict Next code example for a stored
 `mcp__qodana__edict_next_validate_code_example`
 
 - Input: the absolute `exampleDirectory` inside a cluster's `synthetic-examples/` directory.
-- Output: `success`, `summary`, structural `issues`, and the resolved `targetPsiElements` for valid target ranges.
+- Output: `success`, `summary`, structural `issues`, the resolved `targetPsiElements` for valid target ranges, and `nextAction`.
 - Effect: read-only PSI validation of metadata, source presence, parsing, ranges, and target elements. It reports the result to stdout and does not decide whether the example is semantically representative.
-- Next action: repair and retry while `success` is false. On true, independently confirm the label, meaning, and expected ranges before returning to the caller.
+- Next action: follow `nextAction`: repair and retry on `REPAIR_CODE_EXAMPLE`; on `CONTINUE_CLUSTER_GENERATION`, independently confirm the label, meaning, and expected ranges before returning to the caller.
 
 Read the complete stored Signal or transient reviewed-finding payload and its cluster. For a Signal loaded from the cluster, preserve its declared strength. First look for an existing cluster example that genuinely represents the same semantic case and label. If one fits, set the stored Signal's `syntheticExampleId` to that example ID without duplicating it.
 
