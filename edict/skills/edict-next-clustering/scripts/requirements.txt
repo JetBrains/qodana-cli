@@ -1,2 +1,0 @@
-numpy==2.2.3
-sentence-transformers==3.4.1

@@ -13,7 +13,7 @@ Accept exactly six absolute paths from the prompt:
 - `Candidate inspection`: read-only Inspection KTS that already passed example validation and project analysis.
 - `Sampled findings JSON`: project findings produced for that exact candidate.
 - `Weak-signal review JSON`: classification of every sampled finding for that exact candidate.
-- `Inspected Ultimate project`: source repository used to verify relevant APIs, existing coverage, and finding context.
+- `Inspected project`: source repository used to verify relevant APIs, existing coverage, and finding context.
 - `Review output path`: the worker's only output file.
 
 Do not edit the candidate, cluster, examples, inspected project, or repository. Do not create examples. Base every conclusion on available artifacts or source evidence; never turn missing information into an approval or rejection reason.
@@ -44,7 +44,7 @@ Write `Review output path` with exactly this shape:
 
 ```json
 {
-  "status": "ACCEPT|REVISE",
+  "status": "ACCEPT|REVISE|INCOMPLETE",
   "findings": [
     {
       "severity": "BLOCKER|MAJOR|MINOR",
@@ -58,4 +58,6 @@ Write `Review output path` with exactly this shape:
 }
 ```
 
-Use `ACCEPT` only when evidence is complete and no `BLOCKER` or `MAJOR` finding remains. Use `REVISE` for actionable specification, detector, coverage, cost, or diagnostic defects.
+Use `INCOMPLETE` when required evidence is missing or ambiguous; list the missing evidence and do not turn it into a
+candidate defect. Use `REVISE` only for actionable, evidence-backed defects. Use `ACCEPT` only when evidence is
+complete and no `BLOCKER` or `MAJOR` finding remains.

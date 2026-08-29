@@ -12,7 +12,7 @@ Accept exactly four absolute paths from the prompt:
 - `Sampled findings JSON`: read-only input produced by `mcp__qodana__edict_next_get_new_inspection_results`.
 - `Review output path`: the worker's only workspace output file.
 - `Cluster directory`: read the cluster and add only validated negative examples below its `synthetic-examples/` directory.
-- `Inspected Ultimate project`: retrieve each sampled source revision from this repository.
+- `Inspected project`: retrieve each sampled source revision from this repository.
 
 Do not edit the candidate inspection, cluster Signals, description, history, or inspected project. Do not store sampled findings as Signals.
 
