@@ -153,11 +153,6 @@ func GetScanProperties(c corescan.Context) []string {
 	}
 
 	cliProps, flags := c.PropertiesAndFlags()
-	for _, f := range flags {
-		if f != "" && !str.Contains(lines, f) {
-			lines = append(lines, f)
-		}
-	}
 
 	props := getPropertiesMap(
 		c.Prod().ParentPrefix(),
@@ -181,9 +176,7 @@ func GetScanProperties(c corescan.Context) []string {
 		props[k] = v
 	}
 
-	for k, v := range props {
-		lines = append(lines, fmt.Sprintf("%s=%s", k, v))
-	}
+	lines = appendVmOptions(lines, props, flags)
 
 	sort.Strings(lines)
 
@@ -202,7 +195,24 @@ func GetNativeServiceProperties(c corescan.Context) []string {
 	if _, err := os.Stat(disabledPluginsFile); err == nil {
 		lines = append(lines, fmt.Sprintf("-Ddisabled.plugins.file.path=%s", disabledPluginsFile))
 	}
+	properties, flags := c.PropertiesAndFlags()
+	lines = appendVmOptions(lines, properties, flags)
 	sort.Strings(lines)
+	return lines
+}
+
+func appendVmOptions(lines []string, properties map[string]string, flags []string) []string {
+	for _, flag := range flags {
+		if flag != "" && !str.Contains(lines, flag) {
+			lines = append(lines, flag)
+		}
+	}
+	for name, value := range properties {
+		if !strings.HasPrefix(name, "-") {
+			name = fmt.Sprintf("-D%s", name)
+		}
+		lines = append(lines, fmt.Sprintf("%s=%s", name, value))
+	}
 	return lines
 }
 

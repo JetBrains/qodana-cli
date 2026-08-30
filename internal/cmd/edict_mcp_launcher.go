@@ -102,6 +102,7 @@ func prepareMCPScanContext(request edictmcp.LaunchRequest) (corescan.Context, st
 		Ide:          request.IDE,
 		WithinDocker: "false",
 		Script:       mcpServerScript,
+		Property:     request.Property,
 	}
 	scanContext := corescan.CreateContext(
 		cliOptions,
