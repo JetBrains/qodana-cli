@@ -59,6 +59,7 @@ type StartOptions struct {
 	LogFile     string
 	Linter      string
 	IDE         string
+	Property    []string
 	Port        int
 	WaitTimeout time.Duration
 }
@@ -69,6 +70,7 @@ type LaunchRequest struct {
 	LogFile    string
 	Linter     string
 	IDE        string
+	Property   []string
 	Port       int
 }
 
@@ -162,6 +164,7 @@ func (s Service) startLocked(ctx context.Context, options StartOptions) (State, 
 		LogFile:    options.LogFile,
 		Linter:     options.Linter,
 		IDE:        options.IDE,
+		Property:   options.Property,
 		Port:       options.Port,
 	})
 	if err != nil {

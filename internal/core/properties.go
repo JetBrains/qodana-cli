@@ -203,20 +203,12 @@ func GetScanProperties(c corescan.Context) []string {
 		lines = append(lines, fmt.Sprintf("-Ddisabled.plugins.file.path=%s", disabledPluginsFile))
 	}
 
-	for _, f := range propertyMaps.flags {
-		if f != "" && !str.Contains(lines, f) {
-			lines = append(lines, f)
-		}
-	}
-
 	props := maps.Clone(propertyMaps.common)
 	maps.Copy(props, propertyMaps.scan)
 	maps.Copy(props, propertyMaps.yamlOverrides)
 	maps.Copy(props, propertyMaps.cliOverrides)
 
-	for k, v := range props {
-		lines = append(lines, fmt.Sprintf("%s=%s", k, v))
-	}
+	lines = appendVmOptions(lines, props, propertyMaps.flags)
 
 	sort.Strings(lines)
 
@@ -239,7 +231,24 @@ func GetNativeServiceProperties(c corescan.Context) []string {
 	if _, err := os.Stat(disabledPluginsFile); err == nil {
 		lines = append(lines, fmt.Sprintf("-Ddisabled.plugins.file.path=%s", disabledPluginsFile))
 	}
+	cliProperties, flags := c.PropertiesAndFlags()
+	lines = appendVmOptions(lines, cliProperties, flags)
 	sort.Strings(lines)
+	return lines
+}
+
+func appendVmOptions(lines []string, properties map[string]string, flags []string) []string {
+	for _, flag := range flags {
+		if flag != "" && !str.Contains(lines, flag) {
+			lines = append(lines, flag)
+		}
+	}
+	for name, value := range properties {
+		if !strings.HasPrefix(name, "-") {
+			name = fmt.Sprintf("-D%s", name)
+		}
+		lines = append(lines, fmt.Sprintf("%s=%s", name, value))
+	}
 	return lines
 }
 

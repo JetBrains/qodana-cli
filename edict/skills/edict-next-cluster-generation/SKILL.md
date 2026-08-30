@@ -13,8 +13,8 @@ field.
 
 Every Edict Next MCP response has an authoritative `nextAction`. Check `exhausted` first. When
 `retryUnchanged: true`, the operation produced no verdict: repeat it with the exact same input. Finishing without a
-finalization call is valid and makes repository validation infer predecessor fallback. Use `DISCONTINUED` only when
-Signals conflict or no coherent PSI rule is feasible.
+finalization call is valid and leaves the cluster `Pending` for the next run. Use `DISCONTINUED` only when Signals
+conflict or no coherent PSI rule is feasible.
 
 Keep `<private scratch workspace>/state.md` as the restart point. After every MCP call or worker result, record the
 phase, cluster id and path, last `nextAction`, candidate path, sampled-findings path, review paths, and exact next step.
@@ -36,7 +36,7 @@ Call `mcp__qodana__edict_next_get_inspection_action(clusterDirectory)`. This sta
 which is 210 minutes by default.
 
 - `CONFLICT`: append the opposite-label rationale and ids to history, then finalize `DISCONTINUED`.
-- `SKIP`: append the reuse decision and finish without finalizing; repository validation keeps the predecessor.
+- `SKIP`: append the reuse decision and finish without finalizing; the MCP has already recorded the predecessor.
 - `GENERATE`: continue below.
 - `exhausted: true`: append the deadline outcome and finish without finalizing.
 
