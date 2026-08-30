@@ -5,6 +5,8 @@ description: Independently review one validated Edict Next inspection candidate 
 
 # Edict Next Inspection Review
 
+Load only this skill.
+
 ## Task contract
 
 Accept exactly six absolute paths from the prompt:

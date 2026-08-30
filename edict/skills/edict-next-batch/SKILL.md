@@ -1,19 +1,19 @@
 ---
 name: edict-next-batch
-description: Assign one prepared alphabetical batch of Edict inbox Signals to existing or new durable clusters, then validate the worktree transition.
+description: Assign exactly one prepared Edict inbox batch to durable clusters; validation belongs to its orchestration agent.
 ---
 
 # Edict Next Batch
 
-The task supplies `batchPath`, the Edict worktree, and the inspected project. Process exactly this batch. Edit the
-worktree directly; MCP validates the result but does not apply it.
+Load only this skill. The task supplies `batchPath`, the Edict worktree, and the inspected project. Process exactly this
+batch and edit the worktree directly. Do not call batch validation; the distribution orchestrator owns it.
 
 ## Batch file
 
 `batchPath` contains `currentBatchInboxSignals`. Each entry has the real inbox `signalPath` and nearest candidates:
 
-- `cluster`: `clusterId`, `clusterDescription`, real `clusterPath`, `closestSignalIds`, and `nearestDistance`.
-- `signal`: another current-batch `signalId`, its real `signalPath`, and `nearestDistance`.
+- `cluster`: current `clusterId`, `clusterDescription`, real `clusterPath`, and `nearestDistance`.
+- `signal`: another selected inbox `signalId`, its real `signalPath`, and `nearestDistance`.
 
 Candidates are deterministic help, not decisions. Read each Signal, the relevant cluster members, and source at the
 referenced revision. Do not group from description distance alone.
@@ -38,13 +38,7 @@ referenced revision. Do not group from description distance alone.
    Existing clusters receive the moved Signal files and must have their status changed to `Pending`. Do not change
    their id, description, language, history, examples, outcome, candidate, or inspection during routing. Do not touch
    Signals outside this batch.
-4. Call `mcp__qodana__edict_next_validate_batch` with the exact `batchPath`.
-5. Follow `nextAction`: on `REPAIR_BATCH`, repair only the reported transition issues and retry the same path; on
-    `PROCESS_BATCH`, report the returned next `batchPath` to the orchestration task; on `START_GENERATION`, report that
-    the inbox is empty. Retrieval failures are retried internally; report and stop if the tool still fails.
-
-The validation response contains `success`, `validatedSignalCount`, `inboxSignalCount`, optional next `batchPath`,
-`summary`, `issues`, and `nextAction`. A successful call prepares the next batch before replacing the rolling verified
-snapshot. Do not add or run tests and do not generate inspections in this skill.
+4. Return a concise completion report to the orchestrator. Do not validate, repair after validation, prepare another
+   batch, add or run tests, or generate inspections.
 
 For source context, use read-only repository MCPs such as `mcp__qodana__file_at_ref` with the Signal's exact revision.

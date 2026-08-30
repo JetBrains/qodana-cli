@@ -5,16 +5,19 @@ description: Process one Edict Next cluster from evidence and reuse through cand
 
 # Edict Next Cluster Generation
 
-The prompt supplies one cluster directory, one private scratch workspace, and the inspected project. Read and edit only
-that cluster. Put transient state and worker output only in the scratch workspace. MCP owns terminal status and
+Load only this skill. The prompt supplies one cluster directory, one private scratch workspace, and the inspected
+project. Read and edit only that cluster. Put transient state and worker output only in the scratch workspace. MCP owns terminal status and
 inspection materialization; you may write only the cluster description/id before generation starts, each Signal's
 `syntheticExampleId`, code examples, `candidate.inspection.kts`, and `history.md`. Do not change any other Signal
 field.
 
-Every Edict Next MCP response has an authoritative `nextAction`. Check `exhausted` first. When
-`retryUnchanged: true`, the operation produced no verdict: repeat it with the exact same input. Finishing without a
-finalization call is valid and leaves the cluster `Pending` for the next run. Use `DISCONTINUED` only when Signals
-conflict or no coherent PSI rule is feasible.
+Every Edict Next MCP response has an authoritative `nextAction`. Check `exhausted` first. When `retryUnchanged: true`,
+repeat the exact same input. Return normally only after `SKIP`, successful finalization, or deadline exhaustion. Report
+an unrecoverable infrastructure failure clearly so the orchestrator can retry the complete task once. Use
+`DISCONTINUED` only when Signals conflict or no coherent PSI rule is feasible.
+
+Do not load `$edict-next-code-example`, `$edict-next-weak-signal-review`, or `$edict-next-inspection-review`. Their names
+are opaque: mention the required literal skill only in a fresh worker prompt and use that worker's returned artifact.
 
 Keep `<private scratch workspace>/state.md` as the restart point. After every MCP call or worker result, record the
 phase, cluster id and path, last `nextAction`, candidate path, sampled-findings path, review paths, and exact next step.
@@ -40,8 +43,8 @@ which is 210 minutes by default.
 - `GENERATE`: continue below.
 - `exhausted: true`: append the deadline outcome and finish without finalizing.
 
-A changed predecessor is skipped only when it still covers at least 85% of positives and reports no negative. An
-unchanged terminal cluster is preserved without remeasurement.
+A changed predecessor is skipped when it still achieves at least 85% aggregate label accuracy. An unchanged terminal
+cluster is preserved without remeasurement.
 
 ## 3. Generate and measure
 
@@ -49,8 +52,8 @@ Write only Kotlin Inspection KTS to `candidate.inspection.kts`. The cluster id, 
 identity. Implement the general structural rule; never special-case example text, paths, names, or line numbers.
 
 Call `mcp__qodana__edict_next_validate_inspection(clusterDirectory, inspectionPath)`. It compiles once and measures
-every stored example. Acceptance requires at least one positive, no negative reports, and the returned positive-coverage
-bar. A compiling coverage miss ratchets that bar from 85% to 70% to 50%.
+every evidence case. Acceptance requires at least one positive and 85% label accuracy. A positive is correct when the
+expected ranges are reported; a negative is correct when nothing is reported. The threshold never changes.
 
 - On `RETRY_SAME_INPUT`, call again with the candidate unchanged.
 - On `REPAIR_INSPECTION`, fix the general predicate. Never weaken a correct negative example to pass.
@@ -97,7 +100,7 @@ candidate. Only `ACCEPT` permits a generated decision.
 ## 5. Finish
 
 Before finalization, append a concise history entry with the rule, reuse decision, attempts, failures, sampled-finding
-review, quality review, achieved coverage, and decision. Then call
+review, quality review, achieved accuracy, and decision. Then call
 `mcp__qodana__edict_next_finalize_cluster(clusterDirectory, GENERATED, inspectionPath)` with the exact accepted
 candidate. The call records its text; final repository validation remeasures and materializes it.
 

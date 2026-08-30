@@ -5,6 +5,8 @@ description: Assign or create one mandatory Edict Next code example for a stored
 
 # Edict Next Code Example
 
+Load only this skill.
+
 ## MCP contract
 
 `mcp__qodana__edict_next_validate_code_example`

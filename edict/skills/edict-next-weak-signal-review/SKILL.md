@@ -5,6 +5,9 @@ description: Independently review one Edict Next inspection's sampled project fi
 
 # Edict Next Weak Signal Review
 
+Load only this skill. When an example is needed, do not load `$edict-next-code-example`; mention it only in a fresh
+worker prompt.
+
 ## Task contract
 
 Accept exactly four absolute paths from the prompt:

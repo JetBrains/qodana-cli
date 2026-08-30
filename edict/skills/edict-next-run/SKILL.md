@@ -1,42 +1,31 @@
 ---
 name: edict-next-run
-description: Run Edict Next from run start through routing, generation, validation, commit, and push.
+description: Orchestrate the four isolated Edict Next stages without loading or performing any stage implementation.
 ---
 
 # Edict Next Run
 
-The Qodana script prompt supplies the source repository, workspace, inspected project, and concurrency limit. When the
-skill is invoked directly against the standalone Qodana MCP server instead, call
-`mcp__qodana__edict_next_start_run` and use its returned parameters. Own the filesystem and Git workflow. Every MCP
-response has an authoritative `nextAction`; follow it.
+Load only this skill. Stage skills are opaque contracts: do not read, load, summarize, or perform them yourself. Mention
+each stage skill only as the first literal line of a fresh subagent prompt. Use native subagent tools only; never launch
+Codex through shell scripts or replace a prescribed worker prompt.
 
-Keep `<workspace>/run-state.md` as the restart point. Record the worktree and branch, current batch path, remaining and
-completed cluster ids, active scratch directories, last MCP response, and exact next step. Update it after every batch,
-cluster-task result, and repository validation. Re-read it after interruption or context compaction.
+The Qodana prompt supplies the source repository, workspace, inspected project, concurrency, protocol version, and four
+absolute UTC deadlines. For a direct standalone-MCP run, first call `mcp__qodana__edict_next_start_run` and use its
+returned values and deadlines. Never recalculate or extend a deadline.
 
-1. Create a worktree below the supplied workspace from the source repository's current revision. Use branch
-   `edict-next/YYYY-MM-DD`, adding `-2`, `-3`, and so on when needed. Make every repository change in this worktree.
-2. Call `mcp__qodana__edict_next_prepare_pipeline(worktreePath, workspacePath)` exactly once. It validates timeout
-   configuration, prepares retrieval, snapshots the original and rolling repository state, freezes up to 100 JVM inbox
-   Signals alphabetically for this run, and returns the first batch of up to 10.
-3. While `nextAction` is `PROCESS_BATCH`, launch exactly one fresh `$edict-next-batch` task with the returned
-   `batchPath`, worktree, and inspected project. Never overlap batches. Continue with the next path it returns.
-   `START_GENERATION` means this run's selected Signals are assigned; deferred inbox Signals stay for a later run. Stop
-   the run if internal retrieval retries are exhausted.
-4. Enumerate every `Pending` cluster after distribution. For each, create a private scratch directory below the
-   workspace and launch a fresh `$edict-next-cluster-generation` task with only that cluster directory, its scratch
-   directory, and the inspected project. Allow at most `maxConcurrentClusterTasks` tasks concurrently. Track every task
-   to completion; do not let one cluster failure cancel unrelated clusters. Do not wrap workers in shell timeouts; the
-   MCP generation deadline is authoritative.
-5. After all cluster tasks finish, call `mcp__qodana__edict_next_validate_repository`. It materializes recorded
-   decisions, leaves missing or unfinished decisions `Pending` for the next run, validates the complete worktree
-   against the original snapshot, writes `edict-next-verification.csv`, and exports the embedding cache.
-6. On `REPAIR_REPOSITORY`, repair only reported cluster-local problems and validate again. Abort on lost or multiply
-   owned Signals or examples. Only `PUBLISH` permits commit and push.
-7. Commit every worktree change and push the branch. For a direct MCP run, call
-   `mcp__qodana__edict_next_validate_completion` afterward; `FINISH_RUN` completes the run, while
-   `REPAIR_REPOSITORY` requires repair, validation, commit, push, and completion again. The Qodana script revalidates
-   automatically when its Codex session ends. Hand back every cluster's status, history, and generated inspection.
+Run these agents sequentially:
 
-Do not modify the inspected project or the source checkout outside the worktree. Do not add or run tests. Do
-not publish a repository state that has not passed the final validation.
+1. Launch `$edict-next-prepare` with the source repository, workspace, inspected project, protocol version, and
+   preparation deadline. Then call `mcp__qodana__edict_next_get_run_state`; continue only from `DISTRIBUTION` or
+   `GENERATION`.
+2. If distribution is required, launch `$edict-next-distribution` with the complete run-state response and distribution
+   deadline. Re-read run state and require `GENERATION`.
+3. Launch `$edict-next-generation` with the complete run-state response and generation deadline. Re-read run state and
+   require `VERIFICATION`.
+4. Launch `$edict-next-verification` with the complete run-state response, session deadline, and whether this is a direct
+   MCP run. Re-read run state and require `PUBLICATION` for a Qodana-script run or `FINISHED` for a direct run.
+
+Wait for each stage agent to finish before launching the next. Check UTC time around every wait; wait in chunks of at
+most 60 minutes and never beyond the stage deadline. At a deadline, interrupt the stage agent and stop the run. Also stop
+on a failed stage, protocol mismatch, or unexpected stage. Do not edit either repository, call processing MCPs, commit,
+push, add tests, or run tests yourself.
