@@ -66,6 +66,7 @@ type edictMCPStartOptions struct {
 	LogFile     string
 	Linter      string
 	IDE         string
+	Property    []string
 	Port        int
 	WaitTimeout time.Duration
 }
@@ -88,7 +89,7 @@ func newEdictMCPStartCommand(service edictmcp.Service) *cobra.Command {
 			state, err := service.Start(
 				cmd.Context(), edictmcp.StartOptions{
 					ProjectDir: projectDir, StateFile: paths.state, ReadyFile: paths.ready, LogFile: paths.log,
-					Linter: options.Linter, IDE: options.IDE, Port: options.Port, WaitTimeout: options.WaitTimeout,
+					Linter: options.Linter, IDE: options.IDE, Property: options.Property, Port: options.Port, WaitTimeout: options.WaitTimeout,
 				},
 			)
 			if err != nil {
@@ -113,6 +114,7 @@ func newEdictMCPStartCommand(service edictmcp.Service) *cobra.Command {
 		"Native IDE product code or path to a local IDE distribution",
 	)
 	flags.IntVar(&options.Port, "port", 0, "MCP server port; 0 selects an available port")
+	flags.StringArrayVar(&options.Property, "property", nil, "Set a JVM property or option for the MCP server")
 	flags.DurationVar(&options.WaitTimeout, "wait-timeout", 90*time.Second, "Maximum time to wait for MCP readiness")
 	flags.StringVar(&options.StateFile, "state-file", "", "Lifecycle state file (defaults to the Qodana user cache)")
 	flags.StringVar(&options.ReadyFile, "ready-file", "", "Readiness file written by the linter")

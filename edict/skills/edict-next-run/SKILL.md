@@ -17,18 +17,20 @@ cluster-task result, and repository validation. Re-read it after interruption or
 1. Create a worktree below the supplied workspace from the source repository's current revision. Use branch
    `edict-next/YYYY-MM-DD`, adding `-2`, `-3`, and so on when needed. Make every repository change in this worktree.
 2. Call `mcp__qodana__edict_next_prepare_pipeline(worktreePath, workspacePath)` exactly once. It validates timeout
-   configuration, prepares retrieval, snapshots the original and rolling repository state, and returns the first
-   alphabetical batch of up to 50 JVM Signals.
+   configuration, prepares retrieval, snapshots the original and rolling repository state, freezes up to 100 JVM inbox
+   Signals alphabetically for this run, and returns the first batch of up to 10.
 3. While `nextAction` is `PROCESS_BATCH`, launch exactly one fresh `$edict-next-batch` task with the returned
    `batchPath`, worktree, and inspected project. Never overlap batches. Continue with the next path it returns.
-   `START_GENERATION` means the JVM inbox is empty. Stop the run if internal retrieval retries are exhausted.
+   `START_GENERATION` means this run's selected Signals are assigned; deferred inbox Signals stay for a later run. Stop
+   the run if internal retrieval retries are exhausted.
 4. Enumerate every `Pending` cluster after distribution. For each, create a private scratch directory below the
    workspace and launch a fresh `$edict-next-cluster-generation` task with only that cluster directory, its scratch
    directory, and the inspected project. Allow at most `maxConcurrentClusterTasks` tasks concurrently. Track every task
-   to completion; do not let one cluster failure cancel unrelated clusters.
+   to completion; do not let one cluster failure cancel unrelated clusters. Do not wrap workers in shell timeouts; the
+   MCP generation deadline is authoritative.
 5. After all cluster tasks finish, call `mcp__qodana__edict_next_validate_repository`. It materializes recorded
-   decisions, infers predecessor fallback for missing decisions, validates the complete worktree against the original
-   snapshot, writes `edict-next-verification.csv`, and exports the embedding cache.
+   decisions, leaves missing or unfinished decisions `Pending` for the next run, validates the complete worktree
+   against the original snapshot, writes `edict-next-verification.csv`, and exports the embedding cache.
 6. On `REPAIR_REPOSITORY`, repair only reported cluster-local problems and validate again. Abort on lost or multiply
    owned Signals or examples. Only `PUBLISH` permits commit and push.
 7. Commit every worktree change and push the branch. For a direct MCP run, call
