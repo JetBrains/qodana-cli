@@ -12,6 +12,7 @@ PLATFORMS = (
 
 EXCLUDE_PATTERNS = (
     "ruby",
+    "poly",  # internal-only: no public release feed, so QD_* download ARGs are empty
 )
 
 RUNNERS = {
