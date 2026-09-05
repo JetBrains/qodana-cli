@@ -1,42 +1,23 @@
 ---
 name: edict-next-run
-description: Run Edict Next from run start through routing, generation, validation, commit, and push.
+description: Orchestrate the Edict Next preparation, distribution, and generation stages.
 ---
 
 # Edict Next Run
 
-The Qodana script prompt supplies the source repository, workspace, inspected project, and concurrency limit. When the
-skill is invoked directly against the standalone Qodana MCP server instead, call
-`mcp__qodana__edict_next_start_run` and use its returned parameters. Own the filesystem and Git workflow. Every MCP
-response has an authoritative `nextAction`; follow it.
+Load only this skill. Mention each stage skill only as the first line of a fresh worker prompt. Do not edit the worktree,
+call cluster-processing MCPs, or run tests yourself.
 
-Keep `<workspace>/run-state.md` as the restart point. Record the worktree and branch, current batch path, remaining and
-completed cluster ids, active scratch directories, last MCP response, and exact next step. Update it after every batch,
-cluster-task result, and repository validation. Re-read it after interruption or context compaction.
+Run sequentially:
 
-1. Create a worktree below the supplied workspace from the source repository's current revision. Use branch
-   `edict-next/YYYY-MM-DD`, adding `-2`, `-3`, and so on when needed. Make every repository change in this worktree.
-2. Call `mcp__qodana__edict_next_prepare_pipeline(worktreePath, workspacePath)` exactly once. It validates timeout
-   configuration, prepares retrieval, snapshots the original and rolling repository state, freezes up to 100 JVM inbox
-   Signals alphabetically for this run, and returns the first batch of up to 10.
-3. While `nextAction` is `PROCESS_BATCH`, launch exactly one fresh `$edict-next-batch` task with the returned
-   `batchPath`, worktree, and inspected project. Never overlap batches. Continue with the next path it returns.
-   `START_GENERATION` means this run's selected Signals are assigned; deferred inbox Signals stay for a later run. Stop
-   the run if internal retrieval retries are exhausted.
-4. Enumerate every `Pending` cluster after distribution. For each, create a private scratch directory below the
-   workspace and launch a fresh `$edict-next-cluster-generation` task with only that cluster directory, its scratch
-   directory, and the inspected project. Allow at most `maxConcurrentClusterTasks` tasks concurrently. Track every task
-   to completion; do not let one cluster failure cancel unrelated clusters. Do not wrap workers in shell timeouts; the
-   MCP generation deadline is authoritative.
-5. After all cluster tasks finish, call `mcp__qodana__edict_next_validate_repository`. It materializes recorded
-   decisions, leaves missing or unfinished decisions `Pending` for the next run, validates the complete worktree
-   against the original snapshot, writes `edict-next-verification.csv`, and exports the embedding cache.
-6. On `REPAIR_REPOSITORY`, repair only reported cluster-local problems and validate again. Abort on lost or multiply
-   owned Signals or examples. Only `PUBLISH` permits commit and push.
-7. Commit every worktree change and push the branch. For a direct MCP run, call
-   `mcp__qodana__edict_next_validate_completion` afterward; `FINISH_RUN` completes the run, while
-   `REPAIR_REPOSITORY` requires repair, validation, commit, push, and completion again. The Qodana script revalidates
-   automatically when its Codex session ends. Hand back every cluster's status, history, and generated inspection.
+1. Launch `$edict-next-prepare` for up to 35 minutes. Pass the source repository, workspace, and inspected project supplied in the
+   run prompt. It creates the worktree and prepares all required context for the pipeline.
+2. Launch `$edict-next-distribution` for up to 120 minutes. After it returns, call
+   `edict_next_validate_distribution` and stop on failure. Pass worktree path to the worker.
+3. Launch `$edict-next-generation` for up to 395 minutes.
+4. Call the read-only `edict_next_validate_generation` for up to 40 minutes. Stop unless it returns `PUBLISH`.
 
-Do not modify the inspected project or the source checkout outside the worktree. Do not add or run tests. Do
-not publish a repository state that has not passed the final validation.
+After successful validation, collect every Invalid cluster id and its manual-repair reason from `history.md`. Commit and
+push the worktree, then let the Qodana script finish. Pending and Invalid clusters do not block publication. In the final
+response, list every Invalid cluster and its recorded reason. Wait in chunks of at most 60 minutes for stage workers and
+MCP calls and stop on a failed stage or timeout. The complete session budget is 600 minutes.
