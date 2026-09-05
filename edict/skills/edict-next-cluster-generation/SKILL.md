@@ -1,104 +1,126 @@
 ---
 name: edict-next-cluster-generation
-description: Process one Edict Next cluster from evidence and reuse through candidate review and final decision.
+description: Process one Pending Edict Next cluster through evidence, reuse, candidate review, and a direct repository transition.
 ---
 
 # Edict Next Cluster Generation
 
-The prompt supplies one cluster directory, one private scratch workspace, and the inspected project. Read and edit only
-that cluster. Put transient state and worker output only in the scratch workspace. MCP owns terminal status and
-inspection materialization; you may write only the cluster description/id before generation starts, each Signal's
-`syntheticExampleId`, code examples, `candidate.inspection.kts`, and `history.md`. Do not change any other Signal
-field.
+# Goal
 
-Every Edict Next MCP response has an authoritative `nextAction`. Check `exhausted` first. When
-`retryUnchanged: true`, the operation produced no verdict: repeat it with the exact same input. Finishing without a
-finalization call is valid and leaves the cluster `Pending` for the next run. Use `DISCONTINUED` only when Signals
-conflict or no coherent PSI rule is feasible.
+Process the supplied Pending cluster from its Signals into one of these repository states:
 
-Keep `<private scratch workspace>/state.md` as the restart point. After every MCP call or worker result, record the
-phase, cluster id and path, last `nextAction`, candidate path, sampled-findings path, review paths, and exact next step.
-Re-read it after interruption or context compaction. Never put this file in the worktree.
+- `Generated`: one IntelliJ inspection handles every Signal and has passed example validation and project review.
+- `Discontinued`: sound cluster evidence shows that no coherent IntelliJ inspection can fit signal requirements.
+- `Invalid`: conflicting evidence or another specific cluster problem requires manual repair.
+- `Pending`: work is incomplete, but every repository artifact left behind is structurally valid and can be continued later.
 
-## 1. Complete evidence
+The prompt supplies `clusterId`, `clusterDirectory`, a private scratch directory, and the inspected project.
 
-Read every Signal and inspect its exact source revision and ranges. Refine the description to name the shared detector.
-Preserve the id when it still describes that detector; otherwise rename the cluster directory and the
-`description.json` id together, using lowercase kebab-case. Do this before the inspection-action call, never after it.
-Do not change membership, language, or `Pending` status.
+# Allowed changes
 
-For every Signal without `syntheticExampleId`, invoke `$edict-next-code-example`. Reuse a genuinely matching example
-or create and MCP-validate one. Every Signal must end with a semantically correct, same-label example.
+You may directly change only:
 
-## 2. Decide reuse
+- the target cluster directory name and the `id`, `description`, `status`, and `predecessorId` fields in its
+  `description.json`; a rename must change the directory name and `id` together;
+- appended entries in the target cluster's `history.md`;
+- `inspections/<clusterId>.candidate.kts`, `inspections/<clusterId>.inspection.kts`, and the inspection named by the
+  cluster's `predecessorId`;
+- files in the supplied private scratch directory.
 
-Call `mcp__qodana__edict_next_get_inspection_action(clusterDirectory)`. This starts the configured cluster deadline,
-which is 210 minutes by default.
+Do not directly change anything else. Do not edit signals, change cluster membership or language, edit the inspected project, or edit
+another cluster. Put all transient worker output in private scratch directory.
 
-- `CONFLICT`: append the opposite-label rationale and ids to history, then finalize `DISCONTINUED`.
-- `SKIP`: append the reuse decision and finish without finalizing; the MCP has already recorded the predecessor.
-- `GENERATE`: continue below.
-- `exhausted: true`: append the deadline outcome and finish without finalizing.
+Keep the cluster `Pending` and preserve `predecessorId` until a terminal transition. After renaming the cluster, use its
+new id in every MCP call and inspection path; also rename an existing candidate to the new candidate path.
 
-A changed predecessor is skipped only when it still covers at least 85% of positives and reports no negative. An
-unchanged terminal cluster is preserved without remeasurement.
+Do not load the `edict-next-code-example`, `edict-next-weak-signal-review`, or `edict-next-inspection-review` skills
+yourself. Ask a fresh worker to load the required skill and use only its returned artifact.
 
-## 3. Generate and measure
+# Process
 
-Write only Kotlin Inspection KTS to `candidate.inspection.kts`. The cluster id, description, and language are the rule
-identity. Implement the general structural rule; never special-case example text, paths, names, or line numbers.
+## 1. Complete the evidence
 
-Call `mcp__qodana__edict_next_validate_inspection(clusterDirectory, inspectionPath)`. It compiles once and measures
-every stored example. Acceptance requires at least one positive, no negative reports, and the returned positive-coverage
-bar. A compiling coverage miss ratchets that bar from 85% to 70% to 50%.
+Read `history.md` and prior attempt artifacts from private scratch before revising the cluster identity. Read every Signal and
+retrieve its exact source revision and relevant ranges with `mcp__qodana__file_at_ref`. Use the current Signals and exact source
+evidence as the authority for the cluster description and ID; history provides continuity but does not override current evidence.
+Keep the current id when it fits; otherwise rename the cluster before the first MCP call. Record every ID or description change in
+`history.md` with the old value, new value, reason, and supporting evidence. A rename changes the cluster directory name and
+`description.json` id together. Preserve `predecessorId`: it identifies the existing inspection under its old id until the terminal
+transition.
 
-- On `RETRY_SAME_INPUT`, call again with the candidate unchanged.
-- On `REPAIR_INSPECTION`, fix the general predicate. Never weaken a correct negative example to pass.
+For every Signal without `syntheticExampleId`, start a fresh worker with:
+
+```plaintext
+Load the <edict-next-code-example invocation call> skill.
+
+Signal path: <clusterDirectory>/signals/<signal-id>.json
+Synthetic examples directory: <clusterDirectory>/synthetic-examples
+```
+
+Verify the signal now has the `syntheticExampleId` field. If the worker cannot complete the assignment, save the reason and follow steps
+to apply `Invalid` transition below.
+
+## 2. Decide whether to reuse the predecessor
+
+Call `edict_next_get_inspection_action(clusterId)`.
+
+- `CONFLICT`: record the conflicting Signal ids and rationale in history, then apply the Invalid transition below.
+- `SKIP`: record the measured reuse decision in history, then apply the Reused transition below.
+- `GENERATE`: continue with a candidate.
+
+## 3. Generate and measure a candidate
+
+Before writing the first candidate, call `mcp__qodana__generate_inspection_kts_api` and
+`mcp__qodana__generate_inspection_kts_examples` for the cluster language. Call `mcp__qodana__generate_psi_tree` on
+representative positive and negative code examples whenever the relevant PSI structure is uncertain.
+
+Write the candidate to `inspections/<clusterId>.candidate.kts`. Implement one general IntelliJ inspection for the shared
+problem. Never special-case example text, paths, names, or line numbers.
+
+Call `edict_next_validate_inspection(clusterId)`. Acceptance requires at least one positive example and 85% aggregate
+label accuracy.
+
+- On `REPAIR_INSPECTION`, repair the general predicate and validate again.
 - On `ANALYZE_PROJECT`, keep the exact validated candidate and continue.
-- With no positive example or no feasible coherent rule, append the rationale and finalize `DISCONTINUED`.
+- If sound cluster evidence proves that no coherent PSI rule is feasible, record why and apply the Discontinued
+  transition. If a specific problem with the cluster itself prevents that decision, apply the Invalid transition instead.
 
 ## 4. Review project findings
 
-Call `mcp__qodana__edict_next_get_new_inspection_results` for the validated candidate. It shares a batched project scan
-with other clusters and writes up to 20 findings. Retry the exact input on `RETRY_SAME_INPUT`; stop without finalizing
-when the deadline is exhausted.
-
-Launch a fresh worker with:
+Call `edict_next_get_new_inspection_results(clusterId, privateScratchDirectory)` and wait up to 40m. Then ask a fresh worker to
+load `edict-next-weak-signal-review`:
 
 ```text
-$edict-next-weak-signal-review
+Load the edict-next-weak-signal-review skill.
 
-Sampled findings JSON: <returned sampledFindingsPath>
-Review output path: <new JSON path in private scratch>
-Cluster directory: <cluster directory>
-Inspected project: <project path>
+Review config: <weak-signal-review-config path returned by the MCP>
 ```
 
-Validate that every finding index appears exactly once. On `INCOMPLETE`, launch a fresh worker while time remains or
-finish without finalizing. When a `COMPLETE` review adds examples, repeat candidate validation and project analysis.
-
-When a complete weak-signal review adds no examples, launch a fresh quality reviewer:
+Read the returned summary. If it lists false-positive reports, read every report, repair the candidate's general predicate,
+validate it, call the MCP again for a fresh pair of manifests, and repeat this step after validation returns `ANALYZE_PROJECT`.
+If it lists no false positives, ask a fresh worker to load `edict-next-inspection-review`:
 
 ```text
-$edict-next-inspection-review
+Load the edict-next-inspection-review skill.
 
-Cluster directory: <cluster directory>
-Candidate inspection: <candidate path>
-Sampled findings JSON: <returned sampledFindingsPath>
-Weak-signal review JSON: <completed review output>
-Inspected project: <project path>
-Review output path: <new JSON path in private scratch>
+Review config: <inspection-review-config path returned by the MCP>
 ```
 
-On `INCOMPLETE`, retry with a fresh reviewer or finish without finalizing. On `REVISE`, apply only evidence-backed
-general corrections and repeat validation, project analysis, weak-signal review, and quality review for the revised
-candidate. Only `ACCEPT` permits a generated decision.
+- On `REJECT`, read the findings. Apply the Invalid transition for a duplicate existing inspection or another specific
+  cluster problem you cannot fix. Apply the Discontinued transition if the evidence proves that no coherent inspection
+  can satisfy the Signals. Otherwise, make the smallest suggested general corrections, then repeat validation and both reviews.
+- On `ACCEPT`, record the rule, attempts, reviews, achieved accuracy, and decision in history, then apply the Accepted
+  transition.
 
-## 5. Finish
+## 5. Apply the terminal transition
 
-Before finalization, append a concise history entry with the rule, reuse decision, attempts, failures, sampled-finding
-review, quality review, achieved coverage, and decision. Then call
-`mcp__qodana__edict_next_finalize_cluster(clusterDirectory, GENERATED, inspectionPath)` with the exact accepted
-candidate. The call records its text; final repository validation remeasures and materializes it.
+- **Accepted:** replace `inspections/<clusterId>.inspection.kts` with the exact accepted candidate; remove the candidate
+  and any distinct predecessor inspection; clear `predecessorId`; set the status to `Generated`.
+- **Reused:** move the predecessor inspection to `inspections/<clusterId>.inspection.kts` when the id changed; remove the
+  candidate; clear `predecessorId`; set the status to `Generated`.
+- **Discontinued:** remove the candidate and predecessor/current inspection; clear `predecessorId`; set the status to
+  `Discontinued`.
+- **Invalid:** append the specific manual-repair reason to history and set the status to `Invalid`. Keep valid partial
+  artifacts and `predecessorId` unchanged, as for `Pending`.
 
-Every exit path must leave non-empty history explaining the outcome.
+Return after the repository reaches the chosen state.

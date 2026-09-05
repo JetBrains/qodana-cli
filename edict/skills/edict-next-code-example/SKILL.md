@@ -1,30 +1,37 @@
 ---
 name: edict-next-code-example
-description: Assign or create one mandatory Edict Next code example for a stored Signal or a transient reviewed project finding and verify its parsing, ranges, and PSI structure through MCP.
+description: Assign a validated existing or new code example to one Edict Next Signal JSON.
 ---
 
 # Edict Next Code Example
 
-## MCP contract
+Load only this skill.
 
-`mcp__qodana__edict_next_validate_code_example`
+The prompt supplies exactly two absolute paths:
 
-- Input: the absolute `exampleDirectory` inside a cluster's `synthetic-examples/` directory.
-- Output: `success`, `summary`, structural `issues`, the resolved `targetPsiElements` for valid target ranges, and `nextAction`.
-- Effect: read-only PSI validation of metadata, source presence, parsing, ranges, and target elements. It reports the result to stdout and does not decide whether the example is semantically representative.
-- Next action: follow `nextAction`: repair and retry on `REPAIR_CODE_EXAMPLE`; on `CONTINUE_CLUSTER_GENERATION`, independently confirm the label, meaning, and expected ranges before returning to the caller.
+- `Signal path`: the Signal JSON to update.
+- `Synthetic examples directory`: the target cluster's `synthetic-examples/` directory.
 
-Read the complete stored Signal or transient reviewed-finding payload and its cluster. For a Signal loaded from the cluster, preserve its declared strength. First look for an existing cluster example that genuinely represents the same semantic case and label. If one fits, set the stored Signal's `syntheticExampleId` to that example ID without duplicating it.
+You may change only files below the supplied examples directory and `syntheticExampleId` in the supplied Signal. Do not
+change any other Signal field or any other file.
 
-A false-positive project finding supplied by `$edict-next-weak-signal-review` is transient weak evidence. Use its file revision and semantic explanation only to create a new negative example; do not store it as a Signal or assign a `syntheticExampleId` to it.
+Read the complete Signal and retrieve its exact `fileRevision` with `mcp__qodana__file_at_ref`. Compare that evidence with
+the existing examples. Reuse an example only when it genuinely represents the same semantic case and label. If none fits,
+create a small, self-contained example at:
 
-Otherwise, obtain the referenced source with repository-context MCP calls such as `mcp__qodana__file_at_ref`. Choose a small self-contained example from it, or generate a new example when no real snippet is suitable. Store it as:
-
-```text
-synthetic-examples/<example-id>/metadata.json
-synthetic-examples/<example-id>/project/<file-name>.kt|java
+```plaintext
+<synthetic-examples-directory>/<example-id>/metadata.json
+<synthetic-examples-directory>/<example-id>/project/<file-name>.kt|java
 ```
 
-Metadata has `id`, `fileName`, `label`, and `expectedRanges`. Positive examples require exact one-based target ranges. Negative examples normally use an empty range list. The project directory may contain additional support files when necessary. For a stored Signal, update its JSON with `syntheticExampleId`; for a transient false-positive finding, leave the new example unattached.
+Metadata contains `id`, `fileName`, `label`, and `expectedRanges`. Positive examples require exact one-based target ranges;
+negative examples normally use an empty range list. Use one self-contained source file: support files do not participate in
+validation or inspection execution.
 
-Call `mcp__qodana__edict_next_validate_code_example` with the example directory. Repair all parsing, language, range, and PSI problems and validate again. MCP establishes structural feasibility only: independently ensure the code actually demonstrates the Signal and that its label and ranges are semantically correct.
+Derive `clusterId` from the canonical examples-directory path and call
+`mcp__qodana__edict_next_validate_code_example(clusterId, exampleId)`, including for a reused example. Repair structural
+issues and validate again. The MCP does not establish semantics: independently confirm that the example demonstrates the
+Signal and that its label and ranges are correct.
+
+Only after both checks succeed, set the supplied Signal's `syntheticExampleId` and return the assigned example ID. If the
+work cannot be completed, leave the Signal unchanged and return a clear reason.
