@@ -7,6 +7,9 @@ description: Assign a validated existing or new code example to one Edict Next S
 
 Load only this skill.
 
+For every Qodana MCP call, pass the inspected IntelliJ project as `projectPath`. Never pass the Edict worktree as
+`projectPath`; the worktree is repository data already loaded in the run context.
+
 The prompt supplies exactly two absolute paths:
 
 - `Signal path`: the Signal JSON to update.

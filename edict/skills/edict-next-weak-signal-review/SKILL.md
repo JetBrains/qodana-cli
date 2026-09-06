@@ -8,6 +8,9 @@ description: Run one validated Edict Next candidate over the project, review eve
 Load only this skill. When an example is needed, do not load `edict-next-code-example`; mention it only in a fresh
 worker prompt.
 
+For every Qodana MCP call, pass the inspected IntelliJ project as `projectPath`. Never pass the Edict worktree as
+`projectPath`; the worktree is repository data already loaded in the run context.
+
 The prompt supplies exactly one absolute path:
 
 - `Review config`: JSON manifest produced by `edict_next_get_new_inspection_results`.

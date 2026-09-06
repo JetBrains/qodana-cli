@@ -7,6 +7,9 @@ description: Sequentially assign prepared inbox Signals to durable clusters.
 
 Load only this skill. Do not read another Edict Next skill or edit the worktree directly. The stage budget is 120 minutes.
 
+For every Qodana MCP call, pass the inspected IntelliJ project as `projectPath`. Never pass the Edict worktree as
+`projectPath`; the worktree is repository data already loaded in the run context.
+
 ## Repository format
 
 For the `signalId` returned by `edict_next_next_signal`, read the Signal from:
