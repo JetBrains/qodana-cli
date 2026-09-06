@@ -7,6 +7,9 @@ description: Independently review one validated Edict Next inspection candidate 
 
 Load only this skill.
 
+For every Qodana MCP call, pass the inspected IntelliJ project as `projectPath`. Never pass the Edict worktree as
+`projectPath`; the worktree is repository data already loaded in the run context.
+
 ## Task contract
 
 Accept exactly one absolute path from the prompt:
