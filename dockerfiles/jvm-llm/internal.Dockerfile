@@ -21,7 +21,7 @@ RUN curl -fsSL https://claude.ai/install.sh | bash && \
 
 # Install socat for port forwarding
 RUN apt-get update \
-    && apt-get install -y --no-install-recommends socat \
+    && apt-get install -y --no-install-recommends python3 python3-venv socat \
     && rm -rf /var/lib/apt/lists/*
 
 LABEL maintainer="qodana-support@jetbrains.com" description="Qodana for JVM with Claude Code (https://jb.gg/qodana-jvm)"
