@@ -8,6 +8,9 @@ description: Run isolated generation workers for every frozen cluster target.
 Load only this skill. Ask to load the `edict-next-cluster-generation` skill in the first line of a fresh worker prompt. Do not edit
 the worktree or call cluster-processing MCPs yourself.
 
+For every Qodana MCP call, pass the inspected IntelliJ project as `projectPath`. Never pass the Edict worktree as
+`projectPath`; the worktree is repository data already loaded in the run context.
+
 Call `edict_next_get_generation_clusters`. This MCP returns the clusters to process and `maxConcurrentClusterTasks` value.
 
 Keep up to `maxConcurrentClusterTasks` workers active, launching the next cluster whenever any worker returns. Launch one fresh worker per
@@ -17,5 +20,5 @@ After every cluster has been started, wait for the remaining workers to return.
 
 Do not modify or repair repository changes made by workers. If you recognize any issue, flag it in the result for the
 parent agent. A worker may leave its cluster Pending or mark it Invalid for manual repair; neither is a stage failure.
-Return when all workers have returned. The stage budget is 395 minutes; wait in chunks of at most 60 minutes and stop at
+Return when all workers have returned. The stage budget is 695 minutes; wait in chunks of at most 60 minutes and stop at
 the deadline.

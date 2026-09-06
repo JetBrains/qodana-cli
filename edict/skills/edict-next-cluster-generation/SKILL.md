@@ -16,6 +16,9 @@ Process the supplied Pending cluster from its Signals into one of these reposito
 
 The prompt supplies `clusterId`, `clusterDirectory`, a private scratch directory, and the inspected project.
 
+For every Qodana MCP call, pass the inspected IntelliJ project as `projectPath`. Never pass the Edict worktree as
+`projectPath`; the worktree is repository data already loaded in the run context.
+
 # Allowed changes
 
 You may directly change only:
@@ -35,6 +38,11 @@ new id in every MCP call and inspection path; also rename an existing candidate 
 
 Do not load the `edict-next-code-example`, `edict-next-weak-signal-review`, or `edict-next-inspection-review` skills
 yourself. Ask a fresh worker to load the required skill and use only its returned artifact.
+
+The 120-minute cluster deadline starts with the first `edict_next_get_inspection_action` call and does not reset. Every
+later cluster MCP call uses the remaining time. If an MCP call reports `Cleanup current session to valid Pending state and
+stop generation`, stop child workers, leave the cluster and its artifacts in a structurally valid `Pending` state, and
+return without another MCP call.
 
 # Process
 
