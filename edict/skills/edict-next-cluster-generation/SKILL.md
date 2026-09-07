@@ -14,7 +14,10 @@ Process the supplied Pending cluster from its Signals into one of these reposito
 - `Invalid`: conflicting evidence or another specific cluster problem requires manual repair.
 - `Pending`: work is incomplete, but every repository artifact left behind is structurally valid and can be continued later.
 
-The prompt supplies `clusterId`, `clusterDirectory`, a private scratch directory, and the inspected project.
+The prompt supplies `clusterId`, `clusterDirectory`, the absolute worktree path, an absolute private scratch directory, and the
+inspected project.
+Before the first write or MCP call, resolve the worktree and private scratch paths. Return failure without changing the repository
+if the private scratch directory equals the worktree or is below it.
 
 For every Qodana MCP call, pass the inspected IntelliJ project as `projectPath`. Never pass the Edict worktree as
 `projectPath`; the worktree is repository data already loaded in the run context.
@@ -36,7 +39,8 @@ another cluster. Put all transient worker output in private scratch directory.
 Keep the cluster `Pending` and preserve `predecessorId` until a terminal transition. After renaming the cluster, use its
 new id in every MCP call and inspection path; also rename an existing candidate to the new candidate path.
 
-Do not load the `edict-next-code-example`, `edict-next-weak-signal-review`, or `edict-next-inspection-review` skills
+Do not load the `edict-next-code-example`, `edict-next-weak-signal-review`, `edict-next-inspection-code-review`, or
+`edict-next-inspection-value-review` skills
 yourself. Ask a fresh worker to load the required skill and use only its returned artifact.
 
 The 120-minute cluster deadline starts with the first `edict_next_get_inspection_action` call and does not reset. Every
@@ -85,8 +89,40 @@ representative positive and negative code examples whenever the relevant PSI str
 Write the candidate to `inspections/<clusterId>.candidate.kts`. Implement one general IntelliJ inspection for the shared
 problem. Never special-case example text, paths, names, or line numbers.
 
-Call `edict_next_validate_inspection(clusterId)`. Acceptance requires at least one positive example and 85% aggregate
-label accuracy.
+Generation constraints:
+
+- Use only the Inspection KTS API and define one `localInspection { ... }` implementation in this file.
+- Keep the complete inspection in this one file; add explicit imports only for symbols not provided by the Inspection KTS runtime.
+- Do not hard-code repository paths, filenames, line numbers, or other example-specific details.
+- Do not use data-flow analysis. If the rule requires it, apply the Discontinued transition.
+- Keep traversal bounded and file-local. Reference searches may use only this exact form:
+
+  ```kotlin
+  val searchScope = LocalSearchScope(file)
+  val references = ReferencesSearch.search(mainElement, searchScope).findAll()
+  ```
+
+  Do not use project-wide, module-wide, global, or other cross-file reference searches. If the rule requires such a search,
+  apply the Discontinued transition.
+- Prefer a semantically correct, realistically implementable inspection over a clever or brittle one.
+
+Ask a fresh worker to load `edict-next-inspection-code-review` before verification:
+
+```text
+Load the edict-next-inspection-code-review skill.
+
+Cluster directory: <clusterDirectory>
+Candidate inspection: <clusterDirectory>/../../inspections/<clusterId>.candidate.kts
+Inspected IntelliJ project: <inspected project path>
+Review output path: <privateScratchDirectory>/inspection-code-review.json
+```
+
+Read the review output. On `REJECT`, make the smallest suggested general correction and repeat the code review. If the
+review identifies a duplicate existing inspection or another specific cluster problem that cannot be fixed, apply the
+Invalid transition. If no coherent inspection can satisfy the Signals, apply the Discontinued transition.
+
+Only after code review is accepted, call `edict_next_validate_inspection(clusterId)`. Acceptance requires at least one positive
+example and 85% aggregate label accuracy.
 
 - On `REPAIR_INSPECTION`, repair the general predicate and validate again.
 - On `ANALYZE_PROJECT`, keep the exact validated candidate and continue.
@@ -106,19 +142,20 @@ Review config: <weak-signal-review-config path returned by the MCP>
 
 Read the returned summary. If it lists false-positive reports, read every report, repair the candidate's general predicate,
 validate it, call the MCP again for a fresh pair of manifests, and repeat this step after validation returns `ANALYZE_PROJECT`.
-If it lists no false positives, ask a fresh worker to load `edict-next-inspection-review`:
+If it lists no false positives, ask a fresh worker to load `edict-next-inspection-value-review`:
 
 ```text
-Load the edict-next-inspection-review skill.
+Load the edict-next-inspection-value-review skill.
 
 Review config: <inspection-review-config path returned by the MCP>
 ```
 
-- On `REJECT`, read the findings. Apply the Invalid transition for a duplicate existing inspection or another specific
-  cluster problem you cannot fix. Apply the Discontinued transition if the evidence proves that no coherent inspection
-  can satisfy the Signals. Otherwise, make the smallest suggested general corrections, then repeat validation and both reviews.
-- On `ACCEPT`, record the rule, attempts, reviews, achieved accuracy, and decision in history, then apply the Accepted
-  transition.
+- On value-review `REJECT`, read the findings. Apply the Invalid transition for a duplicate existing inspection or another
+  specific cluster problem you cannot fix. Apply the Discontinued transition if the evidence proves that no coherent
+  inspection can satisfy the Signals. Otherwise, make the smallest suggested general corrections, then repeat validation
+  and both reviews.
+- On value-review `ACCEPT`, record the rule, attempts, reviews, achieved accuracy, and decision in history, then apply the
+  Accepted transition.
 
 ## 5. Apply the terminal transition
 

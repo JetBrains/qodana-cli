@@ -11,13 +11,19 @@ call cluster-processing MCPs, or run tests yourself.
 For every Qodana MCP call, pass the inspected IntelliJ project as `projectPath`. Never pass the Edict worktree as
 `projectPath`; the worktree is repository data already loaded in the run context.
 
+Treat the supplied workspace as the shared parent directory for the run. Retain it after preparation. Pass the source
+repository only to the preparation worker.
+
 Run sequentially:
 
 1. Launch `edict-next-prepare` for up to 35 minutes. Pass the source repository, workspace, and inspected project supplied in the
-   run prompt. It creates the worktree and prepares all required context for the pipeline.
+   run prompt. It creates the worktree and prepares all required context for the pipeline. Retain both the supplied workspace path
+   and the returned worktree path.
 2. Launch `edict-next-distribution` for up to 120 minutes. After it returns, call
    `edict_next_validate_distribution` and stop on failure. Pass worktree path to the worker.
-3. Launch `edict-next-generation` for up to 695 minutes.
+3. Choose a unique absolute generation scratch root below the supplied workspace and outside the worktree. Pass the worktree path,
+   generation scratch root, and inspected project to `edict-next-generation`, then launch it for up to 695 minutes. Stop before
+   launch if the scratch root equals the worktree or is below it.
 4. Call the read-only `edict_next_validate_generation` for up to 40 minutes. Stop unless it returns `PUBLISH`.
 
 After successful validation, collect every Invalid cluster id and its manual-repair reason from `history.md`. Commit and
