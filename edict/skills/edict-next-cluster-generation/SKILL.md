@@ -10,8 +10,8 @@ description: Process one Pending Edict Next cluster through evidence, reuse, can
 Process the supplied Pending cluster from its Signals into one of these repository states:
 
 - `Generated`: one IntelliJ inspection handles every Signal and has passed example validation and project review.
-- `Discontinued`: sound cluster evidence shows that no coherent IntelliJ inspection can fit signal requirements.
-- `Invalid`: conflicting evidence or another specific cluster problem requires manual repair.
+- `Discontinued`: the cluster Signals are semantically incompatible and do not express one coherent code-quality rule.
+- `Invalid`: pipeline processing cannot continue because infrastructure/tooling failed or the cluster input/state is broken.
 - `Pending`: work is incomplete, but every repository artifact left behind is structurally valid and can be continued later.
 
 The prompt supplies `clusterId`, `clusterDirectory`, the absolute worktree path, an absolute private scratch directory, and the
@@ -47,6 +47,14 @@ The 120-minute cluster deadline starts with the first `edict_next_get_inspection
 later cluster MCP call uses the remaining time. If an MCP call reports `Cleanup current session to valid Pending state and
 stop generation`, stop child workers, leave the cluster and its artifacts in a structurally valid `Pending` state, and
 return without another MCP call.
+
+Use `Discontinued` if and only if exact Signal evidence proves that the Signals themselves have incompatible semantic
+requirements and therefore cannot belong to one coherent code-quality rule. Record the incompatible Signal ids and the
+semantic contradiction in history. Do not use `Discontinued` for implementation limits, missing or malformed evidence,
+duplicate Signals or inspections, tool or infrastructure failures, timeouts, rejected candidates, or any other pipeline limitation.
+Candidate failures, repeated poor decisions, and exhausted repair attempts do not by themselves prove `Invalid`. Keep repairing
+while time remains; leave the cluster `Pending` when the deadline stops work. Use `Invalid` only when a concrete
+infrastructure/tooling/capability failure or broken cluster input/state prevents further valid processing, and record that evidence.
 
 # Process
 
@@ -94,7 +102,8 @@ Generation constraints:
 - Use only the Inspection KTS API and define one `localInspection { ... }` implementation in this file.
 - Keep the complete inspection in this one file; add explicit imports only for symbols not provided by the Inspection KTS runtime.
 - Do not hard-code repository paths, filenames, line numbers, or other example-specific details.
-- Do not use data-flow analysis. If the rule requires it, apply the Discontinued transition.
+- Do not use data-flow analysis. If a semantically coherent rule requires it, apply the Invalid transition because the pipeline
+  cannot implement the rule under its constraints.
 - Keep traversal bounded and file-local. Reference searches may use only this exact form:
 
   ```kotlin
@@ -103,7 +112,7 @@ Generation constraints:
   ```
 
   Do not use project-wide, module-wide, global, or other cross-file reference searches. If the rule requires such a search,
-  apply the Discontinued transition.
+  apply the Invalid transition because the pipeline cannot implement the rule under its constraints.
 - Prefer a semantically correct, realistically implementable inspection over a clever or brittle one.
 
 Ask a fresh worker to load `edict-next-inspection-code-review` before verification:
@@ -119,15 +128,17 @@ Review output path: <privateScratchDirectory>/inspection-code-review.json
 
 Read the review output. On `REJECT`, make the smallest suggested general correction and repeat the code review. If the
 review identifies a duplicate existing inspection or another specific cluster problem that cannot be fixed, apply the
-Invalid transition. If no coherent inspection can satisfy the Signals, apply the Discontinued transition.
+Invalid transition. Apply the Discontinued transition only if the review identifies semantically incompatible Signals that
+cannot express one coherent code-quality rule.
 
 Only after code review is accepted, call `edict_next_validate_inspection(clusterId)`. Acceptance requires at least one positive
 example and 85% aggregate label accuracy.
 
 - On `REPAIR_INSPECTION`, repair the general predicate and validate again.
 - On `ANALYZE_PROJECT`, keep the exact validated candidate and continue.
-- If sound cluster evidence proves that no coherent PSI rule is feasible, record why and apply the Discontinued
-  transition. If a specific problem with the cluster itself prevents that decision, apply the Invalid transition instead.
+- If exact Signal evidence proves that the Signals are semantically incompatible, record the incompatible Signal ids and
+  contradiction, then apply the Discontinued transition. If the Signals express a coherent rule, continue repairing the candidate.
+  Apply the Invalid transition only when a concrete pipeline capability or tooling failure blocks further valid processing.
 
 ## 4. Review project findings
 
@@ -151,9 +162,10 @@ Review config: <inspection-review-config path returned by the MCP>
 ```
 
 - On value-review `REJECT`, read the findings. Apply the Invalid transition for a duplicate existing inspection or another
-  specific cluster problem you cannot fix. Apply the Discontinued transition if the evidence proves that no coherent
-  inspection can satisfy the Signals. Otherwise, make the smallest suggested general corrections, then repeat validation
-  and both reviews.
+  broken cluster state you cannot fix. Apply the Discontinued transition only if exact Signal evidence proves that the Signals
+  are semantically incompatible and cannot express one coherent code-quality rule. Otherwise, make the smallest suggested
+  general corrections, then repeat validation and both reviews. Repeated rejection does not justify `Invalid`; leave the cluster
+  `Pending` if the deadline stops further repair.
 - On value-review `ACCEPT`, record the rule, attempts, reviews, achieved accuracy, and decision in history, then apply the
   Accepted transition.
 
@@ -163,9 +175,9 @@ Review config: <inspection-review-config path returned by the MCP>
   and any distinct predecessor inspection; clear `predecessorId`; set the status to `Generated`.
 - **Reused:** move the predecessor inspection to `inspections/<clusterId>.inspection.kts` when the id changed; remove the
   candidate; clear `predecessorId`; set the status to `Generated`.
-- **Discontinued:** remove the candidate and predecessor/current inspection; clear `predecessorId`; set the status to
-  `Discontinued`.
-- **Invalid:** append the specific manual-repair reason to history and set the status to `Invalid`. Keep valid partial
-  artifacts and `predecessorId` unchanged, as for `Pending`.
+- **Discontinued:** append the incompatible Signal ids and their semantic contradiction to history; remove the candidate and
+  predecessor/current inspection; clear `predecessorId`; set the status to `Discontinued`.
+- **Invalid:** append the concrete infrastructure/tooling failure or broken cluster input/state to history and set the status
+  to `Invalid`. Keep valid partial artifacts and `predecessorId` unchanged, as for `Pending`.
 
 Return after the repository reaches the chosen state.

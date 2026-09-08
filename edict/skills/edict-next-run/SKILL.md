@@ -26,7 +26,8 @@ Run sequentially:
    launch if the scratch root equals the worktree or is below it.
 4. Call the read-only `edict_next_validate_generation` for up to 40 minutes. Stop unless it returns `PUBLISH`.
 
-After successful validation, collect every Invalid cluster id and its manual-repair reason from `history.md`. Commit and
-push the worktree, then let the Qodana script finish. Pending and Invalid clusters do not block publication. In the final
-response, list every Invalid cluster and its recorded reason. Wait in chunks of at most 60 minutes for stage workers and
+After successful validation, collect every Invalid cluster id and its recorded infrastructure/tooling or cluster-state failure
+from `history.md`. Commit and push the worktree, then let the Qodana script finish. Pending and Invalid clusters do not block
+publication. In the final response, list every Invalid cluster and its recorded reason. Wait in chunks of at most 60 minutes
+for stage workers and
 MCP calls and stop on a failed stage or timeout. The complete session budget is 900 minutes.
