@@ -12,20 +12,16 @@ For every Qodana MCP call, pass the inspected IntelliJ project as `projectPath`.
 
 ## Repository format
 
-For the `signalId` returned by `edict_next_next_signal`, read the Signal from:
-
-```text
-<worktree>/inbox/<signal-id>.json
-```
+`edict_next_next_signal` returns the complete stored JSON for the incoming Signal. Preserve it as the authority for the
+distribution decision; do not replace it with a summary.
 
 Here, a "neighbor" only means one of the smallest embedding distances in the retrieval corpus. It is a candidate for
-comparison, not a guarantee of semantic closeness or cluster compatibility. For a neighboring cluster returned by the
-MCP, read its description and the neighboring Signals assigned to it from:
+comparison, not a guarantee of semantic closeness or cluster compatibility. Before considering an existing cluster, call
+`edict_next_get_distribution_context` with `kind: "cluster"` and its id. It returns the complete stored cluster description
+and every member Signal JSON, including negative Signals. Loading only the description or nearest member is insufficient.
 
-```text
-<worktree>/clusters/<cluster-id>/description.json
-<worktree>/clusters/<cluster-id>/signals/<signal-id>.json
-```
+For a neighboring inbox Signal, call `edict_next_get_distribution_context` with `kind: "signal"` and its id when that
+comparison is useful. It returns the complete stored Signal JSON.
 
 `description.json` has this relevant shape:
 
@@ -54,6 +50,10 @@ A Signal JSON has this relevant shape:
 
 Only decision-relevant fields are shown; both files contain additional fields.
 
+The stored evidence should usually be sufficient. When its revision, diff, or expected range leaves source behavior
+ambiguous, inspect the repository at the exact recorded revision, for example with `get_file_at_ref`. Repository reads are
+read-only evidence gathering; distribution mutations must still go only through the Edict Next MCP tools.
+
 Treat the cluster description only as a navigation hint: it is derived from its Signals and may be close without fitting
 the new Signal exactly. Decide from the Signal payloads by asking: **Can the received Signal and every Signal already in
 this cluster be detected by the same IntelliJ inspection?** Assign it only when the answer is yes and the source language
@@ -63,7 +63,15 @@ inspection. Otherwise, create a new cluster whose id and description express the
 Repeat until `edict_next_next_signal` returns `STOP_DISTRIBUTION`:
 
 1. Call `edict_next_next_signal`.
-2. Choose a compatible existing cluster id, or choose a new kebab-case id and concise description.
-3. Call `edict_next_add_signal_to_cluster` with `signalId`, `clusterId`, and `newClusterDescription` only for a new id.
+2. Read the returned incoming Signal JSON. For each plausible existing cluster, call
+   `edict_next_get_distribution_context(kind: "cluster", id: "<cluster-id>")` and compare the incoming Signal against every
+   returned member Signal. Retrieve neighboring Signal context or exact-revision source only when it resolves a real ambiguity.
+3. Choose a compatible existing cluster id, or choose a new kebab-case id and concise description. Do not split an existing
+   cluster; cluster splitting is a manual repair outside this stage.
+4. Call `edict_next_add_signal_to_cluster` with `signalId`, `clusterId`, and `newClusterDescription` only for a new id. The MCP
+   rejects assignment to an existing cluster unless that cluster's context was successfully returned for the current Signal.
+   If it returns `added: false`, treat `summary` as decision feedback, correct the cluster choice, and retry the same
+   Signal. Do not call `edict_next_next_signal` while the Signal remains unassigned. Return a failed stage only when the
+   response does not describe a correctable distribution decision or the corrected attempt also fails.
 
 Signals are returned alphabetically and preparation selects at most 100. Return only after distribution is complete.
