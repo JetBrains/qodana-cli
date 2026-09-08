@@ -24,6 +24,7 @@ scratch root, and the inspected project path. Whenever any worker returns, immed
 waiting for the other active workers. After every cluster has been started, wait for the remaining workers to return.
 
 Do not modify or repair repository changes made by workers. If you recognize any issue, flag it in the result for the
-parent agent. A worker may leave its cluster Pending or mark it Invalid for manual repair; neither is a stage failure.
+parent agent. A worker may leave its cluster Pending or mark it Invalid because infrastructure/tooling or its cluster
+input/state is broken; neither is a stage failure.
 Return when all workers have returned. The stage budget is 695 minutes; wait in chunks of at most 60 minutes and stop at
 the deadline.
