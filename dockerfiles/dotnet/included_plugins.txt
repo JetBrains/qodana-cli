@@ -78,3 +78,4 @@ com.jetbrains.gateway
 com.jetbrains.rider.frontend
 com.intellij.dfa.analysis
 intellij.opengrep
+org.jetbrains.security.package-checker
