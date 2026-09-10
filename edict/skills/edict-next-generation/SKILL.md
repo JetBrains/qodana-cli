@@ -19,9 +19,10 @@ them in the worktree.
 Call `edict_next_get_generation_clusters`. This MCP returns the clusters to process and `maxConcurrentClusterTasks` value.
 
 Keep up to `maxConcurrentClusterTasks` workers active, launching the next cluster whenever any worker returns. Launch one fresh worker
-per cluster. Pass its `clusterId`, `clusterDirectory`, the worktree path, a unique private scratch directory below the generation
-scratch root, and the inspected project path. Whenever any worker returns, immediately launch the next unstarted cluster without
-waiting for the other active workers. After every cluster has been started, wait for the remaining workers to return.
+per cluster using **native** spawn_agent tool. Pass its `clusterId`, `clusterDirectory`, the worktree path, a unique private 
+scratch directory below the generation scratch root, and the inspected project path. Whenever any worker returns, 
+immediately launch the next unstarted cluster without waiting for the other active workers. After every cluster 
+has been started, wait for the remaining workers to return.
 
 Do not modify or repair repository changes made by workers. If you recognize any issue, flag it in the result for the
 parent agent. A worker may leave its cluster Pending or mark it Invalid because infrastructure/tooling or its cluster
