@@ -68,7 +68,7 @@ Keep the current id when it fits; otherwise rename the cluster before the first 
 `description.json` id together. Preserve `predecessorId`: it identifies the existing inspection under its old id until the terminal
 transition.
 
-For every Signal without `syntheticExampleId`, start a fresh worker with:
+For every Signal without `syntheticExampleId`, start a fresh worker (create with **native** spawn_agent tool) with:
 
 ```plaintext
 Load the <edict-next-code-example invocation call> skill.
@@ -115,7 +115,7 @@ Generation constraints:
   apply the Invalid transition because the pipeline cannot implement the rule under its constraints.
 - Prefer a semantically correct, realistically implementable inspection over a clever or brittle one.
 
-Ask a fresh worker to load `edict-next-inspection-code-review` before verification:
+Ask a fresh worker (create with **native** spawn_agent tool) to load `edict-next-inspection-code-review` before verification:
 
 ```text
 Load the edict-next-inspection-code-review skill.
@@ -142,8 +142,8 @@ example and 85% aggregate label accuracy.
 
 ## 4. Review project findings
 
-Call `edict_next_get_new_inspection_results(clusterId, privateScratchDirectory)` and wait up to 40m. Then ask a fresh worker to
-load `edict-next-weak-signal-review`:
+Call `edict_next_get_new_inspection_results(clusterId, privateScratchDirectory)` and wait up to 40m. Then ask a fresh worker (create with **native** spawn_agent tool)
+to load `edict-next-weak-signal-review`:
 
 ```text
 Load the edict-next-weak-signal-review skill.
@@ -153,7 +153,7 @@ Review config: <weak-signal-review-config path returned by the MCP>
 
 Read the returned summary. If it lists false-positive reports, read every report, repair the candidate's general predicate,
 validate it, call the MCP again for a fresh pair of manifests, and repeat this step after validation returns `ANALYZE_PROJECT`.
-If it lists no false positives, ask a fresh worker to load `edict-next-inspection-value-review`:
+If it lists no false positives, ask a fresh worker (create with **native** spawn_agent tool) to load `edict-next-inspection-value-review`:
 
 ```text
 Load the edict-next-inspection-value-review skill.

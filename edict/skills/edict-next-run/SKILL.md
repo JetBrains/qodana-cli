@@ -14,6 +14,8 @@ For every Qodana MCP call, pass the inspected IntelliJ project as `projectPath`.
 Treat the supplied workspace as the shared parent directory for the run. Retain it after preparation. Pass the source
 repository only to the preparation worker.
 
+Every fresh worker should be created with **native** spawn_agent tool.
+
 Run sequentially:
 
 1. Launch `edict-next-prepare` for up to 35 minutes. Pass the source repository, workspace, and inspected project supplied in the
