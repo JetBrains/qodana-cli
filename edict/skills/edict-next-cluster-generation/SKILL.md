@@ -39,9 +39,8 @@ another cluster. Put all transient worker output in private scratch directory.
 Keep the cluster `Pending` and preserve `predecessorId` until a terminal transition. After renaming the cluster, use its
 new id in every MCP call and inspection path; also rename an existing candidate to the new candidate path.
 
-Do not load the `edict-next-code-example`, `edict-next-weak-signal-review`, `edict-next-inspection-code-review`, or
-`edict-next-inspection-value-review` skills
-yourself. Ask a fresh worker to load the required skill and use only its returned artifact.
+Do not load the `edict-next-code-example`, `edict-next-weak-signal-review`, or `edict-next-inspection-code-review` skills yourself.
+Ask a fresh worker to load the required skill and use only its returned artifact.
 
 The 120-minute cluster deadline starts with the first `edict_next_get_inspection_action` call and does not reset. Every
 later cluster MCP call uses the remaining time. If an MCP call reports `Cleanup current session to valid Pending state and
@@ -51,7 +50,7 @@ return without another MCP call.
 Use `Discontinued` if and only if exact Signal evidence proves that the Signals themselves have incompatible semantic
 requirements and therefore cannot belong to one coherent code-quality rule. Record the incompatible Signal ids and the
 semantic contradiction in history. Do not use `Discontinued` for implementation limits, missing or malformed evidence,
-duplicate Signals or inspections, tool or infrastructure failures, timeouts, rejected candidates, or any other pipeline limitation.
+duplicate Signals, tool or infrastructure failures, timeouts, rejected candidates, or any other pipeline limitation.
 Candidate failures, repeated poor decisions, and exhausted repair attempts do not by themselves prove `Invalid`. Keep repairing
 while time remains; leave the cluster `Pending` when the deadline stops work. Use `Invalid` only when a concrete
 infrastructure/tooling/capability failure or broken cluster input/state prevents further valid processing, and record that evidence.
@@ -126,10 +125,9 @@ Inspected IntelliJ project: <inspected project path>
 Review output path: <privateScratchDirectory>/inspection-code-review.json
 ```
 
-Read the review output. On `REJECT`, make the smallest suggested general correction and repeat the code review. If the
-review identifies a duplicate existing inspection or another specific cluster problem that cannot be fixed, apply the
-Invalid transition. Apply the Discontinued transition only if the review identifies semantically incompatible Signals that
-cannot express one coherent code-quality rule.
+Read the review output. On `REJECT`, make the smallest suggested general correction and repeat the code review. If the review identifies
+a specific cluster problem that cannot be fixed, apply the Invalid transition. Apply the Discontinued transition only if the review
+identifies semantically incompatible Signals that cannot express one coherent code-quality rule.
 
 Only after code review is accepted, call `edict_next_validate_inspection(clusterId)`. Acceptance requires at least one positive
 example and 85% aggregate label accuracy.
@@ -153,21 +151,8 @@ Review config: <weak-signal-review-config path returned by the MCP>
 
 Read the returned summary. If it lists false-positive reports, read every report, repair the candidate's general predicate,
 validate it, call the MCP again for a fresh pair of manifests, and repeat this step after validation returns `ANALYZE_PROJECT`.
-If it lists no false positives, ask a fresh worker (create with **native** spawn_agent tool) to load `edict-next-inspection-value-review`:
-
-```text
-Load the edict-next-inspection-value-review skill.
-
-Review config: <inspection-review-config path returned by the MCP>
-```
-
-- On value-review `REJECT`, read the findings. Apply the Invalid transition for a duplicate existing inspection or another
-  broken cluster state you cannot fix. Apply the Discontinued transition only if exact Signal evidence proves that the Signals
-  are semantically incompatible and cannot express one coherent code-quality rule. Otherwise, make the smallest suggested
-  general corrections, then repeat validation and both reviews. Repeated rejection does not justify `Invalid`; leave the cluster
-  `Pending` if the deadline stops further repair.
-- On value-review `ACCEPT`, record the rule, attempts, reviews, achieved accuracy, and decision in history, then apply the
-  Accepted transition.
+If it lists no false positives, record the rule, attempts, review, achieved accuracy, and decision in history, then apply the
+Accepted transition.
 
 ## 5. Apply the terminal transition
 

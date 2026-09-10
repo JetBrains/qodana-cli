@@ -1,6 +1,6 @@
 ---
 name: edict-next-inspection-code-review
-description: Independently review one Edict Next inspection candidate for implementation, observability, novelty, and diagnostic quality before verification.
+description: Independently review one Edict Next inspection candidate for implementation, observability, and diagnostic quality before verification.
 ---
 
 # Edict Next Inspection Code Review
@@ -26,7 +26,7 @@ Do not edit the candidate, cluster, examples, inspected project, or repository. 
 1. **Observable predicate.** Confirm that local PSI, resolution, or bounded analysis can observe every fact the rule depends on.
    A local inspection cannot infer revision history, runtime state, architectural intent, or out-of-file mutation unless the candidate
    has a sound observable proxy. Require the implementation to prove every contextual qualifier in the rule.
-2**Traversal and search scope.** Require every traversal to be bounded and file-local. Reference searches must not use a project,
+2. **Traversal and search scope.** Require every traversal to be bounded and file-local. Reference searches must not use a project,
    module, global, or other cross-file scope. The only permitted reference-search form is:
 
    ```kotlin
@@ -36,10 +36,10 @@ Do not edit the candidate, cluster, examples, inspected project, or repository. 
 
    Reject any other `ReferencesSearch` usage. Reject inspections whose correctness or performance depends on resolving symbols,
    usages, or declarations outside the inspected file, or on other heavy cross-file analysis.
-3**Implementation quality and cost.** Check that helpers express auditable rule boundaries, syntax filters precede resolution or
+3. **Implementation quality and cost.** Check that helpers express auditable rule boundaries, syntax filters precede resolution or
    searches, and complexity is proportional to the semantic problem. Reject hard-coded seed details
    (e.g. exact files or line numbers) that do not represent a stable API or project contract.
-4**Diagnostic contract.** Ensure the rule ID is stable lowercase kebab-case, severity matches certainty, the finding highlights the fixable semantic unit, and the message and description state the implemented violation and an actually applicable remedy.
+4. **Diagnostic contract.** Ensure the rule ID is stable lowercase kebab-case, severity matches certainty, the finding highlights the fixable semantic unit, and the message and description state the implemented violation and an actually applicable remedy.
 
 ## Output contract
 
@@ -51,9 +51,9 @@ Write `Review output path` with exactly this shape:
   "findings": [
     {
       "severity": "BLOCKER|MAJOR|MINOR",
-      "category": "SPECIFICATION|DUPLICATION|VALUE|OBSERVABILITY|PRECISION|IMPLEMENTATION|COVERAGE|PERFORMANCE|DIAGNOSTIC",
+      "category": "SPECIFICATION|OBSERVABILITY|PRECISION|IMPLEMENTATION|COVERAGE|PERFORMANCE|DIAGNOSTIC",
       "description": "evidence-backed issue",
-      "evidence": ["artifact, source location, finding index, or existing inspection"],
+      "evidence": ["artifact, source location, or finding index"],
       "suggestion": "smallest general correction, or null when the finding cannot be fixed in the candidate"
     }
   ],
