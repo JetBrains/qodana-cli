@@ -124,9 +124,6 @@ type QodanaYaml struct {
 	// AnalyzeDevDependencies property whether to include dev dependencies in the analysis
 	AnalyzeDevDependencies bool `yaml:"analyzeDevDependencies,omitempty"`
 
-	// EnablePackageSearch property to start using package-search service for fetching license data for dependencies (only for jvm libraries)
-	EnablePackageSearch bool `yaml:"enablePackageSearch,omitempty"`
-
 	// RaiseLicenseProblems property to show license problems like other inspections.
 	RaiseLicenseProblems bool `yaml:"raiseLicenseProblems,omitempty"`
 }
