@@ -15,7 +15,7 @@ runs:
 
         # See https://docs.docker.com/engine/install/ubuntu/#install-using-the-repository
         sudo apt-get update
-        sudo apt-get install ca-certificates curl inotify-tools
+        sudo apt-get install -y ca-certificates curl
         sudo install -m 0755 -d /etc/apt/keyrings
         sudo curl -fsSL https://download.docker.com/linux/ubuntu/gpg -o /etc/apt/keyrings/docker.asc
         sudo chmod a+r /etc/apt/keyrings/docker.asc
@@ -29,7 +29,7 @@ runs:
 
     - name: Install Docker CLI
       shell: bash
-      run: sudo apt-get install docker-ce-cli
+      run: sudo apt-get install -y docker-ce-cli
 
     - name: Install Podman Engine
       shell: bash
@@ -57,10 +57,10 @@ runs:
         sudo rsync -av "${ARCHIVE_NAME}/etc/" /etc
         sudo rsync -av "${ARCHIVE_NAME}/usr/" /usr
 
-        # podman resolves its OCI runtime as /usr/bin/crun before the bundled
-        # /usr/local/bin/crun, so install the bundled binary there too. Otherwise
-        # podman silently runs whatever crun the runner image ships while
-        # `crun --version` reports the bundled one.
+        # podman searches /usr/bin/crun before the bundled /usr/local/bin/crun, so
+        # install the bundled binary there too. Otherwise podman silently runs
+        # whatever crun the runner image ships while `crun --version` reports the
+        # bundled one -- the wrong runtime, reported wrongly.
         sudo install -m 0755 "${ARCHIVE_NAME}/usr/local/bin/crun" /usr/bin/crun
         echo "crun version (/usr/bin/crun): $(/usr/bin/crun --version | head -1)"
 
@@ -74,40 +74,52 @@ runs:
         podman_version=$(sudo podman version --format="{{.Server.Version}}")
         podman_socket="/var/run/podman-${podman_version}.sock"
         service_log="/tmp/podman-system-service.log"
-        # inotifywait matches --include against the whole path, not the bare
-        # filename, so this must not be anchored at the start.
-        socket_regex="podman-${podman_version//./\\.}\.sock$"
-
-        # Watch for the socket before starting the service, so its creation cannot be
-        # missed. inotifywait announces "Watches established." once it is armed;
-        # blocking on that line is what makes this race-free without polling.
-        coproc socket_watch { inotifywait -e create --include "${socket_regex}" /var/run 2>&1; }
-        while IFS= read -r line <&"${socket_watch[0]}"; do
-          [[ "$line" == *"Watches established."* ]] && break
-        done
 
         sudo podman system service --time=0 "unix://${podman_socket}" >"${service_log}" 2>&1 &
         service_pid=$!
 
-        # Whichever comes first: the socket is created, or the service dies. Racing the
-        # two means a service that fails to start reports immediately instead of
-        # hanging until the job timeout.
-        wait -n "${socket_watch_PID}" "${service_pid}" || true
-
-        if [[ ! -S "${podman_socket}" ]]; then
-          echo "podman system service did not create ${podman_socket}."
-          echo "--- service log ---"; cat "${service_log}" || true
+        # Report why the engine never came up, then fail.
+        fail() {
+          echo "$1"
+          echo "--- podman system service log ---"; cat "${service_log}" || true
           echo "--- podman processes ---"; pgrep -a podman || echo "(none)"
           exit 1
-        fi
+        }
 
-        # Hand the socket to the runner user. The previous groupadd/usermod/`newgrp
-        # docker` dance replaced this shell, which also happened to delay the first
-        # readiness check long enough to paper over the polling bug fixed here.
+        # podman-static is built without systemd support, so there is no readiness
+        # notification to block on and the socket has to be waited for. The deadline
+        # is the failure bound surfaced to a human, not a synchronisation device: it
+        # only decides how long we let an engine that may never start hold the job.
+        #
+        # The previous helper set `exit_code` once *outside* its loop, so `||`
+        # short-circuiting on success never reset it. It could therefore only ever
+        # succeed if the very first attempt did -- which is what broke CI when podman
+        # 6.1.1 began binding its socket a few milliseconds later than 5.8.4.
+        deadline=$(( SECONDS + 60 ))
+        until [[ -S "${podman_socket}" ]]; do
+          kill -0 "${service_pid}" 2>/dev/null \
+            || fail "podman system service exited before creating ${podman_socket}."
+          (( SECONDS < deadline )) \
+            || fail "podman system service did not create ${podman_socket} within 60s."
+          sleep 0.1
+        done
+
         sudo chown "$(id -u):$(id -g)" "${podman_socket}"
 
         docker context create --docker "host=unix://${podman_socket}" "podman-${podman_version}"
         docker context use "podman-${podman_version}"
 
-        # The socket is listening, so this connects and blocks until the API serves it.
-        docker version --format 'Server: {{.Server.Version}}'
+        # The socket exists from bind(2), which precedes listen(2), so a connection
+        # can still be refused for a moment after it appears. It can also outlive a
+        # service killed without cleanup, so liveness is rechecked here too.
+        deadline=$(( SECONDS + 60 ))
+        until docker version --format 'Server: {{.Server.Version}}'; do
+          kill -0 "${service_pid}" 2>/dev/null \
+            || fail "podman system service died before serving the API."
+          (( SECONDS < deadline )) \
+            || fail "podman API on ${podman_socket} never became reachable."
+          sleep 0.1
+        done
+
+        # Surface startup warnings, which used to reach the log via the step's stdout.
+        echo "--- podman system service log ---"; cat "${service_log}" || true
