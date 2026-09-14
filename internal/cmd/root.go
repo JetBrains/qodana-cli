@@ -19,7 +19,6 @@ package cmd
 import (
 	"fmt"
 	"os"
-	"slices"
 
 	"github.com/JetBrains/qodana-cli/internal/core"
 	"github.com/JetBrains/qodana-cli/internal/platform/msg"
@@ -29,36 +28,6 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )
-
-// isHelpOrVersion checks if only help was requested.
-func isHelpOrVersion(args []string) bool {
-	return len(args) == 2 && (args[1] == "--help" || args[1] == "-h" || args[1] == "help" || args[1] == "--version" || args[1] == "-v")
-}
-
-func isCompletionRequested(args []string) bool {
-	return len(args) >= 2 && args[1] == "completion"
-}
-
-// isCommandRequested checks if any command is requested.
-func isCommandRequested(commands []*cobra.Command, args []string) string {
-	for _, c := range commands {
-		if slices.Contains(args, c.Name()) {
-			return c.Name()
-		}
-	}
-	return ""
-}
-
-// setDefaultCommandIfNeeded sets default scan command if no other command is requested.
-func setDefaultCommandIfNeeded(rootCmd *cobra.Command, args []string) {
-	if !isHelpOrVersion(args) && isCommandRequested(
-		rootCmd.Commands(),
-		args[1:],
-	) == "" && !isCompletionRequested(args) {
-		newArgs := append([]string{"scan"}, args[1:]...)
-		rootCmd.SetArgs(newArgs)
-	}
-}
 
 // Execute is a main CLI entrypoint: handles user interrupt, CLI start and everything else.
 func Execute() {
@@ -70,7 +39,6 @@ func Execute() {
 		msg.DisableColor()
 	}
 
-	setDefaultCommandIfNeeded(rootCommand, os.Args)
 	if err := rootCommand.Execute(); err != nil {
 		core.CheckForUpdates(version.Version)
 		_, err = fmt.Fprintf(os.Stderr, "error running command: %s\n", err)
