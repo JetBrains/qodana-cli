@@ -70,15 +70,18 @@ runs:
         set -euo pipefail
 
         # Only the two expected assignments are forwarded, so nothing else in the
-        # captured stdout can define an environment variable for later steps.
-        mapfile -t parsed <<< "${PARSED_VERSION}"
-        if (( ${#parsed[@]} < 2 )) \
-          || [[ "${parsed[0]}" != ENGINE_TYPE=* || "${parsed[1]}" != ENGINE_VERSION=* ]]; then
+        # captured stdout can define an environment variable for later steps. Read
+        # rather than `mapfile`, which is a bash 4 builtin: this action also runs on
+        # the macOS runners, where bash is 3.2.
+        engine_type=""
+        engine_version=""
+        { IFS= read -r engine_type || true; IFS= read -r engine_version || true; } <<< "${PARSED_VERSION}"
+        if [[ "${engine_type}" != ENGINE_TYPE=* || "${engine_version}" != ENGINE_VERSION=* ]]; then
           echo "::error::unexpected output from the version parser"
           printf '%s\n' "${PARSED_VERSION}"
           exit 1
         fi
-        printf '%s\n%s\n' "${parsed[0]}" "${parsed[1]}" >> "$GITHUB_ENV"
+        printf '%s\n%s\n' "${engine_type}" "${engine_version}" >> "$GITHUB_ENV"
 
     - name: Setup Docker
       if: env.ENGINE_TYPE == 'docker'
