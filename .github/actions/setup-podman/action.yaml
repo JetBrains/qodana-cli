@@ -13,6 +13,13 @@ runs:
       run: | # shell
         set -euo pipefail
 
+        # podman-static is a Linux tarball and every step below uses apt, so say so
+        # here rather than failing deep inside a package manager.
+        if [[ "$(uname -s)" != Linux ]]; then
+          echo "::error::setup-podman supports Linux runners only (got $(uname -s))"
+          exit 1
+        fi
+
         # See https://docs.docker.com/engine/install/ubuntu/#install-using-the-repository
         sudo apt-get update
         sudo apt-get install -y ca-certificates curl
@@ -29,10 +36,11 @@ runs:
 
     - name: Install Docker CLI
       shell: bash
-      # --no-install-recommends skips docker-buildx-plugin and docker-compose-plugin,
-      # which conflict with the runner's own moby-buildx. The runner's CLI is
-      # replaced either way, because moby-cli declares Conflicts/Replaces on
-      # docker-ce-cli.
+      # The image already has docker-ce-cli from download.docker.com but deletes the
+      # apt list and signing key afterwards, which is why the repository is re-added
+      # above. --no-install-recommends skips the buildx and compose plugin packages:
+      # the image supplies those as standalone binaries under
+      # /usr/libexec/docker/cli-plugins, and the podman row needs `docker compose`.
       run: sudo apt-get install -y --no-install-recommends docker-ce-cli
 
     - name: Install Podman Engine
@@ -54,6 +62,14 @@ runs:
         # etc/ are then rsynced over / as root below.
         if [[ ! "${VERSION}" =~ ^(latest|v?[0-9]+(\.[0-9]+)*)$ ]]; then
           echo "::error::unsupported podman version '${VERSION}'"
+          exit 1
+        fi
+
+        # podman-static only tags full versions, so a documented-but-partial value
+        # like 5.8 would 404 below and, worse, would later be compared against the
+        # resolved 5.8.4 and reported as a mismatch.
+        if [[ "${VERSION}" != "latest" && ! "${VERSION}" =~ ^v?[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+          echo "::error::podman needs a full major.minor.patch version or 'latest', got '${VERSION}'"
           exit 1
         fi
 
@@ -88,6 +104,10 @@ runs:
         # bundled binary there is therefore what stops podman running the runner
         # image's older crun. runc needs no equivalent: podman discovers crun first,
         # so the runner's runc is never selected.
+        if [[ ! -x "${ARCHIVE_NAME}/usr/local/bin/crun" ]]; then
+          echo "::error::the podman-static tarball has no usr/local/bin/crun to install"
+          exit 1
+        fi
         sudo install -m 0755 "${ARCHIVE_NAME}/usr/local/bin/crun" /usr/bin/crun
 
         sudo podman version
@@ -99,7 +119,8 @@ runs:
         # mis-resolved runtime and a silently wrong engine, so they fail hard.
         # Name first so the floor is applied to the runtime it describes; Version is
         # a multi-line banner, so it goes last.
-        runtime_info=$(sudo podman info --format '{{.Host.OCIRuntime.Name}}|{{.Host.OCIRuntime.Path}}|{{.Host.OCIRuntime.Version}}')
+        runtime_info=$(sudo podman info --format '{{.Host.OCIRuntime.Name}}|{{.Host.OCIRuntime.Path}}|{{.Host.OCIRuntime.Version}}') \
+          || { echo "::error::podman info failed; the engine cannot describe its runtime"; exit 1; }
         runtime_name="${runtime_info%%|*}"
         runtime_rest="${runtime_info#*|}"
         runtime_path="${runtime_rest%%|*}"
@@ -135,17 +156,21 @@ runs:
         socket_timeout=60
         api_timeout=60
 
-        podman_version=$(sudo podman version --format="{{.Server.Version}}")
-        if [[ -z "${podman_version}" ]]; then
-          echo "::error::could not determine the podman server version"
+        # `sudo podman` resolves through sudo's secure_path, and the runner image ships
+        # its own podman in /usr/bin while the tarball installs into /usr/local/bin.
+        # Asserting the resolved path covers `latest` too, where there is no expected
+        # version to compare against -- and `latest` is this action's default, so a
+        # version-only check would leave the common case unverified.
+        resolved_podman=$(sudo sh -c 'command -v podman') \
+          || { echo "::error::sudo cannot resolve podman at all"; exit 1; }
+        if [[ "${resolved_podman}" != "/usr/local/bin/podman" ]]; then
+          echo "::error::sudo resolves podman to ${resolved_podman}, not the installed /usr/local/bin/podman"
           exit 1
         fi
 
-        # `sudo podman` resolves through sudo's secure_path, and the runner image
-        # ships its own podman in /usr/bin while the tarball installs into
-        # /usr/local/bin. Without this, a change to that ordering would leave the
-        # download and rsync succeeding while the matrix silently exercised the
-        # runner's podman instead of the requested one.
+        podman_version=$(sudo podman version --format="{{.Server.Version}}") \
+          || { echo "::error::could not determine the podman server version"; exit 1; }
+
         if [[ "${VERSION}" != "latest" && "${podman_version}" != "${VERSION#v}" ]]; then
           echo "::error::requested podman ${VERSION#v} but ${podman_version} is what runs"
           exit 1
@@ -176,7 +201,9 @@ runs:
         fail() {
           echo "::error::$1"
           echo "--- podman system service log ---"; cat "${service_log}" || true
-          echo "--- last docker probe output ---"; cat "${probe_log}" || true
+          if [[ -s "${probe_log}" ]]; then
+            echo "--- last docker probe output ---"; cat "${probe_log}"
+          fi
           echo "--- podman processes ---"; pgrep -a podman || echo "(none)"
           exit 1
         }
