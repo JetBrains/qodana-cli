@@ -20,13 +20,19 @@ runs:
       run: | # shell
         set -euo pipefail
 
-        # podman-static ships a Linux tarball, and the docker CLI this relies on is
-        # preinstalled only on the Linux images. Say so here rather than failing
-        # obscurely inside tar or podman.
+        # podman-static publishes Linux tarballs only, so there is nothing to install
+        # elsewhere. Say so here rather than failing obscurely inside tar or podman.
         if [[ "$(uname -s)" != Linux ]]; then
           echo "::error::setup-podman supports Linux runners only (got $(uname -s))"
           exit 1
         fi
+
+        # This action no longer installs a docker CLI -- the Linux runner images ship
+        # one -- so the dependency is asserted rather than assumed. Without this, a
+        # runner lacking it starts a root podman service and then dies on a bare
+        # "docker: command not found", leaking the engine and the socket.
+        command -v docker >/dev/null \
+          || { echo "::error::setup-podman needs a preinstalled docker CLI"; exit 1; }
 
         # Ubuntu noble ships crun 1.14.1, below the 1.14.3 that podman's OCI specs
         # need, so installing the bundled runtime below is load-bearing.
@@ -81,16 +87,21 @@ runs:
 
         # Asserted *before* anything below trusts `sudo podman`. The runner ships its
         # own podman in /usr/bin, and installing the bundled crun over /usr/bin/crun
-        # means that podman would also report crun at the expected version -- so every
-        # check below would pass while describing an engine that never serves.
+        # means it would report crun at the expected version too, so the runtime gates
+        # alone cannot tell the two apart. For a pinned input the version check below
+        # would still catch it; for `latest` -- this action's default -- nothing would.
         # `cmp` rather than a version comparison, because `latest` has no expected
         # version and a path alone does not establish identity.
         resolved_podman=$(sudo sh -c 'command -v podman') \
           || { echo "::error::sudo cannot resolve podman at all"; exit 1; }
-        if ! sudo cmp -s "${resolved_podman}" "${ARCHIVE_NAME}/usr/local/bin/podman"; then
-          echo "::error::sudo resolves podman to ${resolved_podman}, which is not the binary just installed"
-          exit 1
-        fi
+        # cmp exits 1 for "differs" but 2 for an I/O error, which would otherwise be
+        # reported as a mismatch and send the reader hunting the wrong problem.
+        sudo cmp -s "${resolved_podman}" "${ARCHIVE_NAME}/usr/local/bin/podman" || case $? in
+          1) echo "::error::sudo resolves podman to ${resolved_podman}, which is not the binary just installed"
+             exit 1 ;;
+          *) echo "::error::could not compare ${resolved_podman} with the extracted podman binary"
+             exit 1 ;;
+        esac
 
         sudo podman version
 
@@ -141,16 +152,15 @@ runs:
         socket_timeout=60
         api_timeout=60
 
-        podman_version=$(sudo podman version --format="{{.Server.Version}}")
-        podman_socket="/var/run/podman-${podman_version}.sock"
-        context_name="podman-${podman_version}"
         # Unique names, so a second invocation in the same job cannot overwrite the
-        # first one's diagnostics.
-        service_log=$(mktemp "${RUNNER_TEMP:-/tmp}/podman-service.XXXXXX")
-        probe_log=$(mktemp "${RUNNER_TEMP:-/tmp}/docker-probe.XXXXXX")
+        # first one's diagnostics. Created before fail() because it reads them.
+        service_log=$(mktemp "${RUNNER_TEMP:-/tmp}/podman-service.XXXXXX") \
+          || { echo "::error::could not create a log file under ${RUNNER_TEMP:-/tmp}"; exit 1; }
+        probe_log=$(mktemp "${RUNNER_TEMP:-/tmp}/docker-probe.XXXXXX") \
+          || { echo "::error::could not create a log file under ${RUNNER_TEMP:-/tmp}"; exit 1; }
 
-        # Defined before anything that can fail, so a failure below always reports
-        # with the service log and process state rather than bare errexit.
+        # Defined before anything that can fail, so every failure below reports with
+        # the service log and process state rather than dying on bare errexit.
         fail() {
           echo "::error::$1"
           echo "--- podman system service log ---"; cat "${service_log}" || true
@@ -161,6 +171,11 @@ runs:
           exit 1
         }
 
+        podman_version=$(sudo podman version --format="{{.Server.Version}}") \
+          || fail "could not determine the podman server version"
+        podman_socket="/var/run/podman-${podman_version}.sock"
+        context_name="podman-${podman_version}"
+
         # A previous invocation in this job would still be serving this same
         # version-derived path, and removing the socket under it would leak an engine
         # that never exits (--time=0). Stop it first, then clear the socket so `-S`
@@ -168,7 +183,11 @@ runs:
         # file would otherwise satisfy the wait immediately, the chown would land on
         # that inode, and podman -- which unlinks a stale socket before binding --
         # would serve a fresh root-owned one the runner user cannot reach.
-        sudo pkill -f "podman system service .*${podman_socket}" || true
+        # The [p] bracket stops the pattern matching the argv of the `sudo pkill` that
+        # carries it -- otherwise sudo SIGTERMs itself, can be killed mid-enumeration,
+        # and always reports success. Dots are escaped so the version cannot glob.
+        stale_service_re="podman system service .*/var/run/[p]odman-${podman_version//./\\.}\.sock"
+        sudo pkill -f "${stale_service_re}" || true
         sudo rm -f "${podman_socket}"
 
         sudo podman system service --time=0 "unix://${podman_socket}" >"${service_log}" 2>&1 &
@@ -194,8 +213,8 @@ runs:
         # and connecting to a unix socket needs write, so this is what makes it usable.
         sudo chown "$(id -u):$(id -g)" "${podman_socket}"
 
-        # Leave the current context before removing it, so a failure between removal
-        # and creation cannot strand the CLI on a context that no longer exists.
+        # Required, not merely defensive: `docker context rm` refuses to remove the
+        # context that is currently in use.
         docker context use default >/dev/null
         if docker context inspect "${context_name}" >/dev/null 2>&1; then
           docker context rm -f "${context_name}" >/dev/null
@@ -205,12 +224,12 @@ runs:
 
         # The socket exists from bind(2), which precedes listen(2), so a connection is
         # refused -- exit 1, immediately -- until the API is actually serving. Every
-        # status is retried until the deadline: `timeout` passes the child's status
-        # through verbatim, so its 125/126/127 cannot be told apart from docker's own
-        # (docker uses 125 for daemon errors, which are transient during startup). A
-        # probe that can never succeed is caught by the liveness check and the
-        # deadline. -k also sends SIGKILL, so a probe ignoring SIGTERM cannot outlive
-        # its bound and hang the job.
+        # status is retried until the deadline: `docker ps` exits 1 when it cannot
+        # reach the daemon, which is the transient case, and `timeout` passes the
+        # child's status through verbatim so its own 125/126/127 cannot be told apart
+        # from the probe's. A probe that can never succeed is caught by the liveness
+        # check and the deadline instead. -k also sends SIGKILL, so a probe ignoring
+        # SIGTERM cannot outlive its bound and hang the job.
         deadline=$(( SECONDS + api_timeout ))
         until timeout -k 1 5 docker ps >"${probe_log}" 2>&1; do
           kill -0 "${service_pid}" 2>/dev/null \
