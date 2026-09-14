@@ -7,7 +7,9 @@ inputs:
     description: |
       Engine version of format [<type>@]<version>, where:
         - type: either "docker" or "podman" (default: docker)
-        - version: either "latest" or "[v]major[.minor[.patch]]" version of the engine.
+        - version: either "latest" or a "[v]major[.minor[.patch]]" version. Docker
+          accepts partial versions and resolves them to the newest match; podman
+          requires a full major.minor.patch, because podman-static only tags those.
 
       Default: docker@latest
 runs:

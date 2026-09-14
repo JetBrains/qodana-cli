@@ -1,48 +1,15 @@
 name: Setup Podman
-description: Install Podman
+description: Install Podman and point the Docker CLI at it
 inputs:
   version:
     required: true
     default: latest
-    description: Engine version
+    description: |
+      Either "latest" or a full "[v]major.minor.patch" version. podman-static only
+      tags full versions, so partial ones are rejected rather than 404ing.
 runs:
   using: composite
   steps:
-    - name: Set up Docker APT repository
-      shell: bash
-      run: | # shell
-        set -euo pipefail
-
-        # podman-static is a Linux tarball and every step below uses apt, so say so
-        # here rather than failing deep inside a package manager.
-        if [[ "$(uname -s)" != Linux ]]; then
-          echo "::error::setup-podman supports Linux runners only (got $(uname -s))"
-          exit 1
-        fi
-
-        # See https://docs.docker.com/engine/install/ubuntu/#install-using-the-repository
-        sudo apt-get update
-        sudo apt-get install -y ca-certificates curl
-        sudo install -m 0755 -d /etc/apt/keyrings
-        sudo curl -fsSL https://download.docker.com/linux/ubuntu/gpg -o /etc/apt/keyrings/docker.asc
-        sudo chmod a+r /etc/apt/keyrings/docker.asc
-
-        # Add the repository to Apt sources:
-        echo \
-          "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/ubuntu \
-          $(. /etc/os-release && echo "${UBUNTU_CODENAME:-$VERSION_CODENAME}") stable" | \
-          sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
-        sudo apt-get update
-
-    - name: Install Docker CLI
-      shell: bash
-      # The image already has docker-ce-cli from download.docker.com but deletes the
-      # apt list and signing key afterwards, which is why the repository is re-added
-      # above. --no-install-recommends skips the buildx and compose plugin packages:
-      # the image supplies those as standalone binaries under
-      # /usr/libexec/docker/cli-plugins, and the podman row needs `docker compose`.
-      run: sudo apt-get install -y --no-install-recommends docker-ce-cli
-
     - name: Install Podman Engine
       shell: bash
       # Passed through the environment rather than interpolated into the script: this
@@ -53,21 +20,22 @@ runs:
       run: | # shell
         set -euo pipefail
 
-        # Ubuntu noble ships crun 1.14.1, below the 1.14.3 that podman's OCI specs
-        # need, so the bundled runtime below is load-bearing rather than cosmetic.
-        CRUN_MIN_VERSION="1.14.3"
-
-        # Validated before it reaches the URL: curl resolves `..`, so an unchecked
-        # version could point the download at an arbitrary repository whose usr/ and
-        # etc/ are then rsynced over / as root below.
-        if [[ ! "${VERSION}" =~ ^(latest|v?[0-9]+(\.[0-9]+)*)$ ]]; then
-          echo "::error::unsupported podman version '${VERSION}'"
+        # podman-static ships a Linux tarball, and the docker CLI this relies on is
+        # preinstalled only on the Linux images. Say so here rather than failing
+        # obscurely inside tar or podman.
+        if [[ "$(uname -s)" != Linux ]]; then
+          echo "::error::setup-podman supports Linux runners only (got $(uname -s))"
           exit 1
         fi
 
-        # podman-static only tags full versions, so a documented-but-partial value
-        # like 5.8 would 404 below and, worse, would later be compared against the
-        # resolved 5.8.4 and reported as a mismatch.
+        # Ubuntu noble ships crun 1.14.1, below the 1.14.3 that podman's OCI specs
+        # need, so installing the bundled runtime below is load-bearing.
+        CRUN_MIN_VERSION="1.14.3"
+
+        # Gates the download URL: curl resolves `..`, so an unvalidated version could
+        # point this at an arbitrary repository whose usr/ and etc/ are then rsynced
+        # over / as root. Only `latest` or a full version is admitted, which is also
+        # all podman-static tags.
         if [[ "${VERSION}" != "latest" && ! "${VERSION}" =~ ^v?[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
           echo "::error::podman needs a full major.minor.patch version or 'latest', got '${VERSION}'"
           exit 1
@@ -84,41 +52,60 @@ runs:
         curl -fSL --retry 3 --retry-delay 5 "${BASE_URL}/${ARCHIVE_NAME}.tar.gz" -o "${ARCHIVE_FILE}"
 
         if ! gzip -t "${ARCHIVE_FILE}" 2>/dev/null; then
-          echo "Error: Downloaded file is not a valid gzip archive"
+          echo "::error::downloaded file is not a valid gzip archive"
           file "${ARCHIVE_FILE}"
           exit 1
         fi
 
         cd /tmp
         # Cleared first: tar does not remove files a previous extraction left behind,
-        # and everything under here is rsynced over / as root. Runner-owned, since
-        # the unprivileged tar below creates it.
+        # and everything under here is rsynced over / as root. Runner-owned, since the
+        # unprivileged tar below creates it.
         rm -rf "/tmp/${ARCHIVE_NAME}"
         tar -xzf "${ARCHIVE_FILE}"
+        for required in usr/local/bin/podman usr/local/bin/crun; do
+          if [[ ! -x "${ARCHIVE_NAME}/${required}" ]]; then
+            echo "::error::the podman-static tarball has no ${required}"
+            exit 1
+          fi
+        done
         sudo rsync -av "${ARCHIVE_NAME}/etc/" /etc
         sudo rsync -av "${ARCHIVE_NAME}/usr/" /usr
 
         # podman resolves its OCI runtime from absolute path lists in
         # [engine.runtimes], not from PATH, and for crun that list tries
-        # /usr/bin/crun before the bundled /usr/local/bin/crun. Installing the
-        # bundled binary there is therefore what stops podman running the runner
-        # image's older crun. runc needs no equivalent: podman discovers crun first,
-        # so the runner's runc is never selected.
-        if [[ ! -x "${ARCHIVE_NAME}/usr/local/bin/crun" ]]; then
-          echo "::error::the podman-static tarball has no usr/local/bin/crun to install"
+        # /usr/bin/crun before the bundled /usr/local/bin/crun. Installing the bundled
+        # binary there is what stops podman running the runner image's older crun.
+        # runc needs no equivalent: podman discovers crun first.
+        sudo install -m 0755 "${ARCHIVE_NAME}/usr/local/bin/crun" /usr/bin/crun
+
+        # Asserted *before* anything below trusts `sudo podman`. The runner ships its
+        # own podman in /usr/bin, and installing the bundled crun over /usr/bin/crun
+        # means that podman would also report crun at the expected version -- so every
+        # check below would pass while describing an engine that never serves.
+        # `cmp` rather than a version comparison, because `latest` has no expected
+        # version and a path alone does not establish identity.
+        resolved_podman=$(sudo sh -c 'command -v podman') \
+          || { echo "::error::sudo cannot resolve podman at all"; exit 1; }
+        if ! sudo cmp -s "${resolved_podman}" "${ARCHIVE_NAME}/usr/local/bin/podman"; then
+          echo "::error::sudo resolves podman to ${resolved_podman}, which is not the binary just installed"
           exit 1
         fi
-        sudo install -m 0755 "${ARCHIVE_NAME}/usr/local/bin/crun" /usr/bin/crun
 
         sudo podman version
 
-        # The tarball's containers.conf sets only cgroup_manager and events_logger --
-        # it does not pin runtime="crun" -- so the runtime is discovered at run time,
-        # and `rsync` without --delete leaves any pre-existing /etc/containers in
-        # place. These checks are therefore the only thing standing between a
-        # mis-resolved runtime and a silently wrong engine, so they fail hard.
-        # Name first so the floor is applied to the runtime it describes; Version is
-        # a multi-line banner, so it goes last.
+        podman_version=$(sudo podman version --format="{{.Server.Version}}") \
+          || { echo "::error::could not determine the podman server version"; exit 1; }
+        if [[ "${VERSION}" != "latest" && "${podman_version}" != "${VERSION#v}" ]]; then
+          echo "::error::requested podman ${VERSION#v} but ${podman_version} is what runs"
+          exit 1
+        fi
+
+        # Defence in depth on the runtime. The tarball's containers.conf does not pin
+        # runtime="crun", so podman discovers it at run time; these gates are what turn
+        # a mis-discovery into a failure rather than a silently wrong engine. Name
+        # first so the floor applies to the runtime it describes; Version is a
+        # multi-line banner, so it goes last.
         runtime_info=$(sudo podman info --format '{{.Host.OCIRuntime.Name}}|{{.Host.OCIRuntime.Path}}|{{.Host.OCIRuntime.Version}}') \
           || { echo "::error::podman info failed; the engine cannot describe its runtime"; exit 1; }
         runtime_name="${runtime_info%%|*}"
@@ -129,7 +116,7 @@ runs:
         echo "${runtime_version}"
 
         # Matched on the literal "crun version " prefix, which is what excludes the
-        # banner's OCI `spec:` version; the pattern itself is deliberately unanchored.
+        # banner's OCI `spec:` version.
         crun_version_re='crun version ([0-9]+\.[0-9]+(\.[0-9]+)?)'
         if [[ "${runtime_name}" != crun ]]; then
           echo "::error::podman resolved ${runtime_name} at ${runtime_path}, not the bundled crun"
@@ -146,8 +133,6 @@ runs:
 
     - shell: bash
       name: Start Podman Engine
-      env:
-        VERSION: ${{ inputs.version }}
       run: | # shell
         set -euo pipefail
 
@@ -156,26 +141,7 @@ runs:
         socket_timeout=60
         api_timeout=60
 
-        # `sudo podman` resolves through sudo's secure_path, and the runner image ships
-        # its own podman in /usr/bin while the tarball installs into /usr/local/bin.
-        # Asserting the resolved path covers `latest` too, where there is no expected
-        # version to compare against -- and `latest` is this action's default, so a
-        # version-only check would leave the common case unverified.
-        resolved_podman=$(sudo sh -c 'command -v podman') \
-          || { echo "::error::sudo cannot resolve podman at all"; exit 1; }
-        if [[ "${resolved_podman}" != "/usr/local/bin/podman" ]]; then
-          echo "::error::sudo resolves podman to ${resolved_podman}, not the installed /usr/local/bin/podman"
-          exit 1
-        fi
-
-        podman_version=$(sudo podman version --format="{{.Server.Version}}") \
-          || { echo "::error::could not determine the podman server version"; exit 1; }
-
-        if [[ "${VERSION}" != "latest" && "${podman_version}" != "${VERSION#v}" ]]; then
-          echo "::error::requested podman ${VERSION#v} but ${podman_version} is what runs"
-          exit 1
-        fi
-
+        podman_version=$(sudo podman version --format="{{.Server.Version}}")
         podman_socket="/var/run/podman-${podman_version}.sock"
         context_name="podman-${podman_version}"
         # Unique names, so a second invocation in the same job cannot overwrite the
@@ -183,21 +149,8 @@ runs:
         service_log=$(mktemp "${RUNNER_TEMP:-/tmp}/podman-service.XXXXXX")
         probe_log=$(mktemp "${RUNNER_TEMP:-/tmp}/docker-probe.XXXXXX")
 
-        # Removed before starting, so `-S` below can only become true from podman's
-        # own bind(2). A leftover socket would otherwise satisfy the wait at once,
-        # the chown would land on that inode, and podman -- which unlinks a stale
-        # socket before binding -- would then serve a fresh root-owned one the runner
-        # user cannot reach, failing 60s later as if the API were at fault.
-        sudo rm -f "${podman_socket}"
-
-        sudo podman system service --time=0 "unix://${podman_socket}" >"${service_log}" 2>&1 &
-        # sudo waits for the engine and exits with its status, so this pid standing
-        # means precisely "the engine has not exited". It also exists from the moment
-        # the job is backgrounded, whereas podman itself only appears once sudo has
-        # forked and exec'd it -- testing for podman alone fails inside that window.
-        service_pid=$!
-
-        # Detail is printed as plain lines: a newline would truncate an annotation.
+        # Defined before anything that can fail, so a failure below always reports
+        # with the service log and process state rather than bare errexit.
         fail() {
           echo "::error::$1"
           echo "--- podman system service log ---"; cat "${service_log}" || true
@@ -207,6 +160,23 @@ runs:
           echo "--- podman processes ---"; pgrep -a podman || echo "(none)"
           exit 1
         }
+
+        # A previous invocation in this job would still be serving this same
+        # version-derived path, and removing the socket under it would leak an engine
+        # that never exits (--time=0). Stop it first, then clear the socket so `-S`
+        # below can only become true from the new engine's own bind(2): a leftover
+        # file would otherwise satisfy the wait immediately, the chown would land on
+        # that inode, and podman -- which unlinks a stale socket before binding --
+        # would serve a fresh root-owned one the runner user cannot reach.
+        sudo pkill -f "podman system service .*${podman_socket}" || true
+        sudo rm -f "${podman_socket}"
+
+        sudo podman system service --time=0 "unix://${podman_socket}" >"${service_log}" 2>&1 &
+        # sudo waits for the engine and exits with its status, so this pid standing
+        # means precisely "the engine has not exited". It also exists from the moment
+        # the job is backgrounded, whereas podman itself only appears once sudo has
+        # forked and exec'd it -- testing for podman alone fails inside that window.
+        service_pid=$!
 
         # podman-static is built without systemd support, so `systemctl` cannot be
         # used to await readiness here. The deadline is the failure bound reported to
@@ -221,8 +191,7 @@ runs:
         done
 
         # podman creates the socket root-owned and not writable by the runner user,
-        # and connecting to a unix socket needs write, so this is what makes it
-        # usable.
+        # and connecting to a unix socket needs write, so this is what makes it usable.
         sudo chown "$(id -u):$(id -g)" "${podman_socket}"
 
         # Leave the current context before removing it, so a failure between removal
@@ -236,28 +205,25 @@ runs:
 
         # The socket exists from bind(2), which precedes listen(2), so a connection is
         # refused -- exit 1, immediately -- until the API is actually serving. Every
-        # status is retried until this loop's own deadline: `timeout` passes the
-        # child's status through verbatim, so its 125/126/127 cannot be told apart
-        # from docker's own (docker uses 125 for daemon errors, which are transient
-        # during startup). -k also sends SIGKILL, so a probe that ignores SIGTERM
-        # cannot outlive its bound and hang the job.
+        # status is retried until the deadline: `timeout` passes the child's status
+        # through verbatim, so its 125/126/127 cannot be told apart from docker's own
+        # (docker uses 125 for daemon errors, which are transient during startup). A
+        # probe that can never succeed is caught by the liveness check and the
+        # deadline. -k also sends SIGKILL, so a probe ignoring SIGTERM cannot outlive
+        # its bound and hang the job.
         deadline=$(( SECONDS + api_timeout ))
         until timeout -k 1 5 docker ps >"${probe_log}" 2>&1; do
           kill -0 "${service_pid}" 2>/dev/null \
             || fail "podman system service died before serving the API"
-          if (( SECONDS >= deadline )); then
-            # Authoritative: the engine may have become ready since the last probe.
-            timeout -k 1 5 docker ps >"${probe_log}" 2>&1 && break
-            fail "podman API on ${podman_socket} was unreachable for ${api_timeout}s"
-          fi
+          (( SECONDS < deadline )) \
+            || fail "podman API on ${podman_socket} was unreachable for ${api_timeout}s"
           sleep 0.5
         done
 
         # The CLI resolves DOCKER_HOST ahead of the selected context, so without this
-        # assertion a job with DOCKER_HOST set would silently talk to the runner's own
-        # dockerd and pass while never touching podman. Routed through fail() so a
-        # non-zero `docker version` prints the diagnostics rather than dying at the
-        # assignment under errexit.
+        # a job with DOCKER_HOST set would silently talk to the runner's own dockerd
+        # and pass while never touching podman. Routed through fail() so a non-zero
+        # `docker version` prints diagnostics rather than dying at the assignment.
         server_version=$(docker version --format '{{.Server.Version}}') \
           || fail "docker version failed against ${podman_socket}"
         if [[ "${server_version}" != "${podman_version}" ]]; then
