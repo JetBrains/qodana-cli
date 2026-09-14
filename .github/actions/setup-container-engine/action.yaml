@@ -77,6 +77,12 @@ runs:
         engine_type=""
         engine_version=""
         { IFS= read -r engine_type || true; IFS= read -r engine_version || true; } <<< "${PARSED_VERSION}"
+        # Python emits CRLF on the Windows runners, which also run this step. The
+        # runner happens to strip a trailing CR from GITHUB_ENV today; stripping it
+        # here means a change to that behaviour cannot silently leave both engine
+        # `if:` conditions false and skip setup altogether.
+        engine_type="${engine_type%$'\r'}"
+        engine_version="${engine_version%$'\r'}"
         if [[ "${engine_type}" != ENGINE_TYPE=* || "${engine_version}" != ENGINE_VERSION=* ]]; then
           echo "::error::unexpected output from the version parser"
           printf '%s\n' "${PARSED_VERSION}"
