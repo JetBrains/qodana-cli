@@ -27,10 +27,10 @@ runs:
           exit 1
         fi
 
-        # This action no longer installs a docker CLI -- the Linux runner images ship
-        # one -- so the dependency is asserted rather than assumed. Without this, a
-        # runner lacking it starts a root podman service and then dies on a bare
-        # "docker: command not found", leaking the engine and the socket.
+        # The Linux runner images ship a docker CLI, so the dependency is asserted
+        # rather than assumed. Without this, a runner lacking it starts a root podman
+        # service and then dies on a bare "docker: command not found", leaking the
+        # engine and the socket.
         command -v docker >/dev/null \
           || { echo "::error::setup-podman needs a preinstalled docker CLI"; exit 1; }
 
@@ -165,7 +165,7 @@ runs:
           echo "::error::$1"
           echo "--- podman system service log ---"; cat "${service_log}" || true
           if [[ -s "${probe_log}" ]]; then
-            echo "--- last docker probe output ---"; cat "${probe_log}"
+            echo "--- last docker probe output ---"; cat "${probe_log}" || true
           fi
           echo "--- podman processes ---"; pgrep -a podman || echo "(none)"
           exit 1
@@ -187,8 +187,24 @@ runs:
         # carries it -- otherwise sudo SIGTERMs itself, can be killed mid-enumeration,
         # and always reports success. Dots are escaped so the version cannot glob.
         stale_service_re="podman system service .*/var/run/[p]odman-${podman_version//./\\.}\.sock"
-        sudo pkill -f "${stale_service_re}" || true
-        sudo rm -f "${podman_socket}"
+        pkill_status=0
+        sudo pkill -f "${stale_service_re}" || pkill_status=$?
+        case "${pkill_status}" in
+          0)
+            # pkill only signals. Wait for the old engine to actually exit: its
+            # listener unlinks the socket path by name on close, so a still-shutting-
+            # down service would delete the socket the new engine binds below.
+            stale_deadline=$(( SECONDS + 30 ))
+            while sudo pgrep -f "${stale_service_re}" >/dev/null; do
+              (( SECONDS < stale_deadline )) \
+                || fail "a previous podman service on ${podman_socket} would not exit"
+              sleep 0.1
+            done
+            ;;
+          1) : ;;  # nothing matched, which is the normal case
+          *) fail "pkill failed looking for a previous podman service (exit ${pkill_status})" ;;
+        esac
+        sudo rm -f "${podman_socket}" || fail "could not remove a stale ${podman_socket}"
 
         sudo podman system service --time=0 "unix://${podman_socket}" >"${service_log}" 2>&1 &
         # sudo waits for the engine and exits with its status, so this pid standing
@@ -215,12 +231,16 @@ runs:
 
         # Required, not merely defensive: `docker context rm` refuses to remove the
         # context that is currently in use.
-        docker context use default >/dev/null
+        docker context use default >/dev/null \
+          || fail "could not switch to the default docker context"
         if docker context inspect "${context_name}" >/dev/null 2>&1; then
-          docker context rm -f "${context_name}" >/dev/null
+          docker context rm -f "${context_name}" >/dev/null \
+            || fail "could not remove the existing ${context_name} docker context"
         fi
-        docker context create --docker "host=unix://${podman_socket}" "${context_name}"
-        docker context use "${context_name}"
+        docker context create --docker "host=unix://${podman_socket}" "${context_name}" \
+          || fail "could not create the ${context_name} docker context"
+        docker context use "${context_name}" \
+          || fail "could not select the ${context_name} docker context"
 
         # The socket exists from bind(2), which precedes listen(2), so a connection is
         # refused -- exit 1, immediately -- until the API is actually serving. Every

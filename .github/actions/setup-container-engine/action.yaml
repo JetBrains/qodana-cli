@@ -92,6 +92,17 @@ runs:
         fi
         printf '%s\n%s\n' "${engine_type}" "${engine_version}" >> "$GITHUB_ENV"
 
+    - name: Verify an engine was selected
+      shell: bash
+      # Both steps below are gated on ENGINE_TYPE, so a value that is neither would
+      # skip both and report success having installed no container engine at all.
+      run: | # shell
+        set -euo pipefail
+        case "${ENGINE_TYPE:-}" in
+          docker|podman) echo "container engine: ${ENGINE_TYPE} ${ENGINE_VERSION}" ;;
+          *) echo "::error::no container engine selected (ENGINE_TYPE='${ENGINE_TYPE:-}')"; exit 1 ;;
+        esac
+
     - name: Setup Docker
       if: env.ENGINE_TYPE == 'docker'
       uses: ./.github/actions/setup-docker
