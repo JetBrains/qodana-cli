@@ -15,7 +15,7 @@ runs:
 
         # See https://docs.docker.com/engine/install/ubuntu/#install-using-the-repository
         sudo apt-get update
-        sudo apt-get install ca-certificates curl
+        sudo apt-get install ca-certificates curl inotify-tools
         sudo install -m 0755 -d /etc/apt/keyrings
         sudo curl -fsSL https://download.docker.com/linux/ubuntu/gpg -o /etc/apt/keyrings/docker.asc
         sudo chmod a+r /etc/apt/keyrings/docker.asc
@@ -59,8 +59,8 @@ runs:
 
         # podman resolves its OCI runtime as /usr/bin/crun before the bundled
         # /usr/local/bin/crun, so install the bundled binary there too. Otherwise
-        # podman silently runs whatever crun the runner image happens to ship
-        # while `crun --version` reports the bundled one.
+        # podman silently runs whatever crun the runner image ships while
+        # `crun --version` reports the bundled one.
         sudo install -m 0755 "${ARCHIVE_NAME}/usr/local/bin/crun" /usr/bin/crun
         echo "crun version (/usr/bin/crun): $(/usr/bin/crun --version | head -1)"
 
@@ -69,54 +69,43 @@ runs:
     - shell: bash
       name: Start Podman Engine
       run: | # shell
+        set -euo pipefail
+
         podman_version=$(sudo podman version --format="{{.Server.Version}}")
-        export podman_socket="/var/run/podman-${podman_version}.sock"
+        podman_socket="/var/run/podman-${podman_version}.sock"
         service_log="/tmp/podman-system-service.log"
+        socket_regex="^podman-${podman_version//./\\.}\.sock$"
 
-        export TIMEOUT=$(($(date +%s) + 30))  # 30 seconds in the future
-        function await() {
-          exit_code=0
-          echo "Polling: $@" >&2
-          while true; do
-            if (( $(date +%s) >= $TIMEOUT )); then
-              echo "Timeout reached!" >&2
-              return 1
-            fi
-
-            "$@" || exit_code=$?
-            if [[ $exit_code == 0 ]]; then
-              break
-            fi
-
-            sleep 1
-          done
-        }
+        # Watch for the socket before starting the service, so its creation cannot be
+        # missed. inotifywait announces "Watches established." once it is armed;
+        # blocking on that line is what makes this race-free without polling.
+        coproc socket_watch { inotifywait -e create --include "${socket_regex}" /var/run 2>&1; }
+        while IFS= read -r line <&"${socket_watch[0]}"; do
+          [[ "$line" == *"Watches established."* ]] && break
+        done
 
         sudo podman system service --time=0 "unix://${podman_socket}" >"${service_log}" 2>&1 &
+        service_pid=$!
 
-        # Await socket creation
-        if ! await test -S "${podman_socket}"; then
+        # Whichever comes first: the socket is created, or the service dies. Racing the
+        # two means a service that fails to start reports immediately instead of
+        # hanging until the job timeout.
+        wait -n "${socket_watch_PID}" "${service_pid}" || true
+
+        if [[ ! -S "${podman_socket}" ]]; then
           echo "podman system service did not create ${podman_socket}."
           echo "--- service log ---"; cat "${service_log}" || true
           echo "--- podman processes ---"; pgrep -a podman || echo "(none)"
-          echo "--- sockets ---"; sudo ls -la /var/run/podman* /run/podman* 2>&1 || true
-          echo "--- foreground probe (podman's own idle timeout ends it) ---"
-          sudo podman --log-level=debug system service --time=1 "unix:///var/run/podman-probe.sock" 2>&1 | tail -40
           exit 1
         fi
 
-        # Hand the socket to the runner user directly. The previous
-        # groupadd/usermod/`newgrp docker` dance replaced this shell, which hung up
-        # the backgrounded service: podman <= 5 ignored the resulting SIGHUP, podman
-        # >= 6 exits on it, silently leaving no socket behind.
+        # Hand the socket to the runner user. The previous groupadd/usermod/`newgrp
+        # docker` dance replaced this shell, which also happened to delay the first
+        # readiness check long enough to paper over the polling bug fixed here.
         sudo chown "$(id -u):$(id -g)" "${podman_socket}"
 
         docker context create --docker "host=unix://${podman_socket}" "podman-${podman_version}"
         docker context use "podman-${podman_version}"
 
-        # Await start of engine
-        await docker ps
-
-    - name: Podman version
-      shell: bash
-      run: docker version --format '{{.Server.Version}}'
+        # The socket is listening, so this connects and blocks until the API serves it.
+        docker version --format 'Server: {{.Server.Version}}'
