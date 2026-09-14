@@ -478,6 +478,23 @@ func TestNoCache(t *testing.T) {
 	})
 }
 
+func TestCreateReportServer(t *testing.T) {
+	reportDir := t.TempDir()
+	err := os.WriteFile(filepath.Join(reportDir, "index.html"), []byte("Qodana report"), 0o644)
+	assert.NoError(t, err)
+
+	server := createReportServer(reportDir, 18080)
+	assert.Equal(t, "127.0.0.1:18080", server.Addr)
+
+	req := httptest.NewRequest(http.MethodGet, "/", nil)
+	rr := httptest.NewRecorder()
+	server.Handler.ServeHTTP(rr, req)
+
+	assert.Equal(t, http.StatusOK, rr.Code)
+	assert.Equal(t, "Qodana report", rr.Body.String())
+	assert.Equal(t, "no-cache, private, max-age=0", rr.Header().Get("Cache-Control"))
+}
+
 func TestComputeId_SymlinkSameDir(t *testing.T) {
 	tmp := t.TempDir()
 	tmp, err := filepath.EvalSymlinks(tmp) // handle macOS /var -> /private/var
