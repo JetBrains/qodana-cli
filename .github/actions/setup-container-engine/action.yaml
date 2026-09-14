@@ -27,14 +27,15 @@ runs:
           import re
           import sys
 
-          version_string = os.getenv("INPUT_VERSION")
-          if version_string is None and len(sys.argv) > 1:
-            version_string = sys.argv[1]
+          # Stripped because `container-engine` is a free-text workflow_dispatch
+          # input, so a trailing space or newline is easy to introduce and would
+          # otherwise be rejected as an unrecognized version.
+          version_string = os.getenv("INPUT_VERSION", "").strip()
           if not version_string:
             print("No engine version given", file=sys.stderr)
             sys.exit(1)
 
-          parts = version_string.lower().split("@", 1)
+          parts = [part.strip() for part in version_string.lower().split("@", 1)]
 
           if len(parts) == 1:
             engine = "docker"
