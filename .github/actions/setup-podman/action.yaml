@@ -96,8 +96,12 @@ runs:
 
         # Await socket creation
         if ! await test -S "${podman_socket}"; then
-          echo "podman system service did not create ${podman_socket}. Its output was:"
-          cat "${service_log}" || true
+          echo "podman system service did not create ${podman_socket}."
+          echo "--- service log ---"; cat "${service_log}" || true
+          echo "--- podman processes ---"; pgrep -a podman || echo "(none)"
+          echo "--- sockets ---"; sudo ls -la /var/run/podman* /run/podman* 2>&1 || true
+          echo "--- foreground probe (podman's own idle timeout ends it) ---"
+          sudo podman --log-level=debug system service --time=1 "unix:///var/run/podman-probe.sock" 2>&1 | tail -40
           exit 1
         fi
 
