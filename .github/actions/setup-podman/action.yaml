@@ -57,15 +57,12 @@ runs:
         sudo rsync -av "${ARCHIVE_NAME}/etc/" /etc
         sudo rsync -av "${ARCHIVE_NAME}/usr/" /usr
 
-        # podman-static bundles crun, but it may be too old for the OCI spec
-        # version that modern podman generates (needs crun >= 1.14.3).
-        # Ubuntu 24.04 ships 1.14.1, so fetch a recent binary from GitHub.
-        CRUN_VERSION="1.20"
-        curl -fSL --retry 3 --retry-delay 5 \
-          "https://github.com/containers/crun/releases/download/${CRUN_VERSION}/crun-${CRUN_VERSION}-linux-$(dpkg --print-architecture)" \
-          -o /tmp/crun
-        sudo install -m 0755 /tmp/crun /usr/bin/crun
-        echo "crun version: $(crun --version | head -1)"
+        # podman resolves its OCI runtime as /usr/bin/crun before the bundled
+        # /usr/local/bin/crun, so install the bundled binary there too. Otherwise
+        # podman silently runs whatever crun the runner image happens to ship
+        # while `crun --version` reports the bundled one.
+        sudo install -m 0755 "${ARCHIVE_NAME}/usr/local/bin/crun" /usr/bin/crun
+        echo "crun version (/usr/bin/crun): $(/usr/bin/crun --version | head -1)"
 
         sudo podman version
 
@@ -74,6 +71,7 @@ runs:
       run: | # shell
         podman_version=$(sudo podman version --format="{{.Server.Version}}")
         export podman_socket="/var/run/podman-${podman_version}.sock"
+        service_log="/tmp/podman-system-service.log"
 
         export TIMEOUT=$(($(date +%s) + 30))  # 30 seconds in the future
         function await() {
@@ -94,16 +92,20 @@ runs:
           done
         }
 
-        sudo podman system service --time=0 "unix://${podman_socket}" &
-
-        sudo groupadd -f docker
-        sudo usermod -aG docker $USER
-        newgrp docker
+        sudo podman system service --time=0 "unix://${podman_socket}" >"${service_log}" 2>&1 &
 
         # Await socket creation
-        await test -S "${podman_socket}"
-        sudo chgrp docker "${podman_socket}"
-        sudo chmod 660 "${podman_socket}"
+        if ! await test -S "${podman_socket}"; then
+          echo "podman system service did not create ${podman_socket}. Its output was:"
+          cat "${service_log}" || true
+          exit 1
+        fi
+
+        # Hand the socket to the runner user directly. The previous
+        # groupadd/usermod/`newgrp docker` dance replaced this shell, which hung up
+        # the backgrounded service: podman <= 5 ignored the resulting SIGHUP, podman
+        # >= 6 exits on it, silently leaving no socket behind.
+        sudo chown "$(id -u):$(id -g)" "${podman_socket}"
 
         docker context create --docker "host=unix://${podman_socket}" "podman-${podman_version}"
         docker context use "podman-${podman_version}"
