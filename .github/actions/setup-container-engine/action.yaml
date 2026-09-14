@@ -27,7 +27,13 @@ runs:
           import re
           import sys
 
-          version_string = os.getenv("INPUT_VERSION") or sys.argv[1]
+          version_string = os.getenv("INPUT_VERSION")
+          if version_string is None and len(sys.argv) > 1:
+            version_string = sys.argv[1]
+          if not version_string:
+            print("No engine version given", file=sys.stderr)
+            sys.exit(1)
+
           parts = version_string.lower().split("@", 1)
 
           if len(parts) == 1:
@@ -45,7 +51,9 @@ runs:
           # a download URL, and this action is reachable from a workflow_dispatch
           # input. Anything but a plain version -- metacharacters, newlines, path
           # traversal -- is rejected here rather than at each of those sinks.
-          if not re.fullmatch(r"latest|v?\d+(\.\d+)*", version):
+          # [0-9] rather than \d, which also accepts non-ASCII digits that would then
+          # reach the URL.
+          if not re.fullmatch(r"latest|v?[0-9]+(\.[0-9]+)*", version):
             print(f"Unrecognized engine version '{version}'", file=sys.stderr)
             sys.exit(1)
 
@@ -58,7 +66,19 @@ runs:
       # crafted version rather than write it.
       env:
         PARSED_VERSION: ${{ steps.parse-version.outputs.stdout }}
-      run: printf '%s\n' "${PARSED_VERSION}" >> "$GITHUB_ENV"
+      run: | # shell
+        set -euo pipefail
+
+        # Only the two expected assignments are forwarded, so nothing else in the
+        # captured stdout can define an environment variable for later steps.
+        mapfile -t parsed <<< "${PARSED_VERSION}"
+        if (( ${#parsed[@]} < 2 )) \
+          || [[ "${parsed[0]}" != ENGINE_TYPE=* || "${parsed[1]}" != ENGINE_VERSION=* ]]; then
+          echo "::error::unexpected output from the version parser"
+          printf '%s\n' "${PARSED_VERSION}"
+          exit 1
+        fi
+        printf '%s\n%s\n' "${parsed[0]}" "${parsed[1]}" >> "$GITHUB_ENV"
 
     - name: Setup Docker
       if: env.ENGINE_TYPE == 'docker'
