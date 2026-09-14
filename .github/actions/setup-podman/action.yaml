@@ -33,12 +33,17 @@ runs:
 
     - name: Install Podman Engine
       shell: bash
+      # Passed through the environment rather than interpolated into the script,
+      # which would let a crafted `version` run arbitrary commands: this action is
+      # reachable from a `workflow_dispatch` input, not only from the fixed matrix.
+      env:
+        VERSION: ${{ inputs.version }}
       run: | # shell
         set -euo pipefail
 
         BASE_URL="https://github.com/mgoltzsche/podman-static/releases/latest/download"
-        if [[ "${{ inputs.version }}" != "latest" ]]; then
-          BASE_URL="https://github.com/mgoltzsche/podman-static/releases/download/v${{ inputs.version }}"
+        if [[ "${VERSION}" != "latest" ]]; then
+          BASE_URL="https://github.com/mgoltzsche/podman-static/releases/download/v${VERSION}"
         fi
 
         ARCHIVE_NAME="podman-linux-$(dpkg --print-architecture)"
@@ -60,15 +65,13 @@ runs:
         # podman searches /usr/bin/crun before the bundled /usr/local/bin/crun, so
         # install the bundled binary there too. Otherwise podman silently runs
         # whatever crun the runner image ships while `crun --version` reports the
-        # bundled one -- the wrong runtime, reported wrongly. Using the bundled
-        # binary also keeps crun at the version podman-static built against, well
-        # above the 1.14.3 that podman's OCI specs require.
+        # bundled one -- the wrong runtime, reported wrongly.
         sudo install -m 0755 "${ARCHIVE_NAME}/usr/local/bin/crun" /usr/bin/crun
 
-        # Assigned rather than inlined into echo, so a failing pipeline under
-        # `pipefail` aborts the step instead of printing a truncated version.
-        crun_version=$(/usr/bin/crun --version | head -1)
-        echo "crun in use (/usr/bin/crun): ${crun_version}"
+        # Trimmed in the shell rather than with `| head -1`: head exits after the
+        # first line, and the resulting SIGPIPE would fail the step under pipefail.
+        crun_version=$(/usr/bin/crun --version)
+        echo "crun in use (/usr/bin/crun): ${crun_version%%$'\n'*}"
 
         sudo podman version
 
@@ -86,8 +89,18 @@ runs:
         fi
         podman_socket="/var/run/podman-${podman_version}.sock"
         service_log="/tmp/podman-system-service.log"
+        probe_log="/tmp/docker-probe.log"
+
+        # podman binds with a plain net.Listen and never unlinks a stale socket, so
+        # a leftover file would make the new service exit with "address already in
+        # use" while the -S test below is already satisfied.
+        sudo rm -f "${podman_socket}"
 
         sudo podman system service --time=0 "unix://${podman_socket}" >"${service_log}" 2>&1 &
+        # sudo waits for the engine and exits with its status, so this pid standing
+        # means precisely "the engine has not exited". It also exists from the moment
+        # the job is backgrounded, whereas podman itself only appears once sudo has
+        # forked and exec'd it -- testing for podman alone fails inside that window.
         service_pid=$!
 
         fail() {
@@ -97,37 +110,12 @@ runs:
           exit 1
         }
 
-        # `sudo` runs the engine under a monitor process, because Ubuntu sets
-        # `Defaults use_pty`, so the backgrounded pid is sudo's rather than podman's
-        # and outlives it. Identify the engine by the socket it was told to serve,
-        # then confirm via comm that it is podman itself: the sudo front-end carries
-        # the same arguments on its command line, and the runner image ships an
-        # unrelated podman of its own.
-        engine_running() {
-          local pid
-          for pid in $(pgrep -f "system service .*${podman_socket}" 2>/dev/null); do
-            if [[ "$(cat "/proc/${pid}/comm" 2>/dev/null)" == podman ]]; then
-              return 0
-            fi
-          done
-          return 1
-        }
-
-        # Either process standing means the engine has not failed. The sudo pid
-        # exists the instant the job is backgrounded, whereas podman itself only
-        # appears once sudo has forked and exec'd it -- a window of a few
-        # milliseconds. Testing for podman alone declares failure inside that
-        # window, which is intermittent and looks exactly like a dead engine.
-        engine_alive() {
-          kill -0 "${service_pid}" 2>/dev/null || engine_running
-        }
-
         # podman-static is built without systemd support, so there is no readiness
         # notification to block on. The deadline is the failure bound reported to a
         # human, not a synchronisation device.
         deadline=$(( SECONDS + startup_timeout ))
         until [[ -S "${podman_socket}" ]]; do
-          engine_alive || [[ -S "${podman_socket}" ]] \
+          kill -0 "${service_pid}" 2>/dev/null || [[ -S "${podman_socket}" ]] \
             || fail "podman system service exited before creating ${podman_socket}."
           (( SECONDS < deadline )) \
             || fail "podman system service did not create ${podman_socket} within ${startup_timeout}s."
@@ -136,27 +124,31 @@ runs:
 
         sudo chown "$(id -u):$(id -g)" "${podman_socket}"
 
-        docker context create --docker "host=unix://${podman_socket}" "podman-${podman_version}" \
-          || docker context update --docker "host=unix://${podman_socket}" "podman-${podman_version}"
+        # Recreated rather than reused: an existing context of this name can carry
+        # unrelated TLS or kubernetes metadata that `context update` would preserve.
+        docker context rm -f "podman-${podman_version}" >/dev/null 2>&1 || true
+        docker context create --docker "host=unix://${podman_socket}" "podman-${podman_version}"
         docker context use "podman-${podman_version}"
 
         # The socket exists from bind(2), which precedes listen(2), so the API can
-        # refuse a connection briefly after the socket appears. `docker ps` rather
-        # than `docker version`, because it exercises the engine instead of just the
-        # HTTP mux. Each probe is bounded: the docker CLI applies no timeout of its
-        # own, so an engine that accepts but never answers would otherwise hold the
-        # job until it is killed, with none of the diagnostics below.
+        # refuse a connection briefly after the socket appears. Each probe is bounded
+        # because the docker CLI applies no timeout of its own, and its output is
+        # kept so a permanent error is reported as itself rather than as a timeout.
         deadline=$(( SECONDS + startup_timeout ))
-        until timeout 5 docker ps >/dev/null 2>&1; do
-          engine_alive || fail "podman system service died before serving the API."
+        until timeout 5 docker ps >"${probe_log}" 2>&1; do
+          probe_status=$?
+          case "${probe_status}" in
+            126|127) fail "docker CLI is unusable (exit ${probe_status}): $(cat "${probe_log}")" ;;
+          esac
+          kill -0 "${service_pid}" 2>/dev/null \
+            || fail "podman system service died before serving the API: $(cat "${probe_log}")"
           if (( SECONDS >= deadline )); then
-            echo "--- final docker ps attempt ---"
-            timeout 5 docker ps || true
-            fail "podman API on ${podman_socket} did not become reachable within ${startup_timeout}s."
+            # Authoritative: the engine may have become ready since the last probe.
+            timeout 5 docker ps && break
+            fail "podman API on ${podman_socket} was unreachable for ${startup_timeout}s: $(cat "${probe_log}")"
           fi
           sleep 0.5
         done
 
-        # Startup output only; anything logged later stays in ${service_log}.
-        echo "--- podman system service log ---"; cat "${service_log}" || true
+        echo "--- podman system service startup log ---"; cat "${service_log}" || true
         docker version --format 'Server: {{.Server.Version}}'
