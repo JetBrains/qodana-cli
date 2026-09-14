@@ -60,9 +60,15 @@ runs:
         # podman searches /usr/bin/crun before the bundled /usr/local/bin/crun, so
         # install the bundled binary there too. Otherwise podman silently runs
         # whatever crun the runner image ships while `crun --version` reports the
-        # bundled one -- the wrong runtime, reported wrongly.
+        # bundled one -- the wrong runtime, reported wrongly. Using the bundled
+        # binary also keeps crun at the version podman-static built against, well
+        # above the 1.14.3 that podman's OCI specs require.
         sudo install -m 0755 "${ARCHIVE_NAME}/usr/local/bin/crun" /usr/bin/crun
-        echo "crun version (/usr/bin/crun): $(/usr/bin/crun --version | head -1)"
+
+        # Assigned rather than inlined into echo, so a failing pipeline under
+        # `pipefail` aborts the step instead of printing a truncated version.
+        crun_version=$(/usr/bin/crun --version | head -1)
+        echo "crun in use (/usr/bin/crun): ${crun_version}"
 
         sudo podman version
 
@@ -71,55 +77,76 @@ runs:
       run: | # shell
         set -euo pipefail
 
+        startup_timeout=60
+
         podman_version=$(sudo podman version --format="{{.Server.Version}}")
+        if [[ -z "${podman_version}" ]]; then
+          echo "::error::could not determine the podman server version"
+          exit 1
+        fi
         podman_socket="/var/run/podman-${podman_version}.sock"
         service_log="/tmp/podman-system-service.log"
 
         sudo podman system service --time=0 "unix://${podman_socket}" >"${service_log}" 2>&1 &
-        service_pid=$!
 
-        # Report why the engine never came up, then fail.
         fail() {
-          echo "$1"
+          echo "::error::$1"
           echo "--- podman system service log ---"; cat "${service_log}" || true
           echo "--- podman processes ---"; pgrep -a podman || echo "(none)"
           exit 1
         }
 
+        # `sudo` runs the engine under a monitor process, because Ubuntu sets
+        # `Defaults use_pty`, so the backgrounded pid is sudo's rather than podman's
+        # and outlives it. Identify the engine by the socket it was told to serve,
+        # then confirm via comm that it is podman itself: the sudo front-end carries
+        # the same arguments on its command line, and the runner image ships an
+        # unrelated podman of its own.
+        engine_running() {
+          local pid
+          for pid in $(pgrep -f "system service .*${podman_socket}" 2>/dev/null); do
+            if [[ "$(cat "/proc/${pid}/comm" 2>/dev/null)" == podman ]]; then
+              return 0
+            fi
+          done
+          return 1
+        }
+
         # podman-static is built without systemd support, so there is no readiness
-        # notification to block on and the socket has to be waited for. The deadline
-        # is the failure bound surfaced to a human, not a synchronisation device: it
-        # only decides how long we let an engine that may never start hold the job.
-        #
-        # The previous helper set `exit_code` once *outside* its loop, so `||`
-        # short-circuiting on success never reset it. It could therefore only ever
-        # succeed if the very first attempt did -- which is what broke CI when podman
-        # 6.1.1 began binding its socket a few milliseconds later than 5.8.4.
-        deadline=$(( SECONDS + 60 ))
+        # notification to block on. The deadline is the failure bound reported to a
+        # human, not a synchronisation device.
+        deadline=$(( SECONDS + startup_timeout ))
         until [[ -S "${podman_socket}" ]]; do
-          kill -0 "${service_pid}" 2>/dev/null \
+          engine_running || [[ -S "${podman_socket}" ]] \
             || fail "podman system service exited before creating ${podman_socket}."
           (( SECONDS < deadline )) \
-            || fail "podman system service did not create ${podman_socket} within 60s."
+            || fail "podman system service did not create ${podman_socket} within ${startup_timeout}s."
           sleep 0.1
         done
 
         sudo chown "$(id -u):$(id -g)" "${podman_socket}"
 
-        docker context create --docker "host=unix://${podman_socket}" "podman-${podman_version}"
+        docker context create --docker "host=unix://${podman_socket}" "podman-${podman_version}" \
+          || docker context update --docker "host=unix://${podman_socket}" "podman-${podman_version}"
         docker context use "podman-${podman_version}"
 
-        # The socket exists from bind(2), which precedes listen(2), so a connection
-        # can still be refused for a moment after it appears. It can also outlive a
-        # service killed without cleanup, so liveness is rechecked here too.
-        deadline=$(( SECONDS + 60 ))
-        until docker version --format 'Server: {{.Server.Version}}'; do
-          kill -0 "${service_pid}" 2>/dev/null \
-            || fail "podman system service died before serving the API."
-          (( SECONDS < deadline )) \
-            || fail "podman API on ${podman_socket} never became reachable."
-          sleep 0.1
+        # The socket exists from bind(2), which precedes listen(2), so the API can
+        # refuse a connection briefly after the socket appears. `docker ps` rather
+        # than `docker version`, because it exercises the engine instead of just the
+        # HTTP mux. Each probe is bounded: the docker CLI applies no timeout of its
+        # own, so an engine that accepts but never answers would otherwise hold the
+        # job until it is killed, with none of the diagnostics below.
+        deadline=$(( SECONDS + startup_timeout ))
+        until timeout 5 docker ps >/dev/null 2>&1; do
+          engine_running || fail "podman system service died before serving the API."
+          if (( SECONDS >= deadline )); then
+            echo "--- final docker ps attempt ---"
+            timeout 5 docker ps || true
+            fail "podman API on ${podman_socket} did not become reachable within ${startup_timeout}s."
+          fi
+          sleep 0.5
         done
 
-        # Surface startup warnings, which used to reach the log via the step's stdout.
+        # Startup output only; anything logged later stays in ${service_log}.
         echo "--- podman system service log ---"; cat "${service_log}" || true
+        docker version --format 'Server: {{.Server.Version}}'
