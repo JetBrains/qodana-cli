@@ -88,6 +88,7 @@ runs:
         service_log="/tmp/podman-system-service.log"
 
         sudo podman system service --time=0 "unix://${podman_socket}" >"${service_log}" 2>&1 &
+        service_pid=$!
 
         fail() {
           echo "::error::$1"
@@ -112,12 +113,21 @@ runs:
           return 1
         }
 
+        # Either process standing means the engine has not failed. The sudo pid
+        # exists the instant the job is backgrounded, whereas podman itself only
+        # appears once sudo has forked and exec'd it -- a window of a few
+        # milliseconds. Testing for podman alone declares failure inside that
+        # window, which is intermittent and looks exactly like a dead engine.
+        engine_alive() {
+          kill -0 "${service_pid}" 2>/dev/null || engine_running
+        }
+
         # podman-static is built without systemd support, so there is no readiness
         # notification to block on. The deadline is the failure bound reported to a
         # human, not a synchronisation device.
         deadline=$(( SECONDS + startup_timeout ))
         until [[ -S "${podman_socket}" ]]; do
-          engine_running || [[ -S "${podman_socket}" ]] \
+          engine_alive || [[ -S "${podman_socket}" ]] \
             || fail "podman system service exited before creating ${podman_socket}."
           (( SECONDS < deadline )) \
             || fail "podman system service did not create ${podman_socket} within ${startup_timeout}s."
@@ -138,7 +148,7 @@ runs:
         # job until it is killed, with none of the diagnostics below.
         deadline=$(( SECONDS + startup_timeout ))
         until timeout 5 docker ps >/dev/null 2>&1; do
-          engine_running || fail "podman system service died before serving the API."
+          engine_alive || fail "podman system service died before serving the API."
           if (( SECONDS >= deadline )); then
             echo "--- final docker ps attempt ---"
             timeout 5 docker ps || true
