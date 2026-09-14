@@ -74,7 +74,9 @@ runs:
         podman_version=$(sudo podman version --format="{{.Server.Version}}")
         podman_socket="/var/run/podman-${podman_version}.sock"
         service_log="/tmp/podman-system-service.log"
-        socket_regex="^podman-${podman_version//./\\.}\.sock$"
+        # inotifywait matches --include against the whole path, not the bare
+        # filename, so this must not be anchored at the start.
+        socket_regex="podman-${podman_version//./\\.}\.sock$"
 
         # Watch for the socket before starting the service, so its creation cannot be
         # missed. inotifywait announces "Watches established." once it is armed;
