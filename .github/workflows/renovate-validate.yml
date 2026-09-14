@@ -1,0 +1,31 @@
+name: '🤖 Renovate'
+on:
+  pull_request:
+    paths:
+      - '.github/renovate.json5'
+      - '.github/workflows/renovate-validate.yml'
+  push:
+    branches:
+      - main
+    paths:
+      - '.github/renovate.json5'
+      - '.github/workflows/renovate-validate.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    name: validate config
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Validate Renovate config
+        # No path arg: auto-discovery validates .github/renovate.json5 as a repository config
+        # (the mode Renovate actually consumes it in), not as a global config.
+        run: npx --yes --package renovate@43.227.0 renovate-config-validator --strict
