@@ -33,17 +33,28 @@ runs:
 
     - name: Install Podman Engine
       shell: bash
-      # Passed through the environment rather than interpolated into the script,
-      # which would let a crafted `version` run arbitrary commands: this action is
-      # reachable from a `workflow_dispatch` input, not only from the fixed matrix.
+      # Passed through the environment rather than interpolated into the script: this
+      # action is reachable from a workflow_dispatch input, so a crafted version would
+      # otherwise run as a command.
       env:
         VERSION: ${{ inputs.version }}
       run: | # shell
         set -euo pipefail
 
+        # podman generates OCI specs that this runtime version or newer can read.
+        CRUN_MIN_VERSION="1.14.3"
+
+        # Validated before it reaches the URL: curl resolves `..`, so an unchecked
+        # version could point the download at an arbitrary repository whose usr/ and
+        # etc/ are then rsynced over / as root below.
+        if [[ ! "${VERSION}" =~ ^(latest|v?[0-9]+(\.[0-9]+)*)$ ]]; then
+          echo "::error::unsupported podman version '${VERSION}'"
+          exit 1
+        fi
+
         BASE_URL="https://github.com/mgoltzsche/podman-static/releases/latest/download"
         if [[ "${VERSION}" != "latest" ]]; then
-          BASE_URL="https://github.com/mgoltzsche/podman-static/releases/download/v${VERSION}"
+          BASE_URL="https://github.com/mgoltzsche/podman-static/releases/download/v${VERSION#v}"
         fi
 
         ARCHIVE_NAME="podman-linux-$(dpkg --print-architecture)"
@@ -62,24 +73,37 @@ runs:
         sudo rsync -av "${ARCHIVE_NAME}/etc/" /etc
         sudo rsync -av "${ARCHIVE_NAME}/usr/" /usr
 
-        # podman searches /usr/bin/crun before the bundled /usr/local/bin/crun, so
-        # install the bundled binary there too. Otherwise podman silently runs
-        # whatever crun the runner image ships while `crun --version` reports the
-        # bundled one -- the wrong runtime, reported wrongly.
+        # podman searches /usr/bin before the bundled /usr/local/bin, so install the
+        # bundled runtimes there too. Otherwise podman silently runs whichever crun or
+        # runc the runner image happens to ship.
         sudo install -m 0755 "${ARCHIVE_NAME}/usr/local/bin/crun" /usr/bin/crun
-
-        # Trimmed in the shell rather than with `| head -1`: head exits after the
-        # first line, and the resulting SIGPIPE would fail the step under pipefail.
-        crun_version=$(/usr/bin/crun --version)
-        echo "crun in use (/usr/bin/crun): ${crun_version%%$'\n'*}"
+        sudo install -m 0755 "${ARCHIVE_NAME}/usr/local/bin/runc" /usr/bin/runc
 
         sudo podman version
+
+        # Ask podman which runtime it resolved, rather than running one ourselves and
+        # assuming it picked the same binary.
+        runtime_path=$(sudo podman info --format '{{.Host.OCIRuntime.Path}}')
+        runtime_version=$(sudo podman info --format '{{.Host.OCIRuntime.Version}}')
+        echo "podman resolved OCI runtime: ${runtime_path} (${runtime_version})"
+
+        # Reported rather than enforced. Installing the bundled runtime already makes
+        # a modern crun structural, and `podman info` has been observed reporting a
+        # runc banner for a crun path, so a hard check here risks aborting a healthy
+        # job over a parse. Surfacing the value lets a real mismatch be seen.
+        if [[ ! "${runtime_version}" =~ ([0-9]+\.[0-9]+(\.[0-9]+)?) ]]; then
+          echo "::warning::could not read a version out of '${runtime_version}'"
+        elif ! printf '%s\n%s\n' "${CRUN_MIN_VERSION}" "${BASH_REMATCH[1]}" | sort -V -C; then
+          echo "::warning::OCI runtime reports ${BASH_REMATCH[1]}, older than the expected ${CRUN_MIN_VERSION}"
+        fi
 
     - shell: bash
       name: Start Podman Engine
       run: | # shell
         set -euo pipefail
 
+        # Budget for the engine to start and answer, spanning both waits below rather
+        # than resetting between them.
         startup_timeout=60
 
         podman_version=$(sudo podman version --format="{{.Server.Version}}")
@@ -91,9 +115,9 @@ runs:
         service_log="/tmp/podman-system-service.log"
         probe_log="/tmp/docker-probe.log"
 
-        # podman binds with a plain net.Listen and never unlinks a stale socket, so
-        # a leftover file would make the new service exit with "address already in
-        # use" while the -S test below is already satisfied.
+        # podman binds with a plain net.Listen and never unlinks a stale socket, so a
+        # leftover file would make the new service exit with "address already in use"
+        # while the -S test below is already satisfied.
         sudo rm -f "${podman_socket}"
 
         sudo podman system service --time=0 "unix://${podman_socket}" >"${service_log}" 2>&1 &
@@ -126,25 +150,29 @@ runs:
 
         # Recreated rather than reused: an existing context of this name can carry
         # unrelated TLS or kubernetes metadata that `context update` would preserve.
-        docker context rm -f "podman-${podman_version}" >/dev/null 2>&1 || true
+        if docker context inspect "podman-${podman_version}" >/dev/null 2>&1; then
+          docker context rm -f "podman-${podman_version}"
+        fi
         docker context create --docker "host=unix://${podman_socket}" "podman-${podman_version}"
         docker context use "podman-${podman_version}"
 
         # The socket exists from bind(2), which precedes listen(2), so the API can
         # refuse a connection briefly after the socket appears. Each probe is bounded
-        # because the docker CLI applies no timeout of its own, and its output is
-        # kept so a permanent error is reported as itself rather than as a timeout.
-        deadline=$(( SECONDS + startup_timeout ))
+        # because the docker CLI applies no timeout of its own, and its output is kept
+        # so a permanent error is reported as itself rather than as a timeout.
         until timeout 5 docker ps >"${probe_log}" 2>&1; do
           probe_status=$?
-          case "${probe_status}" in
-            126|127) fail "docker CLI is unusable (exit ${probe_status}): $(cat "${probe_log}")" ;;
-          esac
+          # 124 is the probe timing out, which is the transient case worth retrying.
+          # Everything else -- 125 timeout's own failure, 126/127 unusable CLI, 128+n
+          # death by signal -- is a broken probe that retrying cannot fix.
+          if (( probe_status != 124 )); then
+            fail "docker probe failed with exit ${probe_status}: $(cat "${probe_log}")"
+          fi
           kill -0 "${service_pid}" 2>/dev/null \
             || fail "podman system service died before serving the API: $(cat "${probe_log}")"
           if (( SECONDS >= deadline )); then
             # Authoritative: the engine may have become ready since the last probe.
-            timeout 5 docker ps && break
+            timeout 5 docker ps >"${probe_log}" 2>&1 && break
             fail "podman API on ${podman_socket} was unreachable for ${startup_timeout}s: $(cat "${probe_log}")"
           fi
           sleep 0.5
