@@ -9,7 +9,7 @@ inputs:
         - type: either "docker" or "podman" (default: docker)
         - version: either "latest" or a "[v]major[.minor[.patch]]" version. Docker
           accepts partial versions and resolves them to the newest match; podman
-          requires a full major.minor.patch, because podman-static only tags those.
+          requires a full major.minor.patch.
 
       Default: docker@latest
 runs:
@@ -22,16 +22,13 @@ runs:
         INPUT_VERSION: ${{ inputs.version }}
       with:
         shell: python
-        # Note: in VS Code, consider installing `harrydowning.yaml-embedded-languages` to enable code highlighting
-        # in the embedded python code.
+        # In VS Code, install `harrydowning.yaml-embedded-languages` for highlighting
+        # in the embedded python code below.
         run: | # python
           import os
           import re
           import sys
 
-          # Stripped because `container-engine` is a free-text workflow_dispatch
-          # input, so a trailing space or newline is easy to introduce and would
-          # otherwise be rejected as an unrecognized version.
           version_string = os.getenv("INPUT_VERSION", "").strip()
           if not version_string:
             print("No engine version given", file=sys.stderr)
@@ -50,12 +47,9 @@ runs:
             print(f"Unrecognized engine type '{engine}'", file=sys.stderr)
             sys.exit(1)
 
-          # These values reach GITHUB_ENV and are interpolated into shell commands and
-          # a download URL, and this action is reachable from a workflow_dispatch
-          # input. Anything but a plain version -- metacharacters, newlines, path
-          # traversal -- is rejected here rather than at each of those sinks.
-          # [0-9] rather than \d, which also accepts non-ASCII digits that would then
-          # reach the URL.
+          # version is attacker-influenced via workflow_dispatch and reaches a shell
+          # command and a download URL; validate before either sink does.
+          # [0-9], not \d, which also matches non-ASCII digits.
           if not re.fullmatch(r"latest|v?[0-9]+(\.[0-9]+)*", version):
             print(f"Unrecognized engine version '{version}'", file=sys.stderr)
             sys.exit(1)
@@ -65,24 +59,18 @@ runs:
 
     - name: Export parsed version
       shell: bash
-      # Via the environment, not `${{ }}` interpolation: the latter would execute a
-      # crafted version rather than write it.
+      # Passed through the environment, not `${{ }}` interpolation, which would
+      # execute a crafted version rather than write it.
       env:
         PARSED_VERSION: ${{ steps.parse-version.outputs.stdout }}
       run: | # shell
         set -euo pipefail
 
-        # Only the two expected assignments are forwarded, so nothing else in the
-        # captured stdout can define an environment variable for later steps. Read
-        # rather than `mapfile`, which is a bash 4 builtin: this action also runs on
-        # the macOS runners, where bash is 3.2.
+        # Read, not `mapfile`: this step also runs on macOS runners, where bash is 3.2.
         engine_type=""
         engine_version=""
         { IFS= read -r engine_type || true; IFS= read -r engine_version || true; } <<< "${PARSED_VERSION}"
-        # Python emits CRLF on the Windows runners, which also run this step. The
-        # runner happens to strip a trailing CR from GITHUB_ENV today; stripping it
-        # here means a change to that behaviour cannot silently leave both engine
-        # `if:` conditions false and skip setup altogether.
+        # Python emits CRLF on the Windows runners this step also runs on.
         engine_type="${engine_type%$'\r'}"
         engine_version="${engine_version%$'\r'}"
         if [[ "${engine_type}" != ENGINE_TYPE=* || "${engine_version}" != ENGINE_VERSION=* ]]; then
@@ -94,8 +82,8 @@ runs:
 
     - name: Verify an engine was selected
       shell: bash
-      # Both steps below are gated on ENGINE_TYPE, so a value that is neither would
-      # skip both and report success having installed no container engine at all.
+      # Setup Docker and Setup Podman below are both gated on ENGINE_TYPE; without
+      # this check, a value that is neither would skip both and report success.
       run: | # shell
         set -euo pipefail
         case "${ENGINE_TYPE:-}" in
