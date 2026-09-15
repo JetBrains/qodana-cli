@@ -369,7 +369,7 @@ func ShowReport(cacheDir string, resultsDir string, reportDir string, port int) 
 				}
 				openReport("", reportDir, port)
 			},
-			fmt.Sprintf("Showing Qodana report from %s", fmt.Sprintf("http://localhost:%d/", port)),
+			fmt.Sprintf("Showing Qodana report from http://127.0.0.1:%d/", port),
 			"",
 		)
 	}
@@ -422,32 +422,43 @@ func unpackWebUI(cacheDir string, reportDir string) {
 // openReport serves the report on the given port and opens the browser.
 func openReport(cloudUrl string, path string, port int) {
 	if cloudUrl != "" {
-		resp, err := http.Get(cloudUrl)
-		if err == nil && resp.StatusCode == 200 {
-			err = utils.OpenBrowser(cloudUrl)
-			if err != nil {
-				return
-			}
-		}
+		openBrowserWhenAvailable(cloudUrl)
 		return
 	}
-	url := fmt.Sprintf("http://localhost:%d", port)
-	go func() {
-		resp, err := http.Get(url)
-		if err == nil && resp.StatusCode == 200 {
-			err := utils.OpenBrowser(url)
-			if err != nil {
-				return
-			}
-		}
-	}()
-	http.Handle("/", noCache(http.FileServer(http.Dir(path))))
-	err := http.ListenAndServe(fmt.Sprintf(":%d", port), nil)
+	url := fmt.Sprintf("http://127.0.0.1:%d", port)
+	go openBrowserWhenAvailable(url)
+	server := createReportServer(path, port)
+	defer func() { _ = server.Close() }()
+	err := server.ListenAndServe()
 	if err != nil {
 		msg.WarningMessage("Problem serving report, %s\n", err.Error())
 		return
 	}
 	_, _ = fmt.Scan()
+}
+
+func openBrowserWhenAvailable(url string) {
+	resp, err := http.Get(url)
+	if err != nil {
+		return
+	}
+	defer func() { _ = resp.Body.Close() }()
+
+	if resp.StatusCode != http.StatusOK {
+		return
+	}
+	_ = utils.OpenBrowser(url)
+}
+
+func createReportServer(path string, port int) *http.Server {
+	addr := fmt.Sprintf("127.0.0.1:%d", port)
+	if qdenv.IsContainer() {
+		addr = fmt.Sprintf(":%d", port)
+	}
+	return &http.Server{
+		Addr:    addr,
+		Handler: noCache(http.FileServer(http.Dir(path))),
+	}
 }
 
 // noCache handles serving the static files with no cache headers.
