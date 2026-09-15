@@ -7,7 +7,9 @@ inputs:
     description: |
       Engine version of format [<type>@]<version>, where:
         - type: either "docker" or "podman" (default: docker)
-        - version: either "latest" or "[v]major[.minor[.patch]]" version of the engine.
+        - version: either "latest" or a "[v]major[.minor[.patch]]" version. Docker
+          accepts partial versions and resolves them to the newest match; podman
+          requires a full major.minor.patch.
 
       Default: docker@latest
 runs:
@@ -20,14 +22,19 @@ runs:
         INPUT_VERSION: ${{ inputs.version }}
       with:
         shell: python
-        # Note: in VS Code, consider installing `harrydowning.yaml-embedded-languages` to enable code highlighting
-        # in the embedded python code.
+        # In VS Code, install `harrydowning.yaml-embedded-languages` for highlighting
+        # in the embedded python code below.
         run: | # python
           import os
+          import re
           import sys
 
-          version_string = os.getenv("INPUT_VERSION") or sys.argv[1]
-          parts = version_string.lower().split("@", 1)
+          version_string = os.getenv("INPUT_VERSION", "").strip()
+          if not version_string:
+            print("No engine version given", file=sys.stderr)
+            sys.exit(1)
+
+          parts = [part.strip() for part in version_string.lower().split("@", 1)]
 
           if len(parts) == 1:
             engine = "docker"
@@ -40,12 +47,49 @@ runs:
             print(f"Unrecognized engine type '{engine}'", file=sys.stderr)
             sys.exit(1)
 
+          # version is attacker-influenced via workflow_dispatch and reaches a shell
+          # command and a download URL; validate before either sink does.
+          # [0-9], not \d, which also matches non-ASCII digits.
+          if not re.fullmatch(r"latest|v?[0-9]+(\.[0-9]+)*", version):
+            print(f"Unrecognized engine version '{version}'", file=sys.stderr)
+            sys.exit(1)
+
           print(f"ENGINE_TYPE={engine}")
           print(f"ENGINE_VERSION={version}")
 
-    - name: Parse version
+    - name: Export parsed version
       shell: bash
-      run: echo "${{ steps.parse-version.outputs.stdout }}" >> "$GITHUB_ENV"
+      # Passed through the environment, not `${{ }}` interpolation, which would
+      # execute a crafted version rather than write it.
+      env:
+        PARSED_VERSION: ${{ steps.parse-version.outputs.stdout }}
+      run: | # shell
+        set -euo pipefail
+
+        # Read, not `mapfile`: this step also runs on macOS runners, where bash is 3.2.
+        engine_type=""
+        engine_version=""
+        { IFS= read -r engine_type || true; IFS= read -r engine_version || true; } <<< "${PARSED_VERSION}"
+        # Python emits CRLF on the Windows runners this step also runs on.
+        engine_type="${engine_type%$'\r'}"
+        engine_version="${engine_version%$'\r'}"
+        if [[ "${engine_type}" != ENGINE_TYPE=* || "${engine_version}" != ENGINE_VERSION=* ]]; then
+          echo "::error::unexpected output from the version parser"
+          printf '%s\n' "${PARSED_VERSION}"
+          exit 1
+        fi
+        printf '%s\n%s\n' "${engine_type}" "${engine_version}" >> "$GITHUB_ENV"
+
+    - name: Verify an engine was selected
+      shell: bash
+      # Setup Docker and Setup Podman below are both gated on ENGINE_TYPE; without
+      # this check, a value that is neither would skip both and report success.
+      run: | # shell
+        set -euo pipefail
+        case "${ENGINE_TYPE:-}" in
+          docker|podman) echo "container engine: ${ENGINE_TYPE} ${ENGINE_VERSION}" ;;
+          *) echo "::error::no container engine selected (ENGINE_TYPE='${ENGINE_TYPE:-}')"; exit 1 ;;
+        esac
 
     - name: Setup Docker
       if: env.ENGINE_TYPE == 'docker'
