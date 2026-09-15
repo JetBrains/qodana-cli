@@ -1,5 +1,6 @@
 import os
 import sys
+from pathlib import Path
 
 import pytest
 
@@ -120,6 +121,26 @@ def test_composite_variable_ref_fails_closed():
 def test_real_templates_introduce_no_dhi_base():
     # passes only because real templates exist and are clean; an empty match is a loud violation
     assert check_templates() == []
+
+
+def test_real_node_base_files_install_pnpm():
+    checked = []
+    for path in Path("dockerfiles/base").glob("*.Dockerfile"):
+        content = path.read_text(encoding="utf-8")
+        if "npm install -g" not in content:
+            continue
+        checked.append(path.name)
+        assert "# renovate: datasource=npm depName=pnpm" in content, path
+        assert 'ENV PNPM_VERSION="' in content, path
+        assert 'ARG PNPM_SHA512="' in content, path
+        assert 'pnpm-$PNPM_VERSION.tgz' in content, path
+        assert 'sha512sum -c -' in content, path
+        assert '/usr/local/bin/pnpm' in content, path
+        assert '/usr/local/bin/pnpx' in content, path
+        assert '/usr/local/bin/pn' in content, path
+        assert '/usr/local/bin/pnx' in content, path
+        assert "pnpm@$PNPM_VERSION" not in content, path
+    assert checked, "no Node-capable base Dockerfiles found"
 
 
 def test_template_with_any_from_is_flagged(tmp_path):

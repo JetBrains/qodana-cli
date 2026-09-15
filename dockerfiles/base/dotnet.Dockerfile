@@ -5,6 +5,9 @@ FROM dotnet-community
 
 # renovate: datasource=npm depName=eslint
 ENV ESLINT_VERSION="9.31.0"
+# renovate: datasource=npm depName=pnpm
+ENV PNPM_VERSION="11.18.0"
+ARG PNPM_SHA512="33d83c77da82f49fba836925c6f1b841181ec3132b670639bd012f7075f5c7cf634c5f870147c19aae7478fac01df09d8892e880454896edd23ee9b33757563c"
 
 ENV PATH="/opt/yarn/bin:$PATH" RIDER_UNREAL_ROOT="/data/unrealEngine"
 ENV SKIP_YARN_COREPACK_CHECK=0
@@ -21,6 +24,15 @@ RUN ln -s /usr/local/lib/node_modules/npm/bin/npm-cli.js /usr/local/bin/npm && \
     corepack --version && \
     yarn --version && \
     npm install -g eslint@$ESLINT_VERSION && npm config set update-notifier false && \
+    curl -fsSL "https://registry.npmjs.org/pnpm/-/pnpm-$PNPM_VERSION.tgz" -o /tmp/pnpm.tgz && \
+    echo "$PNPM_SHA512  /tmp/pnpm.tgz" | sha512sum -c - && \
+    mkdir -p /usr/local/lib/node_modules/pnpm && \
+    tar -xzf /tmp/pnpm.tgz --strip-components=1 -C /usr/local/lib/node_modules/pnpm && \
+    ln -s /usr/local/lib/node_modules/pnpm/bin/pnpm.mjs /usr/local/bin/pnpm && \
+    ln -s /usr/local/lib/node_modules/pnpm/bin/pnpx.mjs /usr/local/bin/pnpx && \
+    ln -s /usr/local/lib/node_modules/pnpm/bin/pnpm.mjs /usr/local/bin/pn && \
+    ln -s /usr/local/lib/node_modules/pnpm/bin/pnpx.mjs /usr/local/bin/pnx && \
+    rm /tmp/pnpm.tgz && \
     mkdir -p $RIDER_UNREAL_ROOT && \
     chmod 777 -R "$HOME/.npm" "$HOME/.npmrc" && \
     apt-get update && \
