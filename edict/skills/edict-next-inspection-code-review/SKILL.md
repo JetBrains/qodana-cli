@@ -18,6 +18,10 @@ Accept the absolute paths supplied in the prompt:
 
 Read the cluster Signals, candidate inspection, and inspected project. Review only the implementation based on available source evidence.
 Restate the candidate's general rule from the stored Signals and examples before reviewing its implementation. Treat the motivating evidence as authoritative about the intended problem, but verify that the generalization is actually true. A plausible detector for a misread or over-generalized rule is not acceptable.
+Confirm that every synthetic example preserves the diagnostic target and label-determining facts of its Signal's exact source
+evidence. Treat a moved target or altered positive/negative discriminator as a `MAJOR` `SPECIFICATION` finding; never
+restate the rule from the altered example.
+Treat unjustified narrowing to incidental details of the supplied evidence as a `MAJOR` `COVERAGE` finding and reject the candidate even when every synthetic example passes.
 
 Do not edit the candidate, cluster, examples, inspected project, or repository. Do not create examples. Base every conclusion on available artifacts or source evidence; never turn missing information into an approval or rejection reason.
 

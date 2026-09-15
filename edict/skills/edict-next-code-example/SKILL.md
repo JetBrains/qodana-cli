@@ -18,20 +18,31 @@ The prompt supplies exactly two absolute paths:
 You may change only files below the supplied examples directory and `syntheticExampleId` in the supplied Signal. Do not
 change any other Signal field or any other file.
 
-Read the complete Signal and retrieve its exact `fileRevision` with `mcp__qodana__file_at_ref`. Compare that evidence with
-the existing examples. The assigned example must be small and self-contained. A positive example must contain exactly one
-occurrence of the problem described by the Signal; a negative example must contain none. Reuse an example only when it
-already satisfies this invariant and genuinely represents the same semantic case and label. Otherwise, create an example at:
+Read the complete Signal and retrieve its exact `fileRevision` with `mcp__qodana__file_at_ref`. Treat that source as the
+authority. Identify the source construct covered by `fileRevision.expectedRanges`, its diagnostic role, and the properties
+and relationships that make the Signal positive or negative.
+
+The assigned example is a small, self-contained reduction of that exact evidence. Prefer deleting unrelated code and replacing
+dependencies with minimal declarations. Do not reinterpret or generalize the Signal, move the diagnostic target to another
+element, or change a classification-relevant modifier, annotation, type relationship, assignment, call, or control-flow
+condition. When unsure whether a detail affects the label, preserve it.
+
+A positive example must contain exactly one reportable problem. Its sole expected range must identify the same semantic target
+as the original source range; supporting declarations, usages, and control flow may appear elsewhere in the example. A negative
+example must contain exactly one focused allowed case corresponding to the original source range, no reportable problems, and
+an empty expected-range list. Do not create a trivial negative by removing the construct being evaluated.
+
+Reuse an example only when it already satisfies these invariants and represents the same semantic case, target, and label.
+Otherwise, create an example at:
 
 ```plaintext
 <synthetic-examples-directory>/<example-id>/metadata.json
 <synthetic-examples-directory>/<example-id>/project/<file-name>.kt|java
 ```
 
-Metadata contains `id`, `fileName`, `label`, and `expectedRanges`. A positive example must declare exactly one one-based
-target range covering its sole problem occurrence; a negative example must use an empty range list. Never copy the complete
-production source file. Include only the declarations needed to represent the Signal in one self-contained source file:
-support files do not participate in validation or inspection execution.
+Metadata contains `id`, `fileName`, `label`, and `expectedRanges`. Never copy the complete production source file.
+Keep required declarations in one self-contained source file: support files do not participate in validation or inspection
+execution.
 
 Derive `clusterId` from the canonical examples-directory path and call
 `mcp__qodana__edict_next_validate_code_example(clusterId, exampleId)`, including for a reused example. Repair structural

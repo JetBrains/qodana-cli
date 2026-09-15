@@ -93,8 +93,12 @@ Before writing the first candidate, call `mcp__qodana__generate_inspection_kts_a
 `mcp__qodana__generate_inspection_kts_examples` for the cluster language. Call `mcp__qodana__generate_psi_tree` on
 representative positive and negative code examples whenever the relevant PSI structure is uncertain.
 
-Write the candidate to `inspections/<clusterId>.candidate.kts`. Implement one general IntelliJ inspection for the shared
-problem. Never special-case example text, paths, names, or line numbers.
+Write the candidate to `inspections/<clusterId>.candidate.kts`. Infer and implement the most general coherent code-quality
+rule supported by every Signal and its exact source evidence. It must fit all positive and negative Signals. Do not narrow
+the rule to incidental details such as one syntax shape, modifier, API or type, literal, or control-flow form unless that
+detail is essential to why the code is problematic. Never special-case example text, paths, names, or line numbers.
+Treat synthetic examples only as executable projections of the Signals: they do not override exact source evidence and must
+not be used to redefine the general rule or its diagnostic target.
 
 Generation constraints:
 
@@ -149,9 +153,15 @@ Load the edict-next-weak-signal-review skill.
 Review config: <weak-signal-review-config path returned by the MCP>
 ```
 
-Read the returned summary. If it lists false-positive reports, read every report, repair the candidate's general predicate,
-validate it, call the MCP again for a fresh pair of manifests, and repeat this step after validation returns `ANALYZE_PROJECT`.
-If it lists no false positives, record the rule, attempts, review, achieved accuracy, and decision in history, then apply the
+Read the returned summary and verify that every finding is classified and every `TP` and `FP` has an assigned synthetic
+example ID. Do not continue until the review has completely materialized all confident classifications. These examples are
+now accumulated positive and negative validation evidence.
+
+If the summary contains FPs, read every FP report, repair the candidate's general predicate, and validate it against the
+expanded example corpus. After validation returns `ANALYZE_PROJECT`, call the MCP again for a fresh analysis and repeat this
+step. Every repair must preserve all earlier TP evidence while excluding established FPs.
+
+If the summary contains no FPs, record the rule, attempts, review, achieved accuracy, and decision in history, then apply the
 Accepted transition.
 
 ## 5. Apply the terminal transition
