@@ -29,6 +29,7 @@ import (
 	"github.com/JetBrains/qodana-cli/internal/foundation/exec"
 	"github.com/JetBrains/qodana-cli/internal/foundation/fs"
 	"github.com/JetBrains/qodana-cli/internal/platform/product"
+	"github.com/JetBrains/qodana-cli/internal/platform/qdenv"
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
 )
@@ -483,16 +484,25 @@ func TestCreateReportServer(t *testing.T) {
 	err := os.WriteFile(filepath.Join(reportDir, "index.html"), []byte("Qodana report"), 0o644)
 	assert.NoError(t, err)
 
-	server := createReportServer(reportDir, 18080)
-	assert.Equal(t, "127.0.0.1:18080", server.Addr)
+	t.Run("native", func(t *testing.T) {
+		t.Setenv(qdenv.QodanaDockerEnv, "")
+		server := createReportServer(reportDir, 18080)
+		assert.Equal(t, "127.0.0.1:18080", server.Addr)
 
-	req := httptest.NewRequest(http.MethodGet, "/", nil)
-	rr := httptest.NewRecorder()
-	server.Handler.ServeHTTP(rr, req)
+		req := httptest.NewRequest(http.MethodGet, "/", nil)
+		rr := httptest.NewRecorder()
+		server.Handler.ServeHTTP(rr, req)
 
-	assert.Equal(t, http.StatusOK, rr.Code)
-	assert.Equal(t, "Qodana report", rr.Body.String())
-	assert.Equal(t, "no-cache, private, max-age=0", rr.Header().Get("Cache-Control"))
+		assert.Equal(t, http.StatusOK, rr.Code)
+		assert.Equal(t, "Qodana report", rr.Body.String())
+		assert.Equal(t, "no-cache, private, max-age=0", rr.Header().Get("Cache-Control"))
+	})
+
+	t.Run("container", func(t *testing.T) {
+		t.Setenv(qdenv.QodanaDockerEnv, "true")
+		server := createReportServer(reportDir, 18080)
+		assert.Equal(t, ":18080", server.Addr)
+	})
 }
 
 func TestComputeId_SymlinkSameDir(t *testing.T) {

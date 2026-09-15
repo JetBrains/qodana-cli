@@ -451,8 +451,12 @@ func openBrowserWhenAvailable(url string) {
 }
 
 func createReportServer(path string, port int) *http.Server {
+	addr := fmt.Sprintf("127.0.0.1:%d", port)
+	if qdenv.IsContainer() {
+		addr = fmt.Sprintf(":%d", port)
+	}
 	return &http.Server{
-		Addr:    fmt.Sprintf("127.0.0.1:%d", port),
+		Addr:    addr,
 		Handler: noCache(http.FileServer(http.Dir(path))),
 	}
 }
