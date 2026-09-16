@@ -10,7 +10,7 @@ runs:
   steps:
     - name: Install Podman Engine
       shell: bash
-      # Passed through the environment, not interpolated: VERSION is attacker-influenced.
+      # Passed through the environment rather than interpolated into the script.
       env:
         VERSION: ${{ inputs.version }}
       run: ${{ github.action_path }}/install-podman.sh

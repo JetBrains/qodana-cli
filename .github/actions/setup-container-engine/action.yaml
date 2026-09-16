@@ -20,8 +20,8 @@ runs:
         INPUT_VERSION: ${{ inputs.version }}
       with:
         shell: python
-        # In VS Code, install `harrydowning.yaml-embedded-languages` for highlighting
-        # in the embedded python code below.
+        # Note: in VS Code, consider installing `harrydowning.yaml-embedded-languages` to enable code highlighting
+        # in the embedded python code.
         run: | # python
           import os
           import re
@@ -45,9 +45,8 @@ runs:
             print(f"Unrecognized engine type '{engine}'", file=sys.stderr)
             sys.exit(1)
 
-          # version is attacker-influenced via workflow_dispatch and reaches a shell
-          # command and a download URL; validate before either sink does.
-          # [0-9], not \d, which also matches non-ASCII digits.
+          # version reaches a shell command and a download URL; check its shape
+          # before either. [0-9], not \d, which also matches non-ASCII digits.
           if not re.fullmatch(r"latest|v?[0-9]+(\.[0-9]+)*", version):
             print(f"Unrecognized engine version '{version}'", file=sys.stderr)
             sys.exit(1)
@@ -57,12 +56,13 @@ runs:
 
     - name: Export parsed version
       shell: bash
-      # Passed through the environment, not `${{ }}` interpolation, which would
-      # execute a crafted version rather than write it.
+      # Passed through the environment rather than `${{ }}` interpolation, which
+      # would evaluate the value instead of writing it.
       env:
         PARSED_VERSION: ${{ steps.parse-version.outputs.stdout }}
       run: | # shell
         set -euo pipefail
+        exec 2>&1
 
         # Read, not `mapfile`: this step also runs on macOS runners, where bash is 3.2.
         engine_type=""
@@ -72,7 +72,7 @@ runs:
         engine_type="${engine_type%$'\r'}"
         engine_version="${engine_version%$'\r'}"
         if [[ "${engine_type}" != ENGINE_TYPE=* || "${engine_version}" != ENGINE_VERSION=* ]]; then
-          echo "::error::unexpected output from the version parser"
+          echo "::error::unexpected output from the version parser" >&2
           printf '%s\n' "${PARSED_VERSION}"
           exit 1
         fi
@@ -84,9 +84,14 @@ runs:
       # this check, a value that is neither would skip both and report success.
       run: | # shell
         set -euo pipefail
+        exec 2>&1
+
         case "${ENGINE_TYPE:-}" in
           docker|podman) echo "container engine: ${ENGINE_TYPE} ${ENGINE_VERSION}" ;;
-          *) echo "::error::no container engine selected (ENGINE_TYPE='${ENGINE_TYPE:-}')"; exit 1 ;;
+          *)
+            echo "::error::no container engine selected (ENGINE_TYPE='${ENGINE_TYPE:-}')" >&2
+            exit 1
+            ;;
         esac
 
     - name: Setup Docker
