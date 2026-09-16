@@ -24,38 +24,42 @@ if [[ "${VERSION}" != "latest" && ! "${VERSION}" =~ ^v?[0-9]+\.[0-9]+\.[0-9]+$ ]
   exit 1
 fi
 
-BASE_URL="https://github.com/mgoltzsche/podman-static/releases/latest/download"
+base_url="https://github.com/mgoltzsche/podman-static/releases/latest/download"
 if [[ "${VERSION}" != "latest" ]]; then
-  BASE_URL="https://github.com/mgoltzsche/podman-static/releases/download/v${VERSION#v}"
+  base_url="https://github.com/mgoltzsche/podman-static/releases/download/v${VERSION#v}"
 fi
 
-ARCHIVE_NAME="podman-linux-$(dpkg --print-architecture)"
-ARCHIVE_FILE="/tmp/${ARCHIVE_NAME}.tar.gz"
+archive_name="podman-linux-$(dpkg --print-architecture)"
 
-curl -fSL --retry 3 --retry-delay 5 "${BASE_URL}/${ARCHIVE_NAME}.tar.gz" -o "${ARCHIVE_FILE}"
+if ! work_dir=$(mktemp -d "${RUNNER_TEMP:-/tmp}/setup-podman.XXXXXX"); then
+  echo "::error::could not create a work directory under ${RUNNER_TEMP:-/tmp}" >&2
+  exit 1
+fi
+archive_file="${work_dir}/${archive_name}.tar.gz"
 
-if ! gzip -t "${ARCHIVE_FILE}" 2>/dev/null; then
+curl -fSL --retry 3 --retry-delay 5 "${base_url}/${archive_name}.tar.gz" -o "${archive_file}"
+
+if ! gzip -t "${archive_file}" 2>/dev/null; then
   echo "::error::downloaded file is not a valid gzip archive" >&2
-  file "${ARCHIVE_FILE}"
+  file "${archive_file}"
   exit 1
 fi
 
-cd /tmp
-rm -rf "/tmp/${ARCHIVE_NAME}"
-tar -xzf "${ARCHIVE_FILE}"
+tar -xzf "${archive_file}" -C "${work_dir}"
+extracted="${work_dir}/${archive_name}"
 
 for required in usr/local/bin/podman usr/local/bin/crun; do
-  if [[ ! -x "${ARCHIVE_NAME}/${required}" ]]; then
+  if [[ ! -x "${extracted}/${required}" ]]; then
     echo "::error::the podman-static tarball has no ${required}" >&2
     exit 1
   fi
 done
 
-sudo rsync -av "${ARCHIVE_NAME}/etc/" /etc
-sudo rsync -av "${ARCHIVE_NAME}/usr/" /usr
+sudo rsync -av "${extracted}/etc/" /etc
+sudo rsync -av "${extracted}/usr/" /usr
 
 # podman resolves crun from /usr/bin/crun before the bundled /usr/local/bin/crun.
-sudo install -m 0755 "${ARCHIVE_NAME}/usr/local/bin/crun" /usr/bin/crun
+sudo install -m 0755 "${extracted}/usr/local/bin/crun" /usr/bin/crun
 
 if ! resolved_podman=$(sudo sh -c 'command -v podman'); then
   echo "::error::sudo cannot resolve podman at all" >&2
@@ -64,7 +68,7 @@ fi
 
 # cmp exits 1 for "differs" and 2 for an I/O error; only the first is a mismatch.
 cmp_status=0
-sudo cmp -s "${resolved_podman}" "${ARCHIVE_NAME}/usr/local/bin/podman" || cmp_status=$?
+sudo cmp -s "${resolved_podman}" "${extracted}/usr/local/bin/podman" || cmp_status=$?
 if (( cmp_status == 1 )); then
   echo "::error::sudo resolves podman to ${resolved_podman}, which is not the binary just installed" >&2
   exit 1
