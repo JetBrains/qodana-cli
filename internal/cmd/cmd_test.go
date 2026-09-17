@@ -26,6 +26,7 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"slices"
 	"strings"
 	"testing"
 	"time"
@@ -40,6 +41,7 @@ import (
 	imagetypes "github.com/docker/docker/api/types/image"
 	cp "github.com/otiai10/copy"
 	log "github.com/sirupsen/logrus"
+	"github.com/spf13/cobra"
 )
 
 func TestIsHelpOrVersion(t *testing.T) {
@@ -70,6 +72,8 @@ func TestIsCompletionRequested(t *testing.T) {
 	}{
 		{[]string{"qodana", "completion"}, true},
 		{[]string{"qodana", "completion", "bash"}, true},
+		{[]string{"qodana", cobra.ShellCompRequestCmd, ""}, true},
+		{[]string{"qodana", cobra.ShellCompNoDescRequestCmd, ""}, true},
 		{[]string{"qodana", "scan"}, false},
 		{[]string{"qodana"}, false},
 	}
@@ -77,6 +81,16 @@ func TestIsCompletionRequested(t *testing.T) {
 		if result := isCompletionRequested(tt.args); result != tt.expected {
 			t.Errorf("isCompletionRequested(%v) = %v, want %v", tt.args, result, tt.expected)
 		}
+	}
+}
+
+func TestCompletionCommandIsRegisteredForHelp(t *testing.T) {
+	rootCmd := newRootCommand()
+	rootCmd.AddCommand(newScanCommand())
+	defaultCommandArgs(rootCmd, []string{"qodana", "help", "completion"})
+
+	if actual := isCommandRequested(rootCmd.Commands(), []string{"help", "completion"}); actual != "completion" {
+		t.Errorf("isCommandRequested(..., help completion) = %q, want %q", actual, "completion")
 	}
 }
 
@@ -102,16 +116,21 @@ func TestIsCommandRequested(t *testing.T) {
 	}
 }
 
-func TestSetDefaultCommandIfNeeded(t *testing.T) {
+func TestDefaultCommandArgs(t *testing.T) {
 	tests := []struct {
-		name string
-		args []string
+		name     string
+		args     []string
+		expected []string
 	}{
-		{"no args adds scan", []string{"qodana", "-i", "."}},
-		{"help flag unchanged", []string{"qodana", "--help"}},
-		{"version flag unchanged", []string{"qodana", "-v"}},
-		{"scan command unchanged", []string{"qodana", "scan", "-i", "."}},
-		{"init command unchanged", []string{"qodana", "init"}},
+		{"default scan", []string{"qodana", "-i", "."}, []string{"scan", "-i", "."}},
+		{"help flag", []string{"qodana", "--help"}, []string{"--help"}},
+		{"version flag", []string{"qodana", "-v"}, []string{"-v"}},
+		{"scan command", []string{"qodana", "scan", "-i", "."}, []string{"scan", "-i", "."}},
+		{"init command", []string{"qodana", "init"}, []string{"init"}},
+		{"help registered command", []string{"qodana", "help", "scan"}, []string{"help", "scan"}},
+		{"help completion", []string{"qodana", "help", "completion"}, []string{"help", "completion"}},
+		{"completion request", []string{"qodana", cobra.ShellCompRequestCmd, ""}, []string{cobra.ShellCompRequestCmd, ""}},
+		{"completion request without descriptions", []string{"qodana", cobra.ShellCompNoDescRequestCmd, ""}, []string{cobra.ShellCompNoDescRequestCmd, ""}},
 	}
 	for _, tt := range tests {
 		t.Run(
@@ -119,7 +138,10 @@ func TestSetDefaultCommandIfNeeded(t *testing.T) {
 				rootCmd := newRootCommand()
 				rootCmd.AddCommand(newScanCommand())
 				rootCmd.AddCommand(newInitCommand())
-				setDefaultCommandIfNeeded(rootCmd, tt.args)
+				actual := defaultCommandArgs(rootCmd, tt.args)
+				if !slices.Equal(actual, tt.expected) {
+					t.Errorf("defaultCommandArgs(..., %v) = %v, want %v", tt.args, actual, tt.expected)
+				}
 			},
 		)
 	}
