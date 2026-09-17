@@ -10,12 +10,8 @@ if [[ "$(uname -s)" != Linux ]]; then
   exit 1
 fi
 
-if ! command -v docker >/dev/null; then
-  echo "::error::setup-podman needs a preinstalled docker CLI" >&2
-  exit 1
-fi
-
-# Ubuntu noble ships crun 1.14.1, below the 1.14.3 podman needs.
+# Ubuntu noble ships crun 1.14.1, below the 1.14.3 podman needs. podman-static
+# bundles crun >= 1.14.3 from v4.9.4 on, which is the oldest version supported.
 crun_min_version="1.14.3"
 
 # VERSION reaches a download URL below, so check its shape first.
