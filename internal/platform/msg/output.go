@@ -115,6 +115,13 @@ func WarningMessage(message string, a ...any) {
 	pterm.Println(icon, Primary(message))
 }
 
+// WarningMessageToStderr prints a warning message to standard error with the icon.
+func WarningMessageToStderr(message string, a ...any) {
+	message = fmt.Sprintf(message, a...)
+	icon := warningStyle.Sprint("\n! ")
+	pterm.Fprintln(os.Stderr, icon, Primary(message))
+}
+
 // WarningMessageCI prints a warning message to the CI environment (additional highlighting).
 func WarningMessageCI(message string, a ...any) {
 	message = fmt.Sprintf(message, a...)

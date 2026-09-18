@@ -36,7 +36,11 @@ func isHelpOrVersion(args []string) bool {
 }
 
 func isCompletionRequested(args []string) bool {
-	return len(args) >= 2 && args[1] == "completion"
+	return len(args) >= 2 && (args[1] == "completion" || args[1] == cobra.ShellCompRequestCmd || args[1] == cobra.ShellCompNoDescRequestCmd)
+}
+
+func shouldWarnForCommandPosition(rootCmd *cobra.Command, args []string) bool {
+	return len(args) < 2 || (!isHelpOrVersion(args) && args[1] != "help" && !isCompletionRequested(args) && isCommandRequested(rootCmd.Commands(), args[1:2]) == "")
 }
 
 // isCommandRequested checks if any command is requested.
@@ -49,15 +53,18 @@ func isCommandRequested(commands []*cobra.Command, args []string) string {
 	return ""
 }
 
-// setDefaultCommandIfNeeded sets default scan command if no other command is requested.
-func setDefaultCommandIfNeeded(rootCmd *cobra.Command, args []string) {
+func defaultCommandArgs(rootCmd *cobra.Command, args []string) []string {
+	commandArgs := args[1:]
+	if len(commandArgs) >= 2 && commandArgs[0] == "help" {
+		rootCmd.InitDefaultCompletionCmd()
+	}
 	if !isHelpOrVersion(args) && isCommandRequested(
 		rootCmd.Commands(),
-		args[1:],
+		commandArgs,
 	) == "" && !isCompletionRequested(args) {
-		newArgs := append([]string{"scan"}, args[1:]...)
-		rootCmd.SetArgs(newArgs)
+		return append([]string{"scan"}, commandArgs...)
 	}
+	return commandArgs
 }
 
 // Execute is a main CLI entrypoint: handles user interrupt, CLI start and everything else.
@@ -69,8 +76,11 @@ func Execute() {
 	if !msg.IsInteractive() || os.Getenv("NO_COLOR") != "" { // http://no-color.org
 		msg.DisableColor()
 	}
+	if shouldWarnForCommandPosition(rootCommand, os.Args) {
+		msg.WarningMessageToStderr("Command must be specified as the first argument. This syntax is deprecated and will be rejected in the next release. Use `qodana <command> [arguments]`.")
+	}
 
-	setDefaultCommandIfNeeded(rootCommand, os.Args)
+	rootCommand.SetArgs(defaultCommandArgs(rootCommand, os.Args))
 	if err := rootCommand.Execute(); err != nil {
 		core.CheckForUpdates(version.Version)
 		_, err = fmt.Fprintf(os.Stderr, "error running command: %s\n", err)
