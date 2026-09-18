@@ -1,10 +1,10 @@
 name: Setup Podman
-description: Install Podman
+description: Install Podman (v4.9.4 or newer) and point the Docker CLI at it
 inputs:
   version:
     required: true
     default: latest
-    description: Engine version
+    description: Either "latest" or a full "[v]major.minor.patch" version.
 runs:
   using: composite
   steps:
@@ -33,84 +33,11 @@ runs:
 
     - name: Install Podman Engine
       shell: bash
-      run: | # shell
-        set -euo pipefail
+      # Passed through the environment rather than interpolated into the script.
+      env:
+        VERSION: ${{ inputs.version }}
+      run: ${{ github.action_path }}/install-podman.sh
 
-        BASE_URL="https://github.com/mgoltzsche/podman-static/releases/latest/download"
-        if [[ "${{ inputs.version }}" != "latest" ]]; then
-          BASE_URL="https://github.com/mgoltzsche/podman-static/releases/download/v${{ inputs.version }}"
-        fi
-
-        ARCHIVE_NAME="podman-linux-$(dpkg --print-architecture)"
-        ARCHIVE_FILE="/tmp/${ARCHIVE_NAME}.tar.gz"
-
-        curl -fSL --retry 3 --retry-delay 5 "${BASE_URL}/${ARCHIVE_NAME}.tar.gz" -o "${ARCHIVE_FILE}"
-
-        if ! gzip -t "${ARCHIVE_FILE}" 2>/dev/null; then
-          echo "Error: Downloaded file is not a valid gzip archive"
-          file "${ARCHIVE_FILE}"
-          exit 1
-        fi
-
-        cd /tmp
-        tar -xzf "${ARCHIVE_FILE}"
-        sudo rsync -av "${ARCHIVE_NAME}/etc/" /etc
-        sudo rsync -av "${ARCHIVE_NAME}/usr/" /usr
-
-        # podman-static bundles crun, but it may be too old for the OCI spec
-        # version that modern podman generates (needs crun >= 1.14.3).
-        # Ubuntu 24.04 ships 1.14.1, so fetch a recent binary from GitHub.
-        CRUN_VERSION="1.20"
-        curl -fSL --retry 3 --retry-delay 5 \
-          "https://github.com/containers/crun/releases/download/${CRUN_VERSION}/crun-${CRUN_VERSION}-linux-$(dpkg --print-architecture)" \
-          -o /tmp/crun
-        sudo install -m 0755 /tmp/crun /usr/bin/crun
-        echo "crun version: $(crun --version | head -1)"
-
-        sudo podman version
-
-    - shell: bash
-      name: Start Podman Engine
-      run: | # shell
-        podman_version=$(sudo podman version --format="{{.Server.Version}}")
-        export podman_socket="/var/run/podman-${podman_version}.sock"
-
-        export TIMEOUT=$(($(date +%s) + 30))  # 30 seconds in the future
-        function await() {
-          exit_code=0
-          echo "Polling: $@" >&2
-          while true; do
-            if (( $(date +%s) >= $TIMEOUT )); then
-              echo "Timeout reached!" >&2
-              return 1
-            fi
-
-            "$@" || exit_code=$?
-            if [[ $exit_code == 0 ]]; then
-              break
-            fi
-
-            sleep 1
-          done
-        }
-
-        sudo podman system service --time=0 "unix://${podman_socket}" &
-
-        sudo groupadd -f docker
-        sudo usermod -aG docker $USER
-        newgrp docker
-
-        # Await socket creation
-        await test -S "${podman_socket}"
-        sudo chgrp docker "${podman_socket}"
-        sudo chmod 660 "${podman_socket}"
-
-        docker context create --docker "host=unix://${podman_socket}" "podman-${podman_version}"
-        docker context use "podman-${podman_version}"
-
-        # Await start of engine
-        await docker ps
-
-    - name: Podman version
+    - name: Start Podman Engine
       shell: bash
-      run: docker version --format '{{.Server.Version}}'
+      run: ${{ github.action_path }}/start-podman.sh
