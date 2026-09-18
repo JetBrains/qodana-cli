@@ -77,7 +77,7 @@ func (c Context) SecondStageOfScopedScript(scopeFile string, startSarif string) 
 		"-Dqodana.skip.preamble=true", // don't print the QD logo again
 		"-Didea.headless.enable.statistics=false",                   // disable statistics for second run
 		fmt.Sprintf("-Dqodana.scoped.baseline.path=%s", startSarif), // disable statistics for second run
-		"-Dqodana.skip.coverage.issues.reporting=true",              // don't report coverage issues on the second pass, but allow numbers to be computed
+		"-Dqodana.incremental.coverage.issues.reporting=true",       // report coverage issues for changed code
 	)
 	c.resultsDir = endDir
 	startup.MakeDirAll(c.LogDir()) // need to prepare new result and log dir
@@ -88,7 +88,10 @@ func (c Context) FirstStageOfReverseScopedScript(scopeFile string) Context {
 	c.script = "reverse-scoped:NEW," + scopeFile
 
 	startDir := filepath.Join(c.ResultsDir(), "start")
-	properties := []string{"-Dqodana.skip.result.strategy=ANY"} // finish only in case of none issues found
+	properties := []string{
+		"-Dqodana.skip.result.strategy=ANY",                   // finish only in case of none issues found
+		"-Dqodana.incremental.coverage.issues.reporting=true", // report coverage issues for changed code
+	}
 
 	if !c.BaselineIncludeAbsent() {
 		reducedScope := filepath.Join(startDir, "reduced-scope.json")

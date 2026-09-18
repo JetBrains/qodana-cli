@@ -65,7 +65,7 @@ func TestScopedScript(t *testing.T) {
 						"-Dqodana.skip.preamble=true",
 						"-Didea.headless.enable.statistics=false",
 						"-Dqodana.scoped.baseline.path=" + filepath.Join(dir, "start", "qodana.sarif.json"),
-						"-Dqodana.skip.coverage.issues.reporting=true",
+						"-Dqodana.incremental.coverage.issues.reporting=true",
 					},
 				}
 			},
@@ -170,6 +170,7 @@ func TestReverseScopedScript(t *testing.T) {
 				return [][]string{
 					{
 						"-Dqodana.skip.result.strategy=ANY",
+						"-Dqodana.incremental.coverage.issues.reporting=true",
 						"-Dqodana.reduced.scope.path=" + filepath.Join(dir, "reduced-scope.json"),
 					},
 					{
@@ -203,6 +204,7 @@ func TestReverseScopedScript(t *testing.T) {
 				return [][]string{
 					{
 						"-Dqodana.skip.result.strategy=ANY",
+						"-Dqodana.incremental.coverage.issues.reporting=true",
 					},
 					{
 						"-Dqodana.skip.preamble=true",
@@ -235,6 +237,7 @@ func TestReverseScopedScript(t *testing.T) {
 				return [][]string{
 					{
 						"-Dqodana.skip.result.strategy=ANY",
+						"-Dqodana.incremental.coverage.issues.reporting=true",
 						"-Dqodana.reduced.scope.path=" + filepath.Join(dir, "reduced-scope.json"),
 					},
 				}
@@ -262,6 +265,7 @@ func TestReverseScopedScript(t *testing.T) {
 				return [][]string{
 					{
 						"-Dqodana.skip.result.strategy=ANY",
+						"-Dqodana.incremental.coverage.issues.reporting=true",
 						"-Dqodana.reduced.scope.path=" + filepath.Join(dir, "reduced-scope.json"),
 					},
 					{
@@ -305,6 +309,7 @@ func TestReverseScopedScript(t *testing.T) {
 				return [][]string{
 					{
 						"-Dqodana.skip.result.strategy=ANY",
+						"-Dqodana.incremental.coverage.issues.reporting=true",
 						"-Dqodana.reduced.scope.path=" + filepath.Join(dir, "reduced-scope.json"),
 					},
 					{
@@ -344,6 +349,7 @@ func TestReverseScopedScript(t *testing.T) {
 				return [][]string{
 					{
 						"-Dqodana.skip.result.strategy=ANY",
+						"-Dqodana.incremental.coverage.issues.reporting=true",
 					},
 					{
 						"-Dqodana.skip.preamble=true",

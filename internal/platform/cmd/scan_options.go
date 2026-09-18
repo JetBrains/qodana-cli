@@ -19,6 +19,7 @@ package platformcmd
 import (
 	"fmt"
 	"os"
+	"strconv"
 	"strings"
 
 	"github.com/JetBrains/qodana-cli/internal/platform/product"
@@ -53,6 +54,7 @@ type CliOptions struct {
 	Property                  []string
 	Script                    string
 	FailThreshold             string
+	ReportCoverageProblems    string
 	Commit                    string
 	DiffStart                 string
 	DiffEnd                   string
@@ -233,6 +235,18 @@ func ComputeFlags(cmd *cobra.Command, options *CliOptions) error {
 		"",
 		"Set the number of problems that will serve as a quality gate. If this number is reached, the inspection run is terminated with a non-zero exit code",
 	)
+	flags.Func(
+		"report-coverage-problems",
+		"Report coverage problems. This option overrides coverage.reportProblems in qodana.yaml.",
+		func(value string) error {
+			parsed, err := strconv.ParseBool(value)
+			if err != nil {
+				return err
+			}
+			options.ReportCoverageProblems = strconv.FormatBool(parsed)
+			return nil
+		},
+	)
 	flags.BoolVar(
 		&options.DisableSanity,
 		"disable-sanity",
@@ -321,11 +335,13 @@ func ComputeFlags(cmd *cobra.Command, options *CliOptions) error {
 		"./build/compile_commands.json",
 		"[qodana-clang specific] Path to compile_commands.json. Should be relative to the project directory.",
 	)
-	flags.StringVar(&options.ClangArgs, "clang-args", "",
+	flags.StringVar(
+		&options.ClangArgs, "clang-args", "",
 		`[qodana-clang specific] Extra arguments for clang. `+
 			`Tokens are split using POSIX shell quoting rules. `+
 			`By default appended after '--' as compiler args; include '--' yourself `+
-			`to pass clang-tidy options first, e.g. '--config-file=X -- -Wno-foo'.`)
+			`to pass clang-tidy options first, e.g. '--config-file=X -- -Wno-foo'.`,
+	)
 	flags.StringVar(&options.CdnetSolution, "solution", "", "[qodana-cdnet specific] Relative path to solution file")
 	flags.StringVar(&options.CdnetProject, "project", "", "[qodana-cdnet specific] Relative path to project file")
 	flags.StringVar(&options.CdnetConfiguration, "configuration", "", "[qodana-cdnet specific] Build configuration")
