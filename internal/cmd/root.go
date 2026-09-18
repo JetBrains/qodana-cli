@@ -77,7 +77,7 @@ func Execute() {
 		msg.DisableColor()
 	}
 	if shouldWarnForCommandPosition(rootCommand, os.Args) {
-		msg.WarningMessage("Command must be specified as the first argument. This syntax is deprecated and will be rejected in the next release. Use `qodana <command> [arguments]`.")
+		msg.WarningMessageToStderr("Command must be specified as the first argument. This syntax is deprecated and will be rejected in the next release. Use `qodana <command> [arguments]`.")
 	}
 
 	rootCommand.SetArgs(defaultCommandArgs(rootCommand, os.Args))
