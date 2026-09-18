@@ -80,6 +80,47 @@ func InstallSkills(destDir string) ([]string, error) {
 	return names, nil
 }
 
+// InstallSkill copies one bundled skill into destDir/<name>, overwriting existing files.
+func InstallSkill(destDir string, name string) error {
+	names, err := SkillNames()
+	if err != nil {
+		return err
+	}
+	found := false
+	for _, available := range names {
+		if available == name {
+			found = true
+			break
+		}
+	}
+	if !found {
+		return fmt.Errorf("unknown bundled skill %q", name)
+	}
+	sourceRoot := filepath.ToSlash(filepath.Join(skillsRoot, name))
+	err = fs.WalkDir(skillsFS, sourceRoot, func(path string, d fs.DirEntry, walkErr error) error {
+		if walkErr != nil {
+			return walkErr
+		}
+		relative, err := filepath.Rel(filepath.FromSlash(sourceRoot), filepath.FromSlash(path))
+		if err != nil {
+			return err
+		}
+		target := filepath.Join(destDir, name, relative)
+		if d.IsDir() {
+			return os.MkdirAll(target, 0o755)
+		}
+		content, err := skillsFS.ReadFile(path)
+		if err != nil {
+			return err
+		}
+		return os.WriteFile(target, content, 0o644)
+	})
+	if err != nil {
+		return fmt.Errorf("failed to install skill %s to %s: %w", name, destDir, err)
+	}
+	return nil
+}
+
 // CodexSkillsDir resolves the Codex CLI skills directory.
 // Project-level: <projectDir>/.codex/skills. User-level: $CODEX_HOME/skills,
 // falling back to ~/.codex/skills when CODEX_HOME is not set.
