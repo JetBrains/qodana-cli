@@ -39,6 +39,10 @@ func isCompletionRequested(args []string) bool {
 	return len(args) >= 2 && (args[1] == "completion" || args[1] == cobra.ShellCompRequestCmd || args[1] == cobra.ShellCompNoDescRequestCmd)
 }
 
+func shouldWarnForCommandPosition(rootCmd *cobra.Command, args []string) bool {
+	return len(args) < 2 || (!isHelpOrVersion(args) && args[1] != "help" && !isCompletionRequested(args) && isCommandRequested(rootCmd.Commands(), args[1:2]) == "")
+}
+
 // isCommandRequested checks if any command is requested.
 func isCommandRequested(commands []*cobra.Command, args []string) string {
 	for _, c := range commands {
@@ -71,6 +75,9 @@ func Execute() {
 	go core.CheckForUpdates(version.Version)
 	if !msg.IsInteractive() || os.Getenv("NO_COLOR") != "" { // http://no-color.org
 		msg.DisableColor()
+	}
+	if shouldWarnForCommandPosition(rootCommand, os.Args) {
+		msg.WarningMessage("Command must be specified as the first argument. This syntax is deprecated and will be rejected in the next release. Use `qodana <command> [arguments]`.")
 	}
 
 	rootCommand.SetArgs(defaultCommandArgs(rootCommand, os.Args))

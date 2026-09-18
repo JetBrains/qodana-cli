@@ -84,6 +84,40 @@ func TestIsCompletionRequested(t *testing.T) {
 	}
 }
 
+func TestShouldWarnForCommandPosition(t *testing.T) {
+	rootCmd := newRootCommand()
+	rootCmd.AddCommand(newScanCommand())
+
+	tests := []struct {
+		name     string
+		args     []string
+		expected bool
+	}{
+		{"no command", []string{"qodana"}, true},
+		{"unknown first argument", []string{"qodana", "unknown"}, true},
+		{"flag before command", []string{"qodana", "-i", "blah"}, true},
+		{"command after flag", []string{"qodana", "-i", "blah", "scan"}, true},
+		{"persistent flag before command", []string{"qodana", "--log-level", "debug", "scan"}, true},
+		{"command first", []string{"qodana", "scan", "-i", "blah"}, false},
+		{"help command", []string{"qodana", "help", "scan"}, false},
+		{"help completion command", []string{"qodana", "help", "completion"}, false},
+		{"completion command", []string{"qodana", "completion", "bash"}, false},
+		{"shell completion request", []string{"qodana", cobra.ShellCompRequestCmd, ""}, false},
+		{"shell completion request without descriptions", []string{"qodana", cobra.ShellCompNoDescRequestCmd, ""}, false},
+		{"help flag", []string{"qodana", "--help"}, false},
+		{"short help flag", []string{"qodana", "-h"}, false},
+		{"version flag", []string{"qodana", "--version"}, false},
+		{"short version flag", []string{"qodana", "-v"}, false},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if actual := shouldWarnForCommandPosition(rootCmd, tt.args); actual != tt.expected {
+				t.Errorf("shouldWarnForCommandPosition(..., %v) = %v, want %v", tt.args, actual, tt.expected)
+			}
+		})
+	}
+}
+
 func TestCompletionCommandIsRegisteredForHelp(t *testing.T) {
 	rootCmd := newRootCommand()
 	rootCmd.AddCommand(newScanCommand())
