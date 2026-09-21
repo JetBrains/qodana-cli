@@ -369,7 +369,7 @@ func ShowReport(cacheDir string, resultsDir string, reportDir string, port int) 
 				}
 				openReport("", reportDir, port)
 			},
-			fmt.Sprintf("Showing Qodana report from http://127.0.0.1:%d/", port),
+			fmt.Sprintf("Showing Qodana report from http://localhost:%d/", port),
 			"",
 		)
 	}
@@ -425,7 +425,7 @@ func openReport(cloudUrl string, path string, port int) {
 		openBrowserWhenAvailable(cloudUrl)
 		return
 	}
-	url := fmt.Sprintf("http://127.0.0.1:%d", port)
+	url := fmt.Sprintf("http://localhost:%d", port)
 	go openBrowserWhenAvailable(url)
 	server := createReportServer(path, port)
 	defer func() { _ = server.Close() }()
