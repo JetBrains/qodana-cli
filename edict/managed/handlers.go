@@ -71,7 +71,7 @@ func (h toolHandlers) taskAdd(in addTaskInput) (any, error) {
 	caller := h.taskForToken(in.Token)
 	task, err := h.store.AddTask(in.Token, in.Skill, in.Title)
 	if err != nil {
-		h.log.printf(caller, "Add task %q (%s) failed: %s", h.log.text(in.Title), h.log.text(in.Skill), h.log.text(err.Error()))
+		h.log.printf(caller, "Add task %q (%s) failed: %s", h.log.text(in.Title), displaySkill(h.log.text(in.Skill)), h.log.text(err.Error()))
 	} else {
 		h.log.printf(caller, "Added task %s", h.log.target(task))
 	}
@@ -93,7 +93,7 @@ func (h toolHandlers) delegate(in delegateInput) (any, error) {
 
 func (h toolHandlers) taskStart(in startTaskInput) (any, error) {
 	task := h.taskForToken(in.Token)
-	plan, err := h.store.StartTask(in.Token, in.AgentID)
+	plan, err := h.store.StartTask(in.Token, in.AgentID, in.Skill)
 	if err != nil {
 		h.log.printf(task, "Start task %q failed: %s", h.log.text(task.Title), h.log.text(err.Error()))
 	} else {

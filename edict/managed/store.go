@@ -62,8 +62,10 @@ type File struct {
 }
 
 type Delegation struct {
-	Token  string `json:"token"`
-	TaskID string `json:"taskId"`
+	Token     string `json:"token"`
+	TaskID    string `json:"taskId"`
+	Skill     string `json:"skill"`
+	SkillPath string `json:"skillPath"` // Relative to the host's installed skills directory.
 }
 
 type capability struct {
@@ -80,6 +82,7 @@ type Store struct {
 	lock           *os.File
 	policies       map[string]Policy
 	grants         map[string]capability
+	issuedTokens   map[string]struct{} // Hashes retained for log redaction after revocation.
 	plan           *Plan
 	managerClaimed bool
 	closed         bool
@@ -97,7 +100,7 @@ func NewStore(directory string) (*Store, error) {
 	if err != nil {
 		return nil, err
 	}
-	s := &Store{root: root, policies: policies, grants: make(map[string]capability)}
+	s := &Store{root: root, policies: policies, grants: make(map[string]capability), issuedTokens: make(map[string]struct{})}
 	fail := func(err error) (*Store, error) { _ = s.Close(); return nil, err }
 	if err := s.safePath(".edict-mcp.lock"); err != nil {
 		return fail(err)
@@ -191,6 +194,7 @@ func (s *Store) CreatePlan(request string, steps []Step) (*PlanCreation, error) 
 		}
 	}
 	token := randomID()
+	s.issuedTokens[hash(token)] = struct{}{}
 	s.grants[hash(token)] = c
 	s.managerClaimed = true
 	return &PlanCreation{Plan: clonePlan(s.plan), Token: token}, nil
@@ -272,10 +276,11 @@ func (s *Store) Delegate(token, taskID string, operations, scope []string) (Dele
 		return Delegation{}, err
 	}
 	s.grants[hash(secret)] = capability{skill: task.Skill, taskID: task.ID, parent: hash(token), operations: slices.Clone(operations), scope: slices.Clone(scope)}
-	return Delegation{Token: secret, TaskID: task.ID}, nil
+	s.issuedTokens[hash(secret)] = struct{}{}
+	return Delegation{Token: secret, TaskID: task.ID, Skill: task.Skill, SkillPath: "managed-" + task.Skill + "/SKILL.md"}, nil
 }
 
-func (s *Store) StartTask(token, agentID string) (*Plan, error) {
+func (s *Store) StartTask(token, agentID, skill string) (*Plan, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	c, err := s.lookup(token)
@@ -286,6 +291,9 @@ func (s *Store) StartTask(token, agentID string) (*Plan, error) {
 	task := findTask(p, c.taskID)
 	if task == nil || task.Status != "delegated" {
 		return nil, errors.New("only a delegated worker can start its task")
+	}
+	if skill != c.skill {
+		return nil, fmt.Errorf("task skill mismatch: got %q; expected %q; read managed-%s/SKILL.md from the installed skills directory before starting", skill, c.skill, c.skill)
 	}
 	if strings.TrimSpace(agentID) == "" {
 		return nil, errors.New("subagent ID is required")

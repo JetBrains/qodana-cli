@@ -92,7 +92,7 @@ func TestManagedEdictDistilleryWorkflow(t *testing.T) {
 		ctx,
 		client,
 		"edict_task_start",
-		map[string]any{"token": batch.Token, "agentId": "scripted-batch-agent"},
+		map[string]any{"token": batch.Token, "agentId": "scripted-batch-agent", "skill": batch.Skill},
 	)
 	analysisTask := managedCall[managed.Task](
 		t, ctx, client, "edict_task_add", map[string]any{
@@ -111,7 +111,7 @@ func TestManagedEdictDistilleryWorkflow(t *testing.T) {
 		ctx,
 		client,
 		"edict_task_start",
-		map[string]any{"token": analysis.Token, "agentId": "scripted-analysis-agent"},
+		map[string]any{"token": analysis.Token, "agentId": "scripted-analysis-agent", "skill": analysis.Skill},
 	)
 	signals := managedFixtureSignals(t, checkout)
 	writeArgs := map[string]any{
@@ -219,7 +219,7 @@ func TestManagedEdictDistilleryWorkflow(t *testing.T) {
 		ctx,
 		client,
 		"edict_task_start",
-		map[string]any{"token": run.Token, "agentId": "scripted-run-agent"},
+		map[string]any{"token": run.Token, "agentId": "scripted-run-agent", "skill": run.Skill},
 	)
 	distributionTask := managedCall[managed.Task](
 		t, ctx, client, "edict_task_add", map[string]any{
@@ -252,7 +252,7 @@ func TestManagedEdictDistilleryWorkflow(t *testing.T) {
 		ctx,
 		client,
 		"edict_task_start",
-		map[string]any{"token": distribution.Token, "agentId": "scripted-distribution-agent"},
+		map[string]any{"token": distribution.Token, "agentId": "scripted-distribution-agent", "skill": distribution.Skill},
 	)
 	for _, signal := range signals {
 		read := managedCall[managed.File](t, ctx, client, "edict_read", map[string]any{"token": distribution.Token, "path": signal.Path})
@@ -518,20 +518,22 @@ func requireManagedDistilleryFixture(t *testing.T) {
 	t.Setenv("DISTILLERY_TEST_REPO", local)
 }
 
-func newManagedIntegrationServer(t *testing.T, store *managed.Store, testRoot string) *mcp.Server {
+func newManagedIntegrationServer(t *testing.T, store *managed.Store, testRoot string) (*mcp.Server, *managed.AgentLogger) {
 	t.Helper()
 	logs, err := managed.OpenLogs(filepath.Join(testRoot, "log"))
 	if err != nil {
 		t.Fatal(err)
 	}
 	t.Cleanup(func() { _ = logs.Close() })
-	return managed.NewServer(store, logs.Activity, logs.System)
+	agents := managed.NewAgentLogger(store, logs.Agents)
+	return managed.NewServer(store, logs.Activity, logs.System, agents), agents
 }
 
 func connectManagedTestServer(t *testing.T, store *managed.Store, testRoot string) *mcp.ClientSession {
 	t.Helper()
 	serverTransport, clientTransport := mcp.NewInMemoryTransports()
-	serverSession, err := newManagedIntegrationServer(t, store, testRoot).Connect(context.Background(), serverTransport, nil)
+	server, _ := newManagedIntegrationServer(t, store, testRoot)
+	serverSession, err := server.Connect(context.Background(), serverTransport, nil)
 	if err != nil {
 		t.Fatal(err)
 	}

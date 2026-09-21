@@ -34,7 +34,7 @@ func TestServerLogsRequestsAndResponsesWithoutCapabilities(t *testing.T) {
 	require.Len(t, created.Token, 64)
 	require.Len(t, grant.Token, 64)
 	require.True(t, call("edict_plan_create", args).IsError)
-	protocolOutput[Plan](t, call("edict_task_start", map[string]any{"token": grant.Token, "agentId": "logged-worker"}))
+	protocolOutput[Plan](t, call("edict_task_start", map[string]any{"token": grant.Token, "agentId": "logged-worker", "skill": grant.Skill}))
 	cancelled := protocolOutput[Task](t, call("edict_task_add", map[string]any{
 		"token": created.Token, "skill": "edict-next-batch-signal-analysis", "title": "Cancelled analysis",
 	}))
@@ -158,12 +158,12 @@ func TestActivityLogsCallerAcrossDelegationAndSharedSessionReads(t *testing.T) {
 		"token": created.Token, "taskId": created.Plan.Tasks[0].ID,
 		"operations": []string{"inbox.write"}, "scope": []string{"inbox"},
 	}))
-	call("edict_task_start", map[string]any{"token": batch.Token, "agentId": "batch-worker"})
+	call("edict_task_start", map[string]any{"token": batch.Token, "agentId": "batch-worker", "skill": batch.Skill})
 	child := protocolOutput[Task](t, call("edict_task_add", map[string]any{
 		"token": batch.Token, "skill": "edict-next-signal-analysis", "title": "Review commit",
 	}))
 	analysis := protocolOutput[Delegation](t, call("edict_delegate", map[string]any{"token": batch.Token, "taskId": child.ID}))
-	call("edict_task_start", map[string]any{"token": analysis.Token, "agentId": "analysis-worker"})
+	call("edict_task_start", map[string]any{"token": analysis.Token, "agentId": "analysis-worker", "skill": analysis.Skill})
 	call("edict_registry", map[string]any{"token": analysis.Token})
 	call("edict_list", map[string]any{"token": batch.Token, "prefix": "inbox"})
 	call("edict_plan_get", map[string]any{"token": created.Token})
@@ -233,13 +233,13 @@ func TestOpenLogsAppendAndReportInvalidDirectory(t *testing.T) {
 	for _, line := range []string{"first\n", "second\n"} {
 		logs, err := OpenLogs(directory)
 		require.NoError(t, err)
-		for _, file := range []*os.File{logs.Activity, logs.System} {
+		for _, file := range []*os.File{logs.Activity, logs.System, logs.Agents} {
 			_, err = file.WriteString(line)
 			require.NoError(t, err)
 		}
 		require.NoError(t, logs.Close())
 	}
-	for _, name := range []string{"edict-mcp.log", "edict-mcp-system.log"} {
+	for _, name := range []string{"edict-mcp.log", "edict-mcp-system.log", "edict-agents.log"} {
 		data, err := os.ReadFile(filepath.Join(directory, "edict", name))
 		require.NoError(t, err)
 		require.Equal(t, "first\nsecond\n", string(data))

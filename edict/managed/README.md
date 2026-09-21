@@ -56,6 +56,36 @@ remain visible. Structured worker reports stay in the system log, with a readabl
 summary in the activity log.
 Keep the project log directory inaccessible to children.
 
+Hosts launching managed workflows through `edict.RunCodex` can capture the main
+agent's and all nested workers' emitted commentary and final messages in
+`edict-agents.log`, in the same log directory. Pass
+`managed.NewAgentLogger(store, logs.Agents)` as `CodexRunConfig.AgentLogger` and the
+fourth argument to `managed.NewServer`, using the existing store and `managed.OpenLogs`
+result. The server mirrors readable MCP activity into this combined log with an
+`mcp:` label. The managed integration harness
+enables this automatically; no log-directory CLI flag is needed. Capture tails
+Codex session traces during execution and flushes on success, failure, or
+cancellation. Every record starts with its timestamp, `[skill/shortTaskId]`, and
+`commentary:`, `final:`, or `mcp:`. Lines wrap at 120 Unicode characters including
+the prefix, with indented continuation lines. Existing multiline formatting and
+full messages remain available; long paths are wrapped too. Runtime agent IDs
+are used internally for attribution and omitted from this readable log. Issued
+tokens remain redacted after revocation.
+
+Only the invocation's root thread and its descendants are included. Prompts,
+tool payloads, reasoning events, and unrelated sessions are excluded. Early
+worker output waits for `edict_task_start` to associate the runtime agent with
+its managed task. If a worker exits before starting, its output is retained as
+`[unassigned/-]`. The standalone MCP server sees tool
+traffic only; an external host must supply its agent output to `AgentLogger`.
+
+Delegations return the assigned `skill` and a `skillPath` relative to the installed
+skills directory. Parents provide the child the resolved absolute path and require
+reading it before starting. `edict_task_start` requires that same registry `skill`
+and rejects mismatches. This validates the declared role; the real Codex test also
+checks the worker's actual skill-file reads. The root manager skill does not apply
+to delegated workers, even when it is the only implicitly discoverable skill.
+
 The trusted host must make the state root read-only to **all** agents, including
 unmanaged skills, while the server retains write access. Run the server outside
 that agent sandbox. Have the manager claim the plan before starting children; deny
@@ -140,8 +170,9 @@ call-graph restrictions, revocation, plan recovery, stale writes, filesystem
 containment, concurrent access, and clean CLI stdio/shutdown.
 
 Integration artifacts are retained in `<qodana-cli>/out/<test-name>/`, including
-the fixture checkout, Codex traces, readable `log/edict/edict-mcp.log`, and detailed
-`log/edict/edict-mcp-system.log` for managed tests.
+the fixture checkout, Codex traces, readable `log/edict/edict-mcp.log`, detailed
+`log/edict/edict-mcp-system.log`, and runtime output in `log/edict/edict-agents.log`
+for managed Codex tests.
 Each test clears its own output directory before the next execution; the latest
 run remains available for debugging after success or failure. Raw Codex traces may
 contain capabilities, so the per-test directory is private and must not be shared
