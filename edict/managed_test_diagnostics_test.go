@@ -11,6 +11,13 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+func TestManagedCommitSignalAcceptsAdditionalProvenance(t *testing.T) {
+	var signal managedCommitSignal
+	require.NoError(t, json.Unmarshal([]byte(`{"provenance":{"workItemId":"commit-1234","signalIndex":0,"details":{"verified":true}}}`), &signal))
+	require.Equal(t, "commit-1234", signal.Provenance.WorkItemID)
+	require.Error(t, json.Unmarshal([]byte(`{"provenance":{"workItemId":0}}`), &signal), "the required workItemId must remain a string")
+}
+
 func TestManagedTraceRedactsTokensWithoutHidingArtifactIDs(t *testing.T) {
 	manager, worker := strings.Repeat("a", 64), strings.Repeat("b", 64)
 	plan, task, digest := strings.Repeat("c", 64), strings.Repeat("d", 64), strings.Repeat("e", 64)

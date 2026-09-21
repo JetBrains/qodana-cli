@@ -64,6 +64,9 @@ func TestSignalWriteValidation(t *testing.T) {
 		{"reversed range", "fileRevision.expectedRanges[0]", func(s *signalRecord) { s.FileRevision.ExpectedRanges[0].End = 0 }},
 		{"unchanged range", "fileRevision.expectedRanges[0]", func(s *signalRecord) { s.FileRevision.ExpectedRanges = []signalRange{{2, 2}} }},
 		{"missing diff", "source.diffPositiveToNegative", func(s *signalRecord) { s.Source.DiffPositiveToNegative = "" }},
+		{"trimmed diff newline", "source.diffPositiveToNegative", func(s *signalRecord) {
+			s.Source.DiffPositiveToNegative = strings.TrimSuffix(s.Source.DiffPositiveToNegative, "\n")
+		}},
 		{"truncated diff", "source.diffPositiveToNegative", func(s *signalRecord) {
 			s.Source.DiffPositiveToNegative = strings.TrimSuffix(s.Source.DiffPositiveToNegative, " end();\n")
 		}},
