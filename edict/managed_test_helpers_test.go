@@ -16,6 +16,7 @@ import (
 	"strings"
 	"testing"
 	"time"
+	"unicode/utf8"
 
 	"github.com/JetBrains/qodana-cli/edict/managed"
 	"github.com/modelcontextprotocol/go-sdk/mcp"
@@ -58,7 +59,7 @@ type managedCodexTest struct {
 func prepareManagedCodex(t *testing.T, project managedTestProject) managedCodexTest {
 	t.Helper()
 	checkout := project.Checkout
-	server := newManagedIntegrationServer(t, project.Store, checkout.TestRoot)
+	server, agents := newManagedIntegrationServer(t, project.Store, checkout.TestRoot)
 	httpServer := httptest.NewServer(mcp.NewStreamableHTTPHandler(
 		func(_ *http.Request) *mcp.Server { return server }, nil,
 	))
@@ -112,6 +113,7 @@ default_tools_approval_mode = "approve"
 		config: CodexRunConfig{
 			Executable: binary, HomeDirectory: home, WorkingDirectory: project.ProjectDirectory,
 			OutputDirectory: filepath.Join(checkout.TestRoot, "trace"), Model: CodexModelFromEnvironment(),
+			AgentLogger: agents,
 		},
 	}
 }
@@ -158,6 +160,25 @@ func (codex managedCodexTest) assertCompletedTasks(t *testing.T, result CodexRun
 			t.Errorf("manager did not execute %s", skill)
 		}
 	}
+	assertManagedAgentOutput(t, codex.project.Checkout.TestRoot, plan)
+	assertManagedWorkerSkills(t, codex.config.HomeDirectory, plan)
+}
+
+func assertManagedAgentOutput(t *testing.T, testRoot string, plan *managed.Plan) {
+	t.Helper()
+	output := string(mustReadFile(t, filepath.Join(testRoot, "log", "edict", "edict-agents.log")))
+	assert.Contains(t, output, "[edict_manager/-] commentary:", "main agent output must be logged")
+	assert.NotContains(t, output, "[unassigned", "completed managed workers must have skill/task attribution")
+	assert.NotContains(t, output, " agent=")
+	for _, line := range strings.Split(output, "\n") {
+		assert.LessOrEqual(t, utf8.RuneCountInString(line), 120, "agent log line must wrap: %s", line)
+	}
+	for _, task := range plan.Tasks {
+		prefix := "[" + strings.ReplaceAll(task.Skill, "edict-next-", "edict-") + "/" + task.ID[:8] + "] "
+		assert.Contains(t, output, prefix+"final:", "final output missing for managed task %s", task.ID)
+		assert.Contains(t, output, prefix+"mcp: Started task", "MCP activity missing for managed task %s", task.ID)
+	}
+	assert.Contains(t, output, "[edict_manager/-] final:", "final manager output must be logged")
 }
 
 func assertManagedCheckoutUnchanged(t *testing.T, project managedTestProject) {
