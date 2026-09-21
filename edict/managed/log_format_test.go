@@ -84,8 +84,42 @@ func TestCombinedAgentLogIncludesAttributedMCPActivity(t *testing.T) {
 	prefix := "[edict-batch-signal-analysis/" + batch.TaskID[:8] + "] "
 	require.Equal(t, 8, strings.Count(output, prefix+"commentary: Reading the plan [redacted]"))
 	require.Equal(t, 8, strings.Count(output, prefix+"mcp: Read plan:"))
+	require.Equal(t, 8, strings.Count(output, prefix+"mcp: edict_plan_get response:"))
+	require.Contains(t, output, "id: "+batch.TaskID)
 	require.NotContains(t, output, batch.Token)
 	for _, line := range strings.Split(strings.TrimSuffix(output, "\n"), "\n") {
 		require.LessOrEqual(t, utf8.RuneCountInString(line), 120)
+	}
+}
+
+func TestReadableResponsesPreserveFullReportsAndRedactOnlyTokens(t *testing.T) {
+	store, manager, _ := testStore(t)
+	var activity, agents bytes.Buffer
+	logger := newActivityLogger(&activity)
+	logger.agents = NewAgentLogger(store, &agents)
+	caller := Task{Skill: "edict_manager"}
+	logger.remember(manager, caller)
+	// Exercise JSON within JSON, multiline source, large exact numbers, and a
+	// report larger than the short status summary's limit.
+	report := `{"workItemId":"commit-19475f69ff6ed87a","source":{"commitRevision":"19475f69ff6ed87a68712b4ad9d55938f3868b6e","diff":"-old\n+new\n"},"count":9007199254740993,"token":"not-an-issued-token","description":"` + strings.Repeat("evidence ", 100) + manager + `"}`
+	response := File{Path: "inbox/s-example.json", Hash: strings.Repeat("f", 64), Content: report}
+	logger.response(caller, "edict_read", response, nil)
+	require.Equal(t, report, response.Content, "logging must not change the actual response")
+	for _, output := range []string{activity.String(), agents.String()} {
+		unwrapped := strings.ReplaceAll(output, "\n    ", "")
+		for _, want := range []string{
+			"edict_read response:", "workItemId: commit-19475f69ff6ed87a", "commitRevision: 19475f69ff6ed87a68712b4ad9d55938f3868b6e",
+			"count: 9007199254740993", "hash: " + response.Hash, "token: '[redacted]'", strings.Repeat("evidence ", 100) + "[redacted]",
+		} {
+			require.Contains(t, unwrapped, want)
+		}
+		require.Contains(t, output, "diff: |\n")
+		require.Contains(t, output, "-old\n")
+		require.Contains(t, output, "+new\n")
+		require.NotContains(t, output, manager)
+		require.NotContains(t, output, "not-an-issued-token")
+		for _, line := range strings.Split(strings.TrimSuffix(output, "\n"), "\n") {
+			require.LessOrEqual(t, utf8.RuneCountInString(line), 120)
+		}
 	}
 }

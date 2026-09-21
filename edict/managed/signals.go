@@ -94,6 +94,9 @@ func validateSignal(name, content string) error {
 	source := signal.Source
 	switch source.Type {
 	case "FromCommit":
+		if !strings.HasSuffix(source.DiffPositiveToNegative, "\n") {
+			return invalid("source.diffPositiveToNegative", "must preserve the canonical Git diff's final newline; read the exact Git output without trimming it")
+		}
 		for _, field := range []struct{ name, value string }{
 			{"source.commitRevision", source.CommitRevision}, {"source.parentRevision", source.ParentRevision},
 		} {

@@ -24,7 +24,10 @@ analysis session for local Git extraction. Keep temporary packages outside the s
    when supplied. Retain full human discussion, PR title/body, URL, and exact before/after revision anchors. Do not use
    a legacy IntelliJ preparation tool that changes Edict state.
 3. For every eligible work item, including a singleton, create and delegate an `edict-next-signal-analysis` task with
-   `operations: []`. Give a fresh native subagent exactly that item's retained package, source checkout, source revision
+   `operations: []`. In `edict_task_add`, put the work-item ID, full commit revision and commit subject in the title
+   (for PRs, use the PR number, URL and title). This records the source assignment in the plan and logs before the
+   worker starts; a generic title such as "Review correction" is insufficient. Give a fresh native subagent exactly
+   that same item's retained package, source checkout, source revision
    readers if needed, and private scratch path. No inline fallback. Use waves within available concurrency.
 4. Verify complete inspection coverage: returned inspected IDs must equal the prepared set exactly, with no duplicates,
    missing or blocked items. Every worker must have inspected complete human material plus exact source and diff. Stop

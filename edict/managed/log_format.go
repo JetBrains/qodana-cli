@@ -17,6 +17,10 @@ const readableLogWidth = 120
 func formatAgentRecord(at time.Time, task Task, kind, text string) string {
 	skill := displaySkill(task.Skill)
 	prefix := fmt.Sprintf("%s [%s/%s] %s: ", at.Local().Format("2006/01/02 15:04:05"), skill, shortTaskID(task.ID), kind)
+	return formatReadableRecord(prefix, text)
+}
+
+func formatReadableRecord(prefix, text string) string {
 	var record strings.Builder
 	text = strings.ReplaceAll(text, "\t", "    ")
 	for _, line := range strings.Split(strings.TrimRight(text, "\r\n"), "\n") {

@@ -29,7 +29,7 @@ import (
 )
 
 // This test drives real MCP requests and real Git evidence deterministically. The
-// agent IDs below represent a scripted client; TestManagedEdictManagerSkill is the
+// agent IDs below represent a scripted client; TestManagedEdictExtractSignalsFromOneCommit is the
 // separate test that actually launches Codex and its subagents.
 func TestManagedEdictDistilleryWorkflow(t *testing.T) {
 	if testing.Short() {
@@ -252,10 +252,20 @@ func TestManagedEdictDistilleryWorkflow(t *testing.T) {
 		ctx,
 		client,
 		"edict_task_start",
-		map[string]any{"token": distribution.Token, "agentId": "scripted-distribution-agent", "skill": distribution.Skill},
+		map[string]any{
+			"token":   distribution.Token,
+			"agentId": "scripted-distribution-agent",
+			"skill":   distribution.Skill,
+		},
 	)
 	for _, signal := range signals {
-		read := managedCall[managed.File](t, ctx, client, "edict_read", map[string]any{"token": distribution.Token, "path": signal.Path})
+		read := managedCall[managed.File](
+			t,
+			ctx,
+			client,
+			"edict_read",
+			map[string]any{"token": distribution.Token, "path": signal.Path},
+		)
 		clusterPath := "clusters/" + historyFixtureCluster + "/signals/" + filepath.Base(signal.Path)
 		copied := managedCall[managed.File](
 			t, ctx, client, "edict_state_write", map[string]any{
@@ -355,20 +365,31 @@ func TestManagedEdictDistilleryWorkflow(t *testing.T) {
 	)
 }
 
-// This test launches a real Codex manager and native subagents. No IntelliJ
-// server is needed for the extraction-only request.
-func TestManagedEdictManagerSkill(t *testing.T) {
-	//if testing.Short() || os.Getenv("EDICT_MANAGED_CODEX_TEST") != "1" {
-	//	t.Skip("set EDICT_MANAGED_CODEX_TEST=1 to run the real Codex manager/subagent integration")
-	//}
+// This test launches a real Codex manager and native subagents.
+func TestManagedEdictExtractSignalsFromOneCommit(t *testing.T) {
+	if testing.Short() {
+		t.Skip("real codex exec is long")
+	}
 	requireCodexProvider(t)
 	project := prepareManagedTestProject(t, historyFixtureFixRevision, historyFixtureProject)
 	codex := prepareManagedCodex(t, project)
 
 	result := codex.run(t, "Extract signals from the latest commit.", 15*time.Minute)
 
-	codex.assertCompletedTasks(t, result, "edict-next-batch-signal-analysis", "edict-next-signal-analysis")
+	codex.assertSignalExtractionTasks(t, result, historyFixSignalExpectation())
 	assertManagedCommitSignals(t, project, historyFixSignalExpectation())
+	assertManagedCheckoutUnchanged(t, project)
+}
+
+func TestManagedEdictExtractSignalsFromThreeCommits(t *testing.T) {
+	requireCodexProvider(t)
+	project := prepareManagedTestProject(t, threeCommitFixtureHead, threeCommitFixtureProject)
+	codex := prepareManagedCodex(t, project)
+
+	result := codex.run(t, "Extract signals from the latest three commits.", 15*time.Minute)
+
+	codex.assertSignalExtractionTasks(t, result, threeCommitSignalExpectations()...)
+	assertManagedCommitSignals(t, project, threeCommitSignalExpectations()...)
 	assertManagedCheckoutUnchanged(t, project)
 }
 
@@ -534,7 +555,11 @@ func requireManagedDistilleryFixture(t *testing.T) {
 	t.Setenv("DISTILLERY_TEST_REPO", local)
 }
 
-func newManagedIntegrationServer(t *testing.T, store *managed.Store, testRoot string) (*mcp.Server, *managed.AgentLogger) {
+func newManagedIntegrationServer(
+	t *testing.T,
+	store *managed.Store,
+	testRoot string,
+) (*mcp.Server, *managed.AgentLogger) {
 	t.Helper()
 	logs, err := managed.OpenLogs(filepath.Join(testRoot, "log"))
 	if err != nil {
@@ -657,7 +682,11 @@ type managedCommitSignal struct {
 	Label              string                    `json:"label"`
 	Description        string                    `json:"description"`
 	SyntheticExampleID *string                   `json:"syntheticExampleId"`
-	Provenance         map[string]string         `json:"provenance"`
+	Provenance         managedSignalProvenance   `json:"provenance"`
+}
+
+type managedSignalProvenance struct {
+	WorkItemID string `json:"workItemId"`
 }
 
 type managedCommitSource struct {
@@ -731,7 +760,7 @@ func managedFixtureSignals(t *testing.T, checkout distilleryTestCheckout) []mana
 			},
 			Label:       evidence.label,
 			Description: "Use an explicit completion signal instead of sleeping to coordinate a worker",
-			Provenance:  map[string]string{"workItemId": workItemID},
+			Provenance:  managedSignalProvenance{WorkItemID: workItemID},
 		}
 		data, err := json.MarshalIndent(signal, "", "  ")
 		if err != nil {

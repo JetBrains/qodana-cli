@@ -36,6 +36,10 @@ Standard output contains only MCP protocol messages. The MCP client owns the
 stdio connection and server lifetime. Logging needs no extra CLI parameter: logs
 are appended under `<project-dir>/log/edict/`. Tool handlers write readable progress
 to `edict-mcp.log`: plan creation, task titles and outcomes, file changes, and errors.
+Each handler also logs its complete response body, or error, below a named
+`edict_<tool> response:` entry. Bodies use readable YAML, expanding JSON-encoded
+file contents and worker reports and preserving multiline evidence. These are
+display copies; the MCP response itself is unchanged. Protocol envelopes are omitted.
 Detailed JSON request/response payloads, protocol fields, timings, and SDK diagnostics
 go to `edict-mcp-system.log`. Each activity line starts with the timestamp, skill,
 and the first eight characters of the task ID, for example:
@@ -52,8 +56,8 @@ Tokenless reads use `[anonymous task=-]` because the caller is unknown. A shared
 MCP connection cannot identify individual workers. Manager events use
 `[edict_manager task=-]` because the manager has no worker task. Only capability
 tokens are redacted, including known tokens in free-form text; IDs and hashes
-remain visible. Structured worker reports stay in the system log, with a readable
-summary in the activity log.
+remain visible. Structured worker reports appear in full in readable responses,
+including plan reads and task completion. Both readable logs wrap at 120 characters.
 Keep the project log directory inaccessible to children.
 
 Hosts launching managed workflows through `edict.RunCodex` can capture the main
@@ -61,7 +65,7 @@ agent's and all nested workers' emitted commentary and final messages in
 `edict-agents.log`, in the same log directory. Pass
 `managed.NewAgentLogger(store, logs.Agents)` as `CodexRunConfig.AgentLogger` and the
 fourth argument to `managed.NewServer`, using the existing store and `managed.OpenLogs`
-result. The server mirrors readable MCP activity into this combined log with an
+result. The server mirrors readable MCP activity and complete response bodies into this combined log with an
 `mcp:` label. The managed integration harness
 enables this automatically; no log-directory CLI flag is needed. Capture tails
 Codex session traces during execution and flushes on success, failure, or
@@ -72,8 +76,13 @@ full messages remain available; long paths are wrapped too. Runtime agent IDs
 are used internally for attribution and omitted from this readable log. Issued
 tokens remain redacted after revocation.
 
-Only the invocation's root thread and its descendants are included. Prompts,
-tool payloads, reasoning events, and unrelated sessions are excluded. Early
+Only the invocation's root thread and its descendants are included. Native runtime prompts,
+tool payloads, reasoning events, and unrelated sessions are excluded; Edict MCP
+response bodies come directly from the server handlers. Commit assignments are
+recorded by the batch skill in each evidence task's title: work-item ID, full
+commit revision, and commit subject (PR assignments use the number, URL and title).
+Task creation, delegation, and start messages therefore identify the source before
+the worker returns any findings. Early
 worker output waits for `edict_task_start` to associate the runtime agent with
 its managed task. If a worker exits before starting, its output is retained as
 `[unassigned/-]`. The standalone MCP server sees tool
@@ -155,24 +164,29 @@ go test ./internal/cmd -run 'TestManaged|TestEdictManaged'
 DISTILLERY_TEST_REPO=/path/to/distillery-test \
   go test ./edict -run '^TestManagedEdictDistilleryWorkflow$' -v
 EDICT_MANAGED_CODEX_TEST=1 DISTILLERY_TEST_REPO=/path/to/distillery-test \
-  go test ./edict -run '^TestManagedEdictManagerSkill$' -v -timeout 18m
+  go test ./edict -run '^TestManagedEdictExtractSignalsFrom(OneCommit|ThreeCommits)$' -v -timeout 35m
 ```
 
 The deterministic integration test uses real Git history and MCP requests, plus
-an actual Codex sandbox write-denial check when Codex is installed. The opt-in
-model test asks only "Extract signals from the latest commit." It runs from the
+an actual Codex sandbox write-denial check when Codex is installed. The real-model
+tests ask only "Extract signals from the latest commit." or "Extract signals from
+the latest three commits." Each runs from the
 source project with MCP and scratch space configured by the test environment,
-without protocol instructions in the prompt. It runs the manager and native subagents, checks their runtime IDs against
-the persisted plan, and validates extracted signals against the fixture's exact
-revisions and diff. It requires Codex and the configured model provider. It does
-not run IntelliJ generation. Unit/protocol tests cover capability attenuation,
+without protocol instructions in the prompt. They run the manager and native subagents,
+check one evidence worker per commit beneath the batch task, and validate extracted
+signals against each fixture commit's exact revisions and diff. The three-commit
+scenario uses `distillery-test/testExtractSignalsFromThreeCommits`: a baseline
+followed by independent string-equality, locale, and integer-overflow corrections.
+It expects six signals, with one positive/negative pair for each commit and none
+from outside the selection. Both scenarios require Codex and the configured model
+provider; neither runs IntelliJ generation. Unit/protocol tests cover capability attenuation,
 call-graph restrictions, revocation, plan recovery, stale writes, filesystem
 containment, concurrent access, and clean CLI stdio/shutdown.
 
-The managed model test defaults to `gpt-5.6-terra`, with high reasoning effort.
-Its native workers inherit the selected model. Set `CODEX_MODEL=gpt-5.6-sol`
+The managed model tests default to `gpt-5.6-terra`, with high reasoning effort.
+Their native workers inherit the selected model. Set `CODEX_MODEL=gpt-5.6-sol`
 (or another supported model) to override it for comparisons or provider access.
-Other Codex integrations retain their existing model defaults. The test prints
+Other Codex integrations retain their existing model defaults. Each test prints
 its selected model alongside the result and elapsed time.
 
 Integration artifacts are retained in `<qodana-cli>/out/<test-name>/`, including
