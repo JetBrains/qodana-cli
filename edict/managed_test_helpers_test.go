@@ -58,6 +58,13 @@ type managedCodexTest struct {
 // prompts should describe the requested work, without teaching the skill protocol.
 func prepareManagedCodex(t *testing.T, project managedTestProject) managedCodexTest {
 	t.Helper()
+	// Keep this fixture workflow fast without changing the model used by other
+	// Codex integrations. CODEX_MODEL still allows provider-specific overrides.
+	model := strings.TrimSpace(os.Getenv("CODEX_MODEL"))
+	if model == "" {
+		model = "gpt-5.6-terra"
+	}
+	t.Logf("Managed Codex model: %s", model)
 	checkout := project.Checkout
 	server, agents := newManagedIntegrationServer(t, project.Store, checkout.TestRoot)
 	httpServer := httptest.NewServer(mcp.NewStreamableHTTPHandler(
@@ -112,7 +119,7 @@ default_tools_approval_mode = "approve"
 		project: project,
 		config: CodexRunConfig{
 			Executable: binary, HomeDirectory: home, WorkingDirectory: project.ProjectDirectory,
-			OutputDirectory: filepath.Join(checkout.TestRoot, "trace"), Model: CodexModelFromEnvironment(),
+			OutputDirectory: filepath.Join(checkout.TestRoot, "trace"), Model: model,
 			AgentLogger: agents,
 		},
 	}
