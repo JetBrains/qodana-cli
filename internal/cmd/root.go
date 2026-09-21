@@ -62,17 +62,22 @@ func setDefaultCommandIfNeeded(rootCmd *cobra.Command, args []string) {
 
 // Execute is a main CLI entrypoint: handles user interrupt, CLI start and everything else.
 func Execute() {
-	if !qdenv.IsContainer() && os.Geteuid() == 0 {
+	managedMCP := IsManagedMCPCommand(os.Args[1:])
+	if !managedMCP && !qdenv.IsContainer() && os.Geteuid() == 0 {
 		msg.WarningMessage("Running the tool as root is dangerous: please run it as a regular user")
 	}
-	go core.CheckForUpdates(version.Version)
+	if !managedMCP {
+		go core.CheckForUpdates(version.Version)
+	}
 	if !msg.IsInteractive() || os.Getenv("NO_COLOR") != "" { // http://no-color.org
 		msg.DisableColor()
 	}
 
 	setDefaultCommandIfNeeded(rootCommand, os.Args)
 	if err := rootCommand.Execute(); err != nil {
-		core.CheckForUpdates(version.Version)
+		if !managedMCP {
+			core.CheckForUpdates(version.Version)
+		}
 		_, err = fmt.Fprintf(os.Stderr, "error running command: %s\n", err)
 		if err != nil {
 			return
@@ -80,7 +85,20 @@ func Execute() {
 		os.Exit(1)
 	}
 
-	core.CheckForUpdates(version.Version)
+	if !managedMCP {
+		core.CheckForUpdates(version.Version)
+	}
+}
+
+// IsManagedMCPCommand identifies the stdio server before starting process-wide
+// console output or interrupt handlers. InitCli must be called first.
+func IsManagedMCPCommand(args []string) bool {
+	return isManagedMCPCommand(rootCommand, args)
+}
+
+func isManagedMCPCommand(root *cobra.Command, args []string) bool {
+	command, _, _ := root.Find(args)
+	return command != nil && command.Name() == "edict-mcp"
 }
 
 // newRootCommand constructs root command.

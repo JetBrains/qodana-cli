@@ -41,21 +41,9 @@ func cloneDistilleryTestRepository(t *testing.T, expectedHead string) distillery
 	if err != nil {
 		t.Fatal("git is required:", err)
 	}
+	testRoot := prepareIntegrationTestRoot(t)
 	packageDirectory, err := os.Getwd()
 	if err != nil {
-		t.Fatal(err)
-	}
-	testRoot := filepath.Join(packageDirectory, "testtmp", t.Name())
-	assertTestRoot(t, packageDirectory, testRoot)
-	if err := os.RemoveAll(testRoot); err != nil {
-		t.Fatalf("clear test directory: %v", err)
-	}
-	t.Cleanup(func() {
-		if err := os.RemoveAll(testRoot); err != nil {
-			t.Errorf("clear test directory: %v", err)
-		}
-	})
-	if err := os.MkdirAll(testRoot, 0o755); err != nil {
 		t.Fatal(err)
 	}
 
@@ -82,15 +70,86 @@ func cloneDistilleryTestRepository(t *testing.T, expectedHead string) distillery
 	}
 }
 
-func assertTestRoot(t *testing.T, packageDirectory string, testRoot string) {
+// Keep the last run's artifacts for debugging; clear only this test's directory
+// before starting another run. All integration tests share the repository's out/.
+func prepareIntegrationTestRoot(t *testing.T) string {
 	t.Helper()
-	relative, err := filepath.Rel(packageDirectory, testRoot)
+	packageDirectory, err := os.Getwd()
 	if err != nil {
 		t.Fatal(err)
 	}
-	parts := strings.Split(filepath.Clean(relative), string(filepath.Separator))
-	if len(parts) < 2 || parts[0] != "testtmp" || parts[1] != t.Name() {
+	repositoryDirectory := packageDirectory
+	for {
+		if info, err := os.Stat(filepath.Join(repositoryDirectory, "go.mod")); err == nil && !info.IsDir() {
+			break
+		}
+		parent := filepath.Dir(repositoryDirectory)
+		if parent == repositoryDirectory {
+			t.Fatalf("cannot locate repository root from %s", packageDirectory)
+		}
+		repositoryDirectory = parent
+	}
+	testRoot := filepath.Join(repositoryDirectory, "out", filepath.FromSlash(t.Name()))
+	assertTestRoot(t, repositoryDirectory, testRoot)
+	if err := os.RemoveAll(testRoot); err != nil {
+		t.Fatalf("clear test directory: %v", err)
+	}
+	if err := os.MkdirAll(testRoot, 0o700); err != nil {
+		t.Fatal(err)
+	}
+	return testRoot
+}
+
+func assertTestRoot(t *testing.T, repositoryDirectory string, testRoot string) {
+	t.Helper()
+	relative, err := filepath.Rel(repositoryDirectory, testRoot)
+	if err != nil || filepath.ToSlash(relative) != "out/"+t.Name() {
 		t.Fatalf("refusing to clear unexpected test path %s", testRoot)
+	}
+	// Do not follow a redirected out directory while wiping previous results.
+	parent := filepath.Dir(testRoot)
+	for parent != repositoryDirectory {
+		info, err := os.Lstat(parent)
+		if err != nil && !os.IsNotExist(err) {
+			t.Fatal(err)
+		}
+		if err == nil && (!info.IsDir() || info.Mode()&os.ModeSymlink != 0) {
+			t.Fatalf("refusing to clear test artifacts through %s", parent)
+		}
+		parent = filepath.Dir(parent)
+	}
+}
+
+func TestIntegrationOutputRetainedAndResetBeforeNextRun(t *testing.T) {
+	root := prepareIntegrationTestRoot(t)
+	// IDE runners may launch from the repository root instead of the package.
+	t.Chdir(filepath.Dir(filepath.Dir(root)))
+	sibling := filepath.Join(root, "keep")
+	if err := os.WriteFile(sibling, []byte("sibling"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	var retained string
+	t.Run("reset", func(t *testing.T) {
+		directory := prepareIntegrationTestRoot(t)
+		stale := filepath.Join(directory, "stale-state")
+		if err := os.WriteFile(stale, []byte("previous run"), 0o600); err != nil {
+			t.Fatal(err)
+		}
+		if next := prepareIntegrationTestRoot(t); next != directory {
+			t.Fatalf("test output moved: %s", next)
+		}
+		if _, err := os.Stat(stale); !os.IsNotExist(err) {
+			t.Fatalf("previous state was not wiped: %v", err)
+		}
+		retained = filepath.Join(directory, "last-run.log")
+		if err := os.WriteFile(retained, []byte("keep for debugging"), 0o600); err != nil {
+			t.Fatal(err)
+		}
+	})
+	for _, file := range []string{retained, sibling} {
+		if _, err := os.Stat(file); err != nil {
+			t.Fatalf("test cleanup removed %s: %v", file, err)
+		}
 	}
 }
 

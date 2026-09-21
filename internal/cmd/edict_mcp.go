@@ -49,7 +49,7 @@ func newEdictMCPCommand() *cobra.Command {
 func newEdictMCPCommandWithService(service edictmcp.Service) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "mcp",
-		Short: "Manage the Edict MCP server",
+		Short: "Manage the IntelliJ MCP server for Edict inspections",
 	}
 	cmd.AddCommand(
 		newEdictMCPStartCommand(service),
