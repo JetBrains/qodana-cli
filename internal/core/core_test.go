@@ -17,6 +17,7 @@
 package core
 
 import (
+	"bytes"
 	"errors"
 	"fmt"
 	"net/http"
@@ -169,6 +170,99 @@ func TestDockerCliArgs(t *testing.T) {
 				context := tc.cb.Build()
 				args := GetIdeArgs(context)
 				assert.Equal(t, tc.res, args)
+			},
+		)
+	}
+}
+
+func TestTeamCityLicenseAuditCompatibilityArgs(t *testing.T) {
+	logger := log.StandardLogger()
+	originalOutput := logger.Out
+	t.Cleanup(func() { logger.SetOutput(originalOutput) })
+
+	for _, tc := range []struct {
+		name        string
+		environment string
+		properties  []string
+		want        []string
+		wantWarning bool
+	}{
+		{
+			name:        "old TeamCity user property overrides compatibility property",
+			environment: "teamcity:2026.0:123456",
+			properties:  []string{"qodana.license.audit.v2=false"},
+			want: []string{
+				"--property=qodana.license.audit.v2=true",
+				"--property=qodana.license.audit.v2=false",
+			},
+		},
+		{
+			name:        "older major version",
+			environment: "teamcity:2025.2.1:123456",
+			want:        []string{"--property=qodana.license.audit.v2=true"},
+		},
+		{
+			name:        "TeamCity 2026.1 needs the legacy format",
+			environment: "teamcity:2026.1:123456",
+			want:        []string{"--property=qodana.license.audit.v2=true"},
+		},
+		{
+			name:        "TeamCity 2026.1 EAP needs the legacy format",
+			environment: "teamcity:2026.1_EAP:123456",
+			want:        []string{"--property=qodana.license.audit.v2=true"},
+		},
+		{
+			name:        "minimum supported version",
+			environment: "teamcity:2026.1.2:123456",
+			want:        []string{},
+		},
+		{
+			name:        "newer version",
+			environment: "teamcity:2026.2:123456",
+			want:        []string{},
+		},
+		{
+			name:        "unrelated environment",
+			environment: "github-actions:2026.0:123456",
+			want:        []string{},
+		},
+		{
+			name:        "bare TeamCity environment",
+			environment: "teamcity",
+			want:        []string{},
+		},
+		{
+			name:        "malformed version",
+			environment: "teamcity:2026.x:123456",
+			want:        []string{},
+			wantWarning: true,
+		},
+		{
+			name:        "overflowing version",
+			environment: "teamcity:999999999999999999999999.1:123456",
+			want:        []string{},
+			wantWarning: true,
+		},
+	} {
+		t.Run(
+			tc.name, func(t *testing.T) {
+				var output bytes.Buffer
+				logger.SetOutput(&output)
+
+				args := GetIdeArgs(
+					corescan.ContextBuilder{
+						Analyser: product.JvmLinter.DockerAnalyzer(),
+						Env:      []string{qdenv.QodanaEnv + "=" + tc.environment},
+						Property: tc.properties,
+					}.Build(),
+				)
+
+				assert.Equal(t, tc.want, args)
+				if tc.wantWarning {
+					assert.Contains(t, output.String(), "Cannot parse TeamCity version")
+				} else {
+					assert.Empty(t, output.String())
+				}
 			},
 		)
 	}
