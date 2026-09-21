@@ -487,7 +487,7 @@ func TestCreateReportServer(t *testing.T) {
 	t.Run("native", func(t *testing.T) {
 		t.Setenv(qdenv.QodanaDockerEnv, "")
 		server := createReportServer(reportDir, 18080)
-		assert.Equal(t, "127.0.0.1:18080", server.Addr)
+		assert.Equal(t, "localhost:18080", server.Addr)
 
 		req := httptest.NewRequest(http.MethodGet, "/", nil)
 		rr := httptest.NewRecorder()
