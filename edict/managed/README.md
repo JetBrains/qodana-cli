@@ -169,6 +169,12 @@ not run IntelliJ generation. Unit/protocol tests cover capability attenuation,
 call-graph restrictions, revocation, plan recovery, stale writes, filesystem
 containment, concurrent access, and clean CLI stdio/shutdown.
 
+The managed model test defaults to `gpt-5.6-terra`, with high reasoning effort.
+Its native workers inherit the selected model. Set `CODEX_MODEL=gpt-5.6-sol`
+(or another supported model) to override it for comparisons or provider access.
+Other Codex integrations retain their existing model defaults. The test prints
+its selected model alongside the result and elapsed time.
+
 Integration artifacts are retained in `<qodana-cli>/out/<test-name>/`, including
 the fixture checkout, Codex traces, readable `log/edict/edict-mcp.log`, detailed
 `log/edict/edict-mcp-system.log`, and runtime output in `log/edict/edict-agents.log`
