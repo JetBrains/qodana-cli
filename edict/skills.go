@@ -24,14 +24,16 @@ import (
 	"os"
 	"path/filepath"
 	"sort"
+	"strings"
 )
 
 //go:embed all:skills
 var skillsFS embed.FS
 
 const skillsRoot = "skills"
+const managedSkillsRoot = skillsRoot + "/managed"
 
-// SkillNames returns the names of the bundled skills (top-level directories under skills/).
+// SkillNames returns the bundled legacy skill names, excluding the managed bundle.
 func SkillNames() ([]string, error) {
 	entries, err := skillsFS.ReadDir(skillsRoot)
 	if err != nil {
@@ -39,7 +41,7 @@ func SkillNames() ([]string, error) {
 	}
 	var names []string
 	for _, entry := range entries {
-		if entry.IsDir() {
+		if entry.IsDir() && entry.Name() != "managed" {
 			names = append(names, entry.Name())
 		}
 	}
@@ -47,35 +49,17 @@ func SkillNames() ([]string, error) {
 	return names, nil
 }
 
-// InstallSkills copies all bundled skills into destDir (one subdirectory per skill),
+// InstallSkills copies the bundled legacy skills into destDir (one subdirectory per skill),
 // overwriting existing files. Returns the names of the installed skills.
 func InstallSkills(destDir string) ([]string, error) {
 	names, err := SkillNames()
 	if err != nil {
 		return nil, err
 	}
-	err = fs.WalkDir(
-		skillsFS, skillsRoot, func(path string, d fs.DirEntry, err error) error {
-			if err != nil {
-				return err
-			}
-			rel, err := filepath.Rel(skillsRoot, filepath.FromSlash(path))
-			if err != nil {
-				return err
-			}
-			target := filepath.Join(destDir, rel)
-			if d.IsDir() {
-				return os.MkdirAll(target, 0o755)
-			}
-			content, err := skillsFS.ReadFile(path)
-			if err != nil {
-				return err
-			}
-			return os.WriteFile(target, content, 0o644)
-		},
-	)
-	if err != nil {
-		return nil, fmt.Errorf("failed to install skills to %s: %w", destDir, err)
+	for _, name := range names {
+		if err := installBundledSkill(destDir, skillsRoot, name, name); err != nil {
+			return nil, err
+		}
 	}
 	return names, nil
 }
@@ -96,8 +80,65 @@ func InstallSkill(destDir string, name string) error {
 	if !found {
 		return fmt.Errorf("unknown bundled skill %q", name)
 	}
-	sourceRoot := filepath.ToSlash(filepath.Join(skillsRoot, name))
-	err = fs.WalkDir(skillsFS, sourceRoot, func(path string, d fs.DirEntry, walkErr error) error {
+	return installBundledSkill(destDir, skillsRoot, name, name)
+}
+
+// ManagedSkillNames returns the discoverable names of the managed skills. Their
+// installed names are distinct from the legacy skills; the MCP registry continues
+// to use the original edict-next-* IDs for managed children.
+func ManagedSkillNames() ([]string, error) {
+	entries, err := skillsFS.ReadDir(managedSkillsRoot)
+	if err != nil {
+		return nil, fmt.Errorf("failed to read bundled managed skills: %w", err)
+	}
+	var names []string
+	for _, entry := range entries {
+		if !entry.IsDir() {
+			continue
+		}
+		name := entry.Name()
+		if name != "edict_manager" {
+			name = "managed-" + name
+		}
+		names = append(names, name)
+	}
+	sort.Strings(names)
+	return names, nil
+}
+
+// InstallManagedSkills installs the manager and all managed children together.
+// InstallSkills intentionally installs only the legacy, unmanaged skill set.
+func InstallManagedSkills(destDir string) ([]string, error) {
+	names, err := ManagedSkillNames()
+	if err != nil {
+		return nil, err
+	}
+	for _, name := range names {
+		if err := installBundledSkill(destDir, managedSkillsRoot, strings.TrimPrefix(name, "managed-"), name); err != nil {
+			return nil, err
+		}
+	}
+	return names, nil
+}
+
+// InstallManagedSkill installs one managed skill by its discoverable name.
+// Prefer InstallManagedSkills when the manager needs its complete call graph.
+func InstallManagedSkill(destDir, name string) error {
+	names, err := ManagedSkillNames()
+	if err != nil {
+		return err
+	}
+	for _, available := range names {
+		if available == name {
+			return installBundledSkill(destDir, managedSkillsRoot, strings.TrimPrefix(name, "managed-"), name)
+		}
+	}
+	return fmt.Errorf("unknown bundled managed skill %q", name)
+}
+
+func installBundledSkill(destDir, root, sourceName, name string) error {
+	sourceRoot := filepath.ToSlash(filepath.Join(root, sourceName))
+	err := fs.WalkDir(skillsFS, sourceRoot, func(path string, d fs.DirEntry, walkErr error) error {
 		if walkErr != nil {
 			return walkErr
 		}

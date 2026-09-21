@@ -30,7 +30,7 @@ func newEdictCommand() *cobra.Command {
 		Use:   "edict",
 		Short: "Edict commands: extract inspection rules from your development history",
 	}
-	cmd.AddCommand(newEdictSetupCodexCommand(), newEdictMCPCommand())
+	cmd.AddCommand(newEdictSetupCodexCommand(), newEdictMCPCommand(), newEdictManagedMCPCommand())
 	return cmd
 }
 
@@ -45,6 +45,7 @@ into the Codex CLI skills directory, so that 'codex' discovers them automaticall
 
 By default skills are installed user-wide into $CODEX_HOME/skills (~/.codex/skills).
 Use --project to install into <project-dir>/.codex/skills instead.
+Use --managed to install edict_manager and its capability-controlled skill copies.
 Existing skill files are overwritten, so re-running the command updates the skills.`,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			destDir := cliOptions.DestDir
@@ -55,7 +56,11 @@ Existing skill files are overwritten, so re-running the command updates the skil
 					return err
 				}
 			}
-			installed, err := edict.InstallSkills(destDir)
+			install := edict.InstallSkills
+			if cliOptions.Managed {
+				install = edict.InstallManagedSkills
+			}
+			installed, err := install(destDir)
 			if err != nil {
 				return err
 			}
@@ -65,12 +70,14 @@ Existing skill files are overwritten, so re-running the command updates the skil
 	}
 	flags := cmd.Flags()
 	flags.BoolVar(&cliOptions.Project, "project", false, "Install into <project-dir>/.codex/skills instead of the user-wide Codex skills directory")
+	flags.BoolVar(&cliOptions.Managed, "managed", false, "Install edict_manager and managed skills requiring edict-mcp capabilities")
 	flags.StringVarP(&cliOptions.ProjectDir, "project-dir", "i", ".", "Root directory of the project (used with --project)")
 	flags.StringVar(&cliOptions.DestDir, "dest", "", "Install into a custom directory (overrides --project and the default location)")
 	return cmd
 }
 
 type edictSetupCodexOptions struct {
+	Managed    bool
 	Project    bool
 	ProjectDir string
 	DestDir    string

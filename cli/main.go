@@ -17,12 +17,18 @@
 package main
 
 import (
+	"os"
+
 	"github.com/JetBrains/qodana-cli/internal/cmd"
 	"github.com/JetBrains/qodana-cli/internal/platform/process"
 )
 
 func main() {
-	process.Init()
 	cmd.InitCli()
+	// The managed MCP server owns its signal handling and must keep stdout
+	// exclusively for protocol traffic, including during shutdown.
+	if !cmd.IsManagedMCPCommand(os.Args[1:]) {
+		process.Init()
+	}
 	cmd.Execute()
 }
