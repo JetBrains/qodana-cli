@@ -26,6 +26,8 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
+
+	"github.com/JetBrains/qodana-cli/edict/managed"
 )
 
 // DefaultCodexModel is used when CODEX_MODEL is not configured.
@@ -60,6 +62,7 @@ type CodexRunConfig struct {
 	OutputDirectory  string
 	Model            string
 	Prompt           string
+	AgentLogger      *managed.AgentLogger // Optional managed runtime output capture.
 }
 
 // CodexRunResult contains captured traces and the final assistant message.
@@ -232,7 +235,9 @@ func RunCodex(ctx context.Context, config CodexRunConfig) (CodexRunResult, error
 	command.Env = environmentWithOverrides(map[string]string{"CODEX_HOME": config.HomeDirectory})
 	command.Stdout = stdout
 	command.Stderr = stderr
+	stopLogging := startCodexAgentLogging(config, result.StdoutPath)
 	runErr := command.Run()
+	loggingErr := stopLogging()
 	closeErr := errors.Join(stdout.Close(), stderr.Close())
 
 	result.Stdout, err = readCodexTrace(result.StdoutPath)
@@ -241,7 +246,7 @@ func RunCodex(ctx context.Context, config CodexRunConfig) (CodexRunResult, error
 	readErr = errors.Join(readErr, err)
 	result.LastMessage, err = readCodexLastMessage(result.LastMessagePath, runErr)
 	readErr = errors.Join(readErr, err)
-	if combined := errors.Join(runErr, closeErr, readErr); combined != nil {
+	if combined := errors.Join(runErr, closeErr, readErr, loggingErr); combined != nil {
 		return result, fmt.Errorf("run Codex: %w", combined)
 	}
 	return result, nil

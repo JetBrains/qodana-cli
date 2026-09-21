@@ -22,17 +22,18 @@ import (
 	"github.com/modelcontextprotocol/go-sdk/mcp"
 )
 
-// Logs keeps readable tool activity separate from detailed protocol diagnostics.
+// Logs keeps tool activity, protocol diagnostics, and runtime agent output separate.
 type Logs struct {
 	Activity *os.File
 	System   *os.File
+	Agents   *os.File
 }
 
 func (l *Logs) Close() error {
-	return errors.Join(l.Activity.Close(), l.System.Close())
+	return errors.Join(l.Activity.Close(), l.System.Close(), l.Agents.Close())
 }
 
-// OpenLogs appends both logs below the caller's log directory. The caller must
+// OpenLogs appends managed logs below the caller's log directory. The caller must
 // close them after all server sessions have stopped.
 func OpenLogs(logDir string) (*Logs, error) {
 	if strings.TrimSpace(logDir) == "" {
@@ -51,13 +52,20 @@ func OpenLogs(logDir string) (*Logs, error) {
 		_ = file.Close()
 		return nil, fmt.Errorf("opening Edict MCP system log: %w", err)
 	}
-	return &Logs{Activity: file, System: system}, nil
+	agents, err := os.OpenFile(filepath.Join(directory, "edict-agents.log"), os.O_CREATE|os.O_APPEND|os.O_WRONLY, 0o600)
+	if err != nil {
+		_ = file.Close()
+		_ = system.Close()
+		return nil, fmt.Errorf("opening Edict agent output log: %w", err)
+	}
+	return &Logs{Activity: file, System: system, Agents: agents}, nil
 }
 
 // Remember only token hashes and display metadata, including after revocation.
 // This distinguishes actual capabilities from equally long task IDs and hashes.
 type activityLogger struct {
 	logger *log.Logger
+	agents *AgentLogger
 	mu     sync.RWMutex
 	tasks  map[string]Task
 }
@@ -98,9 +106,13 @@ func (l *activityLogger) printf(task Task, format string, args ...any) {
 		skill = "anonymous"
 	}
 	// Shorten skill names only for display, leaving the protocol registry intact.
-	message := strings.ReplaceAll(l.redact(fmt.Sprintf(format, args...)), "edict-next-", "edict-")
-	skill = strings.ReplaceAll(l.text(skill), "edict-next-", "edict-")
+	message := l.redact(fmt.Sprintf(format, args...))
+	skill = displaySkill(l.text(skill))
 	l.logger.Printf("[%s task=%s] %s", skill, shortTaskID(task.ID), message)
+	if l.agents != nil {
+		task.Skill = skill
+		l.agents.mcp(time.Now(), task, message)
+	}
 }
 
 func shortTaskID(id string) string {
@@ -114,7 +126,11 @@ func shortTaskID(id string) string {
 }
 
 func (l *activityLogger) target(task Task) string {
-	return fmt.Sprintf("%q (%s task=%s)", l.text(task.Title), l.text(task.Skill), shortTaskID(task.ID))
+	return fmt.Sprintf("%q (%s task=%s)", l.text(task.Title), displaySkill(l.text(task.Skill)), shortTaskID(task.ID))
+}
+
+func displaySkill(skill string) string {
+	return strings.ReplaceAll(skill, "edict-next-", "edict-")
 }
 
 // Keep free-form titles, results and errors on one readable line. Capabilities

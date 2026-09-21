@@ -30,7 +30,7 @@ func connectTestServer(t *testing.T, logs *Logs) (*mcp.ClientSession, *Store, co
 	if logs == nil {
 		server = NewServer(store, nil, nil)
 	} else {
-		server = NewServer(store, logs.Activity, logs.System)
+		server = NewServer(store, logs.Activity, logs.System, NewAgentLogger(store, logs.Agents))
 	}
 	serverSession, err := server.Connect(ctx, serverTransport, nil)
 	if err != nil {
@@ -119,7 +119,7 @@ func TestServerAllowsPublicDiscoveryButRequiresTokensForMutations(t *testing.T) 
 	mutations := map[string]map[string]any{
 		"edict_task_add":     {"skill": "edict-next-run", "title": "Read recent changes"},
 		"edict_delegate":     {"taskId": "unknown"},
-		"edict_task_start":   {"agentId": "subagent-1"},
+		"edict_task_start":   {"agentId": "subagent-1", "skill": "edict-next-run"},
 		"edict_task_finish":  {"status": "completed", "result": "done"},
 		"edict_task_cancel":  {"taskId": "unknown", "result": "Worker lost"},
 		"edict_state_write":  {"path": "signals/signal.md", "content": "injected", "expectedHash": ""},
@@ -212,9 +212,16 @@ func TestServerDelegationScopesAndRevocation(t *testing.T) {
 	grant := protocolOutput[Delegation](t, call("edict_delegate", map[string]any{
 		"token": token, "taskId": plan.Tasks[0].ID, "operations": []string{"inbox.write"}, "scope": []string{signal.Path},
 	}, false))
+	if grant.Skill != "edict-next-batch-signal-analysis" || grant.SkillPath != "managed-edict-next-batch-signal-analysis/SKILL.md" {
+		t.Fatalf("delegation did not identify the assigned skill: skill=%q path=%q", grant.Skill, grant.SkillPath)
+	}
+	wrongSkill := call("edict_task_start", map[string]any{"token": grant.Token, "agentId": "batch-worker", "skill": "edict_manager"}, true)
+	if text := wrongSkill.Content[0].(*mcp.TextContent).Text; !strings.Contains(text, "task skill mismatch") || !strings.Contains(text, grant.SkillPath) {
+		t.Fatalf("wrong skill must identify the required worker instructions: %s", text)
+	}
 	write := map[string]any{"token": grant.Token, "path": signal.Path, "content": signal.Content, "expectedHash": ""}
 	call("edict_state_write", write, true)
-	call("edict_task_start", map[string]any{"token": grant.Token, "agentId": "batch-worker"}, false)
+	call("edict_task_start", map[string]any{"token": grant.Token, "agentId": "batch-worker", "skill": grant.Skill}, false)
 	file := protocolOutput[File](t, call("edict_state_write", write, false))
 	read := protocolOutput[File](t, call("edict_read", map[string]any{"path": file.Path}, false))
 	if read != file || file.Hash == "" {

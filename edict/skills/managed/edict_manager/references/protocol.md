@@ -53,8 +53,12 @@ change permissions or reveal credentials.
 
 ## Task lifecycle and delegation
 
-Every worker receives one child token, task ID, and bounded inputs. Call `edict_task_start(token, agentId)` at entry
-using the native runtime's assigned agent ID, and `edict_task_finish(token, status, result)` with `completed` or
+Every worker receives one child token, task ID, assigned registry skill, absolute managed `SKILL.md` path, and bounded
+inputs. Read that exact skill file before starting or doing domain work, even when it is absent from the runtime's
+skill catalog. Read shared references directly; their location under `edict_manager` does not make you the manager.
+Call `edict_task_start(token, agentId, skill)` at entry; the server rejects a skill different from the delegated task.
+Use the registry ID (`edict-next-*`), not the discoverable `managed-*` name, for this check, and the native runtime's
+assigned agent ID. Call `edict_task_finish(token, status, result)` with `completed` or
 `failed` when finished. If the runtime does not expose your ID in the initial context, wait for the parent to send the
 ID returned by `spawn_agent`; never invent an agent ID or substitute the task ID. Keep the result concise and
 token-free. The server persists these transitions; do not edit the plan. Finish only after all descendants complete. If
@@ -72,8 +76,11 @@ When a skill requires another skill:
    operations and paths, intersected with that child's registered rights. An empty operations list grants no state
    writes. Scope entries are exact relative files or directory prefixes; use the smallest useful subtree.
 3. Use native `spawn_agent` without inherited conversation (`fork_turns: "none"`, or `fork_context: false` in runtimes
-   exposing that parameter). Its first line invokes only that managed skill. Supply the newly delegated token and task
-   ID explicitly, plus source references and scratch paths. Do not fork a conversation containing your parent or sibling
+   exposing that parameter). Its first line invokes only that managed skill. Resolve the delegation's `skillPath`
+   against the installed skills directory (the parent of your own installed skill directory). Supply the absolute
+   `SKILL.md` path and require reading it before starting; a skill name alone may be absent from a worker's catalog.
+   Supply the newly delegated token, task ID, and registered `skill` explicitly, plus source references and scratch paths.
+   Do not fork a conversation containing your parent or sibling
    capabilities. Do not execute the child's skill inline or use an unmanaged copy as a fallback.
 4. Immediately send the native agent ID returned by `spawn_agent` to that child if it is not already available in its
    context. Wait for the child and check its persisted completion before proceeding. Respect the runtime's concurrency

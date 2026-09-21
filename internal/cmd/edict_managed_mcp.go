@@ -36,7 +36,8 @@ It requires no token and can succeed only once per server lifetime. Keep the
 returned token private to edict_manager; all other mutations require a token.
 All stdout output is MCP protocol traffic. Readable activity is logged to
 <project-dir>/log/edict/edict-mcp.log; protocol details are logged separately to
-edict-mcp-system.log in the same directory. Capability tokens are redacted.`,
+edict-mcp-system.log in the same directory. MCP activity also appears in
+edict-agents.log alongside output supplied by the agent host. Capability tokens are redacted.`,
 		Args:         cobra.NoArgs,
 		SilenceUsage: true,
 		RunE: func(command *cobra.Command, _ []string) error {
@@ -59,7 +60,7 @@ edict-mcp-system.log in the same directory. Capability tokens are redacted.`,
 			if !ok {
 				reader = io.NopCloser(command.InOrStdin())
 			}
-			err = managed.NewServer(store, logs.Activity, logs.System).Run(ctx, &mcp.IOTransport{
+			err = managed.NewServer(store, logs.Activity, logs.System, managed.NewAgentLogger(store, logs.Agents)).Run(ctx, &mcp.IOTransport{
 				Reader: reader,
 				Writer: managedMCPWriter{command.OutOrStdout()},
 			})

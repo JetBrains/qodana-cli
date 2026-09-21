@@ -1,12 +1,16 @@
 ---
 name: edict_manager
-description: Plan and coordinate managed Edict signal analysis and inspection generation, with persisted task progress and capability-scoped subagents. Use as the entry point for managed Edict requests.
+description: Plan and coordinate root user requests for managed Edict signal analysis and inspection generation. Delegated workers with a task/token must use their assigned managed skill instead.
 ---
 
 # Edict Manager
 
 Turn the user's request into a short pipeline of registered managed skills. Execute every stage and every nested subtask
 in a fresh native subagent. You own planning and coordination; children own domain work.
+
+This skill is for the root manager only. If you already received a delegated task/token, load the assigned worker's
+`SKILL.md` from the supplied absolute path and follow that skill. Shared references under `edict_manager/references/`
+are a protocol library, not an instruction to invoke this manager skill.
 
 Read [the managed execution protocol](references/protocol.md) before starting. Require an available `edict-mcp` server,
 the source project, and scratch space outside the registered state root. Obtain the manager capability from the first
@@ -33,9 +37,12 @@ native subagent runtime is a failed prerequisite, not permission to execute stag
    and `inspection.write` on `inbox`, `clusters`, and `inspections`. Narrow these further when the user targets specific
    items. These are delegation ceilings, not permission for the orchestrator itself to edit state.
 5. Spawn a fresh child without inherited conversation (`fork_turns: "none"`, or `fork_context: false` in runtimes
-   exposing that parameter), its managed skill invocation, the returned child token/task ID, explicit source inputs,
+   exposing that parameter), its managed skill invocation, the returned child token/task ID/skill, explicit source inputs,
    scratch location, and any relevant prior-stage results. Wait for its native completion and verify its persisted task
    is completed through the plan. Never print the child token or save it in a prompt file.
+   Resolve the delegation's `skillPath` against the installed skills directory (the parent of this skill's directory).
+   Include that absolute `SKILL.md` path in the child prompt and explicitly require reading it before `edict_task_start`.
+   Explicit-only children may be absent from the runtime's skill catalog; the file path is authoritative.
 6. Stop on any failed child or uncompleted task. Cancel a lost worker through `edict_task_cancel`, then cancel remaining
    unstarted dependent stages with an explicit upstream-failure reason. Do not launch them or turn skipped work into
    success. This leaves the plan terminal for a new request after server restart; a requested retry can still re-delegate failed stages in
