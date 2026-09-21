@@ -407,28 +407,37 @@ func assertManagedSandboxDeniesDirectWrites(t *testing.T, binary, home, reposito
 	}
 }
 
+type managedRuntimeAgentCall struct {
+	Type              string   `json:"type"`
+	Tool              string   `json:"tool"`
+	Status            string   `json:"status"`
+	ReceiverThreadIDs []string `json:"receiver_thread_ids"`
+}
+
 func managedSpawnedAgents(t *testing.T, home, output string) map[string]bool {
 	t.Helper()
 	spawned := make(map[string]bool)
-	for _, line := range nonEmptyLines(output) {
-		var event struct {
-			Type string `json:"type"`
-			Item struct {
-				Type              string   `json:"type"`
-				Tool              string   `json:"tool"`
-				ReceiverThreadIDs []string `json:"receiver_thread_ids"`
-			} `json:"item"`
+	rememberSpawn := func(item managedRuntimeAgentCall) {
+		if !strings.Contains(strings.ToLower(item.Type), "collab") || item.Tool != "spawn_agent" ||
+			(item.Status != "" && item.Status != "completed") {
+			return
 		}
-		if json.Unmarshal([]byte(line), &event) != nil || event.Type != "item.completed" ||
-			!strings.Contains(event.Item.Type, "collab") || event.Item.Tool != "spawn_agent" {
-			continue
-		}
-		for _, id := range event.Item.ReceiverThreadIDs {
+		for _, id := range item.ReceiverThreadIDs {
 			spawned[id] = true
 		}
 	}
+	for _, line := range nonEmptyLines(output) {
+		var event struct {
+			Type string                  `json:"type"`
+			Item managedRuntimeAgentCall `json:"item"`
+		}
+		if json.Unmarshal([]byte(line), &event) != nil || event.Type != "item.completed" {
+			continue
+		}
+		rememberSpawn(event.Item)
+	}
 	// Exec's public stream may show only root-thread events. Session rollouts
-	// preserve the nested workers' native function calls and matched responses.
+	// preserve nested native calls, including calls inside exec tool wrappers.
 	err := filepath.WalkDir(
 		filepath.Join(home, "sessions"), func(path string, entry fs.DirEntry, walkErr error) error {
 			if errors.Is(walkErr, os.ErrNotExist) {
@@ -452,16 +461,23 @@ func managedSpawnedAgents(t *testing.T, home, output string) map[string]bool {
 				var event struct {
 					Type    string `json:"type"`
 					Payload struct {
-						Type   string `json:"type"`
-						Name   string `json:"name"`
-						CallID string `json:"call_id"`
-						Output string `json:"output"`
+						Type   string                  `json:"type"`
+						Name   string                  `json:"name"`
+						CallID string                  `json:"call_id"`
+						Output string                  `json:"output"`
+						Item   managedRuntimeAgentCall `json:"item"`
 					} `json:"payload"`
 				}
-				if json.Unmarshal(scanner.Bytes(), &event) != nil || event.Type != "response_item" {
+				if json.Unmarshal(scanner.Bytes(), &event) != nil {
 					continue
 				}
 				payload := event.Payload
+				if event.Type == "event_msg" && payload.Type == "item_completed" {
+					rememberSpawn(payload.Item)
+				}
+				if event.Type != "response_item" {
+					continue
+				}
 				if payload.Type == "function_call" && (payload.Name == "spawn_agent" || strings.HasSuffix(
 					payload.Name,
 					".spawn_agent",
