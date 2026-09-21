@@ -171,19 +171,63 @@ func (codex managedCodexTest) assertCompletedTasks(t *testing.T, result CodexRun
 	assertManagedWorkerSkills(t, codex.config.HomeDirectory, plan)
 }
 
+// Every commit needs its own evidence worker beneath the single batch task.
+func (codex managedCodexTest) assertSignalExtractionTasks(t *testing.T, result CodexRunResult, commits ...managedCommitExpectation) {
+	t.Helper()
+	codex.assertCompletedTasks(t, result, "edict-next-batch-signal-analysis", "edict-next-signal-analysis")
+	plan := codex.project.Store.Plan()
+	var batches, analyses []managed.Task
+	for _, task := range plan.Tasks {
+		switch task.Skill {
+		case "edict-next-batch-signal-analysis":
+			batches = append(batches, task)
+		case "edict-next-signal-analysis":
+			analyses = append(analyses, task)
+		default:
+			t.Errorf("unexpected task %s (%s) in extraction-only plan", task.ID, task.Skill)
+		}
+	}
+	assert.Len(t, analyses, len(commits), "each selected commit must have a distinct evidence task")
+	if assert.Len(t, batches, 1, "extraction must use one batch task") {
+		assert.Empty(t, batches[0].ParentID, "batch analysis must be a top-level task")
+		for _, task := range analyses {
+			assert.Equal(t, batches[0].ID, task.ParentID, "evidence task %s must be delegated by batch analysis", task.ID)
+		}
+	}
+	// The persisted assignment must identify the source before any results exist.
+	// Match revisions, rather than model-generated descriptions, to distinguish
+	// workers and catch duplicated or missing commit assignments.
+	for _, commit := range commits {
+		var assigned []managed.Task
+		for _, task := range analyses {
+			if strings.Contains(task.Title, commit.Commit) {
+				assigned = append(assigned, task)
+			}
+		}
+		if assert.Len(t, assigned, 1, "commit %s must appear in exactly one evidence task title", commit.Commit) {
+			assert.Contains(t, assigned[0].Title, "commit-"+commit.Commit[:16], "task title must identify its work item")
+			assert.Contains(t, assigned[0].Result, commit.Commit, "worker %s must report evidence for its assigned commit", assigned[0].ID)
+		}
+	}
+}
+
 func assertManagedAgentOutput(t *testing.T, testRoot string, plan *managed.Plan) {
 	t.Helper()
 	output := string(mustReadFile(t, filepath.Join(testRoot, "log", "edict", "edict-agents.log")))
+	unwrapped := strings.ReplaceAll(output, "\n    ", "")
 	assert.Contains(t, output, "[edict_manager/-] commentary:", "main agent output must be logged")
-	assert.NotContains(t, output, "[unassigned", "completed managed workers must have skill/task attribution")
 	assert.NotContains(t, output, " agent=")
 	for _, line := range strings.Split(output, "\n") {
 		assert.LessOrEqual(t, utf8.RuneCountInString(line), 120, "agent log line must wrap: %s", line)
 	}
+	// Attempts that fail before task_start remain logged as unassigned, even if
+	// the manager recovers. Every completed task must still have attributed output.
 	for _, task := range plan.Tasks {
 		prefix := "[" + strings.ReplaceAll(task.Skill, "edict-next-", "edict-") + "/" + task.ID[:8] + "] "
 		assert.Contains(t, output, prefix+"final:", "final output missing for managed task %s", task.ID)
 		assert.Contains(t, output, prefix+"mcp: Started task", "MCP activity missing for managed task %s", task.ID)
+		assert.Contains(t, unwrapped, prefix+"mcp: Started task "+fmt.Sprintf("%q", task.Title), "source assignment missing for managed task %s", task.ID)
+		assert.Contains(t, output, prefix+"mcp: edict_task_finish response:", "MCP response missing for managed task %s", task.ID)
 	}
 	assert.Contains(t, output, "[edict_manager/-] final:", "final manager output must be logged")
 }
@@ -221,31 +265,57 @@ type managedCommitExpectation struct {
 	Evidence []managedSignalEvidence
 }
 
-// Artifact verification has no dependency on Codex or a particular fixture commit.
-func assertManagedCommitSignals(t *testing.T, project managedTestProject, expected managedCommitExpectation) {
+type managedCommitSignalFile struct {
+	Name   string
+	Signal managedCommitSignal
+}
+
+// Verify the whole inbox so missing commits, duplicates, and out-of-range
+// signals cannot hide behind the correct total number of records.
+func assertManagedCommitSignals(t *testing.T, project managedTestProject, expected ...managedCommitExpectation) {
 	t.Helper()
-	checkout := project.Checkout
-	expectedDiff := runCommand(t, checkout.RepositoryDirectory, checkout.GitBinary,
-		"--no-pager", "diff", "--no-color", "--no-ext-diff", "--unified=200",
-		expected.Parent, expected.Commit, "--", expected.Path, expected.Path)
 	entries, err := os.ReadDir(filepath.Join(project.StateDirectory, "inbox"))
 	if err != nil {
 		t.Fatal(err)
 	}
-	if len(entries) != len(expected.Evidence) {
-		t.Fatalf("expected %d inbox signals, got %d", len(expected.Evidence), len(entries))
+	count := 0
+	for _, commit := range expected {
+		count += len(commit.Evidence)
 	}
-	labels := make(map[string]bool)
+	assert.Len(t, entries, count, "total inbox signals across %d commits", len(expected))
+	byCommit := make(map[string][]managedCommitSignalFile)
 	for _, entry := range entries {
 		var signal managedCommitSignal
 		if err := json.Unmarshal(mustReadFile(t, filepath.Join(project.StateDirectory, "inbox", entry.Name())), &signal); err != nil {
 			t.Fatalf("parse inbox/%s: %v", entry.Name(), err)
 		}
-		artifact := "inbox/" + entry.Name()
+		byCommit[signal.Source.CommitRevision] = append(byCommit[signal.Source.CommitRevision], managedCommitSignalFile{entry.Name(), signal})
+	}
+	for _, commit := range expected {
+		assertManagedCommitSignalFiles(t, project.Checkout, commit, byCommit[commit.Commit])
+		delete(byCommit, commit.Commit)
+	}
+	for commit, files := range byCommit {
+		for _, file := range files {
+			t.Errorf("inbox/%s: source.commitRevision %q is outside the expected commit selection", file.Name, commit)
+		}
+	}
+}
+
+func assertManagedCommitSignalFiles(t *testing.T, checkout distilleryTestCheckout, expected managedCommitExpectation, files []managedCommitSignalFile) {
+	t.Helper()
+	expectedDiff := runCommand(t, checkout.RepositoryDirectory, checkout.GitBinary,
+		"--no-pager", "diff", "--no-color", "--no-ext-diff", "--unified=200",
+		expected.Parent, expected.Commit, "--", expected.Path, expected.Path)
+	assert.Len(t, files, len(expected.Evidence), "signals for commit %s", expected.Commit)
+	labels := make(map[string]bool)
+	for _, file := range files {
+		signal := file.Signal
+		artifact := "inbox/" + file.Name
 		digest := sha256.Sum256([]byte(signal.IdempotencyKey))
 		expectedID := "s-" + hex.EncodeToString(digest[:])[:10]
 		assert.Equal(t, expectedID, signal.ID, "%s: id must match SHA-256 of idempotencyKey", artifact)
-		assert.Equal(t, signal.ID+".json", entry.Name(), "%s: filename must match id", artifact)
+		assert.Equal(t, signal.ID+".json", file.Name, "%s: filename must match id", artifact)
 		assert.Equal(t, expected.Path, signal.FileRevision.Path, "%s: fileRevision.path must be relative to the repository root", artifact)
 		assert.Equal(t, "FromCommit", signal.Source.Type, "%s: source.type", artifact)
 		assert.Equal(t, expected.Commit, signal.Source.CommitRevision, "%s: source.commitRevision", artifact)
@@ -253,7 +323,7 @@ func assertManagedCommitSignals(t *testing.T, project managedTestProject, expect
 		assert.Equal(t, expectedDiff, signal.Source.DiffPositiveToNegative, "%s: source.diffPositiveToNegative must match the canonical Git diff", artifact)
 		assert.NotEmpty(t, strings.TrimSpace(signal.Description), "%s: description", artifact)
 		assert.NotEmpty(t, strings.TrimSpace(signal.IdempotencyKey), "%s: idempotencyKey", artifact)
-		assert.NotEmpty(t, strings.TrimSpace(signal.Provenance["workItemId"]), "%s: provenance.workItemId", artifact)
+		assert.NotEmpty(t, strings.TrimSpace(signal.Provenance.WorkItemID), "%s: provenance.workItemId", artifact)
 		index := slices.IndexFunc(expected.Evidence, func(e managedSignalEvidence) bool { return e.Label == signal.Label })
 		if index < 0 || labels[signal.Label] {
 			t.Errorf("%s: unexpected or duplicate label %q", artifact, signal.Label)
@@ -275,7 +345,7 @@ func assertManagedCommitSignals(t *testing.T, project managedTestProject, expect
 	}
 	for _, evidence := range expected.Evidence {
 		if !labels[evidence.Label] {
-			t.Errorf("missing %s signal", evidence.Label)
+			t.Errorf("commit %s: missing %s signal", expected.Commit, evidence.Label)
 		}
 	}
 }

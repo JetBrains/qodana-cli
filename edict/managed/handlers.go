@@ -11,7 +11,7 @@ func (h toolHandlers) registry(in callerInput) (any, error) {
 	caller := h.taskForToken(in.Token)
 	skills := h.store.Registry()
 	h.log.printf(caller, "Read skill registry: %d skills available", len(skills))
-	return map[string]any{"skills": skills}, nil
+	return h.respond(caller, "edict_registry", map[string]any{"skills": skills}, nil)
 }
 
 func (h toolHandlers) read(in readInput) (any, error) {
@@ -22,7 +22,7 @@ func (h toolHandlers) read(in readInput) (any, error) {
 	} else {
 		h.log.printf(caller, "Read %q (%d bytes)", h.log.text(file.Path), len(file.Content))
 	}
-	return file, err
+	return h.respond(caller, "edict_read", file, err)
 }
 
 func (h toolHandlers) list(in listInput) (any, error) {
@@ -37,7 +37,7 @@ func (h toolHandlers) list(in listInput) (any, error) {
 		}
 		h.log.printf(caller, "Listed files under %q: %d found", h.log.text(prefix), len(paths))
 	}
-	return map[string]any{"paths": paths}, err
+	return h.respond(caller, "edict_list", map[string]any{"paths": paths}, err)
 }
 
 func (h toolHandlers) planGet(in callerInput) (any, error) {
@@ -53,18 +53,20 @@ func (h toolHandlers) planGet(in callerInput) (any, error) {
 		h.log.printf(caller, "Read plan: %d pending, %d delegated, %d running, %d completed, %d failed",
 			counts["pending"], counts["delegated"], counts["running"], counts["completed"], counts["failed"])
 	}
-	return map[string]any{"plan": plan}, nil
+	return h.respond(caller, "edict_plan_get", map[string]any{"plan": plan}, nil)
 }
 
 func (h toolHandlers) planCreate(in createPlanInput) (any, error) {
+	caller := Task{Skill: "anonymous"}
 	created, err := h.store.CreatePlan(in.Request, in.Steps)
 	if err != nil {
-		h.log.printf(Task{Skill: "anonymous"}, "Create plan %q failed: %s", h.log.text(in.Request), h.log.text(err.Error()))
+		h.log.printf(caller, "Create plan %q failed: %s", h.log.text(in.Request), h.log.text(err.Error()))
 	} else {
-		h.log.remember(created.Token, Task{Skill: "edict_manager"})
-		h.log.printf(Task{Skill: "edict_manager"}, "Plan ready: %q; manager assigned", h.log.text(created.Plan.Request))
+		caller.Skill = "edict_manager"
+		h.log.remember(created.Token, caller)
+		h.log.printf(caller, "Plan ready: %q; manager assigned", h.log.text(created.Plan.Request))
 	}
-	return created, err
+	return h.respond(caller, "edict_plan_create", created, err)
 }
 
 func (h toolHandlers) taskAdd(in addTaskInput) (any, error) {
@@ -75,7 +77,7 @@ func (h toolHandlers) taskAdd(in addTaskInput) (any, error) {
 	} else {
 		h.log.printf(caller, "Added task %s", h.log.target(task))
 	}
-	return task, err
+	return h.respond(caller, "edict_task_add", task, err)
 }
 
 func (h toolHandlers) delegate(in delegateInput) (any, error) {
@@ -88,7 +90,7 @@ func (h toolHandlers) delegate(in delegateInput) (any, error) {
 		h.log.remember(grant.Token, task)
 		h.log.printf(caller, "Delegated task %s", h.log.target(task))
 	}
-	return grant, err
+	return h.respond(caller, "edict_delegate", grant, err)
 }
 
 func (h toolHandlers) taskStart(in startTaskInput) (any, error) {
@@ -99,7 +101,7 @@ func (h toolHandlers) taskStart(in startTaskInput) (any, error) {
 	} else {
 		h.log.printf(task, "Started task %q", h.log.text(task.Title))
 	}
-	return plan, err
+	return h.respond(task, "edict_task_start", plan, err)
 }
 
 func (h toolHandlers) taskFinish(in finishTaskInput) (any, error) {
@@ -111,7 +113,7 @@ func (h toolHandlers) taskFinish(in finishTaskInput) (any, error) {
 	} else {
 		h.log.printf(task, "Task %q %s: %s", h.log.text(task.Title), in.Status, h.log.result(in.Result))
 	}
-	return plan, err
+	return h.respond(task, "edict_task_finish", plan, err)
 }
 
 func (h toolHandlers) taskCancel(in cancelTaskInput) (any, error) {
@@ -123,7 +125,7 @@ func (h toolHandlers) taskCancel(in cancelTaskInput) (any, error) {
 	} else {
 		h.log.printf(caller, "Cancelled task %s: %s", h.log.target(task), h.log.result(in.Result))
 	}
-	return plan, err
+	return h.respond(caller, "edict_task_cancel", plan, err)
 }
 
 func (h toolHandlers) stateWrite(in writeInput) (any, error) {
@@ -134,7 +136,7 @@ func (h toolHandlers) stateWrite(in writeInput) (any, error) {
 	} else {
 		h.log.printf(task, "Wrote %q (%d bytes)", h.log.text(file.Path), len(file.Content))
 	}
-	return file, err
+	return h.respond(task, "edict_state_write", file, err)
 }
 
 func (h toolHandlers) stateDelete(in deleteInput) (any, error) {
@@ -145,7 +147,12 @@ func (h toolHandlers) stateDelete(in deleteInput) (any, error) {
 	} else {
 		h.log.printf(task, "Deleted %q", h.log.text(in.Path))
 	}
-	return map[string]any{"deleted": err == nil}, err
+	return h.respond(task, "edict_state_delete", map[string]any{"deleted": err == nil}, err)
+}
+
+func (h toolHandlers) respond(caller Task, tool string, output any, err error) (any, error) {
+	h.log.response(caller, tool, output, err)
+	return output, err
 }
 
 // Snapshot display metadata before a mutation can revoke the capability.

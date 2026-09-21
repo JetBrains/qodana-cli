@@ -10,6 +10,7 @@ import (
 	"strings"
 	"sync"
 	"testing"
+	"unicode/utf8"
 
 	"github.com/modelcontextprotocol/go-sdk/mcp"
 	"github.com/stretchr/testify/require"
@@ -110,6 +111,7 @@ func TestServerLogsRequestsAndResponsesWithoutCapabilities(t *testing.T) {
 
 	activity, err := os.ReadFile(filepath.Join(directory, "edict", "edict-mcp.log"))
 	require.NoError(t, err)
+	unwrapped := strings.ReplaceAll(string(activity), "\n    ", "")
 	for _, want := range []string{
 		`[edict_manager task=-] Plan ready: "Logged request"; manager assigned`,
 		`[edict_manager task=-] Delegated task "Logged stage" (edict-run task=` + grant.TaskID[:8] + `)`,
@@ -123,18 +125,27 @@ func TestServerLogsRequestsAndResponsesWithoutCapabilities(t *testing.T) {
 		`[edict_manager task=-] Read "plans/` + created.Plan.ID + `.json"`,
 		`[edict_manager task=-] Read plan: 0 pending, 0 delegated, 0 running, 1 completed, 1 failed`,
 	} {
-		require.Contains(t, string(activity), want)
+		require.Contains(t, unwrapped, want)
 	}
-	for _, unwanted := range []string{created.Token, grant.Token, grant.TaskID, "edict-next-",
-		"requestId", "sessionId", "structuredContent", "durationMs", "logged-worker", `"method"`, `"params"`,
-		"internal cancellation details", "internal completion details", `"debug"`, `"details"`} {
+	for _, want := range []string{grant.TaskID, "internal cancellation details", "internal completion details", "token: '[redacted]'",
+		"edict_plan_get response:", "edict_task_finish response:", "edict_state_write response:", "error: invalid or revoked capability"} {
+		require.Contains(t, unwrapped, want)
+	}
+	for _, unwanted := range []string{created.Token, grant.Token,
+		"requestId", "sessionId", "structuredContent", "durationMs", `"method"`, `"params"`} {
 		require.NotContains(t, string(activity), unwanted)
 	}
 	lines := strings.Split(strings.TrimSpace(string(activity)), "\n")
-	require.Len(t, lines, 21)
+	headers := 0
 	for _, line := range lines {
+		require.LessOrEqual(t, utf8.RuneCountInString(line), 120)
+		if strings.HasPrefix(line, "    ") {
+			continue
+		}
+		headers++
 		require.Regexp(t, `^\d{4}/\d{2}/\d{2} \d{2}:\d{2}:\d{2} \[[a-z_-]+ task=(?:[0-9a-f]{8}|-)\] .+`, line)
 	}
+	require.Equal(t, 42, headers, "each handler logs its summary and complete response")
 }
 
 func TestActivityLogsCallerAcrossDelegationAndSharedSessionReads(t *testing.T) {
@@ -205,7 +216,7 @@ func TestActivityLogsCallerAcrossDelegationAndSharedSessionReads(t *testing.T) {
 
 	activity, err := os.ReadFile(filepath.Join(directory, "edict", "edict-mcp.log"))
 	require.NoError(t, err)
-	text := string(activity)
+	text := strings.ReplaceAll(string(activity), "\n    ", "")
 	for _, want := range []string{
 		`[anonymous task=-] Read plan: no plan created yet`,
 		batchPrefix + `Added task "Review commit" (edict-signal-analysis task=` + child.ID[:8] + `)`,

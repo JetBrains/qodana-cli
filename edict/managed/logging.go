@@ -20,6 +20,7 @@ import (
 	"time"
 
 	"github.com/modelcontextprotocol/go-sdk/mcp"
+	"gopkg.in/yaml.v3"
 )
 
 // Logs keeps tool activity, protocol diagnostics, and runtime agent output separate.
@@ -71,7 +72,7 @@ type activityLogger struct {
 }
 
 func newActivityLogger(output io.Writer) *activityLogger {
-	return &activityLogger{logger: log.New(output, "", log.LstdFlags), tasks: make(map[string]Task)}
+	return &activityLogger{logger: log.New(output, "", 0), tasks: make(map[string]Task)}
 }
 
 func (l *activityLogger) remember(token string, task Task) {
@@ -108,10 +109,62 @@ func (l *activityLogger) printf(task Task, format string, args ...any) {
 	// Shorten skill names only for display, leaving the protocol registry intact.
 	message := l.redact(fmt.Sprintf(format, args...))
 	skill = displaySkill(l.text(skill))
-	l.logger.Printf("[%s task=%s] %s", skill, shortTaskID(task.ID), message)
+	at := time.Now()
+	prefix := fmt.Sprintf("%s [%s task=%s] ", at.Local().Format("2006/01/02 15:04:05"), skill, shortTaskID(task.ID))
+	l.logger.Print(formatReadableRecord(prefix, message))
 	if l.agents != nil {
 		task.Skill = skill
-		l.agents.mcp(time.Now(), task, message)
+		l.agents.mcp(at, task, message)
+	}
+}
+
+// Log the handler's actual response once, without the duplicate MCP text and
+// structuredContent envelopes. YAML keeps multiline source and nested reports
+// readable. Only the display copy is decoded/redacted; callers receive the
+// original values, including capabilities and JSON-encoded strings.
+func (l *activityLogger) response(task Task, tool string, result any, callErr error) {
+	if callErr != nil {
+		result = map[string]any{"error": callErr.Error()}
+	}
+	data, err := json.Marshal(l.payload(result))
+	var document yaml.Node
+	if err == nil {
+		err = yaml.Unmarshal(data, &document)
+	}
+	if err != nil {
+		l.printf(task, "%s response: [payload unavailable]", tool)
+		return
+	}
+	expandResponseJSON(&document)
+	var output bytes.Buffer
+	encoder := yaml.NewEncoder(&output)
+	encoder.SetIndent(2)
+	if err := encoder.Encode(&document); err != nil {
+		l.printf(task, "%s response: [payload unavailable]", tool)
+		return
+	}
+	l.printf(task, "%s response:\n%s", tool, output.String())
+}
+
+// State files and worker reports are JSON strings in the protocol. Expand these
+// fields for display so a plan read exposes findings instead of escaped JSON.
+func expandResponseJSON(node *yaml.Node) {
+	// JSON is parsed as YAML flow nodes. Use block style for readable fields,
+	// arrays and literal multiline strings in the log.
+	node.Style = 0
+	if node.Kind == yaml.MappingNode {
+		for i := 0; i < len(node.Content); i += 2 {
+			key, value := node.Content[i].Value, node.Content[i+1]
+			if (key == "result" || key == "content") && value.Tag == "!!str" && json.Valid([]byte(value.Value)) {
+				var decoded yaml.Node
+				if yaml.Unmarshal([]byte(value.Value), &decoded) == nil && len(decoded.Content) == 1 {
+					*value = *decoded.Content[0]
+				}
+			}
+		}
+	}
+	for _, child := range node.Content {
+		expandResponseJSON(child)
 	}
 }
 
@@ -144,8 +197,7 @@ func (l *activityLogger) text(text string) string {
 	return text
 }
 
-// Workers may return a JSON report as their result string. Keep its technical
-// details in the system log and show only a prose summary in the activity log.
+// Keep a short status summary above the complete response body.
 func (l *activityLogger) result(result string) string {
 	var value any
 	if json.Unmarshal([]byte(result), &value) != nil {
