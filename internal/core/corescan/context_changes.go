@@ -192,3 +192,10 @@ func (c Context) prepareContext(skipFixes bool, propertiesToAdd ...string) Conte
 	}
 	return c
 }
+
+// WithCloudBaseline compares the analysis results with the baseline downloaded from Qodana Cloud,
+// the same way as with a baseline file.
+func (c Context) WithCloudBaseline(baselineForLinter string) Context {
+	c.baseline = baselineForLinter
+	return c
+}

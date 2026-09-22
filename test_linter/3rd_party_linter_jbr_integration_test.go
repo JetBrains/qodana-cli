@@ -50,7 +50,7 @@ func TestQodana3rdPartyLinterWithMockedCloud(t *testing.T) {
 
 	setupWorkspace(t, containerID)
 
-	scanOutput := runQodanaScan(t, containerID)
+	scanOutput := runQodanaScan(t, containerID, "--baseline", "/workspace/results/qodana.sarif-baseline.json")
 
 	// Verify
 	mockLog := getMockedTrafficLogs(t, containerID)
@@ -64,6 +64,9 @@ func TestQodana3rdPartyLinterWithMockedCloud(t *testing.T) {
 	require.NotEmpty(t, mockRequests, "Should have captured mock requests")
 	verifyPublisherCliCalls(t, mockRequests)
 	verifyQodanaFuserCalls(t, mockRequests)
+
+	cloudBaselineOutput := runQodanaScan(t, containerID)
+	verifyCloudBaseline(t, cloudBaselineOutput, getMockRequests(t, containerID))
 }
 
 func getMockedTrafficLogs(t *testing.T, containerID string) string {
@@ -190,6 +193,7 @@ type MockRequest struct {
 	Timestamp      string      `json:"timestamp"`
 	Method         string      `json:"method"`
 	Path           string      `json:"path"`
+	Query          string      `json:"query"`
 	RequestBody    interface{} `json:"request_body"`
 	ResponseStatus int         `json:"response_status"`
 	ResponseBody   interface{} `json:"response_body"`
@@ -268,7 +272,7 @@ func setupWorkspace(t *testing.T, containerID string) {
 }
 
 // runQodanaScan executes a qodana command with timeout and returns the output
-func runQodanaScan(t *testing.T, containerID string) string {
+func runQodanaScan(t *testing.T, containerID string, scanArgs ...string) string {
 	t.Helper()
 
 	ctx, cancel := context.WithTimeout(context.Background(), qodanaScanTimeout)
@@ -279,8 +283,8 @@ func runQodanaScan(t *testing.T, containerID string) string {
 		"/qodana", "scan",
 		"--project-dir", "/workspace",
 		"--results-dir", "/workspace/results",
-		"--baseline", "/workspace/results/qodana.sarif-baseline.json",
 	}
+	args = append(args, scanArgs...)
 
 	cmd := exec.CommandContext(ctx, args[0], args[1:]...)
 	output, err := cmd.CombinedOutput()
@@ -295,7 +299,28 @@ func verifyBaselineCliLogs(t *testing.T, scanOutput string) {
 	t.Log("Verifying baseline CLI logs...")
 	assert.Regexp(t, `Type can be replaced with auto\s+NEW\s+note\s+1`, scanOutput)
 	assert.Regexp(t, `Local variable can be made const\s+UNCHANGED\s+note\s+4`, scanOutput)
+	assert.Contains(t, scanOutput, "The analysis used the baseline file /workspace/results/qodana.sarif-baseline.json")
 	t.Log("✓ Baseline CLI logs verified")
+}
+
+// verifyCloudBaseline verifies that a scan without a baseline file compares its results with the
+// baseline downloaded from Qodana Cloud for the tool which has produced the report.
+func verifyCloudBaseline(t *testing.T, scanOutput string, reqMap map[string]*MockRequest) {
+	t.Helper()
+	t.Log("Verifying cloud baseline usage...")
+
+	baselineReq := findRequest(reqMap, "GET", "/linters/v1/linters/baseline")
+	require.NotNil(t, baselineReq, "GET /linters/v1/linters/baseline was not made")
+	assert.Equal(t, 200, baselineReq.ResponseStatus, "baseline request should return 200")
+	assert.Equal(t, "toolName=qdtest", baselineReq.Query, "baseline should be requested for the linter product code")
+
+	assert.Contains(t, scanOutput, "Fetching baseline from Qodana Cloud")
+	assert.Contains(t, scanOutput, "The analysis used the baseline from Qodana Cloud")
+	// the cloud baseline of the test data holds another rule than the baseline file, so the grouping
+	// tells which of the two the analysis has used
+	assert.Regexp(t, `Declarator is never used\s+UNCHANGED\s+warning\s+3`, scanOutput)
+	assert.Regexp(t, `Local variable can be made const\s+NEW\s+note\s+4`, scanOutput)
+	t.Log("✓ Cloud baseline usage verified")
 }
 
 func verifyUsedFailThresholdFromGlobalConfiguration(t *testing.T, scanOutput string) {
