@@ -77,10 +77,17 @@ func TestDownloadCloudBaseline(t *testing.T) {
 		require.NoError(t, err)
 		assert.Equal(t, "QDNET", stored.Runs[0].Tool.Driver.Name)
 
-		// the linter of a container run reads it as another user
+		// the linter of a container run reads it as another user. Only the bits which let one in
+		// are asserted: Windows reports 0777 for a directory whatever it was created with.
+		const openToOthers = os.FileMode(0o055)
 		info, err := os.Stat(filepath.Dir(baseline))
 		require.NoError(t, err)
-		assert.Equal(t, os.FileMode(0o755), info.Mode().Perm(), "the baseline dir should be readable")
+		assert.Equal(
+			t,
+			openToOthers,
+			info.Mode().Perm()&openToOthers,
+			"the baseline dir should be readable by the linter",
+		)
 
 		cleanup()
 		assert.NoFileExists(t, baseline)
