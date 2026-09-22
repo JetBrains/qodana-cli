@@ -6,6 +6,7 @@ import (
 	"bufio"
 	"encoding/json"
 	"io/fs"
+	"maps"
 	"os"
 	"path/filepath"
 	"regexp"
@@ -19,20 +20,31 @@ import (
 
 // Verify actual skill reads from runtime calls and their returned file content,
 // rather than accepting a worker's prose claim or its task_start declaration.
-func assertManagedWorkerSkills(t *testing.T, home string, plan *managed.Plan) {
+func assertManagedWorkerSetup(t *testing.T, home string, plan *managed.Plan) {
 	t.Helper()
 	loaded, err := managedWorkerSkillReads(home)
 	if err != nil {
 		t.Fatalf("inspect managed worker skill loads: %v", err)
 	}
 	for _, task := range plan.Tasks {
-		assert.True(t, loaded[task.AgentID]["managed-"+task.Skill], "task %s must read its assigned managed-%s/SKILL.md", task.ID, task.Skill)
-		assert.False(t, loaded[task.AgentID]["edict_manager"], "task %s must load its worker skill, not the root manager skill", task.ID)
+		worker := loaded[task.AgentID]
+		assert.True(t, worker.SkillsAtStart["managed-"+task.Skill], "task %s must read its assigned managed-%s/SKILL.md before starting", task.ID, task.Skill)
+		assert.False(t, worker.Skills["edict_manager"], "task %s must load its worker skill, not the root manager skill", task.ID)
+		assert.True(t, worker.FetchedBeforeStart, "worker %s must fetch its assignment in its own runtime session before startup", task.ID)
+		assert.Equal(t, managed.TaskAssignment{TaskID: task.ID, Skill: task.Skill, SkillPath: "managed-" + task.Skill + "/SKILL.md", Prompt: task.Prompt}, worker.Assignment,
+			"worker %s must execute the exact assignment returned by MCP", task.ID)
 	}
 }
 
-func managedWorkerSkillReads(home string) (map[string]map[string]bool, error) {
-	loaded := make(map[string]map[string]bool)
+type managedWorkerSetup struct {
+	Skills             map[string]bool
+	SkillsAtStart      map[string]bool
+	Assignment         managed.TaskAssignment
+	FetchedBeforeStart bool
+}
+
+func managedWorkerSkillReads(home string) (map[string]managedWorkerSetup, error) {
+	loaded := make(map[string]managedWorkerSetup)
 	skillPath := regexp.MustCompile(`(edict_manager|managed-edict-[a-z-]+)/SKILL\.md`)
 	err := filepath.WalkDir(filepath.Join(home, "sessions"), func(path string, entry fs.DirEntry, err error) error {
 		if err != nil {
@@ -48,6 +60,8 @@ func managedWorkerSkillReads(home string) (map[string]map[string]bool, error) {
 		defer file.Close()
 		var identity codexAgentSession
 		reads, calls := make(map[string]bool), make(map[string][]string)
+		setup := managedWorkerSetup{Skills: reads}
+		started := false
 		scanner := bufio.NewScanner(file)
 		scanner.Buffer(make([]byte, 4096), 16<<20)
 		for scanner.Scan() {
@@ -61,6 +75,46 @@ func managedWorkerSkillReads(home string) (map[string]map[string]bool, error) {
 			if event.Type == "session_meta" {
 				if err := identity.consume(scanner.Bytes()); err != nil {
 					return err
+				}
+			}
+			if event.Type == "event_msg" {
+				var payload struct {
+					Type string `json:"type"`
+					Item struct {
+						Server   string          `json:"server"`
+						Tool     string          `json:"tool"`
+						Command  json.RawMessage `json:"command"`
+						Output   string          `json:"aggregated_output"`
+						ExitCode *int            `json:"exit_code"`
+						Result   struct {
+							IsError           bool            `json:"isError"`
+							StructuredContent json.RawMessage `json:"structuredContent"`
+						} `json:"result"`
+					} `json:"item"`
+				}
+				if err := json.Unmarshal(event.Payload, &payload); err != nil {
+					return err
+				}
+				// Nested shell calls may finish before the surrounding functions.exec
+				// returns. Use their runtime results to establish ordering accurately.
+				if payload.Type == "item_completed" && payload.Item.ExitCode != nil && *payload.Item.ExitCode == 0 {
+					for _, match := range skillPath.FindAllStringSubmatch(string(payload.Item.Command), -1) {
+						if strings.Contains(payload.Item.Output, "name: "+match[1]) {
+							reads[match[1]] = true
+						}
+					}
+				}
+				if payload.Type == "item_completed" && payload.Item.Server == "edict-mcp" {
+					if payload.Item.Tool == "edict_task_get" && !payload.Item.Result.IsError && !started {
+						if err := json.Unmarshal(payload.Item.Result.StructuredContent, &setup.Assignment); err != nil {
+							return err
+						}
+					}
+					if payload.Item.Tool == "edict_task_start" && !started {
+						started = true
+						setup.SkillsAtStart = maps.Clone(reads)
+						setup.FetchedBeforeStart = setup.Assignment.TaskID != ""
+					}
 				}
 			}
 			if event.Type != "response_item" {
@@ -91,13 +145,53 @@ func managedWorkerSkillReads(home string) (map[string]map[string]bool, error) {
 				}
 			}
 		}
-		loaded[identity.id] = reads
+		loaded[identity.id] = setup
 		if identity.path != "" {
-			loaded[identity.path] = reads
+			loaded[identity.path] = setup
 		}
 		return scanner.Err()
 	})
 	return loaded, err
+}
+
+func TestManagedWorkerSetupRequiresFetchBeforeStartup(t *testing.T) {
+	assignment := managed.TaskAssignment{TaskID: "task-one", Skill: "edict-next-signal-analysis", SkillPath: "managed-edict-next-signal-analysis/SKILL.md", Prompt: "$managed-edict-next-signal-analysis\nInspect commit-one."}
+	for _, tc := range []struct {
+		name  string
+		calls []string
+		valid bool
+	}{
+		{"fetch before start", []string{"edict_task_get", "edict_task_start"}, true},
+		{"fetch after start", []string{"edict_task_start", "edict_task_get"}, false},
+		{"no fetch", []string{"edict_task_start"}, false},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			home := t.TempDir()
+			require.NoError(t, os.Mkdir(filepath.Join(home, "sessions"), 0o700))
+			file, err := os.Create(filepath.Join(home, "sessions", "worker.jsonl"))
+			require.NoError(t, err)
+			encoder := json.NewEncoder(file)
+			require.NoError(t, encoder.Encode(map[string]any{"type": "session_meta", "payload": map[string]any{"id": "worker", "source": "exec"}}))
+			require.NoError(t, encoder.Encode(map[string]any{"type": "event_msg", "payload": map[string]any{
+				"type": "item_completed", "item": map[string]any{"command": []string{"cat", "/skills/" + assignment.SkillPath},
+					"aggregated_output": "---\nname: managed-" + assignment.Skill + "\n---", "exit_code": 0},
+			}}))
+			for _, tool := range tc.calls {
+				require.NoError(t, encoder.Encode(map[string]any{"type": "event_msg", "payload": map[string]any{
+					"type": "item_completed", "item": map[string]any{"type": "McpToolCall", "server": "edict-mcp", "tool": tool,
+						"result": map[string]any{"structuredContent": assignment}},
+				}}))
+			}
+			require.NoError(t, file.Close())
+			setups, err := managedWorkerSkillReads(home)
+			require.NoError(t, err)
+			require.Equal(t, tc.valid, setups["worker"].FetchedBeforeStart)
+			require.True(t, setups["worker"].SkillsAtStart["managed-"+assignment.Skill])
+			if tc.valid {
+				require.Equal(t, assignment, setups["worker"].Assignment)
+			}
+		})
+	}
 }
 
 func TestManagedWorkerSkillReadsSupportRuntimeOutputFormats(t *testing.T) {
@@ -132,9 +226,9 @@ func TestManagedWorkerSkillReadsSupportRuntimeOutputFormats(t *testing.T) {
 			require.NoError(t, file.Close())
 			loaded, err := managedWorkerSkillReads(home)
 			require.NoError(t, err)
-			require.Equal(t, tc.read, loaded["worker"][skill])
+			require.Equal(t, tc.read, loaded["worker"].Skills[skill])
 			require.Equal(t, loaded["worker"], loaded["/root/worker"])
-			require.False(t, loaded["worker"]["edict_manager"])
+			require.False(t, loaded["worker"].Skills["edict_manager"])
 		})
 	}
 }

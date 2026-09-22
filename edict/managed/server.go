@@ -32,7 +32,7 @@ func NewServer(store *Store, activity, system io.Writer, agents ...*AgentLogger)
 	logger := slog.New(slog.NewJSONHandler(system, nil))
 	server := mcp.NewServer(&mcp.Implementation{Name: "edict-mcp", Version: "1.0.0"}, &mcp.ServerOptions{
 		Logger:       logger,
-		Instructions: "Managed Edict state and execution plans. Root requests enter through edict_manager. Delegated workers must load their assigned managed skill, identified by the delegation's skill and skillPath, instead of invoking edict_manager. Read that SKILL.md before edict_task_start and supply its registered skill ID when starting. Run every task in a subagent with its delegated token. Include your own token in every call, including read tools, so logs identify the caller. Reads may omit it during manager bootstrap and remain public. The first successful edict_plan_create call takes no token and returns the manager token; subsequent calls are forbidden for this server. Other mutations require a capability token. Never persist tokens or include them in task results. This server does not run IntelliJ inspections.",
+		Instructions: "Managed Edict state and execution plans. Root requests enter through edict_manager. Delegated workers must load their assigned managed skill, identified by the delegation's skill and skillPath, instead of invoking edict_manager. Each edict_delegate stores the task instructions and returns a short launch prompt beginning with the assigned $managed-<skill>. Pass that launch prompt to native spawn_agent. Workers must fetch their assignment using edict_task_get with their own token, read the assigned SKILL.md, and declare the returned skill in edict_task_start. Do not copy or compare task instructions in launch messages. Run every task in a subagent with its delegated token. Include your own token in every call, including read tools, so logs identify the caller. Reads may omit it during manager bootstrap and remain public. The first successful edict_plan_create call takes no token and returns the manager token; subsequent calls are forbidden for this server. Other mutations require a capability token. Never persist tokens or include them in task results. This server does not run IntelliJ inspections.",
 	})
 	server.AddReceivingMiddleware(requestLogging(logger, handlers.log))
 	addStoreTool(server, "edict_registry", "Read the immutable startup policy: registered skills, permitted state operations, and allowed child skills. Include your token when available to identify the caller in logs.", true,
@@ -47,9 +47,11 @@ func NewServer(store *Store, activity, system io.Writer, agents ...*AgentLogger)
 		handlers.planCreate)
 	addStoreTool(server, "edict_task_add", "Add a child task for a skill permitted by the caller's registered delegation policy.", false,
 		handlers.taskAdd)
-	addStoreTool(server, "edict_delegate", "Mint a unique child capability for a pending task. Returns token, taskId, assigned skill, and skillPath relative to the host's installed skills directory. Give the child the resolved absolute SKILL.md path and require it to read that file before starting. Operations and path scope may only narrow the parent's grant. Give this token only to that subagent.", false,
+	addStoreTool(server, "edict_delegate", "Store a task assignment and delegate it. Supply token-free prompt instructions starting with $managed-<registered skill>, followed by its absolute SKILL.md path and bounded inputs. Returns token, taskId, skill, skillPath, and a short launch prompt telling the child to fetch its assignment with edict_task_get. Pass the returned prompt to spawn_agent without inherited conversation. Do not copy the full task instructions into the launch message. Operations and scope may only narrow the parent's grant.", false,
 		handlers.delegate)
-	addStoreTool(server, "edict_task_start", "Start a delegated task after reading its assigned managed SKILL.md. The declared skill must match the capability's registered skill; edict_manager cannot substitute for a worker skill. Record the subagent ID before any state mutation.", false,
+	addStoreTool(server, "edict_task_get", "Fetch the task bound to your own delegated token. Returns taskId, skill, skillPath, and the authoritative prompt. Read and execute that assignment; read its managed SKILL.md before edict_task_start. This read is required for every fresh delegation, including retries.", true,
+		handlers.taskGet)
+	addStoreTool(server, "edict_task_start", "Start after fetching your assignment with edict_task_get and reading its assigned managed SKILL.md. The declared skill must match the delegation; use the actual native subagent ID. Startup is rejected until this delegation has fetched its task.", false,
 		handlers.taskStart)
 	addStoreTool(server, "edict_task_finish", "Persist a task's completed or failed status and result; revoke its capability and all descendant capabilities.", false,
 		handlers.taskFinish)
@@ -101,8 +103,13 @@ type addTaskInput struct {
 type delegateInput struct {
 	Token      string   `json:"token" jsonschema:"The parent task's capability token"`
 	TaskID     string   `json:"taskId" jsonschema:"Pending child task ID"`
+	Prompt     string   `json:"prompt" jsonschema:"Complete token-free instructions starting with $managed-<registered skill> on its own first line; include the absolute SKILL.md path and exact source inputs. The worker fetches these instructions from edict_task_get; pass only the returned short launch prompt to spawn_agent."`
 	Operations []string `json:"operations,omitempty" jsonschema:"Explicit subset of the parent and child policy operations; omitted grants no state mutations"`
 	Scope      []string `json:"scope,omitempty" jsonschema:"Explicit narrowed relative state path prefixes; required when granting mutation operations"`
+}
+
+type taskGetInput struct {
+	Token string `json:"token" jsonschema:"Your own delegated capability token; selects only your assigned task"`
 }
 
 type startTaskInput struct {

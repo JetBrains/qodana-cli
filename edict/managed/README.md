@@ -45,12 +45,12 @@ go to `edict-mcp-system.log`. Each activity line starts with the timestamp, skil
 and the first eight characters of the task ID, for example:
 
 ```text
-2026/09/21 11:30:19 [edict-signal-analysis task=1a2b3c4d] Started task "Review the corrective commit"
+2026/09/21 11:30:19 [edict-signal-analysis task=1a2b3c4d] Started task; assignment fetched and skill verified
 ```
 
 Activity logs omit `next-` from displayed skill names. The prefix always identifies
-the caller; adding, delegating, or cancelling a child includes the child's skill
-and short task ID in the message. Read tools accept an optional `token` for caller
+the caller, except the explicit task prompt record, which uses the child's
+skill/task ID and names the assigning parent. Read tools accept an optional `token` for caller
 attribution; managed skills supply their own token on every call after bootstrap.
 Tokenless reads use `[anonymous task=-]` because the caller is unknown. A shared
 MCP connection cannot identify individual workers. Manager events use
@@ -78,21 +78,30 @@ tokens remain redacted after revocation.
 
 Only the invocation's root thread and its descendants are included. Native runtime prompts,
 tool payloads, reasoning events, and unrelated sessions are excluded; Edict MCP
-response bodies come directly from the server handlers. Commit assignments are
-recorded by the batch skill in each evidence task's title: work-item ID, full
-commit revision, and commit subject (PR assignments use the number, URL and title).
-Task creation, delegation, and start messages therefore identify the source before
-the worker returns any findings. Early
+response bodies come directly from the server handlers. The full task assignment submitted to `edict_delegate` is logged under the child's
+skill/task ID. The worker fetches those exact instructions through `edict_task_get`;
+its response is logged too. Only the short launch message carries credentials,
+which remain redacted. Early
 worker output waits for `edict_task_start` to associate the runtime agent with
 its managed task. If a worker exits before starting, its output is retained as
 `[unassigned/-]`. The standalone MCP server sees tool
 traffic only; an external host must supply its agent output to `AgentLogger`.
 
-Delegations return the assigned `skill` and a `skillPath` relative to the installed
-skills directory. Parents provide the child the resolved absolute path and require
-reading it before starting. `edict_task_start` requires that same registry `skill`
-and rejects mismatches. This validates the declared role; the real Codex test also
-checks the worker's actual skill-file reads. The root manager skill does not apply
+`edict_delegate` requires complete token-free `prompt` instructions whose first
+line is exactly `$managed-<registered skill>`, followed by the skill file path and
+bounded inputs. The plan persists these instructions unchanged. The returned
+`prompt` is a short launch message declaring that skill and telling the child to
+call `edict_task_get` with its delegated token. Parents pass only this launch
+message to native `spawn_agent`.
+
+`edict_task_get(token)` selects the assignment bound to that capability and returns
+`taskId`, `skill`, `skillPath`, and the full `prompt`. Workers read it and the assigned
+skill file, then call `edict_task_start(token, agentId, skill)`. Startup is rejected
+until that delegation has fetched its assignment and the declared skill matches.
+Retries must fetch their new assignment. There is no prompt echo or string comparison.
+The real Codex tests verify the child's own MCP read before startup and actual skill-file
+reads. They also reject failed lifecycle calls and any cancellation or failed task
+completion, even if a later retry succeeds. The root manager skill does not apply
 to delegated workers, even when it is the only implicitly discoverable skill.
 
 The trusted host must make the state root read-only to **all** agents, including

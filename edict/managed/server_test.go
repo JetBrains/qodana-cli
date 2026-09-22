@@ -58,7 +58,7 @@ func TestServerDiscoversTypedTools(t *testing.T) {
 	expected := map[string]bool{
 		"edict_registry": true, "edict_read": true, "edict_list": true, "edict_plan_get": true,
 		"edict_plan_create": false, "edict_task_add": false, "edict_delegate": false,
-		"edict_task_start": false, "edict_task_finish": false, "edict_task_cancel": false,
+		"edict_task_get": true, "edict_task_start": false, "edict_task_finish": false, "edict_task_cancel": false,
 		"edict_state_write": false, "edict_state_delete": false,
 	}
 	if len(result.Tools) != len(expected) {
@@ -85,6 +85,9 @@ func TestServerDiscoversTypedTools(t *testing.T) {
 			}
 			if err := json.Unmarshal(encoded, &schema); err != nil {
 				t.Fatal(err)
+			}
+			if (tool.Name == "edict_delegate") && !slices.Contains(schema.Required, "prompt") {
+				t.Errorf("%s must require its prompt", tool.Name)
 			}
 			if tool.Name == "edict_plan_create" {
 				if strings.Contains(string(encoded), `"token"`) {
@@ -118,7 +121,7 @@ func TestServerAllowsPublicDiscoveryButRequiresTokensForMutations(t *testing.T) 
 	}
 	mutations := map[string]map[string]any{
 		"edict_task_add":     {"skill": "edict-next-run", "title": "Read recent changes"},
-		"edict_delegate":     {"taskId": "unknown"},
+		"edict_delegate":     {"taskId": "unknown", "prompt": testPrompt("edict-next-run")},
 		"edict_task_start":   {"agentId": "subagent-1", "skill": "edict-next-run"},
 		"edict_task_finish":  {"status": "completed", "result": "done"},
 		"edict_task_cancel":  {"taskId": "unknown", "result": "Worker lost"},
@@ -210,7 +213,7 @@ func TestServerDelegationScopesAndRevocation(t *testing.T) {
 	}, false))
 	plan, token := creation.Plan, creation.Token
 	grant := protocolOutput[Delegation](t, call("edict_delegate", map[string]any{
-		"token": token, "taskId": plan.Tasks[0].ID, "operations": []string{"inbox.write"}, "scope": []string{signal.Path},
+		"token": token, "taskId": plan.Tasks[0].ID, "operations": []string{"inbox.write"}, "scope": []string{signal.Path}, "prompt": testPrompt(plan.Tasks[0].Skill),
 	}, false))
 	if grant.Skill != "edict-next-batch-signal-analysis" || grant.SkillPath != "managed-edict-next-batch-signal-analysis/SKILL.md" {
 		t.Fatalf("delegation did not identify the assigned skill: skill=%q path=%q", grant.Skill, grant.SkillPath)
@@ -218,6 +221,14 @@ func TestServerDelegationScopesAndRevocation(t *testing.T) {
 	wrongSkill := call("edict_task_start", map[string]any{"token": grant.Token, "agentId": "batch-worker", "skill": "edict_manager"}, true)
 	if text := wrongSkill.Content[0].(*mcp.TextContent).Text; !strings.Contains(text, "task skill mismatch") || !strings.Contains(text, grant.SkillPath) {
 		t.Fatalf("wrong skill must identify the required worker instructions: %s", text)
+	}
+	unread := call("edict_task_start", map[string]any{"token": grant.Token, "agentId": "batch-worker", "skill": grant.Skill}, true)
+	if text := unread.Content[0].(*mcp.TextContent).Text; !strings.Contains(text, "edict_task_get") {
+		t.Fatalf("startup must require fetching the assignment: %s", text)
+	}
+	assignment := protocolOutput[TaskAssignment](t, call("edict_task_get", map[string]any{"token": grant.Token}, false))
+	if assignment.TaskID != grant.TaskID || assignment.Prompt != testPrompt(grant.Skill) {
+		t.Fatal("worker did not receive its authoritative assignment")
 	}
 	write := map[string]any{"token": grant.Token, "path": signal.Path, "content": signal.Content, "expectedHash": ""}
 	call("edict_state_write", write, true)

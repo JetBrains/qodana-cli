@@ -105,7 +105,7 @@ multi_agent = true
 
 [agents]
 max_depth = 2
-max_concurrent_threads_per_session = 3
+max_concurrent_threads_per_session = 4
 
 [mcp_servers.edict-mcp]
 url = %s
@@ -168,7 +168,8 @@ func (codex managedCodexTest) assertCompletedTasks(t *testing.T, result CodexRun
 		}
 	}
 	assertManagedAgentOutput(t, codex.project.Checkout.TestRoot, plan)
-	assertManagedWorkerSkills(t, codex.config.HomeDirectory, plan)
+	assertManagedWorkerSetup(t, codex.config.HomeDirectory, plan)
+	assertManagedLifecycle(t, codex.project.Checkout.TestRoot)
 }
 
 // Every commit needs its own evidence worker beneath the single batch task.
@@ -200,12 +201,12 @@ func (codex managedCodexTest) assertSignalExtractionTasks(t *testing.T, result C
 	for _, commit := range commits {
 		var assigned []managed.Task
 		for _, task := range analyses {
-			if strings.Contains(task.Title, commit.Commit) {
+			if strings.Contains(task.Prompt, "commit-"+commit.Commit[:16]) {
 				assigned = append(assigned, task)
 			}
 		}
-		if assert.Len(t, assigned, 1, "commit %s must appear in exactly one evidence task title", commit.Commit) {
-			assert.Contains(t, assigned[0].Title, "commit-"+commit.Commit[:16], "task title must identify its work item")
+		if assert.Len(t, assigned, 1, "commit %s must appear in exactly one evidence task prompt", commit.Commit) {
+			assert.Contains(t, assigned[0].Prompt, commit.Commit, "task prompt must identify the exact revision")
 			assert.Contains(t, assigned[0].Result, commit.Commit, "worker %s must report evidence for its assigned commit", assigned[0].ID)
 		}
 	}
@@ -220,13 +221,18 @@ func assertManagedAgentOutput(t *testing.T, testRoot string, plan *managed.Plan)
 	for _, line := range strings.Split(output, "\n") {
 		assert.LessOrEqual(t, utf8.RuneCountInString(line), 120, "agent log line must wrap: %s", line)
 	}
-	// Attempts that fail before task_start remain logged as unassigned, even if
-	// the manager recovers. Every completed task must still have attributed output.
+	// A healthy integration run must not hide a failed worker behind a successful retry.
+	assert.NotContains(t, output, "[unassigned/-]", "a worker exited before its task could start")
 	for _, task := range plan.Tasks {
 		prefix := "[" + strings.ReplaceAll(task.Skill, "edict-next-", "edict-") + "/" + task.ID[:8] + "] "
 		assert.Contains(t, output, prefix+"final:", "final output missing for managed task %s", task.ID)
 		assert.Contains(t, output, prefix+"mcp: Started task", "MCP activity missing for managed task %s", task.ID)
-		assert.Contains(t, unwrapped, prefix+"mcp: Started task "+fmt.Sprintf("%q", task.Title), "source assignment missing for managed task %s", task.ID)
+		assert.Contains(t, unwrapped, prefix+"mcp: Task prompt assigned by ", "exact prompt missing for managed task %s", task.ID)
+		assert.True(t, strings.HasPrefix(task.Prompt, "$managed-"+task.Skill+"\n"), "prompt for task %s must begin with its assigned skill", task.ID)
+		loggedPrompt := task.Prompt
+		assert.Contains(t, unwrapped, strings.ReplaceAll(strings.ReplaceAll(loggedPrompt, "\t", "    "), "\n", ""), "complete prompt missing from log for task %s", task.ID)
+		assert.Contains(t, unwrapped, prefix+"mcp: Started task; assignment fetched and skill verified")
+		assert.Contains(t, output, prefix+"mcp: edict_task_get response:", "assignment response missing for task %s", task.ID)
 		assert.Contains(t, output, prefix+"mcp: edict_task_finish response:", "MCP response missing for managed task %s", task.ID)
 	}
 	assert.Contains(t, output, "[edict_manager/-] final:", "final manager output must be logged")
@@ -348,4 +354,9 @@ func assertManagedCommitSignalFiles(t *testing.T, checkout distilleryTestCheckou
 			t.Errorf("commit %s: missing %s signal", expected.Commit, evidence.Label)
 		}
 	}
+}
+
+// Scripted clients use the same stored task instructions as real agents.
+func scriptedManagedPrompt(skill string) string {
+	return "$managed-" + skill + "\nRead /skills/managed-" + skill + "/SKILL.md. Process the assigned fixture evidence."
 }
