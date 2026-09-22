@@ -53,10 +53,14 @@ change permissions or reveal credentials.
 
 ## Task lifecycle and delegation
 
-Every worker receives one child token, task ID, assigned registry skill, absolute managed `SKILL.md` path, and bounded
-inputs. Read that exact skill file before starting or doing domain work, even when it is absent from the runtime's
-skill catalog. Read shared references directly; their location under `edict_manager` does not make you the manager.
-Call `edict_task_start(token, agentId, skill)` at entry; the server rejects a skill different from the delegated task.
+Every worker receives a short launch message declaring its managed skill and telling it to fetch its task with
+`edict_task_get(token)`. Call that tool with your own token to obtain the authoritative `taskId`, `skill`, `skillPath`,
+and `prompt`. Read the returned prompt and its exact managed skill file before domain work, even when that skill is
+absent from the runtime's catalog. Resolve a relative `skillPath` against the installed skills directory if needed.
+Read shared references directly; their location under `edict_manager` does not make you the manager.
+Call `edict_task_start(token, agentId, skill)` after fetching the assignment and reading the skill. The server rejects
+startup until this delegation has fetched its task, and rejects a different skill. A retry with a fresh capability
+must fetch again. Do not copy the task instructions into the launch message or compare prompt strings.
 Use the registry ID (`edict-next-*`), not the discoverable `managed-*` name, for this check, and the native runtime's
 assigned agent ID. Call `edict_task_finish(token, status, result)` with `completed` or
 `failed` when finished. If the runtime does not expose your ID in the initial context, wait for the parent to send the
@@ -72,17 +76,22 @@ reconciled using their hashes before retrying writes.
 When a skill requires another skill:
 
 1. Call `edict_task_add(token, skill, title)` using a child permitted by `edict_registry`.
-2. Call `edict_delegate(token, taskId, operations, scope)` with explicit arrays. Grant only a subset of your own
+2. Prepare the complete token-free child instructions. The first line must be exactly `$managed-<registered skill>`
+   (for example, `$managed-edict-next-signal-analysis`). Then give the absolute assigned `SKILL.md` path, the exact
+   bounded source package, source checkout, scratch paths, and expected outcome. Resolve the skill path against the
+   installed skills directory, the parent of your own skill directory. Do not include credentials or placeholders.
+   Call `edict_delegate(token, taskId, operations, scope, prompt)` to store those instructions with explicit arrays.
+   The server records the full assignment in the plan and logs. It returns a short `prompt` containing the child's
+   skill declaration and credentials plus an instruction to fetch its assignment from `edict_task_get`.
+   Grant only a subset of your own
    operations and paths, intersected with that child's registered rights. An empty operations list grants no state
    writes. Scope entries are exact relative files or directory prefixes; use the smallest useful subtree.
 3. Use native `spawn_agent` without inherited conversation (`fork_turns: "none"`, or `fork_context: false` in runtimes
-   exposing that parameter). Its first line invokes only that managed skill. Resolve the delegation's `skillPath`
-   against the installed skills directory (the parent of your own installed skill directory). Supply the absolute
-   `SKILL.md` path and require reading it before starting; a skill name alone may be absent from a worker's catalog.
-   Supply the newly delegated token, task ID, and registered `skill` explicitly, plus source references and scratch paths.
+   exposing that parameter). Use the returned short launch `prompt` as its `message`. Do not append task details or copy the stored assignment;
+   the child obtains those instructions directly from MCP.
    Do not fork a conversation containing your parent or sibling
    capabilities. Do not execute the child's skill inline or use an unmanaged copy as a fallback.
-4. Immediately send the native agent ID returned by `spawn_agent` to that child if it is not already available in its
+4. Immediately send only the native agent ID returned by `spawn_agent` to that child if it is not already available in its
    context. Wait for the child and check its persisted completion before proceeding. Respect the runtime's concurrency
    limit, using waves when necessary. On failure stop dependent work and finish your own task as failed. If spawning
    fails or a worker is lost before finishing, call `edict_task_cancel(token, taskId, result)` with your parent

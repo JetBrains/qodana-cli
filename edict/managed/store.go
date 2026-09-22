@@ -35,6 +35,7 @@ type Task struct {
 	ParentID   string   `json:"parentId,omitempty"`
 	Skill      string   `json:"skill"`
 	Title      string   `json:"title"`
+	Prompt     string   `json:"prompt,omitempty"` // Token-free task instructions fetched by the worker.
 	Status     string   `json:"status"`
 	AgentID    string   `json:"agentId,omitempty"`
 	Result     string   `json:"result,omitempty"`
@@ -66,11 +67,20 @@ type Delegation struct {
 	TaskID    string `json:"taskId"`
 	Skill     string `json:"skill"`
 	SkillPath string `json:"skillPath"` // Relative to the host's installed skills directory.
+	Prompt    string `json:"prompt"`    // Short launch message telling the worker to fetch its assignment.
+}
+
+type TaskAssignment struct {
+	TaskID    string `json:"taskId"`
+	Skill     string `json:"skill"`
+	SkillPath string `json:"skillPath"`
+	Prompt    string `json:"prompt"`
 }
 
 type capability struct {
 	skill, taskID, parent string
 	operations, scope     []string
+	taskRead              bool
 }
 
 // Store serializes state mutations, pins all I/O to an os.Root and holds an OS
@@ -235,7 +245,7 @@ func (s *Store) allowedChild(c capability, skill, title string) error {
 	return nil
 }
 
-func (s *Store) Delegate(token, taskID string, operations, scope []string) (Delegation, error) {
+func (s *Store) Delegate(token, taskID string, operations, scope []string, prompt string) (Delegation, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	c, err := s.authorize(token)
@@ -269,6 +279,10 @@ func (s *Store) Delegate(token, taskID string, operations, scope []string) (Dele
 	if len(operations) > 0 && len(scope) == 0 {
 		return Delegation{}, errors.New("mutation operations require explicit scope")
 	}
+	if err := s.validatePrompt(task.Skill, prompt); err != nil {
+		return Delegation{}, err
+	}
+	task.Prompt = prompt
 	task.Status, task.AgentID, task.Result = "delegated", "", ""
 	task.Operations, task.Scope = slices.Clone(operations), slices.Clone(scope)
 	secret := randomID()
@@ -277,7 +291,26 @@ func (s *Store) Delegate(token, taskID string, operations, scope []string) (Dele
 	}
 	s.grants[hash(secret)] = capability{skill: task.Skill, taskID: task.ID, parent: hash(token), operations: slices.Clone(operations), scope: slices.Clone(scope)}
 	s.issuedTokens[hash(secret)] = struct{}{}
-	return Delegation{Token: secret, TaskID: task.ID, Skill: task.Skill, SkillPath: "managed-" + task.Skill + "/SKILL.md"}, nil
+	return Delegation{Token: secret, TaskID: task.ID, Skill: task.Skill, SkillPath: "managed-" + task.Skill + "/SKILL.md",
+		Prompt: taskLaunchPrompt(task.ID, task.Skill, secret)}, nil
+}
+
+// ReadTask selects only the assignment bound to this worker's capability. The
+// receipt belongs to this delegation, so a retry must fetch its new assignment.
+func (s *Store) ReadTask(token string) (TaskAssignment, error) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	c, err := s.lookup(token)
+	if err != nil {
+		return TaskAssignment{}, err
+	}
+	task := findTask(s.plan, c.taskID)
+	if task == nil || task.Prompt == "" || (task.Status != "delegated" && task.Status != "running") {
+		return TaskAssignment{}, errors.New("only a delegated worker can read its assigned task")
+	}
+	c.taskRead = true
+	s.grants[hash(token)] = c
+	return TaskAssignment{TaskID: task.ID, Skill: task.Skill, SkillPath: "managed-" + task.Skill + "/SKILL.md", Prompt: task.Prompt}, nil
 }
 
 func (s *Store) StartTask(token, agentID, skill string) (*Plan, error) {
@@ -294,6 +327,9 @@ func (s *Store) StartTask(token, agentID, skill string) (*Plan, error) {
 	}
 	if skill != c.skill {
 		return nil, fmt.Errorf("task skill mismatch: got %q; expected %q; read managed-%s/SKILL.md from the installed skills directory before starting", skill, c.skill, c.skill)
+	}
+	if !c.taskRead {
+		return nil, errors.New("read your assigned task with edict_task_get before starting")
 	}
 	if strings.TrimSpace(agentID) == "" {
 		return nil, errors.New("subagent ID is required")

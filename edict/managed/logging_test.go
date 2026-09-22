@@ -30,11 +30,12 @@ func TestServerLogsRequestsAndResponsesWithoutCapabilities(t *testing.T) {
 	args := map[string]any{"request": "Logged request", "steps": []Step{{Skill: "edict-next-run", Title: "Logged stage"}}}
 	created := protocolOutput[PlanCreation](t, call("edict_plan_create", args))
 	grant := protocolOutput[Delegation](t, call("edict_delegate", map[string]any{
-		"token": created.Token, "taskId": created.Plan.Tasks[0].ID,
+		"token": created.Token, "taskId": created.Plan.Tasks[0].ID, "prompt": testPrompt(created.Plan.Tasks[0].Skill),
 	}))
 	require.Len(t, created.Token, 64)
 	require.Len(t, grant.Token, 64)
 	require.True(t, call("edict_plan_create", args).IsError)
+	protocolOutput[TaskAssignment](t, call("edict_task_get", map[string]any{"token": grant.Token}))
 	protocolOutput[Plan](t, call("edict_task_start", map[string]any{"token": grant.Token, "agentId": "logged-worker", "skill": grant.Skill}))
 	cancelled := protocolOutput[Task](t, call("edict_task_add", map[string]any{
 		"token": created.Token, "skill": "edict-next-batch-signal-analysis", "title": "Cancelled analysis",
@@ -106,17 +107,23 @@ func TestServerLogsRequestsAndResponsesWithoutCapabilities(t *testing.T) {
 			responses[entry.RequestID] = true
 		}
 	}
-	require.Len(t, requests, 22) // initialize, eight mutations, thirteen reads
+	require.Len(t, requests, 23) // initialize, eight mutations, fourteen reads
 	require.Equal(t, requests, responses)
 
 	activity, err := os.ReadFile(filepath.Join(directory, "edict", "edict-mcp.log"))
 	require.NoError(t, err)
 	unwrapped := strings.ReplaceAll(string(activity), "\n    ", "")
+	expectedPrompt := strings.ReplaceAll(testPrompt(grant.Skill), "\n", "")
+	require.Contains(t, unwrapped, expectedPrompt, "the full exact spawn prompt must be logged, except its token")
+	agentOutput, err := os.ReadFile(logs.Agents.Name())
+	require.NoError(t, err)
+	require.Contains(t, strings.ReplaceAll(string(agentOutput), "\n    ", ""), expectedPrompt)
+	require.NotContains(t, string(agentOutput), grant.Token)
 	for _, want := range []string{
 		`[edict_manager task=-] Plan ready: "Logged request"; manager assigned`,
-		`[edict_manager task=-] Delegated task "Logged stage" (edict-run task=` + grant.TaskID[:8] + `)`,
+		`[edict-run task=` + grant.TaskID[:8] + `] Task prompt assigned by edict_manager/-:`,
 		`Create plan "Logged request" failed:`,
-		`[edict-run task=` + grant.TaskID[:8] + `] Started task "Logged stage"`,
+		`[edict-run task=` + grant.TaskID[:8] + `] Started task; assignment fetched and skill verified`,
 		`[edict_manager task=-] Added task "Cancelled analysis" (edict-batch-signal-analysis task=` + cancelled.ID[:8] + `)`,
 		`[edict_manager task=-] Cancelled task "Cancelled analysis" (edict-batch-signal-analysis task=` + cancelled.ID[:8] + `)`,
 		`Structured result recorded`,
@@ -145,7 +152,7 @@ func TestServerLogsRequestsAndResponsesWithoutCapabilities(t *testing.T) {
 		headers++
 		require.Regexp(t, `^\d{4}/\d{2}/\d{2} \d{2}:\d{2}:\d{2} \[[a-z_-]+ task=(?:[0-9a-f]{8}|-)\] .+`, line)
 	}
-	require.Equal(t, 42, headers, "each handler logs its summary and complete response")
+	require.Equal(t, 44, headers, "each handler logs its summary and complete response")
 }
 
 func TestActivityLogsCallerAcrossDelegationAndSharedSessionReads(t *testing.T) {
@@ -166,14 +173,16 @@ func TestActivityLogsCallerAcrossDelegationAndSharedSessionReads(t *testing.T) {
 		"request": "Extract signals", "steps": []Step{{Skill: "edict-next-batch-signal-analysis", Title: "Extract signals"}},
 	}))
 	batch := protocolOutput[Delegation](t, call("edict_delegate", map[string]any{
-		"token": created.Token, "taskId": created.Plan.Tasks[0].ID,
+		"token": created.Token, "taskId": created.Plan.Tasks[0].ID, "prompt": testPrompt(created.Plan.Tasks[0].Skill),
 		"operations": []string{"inbox.write"}, "scope": []string{"inbox"},
 	}))
+	call("edict_task_get", map[string]any{"token": batch.Token})
 	call("edict_task_start", map[string]any{"token": batch.Token, "agentId": "batch-worker", "skill": batch.Skill})
 	child := protocolOutput[Task](t, call("edict_task_add", map[string]any{
 		"token": batch.Token, "skill": "edict-next-signal-analysis", "title": "Review commit",
 	}))
-	analysis := protocolOutput[Delegation](t, call("edict_delegate", map[string]any{"token": batch.Token, "taskId": child.ID}))
+	analysis := protocolOutput[Delegation](t, call("edict_delegate", map[string]any{"token": batch.Token, "taskId": child.ID, "prompt": testPrompt(child.Skill)}))
+	call("edict_task_get", map[string]any{"token": analysis.Token})
 	call("edict_task_start", map[string]any{"token": analysis.Token, "agentId": "analysis-worker", "skill": analysis.Skill})
 	call("edict_registry", map[string]any{"token": analysis.Token})
 	call("edict_list", map[string]any{"token": batch.Token, "prefix": "inbox"})
@@ -220,7 +229,7 @@ func TestActivityLogsCallerAcrossDelegationAndSharedSessionReads(t *testing.T) {
 	for _, want := range []string{
 		`[anonymous task=-] Read plan: no plan created yet`,
 		batchPrefix + `Added task "Review commit" (edict-signal-analysis task=` + child.ID[:8] + `)`,
-		batchPrefix + `Delegated task "Review commit" (edict-signal-analysis task=` + child.ID[:8] + `)`,
+		analysisPrefix + `Task prompt assigned by edict-batch-signal-analysis/` + batch.TaskID[:8] + `:`,
 		batchPrefix + `Cancelled task "Review commit" (edict-signal-analysis task=` + child.ID[:8] + `): Review cancelled`,
 		analysisPrefix + `Add task "Unpermitted child" (edict-run) failed:`,
 		analysisPrefix + `Read skill registry:`,

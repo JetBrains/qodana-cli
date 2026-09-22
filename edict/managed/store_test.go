@@ -22,11 +22,24 @@ func testStore(t *testing.T) (*Store, string, string) {
 	return s, created.Token, dir
 }
 
+func testPrompt(skill string) string {
+	return "$managed-" + skill + "\nRead /skills/managed-" + skill + "/SKILL.md. Inspect the assigned fixture."
+}
+
+func delegateTestTask(s *Store, token, taskID string, ops, scope []string) (Delegation, error) {
+	task := findTask(s.Plan(), taskID)
+	grant, err := s.Delegate(token, taskID, ops, scope, testPrompt(task.Skill))
+	if err == nil {
+		_, err = s.ReadTask(grant.Token)
+	}
+	return grant, err
+}
+
 func worker(t *testing.T, s *Store, parent, skill string, ops, scope []string) Delegation {
 	t.Helper()
 	task, err := s.AddTask(parent, skill, "Execute "+skill)
 	require.NoError(t, err)
-	d, err := s.Delegate(parent, task.ID, ops, scope)
+	d, err := delegateTestTask(s, parent, task.ID, ops, scope)
 	require.NoError(t, err)
 	_, err = s.StartTask(d.Token, "agent-"+task.ID, d.Skill)
 	require.NoError(t, err)
@@ -71,7 +84,7 @@ func TestPlanCreationCanOnlyClaimManagerOnce(t *testing.T) {
 	require.Nil(t, rejected)
 	require.Equal(t, before, s.Plan())
 	require.Len(t, s.grants, 1)
-	child, err := s.Delegate(created.Token, before.Tasks[0].ID, nil, nil)
+	child, err := delegateTestTask(s, created.Token, before.Tasks[0].ID, nil, nil)
 	require.NoError(t, err)
 	_, err = s.StartTask(child.Token, "worker", child.Skill)
 	require.NoError(t, err)
@@ -108,7 +121,7 @@ func TestPlanCreationCanOnlyClaimManagerOnce(t *testing.T) {
 func TestTaskStartRequiresAssignedSkill(t *testing.T) {
 	s, manager, _ := testStore(t)
 	task := s.Plan().Tasks[0]
-	grant, err := s.Delegate(manager, task.ID, nil, nil)
+	grant, err := delegateTestTask(s, manager, task.ID, nil, nil)
 	require.NoError(t, err)
 	before := s.Plan()
 	for _, skill := range []string{"", "edict_manager", "edict-next-signal-analysis", "managed-" + task.Skill} {
@@ -174,15 +187,15 @@ func TestCapabilityAttenuationAndOwnership(t *testing.T) {
 	_, err = s.AddTask(manager, "edict-next-code-example", "Bypass manager pipeline")
 	require.Error(t, err)
 	task := s.Plan().Tasks[0]
-	_, err = s.Delegate(manager, task.ID, []string{"inspection.write"}, []string{"inspections"})
+	_, err = delegateTestTask(s, manager, task.ID, []string{"inspection.write"}, []string{"inspections"})
 	require.Error(t, err)
-	batch, err := s.Delegate(manager, task.ID, []string{"inbox.write"}, []string{signal.Path})
+	batch, err := delegateTestTask(s, manager, task.ID, []string{"inbox.write"}, []string{signal.Path})
 	require.NoError(t, err)
 	_, err = s.Write(batch.Token, signal.Path, signal.Content, "")
 	require.ErrorContains(t, err, "start")
 	_, err = s.StartTask(batch.Token, "batch-agent", batch.Skill)
 	require.NoError(t, err)
-	_, err = s.Delegate(manager, task.ID, nil, nil)
+	_, err = delegateTestTask(s, manager, task.ID, nil, nil)
 	require.Error(t, err)
 	_, err = s.Write(batch.Token, "inbox/s-other.json", `{}`, "")
 	require.Error(t, err)
@@ -190,13 +203,13 @@ func TestCapabilityAttenuationAndOwnership(t *testing.T) {
 	require.NoError(t, err)
 	leafTask, err := s.AddTask(batch.Token, "edict-next-signal-analysis", "Inspect exact commit")
 	require.NoError(t, err)
-	_, err = s.Delegate(manager, leafTask.ID, nil, nil)
+	_, err = delegateTestTask(s, manager, leafTask.ID, nil, nil)
 	require.ErrorContains(t, err, "direct child")
-	_, err = s.Delegate(batch.Token, leafTask.ID, nil, []string{"inbox"})
+	_, err = delegateTestTask(s, batch.Token, leafTask.ID, nil, []string{"inbox"})
 	require.ErrorContains(t, err, "widen")
-	_, err = s.Delegate(batch.Token, leafTask.ID, []string{"inbox.write"}, []string{signal.Path})
+	_, err = delegateTestTask(s, batch.Token, leafTask.ID, []string{"inbox.write"}, []string{signal.Path})
 	require.Error(t, err)
-	leaf, err := s.Delegate(batch.Token, leafTask.ID, nil, nil)
+	leaf, err := delegateTestTask(s, batch.Token, leafTask.ID, nil, nil)
 	require.NoError(t, err)
 	require.NotEqual(t, leaf.Token, batch.Token)
 	_, err = s.StartTask(leaf.Token, "batch-agent", leaf.Skill)
@@ -223,11 +236,11 @@ func TestNarrowedParentCannotRegainOperations(t *testing.T) {
 	generation := worker(t, s, run.Token, "edict-next-generation", []string{"cluster.write"}, []string{"clusters/one"})
 	task, err := s.AddTask(generation.Token, "edict-next-cluster-generation", "Generate one")
 	require.NoError(t, err)
-	_, err = s.Delegate(generation.Token, task.ID, []string{"inspection.write"}, []string{"clusters/one"})
+	_, err = delegateTestTask(s, generation.Token, task.ID, []string{"inspection.write"}, []string{"clusters/one"})
 	require.ErrorContains(t, err, "operation")
-	_, err = s.Delegate(generation.Token, task.ID, []string{"cluster.write"}, []string{"clusters/one-other"})
+	_, err = delegateTestTask(s, generation.Token, task.ID, []string{"cluster.write"}, []string{"clusters/one-other"})
 	require.ErrorContains(t, err, "scope")
-	child, err := s.Delegate(generation.Token, task.ID, []string{"cluster.write"}, []string{"clusters/one"})
+	child, err := delegateTestTask(s, generation.Token, task.ID, []string{"cluster.write"}, []string{"clusters/one"})
 	require.NoError(t, err)
 	_, err = s.StartTask(child.Token, "cluster-agent", child.Skill)
 	require.NoError(t, err)
@@ -319,7 +332,7 @@ func TestArtifactContainmentAndOptimisticConcurrency(t *testing.T) {
 func TestPlansPersistAndResumeWithoutOldCapabilities(t *testing.T) {
 	s, manager, directory := testStore(t)
 	batchTask := s.Plan().Tasks[0]
-	batch, err := s.Delegate(manager, batchTask.ID, []string{"inbox.write"}, []string{"inbox"})
+	batch, err := delegateTestTask(s, manager, batchTask.ID, []string{"inbox.write"}, []string{"inbox"})
 	require.NoError(t, err)
 	_, err = s.StartTask(batch.Token, "before-restart-agent", batch.Skill)
 	require.NoError(t, err)
@@ -358,7 +371,7 @@ func TestPlansPersistAndResumeWithoutOldCapabilities(t *testing.T) {
 	require.Greater(t, reopened.Plan().Revision, p.Revision)
 	_, err = reopened.Write(batch.Token, "inbox/s-replay.json", `{}`, "")
 	require.ErrorContains(t, err, "revoked")
-	resumed, err := reopened.Delegate(newManager, batchTask.ID, []string{"inbox.write"}, []string{"inbox"})
+	resumed, err := delegateTestTask(reopened, newManager, batchTask.ID, []string{"inbox.write"}, []string{"inbox"})
 	require.NoError(t, err)
 	_, err = reopened.StartTask(resumed.Token, "new-agent", resumed.Skill)
 	require.NoError(t, err)
@@ -385,7 +398,7 @@ func TestCoordinatorCancellationRevokesSubtree(t *testing.T) {
 	for _, task := range s.Plan().Tasks[1:] {
 		require.Equal(t, "failed", task.Status)
 	}
-	retried, err := s.Delegate(manager, batch.TaskID, nil, nil)
+	retried, err := delegateTestTask(s, manager, batch.TaskID, nil, nil)
 	require.NoError(t, err)
 	_, err = s.StartTask(retried.Token, "replacement-agent", retried.Skill)
 	require.NoError(t, err)
@@ -396,7 +409,7 @@ func TestCoordinatorCancellationRevokesSubtree(t *testing.T) {
 func TestOversizedPlanMutationPreservesRecoverableState(t *testing.T) {
 	s, manager, directory := testStore(t)
 	task := s.Plan().Tasks[0]
-	batch, err := s.Delegate(manager, task.ID, nil, nil)
+	batch, err := delegateTestTask(s, manager, task.ID, nil, nil)
 	require.NoError(t, err)
 	_, err = s.StartTask(batch.Token, "agent", batch.Skill)
 	require.NoError(t, err)

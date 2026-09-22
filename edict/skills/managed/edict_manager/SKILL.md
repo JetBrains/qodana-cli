@@ -36,12 +36,15 @@ native subagent runtime is a failed prerequisite, not permission to execute stag
    needs `inbox.write` on `inbox`; run needs `inbox.delete`, `cluster.write`, `cluster.signal.write`, `example.write`,
    and `inspection.write` on `inbox`, `clusters`, and `inspections`. Narrow these further when the user targets specific
    items. These are delegation ceilings, not permission for the orchestrator itself to edit state.
-5. Spawn a fresh child without inherited conversation (`fork_turns: "none"`, or `fork_context: false` in runtimes
-   exposing that parameter), its managed skill invocation, the returned child token/task ID/skill, explicit source inputs,
-   scratch location, and any relevant prior-stage results. Wait for its native completion and verify its persisted task
+5. Follow the protocol's assignment flow: supply `edict_delegate` the complete token-free task instructions starting
+   with the child's exact managed skill invocation, then pass its returned short launch `prompt` to native `spawn_agent`.
+   The worker fetches the full assignment with `edict_task_get`; do not copy task instructions into the launch message.
+   Spawn without inherited conversation (`fork_turns: "none"`, or `fork_context: false` in runtimes exposing that parameter).
+   Include explicit source inputs, scratch location, and relevant prior-stage results in the submitted instructions.
+   Wait for its native completion and verify its persisted task
    is completed through the plan. Never print the child token or save it in a prompt file.
    Resolve the delegation's `skillPath` against the installed skills directory (the parent of this skill's directory).
-   Include that absolute `SKILL.md` path in the child prompt and explicitly require reading it before `edict_task_start`.
+   Include that absolute `SKILL.md` path in the submitted instructions and require reading it before `edict_task_start`.
    Explicit-only children may be absent from the runtime's skill catalog; the file path is authoritative.
 6. Stop on any failed child or uncompleted task. Cancel a lost worker through `edict_task_cancel`, then cancel remaining
    unstarted dependent stages with an explicit upstream-failure reason. Do not launch them or turn skipped work into
