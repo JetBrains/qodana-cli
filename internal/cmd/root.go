@@ -39,8 +39,15 @@ func isCompletionRequested(args []string) bool {
 	return len(args) >= 2 && (args[1] == "completion" || args[1] == cobra.ShellCompRequestCmd || args[1] == cobra.ShellCompNoDescRequestCmd)
 }
 
+// shouldWarnForCommandPosition returns true if args[1] is not one of the qodana commands or completion request
 func shouldWarnForCommandPosition(rootCmd *cobra.Command, args []string) bool {
-	return len(args) < 2 || (!isHelpOrVersion(args) && args[1] != "help" && !isCompletionRequested(args) && isCommandRequested(rootCmd.Commands(), args[1:2]) == "")
+	if len(args) < 2 {
+		return true
+	}
+	if args[1] == "help" || isHelpOrVersion(args) || isCompletionRequested(args) {
+		return false
+	}
+	return isCommandRequested(rootCmd.Commands(), []string{args[1]}) == ""
 }
 
 // isCommandRequested checks if any command is requested.
@@ -55,8 +62,11 @@ func isCommandRequested(commands []*cobra.Command, args []string) string {
 
 func defaultCommandArgs(rootCmd *cobra.Command, args []string) []string {
 	commandArgs := args[1:]
-	if len(commandArgs) >= 2 && commandArgs[0] == "help" {
-		rootCmd.InitDefaultCompletionCmd()
+	if len(commandArgs) > 0 && commandArgs[0] == "help" {
+		if len(commandArgs) >= 2 {
+			rootCmd.InitDefaultCompletionCmd()
+		}
+		return commandArgs
 	}
 	if !isHelpOrVersion(args) && isCommandRequested(
 		rootCmd.Commands(),

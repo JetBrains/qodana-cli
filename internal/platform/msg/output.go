@@ -118,7 +118,10 @@ func WarningMessage(message string, a ...any) {
 // WarningMessageToStderr prints a warning message to standard error with the icon.
 func WarningMessageToStderr(message string, a ...any) {
 	message = fmt.Sprintf(message, a...)
-	icon := warningStyle.Sprint("\n! ")
+	icon := "\n! "
+	if isatty.IsTerminal(os.Stderr.Fd()) || isatty.IsCygwinTerminal(os.Stderr.Fd()) {
+		icon = warningStyle.Sprint(icon)
+	}
 	pterm.Fprintln(os.Stderr, icon, Primary(message))
 }
 

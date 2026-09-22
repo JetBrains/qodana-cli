@@ -163,6 +163,7 @@ func TestDefaultCommandArgs(t *testing.T) {
 		{"init command", []string{"qodana", "init"}, []string{"init"}},
 		{"help registered command", []string{"qodana", "help", "scan"}, []string{"help", "scan"}},
 		{"help completion", []string{"qodana", "help", "completion"}, []string{"help", "completion"}},
+		{"help unknown", []string{"qodana", "help", "unknown"}, []string{"help", "unknown"}},
 		{"completion request", []string{"qodana", cobra.ShellCompRequestCmd, ""}, []string{cobra.ShellCompRequestCmd, ""}},
 		{"completion request without descriptions", []string{"qodana", cobra.ShellCompNoDescRequestCmd, ""}, []string{cobra.ShellCompNoDescRequestCmd, ""}},
 	}
