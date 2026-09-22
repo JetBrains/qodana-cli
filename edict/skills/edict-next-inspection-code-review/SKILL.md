@@ -1,53 +1,48 @@
 ---
 name: edict-next-inspection-code-review
-description: Independently review one Edict Next inspection candidate for implementation, observability, and diagnostic quality before verification.
+description: Review one Edict Next candidate against its Signals and examples for coverage, correctness, cost, and metadata agreement.
 ---
 
 # Edict Next Inspection Code Review
 
 Load only this skill.
 
-## Task contract
+## Inputs and boundaries
 
-Accept the absolute paths supplied in the prompt:
+The prompt supplies absolute paths for the cluster directory, candidate inspection, inspected IntelliJ project, and
+review output. Read every Signal, every synthetic example, the candidate, and relevant project source. Do not read
+cluster history, predecessor inspections, or prior reviews.
 
-- cluster directory;
-- candidate inspection;
-- inspected IntelliJ project;
-- review output path.
+Do not edit the candidate, cluster, examples, inspected project, or repository.
 
-Read the cluster Signals, candidate inspection, and inspected project. Review only the implementation based on available source evidence.
-Restate the candidate's general rule from the stored Signals and examples before reviewing its implementation. Treat the motivating evidence as authoritative about the intended problem, but verify that the generalization is actually true. A plausible detector for a misread or over-generalized rule is not acceptable.
-Confirm that every synthetic example preserves the diagnostic target and label-determining facts of its Signal's exact source
-evidence. Treat a moved target or altered positive/negative discriminator as a `MAJOR` `SPECIFICATION` finding; never
-restate the rule from the altered example.
-Treat unjustified narrowing to incidental details of the supplied evidence as a `MAJOR` `COVERAGE` finding and reject the candidate even when every synthetic example passes.
+## Review
 
-Do not edit the candidate, cluster, examples, inspected project, or repository. Do not create examples. Base every conclusion on available artifacts or source evidence; never turn missing information into an approval or rejection reason.
+Infer the behavior best supported by the positive and negative evidence, then review the candidate:
 
-## Review criteria
+An example referenced by a `STRONG` cluster Signal is required evidence. Every other example is weak evidence. Report
+weak-example disagreements so the generation worker can decide whether to repair them, but do not reject a candidate
+solely because a weak example fails. A rejection must be supported independently by the Signals, source semantics, or an
+implementation defect.
 
-1. **Observable predicate.** Confirm that local PSI, resolution, or bounded analysis can observe every fact the rule depends on.
-   A local inspection cannot infer revision history, runtime state, architectural intent, or out-of-file mutation unless the candidate
-   has a sound observable proxy. Require the implementation to prove every contextual qualifier in the rule.
-2. **Traversal and search scope.** Require every traversal to be bounded and file-local. Reference searches must not use a project,
-   module, global, or other cross-file scope. The only permitted reference-search form is:
+1. **Coverage and precision.** Reject incidental restrictions that omit valid forms implied by the Signals. Reject
+   predicates that include strong negative evidence. Passing examples alone does not prove the implementation is broad
+   enough.
+2. **Observable predicate.** Every condition must be observable from local PSI, direct resolution, or bounded analysis.
+   Revision history, runtime state, and architectural intent require a sound observable proxy.
+3. **Scope and cost.** PSI traversal stays in the current file. Directly resolving its references, calls, types,
+   annotations, hierarchy facts, and constants is allowed, including metadata reads from declarations in other files.
+   **Reject** project/module/global enumeration of usages, references, inheritors, overrides, files, or indexes.
+   `LocalSearchScope` must be rooted in the current file. Data-flow analysis is not allowed.
+4. **Implementation.** Require one self-contained `InspectionKts` with exactly one `localInspection`. Check conservative
+   unresolved handling, cancellation, syntax filters before resolution, proportional complexity, and absence of
+   example-specific paths, names, text, or ranges.
+5. **Diagnostic agreement.** The KTS id is lowercase kebab-case, and its name, message, highlighted element, and
+   `htmlDescription` accurately describe what the implementation actually reports and an applicable remedy. Flag a
+   description/implementation mismatch; do not invent a replacement specification or edit either side.
 
-   ```kotlin
-   val searchScope = LocalSearchScope(file)
-   val references = ReferencesSearch.search(mainElement, searchScope).findAll()
-   ```
+## Output
 
-   Reject any other `ReferencesSearch` usage. Reject inspections whose correctness or performance depends on resolving symbols,
-   usages, or declarations outside the inspected file, or on other heavy cross-file analysis.
-3. **Implementation quality and cost.** Check that helpers express auditable rule boundaries, syntax filters precede resolution or
-   searches, and complexity is proportional to the semantic problem. Reject hard-coded seed details
-   (e.g. exact files or line numbers) that do not represent a stable API or project contract.
-4. **Diagnostic contract.** Ensure the rule ID is stable lowercase kebab-case, severity matches certainty, the finding highlights the fixable semantic unit, and the message and description state the implemented violation and an actually applicable remedy.
-
-## Output contract
-
-Write `Review output path` with exactly this shape:
+Write the supplied review output with exactly this shape:
 
 ```json
 {
@@ -55,15 +50,15 @@ Write `Review output path` with exactly this shape:
   "findings": [
     {
       "severity": "BLOCKER|MAJOR|MINOR",
-      "category": "SPECIFICATION|OBSERVABILITY|PRECISION|IMPLEMENTATION|COVERAGE|PERFORMANCE|DIAGNOSTIC",
+      "category": "OBSERVABILITY|PRECISION|IMPLEMENTATION|COVERAGE|PERFORMANCE|DIAGNOSTIC",
       "description": "evidence-backed issue",
-      "evidence": ["artifact, source location, or finding index"],
-      "suggestion": "smallest general correction, or null when the finding cannot be fixed in the candidate"
+      "evidence": ["artifact or source location"],
+      "suggestion": "smallest implementation correction, or null"
     }
   ],
   "summary": "concise decision rationale"
 }
 ```
 
-Use `REJECT` when any evidence-backed `BLOCKER` or `MAJOR` finding exists. Otherwise use `ACCEPT`. Do not reject or
-invent a third outcome for missing evidence; state relevant limitations in the summary and decide from available evidence.
+Use `REJECT` for any evidenced BLOCKER or MAJOR finding; otherwise use `ACCEPT`. Missing information is not evidence
+for approval or rejection: state the limitation and decide from available evidence.

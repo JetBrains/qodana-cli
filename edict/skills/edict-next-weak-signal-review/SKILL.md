@@ -1,97 +1,74 @@
 ---
 name: edict-next-weak-signal-review
-description: Run one validated Edict Next candidate over the project, review every sampled finding, and produce validated positive and negative examples for confident classifications. Use only as a fresh worker launched by an Edict Next cluster-generation task.
+description: Review every sampled finding from one validated Edict Next candidate and materialize confident positive and negative examples.
 ---
 
 # Edict Next Weak Signal Review
 
-Load only this skill. When an example is needed, do not load `edict-next-code-example`; mention it only in a fresh
-worker prompt.
-
-# Goal
-
-Turn one sampled project analysis into additional validation evidence for the cluster. Review every finding against the
-intended general rule. Preserve each confident classification as a validated synthetic example so later candidate repairs
-must continue to satisfy all established positive and negative evidence.
+Load only this skill. When an example is needed, launch a fresh worker that loads `edict-next-code-example`; do not load
+that skill yourself.
 
 # Inputs and boundaries
 
-For every Qodana MCP call, pass the inspected IntelliJ project as `projectPath`. Never pass the Edict worktree as
-`projectPath`; the worktree is repository data already loaded in the run context.
+The prompt supplies one absolute `Review config` path. Read it first, then its cluster directory, candidate inspection,
+sampled findings, inspected project, and private scratch directory.
 
-The prompt supplies exactly one absolute path:
+Pass the inspected IntelliJ project as `projectPath` in every Qodana MCP call, never the Edict worktree.
 
-- `Review config`: JSON manifest produced by `edict_next_get_new_inspection_results`.
+Do not directly edit the candidate, cluster metadata, cluster Signals, or inspected project. You may repair or delete
+files below the cluster's `synthetic-examples/` directory. Code-example workers may change only their transient Signal
+and the cluster's examples directory.
 
-Read the manifest first, then read the referenced cluster directory, candidate inspection, sampled findings file, inspected
-project, and private scratch directory. The manifest identifies one exact candidate-analysis attempt.
+## 1. Establish the rule contract
 
-Do not directly edit the candidate, cluster, examples, or inspected project. Code-example workers may change only examples
-below the cluster's `synthetic-examples/` directory and `syntheticExampleId` in their supplied transient Signal.
+Read the candidate's id, name, `htmlDescription`, and implementation together with every cluster Signal and referenced
+example. Treat `htmlDescription` as the semantic rule contract and the implementation as the detector that emits findings.
+Use Signals and examples only as supporting evidence for the contract and its boundaries.
 
-## 1. Establish the intended rule
+## 2. Classify every finding
 
-Before classifying anything, read the cluster description, history, every Signal, every referenced synthetic example, and
-the complete candidate. Derive the intended rule and its positive and negative boundaries from the Signals and examples;
-the cluster description is only a summary and the candidate is what is being tested. Use `mcp__qodana__file_at_ref` when
-a Signal's linked code example is not enough and exact source is needed to understand its context.
+Read every finding. Retrieve its exact revision and range with `mcp__qodana__file_at_ref`, using `radius: 20`. Confirm
+that the numbered response contains every requested range line. If it does not, retry with `radius: 5` and then
+`radius: 0`; do not classify the finding until the target lines are visible. Inspect enough surrounding code and resolved
+PSI to classify it:
 
-## 2. Classify every project finding
+- `TP`: the reported code violates the rule stated by `htmlDescription`.
+- `FP`: the reported code does not violate that rule and must not be reported.
+- `UNCERTAIN`: required evidence is genuinely unavailable or ambiguous.
 
-Read every finding from the manifest's sampled findings file. For every finding, retrieve its exact revision and relevant range
-with `mcp__qodana__file_at_ref`. Read enough surrounding code and resolve PSI or symbols when needed to decide whether the
-intended inspection rule applies.
+Record unresolved findings and continue; every finding must receive one classification.
 
-Classify each finding as:
+## 3. Materialize confident classifications
 
-- `TP`: the reported code genuinely violates the intended general rule.
-- `FP`: the code must not be reported by that rule.
-- `UNCERTAIN`: required source, semantic, or rule evidence is unavailable or genuinely ambiguous.
+For each TP or FP, create one transient Signal in private scratch with the cluster Signal JSON shape:
 
-Do not infer a classification from path, API name, wording, the cluster description, or the candidate's behaviour alone.
-Inspect every returned finding. If one cannot be classified, record it as unresolved with the reason and continue.
+- use the finding's exact `fileRevision` and a unique id;
+- explain the semantic reason;
+- use `Generated` source, `WEAK` strength, and `POSITIVE` for TP or `NEGATIVE` for FP;
+- start with `syntheticExampleId: null`.
 
-## 3. Materialize every confident classification
+Launch a fresh native `spawn_agent` worker without inherited context for each transient Signal:
 
-For each `TP` or `FP`, write a transient Signal below the manifest's private scratch directory using the same JSON shape as
-a cluster Signal:
-
-- use a unique id and the finding's `fileRevision`;
-- describe the semantic reason for the classification precisely;
-- identify the review as its generated source and set strength to `WEAK`;
-- use label `POSITIVE` for `TP` and `NEGATIVE` for `FP`;
-- set `syntheticExampleId` to `null` initially.
-
-Start a fresh worker for that Signal with:
-
-```plaintext
+```text
 Load the edict-next-code-example skill.
 
 Signal path: <transient Signal path>
 Synthetic examples directory: <cluster directory>/synthetic-examples
+Inspected IntelliJ project: <inspected project path from review config>
 ```
 
-Read the assigned example ID from the updated transient Signal and associate it with the finding. Keep every transient Signal
-in private scratch; never copy it into the repository. Do not create a Signal or example for `UNCERTAIN` evidence.
+Associate the validated example id with the finding and keep the transient Signal in private scratch. Do not create an
+example for UNCERTAIN.
 
-After materializing an `FP`, also write
-`<private-scratch>/weak-signal-review/false-positive-<index>.md` containing:
+For each FP, also write `<private-scratch>/weak-signal-review/false-positive-<index>.md` with its path, revision, range,
+exact relevant snippet, classification reason, and example id.
 
-- the finding's path, revision, and ranges;
-- the exact relevant code snippet from that revision;
-- why the code must not be reported by an inspection satisfying the cluster Signals;
-- the assigned synthetic example ID, whether the example was created or reused.
+After every code-example worker finishes, call `mcp__qodana__edict_next_validate_cluster_examples(clusterId)`. Repair
+every reported example issue and repeat validation until it succeeds. Delete incomplete unreferenced example directories;
+when repairing referenced evidence, preserve its Signal's exact semantics rather than adapting it to the candidate.
 
-The extra FP report supplies repair context; do not write one for a TP.
+## 4. Report
 
-## 4. Report the review
-
-Write the manifest's configured output path with:
-
-- the sampled-findings path and reviewed and total counts;
-- one entry for every finding, preserving its index and classification;
-- the assigned synthetic example ID for every `TP` and `FP`;
-- the reason and no example ID for every `UNCERTAIN` finding;
-- the absolute FP-report path for each `FP`.
-
-Return the output path.
+Write the configured output path with the sampled-findings path, reviewed and total counts, and one indexed entry per
+finding. Every TP and FP includes its example id; every UNCERTAIN includes its reason and no example id; every FP includes
+its report path. Return the output path.
