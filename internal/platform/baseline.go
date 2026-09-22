@@ -23,6 +23,7 @@ import (
 
 	"github.com/JetBrains/qodana-cli/internal/cloud"
 	"github.com/JetBrains/qodana-cli/internal/platform/msg"
+	"github.com/JetBrains/qodana-cli/internal/platform/product"
 	"github.com/JetBrains/qodana-cli/internal/platform/qdenv"
 	"github.com/JetBrains/qodana-cli/internal/platform/thirdpartyscan"
 	"github.com/JetBrains/qodana-cli/internal/platform/utils"
@@ -74,8 +75,8 @@ func (b Baseline) UsedMessage() string {
 func ResolveBaseline(baselineFile string, cloudToken string, toolName string, cacheDir string) Baseline {
 	if baselineFile != "" {
 		return Baseline{
-			baselinePath: baselineFile,
-			isCloudBaseline: os.Getenv(qdenv.QodanaBaselineFromCloud) == "true",
+			baselinePath:             baselineFile,
+			isCloudBaseline:          os.Getenv(qdenv.QodanaBaselineFromCloud) == "true",
 			removeDownloadedBaseline: noBaselineCleanup,
 		}
 	}
@@ -86,6 +87,7 @@ func ResolveBaseline(baselineFile string, cloudToken string, toolName string, ca
 		return noBaseline
 	}
 	fmt.Println("Fetching baseline from Qodana Cloud ...")
+	toolName = product.CloudBaselineToolName(toolName)
 	client := cloud.GetCloudApiEndpoints().NewLintersApiClient(cloudToken)
 	baseline, cleanup, err := downloadCloudBaseline(client, toolName, cacheDir)
 	if err != nil {
