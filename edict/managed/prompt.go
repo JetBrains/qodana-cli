@@ -26,5 +26,5 @@ func (s *Store) validatePrompt(skill, prompt string) error {
 
 func taskLaunchPrompt(taskID, skill, token string) string {
 	return fmt.Sprintf(`$managed-%s
-Call edict_task_get with token %s to fetch your assigned task %s. Read the returned prompt and its assigned SKILL.md, then execute that task using the managed lifecycle.`, skill, token, taskID)
+Before loading any skill, call edict_task_get with token %s to fetch your assigned task %s. Read the returned prompt and its assigned SKILL.md, then execute that task using the managed lifecycle. Use only the assigned worker skill; do not load edict_manager/SKILL.md, which is for the root manager.`, skill, token, taskID)
 }

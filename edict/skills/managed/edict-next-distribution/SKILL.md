@@ -1,6 +1,6 @@
 ---
 name: managed-edict-next-distribution
-description: Assign a prepared inbox snapshot to semantically coherent clusters through edict-mcp as a managed run worker.
+description: Assign a prepared inbox snapshot to semantically coherent clusters through edict-mcp as a managed worker.
 ---
 
 # Managed Edict Distribution

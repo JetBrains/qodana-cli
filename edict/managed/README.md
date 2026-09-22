@@ -18,6 +18,11 @@ only and existing-inbox requests select the corresponding subset. Every stage,
 review, and evidence-analysis task runs in a fresh native subagent. The manager
 does not automatically commit or publish changes.
 
+An explicit three-task request uses separate top-level extraction, distribution
+(clustering), and generation tasks. The manager passes the extracted inbox
+snapshot to distribution, then its affected cluster IDs to generation, waiting
+for each stage to complete before delegating the next.
+
 ## Server and host setup
 
 Configure the MCP host to launch:
@@ -177,6 +182,8 @@ DISTILLERY_TEST_REPO=/path/to/distillery-test \
   go test ./edict -run '^TestManagedEdictDistilleryWorkflow$' -v
 EDICT_MANAGED_CODEX_TEST=1 DISTILLERY_TEST_REPO=/path/to/distillery-test \
   go test ./edict -run '^TestManagedEdictExtractSignalsFrom(OneCommit|ThreeCommits)$' -v -timeout 35m
+ULTIMATE_EDICT_REPO=/path/to/ultimate DISTILLERY_TEST_REPO=/path/to/distillery-test \
+  go test ./edict -run '^TestManagedEdictExtractClusterAndGenerate$' -v -timeout 55m
 ```
 
 The deterministic integration test uses real Git history and MCP requests, plus
@@ -194,6 +201,20 @@ from outside the selection. Both scenarios require Codex and the configured mode
 provider; neither runs IntelliJ generation. Unit/protocol tests cover capability attenuation,
 call-graph restrictions, revocation, plan recovery, stale writes, filesystem
 containment, concurrent access, and clean CLI stdio/shutdown.
+
+`TestManagedEdictExtractClusterAndGenerate` asks for three sequential tasks on the
+latest integer-overflow correction in the three-commit fixture. It starts with no
+cluster or inspection and launches IntelliJ MCP using `//build:mcp_server`
+from `ULTIMATE_EDICT_REPO`. The IDE runs on a disposable source copy; a proxy
+maps the original project path to that copy and exposes only generic inspection
+compilation, PSI, and API-documentation tools.
+The test checks stage order throughout MCP history, complete worker lifecycles,
+preserved signal evidence, assigned examples, and a Generated cluster with an
+accepted inspection. It independently recompiles the saved inspection and tests
+the original positive/negative revisions and generated examples. Real compiler
+calls and reviews must also refer to the final candidate bytes. IntelliJ startup
+and inspection-call logs are retained beside the managed logs in this test's
+output directory.
 
 The managed model tests default to `gpt-5.6-terra`, with high reasoning effort.
 Their native workers inherit the selected model. Set `CODEX_MODEL=gpt-5.6-sol`

@@ -23,7 +23,7 @@ func DefaultRegistry() []Policy {
 	generation := []string{"cluster.write", "cluster.signal.write", "example.write", "inspection.write"}
 	run := append(slices.Clone(generation), "inbox.delete")
 	return []Policy{
-		{Name: "edict_manager", Operations: all, Delegates: []string{"edict-next-run", "edict-next-batch-signal-analysis"}},
+		{Name: "edict_manager", Operations: all, Delegates: []string{"edict-next-run", "edict-next-batch-signal-analysis", "edict-next-distribution", "edict-next-generation"}},
 		{Name: "edict-next-run", Operations: run, Delegates: []string{"edict-next-prepare", "edict-next-distribution", "edict-next-generation"}},
 		{Name: "edict-next-prepare"},
 		{Name: "edict-next-distribution", Operations: []string{"inbox.delete", "cluster.write", "cluster.signal.write"}, Writes: []string{"inbox.delete", "cluster.write", "cluster.signal.write"}},
