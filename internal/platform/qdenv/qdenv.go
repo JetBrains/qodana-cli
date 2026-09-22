@@ -59,6 +59,7 @@ const (
 	QodanaCloudRequestTimeoutEnv  = "QODANA_CLOUD_REQUEST_TIMEOUT"
 	QodanaCloudRequestRetriesEnv  = "QODANA_CLOUD_REQUEST_RETRIES"
 	QodanaSkipSubmoduleUpdate     = "QODANA_SKIP_SUBMODULE_UPDATE"
+	QodanaBaselineFromCloud = "QODANA_BASELINE_FROM_CLOUD"
 
 	// QodanaEndpointEnv QodanaToken properties accessed only by GetQodanaGlobalEnv
 	QodanaEndpointEnv = "QODANA_ENDPOINT"

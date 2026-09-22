@@ -22,6 +22,8 @@ import (
 	"path/filepath"
 
 	"github.com/JetBrains/qodana-cli/internal/cloud"
+	"github.com/JetBrains/qodana-cli/internal/platform/msg"
+	"github.com/JetBrains/qodana-cli/internal/platform/qdenv"
 	"github.com/JetBrains/qodana-cli/internal/platform/thirdpartyscan"
 	"github.com/JetBrains/qodana-cli/internal/platform/utils"
 	"github.com/JetBrains/qodana-cli/internal/tooling"
@@ -69,34 +71,32 @@ func (b Baseline) UsedMessage() string {
 // run was given one, otherwise the baseline stored in Qodana Cloud for toolName, if the project of
 // cloudToken has one. An empty toolName gets the baseline of every tool of the project.
 // The downloaded baseline is stored in cacheDir and must be cleaned up.
-func ResolveBaseline(baselineFile string, cloudToken string, toolName string, cacheDir string) (Baseline, error) {
+func ResolveBaseline(baselineFile string, cloudToken string, toolName string, cacheDir string) Baseline {
 	if baselineFile != "" {
-		return Baseline{baselinePath: baselineFile, removeDownloadedBaseline: noBaselineCleanup}, nil
+		return Baseline{
+			baselinePath: baselineFile,
+			isCloudBaseline: os.Getenv(qdenv.QodanaBaselineFromCloud) == "true",
+			removeDownloadedBaseline: noBaselineCleanup,
+		}
 	}
 
 	noBaseline := Baseline{removeDownloadedBaseline: noBaselineCleanup}
 	if cloudToken == "" {
 		log.Debug("Not connected to Qodana Cloud, running without a baseline")
-		return noBaseline, nil
+		return noBaseline
 	}
-	// the baseline of a linter is the one of the tool its report is written under, e.g. QDNET. A
-	// custom image, of which the CLI knows no product code, gets the baseline of every tool of the
-	// project: the problems of the other tools are simply never matched.
-	if toolName == "" {
-		log.Debug("No product code of the linter, getting the baseline of all tools of the project")
-	}
-
 	fmt.Println("Fetching baseline from Qodana Cloud ...")
 	client := cloud.GetCloudApiEndpoints().NewLintersApiClient(cloudToken)
 	baseline, cleanup, err := downloadCloudBaseline(client, toolName, cacheDir)
 	if err != nil {
-		return noBaseline, fmt.Errorf("failed to get the baseline from Qodana Cloud: %w", err)
+		msg.WarningMessage("Cannot use the baseline of Qodana Cloud, running without a baseline: %v", err)
+		return noBaseline
 	}
 	if baseline == "" {
 		log.Debugf("Qodana Cloud has no baseline of '%s' for this project", toolName)
-		return noBaseline, nil
+		return noBaseline
 	}
-	return Baseline{baselinePath: baseline, isCloudBaseline: true, removeDownloadedBaseline: cleanup}, nil
+	return Baseline{baselinePath: baseline, isCloudBaseline: true, removeDownloadedBaseline: cleanup}
 }
 
 // downloadCloudBaseline stores the baseline from Qodana Cloud as a SARIF file in the cache dir.

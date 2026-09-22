@@ -194,8 +194,9 @@ func (c Context) prepareContext(skipFixes bool, propertiesToAdd ...string) Conte
 }
 
 // WithCloudBaseline compares the analysis results with the baseline downloaded from Qodana Cloud,
-// the same way as with a baseline file.
+// the same way as with a baseline file. The linter is told where the file comes from, so that it
+// reports the baseline of the cloud and not a file of the cache dir.
 func (c Context) WithCloudBaseline(baselineForLinter string) Context {
 	c.baseline = baselineForLinter
-	return c
+	return c.withEnv(qdenv.QodanaBaselineFromCloud, "true", true)
 }

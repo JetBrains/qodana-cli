@@ -38,7 +38,8 @@ const (
 	baselineSarifFooter = `]}]}`
 )
 
-// WriteBaseline writes the baseline stored in Qodana Cloud for the given tool to file as a SARIF report.
+// WriteBaseline writes the baseline stored in Qodana Cloud for the given tool to file as a SARIF
+// report. An empty tool name asks for the baseline of every tool of the project.
 //
 // Qodana Cloud streams the baseline problem by problem, so it is converted the same way: neither the
 // response nor the report is ever held in memory as a whole.

@@ -115,19 +115,16 @@ But you can always override qodana.yaml options with the following command-line 
 				effectiveConfigFiles.ConfigDir,
 			)
 
-			baseline, err := platform.ResolveBaseline(
+			baseline := platform.ResolveBaseline(
 				scanContext.Baseline(),
 				scanContext.QodanaUploadToken(),
 				scanContext.Analyser().GetLinter().ProductCode,
 				scanContext.CacheDir(),
 			)
 			defer baseline.Cleanup()
-			if err != nil {
-				msg.ErrorMessage(err.Error())
-				os.Exit(1)
-			}
 			if baseline.IsFromCloud() {
 				scanContext = scanContext.WithCloudBaseline(baselineForLinter(baseline.BaselinePath(), scanContext))
+				qdenv.SetEnv(qdenv.QodanaBaselineFromCloud, "true")
 			}
 
 			exitCode := core.RunAnalysis(ctx, scanContext)

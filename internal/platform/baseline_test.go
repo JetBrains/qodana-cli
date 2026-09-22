@@ -24,6 +24,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/JetBrains/qodana-cli/internal/platform/qdenv"
 	"github.com/JetBrains/qodana-cli/internal/sarif"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -119,20 +120,32 @@ func TestResolveBaseline(t *testing.T) {
 		baselineFile := filepath.Join(t.TempDir(), "baseline.sarif.json")
 		require.NoError(t, os.WriteFile(baselineFile, []byte("{}"), 0644))
 
-		baseline, err := ResolveBaseline(baselineFile, "token", "QDJVM", t.TempDir())
+		baseline := ResolveBaseline(baselineFile, "token", "QDJVM", t.TempDir())
 		defer baseline.Cleanup()
 
-		require.NoError(t, err)
 		assert.Equal(t, baselineFile, baseline.BaselinePath())
 		assert.False(t, baseline.IsFromCloud())
 		assert.Equal(t, "The analysis used the baseline file "+baselineFile, baseline.UsedMessage())
 	})
 
-	t.Run("no baseline without a cloud token", func(t *testing.T) {
-		baseline, err := ResolveBaseline("", "", "QDJVM", t.TempDir())
+	// the CLI downloads the baseline and passes it as a file, saying where it comes from
+	t.Run("baseline file of the launching CLI is the cloud baseline", func(t *testing.T) {
+		t.Setenv(qdenv.QodanaBaselineFromCloud, "true")
+		baselineFile := filepath.Join(t.TempDir(), "baseline.sarif.json")
+		require.NoError(t, os.WriteFile(baselineFile, []byte("{}"), 0644))
+
+		baseline := ResolveBaseline(baselineFile, "token", "QDJVM", t.TempDir())
 		defer baseline.Cleanup()
 
-		require.NoError(t, err)
+		assert.Equal(t, baselineFile, baseline.BaselinePath())
+		assert.True(t, baseline.IsFromCloud())
+		assert.Equal(t, "The analysis used the baseline from Qodana Cloud", baseline.UsedMessage())
+	})
+
+	t.Run("no baseline without a cloud token", func(t *testing.T) {
+		baseline := ResolveBaseline("", "", "QDJVM", t.TempDir())
+		defer baseline.Cleanup()
+
 		assert.Empty(t, baseline.BaselinePath())
 		assert.Contains(t, baseline.UsedMessage(), "The analysis used no baseline.")
 	})

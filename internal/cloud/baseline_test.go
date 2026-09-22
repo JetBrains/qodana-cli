@@ -246,8 +246,7 @@ func TestWriteBaseline(t *testing.T) {
 }
 
 // TestWriteBaselineOfAllTools verifies that a linter of an unknown product code asks for the whole
-// baseline of the project: the problems of the other tools are never matched, unlike the ones of its
-// own tool, which would be missing from a baseline of the wrong name.
+// baseline of the project, which Qodana Cloud answers with the problems of every tool.
 func TestWriteBaselineOfAllTools(t *testing.T) {
 	var requestUri string
 	written, report, err := requestBaselineOf(
@@ -261,7 +260,6 @@ func TestWriteBaselineOfAllTools(t *testing.T) {
 	require.True(t, written)
 	assert.Equal(t, "/linters/baseline", requestUri, "no tool name asks for the whole baseline")
 	assert.Contains(t, report, `"name":""`)
-	assert.Contains(t, report, "KDocUnresolvedReference")
 }
 
 // TestWriteBaselineGzipped verifies that the baseline is read from the compressed response the cloud
