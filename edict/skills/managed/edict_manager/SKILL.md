@@ -23,6 +23,11 @@ native subagent runtime is a failed prerequisite, not permission to execute stag
    `edict-next-run`. For an existing-inbox request, use `edict-next-run` alone. For extraction only, use batch analysis
    alone. Do not invent a history range or PR selection when none is supplied; use existing inbox state or report the
    missing analysis input.
+   When the user asks for three separate extraction, clustering, and generation tasks, create exactly those three
+   top-level steps: `edict-next-batch-signal-analysis`, `edict-next-distribution`, `edict-next-generation`.
+   After extraction completes, read the resulting inbox files and hashes and supply that bounded snapshot to
+   distribution. Pass distribution's affected cluster IDs to generation. Wait for each stage to complete before
+   delegating the next; do not wrap these explicitly separate stages in `edict-next-run`.
 3. Read `edict_plan_get` first. Call `edict_plan_create(request, steps)` without a token, with the user's concrete
    request and ordered `{skill, title}` steps. The response contains `plan` and a private manager `token`; use that
    token for every subsequent manager call, including `edict_registry`, `edict_list`, `edict_read`, and `edict_plan_get`,
@@ -36,6 +41,9 @@ native subagent runtime is a failed prerequisite, not permission to execute stag
    needs `inbox.write` on `inbox`; run needs `inbox.delete`, `cluster.write`, `cluster.signal.write`, `example.write`,
    and `inspection.write` on `inbox`, `clusters`, and `inspections`. Narrow these further when the user targets specific
    items. These are delegation ceilings, not permission for the orchestrator itself to edit state.
+   Direct distribution needs `inbox.delete`, `cluster.write`, and `cluster.signal.write` on the selected inbox paths
+   and `clusters`. Direct generation needs `cluster.write`, `cluster.signal.write`, `example.write`, and
+   `inspection.write` on the affected cluster directories and inspection paths.
 5. Follow the protocol's assignment flow: supply `edict_delegate` the complete token-free task instructions starting
    with the child's exact managed skill invocation, then pass its returned short launch `prompt` to native `spawn_agent`.
    The worker fetches the full assignment with `edict_task_get`; do not copy task instructions into the launch message.

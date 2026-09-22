@@ -30,6 +30,12 @@ val references = ReferencesSearch.search(mainElement, searchScope).findAll()
 
 No hard-coded example paths, names, line numbers, or seed text. Use explicit imports only where the runtime does not provide them. Persist candidate content to `inspections/<id>.candidate.kts` through MCP, preserving its returned hash. Materialize that exact content and examples in private scratch for tools that require files. An existing predecessor may be reused only after these same current-evidence measurements and reviews pass; never trust its prior Generated status alone.
 
+Preserve the full script contract from the runner's template, including the returned collection of `InspectionKts`
+descriptors and diagnostic metadata. Declaring a `localInspection` variable alone does not return a runnable inspection.
+For `run_inspection_kts`, populate `inspectionKtsCode` directly from the stored candidate's `edict_read` content or its
+byte-identical scratch file. Do not retype, condense, or reformat it in the tool arguments. Hash the actual string sent
+to the runner and record that hash with each measurement; a hash copied from a different candidate is not evidence.
+
 1. Delegate `edict-next-inspection-code-review` with `operations: []`. Supply cluster ID, candidate path/hash, source project, and scratch output. On REJECT, make the smallest general repair and obtain a fresh independent review.
 2. Compile the exact reviewed candidate and run it against all assigned examples with an available scratch-only inspection runner. Require compilation success, at least one positive example, and at least 85% aggregate label accuracy. A positive example must report its expected range; a negative example must not report a problem. Keep actual measured per-example results in scratch. Repair general predicates and repeat review/measurement when these checks fail.
 3. Run the exact measured candidate on the inspected source project. Save complete findings and a deterministic bounded sample in scratch with candidate hash and revision provenance. Build an attempt manifest containing cluster ID, candidate path/hash, source project, full findings path, sampled findings path, private scratch directory, and configured review output paths. All review artifacts belong to this one attempt.

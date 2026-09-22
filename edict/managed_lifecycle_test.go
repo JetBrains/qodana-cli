@@ -12,8 +12,98 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/JetBrains/qodana-cli/edict/managed"
 	"github.com/stretchr/testify/require"
 )
+
+// Check every recorded plan snapshot: the final completed plan alone cannot
+// prove that stages ran in order or that each stage actually started.
+func managedStageOrderProblems(input io.Reader, stages []string) ([]string, error) {
+	var problems []string
+	started, reported := make(map[string]bool), make(map[string]bool)
+	scanner := bufio.NewScanner(input)
+	scanner.Buffer(make([]byte, 4096), 16<<20)
+	for line := 1; scanner.Scan(); line++ {
+		var event struct {
+			Message string `json:"msg"`
+			Result  struct {
+				StructuredContent struct {
+					Tasks []managed.Task `json:"tasks"`
+					Plan  *managed.Plan  `json:"plan"`
+				} `json:"structuredContent"`
+			} `json:"result"`
+		}
+		if err := json.Unmarshal(scanner.Bytes(), &event); err != nil {
+			return nil, fmt.Errorf("MCP log line %d: %w", line, err)
+		}
+		if event.Message != "response" {
+			continue
+		}
+		snapshot := event.Result.StructuredContent
+		if snapshot.Plan != nil {
+			snapshot.Tasks = snapshot.Plan.Tasks
+		}
+		if len(snapshot.Tasks) == 0 {
+			continue
+		}
+		states := make(map[string]string)
+		for _, task := range snapshot.Tasks {
+			states[task.ID] = task.Status
+			if task.Status == "running" {
+				started[task.ID] = true
+			}
+		}
+		for i, id := range stages {
+			if states[id] == "" || states[id] == "pending" {
+				continue
+			}
+			for _, previous := range stages[:i] {
+				if states[previous] != "completed" && !reported[id] {
+					problems = append(problems, fmt.Sprintf("MCP log line %d: stage %s is %s before preceding stage %s completed (status %q)",
+						line, id, states[id], previous, states[previous]))
+					reported[id] = true
+				}
+			}
+		}
+	}
+	for _, id := range stages {
+		if !started[id] {
+			problems = append(problems, fmt.Sprintf("stage %s has no recorded running state", id))
+		}
+	}
+	return problems, scanner.Err()
+}
+
+func TestManagedStageOrderRejectsOverlapHiddenByCompletedPlan(t *testing.T) {
+	ids := []string{"extract", "cluster", "generate"}
+	snapshot := func(statuses ...string) string {
+		var tasks []managed.Task
+		for i, status := range statuses {
+			tasks = append(tasks, managed.Task{ID: ids[i], Status: status})
+		}
+		data, err := json.Marshal(map[string]any{"msg": "response", "result": map[string]any{"structuredContent": managed.Plan{Tasks: tasks}}})
+		require.NoError(t, err)
+		return string(data) + "\n"
+	}
+	finished := snapshot("completed", "completed", "completed")
+	for name, trace := range map[string]string{
+		"overlap": snapshot("running", "running", "pending") + snapshot("completed", "completed", "running") + finished,
+		"out-of-order": snapshot("pending", "running", "pending") + snapshot("running", "completed", "pending") +
+			snapshot("completed", "completed", "running") + finished,
+		"missing-executions": finished,
+	} {
+		t.Run(name, func(t *testing.T) {
+			problems, err := managedStageOrderProblems(strings.NewReader(trace), ids)
+			require.NoError(t, err)
+			require.NotEmpty(t, problems, "successful final state must not conceal invalid stage execution")
+		})
+	}
+	ordered := snapshot("running", "pending", "pending") + snapshot("completed", "running", "pending") +
+		snapshot("completed", "completed", "running") + finished
+	problems, err := managedStageOrderProblems(strings.NewReader(ordered), ids)
+	require.NoError(t, err)
+	require.Empty(t, problems)
+}
 
 func assertManagedLifecycle(t *testing.T, testRoot string) {
 	t.Helper()

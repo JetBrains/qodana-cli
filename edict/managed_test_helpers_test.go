@@ -58,6 +58,11 @@ type managedCodexTest struct {
 // prompts should describe the requested work, without teaching the skill protocol.
 func prepareManagedCodex(t *testing.T, project managedTestProject) managedCodexTest {
 	t.Helper()
+	return prepareManagedCodexWithInspectionServer(t, project, "")
+}
+
+func prepareManagedCodexWithInspectionServer(t *testing.T, project managedTestProject, inspectionURL string) managedCodexTest {
+	t.Helper()
 	// Keep this fixture workflow fast without changing the model used by other
 	// Codex integrations. CODEX_MODEL still allows provider-specific overrides.
 	model := strings.TrimSpace(os.Getenv("CODEX_MODEL"))
@@ -97,20 +102,32 @@ func prepareManagedCodex(t *testing.T, project managedTestProject) managedCodexT
 	}
 	configPath := filepath.Join(home, "config.toml")
 	config := mustReadFile(t, configPath)
-	// Permit the batch worker's nested evidence worker. The isolated MCP server
-	// can mutate only fixture state; direct filesystem writes remain sandboxed.
+	depth, threads := 2, 4
+	if inspectionURL != "" {
+		depth, threads = 5, 6 // Generation includes nested example and review workers.
+	}
+	// The isolated MCP server can mutate only fixture state; direct filesystem
+	// writes remain sandboxed throughout nested generation and review tasks.
 	config = append(config, []byte(fmt.Sprintf(`
 [features]
 multi_agent = true
 
 [agents]
-max_depth = 2
-max_concurrent_threads_per_session = 4
+max_depth = %d
+max_concurrent_threads_per_session = %d
 
 [mcp_servers.edict-mcp]
 url = %s
 default_tools_approval_mode = "approve"
-`, tomlString(httpServer.URL)))...)
+`, depth, threads, tomlString(httpServer.URL)))...)
+	if inspectionURL != "" {
+		config = append(config, []byte(fmt.Sprintf(`
+[mcp_servers.inspection]
+url = %s
+default_tools_approval_mode = "approve"
+tool_timeout_sec = 300
+`, tomlString(inspectionURL)))...)
+	}
 	if err := os.WriteFile(configPath, config, 0o600); err != nil {
 		t.Fatal(err)
 	}
@@ -324,11 +341,14 @@ func assertManagedCommitSignalFiles(t *testing.T, checkout distilleryTestCheckou
 	labels := make(map[string]bool)
 	for _, file := range files {
 		signal := file.Signal
-		artifact := "inbox/" + file.Name
+		artifact := file.Name
+		if !strings.Contains(artifact, "/") {
+			artifact = "inbox/" + artifact
+		}
 		digest := sha256.Sum256([]byte(signal.IdempotencyKey))
 		expectedID := "s-" + hex.EncodeToString(digest[:])[:10]
 		assert.Equal(t, expectedID, signal.ID, "%s: id must match SHA-256 of idempotencyKey", artifact)
-		assert.Equal(t, signal.ID+".json", file.Name, "%s: filename must match id", artifact)
+		assert.Equal(t, signal.ID+".json", filepath.Base(file.Name), "%s: filename must match id", artifact)
 		assert.Equal(t, expected.Path, signal.FileRevision.Path, "%s: fileRevision.path must be relative to the repository root", artifact)
 		assert.Equal(t, "FromCommit", signal.Source.Type, "%s: source.type", artifact)
 		assert.Equal(t, expected.Commit, signal.Source.CommitRevision, "%s: source.commitRevision", artifact)
