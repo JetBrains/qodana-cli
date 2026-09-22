@@ -23,21 +23,27 @@ type AgentMessage struct {
 }
 
 // AgentLogger correlates runtime output with managed tasks and redacts issued
-// capabilities, including revoked ones. The caller owns the output writer.
+// capabilities, including revoked ones. The caller owns the output writers.
 type AgentLogger struct {
-	mu         sync.Mutex
-	store      *Store
-	output     io.Writer
-	identities map[string]Task
-	pending    []AgentMessage
-	err        error
+	mu          sync.Mutex
+	store       *Store
+	output      io.Writer
+	shortOutput io.Writer
+	identities  map[string]Task
+	pending     []AgentMessage
+	err         error
 }
 
-func NewAgentLogger(store *Store, output io.Writer) *AgentLogger {
+// NewAgentLogger writes full records to output and MCP summaries with unchanged
+// agent messages to shortOutput. A nil writer discards that log.
+func NewAgentLogger(store *Store, output, shortOutput io.Writer) *AgentLogger {
 	if output == nil {
 		output = io.Discard
 	}
-	return &AgentLogger{store: store, output: output, identities: make(map[string]Task)}
+	if shortOutput == nil {
+		shortOutput = io.Discard
+	}
+	return &AgentLogger{store: store, output: output, shortOutput: shortOutput, identities: make(map[string]Task)}
 }
 
 func (l *AgentLogger) Record(message AgentMessage) {
@@ -95,8 +101,8 @@ func (l *AgentLogger) Flush(final bool) error {
 		if phase == "" {
 			phase = "message"
 		}
-		if err := l.write(message.Time, task, phase, text); err != nil {
-			return err
+		if l.err = l.write(message.Time, task, phase, text, text); l.err != nil {
+			return l.err
 		}
 	}
 	l.pending = pending
@@ -105,17 +111,26 @@ func (l *AgentLogger) Flush(final bool) error {
 
 // MCP records are already attributed and redacted by the tool handler. Share
 // the same lock and formatter as runtime output so records cannot interleave.
-func (l *AgentLogger) mcp(at time.Time, task Task, text string) {
+func (l *AgentLogger) mcp(at time.Time, task Task, text, summary string) {
 	l.mu.Lock()
 	defer l.mu.Unlock()
 	if l.err == nil {
-		l.err = l.write(at, task, "mcp", text)
+		l.err = l.write(at, task, "mcp", text, summary)
 	}
 }
 
-func (l *AgentLogger) write(at time.Time, task Task, kind, text string) error {
-	if _, err := io.WriteString(l.output, formatAgentRecord(at, task, kind, text)); err != nil {
+func (l *AgentLogger) write(at time.Time, task Task, kind, text, shortText string) error {
+	record := formatAgentRecord(at, task, kind, text)
+	if _, err := io.WriteString(l.output, record); err != nil {
 		return fmt.Errorf("write managed agent output: %w", err)
+	}
+	if shortText != "" || kind != "mcp" {
+		if shortText != text {
+			record = formatAgentRecord(at, task, kind, shortText)
+		}
+		if _, err := io.WriteString(l.shortOutput, record); err != nil {
+			return fmt.Errorf("write managed short agent output: %w", err)
+		}
 	}
 	return nil
 }
