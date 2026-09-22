@@ -20,12 +20,14 @@ native subagent runtime is a failed prerequisite, not permission to execute stag
 
 1. Read `edict_registry` and the relevant state through `edict_list` / `edict_read`. Use the registered original skill
    IDs in MCP calls; use `$managed-edict-next-*` in child prompts. Do not load child skills yourself.
-2. Explain the chosen high-level pipeline briefly. The default is `edict-next-batch-signal-analysis` followed by
-   `edict-next-run`. For an existing-inbox request, use `edict-next-run` alone. For extraction only, use batch analysis
-   alone. Do not invent a history range or PR selection when none is supplied; use existing inbox state or report the
+2. Explain the chosen high-level pipeline briefly. Select `edict-next-batch-signal-analysis` for bounded Git commits
+   or `edict-next-pr-signal-analysis` for GitHub/Space PR-review discussions, followed by `edict-next-run` when generation
+   is requested. PR analysis needs provider, owner/project key, repository name, explicit PR numbers or inclusive dates,
+   and a PR limit; it obtains review data from edict-mcp. For an existing-inbox request, use `edict-next-run` alone.
+   For extraction only, use the applicable extraction skill alone. Do not invent a history range or PR selection when none is supplied; use existing inbox state or report the
    missing analysis input.
    When the user asks for three separate extraction, clustering, and generation tasks, create exactly those three
-   top-level steps: `edict-next-batch-signal-analysis`, `edict-next-distribution`, `edict-next-generation`.
+   top-level steps: the applicable extraction skill, `edict-next-distribution`, `edict-next-generation`.
    After extraction completes, read the resulting inbox files and hashes and supply that bounded snapshot to
    distribution. Pass distribution's affected cluster IDs to generation. Wait for each stage to complete before
    delegating the next; do not wrap these explicitly separate stages in `edict-next-run`.
@@ -39,7 +41,7 @@ native subagent runtime is a failed prerequisite, not permission to execute stag
    token. Reuse pending/failed tasks, keep completed results, and avoid duplicate children. If an unrelated plan is
    unfinished, report it without cancelling it. A new request after a terminal plan needs a new server. Keep the plan
    ID and state-relative path `plans/<id>.json`; never write the plan yourself.
-4. For each stage in order, delegate its plan task with only the operations and path scope it needs. Batch analysis
+4. For each stage in order, delegate its plan task with only the operations and path scope it needs. Commit or PR analysis
    needs `inbox.write` on `inbox`; run needs `inbox.delete`, `cluster.write`, `cluster.signal.write`, `example.write`,
    and `inspection.write` on `inbox`, `clusters`, and `inspections`. Narrow these further when the user targets specific
    items. These are delegation ceilings, not permission for the orchestrator itself to edit state.

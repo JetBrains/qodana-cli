@@ -60,6 +60,8 @@ func TestServerDiscoversTypedTools(t *testing.T) {
 		"edict_plan_create": false, "edict_task_add": false, "edict_delegate": false,
 		"edict_task_get": true, "edict_task_start": false, "edict_task_finish": false, "edict_task_cancel": false,
 		"edict_state_write": false, "edict_state_delete": false,
+		"edict_prepare_pr_analysis": true, "edict_list_pr_analysis_items": true, "edict_get_pr_analysis_item": true,
+		"edict_validate_pr_signals": true, "edict_pr_file_at_ref": true, "edict_pr_file_diff": true,
 	}
 	if len(result.Tools) != len(expected) {
 		t.Fatalf("got %d tools, expected %d", len(result.Tools), len(expected))
