@@ -23,6 +23,50 @@ An explicit three-task request uses separate top-level extraction, distribution
 snapshot to distribution, then its affected cluster IDs to generation, waiting
 for each stage to complete before delegating the next.
 
+Commit extraction uses `edict-next-batch-signal-analysis`. GitHub and Space review
+extraction uses `edict-next-pr-signal-analysis`; both delegate each evidence item
+to the read-only `edict-next-signal-analysis` worker. The PR skill fetches review
+packages from edict-mcp instead of calling the provider or IntelliJ directly.
+
+## PR review access
+
+Set provider credentials in the **edict-mcp server environment**:
+
+- GitHub: `GITHUB_TOKEN` (or `GH_TOKEN`). Public repositories also work anonymously.
+- Space: `SPACE_TOKEN`; `EDICT_SPACE_URL` defaults to `https://jetbrains.team`.
+- GitHub Enterprise: set `EDICT_GITHUB_API_URL` to its REST API base URL
+  (for example `https://github.example.com/api/v3`). The default is `https://api.github.com`.
+
+No provider credential is an MCP argument. Supply `provider`, `owner` (GitHub
+owner or Space project key), `repo`, and a bounded review selection in the task.
+For example: “Extract signals from GitHub PRs 123 and 124 in JetBrains/example.”
+Explicit PR numbers or inclusive UTC `startDate`/`endDate` select merged reviews;
+`maxPrs` limits the selection to 1–1000 PRs. No IntelliJ session is needed.
+
+`edict_prepare_pr_analysis` retains a provider snapshot and returns counts and a
+batch ID. `edict_list_pr_analysis_items` pages its stable discussion IDs, and
+`edict_get_pr_analysis_item` returns complete human messages, title/body, URLs,
+and base/comment/head revisions. Provider pagination errors, restricted Space
+history, and missing source anchors fail preparation instead of losing items.
+The implementation follows Ultimate's `ExtractionMcpToolset`,
+`PRAnalysisMcpService`, `GitHubRemoteService`, and `SpaceRemoteService`.
+
+Workers inspect exact source using local Git. `edict_pr_file_at_ref` and
+`edict_pr_file_diff` provide a remote fallback restricted to a prepared item's
+revisions. The diff reader runs Git on complete provider file snapshots, with
+200 context lines; it rejects truncated file content. Use the real path on each
+side for renamed files. Batches are accessible only to their preparing task and
+its evidence workers.
+
+Before publication, `edict_validate_pr_signals` checks every prepared work-item
+ID and every proposed inbox record, including provider metadata, full ordered
+discussion messages, evidence revisions and changed-line ranges. It records the
+exact validated content hashes. The PR coordinator can publish only those bytes,
+and cannot complete until all validated signals are present. Empty findings are
+valid after complete inspection. Provider snapshots and receipts live in memory;
+after a restart, prepare and validate again, reusing identical existing records.
+Source authenticity and semantic relevance still require worker inspection.
+
 ## Server and host setup
 
 Configure the MCP host to launch:
@@ -176,12 +220,14 @@ inspection code; managed skills perform those checks using scratch-only tooling.
 ## Tests
 
 ```sh
-go test -race ./edict/managed
+go test -race ./edict/managed/...
 go test ./internal/cmd -run 'TestManaged|TestEdictManaged'
 DISTILLERY_TEST_REPO=/path/to/distillery-test \
   go test ./edict -run '^TestManagedEdictDistilleryWorkflow$' -v
 EDICT_MANAGED_CODEX_TEST=1 DISTILLERY_TEST_REPO=/path/to/distillery-test \
   go test ./edict -run '^TestManagedEdictExtractSignalsFrom(OneCommit|ThreeCommits)$' -v -timeout 35m
+DISTILLERY_TEST_REPO=/path/to/distillery-test \
+  go test ./edict -run '^TestManagedEdictExtractSignalsFromPRReview$' -v -timeout 35m
 ULTIMATE_EDICT_REPO=/path/to/ultimate DISTILLERY_TEST_REPO=/path/to/distillery-test \
   go test ./edict -run '^TestManagedEdictExtractClusterAndGenerate$' -v -timeout 55m
 ```
@@ -201,6 +247,15 @@ from outside the selection. Both scenarios require Codex and the configured mode
 provider; neither runs IntelliJ generation. Unit/protocol tests cover capability attenuation,
 call-graph restrictions, revocation, plan recovery, stale writes, filesystem
 containment, concurrent access, and clean CLI stdio/shutdown.
+
+`TestManagedEdictExtractSignalsFromPRReview` runs real Codex and native workers
+for GitHub and Space separately. HTTP fixtures serve deterministic provider
+responses; the agents inspect actual before/after Git source. Assertions check
+the PR-specific delegation, successful provider/lifecycle/write calls, complete
+discussion provenance, both signal labels, and exact canonical diff. Each case
+cleans its own `out/TestManagedEdictExtractSignalsFromPRReview/<provider>` folder
+before running. Unit tests additionally exercise multi-page provider data,
+truncation, invalid coverage, task isolation, and rejected writes.
 
 `TestManagedEdictExtractClusterAndGenerate` asks for three sequential tasks on the
 latest integer-overflow correction in the three-commit fixture. It starts with no

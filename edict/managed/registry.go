@@ -23,7 +23,7 @@ func DefaultRegistry() []Policy {
 	generation := []string{"cluster.write", "cluster.signal.write", "example.write", "inspection.write"}
 	run := append(slices.Clone(generation), "inbox.delete")
 	return []Policy{
-		{Name: "edict_manager", Operations: all, Delegates: []string{"edict-next-run", "edict-next-batch-signal-analysis", "edict-next-distribution", "edict-next-generation"}},
+		{Name: "edict_manager", Operations: all, Delegates: []string{"edict-next-run", "edict-next-batch-signal-analysis", "edict-next-pr-signal-analysis", "edict-next-distribution", "edict-next-generation"}},
 		{Name: "edict-next-run", Operations: run, Delegates: []string{"edict-next-prepare", "edict-next-distribution", "edict-next-generation"}},
 		{Name: "edict-next-prepare"},
 		{Name: "edict-next-distribution", Operations: []string{"inbox.delete", "cluster.write", "cluster.signal.write"}, Writes: []string{"inbox.delete", "cluster.write", "cluster.signal.write"}},
@@ -34,6 +34,7 @@ func DefaultRegistry() []Policy {
 		{Name: "edict-next-inspection-value-review"},
 		{Name: "edict-next-weak-signal-review", Operations: []string{"example.write", "cluster.signal.write"}, Delegates: []string{"edict-next-code-example"}},
 		{Name: "edict-next-batch-signal-analysis", Operations: []string{"inbox.write"}, Writes: []string{"inbox.write"}, Delegates: []string{"edict-next-signal-analysis"}},
+		{Name: "edict-next-pr-signal-analysis", Operations: []string{"inbox.write"}, Writes: []string{"inbox.write"}, Delegates: []string{"edict-next-signal-analysis"}},
 		{Name: "edict-next-signal-analysis"},
 	}
 }
