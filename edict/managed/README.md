@@ -62,8 +62,11 @@ Keep the project log directory inaccessible to children.
 
 Hosts launching managed workflows through `edict.RunCodex` can capture the main
 agent's and all nested workers' emitted commentary and final messages in
-`edict-agents.log`, in the same log directory. Pass
-`managed.NewAgentLogger(store, logs.Agents)` as `CodexRunConfig.AgentLogger` and the
+`edict-agents.log`, in the same log directory. `edict-agent-short.log` keeps the
+same commentary and final messages, with only concise MCP activity and task
+status summaries. It omits full response bodies and replaces task prompts with
+a brief delegation entry. Pass
+`managed.NewAgentLogger(store, logs.Agents, logs.AgentsShort)` as `CodexRunConfig.AgentLogger` and the
 fourth argument to `managed.NewServer`, using the existing store and `managed.OpenLogs`
 result. The server mirrors readable MCP activity and complete response bodies into this combined log with an
 `mcp:` label. The managed integration harness
@@ -201,6 +204,7 @@ its selected model alongside the result and elapsed time.
 Integration artifacts are retained in `<qodana-cli>/out/<test-name>/`, including
 the fixture checkout, Codex traces, readable `log/edict/edict-mcp.log`, detailed
 `log/edict/edict-mcp-system.log`, and runtime output in `log/edict/edict-agents.log`
+and `log/edict/edict-agent-short.log`
 for managed Codex tests.
 Each test clears its own output directory before the next execution; the latest
 run remains available for debugging after success or failure. Raw Codex traces may

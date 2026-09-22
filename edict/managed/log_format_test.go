@@ -51,7 +51,7 @@ func TestCombinedAgentLogIncludesAttributedMCPActivity(t *testing.T) {
 	require.NoError(t, err)
 	t.Cleanup(func() { require.NoError(t, logs.Close()) })
 	store, manager, _ := testStore(t)
-	agents := NewAgentLogger(store, logs.Agents)
+	agents := NewAgentLogger(store, logs.Agents, logs.AgentsShort)
 	server := NewServer(store, logs.Activity, logs.System, agents)
 	clientTransport, serverTransport := mcp.NewInMemoryTransports()
 	ctx := context.Background()
@@ -87,8 +87,18 @@ func TestCombinedAgentLogIncludesAttributedMCPActivity(t *testing.T) {
 	require.Equal(t, 8, strings.Count(output, prefix+"mcp: edict_plan_get response:"))
 	require.Contains(t, output, "id: "+batch.TaskID)
 	require.NotContains(t, output, batch.Token)
-	for _, line := range strings.Split(strings.TrimSuffix(output, "\n"), "\n") {
-		require.LessOrEqual(t, utf8.RuneCountInString(line), 120)
+	data, err = os.ReadFile(logs.AgentsShort.Name())
+	require.NoError(t, err)
+	short := string(data)
+	require.Equal(t, 8, strings.Count(short, prefix+"commentary: Reading the plan [redacted]"))
+	require.Equal(t, 8, strings.Count(short, prefix+"mcp: Read plan:"))
+	require.NotContains(t, short, "edict_plan_get response:")
+	require.NotContains(t, short, "id: "+batch.TaskID)
+	require.NotContains(t, short, batch.Token)
+	for _, text := range []string{output, short} {
+		for _, line := range strings.Split(strings.TrimSuffix(text, "\n"), "\n") {
+			require.LessOrEqual(t, utf8.RuneCountInString(line), 120)
+		}
 	}
 }
 
@@ -96,7 +106,7 @@ func TestReadableResponsesPreserveFullReportsAndRedactOnlyTokens(t *testing.T) {
 	store, manager, _ := testStore(t)
 	var activity, agents bytes.Buffer
 	logger := newActivityLogger(&activity)
-	logger.agents = NewAgentLogger(store, &agents)
+	logger.agents = NewAgentLogger(store, &agents, nil)
 	caller := Task{Skill: "edict_manager"}
 	logger.remember(manager, caller)
 	// Exercise JSON within JSON, multiline source, large exact numbers, and a

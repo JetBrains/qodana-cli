@@ -571,7 +571,7 @@ func newManagedIntegrationServer(
 		t.Fatal(err)
 	}
 	t.Cleanup(func() { _ = logs.Close() })
-	agents := managed.NewAgentLogger(store, logs.Agents)
+	agents := managed.NewAgentLogger(store, logs.Agents, logs.AgentsShort)
 	return managed.NewServer(store, logs.Activity, logs.System, agents), agents
 }
 

@@ -119,6 +119,27 @@ func TestServerLogsRequestsAndResponsesWithoutCapabilities(t *testing.T) {
 	require.NoError(t, err)
 	require.Contains(t, strings.ReplaceAll(string(agentOutput), "\n    ", ""), expectedPrompt)
 	require.NotContains(t, string(agentOutput), grant.Token)
+	shortOutput, err := os.ReadFile(logs.AgentsShort.Name())
+	require.NoError(t, err)
+	short := strings.ReplaceAll(string(shortOutput), "\n    ", "")
+	for _, want := range []string{
+		`[edict-run/` + grant.TaskID[:8] + `] mcp: Task delegated by edict_manager/-`,
+		`Read assigned task and prompt`,
+		`Started task; assignment fetched and skill verified`,
+		`Task "Logged stage" completed: Inbox processed`,
+		`Write "inbox/s-one.json" failed: invalid or revoked capability`,
+		`Read plan: 0 pending, 0 delegated, 0 running, 1 completed, 1 failed`,
+		`Create plan "Logged request" failed:`,
+		`Cancelled task "Cancelled analysis"`,
+	} {
+		require.Contains(t, short, want, "short log must retain MCP outcomes and failures")
+	}
+	for _, unwanted := range []string{expectedPrompt, "response:", "internal completion details", "internal cancellation details", created.Token, grant.Token} {
+		require.NotContains(t, short, unwanted, "short log must omit payloads and capabilities")
+	}
+	for _, line := range strings.Split(string(shortOutput), "\n") {
+		require.LessOrEqual(t, utf8.RuneCountInString(line), 120)
+	}
 	for _, want := range []string{
 		`[edict_manager task=-] Plan ready: "Logged request"; manager assigned`,
 		`[edict-run task=` + grant.TaskID[:8] + `] Task prompt assigned by edict_manager/-:`,
@@ -253,13 +274,13 @@ func TestOpenLogsAppendAndReportInvalidDirectory(t *testing.T) {
 	for _, line := range []string{"first\n", "second\n"} {
 		logs, err := OpenLogs(directory)
 		require.NoError(t, err)
-		for _, file := range []*os.File{logs.Activity, logs.System, logs.Agents} {
+		for _, file := range []*os.File{logs.Activity, logs.System, logs.Agents, logs.AgentsShort} {
 			_, err = file.WriteString(line)
 			require.NoError(t, err)
 		}
 		require.NoError(t, logs.Close())
 	}
-	for _, name := range []string{"edict-mcp.log", "edict-mcp-system.log", "edict-agents.log"} {
+	for _, name := range []string{"edict-mcp.log", "edict-mcp-system.log", "edict-agents.log", "edict-agent-short.log"} {
 		data, err := os.ReadFile(filepath.Join(directory, "edict", name))
 		require.NoError(t, err)
 		require.Equal(t, "first\nsecond\n", string(data))

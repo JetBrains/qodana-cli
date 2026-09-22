@@ -39,10 +39,10 @@ func TestCodexAgentCollectorTracksNestedOutputWithoutDuplicates(t *testing.T) {
 	_, err = store.StartTask(child.Token, "/root/batch/review", child.Skill)
 	require.NoError(t, err)
 
-	var log bytes.Buffer
+	var log, short bytes.Buffer
 	stdout := filepath.Join(home, "stdout.jsonl")
 	require.NoError(t, os.WriteFile(stdout, []byte("{\"type\":\"thread.started\",\"thread_id\":\"root-thread\"}\n"), 0o600))
-	collector := newCodexAgentCollector(home, stdout, managed.NewAgentLogger(store, &log))
+	collector := newCodexAgentCollector(home, stdout, managed.NewAgentLogger(store, &log, &short))
 	sessions := filepath.Join(home, "sessions")
 	require.NoError(t, os.Mkdir(sessions, 0o700))
 	writeEvent := func(file string, event any) {
@@ -103,6 +103,7 @@ func TestCodexAgentCollectorTracksNestedOutputWithoutDuplicates(t *testing.T) {
 	for _, text := range []string{"Manager output", "Batch output", "Child output", "Final manager output"} {
 		require.Equal(t, 1, strings.Count(log.String(), text))
 	}
+	require.Equal(t, log.String(), short.String(), "short log must preserve all captured agent output")
 }
 
 func TestRunCodexCapturesAgentOutputOnFailure(t *testing.T) {
@@ -113,7 +114,7 @@ func TestRunCodexCapturesAgentOutputOnFailure(t *testing.T) {
 	store, err := managed.NewStore(filepath.Join(temporary, "state"))
 	require.NoError(t, err)
 	t.Cleanup(func() { require.NoError(t, store.Close()) })
-	var log bytes.Buffer
+	var log, short bytes.Buffer
 	executable := filepath.Join(temporary, "codex-stub")
 	stub := `#!/bin/sh
 mkdir -p "$CODEX_HOME/sessions"
@@ -125,8 +126,9 @@ exit 7
 	_, err = RunCodex(context.Background(), CodexRunConfig{
 		Executable: executable, HomeDirectory: filepath.Join(temporary, "home"), WorkingDirectory: temporary,
 		OutputDirectory: filepath.Join(temporary, "trace"), Model: "test", Prompt: "test",
-		AgentLogger: managed.NewAgentLogger(store, &log),
+		AgentLogger: managed.NewAgentLogger(store, &log, &short),
 	})
 	require.ErrorContains(t, err, "exit status 7")
 	require.Contains(t, log.String(), "[edict_manager/-] commentary: Partial output before failure")
+	require.Equal(t, log.String(), short.String(), "short log must retain output when Codex fails")
 }

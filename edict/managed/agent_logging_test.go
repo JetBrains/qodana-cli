@@ -5,6 +5,7 @@ package managed
 import (
 	"bytes"
 	"errors"
+	"io"
 	"strings"
 	"testing"
 	"time"
@@ -14,10 +15,10 @@ import (
 
 func TestAgentLoggerAttributesFullOutputAndRedactsRevokedTokens(t *testing.T) {
 	store, manager, _ := testStore(t)
-	var output bytes.Buffer
-	logger := NewAgentLogger(store, &output)
+	var output, short bytes.Buffer
+	logger := NewAgentLogger(store, &output, &short)
 	now := time.Now()
-	logger.Record(AgentMessage{Time: now, AgentID: "manager-thread", IsRoot: true, Phase: "commentary", Text: "Starting managed analysis"})
+	logger.Record(AgentMessage{Time: now, AgentID: "manager-thread", IsRoot: true, Phase: "commentary", Text: "Starting managed analysis\n" + strings.Repeat("Multiline commentary 世界. ", 80)})
 	logger.Record(AgentMessage{Time: now, AgentID: "worker-thread", AgentPath: "/root/batch", Phase: "commentary", Text: "Inspecting commit"})
 	require.NoError(t, logger.Flush(false))
 	require.Contains(t, output.String(), "[edict_manager/-] commentary: Starting managed analysis")
@@ -50,6 +51,7 @@ func TestAgentLoggerAttributesFullOutputAndRedactsRevokedTokens(t *testing.T) {
 	previous := output.String()
 	require.NoError(t, logger.Flush(true))
 	require.Equal(t, previous, output.String(), "flushing must not duplicate messages")
+	require.Equal(t, output.String(), short.String(), "commentary and final messages must be identical in both logs")
 }
 
 type failingAgentLogWriter struct{}
@@ -58,7 +60,17 @@ func (failingAgentLogWriter) Write([]byte) (int, error) { return 0, errors.New("
 
 func TestAgentLoggerReportsWriteFailure(t *testing.T) {
 	store, _, _ := testStore(t)
-	logger := NewAgentLogger(store, failingAgentLogWriter{})
-	logger.Record(AgentMessage{Time: time.Now(), AgentID: "root", IsRoot: true, Text: "Output"})
-	require.ErrorContains(t, logger.Flush(true), "disk full")
+	for _, shortFails := range []bool{false, true} {
+		var output bytes.Buffer
+		var full, short io.Writer = failingAgentLogWriter{}, &output
+		if shortFails {
+			full, short = short, full
+		}
+		logger := NewAgentLogger(store, full, short)
+		logger.Record(AgentMessage{Time: time.Now(), AgentID: "root", IsRoot: true, Text: "Output"})
+		require.ErrorContains(t, logger.Flush(true), "disk full")
+		previous := output.String()
+		require.ErrorContains(t, logger.Flush(true), "disk full")
+		require.Equal(t, previous, output.String(), "retrying after a write failure must not duplicate messages")
+	}
 }

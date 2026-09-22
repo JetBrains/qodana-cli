@@ -37,7 +37,9 @@ returned token private to edict_manager; all other mutations require a token.
 All stdout output is MCP protocol traffic. Readable activity is logged to
 <project-dir>/log/edict/edict-mcp.log; protocol details are logged separately to
 edict-mcp-system.log in the same directory. MCP activity also appears in
-edict-agents.log alongside output supplied by the agent host. Capability tokens are redacted.`,
+edict-agents.log alongside output supplied by the agent host. edict-agent-short.log
+keeps the same agent messages with concise MCP summaries, omitting response bodies
+and task prompts. Capability tokens are redacted.`,
 		Args:         cobra.NoArgs,
 		SilenceUsage: true,
 		RunE: func(command *cobra.Command, _ []string) error {
@@ -60,7 +62,7 @@ edict-agents.log alongside output supplied by the agent host. Capability tokens 
 			if !ok {
 				reader = io.NopCloser(command.InOrStdin())
 			}
-			err = managed.NewServer(store, logs.Activity, logs.System, managed.NewAgentLogger(store, logs.Agents)).Run(ctx, &mcp.IOTransport{
+			err = managed.NewServer(store, logs.Activity, logs.System, managed.NewAgentLogger(store, logs.Agents, logs.AgentsShort)).Run(ctx, &mcp.IOTransport{
 				Reader: reader,
 				Writer: managedMCPWriter{command.OutOrStdout()},
 			})

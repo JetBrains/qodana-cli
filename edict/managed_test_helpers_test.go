@@ -215,8 +215,10 @@ func (codex managedCodexTest) assertSignalExtractionTasks(t *testing.T, result C
 func assertManagedAgentOutput(t *testing.T, testRoot string, plan *managed.Plan) {
 	t.Helper()
 	output := string(mustReadFile(t, filepath.Join(testRoot, "log", "edict", "edict-agents.log")))
+	short := string(mustReadFile(t, filepath.Join(testRoot, "log", "edict", "edict-agent-short.log")))
 	unwrapped := strings.ReplaceAll(output, "\n    ", "")
 	assert.Contains(t, output, "[edict_manager/-] commentary:", "main agent output must be logged")
+	assert.Contains(t, short, "[edict_manager/-] commentary:", "main agent output must be kept in the short log")
 	assert.NotContains(t, output, " agent=")
 	for _, line := range strings.Split(output, "\n") {
 		assert.LessOrEqual(t, utf8.RuneCountInString(line), 120, "agent log line must wrap: %s", line)
@@ -234,8 +236,13 @@ func assertManagedAgentOutput(t *testing.T, testRoot string, plan *managed.Plan)
 		assert.Contains(t, unwrapped, prefix+"mcp: Started task; assignment fetched and skill verified")
 		assert.Contains(t, output, prefix+"mcp: edict_task_get response:", "assignment response missing for task %s", task.ID)
 		assert.Contains(t, output, prefix+"mcp: edict_task_finish response:", "MCP response missing for managed task %s", task.ID)
+		assert.Contains(t, short, prefix+"final:", "final output missing from short log for task %s", task.ID)
+		assert.Contains(t, short, prefix+"mcp: Started task", "task status missing from short log for task %s", task.ID)
+		assert.NotContains(t, short, prefix+"mcp: edict_task_get response:", "short log must omit full assignments")
+		assert.NotContains(t, short, prefix+"mcp: edict_task_finish response:", "short log must omit full responses")
 	}
 	assert.Contains(t, output, "[edict_manager/-] final:", "final manager output must be logged")
+	assert.Contains(t, short, "[edict_manager/-] final:", "final manager output must be kept in the short log")
 }
 
 func assertManagedCheckoutUnchanged(t *testing.T, project managedTestProject) {

@@ -88,7 +88,7 @@ func (h toolHandlers) delegate(in delegateInput) (any, error) {
 		h.log.printf(caller, "Delegate task %s failed: %s", h.log.target(task), h.log.text(err.Error()))
 	} else {
 		h.log.remember(grant.Token, task)
-		h.log.printf(task, "Task prompt assigned by %s/%s:\n%s", displaySkill(caller.Skill), shortTaskID(caller.ID), in.Prompt)
+		h.log.assignment(task, caller, in.Prompt)
 	}
 	return h.respond(caller, "edict_delegate", grant, err)
 }
