@@ -137,6 +137,22 @@ func TestWriteBaselineSarifFingerprints(t *testing.T) {
 	}
 }
 
+// TestWriteBaselineSarifQuotesToolName verifies that a tool name cannot end the string it is
+// written in and change the report around it.
+func TestWriteBaselineSarifQuotesToolName(t *testing.T) {
+	toolName := `QD","results":[{"ruleId":"Injected`
+
+	written, result, err := writeBaselineToString(t, toolName, baselineBody)
+	require.NoError(t, err)
+	require.True(t, written)
+
+	var report sarif.Report
+	require.NoError(t, json.Unmarshal([]byte(result), &report), "written report: %s", result)
+	require.Len(t, report.Runs, 1)
+	assert.Equal(t, toolName, report.Runs[0].Tool.Driver.Name)
+	assert.Len(t, report.Runs[0].Results, 2, "the name must not add problems of its own")
+}
+
 func TestWriteBaselineSarifWithoutProblems(t *testing.T) {
 	for _, tc := range []struct {
 		name string
@@ -352,6 +368,28 @@ func TestWriteBaselineTruncatedGzip(t *testing.T) {
 	)
 
 	assert.Error(t, err)
+	assert.False(t, written)
+	assert.Empty(t, report)
+}
+
+// TestWriteBaselineStalledBody verifies that a server which sends the headers and then stops
+// sending the body fails the download instead of hanging the analysis, however long the download
+// of a big baseline is otherwise allowed to take.
+func TestWriteBaselineStalledBody(t *testing.T) {
+	t.Setenv(qdenv.QodanaCloudRequestTimeoutEnv, "1")
+	t.Setenv(qdenv.QodanaCloudRequestRetriesEnv, "1")
+	served := make(chan struct{})
+
+	written, report, err := requestBaseline(
+		t, func(w http.ResponseWriter, r *http.Request) {
+			_, _ = io.WriteString(w, `{"baseline":[`)
+			w.(http.Flusher).Flush()
+			<-served // the body never continues
+		},
+	)
+	close(served)
+
+	assert.Error(t, err, "a stalled body should fail the download")
 	assert.False(t, written)
 	assert.Empty(t, report)
 }

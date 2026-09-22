@@ -18,6 +18,7 @@ package cloud
 
 import (
 	"bufio"
+	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -26,6 +27,7 @@ import (
 	"net/url"
 	"os"
 	"strings"
+	"time"
 
 	"github.com/JetBrains/qodana-cli/internal/sarif"
 	log "github.com/sirupsen/logrus"
@@ -33,9 +35,11 @@ import (
 
 const (
 	qodanaBaselineUri = "/linters/baseline"
-	// the SARIF report the baseline problems are wrapped in, with the name of the tool filled in
-	baselineSarifHeader = `{"version":"2.1.0","runs":[{"tool":{"driver":{"name":%s}},"results":[`
-	baselineSarifFooter = `]}]}`
+	// the SARIF report the baseline problems are wrapped in: the name of the tool is written
+	// between the first two parts by the JSON encoder, and the problems follow the second
+	baselineSarifHeader  = `{"version":"2.1.0","runs":[{"tool":{"driver":{"name":`
+	baselineSarifResults = `}},"results":[`
+	baselineSarifFooter  = `]}]}`
 )
 
 // WriteBaseline writes the baseline stored in Qodana Cloud for the given tool to file as a SARIF
@@ -75,16 +79,56 @@ func (client *QdClient) WriteBaseline(toolName string, file *os.File) (bool, err
 	return written, nil
 }
 
-// streaming returns the client to download the baseline with.
+// streaming returns the client to download the baseline with. The download gets no overall
+// deadline, because reading the baseline of a big project takes as long as it takes, and a request
+// which stops making progress is failed instead: by the timeout of the response header, and by the
+// stall guard of the body.
 func (client *QdClient) streaming() *QdClient {
 	transport := http.DefaultTransport.(*http.Transport).Clone()
 	transport.ResponseHeaderTimeout = getRequestTimeout()
-	transport.IdleConnTimeout = getRequestTimeout()
 	return &QdClient{
-		httpClient: &http.Client{Transport: transport},
+		httpClient: &http.Client{Transport: stallGuard{transport: transport, timeout: getRequestTimeout()}},
 		apiUrl:     client.apiUrl,
 		token:      client.token,
 	}
+}
+
+// stallGuard fails a response whose body stops arriving. Without it a server which sends the
+// headers and then goes quiet would hang the analysis for as long as it keeps the connection.
+type stallGuard struct {
+	transport http.RoundTripper
+	timeout   time.Duration
+}
+
+func (guard stallGuard) RoundTrip(request *http.Request) (*http.Response, error) {
+	// the request is aborted rather than the body closed: closing a body waits for the read which
+	// is stuck on it, while aborting the request drops the connection and ends that read
+	ctx, abort := context.WithCancel(request.Context())
+	response, err := guard.transport.RoundTrip(request.Clone(ctx))
+	if err != nil {
+		abort()
+		return nil, err
+	}
+	response.Body = &guardedBody{body: response.Body, abort: abort, timeout: guard.timeout}
+	return response, nil
+}
+
+// guardedBody aborts the request it reads from when a read takes longer than the timeout.
+type guardedBody struct {
+	body    io.ReadCloser
+	abort   context.CancelFunc
+	timeout time.Duration
+}
+
+func (b *guardedBody) Read(p []byte) (int, error) {
+	stalled := time.AfterFunc(b.timeout, b.abort)
+	defer stalled.Stop()
+	return b.body.Read(p)
+}
+
+func (b *guardedBody) Close() error {
+	defer b.abort()
+	return b.body.Close()
 }
 
 // baselineQuery asks for the baseline of one tool, which Qodana Cloud stores under the trimmed and
@@ -108,11 +152,6 @@ func writeBaselineSarif(toolName string, in io.Reader, out io.Writer) (bool, err
 	if !hasBaseline {
 		return false, nil
 	}
-	name, err := json.Marshal(toolName) // quoted and escaped for the report
-	if err != nil {
-		return false, err
-	}
-
 	encoder := json.NewEncoder(out)
 	problems := 0
 	for decoder.More() {
@@ -120,11 +159,19 @@ func writeBaselineSarif(toolName string, in io.Reader, out io.Writer) (bool, err
 		if err := decoder.Decode(&problem); err != nil {
 			return false, fmt.Errorf("failed to read baseline problem #%d: %w", problems+1, err)
 		}
-		separator := ","
 		if problems == 0 {
-			separator = fmt.Sprintf(baselineSarifHeader, name)
-		}
-		if _, err := io.WriteString(out, separator); err != nil {
+			// the encoder writes the name quoted and escaped, so that no name can end the string
+			// it is written in and change the report around it
+			if _, err := io.WriteString(out, baselineSarifHeader); err != nil {
+				return false, err
+			}
+			if err := encoder.Encode(toolName); err != nil {
+				return false, err
+			}
+			if _, err := io.WriteString(out, baselineSarifResults); err != nil {
+				return false, err
+			}
+		} else if _, err := io.WriteString(out, ","); err != nil {
 			return false, err
 		}
 		if err := encoder.Encode(&problem); err != nil {
