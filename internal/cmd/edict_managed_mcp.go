@@ -30,6 +30,9 @@ func newEdictManagedMCPCommand() *cobra.Command {
 The immutable skill policy is registered at startup. Only capability-bearing
 managed tasks may mutate state, and child capabilities can only narrow access.
 IntelliJ inspections use the separate 'edict mcp start' server.
+GitHub and Space PR-review data is read directly by edict-mcp. Configure
+GITHUB_TOKEN (or GH_TOKEN), SPACE_TOKEN, and optionally EDICT_GITHUB_API_URL or
+EDICT_SPACE_URL in the server environment; provider tokens are never MCP arguments.
 
 The first successful edict_plan_create call returns the manager capability.
 It requires no token and can succeed only once per server lifetime. Keep the

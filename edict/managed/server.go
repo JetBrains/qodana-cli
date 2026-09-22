@@ -61,6 +61,7 @@ func NewServer(store *Store, activity, system io.Writer, agents ...*AgentLogger)
 		handlers.stateWrite)
 	addStoreTool(server, "edict_state_delete", "Delete an allowed state file using its exact current hash. Execution plans and registry cannot be deleted with this tool.", false,
 		handlers.stateDelete)
+	addPRTools(server, handlers)
 	return server
 }
 

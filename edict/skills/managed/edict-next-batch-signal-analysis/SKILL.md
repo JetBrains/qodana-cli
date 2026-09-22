@@ -1,6 +1,6 @@
 ---
 name: managed-edict-next-batch-signal-analysis
-description: Coordinate delegated review of a bounded commit or PR selection and persist supported source-correction signals through edict-mcp.
+description: Coordinate delegated analysis of a bounded Git commit selection and persist supported source-correction signals through edict-mcp.
 ---
 
 # Managed Batch Signal Analysis
@@ -10,38 +10,35 @@ and [the signal contract](../edict_manager/references/signals.md). Registry ID: 
 own coverage and `inbox.write`; workers own evidence inspection. Do not generate rules, clusters, examples, or
 inspections.
 
-Start the task. Require the source checkout and exactly one bounded source selection: a Git revision expression with a
-commit limit, or explicit PR numbers/date bounds with a PR limit and a read-only provider. Do not require an IntelliJ
+Start the task. Require the source checkout and a bounded Git revision expression with a commit limit.
+PR-review extraction belongs to `edict-next-pr-signal-analysis`; report misrouted review requests to the manager.
+Do not require an IntelliJ
 analysis session for local Git extraction. Keep temporary packages outside the state root.
 
-1. Commit mode: enumerate the supplied range in stable order with read-only Git, honoring its limit. Resolve each full
+1. Enumerate the supplied range in stable order with read-only Git, honoring its limit. Resolve each full
    revision, parent count, first parent, complete message, changed paths, and canonical unified diff. Exclude root
    commits, merges, reverts, automated commits, and commits without relevant source changes. Assign
    `commit-<first 16 revision characters>` IDs. A terse message alone is not grounds to exclude an otherwise eligible
    correction before source inspection.
-2. PR mode: read the bounded selection and every discussion through the available provider's read-only interface. Follow
-   all pagination, preserve ordered distinct work-item IDs, and require the final count to equal the provider's total
-   when supplied. Retain full human discussion, PR title/body, URL, and exact before/after revision anchors. Do not use
-   a legacy IntelliJ preparation tool that changes Edict state.
-3. For every eligible work item, including a singleton, create and delegate an `edict-next-signal-analysis` task with
-   `operations: []`. Put that item's work-item ID, full commit/parent revisions and complete message (or PR number,
-   URL and discussion) in the `edict_delegate` prompt, together with its retained package, source checkout, revision
+2. For every eligible commit, including a singleton, create and delegate an `edict-next-signal-analysis` task with
+   `operations: []`. Put that item's work-item ID, full commit/parent revisions and complete message
+   in the `edict_delegate` prompt, together with its retained package, source checkout, revision
    readers if needed, and private scratch path. Pass only the returned short launch prompt to a fresh native subagent; it fetches
    the full assignment from `edict_task_get`. No inline fallback. Use waves within available concurrency.
-4. Verify complete inspection coverage: returned inspected IDs must equal the prepared set exactly, with no duplicates,
+3. Verify complete inspection coverage: returned inspected IDs must equal the prepared set exactly, with no duplicates,
    missing or blocked items. Every worker must have inspected complete human material plus exact source and diff. Stop
    on incomplete coverage. Preserve every supported worker finding; do not silently drop it for being cosmetic or local.
-5. Materialize every candidate record in memory using the signal contract before any write. Check actual
+4. Materialize every candidate record in memory using the signal contract before any write. Check actual
    revision/path/ranges, changed-line intersections, label, canonical diff, complete source metadata, distinct stable
    ID, and absence of rule fields. Parse the candidate JSON and check that every `fileRevision.expectedRanges` item
    has integer `start` and `end` fields satisfying `1 <= start <= end`; `startLine`/`endLine` are unsupported.
    The number of materialized records must equal the number of accepted findings. On
    malformed evidence fail the batch without publishing a partial candidate set.
-6. Publish each complete record using `edict_state_write` with the supplied capability. If its stable inbox ID already
+5. Publish each complete `FromCommit` record using `edict_state_write` with the supplied capability. If its stable inbox ID already
    exists with identical content, count it as an idempotent success. Conflicting content requires investigation and a
    failed outcome, not an overwrite. Read back all resulting paths and verify hashes/content and the complete expected
    ID set. A failed write may leave earlier valid records; report those exact paths for a retry.
-7. Finish with inspected work-item IDs, signal IDs, paths, hashes, and counts. An empty eligible set or completely
+6. Finish with inspected work-item IDs, signal IDs, paths, hashes, and counts. An empty eligible set or completely
    inspected batch with zero findings is a successful no-op with no placeholder records. No commit, push, or IntelliJ
    state mutation is part of publication.
 

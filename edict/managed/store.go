@@ -17,6 +17,8 @@ import (
 	"slices"
 	"strings"
 	"sync"
+
+	"github.com/JetBrains/qodana-cli/edict/managed/review"
 )
 
 const maxFileSize = 8 << 20
@@ -96,6 +98,8 @@ type Store struct {
 	plan           *Plan
 	managerClaimed bool
 	closed         bool
+	reviewClient   *review.Client
+	prBatches      map[string]*prBatch
 }
 
 func NewStore(directory string) (*Store, error) {
@@ -111,6 +115,8 @@ func NewStore(directory string) (*Store, error) {
 		return nil, err
 	}
 	s := &Store{root: root, policies: policies, grants: make(map[string]capability), issuedTokens: make(map[string]struct{})}
+	s.reviewClient = review.FromEnvironment()
+	s.prBatches = make(map[string]*prBatch)
 	fail := func(err error) (*Store, error) { _ = s.Close(); return nil, err }
 	if err := s.safePath(".edict-mcp.lock"); err != nil {
 		return fail(err)
@@ -136,6 +142,7 @@ func (s *Store) Close() error {
 	}
 	s.closed = true
 	s.grants = nil
+	s.prBatches = nil
 	var err error
 	if s.lock != nil {
 		err = s.lock.Close()
@@ -362,6 +369,11 @@ func (s *Store) FinishTask(token, status, result string) (*Plan, error) {
 	if strings.TrimSpace(result) == "" {
 		return nil, errors.New("task result is required")
 	}
+	if c.skill == prSkill && status == "completed" {
+		if err := s.completePR(c.taskID); err != nil {
+			return nil, err
+		}
+	}
 	p := clonePlan(s.plan)
 	for i := range p.Tasks {
 		task := &p.Tasks[i]
@@ -572,6 +584,9 @@ func (s *Store) Write(token, name, content, expectedHash string) (File, error) {
 	}
 	if op := operation(name); op == "inbox.write" || op == "cluster.signal.write" {
 		if err := validateSignal(name, content); err != nil {
+			return File{}, err
+		}
+		if err := s.validatePRWrite(c, name, content); err != nil {
 			return File{}, err
 		}
 	}
