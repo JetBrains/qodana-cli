@@ -19,6 +19,7 @@ package core
 import (
 	"fmt"
 	"os"
+	"regexp"
 	"strconv"
 	"strings"
 	"time"
@@ -31,11 +32,16 @@ import (
 	"github.com/JetBrains/qodana-cli/internal/platform/commoncontext"
 	"github.com/JetBrains/qodana-cli/internal/platform/product"
 	"github.com/JetBrains/qodana-cli/internal/platform/qdcontainer"
+	"github.com/JetBrains/qodana-cli/internal/platform/qdenv"
 	"github.com/JetBrains/qodana-cli/internal/platform/utils"
 	"github.com/JetBrains/qodana-cli/internal/sarif"
 
 	log "github.com/sirupsen/logrus"
 )
+
+const legacyLicenseAuditArgument = "--property=qodana.license.audit.v2=true"
+
+var teamCityEnvironmentPattern = regexp.MustCompile(`^teamcity:(\d+)\.(\d+)(?:\.(\d+)(?:\.\d+)*)?(?:_EAP)?:\d+$`)
 
 // getIdeExitCode gets IDEA "exitCode" from SARIF.
 func getIdeExitCode(resultsDir string, c int) (res int) {
@@ -244,6 +250,9 @@ func GetIdeArgs(c corescan.Context) []string {
 		if c.GenerateCodeClimateReport() {
 			arguments = append(arguments, "--code-climate")
 		}
+		if argument := legacyLicenseAuditArgumentFor(c); argument != "" {
+			arguments = append(arguments, argument)
+		}
 		for _, property := range c.Property() {
 			arguments = append(arguments, "--property="+property)
 		}
@@ -251,6 +260,44 @@ func GetIdeArgs(c corescan.Context) []string {
 		arguments = append(arguments, "--config-dir", c.EffectiveConfigurationDir())
 	}
 	return arguments
+}
+
+// license audit v2 is required for TeamCity version < 2026.1.2
+func legacyLicenseAuditArgumentFor(c corescan.Context) string {
+	environment := qdenv.GetEnv(c, qdenv.QodanaEnv)
+	if !strings.HasPrefix(environment, "teamcity:") {
+		return ""
+	}
+
+	match := teamCityEnvironmentPattern.FindStringSubmatch(environment)
+	if match == nil {
+		log.Warnf(
+			"Cannot parse TeamCity version from %s=%q; not enabling the legacy License Audit format",
+			qdenv.QodanaEnv,
+			environment,
+		)
+		return ""
+	}
+
+	major, majorErr := strconv.Atoi(match[1])
+	minor, minorErr := strconv.Atoi(match[2])
+	patch := 0
+	var patchErr error
+	if match[3] != "" {
+		patch, patchErr = strconv.Atoi(match[3])
+	}
+	if majorErr != nil || minorErr != nil || patchErr != nil {
+		log.Warnf(
+			"Cannot parse TeamCity version from %s=%q; not enabling the legacy License Audit format",
+			qdenv.QodanaEnv,
+			environment,
+		)
+		return ""
+	}
+	if major < 2026 || major == 2026 && (minor < 1 || minor == 1 && patch < 2) {
+		return legacyLicenseAuditArgument
+	}
+	return ""
 }
 
 // postAnalysis post-analysis stage: wait for FUS stats to upload
