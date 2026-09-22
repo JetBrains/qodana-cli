@@ -89,8 +89,7 @@ func (c Context) FirstStageOfReverseScopedScript(scopeFile string) Context {
 
 	startDir := filepath.Join(c.ResultsDir(), "start")
 	properties := []string{
-		"-Dqodana.skip.result.strategy=ANY",                   // finish only in case of none issues found
-		"-Dqodana.incremental.coverage.issues.reporting=true", // report coverage issues for changed code
+		"-Dqodana.skip.result.strategy=ANY", // finish only in case of none issues found
 	}
 
 	if !c.BaselineIncludeAbsent() {

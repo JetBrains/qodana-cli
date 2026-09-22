@@ -170,7 +170,6 @@ func TestReverseScopedScript(t *testing.T) {
 				return [][]string{
 					{
 						"-Dqodana.skip.result.strategy=ANY",
-						"-Dqodana.incremental.coverage.issues.reporting=true",
 						"-Dqodana.reduced.scope.path=" + filepath.Join(dir, "reduced-scope.json"),
 					},
 					{
@@ -204,7 +203,6 @@ func TestReverseScopedScript(t *testing.T) {
 				return [][]string{
 					{
 						"-Dqodana.skip.result.strategy=ANY",
-						"-Dqodana.incremental.coverage.issues.reporting=true",
 					},
 					{
 						"-Dqodana.skip.preamble=true",
@@ -237,7 +235,6 @@ func TestReverseScopedScript(t *testing.T) {
 				return [][]string{
 					{
 						"-Dqodana.skip.result.strategy=ANY",
-						"-Dqodana.incremental.coverage.issues.reporting=true",
 						"-Dqodana.reduced.scope.path=" + filepath.Join(dir, "reduced-scope.json"),
 					},
 				}
@@ -265,7 +262,6 @@ func TestReverseScopedScript(t *testing.T) {
 				return [][]string{
 					{
 						"-Dqodana.skip.result.strategy=ANY",
-						"-Dqodana.incremental.coverage.issues.reporting=true",
 						"-Dqodana.reduced.scope.path=" + filepath.Join(dir, "reduced-scope.json"),
 					},
 					{
@@ -309,7 +305,6 @@ func TestReverseScopedScript(t *testing.T) {
 				return [][]string{
 					{
 						"-Dqodana.skip.result.strategy=ANY",
-						"-Dqodana.incremental.coverage.issues.reporting=true",
 						"-Dqodana.reduced.scope.path=" + filepath.Join(dir, "reduced-scope.json"),
 					},
 					{
@@ -349,7 +344,6 @@ func TestReverseScopedScript(t *testing.T) {
 				return [][]string{
 					{
 						"-Dqodana.skip.result.strategy=ANY",
-						"-Dqodana.incremental.coverage.issues.reporting=true",
 					},
 					{
 						"-Dqodana.skip.preamble=true",
