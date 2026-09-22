@@ -23,7 +23,7 @@ func TestAgentLoggerAttributesFullOutputAndRedactsRevokedTokens(t *testing.T) {
 	require.Contains(t, output.String(), "[edict_manager/-] commentary: Starting managed analysis")
 	require.NotContains(t, output.String(), "Inspecting commit")
 
-	grant, err := store.Delegate(manager, store.Plan().Tasks[0].ID, nil, nil)
+	grant, err := delegateTestTask(store, manager, store.Plan().Tasks[0].ID, nil, nil)
 	require.NoError(t, err)
 	_, err = store.StartTask(grant.Token, "/root/batch", grant.Skill) // Some runtimes return paths, others UUIDs.
 	require.NoError(t, err)

@@ -83,10 +83,12 @@ func TestManagedEdictDistilleryWorkflow(t *testing.T) {
 		t, ctx, client, "edict_delegate", map[string]any{
 			"token":      managerToken,
 			"taskId":     batchTask.ID,
+			"prompt":     scriptedManagedPrompt(batchTask.Skill),
 			"operations": []string{"inbox.write"},
 			"scope":      []string{"inbox"},
 		},
 	)
+	managedCall[managed.TaskAssignment](t, ctx, client, "edict_task_get", map[string]any{"token": batch.Token})
 	managedCall[managed.Plan](
 		t,
 		ctx,
@@ -103,9 +105,10 @@ func TestManagedEdictDistilleryWorkflow(t *testing.T) {
 	)
 	analysis := managedCall[managed.Delegation](
 		t, ctx, client, "edict_delegate", map[string]any{
-			"token": batch.Token, "taskId": analysisTask.ID, "operations": []string{}, "scope": []string{},
+			"token": batch.Token, "taskId": analysisTask.ID, "prompt": scriptedManagedPrompt(analysisTask.Skill), "operations": []string{}, "scope": []string{},
 		},
 	)
+	managedCall[managed.TaskAssignment](t, ctx, client, "edict_task_get", map[string]any{"token": analysis.Token})
 	managedCall[managed.Plan](
 		t,
 		ctx,
@@ -209,11 +212,12 @@ func TestManagedEdictDistilleryWorkflow(t *testing.T) {
 
 	run := managedCall[managed.Delegation](
 		t, ctx, client, "edict_delegate", map[string]any{
-			"token": managerToken, "taskId": runTask.ID,
+			"token": managerToken, "taskId": runTask.ID, "prompt": scriptedManagedPrompt(runTask.Skill),
 			"operations": []string{"inbox.delete", "cluster.signal.write"},
 			"scope":      []string{"inbox", "clusters/" + historyFixtureCluster},
 		},
 	)
+	managedCall[managed.TaskAssignment](t, ctx, client, "edict_task_get", map[string]any{"token": run.Token})
 	managedCall[managed.Plan](
 		t,
 		ctx,
@@ -230,23 +234,24 @@ func TestManagedEdictDistilleryWorkflow(t *testing.T) {
 	)
 	managedCallDenied(
 		t, ctx, client, "edict_delegate", map[string]any{
-			"token": run.Token, "taskId": distributionTask.ID,
+			"token": run.Token, "taskId": distributionTask.ID, "prompt": scriptedManagedPrompt(distributionTask.Skill),
 			"operations": []string{"cluster.signal.write"}, "scope": []string{"clusters/another-cluster"},
 		},
 	)
 	managedCallDenied(
 		t, ctx, client, "edict_delegate", map[string]any{
-			"token": run.Token, "taskId": distributionTask.ID,
+			"token": run.Token, "taskId": distributionTask.ID, "prompt": scriptedManagedPrompt(distributionTask.Skill),
 			"operations": []string{"cluster.write"}, "scope": []string{"clusters/" + historyFixtureCluster},
 		},
 	)
 	distribution := managedCall[managed.Delegation](
 		t, ctx, client, "edict_delegate", map[string]any{
-			"token": run.Token, "taskId": distributionTask.ID,
+			"token": run.Token, "taskId": distributionTask.ID, "prompt": scriptedManagedPrompt(distributionTask.Skill),
 			"operations": []string{"inbox.delete", "cluster.signal.write"},
 			"scope":      []string{"inbox", "clusters/" + historyFixtureCluster},
 		},
 	)
+	managedCall[managed.TaskAssignment](t, ctx, client, "edict_task_get", map[string]any{"token": distribution.Token})
 	managedCall[managed.Plan](
 		t,
 		ctx,

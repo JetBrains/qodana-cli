@@ -83,14 +83,25 @@ func (h toolHandlers) taskAdd(in addTaskInput) (any, error) {
 func (h toolHandlers) delegate(in delegateInput) (any, error) {
 	caller := h.taskForToken(in.Token)
 	task := h.taskForID(in.TaskID)
-	grant, err := h.store.Delegate(in.Token, in.TaskID, in.Operations, in.Scope)
+	grant, err := h.store.Delegate(in.Token, in.TaskID, in.Operations, in.Scope, in.Prompt)
 	if err != nil {
 		h.log.printf(caller, "Delegate task %s failed: %s", h.log.target(task), h.log.text(err.Error()))
 	} else {
 		h.log.remember(grant.Token, task)
-		h.log.printf(caller, "Delegated task %s", h.log.target(task))
+		h.log.printf(task, "Task prompt assigned by %s/%s:\n%s", displaySkill(caller.Skill), shortTaskID(caller.ID), in.Prompt)
 	}
 	return h.respond(caller, "edict_delegate", grant, err)
+}
+
+func (h toolHandlers) taskGet(in taskGetInput) (any, error) {
+	task := h.taskForToken(in.Token)
+	assignment, err := h.store.ReadTask(in.Token)
+	if err != nil {
+		h.log.printf(task, "Read assigned task failed: %s", h.log.text(err.Error()))
+	} else {
+		h.log.printf(task, "Read assigned task and prompt")
+	}
+	return h.respond(task, "edict_task_get", assignment, err)
 }
 
 func (h toolHandlers) taskStart(in startTaskInput) (any, error) {
@@ -99,7 +110,7 @@ func (h toolHandlers) taskStart(in startTaskInput) (any, error) {
 	if err != nil {
 		h.log.printf(task, "Start task %q failed: %s", h.log.text(task.Title), h.log.text(err.Error()))
 	} else {
-		h.log.printf(task, "Started task %q", h.log.text(task.Title))
+		h.log.printf(task, "Started task; assignment fetched and skill verified")
 	}
 	return h.respond(task, "edict_task_start", plan, err)
 }
