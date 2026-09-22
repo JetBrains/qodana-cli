@@ -30,7 +30,7 @@ func connectTestServer(t *testing.T, logs *Logs) (*mcp.ClientSession, *Store, co
 	if logs == nil {
 		server = NewServer(store, nil, nil)
 	} else {
-		server = NewServer(store, logs.Activity, logs.System, NewAgentLogger(store, logs.Agents))
+		server = NewServer(store, logs.Activity, logs.System, NewAgentLogger(store, logs.Agents, logs.AgentsShort))
 	}
 	serverSession, err := server.Connect(ctx, serverTransport, nil)
 	if err != nil {

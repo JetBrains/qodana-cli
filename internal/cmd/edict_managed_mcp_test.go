@@ -69,7 +69,10 @@ func exerciseEdictManagedMCP(t *testing.T, cancelServer bool) {
 		t.Fatal("missing manager capability or plan")
 	}
 	result, err = session.CallTool(ctx, &mcp.CallToolParams{
-		Name: "edict_delegate", Arguments: map[string]any{"token": created.Token, "taskId": created.Plan.Tasks[0].ID},
+		Name: "edict_delegate", Arguments: map[string]any{
+			"token": created.Token, "taskId": created.Plan.Tasks[0].ID,
+			"prompt": "$managed-edict-next-run\nRead /skills/managed-edict-next-run/SKILL.md. Process existing signals.",
+		},
 	})
 	if err != nil || result.IsError {
 		t.Fatalf("returned manager token was not accepted: %v, %+v", err, result)
@@ -109,7 +112,7 @@ func exerciseEdictManagedMCP(t *testing.T, cancelServer bool) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	for _, want := range []string{`Plan ready: "Check project history"`, `Delegated task "Process existing signals"`, "already succeeded"} {
+	for _, want := range []string{`Plan ready: "Check project history"`, `Task prompt assigned by edict_manager/-:`, "already succeeded"} {
 		if !bytes.Contains(activity, []byte(want)) {
 			t.Errorf("activity log is missing %q", want)
 		}
@@ -117,6 +120,20 @@ func exerciseEdictManagedMCP(t *testing.T, cancelServer bool) {
 	for _, unwanted := range []string{created.Token, `"msg":"request"`, "requestId", "structuredContent"} {
 		if bytes.Contains(activity, []byte(unwanted)) {
 			t.Errorf("activity log contains a capability or protocol details")
+		}
+	}
+	short, err := os.ReadFile(filepath.Join(project, "log", "edict", "edict-agent-short.log"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, want := range []string{`Plan ready: "Check project history"`, `Task delegated by edict_manager/-`, "already succeeded"} {
+		if !bytes.Contains(short, []byte(want)) {
+			t.Errorf("short agent log is missing %q", want)
+		}
+	}
+	for _, unwanted := range []string{created.Token, "response:", "SKILL.md", "managerToken:"} {
+		if bytes.Contains(short, []byte(unwanted)) {
+			t.Errorf("short agent log contains %q", unwanted)
 		}
 	}
 }

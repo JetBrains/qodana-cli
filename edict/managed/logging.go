@@ -25,13 +25,14 @@ import (
 
 // Logs keeps tool activity, protocol diagnostics, and runtime agent output separate.
 type Logs struct {
-	Activity *os.File
-	System   *os.File
-	Agents   *os.File
+	Activity    *os.File
+	System      *os.File
+	Agents      *os.File
+	AgentsShort *os.File
 }
 
 func (l *Logs) Close() error {
-	return errors.Join(l.Activity.Close(), l.System.Close(), l.Agents.Close())
+	return errors.Join(l.Activity.Close(), l.System.Close(), l.Agents.Close(), l.AgentsShort.Close())
 }
 
 // OpenLogs appends managed logs below the caller's log directory. The caller must
@@ -59,7 +60,14 @@ func OpenLogs(logDir string) (*Logs, error) {
 		_ = system.Close()
 		return nil, fmt.Errorf("opening Edict agent output log: %w", err)
 	}
-	return &Logs{Activity: file, System: system, Agents: agents}, nil
+	short, err := os.OpenFile(filepath.Join(directory, "edict-agent-short.log"), os.O_CREATE|os.O_APPEND|os.O_WRONLY, 0o600)
+	if err != nil {
+		_ = file.Close()
+		_ = system.Close()
+		_ = agents.Close()
+		return nil, fmt.Errorf("opening Edict short agent output log: %w", err)
+	}
+	return &Logs{Activity: file, System: system, Agents: agents, AgentsShort: short}, nil
 }
 
 // Remember only token hashes and display metadata, including after revocation.
@@ -102,19 +110,36 @@ func (l *activityLogger) redact(text string) string {
 }
 
 func (l *activityLogger) printf(task Task, format string, args ...any) {
+	message := fmt.Sprintf(format, args...)
+	l.write(task, message, message)
+}
+
+// Detailed payloads stay in the full logs; the handler's summary already
+// describes the outcome in the short log.
+func (l *activityLogger) detailf(task Task, format string, args ...any) {
+	l.write(task, fmt.Sprintf(format, args...), "")
+}
+
+func (l *activityLogger) assignment(task, caller Task, prompt string) {
+	parent := displaySkill(caller.Skill) + "/" + shortTaskID(caller.ID)
+	l.write(task, fmt.Sprintf("Task prompt assigned by %s:\n%s", parent, prompt),
+		fmt.Sprintf("Task delegated by %s", parent))
+}
+
+func (l *activityLogger) write(task Task, message, shortMessage string) {
 	skill := task.Skill
 	if skill == "" {
 		skill = "anonymous"
 	}
 	// Shorten skill names only for display, leaving the protocol registry intact.
-	message := l.redact(fmt.Sprintf(format, args...))
+	message = l.redact(message)
 	skill = displaySkill(l.text(skill))
 	at := time.Now()
 	prefix := fmt.Sprintf("%s [%s task=%s] ", at.Local().Format("2006/01/02 15:04:05"), skill, shortTaskID(task.ID))
 	l.logger.Print(formatReadableRecord(prefix, message))
 	if l.agents != nil {
 		task.Skill = skill
-		l.agents.mcp(at, task, message)
+		l.agents.mcp(at, task, message, l.redact(shortMessage))
 	}
 }
 
@@ -132,7 +157,7 @@ func (l *activityLogger) response(task Task, tool string, result any, callErr er
 		err = yaml.Unmarshal(data, &document)
 	}
 	if err != nil {
-		l.printf(task, "%s response: [payload unavailable]", tool)
+		l.detailf(task, "%s response: [payload unavailable]", tool)
 		return
 	}
 	expandResponseJSON(&document)
@@ -140,10 +165,10 @@ func (l *activityLogger) response(task Task, tool string, result any, callErr er
 	encoder := yaml.NewEncoder(&output)
 	encoder.SetIndent(2)
 	if err := encoder.Encode(&document); err != nil {
-		l.printf(task, "%s response: [payload unavailable]", tool)
+		l.detailf(task, "%s response: [payload unavailable]", tool)
 		return
 	}
-	l.printf(task, "%s response:\n%s", tool, output.String())
+	l.detailf(task, "%s response:\n%s", tool, output.String())
 }
 
 // State files and worker reports are JSON strings in the protocol. Expand these
