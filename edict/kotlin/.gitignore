@@ -1,0 +1,9 @@
+.gradle/
+.kotlin/
+build/
+.idea/
+out/
+
+# The parent Go repository ignores qodana binaries and all JARs.
+!src/**/qodana/
+!gradle/wrapper/gradle-wrapper.jar
