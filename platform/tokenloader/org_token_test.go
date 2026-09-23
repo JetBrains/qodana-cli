@@ -27,16 +27,14 @@ import (
 	"github.com/JetBrains/qodana-cli/v2025/platform/qdenv"
 )
 
-func TestParseProjectIdentifier(t *testing.T) {
+func TestValidateProjectIdentifier(t *testing.T) {
 	for _, testData := range []struct {
 		identifier string
-		team       string
-		project    string
 		valid      bool
 	}{
-		{identifier: "a-b:c.d_e", team: "a-b", project: "c.d_e", valid: true},
-		{identifier: "My Team:My Project 2", team: "My Team", project: "My Project 2", valid: true},
-		{identifier: " team : project ", team: " team ", project: " project ", valid: true},
+		{identifier: "a-b:c.d_e", valid: true},
+		{identifier: "My Team:My Project 2", valid: true},
+		{identifier: " team : project ", valid: true},
 		{identifier: "team"},
 		{identifier: "team:project:extra"},
 		{identifier: ":project"},
@@ -50,18 +48,12 @@ func TestParseProjectIdentifier(t *testing.T) {
 	} {
 		t.Run(
 			testData.identifier, func(t *testing.T) {
-				team, project, err := ParseProjectIdentifier(testData.identifier)
-				if !testData.valid {
-					if err == nil {
-						t.Errorf("expected '%s' to be invalid, got team '%s' project '%s'", testData.identifier, team, project)
-					}
-					return
+				err := ValidateProjectIdentifier(testData.identifier)
+				if testData.valid && err != nil {
+					t.Errorf("expected '%s' to be valid, got %v", testData.identifier, err)
 				}
-				if err != nil {
-					t.Fatalf("unexpected error: %v", err)
-				}
-				if team != testData.team || project != testData.project {
-					t.Errorf("expected '%s' and '%s', got '%s' and '%s'", testData.team, testData.project, team, project)
+				if !testData.valid && err == nil {
+					t.Errorf("expected '%s' to be invalid", testData.identifier)
 				}
 			},
 		)
@@ -74,8 +66,7 @@ func (e envProvider) Env() []string { return e }
 
 type exchangeCall struct {
 	orgToken string
-	team     string
-	project  string
+	slug     string
 }
 
 func setupOrgTokenTest(t *testing.T, yaml string, env ...string) (string, *[]exchangeCall) {
@@ -93,8 +84,8 @@ func setupOrgTokenTest(t *testing.T, yaml string, env ...string) (string, *[]exc
 
 	var calls []exchangeCall
 	original := exchangeOrgToken
-	exchangeOrgToken = func(orgToken string, team string, project string) (string, error) {
-		calls = append(calls, exchangeCall{orgToken, team, project})
+	exchangeOrgToken = func(orgToken string, projectQualifiedSlug string) (string, error) {
+		calls = append(calls, exchangeCall{orgToken, projectQualifiedSlug})
 		if orgToken == "declined" {
 			return "", cloud.OrgTokenDeclinedError
 		}
@@ -131,21 +122,21 @@ func TestResolveOrgToken(t *testing.T) {
 		{
 			name:          "org token and project from env",
 			env:           []string{"QODANA_ORG_TOKEN=org", "QODANA_PROJECT=team:project"},
-			expectedCall:  &exchangeCall{"org", "team", "project"},
+			expectedCall:  &exchangeCall{"org", "team:project"},
 			expectedToken: "project-token",
 		},
 		{
 			name:          "org token and project from yaml",
 			yaml:          "version: \"1.0\"\nproject: My Team:my-project\n",
 			env:           []string{"QODANA_ORG_TOKEN=org"},
-			expectedCall:  &exchangeCall{"org", "My Team", "my-project"},
+			expectedCall:  &exchangeCall{"org", "My Team:my-project"},
 			expectedToken: "project-token",
 		},
 		{
 			name:          "env project overrides yaml",
 			yaml:          "project: yaml-team:yaml-project\n",
 			env:           []string{"QODANA_ORG_TOKEN=org", "QODANA_PROJECT=env-team:env-project"},
-			expectedCall:  &exchangeCall{"org", "env-team", "env-project"},
+			expectedCall:  &exchangeCall{"org", "env-team:env-project"},
 			expectedToken: "project-token",
 		},
 		{
@@ -172,7 +163,7 @@ func TestResolveOrgToken(t *testing.T) {
 		{
 			name:          "declined org token",
 			env:           []string{"QODANA_ORG_TOKEN=declined", "QODANA_PROJECT=team:project"},
-			expectedCall:  &exchangeCall{"declined", "team", "project"},
+			expectedCall:  &exchangeCall{"declined", "team:project"},
 			errorContains: "Failed to obtain a project token",
 		},
 	} {

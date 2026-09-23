@@ -22,6 +22,7 @@ import (
 	"fmt"
 	"net/http"
 	"net/http/httptest"
+	"reflect"
 	"strings"
 	"testing"
 	"time"
@@ -76,13 +77,13 @@ func TestRequestProjectToken(t *testing.T) {
 							if auth := r.Header.Get("Authorization"); auth != "Bearer "+orgToken {
 								t.Errorf("unexpected Authorization header '%s'", auth)
 							}
-							var req projectTokenRequest
+							var req map[string]any
 							if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 								t.Errorf("failed to decode request: %v", err)
 							}
-							expected := projectTokenRequest{TeamName: "my team", ProjectName: "my-project", TokenTtlSeconds: 3600}
-							if req != expected {
-								t.Errorf("expected request %+v, got %+v", expected, req)
+							expected := map[string]any{"projectQualifiedSlug": "my team:my-project", "tokenTtlSeconds": float64(3600)}
+							if !reflect.DeepEqual(req, expected) {
+								t.Errorf("expected request %v, got %v", expected, req)
 							}
 							w.WriteHeader(testData.status)
 							_, _ = fmt.Fprint(w, testData.body)
@@ -92,7 +93,7 @@ func TestRequestProjectToken(t *testing.T) {
 				defer svr.Close()
 
 				apis := QdApiEndpoints{CloudApiUrl: svr.URL}
-				token, err := apis.NewPublicApiClient(orgToken).RequestProjectToken("my team", "my-project", time.Hour)
+				token, err := apis.NewPublicApiClient(orgToken).RequestProjectToken("my team:my-project", time.Hour)
 				if testData.success {
 					if err != nil {
 						t.Fatalf("unexpected error: %v", err)

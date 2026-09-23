@@ -41,9 +41,8 @@ type QdPublicApiClient struct {
 }
 
 type projectTokenRequest struct {
-	TeamName        string `json:"teamName"`
-	ProjectName     string `json:"projectName"`
-	TokenTtlSeconds int64  `json:"tokenTtlSeconds,omitempty"`
+	ProjectQualifiedSlug string `json:"projectQualifiedSlug"`
+	TokenTtlSeconds      int64  `json:"tokenTtlSeconds,omitempty"`
 }
 
 type projectTokenResponse struct {
@@ -54,14 +53,13 @@ func (endpoints *QdApiEndpoints) NewPublicApiClient(orgToken string) *QdPublicAp
 	return &QdPublicApiClient{client: endpoints.NewCloudApiClient(orgToken)}
 }
 
-// RequestProjectToken returns a project token valid for ttl for the given team and project.
+// RequestProjectToken returns a project token valid for ttl for the project given as team-slug:project-slug.
 // Note: Qodana Cloud creates the team and project if they don't exist.
-func (c *QdPublicApiClient) RequestProjectToken(teamName string, projectName string, ttl time.Duration) (string, error) {
+func (c *QdPublicApiClient) RequestProjectToken(projectQualifiedSlug string, ttl time.Duration) (string, error) {
 	body, err := json.Marshal(
 		projectTokenRequest{
-			TeamName:        teamName,
-			ProjectName:     projectName,
-			TokenTtlSeconds: int64(ttl.Seconds()),
+			ProjectQualifiedSlug: projectQualifiedSlug,
+			TokenTtlSeconds:      int64(ttl.Seconds()),
 		},
 	)
 	if err != nil {

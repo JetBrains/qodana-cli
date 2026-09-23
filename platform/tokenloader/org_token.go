@@ -40,28 +40,28 @@ var tokenFromExchange = false
 const projectTokenTtl = 6 * time.Hour
 
 // exchangeOrgToken is a variable to allow replacing the Cloud call in tests.
-var exchangeOrgToken = func(orgToken string, team string, project string) (string, error) {
-	return cloud.GetCloudApiEndpoints().NewPublicApiClient(orgToken).RequestProjectToken(team, project, projectTokenTtl)
+var exchangeOrgToken = func(orgToken string, projectQualifiedSlug string) (string, error) {
+	return cloud.GetCloudApiEndpoints().NewPublicApiClient(orgToken).RequestProjectToken(projectQualifiedSlug, projectTokenTtl)
 }
 
-// ParseProjectIdentifier splits a project identifier of the form team-slug:project-slug.
-func ParseProjectIdentifier(identifier string) (team string, project string, err error) {
+// ValidateProjectIdentifier checks that a project identifier has the form team-slug:project-slug.
+func ValidateProjectIdentifier(identifier string) error {
 	parts := strings.Split(identifier, ":")
 	if len(parts) != 2 {
-		return "", "", fmt.Errorf(
+		return fmt.Errorf(
 			"project identifier '%s' must have the form team-slug:project-slug",
 			identifier,
 		)
 	}
 	for _, part := range parts {
 		if !projectIdentifierPartPattern.MatchString(part) {
-			return "", "", fmt.Errorf(
+			return fmt.Errorf(
 				"project identifier '%s' is invalid: team and project slugs must be non-empty and contain only letters, digits, spaces, '-', '.' and '_'",
 				identifier,
 			)
 		}
 	}
-	return parts[0], parts[1], nil
+	return nil
 }
 
 // InitializeQodanaGlobalEnv initializes the global env and resolves QODANA_ORG_TOKEN into QODANA_TOKEN if it is set.
@@ -103,12 +103,11 @@ func resolveOrgToken(projectDir string, configName string) error {
 			qdenv.QodanaProject,
 		)
 	}
-	team, project, err := ParseProjectIdentifier(identifier)
-	if err != nil {
+	if err := ValidateProjectIdentifier(identifier); err != nil {
 		return fmt.Errorf("%s: %w", source, err)
 	}
 
-	projectToken, err := exchangeOrgToken(orgToken, team, project)
+	projectToken, err := exchangeOrgToken(orgToken, identifier)
 	if err != nil {
 		if errors.Is(err, cloud.OrgTokenDeclinedError) {
 			return fmt.Errorf("%v\n"+cloud.OrgTokenExchangeFailedMessage, err, identifier)
