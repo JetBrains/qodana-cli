@@ -20,6 +20,7 @@ import (
 	"github.com/JetBrains/qodana-cli/internal/core"
 	"github.com/JetBrains/qodana-cli/internal/platform/commoncontext"
 	"github.com/JetBrains/qodana-cli/internal/platform/qdenv"
+	"github.com/JetBrains/qodana-cli/internal/platform/tokenloader"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 )
@@ -37,7 +38,7 @@ be viewed via the file:// protocol (by double-clicking the index.html file).
 https://www.jetbrains.com/help/qodana/html-report.html
 This command serves the Qodana report locally and opens a browser to it.`,
 		Run: func(cmd *cobra.Command, args []string) {
-			qdenv.InitializeQodanaGlobalEnv(qdenv.EmptyEnvProvider())
+			tokenloader.InitializeQodanaGlobalEnv(qdenv.EmptyEnvProvider(), cliOptions.ProjectDir, cliOptions.ConfigName)
 
 			commonCtx := commoncontext.Compute(
 				cliOptions.Linter,

@@ -41,7 +41,7 @@ func RunThirdPartyLinterAnalysis(
 	linter ThirdPartyLinter,
 	linterInfo thirdpartyscan.LinterInfo,
 ) (int, error) {
-	qdenv.InitializeQodanaGlobalEnv(cliOptions)
+	tokenloader.InitializeQodanaGlobalEnv(cliOptions, cliOptions.ProjectDir, cliOptions.ConfigName)
 
 	var err error
 

@@ -8,6 +8,8 @@ import (
 	"os"
 	"path/filepath"
 	"runtime"
+	"slices"
+	"strings"
 	"testing"
 
 	"github.com/docker/docker/api/types/backend"
@@ -16,6 +18,7 @@ import (
 	"github.com/docker/docker/api/types/registry"
 
 	"github.com/JetBrains/qodana-cli/internal/platform/product"
+	"github.com/JetBrains/qodana-cli/internal/platform/qdenv"
 	"github.com/JetBrains/qodana-cli/internal/platform/utils"
 	"github.com/stretchr/testify/assert"
 )
@@ -451,4 +454,30 @@ func TestGenerateDebugDockerRunCommand_FiltersTokens(t *testing.T) {
 	assert.Contains(t, result, "-e SAFE_VAR=value")
 	// QODANA_TOKEN should be filtered out
 	assert.NotContains(t, result, "secret_token")
+}
+
+func TestWithoutEnv(t *testing.T) {
+	env := []string{"QODANA_ORG_TOKEN=org", "QODANA_ORG_TOKEN_X=keep", "QODANA_TOKEN=token", "OTHER=QODANA_ORG_TOKEN=x"}
+	expected := []string{"QODANA_ORG_TOKEN_X=keep", "QODANA_TOKEN=token", "OTHER=QODANA_ORG_TOKEN=x"}
+	if actual := withoutEnv(env, qdenv.QodanaOrgToken); !slices.Equal(actual, expected) {
+		t.Errorf("expected %v, got %v", expected, actual)
+	}
+}
+
+func TestDebugDockerRunCommandHidesTokens(t *testing.T) {
+	cfg := &backend.ContainerCreateConfig{
+		Config: &container.Config{
+			Image: "image",
+			Env:   []string{"QODANA_ORG_TOKEN=org-secret", "QODANA_TOKEN=project-secret", "QODANA_BRANCH=main"},
+		},
+	}
+	command := generateDebugDockerRunCommand(cfg)
+	for _, secret := range []string{"org-secret", "project-secret"} {
+		if strings.Contains(command, secret) {
+			t.Errorf("debug command must not contain '%s': %s", secret, command)
+		}
+	}
+	if !strings.Contains(command, "-e QODANA_BRANCH=main") {
+		t.Errorf("debug command must contain non-secret env: %s", command)
+	}
 }
