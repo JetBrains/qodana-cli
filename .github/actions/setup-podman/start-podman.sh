@@ -115,6 +115,17 @@ if [[ "${server_version}" != "${podman_version}" ]]; then
   fail "docker CLI is served by ${server_version}, not the podman ${podman_version} started here"
 fi
 
+# The runner's dockerd sets the FORWARD policy to DROP. netavark 2 (podman 6)
+# accepts container traffic in its own nftables table, which cannot override a
+# drop in Docker's chain, so reset the policy for traffic Docker doesn't manage.
+# The policy, not a per-interface rule, so every podman network is covered;
+# ip6 too, since Docker sets DROP there once it enables IPv6 forwarding.
+for tool in iptables ip6tables; do
+  if ! sudo "${tool}" -P FORWARD ACCEPT; then
+    fail "could not set the ${tool} FORWARD policy to ACCEPT"
+  fi
+done
+
 # Containers can start and still have no outbound network; catch that here
 # rather than as a DNS timeout deep in the first test that builds an image.
 if ! docker run --rm docker.io/library/alpine:3 nslookup registry-1.docker.io >"${probe_log}" 2>&1; then
