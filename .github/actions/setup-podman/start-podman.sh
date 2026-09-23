@@ -10,14 +10,9 @@ exec 2>&1
 api_timeout=120
 stop_timeout=30
 
-# systemd opens the service log as root. A directory of our own, because
-# fs.protected_regular refuses that open in a sticky one like /tmp.
-if ! service_log_dir=$(mktemp -d "${RUNNER_TEMP:-/tmp}/podman-service.XXXXXX"); then
-  echo "::error::could not create a log directory under ${RUNNER_TEMP:-/tmp}" >&2
-  exit 1
-fi
-service_log="${service_log_dir}/service.log"
-: >"${service_log}"
+# Each service logs to <log_root>/<unit>/service.log, so a later invocation can
+# find a stale service's log from its unit name.
+log_root="${RUNNER_TEMP:-/tmp}"
 if ! probe_log=$(mktemp "${RUNNER_TEMP:-/tmp}/api-probe.XXXXXX"); then
   echo "::error::could not create a log file under ${RUNNER_TEMP:-/tmp}" >&2
   exit 1
@@ -25,26 +20,43 @@ fi
 
 # Result of each previous invocation's service, keyed by unit name without suffix.
 declare -A stale_results=()
+# The unit systemd-run was asked to create, once it has been.
+started_unit=""
 
 fail() {
   echo "::error::$1" >&2
-  echo "--- podman system service log ---" >&2
-  cat "${service_log}" >&2 || true
+  # The stop job ends only after systemd has reaped podman, which can lag the
+  # failure a client saw; stopping first makes the state dumped below final.
+  if [[ -n "${started_unit}" ]]; then
+    sudo systemctl stop "${started_unit}.socket" "${started_unit}.service" || true
+  fi
+  if [[ -n "${service_log:-}" ]]; then
+    echo "--- podman system service log ---" >&2
+    cat "${service_log}" >&2 || true
+  fi
+  local base name
+  for base in "${!stale_results[@]}"; do
+    echo "--- previous podman system service log (${base}) ---" >&2
+    cat "${log_root}/${base}/service.log" >&2 || true
+  done
   if [[ -s "${probe_log}" ]]; then
     echo "--- last API probe output ---" >&2
     cat "${probe_log}" >&2 || true
   fi
-  if [[ -n "${unit:-}" ]]; then
+  local -a units=("${!stale_results[@]}")
+  if [[ -n "${started_unit}" ]]; then
+    units+=("${started_unit}")
+  fi
+  if (( ${#units[@]} > 0 )); then
     echo "--- podman systemd units ---" >&2
-    local base name
     local -a journal_args=()
-    for base in "${unit}" "${!stale_results[@]}"; do
+    for base in "${units[@]}"; do
       for name in "${base}.socket" "${base}.service"; do
         systemctl show -p Id,ActiveState,SubState,Result,ExecMainStatus "${name}" >&2 || true
         journal_args+=(-u "${name}")
       done
     done
-    # systemd's own messages about the units; the service's output is in the log above.
+    # systemd's own messages about the units; the service's output is in the logs above.
     sudo journalctl --sync || true
     sudo journalctl --no-pager "${journal_args[@]}" >&2 || true
   fi
@@ -68,6 +80,12 @@ context_name="podman-${podman_version}"
 # The uuid shape keeps 5.8.4 from matching 5.8.4-dev units, which serve another socket.
 unit_glob="setup-podman-${podman_version}-????????-????-????-????-????????????"
 unit="setup-podman-${podman_version}-$(</proc/sys/kernel/random/uuid)"
+service_log="${log_root}/${unit}/service.log"
+# systemd opens the log as root, which fs.protected_regular refuses for a
+# user-owned file directly in a sticky directory like /tmp.
+if ! mkdir "${log_root}/${unit}" || ! : >"${service_log}"; then
+  fail "could not create ${service_log}"
+fi
 
 # Stop a previous invocation's service (it never exits on its own: --time=0).
 # `systemctl stop` returns when the stop job is done; a service still up
@@ -96,12 +114,15 @@ done
 
 # systemd-run returns once the socket is bound, owned by us and listening;
 # clients queue on it until podman, started by the first one, accepts.
-# - KillMode=process, as in upstream podman.service: stopping leaves containers running.
+# - Type, Delegate and KillMode as in upstream podman.service.
+# - The step's OOM priority, which the runner raises for job processes and podman
+#   passes on to containers.
 # - StartLimitBurst=1: a podman that dies without accepting would otherwise be
 #   re-activated by the still-queued connection, turning a crash into a hang.
 #   The interval must be infinity; 0 disables the limit.
 # - Output to a file, not the journal, which ingests it asynchronously: the file
 #   is complete by the time podman's exit resets the API probe.
+started_unit="${unit}"
 if ! sudo systemd-run --quiet --unit="${unit}" \
     --socket-property=ListenStream="${podman_socket}" \
     --socket-property=SocketUser="$(id -un)" \
@@ -110,6 +131,7 @@ if ! sudo systemd-run --quiet --unit="${unit}" \
     --property=Type=exec \
     --property=Delegate=yes \
     --property=KillMode=process \
+    --property=OOMScoreAdjust="$(</proc/self/oom_score_adj)" \
     --property=StartLimitBurst=1 \
     --property=StartLimitIntervalSec=infinity \
     --property=TimeoutStopSec="${stop_timeout}" \
@@ -139,6 +161,7 @@ curl_status=0
 curl --unix-socket "${podman_socket}" --max-time "${api_timeout}" -fsS http://podman/_ping >"${probe_log}" 2>&1 || curl_status=$?
 case "${curl_status}" in
   0) : ;;
+  22) fail "podman API on ${podman_socket} answered with an HTTP error" ;;
   28) fail "podman API on ${podman_socket} did not answer within ${api_timeout}s" ;;
   *) fail "podman system service did not serve the API on ${podman_socket} (curl exit ${curl_status})" ;;
 esac
