@@ -218,3 +218,5 @@ CLAUDE.local.md
 __pycache__/
 *.py[cod]
 .pytest_cache/
+/edict/.idea/**
+/out/**
