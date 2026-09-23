@@ -27,7 +27,7 @@ import (
 	"github.com/JetBrains/qodana-cli/v2025/platform/qdenv"
 )
 
-func TestValidateProjectIdentifier(t *testing.T) {
+func TestValidateProjectSlug(t *testing.T) {
 	for _, testData := range []struct {
 		identifier string
 		valid      bool
@@ -48,7 +48,7 @@ func TestValidateProjectIdentifier(t *testing.T) {
 	} {
 		t.Run(
 			testData.identifier, func(t *testing.T) {
-				err := ValidateProjectIdentifier(testData.identifier)
+				err := ValidateProjectSlug(testData.identifier)
 				if testData.valid && err != nil {
 					t.Errorf("expected '%s' to be valid, got %v", testData.identifier, err)
 				}
@@ -71,7 +71,7 @@ type exchangeCall struct {
 
 func setupOrgTokenTest(t *testing.T, yaml string, env ...string) (string, *[]exchangeCall) {
 	t.Helper()
-	for _, key := range []string{qdenv.QodanaToken, qdenv.QodanaOrgToken, qdenv.QodanaProject} {
+	for _, key := range []string{qdenv.QodanaToken, qdenv.QodanaOrgToken, qdenv.QodanaProjectSlug} {
 		t.Setenv(key, "")
 	}
 	projectDir := t.TempDir()
@@ -116,32 +116,37 @@ func TestResolveOrgToken(t *testing.T) {
 		},
 		{
 			name:          "project without org token is ignored",
-			env:           []string{"QODANA_TOKEN=token", "QODANA_PROJECT=team:project"},
+			env:           []string{"QODANA_TOKEN=token", "QODANA_PROJECT_SLUG=team:project"},
 			expectedToken: "token",
 		},
 		{
 			name:          "org token and project from env",
-			env:           []string{"QODANA_ORG_TOKEN=org", "QODANA_PROJECT=team:project"},
+			env:           []string{"QODANA_ORG_TOKEN=org", "QODANA_PROJECT_SLUG=team:project"},
 			expectedCall:  &exchangeCall{"org", "team:project"},
 			expectedToken: "project-token",
 		},
 		{
 			name:          "org token and project from yaml",
-			yaml:          "version: \"1.0\"\nproject: My Team:my-project\n",
+			yaml:          "version: \"1.0\"\nprojectSlug: My Team:my-project\n",
 			env:           []string{"QODANA_ORG_TOKEN=org"},
 			expectedCall:  &exchangeCall{"org", "My Team:my-project"},
 			expectedToken: "project-token",
 		},
 		{
 			name:          "env project overrides yaml",
-			yaml:          "project: yaml-team:yaml-project\n",
-			env:           []string{"QODANA_ORG_TOKEN=org", "QODANA_PROJECT=env-team:env-project"},
+			yaml:          "projectSlug: yaml-team:yaml-project\n",
+			env:           []string{"QODANA_ORG_TOKEN=org", "QODANA_PROJECT_SLUG=env-team:env-project"},
 			expectedCall:  &exchangeCall{"org", "env-team:env-project"},
 			expectedToken: "project-token",
 		},
 		{
+			name:          "similarly named env is not taken as project slug",
+			env:           []string{"QODANA_ORG_TOKEN=org", "QODANA_PROJECT_ID=report-prefix"},
+			errorContains: "no project is specified",
+		},
+		{
 			name:          "both tokens",
-			env:           []string{"QODANA_TOKEN=token", "QODANA_ORG_TOKEN=org", "QODANA_PROJECT=team:project"},
+			env:           []string{"QODANA_TOKEN=token", "QODANA_ORG_TOKEN=org", "QODANA_PROJECT_SLUG=team:project"},
 			errorContains: "only one of them",
 		},
 		{
@@ -151,18 +156,18 @@ func TestResolveOrgToken(t *testing.T) {
 		},
 		{
 			name:          "invalid project from env",
-			env:           []string{"QODANA_ORG_TOKEN=org", "QODANA_PROJECT=team/project"},
-			errorContains: "QODANA_PROJECT: project identifier",
+			env:           []string{"QODANA_ORG_TOKEN=org", "QODANA_PROJECT_SLUG=team/project"},
+			errorContains: "QODANA_PROJECT_SLUG: project slug",
 		},
 		{
 			name:          "invalid project from yaml",
-			yaml:          "project: team:pro@ject\n",
+			yaml:          "projectSlug: team:pro@ject\n",
 			env:           []string{"QODANA_ORG_TOKEN=org"},
-			errorContains: "qodana.yaml: project identifier",
+			errorContains: "qodana.yaml: project slug",
 		},
 		{
 			name:          "declined org token",
-			env:           []string{"QODANA_ORG_TOKEN=declined", "QODANA_PROJECT=team:project"},
+			env:           []string{"QODANA_ORG_TOKEN=declined", "QODANA_PROJECT_SLUG=team:project"},
 			expectedCall:  &exchangeCall{"declined", "team:project"},
 			errorContains: "Failed to obtain a project token",
 		},
@@ -202,7 +207,7 @@ func TestResolveOrgToken(t *testing.T) {
 func TestResolveOrgTokenUnsetsOsEnv(t *testing.T) {
 	projectDir, _ := setupOrgTokenTest(t, "")
 	t.Setenv(qdenv.QodanaOrgToken, "org")
-	t.Setenv(qdenv.QodanaProject, "team:project")
+	t.Setenv(qdenv.QodanaProjectSlug, "team:project")
 	qdenv.InitializeQodanaGlobalEnv(qdenv.EmptyEnvProvider())
 
 	if err := resolveOrgToken(projectDir, ""); err != nil {

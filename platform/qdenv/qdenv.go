@@ -66,8 +66,8 @@ const (
 	// QodanaOrgToken is an organisation-level token, exchanged for a short-lived project token.
 	// !!! It must never be passed to the linter process or container !!!
 	QodanaOrgToken = "QODANA_ORG_TOKEN"
-	// QodanaProject identifies the project for QodanaOrgToken exchange, in the form team-slug:project-slug
-	QodanaProject = "QODANA_PROJECT"
+	// QodanaProjectSlug identifies the project for QodanaOrgToken exchange, in the form team-slug:project-slug
+	QodanaProjectSlug = "QODANA_PROJECT_SLUG"
 )
 
 type qodanaGlobalEnv struct {
@@ -83,7 +83,7 @@ func InitializeQodanaGlobalEnv(provider EnvProvider) {
 			QodanaEndpointEnv: GetEnvWithOsEnv(provider, QodanaEndpointEnv),
 			QodanaToken:       GetEnvWithOsEnv(provider, QodanaToken),
 			QodanaOrgToken:    GetEnvWithOsEnv(provider, QodanaOrgToken),
-			QodanaProject:     GetEnvWithOsEnv(provider, QodanaProject),
+			QodanaProjectSlug: GetEnvWithOsEnv(provider, QodanaProjectSlug),
 		},
 	}
 }

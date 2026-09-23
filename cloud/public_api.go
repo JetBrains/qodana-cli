@@ -32,7 +32,7 @@ const publicProjectsPath = "/public/organizations/projects"
 var OrgTokenDeclinedError = errors.New("organization token was declined by Qodana Cloud server")
 
 const OrgTokenExchangeFailedMessage = `Failed to obtain a project token using QODANA_ORG_TOKEN for project '%s'.
-Please ensure that QODANA_ORG_TOKEN is a valid organization API token and that QODANA_PROJECT or 'project:' in qodana.yaml is correct.`
+Please ensure that QODANA_ORG_TOKEN is a valid organization API token and that QODANA_PROJECT_SLUG or 'projectSlug:' in qodana.yaml is correct.`
 
 // QdPublicApiClient is a client of the Qodana Public API, authenticated with an organization API token.
 // It is a separate type from QdClient so that the organization token is never used for project-token endpoints.
