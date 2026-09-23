@@ -115,6 +115,12 @@ if [[ "${server_version}" != "${podman_version}" ]]; then
   fail "docker CLI is served by ${server_version}, not the podman ${podman_version} started here"
 fi
 
+# Containers can start and still have no outbound network; catch that here
+# rather than as a DNS timeout deep in the first test that builds an image.
+if ! docker run --rm docker.io/library/alpine:3 nslookup registry-1.docker.io >"${probe_log}" 2>&1; then
+  fail "a container on the default podman network cannot resolve registry-1.docker.io"
+fi
+
 echo "--- podman system service startup log ---"
 cat "${service_log}" || true
 echo "docker CLI is served by podman ${server_version}"
