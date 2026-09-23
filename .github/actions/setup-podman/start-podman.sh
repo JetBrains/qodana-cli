@@ -20,7 +20,7 @@ fi
 
 # Result of each previous invocation's service, keyed by unit name without suffix.
 declare -A stale_results=()
-# The unit systemd-run was asked to create, once it has been.
+# The unit systemd-run was asked to create.
 started_unit=""
 
 fail() {
@@ -79,7 +79,10 @@ podman_socket="/var/run/podman-${podman_version}.sock"
 context_name="podman-${podman_version}"
 # The uuid shape keeps 5.8.4 from matching 5.8.4-dev units, which serve another socket.
 unit_glob="setup-podman-${podman_version}-????????-????-????-????-????????????"
-unit="setup-podman-${podman_version}-$(</proc/sys/kernel/random/uuid)"
+if ! uuid=$(</proc/sys/kernel/random/uuid); then
+  fail "could not generate a unit name"
+fi
+unit="setup-podman-${podman_version}-${uuid}"
 service_log="${log_root}/${unit}/service.log"
 # systemd opens the log as root, which fs.protected_regular refuses for a
 # user-owned file directly in a sticky directory like /tmp.
@@ -111,6 +114,18 @@ for stale_unit in "${!stale_results[@]}"; do
     fail "a previous podman service on ${podman_socket} did not stop within ${stop_timeout}s of SIGTERM"
   fi
 done
+# Their results are read; unload the failed ones so they don't pile up.
+if ! sudo systemctl reset-failed "${unit_glob}.socket" "${unit_glob}.service"; then
+  fail "could not reset previous podman units"
+fi
+
+# Read here: a failed substitution inside systemd-run's arguments would go unnoticed.
+if ! runner_user=$(id -un) || ! runner_group=$(id -gn); then
+  fail "could not resolve the runner user and group"
+fi
+if ! oom_score_adj=$(</proc/self/oom_score_adj); then
+  fail "could not read the step's OOM score adjustment"
+fi
 
 # systemd-run returns once the socket is bound, owned by us and listening;
 # clients queue on it until podman, started by the first one, accepts.
@@ -120,18 +135,18 @@ done
 # - StartLimitBurst=1: a podman that dies without accepting would otherwise be
 #   re-activated by the still-queued connection, turning a crash into a hang.
 #   The interval must be infinity; 0 disables the limit.
-# - Output to a file, not the journal, which ingests it asynchronously: the file
-#   is complete by the time podman's exit resets the API probe.
+# - Output to a file, not the journal, which ingests asynchronously and could
+#   still be catching up when fail() reads it.
 started_unit="${unit}"
 if ! sudo systemd-run --quiet --unit="${unit}" \
     --socket-property=ListenStream="${podman_socket}" \
-    --socket-property=SocketUser="$(id -un)" \
-    --socket-property=SocketGroup="$(id -gn)" \
+    --socket-property=SocketUser="${runner_user}" \
+    --socket-property=SocketGroup="${runner_group}" \
     --socket-property=SocketMode=0660 \
     --property=Type=exec \
     --property=Delegate=yes \
     --property=KillMode=process \
-    --property=OOMScoreAdjust="$(</proc/self/oom_score_adj)" \
+    --property=OOMScoreAdjust="${oom_score_adj}" \
     --property=StartLimitBurst=1 \
     --property=StartLimitIntervalSec=infinity \
     --property=TimeoutStopSec="${stop_timeout}" \
