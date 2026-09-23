@@ -8,7 +8,6 @@ import (
 	"os"
 	"path/filepath"
 	"runtime"
-	"slices"
 	"strings"
 	"testing"
 
@@ -18,7 +17,6 @@ import (
 	"github.com/docker/docker/api/types/registry"
 
 	"github.com/JetBrains/qodana-cli/internal/platform/product"
-	"github.com/JetBrains/qodana-cli/internal/platform/qdenv"
 	"github.com/JetBrains/qodana-cli/internal/platform/utils"
 	"github.com/stretchr/testify/assert"
 )
@@ -454,14 +452,6 @@ func TestGenerateDebugDockerRunCommand_FiltersTokens(t *testing.T) {
 	assert.Contains(t, result, "-e SAFE_VAR=value")
 	// QODANA_TOKEN should be filtered out
 	assert.NotContains(t, result, "secret_token")
-}
-
-func TestWithoutEnv(t *testing.T) {
-	env := []string{"QODANA_ORG_TOKEN=org", "QODANA_ORG_TOKEN_X=keep", "QODANA_TOKEN=token", "OTHER=QODANA_ORG_TOKEN=x"}
-	expected := []string{"QODANA_ORG_TOKEN_X=keep", "QODANA_TOKEN=token", "OTHER=QODANA_ORG_TOKEN=x"}
-	if actual := withoutEnv(env, qdenv.QodanaOrgToken); !slices.Equal(actual, expected) {
-		t.Errorf("expected %v, got %v", expected, actual)
-	}
 }
 
 func TestDebugDockerRunCommandHidesTokens(t *testing.T) {

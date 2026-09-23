@@ -309,7 +309,7 @@ func getDockerOptions(c corescan.Context, image string) *backend.ContainerCreate
 	qdenv.ExtractQodanaEnvironment(updateScanContextEnv)
 
 	// QODANA_ORG_TOKEN must never leave the CLI: the container only gets the exchanged project token
-	dockerEnv := withoutEnv(c.Env(), qdenv.QodanaOrgToken)
+	dockerEnv := qdenv.WithoutEnv(c.Env(), qdenv.QodanaOrgToken)
 	qodanaCloudUploadToken := c.QodanaUploadToken()
 	if qodanaCloudUploadToken != "" {
 		dockerEnv = append(dockerEnv, fmt.Sprintf("%s=%s", qdenv.QodanaToken, qodanaCloudUploadToken))
@@ -471,22 +471,6 @@ func selectUser(image string, userFromContext string) string {
 	return userFromContext // Do not modify explicit user input
 }
 
-// isEnv reports whether a KEY=VALUE env entry sets the given key.
-func isEnv(env string, key string) bool {
-	return strings.HasPrefix(env, key+"=")
-}
-
-// withoutEnv returns env entries except those setting the given key.
-func withoutEnv(env []string, key string) []string {
-	result := make([]string, 0, len(env))
-	for _, e := range env {
-		if !isEnv(e, key) {
-			result = append(result, e)
-		}
-	}
-	return result
-}
-
 func generateDebugDockerRunCommand(cfg *backend.ContainerCreateConfig) string {
 	var cmdBuilder strings.Builder
 	cmdBuilder.WriteString("docker run ")
@@ -506,7 +490,7 @@ func generateDebugDockerRunCommand(cfg *backend.ContainerCreateConfig) string {
 		cmdBuilder.WriteString(fmt.Sprintf("-u %s ", cfg.Config.User))
 	}
 	for _, env := range cfg.Config.Env {
-		if isEnv(env, qdenv.QodanaOrgToken) {
+		if qdenv.IsEnv(env, qdenv.QodanaOrgToken) {
 			continue
 		}
 		if !strings.Contains(env, qdenv.QodanaToken) || strings.Contains(

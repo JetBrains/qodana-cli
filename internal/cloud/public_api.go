@@ -29,7 +29,7 @@ import (
 // It is served under the Cloud API URL and authenticated with an organization API token.
 const publicProjectsPath = "/public/organizations/projects"
 
-var OrgTokenDeclinedError = errors.New("organization token was declined by Qodana Cloud server")
+var ErrOrgTokenDeclined = errors.New("organization token was declined by Qodana Cloud server")
 
 const OrgTokenExchangeFailedMessage = `Failed to obtain a project token using QODANA_ORG_TOKEN for project '%s'.
 Please ensure that QODANA_ORG_TOKEN is a valid organization API token and that QODANA_PROJECT_SLUG or 'projectSlug:' in qodana.yaml is correct.`
@@ -74,7 +74,7 @@ func (c *QdPublicApiClient) RequestProjectToken(projectQualifiedSlug string, ttl
 	if err != nil {
 		var apiErr *APIError
 		if errors.As(err, &apiErr) && slices.Contains(request.AcceptedStatuses, apiErr.StatusCode) {
-			return "", fmt.Errorf("%w: %v", OrgTokenDeclinedError, err)
+			return "", fmt.Errorf("%w: %v", ErrOrgTokenDeclined, err)
 		}
 		return "", err
 	}

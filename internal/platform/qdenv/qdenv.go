@@ -130,6 +130,22 @@ func GetEnv(provider EnvProvider, key string) string {
 	return ""
 }
 
+// IsEnv reports whether a KEY=VALUE env entry sets the given key.
+func IsEnv(env string, key string) bool {
+	return strings.HasPrefix(env, key+"=")
+}
+
+// WithoutEnv returns env entries except those setting the given key.
+func WithoutEnv(env []string, key string) []string {
+	result := make([]string, 0, len(env))
+	for _, e := range env {
+		if !IsEnv(e, key) {
+			result = append(result, e)
+		}
+	}
+	return result
+}
+
 func GetEnvWithOsEnv(provider EnvProvider, key string) string {
 	envFromProvider := GetEnv(provider, key)
 	if envFromProvider != "" {

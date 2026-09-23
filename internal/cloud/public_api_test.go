@@ -106,7 +106,7 @@ func TestRequestProjectToken(t *testing.T) {
 				if err == nil {
 					t.Fatalf("expected an error, got token '%s'", token)
 				}
-				if errors.Is(err, OrgTokenDeclinedError) != testData.declined {
+				if errors.Is(err, ErrOrgTokenDeclined) != testData.declined {
 					t.Errorf("unexpected declined state for error: %v", err)
 				}
 				if strings.Contains(err.Error(), orgToken) || strings.Contains(err.Error(), projectToken) {

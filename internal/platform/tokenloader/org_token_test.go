@@ -93,7 +93,7 @@ func setupOrgTokenTest(t *testing.T, yaml string, env ...string) (string, *[]exc
 	exchangeOrgToken = func(orgToken string, projectQualifiedSlug string) (string, error) {
 		calls = append(calls, exchangeCall{orgToken, projectQualifiedSlug})
 		if orgToken == "declined" {
-			return "", cloud.OrgTokenDeclinedError
+			return "", cloud.ErrOrgTokenDeclined
 		}
 		return "project-token", nil
 	}

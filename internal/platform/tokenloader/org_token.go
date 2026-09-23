@@ -111,8 +111,8 @@ func resolveOrgToken(projectDir string, configName string) error {
 
 	projectToken, err := exchangeOrgToken(orgToken, projectSlug)
 	if err != nil {
-		if errors.Is(err, cloud.OrgTokenDeclinedError) {
-			return fmt.Errorf("%v\n"+cloud.OrgTokenExchangeFailedMessage, err, projectSlug)
+		if errors.Is(err, cloud.ErrOrgTokenDeclined) {
+			return fmt.Errorf("%w\n%s", err, fmt.Sprintf(cloud.OrgTokenExchangeFailedMessage, projectSlug))
 		}
 		return fmt.Errorf("token exchange for project '%s' failed: %w", projectSlug, err)
 	}
