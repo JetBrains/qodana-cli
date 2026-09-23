@@ -45,6 +45,12 @@ func TestValidateProjectSlug(t *testing.T) {
 		{identifier: "team:pro@ject"},
 		{identifier: "tëam:project"},
 		{identifier: "team:project\n"},
+		{identifier: "abc:def", valid: true},
+		{identifier: strings.Repeat("t", 64) + ":" + strings.Repeat("p", 64), valid: true},
+		{identifier: "ab:project"},
+		{identifier: "team:pr"},
+		{identifier: strings.Repeat("t", 65) + ":project"},
+		{identifier: "team:" + strings.Repeat("p", 65)},
 	} {
 		t.Run(
 			testData.identifier, func(t *testing.T) {

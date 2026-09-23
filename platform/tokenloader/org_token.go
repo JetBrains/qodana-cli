@@ -30,7 +30,9 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-var projectSlugPartPattern = regexp.MustCompile(`^[A-Za-z0-9 ._-]+$`)
+// projectSlugPartPattern matches the team or the project part of a project slug.
+// All allowed characters are ASCII, so the length is counted in characters.
+var projectSlugPartPattern = regexp.MustCompile(`^[A-Za-z0-9 ._-]{3,64}$`)
 
 // tokenFromExchange is true when QODANA_TOKEN was obtained by exchanging QODANA_ORG_TOKEN.
 // Such a token is short-lived, so it is never saved to the keyring.
@@ -56,7 +58,7 @@ func ValidateProjectSlug(projectSlug string) error {
 	for _, part := range parts {
 		if !projectSlugPartPattern.MatchString(part) {
 			return fmt.Errorf(
-				"project slug '%s' is invalid: team and project slugs must be non-empty and contain only letters, digits, spaces, '-', '.' and '_'",
+				"project slug '%s' is invalid: team and project slugs must be 3 to 64 characters long and contain only letters, digits, spaces, '-', '.' and '_'",
 				projectSlug,
 			)
 		}
