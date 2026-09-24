@@ -308,7 +308,8 @@ func getDockerOptions(c corescan.Context, image string) *backend.ContainerCreate
 	updateScanContextEnv := func(key string, value string) { c = c.WithEnvExtractedFromOsEnv(key, value) }
 	qdenv.ExtractQodanaEnvironment(updateScanContextEnv)
 
-	dockerEnv := c.Env()
+	// QODANA_ORG_TOKEN must never leave the CLI: the container only gets the exchanged project token
+	dockerEnv := qdenv.WithoutEnv(c.Env(), qdenv.QodanaOrgToken)
 	qodanaCloudUploadToken := c.QodanaUploadToken()
 	if qodanaCloudUploadToken != "" {
 		dockerEnv = append(dockerEnv, fmt.Sprintf("%s=%s", qdenv.QodanaToken, qodanaCloudUploadToken))
@@ -489,6 +490,9 @@ func generateDebugDockerRunCommand(cfg *backend.ContainerCreateConfig) string {
 		cmdBuilder.WriteString(fmt.Sprintf("-u %s ", cfg.Config.User))
 	}
 	for _, env := range cfg.Config.Env {
+		if qdenv.IsEnv(env, qdenv.QodanaOrgToken) {
+			continue
+		}
 		if !strings.Contains(env, qdenv.QodanaToken) || strings.Contains(
 			env,
 			qdenv.QodanaLicense,

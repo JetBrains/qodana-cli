@@ -401,3 +401,9 @@ func TestGetSpaceRemoteUrl(t *testing.T) {
 	expected := "ssh://git@git.myorg.jetbrains.space/PROJ/myrepo.git"
 	assert.Equal(t, expected, getSpaceRemoteUrl())
 }
+
+func TestWithoutEnv(t *testing.T) {
+	env := []string{"QODANA_ORG_TOKEN=org", "QODANA_ORG_TOKEN_X=keep", "QODANA_TOKEN=token", "OTHER=QODANA_ORG_TOKEN=x"}
+	expected := []string{"QODANA_ORG_TOKEN_X=keep", "QODANA_TOKEN=token", "OTHER=QODANA_ORG_TOKEN=x"}
+	assert.Equal(t, expected, WithoutEnv(env, QodanaOrgToken))
+}

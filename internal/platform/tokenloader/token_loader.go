@@ -58,6 +58,10 @@ func IsCloudTokenRequired(tokenLoader CloudTokenLoader) bool {
 }
 
 func LoadCloudUploadToken(tokenLoader CloudTokenLoader, refresh bool, requiresToken bool, interactive bool) string {
+	if tokenFromExchange {
+		// short-lived token obtained via QODANA_ORG_TOKEN: never touch the keyring or ask the user
+		return tokenLoader.GetQodanaToken()
+	}
 	tokenFetchers := []func(bool) string{
 		func(_ bool) string { return tokenLoader.GetQodanaToken() },
 		func(refresh bool) string { return getTokenFromKeychain(refresh, tokenLoader.GetId()) },
