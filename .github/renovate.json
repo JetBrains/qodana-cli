@@ -15,6 +15,17 @@
     "**/testdata/**",
     ".teamcity/**"
   ],
+  "nuget": {
+    "ignorePaths": [
+      "**/node_modules/**",
+      "**/bower_components/**",
+      "**/vendor/**",
+      "**/examples/**",
+      "**/__fixtures__/**",
+      "**/testdata/**",
+      ".teamcity/**"
+    ]
+  },
   "regexManagers": [
     {
       "fileMatch": [
