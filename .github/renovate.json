@@ -3,6 +3,18 @@
   "extends": [
     "config:base"
   ],
+  "ignorePaths": [
+    "**/node_modules/**",
+    "**/bower_components/**",
+    "**/vendor/**",
+    "**/examples/**",
+    "**/__tests__/**",
+    "**/test/**",
+    "**/tests/**",
+    "**/__fixtures__/**",
+    "**/testdata/**",
+    ".teamcity/**"
+  ],
   "regexManagers": [
     {
       "fileMatch": [
@@ -24,6 +36,12 @@
     }
   ],
   "packageRules": [
+    {
+      "description": "Qodana artifacts aren't on Maven Central; querying it anyway risks a 429 that aborts the whole run.",
+      "matchDatasources": ["maven"],
+      "matchPackageNames": ["org.jetbrains.qodana:*", "com.jetbrains.qodana:*"],
+      "registryUrls": ["https://packages.jetbrains.team/maven/p/ij/intellij-dependencies"]
+    },
     {
       "datasources": ["repology"],
       "packagePatterns": [
