@@ -5,79 +5,74 @@ set -euxo pipefail
 # output below stay in order.
 exec 2>&1
 
-socket_timeout=60
-api_timeout=60
+# Failure bounds. The API one is on podman hanging and spans its start-up and
+# first answer; the others are on the registry and its resolver.
+api_timeout=120
 pull_timeout=120
 dns_timeout=30
+unit=setup-podman
+started=""
 
-if ! service_log=$(mktemp "${RUNNER_TEMP:-/tmp}/podman-service.XXXXXX"); then
-  echo "::error::could not create a log file under ${RUNNER_TEMP:-/tmp}" >&2
+# systemd opens the log as root, which fs.protected_regular refuses for a
+# user-owned file directly in a sticky directory like /tmp.
+if ! log_dir=$(mktemp -d "${RUNNER_TEMP:-/tmp}/podman-service.XXXXXX"); then
+  echo "::error::could not create a log directory under ${RUNNER_TEMP:-/tmp}" >&2
   exit 1
 fi
-if ! probe_log=$(mktemp "${RUNNER_TEMP:-/tmp}/docker-probe.XXXXXX"); then
-  echo "::error::could not create a log file under ${RUNNER_TEMP:-/tmp}" >&2
-  exit 1
-fi
+service_log="${log_dir}/service.log"
+probe_log="${log_dir}/probe.log"
+: >"${service_log}"
 
 fail() {
   echo "::error::$1" >&2
+  # Stopping first makes the state below final: the stop ends only after
+  # systemd has reaped podman, which can lag the failure the probe saw.
+  if [[ -n "${started}" ]]; then
+    sudo systemctl stop "${unit}.socket" "${unit}.service" || true
+  fi
   echo "--- podman system service log ---" >&2
   cat "${service_log}" >&2 || true
   if [[ -s "${probe_log}" ]]; then
-    echo "--- last docker probe output ---" >&2
+    echo "--- last API probe output ---" >&2
     cat "${probe_log}" >&2 || true
   fi
-  echo "--- podman processes ---" >&2
-  pgrep -a podman >&2 || echo "(none)" >&2
+  echo "--- podman systemd units ---" >&2
+  sudo journalctl --sync || true
+  systemctl status --no-pager --full "${unit}.socket" "${unit}.service" >&2 || true
   exit 1
 }
 
 if ! podman_version=$(sudo podman version --format="{{.Server.Version}}"); then
   fail "could not determine the podman server version"
 fi
+if ! podman_bin=$(sudo sh -c 'command -v podman'); then
+  fail "sudo cannot resolve podman"
+fi
 podman_socket="/var/run/podman-${podman_version}.sock"
 context_name="podman-${podman_version}"
+read -r oom_score_adj </proc/self/oom_score_adj
 
-# Stop a previous invocation's service (it never exits on its own: --time=0),
-# then remove its socket -- a leftover file would satisfy the wait below
-# immediately and the chown would land on an inode podman then replaces.
-# [p] keeps this pattern from matching the `sudo pkill` invocation itself.
-stale_service_re="podman system service .*/var/run/[p]odman-${podman_version//./\\.}\.sock"
-pkill_status=0
-sudo pkill -f "${stale_service_re}" || pkill_status=$?
-case "${pkill_status}" in
-  0)
-    stale_deadline=$(( SECONDS + 30 ))
-    while sudo pgrep -f "${stale_service_re}" >/dev/null; do
-      if (( SECONDS >= stale_deadline )); then
-        fail "a previous podman service on ${podman_socket} would not exit"
-      fi
-      sleep 0.1
-    done
-    ;;
-  1) : ;;  # nothing matched, which is the normal case
-  *) fail "pkill failed looking for a previous podman service (exit ${pkill_status})" ;;
-esac
-
-if ! sudo rm -f "${podman_socket}"; then
-  fail "could not remove a stale ${podman_socket}"
+# systemd-run returns once the socket is bound, owned by us and listening;
+# clients queue on it until podman, started by the first one, accepts.
+# - StartLimitBurst=1: a podman that dies without accepting would otherwise be
+#   re-activated by the queued connection, turning a crash into a hang.
+#   The interval must be infinity; 0 disables the limit.
+# - Output to a file, not the journal, which ingests asynchronously and could
+#   still be catching up when fail() reads it.
+# - The step's OOM priority, which the runner raises and podman passes on to containers.
+if ! sudo systemd-run --quiet --unit="${unit}" \
+    --socket-property=ListenStream="${podman_socket}" \
+    --socket-property=SocketUser="${UID}" \
+    --socket-property=SocketMode=0600 \
+    --property=StartLimitBurst=1 \
+    --property=StartLimitIntervalSec=infinity \
+    --property=StandardOutput=append:"${service_log}" \
+    --property=StandardError=append:"${service_log}" \
+    --property=OOMScoreAdjust="${oom_score_adj}" \
+    "${podman_bin}" system service --time=0; then
+  fail "could not start podman as ${unit} (the action runs once per job)"
 fi
-
-sudo podman system service --time=0 "unix://${podman_socket}" >"${service_log}" 2>&1 &
-service_pid=$!
-
-deadline=$(( SECONDS + socket_timeout ))
-until [[ -S "${podman_socket}" ]]; do
-  if ! kill -0 "${service_pid}" 2>/dev/null && [[ ! -S "${podman_socket}" ]]; then
-    fail "podman system service exited before creating ${podman_socket}"
-  fi
-  if (( SECONDS >= deadline )); then
-    fail "podman system service did not create ${podman_socket} within ${socket_timeout}s"
-  fi
-  sleep 0.1
-done
-
-sudo chown "$(id -u):$(id -g)" "${podman_socket}"
+started=1
 
 # docker context rm refuses to remove the context currently in use.
 if ! docker context use default >/dev/null; then
@@ -95,18 +90,13 @@ if ! docker context use "${context_name}"; then
   fail "could not select the ${context_name} docker context"
 fi
 
-# docker ps exits 1 (not 124) when it can't reach the daemon, and `timeout`
-# passes the child's status through verbatim, so every status is retried.
-deadline=$(( SECONDS + api_timeout ))
-until timeout -k 1 5 docker ps >"${probe_log}" 2>&1; do
-  if ! kill -0 "${service_pid}" 2>/dev/null; then
-    fail "podman system service died before serving the API"
-  fi
-  if (( SECONDS >= deadline )); then
-    fail "podman API on ${podman_socket} was unreachable for ${api_timeout}s"
-  fi
-  sleep 0.5
-done
+curl_status=0
+curl --unix-socket "${podman_socket}" --max-time "${api_timeout}" -fsS http://podman/_ping >"${probe_log}" 2>&1 || curl_status=$?
+case "${curl_status}" in
+  0) : ;;
+  28) fail "podman API on ${podman_socket} did not answer within ${api_timeout}s" ;;
+  *) fail "podman system service did not serve the API on ${podman_socket} (curl exit ${curl_status})" ;;
+esac
 
 # The docker CLI resolves DOCKER_HOST ahead of the selected context, so a job
 # with it set would otherwise silently talk to the runner's own dockerd.
@@ -119,7 +109,7 @@ fi
 
 # The runner's dockerd sets the FORWARD policy to DROP, which netavark 2 (podman 6)
 # can't override: it accepts container traffic in its own nftables table.
-# Empty the probe log first so a failure here doesn't dump stale docker ps output.
+# Empty the probe log first so a failure here doesn't dump the stale API probe output.
 : >"${probe_log}"
 if ! sudo iptables -P FORWARD ACCEPT; then
   fail "could not set the iptables FORWARD policy to ACCEPT"
