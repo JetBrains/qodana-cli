@@ -24,7 +24,8 @@ import org.jetbrains.qodana.edict.signals.SignalValidation
 import org.jetbrains.qodana.edict.skills.Registry
 
 internal const val MAX_ARTIFACT_BYTES = 8 * 1024 * 1024
-private val possibleToken = Regex("[0-9a-f]{64}")
+// Look ahead so a hexadecimal prefix cannot hide a token inside a longer run.
+private val possibleToken = Regex("(?=([0-9a-f]{64}))")
 
 internal data class Capability(
     val skill: String, val taskId: String = "", val parent: String = "",
@@ -221,7 +222,20 @@ class Store(directory: Path) : AutoCloseable {
         Files.delete(safePath(name))
     }
 
-    @Synchronized fun redact(text: String): String = possibleToken.replace(text) { if (sha256(it.value) in issuedTokens) "[REDACTED]" else it.value }
+    @Synchronized fun redact(text: String): String {
+        if (issuedTokens.isEmpty()) return text
+        return buildString {
+            var copiedUntil = 0
+            possibleToken.findAll(text).forEach { match ->
+                if (sha256(match.groupValues[1]) in issuedTokens) {
+                    val start = match.range.first
+                    if (start >= copiedUntil) append(text, copiedUntil, start).append("[REDACTED]")
+                    copiedUntil = maxOf(copiedUntil, start + 64)
+                }
+            }
+            append(text, copiedUntil, text.length)
+        }
+    }
     @Synchronized internal fun caller(token: String): String = grants[sha256(token)]?.let { "${it.skill}/${it.taskId.ifEmpty { "manager" }}" } ?: "anonymous"
 
     internal fun authorize(token: String): Capability = lookup(token).also { c ->
