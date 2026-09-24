@@ -63,7 +63,8 @@
         "# requires-python = \"==(?<currentValue>\\d+\\.\\d+\\.\\d+)\""
       ],
       "datasourceTemplate": "python-version",
-      "depNameTemplate": "python"
+      "depNameTemplate": "uv-script-python",
+      "packageNameTemplate": "python"
     }
   ],
   "pep723": {
@@ -88,6 +89,11 @@
     {
       "matchDatasources": ["custom.docker-static"],
       "extractVersion": "^docker-(?<version>\\d+\\.\\d+\\.\\d+)\\.tgz$"
+    },
+    {
+      "description": "uv downloads only the Python builds it knows, so a Python bump may need a uv bump in the same PR.",
+      "matchDepNames": ["astral-sh/uv", "uv-script-python"],
+      "groupName": "uv and its script Python"
     },
     {
       "matchDatasources": ["github-releases"],
