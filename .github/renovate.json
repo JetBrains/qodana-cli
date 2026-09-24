@@ -93,7 +93,8 @@
     {
       "description": "uv downloads only the Python builds it knows, so a Python bump may need a uv bump in the same PR.",
       "matchDepNames": ["astral-sh/uv", "uv-script-python"],
-      "groupName": "uv and its script Python"
+      "groupName": "uv and its script Python",
+      "separateMajorMinor": false
     },
     {
       "description": "config-loader-cli.jar in test.yaml needs Java 21; moving to a new major is a deliberate change.",
