@@ -17,10 +17,6 @@
 package cmd
 
 import (
-	"strings"
-
-	"github.com/JetBrains/qodana-cli/edict"
-	"github.com/JetBrains/qodana-cli/internal/platform/msg"
 	"github.com/spf13/cobra"
 )
 
@@ -39,38 +35,32 @@ func newEdictSetupCodexCommand() *cobra.Command {
 	cliOptions := &edictSetupCodexOptions{}
 	cmd := &cobra.Command{
 		Use:   "setup-codex",
-		Short: "Install edict skills into the local Codex CLI",
-		Long: `Install the edict agent skills bundled with the Qodana CLI (e.g. extract-review-signals)
+		Short: "Install managed Edict skills into the local Codex CLI",
+		Long: `Install the managed Edict skills bundled in the Kotlin application
 into the Codex CLI skills directory, so that 'codex' discovers them automatically.
 
 By default skills are installed user-wide into $CODEX_HOME/skills (~/.codex/skills).
 Use --project to install into <project-dir>/.codex/skills instead.
-Use --managed to install edict_manager and its capability-controlled skill copies.
+Installs edict_manager and its capability-controlled skill copies by default.
+The --managed flag is retained for compatibility.
 Existing skill files are overwritten, so re-running the command updates the skills.`,
+		Args:         cobra.NoArgs,
+		SilenceUsage: true,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			destDir := cliOptions.DestDir
 			if destDir == "" {
 				var err error
-				destDir, err = edict.CodexSkillsDir(cliOptions.Project, cliOptions.ProjectDir)
+				destDir, err = codexSkillsDirectory(cliOptions.Project, cliOptions.ProjectDir)
 				if err != nil {
 					return err
 				}
 			}
-			install := edict.InstallSkills
-			if cliOptions.Managed {
-				install = edict.InstallManagedSkills
-			}
-			installed, err := install(destDir)
-			if err != nil {
-				return err
-			}
-			msg.SuccessMessage("Installed %d skill(s) into %s: %s", len(installed), destDir, strings.Join(installed, ", "))
-			return nil
+			return runEdictJVM(cmd, "install-skills", "--directory", destDir)
 		},
 	}
 	flags := cmd.Flags()
 	flags.BoolVar(&cliOptions.Project, "project", false, "Install into <project-dir>/.codex/skills instead of the user-wide Codex skills directory")
-	flags.BoolVar(&cliOptions.Managed, "managed", false, "Install edict_manager and managed skills requiring edict-mcp capabilities")
+	flags.BoolVar(&cliOptions.Managed, "managed", false, "Compatibility flag; managed skills are always installed")
 	flags.StringVarP(&cliOptions.ProjectDir, "project-dir", "i", ".", "Root directory of the project (used with --project)")
 	flags.StringVar(&cliOptions.DestDir, "dest", "", "Install into a custom directory (overrides --project and the default location)")
 	return cmd
