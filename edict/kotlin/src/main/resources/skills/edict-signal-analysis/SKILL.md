@@ -1,9 +1,9 @@
 ---
-name: managed-edict-signal-analysis
+name: edict-signal-analysis
 description: Inspect one assigned PR discussion or corrective commit for source-backed signals as a read-only managed batch worker.
 ---
 
-# Managed Single-Item Signal Analysis
+# Single-Item Signal Analysis
 
 Follow [the managed protocol](../edict_manager/references/protocol.md)
 and [the signal contract](../edict_manager/references/signals.md). Registry ID: `edict-signal-analysis`. This leaf

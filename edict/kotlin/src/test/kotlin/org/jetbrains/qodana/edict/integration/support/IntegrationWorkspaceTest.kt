@@ -1,20 +1,28 @@
 package org.jetbrains.qodana.edict.integration.support
 
-import java.nio.file.Files
-import java.nio.file.Path
-import kotlin.test.*
 import org.jetbrains.qodana.edict.support.afterSource
 import org.jetbrains.qodana.edict.support.fixturePath
 import org.jetbrains.qodana.edict.support.gitFixture
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.io.TempDir
+import java.nio.file.Files
+import java.nio.file.Path
+import kotlin.test.assertEquals
+import kotlin.test.assertFailsWith
+import kotlin.test.assertFalse
+import kotlin.test.assertTrue
 
 class IntegrationWorkspaceTest {
-    @TempDir lateinit var directory: Path
-    @BeforeEach fun canonicalTemporaryDirectory() { directory = directory.toRealPath() }
+    @TempDir
+    lateinit var directory: Path
+    @BeforeEach
+    fun canonicalTemporaryDirectory() {
+        directory = directory.toRealPath()
+    }
 
-    @Test fun `each run clones committed history and clears only its own previous artifacts`() {
+    @Test
+    fun `each run clones committed history and clears only its own previous artifacts`() {
         val source = gitFixture(directory.resolve("source"))
         val revision = source.resolve("HEAD")
         Files.writeString(source.root.resolve(fixturePath), "dirty source checkout")
@@ -32,7 +40,11 @@ class IntegrationWorkspaceTest {
             Files.writeString(workspace.output.resolve("log/previous.log"), "old")
             Files.writeString(workspace.repository.root.resolve(fixturePath), "modified clone")
             assertFailsWith<IllegalStateException> { open() }
-            assertEquals("old", Files.readString(workspace.output.resolve("log/previous.log")), "Concurrent attempt must not delete the active run")
+            assertEquals(
+                "old",
+                Files.readString(workspace.output.resolve("log/previous.log")),
+                "Concurrent attempt must not delete the active run"
+            )
             workspace.output
         }
         assertTrue(Files.exists(first.resolve("log/previous.log")), "Artifacts survive completion")
@@ -48,13 +60,21 @@ class IntegrationWorkspaceTest {
         assertEquals("do not copy or delete", Files.readString(source.root.resolve("untracked")))
     }
 
-    @Test fun `cleanup refuses redirected output without deleting the target`() {
+    @Test
+    fun `cleanup refuses redirected output without deleting the target`() {
         val target = directory.resolve("target")
         Files.createDirectory(target)
         Files.writeString(target.resolve("keep"), "keep")
         val out = directory.resolve("redirected")
         Files.createSymbolicLink(out, target)
-        assertFailsWith<IllegalArgumentException> { IntegrationWorkspace.open(out, "FixtureTest", "one commit", "unused") }
+        assertFailsWith<IllegalArgumentException> {
+            IntegrationWorkspace.open(
+                out,
+                "FixtureTest",
+                "one commit",
+                "unused"
+            )
+        }
         assertEquals("keep", Files.readString(target.resolve("keep")))
     }
 }

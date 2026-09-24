@@ -98,14 +98,14 @@ class Store(directory: Path) : AutoCloseable {
         require(operations.all { it in c.operations && it in Registry[task.skill].operations }) { "Cannot widen delegated operations" }
         scope.forEach { validArtifactPath(it); require(covered(c.scope, it)) { "Cannot widen scope to $it" } }
         require(operations.isEmpty() || scope.isNotEmpty()) { "Mutation operations require explicit scope" }
-        require(prompt.substringBefore('\n') == "\$managed-${task.skill}" && prompt.substringAfter('\n', "").isNotBlank()) {
-            "Subagent prompt must start with the exact line \$managed-${task.skill} followed by its skill path and bounded task instructions"
+        require(prompt.substringBefore('\n') == "\$${task.skill}" && prompt.substringAfter('\n', "").isNotBlank()) {
+            "Subagent prompt must start with the exact line \$${task.skill} followed by its skill path and bounded task instructions"
         }
         requireNoTokens(prompt)
         update(task.copy(status = "delegated", agentId = "", result = "", operations = operations.toList(), scope = scope.toList(), prompt = prompt))
         val secret = issue(Capability(task.skill, taskId, sha256(token), operations.toList(), scope.toList()))
         return Delegation(secret, taskId, task.skill, Registry.skillPath(task.skill),
-            "\$managed-${task.skill}\nBefore loading any skill, call edict_task_get with exactly these arguments:\n" +
+            "\$${task.skill}\nBefore loading any skill, call edict_task_get with exactly these arguments:\n" +
                 "{\"token\":\"$secret\"}\n" +
                 "The token selects your assigned task. taskId is returned by this call; it is not an input argument. " +
                 "Read the returned prompt and assigned SKILL.md, then execute it using the managed lifecycle. Use only the assigned worker skill; edict_manager is for the root manager.")

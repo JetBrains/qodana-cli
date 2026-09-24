@@ -1,5 +1,5 @@
 ---
-name: managed-edict-inspection-code-review
+name: edict-inspection-code-review
 description: Independently review a managed inspection candidate for implementation, observability, novelty, and diagnostics without state-write permissions.
 ---
 

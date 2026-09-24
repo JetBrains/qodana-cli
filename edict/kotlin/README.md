@@ -22,7 +22,9 @@ the 13 managed skills; `--managed` remains accepted for compatibility. Destinati
 selection still supports `--dest`, `--project`, and `$CODEX_HOME/skills` (falling
 back to `~/.codex/skills`). Installation prints the installed names. Existing
 unrelated skills are preserved, including any old `*-next-*` copies; remove those
-old copies from your Codex skills directory when migrating.
+old copies from your Codex skills directory when migrating. When upgrading from
+prefixed worker names, reinstall the bundle and remove worker directories with
+the previous `managed-` prefix.
 
 From the repository root:
 
@@ -57,7 +59,7 @@ must share one server and one state lock.
 ## What is ported
 
 - All 13 managed skills, their invocation policies, and shared references.
-  Registry IDs use `edict-*`; installed worker names use `managed-edict-*`.
+  Worker registry IDs and installed skill names both use `edict-*`.
   The manager remains `edict_manager`. The `-next-` component is removed from
   names, references, prompts, and registry policies in this project.
 - Manager claims, task assignment retrieval, native worker startup, attenuated

@@ -38,7 +38,7 @@ class AgentLoggingTest {
                 child.id,
                 emptyList(),
                 emptyList(),
-                "\$managed-edict-signal-analysis\nRead /skills/managed-edict-signal-analysis/SKILL.md"
+                "\$edict-signal-analysis\nRead /skills/edict-signal-analysis/SKILL.md"
             )
             val home = directory.resolve("home")
             val sessions = home.resolve("sessions")
@@ -150,7 +150,7 @@ class AgentLoggingTest {
             })
             val task = store.plan()!!.tasks.single()
             val prompt =
-                "\$managed-edict-batch-signal-analysis\nRead /skills/managed-edict-batch-signal-analysis/SKILL.md and inspect HEAD."
+                "\$edict-batch-signal-analysis\nRead /skills/edict-batch-signal-analysis/SKILL.md and inspect HEAD."
             val delegated = call(
                 "edict_delegate",
                 buildJsonObject { put("token", created.text("token")); put("taskId", task.id); put("prompt", prompt) })

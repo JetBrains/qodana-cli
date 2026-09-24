@@ -29,7 +29,13 @@ val bundledJar by tasks.registering(Jar::class) {
     manifest { attributes("Main-Class" to application.mainClass.get(), "Multi-Release" to "true") }
     from(sourceSets.main.get().output)
     from(configurations.runtimeClasspath.map { files -> files.map { if (it.isDirectory) it else zipTree(it) } })
-    exclude("META-INF/*.SF", "META-INF/*.RSA", "META-INF/*.DSA", "module-info.class", "META-INF/versions/**/module-info.class")
+    exclude(
+        "META-INF/*.SF",
+        "META-INF/*.RSA",
+        "META-INF/*.DSA",
+        "module-info.class",
+        "META-INF/versions/**/module-info.class"
+    )
 }
 
 val managedSkills = layout.projectDirectory.dir("src/main/resources/skills")
@@ -53,7 +59,8 @@ tasks.processResources {
 }
 
 tasks.test {
-    val excludeIntegrationTests = providers.gradleProperty("excludeIntegrationTests").map(String::toBoolean).getOrElse(false)
+    val excludeIntegrationTests =
+        providers.gradleProperty("excludeIntegrationTests").map(String::toBoolean).getOrElse(false)
     inputs.property("excludeIntegrationTests", excludeIntegrationTests)
     useJUnitPlatform { if (excludeIntegrationTests) excludeTags("integration") }
     if (!excludeIntegrationTests) {

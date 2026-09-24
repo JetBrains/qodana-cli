@@ -1,9 +1,9 @@
 ---
-name: managed-edict-batch-signal-analysis
+name: edict-batch-signal-analysis
 description: Coordinate delegated analysis of a bounded Git commit selection and persist supported source-correction signals through edict-mcp.
 ---
 
-# Managed Batch Signal Analysis
+# Batch Signal Analysis
 
 Follow [the managed protocol](../edict_manager/references/protocol.md)
 and [the signal contract](../edict_manager/references/signals.md). Registry ID: `edict-batch-signal-analysis`. You

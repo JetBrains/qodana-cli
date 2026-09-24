@@ -19,7 +19,7 @@ conversation. An unavailable server or
 native subagent runtime is a failed prerequisite, not permission to execute stages inline.
 
 1. Read `edict_registry` and the relevant state through `edict_list` / `edict_read`. Use the registered skill
-   IDs in MCP calls; use `$managed-edict-*` in child prompts. Do not load child skills yourself.
+   IDs in MCP calls; use `$edict-*` in child prompts. Do not load child skills yourself.
 2. Explain the chosen high-level pipeline briefly. Select `edict-batch-signal-analysis` for bounded Git commits
    or `edict-pr-signal-analysis` for GitHub/Space PR-review discussions, followed by `edict-run` when generation
    is requested. PR analysis needs provider, owner/project key, repository name, explicit PR numbers or inclusive dates,

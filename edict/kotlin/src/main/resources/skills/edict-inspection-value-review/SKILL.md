@@ -1,5 +1,5 @@
 ---
-name: managed-edict-inspection-value-review
+name: edict-inspection-value-review
 description: Independently review a managed validated inspection candidate for value, precision, and source-evidence coverage without state-write permissions.
 ---
 

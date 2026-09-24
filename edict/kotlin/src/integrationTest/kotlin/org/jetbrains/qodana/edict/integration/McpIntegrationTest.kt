@@ -85,10 +85,11 @@ class McpIntegrationTest : IntegrationTest() {
                     )
                         put(
                             "prompt",
-                            "\$managed-$skill\nRead ${skills.resolve(Registry.skillPath(skill))}. Inspect ${commit.workItemId}, ${commit.parentRevision} -> ${commit.commitRevision} in ${repository.root}."
+                            "\$$skill\nRead ${skills.resolve(Registry.skillPath(skill))}. Inspect ${commit.workItemId}, ${commit.parentRevision} -> ${commit.commitRevision} in ${repository.root}."
                         )
                     })
                     val token = delegated.text("token")
+                    assertEquals("\$$skill", delegated.text("prompt").substringBefore('\n'))
                     val launchArguments = wireJson.parseToJsonElement(delegated.text("prompt").lineSequence().single { it.startsWith("{") }).jsonObject
                     assertEquals(setOf("token"), launchArguments.keys, "Launch instructions must match the token-only task-get schema")
                     assertEquals(token, launchArguments.text("token"))

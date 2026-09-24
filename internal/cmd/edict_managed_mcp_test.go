@@ -77,7 +77,7 @@ func exerciseEdictManagedMCP(t *testing.T, cancelServer bool) {
 	result, err = session.CallTool(ctx, &mcp.CallToolParams{
 		Name: "edict_delegate", Arguments: map[string]any{
 			"token": created.Token, "taskId": created.Plan.Tasks[0].ID,
-			"prompt": "$managed-edict-run\nRead /skills/managed-edict-run/SKILL.md. Process existing signals.",
+			"prompt": "$edict-run\nRead /skills/edict-run/SKILL.md. Process existing signals.",
 		},
 	})
 	if err != nil || result.IsError {
