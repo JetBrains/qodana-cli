@@ -20,6 +20,18 @@ kotlin { jvmToolchain(21) }
 kotlin.sourceSets.test { kotlin.srcDir("src/integrationTest/kotlin") }
 application { mainClass = "org.jetbrains.qodana.edict.MainKt" }
 
+// The Go CLI embeds this self-contained executable alongside its other Java tools.
+val bundledJar by tasks.registering(Jar::class) {
+    archiveFileName = "edict-cli.jar"
+    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+    isPreserveFileTimestamps = false
+    isReproducibleFileOrder = true
+    manifest { attributes("Main-Class" to application.mainClass.get(), "Multi-Release" to "true") }
+    from(sourceSets.main.get().output)
+    from(configurations.runtimeClasspath.map { files -> files.map { if (it.isDirectory) it else zipTree(it) } })
+    exclude("META-INF/*.SF", "META-INF/*.RSA", "META-INF/*.DSA", "module-info.class", "META-INF/versions/**/module-info.class")
+}
+
 val managedSkills = layout.projectDirectory.dir("src/main/resources/skills")
 val skillIndex = layout.buildDirectory.file("generated/skill-index/index.txt")
 val generateSkillIndex by tasks.registering {
