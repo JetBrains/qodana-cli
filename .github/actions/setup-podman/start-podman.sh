@@ -7,6 +7,8 @@ exec 2>&1
 
 socket_timeout=60
 api_timeout=60
+pull_timeout=120
+dns_timeout=30
 
 if ! service_log=$(mktemp "${RUNNER_TEMP:-/tmp}/podman-service.XXXXXX"); then
   echo "::error::could not create a log file under ${RUNNER_TEMP:-/tmp}" >&2
@@ -113,6 +115,24 @@ if ! server_version=$(docker version --format '{{.Server.Version}}'); then
 fi
 if [[ "${server_version}" != "${podman_version}" ]]; then
   fail "docker CLI is served by ${server_version}, not the podman ${podman_version} started here"
+fi
+
+# The runner's dockerd sets the FORWARD policy to DROP, which netavark 2 (podman 6)
+# can't override: it accepts container traffic in its own nftables table.
+# Empty the probe log first so a failure here doesn't dump stale docker ps output.
+: >"${probe_log}"
+if ! sudo iptables -P FORWARD ACCEPT; then
+  fail "could not set the iptables FORWARD policy to ACCEPT"
+fi
+
+# Containers can start and still be unable to resolve names; catch that here
+# rather than as a DNS timeout deep in the first test that builds an image.
+probe_image=docker.io/library/alpine:3.24
+if ! timeout -k 1 "${pull_timeout}" docker pull -q "${probe_image}" >"${probe_log}" 2>&1; then
+  fail "could not pull ${probe_image}"
+fi
+if ! timeout -k 1 "${dns_timeout}" docker run --rm "${probe_image}" nslookup -type=a registry-1.docker.io >"${probe_log}" 2>&1; then
+  fail "a container on the default podman network cannot resolve registry-1.docker.io"
 fi
 
 echo "--- podman system service startup log ---"
