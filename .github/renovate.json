@@ -48,7 +48,7 @@
   ],
   "packageRules": [
     {
-      "description": "Qodana artifacts are only on packages.jetbrains.team; if Central also gets queried, a Central 429 aborts the whole run whenever packages.jetbrains.team fails.",
+      "description": "Qodana artifacts are only on packages.jetbrains.team. Also querying Central lets a Central 429 abort the run whenever packages.jetbrains.team fails.",
       "matchDatasources": ["maven"],
       "matchPackageNames": ["org.jetbrains.qodana:*", "com.jetbrains.qodana:*"],
       "registryUrls": ["https://packages.jetbrains.team/maven/p/ij/intellij-dependencies"]
