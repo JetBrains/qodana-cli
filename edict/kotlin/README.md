@@ -60,20 +60,49 @@ Use a new state root when switching from the old `edict-next-*` registry: existi
 inbox, cluster, and inspection artifacts retain their layout, but old execution
 plans are not automatically migrated to the renamed registry.
 
+## Source organization
+
+Production code lives under `src/main/kotlin/org/jetbrains/qodana/edict`:
+
+| Package | Responsibility |
+| --- | --- |
+| `model` | Serialized execution plans, task assignments and signal evidence |
+| `skills` | Managed skill registry, policies and classpath resources |
+| `store` | Persistent artifacts, capabilities, lifecycle and inbox receipts |
+| `signals` | Structural signal validation and unified-diff parsing |
+| `git` | Exact repository evidence and commit extraction |
+| `reviews` | GitHub/Space clients, review models and prepared PR analysis |
+| `mcp` | Shared stdio/HTTP tool transport and dispatch |
+| `runtime` | Isolated Codex execution and native session collection |
+| `logging` | Redacted, correlated agent activity logs |
+| `common` | JSON configuration/accessors, hashing and bounded subprocesses |
+
+`Main.kt` retains the `org.jetbrains.qodana.edict.MainKt` CLI entrypoint.
+The resource paths and persisted JSON contracts are unchanged by package layout.
+
 ## Tests
 
 Unit tests live in `src/test/kotlin`. Integration tests and their shared harness
 live in `src/integrationTest/kotlin`, in the `org.jetbrains.qodana.edict.integration`
-package. Both run through the standard `test` task; there is no separate live-test
+package and its `support` subpackages. The shared clone/runtime harness, review
+fixtures, compiler transport and generation assertions live alongside the
+integration tests. Unit tests mirror the component packages; unit checks of the
+integration harness also stay in `src/test/kotlin` and need no external checkout.
+Both run through the standard `test` task; there is no separate live-test
 task. Integration tests run by default, including the real Codex extraction test.
 
 ```sh
 # Unit tests only; no Distillery checkout or model access required.
 ./gradlew test -PexcludeIntegrationTests=true
-# All tests, including real model-backed extraction.
-./gradlew test --console=plain
+# All tests, including real model-backed extraction and generation.
+ULTIMATE_EDICT_REPO=/path/to/ultimate.edict.master ./gradlew test --console=plain
 # One integration test, also runnable directly from the IDE.
 ./gradlew test --tests '*LiveCommitExtractionTest' --console=plain
+# Three commits and GitHub/Space review extraction, without an inspection compiler.
+./gradlew test --tests '*LiveThreeCommitExtractionTest' --tests '*LivePrExtractionTest' --console=plain
+# Generation with the same model as the retained Go generation baseline.
+CODEX_MODEL=gpt-5.6-terra ULTIMATE_EDICT_REPO=/path/to/ultimate.edict.master \
+  ./gradlew test --tests '*LivePipelineTest' --console=plain
 ```
 
 Every integration test inherits `IntegrationTest`, which prepares an
@@ -87,7 +116,8 @@ Every integration test inherits `IntegrationTest`, which prepares an
   local clone or Git URL. By default it uses
   `~/prj/examples/distillery-test` when available, otherwise
   `ssh://git@git.jetbrains.team/sa/distillery-test.git`.
-- Checks out pinned commit `16f44bad3587e0f95ec5ff711ba213820de9ed35` on `main`,
+- Checks out the test's pinned commit on `main` (by default
+  `16f44bad3587e0f95ec5ff711ba213820de9ed35`),
   resets and cleans the disposable clone before execution, and uses its
   `testHistoryFixSignals` project and `.edict` state. The original checkout,
   including any uncommitted changes, is never cleaned or modified.
@@ -109,6 +139,22 @@ the host's active provider definition. Without a custom provider,
 `LITELLM_API_KEY` selects LiteLLM; otherwise Codex uses its default provider.
 Existing `auth.json` is copied when needed. Host hooks, MCP servers and permissions
 are not inherited. Missing provider or fixture access fails the integration test.
+
+`LiveThreeCommitExtractionTest` extracts six signals from three pinned corrections:
+string equality, locale-independent normalization, and integer multiplication
+overflow. `LivePrExtractionTest` exercises GitHub and Space through local authenticated
+HTTP fixtures, using the real provider clients and native managed workers. Each
+provider must produce both sides of the review correction with complete provenance.
+
+`LivePipelineTest` extracts the overflow correction, clusters its two signals and
+generates an accepted inspection. It launches the external Ultimate inspection MCP
+server from `ULTIMATE_EDICT_REPO` using Bazel; this is a test prerequisite, not a JVM
+dependency. It uses a disposable compiler project copy and audits compiler calls in
+`log/inspection-mcp.jsonl`. The test independently recompiles the accepted bytes
+against original Git evidence and synthetic examples, and verifies reviews accepted
+that exact inspection hash. Compiler startup output is retained in `log/intellij-mcp.log`.
+Generation allows up to 60 minutes for model execution, including candidate revisions
+and independent reviews. Extraction tests retain their 20-minute execution limit.
 
 Each test's `log/edict/` directory contains:
 
@@ -177,4 +223,5 @@ standalone boundaries:
 IntelliJ `PatchReader` is replaced by `UnifiedDiff`; EEL and project services are
 replaced by Java NIO, argument-array Git subprocesses, and explicit host objects.
 Unit tests build minimal local Git histories. Integration tests share the pinned
-Distillery clone fixture and do not depend on Ultimate.
+Distillery clone fixture. Only the generation integration test requires an external
+Ultimate checkout and its inspection compiler.

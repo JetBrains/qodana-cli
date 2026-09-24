@@ -1,10 +1,18 @@
 package org.jetbrains.qodana.edict.integration
 
-import org.jetbrains.qodana.edict.*
-
-import org.junit.jupiter.api.Test
 import java.nio.file.Files
 import kotlin.test.*
+import org.jetbrains.qodana.edict.common.json
+import org.jetbrains.qodana.edict.integration.support.IntegrationTest
+import org.jetbrains.qodana.edict.integration.support.historyBefore
+import org.jetbrains.qodana.edict.integration.support.historyCommit
+import org.jetbrains.qodana.edict.integration.support.historyPath
+import org.jetbrains.qodana.edict.integration.support.verifyAgentLogs
+import org.jetbrains.qodana.edict.integration.support.verifyRuntimeWorkers
+import org.jetbrains.qodana.edict.model.Signal
+import org.jetbrains.qodana.edict.model.SignalLabel
+import org.jetbrains.qodana.edict.support.batch
+import org.junit.jupiter.api.Test
 
 class LiveCommitExtractionTest : IntegrationTest() {
     @Test

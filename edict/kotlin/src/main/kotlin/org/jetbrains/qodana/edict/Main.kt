@@ -4,6 +4,9 @@ package org.jetbrains.qodana.edict
 import java.nio.file.Path
 import java.util.concurrent.CountDownLatch
 import kotlin.system.exitProcess
+import org.jetbrains.qodana.edict.mcp.McpServer
+import org.jetbrains.qodana.edict.skills.Skills
+import org.jetbrains.qodana.edict.store.Store
 
 fun main(args: Array<String>) {
     try {
