@@ -36,7 +36,7 @@ jobs:
       - name: golangci-lint
         uses: golangci/golangci-lint-action@v9
         with:
-          version: v2.6
+          version: v2.6.2
       - uses: github/codeql-action/init@v4
         with:
           languages: go
@@ -49,22 +49,26 @@ jobs:
     with:
       os: ${{ matrix.os }}
       container-engine: ${{ matrix.container-engine }}
+      container-tests: ${{ matrix.container-tests || false }}
     secrets: inherit
     strategy:
       matrix:
         include:
           - os: macos-15-large  # Only intel-based macOS runners support virtualization for Docker.
-            container-engine: docker@latest
+            # renovate: datasource=custom.docker-static depName=docker
+            container-engine: &docker docker@29.8.1
           - os: windows-latest
-            container-engine: docker@latest
+            container-engine: *docker
           - os: ubuntu-latest
-            container-engine: docker@latest
+            container-engine: *docker
+            container-tests: true
           - os: ubuntu-latest
+            # renovate: datasource=github-releases depName=mgoltzsche/podman-static
             container-engine: podman@6.1.2
           - os: ubuntu-latest
             container-engine: docker@v25.0  # See also: https://endoflife.date/docker-engine
           - os: ubuntu-24.04-arm        # arm64
-            container-engine: docker@latest
+            container-engine: *docker
           - os: macos-15                 # arm64 — no Docker (nested virt unsupported on GH runners)
             container-engine: none
           - os: windows-11-arm           # arm64 — no Docker (no static binaries for Windows ARM64)
@@ -157,7 +161,7 @@ jobs:
         uses: goreleaser/goreleaser-action@v6
         with:
           distribution: goreleaser-pro
-          version: "~> v2"
+          version: v2.18.2
           args: build --snapshot --clean --id cli
         env:
           GORELEASER_KEY: ${{ secrets.GORELEASER_KEY }}
@@ -170,7 +174,7 @@ jobs:
         uses: goreleaser/goreleaser-action@v6
         with:
           distribution: goreleaser-pro
-          version: "~> v2"
+          version: v2.18.2
           args: release --nightly --clean --skip=chocolatey,nfpm,homebrew,scoop,snapcraft
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

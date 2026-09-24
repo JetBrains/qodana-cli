@@ -3,7 +3,6 @@ description: Install Podman (v4.9.4 or newer), point the Docker CLI at it, and s
 inputs:
   version:
     required: true
-    default: latest
     description: Either "latest" or a full "[v]major.minor.patch" version.
 runs:
   using: composite
