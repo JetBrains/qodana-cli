@@ -382,10 +382,22 @@ class McpServer(private val store: Store, provider: ReviewProvider = ReviewClien
         val server = HttpServer.create(InetSocketAddress("127.0.0.1", port), 0)
         val executor = Executors.newCachedThreadPool()
         server.executor = executor
+        val portSuffix = if (server.address.port == 80) "" else ":${server.address.port}"
+        val allowedOrigins = setOf("http://127.0.0.1$portSuffix", "http://localhost$portSuffix")
         server.createContext("/mcp") { exchange ->
             exchange.use {
+                // Native MCP clients omit Origin; browsers must use this server's own origin.
+                val origins = exchange.requestHeaders["Origin"]
+                if (origins != null && (origins.size != 1 || origins.single() !in allowedOrigins)) {
+                    exchange.sendResponseHeaders(403, -1); return@createContext
+                }
                 if (exchange.requestMethod != "POST") {
                     exchange.sendResponseHeaders(405, -1); return@createContext
+                }
+                val contentTypes = exchange.requestHeaders["Content-Type"]
+                if (contentTypes?.size != 1 ||
+                    !contentTypes.single().substringBefore(';').trim().equals("application/json", ignoreCase = true)) {
+                    exchange.sendResponseHeaders(415, -1); return@createContext
                 }
                 val bytes = exchange.requestBody.readNBytes(20 * 1024 * 1024 + 1)
                 if (bytes.size > 20 * 1024 * 1024) {
