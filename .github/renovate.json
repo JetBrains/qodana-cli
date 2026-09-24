@@ -96,6 +96,11 @@
       "groupName": "uv and its script Python"
     },
     {
+      "description": "config-loader-cli.jar in test.yaml needs Java 21; moving to a new major is a deliberate change.",
+      "matchDepNames": ["java-jdk"],
+      "allowedVersions": "<22"
+    },
+    {
       "matchDatasources": ["github-releases"],
       "matchPackageNames": ["mgoltzsche/podman-static"],
       "extractVersion": "^v(?<version>.*)$"
