@@ -17,6 +17,8 @@ runs:
       shell: bash
       env:
         QUERY: ${{ inputs.version }}
+        # Use the exact requires-python build, not whatever Python the runner image has.
+        UV_PYTHON_PREFERENCE: only-managed
       run: | # shell
         set -euo pipefail
         version=$(uv run --script "${GITHUB_ACTION_PATH}/normalize-version.py")

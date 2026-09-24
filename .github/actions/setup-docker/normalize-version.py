@@ -1,5 +1,5 @@
 # /// script
-# requires-python = "==3.13.*"
+# requires-python = "==3.13.15"
 # dependencies = [
 #     "htmllistparse==0.6.1",
 #     "natsort==8.4.0",

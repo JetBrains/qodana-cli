@@ -53,6 +53,17 @@
       "matchStrings": [
         "#\\s*renovate:\\s*datasource=(?<datasource>\\S+) depName=(?<depName>\\S+)\\s+container-engine: (?:&\\S+ )?[a-z]+@(?<currentValue>\\S+)"
       ]
+    },
+    {
+      "description": "The pep723 manager doesn't track requires-python.",
+      "fileMatch": [
+        "^\\.github/actions/setup-docker/normalize-version\\.py$"
+      ],
+      "matchStrings": [
+        "# requires-python = \"==(?<currentValue>\\d+\\.\\d+\\.\\d+)\""
+      ],
+      "datasourceTemplate": "python-version",
+      "depNameTemplate": "python"
     }
   ],
   "pep723": {
