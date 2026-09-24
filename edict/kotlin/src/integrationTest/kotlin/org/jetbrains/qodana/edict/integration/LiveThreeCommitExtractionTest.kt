@@ -1,15 +1,11 @@
 // Copyright 2026 JetBrains s.r.o. Licensed under the Apache License, Version 2.0.
 package org.jetbrains.qodana.edict.integration
 
-import kotlin.test.*
-import org.jetbrains.qodana.edict.integration.support.IntegrationTest
-import org.jetbrains.qodana.edict.integration.support.threeCommitExpectations
-import org.jetbrains.qodana.edict.integration.support.threeCommitHead
-import org.jetbrains.qodana.edict.integration.support.threeCommitProject
-import org.jetbrains.qodana.edict.integration.support.verifyCommitSignals
-import org.jetbrains.qodana.edict.integration.support.verifyManagedRun
-import org.jetbrains.qodana.edict.support.batch
+import org.jetbrains.qodana.edict.integration.support.*
 import org.junit.jupiter.api.Test
+import kotlin.test.assertContains
+import kotlin.test.assertEquals
+import kotlin.test.assertNotNull
 
 class LiveThreeCommitExtractionTest : IntegrationTest() {
     override val fixtureRevision = threeCommitHead

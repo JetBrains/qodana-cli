@@ -1,9 +1,9 @@
 ---
-name: managed-edict-generation
+name: edict-generation
 description: Delegate one isolated managed generation worker per selected Pending cluster and collect durable outcomes.
 ---
 
-# Managed Edict Generation
+# Edict Generation
 
 Follow [the managed protocol](../edict_manager/references/protocol.md). Registry ID: `edict-generation`. Coordinate
 only; do not edit state.

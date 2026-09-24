@@ -1,24 +1,37 @@
 // Copyright 2026 JetBrains s.r.o. Licensed under the Apache License, Version 2.0.
 package org.jetbrains.qodana.edict.integration.support.inspection
 
-import java.nio.file.Files
-import java.nio.file.Path
-import kotlin.test.*
-import kotlinx.serialization.json.*
+import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.buildJsonObject
+import kotlinx.serialization.json.put
+import kotlinx.serialization.json.putJsonArray
 import org.jetbrains.qodana.edict.common.sha256
 import org.jetbrains.qodana.edict.common.wireJson
 import org.jetbrains.qodana.edict.model.Plan
 import org.jetbrains.qodana.edict.model.Task
 import org.junit.jupiter.api.io.TempDir
+import java.nio.file.Files
+import java.nio.file.Path
+import kotlin.test.Test
+import kotlin.test.assertEquals
+import kotlin.test.assertFailsWith
+import kotlin.test.assertTrue
 
 class InspectionResultTest {
-    @TempDir lateinit var directory: Path
+    @TempDir
+    lateinit var directory: Path
 
-    @Test fun `review receipts use their JSON content regardless of filename extension`() {
+    @Test
+    fun `review receipts use their JSON content regardless of filename extension`() {
         val hash = sha256("persisted accepted inspection")
-        fun receipt(path: String, candidateHash: String = hash, status: String = "ACCEPT") = directory.resolve(path).also {
-            Files.writeString(it, """{"candidateHash":"$candidateHash","status":"$status","findings":[],"summary":"review"}""")
-        }
+        fun receipt(path: String, candidateHash: String = hash, status: String = "ACCEPT") =
+            directory.resolve(path).also {
+                Files.writeString(
+                    it,
+                    """{"candidateHash":"$candidateHash","status":"$status","findings":[],"summary":"review"}"""
+                )
+            }
+
         val code = receipt("code-review.md")
         val value = receipt("value-review")
         receipt("rejected.json", status = "REJECT")
@@ -28,10 +41,20 @@ class InspectionResultTest {
         assertEquals(setOf(code, value), acceptedCandidateReviews(directory, hash).toSet())
     }
 
-    @Test fun `decode compiler responses from text and structured MCP content`() {
+    @Test
+    fun `decode compiler responses from text and structured MCP content`() {
         val output = """{"compilationSuccess":true,"foundProblems":[{"lineNumber":5}]}"""
         val envelopes = listOf(
-            buildJsonObject { putJsonArray("content") { add(buildJsonObject { put("type", "text"); put("text", output) }) } },
+            buildJsonObject {
+                putJsonArray("content") {
+                    add(buildJsonObject {
+                        put("type", "text"); put(
+                        "text",
+                        output
+                    )
+                    })
+                }
+            },
             buildJsonObject { put("structuredContent", wireJson.parseToJsonElement(output)) },
         )
         envelopes.forEach {
@@ -43,19 +66,32 @@ class InspectionResultTest {
         assertFailsWith<IllegalStateException> { decodeInspectionResult(JsonObject(emptyMap())) }
     }
 
-    @Test fun `completed final plan cannot conceal invalid stage execution`() {
+    @Test
+    fun `completed final plan cannot conceal invalid stage execution`() {
         val ids = listOf("extract", "cluster", "generate")
         fun snapshot(vararg states: String) = Plan(request = "pipeline", tasks = states.mapIndexed { index, status ->
             Task(id = ids[index], skill = ids[index], title = ids[index], status = status)
         })
+
         val finished = snapshot("completed", "completed", "completed")
         val invalid = listOf(
             listOf(snapshot("running", "running", "pending"), snapshot("completed", "completed", "running"), finished),
-            listOf(snapshot("pending", "running", "pending"), snapshot("running", "completed", "pending"), snapshot("completed", "completed", "running"), finished),
+            listOf(
+                snapshot("pending", "running", "pending"),
+                snapshot("running", "completed", "pending"),
+                snapshot("completed", "completed", "running"),
+                finished
+            ),
             listOf(finished),
         )
         invalid.forEach { assertTrue(stageOrderProblems(it, ids).isNotEmpty()) }
-        assertTrue(stageOrderProblems(listOf(snapshot("running", "pending", "pending"), snapshot("completed", "running", "pending"),
-            snapshot("completed", "completed", "running"), finished), ids).isEmpty())
+        assertTrue(
+            stageOrderProblems(
+                listOf(
+                    snapshot("running", "pending", "pending"), snapshot("completed", "running", "pending"),
+                    snapshot("completed", "completed", "running"), finished
+                ), ids
+            ).isEmpty()
+        )
     }
 }

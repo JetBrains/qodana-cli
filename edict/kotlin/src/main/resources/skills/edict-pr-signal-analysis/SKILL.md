@@ -1,9 +1,9 @@
 ---
-name: managed-edict-pr-signal-analysis
+name: edict-pr-signal-analysis
 description: Extract source-backed signals from a bounded selection of merged GitHub pull-request or Space review discussions using edict-mcp provider data and delegated evidence analysis.
 ---
 
-# Managed PR Review Signal Analysis
+# PR Review Signal Analysis
 
 Follow [the managed protocol](../edict_manager/references/protocol.md) and
 [the signal contract](../edict_manager/references/signals.md). Registry ID: `edict-pr-signal-analysis`.
@@ -22,7 +22,7 @@ failed prerequisite. Commit-only requests belong to `edict-batch-signal-analysis
    Preserve the prepared order. Require the union to contain exactly `totalWorkItemCount` distinct IDs. Page summaries
    are for assignment, never a substitute for reading discussions. Stop on incomplete pagination.
 3. For every work item, including a singleton, add and delegate a fresh `edict-signal-analysis` task with
-   `operations: []`. Start its stored instructions with `$managed-edict-signal-analysis`, include the absolute
+   `operations: []`. Start its stored instructions with `$edict-signal-analysis`, include the absolute
    installed skill path, `batchId`, exact `workItemId`, source checkout and private scratch. Require the worker to fetch
    the complete package from `edict_get_pr_analysis_item` using its own token. Pass only `edict_delegate`'s returned
    launch prompt to the native subagent. Use worker waves within available concurrency.

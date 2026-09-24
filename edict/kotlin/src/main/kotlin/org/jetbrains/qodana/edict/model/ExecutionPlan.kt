@@ -7,6 +7,7 @@ import org.jetbrains.qodana.edict.common.sha256
 
 @Serializable
 data class Step(val skill: String, val title: String)
+
 @Serializable
 data class Task(
     val id: String = randomId(), val parentId: String = "", val skill: String, val title: String,
@@ -16,10 +17,13 @@ data class Task(
 
 @Serializable
 data class Plan(val id: String = randomId(), val request: String, val revision: Int = 0, val tasks: List<Task>)
+
 @Serializable
 data class PlanCreation(val plan: Plan, val token: String)
+
 @Serializable
 data class StateFile(val path: String, val content: String, val hash: String = sha256(content))
+
 @Serializable
 data class Delegation(
     val token: String,

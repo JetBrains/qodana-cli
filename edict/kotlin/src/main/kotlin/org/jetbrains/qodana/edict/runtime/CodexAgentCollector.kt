@@ -1,21 +1,23 @@
 // Copyright 2026 JetBrains s.r.o. Licensed under the Apache License, Version 2.0.
 package org.jetbrains.qodana.edict.runtime
 
-import java.io.RandomAccessFile
-import java.nio.file.Files
-import java.nio.file.Path
-import java.time.Instant
-import kotlinx.serialization.json.*
+import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.jsonObject
 import org.jetbrains.qodana.edict.common.array
 import org.jetbrains.qodana.edict.common.obj
 import org.jetbrains.qodana.edict.common.text
 import org.jetbrains.qodana.edict.common.wireJson
 import org.jetbrains.qodana.edict.logging.AgentLogger
+import java.io.RandomAccessFile
+import java.nio.file.Files
+import java.nio.file.Path
+import java.time.Instant
 
 /** Tails runtime receipts once, including descendants identified by native thread ancestry. */
 internal class CodexAgentCollector(private val home: Path, stdout: Path, private val logger: AgentLogger) {
     private val output = JsonlTail(stdout)
     private var root = ""
+
     private class Session(path: Path) {
         val tail = JsonlTail(path)
         var id = ""
@@ -31,13 +33,21 @@ internal class CodexAgentCollector(private val home: Path, stdout: Path, private
                 agentPath = spawn.text("agent_path")
             }
             if (event.text("type") != "response_item" || payload.text("type") != "message" ||
-                payload.text("role") != "assistant" || payload.text("phase") !in listOf("", "commentary", "final", "final_answer")) return
-            val text = payload.array("content").filter { it.text("type") == "output_text" }.joinToString("\n") { it.text("text") }
+                payload.text("role") != "assistant" || payload.text("phase") !in listOf(
+                    "",
+                    "commentary",
+                    "final",
+                    "final_answer"
+                )
+            ) return
+            val text = payload.array("content").filter { it.text("type") == "output_text" }
+                .joinToString("\n") { it.text("text") }
             if (text.isNotBlank()) messages += AgentLogger.Message(
                 Instant.parse(event.text("timestamp")), id, agentPath, phase = payload.text("phase"), text = text,
             )
         }
     }
+
     private val sessions = mutableMapOf<Path, Session>()
 
     fun scan(final: Boolean = false) {
@@ -56,7 +66,15 @@ internal class CodexAgentCollector(private val home: Path, stdout: Path, private
             sessions.values.filter { it.id.isNotBlank() && it.parent in allowed }.forEach { allowed += it.id }
         } while (size != allowed.size)
         sessions.values.filter { it.id in allowed }.forEach { session ->
-            session.messages.forEach { logger.record(it.copy(agentId = session.id, agentPath = session.agentPath, root = session.id == root)) }
+            session.messages.forEach {
+                logger.record(
+                    it.copy(
+                        agentId = session.id,
+                        agentPath = session.agentPath,
+                        root = session.id == root
+                    )
+                )
+            }
             session.messages.clear()
         }
         logger.flush(final)

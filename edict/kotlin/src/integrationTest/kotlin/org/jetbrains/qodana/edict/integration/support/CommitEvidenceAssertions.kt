@@ -1,17 +1,17 @@
 // Copyright 2026 JetBrains s.r.o. Licensed under the Apache License, Version 2.0.
 package org.jetbrains.qodana.edict.integration.support
 
-import java.nio.file.Files
-import kotlin.test.*
 import org.jetbrains.qodana.edict.common.json
 import org.jetbrains.qodana.edict.git.GitRepository
-import org.jetbrains.qodana.edict.main
 import org.jetbrains.qodana.edict.model.Plan
-import org.jetbrains.qodana.edict.model.Signal
 import org.jetbrains.qodana.edict.model.SignalLabel
 import org.jetbrains.qodana.edict.model.StateFile
 import org.jetbrains.qodana.edict.runtime.CodexRunner
 import org.jetbrains.qodana.edict.signals.SignalValidation
+import java.nio.file.Files
+import kotlin.test.assertEquals
+import kotlin.test.assertFalse
+import kotlin.test.assertTrue
 
 internal const val threeCommitProject = "testExtractSignalsFromThreeCommits"
 internal const val threeCommitBaseline = "26b38d1203a6697bac3ec38659f25ed6e6f50f05"
@@ -48,20 +48,34 @@ internal fun verifyCommitSignals(repository: GitRepository, files: List<StateFil
     }
     assertEquals(signals.size, signals.map { it.id }.distinct().size, "Signal IDs must be unique")
     assertEquals(signals.size, signals.map { it.idempotencyKey }.distinct().size, "Evidence must not be duplicated")
-    assertEquals(expected.map { it.revision }.toSet(), signals.map { it.source.commitRevision }.toSet(), "Commit selection differs")
+    assertEquals(
+        expected.map { it.revision }.toSet(),
+        signals.map { it.source.commitRevision }.toSet(),
+        "Commit selection differs"
+    )
     expected.forEach { commit ->
         val pair = signals.filter { it.source.commitRevision == commit.revision }
         assertEquals(2, pair.size, "Signal count for ${commit.revision}")
-        assertEquals(SignalLabel.entries.toSet(), pair.map { it.label }.toSet(), "Evidence labels for ${commit.revision}")
+        assertEquals(
+            SignalLabel.entries.toSet(),
+            pair.map { it.label }.toSet(),
+            "Evidence labels for ${commit.revision}"
+        )
         pair.forEach { signal ->
             assertEquals("FromCommit", signal.source.type)
             assertEquals(commit.parent, signal.source.parentRevision)
             assertEquals(commit.path, signal.fileRevision.path)
-            assertEquals(repository.diff(commit.parent, commit.revision, listOf(commit.path)), signal.source.diffPositiveToNegative)
+            assertEquals(
+                repository.diff(commit.parent, commit.revision, listOf(commit.path)),
+                signal.source.diffPositiveToNegative
+            )
             val positive = signal.label == SignalLabel.POSITIVE
             assertEquals(if (positive) commit.parent else commit.revision, signal.fileRevision.revision)
             val line = if (positive) commit.positiveLine else commit.negativeLine
-            assertTrue(signal.fileRevision.expectedRanges.any { line in it.start..it.end }, "${signal.id} must cover corrected line $line")
+            assertTrue(
+                signal.fileRevision.expectedRanges.any { line in it.start..it.end },
+                "${signal.id} must cover corrected line $line"
+            )
         }
     }
 }
@@ -73,12 +87,19 @@ internal fun verifyManagedRun(workspace: IntegrationWorkspace, runtime: CodexRun
         assertTrue(task.agentId.isNotBlank(), "Every managed task needs a native agent")
         assertTrue(task.result.isNotBlank(), "Completed ${task.skill} task must retain its result")
     }
-    assertEquals(plan.tasks.size, plan.tasks.map { it.agentId }.distinct().size, "Each task must use a distinct native worker")
+    assertEquals(
+        plan.tasks.size,
+        plan.tasks.map { it.agentId }.distinct().size,
+        "Each task must use a distinct native worker"
+    )
     val persisted = json.decodeFromString<Plan>(Files.readString(workspace.state.resolve("plans/${plan.id}.json")))
     assertEquals(plan, persisted, "Completed plan must be persisted without lag")
     val log = Files.readString(workspace.logs.resolve("edict-mcp-system.log"))
     val lifecycle = Regex("] edict_(?:plan_create|delegate|task_[a-z]+) ")
-    assertFalse(log.lineSequence().any { lifecycle.containsMatchIn(it) && it.contains("\"isError\":true") }, "Managed lifecycle failed; inspect ${workspace.logs}")
+    assertFalse(
+        log.lineSequence().any { lifecycle.containsMatchIn(it) && it.contains("\"isError\":true") },
+        "Managed lifecycle failed; inspect ${workspace.logs}"
+    )
     assertFalse(log.contains("] edict_task_cancel "), "Healthy runs must not hide failed workers behind cancellation")
     assertFalse(log.lineSequence().any {
         it.contains("] edict_task_finish ") && it.substringBefore(" => ").contains("\"status\":\"failed\"")

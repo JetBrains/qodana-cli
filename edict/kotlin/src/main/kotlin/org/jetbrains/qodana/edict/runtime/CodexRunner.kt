@@ -1,16 +1,16 @@
 // Copyright 2026 JetBrains s.r.o. Licensed under the Apache License, Version 2.0.
 package org.jetbrains.qodana.edict.runtime
 
-import java.nio.file.Files
-import java.nio.file.Path
-import java.nio.file.StandardCopyOption
-import java.nio.file.attribute.PosixFilePermissions
-import java.util.concurrent.TimeUnit
 import kotlinx.serialization.json.JsonPrimitive
 import org.jetbrains.qodana.edict.logging.AgentLogger
 import org.jetbrains.qodana.edict.skills.Skills
 import org.tomlj.Toml
 import org.tomlj.TomlTable
+import java.nio.file.Files
+import java.nio.file.Path
+import java.nio.file.StandardCopyOption
+import java.nio.file.attribute.PosixFilePermissions
+import java.util.concurrent.TimeUnit
 
 /** Isolated host for managed-skill tests and integrations. MCP must run outside the agent filesystem sandbox. */
 class CodexRunner(
@@ -32,10 +32,14 @@ class CodexRunner(
         require("edict-mcp" !in additionalMcpServers) { "Additional tools must not replace the managed Edict server" }
         listOf(output, home, scratch, trace).forEach {
             Files.createDirectories(it)
-            if (Files.getFileStore(it).supportsFileAttributeView("posix")) Files.setPosixFilePermissions(it, PosixFilePermissions.fromString("rwx------"))
+            if (Files.getFileStore(it).supportsFileAttributeView("posix")) Files.setPosixFilePermissions(
+                it,
+                PosixFilePermissions.fromString("rwx------")
+            )
         }
         Skills.install(home.resolve("skills"))
-        val sourceHome = Path.of(System.getenv("CODEX_HOME") ?: Path.of(System.getProperty("user.home"), ".codex").toString())
+        val sourceHome =
+            Path.of(System.getenv("CODEX_HOME") ?: Path.of(System.getProperty("user.home"), ".codex").toString())
         val inherited = providerConfiguration(sourceHome.resolve("config.toml"))
         val litellm = inherited == null && !System.getenv("LITELLM_API_KEY").isNullOrBlank()
         val provider = inherited ?: if (litellm) """
@@ -50,7 +54,8 @@ class CodexRunner(
             val auth = sourceHome.resolve("auth.json")
             if (Files.exists(auth)) Files.copy(auth, home.resolve("auth.json"), StandardCopyOption.REPLACE_EXISTING)
         }
-        Files.writeString(home.resolve("config.toml"), """
+        Files.writeString(
+            home.resolve("config.toml"), """
             approval_policy = "never"
             default_permissions = "edict-test"
             model_reasoning_effort = "high"
@@ -83,13 +88,13 @@ class CodexRunner(
             url = ${quote(mcpUrl)}
             default_tools_approval_mode = "approve"
         """.trimIndent() + "\n" + additionalMcpServers.entries.joinToString("\n") { (name, url) ->
-            """
+                """
                 [mcp_servers.${quote(name)}]
                 url = ${quote(url)}
                 default_tools_approval_mode = "approve"
                 tool_timeout_sec = 300
             """.trimIndent() + "\n"
-        })
+            })
     }
 
     // Inherit only the selected provider, never unrelated hooks, MCP servers, skills or host permissions.
@@ -105,6 +110,7 @@ class CodexRunner(
             is org.tomlj.TomlArray -> (0 until v.size()).joinToString(", ", "[", "]") { value(v.get(it)) }
             else -> error("Unsupported provider configuration value")
         }
+
         fun table(section: String, table: TomlTable): String = buildString {
             appendLine("[$section]")
             table.keySet().forEach { key ->
@@ -123,10 +129,13 @@ class CodexRunner(
         val stderr = trace.resolve("stderr.log")
         val last = trace.resolve("last-message.txt")
         Files.deleteIfExists(last)
-        val process = ProcessBuilder(executable, "exec", "--dangerously-bypass-hook-trust", "--json", "--skip-git-repo-check", "--model", model,
-            "--output-last-message", last.toString(), prompt)
+        val process = ProcessBuilder(
+            executable, "exec", "--dangerously-bypass-hook-trust", "--json", "--skip-git-repo-check", "--model", model,
+            "--output-last-message", last.toString(), prompt
+        )
             .directory(project.toFile()).redirectOutput(stdout.toFile()).redirectError(stderr.toFile())
-            .apply { environment()["CODEX_HOME"] = home.toString(); environment()["TMPDIR"] = scratch.toString() }.start()
+            .apply { environment()["CODEX_HOME"] = home.toString(); environment()["TMPDIR"] = scratch.toString() }
+            .start()
         process.outputStream.close()
         val collector = agentLogger?.let { CodexAgentCollector(home, stdout, it) }
         var failure: Throwable? = null
@@ -148,24 +157,48 @@ class CodexRunner(
                 process.destroyForcibly()
                 process.waitFor(5, TimeUnit.SECONDS)
             }
-            try { collector?.scan(final = true) }
-            catch (e: Exception) { if (failure != null) failure.addSuppressed(e) else throw e }
+            try {
+                collector?.scan(final = true)
+            } catch (e: Exception) {
+                if (failure != null) failure.addSuppressed(e) else throw e
+            }
         }
     }
 
     fun verifySandbox() {
         val allowed = scratch.resolve("sandbox-write-probe")
         val denied = state.resolve("unmanaged-write-probe")
-        val process = ProcessBuilder(executable, "sandbox", "-P", "edict-test", "-C", project.toString(), "--", "/bin/sh", "-c",
-            "printf allowed > \"\$1\" && printf forbidden > \"\$2\"", "edict-sandbox-probe", allowed.toString(), denied.toString())
-            .redirectOutput(trace.resolve("sandbox.stdout").toFile()).redirectError(trace.resolve("sandbox.stderr").toFile())
-            .apply { environment()["CODEX_HOME"] = home.toString(); environment()["TMPDIR"] = scratch.toString() }.start()
+        val process = ProcessBuilder(
+            executable,
+            "sandbox",
+            "-P",
+            "edict-test",
+            "-C",
+            project.toString(),
+            "--",
+            "/bin/sh",
+            "-c",
+            "printf allowed > \"\$1\" && printf forbidden > \"\$2\"",
+            "edict-sandbox-probe",
+            allowed.toString(),
+            denied.toString()
+        )
+            .redirectOutput(trace.resolve("sandbox.stdout").toFile())
+            .redirectError(trace.resolve("sandbox.stderr").toFile())
+            .apply { environment()["CODEX_HOME"] = home.toString(); environment()["TMPDIR"] = scratch.toString() }
+            .start()
         process.outputStream.close()
         try {
             check(process.waitFor(30, TimeUnit.SECONDS)) { "Sandbox probe timed out" }
-            check(process.exitValue() != 0 && Files.exists(allowed) && Files.readString(allowed) == "allowed" && !Files.exists(denied)) {
+            check(
+                process.exitValue() != 0 && Files.exists(allowed) && Files.readString(allowed) == "allowed" && !Files.exists(
+                    denied
+                )
+            ) {
                 "Codex sandbox must permit scratch writes and deny direct state writes; inspect $trace"
             }
-        } finally { if (process.isAlive) process.destroyForcibly(); Files.deleteIfExists(allowed) }
+        } finally {
+            if (process.isAlive) process.destroyForcibly(); Files.deleteIfExists(allowed)
+        }
     }
 }

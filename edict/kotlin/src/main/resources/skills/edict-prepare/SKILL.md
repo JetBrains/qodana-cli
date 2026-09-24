@@ -1,9 +1,9 @@
 ---
-name: managed-edict-prepare
+name: edict-prepare
 description: Validate inputs and capture a bounded read-only inbox snapshot for a managed Edict run.
 ---
 
-# Managed Edict Preparation
+# Edict Preparation
 
 Follow [the managed protocol](../edict_manager/references/protocol.md). Registry ID: `edict-prepare`. This leaf has
 no state-write operations.

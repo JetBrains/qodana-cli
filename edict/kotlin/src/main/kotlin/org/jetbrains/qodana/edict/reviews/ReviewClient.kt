@@ -1,6 +1,16 @@
 // Copyright 2026 JetBrains s.r.o. Licensed under the Apache License, Version 2.0.
 package org.jetbrains.qodana.edict.reviews
 
+import kotlinx.serialization.json.JsonElement
+import kotlinx.serialization.json.JsonPrimitive
+import kotlinx.serialization.json.jsonArray
+import kotlinx.serialization.json.jsonObject
+import org.jetbrains.qodana.edict.common.number
+import org.jetbrains.qodana.edict.common.runProcess
+import org.jetbrains.qodana.edict.common.text
+import org.jetbrains.qodana.edict.common.wireJson
+import org.jetbrains.qodana.edict.signals.validRevision
+import org.jetbrains.qodana.edict.signals.validSourcePath
 import java.net.URI
 import java.net.URLEncoder
 import java.net.http.HttpClient
@@ -10,13 +20,6 @@ import java.nio.file.Files
 import java.nio.file.NoSuchFileException
 import java.time.Duration
 import java.util.*
-import kotlinx.serialization.json.*
-import org.jetbrains.qodana.edict.common.number
-import org.jetbrains.qodana.edict.common.runProcess
-import org.jetbrains.qodana.edict.common.text
-import org.jetbrains.qodana.edict.common.wireJson
-import org.jetbrains.qodana.edict.signals.validRevision
-import org.jetbrains.qodana.edict.signals.validSourcePath
 
 internal fun urlPart(value: String): String = URLEncoder.encode(value, Charsets.UTF_8).replace("+", "%20")
 internal fun isBot(name: String, kind: String): Boolean = kind.equals("bot", true) || name.lowercase().let {

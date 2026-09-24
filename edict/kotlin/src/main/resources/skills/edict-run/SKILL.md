@@ -1,9 +1,9 @@
 ---
-name: managed-edict-run
+name: edict-run
 description: Execute the managed preparation, distribution, and generation pipeline as a delegated edict_manager worker.
 ---
 
-# Managed Edict Run
+# Edict Run
 
 Follow [the managed protocol](../edict_manager/references/protocol.md). Registry ID: `edict-run`. Start your
 assigned task. Coordinate only; every stage runs in its own native subagent.

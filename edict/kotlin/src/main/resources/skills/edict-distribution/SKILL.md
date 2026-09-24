@@ -1,9 +1,9 @@
 ---
-name: managed-edict-distribution
+name: edict-distribution
 description: Assign a prepared inbox snapshot to semantically coherent clusters through edict-mcp as a managed worker.
 ---
 
-# Managed Edict Distribution
+# Edict Distribution
 
 Follow [the managed protocol](../edict_manager/references/protocol.md). Registry ID: `edict-distribution`. This
 leaf uses `inbox.delete`, `cluster.write`, and `cluster.signal.write` only.

@@ -1,9 +1,9 @@
 ---
-name: managed-edict-code-example
+name: edict-code-example
 description: Create or reuse one source-faithful synthetic example and assign it to a managed signal through scoped edict-mcp writes.
 ---
 
-# Managed Code Example
+# Code Example
 
 Follow [the managed protocol](../edict_manager/references/protocol.md). Registry ID: `edict-code-example`. This
 leaf may write only the scoped examples directory and, when granted, `syntheticExampleId` in one persisted signal.
