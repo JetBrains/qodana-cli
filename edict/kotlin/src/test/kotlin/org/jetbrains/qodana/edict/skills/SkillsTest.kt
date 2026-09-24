@@ -1,18 +1,22 @@
 package org.jetbrains.qodana.edict.skills
 
+import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.io.TempDir
 import java.nio.file.Files
 import java.nio.file.Path
 import kotlin.test.*
-import org.junit.jupiter.api.Test
-import org.junit.jupiter.api.io.TempDir
 
 class SkillsTest {
-    @TempDir lateinit var directory: Path
+    @TempDir
+    lateinit var directory: Path
 
-    @Test fun `install only managed skills with matching registry and metadata`() {
-        assertEquals(13, Skills.install(directory).size)
+    @Test
+    fun `install only managed skills with matching registry and metadata`() {
+        val installed = Skills.install(directory)
+        assertEquals(13, installed.size)
+        assertEquals(Registry.policies.map { it.name }.sorted(), installed)
         Registry.policies.forEach { policy ->
-            val name = Registry.installedName(policy.name)
+            val name = policy.name
             val text = Files.readString(directory.resolve("$name/SKILL.md"))
             assertContains(text, "name: $name\n")
             assertFalse(text.contains("edict-next-"))
@@ -23,7 +27,8 @@ class SkillsTest {
         assertFailsWith<IllegalArgumentException> { Skills.install(directory, "../edict_manager") }
     }
 
-    @Test fun `registry separates delegation from execution`() {
+    @Test
+    fun `registry separates delegation from execution`() {
         assertTrue(Registry["edict_manager"].writes.isEmpty())
         assertTrue(Registry["edict-signal-analysis"].operations.isEmpty())
         Registry.policies.forEach { policy ->

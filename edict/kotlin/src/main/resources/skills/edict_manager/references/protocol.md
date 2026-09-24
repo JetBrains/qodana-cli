@@ -30,8 +30,8 @@ remain public but are logged as anonymous; MCP sessions are shared and do not es
 Plan files are `plans/<id>.json`; all state paths are relative to the registered state root. The registry is fixed when
 the server starts; do not register permissions from an agent. Its `operations` are the delegation ceiling, while
 `writes` are operations the skill may execute itself; orchestrators can delegate rights they cannot personally use. A
-skill ID is its registered `edict-*` name; its discoverable managed invocation is `$managed-edict-*`. The root
-is `edict_manager` in both places.
+worker's registry ID and installed skill name are both `edict-*`; invoke it as `$edict-*`. The root
+uses `edict_manager` and is invoked as `$edict_manager`.
 
 All persisted Edict changes, including plan/task progress, inbox records, descriptions, history, signals, examples, and
 inspection scripts, go through this standalone Edict server. Never use shell writes, filesystem tools, Git, or IntelliJ's
@@ -61,8 +61,8 @@ Read shared references directly; their location under `edict_manager` does not m
 Call `edict_task_start(token, agentId, skill)` after fetching the assignment and reading the skill. The server rejects
 startup until this delegation has fetched its task, and rejects a different skill. A retry with a fresh capability
 must fetch again. Do not copy the task instructions into the launch message or compare prompt strings.
-Use the registry ID (`edict-*`), not the discoverable `managed-*` name, for this check, and the native runtime's
-assigned agent ID. Call `edict_task_finish(token, status, result)` with `completed` or
+Use the skill name (`edict-*`) returned by `edict_task_get` and the native runtime's assigned agent ID
+for this check. Call `edict_task_finish(token, status, result)` with `completed` or
 `failed` when finished. If the runtime does not expose your ID in the initial context, wait for the parent to send the
 ID returned by `spawn_agent`; never invent an agent ID or substitute the task ID. Keep the result concise and
 token-free. The server persists these transitions; do not edit the plan. Finish only after all descendants complete. If
@@ -76,8 +76,8 @@ reconciled using their hashes before retrying writes.
 When a skill requires another skill:
 
 1. Call `edict_task_add(token, skill, title)` using a child permitted by `edict_registry`.
-2. Prepare the complete token-free child instructions. The first line must be exactly `$managed-<registered skill>`
-   (for example, `$managed-edict-signal-analysis`). Then give the absolute assigned `SKILL.md` path, the exact
+2. Prepare the complete token-free child instructions. The first line must be exactly `$<registered skill>`
+   (for example, `$edict-signal-analysis`). Then give the absolute assigned `SKILL.md` path, the exact
    bounded source package, source checkout, scratch paths, and expected outcome. Resolve the skill path against the
    installed skills directory, the parent of your own skill directory. Do not include credentials or placeholders.
    Call `edict_delegate(token, taskId, operations, scope, prompt)` to store those instructions with explicit arrays.

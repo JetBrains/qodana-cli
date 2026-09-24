@@ -61,6 +61,6 @@ class CliTest : IntegrationTest() {
             )
         )
         assertTrue(Files.exists(directory.resolve("skills/edict_manager/references/signals.md")))
-        assertTrue(Files.exists(directory.resolve("skills/managed-edict-signal-analysis/agents/openai.yaml")))
+        assertTrue(Files.exists(directory.resolve("skills/edict-signal-analysis/agents/openai.yaml")))
     }
 }

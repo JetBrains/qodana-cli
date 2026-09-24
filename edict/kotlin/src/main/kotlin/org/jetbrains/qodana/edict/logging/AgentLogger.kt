@@ -1,18 +1,20 @@
 // Copyright 2026 JetBrains s.r.o. Licensed under the Apache License, Version 2.0.
 package org.jetbrains.qodana.edict.logging
 
-import java.nio.file.Files
-import java.nio.file.Path
-import java.nio.file.StandardOpenOption.*
-import java.nio.file.attribute.PosixFilePermissions
-import java.time.Instant
-import kotlinx.serialization.json.*
+import kotlinx.serialization.json.JsonElement
+import kotlinx.serialization.json.JsonNull
+import kotlinx.serialization.json.JsonObject
 import org.jetbrains.qodana.edict.common.flag
 import org.jetbrains.qodana.edict.common.json
 import org.jetbrains.qodana.edict.common.obj
 import org.jetbrains.qodana.edict.common.text
-import org.jetbrains.qodana.edict.model.Task
 import org.jetbrains.qodana.edict.store.Store
+import java.nio.file.Files
+import java.nio.file.Path
+import java.nio.file.StandardOpenOption.APPEND
+import java.nio.file.StandardOpenOption.CREATE
+import java.nio.file.attribute.PosixFilePermissions
+import java.time.Instant
 
 /** Human-readable assistant output and attributed MCP activity; private runtime events are excluded. */
 class AgentLogger(private val store: Store, val directory: Path) {
@@ -20,7 +22,9 @@ class AgentLogger(private val store: Store, val directory: Path) {
         val time: Instant, val agentId: String, val agentPath: String = "", val root: Boolean = false,
         val phase: String = "message", val text: String,
     )
+
     private data class Identity(val skill: String, val task: String = "")
+
     private val pending = mutableListOf<Message>()
     private val identities = mutableMapOf<String, Identity>()
     private val full = directory.resolve("edict-agents.log")
@@ -37,10 +41,14 @@ class AgentLogger(private val store: Store, val directory: Path) {
         }
     }
 
-    @Synchronized fun record(message: Message) { pending += message }
+    @Synchronized
+    fun record(message: Message) {
+        pending += message
+    }
 
     /** Worker commentary can arrive before task_start provides the runtime identity. */
-    @Synchronized fun flush(final: Boolean = false) {
+    @Synchronized
+    fun flush(final: Boolean = false) {
         store.plan()?.tasks?.filter { it.agentId.isNotBlank() }?.forEach {
             identities[it.agentId] = Identity(it.skill, it.id)
         }
@@ -49,33 +57,46 @@ class AgentLogger(private val store: Store, val directory: Path) {
         while (iterator.hasNext()) {
             val message = iterator.next()
             val identity = if (message.root) Identity("edict_manager")
-                else identities[message.agentId] ?: identities[message.agentPath]
-            if (identity == null && !final) { retained += message; continue }
-            val phase = when (message.phase) { "final_answer" -> "final"; "" -> "message"; else -> message.phase }
+            else identities[message.agentId] ?: identities[message.agentPath]
+            if (identity == null && !final) {
+                retained += message; continue
+            }
+            val phase = when (message.phase) {
+                "final_answer" -> "final"; "" -> "message"; else -> message.phase
+            }
             write(message.time, identity ?: Identity("unassigned"), phase, message.text, message.text)
         }
         pending.clear()
         pending += retained
     }
 
-    @Synchronized internal fun mcp(caller: String, tool: String, arguments: JsonObject, response: JsonObject) {
+    @Synchronized
+    internal fun mcp(caller: String, tool: String, arguments: JsonObject, response: JsonObject) {
         val at = Instant.now()
         val result = response.obj("structuredContent")
         val ok = response.flag("isError") != true
         val callerIdentity = if (caller.startsWith("edict_manager/") || tool == "edict_plan_create" && ok)
             Identity("edict_manager") else Identity(caller.substringBefore('/'), caller.substringAfter('/', ""))
-        val target = if (tool == "edict_delegate" && ok) Identity(result.text("skill"), result.text("taskId")) else callerIdentity
+        val target = if (tool == "edict_delegate" && ok) Identity(
+            result.text("skill"),
+            result.text("taskId")
+        ) else callerIdentity
         val summary = if (!ok) "$tool failed" else when (tool) {
             "edict_task_start" -> "Started task; assignment fetched and skill verified"
             "edict_task_finish" -> "Finished task: ${arguments.text("status")}"
             "edict_task_cancel" -> "Cancelled task ${arguments.text("taskId").take(8)}"
-            "edict_delegate" -> "Task delegated by ${callerIdentity.skill}/${callerIdentity.task.take(8).ifEmpty { "-" }}"
+            "edict_delegate" -> "Task delegated by ${callerIdentity.skill}/${
+                callerIdentity.task.take(8).ifEmpty { "-" }
+            }"
+
             "edict_state_write" -> "Wrote ${arguments.text("path")}"
             "edict_state_delete" -> "Deleted ${arguments.text("path")}"
             else -> "$tool ok"
         }
         val detail = if (tool == "edict_delegate" && ok)
-            "Task prompt assigned by ${callerIdentity.skill}/${callerIdentity.task.take(8).ifEmpty { "-" }}:\n${arguments.text("prompt")}" else summary
+            "Task prompt assigned by ${callerIdentity.skill}/${
+                callerIdentity.task.take(8).ifEmpty { "-" }
+            }:\n${arguments.text("prompt")}" else summary
         write(at, target, "mcp", detail, summary)
         val payload = response["structuredContent"] ?: response["content"] ?: JsonNull
         write(at, target, "mcp", "$tool response:\n${json.encodeToString(JsonElement.serializer(), payload)}", null)

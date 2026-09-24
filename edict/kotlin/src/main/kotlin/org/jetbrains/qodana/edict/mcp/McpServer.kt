@@ -2,19 +2,11 @@
 package org.jetbrains.qodana.edict.mcp
 
 import com.sun.net.httpserver.HttpServer
-import java.io.BufferedReader
-import java.io.PrintWriter
-import java.net.InetSocketAddress
-import java.nio.file.Files
-import java.nio.file.Path
-import java.time.Instant
-import java.util.concurrent.Executors
 import kotlinx.serialization.json.*
 import org.jetbrains.qodana.edict.common.flag
 import org.jetbrains.qodana.edict.common.text
 import org.jetbrains.qodana.edict.common.wireJson
 import org.jetbrains.qodana.edict.logging.AgentLogger
-import org.jetbrains.qodana.edict.model.Signal
 import org.jetbrains.qodana.edict.model.Step
 import org.jetbrains.qodana.edict.reviews.PrAnalysis
 import org.jetbrains.qodana.edict.reviews.ReviewClient
@@ -22,6 +14,13 @@ import org.jetbrains.qodana.edict.reviews.ReviewProvider
 import org.jetbrains.qodana.edict.reviews.ReviewSelection
 import org.jetbrains.qodana.edict.skills.Registry
 import org.jetbrains.qodana.edict.store.Store
+import java.io.BufferedReader
+import java.io.PrintWriter
+import java.net.InetSocketAddress
+import java.nio.file.Files
+import java.nio.file.Path
+import java.time.Instant
+import java.util.concurrent.Executors
 
 private fun obj(vararg fields: Pair<String, JsonElement>) = JsonObject(fields.toMap())
 private fun strings(values: List<String>) = JsonArray(values.map(::JsonPrimitive))
@@ -128,7 +127,7 @@ class McpServer(private val store: Store, provider: ReviewProvider = ReviewClien
         }
         tool(
             "edict_delegate",
-            "Delegate a task with narrowed operations and path scope. Prompt must start with the exact line \$managed-<registry skill>, then absolute SKILL.md path and bounded token-free instructions. Pass only returned short prompt to native spawn_agent without inherited conversation.",
+            "Delegate a task with narrowed operations and path scope. Prompt must start with the exact line \$<registry skill>, then absolute SKILL.md path and bounded token-free instructions. Pass only returned short prompt to native spawn_agent without inherited conversation.",
             required = listOf("token", "taskId", "prompt"),
             properties = props("taskId", "prompt") + mapOf("operations" to array, "scope" to array)
         ) {
@@ -396,7 +395,8 @@ class McpServer(private val store: Store, provider: ReviewProvider = ReviewClien
                 }
                 val contentTypes = exchange.requestHeaders["Content-Type"]
                 if (contentTypes?.size != 1 ||
-                    !contentTypes.single().substringBefore(';').trim().equals("application/json", ignoreCase = true)) {
+                    !contentTypes.single().substringBefore(';').trim().equals("application/json", ignoreCase = true)
+                ) {
                     exchange.sendResponseHeaders(415, -1); return@createContext
                 }
                 val bytes = exchange.requestBody.readNBytes(20 * 1024 * 1024 + 1)

@@ -1,6 +1,10 @@
 // Copyright 2026 JetBrains s.r.o. Licensed under the Apache License, Version 2.0.
 package org.jetbrains.qodana.edict.integration.support.inspection
 
+import kotlinx.serialization.json.*
+import org.jetbrains.qodana.edict.common.flag
+import org.jetbrains.qodana.edict.common.text
+import org.jetbrains.qodana.edict.common.wireJson
 import java.io.BufferedReader
 import java.io.InputStream
 import java.net.URI
@@ -12,19 +16,20 @@ import java.util.concurrent.CompletableFuture
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicLong
-import kotlinx.serialization.json.*
-import org.jetbrains.qodana.edict.common.flag
-import org.jetbrains.qodana.edict.common.text
-import org.jetbrains.qodana.edict.common.wireJson
 
-internal data class InspectionResult(val compilationSuccess: Boolean, val compilationStatus: String, val problemLines: List<Int>)
+internal data class InspectionResult(
+    val compilationSuccess: Boolean,
+    val compilationStatus: String,
+    val problemLines: List<Int>
+)
 
 internal fun decodeInspectionResult(result: JsonObject): InspectionResult {
     check(result.flag("isError") != true) { "Inspection MCP returned an error: $result" }
     val data = (result["structuredContent"] as? JsonObject) ?: (result["content"] as? JsonArray).orEmpty()
         .firstNotNullOfOrNull { item -> runCatching { wireJson.parseToJsonElement(item.jsonObject.text("text")).jsonObject }.getOrNull() }
-        ?: error("Inspection result has no JSON content")
-    return InspectionResult(data.flag("compilationSuccess") == true, data.text("compilationStatus"),
+    ?: error("Inspection result has no JSON content")
+    return InspectionResult(
+        data.flag("compilationSuccess") == true, data.text("compilationStatus"),
         (data["foundProblems"] as? JsonArray).orEmpty().map { it.jsonObject.getValue("lineNumber").jsonPrimitive.int })
 }
 
@@ -43,7 +48,10 @@ internal class InspectionMcpClient(private val endpoint: URI) : AutoCloseable {
     init {
         try {
             if (legacySse) {
-                val response = client.send(HttpRequest.newBuilder(endpoint).header("Accept", "text/event-stream").GET().build(), HttpResponse.BodyHandlers.ofInputStream())
+                val response = client.send(
+                    HttpRequest.newBuilder(endpoint).header("Accept", "text/event-stream").GET().build(),
+                    HttpResponse.BodyHandlers.ofInputStream()
+                )
                 check(response.statusCode() == 200) { "Inspection SSE connection failed: HTTP ${response.statusCode()}" }
                 events = response.body()
                 eventThread = Thread({
@@ -53,9 +61,10 @@ internal class InspectionMcpClient(private val endpoint: URI) : AutoCloseable {
                                 val uri = endpoint.resolve(data)
                                 require(uri.scheme == endpoint.scheme && uri.authority == endpoint.authority) { "Inspection SSE redirected to another origin" }
                                 postEndpoint.complete(uri)
-                            } else runCatching { wireJson.parseToJsonElement(data).jsonObject }.getOrNull()?.let { value ->
-                                value["id"]?.let { pending[it.toString()]?.complete(value) }
-                            }
+                            } else runCatching { wireJson.parseToJsonElement(data).jsonObject }.getOrNull()
+                                ?.let { value ->
+                                    value["id"]?.let { pending[it.toString()]?.complete(value) }
+                                }
                             false
                         }
                         error("Inspection SSE stream closed")
@@ -73,10 +82,13 @@ internal class InspectionMcpClient(private val endpoint: URI) : AutoCloseable {
             })
             protocol = initialized.text("protocolVersion").ifBlank { protocol }
             send(buildJsonObject { put("jsonrpc", "2.0"); put("method", "notifications/initialized") })
-        } catch (e: Throwable) { close(); throw e }
+        } catch (e: Throwable) {
+            close(); throw e
+        }
     }
 
-    fun call(name: String, arguments: JsonObject): JsonObject = request("tools/call", buildJsonObject { put("name", name); put("arguments", arguments) })
+    fun call(name: String, arguments: JsonObject): JsonObject =
+        request("tools/call", buildJsonObject { put("name", name); put("arguments", arguments) })
 
     fun request(method: String, params: JsonObject): JsonObject {
         val id = sequence.incrementAndGet()
@@ -88,7 +100,9 @@ internal class InspectionMcpClient(private val endpoint: URI) : AutoCloseable {
             val response = future.get(5, TimeUnit.MINUTES)
             check("error" !in response) { "Inspection MCP $method failed: ${response["error"]}" }
             return response.getValue("result").jsonObject
-        } finally { pending.remove(id.toString()) }
+        } finally {
+            pending.remove(id.toString())
+        }
     }
 
     private fun send(message: JsonObject): JsonObject? {
@@ -96,10 +110,19 @@ internal class InspectionMcpClient(private val endpoint: URI) : AutoCloseable {
             .header("Content-Type", "application/json").header("Accept", "application/json, text/event-stream")
             .header("MCP-Protocol-Version", protocol)
         session?.let { request.header("Mcp-Session-Id", it) }
-        val response = client.send(request.POST(HttpRequest.BodyPublishers.ofString(wireJson.encodeToString(message))).build(), HttpResponse.BodyHandlers.ofInputStream())
+        val response = client.send(
+            request.POST(HttpRequest.BodyPublishers.ofString(wireJson.encodeToString(message))).build(),
+            HttpResponse.BodyHandlers.ofInputStream()
+        )
         response.headers().firstValue("Mcp-Session-Id").ifPresent { session = it }
         return response.body().use { body ->
-            check(response.statusCode() in 200..299) { "Inspection MCP HTTP ${response.statusCode()}: ${body.readNBytes(4096).toString(Charsets.UTF_8)}" }
+            check(response.statusCode() in 200..299) {
+                "Inspection MCP HTTP ${response.statusCode()}: ${
+                    body.readNBytes(
+                        4096
+                    ).toString(Charsets.UTF_8)
+                }"
+            }
             if (legacySse || message["id"] == null || response.statusCode() == 202) return@use null
             if (response.headers().firstValue("Content-Type").orElse("").contains("text/event-stream")) {
                 var result: JsonObject? = null

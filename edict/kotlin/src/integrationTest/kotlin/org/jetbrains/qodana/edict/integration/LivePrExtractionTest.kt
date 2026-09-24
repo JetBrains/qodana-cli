@@ -1,26 +1,22 @@
 // Copyright 2026 JetBrains s.r.o. Licensed under the Apache License, Version 2.0.
 package org.jetbrains.qodana.edict.integration
 
-import java.nio.file.Files
-import kotlin.test.*
-import kotlinx.serialization.json.*
+import kotlinx.serialization.json.jsonObject
 import org.jetbrains.qodana.edict.common.array
 import org.jetbrains.qodana.edict.common.flag
 import org.jetbrains.qodana.edict.common.text
 import org.jetbrains.qodana.edict.common.wireJson
-import org.jetbrains.qodana.edict.integration.support.IntegrationTest
-import org.jetbrains.qodana.edict.integration.support.historyBefore
-import org.jetbrains.qodana.edict.integration.support.historyCommit
-import org.jetbrains.qodana.edict.integration.support.historyPath
+import org.jetbrains.qodana.edict.integration.support.*
 import org.jetbrains.qodana.edict.integration.support.reviews.ReviewProviderFixture
-import org.jetbrains.qodana.edict.integration.support.verifyManagedRun
-import org.jetbrains.qodana.edict.model.Signal
 import org.jetbrains.qodana.edict.model.SignalLabel
-import org.jetbrains.qodana.edict.reviews.github
-import org.jetbrains.qodana.edict.reviews.space
 import org.jetbrains.qodana.edict.signals.SignalValidation
 import org.jetbrains.qodana.edict.store.Store
 import org.junit.jupiter.api.Test
+import java.nio.file.Files
+import kotlin.test.assertEquals
+import kotlin.test.assertFalse
+import kotlin.test.assertNotNull
+import kotlin.test.assertTrue
 
 class LivePrExtractionTest : IntegrationTest() {
     @Test
@@ -31,7 +27,10 @@ class LivePrExtractionTest : IntegrationTest() {
 
     private fun extractReview(provider: String) {
         ReviewProviderFixture(provider, workspace.repository).use { fixture ->
-            workspace.withCodex("Extract signals from $provider review #7 in owner/repo.", provider = fixture.client) { store, runtime, _ ->
+            workspace.withCodex(
+                "Extract signals from $provider review #7 in owner/repo.",
+                provider = fixture.client
+            ) { store, runtime, _ ->
                 val plan = assertNotNull(store.plan())
                 assertEquals(2, plan.tasks.size, "One PR coordinator and one discussion worker required")
                 val coordinator = plan.tasks.single { it.skill == "edict-pr-signal-analysis" }
@@ -59,7 +58,10 @@ class LivePrExtractionTest : IntegrationTest() {
             assertEquals(fixture.title, signal.source.title)
             assertEquals(listOf(fixture.message), signal.source.discussionMessages)
             assertEquals(fixture.discussionUrl, signal.source.url)
-            assertTrue(signal.source.diffPositiveToNegative in listOf(diff, providerDiff), "PR diff must match canonical historical Git bytes")
+            assertTrue(
+                signal.source.diffPositiveToNegative in listOf(diff, providerDiff),
+                "PR diff must match canonical historical Git bytes"
+            )
             assertEquals(historyPath, signal.fileRevision.path)
             assertTrue(signal.provenance.workItemId.startsWith("pr-7-"))
             assertFalse(signal.provenance.analysisBatchId.isNullOrBlank())
@@ -69,8 +71,16 @@ class LivePrExtractionTest : IntegrationTest() {
             assertEquals(revision, signal.fileRevision.revision)
             val source = fixture.source.getValue(revision)
             val lines = source.count { it == '\n' } + if (source.isNotEmpty() && !source.endsWith('\n')) 1 else 0
-            signal.fileRevision.expectedRanges.forEach { assertTrue(it.end <= lines, "Signal range exceeds historical source") }
-            assertTrue(signal.fileRevision.expectedRanges.any { line in it.start..it.end }, "Evidence must cover correction at line $line")
+            signal.fileRevision.expectedRanges.forEach {
+                assertTrue(
+                    it.end <= lines,
+                    "Signal range exceeds historical source"
+                )
+            }
+            assertTrue(
+                signal.fileRevision.expectedRanges.any { line in it.start..it.end },
+                "Evidence must cover correction at line $line"
+            )
             signal
         }
         assertEquals(SignalLabel.entries.toSet(), signals.map { it.label }.toSet())
@@ -93,11 +103,16 @@ class LivePrExtractionTest : IntegrationTest() {
                 val path = arguments.text("path")
                 // An existence check before publishing an idempotent inbox record can return ENOENT.
                 val missingOutput = name == "edict_read" && path.startsWith("inbox/") &&
-                    detail == workspace.state.resolve(path).toString()
+                        detail == workspace.state.resolve(path).toString()
                 assertTrue(missingOutput, "$name failed: $detail; inspect ${workspace.logs}")
             }
         }
-        listOf("edict_prepare_pr_analysis", "edict_list_pr_analysis_items", "edict_get_pr_analysis_item", "edict_validate_pr_signals")
+        listOf(
+            "edict_prepare_pr_analysis",
+            "edict_list_pr_analysis_items",
+            "edict_get_pr_analysis_item",
+            "edict_validate_pr_signals"
+        )
             .forEach { assertTrue(it in calls, "Missing real $it call") }
     }
 }

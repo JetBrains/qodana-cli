@@ -1,9 +1,9 @@
 ---
-name: managed-edict-weak-signal-review
+name: edict-weak-signal-review
 description: Review a managed inspection attempt's sampled findings and delegate negative examples for confident false positives.
 ---
 
-# Managed Weak Signal Review
+# Weak Signal Review
 
 Follow [the managed protocol](../edict_manager/references/protocol.md). Registry ID: `edict-weak-signal-review`.
 Start the task. Your example-write capability is for delegation; you do not write persisted state yourself.

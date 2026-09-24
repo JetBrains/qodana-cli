@@ -1,9 +1,9 @@
 ---
-name: managed-edict-cluster-generation
+name: edict-cluster-generation
 description: Generate and independently review one Pending cluster's inspection using scoped edict-mcp writes and scratch-only inspection execution.
 ---
 
-# Managed Cluster Generation
+# Cluster Generation
 
 Follow [the managed protocol](../edict_manager/references/protocol.md). Registry ID: `edict-cluster-generation`.
 Start the assigned task. Its scope is one cluster and its named inspection paths; keep cluster ID, language, membership,
