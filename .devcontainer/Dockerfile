@@ -19,7 +19,8 @@ FROM dhi.io/golang:1.25-debian13-dev
 ARG TARGETARCH
 ARG CLANG=16
 ENV TARGETARCH=$TARGETARCH \
-    CLANG=$CLANG
+    CLANG=$CLANG \
+    JAVA_HOME=/usr/lib/jvm/java-21-openjdk-$TARGETARCH
 ENV CHOCO_VERSION=2.2.2 \
     GH_VERSION=2.41.0 \
     GORELEASER_VERSION=2.14.3
@@ -43,7 +44,7 @@ RUN set -ex && ln -s /usr/bin/which.debianutils /usr/bin/which && \
       libicu76 \
       git \
       git-lfs \
-      default-jre \
+      openjdk-21-jdk \
       xdg-utils
 
 # note: choco is required for the full goreleaser functionality
@@ -107,6 +108,7 @@ RUN echo "deb https://apt.llvm.org/bookworm llvm-toolchain-bookworm-$CLANG main"
 ENV PATH=$PATH:$DOTNET_ROOT:$DOTNET_ROOT/tools
 RUN set -ex &&  \
     docker -h && choco -h && dotnet -h && goreleaser -h && gh --version && gpg --version &&  \
+    java -version && javac -version && \
     git config --global --add safe.directory '*' && \
     rm -rf /var/cache/apt /var/lib/apt/ /tmp/*
 
