@@ -1,6 +1,11 @@
 # Managed Edict
 
-`edict-mcp` is the Qodana CLI's state and execution-plan server. It does not launch
+The Qodana CLI now delegates managed skill installation and `edict-mcp` to the
+[Kotlin implementation](../kotlin/README.md#qodana-cli-integration). This directory
+retains the original Go implementation and its comparison tests. The examples
+below describe that older implementation, including its `edict-next-*` skill names.
+
+`edict-mcp` is the state and execution-plan server. It does not launch
 an IDE. `qodana edict mcp start` still launches the separate IntelliJ inspection
 server.
 

@@ -14,6 +14,39 @@ build/install/edict/bin/edict install-skills --directory /path/to/codex-home/ski
 build/install/edict/bin/edict mcp --project-dir /path/to/source --state-dir /path/to/state
 ```
 
+## Qodana CLI integration
+
+The Go commands `qodana edict setup-codex` and `qodana edict edict-mcp` launch this
+Kotlin application with Qodana's embedded JBR. Skill installation always installs
+the 13 managed skills; `--managed` remains accepted for compatibility. Destination
+selection still supports `--dest`, `--project`, and `$CODEX_HOME/skills` (falling
+back to `~/.codex/skills`). Installation prints the installed names. Existing
+unrelated skills are preserved, including any old `*-next-*` copies; remove those
+old copies from your Codex skills directory when migrating.
+
+From the repository root:
+
+```sh
+go generate ./internal/tooling/...
+go build -o qodana ./cli
+./qodana edict setup-codex --project --project-dir /path/to/source
+./qodana edict edict-mcp --project-dir /path/to/source
+./qodana edict edict-mcp --project-dir /path/to/source --http-port 0 --log-dir /path/to/logs
+go test ./internal/cmd -run 'Test(Edict|ManagedMCP)'
+```
+
+Generation builds `./gradlew bundledJar`, embeds the JAR with the other Java tools,
+and updates the bundled runtime's module set. A content hash in the JAR name and
+a module hash in the runtime name prevent reuse of stale extracted tools. No
+separate JVM installation is needed to use the Go commands. For standalone use,
+run `java -jar build/libs/edict-cli.jar --help` after building `bundledJar`.
+
+The Go proxy tests launch the actual embedded JAR and JBR. They cover all install
+destinations and bundled resources, stdio/HTTP MCP, redacted logs, errors, shutdown,
+and state-lock release. They need no model, Distillery checkout, or IDE.
+`qodana edict mcp start/status/stop` continues to manage the separate IntelliJ
+inspection server.
+
 `mcp` uses newline-delimited MCP JSON-RPC on stdio. Stdout contains only protocol
 messages; activity and redacted tool details are written to
 `<project-dir>/log/edict/edict-mcp{,-system}.log`. Add `--http-port 0` to start a

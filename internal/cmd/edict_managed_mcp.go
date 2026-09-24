@@ -8,25 +8,21 @@ package cmd
 import (
 	"context"
 	"errors"
-	"io"
-	"os"
-	"os/signal"
-	"path/filepath"
-	"syscall"
+	"strconv"
 
-	"github.com/JetBrains/qodana-cli/edict/managed"
-	"github.com/modelcontextprotocol/go-sdk/mcp"
 	"github.com/spf13/cobra"
 )
 
 // newEdictManagedMCPCommand serves state management independently of the
 // IntelliJ inspection server launched by `edict mcp start`.
 func newEdictManagedMCPCommand() *cobra.Command {
-	var projectDir, stateDir string
+	var projectDir, stateDir, logDir string
+	var httpPort int
 	command := &cobra.Command{
 		Use:   "edict-mcp",
-		Short: "Serve managed Edict state and skill capabilities over MCP stdio",
-		Long: `Run the Qodana CLI's managed Edict state server over stdin/stdout.
+		Short: "Serve managed Edict state and skill capabilities through the Kotlin JVM",
+		Long: `Run the bundled Kotlin managed Edict server over stdin/stdout.
+Use --http-port to serve Streamable HTTP on loopback instead.
 The immutable skill policy is registered at startup. Only capability-bearing
 managed tasks may mutate state, and child capabilities can only narrow access.
 IntelliJ inspections use the separate 'edict mcp start' server.
@@ -46,30 +42,22 @@ and task prompts. Capability tokens are redacted.`,
 		Args:         cobra.NoArgs,
 		SilenceUsage: true,
 		RunE: func(command *cobra.Command, _ []string) error {
-			logs, err := managed.OpenLogs(filepath.Join(projectDir, "log"))
-			if err != nil {
-				return err
+			args := []string{"mcp", "--project-dir", projectDir}
+			for _, option := range []struct{ name, value string }{
+				{"state-dir", stateDir}, {"log-dir", logDir},
+			} {
+				if option.value != "" {
+					args = append(args, "--"+option.name, option.value)
+				}
 			}
-			defer logs.Close()
-			if stateDir == "" {
-				stateDir = filepath.Join(projectDir, ".edict")
+			if command.Flags().Changed("http-port") {
+				if httpPort < 0 || httpPort > 65535 {
+					return errors.New("http-port must be between 0 and 65535")
+				}
+				args = append(args, "--http-port", strconv.Itoa(httpPort))
 			}
-			store, err := managed.NewStore(stateDir)
-			if err != nil {
-				return err
-			}
-			defer store.Close()
-			ctx, stop := signal.NotifyContext(command.Context(), os.Interrupt, syscall.SIGTERM)
-			defer stop()
-			reader, ok := command.InOrStdin().(io.ReadCloser)
-			if !ok {
-				reader = io.NopCloser(command.InOrStdin())
-			}
-			err = managed.NewServer(store, logs.Activity, logs.System, managed.NewAgentLogger(store, logs.Agents, logs.AgentsShort)).Run(ctx, &mcp.IOTransport{
-				Reader: reader,
-				Writer: managedMCPWriter{command.OutOrStdout()},
-			})
-			if errors.Is(err, context.Canceled) && ctx.Err() != nil {
+			err := runEdictJVM(command, args...)
+			if errors.Is(err, context.Canceled) {
 				return nil
 			}
 			return err
@@ -77,9 +65,7 @@ and task prompts. Capability tokens are redacted.`,
 	}
 	command.Flags().StringVarP(&projectDir, "project-dir", "i", ".", "Project root used for the default state and log directories")
 	command.Flags().StringVar(&stateDir, "state-dir", "", "Persisted Edict state directory (defaults to <project-dir>/.edict)")
+	command.Flags().StringVar(&logDir, "log-dir", "", "Log root (defaults to <project-dir>/log; files are written under edict/)")
+	command.Flags().IntVar(&httpPort, "http-port", 0, "Serve HTTP on loopback at this port (0 selects an available port)")
 	return command
 }
-
-type managedMCPWriter struct{ io.Writer }
-
-func (managedMCPWriter) Close() error { return nil }

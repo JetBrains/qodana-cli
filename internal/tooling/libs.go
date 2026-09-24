@@ -28,6 +28,7 @@ import (
 )
 
 //go:generate go run scripts/download-libs.go
+//go:generate go run scripts/build-edict.go
 //go:embed libs/*.jar
 var libs embed.FS
 
@@ -36,6 +37,7 @@ type Library string
 const (
 	BaselineCli     Library = "libs/baseline-cli*.jar"
 	ConfigLoaderCli Library = "libs/config-loader-cli*.jar"
+	EdictCli        Library = "libs/edict-cli-*.jar"
 	Fuser           Library = "libs/qodana-fuser*.jar"
 	PublisherCli    Library = "libs/publisher-cli*.jar"
 	ReportConverter Library = "libs/intellij-report-converter*.jar"

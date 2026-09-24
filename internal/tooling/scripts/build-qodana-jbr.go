@@ -30,6 +30,7 @@ import (
 // Configuration ===============================================================================
 
 const jbrBaseURL = "https://cache-redirector.jetbrains.com/intellij-jbr"
+
 // renovate: datasource=github-releases depName=JetBrains/JetBrainsRuntime
 const jbrDefaultTag = "jbr-release-25.0.2b329.72"
 
@@ -60,9 +61,11 @@ func jbrFlavor(p platform) string {
 //   build/            — jlink output (minimal runtime, unpacked)
 //   dist/             — final qodana-jbr tar.gz archive
 //   upstream.sha512   — SHA-512 of the upstream archive (validation anchor)
+//   libraries.sha512  — fingerprint of JARs used to infer the runtime modules
 //
 // Invalidation: fetch upstream .checksum, compare to upstream.sha512.
 // If mismatch or missing → re-download, re-extract, rebuild, re-dist.
+// If libraries.sha512 differs → infer modules again, rebuild, re-dist.
 
 var httpClient = &http.Client{Timeout: 10 * time.Minute}
 
@@ -81,9 +84,16 @@ func main() {
 	// Fetch upstream checksum for target
 	targetSHA := fetchUpstreamChecksum(version, jbrFlavor(target), build)
 
+	// Module requirements can change even when the upstream JBR version does not.
+	libsDir := filepath.Join(repoRoot, "internal", "tooling", "libs")
+	libsSHA := librariesDigest(libsDir)
 	// Check if target is already up to date
 	tDir := platformDir(cacheDir, target)
-	if readFile(filepath.Join(tDir, "upstream.sha512")) == targetSHA && hasDist(tDir) {
+	upToDate := func() bool {
+		return readFile(filepath.Join(tDir, "upstream.sha512")) == targetSHA &&
+			readFile(filepath.Join(tDir, "libraries.sha512")) == libsSHA && hasDist(tDir)
+	}
+	if upToDate() {
 		linkToEmbed(cacheDir, embedDir, target)
 		log.Printf("JBR for %s/%s is up to date", target.goos, target.goarch)
 		return
@@ -94,7 +104,7 @@ func main() {
 	lockPath := filepath.Join(tDir, "build.lock")
 	if err := flock.With(lockPath, func() {
 		// Re-check after acquiring lock — another process may have built while we waited.
-		if readFile(filepath.Join(tDir, "upstream.sha512")) == targetSHA && hasDist(tDir) {
+		if upToDate() {
 			linkToEmbed(cacheDir, embedDir, target)
 			log.Printf("JBR for %s/%s is up to date (built by another process)", target.goos, target.goarch)
 			return
@@ -116,12 +126,12 @@ func main() {
 		}
 
 		// Determine required modules
-		libsDir := filepath.Join(repoRoot, "internal", "tooling", "libs")
 		modules := runJdepsOnAllJars(jdepsBin, libsDir)
 		log.Printf("Required modules: %s", modules)
 
 		// Build
 		buildPlatform(jlinkBin, modules, cacheDir, target, version, build)
+		writeFile(filepath.Join(tDir, "libraries.sha512"), libsSHA)
 		log.Printf("BUILT: %s/%s", target.goos, target.goarch)
 
 		linkToEmbed(cacheDir, embedDir, target)
@@ -342,7 +352,9 @@ func buildPlatform(jlinkBin, modules, cacheDir string, p platform, version, buil
 	if err := os.MkdirAll(distDir, 0o755); err != nil {
 		log.Fatalf("Failed to create dist dir: %v", err)
 	}
-	archiveName := fmt.Sprintf("qodana-jbrsdk-%s-%s-%s.tar.gz", version, jbrFlavor(p), build)
+	// Also invalidate the end user's extracted runtime when the module set changes.
+	moduleHash := sha512.Sum512([]byte(modules))
+	archiveName := fmt.Sprintf("qodana-jbrsdk-%s-%s-%s-%x.tar.gz", version, jbrFlavor(p), build, moduleHash[:8])
 	topDir := strings.TrimSuffix(archiveName, ".tar.gz")
 	if err := archive.CreateTarGz(buildDir, filepath.Join(distDir, archiveName), topDir); err != nil {
 		log.Fatalf("Failed to create archive for %s: %v", jbrFlavor(p), err)
@@ -431,6 +443,23 @@ func findJmodsDir(srcDir string) string {
 
 // jdeps =======================================================================================
 
+func librariesDigest(libsDir string) string {
+	jars, err := filepath.Glob(filepath.Join(libsDir, "*.jar"))
+	if err != nil || len(jars) == 0 {
+		log.Fatalf("Cannot fingerprint embedded libraries in %s: %v", libsDir, err)
+	}
+	digest := sha512.New()
+	for _, jar := range jars {
+		data, err := os.ReadFile(jar)
+		if err != nil {
+			log.Fatal(err)
+		}
+		jarDigest := sha512.Sum512(data)
+		fmt.Fprintf(digest, "%s:%x\n", filepath.Base(jar), jarDigest)
+	}
+	return hex.EncodeToString(digest.Sum(nil))
+}
+
 func runJdepsOnAllJars(jdepsBin, libsDir string) string {
 	entries, err := os.ReadDir(libsDir)
 	if err != nil {
@@ -463,7 +492,7 @@ func runJdepsOnAllJars(jdepsBin, libsDir string) string {
 }
 
 func runJdeps(jdepsBin, jarPath string) []string {
-	cmd := exec.Command(jdepsBin, "--list-deps", "--ignore-missing-deps", jarPath)
+	cmd := exec.Command(jdepsBin, "--list-deps", "--multi-release", "base", "--ignore-missing-deps", jarPath)
 	output, err := cmd.CombinedOutput()
 	if err != nil {
 		outStr := strings.TrimSpace(string(output))

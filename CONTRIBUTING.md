@@ -9,6 +9,7 @@ By participating in this project, you agree to abide our [Code of conduct](.gith
 Prerequisites:
 
 - [Go 1.25+](https://golang.org/doc/install)
+- JDK 21 (for building the bundled Kotlin Edict application with its Gradle wrapper)
 - [Docker](https://docs.docker.com/get-docker/)
 
 Other things you might need to develop:
@@ -43,18 +44,25 @@ Run the download script to fetch all closed-source dependencies from TeamCity:
 go run scripts/download-deps.go
 ```
 
-Then download the public Maven JARs:
+Then prepare the public Maven JARs, Kotlin Edict JAR, and bundled Java runtime:
 ```sh
 go generate ./internal/tooling/...
 ```
 
 **For external contributors:**
 
-Download public JARs via go generate:
+Prepare embedded tools via go generate:
 
 ```sh
 go generate ./internal/tooling/...
 ```
+
+This builds `edict/kotlin`'s `bundledJar` task and embeds its executable JAR under
+`internal/tooling/libs`, using a content hash in the filename to refresh cached
+copies when code or skills change. It also includes Edict's required modules in
+the bundled JBR. Rerun generation before building Go after changing Kotlin code or
+managed skills. Generated JARs and runtimes are ignored by Git. End users do not
+need a separate Java or Gradle installation.
 
 `cd` into the `cli` directory and run for debug:
 

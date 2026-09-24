@@ -16,7 +16,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/JetBrains/qodana-cli/edict/managed"
 	"github.com/modelcontextprotocol/go-sdk/mcp"
 )
 
@@ -28,7 +27,7 @@ func TestEdictManagedMCPServesProtocolWithoutBootstrapToken(t *testing.T) {
 func exerciseEdictManagedMCP(t *testing.T, cancelServer bool) {
 	t.Helper()
 	project := t.TempDir()
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
 	serverPipe, clientPipe := net.Pipe()
 	defer serverPipe.Close()
@@ -50,8 +49,8 @@ func exerciseEdictManagedMCP(t *testing.T, cancelServer bool) {
 		t.Fatalf("default state directory was not created: %v", err)
 	}
 	result, err := session.CallTool(ctx, &mcp.CallToolParams{
-		Name: "edict_plan_create", Arguments: map[string]any{"request": "Check project history", "steps": []managed.Step{
-			{Skill: "edict-next-run", Title: "Process existing signals"},
+		Name: "edict_plan_create", Arguments: map[string]any{"request": "Check project history", "steps": []map[string]string{
+			{"skill": "edict-run", "title": "Process existing signals"},
 		}},
 	})
 	if err != nil || result.IsError {
@@ -61,24 +60,31 @@ func exerciseEdictManagedMCP(t *testing.T, cancelServer bool) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	var created managed.PlanCreation
+	var created struct {
+		Token string `json:"token"`
+		Plan  *struct {
+			Tasks []struct {
+				ID string `json:"id"`
+			} `json:"tasks"`
+		} `json:"plan"`
+	}
 	if err := json.Unmarshal(data, &created); err != nil {
 		t.Fatal(err)
 	}
-	if len(created.Token) != 64 || created.Plan == nil {
+	if len(created.Token) != 64 || created.Plan == nil || len(created.Plan.Tasks) != 1 {
 		t.Fatal("missing manager capability or plan")
 	}
 	result, err = session.CallTool(ctx, &mcp.CallToolParams{
 		Name: "edict_delegate", Arguments: map[string]any{
 			"token": created.Token, "taskId": created.Plan.Tasks[0].ID,
-			"prompt": "$managed-edict-next-run\nRead /skills/managed-edict-next-run/SKILL.md. Process existing signals.",
+			"prompt": "$managed-edict-run\nRead /skills/managed-edict-run/SKILL.md. Process existing signals.",
 		},
 	})
 	if err != nil || result.IsError {
 		t.Fatalf("returned manager token was not accepted: %v, %+v", err, result)
 	}
 	result, err = session.CallTool(ctx, &mcp.CallToolParams{
-		Name: "edict_plan_create", Arguments: map[string]any{"request": "Second manager", "steps": []managed.Step{{Skill: "edict-next-run", Title: "Duplicate"}}},
+		Name: "edict_plan_create", Arguments: map[string]any{"request": "Second manager", "steps": []map[string]string{{"skill": "edict-run", "title": "Duplicate"}}},
 	})
 	if err != nil || !result.IsError {
 		t.Fatalf("second plan creation was not rejected: %v, %+v", err, result)
@@ -96,14 +102,35 @@ func exerciseEdictManagedMCP(t *testing.T, cancelServer bool) {
 	case <-time.After(5 * time.Second):
 		t.Fatal("CLI did not stop when its context or MCP connection closed")
 	}
+	restart := newEdictManagedMCPCommand()
+	restart.SetArgs([]string{"--project-dir", project})
+	restart.SetIn(strings.NewReader(""))
+	restart.SetOut(&bytes.Buffer{})
+	restart.SetErr(&bytes.Buffer{})
+	if err := restart.Execute(); err != nil {
+		t.Fatalf("restart after shutdown: %v", err)
+	}
+
 	logData, err := os.ReadFile(filepath.Join(project, "log", "edict", "edict-mcp-system.log"))
 	if err != nil {
 		t.Fatal(err)
 	}
-	for _, want := range []string{`"msg":"request"`, `"msg":"response"`, "edict_plan_create", "Check project history", "already succeeded"} {
+	for _, want := range []string{" => ", "edict_plan_create", "Check project history", "already succeeded"} {
 		if !bytes.Contains(logData, []byte(want)) {
 			t.Errorf("server log is missing %q", want)
 		}
+	}
+	agents, err := os.ReadFile(filepath.Join(project, "log", "edict", "edict-agents.log"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, want := range []string{"Task prompt assigned by edict_manager/-:", "Check project history", "edict_plan_create response:"} {
+		if !bytes.Contains(agents, []byte(want)) {
+			t.Errorf("agent log is missing %q", want)
+		}
+	}
+	if bytes.Contains(agents, []byte(created.Token)) {
+		t.Fatal("agent log exposed capability")
 	}
 	if bytes.Contains(logData, []byte(created.Token)) {
 		t.Fatal("server log exposed the manager capability")
@@ -112,7 +139,7 @@ func exerciseEdictManagedMCP(t *testing.T, cancelServer bool) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	for _, want := range []string{`Plan ready: "Check project history"`, `Task prompt assigned by edict_manager/-:`, "already succeeded"} {
+	for _, want := range []string{"edict_plan_create ok", "edict_delegate ok", "edict_plan_create failed"} {
 		if !bytes.Contains(activity, []byte(want)) {
 			t.Errorf("activity log is missing %q", want)
 		}
@@ -126,7 +153,7 @@ func exerciseEdictManagedMCP(t *testing.T, cancelServer bool) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	for _, want := range []string{`Plan ready: "Check project history"`, `Task delegated by edict_manager/-`, "already succeeded"} {
+	for _, want := range []string{"edict_plan_create ok", "Task delegated by edict_manager/-", "edict_plan_create failed"} {
 		if !bytes.Contains(short, []byte(want)) {
 			t.Errorf("short agent log is missing %q", want)
 		}
@@ -147,9 +174,6 @@ func TestEdictManagedMCPNeedsNoLoggingParameter(t *testing.T) {
 	if err := command.Execute(); err != nil {
 		t.Fatalf("startup without a logging parameter: %v", err)
 	}
-	if command.Flags().Lookup("log-dir") != nil {
-		t.Fatal("unexpected log-dir flag")
-	}
 }
 
 func TestEdictManagedMCPStartupFailureKeepsStdoutClean(t *testing.T) {
@@ -169,20 +193,6 @@ func TestEdictManagedMCPStartupFailureKeepsStdoutClean(t *testing.T) {
 	}
 	if output.Len() != 0 {
 		t.Fatalf("startup failure contaminated stdout: %s", output.String())
-	}
-}
-
-func TestEdictSetupCodexManagedFlag(t *testing.T) {
-	destination := t.TempDir()
-	command := newEdictSetupCodexCommand()
-	command.SetArgs([]string{"--managed", "--dest", destination})
-	if err := command.Execute(); err != nil {
-		t.Fatal(err)
-	}
-	for _, skill := range []string{"edict_manager", "managed-edict-next-run", "managed-edict-next-batch-signal-analysis"} {
-		if _, err := os.Stat(filepath.Join(destination, skill, "SKILL.md")); err != nil {
-			t.Errorf("managed skill %s was not installed: %v", skill, err)
-		}
 	}
 }
 

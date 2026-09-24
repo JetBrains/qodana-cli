@@ -41,7 +41,7 @@ jobs:
           cache-dependency-path: "**/*.sum"
           go-version-file: go.mod
 
-      - name: Set up Java 21 for config-loader-cli.jar
+      - name: Set up Java 21 for building bundled Java and Kotlin tools
         uses: actions/setup-java@v5
         with:
           distribution: temurin
