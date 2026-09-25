@@ -29,8 +29,13 @@ object SignalValidation {
         } catch (e: Exception) {
             throw IllegalArgumentException("Invalid signal '$path': JSON: ${e.message}", e)
         }
-        field("idempotencyKey", signal.idempotencyKey.isNotBlank(), "must not be blank")
-        field("id", signal.id == stableSignalId(signal.idempotencyKey), "must equal SHA-256 derived stable signal ID")
+        val suppliedFeedback = signal.source.type == "SubmittedFeedback" && signal.source.suggestionId != null
+        if (suppliedFeedback && signal.idempotencyKey.isEmpty()) {
+            field("id", signal.id.matches(Regex("s-[0-9a-f]{12}")), "expected the supplied feedback's 12-digit hexadecimal ID")
+        } else {
+            field("idempotencyKey", signal.idempotencyKey.isNotBlank(), "must not be blank")
+            field("id", signal.id == stableSignalId(signal.idempotencyKey), "must equal SHA-256 derived stable signal ID")
+        }
         field("id", path.substringAfterLast('/') == "${signal.id}.json", "must match filename")
         field(
             "description",
@@ -43,7 +48,7 @@ object SignalValidation {
             !path.startsWith("inbox/") || signal.syntheticExampleId == null,
             "inbox signals cannot reference examples"
         )
-        field("provenance.workItemId", signal.provenance.workItemId.isNotBlank(), "must not be blank")
+        field("provenance.workItemId", suppliedFeedback || signal.provenance.workItemId.isNotBlank(), "must not be blank")
         val file = signal.fileRevision
         field("fileRevision.path", validSourcePath(file.path), "must be a clean repository-relative path")
         field("fileRevision.revision", validRevision(file.revision), "must be a full lowercase Git revision")
@@ -67,8 +72,16 @@ object SignalValidation {
         val source = signal.source
         when (source.type) {
             "SubmittedFeedback" -> {
-                field("source.message", !source.message.isNullOrBlank(), "requires the original feedback")
-                field("source.url", !source.url.isNullOrBlank(), "requires the feedback source reference")
+                if (suppliedFeedback) {
+                    field("source.suggestionId", !source.suggestionId.isNullOrBlank(), "requires the original suggestion reference")
+                    field("source.inspectionName", !source.inspectionName.isNullOrBlank(), "requires the supplied inspection name")
+                    field("source.inspectionDescription", !source.inspectionDescription.isNullOrBlank(), "requires the original feedback description")
+                    field("source.codeSnippet", !source.codeSnippet.isNullOrBlank(), "requires the supplied source snippet")
+                    field("source.reason", !source.reason.isNullOrBlank(), "requires the original feedback reason")
+                } else {
+                    field("source.message", !source.message.isNullOrBlank(), "requires the original feedback")
+                    field("source.url", !source.url.isNullOrBlank(), "requires the feedback source reference")
+                }
                 field("source", source.diffPositiveToNegative.isEmpty() && source.commitRevision == null &&
                         source.parentRevision == null && source.prNumber == null && source.title == null &&
                         source.discussionMessages.isEmpty(), "feedback must not fabricate commit or PR evidence")

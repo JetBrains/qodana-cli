@@ -2,7 +2,9 @@
 
 This Gradle subproject runs **after** Codex generation. `:benchmark:report` executes
 accepted inspections with the native `QODANA_DIST`, writes SARIF, and compares it
-with the original benchmark specifications and gold. `:benchmark:compare` can
+with the original benchmark specifications and `.edict/gold.sarif.json`. Both tasks
+read the project's existing `.edict` state via `-PedictStateDir`; report artifacts
+go to `-PbenchmarkOutputDir`. `:benchmark:compare` can
 re-evaluate existing SARIF. The subproject has no generation controller or MCP proxy.
 
 Pipeline setup, parameters, artifact provenance, and commands are documented in

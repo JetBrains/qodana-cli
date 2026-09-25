@@ -1,5 +1,16 @@
 # Strong-signal evidence and storage
 
+## Existing submitted feedback
+
+The inbox can already contain `SubmittedFeedback` records supplied with the project. Process these in place, preserving
+their original fields and IDs. The checked-in format uses a 12-digit hexadecimal signal ID and source fields
+`inspectionName`, `inspectionDescription`, `codeSnippet`, `reason`, and `suggestionId`; `suggestionId` is its stable
+source reference. This format has no `idempotencyKey`, `provenance`, or correcting diff. The alternative feedback format
+uses `source.message`, `source.url`, `idempotencyKey`, and `provenance`. Both carry an exact `fileRevision`, label, and
+description. Do not invent missing commit/PR metadata or convert existing feedback into extracted commit signals.
+
+## Extracting commit and PR signals
+
 Accept a PR discussion or human-authored corrective commit when human material requests, identifies, or confirms a
 concrete source correction, the exact before/after change demonstrates it, and its problematic or corrected form is
 bounded to source ranges without hidden information. Inspect complete discussion, title/body, anchored source, and diff

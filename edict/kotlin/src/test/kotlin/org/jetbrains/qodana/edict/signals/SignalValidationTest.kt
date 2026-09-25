@@ -17,6 +17,24 @@ class SignalValidationTest {
     @TempDir
     lateinit var directory: Path
     @Test
+    fun `checked-in feedback retains its supplied identity and source fields`() {
+        val content = javaClass.getResource("/signals/submitted-feedback.json")!!.readText()
+        val signal = SignalValidation.validate("inbox/s-0b1840a3d440.json", content)
+        assertEquals("benchmark/StaticInitializerReferencesSubClass/specification.json#negativeExamples/0", signal.deduplicationKey)
+        assertEquals("StaticInitializerReferencesSubClass", signal.source.inspectionName)
+        assertEquals(SignalLabel.NEGATIVE, signal.label)
+        assertTrue(signal.idempotencyKey.isEmpty())
+        assertTrue(signal.provenance.workItemId.isEmpty())
+        assertEquals(signal, SignalValidation.validate("clusters/chosen/signals/${signal.id}.json", content))
+        assertFails { SignalValidation.validate("inbox/s-other.json", content) }
+        listOf(signal.source.copy(suggestionId = ""), signal.source.copy(inspectionDescription = ""),
+            signal.source.copy(codeSnippet = null), signal.source.copy(commitRevision = signal.fileRevision.revision))
+            .forEach { source ->
+                assertFails { SignalValidation.validate("inbox/${signal.id}.json", json.encodeToString(signal.copy(source = source))) }
+            }
+    }
+
+    @Test
     fun `feedback requires source attribution and cannot masquerade as a correcting change`() {
         val original = fixtureSignals(gitFixture(directory)).first()
         val signal = original.copy(source = SignalSource("SubmittedFeedback", "", message = "Original labelled feedback",

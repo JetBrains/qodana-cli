@@ -4,6 +4,7 @@ set -euo pipefail
 benchmark_checkout="${BENCHMARK_CHECKOUT_DIR:-$PWD}"
 benchmark_source="$benchmark_checkout/qodana-cli"
 benchmark_project="$benchmark_checkout/project"
+benchmark_state="$benchmark_project/.edict"
 benchmark_output="$benchmark_checkout/benchmark-output"
 benchmark_codex_home="$benchmark_output/codex-home"
 benchmark_scratch="$benchmark_output/scratch"

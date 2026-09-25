@@ -18,12 +18,12 @@ class NativeReportTest {
         assertFailsWith<IllegalArgumentException> { scoringCode("$code\n$code", "EdictBenchmarkRule") }
     }
     @Test fun `comparison follows Edict cluster membership including splits and merges`() {
-        val signal = root.resolve("state/clusters/chosen-name/signals/s-signal.json")
+        val signal = root.resolve("clusters/chosen-name/signals/s-signal.json")
         signal.parent.createDirectories()
-        signal.writeText("""{"provenance":{"workItemId":"benchmark/Rule/specification.json#/positiveExamples/0"}}""")
+        signal.writeText("""{"source":{"type":"SubmittedFeedback","inspectionName":"Rule","suggestionId":"benchmark/Rule/specification.json#positiveExamples/0"}}""")
         val inputs = BenchmarkInputs("revision", listOf(Specification("Rule", "Description", "Java"), Specification("Other", "Other description", "Java")))
         assertEquals(mapOf("Rule" to listOf("chosen-name"), "Other" to emptyList()), resolveClusters(inputs, root))
-        val split = root.resolve("state/clusters/another/signals/s-second.json")
+        val split = root.resolve("clusters/another/signals/s-second.json")
         split.parent.createDirectories()
         split.writeText("""{"provenance":{"workItemId":"benchmark/Rule/specification.json#/positiveExamples/1"}}""")
         signal.resolveSibling("s-other.json").writeText("""{"provenance":{"workItemId":"benchmark/Other/specification.json#/positiveExamples/0"}}""")
@@ -32,7 +32,7 @@ class NativeReportTest {
     @Test fun `missing clusters never fall back to a predefined inspection name`() {
         val inputs = BenchmarkInputs("revision", listOf(Specification("Rule", "Description", "Java")))
         assertEquals(mapOf("Rule" to emptyList()), resolveClusters(inputs, root))
-        root.resolve("state/clusters/rule").createDirectories().resolve("description.json").writeText("""{"status":"Generated"}""")
+        root.resolve("clusters/rule").createDirectories().resolve("description.json").writeText("""{"status":"Generated"}""")
         assertEquals(mapOf("Rule" to emptyList()), resolveClusters(inputs, root))
         assertEquals("NotClustered", generationOutcome(emptyList(), emptyMap()))
         assertEquals("PartiallyGenerated", generationOutcome(listOf("a", "b"), mapOf("a" to "Generated", "b" to "Pending")))

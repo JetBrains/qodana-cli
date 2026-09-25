@@ -18,7 +18,7 @@ data class FileRevision(val path: String, val revision: String, val expectedRang
 @Serializable
 data class SignalSource(
     val type: String,
-    val diffPositiveToNegative: String,
+    val diffPositiveToNegative: String = "",
     val commitRevision: String? = null,
     val parentRevision: String? = null,
     val message: String? = null,
@@ -26,6 +26,11 @@ data class SignalSource(
     val title: String? = null,
     val discussionMessages: List<String> = emptyList(),
     val url: String? = null,
+    val inspectionName: String? = null,
+    val inspectionDescription: String? = null,
+    val codeSnippet: String? = null,
+    val reason: String? = null,
+    val suggestionId: String? = null,
 )
 
 @Serializable
@@ -34,11 +39,13 @@ data class Provenance(val workItemId: String, val analysisBatchId: String? = nul
 @Serializable
 data class Signal(
     val id: String,
-    val idempotencyKey: String,
+    val idempotencyKey: String = "",
     val fileRevision: FileRevision,
     val source: SignalSource,
     val label: SignalLabel,
     val description: String,
     val syntheticExampleId: String? = null,
-    val provenance: Provenance,
-)
+    val provenance: Provenance = Provenance(""),
+) {
+    val deduplicationKey: String get() = idempotencyKey.ifBlank { source.suggestionId.orEmpty() }
+}

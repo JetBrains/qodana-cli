@@ -1,0 +1,23 @@
+{
+    "id": "s-0b1840a3d440",
+    "fileRevision": {
+        "path": "core/src/main/java/hudson/model/PaneStatusProperties.java",
+        "revision": "5a82aeb196ed0528cb19e0fd7a227325d2906786",
+        "expectedRanges": [
+            {
+                "start": 14,
+                "end": 19
+            }
+        ]
+    },
+    "source": {
+        "type": "SubmittedFeedback",
+        "inspectionName": "StaticInitializerReferencesSubClass",
+        "inspectionDescription": "Reports classes that refer to their subclasses in static initializers or static fields. Such references can cause JVM-level deadlocks in multithreaded environment, when one thread tries to load the superclass and another thread tries to load the subclass at the same time. Example: 'class Parent {\n    static final Child field = new Child();\n  }\n  class Child extends Parent { }' Inspection ID: StaticInitializerReferencesSubClass",
+        "codeSnippet": "    private final PersistedList<String> collapsed = new PersistedList<>(this);\n\n    private static final PaneStatusProperties FALLBACK = new PaneStatusPropertiesSessionFallback();\n\n    public boolean isCollapsed(String paneId) {\n        return collapsed.contains(paneId);",
+        "reason": "Benchmark example imported from benchmark/StaticInitializerReferencesSubClass/specification.json#negativeExamples/0.",
+        "suggestionId": "benchmark/StaticInitializerReferencesSubClass/specification.json#negativeExamples/0"
+    },
+    "label": "NEGATIVE",
+    "description": "NEGATIVE: Benchmark example for StaticInitializerReferencesSubClass; this code must not be reported."
+}

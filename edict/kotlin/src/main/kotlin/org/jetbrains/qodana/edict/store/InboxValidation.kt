@@ -25,13 +25,13 @@ fun validateInboxChanges(store: Store, paths: List<String>): ValidationReceipt {
         require(path.startsWith("inbox/") && path.count { it == '/' } == 1) { "Expected inbox/<signal-id>.json" }
         val file = store.read(path)
         val signal = SignalValidation.validate(path, file.content)
-        ValidatedInboxFile(path, file.hash, signal.id, signal.idempotencyKey)
+        ValidatedInboxFile(path, file.hash, signal.id, signal.deduplicationKey)
     }
     require(files.map { it.idempotencyKey }.distinct().size == files.size) { "Duplicate idempotency keys" }
     val keys = files.map { it.idempotencyKey }.toSet()
     store.list("inbox").filterNot { it in paths }.forEach { path ->
         val existing = json.decodeFromString<Signal>(store.read(path).content)
-        require(existing.idempotencyKey !in keys) { "Idempotency key already exists in $path" }
+        require(existing.deduplicationKey !in keys) { "Idempotency key already exists in $path" }
     }
     return ValidationReceipt(
         "validation-${sha256(files.joinToString("|") { "${it.relativePath}:${it.sha256}" }).take(24)}",

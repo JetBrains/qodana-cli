@@ -87,23 +87,23 @@ class ComparisonTest {
     """.trimIndent()
 
     private fun fixture() {
-        val input = BenchmarkInputs("revision",
-            listOf(spec(FileRevision("X.java")), Specification("Pending", "Unfinished", "Java")))
-        write("generation/inputs.json", json.encodeToString(input))
-        write("generation/state/clusters/rule/description.json", """{"status":"Generated"}""")
-        write("generation/state/clusters/pending/description.json", """{"status":"Pending"}""")
-        write("generation/state/clusters/rule/signals/s-rule.json", """{"provenance":{"workItemId":"benchmark/Rule/specification.json#/positiveExamples/0"}}""")
-        write("generation/state/clusters/pending/signals/s-pending.json", """{"provenance":{"workItemId":"benchmark/Pending/specification.json#/positiveExamples/0"}}""")
-        write("generation/state/inspections/rule.inspection.kts", "// fixture inspection")
-        write("benchmark/gold.sarif.json", sarif("Rule"))
-        write("generation/qodana.sarif.json", sarif("EdictBenchmarkRule"))
+        write("reports/source-revision.txt", "revision\n")
+        write("benchmark/Rule/specification.json", json.encodeToString(spec(FileRevision("X.java"))))
+        write("benchmark/Pending/specification.json", json.encodeToString(Specification("Pending", "Unfinished", "Java")))
+        write("project/.edict/clusters/rule/description.json", """{"status":"Generated"}""")
+        write("project/.edict/clusters/pending/description.json", """{"status":"Pending"}""")
+        write("project/.edict/clusters/rule/signals/s-rule.json", """{"source":{"type":"SubmittedFeedback","suggestionId":"benchmark/Rule/specification.json#positiveExamples/0"}}""")
+        write("project/.edict/clusters/pending/signals/s-pending.json", """{"provenance":{"workItemId":"benchmark/Pending/specification.json#/positiveExamples/0"}}""")
+        write("project/.edict/inspections/rule.inspection.kts", "// fixture inspection")
+        write("project/.edict/gold.sarif.json", sarif("Rule"))
+        write("reports/qodana.sarif.json", sarif("EdictBenchmarkRule"))
     }
 
     @Test fun `comparison writes reference artifacts and aggregates only generated inspections`() {
         fixture()
         write("reports/generatedInspections/Stale.kts", "stale")
         write("reports/specGoldComparisons/Stale.json", "{}")
-        val report = compare(root.resolve("benchmark"), root.resolve("generation"), root.resolve("reports"))
+        val report = compare(root.resolve("benchmark"), root.resolve("project/.edict"), root.resolve("reports"))
         assertEquals(2, report.totalInspectionsProcessed)
         assertEquals(1, report.successful)
         assertEquals(1, report.aggregate.totalTP)
@@ -115,15 +115,17 @@ class ComparisonTest {
         assertTrue(root.resolve("reports/qodana.sarif.json").exists())
         assertFalse(root.resolve("reports/generatedInspections/Stale.kts").exists())
         assertFalse(root.resolve("reports/specGoldComparisons/Stale.json").exists())
-        // Held-out snapshot remains untouched.
-        assertEquals(2, json.decodeFromString<BenchmarkInputs>(root.resolve("generation/inputs.json").readText()).specifications.size)
+        // Reporting leaves checked-in fixtures and the state store in place.
+        assertEquals(spec(FileRevision("X.java")), json.decodeFromString<Specification>(root.resolve("benchmark/Rule/specification.json").readText()))
+        assertEquals(sarif("Rule"), root.resolve("project/.edict/gold.sarif.json").readText())
+        assertFalse(root.resolve("reports/state").exists())
     }
 
     @Test fun `built in rules cannot stand in for generated inspections`() {
         fixture()
-        write("generation/qodana.sarif.json", sarif("Rule"))
+        write("reports/qodana.sarif.json", sarif("Rule"))
         val error = assertFailsWith<IllegalArgumentException> {
-            compare(root.resolve("benchmark"), root.resolve("generation"), root.resolve("reports"))
+            compare(root.resolve("benchmark"), root.resolve("project/.edict"), root.resolve("reports"))
         }
         assertContains(error.message.orEmpty(), "EdictBenchmarkRule")
     }
@@ -140,9 +142,9 @@ class ComparisonTest {
 
     @Test fun `zero generated inspections still produce a report`() {
         fixture()
-        write("generation/state/clusters/rule/description.json", """{"status":"Invalid"}""")
-        write("generation/qodana.sarif.json", """{"runs":[{"results":[]}]}""")
-        val report = compare(root.resolve("benchmark"), root.resolve("generation"), root.resolve("reports"))
+        write("project/.edict/clusters/rule/description.json", """{"status":"Invalid"}""")
+        write("reports/qodana.sarif.json", """{"runs":[{"results":[]}]}""")
+        val report = compare(root.resolve("benchmark"), root.resolve("project/.edict"), root.resolve("reports"))
         assertEquals(0, report.successful)
         assertEquals(0.0, report.aggregate.specSatisfiedRate)
         assertTrue(root.resolve("reports/report.json").exists())
@@ -150,24 +152,24 @@ class ComparisonTest {
 
     @Test fun `no clusters produces an explicit outcome and empty SARIF`() {
         fixture()
-        deleteTree(root.resolve("generation/state/clusters"))
-        generateSarif(root.resolve("unused-project"), root.resolve("generation"))
-        val report = compare(root.resolve("benchmark"), root.resolve("generation"), root.resolve("reports"))
+        deleteTree(root.resolve("project/.edict/clusters"))
+        generateSarif(root.resolve("unused-project"), root.resolve("benchmark"), root.resolve("project/.edict"), root.resolve("reports"))
+        val report = compare(root.resolve("benchmark"), root.resolve("project/.edict"), root.resolve("reports"))
         assertEquals(mapOf("Rule" to "NotClustered", "Pending" to "NotClustered"), report.generationOutcomes)
         assertEquals(0, report.successful)
         assertTrue(readSarif(root.resolve("reports/qodana.sarif.json")).findings.isEmpty())
-        assertFalse(root.resolve("generation/state/clusters").exists())
+        assertFalse(root.resolve("project/.edict/clusters").exists())
     }
 
     @Test fun `split and merged clusters are scored against their source specifications`() {
         fixture()
-        write("generation/state/clusters/pending/description.json", """{"status":"Generated"}""")
-        write("generation/state/clusters/pending/signals/s-rule-second.json", """{"provenance":{"workItemId":"benchmark/Rule/specification.json#/positiveExamples/1"}}""")
-        write("generation/state/inspections/pending.inspection.kts", "// shared inspection")
+        write("project/.edict/clusters/pending/description.json", """{"status":"Generated"}""")
+        write("project/.edict/clusters/pending/signals/s-rule-second.json", """{"provenance":{"workItemId":"benchmark/Rule/specification.json#/positiveExamples/1"}}""")
+        write("project/.edict/inspections/pending.inspection.kts", "// shared inspection")
         val runs = listOf("EdictBenchmarkRule_Cluster1", "EdictBenchmarkRule_Cluster2", "EdictBenchmarkPending")
             .flatMap { json.parseToJsonElement(sarif(it)).jsonObject.getValue("runs").jsonArray }
-        writeJson(root.resolve("generation/qodana.sarif.json"), obj("runs" to JsonArray(runs)))
-        val report = compare(root.resolve("benchmark"), root.resolve("generation"), root.resolve("reports"))
+        writeJson(root.resolve("reports/qodana.sarif.json"), obj("runs" to JsonArray(runs)))
+        val report = compare(root.resolve("benchmark"), root.resolve("project/.edict"), root.resolve("reports"))
         assertEquals(2, report.successful)
         assertEquals(listOf("pending", "rule"), report.clustersByRule["Rule"])
         assertEquals(listOf("pending"), report.clustersByRule["Pending"])

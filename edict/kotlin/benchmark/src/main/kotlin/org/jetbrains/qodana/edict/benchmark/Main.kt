@@ -42,15 +42,15 @@ internal fun readSarif(path: Path): Sarif {
     return Sarif(findings, registered)
 }
 
-internal fun compare(benchmarkDir: Path, generationDir: Path, outputDir: Path,
-                     analysisSarif: Path = generationDir.resolve("qodana.sarif.json")): BenchmarkReport {
-    // Use the immutable snapshot selected before generation, including held-out optional examples.
-    val inputs = json.decodeFromString<BenchmarkInputs>(generationDir.resolve("inputs.json").readText())
-    val clusters = resolveClusters(inputs, generationDir)
-    val statuses = clusterOutcomes(clusters, generationDir)
+internal fun compare(benchmarkDir: Path, stateDir: Path, outputDir: Path,
+                     analysisSarif: Path = outputDir.resolve("qodana.sarif.json")): BenchmarkReport {
+    // Specifications stay in the VCS checkout; reporting reads them only after generation.
+    val inputs = loadInputs(benchmarkDir, outputDir)
+    val clusters = resolveClusters(inputs, stateDir)
+    val statuses = clusterOutcomes(clusters, stateDir)
     val outcomes = clusters.mapValues { (_, members) -> generationOutcome(members, statuses) }
     val successful = inputs.specifications.filter { outcomes[it.ruleId] == "Generated" }
-    val gold = readSarif(benchmarkDir.resolve("gold.sarif.json")).findings
+    val gold = readSarif(stateDir.resolve("gold.sarif.json")).findings
     val analysis = readSarif(analysisSarif)
     val generated = scoringInspections(clusters, statuses)
     val generatedIds = generated.associate { it.id to it.rule }
@@ -76,7 +76,7 @@ internal fun compare(benchmarkDir: Path, generationDir: Path, outputDir: Path,
     specGoldDir.listDirectoryEntries("*.json").forEach { it.deleteExisting() }
     generated.forEach { inspection ->
         val filename = if (clusters.getValue(inspection.rule).size == 1) inspection.rule else "${inspection.rule}--${inspection.cluster}"
-        generationDir.resolve("state/inspections/${inspection.cluster}.inspection.kts")
+        stateDir.resolve("inspections/${inspection.cluster}.inspection.kts")
             .copyTo(inspectionsDir.resolve("$filename.kts"), overwrite = true)
     }
     comparisons.forEach { specGoldDir.resolve("${it.ruleId}.json").writeText(json.encodeToString(it) + "\n") }
@@ -116,18 +116,19 @@ internal fun logReport(report: BenchmarkReport) {
 
 fun main(args: Array<String>) {
     try {
-        val allowed = setOf("--benchmark-dir", "--generation-dir", "--output-dir", "--analysis-sarif", "--project-dir")
+        val allowed = setOf("--benchmark-dir", "--state-dir", "--output-dir", "--analysis-sarif", "--project-dir")
         require(args.size % 2 == 0 && args.toList().chunked(2).all { it[0] in allowed }) {
-            "Use --benchmark-dir <fixtures> --generation-dir <generation artifacts> [--output-dir <reports>] [--analysis-sarif <file>]"
+            "Use --benchmark-dir <fixtures> --state-dir <project/.edict> --output-dir <reports> [--analysis-sarif <file>]"
         }
         val options = args.toList().chunked(2).associate { it[0] to Path.of(it[1]).toAbsolutePath().normalize() }
         require(options.size == args.size / 2) { "Duplicate options" }
-        val generation = options["--generation-dir"] ?: error("--generation-dir is required")
-        options["--project-dir"]?.let { generateSarif(it, generation) }
-        val report = compare(options["--benchmark-dir"] ?: error("--benchmark-dir is required"), generation,
-            options["--output-dir"] ?: generation, options["--analysis-sarif"] ?: generation.resolve("qodana.sarif.json"))
+        val state = options["--state-dir"] ?: error("--state-dir is required")
+        val output = options["--output-dir"] ?: error("--output-dir is required")
+        val benchmark = options["--benchmark-dir"] ?: error("--benchmark-dir is required")
+        options["--project-dir"]?.let { generateSarif(it, benchmark, state, output) }
+        val report = compare(benchmark, state, output, options["--analysis-sarif"] ?: output.resolve("qodana.sarif.json"))
         logReport(report)
-        options["--project-dir"]?.let { verifyManagedCompletion(generation) }
+        options["--project-dir"]?.let { verifyManagedCompletion(state) }
         check(report.successful > 0) { "No inspections generated; report.json contains the recorded generation outcomes" }
     } catch (error: Exception) {
         System.err.println("Benchmark comparison failed: ${error.message}")

@@ -17,14 +17,16 @@ cp "$benchmark_checkout/native-cli/qodana" "$benchmark_output/tooling/bin/qodana
 chmod +x "$benchmark_output/tooling/bin/qodana"
 qodana --version
 git -C "$benchmark_source" rev-parse HEAD > "$benchmark_output/runner-revision.txt"
+git -C "$benchmark_project" rev-parse HEAD > "$benchmark_output/source-revision.txt"
 # Build the standard Edict application, not the benchmark reporting subproject.
 "$benchmark_source/edict/kotlin/gradlew" -p "$benchmark_source/edict/kotlin" --no-daemon --console=plain :installDist
 edict="$benchmark_source/edict/kotlin/build/install/edict/bin/edict"
 "$edict" install-skills --directory "$benchmark_codex_home/skills"
-bash "$benchmark_source/scripts/edict-benchmark/import-inbox.sh"
+test -d "$benchmark_state/inbox"
+echo "Using existing Edict state at $benchmark_state ($(find "$benchmark_state/inbox" -name '*.json' | wc -l) inbox signals)."
 cat > "$benchmark_project/AGENTS.md" <<CONTEXT
 Source project: $benchmark_project
-Managed state: $benchmark_output/state (write through edict-mcp).
+Managed state: $benchmark_state (write through edict-mcp).
 Private scratch: $benchmark_scratch
 Skills directory: $benchmark_codex_home/skills
 Native inspections MCP provides compilation and example execution.
@@ -33,7 +35,7 @@ For complete project findings, use:
 Use an inspection ID distinct from built-in inspections (for example, prefix it with edict-).
 CONTEXT
 mkdir -p "$benchmark_output/trace" "$benchmark_output/mcp-cache" "$benchmark_output/mcp-results"
-nohup setsid "$edict" mcp --project-dir "$benchmark_project" --state-dir "$benchmark_output/state" \
+nohup setsid "$edict" mcp --project-dir "$benchmark_project" --state-dir "$benchmark_state" \
   --log-dir "$benchmark_output/log" --http-port 0 > "$benchmark_output/log/edict-server.log" 2>&1 < /dev/null &
 echo $! > "$benchmark_output/edict.pid"
 # This native archive provides the IDE's headless mcpServer starter. Its older
@@ -108,13 +110,13 @@ CONFIG
 # Exercise the actual sandbox without starting a model request.
 if env CODEX_HOME="$benchmark_codex_home" codex sandbox -P edict-benchmark -C "$benchmark_project" -- \
   /bin/sh -c 'printf allowed > "$1" && printf forbidden > "$2"' edict-probe \
-  "$benchmark_scratch/sandbox-write-probe" "$benchmark_output/state/unmanaged-write-probe" \
+  "$benchmark_scratch/sandbox-write-probe" "$benchmark_state/unmanaged-write-probe" \
   > "$benchmark_output/trace/sandbox.stdout" 2> "$benchmark_output/trace/sandbox.stderr"; then
   echo 'Sandbox incorrectly allowed an unmanaged state write' >&2
   exit 1
 fi
 test -s "$benchmark_scratch/sandbox-write-probe"
-test ! -e "$benchmark_output/state/unmanaged-write-probe"
+test ! -e "$benchmark_state/unmanaged-write-probe"
 rm "$benchmark_scratch/sandbox-write-probe"
 touch "$benchmark_output/servers-ready"
 echo "Both native MCP servers are ready."

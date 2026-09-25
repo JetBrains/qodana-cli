@@ -50,7 +50,8 @@ fun main() {
                 "target.jdk.home" to "%env.JDK_21_0%", "ui.gradleRunner.gradle.wrapper.useWrapper" to "true",
                 "ui.gradleRunner.gradle.tasks.names" to ":benchmark:report",
                 "ui.gradleRunner.additional.gradle.cmd.params" to "--no-daemon --console=plain -PbenchmarkDir=%teamcity.build.checkoutDir%/project/benchmark " +
-                    "-PgenerationDir=%teamcity.build.checkoutDir%/benchmark-output -PsourceProjectDir=%teamcity.build.checkoutDir%/project")))
+                    "-PedictStateDir=%teamcity.build.checkoutDir%/project/.edict -PbenchmarkOutputDir=%teamcity.build.checkoutDir%/benchmark-output " +
+                    "-PsourceProjectDir=%teamcity.build.checkoutDir%/project")))
     ))))
     api("/app/rest/buildTypes/id:$job/snapshot-dependencies", obj("snapshot-dependency" to JsonArray(emptyList())))
     api("/app/rest/buildTypes/id:$job/artifact-dependencies", obj("artifact-dependency" to JsonArray(listOf(
@@ -69,17 +70,18 @@ fun main() {
         "env.QODANA_CLI" to "%teamcity.build.checkoutDir%/benchmark-output/tooling/bin/qodana",
         "env.EDICT_PROJECT_DIR" to "%teamcity.build.checkoutDir%/project",
         "env.LITELLM_API_KEY" to "%liteLLMToken%", "env.BENCHMARK_MODEL" to "gpt-5.6-sol", "env.BENCHMARK_MINUTES" to "240",
-        "env.BENCHMARK_LIMIT" to "0", "env.BENCHMARK_RULES" to "", "env.BENCHMARK_CODEX_VERSION" to "0.155.1")
+        "env.BENCHMARK_CODEX_VERSION" to "0.155.1")
     parameters.forEach { (name, value) -> api("/app/rest/buildTypes/id:$job/parameters", obj("name" to text(name), "value" to text(value)), "POST") }
-    val obsolete = setOf("benchmark.image", "env.BENCHMARK_IMAGE", "env.BENCHMARK_SOURCE_REVISION", "env.BENCHMARK_COMPARISON_REVISION", "env.BENCHMARK_PREFLIGHT")
+    val obsolete = setOf("benchmark.image", "env.BENCHMARK_IMAGE", "env.BENCHMARK_SOURCE_REVISION", "env.BENCHMARK_COMPARISON_REVISION", "env.BENCHMARK_PREFLIGHT",
+        "env.BENCHMARK_LIMIT", "env.BENCHMARK_RULES")
     // Read names only: secure parameter values are never needed by this configuration tool.
     val names = json.parseToJsonElement(commandOutput("teamcity", "api", "/app/rest/buildTypes/id:$job/parameters?fields=property(name)")).jsonObject
     names["property"]?.jsonArray.orEmpty().map { it.jsonObject.string("name") }.filter { it in obsolete }.forEach {
         api("/app/rest/buildTypes/id:$job/parameters/$it", method = "DELETE")
     }
-    val artifacts = listOf("report.json", "qodana.sarif.json", "inputs.json", "prompt.txt", "inspection-tools.json", "source-revision.txt", "runner-revision.txt")
+    val artifacts = listOf("report.json", "qodana.sarif.json", "prompt.txt", "inspection-tools.json", "source-revision.txt", "runner-revision.txt")
         .map { "benchmark-output/$it" } + listOf("benchmark-output/generatedInspections => generatedInspections.zip",
-        "benchmark-output/specGoldComparisons => specGoldComparisons.zip", "benchmark-output/state => state.zip", "benchmark-output/log => logs.zip",
+        "benchmark-output/specGoldComparisons => specGoldComparisons.zip", "project/.edict => state.zip", "benchmark-output/log => logs.zip",
         "benchmark-output/trace/sandbox.stderr", "benchmark-output/trace/sandbox.stdout", "benchmark-output/mcp-results/log => inspection-ide-logs.zip",
         "benchmark-output/evaluation => evaluation.zip", "qodana-cli/scripts/edict-benchmark => runner-scripts.zip")
     mapOf("executionTimeoutMin" to "300", "maximumNumberOfBuilds" to "1", "cleanBuild" to "true", "checkoutMode" to "ON_AGENT",
