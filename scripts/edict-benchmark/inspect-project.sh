@@ -4,7 +4,7 @@ set -euo pipefail
 [[ $# == 3 ]] || { echo 'Usage: inspect-project.sh candidate.kts inspection-id scratch-output' >&2; exit 2; }
 candidate=$(realpath "$1")
 inspection_id="$2"
-[[ "$inspection_id" =~ ^[A-Za-z0-9_]+$ ]]
+[[ "$inspection_id" =~ ^[A-Za-z0-9_][A-Za-z0-9_-]*$ ]]
 : "${QODANA_DIST:?}"
 : "${TMPDIR:?}"
 mkdir -p "$3"
