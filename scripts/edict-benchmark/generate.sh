@@ -17,7 +17,7 @@ codex_pid=$!
 echo "$codex_pid" > "$benchmark_output/codex.pid"
 shopt -s nullglob
 while kill -0 "$codex_pid" 2>/dev/null; do
-  clusters=("$benchmark_output"/state/clusters/*/description.json)
+  clusters=("$benchmark_state"/clusters/*/description.json)
   if ((${#clusters[@]})); then
     jq -rs 'group_by(.status) | map("\(.[0].status)=\(length)") | join(", ")' \
       "${clusters[@]}" | sed 's/^/Generation progress: /'
