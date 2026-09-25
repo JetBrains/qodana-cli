@@ -44,9 +44,9 @@ fun main() {
     api("/app/rest/buildTypes/id:$job/steps", obj("step" to JsonArray(listOf(
         bashStep("INSTALL_CODEX", "Install Codex and configure LiteLLM", "install-codex.sh"),
         bashStep("START_MCP", "Install Kotlin skills and start native MCP servers", "prepare.sh"),
-        bashStep("EXECUTE_CODEX", "Process inbox and generate new rules", "generate.sh", "execute_always"),
+        bashStep("EXECUTE_CODEX", "Process inbox and generate new rules", "generate.sh"),
         obj("id" to text("REPORT"), "name" to text("Generate SARIF and compare with gold"), "type" to text("gradle-runner"),
-            "properties" to properties(mapOf("teamcity.step.mode" to "execute_always", "teamcity.build.workingDir" to "qodana-cli/edict/kotlin",
+            "properties" to properties(mapOf("teamcity.step.mode" to "execute_if_failed", "teamcity.build.workingDir" to "qodana-cli/edict/kotlin",
                 "target.jdk.home" to "%env.JDK_21_0%", "ui.gradleRunner.gradle.wrapper.useWrapper" to "true",
                 "ui.gradleRunner.gradle.tasks.names" to ":benchmark:report",
                 "ui.gradleRunner.additional.gradle.cmd.params" to "--no-daemon --console=plain -PbenchmarkDir=%teamcity.build.checkoutDir%/project/benchmark " +
