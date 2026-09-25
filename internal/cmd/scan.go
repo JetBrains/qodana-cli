@@ -19,6 +19,7 @@ package cmd
 import (
 	"fmt"
 	"os"
+	"path"
 	"path/filepath"
 
 	"github.com/JetBrains/qodana-cli/internal/cloud"
@@ -31,6 +32,7 @@ import (
 	"github.com/JetBrains/qodana-cli/internal/platform/commoncontext"
 	"github.com/JetBrains/qodana-cli/internal/platform/effectiveconfig"
 	"github.com/JetBrains/qodana-cli/internal/platform/msg"
+	"github.com/JetBrains/qodana-cli/internal/platform/qdcontainer"
 	"github.com/JetBrains/qodana-cli/internal/platform/qdenv"
 	"github.com/JetBrains/qodana-cli/internal/platform/qdyaml"
 	log "github.com/sirupsen/logrus"
@@ -113,6 +115,18 @@ But you can always override qodana.yaml options with the following command-line 
 				effectiveConfigFiles.ConfigDir,
 			)
 
+			baseline := platform.ResolveBaseline(
+				scanContext.Baseline(),
+				scanContext.QodanaUploadToken(),
+				scanContext.Analyser().GetLinter().ProductCode,
+				scanContext.CacheDir(),
+			)
+			defer baseline.Cleanup()
+			if baseline.IsFromCloud() {
+				scanContext = scanContext.WithCloudBaseline(baselineForLinter(baseline.BaselinePath(), scanContext))
+				qdenv.SetEnv(qdenv.QodanaBaselineFromCloud, "true")
+			}
+
 			exitCode := core.RunAnalysis(ctx, scanContext)
 			if qdenv.IsContainer() {
 				err := platform.ChangeResultsPermissionsRecursively(scanContext.ResultsDir())
@@ -134,6 +148,7 @@ But you can always override qodana.yaml options with the following command-line 
 			if newReportUrl != oldReportUrl && newReportUrl != "" && !qdenv.IsContainer() {
 				msg.SuccessMessage("Report is successfully uploaded to %s", newReportUrl)
 			}
+			fmt.Println(baseline.UsedMessage())
 
 			commoncontext.InteractiveShowReport(
 				scanContext.ShowReport(),
@@ -200,4 +215,17 @@ func checkExitCode(exitCode int, c corescan.Context) {
 		}
 		os.Exit(exitCode)
 	}
+}
+
+// baselineForLinter returns the path the linter reads the downloaded baseline from. A linter in a
+// container reads it from the cache dir mounted into the container.
+func baselineForLinter(baselinePath string, c corescan.Context) string {
+	if !c.Analyser().IsContainer() {
+		return baselinePath
+	}
+	relative, err := filepath.Rel(c.CacheDir(), baselinePath)
+	if err != nil {
+		log.Fatalf("Baseline %s is not in the cache dir %s: %v", baselinePath, c.CacheDir(), err)
+	}
+	return path.Join(qdcontainer.DataCacheDir, filepath.ToSlash(relative))
 }

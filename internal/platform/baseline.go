@@ -18,14 +18,129 @@ package platform
 
 import (
 	"fmt"
+	"os"
+	"path/filepath"
 
+	"github.com/JetBrains/qodana-cli/internal/cloud"
+	"github.com/JetBrains/qodana-cli/internal/platform/msg"
+	"github.com/JetBrains/qodana-cli/internal/platform/product"
+	"github.com/JetBrains/qodana-cli/internal/platform/qdenv"
 	"github.com/JetBrains/qodana-cli/internal/platform/thirdpartyscan"
 	"github.com/JetBrains/qodana-cli/internal/platform/utils"
 	"github.com/JetBrains/qodana-cli/internal/tooling"
+	log "github.com/sirupsen/logrus"
 )
 
+// baselineDownloader writes the baseline of a tool from Qodana Cloud to a file.
+type baselineDownloader interface {
+	WriteBaseline(toolName string, file *os.File) (bool, error)
+}
+
+var noBaselineCleanup = func() {}
+
+// Baseline is the baseline an analysis compares its results with.
+type Baseline struct {
+	baselinePath             string
+	isCloudBaseline          bool
+	removeDownloadedBaseline func()
+}
+
+func (b Baseline) BaselinePath() string { return b.baselinePath }
+
+func (b Baseline) IsFromCloud() bool { return b.isCloudBaseline }
+
+func (b Baseline) Cleanup() {
+	if b.removeDownloadedBaseline != nil {
+		b.removeDownloadedBaseline()
+	}
+}
+
+// UsedMessage tells which baseline the analysis has used.
+func (b Baseline) UsedMessage() string {
+	switch {
+	case b.isCloudBaseline:
+		return "The analysis used the baseline from Qodana Cloud"
+	case b.baselinePath != "":
+		return fmt.Sprintf("The analysis used the baseline file %s", b.baselinePath)
+	default:
+		return "The analysis used no baseline. Give a baseline file with --baseline, " +
+			"or turn on the cloud baseline of the project in Qodana Cloud."
+	}
+}
+
+// ResolveBaseline returns the baseline the analysis results are compared with: baselineFile, if the
+// run was given one, otherwise the baseline stored in Qodana Cloud for toolName, if the project of
+// cloudToken has one. An empty toolName gets the baseline of every tool of the project.
+// The downloaded baseline is stored in cacheDir and must be cleaned up.
+func ResolveBaseline(baselineFile string, cloudToken string, toolName string, cacheDir string) Baseline {
+	if baselineFile != "" {
+		return Baseline{
+			baselinePath:             baselineFile,
+			isCloudBaseline:          os.Getenv(qdenv.QodanaBaselineFromCloud) == "true",
+			removeDownloadedBaseline: noBaselineCleanup,
+		}
+	}
+
+	noBaseline := Baseline{removeDownloadedBaseline: noBaselineCleanup}
+	if cloudToken == "" {
+		log.Debug("Not connected to Qodana Cloud, running without a baseline")
+		return noBaseline
+	}
+	fmt.Println("Fetching baseline from Qodana Cloud ...")
+	toolName = product.CloudBaselineToolName(toolName)
+	client := cloud.GetCloudApiEndpoints().NewLintersApiClient(cloudToken)
+	baseline, cleanup, err := downloadCloudBaseline(client, toolName, cacheDir)
+	if err != nil {
+		msg.WarningMessage("Cannot use the baseline of Qodana Cloud, running without a baseline: %v", err)
+		return noBaseline
+	}
+	if baseline == "" {
+		log.Debugf("Qodana Cloud has no baseline of '%s' for this project", toolName)
+		return noBaseline
+	}
+	return Baseline{baselinePath: baseline, isCloudBaseline: true, removeDownloadedBaseline: cleanup}
+}
+
+// downloadCloudBaseline stores the baseline from Qodana Cloud as a SARIF file in the cache dir.
+// An empty path means that there is no cloud baseline to compare the analysis with.
+func downloadCloudBaseline(client baselineDownloader, toolName string, cacheDir string) (string, func(), error) {
+	if err := os.MkdirAll(cacheDir, 0o755); err != nil {
+		return "", noBaselineCleanup, fmt.Errorf("failed to create the cache dir %s: %w", cacheDir, err)
+	}
+	dir, err := os.MkdirTemp(cacheDir, "cloud-baseline-")
+	if err != nil {
+		return "", noBaselineCleanup, fmt.Errorf("failed to create a directory for the baseline: %w", err)
+	}
+	cleanup := func() { _ = os.RemoveAll(dir) }
+	// a linter in a container reads the baseline as the user of the container, which is not always
+	// the user which has downloaded it, while MkdirTemp lets only the owner in
+	if err := os.Chmod(dir, 0o755); err != nil {
+		cleanup()
+		return "", noBaselineCleanup, fmt.Errorf("failed to open the directory of the baseline: %w", err)
+	}
+	baseline := filepath.Join(dir, "qodana.sarif.json")
+	file, err := os.Create(baseline)
+	if err != nil {
+		cleanup()
+		return "", noBaselineCleanup, fmt.Errorf("failed to create the baseline file %s: %w", baseline, err)
+	}
+
+	written, err := client.WriteBaseline(toolName, file)
+	if closeErr := file.Close(); err == nil {
+		err = closeErr
+	}
+	if err != nil || !written {
+		cleanup()
+		return "", noBaselineCleanup, err
+	}
+	if info, statErr := os.Stat(baseline); statErr == nil {
+		log.Debugf("Baseline of %s from Qodana Cloud: %s, %d bytes", toolName, baseline, info.Size())
+	}
+	return baseline, cleanup, nil
+}
+
 // computeBaselinePrintResults runs SARIF analysis (compares with baseline and prints the result)=
-func computeBaselinePrintResults(c thirdpartyscan.Context, thresholds map[string]string) (int, error) {
+func computeBaselinePrintResults(c thirdpartyscan.Context, thresholds map[string]string, baseline string) (int, error) {
 	sarifPath := GetSarifPath(c.ResultsDir())
 	args := []string{
 		tooling.GetQodanaJBRPath(c.CacheDir()),
@@ -39,8 +154,8 @@ func computeBaselinePrintResults(c thirdpartyscan.Context, thresholds map[string
 	}
 	severities := thresholdsToArgs(thresholds)
 	args = append(args, severities...)
-	if c.Baseline() != "" {
-		args = append(args, "-b", c.Baseline())
+	if baseline != "" {
+		args = append(args, "-b", baseline)
 	}
 	if c.BaselineIncludeAbsent() {
 		args = append(args, "-i")
