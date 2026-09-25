@@ -7,6 +7,10 @@ import java.nio.file.attribute.BasicFileAttributes
 import java.util.concurrent.TimeUnit
 import kotlin.io.path.*
 
+internal fun obj(vararg values: Pair<String, JsonElement>) = JsonObject(mapOf(*values))
+internal fun text(value: String) = JsonPrimitive(value)
+internal fun JsonObject.string(name: String) = getValue(name).jsonPrimitive.content
+
 internal fun writeJson(path: Path, value: JsonElement) {
     path.parent.createDirectories()
     path.writeText(json.encodeToString(JsonElement.serializer(), value) + "\n")
@@ -31,18 +35,19 @@ internal fun commandOutput(vararg command: String): String {
 
 internal fun qodanaProcess(project: Path, results: Path, cache: Path, log: Path, vararg extra: String): ProcessBuilder {
     results.createDirectories(); cache.createDirectories(); log.parent.createDirectories()
-    return ProcessBuilder(listOf("/opt/idea/bin/qodana", "scan", "--project-dir", project.toString(),
+    val distribution = System.getenv("QODANA_DIST") ?: error("QODANA_DIST must point to the native distribution")
+    return ProcessBuilder(listOf(System.getenv("QODANA_CLI") ?: "qodana", "scan", "--within-docker=false",
+        "--ide", distribution, "--project-dir", project.toString(),
         "--results-dir", results.toString(), "--cache-dir", cache.toString(), "--disable-sanity", "--run-promo=false",
         "--save-report=false", "--property=idea.headless.enable.statistics=false") + extra)
         .redirectErrorStream(true).redirectOutput(log.toFile()).apply {
-            // The image exports QODANA_CONF=/root/.config/idea. Override the actual CLI input,
-            // not idea.config.path: the CLI sorts duplicate JVM properties and the default wins.
+            // Every IDE process needs its own configuration directory to avoid lock collisions.
             environment()["QODANA_CONF"] = cache.resolve("config").toString()
         }
 }
 
 internal fun copySource(source: Path, target: Path) {
-    val excluded = setOf(".git", ".edict", ".qodana", "benchmark", "inspections", "target", "qodana.yaml")
+    val excluded = setOf(".git", ".edict", ".qodana", "benchmark", "inspections", "target", "qodana.yaml", "AGENTS.md")
     Files.walkFileTree(source, object : SimpleFileVisitor<Path>() {
         override fun preVisitDirectory(dir: Path, attrs: BasicFileAttributes): FileVisitResult {
             if (dir != source && dir.fileName.toString() in excluded) return FileVisitResult.SKIP_SUBTREE
@@ -84,8 +89,8 @@ internal class ProjectRunner(private val source: Path, private val output: Path)
         val log = destination.resolve("analysis.log")
         val process = qodanaProcess(project, results, workspace.resolve("cache"), log).start()
         try {
-            if (!process.waitFor(30, TimeUnit.MINUTES)) throw InfrastructureFailure("Project scan timed out; see $log")
-            if (process.exitValue() != 0) throw InfrastructureFailure("Project analysis exited ${process.exitValue()}; see $log\n${log.readText().takeLast(2000)}")
+            if (!process.waitFor(30, TimeUnit.MINUTES)) throw IllegalStateException("Project scan timed out; see $log")
+            if (process.exitValue() != 0) throw IllegalStateException("Project analysis exited ${process.exitValue()}; see $log\n${log.readText().takeLast(2000)}")
             val sarif = results.resolve("qodana.sarif.json")
             val registered = readSarif(sarif).registeredRules
             check(registered.containsAll(codes.keys)) { "Generated inspections were not loaded: ${codes.keys - registered}" }
