@@ -15,11 +15,14 @@ project="${EDICT_PROJECT_DIR:-$PWD}"
 test -f "$project/pom.xml"
 exec 9> "$TMPDIR/native-project-scan.lock"
 flock -w 1800 9
-workspace="$TMPDIR/native-project-workspace"
+# Long IDE system paths redirect the lock socket to /tmp, outside this sandbox.
+workspace="$TMPDIR/q"
+export JAVA_TOOL_OPTIONS="${JAVA_TOOL_OPTIONS:-} -Djava.io.tmpdir=\"$TMPDIR\""
 if [[ ! -d "$workspace/project" ]]; then
   mkdir -p "$workspace/project"
   tar -C "$project" --exclude=.git --exclude=.edict --exclude=.qodana --exclude=benchmark \
   --exclude=inspections --exclude=target --exclude=qodana.yaml --exclude=AGENTS.md -cf - . | tar -C "$workspace/project" -xf -
+  git -C "$workspace/project" init --quiet
 fi
 # Reuse one imported project and IDE cache across sequential candidates.
 rm -rf "$workspace/project/inspections"
