@@ -33,7 +33,7 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Setup container engine
+      - name: Setup container engine (${{ inputs.container-engine }})
         if: inputs.container-engine != 'none'
         uses: ./.github/actions/setup-container-engine
         with:
