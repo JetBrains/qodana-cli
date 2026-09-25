@@ -98,7 +98,9 @@ func IsManagedMCPCommand(args []string) bool {
 
 func isManagedMCPCommand(root *cobra.Command, args []string) bool {
 	command, _, _ := root.Find(args)
-	return command != nil && command.Name() == "edict-mcp"
+	return command != nil && command.Name() == "start" &&
+		command.Parent() != nil && command.Parent().Name() == "mcp" &&
+		command.Parent().Parent() != nil && command.Parent().Parent().Name() == "edict"
 }
 
 // newRootCommand constructs root command.

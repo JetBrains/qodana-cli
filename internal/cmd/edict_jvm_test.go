@@ -55,7 +55,7 @@ func TestEdictSetupCodexUsesKotlinBundle(t *testing.T) {
 			if err := os.WriteFile(unrelated, []byte("keep"), 0o600); err != nil {
 				t.Fatal(err)
 			}
-			command := newEdictSetupCodexCommand()
+			command := newEdictInstallCommand()
 			command.SetArgs(args)
 			command.SetIn(strings.NewReader(""))
 			var output, stderr bytes.Buffer
@@ -117,7 +117,7 @@ func TestEdictCodexDefaultSkillsDirectory(t *testing.T) {
 }
 
 func TestEdictJVMPropagatesFailure(t *testing.T) {
-	command := newEdictSetupCodexCommand()
+	command := newEdictInstallCommand()
 	blocked := filepath.Join(t.TempDir(), "not a directory")
 	if err := os.WriteFile(blocked, []byte("keep"), 0o600); err != nil {
 		t.Fatal(err)
@@ -145,7 +145,7 @@ func TestEdictManagedMCPHTTPProxy(t *testing.T) {
 	defer cancel()
 	stderr, stderrWriter := io.Pipe()
 	defer stderr.Close()
-	command := newEdictManagedMCPCommand()
+	command := newEdictManagedMCPStartCommand()
 	command.SetArgs([]string{"--project-dir", project, "--state-dir", state, "--log-dir", logs, "--http-port", "0"})
 	command.SetIn(strings.NewReader(""))
 	var output bytes.Buffer
@@ -193,7 +193,7 @@ func TestEdictManagedMCPHTTPProxy(t *testing.T) {
 		t.Fatalf("unexpected Kotlin HTTP registry response (status %d)", response.StatusCode)
 	}
 	// The forwarded state path is exclusively locked by the JVM.
-	duplicate := newEdictManagedMCPCommand()
+	duplicate := newEdictManagedMCPStartCommand()
 	duplicate.SetArgs([]string{"--project-dir", project, "--state-dir", state})
 	duplicate.SetIn(strings.NewReader(""))
 	duplicate.SetOut(&bytes.Buffer{})
@@ -221,7 +221,7 @@ func TestEdictManagedMCPHTTPProxy(t *testing.T) {
 		t.Fatal("custom state directory was ignored")
 	}
 	// A fresh process must be able to acquire the same state after cancellation.
-	restart := newEdictManagedMCPCommand()
+	restart := newEdictManagedMCPStartCommand()
 	restart.SetArgs([]string{"--project-dir", project, "--state-dir", state})
 	restart.SetIn(strings.NewReader(""))
 	restart.SetOut(&bytes.Buffer{})

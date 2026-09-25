@@ -38,41 +38,42 @@ const (
 	mcpOutputJSON    = "json"
 )
 
-func newEdictMCPCommand() *cobra.Command {
+func newEdictLinterMCPCommand() *cobra.Command {
 	service := edictmcp.Service{
 		Launcher:  qodanaMCPLauncher{},
 		Processes: edictmcp.OSProcessController{},
 	}
-	return newEdictMCPCommandWithService(service)
+	return newEdictLinterMCPCommandWithService(service)
 }
 
-func newEdictMCPCommandWithService(service edictmcp.Service) *cobra.Command {
+func newEdictLinterMCPCommandWithService(service edictmcp.Service) *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "mcp",
+		Use:   "linter-mcp",
 		Short: "Manage the IntelliJ MCP server for Edict inspections",
 	}
 	cmd.AddCommand(
-		newEdictMCPStartCommand(service),
-		newEdictMCPStatusCommand(service),
-		newEdictMCPStopCommand(service),
+		newEdictLinterMCPStartCommand(service),
+		newEdictLinterMCPStatusCommand(service),
+		newEdictLinterMCPStopCommand(service),
 	)
 	return cmd
 }
 
-type edictMCPStartOptions struct {
+type edictLinterMCPStartOptions struct {
 	ProjectDir  string
 	StateFile   string
 	ReadyFile   string
 	LogFile     string
 	Linter      string
 	IDE         string
+	Starter     string
 	Property    []string
 	Port        int
 	WaitTimeout time.Duration
 }
 
-func newEdictMCPStartCommand(service edictmcp.Service) *cobra.Command {
-	options := &edictMCPStartOptions{}
+func newEdictLinterMCPStartCommand(service edictmcp.Service) *cobra.Command {
+	options := &edictLinterMCPStartOptions{}
 	cmd := &cobra.Command{
 		Use:   "start",
 		Short: "Start the MCP server and wait until it is ready",
@@ -89,7 +90,7 @@ func newEdictMCPStartCommand(service edictmcp.Service) *cobra.Command {
 			state, err := service.Start(
 				cmd.Context(), edictmcp.StartOptions{
 					ProjectDir: projectDir, StateFile: paths.state, ReadyFile: paths.ready, LogFile: paths.log,
-					Linter: options.Linter, IDE: options.IDE, Property: options.Property, Port: options.Port, WaitTimeout: options.WaitTimeout,
+					Linter: options.Linter, IDE: options.IDE, Starter: options.Starter, Property: options.Property, Port: options.Port, WaitTimeout: options.WaitTimeout,
 				},
 			)
 			if err != nil {
@@ -114,6 +115,7 @@ func newEdictMCPStartCommand(service edictmcp.Service) *cobra.Command {
 		"Native IDE product code or path to a local IDE distribution",
 	)
 	flags.IntVar(&options.Port, "port", 0, "MCP server port; 0 selects an available port")
+	flags.StringVar(&options.Starter, "starter", mcpIDEStarter, "Server entry point: mcpServer (IDE headless starter) or mcp-server (Qodana script)")
 	flags.StringArrayVar(&options.Property, "property", nil, "Set a JVM property or option for the MCP server")
 	flags.DurationVar(&options.WaitTimeout, "wait-timeout", 90*time.Second, "Maximum time to wait for MCP readiness")
 	flags.StringVar(&options.StateFile, "state-file", "", "Lifecycle state file (defaults to the Qodana user cache)")
@@ -123,15 +125,15 @@ func newEdictMCPStartCommand(service edictmcp.Service) *cobra.Command {
 	return cmd
 }
 
-type edictMCPStateOptions struct {
+type edictLinterMCPStateOptions struct {
 	ProjectDir string
 	StateFile  string
 	Timeout    time.Duration
 	Output     string
 }
 
-func newEdictMCPStatusCommand(service edictmcp.Service) *cobra.Command {
-	options := &edictMCPStateOptions{}
+func newEdictLinterMCPStatusCommand(service edictmcp.Service) *cobra.Command {
+	options := &edictLinterMCPStateOptions{}
 	cmd := &cobra.Command{
 		Use:   "status",
 		Short: "Show the MCP server status",
@@ -158,8 +160,8 @@ func newEdictMCPStatusCommand(service edictmcp.Service) *cobra.Command {
 	return cmd
 }
 
-func newEdictMCPStopCommand(service edictmcp.Service) *cobra.Command {
-	options := &edictMCPStateOptions{}
+func newEdictLinterMCPStopCommand(service edictmcp.Service) *cobra.Command {
+	options := &edictLinterMCPStateOptions{}
 	cmd := &cobra.Command{
 		Use:   "stop",
 		Short: "Stop the MCP server",
@@ -179,7 +181,7 @@ func newEdictMCPStopCommand(service edictmcp.Service) *cobra.Command {
 	return cmd
 }
 
-func addEdictMCPStateFlags(cmd *cobra.Command, options *edictMCPStateOptions, includeTimeout bool) {
+func addEdictMCPStateFlags(cmd *cobra.Command, options *edictLinterMCPStateOptions, includeTimeout bool) {
 	cmd.Flags().StringVarP(&options.ProjectDir, "project-dir", "i", ".", "Root directory of the project")
 	cmd.Flags().StringVar(
 		&options.StateFile,

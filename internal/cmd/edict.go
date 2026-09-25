@@ -26,15 +26,15 @@ func newEdictCommand() *cobra.Command {
 		Use:   "edict",
 		Short: "Edict commands: extract inspection rules from your development history",
 	}
-	cmd.AddCommand(newEdictSetupCodexCommand(), newEdictMCPCommand(), newEdictManagedMCPCommand())
+	cmd.AddCommand(newEdictInstallCommand(), newEdictLinterMCPCommand(), newEdictManagedMCPCommand())
 	return cmd
 }
 
-// newEdictSetupCodexCommand returns the command installing bundled edict skills into the Codex CLI.
-func newEdictSetupCodexCommand() *cobra.Command {
-	cliOptions := &edictSetupCodexOptions{}
+// newEdictInstallCommand returns the command installing bundled edict skills into the Codex CLI.
+func newEdictInstallCommand() *cobra.Command {
+	cliOptions := &edictInstallOptions{}
 	cmd := &cobra.Command{
-		Use:   "setup-codex",
+		Use:   "install",
 		Short: "Install managed Edict skills into the local Codex CLI",
 		Long: `Install the managed Edict skills bundled in the Kotlin application
 into the Codex CLI skills directory, so that 'codex' discovers them automatically.
@@ -66,7 +66,7 @@ Existing skill files are overwritten, so re-running the command updates the skil
 	return cmd
 }
 
-type edictSetupCodexOptions struct {
+type edictInstallOptions struct {
 	Managed    bool
 	Project    bool
 	ProjectDir string

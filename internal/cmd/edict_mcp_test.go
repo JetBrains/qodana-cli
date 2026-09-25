@@ -18,7 +18,7 @@ import (
 
 func TestEdictMCPStartDefaultsToQodanaDistribution(t *testing.T) {
 	t.Setenv(qdenv.QodanaDistEnv, "/opt/idea")
-	command := newEdictMCPStartCommand(edictmcp.Service{})
+	command := newEdictLinterMCPStartCommand(edictmcp.Service{})
 
 	ide, err := command.Flags().GetString("ide")
 	if err != nil {
@@ -30,7 +30,7 @@ func TestEdictMCPStartDefaultsToQodanaDistribution(t *testing.T) {
 }
 
 func TestEdictMCPStatusDefaultsToTabularOutput(t *testing.T) {
-	command := newEdictMCPStatusCommand(edictmcp.Service{})
+	command := newEdictLinterMCPStatusCommand(edictmcp.Service{})
 	output, err := command.Flags().GetString("output")
 	if err != nil {
 		t.Fatal(err)
@@ -45,7 +45,7 @@ func TestEdictMCPStatusWithoutState(t *testing.T) {
 	service := edictmcp.Service{
 		Processes: edictmcp.OSProcessController{},
 	}
-	command := newEdictMCPCommandWithService(service)
+	command := newEdictLinterMCPCommandWithService(service)
 	output := &bytes.Buffer{}
 	command.SetOut(output)
 	command.SetArgs([]string{"status", "--project-dir", t.TempDir(), "--state-file", stateFile, "--output", "json"})
@@ -95,12 +95,12 @@ func TestEdictMCPStatusRejectsUnknownFormat(t *testing.T) {
 	}
 }
 
-func TestEdictCommandIncludesMCP(t *testing.T) {
+func TestEdictCommandIncludesBothMCPServers(t *testing.T) {
 	command := newEdictCommand()
-	for _, child := range command.Commands() {
-		if child.Name() == "mcp" {
-			return
+	for _, path := range [][]string{{"install"}, {"mcp", "start"}, {"linter-mcp", "start"}, {"linter-mcp", "status"}, {"linter-mcp", "stop"}} {
+		found, remaining, err := command.Find(path)
+		if err != nil || len(remaining) != 0 || found.Name() != path[len(path)-1] {
+			t.Fatalf("edict %v is not registered: %v", path, err)
 		}
 	}
-	t.Fatal("edict mcp command is not registered")
 }

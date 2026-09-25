@@ -16,7 +16,7 @@ build/install/edict/bin/edict mcp --project-dir /path/to/source --state-dir /pat
 
 ## Qodana CLI integration
 
-The Go commands `qodana edict setup-codex` and `qodana edict edict-mcp` launch this
+The Go commands `qodana edict install` and `qodana edict mcp start` launch this
 Kotlin application with Qodana's embedded JBR. Skill installation always installs
 the 13 managed skills; `--managed` remains accepted for compatibility. Destination
 selection still supports `--dest`, `--project`, and `$CODEX_HOME/skills` (falling
@@ -31,9 +31,9 @@ From the repository root:
 ```sh
 go generate ./internal/tooling/...
 go build -o qodana ./cli
-./qodana edict setup-codex --project --project-dir /path/to/source
-./qodana edict edict-mcp --project-dir /path/to/source
-./qodana edict edict-mcp --project-dir /path/to/source --http-port 0 --log-dir /path/to/logs
+./qodana edict install --project --project-dir /path/to/source
+./qodana edict mcp start --project-dir /path/to/source
+./qodana edict mcp start --project-dir /path/to/source --http-port 0 --log-dir /path/to/logs
 go test ./internal/cmd -run 'Test(Edict|ManagedMCP)'
 ```
 
@@ -46,7 +46,7 @@ run `java -jar build/libs/edict-cli.jar --help` after building `bundledJar`.
 The Go proxy tests launch the actual embedded JAR and JBR. They cover all install
 destinations and bundled resources, stdio/HTTP MCP, redacted logs, errors, shutdown,
 and state-lock release. They need no model, Distillery checkout, or IDE.
-`qodana edict mcp start/status/stop` continues to manage the separate IntelliJ
+`qodana edict linter-mcp start/status/stop` continues to manage the separate IntelliJ
 inspection server.
 
 `mcp` uses newline-delimited MCP JSON-RPC on stdio. Stdout contains only protocol

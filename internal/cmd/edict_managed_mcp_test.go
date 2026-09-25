@@ -33,7 +33,7 @@ func exerciseEdictManagedMCP(t *testing.T, cancelServer bool) {
 	defer serverPipe.Close()
 	defer clientPipe.Close()
 	command := newEdictCommand()
-	command.SetArgs([]string{"edict-mcp", "--project-dir", project})
+	command.SetArgs([]string{"mcp", "start", "--project-dir", project})
 	command.SetIn(serverPipe)
 	command.SetOut(serverPipe)
 	command.SetErr(&bytes.Buffer{})
@@ -102,7 +102,7 @@ func exerciseEdictManagedMCP(t *testing.T, cancelServer bool) {
 	case <-time.After(5 * time.Second):
 		t.Fatal("CLI did not stop when its context or MCP connection closed")
 	}
-	restart := newEdictManagedMCPCommand()
+	restart := newEdictManagedMCPStartCommand()
 	restart.SetArgs([]string{"--project-dir", project})
 	restart.SetIn(strings.NewReader(""))
 	restart.SetOut(&bytes.Buffer{})
@@ -166,7 +166,7 @@ func exerciseEdictManagedMCP(t *testing.T, cancelServer bool) {
 }
 
 func TestEdictManagedMCPNeedsNoLoggingParameter(t *testing.T) {
-	command := newEdictManagedMCPCommand()
+	command := newEdictManagedMCPStartCommand()
 	command.SetArgs([]string{"--project-dir", t.TempDir()})
 	command.SetIn(strings.NewReader(""))
 	command.SetOut(&bytes.Buffer{})
@@ -182,7 +182,7 @@ func TestEdictManagedMCPStartupFailureKeepsStdoutClean(t *testing.T) {
 	if err := os.WriteFile(state, []byte("existing"), 0o600); err != nil {
 		t.Fatal(err)
 	}
-	command := newEdictManagedMCPCommand()
+	command := newEdictManagedMCPStartCommand()
 	command.SetArgs([]string{"--state-dir", state, "--project-dir", directory})
 	command.SetIn(strings.NewReader(""))
 	output := &bytes.Buffer{}
@@ -200,17 +200,17 @@ func TestManagedMCPCommandDetection(t *testing.T) {
 	root := newRootCommand()
 	root.AddCommand(newEdictCommand())
 	for _, args := range [][]string{
-		{"edict", "edict-mcp"},
-		{"--log-level", "debug", "edict", "edict-mcp"},
-		{"edict", "--disable-update-checks", "edict-mcp", "--state-dir", "/tmp/edict-state"},
+		{"edict", "mcp", "start"},
+		{"--log-level", "debug", "edict", "mcp", "start"},
+		{"edict", "--disable-update-checks", "mcp", "start", "--state-dir", "/tmp/edict-state"},
 	} {
 		if !isManagedMCPCommand(root, args) {
 			t.Errorf("stdio MCP invocation was not detected: %v", args)
 		}
 	}
 	for _, args := range [][]string{
-		{"edict", "mcp", "start"},
-		{"edict", "setup-codex", "--dest", "edict-mcp"},
+		{"edict", "linter-mcp", "start"},
+		{"edict", "install", "--dest", "mcp"},
 		{"edict"},
 	} {
 		if isManagedMCPCommand(root, args) {

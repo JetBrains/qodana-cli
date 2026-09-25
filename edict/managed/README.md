@@ -6,13 +6,13 @@ retains the original Go implementation and its comparison tests. The examples
 below describe that older implementation, including its `edict-next-*` skill names.
 
 `edict-mcp` is the state and execution-plan server. It does not launch
-an IDE. `qodana edict mcp start` still launches the separate IntelliJ inspection
+an IDE. `qodana edict linter-mcp start` still launches the separate IntelliJ inspection
 server.
 
 Install the bundled manager and managed skill copies:
 
 ```sh
-qodana edict setup-codex --managed
+qodana edict install --managed
 ```
 
 The source bundle is `edict/skills/managed`. Installed children use
@@ -77,7 +77,7 @@ Source authenticity and semantic relevance still require worker inspection.
 Configure the MCP host to launch:
 
 ```sh
-qodana edict edict-mcp --project-dir /path/to/project
+qodana edict mcp start --project-dir /path/to/project
 ```
 
 The default state root is `<project-dir>/.edict`; use `--state-dir` for an existing
