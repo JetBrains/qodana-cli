@@ -20,7 +20,6 @@ tasks.register<JavaExec>("configureTeamCity") {
     group = "build setup"
     classpath = sourceSets.main.get().runtimeClasspath
     mainClass = "org.jetbrains.qodana.edict.benchmark.ConfigureTeamCityKt"
-    args(rootProject.projectDir.resolve("../../scripts/edict-benchmark").absolutePath)
 }
 
 // This task only consumes completed generation artifacts; it never starts an agent or IDE.
