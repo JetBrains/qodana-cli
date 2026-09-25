@@ -3,6 +3,7 @@ description: Install Docker engine.
 inputs:
   version:
     required: true
+    default: latest
     description: Either "latest", or "[v]major[.minor[.patch]]" version of the engine.
 runs:
   using: composite
@@ -22,8 +23,7 @@ runs:
       run: | # shell
         set -euo pipefail
         version=$(uv run --script "${GITHUB_ACTION_PATH}/normalize-version.py")
-        # Python emits CRLF on the Windows runners this step also runs on.
-        echo "version=${version%$'\r'}" >> "$GITHUB_OUTPUT"
+        echo "version=${version}" >> "$GITHUB_OUTPUT"
 
     - if: runner.os == 'macOS'
       name: Install compatible version of QEMU for macOS

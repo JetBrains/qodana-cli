@@ -3,10 +3,13 @@ description: Install Docker or Podman engine and enable an appropriate Docker CL
 inputs:
   version:
     required: true
+    default: docker@latest
     description: |
       Engine version of format [<type>@]<version>, where:
         - type: either "docker" or "podman" (default: docker)
         - version: "latest", or "[v]major[.minor[.patch]]" (podman needs all three, >= 4.9.4)
+
+      Default: docker@latest
 runs:
   using: composite
   steps:

@@ -49,7 +49,7 @@ jobs:
         uses: actions/setup-java@v5
         with:
           distribution: temurin
-          # Adoptium's semver for jdk-21.0.12.1+1. setup-java matches a version with a build part exactly.
+          # Adoptium's semver form (X.Y.Z+B.0.LTS): setup-java matches a version with a build part exactly.
           java-version: 21.0.12+101.0.LTS
 
       - uses: ./.github/actions/mock-dependencies
