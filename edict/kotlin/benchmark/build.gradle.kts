@@ -16,12 +16,6 @@ kotlin { jvmToolchain(21) }
 application { mainClass = "org.jetbrains.qodana.edict.benchmark.MainKt" }
 tasks.test { useJUnitPlatform() }
 
-tasks.register<JavaExec>("configureTeamCity") {
-    group = "build setup"
-    classpath = sourceSets.main.get().runtimeClasspath
-    mainClass = "org.jetbrains.qodana.edict.benchmark.ConfigureTeamCityKt"
-}
-
 // This task only consumes completed generation artifacts; it never starts an agent or IDE.
 tasks.register<JavaExec>("compare") {
     group = "verification"
