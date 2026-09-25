@@ -19,7 +19,9 @@ internal fun seedBenchmarkInbox(repository: GitRepository, output: Path, specifi
             val source = repository.fileAt(sourceRevision, example.path)
             val lineCount = source.count { it == '\n' } + if (source.isNotEmpty() && !source.endsWith('\n')) 1 else 0
             val ranges = example.expectedProblemRanges?.takeIf { it.isNotEmpty() } ?: listOf(LineRange(1, lineCount))
-            require(ranges.all { it.start >= 1 && it.end >= it.start && it.end <= lineCount }) {
+            // Benchmark ranges may include trailing context beyond EOF. Preserve them exactly,
+            // while requiring each range to start on actual historical source.
+            require(ranges.all { it.start >= 1 && it.end >= it.start && it.start <= lineCount }) {
                 "Invalid required example range in $rule/$field/$index at $sourceRevision:${example.path}"
             }
             val origin = "benchmark/$rule/specification.json#/$field/$index"
