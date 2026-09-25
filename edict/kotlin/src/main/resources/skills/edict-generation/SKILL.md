@@ -17,15 +17,15 @@ an existing predecessor inspection path when necessary. Never grant the whole cl
 worker. Pass a unique scratch directory, source project, cluster ID, and its child capability to a fresh native
 subagent.
 
-With the configured ten-agent capacity, keep **two cluster workers running concurrently** whenever at least two
-targets remain. Start both before waiting for either. Reserve three shared coordinator frames (manager, run,
-generation) and up to three frames per active cluster (cluster, reviewer, review's example child), leaving one spare.
+With the configured 50-agent capacity, keep **up to 15 cluster workers running concurrently** whenever targets
+remain. Fill all available cluster slots before waiting. Reserve three shared coordinator frames (manager, run,
+generation) and up to three frames per active cluster (cluster, reviewer, review's example child), leaving two spare.
 Each cluster must run its own children one at a time; include that constraint in its assignment. Do not fill the
 remaining slots with more cluster workers and leave no room for their descendants. If the host exposes a smaller
 capacity, reduce the number of active clusters to preserve those reservations.
 
-When either worker finishes, verify its persisted outcome, close/dispose its native agent and completed descendants,
-and immediately launch the next queued cluster in that slot. Do not wait for the other cluster to finish its repairs.
+When any worker finishes, verify its persisted outcome, close/dispose its native agent and completed descendants,
+and immediately launch the next queued cluster in that slot. Do not wait for other clusters to finish their repairs.
 Each cluster has at most three review iterations including the initial candidate; Pending after exhausting that budget
 is a valid bounded outcome and must release its slot for the next target.
 

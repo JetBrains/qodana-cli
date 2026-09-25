@@ -42,7 +42,7 @@ mode = "full"
 multi_agent = true
 [agents]
 max_depth = 5
-max_concurrent_threads_per_session = 10
+max_concurrent_threads_per_session = 50
 CONFIG
 chmod 600 "$benchmark_codex_home/config.toml"
 

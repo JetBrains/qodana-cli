@@ -22,7 +22,7 @@ class CodexRunnerTest {
         runner.prepare()
         val parsed = Toml.parse(runner.home.resolve("config.toml"))
         assertFalse(parsed.hasErrors(), parsed.errors().toString())
-        assertEquals(10, parsed.getLong(listOf("agents", "max_concurrent_threads_per_session")))
+        assertEquals(50, parsed.getLong(listOf("agents", "max_concurrent_threads_per_session")))
         assertEquals(setOf("edict-mcp", "inspection.compiler"), parsed.getTable("mcp_servers")!!.keySet())
         assertEquals("http://127.0.0.1:10001/mcp", parsed.getString(listOf("mcp_servers", "edict-mcp", "url")))
         assertEquals(
