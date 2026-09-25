@@ -87,11 +87,13 @@ class ComparisonTest {
     """.trimIndent()
 
     private fun fixture() {
-        val input = BenchmarkInputs("revision", mapOf("rule" to "Rule", "pending" to "Pending"),
+        val input = BenchmarkInputs("revision",
             listOf(spec(FileRevision("X.java")), Specification("Pending", "Unfinished", "Java")))
         write("generation/inputs.json", json.encodeToString(input))
         write("generation/state/clusters/rule/description.json", """{"status":"Generated"}""")
         write("generation/state/clusters/pending/description.json", """{"status":"Pending"}""")
+        write("generation/state/clusters/rule/signals/s-rule.json", """{"provenance":{"workItemId":"benchmark/Rule/specification.json#/positiveExamples/0"}}""")
+        write("generation/state/clusters/pending/signals/s-pending.json", """{"provenance":{"workItemId":"benchmark/Pending/specification.json#/positiveExamples/0"}}""")
         write("generation/state/inspections/rule.inspection.kts", "// fixture inspection")
         write("benchmark/gold.sarif.json", sarif("Rule"))
         write("generation/qodana.sarif.json", sarif("EdictBenchmarkRule"))
@@ -144,5 +146,36 @@ class ComparisonTest {
         assertEquals(0, report.successful)
         assertEquals(0.0, report.aggregate.specSatisfiedRate)
         assertTrue(root.resolve("reports/report.json").exists())
+    }
+
+    @Test fun `no clusters produces an explicit outcome and empty SARIF`() {
+        fixture()
+        deleteTree(root.resolve("generation/state/clusters"))
+        generateSarif(root.resolve("unused-project"), root.resolve("generation"))
+        val report = compare(root.resolve("benchmark"), root.resolve("generation"), root.resolve("reports"))
+        assertEquals(mapOf("Rule" to "NotClustered", "Pending" to "NotClustered"), report.generationOutcomes)
+        assertEquals(0, report.successful)
+        assertTrue(readSarif(root.resolve("reports/qodana.sarif.json")).findings.isEmpty())
+        assertFalse(root.resolve("generation/state/clusters").exists())
+    }
+
+    @Test fun `split and merged clusters are scored against their source specifications`() {
+        fixture()
+        write("generation/state/clusters/pending/description.json", """{"status":"Generated"}""")
+        write("generation/state/clusters/pending/signals/s-rule-second.json", """{"provenance":{"workItemId":"benchmark/Rule/specification.json#/positiveExamples/1"}}""")
+        write("generation/state/inspections/pending.inspection.kts", "// shared inspection")
+        val runs = listOf("EdictBenchmarkRule_Cluster1", "EdictBenchmarkRule_Cluster2", "EdictBenchmarkPending")
+            .flatMap { json.parseToJsonElement(sarif(it)).jsonObject.getValue("runs").jsonArray }
+        writeJson(root.resolve("generation/qodana.sarif.json"), obj("runs" to JsonArray(runs)))
+        val report = compare(root.resolve("benchmark"), root.resolve("generation"), root.resolve("reports"))
+        assertEquals(2, report.successful)
+        assertEquals(listOf("pending", "rule"), report.clustersByRule["Rule"])
+        assertEquals(listOf("pending"), report.clustersByRule["Pending"])
+        // The same finding from two clusters counts once for this specification.
+        assertEquals(1, report.inspectionMetrics.single { it.ruleId == "Rule" }.truePositives)
+        assertEquals(1, report.inspectionMetrics.single { it.ruleId == "Pending" }.falsePositives)
+        assertTrue(root.resolve("reports/generatedInspections/Rule--rule.kts").exists())
+        assertTrue(root.resolve("reports/generatedInspections/Rule--pending.kts").exists())
+        assertTrue(root.resolve("reports/generatedInspections/Pending.kts").exists())
     }
 }

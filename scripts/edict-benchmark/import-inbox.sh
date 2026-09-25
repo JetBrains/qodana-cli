@@ -11,20 +11,13 @@ jq -s --arg rules "${BENCHMARK_RULES:-}" --argjson limit "${BENCHMARK_LIMIT:-0}"
   sort_by(.ruleId) | if $limit > 0 then .[:$limit] else . end |
   if length == 0 then error("No benchmark specifications") else . end |
   if all(.[]; .ruleId | test("^[A-Za-z0-9]+$")) and
-     (map(.ruleId | ascii_downcase) | unique | length) == length then . else error("Unsafe or duplicate rule IDs") end
+     (map(.ruleId) | unique | length) == length then . else error("Unsafe or duplicate rule IDs") end
 ' "$benchmark_project"/benchmark/*/specification.json > "$benchmark_output/specifications.tmp.json"
-jq --arg revision "$revision" '{revision: $revision,
-  clusterToRule: (map({key: (.ruleId | ascii_downcase), value: .ruleId}) | from_entries), specifications: .}' \
+jq --arg revision "$revision" '{revision: $revision, specifications: .}' \
   "$benchmark_output/specifications.tmp.json" > "$benchmark_output/inputs.json"
-mkdir -p "$benchmark_output/state/inbox" "$benchmark_output/state/inspections"
+mkdir -p "$benchmark_output/state/inbox"
 while IFS= read -r specification; do
   rule=$(jq -r '.ruleId' <<< "$specification")
-  cluster=$(jq -r '.ruleId | ascii_downcase' <<< "$specification")
-  mkdir -p "$benchmark_output/state/clusters/$cluster"
-  jq --arg id "$cluster" '{id: $id, description, language, status: "Pending"}' <<< "$specification" \
-    > "$benchmark_output/state/clusters/$cluster/description.json"
-  printf '# Submitted feedback\n\nRequired labelled examples from benchmark/%s/specification.json.\n' "$rule" \
-    > "$benchmark_output/state/clusters/$cluster/history.md"
   while IFS= read -r example; do
     field=$(jq -r '.field' <<< "$example")
     index=$(jq -r '.index' <<< "$example")
@@ -49,3 +42,4 @@ done < <(jq -c '.[]' "$benchmark_output/specifications.tmp.json")
 rm "$benchmark_output/specifications.tmp.json"
 printf '%s\n' "$revision" > "$benchmark_output/source-revision.txt"
 echo "Imported $(find "$benchmark_output/state/inbox" -name '*.json' | wc -l) required signals."
+echo 'No clusters created; Edict will cluster the inbox during distribution.'

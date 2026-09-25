@@ -10,7 +10,7 @@ The pipeline has four steps:
 1. `install-codex.sh` installs pinned Codex and configures LiteLLM using the secure
    `LITELLM_API_KEY` environment parameter.
 2. `prepare.sh` installs the standard Edict application and its Kotlin skills,
-   imports required fixture examples as SubmittedFeedback, and starts the Edict
+   imports required fixture examples into the inbox as SubmittedFeedback, and starts the Edict
    and native inspections MCP servers. The supplied archive uses its built-in
    `idea mcpServer` headless entry point; its AI Assistant plugin predates the
    Qodana-specific `mcp-server` script. Both must be ready before execution.
@@ -32,11 +32,17 @@ Generation can compile examples with inspections MCP and use `inspect-project.sh
 for complete project findings in scratch, reusing a serialized project workspace
 and IDE cache across candidates. State is writable only through Edict MCP.
 Optional examples and gold are denied to Codex. Required examples preserve source
-revisions, labels, ranges, and original feedback. Comparison follows feedback
-provenance instead of prescribing cluster names. Scoring copies namespace the
-literal first `InspectionKts` descriptor ID to `EdictBenchmark<RuleId>` to avoid
-built-in inspection collisions; accepted scripts remain unchanged. Unsupported
-or ambiguous descriptor/cluster mappings fail explicitly.
+revisions, labels, ranges, and original feedback. Initialization creates no clusters
+or cluster descriptions: Edict creates them while processing the inbox. Comparison
+discovers the resulting membership from feedback provenance. Split clusters are
+scored together for their source specification, with duplicate findings counted once;
+merged clusters are evaluated against each contributing specification. Missing clusters
+are reported as `NotClustered`; mixed generated and unfinished clusters as
+`PartiallyGenerated`. The report includes cluster membership and statuses.
+Scoring copies namespace the literal first `InspectionKts` descriptor ID to
+`EdictBenchmark<RuleId>` (with a numbered suffix for split clusters) to avoid built-in
+inspection collisions; accepted scripts remain unchanged. Unsupported descriptors
+fail explicitly.
 
 `BENCHMARK_RULES` is an optional comma-separated selection; `BENCHMARK_LIMIT=0`
 selects all fixtures. `BENCHMARK_MINUTES` bounds Codex execution (default 240).

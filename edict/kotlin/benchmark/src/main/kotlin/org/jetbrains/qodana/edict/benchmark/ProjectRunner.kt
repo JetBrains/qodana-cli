@@ -80,7 +80,7 @@ internal class ProjectRunner(private val source: Path, private val output: Path)
         deleteTree(project.resolve("inspections"))
         val inspections = project.resolve("inspections").createDirectories()
         codes.forEach { (rule, code) ->
-            require(rule.matches(Regex("EdictBenchmark[A-Za-z0-9]+")))
+            require(rule.matches(Regex("EdictBenchmark[A-Za-z0-9_]+")))
             inspections.resolve("$rule.inspection.kts").writeText(code)
         }
         writeJson(project.resolve("qodana.yaml"), obj("version" to text("1.0"), "profile" to obj("name" to text("empty")),
