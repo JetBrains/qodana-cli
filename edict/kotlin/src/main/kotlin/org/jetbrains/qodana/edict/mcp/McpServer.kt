@@ -7,6 +7,8 @@ import org.jetbrains.qodana.edict.common.flag
 import org.jetbrains.qodana.edict.common.text
 import org.jetbrains.qodana.edict.common.wireJson
 import org.jetbrains.qodana.edict.logging.AgentLogger
+import org.jetbrains.qodana.edict.logging.TaskLifecycleLogger
+import org.jetbrains.qodana.edict.model.Plan
 import org.jetbrains.qodana.edict.model.Step
 import org.jetbrains.qodana.edict.reviews.PrAnalysis
 import org.jetbrains.qodana.edict.reviews.ReviewClient
@@ -37,8 +39,21 @@ private fun JsonObject.integer(name: String): Int =
 private inline fun <reified T> encoded(value: T): JsonElement = wireJson.encodeToJsonElement(value)
 
 /** Small MCP JSON-RPC transport; state authorization is shared by stdio and HTTP, and lives in Store. */
-class McpServer(private val store: Store, provider: ReviewProvider = ReviewClient(), private val logs: Path? = null) {
+class McpServer(
+    private val store: Store,
+    provider: ReviewProvider = ReviewClient(),
+    private val logs: Path? = null,
+    taskOutput: PrintWriter = PrintWriter(System.err, true),
+) {
     val agents: AgentLogger? = logs?.let { AgentLogger(store, it) }
+    private val taskLogger = TaskLifecycleLogger(store, logs, taskOutput)
+
+    private fun lifecycle(change: () -> Plan): JsonElement = synchronized(store) {
+        val before = store.plan()
+        val after = change()
+        taskLogger.record(before, after)
+        encoded(after)
+    }
 
     private data class Tool(val definition: JsonObject, val invoke: (JsonObject) -> JsonElement)
 
@@ -153,7 +168,7 @@ class McpServer(private val store: Store, provider: ReviewProvider = ReviewClien
             required = listOf("token", "agentId", "skill"),
             properties = props("agentId", "skill")
         ) {
-            encoded(store.startTask(it.required("token"), it.required("agentId"), it.required("skill")))
+            lifecycle { store.startTask(it.required("token"), it.required("agentId"), it.required("skill")) }
         }
         tool(
             "edict_task_finish",
@@ -161,7 +176,7 @@ class McpServer(private val store: Store, provider: ReviewProvider = ReviewClien
             required = listOf("token", "status", "result"),
             properties = props("status", "result")
         ) {
-            encoded(store.finishTask(it.required("token"), it.required("status"), it.required("result")))
+            lifecycle { store.finishTask(it.required("token"), it.required("status"), it.required("result")) }
         }
         tool(
             "edict_task_cancel",
@@ -169,7 +184,7 @@ class McpServer(private val store: Store, provider: ReviewProvider = ReviewClien
             required = listOf("token", "taskId", "result"),
             properties = props("taskId", "result")
         ) {
-            encoded(store.cancelTask(it.required("token"), it.required("taskId"), it.required("result")))
+            lifecycle { store.cancelTask(it.required("token"), it.required("taskId"), it.required("result")) }
         }
         tool(
             "edict_state_write",

@@ -16,9 +16,9 @@ Capabilities authorize MCP requests; they cannot prevent unrestricted filesystem
 process. Do not claim this server replaces host sandbox isolation.
 
 The host must also prevent legacy inspection-server tools from writing authoritative state; give them scratch snapshots,
-not a writable Edict session. Full generation needs up to five nested worker levels. The host configures ten
-simultaneous agent frames so two clusters can run concurrently: three shared coordinators plus up to three frames
-per cluster, with one spare. Keep at most one direct child active within each cluster/review branch; reserve those
+not a writable Edict session. Full generation needs up to five nested worker levels. The host configures 50
+simultaneous agent frames so up to 15 clusters can run concurrently: three shared coordinators plus up to three frames
+per cluster, with two spare. Keep at most one direct child active within each cluster/review branch; reserve those
 descendant slots before starting cluster workers. Extraction needs two nested levels. After
 collecting a completed worker's result, release it with the runtime's native close/dispose tool when available so later
 fresh workers can start. If the runtime cannot provide the required capacity, report the limitation without inline
