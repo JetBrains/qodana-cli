@@ -30,7 +30,6 @@ data class Specification(
 @Serializable
 data class BenchmarkInputs(
     val revision: String,
-    val clusterToRule: Map<String, String>,
     val specifications: List<Specification>,
 )
 
@@ -136,4 +135,6 @@ data class BenchmarkReport(
     val specGoldMetrics: SpecGoldAggregateMetrics,
     val sourceRevision: String,
     val generationOutcomes: Map<String, String>,
+    val clustersByRule: Map<String, List<String>> = emptyMap(),
+    val clusterOutcomes: Map<String, String> = emptyMap(),
 )

@@ -46,35 +46,27 @@ internal fun compare(benchmarkDir: Path, generationDir: Path, outputDir: Path,
                      analysisSarif: Path = generationDir.resolve("qodana.sarif.json")): BenchmarkReport {
     // Use the immutable snapshot selected before generation, including held-out optional examples.
     val inputs = json.decodeFromString<BenchmarkInputs>(generationDir.resolve("inputs.json").readText())
-    require(inputs.specifications.isNotEmpty()) { "No benchmark specifications" }
-    val rules = inputs.specifications.map { it.ruleId }
-    require(rules.distinct().size == rules.size && inputs.clusterToRule.values.toSet() == rules.toSet() &&
-        inputs.clusterToRule.size == rules.size) { "Specifications and cluster mapping must be one-to-one" }
-    require(inputs.clusterToRule.all { (cluster, rule) ->
-        cluster.matches(Regex("[a-z0-9][a-z0-9-]*")) && rule.matches(Regex("[A-Za-z0-9]+"))
-    }) { "Unsafe cluster or rule ID" }
-
-    val clusterToRule = resolveClusters(inputs, generationDir)
-    val outcomes = clusterToRule.map { (cluster, rule) ->
-        val description = json.parseToJsonElement(
-            generationDir.resolve("state/clusters/$cluster/description.json").readText()).jsonObject
-        rule to description.getValue("status").jsonPrimitive.content
-    }.toMap()
+    val clusters = resolveClusters(inputs, generationDir)
+    val statuses = clusterOutcomes(clusters, generationDir)
+    val outcomes = clusters.mapValues { (_, members) -> generationOutcome(members, statuses) }
     val successful = inputs.specifications.filter { outcomes[it.ruleId] == "Generated" }
     val gold = readSarif(benchmarkDir.resolve("gold.sarif.json")).findings
     val analysis = readSarif(analysisSarif)
-    val generatedIds = successful.associate { "EdictBenchmark${it.ruleId}" to it.ruleId }
+    val generated = scoringInspections(clusters, statuses)
+    val generatedIds = generated.associate { it.id to it.rule }
     require(analysis.registeredRules.containsAll(generatedIds.keys)) {
         "Generated inspections missing from analysis SARIF: ${generatedIds.keys - analysis.registeredRules}"
     }
     // Only the namespaced generated rules count; a built-in inspection must never substitute for one.
     val findings = analysis.findings.mapNotNull { finding ->
         generatedIds[finding.ruleId]?.let { finding.copy(ruleId = it) }
+    }.groupBy { it.ruleId }.flatMap { (rule, matches) ->
+        if (clusters.getValue(rule).size > 1) matches.distinct() else matches
     }
     val metrics = successful.map { calculateMetrics(it, gold, findings) }
     val comparisons = successful.map { compareSpecWithGold(it, gold) }
     val report = BenchmarkReport(metrics, aggregate(metrics), inputs.specifications.size, successful.size,
-        specGoldAggregate(comparisons), inputs.revision, outcomes)
+        specGoldAggregate(comparisons), inputs.revision, outcomes, clusters, statuses)
 
     outputDir.createDirectories()
     val inspectionsDir = outputDir.resolve("generatedInspections").createDirectories()
@@ -82,10 +74,10 @@ internal fun compare(benchmarkDir: Path, generationDir: Path, outputDir: Path,
     // Remove only artifacts owned by this task, so a rerun cannot publish stale successful rules.
     inspectionsDir.listDirectoryEntries("*.kts").forEach { it.deleteExisting() }
     specGoldDir.listDirectoryEntries("*.json").forEach { it.deleteExisting() }
-    val clusters = clusterToRule.entries.associate { it.value to it.key }
-    successful.forEach { spec ->
-        generationDir.resolve("state/inspections/${clusters.getValue(spec.ruleId)}.inspection.kts")
-            .copyTo(inspectionsDir.resolve("${spec.ruleId}.kts"), overwrite = true)
+    generated.forEach { inspection ->
+        val filename = if (clusters.getValue(inspection.rule).size == 1) inspection.rule else "${inspection.rule}--${inspection.cluster}"
+        generationDir.resolve("state/inspections/${inspection.cluster}.inspection.kts")
+            .copyTo(inspectionsDir.resolve("$filename.kts"), overwrite = true)
     }
     comparisons.forEach { specGoldDir.resolve("${it.ruleId}.json").writeText(json.encodeToString(it) + "\n") }
     val destinationSarif = outputDir.resolve("qodana.sarif.json")

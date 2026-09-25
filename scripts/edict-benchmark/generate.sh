@@ -15,9 +15,15 @@ setsid timeout --signal=TERM --kill-after=30s "${BENCHMARK_MINUTES:-240}m" \
   > "$benchmark_output/trace/stdout.jsonl" 2> "$benchmark_output/trace/stderr.log" &
 codex_pid=$!
 echo "$codex_pid" > "$benchmark_output/codex.pid"
+shopt -s nullglob
 while kill -0 "$codex_pid" 2>/dev/null; do
-  jq -cs 'group_by(.status) | map("\(.[0].status)=\(length)") | join(", ")' \
-    "$benchmark_output"/state/clusters/*/description.json | sed 's/^/Generation progress: /'
+  clusters=("$benchmark_output"/state/clusters/*/description.json)
+  if ((${#clusters[@]})); then
+    jq -rs 'group_by(.status) | map("\(.[0].status)=\(length)") | join(", ")' \
+      "${clusters[@]}" | sed 's/^/Generation progress: /'
+  else
+    echo 'Generation progress: waiting for Edict to create clusters from the inbox'
+  fi
   sleep 30
 done
 wait "$codex_pid"
