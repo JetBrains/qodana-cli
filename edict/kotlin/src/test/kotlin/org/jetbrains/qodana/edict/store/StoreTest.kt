@@ -23,6 +23,33 @@ class StoreTest {
     lateinit var directory: Path
 
     @Test
+    fun `distribution moves existing project feedback unchanged inside dot edict`() {
+        val content = javaClass.getResource("/signals/submitted-feedback.json")!!.readText()
+        val state = directory.resolve("project/.edict")
+        val inbox = state.resolve("inbox/s-0b1840a3d440.json")
+        Files.createDirectories(inbox.parent)
+        Files.writeString(inbox, content)
+        Files.writeString(state.resolve("gold.sarif.json"), "gold remains unchanged")
+        Store(state).use { store ->
+            val receipt = validateInboxChanges(store, listOf("inbox/s-0b1840a3d440.json"))
+            assertEquals("benchmark/StaticInitializerReferencesSubClass/specification.json#negativeExamples/0", receipt.validatedFiles.single().idempotencyKey)
+            val plan = store.createPlan("Process inbox", listOf(Step("edict-run", "Run")))
+            val run = store.launch(plan.token, plan.plan.tasks.single().id, "edict-run",
+                listOf("inbox.delete", "cluster.write", "cluster.signal.write"), listOf("inbox", "clusters"))
+            val task = store.addTask(run.token, "edict-distribution", "Distribute")
+            val worker = store.launch(run.token, task.id, task.skill,
+                listOf("inbox.delete", "cluster.write", "cluster.signal.write"), listOf("inbox", "clusters"))
+            store.write(worker.token, "clusters/chosen/description.json", """{"id":"chosen","description":"Chosen by Edict","language":"Java","status":"Pending"}""", "")
+            val original = store.read("inbox/s-0b1840a3d440.json")
+            store.write(worker.token, "clusters/chosen/signals/s-0b1840a3d440.json", original.content, "")
+            assertEquals(content, store.read("clusters/chosen/signals/s-0b1840a3d440.json").content)
+            store.delete(worker.token, original.path, original.hash)
+            assertTrue(store.list("inbox").isEmpty())
+        }
+        assertEquals("gold remains unchanged", Files.readString(state.resolve("gold.sarif.json")))
+    }
+
+    @Test
     fun `extraction workers cannot replace source evidence with submitted feedback`() {
         val original = fixtureSignals(gitFixture(directory.resolve("source"))).first()
         val signal = original.copy(source = org.jetbrains.qodana.edict.model.SignalSource("SubmittedFeedback", "",

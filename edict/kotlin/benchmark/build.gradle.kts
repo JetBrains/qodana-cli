@@ -31,9 +31,8 @@ tasks.register<JavaExec>("compare") {
     doFirst {
         fun required(name: String) = providers.gradleProperty(name).orNull
             ?: error("Supply -P$name=<path>")
-        val generation = required("generationDir")
-        args("--benchmark-dir", required("benchmarkDir"), "--generation-dir", generation,
-             "--output-dir", providers.gradleProperty("benchmarkOutputDir").getOrElse(generation))
+        args("--benchmark-dir", required("benchmarkDir"), "--state-dir", required("edictStateDir"),
+             "--output-dir", required("benchmarkOutputDir"))
         providers.gradleProperty("analysisSarif").orNull?.let { args("--analysis-sarif", it) }
     }
 }
@@ -47,7 +46,8 @@ tasks.register<JavaExec>("report") {
     doFirst {
         fun required(name: String) = providers.gradleProperty(name).orNull
             ?: error("Supply -P$name=<path>")
-        args("--benchmark-dir", required("benchmarkDir"), "--generation-dir", required("generationDir"),
+        args("--benchmark-dir", required("benchmarkDir"), "--state-dir", required("edictStateDir"),
+             "--output-dir", required("benchmarkOutputDir"),
              "--project-dir", required("sourceProjectDir"))
     }
 }
