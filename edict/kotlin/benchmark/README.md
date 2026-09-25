@@ -1,8 +1,16 @@
-# Inspection generation benchmark comparison
+# Inspection generation benchmark
 
-This standalone Gradle subproject compares completed Kotlin managed-skill generation
-artifacts with the Jenkins benchmark fixtures. It has no dependency on the Edict
-runtime or IntelliJ platform and does not run models or inspections.
+This Gradle subproject runs the embedded Kotlin managed skills and compares their
+completed generation artifacts with the Jenkins benchmark fixtures. Generation
+uses the assembled Qodana image; the comparison task only reads completed artifacts
+and does not start a model or IDE.
+
+`:benchmark:runnerJar` packages the Kotlin controller, embedded Edict runtime and
+bundled skills. It starts inspections MCP before generation, keeps its event
+stream alive, checks compilation and a concurrent full-project scan, then verifies
+the managed sandbox before model execution. Every Qodana process receives an
+isolated `QODANA_CONF`. See the [CI runner documentation](../../../scripts/edict-benchmark/README.md)
+for configuration, build parameters and diagnostics.
 
 From `edict/kotlin`, with JDK 21 installed:
 

@@ -6,18 +6,19 @@ under `StaticAnalysis_Edict_Benchmarks`.
 
 The build uses the Jenkins dataset from the reference benchmark, the assembled
 Qodana image `registry.jetbrains.team/p/sa/containers/qodana-jvm:263.SNAPSHOT.149`
-from build `1070975243`, and the Kotlin `edict-cli.jar` from build `1070533116`
-(`1.0.1`). Neither dependency triggers an upstream build. Codex `0.155.1` is
+from build `1070975243`. The embedded Kotlin runtime, skills and benchmark runner
+are built from a pinned commit of `JetBrains/qodana-cli`. Codex `0.155.1` is
 installed in the build output because the image's bundled `0.117` lacks the
 permission profiles required by the Kotlin host.
 The assembled image is used directly; there is no custom Dockerfile or image build.
-Python orchestration runs on the Linux TeamCity agent, and Java, Codex and Qodana
-run in the container with the checkout mounted at the same absolute path. Both
-MCP endpoints use loopback through Docker host networking.
+Shell scripts prepare the checkout and container; all generation orchestration
+and comparison code is Kotlin. Java, Codex and Qodana run in the container with
+the checkout mounted at the same absolute path. Both MCP endpoints use loopback
+inside the container.
 
-`BenchmarkHost.java` invokes the published Kotlin `CodexRunner`, bundled skills,
+`Generation.kt` invokes the embedded Kotlin `CodexRunner`, bundled skills,
 `Store`, MCP server and agent logger. It checks scratch/state filesystem isolation
-before model execution. `benchmark.py` starts Qodana's `mcp-server` scenario,
+before model execution. `InspectionServer` starts Qodana's `mcp-server` scenario,
 waits for its HTTP endpoint and verifies all four generic inspection tools before
 starting the host. The client maintains the GET event stream required by IntelliJ
 to keep its MCP session alive. Preflight compiles and executes a sentinel fixture,
@@ -32,7 +33,8 @@ must still pass before any model execution; a failed probe stops the build.
 
 Project scans run serially against a reused source copy and warm cache. Every IDE
 process has a separate configuration directory as well as a separate system cache,
-so it cannot collide with the running MCP server's configuration lock. Each scan
+by overriding the image's `QODANA_CONF` environment variable, so it cannot collide
+with the running MCP server's configuration lock. Each scan
 replaces the previous candidate scripts and writes separate results. MCP transport
 failures and failed Qodana processes stop model execution promptly. Tool timings
 and failures are recorded in `log/inspection-mcp.jsonl`; `progress.json` preserves
@@ -71,6 +73,7 @@ Build parameters:
 | Parameter | Default | Purpose |
 | --- | --- | --- |
 | `benchmark.image` | `…:263.SNAPSHOT.149` | Assembled inspections runtime |
+| `env.BENCHMARK_SOURCE_REVISION` | pinned commit SHA | Embedded runtime, skills and runner source |
 | `env.BENCHMARK_COMPARISON_REVISION` | pinned commit SHA | qodana-cli source checked out after generation |
 | `env.BENCHMARK_MODEL` | `gpt-5.6-sol` | Model used by Kotlin CodexRunner |
 | `env.BENCHMARK_CODEX_VERSION` | `0.155.1` | Compatible Codex version |
@@ -88,22 +91,23 @@ are not published.
 To update the dedicated configuration with these runner files:
 
 ```sh
-python3 scripts/edict-benchmark/configure_teamcity.py --comparison-revision <published-full-commit-sha>
+cd edict/kotlin
+./gradlew :benchmark:configureTeamCity -PbenchmarkRevision=<published-full-commit-sha>
 ```
 
-For a new server configuration, add `--create` once; this copies the reference
-configuration within TeamCity so its secure parameters need not be retrieved.
-The generation scripts are embedded in the build step. The Kotlin comparison
-subproject must be available at the supplied published commit, because TeamCity
-checks it out only after generation. JDK 21 is selected through the agent
-`JDK_21_0` environment variable.
+This updates the existing dedicated configuration through the authenticated
+`teamcity` CLI and preserves its secure parameters. Shell scripts are embedded
+in the preparation step. The supplied published commit must contain the Kotlin
+subproject and embedded runtime. A second checkout of that same commit runs
+comparison after generation. JDK 21 is selected through the agent `JDK_21_0`
+environment variable.
 
 Validation:
 
 ```sh
-python3 -m unittest discover -s scripts/edict-benchmark -p 'test_*.py' -v
+bash -n scripts/edict-benchmark/prepare.sh
 bash -n scripts/edict-benchmark/run.sh
 bash -n scripts/edict-benchmark/generate.sh
 bash -n scripts/edict-benchmark/compare.sh
-(cd edict/kotlin && ./gradlew :benchmark:test)
+(cd edict/kotlin && ./gradlew :benchmark:test :benchmark:runnerJar)
 ```

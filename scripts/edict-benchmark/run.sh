@@ -1,19 +1,15 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# Runs in the unmodified assembled image. Python orchestration stays on the CI agent.
-if [[ $# -ne 7 ]]; then
-  echo 'Usage: run.sh project output jar inspection-url model minutes preflight' >&2
-  exit 2
-fi
-project_dir="$1"
-output_dir="$2"
-edict_jar="$3"
-script_dir="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
-mkdir -p "$output_dir/classes"
+# All generation orchestration is Kotlin; the image already has Java and Node.
+project_dir="$PWD/project"
+output_dir="$PWD/benchmark-output"
 # The assembled image contains Codex 0.117, predating the Kotlin host's permission profiles.
 npm install --no-audit --no-fund --cache "$output_dir/npm-cache" --prefix "$output_dir/tooling" "@openai/codex@${BENCHMARK_CODEX_VERSION:-0.155.1}"
 export PATH="$output_dir/tooling/node_modules/.bin:$PATH"
 codex --version
-javac -cp "$edict_jar" -d "$output_dir/classes" "$script_dir/BenchmarkHost.java"
-exec java -cp "$output_dir/classes:$edict_jar" BenchmarkHost "$project_dir" "$output_dir" "$4" "$5" "$6" "$7"
+exec java -jar "$PWD/benchmark-runtime/benchmark-runner.jar" \
+  --project "$project_dir" --output "$output_dir" \
+  --model "${BENCHMARK_MODEL:-gpt-5.6-sol}" --minutes "${BENCHMARK_MINUTES:-240}" \
+  --limit "${BENCHMARK_LIMIT:-0}" --rules "${BENCHMARK_RULES:-}" \
+  --preflight "${BENCHMARK_PREFLIGHT:-false}"
