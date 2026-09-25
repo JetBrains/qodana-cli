@@ -37,6 +37,14 @@ CLI executable. No container is used. Separate `QODANA_CONF` directories prevent
 MCP and analysis IDE instances from contending for the same configuration lock.
 
 Generation can compile and execute examples with inspections MCP.
+Codex permits ten simultaneous agents. Generation keeps two cluster workers active,
+reserving slots for their reviewers and example workers. Each cluster gets at most
+three review iterations including its initial candidate; the managed server caps each
+review stage at three tasks per cluster worker, preserving that count across restarts.
+Only BLOCKER findings require repairs. MAJOR findings request another iteration while
+budget remains but permit downstream checks and publication with recorded limitations.
+MINOR findings are recorded without a repair loop. Required compilation/example checks
+and exact-candidate provenance remain mandatory.
 State is writable only through Edict MCP.
 The benchmark specification directory and `.edict/gold.sarif.json` are denied to
 Codex. All existing inbox signals remain available, including optional examples

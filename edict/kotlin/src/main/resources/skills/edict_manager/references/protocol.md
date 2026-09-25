@@ -16,8 +16,10 @@ Capabilities authorize MCP requests; they cannot prevent unrestricted filesystem
 process. Do not claim this server replaces host sandbox isolation.
 
 The host must also prevent legacy inspection-server tools from writing authoritative state; give them scratch snapshots,
-not a writable Edict session. Full generation needs up to five nested worker levels and six simultaneous agent frames;
-extraction needs two nested levels. Ensure those runtime limits before starting the corresponding pipeline. After
+not a writable Edict session. Full generation needs up to five nested worker levels. The host configures ten
+simultaneous agent frames so two clusters can run concurrently: three shared coordinators plus up to three frames
+per cluster, with one spare. Keep at most one direct child active within each cluster/review branch; reserve those
+descendant slots before starting cluster workers. Extraction needs two nested levels. After
 collecting a completed worker's result, release it with the runtime's native close/dispose tool when available so later
 fresh workers can start. If the runtime cannot provide the required capacity, report the limitation without inline
 execution.
@@ -92,8 +94,9 @@ When a skill requires another skill:
    Do not fork a conversation containing your parent or sibling
    capabilities. Do not execute the child's skill inline or use an unmanaged copy as a fallback.
 4. Immediately send only the native agent ID returned by `spawn_agent` to that child if it is not already available in its
-   context. Wait for the child and check its persisted completion before proceeding. Respect the runtime's concurrency
-   limit, using waves when necessary. On failure stop dependent work and finish your own task as failed. If spawning
+   context. Start independent siblings within the reserved capacity before waiting; only dependent work must wait for
+   the child's persisted completion. Respect the runtime's concurrency limit and reserve room for descendants. On
+   failure stop dependent work and finish your own task as failed. If spawning
    fails or a worker is lost before finishing, call `edict_task_cancel(token, taskId, result)` with your parent
    capability to persist the failure and revoke that task's descendants. Do not act as its worker.
 

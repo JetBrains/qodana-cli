@@ -83,7 +83,7 @@ class CodexRunner(
             multi_agent = true
             [agents]
             max_depth = 5
-            max_concurrent_threads_per_session = 6
+            max_concurrent_threads_per_session = 10
             [mcp_servers.edict-mcp]
             url = ${quote(mcpUrl)}
             default_tools_approval_mode = "approve"

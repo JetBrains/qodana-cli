@@ -23,6 +23,43 @@ class StoreTest {
     lateinit var directory: Path
 
     @Test
+    fun `review budget survives restart and is independent for each cluster and review stage`() {
+        val steps = listOf(Step("edict-generation", "Generate"))
+        var generationId = ""
+        var clusterId = ""
+        val reviewSkills = listOf("edict-inspection-code-review", "edict-weak-signal-review", "edict-inspection-value-review")
+        Store(directory).use { store ->
+            val plan = store.createPlan("Generate", steps)
+            generationId = plan.plan.tasks.single().id
+            val generation = store.launch(plan.token, generationId, "edict-generation", emptyList(), listOf("clusters"))
+            val cluster = store.addTask(generation.token, "edict-cluster-generation", "First cluster")
+            clusterId = cluster.id
+            val worker = store.launch(generation.token, cluster.id, cluster.skill, emptyList(), listOf("clusters/first"))
+            for (skill in reviewSkills) repeat(3) { iteration ->
+                val review = store.addTask(worker.token, skill, "Review iteration ${iteration + 1}/3")
+                val reviewer = store.launch(worker.token, review.id, skill, emptyList(), listOf("clusters/first"))
+                store.finishTask(reviewer.token, "completed", "Reviewed")
+            }
+        }
+        Store(directory).use { store ->
+            val resumed = store.createPlan("Generate", steps)
+            val generation = store.launch(resumed.token, generationId, "edict-generation", emptyList(), listOf("clusters"))
+            val worker = store.launch(generation.token, clusterId, "edict-cluster-generation", emptyList(), listOf("clusters/first"))
+            for (skill in reviewSkills) {
+                assertTrue(assertFails { store.addTask(worker.token, skill, "Fourth attempt") }.message!!.contains("Three review iterations"))
+            }
+            // Example creation is not an additional review iteration.
+            repeat(4) { store.addTask(worker.token, "edict-code-example", "Example $it") }
+            val second = store.addTask(generation.token, "edict-cluster-generation", "Second cluster")
+            val sibling = store.launch(generation.token, second.id, second.skill, emptyList(), listOf("clusters/second"))
+            for (skill in reviewSkills) {
+                store.addTask(sibling.token, skill, "First review")
+            }
+            assertEquals(3, store.plan()!!.tasks.count { it.parentId == clusterId && it.skill == "edict-inspection-code-review" })
+        }
+    }
+
+    @Test
     fun `distribution moves existing project feedback unchanged inside dot edict`() {
         val content = javaClass.getResource("/signals/submitted-feedback.json")!!.readText()
         val state = directory.resolve("project/.edict")
