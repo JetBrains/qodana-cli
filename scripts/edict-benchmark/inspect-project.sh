@@ -15,15 +15,20 @@ project="${EDICT_PROJECT_DIR:-$PWD}"
 test -f "$project/pom.xml"
 exec 9> "$TMPDIR/native-project-scan.lock"
 flock -w 1800 9
-mkdir -p "$destination/project"
-tar -C "$project" --exclude=.git --exclude=.edict --exclude=.qodana --exclude=benchmark \
-  --exclude=inspections --exclude=target --exclude=qodana.yaml --exclude=AGENTS.md -cf - . | tar -C "$destination/project" -xf -
-mkdir -p "$destination/project/inspections"
-cp "$candidate" "$destination/project/inspections/$inspection_id.inspection.kts"
-jq -n --arg id "$inspection_id" '{version:"1.0", profile:{name:"empty"},include:[{name:$id}]}' > "$destination/project/qodana.yaml"
-QODANA_CONF="$destination/cache/config" timeout --signal=TERM --kill-after=30s 30m qodana scan \
-  --within-docker=false --project-dir "$destination/project" --results-dir "$destination/results" \
-  --cache-dir "$destination/cache" --disable-sanity --run-promo=false --save-report=false \
+workspace="$TMPDIR/native-project-workspace"
+if [[ ! -d "$workspace/project" ]]; then
+  mkdir -p "$workspace/project"
+  tar -C "$project" --exclude=.git --exclude=.edict --exclude=.qodana --exclude=benchmark \
+  --exclude=inspections --exclude=target --exclude=qodana.yaml --exclude=AGENTS.md -cf - . | tar -C "$workspace/project" -xf -
+fi
+# Reuse one imported project and IDE cache across sequential candidates.
+rm -rf "$workspace/project/inspections"
+mkdir -p "$workspace/project/inspections"
+cp "$candidate" "$workspace/project/inspections/$inspection_id.inspection.kts"
+jq -n --arg id "$inspection_id" '{version:"1.0", profile:{name:"empty"},include:[{name:$id}]}' > "$workspace/project/qodana.yaml"
+QODANA_CONF="$workspace/cache/config" timeout --signal=TERM --kill-after=30s 30m qodana scan \
+  --within-docker=false --project-dir "$workspace/project" --results-dir "$destination/results" \
+  --cache-dir "$workspace/cache" --disable-sanity --run-promo=false --save-report=false \
   --property=idea.headless.enable.statistics=false > "$destination/analysis.log" 2>&1
 jq -e --arg id "$inspection_id" '[.runs[].tool | .driver, .extensions[]? | .rules[]?.id] | index($id) != null' \
   "$destination/results/qodana.sarif.json" > /dev/null
