@@ -56,12 +56,6 @@ The job timeout is 300 minutes. Reports, persisted state, native analysis logs,
 and the exact Bash scripts are build artifacts; credentials and raw Codex sessions
 are not published.
 
-Reapply the checked-in TeamCity configuration with an authenticated `teamcity` CLI:
-
-```sh
-./edict/kotlin/gradlew -p edict/kotlin :benchmark:configureTeamCity
-```
-
 Run native reporting locally after generation:
 
 ```sh
