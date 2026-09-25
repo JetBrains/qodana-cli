@@ -30,7 +30,7 @@ Skills directory: $benchmark_codex_home/skills
 Native inspections MCP provides compilation and example execution.
 For complete project findings, use:
   bash $benchmark_source/scripts/edict-benchmark/inspect-project.sh <candidate.kts> <inspection-id> <scratch-output-directory>
-Use an inspection ID distinct from built-in inspections (for example, prefix it with Edict).
+Use an inspection ID distinct from built-in inspections (for example, prefix it with edict-).
 CONTEXT
 mkdir -p "$benchmark_output/trace" "$benchmark_output/mcp-cache" "$benchmark_output/mcp-results"
 nohup setsid "$edict" mcp --project-dir "$benchmark_project" --state-dir "$benchmark_output/state" \
