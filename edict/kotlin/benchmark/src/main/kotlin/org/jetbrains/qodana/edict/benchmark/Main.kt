@@ -54,7 +54,8 @@ internal fun compare(benchmarkDir: Path, generationDir: Path, outputDir: Path,
         cluster.matches(Regex("[a-z0-9][a-z0-9-]*")) && rule.matches(Regex("[A-Za-z0-9]+"))
     }) { "Unsafe cluster or rule ID" }
 
-    val outcomes = inputs.clusterToRule.map { (cluster, rule) ->
+    val clusterToRule = resolveClusters(inputs, generationDir)
+    val outcomes = clusterToRule.map { (cluster, rule) ->
         val description = json.parseToJsonElement(
             generationDir.resolve("state/clusters/$cluster/description.json").readText()).jsonObject
         rule to description.getValue("status").jsonPrimitive.content
@@ -81,7 +82,7 @@ internal fun compare(benchmarkDir: Path, generationDir: Path, outputDir: Path,
     // Remove only artifacts owned by this task, so a rerun cannot publish stale successful rules.
     inspectionsDir.listDirectoryEntries("*.kts").forEach { it.deleteExisting() }
     specGoldDir.listDirectoryEntries("*.json").forEach { it.deleteExisting() }
-    val clusters = inputs.clusterToRule.entries.associate { it.value to it.key }
+    val clusters = clusterToRule.entries.associate { it.value to it.key }
     successful.forEach { spec ->
         generationDir.resolve("state/inspections/${clusters.getValue(spec.ruleId)}.inspection.kts")
             .copyTo(inspectionsDir.resolve("${spec.ruleId}.kts"), overwrite = true)
@@ -123,16 +124,18 @@ internal fun logReport(report: BenchmarkReport) {
 
 fun main(args: Array<String>) {
     try {
-        val allowed = setOf("--benchmark-dir", "--generation-dir", "--output-dir", "--analysis-sarif")
+        val allowed = setOf("--benchmark-dir", "--generation-dir", "--output-dir", "--analysis-sarif", "--project-dir")
         require(args.size % 2 == 0 && args.toList().chunked(2).all { it[0] in allowed }) {
             "Use --benchmark-dir <fixtures> --generation-dir <generation artifacts> [--output-dir <reports>] [--analysis-sarif <file>]"
         }
         val options = args.toList().chunked(2).associate { it[0] to Path.of(it[1]).toAbsolutePath().normalize() }
         require(options.size == args.size / 2) { "Duplicate options" }
         val generation = options["--generation-dir"] ?: error("--generation-dir is required")
+        options["--project-dir"]?.let { generateSarif(it, generation) }
         val report = compare(options["--benchmark-dir"] ?: error("--benchmark-dir is required"), generation,
             options["--output-dir"] ?: generation, options["--analysis-sarif"] ?: generation.resolve("qodana.sarif.json"))
         logReport(report)
+        options["--project-dir"]?.let { verifyManagedCompletion(generation) }
         check(report.successful > 0) { "No inspections generated; report.json contains the recorded generation outcomes" }
     } catch (error: Exception) {
         System.err.println("Benchmark comparison failed: ${error.message}")
