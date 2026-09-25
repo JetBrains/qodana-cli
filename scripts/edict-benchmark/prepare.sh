@@ -7,17 +7,18 @@ trap 'exit 130' INT TERM
 # The distribution and matching CLI are TeamCity artifact dependencies.
 archive=qodana-QDJVM-263.SNAPSHOT.150-aarch64.tar.gz
 (cd "$benchmark_checkout/native-artifacts" && sha256sum -c "$archive.sha256")
-mkdir -p "$benchmark_output/native-unpacked" "$QODANA_DIST" "$benchmark_output/tooling/bin"
+mkdir -p "$benchmark_output/native-unpacked" "$benchmark_output/tooling/bin"
+[[ ! -e "$QODANA_DIST" ]] || { echo "Use a fresh native distribution directory: $QODANA_DIST" >&2; exit 1; }
 tar -xzf "$benchmark_checkout/native-artifacts/$archive" -C "$benchmark_output/native-unpacked"
 product_info=$(find "$benchmark_output/native-unpacked" -name product-info.json -print -quit)
 [[ -n "$product_info" ]]
-cp -a "$(dirname "$product_info")/." "$QODANA_DIST/"
+mv "$(dirname "$product_info")" "$QODANA_DIST"
 cp "$benchmark_checkout/native-cli/qodana" "$benchmark_output/tooling/bin/qodana"
 chmod +x "$benchmark_output/tooling/bin/qodana"
 qodana --version
 git -C "$benchmark_source" rev-parse HEAD > "$benchmark_output/runner-revision.txt"
 # Build the standard Edict application, not the benchmark reporting subproject.
-"$benchmark_source/edict/kotlin/gradlew" -p "$benchmark_source/edict/kotlin" --no-daemon --console=plain installDist
+"$benchmark_source/edict/kotlin/gradlew" -p "$benchmark_source/edict/kotlin" --no-daemon --console=plain :installDist
 edict="$benchmark_source/edict/kotlin/build/install/edict/bin/edict"
 "$edict" install-skills --directory "$benchmark_codex_home/skills"
 bash "$benchmark_source/scripts/edict-benchmark/import-inbox.sh"
@@ -35,22 +36,62 @@ mkdir -p "$benchmark_output/trace" "$benchmark_output/mcp-cache" "$benchmark_out
 nohup setsid "$edict" mcp --project-dir "$benchmark_project" --state-dir "$benchmark_output/state" \
   --log-dir "$benchmark_output/log" --http-port 0 > "$benchmark_output/log/edict-server.log" 2>&1 < /dev/null &
 echo $! > "$benchmark_output/edict.pid"
-nohup setsid env QODANA_CONF="$benchmark_output/mcp-cache/config" qodana scan \
-  --within-docker=false --project-dir "$benchmark_project" --results-dir "$benchmark_output/mcp-results" \
-  --cache-dir "$benchmark_output/mcp-cache" --script mcp-server --profile-name empty \
-  --disable-sanity --run-promo=false --save-report=false --property=idea.headless.enable.statistics=false \
+# This native archive provides the IDE's headless mcpServer starter. Its older
+# AI Assistant plugin does not register the Qodana-specific mcp-server script.
+cp "$QODANA_DIST/bin/idea64.vmoptions" "$benchmark_output/mcp.vmoptions"
+cat >> "$benchmark_output/mcp.vmoptions" <<VMOPTIONS
+-Xmx8g
+-Didea.config.path=$benchmark_output/mcp-cache/config
+-Didea.system.path=$benchmark_output/mcp-cache/system
+-Didea.log.path=$benchmark_output/mcp-results/log
+-Didea.plugins.path=$QODANA_DIST/custom-plugins
+-Djava.awt.headless=true
+-Didea.is.internal=true
+-Deap.login.enabled=false
+-Didea.headless.enable.statistics=false
+VMOPTIONS
+# The IDE starter does not support port 0; allocate a free loopback port first.
+inspection_port=$(node -e 'const s=require("net").createServer();s.listen(0,"127.0.0.1",()=>{console.log(s.address().port);s.close()})')
+nohup setsid env IDEA_VM_OPTIONS="$benchmark_output/mcp.vmoptions" "$QODANA_DIST/bin/idea" mcpServer \
+  --project="$benchmark_project" --port="$inspection_port" --invocation-mode=direct \
+  --allowed-tools=generate_psi_tree,generate_inspection_kts_api,generate_inspection_kts_examples,run_inspection_kts \
   > "$benchmark_output/log/inspection-server.log" 2>&1 < /dev/null &
 echo $! > "$benchmark_output/inspection.pid"
 for ((attempt=0; attempt<1200; attempt++)); do
-  kill -0 "$(cat "$benchmark_output/edict.pid")"
-  kill -0 "$(cat "$benchmark_output/inspection.pid")"
+  if ! kill -0 "$(cat "$benchmark_output/edict.pid")" 2>/dev/null ||
+     ! kill -0 "$(cat "$benchmark_output/inspection.pid")" 2>/dev/null; then
+    tail -40 "$benchmark_output/log/edict-server.log" "$benchmark_output/log/inspection-server.log"
+    exit 1
+  fi
   edict_url=$(sed -nE 's/.*edict-mcp listening at (http[^[:space:]]+).*/\1/p' "$benchmark_output/log/edict-server.log" | head -1)
-  inspection_url=$(sed -nE 's/.*Streamable HTTP endpoint: (http[^[:space:]]+).*/\1/p' "$benchmark_output/log/inspection-server.log" | head -1 | sed $'s/\033.*//')
+  inspection_url=$(sed -nE 's/.*SSE URL: (http[^[:space:]]+)\/sse.*/\1\/stream/p' "$benchmark_output/log/inspection-server.log" | head -1)
   if [[ -n "$edict_url" && -n "$inspection_url" ]]; then break; fi
   if ((attempt % 30 == 0)); then echo "Waiting for native MCP servers ($attempt seconds)"; fi
   sleep 1
 done
-[[ -n "$edict_url" && -n "$inspection_url" ]]
+[[ -n "$edict_url" && -n "$inspection_url" ]] || { echo 'MCP startup exceeded 20 minutes' >&2; exit 1; }
+# Check the advertised endpoint and required tools before starting Codex.
+# Session IDs stay in private setup files; DELETE releases this short-lived probe.
+for ((attempt=0; attempt<30; attempt++)); do
+  if curl -fsS --max-time 5 -D "$benchmark_output/trace/mcp-headers" \
+    -H 'Content-Type: application/json' -H 'Accept: application/json, text/event-stream' \
+    -d '{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2025-03-26","capabilities":{},"clientInfo":{"name":"benchmark-readiness","version":"1"}}}' \
+    "$inspection_url" > "$benchmark_output/trace/mcp-initialize"; then break; fi
+  sleep 1
+done
+session=$(awk 'tolower($1)=="mcp-session-id:" {gsub("\r", "", $2); print $2}' "$benchmark_output/trace/mcp-headers")
+[[ -n "$session" ]]
+curl -fsS --max-time 5 -H 'Content-Type: application/json' -H 'Accept: application/json, text/event-stream' \
+  -H "Mcp-Session-Id: $session" -d '{"jsonrpc":"2.0","method":"notifications/initialized"}' "$inspection_url" > /dev/null
+curl -fsS --max-time 10 -H 'Content-Type: application/json' -H 'Accept: application/json, text/event-stream' \
+  -H "Mcp-Session-Id: $session" -d '{"jsonrpc":"2.0","id":2,"method":"tools/list"}' "$inspection_url" \
+  > "$benchmark_output/trace/mcp-tools-response"
+# The server can return either plain JSON or SSE JSON data.
+sed -n -e 's/^data: *//p' -e '/^{/p' "$benchmark_output/trace/mcp-tools-response" \
+  | jq '.result.tools' > "$benchmark_output/inspection-tools.json"
+jq -e '[.[].name] | contains(["generate_psi_tree","generate_inspection_kts_api","generate_inspection_kts_examples","run_inspection_kts"])' \
+  "$benchmark_output/inspection-tools.json" > /dev/null
+curl -sS --max-time 5 -X DELETE -H "Mcp-Session-Id: $session" "$inspection_url" > /dev/null
 cat >> "$benchmark_codex_home/config.toml" <<CONFIG
 
 [mcp_servers.edict-mcp]

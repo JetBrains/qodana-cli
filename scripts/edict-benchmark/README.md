@@ -11,7 +11,9 @@ The pipeline has four steps:
    `LITELLM_API_KEY` environment parameter.
 2. `prepare.sh` installs the standard Edict application and its Kotlin skills,
    imports required fixture examples as SubmittedFeedback, and starts the Edict
-   and native inspections MCP servers. Both must be ready before execution.
+   and native inspections MCP servers. The supplied archive uses its built-in
+   `idea mcpServer` headless entry point; its AI Assistant plugin predates the
+   Qodana-specific `mcp-server` script. Both must be ready before execution.
 3. `generate.sh` executes Codex directly with `process inbox and generate new rules`.
    Its exit trap stops both servers, including on failure. Raw Codex transcripts
    stay private because MCP responses contain temporary delegation capabilities.
@@ -26,7 +28,8 @@ CLI executable. No container is used. Separate `QODANA_CONF` directories prevent
 MCP and analysis IDE instances from contending for the same configuration lock.
 
 Generation can compile examples with inspections MCP and use `inspect-project.sh`
-for complete project findings in scratch. State is writable only through Edict MCP.
+for complete project findings in scratch, reusing a serialized project workspace
+and IDE cache across candidates. State is writable only through Edict MCP.
 Optional examples and gold are denied to Codex. Required examples preserve source
 revisions, labels, ranges, and original feedback. Comparison follows feedback
 provenance instead of prescribing cluster names. Scoring copies namespace the
