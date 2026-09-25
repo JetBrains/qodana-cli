@@ -61,6 +61,10 @@ fun main() {
     features["feature"]?.jsonArray.orEmpty().filter { it.jsonObject.string("type") == "DockerSupport" }.forEach {
         api("/app/rest/buildTypes/id:$job/features/${it.jsonObject.string("id")}", method = "DELETE")
     }
+    features["feature"]?.jsonArray.orEmpty().filter { it.jsonObject.string("type") == "jetbrains.agent.free.space" }.forEach {
+        api("/app/rest/buildTypes/id:$job/features/${it.jsonObject.string("id")}/parameters",
+            properties(mapOf("free-space-fail-start" to "false", "free-space-work" to "20gb")))
+    }
     val parameters = mapOf("env.QODANA_DIST" to "%teamcity.build.checkoutDir%/native-dist",
         "env.QODANA_CLI" to "%teamcity.build.checkoutDir%/benchmark-output/tooling/bin/qodana",
         "env.EDICT_PROJECT_DIR" to "%teamcity.build.checkoutDir%/project",
@@ -73,7 +77,7 @@ fun main() {
     names["property"]?.jsonArray.orEmpty().map { it.jsonObject.string("name") }.filter { it in obsolete }.forEach {
         api("/app/rest/buildTypes/id:$job/parameters/$it", method = "DELETE")
     }
-    val artifacts = listOf("report.json", "qodana.sarif.json", "inputs.json", "prompt.txt", "source-revision.txt", "runner-revision.txt")
+    val artifacts = listOf("report.json", "qodana.sarif.json", "inputs.json", "prompt.txt", "inspection-tools.json", "source-revision.txt", "runner-revision.txt")
         .map { "benchmark-output/$it" } + listOf("benchmark-output/generatedInspections => generatedInspections.zip",
         "benchmark-output/specGoldComparisons => specGoldComparisons.zip", "benchmark-output/state => state.zip", "benchmark-output/log => logs.zip",
         "benchmark-output/trace/sandbox.stderr", "benchmark-output/trace/sandbox.stdout", "benchmark-output/mcp-results/log => inspection-ide-logs.zip",
