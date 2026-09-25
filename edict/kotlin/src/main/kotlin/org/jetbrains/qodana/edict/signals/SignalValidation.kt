@@ -66,6 +66,16 @@ object SignalValidation {
         }
         val source = signal.source
         when (source.type) {
+            "SubmittedFeedback" -> {
+                field("source.message", !source.message.isNullOrBlank(), "requires the original feedback")
+                field("source.url", !source.url.isNullOrBlank(), "requires the feedback source reference")
+                field("source", source.diffPositiveToNegative.isEmpty() && source.commitRevision == null &&
+                        source.parentRevision == null && source.prNumber == null && source.title == null &&
+                        source.discussionMessages.isEmpty(), "feedback must not fabricate commit or PR evidence")
+                // Feedback labels an exact source location; it has no correcting diff or before/after sides.
+                return signal
+            }
+
             "FromCommit" -> {
                 field(
                     "source.commitRevision",
@@ -100,7 +110,7 @@ object SignalValidation {
                 "FromPR requires prNumber, title, discussionMessages and url"
             )
 
-            else -> field("source.type", false, "must be FromCommit or FromPR")
+            else -> field("source.type", false, "must be FromCommit, FromPR or SubmittedFeedback")
         }
         val changes = try {
             UnifiedDiff.parse(source.diffPositiveToNegative).side(signal.label)

@@ -206,6 +206,7 @@ class Store(directory: Path) : AutoCloseable {
         if (op == "inbox.write" || op == "cluster.signal.write") {
             val signal = SignalValidation.validate(name, content)
             if (op == "inbox.write") {
+                require(signal.source.type != "SubmittedFeedback") { "Feedback must be imported by the trusted host, not fabricated by extraction workers" }
                 require(c.skill != "edict-batch-signal-analysis" || signal.source.type != "FromPR") { "PR signals require edict-pr-signal-analysis" }
                 if (c.skill == "edict-pr-signal-analysis") checkNotNull(prAnalysis).validateWrite(c.taskId, signal.id, content)
             }

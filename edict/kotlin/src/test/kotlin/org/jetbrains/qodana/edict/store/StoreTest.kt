@@ -23,6 +23,18 @@ class StoreTest {
     lateinit var directory: Path
 
     @Test
+    fun `extraction workers cannot replace source evidence with submitted feedback`() {
+        val original = fixtureSignals(gitFixture(directory.resolve("source"))).first()
+        val signal = original.copy(source = org.jetbrains.qodana.edict.model.SignalSource("SubmittedFeedback", "",
+            message = "Feedback", url = "benchmark/Rule/specification.json"))
+        Store(directory.resolve("state")).use { store ->
+            val (_, worker) = store.batch()
+            assertFails { store.write(worker.token, "inbox/${signal.id}.json", json.encodeToString(signal), "") }
+            assertTrue(store.list("inbox").isEmpty())
+        }
+    }
+
+    @Test
     fun `worker must fetch assignment and declare matching skill before start`() {
         Store(directory).use { store ->
             val plan = store.createPlan("Extract", listOf(Step("edict-batch-signal-analysis", "Commit")))
