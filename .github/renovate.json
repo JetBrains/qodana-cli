@@ -44,14 +44,67 @@
         "renovate:\\s*datasource=(?<datasource>.*?) depName=(?<depName>.*?)\\n.*?\"(?<currentValue>.*?)\""
       ],
       "versioningTemplate": "regex:^jbr-release-(?<major>\\d+)\\.(?<minor>\\d+)\\.(?<patch>\\d+)b(?<build>.*)$"
+    },
+    {
+      "description": "Container-engine rows of the CI test matrix.",
+      "fileMatch": [
+        "^\\.github/workflows/ci\\.yml$"
+      ],
+      "matchStrings": [
+        "#\\s*renovate:\\s*datasource=(?<datasource>\\S+) depName=(?<depName>\\S+)\\s+container-engine: (?:&\\S+ )?[a-z]+@(?<currentValue>\\S+)"
+      ]
+    },
+    {
+      "description": "The pep723 manager doesn't track requires-python.",
+      "fileMatch": [
+        "^\\.github/actions/setup-docker/normalize-version\\.py$"
+      ],
+      "matchStrings": [
+        "# requires-python = \"==(?<currentValue>\\d+\\.\\d+\\.\\d+)\""
+      ],
+      "datasourceTemplate": "python-version",
+      "depNameTemplate": "uv-script-python",
+      "packageNameTemplate": "python"
     }
   ],
+  "pep723": {
+    "fileMatch": [
+      "^\\.github/actions/setup-docker/normalize-version\\.py$"
+    ]
+  },
+  "customDatasources": {
+    "docker-static": {
+      "description": "The static binaries .github/actions/setup-docker installs.",
+      "defaultRegistryUrlTemplate": "https://download.docker.com/linux/static/stable/x86_64/",
+      "format": "html"
+    }
+  },
   "packageRules": [
     {
       "description": "Qodana artifacts are only on packages.jetbrains.team. Also querying Central lets a Central 429 abort the run whenever packages.jetbrains.team fails.",
       "matchDatasources": ["maven"],
       "matchPackageNames": ["org.jetbrains.qodana:*", "com.jetbrains.qodana:*"],
       "registryUrls": ["https://packages.jetbrains.team/maven/p/ij/intellij-dependencies"]
+    },
+    {
+      "matchDatasources": ["custom.docker-static"],
+      "extractVersion": "^docker-(?<version>\\d+\\.\\d+\\.\\d+)\\.tgz$"
+    },
+    {
+      "description": "uv downloads only the Python builds it knows, so a Python bump may need a uv bump in the same PR.",
+      "matchDepNames": ["astral-sh/uv", "uv-script-python"],
+      "groupName": "uv and its script Python",
+      "separateMajorMinor": false
+    },
+    {
+      "description": "config-loader-cli.jar in test.yaml needs Java 21; moving to a new major is a deliberate change.",
+      "matchDepNames": ["java-jdk"],
+      "allowedVersions": "<22"
+    },
+    {
+      "matchDatasources": ["github-releases"],
+      "matchPackageNames": ["mgoltzsche/podman-static"],
+      "extractVersion": "^v(?<version>.*)$"
     },
     {
       "datasources": ["repology"],
