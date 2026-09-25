@@ -80,6 +80,13 @@ Write `Review output path` with exactly this shape:
 }
 ```
 
-Use `REJECT` when any evidence-backed `BLOCKER` or `MAJOR` finding exists. Otherwise use `ACCEPT`. Do not reject or
-invent a third outcome for missing evidence; state relevant limitations in the summary and decide from available
-evidence.
+Use `REJECT` only for an evidence-backed `BLOCKER`; otherwise use `ACCEPT`, retaining every MAJOR/MINOR finding.
+BLOCKER means the candidate cannot compile/run, fails a required example gate, violates an explicit execution
+constraint, or has a demonstrated defect that invalidates its core rule or recommends an unsafe change. Bounded
+coverage/precision gaps that leave the core rule usable are MAJOR; cosmetic improvements are MINOR. Do not promote
+a finding merely to force another repair.
+
+MAJOR findings request reassessment in the next available iteration, but do not block downstream validation or
+publication. The cluster worker has three iterations total, including the initial review; do not request unlimited
+repairs or require every finding to be cleared. State unresolved limitations in the summary. Missing evidence alone
+is not grounds for rejection or an invented third outcome.
