@@ -23,9 +23,11 @@ import (
 	"io"
 	"os"
 	"os/exec"
+	"path/filepath"
 	"regexp"
 	"strings"
 	"sync"
+	"time"
 
 	edictmcp "github.com/JetBrains/qodana-cli/edict/mcp"
 	"github.com/JetBrains/qodana-cli/internal/core"
@@ -40,13 +42,21 @@ import (
 )
 
 const mcpServerScript = "mcp-server"
+const mcpIDEStarter = "mcpServer"
 
 var streamableEndpointPattern = regexp.MustCompile(`Streamable HTTP endpoint:\s*(https?://[^\s\x1b]+)`)
+var ideSSEEndpointPattern = regexp.MustCompile(`SSE URL:\s*(https?://[^\s\x1b]+)`)
 
 type qodanaMCPLauncher struct{}
 
 func (qodanaMCPLauncher) Launch(_ context.Context, request edictmcp.LaunchRequest) (edictmcp.Process, error) {
-	if request.Port != 0 {
+	if request.Starter == "" {
+		request.Starter = mcpIDEStarter
+	}
+	if request.Starter != mcpServerScript && request.Starter != mcpIDEStarter {
+		return nil, fmt.Errorf("unsupported MCP starter %q; use mcp-server or mcpServer", request.Starter)
+	}
+	if request.Port != 0 && request.Starter != mcpIDEStarter {
 		return nil, fmt.Errorf("--port is not supported by the '%s' linter script; use --port=0", mcpServerScript)
 	}
 
@@ -56,18 +66,49 @@ func (qodanaMCPLauncher) Launch(_ context.Context, request edictmcp.LaunchReques
 		return nil, err
 	}
 	arguments := core.PrepareNativeServiceRunCommand(scanContext)
+	if request.Starter == mcpIDEStarter {
+		arguments = ideMCPArguments(scanContext.Prod().IdeScript, request)
+	}
+	return startMCPProcess(arguments, request, runtimeDir, cleanup)
+}
 
+func ideMCPArguments(executable string, request edictmcp.LaunchRequest) []string {
+	args := []string{executable, mcpIDEStarter, "--project=" + request.ProjectDir, "--invocation-mode=direct",
+		"--allowed-tools=generate_psi_tree,generate_inspection_kts_api,generate_inspection_kts_examples,run_inspection_kts"}
+	// Omit port 0: the IDE starter selects a free port when no port is supplied.
+	if request.Port != 0 {
+		args = append(args, fmt.Sprintf("--port=%d", request.Port))
+	}
+	return args
+}
+
+func startMCPProcess(arguments []string, request edictmcp.LaunchRequest, runtimeDir string, cleanup func()) (edictmcp.Process, error) {
 	logFile, err := os.OpenFile(request.LogFile, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0o600)
 	if err != nil {
 		cleanup()
 		return nil, fmt.Errorf("opening MCP log file: %w", err)
 	}
-	detector := &mcpEndpointDetector{log: logFile, readyFile: request.ReadyFile}
+	reader, err := os.Open(request.LogFile)
+	if err != nil {
+		_ = logFile.Close()
+		cleanup()
+		return nil, fmt.Errorf("reading MCP log file: %w", err)
+	}
+	// Read only this launch's output, not an endpoint left by a previous process.
+	if _, err := reader.Seek(0, io.SeekEnd); err != nil {
+		_ = reader.Close()
+		_ = logFile.Close()
+		cleanup()
+		return nil, err
+	}
 	command := exec.Command(arguments[0], arguments[1:]...)
 	command.Dir = request.ProjectDir
-	command.Stdout = detector
-	command.Stderr = detector
+	// The server outlives `mcp start`. Inherit the file directly so logging keeps
+	// working after the CLI exits instead of leaving the server with broken pipes.
+	command.Stdout = logFile
+	command.Stderr = logFile
 	if err := command.Start(); err != nil {
+		_ = reader.Close()
 		_ = logFile.Close()
 		cleanup()
 		return nil, fmt.Errorf("launching %s: %w", arguments[0], err)
@@ -75,10 +116,35 @@ func (qodanaMCPLauncher) Launch(_ context.Context, request edictmcp.LaunchReques
 
 	process := &qodanaMCPProcess{
 		command: command, executable: command.Path, runtimeDir: runtimeDir,
-		done: make(chan error, 1), log: logFile, cleanup: cleanup,
+		done: make(chan error, 1), exited: make(chan struct{}), log: logFile, cleanup: cleanup,
 	}
+	go detectMCPEndpoint(reader, request.ReadyFile, process.exited)
 	go process.wait()
 	return process, nil
+}
+
+func detectMCPEndpoint(reader *os.File, readyFile string, exited <-chan struct{}) {
+	defer reader.Close()
+	detector := &mcpEndpointDetector{log: io.Discard, readyFile: readyFile}
+	ticker := time.NewTicker(100 * time.Millisecond)
+	defer ticker.Stop()
+	buffer := make([]byte, 4096)
+	for {
+		n, err := reader.Read(buffer)
+		if n > 0 {
+			_, _ = detector.Write(buffer[:n])
+		}
+		if detector.reported || (err != nil && err != io.EOF) {
+			return
+		}
+		if err == io.EOF {
+			select {
+			case <-exited:
+				return
+			case <-ticker.C:
+			}
+		}
+	}
 }
 
 func prepareMCPScanContext(request edictmcp.LaunchRequest) (corescan.Context, string, func(), error) {
@@ -91,11 +157,14 @@ func prepareMCPScanContext(request edictmcp.LaunchRequest) (corescan.Context, st
 		return corescan.Context{}, "", func() {},
 			fmt.Errorf("the MCP server requires a native linter or IDE distribution")
 	}
-	preparedHost := startup.PrepareNativeServiceHost(commonCtx)
 	configDir, cleanup, err := fs.CreateTempDir("qodana-mcp-config")
 	if err != nil {
 		return corescan.Context{}, "", func() {}, fmt.Errorf("creating MCP configuration directory: %w", err)
 	}
+	// Keep the service separate from scan caches and concurrent MCP instances.
+	commonCtx.CacheDir = filepath.Join(configDir, "cache")
+	commonCtx.ResultsDir = filepath.Join(configDir, "results")
+	preparedHost := startup.PrepareNativeServiceHost(commonCtx)
 	cliOptions := platformcmd.CliOptions{
 		ProjectDir:   request.ProjectDir,
 		Linter:       request.Linter,
@@ -154,6 +223,12 @@ func (w *mcpEndpointDetector) inspectLine(line string) {
 	}
 	match := streamableEndpointPattern.FindStringSubmatch(strings.TrimSpace(line))
 	if len(match) != 2 {
+		match = ideSSEEndpointPattern.FindStringSubmatch(strings.TrimSpace(line))
+		if len(match) == 2 {
+			match[1] = strings.TrimSuffix(match[1], "/sse") + "/stream"
+		}
+	}
+	if len(match) != 2 {
 		return
 	}
 	if err := edictmcp.WriteReady(w.readyFile, edictmcp.Ready{Status: "ready", URL: match[1]}); err != nil {
@@ -168,6 +243,7 @@ type qodanaMCPProcess struct {
 	executable string
 	runtimeDir string
 	done       chan error
+	exited     chan struct{}
 	log        io.Closer
 	cleanup    func()
 }
@@ -195,6 +271,7 @@ func (p *qodanaMCPProcess) Kill() error {
 
 func (p *qodanaMCPProcess) wait() {
 	err := p.command.Wait()
+	close(p.exited)
 	_ = p.log.Close()
 	p.cleanup()
 	p.done <- err
