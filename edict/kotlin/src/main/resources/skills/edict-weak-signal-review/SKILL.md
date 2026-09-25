@@ -23,8 +23,14 @@ For each confident FP, create a transient NEGATIVE signal only in private scratc
 Delegate `edict-code-example` with `example.write` scoped to this cluster's example directory and no signal-write
 permission. Pass the transient scratch signal. Require its completed result and verified example ID.
 
+Run example children one at a time and close/dispose each after collecting its result, preserving the other cluster's
+reserved agent slots.
+
 Write one scratch false-positive report with exact path/revision/ranges, relevant snippet, semantic reason, example ID,
-and whether created or reused. Do not create a signal/example for uncertain evidence or a report for TP. Never copy
+whether created or reused, and severity (`BLOCKER` or `MAJOR`). Use BLOCKER when the evidence invalidates the core rule
+or demonstrates an unsafe recommendation; use MAJOR for a bounded precision gap that leaves the core rule usable.
+Only BLOCKER findings require repairs. MAJOR findings request another iteration within the cluster's three-iteration
+budget but do not block its value review or publication. Do not create a signal/example for uncertain evidence or a report for TP. Never copy
 transient weak signals into the persisted cluster.
 
 Write the manifest's scratch output with candidate hash, sampled findings path, total/reviewed counts, every

@@ -59,7 +59,8 @@ plausible detector for a misread or over-generalized rule is not acceptable.
    proof of
    universal precision. When evidence shows that the candidate is narrower than the cluster Signals or misses part of
    their
-   positive boundary, report a `MAJOR` `COVERAGE` finding and `REJECT`. A low finding count alone is not evidence of
+   positive boundary, report a `MAJOR` `COVERAGE` finding. It requests another iteration while budget remains, but does
+   not by itself cause `REJECT` or prevent publication. A low finding count alone is not evidence of
    overfitting.
 
 ## Output contract
@@ -85,6 +86,12 @@ Write `Review output path` with exactly this shape:
 }
 ```
 
-Use `REJECT` when any evidence-backed `BLOCKER` or `MAJOR` finding exists. Otherwise use `ACCEPT`. Do not reject or
-invent a third outcome for missing evidence; state relevant limitations in the summary and decide from available
-evidence.
+Use `REJECT` only for an evidence-backed `BLOCKER`; otherwise use `ACCEPT`, retaining every MAJOR/MINOR finding.
+BLOCKER means a demonstrated defect invalidates the core rule, recommends an unsafe change, or fails a mandatory
+validation requirement. Bounded coverage/precision gaps that leave the core rule usable are MAJOR; cosmetic
+improvements are MINOR. Do not promote a finding merely to force a repair.
+
+MAJOR findings request reassessment in the next available iteration without blocking publication. The cluster worker
+has three iterations total across all review stages, including its initial candidate. Report remaining MAJOR/MINOR
+findings as limitations after the last iteration; do not require them all to be fixed. Missing evidence alone is not
+grounds for rejection or an invented third outcome.
