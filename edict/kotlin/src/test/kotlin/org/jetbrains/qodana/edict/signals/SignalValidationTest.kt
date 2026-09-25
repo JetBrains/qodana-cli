@@ -3,6 +3,7 @@ package org.jetbrains.qodana.edict.signals
 import org.jetbrains.qodana.edict.common.json
 import org.jetbrains.qodana.edict.model.SignalLabel
 import org.jetbrains.qodana.edict.model.SignalRange
+import org.jetbrains.qodana.edict.model.SignalSource
 import org.jetbrains.qodana.edict.support.fixtureSignals
 import org.jetbrains.qodana.edict.support.gitFixture
 import org.junit.jupiter.api.Test
@@ -15,6 +16,19 @@ import kotlin.test.assertTrue
 class SignalValidationTest {
     @TempDir
     lateinit var directory: Path
+    @Test
+    fun `feedback requires source attribution and cannot masquerade as a correcting change`() {
+        val original = fixtureSignals(gitFixture(directory)).first()
+        val signal = original.copy(source = SignalSource("SubmittedFeedback", "", message = "Original labelled feedback",
+            url = "git:${original.fileRevision.revision}:benchmark/Rule/specification.json"))
+        fun validate(source: SignalSource) = SignalValidation.validate("inbox/${signal.id}.json", json.encodeToString(signal.copy(source = source)))
+        assertEquals(signal, validate(signal.source))
+        listOf(signal.source.copy(message = null), signal.source.copy(url = ""),
+            signal.source.copy(diffPositiveToNegative = original.source.diffPositiveToNegative),
+            signal.source.copy(commitRevision = original.source.commitRevision), signal.source.copy(prNumber = 1))
+            .forEach { assertFails { validate(it) } }
+    }
+
     @Test
     fun `validate both sides of real commit and reject forged source evidence`() {
         val repository = gitFixture(directory)
