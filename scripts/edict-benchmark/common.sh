@@ -15,6 +15,10 @@ export TMPDIR="$benchmark_scratch"
 mkdir -p "$benchmark_output/log" "$benchmark_scratch" "$benchmark_codex_home"
 
 stop_servers() {
+  if [[ -f "$benchmark_output/inspection-state.json" ]]; then
+    qodana edict linter-mcp stop --project-dir "$benchmark_project" \
+      --state-file "$benchmark_output/inspection-state.json" > /dev/null || true
+  fi
   local pid_file pid
   for pid_file in "$benchmark_output"/*.pid; do
     [[ -f "$pid_file" ]] || continue

@@ -6,7 +6,7 @@ Edict state.
 
 ## Authority and storage
 
-The trusted host starts `qodana edict edict-mcp --state-dir <state>` separately from the inspection
+The trusted host starts `qodana edict mcp start --state-dir <state>` separately from the inspection
 server. The first successful `edict_plan_create(request, steps)` call needs no token and returns `{plan, token}`. Its caller becomes
 manager; this is allowed only once per server lifetime, including after task completion. The manager claims it before
 spawning children and keeps the returned token private. After restart, the same call with the saved request and

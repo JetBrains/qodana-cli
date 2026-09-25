@@ -7,33 +7,37 @@ VCS root checks out `JetBrains/qodana-cli`, branch `avafanasev/edict-master`, in
 
 The pipeline has four steps:
 
-1. `install-codex.sh` installs pinned Codex and configures LiteLLM using the secure
-   `LITELLM_API_KEY` environment parameter.
-2. `prepare.sh` installs the standard Edict application and its Kotlin skills,
-   and starts Edict MCP using the checked-out project's **`project/.edict`** as its
-   state directory, alongside the native inspections MCP server. The existing
+1. `install-codex.sh` installs pinned Codex, configures LiteLLM using the secure
+   `LITELLM_API_KEY` environment parameter, extracts the native distribution, and
+   builds Qodana CLI with the current embedded Kotlin application and skills.
+2. `prepare.sh` runs `qodana edict install`, enables every installed skill in
+   Codex configuration, and starts `qodana edict mcp start` using the checked-out
+   project's **`project/.edict`** as its state directory. It starts inspections with
+   `qodana edict linter-mcp start`, selecting native execution through `QODANA_DIST`. The existing
    `.edict/inbox` files are used directly, without importing, copying, or filtering
-   signals. The supplied archive uses its built-in
-   `idea mcpServer` headless entry point; its AI Assistant plugin predates the
-   Qodana-specific `mcp-server` script. Both must be ready before execution.
+   signals. The CLI launches the native `idea mcpServer` headless entry point
+   and waits for readiness.
+   Both servers must be ready before execution. MCP tool calls are auto-approved.
 3. `generate.sh` executes Codex directly with `process inbox and generate new rules`.
-   Its exit trap stops both servers, including on failure or cancellation. Generation
-   uses TeamCity’s normal execution mode so cancellation remains interruptible. Raw Codex transcripts
-   stay private because MCP responses contain temporary delegation capabilities.
+   The prompt also supplies the existing state and private scratch paths.
+   Generation uses TeamCity’s normal execution mode so cancellation remains
+   interruptible. TeamCity cleans up server processes when the build finishes.
 4. A TeamCity **Gradle runner** executes `:benchmark:report`. Kotlin runs the accepted
    inspections from `.edict/inspections` natively, writes SARIF into `benchmark-output`,
    and compares it with the checked-in specifications and `.edict/gold.sarif.json`.
    No benchmark Kotlin controller runs before Codex.
 
-The pinned ARM64 Qodana distribution comes from build **1070981529**. The matching
-CLI comes from its dependency **1070964192**. TeamCity downloads these artifacts;
+The ARM64 Qodana distribution comes from the latest successful `qodana-jvm: edict`
+build (`ijplatform_master_QodanaJvmEdict`, main branch). TeamCity downloads the
+archive and its checksum; the first step discovers and unpacks it, then sets
+`env.QODANA_DIST` for subsequent steps. The CLI is built from the source VCS checkout so its
+embedded skills and managed state server match that revision.
 `QODANA_DIST` points to the extracted native distribution and `QODANA_CLI` to the
 CLI executable. No container is used. Separate `QODANA_CONF` directories prevent
 MCP and analysis IDE instances from contending for the same configuration lock.
 
-Generation can compile examples with inspections MCP and use `inspect-project.sh`
-for complete project findings in scratch, reusing a serialized project workspace
-and IDE cache across candidates. State is writable only through Edict MCP.
+Generation can compile and execute examples with inspections MCP.
+State is writable only through Edict MCP.
 The benchmark specification directory and `.edict/gold.sarif.json` are denied to
 Codex. All existing inbox signals remain available, including optional examples
 already supplied by the repository. Their IDs, revisions, labels, ranges and original
@@ -51,10 +55,9 @@ Scoring copies namespace the literal first `InspectionKts` descriptor ID to
 inspection collisions; accepted scripts remain unchanged. Unsupported descriptors
 fail explicitly.
 
-`BENCHMARK_MINUTES` bounds Codex execution (default 240).
 The job timeout is 300 minutes. Reports, persisted state, native analysis logs,
-and the exact Bash scripts are build artifacts; credentials and raw Codex sessions
-are not published.
+and the exact Bash scripts are build artifacts; credentials and Codex session
+files are not published.
 
 Run native reporting locally after generation:
 

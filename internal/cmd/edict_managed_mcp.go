@@ -14,18 +14,27 @@ import (
 )
 
 // newEdictManagedMCPCommand serves state management independently of the
-// IntelliJ inspection server launched by `edict mcp start`.
+// IntelliJ inspection server launched by `edict linter-mcp start`.
 func newEdictManagedMCPCommand() *cobra.Command {
+	command := &cobra.Command{
+		Use:   "mcp",
+		Short: "Manage the Kotlin Edict state server",
+	}
+	command.AddCommand(newEdictManagedMCPStartCommand())
+	return command
+}
+
+func newEdictManagedMCPStartCommand() *cobra.Command {
 	var projectDir, stateDir, logDir string
 	var httpPort int
 	command := &cobra.Command{
-		Use:   "edict-mcp",
+		Use:   "start",
 		Short: "Serve managed Edict state and skill capabilities through the Kotlin JVM",
 		Long: `Run the bundled Kotlin managed Edict server over stdin/stdout.
 Use --http-port to serve Streamable HTTP on loopback instead.
 The immutable skill policy is registered at startup. Only capability-bearing
 managed tasks may mutate state, and child capabilities can only narrow access.
-IntelliJ inspections use the separate 'edict mcp start' server.
+IntelliJ inspections use the separate 'edict linter-mcp start' server.
 GitHub and Space PR-review data is read directly by edict-mcp. Configure
 GITHUB_TOKEN (or GH_TOKEN), SPACE_TOKEN, and optionally EDICT_GITHUB_API_URL or
 EDICT_SPACE_URL in the server environment; provider tokens are never MCP arguments.
