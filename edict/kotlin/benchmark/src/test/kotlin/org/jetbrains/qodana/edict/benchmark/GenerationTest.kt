@@ -36,7 +36,7 @@ class GenerationTest {
         commandOutput("git", "-C", root.toString(), "add", "X.java")
         commandOutput("git", "-C", root.toString(), "-c", "user.name=Test", "-c", "user.email=test@example.invalid",
             "commit", "--quiet", "--allow-empty", "-m", "Fixture")
-        val required = obj("path" to text("X.java"), "expectedProblemRanges" to JsonArray(listOf(obj("start" to JsonPrimitive(1), "end" to JsonPrimitive(2)))))
+        val required = obj("path" to text("X.java"), "expectedProblemRanges" to JsonArray(listOf(obj("start" to JsonPrimitive(1), "end" to JsonPrimitive(3)))))
         val specification = obj("ruleId" to text("Rule"), "description" to text("Original"), "language" to text("Java"),
             "positiveExamples" to JsonArray(listOf(required)), "negativeExamples" to JsonArray(listOf(required)),
             "optionalPositiveExamples" to JsonArray(listOf(obj("path" to text("HeldOut.java")))))
@@ -57,6 +57,7 @@ class GenerationTest {
             val signals = inbox.map { SignalValidation.validate(it, store.read(it).content) }
             assertEquals(setOf(SignalLabel.POSITIVE, SignalLabel.NEGATIVE), signals.map { it.label }.toSet())
             assertEquals(1, signals.map { it.fileRevision }.distinct().size)
+            assertEquals(3, signals.first().fileRevision.expectedRanges.single().end, "Preserve trailing context beyond EOF")
             assertTrue(signals.all { it.source.type == "SubmittedFeedback" && it.source.diffPositiveToNegative.isEmpty() })
             assertEquals(commandOutput("git", "-C", root.toString(), "rev-parse", "HEAD"), signals.first().fileRevision.revision)
             assertTrue(signals.all { it.provenance.workItemId.startsWith("benchmark/Rule/specification.json#/") })
