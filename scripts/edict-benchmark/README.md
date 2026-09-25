@@ -15,7 +15,8 @@ The pipeline has four steps:
    `idea mcpServer` headless entry point; its AI Assistant plugin predates the
    Qodana-specific `mcp-server` script. Both must be ready before execution.
 3. `generate.sh` executes Codex directly with `process inbox and generate new rules`.
-   Its exit trap stops both servers, including on failure. Raw Codex transcripts
+   Its exit trap stops both servers, including on failure or cancellation. Generation
+   uses TeamCity’s normal execution mode so cancellation remains interruptible. Raw Codex transcripts
    stay private because MCP responses contain temporary delegation capabilities.
 4. A TeamCity **Gradle runner** executes `:benchmark:report`. Kotlin runs the accepted
    inspections natively, writes SARIF, and compares it with the immutable fixture
