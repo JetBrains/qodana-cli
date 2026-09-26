@@ -46,8 +46,7 @@ max_concurrent_threads_per_session = 50
 CONFIG
 chmod 600 "$benchmark_codex_home/config.toml"
 
-# TeamCity supplies the native distribution; build the CLI from this checkout
-# so its embedded Kotlin server and skills match the benchmark sources.
+# TeamCity supplies the native distribution and, for a custom run, the assembled CLI.
 shopt -s nullglob
 archives=("$benchmark_checkout/native-artifacts/"*.tar.gz)
 [[ ${#archives[@]} -eq 1 ]] || { echo 'Expected one native distribution from the artifact dependency' >&2; exit 1; }
@@ -60,17 +59,33 @@ product_info=$(find "$benchmark_output/native-unpacked" -name product-info.json 
 [[ -n "$product_info" ]]
 mv "$(dirname "$product_info")" "$QODANA_DIST"
 printf "##teamcity[setParameter name='env.QODANA_DIST' value='%s']\n" "$QODANA_DIST"
-if ! command -v go > /dev/null; then
-  go_version=$(awk '$1 == "go" {print $2}' "$benchmark_source/go.mod")
-  go_archive="go$go_version.linux-arm64.tar.gz"
-  go_checksum=$(curl -fsSL 'https://go.dev/dl/?mode=json&include=all' \
-    | jq -er --arg archive "$go_archive" '.[] | .files[] | select(.filename == $archive) | .sha256')
-  curl -fsSL "https://go.dev/dl/$go_archive" -o "$benchmark_output/tooling/$go_archive"
-  (cd "$benchmark_output/tooling" && printf '%s  %s\n' "$go_checksum" "$go_archive" | sha256sum -c -)
-  tar -xzf "$benchmark_output/tooling/$go_archive" -C "$benchmark_output/tooling"
-  export PATH="$benchmark_output/tooling/go/bin:$PATH"
+runner_revision=$(git -C "$benchmark_source" rev-parse HEAD)
+if [[ -n "${BENCHMARK_CLI_PATH:-}" ]]; then
+  : "${BENCHMARK_CLI_REVISION:?Set the source revision of the assembled CLI}"
+  [[ "$BENCHMARK_CLI_REVISION" == "$runner_revision" ]] || {
+    echo "Assembled CLI revision $BENCHMARK_CLI_REVISION does not match checkout $runner_revision" >&2
+    exit 1
+  }
+  cli_artifact="$BENCHMARK_CLI_PATH"
+  [[ "$cli_artifact" == /* ]] || cli_artifact="$benchmark_checkout/$cli_artifact"
+  [[ -f "$cli_artifact" ]] || { echo "CLI artifact not found: $cli_artifact" >&2; exit 1; }
+  install -m 755 "$cli_artifact" "$benchmark_output/tooling/bin/qodana"
+  printf 'Using assembled CLI from build %s, revision %s\n' "${BENCHMARK_CLI_BUILD_ID:-unknown}" "$runner_revision"
+else
+  if ! command -v go > /dev/null; then
+    go_version=$(awk '$1 == "go" {print $2}' "$benchmark_source/go.mod")
+    go_archive="go$go_version.linux-arm64.tar.gz"
+    go_checksum=$(curl -fsSL 'https://go.dev/dl/?mode=json&include=all' \
+      | jq -er --arg archive "$go_archive" '.[] | .files[] | select(.filename == $archive) | .sha256')
+    curl -fsSL "https://go.dev/dl/$go_archive" -o "$benchmark_output/tooling/$go_archive"
+    (cd "$benchmark_output/tooling" && printf '%s  %s\n' "$go_checksum" "$go_archive" | sha256sum -c -)
+    tar -xzf "$benchmark_output/tooling/$go_archive" -C "$benchmark_output/tooling"
+    export PATH="$benchmark_output/tooling/go/bin:$PATH"
+  fi
+  (cd "$benchmark_source" && go generate ./internal/tooling/... && go build -o "$benchmark_output/tooling/bin/qodana" ./cli)
 fi
-(cd "$benchmark_source" && go generate ./internal/tooling/... && go build -o "$benchmark_output/tooling/bin/qodana" ./cli)
 qodana --version
-git -C "$benchmark_source" rev-parse HEAD > "$benchmark_output/runner-revision.txt"
+printf '%s\n' "$runner_revision" > "$benchmark_output/runner-revision.txt"
+sha256sum "$benchmark_output/tooling/bin/qodana" > "$benchmark_output/cli.sha256"
+printf '%s\n' "${BENCHMARK_CLI_BUILD_ID:-built-from-checkout}" > "$benchmark_output/cli-build.txt"
 git -C "$benchmark_project" rev-parse HEAD > "$benchmark_output/source-revision.txt"
