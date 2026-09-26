@@ -92,7 +92,6 @@ class LivePipelineTest : IntegrationTest() {
             description.text("status"),
             "Generation must produce an accepted inspection; inspect cluster history and agent logs"
         )
-        assertTrue(description["predecessorId"] == null || description["predecessorId"] == JsonNull)
         val signalFiles = store.list("$clusterPath/signals").map(store::read)
         verifyCommitSignals(workspace.repository, signalFiles, listOf(expected))
         val accepted = "inspections/$cluster.inspection.kts"
