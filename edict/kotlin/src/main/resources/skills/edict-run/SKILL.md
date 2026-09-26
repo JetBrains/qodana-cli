@@ -18,8 +18,8 @@ assigned task. Coordinate only; every stage runs in its own native subagent.
    affected cluster IDs and any pre-existing Pending clusters requested by the user. Scratch must be outside the state
    root.
 4. Verify the children's persisted task outcomes. Read the resulting descriptions and inspection paths through MCP; a
-   Generated cluster must have its accepted inspection. Summarize produced inspections and all Pending/Invalid clusters
-   with reasons from history. Finish your task.
+   Generated cluster must have its accepted inspection. Summarize produced inspections and their `knownProblems`, plus
+   all Pending/Invalid clusters with reasons from history. Finish your task.
 
 An empty inbox is a successful distribution no-op. Generation may still process explicitly selected or existing Pending
 clusters. Do not create worktrees or publish repository changes.

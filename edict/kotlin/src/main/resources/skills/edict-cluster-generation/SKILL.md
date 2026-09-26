@@ -22,9 +22,11 @@ Only BLOCKER findings require repairs. MAJOR findings request another iteration 
 example validation, project execution, or downstream reviews in the current iteration. Do not change code merely to
 clear MAJOR or MINOR findings; carry them into the next review for reassessment against the collected evidence. If the
 candidate is unchanged, reuse its hash-matched measurements. At the third iteration, proceed with a blocker-free,
-validated candidate and record remaining MAJOR/MINOR findings as limitations. If a BLOCKER or required validation
-failure remains, preserve valid Pending state and report the remaining work so the coordinator can start another
-cluster. Do not waive compilation, required examples, or provenance checks to exhaust the budget successfully.
+validated candidate, set the cluster to `Generated`, and record every unresolved MAJOR finding for that exact candidate
+in `description.json` under `knownProblems`. An unresolved MAJOR finding on the last review must never leave the cluster
+`Pending`. If a BLOCKER or required validation failure remains, preserve valid Pending state and report the remaining
+work so the coordinator can start another cluster. Do not waive compilation, required examples, or provenance checks
+to exhaust the budget successfully.
 
 Keep at most one direct example/review child active at a time and close/dispose it after collecting its result. Other
 clusters run concurrently and need their reserved descendant slots. Do not confuse a domain status with task failure: a documented valid
@@ -93,7 +95,8 @@ to the runner and record that hash with each measurement; a hash copied from a d
 5. Delegate `edict-inspection-value-review` with `operations: []`, passing the exact manifest and weak-review
    result. On a BLOCKER/REJECT, repair the supported issue and repeat affected measurements/reviews in the next
    iteration if available. With MAJOR findings but no blockers, reiterate while budget remains; after iteration three
-   proceed with the validated candidate and documented limitations. With no BLOCKER or MAJOR findings, finish early.
+   proceed with the validated candidate as `Generated` and persist the unresolved MAJOR findings in `knownProblems`.
+   With no BLOCKER or MAJOR findings, finish early.
    Rejection or exhausted iterations alone do not justify Invalid or Discontinued.
 
 Any candidate byte change invalidates prior reviews, accuracy, and project findings. Before acceptance reread the stored
@@ -107,13 +110,18 @@ MCP writes. Then apply the chosen transition through MCP, keeping
 every partially written artifact structurally valid:
 
 - `Generated`: write the exact accepted candidate to `inspections/<id>.inspection.kts`, read back and verify it, delete
-  the candidate and any distinct authorized predecessor inspection, clear `predecessorId`, and set status Generated
-  last.
+  the candidate and any distinct authorized predecessor inspection, clear `predecessorId`, and replace
+  `description.json`'s `knownProblems` with the unresolved MAJOR findings from the final review cycle for that exact
+  candidate. Each entry has `severity: "MAJOR"`, `review` (`code`, `weak-signal`, or `value`), `category`, `description`,
+  `evidence`, and nullable `suggestion`; translate a weak-signal false-positive report to category `PRECISION`. Use an
+  empty array when no MAJOR findings remain, so stale problems are cleared. Set status Generated last.
 - `Discontinued`: record incompatible signal IDs and contradiction, delete authorized candidate/current/predecessor
   inspections, clear `predecessorId`, and set status Discontinued last.
 - `Invalid`: record the concrete tooling/capability failure or broken input; preserve valid partial artifacts and
   predecessor, then set Invalid.
-- `Pending`: preserve valid partial work and predecessor; record remaining work and leave Pending.
+- `Pending`: preserve valid partial work and predecessor when a BLOCKER, mandatory validation failure, deadline, or
+  interrupted transition prevents publication; record remaining work and leave Pending. MAJOR findings alone never
+  justify this transition, including after the final iteration.
 
 Do not remove an inspection outside your granted scope. On a write conflict or incomplete transition, stop and report
 the exact persisted state instead of claiming the terminal outcome. Return IDs, paths, status, and evidence summary,
