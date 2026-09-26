@@ -20,6 +20,14 @@ repair malformed records here.
 Require the original feedback, source reference, exact file revision and ranges. Preserve the supplied format and
 fields; do not normalize or rewrite records. They have no correcting diff; do not invent commit or PR provenance.
 
+Distinguish malformed range structure from a documented source-location limitation in `SubmittedFeedback`.
+If the feedback explicitly records a stale or overlong range and its supplied snippet is verifiable at the cited
+revision, preserve the original record and return that limitation with the prepared snapshot for downstream semantic
+processing. Do not reject the entire snapshot solely for that documented mismatch. Never invent missing lines or
+claim the full range was verified. Missing source revisions, malformed range structure, or unverifiable evidence
+remain prerequisite failures.
+
+
 List existing cluster descriptions, all cluster member paths, and Pending cluster IDs for downstream navigation. The
 distribution worker must read full candidate cluster membership before assignment. Embeddings and a worktree are not
 prerequisites for this simpler pipeline. Require inspection capabilities only when generation has actual targets; an
