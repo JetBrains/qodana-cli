@@ -20,14 +20,17 @@ analysis session for local Git extraction. Keep temporary packages outside the s
    commits, merges, reverts, automated commits, and commits without relevant source changes. Assign
    `commit-<first 16 revision characters>` IDs. A terse message alone is not grounds to exclude an otherwise eligible
    correction before source inspection.
-2. For every eligible commit, including a singleton, create and delegate an `edict-signal-analysis` task with
-   `operations: []`. Put that item's work-item ID, full commit/parent revisions and complete message
-   in the `edict_delegate` prompt, together with its retained package, source checkout, revision
+2. Partition the prepared set into disjoint, non-empty chunks of at most eight work items, preserving their order.
+   Create and delegate one `edict-signal-analysis` task per chunk with `operations: []`. Include every assigned
+   work-item ID, full commit/parent revisions and complete message
+   in the `edict_delegate` prompt, together with its retained packages, source checkout, revision
    readers if needed, and private scratch path. Pass only the returned short launch prompt to a fresh native subagent; it fetches
-   the full assignment from `edict_task_get`. No inline fallback. Use waves within available concurrency.
+   the full assignment from `edict_task_get`. Even a singleton runs in a managed child; there is no inline fallback.
+   Use waves within available concurrency, never larger chunks just to fit one wave. Assign each item exactly once.
 3. Verify complete inspection coverage: returned inspected IDs must equal the prepared set exactly, with no duplicates,
    missing or blocked items. Every worker must have inspected complete human material plus exact source and diff. Stop
-   on incomplete coverage. Preserve every supported worker finding; do not silently drop it for being cosmetic or local.
+   on incomplete coverage after retrying lost or blocked inspection when possible. Preserve every supported worker
+   finding; do not silently drop or downgrade it for being cosmetic, local, or insufficiently generalizable.
 4. Materialize every candidate record in memory using the signal contract before any write. Check actual
    revision/path/ranges, changed-line intersections, label, canonical diff, complete source metadata, distinct stable
    ID, and absence of rule fields. Parse the candidate JSON and check that every `fileRevision.expectedRanges` item

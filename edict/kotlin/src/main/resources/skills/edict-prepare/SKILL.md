@@ -29,8 +29,11 @@ remain prerequisite failures.
 
 
 List existing cluster descriptions, all cluster member paths, and Pending cluster IDs for downstream navigation. The
-distribution worker must read full candidate cluster membership before assignment. Embeddings and a worktree are not
-prerequisites for this simpler pipeline. Require inspection capabilities only when generation has actual targets; an
+distribution worker must read full candidate cluster membership before assignment. Preparation validates the registered
+state in place; the host already supplied the checkout. Worktree creation, embedding-environment setup, and legacy
+session preparation are not managed prerequisites. Require inspection capabilities only when generation has actual targets; an
 empty run can complete without an inspection server.
 
-Keep summaries in the task result or private scratch. Finish with the prepared snapshot and any prerequisite failure.
+Return the existing state location, source project, complete prepared snapshot, existing-cluster navigation, and any
+prerequisite failure. Do not distribute Signals, create examples, or generate inspections in this stage. Keep summaries
+in the task result or private scratch and finish the task.
