@@ -9,7 +9,8 @@ The pipeline has four steps:
 
 1. `install-codex.sh` installs pinned Codex, configures LiteLLM using the secure
    `LITELLM_API_KEY` environment parameter, extracts the native distribution, and
-   builds Qodana CLI with the current embedded Kotlin application and skills.
+   installs a supplied assembled Qodana CLI or builds it from the checkout, including
+   the current embedded Kotlin application and skills.
 2. `prepare.sh` runs `qodana edict install`, enables every installed skill in
    Codex configuration, and starts `qodana edict mcp start` using the checked-out
    project's **`project/.edict`** as its state directory. It starts inspections with
@@ -35,6 +36,18 @@ embedded skills and managed state server match that revision.
 `QODANA_DIST` points to the extracted native distribution and `QODANA_CLI` to the
 CLI executable. No container is used. Separate `QODANA_CONF` directories prevent
 MCP and analysis IDE instances from contending for the same configuration lock.
+
+For a custom-branch run, first assemble `ijplatform_master_QodanaCliAll` (Snapshot
+2026.3 CLI) at the branch's exact commit. In the benchmark custom run, pin the CLI
+source VCS root to that same branch and commit, retain the native distribution
+dependency, and add a per-run artifact dependency on that successful CLI build:
+`cli_linux_arm64_v8.0/qodana => cli-artifacts`.
+Set `env.BENCHMARK_CLI_PATH=cli-artifacts/qodana`,
+`env.BENCHMARK_CLI_REVISION=<full commit SHA>`, and
+`env.BENCHMARK_CLI_BUILD_ID=<assembly build ID>`. The install step checks the source
+revision, installs the assembled binary, and skips Go generation/build. It records
+the build ID, revision, and binary checksum in the benchmark output. These custom
+run overrides do not change the default benchmark branch or its dependencies.
 
 Generation can compile and execute examples with inspections MCP.
 Codex permits 50 simultaneous agents. Generation keeps up to 15 cluster workers active,

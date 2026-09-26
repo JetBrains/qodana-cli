@@ -37,18 +37,20 @@ reason.
    A local inspection cannot infer revision history, runtime state, architectural intent, or out-of-file mutation unless
    the candidate
    has a sound observable proxy. Require the implementation to prove every contextual qualifier in the rule.
-2. **Traversal and search scope.** Require every traversal to be bounded and file-local. Reference searches must not use
-   a project,
-   module, global, or other cross-file scope. The only permitted reference-search form is:
+2. **Traversal and lookup cost.** Keep the inspection visitor bounded to the file being inspected. Ordinary symbol
+   resolution, reading resolved declarations (including library APIs), and inexpensive indexed lookups outside that
+   file are allowed. This includes checking superclasses/interfaces and finding inheritors; crossing a file boundary
+   is not by itself a defect or a reason to reject the candidate.
 
-   ```kotlin
-   val searchScope = LocalSearchScope(file)
-   val references = ReferencesSearch.search(mainElement, searchScope).findAll()
-   ```
+   Judge searches by their scope, frequency, and result consumption. For example, `ClassInheritorsSearch` or a targeted
+   `ReferencesSearch` can be appropriate after a selective syntax/symbol check, using the narrowest relevant use/module/
+   project scope and stopping once the needed evidence is found. Prefer direct inheritance checks when they answer
+   the question. A lazy query is not automatically cheap: avoid repeated deep hierarchy searches, eager collection of
+   every project usage, whole-project PSI walks, or nested scans for each visited element. Reuse results within the
+   analysis where safe; do not retain stale PSI in global caches.
 
-   Reject any other `ReferencesSearch` usage. Reject inspections whose correctness or performance depends on resolving
-   symbols,
-   usages, or declarations outside the inspected file, or on other heavy cross-file analysis.
+   Report a performance defect with concrete evidence of the costly query, its trigger frequency, and its scope or
+   observed runtime. Do not assume standard resolution or an inheritor query is expensive merely from its API name.
 3. **Implementation quality and cost.** Check that helpers express auditable rule boundaries, syntax filters precede
    resolution or
    searches, and complexity is proportional to the semantic problem. Reject hard-coded seed details
