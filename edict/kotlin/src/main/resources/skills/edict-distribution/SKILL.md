@@ -20,9 +20,9 @@ description; do not split or rename existing clusters.
 
 Use these ordered MCP writes:
 
-1. Create a new `description.json` with matching `id`, `description`, `language`, and `status: "Pending"`, or preserve
-   an existing description's other fields. When adding evidence to a Generated cluster, mark it Pending and preserve its
-   current inspection as `predecessorId` so generation revalidates it.
+1. Create a new `description.json` with matching `id`, `description`, `language`, `status: "Pending"`, and
+   `knownProblems: []`, or preserve an existing description's other fields. When adding evidence to a Generated
+   cluster, mark it Pending and preserve its current inspection as `predecessorId` so generation revalidates it.
 2. Write the complete inbox content to `clusters/<cluster>/signals/<signal>.json`. If the destination already exists,
    require identical content; do not silently replace conflicting evidence.
 3. Append the assignment and source signal ID to the cluster's `history.md` using its current hash. Read back the
