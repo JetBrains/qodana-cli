@@ -25,7 +25,7 @@ The pipeline has four steps:
    interruptible. TeamCity cleans up server processes when the build finishes.
 4. A TeamCity **Gradle runner** executes `:benchmark:report`. Kotlin runs the accepted
    inspections from `.edict/inspections` natively, writes SARIF into `benchmark-output`,
-   and compares it with the checked-in specifications and `.edict/gold.sarif.json`.
+   and compares it with `.edict/gold.sarif.json`.
    No benchmark Kotlin controller runs before Codex.
 
 The ARM64 Qodana distribution comes from the latest successful `qodana-jvm: edict`
@@ -72,8 +72,8 @@ while processing the inbox in place. Kotlin accepts the checked-in SubmittedFeed
 format (`inspectionName`, `inspectionDescription`, `codeSnippet`, `reason`,
 `suggestionId`) directly. Comparison discovers the resulting membership from each
 signal's `source.suggestionId` (or managed feedback provenance). Split clusters are
-scored together for their source specification, with duplicate findings counted once;
-merged clusters are evaluated against each contributing specification. Missing clusters
+scored together for their source rule, with duplicate findings counted once; merged
+clusters are evaluated for each contributing rule against the gold SARIF. Missing clusters
 are reported as `NotClustered`; mixed generated and unfinished clusters as
 `PartiallyGenerated`. The report includes cluster membership and statuses.
 Scoring copies namespace the literal first `InspectionKts` descriptor ID to
