@@ -20,7 +20,7 @@ data class ValidationReceipt(val receiptId: String, val validatedFiles: List<Val
 
 /** Read-only validation of an already-published managed inbox; no IDE or Git checkout is required for state. */
 fun validateInboxChanges(store: Store, paths: List<String>): ValidationReceipt {
-    require(paths.isNotEmpty() && paths.distinct().size == paths.size) { "Provide distinct inbox paths" }
+    require(paths.distinct().size == paths.size) { "Provide distinct inbox paths" }
     val files = paths.map { path ->
         require(path.startsWith("inbox/") && path.count { it == '/' } == 1) { "Expected inbox/<signal-id>.json" }
         val file = store.read(path)
@@ -33,8 +33,8 @@ fun validateInboxChanges(store: Store, paths: List<String>): ValidationReceipt {
         val existing = json.decodeFromString<Signal>(store.read(path).content)
         require(existing.deduplicationKey !in keys) { "Idempotency key already exists in $path" }
     }
-    return ValidationReceipt(
-        "validation-${sha256(files.joinToString("|") { "${it.relativePath}:${it.sha256}" }).take(24)}",
-        files
-    )
+    return ValidationReceipt(validationReceiptId(files), files)
 }
+
+internal fun validationReceiptId(files: List<ValidatedInboxFile>): String =
+    "validation-${sha256(files.joinToString("|") { "${it.relativePath}:${it.sha256}" }).take(24)}"

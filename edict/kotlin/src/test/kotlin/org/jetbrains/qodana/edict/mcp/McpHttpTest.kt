@@ -1,5 +1,10 @@
 package org.jetbrains.qodana.edict.mcp
 
+import kotlinx.serialization.json.JsonArray
+import kotlinx.serialization.json.buildJsonObject
+import kotlinx.serialization.json.put
+import org.jetbrains.qodana.edict.common.flag
+import org.jetbrains.qodana.edict.common.obj
 import org.jetbrains.qodana.edict.store.Store
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.io.TempDir
@@ -12,6 +17,7 @@ import kotlin.test.assertContains
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
+import kotlin.test.assertTrue
 
 class McpHttpTest {
     @TempDir
@@ -111,6 +117,35 @@ class McpHttpTest {
                     }
                 }
             }
+        }
+    }
+
+    @Test
+    fun `read only state validators are exposed without an inspection runtime`() {
+        Store(directory.resolve("state")).use { store ->
+            val server = McpServer(store)
+            val prepared = server.call(
+                "edict_validate_inbox",
+                buildJsonObject { put("paths", JsonArray(emptyList())) }
+            )
+            assertEquals(false, prepared.flag("isError"))
+            val receipt = prepared.obj("structuredContent")
+            val distribution = server.call(
+                "edict_validate_distribution",
+                buildJsonObject { put("receipt", receipt) }
+            )
+            assertTrue(distribution.obj("structuredContent").flag("success") == true)
+            val generation = server.call(
+                "edict_validate_generation",
+                buildJsonObject { put("clusterIds", JsonArray(emptyList())) }
+            )
+            assertTrue(generation.obj("structuredContent").flag("success") == true)
+            val example = server.call(
+                "edict_validate_code_example",
+                buildJsonObject { put("clusterId", "missing"); put("exampleId", "missing") }
+            )
+            assertEquals(false, example.flag("isError"))
+            assertEquals(false, example.obj("structuredContent").flag("success"))
         }
     }
 }
