@@ -1,6 +1,6 @@
 ---
 name: edict-code-example
-description: Create or reuse one source-faithful synthetic example and assign it to a managed signal through scoped edict-mcp writes.
+description: Assign a validated existing or new code example to one Signal through scoped managed writes.
 ---
 
 # Code Example
@@ -17,12 +17,15 @@ case and label. Otherwise create one small, self-contained source file: a positi
 the problem; a negative must contain none. Include only necessary declarations, never a complete production source file
 or a hidden dependency on support files.
 
+Validate reused examples too; their existence or previous assignment is not proof that the current Signal, source,
+label, and expected range match. The compiler/parser establishes structural validity, not semantic correctness.
+
 The persisted layout is `clusters/<id>/synthetic-examples/<example-id>/metadata.json` and `project/<file-name>.kt|java`.
-Metadata contains `id`, `fileName`, `label`, and `expectedRanges`. Positive metadata has exactly one one-based range
+Metadata contains `id`, `fileName`, `label`, and `expectedRanges`. Positive metadata has exactly one one-based inclusive range
 covering the problem; negative metadata has an empty range list. Check valid source syntax with an available
-parser/compiler using private scratch, then independently check semantic fidelity, label, and ranges. Do not use the
-legacy IntelliJ Edict validator, which owns a different state session. If a required source/parser check cannot run,
-fail with that limitation instead of declaring the example validated.
+parser/compiler using private scratch. Repair structural issues and repeat validation, then independently check semantic
+fidelity, label, and ranges. Do not use the legacy IntelliJ Edict validator, which owns a different state session. If the
+required source/parser capability is unavailable, fail with that limitation instead of declaring the example validated.
 
 Persist the source and metadata using MCP, and read them back to verify hashes and structural consistency. Only then
 assign `syntheticExampleId`. For a persisted signal, reread it and write the updated JSON through MCP, preserving every

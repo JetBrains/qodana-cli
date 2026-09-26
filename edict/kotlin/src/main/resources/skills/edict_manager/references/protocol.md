@@ -6,7 +6,7 @@ Edict state.
 
 ## Authority and storage
 
-The trusted host starts `edict mcp --state-dir <state>` separately from the inspection
+The trusted host starts `qodana edict mcp start --state-dir <state>` separately from the inspection
 server. The first successful `edict_plan_create(request, steps)` call needs no token and returns `{plan, token}`. Its caller becomes
 manager; this is allowed only once per server lifetime, including after task completion. The manager claims it before
 spawning children and keeps the returned token private. After restart, the same call with the saved request and
@@ -42,6 +42,12 @@ obtain write authority. Use IntelliJ only for source/PSI reads, API documentatio
 outputs remain in private scratch outside the state root. For all IntelliJ calls, `projectPath` identifies the inspected
 source project.
 
+Resolve the supplied source project, managed state root, and private scratch paths before the first domain write or
+inspection call. Scratch must be outside both the managed state and inspected source checkout. Keep worker prompts,
+review manifests, measurements, and transient signals there; never create a worktree or a second Edict state store.
+For every inspection-server call that exposes `projectPath`, pass the inspected IntelliJ project, never the state root
+or scratch directory. Use local read-only Git for exact revisions when a legacy `file_at_ref` tool is unavailable.
+
 For a state write, call `edict_read` first and pass its hash as `expectedHash` to
 `edict_state_write(token, path, content, expectedHash)`. Use an empty hash only for a new path. Delete with
 `edict_state_delete(token, path, expectedHash)` after reading its current hash. Preserve every unrelated field. On
@@ -74,6 +80,9 @@ On resumption, read the plan before adding tasks. Reuse your existing direct chi
 re-delegate pending/failed work with fresh capabilities and fresh subagents. Do not append replacements that leave old
 failed children unresolved. Interrupted tasks become pending at server restart; persisted artifacts remain and must be
 reconciled using their hashes before retrying writes.
+The same rule applies to a failed launch or task-fetch attempt: cancel the lost delegation, then re-delegate the same
+task ID. A transport retry is not a new review iteration. Never obtain a fresh review by silently discarding a completed
+review or its blocker findings.
 
 When a skill requires another skill:
 

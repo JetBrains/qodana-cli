@@ -1,6 +1,6 @@
 ---
 name: edict-generation
-description: Delegate one isolated managed generation worker per selected Pending cluster and collect durable outcomes.
+description: Run isolated managed generation workers for every frozen cluster target and collect durable outcomes.
 ---
 
 # Edict Generation
@@ -8,8 +8,10 @@ description: Delegate one isolated managed generation worker per selected Pendin
 Follow [the managed protocol](../edict_manager/references/protocol.md). Registry ID: `edict-generation`. Coordinate
 only; do not edit state.
 
-Start your task. Read the selected cluster descriptions and freeze a distinct set of Pending IDs. If the parent
-explicitly requests all Pending clusters, discover them with MCP reads. Return success for an empty set.
+Start your task. Resolve the state and private generation scratch roots using the managed protocol. Keep orchestration
+logs, manifests, prompts, result tables, and summaries in scratch, never in managed state. Read the selected cluster
+descriptions and freeze a distinct set of Pending IDs before launching workers. If the parent explicitly requests all
+Pending clusters, discover them with MCP reads. Return success for an empty set.
 
 For each target create a nested `edict-cluster-generation` task. Grant `cluster.write`, `cluster.signal.write`,
 `example.write`, and `inspection.write` only under its exact cluster directory, candidate/current inspection paths, and
@@ -29,6 +31,8 @@ and immediately launch the next queued cluster in that slot. Do not wait for oth
 Each cluster has at most three review iterations including the initial candidate; Pending after exhausting that budget
 is a valid bounded outcome and must release its slot for the next target.
 
-Wait for every started child and verify its persisted task. Do not repair artifacts yourself. A valid Pending or Invalid domain outcome is reportable
-without fabricating an inspection; a failed worker, unperformed required check, or broken persisted artifact fails this
-orchestration task. Return IDs, statuses, accepted inspection paths, and recorded limitations, then finish.
+After every frozen target has been started, wait for the remaining workers and verify their persisted tasks. Require
+exact coverage of the frozen set with no missing or duplicate cluster outcomes. Do not modify or repair worker
+artifacts; flag issues for the parent. A valid Pending or Invalid cluster outcome is not a stage failure. A failed
+worker, an unperformed check claimed as successful, or a broken persisted artifact fails orchestration. Return each
+cluster ID, status, accepted inspection path if any, and the Pending/Invalid reason from history, then finish.

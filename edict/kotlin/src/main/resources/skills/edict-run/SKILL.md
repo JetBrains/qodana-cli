@@ -17,9 +17,13 @@ assigned task. Coordinate only; every stage runs in its own native subagent.
    `inspection.write`, scoped to resulting cluster directories and their exact inspection paths. Pass the returned
    affected cluster IDs and any pre-existing Pending clusters requested by the user. Scratch must be outside the state
    root.
-4. Verify the children's persisted task outcomes. Read the resulting descriptions and inspection paths through MCP; a
-   Generated cluster must have its accepted inspection. Summarize produced inspections and all Pending/Invalid clusters
-   with reasons from history. Finish your task.
+4. Validate the complete frozen generation target set against the children's persisted outcomes. Read the resulting
+   descriptions, histories, and inspection paths through MCP. Every Generated cluster must have its exact accepted
+   inspection, completed reviews/measurements for that hash, and structurally valid assigned examples. Every Pending or
+   Invalid cluster must preserve valid partial artifacts and record its concrete reason. Stop on a failed stage,
+   missing target, or broken transition; do not repair a worker's artifacts inline. After successful validation,
+   summarize produced inspections and every Pending/Invalid cluster with its history reason, then finish your task.
 
 An empty inbox is a successful distribution no-op. Generation may still process explicitly selected or existing Pending
-clusters. Do not create worktrees or publish repository changes.
+clusters. Valid Pending/Invalid domain outcomes do not fail the stage. Do not create worktrees, commit, push, or publish
+repository changes: the managed task/state receipt replaces the standalone workflow's Git publication.

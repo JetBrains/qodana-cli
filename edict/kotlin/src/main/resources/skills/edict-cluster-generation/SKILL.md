@@ -1,6 +1,6 @@
 ---
 name: edict-cluster-generation
-description: Generate and independently review one Pending cluster's inspection using scoped edict-mcp writes and scratch-only inspection execution.
+description: Process one Pending cluster through evidence, predecessor reuse, candidate review, and a managed state transition.
 ---
 
 # Cluster Generation
@@ -9,6 +9,12 @@ Follow [the managed protocol](../edict_manager/references/protocol.md). Registry
 Start the assigned task. Its scope is one cluster and its named inspection paths; keep cluster ID, language, membership,
 and all source evidence unchanged. Persist every description/history/inspection change through MCP. Delegate all example
 construction and reviews to fresh native subagents.
+
+The goal is the same as the standalone generation workflow: one general inspection covering the supplied Signals,
+validated examples, and reviewed project findings. `Generated` means the exact accepted inspection is persisted;
+`Discontinued` means incompatible Signal semantics; `Invalid` means a concrete infrastructure/tooling or broken-input
+failure; `Pending` means valid partial work remains. Keep Pending and preserve `predecessorId` until a terminal
+transition. Cluster renames and direct repository/Git writes are outside this managed task's capabilities.
 
 The parent provides the cluster ID, source project, and private scratch directory outside the state root. Run at most
 **three review iterations, including the initial candidate**, across the complete code/weak/value review cycle. Include
@@ -30,11 +36,13 @@ Keep at most one direct example/review child active at a time and close/dispose 
 clusters run concurrently and need their reserved descendant slots. Do not confuse a domain status with task failure: a documented valid
 Pending/Invalid outcome may complete the bounded task, but missing required inputs or failed delegated tasks fail it.
 
-## Evidence and examples
+## 1. Complete the evidence
 
-Read description, history, every signal, and referenced examples through MCP. Retrieve exact historical source when
-needed. Current source evidence governs the rule; prior history preserves continuity. Refine a misleading description
-through MCP with a history entry, preserving ID and all unrelated fields. Do not rename clusters in this pipeline.
+Read description, history, prior scratch attempt artifacts, every Signal, and referenced examples through MCP. Retrieve
+every Signal's exact historical source revision and relevant ranges with read-only Git or an available revision reader.
+Current Signals and exact source evidence govern the rule; prior history preserves continuity but does not override
+them. Refine a misleading description through MCP with a history entry recording old/new text, reason, and evidence,
+preserving ID and all unrelated fields. Do not rename clusters in this pipeline.
 
 For each signal without a valid assigned example, delegate `edict-code-example` with `cluster.signal.write` scoped
 to that exact signal and `example.write` scoped to this cluster's examples directory. Pass the full signal path and
@@ -45,15 +53,29 @@ Only incompatible semantic requirements proven by exact signal evidence justify 
 and contradiction. Tool failure, missing/broken evidence, duplicates, rejected candidates, and implementation limits do
 not prove incompatibility.
 
-## Candidate and measurements
+## 2. Decide whether to reuse the predecessor
 
-Discover inspection-server tools and inspect their schemas. Request Inspection KTS API documentation/examples and PSI
-evidence where relevant. Use only source reads and generic inspection execution with scratch inputs/outputs. Do not
+When `predecessorId` identifies an existing inspection, read its exact content through MCP before generating a new
+implementation. Check whether it expresses the shared rule and can cover the current Signals and examples. If plausible,
+use those bytes as the candidate and run the same current-evidence reviews and measurements below. Prior Generated
+status alone is not acceptance. Only an unchanged predecessor that passes current validation and reviews can be reused;
+otherwise repair it or generate a new candidate within the remaining review budget. Preserve the predecessor until
+successful publication. The legacy session's action/validation tools are replaced by these managed checks.
+
+## 3. Generate and measure a candidate
+
+Discover inspection-server tools and inspect their schemas. Use only source reads and generic inspection execution
+with scratch inputs/outputs. Do not
 invoke legacy Edict session, preparation, validation, or transition tools that write state. A missing compatible
 compiler/runner is a concrete capability failure: record it and preserve valid partial state as Invalid; do not claim
 inspection validation occurred.
 
-Generate one general `localInspection { ... }` implementation in a single `.kts` file. Keep traversal bounded and
+Before writing the first candidate, call `generate_inspection_kts_api` and `generate_inspection_kts_examples` for the
+cluster language. Call `generate_psi_tree` on representative positive/negative examples when the PSI structure is
+uncertain. Route every call to the inspected source project using its `projectPath`, never to managed state or scratch.
+
+Generate one general `localInspection { ... }` implementation in a single `.kts` file. Prefer a semantically correct,
+realistically implementable inspection over a clever or brittle one. Keep traversal bounded and
 file-local. Do not use data-flow analysis or cross-file reference searches. The only permitted reference-search form is:
 
 ```kotlin
@@ -63,9 +85,10 @@ val references = ReferencesSearch.search(mainElement, searchScope).findAll()
 
 No hard-coded example paths, names, line numbers, or seed text. Use explicit imports only where the runtime does not
 provide them. Persist candidate content to `inspections/<id>.candidate.kts` through MCP, preserving its returned hash.
-Materialize that exact content and examples in private scratch for tools that require files. An existing predecessor may
-be reused only after these same current-evidence measurements and reviews pass; never trust its prior Generated status
-alone.
+Materialize that exact content and examples in private scratch for tools that require files.
+
+If exact evidence shows a coherent rule requires unavailable data-flow or prohibited cross-file searches, record that
+specific capability failure as Invalid. A rejected candidate or an exhausted repair budget alone remains Pending.
 
 Preserve the full script contract from the runner's template, including the returned collection of `InspectionKts`
 descriptors and diagnostic metadata. Declaring a `localInspection` variable alone does not return a runnable inspection.
@@ -82,15 +105,19 @@ to the runner and record that hash with each measurement; a hash copied from a d
    accuracy. A positive example must report its expected range; a negative example must not report a problem. Keep
    actual measured per-example results in scratch. Failed compilation or required accuracy/range checks are blocking;
    repair general predicates and repeat review/measurement only within the three-iteration budget.
-3. Run the exact measured candidate on the inspected source project. Save complete findings and a deterministic bounded
-   sample in scratch with candidate hash and revision provenance. Build an attempt manifest containing cluster ID,
-   candidate path/hash, source project, full findings path, sampled findings path, private scratch directory, and
-   configured review output paths, and iteration number. All review artifacts belong to this one attempt.
-4. Delegate `edict-weak-signal-review` with `example.write` limited to this cluster's examples directory; this
+
+## 4. Review project findings
+
+Run the exact measured candidate on the inspected source project. Save complete findings and a deterministic bounded
+sample in scratch with candidate hash and revision provenance. Build an attempt manifest containing cluster ID,
+candidate path/hash, source project, full findings path, sampled findings path, private scratch directory,
+configured review output paths, and iteration number. All review artifacts belong to this one attempt.
+
+1. Delegate `edict-weak-signal-review` with `example.write` limited to this cluster's examples directory; this
    permission is for delegation to its example children. Supply the manifest. Read every false-positive report and its
    severity. Repair BLOCKER findings in the next iteration if available; MAJOR findings request another iteration but
    do not block the value review or eventual publication. Do not automatically repair every false positive.
-5. Delegate `edict-inspection-value-review` with `operations: []`, passing the exact manifest and weak-review
+2. Delegate `edict-inspection-value-review` with `operations: []`, passing the exact manifest and weak-review
    result. On a BLOCKER/REJECT, repair the supported issue and repeat affected measurements/reviews in the next
    iteration if available. With MAJOR findings but no blockers, reiterate while budget remains; after iteration three
    proceed with the validated candidate and documented limitations. With no BLOCKER or MAJOR findings, finish early.
@@ -99,7 +126,7 @@ to the runner and record that hash with each measurement; a hash copied from a d
 Any candidate byte change invalidates prior reviews, accuracy, and project findings. Before acceptance reread the stored
 candidate and require its hash to equal every accepted review and measured run.
 
-## Persist the outcome
+## 5. Apply the terminal transition
 
 Append an evidence-backed history entry with iteration count, accuracy, review decisions and severities,
 source/candidate hashes, remaining non-blocking findings, and the resulting rule or blocking reason, using hash-checked
@@ -108,7 +135,7 @@ every partially written artifact structurally valid:
 
 - `Generated`: write the exact accepted candidate to `inspections/<id>.inspection.kts`, read back and verify it, delete
   the candidate and any distinct authorized predecessor inspection, clear `predecessorId`, and set status Generated
-  last.
+  last. Apply this same verified transition when reusing an unchanged predecessor and record the reuse decision.
 - `Discontinued`: record incompatible signal IDs and contradiction, delete authorized candidate/current/predecessor
   inspections, clear `predecessorId`, and set status Discontinued last.
 - `Invalid`: record the concrete tooling/capability failure or broken input; preserve valid partial artifacts and
