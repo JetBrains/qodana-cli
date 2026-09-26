@@ -8,9 +8,10 @@ description: Sequentially assign prepared inbox Signals to durable clusters thro
 Follow [the managed protocol](../edict_manager/references/protocol.md). Registry ID: `edict-distribution`. This
 leaf uses `inbox.delete`, `cluster.write`, and `cluster.signal.write` only.
 
-Start the task and process the prepared inbox paths alphabetically. Read the complete stored signal and require its hash
-to match the prepared snapshot. Preserve every field, including provenance and negative evidence. Infer source language
-from actual recorded source, not a guessed cluster title.
+Start the task and process the validation receipt's inbox paths alphabetically. Read the complete stored signal and
+require its path and hash to match the receipt. Preserve every field, including provenance and negative evidence. Infer
+source language from actual recorded source, not a guessed cluster title. Return the complete unchanged receipt with
+the assignment result so the coordinator can call `edict_validate_distribution`.
 
 For each plausible existing cluster, read its complete description and every member signal, including negatives. A
 nearby description is only a navigation hint. Assign a signal only when it and every current member can be handled by
