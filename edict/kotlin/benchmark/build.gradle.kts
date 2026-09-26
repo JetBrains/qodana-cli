@@ -19,7 +19,7 @@ tasks.test { useJUnitPlatform() }
 // This task only consumes completed generation artifacts; it never starts an agent or IDE.
 tasks.register<JavaExec>("compare") {
     group = "verification"
-    description = "Compare generated inspection SARIF with benchmark specifications and gold SARIF"
+    description = "Compare generated inspection SARIF with gold SARIF"
     classpath = sourceSets.main.get().runtimeClasspath
     mainClass = application.mainClass
     doFirst {

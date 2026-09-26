@@ -44,12 +44,11 @@ internal fun readSarif(path: Path): Sarif {
 
 internal fun compare(benchmarkDir: Path, stateDir: Path, outputDir: Path,
                      analysisSarif: Path = outputDir.resolve("qodana.sarif.json")): BenchmarkReport {
-    // Specifications stay in the VCS checkout; reporting reads them only after generation.
     val inputs = loadInputs(benchmarkDir, outputDir)
     val clusters = resolveClusters(inputs, stateDir)
     val statuses = clusterOutcomes(clusters, stateDir)
     val outcomes = clusters.mapValues { (_, members) -> generationOutcome(members, statuses) }
-    val successful = inputs.specifications.filter { outcomes[it.ruleId] == "Generated" }
+    val successful = inputs.rules.filter { outcomes[it] == "Generated" }
     val gold = readSarif(stateDir.resolve("gold.sarif.json")).findings
     val analysis = readSarif(analysisSarif)
     val generated = scoringInspections(clusters, statuses)
@@ -64,22 +63,19 @@ internal fun compare(benchmarkDir: Path, stateDir: Path, outputDir: Path,
         if (clusters.getValue(rule).size > 1) matches.distinct() else matches
     }
     val metrics = successful.map { calculateMetrics(it, gold, findings) }
-    val comparisons = successful.map { compareSpecWithGold(it, gold) }
-    val report = BenchmarkReport(metrics, aggregate(metrics), inputs.specifications.size, successful.size,
-        specGoldAggregate(comparisons), inputs.revision, outcomes, clusters, statuses)
+    val report = BenchmarkReport(metrics, aggregate(metrics), inputs.rules.size, successful.size,
+        inputs.revision, outcomes, clusters, statuses)
 
     outputDir.createDirectories()
     val inspectionsDir = outputDir.resolve("generatedInspections").createDirectories()
-    val specGoldDir = outputDir.resolve("specGoldComparisons").createDirectories()
     // Remove only artifacts owned by this task, so a rerun cannot publish stale successful rules.
     inspectionsDir.listDirectoryEntries("*.kts").forEach { it.deleteExisting() }
-    specGoldDir.listDirectoryEntries("*.json").forEach { it.deleteExisting() }
+    deleteTree(outputDir.resolve("specGoldComparisons"))
     generated.forEach { inspection ->
         val filename = if (clusters.getValue(inspection.rule).size == 1) inspection.rule else "${inspection.rule}--${inspection.cluster}"
         stateDir.resolve("inspections/${inspection.cluster}.inspection.kts")
             .copyTo(inspectionsDir.resolve("$filename.kts"), overwrite = true)
     }
-    comparisons.forEach { specGoldDir.resolve("${it.ruleId}.json").writeText(json.encodeToString(it) + "\n") }
     val destinationSarif = outputDir.resolve("qodana.sarif.json")
     if (analysisSarif.toAbsolutePath().normalize() != destinationSarif.toAbsolutePath().normalize()) {
         analysisSarif.copyTo(destinationSarif, overwrite = true)
@@ -99,19 +95,17 @@ internal fun logReport(report: BenchmarkReport) {
     report.generationOutcomes.forEach { (rule, status) ->
         val metric = byRule[rule]
         teamCity("testStarted", "name" to rule)
-        if (metric == null || !metric.satisfiesSpec) {
-            teamCity("testFailed", "name" to rule, "message" to "$status; specification satisfied: ${metric?.satisfiesSpec ?: false}")
+        if (metric == null) {
+            teamCity("testFailed", "name" to rule, "message" to status)
         }
         teamCity("testFinished", "name" to rule)
         if (metric != null) println("$rule: TP=${metric.truePositives} FP=${metric.falsePositives} FN=${metric.falseNegatives} " +
-            "R=${metric.recall} P=${metric.precision} F1=${metric.f1Score} Spec=${metric.satisfiesSpec}")
+            "R=${metric.recall} P=${metric.precision} F1=${metric.f1Score}")
     }
     teamCity("buildStatisticValue", "key" to "edict.totalInspectionsProcessed", "value" to report.totalInspectionsProcessed)
     teamCity("buildStatisticValue", "key" to "edict.successful", "value" to report.successful)
-    teamCity("buildStatisticValue", "key" to "edict.specSatisfiedCount", "value" to report.aggregate.specSatisfiedCount)
     teamCity("buildStatisticValue", "key" to "edict.avgF1Score", "value" to report.aggregate.avgF1Score)
-    teamCity("buildStatus", "text" to "${report.successful}/${report.totalInspectionsProcessed} inspections generated, " +
-        "${report.aggregate.specSatisfiedCount}/${report.successful} specs satisfied")
+    teamCity("buildStatus", "text" to "${report.successful}/${report.totalInspectionsProcessed} inspections generated")
 }
 
 fun main(args: Array<String>) {

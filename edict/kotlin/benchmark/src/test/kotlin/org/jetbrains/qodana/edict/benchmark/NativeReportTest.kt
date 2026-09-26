@@ -21,7 +21,7 @@ class NativeReportTest {
         val signal = root.resolve("clusters/chosen-name/signals/s-signal.json")
         signal.parent.createDirectories()
         signal.writeText("""{"source":{"type":"SubmittedFeedback","inspectionName":"Rule","suggestionId":"benchmark/Rule/specification.json#positiveExamples/0"}}""")
-        val inputs = BenchmarkInputs("revision", listOf(Specification("Rule", "Description", "Java"), Specification("Other", "Other description", "Java")))
+        val inputs = BenchmarkInputs("revision", listOf("Rule", "Other"))
         assertEquals(mapOf("Rule" to listOf("chosen-name"), "Other" to emptyList()), resolveClusters(inputs, root))
         val split = root.resolve("clusters/another/signals/s-second.json")
         split.parent.createDirectories()
@@ -30,7 +30,7 @@ class NativeReportTest {
         assertEquals(mapOf("Rule" to listOf("another", "chosen-name"), "Other" to listOf("chosen-name")), resolveClusters(inputs, root))
     }
     @Test fun `missing clusters never fall back to a predefined inspection name`() {
-        val inputs = BenchmarkInputs("revision", listOf(Specification("Rule", "Description", "Java")))
+        val inputs = BenchmarkInputs("revision", listOf("Rule"))
         assertEquals(mapOf("Rule" to emptyList()), resolveClusters(inputs, root))
         root.resolve("clusters/rule").createDirectories().resolve("description.json").writeText("""{"status":"Generated"}""")
         assertEquals(mapOf("Rule" to emptyList()), resolveClusters(inputs, root))

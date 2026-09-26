@@ -7,15 +7,13 @@ import kotlin.io.path.*
 
 internal fun loadInputs(benchmark: Path, output: Path): BenchmarkInputs = BenchmarkInputs(
     output.resolve("source-revision.txt").readText().trim(),
-    benchmark.listDirectoryEntries().filter { it.isDirectory() }.sortedBy { it.name }.map {
-        json.decodeFromString<Specification>(it.resolve("specification.json").readText())
-    },
+    benchmark.listDirectoryEntries().filter { it.isDirectory() }.map { it.name }.sorted(),
 )
 
-// Discover only clusters created by Edict. A specification may span several clusters,
-// and a cluster may contain feedback from several specifications.
+// Discover only clusters created by Edict. A rule may span several clusters,
+// and a cluster may contain feedback for several rules.
 internal fun resolveClusters(inputs: BenchmarkInputs, state: Path): Map<String, List<String>> {
-    val rules = inputs.specifications.map { it.ruleId }
+    val rules = inputs.rules
     require(rules.isNotEmpty() && rules.distinct().size == rules.size && rules.all { it.matches(Regex("[A-Za-z0-9]+")) }) {
         "Expected distinct, safe benchmark rule IDs"
     }
