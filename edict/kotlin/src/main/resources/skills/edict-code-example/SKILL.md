@@ -22,12 +22,16 @@ label, and expected range match. The compiler/parser establishes structural vali
 
 The persisted layout is `clusters/<id>/synthetic-examples/<example-id>/metadata.json` and `project/<file-name>.kt|java`.
 Metadata contains `id`, `fileName`, `label`, and `expectedRanges`. Positive metadata has exactly one one-based inclusive range
-covering the problem; negative metadata has an empty range list. Check valid source syntax with an available
-parser/compiler using private scratch. Repair structural issues and repeat validation, then independently check semantic
-fidelity, label, and ranges. Do not use the legacy IntelliJ Edict validator, which owns a different state session. If the
+covering the problem; negative metadata has an empty range list. Check valid source syntax with the Ultimate inspection
+server's generic PSI/parser capability using private scratch and the inspected source project as `projectPath`. Repair
+syntax issues and repeat that check. Then call `edict_validate_code_example(clusterId, exampleId)` to validate the
+persisted metadata, layout, label, language, and ranges; repair and repeat until it succeeds. This managed validator does
+not parse source and neither structural check establishes semantic correctness, so independently confirm source
+fidelity, label, and ranges. Do not use any legacy `edict_next_*` validator, which owns a different state session. If the
 required source/parser capability is unavailable, fail with that limitation instead of declaring the example validated.
 
-Persist the source and metadata using MCP, and read them back to verify hashes and structural consistency. Only then
+Persist the source and metadata using MCP, and read them back to verify hashes and structural consistency. Only after
+the external syntax check and managed validator both succeed,
 assign `syntheticExampleId`. For a persisted signal, reread it and write the updated JSON through MCP, preserving every
 other field. For a transient weak signal, return the example ID and update only the supplied scratch signal; never
 create a persisted cluster signal from it. Finish with the example ID, paths, hashes, and validation result.

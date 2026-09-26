@@ -11,8 +11,9 @@ assigned task. Coordinate only; every stage runs in its own native subagent.
 1. Delegate `edict-prepare` with no write operations. Pass the source project, state context, and scratch root. It
    returns the bounded inbox snapshot and validates prerequisites.
 2. Delegate `edict-distribution` with `inbox.delete`, `cluster.write`, and `cluster.signal.write`, scoped to
-   selected inbox paths and `clusters`. Pass the prepared snapshot. Require every selected signal to have a verified
-   durable destination before advancing.
+   selected inbox paths and `clusters`. Pass the complete preparation receipt. After the worker returns, call
+   `edict_validate_distribution` with that unchanged receipt. Stop on failure; only a successful response proves every
+   selected signal moved unchanged to one durable destination.
 3. Delegate `edict-generation` with `cluster.write`, `cluster.signal.write`, `example.write`, and
    `inspection.write`, scoped to resulting cluster directories and their exact inspection paths. Pass the returned
    affected cluster IDs and any pre-existing Pending clusters requested by the user. Scratch must be outside the state
@@ -21,9 +22,11 @@ assigned task. Coordinate only; every stage runs in its own native subagent.
    descriptions, histories, and inspection paths through MCP. Every Generated cluster must have its exact accepted
    inspection, completed reviews/measurements for that hash, structurally valid assigned examples, and its
    `knownProblems`. Every Pending or Invalid cluster must preserve valid partial artifacts and record its concrete
-   reason. Stop on a failed stage, missing target, or broken transition; do not repair a worker's artifacts inline.
-   After successful validation, summarize produced inspections and every Pending/Invalid cluster with its history
-   reason, then finish your task.
+   reason. After checking the external inspection execution evidence, call `edict_validate_generation` with the complete
+   frozen cluster ID list. This validator checks persisted state only and never replaces compilation, example accuracy,
+   project execution, or review evidence. Stop on a failed stage, missing target, or broken transition; do not repair a
+   worker's artifacts inline. After successful validation, summarize produced inspections and every Pending/Invalid
+   cluster with its history reason, then finish your task.
 
 An empty inbox is a successful distribution no-op. Generation may still process explicitly selected or existing Pending
 clusters. Valid Pending/Invalid domain outcomes do not fail the stage. Do not create worktrees, commit, push, or publish

@@ -168,7 +168,7 @@ class McpIntegrationTest : IntegrationTest() {
             assertEquals(5, lines.size)
             assertEquals("edict-mcp", lines[0].obj("result").obj("serverInfo").text("name"))
             assertEquals(-32700, lines[1].obj("error").number("code"))
-            assertEquals(19, lines[2].obj("result").array("tools").size)
+            assertEquals(24, lines[2].obj("result").array("tools").size)
             assertEquals(true, lines[3].obj("result").flag("isError"))
             assertTrue(lines.last().obj("result").isEmpty())
         }
