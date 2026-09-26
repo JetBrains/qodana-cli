@@ -69,7 +69,8 @@ native subagent runtime is a failed prerequisite, not permission to execute stag
    re-delegate failed stages in
    dependency order. Report the failed task and existing plan path so the user can inspect durable progress.
 7. After all stages complete, read the persisted plan and report its path, the produced signal/cluster/inspection IDs,
-   and any Pending or Invalid clusters with their reasons. Completion means every planned task completed; a Generated
-   inspection additionally requires the generation skill's evidence and review checks.
+   Generated inspections' `knownProblems`, and any Pending or Invalid clusters with their reasons. Completion means
+   every planned task completed; a Generated inspection additionally requires the generation skill's evidence and
+   review checks.
 
 Do not commit, push, create state-repository worktrees, or perform external publication as part of this pipeline.

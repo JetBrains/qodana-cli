@@ -114,8 +114,12 @@ get a task/token and report lifecycle changes, with `operations: []`.
 | `inspections/<cluster-id>.candidate.kts`, `<cluster-id>.inspection.kts` | `inspection.write`              |
 
 Use lowercase letters, digits, hyphens, and underscores for artifact IDs. Persist source evidence unchanged when moving
-a signal. A description has `id`, `description`, `language`, `status`, and optional `predecessorId`; valid pipeline
-statuses are `Pending`, `Generated`, `Discontinued`, and `Invalid`. Synthetic example metadata has `id`, `fileName`,
+a signal. A description has `id`, `description`, `language`, `status`, optional `predecessorId`, and a
+`knownProblems` array. Each known problem has `severity: "MAJOR"`, `review` (`code`, `weak-signal`, or `value`),
+`category`, `description`, `evidence`, and nullable `suggestion`. The array describes unresolved findings for the
+currently published inspection and is empty when none remain; replace it on every Generated transition instead of
+accumulating findings from older candidates. Valid pipeline statuses are `Pending`, `Generated`, `Discontinued`, and
+`Invalid`. Synthetic example metadata has `id`, `fileName`,
 `label`, and `expectedRanges`, with one self-contained source file in `project/`; source filenames may use uppercase
 letters.
 
