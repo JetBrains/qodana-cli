@@ -53,13 +53,13 @@ invoke legacy Edict session, preparation, validation, or transition tools that w
 compiler/runner is a concrete capability failure: record it and preserve valid partial state as Invalid; do not claim
 inspection validation occurred.
 
-Generate one general `localInspection { ... }` implementation in a single `.kts` file. Keep traversal bounded and
-file-local. Do not use data-flow analysis or cross-file reference searches. The only permitted reference-search form is:
-
-```kotlin
-val searchScope = LocalSearchScope(file)
-val references = ReferencesSearch.search(mainElement, searchScope).findAll()
-```
+Generate one general `localInspection { ... }` implementation in a single `.kts` file. Keep the inspection visitor
+bounded to the inspected file. Ordinary symbol resolution and inexpensive indexed queries may read outside it,
+including resolved library declarations, superclass/interface checks, and finding inheritors. Apply selective cheap
+filters first, use the narrowest relevant scope, and stop queries once the needed evidence is found. Targeted reference
+searches are allowed under the same cost constraints; local-only questions should use `LocalSearchScope(file)`.
+Avoid whole-project PSI walks, eager collection of all usages, repeated deep hierarchy searches per visited element,
+and data-flow analysis. Do not mark a coherent rule Invalid merely because a cheap lookup crosses a file boundary.
 
 No hard-coded example paths, names, line numbers, or seed text. Use explicit imports only where the runtime does not
 provide them. Persist candidate content to `inspections/<id>.candidate.kts` through MCP, preserving its returned hash.

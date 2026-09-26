@@ -104,15 +104,12 @@ Generation constraints:
 - Do not hard-code repository paths, filenames, line numbers, or other example-specific details.
 - Do not use data-flow analysis. If a semantically coherent rule requires it, apply the Invalid transition because the pipeline
   cannot implement the rule under its constraints.
-- Keep traversal bounded and file-local. Reference searches may use only this exact form:
-
-  ```kotlin
-  val searchScope = LocalSearchScope(file)
-  val references = ReferencesSearch.search(mainElement, searchScope).findAll()
-  ```
-
-  Do not use project-wide, module-wide, global, or other cross-file reference searches. If the rule requires such a search,
-  apply the Invalid transition because the pipeline cannot implement the rule under its constraints.
+- Keep the inspection visitor bounded to the inspected file. Ordinary symbol resolution and inexpensive indexed
+  queries may read outside it, including resolved library declarations, superclass/interface checks, and finding
+  inheritors. Apply selective cheap filters first, use the narrowest relevant scope, and stop once the required
+  evidence is found. Targeted reference searches are allowed under the same cost constraints; local-only questions
+  should use `LocalSearchScope(file)`. Avoid whole-project PSI walks, eager collection of all usages, and repeated
+  deep hierarchy searches per visited element. Do not mark a rule Invalid merely because a cheap lookup crosses a file boundary.
 - Prefer a semantically correct, realistically implementable inspection over a clever or brittle one.
 
 Ask a fresh worker (create with **native** spawn_agent tool) to load `edict-next-inspection-code-review` before verification:
