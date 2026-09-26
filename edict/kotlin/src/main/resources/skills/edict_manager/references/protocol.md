@@ -35,12 +35,20 @@ the server starts; do not register permissions from an agent. Its `operations` a
 worker's registry ID and installed skill name are both `edict-*`; invoke it as `$edict-*`. The root
 uses `edict_manager` and is invoked as `$edict_manager`.
 
+Managed read-only state gates are `edict_validate_inbox`, `edict_validate_distribution`,
+`edict_validate_code_example`, `edict_validate_cluster_examples`, and `edict_validate_generation`. Pass the caller's
+token for attribution. The inbox validator returns the immutable pre-distribution receipt; pass that complete receipt
+unchanged to distribution validation. Example validators check persisted metadata/layout/range and Signal links, while
+generation validation checks persisted repository transitions. They do not parse source or compile/run inspections.
+
 All persisted Edict changes, including plan/task progress, inbox records, descriptions, history, signals, examples, and
 inspection scripts, go through this standalone Edict server. Never use shell writes, filesystem tools, Git, or IntelliJ's
 legacy `edict_next_*` tools to change the registered state. Do not call a legacy preparation/generation/session tool to
-obtain write authority. Use IntelliJ only for source/PSI reads, API documentation, and inspection execution whose
-outputs remain in private scratch outside the state root. For all IntelliJ calls, `projectPath` identifies the inspected
-source project.
+obtain write authority. Use Ultimate's generic inspection MCP only for source/PSI reads, API documentation, source
+parsing, and inspection execution whose outputs remain in private scratch outside the state root. For all IntelliJ
+calls, `projectPath` identifies the inspected source project. Pass exact candidate bytes read from managed state as
+`inspectionKtsCode` to `run_inspection_kts`; use the same call shape for example measurement and inspected-project
+analysis. Never substitute legacy `edict_next_*` session tools for these generic calls.
 
 Resolve the supplied source project, managed state root, and private scratch paths before the first domain write or
 inspection call. Scratch must be outside both the managed state and inspected source checkout. Keep worker prompts,

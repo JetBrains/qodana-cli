@@ -16,6 +16,13 @@ import org.jetbrains.qodana.edict.reviews.ReviewProvider
 import org.jetbrains.qodana.edict.reviews.ReviewSelection
 import org.jetbrains.qodana.edict.skills.Registry
 import org.jetbrains.qodana.edict.store.Store
+import org.jetbrains.qodana.edict.store.DistributionValidationSnapshot
+import org.jetbrains.qodana.edict.store.ValidationReceipt
+import org.jetbrains.qodana.edict.store.prepareDistributionValidation
+import org.jetbrains.qodana.edict.store.validateClusterExamplesState
+import org.jetbrains.qodana.edict.store.validateCodeExampleState
+import org.jetbrains.qodana.edict.store.validateDistributionState
+import org.jetbrains.qodana.edict.store.validateGenerationState
 import java.io.BufferedReader
 import java.io.PrintWriter
 import java.net.InetSocketAddress
@@ -23,6 +30,7 @@ import java.nio.file.Files
 import java.nio.file.Path
 import java.time.Instant
 import java.util.concurrent.Executors
+import java.util.concurrent.ConcurrentHashMap
 
 private fun obj(vararg fields: Pair<String, JsonElement>) = JsonObject(fields.toMap())
 private fun strings(values: List<String>) = JsonArray(values.map(::JsonPrimitive))
@@ -58,6 +66,7 @@ class McpServer(
     private data class Tool(val definition: JsonObject, val invoke: (JsonObject) -> JsonElement)
 
     private val tools = linkedMapOf<String, Tool>()
+    private val distributionSnapshots = ConcurrentHashMap<String, DistributionValidationSnapshot>()
     private val pr = PrAnalysis(store, provider)
     private val instructions = "Managed Edict state and execution plans. Root requests enter through edict_manager. " +
             "Each task must execute in a fresh native subagent with its delegated token and no inherited conversation. " +
@@ -87,6 +96,21 @@ class McpServer(
         }
 
         fun props(vararg names: String): Map<String, JsonElement> = names.associateWith { string }
+        val validatedInboxFile = obj(
+            "type" to JsonPrimitive("object"),
+            "properties" to JsonObject(props("relativePath", "sha256", "signalId", "idempotencyKey")),
+            "required" to strings(listOf("relativePath", "sha256", "signalId", "idempotencyKey")),
+            "additionalProperties" to JsonPrimitive(false)
+        )
+        val validationReceipt = obj(
+            "type" to JsonPrimitive("object"),
+            "properties" to obj(
+                "receiptId" to string,
+                "validatedFiles" to obj("type" to JsonPrimitive("array"), "items" to validatedInboxFile)
+            ),
+            "required" to strings(listOf("receiptId", "validatedFiles")),
+            "additionalProperties" to JsonPrimitive(false)
+        )
         tool(
             "edict_registry",
             "Read immutable managed skill policy and permitted call graph.",
@@ -105,6 +129,52 @@ class McpServer(
             true,
             properties = props("prefix")
         ) { obj("paths" to encoded(store.list(it.text("prefix")))) }
+        tool(
+            "edict_validate_inbox",
+            "Validate and freeze distinct selected inbox files before distribution. Return the complete receipt to the coordinator.",
+            true,
+            listOf("paths"),
+            mapOf("paths" to array)
+        ) {
+            val snapshot = prepareDistributionValidation(store, it.strings("paths"))
+            distributionSnapshots[snapshot.receipt.receiptId] = snapshot
+            encoded(snapshot.receipt)
+        }
+        tool(
+            "edict_validate_distribution",
+            "Validate that every Signal in a pre-distribution receipt moved unchanged from inbox to exactly one cluster and that repository state is coherent.",
+            true,
+            listOf("receipt"),
+            mapOf("receipt" to validationReceipt)
+        ) {
+            val receipt = wireJson.decodeFromJsonElement<ValidationReceipt>(it.getValue("receipt"))
+            val snapshot = checkNotNull(distributionSnapshots[receipt.receiptId]) {
+                "Unknown distribution receipt; call edict_validate_inbox on this server before distribution"
+            }
+            require(snapshot.receipt == receipt) { "Distribution receipt contents changed" }
+            encoded(validateDistributionState(store, snapshot))
+        }
+        tool(
+            "edict_validate_code_example",
+            "Validate one persisted code example's metadata, single-source layout, label, language, and one-based ranges. Source parsing remains an inspection-server check.",
+            true,
+            listOf("clusterId", "exampleId"),
+            props("clusterId", "exampleId")
+        ) { encoded(validateCodeExampleState(store, it.required("clusterId"), it.required("exampleId"))) }
+        tool(
+            "edict_validate_cluster_examples",
+            "Validate all persisted examples and require every cluster Signal to reference one structurally valid example with a matching label.",
+            true,
+            listOf("clusterId"),
+            props("clusterId")
+        ) { encoded(validateClusterExamplesState(store, it.required("clusterId"))) }
+        tool(
+            "edict_validate_generation",
+            "Validate repository structure and every frozen generation target's persisted outcome. This does not compile or execute inspections.",
+            true,
+            listOf("clusterIds"),
+            mapOf("clusterIds" to array)
+        ) { encoded(validateGenerationState(store, it.strings("clusterIds"))) }
         tool(
             "edict_plan_get",
             "Read current execution plan and worker results.",

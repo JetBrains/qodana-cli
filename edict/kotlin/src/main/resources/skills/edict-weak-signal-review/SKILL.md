@@ -45,6 +45,10 @@ Only BLOCKER findings require repairs. MAJOR findings request another iteration 
 budget but do not block its value review or publication. Do not create a signal/example for uncertain evidence or a report for TP. Never copy
 transient weak signals into the persisted cluster.
 
+After every code-example worker finishes, call `edict_validate_cluster_examples(clusterId)`. Repair reported persisted
+metadata, range, or label-link issues through bounded example workers and repeat until it succeeds. This state validator
+does not replace each example worker's Ultimate PSI/parser check or semantic review.
+
 Write the manifest's scratch output with candidate hash, sampled findings path, total/reviewed counts, every
 absolute false-positive report path, and every unresolved finding/reason. A zero-FP sample does not prove universal precision.
 Return its path and finish the task after all example children complete.

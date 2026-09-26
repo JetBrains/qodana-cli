@@ -56,6 +56,10 @@ Only incompatible semantic requirements proven by exact signal evidence justify 
 and contradiction. Tool failure, missing/broken evidence, duplicates, rejected candidates, and implementation limits do
 not prove incompatibility.
 
+After every example worker finishes, call `edict_validate_cluster_examples(clusterId)`. Repair reported managed-state
+issues through new example workers and repeat until it succeeds. The validator checks persisted structure and label
+links; it does not replace the workers' Ultimate PSI/parser checks or semantic source-fidelity decisions.
+
 ## 2. Decide whether to reuse the previous version
 
 When `inspections/<id>.inspection.kts` exists, read its exact bytes through MCP before generating a new implementation.
@@ -68,7 +72,7 @@ checks.
 
 ## 3. Generate and measure
 
-Discover inspection-server tools and inspect their schemas. Request Inspection KTS API documentation/examples and PSI
+Discover Ultimate inspection-server tools and inspect their schemas. Request Inspection KTS API documentation/examples and PSI
 evidence where relevant. Use only source reads and generic inspection execution with scratch inputs/outputs. Do not
 invoke legacy Edict session, preparation, validation, or transition tools that write state. A missing compatible
 compiler/runner is a concrete capability failure: record it and preserve valid partial state as Invalid; do not claim
@@ -100,15 +104,17 @@ to the runner and record that hash with each measurement; a hash copied from a d
    project, scratch output, and iteration number. On a BLOCKER/REJECT, make the smallest general repair and obtain a
    fresh independent review in the next iteration, if one remains. With only MAJOR/MINOR findings, continue this
    iteration's measurements and reviews.
-2. Compile the exact reviewed candidate and run it against all assigned examples with an available scratch-only
-   inspection runner. Require compilation success, at least one positive example, and at least 85% aggregate label
+2. Compile the exact reviewed candidate and run it with Ultimate's generic `run_inspection_kts` against all assigned
+   examples, always passing the inspected source project as `projectPath` and exact `edict_read` candidate bytes as
+   `inspectionKtsCode`. Require compilation success, at least one positive example, and at least 85% aggregate label
    accuracy. A positive example must report its expected range; a negative example must not report a problem. Keep
    actual measured per-example results in scratch. Failed compilation or required accuracy/range checks are blocking;
    repair general predicates and repeat review/measurement only within the three-iteration budget.
 
 ## 4. Review findings
 
-1. Run the exact measured candidate on the inspected source project. Save complete findings and a deterministic bounded
+1. Run the exact measured candidate with the same Ultimate `run_inspection_kts` tool on the inspected source project.
+   Pass the same exact candidate bytes and inspected project path used for example measurement. Save complete findings and a deterministic bounded
    sample in scratch with candidate hash and revision provenance. Build an attempt manifest containing cluster ID,
    candidate path/hash, source project, full findings path, sampled findings path, private scratch directory, and
    configured review output paths, and iteration number. All review artifacts belong to this one attempt.
@@ -138,10 +144,11 @@ every partially written artifact structurally valid:
   MAJOR findings from the final review cycle for that exact candidate. Each entry has `severity: "MAJOR"`, `review`
   (`code`, `weak-signal`, or `value`), `category`, `description`,
   `evidence`, and nullable `suggestion`; translate a weak-signal false-positive report to category `PRECISION`. Use an
-  empty array when no MAJOR findings remain, so stale problems are cleared. Set status Generated last. Apply this same
+  empty array when no MAJOR findings remain, so stale problems are cleared. Clear `predecessorId` and set status Generated
+  last. Apply this same
   verified transition when reusing an unchanged previous version and record the reuse decision.
 - `Discontinued`: record incompatible signal IDs and contradiction, delete the authorized candidate and current
-  inspection (the previous version), and set status Discontinued last.
+  inspection (the previous version), clear `predecessorId`, and set status Discontinued last.
 - `Invalid`: record the concrete tooling/capability failure or broken input; preserve valid partial artifacts and the
   previous version, then set Invalid.
 - `Pending`: preserve valid partial work and the previous version when a BLOCKER, mandatory validation failure,
