@@ -76,11 +76,12 @@ class StoreTest {
             val task = store.addTask(run.token, "edict-distribution", "Distribute")
             val worker = store.launch(run.token, task.id, task.skill,
                 listOf("inbox.delete", "cluster.write", "cluster.signal.write"), listOf("inbox", "clusters"))
-            store.write(worker.token, "clusters/chosen/description.json", """{"id":"chosen","description":"Chosen by Edict","language":"Java","status":"Pending"}""", "")
+            assertFails { store.write(worker.token, "clusters/chosen/description.json", "{}", "") }
+            store.writeDistribution(worker.token, "clusters/chosen/description.json", """{"id":"chosen","description":"Chosen by Edict","language":"Java","status":"Pending"}""", "")
             val original = store.read("inbox/s-0b1840a3d440.json")
-            store.write(worker.token, "clusters/chosen/signals/s-0b1840a3d440.json", original.content, "")
+            store.writeDistribution(worker.token, "clusters/chosen/signals/s-0b1840a3d440.json", original.content, "")
             assertEquals(content, store.read("clusters/chosen/signals/s-0b1840a3d440.json").content)
-            store.delete(worker.token, original.path, original.hash)
+            store.deleteDistribution(worker.token, original.path, original.hash)
             assertTrue(store.list("inbox").isEmpty())
         }
         assertEquals("gold remains unchanged", Files.readString(state.resolve("gold.sarif.json")))
@@ -303,16 +304,16 @@ class StoreTest {
                 listOf(inbox.path, "clusters/c-equality")
             )
             val cluster = "clusters/c-equality"
-            store.write(
+            store.writeDistribution(
                 distribution.token,
                 "$cluster/description.json",
                 "{\"id\":\"c-equality\",\"status\":\"Pending\"}",
                 ""
             )
-            val moved = store.write(distribution.token, "$cluster/signals/${signal.id}.json", inbox.content, "")
+            val moved = store.writeDistribution(distribution.token, "$cluster/signals/${signal.id}.json", inbox.content, "")
             assertEquals(inbox.hash, moved.hash)
-            assertFails { store.delete(distribution.token, inbox.path, "") }
-            store.delete(distribution.token, inbox.path, inbox.hash)
+            assertFails { store.deleteDistribution(distribution.token, inbox.path, "") }
+            store.deleteDistribution(distribution.token, inbox.path, inbox.hash)
             store.finishTask(distribution.token, "completed", "Distributed")
             val generation = store.launch(
                 created.token,

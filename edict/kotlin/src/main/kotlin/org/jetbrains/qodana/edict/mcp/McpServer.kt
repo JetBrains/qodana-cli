@@ -17,6 +17,8 @@ import org.jetbrains.qodana.edict.reviews.ReviewSelection
 import org.jetbrains.qodana.edict.skills.Registry
 import org.jetbrains.qodana.edict.store.Store
 import org.jetbrains.qodana.edict.store.DistributionValidationSnapshot
+import org.jetbrains.qodana.edict.store.DistributionService
+import org.jetbrains.qodana.edict.store.AddSignalResponse
 import org.jetbrains.qodana.edict.store.ValidationReceipt
 import org.jetbrains.qodana.edict.store.prepareDistributionValidation
 import org.jetbrains.qodana.edict.store.validateClusterExamplesState
@@ -67,6 +69,7 @@ class McpServer(
 
     private val tools = linkedMapOf<String, Tool>()
     private val distributionSnapshots = ConcurrentHashMap<String, DistributionValidationSnapshot>()
+    private val distribution = DistributionService(store, distributionSnapshots)
     private val pr = PrAnalysis(store, provider)
     private val instructions = "Managed Edict state and execution plans. Root requests enter through edict_manager. " +
             "Each task must execute in a fresh native subagent with its delegated token and no inherited conversation. " +
@@ -153,6 +156,40 @@ class McpServer(
             }
             require(snapshot.receipt == receipt) { "Distribution receipt contents changed" }
             encoded(validateDistributionState(store, snapshot))
+        }
+        tool(
+            "edict_next_next_signal",
+            "Return the current or next alphabetical Signal and same-language embedding candidates for this distribution task. The immutable preparation receipt binds the task to its batch.",
+            true,
+            listOf("token", "receipt"),
+            mapOf("receipt" to validationReceipt)
+        ) {
+            val receipt = wireJson.decodeFromJsonElement<ValidationReceipt>(it.getValue("receipt"))
+            encoded(distribution.nextSignal(it.required("token"), receipt))
+        }
+        tool(
+            "edict_next_get_distribution_context",
+            "Return prepared Signal evidence or every current member of a cluster. Reading a cluster records its context receipt for the current Signal.",
+            true,
+            listOf("token", "kind", "id"),
+            props("kind", "id")
+        ) {
+            encoded(distribution.context(it.required("token"), it.required("kind"), it.required("id")))
+        }
+        tool(
+            "edict_next_add_signal_to_cluster",
+            "Apply the only distribution mutation: move the current prepared Signal unchanged to an existing compatible cluster or create a new Pending cluster. Existing clusters require a context receipt.",
+            required = listOf("token", "signalId", "clusterId"),
+            properties = props("signalId", "clusterId")
+        ) {
+            val signalId = it.required("signalId")
+            encoded(
+                try {
+                    distribution.addSignal(it.required("token"), signalId, it.required("clusterId"))
+                } catch (e: Exception) {
+                    AddSignalResponse(signalId, e.message ?: e.javaClass.simpleName, false)
+                }
+            )
         }
         tool(
             "edict_validate_code_example",
