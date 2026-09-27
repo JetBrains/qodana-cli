@@ -6,7 +6,7 @@ mkdir -p "$benchmark_output/tooling/bin"
 (
   cd "$benchmark_source"
   go generate ./internal/tooling/...
-  go build -o "$benchmark_output/tooling/bin/qodana" ./cli
+  CGO_ENABLED=0 go build -o "$benchmark_output/tooling/bin/qodana" ./cli
 )
 
 qodana --version
