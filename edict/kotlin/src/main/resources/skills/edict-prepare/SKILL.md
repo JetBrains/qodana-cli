@@ -21,6 +21,13 @@ records here.
 Require the original feedback, source reference, exact file revision and ranges. Preserve the supplied format and
 fields; do not normalize or rewrite records. They have no correcting diff; do not invent commit or PR provenance.
 
+Validate source evidence against `fileRevision.revision`, never against the current checkout merely because the path
+exists there. If the cited revision is not the checked-out `HEAD` and no exact-revision inspection tool is available,
+use read-only Git from the supplied source project (for example,
+`git show <revision>:<path>`) and count/match ranges in those bytes. A range beyond the current worktree file is not
+invalid when it exists at the cited revision. Treat failure to resolve the cited Git object as unverifiable evidence;
+do not silently fall back to `HEAD`.
+
 Distinguish malformed range structure from a documented source-location limitation in `SubmittedFeedback`.
 If the feedback explicitly records a stale or overlong range and its supplied snippet is verifiable at the cited
 revision, preserve the original record and return that limitation with the prepared snapshot for downstream semantic
