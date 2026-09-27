@@ -193,8 +193,24 @@ class Store(directory: Path) : AutoCloseable {
         }.sorted()
     }
 
-    @Synchronized fun write(token: String, name: String, content: String, expectedHash: String): StateFile {
-        val c = authorizeWrite(token, name, false)
+    @Synchronized fun write(token: String, name: String, content: String, expectedHash: String): StateFile =
+        write(token, name, content, expectedHash, distributionMutation = false)
+
+    @Synchronized internal fun writeDistribution(
+        token: String,
+        name: String,
+        content: String,
+        expectedHash: String
+    ): StateFile = write(token, name, content, expectedHash, distributionMutation = true)
+
+    private fun write(
+        token: String,
+        name: String,
+        content: String,
+        expectedHash: String,
+        distributionMutation: Boolean
+    ): StateFile {
+        val c = authorizeWrite(token, name, false, distributionMutation)
         require(content.toByteArray(Charsets.UTF_8).size <= MAX_ARTIFACT_BYTES) { "Artifact exceeds 8 MiB" }
         requireNoTokens(content)
         val parsed = if (name.endsWith(".json")) json.parseToJsonElement(content) else null
@@ -222,8 +238,14 @@ class Store(directory: Path) : AutoCloseable {
         return StateFile(name, content)
     }
 
-    @Synchronized fun delete(token: String, name: String, expectedHash: String) {
-        val c = authorizeWrite(token, name, true)
+    @Synchronized fun delete(token: String, name: String, expectedHash: String) =
+        delete(token, name, expectedHash, distributionMutation = false)
+
+    @Synchronized internal fun deleteDistribution(token: String, name: String, expectedHash: String) =
+        delete(token, name, expectedHash, distributionMutation = true)
+
+    private fun delete(token: String, name: String, expectedHash: String, distributionMutation: Boolean) {
+        val c = authorizeWrite(token, name, true, distributionMutation)
         require(c.skill != "edict-code-example" || operation(name) != "cluster.signal.write") { "Example workers cannot delete signals" }
         require(expectedHash.isNotEmpty()) { "Deletion requires existing artifact hash" }
         compare(name, expectedHash)
@@ -273,8 +295,19 @@ class Store(directory: Path) : AutoCloseable {
     }
     private fun revoke(id: String) { grants.entries.removeIf { it.value.taskId == id || descendant(it.value.taskId, id) } }
     private fun update(task: Task) { save(current!!.copy(tasks = current!!.tasks.map { if (it.id == task.id) task else it })) }
-    private fun authorizeWrite(token: String, name: String, deleting: Boolean): Capability {
+    private fun authorizeWrite(
+        token: String,
+        name: String,
+        deleting: Boolean,
+        distributionMutation: Boolean
+    ): Capability {
         val c = authorize(token)
+        require(c.skill != "edict-distribution" || distributionMutation) {
+            "edict-distribution must mutate state through edict_next_add_signal_to_cluster"
+        }
+        require(!distributionMutation || c.skill == "edict-distribution") {
+            "Only edict-distribution may use the distribution transition"
+        }
         val op = operation(name).let { if (deleting && it == "inbox.write") "inbox.delete" else it }
         require(op.isNotEmpty() && op in c.operations && op in Registry[c.skill].writes && covered(c.scope, name)) { "${c.skill} cannot modify $name" }
         safePath(name)

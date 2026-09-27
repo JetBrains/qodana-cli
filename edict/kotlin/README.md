@@ -73,8 +73,9 @@ must share one server and one state lock.
 - Signal models, stable IDs, strict unified-diff parsing, changed-side range
   validation, inbox receipts, exact Git revision/source readers, and a commit
   extraction boundary with an injectable semantic analyzer.
-- Read-only distribution, code-example, cluster-example, and generation-state
-  gates. Generated inspection compilation and execution deliberately remain in
+- Task-bound sequential distribution with same-language embedding candidates, context receipts, one guarded
+  Signal-to-cluster transition, a durable vector cache, and post-distribution validation. Code-example,
+  cluster-example, and generation-state gates remain read-only. Generated inspection compilation and execution deliberately remain in
   Ultimate's generic inspection MCP and are never embedded in this CLI.
 - GitHub and Space review readers, bounded selection, pagination, bot filtering,
   complete discussion provenance, exact source snapshots, task-bound batches,

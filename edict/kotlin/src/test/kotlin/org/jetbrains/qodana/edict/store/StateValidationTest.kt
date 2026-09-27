@@ -47,25 +47,25 @@ class StateValidationTest {
                 listOf(inbox.path, "clusters/equality")
             )
             val cluster = "clusters/equality"
-            store.write(
+            store.writeDistribution(
                 distribution.token,
                 "$cluster/description.json",
                 """{"id":"equality","description":"Compare strings by value","language":"Java","status":"Pending","knownProblems":[]}""",
                 ""
             )
-            store.write(distribution.token, "$cluster/history.md", "Distributed ${signal.id}\n", "")
-            var member = store.write(distribution.token, "$cluster/signals/${signal.id}.json", inbox.content, "")
-            store.delete(distribution.token, inbox.path, inbox.hash)
+            store.writeDistribution(distribution.token, "$cluster/history.md", "Distributed ${signal.id}\n", "")
+            var member = store.writeDistribution(distribution.token, "$cluster/signals/${signal.id}.json", inbox.content, "")
+            store.deleteDistribution(distribution.token, inbox.path, inbox.hash)
             assertTrue(validateDistributionState(store, snapshot).success)
 
-            member = store.write(
+            member = store.writeDistribution(
                 distribution.token,
                 member.path,
                 json.encodeToString(signal.copy(description = "Tampered during distribution")),
                 member.hash
             )
             assertFalse(validateDistributionState(store, snapshot).success)
-            member = store.write(distribution.token, member.path, inbox.content, member.hash)
+            member = store.writeDistribution(distribution.token, member.path, inbox.content, member.hash)
             assertTrue(validateDistributionState(store, snapshot).success)
             store.finishTask(distribution.token, "completed", "Distributed")
 
