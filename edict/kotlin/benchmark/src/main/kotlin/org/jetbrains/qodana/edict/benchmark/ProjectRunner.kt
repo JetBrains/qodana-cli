@@ -18,6 +18,12 @@ internal fun writeJson(path: Path, value: JsonElement) {
 
 internal fun readObject(path: Path) = json.parseToJsonElement(path.readText()).jsonObject
 
+internal fun projectConfiguration(rules: Set<String>) = obj(
+    "version" to text("1.0"),
+    "inspections" to JsonArray(listOf(obj("group" to text("Excluded"), "enabled" to JsonPrimitive(false)))),
+    "include" to JsonArray(rules.map { obj("name" to text(it)) }),
+)
+
 internal fun stop(process: Process) {
     val descendants = process.descendants().toList()
     if (process.isAlive) process.destroy()
@@ -83,8 +89,7 @@ internal class ProjectRunner(private val source: Path, private val output: Path)
             require(rule.matches(Regex("EdictBenchmark[A-Za-z0-9_]+")))
             inspections.resolve("$rule.inspection.kts").writeText(code)
         }
-        writeJson(project.resolve("qodana.yaml"), obj("version" to text("1.0"), "profile" to obj("name" to text("empty")),
-            "include" to JsonArray(codes.keys.map { obj("name" to text(it)) })))
+        writeJson(project.resolve("qodana.yaml"), projectConfiguration(codes.keys))
         val results = destination.resolve("results")
         val log = destination.resolve("analysis.log")
         val process = qodanaProcess(project, results, workspace.resolve("cache"), log).start()

@@ -1,6 +1,8 @@
 // Copyright 2026 JetBrains s.r.o. Licensed under the Apache License, Version 2.0.
 package org.jetbrains.qodana.edict.benchmark
 
+import kotlinx.serialization.json.JsonArray
+import kotlinx.serialization.json.JsonPrimitive
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.io.TempDir
 import java.nio.file.Path
@@ -9,6 +11,13 @@ import kotlin.test.*
 
 class NativeReportTest {
     @TempDir lateinit var root: Path
+    @Test fun `project scan disables excluded group without an empty profile`() {
+        val configuration = projectConfiguration(linkedSetOf("EdictBenchmarkRule"))
+        assertNull(configuration["profile"])
+        assertEquals(JsonArray(listOf(obj("group" to text("Excluded"), "enabled" to JsonPrimitive(false)))),
+            configuration["inspections"])
+        assertEquals(JsonArray(listOf(obj("name" to text("EdictBenchmarkRule")))), configuration["include"])
+    }
     @Test fun `scoring renames descriptor metadata without changing the implementation`() {
         val code = """val implementation = localInspection { file, inspection -> println("Original") }
             listOf(InspectionKts(id = "Original", localTool = implementation, name = "Original"))"""
