@@ -11,7 +11,9 @@ assigned task. Coordinate only; every stage runs in its own native subagent.
 1. Delegate `edict-prepare` with no write operations. Pass the source project, state context, and scratch root. It
    returns the bounded inbox snapshot and validates prerequisites.
 2. Delegate `edict-distribution` with `inbox.delete`, `cluster.write`, and `cluster.signal.write`, scoped to
-   selected inbox paths and `clusters`. Pass the complete preparation receipt. After the worker returns, call
+   selected inbox paths and `clusters`. Pass the complete preparation receipt. The worker uses only the sequential
+   next/context/add distribution tools; its capability authorizes that server-owned transition, not generic writes.
+   After the worker returns, call
    `edict_validate_distribution` with that unchanged receipt. Stop on failure; only a successful response proves every
    selected signal moved unchanged to one durable destination.
 3. Delegate `edict-generation` with `cluster.write`, `cluster.signal.write`, `example.write`, and

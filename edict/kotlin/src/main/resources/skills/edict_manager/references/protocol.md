@@ -42,13 +42,16 @@ unchanged to distribution validation. Example validators check persisted metadat
 generation validation checks persisted repository transitions. They do not parse source or compile/run inspections.
 
 All persisted Edict changes, including plan/task progress, inbox records, descriptions, history, signals, examples, and
-inspection scripts, go through this standalone Edict server. Never use shell writes, filesystem tools, Git, or IntelliJ's
-legacy `edict_next_*` tools to change the registered state. Do not call a legacy preparation/generation/session tool to
-obtain write authority. Use Ultimate's generic inspection MCP only for source/PSI reads, API documentation, source
+inspection scripts, go through this standalone Edict server. During distribution, the managed
+`edict_next_next_signal`, `edict_next_get_distribution_context`, and `edict_next_add_signal_to_cluster` tools own the
+sequential cursor, context receipts, embedding candidates, and only allowed distribution mutation. They require the
+running distribution task's narrowed capability and immutable inbox receipt. Never use shell writes, filesystem tools,
+Git, or similarly named IntelliJ session tools to change the registered state. Do not call an IntelliJ
+preparation/generation/session tool to obtain write authority. Use Ultimate's generic inspection MCP only for source/PSI reads, API documentation, source
 parsing, and inspection execution whose outputs remain in private scratch outside the state root. For all IntelliJ
 calls, `projectPath` identifies the inspected source project. Pass exact candidate bytes read from managed state as
 `inspectionKtsCode` to `run_inspection_kts`; use the same call shape for example measurement and inspected-project
-analysis. Never substitute legacy `edict_next_*` session tools for these generic calls.
+analysis. Never substitute IntelliJ generation/session tools for these generic calls.
 
 Resolve the supplied source project, managed state root, and private scratch paths before the first domain write or
 inspection call. Scratch must be outside both the managed state and inspected source checkout. Keep worker prompts,
@@ -56,7 +59,7 @@ review manifests, measurements, and transient signals there; never create a work
 For every inspection-server call that exposes `projectPath`, pass the inspected IntelliJ project, never the state root
 or scratch directory. Use local read-only Git for exact revisions when a legacy `file_at_ref` tool is unavailable.
 
-For a state write, call `edict_read` first and pass its hash as `expectedHash` to
+Outside the task-bound distribution transition, call `edict_read` before a state write and pass its hash as `expectedHash` to
 `edict_state_write(token, path, content, expectedHash)`. Use an empty hash only for a new path. Delete with
 `edict_state_delete(token, path, expectedHash)` after reading its current hash. Preserve every unrelated field. On
 conflict, reread and reconsider; do not blindly overwrite with a newer hash. The server checks authority, artifact paths,

@@ -31,8 +31,9 @@ remain prerequisite failures.
 
 List existing cluster descriptions, all cluster member paths, and Pending cluster IDs for downstream navigation. The
 distribution worker must read full candidate cluster membership before assignment. Preparation validates the registered
-state in place; the host already supplied the checkout. Worktree creation, embedding-environment setup, and legacy
-session preparation are not managed prerequisites. Require inspection capabilities only when generation has actual targets; an
+state in place; the host already supplied the checkout. The distribution task lazily prepares same-language embedding
+neighbours from this frozen receipt and reuses the durable cache under the managed state root. Worktree creation and
+legacy IDE session preparation are not managed prerequisites. Require inspection capabilities only when generation has actual targets; an
 empty run can complete without an inspection server.
 
 Return the existing state location, source project, complete validation receipt, existing-cluster navigation, and any
