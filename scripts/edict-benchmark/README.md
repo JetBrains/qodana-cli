@@ -17,17 +17,18 @@ The pipeline has six steps:
    need to match the container's glibc version.
 3. `install-intellij.sh` verifies and extracts the native IntelliJ distribution supplied
    by the TeamCity artifact dependency.
-4. `prepare.sh` runs `qodana edict install`, enables every installed skill in
-   Codex configuration, and starts `qodana edict mcp start` using the checked-out
+4. `prepare.sh` runs `qodana edict install`, enables every installed skill, and
+   configures Codex to launch `qodana edict mcp start` over stdio using the checked-out
    project's **`project/.edict`** as its state directory. It starts inspections with
    `qodana edict linter-mcp start`, selecting native execution through `QODANA_DIST`.
-   The managed server receives the prepared embedding interpreter explicitly rather
-   than using the agent's default Python; on ARM64 its bundled OpenMP runtime is
-   preloaded for that server to avoid static-TLS load-order failures. The existing
+   Codex launches the managed server with the prepared embedding interpreter rather
+   than the agent's default Python; on ARM64 its bundled OpenMP runtime is preloaded
+   to avoid static-TLS load-order failures. The existing
    `.edict/inbox` files are used directly, without importing, copying, or filtering
    signals. The CLI launches the native `idea mcpServer` headless entry point
    and waits for readiness.
-   Both servers must be ready before execution. MCP tool calls are auto-approved.
+   The inspection server must be ready before execution; the managed server is required
+   during Codex startup. MCP tool calls are auto-approved.
 5. `generate.sh` executes Codex directly with `process inbox and generate new rules`.
    The prompt also supplies the existing state and private scratch paths.
    Generation uses TeamCity’s normal execution mode so cancellation remains
