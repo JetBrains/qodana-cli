@@ -5,14 +5,16 @@ The fixture VCS root checks out `qodana/edict-jenkins` into `project`; the sourc
 VCS root checks out `JetBrains/qodana-cli`, branch `avafanasev/edict-master`, into
 `qodana-cli`. Scripts never fetch or check out repositories.
 
-The pipeline has four steps:
+The pipeline has six steps:
 
 1. `install-codex.sh` installs pinned Codex, configures LiteLLM using the secure
    `LITELLM_API_KEY` environment parameter, provisions Python 3.12 with the pinned
-   embedding dependencies, extracts the native distribution, and installs a supplied
-   assembled Qodana CLI or builds it from the checkout, including the current embedded
-   Kotlin application and skills.
-2. `prepare.sh` runs `qodana edict install`, enables every installed skill in
+   embedding dependencies.
+2. `install-qodana.sh` builds the Qodana CLI directly from the source checkout with
+   `go build` and installs it under the benchmark tooling directory.
+3. `install-intellij.sh` verifies and extracts the native IntelliJ distribution supplied
+   by the TeamCity artifact dependency.
+4. `prepare.sh` runs `qodana edict install`, enables every installed skill in
    Codex configuration, and starts `qodana edict mcp start` using the checked-out
    project's **`project/.edict`** as its state directory. It starts inspections with
    `qodana edict linter-mcp start`, selecting native execution through `QODANA_DIST`.
@@ -23,35 +25,27 @@ The pipeline has four steps:
    signals. The CLI launches the native `idea mcpServer` headless entry point
    and waits for readiness.
    Both servers must be ready before execution. MCP tool calls are auto-approved.
-3. `generate.sh` executes Codex directly with `process inbox and generate new rules`.
+5. `generate.sh` executes Codex directly with `process inbox and generate new rules`.
    The prompt also supplies the existing state and private scratch paths.
    Generation uses TeamCity’s normal execution mode so cancellation remains
    interruptible. TeamCity cleans up server processes when the build finishes.
-4. A TeamCity **Gradle runner** executes `:benchmark:report`. Kotlin runs the accepted
+6. A TeamCity **Gradle runner** executes `:benchmark:report`. Kotlin runs the accepted
    inspections from `.edict/inspections` natively, writes SARIF into `benchmark-output`,
    and compares it with `.edict/gold.sarif.json`.
    No benchmark Kotlin controller runs before Codex.
 
 The ARM64 Qodana distribution comes from the latest successful `qodana-jvm: edict`
 build (`ijplatform_master_QodanaJvmEdict`, main branch). TeamCity downloads the
-archive and its checksum; the first step discovers and unpacks it, then sets
+archive and its checksum; the IntelliJ installation step discovers and unpacks it, then sets
 `env.QODANA_DIST` for subsequent steps. The CLI is built from the source VCS checkout so its
 embedded skills and managed state server match that revision.
 `QODANA_DIST` points to the extracted native distribution and `QODANA_CLI` to the
 CLI executable. No container is used. Separate `QODANA_CONF` directories prevent
 MCP and analysis IDE instances from contending for the same configuration lock.
 
-For a custom-branch run, first assemble `ijplatform_master_QodanaCliAll` (Snapshot
-2026.3 CLI) at the branch's exact commit. In the benchmark custom run, pin the CLI
-source VCS root to that same branch and commit, retain the native distribution
-dependency, and add a per-run artifact dependency on that successful CLI build:
-`cli_linux_arm64_v8.0/qodana => cli-artifacts`.
-Set `env.BENCHMARK_CLI_PATH=cli-artifacts/qodana`,
-`env.BENCHMARK_CLI_REVISION=<full commit SHA>`, and
-`env.BENCHMARK_CLI_BUILD_ID=<assembly build ID>`. The install step checks the source
-revision, installs the assembled binary, and skips Go generation/build. It records
-the build ID, revision, and binary checksum in the benchmark output. These custom
-run overrides do not change the default benchmark branch or its dependencies.
+For a custom-branch run, pin the CLI source VCS root to that branch and commit. The
+benchmark always builds the CLI from that checkout; it does not consume a separately
+assembled CLI artifact. The native distribution artifact dependency remains unchanged.
 
 Generation can compile and execute examples with inspections MCP.
 Codex permits 50 simultaneous agents. Generation keeps up to 15 cluster workers active,
