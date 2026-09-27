@@ -28,7 +28,8 @@ fun main(args: Array<String>) {
                         "project-dir",
                         "state-dir",
                         "http-port",
-                        "log-dir"
+                        "log-dir",
+                        "embedding-python"
                     )
                 }) { "Unknown MCP option" }
                 val project = Path.of(options["project-dir"] ?: ".").toAbsolutePath().normalize()
@@ -38,7 +39,8 @@ fun main(args: Array<String>) {
                     try {
                         val server = McpServer(
                             store,
-                            logs = (options["log-dir"]?.let(Path::of) ?: project.resolve("log")).resolve("edict")
+                            logs = (options["log-dir"]?.let(Path::of) ?: project.resolve("log")).resolve("edict"),
+                            embeddingPython = options["embedding-python"]?.let(Path::of),
                         )
                         if ("http-port" in options) server.serveHttp(options.getValue("http-port").toInt())
                             .use { transport ->
@@ -55,7 +57,7 @@ fun main(args: Array<String>) {
                 """
                 Edict managed skills (standalone Kotlin/JVM)
                   edict install-skills --directory <skills-directory> [--skill <name>]
-                  edict mcp [--project-dir <project>] [--state-dir <state>] [--log-dir <logs>] [--http-port <port>]
+                  edict mcp [--project-dir <project>] [--state-dir <state>] [--log-dir <logs>] [--embedding-python <python>] [--http-port <port>]
                 MCP uses stdio by default. HTTP binds to loopback and shares one store across workers.
             """.trimIndent()
             )

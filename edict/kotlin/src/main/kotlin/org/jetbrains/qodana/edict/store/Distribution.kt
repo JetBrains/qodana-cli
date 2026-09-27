@@ -84,7 +84,7 @@ internal fun interface NeighbourRetriever {
     fun prepare(corpus: List<Signal>, signalIds: List<String>, cacheDirectory: Path): Map<String, SignalNeighbours>
 }
 
-internal class PythonNeighbourRetriever : NeighbourRetriever {
+internal class PythonNeighbourRetriever(private val preparedPython: Path? = null) : NeighbourRetriever {
     override fun prepare(
         corpus: List<Signal>,
         signalIds: List<String>,
@@ -94,23 +94,10 @@ internal class PythonNeighbourRetriever : NeighbourRetriever {
         val home = Files.createTempDirectory("edict-embeddings-")
         try {
             val script = copyResource("/distribution/cluster.py", home.resolve("cluster.py"))
-            val requirements = copyResource("/distribution/requirements.txt", home.resolve("requirements.txt"))
-            val venv = home.resolve("venv")
-            val python = if (System.getProperty("os.name").startsWith("Windows", ignoreCase = true)) {
-                venv.resolve("Scripts/python.exe")
-            } else {
-                venv.resolve("bin/python")
+            val python = preparedPython?.toAbsolutePath()?.normalize() ?: preparePython(home)
+            require(Files.isRegularFile(python) && Files.isExecutable(python)) {
+                "Prepared embedding Python is not executable: $python"
             }
-            val basePython = System.getProperty("qodana.edict.python") ?: "python3"
-            runProcess(home, listOf(basePython, "-m", "venv", venv.toString()), timeoutSeconds = 300)
-            runProcess(
-                home,
-                listOf(
-                    python.toString(), "-m", "pip", "install", "--quiet", "--disable-pip-version-check",
-                    "-r", requirements.toString()
-                ),
-                timeoutSeconds = 1_200,
-            )
             Files.createDirectories(cacheDirectory)
             require(!Files.isSymbolicLink(cacheDirectory)) { "Embedding cache must not be a symlink" }
             val request = home.resolve("request.json")
@@ -142,6 +129,27 @@ internal class PythonNeighbourRetriever : NeighbourRetriever {
         val source = checkNotNull(javaClass.getResourceAsStream(name)) { "Missing bundled resource $name" }
         source.use { Files.copy(it, target) }
         return target
+    }
+
+    private fun preparePython(home: Path): Path {
+        val requirements = copyResource("/distribution/requirements.txt", home.resolve("requirements.txt"))
+        val venv = home.resolve("venv")
+        val python = if (System.getProperty("os.name").startsWith("Windows", ignoreCase = true)) {
+            venv.resolve("Scripts/python.exe")
+        } else {
+            venv.resolve("bin/python")
+        }
+        val basePython = System.getProperty("qodana.edict.python") ?: "python3"
+        runProcess(home, listOf(basePython, "-m", "venv", venv.toString()), timeoutSeconds = 300)
+        runProcess(
+            home,
+            listOf(
+                python.toString(), "-m", "pip", "install", "--quiet", "--disable-pip-version-check",
+                "-r", requirements.toString()
+            ),
+            timeoutSeconds = 1_200,
+        )
+        return python
     }
 }
 
