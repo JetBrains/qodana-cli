@@ -89,6 +89,6 @@ coverage/precision gaps that leave the core rule usable are MAJOR; cosmetic impr
 a finding merely to force another repair.
 
 MAJOR findings request reassessment in the next available iteration, but do not block downstream validation or
-publication. The cluster worker has three iterations total, including the initial review; do not request unlimited
+publication. The cluster worker has five iterations total, including the initial review; do not request unlimited
 repairs or require every finding to be cleared. State unresolved limitations in the summary. Missing evidence alone
 is not grounds for rejection or an invented third outcome.

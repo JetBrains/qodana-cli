@@ -28,7 +28,7 @@ capacity, reduce the number of active clusters to preserve those reservations.
 
 When any worker finishes, verify its persisted outcome, close/dispose its native agent and completed descendants,
 and immediately launch the next queued cluster in that slot. Do not wait for other clusters to finish their repairs.
-Each cluster has at most three review iterations including the initial candidate; exhausting that budget is not itself
+Each cluster has at most five review iterations including the initial candidate; exhausting that budget is not itself
 a reason to leave the cluster Pending. Pending is valid only when a BLOCKER, mandatory validation failure, deadline,
 or interrupted transition still prevents publication. When the final review has unresolved MAJOR findings but no
 BLOCKER, require the worker to publish the validated inspection as Generated and persist those findings in the

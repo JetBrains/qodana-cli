@@ -52,14 +52,14 @@ class ComparisonTest {
 
     private fun fixture() {
         write("reports/source-revision.txt", "revision\n")
-        write("benchmark/Rule/specification.json", "{\"ruleId\":\"Rule\"}")
-        write("benchmark/Pending/specification.json", "{\"ruleId\":\"Pending\"}")
         write("project/.edict/clusters/rule/description.json", """{"status":"Generated"}""")
         write("project/.edict/clusters/pending/description.json", """{"status":"Pending"}""")
         write("project/.edict/clusters/rule/signals/s-rule.json", """{"source":{"type":"SubmittedFeedback","suggestionId":"benchmark/Rule/specification.json#positiveExamples/0"}}""")
         write("project/.edict/clusters/pending/signals/s-pending.json", """{"provenance":{"workItemId":"benchmark/Pending/specification.json#/positiveExamples/0"}}""")
         write("project/.edict/inspections/rule.inspection.kts", "// fixture inspection")
-        write("project/.edict/gold.sarif.json", sarif("Rule"))
+        val goldRuns = listOf("Rule", "Pending")
+            .flatMap { json.parseToJsonElement(sarif(it)).jsonObject.getValue("runs").jsonArray }
+        writeJson(root.resolve("project/.edict/gold.sarif.json"), obj("runs" to JsonArray(goldRuns)))
         write("reports/qodana.sarif.json", sarif("EdictBenchmarkRule"))
     }
 
@@ -77,9 +77,8 @@ class ComparisonTest {
         assertTrue(root.resolve("reports/qodana.sarif.json").exists())
         assertFalse(root.resolve("reports/specGoldComparisons").exists())
         assertFalse(root.resolve("reports/generatedInspections/Stale.kts").exists())
-        // Reporting leaves checked-in fixtures and the state store in place.
-        assertEquals("{\"ruleId\":\"Rule\"}", root.resolve("benchmark/Rule/specification.json").readText())
-        assertEquals(sarif("Rule"), root.resolve("project/.edict/gold.sarif.json").readText())
+        // Reporting leaves the gold SARIF and state store in place.
+        assertEquals(setOf("Rule", "Pending"), readSarif(root.resolve("project/.edict/gold.sarif.json")).findings.map { it.ruleId }.toSet())
         assertFalse(root.resolve("reports/state").exists())
     }
 
@@ -114,7 +113,7 @@ class ComparisonTest {
     @Test fun `no clusters produces an explicit outcome and empty SARIF`() {
         fixture()
         deleteTree(root.resolve("project/.edict/clusters"))
-        generateSarif(root.resolve("unused-project"), root.resolve("benchmark"), root.resolve("project/.edict"), root.resolve("reports"))
+        generateSarif(root.resolve("unused-project"), root.resolve("project/.edict"), root.resolve("reports"))
         val report = compare(root.resolve("benchmark"), root.resolve("project/.edict"), root.resolve("reports"))
         assertEquals(mapOf("Rule" to "NotClustered", "Pending" to "NotClustered"), report.generationOutcomes)
         assertEquals(0, report.successful)
@@ -127,8 +126,9 @@ class ComparisonTest {
         write("project/.edict/clusters/pending/description.json", """{"status":"Generated"}""")
         write("project/.edict/clusters/pending/signals/s-rule-second.json", """{"provenance":{"workItemId":"benchmark/Rule/specification.json#/positiveExamples/1"}}""")
         write("project/.edict/inspections/pending.inspection.kts", "// shared inspection")
-        val runs = listOf("EdictBenchmarkRule_Cluster1", "EdictBenchmarkRule_Cluster2", "EdictBenchmarkPending")
-            .flatMap { json.parseToJsonElement(sarif(it)).jsonObject.getValue("runs").jsonArray }
+        val runs = listOf(sarif("EdictBenchmarkRule_Cluster1"), sarif("EdictBenchmarkRule_Cluster2"),
+            sarif("EdictBenchmarkPending", line = 100, offset = 1000))
+            .flatMap { json.parseToJsonElement(it).jsonObject.getValue("runs").jsonArray }
         writeJson(root.resolve("reports/qodana.sarif.json"), obj("runs" to JsonArray(runs)))
         val report = compare(root.resolve("benchmark"), root.resolve("project/.edict"), root.resolve("reports"))
         assertEquals(2, report.successful)

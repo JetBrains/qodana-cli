@@ -42,14 +42,15 @@ internal fun readSarif(path: Path): Sarif {
     return Sarif(findings, registered)
 }
 
-internal fun compare(benchmarkDir: Path, stateDir: Path, outputDir: Path,
+internal fun compare(_benchmarkDir: Path, stateDir: Path, outputDir: Path,
                      analysisSarif: Path = outputDir.resolve("qodana.sarif.json")): BenchmarkReport {
-    val inputs = loadInputs(benchmarkDir, outputDir)
+    val goldSarif = readSarif(stateDir.resolve("gold.sarif.json"))
+    val inputs = loadInputs(goldSarif, outputDir)
     val clusters = resolveClusters(inputs, stateDir)
     val statuses = clusterOutcomes(clusters, stateDir)
     val outcomes = clusters.mapValues { (_, members) -> generationOutcome(members, statuses) }
     val successful = inputs.rules.filter { outcomes[it] == "Generated" }
-    val gold = readSarif(stateDir.resolve("gold.sarif.json")).findings
+    val gold = goldSarif.findings
     val analysis = readSarif(analysisSarif)
     val generated = scoringInspections(clusters, statuses)
     val generatedIds = generated.associate { it.id to it.rule }
@@ -119,7 +120,7 @@ fun main(args: Array<String>) {
         val state = options["--state-dir"] ?: error("--state-dir is required")
         val output = options["--output-dir"] ?: error("--output-dir is required")
         val benchmark = options["--benchmark-dir"] ?: error("--benchmark-dir is required")
-        options["--project-dir"]?.let { generateSarif(it, benchmark, state, output) }
+        options["--project-dir"]?.let { generateSarif(it, state, output) }
         val report = compare(benchmark, state, output, options["--analysis-sarif"] ?: output.resolve("qodana.sarif.json"))
         logReport(report)
         options["--project-dir"]?.let { verifyManagedCompletion(state) }

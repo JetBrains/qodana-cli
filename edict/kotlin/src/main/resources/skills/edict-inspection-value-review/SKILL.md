@@ -92,6 +92,6 @@ validation requirement. Bounded coverage/precision gaps that leave the core rule
 improvements are MINOR. Do not promote a finding merely to force a repair.
 
 MAJOR findings request reassessment in the next available iteration without blocking publication. The cluster worker
-has three iterations total across all review stages, including its initial candidate. Report remaining MAJOR/MINOR
+has five iterations total across all review stages, including its initial candidate. Report remaining MAJOR/MINOR
 findings as limitations after the last iteration; do not require them all to be fixed. Missing evidence alone is not
 grounds for rejection or an invented third outcome.
