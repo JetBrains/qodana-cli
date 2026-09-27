@@ -146,6 +146,12 @@ class McpIntegrationTest : IntegrationTest() {
                 val logs = Files.readString(workspace.logs.resolve("edict-mcp-system.log"))
                 listOf(manager, batch, leaf).forEach { assertFalse(logs.contains(it)) }
                 assertContains(logs, "[REDACTED]")
+                store.plan()!!.tasks.forEach { task ->
+                    val taskLog = Files.readString(workspace.logs.resolve("tasks/${task.id}.log"))
+                    assertContains(taskLog, "[${task.skill}/${task.id.take(8)}] mcp:")
+                    assertContains(taskLog, "edict_task_finish response:")
+                    assertFalse(taskLog.contains("[edict_manager/-]"))
+                }
             }
         }
     }

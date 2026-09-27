@@ -112,10 +112,14 @@ class AgentLoggingTest {
             collector.scan(final = true)
             val full = Files.readString(logs.resolve("edict-agents.log"))
             val unwrapped = full.replace("\n    ", "")
+            val leafLog = Files.readString(logs.resolve("tasks/${leaf.taskId}.log"))
             assertContains(
                 unwrapped,
                 "[edict-signal-analysis/${leaf.taskId.take(8)}] final: Leaf finished $digest [REDACTED] [REDACTED]"
             )
+            assertContains(leafLog.replace("\n    ", ""), "final: Leaf finished $digest [REDACTED] [REDACTED]")
+            assertFalse(leafLog.contains("Manager commentary"))
+            assertFalse(leafLog.contains("Batch commentary"))
             listOf("Manager commentary", "Batch commentary", "Early leaf output", "Manager final").forEach {
                 assertEquals(1, Regex(Regex.escape(it)).findAll(full).count())
             }
@@ -164,8 +168,12 @@ class AgentLoggingTest {
                 buildJsonObject { put("token", token); put("status", "completed"); put("result", "Done") })
             val full = Files.readString(logs.resolve("edict-agents.log"))
             val short = Files.readString(logs.resolve("edict-agent-short.log"))
+            val taskLog = Files.readString(logs.resolve("tasks/${task.id}.log"))
             assertContains(full.replace("\n    ", ""), prompt.replace("\n", ""))
             assertContains(full, "[${task.skill}/${task.id.take(8)}] mcp: edict_task_finish response:")
+            assertContains(taskLog.replace("\n    ", ""), prompt.replace("\n", ""))
+            assertContains(taskLog, "[${task.skill}/${task.id.take(8)}] mcp: edict_task_finish response:")
+            assertFalse(taskLog.contains("[edict_manager/-]"))
             assertFalse(short.contains("response:"))
             assertContains(short, "Started task")
             listOf(

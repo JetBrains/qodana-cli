@@ -47,7 +47,8 @@ All stdout output is MCP protocol traffic. Readable activity is logged to
 edict-mcp-system.log in the same directory. MCP activity also appears in
 edict-agents.log alongside output supplied by the agent host. edict-agent-short.log
 keeps the same agent messages with concise MCP summaries, omitting response bodies
-and task prompts. Capability tokens are redacted.`,
+and task prompts. Full records for each managed task/subagent are also written to
+tasks/<full-task-id>.log. Capability tokens are redacted.`,
 		Args:         cobra.NoArgs,
 		SilenceUsage: true,
 		RunE: func(command *cobra.Command, _ []string) error {
