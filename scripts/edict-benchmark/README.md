@@ -8,13 +8,16 @@ VCS root checks out `JetBrains/qodana-cli`, branch `avafanasev/edict-master`, in
 The pipeline has four steps:
 
 1. `install-codex.sh` installs pinned Codex, configures LiteLLM using the secure
-   `LITELLM_API_KEY` environment parameter, extracts the native distribution, and
-   installs a supplied assembled Qodana CLI or builds it from the checkout, including
-   the current embedded Kotlin application and skills.
+   `LITELLM_API_KEY` environment parameter, provisions Python 3.12 with the pinned
+   embedding dependencies, extracts the native distribution, and installs a supplied
+   assembled Qodana CLI or builds it from the checkout, including the current embedded
+   Kotlin application and skills.
 2. `prepare.sh` runs `qodana edict install`, enables every installed skill in
    Codex configuration, and starts `qodana edict mcp start` using the checked-out
    project's **`project/.edict`** as its state directory. It starts inspections with
-   `qodana edict linter-mcp start`, selecting native execution through `QODANA_DIST`. The existing
+   `qodana edict linter-mcp start`, selecting native execution through `QODANA_DIST`.
+   The managed server receives the prepared embedding interpreter explicitly rather
+   than using the agent's default Python. The existing
    `.edict/inbox` files are used directly, without importing, copying, or filtering
    signals. The CLI launches the native `idea mcpServer` headless entry point
    and waits for readiness.
