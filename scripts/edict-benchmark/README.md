@@ -11,7 +11,9 @@ The pipeline has six steps:
    `LITELLM_API_KEY` environment parameter, provisions Python 3.12 with the pinned
    embedding dependencies.
 2. `install-qodana.sh` builds the Qodana CLI directly from the source checkout with
-   `go build` and installs it under the benchmark tooling directory.
+   `go build` and installs it under the benchmark tooling directory. TeamCity runs
+   this step in the repository's published devcontainer image, so the host agent does
+   not need a Go installation.
 3. `install-intellij.sh` verifies and extracts the native IntelliJ distribution supplied
    by the TeamCity artifact dependency.
 4. `prepare.sh` runs `qodana edict install`, enables every installed skill in
