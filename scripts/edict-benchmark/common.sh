@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Sourced by the three CI Bash steps. TeamCity supplies both VCS checkouts.
+# Sourced by the benchmark CI Bash steps. TeamCity supplies both VCS checkouts.
 set -euo pipefail
 benchmark_checkout="${BENCHMARK_CHECKOUT_DIR:-$PWD}"
 benchmark_source="$benchmark_checkout/qodana-cli"
