@@ -19,6 +19,7 @@ import org.jetbrains.qodana.edict.store.Store
 import org.jetbrains.qodana.edict.store.DistributionValidationSnapshot
 import org.jetbrains.qodana.edict.store.DistributionService
 import org.jetbrains.qodana.edict.store.AddSignalResponse
+import org.jetbrains.qodana.edict.store.PythonNeighbourRetriever
 import org.jetbrains.qodana.edict.store.ValidationReceipt
 import org.jetbrains.qodana.edict.store.prepareDistributionValidation
 import org.jetbrains.qodana.edict.store.validateClusterExamplesState
@@ -54,6 +55,7 @@ class McpServer(
     provider: ReviewProvider = ReviewClient(),
     private val logs: Path? = null,
     taskOutput: PrintWriter = PrintWriter(System.err, true),
+    embeddingPython: Path? = null,
 ) {
     val agents: AgentLogger? = logs?.let { AgentLogger(store, it) }
     private val taskLogger = TaskLifecycleLogger(store, logs, taskOutput)
@@ -69,7 +71,11 @@ class McpServer(
 
     private val tools = linkedMapOf<String, Tool>()
     private val distributionSnapshots = ConcurrentHashMap<String, DistributionValidationSnapshot>()
-    private val distribution = DistributionService(store, distributionSnapshots)
+    private val distribution = DistributionService(
+        store,
+        distributionSnapshots,
+        PythonNeighbourRetriever(embeddingPython),
+    )
     private val pr = PrAnalysis(store, provider)
     private val instructions = "Managed Edict state and execution plans. Root requests enter through edict_manager. " +
             "Each task must execute in a fresh native subagent with its delegated token and no inherited conversation. " +
