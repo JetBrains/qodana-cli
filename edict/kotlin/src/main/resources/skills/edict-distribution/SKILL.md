@@ -1,42 +1,37 @@
 ---
 name: edict-distribution
-description: Sequentially assign prepared inbox Signals to durable clusters through managed MCP writes.
+description: Sequentially assign prepared inbox Signals to durable clusters through managed distribution transitions.
 ---
 
 # Edict Distribution
 
-Follow [the managed protocol](../edict_manager/references/protocol.md). Registry ID: `edict-distribution`. This
-leaf uses `inbox.delete`, `cluster.write`, and `cluster.signal.write` only.
+Follow [the managed protocol](../edict_manager/references/protocol.md). Registry ID: `edict-distribution`. Start the
+task and use only the three distribution tools below. Do not call generic state-write or state-delete tools. The
+delegated `inbox.delete`, `cluster.write`, and `cluster.signal.write` capability authorizes the server-owned transition;
+the preparation receipt binds this task to its selected inbox batch.
 
-Start the task and process the validation receipt's inbox paths alphabetically. Read the complete stored signal and
-require its path and hash to match the receipt. Preserve every field, including provenance and negative evidence. Infer
-source language from actual recorded source, not a guessed cluster title. Return the complete unchanged receipt with
-the assignment result so the coordinator can call `edict_validate_distribution`.
+`edict_next_next_signal` returns the complete incoming Signal; use it as the decision authority. Its same-language
+embedding neighbours are comparison candidates, not proof of compatibility.
 
-For each plausible existing cluster, read its complete description and every member signal, including negatives. A
-nearby description is only a navigation hint. Assign a signal only when it and every current member can be handled by
-the same IntelliJ inspection and the languages match. Positive and negative Signals may belong together when they
-define the behavior of that same inspection. If nearest-neighbor/retrieval data is supplied, it is only a candidate
-list, never proof of semantic compatibility. Read the complete payload of a neighboring inbox Signal when needed.
-Read exact-revision source through local Git or the inspection
-server when source behavior is ambiguous. Otherwise select a new unused kebab-case cluster ID and a concise detector
-description; do not split or rename existing clusters.
-Do not summarize or replace the incoming Signal before assigning it, and do not advance to another selected Signal
-while the current one lacks a verified durable destination.
+Decide from the Signals: **can the incoming Signal and every current member be handled by the same IntelliJ
+inspection?** Assign only when yes and languages match. Positive and negative Signals may share a cluster when they
+define the boundary of that inspection. Otherwise create a new cluster with a provisional lowercase kebab-case id.
+Do not split or rename an existing cluster. Read exact-revision source through local Git or the inspection server when
+recorded evidence is ambiguous.
 
-Use these ordered MCP writes:
+Repeat until `edict_next_next_signal` returns `STOP_DISTRIBUTION`:
 
-1. Create a new `description.json` with matching `id`, `description`, `language`, `status: "Pending"`, and
-   `knownProblems: []`, or preserve an existing description's other fields. When adding evidence to a Generated
-   cluster, mark it Pending and preserve its current inspection as the previous version so generation revalidates it.
-2. Write the complete inbox content to `clusters/<cluster>/signals/<signal>.json`. If the destination already exists,
-   require identical content; do not silently replace conflicting evidence.
-3. Append the assignment and source signal ID to the cluster's `history.md` using its current hash. Read back the
-   destination and verify its content/hash.
-4. Only then delete the original inbox record with its original hash. If any step fails, stop, preserving the original
-   inbox record whenever it still exists. Report partial progress so a retry can recognize an already copied identical
-   signal.
+1. Call `edict_next_next_signal` with your task token and the complete unchanged preparation receipt. Read the complete
+   returned Signal. Repeated calls return the same current Signal until it has a durable assignment.
+2. For every plausible existing cluster, call `edict_next_get_distribution_context` with `kind: "cluster"` and compare
+   every member Signal, including negatives. Retrieve a useful neighboring inbox Signal with `kind: "signal"` when
+   needed. A cluster read records the context receipt required for an existing-cluster assignment.
+3. Choose one compatible existing cluster id or a new provisional id.
+4. Call `edict_next_add_signal_to_cluster` with `signalId` and `clusterId`. This single transition preserves the exact
+   Signal, updates/creates the Pending cluster and history, verifies the durable destination, then removes the inbox
+   copy. If `added` is false, use the summary to correct the choice and retry the same Signal; do not request another
+   Signal while it remains unassigned.
 
-This sequence preserves evidence across interruption; it is not a multi-file transaction. Never delete the only copy of
-a signal. Return the exact assigned IDs, affected cluster IDs, and any remaining selected paths; finish only when every
-selected signal has its verified destination.
+Return the assigned Signal IDs and affected cluster IDs. Finish only after distribution returns
+`STOP_DISTRIBUTION`; the coordinator then validates the unchanged preparation receipt with
+`edict_validate_distribution`.
