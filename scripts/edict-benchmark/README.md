@@ -56,8 +56,8 @@ run overrides do not change the default benchmark branch or its dependencies.
 Generation can compile and execute examples with inspections MCP.
 Codex permits 50 simultaneous agents. Generation keeps up to 15 cluster workers active,
 reserving slots for their reviewers and example workers. Each cluster gets at most
-three review iterations including its initial candidate; the managed server caps each
-review stage at three tasks per cluster worker, preserving that count across restarts.
+five review iterations including its initial candidate; the managed server caps each
+review stage at five tasks per cluster worker, preserving that count across restarts.
 Only BLOCKER findings require repairs. MAJOR findings request another iteration while
 budget remains but permit downstream checks and publication with recorded limitations.
 MINOR findings are recorded without a repair loop. Required compilation/example checks

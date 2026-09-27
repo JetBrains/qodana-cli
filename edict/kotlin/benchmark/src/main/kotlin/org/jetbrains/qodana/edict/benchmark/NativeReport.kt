@@ -5,9 +5,9 @@ import kotlinx.serialization.json.*
 import java.nio.file.Path
 import kotlin.io.path.*
 
-internal fun loadInputs(benchmark: Path, output: Path): BenchmarkInputs = BenchmarkInputs(
+internal fun loadInputs(gold: Sarif, output: Path): BenchmarkInputs = BenchmarkInputs(
     output.resolve("source-revision.txt").readText().trim(),
-    benchmark.listDirectoryEntries().filter { it.isDirectory() }.map { it.name }.sorted(),
+    gold.findings.map { it.ruleId }.distinct().sorted(),
 )
 
 // Discover only clusters created by Edict. A rule may span several clusters,
@@ -68,8 +68,8 @@ internal fun scoringCode(code: String, id: String): String {
     return code.replaceRange(match.range, match.value.substringBefore('"') + "\"$id\"")
 }
 
-internal fun generateSarif(project: Path, benchmark: Path, state: Path, output: Path) {
-    val inputs = loadInputs(benchmark, output)
+internal fun generateSarif(project: Path, state: Path, output: Path) {
+    val inputs = loadInputs(readSarif(state.resolve("gold.sarif.json")), output)
     val clusters = resolveClusters(inputs, state)
     val codes = scoringInspections(clusters, clusterOutcomes(clusters, state)).associate { inspection ->
         inspection.id to scoringCode(state.resolve("inspections/${inspection.cluster}.inspection.kts").readText(), inspection.id)
