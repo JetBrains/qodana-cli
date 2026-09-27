@@ -14,7 +14,10 @@ for skill in "$benchmark_codex_home"/skills/*/SKILL.md; do
 done
 
 [[ -x "$benchmark_embedding_python" ]] || { echo "Embedding Python not found: $benchmark_embedding_python" >&2; exit 1; }
-nohup setsid qodana edict mcp start --project-dir "$benchmark_project" --state-dir "$benchmark_state" \
+embedding_openmp=$(embedding_libgomp)
+[[ -n "$embedding_openmp" ]] || { echo "Embedding environment has no libgomp runtime" >&2; exit 1; }
+LD_PRELOAD="$embedding_openmp${LD_PRELOAD:+:$LD_PRELOAD}" \
+  nohup setsid qodana edict mcp start --project-dir "$benchmark_project" --state-dir "$benchmark_state" \
   --embedding-python "$benchmark_embedding_python" \
   --log-dir "$benchmark_output/log" --http-port 0 > "$benchmark_output/log/edict-server.log" 2>&1 < /dev/null &
 echo $! > "$benchmark_output/edict.pid"

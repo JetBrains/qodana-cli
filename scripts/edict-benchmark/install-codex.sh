@@ -19,7 +19,9 @@ export UV_PYTHON_INSTALL_DIR="$benchmark_output/tooling/python"
 "$uv" venv --python 3.12 --managed-python "$benchmark_embedding_venv"
 "$uv" pip install --python "$benchmark_embedding_python" \
   -r "$benchmark_source/edict/kotlin/src/main/resources/distribution/requirements.txt"
-"$benchmark_embedding_python" -c \
+embedding_openmp=$(embedding_libgomp)
+[[ -n "$embedding_openmp" ]] || { echo "Embedding environment has no libgomp runtime" >&2; exit 1; }
+LD_PRELOAD="$embedding_openmp${LD_PRELOAD:+:$LD_PRELOAD}" "$benchmark_embedding_python" -c \
   'import numpy, sentence_transformers; print(f"embedding Python ready: numpy={numpy.__version__}, sentence-transformers={sentence_transformers.__version__}")'
 
 cat > "$benchmark_codex_home/config.toml" <<CONFIG

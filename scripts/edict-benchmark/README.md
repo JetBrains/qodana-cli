@@ -17,7 +17,8 @@ The pipeline has four steps:
    project's **`project/.edict`** as its state directory. It starts inspections with
    `qodana edict linter-mcp start`, selecting native execution through `QODANA_DIST`.
    The managed server receives the prepared embedding interpreter explicitly rather
-   than using the agent's default Python. The existing
+   than using the agent's default Python; on ARM64 its bundled OpenMP runtime is
+   preloaded for that server to avoid static-TLS load-order failures. The existing
    `.edict/inbox` files are used directly, without importing, copying, or filtering
    signals. The CLI launches the native `idea mcpServer` headless entry point
    and waits for readiness.
