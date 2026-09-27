@@ -64,6 +64,8 @@ including nested reviewers and example workers. Tasks outside a cluster use `-` 
 cluster. Failed or cancelled tasks also emit `finished`; their outcome remains in the
 plan and detailed MCP log. These messages go to server stderr and `log/edict/edict-tasks.log`,
 which the generation step streams to the TeamCity console. MCP stdio stdout stays JSON-RPC.
+Full assignment, MCP response, commentary, and final-message records for each managed
+task are also retained in `log/edict/tasks/<full-task-id>.log`.
 The benchmark specification directory and `.edict/gold.sarif.json` are denied to
 Codex. All existing inbox signals remain available, including optional examples
 already supplied by the repository. Their IDs, revisions, labels, ranges and original

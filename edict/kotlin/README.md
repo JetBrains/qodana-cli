@@ -196,6 +196,8 @@ Each test's `log/edict/` directory contains:
 - `edict-agents.log`: manager and worker commentary/final messages, task
   assignments, MCP lifecycle activity and complete response details.
 - `edict-agent-short.log`: the same agent messages with concise MCP summaries.
+- `tasks/<full-task-id>.log`: one detailed log per managed task/subagent, containing
+  only that task's assignment, MCP details, commentary and final message.
 - `edict-mcp.log` and `edict-mcp-system.log`: tool activity and protocol details.
 
 Agent logs update during execution, correlate native workers with skill/task
