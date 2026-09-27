@@ -29,11 +29,15 @@ class AgentLogger(private val store: Store, val directory: Path) {
     private val identities = mutableMapOf<String, Identity>()
     private val full = directory.resolve("edict-agents.log")
     private val short = directory.resolve("edict-agent-short.log")
+    private val tasks = directory.resolve("tasks")
 
     init {
         Files.createDirectories(directory)
         if (Files.getFileStore(directory).supportsFileAttributeView("posix"))
             Files.setPosixFilePermissions(directory, PosixFilePermissions.fromString("rwx------"))
+        Files.createDirectories(tasks)
+        if (Files.getFileStore(tasks).supportsFileAttributeView("posix"))
+            Files.setPosixFilePermissions(tasks, PosixFilePermissions.fromString("rwx------"))
         listOf(full, short).forEach {
             Files.writeString(it, "", CREATE, APPEND)
             if (Files.getFileStore(it).supportsFileAttributeView("posix"))
@@ -105,7 +109,14 @@ class AgentLogger(private val store: Store, val directory: Path) {
 
     private fun write(at: Instant, identity: Identity, kind: String, text: String, shortText: String?) {
         val prefix = "$at [${identity.skill}/${identity.task.take(8).ifEmpty { "-" }}] $kind: "
-        Files.writeString(full, format(prefix, store.redact(text)), APPEND)
+        val record = format(prefix, store.redact(text))
+        Files.writeString(full, record, APPEND)
+        if (identity.task.isNotEmpty()) {
+            val task = tasks.resolve("${identity.task}.log")
+            Files.writeString(task, record, CREATE, APPEND)
+            if (Files.getFileStore(task).supportsFileAttributeView("posix"))
+                Files.setPosixFilePermissions(task, PosixFilePermissions.fromString("rw-------"))
+        }
         if (shortText != null) Files.writeString(short, format(prefix, store.redact(shortText)), APPEND)
     }
 

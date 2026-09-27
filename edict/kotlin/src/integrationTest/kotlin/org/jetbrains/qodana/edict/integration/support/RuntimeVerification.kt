@@ -29,10 +29,16 @@ internal fun verifyAgentLogs(logs: Path, plan: Plan) {
     val unwrapped = full.replace("\n    ", "")
     plan.tasks.forEach { task ->
         val prefix = "[${task.skill}/${task.id.take(8)}] mcp: "
+        val taskLog = Files.readString(logs.resolve("tasks/${task.id}.log"))
         assertContains(unwrapped, prefix + "Task prompt assigned by ")
         assertContains(unwrapped, task.prompt.replace("\t", "    ").replace("\n", ""))
         assertContains(full, prefix + "edict_task_get response:")
         assertContains(full, prefix + "edict_task_finish response:")
+        assertContains(taskLog, "[${task.skill}/${task.id.take(8)}] final:")
+        assertContains(taskLog.replace("\n    ", ""), prefix + "Task prompt assigned by ")
+        assertContains(taskLog, prefix + "edict_task_get response:")
+        assertContains(taskLog, prefix + "edict_task_finish response:")
+        assertFalse(taskLog.contains("[edict_manager/-]"))
         assertFalse(short.contains(prefix + "edict_task_get response:"))
         assertFalse(short.contains(prefix + "edict_task_finish response:"))
     }
