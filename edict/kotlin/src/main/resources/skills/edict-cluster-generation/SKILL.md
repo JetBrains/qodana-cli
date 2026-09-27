@@ -18,17 +18,17 @@ cluster, it is the previous version. Preserve it until a successful publication 
 Cluster renames and direct repository/Git writes are outside this managed task's capabilities.
 
 The parent provides the cluster ID, source project, and private scratch directory outside the state root. Run at most
-**three review iterations, including the initial candidate**, across the complete code/weak/value review cycle. Include
-`iteration N/3` in review task titles and the attempt manifest. Count existing code-review tasks on resumption; do not
+**five review iterations, including the initial candidate**, across the complete code/weak/value review cycle. Include
+`iteration N/5` in review task titles and the attempt manifest. Count existing code-review tasks on resumption; do not
 reset the budget after a different review stage, a changed hash, or a restarted worker. One iteration permits at most
-one review of each kind. Any repair after code review consumes the next iteration; do not start a fourth iteration.
-The managed server refuses a fourth task of each review kind for this cluster worker, including after a restart.
+one review of each kind. Any repair after code review consumes the next iteration; do not start a sixth iteration.
+The managed server refuses a sixth task of each review kind for this cluster worker, including after a restart.
 An exhausted review budget is a bounded domain outcome; finalize existing work rather than retrying the rejected add.
 
 Only BLOCKER findings require repairs. MAJOR findings request another iteration when one remains, but do not stop
 example validation, project execution, or downstream reviews in the current iteration. Do not change code merely to
 clear MAJOR or MINOR findings; carry them into the next review for reassessment against the collected evidence. If the
-candidate is unchanged, reuse its hash-matched measurements. At the third iteration, proceed with a blocker-free,
+candidate is unchanged, reuse its hash-matched measurements. At the fifth iteration, proceed with a blocker-free,
 validated candidate, set the cluster to `Generated`, and record every unresolved MAJOR finding for that exact candidate
 in `description.json` under `knownProblems`. An unresolved MAJOR finding on the last review must never leave the cluster
 `Pending`. If a BLOCKER or required validation failure remains, preserve valid Pending state and report the remaining

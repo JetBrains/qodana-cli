@@ -35,8 +35,8 @@ class StoreTest {
             val cluster = store.addTask(generation.token, "edict-cluster-generation", "First cluster")
             clusterId = cluster.id
             val worker = store.launch(generation.token, cluster.id, cluster.skill, emptyList(), listOf("clusters/first"))
-            for (skill in reviewSkills) repeat(3) { iteration ->
-                val review = store.addTask(worker.token, skill, "Review iteration ${iteration + 1}/3")
+            for (skill in reviewSkills) repeat(5) { iteration ->
+                val review = store.addTask(worker.token, skill, "Review iteration ${iteration + 1}/5")
                 val reviewer = store.launch(worker.token, review.id, skill, emptyList(), listOf("clusters/first"))
                 store.finishTask(reviewer.token, "completed", "Reviewed")
             }
@@ -46,7 +46,7 @@ class StoreTest {
             val generation = store.launch(resumed.token, generationId, "edict-generation", emptyList(), listOf("clusters"))
             val worker = store.launch(generation.token, clusterId, "edict-cluster-generation", emptyList(), listOf("clusters/first"))
             for (skill in reviewSkills) {
-                assertTrue(assertFails { store.addTask(worker.token, skill, "Fourth attempt") }.message!!.contains("Three review iterations"))
+                assertTrue(assertFails { store.addTask(worker.token, skill, "Sixth attempt") }.message!!.contains("Five review iterations"))
             }
             // Example creation is not an additional review iteration.
             repeat(4) { store.addTask(worker.token, "edict-code-example", "Example $it") }
@@ -55,7 +55,7 @@ class StoreTest {
             for (skill in reviewSkills) {
                 store.addTask(sibling.token, skill, "First review")
             }
-            assertEquals(3, store.plan()!!.tasks.count { it.parentId == clusterId && it.skill == "edict-inspection-code-review" })
+            assertEquals(5, store.plan()!!.tasks.count { it.parentId == clusterId && it.skill == "edict-inspection-code-review" })
         }
     }
 

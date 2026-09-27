@@ -24,7 +24,7 @@ import org.jetbrains.qodana.edict.signals.SignalValidation
 import org.jetbrains.qodana.edict.skills.Registry
 
 internal const val MAX_ARTIFACT_BYTES = 8 * 1024 * 1024
-internal const val MAX_REVIEW_ITERATIONS = 3
+internal const val MAX_REVIEW_ITERATIONS = 5
 private val generationReviews = setOf("edict-inspection-code-review", "edict-weak-signal-review", "edict-inspection-value-review")
 // Look ahead so a hexadecimal prefix cannot hide a token inside a longer run.
 private val possibleToken = Regex("(?=([0-9a-f]{64}))")
@@ -87,7 +87,7 @@ class Store(directory: Path) : AutoCloseable {
         val p = checkNotNull(current)
         if (c.skill == "edict-cluster-generation" && skill in generationReviews) {
             require(p.tasks.count { it.parentId == c.taskId && it.skill == skill } < MAX_REVIEW_ITERATIONS) {
-                "Three review iterations exhausted for $skill; finish this cluster with its validated outcome and remaining findings"
+                "Five review iterations exhausted for $skill; finish this cluster with its validated outcome and remaining findings"
             }
         }
         require(p.tasks.size < 10000) { "Task limit reached" }
