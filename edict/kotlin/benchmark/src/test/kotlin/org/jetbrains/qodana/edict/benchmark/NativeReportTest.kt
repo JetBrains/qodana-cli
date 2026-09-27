@@ -1,6 +1,9 @@
 // Copyright 2026 JetBrains s.r.o. Licensed under the Apache License, Version 2.0.
 package org.jetbrains.qodana.edict.benchmark
 
+import kotlinx.serialization.json.JsonArray
+import kotlinx.serialization.json.JsonPrimitive
+import kotlinx.serialization.json.jsonObject
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.io.TempDir
 import java.nio.file.Path
@@ -9,6 +12,13 @@ import kotlin.test.*
 
 class NativeReportTest {
     @TempDir lateinit var root: Path
+    @Test fun `project scan disables all inspections without naming an empty profile`() {
+        val configuration = projectConfiguration(linkedSetOf("EdictBenchmarkRule"))
+        assertNull(configuration["inspections"])
+        assertEquals(JsonArray(listOf(obj("group" to text("ALL"), "enabled" to JsonPrimitive(false)))),
+            configuration.getValue("profile").jsonObject["inspections"])
+        assertEquals(JsonArray(listOf(obj("name" to text("EdictBenchmarkRule")))), configuration["include"])
+    }
     @Test fun `scoring renames descriptor metadata without changing the implementation`() {
         val code = """val implementation = localInspection { file, inspection -> println("Original") }
             listOf(InspectionKts(id = "Original", localTool = implementation, name = "Original"))"""
