@@ -3,7 +3,11 @@ set -euo pipefail
 source "$(dirname "$0")/common.sh"
 
 mkdir -p "$benchmark_output/tooling/bin"
-(cd "$benchmark_source" && go build -o "$benchmark_output/tooling/bin/qodana" ./cli)
+(
+  cd "$benchmark_source"
+  go generate ./internal/tooling/...
+  go build -o "$benchmark_output/tooling/bin/qodana" ./cli
+)
 
 qodana --version
 git -C "$benchmark_source" rev-parse HEAD > "$benchmark_output/runner-revision.txt"
