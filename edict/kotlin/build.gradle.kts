@@ -14,6 +14,8 @@ dependencies {
     implementation("org.tomlj:tomlj:1.1.1")
     testImplementation(kotlin("test-junit5"))
     testRuntimeOnly("org.junit.platform:junit-platform-launcher")
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.10.2")
+    implementation("io.modelcontextprotocol:kotlin-sdk-server:0.15.0")
 }
 
 kotlin { jvmToolchain(21) }

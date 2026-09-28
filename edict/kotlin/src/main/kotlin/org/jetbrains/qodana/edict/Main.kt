@@ -1,6 +1,13 @@
 // Copyright 2026 JetBrains s.r.o. Licensed under the Apache License, Version 2.0.
 package org.jetbrains.qodana.edict
 
+import io.modelcontextprotocol.kotlin.sdk.server.StdioServerTransport
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.runBlocking
+import kotlinx.io.asSink
+import kotlinx.io.asSource
+import kotlinx.io.buffered
+import org.jetbrains.qodana.edict.edictnext.EdictNextMcpToolset
 import org.jetbrains.qodana.edict.mcp.McpServer
 import org.jetbrains.qodana.edict.skills.Skills
 import org.jetbrains.qodana.edict.store.Store
@@ -53,11 +60,27 @@ fun main(args: Array<String>) {
                 }
             }
 
+            "edict-mcp-next" -> {
+                require(options.isEmpty()) { "edict-mcp-next does not accept options" }
+                val server = EdictNextMcpToolset().createServer()
+                val transport = StdioServerTransport(
+                    input = System.`in`.asSource().buffered(),
+                    output = System.out.asSink().buffered(),
+                )
+                runBlocking {
+                    val session = server.createSession(transport)
+                    val closed = Job()
+                    session.onClose { closed.complete() }
+                    closed.join()
+                }
+            }
+
             "help", "--help", "-h" -> println(
                 """
                 Edict managed skills (standalone Kotlin/JVM)
                   edict install-skills --directory <skills-directory> [--skill <name>]
                   edict mcp [--project-dir <project>] [--state-dir <state>] [--log-dir <logs>] [--embedding-python <python>] [--http-port <port>]
+                  edict edict-mcp-next
                 MCP uses stdio by default. HTTP binds to loopback and shares one store across workers.
             """.trimIndent()
             )
