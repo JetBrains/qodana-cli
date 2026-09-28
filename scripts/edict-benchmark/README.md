@@ -5,11 +5,10 @@ The fixture VCS root checks out `qodana/edict-jenkins` into `project`; the sourc
 VCS root checks out `JetBrains/qodana-cli`, branch `avafanasev/edict-master`, into
 `qodana-cli`. Scripts never fetch or check out repositories.
 
-The pipeline has six steps:
+The pipeline has seven steps:
 
 1. `install-codex.sh` installs pinned Codex, configures LiteLLM using the secure
-   `LITELLM_API_KEY` environment parameter, provisions Python 3.12 with the pinned
-   embedding dependencies.
+   `LITELLM_API_KEY` environment parameter.
 2. `install-qodana.sh` generates the embedded tooling, builds a static Qodana CLI directly
    from the source checkout with `CGO_ENABLED=0 go build`, and installs it under the
    benchmark tooling directory. TeamCity runs this step in the repository's published
@@ -17,23 +16,27 @@ The pipeline has six steps:
    need to match the container's glibc version.
 3. `install-intellij.sh` verifies and extracts the native IntelliJ distribution supplied
    by the TeamCity artifact dependency.
-4. `prepare.sh` runs `qodana edict install`, enables every installed skill, and
-   configures Codex to launch `qodana edict mcp start` over stdio using the checked-out
+4. `install-embedding-python.sh` provisions Python 3.12 with the pinned embedding
+   dependencies. It creates a dedicated Python launcher that preloads the environment's
+   OpenMP runtime before importing the embedding stack, avoiding the ARM64 static-TLS
+   load-order failure without affecting the MCP JVM or unrelated build steps.
+5. `prepare.sh` runs `qodana edict install`; Codex discovers the installed skills
+   under `CODEX_HOME` and enables them by default. The script starts a shared
+   `qodana edict mcp start` HTTP server using the checked-out
    project's **`project/.edict`** as its state directory. It starts inspections with
    `qodana edict linter-mcp start`, selecting native execution through `QODANA_DIST`.
-   Codex launches the managed server with the prepared embedding interpreter rather
-   than the agent's default Python; on ARM64 its bundled OpenMP runtime is preloaded
-   to avoid static-TLS load-order failures. The existing
+   The managed server uses the prepared embedding launcher rather than the agent's
+   default Python. The existing
    `.edict/inbox` files are used directly, without importing, copying, or filtering
    signals. The CLI launches the native `idea mcpServer` headless entry point
    and waits for readiness.
-   The inspection server must be ready before execution; the managed server is required
-   during Codex startup. MCP tool calls are auto-approved.
-5. `generate.sh` executes Codex directly with `process inbox and generate new rules`.
+   Both servers must be ready before execution. The shared managed endpoint remains
+   available to isolated Codex workers, and MCP tool calls are auto-approved.
+6. `generate.sh` executes Codex directly with `process inbox and generate new rules`.
    The prompt also supplies the existing state and private scratch paths.
    Generation uses TeamCity’s normal execution mode so cancellation remains
    interruptible. TeamCity cleans up server processes when the build finishes.
-6. A TeamCity **Gradle runner** executes `:benchmark:report`. Kotlin runs the accepted
+7. A TeamCity **Gradle runner** executes `:benchmark:report`. Kotlin runs the accepted
    inspections from `.edict/inspections` natively, writes SARIF into `benchmark-output`,
    and compares it with `.edict/gold.sarif.json`.
    No benchmark Kotlin controller runs before Codex.

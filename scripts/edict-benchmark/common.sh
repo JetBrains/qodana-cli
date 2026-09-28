@@ -10,6 +10,7 @@ benchmark_codex_home="$benchmark_output/codex-home"
 benchmark_scratch="$benchmark_output/scratch"
 benchmark_embedding_venv="$benchmark_output/embedding-python"
 benchmark_embedding_python="$benchmark_embedding_venv/bin/python"
+benchmark_embedding_launcher="$benchmark_output/tooling/bin/embedding-python"
 
 embedding_libgomp() {
   find "$benchmark_embedding_venv" -type f -name 'libgomp*.so*' -print -quit
