@@ -41,7 +41,8 @@ Pending/Invalid outcome may complete the bounded task, but missing required inpu
 
 ## 1. Complete the evidence
 
-Read description, history, prior scratch attempt artifacts, every signal, and referenced examples through MCP.
+Read description, history, every signal, and referenced examples through MCP. Read prior attempt artifacts from private
+scratch.
 Retrieve every signal's exact historical source revision and relevant ranges with read-only Git or an available
 revision reader. Current signals and exact source evidence govern the rule; prior history preserves continuity but does
 not override them. Refine a misleading description through MCP with a history entry recording old/new text, reason,

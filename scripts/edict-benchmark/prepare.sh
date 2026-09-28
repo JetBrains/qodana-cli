@@ -1,22 +1,22 @@
 #!/usr/bin/env bash
 set -euo pipefail
 source "$(dirname "$0")/common.sh"
-trap 'stop_servers' EXIT
-trap 'exit 130' INT TERM
-: "${QODANA_TOKEN:?}"
-test -d "$benchmark_state/inbox"
-mkdir -p "$benchmark_output/trace" "$benchmark_output/log/edict"
-: >> "$benchmark_output/log/edict/edict-tasks.log"
 
 qodana edict install --dest "$benchmark_codex_home/skills"
-for skill_file in "$benchmark_codex_home"/skills/*/SKILL.md; do
-  [[ -f "$skill_file" ]] || continue
-  printf '\n[[skills.config]]\npath = "%s"\nenabled = true\n' "$skill_file" >> "$benchmark_codex_home/config.toml"
-done
 
-[[ -x "$benchmark_embedding_python" ]] || { echo "Embedding Python not found: $benchmark_embedding_python" >&2; exit 1; }
-embedding_openmp=$(embedding_libgomp)
-[[ -n "$embedding_openmp" ]] || { echo "Embedding environment has no libgomp runtime" >&2; exit 1; }
+[[ -x "$benchmark_embedding_launcher" ]] || { echo "Embedding Python launcher not found: $benchmark_embedding_launcher" >&2; exit 1; }
+nohup setsid qodana edict mcp start --project-dir "$benchmark_project" --state-dir "$benchmark_state" \
+  --embedding-python "$benchmark_embedding_launcher" \
+  --log-dir "$benchmark_output/log" --http-port 0 > "$benchmark_output/log/edict-server.log" 2>&1 < /dev/null &
+echo $! > "$benchmark_output/edict.pid"
+edict_url=
+for ((attempt=0; attempt<90; attempt++)); do
+  kill -0 "$(cat "$benchmark_output/edict.pid")" 2>/dev/null || { echo 'Edict MCP exited during startup' >&2; exit 1; }
+  edict_url=$(sed -nE 's/.*edict-mcp listening at (http[^[:space:]]+).*/\1/p' "$benchmark_output/log/edict-server.log" | head -1)
+  [[ -z "$edict_url" ]] || break
+  sleep 1
+done
+[[ -n "$edict_url" ]] || { echo 'Edict MCP startup timed out' >&2; exit 1; }
 
 # QODANA_DIST selects the native distribution unpacked by the previous step.
 inspection_url=$(
@@ -29,11 +29,8 @@ inspection_url=$(
 cat >> "$benchmark_codex_home/config.toml" <<CONFIG
 
 [mcp_servers.edict-mcp]
-command = "$benchmark_output/tooling/bin/qodana"
-args = ["edict", "mcp", "start", "--project-dir", "$benchmark_project", "--state-dir", "$benchmark_state", "--embedding-python", "$benchmark_embedding_python", "--log-dir", "$benchmark_output/log"]
-env = { LD_PRELOAD = "$embedding_openmp${LD_PRELOAD:+:$LD_PRELOAD}" }
+url = "$edict_url"
 default_tools_approval_mode = "approve"
-startup_timeout_sec = 90
 required = true
 [mcp_servers.inspection]
 url = "$inspection_url"
@@ -41,5 +38,5 @@ default_tools_approval_mode = "approve"
 tool_timeout_sec = 1800
 required = true
 CONFIG
-echo "Inspection MCP is ready; managed Edict MCP will use existing state at $benchmark_state."
+echo "Both MCP servers are ready; using existing state at $benchmark_state."
 trap - EXIT INT TERM
