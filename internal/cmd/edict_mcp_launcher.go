@@ -74,7 +74,7 @@ func (qodanaMCPLauncher) Launch(_ context.Context, request edictmcp.LaunchReques
 
 func ideMCPArguments(executable string, request edictmcp.LaunchRequest) []string {
 	args := []string{executable, mcpIDEStarter, "--project=" + request.ProjectDir, "--invocation-mode=direct",
-		"--allowed-tools=generate_psi_tree,generate_inspection_kts_api,generate_inspection_kts_examples,run_inspection_kts"}
+		"--allowed-tools=generate_psi_tree,generate_inspection_kts_api,generate_inspection_kts_examples,run_inspection_kts,compile_inspection_kts,run_inspection_kts_examples,run_inspection_kts_project"}
 	// Omit port 0: the IDE starter selects a free port when no port is supplied.
 	if request.Port != 0 {
 		args = append(args, fmt.Sprintf("--port=%d", request.Port))

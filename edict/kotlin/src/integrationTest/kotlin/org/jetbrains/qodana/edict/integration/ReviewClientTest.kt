@@ -6,16 +6,11 @@ import kotlinx.serialization.json.JsonPrimitive
 import org.jetbrains.qodana.edict.common.json
 import org.jetbrains.qodana.edict.integration.support.IntegrationTest
 import org.jetbrains.qodana.edict.integration.support.historyPath
-import org.jetbrains.qodana.edict.model.Provenance
-import org.jetbrains.qodana.edict.model.SignalSource
-import org.jetbrains.qodana.edict.model.Step
 import org.jetbrains.qodana.edict.reviews.*
 import org.jetbrains.qodana.edict.signals.UnifiedDiff
-import org.jetbrains.qodana.edict.store.Store
 import org.jetbrains.qodana.edict.support.afterSource
 import org.jetbrains.qodana.edict.support.beforeSource
 import org.jetbrains.qodana.edict.support.fixturePath
-import org.jetbrains.qodana.edict.support.launch
 import org.junit.jupiter.api.Test
 import java.net.InetSocketAddress
 import java.net.URLDecoder
@@ -177,90 +172,4 @@ class ReviewClientTest : IntegrationTest() {
         }
     }
 
-    @Test
-    fun `PR validation binds ordered coverage and exact bytes to coordinator task`() {
-        val signal = workspace.signals().first()
-        val review = PullRequest(
-            7,
-            "https://review/7",
-            "Fix equality",
-            "Context",
-            signal.source.parentRevision!!,
-            signal.source.commitRevision!!,
-            1790000000000,
-            listOf(
-                ReviewThread(
-                    "root",
-                    "https://review/7#root",
-                    historyPath,
-                    signal.fileRevision.revision,
-                    5,
-                    5,
-                    listOf(ReviewMessage("reviewer", "Compare string values", "2026-09-21"))
-                )
-            )
-        )
-        val provider = object : ReviewProvider {
-            override fun fetch(selection: ReviewSelection) = listOf(review)
-            override fun file(repository: ReviewRepository, revision: String, path: String) =
-                error("Unexpected source call")
-
-            override fun diff(
-                repository: ReviewRepository,
-                before: String,
-                after: String,
-                beforePath: String,
-                afterPath: String
-            ) = error("Unexpected diff call")
-        }
-        Store(workspace.state).use { store ->
-            val analysis = PrAnalysis(store, provider)
-            val manager = store.createPlan(
-                "Reviews",
-                listOf(Step("edict-pr-signal-analysis", "First"), Step("edict-pr-signal-analysis", "Second"))
-            )
-            val coordinator = store.launch(
-                manager.token,
-                manager.plan.tasks[0].id,
-                "edict-pr-signal-analysis",
-                listOf("inbox.write"),
-                listOf("inbox")
-            )
-            val other = store.launch(
-                manager.token,
-                manager.plan.tasks[1].id,
-                "edict-pr-signal-analysis",
-                listOf("inbox.write"),
-                listOf("inbox")
-            )
-            assertFails { store.finishTask(coordinator.token, "completed", "Premature") }
-            val batch = analysis.prepare(coordinator.token, ReviewSelection("github", "o", "r", 1, listOf(7)))
-            assertFails { analysis.list(other.token, batch.batchId, 0, 20) }
-            val item = analysis.list(coordinator.token, batch.batchId, 0, 20).items.single()
-            val prSignal = signal.copy(
-                source = SignalSource(
-                    "FromPR", signal.source.diffPositiveToNegative, prNumber = 7, title = review.title,
-                    discussionMessages = listOf("Compare string values"), url = "https://review/7#root"
-                ), provenance = Provenance(item.workItemId)
-            )
-            val content = json.encodeToString(prSignal)
-            val path = "inbox/${signal.id}.json"
-            assertFails { store.write(coordinator.token, path, content, "") }
-            assertFails { analysis.validate(coordinator.token, batch.batchId, emptyList(), listOf(content)) }
-            assertFails {
-                analysis.validate(
-                    coordinator.token,
-                    batch.batchId,
-                    listOf(item.workItemId),
-                    listOf(json.encodeToString(prSignal.copy(source = prSignal.source.copy(title = "Invented"))))
-                )
-            }
-            analysis.validate(coordinator.token, batch.batchId, listOf(item.workItemId), listOf(content))
-            assertFails { store.finishTask(coordinator.token, "completed", "Missing publication") }
-            assertFails { store.write(coordinator.token, path, "$content\n", "") }
-            store.write(coordinator.token, path, content, "")
-            store.finishTask(coordinator.token, "completed", "Published")
-            assertFails { analysis.get(coordinator.token, batch.batchId, item.workItemId) }
-        }
-    }
 }

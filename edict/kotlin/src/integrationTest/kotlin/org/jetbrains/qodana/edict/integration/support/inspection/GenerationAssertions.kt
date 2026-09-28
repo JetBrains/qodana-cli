@@ -6,7 +6,7 @@ import java.nio.file.Path
 import kotlinx.serialization.json.jsonObject
 import org.jetbrains.qodana.edict.common.text
 import org.jetbrains.qodana.edict.common.wireJson
-import org.jetbrains.qodana.edict.model.Plan
+import org.jetbrains.qodana.edict.edictnext.EdictNextRepositoryState.Plan
 
 internal fun acceptedCandidateReviews(scratch: Path, candidateHash: String): List<Path> =
     Files.walk(scratch).use { files -> files.filter { Files.isRegularFile(it) }.filter { path ->

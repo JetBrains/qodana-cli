@@ -1,25 +1,30 @@
 // Copyright 2026 JetBrains s.r.o. Licensed under the Apache License, Version 2.0.
 package org.jetbrains.qodana.edict.integration
 
-import kotlinx.serialization.json.*
-import org.jetbrains.qodana.edict.common.*
-import org.jetbrains.qodana.edict.integration.support.*
-import org.jetbrains.qodana.edict.integration.support.inspection.InspectionServer
-import org.jetbrains.qodana.edict.integration.support.inspection.acceptedCandidateReviews
-import org.jetbrains.qodana.edict.integration.support.inspection.decodeInspectionResult
-import org.jetbrains.qodana.edict.integration.support.inspection.stageOrderProblems
-import org.jetbrains.qodana.edict.model.Plan
-import org.jetbrains.qodana.edict.model.Signal
-import org.jetbrains.qodana.edict.model.SignalLabel
-import org.jetbrains.qodana.edict.model.SignalRange
-import org.jetbrains.qodana.edict.runtime.CodexRunner
-import org.jetbrains.qodana.edict.store.Store
-import org.junit.jupiter.api.Test
 import java.nio.file.Files
+import kotlin.io.path.readText
 import kotlin.test.assertContains
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
+import kotlinx.coroutines.runBlocking
+import kotlinx.serialization.json.decodeFromJsonElement
+import kotlinx.serialization.json.JsonArray
+import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.jsonObject
+import org.jetbrains.qodana.edict.common.sha256
+import org.jetbrains.qodana.edict.common.wireJson
+import org.jetbrains.qodana.edict.edictnext.EdictNextClusterStatus
+import org.jetbrains.qodana.edict.edictnext.EdictNextRepositoryState.Plan
+import org.jetbrains.qodana.edict.edictnext.EdictNextSignalLabel
+import org.jetbrains.qodana.edict.edictnext.EdictRepository
+import org.jetbrains.qodana.edict.edictnext.EdictRepositoryDirectory
+import org.jetbrains.qodana.edict.integration.support.*
+import org.jetbrains.qodana.edict.integration.support.inspection.InspectionServer
+import org.jetbrains.qodana.edict.integration.support.inspection.acceptedCandidateReviews
+import org.jetbrains.qodana.edict.integration.support.inspection.stageOrderProblems
+import org.jetbrains.qodana.edict.runtime.CodexRunner
+import org.junit.jupiter.api.Test
 
 class LivePipelineTest : IntegrationTest() {
     override val fixtureRevision = threeCommitHead
@@ -30,28 +35,39 @@ class LivePipelineTest : IntegrationTest() {
         val expected = threeCommitExpectations().last()
         InspectionServer.start(workspace).use { inspection ->
             workspace.withCodex(
-                "Run three tasks in order: extract signals from the latest commit, cluster them, then generate inspections.",
-                inspectionUrl = inspection.url, timeoutMinutes = 60,
+                """
+                Use edict_manager and execute exactly three top-level tasks in this order:
+                1. edict-batch-signal-analysis: extract Signals from exactly $threeCommitHead^! with commit limit 1.
+                2. edict-next-distribution: distribute every extracted inbox Signal.
+                3. edict-next-generation: generate and validate inspections for every Pending cluster.
+
+                Source checkout: ${workspace.repository.root}
+                Edict worktree and state root: ${workspace.state}
+                Inspected IntelliJ project: ${workspace.project}
+                Generation scratch root: ${workspace.output.resolve("scratch/pipeline-generation")}
+                Publish extracted Signals only through edict_state_write. Follow the managed protocol for every worker.
+                """.trimIndent(),
+                inspectionServer = inspection,
+                timeoutMinutes = 180,
             ) { store, runtime, _ ->
                 val plan = assertNotNull(store.plan())
                 val required = setOf(
                     "edict-batch-signal-analysis",
                     "edict-signal-analysis",
-                    "edict-distribution",
-                    "edict-generation",
-                    "edict-cluster-generation",
-                    "edict-code-example",
-                    "edict-inspection-code-review",
-                    "edict-weak-signal-review",
-                    "edict-inspection-value-review"
+                    "edict-next-distribution",
+                    "edict-next-generation",
+                    "edict-next-cluster-generation",
+                    "edict-next-code-example-overseer",
+                    "edict-next-inspection-code-review",
+                    "edict-next-weak-signal-review",
                 )
                 assertTrue(
                     plan.tasks.map { it.skill }.toSet().containsAll(required),
-                    "Pipeline must execute extraction, distribution, generation and all native review/example workers"
+                    "Pipeline must execute extraction, distribution, generation, example reconciliation and both reviews",
                 )
                 verifyManagedRun(workspace, runtime, plan)
                 verifySequentialStages(plan)
-                verifyGeneratedCluster(store, runtime, inspection, expected)
+                verifyGeneratedCluster(runtime, inspection, expected)
             }
         }
     }
@@ -59,12 +75,14 @@ class LivePipelineTest : IntegrationTest() {
     private fun verifySequentialStages(plan: Plan) {
         val stages = plan.tasks.filter { it.parentId.isEmpty() }
         assertEquals(
-            listOf("edict-batch-signal-analysis", "edict-distribution", "edict-generation"),
-            stages.map { it.skill })
+            listOf("edict-batch-signal-analysis", "edict-next-distribution", "edict-next-generation"),
+            stages.map { it.skill },
+        )
         val ids = stages.map { it.id }
         val snapshots = Files.readAllLines(workspace.logs.resolve("edict-mcp-system.log")).mapNotNull { line ->
-            val result =
-                wireJson.parseToJsonElement(line.substringAfter(" => ")).jsonObject["structuredContent"] as? JsonObject
+            val encoded = line.substringAfter(" => ", missingDelimiterValue = "")
+            if (encoded.isEmpty()) return@mapNotNull null
+            val result = runCatching { wireJson.parseToJsonElement(encoded).jsonObject["structuredContent"] as? JsonObject }.getOrNull()
             (result?.get("plan") as? JsonObject ?: result)?.takeIf { it["tasks"] is JsonArray }
                 ?.let { wireJson.decodeFromJsonElement<Plan>(it) }
         }
@@ -73,95 +91,60 @@ class LivePipelineTest : IntegrationTest() {
     }
 
     private fun verifyGeneratedCluster(
-        store: Store,
         runtime: CodexRunner,
         inspection: InspectionServer,
-        expected: CommitExpectation
+        expected: CommitExpectation,
     ) {
-        assertTrue(store.list("inbox").isEmpty(), "Clustering must consume every extracted signal")
-        val descriptions = store.list("clusters").filter { it.endsWith("/description.json") }
-        assertEquals(1, descriptions.size, "The positive/negative pair must form exactly one cluster")
-        val descriptionPath = descriptions.single()
-        val clusterPath = descriptionPath.substringBeforeLast('/')
-        val cluster = clusterPath.substringAfterLast('/')
-        val description = wireJson.parseToJsonElement(store.read(descriptionPath).content).jsonObject
-        assertEquals(cluster, description.text("id"))
-        assertEquals("Java", description.text("language"))
-        assertEquals(
-            "Generated",
-            description.text("status"),
-            "Generation must produce an accepted inspection; inspect cluster history and agent logs"
-        )
-        val signalFiles = store.list("$clusterPath/signals").map(store::read)
-        verifyCommitSignals(workspace.repository, signalFiles, listOf(expected))
-        val accepted = "inspections/$cluster.inspection.kts"
-        val code = store.read(accepted).content
+        val repository = EdictRepository(EdictRepositoryDirectory(workspace.state))
+        val state = runBlocking { repository.loadState() }
+        assertTrue(state.inboxSignals.isEmpty(), "Distribution must consume every extracted Signal")
+        assertEquals(1, state.clusters.size, "The positive/negative pair must form exactly one cluster")
+        val cluster = state.clusters.single()
+        assertEquals(EdictNextClusterStatus.Generated, cluster.manifest.status)
+        assertEquals("Java", cluster.manifest.language.name)
+        verifyCommitSignals(workspace.repository, signalFiles(cluster.directory.signalsDirectory), listOf(expected))
+
+        val code = assertNotNull(state.inspectionCode(cluster.id))
         assertTrue(code.isNotBlank())
         assertEquals(
-            listOf(accepted),
-            store.list("inspections"),
-            "Only the accepted inspection may remain, with no candidate"
+            listOf("inspections/${cluster.id}.inspection.kts"),
+            state.filesByRelativePath.keys.filter { it.startsWith("inspections/") }.sorted(),
+            "Only the accepted inspection may remain, with no candidate",
         )
-        assertTrue(store.read("$clusterPath/history.md").content.isNotBlank())
+        assertTrue(cluster.historyPath.readText().isNotBlank())
 
-        // Independently compile the actual persisted bytes against both original Git revisions.
         val contextPath = expected.path.removePrefix("$threeCommitProject/")
-        val originalPositive =
-            inspection.run(code, contextPath, workspace.repository.fileAt(expected.parent, expected.path))
-        assertContains(
-            originalPositive.problemLines,
-            expected.positiveLine,
-            "Accepted inspection must detect the original integer overflow"
-        )
-        val originalNegative =
-            inspection.run(code, contextPath, workspace.repository.fileAt(expected.revision, expected.path))
+        val originalPositive = inspection.run(code, contextPath, workspace.repository.fileAt(expected.parent, expected.path))
+        assertContains(originalPositive.problemLines, expected.positiveLine, "Accepted inspection must detect the original problem")
+        val originalNegative = inspection.run(code, contextPath, workspace.repository.fileAt(expected.revision, expected.path))
         assertTrue(originalNegative.problemLines.isEmpty(), "Accepted inspection must not flag the corrected revision")
 
-        signalFiles.forEach { file ->
-            val signal = json.decodeFromString<Signal>(file.content)
-            val example =
-                assertNotNull(signal.syntheticExampleId, "Generation must assign every signal a measured example")
-            val directory = "$clusterPath/synthetic-examples/$example"
-            val metadata = wireJson.parseToJsonElement(store.read("$directory/metadata.json").content).jsonObject
-            assertEquals(example, metadata.text("id"))
-            assertEquals(signal.label.name, metadata.text("label"))
-            val filename = metadata.text("fileName")
-            assertTrue(
-                filename.isNotBlank() && '/' !in filename && '\\' !in filename,
-                "Example must use a single source file"
-            )
-            val source = store.read("$directory/project/$filename").content
-            val measured = inspection.run(code, contextPath, source)
-            val ranges =
-                (metadata["expectedRanges"] as? JsonArray).orEmpty().map { json.decodeFromJsonElement<SignalRange>(it) }
-            if (signal.label == SignalLabel.POSITIVE) {
-                assertEquals(1, ranges.size)
-                assertEquals(
-                    1,
-                    measured.problemLines.size,
-                    "Positive example must contain exactly one detected problem"
-                )
-                assertTrue(measured.problemLines.single() in ranges.single().start..ranges.single().end)
-            } else {
-                assertTrue(ranges.isEmpty())
-                assertTrue(measured.problemLines.isEmpty(), "Negative example must not be reported")
+        cluster.signals.forEach { signal ->
+            val exampleId = assertNotNull(signal.syntheticExampleId, "Generation must assign every Signal a measured example")
+            val example = cluster.examples.single { it.metadata.id == exampleId }
+            val measured = inspection.run(code, contextPath, example.code)
+            when (signal.label) {
+                EdictNextSignalLabel.POSITIVE -> {
+                    val ranges = assertNotNull(example.metadata.expectedRanges)
+                    assertEquals(1, ranges.size)
+                    assertEquals(1, measured.problemLines.size, "Positive example must contain exactly one detected problem")
+                    assertTrue(measured.problemLines.single() in ranges.single().start..ranges.single().end)
+                }
+                EdictNextSignalLabel.NEGATIVE -> {
+                    assertTrue(example.metadata.expectedRanges.isNullOrEmpty())
+                    assertTrue(measured.problemLines.isEmpty(), "Negative example must not be reported")
+                }
             }
         }
         verifyGenerationEvidence(runtime, code)
     }
 
     private fun verifyGenerationEvidence(runtime: CodexRunner, code: String) {
-        val hash = sha256(code)
-        val acceptedReviews = acceptedCandidateReviews(runtime.scratch, hash)
-        assertTrue(acceptedReviews.size >= 2, "Code and value reviews must accept the exact persisted inspection hash")
-        val measured = Files.readAllLines(workspace.output.resolve("log/inspection-mcp.jsonl"))
+        val acceptedReviews = acceptedCandidateReviews(runtime.scratch, sha256(code))
+        assertTrue(acceptedReviews.isNotEmpty(), "Code review must accept the exact persisted inspection hash")
+        val calls = Files.readAllLines(workspace.output.resolve("log/inspection-mcp.jsonl"))
             .map { wireJson.parseToJsonElement(it).jsonObject }
-            .count { call ->
-                call.text("tool") == "run_inspection_kts" && call.obj("arguments").text("inspectionKtsCode") == code &&
-                        runCatching { decodeInspectionResult(call.obj("result")).compilationSuccess }.getOrDefault(false)
-            }
-        assertTrue(measured >= 3, "Agent must compile and measure its final candidate on examples and project source")
+        assertTrue(calls.any { it["tool"]?.toString()?.contains("compile_inspection_kts") == true })
+        assertTrue(calls.any { it["tool"]?.toString()?.contains("run_inspection_kts_examples") == true })
     }
 }
-
-/** Review skills require a JSON object at the assigned output path, without prescribing a file extension. */

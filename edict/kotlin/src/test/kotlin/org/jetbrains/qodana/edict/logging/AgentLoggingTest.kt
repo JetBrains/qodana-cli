@@ -2,11 +2,11 @@ package org.jetbrains.qodana.edict.logging
 
 import kotlinx.serialization.json.*
 import org.jetbrains.qodana.edict.common.*
-import org.jetbrains.qodana.edict.mcp.McpServer
-import org.jetbrains.qodana.edict.model.Step
+import org.jetbrains.qodana.edict.edictnext.EdictNextRepositoryState
+import org.jetbrains.qodana.edict.edictnext.EdictNextRepositoryState.Step
 import org.jetbrains.qodana.edict.runtime.CodexAgentCollector
 import org.jetbrains.qodana.edict.runtime.CodexRunner
-import org.jetbrains.qodana.edict.store.Store
+import org.jetbrains.qodana.edict.support.EdictNextTestTools
 import org.jetbrains.qodana.edict.support.launch
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.io.TempDir
@@ -23,21 +23,17 @@ class AgentLoggingTest {
 
     @Test
     fun `collector attributes nested output defers early workers and redacts revoked tokens`() {
-        Store(directory.resolve("state")).use { store ->
+        EdictNextRepositoryState.open(directory.resolve("state")).use { store ->
             val created = store.createPlan("Extract", listOf(Step("edict-batch-signal-analysis", "Commit")))
             val batch = store.launch(
                 created.token,
                 created.plan.tasks.single().id,
                 "edict-batch-signal-analysis",
-                emptyList(),
-                emptyList()
             )
             val child = store.addTask(batch.token, "edict-signal-analysis", "Inspect")
             val leaf = store.delegate(
                 batch.token,
                 child.id,
-                emptyList(),
-                emptyList(),
                 "\$edict-signal-analysis\nRead /skills/edict-signal-analysis/SKILL.md"
             )
             val home = directory.resolve("home")
@@ -137,9 +133,9 @@ class AgentLoggingTest {
 
     @Test
     fun `MCP logs contain complete assignments and summaries without capability leaks`() {
-        Store(directory.resolve("state")).use { store ->
+        EdictNextRepositoryState.open(directory.resolve("state")).use { store ->
             val logs = directory.resolve("log")
-            val server = McpServer(store, logs = logs)
+            val server = EdictNextTestTools(store, logs = logs)
             fun call(name: String, arguments: JsonObject): JsonObject {
                 val result = server.call(name, arguments)
                 assertEquals(false, result.flag("isError"))
@@ -185,7 +181,7 @@ class AgentLoggingTest {
 
     @Test
     fun `runtime failure still flushes agent messages`() {
-        Store(directory.resolve("state")).use { store ->
+        EdictNextRepositoryState.open(directory.resolve("state")).use { store ->
             val executable = directory.resolve("codex-stub")
             Files.writeString(
                 executable, """

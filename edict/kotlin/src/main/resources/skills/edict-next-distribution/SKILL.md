@@ -1,0 +1,37 @@
+---
+name: edict-next-distribution
+description: Managed subagent that sequentially assigns prepared inbox Signals to durable clusters.
+---
+
+# Edict Next Distribution
+
+Run only as a delegated managed subagent. Follow [the manager protocol](../edict_manager/references/protocol.md) before
+domain work and use its assigned task lifecycle.
+
+Load only this skill.
+
+Call `edict_prepare_pipeline(worktreePath)` once with the supplied Edict worktree.
+
+## Evidence
+
+`edict_next_signal` returns the complete incoming Signal; use it as the decision authority. Nearest embedding
+neighbors are comparison candidates, not proof of compatibility.
+
+Decide from the Signals: **can the incoming Signal and every current member be handled by the same IntelliJ
+inspection?** Assign only when yes and languages match.
+Positive and negative Signals may share a cluster when they define the boundary of that inspection. Otherwise create a
+new cluster with a provisional lowercase kebab-case id. Do not split an existing cluster; splitting is manual.
+
+## Loop
+
+Repeat until `edict_next_signal` returns `STOP_DISTRIBUTION`:
+
+1. Call `edict_next_signal` and read the complete Signal.
+2. For every plausible existing cluster, retrieve `kind: "cluster"` context and compare every member Signal, including
+   negatives. Retrieve a useful neighboring inbox Signal with `kind: "signal"`, or read its exact revision with
+   `get_file_at_ref` when needed.
+3. Choose one compatible existing cluster id or a new provisional id.
+4. Call `edict_next_add_signal_to_cluster` with `signalId` and `clusterId`. Existing-cluster assignment requires its
+   context receipt. If `added` is false, use the summary to correct the choice and retry the same Signal; do not request
+   the next Signal while it remains unassigned.
+Return only after distribution is complete.
