@@ -13,13 +13,22 @@ class ComparisonTest {
     private fun finding(line: Long, offset: Long? = null, path: String? = "X.java", rule: String = "Rule") =
         Finding(rule, path, line, offset, offset?.let { 4L })
 
-    @Test fun `nearby TP still leaves exact FN as in reference`() {
+    @Test fun `nearby TP covers the corresponding gold finding`() {
         val metrics = calculateMetrics("Rule", listOf(finding(10, 100)), listOf(finding(12, 200), finding(20, 300)))
         assertEquals(1, metrics.truePositives)
         assertEquals(1, metrics.falsePositives)
-        assertEquals(1, metrics.falseNegatives)
+        assertEquals(0, metrics.falseNegatives)
         assertEquals(1.0, metrics.recall)
         assertEquals(0.5, metrics.precision)
+    }
+
+    @Test fun `duplicate generated matches do not inflate recall`() {
+        val metrics = calculateMetrics("Rule", listOf(finding(10, 100)), listOf(finding(10, 100), finding(11, 200)))
+        assertEquals(2, metrics.truePositives)
+        assertEquals(0, metrics.falsePositives)
+        assertEquals(0, metrics.falseNegatives)
+        assertEquals(1.0, metrics.recall)
+        assertEquals(1.0, metrics.precision)
     }
 
     @Test fun `exact intersection is inclusive and missing locations never match`() {

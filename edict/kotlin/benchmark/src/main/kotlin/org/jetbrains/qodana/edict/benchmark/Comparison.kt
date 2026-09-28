@@ -3,8 +3,7 @@ package org.jetbrains.qodana.edict.benchmark
 
 import kotlin.math.abs
 
-// Preserve the reference's inclusive region intersection and two-line tolerance,
-// including its asymmetric FN calculation (exact matches only).
+// Preserve the reference's inclusive region intersection and two-line tolerance.
 internal fun matchExact(a: Finding, b: Finding): Boolean =
     a.path != null && a.path == b.path && a.charOffset != null && a.charLength != null &&
         b.charOffset != null && b.charLength != null &&
@@ -22,8 +21,11 @@ internal fun calculateMetrics(ruleId: String, gold: List<Finding>, findings: Lis
     val actual = findings.filter { it.ruleId == ruleId }
     val tp = actual.filter { candidate -> baseline.any { matchExact(it, candidate) || matchLenient(it, candidate) } }
     val fp = actual.size - tp.size
-    val fn = baseline.count { expected -> tp.none { matchExact(expected, it) } }
-    val recall = if (baseline.isEmpty()) 0.0 else tp.size.toDouble() / baseline.size
+    val coveredGold = baseline.count { expected ->
+        actual.any { matchExact(expected, it) || matchLenient(expected, it) }
+    }
+    val fn = baseline.size - coveredGold
+    val recall = if (baseline.isEmpty()) 0.0 else coveredGold.toDouble() / baseline.size
     val precision = if (actual.isEmpty()) 0.0 else tp.size.toDouble() / actual.size
     return InspectionMetrics(ruleId, tp.size, fp, fn, recall, precision, f1(precision, recall))
 }
