@@ -1,7 +1,5 @@
 package org.jetbrains.qodana.edict.edictnext
 
-import com.intellij.ml.llm.qodana.agents.edictnext.EDICT_NEXT_CANDIDATE_SUFFIX
-import com.intellij.ml.llm.qodana.agents.edictnext.EDICT_NEXT_INSPECTION_SUFFIX
 import java.nio.file.Path
 import kotlin.io.path.createDirectories
 import kotlin.io.path.isDirectory

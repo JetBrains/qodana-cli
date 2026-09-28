@@ -2,6 +2,10 @@
 package org.jetbrains.qodana.edict.mcp
 
 import com.sun.net.httpserver.HttpServer
+import io.modelcontextprotocol.kotlin.sdk.server.Server
+import io.modelcontextprotocol.kotlin.sdk.types.CallToolResult
+import io.modelcontextprotocol.kotlin.sdk.types.TextContent
+import io.modelcontextprotocol.kotlin.sdk.types.ToolSchema
 import kotlinx.serialization.json.*
 import org.jetbrains.qodana.edict.common.flag
 import org.jetbrains.qodana.edict.common.text
@@ -416,6 +420,31 @@ class McpServer(
                     )
                 )
             )
+        }
+    }
+
+    /** Reuses managed plan/task implementations in SDK-based servers without duplicating their authorization rules. */
+    internal fun registerManagedTools(server: Server, names: Set<String>) {
+        names.forEach { name ->
+            val tool = checkNotNull(tools[name]) { "Unknown managed MCP tool '$name'" }
+            val schema = tool.definition.getValue("inputSchema").jsonObject
+            server.addTool(
+                name = name,
+                description = tool.definition.getValue("description").jsonPrimitive.content,
+                inputSchema = ToolSchema(
+                    properties = schema.getValue("properties").jsonObject,
+                    required = (schema["required"] as? JsonArray).orEmpty().map { it.jsonPrimitive.content },
+                ),
+            ) { request ->
+                val result = call(name, request.arguments ?: JsonObject(emptyMap()))
+                CallToolResult(
+                    content = (result["content"] as? JsonArray).orEmpty().mapNotNull { item ->
+                        item.jsonObject.text("text").takeIf(String::isNotEmpty)?.let(::TextContent)
+                    },
+                    isError = result.flag("isError").takeIf { it == true },
+                    structuredContent = result["structuredContent"] as? JsonObject,
+                )
+            }
         }
     }
 

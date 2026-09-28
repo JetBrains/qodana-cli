@@ -1,6 +1,6 @@
 @file:OptIn(kotlinx.serialization.ExperimentalSerializationApi::class)
 
-package com.intellij.ml.llm.qodana.agents.edictnext
+package org.jetbrains.qodana.edict.edictnext
 
 import kotlinx.serialization.EncodeDefault
 import kotlinx.serialization.SerialName

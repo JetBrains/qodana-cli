@@ -1,8 +1,5 @@
 package org.jetbrains.qodana.edict.edictnext
 
-import com.intellij.ml.llm.qodana.agents.edictnext.EdictNextJson
-import com.intellij.ml.llm.qodana.agents.edictnext.EdictNextMarkGeneratedResponse
-import com.intellij.ml.llm.qodana.agents.edictnext.EdictNextSignalValidationResponse
 import io.modelcontextprotocol.kotlin.sdk.server.Server
 import io.modelcontextprotocol.kotlin.sdk.server.ServerOptions
 import io.modelcontextprotocol.kotlin.sdk.types.CallToolRequest
@@ -17,10 +14,14 @@ import kotlinx.serialization.json.encodeToJsonElement
 import kotlinx.serialization.json.jsonPrimitive
 import kotlinx.serialization.json.put
 import kotlinx.serialization.json.putJsonObject
+import org.jetbrains.qodana.edict.mcp.McpServer
 import kotlin.coroutines.cancellation.CancellationException
 
 /** Registers the Edict Next tools on the standalone MCP Kotlin SDK server. */
-internal class EdictNextMcpToolset {
+internal class EdictNextMcpToolset(
+  private val sessionId: String,
+  private val managedServer: McpServer,
+) {
   fun createServer(): Server = Server(
     serverInfo = Implementation(
       name = SERVER_NAME,
@@ -34,6 +35,8 @@ internal class EdictNextMcpToolset {
   ).also(::registerTools)
 
   private fun registerTools(server: Server) {
+    managedServer.registerManagedTools(server, MANAGED_TOOL_NAMES)
+
     server.addTool(
       name = "edict_next_prepare_pipeline",
       description = "Snapshot the complete Edict repository and prepare neighbours for up to 100 alphabetical inbox Signals. Call once.",
@@ -149,6 +152,22 @@ internal class EdictNextMcpToolset {
     }
 
     server.addTool(
+      name = "edict_next_get_new_inspection_results",
+      description = "Run the validated candidate over the analyzed project and create its weak-signal review manifest.",
+      inputSchema = stringArguments(
+        "clusterId" to "Cluster id; the candidate is inspections/<clusterId>.candidate.kts",
+        "privateScratchDirectory" to "Absolute private directory for review manifests and outputs",
+      ),
+    ) { request ->
+      EdictNextGenerationService.getInstance(sessionId)
+        .getNewInspectionResults(
+          request.requireString("clusterId"),
+          request.requireString("privateScratchDirectory"),
+        )
+        .toToolResult()
+    }
+
+    server.addTool(
       name = "edict_next_mark_generated",
       description = "Validate the current selected inspection and apply the cluster's Generated transition in one guarded operation.",
       inputSchema = stringArguments(
@@ -180,6 +199,21 @@ internal class EdictNextMcpToolset {
 
   private companion object {
     const val SERVER_NAME = "edict-mcp-next"
+    val MANAGED_TOOL_NAMES = setOf(
+      "edict_registry",
+      "edict_read",
+      "edict_list",
+      "edict_plan_get",
+      "edict_plan_create",
+      "edict_task_add",
+      "edict_delegate",
+      "edict_task_get",
+      "edict_task_start",
+      "edict_task_finish",
+      "edict_task_cancel",
+      "edict_state_write",
+      "edict_state_delete",
+    )
   }
 }
 

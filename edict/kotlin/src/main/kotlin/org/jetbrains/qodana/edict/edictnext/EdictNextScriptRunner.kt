@@ -1,13 +1,5 @@
 package org.jetbrains.qodana.edict.edictnext
 
-import com.intellij.ml.llm.qodana.agents.edictnext.EDICT_NEXT_MODEL
-import com.intellij.ml.llm.qodana.agents.edictnext.EDICT_NEXT_MODEL_REVISION
-import com.intellij.ml.llm.qodana.agents.edictnext.EDICT_NEXT_NEIGHBOUR_COUNT
-import com.intellij.ml.llm.qodana.agents.edictnext.EdictNextCorpusIndexRequest
-import com.intellij.ml.llm.qodana.agents.edictnext.EdictNextJson
-import com.intellij.ml.llm.qodana.agents.edictnext.EdictNextNeighboursResponse
-import com.intellij.ml.llm.qodana.agents.edictnext.EdictNextSignal
-import com.intellij.ml.llm.qodana.agents.edictnext.EdictNextSignalNeighbours
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.withContext
@@ -85,7 +77,7 @@ internal class EdictScriptRunner(private val workspace: EdictNextWorkspace) {
     prepared = null
     val directory = home
     home = null
-    if (directory != null) EelFileUtils.deleteRecursively(directory)
+    if (directory != null) directory.toFile().deleteRecursively()
   }
 
   private fun requirePrepared(): PreparedScript =
@@ -128,8 +120,8 @@ internal class EdictScriptRunner(private val workspace: EdictNextWorkspace) {
     // NonCancellable: a cancellation landing on the start must not lose the handle the kill below needs.
     val process = withContext(NonCancellable + Dispatchers.IO) { start(command, logPath) }
     try {
-      val exitCode = process.awaitExit()
-      LOG.info("Edict Next script: ${command.first()} exit=$exitCode, log=$logPath")
+      val exitCode = withContext(Dispatchers.IO) { process.waitFor() }
+      System.err.println("Edict Next script: ${command.first()} exit=$exitCode, log=$logPath")
       check(exitCode == 0) {
         "Command failed with exit code $exitCode: ${command.joinToString(" ")}\n${logPath.readText().takeLast(OUTPUT_TAIL)}"
       }
@@ -155,8 +147,6 @@ internal class EdictScriptRunner(private val workspace: EdictNextWorkspace) {
   private data class PreparedScript(val entry: Path, val python: Path, val embeddingCache: Path)
 
   private companion object {
-    val LOG = logger<EdictNextScriptRunner>()
-
     const val SCRIPT_RESOURCE: String = "/edict-next/cluster.py"
     const val REQUIREMENTS_RESOURCE: String = "/edict-next/requirements.txt"
     const val SCRIPT_FILE_NAME: String = "cluster.py"
@@ -185,7 +175,7 @@ internal class EdictScriptRunner(private val workspace: EdictNextWorkspace) {
 
     internal fun readEdictNextResource(path: String): ByteArray =
       EdictNextResourceInstaller::class.java.getResourceAsStream(path)?.use { it.readAllBytes() }
-        ?: throw QodanaException("Bundled Edict Next resource is missing: $path")
+        ?: throw IllegalStateException("Bundled Edict Next resource is missing: $path")
 
     private const val MANIFEST_RESOURCE: String = "/edict-next-resources.txt"
   }

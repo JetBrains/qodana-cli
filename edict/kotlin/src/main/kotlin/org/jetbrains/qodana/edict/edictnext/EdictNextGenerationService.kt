@@ -1,16 +1,6 @@
 package org.jetbrains.qodana.edict.edictnext
 
-import com.intellij.ml.llm.qodana.agents.edictnext.EdictNextClusterStatus
-import com.intellij.ml.llm.qodana.agents.edictnext.EdictNextCodeExampleValidationResponse
-import com.intellij.ml.llm.qodana.agents.edictnext.EdictNextGenerationClustersResponse
-import com.intellij.ml.llm.qodana.agents.edictnext.EdictNextGenerationTarget
-import com.intellij.ml.llm.qodana.agents.edictnext.EdictNextInspectionAction
-import com.intellij.ml.llm.qodana.agents.edictnext.EdictNextInspectionActionResponse
-import com.intellij.ml.llm.qodana.agents.edictnext.EdictNextInspectionValidationResponse
-import com.intellij.ml.llm.qodana.agents.edictnext.EdictNextMarkGeneratedResponse
-import com.intellij.ml.llm.qodana.agents.edictnext.EdictNextSignal
-import com.intellij.ml.llm.qodana.agents.edictnext.EdictNextValidationIssue
-import com.intellij.ml.llm.qodana.agents.edictnext.sha256Hex
+import kotlinx.coroutines.withTimeout
 import kotlinx.coroutines.withTimeoutOrNull
 import java.nio.file.Path
 import java.util.concurrent.ConcurrentHashMap
@@ -23,6 +13,7 @@ internal class EdictNextGenerationService private constructor(
   sessionId: String,
 ) {
   private val context = EdictSessionContext.getInstance(sessionId)
+  private val inspection: EdictNextInspection get() = EdictNextInspection(context.inspectionServer)
   private val clusterGenerationStarts = ConcurrentHashMap<Set<String>, TimeMark>()
   private val generationTargetSignalIdsByClusterId = ConcurrentHashMap<String, Set<String>>()
   private val inspectionActions = ConcurrentHashMap<Set<String>, EdictNextInspectionAction>()
@@ -87,15 +78,36 @@ internal class EdictNextGenerationService private constructor(
     }
   }
 
-//  suspend fun validateInspection(clusterId: String): EdictNextInspectionValidationResponse {
-//    val repository = context.repository()
-//    val cluster = repository.loadCluster(clusterId)
-//    return withinClusterGenerationDeadline(clusterId, cluster.signalIds) {
-//      inspection.validate(cluster, cluster.candidateInspectionPath.readText())
-//    }
-//  }
+  suspend fun validateInspection(clusterId: String): EdictNextInspectionValidationResponse {
+    val repository = context.repository()
+    val cluster = repository.loadCluster(clusterId)
+    return withinClusterGenerationDeadline(clusterId, cluster.signalIds) {
+      inspection.validate(cluster, cluster.candidateInspectionPath.readText())
+    }
+  }
 
-
+  suspend fun getNewInspectionResults(
+    clusterId: String,
+    privateScratchDirectory: String,
+  ): EdictNextInspectionResultsResponse {
+    val repository = context.repository()
+    val cluster = repository.loadCluster(clusterId)
+    return withinClusterGenerationDeadline(clusterId, cluster.signalIds) {
+      withTimeout(EdictNextTimeouts.analysis) {
+        val code = cluster.candidateInspectionPath.readText()
+        val findings = inspection.analyzeProject(cluster, code, context.projectRevision)
+        val response = EdictNextReviewArtifacts.create(
+          findings = findings,
+          clusterDirectory = cluster.directory.root,
+          candidateInspection = cluster.candidateInspectionPath,
+          inspectedProject = context.analyzedProject,
+          privateScratchDirectory = Path.of(privateScratchDirectory).toAbsolutePath().normalize(),
+        )
+        analyzedCandidateDigests[cluster.signalIds] = findings.candidateDigest
+        response
+      }
+    }
+  }
 
   suspend fun markGenerated(clusterId: String): EdictNextMarkGeneratedResponse {
     val repository = context.repository()

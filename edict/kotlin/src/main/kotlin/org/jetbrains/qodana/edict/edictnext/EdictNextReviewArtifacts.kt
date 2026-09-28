@@ -1,9 +1,5 @@
 package org.jetbrains.qodana.edict.edictnext
 
-import com.intellij.ml.llm.qodana.agents.edictnext.EdictNextInspectionFindings
-import com.intellij.ml.llm.qodana.agents.edictnext.EdictNextInspectionResultsResponse
-import com.intellij.ml.llm.qodana.agents.edictnext.EdictNextJson
-import com.intellij.ml.llm.qodana.agents.edictnext.EdictNextWeakSignalReviewConfig
 import java.nio.file.Path
 import java.util.UUID
 import kotlin.io.path.createDirectories

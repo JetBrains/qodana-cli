@@ -1,10 +1,5 @@
 package org.jetbrains.qodana.edict.edictnext
 
-import com.intellij.ml.llm.qodana.agents.edictnext.EdictNextClusterManifest
-import com.intellij.ml.llm.qodana.agents.edictnext.EdictNextClusterStatus
-import com.intellij.ml.llm.qodana.agents.edictnext.EdictNextCodeExampleMetadata
-import com.intellij.ml.llm.qodana.agents.edictnext.EdictNextJson
-import com.intellij.ml.llm.qodana.agents.edictnext.EdictNextSignal
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.SerializationStrategy
@@ -258,4 +253,8 @@ internal data class EdictNextRepositoryState(
     .associateBy(EdictNextSignal::id)
 
   fun relativePath(path: Path): String = root.relativize(path).toString()
+
+  fun inspectionCode(clusterId: String): String? = filesByRelativePath[
+    "inspections/$clusterId$EDICT_NEXT_INSPECTION_SUFFIX"
+  ]?.decodeToString()
 }

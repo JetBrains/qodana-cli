@@ -1,15 +1,6 @@
 package org.jetbrains.qodana.edict.edictnext
 
-import com.intellij.ml.llm.qodana.agents.edictnext.EDICT_NEXT_CANDIDATE_SUFFIX
-import com.intellij.ml.llm.qodana.agents.edictnext.EDICT_NEXT_INSPECTION_SUFFIX
-import com.intellij.ml.llm.qodana.agents.edictnext.EDICT_NEXT_KEBAB_CASE
-import com.intellij.ml.llm.qodana.agents.edictnext.EdictNextClusterStatus
-import com.intellij.ml.llm.qodana.agents.edictnext.EdictNextCodeExampleMetadata
-import com.intellij.ml.llm.qodana.agents.edictnext.EdictNextCodeExampleValidationResponse
-import com.intellij.ml.llm.qodana.agents.edictnext.EdictNextJson
-import com.intellij.ml.llm.qodana.agents.edictnext.EdictNextSignal
-import com.intellij.ml.llm.qodana.agents.edictnext.EdictNextSignalLabel
-import com.intellij.ml.llm.qodana.agents.edictnext.EdictNextValidationIssue
+import java.nio.file.Path
 import kotlin.collections.plusAssign
 import kotlin.io.path.exists
 import kotlin.io.path.extension
@@ -371,3 +362,32 @@ private fun changedPaths(before: EdictNextRepositoryState, after: EdictNextRepos
     val current = after.filesByRelativePath[path]
     previous == null || current == null || !previous.contentEquals(current)
   }
+
+private suspend fun validateCodeExample(
+  directory: EdictNextExampleDirectory,
+  metadata: EdictNextCodeExampleMetadata,
+  sourcePath: Path,
+  sourceCode: String,
+): EdictNextCodeExampleValidationResponse {
+  val issues = mutableListOf<String>()
+  if (metadata.id != directory.root.fileName.toString()) {
+    issues += "Code example directory '${directory.root.fileName}' does not match metadata id '${metadata.id}'"
+  }
+  if (sourcePath.normalize() != directory.sourcePath(metadata.fileName)) {
+    issues += "Code example source is outside its test project"
+  }
+  val lineCount = sourceCode.lineSequence().count().coerceAtLeast(1)
+  metadata.expectedRanges.orEmpty().forEach { range ->
+    if (range.start < 1 || range.end < range.start || range.end > lineCount) {
+      issues += "Invalid target range ${range.start}-${range.end}; file has $lineCount lines"
+    }
+  }
+  if (metadata.label == EdictNextSignalLabel.POSITIVE && metadata.expectedRanges.isNullOrEmpty()) {
+    issues += "A positive example must declare expectedRanges"
+  }
+  return EdictNextCodeExampleValidationResponse(
+    success = issues.isEmpty(),
+    summary = if (issues.isEmpty()) "Code example and all target ranges are valid" else "Code example is structurally invalid",
+    issues = issues,
+  )
+}

@@ -1,5 +1,6 @@
 package org.jetbrains.qodana.edict.edictnext
 
+import org.jetbrains.qodana.edict.git.GitRepository
 import java.nio.file.Path
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.locks.ReentrantLock
@@ -12,19 +13,30 @@ internal class EdictSessionContext private constructor(private val sessionId: St
 
 
 
-  fun load(workspace: EdictNextWorkspace, sourceRepository: Path) {
+  suspend fun load(
+    workspace: EdictNextWorkspace,
+    sourceRepository: Path,
+    analyzedProject: Path,
+    qodanaExecutable: String,
+  ) {
+    lock.withLock { check(activeRun == null) { "An Edict run is already active" } }
+    val projectRevision = GitRepository(analyzedProject).resolve("HEAD")
+    val server = IntellijMcpServerService(analyzedProject, qodanaExecutable)
+    server.start()
     lock.withLock {
-      check(activeRun == null) { "An Edict run is already active" }
       activeRun = ActiveRun(
-        config = config,
         workspace = workspace,
         sourceRepository = sourceRepository,
-        projectRevision = GitOperations.getInstance(project).saveCurrentState().commit,
+        analyzedProject = analyzedProject,
+        projectRevision = projectRevision,
+        inspectionServer = server,
       )
     }
   }
 
-  fun unload() {
+  suspend fun unload() {
+    val server = lock.withLock { active().inspectionServer }
+    server.stop()
     lock.withLock {
       checkNotNull(activeRun) { "No Edict Next run is active" }
       EdictNextDistributionService.getInstance(sessionId).clear()
@@ -40,18 +52,20 @@ internal class EdictSessionContext private constructor(private val sessionId: St
     checkNotNull(active().repository) { "Call edict_next_prepare_pipeline first" }
   }
 
-  val config: EdictConfig get() = lock.withLock { active().config }
   val workspace: EdictNextWorkspace get() = lock.withLock { active().workspace }
   val sourceRepository: Path get() = lock.withLock { active().sourceRepository }
+  val analyzedProject: Path get() = lock.withLock { active().analyzedProject }
   val projectRevision: String get() = lock.withLock { active().projectRevision }
+  val inspectionServer: IntellijMcpServerService get() = lock.withLock { active().inspectionServer }
 
   private fun active(): ActiveRun = checkNotNull(activeRun) { "No Edict Next run is active" }
 
   private data class ActiveRun(
-    val config: EdictConfig,
     val workspace: EdictNextWorkspace,
     val sourceRepository: Path,
+    val analyzedProject: Path,
     val projectRevision: String,
+    val inspectionServer: IntellijMcpServerService,
     var repository: EdictRepository? = null,
   )
 
@@ -61,8 +75,4 @@ internal class EdictSessionContext private constructor(private val sessionId: St
     fun getInstance(sessionId: String): EdictSessionContext =
       contextsBySessionId.computeIfAbsent(sessionId, ::EdictSessionContext)
   }
-}
-
-class EdictConfig() {
-
 }

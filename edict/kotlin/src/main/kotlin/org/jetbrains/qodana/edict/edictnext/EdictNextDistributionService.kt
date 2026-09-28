@@ -1,18 +1,5 @@
 package org.jetbrains.qodana.edict.edictnext
 
-import com.intellij.ml.llm.qodana.agents.edictnext.EDICT_NEXT_MAX_INBOX_SIGNALS_PER_RUN
-import com.intellij.ml.llm.qodana.agents.edictnext.EdictNextDistributionContextResponse
-import com.intellij.ml.llm.qodana.agents.edictnext.EdictNextDistributionSignal
-import com.intellij.ml.llm.qodana.agents.edictnext.EdictNextNextAction
-import com.intellij.ml.llm.qodana.agents.edictnext.EdictNextPreparePipelineResponse
-import com.intellij.ml.llm.qodana.agents.edictnext.EdictNextScriptNeighbour
-import com.intellij.ml.llm.qodana.agents.edictnext.EdictNextSignal
-import com.intellij.ml.llm.qodana.agents.edictnext.EdictNextSignalCandidate
-import com.intellij.ml.llm.qodana.agents.edictnext.EdictNextSignalNeighbours
-import com.intellij.ml.llm.qodana.agents.edictnext.EdictNextSignalPreparationResponse
-import com.intellij.ml.llm.qodana.agents.edictnext.EdictNextSignalValidationResponse
-import com.intellij.ml.llm.qodana.agents.edictnext.EdictNextValidationIssue
-import com.intellij.ml.llm.qodana.agents.edictnext.EdictNextValidationResponse
 import java.nio.file.Path
 import java.util.concurrent.ConcurrentHashMap
 
