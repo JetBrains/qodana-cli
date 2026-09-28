@@ -1,19 +1,29 @@
 // Copyright 2026 JetBrains s.r.o. Licensed under the Apache License, Version 2.0.
 package org.jetbrains.qodana.edict.integration.support
 
+import io.ktor.server.cio.CIO
+import io.ktor.server.engine.embeddedServer
+import io.modelcontextprotocol.kotlin.sdk.server.mcpStreamableHttp
+import kotlinx.coroutines.runBlocking
 import org.jetbrains.qodana.edict.common.runProcess
 import org.jetbrains.qodana.edict.common.sha256
+import org.jetbrains.qodana.edict.edictnext.EdictNextMcpToolset
+import org.jetbrains.qodana.edict.edictnext.EdictManagementService
+import org.jetbrains.qodana.edict.edictnext.EdictNextRepositoryState
+import org.jetbrains.qodana.edict.edictnext.EdictNextWorkspace
+import org.jetbrains.qodana.edict.edictnext.EdictSessionContext
+import org.jetbrains.qodana.edict.edictnext.IntellijMcpServerService
 import org.jetbrains.qodana.edict.git.CommitSignalExtractor
 import org.jetbrains.qodana.edict.git.GitRepository
 import org.jetbrains.qodana.edict.git.SignalFinding
-import org.jetbrains.qodana.edict.mcp.McpServer
+import org.jetbrains.qodana.edict.integration.support.inspection.InspectionLifecycleFixture
+import org.jetbrains.qodana.edict.integration.support.inspection.InspectionServer
 import org.jetbrains.qodana.edict.model.Signal
 import org.jetbrains.qodana.edict.model.SignalLabel
 import org.jetbrains.qodana.edict.model.SignalRange
 import org.jetbrains.qodana.edict.reviews.ReviewClient
 import org.jetbrains.qodana.edict.reviews.ReviewProvider
 import org.jetbrains.qodana.edict.runtime.CodexRunner
-import org.jetbrains.qodana.edict.store.Store
 import java.io.IOException
 import java.nio.channels.FileChannel
 import java.nio.channels.FileLock
@@ -27,6 +37,7 @@ import java.nio.file.StandardOpenOption.CREATE
 import java.nio.file.StandardOpenOption.WRITE
 import java.nio.file.attribute.BasicFileAttributes
 import java.nio.file.attribute.PosixFilePermissions
+import java.util.UUID
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 
@@ -40,27 +51,79 @@ internal class IntegrationWorkspace private constructor(
     val output: Path, val repository: GitRepository, val project: Path,
     val revision: String, private val lock: FileLock, private val channel: FileChannel,
 ) : AutoCloseable {
-    val state = project.resolve(".edict")
+    // Fixture projects can contain legacy .edict data. Every test instead owns a clean Edict Next repository
+    // at the clone root while keeping the requested subproject as the inspected IntelliJ project.
+    val state = repository.root.resolve(".edict")
     val logs = output.resolve("log/edict")
 
+    @Suppress("UNUSED_PARAMETER")
     fun withCodex(
-        prompt: String, provider: ReviewProvider = ReviewClient(), inspectionUrl: String? = null,
-        timeoutMinutes: Long = 20, verify: (Store, CodexRunner, String) -> Unit,
-    ) {
-        Store(state).use { store ->
-            val server = McpServer(store, provider = provider, logs = logs)
-            server.serveHttp().use { transport ->
-                val runtime = CodexRunner(
-                    output, project, state, transport.url, agentLogger = server.agents,
-                    additionalMcpServers = inspectionUrl?.let { mapOf("inspection" to it) }.orEmpty()
+        prompt: String, provider: ReviewProvider = ReviewClient(), inspectionServer: InspectionServer? = null,
+        timeoutMinutes: Long = 20, verify: (EdictNextRepositoryState, CodexRunner, String) -> Unit,
+    ) = withEdictNextCodex(prompt, timeoutMinutes, inspectionServer, verify)
+
+    /** Runs an existing managed-skill scenario through the SDK-based Edict Next MCP transport. */
+    fun withEdictNextCodex(
+        prompt: String, timeoutMinutes: Long = 20, verify: (EdictNextRepositoryState, CodexRunner, String) -> Unit,
+    ) = withEdictNextCodex(prompt, timeoutMinutes, null, verify)
+
+    private fun withEdictNextCodex(
+        prompt: String, timeoutMinutes: Long, inspectionServer: InspectionServer?,
+        verify: (EdictNextRepositoryState, CodexRunner, String) -> Unit,
+    ) = runBlocking {
+        val lifecycle = if (inspectionServer == null) InspectionLifecycleFixture(output) else null
+        try {
+            val qodanaExecutable = lifecycle?.qodanaExecutable ?: Path.of("qodana")
+            EdictNextRepositoryState.open(state).use { store ->
+                val sessionId = UUID.randomUUID().toString()
+                val context = EdictSessionContext.getInstance(sessionId)
+                context.load(
+                    EdictNextWorkspace.forRun(output.resolve("log"), sessionId),
+                    state,
+                    project,
+                    qodanaExecutable.toString(),
+                    inspectionServer = inspectionServer?.let {
+                        IntellijMcpServerService(projectPath = project, serverLifecycle = it)
+                    } ?: IntellijMcpServerService(projectPath = project, qodanaExecutable = qodanaExecutable.toString()),
                 )
-                runtime.prepare()
-                runtime.verifySandbox()
-                println("Managed run: ${runtime.model}; logs: $logs")
-                val result = runtime.run(prompt, timeoutMinutes)
-                println(store.redact(result))
-                verify(store, runtime, result)
+                val management = EdictManagementService(store, logs = logs)
+                val engine = embeddedServer(CIO, host = "127.0.0.1", port = 0) {
+                    mcpStreamableHttp { EdictNextMcpToolset(sessionId, management).createServer() }
+                }.start(wait = false)
+                try {
+                    val port = engine.engine.resolvedConnectors().single().port
+                    val runtime = CodexRunner(
+                        output, project, state, "http://127.0.0.1:$port/mcp", agentLogger = management.agents,
+                        additionalMcpServers = inspectionServer?.let { mapOf("qodana" to it.url) }.orEmpty(),
+                        stateWritable = inspectionServer != null,
+                    )
+                    runtime.prepare()
+                    runtime.verifySandbox()
+                    println("Edict Next managed run: ${runtime.model}; logs: $logs")
+                    var result: String? = null
+                    var runFailure: Throwable? = null
+                    try {
+                        result = runtime.run(prompt, timeoutMinutes)
+                    } catch (e: Throwable) {
+                        runFailure = e
+                        throw e
+                    } finally {
+                        try {
+                            store.plan()?.let { println(runtime.writePriceReport(it).render()) }
+                        } catch (e: Throwable) {
+                            if (runFailure != null) runFailure.addSuppressed(e) else throw e
+                        }
+                    }
+                    val completedResult = checkNotNull(result)
+                    println(store.redact(completedResult))
+                    verify(store, runtime, completedResult)
+                } finally {
+                    engine.stop(1_000, 5_000)
+                    context.unload()
+                }
             }
+        } finally {
+            lifecycle?.close()
         }
     }
 

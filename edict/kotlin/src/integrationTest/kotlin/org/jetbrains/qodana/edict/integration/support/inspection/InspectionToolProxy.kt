@@ -14,7 +14,15 @@ import java.nio.file.StandardOpenOption.CREATE
 import java.util.concurrent.Executors
 
 internal val inspectionToolNames =
-    setOf("generate_psi_tree", "generate_inspection_kts_api", "generate_inspection_kts_examples", "run_inspection_kts")
+    setOf(
+        "generate_psi_tree",
+        "generate_inspection_kts_api",
+        "generate_inspection_kts_examples",
+        "run_inspection_kts",
+        "compile_inspection_kts",
+        "run_inspection_kts_examples",
+        "run_inspection_kts_project",
+    )
 
 /** Restrict external IDE access to generic compiler tools and redirect all execution to the disposable copy. */
 internal class InspectionToolProxy(
@@ -31,7 +39,7 @@ internal class InspectionToolProxy(
 
     init {
         check(tools.map { it.text("name") }
-            .toSet() == inspectionToolNames) { "External inspection MCP must expose all four generic compiler/documentation tools" }
+            .toSet() == inspectionToolNames) { "External inspection MCP must expose every required compiler/documentation tool" }
         Files.createDirectories(audit.parent)
         server = HttpServer.create(InetSocketAddress("127.0.0.1", 0), 0)
         server.executor = executor
