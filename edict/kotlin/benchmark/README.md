@@ -10,7 +10,7 @@ re-evaluate existing SARIF. The subproject has no generation controller or MCP p
 Pipeline setup, parameters, artifact provenance, and commands are documented in
 [`scripts/edict-benchmark/README.md`](../../../scripts/edict-benchmark/README.md).
 
-Comparison follows `GenerationBenchmarkScript2.kt`: TP uses exact character
-intersection or a two-line tolerance, and FN uses exact character intersection.
+Comparison uses exact character intersection or a two-line tolerance for both
+generated-finding matches and gold-finding coverage.
 Only Generated inspections contribute quality metrics; every selected rule remains
 in the generation-outcome report.
