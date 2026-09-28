@@ -5,9 +5,9 @@ import org.jetbrains.qodana.edict.common.flag
 import org.jetbrains.qodana.edict.common.obj
 import org.jetbrains.qodana.edict.common.text
 import org.jetbrains.qodana.edict.common.wireJson
-import org.jetbrains.qodana.edict.model.Plan
-import org.jetbrains.qodana.edict.model.TaskAssignment
-import org.jetbrains.qodana.edict.skills.Registry
+import org.jetbrains.qodana.edict.edictnext.EdictNextRepositoryState.Plan
+import org.jetbrains.qodana.edict.edictnext.EdictNextRepositoryState.TaskAssignment
+import org.jetbrains.qodana.edict.skills.managed.Registry
 import java.nio.file.Files
 import java.nio.file.Path
 import kotlin.test.*

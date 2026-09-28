@@ -1,10 +1,11 @@
-package org.jetbrains.qodana.edict.store
+package org.jetbrains.qodana.edict.edictnext
 
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.put
 import org.jetbrains.qodana.edict.common.flag
-import org.jetbrains.qodana.edict.mcp.McpServer
+import org.jetbrains.qodana.edict.edictnext.EdictNextRepositoryState
 import org.jetbrains.qodana.edict.support.batch
+import org.jetbrains.qodana.edict.support.EdictNextTestTools
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.io.TempDir
 import java.nio.file.Files
@@ -14,13 +15,13 @@ import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
 import kotlin.test.assertFalse
 
-class StoreRedactionTest {
+class EdictNextRepositoryStateRedactionTest {
     @TempDir
     lateinit var directory: Path
 
     @Test
     fun `redaction finds embedded adjacent and revoked capabilities without hiding unrelated digests`() {
-        Store(directory.resolve("state")).use { store ->
+        EdictNextRepositoryState.open(directory.resolve("state")).use { store ->
             val (manager, batch) = store.batch()
             for (offset in 0..64) {
                 val prefix = "a".repeat(offset)
@@ -37,7 +38,7 @@ class StoreRedactionTest {
 
     @Test
     fun `embedded capabilities cannot be saved in task titles or results`() {
-        Store(directory.resolve("state")).use { store ->
+        EdictNextRepositoryState.open(directory.resolve("state")).use { store ->
             val (manager, batch) = store.batch()
             val before = store.plan()
             assertFailsWith<IllegalArgumentException> {
@@ -47,25 +48,25 @@ class StoreRedactionTest {
                 store.finishTask(batch.token, "completed", "Receipt: a${batch.token}")
             }
             assertEquals(before, store.plan())
-            val persisted = store.read("plans/${before!!.id}.json").content
+            val persisted = Files.readString(store.root.resolve("plans/${before!!.id}.json"))
             listOf(manager.token, batch.token).forEach { assertFalse(persisted.contains(it)) }
         }
     }
 
     @Test
     fun `rejected arguments do not leak embedded credentials into MCP or agent logs`() {
-        Store(directory.resolve("state")).use { store ->
+        EdictNextRepositoryState.open(directory.resolve("state")).use { store ->
             val (manager, batch) = store.batch()
             val logs = directory.resolve("logs")
-            val response = McpServer(store, logs = logs).call("edict_task_add", buildJsonObject {
+            val response = EdictNextTestTools(store, logs = logs).call("edict_task_add", buildJsonObject {
                 put("token", batch.token)
                 put("skill", "edict-signal-analysis")
                 put("title", "Receipt: a${manager.token}f${batch.token}")
             })
             assertEquals(true, response.flag("isError"))
             assertEquals(1, store.plan()!!.tasks.size)
-            Files.list(logs).use { paths ->
-                paths.forEach { file ->
+            Files.walk(logs).use { paths ->
+                paths.filter(Files::isRegularFile).forEach { file ->
                     val content = Files.readString(file).replace("\n    ", "")
                     listOf(manager.token, batch.token).forEach { assertFalse(content.contains(it), file.toString()) }
                 }

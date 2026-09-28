@@ -1,11 +1,11 @@
 // Copyright 2026 JetBrains s.r.o. Licensed under the Apache License, Version 2.0.
 package org.jetbrains.qodana.edict.integration
 
-import org.jetbrains.qodana.edict.integration.support.*
-import org.junit.jupiter.api.Test
 import kotlin.test.assertContains
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
+import org.jetbrains.qodana.edict.integration.support.*
+import org.junit.jupiter.api.Test
 
 class LiveThreeCommitExtractionTest : IntegrationTest() {
     override val fixtureRevision = threeCommitHead
@@ -13,7 +13,17 @@ class LiveThreeCommitExtractionTest : IntegrationTest() {
 
     @Test
     fun `managed skills extract one evidence pair from each of three Distillery commits`() {
-        workspace.withCodex("Extract signals from the latest three commits.") { store, runtime, _ ->
+        workspace.withEdictNextCodex(
+            """
+            Use edict_manager and the managed protocol to extract Signals from exactly three corrective commits.
+            Create exactly one top-level edict-batch-signal-analysis task.
+            Source checkout: ${workspace.repository.root}
+            Edict state root: ${workspace.state}
+            Revision expression: $threeCommitBaseline..$threeCommitHead
+            Commit limit: 3
+            Publish every supported Signal to the inbox through edict_state_write.
+            """.trimIndent(),
+        ) { store, runtime, _ ->
             val expected = threeCommitExpectations()
             val plan = assertNotNull(store.plan())
             assertEquals(4, plan.tasks.size, "One batch and three independent evidence workers required")
@@ -28,7 +38,7 @@ class LiveThreeCommitExtractionTest : IntegrationTest() {
                 assertContains(assigned.single().prompt, commit.revision)
                 assertContains(assigned.single().result, commit.revision)
             }
-            verifyCommitSignals(workspace.repository, store.list("inbox").map(store::read), expected)
+            verifyCommitSignals(workspace.repository, signalFiles(workspace.state.resolve("inbox")), expected)
             verifyManagedRun(workspace, runtime, plan)
         }
     }

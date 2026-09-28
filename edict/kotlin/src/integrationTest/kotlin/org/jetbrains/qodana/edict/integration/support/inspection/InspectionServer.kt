@@ -2,6 +2,7 @@
 package org.jetbrains.qodana.edict.integration.support.inspection
 
 import kotlinx.serialization.json.*
+import org.jetbrains.qodana.edict.edictnext.IntellijMcpServerLifecycle
 import org.jetbrains.qodana.edict.integration.support.IntegrationWorkspace
 import java.net.URI
 import java.nio.file.Files
@@ -13,9 +14,14 @@ internal class InspectionServer private constructor(
     private val process: Process,
     private val client: InspectionMcpClient,
     private val source: Path,
-    private val proxy: InspectionToolProxy,
-) : AutoCloseable {
+  private val proxy: InspectionToolProxy,
+) : AutoCloseable, IntellijMcpServerLifecycle {
     val url = proxy.url
+
+    override suspend fun start(): URI = URI.create(url)
+
+    // The surrounding test owns this shared server because it is also used for direct assertions.
+    override suspend fun stop() = Unit
 
     fun run(code: String, path: String, content: String): InspectionResult =
         decodeInspectionResult(client.call("run_inspection_kts", buildJsonObject {

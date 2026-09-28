@@ -5,9 +5,12 @@ import org.jetbrains.qodana.edict.common.runProcess
 import org.jetbrains.qodana.edict.git.CommitSignalExtractor
 import org.jetbrains.qodana.edict.git.GitRepository
 import org.jetbrains.qodana.edict.git.SignalFinding
+import org.jetbrains.qodana.edict.edictnext.EdictNextRepositoryState
+import org.jetbrains.qodana.edict.edictnext.EdictNextRepositoryState.Delegation
+import org.jetbrains.qodana.edict.edictnext.EdictNextRepositoryState.PlanCreation
+import org.jetbrains.qodana.edict.edictnext.EdictNextRepositoryState.Step
 import org.jetbrains.qodana.edict.model.*
-import org.jetbrains.qodana.edict.skills.Registry
-import org.jetbrains.qodana.edict.store.Store
+import org.jetbrains.qodana.edict.skills.managed.Registry
 import java.nio.file.Files
 import java.nio.file.Path
 
@@ -57,18 +60,14 @@ internal fun fixtureSignals(repository: GitRepository): List<Signal> =
         )
     }.extract("HEAD")
 
-internal fun Store.launch(
+internal fun EdictNextRepositoryState.launch(
     parent: String,
     id: String,
     skill: String,
-    operations: List<String>,
-    scope: List<String>
 ): Delegation {
     val worker = delegate(
         parent,
         id,
-        operations,
-        scope,
         "\$$skill\nRead /skills/${Registry.skillPath(skill)} and perform the assigned bounded task."
     )
     readTask(worker.token)
@@ -76,7 +75,7 @@ internal fun Store.launch(
     return worker
 }
 
-internal fun Store.batch(): Pair<PlanCreation, Delegation> {
+internal fun EdictNextRepositoryState.batch(): Pair<PlanCreation, Delegation> {
     val created = createPlan(
         "Extract signals from the latest commit",
         listOf(Step("edict-batch-signal-analysis", "Extract latest correction"))
@@ -85,7 +84,5 @@ internal fun Store.batch(): Pair<PlanCreation, Delegation> {
         created.token,
         created.plan.tasks.single().id,
         "edict-batch-signal-analysis",
-        listOf("inbox.write"),
-        listOf("inbox")
     )
 }

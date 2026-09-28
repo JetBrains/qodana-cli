@@ -2,10 +2,8 @@
 package org.jetbrains.qodana.edict.git
 
 import kotlinx.serialization.Serializable
-import org.jetbrains.qodana.edict.common.json
 import org.jetbrains.qodana.edict.common.runProcess
 import org.jetbrains.qodana.edict.model.Signal
-import org.jetbrains.qodana.edict.signals.SignalValidation
 import org.jetbrains.qodana.edict.signals.UnifiedDiff
 import org.jetbrains.qodana.edict.signals.validRevision
 import org.jetbrains.qodana.edict.signals.validSourcePath
@@ -73,20 +71,24 @@ class GitRepository(directory: Path) {
             }.filter { runCatching { UnifiedDiff.parse(it.diff) }.isSuccess }.toList()
     }
 
-    /** Validate source authenticity as well as the structural validation performed on every state write. */
+    /** Validate that commit Signal evidence still matches the source repository exactly. */
     fun validateEvidence(signal: Signal) {
-        SignalValidation.validate("inbox/${signal.id}.json", json.encodeToString(Signal.serializer(), signal))
         require(signal.source.type == "FromCommit") { "Expected commit signal" }
-        val commit = commit(signal.source.commitRevision!!)
-        require(signal.source.parentRevision == commit.parentRevision && signal.source.message?.trimEnd('\n') == commit.message) { "Commit metadata differs from repository" }
+        val commit = commit(checkNotNull(signal.source.commitRevision))
+        require(
+            signal.source.parentRevision == commit.parentRevision &&
+                signal.source.message?.trimEnd('\n') == commit.message,
+        ) { "Commit metadata differs from repository" }
         val changes = UnifiedDiff.parse(signal.source.diffPositiveToNegative)
         val paths = (changes.before.keys + changes.after.keys).distinct()
         require(
             signal.source.diffPositiveToNegative == commit.diff ||
-                    signal.source.diffPositiveToNegative == diff(commit.parentRevision, commit.commitRevision, paths)
+                signal.source.diffPositiveToNegative == diff(commit.parentRevision, commit.commitRevision, paths),
         ) { "Signal diff is not canonical Git evidence" }
         val source = fileAt(signal.fileRevision.revision, signal.fileRevision.path)
         val lineCount = source.count { it == '\n' } + if (source.isNotEmpty() && !source.endsWith('\n')) 1 else 0
-        require(signal.fileRevision.expectedRanges.all { it.end <= lineCount }) { "Evidence range exceeds historical source" }
+        require(signal.fileRevision.expectedRanges.all { it.end <= lineCount }) {
+            "Evidence range exceeds historical source"
+        }
     }
 }

@@ -27,6 +27,22 @@ class InspectionTransportTest {
     lateinit var directory: Path
 
     @Test
+    fun `inspection proxy exposes the complete managed compiler contract`() {
+        assertEquals(
+            setOf(
+                "generate_psi_tree",
+                "generate_inspection_kts_api",
+                "generate_inspection_kts_examples",
+                "run_inspection_kts",
+                "compile_inspection_kts",
+                "run_inspection_kts_examples",
+                "run_inspection_kts_project",
+            ),
+            inspectionToolNames,
+        )
+    }
+
+    @Test
     fun `legacy SSE matches overlapping replies by request ID instead of arrival order`() {
         val requests = CopyOnWriteArrayList<JsonObject>()
         val arrived = AtomicInteger()

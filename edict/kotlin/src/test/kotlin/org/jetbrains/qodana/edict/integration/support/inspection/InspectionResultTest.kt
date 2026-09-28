@@ -7,8 +7,8 @@ import kotlinx.serialization.json.put
 import kotlinx.serialization.json.putJsonArray
 import org.jetbrains.qodana.edict.common.sha256
 import org.jetbrains.qodana.edict.common.wireJson
-import org.jetbrains.qodana.edict.model.Plan
-import org.jetbrains.qodana.edict.model.Task
+import org.jetbrains.qodana.edict.edictnext.EdictNextRepositoryState.Plan
+import org.jetbrains.qodana.edict.edictnext.EdictNextRepositoryState.Task
 import org.junit.jupiter.api.io.TempDir
 import java.nio.file.Files
 import java.nio.file.Path
