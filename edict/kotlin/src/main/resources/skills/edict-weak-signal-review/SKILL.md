@@ -41,8 +41,10 @@ After its example is validated, write `<scratch>/weak-signal-review/false-positi
 path/revision/ranges, the exact relevant code snippet, why a rule satisfying the cluster Signals must not report it,
 assigned example ID, whether created or reused, and severity (`BLOCKER` or `MAJOR`). Use BLOCKER when the evidence
 invalidates the core rule or demonstrates an unsafe recommendation; use MAJOR for a bounded precision gap that leaves the core rule usable.
-Only BLOCKER findings require repairs. MAJOR findings request another iteration within the cluster's three-iteration
-budget but do not block its value review or publication. Do not create a signal/example for uncertain evidence or a report for TP. Never copy
+BLOCKER findings require repairs while another cluster iteration remains. MAJOR findings request another iteration
+within the cluster's five-iteration budget. Neither severity independently blocks publication after iteration five when
+the exact candidate passes the mandatory compilation, example, and provenance checks; the cluster worker records those
+findings as published known problems. Do not create a signal/example for uncertain evidence or a report for TP. Never copy
 transient weak signals into the persisted cluster.
 
 After every code-example worker finishes, call `edict_validate_cluster_examples(clusterId)`. Repair reported persisted

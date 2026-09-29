@@ -18,22 +18,24 @@ cluster, it is the previous version. Preserve it until a successful publication 
 Cluster renames and direct repository/Git writes are outside this managed task's capabilities.
 
 The parent provides the cluster ID, source project, and private scratch directory outside the state root. Run at most
-**five review iterations, including the initial candidate**, across the complete code/weak/value review cycle. Include
+**five review iterations, including the initial candidate**, across the code and weak-signal review cycle. Include
 `iteration N/5` in review task titles and the attempt manifest. Count existing code-review tasks on resumption; do not
 reset the budget after a different review stage, a changed hash, or a restarted worker. One iteration permits at most
 one review of each kind. Any repair after code review consumes the next iteration; do not start a sixth iteration.
 The managed server refuses a sixth task of each review kind for this cluster worker, including after a restart.
 An exhausted review budget is a bounded domain outcome; finalize existing work rather than retrying the rejected add.
 
-Only BLOCKER findings require repairs. MAJOR findings request another iteration when one remains, but do not stop
-example validation, project execution, or downstream reviews in the current iteration. Do not change code merely to
-clear MAJOR or MINOR findings; carry them into the next review for reassessment against the collected evidence. If the
-candidate is unchanged, reuse its hash-matched measurements. At the fifth iteration, proceed with a blocker-free,
-validated candidate, set the cluster to `Generated`, and record every unresolved MAJOR finding for that exact candidate
-in `description.json` under `knownProblems`. An unresolved MAJOR finding on the last review must never leave the cluster
-`Pending`. If a BLOCKER or required validation failure remains, preserve valid Pending state and report the remaining
-work so the coordinator can start another cluster. Do not waive compilation, required examples, or provenance checks
-to exhaust the budget successfully.
+BLOCKER findings require repairs while another iteration remains. MAJOR findings request another iteration when one
+remains, but do not stop example validation, project execution, or downstream reviews in the current iteration. Do not
+change code merely to clear MAJOR or MINOR findings; carry them into the next review for reassessment against the
+collected evidence. If the candidate is unchanged, reuse its hash-matched measurements. At the fifth iteration, review
+findings no longer block publication: if the exact candidate compiles and passes the mandatory example and provenance
+checks, set the cluster to `Generated` and record every unresolved BLOCKER and MAJOR finding for that exact candidate in
+`description.json` under `knownProblems`. Store published limitations with schema severity MAJOR, while preserving each
+review's original severity in history and scratch. A review finding on the last iteration must never leave an otherwise
+validated cluster `Pending`. Preserve Pending only for a compilation failure, mandatory example/provenance failure,
+missing execution capability, deadline, or interrupted transition. Do not waive those mandatory checks to exhaust the
+budget successfully.
 
 Keep at most one direct example/review child active at a time and close/dispose it after collecting its result. Other
 clusters run concurrently and need their reserved descendant slots. Do not confuse a domain status with task failure: a documented valid
@@ -103,14 +105,15 @@ to the runner and record that hash with each measurement; a hash copied from a d
 
 1. Delegate `edict-inspection-code-review` with `operations: []`. Supply cluster ID, candidate path/hash, source
    project, scratch output, and iteration number. On a BLOCKER/REJECT, make the smallest general repair and obtain a
-   fresh independent review in the next iteration, if one remains. With only MAJOR/MINOR findings, continue this
-   iteration's measurements and reviews.
+   fresh independent review in the next iteration, if one remains. On iteration five, retain unresolved review findings
+   for `knownProblems` and continue mandatory measurements instead of leaving Pending. With only MAJOR/MINOR findings,
+   continue this iteration's measurements and reviews.
 2. Compile the exact reviewed candidate and run it with Ultimate's generic `run_inspection_kts` against all assigned
    examples, always passing the inspected source project as `projectPath` and exact `edict_read` candidate bytes as
    `inspectionKtsCode`. Require compilation success, at least one positive example, and at least 85% aggregate label
    accuracy. A positive example must report its expected range; a negative example must not report a problem. Keep
    actual measured per-example results in scratch. Failed compilation or required accuracy/range checks are blocking;
-   repair general predicates and repeat review/measurement only within the three-iteration budget.
+   repair general predicates and repeat review/measurement only within the five-iteration budget.
 
 ## 4. Review findings
 
@@ -122,13 +125,9 @@ to the runner and record that hash with each measurement; a hash copied from a d
 2. Delegate `edict-weak-signal-review` with `example.write` limited to this cluster's examples directory; this
    permission is for delegation to its example children. Supply the manifest. Read every false-positive report and its
    severity. Repair BLOCKER findings in the next iteration if available; MAJOR findings request another iteration but
-   do not block the value review or eventual publication. Do not automatically repair every false positive.
-3. Delegate `edict-inspection-value-review` with `operations: []`, passing the exact manifest and weak-review
-   result. On a BLOCKER/REJECT, repair the supported issue and repeat affected measurements/reviews in the next
-   iteration if available. With MAJOR findings but no blockers, reiterate while budget remains; after iteration three
-   proceed with the validated candidate as `Generated` and persist the unresolved MAJOR findings in `knownProblems`.
-   With no BLOCKER or MAJOR findings, finish early.
-   Rejection or exhausted iterations alone do not justify Invalid or Discontinued.
+   do not block eventual publication. On iteration five, retain all unresolved findings for `knownProblems` and publish
+   after the mandatory checks pass. Do not automatically repair every false positive. With no BLOCKER or MAJOR findings,
+   finish early. Rejection or exhausted iterations alone do not justify Pending, Invalid, or Discontinued.
 
 Any candidate byte change invalidates prior reviews, accuracy, and project findings. Before acceptance reread the stored
 candidate and require its hash to equal every accepted review and measured run.
@@ -142,19 +141,20 @@ every partially written artifact structurally valid:
 
 - `Generated`: replace the previous version at `inspections/<id>.inspection.kts` with the exact accepted candidate,
   read back and verify it, delete the candidate, and replace `description.json`'s `knownProblems` with the unresolved
-  MAJOR findings from the final review cycle for that exact candidate. Each entry has `severity: "MAJOR"`, `review`
-  (`code`, `weak-signal`, or `value`), `category`, `description`,
+  BLOCKER and MAJOR findings from the final review cycle for that exact candidate. Normalize every published entry to
+  `severity: "MAJOR"`; preserve original severities in history. Each entry has `review` (`code` or `weak-signal`),
+  `category`, `description`,
   `evidence`, and nullable `suggestion`; translate a weak-signal false-positive report to category `PRECISION`. Use an
-  empty array when no MAJOR findings remain, so stale problems are cleared. Clear `predecessorId` and set status Generated
+  empty array when no review findings remain, so stale problems are cleared. Clear `predecessorId` and set status Generated
   last. Apply this same
   verified transition when reusing an unchanged previous version and record the reuse decision.
 - `Discontinued`: record incompatible signal IDs and contradiction, delete the authorized candidate and current
   inspection (the previous version), clear `predecessorId`, and set status Discontinued last.
 - `Invalid`: record the concrete tooling/capability failure or broken input; preserve valid partial artifacts and the
   previous version, then set Invalid.
-- `Pending`: preserve valid partial work and the previous version when a BLOCKER, mandatory validation failure,
-  deadline, or interrupted transition prevents publication; record remaining work and leave Pending. MAJOR findings
-  alone never justify this transition, including after the final iteration.
+- `Pending`: preserve valid partial work and the previous version only when compilation, a mandatory example/provenance
+  check, a required execution capability, the deadline, or an interrupted transition prevents publication; record
+  remaining work and leave Pending. Review findings alone never justify this transition after the final iteration.
 
 Do not remove an inspection outside your granted scope. On a write conflict or incomplete transition, stop and report
 the exact persisted state instead of claiming the terminal outcome. Return IDs, paths, status, and evidence summary,

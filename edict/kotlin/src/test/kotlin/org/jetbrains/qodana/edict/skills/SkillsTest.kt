@@ -27,6 +27,12 @@ class SkillsTest {
         val preparation = Files.readString(directory.resolve("edict-prepare/SKILL.md"))
         assertContains(preparation, "supplied `codeSnippet` is found verbatim at the cited revision")
         assertContains(preparation, "does not require the feedback prose itself to say that the range is")
+        val generation = Files.readString(directory.resolve("edict-generation/SKILL.md"))
+        assertContains(generation, "Review findings alone must not produce a Pending outcome")
+        val clusterGeneration = Files.readString(directory.resolve("edict-cluster-generation/SKILL.md"))
+        assertContains(clusterGeneration, "Review findings alone never justify this transition")
+        assertContains(clusterGeneration, "`review` (`code` or `weak-signal`)")
+        assertFalse(clusterGeneration.contains("Delegate `edict-inspection-value-review`"))
         assertFalse(Files.exists(directory.resolve("edict-next-run/SKILL.md")))
         assertFailsWith<IllegalArgumentException> { Skills.install(directory, "../edict_manager") }
         assertFailsWith<IllegalArgumentException> { Skills.install(directory, "edict-next-run") }

@@ -29,11 +29,14 @@ capacity, reduce the number of active clusters to preserve those reservations.
 When any worker finishes, verify its persisted outcome, close/dispose its native agent and completed descendants,
 and immediately launch the next queued cluster in that slot. Do not wait for other clusters to finish their repairs.
 Each cluster has at most five review iterations including the initial candidate; exhausting that budget is not itself
-a reason to leave the cluster Pending. Pending is valid only when a BLOCKER, mandatory validation failure, deadline,
-or interrupted transition still prevents publication. When the final review has unresolved MAJOR findings but no
-BLOCKER, require the worker to publish the validated inspection as Generated and persist those findings in the
-description's `knownProblems`; MAJOR findings alone must not produce a Pending outcome. Every finished worker releases
-its slot for the next target.
+a reason to leave the cluster Pending. Review findings guide bounded repairs but are not a second publication gate.
+When the final iteration still has review findings, require the worker to publish the exact candidate as Generated if
+it compiles and passes the mandatory example/provenance checks, and persist every unresolved review finding in the
+description's `knownProblems`. Normalize a review's BLOCKER severity to MAJOR when recording this published limitation;
+the original severity and rationale remain in history and scratch review output. Pending is valid only when compilation,
+mandatory example/provenance validation, a missing capability, the deadline, or an interrupted transition still
+prevents publication. Review findings alone must not produce a Pending outcome. Every finished worker releases its
+slot for the next target.
 
 After every frozen target has been started, wait for the remaining workers and verify their persisted tasks. Require
 exact coverage of the frozen set with no missing or duplicate cluster outcomes. Do not modify or repair worker
