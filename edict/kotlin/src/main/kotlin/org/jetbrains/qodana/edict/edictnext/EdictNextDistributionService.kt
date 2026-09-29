@@ -136,7 +136,7 @@ internal class EdictNextDistributionService private constructor(private val sess
         signalIds: List<String>,
     ): Map<String, EdictNextSignalNeighbours> {
         if (signalIds.isEmpty()) return emptyMap()
-        val runner = EdictScriptRunner(context.workspace)
+        val runner = EdictScriptRunner(context.workspace, context.embeddingPython)
         try {
             runner.prepareEnvironment()
             runner.importEmbeddingCache(repository.paths.embeddingsDirectory)

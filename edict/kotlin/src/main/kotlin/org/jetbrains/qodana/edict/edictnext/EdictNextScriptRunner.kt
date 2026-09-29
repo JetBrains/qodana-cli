@@ -19,7 +19,10 @@ import kotlin.io.writeBytes
  * Owns the retrieval script end to end: its own temporary directory, the venv, the embedding cache, and the
  * process runs. The agent supplies no path, never sees the script, and gets only a decoded response.
  */
-internal class EdictScriptRunner(private val workspace: EdictNextWorkspace) {
+internal class EdictScriptRunner(
+  private val workspace: EdictNextWorkspace,
+  private val preparedPython: Path? = null,
+) {
   private var home: Path? = null
   private var prepared: PreparedScript? = null
 
@@ -28,8 +31,12 @@ internal class EdictScriptRunner(private val workspace: EdictNextWorkspace) {
     val directory = withContext(Dispatchers.IO) { createTempDirectory("edict-next-script") }
     home = directory
     val entry = writeResource(SCRIPT_RESOURCE, directory.resolve(SCRIPT_FILE_NAME))
-    val requirements = writeResource(REQUIREMENTS_RESOURCE, directory.resolve(REQUIREMENTS_FILE_NAME))
-    val python = createVenv(directory, requirements)
+    val python = preparedPython?.also {
+      require(it.toFile().isFile && it.toFile().canExecute()) { "Prepared embedding Python is not executable: $it" }
+    } ?: run {
+      val requirements = writeResource(REQUIREMENTS_RESOURCE, directory.resolve(REQUIREMENTS_FILE_NAME))
+      createVenv(directory, requirements)
+    }
     prepared = PreparedScript(entry, python, directory.resolve("embeddings"))
   }
 
