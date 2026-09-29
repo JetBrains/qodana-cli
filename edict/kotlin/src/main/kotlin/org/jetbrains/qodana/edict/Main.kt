@@ -59,10 +59,17 @@ fun main(args: Array<String>) {
                     ?: System.getProperty("qodana.executable")
                     ?: System.getenv("QODANA_EXECUTABLE")
                     ?: "qodana"
+                val embeddingPython = options["embedding-python"]?.let(Path::of)?.toAbsolutePath()?.normalize()
                 val sessionId = UUID.randomUUID().toString()
                 runBlocking {
                     val context = EdictSessionContext.getInstance(sessionId)
-                    context.load(EdictNextWorkspace.forRun(logs, sessionId), sourceRepository, project, qodanaExecutable)
+                    context.load(
+                        EdictNextWorkspace.forRun(logs, sessionId),
+                        sourceRepository,
+                        project,
+                        qodanaExecutable,
+                        embeddingPython,
+                    )
                     val unloaded = AtomicBoolean()
                     suspend fun unloadOnce() {
                         if (unloaded.compareAndSet(false, true)) context.unload()
