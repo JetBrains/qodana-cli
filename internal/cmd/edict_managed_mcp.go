@@ -25,7 +25,7 @@ func newEdictManagedMCPCommand() *cobra.Command {
 }
 
 func newEdictManagedMCPStartCommand() *cobra.Command {
-	var projectDir, stateDir, logDir, embeddingPython string
+	var projectDir, stateDir, sourceRepository, logDir, embeddingPython string
 	var httpPort int
 	command := &cobra.Command{
 		Use:   "start",
@@ -54,7 +54,8 @@ tasks/<full-task-id>.log. Capability tokens are redacted.`,
 		RunE: func(command *cobra.Command, _ []string) error {
 			args := []string{"mcp", "--project-dir", projectDir}
 			for _, option := range []struct{ name, value string }{
-				{"state-dir", stateDir}, {"log-dir", logDir}, {"embedding-python", embeddingPython},
+				{"state-dir", stateDir}, {"source-repository", sourceRepository},
+				{"log-dir", logDir}, {"embedding-python", embeddingPython},
 			} {
 				if option.value != "" {
 					args = append(args, "--"+option.name, option.value)
@@ -75,6 +76,7 @@ tasks/<full-task-id>.log. Capability tokens are redacted.`,
 	}
 	command.Flags().StringVarP(&projectDir, "project-dir", "i", ".", "Project root used for the default state and log directories")
 	command.Flags().StringVar(&stateDir, "state-dir", "", "Persisted Edict state directory (defaults to <project-dir>/.edict)")
+	command.Flags().StringVar(&sourceRepository, "source-repository", "", "Edict repository used as the immutable distribution source (defaults to <project-dir>)")
 	command.Flags().StringVar(&logDir, "log-dir", "", "Log root (defaults to <project-dir>/log; files are written under edict/)")
 	command.Flags().StringVar(&embeddingPython, "embedding-python", "", "Prepared Python interpreter with the bundled embedding dependencies")
 	command.Flags().IntVar(&httpPort, "http-port", 0, "Serve HTTP on loopback at this port (0 selects an available port)")

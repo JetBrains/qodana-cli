@@ -176,6 +176,16 @@ func TestEdictManagedMCPNeedsNoLoggingParameter(t *testing.T) {
 	}
 }
 
+func TestEdictManagedMCPAcceptsSourceRepository(t *testing.T) {
+	command := newEdictManagedMCPStartCommand()
+	if err := command.ParseFlags([]string{"--source-repository", t.TempDir()}); err != nil {
+		t.Fatalf("source repository flag: %v", err)
+	}
+	if !command.Flags().Changed("source-repository") {
+		t.Fatal("source repository flag was not recorded")
+	}
+}
+
 func TestEdictManagedMCPStartupFailureKeepsStdoutClean(t *testing.T) {
 	directory := t.TempDir()
 	state := filepath.Join(directory, "not-a-directory")
