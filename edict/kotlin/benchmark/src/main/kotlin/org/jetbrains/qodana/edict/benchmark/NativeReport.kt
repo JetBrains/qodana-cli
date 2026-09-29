@@ -34,7 +34,10 @@ internal fun resolveClusters(inputs: BenchmarkInputs, state: Path): Map<String, 
 
 internal fun clusterOutcomes(clusters: Map<String, List<String>>, state: Path): Map<String, String> =
     clusters.values.flatten().distinct().associateWith { cluster ->
-        readObject(state.resolve("clusters/$cluster/description.json")).string("status")
+        val directory = state.resolve("clusters/$cluster")
+        val manifest = directory.resolve("cluster.json").takeIf { it.exists() }
+            ?: directory.resolve("description.json")
+        readObject(manifest).string("status")
     }
 
 internal fun generationOutcome(clusters: List<String>, statuses: Map<String, String>): String {
@@ -85,7 +88,10 @@ internal fun verifyManagedCompletion(state: Path) {
     require(plans.isNotEmpty()) { "No managed Edict plan was created" }
     val tasks = plans.flatMap { readObject(it).getValue("tasks").jsonArray }
     require(tasks.isNotEmpty() && tasks.all { it.jsonObject.string("status") == "completed" }) { "Managed Edict tasks are unfinished" }
-    require(setOf("edict-prepare", "edict-distribution", "edict-generation").all { skill ->
-        tasks.any { it.jsonObject.string("skill") == skill }
-    }) { "Managed Edict did not complete preparation, distribution and generation" }
+    val skills = tasks.map { it.jsonObject.string("skill") }.toSet()
+    val legacyPipeline = setOf("edict-prepare", "edict-distribution", "edict-generation")
+    val nextPipeline = setOf("edict-next-run", "edict-next-distribution", "edict-next-generation")
+    require(legacyPipeline.all(skills::contains) || nextPipeline.all(skills::contains)) {
+        "Managed Edict did not complete preparation, distribution and generation"
+    }
 }

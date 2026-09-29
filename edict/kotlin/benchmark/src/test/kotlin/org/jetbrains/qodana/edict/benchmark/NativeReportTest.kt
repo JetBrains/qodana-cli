@@ -47,6 +47,12 @@ class NativeReportTest {
         assertEquals("NotClustered", generationOutcome(emptyList(), emptyMap()))
         assertEquals("PartiallyGenerated", generationOutcome(listOf("a", "b"), mapOf("a" to "Generated", "b" to "Pending")))
     }
+    @Test fun `cluster outcomes read Edict Next manifests and legacy descriptions`() {
+        root.resolve("clusters/next").createDirectories().resolve("cluster.json").writeText("""{"status":"Generated"}""")
+        root.resolve("clusters/legacy").createDirectories().resolve("description.json").writeText("""{"status":"Pending"}""")
+        val clusters = mapOf("Rule" to listOf("next", "legacy"))
+        assertEquals(mapOf("next" to "Generated", "legacy" to "Pending"), clusterOutcomes(clusters, root))
+    }
     @Test fun `scan source copy excludes state gold and previous candidates`() {
         val source = root.resolve("source").createDirectories()
         for (path in listOf("src/X.java", "benchmark/gold.sarif.json", "inspections/Old.inspection.kts", ".edict/state.json", ".git/config", "qodana.yaml", "AGENTS.md")) {

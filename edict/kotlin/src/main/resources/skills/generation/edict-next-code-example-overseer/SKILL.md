@@ -20,6 +20,11 @@ You may change only `syntheticExampleId` in Signals below the supplied cluster d
 delete files below its `synthetic-examples/` directory. Do not read cluster history, `cluster.json`, candidate or
 predecessor inspections, review artifacts, or other clusters.
 
+Managed state is read-only to filesystem tools. Delegated reducers persist and assign examples with
+`edict_next_save_code_example` and `edict_next_assign_code_example`. For an overseer repair, use those same calls with
+your own task token; delete only an unassigned example with `edict_next_delete_code_example`. Never use `apply_patch`
+or shell writes below the cluster directory.
+
 ## Reconcile the evidence
 
 Read every Signal in the cluster. Resolve the Git root from the inspected project and retrieve each exact

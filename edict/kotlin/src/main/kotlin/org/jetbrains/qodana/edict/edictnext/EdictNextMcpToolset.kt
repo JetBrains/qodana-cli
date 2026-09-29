@@ -115,6 +115,77 @@ internal class EdictNextMcpToolset(
     }
 
     server.addTool(
+      name = "edict_next_save_code_example",
+      description = "Persist one complete synthetic example in the read-only managed state. Code-example, overseer, and review workers must use this instead of filesystem writes.",
+      inputSchema = stringArguments(
+        "token" to "Your delegated managed-task token",
+        "clusterId" to "Frozen generation cluster id",
+        "exampleId" to "New or existing lowercase kebab-case example id",
+        "metadataJson" to "Complete metadata JSON with id, fileName, label, and expectedRanges",
+        "sourceCode" to "Complete self-contained Java or Kotlin source",
+      ),
+    ) { request ->
+      val token = request.requireString("token")
+      management.requireSkill(
+        token,
+        "edict-next-code-example",
+        "edict-next-code-example-overseer",
+        "edict-next-inspection-code-review",
+        "edict-next-weak-signal-review",
+      )
+      management.requireTokenFree(request.requireString("metadataJson"))
+      management.requireTokenFree(request.requireString("sourceCode"))
+      EdictNextGenerationService.getInstance(runId).saveCodeExample(
+        request.requireString("clusterId"),
+        request.requireString("exampleId"),
+        request.requireString("metadataJson"),
+        request.requireString("sourceCode"),
+      ).toToolResult()
+    }
+
+    server.addTool(
+      name = "edict_next_assign_code_example",
+      description = "Assign a structurally valid stored example to one persisted cluster Signal. Only syntheticExampleId is changed.",
+      inputSchema = stringArguments(
+        "token" to "Your delegated managed-task token",
+        "clusterId" to "Frozen generation cluster id",
+        "signalId" to "Persisted Signal id in the cluster",
+        "exampleId" to "Validated example id in the cluster",
+      ),
+    ) { request ->
+      management.requireSkill(
+        request.requireString("token"),
+        "edict-next-code-example",
+        "edict-next-code-example-overseer",
+      )
+      EdictNextGenerationService.getInstance(runId).assignCodeExample(
+        request.requireString("clusterId"),
+        request.requireString("signalId"),
+        request.requireString("exampleId"),
+      ).toToolResult()
+    }
+
+    server.addTool(
+      name = "edict_next_delete_code_example",
+      description = "Delete one unassigned synthetic example from a frozen cluster.",
+      inputSchema = stringArguments(
+        "token" to "Your delegated managed-task token",
+        "clusterId" to "Frozen generation cluster id",
+        "exampleId" to "Unassigned example id to delete",
+      ),
+    ) { request ->
+      management.requireSkill(
+        request.requireString("token"),
+        "edict-next-code-example-overseer",
+        "edict-next-weak-signal-review",
+      )
+      EdictNextGenerationService.getInstance(runId).deleteCodeExample(
+        request.requireString("clusterId"),
+        request.requireString("exampleId"),
+      ).toToolResult()
+    }
+
+    server.addTool(
       name = "edict_next_validate_cluster_examples",
       description = "Validate that every cluster Signal has one structurally valid focused code example with a matching label.",
       inputSchema = stringArguments("clusterId" to "Cluster id"),
@@ -132,6 +203,40 @@ internal class EdictNextMcpToolset(
       EdictNextGenerationService.getInstance(runId)
         .getInspectionAction(request.requireString("clusterId"))
         .toToolResult()
+    }
+
+    server.addTool(
+      name = "edict_next_save_candidate_inspection",
+      description = "Persist the complete candidate Inspection KTS for a frozen Pending cluster in read-only managed state.",
+      inputSchema = stringArguments(
+        "token" to "Your delegated edict-next-cluster-generation task token",
+        "clusterId" to "Frozen generation cluster id",
+        "inspectionKtsCode" to "Complete candidate Inspection KTS source",
+      ),
+    ) { request ->
+      management.requireSkill(request.requireString("token"), "edict-next-cluster-generation")
+      management.requireTokenFree(request.requireString("inspectionKtsCode"))
+      EdictNextGenerationService.getInstance(runId).saveCandidateInspection(
+        request.requireString("clusterId"),
+        request.requireString("inspectionKtsCode"),
+      ).toToolResult()
+    }
+
+    server.addTool(
+      name = "edict_next_append_cluster_history",
+      description = "Append one token-free operational decision to a frozen Pending cluster history in managed state.",
+      inputSchema = stringArguments(
+        "token" to "Your delegated edict-next-cluster-generation task token",
+        "clusterId" to "Frozen generation cluster id",
+        "entry" to "Concise operational decision or known problem",
+      ),
+    ) { request ->
+      management.requireSkill(request.requireString("token"), "edict-next-cluster-generation")
+      management.requireTokenFree(request.requireString("entry"))
+      EdictNextGenerationService.getInstance(runId).appendHistory(
+        request.requireString("clusterId"),
+        request.requireString("entry"),
+      ).toToolResult()
     }
 
     server.addTool(

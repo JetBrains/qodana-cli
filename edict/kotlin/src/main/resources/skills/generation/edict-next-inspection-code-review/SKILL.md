@@ -21,6 +21,11 @@ Do not edit the candidate, existing examples, Signals, cluster metadata, inspect
 file. You may append new example directories below `<cluster directory>/synthetic-examples/` and write the supplied
 review output. Never assign a review example to a Signal; review examples are weak evidence.
 
+Managed state is read-only to filesystem tools. Append each review example with
+`edict_next_save_code_example(token, clusterId, exampleId, metadataJson, sourceCode)` using your own task token. Never
+use `apply_patch` or shell writes below the cluster directory. The review output is private scratch and may be written
+normally.
+
 ## Review
 
 Infer the behavior best supported by the positive and negative evidence, then review the candidate:

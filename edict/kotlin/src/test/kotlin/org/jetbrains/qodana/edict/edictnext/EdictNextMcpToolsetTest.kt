@@ -44,6 +44,11 @@ class EdictNextMcpToolsetTest {
       "edict_task_start",
       "edict_task_finish",
       "edict_task_cancel",
+      "edict_next_save_code_example",
+      "edict_next_assign_code_example",
+      "edict_next_delete_code_example",
+      "edict_next_save_candidate_inspection",
+      "edict_next_append_cluster_history",
     )
     EdictNextRepositoryState.open(directory.resolve("state")).use { store ->
       val management = EdictManagementService(store)
