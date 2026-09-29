@@ -18,6 +18,7 @@ internal class EdictSessionContext private constructor(private val sessionId: St
     sourceRepository: Path,
     analyzedProject: Path,
     qodanaExecutable: String,
+    embeddingPython: Path? = null,
     inspectionServer: IntellijMcpServerService = IntellijMcpServerService(analyzedProject, qodanaExecutable),
   ) {
     lock.withLock { check(activeRun == null) { "An Edict run is already active" } }
@@ -30,6 +31,7 @@ internal class EdictSessionContext private constructor(private val sessionId: St
         sourceRepository = sourceRepository,
         analyzedProject = analyzedProject,
         projectRevision = projectRevision,
+        embeddingPython = embeddingPython,
         inspectionServer = server,
       )
     }
@@ -57,6 +59,7 @@ internal class EdictSessionContext private constructor(private val sessionId: St
   val sourceRepository: Path get() = lock.withLock { active().sourceRepository }
   val analyzedProject: Path get() = lock.withLock { active().analyzedProject }
   val projectRevision: String get() = lock.withLock { active().projectRevision }
+  val embeddingPython: Path? get() = lock.withLock { active().embeddingPython }
   val inspectionServer: IntellijMcpServerService get() = lock.withLock { active().inspectionServer }
 
   private fun active(): ActiveRun = checkNotNull(activeRun) { "No Edict Next run is active" }
@@ -66,6 +69,7 @@ internal class EdictSessionContext private constructor(private val sessionId: St
     val sourceRepository: Path,
     val analyzedProject: Path,
     val projectRevision: String,
+    val embeddingPython: Path?,
     val inspectionServer: IntellijMcpServerService,
     var repository: EdictRepository? = null,
   )
