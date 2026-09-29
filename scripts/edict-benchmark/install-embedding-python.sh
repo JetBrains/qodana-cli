@@ -14,7 +14,7 @@ export UV_PYTHON_INSTALL_DIR="$benchmark_output/tooling/python"
 "$uv" python install 3.12
 "$uv" venv --python 3.12 --managed-python "$benchmark_embedding_venv"
 "$uv" pip install --python "$benchmark_embedding_python" \
-  -r "$benchmark_source/edict/kotlin/src/main/resources/distribution/requirements.txt"
+  -r "$benchmark_source/edict/kotlin/src/main/resources/edict-next/requirements.txt"
 
 # Loading the embedding stack's OpenMP runtime at Python startup avoids the ARM64
 # static-TLS load-order failure without preloading it into the MCP JVM or other steps.
