@@ -59,6 +59,7 @@ org.jetbrains.idea.maven
 org.jetbrains.idea.gradle.dsl
 org.jetbrains.kotlin
 org.jetbrains.plugins.gradle
+org.jetbrains.plugins.javaFX
 com.jetbrains.restWebServices
 com.intellij.plugins.dependencyAnalysis
 org.jetbrains.security.package-checker

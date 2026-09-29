@@ -20,4 +20,5 @@ org.jetbrains.idea.eclipse
 org.jetbrains.idea.maven
 org.jetbrains.kotlin
 org.jetbrains.plugins.gradle
+org.jetbrains.plugins.javaFX
 com.intellij.modules.json
