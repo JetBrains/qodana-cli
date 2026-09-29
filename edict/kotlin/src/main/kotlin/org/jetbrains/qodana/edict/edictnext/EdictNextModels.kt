@@ -277,6 +277,12 @@ internal data class EdictNextCodeExampleValidationResponse(
 )
 
 @Serializable
+internal data class EdictNextMutationResponse(
+  val success: Boolean,
+  val summary: String,
+)
+
+@Serializable
 internal enum class EdictNextInspectionAction {
   CONFLICT,
   SKIP,
@@ -370,7 +376,9 @@ internal fun sha256Hex(bytes: ByteArray): String = MessageDigest.getInstance("SH
 
 internal const val EDICT_NEXT_MODEL: String = "thenlper/gte-large"
 internal const val EDICT_NEXT_MODEL_REVISION: String = "4bef63f39fcc5e2d6b0aae83089f307af4970164"
-internal const val EDICT_NEXT_MAX_CONCURRENT_CLUSTER_TASKS: Int = 20
+// Cluster workers spawn overseers and per-Signal reducers. Keep enough native-agent
+// capacity for those descendants instead of exhausting the session at the first wave.
+internal const val EDICT_NEXT_MAX_CONCURRENT_CLUSTER_TASKS: Int = 6
 internal const val EDICT_NEXT_INSPECTION_SUFFIX: String = ".inspection.kts"
 internal const val EDICT_NEXT_CANDIDATE_SUFFIX: String = ".candidate.kts"
 

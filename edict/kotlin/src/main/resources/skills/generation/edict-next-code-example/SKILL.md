@@ -22,6 +22,12 @@ The prompt supplies exactly three absolute paths:
 You may change only files below the supplied examples directory and `syntheticExampleId` in the supplied Signal. Do not
 change any other Signal field or any other file.
 
+Managed state is read-only to filesystem tools. For a persisted cluster Signal, use
+`edict_next_save_code_example(token, clusterId, exampleId, metadataJson, sourceCode)` to create or repair the example,
+then use `edict_next_assign_code_example(token, clusterId, signalId, exampleId)` after validation. Supply your own task
+token. Never use `apply_patch` or shell writes for the managed examples directory or persisted Signal. A transient
+Signal in private scratch remains an ordinary scratch file and is updated there after the stored example validates.
+
 Your operation is `reduce(Signal, exact source revision) -> one self-contained code example`. A Signal is exact local
 evidence; its example is a semantic program slice, not a rule hypothesis. Do not read cluster metadata, a candidate
 inspection, or review feedback. Neither the reduction nor its label may depend on a general rule or Inspection KTS limits.
@@ -47,7 +53,7 @@ as the original source range; supporting declarations, usages, and control flow 
 example must contain exactly one focused allowed case corresponding to the original source range, no reportable problems, and
 an empty expected-range list. Do not create a trivial negative by removing the construct being evaluated.
 
-For an unassigned Signal, create its example at a new path:
+For an unassigned Signal, create its example through `edict_next_save_code_example` with the equivalent persisted layout:
 
 ```plaintext
 <synthetic-examples-directory>/<example-id>/metadata.json
@@ -63,4 +69,5 @@ Repair structural issues in the example and validate again after any
 repair. The MCP does not establish semantics: independently confirm that the example demonstrates the Signal and that its
 label and ranges are correct.
 
-Only after both checks succeed, set the supplied Signal's `syntheticExampleId` and return the assigned example ID.
+Only after both checks succeed, call `edict_next_assign_code_example` for a persisted Signal, or set
+`syntheticExampleId` in a transient private-scratch Signal, and return the assigned example ID.

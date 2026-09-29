@@ -26,6 +26,11 @@ You may directly change only:
 - `inspections/<clusterId>.candidate.kts`, `inspections/<clusterId>.inspection.kts`, and the predecessor inspection;
 - the supplied private scratch directory.
 
+Managed state is read-only to filesystem tools. Persist a complete candidate with
+`edict_next_save_candidate_inspection(token, clusterId, inspectionKtsCode)` and append operational decisions with
+`edict_next_append_cluster_history(token, clusterId, entry)`, always using your own task token. Example workers use the
+dedicated managed example mutations. Never use `apply_patch` or shell writes for the worktree.
+
 Do not change cluster membership, language, Signal evidence other than an overseer's `syntheticExampleId` assignments,
 the inspected project, or another cluster.
 
@@ -76,7 +81,7 @@ Before the first candidate, call `mcp__qodana__generate_inspection_kts_api` and
 `mcp__qodana__generate_inspection_kts_examples` for the language. Use
 `mcp__qodana__generate_psi_tree` when relevant PSI structure is uncertain.
 
-Write one complete `InspectionKts` to `inspections/<clusterId>.candidate.kts`. It must declare exactly one
+Persist one complete `InspectionKts` with `edict_next_save_candidate_inspection`. It must declare exactly one
 `localInspection` and provide a lowercase kebab-case `id`, nonblank `name`, and nonblank `htmlDescription` that describe
 the implemented behavior. Do not hard-code example paths, names, text, or ranges.
 

@@ -288,6 +288,20 @@ internal class EdictNextRepositoryState(
   } ?: "anonymous"
 
   @Synchronized
+  fun requireSkill(token: String, allowedSkills: Set<String>): String {
+    val capability = authorize(token)
+    require(capability.skill in allowedSkills) {
+      "${capability.skill} is not allowed to perform this managed mutation"
+    }
+    return capability.skill
+  }
+
+  @Synchronized
+  fun requireTokenFree(content: String) {
+    requireNoTokens(content)
+  }
+
+  @Synchronized
   override fun close() {
     if (closed) return
     closed = true

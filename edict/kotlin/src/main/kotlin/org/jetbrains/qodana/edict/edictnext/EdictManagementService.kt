@@ -238,6 +238,14 @@ internal class EdictManagementService(
     return result
   }
 
+  internal fun requireSkill(token: String, vararg allowedSkills: String) {
+    store.requireSkill(token, allowedSkills.toSet())
+  }
+
+  internal fun requireTokenFree(content: String) {
+    store.requireTokenFree(content)
+  }
+
   private fun lifecycle(change: () -> Plan): JsonElement = synchronized(store) {
     val before = store.plan()
     val after = change()
