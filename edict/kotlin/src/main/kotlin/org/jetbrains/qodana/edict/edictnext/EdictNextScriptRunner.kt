@@ -157,27 +157,10 @@ internal class EdictScriptRunner(private val workspace: EdictNextWorkspace) {
 
 
   internal object EdictNextResourceInstaller {
-    fun manifestEntries(): List<String> = readEdictNextResource(MANIFEST_RESOURCE).decodeToString().lineSequence()
-      .map(String::trim)
-      .filter { it.isNotEmpty() && !it.startsWith('#') }
-      .toList()
-
-    fun install(workspace: EdictNextWorkspace) {
-      val agentDirectory = workspace.agentsDirectory.also { it.createDirectories() }
-      manifestEntries().forEach { resourcePath ->
-        val parts = resourcePath.split('/')
-        val destination = agentDirectory.resolve("skills").resolve(parts[3]).resolve(parts.drop(4).joinToString("/")).normalize()
-        destination.parent.createDirectories()
-        destination.writeBytes(readEdictNextResource("/$resourcePath"))
-      }
-    }
-
-
     internal fun readEdictNextResource(path: String): ByteArray =
       EdictNextResourceInstaller::class.java.getResourceAsStream(path)?.use { it.readAllBytes() }
         ?: throw IllegalStateException("Bundled Edict Next resource is missing: $path")
 
-    private const val MANIFEST_RESOURCE: String = "/edict-next-resources.txt"
   }
 
 }

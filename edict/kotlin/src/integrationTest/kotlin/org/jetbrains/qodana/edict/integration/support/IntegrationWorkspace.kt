@@ -1,11 +1,19 @@
 // Copyright 2026 JetBrains s.r.o. Licensed under the Apache License, Version 2.0.
 package org.jetbrains.qodana.edict.integration.support
 
+import io.ktor.server.cio.CIO
+import io.ktor.server.engine.embeddedServer
+import io.modelcontextprotocol.kotlin.sdk.server.mcpStreamableHttp
+import kotlinx.coroutines.runBlocking
 import org.jetbrains.qodana.edict.common.runProcess
 import org.jetbrains.qodana.edict.common.sha256
+import org.jetbrains.qodana.edict.edictnext.EdictNextMcpToolset
+import org.jetbrains.qodana.edict.edictnext.EdictNextWorkspace
+import org.jetbrains.qodana.edict.edictnext.EdictSessionContext
 import org.jetbrains.qodana.edict.git.CommitSignalExtractor
 import org.jetbrains.qodana.edict.git.GitRepository
 import org.jetbrains.qodana.edict.git.SignalFinding
+import org.jetbrains.qodana.edict.integration.support.inspection.InspectionLifecycleFixture
 import org.jetbrains.qodana.edict.mcp.McpServer
 import org.jetbrains.qodana.edict.model.Signal
 import org.jetbrains.qodana.edict.model.SignalLabel
@@ -27,6 +35,7 @@ import java.nio.file.StandardOpenOption.CREATE
 import java.nio.file.StandardOpenOption.WRITE
 import java.nio.file.attribute.BasicFileAttributes
 import java.nio.file.attribute.PosixFilePermissions
+import java.util.UUID
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 
@@ -60,6 +69,43 @@ internal class IntegrationWorkspace private constructor(
                 val result = runtime.run(prompt, timeoutMinutes)
                 println(store.redact(result))
                 verify(store, runtime, result)
+            }
+        }
+    }
+
+    /** Runs an existing managed-skill scenario through the SDK-based Edict Next MCP transport. */
+    fun withEdictNextCodex(
+        prompt: String, timeoutMinutes: Long = 20, verify: (Store, CodexRunner, String) -> Unit,
+    ) = runBlocking {
+        InspectionLifecycleFixture(output).use { inspection ->
+            Store(state).use { store ->
+                val sessionId = UUID.randomUUID().toString()
+                val context = EdictSessionContext.getInstance(sessionId)
+                context.load(
+                    EdictNextWorkspace.forRun(output.resolve("log"), sessionId),
+                    state,
+                    project,
+                    inspection.qodanaExecutable.toString(),
+                )
+                val server = McpServer(store, logs = logs)
+                val engine = embeddedServer(CIO, host = "127.0.0.1", port = 0) {
+                    mcpStreamableHttp { EdictNextMcpToolset(sessionId, server).createServer() }
+                }.start(wait = false)
+                try {
+                    val port = engine.engine.resolvedConnectors().single().port
+                    val runtime = CodexRunner(
+                        output, project, state, "http://127.0.0.1:$port/mcp", agentLogger = server.agents,
+                    )
+                    runtime.prepare()
+                    runtime.verifySandbox()
+                    println("Edict Next managed run: ${runtime.model}; logs: $logs")
+                    val result = runtime.run(prompt, timeoutMinutes)
+                    println(store.redact(result))
+                    verify(store, runtime, result)
+                } finally {
+                    engine.stop(1_000, 5_000)
+                    context.unload()
+                }
             }
         }
     }

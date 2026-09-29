@@ -20,13 +20,13 @@ analysis session for local Git extraction. Keep temporary packages outside the s
    commits, merges, reverts, automated commits, and commits without relevant source changes. Assign
    `commit-<first 16 revision characters>` IDs. A terse message alone is not grounds to exclude an otherwise eligible
    correction before source inspection.
-2. Partition the prepared set into disjoint, non-empty chunks of at most eight work items, preserving their order.
-   Create and delegate one `edict-signal-analysis` task per chunk with `operations: []`. Include every assigned
+2. Create and delegate one `edict-signal-analysis` task per prepared work item with `operations: []`, preserving
+   stable order. Every task owns exactly one commit; never combine several commits in one evidence worker. Include its
    work-item ID, full commit/parent revisions and complete message
    in the `edict_delegate` prompt, together with its retained packages, source checkout, revision
    readers if needed, and private scratch path. Pass only the returned short launch prompt to a fresh native subagent; it fetches
    the full assignment from `edict_task_get`. Even a singleton runs in a managed child; there is no inline fallback.
-   Use waves within available concurrency, never larger chunks just to fit one wave. Assign each item exactly once.
+   Use waves within available concurrency. Assign each item exactly once.
 3. Verify complete inspection coverage: returned inspected IDs must equal the prepared set exactly, with no duplicates,
    missing or blocked items. Every worker must have inspected complete human material plus exact source and diff. Stop
    on incomplete coverage after retrying lost or blocked inspection when possible. Preserve every supported worker

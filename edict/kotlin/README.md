@@ -1,10 +1,9 @@
 # Edict — managed skills for Kotlin/JVM
 
 Standalone Gradle application for the managed part of Edict. Requires JDK 21+ and
-Git; the Gradle wrapper downloads the pinned distribution. The only runtime
-libraries beyond Kotlin are `kotlinx.serialization` and the TOML configuration
-parser `tomlj`. There are no IntelliJ, Qodana
-CLI, Go, or Bazel dependencies.
+Git; the Gradle wrapper downloads the pinned distribution. It uses the Kotlin MCP
+SDK and Ktor for stdio and Streamable HTTP transports. There are no IntelliJ,
+Qodana CLI, Go, or Bazel dependencies.
 
 ```sh
 cd edict/kotlin
@@ -12,17 +11,17 @@ cd edict/kotlin
 build/install/edict/bin/edict --help
 build/install/edict/bin/edict install-skills --directory /path/to/codex-home/skills
 build/install/edict/bin/edict mcp --project-dir /path/to/source --state-dir /path/to/state
+build/install/edict/bin/edict edict-mcp-next --project-dir /path/to/project --state-dir /path/to/state --http-port 62780
 ```
 
 ## Qodana CLI integration
 
 The Go commands `qodana edict install` and `qodana edict mcp start` launch this
-Kotlin application with Qodana's embedded JBR. Skill installation always installs
-the 13 managed skills; `--managed` remains accepted for compatibility. Destination
+Kotlin application with Qodana's embedded JBR. Skill installation installs the
+13 managed skills; `--managed` remains accepted for compatibility. Destination
 selection still supports `--dest`, `--project`, and `$CODEX_HOME/skills` (falling
 back to `~/.codex/skills`). Installation prints the installed names. Existing
-unrelated skills are preserved, including any old `*-next-*` copies; remove those
-old copies from your Codex skills directory when migrating. When upgrading from
+unrelated skills are preserved. When upgrading from
 prefixed worker names, reinstall the bundle and remove worker directories with
 the previous `managed-` prefix.
 
@@ -60,8 +59,7 @@ must share one server and one state lock.
 
 - All 13 managed skills, their invocation policies, and shared references.
   Worker registry IDs and installed skill names both use `edict-*`.
-  The manager remains `edict_manager`. The `-next-` component is removed from
-  names, references, prompts, and registry policies in this project.
+  The manager remains `edict_manager`.
 - Manager claims, task assignment retrieval, native worker startup, attenuated
   capabilities, call-graph restrictions, cancellation, retries, and revocation.
   Capabilities are stored only as hashes in memory and excluded from saved data
@@ -75,8 +73,8 @@ must share one server and one state lock.
   extraction boundary with an injectable semantic analyzer.
 - Task-bound sequential distribution with same-language embedding candidates, context receipts, one guarded
   Signal-to-cluster transition, a durable vector cache, and post-distribution validation. Code-example,
-  cluster-example, and generation-state gates remain read-only. Generated inspection compilation and execution deliberately remain in
-  Ultimate's generic inspection MCP and are never embedded in this CLI.
+  cluster-example, and generation-state gates remain read-only. Generated inspection compilation and execution run through
+  Ultimate's generic inspection MCP; this CLI contains only its lifecycle and HTTP client.
 - GitHub and Space review readers, bounded selection, pagination, bot filtering,
   complete discussion provenance, exact source snapshots, task-bound batches,
   ordered coverage validation, and publication receipts tied to exact bytes.
@@ -90,8 +88,7 @@ them in the application JAR and generates their resource index; Kotlin's `Skills
 loader reads and installs the bundle from the classpath. Both the CLI and Codex
 runner use that loader, with no access to the parent project's skill directory.
 
-The original Go implementation and unmanaged skill bundle remain outside this
-project. The inspection-generation skills are bundled as orchestration clients;
+The original Go implementation remains outside this project. The inspection-generation skills are bundled as orchestration clients;
 compiling/running inspection scripts requires separately supplied inspection
 tools. This project does not embed an IDE or implement an inspection compiler.
 

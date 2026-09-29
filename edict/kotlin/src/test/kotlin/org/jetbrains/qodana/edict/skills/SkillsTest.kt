@@ -11,7 +11,7 @@ class SkillsTest {
     lateinit var directory: Path
 
     @Test
-    fun `install only managed skills with matching registry and metadata`() {
+    fun `install managed skills with matching registry and metadata`() {
         val installed = Skills.install(directory)
         assertEquals(13, installed.size)
         assertEquals(Registry.policies.map { it.name }.sorted(), installed)
@@ -24,7 +24,9 @@ class SkillsTest {
             assertContains(invocation, "allow_implicit_invocation: ${name == "edict_manager"}")
         }
         assertTrue(Files.exists(directory.resolve("edict_manager/references/protocol.md")))
+        assertFalse(Files.exists(directory.resolve("edict-next-run/SKILL.md")))
         assertFailsWith<IllegalArgumentException> { Skills.install(directory, "../edict_manager") }
+        assertFailsWith<IllegalArgumentException> { Skills.install(directory, "edict-next-run") }
     }
 
     @Test

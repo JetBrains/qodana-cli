@@ -22,6 +22,10 @@ class CodexRunner(
     val model: String = System.getenv("CODEX_MODEL") ?: "gpt-5.6-sol",
     private val agentLogger: AgentLogger? = null,
     private val additionalMcpServers: Map<String, String> = emptyMap(),
+    private val primaryMcpName: String = "edict-mcp",
+    private val primaryMcpCommand: List<String>? = null,
+    private val primaryMcpEnabledTools: List<String>? = null,
+    private val additionalWritableRoots: List<Path> = emptyList(),
 ) {
     val home: Path = output.resolve("codex-home")
     val scratch: Path = output.resolve("scratch")
@@ -29,7 +33,8 @@ class CodexRunner(
     private fun quote(value: String): String = JsonPrimitive(value).toString()
 
     fun prepare() {
-        require("edict-mcp" !in additionalMcpServers) { "Additional tools must not replace the managed Edict server" }
+        require(primaryMcpName !in additionalMcpServers) { "Additional tools must not replace the primary Edict server" }
+        require(primaryMcpCommand == null || primaryMcpCommand.isNotEmpty()) { "The primary MCP command must not be empty" }
         listOf(output, home, scratch, trace).forEach {
             Files.createDirectories(it)
             if (Files.getFileStore(it).supportsFileAttributeView("posix")) Files.setPosixFilePermissions(
@@ -71,8 +76,10 @@ class CodexRunner(
             ${quote(home.resolve("sessions").toAbsolutePath().toString())} = "deny"
             ${quote(home.resolve("log").toAbsolutePath().toString())} = "deny"
             ${quote(output.resolve("log").toAbsolutePath().toString())} = "deny"
+            ${additionalWritableRoots.joinToString("\n") { "${quote(it.toRealPath().resolve(".git").toString())} = \"write\"" }}
             [permissions.edict-test.workspace_roots]
             ${quote(scratch.toAbsolutePath().toString())} = true
+            ${additionalWritableRoots.joinToString("\n") { "${quote(it.toRealPath().toString())} = true" }}
             [permissions.edict-test.filesystem.":workspace_roots"]
             "." = "write"
             [permissions.edict-test.network]
@@ -82,12 +89,10 @@ class CodexRunner(
             [features]
             multi_agent = true
             [agents]
+            enabled = true
             max_depth = 5
             max_concurrent_threads_per_session = 50
-            [mcp_servers.edict-mcp]
-            url = ${quote(mcpUrl)}
-            default_tools_approval_mode = "approve"
-        """.trimIndent() + "\n" + additionalMcpServers.entries.joinToString("\n") { (name, url) ->
+        """.trimIndent() + "\n" + primaryMcpConfiguration() + additionalMcpServers.entries.joinToString("\n") { (name, url) ->
                 """
                 [mcp_servers.${quote(name)}]
                 url = ${quote(url)}
@@ -95,6 +100,25 @@ class CodexRunner(
                 tool_timeout_sec = 300
             """.trimIndent() + "\n"
             })
+    }
+
+    private fun primaryMcpConfiguration(): String {
+        val transport = primaryMcpCommand?.let { command ->
+            """
+                command = ${quote(command.first())}
+                args = [${command.drop(1).joinToString(", ") { quote(it) }}]
+                startup_timeout_sec = 120
+                tool_timeout_sec = 3600
+            """.trimIndent()
+        } ?: "url = ${quote(mcpUrl)}"
+        return """
+            [mcp_servers.${quote(primaryMcpName)}]
+            $transport
+            required = true
+            ${primaryMcpEnabledTools?.let { tools -> "enabled_tools = [${tools.joinToString(", ") { quote(it) }}]" }.orEmpty()}
+            omit_tools_from = ["code_mode", "deferred"]
+            default_tools_approval_mode = "approve"
+        """.trimIndent() + "\n"
     }
 
     // Inherit only the selected provider, never unrelated hooks, MCP servers, skills or host permissions.

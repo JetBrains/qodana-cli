@@ -17,7 +17,7 @@ import org.junit.jupiter.api.Test
 class LiveCommitExtractionTest : IntegrationTest() {
     @Test
     fun `managed skills extract signals from one Distillery commit with real native workers`() {
-        workspace.withCodex("Extract signals from the latest commit.") { store, runtime, _ ->
+        workspace.withEdictNextCodex("Extract signals from the latest commit.") { store, runtime, _ ->
             val plan = assertNotNull(store.plan())
             assertEquals(2, plan.tasks.size, "One batch and one evidence worker required")
             assertTrue(plan.tasks.all { it.status == "completed" && it.agentId.isNotBlank() })

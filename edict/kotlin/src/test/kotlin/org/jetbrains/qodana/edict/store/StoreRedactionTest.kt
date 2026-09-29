@@ -64,8 +64,8 @@ class StoreRedactionTest {
             })
             assertEquals(true, response.flag("isError"))
             assertEquals(1, store.plan()!!.tasks.size)
-            Files.list(logs).use { paths ->
-                paths.forEach { file ->
+            Files.walk(logs).use { paths ->
+                paths.filter(Files::isRegularFile).forEach { file ->
                     val content = Files.readString(file).replace("\n    ", "")
                     listOf(manager.token, batch.token).forEach { assertFalse(content.contains(it), file.toString()) }
                 }

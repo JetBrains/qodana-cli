@@ -2,7 +2,10 @@
 package org.jetbrains.qodana.edict
 
 import io.modelcontextprotocol.kotlin.sdk.server.StdioServerTransport
-import kotlinx.coroutines.Job
+import io.modelcontextprotocol.kotlin.sdk.server.mcpStreamableHttp
+import io.ktor.server.cio.CIO
+import io.ktor.server.engine.embeddedServer
+import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.runBlocking
 import kotlinx.io.asSink
 import kotlinx.io.asSource
@@ -16,9 +19,12 @@ import org.jetbrains.qodana.edict.store.Store
 import java.nio.file.Path
 import java.util.concurrent.CountDownLatch
 import java.util.UUID
+import java.util.concurrent.atomic.AtomicBoolean
 import kotlin.system.exitProcess
 
 fun main(args: Array<String>) {
+    // Stdout is the MCP wire for stdio commands; kotlin-logging 8 otherwise prints a startup banner there.
+    System.setProperty("kotlin-logging.logStartupMessage", "false")
     try {
         val command = args.firstOrNull() ?: "help"
         val options = args.drop(1).chunked(2).associate { pair ->
@@ -65,7 +71,14 @@ fun main(args: Array<String>) {
 
             "edict-mcp-next" -> {
                 require(options.keys.all {
-                    it in listOf("project-dir", "state-dir", "source-repository", "log-dir", "qodana-executable")
+                    it in listOf(
+                        "project-dir",
+                        "state-dir",
+                        "source-repository",
+                        "log-dir",
+                        "qodana-executable",
+                        "http-port",
+                    )
                 }) { "Unknown Edict Next option" }
                 val project = Path.of(options["project-dir"] ?: error("Use --project-dir <analyzed-project>"))
                     .toAbsolutePath().normalize()
@@ -81,21 +94,43 @@ fun main(args: Array<String>) {
                 runBlocking {
                     val context = EdictSessionContext.getInstance(sessionId)
                     context.load(EdictNextWorkspace.forRun(logs, sessionId), sourceRepository, project, qodanaExecutable)
+                    val unloaded = AtomicBoolean()
+                    suspend fun unloadOnce() {
+                        if (unloaded.compareAndSet(false, true)) context.unload()
+                    }
+                    val hook = Thread { runBlocking { unloadOnce() } }
+                    Runtime.getRuntime().addShutdownHook(hook)
                     try {
                         Store(state).use { store ->
                             val managedServer = McpServer(store, logs = logs.resolve("edict"))
-                            val server = EdictNextMcpToolset(sessionId, managedServer).createServer()
-                            val transport = StdioServerTransport(
-                                input = System.`in`.asSource().buffered(),
-                                output = System.out.asSink().buffered(),
-                            )
-                            val session = server.createSession(transport)
-                            val closed = Job()
-                            session.onClose { closed.complete() }
-                            closed.join()
+                            val toolset = EdictNextMcpToolset(sessionId, managedServer)
+                            val httpPort = options["http-port"]?.toInt()
+                            if (httpPort != null) {
+                                require(httpPort in 1..65535) { "HTTP port must be between 1 and 65535" }
+                                val engine = embeddedServer(CIO, host = "127.0.0.1", port = httpPort) {
+                                    mcpStreamableHttp { toolset.createServer() }
+                                }
+                                System.err.println("edict-mcp-next listening at http://127.0.0.1:$httpPort/mcp")
+                                engine.start(wait = true)
+                            } else {
+                                val server = toolset.createServer()
+                                val transport = StdioServerTransport(
+                                    input = System.`in`.asSource().buffered(),
+                                    output = System.out.asSink().buffered(),
+                                )
+                                val closed = CompletableDeferred<Unit>()
+                                transport.onClose { closed.complete(Unit) }
+                                server.createSession(transport)
+                                closed.await()
+                            }
                         }
                     } finally {
-                        context.unload()
+                        unloadOnce()
+                        try {
+                            Runtime.getRuntime().removeShutdownHook(hook)
+                        } catch (_: IllegalStateException) {
+                            // JVM shutdown already started and is running the hook.
+                        }
                     }
                 }
             }
@@ -105,7 +140,7 @@ fun main(args: Array<String>) {
                 Edict managed skills (standalone Kotlin/JVM)
                   edict install-skills --directory <skills-directory> [--skill <name>]
                   edict mcp [--project-dir <project>] [--state-dir <state>] [--log-dir <logs>] [--embedding-python <python>] [--http-port <port>]
-                  edict edict-mcp-next --project-dir <project> --state-dir <state> [--source-repository <repository>] [--log-dir <logs>] [--qodana-executable <qodana>]
+                  edict edict-mcp-next --project-dir <project> --state-dir <state> [--source-repository <repository>] [--log-dir <logs>] [--qodana-executable <qodana>] [--http-port <port>]
                 MCP uses stdio by default. HTTP binds to loopback and shares one store across workers.
             """.trimIndent()
             )

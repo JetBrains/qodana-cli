@@ -18,10 +18,11 @@ internal class EdictSessionContext private constructor(private val sessionId: St
     sourceRepository: Path,
     analyzedProject: Path,
     qodanaExecutable: String,
+    inspectionServer: IntellijMcpServerService = IntellijMcpServerService(analyzedProject, qodanaExecutable),
   ) {
     lock.withLock { check(activeRun == null) { "An Edict run is already active" } }
     val projectRevision = GitRepository(analyzedProject).resolve("HEAD")
-    val server = IntellijMcpServerService(analyzedProject, qodanaExecutable)
+    val server = inspectionServer
     server.start()
     lock.withLock {
       activeRun = ActiveRun(
