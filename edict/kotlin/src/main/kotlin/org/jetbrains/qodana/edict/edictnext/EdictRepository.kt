@@ -7,6 +7,7 @@ import org.jetbrains.qodana.edict.git.GitRepository
 import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.StandardCopyOption
+import java.nio.file.StandardOpenOption
 import kotlin.io.path.createDirectories
 import kotlin.io.path.deleteIfExists
 import kotlin.io.path.exists
@@ -57,6 +58,103 @@ internal class EdictRepository(val paths: EdictRepositoryDirectory) {
   }
 
   fun loadInboxSignals(): List<EdictNextSignal> = loadSignals(paths.inboxDirectory)
+
+  fun clusterSignalIds(clusterId: String): Set<String> {
+    require(EDICT_NEXT_KEBAB_CASE.matches(clusterId)) { "Invalid cluster id '$clusterId'" }
+    val clusterDirectory = EdictNextClusterDirectory(paths.clustersDirectory.resolve(clusterId))
+    require(clusterDirectory.manifestPath.isRegularFile()) { "Cluster '$clusterId' does not exist" }
+    val manifest = EdictNextJson.decodeFromString<EdictNextClusterManifest>(clusterDirectory.manifestPath.readText())
+    require(manifest.id == clusterId) { "Cluster manifest id '${manifest.id}' does not match '$clusterId'" }
+    return loadSignals(clusterDirectory.signalsDirectory).mapTo(linkedSetOf(), EdictNextSignal::id)
+  }
+
+  fun saveCodeExample(
+    clusterId: String,
+    exampleId: String,
+    metadata: EdictNextCodeExampleMetadata,
+    sourceCode: String,
+  ) {
+    require(EDICT_NEXT_KEBAB_CASE.matches(clusterId)) { "Invalid cluster id '$clusterId'" }
+    require(EDICT_NEXT_KEBAB_CASE.matches(exampleId)) { "Invalid example id '$exampleId'" }
+    require(metadata.id == exampleId) { "Example metadata id '${metadata.id}' does not match '$exampleId'" }
+    val clusterDirectory = EdictNextClusterDirectory(paths.clustersDirectory.resolve(clusterId))
+    require(clusterDirectory.manifestPath.isRegularFile()) { "Cluster '$clusterId' does not exist" }
+    val manifest = EdictNextJson.decodeFromString<EdictNextClusterManifest>(clusterDirectory.manifestPath.readText())
+    require(manifest.status == EdictNextClusterStatus.Pending) { "Cluster '$clusterId' is not Pending" }
+    val fileName = Path.of(metadata.fileName)
+    require(!fileName.isAbsolute && fileName.nameCount == 1 && metadata.fileName == fileName.fileName.toString()) {
+      "Example source file must be a single relative file name"
+    }
+    require(fileName.toString().substringAfterLast('.', "") == manifest.language.fileExtension) {
+      "Example source language does not match cluster '$clusterId'"
+    }
+    clusterDirectory.examplesDirectory.createDirectories()
+    val temporaryRoot = Files.createTempDirectory(clusterDirectory.root, ".edict-example-")
+    try {
+      val temporary = EdictNextExampleDirectory(temporaryRoot)
+      temporary.projectDirectory.createDirectories()
+      temporary.sourcePath(metadata.fileName).writeText(sourceCode)
+      write(temporary.metadataPath, metadata, EdictNextCodeExampleMetadata.serializer())
+      val target = clusterDirectory.examplesDirectory.resolve(exampleId)
+      if (target.exists()) target.toFile().deleteRecursively()
+      Files.move(temporaryRoot, target, StandardCopyOption.ATOMIC_MOVE)
+    }
+    finally {
+      temporaryRoot.toFile().deleteRecursively()
+    }
+  }
+
+  fun assignCodeExample(clusterId: String, signalId: String, exampleId: String) {
+    val cluster = loadCluster(clusterId)
+    val signal = cluster.signals.singleOrNull { it.id == signalId }
+                 ?: error("Signal '$signalId' does not belong to cluster '$clusterId'")
+    val example = cluster.examples.singleOrNull { it.metadata.id == exampleId }
+                  ?: error("Code example '$exampleId' does not belong to cluster '$clusterId'")
+    require(signal.label == example.metadata.label) {
+      "Signal '$signalId' and example '$exampleId' have different labels"
+    }
+    write(
+      cluster.directory.signalPath(signalId),
+      signal.copy(syntheticExampleId = exampleId),
+      EdictNextSignal.serializer(),
+    )
+  }
+
+  fun deleteCodeExample(clusterId: String, exampleId: String) {
+    require(EDICT_NEXT_KEBAB_CASE.matches(clusterId)) { "Invalid cluster id '$clusterId'" }
+    require(EDICT_NEXT_KEBAB_CASE.matches(exampleId)) { "Invalid example id '$exampleId'" }
+    val clusterDirectory = EdictNextClusterDirectory(paths.clustersDirectory.resolve(clusterId))
+    loadSignals(clusterDirectory.signalsDirectory).forEach { signal ->
+      require(signal.syntheticExampleId != exampleId) {
+        "Code example '$exampleId' is still assigned to Signal '${signal.id}'"
+      }
+    }
+    val exampleDirectory = clusterDirectory.examplesDirectory.resolve(exampleId)
+    require(exampleDirectory.isDirectory()) { "Code example '$exampleId' does not exist" }
+    exampleDirectory.toFile().deleteRecursively()
+  }
+
+  fun saveCandidateInspection(clusterId: String, code: String) {
+    require(loadCluster(clusterId).manifest.status == EdictNextClusterStatus.Pending) {
+      "Cluster '$clusterId' is not Pending"
+    }
+    paths.candidateInspectionPath(clusterId).also { path ->
+      path.parent.createDirectories()
+      path.writeText(code)
+    }
+  }
+
+  fun appendHistory(clusterId: String, entry: String) {
+    require(entry.isNotBlank()) { "History entry must not be blank" }
+    val cluster = loadCluster(clusterId)
+    require(cluster.manifest.status == EdictNextClusterStatus.Pending) { "Cluster '$clusterId' is not Pending" }
+    Files.writeString(
+      cluster.historyPath,
+      entry.trimEnd() + "\n",
+      StandardOpenOption.CREATE,
+      StandardOpenOption.APPEND,
+    )
+  }
 
   fun markGenerated(cluster: EdictNextStoredCluster, selectedInspection: Path) {
     require(selectedInspection.isRegularFile()) { "Selected inspection does not exist: $selectedInspection" }

@@ -42,6 +42,46 @@ internal class EdictNextGenerationService private constructor(
       validateCodeExample(context.repository(), clusterId, exampleId)
     }
 
+  suspend fun saveCodeExample(
+    clusterId: String,
+    exampleId: String,
+    metadataJson: String,
+    sourceCode: String,
+  ): EdictNextMutationResponse = withinGenerationTarget(clusterId) { repository ->
+    val metadata = EdictNextJson.decodeFromString<EdictNextCodeExampleMetadata>(metadataJson)
+    repository.saveCodeExample(clusterId, exampleId, metadata, sourceCode)
+    EdictNextMutationResponse(true, "Stored code example '$exampleId' in cluster '$clusterId'")
+  }
+
+  suspend fun assignCodeExample(
+    clusterId: String,
+    signalId: String,
+    exampleId: String,
+  ): EdictNextMutationResponse = withinGenerationTarget(clusterId) { repository ->
+    val validation = validateCodeExample(repository, clusterId, exampleId)
+    require(validation.success) { validation.summary + ": " + validation.issues.joinToString("; ") }
+    repository.assignCodeExample(clusterId, signalId, exampleId)
+    EdictNextMutationResponse(true, "Assigned code example '$exampleId' to Signal '$signalId'")
+  }
+
+  suspend fun deleteCodeExample(clusterId: String, exampleId: String): EdictNextMutationResponse =
+    withinGenerationTarget(clusterId) { repository ->
+      repository.deleteCodeExample(clusterId, exampleId)
+      EdictNextMutationResponse(true, "Deleted unassigned code example '$exampleId' from cluster '$clusterId'")
+    }
+
+  suspend fun saveCandidateInspection(clusterId: String, code: String): EdictNextMutationResponse =
+    withinGenerationTarget(clusterId) { repository ->
+      repository.saveCandidateInspection(clusterId, code)
+      EdictNextMutationResponse(true, "Stored candidate inspection for cluster '$clusterId'")
+    }
+
+  suspend fun appendHistory(clusterId: String, entry: String): EdictNextMutationResponse =
+    withinGenerationTarget(clusterId) { repository ->
+      repository.appendHistory(clusterId, entry)
+      EdictNextMutationResponse(true, "Appended history for cluster '$clusterId'")
+    }
+
   suspend fun validateClusterExamples(clusterId: String): EdictNextCodeExampleValidationResponse {
     val cluster = try {
       context.repository().loadCluster(clusterId)
@@ -249,6 +289,17 @@ internal class EdictNextGenerationService private constructor(
         "The predecessor inspection does not meet the acceptance criterion: ${validation.summary}"
       },
     )
+  }
+
+  private suspend fun <T : Any> withinGenerationTarget(
+    clusterId: String,
+    action: suspend (EdictRepository) -> T,
+  ): T {
+    val repository = context.repository()
+    val frozenSignalIds = generationTargetSignalIdsByClusterId[clusterId]
+                          ?: error("Cluster '$clusterId' is not a frozen generation target")
+    require(repository.clusterSignalIds(clusterId) == frozenSignalIds) { "Cluster '$clusterId' Signal membership changed" }
+    return withinClusterGenerationDeadline(clusterId, frozenSignalIds) { action(repository) }
   }
 
   private fun requireNoIssues(issues: List<EdictNextValidationIssue>) {
