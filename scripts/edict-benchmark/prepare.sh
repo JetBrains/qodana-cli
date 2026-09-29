@@ -5,7 +5,8 @@ source "$(dirname "$0")/common.sh"
 qodana edict install --dest "$benchmark_codex_home/skills"
 
 [[ -x "$benchmark_embedding_launcher" ]] || { echo "Embedding Python launcher not found: $benchmark_embedding_launcher" >&2; exit 1; }
-nohup setsid qodana edict mcp start --project-dir "$benchmark_project" --state-dir "$benchmark_state" \
+XDG_CACHE_HOME="$benchmark_output/cache" nohup setsid qodana edict mcp start \
+  --project-dir "$benchmark_project" --state-dir "$benchmark_state" \
   --source-repository "$benchmark_state" \
   --embedding-python "$benchmark_embedding_launcher" \
   --log-dir "$benchmark_output/log" --http-port 0 > "$benchmark_output/log/edict-server.log" 2>&1 < /dev/null &

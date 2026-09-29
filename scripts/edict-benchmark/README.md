@@ -29,7 +29,8 @@ The pipeline has seven steps:
    default Python. The existing
    `.edict/inbox` files are used directly, without importing, copying, or filtering
    signals. The CLI launches the native `idea mcpServer` headless entry point
-   and waits for readiness.
+   and waits for readiness. Its lifecycle cache is isolated below `benchmark-output`
+   so stale state from another agent build cannot collide by reused process ID.
    Both servers must be ready before execution. The shared managed endpoint remains
    available to isolated Codex workers, and MCP tool calls are auto-approved.
 6. `generate.sh` executes Codex directly with `process inbox and generate new rules`.
