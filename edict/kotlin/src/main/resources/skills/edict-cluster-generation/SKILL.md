@@ -25,10 +25,10 @@ one review of each kind. Any repair after code review consumes the next iteratio
 The managed server refuses a sixth task of each review kind for this cluster worker, including after a restart.
 An exhausted review budget is a bounded domain outcome; finalize existing work rather than retrying the rejected add.
 
-BLOCKER findings require repairs while another iteration remains. MAJOR findings request another iteration when one
-remains, but do not stop example validation, project execution, or downstream reviews in the current iteration. Do not
-change code merely to clear MAJOR or MINOR findings; carry them into the next review for reassessment against the
-collected evidence. If the candidate is unchanged, reuse its hash-matched measurements. At the fifth iteration, review
+BLOCKER findings require repairs while another iteration remains. MAJOR findings are publishable limitations: they do
+not request another iteration and do not stop example validation, project execution, downstream reviews, or publication.
+Do not change code merely to clear MAJOR or MINOR findings; retain them for `knownProblems`. If the candidate is
+unchanged, reuse its hash-matched measurements. At the fifth iteration, review
 findings no longer block publication: if the exact candidate compiles and passes the mandatory example and provenance
 checks, set the cluster to `Generated` and record every unresolved BLOCKER and MAJOR finding for that exact candidate in
 `description.json` under `knownProblems`. Store published limitations with schema severity MAJOR, while preserving each
@@ -107,7 +107,7 @@ to the runner and record that hash with each measurement; a hash copied from a d
    project, scratch output, and iteration number. On a BLOCKER/REJECT, make the smallest general repair and obtain a
    fresh independent review in the next iteration, if one remains. On iteration five, retain unresolved review findings
    for `knownProblems` and continue mandatory measurements instead of leaving Pending. With only MAJOR/MINOR findings,
-   continue this iteration's measurements and reviews.
+   continue this iteration's measurements and weak-signal review, then publish without another repair iteration.
 2. Compile the exact reviewed candidate and run it with Ultimate's generic `run_inspection_kts` against all assigned
    examples, always passing the inspected source project as `projectPath` and exact `edict_read` candidate bytes as
    `inspectionKtsCode`. Require compilation success, at least one positive example, and at least 85% aggregate label
@@ -124,10 +124,10 @@ to the runner and record that hash with each measurement; a hash copied from a d
    configured review output paths, and iteration number. All review artifacts belong to this one attempt.
 2. Delegate `edict-weak-signal-review` with `example.write` limited to this cluster's examples directory; this
    permission is for delegation to its example children. Supply the manifest. Read every false-positive report and its
-   severity. Repair BLOCKER findings in the next iteration if available; MAJOR findings request another iteration but
-   do not block eventual publication. On iteration five, retain all unresolved findings for `knownProblems` and publish
-   after the mandatory checks pass. Do not automatically repair every false positive. With no BLOCKER or MAJOR findings,
-   finish early. Rejection or exhausted iterations alone do not justify Pending, Invalid, or Discontinued.
+   severity. Repair BLOCKER findings in the next iteration if available. MAJOR findings do not request another
+   iteration; retain them for `knownProblems` and publish after the mandatory checks pass. On iteration five, do the
+   same for all unresolved findings. Do not automatically repair every false positive. With no BLOCKER or MAJOR
+   findings, finish early. Rejection or exhausted iterations alone do not justify Pending, Invalid, or Discontinued.
 
 Any candidate byte change invalidates prior reviews, accuracy, and project findings. Before acceptance reread the stored
 candidate and require its hash to equal every accepted review and measured run.

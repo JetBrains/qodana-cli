@@ -42,8 +42,7 @@ class LivePipelineTest : IntegrationTest() {
                     "edict-cluster-generation",
                     "edict-code-example",
                     "edict-inspection-code-review",
-                    "edict-weak-signal-review",
-                    "edict-inspection-value-review"
+                    "edict-weak-signal-review"
                 )
                 assertTrue(
                     plan.tasks.map { it.skill }.toSet().containsAll(required),

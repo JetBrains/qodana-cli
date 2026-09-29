@@ -31,6 +31,7 @@ class SkillsTest {
         assertContains(generation, "Review findings alone must not produce a Pending outcome")
         val clusterGeneration = Files.readString(directory.resolve("edict-cluster-generation/SKILL.md"))
         assertContains(clusterGeneration, "Review findings alone never justify this transition")
+        assertContains(clusterGeneration, "MAJOR findings are publishable limitations")
         assertContains(clusterGeneration, "`review` (`code` or `weak-signal`)")
         assertFalse(clusterGeneration.contains("Delegate `edict-inspection-value-review`"))
         assertFalse(Files.exists(directory.resolve("edict-next-run/SKILL.md")))
