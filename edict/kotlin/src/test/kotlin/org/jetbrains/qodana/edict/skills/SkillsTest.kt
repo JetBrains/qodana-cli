@@ -24,6 +24,9 @@ class SkillsTest {
             assertContains(invocation, "allow_implicit_invocation: ${name == "edict_manager"}")
         }
         assertTrue(Files.exists(directory.resolve("edict_manager/references/protocol.md")))
+        val preparation = Files.readString(directory.resolve("edict-prepare/SKILL.md"))
+        assertContains(preparation, "supplied `codeSnippet` is found verbatim at the cited revision")
+        assertContains(preparation, "does not require the feedback prose itself to say that the range is")
         assertFalse(Files.exists(directory.resolve("edict-next-run/SKILL.md")))
         assertFailsWith<IllegalArgumentException> { Skills.install(directory, "../edict_manager") }
         assertFailsWith<IllegalArgumentException> { Skills.install(directory, "edict-next-run") }

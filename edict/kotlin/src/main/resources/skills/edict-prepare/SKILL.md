@@ -28,12 +28,14 @@ use read-only Git from the supplied source project (for example,
 invalid when it exists at the cited revision. Treat failure to resolve the cited Git object as unverifiable evidence;
 do not silently fall back to `HEAD`.
 
-Distinguish malformed range structure from a documented source-location limitation in `SubmittedFeedback`.
-If the feedback explicitly records a stale or overlong range and its supplied snippet is verifiable at the cited
-revision, preserve the original record and return that limitation with the prepared snapshot for downstream semantic
-processing. Do not reject the entire snapshot solely for that documented mismatch. Never invent missing lines or
-claim the full range was verified. Missing source revisions, malformed range structure, or unverifiable evidence
-remain prerequisite failures.
+Distinguish malformed range structure from a source-location limitation in `SubmittedFeedback`. Imported inspection
+feedback may retain stale inspection coordinates after the source fixture is minimized or rebased. When the cited
+range is overlong or points to different lines but the supplied `codeSnippet` is found verbatim at the cited revision,
+preserve the original record and return the cited range, verified snippet location, and mismatch as a limitation for
+downstream semantic processing. This fallback does not require the feedback prose itself to say that the range is
+stale. Do not reject the snapshot solely for this mismatch, rewrite the range, invent missing lines, or claim the cited
+range was verified. Missing source revisions, malformed range structure, or evidence for which neither the cited
+range nor supplied snippet can be verified remain prerequisite failures.
 
 
 List existing cluster descriptions, all cluster member paths, and Pending cluster IDs for downstream navigation. The
