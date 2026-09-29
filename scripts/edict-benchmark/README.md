@@ -23,7 +23,7 @@ The pipeline has seven steps:
 5. `prepare.sh` runs `qodana edict install`; Codex discovers the installed skills
    under `CODEX_HOME` and enables them by default. The script starts a shared
    `qodana edict mcp start` HTTP server using the checked-out
-   project's **`project/.edict`** as its state directory. It starts inspections with
+   project's **`project/.edict`** as both its Edict repository and managed state directory. It starts inspections with
    `qodana edict linter-mcp start`, selecting native execution through `QODANA_DIST`.
    The managed server uses the prepared embedding launcher rather than the agent's
    default Python. The existing
@@ -33,7 +33,7 @@ The pipeline has seven steps:
    Both servers must be ready before execution. The shared managed endpoint remains
    available to isolated Codex workers, and MCP tool calls are auto-approved.
 6. `generate.sh` executes Codex directly with `process inbox and generate new rules`.
-   The prompt also supplies the existing state and private scratch paths.
+   The prompt also supplies the Edict repository/state, inspected project, and private scratch paths.
    Generation uses TeamCity’s normal execution mode so cancellation remains
    interruptible. TeamCity cleans up server processes when the build finishes.
 7. A TeamCity **Gradle runner** executes `:benchmark:report`. Kotlin runs the accepted
