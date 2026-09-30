@@ -66,19 +66,33 @@ class InspectionKtsMcpClientTest {
       start()
     }
     try {
-      HttpInspectionKtsClient(URI("http://127.0.0.1:${server.address.port}/mcp")).use { client ->
+      HttpInspectionKtsClient(
+        URI("http://127.0.0.1:${server.address.port}/mcp"),
+        "/project/root",
+      ).use { client ->
         val result = client.runExamples(
           "inspection",
           listOf(InspectionKtsExampleRequest("example", "/examples/example", "Example.kt")),
         )
         assertEquals("sample-rule", result.compilation.inspectionId)
         assertEquals(3, result.files.single().foundProblems.single().lineNumber)
+        client.analyzeProject("project inspection")
       }
-      val toolCall = synchronized(requests) {
-        requests.single { it["method"]?.jsonPrimitive?.content == "tools/call" }
+      val toolCalls = synchronized(requests) {
+        requests.filter { it["method"]?.jsonPrimitive?.content == "tools/call" }
       }
-      val arguments = toolCall.getValue("params").jsonObject.getValue("arguments").jsonObject
-      assertEquals("example", arguments.getValue("examples").jsonArray.single().jsonObject.getValue("id").jsonPrimitive.content)
+      val exampleArguments = toolCalls.single {
+        it.getValue("params").jsonObject.getValue("name").jsonPrimitive.content == "run_inspection_kts_examples"
+      }.getValue("params").jsonObject.getValue("arguments").jsonObject
+      assertEquals(
+        "example",
+        exampleArguments.getValue("examples").jsonArray.single().jsonObject.getValue("id").jsonPrimitive.content,
+      )
+      val projectArguments = toolCalls.single {
+        it.getValue("params").jsonObject.getValue("name").jsonPrimitive.content == "run_inspection_kts_project"
+      }.getValue("params").jsonObject.getValue("arguments").jsonObject
+      assertEquals("project inspection", projectArguments.getValue("inspectionKtsCode").jsonPrimitive.content)
+      assertEquals("/project/root", projectArguments.getValue("projectPath").jsonPrimitive.content)
     }
     finally {
       server.stop(0)
@@ -141,7 +155,10 @@ class InspectionKtsMcpClientTest {
       start()
     }
     try {
-      HttpInspectionKtsClient(URI("http://127.0.0.1:${server.address.port}/mcp")).use { client ->
+      HttpInspectionKtsClient(
+        URI("http://127.0.0.1:${server.address.port}/mcp"),
+        "/project/root",
+      ).use { client ->
         assertFailsWith<StaleInspectionMcpSession> { client.compile("inspection") }
       }
       assertEquals(listOf("expired-session"), synchronized(toolSessions) { toolSessions.toList() })
