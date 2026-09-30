@@ -97,8 +97,26 @@ internal class IntellijMcpServerService(
     clientFactory.create(serverLifecycle.start()).also { client = it }
   }
 
+  suspend fun <T> withClient(action: suspend (InspectionKtsClient) -> T): T {
+    val initial = start()
+    return try {
+      action(initial)
+    }
+    catch (_: StaleInspectionMcpSession) {
+      action(restart(initial))
+    }
+  }
+
   suspend fun <T> waitForAnalysis(action: suspend (InspectionKtsClient) -> T): T = analyses.withLock {
-    action(start())
+    withClient(action)
+  }
+
+  private suspend fun restart(staleClient: InspectionKtsClient): InspectionKtsClient = lifecycle.withLock {
+    client?.takeIf { it !== staleClient }?.let { return@withLock it }
+    staleClient.close()
+    client = null
+    serverLifecycle.stop()
+    clientFactory.create(serverLifecycle.start()).also { client = it }
   }
 
   suspend fun stop() {

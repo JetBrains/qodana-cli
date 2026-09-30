@@ -4,10 +4,13 @@ package org.jetbrains.qodana.edict.edictnext
 internal class EdictNextInspection(
   private val client: suspend () -> InspectionKtsClient,
   private val projectAnalysis: suspend (String) -> InspectionKtsProjectRunResult,
+  private val exampleAnalysis: suspend (String, List<InspectionKtsExampleRequest>) -> InspectionKtsBatchRunResult =
+    { code, requests -> client().runExamples(code, requests) },
 ) {
   constructor(server: IntellijMcpServerService) : this(
     client = { server.start() },
     projectAnalysis = { code -> server.waitForAnalysis { it.analyzeProject(code) } },
+    exampleAnalysis = { code, requests -> server.withClient { it.runExamples(code, requests) } },
   )
 
   suspend fun validate(cluster: EdictNextStoredCluster, code: String): EdictNextInspectionValidationResponse {
@@ -18,7 +21,7 @@ internal class EdictNextInspection(
         targetFilePath = example.directory.projectDirectory.relativize(example.sourcePath).toString(),
       )
     }
-    val execution = client().runExamples(code, requests)
+    val execution = exampleAnalysis(code, requests)
     rejectMetadata(cluster.id, execution.compilation)?.let { return it }
 
     val failures = mutableListOf<EdictNextInspectionFailure>()
