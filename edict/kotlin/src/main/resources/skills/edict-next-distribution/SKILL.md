@@ -10,7 +10,8 @@ domain work and use its assigned task lifecycle.
 
 Load only this skill.
 
-Call `edict_prepare_pipeline(worktreePath)` once with the supplied Edict worktree.
+Call `edict_prepare_pipeline()` once with no arguments. The trusted server binds it to the configured managed Edict
+repository; never substitute the inspected project or another filesystem path.
 
 ## Evidence
 

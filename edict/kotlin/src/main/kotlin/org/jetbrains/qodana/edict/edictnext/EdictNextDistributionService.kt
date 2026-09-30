@@ -1,6 +1,5 @@
 package org.jetbrains.qodana.edict.edictnext
 
-import java.nio.file.Path
 import java.util.concurrent.ConcurrentHashMap
 
 /** Prepares and applies one sequential distribution batch. */
@@ -9,14 +8,12 @@ internal class EdictNextDistributionService private constructor(private val sess
     private var batch: DistributionBatch? = null
     internal var maxInboxSignalsPerRun: Int = EDICT_NEXT_MAX_INBOX_SIGNALS_PER_RUN
 
-    suspend fun preparePipeline(worktreePath: String): EdictNextPreparePipelineResponse {
+    suspend fun preparePipeline(): EdictNextPreparePipelineResponse {
         val sourceRepository = EdictRepository(EdictRepositoryDirectory(context.sourceRepository))
         val sourceState = sourceRepository.loadState()
         requireValidState(sourceRepository, sourceState)
 
-        val repository = EdictRepository(
-          EdictRepositoryDirectory(Path.of(worktreePath).toAbsolutePath().normalize()),
-        )
+        val repository = EdictRepository(EdictRepositoryDirectory(context.managedRepository))
         val initialState = repository.loadState()
         requireValidState(repository, initialState)
         requireNoIssues(validateDistributionChange(sourceState, initialState, emptySet()))

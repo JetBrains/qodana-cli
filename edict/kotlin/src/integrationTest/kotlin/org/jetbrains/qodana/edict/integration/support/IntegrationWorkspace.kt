@@ -80,6 +80,7 @@ internal class IntegrationWorkspace private constructor(
                 context.load(
                     EdictNextWorkspace.forRun(output.resolve("log"), sessionId),
                     state,
+                    state,
                     project,
                     qodanaExecutable.toString(),
                     inspectionServer = inspectionServer?.let {

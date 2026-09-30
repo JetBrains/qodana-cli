@@ -120,6 +120,7 @@ class EdictNextMcpToolsetTest {
     val context = EdictSessionContext.getInstance(runId)
     context.load(
       workspace = EdictNextWorkspace.forRun(directory.resolve("logs"), runId),
+      managedRepository = repository,
       sourceRepository = repository,
       analyzedProject = repository,
       qodanaExecutable = "/qodana",
@@ -131,7 +132,7 @@ class EdictNextMcpToolsetTest {
         val input = """
           {"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2025-03-26","capabilities":{},"clientInfo":{"name":"unit","version":"1"}}}
           {"jsonrpc":"2.0","method":"notifications/initialized"}
-          {"jsonrpc":"2.0","id":2,"method":"tools/call","params":{"name":"edict_prepare_pipeline","arguments":{"worktreePath":"$repository"}}}
+          {"jsonrpc":"2.0","id":2,"method":"tools/call","params":{"name":"edict_prepare_pipeline","arguments":{}}}
           {"jsonrpc":"2.0","id":3,"method":"ping"}
         """.trimIndent() + "\n"
         val transport = StdioServerTransport(

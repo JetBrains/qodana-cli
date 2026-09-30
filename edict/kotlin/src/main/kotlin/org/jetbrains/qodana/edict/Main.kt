@@ -65,6 +65,7 @@ fun main(args: Array<String>) {
                     val context = EdictSessionContext.getInstance(sessionId)
                     context.load(
                         EdictNextWorkspace.forRun(logs, sessionId),
+                        state,
                         sourceRepository,
                         project,
                         qodanaExecutable,

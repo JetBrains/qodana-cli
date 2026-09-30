@@ -15,6 +15,7 @@ internal class EdictSessionContext private constructor(private val sessionId: St
 
   suspend fun load(
     workspace: EdictNextWorkspace,
+    managedRepository: Path,
     sourceRepository: Path,
     analyzedProject: Path,
     qodanaExecutable: String,
@@ -28,6 +29,7 @@ internal class EdictSessionContext private constructor(private val sessionId: St
     lock.withLock {
       activeRun = ActiveRun(
         workspace = workspace,
+        managedRepository = managedRepository,
         sourceRepository = sourceRepository,
         analyzedProject = analyzedProject,
         projectRevision = projectRevision,
@@ -56,6 +58,7 @@ internal class EdictSessionContext private constructor(private val sessionId: St
   }
 
   val workspace: EdictNextWorkspace get() = lock.withLock { active().workspace }
+  val managedRepository: Path get() = lock.withLock { active().managedRepository }
   val sourceRepository: Path get() = lock.withLock { active().sourceRepository }
   val analyzedProject: Path get() = lock.withLock { active().analyzedProject }
   val projectRevision: String get() = lock.withLock { active().projectRevision }
@@ -66,6 +69,7 @@ internal class EdictSessionContext private constructor(private val sessionId: St
 
   private data class ActiveRun(
     val workspace: EdictNextWorkspace,
+    val managedRepository: Path,
     val sourceRepository: Path,
     val analyzedProject: Path,
     val projectRevision: String,
