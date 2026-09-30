@@ -3,6 +3,7 @@ package org.jetbrains.qodana.edict.benchmark
 
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.*
+import org.jetbrains.qodana.edict.runtime.CodexPriceAnalyzer
 import java.nio.file.Path
 import kotlin.io.path.*
 import kotlin.system.exitProcess
@@ -43,7 +44,8 @@ internal fun readSarif(path: Path): Sarif {
 }
 
 internal fun compare(_benchmarkDir: Path, stateDir: Path, outputDir: Path,
-                     analysisSarif: Path = outputDir.resolve("qodana.sarif.json")): BenchmarkReport {
+                     analysisSarif: Path = outputDir.resolve("qodana.sarif.json"),
+                     generationPriceReport: JsonObject? = null): BenchmarkReport {
     val goldSarif = readSarif(stateDir.resolve("gold.sarif.json"))
     val inputs = loadInputs(goldSarif, outputDir)
     val clusters = resolveClusters(inputs, stateDir)
@@ -65,7 +67,7 @@ internal fun compare(_benchmarkDir: Path, stateDir: Path, outputDir: Path,
     }
     val metrics = successful.map { calculateMetrics(it, gold, findings) }
     val report = BenchmarkReport(metrics, aggregate(metrics), inputs.rules.size, successful.size,
-        inputs.revision, outcomes, clusters, statuses)
+        inputs.revision, outcomes, clusters, statuses, generationPriceReport)
 
     outputDir.createDirectories()
     val inspectionsDir = outputDir.resolve("generatedInspections").createDirectories()
@@ -106,24 +108,49 @@ internal fun logReport(report: BenchmarkReport) {
     teamCity("buildStatisticValue", "key" to "edict.totalInspectionsProcessed", "value" to report.totalInspectionsProcessed)
     teamCity("buildStatisticValue", "key" to "edict.successful", "value" to report.successful)
     teamCity("buildStatisticValue", "key" to "edict.avgF1Score", "value" to report.aggregate.avgF1Score)
+    report.generationPriceReport?.get("totalPrice")?.jsonObject?.let { total ->
+        total["priceUsd"]?.jsonPrimitive?.doubleOrNull?.let {
+            teamCity("buildStatisticValue", "key" to "edict.priceUsd", "value" to it)
+        }
+        total["totalTokens"]?.jsonPrimitive?.longOrNull?.let {
+            teamCity("buildStatisticValue", "key" to "edict.totalTokens", "value" to it)
+        }
+    }
     teamCity("buildStatus", "text" to "${report.successful}/${report.totalInspectionsProcessed} inspections generated")
 }
 
 fun main(args: Array<String>) {
     try {
-        val allowed = setOf("--benchmark-dir", "--state-dir", "--output-dir", "--analysis-sarif", "--project-dir")
+        val allowed = setOf("--benchmark-dir", "--state-dir", "--output-dir", "--analysis-sarif", "--project-dir", "--model")
         require(args.size % 2 == 0 && args.toList().chunked(2).all { it[0] in allowed }) {
             "Use --benchmark-dir <fixtures> --state-dir <project/.edict> --output-dir <reports> [--analysis-sarif <file>]"
         }
-        val options = args.toList().chunked(2).associate { it[0] to Path.of(it[1]).toAbsolutePath().normalize() }
+        val options = args.toList().chunked(2).associate { it[0] to it[1] }
         require(options.size == args.size / 2) { "Duplicate options" }
-        val state = options["--state-dir"] ?: error("--state-dir is required")
-        val output = options["--output-dir"] ?: error("--output-dir is required")
-        val benchmark = options["--benchmark-dir"] ?: error("--benchmark-dir is required")
-        options["--project-dir"]?.let { generateSarif(it, state, output) }
-        val report = compare(benchmark, state, output, options["--analysis-sarif"] ?: output.resolve("qodana.sarif.json"))
+        fun path(name: String): Path = Path.of(options[name] ?: error("$name is required")).toAbsolutePath().normalize()
+        val state = path("--state-dir")
+        val output = path("--output-dir")
+        val benchmark = path("--benchmark-dir")
+        val project = options["--project-dir"]?.let { Path.of(it).toAbsolutePath().normalize() }
+        val price = project?.let {
+            CodexPriceAnalyzer.analyze(
+                output.resolve("codex-home"),
+                state,
+                options["--model"]?.takeIf(String::isNotBlank) ?: error("--model is required for analysis"),
+                output.resolve("log/edict/edict-price-report.json"),
+            ).also { result -> println(result.rendered) }
+        }
+        project?.let { generateSarif(it, state, output) }
+        val report = compare(
+            benchmark,
+            state,
+            output,
+            options["--analysis-sarif"]?.let { Path.of(it).toAbsolutePath().normalize() }
+                ?: output.resolve("qodana.sarif.json"),
+            price?.report,
+        )
         logReport(report)
-        options["--project-dir"]?.let { verifyManagedCompletion(state) }
+        project?.let { verifyManagedCompletion(state) }
         check(report.successful > 0) { "No inspections generated; report.json contains the recorded generation outcomes" }
     } catch (error: Exception) {
         System.err.println("Benchmark comparison failed: ${error.message}")

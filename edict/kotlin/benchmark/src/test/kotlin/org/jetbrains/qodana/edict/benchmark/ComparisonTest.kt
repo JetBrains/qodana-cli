@@ -74,13 +74,16 @@ class ComparisonTest {
 
     @Test fun `comparison writes generated artifacts and aggregates only generated inspections`() {
         fixture()
+        val price = buildJsonObject { put("totalPrice", buildJsonObject { put("priceUsd", 1.25); put("totalTokens", 42) }) }
         write("reports/generatedInspections/Stale.kts", "stale")
         write("reports/specGoldComparisons/Stale.json", "{}")
-        val report = compare(root.resolve("benchmark"), root.resolve("project/.edict"), root.resolve("reports"))
+        val report = compare(root.resolve("benchmark"), root.resolve("project/.edict"), root.resolve("reports"),
+            generationPriceReport = price)
         assertEquals(2, report.totalInspectionsProcessed)
         assertEquals(1, report.successful)
         assertEquals(1, report.aggregate.totalTP)
         assertEquals("Pending", report.generationOutcomes["Pending"])
+        assertEquals(price, report.generationPriceReport)
         assertEquals(report, json.decodeFromString<BenchmarkReport>(root.resolve("reports/report.json").readText()))
         assertEquals("// fixture inspection", root.resolve("reports/generatedInspections/Rule.kts").readText())
         assertTrue(root.resolve("reports/qodana.sarif.json").exists())

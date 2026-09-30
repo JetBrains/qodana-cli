@@ -2,6 +2,9 @@
 package org.jetbrains.qodana.edict.runtime
 
 import kotlinx.serialization.json.buildJsonObject
+import kotlinx.serialization.json.jsonObject
+import kotlinx.serialization.json.jsonPrimitive
+import kotlinx.serialization.json.long
 import kotlinx.serialization.json.put
 import kotlinx.serialization.json.putJsonObject
 import org.jetbrains.qodana.edict.common.wireJson
@@ -14,6 +17,7 @@ import java.nio.file.Path
 import kotlin.test.assertContains
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
+import kotlin.test.assertTrue
 
 class CodexPriceReportTest {
     @TempDir
@@ -59,11 +63,8 @@ class CodexPriceReportTest {
         val cluster = Task(id = "cluster-task", parentId = generation.id, skill = "edict-next-cluster-generation", title = "Rule", agentId = "/root/generation/cluster")
         val review = Task(id = "review-task", parentId = cluster.id, skill = "edict-next-inspection-code-review", title = "Review", agentId = "/root/generation/cluster/review")
         val pricing = pricing()
-        val report = CodexPriceReporter.create(
-            directory,
-            Plan(request = "test", tasks = listOf(extract, generation, cluster, review)),
-            pricing,
-        )
+        val plan = Plan(request = "test", tasks = listOf(extract, generation, cluster, review))
+        val report = CodexPriceReporter.create(directory, plan, pricing)
 
         assertEquals(20, report.topStages.single { it.taskId == extract.id }.inclusivePrice.totalTokens)
         assertEquals(120, report.topStages.single { it.taskId == generation.id }.inclusivePrice.totalTokens)
@@ -78,6 +79,17 @@ class CodexPriceReportTest {
         assertEquals(0.000204, report.totalPrice.priceUsd, absoluteTolerance = 1e-12)
         assertContains(report.render(), "Total price: $0.000204")
         assertContains(report.render(), "uncached-input=0")
+
+        val plans = directory.resolve("state/plans")
+        Files.createDirectories(plans)
+        Files.writeString(plans.resolve("plan.json"), wireJson.encodeToString(Plan.serializer(), plan))
+        val output = directory.resolve("price.json")
+        val analysis = CodexPriceAnalyzer.analyze(directory, directory.resolve("state"), output, pricing)
+        assertEquals(150, analysis.totalTokens)
+        assertEquals(0.000204, analysis.totalPriceUsd, absoluteTolerance = 1e-12)
+        assertEquals(150, analysis.report.getValue("totalPrice").jsonObject
+            .getValue("totalTokens").jsonPrimitive.long)
+        assertTrue(Files.size(output) > 0)
     }
 
     @Test
