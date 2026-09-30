@@ -23,6 +23,7 @@ docker run --rm -v `pwd`:/qodana -w /qodana/cli \
     golang:1.24 go build -o qodana
 
 docker run -it --rm \
+    -e QODANA_TOKEN=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJwcm9qZWN0IjoiQW1PNFEiLCJvcmdhbml6YXRpb24iOiIzb0RycCIsInRva2VuIjoicDRLS1IifQ.xFZhkIJrRAS9hKUhn62OAB9Y0D7G189nJRo69YSuynE \
     -e DEVICEID=200820300000000-0000-0000-0000-000000000001 \
     --pull always \
     -w /data/project \

@@ -71,6 +71,8 @@ internal interface InspectionKtsClient : AutoCloseable {
   suspend fun analyzeProject(code: String): InspectionKtsProjectRunResult
 }
 
+internal class StaleInspectionMcpSession(val sessionId: String) : RuntimeException()
+
 internal class HttpInspectionKtsClient(
   private val endpoint: URI,
   private val requestTimeout: Duration = Duration.ofMinutes(45),
