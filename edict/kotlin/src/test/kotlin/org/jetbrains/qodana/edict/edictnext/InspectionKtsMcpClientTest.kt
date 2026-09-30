@@ -118,7 +118,7 @@ class InspectionKtsMcpClientTest {
           }
           if (method == "tools/call") {
             synchronized(toolSessions) { toolSessions += requestSession }
-            val bytes = "Streamable HTTP session not found".encodeToByteArray()
+            val bytes = byteArrayOf()
             exchange.sendResponseHeaders(404, bytes.size.toLong())
             exchange.responseBody.write(bytes)
             return@createContext
