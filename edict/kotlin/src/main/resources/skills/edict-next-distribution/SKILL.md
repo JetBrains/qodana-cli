@@ -23,6 +23,11 @@ inspection?** Assign only when yes and languages match.
 Positive and negative Signals may share a cluster when they define the boundary of that inspection. Otherwise create a
 new cluster with a provisional lowercase kebab-case id. Do not split an existing cluster; splitting is manual.
 
+Treat an identical non-blank `source.inspectionName` on same-language SubmittedFeedback Signals as authoritative
+inspection identity. Such Signals must reuse one cluster even when their labels differ or a plausible cluster uses a
+different spelling. Before creating a cluster, inspect candidates for that identity. If an add response reports an
+existing identity match, load that cluster's context and retry with its exact id; never create a second spelling.
+
 ## Loop
 
 Repeat until `edict_next_signal` returns `STOP_DISTRIBUTION`:

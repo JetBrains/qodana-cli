@@ -106,4 +106,11 @@ class SkillsTest {
         assertContains(compactGeneration, "each direct substage including all of its descendants")
         assertContains(compactGeneration, "inclusive cluster total")
     }
+
+    @Test
+    fun `distribution preserves submitted inspection identity`() {
+        val distribution = Skills.read("edict-next-distribution")
+        assertContains(distribution, "identical non-blank `source.inspectionName`")
+        assertContains(distribution, "never create a second spelling")
+    }
 }

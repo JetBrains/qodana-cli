@@ -204,6 +204,7 @@ internal sealed class EdictNextDistributionContextResponse {
 internal data class EdictNextDistributionSignal(
   val id: String,
   val fileRevision: EdictNextFileRevision,
+  val source: EdictNextSignalSource,
   val label: EdictNextSignalLabel,
   val description: String,
 )

@@ -80,8 +80,22 @@ internal class EdictNextDistributionService private constructor(private val sess
         require(signalId in currentBatch.signalIds) { "Signal '$signalId' was not selected for this run" }
         currentBatch.requireCurrentSignal(signalId)
         val repository = context.repository()
-        if (repository.loadClusters().any { it.id == clusterId }) {
+        val clusters = repository.loadClusters()
+        if (clusters.any { it.id == clusterId }) {
             currentBatch.requireClusterContext(clusterId)
+        }
+        else {
+            val signal = repository.loadInboxSignals().single { it.id == signalId }
+            val identityMatches = clustersSharingInspectionIdentity(signal, clusters)
+            if (identityMatches.isNotEmpty()) {
+                return EdictNextSignalValidationResponse(
+                  signalId = signalId,
+                  summary = "Signal '$signalId' has the same SubmittedFeedback inspectionName as existing " +
+                    "cluster(s) ${identityMatches.joinToString()}; load that cluster's context and reuse it instead " +
+                    "of creating '$clusterId'",
+                  added = false,
+                )
+            }
         }
         repository.addSignalToCluster(signalId, clusterId)
         currentBatch.completeSignal(signalId)
@@ -252,6 +266,26 @@ internal class EdictNextDistributionService private constructor(private val sess
 private fun EdictNextSignal.toDistributionSignal(): EdictNextDistributionSignal = EdictNextDistributionSignal(
   id = id,
   fileRevision = fileRevision,
+  source = source,
   label = label,
   description = description,
 )
+
+internal fun clustersSharingInspectionIdentity(
+    signal: EdictNextSignal,
+    clusters: List<EdictNextStoredCluster>,
+): List<String> {
+    val inspectionName = (signal.source as? EdictNextSignalSource.SubmittedFeedback)
+      ?.inspectionName?.takeIf(String::isNotBlank) ?: return emptyList()
+    return clusters.asSequence()
+      .filter { it.manifest.language == signal.language }
+      .filter { cluster ->
+          cluster.signals.any { existing ->
+              (existing.source as? EdictNextSignalSource.SubmittedFeedback)
+                ?.inspectionName?.takeIf(String::isNotBlank) == inspectionName
+          }
+      }
+      .map(EdictNextStoredCluster::id)
+      .sorted()
+      .toList()
+}
