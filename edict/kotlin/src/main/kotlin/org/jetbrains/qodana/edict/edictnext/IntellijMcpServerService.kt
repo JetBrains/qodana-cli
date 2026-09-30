@@ -115,7 +115,7 @@ internal class IntellijMcpServerService(
 
   private suspend fun restart(staleClient: InspectionKtsClient): InspectionKtsClient = lifecycle.withLock {
     client?.takeIf { it !== staleClient }?.let { return@withLock it }
-    staleClient.close()
+    runCatching { staleClient.close() }
     client = null
     serverLifecycle.stop()
     clientFactory.create(serverLifecycle.start()).also { client = it }

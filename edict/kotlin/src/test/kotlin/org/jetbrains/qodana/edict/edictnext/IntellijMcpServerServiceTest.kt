@@ -108,6 +108,30 @@ class IntellijMcpServerServiceTest {
     assertEquals(1, clients.last().closeCount)
   }
 
+  @Test
+  fun `restarts the endpoint when closing the stale client is unsupported`() = runBlocking {
+    val lifecycle = FakeLifecycle()
+    val clients = mutableListOf<RestartClient>()
+    val service = IntellijMcpServerService(
+      projectPath = project,
+      clientFactory = InspectionKtsClientFactory {
+        RestartClient(
+          expired = clients.isEmpty(),
+          closeFailure = if (clients.isEmpty()) UnsupportedOperationException("shutdownNow") else null,
+        ).also(clients::add)
+      },
+      serverLifecycle = lifecycle,
+    )
+
+    val result = service.withClient { it.compile("inspection") }
+
+    assertTrue(result.compilationSuccess)
+    assertEquals(2, lifecycle.startCount)
+    assertEquals(1, lifecycle.stopCount)
+    assertEquals(1, clients.first().closeCount)
+    service.stop()
+  }
+
   private class FakeCommandRunner : CommandRunner {
     val commands = mutableListOf<List<String>>()
 
@@ -130,7 +154,10 @@ class IntellijMcpServerServiceTest {
     override fun close() { closeCount++ }
   }
 
-  private class RestartClient(private val expired: Boolean) : InspectionKtsClient {
+  private class RestartClient(
+    private val expired: Boolean,
+    private val closeFailure: RuntimeException? = null,
+  ) : InspectionKtsClient {
     var closeCount = 0
     override suspend fun compile(code: String): InspectionKtsCompileResult {
       if (expired) throw StaleInspectionMcpSession("expired-session")
@@ -138,7 +165,10 @@ class IntellijMcpServerServiceTest {
     }
     override suspend fun runExamples(code: String, examples: List<InspectionKtsExampleRequest>) = error("not used")
     override suspend fun analyzeProject(code: String) = error("not used")
-    override fun close() { closeCount++ }
+    override fun close() {
+      closeCount++
+      closeFailure?.let { throw it }
+    }
   }
 
   private class FakeLifecycle : IntellijMcpServerLifecycle {
