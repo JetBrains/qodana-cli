@@ -88,6 +88,7 @@ class InspectionKtsMcpClientTest {
         "example",
         exampleArguments.getValue("examples").jsonArray.single().jsonObject.getValue("id").jsonPrimitive.content,
       )
+      assertEquals("/project/root", exampleArguments.getValue("projectPath").jsonPrimitive.content)
       val projectArguments = toolCalls.single {
         it.getValue("params").jsonObject.getValue("name").jsonPrimitive.content == "run_inspection_kts_project"
       }.getValue("params").jsonObject.getValue("arguments").jsonObject
