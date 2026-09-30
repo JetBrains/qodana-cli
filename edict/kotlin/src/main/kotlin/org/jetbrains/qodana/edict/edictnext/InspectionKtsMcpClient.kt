@@ -75,6 +75,7 @@ internal class StaleInspectionMcpSession(val sessionId: String) : RuntimeExcepti
 
 internal class HttpInspectionKtsClient(
   private val endpoint: URI,
+  private val projectPath: String,
   private val requestTimeout: Duration = Duration.ofMinutes(45),
 ) : InspectionKtsClient {
   private val client = HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(30)).build()
@@ -120,7 +121,10 @@ internal class HttpInspectionKtsClient(
   )
 
   override suspend fun analyzeProject(code: String): InspectionKtsProjectRunResult =
-    call("run_inspection_kts_project", buildJsonObject { put("inspectionKtsCode", code) })
+    call("run_inspection_kts_project", buildJsonObject {
+      put("inspectionKtsCode", code)
+      put("projectPath", projectPath)
+    })
 
   private suspend inline fun <reified T> call(name: String, arguments: JsonObject): T = withContext(Dispatchers.IO) {
     val result = requestBlocking(
