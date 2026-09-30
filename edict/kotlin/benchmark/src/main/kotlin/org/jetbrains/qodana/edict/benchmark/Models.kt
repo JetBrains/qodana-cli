@@ -2,6 +2,7 @@
 package org.jetbrains.qodana.edict.benchmark
 
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.json.JsonObject
 
 data class BenchmarkInputs(
     val revision: String,
@@ -50,4 +51,5 @@ data class BenchmarkReport(
     val generationOutcomes: Map<String, String>,
     val clustersByRule: Map<String, List<String>> = emptyMap(),
     val clusterOutcomes: Map<String, String> = emptyMap(),
+    val generationPriceReport: JsonObject? = null,
 )
