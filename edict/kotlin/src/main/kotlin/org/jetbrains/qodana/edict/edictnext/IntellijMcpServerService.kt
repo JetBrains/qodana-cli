@@ -76,12 +76,14 @@ internal class QodanaIntellijMcpServerLifecycle(
 
 /** Owns the IDE MCP lifecycle and serializes whole-project analyses on its opened project. */
 internal class IntellijMcpServerService(
-  projectPath: Path,
+  private val projectPath: Path,
   private val qodanaExecutable: String = System.getProperty("qodana.executable")
     ?: System.getenv("QODANA_EXECUTABLE")
     ?: "qodana",
   private val commandRunner: CommandRunner = ProcessCommandRunner,
-  private val clientFactory: InspectionKtsClientFactory = InspectionKtsClientFactory(::HttpInspectionKtsClient),
+  private val clientFactory: InspectionKtsClientFactory = InspectionKtsClientFactory { endpoint ->
+    HttpInspectionKtsClient(endpoint, projectPath.toAbsolutePath().normalize().absolutePathString())
+  },
   private val serverLifecycle: IntellijMcpServerLifecycle = QodanaIntellijMcpServerLifecycle(
     projectPath,
     qodanaExecutable,
