@@ -38,7 +38,12 @@ The pipeline has seven steps:
    interruptible. TeamCity cleans up server processes when the build finishes.
 7. A TeamCity **Gradle runner** executes `:benchmark:report`. Kotlin runs the accepted
    inspections from `.edict/inspections` natively, writes SARIF into `benchmark-output`,
-   and compares it with `.edict/gold.sarif.json`.
+   and compares it with `.edict/gold.sarif.json`. During this analysis it prices every
+   manager and subagent session using current official OpenAI Standard rates, prints
+   the token-type and stage breakdown, writes
+   `benchmark-output/log/edict/edict-price-report.json`, embeds the complete price
+   report in `report.json`, and publishes `edict.priceUsd` and `edict.totalTokens` as
+   TeamCity statistics. Missing plan, session, pricing, or usage data fails reporting.
    No benchmark Kotlin controller runs before Codex.
 
 The ARM64 Qodana distribution comes from the latest successful `qodana-jvm: edict`
