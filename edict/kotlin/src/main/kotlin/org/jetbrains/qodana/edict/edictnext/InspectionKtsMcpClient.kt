@@ -189,7 +189,7 @@ internal class HttpInspectionKtsClient(
   }
 
   override fun close() {
-    client.shutdownNow()
+    client.close()
   }
 
   private companion object {
