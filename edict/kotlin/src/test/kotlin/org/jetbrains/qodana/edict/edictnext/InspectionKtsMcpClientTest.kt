@@ -12,9 +12,9 @@ import kotlinx.serialization.json.putJsonObject
 import java.net.InetSocketAddress
 import java.net.URI
 import java.util.concurrent.Executors
-import java.util.concurrent.atomic.AtomicInteger
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFailsWith
 
 class InspectionKtsMcpClientTest {
   @Test
@@ -87,8 +87,7 @@ class InspectionKtsMcpClientTest {
   }
 
   @Test
-  fun `reinitializes and retries once when the MCP session expires`() = runBlocking {
-    val initializeCount = AtomicInteger()
+  fun `reports an expired MCP session to its lifecycle owner`() = runBlocking {
     val toolSessions = mutableListOf<String?>()
     val executor = Executors.newCachedThreadPool()
     val server = HttpServer.create(InetSocketAddress("127.0.0.1", 0), 0).apply {
@@ -104,17 +103,14 @@ class InspectionKtsMcpClientTest {
           }
           if (method == "tools/call") {
             synchronized(toolSessions) { toolSessions += requestSession }
-            if (requestSession == "expired-session") {
-              val bytes = "Streamable HTTP session not found".encodeToByteArray()
-              exchange.sendResponseHeaders(404, bytes.size.toLong())
-              exchange.responseBody.write(bytes)
-              return@createContext
-            }
+            val bytes = "Streamable HTTP session not found".encodeToByteArray()
+            exchange.sendResponseHeaders(404, bytes.size.toLong())
+            exchange.responseBody.write(bytes)
+            return@createContext
           }
           val result = when (method) {
             "initialize" -> {
-              val session = if (initializeCount.incrementAndGet() == 1) "expired-session" else "fresh-session"
-              exchange.responseHeaders.set("Mcp-Session-Id", session)
+              exchange.responseHeaders.set("Mcp-Session-Id", "expired-session")
               buildJsonObject {
                 put("protocolVersion", "2025-03-26")
                 putJsonObject("capabilities") { putJsonObject("tools") {} }
@@ -146,10 +142,9 @@ class InspectionKtsMcpClientTest {
     }
     try {
       HttpInspectionKtsClient(URI("http://127.0.0.1:${server.address.port}/mcp")).use { client ->
-        assertEquals("sample-rule", client.compile("inspection").inspectionId)
+        assertFailsWith<StaleInspectionMcpSession> { client.compile("inspection") }
       }
-      assertEquals(2, initializeCount.get())
-      assertEquals(listOf("expired-session", "fresh-session"), synchronized(toolSessions) { toolSessions.toList() })
+      assertEquals(listOf("expired-session"), synchronized(toolSessions) { toolSessions.toList() })
     }
     finally {
       server.stop(0)

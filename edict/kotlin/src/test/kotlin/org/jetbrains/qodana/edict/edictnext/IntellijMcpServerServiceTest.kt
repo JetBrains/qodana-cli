@@ -85,6 +85,29 @@ class IntellijMcpServerServiceTest {
     assertTrue(runner.commands.isEmpty())
   }
 
+  @Test
+  fun `restarts the endpoint and retries once when its session expires`() = runBlocking {
+    val lifecycle = FakeLifecycle()
+    val clients = mutableListOf<RestartClient>()
+    val service = IntellijMcpServerService(
+      projectPath = project,
+      clientFactory = InspectionKtsClientFactory {
+        RestartClient(expired = clients.isEmpty()).also(clients::add)
+      },
+      serverLifecycle = lifecycle,
+    )
+
+    val result = service.withClient { it.compile("inspection") }
+
+    assertTrue(result.compilationSuccess)
+    assertEquals(2, lifecycle.startCount)
+    assertEquals(1, lifecycle.stopCount)
+    assertEquals(1, clients.first().closeCount)
+    service.stop()
+    assertEquals(2, lifecycle.stopCount)
+    assertEquals(1, clients.last().closeCount)
+  }
+
   private class FakeCommandRunner : CommandRunner {
     val commands = mutableListOf<List<String>>()
 
@@ -102,6 +125,17 @@ class IntellijMcpServerServiceTest {
   private class EmptyClient : InspectionKtsClient {
     var closeCount = 0
     override suspend fun compile(code: String) = error("not used")
+    override suspend fun runExamples(code: String, examples: List<InspectionKtsExampleRequest>) = error("not used")
+    override suspend fun analyzeProject(code: String) = error("not used")
+    override fun close() { closeCount++ }
+  }
+
+  private class RestartClient(private val expired: Boolean) : InspectionKtsClient {
+    var closeCount = 0
+    override suspend fun compile(code: String): InspectionKtsCompileResult {
+      if (expired) throw StaleInspectionMcpSession("expired-session")
+      return InspectionKtsCompileResult(compilationSuccess = true)
+    }
     override suspend fun runExamples(code: String, examples: List<InspectionKtsExampleRequest>) = error("not used")
     override suspend fun analyzeProject(code: String) = error("not used")
     override fun close() { closeCount++ }

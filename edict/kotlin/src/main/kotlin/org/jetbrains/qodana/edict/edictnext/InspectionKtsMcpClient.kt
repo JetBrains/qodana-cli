@@ -71,13 +71,14 @@ internal interface InspectionKtsClient : AutoCloseable {
   suspend fun analyzeProject(code: String): InspectionKtsProjectRunResult
 }
 
+internal class StaleInspectionMcpSession(val sessionId: String) : RuntimeException()
+
 internal class HttpInspectionKtsClient(
   private val endpoint: URI,
   private val requestTimeout: Duration = Duration.ofMinutes(45),
 ) : InspectionKtsClient {
   private val client = HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(30)).build()
   private val sequence = AtomicLong()
-  private val sessionRecoveryLock = Any()
   @Volatile private var sessionId: String? = null
   @Volatile private var protocolVersion: String = "2025-03-26"
 
@@ -142,27 +143,14 @@ internal class HttpInspectionKtsClient(
 
   private fun requestBlocking(method: String, params: JsonObject): JsonObject {
     val id = sequence.incrementAndGet()
-    val message = buildJsonObject {
+    val response = sendBlocking(buildJsonObject {
       put("jsonrpc", "2.0")
       put("id", id)
       put("method", method)
       put("params", params)
-    }
-    val response = try {
-      sendBlocking(message)
-    }
-    catch (stale: StaleInspectionMcpSession) {
-      recoverSession(stale.sessionId)
-      sendBlocking(message)
-    } ?: error("Inspection MCP returned no response for '$method'")
+    }) ?: error("Inspection MCP returned no response for '$method'")
     check("error" !in response) { "Inspection MCP '$method' failed: ${response["error"]}" }
     return response.getValue("result").jsonObject
-  }
-
-  private fun recoverSession(staleSessionId: String) = synchronized(sessionRecoveryLock) {
-    if (sessionId != staleSessionId) return@synchronized
-    sessionId = null
-    initializeSession()
   }
 
   private fun sendBlocking(message: JsonObject): JsonObject? {
@@ -208,6 +196,4 @@ internal class HttpInspectionKtsClient(
   private companion object {
     val ListSerializer = kotlinx.serialization.builtins.ListSerializer(InspectionKtsExampleRequest.serializer())
   }
-
-  private class StaleInspectionMcpSession(val sessionId: String) : RuntimeException()
 }
