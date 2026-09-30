@@ -172,8 +172,7 @@ internal class HttpInspectionKtsClient(
     )
     if (
       requestSessionId != null &&
-      response.statusCode() == 404 &&
-      response.body().contains("session not found", ignoreCase = true)
+      response.statusCode() == 404
     ) {
       throw StaleInspectionMcpSession(requestSessionId)
     }
