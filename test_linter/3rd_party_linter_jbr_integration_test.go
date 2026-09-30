@@ -8,12 +8,11 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
-
-	"github.com/JetBrains/qodana-cli/internal/foundation/fs"
 	"strings"
 	"testing"
 	"time"
 
+	"github.com/JetBrains/qodana-cli/internal/foundation/fs"
 	"github.com/JetBrains/qodana-cli/internal/testutil/needs"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -64,7 +63,9 @@ func TestQodana3rdPartyLinterWithMockedCloud(t *testing.T) {
 	require.NotEmpty(t, mockRequests, "Should have captured mock requests")
 	verifyPublisherCliCalls(t, mockRequests)
 	verifyQodanaFuserCalls(t, mockRequests)
+	verifyBaselineFileUsedWithoutCloud(t, scanOutput, mockRequests)
 
+	// without a baseline file the baseline is downloaded from Qodana Cloud
 	cloudBaselineOutput := runQodanaScan(t, containerID)
 	verifyCloudBaseline(t, cloudBaselineOutput, getMockRequests(t, containerID))
 }
@@ -299,8 +300,23 @@ func verifyBaselineCliLogs(t *testing.T, scanOutput string) {
 	t.Log("Verifying baseline CLI logs...")
 	assert.Regexp(t, `Type can be replaced with auto\s+NEW\s+note\s+1`, scanOutput)
 	assert.Regexp(t, `Local variable can be made const\s+UNCHANGED\s+note\s+4`, scanOutput)
-	assert.Contains(t, scanOutput, "The analysis used the baseline file /workspace/results/qodana.sarif-baseline.json")
 	t.Log("✓ Baseline CLI logs verified")
+}
+
+// verifyBaselineFileUsedWithoutCloud verifies that a scan given a baseline file uses it and doesn't
+// ask Qodana Cloud for a baseline at all.
+func verifyBaselineFileUsedWithoutCloud(t *testing.T, scanOutput string, reqMap map[string]*MockRequest) {
+	t.Helper()
+	t.Log("Verifying that a baseline file leaves Qodana Cloud alone...")
+
+	assert.Nil(
+		t,
+		findRequest(reqMap, "GET", "/linters/v1/linters/baseline"),
+		"a scan with --baseline should not request the baseline of Qodana Cloud",
+	)
+	assert.NotContains(t, scanOutput, "Fetching baseline from Qodana Cloud")
+	assert.Contains(t, scanOutput, "The analysis used the baseline file /workspace/results/qodana.sarif-baseline.json")
+	t.Log("✓ Baseline file usage verified")
 }
 
 // verifyCloudBaseline verifies that a scan without a baseline file compares its results with the
@@ -312,7 +328,7 @@ func verifyCloudBaseline(t *testing.T, scanOutput string, reqMap map[string]*Moc
 	baselineReq := findRequest(reqMap, "GET", "/linters/v1/linters/baseline")
 	require.NotNil(t, baselineReq, "GET /linters/v1/linters/baseline was not made")
 	assert.Equal(t, 200, baselineReq.ResponseStatus, "baseline request should return 200")
-	assert.Equal(t, "toolName=qdtest", baselineReq.Query, "baseline should be requested for the linter product code")
+	assert.Equal(t, "toolName=QDTEST", baselineReq.Query, "baseline should be requested for the linter product code")
 
 	assert.Contains(t, scanOutput, "Fetching baseline from Qodana Cloud")
 	assert.Contains(t, scanOutput, "The analysis used the baseline from Qodana Cloud")

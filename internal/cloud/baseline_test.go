@@ -115,26 +115,13 @@ func TestWriteBaselineSarif(t *testing.T) {
 }
 
 // TestWriteBaselineSarifFingerprints verifies that the fingerprints, which the baseline is matched
-// by, reach the report under the name the SARIF standard defines. A Qodana Cloud old enough to
-// spell them partialFingerPrints is read just as well.
+// by, reach the report under the name the SARIF standard defines, the only one the linters read.
 func TestWriteBaselineSarifFingerprints(t *testing.T) {
-	for _, spelling := range []string{"partialFingerprints", "partialFingerPrints"} {
-		t.Run(
-			spelling, func(t *testing.T) {
-				body := fmt.Sprintf(
-					`{"baseline":[{"ruleId":"Rule","message":{"text":"problem"},%q:{"equalIndicator/v1":"fingerprint"}}]}`,
-					spelling,
-				)
+	_, result, err := writeBaselineToString(t, "QDJVM", baselineBody)
+	require.NoError(t, err)
 
-				written, result, err := writeBaselineToString(t, "QDJVM", body)
-				require.NoError(t, err)
-				require.True(t, written)
-
-				assert.Contains(t, result, `"partialFingerprints":{"equalIndicator/v1":"fingerprint"}`)
-				assert.NotContains(t, result, `"partialFingerPrints"`)
-			},
-		)
-	}
+	assert.Contains(t, result, `"partialFingerprints":{"equalIndicator/v1":`)
+	assert.NotContains(t, result, `"partialFingerPrints"`)
 }
 
 // TestWriteBaselineSarifQuotesToolName verifies that a tool name cannot end the string it is
@@ -183,6 +170,11 @@ func TestWriteBaselineSarifTruncated(t *testing.T) {
 		body string
 	}{
 		{"cut before the baseline", `{"baseline"`},
+		{"cut in a field before the baseline", `{"total": 10`},
+		{"cut after a field before the baseline", `{"total": 10,`},
+		{"cut before the baseline of an answer with other fields", `{"total": 10, "baseline"`},
+		{"cut after the start of the list of problems", `{"baseline":[`},
+		{"cut in another field", `{"filter":{"tool":"QDJVM"`},
 		{"cut inside a problem", baselineBody[:len(baselineBody)/2]},
 		{"cut after a problem", baselineBody[:strings.Index(baselineBody, "VulnerableLibrariesLocal")-10]},
 		{"unclosed list of problems", strings.TrimSuffix(strings.TrimSpace(baselineBody), "]\n}")},
@@ -192,6 +184,30 @@ func TestWriteBaselineSarifTruncated(t *testing.T) {
 				written, _, err := writeBaselineToString(t, "QDJVM", tc.body)
 				assert.Error(t, err)
 				assert.False(t, written)
+			},
+		)
+	}
+}
+
+// TestWriteBaselineSarifIgnoresTrailingGarbage verifies that what a server writes after the
+// baseline is not read, so it cannot spoil a baseline which arrived whole.
+func TestWriteBaselineSarifIgnoresTrailingGarbage(t *testing.T) {
+	for _, tc := range []struct {
+		name string
+		body string
+	}{
+		{"garbage after the answer", baselineBody + " garbage"},
+		{"a field after the baseline", strings.TrimSuffix(strings.TrimSpace(baselineBody), "}") + `,"total":2}`},
+	} {
+		t.Run(
+			tc.name, func(t *testing.T) {
+				written, result, err := writeBaselineToString(t, "QDJVM", tc.body)
+				require.NoError(t, err)
+				require.True(t, written)
+
+				var report sarif.Report
+				require.NoError(t, json.Unmarshal([]byte(result), &report), "written report: %s", result)
+				assert.Len(t, report.Runs[0].Results, 2)
 			},
 		)
 	}
@@ -254,7 +270,7 @@ func TestWriteBaseline(t *testing.T) {
 
 	require.NoError(t, err)
 	require.True(t, written)
-	assert.Equal(t, "/linters/baseline?toolName=qdjvm", requestUri)
+	assert.Equal(t, "/linters/baseline?toolName=QDJVM", requestUri)
 	assert.Equal(t, "Bearer token", authorization)
 	assert.Contains(t, acceptEncoding, "gzip", "a streamed baseline should be requested compressed")
 	assert.Contains(t, report, `"name":"QDJVM"`)
@@ -392,6 +408,25 @@ func TestWriteBaselineStalledBody(t *testing.T) {
 	assert.Error(t, err, "a stalled body should fail the download")
 	assert.False(t, written)
 	assert.Empty(t, report)
+}
+
+// TestWriteBaselineWithoutTimeout verifies that a turned-off request timeout leaves a slow download
+// alone instead of failing it at once.
+func TestWriteBaselineWithoutTimeout(t *testing.T) {
+	t.Setenv(qdenv.QodanaCloudRequestTimeoutEnv, "0")
+
+	written, report, err := requestBaseline(
+		t, func(w http.ResponseWriter, r *http.Request) {
+			_, _ = io.WriteString(w, `{"baseline":[`)
+			w.(http.Flusher).Flush()
+			time.Sleep(300 * time.Millisecond) // longer than a zero timeout would allow
+			_, _ = io.WriteString(w, `{"ruleId":"Rule","message":{"text":"problem"}}]}`)
+		},
+	)
+
+	require.NoError(t, err)
+	require.True(t, written)
+	assert.Contains(t, report, "Rule")
 }
 
 func TestWriteBaselineDisabled(t *testing.T) {

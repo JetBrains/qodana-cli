@@ -41,13 +41,17 @@ var noBaselineCleanup = func() {}
 // Baseline is the baseline an analysis compares its results with.
 type Baseline struct {
 	baselinePath             string
-	isCloudBaseline          bool
+	source                   string
 	removeDownloadedBaseline func()
 }
 
 func (b Baseline) BaselinePath() string { return b.baselinePath }
 
-func (b Baseline) IsFromCloud() bool { return b.isCloudBaseline }
+func (b Baseline) IsFromCloud() bool { return b.source == qdenv.BaselineSourceCloud }
+
+// Source tells a linter which baseline this CLI has resolved for it, so that the linter reports the
+// source of the baseline and doesn't look for one in Qodana Cloud again.
+func (b Baseline) Source() string { return b.source }
 
 func (b Baseline) Cleanup() {
 	if b.removeDownloadedBaseline != nil {
@@ -58,7 +62,7 @@ func (b Baseline) Cleanup() {
 // UsedMessage tells which baseline the analysis has used.
 func (b Baseline) UsedMessage() string {
 	switch {
-	case b.isCloudBaseline:
+	case b.source == qdenv.BaselineSourceCloud:
 		return "The analysis used the baseline from Qodana Cloud"
 	case b.baselinePath != "":
 		return fmt.Sprintf("The analysis used the baseline file %s", b.baselinePath)
@@ -72,16 +76,27 @@ func (b Baseline) UsedMessage() string {
 // run was given one, otherwise the baseline stored in Qodana Cloud for toolName, if the project of
 // cloudToken has one. An empty toolName gets the baseline of every tool of the project.
 // The downloaded baseline is stored in cacheDir and must be cleaned up.
+//
+// Qodana Cloud is asked only once: a linter launched by a CLI which has resolved the baseline
+// already is told so by qdenv.QodanaBaselineSource and takes that answer.
 func ResolveBaseline(baselineFile string, cloudToken string, toolName string, cacheDir string) Baseline {
 	if baselineFile != "" {
+		source := os.Getenv(qdenv.QodanaBaselineSource)
+		if source != qdenv.BaselineSourceCloud {
+			source = qdenv.BaselineSourceLocal
+		}
 		return Baseline{
 			baselinePath:             baselineFile,
-			isCloudBaseline:          os.Getenv(qdenv.QodanaBaselineFromCloud) == "true",
+			source:                   source,
 			removeDownloadedBaseline: noBaselineCleanup,
 		}
 	}
 
-	noBaseline := Baseline{removeDownloadedBaseline: noBaselineCleanup}
+	noBaseline := Baseline{source: qdenv.BaselineSourceNone, removeDownloadedBaseline: noBaselineCleanup}
+	if source := os.Getenv(qdenv.QodanaBaselineSource); source != "" {
+		log.Debugf("The baseline was resolved by the CLI which launched this linter: %s", source)
+		return noBaseline
+	}
 	if cloudToken == "" {
 		log.Debug("Not connected to Qodana Cloud, running without a baseline")
 		return noBaseline
@@ -98,7 +113,11 @@ func ResolveBaseline(baselineFile string, cloudToken string, toolName string, ca
 		log.Debugf("Qodana Cloud has no baseline of '%s' for this project", toolName)
 		return noBaseline
 	}
-	return Baseline{baselinePath: baseline, isCloudBaseline: true, removeDownloadedBaseline: cleanup}
+	return Baseline{
+		baselinePath:             baseline,
+		source:                   qdenv.BaselineSourceCloud,
+		removeDownloadedBaseline: cleanup,
+	}
 }
 
 // downloadCloudBaseline stores the baseline from Qodana Cloud as a SARIF file in the cache dir.
@@ -132,6 +151,11 @@ func downloadCloudBaseline(client baselineDownloader, toolName string, cacheDir 
 	if err != nil || !written {
 		cleanup()
 		return "", noBaselineCleanup, err
+	}
+	// os.Create obeys the umask of the host, which can leave the file to its owner only
+	if err := os.Chmod(baseline, 0o644); err != nil {
+		cleanup()
+		return "", noBaselineCleanup, fmt.Errorf("failed to make the baseline readable: %w", err)
 	}
 	if info, statErr := os.Stat(baseline); statErr == nil {
 		log.Debugf("Baseline of %s from Qodana Cloud: %s, %d bytes", toolName, baseline, info.Size())

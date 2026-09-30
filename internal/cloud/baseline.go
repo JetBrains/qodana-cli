@@ -35,8 +35,11 @@ import (
 
 const (
 	qodanaBaselineUri = "/linters/baseline"
-	// the SARIF report the baseline problems are wrapped in: the name of the tool is written
-	// between the first two parts by the JSON encoder, and the problems follow the second
+	// the parts of the SARIF report the baseline problems are wrapped in, which the JSON encoder
+	// fills in as the problems arrive:
+	//
+	//	{"version":"2.1.0","runs":[{"tool":{"driver":{"name":  "QDJVM"  }},"results":[  …problems…  ]}]}
+	//	└────────────── header ─────────────────────────────┘ └ encoder ┘└── results ──┘└── footer ──┘
 	baselineSarifHeader  = `{"version":"2.1.0","runs":[{"tool":{"driver":{"name":`
 	baselineSarifResults = `}},"results":[`
 	baselineSarifFooter  = `]}]}`
@@ -121,6 +124,9 @@ type guardedBody struct {
 }
 
 func (b *guardedBody) Read(p []byte) (int, error) {
+	if b.timeout <= 0 {
+		return b.body.Read(p)
+	}
 	stalled := time.AfterFunc(b.timeout, b.abort)
 	defer stalled.Stop()
 	return b.body.Read(p)
@@ -131,14 +137,13 @@ func (b *guardedBody) Close() error {
 	return b.body.Close()
 }
 
-// baselineQuery asks for the baseline of one tool, which Qodana Cloud stores under the trimmed and
-// lowercased tool name. No tool name asks for the baseline of every tool of the project.
+// baselineQuery asks for the baseline of one tool. The name is sent as the linters send it, which
+// Qodana Cloud trims and lowercases itself. No tool name asks for the baseline of every tool.
 func baselineQuery(toolName string) string {
-	tool := strings.ToLower(strings.TrimSpace(toolName))
-	if tool == "" {
+	if strings.TrimSpace(toolName) == "" {
 		return ""
 	}
-	return "?" + url.Values{"toolName": []string{tool}}.Encode()
+	return "?" + url.Values{"toolName": []string{toolName}}.Encode()
 }
 
 // writeBaselineSarif converts the streamed baseline response to a SARIF report of the given tool,
@@ -224,6 +229,10 @@ func openBaselineArray(decoder *json.Decoder) (bool, error) {
 			return false, fmt.Errorf("expected a list of problems, got '%v'", token)
 		}
 		return true, nil
+	}
+	// the object must be closed by the server, otherwise the baseline may have been cut off it
+	if _, err := decoder.Token(); err != nil {
+		return false, err
 	}
 	return false, nil
 }

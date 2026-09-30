@@ -132,11 +132,13 @@ func RunThirdPartyLinterAnalysis(
 		context.LinterInfo().ProductCode,
 		context.CacheDir(),
 	)
-	defer baseline.Cleanup()
-
 	thresholds := getFailureThresholds(context)
 	var analysisResult int
-	if analysisResult, err = computeBaselinePrintResults(context, thresholds, baseline.BaselinePath()); err != nil {
+	analysisResult, err = computeBaselinePrintResults(context, thresholds, baseline.BaselinePath())
+	// not deferred: the analysis may leave the process with os.Exit over the fail threshold
+	baseline.Cleanup()
+	fmt.Println(baseline.UsedMessage())
+	if err != nil {
 		msg.ErrorMessage(err.Error())
 		return 1, err
 	}
@@ -151,7 +153,6 @@ func RunThirdPartyLinterAnalysis(
 		commoncontext.SaveReport(context.ResultsDir(), context.ReportDir(), context.CacheDir())
 	}
 	sendReportToQodanaServer(context)
-	fmt.Println(baseline.UsedMessage())
 	newReportUrl := cloud.GetReportUrl(context.ResultsDir())
 	ProcessSarif(
 		filepath.Join(context.ResultsDir(), commoncontext.QodanaSarifName),

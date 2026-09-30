@@ -80,13 +80,23 @@ func TestDownloadCloudBaseline(t *testing.T) {
 		// the linter of a container run reads it as another user. Only the bits which let one in
 		// are asserted: Windows reports 0777 for a directory whatever it was created with.
 		const openToOthers = os.FileMode(0o055)
-		info, err := os.Stat(filepath.Dir(baseline))
+		dir, err := os.Stat(filepath.Dir(baseline))
 		require.NoError(t, err)
 		assert.Equal(
 			t,
 			openToOthers,
-			info.Mode().Perm()&openToOthers,
+			dir.Mode().Perm()&openToOthers,
 			"the baseline dir should be readable by the linter",
+		)
+		// os.Create obeys the umask, which a container user reading the file doesn't share
+		const readableByOthers = os.FileMode(0o044)
+		report, err := os.Stat(baseline)
+		require.NoError(t, err)
+		assert.Equal(
+			t,
+			readableByOthers,
+			report.Mode().Perm()&readableByOthers,
+			"the baseline file should be readable by the linter",
 		)
 
 		cleanup()
@@ -137,7 +147,7 @@ func TestResolveBaseline(t *testing.T) {
 
 	// the CLI downloads the baseline and passes it as a file, saying where it comes from
 	t.Run("baseline file of the launching CLI is the cloud baseline", func(t *testing.T) {
-		t.Setenv(qdenv.QodanaBaselineFromCloud, "true")
+		t.Setenv(qdenv.QodanaBaselineSource, qdenv.BaselineSourceCloud)
 		baselineFile := filepath.Join(t.TempDir(), "baseline.sarif.json")
 		require.NoError(t, os.WriteFile(baselineFile, []byte("{}"), 0644))
 
@@ -146,7 +156,32 @@ func TestResolveBaseline(t *testing.T) {
 
 		assert.Equal(t, baselineFile, baseline.BaselinePath())
 		assert.True(t, baseline.IsFromCloud())
+		assert.Equal(t, qdenv.BaselineSourceCloud, baseline.Source())
 		assert.Equal(t, "The analysis used the baseline from Qodana Cloud", baseline.UsedMessage())
+	})
+
+	// the source of a linter which the CLI told nothing is its own command line
+	t.Run("baseline file of a run without a source is a local one", func(t *testing.T) {
+		t.Setenv(qdenv.QodanaBaselineSource, "")
+		baselineFile := filepath.Join(t.TempDir(), "baseline.sarif.json")
+		require.NoError(t, os.WriteFile(baselineFile, []byte("{}"), 0644))
+
+		baseline := ResolveBaseline(baselineFile, "token", "QDJVM", t.TempDir())
+		defer baseline.Cleanup()
+
+		assert.False(t, baseline.IsFromCloud())
+		assert.Equal(t, qdenv.BaselineSourceLocal, baseline.Source())
+	})
+
+	// the outer CLI of a linter in an image has asked Qodana Cloud already
+	t.Run("no second ask when a CLI has resolved the baseline", func(t *testing.T) {
+		t.Setenv(qdenv.QodanaBaselineSource, qdenv.BaselineSourceNone)
+
+		baseline := ResolveBaseline("", "token", "QDJVM", t.TempDir())
+		defer baseline.Cleanup()
+
+		assert.Empty(t, baseline.BaselinePath())
+		assert.Equal(t, qdenv.BaselineSourceNone, baseline.Source())
 	})
 
 	t.Run("no baseline without a cloud token", func(t *testing.T) {
@@ -154,12 +189,13 @@ func TestResolveBaseline(t *testing.T) {
 		defer baseline.Cleanup()
 
 		assert.Empty(t, baseline.BaselinePath())
+		assert.Equal(t, qdenv.BaselineSourceNone, baseline.Source())
 		assert.Contains(t, baseline.UsedMessage(), "The analysis used no baseline.")
 	})
 }
 
 func TestUsedMessage(t *testing.T) {
-	cloudBaseline := Baseline{baselinePath: "/cache/cloud-baseline-1/qodana.sarif.json", isCloudBaseline: true}
+	cloudBaseline := Baseline{baselinePath: "/cache/cloud-baseline-1/qodana.sarif.json", source: qdenv.BaselineSourceCloud}
 	assert.Equal(t, "The analysis used the baseline from Qodana Cloud", cloudBaseline.UsedMessage())
 	assert.Equal(
 		t,

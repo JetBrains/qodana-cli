@@ -121,13 +121,17 @@ But you can always override qodana.yaml options with the following command-line 
 				scanContext.Analyser().GetLinter().ProductCode,
 				scanContext.CacheDir(),
 			)
-			defer baseline.Cleanup()
 			if baseline.IsFromCloud() {
 				scanContext = scanContext.WithCloudBaseline(baselineForLinter(baseline.BaselinePath(), scanContext))
-				qdenv.SetEnv(qdenv.QodanaBaselineFromCloud, "true")
+			} else {
+				scanContext = scanContext.WithResolvedBaselineSource(baseline.Source())
 			}
+			qdenv.SetEnv(qdenv.QodanaBaselineSource, baseline.Source())
 
 			exitCode := core.RunAnalysis(ctx, scanContext)
+			// not deferred: the exit code checks below leave the process with os.Exit
+			baseline.Cleanup()
+			fmt.Println(baseline.UsedMessage())
 			if qdenv.IsContainer() {
 				err := platform.ChangeResultsPermissionsRecursively(scanContext.ResultsDir())
 				if err != nil {
@@ -148,7 +152,6 @@ But you can always override qodana.yaml options with the following command-line 
 			if newReportUrl != oldReportUrl && newReportUrl != "" && !qdenv.IsContainer() {
 				msg.SuccessMessage("Report is successfully uploaded to %s", newReportUrl)
 			}
-			fmt.Println(baseline.UsedMessage())
 
 			commoncontext.InteractiveShowReport(
 				scanContext.ShowReport(),

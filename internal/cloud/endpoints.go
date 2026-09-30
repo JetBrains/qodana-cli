@@ -139,7 +139,7 @@ type QdCloudRequest struct {
 	AcceptedStatuses []int
 	Retries          int
 	Cooldown         int
-	ReadResponse func(body io.Reader) error
+	ReadResponse     func(body io.Reader) error
 }
 
 func NewCloudRequest(path string) QdCloudRequest {
