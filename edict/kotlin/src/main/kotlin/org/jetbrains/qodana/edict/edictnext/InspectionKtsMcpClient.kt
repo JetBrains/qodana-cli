@@ -116,6 +116,7 @@ internal class HttpInspectionKtsClient(
     "run_inspection_kts_examples",
     buildJsonObject {
       put("inspectionKtsCode", code)
+      put("projectPath", projectPath)
       put("examples", EdictNextJson.encodeToJsonElement(ListSerializer, examples))
     },
   )
