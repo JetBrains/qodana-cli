@@ -165,6 +165,12 @@ internal class HttpInspectionKtsClient(
       builder.POST(HttpRequest.BodyPublishers.ofString(EdictNextJson.encodeToString(message))).build(),
       HttpResponse.BodyHandlers.ofString(),
     )
+    if (
+      requestSessionId != null &&
+      response.statusCode() == 404
+    ) {
+      throw StaleInspectionMcpSession(requestSessionId)
+    }
     response.headers().firstValue("Mcp-Session-Id").ifPresent { sessionId = it }
     check(response.statusCode() in 200..299) {
       "Inspection MCP HTTP ${response.statusCode()}: ${response.body().take(4_096)}"
