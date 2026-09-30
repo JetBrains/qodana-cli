@@ -47,11 +47,12 @@ func getScanPropertiesMap(
 	repositoryRoot string,
 ) map[string]string {
 	properties := map[string]string{
-		"-Didea.headless.enable.statistics":    strconv.FormatBool(cloud.Token.IsAllowedToSendFUS()),
-		"-Didea.headless.statistics.device.id": deviceIdSalt[0],
-		"-Didea.headless.statistics.salt":      deviceIdSalt[1],
-		"-Dqodana.automation.guid":             str.QuoteIfSpace(analysisId),
-		"-XX:MaxRAMPercentage":                 "70", //only in docker?
+		"-Didea.headless.enable.statistics":            strconv.FormatBool(cloud.Token.IsAllowedToSendFUS()),
+		"-Didea.headless.statistics.device.id":         deviceIdSalt[0],
+		"-Didea.headless.statistics.salt":              deviceIdSalt[1],
+		"-Dqodana.automation.guid":                     str.QuoteIfSpace(analysisId),
+		"-XX:MaxRAMPercentage":                         "70", //only in docker?
+		"-Dtypescript.service.node.defaultMemoryLimit": "1024",
 	}
 	if coverageDir != "" {
 		properties["-Dqodana.coverage.input"] = str.QuoteIfSpace(coverageDir)
@@ -137,12 +138,14 @@ func GetInstallPluginsProperties(c corescan.Context) []string {
 	propertyMaps := createPropertyMaps(c)
 	overrides := maps.Clone(propertyMaps.yamlOverrides)
 	maps.Copy(overrides, propertyMaps.cliOverrides)
-	properties := algorithm.MapValues(propertyMaps.common, func(key, value string) string {
-		if override, ok := overrides[key]; ok {
-			return override
-		}
-		return value
-	})
+	properties := algorithm.MapValues(
+		propertyMaps.common, func(key, value string) string {
+			if override, ok := overrides[key]; ok {
+				return override
+			}
+			return value
+		},
+	)
 	properties["-Didea.headless.enable.statistics"] = "false"
 	properties["-Dqodana.application"] = "true"
 	properties["-Dintellij.platform.load.app.info.from.resources"] = "true"
