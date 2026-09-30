@@ -77,10 +77,15 @@ internal class HttpInspectionKtsClient(
 ) : InspectionKtsClient {
   private val client = HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(30)).build()
   private val sequence = AtomicLong()
+  private val sessionRecoveryLock = Any()
   @Volatile private var sessionId: String? = null
   @Volatile private var protocolVersion: String = "2025-03-26"
 
   init {
+    initializeSession()
+  }
+
+  private fun initializeSession() {
     val initialized = requestBlocking(
       "initialize",
       buildJsonObject {
@@ -137,27 +142,48 @@ internal class HttpInspectionKtsClient(
 
   private fun requestBlocking(method: String, params: JsonObject): JsonObject {
     val id = sequence.incrementAndGet()
-    val response = sendBlocking(buildJsonObject {
+    val message = buildJsonObject {
       put("jsonrpc", "2.0")
       put("id", id)
       put("method", method)
       put("params", params)
-    }) ?: error("Inspection MCP returned no response for '$method'")
+    }
+    val response = try {
+      sendBlocking(message)
+    }
+    catch (stale: StaleInspectionMcpSession) {
+      recoverSession(stale.sessionId)
+      sendBlocking(message)
+    } ?: error("Inspection MCP returned no response for '$method'")
     check("error" !in response) { "Inspection MCP '$method' failed: ${response["error"]}" }
     return response.getValue("result").jsonObject
   }
 
+  private fun recoverSession(staleSessionId: String) = synchronized(sessionRecoveryLock) {
+    if (sessionId != staleSessionId) return@synchronized
+    sessionId = null
+    initializeSession()
+  }
+
   private fun sendBlocking(message: JsonObject): JsonObject? {
+    val requestSessionId = sessionId
     val builder = HttpRequest.newBuilder(endpoint)
       .timeout(requestTimeout)
       .header("Content-Type", "application/json")
       .header("Accept", "application/json, text/event-stream")
       .header("MCP-Protocol-Version", protocolVersion)
-    sessionId?.let { builder.header("Mcp-Session-Id", it) }
+    requestSessionId?.let { builder.header("Mcp-Session-Id", it) }
     val response = client.send(
       builder.POST(HttpRequest.BodyPublishers.ofString(EdictNextJson.encodeToString(message))).build(),
       HttpResponse.BodyHandlers.ofString(),
     )
+    if (
+      requestSessionId != null &&
+      response.statusCode() == 404 &&
+      response.body().contains("session not found", ignoreCase = true)
+    ) {
+      throw StaleInspectionMcpSession(requestSessionId)
+    }
     response.headers().firstValue("Mcp-Session-Id").ifPresent { sessionId = it }
     check(response.statusCode() in 200..299) {
       "Inspection MCP HTTP ${response.statusCode()}: ${response.body().take(4_096)}"
@@ -182,4 +208,6 @@ internal class HttpInspectionKtsClient(
   private companion object {
     val ListSerializer = kotlinx.serialization.builtins.ListSerializer(InspectionKtsExampleRequest.serializer())
   }
+
+  private class StaleInspectionMcpSession(val sessionId: String) : RuntimeException()
 }
