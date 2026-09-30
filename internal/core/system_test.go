@@ -65,7 +65,7 @@ func TestScopedScript(t *testing.T) {
 						"-Dqodana.skip.preamble=true",
 						"-Didea.headless.enable.statistics=false",
 						"-Dqodana.scoped.baseline.path=" + filepath.Join(dir, "start", "qodana.sarif.json"),
-						"-Dqodana.skip.coverage.issues.reporting=true",
+						"-Dqodana.incremental.coverage.issues.reporting=true",
 					},
 				}
 			},

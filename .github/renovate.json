@@ -3,6 +3,29 @@
   "extends": [
     "config:base"
   ],
+  "ignorePaths": [
+    "**/node_modules/**",
+    "**/bower_components/**",
+    "**/vendor/**",
+    "**/examples/**",
+    "**/__tests__/**",
+    "**/test/**",
+    "**/tests/**",
+    "**/__fixtures__/**",
+    "**/testdata/**",
+    ".teamcity/**"
+  ],
+  "nuget": {
+    "ignorePaths": [
+      "**/node_modules/**",
+      "**/bower_components/**",
+      "**/vendor/**",
+      "**/examples/**",
+      "**/__fixtures__/**",
+      "**/testdata/**",
+      ".teamcity/**"
+    ]
+  },
   "regexManagers": [
     {
       "fileMatch": [
@@ -24,6 +47,12 @@
     }
   ],
   "packageRules": [
+    {
+      "description": "Qodana artifacts are only on packages.jetbrains.team. Also querying Central lets a Central 429 abort the run whenever packages.jetbrains.team fails.",
+      "matchDatasources": ["maven"],
+      "matchPackageNames": ["org.jetbrains.qodana:*", "com.jetbrains.qodana:*"],
+      "registryUrls": ["https://packages.jetbrains.team/maven/p/ij/intellij-dependencies"]
+    },
     {
       "datasources": ["repology"],
       "packagePatterns": [

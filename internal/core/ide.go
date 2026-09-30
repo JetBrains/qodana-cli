@@ -151,6 +151,9 @@ func GetIdeArgs(c corescan.Context) []string {
 	if c.FailThreshold() != "" {
 		arguments = append(arguments, "--fail-threshold", c.FailThreshold())
 	}
+	if c.ReportCoverageProblems() != "" {
+		arguments = append(arguments, "--report-coverage-problems", c.ReportCoverageProblems())
+	}
 	if rel := c.ProjectDirPathRelativeToRepositoryRoot(); rel != "" && rel != "." {
 		if c.Analyser().IsContainer() {
 			// it is safe to use / here because it's a path inside the container

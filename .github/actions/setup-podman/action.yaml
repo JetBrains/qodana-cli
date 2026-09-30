@@ -1,5 +1,5 @@
 name: Setup Podman
-description: Install Podman (v4.9.4 or newer) and point the Docker CLI at it
+description: Install Podman (v4.9.4 or newer), point the Docker CLI at it, and set the host's FORWARD policy to ACCEPT
 inputs:
   version:
     required: true
