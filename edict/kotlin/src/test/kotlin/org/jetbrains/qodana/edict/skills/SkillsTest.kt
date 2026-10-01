@@ -98,6 +98,8 @@ class SkillsTest {
         assertContains(review, "Do not edit the candidate, cluster, examples, inspected project, or repository")
         assertContains(review, "Do not stop after finding enough defects to reject")
         assertContains(review, "report all independently established BLOCKER and MAJOR findings in the same review")
+        assertContains(compactReview, "contrived composition of multiple wrappers/operators or rare constants")
+        assertContains(compactReview, "Do not require exhaustive closure over all composable Java syntax")
         assertContains(review, "\"status\": \"ACCEPT|REJECT\"")
         assertContains(review, "\"category\": \"OBSERVABILITY|PRECISION|IMPLEMENTATION|COVERAGE|PERFORMANCE|DIAGNOSTIC\"")
         assertFalse(compactReview.contains("append one focused example"))
