@@ -11,10 +11,9 @@ domain work and use its assigned task lifecycle.
 Load only this skill. The prompt supplies:
 
 - `Cluster directory`: the absolute target cluster directory.
-- `Inspected IntelliJ project`: the project to pass as `projectPath` in Qodana MCP calls.
+- `Inspected IntelliJ project`: the project to pass to inspection tools that accept `projectPath`.
 
-For every Qodana MCP call, pass the inspected IntelliJ project as `projectPath`. Never pass the Edict worktree as
-`projectPath`.
+When an inspection tool accepts `projectPath`, pass the inspected IntelliJ project. Never pass the Edict worktree.
 
 You may change only `syntheticExampleId` in Signals below the supplied cluster directory and create, update, repair, or
 delete files below its `synthetic-examples/` directory. Do not read cluster history, `cluster.json`, candidate or
@@ -51,7 +50,7 @@ A positive example contains exactly one reportable occurrence and one expected r
 the source Signal. A negative example contains one focused allowed occurrence and an empty expected-range list. Keep
 each example in one self-contained source file; support files do not participate in validation.
 
-After reconciling the complete corpus, call `mcp__qodana__edict_next_validate_cluster_examples(clusterId)`. Repair every
+After reconciling the complete corpus, call `edict_next_validate_cluster_examples(clusterId)`. Repair every
 reported structural issue and repeat until it succeeds. Independently review every created or changed example against
 its exact source revision because structural validation cannot establish source fidelity.
 

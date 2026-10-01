@@ -52,6 +52,7 @@ class CliTest : IntegrationTest() {
                 assertTrue("edict_delegate" in tools)
                 assertTrue("edict_prepare_pipeline" in tools)
                 assertTrue("edict_next_validate_generation" in tools)
+                assertTrue("generate_inspection_kts_api" in tools)
                 EdictNextRepositoryState.open(state).use { assertNull(it.plan()) }
             } finally {
                 if (process.isAlive) process.destroyForcibly()

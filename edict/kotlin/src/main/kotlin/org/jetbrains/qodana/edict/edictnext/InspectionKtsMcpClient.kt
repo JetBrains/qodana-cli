@@ -11,6 +11,7 @@ import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
 import kotlinx.serialization.json.put
 import kotlinx.serialization.json.putJsonObject
+import kotlinx.serialization.json.JsonPrimitive
 import java.net.URI
 import java.net.http.HttpClient
 import java.net.http.HttpRequest
@@ -69,6 +70,8 @@ internal interface InspectionKtsClient : AutoCloseable {
   suspend fun compile(code: String): InspectionKtsCompileResult
   suspend fun runExamples(code: String, examples: List<InspectionKtsExampleRequest>): InspectionKtsBatchRunResult
   suspend fun analyzeProject(code: String): InspectionKtsProjectRunResult
+  suspend fun proxyTool(name: String, arguments: JsonObject): JsonObject =
+    error("Inspection tool proxying is not supported by ${this::class.simpleName}")
 }
 
 internal class StaleInspectionMcpSession(val sessionId: String) : RuntimeException()
@@ -123,14 +126,15 @@ internal class HttpInspectionKtsClient(
       put("projectPath", projectPath)
     })
 
+  override suspend fun proxyTool(name: String, arguments: JsonObject): JsonObject {
+    require(name in INSPECTION_KTS_AGENT_TOOL_NAMES) { "Inspection MCP tool '$name' is not exposed by Edict" }
+    return withContext(Dispatchers.IO) {
+      callToolBlocking(name, JsonObject(arguments + ("projectPath" to JsonPrimitive(projectPath))))
+    }
+  }
+
   private suspend inline fun <reified T> call(name: String, arguments: JsonObject): T = withContext(Dispatchers.IO) {
-    val result = requestBlocking(
-      "tools/call",
-      buildJsonObject {
-        put("name", name)
-        put("arguments", arguments)
-      },
-    )
+    val result = callToolBlocking(name, arguments)
     check(result["isError"]?.jsonPrimitive?.content != "true") { "Inspection MCP tool '$name' failed: $result" }
     val structured = result["structuredContent"] as? JsonObject
       ?: (result["content"] as? JsonArray).orEmpty().firstNotNullOfOrNull { item ->
@@ -141,6 +145,15 @@ internal class HttpInspectionKtsClient(
       ?: error("Inspection MCP tool '$name' returned no JSON result")
     EdictNextJson.decodeFromJsonElement<T>(structured)
   }
+
+  private fun callToolBlocking(name: String, arguments: JsonObject): JsonObject =
+    requestBlocking(
+      "tools/call",
+      buildJsonObject {
+        put("name", name)
+        put("arguments", arguments)
+      },
+    )
 
   private fun requestBlocking(method: String, params: JsonObject): JsonObject {
     val id = sequence.incrementAndGet()
@@ -155,12 +168,13 @@ internal class HttpInspectionKtsClient(
   }
 
   private fun sendBlocking(message: JsonObject): JsonObject? {
+    val requestSessionId = sessionId
     val builder = HttpRequest.newBuilder(endpoint)
       .timeout(requestTimeout)
       .header("Content-Type", "application/json")
       .header("Accept", "application/json, text/event-stream")
       .header("MCP-Protocol-Version", protocolVersion)
-    sessionId?.let { builder.header("Mcp-Session-Id", it) }
+    requestSessionId?.let { builder.header("Mcp-Session-Id", it) }
     val response = client.send(
       builder.POST(HttpRequest.BodyPublishers.ofString(EdictNextJson.encodeToString(message))).build(),
       HttpResponse.BodyHandlers.ofString(),
@@ -196,3 +210,16 @@ internal class HttpInspectionKtsClient(
     val ListSerializer = kotlinx.serialization.builtins.ListSerializer(InspectionKtsExampleRequest.serializer())
   }
 }
+
+internal val INSPECTION_KTS_AGENT_TOOL_NAMES = setOf(
+  "generate_psi_tree",
+  "generate_inspection_kts_api",
+  "generate_inspection_kts_examples",
+)
+
+internal val INSPECTION_KTS_UPSTREAM_TOOL_NAMES = INSPECTION_KTS_AGENT_TOOL_NAMES + setOf(
+  "run_inspection_kts",
+  "compile_inspection_kts",
+  "run_inspection_kts_examples",
+  "run_inspection_kts_project",
+)

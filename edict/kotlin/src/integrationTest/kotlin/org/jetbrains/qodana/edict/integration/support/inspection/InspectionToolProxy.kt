@@ -6,6 +6,7 @@ import kotlinx.serialization.json.*
 import org.jetbrains.qodana.edict.common.obj
 import org.jetbrains.qodana.edict.common.text
 import org.jetbrains.qodana.edict.common.wireJson
+import org.jetbrains.qodana.edict.edictnext.INSPECTION_KTS_UPSTREAM_TOOL_NAMES
 import java.net.InetSocketAddress
 import java.nio.file.Files
 import java.nio.file.Path
@@ -13,16 +14,7 @@ import java.nio.file.StandardOpenOption.APPEND
 import java.nio.file.StandardOpenOption.CREATE
 import java.util.concurrent.Executors
 
-internal val inspectionToolNames =
-    setOf(
-        "generate_psi_tree",
-        "generate_inspection_kts_api",
-        "generate_inspection_kts_examples",
-        "run_inspection_kts",
-        "compile_inspection_kts",
-        "run_inspection_kts_examples",
-        "run_inspection_kts_project",
-    )
+internal val inspectionToolNames = INSPECTION_KTS_UPSTREAM_TOOL_NAMES
 
 /** Restrict external IDE access to generic compiler tools and redirect all execution to the disposable copy. */
 internal class InspectionToolProxy(

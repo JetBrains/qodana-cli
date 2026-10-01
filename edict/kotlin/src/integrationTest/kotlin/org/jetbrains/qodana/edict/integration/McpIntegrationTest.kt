@@ -56,6 +56,11 @@ class McpIntegrationTest : IntegrationTest() {
             assertContains(tools, "edict_delegate")
             assertContains(tools, "edict_prepare_pipeline")
             assertContains(tools, "edict_next_get_new_inspection_results")
+            assertContains(tools, "generate_inspection_kts_api")
+            assertFalse("run_inspection_kts" in tools)
+            assertFalse("compile_inspection_kts" in tools)
+            assertFalse("run_inspection_kts_examples" in tools)
+            assertFalse("run_inspection_kts_project" in tools)
             assertEquals(true, lines[2].obj("result").flag("isError"))
             assertTrue(lines.last().obj("result").isEmpty())
         }

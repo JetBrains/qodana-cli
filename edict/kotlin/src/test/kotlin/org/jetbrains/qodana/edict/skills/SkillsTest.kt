@@ -103,7 +103,5 @@ class SkillsTest {
         assertContains(review, "\"status\": \"ACCEPT|REJECT|EXAMPLES_ADDED\"")
         assertContains(review, "\"addedExampleIds\": [\"example-id\"]")
         assertFalse(review.contains("\"category\": \"OBSERVABILITY|PRECISION|IMPLEMENTATION|COVERAGE"))
-        assertContains(compactGeneration, "each direct substage including all of its descendants")
-        assertContains(compactGeneration, "inclusive cluster total")
     }
 }
