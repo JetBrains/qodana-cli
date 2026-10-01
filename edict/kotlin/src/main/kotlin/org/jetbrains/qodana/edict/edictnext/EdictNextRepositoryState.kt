@@ -128,8 +128,8 @@ internal class EdictNextRepositoryState(
     allowedChild(capability, skill, title)
     val plan = checkNotNull(currentPlan)
     if (capability.skill == "edict-next-cluster-generation" && skill in GENERATION_REVIEWS) {
-      require(plan.tasks.count { it.parentId == capability.taskId && it.skill == skill } < MAX_REVIEW_ITERATIONS) {
-        "Three review iterations exhausted for $skill; finish this cluster with its validated outcome and remaining findings"
+      require(plan.tasks.count { it.parentId == capability.taskId && it.skill == skill } <= MAX_REPAIR_ITERATIONS) {
+        "Three review repair iterations exhausted for $skill; finish this cluster with its validated outcome and remaining findings"
       }
     }
     require(plan.tasks.size < 10_000) { "Task limit reached" }
@@ -467,7 +467,7 @@ internal class EdictNextRepositoryState(
 
   companion object {
     private const val MAX_PLAN_BYTES = 8 * 1024 * 1024
-    private const val MAX_REVIEW_ITERATIONS = 3
+    private const val MAX_REPAIR_ITERATIONS = 3
     private const val LOCK_FILE = ".edict-mcp.lock"
     private const val CURRENT_PLAN_FILE = ".edict-mcp-current"
     private val GENERATION_REVIEWS = setOf(

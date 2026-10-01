@@ -1,6 +1,6 @@
 ---
 name: edict-next-inspection-code-review
-description: Managed subagent that reviews one Edict Next candidate and appends validated examples for reproducible behavioral gaps.
+description: Managed subagent that reviews one Edict Next candidate without mutating its evidence or implementation.
 ---
 
 # Edict Next Inspection Code Review
@@ -22,6 +22,11 @@ Do not edit the candidate, cluster, examples, inspected project, or repository.
 ## Review
 
 Infer the behavior best supported by the positive and negative evidence, then review the candidate:
+
+Complete the whole bounded review before writing the decision. Do not stop after finding enough defects to reject.
+Systematically check every supported expression/container form, every excluded form, and every PSI branch used by the
+candidate, and report all independently established BLOCKER and MAJOR findings in the same review. This is especially
+important when several forms share the same value-flow or expected-type helper: audit all of those forms together.
 
 An example referenced by a `STRONG` cluster Signal is required evidence. Every other example is weak evidence. Report
 weak-example disagreements so the generation worker can decide whether to repair them, but do not reject a candidate

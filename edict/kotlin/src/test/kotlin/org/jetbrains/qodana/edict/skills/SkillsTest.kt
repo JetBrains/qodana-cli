@@ -88,20 +88,20 @@ class SkillsTest {
     }
 
     @Test
-    fun `inspection review closes behavioral findings through validated examples`() {
+    fun `inspection review is read only and validation follows acceptance`() {
         val generation = Skills.read("edict-next-cluster-generation")
         val compactGeneration = generation.replace(Regex("\\s+"), " ")
         val review = Skills.read("edict-next-inspection-code-review")
         val compactReview = review.replace(Regex("\\s+"), " ")
 
-        assertContains(generation, "edict_next_validate_cluster_examples(clusterId)` immediately before review")
-        assertContains(generation, "status is `EXAMPLES_ADDED`")
-        assertContains(generation, "Do not treat free-form FP/FN claims as repair requirements")
-        assertContains(review, "append one focused example")
-        assertContains(compactReview, "Do not return an FP or FN as a review finding")
-        assertContains(review, "edict_next_validate_cluster_examples(clusterId)")
-        assertContains(review, "\"status\": \"ACCEPT|REJECT|EXAMPLES_ADDED\"")
-        assertContains(review, "\"addedExampleIds\": [\"example-id\"]")
-        assertFalse(review.contains("\"category\": \"OBSERVABILITY|PRECISION|IMPLEMENTATION|COVERAGE"))
+        assertContains(compactGeneration, "After acceptance, call `edict_next_validate_inspection(clusterId)`")
+        assertContains(review, "Do not edit the candidate, cluster, examples, inspected project, or repository")
+        assertContains(review, "Do not stop after finding enough defects to reject")
+        assertContains(review, "report all independently established BLOCKER and MAJOR findings in the same review")
+        assertContains(review, "\"status\": \"ACCEPT|REJECT\"")
+        assertContains(review, "\"category\": \"OBSERVABILITY|PRECISION|IMPLEMENTATION|COVERAGE|PERFORMANCE|DIAGNOSTIC\"")
+        assertFalse(compactReview.contains("append one focused example"))
+        assertFalse(review.contains("EXAMPLES_ADDED"))
+        assertFalse(review.contains("addedExampleIds"))
     }
 }

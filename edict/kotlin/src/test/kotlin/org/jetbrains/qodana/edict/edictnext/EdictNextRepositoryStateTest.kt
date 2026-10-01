@@ -33,8 +33,9 @@ class EdictNextRepositoryStateTest {
       val cluster = state.addTask(generation.token, "edict-next-cluster-generation", "First cluster")
       clusterId = cluster.id
       val worker = state.launch(generation.token, cluster.id, cluster.skill)
-      for (skill in reviewSkills) repeat(3) { iteration ->
-        val review = state.addTask(worker.token, skill, "Review iteration ${iteration + 1}/3")
+      for (skill in reviewSkills) repeat(4) { attempt ->
+        val title = if (attempt == 0) "Initial review" else "Review after repair $attempt/3"
+        val review = state.addTask(worker.token, skill, title)
         val reviewer = state.launch(worker.token, review.id, skill)
         state.finishTask(reviewer.token, "completed", "Reviewed")
       }
@@ -45,8 +46,8 @@ class EdictNextRepositoryStateTest {
       val worker = state.launch(generation.token, clusterId, "edict-next-cluster-generation")
       for (skill in reviewSkills) {
         assertTrue(
-          assertFails { state.addTask(worker.token, skill, "Fourth attempt") }
-            .message.orEmpty().contains("Three review iterations"),
+          assertFails { state.addTask(worker.token, skill, "Fifth review attempt") }
+            .message.orEmpty().contains("Three review repair iterations"),
         )
       }
       repeat(4) { state.addTask(worker.token, "edict-next-code-example-overseer", "Example $it") }
@@ -54,7 +55,7 @@ class EdictNextRepositoryStateTest {
       val sibling = state.launch(generation.token, second.id, second.skill)
       for (skill in reviewSkills) state.addTask(sibling.token, skill, "First review")
       assertEquals(
-        3,
+        4,
         state.plan()!!.tasks.count { it.parentId == clusterId && it.skill == "edict-next-inspection-code-review" },
       )
     }
