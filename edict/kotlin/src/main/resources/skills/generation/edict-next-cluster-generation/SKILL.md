@@ -115,7 +115,9 @@ Review output path: <privateScratchDirectory>/inspection-code-review.json
 ```
 
 On `REJECT`, repair evidence coverage or implementation defects. Resolve description/implementation mismatches against
-the Signals and examples, then repeat review.
+the Signals and examples, then repeat review. The bounded workflow permits the initial review plus at most three
+reject-repair-review iterations, so a repair made after the third rejection can still receive one final independent
+acceptance check.
 
 After acceptance, call `edict_next_validate_inspection(clusterId)`. It requires every strong example to pass and reports
 weak-example results as advisory evidence. Repair as many weak failures as possible without compromising the coherent
