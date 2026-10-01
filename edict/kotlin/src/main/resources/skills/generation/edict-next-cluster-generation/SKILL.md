@@ -15,7 +15,7 @@ The prompt supplies `clusterId`, `clusterDirectory`, the absolute worktree path,
 inspected project. Resolve the paths before any write or MCP call. Return without changing the repository if scratch
 equals or is below the worktree.
 
-Pass the inspected IntelliJ project as `projectPath` in every Qodana MCP call, never the Edict worktree.
+When an inspection tool accepts `projectPath`, pass the inspected IntelliJ project, never the Edict worktree.
 
 # Boundaries
 
@@ -77,9 +77,9 @@ Independently derive the broadest coherent code-quality rule best supported by t
 problem-causing conditions from incidental names, APIs, literals, operators, and source shapes. Do not join unrelated
 predicates merely to fit the corpus.
 
-Before the first candidate, call `mcp__qodana__generate_inspection_kts_api` and
-`mcp__qodana__generate_inspection_kts_examples` for the language. Use
-`mcp__qodana__generate_psi_tree` when relevant PSI structure is uncertain.
+Before the first candidate, call `generate_inspection_kts_api` and
+`generate_inspection_kts_examples` for the language. Use
+`generate_psi_tree` when relevant PSI structure is uncertain.
 
 Persist one complete `InspectionKts` with `edict_next_save_candidate_inspection`. It must declare exactly one
 `localInspection` and provide a lowercase kebab-case `id`, nonblank `name`, and nonblank `htmlDescription` that describe

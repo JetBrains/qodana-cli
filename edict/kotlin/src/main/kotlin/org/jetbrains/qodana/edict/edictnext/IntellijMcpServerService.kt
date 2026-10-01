@@ -5,6 +5,7 @@ import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.json.JsonObject
 import java.net.URI
 import java.nio.file.Path
 import kotlin.io.path.absolutePathString
@@ -112,6 +113,9 @@ internal class IntellijMcpServerService(
   suspend fun <T> waitForAnalysis(action: suspend (InspectionKtsClient) -> T): T = analyses.withLock {
     withClient(action)
   }
+
+  suspend fun proxyTool(name: String, arguments: JsonObject): JsonObject =
+    withClient { it.proxyTool(name, arguments) }
 
   private suspend fun restart(staleClient: InspectionKtsClient): InspectionKtsClient = lifecycle.withLock {
     client?.takeIf { it !== staleClient }?.let { return@withLock it }

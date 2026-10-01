@@ -10,8 +10,8 @@ domain work and use it for every child delegation and task transition.
 
 Load only this skill. Do not edit the worktree or call cluster-processing MCPs yourself.
 
-For every Qodana MCP call, pass the inspected IntelliJ project as `projectPath`. Never pass the Edict worktree as
-`projectPath`; the worktree is repository data already loaded in the run context.
+When an inspection tool accepts `projectPath`, pass the inspected IntelliJ project. Never pass the Edict worktree;
+the worktree is repository data already loaded in the run context.
 
 The prompt supplies the absolute worktree path and generation scratch root. Resolve both before the first MCP call or worker
 launch. Stop if the scratch root equals or is below the worktree; otherwise create it and store all transient output there.
@@ -26,4 +26,4 @@ after all clusters have started, wait for the remaining workers.
 Do not modify or repair repository changes made by workers. If you recognize any issue, flag it in the result for the
 parent agent. A worker may leave its cluster Pending or mark it Invalid because infrastructure/tooling or its cluster
 input/state is broken; neither is a stage failure.
-Return when all workers have returned. 
+Return when all workers have returned.
