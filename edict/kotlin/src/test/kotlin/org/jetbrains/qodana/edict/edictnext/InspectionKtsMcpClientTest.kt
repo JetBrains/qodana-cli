@@ -70,6 +70,17 @@ class InspectionKtsMcpClientTest {
         URI("http://127.0.0.1:${server.address.port}/mcp"),
         "/project/root",
       ).use { client ->
+        val proxyResult = client.proxyTool(
+          "generate_inspection_kts_api",
+          buildJsonObject {
+            put("language", "Java")
+            put("projectPath", "/untrusted/project")
+          },
+        )
+        assertEquals("false", proxyResult.getValue("isError").jsonPrimitive.content)
+        assertFailsWith<IllegalArgumentException> {
+          client.proxyTool("run_inspection_kts", buildJsonObject { put("inspectionKtsCode", "inspection") })
+        }
         val result = client.runExamples(
           "inspection",
           listOf(InspectionKtsExampleRequest("example", "/examples/example", "Example.kt")),
@@ -81,6 +92,11 @@ class InspectionKtsMcpClientTest {
       val toolCalls = synchronized(requests) {
         requests.filter { it["method"]?.jsonPrimitive?.content == "tools/call" }
       }
+      val apiArguments = toolCalls.single {
+        it.getValue("params").jsonObject.getValue("name").jsonPrimitive.content == "generate_inspection_kts_api"
+      }.getValue("params").jsonObject.getValue("arguments").jsonObject
+      assertEquals("Java", apiArguments.getValue("language").jsonPrimitive.content)
+      assertEquals("/project/root", apiArguments.getValue("projectPath").jsonPrimitive.content)
       val exampleArguments = toolCalls.single {
         it.getValue("params").jsonObject.getValue("name").jsonPrimitive.content == "run_inspection_kts_examples"
       }.getValue("params").jsonObject.getValue("arguments").jsonObject

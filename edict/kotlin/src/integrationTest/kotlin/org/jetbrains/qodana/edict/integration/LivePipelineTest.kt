@@ -144,7 +144,6 @@ class LivePipelineTest : IntegrationTest() {
         assertTrue(acceptedReviews.isNotEmpty(), "Code review must accept the exact persisted inspection hash")
         val calls = Files.readAllLines(workspace.output.resolve("log/inspection-mcp.jsonl"))
             .map { wireJson.parseToJsonElement(it).jsonObject }
-        assertTrue(calls.any { it["tool"]?.toString()?.contains("compile_inspection_kts") == true })
         assertTrue(calls.any { it["tool"]?.toString()?.contains("run_inspection_kts_examples") == true })
     }
 }

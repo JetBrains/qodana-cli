@@ -10,14 +10,14 @@ domain work and use its assigned task lifecycle.
 
 Load only this skill.
 
-For every Qodana MCP call, pass the inspected IntelliJ project as `projectPath`. Never pass the Edict worktree as
-`projectPath`; the worktree is repository data already loaded in the run context.
+When an inspection tool accepts `projectPath`, pass the inspected IntelliJ project. Never pass the Edict worktree;
+the worktree is repository data already loaded in the run context.
 
 The prompt supplies exactly three absolute paths:
 
 - `Signal path`: the Signal JSON to update.
 - `Synthetic examples directory`: the target cluster's `synthetic-examples/` directory.
-- `Inspected IntelliJ project`: the project to pass as `projectPath` in Qodana MCP calls.
+- `Inspected IntelliJ project`: the project to pass to inspection tools that accept `projectPath`.
 
 You may change only files below the supplied examples directory and `syntheticExampleId` in the supplied Signal. Do not
 change any other Signal field or any other file.
@@ -64,7 +64,7 @@ Metadata contains `id`, `fileName`, `label`, and `expectedRanges`. Derive the ex
 do not retain source line numbers after moving the target. Never copy the complete production source file.
 
 Derive `clusterId` from the canonical examples-directory path and call
-`mcp__qodana__edict_next_validate_code_example(clusterId, exampleId)` for the newly created example before assigning it.
+`edict_next_validate_code_example(clusterId, exampleId)` for the newly created example before assigning it.
 Repair structural issues in the example and validate again after any
 repair. The MCP does not establish semantics: independently confirm that the example demonstrates the Signal and that its
 label and ranges are correct.

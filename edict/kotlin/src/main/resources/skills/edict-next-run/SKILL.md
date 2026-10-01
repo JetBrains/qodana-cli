@@ -11,8 +11,8 @@ domain work and use it for every child delegation and task transition.
 Load only this skill. Launch every stage with the native `spawn_agent` tool and mention its skill only in the first line
 of the fresh worker prompt. Do not edit the worktree, call cluster-processing MCPs, or run tests yourself.
 
-For every Qodana MCP call, pass the inspected IntelliJ project as `projectPath`. Never pass the Edict worktree as
-`projectPath`; the worktree is repository data already loaded in the run context.
+When an inspection tool accepts `projectPath`, pass the inspected IntelliJ project. Never pass the Edict worktree;
+the worktree is repository data already loaded in the run context.
 
 The prompt supplies the Edict worktree, inspected project, and shared workspace for generation scratch data.
 

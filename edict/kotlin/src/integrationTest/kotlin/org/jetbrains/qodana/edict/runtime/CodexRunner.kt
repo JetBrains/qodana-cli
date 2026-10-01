@@ -22,8 +22,6 @@ class CodexRunner(
     private val executable: String = System.getenv("CODEX_BIN") ?: "codex",
     val model: String = System.getenv("CODEX_MODEL") ?: "gpt-5.6-sol",
     private val agentLogger: AgentLogger? = null,
-    private val additionalMcpServers: Map<String, String> = emptyMap(),
-    private val primaryMcpName: String = "edict-mcp",
     private val primaryMcpCommand: List<String>? = null,
     private val primaryMcpEnabledTools: List<String>? = null,
     private val additionalWritableRoots: List<Path> = emptyList(),
@@ -36,7 +34,6 @@ class CodexRunner(
     private fun quote(value: String): String = JsonPrimitive(value).toString()
 
     fun prepare() {
-        require(primaryMcpName !in additionalMcpServers) { "Additional tools must not replace the primary Edict server" }
         require(primaryMcpCommand == null || primaryMcpCommand.isNotEmpty()) { "The primary MCP command must not be empty" }
         listOf(output, home, scratch, trace).forEach {
             Files.createDirectories(it)
@@ -95,14 +92,7 @@ class CodexRunner(
             enabled = true
             max_depth = 5
             max_concurrent_threads_per_session = 50
-        """.trimIndent() + "\n" + primaryMcpConfiguration() + additionalMcpServers.entries.joinToString("\n") { (name, url) ->
-                """
-                [mcp_servers.${quote(name)}]
-                url = ${quote(url)}
-                default_tools_approval_mode = "approve"
-                tool_timeout_sec = 300
-            """.trimIndent() + "\n"
-            })
+        """.trimIndent() + "\n" + primaryMcpConfiguration())
     }
 
     private fun primaryMcpConfiguration(): String {
@@ -115,7 +105,7 @@ class CodexRunner(
             """.trimIndent()
         } ?: "url = ${quote(mcpUrl)}"
         return """
-            [mcp_servers.${quote(primaryMcpName)}]
+            [mcp_servers."edict-mcp"]
             $transport
             required = true
             ${primaryMcpEnabledTools?.let { tools -> "enabled_tools = [${tools.joinToString(", ") { quote(it) }}]" }.orEmpty()}

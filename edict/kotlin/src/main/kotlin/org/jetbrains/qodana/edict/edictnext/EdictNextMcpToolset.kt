@@ -31,6 +31,7 @@ internal class EdictNextMcpToolset(
 
   private fun registerTools(server: Server) {
     management.registerTools(server)
+    registerInspectionProxyTools(server)
 
     server.addTool(
       name = "edict_prepare_pipeline",
@@ -298,9 +299,81 @@ internal class EdictNextMcpToolset(
     }
   }
 
+  private fun registerInspectionProxyTools(server: Server) {
+    inspectionProxyTools.forEach { tool ->
+      server.addTool(
+        name = tool.name,
+        description = tool.description,
+        inputSchema = tool.inputSchema,
+      ) { request ->
+        EdictSessionContext.getInstance(runId).inspectionServer
+          .proxyTool(tool.name, request.arguments ?: JsonObject(emptyMap()))
+          .toProxiedToolResult()
+      }
+    }
+  }
+
   private companion object {
     const val SERVER_NAME = "edict-mcp-next"
   }
+}
+
+private data class InspectionProxyTool(
+  val name: String,
+  val description: String,
+  val inputSchema: ToolSchema,
+)
+
+private val inspectionProxyTools = listOf(
+  InspectionProxyTool(
+    name = "generate_psi_tree",
+    description = "Create a PSI tree for Java or Kotlin source code.",
+    inputSchema = toolArguments(
+      "code" to stringProperty("Source code to parse"),
+      "language" to stringProperty("Java or Kotlin"),
+      "projectPath" to stringProperty("Project path; Edict always routes this to the analyzed project"),
+      required = setOf("code", "language"),
+    ),
+  ),
+  InspectionProxyTool(
+    name = "generate_inspection_kts_api",
+    description = "Return Inspection KTS API documentation for Java or Kotlin.",
+    inputSchema = toolArguments(
+      "language" to stringProperty("Java or Kotlin"),
+      "projectPath" to stringProperty("Project path; Edict always routes this to the analyzed project"),
+      "wrapInTags" to booleanProperty("Wrap the API in XML tags"),
+      required = setOf("language"),
+    ),
+  ),
+  InspectionProxyTool(
+    name = "generate_inspection_kts_examples",
+    description = "Return Inspection KTS templates and examples.",
+    inputSchema = toolArguments(
+      "includeAdditionalExamples" to booleanProperty("Include additional curated examples"),
+      "language" to stringProperty("Java, Kotlin, or Any"),
+      "projectPath" to stringProperty("Project path; Edict always routes this to the analyzed project"),
+    ),
+  ),
+).also { tools ->
+  check(tools.mapTo(linkedSetOf(), InspectionProxyTool::name) == INSPECTION_KTS_AGENT_TOOL_NAMES)
+}
+
+private fun toolArguments(
+  vararg properties: Pair<String, JsonObject>,
+  required: Set<String> = emptySet(),
+): ToolSchema = ToolSchema(
+  properties = buildJsonObject { properties.forEach { (name, schema) -> put(name, schema) } },
+  required = properties.map(Pair<String, JsonObject>::first).filter(required::contains),
+)
+
+private fun stringProperty(description: String): JsonObject = buildJsonObject {
+  put("type", "string")
+  put("description", description)
+}
+
+private fun booleanProperty(description: String): JsonObject = buildJsonObject {
+  put("type", "boolean")
+  put("description", description)
 }
 
 private fun stringArguments(vararg arguments: Pair<String, String>): ToolSchema = ToolSchema(
@@ -327,3 +400,15 @@ private inline fun <reified T> T.toToolResult(isError: Boolean = false): CallToo
     structuredContent = element as? JsonObject,
   )
 }
+
+private fun JsonObject.toProxiedToolResult(): CallToolResult = CallToolResult(
+  content = (this["content"] as? JsonArray).orEmpty().mapNotNull { item ->
+    val block = item as? JsonObject ?: return@mapNotNull null
+    if (block["type"]?.jsonPrimitive?.content == "text") {
+      TextContent(block["text"]?.jsonPrimitive?.content.orEmpty())
+    }
+    else null
+  },
+  isError = this["isError"]?.jsonPrimitive?.content?.toBooleanStrictOrNull(),
+  structuredContent = this["structuredContent"] as? JsonObject,
+)

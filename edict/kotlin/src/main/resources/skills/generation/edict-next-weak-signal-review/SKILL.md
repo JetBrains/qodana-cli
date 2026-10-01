@@ -16,7 +16,7 @@ that skill yourself.
 The prompt supplies one absolute `Review config` path. Read it first, then its cluster directory, candidate inspection,
 sampled findings, inspected project, and private scratch directory.
 
-Pass the inspected IntelliJ project as `projectPath` in every Qodana MCP call, never the Edict worktree.
+When an inspection tool accepts `projectPath`, pass the inspected IntelliJ project, never the Edict worktree.
 
 Do not directly edit the candidate, cluster metadata, cluster Signals, or inspected project. You may repair or delete
 files below the cluster's `synthetic-examples/` directory. Code-example workers may change only their transient Signal
@@ -71,7 +71,7 @@ example for UNCERTAIN.
 For each FP, also write `<private-scratch>/weak-signal-review/false-positive-<index>.md` with its path, revision, range,
 exact relevant snippet, classification reason, and example id.
 
-After every code-example worker finishes, call `mcp__qodana__edict_next_validate_cluster_examples(clusterId)`. Repair
+After every code-example worker finishes, call `edict_next_validate_cluster_examples(clusterId)`. Repair
 every reported example issue and repeat validation until it succeeds. Delete incomplete unreferenced example directories;
 when repairing referenced evidence, preserve its Signal's exact semantics rather than adapting it to the candidate.
 

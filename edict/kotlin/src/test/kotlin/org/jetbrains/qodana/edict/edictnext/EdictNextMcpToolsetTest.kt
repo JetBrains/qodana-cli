@@ -7,9 +7,11 @@ import kotlinx.io.asSink
 import kotlinx.io.asSource
 import kotlinx.io.buffered
 import kotlinx.serialization.json.JsonArray
+import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.put
+import org.jetbrains.qodana.edict.common.array
 import org.jetbrains.qodana.edict.common.flag
 import org.jetbrains.qodana.edict.common.obj
 import org.jetbrains.qodana.edict.common.runProcess
@@ -49,12 +51,16 @@ class EdictNextMcpToolsetTest {
       "edict_next_delete_code_example",
       "edict_next_save_candidate_inspection",
       "edict_next_append_cluster_history",
+      "generate_psi_tree",
+      "generate_inspection_kts_api",
+      "generate_inspection_kts_examples",
     )
     EdictNextRepositoryState.open(directory.resolve("state")).use { store ->
       val management = EdictManagementService(store)
       val toolset = EdictNextMcpToolset("test-run", management)
       val server = toolset.createServer()
       assertTrue(server.tools.keys.containsAll(movedTools))
+      assertTrue(server.tools.keys.intersect(INSPECTION_KTS_UPSTREAM_TOOL_NAMES) == INSPECTION_KTS_AGENT_TOOL_NAMES)
       val delegateSchema = server.tools.getValue("edict_delegate").tool.inputSchema
       assertEquals(setOf("token", "taskId", "prompt"), checkNotNull(delegateSchema.properties).keys)
       assertEquals(listOf("token", "taskId", "prompt"), delegateSchema.required)
@@ -132,7 +138,8 @@ class EdictNextMcpToolsetTest {
           {"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2025-03-26","capabilities":{},"clientInfo":{"name":"unit","version":"1"}}}
           {"jsonrpc":"2.0","method":"notifications/initialized"}
           {"jsonrpc":"2.0","id":2,"method":"tools/call","params":{"name":"edict_prepare_pipeline","arguments":{"worktreePath":"$repository"}}}
-          {"jsonrpc":"2.0","id":3,"method":"ping"}
+          {"jsonrpc":"2.0","id":3,"method":"tools/call","params":{"name":"generate_inspection_kts_api","arguments":{"language":"Java","projectPath":"/ignored"}}}
+          {"jsonrpc":"2.0","id":4,"method":"ping"}
         """.trimIndent() + "\n"
         val transport = StdioServerTransport(
           input = DelayedEofInputStream(ByteArrayInputStream(input.encodeToByteArray())).asSource().buffered(),
@@ -145,10 +152,13 @@ class EdictNextMcpToolsetTest {
 
         val responses = output.toString(Charsets.UTF_8).lineSequence().filter(String::isNotBlank)
           .map { wireJson.parseToJsonElement(it).jsonObject }.toList()
-        assertEquals(3, responses.size)
+        assertEquals(4, responses.size)
         val result = responses.single { it["id"].toString() == "2" }.obj("result")
         assertFalse(result.flag("isError") == true)
         assertContains(result.obj("structuredContent").text("summary"), "0 Signal(s) selected")
+        val api = responses.single { it["id"].toString() == "3" }.obj("result")
+        assertFalse(api.flag("isError") == true)
+        assertEquals("inspection api", api.array("content").single().text("text"))
       }
     } finally {
       context.unload()
@@ -162,6 +172,13 @@ class EdictNextMcpToolsetTest {
       examples: List<InspectionKtsExampleRequest>,
     ): InspectionKtsBatchRunResult = error("not used")
     override suspend fun analyzeProject(code: String): InspectionKtsProjectRunResult = error("not used")
+    override suspend fun proxyTool(name: String, arguments: JsonObject): JsonObject = buildJsonObject {
+      put("isError", false)
+      put("content", JsonArray(listOf(buildJsonObject {
+        put("type", "text")
+        put("text", "inspection api")
+      })))
+    }
     override fun close() = Unit
   }
 

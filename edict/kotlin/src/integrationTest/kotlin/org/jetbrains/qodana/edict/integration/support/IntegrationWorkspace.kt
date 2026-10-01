@@ -94,7 +94,6 @@ internal class IntegrationWorkspace private constructor(
                     val port = engine.engine.resolvedConnectors().single().port
                     val runtime = CodexRunner(
                         output, project, state, "http://127.0.0.1:$port/mcp", agentLogger = management.agents,
-                        additionalMcpServers = inspectionServer?.let { mapOf("qodana" to it.url) }.orEmpty(),
                         stateWritable = inspectionServer != null,
                     )
                     runtime.prepare()
