@@ -158,12 +158,3 @@ otherwise record the decision and call `edict_next_mark_generated(clusterId)`.
 - `Invalid`: record the concrete infrastructure/tooling failure or broken input and set the status. Keep valid partial
   artifacts and `predecessorId`.
 - An unfinished or rejected attempt is not by itself Invalid. Keep repairing while time remains, otherwise leave Pending.
-
-## Price reporting
-
-Keep direct child task titles specific to their top substage. The trusted host reports USD after execution for the
-cluster worker's own generation/coordination, each direct substage including all of its descendants, and the inclusive
-cluster total. It fetches the current official OpenAI Standard list rates and prices disjoint uncached-input,
-cached-input, cache-write, and output tokens per response, selecting long-context rates when applicable. Reasoning is
-already part of output and must not be charged twice. Runtime session receipts are authoritative and become available
-only after a worker finishes.
