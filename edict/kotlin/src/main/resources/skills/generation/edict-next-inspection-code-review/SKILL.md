@@ -28,6 +28,12 @@ Systematically check every supported expression/container form, every excluded f
 candidate, and report all independently established BLOCKER and MAJOR findings in the same review. This is especially
 important when several forms share the same value-flow or expected-type helper: audit all of those forms together.
 
+Keep severity proportional to the evidence and the bounded workflow. A behavioral defect is `BLOCKER` or `MAJOR` only
+when it contradicts a strong Signal/example, breaks a directly advertised core context, or has a simple reproducer in
+ordinary code. Record an independently valid edge as `MINOR` when reproducing it requires a contrived composition of
+multiple wrappers/operators or rare constants not present in the evidence. Do not require exhaustive closure over all
+composable Java syntax to accept a coherent bounded inspection; describe such residual edges as advisory limitations.
+
 An example referenced by a `STRONG` cluster Signal is required evidence. Every other example is weak evidence. Report
 weak-example disagreements so the generation worker can decide whether to repair them, but do not reject a candidate
 solely because a weak example fails. A rejection must be supported independently by the Signals, source semantics, or an
