@@ -103,18 +103,7 @@ Implementation constraints:
 
 ## 4. Validate and review in generation cycles
 
-Repeat this cycle until the candidate is accepted:
-
-1. Call `edict_next_validate_cluster_examples(clusterId)` immediately before review. When it fails, do not launch or
-   consume a review. Reconcile or repair the example corpus, repair the candidate when the changed evidence requires
-   it, and restart this generation cycle.
-2. Call `edict_next_validate_inspection(clusterId)`. It requires every strong example to pass and reports weak-example
-   results as advisory evidence. Repair every strong failure and as many weak failures as possible without compromising
-   the coherent rule, then restart this cycle. Every example added by the preceding code review is mandatory for the
-   next candidate revision: do not launch another review while any id from that review's `addedExampleIds` appears in
-   `reportedNegativeExampleIds` or `uncoveredPositiveExampleIds`. Continue to review only when every strong and newly
-   added review example passes and any other remaining weak failures are an explicit, evidence-backed decision.
-3. Launch one fresh review worker:
+Launch a fresh review worker:
 
 ```text
 Load the edict-next-inspection-code-review skill.
@@ -125,14 +114,12 @@ Inspected IntelliJ project: <inspected project path>
 Review output path: <privateScratchDirectory>/inspection-code-review.json
 ```
 
-The reviewer appends a validated weak example for every reproducible false positive or false negative instead of
-returning that behavioral mismatch as a finding. When `addedExampleIds` is non-empty or status is `EXAMPLES_ADDED`,
-restart this generation cycle. The new examples are measured by the two validation gates before another review.
+On `REJECT`, repair evidence coverage or implementation defects. Resolve description/implementation mismatches against
+the Signals and examples, then repeat review.
 
-On `REJECT`, repair only the reported non-behavioral implementation, observability, performance, or diagnostic defects,
-then restart this cycle. `ACCEPT` is valid only for the exact candidate hash, with an empty `addedExampleIds`, after both
-validation gates succeeded immediately before that review. Do not treat free-form FP/FN claims as repair requirements;
-only stored examples participate in behavioral repair.
+After acceptance, call `edict_next_validate_inspection(clusterId)`. It requires every strong example to pass and reports
+weak-example results as advisory evidence. Repair as many weak failures as possible without compromising the coherent
+rule or strong evidence. Decide whether any remaining weak failures are acceptable; continue only when they are.
 
 ## 5. Review project findings
 
