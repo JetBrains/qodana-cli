@@ -303,6 +303,16 @@ internal data class EdictNextInspectionFailure(
 )
 
 @Serializable
+internal data class EdictNextInspectionCompilationResponse(
+  val success: Boolean,
+  val summary: String,
+  val errorDetails: String? = null,
+  @EncodeDefault(EncodeDefault.Mode.ALWAYS)
+  val nextAction: EdictNextNextAction =
+    if (success) EdictNextNextAction.CONTINUE_CLUSTER_GENERATION else EdictNextNextAction.REPAIR_INSPECTION,
+)
+
+@Serializable
 internal data class EdictNextInspectionValidationResponse(
   val compilationSuccess: Boolean,
   val overallSuccess: Boolean,

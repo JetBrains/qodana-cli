@@ -51,6 +51,7 @@ class EdictNextMcpToolsetTest {
       "edict_next_delete_code_example",
       "edict_next_save_candidate_inspection",
       "edict_next_append_cluster_history",
+      "edict_next_compile_inspection",
       "generate_psi_tree",
       "generate_inspection_kts_api",
       "generate_inspection_kts_examples",

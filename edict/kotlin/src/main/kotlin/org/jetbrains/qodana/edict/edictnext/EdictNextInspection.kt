@@ -13,6 +13,16 @@ internal class EdictNextInspection(
     exampleAnalysis = { code, requests -> server.withClient { it.runExamples(code, requests) } },
   )
 
+  suspend fun compile(cluster: EdictNextStoredCluster, code: String): EdictNextInspectionCompilationResponse {
+    val compilation = client().compile(code)
+    val rejection = metadataRejection(cluster.id, compilation)
+    return EdictNextInspectionCompilationResponse(
+      success = rejection == null,
+      summary = rejection?.let { "Inspection rejected: $it" } ?: "Inspection compiles with valid cluster metadata",
+      errorDetails = compilation.compilationErrorDetails,
+    )
+  }
+
   suspend fun validate(cluster: EdictNextStoredCluster, code: String): EdictNextInspectionValidationResponse {
     val requests = cluster.examples.map { example ->
       InspectionKtsExampleRequest(
@@ -112,21 +122,24 @@ internal class EdictNextInspection(
     expectedId: String,
     compilation: InspectionKtsCompileResult,
   ): EdictNextInspectionValidationResponse? {
-    val rejection = when {
-      !compilation.compilationSuccess -> compilation.compilationStatus ?: "unknown compilation error"
-      compilation.inspectionId == null -> "compiled inspection has no id"
-      !EDICT_NEXT_KEBAB_CASE.matches(compilation.inspectionId) -> "inspection id '${compilation.inspectionId}' is not lowercase kebab-case"
-      compilation.inspectionId != expectedId -> "inspection id '${compilation.inspectionId}' does not match cluster id '$expectedId'"
-      compilation.inspectionName.isNullOrBlank() -> "inspection name must not be blank"
-      compilation.inspectionDescription.isNullOrBlank() -> "inspection description must not be blank"
-      else -> return null
-    }
+    val rejection = metadataRejection(expectedId, compilation) ?: return null
     return EdictNextInspectionValidationResponse(
       compilationSuccess = false,
       overallSuccess = false,
       summary = "Inspection rejected: $rejection",
     )
   }
+
+  private fun metadataRejection(expectedId: String, compilation: InspectionKtsCompileResult): String? =
+    when {
+      !compilation.compilationSuccess -> compilation.compilationStatus ?: "unknown compilation error"
+      compilation.inspectionId == null -> "compiled inspection has no id"
+      !EDICT_NEXT_KEBAB_CASE.matches(compilation.inspectionId) -> "inspection id '${compilation.inspectionId}' is not lowercase kebab-case"
+      compilation.inspectionId != expectedId -> "inspection id '${compilation.inspectionId}' does not match cluster id '$expectedId'"
+      compilation.inspectionName.isNullOrBlank() -> "inspection name must not be blank"
+      compilation.inspectionDescription.isNullOrBlank() -> "inspection description must not be blank"
+      else -> null
+    }
 
   private fun evaluateExample(example: EdictNextStoredExample, result: InspectionKtsFileResult?): ExampleOutcome {
     if (result == null) {

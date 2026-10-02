@@ -103,6 +103,10 @@ Implementation constraints:
 
 ## 4. Validate and review in generation cycles
 
+Before every review, call `edict_next_compile_inspection(clusterId)`. If compilation or metadata validation fails,
+repair and save the candidate, then compile it again. Do not launch a review worker or consume a review attempt until
+this gate succeeds. Any candidate change invalidates the prior compile result.
+
 Launch a fresh review worker:
 
 ```text

@@ -88,12 +88,14 @@ class SkillsTest {
     }
 
     @Test
-    fun `inspection review is read only and validation follows acceptance`() {
+    fun `inspection review is compile gated and validation follows acceptance`() {
         val generation = Skills.read("edict-next-cluster-generation")
         val compactGeneration = generation.replace(Regex("\\s+"), " ")
         val review = Skills.read("edict-next-inspection-code-review")
         val compactReview = review.replace(Regex("\\s+"), " ")
 
+        assertContains(compactGeneration, "Before every review, call `edict_next_compile_inspection(clusterId)`")
+        assertContains(compactGeneration, "Do not launch a review worker or consume a review attempt until this gate succeeds")
         assertContains(compactGeneration, "After acceptance, call `edict_next_validate_inspection(clusterId)`")
         assertContains(review, "Do not edit the candidate, cluster, examples, inspected project, or repository")
         assertContains(review, "Do not stop after finding enough defects to reject")

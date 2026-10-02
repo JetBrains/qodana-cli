@@ -241,6 +241,18 @@ internal class EdictNextMcpToolset(
     }
 
     server.addTool(
+      name = "edict_next_compile_inspection",
+      description = "Compile the current candidate and validate its KTS metadata before spending a review attempt.",
+      inputSchema = stringArguments(
+        "clusterId" to "Cluster id; the candidate is inspections/<clusterId>.candidate.kts",
+      ),
+    ) { request ->
+      EdictNextGenerationService.getInstance(runId)
+        .compileInspection(request.requireString("clusterId"))
+        .toToolResult()
+    }
+
+    server.addTool(
       name = "edict_next_validate_inspection",
       description = """Compile an inspection candidate, require its KTS metadata to match the cluster, and measure its label accuracy across the evidence. 
         Returns achieved accuracy, reported negative examples, and uncovered positive examples.""",

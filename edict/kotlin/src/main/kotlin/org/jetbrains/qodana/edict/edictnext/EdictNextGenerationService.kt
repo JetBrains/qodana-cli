@@ -126,6 +126,14 @@ internal class EdictNextGenerationService private constructor(
     }
   }
 
+  suspend fun compileInspection(clusterId: String): EdictNextInspectionCompilationResponse {
+    val repository = context.repository()
+    val cluster = repository.loadCluster(clusterId)
+    return withinClusterGenerationDeadline(clusterId, cluster.signalIds) {
+      inspection.compile(cluster, cluster.candidateInspectionPath.readText())
+    }
+  }
+
   suspend fun getNewInspectionResults(
     clusterId: String,
     privateScratchDirectory: String,

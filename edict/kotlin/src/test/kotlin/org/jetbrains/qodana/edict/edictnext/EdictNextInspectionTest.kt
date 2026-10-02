@@ -61,6 +61,27 @@ class EdictNextInspectionTest {
   }
 
   @Test
+  fun `compile gate returns compiler details without running examples`() = runBlocking {
+    val cluster = cluster()
+    val client = FakeInspectionClient(
+      examplesResult = batchResult().copy(
+        compilation = InspectionKtsCompileResult(
+          compilationSuccess = false,
+          compilationStatus = "Compilation failed",
+          compilationErrorDetails = "Unresolved reference: LambdaUtil",
+        ),
+      ),
+    )
+
+    val result = EdictNextInspection({ client }, { client.projectResult }).compile(cluster, "inspection")
+
+    assertFalse(result.success)
+    assertEquals("Unresolved reference: LambdaUtil", result.errorDetails)
+    assertEquals(1, client.compileCalls)
+    assertEquals(0, client.exampleCalls)
+  }
+
+  @Test
   fun `converts generic project findings to review findings`() = runBlocking {
     val cluster = cluster()
     val projectResult = InspectionKtsProjectRunResult(
@@ -130,8 +151,18 @@ class EdictNextInspectionTest {
     private val examplesResult: InspectionKtsBatchRunResult,
     val projectResult: InspectionKtsProjectRunResult = InspectionKtsProjectRunResult(examplesResult.compilation),
   ) : InspectionKtsClient {
-    override suspend fun compile(code: String): InspectionKtsCompileResult = examplesResult.compilation
-    override suspend fun runExamples(code: String, examples: List<InspectionKtsExampleRequest>): InspectionKtsBatchRunResult = examplesResult
+    var compileCalls = 0
+    var exampleCalls = 0
+
+    override suspend fun compile(code: String): InspectionKtsCompileResult {
+      compileCalls++
+      return examplesResult.compilation
+    }
+
+    override suspend fun runExamples(code: String, examples: List<InspectionKtsExampleRequest>): InspectionKtsBatchRunResult {
+      exampleCalls++
+      return examplesResult
+    }
     override suspend fun analyzeProject(code: String): InspectionKtsProjectRunResult = projectResult
     override fun close() = Unit
   }
