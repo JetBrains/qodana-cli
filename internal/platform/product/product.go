@@ -386,3 +386,15 @@ func FindLinterByName(name string) Linter {
 	}
 	return UnknownLinter
 }
+
+// CloudBaselineToolName returns the name the baseline of a linter of the given product code is
+// stored under in Qodana Cloud. The JVM linters report themselves as QDJVM whichever edition they
+// are, a community or an android one, so all of them share one baseline.
+func CloudBaselineToolName(productCode string) string {
+	switch strings.TrimSuffix(productCode, EapSuffix) {
+	case QDJVMC, QDAND, QDANDC:
+		return QDJVM
+	default:
+		return productCode
+	}
+}
