@@ -74,7 +74,10 @@ class EdictNextRepositoryStateTest {
       assertFails { state.addTask(delegation.token, "edict-signal-analysis", "Inspect") }
       assertEquals(delegation.taskId, state.readTask(delegation.token).taskId)
       assertFails { state.startTask(delegation.token, "worker", "edict_manager") }
-      state.startTask(delegation.token, "worker", delegation.skill)
+      val started = state.startTask(delegation.token, "worker", delegation.skill)
+      assertEquals(delegation.taskId, started.taskId)
+      assertEquals("running", started.status)
+      assertEquals(state.plan()!!.revision, started.planRevision)
       assertFails { state.startTask(delegation.token, "worker", delegation.skill) }
       assertFails { state.createPlan("Again", listOf(Step("edict-next-run", "Run"))) }
     }

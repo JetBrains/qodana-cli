@@ -64,6 +64,9 @@ internal class EdictNextRepositoryState(
   data class TaskAssignment(val taskId: String, val skill: String, val skillPath: String, val prompt: String)
 
   @Serializable
+  data class TaskLifecycleAck(val taskId: String, val status: String, val planRevision: Int)
+
+  @Serializable
   data class StateArtifact(val path: String, val content: String, val hash: String)
 
   private data class Capability(
@@ -176,7 +179,7 @@ internal class EdictNextRepositoryState(
   }
 
   @Synchronized
-  fun startTask(token: String, agentId: String, skill: String): Plan {
+  fun startTask(token: String, agentId: String, skill: String): TaskLifecycleAck {
     val capability = lookup(token)
     val task = task(capability.taskId)
     require(task.status == "delegated") { "Only a delegated worker can start its task" }
@@ -187,11 +190,11 @@ internal class EdictNextRepositoryState(
     }
     requireNoTokens(agentId)
     update(task.copy(status = "running", agentId = agentId))
-    return checkNotNull(plan())
+    return lifecycleAck(task.id, "running")
   }
 
   @Synchronized
-  fun finishTask(token: String, status: String, result: String): Plan {
+  fun finishTask(token: String, status: String, result: String): TaskLifecycleAck {
     val capability = authorize(token)
     require(capability.taskId.isNotEmpty()) { "Manager must finish tasks through their workers" }
     require(status in TERMINAL_STATUSES && result.isNotBlank()) { "Requires completed or failed status and a result" }
@@ -211,11 +214,11 @@ internal class EdictNextRepositoryState(
     }
     save(plan.copy(tasks = tasks))
     revoke(capability.taskId)
-    return checkNotNull(plan())
+    return lifecycleAck(capability.taskId, status)
   }
 
   @Synchronized
-  fun cancelTask(token: String, taskId: String, result: String): Plan {
+  fun cancelTask(token: String, taskId: String, result: String): TaskLifecycleAck {
     val capability = authorize(token)
     val task = task(taskId)
     require(task.parentId == capability.taskId) { "Only direct coordinator can cancel a task" }
@@ -231,7 +234,7 @@ internal class EdictNextRepositoryState(
       else candidate
     }))
     revoke(taskId)
-    return checkNotNull(plan())
+    return lifecycleAck(taskId, "failed")
   }
 
   /** Publish a validated extraction result without granting workers direct filesystem write access. */
@@ -377,6 +380,9 @@ internal class EdictNextRepositoryState(
     val plan = checkNotNull(currentPlan)
     save(plan.copy(tasks = plan.tasks.map { if (it.id == task.id) task else it }))
   }
+
+  private fun lifecycleAck(taskId: String, status: String): TaskLifecycleAck =
+    TaskLifecycleAck(taskId, status, checkNotNull(currentPlan).revision)
 
   private fun save(plan: Plan) {
     ensureManagementState()

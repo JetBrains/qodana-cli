@@ -20,8 +20,8 @@ import org.jetbrains.qodana.edict.common.text
 import org.jetbrains.qodana.edict.common.wireJson
 import org.jetbrains.qodana.edict.logging.AgentLogger
 import org.jetbrains.qodana.edict.logging.TaskLifecycleLogger
-import org.jetbrains.qodana.edict.edictnext.EdictNextRepositoryState.Plan
 import org.jetbrains.qodana.edict.edictnext.EdictNextRepositoryState.Step
+import org.jetbrains.qodana.edict.edictnext.EdictNextRepositoryState.TaskLifecycleAck
 import org.jetbrains.qodana.edict.skills.managed.Registry
 import java.io.PrintWriter
 import java.nio.file.Files
@@ -246,11 +246,12 @@ internal class EdictManagementService(
     store.requireTokenFree(content)
   }
 
-  private fun lifecycle(change: () -> Plan): JsonElement = synchronized(store) {
+  private fun lifecycle(change: () -> TaskLifecycleAck): JsonElement = synchronized(store) {
     val before = store.plan()
-    val after = change()
+    val result = change()
+    val after = checkNotNull(store.plan())
     taskLogger.record(before, after)
-    EdictNextJson.encodeToJsonElement(after)
+    EdictNextJson.encodeToJsonElement(result)
   }
 
   @Synchronized
