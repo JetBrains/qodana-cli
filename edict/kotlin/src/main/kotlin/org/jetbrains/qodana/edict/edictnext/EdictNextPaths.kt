@@ -1,17 +1,15 @@
 package org.jetbrains.qodana.edict.edictnext
 
 import java.nio.file.Path
-import kotlin.io.path.createDirectories
 import kotlin.io.path.isDirectory
-import kotlin.io.path.writeText
 
 internal data class EdictRepositoryDirectory(val root: Path) {
   val clustersDirectory: Path = root.resolve("clusters")
   val inboxDirectory: Path = root.resolve("inbox")
   val inspectionsDirectory: Path = root.resolve("inspections")
 
-  /** The durable embedding cache: a run imports it before distribution and exports it back before commit. */
   val embeddingsDirectory: Path = root.resolve("embeddings")
+  val gteEmbeddingCacheDirectory: Path = embeddingsDirectory.resolve("gte-large-$EDICT_NEXT_MODEL_REVISION")
 
   init {
     require(root.isDirectory()) { "Edict repository does not exist or is not a directory: $root" }
@@ -23,31 +21,12 @@ internal data class EdictRepositoryDirectory(val root: Path) {
 }
 
 internal data class EdictNextWorkspace(val root: Path) {
-  val agentsDirectory: Path = root.resolve(".agents")
-  val codexLogDirectory: Path = root.resolve("codex")
   val worktree: Path = root.resolve("worktree")
-  val script: EdictNextScriptDirectory = EdictNextScriptDirectory(root.resolve("script"))
-
-  fun analysisDirectory(clusterId: String, attemptId: String): Path =
-    root.resolve("analysis").resolve(clusterId).resolve(attemptId)
+  val neighboursResponsePath: Path = root.resolve("neighbours.response.json")
 
   companion object {
     fun forRun(baseLogDirectory: Path, runId: String): EdictNextWorkspace =
       EdictNextWorkspace(baseLogDirectory.resolve("edict-next").resolve(runId))
-  }
-}
-
-/** The retrieval script's requests, responses, and logs, kept in the run's log directory as its audit trail. */
-internal data class EdictNextScriptDirectory(val root: Path) {
-  val requestPath: Path = root.resolve("neighbours.request.json")
-
-  val responsePath: Path = root.resolve("neighbours.response.json")
-
-  fun logPath(name: String): Path = root.resolve("$name.log")
-
-  fun writeRequest(content: String) {
-    root.createDirectories()
-    requestPath.writeText(content)
   }
 }
 
@@ -67,6 +46,24 @@ internal data class EdictNextExampleDirectory(val root: Path) {
   fun sourcePath(fileName: String): Path = projectDirectory.resolve(fileName).normalize()
 }
 
-internal data class EdictNextAnalysisOutput(val root: Path) {
-  fun batchDirectory(batchId: Int): Path = root.resolve("batched-analysis").resolve("batch-$batchId")
+/** GTE model files shared by every run on this machine, next to the Edict tooling the Qodana CLI extracts. */
+internal fun edictNextModelDirectory(): Path = userCacheDirectory()
+  .resolve("JetBrains").resolve("Qodana").resolve("edict").resolve("models").resolve("gte-large-$EDICT_NEXT_MODEL_REVISION")
+
+/** Resolves the per-user cache root like Go's `os.UserCacheDir`. */
+internal fun userCacheDirectory(): Path {
+  val os = System.getProperty("os.name").lowercase()
+  return when {
+    os.startsWith("windows") -> Path.of(environmentVariable("LocalAppData") ?: error("%LocalAppData% is not defined"))
+    os.startsWith("mac") -> homeDirectory().resolve("Library").resolve("Caches")
+    else -> xdgCacheHome() ?: homeDirectory().resolve(".cache")
+  }
+}
+
+private fun environmentVariable(name: String): String? = System.getenv(name)?.takeIf(String::isNotEmpty)
+
+private fun homeDirectory(): Path = Path.of(environmentVariable("HOME") ?: error($$"$HOME is not defined"))
+
+private fun xdgCacheHome(): Path? = environmentVariable("XDG_CACHE_HOME")?.let(Path::of)?.also { path ->
+  require(path.isAbsolute) { $$"Path in $XDG_CACHE_HOME is relative: $$path" }
 }

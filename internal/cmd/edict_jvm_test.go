@@ -205,8 +205,7 @@ func TestEdictManagedMCPHTTPProxy(t *testing.T) {
 	defer stderr.Close()
 	command := newEdictManagedMCPStartCommand()
 	command.SetArgs([]string{
-		"--project-dir", project, "--state-dir", state, "--log-dir", logs,
-		"--embedding-python", filepath.Join(project, "embedding-python"), "--http-port", "0",
+		"--project-dir", project, "--state-dir", state, "--log-dir", logs, "--http-port", "0",
 	})
 	command.SetIn(strings.NewReader(""))
 	var output bytes.Buffer

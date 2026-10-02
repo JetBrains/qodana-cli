@@ -1,7 +1,11 @@
 package org.jetbrains.qodana.edict.edictnext
 
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import java.nio.file.Path
 import java.util.concurrent.ConcurrentHashMap
+import kotlin.io.path.createDirectories
+import kotlin.io.path.writeText
 
 /** Prepares and applies one sequential distribution batch. */
 internal class EdictNextDistributionService private constructor(private val sessionId: String) {
@@ -22,7 +26,7 @@ internal class EdictNextDistributionService private constructor(private val sess
         requireNoIssues(validateDistributionChange(sourceState, initialState, emptySet()))
 
         val signalIds = initialState.jvmInboxSignalIds.sorted().take(maxInboxSignalsPerRun)
-        val neighbours = prepareNeighbours(repository, initialState, signalIds)
+        val neighbours = prepareNeighbours(initialState, signalIds)
         context.useRepository(repository)
         batch = DistributionBatch(sourceRepository, sourceState, initialState, signalIds.toSet(), neighbours)
 
@@ -130,24 +134,20 @@ internal class EdictNextDistributionService private constructor(private val sess
     }
 
     private suspend fun prepareNeighbours(
-        repository: EdictRepository,
         state: EdictNextRepositoryState,
         signalIds: List<String>,
     ): Map<String, EdictNextSignalNeighbours> {
-        if (signalIds.isEmpty()) return emptyMap()
-        val runner = EdictScriptRunner(context.workspace, context.embeddingPython)
-        try {
-            runner.prepareEnvironment()
-            runner.importEmbeddingCache(repository.paths.embeddingsDirectory)
-            val corpus =
-                state.clusters.flatMap(EdictNextStoredCluster::signals) + signalIds.map(state.signalsById::getValue)
-            return runner.prepareCorpus(
-                corpus,
-                signalIds,
-            ).also { runner.exportEmbeddingCache(repository.paths.embeddingsDirectory) }
-        } finally {
-            runner.deleteEnvironment()
+        val neighbours = EdictNextNeighbourFinder(edictNextModelDirectory()).find(state, signalIds)
+        withContext(Dispatchers.IO) {
+            context.workspace.neighboursResponsePath.parent.createDirectories()
+            context.workspace.neighboursResponsePath.writeText(
+                EdictNextJson.encodeToString(
+                    EdictNextNeighboursResponse.serializer(),
+                    EdictNextNeighboursResponse(neighbours.values.toList()),
+                ),
+            )
         }
+        return neighbours
     }
 
     private fun mergeCandidates(
@@ -164,7 +164,7 @@ internal class EdictNextDistributionService private constructor(private val sess
         }.groupBy({ it.first }, { it.second }).map { (clusterId, matched) ->
             EdictNextSignalCandidate.Cluster(
                 clusterId,
-                matched.minOf(EdictNextScriptNeighbour::distance),
+                matched.minOf(EdictNextNeighbour::distance),
             )
         }
         val inboxIds = inbox.mapTo(hashSetOf(), EdictNextSignal::id)
