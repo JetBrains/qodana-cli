@@ -17,10 +17,10 @@ build/install/edict/bin/edict edict-mcp-next --project-dir /path/to/project --st
 
 The Go commands `qodana edict install` and `qodana edict mcp start` launch this
 Kotlin application with Qodana's embedded JBR. Skill installation installs the
-13 managed skills; `--managed` remains accepted for compatibility. Destination
-selection still supports `--dest`, `--project`, and `$CODEX_HOME/skills` (falling
-back to `~/.codex/skills`). Installation prints the installed names. Existing
-unrelated skills are preserved. When upgrading from
+managed skills into `$CODEX_HOME/skills` (falling back to `~/.codex/skills`),
+`./.codex/skills` with `--project`, `<dir>/.codex/skills` with `--project-dir <dir>`,
+or any directory with `--dest`.
+Installation prints the installed names. Existing unrelated skills are preserved. When upgrading from
 prefixed worker names, reinstall the bundle and remove worker directories with
 the previous `managed-` prefix.
 
@@ -29,7 +29,7 @@ From the repository root:
 ```sh
 go generate ./internal/tooling/...
 go build -o qodana ./cli
-./qodana edict install --project --project-dir /path/to/source
+./qodana edict install --project-dir /path/to/source
 ./qodana edict mcp start --project-dir /path/to/source
 ./qodana edict mcp start --project-dir /path/to/source --http-port 0 --log-dir /path/to/logs
 go test ./internal/cmd -run 'Test(Edict|ManagedMCP)'
@@ -44,8 +44,12 @@ run `java -jar build/libs/edict-cli.jar --help` after building `bundledJar`.
 The Go proxy tests launch the actual embedded JAR and JBR. They cover all install
 destinations and bundled resources, stdio/HTTP MCP, redacted logs, errors, shutdown,
 and state-lock release. They need no model, Distillery checkout, or IDE.
-`qodana edict linter-mcp start/status/stop` continues to manage the separate IntelliJ
-inspection server.
+The server starts IntelliJ only when an inspection tool first needs it: it runs the
+hidden `qodana edict ide-mcp` helper as a child, which prints one readiness line and
+stops the IDE when its stdin closes. The IDE is native only: `--ide-dist <path>`, else
+`--ide-linter <name>` (downloaded by the CLI), else `QODANA_DIST`. Pass
+`--ide-property`/`--ide-wait-timeout` through `edict mcp start`; IDE output goes to
+`<log-dir>/edict/intellij-mcp.log`.
 
 `edict-mcp-next` (and its `mcp` compatibility alias) uses newline-delimited MCP JSON-RPC on stdio. Stdout contains only protocol
 messages; activity and redacted tool details are written to

@@ -10,9 +10,6 @@ domain work and use it for every child delegation and task transition.
 
 Load only this skill. Do not edit the worktree or call cluster-processing MCPs yourself.
 
-When an inspection tool accepts `projectPath`, pass the inspected IntelliJ project. Never pass the Edict worktree;
-the worktree is repository data already loaded in the run context.
-
 The prompt supplies the absolute worktree path and generation scratch root. Resolve both before the first MCP call or worker
 launch. Stop if the scratch root equals or is below the worktree; otherwise create it and store all transient output there.
 

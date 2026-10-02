@@ -74,18 +74,3 @@ func runEdictJVM(command *cobra.Command, args ...string) error {
 	}
 	return nil
 }
-
-func codexSkillsDirectory(project bool, projectDir string) (string, error) {
-	if project {
-		absolute, err := filepath.Abs(projectDir)
-		return filepath.Join(absolute, ".codex", "skills"), err
-	}
-	if codexHome := os.Getenv("CODEX_HOME"); codexHome != "" {
-		return filepath.Join(codexHome, "skills"), nil
-	}
-	home, err := os.UserHomeDir()
-	if err != nil {
-		return "", fmt.Errorf("resolve home directory: %w", err)
-	}
-	return filepath.Join(home, ".codex", "skills"), nil
-}

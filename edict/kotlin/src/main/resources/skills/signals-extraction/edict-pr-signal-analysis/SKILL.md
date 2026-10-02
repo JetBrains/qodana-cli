@@ -11,7 +11,7 @@ You own coverage and `inbox.write`; delegate evidence inspection to `edict-signa
 
 Require a provider (`github` or `space`), owner (GitHub owner or Space project key), repository name, and either explicit
 PR numbers or inclusive UTC date bounds, together with a PR limit from 1 to 1000. Use the source checkout when available
-and scratch outside the state root. This workflow needs edict-mcp, without an IntelliJ session. Provider credentials
+and scratch outside the state root. This workflow needs `edict-mcp`, without an IntelliJ session. Provider credentials
 belong in the server environment; never request their values in a tool call, prompt, result, or log. Missing access is a
 failed prerequisite. Commit-only requests belong to `edict-batch-signal-analysis`.
 

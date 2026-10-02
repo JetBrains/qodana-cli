@@ -25,9 +25,9 @@ import (
 
 func main() {
 	cmd.InitCli()
-	// The managed MCP server owns its signal handling and must keep stdout
+	// The Edict servers own their signal handling and must keep stdout
 	// exclusively for protocol traffic, including during shutdown.
-	if !cmd.IsManagedMCPCommand(os.Args[1:]) {
+	if !cmd.IsEdictServerCommand(os.Args[1:]) {
 		process.Init()
 	}
 	cmd.Execute()

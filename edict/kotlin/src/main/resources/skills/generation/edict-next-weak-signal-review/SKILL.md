@@ -16,8 +16,6 @@ that skill yourself.
 The prompt supplies one absolute `Review config` path. Read it first, then its cluster directory, candidate inspection,
 sampled findings, inspected project, and private scratch directory.
 
-When an inspection tool accepts `projectPath`, pass the inspected IntelliJ project, never the Edict worktree.
-
 Do not directly edit the candidate, cluster metadata, cluster Signals, or inspected project. You may repair or delete
 files below the cluster's `synthetic-examples/` directory. Code-example workers may change only their transient Signal
 and the cluster's examples directory.

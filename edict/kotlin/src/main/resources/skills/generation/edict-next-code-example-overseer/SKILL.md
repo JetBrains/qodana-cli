@@ -11,9 +11,7 @@ domain work and use its assigned task lifecycle.
 Load only this skill. The prompt supplies:
 
 - `Cluster directory`: the absolute target cluster directory.
-- `Inspected IntelliJ project`: the project to pass to inspection tools that accept `projectPath`.
-
-When an inspection tool accepts `projectPath`, pass the inspected IntelliJ project. Never pass the Edict worktree.
+- `Inspected IntelliJ project`: the project that the IDE has open for inspection tools.
 
 You may change only `syntheticExampleId` in Signals below the supplied cluster directory and create, update, repair, or
 delete files below its `synthetic-examples/` directory. Do not read cluster history, `cluster.json`, candidate or

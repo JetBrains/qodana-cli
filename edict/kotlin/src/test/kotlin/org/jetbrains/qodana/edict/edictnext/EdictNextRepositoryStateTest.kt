@@ -12,6 +12,11 @@ import kotlin.test.assertEquals
 import kotlin.test.assertFails
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue
+import kotlin.reflect.KClass
+import kotlin.reflect.KMutableProperty
+import kotlin.reflect.KType
+import kotlin.reflect.full.memberProperties
+import kotlin.reflect.typeOf
 
 class EdictNextRepositoryStateTest {
   @TempDir
@@ -127,5 +132,37 @@ class EdictNextRepositoryStateTest {
       state.finishTask(batch.token, "completed", "Resumed")
       assertFalse(Files.readString(directory.resolve("plans/$id.json")).contains(batch.token))
     }
+  }
+
+  @Test
+  fun `plan is deeply immutable so plan() can share it without copying`() {
+    val leaves = setOf<KClass<*>>(String::class, Int::class, Long::class, Boolean::class)
+    val collections = setOf<KClass<*>>(List::class, Set::class, Map::class)
+    val violations = mutableListOf<String>()
+    val visited = mutableSetOf<KClass<*>>()
+
+    fun check(type: KType, path: String) {
+      val klass = type.classifier as? KClass<*> ?: return violations.plusAssign("$path: unsupported type $type")
+      when {
+        klass in leaves -> Unit
+        klass in collections -> {
+          // List and MutableList share a runtime class; only the declared type tells them apart.
+          if (type.toString().startsWith("kotlin.collections.Mutable")) violations += "$path: mutable collection $type"
+          type.arguments.forEachIndexed { index, argument ->
+            argument.type?.let { check(it, "$path[$index]") } ?: violations.plusAssign("$path: star projection")
+          }
+        }
+        klass.isData -> if (visited.add(klass)) {
+          for (property in klass.memberProperties) {
+            if (property is KMutableProperty<*>) violations += "$path.${property.name}: var"
+            check(property.returnType, "$path.${property.name}")
+          }
+        }
+        else -> violations += "$path: $type is not a known immutable type"
+      }
+    }
+
+    check(typeOf<EdictNextRepositoryState.Plan>(), "Plan")
+    assertTrue(violations.isEmpty(), "plan() returns the shared Plan, so it must stay immutable:\n" + violations.joinToString("\n"))
   }
 }

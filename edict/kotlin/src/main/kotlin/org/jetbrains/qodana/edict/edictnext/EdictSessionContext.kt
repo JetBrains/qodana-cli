@@ -21,18 +21,15 @@ internal class EdictSessionContext private constructor(private val sessionId: St
     embeddingPython: Path? = null,
     inspectionServer: IntellijMcpServerService = IntellijMcpServerService(analyzedProject, qodanaExecutable),
   ) {
-    lock.withLock { check(activeRun == null) { "An Edict run is already active" } }
-    val projectRevision = GitRepository(analyzedProject).resolve("HEAD")
-    val server = inspectionServer
-    server.start()
+    // Record paths only: the MCP host waits for initialize, and management or extraction runs need neither Git nor the IDE.
     lock.withLock {
+      check(activeRun == null) { "An Edict run is already active" }
       activeRun = ActiveRun(
         workspace = workspace,
         sourceRepository = sourceRepository,
         analyzedProject = analyzedProject,
-        projectRevision = projectRevision,
         embeddingPython = embeddingPython,
-        inspectionServer = server,
+        inspectionServer = inspectionServer,
       )
     }
   }
@@ -58,7 +55,10 @@ internal class EdictSessionContext private constructor(private val sessionId: St
   val workspace: EdictNextWorkspace get() = lock.withLock { active().workspace }
   val sourceRepository: Path get() = lock.withLock { active().sourceRepository }
   val analyzedProject: Path get() = lock.withLock { active().analyzedProject }
-  val projectRevision: String get() = lock.withLock { active().projectRevision }
+  /** The analyzed project's HEAD, resolved on first use and fixed for the rest of the run. */
+  val projectRevision: String get() = lock.withLock {
+    active().let { run -> run.projectRevision ?: GitRepository(run.analyzedProject).resolve("HEAD").also { run.projectRevision = it } }
+  }
   val embeddingPython: Path? get() = lock.withLock { active().embeddingPython }
   val inspectionServer: IntellijMcpServerService get() = lock.withLock { active().inspectionServer }
 
@@ -68,9 +68,9 @@ internal class EdictSessionContext private constructor(private val sessionId: St
     val workspace: EdictNextWorkspace,
     val sourceRepository: Path,
     val analyzedProject: Path,
-    val projectRevision: String,
     val embeddingPython: Path?,
     val inspectionServer: IntellijMcpServerService,
+    var projectRevision: String? = null,
     var repository: EdictRepository? = null,
   )
 

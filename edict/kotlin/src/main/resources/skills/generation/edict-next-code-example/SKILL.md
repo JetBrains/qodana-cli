@@ -10,14 +10,11 @@ domain work and use its assigned task lifecycle.
 
 Load only this skill.
 
-When an inspection tool accepts `projectPath`, pass the inspected IntelliJ project. Never pass the Edict worktree;
-the worktree is repository data already loaded in the run context.
-
 The prompt supplies exactly three absolute paths:
 
 - `Signal path`: the Signal JSON to update.
 - `Synthetic examples directory`: the target cluster's `synthetic-examples/` directory.
-- `Inspected IntelliJ project`: the project to pass to inspection tools that accept `projectPath`.
+- `Inspected IntelliJ project`: the project that the IDE has open for inspection tools.
 
 You may change only files below the supplied examples directory and `syntheticExampleId` in the supplied Signal. Do not
 change any other Signal field or any other file.
