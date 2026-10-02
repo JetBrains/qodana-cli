@@ -12,11 +12,13 @@ import (
 	"net"
 	"os"
 	"path/filepath"
+	"strconv"
 	"strings"
 	"testing"
 	"time"
 
 	"github.com/modelcontextprotocol/go-sdk/mcp"
+	"github.com/spf13/cobra"
 )
 
 func TestEdictManagedMCPServesProtocolWithoutBootstrapToken(t *testing.T) {
@@ -193,6 +195,42 @@ func TestEdictManagedMCPNeedsNoLoggingParameter(t *testing.T) {
 	command.SetErr(&bytes.Buffer{})
 	if err := command.Execute(); err != nil {
 		t.Fatalf("startup without a logging parameter: %v", err)
+	}
+}
+
+func TestEdictManagedMCPForwardsSourceRepository(t *testing.T) {
+	var forwarded []string
+	command := newEdictManagedMCPStartCommandWithRunner(func(_ *cobra.Command, args ...string) error {
+		forwarded = append([]string(nil), args...)
+		return nil
+	})
+	command.SetArgs([]string{
+		"--project-dir", "/project",
+		"--state-dir", "/state",
+		"--source-repository", "/source",
+		"--log-dir", "/logs",
+		"--embedding-python", "/python",
+		"--http-port", "1234",
+	})
+	if err := command.Execute(); err != nil {
+		t.Fatal(err)
+	}
+	want := []string{
+		"mcp", "--project-dir", "/project",
+		"--parent-pid", strconv.Itoa(os.Getpid()),
+	}
+	if executable, err := os.Executable(); err == nil {
+		want = append(want, "--qodana-executable", executable)
+	}
+	want = append(want,
+		"--state-dir", "/state",
+		"--source-repository", "/source",
+		"--log-dir", "/logs",
+		"--embedding-python", "/python",
+		"--http-port", "1234",
+	)
+	if strings.Join(forwarded, "\x00") != strings.Join(want, "\x00") {
+		t.Fatalf("forwarded arguments: %q, want %q", forwarded, want)
 	}
 }
 
