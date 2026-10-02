@@ -26,6 +26,10 @@ func newEdictManagedMCPCommand() *cobra.Command {
 }
 
 func newEdictManagedMCPStartCommand() *cobra.Command {
+	return newEdictManagedMCPStartCommandWithRunner(runEdictJVM)
+}
+
+func newEdictManagedMCPStartCommandWithRunner(run func(*cobra.Command, ...string) error) *cobra.Command {
 	var projectDir, stateDir, sourceRepository, logDir, embeddingPython, ideDist, ideLinter string
 	var ideProperties []string
 	var ideWaitTimeout time.Duration
@@ -85,7 +89,7 @@ tasks/<full-task-id>.log. Capability tokens are redacted.`,
 				}
 				args = append(args, "--http-port", strconv.Itoa(httpPort))
 			}
-			err := runEdictJVM(command, args...)
+			err := run(command, args...)
 			if errors.Is(err, context.Canceled) {
 				return nil
 			}
