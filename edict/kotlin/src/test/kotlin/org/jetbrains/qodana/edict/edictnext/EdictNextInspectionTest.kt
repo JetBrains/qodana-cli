@@ -1,6 +1,7 @@
 package org.jetbrains.qodana.edict.edictnext
 
 import kotlinx.coroutines.runBlocking
+import kotlinx.serialization.json.JsonObject
 import org.junit.jupiter.api.io.TempDir
 import java.nio.file.Path
 import kotlin.test.Test
@@ -133,6 +134,7 @@ class EdictNextInspectionTest {
     override suspend fun compile(code: String): InspectionKtsCompileResult = examplesResult.compilation
     override suspend fun runExamples(code: String, examples: List<InspectionKtsExampleRequest>): InspectionKtsBatchRunResult = examplesResult
     override suspend fun analyzeProject(code: String): InspectionKtsProjectRunResult = projectResult
+    override suspend fun callTool(name: String, arguments: JsonObject): JsonObject = error("not used")
     override fun close() = Unit
   }
 }

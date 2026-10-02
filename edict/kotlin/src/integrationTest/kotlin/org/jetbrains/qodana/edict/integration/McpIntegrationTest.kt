@@ -9,7 +9,6 @@ import kotlinx.io.asSource
 import kotlinx.io.buffered
 import kotlin.test.assertContains
 import kotlin.test.assertEquals
-import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 import kotlinx.serialization.json.*
 import org.jetbrains.qodana.edict.common.array
@@ -54,13 +53,13 @@ class McpIntegrationTest : IntegrationTest() {
             assertEquals("edict-mcp-next", lines[0].obj("result").obj("serverInfo").text("name"))
             val tools = lines[1].obj("result").array("tools").map { it.text("name") }.toSet()
             assertContains(tools, "edict_delegate")
-            assertContains(tools, "edict_prepare_pipeline")
+            assertContains(tools, "edict_next_prepare_pipeline")
             assertContains(tools, "edict_next_get_new_inspection_results")
             assertContains(tools, "generate_inspection_kts_api")
-            assertFalse("run_inspection_kts" in tools)
-            assertFalse("compile_inspection_kts" in tools)
-            assertFalse("run_inspection_kts_examples" in tools)
-            assertFalse("run_inspection_kts_project" in tools)
+            assertContains(tools, "run_inspection_kts")
+            assertContains(tools, "compile_inspection_kts")
+            assertContains(tools, "run_inspection_kts_examples")
+            assertContains(tools, "run_inspection_kts_project")
             assertEquals(true, lines[2].obj("result").flag("isError"))
             assertTrue(lines.last().obj("result").isEmpty())
         }

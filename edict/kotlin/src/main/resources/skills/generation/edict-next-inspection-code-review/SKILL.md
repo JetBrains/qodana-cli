@@ -14,8 +14,7 @@ Load only this skill.
 
 The prompt supplies absolute paths for the cluster directory, candidate inspection, inspected IntelliJ project, and
 review output. Read every Signal, every synthetic example, the candidate, and relevant project source. Do not read
-cluster history, predecessor inspections, or prior reviews. Pass the inspected project as `projectPath` in every Qodana
-MCP call.
+cluster history, predecessor inspections, or prior reviews.
 
 Do not edit the candidate, cluster, examples, inspected project, or repository.
 
