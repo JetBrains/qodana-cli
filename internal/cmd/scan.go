@@ -33,6 +33,7 @@ import (
 	"github.com/JetBrains/qodana-cli/internal/platform/msg"
 	"github.com/JetBrains/qodana-cli/internal/platform/qdenv"
 	"github.com/JetBrains/qodana-cli/internal/platform/qdyaml"
+	"github.com/JetBrains/qodana-cli/internal/platform/tokenloader"
 	log "github.com/sirupsen/logrus"
 
 	"github.com/JetBrains/qodana-cli/internal/core"
@@ -51,7 +52,9 @@ Note that most options can be configured via qodana.yaml (https://www.jetbrains.
 But you can always override qodana.yaml options with the following command-line options.
 `,
 		Run: func(cmd *cobra.Command, args []string) {
-			qdenv.InitializeQodanaGlobalEnv(cliOptions)
+			tokenloader.InitializeQodanaGlobalEnv(cliOptions, cliOptions.ProjectDir, cliOptions.ConfigName)
+			// QODANA_ORG_TOKEN is resolved: drop it so it never reaches the scan context and its debug output
+			cliOptions.Env_ = qdenv.WithoutEnv(cliOptions.Env_, qdenv.QodanaOrgToken)
 
 			ctx := cmd.Context()
 
