@@ -92,6 +92,7 @@ metadata and shared references. Edit these local copies directly. Gradle package
 them in the application JAR and generates their resource index; Kotlin's `Skills`
 loader reads and installs the bundle from the classpath. Both the CLI and Codex
 runner use that loader, with no access to the parent project's skill directory.
+[`EDICT_RUN_FLOW.md`](EDICT_RUN_FLOW.md) describes how these skills and MCP tools form one run.
 
 The original Go implementation remains outside this project. The inspection-generation skills are bundled as orchestration clients;
 compiling/running inspection scripts requires separately supplied inspection

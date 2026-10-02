@@ -49,7 +49,6 @@ fun main(args: Array<String>) {
                         "log-dir",
                         "qodana-executable",
                         "http-port",
-                        "embedding-python",
                         "ide-dist",
                         "ide-linter",
                         "ide-property",
@@ -67,7 +66,6 @@ fun main(args: Array<String>) {
                     ?: System.getProperty("qodana.executable")
                     ?: System.getenv("QODANA_EXECUTABLE")
                     ?: "qodana"
-                val embeddingPython = options["embedding-python"]?.let(Path::of)?.toAbsolutePath()?.normalize()
                 val sessionId = UUID.randomUUID().toString()
                 runBlocking {
                     val context = EdictSessionContext.getInstance(sessionId)
@@ -83,7 +81,6 @@ fun main(args: Array<String>) {
                         sourceRepository,
                         project,
                         qodanaExecutable,
-                        embeddingPython,
                         IntellijMcpServerService(project, qodanaExecutable, ideArguments, logs.resolve("edict/intellij-mcp.log")),
                     )
                     val unloaded = AtomicBoolean()

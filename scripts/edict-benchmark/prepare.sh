@@ -4,12 +4,10 @@ source "$(dirname "$0")/common.sh"
 
 qodana edict install --dest "$benchmark_codex_home/skills"
 
-[[ -x "$benchmark_embedding_launcher" ]] || { echo "Embedding Python launcher not found: $benchmark_embedding_launcher" >&2; exit 1; }
 # The server starts IntelliJ from QODANA_DIST on the first inspection call and stops it on exit.
 QODANA_CONF="$benchmark_output/mcp-config" nohup setsid qodana edict mcp start \
   --project-dir "$benchmark_project" --state-dir "$benchmark_state" \
   --source-repository "$benchmark_state" \
-  --embedding-python "$benchmark_embedding_launcher" \
   --ide-wait-timeout 20m \
   --ide-property=-Xmx8g --ide-property=java.awt.headless=true --ide-property=idea.is.internal=true \
   --ide-property=eap.login.enabled=false \

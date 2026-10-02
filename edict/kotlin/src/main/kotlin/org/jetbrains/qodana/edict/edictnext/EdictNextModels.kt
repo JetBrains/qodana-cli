@@ -152,21 +152,11 @@ internal data class EdictNextClusterManifest(
   val predecessorId: String? = null,
 )
 
-// --- Bundled script contract -------------------------------------------------------------------
-// A pure function of its request file. The script hands out locality and never applies a distance
-// threshold; what belongs to which cluster is the agent's verdict.
+// --- Neighbour retrieval ------------------------------------------------------------------------
+// Retrieval hands out locality without deciding cluster membership.
 
 @Serializable
-internal data class EdictNextCorpusIndexRequest(
-  val model: String,
-  val modelRevision: String,
-  val corpus: List<EdictNextSignal>,
-  val signalIds: List<String>,
-  val neighbourCount: Int,
-)
-
-@Serializable
-internal data class EdictNextScriptNeighbour(
+internal data class EdictNextNeighbour(
   val signalId: String,
   val distance: Double,
 )
@@ -174,7 +164,7 @@ internal data class EdictNextScriptNeighbour(
 @Serializable
 internal data class EdictNextSignalNeighbours(
   val signalId: String,
-  val closest: List<EdictNextScriptNeighbour> = emptyList(),
+  val closest: List<EdictNextNeighbour> = emptyList(),
 )
 
 @Serializable

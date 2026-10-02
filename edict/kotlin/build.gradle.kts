@@ -14,10 +14,13 @@ dependencies {
     implementation("org.tomlj:tomlj:1.1.1")
     testImplementation(kotlin("test-junit5"))
     testImplementation(kotlin("reflect"))
+    testImplementation("org.junit-pioneer:junit-pioneer:2.3.0")
     testRuntimeOnly("org.junit.platform:junit-platform-launcher")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.10.2")
     implementation("io.modelcontextprotocol:kotlin-sdk-server:0.15.0")
     implementation("io.ktor:ktor-server-cio:3.5.1")
+    implementation("ai.djl:api:0.38.0")
+    implementation("com.microsoft.onnxruntime:onnxruntime:1.22.0")
 }
 
 kotlin { jvmToolchain(21) }
@@ -38,7 +41,10 @@ val bundledJar by tasks.registering(Jar::class) {
         "META-INF/*.RSA",
         "META-INF/*.DSA",
         "module-info.class",
-        "META-INF/versions/**/module-info.class"
+        "META-INF/versions/**/module-info.class",
+        // ONNX Runtime ships native debug symbols; loading the libraries does not need them.
+        "ai/onnxruntime/native/**/*.pdb",
+        "ai/onnxruntime/native/**/*.dSYM/**",
     )
 }
 
@@ -67,6 +73,8 @@ tasks.test {
         providers.gradleProperty("excludeIntegrationTests").map(String::toBoolean).getOrElse(false)
     inputs.property("excludeIntegrationTests", excludeIntegrationTests)
     useJUnitPlatform { if (excludeIntegrationTests) excludeTags("integration") }
+    // JUnit Pioneer's @SetEnvironmentVariable rewrites the JDK's environment map reflectively.
+    jvmArgs("--add-opens", "java.base/java.util=ALL-UNNAMED", "--add-opens", "java.base/java.lang=ALL-UNNAMED")
     if (!excludeIntegrationTests) {
         // Clone/runtime/provider state is external to Gradle's input snapshot.
         outputs.upToDateWhen { false }
