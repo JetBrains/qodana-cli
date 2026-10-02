@@ -61,6 +61,7 @@ Write the supplied review output with exactly this shape:
 
 ```json
 {
+  "candidateHash": "lowercase SHA-256 of the exact candidate inspection bytes",
   "status": "ACCEPT|REJECT",
   "findings": [
     {
@@ -74,6 +75,9 @@ Write the supplied review output with exactly this shape:
   "summary": "concise decision rationale"
 }
 ```
+
+Compute `candidateHash` from the exact candidate file reviewed. It binds the verdict to those immutable bytes; never
+copy a hash from a prompt or prior artifact.
 
 Use `REJECT` for any evidenced BLOCKER or MAJOR finding; otherwise use `ACCEPT`. Missing information is not evidence
 for approval or rejection: state the limitation and decide from available evidence.

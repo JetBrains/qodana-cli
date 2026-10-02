@@ -32,7 +32,10 @@ and `prompt`. Read the returned prompt and its exact managed skill file before d
 absent from the runtime's catalog. Resolve a relative `skillPath` against the installed skills directory if needed.
 Call `edict_task_start(token, agentId, skill)` after fetching the assignment and reading the skill. The server rejects
 startup until this delegation has fetched its task, and rejects a different skill. A retry with a fresh capability
-must fetch again. Call `edict_task_finish(token, status, result)` with `completed` or
+must fetch again. Remember the start acknowledgement's `planRevision`. When checking children, call
+`edict_plan_get(sinceRevision=<last observed revision>)`, consume only the returned changed tasks, and advance the
+cursor to `delta.revision`. Never use plan reads to poll a running native child: wait for the native completion event,
+then make one incremental read to verify persisted completion. Call `edict_task_finish(token, status, result)` with `completed` or
 `failed` when finished.
 Keep the result concise and token-free. The server persists these transitions; do not edit the plan. Finish only after all descendants complete. If
 a tool is unavailable or a required check cannot run, record the failure rather than claiming succeeded.

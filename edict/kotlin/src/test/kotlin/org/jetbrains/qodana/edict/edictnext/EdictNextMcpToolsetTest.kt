@@ -64,6 +64,8 @@ class EdictNextMcpToolsetTest {
       val delegateSchema = server.tools.getValue("edict_delegate").tool.inputSchema
       assertEquals(setOf("token", "taskId", "prompt"), checkNotNull(delegateSchema.properties).keys)
       assertEquals(listOf("token", "taskId", "prompt"), delegateSchema.required)
+      val planGetSchema = server.tools.getValue("edict_plan_get").tool.inputSchema
+      assertEquals(setOf("token", "sinceRevision"), checkNotNull(planGetSchema.properties).keys)
 
       val output = ByteArrayOutputStream()
       val input = """
@@ -86,6 +88,7 @@ class EdictNextMcpToolsetTest {
       assertFalse(creation.flag("isError") == true)
       assertEquals("Extract", store.plan()?.request)
       val task = store.plan()!!.tasks.single()
+      val createdPlanRevision = store.plan()!!.revision
       val token = creation.obj("structuredContent").text("token")
       val obsoleteArguments = management.call("edict_delegate", buildJsonObject {
         put("token", token)
@@ -101,12 +104,21 @@ class EdictNextMcpToolsetTest {
       })
       assertFalse(delegation.flag("isError") == true)
       assertEquals("delegated", store.plan()!!.tasks.single().status)
+      val delta = management.call("edict_plan_get", buildJsonObject {
+        put("token", token)
+        put("sinceRevision", createdPlanRevision)
+      })
+      assertFalse(delta.flag("isError") == true)
+      val changed = delta.obj("structuredContent").obj("delta")
+      assertEquals(1, changed.array("tasks").size)
+      assertEquals("delegated", changed.array("tasks").single().jsonObject.text("status"))
     }
   }
 
   @Test
   fun `tool handlers use the Edict run id rather than the MCP connection id`() = runBlocking {
-    val repository = Files.createDirectory(directory.resolve("repository"))
+    val checkout = Files.createDirectory(directory.resolve("checkout"))
+    val repository = Files.createDirectory(checkout.resolve(".edict"))
     runProcess(repository, listOf("git", "init", "--quiet", "--initial-branch=main"))
     runProcess(repository, listOf("git", "config", "user.email", "edict-test@localhost"))
     runProcess(repository, listOf("git", "config", "user.name", "Edict Test"))
@@ -137,7 +149,7 @@ class EdictNextMcpToolsetTest {
         val input = """
           {"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2025-03-26","capabilities":{},"clientInfo":{"name":"unit","version":"1"}}}
           {"jsonrpc":"2.0","method":"notifications/initialized"}
-          {"jsonrpc":"2.0","id":2,"method":"tools/call","params":{"name":"edict_prepare_pipeline","arguments":{"worktreePath":"$repository"}}}
+          {"jsonrpc":"2.0","id":2,"method":"tools/call","params":{"name":"edict_prepare_pipeline","arguments":{"worktreePath":"$checkout"}}}
           {"jsonrpc":"2.0","id":3,"method":"tools/call","params":{"name":"generate_inspection_kts_api","arguments":{"language":"Java","projectPath":"/ignored"}}}
           {"jsonrpc":"2.0","id":4,"method":"ping"}
         """.trimIndent() + "\n"

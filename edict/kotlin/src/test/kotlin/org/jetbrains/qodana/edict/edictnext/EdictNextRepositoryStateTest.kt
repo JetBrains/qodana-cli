@@ -84,6 +84,26 @@ class EdictNextRepositoryStateTest {
   }
 
   @Test
+  fun `plan delta returns only tasks changed after the requested revision`() {
+    EdictNextRepositoryState.open(directory).use { state ->
+      val created = state.createPlan("Extract", listOf(Step("edict-batch-signal-analysis", "Commit")))
+      val initialRevision = created.plan.revision
+      assertEquals(created.plan.tasks.map { it.id }, state.planDelta(0).tasks.map { it.id })
+      assertTrue(state.planDelta(initialRevision).tasks.isEmpty())
+
+      val batch = state.launch(created.token, created.plan.tasks.single().id, "edict-batch-signal-analysis")
+      val afterStart = state.planDelta(initialRevision)
+      assertEquals(listOf(batch.taskId), afterStart.tasks.map { it.id })
+      assertEquals("running", afterStart.tasks.single().status)
+      assertTrue(afterStart.revision > initialRevision)
+
+      val child = state.addTask(batch.token, "edict-signal-analysis", "Inspect")
+      val afterChild = state.planDelta(afterStart.revision)
+      assertEquals(listOf(child.id), afterChild.tasks.map { it.id })
+    }
+  }
+
+  @Test
   fun `capabilities enforce call graph and revocation`() {
     EdictNextRepositoryState.open(directory).use { state ->
       val (manager, batch) = state.batch()

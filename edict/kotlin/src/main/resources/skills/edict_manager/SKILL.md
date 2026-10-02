@@ -27,7 +27,9 @@ native subagent runtime is a failed prerequisite, not permission to execute stag
 3. Call `edict_plan_create(request, steps)` without a token, with the user's concrete
    request and ordered `{skill, title}` steps. The response contains `plan` and a private manager `token`; use that
    token for every subsequent manager lifecycle call. `edict_plan_get` is public, but may receive the token for caller
-   attribution.
+   attribution. Remember the returned `plan.revision`. For every later read call
+   `edict_plan_get(sinceRevision=<last observed revision>)` and advance the cursor to the returned `delta.revision`;
+   do not repeatedly request the full plan.
    Only one successful creation is allowed per server lifetime, even after all
    tasks finish. Never call it again once you have the token. After a server restart, claim an unfinished plan using
    its exact persisted request and ordered top-level skill/title steps; this returns the existing plan and a fresh
@@ -40,8 +42,9 @@ native subagent runtime is a failed prerequisite, not permission to execute stag
    The worker fetches the full assignment with `edict_task_get`; do not copy task instructions into the launch message.
    Spawn without inherited conversation (`fork_turns: "none"`, or `fork_context: false` in runtimes exposing that
    parameter).
-   Include relevant prior-stage results in the submitted instructions. Wait for its native completion and verify its persisted task
-   is completed through the plan. Never print the child token or save it in a prompt file.
+   Include relevant prior-stage results in the submitted instructions. Wait for its native completion; never poll
+   `edict_plan_get` while a child is running. After the native runtime reports completion, verify its persisted task
+   through one incremental plan read from the last observed revision. Never print the child token or save it in a prompt file.
    Resolve the delegation's `skillPath` against the installed skills directory (the parent of this skill's directory).
    Include that absolute `SKILL.md` path in the submitted instructions and require reading it before `edict_task_start`.
    Explicit-only children may be absent from the runtime's skill catalog; the file path is authoritative.
@@ -50,7 +53,7 @@ native subagent runtime is a failed prerequisite, not permission to execute stag
    success. This leaves the plan terminal for a new request after server restart; a requested retry can still
    re-delegate failed stages in
    dependency order. Report the failed task and existing plan path so the user can inspect durable progress.
-7. After all stages complete, read the persisted plan and report its path, the produced signal/cluster/inspection IDs,
+7. After all stages complete, use the accumulated plan plus a final incremental read and report its path, the produced signal/cluster/inspection IDs,
    Generated inspections' `knownProblems`, and any Pending or Invalid clusters with their reasons. Completion means
    every planned task completed; a Generated inspection additionally requires the generation skill's evidence and
    review checks. The trusted host appends a USD report for each top-level stage including all descendant workers, every

@@ -39,6 +39,7 @@ internal class EdictNextRepositoryState(
     val agentId: String = "",
     val result: String = "",
     val blockedByTaskId: String = "",
+    val revision: Int = 0,
   )
 
   @Serializable
@@ -48,6 +49,21 @@ internal class EdictNextRepositoryState(
     val revision: Int = 0,
     val tasks: List<Task>,
   )
+
+  @Serializable
+  data class TaskDelta(
+    val id: String,
+    val parentId: String,
+    val skill: String,
+    val title: String,
+    val status: String,
+    val result: String,
+    val blockedByTaskId: String,
+    val revision: Int,
+  )
+
+  @Serializable
+  data class PlanDelta(val id: String, val revision: Int, val tasks: List<TaskDelta>)
 
   @Serializable
   data class PlanCreation(val plan: Plan, val token: String)
@@ -102,6 +118,31 @@ internal class EdictNextRepositoryState(
   fun plan(): Plan? {
     ensureManagementState()
     return currentPlan?.let { EdictNextJson.decodeFromString<Plan>(EdictNextJson.encodeToString(it)) }
+  }
+
+  @Synchronized
+  fun planDelta(sinceRevision: Int): PlanDelta {
+    ensureManagementState()
+    val plan = checkNotNull(currentPlan) { "No execution plan exists" }
+    require(sinceRevision in 0..plan.revision) {
+      "sinceRevision must be between 0 and the current plan revision ${plan.revision}"
+    }
+    return PlanDelta(
+      plan.id,
+      plan.revision,
+      plan.tasks.filter { it.revision > sinceRevision }.map { task ->
+        TaskDelta(
+          task.id,
+          task.parentId,
+          task.skill,
+          task.title,
+          task.status,
+          task.result,
+          task.blockedByTaskId,
+          task.revision,
+        )
+      },
+    )
   }
 
   @Synchronized
@@ -394,7 +435,13 @@ internal class EdictNextRepositoryState(
 
   private fun save(plan: Plan) {
     ensureManagementState()
-    val updated = plan.copy(revision = plan.revision + 1)
+    val revision = plan.revision + 1
+    val previous = currentPlan?.tasks?.associateBy(Task::id).orEmpty()
+    val tasks = plan.tasks.map { task ->
+      val old = previous[task.id]
+      if (old == null || task.copy(revision = old.revision) != old) task.copy(revision = revision) else task
+    }
+    val updated = plan.copy(revision = revision, tasks = tasks)
     val content = EdictNextJson.encodeToString(updated) + "\n"
     require(content.toByteArray(Charsets.UTF_8).size <= MAX_PLAN_BYTES) { "Execution plan exceeds 8 MiB" }
     atomicWrite("plans/${updated.id}.json", content)

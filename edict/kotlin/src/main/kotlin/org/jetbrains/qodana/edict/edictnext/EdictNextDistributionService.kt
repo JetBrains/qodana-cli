@@ -2,6 +2,7 @@ package org.jetbrains.qodana.edict.edictnext
 
 import java.nio.file.Path
 import java.util.concurrent.ConcurrentHashMap
+import kotlin.io.path.isDirectory
 
 /** Prepares and applies one sequential distribution batch. */
 internal class EdictNextDistributionService private constructor(private val sessionId: String) {
@@ -14,9 +15,9 @@ internal class EdictNextDistributionService private constructor(private val sess
         val sourceState = sourceRepository.loadState()
         requireValidState(sourceRepository, sourceState)
 
-        val repository = EdictRepository(
-          EdictRepositoryDirectory(Path.of(worktreePath).toAbsolutePath().normalize()),
-        )
+        val requestedRoot = Path.of(worktreePath).toAbsolutePath().normalize()
+        val repositoryRoot = requestedRoot.resolve(".edict").takeIf(Path::isDirectory) ?: requestedRoot
+        val repository = EdictRepository(EdictRepositoryDirectory(repositoryRoot))
         val initialState = repository.loadState()
         requireValidState(repository, initialState)
         requireNoIssues(validateDistributionChange(sourceState, initialState, emptySet()))

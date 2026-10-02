@@ -35,9 +35,9 @@ internal class EdictNextMcpToolset(
 
     server.addTool(
       name = "edict_prepare_pipeline",
-      description = "Snapshot the complete Edict repository and prepare neighbours for up to 100 alphabetical inbox Signals. Call once.",
+      description = "Snapshot the complete Edict repository and prepare neighbours for up to 100 alphabetical inbox Signals. Accepts the Edict state root or a source checkout containing .edict. Call once.",
       inputSchema = stringArguments(
-        "worktreePath" to "Absolute path to the agent-created Edict repository worktree",
+        "worktreePath" to "Absolute path to the agent-created Edict state root or source checkout containing .edict",
       ),
     ) { request ->
       EdictNextDistributionService.getInstance(runId)

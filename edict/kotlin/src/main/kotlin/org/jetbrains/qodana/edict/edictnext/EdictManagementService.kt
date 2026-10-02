@@ -12,7 +12,9 @@ import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.decodeFromJsonElement
 import kotlinx.serialization.json.encodeToJsonElement
+import kotlinx.serialization.json.intOrNull
 import kotlinx.serialization.json.jsonObject
+import kotlinx.serialization.json.jsonPrimitive
 import kotlinx.serialization.json.put
 import kotlinx.serialization.json.putJsonObject
 import org.jetbrains.qodana.edict.common.flag
@@ -57,6 +59,7 @@ internal class EdictManagementService(
 
   fun registerTools(server: Server) {
     val string = jsonType("string")
+    val integer = jsonType("integer")
 
     fun properties(vararg names: String): Map<String, JsonElement> = names.associateWith { string }
 
@@ -93,10 +96,16 @@ internal class EdictManagementService(
 
     tool(
       name = "edict_plan_get",
-      description = "Read current execution plan and worker results.",
+      description = "Read the full execution plan, or compact task changes after sinceRevision. After plan creation or task start, wait for native child completion before reading a delta; never poll. Advance the cursor to the returned revision.",
       readOnly = true,
-    ) {
-      buildJsonObject { put("plan", EdictNextJson.encodeToJsonElement(store.plan())) }
+      properties = mapOf("sinceRevision" to integer),
+    ) { arguments ->
+      val sinceRevision = arguments["sinceRevision"]?.jsonPrimitive?.intOrNull
+      if ("sinceRevision" in arguments && sinceRevision == null) error("sinceRevision must be an integer")
+      buildJsonObject {
+        if (sinceRevision == null) put("plan", EdictNextJson.encodeToJsonElement(store.plan()))
+        else put("delta", EdictNextJson.encodeToJsonElement(store.planDelta(sinceRevision)))
+      }
     }
 
     val steps = buildJsonObject {
