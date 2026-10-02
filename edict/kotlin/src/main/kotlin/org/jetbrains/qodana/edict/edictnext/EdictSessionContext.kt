@@ -18,7 +18,6 @@ internal class EdictSessionContext private constructor(private val sessionId: St
     sourceRepository: Path,
     analyzedProject: Path,
     qodanaExecutable: String,
-    embeddingPython: Path? = null,
     inspectionServer: IntellijMcpServerService = IntellijMcpServerService(analyzedProject, qodanaExecutable),
   ) {
     // Record paths only: the MCP host waits for initialize, and management or extraction runs need neither Git nor the IDE.
@@ -28,7 +27,6 @@ internal class EdictSessionContext private constructor(private val sessionId: St
         workspace = workspace,
         sourceRepository = sourceRepository,
         analyzedProject = analyzedProject,
-        embeddingPython = embeddingPython,
         inspectionServer = inspectionServer,
       )
     }
@@ -59,7 +57,6 @@ internal class EdictSessionContext private constructor(private val sessionId: St
   val projectRevision: String get() = lock.withLock {
     active().let { run -> run.projectRevision ?: GitRepository(run.analyzedProject).resolve("HEAD").also { run.projectRevision = it } }
   }
-  val embeddingPython: Path? get() = lock.withLock { active().embeddingPython }
   val inspectionServer: IntellijMcpServerService get() = lock.withLock { active().inspectionServer }
 
   private fun active(): ActiveRun = checkNotNull(activeRun) { "No Edict Next run is active" }
@@ -68,7 +65,6 @@ internal class EdictSessionContext private constructor(private val sessionId: St
     val workspace: EdictNextWorkspace,
     val sourceRepository: Path,
     val analyzedProject: Path,
-    val embeddingPython: Path?,
     val inspectionServer: IntellijMcpServerService,
     var projectRevision: String? = null,
     var repository: EdictRepository? = null,

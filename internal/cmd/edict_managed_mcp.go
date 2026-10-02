@@ -30,7 +30,7 @@ func newEdictManagedMCPStartCommand() *cobra.Command {
 }
 
 func newEdictManagedMCPStartCommandWithRunner(run func(*cobra.Command, ...string) error) *cobra.Command {
-	var projectDir, stateDir, sourceRepository, logDir, embeddingPython, ideDist, ideLinter string
+	var projectDir, stateDir, sourceRepository, logDir, ideDist, ideLinter string
 	var ideProperties []string
 	var ideWaitTimeout time.Duration
 	var httpPort int
@@ -70,7 +70,7 @@ tasks/<full-task-id>.log. Capability tokens are redacted.`,
 			}
 			for _, option := range []struct{ name, value string }{
 				{"state-dir", stateDir}, {"source-repository", sourceRepository},
-				{"log-dir", logDir}, {"embedding-python", embeddingPython},
+				{"log-dir", logDir},
 				{"ide-dist", ideDist}, {"ide-linter", ideLinter},
 			} {
 				if option.value != "" {
@@ -100,7 +100,6 @@ tasks/<full-task-id>.log. Capability tokens are redacted.`,
 	command.Flags().StringVar(&stateDir, "state-dir", "", "Persisted Edict state directory (defaults to <project-dir>/.edict)")
 	command.Flags().StringVar(&sourceRepository, "source-repository", "", "Reference Edict repository used to validate managed changes (defaults to <project-dir>)")
 	command.Flags().StringVar(&logDir, "log-dir", "", "Log root (defaults to <project-dir>/log; files are written under edict/)")
-	command.Flags().StringVar(&embeddingPython, "embedding-python", "", "Prepared Python interpreter with the bundled embedding dependencies")
 	command.Flags().IntVar(&httpPort, "http-port", 0, "Serve HTTP on loopback at this port (0 selects an available port)")
 	command.Flags().StringVar(&ideDist, "ide-dist", "", "Local IDE or Qodana linter distribution for inspections (overrides QODANA_DIST)")
 	command.Flags().StringVar(&ideLinter, "ide-linter", "", "Qodana linter to download and run natively for inspections, e.g. qodana-jvm (overrides QODANA_DIST)")

@@ -8,13 +8,6 @@ benchmark_state="$benchmark_project/.edict"
 benchmark_output="$benchmark_checkout/benchmark-output"
 benchmark_codex_home="$benchmark_output/codex-home"
 benchmark_scratch="$benchmark_output/scratch"
-benchmark_embedding_venv="$benchmark_output/embedding-python"
-benchmark_embedding_python="$benchmark_embedding_venv/bin/python"
-benchmark_embedding_launcher="$benchmark_output/tooling/bin/embedding-python"
-
-embedding_libgomp() {
-  find "$benchmark_embedding_venv" -type f -name 'libgomp*.so*' -print -quit
-}
 
 export JAVA_HOME="${JDK_21_0:-${JAVA_HOME:?JDK 21 is required}}"
 export PATH="$benchmark_output/tooling/node_modules/.bin:$benchmark_output/tooling/bin:$JAVA_HOME/bin:$PATH"

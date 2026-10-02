@@ -209,7 +209,6 @@ func TestEdictManagedMCPForwardsSourceRepository(t *testing.T) {
 		"--state-dir", "/state",
 		"--source-repository", "/source",
 		"--log-dir", "/logs",
-		"--embedding-python", "/python",
 		"--http-port", "1234",
 	})
 	if err := command.Execute(); err != nil {
@@ -226,7 +225,6 @@ func TestEdictManagedMCPForwardsSourceRepository(t *testing.T) {
 		"--state-dir", "/state",
 		"--source-repository", "/source",
 		"--log-dir", "/logs",
-		"--embedding-python", "/python",
 		"--http-port", "1234",
 	)
 	if strings.Join(forwarded, "\x00") != strings.Join(want, "\x00") {
