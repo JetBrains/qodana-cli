@@ -97,7 +97,11 @@ class EdictNextRepositoryStateTest {
       state.cancelTask(manager.token, batch.taskId, "Worker lost")
       assertFails { state.readTask(leaf.token) }
       assertFails { state.finishTask(batch.token, "completed", "Done") }
-      assertTrue(state.plan()!!.tasks.all { it.status == "failed" })
+      val failed = state.plan()!!.tasks
+      assertTrue(failed.all { it.status == "failed" })
+      assertEquals("Worker lost", failed.single { it.id == batch.taskId }.result)
+      assertEquals(batch.taskId, failed.single { it.id == child.id }.blockedByTaskId)
+      assertTrue(failed.single { it.id == child.id }.result.isEmpty())
       val retry = state.launch(manager.token, batch.taskId, batch.skill)
       val retriedLeaf = state.launch(retry.token, child.id, child.skill)
       state.finishTask(retriedLeaf.token, "completed", "Inspected")

@@ -38,6 +38,7 @@ internal class EdictNextRepositoryState(
     val status: String = "pending",
     val agentId: String = "",
     val result: String = "",
+    val blockedByTaskId: String = "",
   )
 
   @Serializable
@@ -152,7 +153,7 @@ internal class EdictNextRepositoryState(
       "Subagent prompt must start with the exact line \$${task.skill} followed by its skill path and bounded task instructions"
     }
     requireNoTokens(prompt)
-    update(task.copy(status = "delegated", agentId = "", result = "", prompt = prompt))
+    update(task.copy(status = "delegated", agentId = "", result = "", blockedByTaskId = "", prompt = prompt))
     val secret = issue(Capability(task.skill, taskId, sha256(token)))
     return Delegation(
       secret,
@@ -202,12 +203,16 @@ internal class EdictNextRepositoryState(
     val plan = checkNotNull(currentPlan)
     val tasks = plan.tasks.map { task ->
       when {
-        task.id == capability.taskId -> task.copy(status = status, result = result)
+        task.id == capability.taskId -> task.copy(status = status, result = result, blockedByTaskId = "")
         descendant(task.id, capability.taskId) -> {
           require(status != "completed" || task.status == "completed") {
             "Complete all subtasks before completing their parent"
           }
-          if (task.status == "completed") task else task.copy(status = "failed", result = "Parent task failed: $result")
+          if (task.status == "completed") task else task.copy(
+            status = "failed",
+            result = "",
+            blockedByTaskId = capability.taskId,
+          )
         }
         else -> task
       }
@@ -228,8 +233,11 @@ internal class EdictNextRepositoryState(
     requireNoTokens(result)
     val plan = checkNotNull(currentPlan)
     save(plan.copy(tasks = plan.tasks.map { candidate ->
-      if (candidate.id == taskId || descendant(candidate.id, taskId) && candidate.status != "completed") {
-        candidate.copy(status = "failed", result = result)
+      if (candidate.id == taskId) {
+        candidate.copy(status = "failed", result = result, blockedByTaskId = "")
+      }
+      else if (descendant(candidate.id, taskId) && candidate.status != "completed") {
+        candidate.copy(status = "failed", result = "", blockedByTaskId = taskId)
       }
       else candidate
     }))
