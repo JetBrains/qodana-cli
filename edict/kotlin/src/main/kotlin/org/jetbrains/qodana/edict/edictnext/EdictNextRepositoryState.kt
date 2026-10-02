@@ -259,6 +259,9 @@ internal class EdictNextRepositoryState(
     require(capability.skill != "edict-batch-signal-analysis" || signal.source.type == "FromCommit") {
       "Commit extraction can publish only FromCommit Signals"
     }
+    require(capability.skill != "edict-pr-signal-analysis" || signal.source.type == "FromPR") {
+      "PR extraction can publish only FromPR Signals"
+    }
     // Edict Next must be able to consume every accepted legacy extraction record.
     EdictNextJson.decodeFromString<EdictNextSignal>(content)
 
@@ -310,6 +313,28 @@ internal class EdictNextRepositoryState(
   @Synchronized
   fun requireTokenFree(content: String) {
     requireNoTokens(content)
+  }
+
+  @Synchronized
+  internal fun prAnalysisOwner(token: String, coordinator: Boolean): String {
+    val capability = authorize(token)
+    if (capability.skill == "edict-pr-signal-analysis") return capability.taskId
+    if (!coordinator && capability.skill == "edict-signal-analysis") {
+      val parent = task(task(capability.taskId).parentId)
+      if (parent.skill == "edict-pr-signal-analysis") return parent.id
+    }
+    error("PR analysis requires a running PR-analysis task${if (coordinator) "" else " or its signal-analysis worker"}")
+  }
+
+  @Synchronized
+  internal fun isPrAnalysisCoordinator(token: String): Boolean =
+    authorize(token).skill == "edict-pr-signal-analysis"
+
+  @Synchronized
+  internal fun inboxSignalHash(id: String): String? {
+    require(id.matches(Regex("s-[0-9a-f]{10}"))) { "Invalid Signal ID" }
+    val path = safePath("inbox/$id.json")
+    return if (Files.exists(path, NOFOLLOW_LINKS)) sha256(Files.readString(path)) else null
   }
 
   @Synchronized

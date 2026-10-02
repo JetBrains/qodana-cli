@@ -60,15 +60,16 @@ internal class IntegrationWorkspace private constructor(
     fun withCodex(
         prompt: String, provider: ReviewProvider = ReviewClient(), inspectionServer: InspectionServer? = null,
         timeoutMinutes: Long = 20, verify: (EdictNextRepositoryState, CodexRunner, String) -> Unit,
-    ) = withEdictNextCodex(prompt, timeoutMinutes, inspectionServer, verify)
+    ) = withEdictNextCodex(prompt, timeoutMinutes, inspectionServer, provider, verify)
 
     /** Runs an existing managed-skill scenario through the SDK-based Edict Next MCP transport. */
     fun withEdictNextCodex(
         prompt: String, timeoutMinutes: Long = 20, verify: (EdictNextRepositoryState, CodexRunner, String) -> Unit,
-    ) = withEdictNextCodex(prompt, timeoutMinutes, null, verify)
+    ) = withEdictNextCodex(prompt, timeoutMinutes, null, ReviewClient(), verify)
 
     private fun withEdictNextCodex(
         prompt: String, timeoutMinutes: Long, inspectionServer: InspectionServer?,
+        reviewProvider: ReviewProvider,
         verify: (EdictNextRepositoryState, CodexRunner, String) -> Unit,
     ) = runBlocking {
         val lifecycle = if (inspectionServer == null) InspectionLifecycleFixture(output) else null
@@ -86,7 +87,7 @@ internal class IntegrationWorkspace private constructor(
                         IntellijMcpServerService(projectPath = project, serverLifecycle = it)
                     } ?: IntellijMcpServerService(projectPath = project, qodanaExecutable = qodanaExecutable.toString()),
                 )
-                val management = EdictManagementService(store, logs = logs)
+                val management = EdictManagementService(store, logs = logs, reviewProvider = reviewProvider)
                 val engine = embeddedServer(CIO, host = "127.0.0.1", port = 0) {
                     mcpStreamableHttp { EdictNextMcpToolset(sessionId, management).createServer() }
                 }.start(wait = false)
