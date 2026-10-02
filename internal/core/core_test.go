@@ -1336,6 +1336,7 @@ func propertiesFixtureWithConfigPath(enableStats bool, configPath string, additi
 		fmt.Sprintf("-Didea.system.path=%s", filepath.Join(os.TempDir(), "entrypoint", "cache", "idea", "233")),
 		fmt.Sprintf("-Xlog:gc*:%s", filepath.Join(os.TempDir(), "entrypoint", "results", "log", "gc.log")),
 		"-XX:MaxRAMPercentage=70",
+		"-Dtypescript.service.node.defaultMemoryLimit=1024",
 	}
 	properties = append(properties, additionalProperties...)
 	sort.Strings(properties)
