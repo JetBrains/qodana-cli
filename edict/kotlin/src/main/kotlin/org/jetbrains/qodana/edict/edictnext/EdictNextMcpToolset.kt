@@ -31,10 +31,9 @@ internal class EdictNextMcpToolset(
 
   private fun registerTools(server: Server) {
     management.registerTools(server)
-    registerInspectionProxyTools(server)
 
     server.addTool(
-      name = "edict_prepare_pipeline",
+      name = "edict_next_prepare_pipeline",
       description = "Snapshot the complete Edict repository and prepare neighbours for up to 100 alphabetical inbox Signals. Call once.",
       inputSchema = stringArguments(
         "worktreePath" to "Absolute path to the agent-created Edict repository worktree",
@@ -46,7 +45,7 @@ internal class EdictNextMcpToolset(
     }
 
     server.addTool(
-      name = "edict_next_signal",
+      name = "edict_next_next_signal",
       description = "Return the next alphabetical inbox Signal and its nearest cluster or inbox candidates. Call until it returns STOP_DISTRIBUTION.",
     ) {
       EdictNextDistributionService.getInstance(runId).nextSignal().toToolResult()
@@ -297,83 +296,101 @@ internal class EdictNextMcpToolset(
     ) {
       EdictNextGenerationService.getInstance(runId).validateGeneration().toToolResult()
     }
+
+    registerInspectionKtsTools(server)
   }
 
-  private fun registerInspectionProxyTools(server: Server) {
-    inspectionProxyTools.forEach { tool ->
-      server.addTool(
-        name = tool.name,
-        description = tool.description,
-        inputSchema = tool.inputSchema,
-      ) { request ->
-        EdictSessionContext.getInstance(runId).inspectionServer
-          .proxyTool(tool.name, request.arguments ?: JsonObject(emptyMap()))
-          .toProxiedToolResult()
+  /** Forwards every IntelliJ Inspection KTS tool so agents only need this server, as when the IDE served every tool. */
+  private fun registerInspectionKtsTools(server: Server) {
+    fun proxy(name: String, description: String, inputSchema: ToolSchema, wholeProject: Boolean = false) {
+      server.addTool(name = name, description = description, inputSchema = inputSchema) { request ->
+        val arguments = request.arguments ?: JsonObject(emptyMap())
+        val inspectionServer = EdictSessionContext.getInstance(runId).inspectionServer
+        // Whole-project runs share the IDE's opened project with the pipeline's own analyses, so they queue behind them.
+        val result = if (wholeProject) inspectionServer.waitForAnalysis { it.callTool(name, arguments) }
+        else inspectionServer.withClient { it.callTool(name, arguments) }
+        result.toProxiedToolResult()
       }
     }
+    val inspectionKtsCode = "inspectionKtsCode" to property("string", "The complete inspection.kts script")
+
+    proxy(
+      name = "generate_psi_tree",
+      description = "Parse a Java or Kotlin code snippet with the IntelliJ PSI parser and return its PSI tree.",
+      inputSchema = toolSchema(
+        required = listOf("code", "language"),
+        "code" to property("string", "Source code snippet to parse"),
+        "language" to property("string", "Programming language: 'Java' or 'Kotlin'"),
+      ),
+    )
+    proxy(
+      name = "generate_inspection_kts_examples",
+      description = "Return example inspection.kts scripts to use as templates for writing new inspections.",
+      inputSchema = toolSchema(
+        required = emptyList(),
+        "language" to property("string", "Target language for examples: 'Java', 'Kotlin', or 'Any' (default)"),
+        "includeAdditionalExamples" to property("boolean", "If true, includes additional curated examples besides templates"),
+      ),
+    )
+    proxy(
+      name = "generate_inspection_kts_api",
+      description = "Return the inspection.kts API (PSI classes and helpers) available for the given language.",
+      inputSchema = toolSchema(
+        required = listOf("language"),
+        "language" to property("string", "Target language: 'Java' or 'Kotlin'"),
+        "wrapInTags" to property("boolean", "If true, wraps the API content in <API> and <api.kt> tags"),
+      ),
+    )
+    proxy(
+      name = "compile_inspection_kts",
+      description = "Compile an inspection.kts script and return its inspection metadata without executing it.",
+      inputSchema = toolSchema(required = listOf("inspectionKtsCode"), inspectionKtsCode),
+    )
+    proxy(
+      name = "run_inspection_kts",
+      description = "Compile an inspection.kts script and run it against one file of the inspected project, " +
+        "optionally replacing its content. Returns compilation errors or the found problems.",
+      inputSchema = toolSchema(
+        required = listOf("inspectionKtsCode", "contextPath"),
+        inspectionKtsCode,
+        "contextPath" to property("string", "Path of the target file relative to the inspected project, e.g. 'src/my/Example.kt'"),
+        "targetFileContent" to property("string", "Content to analyze instead of the file on disk; the file must exist when omitted"),
+      ),
+    )
+    proxy(
+      name = "run_inspection_kts_examples",
+      description = "Compile an inspection.kts script once and run it on the target source file of each supplied " +
+        "example project. Returns per-example problems or execution errors.",
+      inputSchema = toolSchema(
+        required = listOf("inspectionKtsCode", "examples"),
+        inspectionKtsCode,
+        "examples" to buildJsonObject {
+          put("type", "array")
+          put("description", "Example projects and the source file to inspect in each")
+          putJsonObject("items") {
+            put("type", "object")
+            putJsonObject("properties") {
+              put("id", property("string", "Caller-chosen example id echoed in the result"))
+              put("projectPath", property("string", "Absolute path of the example project directory"))
+              put("targetFilePath", property("string", "Source file path relative to projectPath"))
+            }
+            putJsonArray("required") { add("id"); add("projectPath"); add("targetFilePath") }
+          }
+        },
+      ),
+    )
+    proxy(
+      name = "run_inspection_kts_project",
+      description = "Compile an inspection.kts script and run it on every Java and Kotlin file of the inspected " +
+        "project. Waits for other whole-project analyses; can take many minutes.",
+      inputSchema = toolSchema(required = listOf("inspectionKtsCode"), inspectionKtsCode),
+      wholeProject = true,
+    )
   }
 
   private companion object {
     const val SERVER_NAME = "edict-mcp-next"
   }
-}
-
-private data class InspectionProxyTool(
-  val name: String,
-  val description: String,
-  val inputSchema: ToolSchema,
-)
-
-private val inspectionProxyTools = listOf(
-  InspectionProxyTool(
-    name = "generate_psi_tree",
-    description = "Create a PSI tree for Java or Kotlin source code.",
-    inputSchema = toolArguments(
-      "code" to stringProperty("Source code to parse"),
-      "language" to stringProperty("Java or Kotlin"),
-      "projectPath" to stringProperty("Project path; Edict always routes this to the analyzed project"),
-      required = setOf("code", "language"),
-    ),
-  ),
-  InspectionProxyTool(
-    name = "generate_inspection_kts_api",
-    description = "Return Inspection KTS API documentation for Java or Kotlin.",
-    inputSchema = toolArguments(
-      "language" to stringProperty("Java or Kotlin"),
-      "projectPath" to stringProperty("Project path; Edict always routes this to the analyzed project"),
-      "wrapInTags" to booleanProperty("Wrap the API in XML tags"),
-      required = setOf("language"),
-    ),
-  ),
-  InspectionProxyTool(
-    name = "generate_inspection_kts_examples",
-    description = "Return Inspection KTS templates and examples.",
-    inputSchema = toolArguments(
-      "includeAdditionalExamples" to booleanProperty("Include additional curated examples"),
-      "language" to stringProperty("Java, Kotlin, or Any"),
-      "projectPath" to stringProperty("Project path; Edict always routes this to the analyzed project"),
-    ),
-  ),
-).also { tools ->
-  check(tools.mapTo(linkedSetOf(), InspectionProxyTool::name) == INSPECTION_KTS_AGENT_TOOL_NAMES)
-}
-
-private fun toolArguments(
-  vararg properties: Pair<String, JsonObject>,
-  required: Set<String> = emptySet(),
-): ToolSchema = ToolSchema(
-  properties = buildJsonObject { properties.forEach { (name, schema) -> put(name, schema) } },
-  required = properties.map(Pair<String, JsonObject>::first).filter(required::contains),
-)
-
-private fun stringProperty(description: String): JsonObject = buildJsonObject {
-  put("type", "string")
-  put("description", description)
-}
-
-private fun booleanProperty(description: String): JsonObject = buildJsonObject {
-  put("type", "boolean")
-  put("description", description)
 }
 
 private fun stringArguments(vararg arguments: Pair<String, String>): ToolSchema = ToolSchema(
@@ -386,6 +403,16 @@ private fun stringArguments(vararg arguments: Pair<String, String>): ToolSchema 
     }
   },
   required = arguments.map(Pair<String, String>::first),
+)
+
+private fun property(type: String, description: String): JsonObject = buildJsonObject {
+  put("type", type)
+  put("description", description)
+}
+
+private fun toolSchema(required: List<String>, vararg properties: Pair<String, JsonObject>): ToolSchema = ToolSchema(
+  properties = JsonObject(properties.toMap()),
+  required = required,
 )
 
 private fun CallToolRequest.requireString(name: String): String =

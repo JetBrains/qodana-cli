@@ -5,13 +5,13 @@ import kotlinx.coroutines.withContext
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.decodeFromJsonElement
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
 import kotlinx.serialization.json.put
 import kotlinx.serialization.json.putJsonObject
-import kotlinx.serialization.json.JsonPrimitive
 import java.net.URI
 import java.net.http.HttpClient
 import java.net.http.HttpRequest
@@ -70,15 +70,20 @@ internal interface InspectionKtsClient : AutoCloseable {
   suspend fun compile(code: String): InspectionKtsCompileResult
   suspend fun runExamples(code: String, examples: List<InspectionKtsExampleRequest>): InspectionKtsBatchRunResult
   suspend fun analyzeProject(code: String): InspectionKtsProjectRunResult
-  suspend fun proxyTool(name: String, arguments: JsonObject): JsonObject =
-    error("Inspection tool proxying is not supported by ${this::class.simpleName}")
+
+  /** Calls an IDE MCP tool verbatim and returns its raw `CallToolResult` JSON, including error results. */
+  suspend fun callTool(name: String, arguments: JsonObject): JsonObject
 }
 
 internal class StaleInspectionMcpSession(val sessionId: String) : RuntimeException()
 
+/**
+ * MCP client for the IDE that the Edict run opened. [projectPath] is that IDE project; every tool call is scoped to it,
+ * because the IDE cannot otherwise tell which project a call targets.
+ */
 internal class HttpInspectionKtsClient(
   private val endpoint: URI,
-  private val projectPath: String,
+  private val projectPath: String? = null,
   private val requestTimeout: Duration = Duration.ofMinutes(45),
 ) : InspectionKtsClient {
   private val client = HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(30)).build()
@@ -126,15 +131,18 @@ internal class HttpInspectionKtsClient(
       put("projectPath", projectPath)
     })
 
-  override suspend fun proxyTool(name: String, arguments: JsonObject): JsonObject {
-    require(name in INSPECTION_KTS_AGENT_TOOL_NAMES) { "Inspection MCP tool '$name' is not exposed by Edict" }
-    return withContext(Dispatchers.IO) {
-      callToolBlocking(name, JsonObject(arguments + ("projectPath" to JsonPrimitive(projectPath))))
-    }
+  override suspend fun callTool(name: String, arguments: JsonObject): JsonObject = withContext(Dispatchers.IO) {
+    requestBlocking(
+      "tools/call",
+      buildJsonObject {
+        put("name", name)
+        put("arguments", projectPath?.let { JsonObject(arguments + ("projectPath" to JsonPrimitive(it))) } ?: arguments)
+      },
+    )
   }
 
-  private suspend inline fun <reified T> call(name: String, arguments: JsonObject): T = withContext(Dispatchers.IO) {
-    val result = callToolBlocking(name, arguments)
+  private suspend inline fun <reified T> call(name: String, arguments: JsonObject): T {
+    val result = callTool(name, arguments)
     check(result["isError"]?.jsonPrimitive?.content != "true") { "Inspection MCP tool '$name' failed: $result" }
     val structured = result["structuredContent"] as? JsonObject
       ?: (result["content"] as? JsonArray).orEmpty().firstNotNullOfOrNull { item ->
@@ -143,17 +151,8 @@ internal class HttpInspectionKtsClient(
         }.getOrNull()
       }
       ?: error("Inspection MCP tool '$name' returned no JSON result")
-    EdictNextJson.decodeFromJsonElement<T>(structured)
+    return EdictNextJson.decodeFromJsonElement<T>(structured)
   }
-
-  private fun callToolBlocking(name: String, arguments: JsonObject): JsonObject =
-    requestBlocking(
-      "tools/call",
-      buildJsonObject {
-        put("name", name)
-        put("arguments", arguments)
-      },
-    )
 
   private fun requestBlocking(method: String, params: JsonObject): JsonObject {
     val id = sequence.incrementAndGet()

@@ -15,8 +15,6 @@ The prompt supplies `clusterId`, `clusterDirectory`, the absolute worktree path,
 inspected project. Resolve the paths before any write or MCP call. Return without changing the repository if scratch
 equals or is below the worktree.
 
-When an inspection tool accepts `projectPath`, pass the inspected IntelliJ project, never the Edict worktree.
-
 # Boundaries
 
 You may directly change only:

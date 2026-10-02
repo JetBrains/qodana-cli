@@ -62,11 +62,11 @@ func setDefaultCommandIfNeeded(rootCmd *cobra.Command, args []string) {
 
 // Execute is a main CLI entrypoint: handles user interrupt, CLI start and everything else.
 func Execute() {
-	managedMCP := IsManagedMCPCommand(os.Args[1:])
-	if !managedMCP && !qdenv.IsContainer() && os.Geteuid() == 0 {
+	edictServer := IsEdictServerCommand(os.Args[1:])
+	if !edictServer && !qdenv.IsContainer() && os.Geteuid() == 0 {
 		msg.WarningMessage("Running the tool as root is dangerous: please run it as a regular user")
 	}
-	if !managedMCP {
+	if !edictServer {
 		go core.CheckForUpdates(version.Version)
 	}
 	if !msg.IsInteractive() || os.Getenv("NO_COLOR") != "" { // http://no-color.org
@@ -75,7 +75,7 @@ func Execute() {
 
 	setDefaultCommandIfNeeded(rootCommand, os.Args)
 	if err := rootCommand.Execute(); err != nil {
-		if !managedMCP {
+		if !edictServer {
 			core.CheckForUpdates(version.Version)
 		}
 		_, err = fmt.Fprintf(os.Stderr, "error running command: %s\n", err)
@@ -85,22 +85,29 @@ func Execute() {
 		os.Exit(1)
 	}
 
-	if !managedMCP {
+	if !edictServer {
 		core.CheckForUpdates(version.Version)
 	}
 }
 
-// IsManagedMCPCommand identifies the stdio server before starting process-wide
-// console output or interrupt handlers. InitCli must be called first.
-func IsManagedMCPCommand(args []string) bool {
-	return isManagedMCPCommand(rootCommand, args)
+// IsEdictServerCommand identifies the Edict stdio servers, `edict mcp start` and the internal `edict ide-mcp`,
+// before starting process-wide console output or interrupt handlers. They own their signal handling and stdout.
+// InitCli must be called first.
+func IsEdictServerCommand(args []string) bool {
+	return isEdictServerCommand(rootCommand, args)
 }
 
-func isManagedMCPCommand(root *cobra.Command, args []string) bool {
+func isEdictServerCommand(root *cobra.Command, args []string) bool {
 	command, _, _ := root.Find(args)
-	return command != nil && command.Name() == "start" &&
-		command.Parent() != nil && command.Parent().Name() == "mcp" &&
-		command.Parent().Parent() != nil && command.Parent().Parent().Name() == "edict"
+	if command == nil || command.Parent() == nil {
+		return false
+	}
+	parent := command.Parent()
+	if command.Name() == "ide-mcp" {
+		return parent.Name() == "edict"
+	}
+	return command.Name() == "start" && parent.Name() == "mcp" &&
+		parent.Parent() != nil && parent.Parent().Name() == "edict"
 }
 
 // newRootCommand constructs root command.

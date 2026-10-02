@@ -34,7 +34,13 @@ internal class EdictManagementService(
   private val store: EdictNextRepositoryState,
   private val logs: Path? = null,
   taskOutput: PrintWriter = PrintWriter(System.err, true),
+  /** Shared by every server registering these tools, so extension state such as PR batches outlives one connection. */
+  extensions: List<ManagedSkillExtension> = emptyList(),
 ) {
+  private val extensions = extensions.associateBy(ManagedSkillExtension::skill).also {
+    require(it.size == extensions.size) { "Each managed skill takes at most one extension" }
+  }
+
   companion object {
     const val INSTRUCTIONS = "Managed Edict state and execution plans. Root requests enter through edict_manager. " +
       "Each task must execute in a fresh native subagent with its delegated token and no inherited conversation. " +
@@ -55,6 +61,34 @@ internal class EdictManagementService(
   private val taskLogger = TaskLifecycleLogger(store, logs, taskOutput)
   private val invocations = ConcurrentHashMap<String, Invocation>()
 
+  /**
+   * Registers a capability-checked tool: it accepts `token`, rejects unknown or missing arguments, redacts errors, and
+   * is logged and callable through [call].
+   */
+  internal fun registerTool(
+    server: Server,
+    name: String,
+    description: String,
+    readOnly: Boolean = false,
+    required: List<String> = emptyList(),
+    properties: Map<String, JsonElement> = emptyMap(),
+    invoke: (JsonObject) -> JsonElement,
+  ) {
+    val allProperties = properties + ("token" to jsonType("string"))
+    invocations[name] = Invocation(required, allProperties.keys, invoke)
+    server.addTool(
+      name = name,
+      description = description,
+      inputSchema = ToolSchema(
+        properties = JsonObject(allProperties),
+        required = required,
+      ),
+      toolAnnotations = ToolAnnotations(readOnlyHint = readOnly),
+    ) { request ->
+      call(name, request.arguments ?: JsonObject(emptyMap())).toToolResult()
+    }
+  }
+
   fun registerTools(server: Server) {
     val string = jsonType("string")
 
@@ -67,21 +101,7 @@ internal class EdictManagementService(
       required: List<String> = emptyList(),
       properties: Map<String, JsonElement> = emptyMap(),
       invoke: (JsonObject) -> JsonElement,
-    ) {
-      val allProperties = properties + ("token" to string)
-      invocations[name] = Invocation(required, allProperties.keys, invoke)
-      server.addTool(
-        name = name,
-        description = description,
-        inputSchema = ToolSchema(
-          properties = JsonObject(allProperties),
-          required = required,
-        ),
-        toolAnnotations = ToolAnnotations(readOnlyHint = readOnly),
-      ) { request ->
-        call(name, request.arguments ?: JsonObject(emptyMap())).toToolResult()
-      }
-    }
+    ) = registerTool(server, name, description, readOnly, required, properties, invoke)
 
     tool(
       name = "edict_registry",
@@ -187,7 +207,7 @@ internal class EdictManagementService(
           arguments.requireString("token"),
           arguments.requireString("status"),
           arguments.requireString("result"),
-        )
+        ) { task -> extensions[task.skill]?.beforeCompletion(task) }
       }
     }
 
@@ -218,9 +238,11 @@ internal class EdictManagementService(
           arguments.requireString("path"),
           arguments.requireString("content"),
           arguments.requireString("expectedHash"),
-        ),
+        ) { task -> extensions[task.skill]?.signalPolicy },
       )
     }
+
+    extensions.values.forEach { it.registerTools(server, this) }
   }
 
   internal fun call(name: String, arguments: JsonObject): JsonObject {
@@ -278,9 +300,9 @@ internal class EdictManagementService(
   }
 }
 
-private fun jsonType(type: String) = buildJsonObject { put("type", type) }
+internal fun jsonType(type: String) = buildJsonObject { put("type", type) }
 
-private fun JsonObject.requireString(name: String): String =
+internal fun JsonObject.requireString(name: String): String =
   (get(name) as? JsonPrimitive)?.takeIf(JsonPrimitive::isString)?.content
     ?: error("$name must be a string")
 

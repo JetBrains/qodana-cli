@@ -46,8 +46,10 @@ internal class InspectionLifecycleFixture(directory: Path) : AutoCloseable {
     val qodanaExecutable: Path = directory.resolve("qodana-lifecycle").also { executable ->
         Files.writeString(executable, """
             #!/bin/sh
-            if [ "${'$'}3" = "start" ]; then
+            # Stands in for `qodana edict ide-mcp`: announce readiness, then run until stdin closes.
+            if [ "${'$'}2" = "ide-mcp" ]; then
               printf '%s\n' '{"status":"ready","url":"http://127.0.0.1:${server.address.port}/mcp"}'
+              cat > /dev/null
             fi
         """.trimIndent())
         assertTrue(executable.toFile().setExecutable(true), "Cannot make fake Qodana executable")

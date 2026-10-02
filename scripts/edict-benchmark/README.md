@@ -23,14 +23,14 @@ The pipeline has seven steps:
 5. `prepare.sh` runs `qodana edict install`; Codex discovers the installed skills
    under `CODEX_HOME` and enables them by default. The script starts a shared
    `qodana edict mcp start` HTTP server using the checked-out
-   project's **`project/.edict`** as both its Edict repository and managed state directory. It starts inspections with
-   `qodana edict linter-mcp start`, selecting native execution through `QODANA_DIST`.
+   project's **`project/.edict`** as both its Edict repository and managed state directory. The server starts the native
+   `idea mcpServer` headless entry point from `QODANA_DIST` on the first inspection call,
+   with the benchmark's IDE properties and a 20-minute readiness allowance, and forwards
+   the IntelliJ tools, so Codex configures only `edict-mcp`.
    The managed server uses the prepared embedding launcher rather than the agent's
    default Python. The existing
    `.edict/inbox` files are used directly, without importing, copying, or filtering
-   signals. The CLI launches the native `idea mcpServer` headless entry point
-   and waits for readiness.
-   Both servers must be ready before execution. The shared managed endpoint remains
+   signals. The shared managed endpoint remains
    available to isolated Codex workers, and MCP tool calls are auto-approved.
 6. `generate.sh` executes Codex directly with `process inbox and generate new rules`.
    The prompt also supplies the Edict repository/state, inspected project, and private scratch paths.

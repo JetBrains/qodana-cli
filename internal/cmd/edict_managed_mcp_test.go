@@ -48,11 +48,15 @@ func exerciseEdictManagedMCP(t *testing.T, cancelServer bool) {
 	if _, err := os.Stat(filepath.Join(project, ".edict")); err != nil {
 		t.Fatalf("default state directory was not created: %v", err)
 	}
-	result, err := session.CallTool(ctx, &mcp.CallToolParams{
-		Name: "edict_plan_create", Arguments: map[string]any{"request": "Check project history", "steps": []map[string]string{
-			{"skill": "edict-run", "title": "Process existing signals"},
-		}},
-	})
+	result, err := session.CallTool(
+		ctx, &mcp.CallToolParams{
+			Name: "edict_plan_create", Arguments: map[string]any{
+				"request": "Check project history", "steps": []map[string]string{
+					{"skill": "edict-next-run", "title": "Process existing signals"},
+				},
+			},
+		},
+	)
 	if err != nil || result.IsError {
 		t.Fatalf("tokenless plan creation failed: %v, %+v", err, result)
 	}
@@ -74,18 +78,26 @@ func exerciseEdictManagedMCP(t *testing.T, cancelServer bool) {
 	if len(created.Token) != 64 || created.Plan == nil || len(created.Plan.Tasks) != 1 {
 		t.Fatal("missing manager capability or plan")
 	}
-	result, err = session.CallTool(ctx, &mcp.CallToolParams{
-		Name: "edict_delegate", Arguments: map[string]any{
-			"token": created.Token, "taskId": created.Plan.Tasks[0].ID,
-			"prompt": "$edict-run\nRead /skills/edict-run/SKILL.md. Process existing signals.",
+	result, err = session.CallTool(
+		ctx, &mcp.CallToolParams{
+			Name: "edict_delegate", Arguments: map[string]any{
+				"token": created.Token, "taskId": created.Plan.Tasks[0].ID,
+				"prompt": "$edict-next-run\nRead /skills/edict-next-run/SKILL.md. Process existing signals.",
+			},
 		},
-	})
+	)
 	if err != nil || result.IsError {
 		t.Fatalf("returned manager token was not accepted: %v, %+v", err, result)
 	}
-	result, err = session.CallTool(ctx, &mcp.CallToolParams{
-		Name: "edict_plan_create", Arguments: map[string]any{"request": "Second manager", "steps": []map[string]string{{"skill": "edict-run", "title": "Duplicate"}}},
-	})
+	result, err = session.CallTool(
+		ctx, &mcp.CallToolParams{
+			Name: "edict_plan_create",
+			Arguments: map[string]any{
+				"request": "Second manager",
+				"steps":   []map[string]string{{"skill": "edict-next-run", "title": "Duplicate"}},
+			},
+		},
+	)
 	if err != nil || !result.IsError {
 		t.Fatalf("second plan creation was not rejected: %v, %+v", err, result)
 	}
@@ -124,7 +136,11 @@ func exerciseEdictManagedMCP(t *testing.T, cancelServer bool) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	for _, want := range []string{"Task prompt assigned by edict_manager/-:", "Check project history", "edict_plan_create response:"} {
+	for _, want := range []string{
+		"Task prompt assigned by edict_manager/-:",
+		"Check project history",
+		"edict_plan_create response:",
+	} {
 		if !bytes.Contains(agents, []byte(want)) {
 			t.Errorf("agent log is missing %q", want)
 		}
@@ -153,7 +169,11 @@ func exerciseEdictManagedMCP(t *testing.T, cancelServer bool) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	for _, want := range []string{"edict_plan_create ok", "Task delegated by edict_manager/-", "edict_plan_create failed"} {
+	for _, want := range []string{
+		"edict_plan_create ok",
+		"Task delegated by edict_manager/-",
+		"edict_plan_create failed",
+	} {
 		if !bytes.Contains(short, []byte(want)) {
 			t.Errorf("short agent log is missing %q", want)
 		}
@@ -196,25 +216,34 @@ func TestEdictManagedMCPStartupFailureKeepsStdoutClean(t *testing.T) {
 	}
 }
 
-func TestManagedMCPCommandDetection(t *testing.T) {
+func TestEdictServerCommandDetection(t *testing.T) {
 	root := newRootCommand()
 	root.AddCommand(newEdictCommand())
 	for _, args := range [][]string{
 		{"edict", "mcp", "start"},
 		{"--log-level", "debug", "edict", "mcp", "start"},
 		{"edict", "--disable-update-checks", "mcp", "start", "--state-dir", "/tmp/edict-state"},
+		{"edict", "ide-mcp", "--project-dir", "/tmp/project"},
 	} {
-		if !isManagedMCPCommand(root, args) {
-			t.Errorf("stdio MCP invocation was not detected: %v", args)
+		if !isEdictServerCommand(root, args) {
+			t.Errorf("Edict server invocation was not detected: %v", args)
 		}
 	}
 	for _, args := range [][]string{
-		{"edict", "linter-mcp", "start"},
 		{"edict", "install", "--dest", "mcp"},
+		{"edict", "mcp"},
 		{"edict"},
 	} {
-		if isManagedMCPCommand(root, args) {
-			t.Errorf("ordinary CLI command was mistaken for MCP: %v", args)
+		if isEdictServerCommand(root, args) {
+			t.Errorf("ordinary CLI command was mistaken for an Edict server: %v", args)
+		}
+	}
+}
+
+func TestEdictIDEMCPCommandIsHidden(t *testing.T) {
+	for _, command := range newEdictCommand().Commands() {
+		if command.Name() == "ide-mcp" && !command.Hidden {
+			t.Fatal("ide-mcp is internal to the Kotlin Edict server and must stay hidden")
 		}
 	}
 }

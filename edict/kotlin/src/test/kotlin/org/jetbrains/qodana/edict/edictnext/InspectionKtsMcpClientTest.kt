@@ -70,7 +70,7 @@ class InspectionKtsMcpClientTest {
         URI("http://127.0.0.1:${server.address.port}/mcp"),
         "/project/root",
       ).use { client ->
-        val proxyResult = client.proxyTool(
+        val proxyResult = client.callTool(
           "generate_inspection_kts_api",
           buildJsonObject {
             put("language", "Java")
@@ -78,9 +78,6 @@ class InspectionKtsMcpClientTest {
           },
         )
         assertEquals("false", proxyResult.getValue("isError").jsonPrimitive.content)
-        assertFailsWith<IllegalArgumentException> {
-          client.proxyTool("run_inspection_kts", buildJsonObject { put("inspectionKtsCode", "inspection") })
-        }
         val result = client.runExamples(
           "inspection",
           listOf(InspectionKtsExampleRequest("example", "/examples/example", "Example.kt")),
