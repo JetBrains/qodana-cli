@@ -1,6 +1,8 @@
 package org.jetbrains.qodana.edict.edictnext
 
 import kotlinx.serialization.encodeToString
+import kotlinx.serialization.json.jsonObject
+import kotlinx.serialization.json.jsonPrimitive
 import org.junit.jupiter.api.io.TempDir
 import java.nio.file.Path
 import kotlin.io.path.createDirectories
@@ -29,15 +31,23 @@ class EdictRepositoryMutationTest {
       ),
     )
     cluster.resolve("history.md").writeText("Created.\n")
-    cluster.resolve("signals/$signalId.json").writeText(
-      EdictNextJson.encodeToString(
-        EdictNextSignal(
-          id = signalId,
-          fileRevision = EdictNextFileRevision("ProcessTree.java", "abc", listOf(EdictNextLineRange(1, 1))),
-          source = EdictNextSignalSource.SubmittedFeedback(),
-          label = EdictNextSignalLabel.POSITIVE,
-          description = "Thread.sleep in a loop",
-        ),
+    val signalPath = cluster.resolve("signals/$signalId.json")
+    val serializedSignal = EdictNextJson.encodeToString(
+      EdictNextSignal(
+        id = signalId,
+        fileRevision = EdictNextFileRevision("ProcessTree.java", "abc", listOf(EdictNextLineRange(1, 1))),
+        source = EdictNextSignalSource.SubmittedFeedback(),
+        label = EdictNextSignalLabel.POSITIVE,
+        description = "Thread.sleep in a loop",
+      ),
+    )
+    signalPath.writeText(
+      serializedSignal.replaceFirst(
+        "{",
+        """{
+          |    "idempotencyKey": "repository:work-item:positive",
+          |    "provenance": { "workItemId": "work-item" },
+          |""".trimMargin(),
       ),
     )
 
@@ -55,6 +65,9 @@ class EdictRepositoryMutationTest {
 
     val loaded = repository.loadCluster(clusterId)
     assertEquals(metadata.id, loaded.signals.single().syntheticExampleId)
+    val assignedSignal = EdictNextJson.parseToJsonElement(signalPath.readText()).jsonObject
+    assertEquals("repository:work-item:positive", assignedSignal.getValue("idempotencyKey").jsonPrimitive.content)
+    assertEquals("work-item", assignedSignal.getValue("provenance").jsonObject.getValue("workItemId").jsonPrimitive.content)
     assertEquals(metadata.id, loaded.examples.single().metadata.id)
     assertEquals("val candidate = true", loaded.candidateInspectionPath.readText())
     assertTrue(cluster.resolve("history.md").readText().endsWith("Candidate stored.\n"))
