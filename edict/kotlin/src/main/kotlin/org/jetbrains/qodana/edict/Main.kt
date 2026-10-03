@@ -14,10 +14,9 @@ import org.jetbrains.qodana.edict.edictnext.EdictManagementService
 import org.jetbrains.qodana.edict.edictnext.EdictNextMcpToolset
 import org.jetbrains.qodana.edict.edictnext.EdictNextRepositoryState
 import org.jetbrains.qodana.edict.edictnext.EdictNextWorkspace
-import org.jetbrains.qodana.edict.edictnext.EdictPrAnalysisService
 import org.jetbrains.qodana.edict.edictnext.EdictSessionContext
 import org.jetbrains.qodana.edict.edictnext.IntellijMcpServerService
-import org.jetbrains.qodana.edict.reviews.ReviewClient
+import org.jetbrains.qodana.edict.git.GitRepository
 import org.jetbrains.qodana.edict.skills.Skills
 import java.nio.file.Path
 import java.util.UUID
@@ -103,7 +102,9 @@ fun main(args: Array<String>) {
                     try {
                         EdictNextRepositoryState.open(state).use { store ->
                             val management = EdictManagementService(
-                                store, logs.resolve("edict"), extensions = listOf(EdictPrAnalysisService(store, ReviewClient())),
+                                store,
+                                logs.resolve("edict"),
+                                signalRepository = GitRepository(sourceRepository),
                             )
                             val toolset = EdictNextMcpToolset(sessionId, management)
                             val httpPort = options["http-port"]?.toInt()

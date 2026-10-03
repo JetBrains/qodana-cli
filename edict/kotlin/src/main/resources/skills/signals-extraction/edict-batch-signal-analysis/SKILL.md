@@ -35,12 +35,10 @@ PR-review extraction belongs to `edict-pr-signal-analysis`; report misrouted rev
    has integer `start` and `end` fields satisfying `1 <= start <= end`; `startLine`/`endLine` are unsupported.
    The number of materialized records must equal the number of accepted findings. On
    malformed evidence fail the batch without publishing a partial candidate set.
-   Build `source.message` and `source.diffPositiveToNegative` by copying the retained Git output programmatically,
-   not by retyping the worker's prose. Preserve the original message punctuation and internal newlines; adding a
-   sentence-ending period changes the evidence. Only terminal newlines introduced by Git's message formatter may
-   be omitted. Check equality with the retained source values before publication.
+   For each `FromCommit` source, persist only the full correcting `commitRevision` and an external `url` when one is
+   available. Do not copy its parent, message, or diff into the Signal; the server derives them from the commit object.
    Compute the stable signal ID with a SHA-256 implementation over the exact UTF-8 idempotency key; never supply a
-   guessed digest. Preserve the diff's final newline when serializing it into the candidate JSON.
+   guessed digest.
 5. Publish each complete `FromCommit` record using `edict_state_write` with the supplied capability. If its stable inbox ID already
    exists with identical content, count it as an idempotent success. Conflicting content requires investigation and a
    failed outcome, not an overwrite. Read back all resulting paths and verify hashes/content and the complete expected
@@ -49,5 +47,5 @@ PR-review extraction belongs to `edict-pr-signal-analysis`; report misrouted rev
    inspected batch with zero findings is a successful no-op with no placeholder records. No commit, push, or IntelliJ
    state mutation is part of publication.
 
-The server checks signal structure and consistency with its supplied diff before writing. Evidence workers and this
-coordinator must still verify source authenticity, canonical diff content, and semantic relevance.
+The server resolves each commit and checks the selected evidence side, path, and ranges against the canonical repository
+diff before writing. Evidence workers and this coordinator must still verify semantic relevance.
