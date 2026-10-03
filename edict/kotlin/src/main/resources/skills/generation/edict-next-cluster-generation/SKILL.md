@@ -93,6 +93,8 @@ do not call inspection action again.
 Implementation constraints:
 
 - use only the Inspection KTS API and one self-contained file;
+- do not explicitly import `HighlightDisplayLevel`; the Inspection KTS host pre-imports it and a duplicate import
+  fails compilation;
 - keep PSI traversal inside the inspected file;
 - directly resolve current-file references, calls, types, annotations, hierarchy facts, and constants when needed;
   resolved declarations may live elsewhere and their metadata may be read;
