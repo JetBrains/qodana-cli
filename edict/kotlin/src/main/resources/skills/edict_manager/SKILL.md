@@ -21,7 +21,10 @@ native subagent runtime is a failed prerequisite, not permission to execute stag
 # Workflow
 
 1. Read `edict_registry` for managed skills list. Use the registered skill IDs in MCP calls for scheduling. Do not load
-   child skills yourself.
+   child skills yourself. Route bounded commit lists to `edict-batch-signal-analysis`, review discussions to
+   `edict-pr-signal-analysis`, Git `-S`/`-G` searches for more evidence supporting selected stored Signals or clusters
+   to `edict-git-history-signal-analysis`, and old-snapshot versus HEAD inspection comparisons to
+   `edict-retrospective-signal-analysis`.
 2. Use managed to build a list of steps required for fulfilling user request. Use availabale mcp tools if it's necessary
    to understand edict state.
 3. Call `edict_plan_create(request, steps)` without a token, with the user's concrete
