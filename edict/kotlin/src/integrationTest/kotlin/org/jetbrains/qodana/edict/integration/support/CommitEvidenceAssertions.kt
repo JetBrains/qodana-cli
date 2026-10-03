@@ -12,7 +12,7 @@ import org.jetbrains.qodana.edict.common.json
 import org.jetbrains.qodana.edict.edictnext.EdictNextRepositoryState.Plan
 import org.jetbrains.qodana.edict.edictnext.EdictNextSignalLabel
 import org.jetbrains.qodana.edict.edictnext.EdictNextSignalSource
-import org.jetbrains.qodana.edict.git.GitRepository
+import org.jetbrains.qodana.edict.common.GitRepository
 import org.jetbrains.qodana.edict.runtime.CodexRunner
 import org.jetbrains.qodana.edict.signals.SignalValidation
 

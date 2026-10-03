@@ -22,11 +22,11 @@ import org.jetbrains.qodana.edict.logging.AgentLogger
 import org.jetbrains.qodana.edict.logging.TaskLifecycleLogger
 import org.jetbrains.qodana.edict.edictnext.EdictNextRepositoryState.Plan
 import org.jetbrains.qodana.edict.edictnext.EdictNextRepositoryState.Step
-import org.jetbrains.qodana.edict.git.GitRepository
-import org.jetbrains.qodana.edict.reviews.PrAnalysis
-import org.jetbrains.qodana.edict.reviews.ReviewClient
-import org.jetbrains.qodana.edict.reviews.ReviewProvider
-import org.jetbrains.qodana.edict.reviews.ReviewSelection
+import org.jetbrains.qodana.edict.common.GitRepository
+import org.jetbrains.qodana.edict.extraction.reviews.PrAnalysis
+import org.jetbrains.qodana.edict.extraction.reviews.ReviewClient
+import org.jetbrains.qodana.edict.extraction.reviews.ReviewProvider
+import org.jetbrains.qodana.edict.extraction.reviews.ReviewSelection
 import org.jetbrains.qodana.edict.skills.managed.Registry
 import java.io.PrintWriter
 import java.nio.file.Files

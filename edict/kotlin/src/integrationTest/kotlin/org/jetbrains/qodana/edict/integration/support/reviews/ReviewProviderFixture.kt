@@ -4,11 +4,11 @@ package org.jetbrains.qodana.edict.integration.support.reviews
 import com.sun.net.httpserver.HttpExchange
 import com.sun.net.httpserver.HttpServer
 import kotlinx.serialization.json.JsonPrimitive
-import org.jetbrains.qodana.edict.git.GitRepository
+import org.jetbrains.qodana.edict.common.GitRepository
 import org.jetbrains.qodana.edict.integration.support.historyBefore
 import org.jetbrains.qodana.edict.integration.support.historyCommit
 import org.jetbrains.qodana.edict.integration.support.historyPath
-import org.jetbrains.qodana.edict.reviews.ReviewClient
+import org.jetbrains.qodana.edict.extraction.reviews.ReviewClient
 import java.net.InetSocketAddress
 import java.net.URLDecoder
 import java.util.*
