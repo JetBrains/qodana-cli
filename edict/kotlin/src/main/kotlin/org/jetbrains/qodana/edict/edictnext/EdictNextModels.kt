@@ -6,7 +6,10 @@ import kotlinx.serialization.EncodeDefault
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
+import org.jetbrains.qodana.edict.common.sha256
 import java.security.MessageDigest
+
+fun stableSignalId(key: String): String = "s-${sha256(key).take(10)}"
 
 internal val EdictNextJson: Json = Json {
   ignoreUnknownKeys = true
@@ -30,20 +33,20 @@ internal enum class EdictNextLanguage(val fileExtension: String) {
 }
 
 @Serializable
-internal enum class EdictNextSignalLabel {
+enum class EdictNextSignalLabel {
   POSITIVE,
   NEGATIVE,
 }
 
 @Serializable
-internal enum class EdictNextSignalStrength {
+enum class EdictNextSignalStrength {
   STRONG,
   @Suppress("unused")
   WEAK,
 }
 
 @Serializable
-internal sealed interface EdictNextSignalSource {
+sealed interface EdictNextSignalSource {
   @Serializable
   @SerialName("FromPR")
   data class FromPR(
@@ -51,13 +54,17 @@ internal sealed interface EdictNextSignalSource {
     val title: String,
     val discussionMessages: List<String>,
     val diffPositiveToNegative: String,
+    val url: String,
   ) : EdictNextSignalSource
 
   @Serializable
   @SerialName("FromCommit")
   data class FromCommit(
     val commitRevision: String,
+    val parentRevision: String,
     val message: String,
+    val diffPositiveToNegative: String,
+    val url: String? = null,
   ) : EdictNextSignalSource
 
   @Serializable
@@ -70,6 +77,8 @@ internal sealed interface EdictNextSignalSource {
     val codeSnippet: String? = null,
     val reason: String? = null,
     val suggestionId: String? = null,
+    val message: String? = null,
+    val url: String? = null,
   ) : EdictNextSignalSource
 
   @Serializable
@@ -78,7 +87,7 @@ internal sealed interface EdictNextSignalSource {
 }
 
 @Serializable
-internal data class EdictNextLineRange(
+data class EdictNextLineRange(
   val start: Int,
   val end: Int,
 ) {
@@ -86,24 +95,35 @@ internal data class EdictNextLineRange(
 }
 
 @Serializable
-internal data class EdictNextFileRevision(
+data class EdictNextFileRevision(
   val path: String,
   val revision: String,
   val expectedRanges: List<EdictNextLineRange>? = null,
 )
 
 @Serializable
-internal data class EdictNextSignal(
+data class EdictNextSignalProvenance(
+  val workItemId: String,
+  val analysisBatchId: String? = null,
+)
+
+@Serializable
+data class EdictNextSignal(
   val id: String,
+  val idempotencyKey: String = "",
   val fileRevision: EdictNextFileRevision,
   val source: EdictNextSignalSource,
   val label: EdictNextSignalLabel,
   val description: String,
   val strength: EdictNextSignalStrength = EdictNextSignalStrength.STRONG,
   val syntheticExampleId: String? = null,
+  val provenance: EdictNextSignalProvenance = EdictNextSignalProvenance(""),
 ) {
-  val isJvmLanguage: Boolean get() = EdictNextLanguage.fromPathOrNull(fileRevision.path) != null
-  val language: EdictNextLanguage
+  val deduplicationKey: String
+    get() = idempotencyKey.ifBlank { (source as? EdictNextSignalSource.SubmittedFeedback)?.suggestionId.orEmpty() }
+
+  internal val isJvmLanguage: Boolean get() = EdictNextLanguage.fromPathOrNull(fileRevision.path) != null
+  internal val language: EdictNextLanguage
     get() = requireNotNull(EdictNextLanguage.fromPathOrNull(fileRevision.path)) {
       "Unsupported Signal source language: ${fileRevision.path}"
     }
@@ -188,25 +208,17 @@ internal data class EdictNextSignalValidationResponse(
 internal sealed class EdictNextDistributionContextResponse {
   @Serializable
   @SerialName("signal")
-  data class Signal(
-    val signal: EdictNextDistributionSignal,
+  data class SignalContext(
+    val signal: EdictNextSignal,
   ) : EdictNextDistributionContextResponse()
 
   @Serializable
   @SerialName("cluster")
   data class Cluster(
     val clusterId: String,
-    val signals: List<EdictNextDistributionSignal>,
+    val signals: List<EdictNextSignal>,
   ) : EdictNextDistributionContextResponse()
 }
-
-@Serializable
-internal data class EdictNextDistributionSignal(
-  val id: String,
-  val fileRevision: EdictNextFileRevision,
-  val label: EdictNextSignalLabel,
-  val description: String,
-)
 
 // --- Distribution -------------------------------------------------------------------------------
 
@@ -224,7 +236,7 @@ internal sealed interface EdictNextSignalCandidate {
 
   @Serializable
   @SerialName("signal")
-  data class Signal(
+  data class SignalCandidate(
     val signalId: String,
     val signalPath: String,
     override val nearestDistance: Double,

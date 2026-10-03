@@ -1,8 +1,10 @@
 package org.jetbrains.qodana.edict.edictnext
 
 import kotlinx.serialization.encodeToString
+import kotlinx.serialization.json.encodeToJsonElement
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
+import org.jetbrains.qodana.edict.signals.SignalValidation
 import org.junit.jupiter.api.io.TempDir
 import java.nio.file.Path
 import kotlin.io.path.createDirectories
@@ -12,11 +14,42 @@ import kotlin.io.path.writeText
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
+import kotlin.test.assertIs
 import kotlin.test.assertTrue
 
 class EdictRepositoryMutationTest {
   @TempDir
   lateinit var directory: Path
+
+  @Test
+  fun `canonical signal reads existing submitted feedback`() {
+    val content = checkNotNull(javaClass.getResource("/signals/submitted-feedback.json")).readText()
+    val signal = SignalValidation.validate("inbox/s-0b1840a3d440.json", content)
+
+    assertIs<EdictNextSignalSource.SubmittedFeedback>(signal.source)
+    assertEquals("benchmark/StaticInitializerReferencesSubClass/specification.json#negativeExamples/0", signal.deduplicationKey)
+  }
+
+  @Test
+  fun `renamed signal variants retain their wire discriminator`() {
+    val signal = EdictNextSignal(
+      id = "s-652d0c8f933a",
+      fileRevision = EdictNextFileRevision("ProcessTree.java", "abc", listOf(EdictNextLineRange(1, 1))),
+      source = EdictNextSignalSource.SubmittedFeedback(),
+      label = EdictNextSignalLabel.POSITIVE,
+      description = "Thread.sleep in a loop",
+    )
+    val context = EdictNextJson.encodeToJsonElement<EdictNextDistributionContextResponse>(
+      EdictNextDistributionContextResponse.SignalContext(signal),
+    ).jsonObject
+    val candidate = EdictNextJson.encodeToJsonElement<EdictNextSignalCandidate>(
+      EdictNextSignalCandidate.SignalCandidate(signal.id, "/inbox/${signal.id}.json", 0.25),
+    ).jsonObject
+
+    assertEquals("signal", context.getValue("type").jsonPrimitive.content)
+    assertEquals(signal.id, context.getValue("signal").jsonObject.getValue("id").jsonPrimitive.content)
+    assertEquals("signal", candidate.getValue("type").jsonPrimitive.content)
+  }
 
   @Test
   fun `managed generation mutations persist examples assignments candidates and history`() {

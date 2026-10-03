@@ -9,7 +9,9 @@ import org.jetbrains.qodana.edict.edictnext.EdictNextRepositoryState
 import org.jetbrains.qodana.edict.edictnext.EdictNextRepositoryState.Delegation
 import org.jetbrains.qodana.edict.edictnext.EdictNextRepositoryState.PlanCreation
 import org.jetbrains.qodana.edict.edictnext.EdictNextRepositoryState.Step
-import org.jetbrains.qodana.edict.model.*
+import org.jetbrains.qodana.edict.edictnext.EdictNextLineRange
+import org.jetbrains.qodana.edict.edictnext.EdictNextSignal
+import org.jetbrains.qodana.edict.edictnext.EdictNextSignalLabel
 import org.jetbrains.qodana.edict.skills.managed.Registry
 import java.nio.file.Files
 import java.nio.file.Path
@@ -40,21 +42,21 @@ internal fun gitFixture(directory: Path): GitRepository {
 }
 
 /** Deliberately scripted semantic decision for offline protocol tests; LiveCommitExtractionTest exercises a real model. */
-internal fun fixtureSignals(repository: GitRepository): List<Signal> =
+internal fun fixtureSignals(repository: GitRepository): List<EdictNextSignal> =
     CommitSignalExtractor(repository) { commit, repo ->
         check(repo.fileAt(commit.parentRevision, fixturePath) == beforeSource)
         check(repo.fileAt(commit.commitRevision, fixturePath) == afterSource)
         listOf(
             SignalFinding(
-                SignalLabel.POSITIVE,
+                EdictNextSignalLabel.POSITIVE,
                 fixturePath,
-                listOf(SignalRange(3, 3)),
+                listOf(EdictNextLineRange(3, 3)),
                 "String reference equality does not compare string values"
             ),
             SignalFinding(
-                SignalLabel.NEGATIVE,
+                EdictNextSignalLabel.NEGATIVE,
                 fixturePath,
-                listOf(SignalRange(3, 3)),
+                listOf(EdictNextLineRange(3, 3)),
                 "Objects.equals compares string values and safely handles nulls"
             ),
         )

@@ -106,7 +106,7 @@ Production code lives under `src/main/kotlin/org/jetbrains/qodana/edict`:
 
 | Package | Responsibility |
 | --- | --- |
-| `model` | Serialized execution plans, task assignments and signal evidence |
+| `edictnext` | Canonical signal model, execution state, distribution and generation lifecycle |
 | `skills` | Managed skill registry, policies and classpath resources |
 | `store` | Persistent artifacts, capabilities, lifecycle and inbox receipts |
 | `signals` | Structural signal validation and unified-diff parsing |
