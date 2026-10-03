@@ -3,6 +3,9 @@ package org.jetbrains.qodana.edict.edictnext
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.SerializationStrategy
+import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.JsonPrimitive
+import kotlinx.serialization.json.jsonObject
 import org.jetbrains.qodana.edict.git.GitRepository
 import java.nio.file.Files
 import java.nio.file.Path
@@ -113,10 +116,13 @@ internal class EdictRepository(val paths: EdictRepositoryDirectory) {
     require(signal.label == example.metadata.label) {
       "Signal '$signalId' and example '$exampleId' have different labels"
     }
-    write(
-      cluster.directory.signalPath(signalId),
-      signal.copy(syntheticExampleId = exampleId),
-      EdictNextSignal.serializer(),
+    val signalPath = cluster.directory.signalPath(signalId)
+    val document = EdictNextJson.parseToJsonElement(signalPath.readText()).jsonObject
+    signalPath.writeText(
+      EdictNextJson.encodeToString(
+        JsonObject.serializer(),
+        JsonObject(document + ("syntheticExampleId" to JsonPrimitive(exampleId))),
+      ),
     )
   }
 
