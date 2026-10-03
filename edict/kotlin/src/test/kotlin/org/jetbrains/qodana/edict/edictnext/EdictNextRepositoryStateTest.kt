@@ -3,6 +3,8 @@ package org.jetbrains.qodana.edict.edictnext
 import org.jetbrains.qodana.edict.edictnext.EdictNextRepositoryState.Delegation
 import org.jetbrains.qodana.edict.edictnext.EdictNextRepositoryState.Step
 import org.jetbrains.qodana.edict.support.batch
+import org.jetbrains.qodana.edict.support.fixtureSignals
+import org.jetbrains.qodana.edict.support.gitFixture
 import org.jetbrains.qodana.edict.support.launch
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.io.TempDir
@@ -21,6 +23,23 @@ import kotlin.reflect.typeOf
 class EdictNextRepositoryStateTest {
   @TempDir
   lateinit var directory: Path
+
+  @Test
+  fun `historical coordinators can publish validated commit signals`() {
+    val repository = gitFixture(directory.resolve("source"))
+    val signal = fixtureSignals(repository).first()
+    val content = EdictNextJson.encodeToString(signal) + "\n"
+    listOf("edict-git-history-signal-analysis", "edict-retrospective-signal-analysis").forEach { skill ->
+      EdictNextRepositoryState.open(directory.resolve(skill)).use { state ->
+        val plan = state.createPlan("Find historical evidence", listOf(Step(skill, "Search")))
+        val worker = state.launch(plan.token, plan.plan.tasks.single().id, skill)
+        repository.validateEvidence(signal)
+        val artifact = state.writeSignal(worker.token, "inbox/${signal.id}.json", content, "")
+        assertEquals(signal.id, artifact.path.substringAfter("inbox/").substringBefore(".json"))
+        assertEquals(content, Files.readString(directory.resolve(skill).resolve(artifact.path)))
+      }
+    }
+  }
 
   @Test
   fun `review budget survives restart and is independent for each cluster and review stage`() {

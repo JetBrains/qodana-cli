@@ -19,6 +19,8 @@ object Registry {
                 "edict-next-generation",
                 "edict-batch-signal-analysis",
                 "edict-pr-signal-analysis",
+                "edict-git-history-signal-analysis",
+                "edict-retrospective-signal-analysis",
             ),
         ),
         Policy(
@@ -45,6 +47,14 @@ object Registry {
         ),
         Policy(
             "edict-pr-signal-analysis",
+            delegates = listOf("edict-signal-analysis"),
+        ),
+        Policy(
+            "edict-git-history-signal-analysis",
+            delegates = listOf("edict-signal-analysis"),
+        ),
+        Policy(
+            "edict-retrospective-signal-analysis",
             delegates = listOf("edict-signal-analysis"),
         ),
         Policy("edict-signal-analysis"),
