@@ -81,7 +81,7 @@ must share one server and one state lock.
   Ultimate's generic inspection MCP; this CLI contains only its lifecycle and HTTP client.
 - GitHub and Space review readers, bounded selection, pagination, bot filtering,
   complete discussion provenance, exact source snapshots, task-bound batches,
-  ordered coverage validation, and publication receipts tied to exact bytes.
+  ordered coverage validation, and publication receipts tied to exact Signal models.
 - An isolated Codex runner for executing the bundled managed skills with a real
   model and native subagents.
 

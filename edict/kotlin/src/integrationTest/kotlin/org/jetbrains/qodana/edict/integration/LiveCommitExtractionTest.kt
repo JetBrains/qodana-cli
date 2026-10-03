@@ -23,7 +23,7 @@ class LiveCommitExtractionTest : IntegrationTest() {
             Edict state root: ${workspace.state}
             Revision expression: $historyCommit^!
             Commit limit: 1
-            Publish every supported Signal to the inbox through edict_state_write.
+            Publish every supported Signal through edict_publish_signal.
             """.trimIndent(),
         ) { store, runtime, _ ->
             val plan = assertNotNull(store.plan())
@@ -41,4 +41,3 @@ class LiveCommitExtractionTest : IntegrationTest() {
         }
     }
 }
-

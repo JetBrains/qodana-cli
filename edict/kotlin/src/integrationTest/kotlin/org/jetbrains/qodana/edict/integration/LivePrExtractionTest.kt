@@ -37,7 +37,7 @@ class LivePrExtractionTest : IntegrationTest() {
                 PR limit: 1
                 Source checkout: ${workspace.repository.root}
                 Edict state root: ${workspace.state}
-                Publish every supported Signal to the inbox through edict_state_write.
+                Publish every supported Signal through edict_publish_signal.
                 """.trimIndent(),
                 provider = fixture.client,
             ) { store, runtime, _ ->
