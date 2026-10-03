@@ -17,7 +17,6 @@ internal class PrAnalysis(
   private val provider: ReviewProvider,
 ) {
   private data class Batch(
-    val owner: String,
     val summary: PrBatchSummary,
     val items: List<PrItem>,
     var validated: Map<String, EdictNextSignal>? = null,
@@ -26,7 +25,7 @@ internal class PrAnalysis(
   private val batches = mutableMapOf<String, Batch>()
 
   fun prepare(token: String, selection: ReviewSelection): PrBatchSummary {
-    store.prAnalysisOwner(token, coordinator = true)
+    store.requirePrAnalysisCaller(token, coordinator = true)
     selection.validate()
     val prs = provider.fetch(selection)
     val items = prs.flatMap { pr ->
@@ -48,8 +47,8 @@ internal class PrAnalysis(
     val id = sha256(json.encodeToString(selection) + json.encodeToString(prs)).take(24)
     val summary = PrBatchSummary(id, prs.size, prs.count { it.threads.isNotEmpty() }, items.size)
     return synchronized(store) {
-      val owner = store.prAnalysisOwner(token, coordinator = true)
-      batches.getOrPut("$owner:$id") { Batch(owner, summary, items) }.summary
+      store.requirePrAnalysisCaller(token, coordinator = true)
+      batches.getOrPut(id) { Batch(summary, items) }.summary
     }
   }
 
@@ -132,17 +131,16 @@ internal class PrAnalysis(
   }
 
   fun validatePublication(token: String, signal: EdictNextSignal) {
-    val owner = store.prAnalysisOwner(token, coordinator = true)
-    require(batches.values.any { it.owner == owner && it.validated?.get(signal.id) == signal }) {
+    store.requirePrAnalysisCaller(token, coordinator = true)
+    require(batches.values.any { it.validated?.get(signal.id) == signal }) {
       "PR Signal has not passed edict_validate_pr_signals with this exact model"
     }
   }
 
   fun complete(token: String) {
-    val owner = store.prAnalysisOwner(token, coordinator = true)
-    val selected = batches.values.filter { it.owner == owner }
-    require(selected.isNotEmpty()) { "Prepare and inspect requested PR selection before finishing" }
-    selected.forEach { batch ->
+    store.requirePrAnalysisCaller(token, coordinator = true)
+    require(batches.isNotEmpty()) { "Prepare and inspect requested PR selection before finishing" }
+    batches.values.forEach { batch ->
       val validated = checkNotNull(batch.validated) { "Validate complete PR inspection coverage before finishing" }
       validated.forEach { (id, signal) ->
         require(store.inboxSignal(id) == signal) { "Validated PR Signal is missing or differs from receipt" }
@@ -151,8 +149,8 @@ internal class PrAnalysis(
   }
 
   private fun batch(token: String, id: String, coordinator: Boolean): Batch {
-    val owner = store.prAnalysisOwner(token, coordinator)
-    return batches["$owner:$id"] ?: error("Unknown PR batch for this task; prepare again after restart")
+    store.requirePrAnalysisCaller(token, coordinator)
+    return batches[id] ?: error("Unknown PR batch; prepare again after restart")
   }
 
   private companion object {
