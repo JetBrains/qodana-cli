@@ -38,16 +38,25 @@ class InspectionKtsMcpClientTest {
               putJsonObject("serverInfo") { put("name", "inspection"); put("version", "1") }
             }
             "tools/call" -> buildJsonObject {
+              val toolName = request.getValue("params").jsonObject.getValue("name").jsonPrimitive.content
               put("isError", false)
               put(
                 "structuredContent",
-                EdictNextJson.encodeToJsonElement(
-                  InspectionKtsBatchRunResult.serializer(),
-                  InspectionKtsBatchRunResult(
+                if (toolName == "compile_inspection_kts") {
+                  EdictNextJson.encodeToJsonElement(
+                    InspectionKtsCompileResult.serializer(),
                     InspectionKtsCompileResult(true, inspectionId = "sample-rule"),
-                    listOf(InspectionKtsFileResult("example", "Example.kt", listOf(InspectionKtsProblem("hit", 3, "WARNING")))),
-                  ),
-                ),
+                  )
+                }
+                else {
+                  EdictNextJson.encodeToJsonElement(
+                    InspectionKtsBatchRunResult.serializer(),
+                    InspectionKtsBatchRunResult(
+                      InspectionKtsCompileResult(true, inspectionId = "sample-rule"),
+                      listOf(InspectionKtsFileResult("example", "Example.kt", listOf(InspectionKtsProblem("hit", 3, "WARNING")))),
+                    ),
+                  )
+                },
               )
             }
             else -> error("Unexpected method")
@@ -78,6 +87,10 @@ class InspectionKtsMcpClientTest {
           },
         )
         assertEquals("false", proxyResult.getValue("isError").jsonPrimitive.content)
+        assertFailsWith<IllegalArgumentException> {
+          client.proxyTool("run_inspection_kts", buildJsonObject { put("inspectionKtsCode", "inspection") })
+        }
+        assertEquals("sample-rule", client.compile("compiled inspection").inspectionId)
         val result = client.runExamples(
           "inspection",
           listOf(InspectionKtsExampleRequest("example", "/examples/example", "Example.kt")),
@@ -94,6 +107,11 @@ class InspectionKtsMcpClientTest {
       }.getValue("params").jsonObject.getValue("arguments").jsonObject
       assertEquals("Java", apiArguments.getValue("language").jsonPrimitive.content)
       assertEquals("/project/root", apiArguments.getValue("projectPath").jsonPrimitive.content)
+      val compileArguments = toolCalls.single {
+        it.getValue("params").jsonObject.getValue("name").jsonPrimitive.content == "compile_inspection_kts"
+      }.getValue("params").jsonObject.getValue("arguments").jsonObject
+      assertEquals("compiled inspection", compileArguments.getValue("inspectionKtsCode").jsonPrimitive.content)
+      assertEquals("/project/root", compileArguments.getValue("projectPath").jsonPrimitive.content)
       val exampleArguments = toolCalls.single {
         it.getValue("params").jsonObject.getValue("name").jsonPrimitive.content == "run_inspection_kts_examples"
       }.getValue("params").jsonObject.getValue("arguments").jsonObject

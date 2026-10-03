@@ -111,7 +111,10 @@ internal class HttpInspectionKtsClient(
   }
 
   override suspend fun compile(code: String): InspectionKtsCompileResult =
-    call("compile_inspection_kts", buildJsonObject { put("inspectionKtsCode", code) })
+    call("compile_inspection_kts", buildJsonObject {
+      put("inspectionKtsCode", code)
+      put("projectPath", projectPath)
+    })
 
   override suspend fun runExamples(
     code: String,
