@@ -13,15 +13,15 @@ import org.jetbrains.qodana.edict.edictnext.EdictNextRepositoryState
 import org.jetbrains.qodana.edict.edictnext.EdictNextWorkspace
 import org.jetbrains.qodana.edict.edictnext.EdictPrAnalysisService
 import org.jetbrains.qodana.edict.edictnext.EdictSessionContext
+import org.jetbrains.qodana.edict.edictnext.EdictNextLineRange
+import org.jetbrains.qodana.edict.edictnext.EdictNextSignal
+import org.jetbrains.qodana.edict.edictnext.EdictNextSignalLabel
 import org.jetbrains.qodana.edict.edictnext.IntellijMcpServerService
 import org.jetbrains.qodana.edict.git.CommitSignalExtractor
 import org.jetbrains.qodana.edict.git.GitRepository
 import org.jetbrains.qodana.edict.git.SignalFinding
 import org.jetbrains.qodana.edict.integration.support.inspection.InspectionLifecycleFixture
 import org.jetbrains.qodana.edict.integration.support.inspection.InspectionServer
-import org.jetbrains.qodana.edict.model.Signal
-import org.jetbrains.qodana.edict.model.SignalLabel
-import org.jetbrains.qodana.edict.model.SignalRange
 import org.jetbrains.qodana.edict.reviews.ReviewClient
 import org.jetbrains.qodana.edict.reviews.ReviewProvider
 import org.jetbrains.qodana.edict.runtime.CodexRunner
@@ -135,21 +135,21 @@ internal class IntegrationWorkspace private constructor(
         }
     }
 
-    fun signals(): List<Signal> = CommitSignalExtractor(repository) { commit, repo ->
+    fun signals(): List<EdictNextSignal> = CommitSignalExtractor(repository) { commit, repo ->
         check(commit.parentRevision == historyBefore && commit.commitRevision == historyCommit)
         check("Thread.sleep(1_000)" in repo.fileAt(historyBefore, historyPath))
         check("workerFinished.await(1, TimeUnit.SECONDS)" in repo.fileAt(historyCommit, historyPath))
         listOf(
             SignalFinding(
-                SignalLabel.POSITIVE,
+                EdictNextSignalLabel.POSITIVE,
                 historyPath,
-                listOf(SignalRange(5, 5)),
+                listOf(EdictNextLineRange(5, 5)),
                 "Sleeping does not reliably coordinate worker completion"
             ),
             SignalFinding(
-                SignalLabel.NEGATIVE,
+                EdictNextSignalLabel.NEGATIVE,
                 historyPath,
-                listOf(SignalRange(10, 10)),
+                listOf(EdictNextLineRange(10, 10)),
                 "Await a completion signal instead of sleeping to coordinate a worker"
             ),
         )
