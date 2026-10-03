@@ -4,6 +4,7 @@ package org.jetbrains.qodana.edict.git
 import kotlinx.serialization.Serializable
 import org.jetbrains.qodana.edict.common.runProcess
 import org.jetbrains.qodana.edict.edictnext.EdictNextSignal
+import org.jetbrains.qodana.edict.edictnext.EdictNextSignalLabel
 import org.jetbrains.qodana.edict.edictnext.EdictNextSignalSource
 import org.jetbrains.qodana.edict.signals.UnifiedDiff
 import org.jetbrains.qodana.edict.signals.validRevision
@@ -77,18 +78,26 @@ class GitRepository(directory: Path) {
         val signalSource = signal.source
         require(signalSource is EdictNextSignalSource.FromCommit) { "Expected commit signal" }
         val commit = commit(signalSource.commitRevision)
-        require(
-            signalSource.parentRevision == commit.parentRevision && signalSource.message.trimEnd('\n') == commit.message,
-        ) { "Commit metadata differs from repository" }
-        val changes = UnifiedDiff.parse(signalSource.diffPositiveToNegative)
-        val paths = (changes.before.keys + changes.after.keys).distinct()
-        require(
-            signalSource.diffPositiveToNegative == commit.diff ||
-                signalSource.diffPositiveToNegative == diff(commit.parentRevision, commit.commitRevision, paths),
-        ) { "Signal diff is not canonical Git evidence" }
+        val expectedRevision = when (signal.label) {
+            EdictNextSignalLabel.POSITIVE -> commit.parentRevision
+            EdictNextSignalLabel.NEGATIVE -> commit.commitRevision
+        }
+        require(signal.fileRevision.revision == expectedRevision) {
+            "Signal revision does not match its ${signal.label} commit side"
+        }
+        val changes = UnifiedDiff.parse(commit.diff).side(signal.label)
+        val changedLines = changes[signal.fileRevision.path]
+        require(changedLines != null) { "Signal path is not changed on its ${signal.label} commit side" }
+        val ranges = signal.fileRevision.expectedRanges.orEmpty()
+        require(ranges.isNotEmpty() && ranges.all { it.start >= 1 && it.end >= it.start }) {
+            "Signal requires valid nonempty evidence ranges"
+        }
+        require(ranges.all { range -> changedLines.any { it in range.start..range.end } }) {
+            "Signal evidence range does not intersect its ${signal.label} commit diff"
+        }
         val source = fileAt(signal.fileRevision.revision, signal.fileRevision.path)
         val lineCount = source.count { it == '\n' } + if (source.isNotEmpty() && !source.endsWith('\n')) 1 else 0
-        require(signal.fileRevision.expectedRanges.orEmpty().all { it.end <= lineCount }) {
+        require(ranges.all { it.end <= lineCount }) {
             "Evidence range exceeds historical source"
         }
     }

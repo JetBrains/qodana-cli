@@ -72,13 +72,11 @@ Keep mutable orchestration progress in the MCP plan.
 PR source preserves `type: "FromPR"`, `prNumber`, complete `title`, ordered complete human `discussionMessages`,
 canonical `diffPositiveToNegative`, and discussion `url`.
 
-Commit source preserves `type: "FromCommit"`, full correcting `commitRevision`, `parentRevision`, complete `message`,
-canonical `diffPositiveToNegative`, and `url` when available. The correcting commitRevision is the same for both labels;
-`fileRevision.revision` selects the actual evidence side.
-Copy the complete commit message verbatim from Git, including its punctuation and internal newlines; do not rewrite
-it as a sentence or substitute an evidence summary. Only terminal message-formatting newlines may be omitted.
+Commit source preserves `type: "FromCommit"`, the full correcting `commitRevision`, and `url` when available. The commit
+object determines its parent, message, and canonical diff; do not duplicate them in the Signal. The correcting
+`commitRevision` is the same for both labels; `fileRevision.revision` selects the actual evidence side.
 
-Keep description concise; store messages/diffs/source metadata in their own fields. Do not include rule names, rule IDs,
+Keep descriptions concise and source metadata in its defined fields. Do not include rule names, rule IDs,
 language/severity judgments, proposed implementations, or synthetic examples in this extraction stage.
 
 Signal writes reject malformed records and inconsistencies in IDs, revisions, paths, or changed-line ranges before

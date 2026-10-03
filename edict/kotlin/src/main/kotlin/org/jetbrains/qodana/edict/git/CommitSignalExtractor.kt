@@ -40,9 +40,6 @@ class CommitSignalExtractor(private val repository: GitRepository, private val a
                 fileRevision = EdictNextFileRevision(finding.path, evidenceRevision, finding.ranges),
                 source = EdictNextSignalSource.FromCommit(
                     commitRevision = commit.commitRevision,
-                    parentRevision = commit.parentRevision,
-                    message = commit.message,
-                    diffPositiveToNegative = commit.diff,
                 ),
                 label = finding.label,
                 description = finding.description,
