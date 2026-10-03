@@ -95,5 +95,5 @@ data class PrReceipt(
     val batchId: String,
     val inspectedWorkItemCount: Int,
     val signalCount: Int,
-    val signals: Map<String, String>
+    val signalIds: List<String>
 )

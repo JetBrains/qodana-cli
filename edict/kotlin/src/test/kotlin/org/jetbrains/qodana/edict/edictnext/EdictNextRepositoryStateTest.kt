@@ -28,16 +28,37 @@ class EdictNextRepositoryStateTest {
   fun `historical coordinators can publish validated commit signals`() {
     val repository = gitFixture(directory.resolve("source"))
     val signal = fixtureSignals(repository).first()
-    val content = EdictNextJson.encodeToString(signal) + "\n"
     listOf("edict-git-history-signal-analysis", "edict-retrospective-signal-analysis").forEach { skill ->
       EdictNextRepositoryState.open(directory.resolve(skill)).use { state ->
         val plan = state.createPlan("Find historical evidence", listOf(Step(skill, "Search")))
         val worker = state.launch(plan.token, plan.plan.tasks.single().id, skill)
-        repository.validateEvidence(signal)
-        val artifact = state.writeSignal(worker.token, "inbox/${signal.id}.json", content, "")
-        assertEquals(signal.id, artifact.path.substringAfter("inbox/").substringBefore(".json"))
-        assertEquals(content, Files.readString(directory.resolve(skill).resolve(artifact.path)))
+        assertTrue(state.publishSignal(worker.token, signal, repository::validateEvidence).created)
+        assertEquals(signal, state.inboxSignal(signal.id))
+        assertTrue(Files.exists(directory.resolve(skill).resolve("inbox/${signal.id}.json")))
       }
+    }
+  }
+
+  @Test
+  fun `signal publication derives storage from the model and is idempotent`() {
+    EdictNextRepositoryState.open(directory).use { state ->
+      val (_, batch) = state.batch()
+      val key = "repository:commit:item:negative"
+      val signal = EdictNextSignal(
+        id = stableSignalId(key),
+        idempotencyKey = key,
+        fileRevision = EdictNextFileRevision("src/Example.kt", "a".repeat(40), listOf(EdictNextLineRange(1, 1))),
+        source = EdictNextSignalSource.FromCommit("b".repeat(40)),
+        label = EdictNextSignalLabel.NEGATIVE,
+        description = "Example finding",
+        provenance = EdictNextSignalProvenance("commit-item"),
+      )
+
+      assertTrue(state.publishSignal(batch.token, signal).created)
+      assertFalse(state.publishSignal(batch.token, signal).created)
+      assertEquals(signal, state.inboxSignal(signal.id))
+      assertTrue(Files.exists(directory.resolve("inbox/${signal.id}.json")))
+      assertFails { state.publishSignal(batch.token, signal.copy(description = "Conflicting finding")) }
     }
   }
 

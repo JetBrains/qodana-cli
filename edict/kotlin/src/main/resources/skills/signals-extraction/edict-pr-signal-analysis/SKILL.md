@@ -7,7 +7,7 @@ description: Managed coordinator subagent that extracts source-backed Signals fr
 
 Run only as a delegated managed subagent. Follow [the manager protocol](../edict_manager/references/protocol.md) and
 [the signal contract](../edict_manager/references/signals.md). Registry ID: `edict-pr-signal-analysis`.
-You own coverage and `inbox.write`; delegate evidence inspection to `edict-signal-analysis`.
+You own coverage and Signal publication; delegate evidence inspection to `edict-signal-analysis`.
 
 Require a provider (`github` or `space`), owner (GitHub owner or Space project key), repository name, and either explicit
 PR numbers or inclusive UTC date bounds, together with a PR limit from 1 to 1000. Use the source checkout when available
@@ -41,13 +41,12 @@ failed prerequisite. Commit-only requests belong to `edict-batch-signal-analysis
    stable IDs from repository identity, discussion/work-item identity, evidence, and deterministic signal index;
    exclude transient batch/plan IDs from idempotency keys.
 6. Call `edict_validate_pr_signals` with your token, batch ID, all `inspectedWorkItemIds` in prepared order, and `signals`:
-   an array of complete JSON record **strings**, using exactly the bytes you will write. Use `[]` when there are no
+   an array of complete Signal model objects. Use `[]` when there are no
    findings. The server verifies coverage, record structure, provider provenance and evidence revisions. A failure
    blocks publication; correct the evidence and validate again. Validation does not replace source inspection.
-7. Publish every validated string to `inbox/<id>.json` using `edict_state_write`. Read back each path and match the
-   receipt's hash. Existing identical content is an idempotent success; conflicting content requires investigation,
-   not overwriting. Do not reformat JSON after validation. Report exact paths left by a partially failed publication.
-8. Finish with batch ID, inspected IDs, signal IDs, paths and hashes. The server rejects completion until coverage is
+7. Publish every validated model using `edict_publish_signal`. An existing identical model is an idempotent success;
+   a conflicting model requires investigation, not overwriting. Report exact IDs left by a partially failed publication.
+8. Finish with batch ID, inspected IDs, and signal IDs. The server rejects completion until coverage is
    validated and all validated signals are present. A completely inspected batch with zero findings, including an
    empty merged-review selection, succeeds without placeholders. After a server restart, prepare the selection again
    and reuse identical persisted records.

@@ -1,6 +1,7 @@
 // Copyright 2026 JetBrains s.r.o. Licensed under the Apache License, Version 2.0.
 package org.jetbrains.qodana.edict.signals
 
+import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.jsonArray
 import kotlinx.serialization.json.jsonObject
@@ -13,6 +14,9 @@ import org.jetbrains.qodana.edict.edictnext.stableSignalId
 
 /** Validates extraction records at the trusted state boundary before Edict Next consumes them. */
 object SignalValidation {
+  fun validate(signal: EdictNextSignal): EdictNextSignal =
+    validate("inbox/${signal.id}.json", json.encodeToString(signal))
+
   fun validate(path: String, content: String): EdictNextSignal {
     fun field(name: String, condition: Boolean, reason: String) {
       require(condition) { "Invalid signal '$path': $name: $reason" }

@@ -70,6 +70,11 @@ internal class EdictManagementService(
       put("type", "array")
       put("items", string)
     }
+    val signalObject = jsonType("object")
+    val signalArray = buildJsonObject {
+      put("type", "array")
+      put("items", signalObject)
+    }
     val integerArray = buildJsonObject {
       put("type", "array")
       put("items", integer)
@@ -227,21 +232,18 @@ internal class EdictManagementService(
     }
 
     tool(
-      name = "edict_state_write",
-      description = "Publish one validated extraction Signal. path must be inbox/<stable-id>.json; expectedHash is empty for creation or the exact current SHA-256 for replacement.",
-      required = listOf("token", "path", "content", "expectedHash"),
-      properties = properties("path", "content", "expectedHash"),
+      name = "edict_publish_signal",
+      description = "Validate and idempotently publish one Signal model to the managed inbox.",
+      required = listOf("token", "signal"),
+      properties = mapOf("signal" to signalObject),
     ) { arguments ->
       val token = arguments.requireString("token")
-      val content = arguments.requireString("content")
-      val signal = wireJson.decodeFromString<EdictNextSignal>(content)
-      if (signal.source is EdictNextSignalSource.FromPR) pr.validateWrite(token, signal.id, content)
+      val signal = wireJson.decodeFromJsonElement<EdictNextSignal>(arguments.getValue("signal"))
+      if (signal.source is EdictNextSignalSource.FromPR) pr.validatePublication(token, signal)
       EdictNextJson.encodeToJsonElement(
-        store.writeSignal(
+        store.publishSignal(
           token,
-          arguments.requireString("path"),
-          content,
-          arguments.requireString("expectedHash"),
+          signal,
         ) { candidate ->
           if (candidate.source is EdictNextSignalSource.FromCommit) {
             requireNotNull(signalRepository) { "Commit Signal validation requires the source repository" }
@@ -304,12 +306,12 @@ internal class EdictManagementService(
 
     tool(
       name = "edict_validate_pr_signals",
-      description = "Validate complete ordered PR coverage and exact prospective inbox JSON strings before publication.",
+      description = "Validate complete ordered PR coverage and prospective Signal models before publication.",
       readOnly = true,
       required = listOf("token", "batchId", "inspectedWorkItemIds", "signals"),
       properties = properties("batchId") + mapOf(
         "inspectedWorkItemIds" to stringArray,
-        "signals" to stringArray,
+        "signals" to signalArray,
       ),
     ) { arguments ->
       EdictNextJson.encodeToJsonElement(
@@ -317,7 +319,7 @@ internal class EdictManagementService(
           arguments.requireString("token"),
           arguments.requireString("batchId"),
           arguments.requireStrings("inspectedWorkItemIds"),
-          arguments.requireStrings("signals"),
+          wireJson.decodeFromJsonElement<List<EdictNextSignal>>(arguments.getValue("signals")),
         ),
       )
     }
