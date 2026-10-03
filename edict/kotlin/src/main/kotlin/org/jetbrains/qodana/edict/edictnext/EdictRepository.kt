@@ -6,7 +6,7 @@ import kotlinx.serialization.SerializationStrategy
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.jsonObject
-import org.jetbrains.qodana.edict.git.GitRepository
+import org.jetbrains.qodana.edict.common.GitRepository
 import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.StandardCopyOption

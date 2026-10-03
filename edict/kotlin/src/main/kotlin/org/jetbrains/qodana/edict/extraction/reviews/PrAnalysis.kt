@@ -1,7 +1,6 @@
 // Copyright 2026 JetBrains s.r.o. Licensed under the Apache License, Version 2.0.
-package org.jetbrains.qodana.edict.reviews
+package org.jetbrains.qodana.edict.extraction.reviews
 
-import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.*
 import org.jetbrains.qodana.edict.common.json
 import org.jetbrains.qodana.edict.common.sha256

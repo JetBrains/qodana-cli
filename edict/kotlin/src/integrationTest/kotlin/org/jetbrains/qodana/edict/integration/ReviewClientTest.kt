@@ -3,10 +3,10 @@ package org.jetbrains.qodana.edict.integration
 import com.sun.net.httpserver.HttpExchange
 import com.sun.net.httpserver.HttpServer
 import kotlinx.serialization.json.JsonPrimitive
-import org.jetbrains.qodana.edict.common.json
+import org.jetbrains.qodana.edict.extraction.reviews.ReviewClient
+import org.jetbrains.qodana.edict.extraction.reviews.ReviewRepository
+import org.jetbrains.qodana.edict.extraction.reviews.ReviewSelection
 import org.jetbrains.qodana.edict.integration.support.IntegrationTest
-import org.jetbrains.qodana.edict.integration.support.historyPath
-import org.jetbrains.qodana.edict.reviews.*
 import org.jetbrains.qodana.edict.signals.UnifiedDiff
 import org.jetbrains.qodana.edict.support.afterSource
 import org.jetbrains.qodana.edict.support.beforeSource
