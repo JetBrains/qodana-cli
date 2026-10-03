@@ -2,13 +2,19 @@
 package org.jetbrains.qodana.edict.git
 
 import kotlinx.serialization.Serializable
-import org.jetbrains.qodana.edict.model.*
+import org.jetbrains.qodana.edict.edictnext.EdictNextFileRevision
+import org.jetbrains.qodana.edict.edictnext.EdictNextLineRange
+import org.jetbrains.qodana.edict.edictnext.EdictNextSignal
+import org.jetbrains.qodana.edict.edictnext.EdictNextSignalLabel
+import org.jetbrains.qodana.edict.edictnext.EdictNextSignalProvenance
+import org.jetbrains.qodana.edict.edictnext.EdictNextSignalSource
+import org.jetbrains.qodana.edict.edictnext.stableSignalId
 
 @Serializable
 data class SignalFinding(
-    val label: SignalLabel,
+    val label: EdictNextSignalLabel,
     val path: String,
-    val ranges: List<SignalRange>,
+    val ranges: List<EdictNextLineRange>,
     val description: String
 )
 
@@ -18,20 +24,29 @@ fun interface CommitAnalyzer {
 }
 
 class CommitSignalExtractor(private val repository: GitRepository, private val analyzer: CommitAnalyzer) {
-    fun extract(revision: String): List<Signal> {
+    fun extract(revision: String): List<EdictNextSignal> {
         val commit = repository.commit(revision)
         val findings = analyzer.analyze(commit, repository)
         require(findings.distinct().size == findings.size) { "Duplicate findings" }
         return findings.mapIndexed { index, finding ->
             val evidenceRevision =
-                if (finding.label == SignalLabel.POSITIVE) commit.parentRevision else commit.commitRevision
+                if (finding.label == EdictNextSignalLabel.POSITIVE) commit.parentRevision else commit.commitRevision
             val key = listOf(
                 commit.workItemId, index, finding.label, finding.path, evidenceRevision,
                 finding.ranges.joinToString(",") { "${it.start}:${it.end}" }).joinToString("|")
-            Signal(
-                stableSignalId(key), key, FileRevision(finding.path, evidenceRevision, finding.ranges),
-                SignalSource("FromCommit", commit.diff, commit.commitRevision, commit.parentRevision, commit.message),
-                finding.label, finding.description, provenance = Provenance(commit.workItemId)
+            EdictNextSignal(
+                id = stableSignalId(key),
+                idempotencyKey = key,
+                fileRevision = EdictNextFileRevision(finding.path, evidenceRevision, finding.ranges),
+                source = EdictNextSignalSource.FromCommit(
+                    commitRevision = commit.commitRevision,
+                    parentRevision = commit.parentRevision,
+                    message = commit.message,
+                    diffPositiveToNegative = commit.diff,
+                ),
+                label = finding.label,
+                description = finding.description,
+                provenance = EdictNextSignalProvenance(commit.workItemId),
             ).also(repository::validateEvidence)
         }
     }

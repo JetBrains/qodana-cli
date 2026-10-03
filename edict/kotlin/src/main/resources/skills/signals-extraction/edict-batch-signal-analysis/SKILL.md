@@ -12,8 +12,6 @@ inspections.
 
 Start the task. Require the source checkout and a bounded Git revision expression with a commit limit.
 PR-review extraction belongs to `edict-pr-signal-analysis`; report misrouted review requests to the manager.
-Do not require an IntelliJ
-analysis session for local Git extraction. Keep temporary packages outside the state root.
 
 1. Enumerate the supplied range in stable order with read-only Git, honoring its limit. Resolve each full
    revision, parent count, first parent, complete message, changed paths, and canonical unified diff. Exclude root

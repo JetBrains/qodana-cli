@@ -56,16 +56,15 @@ internal class EdictNextDistributionService private constructor(private val sess
         currentBatch.requireCurrentSignal()
         val repository = context.repository()
         return when (kind) {
-            SIGNAL_CONTEXT_KIND -> EdictNextDistributionContextResponse.Signal(
-                signal = requireNotNull(currentBatch.worktreeState.signalsById[id]) { "Signal '$id' does not exist" }
-                    .toDistributionSignal(),
+            SIGNAL_CONTEXT_KIND -> EdictNextDistributionContextResponse.SignalContext(
+                signal = requireNotNull(currentBatch.worktreeState.signalsById[id]) { "Signal '$id' does not exist" },
             )
 
             CLUSTER_CONTEXT_KIND -> {
                 val cluster = repository.loadCluster(id)
                 val response = EdictNextDistributionContextResponse.Cluster(
                     clusterId = cluster.id,
-                    signals = cluster.signals.map(EdictNextSignal::toDistributionSignal),
+                    signals = cluster.signals,
                 )
                 currentBatch.recordClusterContext(id)
                 response
@@ -170,7 +169,7 @@ internal class EdictNextDistributionService private constructor(private val sess
         }
         val inboxIds = inbox.mapTo(hashSetOf(), EdictNextSignal::id)
         val signalCandidates = neighbours.closest.filter { it.signalId in inboxIds }.map { neighbour ->
-            EdictNextSignalCandidate.Signal(
+            EdictNextSignalCandidate.SignalCandidate(
                 neighbour.signalId,
                 repository.paths.inboxDirectory.resolve("${neighbour.signalId}.json").toString(),
                 neighbour.distance,
@@ -251,10 +250,3 @@ internal class EdictNextDistributionService private constructor(private val sess
         const val CLUSTER_CONTEXT_KIND: String = "cluster"
     }
 }
-
-private fun EdictNextSignal.toDistributionSignal(): EdictNextDistributionSignal = EdictNextDistributionSignal(
-  id = id,
-  fileRevision = fileRevision,
-  label = label,
-  description = description,
-)

@@ -6,6 +6,8 @@ import org.jetbrains.qodana.edict.common.array
 import org.jetbrains.qodana.edict.common.flag
 import org.jetbrains.qodana.edict.common.text
 import org.jetbrains.qodana.edict.common.wireJson
+import org.jetbrains.qodana.edict.edictnext.EdictNextSignalLabel
+import org.jetbrains.qodana.edict.edictnext.EdictNextSignalSource
 import org.jetbrains.qodana.edict.integration.support.IntegrationTest
 import org.jetbrains.qodana.edict.integration.support.historyBefore
 import org.jetbrains.qodana.edict.integration.support.historyCommit
@@ -13,7 +15,6 @@ import org.jetbrains.qodana.edict.integration.support.historyPath
 import org.jetbrains.qodana.edict.integration.support.reviews.ReviewProviderFixture
 import org.jetbrains.qodana.edict.integration.support.signalFiles
 import org.jetbrains.qodana.edict.integration.support.verifyManagedRun
-import org.jetbrains.qodana.edict.model.SignalLabel
 import org.jetbrains.qodana.edict.signals.SignalValidation
 import org.junit.jupiter.api.Test
 import java.nio.file.Files
@@ -61,34 +62,34 @@ class LivePrExtractionTest : IntegrationTest() {
         val providerDiff = diff.substring(diff.indexOf("--- a/"))
         val signals = files.map { file ->
             val signal = SignalValidation.validate("inbox/${file.fileName}", file.readText())
-            assertEquals("FromPR", signal.source.type)
-            assertEquals(7, signal.source.prNumber)
-            assertEquals(fixture.title, signal.source.title)
-            assertEquals(listOf(fixture.message), signal.source.discussionMessages)
-            assertEquals(fixture.discussionUrl, signal.source.url)
+            val signalSource = signal.source as EdictNextSignalSource.FromPR
+            assertEquals(7, signalSource.prNumber)
+            assertEquals(fixture.title, signalSource.title)
+            assertEquals(listOf(fixture.message), signalSource.discussionMessages)
+            assertEquals(fixture.discussionUrl, signalSource.url)
             assertTrue(
-                signal.source.diffPositiveToNegative in listOf(diff, providerDiff),
+                signalSource.diffPositiveToNegative in listOf(diff, providerDiff),
                 "PR diff must match canonical historical Git bytes",
             )
             assertEquals(historyPath, signal.fileRevision.path)
             assertTrue(signal.provenance.workItemId.startsWith("pr-7-"))
             assertFalse(signal.provenance.analysisBatchId.isNullOrBlank())
-            val positive = signal.label == SignalLabel.POSITIVE
+            val positive = signal.label == EdictNextSignalLabel.POSITIVE
             val revision = if (positive) historyBefore else historyCommit
             val line = if (positive) 5 else 10
             assertEquals(revision, signal.fileRevision.revision)
             val source = fixture.source.getValue(revision)
             val lines = source.count { it == '\n' } + if (source.isNotEmpty() && !source.endsWith('\n')) 1 else 0
-            signal.fileRevision.expectedRanges.forEach {
+            signal.fileRevision.expectedRanges.orEmpty().forEach {
                 assertTrue(it.end <= lines, "Signal range exceeds historical source")
             }
             assertTrue(
-                signal.fileRevision.expectedRanges.any { line in it.start..it.end },
+                signal.fileRevision.expectedRanges.orEmpty().any { line in it.start..it.end },
                 "Evidence must cover correction at line $line",
             )
             signal
         }
-        assertEquals(SignalLabel.entries.toSet(), signals.map { it.label }.toSet())
+        assertEquals(EdictNextSignalLabel.entries.toSet(), signals.map { it.label }.toSet())
         assertEquals(1, signals.map { it.provenance.workItemId }.distinct().size)
         assertEquals(1, signals.map { it.provenance.analysisBatchId }.distinct().size)
         assertEquals(2, signals.map { it.idempotencyKey }.distinct().size)

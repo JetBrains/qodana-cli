@@ -1,13 +1,14 @@
 // Copyright 2026 JetBrains s.r.o. Licensed under the Apache License, Version 2.0.
 package org.jetbrains.qodana.edict.signals
 
-import org.jetbrains.qodana.edict.model.SignalLabel
+import org.jetbrains.qodana.edict.edictnext.EdictNextSignalLabel
 import java.io.ByteArrayOutputStream
 
 /** Strict ordinary Git unified-diff parsing, without IntelliJ PatchReader. Counts distinguish headers from source. */
 object UnifiedDiff {
     data class Changes(val before: Map<String, List<Int>>, val after: Map<String, List<Int>>) {
-        fun side(label: SignalLabel): Map<String, List<Int>> = if (label == SignalLabel.POSITIVE) before else after
+        fun side(label: EdictNextSignalLabel): Map<String, List<Int>> =
+            if (label == EdictNextSignalLabel.POSITIVE) before else after
     }
 
     private val hunk = Regex("^@@ -(\\d+)(?:,(\\d+))? \\+(\\d+)(?:,(\\d+))? @@.*")
