@@ -93,7 +93,7 @@ class AgentLogger internal constructor(private val store: EdictNextRepositorySta
                 callerIdentity.task.take(8).ifEmpty { "-" }
             }"
 
-            "edict_state_write" -> "Wrote ${arguments.text("path")}"
+            "edict_publish_signal" -> "Published Signal ${arguments.obj("signal").text("id")}"
             "edict_state_delete" -> "Deleted ${arguments.text("path")}"
             else -> "$tool ok"
         }

@@ -64,7 +64,7 @@ internal class EdictNextRepositoryState(
   data class TaskAssignment(val taskId: String, val skill: String, val skillPath: String, val prompt: String)
 
   @Serializable
-  data class StateArtifact(val path: String, val content: String, val hash: String)
+  data class SignalPublication(val signal: EdictNextSignal, val created: Boolean)
 
   private data class Capability(
     val skill: String,
@@ -234,23 +234,20 @@ internal class EdictNextRepositoryState(
     return checkNotNull(plan())
   }
 
-  /** Publish a validated extraction result without granting workers direct filesystem write access. */
+  /** Publish a validated model without exposing state paths or serialized bytes to workers. */
   @Synchronized
-  fun writeSignal(
+  fun publishSignal(
     token: String,
-    path: String,
-    content: String,
-    expectedHash: String,
+    signal: EdictNextSignal,
     validateEvidence: (EdictNextSignal) -> Unit = {},
-  ): StateArtifact {
+  ): SignalPublication {
     val capability = authorize(token)
-    require(capability.skill in SIGNAL_WRITERS) { "${capability.skill} cannot publish inbox Signals" }
-    require(path.matches(Regex("inbox/s-[0-9a-f]{10}\\.json"))) {
-      "Signal writes require an inbox/s-<10 lowercase hex>.json path"
-    }
+    require(capability.skill in SIGNAL_PUBLISHERS) { "${capability.skill} cannot publish inbox Signals" }
+    SignalValidation.validate(signal)
+    val path = "inbox/${signal.id}.json"
+    val content = EdictNextJson.encodeToString(signal)
     require(content.toByteArray(Charsets.UTF_8).size <= MAX_PLAN_BYTES) { "Signal exceeds 8 MiB" }
     requireNoTokens(content)
-    val signal = SignalValidation.validate(path, content)
     require(capability.skill != "edict-batch-signal-analysis" || signal.source is EdictNextSignalSource.FromCommit) {
       "Commit extraction can publish only FromCommit Signals"
     }
@@ -262,16 +259,14 @@ internal class EdictNextRepositoryState(
     val target = safePath(path)
     val existing = if (Files.exists(target, NOFOLLOW_LINKS)) Files.readString(target) else null
     if (existing != null) {
-      require(existing == content || expectedHash.isNotEmpty() && sha256(existing) == expectedHash) {
-        "Signal already exists with different content or hash"
+      val existingSignal = EdictNextJson.decodeFromString<EdictNextSignal>(existing)
+      require(existingSignal == signal) {
+        "Signal '${signal.id}' already exists with a different model"
       }
-      if (existing == content) return StateArtifact(path, existing, sha256(existing))
-    }
-    else {
-      require(expectedHash.isEmpty()) { "New Signal requires an empty expectedHash" }
+      return SignalPublication(existingSignal, created = false)
     }
     atomicWrite(path, content)
-    return StateArtifact(path, content, sha256(content))
+    return SignalPublication(signal, created = true)
   }
 
   @Synchronized
@@ -325,10 +320,15 @@ internal class EdictNextRepositoryState(
     authorize(token).skill == "edict-pr-signal-analysis"
 
   @Synchronized
-  internal fun inboxSignalHash(id: String): String? {
+  internal fun inboxSignal(id: String): EdictNextSignal? {
     require(id.matches(Regex("s-[0-9a-f]{10}"))) { "Invalid Signal ID" }
     val path = safePath("inbox/$id.json")
-    return if (Files.exists(path, NOFOLLOW_LINKS)) sha256(Files.readString(path)) else null
+    return if (Files.exists(path, NOFOLLOW_LINKS)) {
+      EdictNextJson.decodeFromString<EdictNextSignal>(Files.readString(path))
+    }
+    else {
+      null
+    }
   }
 
   @Synchronized
@@ -504,7 +504,7 @@ internal class EdictNextRepositoryState(
       "edict-next-inspection-code-review",
       "edict-next-weak-signal-review",
     )
-    private val SIGNAL_WRITERS = setOf("edict-batch-signal-analysis", "edict-pr-signal-analysis")
+    private val SIGNAL_PUBLISHERS = setOf("edict-batch-signal-analysis", "edict-pr-signal-analysis")
     private val TERMINAL_STATUSES = setOf("completed", "failed")
     private val INTERRUPTED_STATUSES = setOf("delegated", "running")
     private val TASK_STATUSES = setOf("pending", "delegated", "running", "completed", "failed")
