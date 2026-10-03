@@ -105,6 +105,9 @@ internal class EdictNextRepositoryState(
     ensureManagementState()
     check(!managerClaimed) { "edict_plan_create has already succeeded for this server" }
     require(request.isNotBlank() && steps.size in 1..1000) { "A request and 1..1000 steps are required" }
+    require(steps.count { it.skill == PR_ANALYSIS_SKILL } <= 1) {
+      "A plan can contain only one PR-analysis coordinator"
+    }
     val manager = Capability(skill = "edict_manager")
     steps.forEach { allowedChild(manager, it.skill, it.title) }
     val existing = currentPlan
@@ -127,6 +130,9 @@ internal class EdictNextRepositoryState(
     val capability = authorize(token)
     allowedChild(capability, skill, title)
     val plan = checkNotNull(currentPlan)
+    require(skill != PR_ANALYSIS_SKILL || plan.tasks.none { it.skill == PR_ANALYSIS_SKILL }) {
+      "A plan can contain only one PR-analysis coordinator"
+    }
     if (capability.skill == "edict-next-cluster-generation" && skill in GENERATION_REVIEWS) {
       require(plan.tasks.count { it.parentId == capability.taskId && it.skill == skill } <= MAX_REPAIR_ITERATIONS) {
         "Three review repair iterations exhausted for $skill; finish this cluster with its validated outcome and remaining findings"
@@ -305,19 +311,19 @@ internal class EdictNextRepositoryState(
   }
 
   @Synchronized
-  internal fun prAnalysisOwner(token: String, coordinator: Boolean): String {
+  internal fun requirePrAnalysisCaller(token: String, coordinator: Boolean) {
     val capability = authorize(token)
-    if (capability.skill == "edict-pr-signal-analysis") return capability.taskId
+    if (capability.skill == PR_ANALYSIS_SKILL) return
     if (!coordinator && capability.skill == "edict-signal-analysis") {
       val parent = task(task(capability.taskId).parentId)
-      if (parent.skill == "edict-pr-signal-analysis") return parent.id
+      if (parent.skill == PR_ANALYSIS_SKILL) return
     }
     error("PR analysis requires a running PR-analysis task${if (coordinator) "" else " or its signal-analysis worker"}")
   }
 
   @Synchronized
   internal fun isPrAnalysisCoordinator(token: String): Boolean =
-    authorize(token).skill == "edict-pr-signal-analysis"
+    authorize(token).skill == PR_ANALYSIS_SKILL
 
   @Synchronized
   internal fun inboxSignal(id: String): EdictNextSignal? {
@@ -498,6 +504,7 @@ internal class EdictNextRepositoryState(
   companion object {
     private const val MAX_PLAN_BYTES = 8 * 1024 * 1024
     private const val MAX_REPAIR_ITERATIONS = 3
+    private const val PR_ANALYSIS_SKILL = "edict-pr-signal-analysis"
     private const val LOCK_FILE = ".edict-mcp.lock"
     private const val CURRENT_PLAN_FILE = ".edict-mcp-current"
     private val GENERATION_REVIEWS = setOf(

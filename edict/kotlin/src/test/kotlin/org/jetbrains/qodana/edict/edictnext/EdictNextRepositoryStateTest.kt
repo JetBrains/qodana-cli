@@ -40,6 +40,18 @@ class EdictNextRepositoryStateTest {
   }
 
   @Test
+  fun `plan permits only one PR analysis coordinator`() {
+    EdictNextRepositoryState.open(directory).use { state ->
+      val skill = "edict-pr-signal-analysis"
+      assertFails {
+        state.createPlan("Reviews", listOf(Step(skill, "First"), Step(skill, "Second")))
+      }
+      val plan = state.createPlan("Reviews", listOf(Step(skill, "Only")))
+      assertFails { state.addTask(plan.token, skill, "Another") }
+    }
+  }
+
+  @Test
   fun `signal publication derives storage from the model and is idempotent`() {
     EdictNextRepositoryState.open(directory).use { state ->
       val (_, batch) = state.batch()
