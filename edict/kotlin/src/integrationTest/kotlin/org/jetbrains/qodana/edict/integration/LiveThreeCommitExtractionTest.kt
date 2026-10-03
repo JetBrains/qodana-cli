@@ -21,7 +21,7 @@ class LiveThreeCommitExtractionTest : IntegrationTest() {
             Edict state root: ${workspace.state}
             Revision expression: $threeCommitBaseline..$threeCommitHead
             Commit limit: 3
-            Publish every supported Signal to the inbox through edict_state_write.
+            Publish every supported Signal through edict_publish_signal.
             """.trimIndent(),
         ) { store, runtime, _ ->
             val expected = threeCommitExpectations()

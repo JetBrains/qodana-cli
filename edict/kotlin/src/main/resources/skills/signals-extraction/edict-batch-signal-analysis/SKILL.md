@@ -7,7 +7,7 @@ description: Managed coordinator subagent that analyzes bounded Git commits and 
 
 Run only as a delegated managed subagent. Follow [the manager protocol](../edict_manager/references/protocol.md)
 and [the signal contract](../edict_manager/references/signals.md). Registry ID: `edict-batch-signal-analysis`. You
-own coverage and `inbox.write`; workers own evidence inspection. Do not generate rules, clusters, examples, or
+own coverage and Signal publication; workers own evidence inspection. Do not generate rules, clusters, examples, or
 inspections.
 
 Start the task. Require the source checkout and a bounded Git revision expression with a commit limit.
@@ -29,7 +29,7 @@ PR-review extraction belongs to `edict-pr-signal-analysis`; report misrouted rev
    missing or blocked items. Every worker must have inspected complete human material plus exact source and diff. Stop
    on incomplete coverage after retrying lost or blocked inspection when possible. Preserve every supported worker
    finding; do not silently drop or downgrade it for being cosmetic, local, or insufficiently generalizable.
-4. Materialize every candidate record in memory using the signal contract before any write. Check actual
+4. Materialize every candidate model in memory using the signal contract before publication. Check actual
    revision/path/ranges, changed-line intersections, label, canonical diff, complete source metadata, distinct stable
    ID, and absence of rule fields. Parse the candidate JSON and check that every `fileRevision.expectedRanges` item
    has integer `start` and `end` fields satisfying `1 <= start <= end`; `startLine`/`endLine` are unsupported.
@@ -39,11 +39,11 @@ PR-review extraction belongs to `edict-pr-signal-analysis`; report misrouted rev
    available. Do not copy its parent, message, or diff into the Signal; the server derives them from the commit object.
    Compute the stable signal ID with a SHA-256 implementation over the exact UTF-8 idempotency key; never supply a
    guessed digest.
-5. Publish each complete `FromCommit` record using `edict_state_write` with the supplied capability. If its stable inbox ID already
-   exists with identical content, count it as an idempotent success. Conflicting content requires investigation and a
-   failed outcome, not an overwrite. Read back all resulting paths and verify hashes/content and the complete expected
-   ID set. A failed write may leave earlier valid records; report those exact paths for a retry.
-6. Finish with inspected work-item IDs, signal IDs, paths, hashes, and counts. An empty eligible set or completely
+5. Publish each complete `FromCommit` model using `edict_publish_signal` with the supplied capability. If its stable ID
+   already exists with the same model, count it as an idempotent success. A conflicting model requires investigation and
+   a failed outcome, not an overwrite. Verify the complete expected ID set. A failed call may leave earlier valid models;
+   report those exact IDs for a retry.
+6. Finish with inspected work-item IDs, signal IDs, and counts. An empty eligible set or completely
    inspected batch with zero findings is a successful no-op with no placeholder records. No commit, push, or IntelliJ
    state mutation is part of publication.
 

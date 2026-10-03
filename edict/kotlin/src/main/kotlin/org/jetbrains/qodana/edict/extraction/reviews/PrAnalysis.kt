@@ -20,7 +20,7 @@ internal class PrAnalysis(
     val owner: String,
     val summary: PrBatchSummary,
     val items: List<PrItem>,
-    var validated: Map<String, String>? = null,
+    var validated: Map<String, EdictNextSignal>? = null,
   )
 
   private val batches = mutableMapOf<String, Batch>()
@@ -78,15 +78,14 @@ internal class PrAnalysis(
     token: String,
     batchId: String,
     inspected: List<String>,
-    contents: List<String>,
+    signals: List<EdictNextSignal>,
   ): PrReceipt = synchronized(store) {
     val batch = batch(token, batchId, coordinator = true)
     require(inspected == batch.items.map(PrItem::workItemId)) { "Incomplete or unordered PR coverage" }
-    val validated = linkedMapOf<String, String>()
-    contents.forEach { content ->
-      require(content.toByteArray().size <= MAX_ARTIFACT_BYTES) { "Signal exceeds 8 MiB" }
-      val candidate = json.decodeFromString<EdictNextSignal>(content)
-      val signal = SignalValidation.validate("inbox/${candidate.id}.json", content)
+    val validated = linkedMapOf<String, EdictNextSignal>()
+    signals.forEach { candidate ->
+      require(wireJson.encodeToString(candidate).toByteArray().size <= MAX_ARTIFACT_BYTES) { "Signal exceeds 8 MiB" }
+      val signal = SignalValidation.validate(candidate)
       val item = batch.items.firstOrNull { it.workItemId == signal.provenance.workItemId }
         ?: error("Unknown signal work item")
       require(signal.id !in validated) { "Duplicate signal" }
@@ -102,10 +101,10 @@ internal class PrAnalysis(
         if (signal.label == EdictNextSignalLabel.NEGATIVE) signal.fileRevision.revision == item.pr.headRevision
         else signal.fileRevision.revision in listOf(item.pr.baseRevision, item.thread.originalCommitSha),
       ) { "Evidence revision does not match its PR side" }
-      validated[signal.id] = sha256(content)
+      validated[signal.id] = signal
     }
     batch.validated = validated
-    PrReceipt(batchId, inspected.size, validated.size, validated.mapKeys { "inbox/${it.key}.json" })
+    PrReceipt(batchId, inspected.size, validated.size, validated.keys.toList())
   }
 
   fun file(token: String, batchId: String, itemId: String, revision: String, path: String): String {
@@ -132,10 +131,10 @@ internal class PrAnalysis(
     return provider.diff(item.repository, before, after, beforePath, afterPath)
   }
 
-  fun validateWrite(token: String, id: String, content: String) {
+  fun validatePublication(token: String, signal: EdictNextSignal) {
     val owner = store.prAnalysisOwner(token, coordinator = true)
-    require(batches.values.any { it.owner == owner && it.validated?.get(id) == sha256(content) }) {
-      "PR signal has not passed edict_validate_pr_signals with these exact bytes"
+    require(batches.values.any { it.owner == owner && it.validated?.get(signal.id) == signal }) {
+      "PR Signal has not passed edict_validate_pr_signals with this exact model"
     }
   }
 
@@ -145,8 +144,8 @@ internal class PrAnalysis(
     require(selected.isNotEmpty()) { "Prepare and inspect requested PR selection before finishing" }
     selected.forEach { batch ->
       val validated = checkNotNull(batch.validated) { "Validate complete PR inspection coverage before finishing" }
-      validated.forEach { (id, hash) ->
-        require(store.inboxSignalHash(id) == hash) { "Validated PR signal is missing or differs from receipt" }
+      validated.forEach { (id, signal) ->
+        require(store.inboxSignal(id) == signal) { "Validated PR Signal is missing or differs from receipt" }
       }
     }
   }

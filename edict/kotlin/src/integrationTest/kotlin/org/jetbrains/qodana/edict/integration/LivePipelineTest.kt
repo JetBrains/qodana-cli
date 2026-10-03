@@ -45,7 +45,7 @@ class LivePipelineTest : IntegrationTest() {
                 Edict worktree and state root: ${workspace.state}
                 Inspected IntelliJ project: ${workspace.project}
                 Generation scratch root: ${workspace.output.resolve("scratch/pipeline-generation")}
-                Publish extracted Signals only through edict_state_write. Follow the managed protocol for every worker.
+                Publish extracted Signals only through edict_publish_signal. Follow the managed protocol for every worker.
                 """.trimIndent(),
                 inspectionServer = inspection,
                 timeoutMinutes = 180,

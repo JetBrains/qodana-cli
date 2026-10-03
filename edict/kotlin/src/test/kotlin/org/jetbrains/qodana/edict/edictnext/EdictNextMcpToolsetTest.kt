@@ -65,6 +65,9 @@ class EdictNextMcpToolsetTest {
       val toolset = EdictNextMcpToolset("test-run", management)
       val server = toolset.createServer()
       assertTrue(server.tools.keys.containsAll(movedTools))
+      assertTrue("edict_publish_signal" in server.tools)
+      assertFalse("edict_state_write" in server.tools)
+      assertTrue(server.tools.keys.intersect(INSPECTION_KTS_UPSTREAM_TOOL_NAMES) == INSPECTION_KTS_AGENT_TOOL_NAMES)
       val delegateSchema = server.tools.getValue("edict_delegate").tool.inputSchema
       assertEquals(setOf("token", "taskId", "prompt"), checkNotNull(delegateSchema.properties).keys)
       assertEquals(listOf("token", "taskId", "prompt"), delegateSchema.required)
