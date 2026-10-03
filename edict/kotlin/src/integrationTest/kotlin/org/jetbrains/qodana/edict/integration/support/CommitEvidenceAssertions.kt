@@ -66,9 +66,8 @@ internal fun verifyCommitSignals(repository: GitRepository, files: List<Path>, e
         assertEquals(EdictNextSignalLabel.entries.toSet(), pair.map { it.label }.toSet(), "Evidence labels for ${commit.revision}")
         pair.forEach { signal ->
             val source = signal.source as EdictNextSignalSource.FromCommit
-            assertEquals(commit.parent, source.parentRevision)
+            assertEquals(EdictNextSignalSource.FromCommit(commit.revision), source)
             assertEquals(commit.path, signal.fileRevision.path)
-            assertEquals(repository.diff(commit.parent, commit.revision, listOf(commit.path)), source.diffPositiveToNegative)
             val positive = signal.label == EdictNextSignalLabel.POSITIVE
             assertEquals(if (positive) commit.parent else commit.revision, signal.fileRevision.revision)
             val line = if (positive) commit.positiveLine else commit.negativeLine

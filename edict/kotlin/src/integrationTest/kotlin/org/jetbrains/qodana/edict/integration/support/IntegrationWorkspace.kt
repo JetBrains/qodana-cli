@@ -93,7 +93,10 @@ internal class IntegrationWorkspace private constructor(
                     } ?: IntellijMcpServerService(projectPath = project, qodanaExecutable = qodanaExecutable.toString()),
                 )
                 val management = EdictManagementService(
-                    store, logs = logs, extensions = listOf(EdictPrAnalysisService(store, reviewProvider)),
+                    store,
+                    logs = logs,
+                    reviewProvider = reviewProvider,
+                    signalRepository = repository,
                 )
                 val engine = embeddedServer(CIO, host = "127.0.0.1", port = 0) {
                     mcpStreamableHttp { EdictNextMcpToolset(sessionId, management).createServer() }

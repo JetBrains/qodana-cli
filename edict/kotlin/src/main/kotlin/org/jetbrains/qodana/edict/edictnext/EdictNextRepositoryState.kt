@@ -236,7 +236,13 @@ internal class EdictNextRepositoryState(
 
   /** Publish a validated extraction result without granting workers direct filesystem write access. */
   @Synchronized
-  fun writeSignal(token: String, path: String, content: String, expectedHash: String): StateArtifact {
+  fun writeSignal(
+    token: String,
+    path: String,
+    content: String,
+    expectedHash: String,
+    validateEvidence: (EdictNextSignal) -> Unit = {},
+  ): StateArtifact {
     val capability = authorize(token)
     require(capability.skill in SIGNAL_WRITERS) { "${capability.skill} cannot publish inbox Signals" }
     require(path.matches(Regex("inbox/s-[0-9a-f]{10}\\.json"))) {
@@ -251,6 +257,7 @@ internal class EdictNextRepositoryState(
     require(capability.skill != "edict-pr-signal-analysis" || signal.source is EdictNextSignalSource.FromPR) {
       "PR extraction can publish only FromPR Signals"
     }
+    validateEvidence(signal)
 
     val target = safePath(path)
     val existing = if (Files.exists(target, NOFOLLOW_LINKS)) Files.readString(target) else null
