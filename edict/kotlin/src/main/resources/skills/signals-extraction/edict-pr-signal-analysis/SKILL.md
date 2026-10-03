@@ -15,7 +15,7 @@ and scratch outside the state root. This workflow needs `edict-mcp`, without an 
 belong in the server environment; never request their values in a tool call, prompt, result, or log. Missing access is a
 failed prerequisite. Commit-only requests belong to `edict-batch-signal-analysis`.
 
-1. Start your task. Call `edict_prepare_pr_analysis` with your token, `provider`, `owner`, `repo`, `maxPrs`, and either
+1. Start your task. Call `edict_fetch_pr_batch` with your token, `provider`, `owner`, `repo`, `maxPrs`, and either
    `prNumbers` or both `startDate` and `endDate` (`YYYY-MM-DD`). The response contains `batchId`, `selectedPrCount`,
    `prCountWithWorkItems`, and `totalWorkItemCount`. Selection includes merged reviews only.
 2. Call `edict_list_pr_analysis_items` with that batch, initially `offset: 0`, `limit: 20`. Follow every `nextOffset`.
@@ -50,5 +50,3 @@ failed prerequisite. Commit-only requests belong to `edict-batch-signal-analysis
    validated and all validated signals are present. A completely inspected batch with zero findings, including an
    empty merged-review selection, succeeds without placeholders. After a server restart, prepare the selection again
    and reuse identical persisted records.
-
-Do not call provider APIs or the legacy Qodana preparation tools directly, modify reviews, commit, or push.

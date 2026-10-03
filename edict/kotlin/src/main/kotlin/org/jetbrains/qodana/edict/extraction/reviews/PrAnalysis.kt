@@ -24,7 +24,7 @@ internal class PrAnalysis(
 
   private val batches = mutableMapOf<String, Batch>()
 
-  fun prepare(token: String, selection: ReviewSelection): PrBatchSummary {
+  fun prepareBatch(token: String, selection: ReviewSelection): PrBatchSummary {
     store.requirePrAnalysisCaller(token, coordinator = true)
     selection.validate()
     val prs = provider.fetch(selection)

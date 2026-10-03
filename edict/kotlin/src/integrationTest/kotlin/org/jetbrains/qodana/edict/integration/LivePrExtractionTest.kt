@@ -113,7 +113,7 @@ class LivePrExtractionTest : IntegrationTest() {
             }
         }
         listOf(
-            "edict_prepare_pr_analysis",
+            "edict_fetch_pr_batch",
             "edict_list_pr_analysis_items",
             "edict_get_pr_analysis_item",
             "edict_validate_pr_signals",
