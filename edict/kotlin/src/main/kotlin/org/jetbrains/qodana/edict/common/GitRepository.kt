@@ -1,8 +1,7 @@
 // Copyright 2026 JetBrains s.r.o. Licensed under the Apache License, Version 2.0.
-package org.jetbrains.qodana.edict.git
+package org.jetbrains.qodana.edict.common
 
 import kotlinx.serialization.Serializable
-import org.jetbrains.qodana.edict.common.runProcess
 import org.jetbrains.qodana.edict.edictnext.EdictNextSignal
 import org.jetbrains.qodana.edict.edictnext.EdictNextSignalLabel
 import org.jetbrains.qodana.edict.edictnext.EdictNextSignalSource

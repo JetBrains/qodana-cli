@@ -16,7 +16,7 @@ import org.jetbrains.qodana.edict.edictnext.EdictNextRepositoryState
 import org.jetbrains.qodana.edict.edictnext.EdictNextWorkspace
 import org.jetbrains.qodana.edict.edictnext.EdictSessionContext
 import org.jetbrains.qodana.edict.edictnext.IntellijMcpServerService
-import org.jetbrains.qodana.edict.git.GitRepository
+import org.jetbrains.qodana.edict.common.GitRepository
 import org.jetbrains.qodana.edict.skills.Skills
 import java.nio.file.Path
 import java.util.UUID

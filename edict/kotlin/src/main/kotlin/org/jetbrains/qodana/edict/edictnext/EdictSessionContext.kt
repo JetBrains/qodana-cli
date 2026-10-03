@@ -1,6 +1,6 @@
 package org.jetbrains.qodana.edict.edictnext
 
-import org.jetbrains.qodana.edict.git.GitRepository
+import org.jetbrains.qodana.edict.common.GitRepository
 import java.nio.file.Path
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.locks.ReentrantLock
