@@ -254,7 +254,7 @@ internal class EdictManagementService(
     }
 
     tool(
-      name = "edict_prepare_pr_analysis",
+      name = "edict_fetch_pr_batch",
       description = "Prepare merged GitHub or Space reviews. Requires a running PR-analysis task.",
       readOnly = true,
       required = listOf("token", "provider", "owner", "repo", "maxPrs"),
@@ -264,7 +264,7 @@ internal class EdictManagementService(
       ),
     ) { arguments ->
       EdictNextJson.encodeToJsonElement(
-        pr.prepare(
+        pr.prepareBatch(
           arguments.requireString("token"),
           wireJson.decodeFromJsonElement<ReviewSelection>(JsonObject(arguments - "token")),
         ),
