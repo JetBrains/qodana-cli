@@ -6,7 +6,6 @@ import kotlinx.serialization.json.jsonArray
 import kotlinx.serialization.json.jsonObject
 import org.jetbrains.qodana.edict.common.randomId
 import org.jetbrains.qodana.edict.common.sha256
-import org.jetbrains.qodana.edict.model.Signal
 import org.jetbrains.qodana.edict.signals.SignalValidation
 import org.jetbrains.qodana.edict.skills.managed.Registry
 import java.nio.ByteBuffer
@@ -74,11 +73,6 @@ internal class EdictNextRepositoryState(
     var taskRead: Boolean = false,
   )
 
-  /** Admits a validated Signal for a task, or throws; it runs under the state lock. */
-  internal fun interface SignalPolicy {
-    fun admit(task: Task, signal: Signal, content: String)
-  }
-
   val clustersById: Map<String, EdictNextStoredCluster> = clusters.associateBy(EdictNextStoredCluster::id)
   val inboxSignalsById: Map<String, EdictNextSignal> = inboxSignals.associateBy(EdictNextSignal::id)
   val inboxSignalIds: Set<String> = inboxSignals.mapTo(LinkedHashSet(), EdictNextSignal::id)
@@ -100,11 +94,10 @@ internal class EdictNextRepositoryState(
     "inspections/$clusterId$EDICT_NEXT_INSPECTION_SUFFIX"
   ]?.decodeToString()
 
-  /** Returns the shared snapshot; [Plan] must stay deeply immutable. */
   @Synchronized
   fun plan(): Plan? {
     ensureManagementState()
-    return currentPlan
+    return currentPlan?.let { EdictNextJson.decodeFromString<Plan>(EdictNextJson.encodeToString(it)) }
   }
 
   @Synchronized
@@ -197,14 +190,12 @@ internal class EdictNextRepositoryState(
     return checkNotNull(plan())
   }
 
-  /** [beforeCompletion] may reject a completed status; it runs under the state lock before the plan changes. */
   @Synchronized
-  fun finishTask(token: String, status: String, result: String, beforeCompletion: (Task) -> Unit = {}): Plan {
+  fun finishTask(token: String, status: String, result: String): Plan {
     val capability = authorize(token)
     require(capability.taskId.isNotEmpty()) { "Manager must finish tasks through their workers" }
     require(status in TERMINAL_STATUSES && result.isNotBlank()) { "Requires completed or failed status and a result" }
     requireNoTokens(result)
-    if (status == "completed") beforeCompletion(task(capability.taskId))
     val plan = checkNotNull(currentPlan)
     val tasks = plan.tasks.map { task ->
       when {
@@ -243,34 +234,23 @@ internal class EdictNextRepositoryState(
     return checkNotNull(plan())
   }
 
-  /**
-   * Publish a validated extraction result without granting workers direct filesystem write access. A task whose
-   * [policyFor] is non-null may publish too, once that policy admits the Signal; it runs under the state lock, so its
-   * checks and the write are atomic.
-   */
+  /** Publish a validated extraction result without granting workers direct filesystem write access. */
   @Synchronized
-  fun writeSignal(
-    token: String, path: String, content: String, expectedHash: String,
-    policyFor: (Task) -> SignalPolicy? = { null },
-  ): StateArtifact {
+  fun writeSignal(token: String, path: String, content: String, expectedHash: String): StateArtifact {
     val capability = authorize(token)
-    val task = capability.taskId.takeIf(String::isNotEmpty)?.let(::task)
-    val policy = task?.let(policyFor)
-    require(capability.skill in SIGNAL_WRITERS || policy != null) {
-      "${capability.skill} cannot publish inbox Signals"
-    }
+    require(capability.skill in SIGNAL_WRITERS) { "${capability.skill} cannot publish inbox Signals" }
     require(path.matches(Regex("inbox/s-[0-9a-f]{10}\\.json"))) {
       "Signal writes require an inbox/s-<10 lowercase hex>.json path"
     }
     require(content.toByteArray(Charsets.UTF_8).size <= MAX_PLAN_BYTES) { "Signal exceeds 8 MiB" }
     requireNoTokens(content)
     val signal = SignalValidation.validate(path, content)
-    require(capability.skill !in SIGNAL_WRITERS || signal.source.type == "FromCommit") {
-      "Commit and historical extraction can publish only FromCommit Signals"
+    require(capability.skill != "edict-batch-signal-analysis" || signal.source is EdictNextSignalSource.FromCommit) {
+      "Commit extraction can publish only FromCommit Signals"
     }
-    if (task != null) policy?.admit(task, signal, content)
-    // Edict Next must be able to consume every accepted legacy extraction record.
-    EdictNextJson.decodeFromString<EdictNextSignal>(content)
+    require(capability.skill != "edict-pr-signal-analysis" || signal.source is EdictNextSignalSource.FromPR) {
+      "PR extraction can publish only FromPR Signals"
+    }
 
     val target = safePath(path)
     val existing = if (Files.exists(target, NOFOLLOW_LINKS)) Files.readString(target) else null
@@ -309,15 +289,6 @@ internal class EdictNextRepositoryState(
   } ?: "anonymous"
 
   @Synchronized
-  internal fun authorizedTask(token: String): Task? = authorize(token).taskId.takeIf(String::isNotEmpty)?.let(::task)
-
-  @Synchronized
-  internal fun inboxSignalHash(signalId: String): String? {
-    val target = safePath("inbox/$signalId.json")
-    return if (Files.exists(target, NOFOLLOW_LINKS)) sha256(Files.readString(target)) else null
-  }
-
-  @Synchronized
   fun requireSkill(token: String, allowedSkills: Set<String>): String {
     val capability = authorize(token)
     require(capability.skill in allowedSkills) {
@@ -329,6 +300,28 @@ internal class EdictNextRepositoryState(
   @Synchronized
   fun requireTokenFree(content: String) {
     requireNoTokens(content)
+  }
+
+  @Synchronized
+  internal fun prAnalysisOwner(token: String, coordinator: Boolean): String {
+    val capability = authorize(token)
+    if (capability.skill == "edict-pr-signal-analysis") return capability.taskId
+    if (!coordinator && capability.skill == "edict-signal-analysis") {
+      val parent = task(task(capability.taskId).parentId)
+      if (parent.skill == "edict-pr-signal-analysis") return parent.id
+    }
+    error("PR analysis requires a running PR-analysis task${if (coordinator) "" else " or its signal-analysis worker"}")
+  }
+
+  @Synchronized
+  internal fun isPrAnalysisCoordinator(token: String): Boolean =
+    authorize(token).skill == "edict-pr-signal-analysis"
+
+  @Synchronized
+  internal fun inboxSignalHash(id: String): String? {
+    require(id.matches(Regex("s-[0-9a-f]{10}"))) { "Invalid Signal ID" }
+    val path = safePath("inbox/$id.json")
+    return if (Files.exists(path, NOFOLLOW_LINKS)) sha256(Files.readString(path)) else null
   }
 
   @Synchronized
@@ -504,11 +497,7 @@ internal class EdictNextRepositoryState(
       "edict-next-inspection-code-review",
       "edict-next-weak-signal-review",
     )
-    private val SIGNAL_WRITERS = setOf(
-      "edict-batch-signal-analysis",
-      "edict-git-history-signal-analysis",
-      "edict-retrospective-signal-analysis",
-    )
+    private val SIGNAL_WRITERS = setOf("edict-batch-signal-analysis", "edict-pr-signal-analysis")
     private val TERMINAL_STATUSES = setOf("completed", "failed")
     private val INTERRUPTED_STATUSES = setOf("delegated", "running")
     private val TASK_STATUSES = setOf("pending", "delegated", "running", "completed", "failed")
