@@ -2,9 +2,9 @@ package org.jetbrains.qodana.edict.support
 
 import org.jetbrains.qodana.edict.common.randomId
 import org.jetbrains.qodana.edict.common.runProcess
-import org.jetbrains.qodana.edict.git.CommitSignalExtractor
-import org.jetbrains.qodana.edict.git.GitRepository
-import org.jetbrains.qodana.edict.git.SignalFinding
+import org.jetbrains.qodana.edict.extraction.git.CommitSignalExtractor
+import org.jetbrains.qodana.edict.common.GitRepository
+import org.jetbrains.qodana.edict.extraction.git.SignalFinding
 import org.jetbrains.qodana.edict.edictnext.EdictNextRepositoryState
 import org.jetbrains.qodana.edict.edictnext.EdictNextRepositoryState.Delegation
 import org.jetbrains.qodana.edict.edictnext.EdictNextRepositoryState.PlanCreation

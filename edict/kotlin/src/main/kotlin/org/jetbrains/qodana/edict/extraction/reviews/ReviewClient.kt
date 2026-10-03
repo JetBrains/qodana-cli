@@ -1,5 +1,5 @@
 // Copyright 2026 JetBrains s.r.o. Licensed under the Apache License, Version 2.0.
-package org.jetbrains.qodana.edict.reviews
+package org.jetbrains.qodana.edict.extraction.reviews
 
 import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.JsonPrimitive
