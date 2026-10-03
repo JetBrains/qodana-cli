@@ -61,9 +61,6 @@ sealed interface EdictNextSignalSource {
   @SerialName("FromCommit")
   data class FromCommit(
     val commitRevision: String,
-    val parentRevision: String,
-    val message: String,
-    val diffPositiveToNegative: String,
     val url: String? = null,
   ) : EdictNextSignalSource
 

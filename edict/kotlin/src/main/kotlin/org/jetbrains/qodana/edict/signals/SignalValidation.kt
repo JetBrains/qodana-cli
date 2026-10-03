@@ -8,7 +8,6 @@ import kotlinx.serialization.json.intOrNull
 import kotlinx.serialization.json.decodeFromJsonElement
 import org.jetbrains.qodana.edict.common.json
 import org.jetbrains.qodana.edict.edictnext.EdictNextSignal
-import org.jetbrains.qodana.edict.edictnext.EdictNextSignalLabel
 import org.jetbrains.qodana.edict.edictnext.EdictNextSignalSource
 import org.jetbrains.qodana.edict.edictnext.stableSignalId
 
@@ -70,12 +69,7 @@ object SignalValidation {
       is EdictNextSignalSource.SubmittedFeedback -> return signal
       is EdictNextSignalSource.FromCommit -> {
         field("source.commitRevision", validRevision(source.commitRevision.orEmpty()), "requires full correcting revision")
-        field("source.parentRevision", validRevision(source.parentRevision.orEmpty()), "requires full parent revision")
-        field("source.message", source.message.isNotBlank(), "requires complete commit message")
-        field("source.diffPositiveToNegative", source.diffPositiveToNegative.endsWith('\n'), "must preserve canonical Git output including final newline")
-        val expected = if (signal.label == EdictNextSignalLabel.POSITIVE) source.parentRevision else source.commitRevision
-        field("fileRevision.revision", file.revision == expected, "must match ${signal.label} evidence side ($expected)")
-        source.diffPositiveToNegative
+        null
       }
       is EdictNextSignalSource.FromPR -> {
         field(
@@ -88,9 +82,10 @@ object SignalValidation {
       }
       is EdictNextSignalSource.Generated -> {
         field("source.type", false, "must be FromCommit, FromPR or SubmittedFeedback")
-        ""
+        null
       }
     }
+    if (diffPositiveToNegative == null) return signal
     val changes = try {
       UnifiedDiff.parse(diffPositiveToNegative).side(signal.label)
     }

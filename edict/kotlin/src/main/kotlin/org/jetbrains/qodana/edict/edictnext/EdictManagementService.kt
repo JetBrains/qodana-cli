@@ -22,6 +22,7 @@ import org.jetbrains.qodana.edict.logging.AgentLogger
 import org.jetbrains.qodana.edict.logging.TaskLifecycleLogger
 import org.jetbrains.qodana.edict.edictnext.EdictNextRepositoryState.Plan
 import org.jetbrains.qodana.edict.edictnext.EdictNextRepositoryState.Step
+import org.jetbrains.qodana.edict.git.GitRepository
 import org.jetbrains.qodana.edict.reviews.PrAnalysis
 import org.jetbrains.qodana.edict.reviews.ReviewClient
 import org.jetbrains.qodana.edict.reviews.ReviewProvider
@@ -39,6 +40,7 @@ internal class EdictManagementService(
   private val logs: Path? = null,
   taskOutput: PrintWriter = PrintWriter(System.err, true),
   reviewProvider: ReviewProvider = ReviewClient(),
+  private val signalRepository: GitRepository? = null,
 ) {
   companion object {
     const val INSTRUCTIONS = "Managed Edict state and execution plans. Root requests enter through edict_manager. " +
@@ -240,7 +242,12 @@ internal class EdictManagementService(
           arguments.requireString("path"),
           content,
           arguments.requireString("expectedHash"),
-        ),
+        ) { candidate ->
+          if (candidate.source is EdictNextSignalSource.FromCommit) {
+            requireNotNull(signalRepository) { "Commit Signal validation requires the source repository" }
+              .validateEvidence(candidate)
+          }
+        },
       )
     }
 
