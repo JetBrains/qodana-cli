@@ -17,7 +17,7 @@ build/install/edict/bin/edict edict-mcp-next --project-dir /path/to/project --st
 
 The Go commands `qodana edict install` and `qodana edict mcp start` launch this
 Kotlin application with Qodana's embedded JBR. Skill installation installs the
-managed skills into `$CODEX_HOME/skills` (falling back to `~/.codex/skills`),
+14 managed skills into `$CODEX_HOME/skills` (falling back to `~/.codex/skills`),
 `./.codex/skills` with `--project`, `<dir>/.codex/skills` with `--project-dir <dir>`,
 or any directory with `--dest`.
 Installation prints the installed names. Existing unrelated skills are preserved. When upgrading from
@@ -60,7 +60,7 @@ must share one server and one state lock.
 
 ## What is ported
 
-- All 13 managed skills, their invocation policies, and shared references.
+- All 14 managed skills, their invocation policies, and shared references.
   Worker registry IDs and installed skill names both use `edict-*`.
   The manager remains `edict_manager`.
 - Manager claims, task assignment retrieval, native worker startup, attenuated
@@ -73,7 +73,8 @@ must share one server and one state lock.
   completed results survive. Resume using the original request and top-level steps.
 - Signal models, stable IDs, strict unified-diff parsing, changed-side range
   validation, inbox receipts, exact Git revision/source readers, and a commit
-  extraction boundary with an injectable semantic analyzer.
+  extraction boundary with an injectable semantic analyzer. Managed Git-history
+  and retrospective Qodana workflows can discover additional corrective evidence.
 - Task-bound sequential distribution with same-language embedding candidates, context receipts, one guarded
   Signal-to-cluster transition, a durable vector cache, and post-distribution validation. Code-example,
   cluster-example, and generation-state gates remain read-only. Generated inspection compilation and execution run through

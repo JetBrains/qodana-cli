@@ -265,8 +265,8 @@ internal class EdictNextRepositoryState(
     require(content.toByteArray(Charsets.UTF_8).size <= MAX_PLAN_BYTES) { "Signal exceeds 8 MiB" }
     requireNoTokens(content)
     val signal = SignalValidation.validate(path, content)
-    require(capability.skill != "edict-batch-signal-analysis" || signal.source.type == "FromCommit") {
-      "Commit extraction can publish only FromCommit Signals"
+    require(capability.skill !in SIGNAL_WRITERS || signal.source.type == "FromCommit") {
+      "Commit and historical extraction can publish only FromCommit Signals"
     }
     if (task != null) policy?.admit(task, signal, content)
     // Edict Next must be able to consume every accepted legacy extraction record.
@@ -504,7 +504,11 @@ internal class EdictNextRepositoryState(
       "edict-next-inspection-code-review",
       "edict-next-weak-signal-review",
     )
-    private val SIGNAL_WRITERS = setOf("edict-batch-signal-analysis")
+    private val SIGNAL_WRITERS = setOf(
+      "edict-batch-signal-analysis",
+      "edict-git-history-signal-analysis",
+      "edict-retrospective-signal-analysis",
+    )
     private val TERMINAL_STATUSES = setOf("completed", "failed")
     private val INTERRUPTED_STATUSES = setOf("delegated", "running")
     private val TASK_STATUSES = setOf("pending", "delegated", "running", "completed", "failed")
