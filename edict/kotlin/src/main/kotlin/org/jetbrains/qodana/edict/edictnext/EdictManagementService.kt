@@ -24,8 +24,10 @@ import org.jetbrains.qodana.edict.edictnext.EdictNextRepositoryState.Plan
 import org.jetbrains.qodana.edict.edictnext.EdictNextRepositoryState.Step
 import org.jetbrains.qodana.edict.common.GitRepository
 import org.jetbrains.qodana.edict.extraction.reviews.PrAnalysis
+import org.jetbrains.qodana.edict.extraction.reviews.RepositoryPrAnalysisCoverage
 import org.jetbrains.qodana.edict.extraction.reviews.ReviewClient
 import org.jetbrains.qodana.edict.extraction.reviews.ReviewProvider
+import org.jetbrains.qodana.edict.extraction.reviews.ReviewRepository
 import org.jetbrains.qodana.edict.extraction.reviews.ReviewSelection
 import org.jetbrains.qodana.edict.skills.managed.Registry
 import java.io.PrintWriter
@@ -70,7 +72,8 @@ internal class EdictManagementService(
       put("type", "array")
       put("items", string)
     }
-    val signalObject = jsonType("object")
+    val modelObject = jsonType("object")
+    val signalObject = modelObject
     val signalArray = buildJsonObject {
       put("type", "array")
       put("items", signalObject)
@@ -250,6 +253,35 @@ internal class EdictManagementService(
               .validateEvidence(candidate)
           }
         },
+      )
+    }
+
+    tool(
+      name = "edict_get_pr_analysis_coverage",
+      description = "Read persisted analyzed date ranges and explicit PR numbers for one review repository.",
+      readOnly = true,
+      required = listOf("token", "repository"),
+      properties = mapOf("repository" to modelObject),
+    ) { arguments ->
+      EdictNextJson.encodeToJsonElement(
+        store.getPrAnalysisCoverage(
+          arguments.requireString("token"),
+          wireJson.decodeFromJsonElement<ReviewRepository>(arguments.getValue("repository")),
+        ),
+      )
+    }
+
+    tool(
+      name = "edict_record_pr_analysis_coverage",
+      description = "Merge completed inclusive date ranges and explicit PR numbers into persisted analysis coverage.",
+      required = listOf("token", "coverage"),
+      properties = mapOf("coverage" to modelObject),
+    ) { arguments ->
+      EdictNextJson.encodeToJsonElement(
+        store.recordPrAnalysisCoverage(
+          arguments.requireString("token"),
+          wireJson.decodeFromJsonElement<RepositoryPrAnalysisCoverage>(arguments.getValue("coverage")),
+        ),
       )
     }
 

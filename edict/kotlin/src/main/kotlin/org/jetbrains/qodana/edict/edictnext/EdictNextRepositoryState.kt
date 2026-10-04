@@ -6,6 +6,10 @@ import kotlinx.serialization.json.jsonArray
 import kotlinx.serialization.json.jsonObject
 import org.jetbrains.qodana.edict.common.randomId
 import org.jetbrains.qodana.edict.common.sha256
+import org.jetbrains.qodana.edict.extraction.reviews.PrAnalysisCoverageState
+import org.jetbrains.qodana.edict.extraction.reviews.PrAnalysisDateRange
+import org.jetbrains.qodana.edict.extraction.reviews.RepositoryPrAnalysisCoverage
+import org.jetbrains.qodana.edict.extraction.reviews.ReviewRepository
 import org.jetbrains.qodana.edict.signals.SignalValidation
 import org.jetbrains.qodana.edict.skills.managed.Registry
 import java.nio.ByteBuffer
@@ -17,6 +21,7 @@ import java.nio.file.StandardCopyOption
 import java.nio.file.StandardOpenOption.CREATE
 import java.nio.file.StandardOpenOption.WRITE
 import java.nio.file.attribute.PosixFilePermissions
+import java.time.LocalDate
 
 /** Repository snapshot plus the persisted execution state associated with an Edict Next run. */
 internal class EdictNextRepositoryState(
@@ -326,6 +331,40 @@ internal class EdictNextRepositoryState(
     authorize(token).skill == PR_ANALYSIS_SKILL
 
   @Synchronized
+  internal fun getPrAnalysisCoverage(token: String, repository: ReviewRepository): RepositoryPrAnalysisCoverage {
+    requirePrAnalysisCaller(token, coordinator = true)
+    repository.validate()
+    return loadPrAnalysisCoverage().repositories.singleOrNull { it.repository == repository }
+      ?: RepositoryPrAnalysisCoverage(repository)
+  }
+
+  @Synchronized
+  internal fun recordPrAnalysisCoverage(
+    token: String,
+    coverage: RepositoryPrAnalysisCoverage,
+  ): RepositoryPrAnalysisCoverage {
+    requirePrAnalysisCaller(token, coordinator = true)
+    require(coverage.analyzedDateRanges.isNotEmpty() || coverage.analyzedPrNumbers.isNotEmpty()) {
+      "PR-analysis coverage record must contain a date range or PR number"
+    }
+    val incoming = coverage.normalized()
+    val state = loadPrAnalysisCoverage()
+    val existing = state.repositories.singleOrNull { it.repository == incoming.repository }
+    val merged = RepositoryPrAnalysisCoverage(
+      repository = incoming.repository,
+      analyzedDateRanges = existing.orEmptyRanges() + incoming.analyzedDateRanges,
+      analyzedPrNumbers = existing.orEmptyPrNumbers() + incoming.analyzedPrNumbers,
+    ).normalized()
+    val repositories = (state.repositories.filterNot { it.repository == merged.repository } + merged)
+      .sortedWith(compareBy({ it.repository.provider }, { it.repository.owner }, { it.repository.repo }))
+    atomicWrite(
+      PR_ANALYSIS_COVERAGE_FILE,
+      EdictNextJson.encodeToString(PrAnalysisCoverageState(repositories = repositories)) + "\n",
+    )
+    return merged
+  }
+
+  @Synchronized
   internal fun inboxSignal(id: String): EdictNextSignal? {
     require(id.matches(Regex("s-[0-9a-f]{10}"))) { "Invalid Signal ID" }
     val path = safePath("inbox/$id.json")
@@ -468,6 +507,19 @@ internal class EdictNextRepositoryState(
     return bytes.toString(Charsets.UTF_8)
   }
 
+  private fun loadPrAnalysisCoverage(): PrAnalysisCoverageState {
+    val path = safePath(PR_ANALYSIS_COVERAGE_FILE)
+    if (!Files.exists(path, NOFOLLOW_LINKS)) return PrAnalysisCoverageState()
+    val content = Files.readString(path)
+    require(content.toByteArray(Charsets.UTF_8).size <= MAX_PLAN_BYTES) { "PR-analysis coverage exceeds 8 MiB" }
+    val state = EdictNextJson.decodeFromString<PrAnalysisCoverageState>(content)
+    require(state.schemaVersion == 1) { "Unsupported PR-analysis coverage schema ${state.schemaVersion}" }
+    require(state.repositories.distinctBy(RepositoryPrAnalysisCoverage::repository).size == state.repositories.size) {
+      "Duplicate repositories in PR-analysis coverage"
+    }
+    return state.copy(repositories = state.repositories.map(RepositoryPrAnalysisCoverage::normalized))
+  }
+
   private fun safePath(relative: String): Path {
     check(!closed) { "Repository state is closed" }
     require(relative.isNotBlank() && !Path.of(relative).isAbsolute) { "Invalid state path" }
@@ -507,6 +559,7 @@ internal class EdictNextRepositoryState(
     private const val PR_ANALYSIS_SKILL = "edict-pr-signal-analysis"
     private const val LOCK_FILE = ".edict-mcp.lock"
     private const val CURRENT_PLAN_FILE = ".edict-mcp-current"
+    private const val PR_ANALYSIS_COVERAGE_FILE = "extraction/pr-analysis-coverage.json"
     private val GENERATION_REVIEWS = setOf(
       "edict-next-inspection-code-review",
       "edict-next-weak-signal-review",
@@ -525,4 +578,34 @@ internal class EdictNextRepositoryState(
       filesByRelativePath = emptyMap(),
     ).also(EdictNextRepositoryState::ensureManagementState)
   }
+}
+
+private fun RepositoryPrAnalysisCoverage?.orEmptyRanges(): List<PrAnalysisDateRange> =
+  this?.analyzedDateRanges.orEmpty()
+
+private fun RepositoryPrAnalysisCoverage?.orEmptyPrNumbers(): List<Int> =
+  this?.analyzedPrNumbers.orEmpty()
+
+private fun RepositoryPrAnalysisCoverage.normalized(): RepositoryPrAnalysisCoverage {
+  repository.validate()
+  analyzedDateRanges.forEach(PrAnalysisDateRange::validate)
+  require(analyzedPrNumbers.all { it > 0 }) { "Analyzed PR numbers must be positive" }
+  val mergedRanges = analyzedDateRanges
+    .map { LocalDate.parse(it.startDate) to LocalDate.parse(it.endDate) }
+    .sortedBy(Pair<LocalDate, LocalDate>::first)
+    .fold(mutableListOf<Pair<LocalDate, LocalDate>>()) { merged, range ->
+      val previous = merged.lastOrNull()
+      if (previous != null && !range.first.isAfter(previous.second.plusDays(1))) {
+        merged[merged.lastIndex] = previous.first to maxOf(previous.second, range.second)
+      }
+      else {
+        merged += range
+      }
+      merged
+    }
+    .map { (start, end) -> PrAnalysisDateRange(start.toString(), end.toString()) }
+  return copy(
+    analyzedDateRanges = mergedRanges,
+    analyzedPrNumbers = analyzedPrNumbers.distinct().sorted(),
+  )
 }
