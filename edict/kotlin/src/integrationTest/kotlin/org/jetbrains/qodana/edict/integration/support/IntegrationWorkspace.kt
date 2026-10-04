@@ -11,6 +11,7 @@ import org.jetbrains.qodana.edict.edictnext.EdictNextMcpToolset
 import org.jetbrains.qodana.edict.edictnext.EdictManagementService
 import org.jetbrains.qodana.edict.edictnext.EdictNextRepositoryState
 import org.jetbrains.qodana.edict.edictnext.EdictNextWorkspace
+import org.jetbrains.qodana.edict.edictnext.EdictPrAnalysisService
 import org.jetbrains.qodana.edict.edictnext.EdictSessionContext
 import org.jetbrains.qodana.edict.edictnext.IntellijMcpServerService
 import org.jetbrains.qodana.edict.git.CommitSignalExtractor
@@ -60,15 +61,20 @@ internal class IntegrationWorkspace private constructor(
     fun withCodex(
         prompt: String, provider: ReviewProvider = ReviewClient(), inspectionServer: InspectionServer? = null,
         timeoutMinutes: Long = 20, verify: (EdictNextRepositoryState, CodexRunner, String) -> Unit,
-    ) = withEdictNextCodex(prompt, timeoutMinutes, inspectionServer, verify)
+    ) = withEdictNextCodex(prompt, timeoutMinutes, inspectionServer, provider, verify = verify)
 
     /** Runs an existing managed-skill scenario through the SDK-based Edict Next MCP transport. */
     fun withEdictNextCodex(
-        prompt: String, timeoutMinutes: Long = 20, verify: (EdictNextRepositoryState, CodexRunner, String) -> Unit,
-    ) = withEdictNextCodex(prompt, timeoutMinutes, null, verify)
+        prompt: String,
+        timeoutMinutes: Long = 20,
+        additionalWritableRoots: List<Path> = emptyList(),
+        verify: (EdictNextRepositoryState, CodexRunner, String) -> Unit,
+    ) = withEdictNextCodex(prompt, timeoutMinutes, null, ReviewClient(), additionalWritableRoots, verify)
 
     private fun withEdictNextCodex(
         prompt: String, timeoutMinutes: Long, inspectionServer: InspectionServer?,
+        reviewProvider: ReviewProvider,
+        additionalWritableRoots: List<Path> = emptyList(),
         verify: (EdictNextRepositoryState, CodexRunner, String) -> Unit,
     ) = runBlocking {
         val lifecycle = if (inspectionServer == null) InspectionLifecycleFixture(output) else null
@@ -86,7 +92,9 @@ internal class IntegrationWorkspace private constructor(
                         IntellijMcpServerService(projectPath = project, serverLifecycle = it)
                     } ?: IntellijMcpServerService(projectPath = project, qodanaExecutable = qodanaExecutable.toString()),
                 )
-                val management = EdictManagementService(store, logs = logs)
+                val management = EdictManagementService(
+                    store, logs = logs, extensions = listOf(EdictPrAnalysisService(store, reviewProvider)),
+                )
                 val engine = embeddedServer(CIO, host = "127.0.0.1", port = 0) {
                     mcpStreamableHttp { EdictNextMcpToolset(sessionId, management).createServer() }
                 }.start(wait = false)
@@ -94,6 +102,7 @@ internal class IntegrationWorkspace private constructor(
                     val port = engine.engine.resolvedConnectors().single().port
                     val runtime = CodexRunner(
                         output, project, state, "http://127.0.0.1:$port/mcp", agentLogger = management.agents,
+                        additionalWritableRoots = additionalWritableRoots,
                         stateWritable = inspectionServer != null,
                     )
                     runtime.prepare()
@@ -236,7 +245,7 @@ internal class IntegrationWorkspace private constructor(
                 Files.setPosixFilePermissions(path, PosixFilePermissions.fromString("rwx------"))
         }
 
-        private fun defaultSource(): String {
+        internal fun defaultSource(): String {
             System.getenv("DISTILLERY_TEST_REPO")?.takeIf(String::isNotBlank)?.let { return it }
             val local = Path.of(System.getProperty("user.home"), "prj/examples/distillery-test")
             return if (Files.exists(local.resolve(".git"))) local.toString() else "ssh://git@git.jetbrains.team/sa/distillery-test.git"

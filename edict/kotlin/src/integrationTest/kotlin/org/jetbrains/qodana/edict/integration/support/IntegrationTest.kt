@@ -15,6 +15,7 @@ abstract class IntegrationTest {
     protected val directory: Path get() = workspace.output
     protected open val fixtureRevision: String = historyCommit
     protected open val fixtureProject: String = historyProject
+    protected open val fixtureSource: String = IntegrationWorkspace.defaultSource()
 
     @BeforeEach
     fun prepareIntegration(test: TestInfo) {
@@ -28,7 +29,7 @@ abstract class IntegrationTest {
         }
         workspace = IntegrationWorkspace.open(
             output, test.testClass.orElseThrow().simpleName, test.testMethod.orElseThrow().name,
-            revision = fixtureRevision, projectPath = fixtureProject
+            source = fixtureSource, revision = fixtureRevision, projectPath = fixtureProject
         )
         println("Integration artifacts: ${workspace.output}")
     }
