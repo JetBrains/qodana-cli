@@ -7,7 +7,7 @@ description: Managed coordinator subagent that uses bounded Git pickaxe searches
 
 Run only as a delegated managed subagent. Follow [the manager protocol](../edict_manager/references/protocol.md)
 and [the signal contract](../edict_manager/references/signals.md). Registry ID:
-`edict-git-history-signal-analysis`. You own search coverage and `inbox.write`; delegated
+`edict-git-history-signal-analysis`. You own search coverage and Signal publication; delegated
 `edict-signal-analysis` workers own semantic evidence inspection. Do not generate rules, clusters, examples, or
 inspections.
 
@@ -38,13 +38,13 @@ records and mixed-repository revisions.
 5. Materialize every supported finding using the current signal contract. `POSITIVE` uses the fixing commit's parent
    and intersects a removed line; `NEGATIVE` uses the fixing commit and intersects an added line. Deletion-only evidence
    produces only a positive Signal because persisted ranges must be nonempty. Use the real path for each side, minimal
-   one-based inclusive ranges, and `FromCommit` with the full correcting `commitRevision`, full parent revision,
-   complete commit message, canonical diff, and optional URL. Set `provenance.workItemId` to the stable commit work-item
-   ID and use a deterministic idempotency key that includes the selected subject ID and exact evidence identity. Do not
-   copy rule IDs or search IDs into unsupported schema fields.
+   one-based inclusive ranges, and `FromCommit` with only the full correcting `commitRevision` and optional URL. The
+   server derives and validates its parent, message, and canonical diff from the commit object. Set
+   `provenance.workItemId` to the stable commit work-item ID and use a deterministic idempotency key that includes the
+   selected subject ID and exact evidence identity. Do not copy rule IDs or search IDs into unsupported schema fields.
 6. Before any write, parse the full candidate set and verify revisions, paths, ranges, changed-line intersections,
-   unique stable IDs, and exact coverage. Publish each record through `edict_state_write`. Identical existing content is
-   an idempotent success; never overwrite different content. Read back and verify every returned path and hash.
+   unique stable IDs, and exact coverage. Publish each model through `edict_publish_signal`. An identical existing model
+   is an idempotent success; never overwrite different content. Read back and verify every returned Signal model.
 7. Finish with selected subject IDs, bounded revision expression, queries used, candidate and inspected commit IDs,
    rejected candidates with concise reasons, accepted correcting commits, and created or existing Signal paths and
    hashes. A complete bounded search with no qualifying evidence is a successful no-op.

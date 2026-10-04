@@ -20,7 +20,7 @@ import org.jetbrains.qodana.edict.common.obj
 import org.jetbrains.qodana.edict.common.runProcess
 import org.jetbrains.qodana.edict.common.text
 import org.jetbrains.qodana.edict.common.wireJson
-import org.jetbrains.qodana.edict.reviews.ReviewClient
+import org.jetbrains.qodana.edict.extraction.reviews.ReviewClient
 import org.junit.jupiter.api.io.TempDir
 import java.io.ByteArrayInputStream
 import java.io.ByteArrayOutputStream
@@ -69,7 +69,7 @@ class EdictNextMcpToolsetTest {
       assertTrue("edict_get_pr_analysis_coverage" in server.tools)
       assertTrue("edict_record_pr_analysis_coverage" in server.tools)
       assertFalse("edict_state_write" in server.tools)
-      assertTrue(server.tools.keys.intersect(INSPECTION_KTS_UPSTREAM_TOOL_NAMES) == INSPECTION_KTS_AGENT_TOOL_NAMES)
+      assertTrue(server.tools.keys.containsAll(INSPECTION_KTS_UPSTREAM_TOOL_NAMES))
       val delegateSchema = server.tools.getValue("edict_delegate").tool.inputSchema
       assertEquals(setOf("token", "taskId", "prompt"), checkNotNull(delegateSchema.properties).keys)
       assertEquals(listOf("token", "taskId", "prompt"), delegateSchema.required)
@@ -116,13 +116,14 @@ class EdictNextMcpToolsetTest {
   @Test
   fun `toolset exposes every tool agents used from the single IDE server`() {
     EdictNextRepositoryState.open(directory.resolve("state")).use { store ->
-      val server = EdictNextMcpToolset("test-run", EdictManagementService(store, extensions = listOf(EdictPrAnalysisService(store, ReviewClient()))))
+      val server = EdictNextMcpToolset("test-run", EdictManagementService(store, reviewProvider = ReviewClient()))
         .createServer()
       assertEquals(
         setOf(
           "edict_registry", "edict_plan_get", "edict_plan_create", "edict_task_add", "edict_delegate",
-          "edict_task_get", "edict_task_start", "edict_task_finish", "edict_task_cancel", "edict_state_write",
-          "edict_prepare_pr_analysis", "edict_list_pr_analysis_items", "edict_get_pr_analysis_item",
+          "edict_task_get", "edict_task_start", "edict_task_finish", "edict_task_cancel", "edict_publish_signal",
+          "edict_get_pr_analysis_coverage", "edict_record_pr_analysis_coverage", "edict_fetch_pr_batch",
+          "edict_list_pr_analysis_items", "edict_get_pr_analysis_item",
           "edict_validate_pr_signals", "edict_pr_file_at_ref", "edict_pr_file_diff",
           "edict_next_prepare_pipeline", "edict_next_next_signal", "edict_next_get_distribution_context",
           "edict_next_add_signal_to_cluster", "edict_next_validate_distribution", "edict_next_get_generation_clusters",

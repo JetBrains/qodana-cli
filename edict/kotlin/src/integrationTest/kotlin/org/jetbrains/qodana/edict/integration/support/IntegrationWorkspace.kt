@@ -11,7 +11,6 @@ import org.jetbrains.qodana.edict.edictnext.EdictNextMcpToolset
 import org.jetbrains.qodana.edict.edictnext.EdictManagementService
 import org.jetbrains.qodana.edict.edictnext.EdictNextRepositoryState
 import org.jetbrains.qodana.edict.edictnext.EdictNextWorkspace
-import org.jetbrains.qodana.edict.edictnext.EdictPrAnalysisService
 import org.jetbrains.qodana.edict.edictnext.EdictSessionContext
 import org.jetbrains.qodana.edict.edictnext.EdictNextLineRange
 import org.jetbrains.qodana.edict.edictnext.EdictNextSignal

@@ -87,9 +87,11 @@ class InspectionKtsMcpClientTest {
           },
         )
         assertEquals("false", proxyResult.getValue("isError").jsonPrimitive.content)
-        assertFailsWith<IllegalArgumentException> {
-          client.proxyTool("run_inspection_kts", buildJsonObject { put("inspectionKtsCode", "inspection") })
-        }
+        val rawResult = client.callTool(
+          "run_inspection_kts",
+          buildJsonObject { put("inspectionKtsCode", "inspection") },
+        )
+        assertEquals("false", rawResult.getValue("isError").jsonPrimitive.content)
         assertEquals("sample-rule", client.compile("compiled inspection").inspectionId)
         val result = client.runExamples(
           "inspection",

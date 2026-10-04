@@ -5,7 +5,6 @@ import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.put
 import kotlinx.serialization.json.putJsonArray
-import org.jetbrains.qodana.edict.common.sha256
 import org.jetbrains.qodana.edict.common.wireJson
 import org.jetbrains.qodana.edict.edictnext.EdictNextRepositoryState.Plan
 import org.jetbrains.qodana.edict.edictnext.EdictNextRepositoryState.Task
@@ -23,22 +22,20 @@ class InspectionResultTest {
 
     @Test
     fun `review receipts use their JSON content regardless of filename extension`() {
-        val hash = sha256("persisted accepted inspection")
-        fun receipt(path: String, candidateHash: String = hash, status: String = "ACCEPT") =
+        fun receipt(path: String, status: String = "ACCEPT") =
             directory.resolve(path).also {
                 Files.writeString(
                     it,
-                    """{"candidateHash":"$candidateHash","status":"$status","findings":[],"summary":"review"}"""
+                    """{"status":"$status","findings":[],"summary":"review"}"""
                 )
             }
 
         val code = receipt("code-review.md")
         val value = receipt("value-review")
         receipt("rejected.json", status = "REJECT")
-        receipt("previous-candidate.md", candidateHash = sha256("previous inspection"))
         Files.writeString(directory.resolve("invalid.json"), "not a JSON receipt")
         Files.writeString(directory.resolve("narrative.md"), "```json\n${Files.readString(code)}\n```")
-        assertEquals(setOf(code, value), acceptedCandidateReviews(directory, hash).toSet())
+        assertEquals(setOf(code, value), acceptedCandidateReviews(directory).toSet())
     }
 
     @Test

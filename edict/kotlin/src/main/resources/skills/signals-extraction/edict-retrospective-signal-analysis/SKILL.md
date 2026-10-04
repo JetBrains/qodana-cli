@@ -7,7 +7,7 @@ description: Managed coordinator subagent that compares a stored inspection at a
 
 Run only as a delegated managed subagent. Follow [the manager protocol](../edict_manager/references/protocol.md)
 and [the signal contract](../edict_manager/references/signals.md). Registry ID:
-`edict-retrospective-signal-analysis`. You own comparison coverage and `inbox.write`; delegated
+`edict-retrospective-signal-analysis`. You own comparison coverage and Signal publication; delegated
 `edict-signal-analysis` workers own semantic fix inspection. Do not change source, clusters, examples, or inspections.
 
 Start the task. Require a source checkout, an Edict state directory, one cluster ID, and a Qodana runner tool that can
@@ -48,13 +48,13 @@ otherwise change the caller's checkout.
    inspection.
 5. Materialize supported findings using the current signal contract. `POSITIVE` uses the fixing commit's parent and a
    minimal range intersecting removed lines; `NEGATIVE` uses the fixing commit and a minimal range intersecting added
-   lines. Intentional deletion with no corrected range produces only a positive Signal. Use `FromCommit` with the full
-   fixing `commitRevision`, full parent revision, complete commit message, canonical diff, and optional URL. Use a
-   stable commit work-item provenance ID, deterministic idempotency keys, and `syntheticExampleId: null`. Do not add
-   legacy `strength`, null ranges, cluster IDs, or retrospective IDs to unsupported schema fields.
+   lines. Intentional deletion with no corrected range produces only a positive Signal. Use `FromCommit` with only the
+   full fixing `commitRevision` and optional URL; the server derives and validates its parent, message, and canonical
+   diff from the commit object. Use a stable commit work-item provenance ID, deterministic idempotency keys, and
+   `syntheticExampleId: null`. Do not add null ranges, cluster IDs, or retrospective IDs to unsupported schema fields.
 6. Parse and validate the complete candidate set before any write. Verify each revision/path/range against Git and the
-   canonical diff, then publish through `edict_state_write`. Identical existing content is an idempotent success; never
-   overwrite different content. Read back every returned path and verify its hash.
+   canonical diff, then publish through `edict_publish_signal`. An identical existing model is an idempotent success;
+   never overwrite different content. Read back and verify every returned Signal model.
 7. Finish with cutoff and snapshot revisions, original HEAD, both SARIF paths, exact-inspection and absent counts,
    inspected work-item IDs, accepted fixing commits, rejected candidates with reasons, and created or existing Signal
    paths and hashes. A successful complete comparison with no intentional fixes is a no-op.

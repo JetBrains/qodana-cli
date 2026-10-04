@@ -79,7 +79,7 @@ class LiveRetrospectiveSignalAnalysisTest : IntegrationTest() {
                   comparison: $runner --project <project> --results <empty-result-directory> --baseline <snapshot-sarif> --include-absent
                 The runner prints the absolute qodana.sarif.json path after a successful run. Use the captured inspection
                 in both temporary worktrees. Do not change the caller's checkout or managed Edict inputs. Publish every
-                independently verified Signal through edict_state_write.
+                independently verified Signal through edict_publish_signal.
             """.trimIndent(),
             timeoutMinutes = 30,
             additionalWritableRoots = writable,
@@ -139,6 +139,10 @@ class LiveRetrospectiveSignalAnalysisTest : IntegrationTest() {
         test -n "${'$'}project"
         test -n "${'$'}results"
         mkdir -p "${'$'}results"
+        TMPDIR="${'$'}{0%/*}/qodana-tmp"
+        TEST_TMPDIR="${'$'}TMPDIR"
+        export TMPDIR TEST_TMPDIR
+        mkdir -p "${'$'}TMPDIR"
         cd "${'$'}ULTIMATE_EDICT_REPO"
         run_qodana() {
           IJ_PRIVATE_PACKAGES_AUTHORIZER_SKIP=true /bin/sh ./bazel.cmd run --config=ci \

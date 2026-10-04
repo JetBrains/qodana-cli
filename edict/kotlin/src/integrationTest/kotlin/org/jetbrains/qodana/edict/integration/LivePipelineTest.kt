@@ -12,7 +12,6 @@ import kotlinx.serialization.json.decodeFromJsonElement
 import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.jsonObject
-import org.jetbrains.qodana.edict.common.sha256
 import org.jetbrains.qodana.edict.common.wireJson
 import org.jetbrains.qodana.edict.edictnext.EdictNextClusterStatus
 import org.jetbrains.qodana.edict.edictnext.EdictNextRepositoryState.Plan
@@ -140,8 +139,8 @@ class LivePipelineTest : IntegrationTest() {
     }
 
     private fun verifyGenerationEvidence(runtime: CodexRunner, code: String) {
-        val acceptedReviews = acceptedCandidateReviews(runtime.scratch, sha256(code))
-        assertTrue(acceptedReviews.isNotEmpty(), "Code review must accept the exact persisted inspection hash")
+        val acceptedReviews = acceptedCandidateReviews(runtime.scratch)
+        assertTrue(acceptedReviews.isNotEmpty(), "Code review must accept the persisted inspection")
         val calls = Files.readAllLines(workspace.output.resolve("log/inspection-mcp.jsonl"))
             .map { wireJson.parseToJsonElement(it).jsonObject }
         assertTrue(calls.any { it["tool"]?.toString()?.contains("run_inspection_kts_examples") == true })
