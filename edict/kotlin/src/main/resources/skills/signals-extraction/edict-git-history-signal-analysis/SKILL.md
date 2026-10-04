@@ -38,10 +38,10 @@ records and mixed-repository revisions.
 5. Materialize every supported finding using the current signal contract. `POSITIVE` uses the fixing commit's parent
    and intersects a removed line; `NEGATIVE` uses the fixing commit and intersects an added line. Deletion-only evidence
    produces only a positive Signal because persisted ranges must be nonempty. Use the real path for each side, minimal
-   one-based inclusive ranges, `FromCommit` with only the full correcting `commitRevision` and optional URL,
-   `provenance.workItemId` set to the stable commit work-item ID, and a deterministic idempotency key that includes the
-   selected subject ID and exact evidence identity. Do not copy commit messages, parents, diffs, rule IDs, or search IDs
-   into unsupported schema fields.
+   one-based inclusive ranges, and `FromCommit` with the full correcting `commitRevision`, full parent revision,
+   complete commit message, canonical diff, and optional URL. Set `provenance.workItemId` to the stable commit work-item
+   ID and use a deterministic idempotency key that includes the selected subject ID and exact evidence identity. Do not
+   copy rule IDs or search IDs into unsupported schema fields.
 6. Before any write, parse the full candidate set and verify revisions, paths, ranges, changed-line intersections,
    unique stable IDs, and exact coverage. Publish each record through `edict_state_write`. Identical existing content is
    an idempotent success; never overwrite different content. Read back and verify every returned path and hash.
