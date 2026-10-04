@@ -23,16 +23,16 @@ inspections/<cluster-id>.inspection.kts
 ```
 
 Require both files and matching IDs. Treat the cluster as semantic authority and the inspection as its detector. The
-state and source checkouts are read-only; put reports and all temporary files in private scratch outside both. Use a
-temporary Git worktree for the historical revision—never detach, stash, clean, reset, or otherwise change the caller's
-checkout.
+state and caller's source checkout are read-only; put reports and all temporary files in private scratch outside both.
+Use separate temporary Git worktrees for the historical revision and HEAD—never detach, stash, clean, reset, or
+otherwise change the caller's checkout.
 
 1. Resolve full `HEAD`. Subtract the requested period from the end date and select the newest first-parent commit at or
-   before the cutoff that is reachable from `HEAD`. Stop if none exists or it equals `HEAD`. Create a private detached
-   worktree at that exact revision and arrange for the runner to use the captured inspection bytes without modifying
-   tracked project files. Always remove the temporary worktree on exit; retain SARIF reports for verification.
-2. Run the whole historical project without a baseline. Require successful parseable SARIF containing results for the
-   exact inspection ID. Run the whole HEAD project with the same inspection bytes, historical SARIF as baseline, and
+   before the cutoff that is reachable from `HEAD`. Stop if none exists or it equals `HEAD`. Create private detached
+   worktrees at that exact revision and at HEAD. Install the captured inspection bytes only inside those temporary
+   worktrees, recording any replaced bytes. Always remove both worktrees on exit; retain SARIF reports for verification.
+2. Run the whole historical worktree project without a baseline. Require successful parseable SARIF containing results
+   for the exact inspection ID. Run the whole HEAD worktree project with the same inspection bytes, historical SARIF as baseline, and
    absent-results mode enabled. Require another successful parseable report. Collect only exact-inspection results whose
    `baselineState` is `absent`; ignore new, unchanged, and unrelated rows. Absence is a candidate, not proof of intent.
 3. For each absent result, use its historical path, range, message, and fingerprints to trace the file from the snapshot
@@ -48,10 +48,10 @@ checkout.
    inspection.
 5. Materialize supported findings using the current signal contract. `POSITIVE` uses the fixing commit's parent and a
    minimal range intersecting removed lines; `NEGATIVE` uses the fixing commit and a minimal range intersecting added
-   lines. Intentional deletion with no corrected range produces only a positive Signal. Use `FromCommit` with only the
-   full fixing `commitRevision` and optional URL, a stable commit work-item provenance ID, deterministic idempotency
-   keys, `strength: STRONG`, and `syntheticExampleId: null`. Do not add legacy null ranges, messages, parent revisions,
-   diffs, cluster IDs, or retrospective IDs to unsupported schema fields.
+   lines. Intentional deletion with no corrected range produces only a positive Signal. Use `FromCommit` with the full
+   fixing `commitRevision`, full parent revision, complete commit message, canonical diff, and optional URL. Use a
+   stable commit work-item provenance ID, deterministic idempotency keys, and `syntheticExampleId: null`. Do not add
+   legacy `strength`, null ranges, cluster IDs, or retrospective IDs to unsupported schema fields.
 6. Parse and validate the complete candidate set before any write. Verify each revision/path/range against Git and the
    canonical diff, then publish through `edict_state_write`. Identical existing content is an idempotent success; never
    overwrite different content. Read back every returned path and verify its hash.
