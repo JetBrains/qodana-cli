@@ -45,7 +45,13 @@ internal class PrAnalysis(
     }
     require(items.distinctBy(PrItem::workItemId).size == items.size) { "Duplicate provider work item" }
     val id = sha256(json.encodeToString(selection) + json.encodeToString(prs)).take(24)
-    val summary = PrBatchSummary(id, prs.size, prs.count { it.threads.isNotEmpty() }, items.size)
+    val summary = PrBatchSummary(
+      id,
+      prs.size,
+      prs.map(PullRequest::number),
+      prs.count { it.threads.isNotEmpty() },
+      items.size,
+    )
     return synchronized(store) {
       store.requirePrAnalysisCaller(token, coordinator = true)
       batches.getOrPut(id) { Batch(summary, items) }.summary

@@ -15,9 +15,11 @@ and scratch outside the state root. This workflow needs `edict-mcp`, without an 
 belong in the server environment; never request their values in a tool call, prompt, result, or log. Missing access is a
 failed prerequisite. Commit-only requests belong to `edict-batch-signal-analysis`.
 
-1. Start your task. Call `edict_fetch_pr_batch` with your token, `provider`, `owner`, `repo`, `maxPrs`, and either
-   `prNumbers` or both `startDate` and `endDate` (`YYYY-MM-DD`). The response contains `batchId`, `selectedPrCount`,
-   `prCountWithWorkItems`, and `totalWorkItemCount`. Selection includes merged reviews only.
+1. Start your task. Call `edict_get_pr_analysis_coverage` with your token and the `repository` model (`provider`, `owner`,
+   and `repo`). Do not reanalyze explicit PR numbers already recorded, or inclusive date intervals completely covered by
+   a recorded range. Then call `edict_fetch_pr_batch` with the remaining selection, `maxPrs`, and either `prNumbers` or
+   both `startDate` and `endDate` (`YYYY-MM-DD`). The response contains `batchId`, `selectedPrCount`,
+   `selectedPrNumbers`, `prCountWithWorkItems`, and `totalWorkItemCount`. Selection includes merged reviews only.
 2. Call `edict_list_pr_analysis_items` with that batch, initially `offset: 0`, `limit: 20`. Follow every `nextOffset`.
    Require each page's item count to equal the smaller of its requested limit and remaining items. Preserve the
    prepared order. Require the union to contain exactly `totalWorkItemCount` distinct IDs. Page summaries
@@ -46,7 +48,11 @@ failed prerequisite. Commit-only requests belong to `edict-batch-signal-analysis
    blocks publication; correct the evidence and validate again. Validation does not replace source inspection.
 7. Publish every validated model using `edict_publish_signal`. An existing identical model is an idempotent success;
    a conflicting model requires investigation, not overwriting. Report exact IDs left by a partially failed publication.
-8. Finish with batch ID, inspected IDs, and signal IDs. The server rejects completion until coverage is
+8. After validation and publication succeed, call `edict_record_pr_analysis_coverage`. Always record the returned
+   `selectedPrNumbers`. For a date selection, also record its inclusive requested date range only when
+   `selectedPrCount < maxPrs`, which proves the limit did not truncate it; when it equals the limit, record only the
+   selected PR numbers. Never record coverage for an incomplete or failed batch.
+9. Finish with batch ID, inspected IDs, and signal IDs. The server rejects completion until coverage is
    validated and all validated signals are present. A completely inspected batch with zero findings, including an
    empty merged-review selection, succeeds without placeholders. After a server restart, prepare the selection again
    and reuse identical persisted records.

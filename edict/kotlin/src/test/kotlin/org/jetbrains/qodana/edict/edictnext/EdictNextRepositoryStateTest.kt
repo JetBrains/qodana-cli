@@ -2,6 +2,9 @@ package org.jetbrains.qodana.edict.edictnext
 
 import org.jetbrains.qodana.edict.edictnext.EdictNextRepositoryState.Delegation
 import org.jetbrains.qodana.edict.edictnext.EdictNextRepositoryState.Step
+import org.jetbrains.qodana.edict.extraction.reviews.PrAnalysisDateRange
+import org.jetbrains.qodana.edict.extraction.reviews.RepositoryPrAnalysisCoverage
+import org.jetbrains.qodana.edict.extraction.reviews.ReviewRepository
 import org.jetbrains.qodana.edict.support.batch
 import org.jetbrains.qodana.edict.support.fixtureSignals
 import org.jetbrains.qodana.edict.support.gitFixture
@@ -36,6 +39,50 @@ class EdictNextRepositoryStateTest {
         assertEquals(signal, state.inboxSignal(signal.id))
         assertTrue(Files.exists(directory.resolve(skill).resolve("inbox/${signal.id}.json")))
       }
+    }
+  }
+
+  @Test
+  fun `PR analysis coverage merges ranges and PR numbers and survives restart`() {
+    val skill = "edict-pr-signal-analysis"
+    val steps = listOf(Step(skill, "Reviews"))
+    val repository = ReviewRepository("github", "jetbrains", "qodana")
+    var taskId = ""
+    val expected = RepositoryPrAnalysisCoverage(
+      repository,
+      analyzedDateRanges = listOf(PrAnalysisDateRange("2026-01-01", "2026-01-05")),
+      analyzedPrNumbers = listOf(2, 3, 9),
+    )
+    EdictNextRepositoryState.open(directory).use { state ->
+      val plan = state.createPlan("Reviews", steps)
+      taskId = plan.plan.tasks.single().id
+      val worker = state.launch(plan.token, taskId, skill)
+      assertEquals(RepositoryPrAnalysisCoverage(repository), state.getPrAnalysisCoverage(worker.token, repository))
+      state.recordPrAnalysisCoverage(
+        worker.token,
+        RepositoryPrAnalysisCoverage(
+          repository,
+          listOf(PrAnalysisDateRange("2026-01-01", "2026-01-03")),
+          listOf(9, 3, 9),
+        ),
+      )
+      assertEquals(
+        expected,
+        state.recordPrAnalysisCoverage(
+          worker.token,
+          RepositoryPrAnalysisCoverage(
+            repository,
+            listOf(PrAnalysisDateRange("2026-01-04", "2026-01-05")),
+            listOf(2),
+          ),
+        ),
+      )
+      assertTrue(Files.exists(directory.resolve("extraction/pr-analysis-coverage.json")))
+    }
+    EdictNextRepositoryState.open(directory).use { state ->
+      val resumed = state.createPlan("Reviews", steps)
+      val worker = state.launch(resumed.token, taskId, skill)
+      assertEquals(expected, state.getPrAnalysisCoverage(worker.token, repository))
     }
   }
 
