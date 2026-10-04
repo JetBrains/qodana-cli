@@ -7,7 +7,35 @@ import java.time.LocalDate
 import java.time.ZoneOffset
 
 @Serializable
-data class ReviewRepository(val provider: String, val owner: String, val repo: String)
+data class ReviewRepository(val provider: String, val owner: String, val repo: String) {
+    fun validate() {
+        require(provider in listOf("github", "space")) { "Provider must be github or space" }
+        require(listOf(owner, repo).all { validSourcePath(it) && '/' !in it }) { "Invalid owner or repo" }
+    }
+}
+
+@Serializable
+data class PrAnalysisDateRange(val startDate: String, val endDate: String) {
+    fun validate() {
+        require(!LocalDate.parse(startDate).isAfter(LocalDate.parse(endDate))) {
+            "startDate must not follow endDate"
+        }
+    }
+}
+
+@Serializable
+data class RepositoryPrAnalysisCoverage(
+    val repository: ReviewRepository,
+    val analyzedDateRanges: List<PrAnalysisDateRange> = emptyList(),
+    val analyzedPrNumbers: List<Int> = emptyList(),
+)
+
+@Serializable
+data class PrAnalysisCoverageState(
+    val schemaVersion: Int = 1,
+    val repositories: List<RepositoryPrAnalysisCoverage> = emptyList(),
+)
+
 @Serializable
 data class ReviewSelection(
     val provider: String, val owner: String, val repo: String, val maxPrs: Int,
@@ -15,8 +43,7 @@ data class ReviewSelection(
 ) {
     val repository: ReviewRepository get() = ReviewRepository(provider, owner, repo)
     fun validate() {
-        require(provider in listOf("github", "space")) { "Provider must be github or space" }
-        require(listOf(owner, repo).all { validSourcePath(it) && '/' !in it }) { "Invalid owner or repo" }
+        repository.validate()
         require(maxPrs in 1..1000) { "maxPrs must be 1..1000" }
         if (prNumbers.isNotEmpty()) require(startDate.isEmpty() && endDate.isEmpty() && prNumbers.all { it > 0 } &&
                 prNumbers.distinct().size == prNumbers.size && prNumbers.size <= maxPrs) { "Require distinct positive PR numbers within maxPrs, or dates" }
@@ -69,6 +96,7 @@ data class PrItem(
 data class PrBatchSummary(
     val batchId: String,
     val selectedPrCount: Int,
+    val selectedPrNumbers: List<Int>,
     val prCountWithWorkItems: Int,
     val totalWorkItemCount: Int
 )
