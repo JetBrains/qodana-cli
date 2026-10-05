@@ -5,12 +5,10 @@
 #     "natsort==8.4.0",
 # ]
 # ///
-import json
 import platform
 import re
 import sys
 import os
-from urllib.request import urlopen
 
 import htmllistparse
 from natsort import natsorted
@@ -60,7 +58,9 @@ def latest_binary(version, os=None, arch=None):
     return matching_versions[-1]
 
 
-query = os.getenv("QUERY") or sys.argv[1]
+query = os.getenv("QUERY") or (sys.argv[1] if len(sys.argv) > 1 else None)
+if not query:
+    fail("No version given: set QUERY or pass it as the first argument")
 if query == "latest":
     print(query)
 elif m := re.fullmatch(r"v?(\d+\.\d+\.\d+)", query):  # Full version specified
