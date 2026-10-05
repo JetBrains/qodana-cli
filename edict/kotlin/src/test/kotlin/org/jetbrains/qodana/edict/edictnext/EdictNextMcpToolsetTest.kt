@@ -20,7 +20,6 @@ import org.jetbrains.qodana.edict.common.obj
 import org.jetbrains.qodana.edict.common.runProcess
 import org.jetbrains.qodana.edict.common.text
 import org.jetbrains.qodana.edict.common.wireJson
-import org.jetbrains.qodana.edict.reviews.ReviewClient
 import org.junit.jupiter.api.io.TempDir
 import java.io.ByteArrayInputStream
 import java.io.ByteArrayOutputStream
@@ -116,7 +115,7 @@ class EdictNextMcpToolsetTest {
   @Test
   fun `toolset exposes every tool agents used from the single IDE server`() {
     EdictNextRepositoryState.open(directory.resolve("state")).use { store ->
-      val server = EdictNextMcpToolset("test-run", EdictManagementService(store, extensions = listOf(EdictPrAnalysisService(store, ReviewClient()))))
+      val server = EdictNextMcpToolset("test-run", EdictManagementService(store))
         .createServer()
       assertEquals(
         setOf(
