@@ -53,6 +53,9 @@ func getScanPropertiesMap(
 		"-Dqodana.automation.guid":             str.QuoteIfSpace(analysisId),
 		"-XX:MaxRAMPercentage":                 "70", //only in docker?
 	}
+	if cloud.DataSharingAllowed != nil {
+		properties["-Dqodana.data.sharing.allowed"] = strconv.FormatBool(*cloud.DataSharingAllowed)
+	}
 	if coverageDir != "" {
 		properties["-Dqodana.coverage.input"] = str.QuoteIfSpace(coverageDir)
 	}

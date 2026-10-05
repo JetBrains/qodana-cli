@@ -32,6 +32,7 @@ func SetupLicenseAndProjectHash(prod product.Product, endpoints *cloud.QdApiEndp
 	var licenseData cloud.LicenseData
 	if token != "" {
 		licenseData = endpoints.GetLicenseData(token)
+		cloud.DataSharingAllowed = &licenseData.DataSharingAllowed
 		if licenseData.ProjectIdHash != "" {
 			err := os.Setenv(qdenv.QodanaProjectIdHash, licenseData.ProjectIdHash)
 			if err != nil {

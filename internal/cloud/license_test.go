@@ -331,3 +331,12 @@ func TestDeserializeLicenseDataFields(t *testing.T) {
 		t.Errorf("LicensePlan: expected 'ULTIMATE' got '%s'", result.LicensePlan)
 	}
 }
+
+func TestDeserializeLicenseDataSharing(t *testing.T) {
+	if DeserializeLicenseData([]byte(`{"licenseId": "A"}`)).DataSharingAllowed {
+		t.Error("missing field should mean false")
+	}
+	if !DeserializeLicenseData([]byte(`{"dataSharingAllowed": true}`)).DataSharingAllowed {
+		t.Error("expected true")
+	}
+}
