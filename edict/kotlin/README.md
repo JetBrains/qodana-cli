@@ -251,9 +251,9 @@ provider evidence fails validation.
 
 ## Implementation references
 
-The managed API and policies were ported from `../managed`, and the local skill
-copies originated from `../skills/managed`. Neither is a build or runtime
-dependency. The reference implementation in Ultimate informed these
+The managed API and policies were ported from the former Go implementation
+(`edict/managed`), and the local skill copies originated from `edict/skills/managed`.
+Both have been removed; see Git history. The reference implementation in Ultimate informed these
 standalone boundaries:
 
 - `predict/agent/codex/commit-analysis-utils.kt`: bounded commit work items,
