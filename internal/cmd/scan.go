@@ -131,7 +131,9 @@ But you can always override qodana.yaml options with the following command-line 
 			exitCode := core.RunAnalysis(ctx, scanContext)
 			// not deferred: the exit code checks below leave the process with os.Exit
 			baseline.Cleanup()
-			fmt.Println(baseline.UsedMessage())
+			if !scanContext.Analyser().IsContainer() || baseline.Source() != qdenv.BaselineSourceLocal {
+				fmt.Println(baseline.UsedMessage())
+			}
 			if qdenv.IsContainer() {
 				err := platform.ChangeResultsPermissionsRecursively(scanContext.ResultsDir())
 				if err != nil {
