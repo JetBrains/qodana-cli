@@ -21,7 +21,7 @@ if ! log_dir=$(mktemp -d "${RUNNER_TEMP:-/tmp}/podman-service.XXXXXX"); then
 fi
 service_log="${log_dir}/service.log"
 probe_log="${log_dir}/probe.log"
-: >"${service_log}"
+touch "${service_log}"
 
 fail() {
   echo "::error::$1" >&2
