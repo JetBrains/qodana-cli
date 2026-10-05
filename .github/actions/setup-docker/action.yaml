@@ -11,7 +11,6 @@ runs:
     - uses: astral-sh/setup-uv@v10.2.0
       with:
         version: 0.12.18
-        enable-cache: false
 
     - name: Normalize version
       id: normalize-version
