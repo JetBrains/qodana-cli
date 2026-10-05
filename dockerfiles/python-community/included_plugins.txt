@@ -21,3 +21,4 @@ com.jetbrains.pycharm.pro.customization
 intellij.jupyter
 intellij.pycharm.community.customization.shared
 org.intellij.plugins.markdown
+com.intellij.modules.pty4j
