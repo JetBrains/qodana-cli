@@ -1,0 +1,149 @@
+{
+  "version": "2.1.0",
+  "runs": [
+    {
+      "tool": {
+        "driver": {
+          "name": "QDCPP"
+        }
+      },
+      "results": [
+        {
+          "ruleId": "CppDeclaratorNeverUsed",
+          "level": "warning",
+          "message": {
+            "text": "Local variable 'myArray' is never used",
+            "markdown": "Local variable 'myArray' is never used"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "main.cpp",
+                  "uriBaseId": "SRCROOT"
+                },
+                "region": {
+                  "startLine": 33,
+                  "startColumn": 10,
+                  "charOffset": 740,
+                  "charLength": 7,
+                  "snippet": {
+                    "text": "myArray"
+                  },
+                  "sourceLanguage": "C++"
+                },
+                "contextRegion": {
+                  "startLine": 31,
+                  "startColumn": 1,
+                  "charOffset": 685,
+                  "charLength": 132,
+                  "snippet": {
+                    "text": "    printMessage(\"Hello, Qodana!\", 123);\n    \n    int* myArray = createArray(10);  // Memory leak - never deleted\n    \n    return 0;"
+                  },
+                  "sourceLanguage": "C++"
+                }
+              }
+            }
+          ],
+          "partialFingerprints": {
+            "equalIndicator/v2": "b04919931871c1fc",
+            "equalIndicator/v1": "7babb2d1ad4cd9b46fc24c37e82e9064786edeb1156067036183f5e2db688e07"
+          },
+          "properties": {
+            "cloudId": "8a141c07-3d06-4849-8b86-e6b6f7004baf"
+          }
+        },
+        {
+          "ruleId": "CppDeclaratorNeverUsed",
+          "level": "warning",
+          "message": {
+            "text": "Local variable 'z' is never used",
+            "markdown": "Local variable 'z' is never used"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "main.cpp",
+                  "uriBaseId": "SRCROOT"
+                },
+                "region": {
+                  "startLine": 26,
+                  "startColumn": 9,
+                  "charOffset": 567,
+                  "charLength": 1,
+                  "snippet": {
+                    "text": "z"
+                  },
+                  "sourceLanguage": "C++"
+                },
+                "contextRegion": {
+                  "startLine": 24,
+                  "startColumn": 1,
+                  "charOffset": 527,
+                  "charLength": 106,
+                  "snippet": {
+                    "text": "    int x = 10;\n    int y = 20;\n    int z = 30;  // Unused variable\n    \n    int sum = calculateSum(x, y);"
+                  },
+                  "sourceLanguage": "C++"
+                }
+              }
+            }
+          ],
+          "partialFingerprints": {
+            "equalIndicator/v2": "4a5ecf80c7df0ce7",
+            "equalIndicator/v1": "abef8121c22dd945a6d8e2c63e2c114b872590b36e813e43b6234aed791fdf59"
+          },
+          "properties": {
+            "cloudId": "db08a704-e3d3-46ca-953a-a3baa1c9e381"
+          }
+        },
+        {
+          "ruleId": "CppDeclaratorNeverUsed",
+          "level": "warning",
+          "message": {
+            "text": "Local variable 'unusedVar' is never used",
+            "markdown": "Local variable 'unusedVar' is never used"
+          },
+          "locations": [
+            {
+              "physicalLocation": {
+                "artifactLocation": {
+                  "uri": "main.cpp",
+                  "uriBaseId": "SRCROOT"
+                },
+                "region": {
+                  "startLine": 7,
+                  "startColumn": 9,
+                  "charOffset": 131,
+                  "charLength": 9,
+                  "snippet": {
+                    "text": "unusedVar"
+                  },
+                  "sourceLanguage": "C++"
+                },
+                "contextRegion": {
+                  "startLine": 5,
+                  "startColumn": 1,
+                  "charOffset": 57,
+                  "charLength": 164,
+                  "snippet": {
+                    "text": "// Function with unused variable\nint calculateSum(int a, int b) {\n    int unusedVar = 42;  // This will trigger a warning\n    int result = a + b;\n    return result;"
+                  },
+                  "sourceLanguage": "C++"
+                }
+              }
+            }
+          ],
+          "partialFingerprints": {
+            "equalIndicator/v2": "f371f83c70d5c4ea",
+            "equalIndicator/v1": "e5b0c2f0ae06e3b180f9fcba033cde2537fe28bf9353ed68a15f04bbdc508037"
+          },
+          "properties": {
+            "cloudId": "e3ab5b8c-642c-4fa2-9cbd-62558ebb32d2"
+          }
+        }
+      ]
+    }
+  ]
+}

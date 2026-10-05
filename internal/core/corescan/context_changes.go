@@ -61,6 +61,7 @@ func (c Context) FirstStageOfScopedScript(scopeFile string) Context {
 		"-Dqodana.skip.coverage.computation=true", // don't compute coverage on first pass
 	)
 	c.baseline = ""
+	c = c.WithResolvedBaselineSource(qdenv.BaselineSourceNone)
 	c.resultsDir = startDir
 	startup.MakeDirAll(c.LogDir()) // need to prepare new result and log dir
 
@@ -193,4 +194,18 @@ func (c Context) prepareContext(skipFixes bool, propertiesToAdd ...string) Conte
 		c.fixesStrategy = "none" // this option is deprecated, but the only way to overwrite the possible yaml value
 	}
 	return c
+}
+
+// WithCloudBaseline compares the analysis results with the baseline downloaded from Qodana Cloud,
+// the same way as with a baseline file. The linter is told where the file comes from, so that it
+// reports the baseline of the cloud and not a file of the cache dir.
+func (c Context) WithCloudBaseline(baselineForLinter string) Context {
+	c.baseline = baselineForLinter
+	return c.WithResolvedBaselineSource(qdenv.BaselineSourceCloud)
+}
+
+// WithResolvedBaselineSource tells the linter which baseline the CLI has resolved for it, so that
+// the linter reports the source of the baseline and doesn't look for one in Qodana Cloud again.
+func (c Context) WithResolvedBaselineSource(source string) Context {
+	return c.withEnv(qdenv.QodanaBaselineSource, source, true)
 }
