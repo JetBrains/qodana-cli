@@ -44,8 +44,9 @@ records and mixed-repository revisions.
    ID and use a deterministic idempotency key that includes the selected subject ID and exact evidence identity. Do not
    copy rule IDs or search IDs into unsupported schema fields.
 6. Before any write, parse the full candidate set and verify revisions, paths, ranges, changed-line intersections,
-   unique stable IDs, and exact coverage. Publish each record through `edict_state_write`. Identical existing content is
-   an idempotent success; never overwrite different content. Read back and verify every returned path and hash.
+   unique stable IDs, and exact coverage. Publish each complete model through `edict_publish_signal`. An existing
+   identical model is an idempotent success; a conflicting model requires investigation and a failed outcome, never an
+   overwrite. Verify the complete expected ID set.
 7. Finish with selected subject IDs, bounded revision expression, queries used, candidate and inspected commit IDs,
    rejected candidates with concise reasons, accepted correcting commits, and created or existing Signal paths and
    hashes. A complete bounded search with no qualifying evidence is a successful no-op.

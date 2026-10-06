@@ -1,18 +1,12 @@
 // Copyright 2026 JetBrains s.r.o. Licensed under the Apache License, Version 2.0.
 package org.jetbrains.qodana.edict.integration.support
 
-import io.ktor.server.cio.CIO
-import io.ktor.server.engine.embeddedServer
-import io.modelcontextprotocol.kotlin.sdk.server.mcpStreamableHttp
-import kotlinx.coroutines.runBlocking
+import org.jetbrains.qodana.edict.EdictServer
+import org.jetbrains.qodana.edict.common.EdictLayout
 import org.jetbrains.qodana.edict.common.runProcess
 import org.jetbrains.qodana.edict.common.sha256
-import org.jetbrains.qodana.edict.edictnext.EdictNextMcpToolset
-import org.jetbrains.qodana.edict.edictnext.EdictManagementService
 import org.jetbrains.qodana.edict.edictnext.EdictNextRepositoryState
-import org.jetbrains.qodana.edict.edictnext.EdictNextWorkspace
 import org.jetbrains.qodana.edict.edictnext.EdictPrAnalysisService
-import org.jetbrains.qodana.edict.edictnext.EdictSessionContext
 import org.jetbrains.qodana.edict.edictnext.EdictNextLineRange
 import org.jetbrains.qodana.edict.edictnext.EdictNextSignal
 import org.jetbrains.qodana.edict.edictnext.EdictNextSignalLabel
@@ -38,7 +32,6 @@ import java.nio.file.StandardOpenOption.CREATE
 import java.nio.file.StandardOpenOption.WRITE
 import java.nio.file.attribute.BasicFileAttributes
 import java.nio.file.attribute.PosixFilePermissions
-import java.util.UUID
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 
@@ -55,7 +48,11 @@ internal class IntegrationWorkspace private constructor(
     // Fixture projects can contain legacy .edict data. Every test instead owns a clean Edict Next repository
     // at the clone root while keeping the requested subproject as the inspected IntelliJ project.
     val state = repository.root.resolve(".edict")
-    val logs = output.resolve("log/edict")
+
+    // Logs stay in the test output, outside the disposable clone. `open` rejects symlinked ancestors, so these paths
+    // are already canonical, as the agent sandbox requires.
+    val layout = EdictLayout(project, state, output.resolve("log"))
+    val logs: Path = layout.processLogDirectory
 
     @Suppress("UNUSED_PARAMETER")
     fun withCodex(
@@ -76,62 +73,38 @@ internal class IntegrationWorkspace private constructor(
         reviewProvider: ReviewProvider,
         additionalWritableRoots: List<Path> = emptyList(),
         verify: (EdictNextRepositoryState, CodexRunner, String) -> Unit,
-    ) = runBlocking {
+    ) {
         val lifecycle = if (inspectionServer == null) InspectionLifecycleFixture(output) else null
         try {
-            val qodanaExecutable = lifecycle?.qodanaExecutable ?: Path.of("qodana")
-            EdictNextRepositoryState.open(state).use { store ->
-                val sessionId = UUID.randomUUID().toString()
-                val context = EdictSessionContext.getInstance(sessionId)
-                context.load(
-                    EdictNextWorkspace.forRun(output.resolve("log"), sessionId),
-                    state,
-                    project,
-                    qodanaExecutable.toString(),
-                    inspectionServer = inspectionServer?.let {
-                        IntellijMcpServerService(projectPath = project, serverLifecycle = it)
-                    } ?: IntellijMcpServerService(projectPath = project, qodanaExecutable = qodanaExecutable.toString()),
+            val inspections = inspectionServer?.let { IntellijMcpServerService(projectPath = project, serverLifecycle = it) }
+                ?: IntellijMcpServerService(projectPath = project, qodanaExecutable = lifecycle!!.qodanaExecutable.toString())
+            EdictServer.start(layout, 0, inspections, reviewProvider).use { server ->
+                val store = server.store
+                val runtime = CodexRunner(
+                    output, layout, server.url, agentLogger = server.management.agents,
+                    additionalWritableRoots = additionalWritableRoots,
+                    stateWritable = inspectionServer != null,
                 )
-                val management = EdictManagementService(
-                    store,
-                    logs = logs,
-                    reviewProvider = reviewProvider,
-                    signalRepository = repository,
-                )
-                val engine = embeddedServer(CIO, host = "127.0.0.1", port = 0) {
-                    mcpStreamableHttp { EdictNextMcpToolset(sessionId, management).createServer() }
-                }.start(wait = false)
+                runtime.prepare()
+                runtime.verifySandbox()
+                println("Edict Next managed run: ${runtime.model}; logs: $logs")
+                var result: String? = null
+                var runFailure: Throwable? = null
                 try {
-                    val port = engine.engine.resolvedConnectors().single().port
-                    val runtime = CodexRunner(
-                        output, project, state, "http://127.0.0.1:$port/mcp", agentLogger = management.agents,
-                        additionalWritableRoots = additionalWritableRoots,
-                        stateWritable = inspectionServer != null,
-                    )
-                    runtime.prepare()
-                    runtime.verifySandbox()
-                    println("Edict Next managed run: ${runtime.model}; logs: $logs")
-                    var result: String? = null
-                    var runFailure: Throwable? = null
-                    try {
-                        result = runtime.run(prompt, timeoutMinutes)
-                    } catch (e: Throwable) {
-                        runFailure = e
-                        throw e
-                    } finally {
-                        try {
-                            store.plan()?.let { println(runtime.writePriceReport(it).render()) }
-                        } catch (e: Throwable) {
-                            if (runFailure != null) runFailure.addSuppressed(e) else throw e
-                        }
-                    }
-                    val completedResult = checkNotNull(result)
-                    println(store.redact(completedResult))
-                    verify(store, runtime, completedResult)
+                    result = runtime.run(prompt, timeoutMinutes)
+                } catch (e: Throwable) {
+                    runFailure = e
+                    throw e
                 } finally {
-                    engine.stop(1_000, 5_000)
-                    context.unload()
+                    try {
+                        store.plan()?.let { println(runtime.writePriceReport(it).render()) }
+                    } catch (e: Throwable) {
+                        if (runFailure != null) runFailure.addSuppressed(e) else throw e
+                    }
                 }
+                val completedResult = checkNotNull(result)
+                println(store.redact(completedResult))
+                verify(store, runtime, completedResult)
             }
         } finally {
             lifecycle?.close()
@@ -165,10 +138,13 @@ internal class IntegrationWorkspace private constructor(
             repository.git("diff", "--name-only", revision, "--"),
             "Integration modified tracked fixture content"
         )
-        val allowed = repository.root.relativize(state).toString().replace('\\', '/') + "/"
+        // Besides state, Edict owns the local agent setup and logs of the project it runs in.
+        val allowed = listOf(layout.stateDirectory, layout.codexConfigPath.parent, layout.logDirectory)
+            .filter { it.startsWith(repository.root) }
+            .map { repository.root.relativize(it).toString().replace('\\', '/') + "/" }
         repository.git("ls-files", "--others", "--exclude-standard", "-z").split('\u0000').filter(String::isNotBlank)
-            .forEach {
-                assertTrue(it.startsWith(allowed), "Integration wrote outside managed state: $it")
+            .forEach { path ->
+                assertTrue(allowed.any(path::startsWith), "Integration wrote outside managed state: $path")
             }
     }
 

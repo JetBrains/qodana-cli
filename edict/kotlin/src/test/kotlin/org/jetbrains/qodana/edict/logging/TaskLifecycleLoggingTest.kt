@@ -1,6 +1,7 @@
 package org.jetbrains.qodana.edict.logging
 
 import kotlinx.serialization.json.*
+import org.jetbrains.qodana.edict.common.EdictLayout
 import org.jetbrains.qodana.edict.common.flag
 import org.jetbrains.qodana.edict.common.text
 import org.jetbrains.qodana.edict.common.wireJson
@@ -45,8 +46,8 @@ class TaskLifecycleLoggingTest {
             val created = store.createPlan("Generate", listOf(Step("edict-next-generation", "Generate")))
             val generation = store.launch(created.token, created.plan.tasks.single().id, "edict-next-generation")
             val output = StringWriter()
-            val logs = directory.resolve("logs")
-            val server = EdictNextTestTools(store, logs = logs, taskOutput = PrintWriter(output))
+            val layout = EdictLayout(directory)
+            val server = EdictNextTestTools(store, layout = layout, taskOutput = PrintWriter(output))
             val workers = (1..15).map { index ->
                 store.delegateChild(generation.token, "edict-next-cluster-generation", "Generate $index")
             }
@@ -66,7 +67,7 @@ class TaskLifecycleLoggingTest {
                 assertTrue(lines.indexOf("$prefix finished") > lines.indexOf("$prefix started"))
                 assertFalse(output.toString().contains(worker.token))
             }
-            assertEquals(output.toString(), Files.readString(logs.resolve("edict-tasks.log")))
+            assertEquals(output.toString(), Files.readString(layout.tasksLogPath))
         }
     }
 
