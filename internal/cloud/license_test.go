@@ -272,7 +272,7 @@ func TestExtractLicenseKey(t *testing.T) {
 			testData.name, func(t *testing.T) {
 				data := DeserializeLicenseData([]byte(testData.data))
 				if data.LicenseKey != testData.expectedKey {
-					t.Errorf("expected data to be '%s' got '%s'", data, testData.expectedKey)
+					t.Errorf("expected license key to be '%s' got '%s'", testData.expectedKey, data.LicenseKey)
 				}
 			},
 		)
@@ -329,5 +329,14 @@ func TestDeserializeLicenseDataFields(t *testing.T) {
 	}
 	if result.LicensePlan != "ULTIMATE" {
 		t.Errorf("LicensePlan: expected 'ULTIMATE' got '%s'", result.LicensePlan)
+	}
+}
+
+func TestDeserializeLicenseDataSharing(t *testing.T) {
+	if DeserializeLicenseData([]byte(`{"licenseId": "A"}`)).DataSharingAllowed {
+		t.Error("missing field should mean false")
+	}
+	if !DeserializeLicenseData([]byte(`{"dataSharingAllowed": true}`)).DataSharingAllowed {
+		t.Error("expected true")
 	}
 }
