@@ -20,16 +20,6 @@ internal data class EdictRepositoryDirectory(val root: Path) {
   fun candidateInspectionPath(clusterId: String): Path = inspectionsDirectory.resolve(clusterId + EDICT_NEXT_CANDIDATE_SUFFIX)
 }
 
-internal data class EdictNextWorkspace(val root: Path) {
-  val worktree: Path = root.resolve("worktree")
-  val neighboursResponsePath: Path = root.resolve("neighbours.response.json")
-
-  companion object {
-    fun forRun(baseLogDirectory: Path, runId: String): EdictNextWorkspace =
-      EdictNextWorkspace(baseLogDirectory.resolve("edict-next").resolve(runId))
-  }
-}
-
 internal data class EdictNextClusterDirectory(val root: Path) {
   val manifestPath: Path = root.resolve("cluster.json")
   val signalsDirectory: Path = root.resolve("signals")

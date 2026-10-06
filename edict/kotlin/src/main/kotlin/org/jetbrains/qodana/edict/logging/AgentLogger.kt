@@ -4,20 +4,20 @@ package org.jetbrains.qodana.edict.logging
 import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.JsonNull
 import kotlinx.serialization.json.JsonObject
+import org.jetbrains.qodana.edict.common.EdictLayout
 import org.jetbrains.qodana.edict.common.flag
 import org.jetbrains.qodana.edict.common.json
 import org.jetbrains.qodana.edict.common.obj
 import org.jetbrains.qodana.edict.common.text
 import org.jetbrains.qodana.edict.edictnext.EdictNextRepositoryState
 import java.nio.file.Files
-import java.nio.file.Path
 import java.nio.file.StandardOpenOption.APPEND
 import java.nio.file.StandardOpenOption.CREATE
 import java.nio.file.attribute.PosixFilePermissions
 import java.time.Instant
 
 /** Human-readable assistant output and attributed MCP activity; private runtime events are excluded. */
-class AgentLogger internal constructor(private val store: EdictNextRepositoryState, val directory: Path) {
+class AgentLogger internal constructor(private val store: EdictNextRepositoryState, private val layout: EdictLayout) {
     data class Message(
         val time: Instant, val agentId: String, val agentPath: String = "", val root: Boolean = false,
         val phase: String = "message", val text: String,
@@ -27,9 +27,10 @@ class AgentLogger internal constructor(private val store: EdictNextRepositorySta
 
     private val pending = mutableListOf<Message>()
     private val identities = mutableMapOf<String, Identity>()
-    private val full = directory.resolve("edict-agents.log")
-    private val short = directory.resolve("edict-agent-short.log")
-    private val tasks = directory.resolve("tasks")
+    private val full = layout.agentsLogPath
+    private val short = layout.agentShortLogPath
+    private val tasks = layout.taskLogDirectory
+    private val directory = layout.processLogDirectory
 
     init {
         Files.createDirectories(directory)
@@ -112,7 +113,7 @@ class AgentLogger internal constructor(private val store: EdictNextRepositorySta
         val record = format(prefix, store.redact(text))
         Files.writeString(full, record, APPEND)
         if (identity.task.isNotEmpty()) {
-            val task = tasks.resolve("${identity.task}.log")
+            val task = layout.taskLogPath(identity.task)
             Files.writeString(task, record, CREATE, APPEND)
             if (Files.getFileStore(task).supportsFileAttributeView("posix"))
                 Files.setPosixFilePermissions(task, PosixFilePermissions.fromString("rw-------"))

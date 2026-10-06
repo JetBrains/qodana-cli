@@ -2,36 +2,48 @@
 
 Standalone Gradle application for the managed part of Edict. Requires JDK 21+ and
 Git; the Gradle wrapper downloads the pinned distribution. It uses the Kotlin MCP
-SDK and Ktor for stdio and Streamable HTTP transports. There are no IntelliJ,
+SDK and Ktor for the Streamable HTTP transport. There are no IntelliJ,
 Qodana CLI, Go, or Bazel dependencies.
 
 ```sh
 cd edict/kotlin
 ./gradlew test -PexcludeIntegrationTests=true installDist
 build/install/edict/bin/edict --help
-build/install/edict/bin/edict install-skills --directory /path/to/codex-home/skills
-build/install/edict/bin/edict edict-mcp-next --project-dir /path/to/project --state-dir /path/to/state --http-port 62780
+cd /path/to/project
+/path/to/edict/kotlin/build/install/edict/bin/edict install
+/path/to/edict/kotlin/build/install/edict/bin/edict mcp --state-dir /path/to/state
 ```
 
 ## Qodana CLI integration
 
 The Go commands `qodana edict install` and `qodana edict mcp start` launch this
-Kotlin application with Qodana's embedded JBR. Skill installation installs the
-14 managed skills into `$CODEX_HOME/skills` (falling back to `~/.codex/skills`),
-`./.codex/skills` with `--project`, `<dir>/.codex/skills` with `--project-dir <dir>`,
-or any directory with `--dest`.
-Installation prints the installed names. Existing unrelated skills are preserved. When upgrading from
-prefixed worker names, reinstall the bundle and remove worker directories with
-the previous `managed-` prefix.
+Kotlin application with Qodana's embedded JBR. Both run in the project directory, which is
+also the inspected project.
+
+Setup and run are separate. The user's `$CODEX_HOME/config.toml` holds only the model
+provider, created before Edict, and trusts the project (`[projects."<project>"] trust_level =
+"trusted"`); without trust Codex ignores the project's `.codex/config.toml`. `install` asks Codex
+(`codex mcp list --json`, or `$CODEX_BIN`) whether it loads the config, and removes it and fails if
+not, so it needs Codex installed. Edict never writes
+`$CODEX_HOME`. `qodana edict install [--deny <path>]...` installs the managed skills into
+`./.codex/skills` and writes `./.codex/config.toml`: the `edict` permission profile (project
+read-only, `log/agent-work` writable for scratch, `log/process-log` and every `--deny` path denied; the
+state root needs no rule because it is read-only to agents and `:read-only` allows reads), agent
+limits, and the `edict-mcp` server on loopback port `edict.mcpPort`. The port comes from the
+`edict` section of the project's `qodana.yml` or `qodana.yaml` (27182 when absent); re-run
+`install` after changing it. Installation logs the installed names. Existing unrelated skills are preserved.
+Then run Codex in the project with an explicit `$edict_manager <request>`; skills read the run's
+paths from the `edict_context` tool.
 
 From the repository root:
 
 ```sh
 go generate ./internal/tooling/...
 go build -o qodana ./cli
-./qodana edict install --project-dir /path/to/source
-./qodana edict mcp start --project-dir /path/to/source
-./qodana edict mcp start --project-dir /path/to/source --http-port 0 --log-dir /path/to/logs
+cd /path/to/project
+/path/to/qodana edict install
+/path/to/qodana edict mcp start --state-dir /path/to/state
+codex exec '$edict_manager process inbox and generate new rules'
 go test ./internal/cmd -run 'Test(Edict|ManagedMCP)'
 ```
 
@@ -41,22 +53,26 @@ a module hash in the runtime name prevent reuse of stale extracted tools. No
 separate JVM installation is needed to use the Go commands. For standalone use,
 run `java -jar build/libs/edict-cli.jar --help` after building `bundledJar`.
 
-The Go proxy tests launch the actual embedded JAR and JBR. They cover all install
-destinations and bundled resources, stdio/HTTP MCP, redacted logs, errors, shutdown,
+The Go proxy tests launch the actual embedded JAR and JBR. They cover the local
+installation and bundled resources, HTTP MCP on the configured port, redacted logs, errors, shutdown,
 and state-lock release. They need no model, Distillery checkout, or IDE.
 The server starts IntelliJ only when an inspection tool first needs it: it runs the
 hidden `qodana edict ide-mcp` helper as a child, which prints one readiness line and
 stops the IDE when its stdin closes. The IDE is native only: `--ide-dist <path>`, else
 `--ide-linter <name>` (downloaded by the CLI), else `QODANA_DIST`. Pass
 `--ide-property`/`--ide-wait-timeout` through `edict mcp start`; IDE output goes to
-`<log-dir>/edict/intellij-mcp.log`.
+`intellij-mcp.log` in the run's log folder.
 
-`edict-mcp-next` (and its `mcp` compatibility alias) uses newline-delimited MCP JSON-RPC on stdio. Stdout contains only protocol
-messages; activity and redacted tool details are written to
-`<project-dir>/log/edict/edict-mcp{,-system}.log`. Add `--http-port 0` to start a
-shared Streamable HTTP endpoint on a dynamically allocated loopback port (printed
-to stderr), or choose a fixed port. HTTP is useful when multiple native agents
-must share one server and one state lock.
+`mcp` serves one shared Streamable HTTP endpoint on loopback port `edict.mcpPort`, so every native
+agent shares one server and one state lock. It fails when `.codex/config.toml` is missing or names
+another port, or when the port is busy; it never moves to another port. State defaults to `.edict`
+(`--state-dir` moves it) and is also the reference repository for distribution checks; the
+project's Git repository validates commit Signals. Every process is a run named by its start time (UTC, for example
+`2026-10-06T14-03-12.345Z`) and logs to `log/process-log/<run-id>/`: activity and redacted tool details in
+`edict-mcp{,-system}.log`, and INFO and above, with stack traces, in `edict.log`, which stdout also shows
+(`src/main/resources/logback.xml`). The server prints its folder as `Process log: <path>`. Agent scratch is
+`log/agent-work/<run-id>/scratch`. `common/EdictLayout.kt` names all of these paths; the `edict.log.dir` JVM system
+property moves the `log` folder (relative to the project), and `edict.run.id` fixes the run id.
 
 ## What is ported
 
@@ -114,7 +130,8 @@ Production code lives under `src/main/kotlin/org/jetbrains/qodana/edict`:
 | `signals` | Structural signal validation and unified-diff parsing |
 | `git` | Exact repository evidence and commit extraction |
 | `reviews` | GitHub/Space clients, review models and prepared PR analysis |
-| `mcp` | Shared stdio/HTTP tool transport and dispatch |
+| `mcp` | Shared HTTP tool transport and dispatch |
+| `setup` | Project-local Codex setup: skills, `.codex/config.toml`, server port |
 | `runtime` | Isolated Codex execution and native session collection |
 | `logging` | Redacted, correlated agent activity logs |
 | `common` | JSON configuration/accessors, hashing and bounded subprocesses |
@@ -173,12 +190,13 @@ exact revisions, canonical Git diff bytes and historical changed-line evidence.
 CLI and provider integration tests use the same clone and output lifecycle.
 
 The model test asks only **“Extract signals from the latest commit.”** It installs
-the bundled skills in an isolated Codex home, runs a shared Kotlin MCP server
+Edict into the fixture project like `qodana edict install`, keeps only the provider and the
+project trust in an isolated Codex home, passes test-only settings (server URL, enabled tools,
+extra writable roots) as `codex -c` overrides, runs a shared Kotlin MCP server
 outside the agent sandbox, and requires a completed batch and distinct native
 evidence worker. `CODEX_BIN` overrides the CLI executable; `CODEX_MODEL` overrides
 the default `gpt-5.6-sol` model (high reasoning effort). The runner inherits only
-the host's active provider definition. Without a custom provider,
-`LITELLM_API_KEY` selects LiteLLM; otherwise Codex uses its default provider.
+the host's active provider definition; otherwise Codex uses its default provider.
 Existing `auth.json` is copied when needed. Host hooks, MCP servers and permissions
 are not inherited. Missing provider or fixture access fails the integration test.
 
@@ -198,7 +216,7 @@ that exact inspection hash. Compiler startup output is retained in `log/intellij
 Generation allows up to 60 minutes for model execution, including candidate revisions
 and independent reviews. Extraction tests retain their 20-minute execution limit.
 
-Each test's `log/edict/` directory contains:
+Each test's `log/process-log/<run-id>/` directory contains:
 
 - `edict-agents.log`: manager and worker commentary/final messages, task
   assignments, MCP lifecycle activity and complete response details.
@@ -212,8 +230,7 @@ identities, wrap lines at 120 characters, and redact issued capability tokens,
 including revoked tokens. Runtime user-message events, reasoning and unrelated sessions
 are excluded. Failures still flush available agent output. Raw runtime traces
 remain in private `trace/` and `codex-home/sessions/` directories. Agents cannot
-read those traces or the shared logs. The CLI accepts `--log-dir` to place its
-`edict/` logs outside the source checkout.
+read those traces or the shared logs.
 
 Run Gradle tests sequentially within a checkout, including runs started by the IDE.
 Overlapping IDE and terminal builds share `build/test-results/test/binary`; one
@@ -229,8 +246,8 @@ run the server outside that sandbox. JVM path checks reject traversal, symlinks,
 and unsupported artifact names; they are not a replacement for host filesystem
 isolation against a process that can replace directories concurrently. Keep raw
 runtime traces and parent/sibling conversations inaccessible to workers: a
-capability is a bearer secret. The supplied runner denies agent access to its
-trace and session directories and grants writes only to scratch space.
+capability is a bearer secret. `qodana edict install` denies agents the server logs and grants
+writes only to scratch space; the supplied runner also denies its trace and session directories.
 
 Plan creation is the only unauthenticated mutation. The first successful caller
 claims manager authority once per server lifetime. Run HTTP only on a trusted

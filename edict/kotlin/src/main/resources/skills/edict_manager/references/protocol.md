@@ -7,13 +7,20 @@ artifacts but receive no capability to modify Edict state.
 
 ## Authority and storage
 
-The trusted host starts `qodana edict mcp start --state-dir <state>` separately from the inspection
-server. The first successful `edict_plan_create(request, steps)` call needs no token and returns `{plan, token}`. Its
+The trusted host runs `qodana edict install` and `qodana edict mcp start` in the inspected project before the agent
+starts. The first successful `edict_plan_create(request, steps)` call needs no token and returns `{plan, token}`. Its
 caller becomes
 manager; this is allowed only once per server lifetime, including after task completion. The manager claims it before
 spawning children and keeps the returned token private. The host's agent sandbox must make the state
 root read-only, keep parent conversations and token-bearing logs inaccessible to children, and leave only scratch
 writable.
+
+## Run paths
+
+Call the read-only `edict_context` for the run's absolute paths: `projectDirectory` (the inspected project and source
+checkout), `stateDirectory` (the read-only state repository that Edict Next tools change in place), and `scratchDirectory` (the
+run's private scratch root). Top-level stages take their paths from  it; prompts never need to repeat them. 
+Child instructions still carry task-specific paths, such as a cluster directory or a unique private scratch directory below `scratchDirectory`.
 
 Spawned subtasks are provided with own token with prompt on execution. State of edict should be modified through mcp
 calls only. List of available mcp ,ethods could be obtained through edict_task_get call.

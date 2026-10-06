@@ -1,35 +1,29 @@
 #!/usr/bin/env bash
 set -euo pipefail
 source "$(dirname "$0")/common.sh"
+cd "$benchmark_project"
 
-qodana edict install --dest "$benchmark_codex_home/skills"
+# Agents must not read the benchmark answers or Codex's own session records.
+qodana edict install --deny benchmark --deny .edict/gold.sarif.json \
+  --deny "$benchmark_output/trace" --deny "$benchmark_codex_home/sessions" --deny "$benchmark_codex_home/log"
 
-# The server starts IntelliJ from QODANA_DIST on the first inspection call and stops it on exit.
+# The server listens on edict.mcpPort (default 27182), keeps .edict as its state and logs to log/process-log/<run-id>.
+# It starts IntelliJ from QODANA_DIST on the first inspection call and stops it on exit.
+# Its console output stays beside the run folders, which agents cannot read either.
+server_log=log/process-log/edict-server.log
+mkdir -p log/process-log
 QODANA_CONF="$benchmark_output/mcp-config" nohup setsid qodana edict mcp start \
-  --project-dir "$benchmark_project" --state-dir "$benchmark_state" \
-  --source-repository "$benchmark_state" \
   --ide-wait-timeout 20m \
   --ide-property=-Xmx8g --ide-property=java.awt.headless=true --ide-property=idea.is.internal=true \
-  --ide-property=eap.login.enabled=false \
-  --log-dir "$benchmark_output/log" --http-port 0 > "$benchmark_output/log/edict-server.log" 2>&1 < /dev/null &
+  --ide-property=eap.login.enabled=false > "$server_log" 2>&1 < /dev/null &
 echo $! > "$benchmark_output/edict.pid"
-edict_url=
 for ((attempt=0; attempt<90; attempt++)); do
   kill -0 "$(cat "$benchmark_output/edict.pid")" 2>/dev/null || { echo 'Edict MCP exited during startup' >&2; exit 1; }
-  edict_url=$(sed -nE 's/.*edict-mcp listening at (http[^[:space:]]+).*/\1/p' "$benchmark_output/log/edict-server.log" | head -1)
-  [[ -z "$edict_url" ]] || break
+  ! grep -q 'edict-mcp listening at ' "$server_log" || break
   sleep 1
 done
-[[ -n "$edict_url" ]] || { echo 'Edict MCP startup timed out' >&2; exit 1; }
-
-cat >> "$benchmark_codex_home/config.toml" <<CONFIG
-
-[mcp_servers.edict-mcp]
-url = "$edict_url"
-default_tools_approval_mode = "approve"
-# Inspection tools include IDE startup (up to --ide-wait-timeout) on first use.
-tool_timeout_sec = 1800
-required = true
-CONFIG
+grep 'edict-mcp listening at ' "$server_log" || { echo 'Edict MCP startup timed out' >&2; exit 1; }
+# The generation step streams this run's task log.
+sed -n 's/.*Process log: //p' "$server_log" > "$benchmark_output/edict-process-log"
 echo "Edict MCP server is ready; using existing state at $benchmark_state."
 trap - EXIT INT TERM

@@ -2,6 +2,7 @@ package org.jetbrains.qodana.edict.edictnext
 
 import kotlinx.coroutines.withTimeout
 import kotlinx.coroutines.withTimeoutOrNull
+import org.jetbrains.qodana.edict.common.GitRepository
 import java.nio.file.Path
 import java.util.concurrent.ConcurrentHashMap
 import kotlin.io.path.isRegularFile
@@ -9,11 +10,16 @@ import kotlin.io.path.readText
 import kotlin.time.TimeMark
 import kotlin.time.TimeSource
 
-internal class EdictNextGenerationService private constructor(
-  sessionId: String,
+/** Generates inspections for the run's Pending clusters, checked against the snapshot [getGenerationClusters] took. */
+internal class EdictNextGenerationService(
+  private val repository: EdictRepository,
+  inspectionServer: IntellijMcpServerService,
+  private val projectRoot: Path,
 ) {
-  private val context = EdictSessionContext.getInstance(sessionId)
-  private val inspection: EdictNextInspection get() = EdictNextInspection(context.inspectionServer)
+  private val inspection = EdictNextInspection(inspectionServer)
+
+  /** The analyzed project's HEAD, resolved on first use and fixed for the rest of the run. */
+  private val projectRevision: String by lazy { GitRepository(projectRoot).resolve("HEAD") }
   private val clusterGenerationStarts = ConcurrentHashMap<Set<String>, TimeMark>()
   private val generationTargetSignalIdsByClusterId = ConcurrentHashMap<String, Set<String>>()
   private val inspectionActions = ConcurrentHashMap<Set<String>, EdictNextInspectionAction>()
@@ -21,7 +27,6 @@ internal class EdictNextGenerationService private constructor(
   private var generationSnapshot: EdictNextGenerationSnapshot? = null
 
   suspend fun getGenerationClusters(): EdictNextGenerationClustersResponse {
-    val repository = context.repository()
     val state = repository.loadState()
     requireNoIssues(validateRepositoryState(repository, state))
     val targets = state.clusters.filter { it.manifest.status == EdictNextClusterStatus.Pending }
@@ -39,7 +44,7 @@ internal class EdictNextGenerationService private constructor(
 
   suspend fun validateCodeExample(clusterId: String, exampleId: String): EdictNextCodeExampleValidationResponse =
     withinClusterGenerationDeadline(clusterId, generationTargetSignalIdsByClusterId[clusterId]) {
-      validateCodeExample(context.repository(), clusterId, exampleId)
+      validateCodeExample(repository, clusterId, exampleId)
     }
 
   suspend fun saveCodeExample(
@@ -84,7 +89,7 @@ internal class EdictNextGenerationService private constructor(
 
   suspend fun validateClusterExamples(clusterId: String): EdictNextCodeExampleValidationResponse {
     val cluster = try {
-      context.repository().loadCluster(clusterId)
+      repository.loadCluster(clusterId)
     }
     catch (e: EdictNextCodeExampleReadException) {
       return EdictNextCodeExampleValidationResponse(
@@ -108,7 +113,6 @@ internal class EdictNextGenerationService private constructor(
   }
 
   suspend fun getInspectionAction(clusterId: String): EdictNextInspectionActionResponse {
-    val repository = context.repository()
     val cluster = repository.loadCluster(clusterId)
     return withinClusterGenerationDeadline(clusterId, cluster.signalIds, start = true) {
       require(cluster.manifest.status == EdictNextClusterStatus.Pending) { "Cluster '$clusterId' is not Pending" }
@@ -119,7 +123,6 @@ internal class EdictNextGenerationService private constructor(
   }
 
   suspend fun validateInspection(clusterId: String): EdictNextInspectionValidationResponse {
-    val repository = context.repository()
     val cluster = repository.loadCluster(clusterId)
     return withinClusterGenerationDeadline(clusterId, cluster.signalIds) {
       inspection.validate(cluster, cluster.candidateInspectionPath.readText())
@@ -130,17 +133,16 @@ internal class EdictNextGenerationService private constructor(
     clusterId: String,
     privateScratchDirectory: String,
   ): EdictNextInspectionResultsResponse {
-    val repository = context.repository()
     val cluster = repository.loadCluster(clusterId)
     return withinClusterGenerationDeadline(clusterId, cluster.signalIds) {
       withTimeout(EdictNextTimeouts.analysis) {
         val code = cluster.candidateInspectionPath.readText()
-        val findings = inspection.analyzeProject(cluster, code, context.projectRevision)
+        val findings = inspection.analyzeProject(cluster, code, projectRevision)
         val response = EdictNextReviewArtifacts.create(
           findings = findings,
           clusterDirectory = cluster.directory.root,
           candidateInspection = cluster.candidateInspectionPath,
-          inspectedProject = context.analyzedProject,
+          inspectedProject = projectRoot,
           privateScratchDirectory = Path.of(privateScratchDirectory).toAbsolutePath().normalize(),
         )
         analyzedCandidateDigests[cluster.signalIds] = findings.candidateDigest
@@ -150,7 +152,6 @@ internal class EdictNextGenerationService private constructor(
   }
 
   suspend fun markGenerated(clusterId: String): EdictNextMarkGeneratedResponse {
-    val repository = context.repository()
     val generationSnapshot = checkNotNull(generationSnapshot) { "Call edict_next_get_generation_clusters first" }
     val cluster = repository.loadCluster(clusterId)
     return withinClusterGenerationDeadline(clusterId, cluster.signalIds) {
@@ -216,7 +217,6 @@ internal class EdictNextGenerationService private constructor(
   }
 
   suspend fun validateGeneration(): EdictNextValidationResponse {
-    val repository = context.repository()
     val generationSnapshot = checkNotNull(generationSnapshot) { "Call edict_next_get_generation_clusters first" }
     val current = try {
       repository.loadState()
@@ -295,7 +295,6 @@ internal class EdictNextGenerationService private constructor(
     clusterId: String,
     action: suspend (EdictRepository) -> T,
   ): T {
-    val repository = context.repository()
     val frozenSignalIds = generationTargetSignalIdsByClusterId[clusterId]
                           ?: error("Cluster '$clusterId' is not a frozen generation target")
     require(repository.clusterSignalIds(clusterId) == frozenSignalIds) { "Cluster '$clusterId' Signal membership changed" }
@@ -337,13 +336,6 @@ internal class EdictNextGenerationService private constructor(
       "Cluster '$clusterId' generation exceeded its 120-minute limit. " +
       "Cleanup current session to valid Pending state and stop generation"
     )
-  }
-
-  companion object {
-    private val servicesBySessionId = ConcurrentHashMap<String, EdictNextGenerationService>()
-
-    fun getInstance(sessionId: String): EdictNextGenerationService =
-      servicesBySessionId.computeIfAbsent(sessionId) { EdictNextGenerationService(it) }
   }
 }
 
