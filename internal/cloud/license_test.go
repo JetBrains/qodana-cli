@@ -272,7 +272,7 @@ func TestExtractLicenseKey(t *testing.T) {
 			testData.name, func(t *testing.T) {
 				data := DeserializeLicenseData([]byte(testData.data))
 				if data.LicenseKey != testData.expectedKey {
-					t.Errorf("expected data to be '%s' got '%s'", data, testData.expectedKey)
+					t.Errorf("expected license key to be '%s' got '%s'", testData.expectedKey, data.LicenseKey)
 				}
 			},
 		)
