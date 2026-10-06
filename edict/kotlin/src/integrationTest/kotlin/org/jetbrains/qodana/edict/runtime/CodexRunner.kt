@@ -2,9 +2,12 @@
 package org.jetbrains.qodana.edict.runtime
 
 import kotlinx.serialization.json.JsonPrimitive
+import org.jetbrains.qodana.edict.common.EdictLayout
 import org.jetbrains.qodana.edict.logging.AgentLogger
+import org.jetbrains.qodana.edict.edictnext.EdictNextMcpToolset
 import org.jetbrains.qodana.edict.edictnext.EdictNextRepositoryState.Plan
-import org.jetbrains.qodana.edict.skills.Skills
+import org.jetbrains.qodana.edict.setup.CodexSetup
+import org.jetbrains.qodana.edict.setup.EdictConfig
 import org.tomlj.Toml
 import org.tomlj.TomlTable
 import java.nio.file.Files
@@ -13,20 +16,28 @@ import java.nio.file.StandardCopyOption
 import java.nio.file.attribute.PosixFilePermissions
 import java.util.concurrent.TimeUnit
 
-/** Isolated host for managed-skill integration tests. MCP must run outside the agent filesystem sandbox. */
-class CodexRunner(
+/**
+ * Isolated host for managed-skill integration tests. MCP must run outside the agent filesystem sandbox.
+ *
+ * Like a user, the runner keeps only the provider and project trust in its temporary `CODEX_HOME`; the session settings
+ * come from `qodana edict install` in the project. Test-only extras are `codex -c` overrides of that local config.
+ */
+class CodexRunner internal constructor(
     private val output: Path,
-    private val project: Path,
-    private val state: Path,
+    layout: EdictLayout,
     private val mcpUrl: String,
-    private val executable: String = System.getenv("CODEX_BIN") ?: "codex",
+    // The real Codex: under Gradle, CODEX_BIN is the fake that only answers Edict's trust check.
+    private val executable: String = System.getenv("EDICT_REAL_CODEX") ?: System.getenv("CODEX_BIN") ?: "codex",
     val model: String = System.getenv("CODEX_MODEL") ?: "gpt-5.6-sol",
     private val agentLogger: AgentLogger? = null,
-    private val primaryMcpCommand: List<String>? = null,
-    private val primaryMcpEnabledTools: List<String>? = null,
+    private val enabledTools: List<String>? = null,
     private val additionalWritableRoots: List<Path> = emptyList(),
     private val stateWritable: Boolean = false,
 ) {
+    // Codex and its sandbox see the project by its canonical path, as the server does.
+    private val layout = layout.copy(root = layout.root.toRealPath())
+    private val project = this.layout.root
+    private val state = this.layout.stateDirectory
     val home: Path = output.resolve("codex-home")
     val scratch: Path = output.resolve("scratch")
     val trace: Path = output.resolve("trace")
@@ -34,7 +45,6 @@ class CodexRunner(
     private fun quote(value: String): String = JsonPrimitive(value).toString()
 
     fun prepare() {
-        require(primaryMcpCommand == null || primaryMcpCommand.isNotEmpty()) { "The primary MCP command must not be empty" }
         listOf(output, home, scratch, trace).forEach {
             Files.createDirectories(it)
             if (Files.getFileStore(it).supportsFileAttributeView("posix")) Files.setPosixFilePermissions(
@@ -42,77 +52,35 @@ class CodexRunner(
                 PosixFilePermissions.fromString("rwx------")
             )
         }
-        Skills.install(home.resolve("skills"))
-        val sourceHome =
-            Path.of(System.getenv("CODEX_HOME") ?: Path.of(System.getProperty("user.home"), ".codex").toString())
-        val inherited = providerConfiguration(sourceHome.resolve("config.toml"))
-        val litellm = inherited == null && !System.getenv("LITELLM_API_KEY").isNullOrBlank()
-        val provider = inherited ?: if (litellm) """
-            model_provider = "litellm"
-            [model_providers.litellm]
-            name = "LiteLLM"
-            base_url = "https://litellm.labs.jb.gg/openai"
-            env_key = "LITELLM_API_KEY"
-            wire_api = "responses"
-        """.trimIndent() else ""
-        if (!litellm) {
-            val auth = sourceHome.resolve("auth.json")
-            if (Files.exists(auth)) Files.copy(auth, home.resolve("auth.json"), StandardCopyOption.REPLACE_EXISTING)
-        }
+        val sourceHome = CodexSetup.userCodexHome()
+        val auth = sourceHome.resolve("auth.json")
+        if (Files.exists(auth)) Files.copy(auth, home.resolve("auth.json"), StandardCopyOption.REPLACE_EXISTING)
         Files.writeString(
-            home.resolve("config.toml"), """
-            approval_policy = "never"
-            default_permissions = "edict-test"
-            model_reasoning_effort = "high"
-            $provider
-
-            [permissions.edict-test]
-            extends = ":read-only"
-            [permissions.edict-test.filesystem]
-            ":tmpdir" = "write"
-            ${quote(project.toRealPath().toString())} = "read"
-            ${quote(state.toRealPath().toString())} = "${if (stateWritable) "write" else "read"}"
-            ${quote(trace.toAbsolutePath().toString())} = "deny"
-            ${quote(home.resolve("sessions").toAbsolutePath().toString())} = "deny"
-            ${quote(home.resolve("log").toAbsolutePath().toString())} = "deny"
-            ${quote(output.resolve("log").toAbsolutePath().toString())} = "deny"
-            ${additionalWritableRoots.joinToString("\n") { "${quote(it.toRealPath().resolve(".git").toString())} = \"write\"" }}
-            [permissions.edict-test.workspace_roots]
-            ${quote(scratch.toAbsolutePath().toString())} = true
-            ${additionalWritableRoots.joinToString("\n") { "${quote(it.toRealPath().toString())} = true" }}
-            [permissions.edict-test.filesystem.":workspace_roots"]
-            "." = "write"
-            [permissions.edict-test.network]
-            enabled = true
-            mode = "full"
-
-            [features]
-            multi_agent = true
-            [agents]
-            enabled = true
-            max_depth = 5
-            max_concurrent_threads_per_session = 50
-        """.trimIndent() + "\n" + primaryMcpConfiguration())
+            home.resolve("config.toml"),
+            providerConfiguration(sourceHome.resolve("config.toml")).orEmpty() + "\n" +
+                "[projects.${quote(project.toString())}]\ntrust_level = \"trusted\"\n",
+        )
+        CodexSetup.install(
+            layout,
+            listOf(trace, home.resolve("sessions"), home.resolve("log")).map { it.toAbsolutePath() },
+            EdictConfig.load(layout),
+            home,
+        )
     }
 
-    private fun primaryMcpConfiguration(): String {
-        val transport = primaryMcpCommand?.let { command ->
-            """
-                command = ${quote(command.first())}
-                args = [${command.drop(1).joinToString(", ") { quote(it) }}]
-                startup_timeout_sec = 120
-                tool_timeout_sec = 3600
-            """.trimIndent()
-        } ?: "url = ${quote(mcpUrl)}"
-        return """
-            [mcp_servers."edict-mcp"]
-            $transport
-            required = true
-            ${primaryMcpEnabledTools?.let { tools -> "enabled_tools = [${tools.joinToString(", ") { quote(it) }}]" }.orEmpty()}
-            omit_tools_from = ["code_mode", "deferred"]
-            default_tools_approval_mode = "approve"
-        """.trimIndent() + "\n"
-    }
+    /** Test-only additions to the installed local config. */
+    internal fun configOverrides(): List<String> = buildList {
+        add("mcp_servers.${EdictNextMcpToolset.SERVER_NAME}.url=${quote(mcpUrl)}")
+        enabledTools?.let { tools ->
+            add("mcp_servers.${EdictNextMcpToolset.SERVER_NAME}.enabled_tools=[${tools.joinToString(", ") { quote(it) }}]")
+        }
+        val writable = additionalWritableRoots.map { it.toRealPath() }.flatMap { listOf(it, it.resolve(".git")) } +
+            listOfNotNull(state.toRealPath().takeIf { stateWritable })
+        // Path keys contain dots, so they go into an inline table; Codex merges it into the installed profile.
+        if (writable.isNotEmpty()) {
+            add("permissions.edict.filesystem={${writable.joinToString(", ") { "${quote(it.toString())} = \"write\"" }}}")
+        }
+    }.flatMap { listOf("-c", it) }
 
     // Inherit only the selected provider, never unrelated hooks, MCP servers, skills or host permissions.
     internal fun providerConfiguration(path: Path): String? {
@@ -147,8 +115,10 @@ class CodexRunner(
         val last = trace.resolve("last-message.txt")
         Files.deleteIfExists(last)
         val process = ProcessBuilder(
-            executable, "exec", "--dangerously-bypass-hook-trust", "--json", "--skip-git-repo-check", "--model", model,
-            "--output-last-message", last.toString(), prompt
+            listOf(executable, "exec") + configOverrides() + listOf(
+                "--dangerously-bypass-hook-trust", "--json", "--skip-git-repo-check", "--model", model,
+                "--output-last-message", last.toString(), prompt,
+            )
         )
             .directory(project.toFile()).redirectOutput(stdout.toFile()).redirectError(stderr.toFile())
             .apply { environment()["CODEX_HOME"] = home.toString(); environment()["TMPDIR"] = scratch.toString() }
@@ -184,26 +154,32 @@ class CodexRunner(
 
     internal fun writePriceReport(plan: Plan): CodexPriceReport =
         CodexPriceReporter.create(home, plan, pricing).also {
-            CodexPriceReporter.write(it, output.resolve("log/edict/edict-price-report.json"))
+            CodexPriceReporter.write(it, layout.processLogDirectory.resolve("edict-price-report.json"))
         }
 
     fun verifySandbox() {
         val allowed = scratch.resolve("sandbox-write-probe")
         val denied = state.resolve("unmanaged-write-probe")
         val process = ProcessBuilder(
-            executable,
-            "sandbox",
-            "-P",
-            "edict-test",
-            "-C",
-            project.toString(),
-            "--",
-            "/bin/sh",
-            "-c",
-            "printf allowed > \"\$1\" && printf forbidden > \"\$2\"",
-            "edict-sandbox-probe",
-            allowed.toString(),
-            denied.toString()
+            buildList {
+                addAll(listOf(this@CodexRunner.executable, "sandbox"))
+                addAll(this@CodexRunner.configOverrides())
+                addAll(
+                    listOf(
+                        "-P",
+                        "edict",
+                        "-C",
+                        this@CodexRunner.project.toString(),
+                        "--",
+                        "/bin/sh",
+                        "-c",
+                        "printf allowed > \"\$1\" && printf forbidden > \"\$2\"",
+                        "edict-sandbox-probe",
+                        allowed.toString(),
+                        denied.toString(),
+                    )
+                )
+            }
         )
             .redirectOutput(trace.resolve("sandbox.stdout").toFile())
             .redirectError(trace.resolve("sandbox.stderr").toFile())

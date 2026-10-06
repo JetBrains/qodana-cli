@@ -1,15 +1,56 @@
 # Edict: how a run works
 
-The host (for example `scripts/edict-benchmark/`) installs the 12 managed skills with `qodana edict install`, starts the
-Edict state server with `qodana edict mcp start --project-dir <project> --state-dir <project>/.edict --http-port 0`, and
-the IntelliJ inspection server with `qodana edict linter-mcp start`. It registers both as Codex MCP servers and runs one
-`codex exec` with a plain request such as `process inbox and generate new rules. Managed state: <state>. Private
-scratch: <scratch>`.
+## Setup and run
+
+```text
+# global, user-owned, created before Edict: provider, model, and the project marked trusted
+$CODEX_HOME/config.toml
+
+# optional, in the project: Edict settings in the Qodana configuration (qodana.yml wins over qodana.yaml)
+edict:
+  mcpPort: 27182   # the default
+
+# setup, in the inspected project (a future `qodana edict setup` replaces these two calls)
+cd <project>
+qodana edict install [--deny <path>]...
+qodana edict mcp start [--state-dir <state>] [--ide-* ...]
+
+# run, in the same directory
+codex exec '$edict_manager process inbox and generate new rules'
+```
+
+- The global `$CODEX_HOME` holds only the provider and the project trust; Edict never writes it. Codex reads the
+  project's `.codex/config.toml` only for a trusted project; `install` checks that with `codex mcp list --json` and
+  fails otherwise. `.codex/skills` load without trust.
+- `qodana edict install` writes, in the working directory:
+  - `.codex/skills/`: the managed skills;
+  - `.codex/config.toml`: `approval_policy = "never"`, the `edict` permission profile, `multi_agent`, agent limits
+    (depth 5, 50 threads), and `[mcp_servers.edict-mcp]` with a loopback URL;
+  - the profile extends `:read-only` (reads everywhere, so a state root outside the project needs no rule): `<cwd>`
+    read, `<cwd>/log/agent-work` write, `<cwd>/log/process-log` deny (token-bearing logs), and every `--deny` path deny;
+  - the port is `edict.mcpPort` from `qodana.yaml`; re-run `install` after changing it.
+- `qodana edict mcp start` serves Streamable HTTP on `edict.mcpPort`. It fails fast when `.codex/config.toml` is missing
+  or names another port, and when the port is busy. The project is the working directory, state defaults to
+  `<cwd>/.edict` (`--state-dir` moves it), and each run (process, named by its UTC start time) logs to
+  `<cwd>/log/process-log/<run-id>`. The state is also the reference repository for
+  distribution checks, and the project's Git repository validates commit Signals. It forwards the
+  IntelliJ inspection tools, starting the IDE on the first inspection call, so Codex configures only `edict-mcp`.
+- The request carries no paths. Skills call `edict_context` for `projectDirectory`, `stateDirectory` (read-only; the
+  state repository Edict Next tools change in place), and `scratchDirectory` (`<cwd>/log/agent-work/<run-id>/scratch`).
+- Provider tokens (`GITHUB_TOKEN`/`GH_TOKEN`, `SPACE_TOKEN`) come from the server environment, never from MCP arguments.
+  A run fails only when it uses a VCS provider without its token.
+
+The benchmark (`scripts/edict-benchmark/`) follows this shape: `install-codex.sh` writes the temporary global home,
+`prepare.sh` runs `install --deny` and `mcp start` in the project, and `generate.sh` runs the explicit `$edict_manager`
+request.
+
+## Agents
 
 The root loads only `edict_manager`. Every other skill runs in a fresh native
 subagent with no inherited conversation, and every Qodana MCP call uses the inspected IntelliJ project as `projectPath`.
-The state root is written only through Edict MCP tools. In the benchmark, the Edict worktree and the state root are the
-same directory; there is no branch, worktree creation, commit, or push.
+The state root is read-only to agents and written only through Edict MCP tools, which change it in place; there is no
+second copy, branch, worktree, commit, or push. Distribution and generation verify their changes against in-memory
+snapshots taken when they start.
 
 ## Managed protocol (every task)
 
@@ -55,23 +96,23 @@ edict_manager
   - one `$edict-signal-analysis` worker per commit; each reads the full message, exact source, and diff and returns
     POSITIVE (before) / NEGATIVE (after) findings without rule fields
   - require exact coverage, build complete `FromCommit` records in memory, then publish each with
-    `edict_state_write(inbox/<id>.json, content, expectedHash)`; identical existing content counts as success
-- `$edict-pr-signal-analysis`: GitHub/Space merged reviews, chunks of at most 8 work items per `$edict-signal-analysis`
-  worker, validated with `edict_validate_pr_signals` before `edict_state_write`
-  - **not wired**: its tools (`edict_prepare_pr_analysis`, `edict_list_pr_analysis_items`,
-    `edict_get_pr_analysis_item`, `edict_validate_pr_signals`, `edict_pr_file_*`) are not registered by the current
-    server. The PR analysis code was removed in `683c9006`
+    `edict_publish_signal`; an identical existing Signal counts as success
+- `$edict-pr-signal-analysis`: GitHub/Space merged reviews
+  - skip ranges already recorded by `edict_get_pr_analysis_coverage`, then `edict_fetch_pr_batch` and
+    `edict_list_pr_analysis_items` / `edict_get_pr_analysis_item` / `edict_pr_file_*`
+  - chunks of at most 8 work items per `$edict-signal-analysis` worker, validated with `edict_validate_pr_signals`,
+    published with `edict_publish_signal`, then `edict_record_pr_analysis_coverage`
 - in the benchmark, extraction is skipped: the fixture's checked-in `.edict/inbox` is processed in place
 
 ## Distribution and generation
 
 - `$edict-next-distribution`
-  - call `edict_prepare_pipeline(worktreePath)` once
-    - validate the source and worktree repositories and require their distribution state to match
+  - call `edict_next_prepare_pipeline` once
+    - snapshot and validate the state repository
     - select up to 100 alphabetical JVM inbox Signals
     - build 10 nearest same-language neighbours per Signal with in-JVM GTE embeddings (`EdictNextNeighbourFinder`);
       vectors are cached in `<state>/embeddings/gte-large-<revision>/`, the model in `<user cache>/JetBrains/Qodana/edict/models/`
-  - repeatedly call `edict_next_signal`; it returns the complete Signal and neighbouring clusters/inbox Signals
+  - repeatedly call `edict_next_next_signal`; it returns the complete Signal and neighbouring clusters/inbox Signals
   - for every plausible cluster, call `edict_next_get_distribution_context(kind: "cluster", id)` and compare every
     member, including negatives; optionally read a neighbouring Signal (`kind: "signal"`) or its exact revision
   - call `edict_next_add_signal_to_cluster(signalId, clusterId)` with a compatible existing id (requires the context
@@ -80,7 +121,8 @@ edict_manager
 - `edict_next_validate_distribution`: only `$edict-next-run` calls it. It validates the repository and requires exactly
   the selected Signals to have moved from the inbox to clusters, with no other changes
 - `$edict-next-generation`
-  - resolve a scratch root outside the worktree and call `edict_next_get_generation_clusters`
+  - take the state repository and project from `edict_context`, create a generation scratch root below its `scratchDirectory`,
+    and call `edict_next_get_generation_clusters`
     - freeze Pending clusters and their Signal memberships; `maxConcurrentClusterTasks` is 20
   - run one `$edict-next-cluster-generation` worker per cluster, keeping up to that many active
   - leaving a cluster Pending or Invalid is not a stage failure; the coordinator never repairs worker output
@@ -143,8 +185,7 @@ edict_manager
 
 When the manager plans it as the single step, it runs distribution [120m], `edict_next_validate_distribution`,
 generation [660m], and `edict_next_validate_generation` [40m], stops unless the result is `PUBLISH`, and reports Invalid
-clusters from `history.md`. Its "commit and push the worktree" step conflicts with `edict_manager`, which forbids commit,
-push, and worktree creation.
+clusters from `history.md`. It no longer commits or pushes, matching `edict_manager`.
 
 ## Repository state
 
@@ -156,14 +197,14 @@ the KTS.
 - `Discontinued`: no current, candidate, or predecessor inspection exists; history is non-empty.
 - no unrelated inspection files exist.
 
-The plan, task lifecycle, and logs live under the state root and `<log-dir>/edict/`:
+The plan and task lifecycle live under the state root, logs under `<cwd>/log/process-log/<run-id>/` (denied to agents):
 `edict-tasks.log` (one line per task start/finish), `edict-mcp.log`, `edict-mcp-system.log` (redacted arguments and
 responses), and `tasks/<task-id>.log`.
 
 ## Differences from the Ultimate `edict-next-run` flow
 
 - A managed plan with per-task capability tokens replaces one root skill; `edict_manager` is the entry point.
-- `$edict-next-prepare` is gone. Distribution calls `edict_prepare_pipeline` itself, and no branch or worktree is
+- `$edict-next-prepare` is gone. Distribution calls `edict_next_prepare_pipeline` itself, and no branch or worktree is
   created.
 - Signal extraction (commits; PRs once wired) is part of the same pipeline.
 - Acceptance requires every strong example to pass; the 85% threshold remains only in tool descriptions.
@@ -173,9 +214,19 @@ responses), and `tasks/<task-id>.log`.
 
 - With the tested plan (distribution -> generation directly), `edict_next_validate_distribution` and
   `edict_next_validate_generation` are not called by anyone.
-- Skills name Edict tools `mcp__qodana__edict_next_*`, but hosts register the server as `edict-mcp`.
-- Some messages still say `edict_next_next_signal` / `edict_next_prepare_pipeline`; the tools are `edict_next_signal`
-  and `edict_prepare_pipeline`.
+- Skills name Edict tools `mcp__qodana__edict_next_*`, but `qodana edict install` registers the server as `edict-mcp`.
+- `edict-git-history-signal-analysis` and `edict-retrospective-signal-analysis` still publish through
+  `edict_state_write`, which the server no longer registers; the tool is `edict_publish_signal`.
+- `cluster.json` status changes to Invalid or Discontinued and cluster renames have no MCP tool, so with read-only state
+  those transitions leave the cluster Pending.
 - `EdictNextTimeouts.session` (900m) is defined but not enforced; the benchmark job timeout is 300 minutes.
 - `scripts/edict-benchmark/README.md` says five review iterations (the server allows three), and `README.md` says 13
   managed skills (the registry has 12).
+
+## TODO (outside the setup/run separation)
+
+- MCP server names: `edict` for Edict, `qodana` for IDE tools; fix the `mcp__qodana__…` names in skills.
+- MCP tools for marking a cluster Invalid or Discontinued and for renaming it (`edict-next-cluster-generation`).
+- `edict-next-run`: remove, or keep.
+- Upstream breakages: test sources do not compile (`LiveGitHistorySignalAnalysisTest.kt`, `IntegrationWorkspace.kt`
+  import, `InspectionKtsMcpClientTest.kt`), and server startup requires the project to be a Git repository (`Main.kt`).

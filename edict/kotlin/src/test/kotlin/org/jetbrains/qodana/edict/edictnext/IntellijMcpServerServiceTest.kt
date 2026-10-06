@@ -124,22 +124,15 @@ class IntellijMcpServerServiceTest {
   }
 
   @Test
-  fun `session load needs neither Git nor the IDE until they are used`() = runBlocking {
+  fun `a run needs neither Git nor the IDE until they are used`() = runBlocking {
     val qodana = fakeQodana("exit 1")
-    val runId = "lazy-${project.fileName}"
-    val context = EdictSessionContext.getInstance(runId)
-    context.load(
-      workspace = EdictNextWorkspace.forRun(project.resolve("logs"), runId),
-      sourceRepository = project,
-      analyzedProject = project,
-      qodanaExecutable = qodana.toString(),
-      inspectionServer = IntellijMcpServerService(projectPath = project, qodanaExecutable = qodana.toString()),
-    )
+    val inspection = IntellijMcpServerService(projectPath = project, qodanaExecutable = qodana.toString())
     try {
-      assertTrue(runCatching { context.projectRevision }.exceptionOrNull()?.message.orEmpty().contains("not a git repository"))
+      // The project is no Git repository, so resolving its HEAD here would throw.
+      EdictNextGenerationService(EdictRepository(EdictRepositoryDirectory(project)), inspection, project)
     }
     finally {
-      context.unload()
+      inspection.stop()
     }
     assertFalse(Files.exists(qodana.resolveSibling("args")))
   }

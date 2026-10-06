@@ -564,7 +564,12 @@ internal class EdictNextRepositoryState(
       "edict-next-inspection-code-review",
       "edict-next-weak-signal-review",
     )
-    private val SIGNAL_PUBLISHERS = setOf("edict-batch-signal-analysis", "edict-pr-signal-analysis")
+    private val SIGNAL_PUBLISHERS = setOf(
+      "edict-batch-signal-analysis",
+      "edict-pr-signal-analysis",
+      "edict-git-history-signal-analysis",
+      "edict-retrospective-signal-analysis",
+    )
     private val TERMINAL_STATUSES = setOf("completed", "failed")
     private val INTERRUPTED_STATUSES = setOf("delegated", "running")
     private val TASK_STATUSES = setOf("pending", "delegated", "running", "completed", "failed")

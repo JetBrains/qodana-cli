@@ -54,8 +54,9 @@ otherwise change the caller's checkout.
    stable commit work-item provenance ID, deterministic idempotency keys, and `syntheticExampleId: null`. Do not add
    legacy `strength`, null ranges, cluster IDs, or retrospective IDs to unsupported schema fields.
 6. Parse and validate the complete candidate set before any write. Verify each revision/path/range against Git and the
-   canonical diff, then publish through `edict_state_write`. Identical existing content is an idempotent success; never
-   overwrite different content. Read back every returned path and verify its hash.
+   canonical diff, then publish each complete model through `edict_publish_signal`. An existing identical model is an
+   idempotent success; a conflicting model requires investigation and a failed outcome, never an overwrite. Verify the
+   complete expected ID set.
 7. Finish with cutoff and snapshot revisions, original HEAD, both SARIF paths, exact-inspection and absent counts,
    inspected work-item IDs, accepted fixing commits, rejected candidates with reasons, and created or existing Signal
    paths and hashes. A successful complete comparison with no intentional fixes is a no-op.
