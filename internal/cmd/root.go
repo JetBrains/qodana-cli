@@ -90,7 +90,7 @@ func Execute() {
 	}
 }
 
-// IsEdictServerCommand identifies the Edict stdio servers, `edict mcp start` and the internal `edict ide-mcp`,
+// IsEdictServerCommand identifies the Edict servers, `edict mcp start` and the internal `edict ide-mcp`,
 // before starting process-wide console output or interrupt handlers. They own their signal handling and stdout.
 // InitCli must be called first.
 func IsEdictServerCommand(args []string) bool {

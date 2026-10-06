@@ -10,7 +10,7 @@ domain work and use its assigned task lifecycle.
 
 Load only this skill.
 
-Call `edict_next_prepare_pipeline(worktreePath)` once with the supplied Edict worktree.
+Call `edict_next_prepare_pipeline` once; it prepares state for the pipeline.
 
 ## Evidence
 

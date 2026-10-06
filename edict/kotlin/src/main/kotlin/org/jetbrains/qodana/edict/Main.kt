@@ -1,31 +1,24 @@
 // Copyright 2026 JetBrains s.r.o. Licensed under the Apache License, Version 2.0.
 package org.jetbrains.qodana.edict
 
-import io.modelcontextprotocol.kotlin.sdk.server.StdioServerTransport
-import io.modelcontextprotocol.kotlin.sdk.server.mcpStreamableHttp
-import io.ktor.server.cio.CIO
-import io.ktor.server.engine.embeddedServer
-import kotlinx.coroutines.CompletableDeferred
-import kotlinx.coroutines.runBlocking
-import kotlinx.io.asSink
-import kotlinx.io.asSource
-import kotlinx.io.buffered
-import org.jetbrains.qodana.edict.edictnext.EdictManagementService
+import io.github.oshai.kotlinlogging.KotlinLogging
+import org.jetbrains.qodana.edict.common.EdictLayout
 import org.jetbrains.qodana.edict.edictnext.EdictNextMcpToolset
-import org.jetbrains.qodana.edict.edictnext.EdictNextRepositoryState
-import org.jetbrains.qodana.edict.edictnext.EdictNextWorkspace
-import org.jetbrains.qodana.edict.edictnext.EdictSessionContext
 import org.jetbrains.qodana.edict.edictnext.IntellijMcpServerService
-import org.jetbrains.qodana.edict.common.GitRepository
-import org.jetbrains.qodana.edict.skills.Skills
+import org.jetbrains.qodana.edict.edictnext.defaultQodanaExecutable
+import org.jetbrains.qodana.edict.setup.CodexSetup
+import org.jetbrains.qodana.edict.setup.EdictConfig
 import java.nio.file.Path
-import java.util.UUID
-import java.util.concurrent.atomic.AtomicBoolean
 import kotlin.system.exitProcess
 
+// Lazy, so main() turns off the kotlin-logging startup banner before the first logger is created.
+private val logger by lazy { KotlinLogging.logger("org.jetbrains.qodana.edict.Main") }
+
 fun main(args: Array<String>) {
-    // Stdout is the MCP wire for stdio commands; kotlin-logging 8 otherwise prints a startup banner there.
+    // kotlin-logging 8 otherwise prints a startup banner to stdout.
     System.setProperty("kotlin-logging.logStartupMessage", "false")
+    // Before the first logger: Logback writes into the folder this fixes, like every EdictLayout of the process.
+    EdictLayout.processRunId()
     try {
         val command = args.firstOrNull() ?: "help"
         val optionPairs = args.drop(1).chunked(2).map { pair ->
@@ -34,21 +27,18 @@ fun main(args: Array<String>) {
         }
         val options = optionPairs.toMap()
         when (command) {
-            "install-skills" -> {
-                require(options.keys.all { it in listOf("directory", "skill") }) { "Unknown install option" }
-                val destination = options["directory"] ?: error("Use install-skills --directory <skills-directory>")
-                Skills.install(Path.of(destination), options["skill"]).forEach(::println)
+            "install" -> {
+                require(options.keys.all { it == "deny" }) { "Unknown install option" }
+                val layout = EdictLayout.get()
+                val denied = optionPairs.map { Path.of(it.second) }
+                CodexSetup.install(layout, denied, EdictConfig.load(layout))
             }
 
-            "mcp", "edict-mcp", "edict-mcp-next" -> {
+            "mcp" -> {
                 require(options.keys.all {
                     it in listOf(
-                        "project-dir",
                         "state-dir",
-                        "source-repository",
-                        "log-dir",
                         "qodana-executable",
-                        "http-port",
                         "ide-dist",
                         "ide-linter",
                         "ide-property",
@@ -56,102 +46,52 @@ fun main(args: Array<String>) {
                         "parent-pid",
                     )
                 }) { "Unknown Edict Next option" }
-                val project = Path.of(options["project-dir"] ?: ".")
-                    .toAbsolutePath().normalize()
-                val state = Path.of(options["state-dir"] ?: project.resolve(".edict").toString())
-                    .toAbsolutePath().normalize()
-                val sourceRepository = Path.of(options["source-repository"] ?: project.toString()).toAbsolutePath().normalize()
-                val logs = Path.of(options["log-dir"] ?: project.resolve("log").toString()).toAbsolutePath().normalize()
-                val qodanaExecutable = options["qodana-executable"]
-                    ?: System.getProperty("qodana.executable")
-                    ?: System.getenv("QODANA_EXECUTABLE")
-                    ?: "qodana"
-                val sessionId = UUID.randomUUID().toString()
-                runBlocking {
-                    val context = EdictSessionContext.getInstance(sessionId)
-                    // `=` keeps values such as -Xmx8g from being parsed as flags by the Go helper.
-                    val ideArguments = buildList {
-                        options["ide-dist"]?.let { add("--dist=$it") }
-                        options["ide-linter"]?.let { add("--linter=$it") }
-                        optionPairs.filter { it.first == "ide-property" }.forEach { add("--property=${it.second}") }
-                        options["ide-wait-timeout"]?.let { add("--wait-timeout=$it") }
-                    }
-                    context.load(
-                        EdictNextWorkspace.forRun(logs, sessionId),
-                        sourceRepository,
-                        project,
-                        qodanaExecutable,
-                        IntellijMcpServerService(project, qodanaExecutable, ideArguments, logs.resolve("edict/intellij-mcp.log")),
-                    )
-                    val unloaded = AtomicBoolean()
-                    suspend fun unloadOnce() {
-                        if (unloaded.compareAndSet(false, true)) context.unload()
-                    }
-                    val hook = Thread { runBlocking { unloadOnce() } }
-                    Runtime.getRuntime().addShutdownHook(hook)
+                val layout = EdictLayout.get(options["state-dir"])
+                val port = EdictConfig.load(layout).also { CodexSetup.requireInstalled(layout, it) }.mcpPort
+                // `=` keeps values such as -Xmx8g from being parsed as flags by the Go helper.
+                val ideArguments = buildList {
+                    options["ide-dist"]?.let { add("--dist=$it") }
+                    options["ide-linter"]?.let { add("--linter=$it") }
+                    optionPairs.filter { it.first == "ide-property" }.forEach { add("--property=${it.second}") }
+                    options["ide-wait-timeout"]?.let { add("--wait-timeout=$it") }
+                }
+                val inspectionServer = IntellijMcpServerService(
+                    layout.root,
+                    options["qodana-executable"] ?: defaultQodanaExecutable(),
+                    ideArguments,
+                    layout.intellijMcpLogPath,
+                )
+                EdictServer.start(layout, port, inspectionServer).use { server ->
+                    Runtime.getRuntime().addShutdownHook(Thread(server::close))
                     // A launcher killed with SIGKILL cannot stop this server, and stdin may stay open (HTTP mode never
-                    // reads it). Exit with the launcher instead; the shutdown hook then stops the IDE helper.
+                    // reads it). Exit with the launcher instead; the shutdown hook then stops the server.
                     options["parent-pid"]?.let { pid ->
                         val parent = ProcessHandle.of(pid.toLong())
                         if (parent.isEmpty) exitProcess(0)
                         parent.get().onExit().thenRun { exitProcess(0) }
                     }
-                    try {
-                        EdictNextRepositoryState.open(state).use { store ->
-                            val management = EdictManagementService(
-                                store,
-                                logs.resolve("edict"),
-                                signalRepository = GitRepository(sourceRepository),
-                            )
-                            val toolset = EdictNextMcpToolset(sessionId, management)
-                            val httpPort = options["http-port"]?.toInt()
-                            if (httpPort != null) {
-                                require(httpPort in 0..65535) { "HTTP port must be between 0 and 65535" }
-                                val engine = embeddedServer(CIO, host = "127.0.0.1", port = httpPort) {
-                                    mcpStreamableHttp { toolset.createServer() }
-                                }
-                                engine.start(wait = false)
-                                val actualPort = engine.engine.resolvedConnectors().single().port
-                                val serverName = if (command == "edict-mcp-next") "edict-mcp-next" else "edict-mcp"
-                                System.err.println("$serverName listening at http://127.0.0.1:$actualPort/mcp")
-                                CompletableDeferred<Unit>().await()
-                            } else {
-                                val server = toolset.createServer()
-                                val transport = StdioServerTransport(
-                                    input = System.`in`.asSource().buffered(),
-                                    output = System.out.asSink().buffered(),
-                                )
-                                val closed = CompletableDeferred<Unit>()
-                                transport.onClose { closed.complete(Unit) }
-                                server.createSession(transport)
-                                closed.await()
-                            }
-                        }
-                    } finally {
-                        unloadOnce()
-                        try {
-                            Runtime.getRuntime().removeShutdownHook(hook)
-                        } catch (_: IllegalStateException) {
-                            // JVM shutdown already started and is running the hook.
-                        }
-                    }
+                    logger.info { "Process log: ${layout.processLogDirectory}" }
+                    logger.info { "${EdictNextMcpToolset.SERVER_NAME} listening at ${server.url}" }
+                    server.await()
                 }
             }
 
             "help", "--help", "-h" -> println(
                 """
-                Edict managed skills (standalone Kotlin/JVM)
-                  edict install-skills --directory <skills-directory> [--skill <name>]
-                  edict edict-mcp-next --project-dir <project> --state-dir <state> [--source-repository <repository>] [--log-dir <logs>] [--qodana-executable <qodana>] [--http-port <port>] [--ide-dist <path> | --ide-linter <linter>] [--ide-property <property>]... [--ide-wait-timeout <duration>] [--parent-pid <pid>]
-                  edict mcp is a compatibility alias for edict-mcp-next.
-                Edict Next MCP uses stdio by default; HTTP binds to loopback and shares one store across workers.
-                The first inspection call starts the IDE through `qodana edict ide-mcp`; output goes to <logs>/edict/intellij-mcp.log.
+                Edict managed skills (standalone Kotlin/JVM). Run every command in the project directory.
+                  edict install [--deny <path>]...
+                    Installs skills into .codex/skills and writes .codex/config.toml for edict.mcpPort from qodana.yaml.
+                  edict mcp [--state-dir <state>] [--qodana-executable <qodana>] [--ide-dist <path> | --ide-linter <linter>] [--ide-property <property>]... [--ide-wait-timeout <duration>] [--parent-pid <pid>]
+                    Serves HTTP on loopback at edict.mcpPort (default ${EdictConfig.DEFAULT_MCP_PORT}); state defaults to .edict.
+                    Each run logs to log/process-log/<run-id> and gives agents log/agent-work/<run-id>; the run id is its start time.
+                The first inspection call starts the IDE through `qodana edict ide-mcp`; its output goes to intellij-mcp.log.
             """.trimIndent()
             )
 
             else -> error("Unknown command '$command'; use --help")
         }
     } catch (e: Exception) {
-        System.err.println("edict: ${e.message}"); exitProcess(1)
+        logger.error(e) { e.message ?: e.toString() }
+        exitProcess(1)
     }
 }

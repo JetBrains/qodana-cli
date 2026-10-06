@@ -11,9 +11,9 @@ domain work and use it for every child delegation and task transition.
 Process the supplied Pending cluster through example reconciliation, predecessor reuse or candidate generation, review,
 and a valid terminal or resumable state.
 
-The prompt supplies `clusterId`, `clusterDirectory`, the absolute worktree path, a private scratch directory, and the
+The prompt supplies `clusterId`, `clusterDirectory`, the absolute state repository path, a private scratch directory, and the
 inspected project. Resolve the paths before any write or MCP call. Return without changing the repository if scratch
-equals or is below the worktree.
+equals or is below the state repository.
 
 # Boundaries
 
@@ -27,7 +27,7 @@ You may directly change only:
 Managed state is read-only to filesystem tools. Persist a complete candidate with
 `edict_next_save_candidate_inspection(token, clusterId, inspectionKtsCode)` and append operational decisions with
 `edict_next_append_cluster_history(token, clusterId, entry)`, always using your own task token. Example workers use the
-dedicated managed example mutations. Never use `apply_patch` or shell writes for the worktree.
+dedicated managed example mutations. Never use `apply_patch` or shell writes for the state repository.
 
 Do not change cluster membership, language, Signal evidence other than an overseer's `syntheticExampleId` assignments,
 the inspected project, or another cluster.
@@ -109,7 +109,7 @@ Launch a fresh review worker:
 Load the edict-next-inspection-code-review skill.
 
 Cluster directory: <clusterDirectory>
-Candidate inspection: <worktree>/inspections/<clusterId>.candidate.kts
+Candidate inspection: <state repository>/inspections/<clusterId>.candidate.kts
 Inspected IntelliJ project: <inspected project path>
 Review output path: <privateScratchDirectory>/inspection-code-review.json
 ```

@@ -12,6 +12,9 @@ repositories { mavenCentral() }
 dependencies {
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.10.0")
     implementation("org.tomlj:tomlj:1.1.1")
+    implementation("com.charleskorn.kaml:kaml:0.104.0")
+    implementation("io.github.oshai:kotlin-logging-jvm:8.0.4")
+    runtimeOnly("ch.qos.logback:logback-classic:1.6.3")
     testImplementation(kotlin("test-junit5"))
     testImplementation(kotlin("reflect"))
     testImplementation("org.junit-pioneer:junit-pioneer:2.3.0")

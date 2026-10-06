@@ -367,6 +367,14 @@ internal enum class EdictNextNextAction {
   PUBLISH,
 }
 
+/** Paths an agent needs for this run; the root prompt carries none of them. */
+@Serializable
+internal data class EdictRunContext(
+  val projectDirectory: String,
+  val stateDirectory: String,
+  val scratchDirectory: String,
+)
+
 internal fun sha256Hex(text: String): String = sha256Hex(text.toByteArray(Charsets.UTF_8))
 
 internal fun sha256Hex(bytes: ByteArray): String = MessageDigest.getInstance("SHA-256")

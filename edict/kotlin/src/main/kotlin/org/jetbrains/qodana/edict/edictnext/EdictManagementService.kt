@@ -22,6 +22,7 @@ import org.jetbrains.qodana.edict.logging.AgentLogger
 import org.jetbrains.qodana.edict.logging.TaskLifecycleLogger
 import org.jetbrains.qodana.edict.edictnext.EdictNextRepositoryState.Plan
 import org.jetbrains.qodana.edict.edictnext.EdictNextRepositoryState.Step
+import org.jetbrains.qodana.edict.common.EdictLayout
 import org.jetbrains.qodana.edict.common.GitRepository
 import org.jetbrains.qodana.edict.extraction.reviews.PrAnalysis
 import org.jetbrains.qodana.edict.extraction.reviews.RepositoryPrAnalysisCoverage
@@ -32,17 +33,15 @@ import org.jetbrains.qodana.edict.extraction.reviews.ReviewSelection
 import org.jetbrains.qodana.edict.skills.managed.Registry
 import java.io.PrintWriter
 import java.nio.file.Files
-import java.nio.file.Path
 import java.time.Instant
 import java.util.concurrent.ConcurrentHashMap
 
 /** Owns managed execution state and exposes its plan/task lifecycle as MCP tools. */
 internal class EdictManagementService(
   private val store: EdictNextRepositoryState,
-  private val logs: Path? = null,
+  private val layout: EdictLayout,
   taskOutput: PrintWriter = PrintWriter(System.err, true),
   reviewProvider: ReviewProvider = ReviewClient(),
-  private val signalRepository: GitRepository? = null,
 ) {
   companion object {
     const val INSTRUCTIONS = "Managed Edict state and execution plans. Root requests enter through edict_manager. " +
@@ -59,9 +58,12 @@ internal class EdictManagementService(
     val invoke: (JsonObject) -> JsonElement,
   )
 
-  val agents: AgentLogger? = logs?.let { AgentLogger(store, it) }
+  val agents: AgentLogger = AgentLogger(store, layout)
 
-  private val taskLogger = TaskLifecycleLogger(store, logs, taskOutput)
+  // Only commit Signals need Git, so a project without it still serves every other tool.
+  private val signalRepository by lazy { GitRepository(layout.root) }
+
+  private val taskLogger = TaskLifecycleLogger(store, layout, taskOutput)
   private val invocations = ConcurrentHashMap<String, Invocation>()
   private val pr = PrAnalysis(store, reviewProvider)
 
@@ -249,8 +251,7 @@ internal class EdictManagementService(
           signal,
         ) { candidate ->
           if (candidate.source is EdictNextSignalSource.FromCommit) {
-            requireNotNull(signalRepository) { "Commit Signal validation requires the source repository" }
-              .validateEvidence(candidate)
+            signalRepository.validateEvidence(candidate)
           }
         },
       )
@@ -433,26 +434,25 @@ internal class EdictManagementService(
 
   @Synchronized
   private fun log(caller: String, name: String, arguments: JsonObject, response: JsonObject) {
-    val directory = logs ?: return
-    Files.createDirectories(directory)
+    Files.createDirectories(layout.processLogDirectory)
     val prefix = "${Instant.now()} [$caller] $name"
     val summary = "$prefix ${if (response.flag("isError") == true) "failed" else "ok"}\n"
     val sanitized = JsonObject(
       arguments.mapValues { (key, value) -> if (key == "token") JsonPrimitive("[REDACTED]") else value },
     )
     Files.writeString(
-      directory.resolve("edict-mcp.log"),
+      layout.mcpLogPath,
       store.redact(summary),
       java.nio.file.StandardOpenOption.CREATE,
       java.nio.file.StandardOpenOption.APPEND,
     )
     Files.writeString(
-      directory.resolve("edict-mcp-system.log"),
+      layout.mcpSystemLogPath,
       store.redact("$prefix ${wireJson.encodeToString(sanitized)} => ${wireJson.encodeToString(response)}\n"),
       java.nio.file.StandardOpenOption.CREATE,
       java.nio.file.StandardOpenOption.APPEND,
     )
-    agents?.mcp(caller, name, sanitized, response)
+    agents.mcp(caller, name, sanitized, response)
   }
 }
 

@@ -122,9 +122,7 @@ internal class QodanaIntellijMcpServerLifecycle(
 /** Owns the IDE MCP lifecycle and serializes whole-project analyses on its opened project. */
 internal class IntellijMcpServerService(
   private val projectPath: Path,
-  private val qodanaExecutable: String = System.getProperty("qodana.executable")
-    ?: System.getenv("QODANA_EXECUTABLE")
-    ?: "qodana",
+  private val qodanaExecutable: String = defaultQodanaExecutable(),
   ideArguments: List<String> = emptyList(),
   log: Path? = null,
   // The helper opens the project by its canonical path, so name it the same way in tool calls.
@@ -191,3 +189,7 @@ internal class IntellijMcpServerService(
     }
   }
 }
+
+/** The Qodana CLI that starts the IDE helper: `qodana.executable`, then `QODANA_EXECUTABLE`, then `qodana` on the PATH. */
+internal fun defaultQodanaExecutable(): String =
+  System.getProperty("qodana.executable") ?: System.getenv("QODANA_EXECUTABLE") ?: "qodana"
