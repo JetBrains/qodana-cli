@@ -9,7 +9,6 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
-	"net"
 	"os"
 	"path/filepath"
 	"strconv"
@@ -22,30 +21,11 @@ import (
 )
 
 func TestEdictManagedMCPServesProtocolWithoutBootstrapToken(t *testing.T) {
-	t.Run("client-disconnect", func(t *testing.T) { exerciseEdictManagedMCP(t, false) })
-	t.Run("server-cancellation", func(t *testing.T) { exerciseEdictManagedMCP(t, true) })
-}
-
-func exerciseEdictManagedMCP(t *testing.T, cancelServer bool) {
-	t.Helper()
-	project := t.TempDir()
+	project := prepareEdictProject(t)
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
-	serverPipe, clientPipe := net.Pipe()
-	defer serverPipe.Close()
-	defer clientPipe.Close()
-	command := newEdictCommand()
-	command.SetArgs([]string{"mcp", "start", "--project-dir", project})
-	command.SetIn(serverPipe)
-	command.SetOut(serverPipe)
-	command.SetErr(&bytes.Buffer{})
-	done := make(chan error, 1)
-	go func() { done <- command.ExecuteContext(ctx) }()
-	client := mcp.NewClient(&mcp.Implementation{Name: "cli-test", Version: "1"}, nil)
-	session, err := client.Connect(ctx, &mcp.IOTransport{Reader: clientPipe, Writer: clientPipe}, nil)
-	if err != nil {
-		t.Fatalf("CLI stdout did not serve valid MCP: %v", err)
-	}
+	server := startEdictMCP(t, ctx)
+	session := connectEdictMCP(t, ctx, server.url)
 	defer session.Close()
 	if _, err := os.Stat(filepath.Join(project, ".edict")); err != nil {
 		t.Fatalf("default state directory was not created: %v", err)
@@ -103,29 +83,13 @@ func exerciseEdictManagedMCP(t *testing.T, cancelServer bool) {
 	if err != nil || !result.IsError {
 		t.Fatalf("second plan creation was not rejected: %v, %+v", err, result)
 	}
-	if cancelServer {
-		cancel()
-	} else {
-		_ = session.Close()
-	}
-	select {
-	case err := <-done:
-		if err != nil {
-			t.Fatalf("server shutdown: %v", err)
-		}
-	case <-time.After(5 * time.Second):
-		t.Fatal("CLI did not stop when its context or MCP connection closed")
-	}
-	restart := newEdictManagedMCPStartCommand()
-	restart.SetArgs([]string{"--project-dir", project})
-	restart.SetIn(strings.NewReader(""))
-	restart.SetOut(&bytes.Buffer{})
-	restart.SetErr(&bytes.Buffer{})
-	if err := restart.Execute(); err != nil {
-		t.Fatalf("restart after shutdown: %v", err)
-	}
+	_ = session.Close()
+	server.stop(t, cancel)
+	restartContext, restartCancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer restartCancel()
+	startEdictMCP(t, restartContext).stop(t, restartCancel)
 
-	logData, err := os.ReadFile(filepath.Join(project, "log", "edict", "edict-mcp-system.log"))
+	logData, err := os.ReadFile(firstEdictProcessLog(t, ".", "edict-mcp-system.log"))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -134,7 +98,7 @@ func exerciseEdictManagedMCP(t *testing.T, cancelServer bool) {
 			t.Errorf("server log is missing %q", want)
 		}
 	}
-	agents, err := os.ReadFile(filepath.Join(project, "log", "edict", "edict-agents.log"))
+	agents, err := os.ReadFile(firstEdictProcessLog(t, ".", "edict-agents.log"))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -153,7 +117,7 @@ func exerciseEdictManagedMCP(t *testing.T, cancelServer bool) {
 	if bytes.Contains(logData, []byte(created.Token)) {
 		t.Fatal("server log exposed the manager capability")
 	}
-	activity, err := os.ReadFile(filepath.Join(project, "log", "edict", "edict-mcp.log"))
+	activity, err := os.ReadFile(firstEdictProcessLog(t, ".", "edict-mcp.log"))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -167,7 +131,7 @@ func exerciseEdictManagedMCP(t *testing.T, cancelServer bool) {
 			t.Errorf("activity log contains a capability or protocol details")
 		}
 	}
-	short, err := os.ReadFile(filepath.Join(project, "log", "edict", "edict-agent-short.log"))
+	short, err := os.ReadFile(firstEdictProcessLog(t, ".", "edict-agent-short.log"))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -187,68 +151,57 @@ func exerciseEdictManagedMCP(t *testing.T, cancelServer bool) {
 	}
 }
 
-func TestEdictManagedMCPNeedsNoLoggingParameter(t *testing.T) {
+func TestEdictManagedMCPRequiresInstall(t *testing.T) {
+	t.Chdir(t.TempDir())
 	command := newEdictManagedMCPStartCommand()
-	command.SetArgs([]string{"--project-dir", t.TempDir()})
 	command.SetIn(strings.NewReader(""))
-	command.SetOut(&bytes.Buffer{})
-	command.SetErr(&bytes.Buffer{})
-	if err := command.Execute(); err != nil {
-		t.Fatalf("startup without a logging parameter: %v", err)
+	if output, err := executeEdictCommand(context.Background(), command); err == nil ||
+		!strings.Contains(output, "run `qodana edict install` first") {
+		t.Fatalf("startup without installation: %v, %s", err, output)
 	}
 }
 
-func TestEdictManagedMCPForwardsSourceRepository(t *testing.T) {
+func TestEdictManagedMCPForwardsStateDirectory(t *testing.T) {
 	var forwarded []string
 	command := newEdictManagedMCPStartCommandWithRunner(func(_ *cobra.Command, args ...string) error {
 		forwarded = append([]string(nil), args...)
 		return nil
 	})
-	command.SetArgs([]string{
-		"--project-dir", "/project",
-		"--state-dir", "/state",
-		"--source-repository", "/source",
-		"--log-dir", "/logs",
-		"--http-port", "1234",
-	})
+	command.SetArgs([]string{"--state-dir", "/state"})
 	if err := command.Execute(); err != nil {
 		t.Fatal(err)
 	}
-	want := []string{
-		"mcp", "--project-dir", "/project",
-		"--parent-pid", strconv.Itoa(os.Getpid()),
-	}
+	want := []string{"mcp", "--parent-pid", strconv.Itoa(os.Getpid())}
 	if executable, err := os.Executable(); err == nil {
 		want = append(want, "--qodana-executable", executable)
 	}
-	want = append(want,
-		"--state-dir", "/state",
-		"--source-repository", "/source",
-		"--log-dir", "/logs",
-		"--http-port", "1234",
-	)
+	want = append(want, "--state-dir", "/state")
 	if strings.Join(forwarded, "\x00") != strings.Join(want, "\x00") {
 		t.Fatalf("forwarded arguments: %q, want %q", forwarded, want)
 	}
 }
 
-func TestEdictManagedMCPStartupFailureKeepsStdoutClean(t *testing.T) {
-	directory := t.TempDir()
-	state := filepath.Join(directory, "not-a-directory")
-	if err := os.WriteFile(state, []byte("existing"), 0o600); err != nil {
+func TestEdictManagedMCPRequiresInstallationForConfiguredPort(t *testing.T) {
+	prepareEdictProject(t)
+	writeEdictPort(t, freePort(t))
+	command := newEdictManagedMCPStartCommand()
+	command.SetIn(strings.NewReader(""))
+	if output, err := executeEdictCommand(context.Background(), command); err == nil ||
+		!strings.Contains(output, "re-run `qodana edict install`") {
+		t.Fatalf("startup with a changed port: %v, %s", err, output)
+	}
+}
+
+func TestEdictManagedMCPFailsForInvalidStateDirectory(t *testing.T) {
+	prepareEdictProject(t)
+	if err := os.WriteFile("not-a-directory", []byte("existing"), 0o600); err != nil {
 		t.Fatal(err)
 	}
 	command := newEdictManagedMCPStartCommand()
-	command.SetArgs([]string{"--state-dir", state, "--project-dir", directory})
+	command.SetArgs([]string{"--state-dir", "not-a-directory"})
 	command.SetIn(strings.NewReader(""))
-	output := &bytes.Buffer{}
-	command.SetOut(output)
-	command.SetErr(&bytes.Buffer{})
-	if err := command.Execute(); err == nil {
-		t.Fatal("expected invalid state directory error")
-	}
-	if output.Len() != 0 {
-		t.Fatalf("startup failure contaminated stdout: %s", output.String())
+	if output, err := executeEdictCommand(context.Background(), command); err == nil || !strings.Contains(output, "ERROR") {
+		t.Fatalf("startup with an invalid state directory: %v, %s", err, output)
 	}
 }
 
@@ -266,7 +219,7 @@ func TestEdictServerCommandDetection(t *testing.T) {
 		}
 	}
 	for _, args := range [][]string{
-		{"edict", "install", "--dest", "mcp"},
+		{"edict", "install", "--deny", "mcp"},
 		{"edict", "mcp"},
 		{"edict"},
 	} {

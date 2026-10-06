@@ -98,7 +98,7 @@ class LivePrExtractionTest : IntegrationTest() {
     private fun verifyReviewCalls() {
         val calls = mutableSetOf<String>()
         val record = Regex("^\\S+ \\[[^]]+] (edict_[a-z_]+) (\\{.*}) => (\\{.*})$")
-        Files.readAllLines(workspace.logs.resolve("edict-mcp-system.log")).filter(String::isNotBlank).forEach { line ->
+        Files.readAllLines(workspace.layout.mcpSystemLogPath).filter(String::isNotBlank).forEach { line ->
             val match = assertNotNull(record.matchEntire(line), "Invalid MCP system-log entry")
             val name = match.groupValues[1]
             val arguments = wireJson.parseToJsonElement(match.groupValues[2]).jsonObject

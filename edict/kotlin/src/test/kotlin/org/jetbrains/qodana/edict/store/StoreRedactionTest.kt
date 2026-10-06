@@ -2,8 +2,8 @@ package org.jetbrains.qodana.edict.edictnext
 
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.put
+import org.jetbrains.qodana.edict.common.EdictLayout
 import org.jetbrains.qodana.edict.common.flag
-import org.jetbrains.qodana.edict.edictnext.EdictNextRepositoryState
 import org.jetbrains.qodana.edict.support.batch
 import org.jetbrains.qodana.edict.support.EdictNextTestTools
 import org.junit.jupiter.api.Test
@@ -57,21 +57,21 @@ class EdictNextRepositoryStateRedactionTest {
     fun `rejected arguments do not leak embedded credentials into MCP or agent logs`() {
         EdictNextRepositoryState.open(directory.resolve("state")).use { store ->
             val (manager, batch) = store.batch()
-            val logs = directory.resolve("logs")
-            val response = EdictNextTestTools(store, logs = logs).call("edict_task_add", buildJsonObject {
+            val layout = EdictLayout(directory)
+            val response = EdictNextTestTools(store, layout = layout).call("edict_task_add", buildJsonObject {
                 put("token", batch.token)
                 put("skill", "edict-signal-analysis")
                 put("title", "Receipt: a${manager.token}f${batch.token}")
             })
             assertEquals(true, response.flag("isError"))
             assertEquals(1, store.plan()!!.tasks.size)
-            Files.walk(logs).use { paths ->
+            Files.walk(layout.logDirectory).use { paths ->
                 paths.filter(Files::isRegularFile).forEach { file ->
                     val content = Files.readString(file).replace("\n    ", "")
                     listOf(manager.token, batch.token).forEach { assertFalse(content.contains(it), file.toString()) }
                 }
             }
-            assertContains(Files.readString(logs.resolve("edict-mcp-system.log")), "a[REDACTED]f[REDACTED]")
+            assertContains(Files.readString(layout.mcpSystemLogPath), "a[REDACTED]f[REDACTED]")
         }
     }
 }

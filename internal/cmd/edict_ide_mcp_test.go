@@ -28,8 +28,11 @@ import (
 
 const fakeIDEEnv = "QODANA_TEST_FAKE_IDE"
 
-// TestMain lets the test binary act as a fake IDE MCP server for serveIDEMCP.
+// TestMain lets the test binary act as a fake IDE MCP server for serveIDEMCP, or as the fake Codex of useFakeCodex.
 func TestMain(m *testing.M) {
+	if os.Getenv(fakeCodexEnv) != "" {
+		os.Exit(runFakeCodex())
+	}
 	switch os.Getenv(fakeIDEEnv) {
 	case "":
 		os.Exit(m.Run())

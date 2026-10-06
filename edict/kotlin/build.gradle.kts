@@ -78,6 +78,9 @@ tasks.test {
     useJUnitPlatform { if (excludeIntegrationTests) excludeTags("integration") }
     // JUnit Pioneer's @SetEnvironmentVariable rewrites the JDK's environment map reflectively.
     jvmArgs("--add-opens", "java.base/java.util=ALL-UNNAMED", "--add-opens", "java.base/java.lang=ALL-UNNAMED")
+    // Tests answer Edict's trust check with a fake; live runs and the trust contract test use the real Codex.
+    environment("CODEX_BIN", layout.projectDirectory.file("src/test/fake-codex/codex").asFile.absolutePath)
+    environment("EDICT_REAL_CODEX", System.getenv("CODEX_BIN") ?: "codex")
     if (!excludeIntegrationTests) {
         // Clone/runtime/provider state is external to Gradle's input snapshot.
         outputs.upToDateWhen { false }

@@ -1,6 +1,7 @@
 package org.jetbrains.qodana.edict.integration.support
 
 import kotlinx.serialization.json.*
+import org.jetbrains.qodana.edict.common.EdictLayout
 import org.jetbrains.qodana.edict.common.flag
 import org.jetbrains.qodana.edict.common.obj
 import org.jetbrains.qodana.edict.common.text
@@ -12,9 +13,9 @@ import java.nio.file.Files
 import java.nio.file.Path
 import kotlin.test.*
 
-internal fun verifyAgentLogs(logs: Path, plan: Plan) {
-    val full = Files.readString(logs.resolve("edict-agents.log"))
-    val short = Files.readString(logs.resolve("edict-agent-short.log"))
+internal fun verifyAgentLogs(layout: EdictLayout, plan: Plan) {
+    val full = Files.readString(layout.agentsLogPath)
+    val short = Files.readString(layout.agentShortLogPath)
     listOf(full, short).forEach { text ->
         assertContains(text, "[edict_manager/-] final:")
         assertFalse(text.contains("[unassigned/-]"), "A worker exited before its managed task started")
@@ -29,7 +30,7 @@ internal fun verifyAgentLogs(logs: Path, plan: Plan) {
     val unwrapped = full.replace("\n    ", "")
     plan.tasks.forEach { task ->
         val prefix = "[${task.skill}/${task.id.take(8)}] mcp: "
-        val taskLog = Files.readString(logs.resolve("tasks/${task.id}.log"))
+        val taskLog = Files.readString(layout.taskLogPath(task.id))
         assertContains(unwrapped, prefix + "Task prompt assigned by ")
         assertContains(unwrapped, task.prompt.replace("\t", "    ").replace("\n", ""))
         assertContains(full, prefix + "edict_task_get response:")

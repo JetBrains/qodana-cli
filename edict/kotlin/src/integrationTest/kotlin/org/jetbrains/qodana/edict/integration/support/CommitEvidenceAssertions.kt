@@ -86,7 +86,7 @@ internal fun verifyManagedRun(workspace: IntegrationWorkspace, runtime: CodexRun
     assertEquals(plan.tasks.size, plan.tasks.map { it.agentId }.distinct().size, "Each task must use a distinct native worker")
     val persisted = json.decodeFromString<Plan>(Files.readString(workspace.state.resolve("plans/${plan.id}.json")))
     assertEquals(plan, persisted, "Completed plan must be persisted without lag")
-    val log = Files.readString(workspace.logs.resolve("edict-mcp-system.log"))
+    val log = Files.readString(workspace.layout.mcpSystemLogPath)
     val lifecycle = Regex("] edict_(?:plan_create|delegate|task_[a-z]+) ")
     assertFalse(log.lineSequence().any { lifecycle.containsMatchIn(it) && it.contains("\"isError\":true") }, "Managed lifecycle failed; inspect ${workspace.logs}")
     assertFalse(log.contains("] edict_task_cancel "), "Healthy runs must not hide failed workers behind cancellation")
@@ -94,5 +94,5 @@ internal fun verifyManagedRun(workspace: IntegrationWorkspace, runtime: CodexRun
         it.contains("] edict_task_finish ") && it.substringBefore(" => ").contains("\"status\":\"failed\"")
     }, "Worker reported failure")
     verifyRuntimeWorkers(runtime.home.resolve("sessions"), plan)
-    verifyAgentLogs(workspace.logs, plan)
+    verifyAgentLogs(workspace.layout, plan)
 }

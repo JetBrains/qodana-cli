@@ -42,7 +42,7 @@ class LivePipelineTest : IntegrationTest() {
                 3. edict-next-generation: generate and validate inspections for every Pending cluster.
 
                 Source checkout: ${workspace.repository.root}
-                Edict worktree and state root: ${workspace.state}
+                State repository: ${workspace.state}
                 Inspected IntelliJ project: ${workspace.project}
                 Generation scratch root: ${workspace.output.resolve("scratch/pipeline-generation")}
                 Publish extracted Signals only through edict_publish_signal. Follow the managed protocol for every worker.
@@ -79,7 +79,7 @@ class LivePipelineTest : IntegrationTest() {
             stages.map { it.skill },
         )
         val ids = stages.map { it.id }
-        val snapshots = Files.readAllLines(workspace.logs.resolve("edict-mcp-system.log")).mapNotNull { line ->
+        val snapshots = Files.readAllLines(workspace.layout.mcpSystemLogPath).mapNotNull { line ->
             val encoded = line.substringAfter(" => ", missingDelimiterValue = "")
             if (encoded.isEmpty()) return@mapNotNull null
             val result = runCatching { wireJson.parseToJsonElement(encoded).jsonObject["structuredContent"] as? JsonObject }.getOrNull()

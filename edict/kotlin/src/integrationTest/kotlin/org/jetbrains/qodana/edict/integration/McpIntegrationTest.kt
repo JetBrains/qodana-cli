@@ -18,8 +18,8 @@ import org.jetbrains.qodana.edict.common.text
 import org.jetbrains.qodana.edict.common.wireJson
 import org.jetbrains.qodana.edict.integration.support.IntegrationTest
 import org.jetbrains.qodana.edict.edictnext.EdictManagementService
-import org.jetbrains.qodana.edict.edictnext.EdictNextMcpToolset
 import org.jetbrains.qodana.edict.edictnext.EdictNextRepositoryState
+import org.jetbrains.qodana.edict.support.edictNextToolset
 import org.junit.jupiter.api.Test
 import io.modelcontextprotocol.kotlin.sdk.server.StdioServerTransport
 
@@ -36,7 +36,7 @@ class McpIntegrationTest : IntegrationTest() {
                 {"jsonrpc":"2.0","id":3,"method":"tools/call","params":{"name":"edict_plan_create","arguments":{}}}
                 {"jsonrpc":"2.0","id":4,"method":"ping"}
             """.trimIndent() + "\n"
-            val server = EdictNextMcpToolset("integration", EdictManagementService(store)).createServer()
+            val server = edictNextToolset(workspace.layout, EdictManagementService(store, workspace.layout)).createServer()
             val transport = StdioServerTransport(
                 input = ByteArrayInputStream(input.encodeToByteArray()).asSource().buffered(),
                 output = output.asSink().buffered(),
@@ -50,7 +50,7 @@ class McpIntegrationTest : IntegrationTest() {
             val lines = output.toString(Charsets.UTF_8).lineSequence().filter(String::isNotBlank)
                 .map { wireJson.parseToJsonElement(it).jsonObject }.toList()
             assertEquals(4, lines.size)
-            assertEquals("edict-mcp-next", lines[0].obj("result").obj("serverInfo").text("name"))
+            assertEquals("edict-mcp", lines[0].obj("result").obj("serverInfo").text("name"))
             val tools = lines[1].obj("result").array("tools").map { it.text("name") }.toSet()
             assertContains(tools, "edict_delegate")
             assertContains(tools, "edict_next_prepare_pipeline")

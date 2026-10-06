@@ -19,7 +19,7 @@ class LiveCodexManagementTest : IntegrationTest() {
             Use the edict_manager skill and its managed protocol.
             Create exactly one top-level edict-next-distribution task.
             Delegate it to a fresh native subagent and complete the managed lifecycle.
-            The Edict worktree is $state and is intentionally empty: verify that it has no Signals to distribute.
+            The state repository is $state and is intentionally empty: verify that it has no Signals to distribute.
             The inspected IntelliJ project is ${workspace.project.toAbsolutePath().normalize()}.
             Do not create additional tasks or edit repository files.
             """.trimIndent(),
@@ -33,7 +33,7 @@ class LiveCodexManagementTest : IntegrationTest() {
             assertTrue(task.result.isNotBlank(), "The worker must persist its outcome")
             assertTrue(result.isNotBlank(), "The manager must return a final response")
             verifyRuntimeWorkers(runtime.home.resolve("sessions"), plan)
-            verifyAgentLogs(workspace.logs, plan)
+            verifyAgentLogs(workspace.layout, plan)
             val price = runtime.writePriceReport(plan)
             assertTrue(price.topStages.single().inclusivePrice.totalTokens > 0, "Worker receipt must be attributed")
             assertEquals(0L, price.unattributedPrice.totalTokens, "Every managed session must be attributed")
