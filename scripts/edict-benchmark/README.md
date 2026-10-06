@@ -9,7 +9,8 @@ The pipeline has six steps:
 
 1. `install-codex.sh` installs pinned Codex and writes a temporary user-level `CODEX_HOME` holding only
    the LiteLLM provider (using the secure `LITELLM_API_KEY` environment parameter) and the trust
-   entry for `project`, without which Codex ignores `project/.codex/config.toml`.
+   entry for `project`, without which Codex ignores `project/.codex/config.toml`. `common.sh` exports
+   it as `CODEX_HOME` for every step, so the trust check of `qodana edict install` sees that entry too.
 2. `install-qodana.sh` generates the embedded tooling, builds a static Qodana CLI directly
    from the source checkout with `CGO_ENABLED=0 go build`, and installs it under the
    benchmark tooling directory. TeamCity runs this step in the repository's published
