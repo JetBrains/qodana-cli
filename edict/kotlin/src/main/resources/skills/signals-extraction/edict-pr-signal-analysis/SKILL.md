@@ -10,8 +10,8 @@ Run only as a delegated managed subagent. Follow [the manager protocol](../edict
 You own coverage and Signal publication; delegate evidence inspection to `edict-signal-analysis`.
 
 Require a provider (`github` or `space`), owner (GitHub owner or Space project key), repository name, and either explicit
-PR numbers or inclusive UTC date bounds, together with a PR limit from 1 to 1000. Use the source checkout when available
-and scratch outside the state root. This workflow needs `edict-mcp`, without an IntelliJ session. Provider credentials
+PR numbers or inclusive UTC date bounds, together with a PR limit from 1 to 1000. Use `projectDirectory` from `edict_context` as the source
+checkout when available and scratch below its `scratchDirectory`. This workflow needs `edict-mcp`, without an IntelliJ session. Provider credentials
 belong in the server environment; never request their values in a tool call, prompt, result, or log. Missing access is a
 failed prerequisite. Commit-only requests belong to `edict-batch-signal-analysis`.
 

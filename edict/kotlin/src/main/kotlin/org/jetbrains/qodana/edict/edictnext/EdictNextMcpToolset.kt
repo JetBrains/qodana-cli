@@ -9,12 +9,17 @@ import io.modelcontextprotocol.kotlin.sdk.types.ServerCapabilities
 import io.modelcontextprotocol.kotlin.sdk.types.TextContent
 import io.modelcontextprotocol.kotlin.sdk.types.ToolSchema
 import kotlinx.serialization.json.*
+import org.jetbrains.qodana.edict.common.EdictLayout
 import kotlin.coroutines.cancellation.CancellationException
+import kotlin.io.path.createDirectories
 
 /** Registers the Edict Next tools on the standalone MCP Kotlin SDK server. */
 internal class EdictNextMcpToolset(
-  private val runId: String,
+  private val layout: EdictLayout,
+  private val inspectionServer: IntellijMcpServerService,
   private val management: EdictManagementService,
+  private val distribution: EdictNextDistributionService,
+  private val generation: EdictNextGenerationService,
 ) {
   fun createServer(): Server = Server(
     serverInfo = Implementation(
@@ -33,22 +38,28 @@ internal class EdictNextMcpToolset(
     management.registerTools(server)
 
     server.addTool(
+      name = "edict_context",
+      description = "Return the absolute paths of this run: inspected project, read-only state root, and private scratch root. Read-only.",
+    ) {
+      EdictRunContext(
+        projectDirectory = layout.root.toString(),
+        stateDirectory = layout.stateDirectory.toString(),
+        scratchDirectory = layout.scratchDirectory.createDirectories().toString(),
+      ).toToolResult()
+    }
+
+    server.addTool(
       name = "edict_next_prepare_pipeline",
-      description = "Snapshot the complete Edict repository and prepare neighbours for up to 100 alphabetical inbox Signals. Call once.",
-      inputSchema = stringArguments(
-        "worktreePath" to "Absolute path to the agent-created Edict repository worktree",
-      ),
-    ) { request ->
-      EdictNextDistributionService.getInstance(runId)
-        .preparePipeline(request.requireString("worktreePath"))
-        .toToolResult()
+      description = "Snapshot the state repository and prepare neighbours for up to 100 alphabetical inbox Signals. Call once.",
+    ) {
+      distribution.preparePipeline().toToolResult()
     }
 
     server.addTool(
       name = "edict_next_next_signal",
       description = "Return the next alphabetical inbox Signal and its nearest cluster or inbox candidates. Call until it returns STOP_DISTRIBUTION.",
     ) {
-      EdictNextDistributionService.getInstance(runId).nextSignal().toToolResult()
+      distribution.nextSignal().toToolResult()
     }
 
     server.addTool(
@@ -59,7 +70,7 @@ internal class EdictNextMcpToolset(
         "id" to "Signal or cluster id",
       ),
     ) { request ->
-      EdictNextDistributionService.getInstance(runId)
+      distribution
         .getContext(request.requireString("kind"), request.requireString("id"))
         .toToolResult()
     }
@@ -74,7 +85,7 @@ internal class EdictNextMcpToolset(
     ) { request ->
       val signalId = request.requireString("signalId")
       try {
-        EdictNextDistributionService.getInstance(runId)
+        distribution
           .addSignalToCluster(signalId, request.requireString("clusterId"))
           .toToolResult()
       }
@@ -91,14 +102,14 @@ internal class EdictNextMcpToolset(
       name = "edict_next_validate_distribution",
       description = "Sanity-check distribution file changes and require every returned Signal to be assigned",
     ) {
-      EdictNextDistributionService.getInstance(runId).validateDistribution().toToolResult()
+      distribution.validateDistribution().toToolResult()
     }
 
     server.addTool(
       name = "edict_next_get_generation_clusters",
       description = "Freeze and return the Pending clusters that generation must process",
     ) {
-      EdictNextGenerationService.getInstance(runId).getGenerationClusters().toToolResult()
+      generation.getGenerationClusters().toToolResult()
     }
 
     server.addTool(
@@ -109,7 +120,7 @@ internal class EdictNextMcpToolset(
         "exampleId" to "Code example id inside the cluster",
       ),
     ) { request ->
-      EdictNextGenerationService.getInstance(runId)
+      generation
         .validateCodeExample(request.requireString("clusterId"), request.requireString("exampleId"))
         .toToolResult()
     }
@@ -135,7 +146,7 @@ internal class EdictNextMcpToolset(
       )
       management.requireTokenFree(request.requireString("metadataJson"))
       management.requireTokenFree(request.requireString("sourceCode"))
-      EdictNextGenerationService.getInstance(runId).saveCodeExample(
+      generation.saveCodeExample(
         request.requireString("clusterId"),
         request.requireString("exampleId"),
         request.requireString("metadataJson"),
@@ -158,7 +169,7 @@ internal class EdictNextMcpToolset(
         "edict-next-code-example",
         "edict-next-code-example-overseer",
       )
-      EdictNextGenerationService.getInstance(runId).assignCodeExample(
+      generation.assignCodeExample(
         request.requireString("clusterId"),
         request.requireString("signalId"),
         request.requireString("exampleId"),
@@ -179,7 +190,7 @@ internal class EdictNextMcpToolset(
         "edict-next-code-example-overseer",
         "edict-next-weak-signal-review",
       )
-      EdictNextGenerationService.getInstance(runId).deleteCodeExample(
+      generation.deleteCodeExample(
         request.requireString("clusterId"),
         request.requireString("exampleId"),
       ).toToolResult()
@@ -190,7 +201,7 @@ internal class EdictNextMcpToolset(
       description = "Validate that every cluster Signal has one structurally valid focused code example with a matching label.",
       inputSchema = stringArguments("clusterId" to "Cluster id"),
     ) { request ->
-      EdictNextGenerationService.getInstance(runId)
+      generation
         .validateClusterExamples(request.requireString("clusterId"))
         .toToolResult()
     }
@@ -200,7 +211,7 @@ internal class EdictNextMcpToolset(
       description = "Detect conflicting Signals, then return SKIP when the predecessor meets the required 85% example accuracy; otherwise return GENERATE. Call before changing the cluster id or inspection candidate.",
       inputSchema = stringArguments("clusterId" to "Cluster id"),
     ) { request ->
-      EdictNextGenerationService.getInstance(runId)
+      generation
         .getInspectionAction(request.requireString("clusterId"))
         .toToolResult()
     }
@@ -216,7 +227,7 @@ internal class EdictNextMcpToolset(
     ) { request ->
       management.requireSkill(request.requireString("token"), "edict-next-cluster-generation")
       management.requireTokenFree(request.requireString("inspectionKtsCode"))
-      EdictNextGenerationService.getInstance(runId).saveCandidateInspection(
+      generation.saveCandidateInspection(
         request.requireString("clusterId"),
         request.requireString("inspectionKtsCode"),
       ).toToolResult()
@@ -233,7 +244,7 @@ internal class EdictNextMcpToolset(
     ) { request ->
       management.requireSkill(request.requireString("token"), "edict-next-cluster-generation")
       management.requireTokenFree(request.requireString("entry"))
-      EdictNextGenerationService.getInstance(runId).appendHistory(
+      generation.appendHistory(
         request.requireString("clusterId"),
         request.requireString("entry"),
       ).toToolResult()
@@ -247,7 +258,7 @@ internal class EdictNextMcpToolset(
         "clusterId" to "Cluster id; the candidate is inspections/<clusterId>.candidate.kts",
       ),
     ) { request ->
-      EdictNextGenerationService.getInstance(runId)
+      generation
         .validateInspection(request.requireString("clusterId"))
         .toToolResult()
     }
@@ -260,7 +271,7 @@ internal class EdictNextMcpToolset(
         "privateScratchDirectory" to "Absolute private directory for review manifests and outputs",
       ),
     ) { request ->
-      EdictNextGenerationService.getInstance(runId)
+      generation
         .getNewInspectionResults(
           request.requireString("clusterId"),
           request.requireString("privateScratchDirectory"),
@@ -277,7 +288,7 @@ internal class EdictNextMcpToolset(
     ) { request ->
       val clusterId = request.requireString("clusterId")
       try {
-        EdictNextGenerationService.getInstance(runId).markGenerated(clusterId).toToolResult()
+        generation.markGenerated(clusterId).toToolResult()
       }
       catch (e: CancellationException) {
         throw e
@@ -294,7 +305,7 @@ internal class EdictNextMcpToolset(
       name = "edict_next_validate_generation",
       description = "Read and validate generation changes against the frozen targets without modifying the repository.",
     ) {
-      EdictNextGenerationService.getInstance(runId).validateGeneration().toToolResult()
+      generation.validateGeneration().toToolResult()
     }
 
     registerInspectionKtsTools(server)
@@ -305,7 +316,6 @@ internal class EdictNextMcpToolset(
     fun proxy(name: String, description: String, inputSchema: ToolSchema, wholeProject: Boolean = false) {
       server.addTool(name = name, description = description, inputSchema = inputSchema) { request ->
         val arguments = request.arguments ?: JsonObject(emptyMap())
-        val inspectionServer = EdictSessionContext.getInstance(runId).inspectionServer
         // Whole-project runs share the IDE's opened project with the pipeline's own analyses, so they queue behind them.
         val result = if (wholeProject) inspectionServer.waitForAnalysis { it.callTool(name, arguments) }
         else inspectionServer.withClient { it.callTool(name, arguments) }
@@ -388,8 +398,9 @@ internal class EdictNextMcpToolset(
     )
   }
 
-  private companion object {
-    const val SERVER_NAME = "edict-mcp-next"
+  companion object {
+    /** The server's name in the MCP handshake, also the name agents register it under. */
+    const val SERVER_NAME = "edict-mcp"
   }
 }
 

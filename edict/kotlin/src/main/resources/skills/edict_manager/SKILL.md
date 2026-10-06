@@ -12,8 +12,8 @@ This skill is for the root manager only. If you already received a delegated tas
 `SKILL.md` from the supplied absolute path and follow that skill. Shared references under `edict_manager/references/`
 are a protocol library, not an instruction to invoke this manager skill.
 
-Read [the managed execution protocol](references/protocol.md) before starting. Require an available `edict-mcp` server,
-the source project, and scratch space outside the registered state root. The manager capability must never enter a child
+Read [the managed execution protocol](references/protocol.md) before starting. Require an available `edict-mcp` server.
+The request carries no paths: call `edict_context` for them (see the protocol). The manager capability must never enter a child
 prompt or inherited
 conversation. An unavailable server or
 native subagent runtime is a failed prerequisite, not permission to execute stages inline.

@@ -10,7 +10,8 @@ and [the signal contract](../edict_manager/references/signals.md). Registry ID: 
 own coverage and Signal publication; workers own evidence inspection. Do not generate rules, clusters, examples, or
 inspections.
 
-Start the task. Require the source checkout and a bounded Git revision expression with a commit limit.
+Start the task. Take the source checkout (`projectDirectory`) and private scratch root (`scratchDirectory`) from `edict_context`. Require a
+bounded Git revision expression with a commit limit.
 PR-review extraction belongs to `edict-pr-signal-analysis`; report misrouted review requests to the manager.
 
 1. Enumerate the supplied range in stable order with read-only Git, honoring its limit. Resolve each full

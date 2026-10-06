@@ -41,8 +41,8 @@ class AgentLoggingTest {
             Files.createDirectories(sessions)
             val stdout = directory.resolve("stdout.jsonl")
             Files.writeString(stdout, """{"type":"thread.started","thread_id":"root-thread"}""" + "\n")
-            val logs = directory.resolve("log")
-            val collector = CodexAgentCollector(home, stdout, AgentLogger(store, logs))
+            val layout = EdictLayout(directory)
+            val collector = CodexAgentCollector(home, stdout, AgentLogger(store, layout))
             fun append(file: String, value: JsonObject) = Files.writeString(
                 sessions.resolve(file),
                 wireJson.encodeToString(JsonObject.serializer(), value) + "\n",
@@ -85,7 +85,7 @@ class AgentLoggingTest {
             append("root.jsonl", message("Private prompt", role = "user"))
             append("root.jsonl", message("Private reasoning", phase = "analysis"))
             collector.scan()
-            assertFalse(Files.readString(logs.resolve("edict-agents.log")).contains("Early leaf output"))
+            assertFalse(Files.readString(layout.agentsLogPath).contains("Early leaf output"))
             store.readTask(leaf.token)
             store.startTask(leaf.token, "/root/batch/leaf", leaf.skill)
             collector.scan()
@@ -102,13 +102,13 @@ class AgentLoggingTest {
                 wireJson.encodeToString(JsonObject.serializer(), message("Manager final", phase = "final_answer"))
             Files.writeString(sessions.resolve("root.jsonl"), final.take(final.length / 2), APPEND)
             collector.scan()
-            assertFalse(Files.readString(logs.resolve("edict-agents.log")).contains("Manager final"))
+            assertFalse(Files.readString(layout.agentsLogPath).contains("Manager final"))
             Files.writeString(sessions.resolve("root.jsonl"), final.drop(final.length / 2), APPEND)
             collector.scan(final = true)
             collector.scan(final = true)
-            val full = Files.readString(logs.resolve("edict-agents.log"))
+            val full = Files.readString(layout.agentsLogPath)
             val unwrapped = full.replace("\n    ", "")
-            val leafLog = Files.readString(logs.resolve("tasks/${leaf.taskId}.log"))
+            val leafLog = Files.readString(layout.taskLogPath(leaf.taskId))
             assertContains(
                 unwrapped,
                 "[edict-signal-analysis/${leaf.taskId.take(8)}] final: Leaf finished $digest [REDACTED] [REDACTED]"
@@ -127,15 +127,15 @@ class AgentLoggingTest {
                 created.token
             ).forEach { assertFalse(full.contains(it)) }
             full.lineSequence().forEach { assertTrue(it.codePointCount(0, it.length) <= 120) }
-            assertEquals(full, Files.readString(logs.resolve("edict-agent-short.log")))
+            assertEquals(full, Files.readString(layout.agentShortLogPath))
         }
     }
 
     @Test
     fun `MCP logs contain complete assignments and summaries without capability leaks`() {
         EdictNextRepositoryState.open(directory.resolve("state")).use { store ->
-            val logs = directory.resolve("log")
-            val server = EdictNextTestTools(store, logs = logs)
+            val layout = EdictLayout(directory)
+            val server = EdictNextTestTools(store, layout = layout)
             fun call(name: String, arguments: JsonObject): JsonObject {
                 val result = server.call(name, arguments)
                 assertEquals(false, result.flag("isError"))
@@ -162,9 +162,9 @@ class AgentLoggingTest {
             call(
                 "edict_task_finish",
                 buildJsonObject { put("token", token); put("status", "completed"); put("result", "Done") })
-            val full = Files.readString(logs.resolve("edict-agents.log"))
-            val short = Files.readString(logs.resolve("edict-agent-short.log"))
-            val taskLog = Files.readString(logs.resolve("tasks/${task.id}.log"))
+            val full = Files.readString(layout.agentsLogPath)
+            val short = Files.readString(layout.agentShortLogPath)
+            val taskLog = Files.readString(layout.taskLogPath(task.id))
             assertContains(full.replace("\n    ", ""), prompt.replace("\n", ""))
             assertContains(full, "[${task.skill}/${task.id.take(8)}] mcp: edict_task_finish response:")
             assertContains(taskLog.replace("\n    ", ""), prompt.replace("\n", ""))
@@ -193,20 +193,19 @@ class AgentLoggingTest {
             """.trimIndent()
             )
             executable.toFile().setExecutable(true)
-            val logs = directory.resolve("log")
+            val layout = EdictLayout(directory)
             val runtime = CodexRunner(
                 directory,
-                directory,
-                store.root,
+                EdictLayout(directory, store.root),
                 "http://127.0.0.1/mcp",
                 executable.toString(),
                 "test",
-                AgentLogger(store, logs)
+                AgentLogger(store, layout)
             )
             runtime.prepare()
             assertContains(assertFailsWith<IllegalStateException> { runtime.run("test") }.message!!, "Codex exited 7")
             assertContains(
-                Files.readString(logs.resolve("edict-agents.log")),
+                Files.readString(layout.agentsLogPath),
                 "[edict_manager/-] commentary: Partial output before failure"
             )
         }

@@ -10,9 +10,10 @@ internal fun runProcess(
     directory: Path,
     arguments: List<String>,
     timeoutSeconds: Long = 60,
-    maxBytes: Int = 16 * 1024 * 1024
+    maxBytes: Int = 16 * 1024 * 1024,
+    environment: Map<String, String> = emptyMap(),
 ): String {
-    val process = ProcessBuilder(arguments).directory(directory.toFile()).start()
+    val process = ProcessBuilder(arguments).directory(directory.toFile()).apply { environment().putAll(environment) }.start()
     process.outputStream.close()
     val executor = Executors.newFixedThreadPool(2)
     try {
