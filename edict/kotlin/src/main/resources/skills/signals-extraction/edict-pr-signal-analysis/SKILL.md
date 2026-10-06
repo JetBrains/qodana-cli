@@ -48,10 +48,11 @@ failed prerequisite. Commit-only requests belong to `edict-batch-signal-analysis
    blocks publication; correct the evidence and validate again. Validation does not replace source inspection.
 7. Publish every validated model using `edict_publish_signal`. An existing identical model is an idempotent success;
    a conflicting model requires investigation, not overwriting. Report exact IDs left by a partially failed publication.
-8. After validation and publication succeed, call `edict_record_pr_analysis_coverage`. Always record the returned
-   `selectedPrNumbers`. For a date selection, also record its inclusive requested date range only when
-   `selectedPrCount < maxPrs`, which proves the limit did not truncate it; when it equals the limit, record only the
-   selected PR numbers. Never record coverage for an incomplete or failed batch.
+8. After validation and publication succeed, call `edict_record_pr_analysis_coverage` with `coverage`: the
+   `repository` model, `analyzedPrNumbers`, and `analyzedDateRanges` (a list of `startDate`/`endDate` objects). Always
+   record the returned `selectedPrNumbers` as `analyzedPrNumbers`. For a date selection, also record its inclusive
+   requested date range only when `selectedPrCount < maxPrs`, which proves the limit did not truncate it; when it
+   equals the limit, record only the selected PR numbers. Never record coverage for an incomplete or failed batch.
 9. Finish with batch ID, inspected IDs, and signal IDs. The server rejects completion until coverage is
    validated and all validated signals are present. A completely inspected batch with zero findings, including an
    empty merged-review selection, succeeds without placeholders. After a server restart, prepare the selection again
