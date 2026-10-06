@@ -8,6 +8,7 @@ import kotlinx.io.asSource
 import kotlinx.io.buffered
 import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.addJsonObject
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.jsonArray
@@ -76,6 +77,14 @@ class EdictNextMcpToolsetTest {
       val delegateSchema = server.tools.getValue("edict_delegate").tool.inputSchema
       assertEquals(setOf("token", "taskId", "prompt"), checkNotNull(delegateSchema.properties).keys)
       assertEquals(listOf("token", "taskId", "prompt"), delegateSchema.required)
+      // Coverage fields differ from the fetch selection's (prNumbers), so the schema names them for the agent.
+      val coverageSchema = checkNotNull(server.tools.getValue("edict_record_pr_analysis_coverage").tool.inputSchema.properties)
+        .getValue("coverage").jsonObject
+      assertEquals(
+        setOf("repository", "analyzedDateRanges", "analyzedPrNumbers"),
+        coverageSchema.getValue("properties").jsonObject.keys,
+      )
+      assertEquals(JsonPrimitive(false), coverageSchema["additionalProperties"])
 
       val output = ByteArrayOutputStream()
       val input = """

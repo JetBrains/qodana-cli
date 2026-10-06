@@ -257,12 +257,26 @@ internal class EdictManagementService(
       )
     }
 
+    // Field names are spelled out so agents do not mistake coverage for an edict_fetch_pr_batch selection.
+    val repository = objectOf(properties("provider", "owner", "repo"), listOf("provider", "owner", "repo"))
+    val coverage = objectOf(
+      mapOf(
+        "repository" to repository,
+        "analyzedDateRanges" to buildJsonObject {
+          put("type", "array")
+          put("items", objectOf(properties("startDate", "endDate"), listOf("startDate", "endDate")))
+        },
+        "analyzedPrNumbers" to integerArray,
+      ),
+      listOf("repository"),
+    )
+
     tool(
       name = "edict_get_pr_analysis_coverage",
       description = "Read persisted analyzed date ranges and explicit PR numbers for one review repository.",
       readOnly = true,
       required = listOf("token", "repository"),
-      properties = mapOf("repository" to modelObject),
+      properties = mapOf("repository" to repository),
     ) { arguments ->
       EdictNextJson.encodeToJsonElement(
         store.getPrAnalysisCoverage(
@@ -276,7 +290,7 @@ internal class EdictManagementService(
       name = "edict_record_pr_analysis_coverage",
       description = "Merge completed inclusive date ranges and explicit PR numbers into persisted analysis coverage.",
       required = listOf("token", "coverage"),
-      properties = mapOf("coverage" to modelObject),
+      properties = mapOf("coverage" to coverage),
     ) { arguments ->
       EdictNextJson.encodeToJsonElement(
         store.recordPrAnalysisCoverage(
@@ -457,6 +471,14 @@ internal class EdictManagementService(
 }
 
 private fun jsonType(type: String) = buildJsonObject { put("type", type) }
+
+/** An object schema that names every field and allows no other. */
+private fun objectOf(properties: Map<String, JsonElement>, required: List<String>) = buildJsonObject {
+  put("type", "object")
+  put("properties", JsonObject(properties))
+  put("required", JsonArray(required.map(::JsonPrimitive)))
+  put("additionalProperties", false)
+}
 
 private fun JsonObject.requireString(name: String): String =
   (get(name) as? JsonPrimitive)?.takeIf(JsonPrimitive::isString)?.content
