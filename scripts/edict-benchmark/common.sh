@@ -13,6 +13,8 @@ export JAVA_HOME="${JDK_21_0:-${JAVA_HOME:?JDK 21 is required}}"
 export PATH="$benchmark_output/tooling/node_modules/.bin:$benchmark_output/tooling/bin:$JAVA_HOME/bin:$PATH"
 export QODANA_DIST="${QODANA_DIST:-$benchmark_checkout/native-dist}"
 export TMPDIR="$benchmark_scratch"
+# Every Codex call uses the benchmark's Codex home, including the trust check of `qodana edict install`.
+export CODEX_HOME="$benchmark_codex_home"
 mkdir -p "$benchmark_output/log" "$benchmark_scratch" "$benchmark_codex_home"
 
 stop_servers() {
