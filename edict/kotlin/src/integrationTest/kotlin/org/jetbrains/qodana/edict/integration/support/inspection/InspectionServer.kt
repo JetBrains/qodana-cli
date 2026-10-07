@@ -13,8 +13,11 @@ import java.util.concurrent.TimeUnit
 internal class InspectionServer private constructor(
     private val process: Process,
     private val client: InspectionMcpClient,
-    private val source: Path,
-  private val proxy: InspectionToolProxy,
+    /** The project the IDE opened: the fixture project without its Edict state. */
+    val source: Path,
+    private val proxy: InspectionToolProxy,
+    /** The IDE's own Streamable HTTP endpoint, which production Edict talks to directly, unlike [url]. */
+    val streamableEndpoint: URI,
 ) : AutoCloseable, IntellijMcpServerLifecycle {
     val url = proxy.url
 
@@ -96,7 +99,9 @@ internal class InspectionServer private constructor(
                     root.resolve("log/inspection-mcp.jsonl"),
                     connected::call
                 )
-                return InspectionServer(process, connected, source, proxy)
+                // The same derivation as `qodana edict ide-mcp`, whose endpoint production Edict uses.
+                val streamable = URI.create(if (url.endsWith("/sse")) url.removeSuffix("/sse") + "/stream" else url)
+                return InspectionServer(process, connected, source, proxy, streamable)
             } catch (e: Throwable) {
                 proxy?.close(); runCatching { client?.close() }; stopIde(process); throw e
             }
