@@ -10,13 +10,13 @@ import org.jetbrains.qodana.edict.common.json
 import org.jetbrains.qodana.edict.integration.support.IntegrationTest
 import org.jetbrains.qodana.edict.integration.support.signalFiles
 import org.jetbrains.qodana.edict.integration.support.verifyManagedRun
-import org.jetbrains.qodana.edict.model.FileRevision
-import org.jetbrains.qodana.edict.model.Provenance
-import org.jetbrains.qodana.edict.model.Signal
-import org.jetbrains.qodana.edict.model.SignalLabel
-import org.jetbrains.qodana.edict.model.SignalRange
-import org.jetbrains.qodana.edict.model.SignalSource
-import org.jetbrains.qodana.edict.model.stableSignalId
+import org.jetbrains.qodana.edict.edictnext.EdictNextFileRevision
+import org.jetbrains.qodana.edict.edictnext.EdictNextLineRange
+import org.jetbrains.qodana.edict.edictnext.EdictNextSignal
+import org.jetbrains.qodana.edict.edictnext.EdictNextSignalLabel
+import org.jetbrains.qodana.edict.edictnext.EdictNextSignalProvenance
+import org.jetbrains.qodana.edict.edictnext.EdictNextSignalSource
+import org.jetbrains.qodana.edict.edictnext.stableSignalId
 import org.jetbrains.qodana.edict.signals.SignalValidation
 import org.junit.jupiter.api.Test
 
@@ -36,28 +36,20 @@ class LiveGitHistorySignalAnalysisTest : IntegrationTest() {
     @Test
     fun `managed history skill finds an independent correction with git grep`() {
         val key = "history-seed|$historicalOrigin|$historicalOriginPath|40"
-        val seed = Signal(
+        val seed = EdictNextSignal(
             id = stableSignalId(key),
             idempotencyKey = key,
-            fileRevision = FileRevision(
+            fileRevision = EdictNextFileRevision(
                 historicalOriginPath,
                 historicalOriginParent,
-                listOf(SignalRange(40, 40)),
+                listOf(EdictNextLineRange(40, 40)),
             ),
-            source = SignalSource(
-                type = "FromCommit",
+            source = EdictNextSignalSource.FromCommit(
                 commitRevision = historicalOrigin,
-                parentRevision = historicalOriginParent,
-                message = "Remove Thread.sleep synchronization",
-                diffPositiveToNegative = workspace.repository.diff(
-                    historicalOriginParent,
-                    historicalOrigin,
-                    listOf(historicalOriginPath),
-                ),
             ),
-            label = SignalLabel.POSITIVE,
+            label = EdictNextSignalLabel.POSITIVE,
             description = "Thread.sleep must not be used to synchronize asynchronous work in tests",
-            provenance = Provenance("commit-${historicalOrigin.take(16)}"),
+            provenance = EdictNextSignalProvenance("commit-${historicalOrigin.take(16)}"),
         )
         val inbox = workspace.state.resolve("inbox")
         Files.createDirectories(inbox)
@@ -69,13 +61,11 @@ class LiveGitHistorySignalAnalysisTest : IntegrationTest() {
             """
             Use edict_manager and the managed protocol to find additional historical evidence for one selected Signal.
             Create exactly one top-level edict-git-history-signal-analysis task.
-            Source checkout: ${workspace.repository.root}
-            Edict state root: ${workspace.state}
             Selected Signal ID: ${seed.id}
             Bounded revision expression: HEAD
             Commit limit: 100
             Use Git pickaxe searches and git grep as required by the skill. Exclude the selected Signal's originating
-            correction and publish every independently verified Signal through edict_state_write.
+            correction and publish every independently verified Signal through edict_publish_signal.
             """.trimIndent(),
         ) { store, runtime, _ ->
             val plan = assertNotNull(store.plan())
@@ -92,10 +82,10 @@ class LiveGitHistorySignalAnalysisTest : IntegrationTest() {
             }
             val independent = signals.filter { it.id != seed.id }
             assertTrue(independent.isNotEmpty(), "Bounded search must publish independent corrective evidence")
-            assertTrue(SignalLabel.POSITIVE in independent.map { it.label })
+            assertTrue(EdictNextSignalLabel.POSITIVE in independent.map { it.label })
             independent.forEach(workspace.repository::validateEvidence)
             assertTrue(signals.none {
-                it.id != seed.id && it.source.commitRevision == historicalOrigin
+                it.id != seed.id && (it.source as? EdictNextSignalSource.FromCommit)?.commitRevision == historicalOrigin
             })
             verifyManagedRun(workspace, runtime, plan)
         }

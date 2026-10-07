@@ -12,7 +12,7 @@ class EdictConfigTest {
   @TempDir
   lateinit var directory: Path
 
-  private val project: EdictLayout get() = EdictLayout(directory)
+  private val project: EdictLayout get() = EdictLayout(directory, directory.resolve(".edict"))
 
   @Test
   fun `defaults without qodana yaml, an edict section or a port`() {
@@ -32,6 +32,7 @@ class EdictConfigTest {
         name: qodana.recommended
       edict:
         mcpPort: 4321
+        statePath: ../shared-edict-state
       """.trimIndent(),
     )
     assertEquals(EdictConfig(4321), EdictConfig.load(project))

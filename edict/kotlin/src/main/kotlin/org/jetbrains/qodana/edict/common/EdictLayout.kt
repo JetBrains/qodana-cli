@@ -9,13 +9,13 @@ import kotlin.io.path.isRegularFile
 
 /**
  * Every path Edict uses for the project in the working directory, the one place that names them: the Edict state
- * repository (`.edict` unless `--state-dir` moves it), the logs (`log` unless the [LOG_DIRECTORY_PROPERTY] system
+ * repository (`edict.statePath` from qodana.yaml, `.edict` by default), the logs (`log` unless the [LOG_DIRECTORY_PROPERTY] system
  * property moves them) and the local Codex setup. The layout inside the state repository belongs to its own classes.
  * Each process keeps its logs and its agents' work in folders named after its [runId].
  */
 internal data class EdictLayout(
   val root: Path,
-  val stateDirectory: Path = root.resolve(".edict"),
+  val stateDirectory: Path,
   val logDirectory: Path = root.resolve(System.getProperty(LOG_DIRECTORY_PROPERTY) ?: "log").normalize(),
   val runId: String = processRunId(),
 ) {
@@ -39,9 +39,6 @@ internal data class EdictLayout(
   val scratchDirectory: Path = agentWorkDirectory.resolve("scratch")
   val neighboursResponsePath: Path = agentWorkDirectory.resolve("neighbours.response.json")
 
-  /** The Qodana configuration, found like the Qodana CLI does: `qodana.yml` first, then `qodana.yaml`. */
-  val qodanaYamlPath: Path? get() = listOf("qodana.yml", "qodana.yaml").map(root::resolve).firstOrNull { it.isRegularFile() }
-
   val codexConfigPath: Path = root.resolve(".codex").resolve("config.toml")
   val codexSkillsDirectory: Path = root.resolve(".codex").resolve("skills")
 
@@ -64,10 +61,17 @@ internal data class EdictLayout(
     fun processRunId(): String = System.getProperty(RUN_ID_PROPERTY)
       ?: RUN_ID_FORMAT.format(Instant.now()).also { System.setProperty(RUN_ID_PROPERTY, it) }
 
-    /** The working directory, with [stateDirectory] resolved against it when given. */
-    fun get(stateDirectory: String? = null): EdictLayout {
+    /** Finds Qodana configuration like the Qodana CLI: `qodana.yml` first, then `qodana.yaml`. */
+    fun findQodanaYaml(root: Path = Path.of("").toRealPath()): Path? =
+      listOf("qodana.yml", "qodana.yaml").map(root::resolve).firstOrNull { it.isRegularFile() }
+
+    /** The working directory and its mandatory configured state path. Absolute state paths remain absolute. */
+    fun get(statePath: String): EdictLayout {
       val root = Path.of("").toRealPath()
-      return stateDirectory?.let { EdictLayout(root, root.resolve(it).normalize()) } ?: EdictLayout(root)
+      val configuredState = Path.of(statePath)
+      val stateDirectory = if (configuredState.isAbsolute) configuredState.normalize()
+      else root.resolve(configuredState).normalize()
+      return EdictLayout(root, stateDirectory)
     }
   }
 }

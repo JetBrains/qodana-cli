@@ -9,11 +9,12 @@ $CODEX_HOME/config.toml
 # optional, in the project: Edict settings in the Qodana configuration (qodana.yml wins over qodana.yaml)
 edict:
   mcpPort: 27182   # the default
+  statePath: .edict # the default; relative paths are resolved from the project
 
 # setup, in the inspected project (a future `qodana edict setup` replaces these two calls)
 cd <project>
 qodana edict install [--deny <path>]...
-qodana edict mcp start [--state-dir <state>] [--ide-* ...]
+qodana edict mcp start [--ide-* ...]
 
 # run, in the same directory
 codex exec '$edict_manager process inbox and generate new rules'
@@ -30,13 +31,15 @@ codex exec '$edict_manager process inbox and generate new rules'
     read, `<cwd>/log/agent-work` write, `<cwd>/log/process-log` deny (token-bearing logs), and every `--deny` path deny;
   - the port is `edict.mcpPort` from `qodana.yaml`; re-run `install` after changing it.
 - `qodana edict mcp start` serves Streamable HTTP on `edict.mcpPort`. It fails fast when `.codex/config.toml` is missing
-  or names another port, and when the port is busy. The project is the working directory, state defaults to
-  `<cwd>/.edict` (`--state-dir` moves it), and each run (process, named by its UTC start time) logs to
+  or names another port, and when the port is busy. The project is the working directory; state comes from
+  `edict.statePath` in `qodana.yaml`, defaulting to `<cwd>/.edict`. Relative state paths resolve from the project. Each
+  run (process, named by its UTC start time) logs to
   `<cwd>/log/process-log/<run-id>`. The state is also the reference repository for
   distribution checks, and the project's Git repository validates commit Signals. It forwards the
   IntelliJ inspection tools, starting the IDE on the first inspection call, so Codex configures only `edict-mcp`.
-- The request carries no paths. Skills call `edict_context` for `projectDirectory`, `stateDirectory` (read-only; the
-  state repository Edict Next tools change in place), and `scratchDirectory` (`<cwd>/log/agent-work/<run-id>/scratch`).
+- The request carries no paths or CI repository identity. Skills call `edict_context` for `projectDirectory`,
+  `stateDirectory` (read-only; the state repository Edict Next tools change in place), `scratchDirectory`
+  (`<cwd>/log/agent-work/<run-id>/scratch`), and `reviewRepository` derived from `edict.ci.url`.
 - Provider tokens (`GITHUB_TOKEN`/`GH_TOKEN`, `SPACE_TOKEN`) come from the server environment, never from MCP arguments.
   A run fails only when it uses a VCS provider without its token.
 

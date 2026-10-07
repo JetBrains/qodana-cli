@@ -26,7 +26,8 @@ class CodexSetupTest {
 
   @Test
   fun `install writes skills and a sandboxed local config`() {
-    val project = EdictLayout(directory.toRealPath())
+    val projectRoot = directory.toRealPath()
+    val project = EdictLayout(projectRoot, projectRoot.resolve(".edict"))
     val gold = project.root.resolve("gold.sarif.json").createFile()
     trust(project.root)
 
@@ -58,7 +59,8 @@ class CodexSetupTest {
 
   @Test
   fun `reinstall follows the configured port and drops deny rules that are no longer requested`() {
-    val project = EdictLayout(directory.toRealPath())
+    val projectRoot = directory.toRealPath()
+    val project = EdictLayout(projectRoot, projectRoot.resolve(".edict"))
     trust(project.root)
     CodexSetup.install(project, listOf(Path.of("gold.sarif.json")), EdictConfig(4321), codexHome)
 
@@ -71,7 +73,8 @@ class CodexSetupTest {
 
   @Test
   fun `server requires an installation for the configured port`() {
-    val project = EdictLayout(directory.toRealPath())
+    val projectRoot = directory.toRealPath()
+    val project = EdictLayout(projectRoot, projectRoot.resolve(".edict"))
     assertFailsWith<IllegalStateException> { CodexSetup.requireInstalled(project, EdictConfig()) }
     trust(project.root)
     CodexSetup.install(project, emptyList(), EdictConfig(4321), codexHome)
@@ -81,7 +84,8 @@ class CodexSetupTest {
 
   @Test
   fun `install fails and removes the config when Codex does not load it`() {
-    val project = EdictLayout(directory.toRealPath())
+    val projectRoot = directory.toRealPath()
+    val project = EdictLayout(projectRoot, projectRoot.resolve(".edict"))
     // The fake Codex from build.gradle.kts answers with this list.
     codexHome.resolve("fake-mcp-list.json").writeText("[]")
     val ignored = assertFailsWith<IllegalStateException> { CodexSetup.install(project, emptyList(), EdictConfig(), codexHome) }
@@ -97,7 +101,8 @@ class CodexSetupTest {
     assumeTrue(System.getenv("CI") != null || System.getenv("TEAMCITY_VERSION") != null || codexInstalled()) {
       "codex is not on PATH"
     }
-    val project = EdictLayout(directory.toRealPath())
+    val projectRoot = directory.toRealPath()
+    val project = EdictLayout(projectRoot, projectRoot.resolve(".edict"))
     assertFailsWith<IllegalStateException> { CodexSetup.install(project, emptyList(), EdictConfig(), codexHome) }
     assertFalse(project.codexConfigPath.exists())
 

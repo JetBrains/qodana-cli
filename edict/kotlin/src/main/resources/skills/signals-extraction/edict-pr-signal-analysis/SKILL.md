@@ -9,9 +9,10 @@ Run only as a delegated managed subagent. Follow [the manager protocol](../edict
 [the signal contract](../edict_manager/references/signals.md). Registry ID: `edict-pr-signal-analysis`.
 You own coverage and Signal publication; delegate evidence inspection to `edict-signal-analysis`.
 
-Require a provider (`github` or `space`), owner (GitHub owner or Space project key), repository name, and either explicit
-PR numbers or inclusive UTC date bounds, together with a PR limit from 1 to 1000. Use `projectDirectory` from `edict_context` as the source
-checkout when available and scratch below its `scratchDirectory`. This workflow needs `edict-mcp`, without an IntelliJ session. Provider credentials
+Call `edict_context` and require its `reviewRepository`, configured by `edict.ci.url` in `qodana.yaml`. Do not request or
+repeat its provider, owner/project key, repository, or any run path in a prompt. Require either explicit PR numbers or
+inclusive UTC date bounds, together with a PR limit from 1 to 1000. Use `projectDirectory` from `edict_context` as the source
+checkout and scratch below its `scratchDirectory`. This workflow needs `edict-mcp`, without an IntelliJ session. Provider credentials
 belong in the server environment; never request their values in a tool call, prompt, result, or log. Missing access is a
 failed prerequisite. Commit-only requests belong to `edict-batch-signal-analysis`.
 
