@@ -108,17 +108,31 @@ Implementation constraints:
 - directly resolve current-file references, calls, types, annotations, hierarchy facts, and constants when needed;
   resolved declarations may live elsewhere and their metadata may be read;
 - do not enumerate project/module/global usages, references, inheritors, overrides, files, or index contents;
-- use `LocalSearchScope` only when rooted in the current file; do not use data-flow analysis;
-- keep work proportional to the current file, filter syntax before resolution, handle unresolved results conservatively,
-  and preserve cancellation.
+- use `LocalSearchScope` only when rooted in the current file;
+- do not use data-flow analysis: decide from the inspected expression and what it directly resolves to, without
+  tracking values through local variables, aliases, loop variables, or helper-call parameters, and without iterating
+  to a fixed point;
+- treat an unresolved reference, call, or type the decision depends on as unknown and do not report: never count it
+  as a match by name, and never treat it as proof that something is absent;
+- keep work proportional to the current file: visit each element a bounded number of times, with no whole-body walk
+  per field, per call, or per call path; follow a same-file delegation (`this(...)`, a helper call) at most one level,
+  or compute one summary per method and reuse it; filter by syntax and names before resolving; preserve cancellation;
+- make the message, highlighted element, and `htmlDescription` state the property the implementation verifies, not a
+  stronger one it assumes.
 
 ## 4. Repeat generation cycles
 
 Strong examples, those referenced by a `STRONG` cluster Signal, define the required behavior. Every other example is
 weak: it targets recall and does not define behavior. Satisfy every weak example that still fits the rule you implement;
-never contradict strong evidence to satisfy one. A weak example that only a prohibited technique (data-flow,
-cross-method analysis, project enumeration) could satisfy is a known limitation: record it in history and do not
-regenerate for it. Weak failures never block a cycle or the Generated transition.
+never contradict strong evidence to satisfy one. Fix a failing weak example by deciding its construct correctly within
+the implementation constraints. Only when you are sure the construct the decision depends on cannot be analyzed within
+them (for example, the copy happens inside a call whose body the inspection may not follow), make the inspection
+abstain on it: treat it as unknown and do not report. Abstain with the simplest syntactic check that recognizes the
+construct, such as the relevant value being passed to a call or a delegation; never follow helpers or aliases to decide
+whether to abstain. Abstaining is a last resort, not a shortcut: record in history why the construct cannot be analyzed.
+A weak example that neither allowed analysis nor abstaining can satisfy without failing a strong example is a known
+limitation: record it in history and do not regenerate for it. Weak failures never block a cycle or the Generated
+transition.
 
 A cycle is cheap, so repeat it as often as needed. Each failed step sends you straight back to repair and regeneration:
 
@@ -162,6 +176,7 @@ remain after this one. The copy is the last analyzed candidate; replace it only 
 
    Cluster id: <clusterId>
    Review output path: <privateScratchDirectory>/inspection-code-review-<n>.json
+   Previous code review: <output path of the previous round's code review, or none>
    ```
 
    Both reviews add weak examples and report them.
