@@ -11,6 +11,8 @@ import org.jetbrains.qodana.edict.integration.support.historyPath
 import org.jetbrains.qodana.edict.ci.ReviewClient
 import java.net.InetSocketAddress
 import java.net.URLDecoder
+import java.time.LocalDate
+import java.time.ZoneOffset
 import java.util.*
 import java.util.concurrent.ConcurrentLinkedQueue
 import kotlin.test.assertEquals
@@ -26,6 +28,7 @@ internal class ReviewProviderFixture(private val provider: String, repository: G
     private val requests = ConcurrentLinkedQueue<String>()
     private val server = HttpServer.create(InetSocketAddress("127.0.0.1", 0), 0)
     private val baseUrl = "http://127.0.0.1:${server.address.port}"
+    private val mergedAt = LocalDate.now(ZoneOffset.UTC).atTime(12, 0).toInstant(ZoneOffset.UTC).toString()
     val discussionUrl = when (provider) {
         "github" -> "https://github.test/owner/repo/pull/7#discussion_r10"
         "space" -> "$baseUrl/im/review/review-id?message=root&channel=feed"
@@ -65,9 +68,14 @@ internal class ReviewProviderFixture(private val provider: String, repository: G
         fun quote(value: String) = JsonPrimitive(value).toString()
         fun encoded(content: String) = Base64.getEncoder().encodeToString(content.toByteArray(Charsets.UTF_8))
         return when (path) {
+            "/repos/owner/repo/pulls" -> {
+                assertEquals("github", provider)
+                """[{"number":7,"updated_at":"$mergedAt","merged_at":"$mergedAt"}]"""
+            }
+
             "/repos/owner/repo/pulls/7" -> {
                 assertEquals("github", provider)
-                """{"number":7,"title":${quote(title)},"body":"Correct worker synchronization","html_url":"https://github.test/owner/repo/pull/7","merged_at":"2026-09-21T12:00:00Z","base":{"sha":"$historyBefore"},"head":{"sha":"$historyCommit"}}"""
+                """{"number":7,"title":${quote(title)},"body":"Correct worker synchronization","html_url":"https://github.test/owner/repo/pull/7","merged_at":"$mergedAt","base":{"sha":"$historyBefore"},"head":{"sha":"$historyCommit"}}"""
             }
 
             "/repos/owner/repo/pulls/7/comments" ->
@@ -113,7 +121,8 @@ internal class ReviewProviderFixture(private val provider: String, repository: G
     fun verifyRequests() {
         errors.firstOrNull()?.let { throw it }
         val required = if (provider == "github") listOf(
-            "/repos/owner/repo/pulls/7", "/repos/owner/repo/pulls/7/comments", "/repos/owner/repo/pulls/7/reviews",
+            "/repos/owner/repo/pulls", "/repos/owner/repo/pulls/7", "/repos/owner/repo/pulls/7/comments",
+            "/repos/owner/repo/pulls/7/reviews",
         ) else listOf(
             "/api/http/projects/key:owner/code-reviews/number:7",
             "/api/http/chats/messages/sync-batch",
