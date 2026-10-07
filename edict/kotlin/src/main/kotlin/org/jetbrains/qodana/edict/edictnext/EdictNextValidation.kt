@@ -66,6 +66,18 @@ internal suspend fun validateRepositoryState(
   state.clusters.forEach { cluster ->
     val history = state.filesByRelativePath[state.relativePath(cluster.historyPath)]?.decodeToString().orEmpty()
     issues += validateCluster(cluster, history)
+    val promotionIds = cluster.manifest.promotions.map(InspectionPromotion::id)
+    if (promotionIds.distinct().size != promotionIds.size) {
+      issues += EdictNextValidationIssue(cluster.directory.manifestPath.toString(), "Cluster contains duplicate promotion ids")
+    }
+    cluster.manifest.promotions.forEach { promotion ->
+      try {
+        validatePromotion(promotion)
+      }
+      catch (e: IllegalArgumentException) {
+        issues += EdictNextValidationIssue(cluster.directory.manifestPath.toString(), e.message.orEmpty())
+      }
+    }
     val finalPath = state.relativePath(repository.paths.inspectionPath(cluster.id))
     val candidatePath = state.relativePath(cluster.candidateInspectionPath)
     when (cluster.manifest.status) {
@@ -130,6 +142,23 @@ internal suspend fun validateRepositoryState(
     issues += EdictNextValidationIssue(path, "Inspection file does not belong to the current cluster state")
   }
   return issues
+}
+
+internal fun validatePromotion(promotion: InspectionPromotion) {
+  require(promotion.id.matches(Regex("p-[0-9a-f]{24}"))) { "Invalid promotion id '${promotion.id}'" }
+  require(promotion.inspectionDigest.matches(Regex("[0-9a-f]{64}"))) { "Invalid promotion inspection digest" }
+  require(promotion.targetBranch.isNotBlank()) { "Promotion target branch is required" }
+  val targetPath = Path.of(promotion.targetPath)
+  require(promotion.targetPath.isNotBlank() && !targetPath.isAbsolute && targetPath.none { it.toString() == ".." }) {
+    "Promotion target path must stay inside the target repository"
+  }
+  require(promotion.pullRequest.owner.isNotBlank() && promotion.pullRequest.repository.isNotBlank()) {
+    "Promotion repository identity is required"
+  }
+  require(promotion.pullRequest.id.isNotBlank() && promotion.pullRequest.url.isNotBlank()) { "Promotion PR identity is required" }
+  require(java.time.Instant.parse(promotion.createdAt) <= java.time.Instant.parse(promotion.updatedAt)) {
+    "Promotion update timestamp precedes creation"
+  }
 }
 
 internal suspend fun validateCluster(

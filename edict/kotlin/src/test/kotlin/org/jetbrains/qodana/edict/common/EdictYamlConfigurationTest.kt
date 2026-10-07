@@ -1,6 +1,7 @@
 // Copyright 2026 JetBrains s.r.o. Licensed under the Apache License, Version 2.0.
 package org.jetbrains.qodana.edict.common
 
+import org.jetbrains.qodana.edict.ci.CiProviderId
 import org.junit.jupiter.api.io.TempDir
 import java.nio.file.Path
 import kotlin.io.path.writeText
@@ -37,7 +38,7 @@ class EdictYamlConfigurationTest {
     assertEquals("../edict-state", configuration.statePath)
     assertEquals(EdictCIConfiguration("https://github.com/JetBrains/qodana-cli"), configuration.ci)
     assertEquals(PromotionConfiguration("reviewer-login", "main", "quality/inspections"), configuration.promotion)
-    assertEquals(EdictCIProvider.GITHUB, configuration.ci?.provider)
+    assertEquals(CiProviderId.GITHUB, configuration.ci?.provider)
     assertEquals("JetBrains", configuration.ci?.owner)
     assertEquals("qodana-cli", configuration.ci?.repository)
   }
@@ -52,7 +53,7 @@ class EdictYamlConfigurationTest {
       """,
     ))
 
-    assertEquals(EdictCIProvider.SPACE, configuration.ci?.provider)
+    assertEquals(CiProviderId.SPACE, configuration.ci?.provider)
     assertEquals("QD", configuration.ci?.owner)
     assertEquals("qodana-cli", configuration.ci?.repository)
   }

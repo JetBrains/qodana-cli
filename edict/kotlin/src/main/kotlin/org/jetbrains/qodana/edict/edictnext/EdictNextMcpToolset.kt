@@ -11,7 +11,8 @@ import io.modelcontextprotocol.kotlin.sdk.types.ToolSchema
 import kotlinx.serialization.json.*
 import org.jetbrains.qodana.edict.common.EdictConfiguration
 import org.jetbrains.qodana.edict.common.EdictLayout
-import org.jetbrains.qodana.edict.extraction.reviews.ReviewRepository
+import org.jetbrains.qodana.edict.promotion.PromotionReviewDecision
+import org.jetbrains.qodana.edict.promotion.PromotionService
 import kotlin.coroutines.cancellation.CancellationException
 import kotlin.io.path.createDirectories
 
@@ -23,6 +24,7 @@ internal class EdictNextMcpToolset(
   private val distribution: EdictNextDistributionService,
   private val generation: EdictNextGenerationService,
   private val configuration: EdictConfiguration = EdictConfiguration(),
+  private val promotion: PromotionService,
 ) {
   fun createServer(): Server = Server(
     serverInfo = Implementation(
@@ -39,6 +41,7 @@ internal class EdictNextMcpToolset(
 
   private fun registerTools(server: Server) {
     management.registerTools(server)
+    registerPromotionTools(server)
 
     server.addTool(
       name = "edict_context",
@@ -48,9 +51,7 @@ internal class EdictNextMcpToolset(
         projectDirectory = layout.root.toString(),
         stateDirectory = layout.stateDirectory.toString(),
         scratchDirectory = layout.scratchDirectory.createDirectories().toString(),
-        reviewRepository = configuration.ci?.let {
-          ReviewRepository(it.provider.name.lowercase(), it.owner, it.repository)
-        },
+        reviewRepository = configuration.ci?.reviewRepository,
       ).toToolResult()
     }
 
@@ -315,6 +316,97 @@ internal class EdictNextMcpToolset(
     }
 
     registerInspectionKtsTools(server)
+  }
+
+  private fun registerPromotionTools(server: Server) {
+    server.addTool(
+      name = "edict_promote_clusters",
+      description = "Promote eligible Generated inspections with more than five strong Signals. Omit clusterIds to process every eligible cluster.",
+      inputSchema = toolSchema(
+        required = listOf("token"),
+        "token" to property("string", "Your delegated edict-promote task token"),
+        "clusterIds" to buildJsonObject {
+          put("type", "array")
+          put("description", "Optional cluster IDs to consider; omitted means every cluster")
+          put("minItems", 1)
+          put("uniqueItems", true)
+          putJsonObject("items") { put("type", "string") }
+        },
+      ),
+    ) { request ->
+      try {
+        management.requireSkill(request.requireString("token"), "edict-promote")
+        val clusterIds = request.arguments?.get("clusterIds")?.let {
+          EdictNextJson.decodeFromJsonElement<List<String>>(it)
+        }
+        promotion.promote(clusterIds).toToolResult()
+      }
+      catch (e: Exception) {
+        EdictNextMutationResponse(false, e.message ?: "Inspection promotion failed").toToolResult(isError = true)
+      }
+    }
+
+    server.addTool(
+      name = "ecict-check-promotion",
+      description = "Refresh ON_REVIEW promotion PRs, returning accepted promotions and closed-unmerged reviews awaiting a cluster decision.",
+      inputSchema = toolSchema(
+        required = listOf("token"),
+        "token" to property("string", "Your delegated ecict-check-promotion task token"),
+      ),
+    ) { request ->
+      try {
+        management.requireSkill(request.requireString("token"), "ecict-check-promotion")
+        val response = promotion.checkReviews()
+        response.copy(
+          undecided = response.undecided.map { it.copy(evidence = management.redact(it.evidence)) },
+          failures = response.failures.map { it.copy(message = management.redact(it.message)) },
+        ).toToolResult()
+      }
+      catch (e: Exception) {
+        EdictNextMutationResponse(false, e.message ?: "Promotion review check failed").toToolResult(isError = true)
+      }
+    }
+
+    val decisionObject = buildJsonObject {
+      put("type", "object")
+      putJsonObject("properties") {
+        put("clusterId", property("string", "Cluster id"))
+        put("promotionId", property("string", "Persisted promotion id"))
+        put("decision", property("string", "MOVE_CLUSTER_TO_PENDING or DISCONTINUE_CLUSTER"))
+        put("rationale", property("string", "Bounded decision rationale based on review evidence"))
+      }
+      putJsonArray("required") { listOf("clusterId", "promotionId", "decision", "rationale").forEach(::add) }
+      put("additionalProperties", false)
+    }
+    server.addTool(
+      name = "edict_promotion_decide_reviews",
+      description = "Verify and resolve 1 to 10 closed reviews, atomically closing each promotion while updating cluster state and history.",
+      inputSchema = toolSchema(
+        required = listOf("token", "decisions"),
+        "token" to property("string", "Your delegated edict-promotion-decision task token"),
+        "decisions" to buildJsonObject {
+          put("type", "array")
+          put("minItems", 1)
+          put("maxItems", 10)
+          put("items", decisionObject)
+        },
+      ),
+    ) { request ->
+      try {
+        management.requireSkill(request.requireString("token"), "edict-promotion-decision")
+        val decisions = EdictNextJson.decodeFromJsonElement<List<PromotionReviewDecision>>(
+          request.arguments?.get("decisions") ?: error("decisions is required"),
+        )
+        decisions.forEach { management.requireTokenFree(it.rationale) }
+        val response = promotion.decideReviews(decisions)
+        response.copy(
+          failures = response.failures.map { it.copy(message = management.redact(it.message)) },
+        ).toToolResult()
+      }
+      catch (e: Exception) {
+        EdictNextMutationResponse(false, e.message ?: "Promotion review decision failed").toToolResult(isError = true)
+      }
+    }
   }
 
   /** Forwards every IntelliJ Inspection KTS tool so agents only need this server, as when the IDE served every tool. */

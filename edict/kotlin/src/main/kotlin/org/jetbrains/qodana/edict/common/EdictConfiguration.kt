@@ -1,6 +1,8 @@
 // Copyright 2026 JetBrains s.r.o. Licensed under the Apache License, Version 2.0.
 package org.jetbrains.qodana.edict.common
 
+import org.jetbrains.qodana.edict.ci.CiProviderId
+import org.jetbrains.qodana.edict.ci.ReviewRepository
 import org.yaml.snakeyaml.LoaderOptions
 import org.yaml.snakeyaml.Yaml
 import org.yaml.snakeyaml.constructor.Constructor
@@ -35,8 +37,6 @@ internal data class EdictConfiguration(
 internal const val DEFAULT_EDICT_MCP_PORT = 27182
 internal const val DEFAULT_EDICT_STATE_PATH = ".edict"
 
-internal enum class EdictCIProvider { GITHUB, SPACE }
-
 internal data class EdictCIConfiguration(val url: String) {
   private val path = webUrl(url, "CI repository").pathSegments()
 
@@ -46,9 +46,10 @@ internal data class EdictCIConfiguration(val url: String) {
     }
   }
 
-  val provider = if (path.size == 2) EdictCIProvider.GITHUB else EdictCIProvider.SPACE
-  val owner = path[if (provider == EdictCIProvider.GITHUB) 0 else 1].validRepositoryName("CI owner or project key")
+  val provider = if (path.size == 2) CiProviderId.GITHUB else CiProviderId.SPACE
+  val owner = path[if (provider == CiProviderId.GITHUB) 0 else 1].validRepositoryName("CI owner or project key")
   val repository = path.last().removeSuffix(".git").validRepositoryName("CI repository")
+  val reviewRepository get() = ReviewRepository(provider, owner, repository)
 }
 
 internal data class PromotionConfiguration(

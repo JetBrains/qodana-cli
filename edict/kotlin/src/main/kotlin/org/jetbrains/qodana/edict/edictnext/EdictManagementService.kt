@@ -24,12 +24,14 @@ import org.jetbrains.qodana.edict.edictnext.EdictNextRepositoryState.Plan
 import org.jetbrains.qodana.edict.edictnext.EdictNextRepositoryState.Step
 import org.jetbrains.qodana.edict.common.EdictLayout
 import org.jetbrains.qodana.edict.common.GitRepository
+import org.jetbrains.qodana.edict.ci.ReviewClient
+import org.jetbrains.qodana.edict.ci.ReviewExtractionApi
+import org.jetbrains.qodana.edict.ci.ReviewRepository
+import org.jetbrains.qodana.edict.ci.ReviewSelection
 import org.jetbrains.qodana.edict.extraction.reviews.PrAnalysis
+import org.jetbrains.qodana.edict.extraction.reviews.PrAnalysisCoverageInput
 import org.jetbrains.qodana.edict.extraction.reviews.RepositoryPrAnalysisCoverage
-import org.jetbrains.qodana.edict.extraction.reviews.ReviewClient
-import org.jetbrains.qodana.edict.extraction.reviews.ReviewProvider
-import org.jetbrains.qodana.edict.extraction.reviews.ReviewRepository
-import org.jetbrains.qodana.edict.extraction.reviews.ReviewSelection
+import org.jetbrains.qodana.edict.extraction.reviews.ReviewSelectionInput
 import org.jetbrains.qodana.edict.skills.managed.Registry
 import java.io.PrintWriter
 import java.nio.file.Files
@@ -41,7 +43,8 @@ internal class EdictManagementService(
   private val store: EdictNextRepositoryState,
   private val layout: EdictLayout,
   taskOutput: PrintWriter = PrintWriter(System.err, true),
-  reviewProvider: ReviewProvider = ReviewClient(),
+  reviewProvider: ReviewExtractionApi = ReviewClient(),
+  private val reviewRepository: ReviewRepository? = null,
 ) {
   companion object {
     const val INSTRUCTIONS = "Managed Edict state and execution plans. Root requests enter through edict_manager. " +
@@ -257,31 +260,16 @@ internal class EdictManagementService(
       )
     }
 
-    // Field names are spelled out so agents do not mistake coverage for an edict_fetch_pr_batch selection.
-    val repository = objectOf(properties("provider", "owner", "repo"), listOf("provider", "owner", "repo"))
-    val coverage = objectOf(
-      mapOf(
-        "repository" to repository,
-        "analyzedDateRanges" to buildJsonObject {
-          put("type", "array")
-          put("items", objectOf(properties("startDate", "endDate"), listOf("startDate", "endDate")))
-        },
-        "analyzedPrNumbers" to integerArray,
-      ),
-      listOf("repository"),
-    )
-
     tool(
       name = "edict_get_pr_analysis_coverage",
-      description = "Read persisted analyzed date ranges and explicit PR numbers for one review repository.",
+      description = "Read persisted analyzed date ranges and explicit PR numbers for the repository configured in edict.ci.",
       readOnly = true,
-      required = listOf("token", "repository"),
-      properties = mapOf("repository" to repository),
+      required = listOf("token"),
     ) { arguments ->
       EdictNextJson.encodeToJsonElement(
         store.getPrAnalysisCoverage(
           arguments.requireString("token"),
-          wireJson.decodeFromJsonElement<ReviewRepository>(arguments.getValue("repository")),
+          configuredReviewRepository(),
         ),
       )
     }
@@ -289,31 +277,49 @@ internal class EdictManagementService(
     tool(
       name = "edict_record_pr_analysis_coverage",
       description = "Merge completed inclusive date ranges and explicit PR numbers into persisted analysis coverage.",
-      required = listOf("token", "coverage"),
-      properties = mapOf("coverage" to coverage),
+      required = listOf("token"),
+      properties = mapOf(
+        "analyzedDateRanges" to buildJsonObject { put("type", "array"); put("items", modelObject) },
+        "analyzedPrNumbers" to integerArray,
+      ),
     ) { arguments ->
+      val input = wireJson.decodeFromJsonElement<PrAnalysisCoverageInput>(JsonObject(arguments - "token"))
       EdictNextJson.encodeToJsonElement(
         store.recordPrAnalysisCoverage(
           arguments.requireString("token"),
-          wireJson.decodeFromJsonElement<RepositoryPrAnalysisCoverage>(arguments.getValue("coverage")),
+          RepositoryPrAnalysisCoverage(
+            configuredReviewRepository(),
+            input.analyzedDateRanges,
+            input.analyzedPrNumbers,
+          ),
         ),
       )
     }
 
     tool(
       name = "edict_fetch_pr_batch",
-      description = "Prepare merged GitHub or Space reviews. Requires a running PR-analysis task.",
+      description = "Prepare merged reviews from the repository configured in edict.ci. Requires a running PR-analysis task.",
       readOnly = true,
-      required = listOf("token", "provider", "owner", "repo", "maxPrs"),
-      properties = properties("provider", "owner", "repo", "startDate", "endDate") + mapOf(
+      required = listOf("token", "maxPrs"),
+      properties = properties("startDate", "endDate") + mapOf(
         "maxPrs" to integer,
         "prNumbers" to integerArray,
       ),
     ) { arguments ->
+      val input = wireJson.decodeFromJsonElement<ReviewSelectionInput>(JsonObject(arguments - "token"))
+      val repository = configuredReviewRepository()
       EdictNextJson.encodeToJsonElement(
         pr.prepareBatch(
           arguments.requireString("token"),
-          wireJson.decodeFromJsonElement<ReviewSelection>(JsonObject(arguments - "token")),
+          ReviewSelection(
+            repository.provider,
+            repository.owner,
+            repository.repository,
+            input.maxPrs,
+            input.prNumbers,
+            input.startDate,
+            input.endDate,
+          ),
         ),
       )
     }
@@ -437,6 +443,12 @@ internal class EdictManagementService(
 
   internal fun requireTokenFree(content: String) {
     store.requireTokenFree(content)
+  }
+
+  internal fun redact(content: String): String = store.redact(content)
+
+  private fun configuredReviewRepository(): ReviewRepository = requireNotNull(reviewRepository) {
+    "PR extraction requires complete edict.ci configuration"
   }
 
   private fun lifecycle(change: () -> Plan): JsonElement = synchronized(store) {

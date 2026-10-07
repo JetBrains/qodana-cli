@@ -3,9 +3,10 @@ package org.jetbrains.qodana.edict.integration
 import com.sun.net.httpserver.HttpExchange
 import com.sun.net.httpserver.HttpServer
 import kotlinx.serialization.json.JsonPrimitive
-import org.jetbrains.qodana.edict.extraction.reviews.ReviewClient
-import org.jetbrains.qodana.edict.extraction.reviews.ReviewRepository
-import org.jetbrains.qodana.edict.extraction.reviews.ReviewSelection
+import org.jetbrains.qodana.edict.ci.CiProviderId
+import org.jetbrains.qodana.edict.ci.ReviewClient
+import org.jetbrains.qodana.edict.ci.ReviewRepository
+import org.jetbrains.qodana.edict.ci.ReviewSelection
 import org.jetbrains.qodana.edict.integration.support.IntegrationTest
 import org.jetbrains.qodana.edict.signals.UnifiedDiff
 import org.jetbrains.qodana.edict.support.afterSource
@@ -88,7 +89,7 @@ class ReviewClientTest : IntegrationTest() {
                 else -> error("Unexpected provider path")
             }
         }) { client ->
-            val pr = client.fetch(ReviewSelection("github", "o", "r", 1, listOf(7))).single()
+            val pr = client.fetch(ReviewSelection(CiProviderId.GITHUB, "o", "r", 1, listOf(7))).single()
             val thread = pr.threads.single()
             assertEquals(
                 listOf("Complete overview", "complete root message ".repeat(100), "Fixed"),
@@ -116,7 +117,7 @@ class ReviewClientTest : IntegrationTest() {
         }) { client ->
             assertEquals(
                 listOf(2),
-                client.fetch(ReviewSelection("github", "o", "r", 10, startDate = "2026-09-21", endDate = "2026-09-21"))
+                client.fetch(ReviewSelection(CiProviderId.GITHUB, "o", "r", 10, startDate = "2026-09-21", endDate = "2026-09-21"))
                     .map { it.number })
         }
     }
@@ -147,7 +148,7 @@ class ReviewClientTest : IntegrationTest() {
                 else -> error("Unexpected Space path")
             }
         }) { client ->
-            val thread = client.fetch(ReviewSelection("space", "O", "repo", 1, listOf(7))).single().threads.single()
+            val thread = client.fetch(ReviewSelection(CiProviderId.SPACE, "O", "repo", 1, listOf(7))).single().threads.single()
             assertEquals(51, thread.messages.size)
             assertEquals("Complete message 51", thread.messages.last().body)
             assertEquals("src/A.java", thread.filePath)
@@ -163,7 +164,7 @@ class ReviewClientTest : IntegrationTest() {
             val encoded = Base64.getEncoder().encodeToString(content.toByteArray())
             """{"type":"file","encoding":"base64","content":"$encoded","size":${content.toByteArray().size + if (truncate) 1 else 0}}"""
         }) { client ->
-            val repo = ReviewRepository("github", "o", "r")
+            val repo = ReviewRepository(CiProviderId.GITHUB, "o", "r")
             val diff = client.diff(repo, before, after, fixturePath, fixturePath)
             assertEquals(listOf(3), UnifiedDiff.parse(diff).before[fixturePath])
             assertContains(diff, "+    return java.util.Objects.equals(a, b);")

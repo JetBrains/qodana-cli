@@ -8,6 +8,9 @@ import io.ktor.server.engine.embeddedServer
 import io.modelcontextprotocol.kotlin.sdk.server.mcpStreamableHttp
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.runBlocking
+import org.jetbrains.qodana.edict.ci.ReviewClient
+import org.jetbrains.qodana.edict.ci.ReviewExtractionApi
+import org.jetbrains.qodana.edict.ci.ReviewManagementApi
 import org.jetbrains.qodana.edict.common.EdictConfiguration
 import org.jetbrains.qodana.edict.common.EdictLayout
 import org.jetbrains.qodana.edict.edictnext.EdictManagementService
@@ -18,8 +21,7 @@ import org.jetbrains.qodana.edict.edictnext.EdictNextRepositoryState
 import org.jetbrains.qodana.edict.edictnext.EdictRepository
 import org.jetbrains.qodana.edict.edictnext.EdictRepositoryDirectory
 import org.jetbrains.qodana.edict.edictnext.IntellijMcpServerService
-import org.jetbrains.qodana.edict.extraction.reviews.ReviewClient
-import org.jetbrains.qodana.edict.extraction.reviews.ReviewProvider
+import org.jetbrains.qodana.edict.promotion.PromotionService
 import java.util.concurrent.atomic.AtomicBoolean
 
 /**
@@ -48,18 +50,23 @@ internal class EdictServer private constructor(
   }
 
   companion object {
-    // TODO: look into signalRepository != signal rpository
     /** Starts on [port]; the agent config names it, so a busy port fails instead of moving the server. 0 picks a free one. */
     fun start(
       layout: EdictLayout,
       port: Int,
       inspectionServer: IntellijMcpServerService,
-      reviewProvider: ReviewProvider = ReviewClient(),
       configuration: EdictConfiguration = EdictConfiguration(),
+      reviewProvider: ReviewExtractionApi = ReviewClient(),
+      reviewManagement: ReviewManagementApi = reviewProvider as? ReviewManagementApi ?: ReviewClient(),
     ): EdictServer {
       val store = EdictNextRepositoryState.open(layout.stateDirectory)
       try {
-        val management = EdictManagementService(store, layout, reviewProvider = reviewProvider)
+        val management = EdictManagementService(
+          store,
+          layout,
+          reviewProvider = reviewProvider,
+          reviewRepository = configuration.ci?.reviewRepository,
+        )
         // The lock above created the state directory, so the repository can be opened now.
         val repository = EdictRepository(EdictRepositoryDirectory(layout.stateDirectory))
         val toolset = EdictNextMcpToolset(
@@ -67,6 +74,7 @@ internal class EdictServer private constructor(
           EdictNextDistributionService(repository, layout.neighboursResponsePath),
           EdictNextGenerationService(repository, inspectionServer, layout.root),
           configuration,
+          PromotionService({ repository }, configuration, reviewManagement),
         )
         val engine = embeddedServer(CIO, host = "127.0.0.1", port = port) {
           mcpStreamableHttp { toolset.createServer() }

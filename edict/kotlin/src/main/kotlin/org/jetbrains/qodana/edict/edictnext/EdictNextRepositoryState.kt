@@ -6,10 +6,10 @@ import kotlinx.serialization.json.jsonArray
 import kotlinx.serialization.json.jsonObject
 import org.jetbrains.qodana.edict.common.randomId
 import org.jetbrains.qodana.edict.common.sha256
+import org.jetbrains.qodana.edict.ci.ReviewRepository
 import org.jetbrains.qodana.edict.extraction.reviews.PrAnalysisCoverageState
 import org.jetbrains.qodana.edict.extraction.reviews.PrAnalysisDateRange
 import org.jetbrains.qodana.edict.extraction.reviews.RepositoryPrAnalysisCoverage
-import org.jetbrains.qodana.edict.extraction.reviews.ReviewRepository
 import org.jetbrains.qodana.edict.signals.SignalValidation
 import org.jetbrains.qodana.edict.skills.managed.Registry
 import java.nio.ByteBuffer
@@ -259,7 +259,7 @@ internal class EdictNextRepositoryState(
     val content = EdictNextJson.encodeToString(signal)
     require(content.toByteArray(Charsets.UTF_8).size <= MAX_PLAN_BYTES) { "Signal exceeds 8 MiB" }
     requireNoTokens(content)
-    require(capability.skill != "edict-batch-signal-analysis" || signal.source is EdictNextSignalSource.FromCommit) {
+    require(capability.skill !in COMMIT_SIGNAL_PUBLISHERS || signal.source is EdictNextSignalSource.FromCommit) {
       "Commit extraction can publish only FromCommit Signals"
     }
     require(capability.skill != "edict-pr-signal-analysis" || signal.source is EdictNextSignalSource.FromPR) {
@@ -356,7 +356,7 @@ internal class EdictNextRepositoryState(
       analyzedPrNumbers = existing.orEmptyPrNumbers() + incoming.analyzedPrNumbers,
     ).normalized()
     val repositories = (state.repositories.filterNot { it.repository == merged.repository } + merged)
-      .sortedWith(compareBy({ it.repository.provider }, { it.repository.owner }, { it.repository.repo }))
+      .sortedWith(compareBy({ it.repository.provider }, { it.repository.owner }, { it.repository.repository }))
     atomicWrite(
       PR_ANALYSIS_COVERAGE_FILE,
       EdictNextJson.encodeToString(PrAnalysisCoverageState(repositories = repositories)) + "\n",
@@ -564,12 +564,12 @@ internal class EdictNextRepositoryState(
       "edict-next-inspection-code-review",
       "edict-next-weak-signal-review",
     )
-    private val SIGNAL_PUBLISHERS = setOf(
+    private val COMMIT_SIGNAL_PUBLISHERS = setOf(
       "edict-batch-signal-analysis",
-      "edict-pr-signal-analysis",
       "edict-git-history-signal-analysis",
       "edict-retrospective-signal-analysis",
     )
+    private val SIGNAL_PUBLISHERS = COMMIT_SIGNAL_PUBLISHERS + "edict-pr-signal-analysis"
     private val TERMINAL_STATUSES = setOf("completed", "failed")
     private val INTERRUPTED_STATUSES = setOf("delegated", "running")
     private val TASK_STATUSES = setOf("pending", "delegated", "running", "completed", "failed")
