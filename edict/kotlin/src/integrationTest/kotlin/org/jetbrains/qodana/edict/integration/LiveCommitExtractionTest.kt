@@ -15,17 +15,7 @@ import org.junit.jupiter.api.Test
 class LiveCommitExtractionTest : IntegrationTest() {
     @Test
     fun `managed skills extract signals from one Distillery commit with real native workers`() {
-        workspace.withEdictNextCodex(
-            """
-            Use edict_manager and the managed protocol to extract Signals from exactly one corrective commit.
-            Create exactly one top-level edict-batch-signal-analysis task.
-            Source checkout: ${workspace.repository.root}
-            Edict state root: ${workspace.state}
-            Revision expression: $historyCommit^!
-            Commit limit: 1
-            Publish every supported Signal through edict_publish_signal.
-            """.trimIndent(),
-        ) { store, runtime, _ ->
+        workspace.withEdictNextCodex("Extract signal from last commit") { store, runtime, _ ->
             val plan = assertNotNull(store.plan())
             assertEquals(2, plan.tasks.size, "One batch and one evidence worker required")
             val batch = plan.tasks.single { it.skill == "edict-batch-signal-analysis" }
