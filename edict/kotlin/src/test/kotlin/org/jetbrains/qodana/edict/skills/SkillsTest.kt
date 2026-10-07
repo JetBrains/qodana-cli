@@ -104,22 +104,23 @@ class SkillsTest {
     }
 
     @Test
-    fun `inspection review is read only and validation follows acceptance`() {
-        val generation = Skills.read("edict-next-cluster-generation")
-        val compactGeneration = generation.replace(Regex("\\s+"), " ")
+    fun `shallow review follows strong example validation and leaves correctness to project review`() {
+        val compactGeneration = Skills.read("edict-next-cluster-generation").replace(Regex("\\s+"), " ")
         val review = Skills.read("edict-next-inspection-code-review")
         val compactReview = review.replace(Regex("\\s+"), " ")
 
-        assertContains(compactGeneration, "After acceptance, call `edict_next_validate_inspection(clusterId)`")
-        assertContains(review, "Do not edit the candidate, cluster, examples, inspected project, or repository")
-        assertContains(review, "Do not stop after finding enough defects to reject")
-        assertContains(review, "report all independently established BLOCKER and MAJOR findings in the same review")
-        assertContains(compactReview, "contrived composition of multiple wrappers/operators or rare constants")
-        assertContains(compactReview, "Do not require exhaustive closure over all composable Java syntax")
+        val validation = compactGeneration.indexOf("Submit the complete candidate with `edict_next_save_candidate_inspection`")
+        val shallowReview = compactGeneration.indexOf("Launch a fresh shallow review worker")
+        assertTrue(validation in 0..<shallowReview)
+        assertContains(compactGeneration, "Weak failures do not block a cycle or the Generated transition")
+        assertContains(compactGeneration, "its `remainingProjectAnalyses` says how many remain")
+        assertContains(review, "Do not edit the candidate, inspected project, or repository")
+        assertContains(compactReview, "Read only the candidate")
+        assertContains(compactReview, "It does not decide whether the inspection is correct")
+        assertContains(compactReview, "a description broader or narrower than the implementation is not a finding")
         assertContains(review, "\"status\": \"ACCEPT|REJECT\"")
-        assertContains(review, "\"category\": \"OBSERVABILITY|PRECISION|IMPLEMENTATION|COVERAGE|PERFORMANCE|DIAGNOSTIC\"")
-        assertFalse(compactReview.contains("append one focused example"))
+        assertContains(review, "\"category\": \"HARDCODED|PERFORMANCE|IMPLEMENTATION|METADATA\"")
+        assertFalse(review.contains("COVERAGE"))
         assertFalse(review.contains("EXAMPLES_ADDED"))
-        assertFalse(review.contains("addedExampleIds"))
     }
 }

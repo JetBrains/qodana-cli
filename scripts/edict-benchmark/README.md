@@ -62,13 +62,12 @@ assembled CLI artifact. The native distribution artifact dependency remains unch
 
 Generation can compile and execute examples with inspections MCP.
 Codex permits 50 simultaneous agents. Generation keeps up to 15 cluster workers active,
-reserving slots for their reviewers and example workers. Each cluster gets at most
-five review iterations including its initial candidate; the managed server caps each
-review stage at five tasks per cluster worker, preserving that count across restarts.
-Only BLOCKER findings require repairs. MAJOR findings request another iteration while
-budget remains but permit downstream checks and publication with recorded limitations.
-MINOR findings are recorded without a repair loop. Required compilation/example checks
-and exact-candidate provenance remain mandatory.
+reserving slots for their reviewers and example workers. A cluster repeats the cheap
+cycle of generation, strong-example validation and shallow review as often as needed;
+the managed server allows each cluster three project analyses (followed by weak-signal
+review) per run, `edict.generation.maxProjectAnalyses` in `qodana.yaml`. Weak examples
+target recall and never block publication. Strong examples and exact-candidate
+provenance remain mandatory.
 State is writable only through Edict MCP.
 The MCP server logs each task transition as `[cluster:taskId] task name started/finished`,
 including nested reviewers and example workers. Tasks outside a cluster use `-` as the

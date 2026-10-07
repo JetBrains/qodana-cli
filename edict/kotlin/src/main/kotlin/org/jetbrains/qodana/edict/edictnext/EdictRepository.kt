@@ -344,6 +344,46 @@ internal class EdictRepository(val paths: EdictRepositoryDirectory) {
     return updated
   }
 
+  /**
+   * Moves a Pending cluster to [newId] with its Signals, examples, and history, and stores [candidateCode] as the candidate
+   * under the new id when one is given. The predecessor stays under its own id.
+   */
+  fun renameCluster(cluster: EdictNextStoredCluster, newId: String, candidateCode: String?) {
+    require(cluster.manifest.status == EdictNextClusterStatus.Pending) { "Cluster '${cluster.id}' is not Pending" }
+    require(EDICT_NEXT_KEBAB_CASE.matches(newId)) { "Invalid cluster id '$newId'" }
+    val target = EdictNextClusterDirectory(paths.clustersDirectory.resolve(newId))
+    require(!target.root.exists()) { "Cluster '$newId' already exists" }
+    require(!paths.inspectionPath(newId).exists() && !paths.candidateInspectionPath(newId).exists()) {
+      "An inspection with id '$newId' already exists"
+    }
+    Files.move(cluster.directory.root, target.root, StandardCopyOption.ATOMIC_MOVE)
+    write(target.manifestPath, cluster.manifest.copy(id = newId), EdictNextClusterManifest.serializer())
+    if (candidateCode != null) {
+      paths.candidateInspectionPath(newId).writeText(candidateCode)
+      cluster.candidateInspectionPath.deleteIfExists()
+    }
+  }
+
+  /** A Discontinued cluster keeps no inspection: its candidate and predecessor go. */
+  fun markDiscontinued(cluster: EdictNextStoredCluster) {
+    write(
+      cluster.directory.manifestPath,
+      cluster.manifest.copy(status = EdictNextClusterStatus.Discontinued, predecessorId = null),
+      EdictNextClusterManifest.serializer(),
+    )
+    cluster.candidateInspectionPath.deleteIfExists()
+    cluster.manifest.predecessorId?.let(paths::inspectionPath)?.deleteIfExists()
+  }
+
+  /** An Invalid cluster keeps its candidate and predecessor, so a later run can continue from them. */
+  fun markInvalid(cluster: EdictNextStoredCluster) {
+    write(
+      cluster.directory.manifestPath,
+      cluster.manifest.copy(status = EdictNextClusterStatus.Invalid),
+      EdictNextClusterManifest.serializer(),
+    )
+  }
+
   fun addSignalToCluster(signalId: String, clusterId: String) {
     val signal = loadInboxSignals().singleOrNull { it.id == signalId } ?: error("Inbox Signal '$signalId' does not exist")
     val clusterDirectory = EdictNextClusterDirectory(paths.clustersDirectory.resolve(clusterId))

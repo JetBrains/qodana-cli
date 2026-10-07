@@ -114,7 +114,8 @@ internal class EdictNextMcpToolset(
 
     server.addTool(
       name = "edict_next_get_generation_clusters",
-      description = "Freeze and return the Pending clusters that generation must process",
+      description = "Freeze and return the Pending clusters that generation must process. Pending clusters without a " +
+        "strong positive Signal are listed separately; they stay Pending without a generation attempt.",
     ) {
       generation.getGenerationClusters().toToolResult()
     }
@@ -134,7 +135,7 @@ internal class EdictNextMcpToolset(
 
     server.addTool(
       name = "edict_next_save_code_example",
-      description = "Persist one complete synthetic example in the read-only managed state. Code-example, overseer, and review workers must use this instead of filesystem writes.",
+      description = "Persist one complete synthetic example in the read-only managed state. Code-example, overseer, and weak-review workers must use this instead of filesystem writes.",
       inputSchema = stringArguments(
         "token" to "Your delegated managed-task token",
         "clusterId" to "Frozen generation cluster id",
@@ -148,7 +149,6 @@ internal class EdictNextMcpToolset(
         token,
         "edict-next-code-example",
         "edict-next-code-example-overseer",
-        "edict-next-inspection-code-review",
         "edict-next-weak-signal-review",
       )
       management.requireTokenFree(request.requireString("metadataJson"))
@@ -225,7 +225,9 @@ internal class EdictNextMcpToolset(
 
     server.addTool(
       name = "edict_next_save_candidate_inspection",
-      description = "Persist the complete candidate Inspection KTS for a frozen Pending cluster in read-only managed state.",
+      description = """Store the complete candidate Inspection KTS of a frozen Pending cluster, then compile it, check its
+        metadata against the cluster, and run every example. The candidate is stored even when it fails. Every strong
+        example must pass before project analysis; weak-example results are reported for recall.""",
       inputSchema = stringArguments(
         "token" to "Your delegated edict-next-cluster-generation task token",
         "clusterId" to "Frozen generation cluster id",
@@ -237,6 +239,23 @@ internal class EdictNextMcpToolset(
       generation.saveCandidateInspection(
         request.requireString("clusterId"),
         request.requireString("inspectionKtsCode"),
+      ).toToolResult()
+    }
+
+    server.addTool(
+      name = "edict_next_rename_cluster",
+      description = """Rename a frozen Pending cluster: its directory, cluster.json id, and candidate, including the
+        candidate's `id = "<clusterId>"`. The predecessor keeps its id. Later calls use the new id.""",
+      inputSchema = stringArguments(
+        "token" to "Your delegated edict-next-cluster-generation task token",
+        "clusterId" to "Frozen generation cluster id",
+        "newClusterId" to "New lowercase kebab-case cluster id, unused by any cluster or inspection",
+      ),
+    ) { request ->
+      management.requireSkill(request.requireString("token"), "edict-next-cluster-generation")
+      generation.renameCluster(
+        request.requireString("clusterId"),
+        request.requireString("newClusterId"),
       ).toToolResult()
     }
 
@@ -258,21 +277,11 @@ internal class EdictNextMcpToolset(
     }
 
     server.addTool(
-      name = "edict_next_validate_inspection",
-      description = """Compile an inspection candidate, require its KTS metadata to match the cluster, and measure its label accuracy across the evidence. 
-        Returns achieved accuracy, reported negative examples, and uncovered positive examples.""",
-      inputSchema = stringArguments(
-        "clusterId" to "Cluster id; the candidate is inspections/<clusterId>.candidate.kts",
-      ),
-    ) { request ->
-      generation
-        .validateInspection(request.requireString("clusterId"))
-        .toToolResult()
-    }
-
-    server.addTool(
       name = "edict_next_get_new_inspection_results",
-      description = "Run the validated candidate over the analyzed project and create its weak-signal review manifest.",
+      description = """Run the current candidate, which must have passed validation when saved, over the analyzed project
+        and create its weak-signal review manifest.
+        Each cluster may run this a limited number of times per run; the response returns how many remain, and a call
+        beyond the limit fails.""",
       inputSchema = stringArguments(
         "clusterId" to "Cluster id; the candidate is inspections/<clusterId>.candidate.kts",
         "privateScratchDirectory" to "Absolute private directory for review manifests and outputs",
@@ -287,23 +296,39 @@ internal class EdictNextMcpToolset(
     }
 
     server.addTool(
-      name = "edict_next_mark_generated",
-      description = "Validate the current selected inspection and apply the cluster's Generated transition in one guarded operation.",
-      inputSchema = stringArguments(
-        "clusterId" to "Pending frozen generation target cluster id",
+      name = "edict_next_finalise_cluster",
+      description = """End the processing of a frozen Pending cluster: record the reason in its history and move it to the
+        requested status with that status's contract satisfied, or reject and leave the cluster unchanged.
+        Generated: publishes the predecessor on SKIP, or the candidate that completed project analysis on GENERATE, when it
+        passes every strong example. Discontinued: removes the candidate and predecessor.
+        Invalid: keeps the candidate and predecessor. Pending: only records the reason.""",
+      inputSchema = toolSchema(
+        listOf("token", "clusterId", "status", "reason"),
+        "token" to property("string", "Your delegated edict-next-cluster-generation task token"),
+        "clusterId" to property("string", "Pending frozen generation target cluster id"),
+        "status" to buildJsonObject {
+          put("type", "string")
+          put("description", "Status to set")
+          putJsonArray("enum") { EdictNextClusterStatus.entries.forEach { add(it.name) } }
+        },
+        "reason" to property("string", "Token-free decision recorded in the cluster history"),
       ),
     ) { request ->
       val clusterId = request.requireString("clusterId")
       try {
-        generation.markGenerated(clusterId).toToolResult()
+        management.requireSkill(request.requireString("token"), "edict-next-cluster-generation")
+        val reason = request.requireString("reason")
+        management.requireTokenFree(reason)
+        val status = EdictNextClusterStatus.valueOf(request.requireString("status"))
+        generation.finaliseCluster(clusterId, status, reason).toToolResult()
       }
       catch (e: CancellationException) {
         throw e
       }
       catch (e: Exception) {
-        EdictNextMarkGeneratedResponse(
+        EdictNextFinaliseClusterResponse(
           success = false,
-          summary = e.message ?: "Failed to mark cluster '$clusterId' Generated",
+          summary = e.message ?: "Failed to finalise cluster '$clusterId'",
         ).toToolResult(isError = true)
       }
     }
@@ -409,15 +434,15 @@ internal class EdictNextMcpToolset(
     }
   }
 
-  /** Forwards every IntelliJ Inspection KTS tool so agents only need this server, as when the IDE served every tool. */
+  /**
+   * Forwards the IntelliJ Inspection KTS tools for authoring and quick single-file checks, so agents only need this
+   * server. Running examples and the whole project stays with the managed tools, which validate and bound them.
+   */
   private fun registerInspectionKtsTools(server: Server) {
-    fun proxy(name: String, description: String, inputSchema: ToolSchema, wholeProject: Boolean = false) {
+    fun proxy(name: String, description: String, inputSchema: ToolSchema) {
       server.addTool(name = name, description = description, inputSchema = inputSchema) { request ->
         val arguments = request.arguments ?: JsonObject(emptyMap())
-        // Whole-project runs share the IDE's opened project with the pipeline's own analyses, so they queue behind them.
-        val result = if (wholeProject) inspectionServer.waitForAnalysis { it.callTool(name, arguments) }
-        else inspectionServer.withClient { it.callTool(name, arguments) }
-        result.toProxiedToolResult()
+        inspectionServer.withClient { it.callTool(name, arguments) }.toProxiedToolResult()
       }
     }
     val inspectionKtsCode = "inspectionKtsCode" to property("string", "The complete inspection.kts script")
@@ -464,35 +489,6 @@ internal class EdictNextMcpToolset(
         "contextPath" to property("string", "Path of the target file relative to the inspected project, e.g. 'src/my/Example.kt'"),
         "targetFileContent" to property("string", "Content to analyze instead of the file on disk; the file must exist when omitted"),
       ),
-    )
-    proxy(
-      name = "run_inspection_kts_examples",
-      description = "Compile an inspection.kts script once and run it on the target source file of each supplied " +
-        "example project. Returns per-example problems or execution errors.",
-      inputSchema = toolSchema(
-        required = listOf("inspectionKtsCode", "examples"),
-        inspectionKtsCode,
-        "examples" to buildJsonObject {
-          put("type", "array")
-          put("description", "Example projects and the source file to inspect in each")
-          putJsonObject("items") {
-            put("type", "object")
-            putJsonObject("properties") {
-              put("id", property("string", "Caller-chosen example id echoed in the result"))
-              put("projectPath", property("string", "Absolute path of the example project directory"))
-              put("targetFilePath", property("string", "Source file path relative to projectPath"))
-            }
-            putJsonArray("required") { add("id"); add("projectPath"); add("targetFilePath") }
-          }
-        },
-      ),
-    )
-    proxy(
-      name = "run_inspection_kts_project",
-      description = "Compile an inspection.kts script and run it on every Java and Kotlin file of the inspected " +
-        "project. Waits for other whole-project analyses; can take many minutes.",
-      inputSchema = toolSchema(required = listOf("inspectionKtsCode"), inspectionKtsCode),
-      wholeProject = true,
     )
   }
 
