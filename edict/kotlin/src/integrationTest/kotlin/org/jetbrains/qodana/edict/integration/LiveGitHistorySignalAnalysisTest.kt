@@ -59,13 +59,8 @@ class LiveGitHistorySignalAnalysisTest : IntegrationTest() {
 
         workspace.withEdictNextCodex(
             """
-            Use edict_manager and the managed protocol to find additional historical evidence for one selected Signal.
-            Create exactly one top-level edict-git-history-signal-analysis task.
-            Selected Signal ID: ${seed.id}
-            Bounded revision expression: HEAD
-            Commit limit: 100
-            Use Git pickaxe searches and git grep as required by the skill. Exclude the selected Signal's originating
-            correction and publish every independently verified Signal through edict_publish_signal.
+            Find additional historical evidence for one selected Signal.
+            Signal ID: ${seed.id}
             """.trimIndent(),
         ) { store, runtime, _ ->
             val plan = assertNotNull(store.plan())
