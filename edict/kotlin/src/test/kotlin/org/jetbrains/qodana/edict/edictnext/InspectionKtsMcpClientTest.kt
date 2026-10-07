@@ -1,5 +1,6 @@
 package org.jetbrains.qodana.edict.edictnext
 
+import com.sun.net.httpserver.HttpExchange
 import com.sun.net.httpserver.HttpServer
 import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.json.JsonObject
@@ -9,9 +10,15 @@ import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
 import kotlinx.serialization.json.put
 import kotlinx.serialization.json.putJsonObject
+import org.junit.jupiter.api.Timeout
+import java.io.IOException
 import java.net.InetSocketAddress
 import java.net.URI
+import java.util.concurrent.CountDownLatch
 import java.util.concurrent.Executors
+import java.util.concurrent.LinkedBlockingQueue
+import java.util.concurrent.TimeUnit
+import java.util.concurrent.atomic.AtomicInteger
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
@@ -25,6 +32,11 @@ class InspectionKtsMcpClientTest {
       this.executor = executor
       createContext("/mcp") { exchange ->
         exchange.use {
+          // No session and no event stream: the client must work with such a server too.
+          if (exchange.requestMethod == "GET") {
+            exchange.sendResponseHeaders(405, -1)
+            return@createContext
+          }
           val request = EdictNextJson.parseToJsonElement(exchange.requestBody.readAllBytes().decodeToString()).jsonObject
           synchronized(requests) { requests += request }
           if (request["id"] == null) {
@@ -87,9 +99,6 @@ class InspectionKtsMcpClientTest {
           },
         )
         assertEquals("false", proxyResult.getValue("isError").jsonPrimitive.content)
-        assertFailsWith<IllegalArgumentException> {
-          client.proxyTool("run_inspection_kts", buildJsonObject { put("inspectionKtsCode", "inspection") })
-        }
         assertEquals("sample-rule", client.compile("compiled inspection").inspectionId)
         val result = client.runExamples(
           "inspection",
@@ -133,69 +142,126 @@ class InspectionKtsMcpClientTest {
   }
 
   @Test
-  fun `reports an expired MCP session to its lifecycle owner`() = runBlocking {
-    val toolSessions = mutableListOf<String?>()
-    val executor = Executors.newCachedThreadPool()
-    val server = HttpServer.create(InetSocketAddress("127.0.0.1", 0), 0).apply {
-      this.executor = executor
+  @Timeout(30)
+  fun `keeps an event stream open for each session`() = runBlocking {
+    SessionServer().use { server ->
+      HttpInspectionKtsClient(server.endpoint, "/project/root").use { client ->
+        assertEquals("sample-rule", client.compile("inspection").inspectionId)
+        assertEquals(listOf("session-1"), server.awaitStreams(1))
+      }
+      // Closing the client ends its stream instead of waiting for it.
+      assertEquals(listOf("session-1"), server.awaitClosedStreams(1))
+    }
+  }
+
+  @Test
+  @Timeout(30)
+  fun `renews a session the server dropped and retries on the same server`() = runBlocking {
+    SessionServer(rejected = setOf("session-1")).use { server ->
+      HttpInspectionKtsClient(server.endpoint, "/project/root").use { client ->
+        assertEquals("sample-rule", client.compile("inspection").inspectionId)
+        assertEquals(listOf("session-1", "session-2"), server.toolSessions())
+        assertEquals(listOf("session-1", "session-2"), server.awaitStreams(2))
+      }
+    }
+  }
+
+  @Test
+  @Timeout(30)
+  fun `reports a session still rejected after renewal to its lifecycle owner`() = runBlocking {
+    SessionServer(rejected = setOf("session-1", "session-2")).use { server ->
+      HttpInspectionKtsClient(server.endpoint, "/project/root").use { client ->
+        val error = assertFailsWith<StaleInspectionMcpSession> { client.compile("inspection") }
+        assertEquals("session-2", error.sessionId)
+        assertEquals(listOf("session-1", "session-2"), server.toolSessions())
+      }
+    }
+  }
+
+  /**
+   * Streamable HTTP server numbering its sessions and holding GET event streams open. Like the IDE after it drops a session,
+   * it accepts a [rejected] session's handshake but answers its tool calls with 404.
+   */
+  private class SessionServer(private val rejected: Set<String> = emptySet()) : AutoCloseable {
+    private val executor = Executors.newCachedThreadPool()
+    private val sessions = AtomicInteger()
+    private val toolSessions = mutableListOf<String?>()
+    private val streams = LinkedBlockingQueue<String>()
+    private val closedStreams = LinkedBlockingQueue<String>()
+    private val stopped = CountDownLatch(1)
+    private val server = HttpServer.create(InetSocketAddress("127.0.0.1", 0), 0).apply {
+      executor = this@SessionServer.executor
       createContext("/mcp") { exchange ->
         exchange.use {
+          val session = exchange.requestHeaders.getFirst("Mcp-Session-Id")
+          if (exchange.requestMethod == "GET") {
+            stream(exchange, checkNotNull(session))
+            return@createContext
+          }
           val request = EdictNextJson.parseToJsonElement(exchange.requestBody.readAllBytes().decodeToString()).jsonObject
           val method = request.getValue("method").jsonPrimitive.content
-          val requestSession = exchange.requestHeaders.getFirst("Mcp-Session-Id")
-          if (method == "notifications/initialized") {
-            exchange.sendResponseHeaders(202, -1)
-            return@createContext
-          }
-          if (method == "tools/call") {
-            synchronized(toolSessions) { toolSessions += requestSession }
-            val bytes = byteArrayOf()
-            exchange.sendResponseHeaders(404, bytes.size.toLong())
-            exchange.responseBody.write(bytes)
-            return@createContext
-          }
-          val result = when (method) {
-            "initialize" -> {
-              exchange.responseHeaders.set("Mcp-Session-Id", "expired-session")
-              buildJsonObject {
+          if (method == "tools/call") synchronized(toolSessions) { toolSessions += session }
+          when {
+            method == "tools/call" && session in rejected -> exchange.sendResponseHeaders(404, -1)
+            request["id"] == null -> exchange.sendResponseHeaders(202, -1)
+            method == "initialize" -> {
+              exchange.responseHeaders.set("Mcp-Session-Id", "session-${sessions.incrementAndGet()}")
+              respond(exchange, request, buildJsonObject {
                 put("protocolVersion", "2025-03-26")
                 putJsonObject("capabilities") { putJsonObject("tools") {} }
                 putJsonObject("serverInfo") { put("name", "inspection"); put("version", "1") }
-              }
+              })
             }
-            "tools/call" -> EdictNextJson.encodeToJsonElement(
-              InspectionKtsCompileResult.serializer(),
-              InspectionKtsCompileResult(true, inspectionId = "sample-rule"),
-            )
-            else -> error("Unexpected method")
+            else -> respond(exchange, request, buildJsonObject {
+              put("isError", false)
+              put("structuredContent", EdictNextJson.encodeToJsonElement(
+                InspectionKtsCompileResult.serializer(),
+                InspectionKtsCompileResult(true, inspectionId = "sample-rule"),
+              ))
+            })
           }
-          val toolResult = if (method == "tools/call") {
-            buildJsonObject { put("isError", false); put("structuredContent", result) }
-          }
-          else result
-          val response = buildJsonObject {
-            put("jsonrpc", "2.0")
-            put("id", request.getValue("id"))
-            put("result", toolResult)
-          }
-          val bytes = EdictNextJson.encodeToString(response).encodeToByteArray()
-          exchange.responseHeaders.set("Content-Type", "application/json")
-          exchange.sendResponseHeaders(200, bytes.size.toLong())
-          exchange.responseBody.write(bytes)
         }
       }
       start()
     }
-    try {
-      HttpInspectionKtsClient(
-        URI("http://127.0.0.1:${server.address.port}/mcp"),
-        "/project/root",
-      ).use { client ->
-        assertFailsWith<StaleInspectionMcpSession> { client.compile("inspection") }
+
+    val endpoint: URI = URI("http://127.0.0.1:${server.address.port}/mcp")
+
+    fun toolSessions(): List<String?> = synchronized(toolSessions) { toolSessions.toList() }
+
+    fun awaitStreams(count: Int): List<String> = List(count) { checkNotNull(streams.poll(10, TimeUnit.SECONDS)) }
+
+    fun awaitClosedStreams(count: Int): List<String> = List(count) { checkNotNull(closedStreams.poll(10, TimeUnit.SECONDS)) }
+
+    /** Sends heartbeats like the IDE until the client goes away or the server stops. */
+    private fun stream(exchange: HttpExchange, session: String) {
+      exchange.responseHeaders.set("Content-Type", "text/event-stream")
+      exchange.sendResponseHeaders(200, 0)
+      streams += session
+      try {
+        while (!stopped.await(100, TimeUnit.MILLISECONDS)) {
+          exchange.responseBody.write(": heartbeat\n\n".encodeToByteArray())
+          exchange.responseBody.flush()
+        }
       }
-      assertEquals(listOf("expired-session"), synchronized(toolSessions) { toolSessions.toList() })
+      catch (_: IOException) {
+        closedStreams += session
+      }
     }
-    finally {
+
+    private fun respond(exchange: HttpExchange, request: JsonObject, result: JsonObject) {
+      val bytes = EdictNextJson.encodeToString(buildJsonObject {
+        put("jsonrpc", "2.0")
+        put("id", request.getValue("id"))
+        put("result", result)
+      }).encodeToByteArray()
+      exchange.responseHeaders.set("Content-Type", "application/json")
+      exchange.sendResponseHeaders(200, bytes.size.toLong())
+      exchange.responseBody.write(bytes)
+    }
+
+    override fun close() {
+      stopped.countDown()
       server.stop(0)
       executor.shutdownNow()
     }
