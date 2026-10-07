@@ -10,14 +10,13 @@ domain work and use its assigned task lifecycle.
 
 Load only this skill.
 
-The prompt supplies exactly three absolute paths:
+The prompt identifies either a persisted Signal with `Cluster id` and `Signal id`, or a transient Signal with
+`Cluster id` and an absolute private-scratch `Signal path`. Call `edict_context` and use its `stateDirectory` and
+`projectDirectory` to resolve all managed state and the inspected IntelliJ project. Do not request or repeat the state
+path in a prompt.
 
-- `Signal path`: the Signal JSON to update.
-- `Synthetic examples directory`: the target cluster's `synthetic-examples/` directory.
-- `Inspected IntelliJ project`: the project that the IDE has open for inspection tools.
-
-You may change only files below the supplied examples directory and `syntheticExampleId` in the supplied Signal. Do not
-change any other Signal field or any other file.
+You may change only files below the identified cluster's examples directory and `syntheticExampleId` in the identified
+Signal. Do not change any other Signal field or any other file.
 
 Managed state is read-only to filesystem tools. For a persisted cluster Signal, use
 `edict_next_save_code_example(token, clusterId, exampleId, metadataJson, sourceCode)` to create or repair the example,
@@ -29,7 +28,7 @@ Your operation is `reduce(Signal, exact source revision) -> one self-contained c
 evidence; its example is a semantic program slice, not a rule hypothesis. Do not read cluster metadata, a candidate
 inspection, or review feedback. Neither the reduction nor its label may depend on a general rule or Inspection KTS limits.
 
-Read the supplied Signal. If it already has `syntheticExampleId`, return that ID. Otherwise resolve the Git root from
+Read the identified Signal. If it already has `syntheticExampleId`, return that ID. Otherwise resolve the Git root from
 the inspected project and retrieve the exact `fileRevision` with read-only Git
 (`git show <revision>:<repository-relative-path>`), treating those complete historical bytes as the authority. If the
 Git object is unavailable and Qodana exposes `file_at_ref`, use it with radius 20, then 5 and 0 until every requested
@@ -60,8 +59,7 @@ For an unassigned Signal, create its example through `edict_next_save_code_examp
 Metadata contains `id`, `fileName`, `label`, and `expectedRanges`. Derive the expected ranges from the finished reduced source;
 do not retain source line numbers after moving the target. Never copy the complete production source file.
 
-Derive `clusterId` from the canonical examples-directory path and call
-`edict_next_validate_code_example(clusterId, exampleId)` for the newly created example before assigning it.
+Call `edict_next_validate_code_example(clusterId, exampleId)` for the newly created example before assigning it.
 Repair structural issues in the example and validate again after any
 repair. The MCP does not establish semantics: independently confirm that the example demonstrates the Signal and that its
 label and ranges are correct.

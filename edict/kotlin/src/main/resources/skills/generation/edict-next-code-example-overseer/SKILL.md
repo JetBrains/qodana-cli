@@ -8,12 +8,11 @@ description: Managed subagent that reconciles one Edict Next cluster's code exam
 Run only as a delegated managed subagent. Follow [the manager protocol](../edict_manager/references/protocol.md) before
 domain work and use its assigned task lifecycle.
 
-Load only this skill. The prompt supplies:
+Load only this skill. The prompt supplies `Cluster id`. Call `edict_context`, then resolve the target cluster below its
+`stateDirectory` and use its `projectDirectory` as the inspected IntelliJ project. Do not request or repeat the state
+path in a prompt.
 
-- `Cluster directory`: the absolute target cluster directory.
-- `Inspected IntelliJ project`: the project that the IDE has open for inspection tools.
-
-You may change only `syntheticExampleId` in Signals below the supplied cluster directory and create, update, repair, or
+You may change only `syntheticExampleId` in Signals below the resolved cluster directory and create, update, repair, or
 delete files below its `synthetic-examples/` directory. Do not read cluster history, `cluster.json`, candidate or
 predecessor inspections, review artifacts, or other clusters.
 
@@ -39,8 +38,8 @@ For every Signal:
 1. Identify the construct covered by its expected range and the source facts that make its label correct.
 2. Inspect its assigned example when present. Keep it when it is a faithful, focused semantic slice of the exact source.
 3. For every missing or incorrect example, create and delegate one `edict-next-code-example` managed task to a fresh
-   native subagent, following the manager protocol. Give it only the absolute Signal path, this cluster's synthetic
-   examples directory, and the inspected IntelliJ project. Wait for every example worker and require its managed task
+   native subagent, following the manager protocol. Give it only this cluster id and the Signal id. The worker resolves
+   configured paths with `edict_context`. Wait for every example worker and require its managed task
    to complete; do not perform the leaf reduction inline. Preserve the original types, modifiers, annotations,
    hierarchy, assignments, calls, aliases, and control flow that determine the label. Replace unrelated dependencies
    with minimal same-file declarations only when their PSI and semantic contracts remain equivalent.

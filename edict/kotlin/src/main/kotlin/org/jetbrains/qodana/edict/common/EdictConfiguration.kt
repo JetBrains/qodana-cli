@@ -10,20 +10,30 @@ import org.yaml.snakeyaml.introspector.Property
 import org.yaml.snakeyaml.introspector.PropertyUtils
 import java.net.URI
 import java.nio.file.Files
+import java.nio.file.InvalidPathException
 import java.nio.file.Path
 import kotlin.io.path.isRegularFile
 
 internal data class EdictConfiguration(
   val mcpPort: Int = DEFAULT_EDICT_MCP_PORT,
+  val statePath: String = DEFAULT_EDICT_STATE_PATH,
   val ci: EdictCIConfiguration? = null,
   val promotion: PromotionConfiguration? = null,
 ) {
   init {
     require(mcpPort in 1..65535) { "edict.mcpPort must be between 1 and 65535: $mcpPort" }
+    require(statePath.isNotBlank()) { "edict.statePath must not be blank" }
+    try {
+      Path.of(statePath)
+    }
+    catch (e: InvalidPathException) {
+      throw IllegalArgumentException("edict.statePath is invalid: $statePath", e)
+    }
   }
 }
 
 internal const val DEFAULT_EDICT_MCP_PORT = 27182
+internal const val DEFAULT_EDICT_STATE_PATH = ".edict"
 
 internal enum class EdictCIProvider { GITHUB, SPACE }
 
@@ -93,11 +103,13 @@ internal class QodanaYaml {
 
 internal class EdictYaml {
   var mcpPort: Int? = null
+  var statePath: String? = null
   var ci: EdictCIYaml? = null
   var promotion: PromotionYaml? = null
 
   fun toConfiguration() = EdictConfiguration(
     mcpPort = mcpPort ?: DEFAULT_EDICT_MCP_PORT,
+    statePath = statePath?.required("edict.statePath") ?: DEFAULT_EDICT_STATE_PATH,
     ci = ci?.toConfiguration(),
     promotion = promotion?.toConfiguration(),
   )

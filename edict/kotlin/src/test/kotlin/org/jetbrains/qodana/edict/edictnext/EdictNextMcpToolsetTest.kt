@@ -16,6 +16,8 @@ import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.put
 import kotlinx.serialization.json.putJsonArray
 import org.jetbrains.qodana.edict.common.EdictLayout
+import org.jetbrains.qodana.edict.common.EdictCIConfiguration
+import org.jetbrains.qodana.edict.common.EdictConfiguration
 import org.jetbrains.qodana.edict.common.array
 import org.jetbrains.qodana.edict.common.flag
 import org.jetbrains.qodana.edict.common.obj
@@ -63,9 +65,13 @@ class EdictNextMcpToolsetTest {
       "generate_inspection_kts_examples",
     )
     EdictNextRepositoryState.open(directory.resolve("state")).use { store ->
-      val layout = EdictLayout(directory)
+      val layout = EdictLayout(directory, directory.resolve(".edict"))
       val management = EdictManagementService(store, layout)
-      val toolset = edictNextToolset(layout, management)
+      val toolset = edictNextToolset(
+        layout,
+        management,
+        configuration = EdictConfiguration(ci = EdictCIConfiguration("https://jetbrains.team/p/owner/repositories/repo")),
+      )
       val server = toolset.createServer()
       assertTrue(server.tools.keys.containsAll(movedTools))
       assertTrue("edict_publish_signal" in server.tools)
@@ -92,6 +98,7 @@ class EdictNextMcpToolsetTest {
         {"jsonrpc":"2.0","method":"notifications/initialized"}
         {"jsonrpc":"2.0","id":2,"method":"tools/call","params":{"name":"edict_plan_create","arguments":{"request":"Extract","steps":[{"skill":"edict-batch-signal-analysis","title":"Commit"}]}}}
         {"jsonrpc":"2.0","id":3,"method":"ping"}
+        {"jsonrpc":"2.0","id":4,"method":"tools/call","params":{"name":"edict_context","arguments":{}}}
       """.trimIndent() + "\n"
       val transport = StdioServerTransport(
         input = DelayedEofInputStream(ByteArrayInputStream(input.encodeToByteArray())).asSource().buffered(),
@@ -105,6 +112,10 @@ class EdictNextMcpToolsetTest {
         .map { wireJson.parseToJsonElement(it).jsonObject }.toList()
       val creation = responses.single { it["id"].toString() == "2" }.obj("result")
       assertFalse(creation.flag("isError") == true)
+      val context = responses.single { it["id"].toString() == "4" }.obj("result").obj("structuredContent")
+      assertEquals("space", context.obj("reviewRepository").text("provider"))
+      assertEquals("owner", context.obj("reviewRepository").text("owner"))
+      assertEquals("repo", context.obj("reviewRepository").text("repo"))
       assertEquals("Extract", store.plan()?.request)
       val task = store.plan()!!.tasks.single()
       val token = creation.obj("structuredContent").text("token")
@@ -128,7 +139,7 @@ class EdictNextMcpToolsetTest {
   @Test
   fun `toolset exposes every tool agents used from the single IDE server`() {
     EdictNextRepositoryState.open(directory.resolve("state")).use { store ->
-      val layout = EdictLayout(directory)
+      val layout = EdictLayout(directory, directory.resolve(".edict"))
       val server = edictNextToolset(layout, EdictManagementService(store, layout)).createServer()
       assertEquals(
         setOf(

@@ -17,7 +17,7 @@ internal data class EdictConfig(val mcpPort: Int = DEFAULT_MCP_PORT) {
     /** Outside the ephemeral range, where the OS assigns ports to outgoing connections. */
     const val DEFAULT_MCP_PORT: Int = DEFAULT_EDICT_MCP_PORT
 
-    fun load(layout: EdictLayout): EdictConfig = load(layout.qodanaYamlPath)
+    fun load(layout: EdictLayout): EdictConfig = load(EdictLayout.findQodanaYaml(layout.root))
 
     fun load(path: Path?): EdictConfig = EdictConfig(EdictYamlConfiguration.load(path).mcpPort)
   }

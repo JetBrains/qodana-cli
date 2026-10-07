@@ -56,6 +56,10 @@ class CliTest : IntegrationTest() {
         val state = workspace.state
         val codexHome = Files.createDirectories(directory.resolve("codex-home"))
         val project = workspace.project.toRealPath().toString()
+        Files.writeString(
+            workspace.project.resolve("qodana.yaml"),
+            "edict:\n  statePath: ${JsonPrimitive(state.toString())}\n",
+        )
         Files.writeString(codexHome.resolve("config.toml"), "[projects.${JsonPrimitive(project)}]\ntrust_level = \"trusted\"\n")
         // The fixture keeps logs outside the checkout, which must stay unchanged.
         val logs = "-D${EdictLayout.LOG_DIRECTORY_PROPERTY}=${workspace.layout.logDirectory}"
@@ -67,8 +71,6 @@ class CliTest : IntegrationTest() {
             val process = ProcessBuilder(
                 executable,
                 "mcp",
-                "--state-dir",
-                state.toString(),
                 "--qodana-executable",
                 inspection.qodanaExecutable.toString(),
             )

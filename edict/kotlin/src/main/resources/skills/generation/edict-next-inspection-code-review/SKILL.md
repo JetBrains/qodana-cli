@@ -12,9 +12,10 @@ Load only this skill.
 
 ## Inputs and boundaries
 
-The prompt supplies absolute paths for the cluster directory, candidate inspection, inspected IntelliJ project, and
-review output. Read every Signal, every synthetic example, the candidate, and relevant project source. Do not read
-cluster history, predecessor inspections, or prior reviews.
+The prompt supplies `Cluster id` and an absolute private-scratch `Review output path`. Call `edict_context`, resolve the
+cluster and candidate inspection below its `stateDirectory`, and use its `projectDirectory` as the inspected IntelliJ
+project. Read every Signal, every synthetic example, the candidate,
+and relevant project source. Do not read cluster history, predecessor inspections, or prior reviews.
 
 Do not edit the candidate, cluster, examples, inspected project, or repository.
 

@@ -42,7 +42,6 @@ class LivePipelineTest : IntegrationTest() {
                 3. edict-next-generation: generate and validate inspections for every Pending cluster.
 
                 Source checkout: ${workspace.repository.root}
-                State repository: ${workspace.state}
                 Inspected IntelliJ project: ${workspace.project}
                 Generation scratch root: ${workspace.output.resolve("scratch/pipeline-generation")}
                 Publish extracted Signals only through edict_publish_signal. Follow the managed protocol for every worker.

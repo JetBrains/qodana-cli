@@ -11,7 +11,6 @@ import (
 	"encoding/json"
 	"os"
 	"path/filepath"
-	"strconv"
 	"strings"
 	"testing"
 	"time"
@@ -161,26 +160,6 @@ func TestEdictManagedMCPRequiresInstall(t *testing.T) {
 	}
 }
 
-func TestEdictManagedMCPForwardsStateDirectory(t *testing.T) {
-	var forwarded []string
-	command := newEdictManagedMCPStartCommandWithRunner(func(_ *cobra.Command, args ...string) error {
-		forwarded = append([]string(nil), args...)
-		return nil
-	})
-	command.SetArgs([]string{"--state-dir", "/state"})
-	if err := command.Execute(); err != nil {
-		t.Fatal(err)
-	}
-	want := []string{"mcp", "--parent-pid", strconv.Itoa(os.Getpid())}
-	if executable, err := os.Executable(); err == nil {
-		want = append(want, "--qodana-executable", executable)
-	}
-	want = append(want, "--state-dir", "/state")
-	if strings.Join(forwarded, "\x00") != strings.Join(want, "\x00") {
-		t.Fatalf("forwarded arguments: %q, want %q", forwarded, want)
-	}
-}
-
 func TestEdictManagedMCPRequiresInstallationForConfiguredPort(t *testing.T) {
 	prepareEdictProject(t)
 	writeEdictPort(t, freePort(t))
@@ -268,8 +247,8 @@ func TestEdictManagedMCPFailsForInvalidStateDirectory(t *testing.T) {
 	if err := os.WriteFile("not-a-directory", []byte("existing"), 0o600); err != nil {
 		t.Fatal(err)
 	}
+	appendEdictStatePath(t, "not-a-directory")
 	command := newEdictManagedMCPStartCommand()
-	command.SetArgs([]string{"--state-dir", "not-a-directory"})
 	command.SetIn(strings.NewReader(""))
 	if output, err := executeEdictCommand(context.Background(), command); err == nil || !strings.Contains(output, "ERROR") {
 		t.Fatalf("startup with an invalid state directory: %v, %s", err, output)
@@ -282,7 +261,7 @@ func TestEdictServerCommandDetection(t *testing.T) {
 	for _, args := range [][]string{
 		{"edict", "mcp", "start"},
 		{"--log-level", "debug", "edict", "mcp", "start"},
-		{"edict", "--disable-update-checks", "mcp", "start", "--state-dir", "/tmp/edict-state"},
+		{"edict", "--disable-update-checks", "mcp", "start", "--config", "/tmp/qodana.yaml"},
 		{"edict", "ide-mcp", "--project-dir", "/tmp/project"},
 	} {
 		if !isEdictServerCommand(root, args) {

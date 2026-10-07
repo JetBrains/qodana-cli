@@ -41,7 +41,7 @@ class AgentLoggingTest {
             Files.createDirectories(sessions)
             val stdout = directory.resolve("stdout.jsonl")
             Files.writeString(stdout, """{"type":"thread.started","thread_id":"root-thread"}""" + "\n")
-            val layout = EdictLayout(directory)
+            val layout = EdictLayout(directory, directory.resolve(".edict"))
             val collector = CodexAgentCollector(home, stdout, AgentLogger(store, layout))
             fun append(file: String, value: JsonObject) = Files.writeString(
                 sessions.resolve(file),
@@ -134,7 +134,7 @@ class AgentLoggingTest {
     @Test
     fun `MCP logs contain complete assignments and summaries without capability leaks`() {
         EdictNextRepositoryState.open(directory.resolve("state")).use { store ->
-            val layout = EdictLayout(directory)
+            val layout = EdictLayout(directory, directory.resolve(".edict"))
             val server = EdictNextTestTools(store, layout = layout)
             fun call(name: String, arguments: JsonObject): JsonObject {
                 val result = server.call(name, arguments)
@@ -193,7 +193,7 @@ class AgentLoggingTest {
             """.trimIndent()
             )
             executable.toFile().setExecutable(true)
-            val layout = EdictLayout(directory)
+            val layout = EdictLayout(directory, directory.resolve(".edict"))
             val runtime = CodexRunner(
                 directory,
                 EdictLayout(directory, store.root),

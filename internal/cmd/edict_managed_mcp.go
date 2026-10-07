@@ -31,7 +31,7 @@ func newEdictManagedMCPStartCommand() *cobra.Command {
 }
 
 func newEdictManagedMCPStartCommandWithRunner(run func(*cobra.Command, ...string) error) *cobra.Command {
-	var configFile, stateDir, ideDist, ideLinter string
+	var configFile, ideDist, ideLinter string
 	var ideProperties []string
 	var ideWaitTimeout time.Duration
 	command := &cobra.Command{
@@ -41,6 +41,7 @@ func newEdictManagedMCPStartCommandWithRunner(run func(*cobra.Command, ...string
 It serves Streamable HTTP on loopback at edict.mcpPort from ./qodana.yaml (or
 ./qodana.yml; default 27182), and fails if 'qodana edict install' did not configure
 that port in ./.codex/config.toml or the port is busy.
+Persisted state is read from edict.statePath in that configuration (default ./.edict).
 The immutable skill policy is registered at startup. Only capability-bearing
 managed tasks may mutate state, and child capabilities can only narrow access.
 On the first inspection call the server starts a native IntelliJ MCP server for
@@ -73,7 +74,7 @@ redacted. Agent scratch lives in ./log/agent-work/<run-id>/scratch.`,
 			}
 			args = append(args, edictQodanaYamlArguments(".", configFile)...)
 			for _, option := range []struct{ name, value string }{
-				{"state-dir", stateDir}, {"ide-dist", ideDist}, {"ide-linter", ideLinter},
+				{"ide-dist", ideDist}, {"ide-linter", ideLinter},
 			} {
 				if option.value != "" {
 					args = append(args, "--"+option.name, option.value)
@@ -93,7 +94,6 @@ redacted. Agent scratch lives in ./log/agent-work/<run-id>/scratch.`,
 		},
 	}
 	command.Flags().StringVar(&configFile, "config", "", "Qodana configuration file (defaults to qodana.yml or qodana.yaml in the current directory)")
-	command.Flags().StringVar(&stateDir, "state-dir", "", "Persisted Edict state directory (defaults to ./.edict)")
 	command.Flags().StringVar(&ideDist, "ide-dist", "", "Local IDE or Qodana linter distribution for inspections (overrides QODANA_DIST)")
 	command.Flags().StringVar(&ideLinter, "ide-linter", "", "Qodana linter to download and run natively for inspections, e.g. qodana-jvm (overrides QODANA_DIST)")
 	command.Flags().StringArrayVar(&ideProperties, "ide-property", nil, "Set a JVM property or option for the IDE")

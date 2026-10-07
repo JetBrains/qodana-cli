@@ -30,15 +30,15 @@ fun main(args: Array<String>) {
         when (command) {
             "install" -> {
                 require(options.keys.all { it == "deny" }) { "Unknown install option" }
-                val layout = EdictLayout.get()
+                val configuration = EdictYamlConfiguration.load(EdictLayout.findQodanaYaml())
+                val layout = EdictLayout.get(configuration.statePath)
                 val denied = optionPairs.map { Path.of(it.second) }
-                CodexSetup.install(layout, denied, EdictConfig.load(layout))
+                CodexSetup.install(layout, denied, EdictConfig(configuration.mcpPort))
             }
 
             "mcp" -> {
                 require(options.keys.all {
                     it in listOf(
-                        "state-dir",
                         "qodana-executable",
                         "ide-dist",
                         "ide-linter",
@@ -48,10 +48,10 @@ fun main(args: Array<String>) {
                         "qodana-yaml",
                     )
                 }) { "Unknown Edict Next option" }
-                val layout = EdictLayout.get(options["state-dir"])
                 val qodanaYaml = options["qodana-yaml"]?.let(Path::of)?.toAbsolutePath()?.normalize()
-                    ?: layout.qodanaYamlPath
+                    ?: EdictLayout.findQodanaYaml()
                 val configuration = EdictYamlConfiguration.load(qodanaYaml)
+                val layout = EdictLayout.get(configuration.statePath)
                 val portConfig = EdictConfig(configuration.mcpPort).also { CodexSetup.requireInstalled(layout, it) }
                 val port = portConfig.mcpPort
                 // `=` keeps values such as -Xmx8g from being parsed as flags by the Go helper.
@@ -67,7 +67,7 @@ fun main(args: Array<String>) {
                     ideArguments,
                     layout.intellijMcpLogPath,
                 )
-                EdictServer.start(layout, port, inspectionServer).use { server ->
+                EdictServer.start(layout, port, inspectionServer, configuration = configuration).use { server ->
                     Runtime.getRuntime().addShutdownHook(Thread(server::close))
                     // A launcher killed with SIGKILL cannot stop this server, and stdin may stay open (HTTP mode never
                     // reads it). Exit with the launcher instead; the shutdown hook then stops the server.
@@ -87,8 +87,8 @@ fun main(args: Array<String>) {
                 Edict managed skills (standalone Kotlin/JVM). Run every command in the project directory.
                   edict install [--deny <path>]...
                     Installs skills into .codex/skills and writes .codex/config.toml for edict.mcpPort from qodana.yaml.
-                  edict mcp [--state-dir <state>] [--qodana-yaml <path>] [--qodana-executable <qodana>] [--ide-dist <path> | --ide-linter <linter>] [--ide-property <property>]... [--ide-wait-timeout <duration>] [--parent-pid <pid>]
-                    Serves HTTP on loopback at edict.mcpPort (default ${EdictConfig.DEFAULT_MCP_PORT}); state defaults to .edict.
+                  edict mcp [--qodana-yaml <path>] [--qodana-executable <qodana>] [--ide-dist <path> | --ide-linter <linter>] [--ide-property <property>]... [--ide-wait-timeout <duration>] [--parent-pid <pid>]
+                    Serves HTTP on loopback at edict.mcpPort (default ${EdictConfig.DEFAULT_MCP_PORT}); state comes from edict.statePath (default .edict).
                     Each run logs to log/process-log/<run-id> and gives agents log/agent-work/<run-id>; the run id is its start time.
                 The first inspection call starts the IDE through `qodana edict ide-mcp`; its output goes to intellij-mcp.log.
             """.trimIndent()
