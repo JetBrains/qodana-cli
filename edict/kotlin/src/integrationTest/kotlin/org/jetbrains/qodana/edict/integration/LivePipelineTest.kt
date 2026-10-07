@@ -12,59 +12,61 @@ import kotlinx.serialization.json.decodeFromJsonElement
 import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.jsonObject
+import org.jetbrains.qodana.edict.common.EdictCIConfiguration
+import org.jetbrains.qodana.edict.common.EdictConfiguration
+import org.jetbrains.qodana.edict.common.PromotionConfiguration
+import org.jetbrains.qodana.edict.common.sha256
+import org.jetbrains.qodana.edict.common.text
 import org.jetbrains.qodana.edict.common.wireJson
 import org.jetbrains.qodana.edict.edictnext.EdictNextClusterStatus
 import org.jetbrains.qodana.edict.edictnext.EdictNextRepositoryState.Plan
 import org.jetbrains.qodana.edict.edictnext.EdictNextSignalLabel
+import org.jetbrains.qodana.edict.edictnext.EdictNextSignalSource
 import org.jetbrains.qodana.edict.edictnext.EdictRepository
 import org.jetbrains.qodana.edict.edictnext.EdictRepositoryDirectory
 import org.jetbrains.qodana.edict.integration.support.*
 import org.jetbrains.qodana.edict.integration.support.inspection.InspectionServer
 import org.jetbrains.qodana.edict.integration.support.inspection.stageOrderProblems
+import org.jetbrains.qodana.edict.integration.support.reviews.ReviewProviderFixture
 import org.jetbrains.qodana.edict.runtime.CodexRunner
 import org.junit.jupiter.api.Test
 
 class LivePipelineTest : IntegrationTest() {
-    override val fixtureRevision = threeCommitHead
-    override val fixtureProject = threeCommitProject
-
     @Test
-    fun `managed skills extract cluster and generate an inspection from Distillery evidence`() {
-        val expected = threeCommitExpectations().last()
-        InspectionServer.start(workspace).use { inspection ->
-            workspace.withCodex(
-                """
-                Use edict_manager and execute exactly three top-level tasks in this order:
-                1. edict-batch-signal-analysis: extract Signals from exactly $threeCommitHead^! with commit limit 1.
-                2. edict-next-distribution: distribute every extracted inbox Signal.
-                3. edict-next-generation: generate and validate inspections for every Pending cluster.
-
-                Source checkout: ${workspace.repository.root}
-                Inspected IntelliJ project: ${workspace.project}
-                Generation scratch root: ${workspace.output.resolve("scratch/pipeline-generation")}
-                Publish extracted Signals only through edict_publish_signal. Follow the managed protocol for every worker.
-                """.trimIndent(),
-                inspectionServer = inspection,
-                timeoutMinutes = 180,
-            ) { store, runtime, _ ->
-                val plan = assertNotNull(store.plan())
-                val required = setOf(
-                    "edict-batch-signal-analysis",
-                    "edict-signal-analysis",
-                    "edict-next-distribution",
-                    "edict-next-generation",
-                    "edict-next-cluster-generation",
-                    "edict-next-code-example-overseer",
-                    "edict-next-inspection-code-review",
-                    "edict-next-weak-signal-review",
-                )
-                assertTrue(
-                    plan.tasks.map { it.skill }.toSet().containsAll(required),
-                    "Pipeline must execute extraction, distribution, generation, example reconciliation and both reviews",
-                )
-                verifyManagedRun(workspace, runtime, plan)
-                verifySequentialStages(plan)
-                verifyGeneratedCluster(runtime, inspection, expected)
+    fun `short daily request runs the default pipeline`() {
+        ReviewProviderFixture("github", workspace.repository).use { reviews ->
+            InspectionServer.start(workspace).use { inspection ->
+                workspace.withCodex(
+                    "Run the daily repository routine.",
+                    provider = reviews.client,
+                    inspectionServer = inspection,
+                    timeoutMinutes = 180,
+                    configuration = EdictConfiguration(
+                        ci = EdictCIConfiguration("https://github.com/owner/repo"),
+                        promotion = PromotionConfiguration("fixture-reviewer"),
+                    ),
+                ) { store, runtime, _ ->
+                    val plan = assertNotNull(store.plan())
+                    val required = setOf(
+                        "edict-signal-analysis",
+                        "edict-pr-signal-analysis",
+                        "edict-next-run",
+                        "edict-next-distribution",
+                        "edict-next-generation",
+                        "edict-next-cluster-generation",
+                        "edict-next-code-example-overseer",
+                        "edict-next-inspection-code-review",
+                        "edict-promote",
+                    )
+                    assertTrue(
+                        plan.tasks.map { it.skill }.toSet().containsAll(required),
+                        "Pipeline must execute PR extraction, distribution, generation, review, and publication",
+                    )
+                    verifyManagedRun(workspace, runtime, plan)
+                    verifySequentialStages(plan)
+                    verifyProcessedCluster(runtime, inspection, plan)
+                    reviews.verifyRequests()
+                }
             }
         }
     }
@@ -72,7 +74,7 @@ class LivePipelineTest : IntegrationTest() {
     private fun verifySequentialStages(plan: Plan) {
         val stages = plan.tasks.filter { it.parentId.isEmpty() }
         assertEquals(
-            listOf("edict-batch-signal-analysis", "edict-next-distribution", "edict-next-generation"),
+            listOf("edict-pr-signal-analysis", "edict-next-run", "edict-promote"),
             stages.map { it.skill },
         )
         val ids = stages.map { it.id }
@@ -87,19 +89,58 @@ class LivePipelineTest : IntegrationTest() {
         assertTrue(problems.isEmpty(), problems.joinToString("\n"))
     }
 
-    private fun verifyGeneratedCluster(
+    private fun verifyProcessedCluster(
         runtime: CodexRunner,
         inspection: InspectionServer,
-        expected: CommitExpectation,
+        plan: Plan,
     ) {
         val repository = EdictRepository(EdictRepositoryDirectory(workspace.state))
         val state = runBlocking { repository.loadState() }
         assertTrue(state.inboxSignals.isEmpty(), "Distribution must consume every extracted Signal")
         assertEquals(1, state.clusters.size, "The positive/negative pair must form exactly one cluster")
         val cluster = state.clusters.single()
-        assertEquals(EdictNextClusterStatus.Generated, cluster.manifest.status)
         assertEquals("Java", cluster.manifest.language.name)
-        verifyCommitSignals(workspace.repository, signalFiles(cluster.directory.signalsDirectory), listOf(expected))
+        assertEquals(2, cluster.signals.size, "The review correction must retain both evidence sides")
+        assertEquals(EdictNextSignalLabel.entries.toSet(), cluster.signals.map { it.label }.toSet())
+        val expectedDiff = workspace.repository.diff(historyBefore, historyCommit, listOf(historyPath))
+        val providerDiff = expectedDiff.substring(expectedDiff.indexOf("--- a/"))
+        cluster.signals.forEach { signal ->
+            val source = signal.source as EdictNextSignalSource.FromPR
+            assertEquals(7, source.prNumber)
+            assertTrue(source.diffPositiveToNegative in listOf(expectedDiff, providerDiff))
+            assertEquals(historyPath, signal.fileRevision.path)
+            val positive = signal.label == EdictNextSignalLabel.POSITIVE
+            assertEquals(if (positive) historyBefore else historyCommit, signal.fileRevision.revision)
+            val expectedLine = if (positive) 5 else 10
+            assertTrue(signal.fileRevision.expectedRanges.orEmpty().any { expectedLine in it.start..it.end })
+            val sourceText = workspace.repository.fileAt(signal.fileRevision.revision, historyPath)
+            val lineCount = sourceText.lineSequence().count()
+            assertTrue(signal.fileRevision.expectedRanges.orEmpty().all { it.end <= lineCount })
+        }
+        assertTrue(cluster.historyPath.readText().isNotBlank())
+
+        if (cluster.manifest.status == EdictNextClusterStatus.Pending) {
+            assertEquals(
+                listOf("inspections/${cluster.id}.candidate.kts"),
+                state.filesByRelativePath.keys.filter { it.startsWith("inspections/") }.sorted(),
+                "A rejected evidence-backed attempt must remain as one resumable candidate",
+            )
+            assertTrue(
+                state.filesByRelativePath.getValue("inspections/${cluster.id}.candidate.kts").isNotEmpty(),
+                "Pending generation must preserve its candidate",
+            )
+            assertTrue(
+                plan.tasks.any { it.skill == "edict-next-inspection-code-review" && it.status == "completed" },
+                "Pending is acceptable only after an independent candidate review",
+            )
+            return
+        }
+
+        assertEquals(EdictNextClusterStatus.Generated, cluster.manifest.status)
+        assertTrue(
+            plan.tasks.any { it.skill == "edict-next-weak-signal-review" && it.status == "completed" },
+            "Generated transition requires weak-signal review",
+        )
 
         val code = assertNotNull(state.inspectionCode(cluster.id))
         assertTrue(code.isNotBlank())
@@ -108,12 +149,10 @@ class LivePipelineTest : IntegrationTest() {
             state.filesByRelativePath.keys.filter { it.startsWith("inspections/") }.sorted(),
             "Only the accepted inspection may remain, with no candidate",
         )
-        assertTrue(cluster.historyPath.readText().isNotBlank())
-
-        val contextPath = expected.path.removePrefix("$threeCommitProject/")
-        val originalPositive = inspection.run(code, contextPath, workspace.repository.fileAt(expected.parent, expected.path))
-        assertContains(originalPositive.problemLines, expected.positiveLine, "Accepted inspection must detect the original problem")
-        val originalNegative = inspection.run(code, contextPath, workspace.repository.fileAt(expected.revision, expected.path))
+        val contextPath = historyPath.removePrefix("$historyProject/")
+        val originalPositive = inspection.run(code, contextPath, workspace.repository.fileAt(historyBefore, historyPath))
+        assertContains(originalPositive.problemLines, 5, "Accepted inspection must detect the original problem")
+        val originalNegative = inspection.run(code, contextPath, workspace.repository.fileAt(historyCommit, historyPath))
         assertTrue(originalNegative.problemLines.isEmpty(), "Accepted inspection must not flag the corrected revision")
 
         cluster.signals.forEach { signal ->
@@ -133,14 +172,22 @@ class LivePipelineTest : IntegrationTest() {
                 }
             }
         }
-        verifyGenerationEvidence(runtime, code)
+        verifyGenerationEvidence(code)
     }
 
-    private fun verifyGenerationEvidence(runtime: CodexRunner, code: String) {
-        // TODO: restore once the review output identifies the reviewed candidate again; a666cb47 dropped `candidateHash`
-        //  from edict-next-inspection-code-review, so no review receipt matches.
-        // val acceptedReviews = acceptedCandidateReviews(runtime.scratch, sha256(code))
-        // assertTrue(acceptedReviews.isNotEmpty(), "Code review must accept the exact persisted inspection hash")
+    private fun verifyGenerationEvidence(code: String) {
+        val inspectionHash = sha256(code)
+        val matchingDigestArtifacts = Files.walk(workspace.layout.scratchDirectory).use { files ->
+            files.filter { Files.isRegularFile(it) }.filter { path ->
+                runCatching {
+                    wireJson.parseToJsonElement(Files.readString(path)).jsonObject.text("candidateDigest")
+                }.getOrNull() == inspectionHash
+            }.toList()
+        }
+        assertTrue(
+            matchingDigestArtifacts.isNotEmpty(),
+            "Project review must record the exact persisted inspection hash",
+        )
         val calls = Files.readAllLines(workspace.output.resolve("log/inspection-mcp.jsonl"))
             .map { wireJson.parseToJsonElement(it).jsonObject }
         assertTrue(calls.any { it["tool"]?.toString()?.contains("run_inspection_kts_examples") == true })
