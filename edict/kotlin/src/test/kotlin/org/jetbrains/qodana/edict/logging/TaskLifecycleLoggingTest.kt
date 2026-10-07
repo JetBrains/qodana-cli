@@ -83,7 +83,7 @@ class TaskLifecycleLoggingTest {
             val finished = store.delegateChild(cluster.token, "edict-next-inspection-code-review", "Code review")
             server.ok("edict_task_start", start(finished))
             server.ok("edict_task_finish", finish(finished))
-            val review = store.delegateChild(cluster.token, "edict-next-weak-signal-review", "Weak\nsignal\treview")
+            val review = store.delegateChild(cluster.token, "edict-next-code-example-overseer", "Reconcile\nexamples\tfor rule")
             server.ok("edict_task_start", start(review))
             val example = store.delegateChild(review.token, "edict-next-code-example", "Check example")
             server.ok("edict_task_start", start(example))
@@ -92,7 +92,7 @@ class TaskLifecycleLoggingTest {
             })
             val lines = output.toString().lines().filter { it.isNotEmpty() }
             assertEquals(9, lines.size)
-            assertContains(lines, "[-:${review.taskId}] Weak signal review started")
+            assertContains(lines, "[-:${review.taskId}] Reconcile examples for rule started")
             assertContains(lines, "[-:${example.taskId}] Check example finished")
             assertContains(lines, "[-:${cluster.taskId}] Generate rule finished")
             assertContains(lines, "[-:${generation.taskId}] Generate finished")

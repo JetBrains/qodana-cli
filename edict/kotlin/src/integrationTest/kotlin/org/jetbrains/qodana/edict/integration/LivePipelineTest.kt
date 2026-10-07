@@ -12,6 +12,8 @@ import kotlinx.serialization.json.decodeFromJsonElement
 import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.jsonObject
+import kotlinx.serialization.json.jsonPrimitive
+import org.jetbrains.qodana.edict.common.sha256
 import org.jetbrains.qodana.edict.common.wireJson
 import org.jetbrains.qodana.edict.edictnext.EdictNextClusterStatus
 import org.jetbrains.qodana.edict.edictnext.EdictNextRepositoryState.Plan
@@ -55,12 +57,13 @@ class LivePipelineTest : IntegrationTest() {
                     "edict-next-generation",
                     "edict-next-cluster-generation",
                     "edict-next-code-example-overseer",
-                    "edict-next-inspection-code-review",
+                    "edict-next-inspection-shallow-review",
                     "edict-next-weak-signal-review",
+                    "edict-next-inspection-code-review",
                 )
                 assertTrue(
                     plan.tasks.map { it.skill }.toSet().containsAll(required),
-                    "Pipeline must execute extraction, distribution, generation, example reconciliation and both reviews",
+                    "Pipeline must execute extraction, distribution, generation, example reconciliation and all three reviews",
                 )
                 verifyManagedRun(workspace, runtime, plan)
                 verifySequentialStages(plan)
@@ -133,14 +136,16 @@ class LivePipelineTest : IntegrationTest() {
                 }
             }
         }
-        verifyGenerationEvidence(runtime, code)
+        verifyGenerationEvidence(cluster.directory.evaluationPath, code)
     }
 
-    private fun verifyGenerationEvidence(runtime: CodexRunner, code: String) {
-        // TODO: restore once the review output identifies the reviewed candidate again; a666cb47 dropped `candidateHash`
-        //  from edict-next-inspection-code-review, so no review receipt matches.
-        // val acceptedReviews = acceptedCandidateReviews(runtime.scratch, sha256(code))
-        // assertTrue(acceptedReviews.isNotEmpty(), "Code review must accept the exact persisted inspection hash")
+    private fun verifyGenerationEvidence(evaluationPath: java.nio.file.Path, code: String) {
+        val evaluation = wireJson.parseToJsonElement(evaluationPath.readText()).jsonObject
+        assertEquals(
+            sha256(code),
+            evaluation["inspectionHash"]?.jsonPrimitive?.content,
+            "The final evaluation must score the exact persisted inspection",
+        )
         val calls = Files.readAllLines(workspace.output.resolve("log/inspection-mcp.jsonl"))
             .map { wireJson.parseToJsonElement(it).jsonObject }
         assertTrue(calls.any { it["tool"]?.toString()?.contains("run_inspection_kts_examples") == true })

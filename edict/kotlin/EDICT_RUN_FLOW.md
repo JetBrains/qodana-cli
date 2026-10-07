@@ -147,7 +147,8 @@ edict_manager
        - an exact semantic contradiction finalises the cluster Discontinued; incomplete reconciliation finalises Pending
     2. calls `edict_next_get_inspection_action(clusterId)`, starting the 120-minute cluster deadline
        - `CONFLICT`: Signals with the same file revision have different labels; finalise Invalid with their ids
-       - `SKIP`: the predecessor passes every strong example; finalise Generated, whatever weak examples fail
+       - `SKIP`: the predecessor passes every strong example; record the evaluation, then finalise Generated, whatever
+         weak examples fail
        - `GENERATE`: derive the broadest coherent rule from all Signals and reconciled examples
     3. on `GENERATE`, drafts the candidate in scratch; every state change goes through Edict MCP
        - read `generate_inspection_kts_api` / `generate_inspection_kts_examples` (and `generate_psi_tree` when needed)
@@ -163,27 +164,39 @@ edict_manager
           attempt, then compiles it, checks metadata, and measures examples
           - passes only with at least one strong positive and every strong example correct; only a passing saved
             candidate may start project analysis
-          - weak examples target recall: satisfy those that still fit the rule; they never block
-       2. launch a fresh shallow `$edict-next-inspection-code-review` (output `<scratch>/inspection-code-review.json`)
+          - weak examples target recall: satisfy those that still fit the rule; they never block. One that only a
+            prohibited technique could satisfy is a known limitation recorded in history
+       2. launch a fresh `$edict-next-inspection-shallow-review` (output `<scratch>/shallow-review-<n>.json`)
           - reads only the candidate: no cluster, Signals, examples, project source, or tools
           - checks hard-coded evidence, scope/cost, implementation practices, and metadata, not correctness
           - `REJECT` for any BLOCKER
-    5. calls `edict_next_get_new_inspection_results(clusterId, privateScratchDirectory)` [up to 40m] and launches
-       `$edict-next-weak-signal-review`
+    5. runs an evidence round: `edict_next_get_new_inspection_results(clusterId, privateScratchDirectory)` [up to 40m]
+       analyzes the candidate over the project, then two reviews add weak examples
        - each cluster gets `edict.generation.maxProjectAnalyses` (3) calls per run; the response reports
          `remainingProjectAnalyses`, and a call beyond the limit fails
-       - classify every sampled finding as TP/FP/UNCERTAIN against `htmlDescription`
-       - materialize every TP and FP through an `$edict-next-code-example` worker from a transient WEAK Signal in
-         scratch; write `false-positive-<n>.md` per FP
-       - end with a successful `edict_next_validate_cluster_examples`
-       - the worker repeats cycles and analysis while one is worth it and analyses remain; then it submits the last
+       - the response returns `findingsUnchanged: true` when the findings equal the cluster's previous analysis; the
+         worker then skips the weak-signal review for that round
+       - `$edict-next-weak-signal-review` classifies the sampled findings against `inspectionDescription` without
+         reading the implementation, groups them by shape, and writes examples itself (no workers) only for new
+         evidence: one NEGATIVE per distinct FP cause, a POSITIVE only for an uncovered TP shape; strong evidence
+         always wins
+       - `$edict-next-inspection-code-review` then reads the implementation and writes at most five important
+         corner-case examples: common forms that differ in what the rule decides rather than in syntax, and that an
+         inspection within the implementation constraints can decide
+       - the worker saves the analyzed candidate again unchanged to measure it against the new examples; when one
+         fails and analyses remain, it runs another generation cycle and evidence round, otherwise it submits the last
          analyzed candidate unchanged
+       - `edict_next_record_evaluation(token, clusterId)` is the last step before finalising Generated: it scores the
+         published inspection on every strong and weak example and writes `clusters/<id>/evaluation.json`
+         (`inspectionHash`, `exampleSetDigest`, `tp`, `fp`, `fn`, `precision`, `recall`, per-example results), and
+         writes nothing unless every strong example passes
     6. records operational evidence with `edict_next_append_cluster_history` and ends with one successful
        `edict_next_finalise_cluster(token, clusterId, status, reason)`; it appends the reason to history and applies the
        status only when its contract holds, otherwise it rejects and changes nothing; the worker may then keep repairing
        within its remaining analyses and deadline, and finalises Pending when nothing more can be fixed
        - Generated (accepted/reused): requires a frozen, unchanged target, project analysis of the exact candidate bytes
-         (or `SKIP`), and a passing validation; publishes the inspection, removes candidate and predecessor
+         (or `SKIP`), an evaluation of exactly that inspection on the current examples, and a passing validation;
+         publishes the inspection, removes candidate and predecessor
        - Discontinued (exact Signal contradiction only): requires an example per Signal; removes candidate and
          predecessor inspection
        - Invalid (concrete infrastructure/tooling failure or broken input): keeps candidate and predecessor

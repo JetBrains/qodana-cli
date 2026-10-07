@@ -100,6 +100,10 @@ class EdictNextGenerationServiceTest {
         "invalid" to EdictNextClusterStatus.Invalid,
         "pending" to EdictNextClusterStatus.Pending,
       )) {
+        if (status == EdictNextClusterStatus.Generated) {
+          val evaluation = generation.recordEvaluation(clusterId)
+          assertTrue(evaluation.success, evaluation.summary)
+        }
         val response = generation.finaliseCluster(clusterId, status, "Decided $status")
         assertTrue(response.success, response.summary)
         val cluster = repository.loadCluster(clusterId)
@@ -229,6 +233,7 @@ class EdictNextGenerationServiceTest {
     assertFailsWith<IllegalStateException> { generation.appendHistory("busy-wait", "Old id") }
 
     // Only the id changed, so the analyzed candidate can be Generated without another analysis.
+    assertTrue(generation.recordEvaluation("busy-loop").success)
     val finalised = generation.finaliseCluster("busy-loop", EdictNextClusterStatus.Generated, "Accepted")
     assertTrue(finalised.success, finalised.toString())
     assertTrue(repository.paths.inspectionPath("busy-loop").isRegularFile())

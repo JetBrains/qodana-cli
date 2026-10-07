@@ -175,6 +175,7 @@ internal class EdictNextMcpToolset(
         "edict-next-code-example",
         "edict-next-code-example-overseer",
         "edict-next-weak-signal-review",
+        "edict-next-inspection-code-review",
       )
       management.requireTokenFree(request.requireString("metadataJson"))
       management.requireTokenFree(request.requireString("sourceCode"))
@@ -221,6 +222,7 @@ internal class EdictNextMcpToolset(
         request.requireString("token"),
         "edict-next-code-example-overseer",
         "edict-next-weak-signal-review",
+        "edict-next-inspection-code-review",
       )
       generation.deleteCodeExample(
         request.requireString("clusterId"),
@@ -240,7 +242,7 @@ internal class EdictNextMcpToolset(
 
     server.addTool(
       name = "edict_next_get_inspection_action",
-      description = "Detect conflicting Signals, then return SKIP when the predecessor meets the required 85% example accuracy; otherwise return GENERATE. Call before changing the cluster id or inspection candidate.",
+      description = "Detect conflicting Signals, then return SKIP when the predecessor passes every strong example; otherwise return GENERATE. Call before changing the cluster id or inspection candidate.",
       inputSchema = stringArguments("clusterId" to "Cluster id"),
     ) { request ->
       generation
@@ -321,11 +323,23 @@ internal class EdictNextMcpToolset(
     }
 
     server.addTool(
+      name = "edict_next_record_evaluation",
+      description = "Last step before finalising Generated: score the inspection that would be published (the analyzed candidate, or the predecessor on SKIP) on every strong and weak example and write clusters/<id>/evaluation.json (tp, fp, fn, precision, recall, inspection hash, per-example results). Writes nothing unless every strong example passes.",
+      inputSchema = stringArguments(
+        "token" to "Your delegated edict-next-cluster-generation task token",
+        "clusterId" to "Pending frozen generation target cluster id",
+      ),
+    ) { request ->
+      management.requireSkill(request.requireString("token"), "edict-next-cluster-generation")
+      generation.recordEvaluation(request.requireString("clusterId")).toToolResult()
+    }
+
+    server.addTool(
       name = "edict_next_finalise_cluster",
       description = """End the processing of a frozen Pending cluster: record the reason in its history and move it to the
         requested status with that status's contract satisfied, or reject and leave the cluster unchanged.
         Generated: publishes the predecessor on SKIP, or the candidate that completed project analysis on GENERATE, when it
-        passes every strong example. Discontinued: removes the candidate and predecessor.
+        passes every strong example and edict_next_record_evaluation scored exactly it on the current examples. Discontinued: removes the candidate and predecessor.
         Invalid: keeps the candidate and predecessor. Pending: only records the reason.""",
       inputSchema = toolSchema(
         listOf("token", "clusterId", "status", "reason"),
