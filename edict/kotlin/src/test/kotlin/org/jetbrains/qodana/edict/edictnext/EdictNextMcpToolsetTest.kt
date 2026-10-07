@@ -184,7 +184,7 @@ class EdictNextMcpToolsetTest {
           "edict_context", "edict_file_at_ref", "edict_next_prepare_pipeline", "edict_next_next_signal", "edict_next_get_distribution_context",
           "edict_next_add_signal_to_cluster", "edict_next_validate_distribution", "edict_next_get_generation_clusters",
           "edict_next_validate_code_example", "edict_next_validate_cluster_examples", "edict_next_get_inspection_action",
-          "edict_next_get_new_inspection_results", "edict_next_finalise_cluster",
+          "edict_next_get_new_inspection_results", "edict_next_record_evaluation", "edict_next_finalise_cluster",
           "edict_next_validate_generation", "edict_next_save_code_example", "edict_next_assign_code_example",
           "edict_next_delete_code_example", "edict_next_save_candidate_inspection", "edict_next_rename_cluster",
           "edict_next_append_cluster_history",

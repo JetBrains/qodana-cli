@@ -14,7 +14,7 @@ class SkillsTest {
     @Test
     fun `install managed skills with matching registry and metadata`() {
         val installed = Skills.install(directory)
-        assertEquals(17, installed.size)
+        assertEquals(18, installed.size)
         assertEquals(Registry.policies.map { it.name }.sorted(), installed)
         Registry.policies.forEach { policy ->
             val name = policy.name
@@ -63,11 +63,15 @@ class SkillsTest {
         assertEquals(
             listOf(
                 "edict-next-code-example-overseer",
-                "edict-next-inspection-code-review",
+                "edict-next-inspection-shallow-review",
                 "edict-next-weak-signal-review",
+                "edict-next-inspection-code-review",
             ),
             Registry["edict-next-cluster-generation"].delegates,
         )
+        // Evidence reviews write their examples themselves.
+        assertEquals(emptyList(), Registry["edict-next-weak-signal-review"].delegates)
+        assertEquals(emptyList(), Registry["edict-next-inspection-code-review"].delegates)
         Registry.policies.forEach { policy ->
             policy.delegates.forEach { Registry[it] }
         }
@@ -104,24 +108,31 @@ class SkillsTest {
     }
 
     @Test
-    fun `shallow review follows strong example validation and leaves correctness to project review`() {
+    fun `shallow review gates and evidence reviews only add weak examples before the final evaluation`() {
         val compactGeneration = Skills.read("edict-next-cluster-generation").replace(Regex("\\s+"), " ")
-        val review = Skills.read("edict-next-inspection-code-review")
-        val compactReview = review.replace(Regex("\\s+"), " ")
+        val shallow = Skills.read("edict-next-inspection-shallow-review")
+        val compactShallow = shallow.replace(Regex("\\s+"), " ")
+        val weak = Skills.read("edict-next-weak-signal-review").replace(Regex("\\s+"), " ")
+        val review = Skills.read("edict-next-inspection-code-review").replace(Regex("\\s+"), " ")
 
         val validation = compactGeneration.indexOf("Submit the complete candidate with `edict_next_save_candidate_inspection`")
         val shallowReview = compactGeneration.indexOf("Launch a fresh shallow review worker")
         assertTrue(validation in 0..<shallowReview)
-        assertContains(compactGeneration, "Weak failures do not block a cycle or the Generated transition")
+        assertContains(compactGeneration, "Weak failures never block a cycle or the Generated transition")
         assertContains(compactGeneration, "its `remainingProjectAnalyses` says how many remain")
-        assertContains(review, "Do not edit the candidate, inspected project, or repository")
-        assertContains(compactReview, "Read only the candidate")
-        assertContains(compactReview, "It does not decide whether the inspection is correct")
-        assertContains(compactReview, "a description broader or narrower than the implementation is not a finding")
-        assertContains(review, "\"status\": \"ACCEPT|REJECT\"")
-        assertContains(review, "\"category\": \"HARDCODED|PERFORMANCE|IMPLEMENTATION|METADATA\"")
-        assertFalse(review.contains("COVERAGE"))
-        assertFalse(review.contains("EXAMPLES_ADDED"))
+        assertContains(compactGeneration, "call `edict_next_record_evaluation(token, clusterId)` as the last step")
+        assertContains(shallow, "Do not edit the candidate, inspected project, or repository")
+        assertContains(compactShallow, "Read only the candidate")
+        assertContains(compactShallow, "It does not decide whether the inspection is correct")
+        assertContains(shallow, "\"status\": \"ACCEPT|REJECT\"")
+        assertContains(shallow, "\"category\": \"HARDCODED|PERFORMANCE|IMPLEMENTATION|METADATA\"")
+        assertFalse(shallow.contains("COVERAGE"))
+        assertContains(weak, "Do not launch workers: write every example yourself")
+        assertContains(weak, "Do not read the candidate's implementation")
+        assertContains(weak, "Strong evidence always wins")
+        assertContains(review, "The output of this review is evidence")
+        assertContains(review, "keep at most five")
+        assertFalse(review.contains("\"status\": \"ACCEPT|REJECT\""))
     }
 
     @Test

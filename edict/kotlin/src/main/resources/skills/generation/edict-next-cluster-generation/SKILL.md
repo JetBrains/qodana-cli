@@ -26,6 +26,9 @@ your own task token:
 - `edict_next_rename_cluster(token, clusterId, newClusterId)` renames the cluster and its candidate, including the
   candidate's `id = "<clusterId>"`; use the new id in every later call;
 - `edict_next_append_cluster_history(token, clusterId, entry)` appends an operational decision to `history.md`;
+- `edict_next_record_evaluation(token, clusterId)` scores the inspection that would be published on every strong and
+  weak example and writes `evaluation.json`; finalising `Generated` requires it for exactly that inspection and the
+  current examples;
 - `edict_next_finalise_cluster(token, clusterId, status, reason)` records the reason and sets `Generated`,
   `Discontinued`, `Invalid`, or keeps `Pending`, applying that status's file changes. It rejects a status whose contract
   the cluster does not meet and leaves the cluster unchanged.
@@ -37,9 +40,16 @@ stays a Pending target, so you may fix what the response names if you still have
 When nothing more can be fixed, finalise `Pending` with what is left. The only exception is a cluster deadline response, 
 after which you make no MCP call.
 
-Do not load `edict-next-code-example-overseer`, `edict-next-code-example`, `edict-next-weak-signal-review`, or
-`edict-next-inspection-code-review` yourself. Launch each required skill in a fresh native `spawn_agent` worker with no
-inherited conversation context.
+Do not load `edict-next-code-example-overseer`, `edict-next-code-example`, `edict-next-inspection-shallow-review`,
+`edict-next-weak-signal-review`, or `edict-next-inspection-code-review` yourself. Launch each required skill in a fresh
+native `spawn_agent` worker with no inherited conversation context.
+
+Name every child task exactly as follows, with `<n>` counting from 1:
+
+- `Reconcile examples for <clusterId>` for the overseer;
+- `Shallow review <clusterId> iteration <n>`;
+- `Weak-signal review <clusterId> round <n>`;
+- `Code review <clusterId> round <n>`.
 
 The 120-minute cluster deadline starts at the first `edict_next_get_inspection_action` call. If an MCP response says to
 clean up to Pending and stop, stop children, leave valid partial artifacts, and make no further MCP call.
@@ -65,8 +75,8 @@ Signal evidence.
 Call `edict_next_get_inspection_action(clusterId)` before changing the cluster id or candidate.
 
 - `CONFLICT`: finalise `Invalid` with the conflicting Signal ids.
-- `SKIP`: the predecessor passes every strong example. Keep the id and finalise `Generated`, recording reuse;
-  weak-example failures do not prevent reuse. Do not create or review a candidate.
+- `SKIP`: the predecessor passes every strong example. Keep the id, call `edict_next_record_evaluation`, and finalise
+  `Generated`, recording reuse; weak-example failures do not prevent reuse. Do not create or review a candidate.
 - `GENERATE`: derive and implement a new inspection.
 
 ## 3. Implement the broadest supported rule
@@ -105,9 +115,10 @@ Implementation constraints:
 ## 4. Repeat generation cycles
 
 Strong examples, those referenced by a `STRONG` cluster Signal, define the required behavior. Every other example is
-weak: it targets recall and does not define behavior. For each weak example, evaluate how applicable it is to the rule
-you implement, and satisfy it when it still fits; satisfy as many as the rule allows. Never contradict strong evidence 
-to satisfy a weak example. Weak failures do not block a cycle or the Generated transition.
+weak: it targets recall and does not define behavior. Satisfy every weak example that still fits the rule you implement;
+never contradict strong evidence to satisfy one. A weak example that only a prohibited technique (data-flow,
+cross-method analysis, project enumeration) could satisfy is a known limitation: record it in history and do not
+regenerate for it. Weak failures never block a cycle or the Generated transition.
 
 A cycle is cheap, so repeat it as often as needed. Each failed step sends you straight back to repair and regeneration:
 
@@ -118,38 +129,51 @@ A cycle is cheap, so repeat it as often as needed. Each failed step sends you st
 2. Launch a fresh shallow review worker:
 
    ```text
-   Load the edict-next-inspection-code-review skill.
+   Load the edict-next-inspection-shallow-review skill.
 
    Cluster id: <clusterId>
-   Review output path: <privateScratchDirectory>/inspection-code-review.json
+   Review output path: <privateScratchDirectory>/shallow-review-<n>.json
    ```
 
    It reads only the candidate and checks hard-coded evidence, scope and cost, implementation practices, and metadata. On
-   `REJECT`, repair every BLOCKER and restart the cycle. On `ACCEPT`, continue with project analysis.
+   `REJECT`, repair every BLOCKER and restart the cycle. On `ACCEPT`, continue with an evidence round.
 
-## 5. Review project findings
+## 5. Evidence rounds
 
-Project analysis and the weak-signal review after it are expensive, so each cluster gets a fixed number per run. Copy
+Project analysis and the reviews after it are expensive, so each cluster gets a fixed number of analyses per run. Copy
 the saved candidate byte for byte to `<privateScratchDirectory>/analyzed-candidate.kts`, then call
 `edict_next_get_new_inspection_results(clusterId, privateScratchDirectory)`; its `remainingProjectAnalyses` says how many
-remain after this one. The copy is the last analyzed candidate; replace it only before the next analysis. Launch a fresh
-weak-review worker with only:
+remain after this one. The copy is the last analyzed candidate; replace it only before the next analysis.
 
-```text
-Load the edict-next-weak-signal-review skill.
+1. If the response has `findingsUnchanged: true`, the project findings equal the previous round's, which were already
+   reviewed: skip the weak-signal review. Otherwise launch a fresh worker with only:
 
-Review config: <returned weak-signal-review-config path>
-```
+   ```text
+   Load the edict-next-weak-signal-review skill.
 
-Require every finding to be classified, every TP and FP to have a validated example, and the weak-review worker's final
-`edict_next_validate_cluster_examples` call to succeed. Use the classifications and weak-example results to decide
-whether another cycle is worth it: one that removes false positives or adds missed positives without failing a strong
-example. If it is and analyses remain, repeat the generation cycles and this project review.
+   Review config: <returned weak-signal-review-config path>
+   ```
+
+   Require every finding to be classified and its final `edict_next_validate_cluster_examples` call to succeed.
+2. Then launch a fresh worker:
+
+   ```text
+   Load the edict-next-inspection-code-review skill.
+
+   Cluster id: <clusterId>
+   Review output path: <privateScratchDirectory>/inspection-code-review-<n>.json
+   ```
+
+   Both reviews add weak examples and report them.
+3. Save the analyzed candidate again unchanged with `edict_next_save_candidate_inspection`: its validation measures it
+   against the examples this round added. If one of them fails, is not a known limitation, and analyses remain, start
+   another generation cycle (section 4) against it, then another evidence round.
 
 Otherwise, and always once `remainingProjectAnalyses` is 0 or the call fails because the limit was reached, stop
 generating: `Generated` requires the stored candidate to be exactly the last analyzed one. If a later cycle saved another
 candidate, save `<privateScratchDirectory>/analyzed-candidate.kts` back unchanged with
-`edict_next_save_candidate_inspection`. Finalise `Generated` with the decision and the remaining weak failures.
+`edict_next_save_candidate_inspection`. Append the decision and the remaining weak failures to history, call
+`edict_next_record_evaluation(token, clusterId)` as the last step before finalising, then finalise `Generated`.
 
 ## 6. Other statuses
 

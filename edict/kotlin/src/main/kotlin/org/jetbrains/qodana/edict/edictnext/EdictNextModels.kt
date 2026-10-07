@@ -347,6 +347,35 @@ internal data class EdictNextInspectionResultsResponse(
   val weakSignalReviewConfigPath: String,
   /** At 0 the analyzed candidate is final: it can still be marked Generated, but not analyzed again once changed. */
   val remainingProjectAnalyses: Int,
+  /** True when the project findings equal those of this cluster's previous analysis, which were already reviewed. */
+  @EncodeDefault(EncodeDefault.Mode.ALWAYS)
+  val findingsUnchanged: Boolean = false,
+)
+
+/**
+ * `clusters/<id>/evaluation.json`: the final score of one inspection on one example set, written only by
+ * `edict_next_record_evaluation`. Positive examples count as tp when satisfied and fn otherwise; negative examples the
+ * inspection reports count as fp. Finalising Generated requires one matching the published inspection and examples.
+ */
+@Serializable
+internal data class EdictNextEvaluation(
+  val inspectionHash: String,
+  val exampleSetDigest: String,
+  val action: EdictNextInspectionAction,
+  val tp: Int,
+  val fp: Int,
+  val fn: Int,
+  val precision: Double,
+  val recall: Double,
+  val strongExampleIds: List<String>,
+  val satisfiedByExampleId: Map<String, Boolean>,
+)
+
+@Serializable
+internal data class EdictNextRecordEvaluationResponse(
+  val success: Boolean,
+  val summary: String,
+  val evaluation: EdictNextEvaluation? = null,
 )
 
 @Serializable

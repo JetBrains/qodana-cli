@@ -25,6 +25,7 @@ internal data class EdictNextClusterDirectory(val root: Path) {
   val signalsDirectory: Path = root.resolve("signals")
   val examplesDirectory: Path = root.resolve("synthetic-examples")
   val historyPath: Path = root.resolve("history.md")
+  val evaluationPath: Path = root.resolve("evaluation.json")
 
   fun signalPath(signalId: String): Path = signalsDirectory.resolve("$signalId.json")
 }
