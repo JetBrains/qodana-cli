@@ -1,74 +1,84 @@
 ---
 name: edict-next-weak-signal-review
-description: Managed subagent that reviews sampled findings and materializes confident positive and negative examples.
+description: Managed subagent that classifies sampled project findings and writes weak examples only for new evidence.
 ---
 
 # Edict Next Weak Signal Review
 
 Run only as a delegated managed subagent. Follow [the manager protocol](../edict_manager/references/protocol.md) before
-domain work and use it for every child delegation and task transition.
+domain work and use its assigned task lifecycle.
 
-Load only this skill. When an example is needed, launch a fresh worker that loads `edict-next-code-example`; do not load
-that skill yourself.
+Load only this skill. Do not launch workers: write every example yourself.
 
 # Inputs and boundaries
 
-The prompt supplies one absolute `Review config` path. Read it first, then its cluster directory, candidate inspection,
-sampled findings, inspected project, and private scratch directory.
+The prompt supplies one absolute `Review config` path. Read it first, then the sampled findings, the cluster's Signals
+and examples, and the inspected project as needed. Its private scratch directory is yours to write.
 
-Reducers persist examples with `edict_next_save_code_example`; use the same call with your own task token for a repair
-and `edict_next_delete_code_example` for an incomplete unassigned example. Review artifacts and transient Signals are
-private scratch and may be written normally.
+Take the rule contract from `inspectionDescription` in the findings file. Do not read the candidate's implementation:
+classify against what the rule says, not against what the detector does.
 
-## 1. Establish the rule contract
+Do not edit the candidate, cluster metadata, Signals or the inspected project. Managed state is read-only to filesystem
+tools: persist examples only with `edict_next_save_code_example(token, clusterId, exampleId, metadataJson, sourceCode)`
+using your own task token, and remove only your own incomplete examples with `edict_next_delete_code_example`. Derive
+`clusterId` from the cluster directory name. Never assign an example to a Signal.
 
-Read the candidate's id, name, `htmlDescription`, and implementation together with every cluster Signal and referenced
-example. Treat `htmlDescription` as the semantic rule contract and the implementation as the detector that emits findings.
-Use Signals and examples only as supporting evidence for the contract and its boundaries.
+## 1. Evidence inventory
+
+List every existing example: its id, label, whether a STRONG Signal references it (strong) or not (weak), and the
+construct its range targets. Read `metadata.json` and the target lines; open the whole example only when needed.
 
 ## 2. Classify every finding
 
-Read every finding. For Git-backed revisions, resolve the Git root from the inspected project and retrieve the exact
-repository-relative file with read-only Git. If the object is unavailable, read it with `edict_file_at_ref` anchored at
-the range, with radius 20, then 5 and 0, until every requested range line is visible. Do not classify the finding before that. Inspect enough surrounding code and resolved
-PSI to classify it:
+For each finding retrieve the exact file at its revision with read-only Git (`git show <revision>:<path>` from the
+inspected project's Git root; if the object is unavailable, read it with `edict_file_at_ref` anchored at the range, with
+radius 20, then 5 and 0, until every requested range line is visible) and read enough surrounding code and resolved PSI:
 
-- `TP`: the reported code violates the rule stated by `htmlDescription`.
-- `FP`: the reported code does not violate that rule and must not be reported.
-- `UNCERTAIN`: required evidence is genuinely unavailable or ambiguous.
+- `TP`: the reported code violates the rule as `inspectionDescription` states it.
+- `FP`: it does not and must not be reported.
+- `UNCERTAIN`: the needed evidence is genuinely unavailable or ambiguous.
 
-Record unresolved findings and continue; every finding must receive one classification.
+Strong evidence always wins. If a finding has the same shape as a strong example but the contract would give it the
+opposite label, the description is wrong, not the strong example: classify it by the strong example, record a
+`contract mismatch` with both ids, and create no example for it.
 
-## 3. Materialize confident classifications
+## 3. Keep only new evidence
 
-For each TP or FP, create one transient Signal in private scratch with the cluster Signal JSON shape:
+Two cases have the same shape when the reported construct is the same kind of PSI element, the parts the rule examines
+have the same syntactic and resolved form, and the reason for the label is the same. Names, literals, formatting and
+unrelated surrounding code do not make a shape new.
 
-- use the finding's exact `fileRevision` and a unique id;
-- explain the semantic reason;
-- use `Generated` source, `WEAK` strength, and `POSITIVE` for TP or `NEGATIVE` for FP;
-- start with `syntheticExampleId: null`.
+Group classified findings by shape and compare each group with the inventory:
 
-Launch a fresh native `spawn_agent` worker without inherited context for each transient Signal:
+- `FP`: one NEGATIVE example per distinct reason it is not a violation.
+- `TP`: one POSITIVE example only when no existing example of either strength covers the shape.
+- `UNCERTAIN`, and every case an existing example already covers: no example; record `covered-by: <exampleId>`.
 
-```text
-Load the edict-next-code-example skill.
+Many findings of one shape are one piece of evidence. Expect to create few examples, often none.
 
-Signal path: <transient Signal path>
-Cluster id: <clusterId>
-```
+## 4. Write the examples
 
-Associate the validated example id with the finding and keep the transient Signal in private scratch. Do not create an
-example for UNCERTAIN.
+Reduce the finding's exact source to one self-contained file, following the reduction rules of
+[the code-example skill](../edict-next-code-example/SKILL.md) (its Signal and assignment steps do not apply):
 
-For each FP, also write `<private-scratch>/weak-signal-review/false-positive-<index>.md` with its path, revision, range,
-exact relevant snippet, classification reason, and example id.
+- keep the diagnostic target and every declaration, type, call and control-flow relation that decides its label;
+  replace external dependencies with minimal same-file stubs only when they preserve those semantics;
+- a POSITIVE contains exactly one reportable problem and one expected range over the same semantic target;
+- a NEGATIVE contains one focused allowed case and no expected ranges, and must not be trivial by removing the construct;
+- never copy the complete production file; derive ranges from the finished reduced source.
 
-After every code-example worker finishes, call `edict_next_validate_cluster_examples(clusterId)`. Repair
-every reported example issue and repeat validation until it succeeds. Delete incomplete unreferenced example directories;
-when repairing referenced evidence, preserve its Signal's exact semantics rather than adapting it to the candidate.
+Use a fresh descriptive kebab-case id. Metadata is `id`, `fileName`, `label` and `expectedRanges`. Call
+`edict_next_validate_code_example(clusterId, exampleId)` and repair structural issues; after three failed repairs delete
+the example and report it as not created. Finish with a successful `edict_next_validate_cluster_examples(clusterId)`.
 
-## 4. Report
+## 5. Report
 
-Write the configured output path with the sampled-findings path, reviewed and total counts, and one indexed entry per
-finding. Every TP and FP includes its example id; every UNCERTAIN includes its reason and no example id; every FP includes
-its report path. Return the output path.
+Write the configured output path with:
+
+- the sampled-findings path, and reviewed and total counts;
+- one entry per finding: index, path and line, classification, one-line reason, and either the created example id or
+  `covered-by: <exampleId>` (UNCERTAIN gives its reason instead);
+- every contract mismatch with its strong example id;
+- the list of created example ids with label and the shape each covers.
+
+Return the output path.

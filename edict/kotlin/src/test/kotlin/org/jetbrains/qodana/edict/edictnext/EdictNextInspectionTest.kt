@@ -78,7 +78,82 @@ class EdictNextInspectionTest {
     assertEquals("abcdef", result.projectRevision)
   }
 
-  private fun cluster(): EdictNextStoredCluster {
+  @Test
+  fun `evaluation scores strong and weak examples once strong examples pass`() = runBlocking {
+    val cluster = cluster(
+      example("weak-missed", EdictNextSignalLabel.POSITIVE, listOf(EdictNextLineRange(1, 1))),
+      example("weak-reported", EdictNextSignalLabel.NEGATIVE, null),
+    )
+    val client = FakeInspectionClient(
+      examplesResult = batchResult(
+        InspectionKtsFileResult("positive", "Positive.kt", listOf(problem(2))),
+        InspectionKtsFileResult("negative", "Negative.kt"),
+        InspectionKtsFileResult("weak-missed", "WeakMissed.kt"),
+        InspectionKtsFileResult("weak-reported", "WeakReported.kt", listOf(problem(1))),
+      ),
+    )
+    val (validation, evaluation) = EdictNextInspection({ client }, { client.projectResult })
+      .evaluate(cluster, "inspection", EdictNextInspectionAction.GENERATE)
+
+    assertTrue(validation.overallSuccess)
+    checkNotNull(evaluation)
+    assertEquals(listOf(1, 1, 1), listOf(evaluation.tp, evaluation.fp, evaluation.fn))
+    assertEquals(0.5, evaluation.precision)
+    assertEquals(0.5, evaluation.recall)
+    assertEquals(listOf("negative", "positive"), evaluation.strongExampleIds)
+    assertEquals(
+      mapOf("negative" to true, "positive" to true, "weak-missed" to false, "weak-reported" to false),
+      evaluation.satisfiedByExampleId,
+    )
+    assertEquals(sha256Hex("inspection"), evaluation.inspectionHash)
+    assertEquals(exampleSetDigest(cluster), evaluation.exampleSetDigest)
+  }
+
+  @Test
+  fun `evaluation is not produced while a strong example fails`() = runBlocking {
+    val client = FakeInspectionClient(
+      examplesResult = batchResult(
+        InspectionKtsFileResult("positive", "Positive.kt"),
+        InspectionKtsFileResult("negative", "Negative.kt"),
+      ),
+    )
+    val (validation, evaluation) = EdictNextInspection({ client }, { client.projectResult })
+      .evaluate(cluster(), "inspection", EdictNextInspectionAction.GENERATE)
+
+    assertFalse(validation.overallSuccess)
+    assertEquals(null, evaluation)
+  }
+
+  @Test
+  fun `findings compare by reported locations only`() {
+    fun findings(vararg lines: Int, message: String = "problem") = EdictNextInspectionFindings(
+      clusterId = "sample-rule",
+      candidateDigest = message,
+      projectRevision = "abcdef",
+      inspectionDescription = message,
+      language = EdictNextLanguage.Java,
+      findings = lines.map {
+        EdictNextProjectFinding(EdictNextFileRevision("src/Sample.java", "abcdef", listOf(EdictNextLineRange(it, it))), message)
+      },
+    )
+
+    assertEquals(findings(3, 7).reviewKey(), findings(3, 7, message = "reworded").reviewKey())
+    assertTrue(findings(3, 7).reviewKey() != findings(3, 8).reviewKey())
+    assertTrue(findings(3, 7).reviewKey() != findings(3).reviewKey())
+  }
+
+  @Test
+  fun `example set digest changes with examples and strong assignments`() {
+    val base = cluster()
+    val weak = cluster(example("weak", EdictNextSignalLabel.NEGATIVE, null))
+    val reassigned = base.copy(signals = base.signals.map { it.copy(syntheticExampleId = null) })
+
+    assertEquals(exampleSetDigest(base), exampleSetDigest(cluster()))
+    assertTrue(exampleSetDigest(base) != exampleSetDigest(weak))
+    assertTrue(exampleSetDigest(base) != exampleSetDigest(reassigned))
+  }
+
+  private fun cluster(vararg weakExamples: EdictNextStoredExample): EdictNextStoredCluster {
     val clusterDirectory = EdictNextClusterDirectory(directory.resolve("sample-rule"))
     val positive = example("positive", EdictNextSignalLabel.POSITIVE, listOf(EdictNextLineRange(2, 2)))
     val negative = example("negative", EdictNextSignalLabel.NEGATIVE, null)
@@ -86,7 +161,7 @@ class EdictNextInspectionTest {
       directory = clusterDirectory,
       manifest = EdictNextClusterManifest("sample-rule", EdictNextLanguage.Kotlin, EdictNextClusterStatus.Pending),
       signals = listOf(signal("positive-signal", EdictNextSignalLabel.POSITIVE, "positive"), signal("negative-signal", EdictNextSignalLabel.NEGATIVE, "negative")),
-      examples = listOf(positive, negative),
+      examples = listOf(positive, negative) + weakExamples,
       candidateInspectionPath = directory.resolve("sample-rule.candidate.kts"),
     )
   }
