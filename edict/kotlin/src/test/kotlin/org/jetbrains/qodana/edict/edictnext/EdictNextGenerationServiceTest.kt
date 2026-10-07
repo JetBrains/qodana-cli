@@ -246,6 +246,20 @@ class EdictNextGenerationServiceTest {
     generation.getNewInspectionResults("busy-wait", directory.resolve("scratch").toString())
   }
 
+  @Test
+  fun `saving a structurally invalid example stores nothing`() = withGeneration { generation, repository ->
+    val outsideFile = EdictNextCodeExampleMetadata("extra", "Extra.java", EdictNextSignalLabel.POSITIVE, listOf(EdictNextLineRange(2, 2)))
+    val error = assertFailsWith<IllegalArgumentException> {
+      generation.saveCodeExample("busy-wait", "extra", EdictNextJson.encodeToString(outsideFile), "class Extra {}")
+    }
+    assertContains(error.message.orEmpty(), "Invalid target range 2-2")
+    val withoutRange = outsideFile.copy(expectedRanges = null)
+    assertFailsWith<IllegalArgumentException> {
+      generation.saveCodeExample("busy-wait", "extra", EdictNextJson.encodeToString(withoutRange), "class Extra {}")
+    }
+    assertFalse(repository.loadCluster("busy-wait").examples.any { it.metadata.id == "extra" })
+  }
+
   private fun withGeneration(test: suspend (EdictNextGenerationService, EdictRepository) -> Unit) = runBlocking {
     val (generation, inspection) = generation("empty-catch" to (EdictNextSignalStrength.STRONG to EdictNextSignalLabel.POSITIVE))
     try {

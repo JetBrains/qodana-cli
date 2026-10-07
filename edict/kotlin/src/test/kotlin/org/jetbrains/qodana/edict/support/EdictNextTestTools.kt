@@ -1,6 +1,7 @@
 package org.jetbrains.qodana.edict.support
 
 import kotlinx.serialization.json.JsonObject
+import org.jetbrains.qodana.edict.ci.ReviewClient
 import org.jetbrains.qodana.edict.common.EdictConfiguration
 import org.jetbrains.qodana.edict.common.EdictLayout
 import org.jetbrains.qodana.edict.edictnext.EdictManagementService
@@ -10,6 +11,7 @@ import org.jetbrains.qodana.edict.edictnext.EdictNextMcpToolset
 import org.jetbrains.qodana.edict.edictnext.EdictNextRepositoryState
 import org.jetbrains.qodana.edict.edictnext.EdictRepository
 import org.jetbrains.qodana.edict.edictnext.EdictRepositoryDirectory
+import org.jetbrains.qodana.edict.edictnext.EdictSourceFileService
 import org.jetbrains.qodana.edict.edictnext.IntellijMcpServerService
 import org.jetbrains.qodana.edict.promotion.PromotionService
 import java.io.PrintWriter
@@ -43,6 +45,7 @@ internal fun edictNextToolset(
     layout, inspectionServer, management,
     EdictNextDistributionService(repository, layout.neighboursResponsePath),
     EdictNextGenerationService(repository, inspectionServer, layout.root),
+    EdictSourceFileService(layout.root, ReviewClient(), configuration.ci?.reviewRepository),
     configuration,
     promotion ?: PromotionService({ repository }, configuration),
   )

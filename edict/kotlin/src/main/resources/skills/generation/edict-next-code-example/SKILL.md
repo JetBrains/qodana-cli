@@ -27,8 +27,8 @@ inspection, or review feedback. Neither the reduction nor its label may depend o
 Read the identified Signal. If it already has `syntheticExampleId`, return that ID. Otherwise resolve the Git root from
 the inspected project and retrieve the exact `fileRevision` with read-only Git
 (`git show <revision>:<repository-relative-path>`), treating those complete historical bytes as the authority. If the
-Git object is unavailable and Qodana exposes `file_at_ref`, use it with radius 20, then 5 and 0 until every requested
-expected-range line is visible. Do not create or change an example before that. Identify the construct covered by
+Git object is unavailable, read it with `edict_file_at_ref` anchored at the expected range, with radius 20, then 5 and
+0, until every requested expected-range line is visible. Do not create or change an example before that. Identify the construct covered by
 `fileRevision.expectedRanges`, its diagnostic role, and the properties and relationships that make the Signal positive
 or negative. The Signal description explains why the evidence was selected, but does not justify adding absent facts.
 

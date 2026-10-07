@@ -392,7 +392,7 @@ private fun changedPaths(before: EdictNextRepositoryState, after: EdictNextRepos
     previous == null || current == null || !previous.contentEquals(current)
   }
 
-private suspend fun validateCodeExample(
+internal suspend fun validateCodeExample(
   directory: EdictNextExampleDirectory,
   metadata: EdictNextCodeExampleMetadata,
   sourcePath: Path,
@@ -405,6 +405,8 @@ private suspend fun validateCodeExample(
   if (sourcePath.normalize() != directory.sourcePath(metadata.fileName)) {
     issues += "Code example source is outside its test project"
   }
+  // TODO: report PSI parse errors, as the in-IDE Edict did with PsiErrorElement; needs a PSI file parsing tool in the
+  //  IntelliJ MCP that returns error descriptions and lines (generate_psi_tree returns only an outline).
   val lineCount = sourceCode.lineSequence().count().coerceAtLeast(1)
   metadata.expectedRanges.orEmpty().forEach { range ->
     if (range.start < 1 || range.end < range.start || range.end > lineCount) {

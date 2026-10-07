@@ -109,5 +109,11 @@ class EdictRepositoryMutationTest {
     repository.saveCodeExample(clusterId, unused.id, unused, "class Unused {}")
     repository.deleteCodeExample(clusterId, unused.id)
     assertFalse(cluster.resolve("synthetic-examples/${unused.id}").exists())
+
+    // Deleting an assigned example unassigns its Signal and keeps every other Signal field.
+    repository.deleteCodeExample(clusterId, metadata.id)
+    assertFalse(cluster.resolve("synthetic-examples/${metadata.id}").exists())
+    val unassignedSignal = EdictNextJson.parseToJsonElement(signalPath.readText()).jsonObject
+    assertEquals(assignedSignal - "syntheticExampleId", unassignedSignal)
   }
 }

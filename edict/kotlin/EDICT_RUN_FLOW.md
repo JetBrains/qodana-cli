@@ -135,7 +135,7 @@ edict_manager
   - leaving a cluster Pending or Invalid is not a stage failure; the coordinator never repairs worker output
   - each `$edict-next-cluster-generation` worker:
     1. launches one `$edict-next-code-example-overseer`
-       - read every Signal at its exact revision (`git show`, then `file_at_ref` with radius 20/5/0)
+       - read every Signal at its exact revision (`git show`, then `edict_file_at_ref` with radius 20/5/0)
        - infer the common rule only to guide reductions; never persist it
        - keep faithful examples; for each missing or incorrect one, launch an `$edict-next-code-example` worker that
          reduces the Signal to one self-contained file, calls `edict_next_validate_code_example`, then sets
