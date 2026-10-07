@@ -12,6 +12,7 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/JetBrains/qodana-cli/internal/platform/qdyaml"
 	"github.com/spf13/cobra"
 )
 
@@ -30,7 +31,7 @@ func newEdictManagedMCPStartCommand() *cobra.Command {
 }
 
 func newEdictManagedMCPStartCommandWithRunner(run func(*cobra.Command, ...string) error) *cobra.Command {
-	var stateDir, ideDist, ideLinter string
+	var configFile, stateDir, ideDist, ideLinter string
 	var ideProperties []string
 	var ideWaitTimeout time.Duration
 	command := &cobra.Command{
@@ -70,6 +71,7 @@ redacted. Agent scratch lives in ./log/agent-work/<run-id>/scratch.`,
 			if executable, err := os.Executable(); err == nil {
 				args = append(args, "--qodana-executable", executable)
 			}
+			args = append(args, edictQodanaYamlArguments(".", configFile)...)
 			for _, option := range []struct{ name, value string }{
 				{"state-dir", stateDir}, {"ide-dist", ideDist}, {"ide-linter", ideLinter},
 			} {
@@ -90,6 +92,7 @@ redacted. Agent scratch lives in ./log/agent-work/<run-id>/scratch.`,
 			return err
 		},
 	}
+	command.Flags().StringVar(&configFile, "config", "", "Qodana configuration file (defaults to qodana.yml or qodana.yaml in the current directory)")
 	command.Flags().StringVar(&stateDir, "state-dir", "", "Persisted Edict state directory (defaults to ./.edict)")
 	command.Flags().StringVar(&ideDist, "ide-dist", "", "Local IDE or Qodana linter distribution for inspections (overrides QODANA_DIST)")
 	command.Flags().StringVar(&ideLinter, "ide-linter", "", "Qodana linter to download and run natively for inspections, e.g. qodana-jvm (overrides QODANA_DIST)")
@@ -97,4 +100,12 @@ redacted. Agent scratch lives in ./log/agent-work/<run-id>/scratch.`,
 	command.Flags().DurationVar(&ideWaitTimeout, "ide-wait-timeout", 0, "Maximum time to wait for the IDE MCP server to become ready (default 1m30s)")
 	command.MarkFlagsMutuallyExclusive("ide-dist", "ide-linter")
 	return command
+}
+
+func edictQodanaYamlArguments(projectDir, configFile string) []string {
+	fullPath := qdyaml.GetLocalNotEffectiveQodanaYamlFullPath(projectDir, configFile)
+	if fullPath == "" {
+		return nil
+	}
+	return []string{"--qodana-yaml", fullPath}
 }
