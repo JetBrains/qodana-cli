@@ -15,14 +15,10 @@ The prompt identifies either a persisted Signal with `Cluster id` and `Signal id
 `projectDirectory` to resolve all managed state and the inspected IntelliJ project. Do not request or repeat the state
 path in a prompt.
 
-You may change only files below the identified cluster's examples directory and `syntheticExampleId` in the identified
-Signal. Do not change any other Signal field or any other file.
-
-Managed state is read-only to filesystem tools. For a persisted cluster Signal, use
-`edict_next_save_code_example(token, clusterId, exampleId, metadataJson, sourceCode)` to create or repair the example,
-then use `edict_next_assign_code_example(token, clusterId, signalId, exampleId)` after validation. Supply your own task
-token. Never use `apply_patch` or shell writes for the managed examples directory or persisted Signal. A transient
-Signal in private scratch remains an ordinary scratch file and is updated there after the stored example validates.
+For a persisted cluster Signal, use `edict_next_save_code_example(token, clusterId, exampleId, metadataJson,
+sourceCode)` to create or repair the example, then `edict_next_assign_code_example(token, clusterId, signalId,
+exampleId)` after validation, with your own task token. A transient Signal in private scratch remains an ordinary
+scratch file and is updated there after the stored example validates.
 
 Your operation is `reduce(Signal, exact source revision) -> one self-contained code example`. A Signal is exact local
 evidence; its example is a semantic program slice, not a rule hypothesis. Do not read cluster metadata, a candidate

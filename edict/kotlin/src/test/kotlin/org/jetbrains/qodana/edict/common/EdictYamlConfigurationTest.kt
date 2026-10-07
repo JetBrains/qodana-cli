@@ -6,6 +6,7 @@ import org.junit.jupiter.api.io.TempDir
 import java.nio.file.Path
 import kotlin.io.path.writeText
 import kotlin.test.Test
+import kotlin.test.assertContains
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
 import kotlin.test.assertNull
@@ -79,6 +80,18 @@ class EdictYamlConfigurationTest {
       EdictYamlConfiguration.load(yaml("edict:\n  statePath: '   '"))
     }
     assertTrue(invalidStatePath.message.orEmpty().contains("edict.statePath is required"))
+  }
+
+  @Test
+  fun `project analyses per cluster default to three and are configurable`() {
+    assertEquals(3, EdictYamlConfiguration.load(null).generation.maxProjectAnalyses)
+    assertEquals(3, EdictYamlConfiguration.load(yaml("edict:\n  generation: {}\n")).generation.maxProjectAnalyses)
+    val configured = EdictYamlConfiguration.load(yaml("edict:\n  generation:\n    maxProjectAnalyses: 5\n"))
+    assertEquals(5, configured.generation.maxProjectAnalyses)
+    val invalid = assertFailsWith<IllegalArgumentException> {
+      EdictYamlConfiguration.load(yaml("edict:\n  generation:\n    maxProjectAnalyses: 0\n"))
+    }
+    assertContains(invalid.message.orEmpty(), "edict.generation.maxProjectAnalyses must be at least 1")
   }
 
   @Test

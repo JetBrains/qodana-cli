@@ -21,6 +21,7 @@ internal data class EdictConfiguration(
   val statePath: String = DEFAULT_EDICT_STATE_PATH,
   val ci: EdictCIConfiguration? = null,
   val promotion: PromotionConfiguration? = null,
+  val generation: GenerationConfiguration = GenerationConfiguration(),
 ) {
   init {
     require(mcpPort in 1..65535) { "edict.mcpPort must be between 1 and 65535: $mcpPort" }
@@ -36,6 +37,15 @@ internal data class EdictConfiguration(
 
 internal const val DEFAULT_EDICT_MCP_PORT = 27182
 internal const val DEFAULT_EDICT_STATE_PATH = ".edict"
+
+/** [maxProjectAnalyses] caps the expensive project analysis, and the reviews that follow it, per cluster in one run. */
+internal data class GenerationConfiguration(val maxProjectAnalyses: Int = DEFAULT_MAX_PROJECT_ANALYSES) {
+  init {
+    require(maxProjectAnalyses >= 1) { "edict.generation.maxProjectAnalyses must be at least 1: $maxProjectAnalyses" }
+  }
+}
+
+internal const val DEFAULT_MAX_PROJECT_ANALYSES = 3
 
 internal data class EdictCIConfiguration(val url: String) {
   private val path = webUrl(url, "CI repository").pathSegments()
@@ -107,13 +117,21 @@ internal class EdictYaml {
   var statePath: String? = null
   var ci: EdictCIYaml? = null
   var promotion: PromotionYaml? = null
+  var generation: GenerationYaml? = null
 
   fun toConfiguration() = EdictConfiguration(
     mcpPort = mcpPort ?: DEFAULT_EDICT_MCP_PORT,
     statePath = statePath?.required("edict.statePath") ?: DEFAULT_EDICT_STATE_PATH,
     ci = ci?.toConfiguration(),
     promotion = promotion?.toConfiguration(),
+    generation = generation?.toConfiguration() ?: GenerationConfiguration(),
   )
+}
+
+internal class GenerationYaml {
+  var maxProjectAnalyses: Int? = null
+
+  fun toConfiguration() = GenerationConfiguration(maxProjectAnalyses ?: DEFAULT_MAX_PROJECT_ANALYSES)
 }
 
 internal class EdictCIYaml {

@@ -283,6 +283,9 @@ internal data class EdictNextGenerationTarget(
 @Serializable
 internal data class EdictNextGenerationClustersResponse(
   val clusters: List<EdictNextGenerationTarget>,
+  /** Pending clusters left out of generation: validation requires a strong positive example, so a strong positive Signal. */
+  @EncodeDefault(EncodeDefault.Mode.ALWAYS)
+  val clustersWithoutStrongPositiveSignal: List<String> = emptyList(),
   @EncodeDefault(EncodeDefault.Mode.ALWAYS)
   val maxConcurrentClusterTasks: Int = EDICT_NEXT_MAX_CONCURRENT_CLUSTER_TASKS,
   val summary: String,
@@ -334,16 +337,18 @@ internal data class EdictNextInspectionValidationResponse(
   val reportedNegativeExampleIds: List<String> = emptyList(),
   val uncoveredPositiveExampleIds: List<String> = emptyList(),
   @EncodeDefault(EncodeDefault.Mode.ALWAYS)
-  val nextAction: EdictNextNextAction = if (overallSuccess) EdictNextNextAction.ANALYZE_PROJECT else EdictNextNextAction.REPAIR_INSPECTION,
+  val nextAction: EdictNextNextAction = if (overallSuccess) EdictNextNextAction.REVIEW_INSPECTION else EdictNextNextAction.REPAIR_INSPECTION,
 )
 
 @Serializable
 internal data class EdictNextInspectionResultsResponse(
   val weakSignalReviewConfigPath: String,
+  /** At 0 the analyzed candidate is final: it can still be marked Generated, but not analyzed again once changed. */
+  val remainingProjectAnalyses: Int,
 )
 
 @Serializable
-internal data class EdictNextMarkGeneratedResponse(
+internal data class EdictNextFinaliseClusterResponse(
   val success: Boolean,
   val summary: String,
   val issues: List<EdictNextValidationIssue> = emptyList(),
@@ -385,7 +390,7 @@ internal enum class EdictNextNextAction {
   REPAIR_CODE_EXAMPLE,
   CONTINUE_CLUSTER_GENERATION,
   REPAIR_INSPECTION,
-  ANALYZE_PROJECT,
+  REVIEW_INSPECTION,
   REPAIR_REPOSITORY,
   PUBLISH,
 }

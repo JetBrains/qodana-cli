@@ -10,6 +10,8 @@ $CODEX_HOME/config.toml
 edict:
   mcpPort: 27182   # the default
   statePath: .edict # the default; relative paths are resolved from the project
+  generation:
+    maxProjectAnalyses: 3   # the default: project analyses per cluster in one run
 
 # setup, in the inspected project (a future `qodana edict setup` replaces these two calls)
 cd <project>
@@ -127,6 +129,8 @@ edict_manager
   - take the state repository and project from `edict_context`, create a generation scratch root below its `scratchDirectory`,
     and call `edict_next_get_generation_clusters`
     - freeze Pending clusters and their Signal memberships; `maxConcurrentClusterTasks` is 20
+    - Pending clusters without a strong positive Signal are not frozen: the response lists them as
+      `clustersWithoutStrongPositiveSignal`, they stay Pending without a worker, and the coordinator reports them
   - run one `$edict-next-cluster-generation` worker per cluster, keeping up to that many active
   - leaving a cluster Pending or Invalid is not a stage failure; the coordinator never repairs worker output
   - each `$edict-next-cluster-generation` worker:
@@ -138,57 +142,54 @@ edict_manager
          `syntheticExampleId`
        - positive examples contain exactly one reportable occurrence and one range; negatives contain one allowed
          occurrence and no ranges
-       - keep compatible unreferenced weak examples, delete incompatible ones, and repeat
+       - delete an unreferenced weak example that contradicts a strong Signal, keep every other one, and repeat
          `edict_next_validate_cluster_examples` until it succeeds
-       - an exact semantic contradiction makes the cluster Discontinued; incomplete reconciliation leaves it Pending
+       - an exact semantic contradiction finalises the cluster Discontinued; incomplete reconciliation finalises Pending
     2. calls `edict_next_get_inspection_action(clusterId)`, starting the 120-minute cluster deadline
-       - `CONFLICT`: Signals with the same file revision have different labels; record their ids and set Invalid
-       - `SKIP`: the predecessor passes every strong example; review advisory weak failures, then call
-         `edict_next_mark_generated` or leave Pending
+       - `CONFLICT`: Signals with the same file revision have different labels; finalise Invalid with their ids
+       - `SKIP`: the predecessor passes every strong example; finalise Generated, whatever weak examples fail
        - `GENERATE`: derive the broadest coherent rule from all Signals and reconciled examples
-    3. on `GENERATE`, writes one complete `inspections/<clusterId>.candidate.kts`
+    3. on `GENERATE`, drafts the candidate in scratch; every state change goes through Edict MCP
        - read `generate_inspection_kts_api` / `generate_inspection_kts_examples` (and `generate_psi_tree` when needed)
-         from the inspection server first
+         from the inspection server first; `compile_inspection_kts` and single-file `run_inspection_kts` serve quick
+         checks. Examples and whole-project runs are not forwarded to agents
        - exactly one `localInspection`; the KTS owns the kebab-case id, name, and `htmlDescription`
-       - if the KTS id differs from the cluster id, rename the directory, `cluster.json` id, and candidate together;
-         keep `predecessorId`. The action and deadline follow frozen Signal membership
+       - the KTS id is the cluster id; a better id renames the cluster with `edict_next_rename_cluster`, which also
+         renames the candidate and its `id = "<clusterId>"` and keeps validation and analysis progress; not after `SKIP`
        - current-file PSI traversal and direct resolution only; no project enumeration, non-local `LocalSearchScope`,
          or data-flow analysis
-    4. repeats a generation cycle until review acceptance
-       1. `edict_next_validate_cluster_examples`; on failure, repair the corpus and restart the cycle
-       2. `edict_next_validate_inspection`: compile, check metadata, and measure examples
-          - accepted only with at least one strong positive and every strong example correct; weak results are
-            advisory
-          - every example added by the previous review must pass before another review
-       3. launch a fresh `$edict-next-inspection-code-review` (output `<scratch>/inspection-code-review.json`)
-          - check coverage/precision, observable predicate, scope/cost, implementation, and diagnostic agreement
-          - every reproducible FP/FN becomes a new weak example (`EXAMPLES_ADDED`), not a finding
-          - `REJECT` for a BLOCKER or MAJOR non-behavioral finding; `ACCEPT` only for the exact candidate hash with no
-            added examples
+    4. repeats a cheap generation cycle as often as needed, regenerating as soon as a step fails
+       1. `edict_next_save_candidate_inspection`: always stores `inspections/<clusterId>.candidate.kts` as the latest
+          attempt, then compiles it, checks metadata, and measures examples
+          - passes only with at least one strong positive and every strong example correct; only a passing saved
+            candidate may start project analysis
+          - weak examples target recall: satisfy those that still fit the rule; they never block
+       2. launch a fresh shallow `$edict-next-inspection-code-review` (output `<scratch>/inspection-code-review.json`)
+          - reads only the candidate: no cluster, Signals, examples, project source, or tools
+          - checks hard-coded evidence, scope/cost, implementation practices, and metadata, not correctness
+          - `REJECT` for any BLOCKER
     5. calls `edict_next_get_new_inspection_results(clusterId, privateScratchDirectory)` [up to 40m] and launches
        `$edict-next-weak-signal-review`
+       - each cluster gets `edict.generation.maxProjectAnalyses` (3) calls per run; the response reports
+         `remainingProjectAnalyses`, and a call beyond the limit fails
        - classify every sampled finding as TP/FP/UNCERTAIN against `htmlDescription`
        - materialize every TP and FP through an `$edict-next-code-example` worker from a transient WEAK Signal in
          scratch; write `false-positive-<n>.md` per FP
        - end with a successful `edict_next_validate_cluster_examples`
-       - the worker repairs FPs/missed positives while keeping strong examples, and repeats review, validation, and
-         analysis until the remaining weak failures are an explicit decision
-    6. records operational evidence in `history.md` and reaches a state
-       - accepted/reused: `edict_next_mark_generated(clusterId)`; it requires a frozen, unchanged target, non-empty
-         history, project analysis of the exact candidate bytes, and a passing validation
-       - Discontinued: exact Signal contradiction only; remove candidate/current/predecessor inspections and clear
-         `predecessorId`
-       - Invalid: concrete infrastructure/tooling failure or broken input; keep valid partial artifacts
-       - unfinished or deadline exceeded: leave a structurally valid Pending cluster
-    - the server allows at most 3 code-review and 3 weak-review tasks per cluster worker, counted across restarts
+       - the worker repeats cycles and analysis while one is worth it and analyses remain; then it submits the last
+         analyzed candidate unchanged
+    6. records operational evidence with `edict_next_append_cluster_history` and ends with one successful
+       `edict_next_finalise_cluster(token, clusterId, status, reason)`; it appends the reason to history and applies the
+       status only when its contract holds, otherwise it rejects and changes nothing; the worker may then keep repairing
+       within its remaining analyses and deadline, and finalises Pending when nothing more can be fixed
+       - Generated (accepted/reused): requires a frozen, unchanged target, project analysis of the exact candidate bytes
+         (or `SKIP`), and a passing validation; publishes the inspection, removes candidate and predecessor
+       - Discontinued (exact Signal contradiction only): requires an example per Signal; removes candidate and
+         predecessor inspection
+       - Invalid (concrete infrastructure/tooling failure or broken input): keeps candidate and predecessor
+       - Pending (unfinished): records the reason only; after a deadline response the worker makes no MCP call
 - `edict_next_validate_generation` [read-only]: only `$edict-next-run` calls it. It validates repository state and frozen
   change boundaries, matches renamed targets by Signal membership, and revalidates every Generated inspection
-
-## `$edict-next-run` (optional wrapper)
-
-When the manager plans it as the single step, it runs distribution [120m], `edict_next_validate_distribution`,
-generation [660m], and `edict_next_validate_generation` [40m], stops unless the result is `PUBLISH`, and reports Invalid
-clusters from `history.md`. It no longer commits or pushes, matching `edict_manager`.
 
 ## Repository state
 
@@ -204,32 +205,18 @@ The plan and task lifecycle live under the state root, logs under `<cwd>/log/pro
 `edict-tasks.log` (one line per task start/finish), `edict-mcp.log`, `edict-mcp-system.log` (redacted arguments and
 responses), and `tasks/<task-id>.log`.
 
-## Differences from the Ultimate `edict-next-run` flow
-
-- A managed plan with per-task capability tokens replaces one root skill; `edict_manager` is the entry point.
-- `$edict-next-prepare` is gone. Distribution calls `edict_next_prepare_pipeline` itself, and no branch or worktree is
-  created.
-- Signal extraction (commits; PRs once wired) is part of the same pipeline.
-- Acceptance requires every strong example to pass; the 85% threshold remains only in tool descriptions.
-- Review iterations are capped server-side (3 per review skill per cluster worker).
-
 ## Known inconsistencies
 
 - With the tested plan (distribution -> generation directly), `edict_next_validate_distribution` and
   `edict_next_validate_generation` are not called by anyone.
-- Skills name Edict tools `mcp__qodana__edict_next_*`, but `qodana edict install` registers the server as `edict-mcp`.
 - `edict-git-history-signal-analysis` and `edict-retrospective-signal-analysis` still publish through
   `edict_state_write`, which the server no longer registers; the tool is `edict_publish_signal`.
-- `cluster.json` status changes to Invalid or Discontinued and cluster renames have no MCP tool, so with read-only state
-  those transitions leave the cluster Pending.
 - `EdictNextTimeouts.session` (900m) is defined but not enforced; the benchmark job timeout is 300 minutes.
-- `scripts/edict-benchmark/README.md` says five review iterations (the server allows three), and `README.md` says 13
-  managed skills (the registry has 12).
+- `README.md` says 13 managed skills (the registry has 12).
 
 ## TODO (outside the setup/run separation)
 
-- MCP server names: `edict` for Edict, `qodana` for IDE tools; fix the `mcp__qodana__…` names in skills.
-- MCP tools for marking a cluster Invalid or Discontinued and for renaming it (`edict-next-cluster-generation`).
+- MCP server names: `edict` for Edict, `qodana` for IDE tools.
 - `edict-next-run`: remove, or keep.
 - Upstream breakages: test sources do not compile (`LiveGitHistorySignalAnalysisTest.kt`, `IntegrationWorkspace.kt`
   import, `InspectionKtsMcpClientTest.kt`), and server startup requires the project to be a Git repository (`Main.kt`).

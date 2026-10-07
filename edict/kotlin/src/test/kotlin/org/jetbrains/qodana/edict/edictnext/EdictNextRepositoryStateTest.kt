@@ -123,7 +123,7 @@ class EdictNextRepositoryStateTest {
   }
 
   @Test
-  fun `review budget survives restart and is independent for each cluster and review stage`() {
+  fun `generation reviews are not limited per cluster worker`() {
     val steps = listOf(Step("edict-next-generation", "Generate"))
     var generationId = ""
     var clusterId = ""
@@ -139,7 +139,7 @@ class EdictNextRepositoryStateTest {
       clusterId = cluster.id
       val worker = state.launch(generation.token, cluster.id, cluster.skill)
       for (skill in reviewSkills) repeat(4) { attempt ->
-        val title = if (attempt == 0) "Initial review" else "Review after repair $attempt/3"
+        val title = if (attempt == 0) "Initial review" else "Review after repair $attempt"
         val review = state.addTask(worker.token, skill, title)
         val reviewer = state.launch(worker.token, review.id, skill)
         state.finishTask(reviewer.token, "completed", "Reviewed")
@@ -149,18 +149,10 @@ class EdictNextRepositoryStateTest {
       val resumed = state.createPlan("Generate", steps)
       val generation = state.launch(resumed.token, generationId, "edict-next-generation")
       val worker = state.launch(generation.token, clusterId, "edict-next-cluster-generation")
-      for (skill in reviewSkills) {
-        assertTrue(
-          assertFails { state.addTask(worker.token, skill, "Fifth review attempt") }
-            .message.orEmpty().contains("Three review repair iterations"),
-        )
-      }
-      repeat(4) { state.addTask(worker.token, "edict-next-code-example-overseer", "Example $it") }
-      val second = state.addTask(generation.token, "edict-next-cluster-generation", "Second cluster")
-      val sibling = state.launch(generation.token, second.id, second.skill)
-      for (skill in reviewSkills) state.addTask(sibling.token, skill, "First review")
+      // Project analysis bounds the expensive stage; the cheap shallow review repeats as often as a cluster needs it.
+      for (skill in reviewSkills) state.addTask(worker.token, skill, "Fifth review attempt")
       assertEquals(
-        4,
+        5,
         state.plan()!!.tasks.count { it.parentId == clusterId && it.skill == "edict-next-inspection-code-review" },
       )
     }

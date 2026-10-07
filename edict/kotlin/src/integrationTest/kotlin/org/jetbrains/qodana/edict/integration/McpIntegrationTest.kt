@@ -9,6 +9,7 @@ import kotlinx.io.asSource
 import kotlinx.io.buffered
 import kotlin.test.assertContains
 import kotlin.test.assertEquals
+import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 import kotlinx.serialization.json.*
 import org.jetbrains.qodana.edict.common.array
@@ -58,8 +59,9 @@ class McpIntegrationTest : IntegrationTest() {
             assertContains(tools, "generate_inspection_kts_api")
             assertContains(tools, "run_inspection_kts")
             assertContains(tools, "compile_inspection_kts")
-            assertContains(tools, "run_inspection_kts_examples")
-            assertContains(tools, "run_inspection_kts_project")
+            // Only the managed tools run examples and the whole project.
+            assertFalse("run_inspection_kts_examples" in tools)
+            assertFalse("run_inspection_kts_project" in tools)
             assertContains(tools, "edict_promote_clusters")
             assertContains(tools, "ecict-check-promotion")
             assertContains(tools, "edict_promotion_decide_reviews")
