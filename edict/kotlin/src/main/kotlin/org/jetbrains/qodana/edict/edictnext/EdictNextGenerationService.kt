@@ -2,6 +2,7 @@ package org.jetbrains.qodana.edict.edictnext
 
 import kotlinx.coroutines.withTimeout
 import kotlinx.coroutines.withTimeoutOrNull
+import org.jetbrains.qodana.edict.common.DEFAULT_MAX_PROJECT_ANALYSES
 import org.jetbrains.qodana.edict.common.GitRepository
 import java.nio.file.Path
 import java.util.concurrent.ConcurrentHashMap
@@ -15,6 +16,7 @@ internal class EdictNextGenerationService(
   private val repository: EdictRepository,
   inspectionServer: IntellijMcpServerService,
   private val projectRoot: Path,
+  private val maxProjectAnalyses: Int = DEFAULT_MAX_PROJECT_ANALYSES,
 ) {
   private val inspection = EdictNextInspection(inspectionServer)
 
@@ -23,22 +25,33 @@ internal class EdictNextGenerationService(
   private val clusterGenerationStarts = ConcurrentHashMap<Set<String>, TimeMark>()
   private val generationTargetSignalIdsByClusterId = ConcurrentHashMap<String, Set<String>>()
   private val inspectionActions = ConcurrentHashMap<Set<String>, EdictNextInspectionAction>()
+  private val validatedCandidateDigests = ConcurrentHashMap<Set<String>, String>()
   private val analyzedCandidateDigests = ConcurrentHashMap<Set<String>, String>()
+  private val projectAnalysisCounts = ConcurrentHashMap<Set<String>, Int>()
   private var generationSnapshot: EdictNextGenerationSnapshot? = null
 
   suspend fun getGenerationClusters(): EdictNextGenerationClustersResponse {
     val state = repository.loadState()
     requireNoIssues(validateRepositoryState(repository, state))
-    val targets = state.clusters.filter { it.manifest.status == EdictNextClusterStatus.Pending }
+    // No candidate can pass without strong positive evidence, so such a cluster waits Pending for a later run.
+    val (targets, withoutStrongPositive) = state.clusters
+      .filter { it.manifest.status == EdictNextClusterStatus.Pending }
+      .partition { cluster ->
+        cluster.signals.any { it.strength == EdictNextSignalStrength.STRONG && it.label == EdictNextSignalLabel.POSITIVE }
+      }
     generationSnapshot = EdictNextGenerationSnapshot(state, targets.associate { it.id to it.signalIds })
     clusterGenerationStarts.clear()
     generationTargetSignalIdsByClusterId.clear()
     generationTargetSignalIdsByClusterId.putAll(targets.associate { it.id to it.signalIds })
     inspectionActions.clear()
+    validatedCandidateDigests.clear()
     analyzedCandidateDigests.clear()
+    projectAnalysisCounts.clear()
     return EdictNextGenerationClustersResponse(
       clusters = targets.map { EdictNextGenerationTarget(it.id, it.directory.root.toString()) },
-      summary = "${targets.size} generation target(s) are ready",
+      clustersWithoutStrongPositiveSignal = withoutStrongPositive.map { it.id },
+      summary = "${targets.size} generation target(s) are ready; ${withoutStrongPositive.size} Pending cluster(s) have no " +
+        "strong positive Signal and stay Pending without a generation attempt",
     )
   }
 
@@ -75,10 +88,41 @@ internal class EdictNextGenerationService(
       EdictNextMutationResponse(true, "Deleted unassigned code example '$exampleId' from cluster '$clusterId'")
     }
 
-  suspend fun saveCandidateInspection(clusterId: String, code: String): EdictNextMutationResponse =
+  /**
+   * Stores the candidate whatever its quality, then compiles it and runs every example, so the stored candidate is always
+   * the latest attempt. Only a candidate that passes every strong example may go on to project analysis.
+   */
+  suspend fun saveCandidateInspection(clusterId: String, code: String): EdictNextInspectionValidationResponse =
     withinGenerationTarget(clusterId) { repository ->
       repository.saveCandidateInspection(clusterId, code)
-      EdictNextMutationResponse(true, "Stored candidate inspection for cluster '$clusterId'")
+      val cluster = repository.loadCluster(clusterId)
+      inspection.validate(cluster, code).also { validation ->
+        if (validation.overallSuccess) validatedCandidateDigests[cluster.signalIds] = sha256Hex(code)
+        else validatedCandidateDigests.remove(cluster.signalIds)
+      }
+    }
+
+  /**
+   * Renames a frozen Pending target and the `id = "<clusterId>"` literal of its candidate. Only the id changes, so a
+   * validated or analyzed candidate stays so under the new id.
+   */
+  suspend fun renameCluster(clusterId: String, newClusterId: String): EdictNextMutationResponse =
+    withinGenerationTarget(clusterId) { repository ->
+      if (newClusterId == clusterId) {
+        return@withinGenerationTarget EdictNextMutationResponse(true, "Cluster '$clusterId' already has this id")
+      }
+      val cluster = repository.loadCluster(clusterId)
+      val code = cluster.candidateInspectionPath.takeIf(Path::isRegularFile)?.readText()
+      val renamedCode = code?.replace(Regex("(\\bid\\s*=\\s*)\"${Regex.escape(clusterId)}\""), "$1\"$newClusterId\"")
+      repository.renameCluster(cluster, newClusterId, renamedCode)
+      generationTargetSignalIdsByClusterId[newClusterId] = cluster.signalIds
+      generationTargetSignalIdsByClusterId.remove(clusterId)
+      if (code != null && renamedCode != null) {
+        for (digests in listOf(validatedCandidateDigests, analyzedCandidateDigests)) {
+          digests.replace(cluster.signalIds, sha256Hex(code), sha256Hex(renamedCode))
+        }
+      }
+      EdictNextMutationResponse(true, "Renamed cluster '$clusterId' to '$newClusterId'")
     }
 
   suspend fun appendHistory(clusterId: String, entry: String): EdictNextMutationResponse =
@@ -122,21 +166,33 @@ internal class EdictNextGenerationService(
     }
   }
 
-  suspend fun validateInspection(clusterId: String): EdictNextInspectionValidationResponse {
-    val cluster = repository.loadCluster(clusterId)
-    return withinClusterGenerationDeadline(clusterId, cluster.signalIds) {
-      inspection.validate(cluster, cluster.candidateInspectionPath.readText())
-    }
-  }
-
+  /**
+   * Starts the expensive stage of a generation cycle: project analysis, then weak-signal review. It takes only the
+   * validated latest candidate. Each cluster gets [maxProjectAnalyses] of them per run, counted from the call, so the
+   * stage stays bounded however often the cheap generation, example and shallow review steps before it repeat.
+   *
+   * TODO: change the weak-signal review into the full review of a generation cycle: weak examples, the project findings,
+   *  and the correctness review that the shallow code review no longer does.
+   * TODO: move the limit to the task MCP once that review is one subagent. Count its tasks per cluster rather than per
+   *  parent task, and allow this call only with that task's token; then the limit also bounds the review itself.
+   */
   suspend fun getNewInspectionResults(
     clusterId: String,
     privateScratchDirectory: String,
   ): EdictNextInspectionResultsResponse {
     val cluster = repository.loadCluster(clusterId)
     return withinClusterGenerationDeadline(clusterId, cluster.signalIds) {
+      val code = cluster.candidateInspectionPath.takeIf(Path::isRegularFile)?.readText()
+      check(code != null && validatedCandidateDigests[cluster.signalIds] == sha256Hex(code)) {
+        "The current candidate of cluster '$clusterId' has not passed validation; " +
+        "save a candidate that passes every strong example first"
+      }
+      val analysis = checkNotNull(projectAnalysisCounts.merge(cluster.signalIds, 1, Int::plus))
+      check(analysis <= maxProjectAnalyses) {
+        "Cluster '$clusterId' used all $maxProjectAnalyses project analyses of this run; stop generating. " +
+        "Finalise the last analyzed candidate Generated if it passes every strong example, otherwise finalise Pending"
+      }
       withTimeout(EdictNextTimeouts.analysis) {
-        val code = cluster.candidateInspectionPath.readText()
         val findings = inspection.analyzeProject(cluster, code, projectRevision)
         val response = EdictNextReviewArtifacts.create(
           findings = findings,
@@ -144,6 +200,7 @@ internal class EdictNextGenerationService(
           candidateInspection = cluster.candidateInspectionPath,
           inspectedProject = projectRoot,
           privateScratchDirectory = Path.of(privateScratchDirectory).toAbsolutePath().normalize(),
+          remainingProjectAnalyses = maxProjectAnalyses - analysis,
         )
         analyzedCandidateDigests[cluster.signalIds] = findings.candidateDigest
         response
@@ -151,69 +208,30 @@ internal class EdictNextGenerationService(
     }
   }
 
-  suspend fun markGenerated(clusterId: String): EdictNextMarkGeneratedResponse {
-    val generationSnapshot = checkNotNull(generationSnapshot) { "Call edict_next_get_generation_clusters first" }
+  /**
+   * Ends the processing of a frozen target in [status], recording [reason] in its history. Each status is reached only
+   * with its contract satisfied, so [validateGeneration] accepts the result; otherwise the cluster stays as it was.
+   */
+  suspend fun finaliseCluster(
+    clusterId: String,
+    status: EdictNextClusterStatus,
+    reason: String,
+  ): EdictNextFinaliseClusterResponse = withinGenerationTarget(clusterId) { repository ->
+    require(reason.isNotBlank()) { "Reason must not be blank" }
     val cluster = repository.loadCluster(clusterId)
-    return withinClusterGenerationDeadline(clusterId, cluster.signalIds) {
-      val frozenSignalIds = generationSnapshot.targetSignalIds.values.singleOrNull { it == cluster.signalIds }
-                            ?: return@withinClusterGenerationDeadline rejectedGeneratedTransition(
-                              "Cluster '$clusterId' is not an unchanged frozen generation target"
-                            )
-      val history = cluster.historyPath.takeIf(Path::isRegularFile)?.readText().orEmpty()
-      val issues = validateGeneratedTransition(repository, cluster, history)
-      if (issues.isNotEmpty()) {
-        return@withinClusterGenerationDeadline rejectedGeneratedTransition(
-          "Found ${issues.size} issue(s) preventing the Generated transition",
-          issues,
-        )
-      }
-      val action = inspectionActions[frozenSignalIds]
-                   ?: return@withinClusterGenerationDeadline rejectedGeneratedTransition(
-                     "Call edict_next_get_inspection_action for cluster '$clusterId' first"
-                   )
-      val selectedInspection = when (action) {
-        EdictNextInspectionAction.CONFLICT -> return@withinClusterGenerationDeadline rejectedGeneratedTransition(
-          "A cluster with conflicting Signals cannot be marked Generated"
-        )
-        EdictNextInspectionAction.SKIP -> {
-          val predecessorId = cluster.manifest.predecessorId
-                              ?: return@withinClusterGenerationDeadline rejectedGeneratedTransition(
-                                "The reusable predecessor inspection is missing"
-                              )
-          if (generationSnapshot.isPredecessorShared(frozenSignalIds, predecessorId)) {
-            return@withinClusterGenerationDeadline rejectedGeneratedTransition(
-              "Predecessor inspection '$predecessorId' belongs to another frozen generation target"
-            )
-          }
-          repository.paths.inspectionPath(predecessorId)
-        }
-        EdictNextInspectionAction.GENERATE -> cluster.candidateInspectionPath
-      }
-      if (!selectedInspection.isRegularFile()) {
-        return@withinClusterGenerationDeadline rejectedGeneratedTransition(
-          "Selected inspection does not exist: $selectedInspection"
-        )
-      }
+    require(cluster.manifest.status == EdictNextClusterStatus.Pending) { "Cluster '$clusterId' is not Pending" }
+    val history = cluster.historyPath.takeIf(Path::isRegularFile)?.readText().orEmpty() + reason
+    if (status == EdictNextClusterStatus.Generated) return@withinGenerationTarget finaliseGenerated(cluster, history, reason)
 
-      val code = selectedInspection.readText()
-      if (action == EdictNextInspectionAction.GENERATE && analyzedCandidateDigests[frozenSignalIds] != sha256Hex(code)) {
-        return@withinClusterGenerationDeadline rejectedGeneratedTransition(
-          "The current candidate has not completed project analysis"
-        )
-      }
-      val validation = inspection.validate(cluster, code)
-      if (!validation.overallSuccess) {
-        return@withinClusterGenerationDeadline rejectedGeneratedTransition(
-          "Selected inspection does not meet the acceptance criterion: ${validation.summary}"
-        )
-      }
-
-      repository.markGenerated(cluster, selectedInspection)
-      EdictNextMarkGeneratedResponse(
-        success = true,
-        summary = "Cluster '$clusterId' is Generated",
-      )
+    val issues = validateCluster(cluster.copy(manifest = cluster.manifest.copy(status = status)), history)
+    if (issues.isNotEmpty()) return@withinGenerationTarget rejectedFinalisation(status, "Found ${issues.size} issue(s)", issues)
+    repository.appendHistory(clusterId, "$status: $reason")
+    when (status) {
+      EdictNextClusterStatus.Discontinued -> repository.markDiscontinued(cluster)
+      EdictNextClusterStatus.Invalid -> repository.markInvalid(cluster)
+      EdictNextClusterStatus.Pending -> Unit
     }
+    EdictNextFinaliseClusterResponse(success = true, summary = "Cluster '$clusterId' is $status")
   }
 
   suspend fun validateGeneration(): EdictNextValidationResponse {
@@ -248,6 +266,41 @@ internal class EdictNextGenerationService(
       summary = if (issues.isEmpty()) "Generation changes are valid" else "Found ${issues.size} generation issue(s)",
       issues = issues,
     )
+  }
+
+  private suspend fun finaliseGenerated(
+    cluster: EdictNextStoredCluster,
+    history: String,
+    reason: String,
+  ): EdictNextFinaliseClusterResponse {
+    val generated = EdictNextClusterStatus.Generated
+    val issues = validateGeneratedTransition(repository, cluster, history)
+    if (issues.isNotEmpty()) return rejectedFinalisation(generated, "Found ${issues.size} issue(s)", issues)
+    val action = inspectionActions[cluster.signalIds]
+                 ?: return rejectedFinalisation(generated, "Call edict_next_get_inspection_action for cluster '${cluster.id}' first")
+    val selectedInspection = when (action) {
+      EdictNextInspectionAction.CONFLICT -> return rejectedFinalisation(generated, "A cluster with conflicting Signals cannot be Generated")
+      EdictNextInspectionAction.SKIP -> {
+        val predecessorId = cluster.manifest.predecessorId
+                            ?: return rejectedFinalisation(generated, "The reusable predecessor inspection is missing")
+        repository.paths.inspectionPath(predecessorId)
+      }
+      EdictNextInspectionAction.GENERATE -> cluster.candidateInspectionPath
+    }
+    if (!selectedInspection.isRegularFile()) {
+      return rejectedFinalisation(generated, "Selected inspection does not exist: $selectedInspection")
+    }
+    val code = selectedInspection.readText()
+    if (action == EdictNextInspectionAction.GENERATE && analyzedCandidateDigests[cluster.signalIds] != sha256Hex(code)) {
+      return rejectedFinalisation(generated, "The current candidate has not completed project analysis")
+    }
+    val validation = inspection.validate(cluster, code)
+    if (!validation.overallSuccess) {
+      return rejectedFinalisation(generated, "Selected inspection does not meet the acceptance criterion: ${validation.summary}")
+    }
+    repository.appendHistory(cluster.id, "$generated: $reason")
+    repository.markGenerated(cluster, selectedInspection)
+    return EdictNextFinaliseClusterResponse(success = true, summary = "Cluster '${cluster.id}' is $generated")
   }
 
   // TODO - think about better comparison than exact fileRevision equality. Deferred for now
@@ -305,10 +358,12 @@ internal class EdictNextGenerationService(
     check(issues.isEmpty()) { issues.joinToString("\n") { "${it.path}: ${it.message}" } }
   }
 
-  private fun rejectedGeneratedTransition(
+  private fun rejectedFinalisation(
+    status: EdictNextClusterStatus,
     summary: String,
     issues: List<EdictNextValidationIssue> = emptyList(),
-  ): EdictNextMarkGeneratedResponse = EdictNextMarkGeneratedResponse(false, summary, issues)
+  ): EdictNextFinaliseClusterResponse =
+    EdictNextFinaliseClusterResponse(false, "Cluster cannot be $status and stays as it was: $summary", issues)
 
   private suspend fun <T : Any> withinClusterGenerationDeadline(
     clusterId: String,
@@ -344,8 +399,4 @@ internal data class EdictNextGenerationSnapshot(
   val targetSignalIds: Map<String, Set<String>>,
 ) {
   val signalIds: Set<String> = targetSignalIds.values.flatten().toSet()
-
-  fun isPredecessorShared(signalIds: Set<String>, predecessorId: String): Boolean = state.clusters.any { cluster ->
-    cluster.signalIds != signalIds && cluster.signalIds in targetSignalIds.values && cluster.manifest.predecessorId == predecessorId
-  }
 }

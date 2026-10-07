@@ -12,6 +12,7 @@ internal object EdictNextReviewArtifacts {
     candidateInspection: Path,
     inspectedProject: Path,
     privateScratchDirectory: Path,
+    remainingProjectAnalyses: Int,
   ): EdictNextInspectionResultsResponse {
     privateScratchDirectory.createDirectories()
     val attemptDirectory = privateScratchDirectory.resolve("attempt-${UUID.randomUUID()}").also { it.createDirectories() }
@@ -46,6 +47,7 @@ internal object EdictNextReviewArtifacts {
     )
     return EdictNextInspectionResultsResponse(
       weakSignalReviewConfigPath = weakConfigPath.absoluteString(),
+      remainingProjectAnalyses = remainingProjectAnalyses,
     )
   }
 

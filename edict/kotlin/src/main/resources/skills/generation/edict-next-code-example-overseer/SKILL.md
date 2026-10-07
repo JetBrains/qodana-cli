@@ -12,14 +12,11 @@ Load only this skill. The prompt supplies `Cluster id`. Call `edict_context`, th
 `stateDirectory` and use its `projectDirectory` as the inspected IntelliJ project. Do not request or repeat the state
 path in a prompt.
 
-You may change only `syntheticExampleId` in Signals below the resolved cluster directory and create, update, repair, or
-delete files below its `synthetic-examples/` directory. Do not read cluster history, `cluster.json`, candidate or
-predecessor inspections, review artifacts, or other clusters.
+Reconcile from the Signals alone: do not read cluster history, `cluster.json`, candidate or predecessor inspections,
+review artifacts, or other clusters.
 
-Managed state is read-only to filesystem tools. Delegated reducers persist and assign examples with
-`edict_next_save_code_example` and `edict_next_assign_code_example`. For an overseer repair, use those same calls with
-your own task token; delete only an unassigned example with `edict_next_delete_code_example`. Never use `apply_patch`
-or shell writes below the cluster directory.
+Change examples only through `edict_next_save_code_example`, `edict_next_assign_code_example`, and
+`edict_next_delete_code_example`, with your own task token for an overseer repair.
 
 ## Reconcile the evidence
 
@@ -51,9 +48,10 @@ After reconciling the complete corpus, call `edict_next_validate_cluster_example
 reported structural issue and repeat until it succeeds. Independently review every created or changed example against
 its exact source revision because structural validation cannot establish source fidelity.
 
-Examples not referenced by a cluster Signal are weak review evidence. When a coherent rule was inferred, keep one only
-when its code and label are compatible with that rule; otherwise delete its complete example directory. Do not assign
-weak examples to strong Signals.
+Examples not referenced by a `STRONG` cluster Signal are weak. Make sure no weak example contradicts a strong Signal:
+delete the complete directory of an example no cluster Signal references when its label contradicts a strong Signal on
+the same semantic case, for example a weak negative containing the construct a strong positive reports. Keep every
+other weak example as it is. Do not assign weak examples to strong Signals.
 
-Return a concise summary listing every Signal and its example id, created or changed examples, deleted weak examples,
-and any evidence that prevented complete reconciliation.
+Return a concise summary listing every Signal and its example id, created or changed examples, deleted weak examples
+with the strong Signal each contradicted, and any evidence that prevented complete reconciliation.

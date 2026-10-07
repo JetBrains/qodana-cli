@@ -138,11 +138,6 @@ internal class EdictNextRepositoryState(
     require(skill != PR_ANALYSIS_SKILL || plan.tasks.none { it.skill == PR_ANALYSIS_SKILL }) {
       "A plan can contain only one PR-analysis coordinator"
     }
-    if (capability.skill == "edict-next-cluster-generation" && skill in GENERATION_REVIEWS) {
-      require(plan.tasks.count { it.parentId == capability.taskId && it.skill == skill } <= MAX_REPAIR_ITERATIONS) {
-        "Three review repair iterations exhausted for $skill; finish this cluster with its validated outcome and remaining findings"
-      }
-    }
     require(plan.tasks.size < 10_000) { "Task limit reached" }
     return Task(parentId = capability.taskId, skill = skill, title = title).also { task ->
       save(plan.copy(tasks = plan.tasks + task))
@@ -555,15 +550,10 @@ internal class EdictNextRepositoryState(
 
   companion object {
     private const val MAX_PLAN_BYTES = 8 * 1024 * 1024
-    private const val MAX_REPAIR_ITERATIONS = 3
     private const val PR_ANALYSIS_SKILL = "edict-pr-signal-analysis"
     private const val LOCK_FILE = ".edict-mcp.lock"
     private const val CURRENT_PLAN_FILE = ".edict-mcp-current"
     private const val PR_ANALYSIS_COVERAGE_FILE = "extraction/pr-analysis-coverage.json"
-    private val GENERATION_REVIEWS = setOf(
-      "edict-next-inspection-code-review",
-      "edict-next-weak-signal-review",
-    )
     private val COMMIT_SIGNAL_PUBLISHERS = setOf(
       "edict-batch-signal-analysis",
       "edict-git-history-signal-analysis",

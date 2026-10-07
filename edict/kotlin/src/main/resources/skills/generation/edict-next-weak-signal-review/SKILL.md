@@ -16,14 +16,9 @@ that skill yourself.
 The prompt supplies one absolute `Review config` path. Read it first, then its cluster directory, candidate inspection,
 sampled findings, inspected project, and private scratch directory.
 
-Do not directly edit the candidate, cluster metadata, cluster Signals, or inspected project. You may repair or delete
-files below the cluster's `synthetic-examples/` directory. Code-example workers may change only their transient Signal
-and the cluster's examples directory.
-
-Managed state is read-only to filesystem tools. Reducers persist examples with `edict_next_save_code_example`; use the
-same call with your own task token for a repair and `edict_next_delete_code_example` for an incomplete unassigned
-example. Never use `apply_patch` or shell writes below the cluster directory. Review artifacts and transient Signals
-are private scratch and may be written normally.
+Reducers persist examples with `edict_next_save_code_example`; use the same call with your own task token for a repair
+and `edict_next_delete_code_example` for an incomplete unassigned example. Review artifacts and transient Signals are
+private scratch and may be written normally.
 
 ## 1. Establish the rule contract
 

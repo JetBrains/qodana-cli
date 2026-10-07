@@ -78,8 +78,6 @@ class EdictNextMcpToolsetTest {
       assertTrue("edict_get_pr_analysis_coverage" in server.tools)
       assertTrue("edict_record_pr_analysis_coverage" in server.tools)
       assertFalse("edict_state_write" in server.tools)
-      // Every IntelliJ Inspection KTS tool is forwarded, so agents need only this server.
-      assertEquals(INSPECTION_KTS_UPSTREAM_TOOL_NAMES, server.tools.keys.intersect(INSPECTION_KTS_UPSTREAM_TOOL_NAMES))
       val delegateSchema = server.tools.getValue("edict_delegate").tool.inputSchema
       assertEquals(setOf("token", "taskId", "prompt"), checkNotNull(delegateSchema.properties).keys)
       assertEquals(listOf("token", "taskId", "prompt"), delegateSchema.required)
@@ -156,12 +154,13 @@ class EdictNextMcpToolsetTest {
           "edict_context", "edict_next_prepare_pipeline", "edict_next_next_signal", "edict_next_get_distribution_context",
           "edict_next_add_signal_to_cluster", "edict_next_validate_distribution", "edict_next_get_generation_clusters",
           "edict_next_validate_code_example", "edict_next_validate_cluster_examples", "edict_next_get_inspection_action",
-          "edict_next_validate_inspection", "edict_next_get_new_inspection_results", "edict_next_mark_generated",
+          "edict_next_get_new_inspection_results", "edict_next_finalise_cluster",
           "edict_next_validate_generation", "edict_next_save_code_example", "edict_next_assign_code_example",
-          "edict_next_delete_code_example", "edict_next_save_candidate_inspection", "edict_next_append_cluster_history",
+          "edict_next_delete_code_example", "edict_next_save_candidate_inspection", "edict_next_rename_cluster",
+          "edict_next_append_cluster_history",
           "edict_promote_clusters", "ecict-check-promotion", "edict_promotion_decide_reviews",
           "generate_psi_tree", "generate_inspection_kts_examples", "generate_inspection_kts_api",
-          "compile_inspection_kts", "run_inspection_kts", "run_inspection_kts_examples", "run_inspection_kts_project",
+          "compile_inspection_kts", "run_inspection_kts",
         ),
         server.tools.keys,
       )
@@ -189,7 +188,7 @@ class EdictNextMcpToolsetTest {
           {"jsonrpc":"2.0","method":"notifications/initialized"}
           {"jsonrpc":"2.0","id":2,"method":"tools/call","params":{"name":"generate_psi_tree","arguments":{"code":"class A","language":"Kotlin"}}}
           {"jsonrpc":"2.0","id":3,"method":"tools/call","params":{"name":"generate_inspection_kts_api","arguments":{"language":"Cobol"}}}
-          {"jsonrpc":"2.0","id":4,"method":"tools/call","params":{"name":"run_inspection_kts_project","arguments":{"inspectionKtsCode":"listOf()"}}}
+          {"jsonrpc":"2.0","id":4,"method":"tools/call","params":{"name":"run_inspection_kts","arguments":{"inspectionKtsCode":"listOf()","contextPath":"A.kt"}}}
           {"jsonrpc":"2.0","id":5,"method":"ping"}
         """.trimIndent() + "\n"
         val transport = StdioServerTransport(
@@ -212,7 +211,7 @@ class EdictNextMcpToolsetTest {
           listOf(
             "generate_psi_tree" to buildJsonObject { put("code", "class A"); put("language", "Kotlin") },
             "generate_inspection_kts_api" to buildJsonObject { put("language", "Cobol") },
-            "run_inspection_kts_project" to buildJsonObject { put("inspectionKtsCode", "listOf()") },
+            "run_inspection_kts" to buildJsonObject { put("inspectionKtsCode", "listOf()"); put("contextPath", "A.kt") },
           ),
           client.calls,
         )

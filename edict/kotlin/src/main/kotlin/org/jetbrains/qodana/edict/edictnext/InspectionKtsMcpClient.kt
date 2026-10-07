@@ -250,13 +250,10 @@ internal class HttpInspectionKtsClient(
   }
 }
 
-internal val INSPECTION_KTS_AGENT_TOOL_NAMES = setOf(
+internal val INSPECTION_KTS_UPSTREAM_TOOL_NAMES = setOf(
   "generate_psi_tree",
   "generate_inspection_kts_api",
   "generate_inspection_kts_examples",
-)
-
-internal val INSPECTION_KTS_UPSTREAM_TOOL_NAMES = INSPECTION_KTS_AGENT_TOOL_NAMES + setOf(
   "run_inspection_kts",
   "compile_inspection_kts",
   "run_inspection_kts_examples",
