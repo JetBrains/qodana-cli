@@ -14,7 +14,7 @@ class SkillsTest {
     @Test
     fun `install managed skills with matching registry and metadata`() {
         val installed = Skills.install(directory)
-        assertEquals(14, installed.size)
+        assertEquals(17, installed.size)
         assertEquals(Registry.policies.map { it.name }.sorted(), installed)
         Registry.policies.forEach { policy ->
             val name = policy.name
@@ -46,6 +46,12 @@ class SkillsTest {
         )
         assertTrue("edict-git-history-signal-analysis" in Registry["edict_manager"].delegates)
         assertTrue("edict-retrospective-signal-analysis" in Registry["edict_manager"].delegates)
+        assertTrue("edict-promote" in Registry["edict_manager"].delegates)
+        assertTrue("ecict-check-promotion" in Registry["edict_manager"].delegates)
+        assertEquals(listOf("edict-promotion-decision"), Registry["ecict-check-promotion"].delegates)
+        listOf("edict-promote", "ecict-check-promotion", "edict-promotion-decision").forEach {
+            assertFalse("worktree" in Skills.read(it).lowercase())
+        }
         assertEquals(
             listOf("edict-signal-analysis"),
             Registry["edict-git-history-signal-analysis"].delegates,

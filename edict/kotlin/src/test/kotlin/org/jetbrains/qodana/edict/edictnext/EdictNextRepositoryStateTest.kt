@@ -4,7 +4,8 @@ import org.jetbrains.qodana.edict.edictnext.EdictNextRepositoryState.Delegation
 import org.jetbrains.qodana.edict.edictnext.EdictNextRepositoryState.Step
 import org.jetbrains.qodana.edict.extraction.reviews.PrAnalysisDateRange
 import org.jetbrains.qodana.edict.extraction.reviews.RepositoryPrAnalysisCoverage
-import org.jetbrains.qodana.edict.extraction.reviews.ReviewRepository
+import org.jetbrains.qodana.edict.ci.CiProviderId
+import org.jetbrains.qodana.edict.ci.ReviewRepository
 import org.jetbrains.qodana.edict.support.batch
 import org.jetbrains.qodana.edict.support.fixtureSignals
 import org.jetbrains.qodana.edict.support.gitFixture
@@ -46,7 +47,7 @@ class EdictNextRepositoryStateTest {
   fun `PR analysis coverage merges ranges and PR numbers and survives restart`() {
     val skill = "edict-pr-signal-analysis"
     val steps = listOf(Step(skill, "Reviews"))
-    val repository = ReviewRepository("github", "jetbrains", "qodana")
+    val repository = ReviewRepository(CiProviderId.GITHUB, "jetbrains", "qodana")
     var taskId = ""
     val expected = RepositoryPrAnalysisCoverage(
       repository,

@@ -83,14 +83,19 @@ class EdictNextMcpToolsetTest {
       val delegateSchema = server.tools.getValue("edict_delegate").tool.inputSchema
       assertEquals(setOf("token", "taskId", "prompt"), checkNotNull(delegateSchema.properties).keys)
       assertEquals(listOf("token", "taskId", "prompt"), delegateSchema.required)
-      // Coverage fields differ from the fetch selection's (prNumbers), so the schema names them for the agent.
-      val coverageSchema = checkNotNull(server.tools.getValue("edict_record_pr_analysis_coverage").tool.inputSchema.properties)
-        .getValue("coverage").jsonObject
-      assertEquals(
-        setOf("repository", "analyzedDateRanges", "analyzedPrNumbers"),
-        coverageSchema.getValue("properties").jsonObject.keys,
+      val coverageSchema = checkNotNull(
+        server.tools.getValue("edict_record_pr_analysis_coverage").tool.inputSchema.properties,
       )
-      assertEquals(JsonPrimitive(false), coverageSchema["additionalProperties"])
+      assertEquals(
+        setOf("token", "analyzedDateRanges", "analyzedPrNumbers"),
+        coverageSchema.keys,
+      )
+      val fetchSchema = server.tools.getValue("edict_fetch_pr_batch").tool.inputSchema
+      assertEquals(
+        setOf("token", "startDate", "endDate", "maxPrs", "prNumbers"),
+        checkNotNull(fetchSchema.properties).keys,
+      )
+      assertEquals(listOf("token", "maxPrs"), fetchSchema.required)
 
       val output = ByteArrayOutputStream()
       val input = """
@@ -154,11 +159,15 @@ class EdictNextMcpToolsetTest {
           "edict_next_validate_inspection", "edict_next_get_new_inspection_results", "edict_next_mark_generated",
           "edict_next_validate_generation", "edict_next_save_code_example", "edict_next_assign_code_example",
           "edict_next_delete_code_example", "edict_next_save_candidate_inspection", "edict_next_append_cluster_history",
+          "edict_promote_clusters", "ecict-check-promotion", "edict_promotion_decide_reviews",
           "generate_psi_tree", "generate_inspection_kts_examples", "generate_inspection_kts_api",
           "compile_inspection_kts", "run_inspection_kts", "run_inspection_kts_examples", "run_inspection_kts_project",
         ),
         server.tools.keys,
       )
+      val promoteSchema = server.tools.getValue("edict_promote_clusters").tool.inputSchema
+      assertEquals(setOf("token", "clusterIds"), checkNotNull(promoteSchema.properties).keys)
+      assertEquals(listOf("token"), promoteSchema.required)
       assertEquals(listOf("code", "language"), server.tools.getValue("generate_psi_tree").tool.inputSchema.required)
     }
   }

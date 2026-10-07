@@ -51,7 +51,7 @@ internal fun verifyRuntimeWorkers(sessions: Path, plan: Plan) {
 
     val workers = mutableMapOf<String, Worker>()
     val spawned = mutableSetOf<String>()
-    val skillPath = Regex("(edict_manager|edict-[a-z-]+)/SKILL\\.md")
+    val skillPath = Regex("(edict_manager|e[cd]ict-[a-z-]+)/SKILL\\.md")
     Files.walk(sessions).use { paths ->
         paths.filter { it.toString().endsWith(".jsonl") }.forEach { file ->
             var id = ""

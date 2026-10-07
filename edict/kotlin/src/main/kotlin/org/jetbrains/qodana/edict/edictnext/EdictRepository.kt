@@ -51,6 +51,10 @@ internal class EdictRepository(val paths: EdictRepositoryDirectory) {
     require(manifest.id == clusterDirectory.root.name) {
       "Cluster directory '${clusterDirectory.root.name}' does not match manifest id '${manifest.id}'"
     }
+    require(manifest.promotions.distinctBy(InspectionPromotion::id).size == manifest.promotions.size) {
+      "Cluster '${manifest.id}' contains duplicate promotion ids"
+    }
+    manifest.promotions.forEach(::validatePromotion)
     return EdictNextStoredCluster(
       directory = clusterDirectory,
       manifest = manifest,
@@ -204,6 +208,142 @@ internal class EdictRepository(val paths: EdictRepositoryDirectory) {
     cluster.manifest.predecessorId?.let(paths::inspectionPath)?.takeIf { it != finalInspection }?.deleteIfExists()
   }
 
+  @Synchronized
+  fun appendPromotion(
+    clusterId: String,
+    expectedInspectionDigest: String,
+    promotion: InspectionPromotion,
+  ): InspectionPromotion {
+    val cluster = loadCluster(clusterId)
+    require(cluster.manifest.status == EdictNextClusterStatus.Generated) { "Cluster '$clusterId' is not Generated" }
+    val inspection = paths.inspectionPath(clusterId)
+    require(inspection.isRegularFile()) { "Generated inspection for '$clusterId' does not exist" }
+    require(sha256Hex(inspection.readBytes()) == expectedInspectionDigest) {
+      "Generated inspection for '$clusterId' changed while promotion was being created"
+    }
+    validatePromotion(promotion)
+    cluster.manifest.promotions.firstOrNull { it.id == promotion.id }?.let { existing ->
+      require(existing == promotion) { "Promotion id '${promotion.id}' already identifies a different promotion" }
+      return existing
+    }
+    require(cluster.manifest.promotions.none {
+      it.inspectionDigest == promotion.inspectionDigest &&
+        it.targetBranch == promotion.targetBranch &&
+        it.targetPath == promotion.targetPath &&
+        it.pullRequest.provider == promotion.pullRequest.provider &&
+        it.pullRequest.owner == promotion.pullRequest.owner &&
+        it.pullRequest.repository == promotion.pullRequest.repository
+    }) { "This inspection version has already been promoted to the configured target" }
+    writeAtomically(
+      cluster.directory.manifestPath,
+      cluster.manifest.copy(promotions = cluster.manifest.promotions + promotion),
+      EdictNextClusterManifest.serializer(),
+    )
+    return promotion
+  }
+
+  @Synchronized
+  fun applyResolvedPromotion(
+    clusterId: String,
+    promotionId: String,
+    resolvedState: PromotionPrState,
+    updatedAt: String,
+    expectedInspectionDigest: String? = null,
+    targetStatus: EdictNextClusterStatus? = null,
+    rationale: String? = null,
+  ): InspectionPromotion {
+    val cluster = loadCluster(clusterId)
+    val index = cluster.manifest.promotions.indexOfFirst { it.id == promotionId }
+    require(index >= 0) { "Unknown promotion '$promotionId' in cluster '$clusterId'" }
+    val current = cluster.manifest.promotions[index]
+    val updated = current.copy(state = resolvedState, updatedAt = updatedAt)
+    val inspection = paths.inspectionPath(clusterId)
+    val updatedManifest: EdictNextClusterManifest
+    val historyEntry: String
+
+    when (resolvedState) {
+      PromotionPrState.ACCEPTED -> {
+        require(current.state == PromotionPrState.ON_REVIEW) {
+          "Illegal promotion transition ${current.state} -> $resolvedState"
+        }
+        require(expectedInspectionDigest == null && targetStatus == null && rationale == null) {
+          "Accepted promotions cannot change the cluster"
+        }
+        updatedManifest = cluster.manifest.copy(
+          promotions = cluster.manifest.promotions.toMutableList().also { it[index] = updated },
+        )
+        historyEntry = "Promotion `$promotionId` accepted after merged PR ${current.pullRequest.url}.\n"
+      }
+      PromotionPrState.CLOSED -> {
+        val resolvedTargetStatus = requireNotNull(targetStatus) { "Promotion decision target status is required" }
+        val resolvedRationale = requireNotNull(rationale) { "Promotion decision rationale is required" }
+        require(resolvedTargetStatus in setOf(EdictNextClusterStatus.Pending, EdictNextClusterStatus.Discontinued)) {
+          "Promotion decisions may move a cluster only to Pending or Discontinued"
+        }
+        require(resolvedRationale.isNotBlank()) { "Promotion decision rationale is required" }
+        require(cluster.manifest.status == EdictNextClusterStatus.Generated) { "Cluster '$clusterId' is not Generated" }
+        require(current.state in setOf(PromotionPrState.ON_REVIEW, PromotionPrState.CLOSED)) {
+          "Promotion '$promotionId' is not awaiting a closed-review decision"
+        }
+        require(current.inspectionDigest == expectedInspectionDigest) {
+          "Promotion does not identify the expected inspection version"
+        }
+        require(inspection.isRegularFile()) { "Generated inspection for '$clusterId' does not exist" }
+        require(sha256Hex(inspection.readBytes()) == expectedInspectionDigest) {
+          "Promotion is stale: the generated inspection has changed"
+        }
+        updatedManifest = cluster.manifest.copy(
+          status = resolvedTargetStatus,
+          predecessorId = cluster.id.takeIf { resolvedTargetStatus == EdictNextClusterStatus.Pending },
+          promotions = cluster.manifest.promotions.toMutableList().also { it[index] = updated },
+        )
+        historyEntry = "Promotion `$promotionId` moved cluster to $resolvedTargetStatus: ${resolvedRationale.trim()}\n"
+      }
+      PromotionPrState.ON_REVIEW, PromotionPrState.DECLINED -> {
+        error("Promotion resolution cannot set state to $resolvedState")
+      }
+    }
+    validatePromotion(updated)
+    val history = cluster.historyPath
+    val originalHistory = history.takeIf(Path::isRegularFile)?.readBytes()
+    val backup = if (resolvedState == PromotionPrState.CLOSED && targetStatus == EdictNextClusterStatus.Discontinued) {
+      Files.createTempFile(inspection.parent, ".edict-discontinued-", ".inspection.kts")
+    }
+    else null
+    try {
+      backup?.let { Files.move(inspection, it, StandardCopyOption.REPLACE_EXISTING) }
+      try {
+        writeAtomically(
+          cluster.directory.manifestPath,
+          updatedManifest,
+          EdictNextClusterManifest.serializer(),
+        )
+        Files.writeString(
+          history,
+          historyEntry,
+          StandardOpenOption.CREATE,
+          StandardOpenOption.APPEND,
+        )
+      }
+      catch (e: Exception) {
+        writeAtomically(cluster.directory.manifestPath, cluster.manifest, EdictNextClusterManifest.serializer())
+        if (originalHistory == null) history.deleteIfExists() else history.writeBytes(originalHistory)
+        backup?.takeIf(Path::exists)?.let { Files.move(it, inspection, StandardCopyOption.REPLACE_EXISTING) }
+        throw e
+      }
+      backup?.deleteIfExists()
+    }
+    finally {
+      if (backup?.exists() == true && !inspection.exists()) {
+        Files.move(backup, inspection, StandardCopyOption.REPLACE_EXISTING)
+      }
+      else {
+        backup?.deleteIfExists()
+      }
+    }
+    return updated
+  }
+
   fun addSignalToCluster(signalId: String, clusterId: String) {
     val signal = loadInboxSignals().singleOrNull { it.id == signalId } ?: error("Inbox Signal '$signalId' does not exist")
     val clusterDirectory = EdictNextClusterDirectory(paths.clustersDirectory.resolve(clusterId))
@@ -283,6 +423,23 @@ internal class EdictRepository(val paths: EdictRepositoryDirectory) {
   private fun <T> write(path: Path, value: T, serializer: SerializationStrategy<T>) {
     path.parent.createDirectories()
     path.writeText(EdictNextJson.encodeToString(serializer, value))
+  }
+
+  private fun <T> writeAtomically(path: Path, value: T, serializer: SerializationStrategy<T>) {
+    path.parent.createDirectories()
+    val temporary = Files.createTempFile(path.parent, ".${path.fileName}.", ".tmp")
+    try {
+      temporary.writeText(EdictNextJson.encodeToString(serializer, value))
+      try {
+        Files.move(temporary, path, StandardCopyOption.ATOMIC_MOVE, StandardCopyOption.REPLACE_EXISTING)
+      }
+      catch (_: java.nio.file.AtomicMoveNotSupportedException) {
+        Files.move(temporary, path, StandardCopyOption.REPLACE_EXISTING)
+      }
+    }
+    finally {
+      temporary.deleteIfExists()
+    }
   }
 
   private suspend fun loadRepositoryFiles(): Map<String, ByteArray> {

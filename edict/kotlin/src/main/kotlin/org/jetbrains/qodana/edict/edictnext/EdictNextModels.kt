@@ -5,9 +5,10 @@ package org.jetbrains.qodana.edict.edictnext
 import kotlinx.serialization.EncodeDefault
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
+import org.jetbrains.qodana.edict.ci.ReviewReference
+import org.jetbrains.qodana.edict.ci.ReviewRepository
 import kotlinx.serialization.json.Json
 import org.jetbrains.qodana.edict.common.sha256
-import org.jetbrains.qodana.edict.extraction.reviews.ReviewRepository
 import java.security.MessageDigest
 
 fun stableSignalId(key: String): String = "s-${sha256(key).take(10)}"
@@ -146,11 +147,32 @@ internal enum class EdictNextClusterStatus {
 }
 
 @Serializable
+internal enum class PromotionPrState {
+  ON_REVIEW,
+  ACCEPTED,
+  DECLINED,
+  CLOSED,
+}
+
+@Serializable
+internal data class InspectionPromotion(
+  val id: String,
+  val inspectionDigest: String,
+  val targetBranch: String,
+  val targetPath: String,
+  val pullRequest: ReviewReference,
+  val state: PromotionPrState,
+  val createdAt: String,
+  val updatedAt: String,
+)
+
+@Serializable
 internal data class EdictNextClusterManifest(
   val id: String,
   val language: EdictNextLanguage,
   val status: EdictNextClusterStatus,
   val predecessorId: String? = null,
+  val promotions: List<InspectionPromotion> = emptyList(),
 )
 
 // --- Neighbour retrieval ------------------------------------------------------------------------

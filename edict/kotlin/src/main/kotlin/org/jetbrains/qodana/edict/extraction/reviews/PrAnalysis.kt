@@ -2,6 +2,10 @@
 package org.jetbrains.qodana.edict.extraction.reviews
 
 import kotlinx.serialization.json.*
+import org.jetbrains.qodana.edict.ci.PullRequest
+import org.jetbrains.qodana.edict.ci.ReviewExtractionApi
+import org.jetbrains.qodana.edict.ci.ReviewMessage
+import org.jetbrains.qodana.edict.ci.ReviewSelection
 import org.jetbrains.qodana.edict.common.json
 import org.jetbrains.qodana.edict.common.sha256
 import org.jetbrains.qodana.edict.common.wireJson
@@ -14,7 +18,7 @@ import org.jetbrains.qodana.edict.signals.SignalValidation
 /** Prepared PR evidence and validation receipts scoped to one managed PR-analysis task. */
 internal class PrAnalysis(
   private val store: EdictNextRepositoryState,
-  private val provider: ReviewProvider,
+  private val provider: ReviewExtractionApi,
 ) {
   private data class Batch(
     val summary: PrBatchSummary,
@@ -31,7 +35,7 @@ internal class PrAnalysis(
     val items = prs.flatMap { pr ->
       pr.threads.map { thread ->
         val identity = buildJsonArray {
-          add(wireJson.encodeToJsonElement(selection.repository))
+          add(wireJson.encodeToJsonElement(selection.repositoryRef))
           add(pr.url)
           add(pr.number)
           add(thread.threadId)
@@ -40,7 +44,7 @@ internal class PrAnalysis(
           add(thread.anchorEndLine)
         }
         val id = "pr-${pr.number}-${sha256(wireJson.encodeToString(identity)).take(16)}"
-        PrItem(id, selection.repository, pr.copy(threads = emptyList()), thread)
+        PrItem(id, selection.repositoryRef, pr.copy(threads = emptyList()), thread)
       }
     }
     require(items.distinctBy(PrItem::workItemId).size == items.size) { "Duplicate provider work item" }
@@ -51,6 +55,7 @@ internal class PrAnalysis(
       prs.map(PullRequest::number),
       prs.count { it.threads.isNotEmpty() },
       items.size,
+      selection.repositoryRef,
     )
     return synchronized(store) {
       store.requirePrAnalysisCaller(token, coordinator = true)
