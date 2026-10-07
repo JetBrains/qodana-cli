@@ -43,8 +43,9 @@ native subagent runtime is a failed prerequisite, not permission to execute stag
    The worker fetches the full assignment with `edict_task_get`; do not copy task instructions into the launch message.
    Spawn without inherited conversation (`fork_turns: "none"`, or `fork_context: false` in runtimes exposing that
    parameter).
-   Include relevant prior-stage results in the submitted instructions. Wait for its native completion and verify its persisted task
-   is completed through the plan. Never print the child token or save it in a prompt file.
+   Include relevant prior-stage results in the submitted instructions. Wait for its native completion; a wait that times
+   out while the child still runs is not a reason to read the plan, so wait again. Read the plan once after the child
+   completes to verify its persisted task is completed. Never print the child token or save it in a prompt file.
    Resolve the delegation's `skillPath` against the installed skills directory (the parent of this skill's directory).
    Include that absolute `SKILL.md` path in the submitted instructions and require reading it before `edict_task_start`.
    Explicit-only children may be absent from the runtime's skill catalog; the file path is authoritative.
