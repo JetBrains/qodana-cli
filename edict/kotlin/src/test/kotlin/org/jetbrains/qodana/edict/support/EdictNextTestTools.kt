@@ -1,6 +1,7 @@
 package org.jetbrains.qodana.edict.support
 
 import kotlinx.serialization.json.JsonObject
+import org.jetbrains.qodana.edict.common.EdictConfiguration
 import org.jetbrains.qodana.edict.common.EdictLayout
 import org.jetbrains.qodana.edict.edictnext.EdictManagementService
 import org.jetbrains.qodana.edict.edictnext.EdictNextDistributionService
@@ -33,11 +34,13 @@ internal fun edictNextToolset(
   layout: EdictLayout,
   management: EdictManagementService,
   inspectionServer: IntellijMcpServerService = IntellijMcpServerService(layout.root),
+  configuration: EdictConfiguration = EdictConfiguration(),
 ): EdictNextMcpToolset {
   val repository = EdictRepository(EdictRepositoryDirectory(layout.stateDirectory.createDirectories()))
   return EdictNextMcpToolset(
     layout, inspectionServer, management,
     EdictNextDistributionService(repository, layout.neighboursResponsePath),
     EdictNextGenerationService(repository, inspectionServer, layout.root),
+    configuration,
   )
 }

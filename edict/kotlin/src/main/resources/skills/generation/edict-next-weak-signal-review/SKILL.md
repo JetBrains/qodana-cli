@@ -59,8 +59,7 @@ Launch a fresh native `spawn_agent` worker without inherited context for each tr
 Load the edict-next-code-example skill.
 
 Signal path: <transient Signal path>
-Synthetic examples directory: <cluster directory>/synthetic-examples
-Inspected IntelliJ project: <inspected project path from review config>
+Cluster id: <clusterId>
 ```
 
 Associate the validated example id with the finding and keep the transient Signal in private scratch. Do not create an

@@ -7,6 +7,7 @@ import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
 import org.jetbrains.qodana.edict.common.sha256
+import org.jetbrains.qodana.edict.extraction.reviews.ReviewRepository
 import java.security.MessageDigest
 
 fun stableSignalId(key: String): String = "s-${sha256(key).take(10)}"
@@ -367,12 +368,13 @@ internal enum class EdictNextNextAction {
   PUBLISH,
 }
 
-/** Paths an agent needs for this run; the root prompt carries none of them. */
+/** Configuration an agent needs for this run; the root prompt carries none of it. */
 @Serializable
 internal data class EdictRunContext(
   val projectDirectory: String,
   val stateDirectory: String,
   val scratchDirectory: String,
+  val reviewRepository: ReviewRepository? = null,
 )
 
 internal fun sha256Hex(text: String): String = sha256Hex(text.toByteArray(Charsets.UTF_8))

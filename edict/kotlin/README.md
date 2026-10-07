@@ -11,7 +11,7 @@ cd edict/kotlin
 build/install/edict/bin/edict --help
 cd /path/to/project
 /path/to/edict/kotlin/build/install/edict/bin/edict install
-/path/to/edict/kotlin/build/install/edict/bin/edict mcp --state-dir /path/to/state
+/path/to/edict/kotlin/build/install/edict/bin/edict mcp
 ```
 
 ## Qodana CLI integration
@@ -29,9 +29,9 @@ not, so it needs Codex installed. Edict never writes
 `./.codex/skills` and writes `./.codex/config.toml`: the `edict` permission profile (project
 read-only, `log/agent-work` writable for scratch, `log/process-log` and every `--deny` path denied; the
 state root needs no rule because it is read-only to agents and `:read-only` allows reads), agent
-limits, and the `edict-mcp` server on loopback port `edict.mcpPort`. The port comes from the
-`edict` section of the project's `qodana.yml` or `qodana.yaml` (27182 when absent); re-run
-`install` after changing it. Installation logs the installed names. Existing unrelated skills are preserved.
+limits, and the `edict-mcp` server on loopback port `edict.mcpPort`. The port and state path come from the
+`edict` section of the project's `qodana.yml` or `qodana.yaml` (27182 and `.edict` when absent); re-run
+`install` after changing the port. Installation logs the installed names. Existing unrelated skills are preserved.
 Then run Codex in the project with an explicit `$edict_manager <request>`; skills read the run's
 paths from the `edict_context` tool.
 
@@ -42,7 +42,7 @@ go generate ./internal/tooling/...
 go build -o qodana ./cli
 cd /path/to/project
 /path/to/qodana edict install
-/path/to/qodana edict mcp start --state-dir /path/to/state
+/path/to/qodana edict mcp start
 codex exec '$edict_manager process inbox and generate new rules'
 go test ./internal/cmd -run 'Test(Edict|ManagedMCP)'
 ```
@@ -65,8 +65,8 @@ stops the IDE when its stdin closes. The IDE is native only: `--ide-dist <path>`
 
 `mcp` serves one shared Streamable HTTP endpoint on loopback port `edict.mcpPort`, so every native
 agent shares one server and one state lock. It fails when `.codex/config.toml` is missing or names
-another port, or when the port is busy; it never moves to another port. State defaults to `.edict`
-(`--state-dir` moves it) and is also the reference repository for distribution checks; the
+another port, or when the port is busy; it never moves to another port. State is read from
+`edict.statePath` in qodana.yaml (default `.edict`) and is also the reference repository for distribution checks; the
 project's Git repository validates commit Signals. Every process is a run named by its start time (UTC, for example
 `2026-10-06T14-03-12.345Z`) and logs to `log/process-log/<run-id>/`: activity and redacted tool details in
 `edict-mcp{,-system}.log`, and INFO and above, with stack traces, in `edict.log`, which stdout also shows

@@ -13,14 +13,12 @@ class LiveCodexManagementTest : IntegrationTest() {
 
     @Test
     fun `real manager delegates empty distribution to one managed worker`() {
-        val state = workspace.state.toAbsolutePath().normalize()
         workspace.withEdictNextCodex(
             """
             Use the edict_manager skill and its managed protocol.
             Create exactly one top-level edict-next-distribution task.
             Delegate it to a fresh native subagent and complete the managed lifecycle.
-            The state repository is $state and is intentionally empty: verify that it has no Signals to distribute.
-            The inspected IntelliJ project is ${workspace.project.toAbsolutePath().normalize()}.
+            Use edict_context for run paths. Verify that the configured state has no Signals to distribute.
             Do not create additional tasks or edit repository files.
             """.trimIndent(),
         ) { repositoryState, runtime, result ->

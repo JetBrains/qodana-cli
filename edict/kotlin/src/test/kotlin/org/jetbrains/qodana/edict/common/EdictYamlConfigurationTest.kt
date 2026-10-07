@@ -24,6 +24,7 @@ class EdictYamlConfigurationTest {
       include:
         - name: SomeInspection
       edict:
+        statePath: ../edict-state
         ci:
           url: https://github.com/JetBrains/qodana-cli
         promotion:
@@ -33,6 +34,7 @@ class EdictYamlConfigurationTest {
       """,
     ))
 
+    assertEquals("../edict-state", configuration.statePath)
     assertEquals(EdictCIConfiguration("https://github.com/JetBrains/qodana-cli"), configuration.ci)
     assertEquals(PromotionConfiguration("reviewer-login", "main", "quality/inspections"), configuration.promotion)
     assertEquals(EdictCIProvider.GITHUB, configuration.ci?.provider)
@@ -71,6 +73,11 @@ class EdictYamlConfigurationTest {
     )).promotion
     assertEquals("inspections", promotion?.inspectionsDirectory)
     assertNull(promotion?.targetBranch)
+
+    val invalidStatePath = assertFailsWith<IllegalStateException> {
+      EdictYamlConfiguration.load(yaml("edict:\n  statePath: '   '"))
+    }
+    assertTrue(invalidStatePath.message.orEmpty().contains("edict.statePath is required"))
   }
 
   @Test

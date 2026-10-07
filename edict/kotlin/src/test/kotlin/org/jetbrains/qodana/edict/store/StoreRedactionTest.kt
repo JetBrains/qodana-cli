@@ -57,7 +57,7 @@ class EdictNextRepositoryStateRedactionTest {
     fun `rejected arguments do not leak embedded credentials into MCP or agent logs`() {
         EdictNextRepositoryState.open(directory.resolve("state")).use { store ->
             val (manager, batch) = store.batch()
-            val layout = EdictLayout(directory)
+            val layout = EdictLayout(directory, directory.resolve(".edict"))
             val response = EdictNextTestTools(store, layout = layout).call("edict_task_add", buildJsonObject {
                 put("token", batch.token)
                 put("skill", "edict-signal-analysis")

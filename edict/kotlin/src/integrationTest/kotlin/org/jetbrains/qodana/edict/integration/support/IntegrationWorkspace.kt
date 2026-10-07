@@ -2,22 +2,14 @@
 package org.jetbrains.qodana.edict.integration.support
 
 import org.jetbrains.qodana.edict.EdictServer
-import org.jetbrains.qodana.edict.common.EdictLayout
-import org.jetbrains.qodana.edict.common.runProcess
-import org.jetbrains.qodana.edict.common.sha256
-import org.jetbrains.qodana.edict.edictnext.EdictNextRepositoryState
-import org.jetbrains.qodana.edict.edictnext.EdictPrAnalysisService
-import org.jetbrains.qodana.edict.edictnext.EdictNextLineRange
-import org.jetbrains.qodana.edict.edictnext.EdictNextSignal
-import org.jetbrains.qodana.edict.edictnext.EdictNextSignalLabel
-import org.jetbrains.qodana.edict.edictnext.IntellijMcpServerService
+import org.jetbrains.qodana.edict.common.*
+import org.jetbrains.qodana.edict.edictnext.*
 import org.jetbrains.qodana.edict.extraction.git.CommitSignalExtractor
-import org.jetbrains.qodana.edict.common.GitRepository
 import org.jetbrains.qodana.edict.extraction.git.SignalFinding
-import org.jetbrains.qodana.edict.integration.support.inspection.InspectionLifecycleFixture
-import org.jetbrains.qodana.edict.integration.support.inspection.InspectionServer
 import org.jetbrains.qodana.edict.extraction.reviews.ReviewClient
 import org.jetbrains.qodana.edict.extraction.reviews.ReviewProvider
+import org.jetbrains.qodana.edict.integration.support.inspection.InspectionLifecycleFixture
+import org.jetbrains.qodana.edict.integration.support.inspection.InspectionServer
 import org.jetbrains.qodana.edict.runtime.CodexRunner
 import java.io.IOException
 import java.nio.channels.FileChannel
@@ -57,8 +49,16 @@ internal class IntegrationWorkspace private constructor(
     @Suppress("UNUSED_PARAMETER")
     fun withCodex(
         prompt: String, provider: ReviewProvider = ReviewClient(), inspectionServer: InspectionServer? = null,
-        timeoutMinutes: Long = 20, verify: (EdictNextRepositoryState, CodexRunner, String) -> Unit,
-    ) = withEdictNextCodex(prompt, timeoutMinutes, inspectionServer, provider, verify = verify)
+        timeoutMinutes: Long = 20, configuration: EdictConfiguration = EdictConfiguration(),
+        verify: (EdictNextRepositoryState, CodexRunner, String) -> Unit,
+    ) = withEdictNextCodex(
+        prompt,
+        timeoutMinutes,
+        inspectionServer,
+        provider,
+        configuration = configuration,
+        verify = verify
+    )
 
     /** Runs an existing managed-skill scenario through the SDK-based Edict Next MCP transport. */
     fun withEdictNextCodex(
@@ -66,19 +66,24 @@ internal class IntegrationWorkspace private constructor(
         timeoutMinutes: Long = 20,
         additionalWritableRoots: List<Path> = emptyList(),
         verify: (EdictNextRepositoryState, CodexRunner, String) -> Unit,
-    ) = withEdictNextCodex(prompt, timeoutMinutes, null, ReviewClient(), additionalWritableRoots, verify)
+    ) = withEdictNextCodex(prompt, timeoutMinutes, null, ReviewClient(), additionalWritableRoots, verify = verify)
 
     private fun withEdictNextCodex(
         prompt: String, timeoutMinutes: Long, inspectionServer: InspectionServer?,
         reviewProvider: ReviewProvider,
         additionalWritableRoots: List<Path> = emptyList(),
+        configuration: EdictConfiguration = EdictConfiguration(),
         verify: (EdictNextRepositoryState, CodexRunner, String) -> Unit,
     ) {
         val lifecycle = if (inspectionServer == null) InspectionLifecycleFixture(output) else null
         try {
-            val inspections = inspectionServer?.let { IntellijMcpServerService(projectPath = project, serverLifecycle = it) }
-                ?: IntellijMcpServerService(projectPath = project, qodanaExecutable = lifecycle!!.qodanaExecutable.toString())
-            EdictServer.start(layout, 0, inspections, reviewProvider).use { server ->
+            val inspections =
+                inspectionServer?.let { IntellijMcpServerService(projectPath = project, serverLifecycle = it) }
+                    ?: IntellijMcpServerService(
+                        projectPath = project,
+                        qodanaExecutable = lifecycle!!.qodanaExecutable.toString()
+                    )
+            EdictServer.start(layout, 0, inspections, reviewProvider, configuration).use { server ->
                 val store = server.store
                 val runtime = CodexRunner(
                     output, layout, server.url, agentLogger = server.management.agents,

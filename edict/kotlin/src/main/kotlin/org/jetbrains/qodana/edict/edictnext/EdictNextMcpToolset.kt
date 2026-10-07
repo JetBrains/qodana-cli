@@ -9,7 +9,9 @@ import io.modelcontextprotocol.kotlin.sdk.types.ServerCapabilities
 import io.modelcontextprotocol.kotlin.sdk.types.TextContent
 import io.modelcontextprotocol.kotlin.sdk.types.ToolSchema
 import kotlinx.serialization.json.*
+import org.jetbrains.qodana.edict.common.EdictConfiguration
 import org.jetbrains.qodana.edict.common.EdictLayout
+import org.jetbrains.qodana.edict.extraction.reviews.ReviewRepository
 import kotlin.coroutines.cancellation.CancellationException
 import kotlin.io.path.createDirectories
 
@@ -20,6 +22,7 @@ internal class EdictNextMcpToolset(
   private val management: EdictManagementService,
   private val distribution: EdictNextDistributionService,
   private val generation: EdictNextGenerationService,
+  private val configuration: EdictConfiguration = EdictConfiguration(),
 ) {
   fun createServer(): Server = Server(
     serverInfo = Implementation(
@@ -39,12 +42,15 @@ internal class EdictNextMcpToolset(
 
     server.addTool(
       name = "edict_context",
-      description = "Return the absolute paths of this run: inspected project, read-only state root, and private scratch root. Read-only.",
+      description = "Return this run's configured paths and CI review repository. Read-only.",
     ) {
       EdictRunContext(
         projectDirectory = layout.root.toString(),
         stateDirectory = layout.stateDirectory.toString(),
         scratchDirectory = layout.scratchDirectory.createDirectories().toString(),
+        reviewRepository = configuration.ci?.let {
+          ReviewRepository(it.provider.name.lowercase(), it.owner, it.repository)
+        },
       ).toToolResult()
     }
 

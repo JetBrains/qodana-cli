@@ -46,7 +46,7 @@ class TaskLifecycleLoggingTest {
             val created = store.createPlan("Generate", listOf(Step("edict-next-generation", "Generate")))
             val generation = store.launch(created.token, created.plan.tasks.single().id, "edict-next-generation")
             val output = StringWriter()
-            val layout = EdictLayout(directory)
+            val layout = EdictLayout(directory, directory.resolve(".edict"))
             val server = EdictNextTestTools(store, layout = layout, taskOutput = PrintWriter(output))
             val workers = (1..15).map { index ->
                 store.delegateChild(generation.token, "edict-next-cluster-generation", "Generate $index")

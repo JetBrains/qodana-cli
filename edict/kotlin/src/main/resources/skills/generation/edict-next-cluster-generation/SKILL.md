@@ -11,9 +11,10 @@ domain work and use it for every child delegation and task transition.
 Process the supplied Pending cluster through example reconciliation, predecessor reuse or candidate generation, review,
 and a valid terminal or resumable state.
 
-The prompt supplies `clusterId`, `clusterDirectory`, the absolute state repository path, a private scratch directory, and the
-inspected project. Resolve the paths before any write or MCP call. Return without changing the repository if scratch
-equals or is below the state repository.
+The prompt supplies only `clusterId`. Call `edict_context` before any other MCP call or write. Resolve the cluster below
+its `stateDirectory`, use its `projectDirectory` as the inspected project, and create a unique private scratch directory
+below its `scratchDirectory`. Do not copy the state path into delegated prompts. Return without changing the repository
+if the scratch directory equals or is below the state repository.
 
 # Boundaries
 
@@ -50,8 +51,7 @@ Read every Signal and launch exactly one fresh overseer:
 ```text
 Load the edict-next-code-example-overseer skill.
 
-Cluster directory: <clusterDirectory>
-Inspected IntelliJ project: <inspected project path>
+Cluster id: <clusterId>
 ```
 
 Require a successful `edict_next_validate_cluster_examples` result. If reconciliation is incomplete, record the concrete
@@ -108,9 +108,7 @@ Launch a fresh review worker:
 ```text
 Load the edict-next-inspection-code-review skill.
 
-Cluster directory: <clusterDirectory>
-Candidate inspection: <state repository>/inspections/<clusterId>.candidate.kts
-Inspected IntelliJ project: <inspected project path>
+Cluster id: <clusterId>
 Review output path: <privateScratchDirectory>/inspection-code-review.json
 ```
 

@@ -1,7 +1,9 @@
 // Copyright 2026 JetBrains s.r.o. Licensed under the Apache License, Version 2.0.
 package org.jetbrains.qodana.edict.integration
 
+import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.jsonObject
+import org.jetbrains.qodana.edict.common.EdictYamlConfiguration
 import org.jetbrains.qodana.edict.common.array
 import org.jetbrains.qodana.edict.common.flag
 import org.jetbrains.qodana.edict.common.text
@@ -28,18 +30,23 @@ class LivePrExtractionTest : IntegrationTest() {
     @Test
     fun `managed skills extract a Space review evidence pair with real native workers`() {
         ReviewProviderFixture("space", workspace.repository).use { fixture ->
+            val qodanaYaml = workspace.output.resolve("qodana.yaml")
+            Files.writeString(
+                qodanaYaml,
+                """
+                edict:
+                  statePath: ${JsonPrimitive(workspace.state.toString())}
+                  ci:
+                    url: https://jetbrains.team/p/owner/repositories/repo
+                """.trimIndent() + "\n",
+            )
             workspace.withCodex(
                 """
-                Use edict_manager and the managed protocol to extract Signals from Space review #7.
-                Provider: space
-                Project key: owner
-                Repository: repo
-                PR limit: 1
-                Source checkout: ${workspace.repository.root}
-                Edict state root: ${workspace.state}
+                Use edict_manager and the managed protocol to extract Signals from configured CI review #7 with PR limit 1.
                 Publish every supported Signal through edict_publish_signal.
                 """.trimIndent(),
                 provider = fixture.client,
+                configuration = EdictYamlConfiguration.load(qodanaYaml),
             ) { store, runtime, _ ->
                 val plan = assertNotNull(store.plan())
                 assertEquals(2, plan.tasks.size, "One PR coordinator and one discussion worker required")

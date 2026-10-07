@@ -310,6 +310,7 @@ func TestEdictConfigurationRoundTrip(t *testing.T) {
 	want := QodanaYaml{
 		Version: "1.0",
 		Edict: EdictConfig{
+			StatePath: "../edict-state",
 			CI: EdictCIConfig{URL: "https://github.com/JetBrains/qodana-cli"},
 			Promotion: EdictPromotionConfig{
 				Reviewer: "reviewer", TargetBranch: "main", InspectionsDirectory: "quality/inspections",

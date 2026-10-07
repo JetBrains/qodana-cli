@@ -304,9 +304,10 @@ func TestEdictJVMPropagatesFailure(t *testing.T) {
 func TestEdictManagedMCPHTTPProxy(t *testing.T) {
 	project := prepareEdictProject(t)
 	state := filepath.Join(project, "custom state")
+	appendEdictStatePath(t, state)
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
-	server := startEdictMCP(t, ctx, "--state-dir", state)
+	server := startEdictMCP(t, ctx)
 	if server.url != edictMCPURL(t) {
 		t.Fatalf("server listens at %s, not at the installed address %s", server.url, edictMCPURL(t))
 	}
@@ -336,16 +337,16 @@ func TestEdictManagedMCPHTTPProxy(t *testing.T) {
 		t.Fatalf("scratch directory was not created: %v", err)
 	}
 	_ = session.Close()
-	// The forwarded state path is exclusively locked by the JVM.
+	// The configured state path is exclusively locked by the JVM.
 	duplicate := newEdictManagedMCPStartCommand()
-	duplicate.SetArgs([]string{"--state-dir", state})
 	duplicate.SetIn(strings.NewReader(""))
 	if output, err := executeEdictCommand(ctx, duplicate); err == nil || !strings.Contains(output, "already owned") {
 		t.Fatalf("second JVM did not respect the state lock: %v, %s", err, output)
 	}
 	// Another state cannot move to another port: the agent config names this one.
+	otherState := filepath.Join(project, "other state")
+	replaceEdictStatePath(t, state, otherState)
 	busy := newEdictManagedMCPStartCommand()
-	busy.SetArgs([]string{"--state-dir", filepath.Join(project, "other state")})
 	busy.SetIn(strings.NewReader(""))
 	if output, err := executeEdictCommand(ctx, busy); err == nil || !strings.Contains(output, "Address already in use") {
 		t.Fatalf("second JVM did not fail on the busy port: %v, %s", err, output)
@@ -357,9 +358,10 @@ func TestEdictManagedMCPHTTPProxy(t *testing.T) {
 		t.Fatal("custom state directory was ignored")
 	}
 	// A fresh process must be able to acquire the same state and port after cancellation.
+	replaceEdictStatePath(t, otherState, state)
 	restartContext, restartCancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer restartCancel()
-	startEdictMCP(t, restartContext, "--state-dir", state).stop(t, restartCancel)
+	startEdictMCP(t, restartContext).stop(t, restartCancel)
 }
 
 // prepareEdictProject installs Edict into a fresh project and makes it the current directory.
@@ -382,6 +384,33 @@ func prepareEdictProject(t *testing.T) string {
 func writeEdictPort(t *testing.T, port int) {
 	t.Helper()
 	if err := os.WriteFile("qodana.yaml", []byte(fmt.Sprintf("version: \"1.0\"\nedict:\n  mcpPort: %d\n", port)), 0o600); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func appendEdictStatePath(t *testing.T, statePath string) {
+	t.Helper()
+	file, err := os.OpenFile("qodana.yaml", os.O_APPEND|os.O_WRONLY, 0o600)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer file.Close()
+	if _, err := fmt.Fprintf(file, "  statePath: %q\n", statePath); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func replaceEdictStatePath(t *testing.T, oldPath, newPath string) {
+	t.Helper()
+	data, err := os.ReadFile("qodana.yaml")
+	if err != nil {
+		t.Fatal(err)
+	}
+	updated := strings.Replace(string(data), fmt.Sprintf("statePath: %q", oldPath), fmt.Sprintf("statePath: %q", newPath), 1)
+	if updated == string(data) {
+		t.Fatalf("qodana.yaml does not contain state path %q", oldPath)
+	}
+	if err := os.WriteFile("qodana.yaml", []byte(updated), 0o600); err != nil {
 		t.Fatal(err)
 	}
 }

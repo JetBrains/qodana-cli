@@ -8,6 +8,7 @@ import io.ktor.server.engine.embeddedServer
 import io.modelcontextprotocol.kotlin.sdk.server.mcpStreamableHttp
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.runBlocking
+import org.jetbrains.qodana.edict.common.EdictConfiguration
 import org.jetbrains.qodana.edict.common.EdictLayout
 import org.jetbrains.qodana.edict.edictnext.EdictManagementService
 import org.jetbrains.qodana.edict.edictnext.EdictNextDistributionService
@@ -54,6 +55,7 @@ internal class EdictServer private constructor(
       port: Int,
       inspectionServer: IntellijMcpServerService,
       reviewProvider: ReviewProvider = ReviewClient(),
+      configuration: EdictConfiguration = EdictConfiguration(),
     ): EdictServer {
       val store = EdictNextRepositoryState.open(layout.stateDirectory)
       try {
@@ -64,6 +66,7 @@ internal class EdictServer private constructor(
           layout, inspectionServer, management,
           EdictNextDistributionService(repository, layout.neighboursResponsePath),
           EdictNextGenerationService(repository, inspectionServer, layout.root),
+          configuration,
         )
         val engine = embeddedServer(CIO, host = "127.0.0.1", port = port) {
           mcpStreamableHttp { toolset.createServer() }
