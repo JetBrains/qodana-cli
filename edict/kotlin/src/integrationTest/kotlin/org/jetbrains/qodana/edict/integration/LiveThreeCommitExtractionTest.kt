@@ -13,16 +13,7 @@ class LiveThreeCommitExtractionTest : IntegrationTest() {
 
     @Test
     fun `managed skills extract one evidence pair from each of three Distillery commits`() {
-        workspace.withEdictNextCodex(
-            """
-            Use edict_manager and the managed protocol to extract Signals from exactly three corrective commits.
-            Create exactly one top-level edict-batch-signal-analysis task.
-            Source checkout: ${workspace.repository.root}
-            Edict state root: ${workspace.state}
-            Revision expression: $threeCommitBaseline..$threeCommitHead
-            Commit limit: 3
-            Publish every supported Signal through edict_publish_signal.
-            """.trimIndent(),
+        workspace.withEdictNextCodex("Extract signals from last 3 commits",
         ) { store, runtime, _ ->
             val expected = threeCommitExpectations()
             val plan = assertNotNull(store.plan())
