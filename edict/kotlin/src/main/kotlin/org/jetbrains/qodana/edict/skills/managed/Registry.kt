@@ -21,6 +21,8 @@ object Registry {
                 "edict-pr-signal-analysis",
                 "edict-git-history-signal-analysis",
                 "edict-retrospective-signal-analysis",
+                "edict-promote",
+                "ecict-check-promotion",
             ),
         ),
         Policy(
@@ -58,6 +60,9 @@ object Registry {
             delegates = listOf("edict-signal-analysis"),
         ),
         Policy("edict-signal-analysis"),
+        Policy("edict-promote"),
+        Policy("ecict-check-promotion", delegates = listOf("edict-promotion-decision")),
+        Policy("edict-promotion-decision"),
     )
 
     private val byName = policies.associateBy(Policy::name)

@@ -8,7 +8,7 @@ import org.jetbrains.qodana.edict.common.GitRepository
 import org.jetbrains.qodana.edict.integration.support.historyBefore
 import org.jetbrains.qodana.edict.integration.support.historyCommit
 import org.jetbrains.qodana.edict.integration.support.historyPath
-import org.jetbrains.qodana.edict.extraction.reviews.ReviewClient
+import org.jetbrains.qodana.edict.ci.ReviewClient
 import java.net.InetSocketAddress
 import java.net.URLDecoder
 import java.util.*

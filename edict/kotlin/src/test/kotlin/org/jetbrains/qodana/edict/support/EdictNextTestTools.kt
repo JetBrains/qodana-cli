@@ -11,6 +11,7 @@ import org.jetbrains.qodana.edict.edictnext.EdictNextRepositoryState
 import org.jetbrains.qodana.edict.edictnext.EdictRepository
 import org.jetbrains.qodana.edict.edictnext.EdictRepositoryDirectory
 import org.jetbrains.qodana.edict.edictnext.IntellijMcpServerService
+import org.jetbrains.qodana.edict.promotion.PromotionService
 import java.io.PrintWriter
 import kotlin.io.path.createDirectories
 
@@ -35,6 +36,7 @@ internal fun edictNextToolset(
   management: EdictManagementService,
   inspectionServer: IntellijMcpServerService = IntellijMcpServerService(layout.root),
   configuration: EdictConfiguration = EdictConfiguration(),
+  promotion: PromotionService? = null,
 ): EdictNextMcpToolset {
   val repository = EdictRepository(EdictRepositoryDirectory(layout.stateDirectory.createDirectories()))
   return EdictNextMcpToolset(
@@ -42,5 +44,6 @@ internal fun edictNextToolset(
     EdictNextDistributionService(repository, layout.neighboursResponsePath),
     EdictNextGenerationService(repository, inspectionServer, layout.root),
     configuration,
+    promotion ?: PromotionService({ repository }, configuration),
   )
 }

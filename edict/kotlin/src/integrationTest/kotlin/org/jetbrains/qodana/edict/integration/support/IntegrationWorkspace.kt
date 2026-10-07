@@ -2,12 +2,13 @@
 package org.jetbrains.qodana.edict.integration.support
 
 import org.jetbrains.qodana.edict.EdictServer
+import org.jetbrains.qodana.edict.ci.ReviewClient
+import org.jetbrains.qodana.edict.ci.ReviewExtractionApi
+import org.jetbrains.qodana.edict.ci.ReviewManagementApi
 import org.jetbrains.qodana.edict.common.*
 import org.jetbrains.qodana.edict.edictnext.*
 import org.jetbrains.qodana.edict.extraction.git.CommitSignalExtractor
 import org.jetbrains.qodana.edict.extraction.git.SignalFinding
-import org.jetbrains.qodana.edict.extraction.reviews.ReviewClient
-import org.jetbrains.qodana.edict.extraction.reviews.ReviewProvider
 import org.jetbrains.qodana.edict.integration.support.inspection.InspectionLifecycleFixture
 import org.jetbrains.qodana.edict.integration.support.inspection.InspectionServer
 import org.jetbrains.qodana.edict.runtime.CodexRunner
@@ -48,7 +49,7 @@ internal class IntegrationWorkspace private constructor(
 
     @Suppress("UNUSED_PARAMETER")
     fun withCodex(
-        prompt: String, provider: ReviewProvider = ReviewClient(), inspectionServer: InspectionServer? = null,
+        prompt: String, provider: ReviewExtractionApi = ReviewClient(), inspectionServer: InspectionServer? = null,
         timeoutMinutes: Long = 20, configuration: EdictConfiguration = EdictConfiguration(),
         verify: (EdictNextRepositoryState, CodexRunner, String) -> Unit,
     ) = withEdictNextCodex(
@@ -66,24 +67,54 @@ internal class IntegrationWorkspace private constructor(
         timeoutMinutes: Long = 20,
         additionalWritableRoots: List<Path> = emptyList(),
         verify: (EdictNextRepositoryState, CodexRunner, String) -> Unit,
-    ) = withEdictNextCodex(prompt, timeoutMinutes, null, ReviewClient(), additionalWritableRoots, verify = verify)
+    ) = withEdictNextCodex(
+        prompt,
+        timeoutMinutes,
+        null,
+        ReviewClient(),
+        additionalWritableRoots,
+        verify = verify,
+    )
+
+    /** Runs promotion coordination with deterministic remote review states through a real Codex manager and workers. */
+    fun withPromotionCodex(
+        prompt: String,
+        configuration: EdictConfiguration,
+        reviews: ReviewManagementApi,
+        timeoutMinutes: Long = 20,
+        verify: (EdictNextRepositoryState, CodexRunner, String) -> Unit,
+    ) = withEdictNextCodex(
+        prompt = prompt,
+        timeoutMinutes = timeoutMinutes,
+        inspectionServer = null,
+        reviewProvider = ReviewClient(),
+        configuration = configuration,
+        reviewManagement = reviews,
+        verify = verify,
+    )
 
     private fun withEdictNextCodex(
         prompt: String, timeoutMinutes: Long, inspectionServer: InspectionServer?,
-        reviewProvider: ReviewProvider,
+        reviewProvider: ReviewExtractionApi,
         additionalWritableRoots: List<Path> = emptyList(),
-        configuration: EdictConfiguration = EdictConfiguration(),
+        configuration: EdictConfiguration = EdictConfiguration(
+            ci = EdictCIConfiguration("https://jetbrains.team/p/owner/repositories/repo"),
+        ),
+        reviewManagement: ReviewManagementApi = reviewProvider as? ReviewManagementApi ?: ReviewClient(),
         verify: (EdictNextRepositoryState, CodexRunner, String) -> Unit,
     ) {
         val lifecycle = if (inspectionServer == null) InspectionLifecycleFixture(output) else null
         try {
-            val inspections =
-                inspectionServer?.let { IntellijMcpServerService(projectPath = project, serverLifecycle = it) }
-                    ?: IntellijMcpServerService(
-                        projectPath = project,
-                        qodanaExecutable = lifecycle!!.qodanaExecutable.toString()
-                    )
-            EdictServer.start(layout, 0, inspections, reviewProvider, configuration).use { server ->
+            val inspections = inspectionServer?.let { IntellijMcpServerService(projectPath = project, serverLifecycle = it) }
+                ?: IntellijMcpServerService(projectPath = project, qodanaExecutable = lifecycle!!.qodanaExecutable.toString())
+            EdictServer.start(
+                layout = layout,
+                port = 0,
+                inspectionServer = inspections,
+                configuration = configuration,
+                reviewProvider = reviewProvider,
+                reviewManagement = reviewManagement,
+            ).use { server ->
                 val store = server.store
                 val runtime = CodexRunner(
                     output, layout, server.url, agentLogger = server.management.agents,
