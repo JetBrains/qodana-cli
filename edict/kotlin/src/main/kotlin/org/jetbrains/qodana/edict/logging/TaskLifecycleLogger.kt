@@ -28,7 +28,7 @@ internal class TaskLifecycleLogger(
             val event = when {
                 task.status == oldStatus -> continue
                 task.status == "running" -> "started"
-                task.status in listOf("completed", "failed") && oldStatus !in listOf("completed", "failed") -> "finished"
+                task.status in CLOSED && oldStatus !in CLOSED -> "finished"
                 else -> continue
             }
             val message = store.redact("[-:${task.id}] ${task.title} $event")
@@ -40,3 +40,5 @@ internal class TaskLifecycleLogger(
         }
     }
 }
+
+private val CLOSED = setOf("completed", "failed", "cancelled")

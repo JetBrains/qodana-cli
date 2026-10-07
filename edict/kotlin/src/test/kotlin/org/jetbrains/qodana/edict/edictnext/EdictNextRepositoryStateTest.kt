@@ -123,6 +123,26 @@ class EdictNextRepositoryStateTest {
   }
 
   @Test
+  fun `a parent completes over a cancelled child but not over a failed one`() {
+    EdictNextRepositoryState.open(directory).use { state ->
+      val (_, batch) = state.batch()
+      val lost = state.addTask(batch.token, "edict-signal-analysis", "Lost worker")
+      state.launch(batch.token, lost.id, lost.skill)
+      state.cancelTask(batch.token, lost.id, "Worker thread died")
+      val failing = state.addTask(batch.token, "edict-signal-analysis", "Failing worker")
+      val failed = state.launch(batch.token, failing.id, failing.skill)
+      state.finishTask(failed.token, "failed", "Evidence is missing")
+      assertTrue(
+        assertFails { state.finishTask(batch.token, "completed", "Done") }.message.orEmpty().contains("Complete or cancel")
+      )
+      val retried = state.launch(batch.token, failing.id, failing.skill)
+      state.finishTask(retried.token, "completed", "Inspected")
+      state.finishTask(batch.token, "completed", "Done")
+      assertEquals("cancelled", state.plan()!!.tasks.single { it.id == lost.id }.status)
+    }
+  }
+
+  @Test
   fun `generation reviews are not limited per cluster worker`() {
     val steps = listOf(Step("edict-next-generation", "Generate"))
     var generationId = ""
@@ -172,7 +192,10 @@ class EdictNextRepositoryStateTest {
       assertFails { state.addTask(delegation.token, "edict-signal-analysis", "Inspect") }
       assertEquals(delegation.taskId, state.readTask(delegation.token).taskId)
       assertFails { state.startTask(delegation.token, "worker", "edict_manager") }
-      state.startTask(delegation.token, "worker", delegation.skill)
+      val started = state.startTask(delegation.token, "worker", delegation.skill)
+      assertEquals(delegation.taskId, started.taskId)
+      assertEquals("running", started.status)
+      assertEquals(state.plan()!!.revision, started.planRevision)
       assertFails { state.startTask(delegation.token, "worker", delegation.skill) }
       assertFails { state.createPlan("Again", listOf(Step("edict-next-run", "Run"))) }
     }
@@ -192,7 +215,7 @@ class EdictNextRepositoryStateTest {
       state.cancelTask(manager.token, batch.taskId, "Worker lost")
       assertFails { state.readTask(leaf.token) }
       assertFails { state.finishTask(batch.token, "completed", "Done") }
-      assertTrue(state.plan()!!.tasks.all { it.status == "failed" })
+      assertTrue(state.plan()!!.tasks.all { it.status == "cancelled" })
       val retry = state.launch(manager.token, batch.taskId, batch.skill)
       val retriedLeaf = state.launch(retry.token, child.id, child.skill)
       state.finishTask(retriedLeaf.token, "completed", "Inspected")

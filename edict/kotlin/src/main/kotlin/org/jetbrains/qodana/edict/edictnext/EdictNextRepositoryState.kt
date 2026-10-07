@@ -69,6 +69,9 @@ internal class EdictNextRepositoryState(
   data class TaskAssignment(val taskId: String, val skill: String, val skillPath: String, val prompt: String)
 
   @Serializable
+  data class TaskLifecycleAck(val taskId: String, val status: String, val planRevision: Int)
+
+  @Serializable
   data class SignalPublication(val signal: EdictNextSignal, val created: Boolean)
 
   private data class Capability(
@@ -116,7 +119,7 @@ internal class EdictNextRepositoryState(
     val manager = Capability(skill = "edict_manager")
     steps.forEach { allowedChild(manager, it.skill, it.title) }
     val existing = currentPlan
-    if (existing != null && existing.tasks.any { it.status !in TERMINAL_STATUSES }) {
+    if (existing != null && existing.tasks.any { it.status !in CLOSED_STATUSES }) {
       require(
         existing.request == request &&
           existing.tasks.filter { it.parentId.isEmpty() }.map { Step(it.skill, it.title) } == steps,
@@ -150,7 +153,7 @@ internal class EdictNextRepositoryState(
     val task = task(taskId)
     require(task.parentId == parent.taskId) { "Task is not a direct child of this capability" }
     allowedChild(parent, task.skill, task.title)
-    require(task.status in listOf("pending", "failed")) { "Task is already delegated or completed" }
+    require(task.status in listOf("pending", "failed", CANCELLED)) { "Task is already delegated or completed" }
     require(prompt.substringBefore('\n') == "\$${task.skill}" && prompt.substringAfter('\n', "").isNotBlank()) {
       "Subagent prompt must start with the exact line \$${task.skill} followed by its skill path and bounded task instructions"
     }
@@ -182,7 +185,7 @@ internal class EdictNextRepositoryState(
   }
 
   @Synchronized
-  fun startTask(token: String, agentId: String, skill: String): Plan {
+  fun startTask(token: String, agentId: String, skill: String): TaskLifecycleAck {
     val capability = lookup(token)
     val task = task(capability.taskId)
     require(task.status == "delegated") { "Only a delegated worker can start its task" }
@@ -193,11 +196,11 @@ internal class EdictNextRepositoryState(
     }
     requireNoTokens(agentId)
     update(task.copy(status = "running", agentId = agentId))
-    return checkNotNull(plan())
+    return lifecycleAck(task.id, "running")
   }
 
   @Synchronized
-  fun finishTask(token: String, status: String, result: String): Plan {
+  fun finishTask(token: String, status: String, result: String): TaskLifecycleAck {
     val capability = authorize(token)
     require(capability.taskId.isNotEmpty()) { "Manager must finish tasks through their workers" }
     require(status in TERMINAL_STATUSES && result.isNotBlank()) { "Requires completed or failed status and a result" }
@@ -207,37 +210,38 @@ internal class EdictNextRepositoryState(
       when {
         task.id == capability.taskId -> task.copy(status = status, result = result)
         descendant(task.id, capability.taskId) -> {
-          require(status != "completed" || task.status == "completed") {
-            "Complete all subtasks before completing their parent"
+          // A cancelled subtask was lost and handled by its parent (retried, replaced or abandoned), so it does not block.
+          require(status != "completed" || task.status in DONE_STATUSES) {
+            "Complete or cancel all subtasks before completing their parent"
           }
-          if (task.status == "completed") task else task.copy(status = "failed", result = "Parent task failed: $result")
+          if (task.status in DONE_STATUSES) task else task.copy(status = "failed", result = "Parent task failed: $result")
         }
         else -> task
       }
     }
     save(plan.copy(tasks = tasks))
     revoke(capability.taskId)
-    return checkNotNull(plan())
+    return lifecycleAck(capability.taskId, status)
   }
 
   @Synchronized
-  fun cancelTask(token: String, taskId: String, result: String): Plan {
+  fun cancelTask(token: String, taskId: String, result: String): TaskLifecycleAck {
     val capability = authorize(token)
     val task = task(taskId)
     require(task.parentId == capability.taskId) { "Only direct coordinator can cancel a task" }
-    require(task.status !in TERMINAL_STATUSES && result.isNotBlank()) {
+    require(task.status !in CLOSED_STATUSES && result.isNotBlank()) {
       "Cancellation requires an unfinished task and a reason"
     }
     requireNoTokens(result)
     val plan = checkNotNull(currentPlan)
     save(plan.copy(tasks = plan.tasks.map { candidate ->
-      if (candidate.id == taskId || descendant(candidate.id, taskId) && candidate.status != "completed") {
-        candidate.copy(status = "failed", result = result)
+      if (candidate.id == taskId || descendant(candidate.id, taskId) && candidate.status !in CLOSED_STATUSES) {
+        candidate.copy(status = CANCELLED, result = result)
       }
       else candidate
     }))
     revoke(taskId)
-    return checkNotNull(plan())
+    return lifecycleAck(taskId, CANCELLED)
   }
 
   /** Publish a validated model without exposing state paths or serialized bytes to workers. */
@@ -448,6 +452,9 @@ internal class EdictNextRepositoryState(
     save(plan.copy(tasks = plan.tasks.map { if (it.id == task.id) task else it }))
   }
 
+  private fun lifecycleAck(taskId: String, status: String): TaskLifecycleAck =
+    TaskLifecycleAck(taskId, status, checkNotNull(currentPlan).revision)
+
   private fun save(plan: Plan) {
     ensureManagementState()
     val updated = plan.copy(revision = plan.revision + 1)
@@ -560,9 +567,17 @@ internal class EdictNextRepositoryState(
       "edict-retrospective-signal-analysis",
     )
     private val SIGNAL_PUBLISHERS = COMMIT_SIGNAL_PUBLISHERS + "edict-pr-signal-analysis"
+    /** Statuses a worker may finish its own task with. */
     private val TERMINAL_STATUSES = setOf("completed", "failed")
+
+    /** Set by the parent through edict_task_cancel when a worker was lost for reasons outside its control. */
+    private const val CANCELLED = "cancelled"
+    private val CLOSED_STATUSES = TERMINAL_STATUSES + CANCELLED
+
+    /** Subtask statuses that let a parent complete. */
+    private val DONE_STATUSES = setOf("completed", CANCELLED)
     private val INTERRUPTED_STATUSES = setOf("delegated", "running")
-    private val TASK_STATUSES = setOf("pending", "delegated", "running", "completed", "failed")
+    private val TASK_STATUSES = setOf("pending", "delegated", "running", "completed", "failed", CANCELLED)
     private val POSSIBLE_TOKEN = Regex("(?=([0-9a-f]{64}))")
     private val IDENTIFIER = Regex("[a-zA-Z0-9][a-zA-Z0-9._-]{0,127}")
 
