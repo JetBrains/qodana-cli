@@ -129,9 +129,11 @@ A cycle is cheap, so repeat it as often as needed. Each failed step sends you st
 
 ## 5. Review project findings
 
-Project analysis and the weak-signal review after it are expensive, so each cluster gets a fixed number per run. Call
+Project analysis and the weak-signal review after it are expensive, so each cluster gets a fixed number per run. Copy
+the saved candidate byte for byte to `<privateScratchDirectory>/analyzed-candidate.kts`, then call
 `edict_next_get_new_inspection_results(clusterId, privateScratchDirectory)`; its `remainingProjectAnalyses` says how many
-remain after this one. Launch a fresh weak-review worker with only:
+remain after this one. The copy is the last analyzed candidate; replace it only before the next analysis. Launch a fresh
+weak-review worker with only:
 
 ```text
 Load the edict-next-weak-signal-review skill.
@@ -145,8 +147,9 @@ whether another cycle is worth it: one that removes false positives or adds miss
 example. If it is and analyses remain, repeat the generation cycles and this project review.
 
 Otherwise, and always once `remainingProjectAnalyses` is 0 or the call fails because the limit was reached, stop
-generating and keep the last analyzed candidate unchanged: `Generated` requires that exact candidate to have completed
-project analysis. Finalise `Generated` with the decision and the remaining weak failures.
+generating: `Generated` requires the stored candidate to be exactly the last analyzed one. If a later cycle saved another
+candidate, save `<privateScratchDirectory>/analyzed-candidate.kts` back unchanged with
+`edict_next_save_candidate_inspection`. Finalise `Generated` with the decision and the remaining weak failures.
 
 ## 6. Other statuses
 

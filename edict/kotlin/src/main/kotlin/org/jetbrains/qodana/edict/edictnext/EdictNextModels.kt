@@ -61,6 +61,8 @@ sealed interface EdictNextSignalSource {
 
   @Serializable
   @SerialName("FromCommit")
+  // TODO: edict-git-history-signal-analysis and edict-retrospective-signal-analysis tell agents to add the parent revision,
+  //  commit message, and diff here; publishing rejects those unknown keys. Align the skills or this source.
   data class FromCommit(
     val commitRevision: String,
     val url: String? = null,

@@ -29,8 +29,8 @@ Use Signals and examples only as supporting evidence for the contract and its bo
 ## 2. Classify every finding
 
 Read every finding. For Git-backed revisions, resolve the Git root from the inspected project and retrieve the exact
-repository-relative file with read-only Git. If the object is unavailable and Qodana exposes `file_at_ref`, use it with
-radius 20, then 5 and 0 until every requested range line is visible. Do not classify the finding before that. Inspect enough surrounding code and resolved
+repository-relative file with read-only Git. If the object is unavailable, read it with `edict_file_at_ref` anchored at
+the range, with radius 20, then 5 and 0, until every requested range line is visible. Do not classify the finding before that. Inspect enough surrounding code and resolved
 PSI to classify it:
 
 - `TP`: the reported code violates the rule stated by `htmlDescription`.

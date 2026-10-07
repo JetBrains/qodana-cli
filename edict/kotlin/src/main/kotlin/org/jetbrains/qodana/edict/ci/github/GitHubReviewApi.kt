@@ -103,6 +103,8 @@ internal class GitHubReviewApi(
     val threads = comments.groupBy { it.number("in_reply_to_id").takeIf { id -> id > 0 } ?: it.number("id") }
       .mapNotNull { (commentId, group) ->
         val anchor = byId[commentId] ?: error("Missing root comment $commentId")
+        // TODO: file-level comments (`subject_type: file`) have no line, so the anchor becomes 0 and ReviewClient.fetch
+        //  rejects the whole batch; skip or anchor them instead.
         val line = anchor.number("original_line").takeIf { it > 0 } ?: anchor.number("line")
         val startLine = anchor.number("original_start_line").takeIf { it > 0 }
           ?: anchor.number("start_line").takeIf { it > 0 }
