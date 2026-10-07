@@ -129,6 +129,27 @@ type QodanaYaml struct {
 
 	// RaiseLicenseProblems property to show license problems like other inspections.
 	RaiseLicenseProblems bool `yaml:"raiseLicenseProblems,omitempty"`
+
+	// Edict configures repository-backed signal extraction and inspection promotion.
+	Edict EdictConfig `yaml:"edict,omitempty"`
+}
+
+// EdictConfig contains the CI repository URL shared by extraction and promotion, and promotion-only settings.
+type EdictConfig struct {
+	CI        EdictCIConfig        `yaml:"ci,omitempty"`
+	Promotion EdictPromotionConfig `yaml:"promotion,omitempty"`
+}
+
+// EdictCIConfig identifies the CI repository Edict reads from.
+type EdictCIConfig struct {
+	URL string `yaml:"url,omitempty"`
+}
+
+// EdictPromotionConfig contains promotion-specific values from qodana.yaml.
+type EdictPromotionConfig struct {
+	Reviewer             string `yaml:"reviewer,omitempty"`
+	TargetBranch         string `yaml:"targetBranch,omitempty"`
+	InspectionsDirectory string `yaml:"inspectionsDirectory,omitempty"`
 }
 
 // WriteConfig writes QodanaYaml to the given path.
