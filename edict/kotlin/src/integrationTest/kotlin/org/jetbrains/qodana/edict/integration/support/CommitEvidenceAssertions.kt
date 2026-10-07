@@ -17,10 +17,10 @@ import org.jetbrains.qodana.edict.runtime.CodexRunner
 import org.jetbrains.qodana.edict.signals.SignalValidation
 
 internal const val threeCommitProject = "testExtractSignalsFromThreeCommits"
-internal const val threeCommitBaseline = "26b38d1203a6697bac3ec38659f25ed6e6f50f05"
-internal const val threeCommitEquality = "b375279dbaa2dd53d64dd9047bdb596d0d5160e7"
-internal const val threeCommitLocale = "4a448d1e6e30961c43024f9900f80e6d3d088b79"
-internal const val threeCommitHead = "19475f69ff6ed87a68712b4ad9d55938f3868b6e"
+internal const val threeCommitBaseline = "59ef095c288139bd009cb46c4b641b3bc540357f"
+internal const val threeCommitEquality = "952f1b8d8dc2e1e0d4f1f109512adc6c7a5a23b7"
+internal const val threeCommitLocale = "3fc14fa67e53ab8645539f5dac4d901da6feeacd"
+internal const val threeCommitHead = "0287c8b1b5a0235825650d73c85d7806beafaa96"
 
 internal data class CommitExpectation(
     val parent: String,
