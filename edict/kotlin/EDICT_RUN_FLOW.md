@@ -182,7 +182,8 @@ edict_manager
          always wins
        - `$edict-next-inspection-code-review` then reads the implementation and writes at most five important
          corner-case examples: common forms that differ in what the rule decides rather than in syntax, and that an
-         inspection within the implementation constraints can decide
+         inspection within the implementation constraints can decide. It writes them all in the first round; later
+         rounds look only at decision points the regeneration added or changed
        - the worker saves the analyzed candidate again unchanged to measure it against the new examples; when one
          fails and analyses remain, it runs another generation cycle and evidence round, otherwise it submits the last
          analyzed candidate unchanged

@@ -12,10 +12,11 @@ Load only this skill. Do not launch workers: write every example yourself.
 
 ## Inputs and boundaries
 
-The prompt supplies `Cluster id` and an absolute private-scratch `Review output path`. Call `edict_context`, resolve the
+The prompt supplies `Cluster id`, an absolute private-scratch `Review output path`, and `Previous code review`: the
+output of this cluster's previous code review round, or none. Call `edict_context`, resolve the
 cluster and its candidate inspection below its `stateDirectory`, and use its `projectDirectory` as the inspected
-IntelliJ project. Read the candidate and every Signal and example. Do not read cluster history, predecessor
-inspections or earlier reviews.
+IntelliJ project. Read the candidate, every Signal and example, and the previous code review. Do not read cluster
+history, predecessor inspections or other reviews.
 
 The output of this review is evidence: weak examples the generation worker regenerates against and the final
 evaluation scores. Strong examples are required evidence; every other example is weak.
@@ -31,15 +32,19 @@ Treat `htmlDescription` as the rule contract and the Signals and strong examples
 implementation's decision points: each PSI element type it visits, each filter and early return, each resolution and
 helper that decides whether something is reported.
 
-Call `edict_next_validate_inspection(clusterId)` to see which examples the candidate currently fails; failing weak
-examples point at decision points that are likely wrong.
-
 ## 2. Find the important corner cases
 
-Add only the few corner cases that really matter. Adding none is a normal outcome when the candidate already handles
-the important forms.
+Add only the few corner cases that really matter, and add them all in the first round, so later rounds have little or
+nothing left to add. Adding none is a normal outcome.
 
-At each decision point, describe forms just inside and just outside the contract:
+- **First round** (no previous code review): decide which forms of the construct the rule must get right from the
+  contract and the Signals, independently of how the candidate handles them today. Write every important form, also
+  ones the candidate already decides correctly: they keep later regenerations from breaking it.
+- **Later rounds**: compare the decision points with those the previous code review listed. Look only at decision
+  points the regeneration added or changed, and only at forms those introduce. A form the first round could have
+  found is not a reason to add an example now.
+
+Around each decision point you examine, describe forms just inside and just outside the contract:
 
 - forms the contract reports but the implementation probably skips (missed positives);
 - forms the contract excludes but the implementation probably reports (false positives).
@@ -51,7 +56,8 @@ Keep a form only when all of these hold:
 - it differs from covered forms in what the rule decides, not only in syntax: extra parentheses, negation, compound
   assignment, an additional wrapper, nesting level or operator around a covered form is not a new corner case;
 - a user would notice the mistake: a missed problem in a core form, or a false report on code that is written often;
-- reading the implementation gives a concrete reason, at a named decision point, to expect it decides the form wrongly;
+- in later rounds, reading the implementation gives a concrete reason, at a decision point added or changed since the
+  previous round, to expect it decides the form wrongly;
 - no existing example already covers its shape (same PSI element kind, same form of the parts the rule examines, same
   reason for the label);
 - its label follows clearly from the contract and agrees with every strong example; drop ambiguous forms;
@@ -60,7 +66,8 @@ Keep a form only when all of these hold:
   handling needs data-flow or alias tracking across statements, analysis of other method bodies, project/module/global
   enumeration, or a `LocalSearchScope` not rooted in the current file.
 
-Rank the kept forms by how commonly real code writes them, then by how likely the defect is, and keep at most five.
+Rank the kept forms by how commonly real code writes them, then by how likely the candidate gets them wrong, and keep at
+most five.
 Record every other form you considered in `droppedForms` with the reason it was not added.
 
 ## 3. Write the examples
@@ -83,6 +90,7 @@ Write the supplied review output with exactly this shape:
 ```json
 {
   "candidateHash": "sha256 of the complete candidate bytes",
+  "decisionPoints": ["each PSI element type, filter, early return, resolution and helper that decides a report"],
   "cornerCases": [
     {
       "exampleId": "id",
