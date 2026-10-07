@@ -20,7 +20,7 @@ import org.jetbrains.qodana.edict.common.text
 import org.jetbrains.qodana.edict.common.wireJson
 import org.jetbrains.qodana.edict.logging.AgentLogger
 import org.jetbrains.qodana.edict.logging.TaskLifecycleLogger
-import org.jetbrains.qodana.edict.edictnext.EdictNextRepositoryState.Plan
+import org.jetbrains.qodana.edict.edictnext.EdictNextRepositoryState.TaskLifecycleAck
 import org.jetbrains.qodana.edict.edictnext.EdictNextRepositoryState.Step
 import org.jetbrains.qodana.edict.common.EdictLayout
 import org.jetbrains.qodana.edict.common.GitRepository
@@ -301,7 +301,7 @@ internal class EdictManagementService(
 
     tool(
       name = "edict_task_cancel",
-      description = "Fail a lost direct child and revoke its descendants. A coordinator cannot report success for workers.",
+      description = "Cancel a direct child lost for reasons outside its control (it could not start, or its worker died) and revoke its descendants. The task becomes cancelled: re-delegate it to retry; it does not block your completion. A coordinator cannot report success for workers.",
       required = listOf("token", "taskId", "result"),
       properties = properties("taskId", "result"),
     ) { arguments ->
@@ -542,11 +542,12 @@ internal class EdictManagementService(
     "PR extraction requires complete edict.ci configuration"
   }
 
-  private fun lifecycle(change: () -> Plan): JsonElement = synchronized(store) {
+  private fun lifecycle(change: () -> TaskLifecycleAck): JsonElement = synchronized(store) {
     val before = store.plan()
-    val after = change()
+    val result = change()
+    val after = checkNotNull(store.plan())
     taskLogger.record(before, after)
-    EdictNextJson.encodeToJsonElement(after)
+    EdictNextJson.encodeToJsonElement(result)
   }
 
   @Synchronized

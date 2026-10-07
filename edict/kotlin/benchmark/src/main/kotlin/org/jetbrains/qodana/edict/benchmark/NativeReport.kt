@@ -87,7 +87,10 @@ internal fun verifyManagedCompletion(state: Path) {
     val plans = state.resolve("plans").listDirectoryEntries("*.json")
     require(plans.isNotEmpty()) { "No managed Edict plan was created" }
     val tasks = plans.flatMap { readObject(it).getValue("tasks").jsonArray }
-    require(tasks.isNotEmpty() && tasks.all { it.jsonObject.string("status") == "completed" }) { "Managed Edict tasks are unfinished" }
+    // A cancelled task was lost and handled by its parent; every other task must have completed.
+    require(tasks.isNotEmpty() && tasks.all { it.jsonObject.string("status") in setOf("completed", "cancelled") }) {
+        "Managed Edict tasks are unfinished"
+    }
     val skills = tasks.map { it.jsonObject.string("skill") }.toSet()
     val legacyPipeline = setOf("edict-prepare", "edict-distribution", "edict-generation")
     val nextPipeline = setOf("edict-next-run", "edict-next-distribution", "edict-next-generation")
