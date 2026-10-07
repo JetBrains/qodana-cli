@@ -3,6 +3,7 @@ package org.jetbrains.qodana.edict
 
 import io.github.oshai.kotlinlogging.KotlinLogging
 import org.jetbrains.qodana.edict.common.EdictLayout
+import org.jetbrains.qodana.edict.common.EdictYamlConfiguration
 import org.jetbrains.qodana.edict.edictnext.EdictNextMcpToolset
 import org.jetbrains.qodana.edict.edictnext.IntellijMcpServerService
 import org.jetbrains.qodana.edict.edictnext.defaultQodanaExecutable
@@ -44,10 +45,15 @@ fun main(args: Array<String>) {
                         "ide-property",
                         "ide-wait-timeout",
                         "parent-pid",
+                        "qodana-yaml",
                     )
                 }) { "Unknown Edict Next option" }
                 val layout = EdictLayout.get(options["state-dir"])
-                val port = EdictConfig.load(layout).also { CodexSetup.requireInstalled(layout, it) }.mcpPort
+                val qodanaYaml = options["qodana-yaml"]?.let(Path::of)?.toAbsolutePath()?.normalize()
+                    ?: layout.qodanaYamlPath
+                val configuration = EdictYamlConfiguration.load(qodanaYaml)
+                val portConfig = EdictConfig(configuration.mcpPort).also { CodexSetup.requireInstalled(layout, it) }
+                val port = portConfig.mcpPort
                 // `=` keeps values such as -Xmx8g from being parsed as flags by the Go helper.
                 val ideArguments = buildList {
                     options["ide-dist"]?.let { add("--dist=$it") }
@@ -81,7 +87,7 @@ fun main(args: Array<String>) {
                 Edict managed skills (standalone Kotlin/JVM). Run every command in the project directory.
                   edict install [--deny <path>]...
                     Installs skills into .codex/skills and writes .codex/config.toml for edict.mcpPort from qodana.yaml.
-                  edict mcp [--state-dir <state>] [--qodana-executable <qodana>] [--ide-dist <path> | --ide-linter <linter>] [--ide-property <property>]... [--ide-wait-timeout <duration>] [--parent-pid <pid>]
+                  edict mcp [--state-dir <state>] [--qodana-yaml <path>] [--qodana-executable <qodana>] [--ide-dist <path> | --ide-linter <linter>] [--ide-property <property>]... [--ide-wait-timeout <duration>] [--parent-pid <pid>]
                     Serves HTTP on loopback at edict.mcpPort (default ${EdictConfig.DEFAULT_MCP_PORT}); state defaults to .edict.
                     Each run logs to log/process-log/<run-id> and gives agents log/agent-work/<run-id>; the run id is its start time.
                 The first inspection call starts the IDE through `qodana edict ide-mcp`; its output goes to intellij-mcp.log.

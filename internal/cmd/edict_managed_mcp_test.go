@@ -192,6 +192,77 @@ func TestEdictManagedMCPRequiresInstallationForConfiguredPort(t *testing.T) {
 	}
 }
 
+func TestEdictManagedMCPForwardsDefaultQodanaYamlPath(t *testing.T) {
+	project := t.TempDir()
+	t.Chdir(project)
+	config := `version: "1.0"
+edict:
+  ci:
+    url: https://github.com/JetBrains/qodana-cli
+  promotion:
+    reviewer: reviewer-login
+    targetBranch: main
+    inspectionsDirectory: quality/inspections
+`
+	if err := os.WriteFile(filepath.Join(project, "qodana.yaml"), []byte(config), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	var forwarded []string
+	command := newEdictManagedMCPStartCommandWithRunner(func(_ *cobra.Command, args ...string) error {
+		forwarded = append([]string(nil), args...)
+		return nil
+	})
+	if err := command.Execute(); err != nil {
+		t.Fatal(err)
+	}
+	expected := "--qodana-yaml\x00qodana.yaml"
+	if !strings.Contains(strings.Join(forwarded, "\x00"), expected) {
+		t.Errorf("forwarded arguments %q do not contain %q", forwarded, expected)
+	}
+}
+
+func TestEdictManagedMCPForwardsCustomQodanaYamlWithoutParsing(t *testing.T) {
+	project := t.TempDir()
+	custom := filepath.Join(project, "config", "custom.yaml")
+	if err := os.MkdirAll(filepath.Dir(custom), 0o700); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(custom, []byte("edict:\n  ci:\n    url:\n"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	var forwarded []string
+	command := newEdictManagedMCPStartCommandWithRunner(func(_ *cobra.Command, args ...string) error {
+		forwarded = append([]string(nil), args...)
+		return nil
+	})
+	command.SetArgs([]string{"--config", custom})
+	if err := command.Execute(); err != nil {
+		t.Fatal(err)
+	}
+	if !strings.Contains(strings.Join(forwarded, "\x00"), "--qodana-yaml\x00"+custom) {
+		t.Fatalf("Go launcher parsed or rejected custom YAML instead of forwarding its path: %q", forwarded)
+	}
+}
+
+func TestEdictManagedMCPForwardsYamlWithoutEdictSection(t *testing.T) {
+	project := t.TempDir()
+	t.Chdir(project)
+	if err := os.WriteFile(filepath.Join(project, "qodana.yaml"), []byte("version: \"1.0\"\n"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	var forwarded []string
+	command := newEdictManagedMCPStartCommandWithRunner(func(_ *cobra.Command, args ...string) error {
+		forwarded = append([]string(nil), args...)
+		return nil
+	})
+	if err := command.Execute(); err != nil {
+		t.Fatal(err)
+	}
+	if !strings.Contains(strings.Join(forwarded, "\x00"), "--qodana-yaml\x00qodana.yaml") {
+		t.Fatalf("Qodana YAML path was not forwarded: %q", forwarded)
+	}
+}
+
 func TestEdictManagedMCPFailsForInvalidStateDirectory(t *testing.T) {
 	prepareEdictProject(t)
 	if err := os.WriteFile("not-a-directory", []byte("existing"), 0o600); err != nil {

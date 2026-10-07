@@ -26,6 +26,30 @@ import org.junit.jupiter.api.Test
 class CliTest : IntegrationTest() {
 
     @Test
+    fun `installed Kotlin application parses and validates forwarded Qodana YAML`() {
+        val config = directory.resolve("partial-qodana.yaml")
+        Files.writeString(config, "edict:\n  ci:\n    url:\n")
+        val stderr = directory.resolve("config-stderr")
+        val process = ProcessBuilder(
+            System.getProperty("edict.executable"),
+            "mcp",
+            "--qodana-yaml",
+            config.toString(),
+        )
+            .apply {
+                environment()["EDICT_OPTS"] = "-D${EdictLayout.LOG_DIRECTORY_PROPERTY}=${workspace.layout.logDirectory}"
+            }
+            .directory(workspace.project.toFile())
+            .redirectOutput(directory.resolve("config-stdout").toFile())
+            .redirectError(stderr.toFile())
+            .start()
+        process.outputStream.close()
+        assertTrue(process.waitFor(30, TimeUnit.SECONDS), "CLI did not reject partial Qodana YAML")
+        assertEquals(1, process.exitValue())
+        assertTrue(Files.readString(stderr).contains("edict.ci.url is required"))
+    }
+
+    @Test
     fun `installed application serves Edict Next over HTTP at the installed port and releases state lock on exit`() {
         val executable = System.getProperty("edict.executable")
         val stderr = directory.resolve("stderr")
