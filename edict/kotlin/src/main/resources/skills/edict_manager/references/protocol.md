@@ -59,7 +59,11 @@ When a skill requires another skill:
    the stored assignment; the child obtains those instructions directly from MCP.
    Do not fork a conversation containing your parent or sibling  capabilities. Do not execute the child's skill inline or use an unmanaged copy as a fallback.
 4.  Start independent siblings within the reserved capacity before waiting; only dependent work must wait for
-   the child's persisted completion. Respect the runtime's concurrency limit and reserve room for descendants. On
+   the child's persisted completion. Wait with the native wait until a child completes; do not poll `edict_plan_get`
+   while children run. Every plan read returns the complete plan, so read it only after a child completes or fails. Respect the runtime's concurrency limit and reserve room for descendants. On
    failure stop dependent work and finish your own task as failed. If spawning
-   fails or a worker is lost before finishing, call `edict_task_cancel(token, taskId, result)` with your parent
-   capability to persist the failure and revoke that task's descendants. Do not act as its worker.
+   fails or a worker is lost before finishing (it cannot fetch its assignment, its thread dies, or it stops responding),
+   call `edict_task_cancel(token, taskId, result)` with your parent capability. That marks the task `cancelled`,
+   revokes it and its descendants, and records your reason. Do not act as its worker. Retry it when your skill still
+   needs its result: `edict_delegate` the same task again and launch a fresh worker. A cancelled task does not count
+   against review limits and does not stop you from completing; a child that finished `failed` does.

@@ -8,9 +8,6 @@ import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
 import kotlinx.coroutines.runBlocking
-import kotlinx.serialization.json.decodeFromJsonElement
-import kotlinx.serialization.json.JsonArray
-import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
 import org.jetbrains.qodana.edict.common.sha256
@@ -22,7 +19,6 @@ import org.jetbrains.qodana.edict.edictnext.EdictRepository
 import org.jetbrains.qodana.edict.edictnext.EdictRepositoryDirectory
 import org.jetbrains.qodana.edict.integration.support.*
 import org.jetbrains.qodana.edict.integration.support.inspection.InspectionServer
-import org.jetbrains.qodana.edict.integration.support.inspection.stageOrderProblems
 import org.jetbrains.qodana.edict.runtime.CodexRunner
 import org.junit.jupiter.api.Test
 
@@ -79,15 +75,19 @@ class LivePipelineTest : IntegrationTest() {
             stages.map { it.skill },
         )
         val ids = stages.map { it.id }
-        val snapshots = Files.readAllLines(workspace.layout.mcpSystemLogPath).mapNotNull { line ->
-            val encoded = line.substringAfter(" => ", missingDelimiterValue = "")
-            if (encoded.isEmpty()) return@mapNotNull null
-            val result = runCatching { wireJson.parseToJsonElement(encoded).jsonObject["structuredContent"] as? JsonObject }.getOrNull()
-            (result?.get("plan") as? JsonObject ?: result)?.takeIf { it["tasks"] is JsonArray }
-                ?.let { wireJson.decodeFromJsonElement<Plan>(it) }
+        // Lifecycle calls return compact acknowledgements, so the task log is the record of stage order.
+        val events = Files.readAllLines(workspace.layout.tasksLogPath)
+        ids.forEachIndexed { index, id ->
+            val started = events.indexOfFirst { it.startsWith("[-:$id] ") && it.endsWith(" started") }
+            val finished = events.indexOfFirst { it.startsWith("[-:$id] ") && it.endsWith(" finished") }
+            assertTrue(started >= 0, "Stage $id has no recorded running state")
+            assertTrue(finished > started, "Stage $id did not finish after it started")
+            if (index > 0) {
+                val previous = ids[index - 1]
+                val previousFinished = events.indexOfFirst { it.startsWith("[-:$previous] ") && it.endsWith(" finished") }
+                assertTrue(started > previousFinished, "Stage $id started before previous stage $previous finished")
+            }
         }
-        val problems = stageOrderProblems(snapshots, ids)
-        assertTrue(problems.isEmpty(), problems.joinToString("\n"))
     }
 
     private fun verifyGeneratedCluster(
