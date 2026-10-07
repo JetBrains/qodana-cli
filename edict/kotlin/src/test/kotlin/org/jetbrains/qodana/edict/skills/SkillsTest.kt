@@ -123,4 +123,20 @@ class SkillsTest {
         assertFalse(review.contains("COVERAGE"))
         assertFalse(review.contains("EXAMPLES_ADDED"))
     }
+
+    @Test
+    fun `manager defines the default daily repository pipeline`() {
+        val manager = Skills.read("edict_manager")
+        val compact = manager.replace(Regex("\\s+"), " ")
+
+        assertContains(manager, "# Default repository pipeline")
+        assertContains(compact, "creation and publication of 10 new inspection rules as the ultimate goal")
+        assertContains(compact, "up to 100 merged PRs not already present")
+        assertContains(compact, "`edict-pr-signal-analysis`")
+        assertContains(compact, "`edict-next-run`")
+        assertContains(compact, "`edict-promote`")
+        assertContains(compact, "never invent Signals")
+        val defaultPipeline = compact.substringAfter("# Default repository pipeline")
+        assertFalse(defaultPipeline.contains("`edict-batch-signal-analysis`"))
+    }
 }
