@@ -23,6 +23,7 @@ internal class EdictNextMcpToolset(
   private val management: EdictManagementService,
   private val distribution: EdictNextDistributionService,
   private val generation: EdictNextGenerationService,
+  private val sourceFiles: EdictSourceFileService,
   private val configuration: EdictConfiguration = EdictConfiguration(),
   private val promotion: PromotionService,
 ) {
@@ -53,6 +54,30 @@ internal class EdictNextMcpToolset(
         scratchDirectory = layout.scratchDirectory.createDirectories().toString(),
         reviewRepository = configuration.ci?.reviewRepository,
       ).toToolResult()
+    }
+
+    server.addTool(
+      name = "edict_file_at_ref",
+      description = "Read a repository file at an exact commit with 1-based line numbers, from local Git or, when the " +
+        "commit is not local, from the CI review repository. With anchor lines, return only them and radius lines around " +
+        "them. Read-only.",
+      inputSchema = toolSchema(
+        required = listOf("path", "ref"),
+        "path" to property("string", "File path relative to the repository root"),
+        "ref" to property("string", "Full commit SHA"),
+        "anchorStartLine" to property("integer", "Optional 1-based first line to focus on"),
+        "anchorEndLine" to property("integer", "Optional 1-based last line to focus on; defaults to anchorStartLine"),
+        "radius" to property("integer", "Context lines around the anchor (default ${EdictSourceFileService.DEFAULT_RADIUS})"),
+      ),
+    ) { request ->
+      val anchor = request.optionalInt("anchorStartLine")?.let { EdictNextLineRange(it, request.optionalInt("anchorEndLine") ?: it) }
+      val content = sourceFiles.fileAtRef(
+        request.requireString("path"),
+        request.requireString("ref"),
+        anchor,
+        request.optionalInt("radius") ?: EdictSourceFileService.DEFAULT_RADIUS,
+      )
+      CallToolResult(content = listOf(TextContent(content)))
     }
 
     server.addTool(
@@ -185,11 +210,11 @@ internal class EdictNextMcpToolset(
 
     server.addTool(
       name = "edict_next_delete_code_example",
-      description = "Delete one unassigned synthetic example from a frozen cluster.",
+      description = "Delete one synthetic example from a frozen cluster and clear syntheticExampleId on every Signal that references it; those Signals then need a new example.",
       inputSchema = stringArguments(
         "token" to "Your delegated managed-task token",
         "clusterId" to "Frozen generation cluster id",
-        "exampleId" to "Unassigned example id to delete",
+        "exampleId" to "Example id to delete",
       ),
     ) { request ->
       management.requireSkill(
@@ -523,6 +548,9 @@ private fun toolSchema(required: List<String>, vararg properties: Pair<String, J
 private fun CallToolRequest.requireString(name: String): String =
   arguments?.get(name)?.jsonPrimitive?.content
   ?: error("'$name' is required")
+
+private fun CallToolRequest.optionalInt(name: String): Int? =
+  arguments?.get(name)?.jsonPrimitive?.let { it.intOrNull ?: error("'$name' must be an integer") }
 
 private inline fun <reified T> T.toToolResult(isError: Boolean = false): CallToolResult {
   val element = EdictNextJson.encodeToJsonElement(this)

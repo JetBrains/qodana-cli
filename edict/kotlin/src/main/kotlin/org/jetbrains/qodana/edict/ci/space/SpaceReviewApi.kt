@@ -115,6 +115,7 @@ internal class SpaceReviewApi(
       val messages = spaceDiscussion(channel)
       if (messages.isEmpty()) return@mapNotNull null
       val anchor = discussion.obj("anchor")
+      // TODO: a discussion without line and oldLine gets anchor 0, and ReviewClient.fetch rejects the whole batch.
       val line = (anchor.number("line").takeIf { it > 0 } ?: anchor.number("oldLine")).toInt()
       ReviewThread(
         "space-$number-${message.text("id")}",

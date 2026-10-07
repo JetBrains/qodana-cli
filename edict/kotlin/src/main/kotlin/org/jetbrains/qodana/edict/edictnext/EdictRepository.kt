@@ -120,27 +120,20 @@ internal class EdictRepository(val paths: EdictRepositoryDirectory) {
     require(signal.label == example.metadata.label) {
       "Signal '$signalId' and example '$exampleId' have different labels"
     }
-    val signalPath = cluster.directory.signalPath(signalId)
-    val document = EdictNextJson.parseToJsonElement(signalPath.readText()).jsonObject
-    signalPath.writeText(
-      EdictNextJson.encodeToString(
-        JsonObject.serializer(),
-        JsonObject(document + ("syntheticExampleId" to JsonPrimitive(exampleId))),
-      ),
-    )
+    writeSyntheticExampleId(cluster.directory.signalPath(signalId), exampleId)
   }
 
+  /** Deletes the example and clears `syntheticExampleId` on every Signal that references it. */
   fun deleteCodeExample(clusterId: String, exampleId: String) {
     require(EDICT_NEXT_KEBAB_CASE.matches(clusterId)) { "Invalid cluster id '$clusterId'" }
     require(EDICT_NEXT_KEBAB_CASE.matches(exampleId)) { "Invalid example id '$exampleId'" }
     val clusterDirectory = EdictNextClusterDirectory(paths.clustersDirectory.resolve(clusterId))
-    loadSignals(clusterDirectory.signalsDirectory).forEach { signal ->
-      require(signal.syntheticExampleId != exampleId) {
-        "Code example '$exampleId' is still assigned to Signal '${signal.id}'"
-      }
-    }
     val exampleDirectory = clusterDirectory.examplesDirectory.resolve(exampleId)
     require(exampleDirectory.isDirectory()) { "Code example '$exampleId' does not exist" }
+    // Unassign first: an interruption then leaves an unreferenced example rather than a dangling reference.
+    loadSignals(clusterDirectory.signalsDirectory).filter { it.syntheticExampleId == exampleId }.forEach { signal ->
+      writeSyntheticExampleId(clusterDirectory.signalPath(signal.id), null)
+    }
     exampleDirectory.toFile().deleteRecursively()
   }
 
@@ -421,6 +414,14 @@ internal class EdictRepository(val paths: EdictRepositoryDirectory) {
       EdictNextClusterManifest.serializer()
     )
     cluster.historyPath.writeText("Created for Signal `${signal.id}`.\n")
+  }
+
+  /** Changes only `syntheticExampleId`, keeping every other field of the stored Signal as it is. */
+  private fun writeSyntheticExampleId(signalPath: Path, exampleId: String?) {
+    val document = EdictNextJson.parseToJsonElement(signalPath.readText()).jsonObject
+    val updated = if (exampleId == null) document - "syntheticExampleId"
+                  else document + ("syntheticExampleId" to JsonPrimitive(exampleId))
+    signalPath.writeText(EdictNextJson.encodeToString(JsonObject.serializer(), JsonObject(updated)))
   }
 
   private fun loadExamples(clusterDirectory: EdictNextClusterDirectory): List<EdictNextStoredExample> {

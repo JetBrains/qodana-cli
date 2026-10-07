@@ -22,8 +22,8 @@ Change examples only through `edict_next_save_code_example`, `edict_next_assign_
 
 Read every Signal in the cluster. Resolve the Git root from the inspected project and retrieve each exact
 `fileRevision` with read-only Git (`git show <revision>:<repository-relative-path>`), treating those complete historical
-bytes as authoritative. If an object is unavailable and Qodana exposes `file_at_ref`, use it with radius 20, then 5
-and 0 until every requested expected-range line is visible. Do not reconcile that Signal before that. Independently infer
+bytes as authoritative. If an object is unavailable, read it with `edict_file_at_ref` anchored at the expected range,
+with radius 20, then 5 and 0, until every requested expected-range line is visible. Do not reconcile that Signal before that. Independently infer
 the broadest coherent rule that explains all positive and negative Signals. Use that inference only to identify which
 source relationships are relevant to each Signal reduction. Do not persist a rule, id, name, or description, and do not
 account for an inspection candidate or Inspection KTS implementation limits.
@@ -34,7 +34,8 @@ For every Signal:
 
 1. Identify the construct covered by its expected range and the source facts that make its label correct.
 2. Inspect its assigned example when present. Keep it when it is a faithful, focused semantic slice of the exact source.
-3. For every missing or incorrect example, create and delegate one `edict-next-code-example` managed task to a fresh
+3. Delete every incorrect example with `edict_next_delete_code_example`; this unassigns its Signals. For every Signal
+   without an example, create and delegate one `edict-next-code-example` managed task to a fresh
    native subagent, following the manager protocol. Give it only this cluster id and the Signal id. The worker resolves
    configured paths with `edict_context`. Wait for every example worker and require its managed task
    to complete; do not perform the leaf reduction inline. Preserve the original types, modifiers, annotations,

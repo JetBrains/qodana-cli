@@ -29,7 +29,7 @@ Repeat until `edict_next_next_signal` returns `STOP_DISTRIBUTION`:
 1. Call `edict_next_next_signal` and read the complete Signal.
 2. For every plausible existing cluster, retrieve `kind: "cluster"` context and compare every member Signal, including
    negatives. Retrieve a useful neighboring inbox Signal with `kind: "signal"`, or read its exact revision with
-   `get_file_at_ref` when needed.
+   `edict_file_at_ref` when needed.
 3. Choose one compatible existing cluster id or a new provisional id.
 4. Call `edict_next_add_signal_to_cluster` with `signalId` and `clusterId`. Existing-cluster assignment requires its
    context receipt. If `added` is false, use the summary to correct the choice and retry the same Signal; do not request

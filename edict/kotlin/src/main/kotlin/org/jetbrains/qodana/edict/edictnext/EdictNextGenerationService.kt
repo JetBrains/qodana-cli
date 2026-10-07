@@ -67,6 +67,11 @@ internal class EdictNextGenerationService(
     sourceCode: String,
   ): EdictNextMutationResponse = withinGenerationTarget(clusterId) { repository ->
     val metadata = EdictNextJson.decodeFromString<EdictNextCodeExampleMetadata>(metadataJson)
+    val directory = EdictNextExampleDirectory(
+      EdictNextClusterDirectory(repository.paths.clustersDirectory.resolve(clusterId)).examplesDirectory.resolve(exampleId),
+    )
+    val validation = validateCodeExample(directory, metadata, directory.sourcePath(metadata.fileName), sourceCode)
+    require(validation.success) { validation.summary + ": " + validation.issues.joinToString("; ") }
     repository.saveCodeExample(clusterId, exampleId, metadata, sourceCode)
     EdictNextMutationResponse(true, "Stored code example '$exampleId' in cluster '$clusterId'")
   }
@@ -85,7 +90,7 @@ internal class EdictNextGenerationService(
   suspend fun deleteCodeExample(clusterId: String, exampleId: String): EdictNextMutationResponse =
     withinGenerationTarget(clusterId) { repository ->
       repository.deleteCodeExample(clusterId, exampleId)
-      EdictNextMutationResponse(true, "Deleted unassigned code example '$exampleId' from cluster '$clusterId'")
+      EdictNextMutationResponse(true, "Deleted code example '$exampleId' from cluster '$clusterId' and unassigned its Signals")
     }
 
   /**
