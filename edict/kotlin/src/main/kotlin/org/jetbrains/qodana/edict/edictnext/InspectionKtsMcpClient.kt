@@ -17,6 +17,7 @@ import java.net.http.HttpClient
 import java.net.http.HttpRequest
 import java.net.http.HttpResponse
 import java.time.Duration
+import java.util.concurrent.CompletableFuture
 import java.util.concurrent.atomic.AtomicLong
 
 @Serializable
@@ -75,11 +76,16 @@ internal interface InspectionKtsClient : AutoCloseable {
   suspend fun callTool(name: String, arguments: JsonObject): JsonObject
 }
 
-internal class StaleInspectionMcpSession(val sessionId: String) : RuntimeException()
+internal class StaleInspectionMcpSession(val sessionId: String) :
+  RuntimeException("IntelliJ MCP rejected session $sessionId, also after renewing it")
 
 /**
  * MCP client for the IDE that the Edict run opened. [projectPath] is that IDE project; every tool call is scoped to it,
  * because the IDE cannot otherwise tell which project a call targets.
+ *
+ * The IDE evicts a Streamable HTTP session whose client opens no GET event stream within 15 seconds, so each session
+ * keeps one open. A session the server no longer knows (HTTP 404) is renewed on the same server and the request retried
+ * once; only a second rejection reaches the lifecycle owner as [StaleInspectionMcpSession].
  */
 internal class HttpInspectionKtsClient(
   private val endpoint: URI,
@@ -90,8 +96,15 @@ internal class HttpInspectionKtsClient(
   private val sequence = AtomicLong()
   @Volatile private var sessionId: String? = null
   @Volatile private var protocolVersion: String = "2025-03-26"
+  @Volatile private var events: CompletableFuture<HttpResponse<Void>>? = null
 
   init {
+    openSession()
+  }
+
+  private fun openSession() {
+    events?.cancel(true)
+    sessionId = null
     val initialized = requestBlocking(
       "initialize",
       buildJsonObject {
@@ -108,6 +121,24 @@ internal class HttpInspectionKtsClient(
       put("jsonrpc", "2.0")
       put("method", "notifications/initialized")
     })
+    events = sessionId?.let(::openEvents)
+  }
+
+  /** Edict reads no server-to-client messages; the stream only keeps the session alive, and a server without one is fine. */
+  private fun openEvents(session: String): CompletableFuture<HttpResponse<Void>> = client.sendAsync(
+    HttpRequest.newBuilder(endpoint)
+      .header("Accept", "text/event-stream")
+      .header("MCP-Protocol-Version", protocolVersion)
+      .header("Mcp-Session-Id", session)
+      .GET()
+      .build(),
+    HttpResponse.BodyHandlers.discarding(),
+  )
+
+  /** Concurrent callers rejected for the same session renew it once. */
+  @Synchronized
+  private fun renewSession(staleSessionId: String) {
+    if (sessionId == staleSessionId) openSession()
   }
 
   override suspend fun compile(code: String): InspectionKtsCompileResult =
@@ -169,7 +200,7 @@ internal class HttpInspectionKtsClient(
     return response.getValue("result").jsonObject
   }
 
-  private fun sendBlocking(message: JsonObject): JsonObject? {
+  private fun sendBlocking(message: JsonObject, renewed: Boolean = false): JsonObject? {
     val requestSessionId = sessionId
     val builder = HttpRequest.newBuilder(endpoint)
       .timeout(requestTimeout)
@@ -181,11 +212,15 @@ internal class HttpInspectionKtsClient(
       builder.POST(HttpRequest.BodyPublishers.ofString(EdictNextJson.encodeToString(message))).build(),
       HttpResponse.BodyHandlers.ofString(),
     )
-    if (
-      requestSessionId != null &&
-      response.statusCode() == 404
-    ) {
-      throw StaleInspectionMcpSession(requestSessionId)
+    if (requestSessionId != null && response.statusCode() == 404) {
+      if (renewed) throw StaleInspectionMcpSession(requestSessionId)
+      try {
+        renewSession(requestSessionId)
+      }
+      catch (e: Exception) {
+        throw StaleInspectionMcpSession(requestSessionId).apply { addSuppressed(e) }
+      }
+      return sendBlocking(message, renewed = true)
     }
     response.headers().firstValue("Mcp-Session-Id").ifPresent { sessionId = it }
     check(response.statusCode() in 200..299) {
@@ -204,8 +239,10 @@ internal class HttpInspectionKtsClient(
     }
   }
 
+  /** Called only when its server stops or is replaced, so exchanges still running are aborted, the event stream included. */
   override fun close() {
-    client.close()
+    events?.cancel(true)
+    client.shutdownNow()
   }
 
   private companion object {
