@@ -35,14 +35,16 @@ object Registry {
             "edict-next-cluster-generation",
             listOf(
                 "edict-next-code-example-overseer",
-                "edict-next-inspection-code-review",
+                "edict-next-inspection-shallow-review",
                 "edict-next-weak-signal-review",
+                "edict-next-inspection-code-review",
             ),
         ),
         Policy("edict-next-code-example-overseer", delegates = listOf("edict-next-code-example")),
         Policy("edict-next-code-example"),
+        Policy("edict-next-inspection-shallow-review"),
         Policy("edict-next-inspection-code-review"),
-        Policy("edict-next-weak-signal-review", delegates = listOf("edict-next-code-example")),
+        Policy("edict-next-weak-signal-review"),
         Policy(
             "edict-batch-signal-analysis",
             delegates = listOf("edict-signal-analysis"),

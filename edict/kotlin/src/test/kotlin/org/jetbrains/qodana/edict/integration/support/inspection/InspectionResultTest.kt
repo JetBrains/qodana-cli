@@ -22,26 +22,6 @@ class InspectionResultTest {
     lateinit var directory: Path
 
     @Test
-    fun `review receipts use their JSON content regardless of filename extension`() {
-        val hash = sha256("persisted accepted inspection")
-        fun receipt(path: String, candidateHash: String = hash, status: String = "ACCEPT") =
-            directory.resolve(path).also {
-                Files.writeString(
-                    it,
-                    """{"candidateHash":"$candidateHash","status":"$status","findings":[],"summary":"review"}"""
-                )
-            }
-
-        val code = receipt("code-review.md")
-        val value = receipt("value-review")
-        receipt("rejected.json", status = "REJECT")
-        receipt("previous-candidate.md", candidateHash = sha256("previous inspection"))
-        Files.writeString(directory.resolve("invalid.json"), "not a JSON receipt")
-        Files.writeString(directory.resolve("narrative.md"), "```json\n${Files.readString(code)}\n```")
-        assertEquals(setOf(code, value), acceptedCandidateReviews(directory, hash).toSet())
-    }
-
-    @Test
     fun `decode compiler responses from text and structured MCP content`() {
         val output = """{"compilationSuccess":true,"foundProblems":[{"lineNumber":5}]}"""
         val envelopes = listOf(

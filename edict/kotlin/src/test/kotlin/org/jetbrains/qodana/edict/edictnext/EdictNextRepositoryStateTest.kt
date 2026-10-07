@@ -128,6 +128,7 @@ class EdictNextRepositoryStateTest {
     var generationId = ""
     var clusterId = ""
     val reviewSkills = listOf(
+      "edict-next-inspection-shallow-review",
       "edict-next-inspection-code-review",
       "edict-next-weak-signal-review",
     )

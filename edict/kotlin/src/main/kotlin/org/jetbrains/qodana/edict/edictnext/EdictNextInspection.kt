@@ -13,7 +13,37 @@ internal class EdictNextInspection(
     exampleAnalysis = { code, requests -> server.withClient { it.runExamples(code, requests) } },
   )
 
-  suspend fun validate(cluster: EdictNextStoredCluster, code: String): EdictNextInspectionValidationResponse {
+  suspend fun validate(cluster: EdictNextStoredCluster, code: String): EdictNextInspectionValidationResponse =
+    measure(cluster, code).validation
+
+  suspend fun evaluate(
+    cluster: EdictNextStoredCluster,
+    code: String,
+    action: EdictNextInspectionAction,
+  ): Pair<EdictNextInspectionValidationResponse, EdictNextEvaluation?> {
+    val measurement = measure(cluster, code)
+    if (!measurement.validation.overallSuccess) return measurement.validation to null
+    val labels = cluster.examples.associate { it.metadata.id to it.metadata.label }
+    fun count(label: EdictNextSignalLabel, satisfied: Boolean) =
+      measurement.satisfiedByExampleId.count { (id, value) -> labels[id] == label && value == satisfied }
+    val tp = count(EdictNextSignalLabel.POSITIVE, satisfied = true)
+    val fn = count(EdictNextSignalLabel.POSITIVE, satisfied = false)
+    val fp = count(EdictNextSignalLabel.NEGATIVE, satisfied = false)
+    return measurement.validation to EdictNextEvaluation(
+      inspectionHash = sha256Hex(code),
+      exampleSetDigest = exampleSetDigest(cluster),
+      action = action,
+      tp = tp,
+      fp = fp,
+      fn = fn,
+      precision = if (tp + fp == 0) 0.0 else tp.toDouble() / (tp + fp),
+      recall = if (tp + fn == 0) 0.0 else tp.toDouble() / (tp + fn),
+      strongExampleIds = measurement.strongExampleIds.sorted(),
+      satisfiedByExampleId = measurement.satisfiedByExampleId.toSortedMap(),
+    )
+  }
+
+  private suspend fun measure(cluster: EdictNextStoredCluster, code: String): Measurement {
     val requests = cluster.examples.map { example ->
       InspectionKtsExampleRequest(
         id = example.metadata.id,
@@ -22,7 +52,7 @@ internal class EdictNextInspection(
       )
     }
     val execution = exampleAnalysis(code, requests)
-    rejectMetadata(cluster.id, execution.compilation)?.let { return it }
+    rejectMetadata(cluster.id, execution.compilation)?.let { return Measurement(it, emptyMap(), emptySet()) }
 
     val failures = mutableListOf<EdictNextInspectionFailure>()
     val outcomesById = cluster.examples.associate { example ->
@@ -58,7 +88,7 @@ internal class EdictNextInspection(
       "$weakCorrectCount/${weakExampleIds.size} weak evidence cases correct (advisory); " +
       "${uncovered.size} uncovered positive(s), ${reportedNegatives.size} reported negative(s)"
     }
-    return EdictNextInspectionValidationResponse(
+    val validation = EdictNextInspectionValidationResponse(
       compilationSuccess = true,
       overallSuccess = accepted,
       summary = summary,
@@ -67,6 +97,7 @@ internal class EdictNextInspection(
       reportedNegativeExampleIds = reportedNegatives,
       uncoveredPositiveExampleIds = uncovered,
     )
+    return Measurement(validation, outcomesById.mapValues { it.value.satisfied }, strongExampleIds)
   }
 
   suspend fun analyzeProject(
@@ -168,4 +199,30 @@ internal class EdictNextInspection(
   }
 
   private data class ExampleOutcome(val failures: List<EdictNextInspectionFailure>, val satisfied: Boolean)
+
+  private class Measurement(
+    val validation: EdictNextInspectionValidationResponse,
+    val satisfiedByExampleId: Map<String, Boolean>,
+    val strongExampleIds: Set<String>,
+  )
+}
+
+/** What makes two analyses' findings the same for review: every reported location, in order. */
+internal fun EdictNextInspectionFindings.reviewKey(): List<Pair<String, List<EdictNextLineRange>?>> =
+  findings.map { it.fileRevision.path to it.fileRevision.expectedRanges }
+
+internal fun exampleSetDigest(cluster: EdictNextStoredCluster): String {
+  val strong = cluster.signals.asSequence()
+    .filter { it.strength == EdictNextSignalStrength.STRONG }
+    .mapNotNull(EdictNextSignal::syntheticExampleId)
+    .toSortedSet()
+  val content = buildString {
+    appendLine("strong:${strong.joinToString(",")}")
+    cluster.examples.sortedBy { it.metadata.id }.forEach { example ->
+      appendLine("example:${example.metadata.id}")
+      appendLine(EdictNextJson.encodeToString(EdictNextCodeExampleMetadata.serializer(), example.metadata))
+      appendLine(sha256Hex(example.code))
+    }
+  }
+  return sha256Hex(content)
 }

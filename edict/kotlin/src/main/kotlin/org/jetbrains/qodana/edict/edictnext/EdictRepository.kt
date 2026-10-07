@@ -159,6 +159,17 @@ internal class EdictRepository(val paths: EdictRepositoryDirectory) {
     )
   }
 
+  fun saveEvaluation(clusterId: String, evaluation: EdictNextEvaluation) {
+    val cluster = loadCluster(clusterId)
+    require(cluster.manifest.status == EdictNextClusterStatus.Pending) { "Cluster '$clusterId' is not Pending" }
+    write(cluster.directory.evaluationPath, evaluation, EdictNextEvaluation.serializer())
+  }
+
+  fun loadEvaluation(cluster: EdictNextStoredCluster): EdictNextEvaluation? =
+    cluster.directory.evaluationPath.takeIf(Path::isRegularFile)?.let {
+      EdictNextJson.decodeFromString(EdictNextEvaluation.serializer(), it.readText())
+    }
+
   fun markGenerated(cluster: EdictNextStoredCluster, selectedInspection: Path) {
     require(selectedInspection.isRegularFile()) { "Selected inspection does not exist: $selectedInspection" }
     val finalInspection = paths.inspectionPath(cluster.id)
