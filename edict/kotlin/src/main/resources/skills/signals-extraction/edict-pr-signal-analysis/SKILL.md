@@ -10,17 +10,21 @@ Run only as a delegated managed subagent. Follow [the manager protocol](../edict
 You own coverage and Signal publication; delegate evidence inspection to `edict-signal-analysis`.
 
 Call `edict_context` and require its `reviewRepository`, configured by `edict.ci.url` in `qodana.yaml`. Do not request or
-repeat its provider, owner/project key, repository, or any run path in a prompt. Require either explicit PR numbers or
-inclusive UTC date bounds, together with a PR limit from 1 to 1000. Use `projectDirectory` from `edict_context` as the source
-checkout and scratch below its `scratchDirectory`. This workflow needs `edict-mcp`, without an IntelliJ session. Provider credentials
-belong in the server environment; never request their values in a tool call, prompt, result, or log. Missing access is a
-failed prerequisite. Commit-only requests belong to `edict-batch-signal-analysis`.
+repeat its provider, owner/project key, repository, or any run path in a prompt. A daily-routine assignment uses the
+server's fixed relevant-PR target. Other requests require either explicit PR numbers or inclusive UTC date bounds.
+Use `projectDirectory` from `edict_context` as the source checkout and scratch
+below its `scratchDirectory`. This workflow needs `edict-mcp`, without an IntelliJ session. Provider credentials belong
+in the server environment; never request their values in a tool call, prompt, result, or log. Missing access is a failed
+prerequisite. Commit-only requests belong to `edict-batch-signal-analysis`.
 
 1. Start your task. Call `edict_get_pr_analysis_coverage` with your token. The response identifies the configured
-   repository. Do not reanalyze explicit PR numbers already recorded, or inclusive date intervals completely covered by
-   a recorded range. Then call `edict_fetch_pr_batch` with the remaining selection, `maxPrs`, and either `prNumbers` or
-   both `startDate` and `endDate` (`YYYY-MM-DD`). The response contains `batchId`, `selectedPrCount`,
-   `selectedPrNumbers`, `prCountWithWorkItems`, and `totalWorkItemCount`. Selection includes merged reviews only.
+   repository. Call `edict_fetch_pr_batch` without a selection for the daily routine: the server scans completed,
+   uncovered UTC dates newest-first until the fixed number of PRs with analysis work is found, includes every PR on
+   each selected date, and returns those full dates as `analyzedDateRanges`. For an explicit request, do not reanalyze
+   PR numbers already recorded or date intervals completely covered by a recorded range; call the same tool with the
+   remaining `prNumbers` or both `startDate` and `endDate` (`YYYY-MM-DD`). An explicit date range selects every merged
+   PR from every complete date in the range and does not apply the daily target. The tool returns `batchId`,
+   `selectedPrCount`, `selectedPrNumbers`, `prCountWithWorkItems`, and `totalWorkItemCount`.
 2. Call `edict_list_pr_analysis_items` with that batch, initially `offset: 0`, `limit: 20`. Follow every `nextOffset`.
    Require each page's item count to equal the smaller of its requested limit and remaining items. Preserve the
    prepared order. Require the union to contain exactly `totalWorkItemCount` distinct IDs. Page summaries
@@ -50,11 +54,11 @@ failed prerequisite. Commit-only requests belong to `edict-batch-signal-analysis
 7. Call `edict_publish_validated_pr_signals` once with the validated batch ID. The server publishes the exact cached
    models without requiring them in the tool call. An existing identical model is an idempotent success; a conflicting
    model requires investigation, not overwriting. Retry the same batch after a partially failed publication.
-8. After validation and publication succeed, call `edict_record_pr_analysis_coverage` with `analyzedPrNumbers` and,
-   when applicable, `analyzedDateRanges`; repository identity is supplied by the server. Always record the returned
-   `selectedPrNumbers`. For a date selection, also record its inclusive requested date range only when
-   `selectedPrCount < maxPrs`, which proves the limit did not truncate it; when it equals the limit, record only the
-   selected PR numbers. Never record coverage for an incomplete or failed batch.
+8. After validation and publication succeed, handle coverage. Publication records a date-based batch's returned full
+   `analyzedDateRanges` only after all validated Signals are published; call `edict_get_pr_analysis_coverage` and
+   require those ranges to be covered. Do not record PR numbers separately for a date-based batch. For an explicit
+   PR-number selection, call `edict_record_pr_analysis_coverage` with all returned `selectedPrNumbers`; repository
+   identity is supplied by the server. Never record coverage for an incomplete or failed batch.
 9. Finish with batch ID, inspected IDs, and signal IDs. The server rejects completion until coverage is
    validated and all validated signals are present. A completely inspected batch with zero findings, including an
    empty merged-review selection, succeeds without placeholders. After a server restart, prepare the selection again

@@ -7,6 +7,8 @@ import org.jetbrains.qodana.edict.ci.ReviewRepository
 import org.jetbrains.qodana.edict.ci.ReviewThread
 import java.time.LocalDate
 
+internal const val DAILY_ROUTINE_PROCESSED_PRS = 100
+
 @Serializable
 data class PrAnalysisDateRange(val startDate: String, val endDate: String) {
   fun validate() {
@@ -31,11 +33,21 @@ data class PrAnalysisCoverageInput(
 
 @Serializable
 data class ReviewSelectionInput(
-  val maxPrs: Int,
   val prNumbers: List<Int> = emptyList(),
   val startDate: String = "",
   val endDate: String = "",
-)
+) {
+  fun validate() {
+    require(prNumbers.all { it > 0 } && prNumbers.distinct().size == prNumbers.size && prNumbers.size <= 1000) {
+      "PR numbers must be distinct, positive, and contain at most 1000 entries"
+    }
+    require((startDate.isEmpty() && endDate.isEmpty()) || (startDate.isNotEmpty() && endDate.isNotEmpty())) {
+      "Specify both startDate and endDate, or neither"
+    }
+    require(prNumbers.isEmpty() || startDate.isEmpty()) { "Select either PR numbers or a date range" }
+    if (startDate.isNotEmpty()) PrAnalysisDateRange(startDate, endDate).validate()
+  }
+}
 
 @Serializable
 data class PrAnalysisCoverageState(
@@ -60,6 +72,7 @@ data class PrBatchSummary(
   val prCountWithWorkItems: Int,
   val totalWorkItemCount: Int,
   val repository: ReviewRepository,
+  val analyzedDateRanges: List<PrAnalysisDateRange> = emptyList(),
 )
 
 @Serializable
