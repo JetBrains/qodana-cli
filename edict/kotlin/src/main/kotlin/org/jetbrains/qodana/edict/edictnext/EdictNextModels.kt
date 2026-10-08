@@ -262,16 +262,6 @@ internal data class EdictNextValidationIssue(
 )
 
 @Serializable
-internal data class EdictNextValidationResponse(
-  val success: Boolean,
-  val summary: String,
-  val issues: List<EdictNextValidationIssue> = emptyList(),
-  @EncodeDefault(EncodeDefault.Mode.ALWAYS)
-  val nextAction: EdictNextNextAction =
-    if (success) EdictNextNextAction.PUBLISH else EdictNextNextAction.REPAIR_REPOSITORY,
-)
-
-@Serializable
 internal data class EdictNextPreparePipelineResponse(
   val summary: String,
 )
@@ -466,8 +456,6 @@ internal enum class EdictNextNextAction {
   CONTINUE_CLUSTER_GENERATION,
   REPAIR_INSPECTION,
   REVIEW_INSPECTION,
-  REPAIR_REPOSITORY,
-  PUBLISH,
 }
 
 /** Configuration an agent needs for this run; the root prompt carries none of it. */

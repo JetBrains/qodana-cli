@@ -14,7 +14,7 @@ class SkillsTest {
     @Test
     fun `install managed skills with matching registry and metadata`() {
         val installed = Skills.install(directory)
-        assertEquals(18, installed.size)
+        assertEquals(17, installed.size)
         assertEquals(Registry.policies.map { it.name }.sorted(), installed)
         Registry.policies.forEach { policy ->
             val name = policy.name
@@ -27,8 +27,8 @@ class SkillsTest {
             }
         }
         assertTrue(Files.exists(directory.resolve("edict_manager/references/protocol.md")))
-        assertTrue(Files.exists(directory.resolve("edict-next-run/SKILL.md")))
         assertTrue(Files.exists(directory.resolve("edict-next-generation/SKILL.md")))
+        assertFalse(Files.exists(directory.resolve("edict-next-run/SKILL.md")))
         assertFalse(Files.exists(directory.resolve("generation")))
         assertFalse(Files.exists(directory.resolve("signals-extraction")))
         assertFalse(Files.exists(directory.resolve("edict-run/SKILL.md")))
@@ -40,10 +40,9 @@ class SkillsTest {
 
     @Test
     fun `registry contains only installed skills and valid delegation edges`() {
-        assertEquals(
-            listOf("edict-next-distribution", "edict-next-generation"),
-            Registry["edict-next-run"].delegates,
-        )
+        assertTrue("edict-next-distribution" in Registry["edict_manager"].delegates)
+        assertTrue("edict-next-generation" in Registry["edict_manager"].delegates)
+        assertEquals(listOf("edict-next-cluster-generation"), Registry["edict-next-generation"].delegates)
         assertTrue("edict-git-history-signal-analysis" in Registry["edict_manager"].delegates)
         assertTrue("edict-retrospective-signal-analysis" in Registry["edict_manager"].delegates)
         assertTrue("edict-promote" in Registry["edict_manager"].delegates)
@@ -139,7 +138,6 @@ class SkillsTest {
     fun `manager defines the default daily repository pipeline`() {
         val manager = Skills.read("edict_manager")
         val compact = manager.replace(Regex("\\s+"), " ")
-        val run = Skills.read("edict-next-run").replace(Regex("\\s+"), " ")
 
         assertContains(manager, "# Default repository pipeline")
         assertContains(compact, "Use `defaultSignalCount` from `edict_context` as the extraction target")
@@ -152,11 +150,12 @@ class SkillsTest {
         assertContains(compact, "Zero-Signal days do not count toward the target but still advance coverage")
         assertContains(compact, "result may exceed the target")
         assertContains(compact, "`edict-pr-signal-analysis`")
-        assertContains(compact, "`edict-next-run`")
+        assertContains(compact, "`edict-next-distribution`")
+        assertContains(compact, "`edict-next-generation`")
         assertContains(compact, "`edict-promote`")
         assertContains(compact, "never invent Signals")
-        assertContains(run, "include that same `generationCount` in the generation child's assignment")
-        assertContains(run, "must omit `generationCount` so `edict.generation.defaultGenerationCount` applies")
+        assertContains(compact, "a user-provided generation count plus relevant completed-stage results into downstream task instructions")
+        assertContains(compact, "downstream generation must omit `generationCount` so the configured default applies")
         val prAnalysis = Skills.read("edict-pr-signal-analysis").replace(Regex("\\s+"), " ")
         assertContains(prAnalysis, "partitions them into chunks of at most eight")
         assertContains(prAnalysis, "retain only its `batchId` and `availableChunkCount`")

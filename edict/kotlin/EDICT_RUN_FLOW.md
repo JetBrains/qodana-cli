@@ -60,8 +60,8 @@ request.
 The root loads only `edict_manager`. Every other skill runs in a fresh native
 subagent with no inherited conversation, and every Qodana MCP call uses the inspected IntelliJ project as `projectPath`.
 The state root is read-only to agents and written only through Edict MCP tools, which change it in place; there is no
-second copy, branch, worktree, commit, or push. Distribution and generation verify their changes against in-memory
-snapshots taken when they start.
+second copy, branch, worktree, commit, or push. Every mutation validates its own change; there is no final
+repository-wide validation.
 
 ## Managed protocol (every task)
 
@@ -70,9 +70,9 @@ snapshots taken when they start.
   - call `edict_plan_create(request, steps)` once per server lifetime; it returns the plan and the private manager token
     - after a server restart, calling it again with the exact persisted request and steps claims the unfinished plan
       with a fresh token; interrupted tasks return to pending, completed results are kept
-  - plan steps from the request; the tested plan for a full run is
-    `edict-batch-signal-analysis` -> `edict-next-distribution` -> `edict-next-generation`
-    (`LivePipelineTest`). `edict-next-run` is also registered as a single top-level step, see below
+  - plan steps from the request; the default repository pipeline is
+    `edict-pr-signal-analysis` -> `edict-next-distribution` -> `edict-next-generation` -> `edict-promote`
+    (`LivePipelineTest`)
   - stop on any failed or uncompleted task and cancel unstarted dependent stages
   - report the plan path, produced Signal/cluster/inspection ids, Generated `knownProblems`, and Pending/Invalid clusters
 - every delegation, at any depth
@@ -90,8 +90,6 @@ Call graph (`skills/managed/Registry.kt`):
 edict_manager
 ├── edict-batch-signal-analysis ── edict-signal-analysis
 ├── edict-pr-signal-analysis ───── edict-signal-analysis
-├── edict-next-run ─┬─ edict-next-distribution
-│                   └─ edict-next-generation
 ├── edict-next-distribution
 └── edict-next-generation ── edict-next-cluster-generation
                               ├── edict-next-code-example-overseer ── edict-next-code-example
@@ -141,12 +139,10 @@ edict_manager
   - call `edict_next_add_signal_to_cluster(signalId, clusterId)` with a compatible existing id (requires the context
     receipt) or a new provisional kebab-case id; retry the same Signal when `added` is false; never split clusters
   - stop on `STOP_DISTRIBUTION`
-- `edict_next_validate_distribution`: only `$edict-next-run` calls it. It validates the repository and requires exactly
-  the selected Signals to have moved from the inbox to clusters, with no other changes
 - `$edict-next-generation`
   - take the state repository and project from `edict_context`, create a generation scratch root below its `scratchDirectory`,
     and call `edict_next_get_generation_clusters`
-    - freeze Pending clusters and their Signal memberships; `maxConcurrentClusterTasks` is 20
+    - freeze Pending clusters and their Signal memberships; `maxConcurrentClusterTasks` is 6
     - Pending clusters without a strong positive Signal and eligible clusters beyond the requested count are not returned
       or frozen; they stay Pending without a worker
   - run one `$edict-next-cluster-generation` worker per cluster, keeping up to that many active
@@ -227,8 +223,6 @@ edict_manager
          predecessor inspection
        - Invalid (concrete infrastructure/tooling failure or broken input): keeps candidate and predecessor
        - Pending (unfinished): records the reason only; after a deadline response the worker makes no MCP call
-- `edict_next_validate_generation` [read-only]: only `$edict-next-run` calls it. It validates repository state and frozen
-  change boundaries, matches renamed targets by Signal membership, and revalidates every Generated inspection
 
 ## Repository state
 
@@ -246,8 +240,6 @@ responses), and `tasks/<task-id>.log`.
 
 ## Known inconsistencies
 
-- With the tested plan (distribution -> generation directly), `edict_next_validate_distribution` and
-  `edict_next_validate_generation` are not called by anyone.
 - `edict-git-history-signal-analysis` and `edict-retrospective-signal-analysis` still publish through
   `edict_state_write`, which the server no longer registers; the tool is `edict_publish_signal`.
 - `EdictNextTimeouts.session` (900m) is defined but not enforced; the benchmark job timeout is 300 minutes.
@@ -256,6 +248,5 @@ responses), and `tasks/<task-id>.log`.
 ## TODO (outside the setup/run separation)
 
 - MCP server names: `edict` for Edict, `qodana` for IDE tools.
-- `edict-next-run`: remove, or keep.
 - Upstream breakages: test sources do not compile (`LiveGitHistorySignalAnalysisTest.kt`, `IntegrationWorkspace.kt`
   import, `InspectionKtsMcpClientTest.kt`), and server startup requires the project to be a Git repository (`Main.kt`).
