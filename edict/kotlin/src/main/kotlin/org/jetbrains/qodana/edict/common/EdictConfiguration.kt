@@ -38,14 +38,24 @@ internal data class EdictConfiguration(
 internal const val DEFAULT_EDICT_MCP_PORT = 27182
 internal const val DEFAULT_EDICT_STATE_PATH = ".edict"
 
-/** [maxProjectAnalyses] caps the expensive project analysis, and the reviews that follow it, per cluster in one run. */
-internal data class GenerationConfiguration(val maxProjectAnalyses: Int = DEFAULT_MAX_PROJECT_ANALYSES) {
+/**
+ * [maxProjectAnalyses] caps the expensive project analysis, and the reviews that follow it, per cluster in one run.
+ * [defaultGenerationCount] is the number of generation targets used when the generation request does not specify one.
+ */
+internal data class GenerationConfiguration(
+  val maxProjectAnalyses: Int = DEFAULT_MAX_PROJECT_ANALYSES,
+  val defaultGenerationCount: Int = DEFAULT_GENERATION_COUNT,
+) {
   init {
     require(maxProjectAnalyses >= 1) { "edict.generation.maxProjectAnalyses must be at least 1: $maxProjectAnalyses" }
+    require(defaultGenerationCount >= 1) {
+      "edict.generation.defaultGenerationCount must be at least 1: $defaultGenerationCount"
+    }
   }
 }
 
 internal const val DEFAULT_MAX_PROJECT_ANALYSES = 3
+internal const val DEFAULT_GENERATION_COUNT = 5
 
 internal data class EdictCIConfiguration(val url: String) {
   private val path = webUrl(url, "CI repository").pathSegments()
@@ -130,8 +140,12 @@ internal class EdictYaml {
 
 internal class GenerationYaml {
   var maxProjectAnalyses: Int? = null
+  var defaultGenerationCount: Int? = null
 
-  fun toConfiguration() = GenerationConfiguration(maxProjectAnalyses ?: DEFAULT_MAX_PROJECT_ANALYSES)
+  fun toConfiguration() = GenerationConfiguration(
+    maxProjectAnalyses = maxProjectAnalyses ?: DEFAULT_MAX_PROJECT_ANALYSES,
+    defaultGenerationCount = defaultGenerationCount ?: DEFAULT_GENERATION_COUNT,
+  )
 }
 
 internal class EdictCIYaml {

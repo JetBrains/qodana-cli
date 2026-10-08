@@ -83,15 +83,29 @@ class EdictYamlConfigurationTest {
   }
 
   @Test
-  fun `project analyses per cluster default to three and are configurable`() {
-    assertEquals(3, EdictYamlConfiguration.load(null).generation.maxProjectAnalyses)
-    assertEquals(3, EdictYamlConfiguration.load(yaml("edict:\n  generation: {}\n")).generation.maxProjectAnalyses)
-    val configured = EdictYamlConfiguration.load(yaml("edict:\n  generation:\n    maxProjectAnalyses: 5\n"))
-    assertEquals(5, configured.generation.maxProjectAnalyses)
+  fun `generation limits have defaults and are configurable`() {
+    val defaults = EdictYamlConfiguration.load(null).generation
+    assertEquals(3, defaults.maxProjectAnalyses)
+    assertEquals(5, defaults.defaultGenerationCount)
+    val empty = EdictYamlConfiguration.load(yaml("edict:\n  generation: {}\n")).generation
+    assertEquals(3, empty.maxProjectAnalyses)
+    assertEquals(5, empty.defaultGenerationCount)
+    val configured = EdictYamlConfiguration.load(yaml(
+      "edict:\n  generation:\n    maxProjectAnalyses: 5\n    defaultGenerationCount: 10\n",
+    )).generation
+    assertEquals(5, configured.maxProjectAnalyses)
+    assertEquals(10, configured.defaultGenerationCount)
     val invalid = assertFailsWith<IllegalArgumentException> {
       EdictYamlConfiguration.load(yaml("edict:\n  generation:\n    maxProjectAnalyses: 0\n"))
     }
     assertContains(invalid.message.orEmpty(), "edict.generation.maxProjectAnalyses must be at least 1")
+    val invalidGenerationCount = assertFailsWith<IllegalArgumentException> {
+      EdictYamlConfiguration.load(yaml("edict:\n  generation:\n    defaultGenerationCount: 0\n"))
+    }
+    assertContains(
+      invalidGenerationCount.message.orEmpty(),
+      "edict.generation.defaultGenerationCount must be at least 1",
+    )
   }
 
   @Test

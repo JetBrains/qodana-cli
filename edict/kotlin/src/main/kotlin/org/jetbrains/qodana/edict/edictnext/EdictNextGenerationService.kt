@@ -2,6 +2,7 @@ package org.jetbrains.qodana.edict.edictnext
 
 import kotlinx.coroutines.withTimeout
 import kotlinx.coroutines.withTimeoutOrNull
+import org.jetbrains.qodana.edict.common.DEFAULT_GENERATION_COUNT
 import org.jetbrains.qodana.edict.common.DEFAULT_MAX_PROJECT_ANALYSES
 import org.jetbrains.qodana.edict.common.GitRepository
 import java.nio.file.Path
@@ -17,6 +18,7 @@ internal class EdictNextGenerationService(
   inspectionServer: IntellijMcpServerService,
   private val projectRoot: Path,
   private val maxProjectAnalyses: Int = DEFAULT_MAX_PROJECT_ANALYSES,
+  private val defaultGenerationCount: Int = DEFAULT_GENERATION_COUNT,
 ) {
   private val inspection = EdictNextInspection(inspectionServer)
 
@@ -31,15 +33,23 @@ internal class EdictNextGenerationService(
   private val reviewedFindings = ConcurrentHashMap<Set<String>, List<Pair<String, List<EdictNextLineRange>?>>>()
   private var generationSnapshot: EdictNextGenerationSnapshot? = null
 
-  suspend fun getGenerationClusters(): EdictNextGenerationClustersResponse {
+  suspend fun getGenerationClusters(generationCount: Int? = null): EdictNextGenerationClustersResponse {
+    val targetCount = generationCount ?: defaultGenerationCount
+    require(targetCount >= 1) { "generationCount must be at least 1: $targetCount" }
     val state = repository.loadState()
     requireNoIssues(validateRepositoryState(repository, state))
     // No candidate can pass without strong positive evidence, so such a cluster waits Pending for a later run.
-    val (targets, withoutStrongPositive) = state.clusters
+    val eligible = state.clusters
       .filter { it.manifest.status == EdictNextClusterStatus.Pending }
-      .partition { cluster ->
+      .filter { cluster ->
         cluster.signals.any { it.strength == EdictNextSignalStrength.STRONG && it.label == EdictNextSignalLabel.POSITIVE }
       }
+    val ranked = eligible.sortedWith(
+      compareByDescending<EdictNextStoredCluster> { cluster ->
+        cluster.signals.count { it.label == EdictNextSignalLabel.POSITIVE }
+      }.thenBy { it.id },
+    )
+    val targets = ranked.take(targetCount)
     generationSnapshot = EdictNextGenerationSnapshot(state, targets.associate { it.id to it.signalIds })
     clusterGenerationStarts.clear()
     generationTargetSignalIdsByClusterId.clear()
@@ -51,9 +61,7 @@ internal class EdictNextGenerationService(
     projectAnalysisCounts.clear()
     return EdictNextGenerationClustersResponse(
       clusters = targets.map { EdictNextGenerationTarget(it.id, it.directory.root.toString()) },
-      clustersWithoutStrongPositiveSignal = withoutStrongPositive.map { it.id },
-      summary = "${targets.size} generation target(s) are ready; ${withoutStrongPositive.size} Pending cluster(s) have no " +
-        "strong positive Signal and stay Pending without a generation attempt",
+      summary = "${targets.size} generation target(s) are ready",
     )
   }
 

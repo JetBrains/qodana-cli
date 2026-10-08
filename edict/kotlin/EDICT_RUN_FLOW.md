@@ -12,6 +12,7 @@ edict:
   statePath: .edict # the default; relative paths are resolved from the project
   generation:
     maxProjectAnalyses: 3   # the default: project analyses per cluster in one run
+    defaultGenerationCount: 5 # the default: top Pending clusters per run by positive-Signal count
 
 # setup, in the inspected project (a future `qodana edict setup` replaces these two calls)
 cd <project>
@@ -129,8 +130,8 @@ edict_manager
   - take the state repository and project from `edict_context`, create a generation scratch root below its `scratchDirectory`,
     and call `edict_next_get_generation_clusters`
     - freeze Pending clusters and their Signal memberships; `maxConcurrentClusterTasks` is 20
-    - Pending clusters without a strong positive Signal are not frozen: the response lists them as
-      `clustersWithoutStrongPositiveSignal`, they stay Pending without a worker, and the coordinator reports them
+    - Pending clusters without a strong positive Signal and eligible clusters beyond the requested count are not returned
+      or frozen; they stay Pending without a worker
   - run one `$edict-next-cluster-generation` worker per cluster, keeping up to that many active
   - leaving a cluster Pending or Invalid is not a stage failure; the coordinator never repairs worker output
   - each `$edict-next-cluster-generation` worker:
