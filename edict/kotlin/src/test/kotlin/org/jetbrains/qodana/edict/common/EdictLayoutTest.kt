@@ -23,4 +23,13 @@ class EdictLayoutTest {
 
     assertEquals(state, EdictLayout.get(state.toString()).stateDirectory)
   }
+
+  @Test
+  fun `keeps IntelliJ MCP results beside its process log`() {
+    val log = directory.resolve("logs")
+    val layout = EdictLayout(directory, directory.resolve("state"), log, "test-run")
+
+    assertEquals(log.resolve("process-log/test-run/intellij-mcp.log"), layout.intellijMcpLogPath)
+    assertEquals(log.resolve("process-log/test-run/intellij-mcp"), layout.intellijMcpResultsDirectory)
+  }
 }

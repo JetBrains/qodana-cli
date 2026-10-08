@@ -30,6 +30,7 @@ internal data class EdictLayout(
   val tasksLogPath: Path = processLogDirectory.resolve("edict-tasks.log")
   val taskLogDirectory: Path = processLogDirectory.resolve("tasks")
   val intellijMcpLogPath: Path = processLogDirectory.resolve("intellij-mcp.log")
+  val intellijMcpResultsDirectory: Path = processLogDirectory.resolve("intellij-mcp")
 
   /** Every run's agent work; the agent sandbox can write here. */
   val agentWorkRoot: Path = logDirectory.resolve("agent-work")
