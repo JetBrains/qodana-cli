@@ -6,38 +6,39 @@ import java.nio.file.Path
 import kotlin.io.path.createDirectories
 import kotlin.io.path.writeText
 
-/** Prepares and applies one sequential distribution batch on the run's state repository, which the batch changes in place. */
+/**
+ * Applies one sequential distribution batch on the run's state repository, which the batch changes in place. The batch is
+ * selected on the first [nextSignal] from the inbox Signals whose neighbours [calculateNeighbours] found.
+ */
 internal class EdictNextDistributionService(
     private val repository: EdictRepository,
-    /** Where the neighbours of the prepared batch are dumped for debugging; nothing reads them back. */
+    /** Where the calculated neighbours are dumped for debugging; nothing reads them back. */
     private val neighboursResponsePath: Path,
 ) {
+    private var neighbours: Map<String, EdictNextSignalNeighbours>? = null
     private var batch: DistributionBatch? = null
     internal var maxInboxSignalsPerRun: Int = EDICT_NEXT_MAX_INBOX_SIGNALS_PER_RUN
 
-    suspend fun preparePipeline(): EdictNextPreparePipelineResponse {
-        var initialState = repository.loadState()
-        val replacementOwners = initialState.inboxSignals.associateWith { signal ->
-            initialState.clusters.filter { signal.id in it.signalIds }
+    suspend fun calculateNeighbours(): EdictNextCalculateNeighboursResponse {
+        var state = repository.loadState()
+        val replacementOwners = state.inboxSignals.associateWith { signal ->
+            state.clusters.filter { signal.id in it.signalIds }
         }
         if (replacementOwners.values.any { it.size > 1 }) {
-            requireNoIssues(validateRepositoryState(repository, initialState))
+            requireNoIssues(validateRepositoryState(repository, state))
         }
         val replacedSignals = replacementOwners.mapNotNull { (signal, owners) ->
             val owner = owners.singleOrNull() ?: return@mapNotNull null
             repository.replaceClusterSignalFromInbox(signal.id, owner.id)
             signal.id
         }
-        if (replacedSignals.isNotEmpty()) initialState = repository.loadState()
-        requireNoIssues(validateRepositoryState(repository, initialState))
-
-        val signalIds = initialState.jvmInboxSignalIds.sorted().take(maxInboxSignalsPerRun)
-        val neighbours = prepareNeighbours(initialState, signalIds)
-        batch = DistributionBatch(initialState, signalIds.toSet(), neighbours)
-
-        return EdictNextPreparePipelineResponse(
+        if (replacedSignals.isNotEmpty()) state = repository.loadState()
+        requireNoIssues(validateRepositoryState(repository, state))
+        val signalIds = state.jvmInboxSignalIds.sorted()
+        neighbours = prepareNeighbours(state, signalIds)
+        return EdictNextCalculateNeighboursResponse(
           summary = buildString {
-              append("${initialState.clusters.size} cluster(s), ${signalIds.size} Signal(s) selected for distribution")
+              append("Calculated neighbours of ${signalIds.size} inbox Signal(s) among ${state.clusters.size} cluster(s)")
               if (replacedSignals.isNotEmpty()) {
                   append(", ${replacedSignals.size} re-published Signal(s) replaced in existing clusters")
               }
@@ -46,7 +47,7 @@ internal class EdictNextDistributionService(
     }
 
     suspend fun nextSignal(): EdictNextSignalPreparationResponse {
-        val currentBatch = requireBatch()
+        val currentBatch = batch ?: selectBatch().also { batch = it }
         val state = repository.loadState()
         val inbox = state.inboxSignals
         val signalId = inbox.asSequence().map(EdictNextSignal::id).filter(currentBatch.signalIds::contains).minOrNull()
@@ -154,10 +155,18 @@ internal class EdictNextDistributionService(
         check(issues.isEmpty()) { issues.joinToString("\n") { "${it.path}: ${it.message}" } }
     }
 
-    private fun requireBatch(): DistributionBatch = checkNotNull(batch) { "Call edict_next_prepare_pipeline first" }
+    private fun requireBatch(): DistributionBatch = checkNotNull(batch) { "Call edict_next_next_signal first" }
+
+    /** Selects the run's batch once; Signals that arrived after [calculateNeighbours] wait for a later run. */
+    private suspend fun selectBatch(): DistributionBatch {
+        val neighbours = checkNotNull(neighbours) { "Call edict_next_calculate_neighbours_by_embeddings first" }
+        val state = repository.loadState()
+        val signalIds = state.jvmInboxSignalIds.filter(neighbours::containsKey).sorted().take(maxInboxSignalsPerRun)
+        return DistributionBatch(state, signalIds.toSet(), neighbours)
+    }
 
     internal class DistributionBatch(
-        /** The state repository when the batch was prepared; Signal context is read from it. */
+        /** The state repository when the batch was selected; Signal context is read from it. */
         val initialState: EdictNextRepositoryState,
         val signalIds: Set<String>,
         val neighbours: Map<String, EdictNextSignalNeighbours>,
