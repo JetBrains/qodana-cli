@@ -13,9 +13,9 @@ Load only this skill. Do not edit the state repository or call cluster-processin
 Call `edict_context` before the first other MCP call or worker launch. Its `stateDirectory` is the state repository and its
 `projectDirectory` the inspected project. Create a unique generation scratch root below its `scratchDirectory` and store all transient output there.
 
-Call `edict_next_get_generation_clusters`. This MCP returns the clusters to process and `maxConcurrentClusterTasks` value.
-Do not process `clustersWithoutStrongPositiveSignal`: they stay Pending until a strong positive Signal joins them. List
-them in your result.
+Call `edict_next_get_generation_clusters`, passing `generationCount` when the generation request specifies an amount.
+When omitted, the MCP uses the configured `edict.generation.defaultGenerationCount`. It returns the selected clusters
+ranked by descending positive-Signal count and `maxConcurrentClusterTasks`. Only returned clusters are generation targets.
 
 Keep up to `maxConcurrentClusterTasks` workers active. Launch one fresh native `spawn_agent` worker per cluster with
 `edict-next-cluster-generation` in the first prompt line and pass only its `clusterId`. Each worker obtains the configured

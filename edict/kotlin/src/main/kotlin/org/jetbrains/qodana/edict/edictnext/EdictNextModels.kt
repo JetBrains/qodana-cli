@@ -285,9 +285,6 @@ internal data class EdictNextGenerationTarget(
 @Serializable
 internal data class EdictNextGenerationClustersResponse(
   val clusters: List<EdictNextGenerationTarget>,
-  /** Pending clusters left out of generation: validation requires a strong positive example, so a strong positive Signal. */
-  @EncodeDefault(EncodeDefault.Mode.ALWAYS)
-  val clustersWithoutStrongPositiveSignal: List<String> = emptyList(),
   @EncodeDefault(EncodeDefault.Mode.ALWAYS)
   val maxConcurrentClusterTasks: Int = EDICT_NEXT_MAX_CONCURRENT_CLUSTER_TASKS,
   val summary: String,

@@ -139,15 +139,22 @@ class SkillsTest {
     fun `manager defines the default daily repository pipeline`() {
         val manager = Skills.read("edict_manager")
         val compact = manager.replace(Regex("\\s+"), " ")
+        val run = Skills.read("edict-next-run").replace(Regex("\\s+"), " ")
 
         assertContains(manager, "# Default repository pipeline")
-        assertContains(compact, "creation and publication of 10 new inspection rules as the ultimate goal")
+        assertContains(compact, "Let generation use `edict.generation.defaultGenerationCount`")
+        assertContains(compact, "do not add a generation count to downstream instructions when the user did not provide one")
+        assertContains(compact, "An explicit user-provided count overrides that default")
         assertContains(compact, "up to 100 merged PRs not already present")
         assertContains(compact, "`edict-pr-signal-analysis`")
         assertContains(compact, "`edict-next-run`")
         assertContains(compact, "`edict-promote`")
         assertContains(compact, "never invent Signals")
+        assertContains(run, "include that same `generationCount` in the generation child's assignment")
+        assertContains(run, "must omit `generationCount` so `edict.generation.defaultGenerationCount` applies")
         val defaultPipeline = compact.substringAfter("# Default repository pipeline")
         assertFalse(defaultPipeline.contains("`edict-batch-signal-analysis`"))
+        assertFalse(defaultPipeline.contains("10-rule target"))
+        assertFalse(defaultPipeline.contains("all Pending generation targets"))
     }
 }

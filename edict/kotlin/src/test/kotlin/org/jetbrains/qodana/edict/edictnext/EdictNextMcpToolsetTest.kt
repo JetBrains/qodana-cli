@@ -197,6 +197,9 @@ class EdictNextMcpToolsetTest {
       val promoteSchema = server.tools.getValue("edict_promote_clusters").tool.inputSchema
       assertEquals(setOf("token", "clusterIds"), checkNotNull(promoteSchema.properties).keys)
       assertEquals(listOf("token"), promoteSchema.required)
+      val generationSchema = server.tools.getValue("edict_next_get_generation_clusters").tool.inputSchema
+      assertEquals(setOf("generationCount"), checkNotNull(generationSchema.properties).keys)
+      assertTrue(generationSchema.required.isNullOrEmpty())
       assertEquals(listOf("code", "language"), server.tools.getValue("generate_psi_tree").tool.inputSchema.required)
     }
   }

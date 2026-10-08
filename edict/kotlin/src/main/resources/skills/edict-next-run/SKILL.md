@@ -19,8 +19,10 @@ Run sequentially:
 1. Launch `edict-next-distribution` for up to 120 minutes. Distribution prepares the pipeline snapshot before assigning
    Signals. After it returns, call
    `edict_next_validate_distribution` and stop on failure.
-2. Launch `edict-next-generation` for up to 660 minutes. It obtains the configured state, project, and scratch paths
-   directly from `edict_context`.
+2. Launch `edict-next-generation` for up to 660 minutes. If this task's assignment contains an explicit user-provided
+   generation count, include that same `generationCount` in the generation child's assignment. Otherwise do not add a
+   count; the generation child must omit `generationCount` so `edict.generation.defaultGenerationCount` applies. It
+   obtains the configured state, project, and scratch paths directly from `edict_context`.
 3. Call the read-only `edict_next_validate_generation` for up to 40 minutes. Stop unless it returns `PUBLISH`.
 
 After successful validation, collect every Invalid cluster id and its recorded infrastructure/tooling or cluster-state failure
