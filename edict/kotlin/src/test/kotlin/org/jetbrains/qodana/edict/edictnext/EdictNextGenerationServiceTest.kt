@@ -73,8 +73,60 @@ class EdictNextGenerationServiceTest {
     try {
       val response = generation.getGenerationClusters()
       assertEquals(listOf("busy-wait"), response.clusters.map { it.clusterId })
-      assertEquals(listOf("strong-negative", "weak-positive"), response.clustersWithoutStrongPositiveSignal.sorted())
       assertFailsWith<IllegalStateException> { generation.saveCandidateInspection("weak-positive", "// weak-positive report") }
+    }
+    finally {
+      inspection.stop()
+    }
+  }
+
+  @Test
+  fun `requested generation count overrides default and selects Pending clusters with the most positive Signals`() = runBlocking<Unit> {
+    val strongPositive = EdictNextSignalStrength.STRONG to EdictNextSignalLabel.POSITIVE
+    val strongNegative = EdictNextSignalStrength.STRONG to EdictNextSignalLabel.NEGATIVE
+    val (generation, inspection) = generation(
+      "most" to strongPositive,
+      "tie-b" to strongPositive,
+      "tie-a" to strongPositive,
+      "negative-heavy" to strongNegative,
+      defaultGenerationCount = 1,
+    )
+    writeSignal("most", "s-most-2", EdictNextSignalStrength.WEAK, EdictNextSignalLabel.POSITIVE)
+    writeSignal("most", "s-most-3", EdictNextSignalStrength.WEAK, EdictNextSignalLabel.POSITIVE)
+    writeSignal("tie-a", "s-tie-a-2", EdictNextSignalStrength.WEAK, EdictNextSignalLabel.POSITIVE)
+    writeSignal("tie-b", "s-tie-b-2", EdictNextSignalStrength.WEAK, EdictNextSignalLabel.POSITIVE)
+    writeSignal("tie-b", "s-tie-b-3", EdictNextSignalStrength.STRONG, EdictNextSignalLabel.NEGATIVE)
+    writeSignal("tie-b", "s-tie-b-4", EdictNextSignalStrength.STRONG, EdictNextSignalLabel.NEGATIVE)
+    writeSignal("negative-heavy", "s-negative-heavy-2", EdictNextSignalStrength.STRONG, EdictNextSignalLabel.NEGATIVE)
+    writeSignal("negative-heavy", "s-negative-heavy-3", EdictNextSignalStrength.STRONG, EdictNextSignalLabel.NEGATIVE)
+
+    try {
+      val response = generation.getGenerationClusters(generationCount = 2)
+      assertEquals(listOf("most", "tie-a"), response.clusters.map { it.clusterId })
+      val error = assertFailsWith<IllegalStateException> {
+        generation.saveCandidateInspection("tie-b", "// tie-b report")
+      }
+      assertContains(error.message.orEmpty(), "not a frozen generation target")
+    }
+    finally {
+      inspection.stop()
+    }
+  }
+
+  @Test
+  fun `configured generation count is used when request omits it`() = runBlocking<Unit> {
+    val strongPositive = EdictNextSignalStrength.STRONG to EdictNextSignalLabel.POSITIVE
+    val (generation, inspection) = generation(
+      "second" to strongPositive,
+      defaultGenerationCount = 1,
+    )
+    writeSignal("second", "s-second-2", EdictNextSignalStrength.WEAK, EdictNextSignalLabel.POSITIVE)
+
+    try {
+      val response = generation.getGenerationClusters()
+      assertEquals(listOf("second"), response.clusters.map { it.clusterId })
+      val error = assertFailsWith<IllegalArgumentException> { generation.getGenerationClusters(generationCount = 0) }
+      assertContains(error.message.orEmpty(), "generationCount must be at least 1")
     }
     finally {
       inspection.stop()
@@ -283,6 +335,7 @@ class EdictNextGenerationServiceTest {
   private fun generation(
     vararg clusters: Pair<String, Pair<EdictNextSignalStrength, EdictNextSignalLabel>>,
     predecessorId: String? = null,
+    defaultGenerationCount: Int = 5,
   ): Pair<EdictNextGenerationService, IntellijMcpServerService> {
     val project = gitFixture(directory.resolve("project")).root
     val state = directory.resolve("state").createDirectories()
@@ -299,7 +352,13 @@ class EdictNextGenerationServiceTest {
         override suspend fun stop() = Unit
       },
     )
-    return EdictNextGenerationService(repository, inspection, project, maxProjectAnalyses = 2) to inspection
+    return EdictNextGenerationService(
+      repository,
+      inspection,
+      project,
+      maxProjectAnalyses = 2,
+      defaultGenerationCount = defaultGenerationCount,
+    ) to inspection
   }
 
   /** A Pending cluster with one Signal whose example expects a finding on line 1 when positive. */

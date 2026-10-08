@@ -139,10 +139,19 @@ internal class EdictNextMcpToolset(
 
     server.addTool(
       name = "edict_next_get_generation_clusters",
-      description = "Freeze and return the Pending clusters that generation must process. Pending clusters without a " +
-        "strong positive Signal are listed separately; they stay Pending without a generation attempt.",
-    ) {
-      generation.getGenerationClusters().toToolResult()
+      description = "Freeze and return the requested number of Pending clusters that generation must process, ranked " +
+        "by descending positive-Signal count. Omit generationCount to use the configured default. Only eligible selected " +
+        "clusters are returned.",
+      inputSchema = toolSchema(
+        required = emptyList(),
+        "generationCount" to buildJsonObject {
+          put("type", "integer")
+          put("minimum", 1)
+          put("description", "Optional number of clusters to generate; omitted uses edict.generation.defaultGenerationCount")
+        },
+      ),
+    ) { request ->
+      generation.getGenerationClusters(request.optionalInt("generationCount")).toToolResult()
     }
 
     server.addTool(

@@ -68,9 +68,11 @@ only by a delegated registered promotion skill when the selected pipeline includ
 # Default repository pipeline
 
 When the user does not give a more specific goal and asks to process the repository, run the daily routine, or create
-new rules, do not ask them to design a pipeline. Use creation and publication of 10 new inspection rules as the ultimate
-goal. Ten is an evidence-constrained target: never invent Signals, force unrelated Signals into a cluster, weaken
-generation validation, or claim rules that were not generated. Report the achieved count and any shortfall.
+new rules, do not ask them to design a pipeline. Let generation use `edict.generation.defaultGenerationCount`; do not
+add a generation count to downstream instructions when the user did not provide one. An explicit user-provided count
+overrides that default and must be carried unchanged through `edict-next-run` to `edict-next-generation`. The count is
+an evidence-constrained target: never invent Signals, force unrelated Signals into a cluster, weaken generation
+validation, or claim rules that were not generated. Report the achieved count and any shortfall.
 
 Create and execute these top-level tasks in this exact order:
 
@@ -78,11 +80,13 @@ Create and execute these top-level tasks in this exact order:
    repository's PR-analysis coverage. Use `edict_get_pr_analysis_coverage` before selection, end the selection on the
    current UTC date, exclude covered PR numbers and fully covered date intervals, and keep the batch bounded to 100.
    If fewer uncovered PRs exist, analyze all of them. An empty selection is a successful no-op.
-2. `edict-next-run`: run distribution (clusterization) and generation sequentially for the resulting inbox and all
-   Pending generation targets.
+2. `edict-next-run`: run distribution (clusterization) and generation sequentially for the resulting inbox and the
+   generation targets selected by the requested count or configured default.
 3. `edict-promote`: publish every newly eligible Generated inspection through the configured promotion target. Missing
    CI or promotion configuration is a failed publication prerequisite, not a reason to omit this task.
 
-Carry the 10-rule target and relevant completed-stage results into downstream task instructions. Do not stop merely
-because extraction produced 10 Signals: the goal counts newly Generated inspection rules that reach the publication
-stage. A more specific user request overrides this default pipeline and its counts, ranges, and stages.
+Carry a user-provided generation count and relevant completed-stage results into downstream task instructions. For the
+default pipeline, do not add a generation count: downstream generation must omit `generationCount` so the configured
+default applies. Do not stop merely because extraction produced the target number of Signals: the goal counts newly
+Generated inspection rules that reach the publication stage. A more specific user request overrides this default
+pipeline and its counts, ranges, and stages.

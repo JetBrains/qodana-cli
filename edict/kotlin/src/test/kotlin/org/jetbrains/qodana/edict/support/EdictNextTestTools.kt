@@ -44,7 +44,13 @@ internal fun edictNextToolset(
   return EdictNextMcpToolset(
     layout, inspectionServer, management,
     EdictNextDistributionService(repository, layout.neighboursResponsePath),
-    EdictNextGenerationService(repository, inspectionServer, layout.root),
+    EdictNextGenerationService(
+      repository,
+      inspectionServer,
+      layout.root,
+      configuration.generation.maxProjectAnalyses,
+      configuration.generation.defaultGenerationCount,
+    ),
     EdictSourceFileService(layout.root, ReviewClient(), configuration.ci?.reviewRepository),
     configuration,
     promotion ?: PromotionService({ repository }, configuration),

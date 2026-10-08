@@ -73,7 +73,13 @@ internal class EdictServer private constructor(
         val toolset = EdictNextMcpToolset(
           layout, inspectionServer, management,
           EdictNextDistributionService(repository, layout.neighboursResponsePath),
-          EdictNextGenerationService(repository, inspectionServer, layout.root, configuration.generation.maxProjectAnalyses),
+          EdictNextGenerationService(
+            repository,
+            inspectionServer,
+            layout.root,
+            configuration.generation.maxProjectAnalyses,
+            configuration.generation.defaultGenerationCount,
+          ),
           EdictSourceFileService(layout.root, reviewProvider, configuration.ci?.reviewRepository),
           configuration,
           PromotionService({ repository }, configuration, reviewManagement),
