@@ -12,7 +12,7 @@ import kotlin.io.path.readText
 import kotlin.time.TimeMark
 import kotlin.time.TimeSource
 
-/** Generates inspections for the run's Pending clusters, checked against the snapshot [getGenerationClusters] took. */
+/** Generates inspections for the Pending clusters that [getGenerationClusters] selected for the run. */
 internal class EdictNextGenerationService(
   private val repository: EdictRepository,
   inspectionServer: IntellijMcpServerService,
@@ -36,7 +36,6 @@ internal class EdictNextGenerationService(
   private val validatedExampleReports = ConcurrentHashMap<Set<String>, Pair<String, Map<String, Boolean>>>()
   private val analyzedExampleReports = ConcurrentHashMap<Set<String>, Map<String, Boolean>>()
   private val analyzedCodes = ConcurrentHashMap<Set<String>, String>()
-  private var generationSnapshot: EdictNextGenerationSnapshot? = null
 
   suspend fun getGenerationClusters(generationCount: Int? = null): EdictNextGenerationClustersResponse {
     val targetCount = generationCount ?: defaultGenerationCount
@@ -55,7 +54,6 @@ internal class EdictNextGenerationService(
       }.thenBy { it.id },
     )
     val targets = ranked.take(targetCount)
-    generationSnapshot = EdictNextGenerationSnapshot(state, targets.associate { it.id to it.signalIds })
     clusterGenerationStarts.clear()
     generationTargetSignalIdsByClusterId.clear()
     generationTargetSignalIdsByClusterId.putAll(targets.associate { it.id to it.signalIds })
@@ -381,7 +379,7 @@ internal class EdictNextGenerationService(
 
   /**
    * Ends the processing of a frozen target in [status], recording [reason] in its history. Each status is reached only
-   * with its contract satisfied, so [validateGeneration] accepts the result; otherwise the cluster stays as it was.
+   * with its contract satisfied; otherwise the cluster stays as it was.
    */
   suspend fun finaliseCluster(
     clusterId: String,
@@ -403,40 +401,6 @@ internal class EdictNextGenerationService(
       EdictNextClusterStatus.Pending -> Unit
     }
     EdictNextFinaliseClusterResponse(success = true, summary = "Cluster '$clusterId' is $status")
-  }
-
-  suspend fun validateGeneration(): EdictNextValidationResponse {
-    val generationSnapshot = checkNotNull(generationSnapshot) { "Call edict_next_get_generation_clusters first" }
-    val current = try {
-      repository.loadState()
-    }
-    catch (e: Exception) {
-      return EdictNextValidationResponse(
-        false,
-        "Repository structure is invalid",
-        listOf(EdictNextValidationIssue(repository.paths.root.toString(), e.message.orEmpty())),
-      )
-    }
-    val issues = validateRepositoryState(repository, current).toMutableList()
-    issues += validateGenerationChange(generationSnapshot.state, current, generationSnapshot.signalIds)
-    generationSnapshot.targetSignalIds.values.forEach { signalIds ->
-      val cluster = current.clusters.singleOrNull { it.signalIds == signalIds }
-      if (cluster?.manifest?.status == EdictNextClusterStatus.Generated) {
-        val code = current.inspectionCode(cluster.id) ?: return@forEach
-        val validation = inspection.validate(cluster, code)
-        if (!validation.overallSuccess) {
-          issues += EdictNextValidationIssue(
-            repository.paths.inspectionPath(cluster.id).toString(),
-            "Generated inspection does not meet the acceptance criterion: ${validation.summary}",
-          )
-        }
-      }
-    }
-    return EdictNextValidationResponse(
-      success = issues.isEmpty(),
-      summary = if (issues.isEmpty()) "Generation changes are valid" else "Found ${issues.size} generation issue(s)",
-      issues = issues,
-    )
   }
 
   private suspend fun finaliseGenerated(
@@ -590,11 +554,4 @@ internal class EdictNextGenerationService(
       "Cleanup current session to valid Pending state and stop generation"
     )
   }
-}
-
-internal data class EdictNextGenerationSnapshot(
-  val state: EdictNextRepositoryState,
-  val targetSignalIds: Map<String, Set<String>>,
-) {
-  val signalIds: Set<String> = targetSignalIds.values.flatten().toSet()
 }

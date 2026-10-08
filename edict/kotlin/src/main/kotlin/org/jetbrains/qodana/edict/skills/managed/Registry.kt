@@ -14,7 +14,6 @@ object Registry {
         Policy(
             "edict_manager",
             delegates = listOf(
-                "edict-next-run",
                 "edict-next-distribution",
                 "edict-next-generation",
                 "edict-batch-signal-analysis",
@@ -24,10 +23,6 @@ object Registry {
                 "edict-promote",
                 "ecict-check-promotion",
             ),
-        ),
-        Policy(
-            "edict-next-run",
-            delegates = listOf("edict-next-distribution", "edict-next-generation"),
         ),
         Policy("edict-next-distribution"),
         Policy("edict-next-generation", delegates = listOf("edict-next-cluster-generation")),

@@ -6,12 +6,9 @@ import org.jetbrains.qodana.edict.common.runProcess
 import org.jetbrains.qodana.edict.support.gitFixture
 import org.junit.jupiter.api.io.TempDir
 import java.net.URI
-import java.nio.file.Files
 import java.nio.file.Path
-import kotlin.io.path.appendText
 import kotlin.io.path.createDirectories
 import kotlin.io.path.createParentDirectories
-import kotlin.io.path.deleteIfExists
 import kotlin.io.path.exists
 import kotlin.io.path.isRegularFile
 import kotlin.io.path.readText
@@ -65,7 +62,7 @@ class EdictNextGenerationServiceTest {
   }
 
   @Test
-  fun `clusters without a strong positive Signal stay Pending without generation`() = runBlocking<Unit> {
+  fun `clusters without a strong positive Signal are not selected`() = runBlocking<Unit> {
     val (generation, inspection) = generation(
       "weak-positive" to (EdictNextSignalStrength.WEAK to EdictNextSignalLabel.POSITIVE),
       "strong-negative" to (EdictNextSignalStrength.STRONG to EdictNextSignalLabel.NEGATIVE),
@@ -166,8 +163,6 @@ class EdictNextGenerationServiceTest {
       assertFalse(repository.loadCluster("busy-wait").candidateInspectionPath.exists())
       assertFalse(repository.loadCluster("discontinued").candidateInspectionPath.exists())
       assertTrue(repository.loadCluster("invalid").candidateInspectionPath.isRegularFile())
-      val validation = generation.validateGeneration()
-      assertTrue(validation.success, validation.issues.toString())
     }
     finally {
       inspection.stop()
@@ -220,52 +215,10 @@ class EdictNextGenerationServiceTest {
       assertEquals(null, cluster.manifest.predecessorId)
       assertFalse(repository.paths.inspectionPath("discontinued").exists())
       assertFalse(cluster.candidateInspectionPath.exists())
-      val validation = generation.validateGeneration()
-      assertTrue(validation.success, validation.issues.toString())
     }
     finally {
       inspection.stop()
     }
-  }
-
-  @Test
-  fun `generation validation follows a renamed target by its Signals`() = runBlocking<Unit> {
-    val (generation, inspection) = generation(
-      "old-name" to (EdictNextSignalStrength.STRONG to EdictNextSignalLabel.POSITIVE),
-      predecessorId = "old-name",
-    )
-    try {
-      generation.getGenerationClusters()
-      renameCluster("old-name", "new-name", EdictNextClusterStatus.Generated)
-      directory.resolve("state/inspections/old-name$EDICT_NEXT_INSPECTION_SUFFIX").deleteIfExists()
-      directory.resolve("state/inspections/new-name$EDICT_NEXT_INSPECTION_SUFFIX").writeText("// new-name report")
-      val validation = generation.validateGeneration()
-      assertTrue(validation.success, validation.issues.toString())
-
-      // A renamed Pending target still owes its frozen predecessor.
-      renameCluster("new-name", "pending-name", EdictNextClusterStatus.Pending)
-      directory.resolve("state/inspections/new-name$EDICT_NEXT_INSPECTION_SUFFIX").deleteIfExists()
-      assertContains(
-        generation.validateGeneration().issues.map { it.message },
-        "Pending or Invalid generation target must retain its frozen predecessor",
-      )
-    }
-    finally {
-      inspection.stop()
-    }
-  }
-
-  /**
-   * Renames a cluster the way a rename transition would: its directory and manifest, keeping Signals and examples.
-   * The new manifest has [status] and no predecessor.
-   */
-  private fun renameCluster(from: String, to: String, status: EdictNextClusterStatus) {
-    val target = directory.resolve("state/clusters/$to")
-    Files.move(directory.resolve("state/clusters/$from"), target)
-    target.resolve("cluster.json").writeText(
-      EdictNextJson.encodeToString(EdictNextClusterManifest(to, EdictNextLanguage.Java, status)),
-    )
-    target.resolve("history.md").appendText("Renamed from `$from`.\n")
   }
 
   @Test
@@ -290,8 +243,6 @@ class EdictNextGenerationServiceTest {
     assertTrue(finalised.success, finalised.toString())
     assertTrue(repository.paths.inspectionPath("busy-loop").isRegularFile())
     assertEquals(listOf("busy-wait"), analyses)
-    val validation = generation.validateGeneration()
-    assertTrue(validation.success, validation.issues.toString())
   }
 
   @Test
