@@ -6,10 +6,7 @@ import java.nio.file.Path
 import kotlin.io.path.createDirectories
 import kotlin.io.path.writeText
 
-/**
- * Prepares and applies one sequential distribution batch on the run's state repository, which the batch changes in
- * place; [validateDistribution] checks those changes against the snapshot [preparePipeline] took.
- */
+/** Prepares and applies one sequential distribution batch on the run's state repository, which the batch changes in place. */
 internal class EdictNextDistributionService(
     private val repository: EdictRepository,
     /** Where the neighbours of the prepared batch are dumped for debugging; nothing reads them back. */
@@ -108,23 +105,6 @@ internal class EdictNextDistributionService(
         )
     }
 
-    suspend fun validateDistribution(): EdictNextValidationResponse {
-        val currentBatch = requireBatch()
-        val current = try {
-            repository.loadState()
-        } catch (e: Exception) {
-            return invalidState(repository, e)
-        }
-        val issues = validateRepositoryState(repository, current) +
-            validateDistributionChange(currentBatch.initialState, current, currentBatch.signalIds)
-        return EdictNextValidationResponse(
-          success = issues.isEmpty(),
-          summary = if (issues.isEmpty()) "Distribution changes are valid" else "Found ${issues.size} distribution issue(s)",
-          issues = issues,
-          nextAction = if (issues.isEmpty()) EdictNextNextAction.STOP_DISTRIBUTION else EdictNextNextAction.REPAIR_REPOSITORY,
-        )
-    }
-
     private suspend fun prepareNeighbours(
         state: EdictNextRepositoryState,
         signalIds: List<String>,
@@ -176,15 +156,8 @@ internal class EdictNextDistributionService(
 
     private fun requireBatch(): DistributionBatch = checkNotNull(batch) { "Call edict_next_prepare_pipeline first" }
 
-    private fun invalidState(repository: EdictRepository, error: Exception): EdictNextValidationResponse =
-      EdictNextValidationResponse(
-        false,
-        "Repository structure is invalid",
-        listOf(EdictNextValidationIssue(repository.paths.root.toString(), error.message.orEmpty())),
-      )
-
     internal class DistributionBatch(
-        /** The state repository when the batch was prepared; distribution changes are validated against it. */
+        /** The state repository when the batch was prepared; Signal context is read from it. */
         val initialState: EdictNextRepositoryState,
         val signalIds: Set<String>,
         val neighbours: Map<String, EdictNextSignalNeighbours>,

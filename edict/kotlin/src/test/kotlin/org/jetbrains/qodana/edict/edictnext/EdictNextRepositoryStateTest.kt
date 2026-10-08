@@ -213,7 +213,7 @@ class EdictNextRepositoryStateTest {
       assertEquals("running", started.status)
       assertEquals(state.plan()!!.revision, started.planRevision)
       assertFails { state.startTask(delegation.token, "worker", delegation.skill) }
-      assertFails { state.createPlan("Again", listOf(Step("edict-next-run", "Run"))) }
+      assertFails { state.createPlan("Again", listOf(Step("edict-next-generation", "Generate"))) }
     }
   }
 

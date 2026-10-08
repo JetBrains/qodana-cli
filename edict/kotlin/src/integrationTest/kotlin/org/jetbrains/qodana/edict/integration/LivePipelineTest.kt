@@ -46,7 +46,6 @@ class LivePipelineTest : IntegrationTest() {
                     val required = setOf(
                         "edict-signal-analysis",
                         "edict-pr-signal-analysis",
-                        "edict-next-run",
                         "edict-next-distribution",
                         "edict-next-generation",
                         "edict-next-cluster-generation",
@@ -72,7 +71,7 @@ class LivePipelineTest : IntegrationTest() {
     private fun verifySequentialStages(plan: Plan) {
         val stages = plan.tasks.filter { it.parentId.isEmpty() }
         assertEquals(
-            listOf("edict-pr-signal-analysis", "edict-next-run", "edict-promote"),
+            listOf("edict-pr-signal-analysis", "edict-next-distribution", "edict-next-generation", "edict-promote"),
             stages.map { it.skill },
         )
         val ids = stages.map { it.id }

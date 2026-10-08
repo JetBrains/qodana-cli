@@ -81,10 +81,14 @@ Create and execute these top-level tasks in this exact order:
    processed full date in PR-analysis coverage. Zero-Signal days do not count toward the target but still advance
    coverage. Stop with a reported shortfall when repository history is exhausted or a provider problem leaves the next
    date uncovered; an empty selection after exhaustion is a successful no-op.
-2. `edict-next-run`: run distribution (clusterization) and generation sequentially for the resulting inbox and the
-   generation targets selected by the requested count or configured default.
-3. `edict-promote`: publish every newly eligible Generated inspection through the configured promotion target. Missing
+2. `edict-next-distribution`: assign the resulting inbox Signals to clusters, for up to 120 minutes.
+3. `edict-next-generation`: process the generation targets selected by the requested count or configured default, for
+   up to 660 minutes. Pending and Invalid clusters do not block publication.
+4. `edict-promote`: publish every newly eligible Generated inspection through the configured promotion target. Missing
    CI or promotion configuration is a failed publication prerequisite, not a reason to omit this task.
+
+Wait for workers in chunks of at most 60 minutes and stop on failure or timeout. The complete session budget is 900
+minutes.
 
 Carry a user-provided Signal target into extraction, and a user-provided generation count plus relevant completed-stage
 results into downstream task instructions. For the default pipeline, do not add a generation count: downstream

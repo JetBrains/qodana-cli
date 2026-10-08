@@ -135,13 +135,6 @@ internal class EdictNextMcpToolset(
     }
 
     server.addTool(
-      name = "edict_next_validate_distribution",
-      description = "Sanity-check distribution file changes and require every returned Signal to be assigned",
-    ) {
-      distribution.validateDistribution().toToolResult()
-    }
-
-    server.addTool(
       name = "edict_next_get_generation_clusters",
       description = "Freeze and return the requested number of Pending clusters that generation must process, ranked " +
         "by descending positive-Signal count. Omit generationCount to use the configured default. Only eligible selected " +
@@ -401,13 +394,6 @@ internal class EdictNextMcpToolset(
           summary = e.message ?: "Failed to finalise cluster '$clusterId'",
         ).toToolResult(isError = true)
       }
-    }
-
-    server.addTool(
-      name = "edict_next_validate_generation",
-      description = "Read and validate generation changes against the frozen targets without modifying the repository.",
-    ) {
-      generation.validateGeneration().toToolResult()
     }
 
     registerInspectionKtsTools(server)
