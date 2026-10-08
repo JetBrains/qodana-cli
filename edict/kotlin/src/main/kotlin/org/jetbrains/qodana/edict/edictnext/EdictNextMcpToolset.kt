@@ -85,15 +85,15 @@ internal class EdictNextMcpToolset(
     }
 
     server.addTool(
-      name = "edict_next_prepare_pipeline",
-      description = "Replace re-published clustered Signals, snapshot the state repository, and prepare neighbours for up to 100 alphabetical inbox Signals. Call once.",
+      name = "edict_next_calculate_neighbours_by_embeddings",
+      description = "Replace re-published clustered Signals, validate the state repository, and calculate the nearest embedding neighbours of every inbox Signal. Call once before edict_next_next_signal.",
     ) {
-      distribution.preparePipeline().toToolResult()
+      distribution.calculateNeighbours().toToolResult()
     }
 
     server.addTool(
       name = "edict_next_next_signal",
-      description = "Return the next alphabetical inbox Signal and its nearest cluster or inbox candidates. Call until it returns STOP_DISTRIBUTION.",
+      description = "Return the next alphabetical inbox Signal of this run and its nearest cluster or inbox candidates. The first call selects up to 100 Signals for the run. Call until it returns STOP_DISTRIBUTION.",
     ) {
       distribution.nextSignal().toToolResult()
     }

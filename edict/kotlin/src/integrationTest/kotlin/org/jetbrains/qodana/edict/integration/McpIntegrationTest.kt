@@ -54,7 +54,7 @@ class McpIntegrationTest : IntegrationTest() {
             assertEquals("edict-mcp", lines[0].obj("result").obj("serverInfo").text("name"))
             val tools = lines[1].obj("result").array("tools").map { it.text("name") }.toSet()
             assertContains(tools, "edict_delegate")
-            assertContains(tools, "edict_next_prepare_pipeline")
+            assertContains(tools, "edict_next_calculate_neighbours_by_embeddings")
             assertContains(tools, "edict_next_get_new_inspection_results")
             assertContains(tools, "generate_inspection_kts_api")
             assertContains(tools, "run_inspection_kts")

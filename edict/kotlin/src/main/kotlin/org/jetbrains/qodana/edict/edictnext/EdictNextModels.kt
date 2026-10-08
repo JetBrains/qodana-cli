@@ -262,7 +262,7 @@ internal data class EdictNextValidationIssue(
 )
 
 @Serializable
-internal data class EdictNextPreparePipelineResponse(
+internal data class EdictNextCalculateNeighboursResponse(
   val summary: String,
 )
 
