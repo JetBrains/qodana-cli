@@ -27,7 +27,7 @@ import org.jetbrains.qodana.edict.common.GitRepository
 import org.jetbrains.qodana.edict.ci.ReviewClient
 import org.jetbrains.qodana.edict.ci.ReviewExtractionApi
 import org.jetbrains.qodana.edict.ci.ReviewRepository
-import org.jetbrains.qodana.edict.ci.ReviewSelection
+import org.jetbrains.qodana.edict.extraction.reviews.DAILY_ROUTINE_PROCESSED_PRS
 import org.jetbrains.qodana.edict.extraction.reviews.PrAnalysis
 import org.jetbrains.qodana.edict.extraction.reviews.PrAnalysisCoverageInput
 import org.jetbrains.qodana.edict.extraction.reviews.RepositoryPrAnalysisCoverage
@@ -36,6 +36,8 @@ import org.jetbrains.qodana.edict.skills.managed.Registry
 import java.io.PrintWriter
 import java.nio.file.Files
 import java.time.Instant
+import java.time.LocalDate
+import java.time.ZoneOffset
 import java.util.concurrent.ConcurrentHashMap
 
 /** Owns managed execution state and exposes its plan/task lifecycle as MCP tools. */
@@ -45,6 +47,8 @@ internal class EdictManagementService(
   taskOutput: PrintWriter = PrintWriter(System.err, true),
   reviewProvider: ReviewExtractionApi = ReviewClient(),
   private val reviewRepository: ReviewRepository? = null,
+  dailyProcessedPrTarget: Int = DAILY_ROUTINE_PROCESSED_PRS,
+  prAnalysisToday: () -> LocalDate = { LocalDate.now(ZoneOffset.UTC) },
 ) {
   companion object {
     const val INSTRUCTIONS = "Managed Edict state and execution plans. Root requests enter through edict_manager. " +
@@ -68,7 +72,7 @@ internal class EdictManagementService(
 
   private val taskLogger = TaskLifecycleLogger(store, layout, taskOutput)
   private val invocations = ConcurrentHashMap<String, Invocation>()
-  private val pr = PrAnalysis(store, reviewProvider)
+  private val pr = PrAnalysis(store, reviewProvider, dailyProcessedPrTarget, prAnalysisToday)
 
   fun registerTools(server: Server) {
     val string = jsonType("string")
@@ -389,29 +393,19 @@ internal class EdictManagementService(
 
     tool(
       name = "edict_fetch_pr_batch",
-      description = "Prepare merged reviews from the repository configured in edict.ci. Requires a running PR-analysis task.",
+      description = "Prepare merged reviews from the repository configured in edict.ci. With no selection, scan complete " +
+        "uncovered UTC dates backward until at least $DAILY_ROUTINE_PROCESSED_PRS PRs with analysis work are found. " +
+        "With startDate and endDate, fetch every PR from those complete dates without the default target. With prNumbers, " +
+        "fetch exactly that explicit selection. Date coverage is persisted only after validated Signals are published.",
       readOnly = true,
-      required = listOf("token", "maxPrs"),
+      required = listOf("token"),
       properties = properties("startDate", "endDate") + mapOf(
-        "maxPrs" to integer,
         "prNumbers" to integerArray,
       ),
     ) { arguments ->
       val input = wireJson.decodeFromJsonElement<ReviewSelectionInput>(JsonObject(arguments - "token"))
-      val repository = configuredReviewRepository()
       EdictNextJson.encodeToJsonElement(
-        pr.prepareBatch(
-          arguments.requireString("token"),
-          ReviewSelection(
-            repository.provider,
-            repository.owner,
-            repository.repository,
-            input.maxPrs,
-            input.prNumbers,
-            input.startDate,
-            input.endDate,
-          ),
-        ),
+        pr.prepareBatch(arguments.requireString("token"), configuredReviewRepository(), input),
       )
     }
 

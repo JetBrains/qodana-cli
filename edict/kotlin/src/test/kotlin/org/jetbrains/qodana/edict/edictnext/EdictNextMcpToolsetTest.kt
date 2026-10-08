@@ -119,10 +119,10 @@ class EdictNextMcpToolsetTest {
       )
       val fetchSchema = server.tools.getValue("edict_fetch_pr_batch").tool.inputSchema
       assertEquals(
-        setOf("token", "startDate", "endDate", "maxPrs", "prNumbers"),
+        setOf("token", "startDate", "endDate", "prNumbers"),
         checkNotNull(fetchSchema.properties).keys,
       )
-      assertEquals(listOf("token", "maxPrs"), fetchSchema.required)
+      assertEquals(listOf("token"), fetchSchema.required)
 
       val output = ByteArrayOutputStream()
       val input = """
