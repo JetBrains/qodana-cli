@@ -104,10 +104,13 @@ edict_manager
   - require exact coverage, build complete `FromCommit` records in memory, then publish each with
     `edict_publish_signal`; an identical existing Signal counts as success
 - `$edict-pr-signal-analysis`: GitHub/Space merged reviews
-  - skip ranges already recorded by `edict_get_pr_analysis_coverage`, then `edict_fetch_pr_batch` and
-    `edict_list_pr_analysis_items` / `edict_get_pr_analysis_item` / `edict_pr_file_*`
+  - `edict_fetch_pr_batch` without a selection scans completed uncovered UTC dates backward until
+    `DAILY_ROUTINE_PROCESSED_PRS` PRs with work items are found; an explicit complete date range fetches every PR in
+    that range without applying the default target
+  - use `edict_list_pr_analysis_items` / `edict_get_pr_analysis_item` / `edict_pr_file_*`
   - chunks of at most 8 work items per `$edict-signal-analysis` worker, validated with `edict_validate_pr_signals`,
-    published with `edict_publish_signal`, then `edict_record_pr_analysis_coverage`
+    and published with `edict_publish_validated_pr_signals`; publication of any date-based batch records its complete
+    date ranges in coverage, while explicit PR-number selections call `edict_record_pr_analysis_coverage`
 - in the benchmark, extraction is skipped: the fixture's checked-in `.edict/inbox` is processed in place
 
 ## Distribution and generation

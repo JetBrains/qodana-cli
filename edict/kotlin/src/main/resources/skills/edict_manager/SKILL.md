@@ -76,10 +76,11 @@ validation, or claim rules that were not generated. Report the achieved count an
 
 Create and execute these top-level tasks in this exact order:
 
-1. `edict-pr-signal-analysis`: extract Signals from up to 100 merged PRs not already present in the configured
-   repository's PR-analysis coverage. Use `edict_get_pr_analysis_coverage` before selection, end the selection on the
-   current UTC date, exclude covered PR numbers and fully covered date intervals, and keep the batch bounded to 100.
-   If fewer uncovered PRs exist, analyze all of them. An empty selection is a successful no-op.
+1. `edict-pr-signal-analysis`: call `edict_fetch_pr_batch` without a selection to extract Signals from the server-defined
+   number of PRs with analysis work. The MCP scans complete uncovered UTC dates backward, never selects the current
+   partial UTC date, and may return more total PRs to preserve a full boundary date. Successful publication persists
+   every processed full date in PR-analysis coverage. If repository history contains fewer relevant PRs, analyze all of
+   them. An empty selection is a successful no-op.
 2. `edict-next-run`: run distribution (clusterization) and generation sequentially for the resulting inbox and the
    generation targets selected by the requested count or configured default.
 3. `edict-promote`: publish every newly eligible Generated inspection through the configured promotion target. Missing
