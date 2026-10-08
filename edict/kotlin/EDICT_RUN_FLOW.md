@@ -126,14 +126,14 @@ edict_manager
 ## Distribution and generation
 
 - `$edict-next-distribution`
-  - call `edict_next_prepare_pipeline` once
+  - call `edict_next_calculate_neighbours_by_embeddings` once
     - replace each re-published inbox Signal already owned by exactly one cluster, append a history record, and move the
       cluster to Pending; ambiguous ownership remains a validation failure
-    - snapshot and validate the state repository
-    - select up to 100 alphabetical JVM inbox Signals
-    - build 10 nearest same-language neighbours per Signal with in-JVM GTE embeddings (`EdictNextNeighbourFinder`);
+    - validate the state repository
+    - build 10 nearest same-language neighbours per JVM inbox Signal with in-JVM GTE embeddings (`EdictNextNeighbourFinder`);
       vectors are cached in `<state>/embeddings/gte-large-<revision>/`, the model in `<user cache>/JetBrains/Qodana/edict/models/`
   - repeatedly call `edict_next_next_signal`; it returns the complete Signal and neighbouring clusters/inbox Signals
+    - the first call selects the run's batch: up to 100 alphabetical JVM inbox Signals with calculated neighbours
   - for every plausible cluster, call `edict_next_get_distribution_context(kind: "cluster", id)` and compare every
     member, including negatives; optionally read a neighbouring Signal (`kind: "signal"`) or its exact revision
   - call `edict_next_add_signal_to_cluster(signalId, clusterId)` with a compatible existing id (requires the context

@@ -20,7 +20,7 @@ class EdictNextDistributionServiceTest {
   lateinit var directory: Path
 
   @Test
-  fun `pipeline preparation replaces a re-published clustered Signal and resets generation`() = runBlocking {
+  fun `neighbour calculation replaces a re-published clustered Signal and resets generation`() = runBlocking {
     val state = directory.resolve("state").createDirectories()
     runProcess(state, listOf("git", "init", "--quiet"))
     val repository = EdictRepository(EdictRepositoryDirectory(state))
@@ -45,9 +45,9 @@ class EdictNextDistributionServiceTest {
       .resolve("$signalId.json").writeText(EdictNextJson.encodeToString(replacement))
 
     val distribution = EdictNextDistributionService(repository, directory.resolve("neighbours.json"))
-    val prepared = distribution.preparePipeline()
+    val prepared = distribution.calculateNeighbours()
 
-    assertContains(prepared.summary, "0 Signal(s) selected for distribution")
+    assertContains(prepared.summary, "neighbours of 0 inbox Signal(s)")
     assertContains(prepared.summary, "1 re-published Signal(s) replaced")
     val current = repository.loadState()
     val currentCluster = current.clusters.single()
@@ -58,7 +58,6 @@ class EdictNextDistributionServiceTest {
     assertContains(currentCluster.historyPath.readText(), "Replaced Signal `$signalId`")
     assertTrue(repository.paths.inspectionPath(clusterId).exists())
     assertTrue(validateRepositoryState(repository, current).isEmpty())
-    assertTrue(distribution.validateDistribution().success)
   }
 
   @Test
@@ -81,7 +80,7 @@ class EdictNextDistributionServiceTest {
     }
 
     val distribution = EdictNextDistributionService(repository, directory.resolve("neighbours.json"))
-    val error = assertFailsWith<IllegalStateException> { distribution.preparePipeline() }
+    val error = assertFailsWith<IllegalStateException> { distribution.calculateNeighbours() }
 
     assertContains(error.message.orEmpty(), "Signal occurs 3 times")
     assertEquals("Original unique model", repository.loadCluster("unique-owner").signals.single().description)

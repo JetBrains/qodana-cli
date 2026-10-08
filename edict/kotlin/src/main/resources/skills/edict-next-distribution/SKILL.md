@@ -10,9 +10,9 @@ domain work and use its assigned task lifecycle.
 
 Load only this skill.
 
-Call `edict_next_prepare_pipeline` once; it prepares state for the pipeline. It also consumes re-published inbox
-Signals already owned by exactly one cluster, replaces the clustered model, records that replacement in history, and
-moves the cluster to Pending. Include the reported replacement count in the task result.
+Call `edict_next_calculate_neighbours_by_embeddings` once before the loop. It also consumes re-published inbox Signals
+already owned by exactly one cluster, replaces the clustered model, records that replacement in history, and moves the
+cluster to Pending. Include the reported replacement count in the task result.
 
 ## Evidence
 

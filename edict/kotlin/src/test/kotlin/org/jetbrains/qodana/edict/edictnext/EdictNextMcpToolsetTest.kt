@@ -252,7 +252,7 @@ class EdictNextMcpToolsetTest {
           "edict_fetch_pr_batch", "edict_get_pr_analysis_chunk", "edict_get_pr_analysis_item",
           "edict_store_pr_signals", "edict_pr_file_at_ref", "edict_pr_file_diff",
           "edict_get_pr_analysis_coverage", "edict_record_pr_analysis_coverage",
-          "edict_context", "edict_file_at_ref", "edict_next_prepare_pipeline", "edict_next_next_signal", "edict_next_get_distribution_context",
+          "edict_context", "edict_file_at_ref", "edict_next_calculate_neighbours_by_embeddings", "edict_next_next_signal", "edict_next_get_distribution_context",
           "edict_next_add_signal_to_cluster", "edict_next_get_generation_clusters",
           "edict_next_validate_code_example", "edict_next_validate_cluster_examples", "edict_next_get_inspection_action",
           "edict_next_get_new_inspection_results", "edict_next_record_weak_review", "edict_next_record_evaluation",
@@ -376,7 +376,7 @@ class EdictNextMcpToolsetTest {
         val input = """
           {"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2025-03-26","capabilities":{},"clientInfo":{"name":"unit","version":"1"}}}
           {"jsonrpc":"2.0","method":"notifications/initialized"}
-          {"jsonrpc":"2.0","id":2,"method":"tools/call","params":{"name":"edict_next_prepare_pipeline","arguments":{}}}
+          {"jsonrpc":"2.0","id":2,"method":"tools/call","params":{"name":"edict_next_calculate_neighbours_by_embeddings","arguments":{}}}
           {"jsonrpc":"2.0","id":3,"method":"tools/call","params":{"name":"generate_inspection_kts_api","arguments":{"language":"Java","projectPath":"/ignored"}}}
           {"jsonrpc":"2.0","id":4,"method":"ping"}
         """.trimIndent() + "\n"
@@ -394,7 +394,7 @@ class EdictNextMcpToolsetTest {
         assertEquals(4, responses.size)
         val result = responses.single { it["id"].toString() == "2" }.obj("result")
         assertFalse(result.flag("isError") == true)
-        assertContains(result.obj("structuredContent").text("summary"), "0 Signal(s) selected")
+        assertContains(result.obj("structuredContent").text("summary"), "neighbours of 0 inbox Signal(s)")
         val api = responses.single { it["id"].toString() == "3" }.obj("result")
         assertFalse(api.flag("isError") == true)
         assertEquals("inspection api", api.array("content").single().text("text"))

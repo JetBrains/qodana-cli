@@ -96,7 +96,7 @@ class CliTest : IntegrationTest() {
                         .message().obj("result").array("tools").map { it.text("name") }.toSet()
                     assertTrue("edict_context" in tools)
                     assertTrue("edict_delegate" in tools)
-                    assertTrue("edict_next_prepare_pipeline" in tools)
+                    assertTrue("edict_next_calculate_neighbours_by_embeddings" in tools)
                     assertTrue("edict_next_get_generation_clusters" in tools)
                     assertTrue("generate_inspection_kts_api" in tools)
                 } finally {
