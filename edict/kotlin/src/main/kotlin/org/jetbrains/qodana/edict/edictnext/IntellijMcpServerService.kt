@@ -37,6 +37,8 @@ internal class QodanaIntellijMcpServerLifecycle(
   private val qodanaExecutable: String,
   private val ideArguments: List<String> = emptyList(),
   private val log: Path? = null,
+  /** Keeps the IDE's results and logs, such as idea.log; without it they are removed when the IDE stops. */
+  private val resultsDirectory: Path? = null,
 ) : IntellijMcpServerLifecycle {
   @Volatile private var helper: Process? = null
 
@@ -44,10 +46,16 @@ internal class QodanaIntellijMcpServerLifecycle(
 
   override suspend fun start(): URI = withContext(Dispatchers.IO) {
     check(helper == null) { "IntelliJ MCP is already running" }
-    val command = listOf(
-      qodanaExecutable, "edict", "ide-mcp",
-      "--project-dir", projectPath.toAbsolutePath().normalize().absolutePathString(),
-    ) + ideArguments
+    val command = buildList {
+        addAll(
+            listOf(
+                this@QodanaIntellijMcpServerLifecycle.qodanaExecutable, "edict", "ide-mcp",
+                "--project-dir", this@QodanaIntellijMcpServerLifecycle.projectPath.toAbsolutePath().normalize().absolutePathString(),
+            )
+        )
+        addAll(listOfNotNull(this@QodanaIntellijMcpServerLifecycle.resultsDirectory?.let { "--results-dir=${it.toAbsolutePath().normalize().absolutePathString()}" }))
+        addAll(this@QodanaIntellijMcpServerLifecycle.ideArguments)
+    }
     log?.let { Files.createDirectories(it.toAbsolutePath().parent) }
     val process = ProcessBuilder(command)
       .redirectError(log?.let { ProcessBuilder.Redirect.appendTo(it.toFile()) } ?: ProcessBuilder.Redirect.DISCARD)
@@ -125,6 +133,7 @@ internal class IntellijMcpServerService(
   private val qodanaExecutable: String = defaultQodanaExecutable(),
   ideArguments: List<String> = emptyList(),
   log: Path? = null,
+  resultsDirectory: Path? = null,
   // The helper opens the project by its canonical path, so name it the same way in tool calls.
   private val clientFactory: InspectionKtsClientFactory = InspectionKtsClientFactory { endpoint ->
     HttpInspectionKtsClient(endpoint, runCatching { projectPath.toRealPath() }.getOrElse { projectPath.toAbsolutePath().normalize() }.toString())
@@ -134,6 +143,7 @@ internal class IntellijMcpServerService(
     qodanaExecutable,
     ideArguments,
     log,
+    resultsDirectory,
   ),
 ) {
   private val lifecycle = Mutex()

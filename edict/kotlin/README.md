@@ -61,7 +61,7 @@ hidden `qodana edict ide-mcp` helper as a child, which prints one readiness line
 stops the IDE when its stdin closes. The IDE is native only: `--ide-dist <path>`, else
 `--ide-linter <name>` (downloaded by the CLI), else `QODANA_DIST`. Pass
 `--ide-property`/`--ide-wait-timeout` through `edict mcp start`; IDE output goes to
-`intellij-mcp.log` in the run's log folder.
+`intellij-mcp.log` in the run's log folder, and the IDE's own logs to `intellij-mcp/log/idea.log` next to it.
 
 `mcp` serves one shared Streamable HTTP endpoint on loopback port `edict.mcpPort`, so every native
 agent shares one server and one state lock. It fails when `.codex/config.toml` is missing or names

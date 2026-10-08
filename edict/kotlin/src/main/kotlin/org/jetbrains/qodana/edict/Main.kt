@@ -66,6 +66,7 @@ fun main(args: Array<String>) {
                     options["qodana-executable"] ?: defaultQodanaExecutable(),
                     ideArguments,
                     layout.intellijMcpLogPath,
+                    layout.intellijMcpResultsDirectory,
                 )
                 EdictServer.start(layout, port, inspectionServer, configuration = configuration).use { server ->
                     Runtime.getRuntime().addShutdownHook(Thread(server::close))
