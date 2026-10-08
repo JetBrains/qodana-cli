@@ -63,6 +63,7 @@ type ideMCPOptions struct {
 	Dist        string
 	Linter      string
 	Property    []string
+	ResultsDir  string
 	WaitTimeout time.Duration
 }
 
@@ -102,6 +103,12 @@ The IDE comes from --dist, else --linter, else QODANA_DIST; Docker is not suppor
 		"Qodana linter to download and run natively, e.g. qodana-jvm (overrides QODANA_DIST)",
 	)
 	flags.StringArrayVar(&options.Property, "property", nil, "Set a JVM property or option for the IDE")
+	flags.StringVar(
+		&options.ResultsDir,
+		"results-dir",
+		"",
+		"Directory for IDE results and logs, kept after exit (default: a temporary directory removed on exit)",
+	)
 	flags.DurationVar(&options.WaitTimeout, "wait-timeout", 90*time.Second, "Maximum time to wait for MCP readiness")
 	command.MarkFlagsMutuallyExclusive("dist", "linter")
 	return command
@@ -116,6 +123,12 @@ func runIDEMCP(ctx context.Context, options ideMCPOptions, stdin io.Reader, stdo
 		return fmt.Errorf("resolving project directory: %w", err)
 	}
 	options.ProjectDir = projectDir
+	if options.ResultsDir != "" {
+		// The IDE runs in the project directory, so a relative path must not be resolved from there.
+		if options.ResultsDir, err = filepath.Abs(options.ResultsDir); err != nil {
+			return fmt.Errorf("resolving results directory: %w", err)
+		}
+	}
 	if err := selectIDEDistribution(options); err != nil {
 		return err
 	}
@@ -296,7 +309,10 @@ func prepareMCPScanContext(options ideMCPOptions) (corescan.Context, func(), err
 	}
 	// Keep the service separate from scan caches and concurrent MCP instances.
 	commonCtx.CacheDir = filepath.Join(configDir, "cache")
-	commonCtx.ResultsDir = filepath.Join(configDir, "results")
+	commonCtx.ResultsDir = options.ResultsDir
+	if commonCtx.ResultsDir == "" {
+		commonCtx.ResultsDir = filepath.Join(configDir, "results")
+	}
 	preparedHost := startup.PrepareNativeServiceHost(commonCtx)
 	cliOptions := platformcmd.CliOptions{
 		ProjectDir:   options.ProjectDir,

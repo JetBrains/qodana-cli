@@ -41,6 +41,7 @@ class IntellijMcpServerServiceTest {
       qodanaExecutable = qodana.toString(),
       ideArguments = listOf("--dist=/opt/idea", "--property=-Xmx8g"),
       log = log,
+      resultsDirectory = project.resolve("logs/intellij-mcp"),
       clientFactory = InspectionKtsClientFactory { uri -> endpoint = uri; client },
     )
 
@@ -48,7 +49,11 @@ class IntellijMcpServerServiceTest {
     assertSame(client, service.start())
     assertEquals(URI("http://127.0.0.1:9876/mcp"), endpoint)
     assertEquals(
-      listOf("edict", "ide-mcp", "--project-dir", project.toAbsolutePath().normalize().toString(), "--dist=/opt/idea", "--property=-Xmx8g"),
+      listOf(
+        "edict", "ide-mcp", "--project-dir", project.toAbsolutePath().normalize().toString(),
+        "--results-dir=${project.resolve("logs/intellij-mcp").toAbsolutePath().normalize()}",
+        "--dist=/opt/idea", "--property=-Xmx8g",
+      ),
       Files.readAllLines(qodana.resolveSibling("args")),
     )
     assertFalse(Files.exists(qodana.resolveSibling("stopped")))
