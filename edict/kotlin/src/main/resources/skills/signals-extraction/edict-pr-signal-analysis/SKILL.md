@@ -47,8 +47,9 @@ failed prerequisite. Commit-only requests belong to `edict-batch-signal-analysis
    an array of complete Signal model objects. Use `[]` when there are no
    findings. The server verifies coverage, record structure, provider provenance and evidence revisions. A failure
    blocks publication; correct the evidence and validate again. Validation does not replace source inspection.
-7. Publish every validated model using `edict_publish_signal`. An existing identical model is an idempotent success;
-   a conflicting model requires investigation, not overwriting. Report exact IDs left by a partially failed publication.
+7. Call `edict_publish_validated_pr_signals` once with the validated batch ID. The server publishes the exact cached
+   models without requiring them in the tool call. An existing identical model is an idempotent success; a conflicting
+   model requires investigation, not overwriting. Retry the same batch after a partially failed publication.
 8. After validation and publication succeed, call `edict_record_pr_analysis_coverage` with `analyzedPrNumbers` and,
    when applicable, `analyzedDateRanges`; repository identity is supplied by the server. Always record the returned
    `selectedPrNumbers`. For a date selection, also record its inclusive requested date range only when
