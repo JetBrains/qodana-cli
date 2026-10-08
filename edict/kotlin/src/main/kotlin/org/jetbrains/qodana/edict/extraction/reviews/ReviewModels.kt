@@ -86,3 +86,10 @@ data class PrReceipt(
   val signalCount: Int,
   val signalIds: List<String>,
 )
+
+@Serializable
+data class PrPublicationReceipt(
+  val batchId: String,
+  val signalIds: List<String>,
+  val createdSignalIds: List<String>,
+)

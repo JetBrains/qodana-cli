@@ -51,7 +51,9 @@ When a skill requires another skill:
    (for example, `$edict-signal-analysis`). Then give the absolute assigned `SKILL.md` path, the exact
    bounded source package, source checkout, scratch paths, and expected outcome. Resolve the skill path against the
    installed skills directory, the parent of your own skill directory. Do not include credentials or placeholders.
-   Call `edict_delegate(token, taskId, prompt)` to store those instructions.
+   Call `edict_delegate(token, taskId, prompt)` to store those instructions. Copy your capability token unchanged from
+   the server response; never retype, shorten, normalize, or reconstruct it. A rejected capability is a lifecycle
+   failure, not a reason to guess or edit the token before retrying.
    The server records the full assignment in the plan and logs. It returns a short `prompt` containing the child's
    skill declaration and credentials plus an instruction to fetch its assignment from `edict_task_get`.
 3. Use native `spawn_agent` without inherited conversation (`fork_turns: "none"`, or `fork_context: false` in runtimes
