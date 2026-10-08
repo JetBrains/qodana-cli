@@ -78,7 +78,82 @@ internal class EdictManagementService(
       put("items", string)
     }
     val modelObject = jsonType("object")
-    val signalObject = modelObject
+    val nullableString = nullable(string)
+    val lineRange = objectOf(
+      properties = mapOf("start" to integer, "end" to integer),
+      required = listOf("start", "end"),
+    )
+    val lineRanges = arrayOf(lineRange, minItems = 1)
+    val fileRevision = objectOf(
+      properties = mapOf(
+        "path" to string,
+        "revision" to string,
+        "expectedRanges" to lineRanges,
+      ),
+      required = listOf("path", "revision", "expectedRanges"),
+    )
+    val fromPr = objectOf(
+      properties = mapOf(
+        "type" to enumOf("FromPR"),
+        "prNumber" to integer,
+        "title" to string,
+        "discussionMessages" to stringArray,
+        "diffPositiveToNegative" to string,
+        "url" to string,
+      ),
+      required = listOf("type", "prNumber", "title", "discussionMessages", "diffPositiveToNegative", "url"),
+    )
+    val fromCommit = objectOf(
+      properties = mapOf(
+        "type" to enumOf("FromCommit"),
+        "commitRevision" to string,
+        "url" to nullableString,
+      ),
+      required = listOf("type", "commitRevision"),
+    )
+    val submittedFeedback = objectOf(
+      properties = mapOf(
+        "type" to enumOf("SubmittedFeedback"),
+        "inspectionName" to nullableString,
+        "inspectionDescription" to nullableString,
+        "problemMessage" to nullableString,
+        "codeSnippet" to nullableString,
+        "reason" to nullableString,
+        "suggestionId" to nullableString,
+        "message" to nullableString,
+        "url" to nullableString,
+      ),
+      required = listOf("type"),
+    )
+    val generated = objectOf(
+      properties = mapOf(
+        "type" to enumOf("Generated"),
+        "resultMessage" to nullableString,
+      ),
+      required = listOf("type"),
+    )
+    val signalSource = oneOf(fromPr, fromCommit, submittedFeedback, generated)
+    val provenance = objectOf(
+      properties = mapOf(
+        "workItemId" to string,
+        "analysisBatchId" to nullableString,
+      ),
+      required = listOf("workItemId"),
+    )
+    val signalObject = objectOf(
+      properties = mapOf(
+        "id" to string,
+        "idempotencyKey" to string,
+        "fileRevision" to fileRevision,
+        "source" to signalSource,
+        "label" to enumOf("POSITIVE", "NEGATIVE"),
+        "description" to string,
+        "strength" to enumOf("STRONG", "WEAK"),
+        "syntheticExampleId" to nullableString,
+        "provenance" to provenance,
+      ),
+      required = listOf("id", "fileRevision", "source", "label", "description"),
+    )
     val signalArray = buildJsonObject {
       put("type", "array")
       put("items", signalObject)
@@ -241,13 +316,15 @@ internal class EdictManagementService(
 
     tool(
       name = "edict_publish_signal",
-      description = "Validate and idempotently publish one Signal model to the managed inbox.",
+      description = "Validate and idempotently publish one non-PR Signal model to the managed inbox. PR-analysis coordinators publish their cached validated batch with edict_publish_validated_pr_signals.",
       required = listOf("token", "signal"),
       properties = mapOf("signal" to signalObject),
     ) { arguments ->
       val token = arguments.requireString("token")
+      require(!store.isPrAnalysisCoordinator(token)) {
+        "PR analysis must publish its cached validated batch with edict_publish_validated_pr_signals"
+      }
       val signal = wireJson.decodeFromJsonElement<EdictNextSignal>(arguments.getValue("signal"))
-      if (signal.source is EdictNextSignalSource.FromPR) pr.validatePublication(token, signal)
       EdictNextJson.encodeToJsonElement(
         store.publishSignal(
           token,
@@ -257,6 +334,20 @@ internal class EdictManagementService(
             signalRepository.validateEvidence(candidate)
           }
         },
+      )
+    }
+
+    tool(
+      name = "edict_publish_validated_pr_signals",
+      description = "Idempotently publish every exact Signal model cached by a successful edict_validate_pr_signals call for this batch. Resend no Signal objects; retry the batch safely after partial publication.",
+      required = listOf("token", "batchId"),
+      properties = properties("batchId"),
+    ) { arguments ->
+      EdictNextJson.encodeToJsonElement(
+        pr.publishValidated(
+          arguments.requireString("token"),
+          arguments.requireString("batchId"),
+        ),
       )
     }
 
@@ -483,6 +574,25 @@ internal class EdictManagementService(
 }
 
 private fun jsonType(type: String) = buildJsonObject { put("type", type) }
+
+private fun enumOf(vararg values: String) = buildJsonObject {
+  put("type", "string")
+  put("enum", JsonArray(values.map(::JsonPrimitive)))
+}
+
+private fun nullable(schema: JsonElement) = buildJsonObject {
+  put("anyOf", JsonArray(listOf(schema, jsonType("null"))))
+}
+
+private fun oneOf(vararg schemas: JsonElement) = buildJsonObject {
+  put("oneOf", JsonArray(schemas.toList()))
+}
+
+private fun arrayOf(items: JsonElement, minItems: Int? = null) = buildJsonObject {
+  put("type", "array")
+  put("items", items)
+  minItems?.let { put("minItems", it) }
+}
 
 /** An object schema that names every field and allows no other. */
 private fun objectOf(properties: Map<String, JsonElement>, required: List<String>) = buildJsonObject {

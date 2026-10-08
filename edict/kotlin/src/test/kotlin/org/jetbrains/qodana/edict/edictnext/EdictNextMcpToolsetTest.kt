@@ -75,12 +75,41 @@ class EdictNextMcpToolsetTest {
       val server = toolset.createServer()
       assertTrue(server.tools.keys.containsAll(movedTools))
       assertTrue("edict_publish_signal" in server.tools)
+      assertTrue("edict_publish_validated_pr_signals" in server.tools)
       assertTrue("edict_get_pr_analysis_coverage" in server.tools)
       assertTrue("edict_record_pr_analysis_coverage" in server.tools)
       assertFalse("edict_state_write" in server.tools)
       val delegateSchema = server.tools.getValue("edict_delegate").tool.inputSchema
       assertEquals(setOf("token", "taskId", "prompt"), checkNotNull(delegateSchema.properties).keys)
       assertEquals(listOf("token", "taskId", "prompt"), delegateSchema.required)
+      val signalSchema = checkNotNull(
+        server.tools.getValue("edict_publish_signal").tool.inputSchema.properties,
+      ).getValue("signal").jsonObject
+      assertEquals(
+        setOf(
+          "id", "idempotencyKey", "fileRevision", "source", "label", "description", "strength",
+          "syntheticExampleId", "provenance",
+        ),
+        signalSchema.getValue("properties").jsonObject.keys,
+      )
+      assertEquals(
+        listOf("id", "fileRevision", "source", "label", "description"),
+        signalSchema.getValue("required").jsonArray.map { (it as JsonPrimitive).content },
+      )
+      val sourceVariants = signalSchema.getValue("properties").jsonObject.getValue("source").jsonObject
+        .getValue("oneOf").jsonArray.map { it.jsonObject }
+      assertEquals(4, sourceVariants.size)
+      val fromPrSchema = sourceVariants.single {
+        it.getValue("properties").jsonObject.getValue("type").jsonObject.getValue("enum").jsonArray
+          .single() == JsonPrimitive("FromPR")
+      }
+      assertEquals(
+        listOf("type", "prNumber", "title", "discussionMessages", "diffPositiveToNegative", "url"),
+        fromPrSchema.getValue("required").jsonArray.map { (it as JsonPrimitive).content },
+      )
+      val publishPrSchema = server.tools.getValue("edict_publish_validated_pr_signals").tool.inputSchema
+      assertEquals(setOf("token", "batchId"), checkNotNull(publishPrSchema.properties).keys)
+      assertEquals(listOf("token", "batchId"), publishPrSchema.required)
       val coverageSchema = checkNotNull(
         server.tools.getValue("edict_record_pr_analysis_coverage").tool.inputSchema.properties,
       )
@@ -148,6 +177,7 @@ class EdictNextMcpToolsetTest {
         setOf(
           "edict_registry", "edict_plan_get", "edict_plan_create", "edict_task_add", "edict_delegate",
           "edict_task_get", "edict_task_start", "edict_task_finish", "edict_task_cancel", "edict_publish_signal",
+          "edict_publish_validated_pr_signals",
           "edict_fetch_pr_batch", "edict_list_pr_analysis_items", "edict_get_pr_analysis_item",
           "edict_validate_pr_signals", "edict_pr_file_at_ref", "edict_pr_file_diff",
           "edict_get_pr_analysis_coverage", "edict_record_pr_analysis_coverage",

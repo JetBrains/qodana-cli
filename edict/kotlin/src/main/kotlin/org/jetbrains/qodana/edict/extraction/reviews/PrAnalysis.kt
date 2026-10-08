@@ -117,6 +117,17 @@ internal class PrAnalysis(
     PrReceipt(batchId, inspected.size, validated.size, validated.keys.toList())
   }
 
+  fun publishValidated(token: String, batchId: String): PrPublicationReceipt = synchronized(store) {
+    val batch = batch(token, batchId, coordinator = true)
+    val validated = checkNotNull(batch.validated) { "Validate complete PR inspection coverage before publication" }
+    val publications = validated.values.map { store.publishSignal(token, it) }
+    PrPublicationReceipt(
+      batchId = batchId,
+      signalIds = publications.map { it.signal.id },
+      createdSignalIds = publications.filter { it.created }.map { it.signal.id },
+    )
+  }
+
   fun file(token: String, batchId: String, itemId: String, revision: String, path: String): String {
     val item = get(token, batchId, itemId)
     require(revision in listOf(item.pr.baseRevision, item.pr.headRevision, item.thread.originalCommitSha)) {
@@ -139,13 +150,6 @@ internal class PrAnalysis(
       "Diff must compare prepared base/comment revision to head"
     }
     return provider.diff(item.repository, before, after, beforePath, afterPath)
-  }
-
-  fun validatePublication(token: String, signal: EdictNextSignal) {
-    store.requirePrAnalysisCaller(token, coordinator = true)
-    require(batches.values.any { it.validated?.get(signal.id) == signal }) {
-      "PR Signal has not passed edict_validate_pr_signals with this exact model"
-    }
   }
 
   fun complete(token: String) {

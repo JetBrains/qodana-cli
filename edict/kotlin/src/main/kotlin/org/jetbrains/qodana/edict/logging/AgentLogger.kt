@@ -95,6 +95,7 @@ class AgentLogger internal constructor(private val store: EdictNextRepositorySta
             }"
 
             "edict_publish_signal" -> "Published Signal ${arguments.obj("signal").text("id")}"
+            "edict_publish_validated_pr_signals" -> "Published validated PR Signal batch ${arguments.text("batchId")}"
             "edict_state_delete" -> "Deleted ${arguments.text("path")}"
             else -> "$tool ok"
         }
