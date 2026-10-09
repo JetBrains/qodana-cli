@@ -11,4 +11,4 @@ internal fun JsonObject.number(key: String): Long = (get(key) as? JsonPrimitive)
 internal fun JsonObject.flag(key: String): Boolean? = (get(key) as? JsonPrimitive)?.booleanOrNull
 internal fun JsonObject.obj(key: String): JsonObject = get(key) as? JsonObject ?: JsonObject(emptyMap())
 internal fun JsonObject.array(key: String): List<JsonObject> =
-    (get(key) as? JsonArray)?.map { it.jsonObject } ?: emptyList()
+    (get(key) as? JsonArray)?.filterIsInstance<JsonObject>() ?: emptyList()

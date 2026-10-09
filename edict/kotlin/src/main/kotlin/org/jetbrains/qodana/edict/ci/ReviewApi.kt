@@ -53,10 +53,15 @@ data class CreateReviewRequest(
 }
 
 interface ReviewExtractionApi {
-  fun fetch(selection: ReviewSelection): List<PullRequest>
+  fun fetch(selection: ReviewSelection): ReviewFetchResult
   fun file(repository: ReviewRepository, revision: String, path: String): String
   fun diff(repository: ReviewRepository, before: String, after: String, beforePath: String, afterPath: String): String
 }
+
+data class ReviewFetchResult(
+  val pullRequests: List<PullRequest>,
+  val problems: List<String> = emptyList(),
+)
 
 interface ReviewManagementApi {
   fun resolveTargetBranch(repository: ReviewRepository, configured: String?): String
@@ -66,7 +71,7 @@ interface ReviewManagementApi {
 
 internal interface ProviderReviewApi {
   val id: CiProviderId
-  fun fetch(selection: ReviewSelection): List<PullRequest>
+  fun fetch(selection: ReviewSelection): ReviewFetchResult
   fun file(repository: ReviewRepository, revision: String, path: String): String
   fun resolveTargetBranch(repository: ReviewRepository, configured: String?): String
   fun ensureReview(request: CreateReviewRequest): CreatedReview
@@ -92,30 +97,34 @@ class ReviewClient private constructor(
     },
   )
 
-  override fun fetch(selection: ReviewSelection): List<PullRequest> {
+  override fun fetch(selection: ReviewSelection): ReviewFetchResult {
     selection.validate()
-    val reviews = provider(selection.provider).fetch(selection)
-    reviews.forEach { pullRequest ->
-      require(validRevision(pullRequest.baseRevision) && validRevision(pullRequest.headRevision)) {
-        "PR ${pullRequest.number} lacks exact base/head revisions"
+    val fetched = provider(selection.provider).fetch(selection)
+    val problems = fetched.problems.toMutableList()
+    val reviews = fetched.pullRequests.mapNotNull { pullRequest ->
+      if (!validRevision(pullRequest.baseRevision) || !validRevision(pullRequest.headRevision)) {
+        problems += "PR ${pullRequest.number}: lacks exact base/head revisions"
+        return@mapNotNull null
       }
-      pullRequest.threads.forEach { thread ->
+      val threads = pullRequest.threads.filter { thread ->
         val anchorLine = thread.anchorLine
         val anchorEndLine = thread.anchorEndLine
         val validAnchor = if (anchorLine == null || anchorEndLine == null) {
           anchorLine == null && anchorEndLine == null
         }
         else anchorLine in 1..anchorEndLine
-        require(
-          validSourcePath(thread.filePath) && validRevision(thread.originalCommitSha) &&
-            validAnchor,
-        ) { "Invalid discussion path, revision or anchors" }
+        val valid = validSourcePath(thread.filePath) && validRevision(thread.originalCommitSha) && validAnchor
+        if (!valid) problems +=
+          "PR ${pullRequest.number} discussion ${thread.threadId}: invalid path, revision or anchors"
+        valid
       }
+      pullRequest.copy(threads = threads)
     }
-    return if (selection.prNumbers.isEmpty()) {
+    val sorted = if (selection.prNumbers.isEmpty()) {
       reviews.sortedWith(compareBy(PullRequest::closeTimestamp, PullRequest::number))
     }
     else reviews
+    return ReviewFetchResult(sorted, problems)
   }
 
   override fun file(repository: ReviewRepository, revision: String, path: String): String {

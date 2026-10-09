@@ -24,7 +24,9 @@ prerequisite. Commit-only requests belong to `edict-batch-signal-analysis`.
    PR numbers already recorded or date intervals completely covered by a recorded range; call the same tool with the
    remaining `prNumbers` or both `startDate` and `endDate` (`YYYY-MM-DD`). An explicit date range selects every merged
    PR from every complete date in the range and does not apply the daily target. The tool returns `batchId`,
-   `selectedPrCount`, `selectedPrNumbers`, `prCountWithWorkItems`, and `totalWorkItemCount`.
+   `selectedPrCount`, `selectedPrNumbers`, `prCountWithWorkItems`, `totalWorkItemCount`, and `problems`. Problems report
+   malformed provider elements and failed checks that were skipped without discarding the rest of the batch. Inspect
+   every returned work item and retain the complete problem list for the final result.
 2. Call `edict_list_pr_analysis_items` with that batch, initially `offset: 0`, `limit: 20`. Follow every `nextOffset`.
    Require each page's item count to equal the smaller of its requested limit and remaining items. Preserve the
    prepared order. Require the union to contain exactly `totalWorkItemCount` distinct IDs. Page summaries
@@ -55,11 +57,14 @@ prerequisite. Commit-only requests belong to `edict-batch-signal-analysis`.
    models without requiring them in the tool call. An existing identical model is an idempotent success; a conflicting
    model requires investigation, not overwriting. Retry the same batch after a partially failed publication.
 8. After validation and publication succeed, handle coverage. Publication records a date-based batch's returned full
-   `analyzedDateRanges` only after all validated Signals are published; call `edict_get_pr_analysis_coverage` and
-   require those ranges to be covered. Do not record PR numbers separately for a date-based batch. For an explicit
+   `analyzedDateRanges` only after all validated Signals are published and only when the batch is problem-free; call
+   `edict_get_pr_analysis_coverage` and require those ranges to be covered. A date-based batch with any reported
+   problem is deliberately not recorded as complete coverage; report that it remains uncovered. Do not record PR
+   numbers separately for a date-based batch. For an explicit
    PR-number selection, call `edict_record_pr_analysis_coverage` with all returned `selectedPrNumbers`; repository
    identity is supplied by the server. Never record coverage for an incomplete or failed batch.
-9. Finish with batch ID, inspected IDs, and signal IDs. The server rejects completion until coverage is
+9. Finish with batch ID, inspected IDs, signal IDs, and a summary of every reported problem (or explicitly state that
+   there were none). The server rejects completion until coverage is
    validated and all validated signals are present. A completely inspected batch with zero findings, including an
    empty merged-review selection, succeeds without placeholders. After a server restart, prepare the selection again
    and reuse identical persisted records.

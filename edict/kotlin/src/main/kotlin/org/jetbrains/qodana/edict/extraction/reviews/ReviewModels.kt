@@ -73,6 +73,7 @@ data class PrBatchSummary(
   val totalWorkItemCount: Int,
   val repository: ReviewRepository,
   val analyzedDateRanges: List<PrAnalysisDateRange> = emptyList(),
+  val problems: List<String> = emptyList(),
 )
 
 @Serializable
