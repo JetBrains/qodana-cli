@@ -60,11 +60,17 @@ class TaskLifecycleLoggingTest {
                 } }.forEach { it.get() }
             }
             val lines = output.toString().lines().filter { it.isNotEmpty() }
-            assertEquals(30, lines.size)
+            assertEquals(45, lines.size)
             workers.forEachIndexed { index, worker ->
-                val prefix = "[-:${worker.taskId}] Generate ${index + 1}"
+                val prefix = "[-:${worker.taskId.take(8)}] Generate ${index + 1}"
                 assertTrue(lines.indexOf("$prefix started") >= 0)
-                assertTrue(lines.indexOf("$prefix finished") > lines.indexOf("$prefix started"))
+                val finished = lines.indexOfFirst { it.startsWith("$prefix finished") }
+                assertTrue(finished > lines.indexOf("$prefix started"))
+                assertEquals(
+                    "$prefix finished [${if (index % 2 == 0) "completed" else "failed"}]",
+                    lines[finished],
+                )
+                assertEquals("  Done", lines[finished + 1])
                 assertFalse(output.toString().contains(worker.token))
             }
             assertEquals(output.toString(), Files.readString(layout.tasksLogPath))
@@ -91,12 +97,16 @@ class TaskLifecycleLoggingTest {
                 put("token", created.token); put("taskId", generation.taskId); put("result", "Worker lost")
             })
             val lines = output.toString().lines().filter { it.isNotEmpty() }
-            assertEquals(9, lines.size)
-            assertContains(lines, "[-:${review.taskId}] Reconcile examples for rule started")
-            assertContains(lines, "[-:${example.taskId}] Check example finished")
-            assertContains(lines, "[-:${cluster.taskId}] Generate rule finished")
-            assertContains(lines, "[-:${generation.taskId}] Generate finished")
-            assertEquals(1, lines.count { it == "[-:${finished.taskId}] Code review finished" })
+            assertEquals(14, lines.size)
+            assertContains(lines, "[-:${review.taskId.take(8)}] Reconcile examples for rule started")
+            assertContains(lines, "[-:${example.taskId.take(8)}] Check example finished [cancelled]")
+            assertContains(lines, "[-:${cluster.taskId.take(8)}] Generate rule finished [cancelled]")
+            assertContains(lines, "[-:${generation.taskId.take(8)}] Generate finished [cancelled]")
+            assertEquals(4, lines.count { it == "  Worker lost" })
+            assertEquals(
+                1,
+                lines.count { it == "[-:${finished.taskId.take(8)}] Code review finished [completed]" },
+            )
         }
     }
 
@@ -125,7 +135,12 @@ class TaskLifecycleLoggingTest {
             val responses = protocol.toString().lines().filter { it.isNotEmpty() }.map { wireJson.parseToJsonElement(it).jsonObject }
             assertEquals(2, responses.size)
             responses.forEach { assertEquals(false, it.flag("isError")) }
-            assertEquals("[-:${task.id}] Generate started\n[-:${task.id}] Generate finished\n", messages.toString())
+            assertEquals(
+                    "[-:${task.id.take(8)}] Generate started\n" +
+                    "[-:${task.id.take(8)}] Generate finished [completed]\n" +
+                    "  Done\n",
+                messages.toString(),
+            )
         }
     }
 }

@@ -2,6 +2,7 @@
 package org.jetbrains.qodana.edict.ci.space
 
 import kotlinx.serialization.json.JsonArray
+import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.buildJsonArray
 import kotlinx.serialization.json.buildJsonObject
@@ -15,6 +16,7 @@ import org.jetbrains.qodana.edict.ci.CreatedReview
 import org.jetbrains.qodana.edict.ci.ProviderReviewApi
 import org.jetbrains.qodana.edict.ci.PullRequest
 import org.jetbrains.qodana.edict.ci.ReviewMessage
+import org.jetbrains.qodana.edict.ci.ReviewFetchResult
 import org.jetbrains.qodana.edict.ci.ReviewReference
 import org.jetbrains.qodana.edict.ci.ReviewRepository
 import org.jetbrains.qodana.edict.ci.ReviewSelection
@@ -23,7 +25,6 @@ import org.jetbrains.qodana.edict.ci.ReviewStatus
 import org.jetbrains.qodana.edict.ci.ReviewThread
 import org.jetbrains.qodana.edict.ci.isBot
 import org.jetbrains.qodana.edict.ci.urlPart
-import org.jetbrains.qodana.edict.common.array
 import org.jetbrains.qodana.edict.common.flag
 import org.jetbrains.qodana.edict.common.number
 import org.jetbrains.qodana.edict.common.obj
@@ -41,10 +42,11 @@ internal class SpaceReviewApi(
   override val id: CiProviderId = CiProviderId.SPACE
   private val webOrigin = spaceUrl.trimEnd('/')
 
-  override fun fetch(selection: ReviewSelection): List<PullRequest> {
+  override fun fetch(selection: ReviewSelection): ReviewFetchResult {
     require(selection.provider == id)
     val root = "/projects/key:${urlPart(selection.owner)}/code-reviews"
     val numbers = selection.prNumbers.toMutableList()
+    val problems = mutableListOf<String>()
     if (numbers.isEmpty()) {
       val start = LocalDate.parse(selection.startDate).atStartOfDay().toInstant(ZoneOffset.UTC).toEpochMilli()
       val seen = mutableSetOf<Int>()
@@ -60,13 +62,23 @@ internal class SpaceReviewApi(
             "to" to selection.endDate,
             "\$fields" to "data(review(id,number,timestamp))",
           ),
-        ).body.jsonObject
-        val items = response.array("data").map { it.obj("review") }
+        ).body as? JsonObject
+        if (response == null) {
+          problems += "Space review discovery page ${page + 1}: expected an object response"
+          break
+        }
+        val data = response.objectElements("data", "Space review discovery page ${page + 1}", problems)
         var old = false
-        for (item in items) {
+        for ((index, wrapper) in data.objects.withIndex()) {
+          val item = wrapper["review"] as? JsonObject
+          if (item == null) {
+            problems += "Space review discovery page ${page + 1} data[$index]: missing review object"
+            continue
+          }
           val number = item.number("number").toInt()
-          require(number > 0 && seen.add(number) && item.number("timestamp") > 0) {
-            "Invalid or repeated Space review"
+          if (number <= 0 || !seen.add(number) || item.number("timestamp") <= 0) {
+            problems += "Space review discovery page ${page + 1} data[$index]: invalid or repeated review"
+            continue
           }
           if (item.number("timestamp") < start) {
             old = true
@@ -75,14 +87,28 @@ internal class SpaceReviewApi(
           if (selection.containsDate(item.number("timestamp"))) numbers += number
           if (numbers.size == selection.maxPrs) break
         }
-        if (old || numbers.size == selection.maxPrs || items.size < PAGE_SIZE) break
-        require(page < MAX_PAGES - 1) { "Incomplete Space review discovery" }
+        if (old || numbers.size == selection.maxPrs || data.elementCount < PAGE_SIZE) break
+        if (page == MAX_PAGES - 1) problems += "Incomplete Space review discovery after $MAX_PAGES pages"
       }
     }
-    return numbers.mapNotNull { number -> fetchPullRequest(root, number, selection) }
+    val pullRequests = numbers.mapNotNull { number ->
+      try {
+        fetchPullRequest(root, number, selection, problems)
+      }
+      catch (e: Exception) {
+        problems += "Space PR $number: ${e.message ?: e.javaClass.simpleName}"
+        null
+      }
+    }
+    return ReviewFetchResult(pullRequests, problems)
   }
 
-  private fun fetchPullRequest(root: String, number: Int, selection: ReviewSelection): PullRequest? {
+  private fun fetchPullRequest(
+    root: String,
+    number: Int,
+    selection: ReviewSelection,
+    problems: MutableList<String>,
+  ): PullRequest? {
     val value = get(
       "$root/number:$number",
       mapOf(
@@ -101,30 +127,36 @@ internal class SpaceReviewApi(
     if (pair.flag("isMerged") != true || !selection.containsDate(value.number("timestamp"))) return null
     val feed = value.text("feedChannelId")
     require(feed.isNotEmpty()) { "Space review lacks discussion feed" }
-    val threads = spaceFeed(feed).mapNotNull { message ->
-      val details = message.obj("details")
-      val author = message.obj("projectedItem").obj("author")
-      if (
-        details.text("className") != "CodeDiscussionAddedFeedEvent" ||
-        author.obj("details").obj("user").isEmpty() ||
-        isBot(author.text("name"), author.obj("details").text("className"))
-      ) return@mapNotNull null
-      val discussion = details.obj("codeDiscussion")
-      val channel = discussion.obj("channel").text("id")
-      require(channel.isNotEmpty()) { "Discussion lacks channel or anchor" }
-      val messages = spaceDiscussion(channel)
-      if (messages.isEmpty()) return@mapNotNull null
-      val anchor = discussion.obj("anchor")
-      val line = (anchor.number("line").takeIf { it > 0 } ?: anchor.number("oldLine").takeIf { it > 0 })?.toInt()
-      ReviewThread(
-        "space-$number-${message.text("id")}",
-        "$webOrigin/im/review/${urlPart(value.text("id"))}?message=${urlPart(message.text("id"))}&channel=${urlPart(feed)}",
-        anchor.text("filename").removePrefix("/"),
-        anchor.text("revision"),
-        line,
-        line,
-        messages,
-      )
+    val threads = spaceFeed(feed, "Space PR $number feed", problems).mapIndexedNotNull { index, message ->
+      try {
+        val details = message.obj("details")
+        val author = message.obj("projectedItem").obj("author")
+        if (
+          details.text("className") != "CodeDiscussionAddedFeedEvent" ||
+          author.obj("details").obj("user").isEmpty() ||
+          isBot(author.text("name"), author.obj("details").text("className"))
+        ) return@mapIndexedNotNull null
+        val discussion = details.obj("codeDiscussion")
+        val channel = discussion.obj("channel").text("id")
+        require(channel.isNotEmpty()) { "discussion lacks channel" }
+        val messages = spaceDiscussion(channel, "Space PR $number discussion $channel", problems)
+        if (messages.isEmpty()) return@mapIndexedNotNull null
+        val anchor = discussion.obj("anchor")
+        val line = (anchor.number("line").takeIf { it > 0 } ?: anchor.number("oldLine").takeIf { it > 0 })?.toInt()
+        ReviewThread(
+          "space-$number-${message.text("id")}",
+          "$webOrigin/im/review/${urlPart(value.text("id"))}?message=${urlPart(message.text("id"))}&channel=${urlPart(feed)}",
+          anchor.text("filename").removePrefix("/"),
+          anchor.text("revision"),
+          line,
+          line,
+          messages,
+        )
+      }
+      catch (e: Exception) {
+        problems += "Space PR $number feed item $index: ${e.message ?: e.javaClass.simpleName}"
+        null
+      }
     }.sortedWith(compareBy({ it.messages.first().createdAt }, { it.threadId }))
     return PullRequest(
       number,
@@ -244,7 +276,7 @@ internal class SpaceReviewApi(
     }
   }
 
-  private fun spaceFeed(channel: String): List<JsonObject> {
+  private fun spaceFeed(channel: String, context: String, problems: MutableList<String>): List<JsonObject> {
     val all = linkedMapOf<String, JsonObject>()
     var etag = "0"
     val cursors = mutableSetOf(etag)
@@ -257,18 +289,35 @@ internal class SpaceReviewApi(
           "\$fields" to "data(chatMessage(id,text,created,details(className,codeDiscussion(id,channel(id)," +
             "anchor(filename,line,oldLine,revision))),projectedItem(author(name,details(className,user(id)))))),etag,hasMore",
         ),
-      ).body.jsonObject
-      response.array("data").map { it.obj("chatMessage") }.filter { it.isNotEmpty() }
-        .forEach { all.putIfAbsent(it.text("id"), it) }
-      require(response.flag("hasMore") != null) { "Space feed omitted pagination completeness flag" }
+      ).body as? JsonObject
+      if (response == null) {
+        problems += "$context page ${page + 1}: expected an object response"
+        return all.values.toList()
+      }
+      response.objectElements("data", "$context page ${page + 1}", problems).objects
+        .forEachIndexed { index, wrapper ->
+          val message = wrapper["chatMessage"] as? JsonObject
+          if (message == null || message.isEmpty()) {
+            problems += "$context page ${page + 1} data[$index]: missing chatMessage object"
+          }
+          else all.putIfAbsent(message.text("id"), message)
+        }
+      if (response.flag("hasMore") == null) {
+        problems += "$context page ${page + 1}: omitted pagination completeness flag"
+        return all.values.toList()
+      }
       if (response.flag("hasMore") == false) return all.values.toList()
       etag = response.text("etag")
-      require(etag.isNotEmpty() && cursors.add(etag)) { "Space feed pagination did not advance" }
+      if (etag.isEmpty() || !cursors.add(etag)) {
+        problems += "$context page ${page + 1}: pagination did not advance"
+        return all.values.toList()
+      }
     }
-    error("Space feed exceeds $MAX_PAGES pages; refusing incomplete evidence")
+    problems += "$context exceeds $MAX_PAGES pages; evidence is incomplete"
+    return all.values.toList()
   }
 
-  private fun spaceDiscussion(channel: String): List<ReviewMessage> {
+  private fun spaceDiscussion(channel: String, context: String, problems: MutableList<String>): List<ReviewMessage> {
     val all = mutableListOf<ReviewMessage>()
     val seen = mutableSetOf<String>()
     val cursors = mutableSetOf<String>()
@@ -281,13 +330,23 @@ internal class SpaceReviewApi(
         "\$fields" to "messages(id,text,author(name,details(className,user(id))),created),nextStartFromDate,orgLimitReached",
       )
       if (start.isNotEmpty()) query["startFromDate"] = start
-      val response = get("/chats/messages", query).body.jsonObject
-      require(response.flag("orgLimitReached") == false) { "Space discussion history unavailable or limited" }
-      val messages = response.array("messages")
+      val response = get("/chats/messages", query).body as? JsonObject
+      if (response == null) {
+        problems += "$context page ${page + 1}: expected an object response"
+        return all
+      }
+      if (response.flag("orgLimitReached") != false) {
+        problems += "$context page ${page + 1}: history unavailable or limited"
+        return all
+      }
+      val messages = response.objectElements("messages", "$context page ${page + 1}", problems)
       var fresh = 0
-      messages.forEach { message ->
-        require(message.text("id").isNotEmpty()) { "Missing Space message ID" }
-        if (!seen.add(message.text("id"))) return@forEach
+      messages.objects.forEachIndexed { index, message ->
+        if (message.text("id").isEmpty()) {
+          problems += "$context page ${page + 1} messages[$index]: missing message ID"
+          return@forEachIndexed
+        }
+        if (!seen.add(message.text("id"))) return@forEachIndexed
         fresh++
         val author = message.obj("author")
         if (message.text("text").isNotEmpty() && !isBot(author.text("name"), author.obj("details").text("className"))) {
@@ -296,13 +355,40 @@ internal class SpaceReviewApi(
           all += ReviewMessage(author.text("name"), message.text("text"), timestamp)
         }
       }
-      if (messages.size < DISCUSSION_PAGE_SIZE) return all
+      if (messages.elementCount < DISCUSSION_PAGE_SIZE) return all
       val timestamp = response.obj("nextStartFromDate").number("timestamp")
-      require(fresh > 0 && timestamp > 0) { "Space discussion pagination did not advance" }
+      if (fresh <= 0 || timestamp <= 0) {
+        problems += "$context page ${page + 1}: pagination did not advance"
+        return all
+      }
       start = Instant.ofEpochMilli(timestamp).toString()
-      require(cursors.add(start)) { "Space discussion repeated date cursor" }
+      if (!cursors.add(start)) {
+        problems += "$context page ${page + 1}: repeated date cursor"
+        return all
+      }
     }
-    error("Space discussion exceeds $MAX_PAGES pages; refusing incomplete evidence")
+    problems += "$context exceeds $MAX_PAGES pages; evidence is incomplete"
+    return all
+  }
+
+  private data class ObjectElements(val objects: List<JsonObject>, val elementCount: Int)
+
+  private fun JsonObject.objectElements(
+    key: String,
+    context: String,
+    problems: MutableList<String>,
+  ): ObjectElements {
+    val elements = get(key) as? JsonArray
+    if (elements == null) {
+      problems += "$context: expected '$key' array"
+      return ObjectElements(emptyList(), 0)
+    }
+    val objects = elements.mapIndexedNotNull { index: Int, element: JsonElement ->
+      (element as? JsonObject).also {
+        if (it == null) problems += "$context $key[$index]: expected object"
+      }
+    }
+    return ObjectElements(objects, elements.size)
   }
 
   private fun get(endpoint: String, query: Map<String, String> = emptyMap()): CiHttpResponse =

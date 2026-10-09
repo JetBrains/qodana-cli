@@ -4,6 +4,7 @@ package org.jetbrains.qodana.edict.extraction.reviews
 import kotlinx.serialization.json.*
 import org.jetbrains.qodana.edict.ci.PullRequest
 import org.jetbrains.qodana.edict.ci.ReviewExtractionApi
+import org.jetbrains.qodana.edict.ci.ReviewFetchResult
 import org.jetbrains.qodana.edict.ci.ReviewMessage
 import org.jetbrains.qodana.edict.ci.ReviewRepository
 import org.jetbrains.qodana.edict.ci.ReviewSelection
@@ -30,6 +31,7 @@ internal class PrAnalysis(
   private data class Batch(
     val summary: PrBatchSummary,
     val items: List<PrItem>,
+    val coverageDateRanges: List<PrAnalysisDateRange>,
     var validated: Map<String, EdictNextSignal>? = null,
   )
 
@@ -54,12 +56,15 @@ internal class PrAnalysis(
     val coverage = store.getPrAnalysisCoverage(token, repository)
     val selectedDates = mutableListOf<LocalDate>()
     val selectedPrs = mutableListOf<PullRequest>()
+    val problems = mutableListOf<String>()
     var relevantPrCount = 0
     var rangeEnd = today().minusDays(1)
     var windowDays = 1L
     while (!rangeEnd.isBefore(MIN_REVIEW_DATE)) {
       val rangeStart = maxOf(MIN_REVIEW_DATE, rangeEnd.minusDays(windowDays - 1))
-      val prs = fetchCompleteRange(repository, rangeStart, rangeEnd)
+      val fetched = fetchCompleteRange(repository, rangeStart, rangeEnd)
+      val prs = fetched.pullRequests
+      problems += fetched.problems
       val prsByDate = prs.groupBy { it.utcCloseDate() }
       var date = rangeEnd
       while (!date.isBefore(rangeStart)) {
@@ -85,6 +90,7 @@ internal class PrAnalysis(
       selectedPrs,
       json.encodeToString(repository) + json.encodeToString(ranges),
       ranges,
+      problems,
     )
   }
 
@@ -97,14 +103,15 @@ internal class PrAnalysis(
     val start = LocalDate.parse(startDate)
     val end = LocalDate.parse(endDate)
     require(end.isBefore(today())) { "Only complete UTC dates before today can be selected" }
-    val prs = fetchCompleteRange(repository, start, end)
+    val fetched = fetchCompleteRange(repository, start, end)
     val ranges = listOf(PrAnalysisDateRange(startDate, endDate))
     return registerBatch(
       token,
       repository,
-      prs.sortedByDescending(PullRequest::closeTimestamp),
+      fetched.pullRequests.sortedByDescending(PullRequest::closeTimestamp),
       json.encodeToString(repository) + json.encodeToString(ranges),
       ranges,
+      fetched.problems,
     )
   }
 
@@ -121,14 +128,21 @@ internal class PrAnalysis(
       prNumbers = prNumbers,
     )
     selection.validate()
-    return registerBatch(token, repository, provider.fetch(selection), json.encodeToString(selection))
+    val fetched = provider.fetch(selection)
+    return registerBatch(
+      token,
+      repository,
+      fetched.pullRequests,
+      json.encodeToString(selection),
+      problems = fetched.problems,
+    )
   }
 
   private fun fetchCompleteRange(
     repository: ReviewRepository,
     startDate: LocalDate,
     endDate: LocalDate,
-  ): List<PullRequest> {
+  ): ReviewFetchResult {
     val selection = ReviewSelection(
       repository.provider,
       repository.owner,
@@ -137,15 +151,20 @@ internal class PrAnalysis(
       startDate = startDate.toString(),
       endDate = endDate.toString(),
     )
-    val prs = provider.fetch(selection)
+    val fetched = provider.fetch(selection)
+    val prs = fetched.pullRequests
     require(prs.all { selection.containsDate(it.closeTimestamp) }) { "Provider returned a PR outside the requested dates" }
-    if (prs.size < FULL_DATE_FETCH_LIMIT) return prs
+    if (prs.size < FULL_DATE_FETCH_LIMIT) return fetched
     require(startDate != endDate) {
       "Cannot prove that UTC date $startDate was fetched completely: it contains at least $FULL_DATE_FETCH_LIMIT PRs"
     }
     val midpoint = startDate.plusDays(ChronoUnit.DAYS.between(startDate, endDate) / 2)
-    return fetchCompleteRange(repository, midpoint.plusDays(1), endDate) +
-      fetchCompleteRange(repository, startDate, midpoint)
+    val newer = fetchCompleteRange(repository, midpoint.plusDays(1), endDate)
+    val older = fetchCompleteRange(repository, startDate, midpoint)
+    return ReviewFetchResult(
+      newer.pullRequests + older.pullRequests,
+      newer.problems + older.problems,
+    )
   }
 
   private fun registerBatch(
@@ -154,6 +173,7 @@ internal class PrAnalysis(
     prs: List<PullRequest>,
     selectionIdentity: String,
     analyzedDateRanges: List<PrAnalysisDateRange> = emptyList(),
+    problems: List<String> = emptyList(),
   ): PrBatchSummary {
     val items = prs.flatMap { pr ->
       pr.threads.map { thread ->
@@ -171,7 +191,7 @@ internal class PrAnalysis(
       }
     }
     require(items.distinctBy(PrItem::workItemId).size == items.size) { "Duplicate provider work item" }
-    val id = sha256(selectionIdentity + json.encodeToString(prs)).take(24)
+    val id = sha256(selectionIdentity + json.encodeToString(prs) + json.encodeToString(problems)).take(24)
     val summary = PrBatchSummary(
       id,
       prs.size,
@@ -180,10 +200,13 @@ internal class PrAnalysis(
       items.size,
       repository,
       analyzedDateRanges,
+      problems,
     )
     return synchronized(store) {
       store.requirePrAnalysisCaller(token, coordinator = true)
-      batches.getOrPut(id) { Batch(summary, items) }.summary
+      batches.getOrPut(id) {
+        Batch(summary, items, analyzedDateRanges.takeIf { problems.isEmpty() }.orEmpty())
+      }.summary
     }
   }
 
@@ -245,10 +268,10 @@ internal class PrAnalysis(
     val batch = batch(token, batchId, coordinator = true)
     val validated = checkNotNull(batch.validated) { "Validate complete PR inspection coverage before publication" }
     val publications = validated.values.map { store.publishSignal(token, it) }
-    if (batch.summary.analyzedDateRanges.isNotEmpty()) {
+    if (batch.coverageDateRanges.isNotEmpty()) {
       store.recordPrAnalysisCoverage(
         token,
-        RepositoryPrAnalysisCoverage(batch.summary.repository, batch.summary.analyzedDateRanges),
+        RepositoryPrAnalysisCoverage(batch.summary.repository, batch.coverageDateRanges),
       )
     }
     PrPublicationReceipt(

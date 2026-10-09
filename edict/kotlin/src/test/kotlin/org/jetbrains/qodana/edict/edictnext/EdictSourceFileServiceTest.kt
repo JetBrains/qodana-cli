@@ -1,8 +1,8 @@
 package org.jetbrains.qodana.edict.edictnext
 
 import org.jetbrains.qodana.edict.ci.CiProviderId
-import org.jetbrains.qodana.edict.ci.PullRequest
 import org.jetbrains.qodana.edict.ci.ReviewExtractionApi
+import org.jetbrains.qodana.edict.ci.ReviewFetchResult
 import org.jetbrains.qodana.edict.ci.ReviewRepository
 import org.jetbrains.qodana.edict.ci.ReviewSelection
 import org.jetbrains.qodana.edict.support.fixturePath
@@ -21,7 +21,7 @@ class EdictSourceFileServiceTest {
   private val remoteReads = mutableListOf<String>()
 
   private val provider = object : ReviewExtractionApi {
-    override fun fetch(selection: ReviewSelection): List<PullRequest> = error("not used")
+    override fun fetch(selection: ReviewSelection): ReviewFetchResult = error("not used")
 
     override fun file(repository: ReviewRepository, revision: String, path: String): String {
       remoteReads += "$revision:$path"

@@ -18,6 +18,7 @@ import org.jetbrains.qodana.edict.common.wireJson
 import org.jetbrains.qodana.edict.ci.CiProviderId
 import org.jetbrains.qodana.edict.ci.PullRequest
 import org.jetbrains.qodana.edict.ci.ReviewExtractionApi
+import org.jetbrains.qodana.edict.ci.ReviewFetchResult
 import org.jetbrains.qodana.edict.ci.ReviewMessage
 import org.jetbrains.qodana.edict.ci.ReviewRepository
 import org.jetbrains.qodana.edict.ci.ReviewSelection
@@ -210,6 +211,54 @@ class ConfiguredPrAnalysisTest {
   }
 
   @Test
+  fun `provider element problems are returned without recording incomplete date coverage`() {
+    val configured = ReviewRepository(CiProviderId.SPACE, "project", "repo")
+    val today = LocalDate.of(2026, 10, 9)
+    val selectedDate = today.minusDays(1)
+    val problem = "Space review discovery page 1 data[3]: expected object"
+    val provider = DateReviewProvider(emptyList(), listOf(problem))
+    EdictNextRepositoryState.open(directory.resolve("state")).use { store ->
+      val plan = store.createPlan(
+        "Date analysis",
+        listOf(EdictNextRepositoryState.Step("edict-pr-signal-analysis", "Analyze a complete UTC date")),
+      )
+      val worker = store.launch(plan.token, plan.plan.tasks.single().id, "edict-pr-signal-analysis")
+      val layout = EdictLayout(directory, store.root)
+      val management = EdictManagementService(
+        store,
+        layout,
+        reviewProvider = provider,
+        reviewRepository = configured,
+        prAnalysisToday = { today },
+      )
+      edictNextToolset(layout, management).createServer()
+
+      val fetched = management.call("edict_fetch_pr_batch", buildJsonObject {
+        put("token", worker.token)
+        put("startDate", selectedDate.toString())
+        put("endDate", selectedDate.toString())
+      })
+      assertFalse(fetched.flag("isError") == true)
+      val summary = fetched.obj("structuredContent")
+      assertEquals(listOf(problem), summary.getValue("problems").jsonArray.map { it.jsonPrimitive.content })
+
+      val validation = management.call("edict_validate_pr_signals", buildJsonObject {
+        put("token", worker.token)
+        put("batchId", summary.text("batchId"))
+        put("inspectedWorkItemIds", JsonArray(emptyList()))
+        put("signals", JsonArray(emptyList()))
+      })
+      assertFalse(validation.flag("isError") == true)
+      val publication = management.call("edict_publish_validated_pr_signals", buildJsonObject {
+        put("token", worker.token)
+        put("batchId", summary.text("batchId"))
+      })
+      assertFalse(publication.flag("isError") == true)
+      assertTrue(store.getPrAnalysisCoverage(worker.token, configured).analyzedDateRanges.isEmpty())
+    }
+  }
+
+  @Test
   fun `PR extraction uses configured repository and rejects MCP identity overrides`() {
     val configured = ReviewRepository(CiProviderId.GITHUB, "JetBrains", "qodana-cli")
     val provider = CapturingReviewProvider()
@@ -353,22 +402,28 @@ class ConfiguredPrAnalysisTest {
 
   private class CapturingReviewProvider(private val pullRequests: List<PullRequest> = emptyList()) : ReviewExtractionApi {
     var selection: ReviewSelection? = null
-    override fun fetch(selection: ReviewSelection): List<PullRequest> {
+    override fun fetch(selection: ReviewSelection): ReviewFetchResult {
       this.selection = selection
-      return pullRequests
+      return ReviewFetchResult(pullRequests)
     }
     override fun file(repository: ReviewRepository, revision: String, path: String): String = error("unused")
     override fun diff(repository: ReviewRepository, before: String, after: String, beforePath: String, afterPath: String): String = error("unused")
   }
 
-  private class DateReviewProvider(private val pullRequests: List<PullRequest>) : ReviewExtractionApi {
+  private class DateReviewProvider(
+    private val pullRequests: List<PullRequest>,
+    private val problems: List<String> = emptyList(),
+  ) : ReviewExtractionApi {
     val selections = mutableListOf<ReviewSelection>()
 
-    override fun fetch(selection: ReviewSelection): List<PullRequest> {
+    override fun fetch(selection: ReviewSelection): ReviewFetchResult {
       selections += selection
-      return pullRequests.filter { selection.containsDate(it.closeTimestamp) }
-        .sortedByDescending(PullRequest::closeTimestamp)
-        .take(selection.maxPrs)
+      return ReviewFetchResult(
+        pullRequests.filter { selection.containsDate(it.closeTimestamp) }
+          .sortedByDescending(PullRequest::closeTimestamp)
+          .take(selection.maxPrs),
+        problems,
+      )
     }
 
     override fun file(repository: ReviewRepository, revision: String, path: String): String = error("unused")
