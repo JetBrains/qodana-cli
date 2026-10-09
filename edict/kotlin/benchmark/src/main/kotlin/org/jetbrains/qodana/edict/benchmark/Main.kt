@@ -135,7 +135,6 @@ fun main(args: Array<String>) {
         val price = project?.let {
             CodexPriceAnalyzer.analyze(
                 output.resolve("codex-home"),
-                state,
                 options["--model"]?.takeIf(String::isNotBlank) ?: error("--model is required for analysis"),
                 output.resolve("log/edict/edict-price-report.json"),
             ).also { result -> println(result.rendered) }

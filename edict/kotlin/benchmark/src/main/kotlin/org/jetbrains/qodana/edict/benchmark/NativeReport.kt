@@ -84,17 +84,4 @@ internal fun generateSarif(project: Path, state: Path, output: Path) {
 
 internal fun verifyManagedCompletion(state: Path) {
     require(state.resolve("inbox").listDirectoryEntries("*.json").isEmpty()) { "Codex left unprocessed inbox signals" }
-    val plans = state.resolve("plans").listDirectoryEntries("*.json")
-    require(plans.isNotEmpty()) { "No managed Edict plan was created" }
-    val tasks = plans.flatMap { readObject(it).getValue("tasks").jsonArray }
-    // A cancelled task was lost and handled by its parent; every other task must have completed.
-    require(tasks.isNotEmpty() && tasks.all { it.jsonObject.string("status") in setOf("completed", "cancelled") }) {
-        "Managed Edict tasks are unfinished"
-    }
-    val skills = tasks.map { it.jsonObject.string("skill") }.toSet()
-    val legacyPipeline = setOf("edict-prepare", "edict-distribution", "edict-generation")
-    val nextPipeline = setOf("edict-next-run", "edict-next-distribution", "edict-next-generation")
-    require(legacyPipeline.all(skills::contains) || nextPipeline.all(skills::contains)) {
-        "Managed Edict did not complete preparation, distribution and generation"
-    }
 }

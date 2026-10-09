@@ -48,8 +48,10 @@ class EdictNextRepositoryStateRedactionTest {
                 store.finishTask(batch.token, "completed", "Receipt: a${batch.token}")
             }
             assertEquals(before, store.plan())
-            val persisted = Files.readString(store.root.resolve("plans/${before!!.id}.json"))
-            listOf(manager.token, batch.token).forEach { assertFalse(persisted.contains(it)) }
+            val inMemory = store.plan().toString()
+            listOf(manager.token, batch.token).forEach { assertFalse(inMemory.contains(it)) }
+            assertFalse(Files.exists(store.root.resolve("plans")))
+            assertFalse(Files.exists(store.root.resolve(".edict-mcp-current")))
         }
     }
 

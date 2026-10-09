@@ -80,11 +80,8 @@ class CodexPriceReportTest {
         assertContains(report.render(), "Total price: $0.000204")
         assertContains(report.render(), "uncached-input=0")
 
-        val plans = directory.resolve("state/plans")
-        Files.createDirectories(plans)
-        Files.writeString(plans.resolve("plan.json"), wireJson.encodeToString(Plan.serializer(), plan))
         val output = directory.resolve("price.json")
-        val analysis = CodexPriceAnalyzer.analyze(directory, directory.resolve("state"), output, pricing)
+        val analysis = CodexPriceAnalyzer.analyze(directory, plan, output, pricing)
         assertEquals(150, analysis.totalTokens)
         assertEquals(0.000204, analysis.totalPriceUsd, absoluteTolerance = 1e-12)
         assertEquals(150, analysis.report.getValue("totalPrice").jsonObject
