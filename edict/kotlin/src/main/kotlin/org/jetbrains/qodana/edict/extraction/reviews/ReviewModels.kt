@@ -7,8 +7,6 @@ import org.jetbrains.qodana.edict.ci.ReviewRepository
 import org.jetbrains.qodana.edict.ci.ReviewThread
 import java.time.LocalDate
 
-internal const val DAILY_ROUTINE_PROCESSED_PRS = 100
-
 @Serializable
 data class PrAnalysisDateRange(val startDate: String, val endDate: String) {
   fun validate() {

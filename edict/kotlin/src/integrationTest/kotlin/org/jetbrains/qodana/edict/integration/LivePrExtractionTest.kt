@@ -43,7 +43,7 @@ class LivePrExtractionTest : IntegrationTest() {
             workspace.withCodex(
                 """
                 Use edict_manager and the managed protocol to extract Signals from configured CI review #7 with PR limit 1.
-                Publish every supported Signal through edict_publish_signal.
+                Validate the complete PR batch and publish it through edict_publish_validated_pr_signals.
                 """.trimIndent(),
                 provider = fixture.client,
                 configuration = EdictYamlConfiguration.load(qodanaYaml),
@@ -104,6 +104,7 @@ class LivePrExtractionTest : IntegrationTest() {
 
     private fun verifyReviewCalls() {
         val calls = mutableSetOf<String>()
+        val successfulCalls = mutableSetOf<String>()
         val record = Regex("^\\S+ \\[[^]]+] (edict_[a-z_]+) (\\{.*}) => (\\{.*})$")
         Files.readAllLines(workspace.layout.mcpSystemLogPath).filter(String::isNotBlank).forEach { line ->
             val match = assertNotNull(record.matchEntire(line), "Invalid MCP system-log entry")
@@ -116,8 +117,10 @@ class LivePrExtractionTest : IntegrationTest() {
                 val path = arguments.text("path")
                 val missingOutput = name == "edict_read" && path.startsWith("inbox/") &&
                     detail == workspace.state.resolve(path).toString()
-                assertTrue(missingOutput, "$name failed: $detail; inspect ${workspace.logs}")
+                val recoverableValidation = name == "edict_validate_pr_signals"
+                assertTrue(missingOutput || recoverableValidation, "$name failed: $detail; inspect ${workspace.logs}")
             }
+            else successfulCalls += name
         }
         listOf(
             "edict_get_pr_analysis_coverage",
@@ -125,7 +128,9 @@ class LivePrExtractionTest : IntegrationTest() {
             "edict_list_pr_analysis_items",
             "edict_get_pr_analysis_item",
             "edict_validate_pr_signals",
+            "edict_publish_validated_pr_signals",
             "edict_record_pr_analysis_coverage",
-        ).forEach { assertTrue(it in calls, "Missing real $it call") }
+        ).forEach { assertTrue(it in successfulCalls, "Missing successful real $it call") }
+        assertFalse("edict_publish_signal" in calls, "PR batches must use validated batch publication")
     }
 }

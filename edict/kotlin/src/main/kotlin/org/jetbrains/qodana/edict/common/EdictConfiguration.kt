@@ -21,6 +21,7 @@ internal data class EdictConfiguration(
   val statePath: String = DEFAULT_EDICT_STATE_PATH,
   val ci: EdictCIConfiguration? = null,
   val promotion: PromotionConfiguration? = null,
+  val extraction: ExtractionConfiguration = ExtractionConfiguration(),
   val generation: GenerationConfiguration = GenerationConfiguration(),
   val calculatePrice: Boolean = false,
 ) {
@@ -38,6 +39,19 @@ internal data class EdictConfiguration(
 
 internal const val DEFAULT_EDICT_MCP_PORT = 27182
 internal const val DEFAULT_EDICT_STATE_PATH = ".edict"
+
+/** [defaultSignalCount] is the daily extraction target when the request does not specify one. */
+internal data class ExtractionConfiguration(
+  val defaultSignalCount: Int = DEFAULT_SIGNAL_COUNT,
+) {
+  init {
+    require(defaultSignalCount >= 1) {
+      "edict.extraction.defaultSignalCount must be at least 1: $defaultSignalCount"
+    }
+  }
+}
+
+internal const val DEFAULT_SIGNAL_COUNT = 100
 
 /**
  * [maxProjectAnalyses] caps the expensive project analysis, and the reviews that follow it, per cluster in one run.
@@ -128,6 +142,7 @@ internal class EdictYaml {
   var statePath: String? = null
   var ci: EdictCIYaml? = null
   var promotion: PromotionYaml? = null
+  var extraction: ExtractionYaml? = null
   var generation: GenerationYaml? = null
   var calculatePrice: Boolean? = null
 
@@ -136,8 +151,17 @@ internal class EdictYaml {
     statePath = statePath?.required("edict.statePath") ?: DEFAULT_EDICT_STATE_PATH,
     ci = ci?.toConfiguration(),
     promotion = promotion?.toConfiguration(),
+    extraction = extraction?.toConfiguration() ?: ExtractionConfiguration(),
     generation = generation?.toConfiguration() ?: GenerationConfiguration(),
     calculatePrice = calculatePrice ?: false,
+  )
+}
+
+internal class ExtractionYaml {
+  var defaultSignalCount: Int? = null
+
+  fun toConfiguration() = ExtractionConfiguration(
+    defaultSignalCount = defaultSignalCount ?: DEFAULT_SIGNAL_COUNT,
   )
 }
 

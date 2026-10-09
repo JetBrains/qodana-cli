@@ -18,6 +18,7 @@ import kotlinx.serialization.json.putJsonArray
 import org.jetbrains.qodana.edict.common.EdictLayout
 import org.jetbrains.qodana.edict.common.EdictCIConfiguration
 import org.jetbrains.qodana.edict.common.EdictConfiguration
+import org.jetbrains.qodana.edict.common.ExtractionConfiguration
 import org.jetbrains.qodana.edict.common.array
 import org.jetbrains.qodana.edict.common.flag
 import org.jetbrains.qodana.edict.common.obj
@@ -70,7 +71,10 @@ class EdictNextMcpToolsetTest {
       val toolset = edictNextToolset(
         layout,
         management,
-        configuration = EdictConfiguration(ci = EdictCIConfiguration("https://jetbrains.team/p/owner/repositories/repo")),
+        configuration = EdictConfiguration(
+          ci = EdictCIConfiguration("https://jetbrains.team/p/owner/repositories/repo"),
+          extraction = ExtractionConfiguration(defaultSignalCount = 17),
+        ),
       )
       val server = toolset.createServer()
       assertTrue(server.tools.keys.containsAll(movedTools))
@@ -149,6 +153,7 @@ class EdictNextMcpToolsetTest {
       assertEquals("space", context.obj("reviewRepository").text("provider"))
       assertEquals("owner", context.obj("reviewRepository").text("owner"))
       assertEquals("repo", context.obj("reviewRepository").text("repo"))
+      assertEquals(JsonPrimitive(17), context["defaultSignalCount"])
       assertEquals("Extract", store.plan()?.request)
       val task = store.plan()!!.tasks.single()
       val token = creation.obj("structuredContent").text("token")

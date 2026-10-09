@@ -16,7 +16,6 @@ import org.jetbrains.qodana.edict.edictnext.EdictNextSignal
 import org.jetbrains.qodana.edict.edictnext.EdictNextSignalLabel
 import org.jetbrains.qodana.edict.edictnext.EdictNextSignalSource
 import org.jetbrains.qodana.edict.signals.SignalValidation
-import java.time.Instant
 import java.time.LocalDate
 import java.time.ZoneOffset
 import java.time.temporal.ChronoUnit
@@ -25,7 +24,6 @@ import java.time.temporal.ChronoUnit
 internal class PrAnalysis(
   private val store: EdictNextRepositoryState,
   private val provider: ReviewExtractionApi,
-  private val dailyProcessedPrTarget: Int = DAILY_ROUTINE_PROCESSED_PRS,
   private val today: () -> LocalDate = { LocalDate.now(ZoneOffset.UTC) },
 ) {
   private data class Batch(
@@ -48,49 +46,28 @@ internal class PrAnalysis(
   }
 
   /**
-   * Selects complete uncovered UTC dates, newest first, until enough PRs with analyzable review work are present.
-   * The current UTC date is never selected because it is not complete yet.
+   * Selects the next complete uncovered UTC date, newest first. A successful publication covers that whole date, so
+   * another default call advances to the preceding uncovered date. The current UTC date is never selected because it
+   * is not complete yet.
    */
   private fun prepareDefaultBatch(token: String, repository: ReviewRepository): PrBatchSummary {
-    require(dailyProcessedPrTarget >= 1) { "Daily processed PR target must be positive" }
     val coverage = store.getPrAnalysisCoverage(token, repository)
-    val selectedDates = mutableListOf<LocalDate>()
-    val selectedPrs = mutableListOf<PullRequest>()
-    val problems = mutableListOf<String>()
-    var relevantPrCount = 0
-    var rangeEnd = today().minusDays(1)
-    var windowDays = 1L
-    while (!rangeEnd.isBefore(MIN_REVIEW_DATE)) {
-      val rangeStart = maxOf(MIN_REVIEW_DATE, rangeEnd.minusDays(windowDays - 1))
-      val fetched = fetchCompleteRange(repository, rangeStart, rangeEnd)
-      val prs = fetched.pullRequests
-      problems += fetched.problems
-      val prsByDate = prs.groupBy { it.utcCloseDate() }
-      var date = rangeEnd
-      while (!date.isBefore(rangeStart)) {
-        if (!coverage.includes(date)) {
-          val datePrs = prsByDate[date].orEmpty()
-            .filterNot { it.number in coverage.analyzedPrNumbers }
-            .sortedByDescending(PullRequest::closeTimestamp)
-          selectedDates += date
-          selectedPrs += datePrs
-          relevantPrCount += datePrs.count { it.threads.isNotEmpty() }
-          if (relevantPrCount >= dailyProcessedPrTarget) break
-        }
-        date = date.minusDays(1)
-      }
-      if (relevantPrCount >= dailyProcessedPrTarget || rangeStart == MIN_REVIEW_DATE) break
-      rangeEnd = rangeStart.minusDays(1)
-      windowDays = (windowDays * 2).coerceAtMost(MAX_DATE_WINDOW_DAYS)
-    }
-    val ranges = selectedDates.toRanges()
+    val date = generateSequence(today().minusDays(1)) { it.minusDays(1) }
+      .takeWhile { !it.isBefore(MIN_REVIEW_DATE) }
+      .firstOrNull { !coverage.includes(it) }
+      ?: return registerBatch(token, repository, emptyList(), "${json.encodeToString(repository)}:history-exhausted")
+    val fetched = fetchCompleteRange(repository, date, date)
+    val prs = fetched.pullRequests
+      .filterNot { it.number in coverage.analyzedPrNumbers }
+      .sortedByDescending(PullRequest::closeTimestamp)
+    val ranges = listOf(PrAnalysisDateRange(date.toString(), date.toString()))
     return registerBatch(
       token,
       repository,
-      selectedPrs,
+      prs,
       json.encodeToString(repository) + json.encodeToString(ranges),
       ranges,
-      problems,
+      fetched.problems,
     )
   }
 
@@ -324,22 +301,10 @@ internal class PrAnalysis(
   private companion object {
     const val MAX_ARTIFACT_BYTES = 8 * 1024 * 1024
     const val FULL_DATE_FETCH_LIMIT = 1000
-    const val MAX_DATE_WINDOW_DAYS = 16_384L
     val MIN_REVIEW_DATE: LocalDate = LocalDate.of(1970, 1, 1)
   }
 }
 
-private fun PullRequest.utcCloseDate(): LocalDate =
-  Instant.ofEpochMilli(closeTimestamp).atZone(ZoneOffset.UTC).toLocalDate()
-
 private fun RepositoryPrAnalysisCoverage.includes(date: LocalDate): Boolean = analyzedDateRanges.any {
   date in LocalDate.parse(it.startDate)..LocalDate.parse(it.endDate)
 }
-
-private fun List<LocalDate>.toRanges(): List<PrAnalysisDateRange> =
-  sorted().fold(mutableListOf<Pair<LocalDate, LocalDate>>()) { ranges, date ->
-    val previous = ranges.lastOrNull()
-    if (previous != null && date == previous.second.plusDays(1)) ranges[ranges.lastIndex] = previous.first to date
-    else ranges += date to date
-    ranges
-  }.map { (start, end) -> PrAnalysisDateRange(start.toString(), end.toString()) }

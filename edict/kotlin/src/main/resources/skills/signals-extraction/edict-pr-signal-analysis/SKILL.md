@@ -10,17 +10,25 @@ Run only as a delegated managed subagent. Follow [the manager protocol](../edict
 You own coverage and Signal publication; delegate evidence inspection to `edict-signal-analysis`.
 
 Call `edict_context` and require its `reviewRepository`, configured by `edict.ci.url` in `qodana.yaml`. Do not request or
-repeat its provider, owner/project key, repository, or any run path in a prompt. A daily-routine assignment uses the
-server's fixed relevant-PR target. Other requests require either explicit PR numbers or inclusive UTC date bounds.
+repeat its provider, owner/project key, repository, or any run path in a prompt. A daily-routine assignment uses its
+explicit `signalTarget`, or `defaultSignalCount` from `edict_context` when the assignment omits one. Other requests
+require either explicit PR numbers or inclusive UTC date bounds.
 Use `projectDirectory` from `edict_context` as the source checkout and scratch
 below its `scratchDirectory`. This workflow needs `edict-mcp`, without an IntelliJ session. Provider credentials belong
 in the server environment; never request their values in a tool call, prompt, result, or log. Missing access is a failed
 prerequisite. Commit-only requests belong to `edict-batch-signal-analysis`.
 
 1. Start your task. Call `edict_get_pr_analysis_coverage` with your token. The response identifies the configured
-   repository. Call `edict_fetch_pr_batch` without a selection for the daily routine: the server scans completed,
-   uncovered UTC dates newest-first until the fixed number of PRs with analysis work is found, includes every PR on
-   each selected date, and returns those full dates as `analyzedDateRanges`. For an explicit request, do not reanalyze
+   repository. Call `edict_fetch_pr_batch` without a selection for the daily routine: each call returns every PR from
+   the next complete uncovered UTC date, newest-first, and returns that date as `analyzedDateRanges`. Finish the whole
+   date even when its Signals take the cumulative total past the target. After steps 2-8 publish it, repeat steps 1-8
+   without a selection until the cumulative number of validated and published Signals reaches the signal target.
+   Zero-Signal dates still must be fully validated and published so coverage advances, and do not satisfy any part of
+   the target. An empty batch with no `analyzedDateRanges` means review history is exhausted; validate and publish that
+   empty batch without workers, then stop successfully and report the shortfall. If a batch reports any problem,
+   finish that batch once and stop the loop with a shortfall:
+   its date deliberately remains uncovered, so fetching again in this run would return the same batch forever.
+   For an explicit request, do not reanalyze
    PR numbers already recorded or date intervals completely covered by a recorded range; call the same tool with the
    remaining `prNumbers` or both `startDate` and `endDate` (`YYYY-MM-DD`). An explicit date range selects every merged
    PR from every complete date in the range and does not apply the daily target. The tool returns `batchId`,
@@ -63,8 +71,8 @@ prerequisite. Commit-only requests belong to `edict-batch-signal-analysis`.
    numbers separately for a date-based batch. For an explicit
    PR-number selection, call `edict_record_pr_analysis_coverage` with all returned `selectedPrNumbers`; repository
    identity is supplied by the server. Never record coverage for an incomplete or failed batch.
-9. Finish with batch ID, inspected IDs, signal IDs, and a summary of every reported problem (or explicitly state that
-   there were none). The server rejects completion until coverage is
+9. Finish with every batch ID, inspected IDs, signal IDs, the target and achieved cumulative Signal count, and a
+   summary of every reported problem (or explicitly state that there were none). The server rejects completion until coverage is
    validated and all validated signals are present. A completely inspected batch with zero findings, including an
    empty merged-review selection, succeeds without placeholders. After a server restart, prepare the selection again
    and reuse identical persisted records.

@@ -10,6 +10,8 @@ $CODEX_HOME/config.toml
 edict:
   mcpPort: 27182   # the default
   statePath: .edict # the default; relative paths are resolved from the project
+  extraction:
+    defaultSignalCount: 100 # the default: newly extracted Signals per daily run
   generation:
     maxProjectAnalyses: 3   # the default: project analyses per cluster in one run
     defaultGenerationCount: 5 # the default: top Pending clusters per run by positive-Signal count
@@ -106,9 +108,9 @@ edict_manager
   - require exact coverage, build complete `FromCommit` records in memory, then publish each with
     `edict_publish_signal`; an identical existing Signal counts as success
 - `$edict-pr-signal-analysis`: GitHub/Space merged reviews
-  - `edict_fetch_pr_batch` without a selection scans completed uncovered UTC dates backward until
-    `DAILY_ROUTINE_PROCESSED_PRS` PRs with work items are found; an explicit complete date range fetches every PR in
-    that range without applying the default target
+  - `edict_fetch_pr_batch` without a selection returns every PR from the next complete uncovered UTC date; the
+    coordinator repeats complete dates until `edict.extraction.defaultSignalCount` validated Signals are published,
+    while an explicit complete date range fetches every PR in that range without applying the default target
   - use `edict_list_pr_analysis_items` / `edict_get_pr_analysis_item` / `edict_pr_file_*`
   - chunks of at most 8 work items per `$edict-signal-analysis` worker, validated with `edict_validate_pr_signals`,
     and published with `edict_publish_validated_pr_signals`; publication of any date-based batch records its complete

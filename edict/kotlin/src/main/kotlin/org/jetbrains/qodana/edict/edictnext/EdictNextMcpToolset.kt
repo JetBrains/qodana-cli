@@ -46,13 +46,14 @@ internal class EdictNextMcpToolset(
 
     server.addTool(
       name = "edict_context",
-      description = "Return this run's configured paths and CI review repository. Read-only.",
+      description = "Return this run's configured paths, CI review repository, and default extraction Signal target. Read-only.",
     ) {
       EdictRunContext(
         projectDirectory = layout.root.toString(),
         stateDirectory = layout.stateDirectory.toString(),
         scratchDirectory = layout.scratchDirectory.createDirectories().toString(),
         reviewRepository = configuration.ci?.reviewRepository,
+        defaultSignalCount = configuration.extraction.defaultSignalCount,
       ).toToolResult()
     }
 
