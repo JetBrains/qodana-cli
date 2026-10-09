@@ -28,7 +28,6 @@ import org.jetbrains.qodana.edict.common.GitRepository
 import org.jetbrains.qodana.edict.ci.ReviewClient
 import org.jetbrains.qodana.edict.ci.ReviewExtractionApi
 import org.jetbrains.qodana.edict.ci.ReviewRepository
-import org.jetbrains.qodana.edict.extraction.reviews.DAILY_ROUTINE_PROCESSED_PRS
 import org.jetbrains.qodana.edict.extraction.reviews.PrAnalysis
 import org.jetbrains.qodana.edict.extraction.reviews.PrAnalysisCoverageInput
 import org.jetbrains.qodana.edict.extraction.reviews.RepositoryPrAnalysisCoverage
@@ -50,7 +49,6 @@ internal class EdictManagementService(
   taskOutput: PrintWriter = PrintWriter(System.err, true),
   reviewProvider: ReviewExtractionApi = ReviewClient(),
   private val reviewRepository: ReviewRepository? = null,
-  dailyProcessedPrTarget: Int = DAILY_ROUTINE_PROCESSED_PRS,
   prAnalysisToday: () -> LocalDate = { LocalDate.now(ZoneOffset.UTC) },
   private val startedAt: Instant = Instant.now(),
 ) {
@@ -76,7 +74,7 @@ internal class EdictManagementService(
 
   private val taskLogger = TaskLifecycleLogger(store, layout, taskOutput)
   private val invocations = ConcurrentHashMap<String, Invocation>()
-  private val pr = PrAnalysis(store, reviewProvider, dailyProcessedPrTarget, prAnalysisToday)
+  private val pr = PrAnalysis(store, reviewProvider, prAnalysisToday)
 
   fun registerTools(server: Server, calculatePrice: Boolean = false) {
     val string = jsonType("string")
@@ -417,8 +415,8 @@ internal class EdictManagementService(
 
     tool(
       name = "edict_fetch_pr_batch",
-      description = "Prepare merged reviews from the repository configured in edict.ci. With no selection, scan complete " +
-        "uncovered UTC dates backward until at least $DAILY_ROUTINE_PROCESSED_PRS PRs with analysis work are found. " +
+      description = "Prepare merged reviews from the repository configured in edict.ci. With no selection, fetch every " +
+        "PR from the next complete uncovered UTC date, newest first. " +
         "With startDate and endDate, fetch every PR from those complete dates without the default target. With prNumbers, " +
         "fetch exactly that explicit selection. Malformed elements and failed per-item checks are skipped and returned in " +
         "problems. Date coverage is persisted only after validated Signals are published from a problem-free batch.",

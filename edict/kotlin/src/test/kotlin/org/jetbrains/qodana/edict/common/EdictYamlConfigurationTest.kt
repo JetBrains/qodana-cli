@@ -113,6 +113,29 @@ class EdictYamlConfigurationTest {
   }
 
   @Test
+  fun `daily extraction signal target has a default and is configurable`() {
+    assertEquals(100, EdictYamlConfiguration.load(null).extraction.defaultSignalCount)
+    assertEquals(
+      100,
+      EdictYamlConfiguration.load(yaml("edict:\n  extraction: {}\n")).extraction.defaultSignalCount,
+    )
+    assertEquals(
+      250,
+      EdictYamlConfiguration.load(yaml(
+        "edict:\n  extraction:\n    defaultSignalCount: 250\n",
+      )).extraction.defaultSignalCount,
+    )
+
+    val invalid = assertFailsWith<IllegalArgumentException> {
+      EdictYamlConfiguration.load(yaml("edict:\n  extraction:\n    defaultSignalCount: 0\n"))
+    }
+    assertContains(
+      invalid.message.orEmpty(),
+      "edict.extraction.defaultSignalCount must be at least 1",
+    )
+  }
+
+  @Test
   fun `price reporting is controlled by a boolean switch`() {
     assertTrue(EdictYamlConfiguration.load(yaml("edict:\n  calculatePrice: true\n")).calculatePrice)
     assertFalse(EdictYamlConfiguration.load(yaml("edict:\n  calculatePrice: false\n")).calculatePrice)
