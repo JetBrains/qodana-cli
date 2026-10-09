@@ -18,6 +18,7 @@ import java.nio.file.Files
 import java.nio.file.LinkOption.NOFOLLOW_LINKS
 import java.nio.file.Path
 import java.nio.file.StandardCopyOption
+import java.nio.file.StandardOpenOption.APPEND
 import java.nio.file.StandardOpenOption.CREATE
 import java.nio.file.StandardOpenOption.WRITE
 import java.nio.file.attribute.PosixFilePermissions
@@ -393,12 +394,27 @@ internal class EdictNextRepositoryState(
     try {
       check(channel.tryLock() != null) { "State is already owned by another Edict management service" }
       lockChannel = channel
+      ensureManagementFilesIgnored()
       restore()
     }
     catch (e: Exception) {
+      lockChannel = null
       channel.close()
       throw e
     }
+  }
+
+  private fun ensureManagementFilesIgnored() {
+    val path = safePath(GITIGNORE_FILE)
+    val content = if (Files.exists(path, NOFOLLOW_LINKS)) readText(GITIGNORE_FILE) else ""
+    val entries = content.lineSequence().map { it.removeSuffix("\r") }.toSet()
+    val missing = MANAGEMENT_GITIGNORE_ENTRIES.filterNot { it in entries || "/$it" in entries }
+    if (missing.isEmpty()) return
+    val addition = buildString {
+      if (content.isNotEmpty() && !content.endsWith('\n')) append('\n')
+      missing.forEach { append(it).append('\n') }
+    }
+    Files.writeString(path, addition, CREATE, APPEND)
   }
 
   private fun authorize(token: String): Capability = lookup(token).also { capability ->
@@ -560,6 +576,8 @@ internal class EdictNextRepositoryState(
     private const val PR_ANALYSIS_SKILL = "edict-pr-signal-analysis"
     private const val LOCK_FILE = ".edict-mcp.lock"
     private const val CURRENT_PLAN_FILE = ".edict-mcp-current"
+    private const val GITIGNORE_FILE = ".gitignore"
+    private val MANAGEMENT_GITIGNORE_ENTRIES = listOf(LOCK_FILE, CURRENT_PLAN_FILE)
     private const val PR_ANALYSIS_COVERAGE_FILE = "extraction/pr-analysis-coverage.json"
     private val COMMIT_SIGNAL_PUBLISHERS = setOf(
       "edict-batch-signal-analysis",
