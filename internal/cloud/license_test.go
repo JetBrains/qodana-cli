@@ -332,11 +332,11 @@ func TestDeserializeLicenseDataFields(t *testing.T) {
 	}
 }
 
-func TestDeserializeLicenseDataSharing(t *testing.T) {
-	if DeserializeLicenseData([]byte(`{"licenseId": "A"}`)).DataSharingAllowed {
+func TestDeserializeLicenseOrganizationAllowsErrorReporting(t *testing.T) {
+	if DeserializeLicenseData([]byte(`{"licenseId": "A"}`)).OrganizationAllowsErrorReporting {
 		t.Error("missing field should mean false")
 	}
-	if !DeserializeLicenseData([]byte(`{"dataSharingAllowed": true}`)).DataSharingAllowed {
+	if !DeserializeLicenseData([]byte(`{"organizationAllowsErrorReporting": true}`)).OrganizationAllowsErrorReporting {
 		t.Error("expected true")
 	}
 }

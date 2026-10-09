@@ -1062,7 +1062,7 @@ func Test_ideaExitCode(t *testing.T) {
 }
 
 func TestSetupLicense(t *testing.T) {
-	t.Cleanup(func() { cloud.DataSharingAllowed = nil })
+	t.Cleanup(func() { cloud.OrganizationAllowsErrorReporting = nil })
 	prod := product.Product{
 		Code:     "QDJVM",
 		IsEap:    false,
@@ -1144,7 +1144,7 @@ func TestSetupLicense(t *testing.T) {
 }
 
 func TestSetupLicenseToken(t *testing.T) {
-	t.Cleanup(func() { cloud.DataSharingAllowed = nil })
+	t.Cleanup(func() { cloud.OrganizationAllowsErrorReporting = nil })
 	for _, testData := range []struct {
 		name       string
 		token      string
@@ -1353,8 +1353,8 @@ func Test_Properties(t *testing.T) {
 	resultsDir := filepath.Join(tmpDir, "results")
 	cacheDir := filepath.Join(tmpDir, "cache")
 
-	cloud.DataSharingAllowed = nil
-	t.Cleanup(func() { cloud.DataSharingAllowed = nil })
+	cloud.OrganizationAllowsErrorReporting = nil
+	t.Cleanup(func() { cloud.OrganizationAllowsErrorReporting = nil })
 	t.Setenv(qdenv.QodanaConfEnv, projectDir)
 	t.Setenv(qdenv.QodanaDockerEnv, "true")
 	t.Setenv("DEVICEID", "FAKE")
