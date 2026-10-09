@@ -22,6 +22,7 @@ internal data class EdictConfiguration(
   val ci: EdictCIConfiguration? = null,
   val promotion: PromotionConfiguration? = null,
   val generation: GenerationConfiguration = GenerationConfiguration(),
+  val calculatePrice: Boolean = false,
 ) {
   init {
     require(mcpPort in 1..65535) { "edict.mcpPort must be between 1 and 65535: $mcpPort" }
@@ -128,6 +129,7 @@ internal class EdictYaml {
   var ci: EdictCIYaml? = null
   var promotion: PromotionYaml? = null
   var generation: GenerationYaml? = null
+  var calculatePrice: Boolean? = null
 
   fun toConfiguration() = EdictConfiguration(
     mcpPort = mcpPort ?: DEFAULT_EDICT_MCP_PORT,
@@ -135,6 +137,7 @@ internal class EdictYaml {
     ci = ci?.toConfiguration(),
     promotion = promotion?.toConfiguration(),
     generation = generation?.toConfiguration() ?: GenerationConfiguration(),
+    calculatePrice = calculatePrice ?: false,
   )
 }
 

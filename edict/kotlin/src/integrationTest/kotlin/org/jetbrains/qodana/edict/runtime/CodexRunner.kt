@@ -153,7 +153,10 @@ class CodexRunner internal constructor(
     }
 
     internal fun writePriceReport(plan: Plan): CodexPriceReport =
-        CodexPriceReporter.create(home, plan, pricing).also {
+        CodexPriceReporter.create(home, plan, { model ->
+            check(model == pricing.model) { "Unexpected model in Codex session: $model" }
+            pricing
+        }).also {
             CodexPriceReporter.write(it, layout.processLogDirectory.resolve("edict-price-report.json"))
         }
 

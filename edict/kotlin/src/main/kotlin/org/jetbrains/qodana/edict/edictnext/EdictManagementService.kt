@@ -5,6 +5,7 @@ import io.modelcontextprotocol.kotlin.sdk.types.CallToolResult
 import io.modelcontextprotocol.kotlin.sdk.types.TextContent
 import io.modelcontextprotocol.kotlin.sdk.types.ToolAnnotations
 import io.modelcontextprotocol.kotlin.sdk.types.ToolSchema
+import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.JsonObject
@@ -33,6 +34,8 @@ import org.jetbrains.qodana.edict.extraction.reviews.PrAnalysisCoverageInput
 import org.jetbrains.qodana.edict.extraction.reviews.RepositoryPrAnalysisCoverage
 import org.jetbrains.qodana.edict.extraction.reviews.ReviewSelectionInput
 import org.jetbrains.qodana.edict.skills.managed.Registry
+import org.jetbrains.qodana.edict.runtime.CodexPriceAnalyzer
+import org.jetbrains.qodana.edict.setup.CodexSetup
 import java.io.PrintWriter
 import java.nio.file.Files
 import java.time.Instant
@@ -49,6 +52,7 @@ internal class EdictManagementService(
   private val reviewRepository: ReviewRepository? = null,
   dailyProcessedPrTarget: Int = DAILY_ROUTINE_PROCESSED_PRS,
   prAnalysisToday: () -> LocalDate = { LocalDate.now(ZoneOffset.UTC) },
+  private val startedAt: Instant = Instant.now(),
 ) {
   companion object {
     const val INSTRUCTIONS = "Managed Edict state and execution plans. Root requests enter through edict_manager. " +
@@ -74,7 +78,7 @@ internal class EdictManagementService(
   private val invocations = ConcurrentHashMap<String, Invocation>()
   private val pr = PrAnalysis(store, reviewProvider, dailyProcessedPrTarget, prAnalysisToday)
 
-  fun registerTools(server: Server) {
+  fun registerTools(server: Server, calculatePrice: Boolean = false) {
     val string = jsonType("string")
     val integer = jsonType("integer")
     val stringArray = buildJsonObject {
@@ -206,6 +210,26 @@ internal class EdictManagementService(
       readOnly = true,
     ) {
       buildJsonObject { put("plan", EdictNextJson.encodeToJsonElement(store.plan())) }
+    }
+
+    if (calculatePrice) tool(
+      name = "edict_calculate_price",
+      description = "Calculate this completed run's Codex token price, write the private JSON price report, and log a readable breakdown.",
+      required = listOf("token"),
+    ) { arguments ->
+      store.requireSkill(arguments.requireString("token"), setOf("edict_manager"))
+      val plan = checkNotNull(store.plan()) { "Create the execution plan before calculating its price" }
+      check(plan.tasks.all { it.status in PRICE_TERMINAL_TASK_STATUSES }) {
+        "Finish or cancel every managed task before calculating the run price"
+      }
+      val analysis = CodexPriceAnalyzer.analyze(
+        CodexSetup.userCodexHome(),
+        plan,
+        layout.priceReportPath,
+        startedAt,
+      )
+      priceLogger.info { analysis.rendered }
+      analysis.report
     }
 
     val steps = buildJsonObject {
@@ -568,6 +592,9 @@ internal class EdictManagementService(
     agents.mcp(caller, name, sanitized, response)
   }
 }
+
+private val priceLogger = KotlinLogging.logger("org.jetbrains.qodana.edict.Price")
+private val PRICE_TERMINAL_TASK_STATUSES = setOf("completed", "failed", "cancelled")
 
 private fun jsonType(type: String) = buildJsonObject { put("type", type) }
 

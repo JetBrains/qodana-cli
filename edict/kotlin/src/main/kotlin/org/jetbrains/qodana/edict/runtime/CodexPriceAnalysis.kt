@@ -8,6 +8,7 @@ import org.jetbrains.qodana.edict.common.json
 import org.jetbrains.qodana.edict.edictnext.EdictNextRepositoryState.Plan
 import java.nio.file.Files
 import java.nio.file.Path
+import java.time.Instant
 
 data class CodexPriceAnalysis(
     val report: JsonObject,
@@ -17,18 +18,26 @@ data class CodexPriceAnalysis(
 )
 
 object CodexPriceAnalyzer {
-    fun analyze(codexHome: Path, model: String, output: Path): CodexPriceAnalysis =
-        analyze(codexHome, Plan(request = "Offline price analysis", tasks = emptyList()), output, OpenAiPricingLoader.fetch(model))
+    fun analyze(codexHome: Path, output: Path): CodexPriceAnalysis =
+        analyze(codexHome, Plan(request = "Offline price analysis", tasks = emptyList()), output)
 
     internal fun analyze(
         codexHome: Path,
         plan: Plan,
         output: Path,
-        pricing: OpenAiPricing,
+        since: Instant? = null,
+    ): CodexPriceAnalysis = analyze(codexHome, plan, output, OpenAiPricingLoader::fetch, since)
+
+    internal fun analyze(
+        codexHome: Path,
+        plan: Plan,
+        output: Path,
+        loadPricing: (String) -> OpenAiPricing,
+        since: Instant? = null,
     ): CodexPriceAnalysis {
         val sessions = codexHome.resolve("sessions")
         require(Files.isDirectory(sessions)) { "Codex sessions directory does not exist: $sessions" }
-        val report = CodexPriceReporter.create(codexHome, plan, pricing)
+        val report = CodexPriceReporter.create(codexHome, plan, loadPricing, since)
         check(report.totalPrice.totalTokens > 0) { "No Codex token usage found in $sessions" }
         CodexPriceReporter.write(report, output)
         return CodexPriceAnalysis(

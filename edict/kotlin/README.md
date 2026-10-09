@@ -74,6 +74,11 @@ project's Git repository validates commit Signals. Every process is a run named 
 `log/agent-work/<run-id>/scratch`. `common/EdictLayout.kt` names all of these paths; the `edict.log.dir` JVM system
 property moves the `log` folder (relative to the project), and `edict.run.id` fixes the run id.
 
+Optional price reporting is enabled with `edict.calculatePrice: true` in `qodana.yaml`. It exposes the manager-only
+`edict_calculate_price` MCP tool, which reads each model from the Codex session log, uses the current official OpenAI
+Standard rates, and writes
+`edict-price-report.json` beside the other private process logs while also logging a readable breakdown.
+
 ## What is ported
 
 - All 14 managed skills, their invocation policies, and shared references.
