@@ -108,10 +108,15 @@ internal data class CodexClusterPrice(
 )
 
 @Serializable
-internal data class CodexPriceReport(
-    val model: String,
-    val currency: String = "usd",
+internal data class CodexModelPrice(
     val pricing: OpenAiPricing,
+    val price: CodexTokenPrice,
+)
+
+@Serializable
+internal data class CodexPriceReport(
+    val models: List<CodexModelPrice>,
+    val currency: String = "usd",
     val managerOwnPrice: CodexTokenPrice,
     val topStages: List<CodexStagePrice>,
     val clusterGenerations: List<CodexClusterPrice>,
@@ -120,10 +125,14 @@ internal data class CodexPriceReport(
     val totalPrice: CodexTokenPrice,
 ) {
     fun render(): String = buildString {
-        appendLine("Price report ($model; official OpenAI ${pricing.tier} list prices; inclusive prices contain every descendant):")
-        appendLine("Pricing source: ${pricing.sourceUrl} (retrieved ${pricing.retrievedAt})")
-        appendLine("Rates per 1M tokens: ${rates(pricing.shortContextRates)} (input <= ${"%,d".format(pricing.shortContextMaxInputTokens)})")
-        pricing.longContextRates?.let { appendLine("Long-context rates: ${rates(it)}") }
+        appendLine("Price report (${models.joinToString { it.pricing.model }}; official OpenAI list prices; inclusive prices contain every descendant):")
+        models.forEach { model ->
+            val pricing = model.pricing
+            appendLine("Pricing for ${pricing.model}: ${pricing.sourceUrl} (retrieved ${pricing.retrievedAt}; ${pricing.tier} tier)")
+            appendLine("- rates per 1M tokens: ${rates(pricing.shortContextRates)} (input <= ${"%,d".format(pricing.shortContextMaxInputTokens)})")
+            pricing.longContextRates?.let { appendLine("- long-context rates: ${rates(it)}") }
+            appendLine("- model total: ${format(model.price)}")
+        }
         appendLine("Top stages:")
         topStages.forEach { appendLine("- ${it.skill}: ${format(it.inclusivePrice)}") }
         clusterGenerations.forEach { cluster ->
@@ -153,8 +162,18 @@ internal data class CodexPriceReport(
 
 /** Prices Codex session logs and, when given a live plan, attributes managed worker sessions to its in-memory tasks. */
 internal object CodexPriceReporter {
-    fun create(home: Path, plan: Plan, pricing: OpenAiPricing): CodexPriceReport {
-        val sessions = readSessions(home.resolve("sessions"), pricing)
+    fun create(home: Path, plan: Plan, since: Instant? = null): CodexPriceReport =
+        create(home, plan, OpenAiPricingLoader::fetch, since)
+
+    internal fun create(
+        home: Path,
+        plan: Plan,
+        loadPricing: (String) -> OpenAiPricing,
+        since: Instant? = null,
+    ): CodexPriceReport {
+        val pricingByModel = mutableMapOf<String, OpenAiPricing>()
+        fun pricing(model: String) = pricingByModel.getOrPut(model) { loadPricing(model) }
+        val sessions = sessionsForPlan(readSessions(home.resolve("sessions"), ::pricing, since), plan)
         val tasksById = plan.tasks.associateBy(Task::id)
         val sessionsByAgent = buildMap {
             sessions.forEach { session ->
@@ -195,7 +214,13 @@ internal object CodexPriceReporter {
         }
             .fold(CodexTokenPrice()) { price, session -> price + session.price }
         val total = sessions.fold(CodexTokenPrice()) { price, session -> price + session.price }
-        return CodexPriceReport(pricing.model, pricing = pricing, managerOwnPrice = manager, topStages = roots, clusterGenerations = clusters,
+        val models = sessions.asSequence().flatMap { it.pricesByModel.asSequence() }
+            .groupBy({ it.key }, { it.value })
+            .toSortedMap()
+            .map { (model, prices) ->
+                CodexModelPrice(pricing(model), prices.fold(CodexTokenPrice(), CodexTokenPrice::plus))
+            }
+        return CodexPriceReport(models, managerOwnPrice = manager, topStages = roots, clusterGenerations = clusters,
             unattributedPrice = unattributed, totalPrice = total)
     }
 
@@ -204,20 +229,45 @@ internal object CodexPriceReporter {
         Files.writeString(path, json.encodeToString(CodexPriceReport.serializer(), report) + "\n", CREATE, TRUNCATE_EXISTING)
     }
 
-    private fun readSessions(directory: Path, pricing: OpenAiPricing): List<SessionPrice> {
+    private fun readSessions(
+        directory: Path,
+        pricing: (String) -> OpenAiPricing,
+        since: Instant?,
+    ): List<SessionPrice> {
         if (!Files.isDirectory(directory)) return emptyList()
         val result = mutableListOf<SessionPrice>()
         Files.walk(directory).use { paths -> paths.filter { Files.isRegularFile(it) && it.toString().endsWith(".jsonl") }
+            .filter { since == null || Files.getLastModifiedTime(it).toInstant() >= since.minusSeconds(1) }
             .forEach { file -> readSession(file, pricing)?.let(result::add) } }
         return result
     }
 
-    private fun readSession(path: Path, pricing: OpenAiPricing): SessionPrice? {
+    private fun sessionsForPlan(sessions: List<SessionPrice>, plan: Plan): List<SessionPrice> {
+        val taskAgents = plan.tasks.map(Task::agentId).filter(String::isNotBlank).toSet()
+        if (taskAgents.isEmpty()) return sessions
+        val byId = sessions.associateBy(SessionPrice::id)
+        val roots = sessions.asSequence()
+            .filter { it.id in taskAgents || it.agentPath in taskAgents }
+            .map { session ->
+                generateSequence(session) { current -> byId[current.parentId] }
+                    .last().id
+            }
+            .toSet()
+        if (roots.isEmpty()) return sessions
+        fun root(session: SessionPrice): String = generateSequence(session) { current -> byId[current.parentId] }
+            .last().id
+        return sessions.filter { root(it) in roots }
+    }
+
+    private fun readSession(path: Path, pricing: (String) -> OpenAiPricing): SessionPrice? {
         var id = ""
         var agentPath = ""
+        var parentId = ""
         var root = false
-        var price = CodexTokenPrice()
-        var requestCosts = CodexTokenPrice()
+        var currentModel = ""
+        val models = linkedSetOf<String>()
+        var cumulativeUsage = CodexTokenPrice()
+        val requestPrices = linkedMapOf<String, CodexTokenPrice>()
         var requestPricesSeen = false
         Files.newBufferedReader(path).useLines { lines ->
             lines.filter(String::isNotBlank).forEach { line ->
@@ -225,14 +275,23 @@ internal object CodexPriceReporter {
                 val payload = event.obj("payload")
                 if (event.text("type") == "session_meta") {
                     id = payload.text("id")
-                    agentPath = payload.obj("source").obj("subagent").obj("thread_spawn").text("agent_path")
-                    root = payload.text("parent_thread_id").isEmpty() &&
-                        payload.obj("source").obj("subagent").obj("thread_spawn").text("parent_thread_id").isEmpty()
+                    val spawn = payload.obj("source").obj("subagent").obj("thread_spawn")
+                    agentPath = spawn.text("agent_path")
+                    parentId = payload.text("parent_thread_id").ifEmpty { spawn.text("parent_thread_id") }
+                    root = parentId.isEmpty()
+                }
+                if (event.text("type") == "turn_context") {
+                    payload.text("model").takeIf(String::isNotEmpty)?.let { model ->
+                        currentModel = model
+                        models += model
+                    }
                 }
                 val usage: JsonObject? = when {
                     event.text("type") == "token_usage_record" -> {
                         val requestUsage = payload.obj("usage").toPrice()
-                        requestCosts += pricing.price(requestUsage, requestUsage.inputTokens())
+                        check(currentModel.isNotEmpty()) { "Codex usage record has no preceding turn model in $path" }
+                        val priced = pricing(currentModel).price(requestUsage, requestUsage.inputTokens())
+                        requestPrices[currentModel] = requestPrices.getOrDefault(currentModel, CodexTokenPrice()) + priced
                         requestPricesSeen = true
                         payload.obj("thread_token_usage")
                     }
@@ -240,18 +299,16 @@ internal object CodexPriceReporter {
                         payload.obj("info").obj("total_token_usage")
                     else -> null
                 }
-                if (usage != null) price = usage.toPrice()
+                if (usage != null) cumulativeUsage = usage.toPrice()
             }
         }
-        val costs = if (requestPricesSeen) requestCosts else pricing.price(price, price.inputTokens())
-        price = price.copy(
-            uncachedInputPriceUsd = costs.uncachedInputPriceUsd,
-            cachedInputPriceUsd = costs.cachedInputPriceUsd,
-            cacheWritePriceUsd = costs.cacheWritePriceUsd,
-            outputPriceUsd = costs.outputPriceUsd,
-            priceUsd = costs.priceUsd,
-        )
-        return id.takeIf(String::isNotEmpty)?.let { SessionPrice(it, agentPath, root, price) }
+        val pricesByModel = if (requestPricesSeen) requestPrices else if (cumulativeUsage.totalTokens > 0) {
+            val model = models.singleOrNull()
+                ?: error("Cannot attribute cumulative Codex usage in $path to one model: ${models.joinToString()}")
+            mapOf(model to pricing(model).price(cumulativeUsage, cumulativeUsage.inputTokens()))
+        }
+        else emptyMap()
+        return id.takeIf(String::isNotEmpty)?.let { SessionPrice(it, agentPath, parentId, root, pricesByModel) }
     }
 
     private fun JsonObject.toPrice(): CodexTokenPrice {
@@ -271,7 +328,15 @@ internal object CodexPriceReporter {
 
     private fun CodexTokenPrice.inputTokens() = uncachedInputTokens + cachedInputTokens + cacheWriteInputTokens
 
-    private data class SessionPrice(val id: String, val agentPath: String, val root: Boolean, val price: CodexTokenPrice)
+    private data class SessionPrice(
+        val id: String,
+        val agentPath: String,
+        val parentId: String,
+        val root: Boolean,
+        val pricesByModel: Map<String, CodexTokenPrice>,
+    ) {
+        val price: CodexTokenPrice = pricesByModel.values.fold(CodexTokenPrice(), CodexTokenPrice::plus)
+    }
 }
 
 internal object OpenAiPricingLoader {

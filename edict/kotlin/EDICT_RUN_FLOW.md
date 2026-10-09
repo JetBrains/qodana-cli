@@ -13,6 +13,8 @@ edict:
   generation:
     maxProjectAnalyses: 3   # the default: project analyses per cluster in one run
     defaultGenerationCount: 5 # the default: top Pending clusters per run by positive-Signal count
+  # Optional: infer models from Codex session logs, expose edict_calculate_price, and log a report.
+  calculatePrice: true
 
 # setup, in the inspected project (a future `qodana edict setup` replaces these two calls)
 cd <project>

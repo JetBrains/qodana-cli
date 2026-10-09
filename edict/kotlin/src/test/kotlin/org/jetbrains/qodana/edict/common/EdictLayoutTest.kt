@@ -32,4 +32,10 @@ class EdictLayoutTest {
     assertEquals(log.resolve("process-log/test-run/intellij-mcp.log"), layout.intellijMcpLogPath)
     assertEquals(log.resolve("process-log/test-run/intellij-mcp"), layout.intellijMcpResultsDirectory)
   }
+
+  @Test
+  fun `keeps the price report in the private process log`() {
+    val layout = EdictLayout(directory, directory.resolve("state"), runId = "test-run")
+    assertEquals(directory.resolve("log/process-log/test-run/edict-price-report.json"), layout.priceReportPath)
+  }
 }

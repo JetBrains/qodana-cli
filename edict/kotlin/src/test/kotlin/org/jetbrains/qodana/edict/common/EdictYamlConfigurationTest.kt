@@ -9,6 +9,7 @@ import kotlin.test.Test
 import kotlin.test.assertContains
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
+import kotlin.test.assertFalse
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
@@ -27,6 +28,7 @@ class EdictYamlConfigurationTest {
         - name: SomeInspection
       edict:
         statePath: ../edict-state
+        calculatePrice: true
         ci:
           url: https://github.com/JetBrains/qodana-cli
         promotion:
@@ -37,6 +39,7 @@ class EdictYamlConfigurationTest {
     ))
 
     assertEquals("../edict-state", configuration.statePath)
+    assertTrue(configuration.calculatePrice)
     assertEquals(EdictCIConfiguration("https://github.com/JetBrains/qodana-cli"), configuration.ci)
     assertEquals(PromotionConfiguration("reviewer-login", "main", "quality/inspections"), configuration.promotion)
     assertEquals(CiProviderId.GITHUB, configuration.ci?.provider)
@@ -65,6 +68,7 @@ class EdictYamlConfigurationTest {
     val withoutEdict = EdictYamlConfiguration.load(yaml("version: \"1.0\""))
     assertNull(withoutEdict.ci)
     assertNull(withoutEdict.promotion)
+    assertFalse(withoutEdict.calculatePrice)
 
     val promotion = EdictYamlConfiguration.load(yaml(
       """
@@ -106,6 +110,12 @@ class EdictYamlConfigurationTest {
       invalidGenerationCount.message.orEmpty(),
       "edict.generation.defaultGenerationCount must be at least 1",
     )
+  }
+
+  @Test
+  fun `price reporting is controlled by a boolean switch`() {
+    assertTrue(EdictYamlConfiguration.load(yaml("edict:\n  calculatePrice: true\n")).calculatePrice)
+    assertFalse(EdictYamlConfiguration.load(yaml("edict:\n  calculatePrice: false\n")).calculatePrice)
   }
 
   @Test

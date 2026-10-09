@@ -312,6 +312,7 @@ func TestEdictConfigurationRoundTrip(t *testing.T) {
 		Edict: EdictConfig{
 			StatePath: "../edict-state",
 			CI: EdictCIConfig{URL: "https://github.com/JetBrains/qodana-cli"},
+			CalculatePrice: true,
 			Promotion: EdictPromotionConfig{
 				Reviewer: "reviewer", TargetBranch: "main", InspectionsDirectory: "quality/inspections",
 			},

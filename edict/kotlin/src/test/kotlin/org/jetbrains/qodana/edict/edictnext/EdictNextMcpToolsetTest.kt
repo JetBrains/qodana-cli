@@ -74,6 +74,7 @@ class EdictNextMcpToolsetTest {
       )
       val server = toolset.createServer()
       assertTrue(server.tools.keys.containsAll(movedTools))
+      assertFalse("edict_calculate_price" in server.tools)
       assertTrue("edict_publish_signal" in server.tools)
       assertTrue("edict_publish_validated_pr_signals" in server.tools)
       assertTrue("edict_get_pr_analysis_coverage" in server.tools)
@@ -201,6 +202,21 @@ class EdictNextMcpToolsetTest {
       assertEquals(setOf("generationCount"), checkNotNull(generationSchema.properties).keys)
       assertTrue(generationSchema.required.isNullOrEmpty())
       assertEquals(listOf("code", "language"), server.tools.getValue("generate_psi_tree").tool.inputSchema.required)
+    }
+  }
+
+  @Test
+  fun `price switch exposes the manager price tool`() {
+    EdictNextRepositoryState.open(directory.resolve("price-state")).use { store ->
+      val layout = EdictLayout(directory, store.root)
+      val server = edictNextToolset(
+        layout,
+        EdictManagementService(store, layout),
+        configuration = EdictConfiguration(calculatePrice = true),
+      ).createServer()
+      val schema = server.tools.getValue("edict_calculate_price").tool.inputSchema
+      assertEquals(setOf("token"), checkNotNull(schema.properties).keys)
+      assertEquals(listOf("token"), schema.required)
     }
   }
 

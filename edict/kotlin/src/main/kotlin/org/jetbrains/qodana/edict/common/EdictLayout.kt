@@ -28,6 +28,7 @@ internal data class EdictLayout(
   val agentsLogPath: Path = processLogDirectory.resolve("edict-agents.log")
   val agentShortLogPath: Path = processLogDirectory.resolve("edict-agent-short.log")
   val tasksLogPath: Path = processLogDirectory.resolve("edict-tasks.log")
+  val priceReportPath: Path = processLogDirectory.resolve("edict-price-report.json")
   val taskLogDirectory: Path = processLogDirectory.resolve("tasks")
   val intellijMcpLogPath: Path = processLogDirectory.resolve("intellij-mcp.log")
   val intellijMcpResultsDirectory: Path = processLogDirectory.resolve("intellij-mcp")

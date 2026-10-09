@@ -121,7 +121,7 @@ internal fun logReport(report: BenchmarkReport) {
 
 fun main(args: Array<String>) {
     try {
-        val allowed = setOf("--benchmark-dir", "--state-dir", "--output-dir", "--analysis-sarif", "--project-dir", "--model")
+        val allowed = setOf("--benchmark-dir", "--state-dir", "--output-dir", "--analysis-sarif", "--project-dir")
         require(args.size % 2 == 0 && args.toList().chunked(2).all { it[0] in allowed }) {
             "Use --benchmark-dir <fixtures> --state-dir <project/.edict> --output-dir <reports> [--analysis-sarif <file>]"
         }
@@ -135,7 +135,6 @@ fun main(args: Array<String>) {
         val price = project?.let {
             CodexPriceAnalyzer.analyze(
                 output.resolve("codex-home"),
-                options["--model"]?.takeIf(String::isNotBlank) ?: error("--model is required for analysis"),
                 output.resolve("log/edict/edict-price-report.json"),
             ).also { result -> println(result.rendered) }
         }

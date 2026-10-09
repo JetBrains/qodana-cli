@@ -43,7 +43,6 @@ tasks.register<JavaExec>("report") {
             ?: error("Supply -P$name=<path>")
         args("--benchmark-dir", required("benchmarkDir"), "--state-dir", required("edictStateDir"),
              "--output-dir", required("benchmarkOutputDir"),
-             "--project-dir", required("sourceProjectDir"),
-             "--model", providers.environmentVariable("BENCHMARK_MODEL").getOrElse("gpt-5.6-sol"))
+             "--project-dir", required("sourceProjectDir"))
     }
 }
