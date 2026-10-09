@@ -26,7 +26,13 @@ class CodexPriceReportTest {
     @Test
     fun `prices top stages and cluster substages inclusively without double counting total`() {
         val sessions = directory.resolve("sessions")
-        fun session(id: String, parent: String, agentPath: String = "", tokens: Long) {
+        fun session(
+            id: String,
+            parent: String,
+            agentPath: String = "",
+            tokens: Long,
+            model: String = "gpt-5.6-sol",
+        ) {
             Files.createDirectories(sessions)
             val meta = buildJsonObject {
                 put("type", "session_meta")
@@ -50,21 +56,28 @@ class CodexPriceReportTest {
                     put("thread_token_usage", usage())
                 }
             }
-            Files.writeString(sessions.resolve("$id.jsonl"), wireJson.encodeToString(meta) + "\n" + wireJson.encodeToString(usageRecord) + "\n")
+            val turn = buildJsonObject {
+                put("type", "turn_context")
+                putJsonObject("payload") { put("model", model) }
+            }
+            Files.writeString(
+                sessions.resolve("$id.jsonl"),
+                listOf(meta, turn, usageRecord).joinToString("\n") { wireJson.encodeToString(it) } + "\n",
+            )
         }
 
         session("manager", "", tokens = 10)
         session("extract-thread", "manager", "/root/extract", 20)
         session("generation-thread", "manager", "/root/generation", 30)
         session("cluster-thread", "generation-thread", "/root/generation/cluster", 40)
-        session("review-thread", "cluster-thread", "/root/generation/cluster/review", 50)
+        session("review-thread", "cluster-thread", "/root/generation/cluster/review", 50, "gpt-5.6-luna")
+        session("unrelated-manager", "", tokens = 1_000)
         val extract = Task(id = "extract-task", skill = "edict-batch-signal-analysis", title = "Extract", agentId = "/root/extract")
         val generation = Task(id = "generation-task", skill = "edict-next-generation", title = "Generate", agentId = "/root/generation")
         val cluster = Task(id = "cluster-task", parentId = generation.id, skill = "edict-next-cluster-generation", title = "Rule", agentId = "/root/generation/cluster")
         val review = Task(id = "review-task", parentId = cluster.id, skill = "edict-next-inspection-code-review", title = "Review", agentId = "/root/generation/cluster/review")
-        val pricing = pricing()
         val plan = Plan(request = "test", tasks = listOf(extract, generation, cluster, review))
-        val report = CodexPriceReporter.create(directory, plan, pricing)
+        val report = CodexPriceReporter.create(directory, plan, { pricing(it) })
 
         assertEquals(20, report.topStages.single { it.taskId == extract.id }.inclusivePrice.totalTokens)
         assertEquals(120, report.topStages.single { it.taskId == generation.id }.inclusivePrice.totalTokens)
@@ -77,16 +90,56 @@ class CodexPriceReportTest {
         assertEquals(0.000050, report.totalPrice.cacheWritePriceUsd, absoluteTolerance = 1e-12)
         assertEquals(0.000100, report.totalPrice.outputPriceUsd, absoluteTolerance = 1e-12)
         assertEquals(0.000204, report.totalPrice.priceUsd, absoluteTolerance = 1e-12)
+        assertEquals(setOf("gpt-5.6-luna", "gpt-5.6-sol"), report.models.map { it.pricing.model }.toSet())
+        assertEquals(50, report.models.single { it.pricing.model == "gpt-5.6-luna" }.price.totalTokens)
+        assertEquals(100, report.models.single { it.pricing.model == "gpt-5.6-sol" }.price.totalTokens)
         assertContains(report.render(), "Total price: $0.000204")
         assertContains(report.render(), "uncached-input=0")
 
         val output = directory.resolve("price.json")
-        val analysis = CodexPriceAnalyzer.analyze(directory, plan, output, pricing)
+        val analysis = CodexPriceAnalyzer.analyze(directory, plan, output, { pricing(it) })
         assertEquals(150, analysis.totalTokens)
         assertEquals(0.000204, analysis.totalPriceUsd, absoluteTolerance = 1e-12)
         assertEquals(150, analysis.report.getValue("totalPrice").jsonObject
             .getValue("totalTokens").jsonPrimitive.long)
         assertTrue(Files.size(output) > 0)
+    }
+
+    @Test
+    fun `prices each usage record with its preceding turn model`() {
+        val sessions = directory.resolve("sessions")
+        Files.createDirectories(sessions)
+        fun turn(model: String) = buildJsonObject {
+            put("type", "turn_context")
+            putJsonObject("payload") { put("model", model) }
+        }
+        fun usage(tokens: Long) = buildJsonObject {
+            put("type", "token_usage_record")
+            putJsonObject("payload") {
+                putJsonObject("usage") {
+                    put("input_tokens", tokens - 1)
+                    put("cached_input_tokens", tokens - 1)
+                    put("output_tokens", 1)
+                    put("total_tokens", tokens)
+                }
+                putJsonObject("thread_token_usage") { put("total_tokens", tokens) }
+            }
+        }
+        val meta = buildJsonObject {
+            put("type", "session_meta")
+            putJsonObject("payload") { put("id", "manager") }
+        }
+        val events = listOf(meta, turn("gpt-5.6-sol"), usage(10), turn("gpt-5.6-luna"), usage(20))
+        Files.writeString(
+            sessions.resolve("manager.jsonl"),
+            events.joinToString("\n") { wireJson.encodeToString(it) } + "\n",
+        )
+
+        val report = CodexPriceReporter.create(directory, Plan(request = "test", tasks = emptyList()), { pricing(it) })
+
+        assertEquals(30, report.totalPrice.totalTokens)
+        assertEquals(10, report.models.single { it.pricing.model == "gpt-5.6-sol" }.price.totalTokens)
+        assertEquals(20, report.models.single { it.pricing.model == "gpt-5.6-luna" }.price.totalTokens)
     }
 
     @Test
@@ -108,8 +161,8 @@ class CodexPriceReportTest {
         assertEquals(48.8 / 1_000_000, pricing.price(usage, 272_001).priceUsd, absoluteTolerance = 1e-12)
     }
 
-    private fun pricing() = OpenAiPricing(
-        model = "gpt-5.6-sol",
+    private fun pricing(model: String = "gpt-5.6-sol") = OpenAiPricing(
+        model = model,
         retrievedAt = "2026-09-29T00:00:00Z",
         shortContextRates = OpenAiTokenRates(4.0, 0.4, 5.0, 20.0),
         longContextRates = OpenAiTokenRates(8.0, 0.8, 10.0, 30.0),

@@ -90,6 +90,7 @@ fun main(args: Array<String>) {
                     Installs skills into .codex/skills and writes .codex/config.toml for edict.mcpPort from qodana.yaml.
                   edict mcp [--qodana-yaml <path>] [--qodana-executable <qodana>] [--ide-dist <path> | --ide-linter <linter>] [--ide-property <property>]... [--ide-wait-timeout <duration>] [--parent-pid <pid>]
                     Serves HTTP on loopback at edict.mcpPort (default ${EdictConfig.DEFAULT_MCP_PORT}); state comes from edict.statePath (default .edict).
+                    edict.calculatePrice=true enables the manager-only price-report MCP tool and private run report.
                     Each run logs to log/process-log/<run-id> and gives agents log/agent-work/<run-id>; the run id is its start time.
                 The first inspection call starts the IDE through `qodana edict ide-mcp`; its output goes to intellij-mcp.log.
             """.trimIndent()

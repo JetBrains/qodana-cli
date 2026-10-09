@@ -54,7 +54,7 @@ When a skill requires another skill:
    Call `edict_delegate(token, taskId, prompt)` to store those instructions. Copy your capability token unchanged from
    the server response; never retype, shorten, normalize, or reconstruct it. A rejected capability is a lifecycle
    failure, not a reason to guess or edit the token before retrying.
-   The server records the full assignment in its in-memory plan and logs. It returns a short `prompt` containing the child's
+   The server records the full assignment in its plan and logs. It returns a short `prompt` containing the child's
    skill declaration and credentials plus an instruction to fetch its assignment from `edict_task_get`.
 3. Use native `spawn_agent` without inherited conversation (`fork_turns: "none"`, or `fork_context: false` in runtimes
    exposing that parameter). Use the returned short launch `prompt` as its `message`. Do not append task details or copy

@@ -13,10 +13,9 @@ This skill is for the root manager only. If you already received a delegated tas
 are a protocol library, not an instruction to invoke this manager skill.
 
 Read [the managed execution protocol](references/protocol.md) before starting. Require an available `edict-mcp` server.
-The request carries no paths: call `edict_context` for them (see the protocol). The manager capability must never enter a child
-prompt or inherited
-conversation. An unavailable server or
-native subagent runtime is a failed prerequisite, not permission to execute stages inline.
+The request carries no paths: call `edict_context` for them (see the protocol). The manager capability must never enter
+a child prompt or inherited conversation. An unavailable server or native subagent runtime is a failed prerequisite, not
+permission to execute stages inline.
 
 # Workflow
 
@@ -32,10 +31,8 @@ native subagent runtime is a failed prerequisite, not permission to execute stag
    token for every subsequent manager lifecycle call. `edict_plan_get` is public, but may receive the token for caller
    attribution.
    Only one successful creation is allowed per server lifetime, even after all
-   tasks finish. Never call it again once you have the token. The plan exists only in the server's memory and is lost
-   when that server stops; a restarted server creates a fresh plan and must inspect durable Edict domain state before
-   scheduling work so it does not duplicate completed publication. A new request after a terminal plan needs a new
-   server. Keep the plan ID for the current server lifetime and never write the plan yourself.
+   tasks finish. Never call it again once you have the token. Keep the plan ID for the current server lifetime and never
+   write the plan yourself.
 5. Follow the protocol's assignment flow: supply `edict_delegate` the complete token-free task instructions starting
    with the child's exact managed skill invocation, then pass its returned short launch `prompt` to native
    `spawn_agent`.
@@ -58,10 +55,10 @@ native subagent runtime is a failed prerequisite, not permission to execute stag
    every stage result including any extraction problem summary, Generated inspections' `knownProblems`, and any Pending
    or Invalid clusters with their reasons. Completion means
    every planned task completed; a Generated inspection additionally requires the generation skill's evidence and
-   review checks. The trusted host appends a USD report for each top-level stage including all descendant workers, every
-   cluster-generation substage and inclusive cluster total, and the complete run total including the manager. It fetches
-   the current official OpenAI Standard list rates and prices disjoint uncached-input, cached-input, cache-write, and
-   output tokens per response. Reasoning is an output subset and must not be charged twice.
+   review checks. If `edict_calculate_price` is available, call it once with the manager token after the final plan read
+   and include its USD total and token total in the final response. It logs a private report for each top-level stage
+   including all descendant workers, every cluster-generation substage and inclusive cluster total, and the run total.
+   Do not call it while a managed task is unfinished.
 
 Do not commit, push, create state-repository worktrees, or perform external publication directly. Publication is owned
 only by a delegated registered promotion skill when the selected pipeline includes it.
@@ -77,7 +74,8 @@ validation, or claim rules that were not generated. Report the achieved count an
 
 Create and execute these top-level tasks in this exact order:
 
-1. `edict-pr-signal-analysis`: call `edict_fetch_pr_batch` without a selection to extract Signals from the server-defined
+1. `edict-pr-signal-analysis`: call `edict_fetch_pr_batch` without a selection to extract Signals from the
+   server-defined
    number of PRs with analysis work. The MCP scans complete uncovered UTC dates backward, never selects the current
    partial UTC date, and may return more total PRs to preserve a full boundary date. Successful publication persists
    every processed full date in PR-analysis coverage. If repository history contains fewer relevant PRs, analyze all of

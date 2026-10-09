@@ -134,11 +134,12 @@ type QodanaYaml struct {
 	Edict EdictConfig `yaml:"edict,omitempty"`
 }
 
-// EdictConfig contains the CI repository URL shared by extraction and promotion, and promotion-only settings.
+// EdictConfig contains Edict state, CI, promotion, and optional price-reporting settings.
 type EdictConfig struct {
 	StatePath string               `yaml:"statePath,omitempty"`
 	CI        EdictCIConfig        `yaml:"ci,omitempty"`
 	Promotion EdictPromotionConfig `yaml:"promotion,omitempty"`
+	CalculatePrice bool            `yaml:"calculatePrice,omitempty"`
 }
 
 // EdictCIConfig identifies the CI repository Edict reads from.

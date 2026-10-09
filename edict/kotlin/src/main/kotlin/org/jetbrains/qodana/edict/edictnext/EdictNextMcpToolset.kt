@@ -41,7 +41,7 @@ internal class EdictNextMcpToolset(
   ).also(::registerTools)
 
   private fun registerTools(server: Server) {
-    management.registerTools(server)
+    management.registerTools(server, configuration.calculatePrice)
     registerPromotionTools(server)
 
     server.addTool(
