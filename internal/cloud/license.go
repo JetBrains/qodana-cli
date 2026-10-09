@@ -37,8 +37,8 @@ type LicenseData struct {
 	ProjectIdHash      string `json:"projectIdHash"`
 	OrganisationIdHash string `json:"organizationIdHash"`
 	LicensePlan        string `json:"licensePlan"`
-	// DataSharingAllowed is optional in the response, a missing field means false.
-	DataSharingAllowed bool `json:"dataSharingAllowed"`
+	// OrganizationAllowsErrorReporting is optional in the response, a missing field means false.
+	OrganizationAllowsErrorReporting bool `json:"organizationAllowsErrorReporting"`
 }
 
 type LicenseToken struct {
@@ -93,8 +93,8 @@ If you need further assistance, please contact our support team at qodana-suppor
 
 var Token LicenseToken
 
-// DataSharingAllowed holds the value from the license response. It is nil when the CLI made no license request.
-var DataSharingAllowed *bool
+// OrganizationAllowsErrorReporting holds the value from the license response. It is nil when the CLI made no license request.
+var OrganizationAllowsErrorReporting *bool
 
 func (o *LicenseToken) IsAllowedToSendReports() bool {
 	return !o.LicenseOnly && o.Token != ""
