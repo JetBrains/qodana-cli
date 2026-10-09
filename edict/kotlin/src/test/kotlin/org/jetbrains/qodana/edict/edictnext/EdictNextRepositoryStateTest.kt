@@ -29,6 +29,28 @@ class EdictNextRepositoryStateTest {
   lateinit var directory: Path
 
   @Test
+  fun `state load adds management files to gitignore once`() {
+    val gitignore = directory.resolve(".gitignore")
+    Files.writeString(gitignore, ".idea/\n.edict-mcp.lock")
+
+    repeat(2) {
+      EdictNextRepositoryState.open(directory).close()
+    }
+
+    assertEquals(
+      listOf(".idea/", ".edict-mcp.lock", ".edict-mcp-current"),
+      Files.readAllLines(gitignore),
+    )
+
+    val fresh = directory.resolve("fresh")
+    EdictNextRepositoryState.open(fresh).close()
+    assertEquals(
+      listOf(".edict-mcp.lock", ".edict-mcp-current"),
+      Files.readAllLines(fresh.resolve(".gitignore")),
+    )
+  }
+
+  @Test
   fun `historical coordinators can publish validated commit signals`() {
     val repository = gitFixture(directory.resolve("source"))
     val signal = fixtureSignals(repository).first()
