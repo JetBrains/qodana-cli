@@ -396,7 +396,8 @@ internal class EdictManagementService(
       description = "Prepare merged reviews from the repository configured in edict.ci. With no selection, scan complete " +
         "uncovered UTC dates backward until at least $DAILY_ROUTINE_PROCESSED_PRS PRs with analysis work are found. " +
         "With startDate and endDate, fetch every PR from those complete dates without the default target. With prNumbers, " +
-        "fetch exactly that explicit selection. Date coverage is persisted only after validated Signals are published.",
+        "fetch exactly that explicit selection. Malformed elements and failed per-item checks are skipped and returned in " +
+        "problems. Date coverage is persisted only after validated Signals are published from a problem-free batch.",
       readOnly = true,
       required = listOf("token"),
       properties = properties("startDate", "endDate") + mapOf(

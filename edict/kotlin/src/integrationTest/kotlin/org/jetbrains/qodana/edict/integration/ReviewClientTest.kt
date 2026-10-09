@@ -89,7 +89,7 @@ class ReviewClientTest : IntegrationTest() {
                 else -> error("Unexpected provider path")
             }
         }) { client ->
-            val pr = client.fetch(ReviewSelection(CiProviderId.GITHUB, "o", "r", 1, listOf(7))).single()
+            val pr = client.fetch(ReviewSelection(CiProviderId.GITHUB, "o", "r", 1, listOf(7))).pullRequests.single()
             val thread = pr.threads.single()
             assertEquals(
                 listOf("Complete overview", "complete root message ".repeat(100), "Fixed"),
@@ -118,7 +118,7 @@ class ReviewClientTest : IntegrationTest() {
             assertEquals(
                 listOf(2),
                 client.fetch(ReviewSelection(CiProviderId.GITHUB, "o", "r", 10, startDate = "2026-09-21", endDate = "2026-09-21"))
-                    .map { it.number })
+                    .pullRequests.map { it.number })
         }
     }
 
@@ -148,7 +148,8 @@ class ReviewClientTest : IntegrationTest() {
                 else -> error("Unexpected Space path")
             }
         }) { client ->
-            val thread = client.fetch(ReviewSelection(CiProviderId.SPACE, "O", "repo", 1, listOf(7))).single().threads.single()
+            val thread = client.fetch(ReviewSelection(CiProviderId.SPACE, "O", "repo", 1, listOf(7)))
+                .pullRequests.single().threads.single()
             assertEquals(51, thread.messages.size)
             assertEquals("Complete message 51", thread.messages.last().body)
             assertEquals("src/A.java", thread.filePath)

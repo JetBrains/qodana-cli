@@ -31,8 +31,12 @@ internal class TaskLifecycleLogger(
                 task.status in CLOSED && oldStatus !in CLOSED -> "finished"
                 else -> continue
             }
-            val message = store.redact("[-:${task.id}] ${task.title} $event")
-                .replace(Regex("[\\p{Cntrl}\\s]+"), " ")
+            val status = if (event == "finished") " [${task.status}]" else ""
+            val header = singleLine(store.redact("[-:${task.id.take(DISPLAYED_ID_LENGTH)}] ${task.title} $event$status"))
+            val message = if (event == "finished") {
+                "$header\n  ${singleLine(store.redact(task.result))}"
+            }
+            else header
             Files.writeString(file, "$message\n", APPEND)
             // stdout belongs to JSON-RPC when the MCP transport is stdio.
             output.println(message)
@@ -42,3 +46,5 @@ internal class TaskLifecycleLogger(
 }
 
 private val CLOSED = setOf("completed", "failed", "cancelled")
+private const val DISPLAYED_ID_LENGTH = 8
+private fun singleLine(value: String): String = value.replace(Regex("[\\p{Cntrl}\\s]+"), " ").trim()

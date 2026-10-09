@@ -2,6 +2,7 @@ package org.jetbrains.qodana.edict.ci
 
 import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.JsonNull
 import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.jsonArray
@@ -14,6 +15,44 @@ import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 
 class ReviewProvidersTest {
+  @Test
+  fun `space skips malformed reviews and feed elements and reports every problem`() {
+    val transport = RecordingTransport { _, method, endpoint, _, _ ->
+      assertEquals("GET", method)
+      when {
+        endpoint.endsWith("/number:1") -> CiHttpResponse(200, JsonNull)
+        endpoint.endsWith("/number:2") -> response(200, obj(
+          "id" to JsonPrimitive("review-2"),
+          "number" to JsonPrimitive(2),
+          "state" to JsonPrimitive("Closed"),
+          "timestamp" to JsonPrimitive(1),
+          "title" to JsonPrimitive("Valid review"),
+          "description" to JsonPrimitive(""),
+          "feedChannelId" to JsonPrimitive("feed-2"),
+          "branchPair" to obj(
+            "repository" to JsonPrimitive("repo"),
+            "isMerged" to JsonPrimitive(true),
+            "sourceBranchRef" to JsonPrimitive("source"),
+            "targetBranchInfo" to obj("ref" to JsonPrimitive("target")),
+          ),
+        ))
+        endpoint == "/chats/messages/sync-batch" -> response(200, obj(
+          "data" to JsonArray(listOf(JsonNull)),
+          "hasMore" to JsonPrimitive(false),
+        ))
+        else -> error("Unexpected Space call $method $endpoint")
+      }
+    }
+    val result = SpaceReviewApi(transport, "https://space.test").fetch(
+      ReviewSelection(CiProviderId.SPACE, "owner", "repo", 2, prNumbers = listOf(1, 2)),
+    )
+
+    assertEquals(listOf(2), result.pullRequests.map(PullRequest::number))
+    assertEquals(2, result.problems.size)
+    assertTrue(result.problems.any { it.startsWith("Space PR 1:") })
+    assertTrue(result.problems.any { "data[0]: expected object" in it })
+  }
+
   @Test
   fun `github creates branch file review and reviewer and reads review state`() {
     val transport = RecordingTransport { provider, method, endpoint, query, body ->

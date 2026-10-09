@@ -17,6 +17,7 @@ import org.jetbrains.qodana.edict.ci.CreatedReview
 import org.jetbrains.qodana.edict.ci.ProviderReviewApi
 import org.jetbrains.qodana.edict.ci.PullRequest
 import org.jetbrains.qodana.edict.ci.ReviewMessage
+import org.jetbrains.qodana.edict.ci.ReviewFetchResult
 import org.jetbrains.qodana.edict.ci.ReviewReference
 import org.jetbrains.qodana.edict.ci.ReviewRepository
 import org.jetbrains.qodana.edict.ci.ReviewSelection
@@ -40,10 +41,11 @@ internal class GitHubReviewApi(
 ) : ProviderReviewApi {
   override val id: CiProviderId = CiProviderId.GITHUB
 
-  override fun fetch(selection: ReviewSelection): List<PullRequest> {
+  override fun fetch(selection: ReviewSelection): ReviewFetchResult {
     require(selection.provider == id)
     val root = repositoryEndpoint(selection.repositoryRef)
     val numbers = selection.prNumbers.toMutableList()
+    val problems = mutableListOf<String>()
     if (numbers.isEmpty()) {
       val start = LocalDate.parse(selection.startDate).atStartOfDay().toInstant(ZoneOffset.UTC)
       val seen = mutableSetOf<Int>()
@@ -58,26 +60,52 @@ internal class GitHubReviewApi(
             "page" to "$page",
           ),
         )
-        val items = response.body.jsonArray.map { it.jsonObject }
-        var old = false
-        for (item in items) {
-          val number = item.number("number").toInt()
-          require(number > 0 && seen.add(number)) { "Invalid or repeated PR number" }
-          if (Instant.parse(item.text("updated_at")).isBefore(start)) {
-            old = true
-            break
-          }
-          if (
-            item.text("merged_at").isNotEmpty() &&
-            selection.containsDate(Instant.parse(item.text("merged_at")).toEpochMilli())
-          ) numbers += number
-          if (numbers.size == selection.maxPrs) break
+        val elements = response.body as? JsonArray
+        if (elements == null) {
+          problems += "GitHub PR discovery page $page: expected an array response"
+          break
         }
-        if (old || numbers.size == selection.maxPrs || !response.hasNext && items.size < PAGE_SIZE) break
-        require(items.isNotEmpty() && page < MAX_PAGES) { "Incomplete GitHub PR discovery" }
+        var old = false
+        for ((index, element) in elements.withIndex()) {
+          val item = element as? JsonObject
+          if (item == null) {
+            problems += "GitHub PR discovery page $page item[$index]: expected object"
+            continue
+          }
+          try {
+            val number = item.number("number").toInt()
+            require(number > 0 && seen.add(number)) { "invalid or repeated PR number" }
+            if (Instant.parse(item.text("updated_at")).isBefore(start)) {
+              old = true
+              break
+            }
+            if (
+              item.text("merged_at").isNotEmpty() &&
+              selection.containsDate(Instant.parse(item.text("merged_at")).toEpochMilli())
+            ) numbers += number
+            if (numbers.size == selection.maxPrs) break
+          }
+          catch (e: Exception) {
+            problems += "GitHub PR discovery page $page item[$index]: ${e.message ?: e.javaClass.simpleName}"
+          }
+        }
+        if (old || numbers.size == selection.maxPrs || !response.hasNext && elements.size < PAGE_SIZE) break
+        if (elements.isEmpty() || page == MAX_PAGES) {
+          problems += "Incomplete GitHub PR discovery at page $page"
+          break
+        }
       }
     }
-    return numbers.mapNotNull { number -> fetchPullRequest(root, number, selection) }
+    val pullRequests = numbers.mapNotNull { number ->
+      try {
+        fetchPullRequest(root, number, selection)
+      }
+      catch (e: Exception) {
+        problems += "GitHub PR $number: ${e.message ?: e.javaClass.simpleName}"
+        null
+      }
+    }
+    return ReviewFetchResult(pullRequests, problems)
   }
 
   private fun fetchPullRequest(root: String, number: Int, selection: ReviewSelection): PullRequest? {
