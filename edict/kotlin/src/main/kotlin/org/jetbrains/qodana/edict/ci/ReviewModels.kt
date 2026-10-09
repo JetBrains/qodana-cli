@@ -69,8 +69,8 @@ data class ReviewThread(
   val reviewDiscussionUrl: String,
   val filePath: String,
   val originalCommitSha: String,
-  val anchorLine: Int,
-  val anchorEndLine: Int,
+  val anchorLine: Int? = null,
+  val anchorEndLine: Int? = null,
   val messages: List<ReviewMessage>,
 )
 

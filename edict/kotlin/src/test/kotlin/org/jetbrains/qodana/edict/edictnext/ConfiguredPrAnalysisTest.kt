@@ -261,8 +261,6 @@ class ConfiguredPrAnalysisTest {
         reviewDiscussionUrl = discussionUrl,
         filePath = "src/Example.kt",
         originalCommitSha = baseRevision,
-        anchorLine = 1,
-        anchorEndLine = 1,
         messages = listOf(ReviewMessage("reviewer", message, "2026-10-08T00:00:00Z")),
       )),
     )))
