@@ -219,7 +219,7 @@ internal class EdictManagementService(
     }
     tool(
       name = "edict_plan_create",
-      description = "Create or resume an execution plan. First successful call returns manager token; no token needed. Supply original request and ordered top-level steps when resuming.",
+      description = "Create an in-memory execution plan for this server lifetime. First successful call returns manager token; no token needed.",
       required = listOf("request", "steps"),
       properties = properties("request") + ("steps" to steps),
     ) { arguments ->
