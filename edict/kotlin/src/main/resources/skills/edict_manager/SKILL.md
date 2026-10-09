@@ -66,27 +66,27 @@ only by a delegated registered promotion skill when the selected pipeline includ
 # Default repository pipeline
 
 When the user does not give a more specific goal and asks to process the repository, run the daily routine, or create
-new rules, do not ask them to design a pipeline. Let generation use `edict.generation.defaultGenerationCount`; do not
-add a generation count to downstream instructions when the user did not provide one. An explicit user-provided count
-overrides that default and must be carried unchanged through `edict-next-run` to `edict-next-generation`. The count is
-an evidence-constrained target: never invent Signals, force unrelated Signals into a cluster, weaken generation
-validation, or claim rules that were not generated. Report the achieved count and any shortfall.
+new rules, do not ask them to design a pipeline. Use `defaultSignalCount` from `edict_context` as the extraction target;
+an explicit user-provided Signal count overrides it. Let generation use `edict.generation.defaultGenerationCount`; do
+not add a generation count to downstream instructions when the user did not provide one specifically for generation.
+Every count is an evidence-constrained target: never invent Signals, force unrelated Signals into a cluster, weaken
+generation validation, or claim rules or Signals that were not produced. Report each achieved count and any shortfall.
 
 Create and execute these top-level tasks in this exact order:
 
-1. `edict-pr-signal-analysis`: call `edict_fetch_pr_batch` without a selection to extract Signals from the
-   server-defined
-   number of PRs with analysis work. The MCP scans complete uncovered UTC dates backward, never selects the current
-   partial UTC date, and may return more total PRs to preserve a full boundary date. Successful publication persists
-   every processed full date in PR-analysis coverage. If repository history contains fewer relevant PRs, analyze all of
-   them. An empty selection is a successful no-op.
+1. `edict-pr-signal-analysis`: pass the Signal target and call `edict_fetch_pr_batch` without a selection. The child
+   repeatedly extracts and publishes every PR on the next complete uncovered UTC date until it reaches the target.
+   It always finishes a selected day, so the result may exceed the target. Successful publication persists every
+   processed full date in PR-analysis coverage. Zero-Signal days do not count toward the target but still advance
+   coverage. Stop with a reported shortfall when repository history is exhausted or a provider problem leaves the next
+   date uncovered; an empty selection after exhaustion is a successful no-op.
 2. `edict-next-run`: run distribution (clusterization) and generation sequentially for the resulting inbox and the
    generation targets selected by the requested count or configured default.
 3. `edict-promote`: publish every newly eligible Generated inspection through the configured promotion target. Missing
    CI or promotion configuration is a failed publication prerequisite, not a reason to omit this task.
 
-Carry a user-provided generation count and relevant completed-stage results into downstream task instructions. For the
-default pipeline, do not add a generation count: downstream generation must omit `generationCount` so the configured
-default applies. Do not stop merely because extraction produced the target number of Signals: the goal counts newly
-Generated inspection rules that reach the publication stage. A more specific user request overrides this default
-pipeline and its counts, ranges, and stages.
+Carry a user-provided Signal target into extraction, and a user-provided generation count plus relevant completed-stage
+results into downstream task instructions. For the default pipeline, do not add a generation count: downstream
+generation must omit `generationCount` so the configured default applies. Reaching the Signal target completes only
+extraction; continue with generation and promotion, then report their independently achieved results. A more specific
+user request overrides this default pipeline and its counts, ranges, and stages.

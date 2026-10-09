@@ -430,6 +430,7 @@ internal data class EdictRunContext(
   val stateDirectory: String,
   val scratchDirectory: String,
   val reviewRepository: ReviewRepository? = null,
+  val defaultSignalCount: Int,
 )
 
 internal fun sha256Hex(text: String): String = sha256Hex(text.toByteArray(Charsets.UTF_8))

@@ -23,7 +23,6 @@ import org.jetbrains.qodana.edict.ci.ReviewMessage
 import org.jetbrains.qodana.edict.ci.ReviewRepository
 import org.jetbrains.qodana.edict.ci.ReviewSelection
 import org.jetbrains.qodana.edict.ci.ReviewThread
-import org.jetbrains.qodana.edict.extraction.reviews.DAILY_ROUTINE_PROCESSED_PRS
 import org.jetbrains.qodana.edict.extraction.reviews.PrAnalysisDateRange
 import org.jetbrains.qodana.edict.support.launch
 import org.jetbrains.qodana.edict.support.edictNextToolset
@@ -42,8 +41,7 @@ class ConfiguredPrAnalysisTest {
   lateinit var directory: Path
 
   @Test
-  fun `daily extraction scans full dates until relevant PR target and records date coverage after publication`() {
-    assertEquals(100, DAILY_ROUTINE_PROCESSED_PRS)
+  fun `daily extraction returns one complete date and advances after publication`() {
     val configured = ReviewRepository(CiProviderId.GITHUB, "JetBrains", "qodana-cli")
     val today = LocalDate.of(2026, 10, 9)
     fun pr(number: Int, date: LocalDate, relevant: Boolean): PullRequest = PullRequest(
@@ -82,7 +80,6 @@ class ConfiguredPrAnalysisTest {
         layout,
         reviewProvider = provider,
         reviewRepository = configured,
-        dailyProcessedPrTarget = 2,
         prAnalysisToday = { today },
       )
       edictNextToolset(layout, management).createServer()
@@ -90,10 +87,10 @@ class ConfiguredPrAnalysisTest {
       val fetched = management.call("edict_fetch_pr_batch", buildJsonObject { put("token", worker.token) })
       assertFalse(fetched.flag("isError") == true)
       val summary = fetched.obj("structuredContent")
-      assertEquals(3, summary.getValue("selectedPrCount").jsonPrimitive.content.toInt())
-      assertEquals(2, summary.getValue("prCountWithWorkItems").jsonPrimitive.content.toInt())
+      assertEquals(1, summary.getValue("selectedPrCount").jsonPrimitive.content.toInt())
+      assertEquals(1, summary.getValue("prCountWithWorkItems").jsonPrimitive.content.toInt())
       assertEquals(
-        listOf(PrAnalysisDateRange("2026-10-06", "2026-10-08")),
+        listOf(PrAnalysisDateRange("2026-10-08", "2026-10-08")),
         wireJson.decodeFromJsonElement<List<PrAnalysisDateRange>>(summary.getValue("analyzedDateRanges")),
       )
       assertTrue(provider.selections.all { LocalDate.parse(it.endDate).isBefore(today) })
@@ -107,7 +104,7 @@ class ConfiguredPrAnalysisTest {
         put("limit", 20)
       }).obj("structuredContent")
       val workItemIds = listed.array("items").map { it.text("workItemId") }
-      assertEquals(2, workItemIds.size)
+      assertEquals(1, workItemIds.size)
       val validation = management.call("edict_validate_pr_signals", buildJsonObject {
         put("token", worker.token)
         put("batchId", batchId)
@@ -122,8 +119,17 @@ class ConfiguredPrAnalysisTest {
       assertFalse(publication.flag("isError") == true)
 
       val coverage = store.getPrAnalysisCoverage(worker.token, configured)
-      assertEquals(listOf(PrAnalysisDateRange("2026-10-06", "2026-10-08")), coverage.analyzedDateRanges)
+      assertEquals(listOf(PrAnalysisDateRange("2026-10-08", "2026-10-08")), coverage.analyzedDateRanges)
       assertTrue(coverage.analyzedPrNumbers.isEmpty())
+
+      val next = management.call("edict_fetch_pr_batch", buildJsonObject { put("token", worker.token) })
+        .obj("structuredContent")
+      assertEquals(1, next.getValue("selectedPrCount").jsonPrimitive.content.toInt())
+      assertEquals(0, next.getValue("prCountWithWorkItems").jsonPrimitive.content.toInt())
+      assertEquals(
+        listOf(PrAnalysisDateRange("2026-10-07", "2026-10-07")),
+        wireJson.decodeFromJsonElement<List<PrAnalysisDateRange>>(next.getValue("analyzedDateRanges")),
+      )
     }
   }
 
@@ -164,7 +170,6 @@ class ConfiguredPrAnalysisTest {
         layout,
         reviewProvider = provider,
         reviewRepository = configured,
-        dailyProcessedPrTarget = 1,
         prAnalysisToday = { today },
       )
       edictNextToolset(layout, management).createServer()
@@ -397,6 +402,52 @@ class ConfiguredPrAnalysisTest {
         put("signal", wireJson.encodeToJsonElement(signals.first()))
       })
       assertTrue(directPublication.flag("isError") == true)
+    }
+  }
+
+  @Test
+  fun `daily extraction returns an empty batch after review history is exhausted`() {
+    val configured = ReviewRepository(CiProviderId.GITHUB, "JetBrains", "qodana-cli")
+    val provider = DateReviewProvider(emptyList())
+    EdictNextRepositoryState.open(directory.resolve("state")).use { store ->
+      val plan = store.createPlan(
+        "Daily analysis",
+        listOf(EdictNextRepositoryState.Step("edict-pr-signal-analysis", "Analyze full UTC dates")),
+      )
+      val worker = store.launch(plan.token, plan.plan.tasks.single().id, "edict-pr-signal-analysis")
+      val layout = EdictLayout(directory, store.root)
+      val management = EdictManagementService(
+        store,
+        layout,
+        reviewProvider = provider,
+        reviewRepository = configured,
+        prAnalysisToday = { LocalDate.of(1970, 1, 1) },
+      )
+      edictNextToolset(layout, management).createServer()
+
+      val summary = management.call("edict_fetch_pr_batch", buildJsonObject { put("token", worker.token) })
+        .obj("structuredContent")
+      assertEquals(0, summary.getValue("selectedPrCount").jsonPrimitive.content.toInt())
+      assertEquals(0, summary.getValue("totalWorkItemCount").jsonPrimitive.content.toInt())
+      assertTrue(summary["analyzedDateRanges"]?.jsonArray.orEmpty().isEmpty())
+      assertTrue(provider.selections.isEmpty())
+
+      val batchId = summary.text("batchId")
+      assertFalse(management.call("edict_validate_pr_signals", buildJsonObject {
+        put("token", worker.token)
+        put("batchId", batchId)
+        put("inspectedWorkItemIds", JsonArray(emptyList()))
+        put("signals", JsonArray(emptyList()))
+      }).flag("isError") == true)
+      assertFalse(management.call("edict_publish_validated_pr_signals", buildJsonObject {
+        put("token", worker.token)
+        put("batchId", batchId)
+      }).flag("isError") == true)
+      assertFalse(management.call("edict_task_finish", buildJsonObject {
+        put("token", worker.token)
+        put("status", "completed")
+        put("result", "Review history exhausted without Signals")
+      }).flag("isError") == true)
     }
   }
 
