@@ -123,7 +123,7 @@ class ReviewClientTest : IntegrationTest() {
     }
 
     @Test
-    fun `Space paginates feed and complete human discussion`() {
+    fun `Space paginates feed and preserves unanchored complete human discussion`() {
         var feeds = 0
         var discussions = 0
         fixture({ exchange ->
@@ -133,7 +133,7 @@ class ReviewClientTest : IntegrationTest() {
                     feeds++
                     if (feeds == 1) """{"data":[],"etag":"second","hasMore":true}""" else {
                         assertContains(exchange.query().getValue("batchInfo"), "etag:second")
-                        """{"data":[{"chatMessage":{"id":"root","projectedItem":{"author":{"name":"Reviewer","details":{"user":{"id":"person"}}}},"details":{"className":"CodeDiscussionAddedFeedEvent","codeDiscussion":{"id":"discussion","channel":{"id":"thread"},"anchor":{"filename":"/src/A.java","line":3,"revision":"$before"}}}}}],"etag":"done","hasMore":false}"""
+                        """{"data":[{"chatMessage":{"id":"root","projectedItem":{"author":{"name":"Reviewer","details":{"user":{"id":"person"}}}},"details":{"className":"CodeDiscussionAddedFeedEvent","codeDiscussion":{"id":"discussion","channel":{"id":"thread"},"anchor":{"filename":"/src/A.java","revision":"$before"}}}}}],"etag":"done","hasMore":false}"""
                     }
                 }
 
@@ -152,6 +152,8 @@ class ReviewClientTest : IntegrationTest() {
             assertEquals(51, thread.messages.size)
             assertEquals("Complete message 51", thread.messages.last().body)
             assertEquals("src/A.java", thread.filePath)
+            assertEquals(null, thread.anchorLine)
+            assertEquals(null, thread.anchorEndLine)
             assertEquals(2, feeds); assertEquals(2, discussions)
         }
     }

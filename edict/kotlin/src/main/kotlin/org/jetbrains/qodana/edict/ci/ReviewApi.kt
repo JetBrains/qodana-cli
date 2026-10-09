@@ -100,9 +100,15 @@ class ReviewClient private constructor(
         "PR ${pullRequest.number} lacks exact base/head revisions"
       }
       pullRequest.threads.forEach { thread ->
+        val anchorLine = thread.anchorLine
+        val anchorEndLine = thread.anchorEndLine
+        val validAnchor = if (anchorLine == null || anchorEndLine == null) {
+          anchorLine == null && anchorEndLine == null
+        }
+        else anchorLine in 1..anchorEndLine
         require(
           validSourcePath(thread.filePath) && validRevision(thread.originalCommitSha) &&
-            thread.anchorLine > 0 && thread.anchorEndLine >= thread.anchorLine,
+            validAnchor,
         ) { "Invalid discussion path, revision or anchors" }
       }
     }
