@@ -151,7 +151,7 @@ internal data class CodexPriceReport(
     private fun money(value: Double): String = "%.6f".format(java.util.Locale.ROOT, value)
 }
 
-/** Prices Codex session logs and attributes managed worker sessions to their persisted tasks. */
+/** Prices Codex session logs and, when given a live plan, attributes managed worker sessions to its in-memory tasks. */
 internal object CodexPriceReporter {
     fun create(home: Path, plan: Plan, pricing: OpenAiPricing): CodexPriceReport {
         val sessions = readSessions(home.resolve("sessions"), pricing)

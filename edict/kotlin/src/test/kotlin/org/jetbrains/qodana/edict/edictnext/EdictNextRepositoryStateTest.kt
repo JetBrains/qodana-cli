@@ -38,14 +38,14 @@ class EdictNextRepositoryStateTest {
     }
 
     assertEquals(
-      listOf(".idea/", ".edict-mcp.lock", ".edict-mcp-current"),
+      listOf(".idea/", ".edict-mcp.lock"),
       Files.readAllLines(gitignore),
     )
 
     val fresh = directory.resolve("fresh")
     EdictNextRepositoryState.open(fresh).close()
     assertEquals(
-      listOf(".edict-mcp.lock", ".edict-mcp-current"),
+      listOf(".edict-mcp.lock"),
       Files.readAllLines(fresh.resolve(".gitignore")),
     )
   }
@@ -70,7 +70,6 @@ class EdictNextRepositoryStateTest {
     val skill = "edict-pr-signal-analysis"
     val steps = listOf(Step(skill, "Reviews"))
     val repository = ReviewRepository(CiProviderId.GITHUB, "jetbrains", "qodana")
-    var taskId = ""
     val expected = RepositoryPrAnalysisCoverage(
       repository,
       analyzedDateRanges = listOf(PrAnalysisDateRange("2026-01-01", "2026-01-05")),
@@ -78,7 +77,7 @@ class EdictNextRepositoryStateTest {
     )
     EdictNextRepositoryState.open(directory).use { state ->
       val plan = state.createPlan("Reviews", steps)
-      taskId = plan.plan.tasks.single().id
+      val taskId = plan.plan.tasks.single().id
       val worker = state.launch(plan.token, taskId, skill)
       assertEquals(RepositoryPrAnalysisCoverage(repository), state.getPrAnalysisCoverage(worker.token, repository))
       state.recordPrAnalysisCoverage(
@@ -103,8 +102,8 @@ class EdictNextRepositoryStateTest {
       assertTrue(Files.exists(directory.resolve("extraction/pr-analysis-coverage.json")))
     }
     EdictNextRepositoryState.open(directory).use { state ->
-      val resumed = state.createPlan("Reviews", steps)
-      val worker = state.launch(resumed.token, taskId, skill)
+      val fresh = state.createPlan("Reviews", steps)
+      val worker = state.launch(fresh.token, fresh.plan.tasks.single().id, skill)
       assertEquals(expected, state.getPrAnalysisCoverage(worker.token, repository))
     }
   }
@@ -167,8 +166,6 @@ class EdictNextRepositoryStateTest {
   @Test
   fun `generation reviews are not limited per cluster worker`() {
     val steps = listOf(Step("edict-next-generation", "Generate"))
-    var generationId = ""
-    var clusterId = ""
     val reviewSkills = listOf(
       "edict-next-inspection-shallow-review",
       "edict-next-inspection-code-review",
@@ -176,10 +173,10 @@ class EdictNextRepositoryStateTest {
     )
     EdictNextRepositoryState.open(directory).use { state ->
       val plan = state.createPlan("Generate", steps)
-      generationId = plan.plan.tasks.single().id
+      val generationId = plan.plan.tasks.single().id
       val generation = state.launch(plan.token, generationId, "edict-next-generation")
       val cluster = state.addTask(generation.token, "edict-next-cluster-generation", "First cluster")
-      clusterId = cluster.id
+      val clusterId = cluster.id
       val worker = state.launch(generation.token, cluster.id, cluster.skill)
       for (skill in reviewSkills) repeat(4) { attempt ->
         val title = if (attempt == 0) "Initial review" else "Review after repair $attempt"
@@ -187,11 +184,6 @@ class EdictNextRepositoryStateTest {
         val reviewer = state.launch(worker.token, review.id, skill)
         state.finishTask(reviewer.token, "completed", "Reviewed")
       }
-    }
-    EdictNextRepositoryState.open(directory).use { state ->
-      val resumed = state.createPlan("Generate", steps)
-      val generation = state.launch(resumed.token, generationId, "edict-next-generation")
-      val worker = state.launch(generation.token, clusterId, "edict-next-cluster-generation")
       // Project analysis bounds the expensive stage; the cheap shallow review repeats as often as a cluster needs it.
       for (skill in reviewSkills) state.addTask(worker.token, skill, "Fifth review attempt")
       assertEquals(
@@ -247,7 +239,7 @@ class EdictNextRepositoryStateTest {
   }
 
   @Test
-  fun `state lock recovery and fresh capabilities preserve completed work`() {
+  fun `closing state discards the in-memory plan and capabilities`() {
     val steps = listOf(Step("edict-batch-signal-analysis", "Commit"))
     lateinit var old: Delegation
     lateinit var id: String
@@ -261,14 +253,13 @@ class EdictNextRepositoryStateTest {
       state.finishTask(leaf.token, "completed", "Verified")
     }
     EdictNextRepositoryState.open(directory).use { state ->
+      assertEquals(null, state.plan())
       assertFails { state.readTask(old.token) }
-      assertFails { state.createPlan("Different", steps) }
-      val resumed = state.createPlan("Extract", steps)
-      assertEquals(id, resumed.plan.id)
-      assertEquals(listOf("pending", "completed"), resumed.plan.tasks.map { it.status })
-      val batch = state.launch(resumed.token, old.taskId, old.skill)
-      state.finishTask(batch.token, "completed", "Resumed")
-      assertFalse(Files.readString(directory.resolve("plans/$id.json")).contains(batch.token))
+      val fresh = state.createPlan("Different", steps)
+      assertFalse(fresh.plan.id == id)
+      assertEquals(listOf("pending"), fresh.plan.tasks.map { it.status })
+      assertFalse(Files.exists(directory.resolve("plans")))
+      assertFalse(Files.exists(directory.resolve(".edict-mcp-current")))
     }
   }
 

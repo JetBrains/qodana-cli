@@ -532,7 +532,7 @@ internal class EdictRepository(val paths: EdictRepositoryDirectory) {
     val GIT_PATH: Path = Path.of(".git")
     val EMBEDDINGS_PATH: Path = Path.of("embeddings")
     val PLANS_PATH: Path = Path.of("plans")
-    val MANAGEMENT_FILES: Set<String> = setOf(".edict-mcp.lock", ".edict-mcp-current")
+    val MANAGEMENT_FILES: Set<String> = setOf(".edict-mcp.lock")
   }
 }
 

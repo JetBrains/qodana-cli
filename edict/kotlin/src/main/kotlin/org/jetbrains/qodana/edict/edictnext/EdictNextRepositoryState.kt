@@ -1,9 +1,6 @@
 package org.jetbrains.qodana.edict.edictnext
 
 import kotlinx.serialization.Serializable
-import kotlinx.serialization.json.decodeFromJsonElement
-import kotlinx.serialization.json.jsonArray
-import kotlinx.serialization.json.jsonObject
 import org.jetbrains.qodana.edict.common.randomId
 import org.jetbrains.qodana.edict.common.sha256
 import org.jetbrains.qodana.edict.ci.ReviewRepository
@@ -24,7 +21,7 @@ import java.nio.file.StandardOpenOption.WRITE
 import java.nio.file.attribute.PosixFilePermissions
 import java.time.LocalDate
 
-/** Repository snapshot plus the persisted execution state associated with an Edict Next run. */
+/** Repository snapshot plus the in-memory execution state associated with an Edict Next server lifetime. */
 internal class EdictNextRepositoryState(
   val root: Path,
   val clusters: List<EdictNextStoredCluster>,
@@ -106,7 +103,7 @@ internal class EdictNextRepositoryState(
   @Synchronized
   fun plan(): Plan? {
     ensureManagementState()
-    return currentPlan?.let { EdictNextJson.decodeFromString<Plan>(EdictNextJson.encodeToString(it)) }
+    return currentPlan
   }
 
   @Synchronized
@@ -119,16 +116,7 @@ internal class EdictNextRepositoryState(
     }
     val manager = Capability(skill = "edict_manager")
     steps.forEach { allowedChild(manager, it.skill, it.title) }
-    val existing = currentPlan
-    if (existing != null && existing.tasks.any { it.status !in CLOSED_STATUSES }) {
-      require(
-        existing.request == request &&
-          existing.tasks.filter { it.parentId.isEmpty() }.map { Step(it.skill, it.title) } == steps,
-      ) { "Resume unfinished plan with its original request and top-level steps" }
-    }
-    else {
-      save(Plan(request = request, tasks = steps.map { Task(skill = it.skill, title = it.title) }))
-    }
+    save(Plan(request = request, tasks = steps.map { Task(skill = it.skill, title = it.title) }))
     val token = issue(manager)
     managerClaimed = true
     return PlanCreation(checkNotNull(plan()), token)
@@ -257,7 +245,7 @@ internal class EdictNextRepositoryState(
     SignalValidation.validate(signal)
     val path = "inbox/${signal.id}.json"
     val content = EdictNextJson.encodeToString(signal)
-    require(content.toByteArray(Charsets.UTF_8).size <= MAX_PLAN_BYTES) { "Signal exceeds 8 MiB" }
+    require(content.toByteArray(Charsets.UTF_8).size <= MAX_STATE_FILE_BYTES) { "Signal exceeds 8 MiB" }
     requireNoTokens(content)
     require(capability.skill !in COMMIT_SIGNAL_PUBLISHERS || signal.source is EdictNextSignalSource.FromCommit) {
       "Commit extraction can publish only FromCommit Signals"
@@ -381,6 +369,7 @@ internal class EdictNextRepositoryState(
     if (closed) return
     closed = true
     grants.clear()
+    currentPlan = null
     lockChannel?.close()
     lockChannel = null
   }
@@ -395,7 +384,6 @@ internal class EdictNextRepositoryState(
       check(channel.tryLock() != null) { "State is already owned by another Edict management service" }
       lockChannel = channel
       ensureManagementFilesIgnored()
-      restore()
     }
     catch (e: Exception) {
       lockChannel = null
@@ -473,55 +461,12 @@ internal class EdictNextRepositoryState(
 
   private fun save(plan: Plan) {
     ensureManagementState()
-    val updated = plan.copy(revision = plan.revision + 1)
-    val content = EdictNextJson.encodeToString(updated) + "\n"
-    require(content.toByteArray(Charsets.UTF_8).size <= MAX_PLAN_BYTES) { "Execution plan exceeds 8 MiB" }
-    atomicWrite("plans/${updated.id}.json", content)
-    if (currentPlan?.id != updated.id) atomicWrite(CURRENT_PLAN_FILE, updated.id)
-    currentPlan = updated
-  }
-
-  private fun restore() {
-    val pointer = safePath(CURRENT_PLAN_FILE)
-    if (!Files.exists(pointer, NOFOLLOW_LINKS)) return
-    val id = readText(CURRENT_PLAN_FILE)
-    require(IDENTIFIER.matches(id)) { "Invalid active plan ID" }
-    val persisted = EdictNextJson.parseToJsonElement(readText("plans/$id.json")).jsonObject
-    require(listOf("id", "request", "revision", "tasks").all { it in persisted }) { "Incomplete saved plan" }
-    persisted.getValue("tasks").jsonArray.forEach { task ->
-      require(listOf("id", "skill", "title", "status").all { it in task.jsonObject }) {
-        "Incomplete saved task"
-      }
-    }
-    val plan = EdictNextJson.decodeFromJsonElement<Plan>(persisted)
-    require(plan.id == id && plan.revision > 0) { "Invalid saved plan identity" }
-    val seen = mutableSetOf<String>()
-    plan.tasks.forEach { task ->
-      require(IDENTIFIER.matches(task.id) && task.id !in seen && (task.parentId.isEmpty() || task.parentId in seen)) {
-        "Invalid saved task graph"
-      }
-      seen += task.id
-      Registry[task.skill]
-      require(task.status in TASK_STATUSES) { "Invalid saved task status" }
-    }
-    currentPlan = plan
-    if (plan.tasks.any { it.status in INTERRUPTED_STATUSES }) {
-      save(plan.copy(tasks = plan.tasks.map { task ->
-        if (task.status in INTERRUPTED_STATUSES) {
-          task.copy(
-            status = "pending",
-            agentId = "",
-            result = "Interrupted by server restart; delegate to a fresh worker.",
-          )
-        }
-        else task
-      }))
-    }
+    currentPlan = plan.copy(revision = plan.revision + 1)
   }
 
   private fun readText(relative: String): String {
-    val bytes = Files.newInputStream(safePath(relative), NOFOLLOW_LINKS).use { it.readNBytes(MAX_PLAN_BYTES + 1) }
-    require(bytes.size <= MAX_PLAN_BYTES) { "Execution plan exceeds 8 MiB" }
+    val bytes = Files.newInputStream(safePath(relative), NOFOLLOW_LINKS).use { it.readNBytes(MAX_STATE_FILE_BYTES + 1) }
+    require(bytes.size <= MAX_STATE_FILE_BYTES) { "State file exceeds 8 MiB" }
     return bytes.toString(Charsets.UTF_8)
   }
 
@@ -529,7 +474,7 @@ internal class EdictNextRepositoryState(
     val path = safePath(PR_ANALYSIS_COVERAGE_FILE)
     if (!Files.exists(path, NOFOLLOW_LINKS)) return PrAnalysisCoverageState()
     val content = Files.readString(path)
-    require(content.toByteArray(Charsets.UTF_8).size <= MAX_PLAN_BYTES) { "PR-analysis coverage exceeds 8 MiB" }
+    require(content.toByteArray(Charsets.UTF_8).size <= MAX_STATE_FILE_BYTES) { "PR-analysis coverage exceeds 8 MiB" }
     val state = EdictNextJson.decodeFromString<PrAnalysisCoverageState>(content)
     require(state.schemaVersion == 1) { "Unsupported PR-analysis coverage schema ${state.schemaVersion}" }
     require(state.repositories.distinctBy(RepositoryPrAnalysisCoverage::repository).size == state.repositories.size) {
@@ -572,12 +517,11 @@ internal class EdictNextRepositoryState(
   }
 
   companion object {
-    private const val MAX_PLAN_BYTES = 8 * 1024 * 1024
+    private const val MAX_STATE_FILE_BYTES = 8 * 1024 * 1024
     private const val PR_ANALYSIS_SKILL = "edict-pr-signal-analysis"
     private const val LOCK_FILE = ".edict-mcp.lock"
-    private const val CURRENT_PLAN_FILE = ".edict-mcp-current"
     private const val GITIGNORE_FILE = ".gitignore"
-    private val MANAGEMENT_GITIGNORE_ENTRIES = listOf(LOCK_FILE, CURRENT_PLAN_FILE)
+    private val MANAGEMENT_GITIGNORE_ENTRIES = listOf(LOCK_FILE)
     private const val PR_ANALYSIS_COVERAGE_FILE = "extraction/pr-analysis-coverage.json"
     private val COMMIT_SIGNAL_PUBLISHERS = setOf(
       "edict-batch-signal-analysis",
@@ -594,10 +538,7 @@ internal class EdictNextRepositoryState(
 
     /** Subtask statuses that let a parent complete. */
     private val DONE_STATUSES = setOf("completed", CANCELLED)
-    private val INTERRUPTED_STATUSES = setOf("delegated", "running")
-    private val TASK_STATUSES = setOf("pending", "delegated", "running", "completed", "failed", CANCELLED)
     private val POSSIBLE_TOKEN = Regex("(?=([0-9a-f]{64}))")
-    private val IDENTIFIER = Regex("[a-zA-Z0-9][a-zA-Z0-9._-]{0,127}")
 
     fun open(root: Path): EdictNextRepositoryState = EdictNextRepositoryState(
       root = root.toAbsolutePath().normalize(),
