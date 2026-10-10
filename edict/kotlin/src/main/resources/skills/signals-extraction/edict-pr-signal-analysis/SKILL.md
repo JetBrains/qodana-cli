@@ -57,10 +57,11 @@ prerequisite. Commit-only requests belong to `edict-batch-signal-analysis`.
    discussion URL, and the complete canonical diff. Include `workItemId` and `analysisBatchId` in provenance. Build
    stable IDs from repository identity, discussion/work-item identity, evidence, and deterministic signal index;
    exclude transient batch/plan IDs from idempotency keys.
-6. Call `edict_validate_pr_signals` with your token, batch ID, all `inspectedWorkItemIds` in prepared order, and `signals`:
+6. Call `edict_store_pr_signals` with your token, batch ID, all `inspectedWorkItemIds` in prepared order, and `signals`:
    an array of complete Signal model objects. Use `[]` when there are no
-   findings. The server verifies coverage, record structure, provider provenance and evidence revisions. A failure
-   blocks publication; correct the evidence and validate again. Validation does not replace source inspection.
+   findings. The server verifies coverage, record structure, provider provenance and evidence revisions, then stores
+   the exact models for publication. A failure blocks publication; correct the evidence and store again. Server
+   validation does not replace source inspection.
 7. Call `edict_publish_validated_pr_signals` once with the validated batch ID. The server publishes the exact cached
    models without requiring them in the tool call. An existing identical model is an idempotent success; a conflicting
    model requires investigation, not overwriting. Retry the same batch after a partially failed publication.

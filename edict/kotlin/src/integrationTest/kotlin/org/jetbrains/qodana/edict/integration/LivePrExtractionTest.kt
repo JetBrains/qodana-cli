@@ -117,8 +117,8 @@ class LivePrExtractionTest : IntegrationTest() {
                 val path = arguments.text("path")
                 val missingOutput = name == "edict_read" && path.startsWith("inbox/") &&
                     detail == workspace.state.resolve(path).toString()
-                val recoverableValidation = name == "edict_validate_pr_signals"
-                assertTrue(missingOutput || recoverableValidation, "$name failed: $detail; inspect ${workspace.logs}")
+                val recoverableStore = name == "edict_store_pr_signals"
+                assertTrue(missingOutput || recoverableStore, "$name failed: $detail; inspect ${workspace.logs}")
             }
             else successfulCalls += name
         }
@@ -127,7 +127,7 @@ class LivePrExtractionTest : IntegrationTest() {
             "edict_fetch_pr_batch",
             "edict_list_pr_analysis_items",
             "edict_get_pr_analysis_item",
-            "edict_validate_pr_signals",
+            "edict_store_pr_signals",
             "edict_publish_validated_pr_signals",
             "edict_record_pr_analysis_coverage",
         ).forEach { assertTrue(it in successfulCalls, "Missing successful real $it call") }

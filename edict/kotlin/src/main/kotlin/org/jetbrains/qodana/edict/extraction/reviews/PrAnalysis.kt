@@ -20,7 +20,7 @@ import java.time.LocalDate
 import java.time.ZoneOffset
 import java.time.temporal.ChronoUnit
 
-/** Prepared PR evidence and validation receipts scoped to one managed PR-analysis task. */
+/** Prepared PR evidence and stored Signal batches scoped to one managed PR-analysis task. */
 internal class PrAnalysis(
   private val store: EdictNextRepositoryState,
   private val provider: ReviewExtractionApi,
@@ -30,7 +30,7 @@ internal class PrAnalysis(
     val summary: PrBatchSummary,
     val items: List<PrItem>,
     val coverageDateRanges: List<PrAnalysisDateRange>,
-    var validated: Map<String, EdictNextSignal>? = null,
+    var storedSignals: Map<String, EdictNextSignal>? = null,
   )
 
   private val batches = mutableMapOf<String, Batch>()
@@ -208,7 +208,7 @@ internal class PrAnalysis(
       ?: error("Unknown work item in PR batch")
   }
 
-  fun validate(
+  fun store(
     token: String,
     batchId: String,
     inspected: List<String>,
@@ -237,13 +237,13 @@ internal class PrAnalysis(
       ) { "Evidence revision does not match its PR side" }
       validated[signal.id] = signal
     }
-    batch.validated = validated
+    batch.storedSignals = validated
     PrReceipt(batchId, inspected.size, validated.size, validated.keys.toList())
   }
 
   fun publishValidated(token: String, batchId: String): PrPublicationReceipt = synchronized(store) {
     val batch = batch(token, batchId, coordinator = true)
-    val validated = checkNotNull(batch.validated) { "Validate complete PR inspection coverage before publication" }
+    val validated = checkNotNull(batch.storedSignals) { "Store complete PR inspection coverage before publication" }
     val publications = validated.values.map { store.publishSignal(token, it) }
     if (batch.coverageDateRanges.isNotEmpty()) {
       store.recordPrAnalysisCoverage(
@@ -286,9 +286,9 @@ internal class PrAnalysis(
     store.requirePrAnalysisCaller(token, coordinator = true)
     require(batches.isNotEmpty()) { "Prepare and inspect requested PR selection before finishing" }
     batches.values.forEach { batch ->
-      val validated = checkNotNull(batch.validated) { "Validate complete PR inspection coverage before finishing" }
-      validated.forEach { (id, signal) ->
-        require(store.inboxSignal(id) == signal) { "Validated PR Signal is missing or differs from receipt" }
+      val storedSignals = checkNotNull(batch.storedSignals) { "Store complete PR inspection coverage before finishing" }
+      storedSignals.forEach { (id, signal) ->
+        require(store.inboxSignal(id) == signal) { "Stored PR Signal is missing or differs from receipt" }
       }
     }
   }
