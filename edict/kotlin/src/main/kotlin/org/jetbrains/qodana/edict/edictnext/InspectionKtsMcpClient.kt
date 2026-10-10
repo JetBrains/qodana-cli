@@ -90,7 +90,7 @@ internal class StaleInspectionMcpSession(val sessionId: String) :
 internal class HttpInspectionKtsClient(
   private val endpoint: URI,
   private val projectPath: String? = null,
-  private val requestTimeout: Duration = Duration.ofMinutes(45),
+  private val requestTimeout: Duration = Duration.ofHours(1),
 ) : InspectionKtsClient {
   private val client = HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(30)).build()
   private val sequence = AtomicLong()
