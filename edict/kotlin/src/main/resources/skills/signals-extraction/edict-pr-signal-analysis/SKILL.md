@@ -59,9 +59,10 @@ prerequisite. Commit-only requests belong to `edict-batch-signal-analysis`.
    exclude transient batch/plan IDs from idempotency keys.
 6. Call `edict_store_pr_signals` with your token, batch ID, all `inspectedWorkItemIds` in prepared order, and `signals`:
    an array of complete Signal model objects. Use `[]` when there are no
-   findings. The server verifies coverage, record structure, provider provenance and evidence revisions, then stores
-   the exact models for publication. A failure blocks publication; correct the evidence and store again. Server
-   validation does not replace source inspection.
+   findings. The server verifies batch coverage, independently validates each model's structure, provider provenance
+   and evidence revisions, and stores every valid model for publication. Per-Signal validation failures are returned
+   in `failures`; they do not fail the batch and must not prevent step 7. Retain every failure for the final task result.
+   A tool-level failure still blocks publication. Server validation does not replace source inspection.
 7. Call `edict_publish_validated_pr_signals` once with the validated batch ID. The server publishes the exact cached
    models without requiring them in the tool call. An existing identical model is an idempotent success; a conflicting
    model requires investigation, not overwriting. Retry the same batch after a partially failed publication.
@@ -72,8 +73,9 @@ prerequisite. Commit-only requests belong to `edict-batch-signal-analysis`.
    numbers separately for a date-based batch. For an explicit
    PR-number selection, call `edict_record_pr_analysis_coverage` with all returned `selectedPrNumbers`; repository
    identity is supplied by the server. Never record coverage for an incomplete or failed batch.
-9. Finish with every batch ID, inspected IDs, signal IDs, the target and achieved cumulative Signal count, and a
-   summary of every reported problem (or explicitly state that there were none). The server rejects completion until coverage is
+9. Finish with every batch ID, inspected IDs, published signal IDs, the target and achieved cumulative Signal count,
+   every per-Signal storage failure, and a summary of every reported provider problem (or explicitly state that there
+   were none). Storage failures do not make the task fail. The server rejects completion until coverage is
    validated and all validated signals are present. A completely inspected batch with zero findings, including an
    empty merged-review selection, succeeds without placeholders. After a server restart, prepare the selection again
    and reuse identical persisted records.

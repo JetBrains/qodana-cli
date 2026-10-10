@@ -4,6 +4,7 @@ import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.encodeToJsonElement
 import kotlinx.serialization.json.jsonArray
+import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
 import kotlinx.serialization.json.put
 import kotlinx.serialization.json.putJsonArray
@@ -296,7 +297,7 @@ class ConfiguredPrAnalysisTest {
   }
 
   @Test
-  fun `validated PR batch publishes cached models without resending them`() {
+  fun `stored PR batch publishes valid models and reports rejected models`() {
     val configured = ReviewRepository(CiProviderId.GITHUB, "JetBrains", "qodana-cli")
     val baseRevision = "a".repeat(40)
     val headRevision = "b".repeat(40)
@@ -372,13 +373,30 @@ class ConfiguredPrAnalysisTest {
         )
       }
       val signals = listOf(signal(EdictNextSignalLabel.POSITIVE), signal(EdictNextSignalLabel.NEGATIVE))
-      val validation = management.call("edict_store_pr_signals", buildJsonObject {
+      val invalidKey = "github:JetBrains/qodana-cli:pr:7:$workItemId:invalid"
+      val invalid = signal(EdictNextSignalLabel.POSITIVE).copy(
+        id = stableSignalId(invalidKey),
+        idempotencyKey = invalidKey,
+        description = "",
+      )
+      val stored = management.call("edict_store_pr_signals", buildJsonObject {
         put("token", worker.token)
         put("batchId", batchId)
         put("inspectedWorkItemIds", JsonArray(listOf(JsonPrimitive(workItemId))))
-        put("signals", wireJson.encodeToJsonElement(signals))
+        put("signals", wireJson.encodeToJsonElement(signals + invalid))
       })
-      assertFalse(validation.flag("isError") == true)
+      assertFalse(stored.flag("isError") == true)
+      val storeReceipt = stored.obj("structuredContent")
+      assertEquals(signals.size, storeReceipt.getValue("signalCount").jsonPrimitive.content.toInt(), storeReceipt.toString())
+      assertEquals(
+        signals.map(EdictNextSignal::id),
+        storeReceipt.getValue("signalIds").jsonArray.map { it.jsonPrimitive.content },
+      )
+      val failure = storeReceipt.array("failures").single().jsonObject
+      assertEquals(2, failure.getValue("signalIndex").jsonPrimitive.content.toInt())
+      assertEquals(invalid.id, failure.getValue("signalId").jsonPrimitive.content)
+      assertEquals(workItemId, failure.getValue("workItemId").jsonPrimitive.content)
+      assertTrue(failure.getValue("message").jsonPrimitive.content.contains("description"))
 
       val publication = management.call("edict_publish_validated_pr_signals", buildJsonObject {
         put("token", worker.token)
@@ -402,6 +420,16 @@ class ConfiguredPrAnalysisTest {
         put("signal", wireJson.encodeToJsonElement(signals.first()))
       })
       assertTrue(directPublication.flag("isError") == true)
+
+      val failureMessage = failure.getValue("message").jsonPrimitive.content
+      val taskResult = "Published ${signals.size} Signals; rejected ${invalid.id}: $failureMessage"
+      val completion = management.call("edict_task_finish", buildJsonObject {
+        put("token", worker.token)
+        put("status", "completed")
+        put("result", taskResult)
+      })
+      assertFalse(completion.flag("isError") == true)
+      assertEquals(taskResult, checkNotNull(store.plan()).tasks.single().result)
     }
   }
 

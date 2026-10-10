@@ -467,7 +467,7 @@ internal class EdictManagementService(
 
     tool(
       name = "edict_store_pr_signals",
-      description = "Validate complete ordered PR coverage and Signal models, then store the exact models in this batch for later publication.",
+      description = "Validate complete ordered PR coverage, then independently validate and store each valid Signal model for later publication. Returns per-Signal failures without discarding valid models or failing the batch; continue publication and include failures in the task result.",
       required = listOf("token", "batchId", "inspectedWorkItemIds", "signals"),
       properties = properties("batchId") + mapOf(
         "inspectedWorkItemIds" to stringArray,
