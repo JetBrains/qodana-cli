@@ -18,7 +18,9 @@ Inspect the complete assigned human discussion or commit message, surrounding PR
 applicable, and the exact before/after source and diff. Prefer local read-only Git; use available revision readers when
 Git objects are absent. For PRs, use `edict_pr_file_at_ref` (batch ID, work-item ID, revision, path) and
 `edict_pr_file_diff` (batch ID, work-item ID, before/after revisions and beforePath/afterPath) through `edict-mcp` with your
-own token. Copy each path exactly from the prepared work item or its complete package. Do not strip a project/module
+own token. Pass the exact full revision strings returned by `edict_get_pr_analysis_item`; never substitute symbolic
+aliases such as `base`, `head`, `before`, or `after`. Copy each path exactly from the prepared work item or its complete
+package. Do not strip a project/module
 prefix, reinterpret it relative to `projectDirectory`, or probe guessed alternatives: provider paths are repository-relative.
 Preserve returned content byte-for-byte. Resolve renames with local Git when possible, use the real path on
 each side, and report unavailable evidence as blocked. Never substitute the current checkout for historical evidence. If neither source can provide

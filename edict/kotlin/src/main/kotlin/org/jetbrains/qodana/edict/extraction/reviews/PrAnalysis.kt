@@ -216,29 +216,46 @@ internal class PrAnalysis(
   ): PrReceipt = synchronized(store) {
     val batch = batch(token, batchId, coordinator = true)
     require(inspected == batch.items.map(PrItem::workItemId)) { "Incomplete or unordered PR coverage" }
-    val validated = linkedMapOf<String, EdictNextSignal>()
-    signals.forEach { candidate ->
-      require(wireJson.encodeToString(candidate).toByteArray().size <= MAX_ARTIFACT_BYTES) { "Signal exceeds 8 MiB" }
-      val signal = SignalValidation.validate(candidate)
-      val item = batch.items.firstOrNull { it.workItemId == signal.provenance.workItemId }
-        ?: error("Unknown signal work item")
-      require(signal.id !in validated) { "Duplicate signal" }
-      val source = signal.source
-      require(
-        source is EdictNextSignalSource.FromPR && source.prNumber == item.pr.number &&
-          source.title == item.pr.title && source.url == item.thread.reviewDiscussionUrl,
-      ) { "Signal source must preserve prepared PR number, title and discussion URL" }
-      require(source.discussionMessages == item.thread.messages.map(ReviewMessage::body)) {
-        "Preserve all prepared discussion messages in order"
+    val stored = linkedMapOf<String, EdictNextSignal>()
+    val failures = mutableListOf<PrSignalStoreFailure>()
+    signals.forEachIndexed { index, candidate ->
+      try {
+        require(wireJson.encodeToString(candidate).toByteArray().size <= MAX_ARTIFACT_BYTES) { "Signal exceeds 8 MiB" }
+        val signal = SignalValidation.validate(candidate)
+        val item = batch.items.firstOrNull { it.workItemId == signal.provenance.workItemId }
+          ?: error("Unknown signal work item")
+        require(signal.id !in stored) { "Duplicate signal" }
+        val source = signal.source
+        require(
+          source is EdictNextSignalSource.FromPR && source.prNumber == item.pr.number &&
+            source.title == item.pr.title && source.url == item.thread.reviewDiscussionUrl,
+        ) { "Signal source must preserve prepared PR number, title and discussion URL" }
+        require(source.discussionMessages == item.thread.messages.map(ReviewMessage::body)) {
+          "Preserve all prepared discussion messages in order"
+        }
+        require(
+          if (signal.label == EdictNextSignalLabel.NEGATIVE) signal.fileRevision.revision == item.pr.headRevision
+          else signal.fileRevision.revision in listOf(item.pr.baseRevision, item.thread.originalCommitSha),
+        ) { "Evidence revision does not match its PR side" }
+        stored[signal.id] = signal
       }
-      require(
-        if (signal.label == EdictNextSignalLabel.NEGATIVE) signal.fileRevision.revision == item.pr.headRevision
-        else signal.fileRevision.revision in listOf(item.pr.baseRevision, item.thread.originalCommitSha),
-      ) { "Evidence revision does not match its PR side" }
-      validated[signal.id] = signal
+      catch (e: Exception) {
+        failures += PrSignalStoreFailure(
+          signalIndex = index,
+          signalId = candidate.id,
+          workItemId = candidate.provenance.workItemId,
+          message = e.message ?: e.javaClass.simpleName,
+        )
+      }
     }
-    batch.storedSignals = validated
-    PrReceipt(batchId, inspected.size, validated.size, validated.keys.toList())
+    batch.storedSignals = stored
+    PrReceipt(
+      batchId = batchId,
+      inspectedWorkItemCount = inspected.size,
+      signalCount = stored.size,
+      signalIds = stored.keys.toList(),
+      failures = failures,
+    )
   }
 
   fun publishValidated(token: String, batchId: String): PrPublicationReceipt = synchronized(store) {
