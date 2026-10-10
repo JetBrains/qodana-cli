@@ -65,7 +65,7 @@ End-to-end review of the current pipeline (code reading only, nothing run). Path
   clusters a cluster can lose analyses without running any. The timeout escapes as a JSON-RPC internal error, so the
   agent never sees `remainingProjectAnalyses`.
 - [ ] Timeouts cannot interrupt IDE calls: `edictnext/InspectionKtsMcpClient.kt:168` makes a blocking
-  `HttpClient.send` with a 45-minute timeout. The analysis limit and the cluster deadline overrun by up to 45 minutes;
+  `HttpClient.send` with a 1-hour timeout. The analysis limit and the cluster deadline overrun by up to 1 hour;
   `IntellijMcpServerService.stop()` takes the `analyses` mutex first, so shutdown hangs holding `.edict-mcp.lock` and a
   restarted `mcp start` is refused. Close the client before taking the mutex.
 - [ ] Codex thread limit vs fan-out: `max_concurrent_threads_per_session = 50` (`setup/CodexSetup.kt:125`) against 6

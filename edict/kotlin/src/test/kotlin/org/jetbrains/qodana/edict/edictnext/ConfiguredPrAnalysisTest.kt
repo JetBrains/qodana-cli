@@ -105,7 +105,7 @@ class ConfiguredPrAnalysisTest {
       }).obj("structuredContent")
       val workItemIds = listed.array("items").map { it.text("workItemId") }
       assertEquals(1, workItemIds.size)
-      val validation = management.call("edict_validate_pr_signals", buildJsonObject {
+      val validation = management.call("edict_store_pr_signals", buildJsonObject {
         put("token", worker.token)
         put("batchId", batchId)
         put("inspectedWorkItemIds", JsonArray(workItemIds.map(::JsonPrimitive)))
@@ -196,7 +196,7 @@ class ConfiguredPrAnalysisTest {
         put("limit", 20)
       }).obj("structuredContent")
       val workItemIds = listed.array("items").map { it.text("workItemId") }
-      val validation = management.call("edict_validate_pr_signals", buildJsonObject {
+      val validation = management.call("edict_store_pr_signals", buildJsonObject {
         put("token", worker.token)
         put("batchId", batchId)
         put("inspectedWorkItemIds", JsonArray(workItemIds.map(::JsonPrimitive)))
@@ -247,7 +247,7 @@ class ConfiguredPrAnalysisTest {
       val summary = fetched.obj("structuredContent")
       assertEquals(listOf(problem), summary.getValue("problems").jsonArray.map { it.jsonPrimitive.content })
 
-      val validation = management.call("edict_validate_pr_signals", buildJsonObject {
+      val validation = management.call("edict_store_pr_signals", buildJsonObject {
         put("token", worker.token)
         put("batchId", summary.text("batchId"))
         put("inspectedWorkItemIds", JsonArray(emptyList()))
@@ -372,7 +372,7 @@ class ConfiguredPrAnalysisTest {
         )
       }
       val signals = listOf(signal(EdictNextSignalLabel.POSITIVE), signal(EdictNextSignalLabel.NEGATIVE))
-      val validation = management.call("edict_validate_pr_signals", buildJsonObject {
+      val validation = management.call("edict_store_pr_signals", buildJsonObject {
         put("token", worker.token)
         put("batchId", batchId)
         put("inspectedWorkItemIds", JsonArray(listOf(JsonPrimitive(workItemId))))
@@ -433,7 +433,7 @@ class ConfiguredPrAnalysisTest {
       assertTrue(provider.selections.isEmpty())
 
       val batchId = summary.text("batchId")
-      assertFalse(management.call("edict_validate_pr_signals", buildJsonObject {
+      assertFalse(management.call("edict_store_pr_signals", buildJsonObject {
         put("token", worker.token)
         put("batchId", batchId)
         put("inspectedWorkItemIds", JsonArray(emptyList()))

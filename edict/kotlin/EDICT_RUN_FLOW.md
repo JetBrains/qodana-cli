@@ -112,7 +112,7 @@ edict_manager
     coordinator repeats complete dates until `edict.extraction.defaultSignalCount` validated Signals are published,
     while an explicit complete date range fetches every PR in that range without applying the default target
   - use `edict_list_pr_analysis_items` / `edict_get_pr_analysis_item` / `edict_pr_file_*`
-  - chunks of at most 8 work items per `$edict-signal-analysis` worker, validated with `edict_validate_pr_signals`,
+  - chunks of at most 8 work items per `$edict-signal-analysis` worker, stored with `edict_store_pr_signals`,
     and published with `edict_publish_validated_pr_signals`; publication of any date-based batch records its complete
     date ranges in coverage, while explicit PR-number selections call `edict_record_pr_analysis_coverage`
 - in the benchmark, extraction is skipped: the fixture's checked-in `.edict/inbox` is processed in place
