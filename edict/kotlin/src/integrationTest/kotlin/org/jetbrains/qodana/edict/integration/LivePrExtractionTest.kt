@@ -42,8 +42,7 @@ class LivePrExtractionTest : IntegrationTest() {
             )
             workspace.withCodex(
                 """
-                Use edict_manager and the managed protocol to extract Signals from configured CI review #7 with PR limit 1.
-                Validate the complete PR batch and publish it through edict_publish_validated_pr_signals.
+                Extract Signals from configured CI review #7 with PR limit 1
                 """.trimIndent(),
                 provider = fixture.client,
                 configuration = EdictYamlConfiguration.load(qodanaYaml),

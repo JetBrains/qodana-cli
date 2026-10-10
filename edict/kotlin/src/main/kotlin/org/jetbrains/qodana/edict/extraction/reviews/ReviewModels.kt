@@ -97,6 +97,15 @@ data class PrReceipt(
   val inspectedWorkItemCount: Int,
   val signalCount: Int,
   val signalIds: List<String>,
+  val failures: List<PrSignalStoreFailure> = emptyList(),
+)
+
+@Serializable
+data class PrSignalStoreFailure(
+  val signalIndex: Int,
+  val signalId: String,
+  val workItemId: String,
+  val message: String,
 )
 
 @Serializable
