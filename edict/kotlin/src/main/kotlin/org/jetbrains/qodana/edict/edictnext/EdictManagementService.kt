@@ -365,7 +365,7 @@ internal class EdictManagementService(
 
     tool(
       name = "edict_publish_validated_pr_signals",
-      description = "Idempotently publish every exact Signal model cached by a successful edict_validate_pr_signals call for this batch. Resend no Signal objects; retry the batch safely after partial publication.",
+      description = "Idempotently publish every exact Signal model stored by a successful edict_store_pr_signals call for this batch. Resend no Signal objects; retry the batch safely after partial publication.",
       required = listOf("token", "batchId"),
       properties = properties("batchId"),
     ) { arguments ->
@@ -466,9 +466,8 @@ internal class EdictManagementService(
     }
 
     tool(
-      name = "edict_validate_pr_signals",
-      description = "Validate complete ordered PR coverage and prospective Signal models before publication.",
-      readOnly = true,
+      name = "edict_store_pr_signals",
+      description = "Validate complete ordered PR coverage and Signal models, then store the exact models in this batch for later publication.",
       required = listOf("token", "batchId", "inspectedWorkItemIds", "signals"),
       properties = properties("batchId") + mapOf(
         "inspectedWorkItemIds" to stringArray,
@@ -476,7 +475,7 @@ internal class EdictManagementService(
       ),
     ) { arguments ->
       EdictNextJson.encodeToJsonElement(
-        pr.validate(
+        pr.store(
           arguments.requireString("token"),
           arguments.requireString("batchId"),
           arguments.requireStrings("inspectedWorkItemIds"),

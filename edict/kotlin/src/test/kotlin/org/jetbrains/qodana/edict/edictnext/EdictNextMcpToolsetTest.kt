@@ -185,7 +185,7 @@ class EdictNextMcpToolsetTest {
           "edict_task_get", "edict_task_start", "edict_task_finish", "edict_task_cancel", "edict_publish_signal",
           "edict_publish_validated_pr_signals",
           "edict_fetch_pr_batch", "edict_list_pr_analysis_items", "edict_get_pr_analysis_item",
-          "edict_validate_pr_signals", "edict_pr_file_at_ref", "edict_pr_file_diff",
+          "edict_store_pr_signals", "edict_pr_file_at_ref", "edict_pr_file_diff",
           "edict_get_pr_analysis_coverage", "edict_record_pr_analysis_coverage",
           "edict_context", "edict_file_at_ref", "edict_next_prepare_pipeline", "edict_next_next_signal", "edict_next_get_distribution_context",
           "edict_next_add_signal_to_cluster", "edict_next_validate_distribution", "edict_next_get_generation_clusters",
