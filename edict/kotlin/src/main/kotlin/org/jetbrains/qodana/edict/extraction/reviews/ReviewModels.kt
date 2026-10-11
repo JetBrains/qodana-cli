@@ -65,39 +65,25 @@ data class PrItem(
 @Serializable
 data class PrBatchSummary(
   val batchId: String,
-  val selectedPrCount: Int,
-  val selectedPrNumbers: List<Int>,
-  val prCountWithWorkItems: Int,
-  val totalWorkItemCount: Int,
-  val repository: ReviewRepository,
-  val analyzedDateRanges: List<PrAnalysisDateRange> = emptyList(),
-  val problems: List<String> = emptyList(),
+  val availableChunkCount: Int,
 )
 
 @Serializable
-data class PrItemSummary(
-  val workItemId: String,
-  val prNumber: Int,
-  val threadId: String,
-  val path: String,
-  val messageCount: Int,
-)
-
-@Serializable
-data class PrPage(
-  val totalWorkItemCount: Int,
-  val offset: Int,
-  val items: List<PrItemSummary>,
-  val nextOffset: Int? = null,
+data class PrChunk(
+  val batchId: String,
+  val chunkIndex: Int,
+  val workItemIds: List<String>,
 )
 
 @Serializable
 data class PrReceipt(
   val batchId: String,
+  val chunkIndex: Int,
   val inspectedWorkItemCount: Int,
   val signalCount: Int,
   val signalIds: List<String>,
   val failures: List<PrSignalStoreFailure> = emptyList(),
+  val problems: List<String> = emptyList(),
 )
 
 @Serializable
@@ -111,6 +97,14 @@ data class PrSignalStoreFailure(
 @Serializable
 data class PrPublicationReceipt(
   val batchId: String,
+  val availableChunkCount: Int,
+  val storedChunkCount: Int,
+  val failedChunkIndexes: List<Int>,
   val signalIds: List<String>,
   val createdSignalIds: List<String>,
+  val selectedPrCount: Int,
+  val analyzedDateRanges: List<PrAnalysisDateRange> = emptyList(),
+  val analyzedPrNumbers: List<Int> = emptyList(),
+  val coverageUpdated: Boolean,
+  val problems: List<String> = emptyList(),
 )

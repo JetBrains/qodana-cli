@@ -108,13 +108,19 @@ edict_manager
   - require exact coverage, build complete `FromCommit` records in memory, then publish each with
     `edict_publish_signal`; an identical existing Signal counts as success
 - `$edict-pr-signal-analysis`: GitHub/Space merged reviews
-  - `edict_fetch_pr_batch` without a selection returns every PR from the next complete uncovered UTC date; the
+  - `edict_fetch_pr_batch` without a selection prepares every PR from the next complete uncovered UTC date and returns
+    only the batch id and server-created chunk count; the
     coordinator repeats complete dates until `edict.extraction.defaultSignalCount` validated Signals are published,
     while an explicit complete date range fetches every PR in that range without applying the default target
-  - use `edict_list_pr_analysis_items` / `edict_get_pr_analysis_item` / `edict_pr_file_*`
-  - chunks of at most 8 work items per `$edict-signal-analysis` worker; `edict_store_pr_signals` reports rejected
-    models while retaining valid ones, which are published with `edict_publish_validated_pr_signals`; publication of any date-based batch records its complete
-    date ranges in coverage, while explicit PR-number selections call `edict_record_pr_analysis_coverage`
+  - one `$edict-signal-analysis` worker receives only a batch id and chunk index, calls
+    `edict_get_pr_analysis_chunk` / `edict_get_pr_analysis_item` / `edict_pr_file_*`, analyzes its work items in order,
+    and calls `edict_store_pr_signals` itself
+  - chunks contain at most 8 work items; storage reports rejected models while retaining valid ones, and the
+    coordinator retries failed chunks once before `edict_publish_validated_pr_signals` publishes every stored chunk
+  - failed chunks remain reported; the coordinator completes when at most half of all handled chunks failed after
+    retry, and fails only when strictly more than half failed
+  - publication withholds coverage when a provider, analysis, storage, or missing-chunk problem leaves the batch
+    incomplete; otherwise it records complete date ranges or explicit PR numbers automatically
 - in the benchmark, extraction is skipped: the fixture's checked-in `.edict/inbox` is processed in place
 
 ## Distribution and generation
