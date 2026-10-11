@@ -10,7 +10,7 @@ Run only as a delegated managed subagent. Follow [the manager protocol](../edict
 You orchestrate batches, retries, publication, and coverage. Never inspect discussions, read source evidence, construct
 Signals, or collect Signal payloads yourself; `edict-signal-analysis` workers own all analysis and storage.
 
-Call `edict_context` and require its configured `reviewRepository`. A daily assignment uses its explicit `signalTarget`,
+Call `edict_context` with your own token and require its configured `reviewRepository`. A daily assignment uses its explicit `signalTarget`,
 or `defaultSignalCount` when the assignment omits one. Other requests require explicit PR numbers or inclusive complete
 UTC date bounds. Provider credentials and all run paths belong to the server and must not be copied into child prompts.
 
@@ -19,7 +19,8 @@ UTC date bounds. Provider credentials and all run paths belong to the server and
    partitions them into chunks of at most eight. For an explicit request, pass only the requested `prNumbers`, or both
    `startDate` and `endDate`. The response is intentionally small: retain only its `batchId` and
    `availableChunkCount`. Do not list work items or inspect provider details.
-2. For every zero-based chunk index below `availableChunkCount`, add an `edict-signal-analysis` child. Its stored
+2. For every zero-based chunk index below `availableChunkCount`, add an `edict-signal-analysis` child and retain its
+   managed task ID for cleanup. Its stored
    assignment must contain only the absolute assigned `SKILL.md` path, the `batchId`, the `chunkIndex`, and the
    requirement to analyze and store that chunk. Do not send work-item IDs, repository identity, source paths, findings,
    or prior worker output. Delegate and launch independent chunks in parallel waves within available native capacity.
@@ -33,7 +34,11 @@ UTC date bounds. Provider credentials and all run paths belong to the server and
    `availableChunkCount` is zero. The server publishes valid Signals from stored chunks, reports missing chunks and all
    worker/provider/storage problems, and updates date or explicit-PR coverage only when the complete batch is eligible.
    Resend no Signal models. If the receipt says coverage was updated, call `edict_get_pr_analysis_coverage` and verify
-   the receipt's date ranges or PR numbers are present.
+   the receipt's date ranges or PR numbers are present. Once publication returns its durable receipt, call
+   `edict_task_cleanup_scratch` for every chunk task created for this batch, including completed, failed, and cancelled
+   tasks; a retry reuses the same managed task ID and directory. Never clean a chunk before publication, and never clean
+   tasks from another batch or coordinator. If cleanup fails, retry that cleanup once, preserve the publication receipt,
+   and report the extraction task as failed rather than leaving the failure hidden.
 5. For a daily run, add the publication receipt's Signal count to the cumulative result. A zero-Signal complete date
    advances coverage but does not satisfy the target. Repeat from step 1 until the target is reached, always finishing
    the selected date even when it takes the total past the target. A receipt with no analyzed date ranges and

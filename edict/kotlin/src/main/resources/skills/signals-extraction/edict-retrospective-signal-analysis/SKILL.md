@@ -11,7 +11,8 @@ and [the signal contract](../edict_manager/references/signals.md). Registry ID:
 `edict-signal-analysis` workers own semantic fix inspection. Do not change source, clusters, examples, or inspections.
 
 Start the task. Take the source checkout (`projectDirectory`), the Edict state directory
-(`stateDirectory`), and private scratch root (`scratchDirectory`) from `edict_context`. Require one cluster ID, and a Qodana runner tool that can
+(`stateDirectory`), and private task scratch (`scratchDirectory`) from `edict_context` called with your own token.
+Require one cluster ID, and a Qodana runner tool that can
 run a supplied inspection against an explicit project/revision worktree, write SARIF to private scratch, use a baseline,
 and include absent results. Accept an optional end date and lookback period, defaulting to the current local date and
 three calendar months. Stop before repository mutation if the runner contract is unavailable.

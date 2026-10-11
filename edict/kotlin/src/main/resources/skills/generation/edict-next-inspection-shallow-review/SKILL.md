@@ -12,7 +12,7 @@ Load only this skill.
 
 ## Inputs and boundaries
 
-The prompt supplies `Cluster id` and an absolute private-scratch `Review output path`. Call `edict_context`; the
+The prompt supplies `Cluster id` and an absolute private-scratch `Review output path`. Call `edict_context` with your own token; the
 candidate is `<stateDirectory>/inspections/<clusterId>.candidate.kts`. Read only the candidate: no cluster files,
 Signals, examples, history, predecessor inspections, prior reviews, or project source, and no inspection tools.
 

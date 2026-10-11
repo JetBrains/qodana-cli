@@ -64,7 +64,13 @@ internal class EdictNextRepositoryState(
   )
 
   @Serializable
-  data class TaskAssignment(val taskId: String, val skill: String, val skillPath: String, val prompt: String)
+  data class TaskAssignment(
+    val taskId: String,
+    val skill: String,
+    val skillPath: String,
+    val prompt: String,
+    val scratchDirectory: String = "",
+  )
 
   @Serializable
   data class TaskLifecycleAck(val taskId: String, val status: String, val planRevision: Int)
@@ -314,6 +320,17 @@ internal class EdictNextRepositoryState(
   @Synchronized
   fun requireTokenFree(content: String) {
     requireNoTokens(content)
+  }
+
+  @Synchronized
+  internal fun scratchOwnerId(token: String): String = lookup(token).taskId.ifEmpty { "manager" }
+
+  @Synchronized
+  internal fun requireTaskScratchCleanup(token: String, taskId: String) {
+    val capability = authorize(token)
+    val target = task(taskId)
+    require(target.parentId == capability.taskId) { "Only a direct coordinator can clean task scratch" }
+    require(target.status in CLOSED_STATUSES) { "Task scratch can be cleaned only after the task is terminal" }
   }
 
   @Synchronized

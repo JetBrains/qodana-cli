@@ -36,7 +36,8 @@ A PR assignment contains only `batchId` and a zero-based `chunkIndex`.
    `edict_publish_signal` or `edict_publish_validated_pr_signals`; the orchestrator publishes stored chunks.
 6. Finish `completed` only after storage succeeds. Return a compact status containing the chunk index, inspected count,
    successfully stored count, validation-failure count, and every concise item/storage problem. Never return Signal
-   fails, finish `failed` so the orchestrator can retry this chunk once.
+   payloads, diffs, source bodies, or capability tokens. If storage fails, finish `failed` so the orchestrator can
+   retry this chunk once.
 
 ## Commit and history mode
 

@@ -13,7 +13,7 @@ This skill is for the root manager only. If you already received a delegated tas
 are a protocol library, not an instruction to invoke this manager skill.
 
 Read [the managed execution protocol](references/protocol.md) before starting. Require an available `edict-mcp` server.
-The request carries no paths: call `edict_context` for them (see the protocol). The manager capability must never enter
+The request carries no paths: after creating the plan, call `edict_context` with the manager token for them (see the protocol). The manager capability must never enter
 a child prompt or inherited conversation. An unavailable server or native subagent runtime is a failed prerequisite, not
 permission to execute stages inline.
 
@@ -32,7 +32,8 @@ permission to execute stages inline.
    attribution.
    Only one successful creation is allowed per server lifetime, even after all
    tasks finish. Never call it again once you have the token. Keep the plan ID for the current server lifetime and never
-   write the plan yourself.
+   write the plan yourself. Call `edict_context` with that token before using configured paths or defaults; its
+   `scratchDirectory` belongs only to the manager.
 5. Follow the protocol's assignment flow: supply `edict_delegate` the complete token-free task instructions starting
    with the child's exact managed skill invocation, then pass its returned short launch `prompt` to native
    `spawn_agent`.

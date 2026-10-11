@@ -44,9 +44,10 @@ codex exec '$edict_manager process inbox and generate new rules'
   `<cwd>/log/process-log/<run-id>`. The state is also the reference repository for
   distribution checks, and the project's Git repository validates commit Signals. It forwards the
   IntelliJ inspection tools, starting the IDE on the first inspection call, so Codex configures only `edict-mcp`.
-- The request carries no paths or CI repository identity. Skills call `edict_context` for `projectDirectory`,
-  `stateDirectory` (read-only; the state repository Edict Next tools change in place), `scratchDirectory`
-  (`<cwd>/log/agent-work/<run-id>/scratch`), and `reviewRepository` derived from `edict.ci.url`.
+- The request carries no paths or CI repository identity. Skills call `edict_context` with their task token for
+  `projectDirectory`, `stateDirectory` (read-only; the state repository Edict Next tools change in place), task-owned
+  `scratchDirectory` (`<cwd>/log/agent-work/<run-id>/scratch/<task-id>`), and `reviewRepository` derived from
+  `edict.ci.url`.
 - Provider tokens (`GITHUB_TOKEN`/`GH_TOKEN`, `SPACE_TOKEN`) come from the server environment, never from MCP arguments.
   A run fails only when it uses a VCS provider without its token.
 

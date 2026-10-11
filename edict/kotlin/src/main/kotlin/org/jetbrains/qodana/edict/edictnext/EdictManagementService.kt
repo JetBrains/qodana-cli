@@ -76,6 +76,9 @@ internal class EdictManagementService(
   private val invocations = ConcurrentHashMap<String, Invocation>()
   private val pr = PrAnalysis(store, reviewProvider, prAnalysisToday)
 
+  internal fun scratchDirectory(token: String) =
+    layout.taskScratchDirectory(store.scratchOwnerId(token)).also { Files.createDirectories(it) }
+
   fun registerTools(server: Server, calculatePrice: Boolean = false) {
     val string = jsonType("string")
     val integer = jsonType("integer")
@@ -285,11 +288,14 @@ internal class EdictManagementService(
 
     tool(
       name = "edict_task_get",
-      description = "Fetch authoritative assignment using only your token; taskId is a returned field, not an input. Read returned prompt and assigned SKILL.md before starting. Required on every delegation including retry.",
+      description = "Fetch authoritative assignment and its task-owned scratch directory using only your token; taskId is a returned field, not an input. Read returned prompt and assigned SKILL.md before starting. Required on every delegation including retry.",
       readOnly = true,
       required = listOf("token"),
     ) { arguments ->
-      EdictNextJson.encodeToJsonElement(store.readTask(arguments.requireString("token")))
+      val token = arguments.requireString("token")
+      EdictNextJson.encodeToJsonElement(
+        store.readTask(token).copy(scratchDirectory = scratchDirectory(token).toString()),
+      )
     }
 
     tool(
@@ -339,6 +345,21 @@ internal class EdictManagementService(
           arguments.requireString("taskId"),
           arguments.requireString("result"),
         )
+      }
+    }
+
+    tool(
+      name = "edict_task_cleanup_scratch",
+      description = "Delete the private scratch directory of one terminal direct child task. Returns whether a directory existed. Coordinators use this only after durable child output no longer depends on scratch.",
+      required = listOf("token", "taskId"),
+      properties = properties("taskId"),
+    ) { arguments ->
+      val token = arguments.requireString("token")
+      val taskId = arguments.requireString("taskId")
+      store.requireTaskScratchCleanup(token, taskId)
+      buildJsonObject {
+        put("taskId", taskId)
+        put("removed", layout.cleanupTaskScratchDirectory(taskId))
       }
     }
 
