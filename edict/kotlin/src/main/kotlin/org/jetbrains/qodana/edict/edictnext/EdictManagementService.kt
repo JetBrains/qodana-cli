@@ -309,18 +309,20 @@ internal class EdictManagementService(
 
     tool(
       name = "edict_task_finish",
-      description = "Finish with status completed or failed and token-free result. All children must complete first. Revokes task and descendant capabilities.",
+      description = "Finish with status completed or failed and token-free result. Children must be terminal; a skill-specific server policy may tolerate reported failed children. Revokes task and descendant capabilities.",
       required = listOf("token", "status", "result"),
       properties = properties("status", "result"),
     ) { arguments ->
       lifecycle {
         val token = arguments.requireString("token")
         val status = arguments.requireString("status")
-        if (status == "completed" && store.isPrAnalysisCoordinator(token)) pr.complete(token)
+        val tolerateFailedChildren = status == "completed" && store.isPrAnalysisCoordinator(token)
+        if (tolerateFailedChildren) pr.complete(token)
         store.finishTask(
           token,
           status,
           arguments.requireString("result"),
+          tolerateFailedChildren = tolerateFailedChildren,
         )
       }
     }
@@ -347,9 +349,7 @@ internal class EdictManagementService(
       properties = mapOf("signal" to signalObject),
     ) { arguments ->
       val token = arguments.requireString("token")
-      require(!store.isPrAnalysisCoordinator(token)) {
-        "PR analysis must publish its cached validated batch with edict_publish_validated_pr_signals"
-      }
+      store.requireDirectSignalPublisher(token)
       val signal = wireJson.decodeFromJsonElement<EdictNextSignal>(arguments.getValue("signal"))
       EdictNextJson.encodeToJsonElement(
         store.publishSignal(
@@ -365,13 +365,15 @@ internal class EdictManagementService(
 
     tool(
       name = "edict_publish_validated_pr_signals",
-      description = "Idempotently publish every exact Signal model stored by a successful edict_store_pr_signals call for this batch. Resend no Signal objects; retry the batch safely after partial publication.",
+      description = "Idempotently publish valid Signals from every stored PR chunk. Missing chunks are reported and skipped. Complete provider-, analysis-, and storage-problem-free batches update date or explicit-PR coverage; incomplete batches leave coverage unchanged.",
       required = listOf("token", "batchId"),
       properties = properties("batchId"),
     ) { arguments ->
+      val token = arguments.requireString("token")
+      store.requireSkill(token, setOf("edict-pr-signal-analysis"))
       EdictNextJson.encodeToJsonElement(
         pr.publishValidated(
-          arguments.requireString("token"),
+          token,
           arguments.requireString("batchId"),
         ),
       )
@@ -418,8 +420,9 @@ internal class EdictManagementService(
       description = "Prepare merged reviews from the repository configured in edict.ci. With no selection, fetch every " +
         "PR from the next complete uncovered UTC date, newest first. " +
         "With startDate and endDate, fetch every PR from those complete dates without the default target. With prNumbers, " +
-        "fetch exactly that explicit selection. Malformed elements and failed per-item checks are skipped and returned in " +
-        "problems. Date coverage is persisted only after validated Signals are published from a problem-free batch.",
+        "fetch exactly that explicit selection. The server partitions prepared work items into chunks of at most eight. " +
+        "Returns only the batch ID and number of available chunks; analysis workers fetch their assigned chunk by index. " +
+        "Coverage is persisted only after all chunks are stored and validated Signals are published from a problem-free batch.",
       readOnly = true,
       required = listOf("token"),
       properties = properties("startDate", "endDate") + mapOf(
@@ -433,18 +436,17 @@ internal class EdictManagementService(
     }
 
     tool(
-      name = "edict_list_pr_analysis_items",
-      description = "Page all prepared PR discussion work items using nextOffset; page size 1..20.",
+      name = "edict_get_pr_analysis_chunk",
+      description = "Read the ordered work-item IDs in one server-prepared PR analysis chunk.",
       readOnly = true,
-      required = listOf("token", "batchId", "offset", "limit"),
-      properties = properties("batchId") + mapOf("offset" to integer, "limit" to integer),
+      required = listOf("token", "batchId", "chunkIndex"),
+      properties = properties("batchId") + mapOf("chunkIndex" to integer),
     ) { arguments ->
       EdictNextJson.encodeToJsonElement(
-        pr.list(
+        pr.chunk(
           arguments.requireString("token"),
           arguments.requireString("batchId"),
-          arguments.requireInt("offset"),
-          arguments.requireInt("limit"),
+          arguments.requireInt("chunkIndex"),
         ),
       )
     }
@@ -467,19 +469,23 @@ internal class EdictManagementService(
 
     tool(
       name = "edict_store_pr_signals",
-      description = "Validate complete ordered PR coverage, then independently validate and store each valid Signal model for later publication. Returns per-Signal failures without discarding valid models or failing the batch; continue publication and include failures in the task result.",
-      required = listOf("token", "batchId", "inspectedWorkItemIds", "signals"),
+      description = "Store one analyzed PR chunk. Requires its complete ordered work-item coverage, independently validates each Signal, and retains valid models despite per-Signal failures. The analysis worker reports all other item problems with the receipt.",
+      required = listOf("token", "batchId", "chunkIndex", "inspectedWorkItemIds", "signals", "problems"),
       properties = properties("batchId") + mapOf(
+        "chunkIndex" to integer,
         "inspectedWorkItemIds" to stringArray,
         "signals" to signalArray,
+        "problems" to stringArray,
       ),
     ) { arguments ->
       EdictNextJson.encodeToJsonElement(
         pr.store(
           arguments.requireString("token"),
           arguments.requireString("batchId"),
+          arguments.requireInt("chunkIndex"),
           arguments.requireStrings("inspectedWorkItemIds"),
           wireJson.decodeFromJsonElement<List<EdictNextSignal>>(arguments.getValue("signals")),
+          arguments.requireStrings("problems"),
         ),
       )
     }
