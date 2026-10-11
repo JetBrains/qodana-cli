@@ -17,10 +17,12 @@ writable.
 
 ## Run paths
 
-Call the read-only `edict_context` for the run's absolute paths: `projectDirectory` (the inspected project and source
-checkout), `stateDirectory` (the read-only state repository that Edict Next tools change in place), and `scratchDirectory` (the
-run's private scratch root). Top-level stages take their paths from  it; prompts never need to repeat them. 
-Child instructions still carry task-specific paths, such as a cluster directory or a unique private scratch directory below `scratchDirectory`.
+Call the read-only `edict_context` with your own capability token for the run's absolute paths: `projectDirectory`
+(the inspected project and source checkout), `stateDirectory` (the read-only state repository that Edict Next tools
+change in place), and `scratchDirectory` (the caller's private task-owned scratch directory). `edict_task_get` returns
+the same task-owned scratch directory. Never use the run-wide scratch parent or a sibling's directory. Top-level stages
+take their paths from `edict_context`; prompts never need to repeat them. Child instructions may still carry a more
+specific path below that child's own scratch directory when its workflow requires one.
 
 Spawned subtasks are provided with own token with prompt on execution. State of edict should be modified through mcp
 calls only. List of available mcp ,ethods could be obtained through edict_task_get call.

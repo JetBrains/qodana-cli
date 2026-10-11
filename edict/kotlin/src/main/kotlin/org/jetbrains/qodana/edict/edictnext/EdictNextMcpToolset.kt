@@ -14,7 +14,6 @@ import org.jetbrains.qodana.edict.common.EdictLayout
 import org.jetbrains.qodana.edict.promotion.PromotionReviewDecision
 import org.jetbrains.qodana.edict.promotion.PromotionService
 import kotlin.coroutines.cancellation.CancellationException
-import kotlin.io.path.createDirectories
 
 /** Registers the Edict Next tools on the standalone MCP Kotlin SDK server. */
 internal class EdictNextMcpToolset(
@@ -46,12 +45,16 @@ internal class EdictNextMcpToolset(
 
     server.addTool(
       name = "edict_context",
-      description = "Return this run's configured paths, CI review repository, and default extraction Signal target. Read-only.",
-    ) {
+      description = "Return this run's configured paths, the caller's task-owned scratch directory, CI review repository, and default extraction Signal target. Read-only.",
+      inputSchema = toolSchema(
+        required = listOf("token"),
+        "token" to property("string", "Your managed capability token"),
+      ),
+    ) { request ->
       EdictRunContext(
         projectDirectory = layout.root.toString(),
         stateDirectory = layout.stateDirectory.toString(),
-        scratchDirectory = layout.scratchDirectory.createDirectories().toString(),
+        scratchDirectory = management.scratchDirectory(request.requireString("token")).toString(),
         reviewRepository = configuration.ci?.reviewRepository,
         defaultSignalCount = configuration.extraction.defaultSignalCount,
       ).toToolResult()

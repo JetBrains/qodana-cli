@@ -128,10 +128,14 @@ internal fun verifyRuntimeWorkers(sessions: Path, plan: Plan) {
             "Worker must read its assigned skill before startup"
         )
         assertFalse("edict_manager" in worker.skills, "Worker must not execute the root manager skill")
+        val assignment = assertNotNull(worker.assignment, "Worker must fetch its assignment before startup")
         assertEquals(
             TaskAssignment(task.id, task.skill, Registry.skillPath(task.skill), task.prompt),
-            worker.assignment,
+            assignment.copy(scratchDirectory = ""),
             "Worker must fetch its exact assignment in its own session before startup"
         )
+        val scratch = Path.of(assignment.scratchDirectory)
+        assertEquals(task.id, scratch.fileName.toString(), "Worker scratch must be owned by its managed task")
+        assertEquals("scratch", scratch.parent.fileName.toString(), "Worker scratch must stay below the run scratch root")
     }
 }

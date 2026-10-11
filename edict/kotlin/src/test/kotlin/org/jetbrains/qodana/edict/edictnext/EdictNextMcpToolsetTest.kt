@@ -56,6 +56,7 @@ class EdictNextMcpToolsetTest {
       "edict_task_start",
       "edict_task_finish",
       "edict_task_cancel",
+      "edict_task_cleanup_scratch",
       "edict_next_save_code_example",
       "edict_next_assign_code_example",
       "edict_next_delete_code_example",
@@ -140,6 +141,12 @@ class EdictNextMcpToolsetTest {
         listOf("token", "batchId", "chunkIndex", "inspectedWorkItemIds", "signals", "problems"),
         storePrSchema.required,
       )
+      val contextSchema = server.tools.getValue("edict_context").tool.inputSchema
+      assertEquals(setOf("token"), checkNotNull(contextSchema.properties).keys)
+      assertEquals(listOf("token"), contextSchema.required)
+      val cleanupSchema = server.tools.getValue("edict_task_cleanup_scratch").tool.inputSchema
+      assertEquals(setOf("token", "taskId"), checkNotNull(cleanupSchema.properties).keys)
+      assertEquals(listOf("token", "taskId"), cleanupSchema.required)
 
       val output = ByteArrayOutputStream()
       val input = """
@@ -147,7 +154,6 @@ class EdictNextMcpToolsetTest {
         {"jsonrpc":"2.0","method":"notifications/initialized"}
         {"jsonrpc":"2.0","id":2,"method":"tools/call","params":{"name":"edict_plan_create","arguments":{"request":"Extract","steps":[{"skill":"edict-batch-signal-analysis","title":"Commit"}]}}}
         {"jsonrpc":"2.0","id":3,"method":"ping"}
-        {"jsonrpc":"2.0","id":4,"method":"tools/call","params":{"name":"edict_context","arguments":{}}}
       """.trimIndent() + "\n"
       val transport = StdioServerTransport(
         input = DelayedEofInputStream(ByteArrayInputStream(input.encodeToByteArray())).asSource().buffered(),
@@ -161,14 +167,31 @@ class EdictNextMcpToolsetTest {
         .map { wireJson.parseToJsonElement(it).jsonObject }.toList()
       val creation = responses.single { it["id"].toString() == "2" }.obj("result")
       assertFalse(creation.flag("isError") == true)
-      val context = responses.single { it["id"].toString() == "4" }.obj("result").obj("structuredContent")
+      val token = creation.obj("structuredContent").text("token")
+      val contextOutput = ByteArrayOutputStream()
+      val contextInput = """
+        {"jsonrpc":"2.0","id":4,"method":"initialize","params":{"protocolVersion":"2025-03-26","capabilities":{},"clientInfo":{"name":"unit","version":"1"}}}
+        {"jsonrpc":"2.0","method":"notifications/initialized"}
+        {"jsonrpc":"2.0","id":5,"method":"tools/call","params":{"name":"edict_context","arguments":{"token":"$token"}}}
+      """.trimIndent() + "\n"
+      val contextTransport = StdioServerTransport(
+        input = DelayedEofInputStream(ByteArrayInputStream(contextInput.encodeToByteArray())).asSource().buffered(),
+        output = contextOutput.asSink().buffered(),
+      )
+      val contextClosed = CompletableDeferred<Unit>()
+      contextTransport.onClose { contextClosed.complete(Unit) }
+      server.createSession(contextTransport)
+      contextClosed.await()
+      val context = contextOutput.toString(Charsets.UTF_8).lineSequence().filter(String::isNotBlank)
+        .map { wireJson.parseToJsonElement(it).jsonObject }
+        .single { it["id"].toString() == "5" }.obj("result").obj("structuredContent")
       assertEquals("space", context.obj("reviewRepository").text("provider"))
       assertEquals("owner", context.obj("reviewRepository").text("owner"))
       assertEquals("repo", context.obj("reviewRepository").text("repo"))
       assertEquals(JsonPrimitive(17), context["defaultSignalCount"])
+      assertEquals(layout.taskScratchDirectory(EdictLayout.MANAGER_SCRATCH_ID).toString(), context.text("scratchDirectory"))
       assertEquals("Extract", store.plan()?.request)
       val task = store.plan()!!.tasks.single()
-      val token = creation.obj("structuredContent").text("token")
       val obsoleteArguments = management.call("edict_delegate", buildJsonObject {
         put("token", token)
         put("taskId", task.id)
@@ -183,6 +206,35 @@ class EdictNextMcpToolsetTest {
       })
       assertFalse(delegation.flag("isError") == true)
       assertEquals("delegated", store.plan()!!.tasks.single().status)
+      val childToken = delegation.obj("structuredContent").text("token")
+      val assignment = management.call("edict_task_get", buildJsonObject { put("token", childToken) })
+        .obj("structuredContent")
+      val taskScratch = layout.taskScratchDirectory(task.id)
+      assertEquals(taskScratch.toString(), assignment.text("scratchDirectory"))
+      assertTrue(Files.isDirectory(taskScratch))
+      Files.writeString(taskScratch.resolve("artifact"), "durable output already stored")
+      val prematureCleanup = management.call("edict_task_cleanup_scratch", buildJsonObject {
+        put("token", token)
+        put("taskId", task.id)
+      })
+      assertTrue(prematureCleanup.flag("isError") == true)
+      assertFalse(management.call("edict_task_start", buildJsonObject {
+        put("token", childToken)
+        put("agentId", "scratch-test-agent")
+        put("skill", task.skill)
+      }).flag("isError") == true)
+      assertFalse(management.call("edict_task_finish", buildJsonObject {
+        put("token", childToken)
+        put("status", "completed")
+        put("result", "Stored durable output")
+      }).flag("isError") == true)
+      val cleanup = management.call("edict_task_cleanup_scratch", buildJsonObject {
+        put("token", token)
+        put("taskId", task.id)
+      })
+      assertFalse(cleanup.flag("isError") == true)
+      assertTrue(cleanup.obj("structuredContent").flag("removed") == true)
+      assertFalse(Files.exists(taskScratch))
     }
   }
 
@@ -194,7 +246,8 @@ class EdictNextMcpToolsetTest {
       assertEquals(
         setOf(
           "edict_registry", "edict_plan_get", "edict_plan_create", "edict_task_add", "edict_delegate",
-          "edict_task_get", "edict_task_start", "edict_task_finish", "edict_task_cancel", "edict_publish_signal",
+          "edict_task_get", "edict_task_start", "edict_task_finish", "edict_task_cancel",
+          "edict_task_cleanup_scratch", "edict_publish_signal",
           "edict_publish_validated_pr_signals",
           "edict_fetch_pr_batch", "edict_get_pr_analysis_chunk", "edict_get_pr_analysis_item",
           "edict_store_pr_signals", "edict_pr_file_at_ref", "edict_pr_file_diff",

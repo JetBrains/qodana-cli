@@ -70,8 +70,9 @@ another port, or when the port is busy; it never moves to another port. State is
 project's Git repository validates commit Signals. Every process is a run named by its start time (UTC, for example
 `2026-10-06T14-03-12.345Z`) and logs to `log/process-log/<run-id>/`: activity and redacted tool details in
 `edict-mcp{,-system}.log`, and INFO and above, with stack traces, in `edict.log`, which stdout also shows
-(`src/main/resources/logback.xml`). The server prints its folder as `Process log: <path>`. Agent scratch is
-`log/agent-work/<run-id>/scratch`. `common/EdictLayout.kt` names all of these paths; the `edict.log.dir` JVM system
+(`src/main/resources/logback.xml`). The server prints its folder as `Process log: <path>`. Each managed task receives
+separate scratch at `log/agent-work/<run-id>/scratch/<task-id>` (`scratch/manager` for the root manager).
+`common/EdictLayout.kt` names all of these paths; the `edict.log.dir` JVM system
 property moves the `log` folder (relative to the project), and `edict.run.id` fixes the run id.
 
 Optional price reporting is enabled with `edict.calculatePrice: true` in `qodana.yaml`. It exposes the manager-only

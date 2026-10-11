@@ -8,7 +8,7 @@ description: Managed subagent that reconciles one Edict Next cluster's code exam
 Run only as a delegated managed subagent. Follow [the manager protocol](../edict_manager/references/protocol.md) before
 domain work and use its assigned task lifecycle.
 
-Load only this skill. The prompt supplies `Cluster id`. Call `edict_context`, then resolve the target cluster below its
+Load only this skill. The prompt supplies `Cluster id`. Call `edict_context` with your own token, then resolve the target cluster below its
 `stateDirectory` and use its `projectDirectory` as the inspected IntelliJ project. Do not request or repeat the state
 path in a prompt.
 

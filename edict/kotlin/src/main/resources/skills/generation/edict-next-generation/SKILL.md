@@ -10,7 +10,7 @@ domain work and use it for every child delegation and task transition.
 
 Load only this skill. Do not edit the state repository or call cluster-processing MCPs yourself.
 
-Call `edict_context` before the first other MCP call or worker launch. Its `stateDirectory` is the state repository and its
+Call `edict_context` with your own token before the first other MCP call or worker launch. Its `stateDirectory` is the state repository and its
 `projectDirectory` the inspected project. Create a unique generation scratch root below its `scratchDirectory` and store all transient output there.
 
 Call `edict_next_get_generation_clusters`, passing `generationCount` when the generation request specifies an amount.
