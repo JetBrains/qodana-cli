@@ -112,6 +112,7 @@ class ConfiguredPrAnalysisTest {
         put("batchId", batchId)
         put("chunkIndex", 0)
         put("inspectedWorkItemIds", JsonArray(workItemIds.map(::JsonPrimitive)))
+        put("failedWorkItemIds", JsonArray(emptyList()))
         put("signals", JsonArray(emptyList()))
         put("problems", JsonArray(emptyList()))
       })
@@ -211,6 +212,7 @@ class ConfiguredPrAnalysisTest {
         put("batchId", batchId)
         put("chunkIndex", 0)
         put("inspectedWorkItemIds", JsonArray(workItemIds.map(::JsonPrimitive)))
+        put("failedWorkItemIds", JsonArray(emptyList()))
         put("signals", JsonArray(emptyList()))
         put("problems", JsonArray(emptyList()))
       })
@@ -279,7 +281,7 @@ class ConfiguredPrAnalysisTest {
   }
 
   @Test
-  fun `publication keeps successful chunks and withholds coverage when another chunk fails`() {
+  fun `publication records coverage when successful work items are majority despite failed chunk`() {
     val configured = ReviewRepository(CiProviderId.GITHUB, "JetBrains", "qodana-cli")
     val today = LocalDate.of(2026, 10, 9)
     val selectedDate = today.minusDays(1)
@@ -318,6 +320,7 @@ class ConfiguredPrAnalysisTest {
         put("batchId", batchId)
         put("chunkIndex", 0)
         put("inspectedWorkItemIds", JsonArray(workItemIds.map(::JsonPrimitive)))
+        put("failedWorkItemIds", JsonArray(emptyList()))
         put("signals", JsonArray(emptyList()))
         put("problems", JsonArray(emptyList()))
       }).flag("isError") == true)
@@ -333,8 +336,13 @@ class ConfiguredPrAnalysisTest {
       val receipt = publication.obj("structuredContent")
       assertEquals(1, receipt.getValue("storedChunkCount").jsonPrimitive.content.toInt())
       assertEquals(listOf(1), receipt.getValue("failedChunkIndexes").jsonArray.map { it.jsonPrimitive.content.toInt() })
-      assertFalse(receipt.flag("coverageUpdated") == true)
-      assertTrue(store.getPrAnalysisCoverage(coordinator.token, configured).analyzedDateRanges.isEmpty())
+      assertEquals(8, receipt.getValue("successfulWorkItemCount").jsonPrimitive.content.toInt())
+      assertEquals(1, receipt.getValue("failedWorkItemCount").jsonPrimitive.content.toInt())
+      assertTrue(receipt.flag("coverageUpdated") == true)
+      assertEquals(
+        listOf(PrAnalysisDateRange(selectedDate.toString(), selectedDate.toString())),
+        store.getPrAnalysisCoverage(coordinator.token, configured).analyzedDateRanges,
+      )
       val completion = management.call("edict_task_finish", buildJsonObject {
         put("token", coordinator.token)
         put("status", "completed")
@@ -342,6 +350,40 @@ class ConfiguredPrAnalysisTest {
       })
       assertFalse(completion.flag("isError") == true, completion.toString())
       assertEquals("failed", store.plan()!!.tasks.single { it.id == failedAnalysis.taskId }.status)
+    }
+  }
+
+  @Test
+  fun `publication withholds coverage when exactly half of work items succeed`() {
+    val configured = ReviewRepository(CiProviderId.GITHUB, "JetBrains", "qodana-cli")
+    val today = LocalDate.of(2026, 10, 9)
+    val selectedDate = today.minusDays(1)
+    EdictNextRepositoryState.open(directory.resolve("state")).use { store ->
+      val plan = store.createPlan(
+        "Half-complete date analysis",
+        listOf(EdictNextRepositoryState.Step("edict-pr-signal-analysis", "Analyze a complete UTC date")),
+      )
+      val coordinator = store.launch(plan.token, plan.plan.tasks.single().id, "edict-pr-signal-analysis")
+      val analysis = PrAnalysis(store, DateReviewProvider(datedPullRequests(16, selectedDate))) { today }
+      val batch = analysis.prepareBatch(coordinator.token, configured, ReviewSelectionInput())
+      assertEquals(2, batch.availableChunkCount)
+      val worker = launchAnalysisWorker(store, coordinator.token)
+      val chunk = analysis.chunk(worker.token, batch.batchId, 0)
+      analysis.store(
+        worker.token,
+        batch.batchId,
+        0,
+        chunk.workItemIds,
+        emptyList(),
+        emptyList(),
+        emptyList(),
+      )
+
+      val receipt = analysis.publishValidated(coordinator.token, batch.batchId)
+      assertEquals(8, receipt.successfulWorkItemCount)
+      assertEquals(8, receipt.failedWorkItemCount)
+      assertFalse(receipt.coverageUpdated)
+      assertTrue(store.getPrAnalysisCoverage(coordinator.token, configured).analyzedDateRanges.isEmpty())
     }
   }
 
@@ -486,6 +528,7 @@ class ConfiguredPrAnalysisTest {
         put("batchId", batchId)
         put("chunkIndex", 0)
         put("inspectedWorkItemIds", JsonArray(listOf(JsonPrimitive(workItemId))))
+        put("failedWorkItemIds", JsonArray(emptyList()))
         put("signals", wireJson.encodeToJsonElement(signals + invalid))
         put("problems", JsonArray(emptyList()))
       })

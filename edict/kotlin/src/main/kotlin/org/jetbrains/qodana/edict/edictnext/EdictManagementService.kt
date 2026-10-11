@@ -443,7 +443,7 @@ internal class EdictManagementService(
         "With startDate and endDate, fetch every PR from those complete dates without the default target. With prNumbers, " +
         "fetch exactly that explicit selection. The server partitions prepared work items into chunks of at most eight. " +
         "Returns only the batch ID and number of available chunks; analysis workers fetch their assigned chunk by index. " +
-        "Coverage is persisted only after all chunks are stored and validated Signals are published from a problem-free batch.",
+        "Date coverage is persisted after publication when strictly more than half of known work items were processed successfully; clean zero-item dates also advance. Explicit PR coverage still requires complete success.",
       readOnly = true,
       required = listOf("token"),
       properties = properties("startDate", "endDate") + mapOf(
@@ -490,11 +490,12 @@ internal class EdictManagementService(
 
     tool(
       name = "edict_store_pr_signals",
-      description = "Store one analyzed PR chunk. Requires its complete ordered work-item coverage, independently validates each Signal, and retains valid models despite per-Signal failures. The analysis worker reports all other item problems with the receipt.",
-      required = listOf("token", "batchId", "chunkIndex", "inspectedWorkItemIds", "signals", "problems"),
+      description = "Store one analyzed PR chunk. Requires complete ordered work-item coverage and explicit failed work-item IDs, independently validates each Signal, and retains valid models despite per-Signal failures.",
+      required = listOf("token", "batchId", "chunkIndex", "inspectedWorkItemIds", "failedWorkItemIds", "signals", "problems"),
       properties = properties("batchId") + mapOf(
         "chunkIndex" to integer,
         "inspectedWorkItemIds" to stringArray,
+        "failedWorkItemIds" to stringArray,
         "signals" to signalArray,
         "problems" to stringArray,
       ),
@@ -505,6 +506,7 @@ internal class EdictManagementService(
           arguments.requireString("batchId"),
           arguments.requireInt("chunkIndex"),
           arguments.requireStrings("inspectedWorkItemIds"),
+          arguments.requireStrings("failedWorkItemIds"),
           wireJson.decodeFromJsonElement<List<EdictNextSignal>>(arguments.getValue("signals")),
           arguments.requireStrings("problems"),
         ),

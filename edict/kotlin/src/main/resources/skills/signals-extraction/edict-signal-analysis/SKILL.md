@@ -26,12 +26,14 @@ A PR assignment contains only `batchId` and a zero-based `chunkIndex`.
    Use bounded one-based `fileRevision.expectedRanges`, complete `FromPR` source metadata, every discussion message in
    order, the verbatim canonical diff, and provenance containing the exact work-item and analysis-batch IDs. Build
    stable Signal IDs and idempotency keys from repository/discussion/evidence identity, never transient task or plan IDs.
-4. Isolate item failures. If one item lacks complete evidence or cannot produce a valid model, append a concise problem
-   containing its work-item ID and continue with later items. Do not invent a Signal or discard correct sibling
+4. Isolate item failures. If one item lacks complete evidence or cannot produce a valid model, append its ID to
+   `failedWorkItemIds`, append a concise problem containing that work-item ID, and continue with later items. Do not
+   invent a Signal or discard correct sibling
    Signals. Consider every ordered ID inspected after either producing its supported models, finding no qualifying
    correction, or recording its problem.
 5. After the last item, call `edict_store_pr_signals` exactly once with your token, `batchId`, `chunkIndex`, all ordered
-   `inspectedWorkItemIds`, every complete Signal model, and all accumulated `problems` (use an empty array when none).
+   `inspectedWorkItemIds`, the distinct failed work-item IDs, every complete Signal model, and all accumulated `problems`
+   (use empty arrays when none).
    The server independently validates each model, retains valid siblings, and returns per-Signal failures. Do not call
    `edict_publish_signal` or `edict_publish_validated_pr_signals`; the orchestrator publishes stored chunks.
 6. Finish `completed` only after storage succeeds. Return a compact status containing the chunk index, inspected count,

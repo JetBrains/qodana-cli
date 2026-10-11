@@ -34,7 +34,6 @@ internal class PrAnalysis(
     val selectedPrCount: Int,
     val selectedPrNumbers: List<Int>,
     val analyzedDateRanges: List<PrAnalysisDateRange>,
-    val coverageDateRanges: List<PrAnalysisDateRange>,
     val providerProblems: List<String>,
     val storedChunks: MutableMap<Int, StoredChunk> = mutableMapOf(),
     var published: Boolean = false,
@@ -44,6 +43,7 @@ internal class PrAnalysis(
     val signals: Map<String, EdictNextSignal>,
     val failures: List<PrSignalStoreFailure>,
     val problems: List<String>,
+    val successfulWorkItemIds: Set<String>,
   )
 
   private val batches = mutableMapOf<String, Batch>()
@@ -195,7 +195,6 @@ internal class PrAnalysis(
           selectedPrCount = prs.size,
           selectedPrNumbers = prs.map(PullRequest::number),
           analyzedDateRanges = analyzedDateRanges,
-          coverageDateRanges = analyzedDateRanges.takeIf { problems.isEmpty() }.orEmpty(),
           providerProblems = problems,
         )
       }.summary
@@ -220,6 +219,7 @@ internal class PrAnalysis(
     batchId: String,
     chunkIndex: Int,
     inspected: List<String>,
+    failedWorkItemIds: List<String>,
     signals: List<EdictNextSignal>,
     problems: List<String>,
   ): PrReceipt = synchronized(store) {
@@ -230,6 +230,12 @@ internal class PrAnalysis(
     require(chunkIndex in batch.chunks.indices) { "Unknown chunk index in PR batch" }
     val chunk = batch.chunks[chunkIndex]
     require(inspected == chunk.map(PrItem::workItemId)) { "Incomplete or unordered PR chunk coverage" }
+    require(failedWorkItemIds.distinct().size == failedWorkItemIds.size && failedWorkItemIds.all(inspected::contains)) {
+      "Failed work-item IDs must be distinct members of the inspected chunk"
+    }
+    require(problems.isEmpty() == failedWorkItemIds.isEmpty()) {
+      "Every failed work item requires a problem, and problems require failed work-item IDs"
+    }
     val stored = linkedMapOf<String, EdictNextSignal>()
     val failures = mutableListOf<PrSignalStoreFailure>()
     signals.forEachIndexed { index, candidate ->
@@ -263,11 +269,15 @@ internal class PrAnalysis(
         )
       }
     }
-    batch.storedChunks[chunkIndex] = StoredChunk(stored, failures, problems)
+    val failedIds = failedWorkItemIds.toSet() + failures.map(PrSignalStoreFailure::workItemId)
+    val successfulIds = inspected.toSet() - failedIds
+    batch.storedChunks[chunkIndex] = StoredChunk(stored, failures, problems, successfulIds)
     PrReceipt(
       batchId = batchId,
       chunkIndex = chunkIndex,
       inspectedWorkItemCount = inspected.size,
+      successfulWorkItemCount = successfulIds.size,
+      failedWorkItemCount = failedIds.size,
       signalCount = stored.size,
       signalIds = stored.keys.toList(),
       failures = failures,
@@ -284,14 +294,20 @@ internal class PrAnalysis(
       "Duplicate Signal IDs across stored PR chunks"
     }
     val publications = validated.map { store.publishSignal(token, it) }
-    val complete = failedChunkIndexes.isEmpty() && batch.providerProblems.isEmpty() &&
-      stored.all { it.problems.isEmpty() && it.failures.isEmpty() }
+    val successfulWorkItemCount = stored.sumOf { it.successfulWorkItemIds.size }
+    val failedWorkItemCount = batch.items.size - successfulWorkItemCount
+    val enoughWorkItemsSucceeded = if (batch.items.isEmpty()) batch.providerProblems.isEmpty()
+    else successfulWorkItemCount * 2 > batch.items.size
     val analyzedPrNumbers = batch.selectedPrNumbers.takeIf { batch.analyzedDateRanges.isEmpty() }.orEmpty()
-    val coverageUpdated = complete && (batch.coverageDateRanges.isNotEmpty() || analyzedPrNumbers.isNotEmpty())
+    val coverageUpdated = when {
+      batch.analyzedDateRanges.isNotEmpty() -> enoughWorkItemsSucceeded
+      analyzedPrNumbers.isNotEmpty() -> failedWorkItemCount == 0 && batch.providerProblems.isEmpty()
+      else -> false
+    }
     if (coverageUpdated) {
       store.recordPrAnalysisCoverage(
         token,
-        RepositoryPrAnalysisCoverage(batch.repository, batch.coverageDateRanges, analyzedPrNumbers),
+        RepositoryPrAnalysisCoverage(batch.repository, batch.analyzedDateRanges, analyzedPrNumbers),
       )
     }
     batch.published = true
@@ -311,6 +327,8 @@ internal class PrAnalysis(
       signalIds = publications.map { it.signal.id },
       createdSignalIds = publications.filter { it.created }.map { it.signal.id },
       selectedPrCount = batch.selectedPrCount,
+      successfulWorkItemCount = successfulWorkItemCount,
+      failedWorkItemCount = failedWorkItemCount,
       analyzedDateRanges = batch.analyzedDateRanges,
       analyzedPrNumbers = analyzedPrNumbers,
       coverageUpdated = coverageUpdated,
