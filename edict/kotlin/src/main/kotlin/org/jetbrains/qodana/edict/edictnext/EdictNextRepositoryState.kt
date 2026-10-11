@@ -189,7 +189,12 @@ internal class EdictNextRepositoryState(
   }
 
   @Synchronized
-  fun finishTask(token: String, status: String, result: String): TaskLifecycleAck {
+  fun finishTask(
+    token: String,
+    status: String,
+    result: String,
+    tolerateFailedChildren: Boolean = false,
+  ): TaskLifecycleAck {
     val capability = authorize(token)
     require(capability.taskId.isNotEmpty()) { "Manager must finish tasks through their workers" }
     require(status in TERMINAL_STATUSES && result.isNotBlank()) { "Requires completed or failed status and a result" }
@@ -199,8 +204,11 @@ internal class EdictNextRepositoryState(
       when {
         task.id == capability.taskId -> task.copy(status = status, result = result)
         descendant(task.id, capability.taskId) -> {
-          // A cancelled subtask was lost and handled by its parent (retried, replaced or abandoned), so it does not block.
-          require(status != "completed" || task.status in DONE_STATUSES) {
+          // Cancelled lost work does not block. A coordinator may also tolerate a failed direct analysis child when
+          // its domain-specific completion check has already accepted the aggregate failure threshold.
+          val toleratedFailure = tolerateFailedChildren && task.parentId == capability.taskId &&
+            task.skill == "edict-signal-analysis" && task.status == "failed"
+          require(status != "completed" || task.status in DONE_STATUSES || toleratedFailure) {
             "Complete or cancel all subtasks before completing their parent"
           }
           if (task.status in DONE_STATUSES) task else task.copy(status = "failed", result = "Parent task failed: $result")
@@ -296,6 +304,11 @@ internal class EdictNextRepositoryState(
       "${capability.skill} is not allowed to perform this managed mutation"
     }
     return capability.skill
+  }
+
+  @Synchronized
+  internal fun requireDirectSignalPublisher(token: String) {
+    requireSkill(token, COMMIT_SIGNAL_PUBLISHERS)
   }
 
   @Synchronized

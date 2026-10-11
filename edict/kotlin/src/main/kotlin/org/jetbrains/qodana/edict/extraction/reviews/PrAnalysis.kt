@@ -29,8 +29,21 @@ internal class PrAnalysis(
   private data class Batch(
     val summary: PrBatchSummary,
     val items: List<PrItem>,
+    val chunks: List<List<PrItem>>,
+    val repository: ReviewRepository,
+    val selectedPrCount: Int,
+    val selectedPrNumbers: List<Int>,
+    val analyzedDateRanges: List<PrAnalysisDateRange>,
     val coverageDateRanges: List<PrAnalysisDateRange>,
-    var storedSignals: Map<String, EdictNextSignal>? = null,
+    val providerProblems: List<String>,
+    val storedChunks: MutableMap<Int, StoredChunk> = mutableMapOf(),
+    var published: Boolean = false,
+  )
+
+  private data class StoredChunk(
+    val signals: Map<String, EdictNextSignal>,
+    val failures: List<PrSignalStoreFailure>,
+    val problems: List<String>,
   )
 
   private val batches = mutableMapOf<String, Batch>()
@@ -169,41 +182,35 @@ internal class PrAnalysis(
     }
     require(items.distinctBy(PrItem::workItemId).size == items.size) { "Duplicate provider work item" }
     val id = sha256(selectionIdentity + json.encodeToString(prs) + json.encodeToString(problems)).take(24)
-    val summary = PrBatchSummary(
-      id,
-      prs.size,
-      prs.map(PullRequest::number),
-      prs.count { it.threads.isNotEmpty() },
-      items.size,
-      repository,
-      analyzedDateRanges,
-      problems,
-    )
+    val chunks = items.chunked(CHUNK_SIZE)
+    val summary = PrBatchSummary(id, chunks.size)
     return synchronized(store) {
       store.requirePrAnalysisCaller(token, coordinator = true)
       batches.getOrPut(id) {
-        Batch(summary, items, analyzedDateRanges.takeIf { problems.isEmpty() }.orEmpty())
+        Batch(
+          summary = summary,
+          items = items,
+          chunks = chunks,
+          repository = repository,
+          selectedPrCount = prs.size,
+          selectedPrNumbers = prs.map(PullRequest::number),
+          analyzedDateRanges = analyzedDateRanges,
+          coverageDateRanges = analyzedDateRanges.takeIf { problems.isEmpty() }.orEmpty(),
+          providerProblems = problems,
+        )
       }.summary
     }
   }
 
-  fun list(token: String, batchId: String, offset: Int, limit: Int): PrPage = synchronized(store) {
+  fun chunk(token: String, batchId: String, chunkIndex: Int): PrChunk = synchronized(store) {
+    store.requireSkill(token, setOf("edict-signal-analysis"))
     val batch = batch(token, batchId, coordinator = false)
-    require(offset in 0..batch.items.size && limit in 1..20) {
-      "offset must be within batch and limit must be 1..20"
-    }
-    val end = minOf(offset + limit, batch.items.size)
-    PrPage(
-      batch.items.size,
-      offset,
-      batch.items.subList(offset, end).map {
-        PrItemSummary(it.workItemId, it.pr.number, it.thread.threadId, it.thread.filePath, it.thread.messages.size)
-      },
-      end.takeIf { it < batch.items.size },
-    )
+    require(chunkIndex in batch.chunks.indices) { "Unknown chunk index in PR batch" }
+    PrChunk(batchId, chunkIndex, batch.chunks[chunkIndex].map(PrItem::workItemId))
   }
 
   fun get(token: String, batchId: String, itemId: String): PrItem = synchronized(store) {
+    store.requireSkill(token, setOf("edict-signal-analysis"))
     batch(token, batchId, coordinator = false).items.firstOrNull { it.workItemId == itemId }
       ?: error("Unknown work item in PR batch")
   }
@@ -211,19 +218,27 @@ internal class PrAnalysis(
   fun store(
     token: String,
     batchId: String,
+    chunkIndex: Int,
     inspected: List<String>,
     signals: List<EdictNextSignal>,
+    problems: List<String>,
   ): PrReceipt = synchronized(store) {
-    val batch = batch(token, batchId, coordinator = true)
-    require(inspected == batch.items.map(PrItem::workItemId)) { "Incomplete or unordered PR coverage" }
+    store.requireSkill(token, setOf("edict-signal-analysis"))
+    store.requireTokenFree(problems.joinToString("\n"))
+    val batch = batch(token, batchId, coordinator = false)
+    check(!batch.published) { "Cannot store a PR chunk after batch publication" }
+    require(chunkIndex in batch.chunks.indices) { "Unknown chunk index in PR batch" }
+    val chunk = batch.chunks[chunkIndex]
+    require(inspected == chunk.map(PrItem::workItemId)) { "Incomplete or unordered PR chunk coverage" }
     val stored = linkedMapOf<String, EdictNextSignal>()
     val failures = mutableListOf<PrSignalStoreFailure>()
     signals.forEachIndexed { index, candidate ->
       try {
         require(wireJson.encodeToString(candidate).toByteArray().size <= MAX_ARTIFACT_BYTES) { "Signal exceeds 8 MiB" }
         val signal = SignalValidation.validate(candidate)
-        val item = batch.items.firstOrNull { it.workItemId == signal.provenance.workItemId }
-          ?: error("Unknown signal work item")
+        val item = chunk.firstOrNull { it.workItemId == signal.provenance.workItemId }
+          ?: error("Signal work item does not belong to this chunk")
+        require(signal.provenance.analysisBatchId == batchId) { "Signal provenance must preserve the analysis batch" }
         require(signal.id !in stored) { "Duplicate signal" }
         val source = signal.source
         require(
@@ -248,30 +263,58 @@ internal class PrAnalysis(
         )
       }
     }
-    batch.storedSignals = stored
+    batch.storedChunks[chunkIndex] = StoredChunk(stored, failures, problems)
     PrReceipt(
       batchId = batchId,
+      chunkIndex = chunkIndex,
       inspectedWorkItemCount = inspected.size,
       signalCount = stored.size,
       signalIds = stored.keys.toList(),
       failures = failures,
+      problems = problems,
     )
   }
 
   fun publishValidated(token: String, batchId: String): PrPublicationReceipt = synchronized(store) {
     val batch = batch(token, batchId, coordinator = true)
-    val validated = checkNotNull(batch.storedSignals) { "Store complete PR inspection coverage before publication" }
-    val publications = validated.values.map { store.publishSignal(token, it) }
-    if (batch.coverageDateRanges.isNotEmpty()) {
+    val failedChunkIndexes = batch.chunks.indices.filterNot(batch.storedChunks::containsKey)
+    val stored = batch.storedChunks.toSortedMap().values
+    val validated = stored.flatMap { it.signals.values }
+    require(validated.distinctBy(EdictNextSignal::id).size == validated.size) {
+      "Duplicate Signal IDs across stored PR chunks"
+    }
+    val publications = validated.map { store.publishSignal(token, it) }
+    val complete = failedChunkIndexes.isEmpty() && batch.providerProblems.isEmpty() &&
+      stored.all { it.problems.isEmpty() && it.failures.isEmpty() }
+    val analyzedPrNumbers = batch.selectedPrNumbers.takeIf { batch.analyzedDateRanges.isEmpty() }.orEmpty()
+    val coverageUpdated = complete && (batch.coverageDateRanges.isNotEmpty() || analyzedPrNumbers.isNotEmpty())
+    if (coverageUpdated) {
       store.recordPrAnalysisCoverage(
         token,
-        RepositoryPrAnalysisCoverage(batch.summary.repository, batch.coverageDateRanges),
+        RepositoryPrAnalysisCoverage(batch.repository, batch.coverageDateRanges, analyzedPrNumbers),
       )
+    }
+    batch.published = true
+    val problems = buildList {
+      addAll(batch.providerProblems)
+      stored.forEach { chunk ->
+        addAll(chunk.problems)
+        addAll(chunk.failures.map { "${it.workItemId}: ${it.message}" })
+      }
+      addAll(failedChunkIndexes.map { "Chunk $it did not store a result" })
     }
     PrPublicationReceipt(
       batchId = batchId,
+      availableChunkCount = batch.chunks.size,
+      storedChunkCount = batch.storedChunks.size,
+      failedChunkIndexes = failedChunkIndexes,
       signalIds = publications.map { it.signal.id },
       createdSignalIds = publications.filter { it.created }.map { it.signal.id },
+      selectedPrCount = batch.selectedPrCount,
+      analyzedDateRanges = batch.analyzedDateRanges,
+      analyzedPrNumbers = analyzedPrNumbers,
+      coverageUpdated = coverageUpdated,
+      problems = problems,
     )
   }
 
@@ -302,11 +345,19 @@ internal class PrAnalysis(
   fun complete(token: String) {
     store.requirePrAnalysisCaller(token, coordinator = true)
     require(batches.isNotEmpty()) { "Prepare and inspect requested PR selection before finishing" }
+    var totalChunkCount = 0
+    var failedChunkCount = 0
     batches.values.forEach { batch ->
-      val storedSignals = checkNotNull(batch.storedSignals) { "Store complete PR inspection coverage before finishing" }
-      storedSignals.forEach { (id, signal) ->
+      require(batch.published) { "Publish stored PR chunks before finishing" }
+      totalChunkCount += batch.chunks.size
+      failedChunkCount += batch.chunks.indices.count { it !in batch.storedChunks }
+      batch.storedChunks.values.flatMap { it.signals.values }.forEach { signal ->
+        val id = signal.id
         require(store.inboxSignal(id) == signal) { "Stored PR Signal is missing or differs from receipt" }
       }
+    }
+    require(failedChunkCount * 2 <= totalChunkCount) {
+      "More than half of PR analysis chunks failed after retry: $failedChunkCount of $totalChunkCount"
     }
   }
 
@@ -316,6 +367,7 @@ internal class PrAnalysis(
   }
 
   private companion object {
+    const val CHUNK_SIZE = 8
     const val MAX_ARTIFACT_BYTES = 8 * 1024 * 1024
     const val FULL_DATE_FETCH_LIMIT = 1000
     val MIN_REVIEW_DATE: LocalDate = LocalDate.of(1970, 1, 1)

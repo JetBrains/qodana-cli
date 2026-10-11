@@ -124,11 +124,10 @@ class LivePrExtractionTest : IntegrationTest() {
         listOf(
             "edict_get_pr_analysis_coverage",
             "edict_fetch_pr_batch",
-            "edict_list_pr_analysis_items",
+            "edict_get_pr_analysis_chunk",
             "edict_get_pr_analysis_item",
             "edict_store_pr_signals",
             "edict_publish_validated_pr_signals",
-            "edict_record_pr_analysis_coverage",
         ).forEach { assertTrue(it in successfulCalls, "Missing successful real $it call") }
         assertFalse("edict_publish_signal" in calls, "PR batches must use validated batch publication")
     }

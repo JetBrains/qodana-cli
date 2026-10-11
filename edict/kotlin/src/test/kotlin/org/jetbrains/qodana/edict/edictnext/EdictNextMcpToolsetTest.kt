@@ -128,6 +128,18 @@ class EdictNextMcpToolsetTest {
         checkNotNull(fetchSchema.properties).keys,
       )
       assertEquals(listOf("token"), fetchSchema.required)
+      val chunkSchema = server.tools.getValue("edict_get_pr_analysis_chunk").tool.inputSchema
+      assertEquals(setOf("token", "batchId", "chunkIndex"), checkNotNull(chunkSchema.properties).keys)
+      assertEquals(listOf("token", "batchId", "chunkIndex"), chunkSchema.required)
+      val storePrSchema = server.tools.getValue("edict_store_pr_signals").tool.inputSchema
+      assertEquals(
+        setOf("token", "batchId", "chunkIndex", "inspectedWorkItemIds", "signals", "problems"),
+        checkNotNull(storePrSchema.properties).keys,
+      )
+      assertEquals(
+        listOf("token", "batchId", "chunkIndex", "inspectedWorkItemIds", "signals", "problems"),
+        storePrSchema.required,
+      )
 
       val output = ByteArrayOutputStream()
       val input = """
@@ -184,7 +196,7 @@ class EdictNextMcpToolsetTest {
           "edict_registry", "edict_plan_get", "edict_plan_create", "edict_task_add", "edict_delegate",
           "edict_task_get", "edict_task_start", "edict_task_finish", "edict_task_cancel", "edict_publish_signal",
           "edict_publish_validated_pr_signals",
-          "edict_fetch_pr_batch", "edict_list_pr_analysis_items", "edict_get_pr_analysis_item",
+          "edict_fetch_pr_batch", "edict_get_pr_analysis_chunk", "edict_get_pr_analysis_item",
           "edict_store_pr_signals", "edict_pr_file_at_ref", "edict_pr_file_diff",
           "edict_get_pr_analysis_coverage", "edict_record_pr_analysis_coverage",
           "edict_context", "edict_file_at_ref", "edict_next_prepare_pipeline", "edict_next_next_signal", "edict_next_get_distribution_context",
