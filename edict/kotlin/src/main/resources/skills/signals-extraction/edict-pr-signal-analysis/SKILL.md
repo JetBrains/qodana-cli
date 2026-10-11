@@ -32,7 +32,10 @@ UTC date bounds. Provider credentials and all run paths belong to the server and
    successful siblings.
 4. Call `edict_publish_validated_pr_signals` once after all first attempts and retries terminate, including when
    `availableChunkCount` is zero. The server publishes valid Signals from stored chunks, reports missing chunks and all
-   worker/provider/storage problems, and updates date or explicit-PR coverage only when the complete batch is eligible.
+   worker/provider/storage problems, and updates date coverage when strictly more than half of the batch's known work
+   items were processed successfully. Missing chunks and worker- or validation-failed work items
+   count as failed; exactly half is not enough. A clean batch with no work items still advances coverage, while a
+   zero-item batch with provider problems does not. Explicit PR-number coverage still requires complete success.
    Resend no Signal models. If the receipt says coverage was updated, call `edict_get_pr_analysis_coverage` and verify
    the receipt's date ranges or PR numbers are present. Once publication returns its durable receipt, call
    `edict_task_cleanup_scratch` for every chunk task created for this batch, including completed, failed, and cancelled
@@ -43,13 +46,14 @@ UTC date bounds. Provider credentials and all run paths belong to the server and
    advances coverage but does not satisfy the target. Repeat from step 1 until the target is reached, always finishing
    the selected date even when it takes the total past the target. A receipt with no analyzed date ranges and
    `selectedPrCount: 0` means review history is exhausted and is a successful no-op. Stop with a reported shortfall
-   after publishing a batch with missing chunks or other problems that prevent coverage; fetching again would select
-   the same uncovered date. An explicit selection processes exactly one batch.
+   after publishing a batch whose receipt says coverage was not updated; fetching again would select the same uncovered
+   date. Problems do not stop daily extraction when the successful-work-item majority updated coverage. An explicit
+   selection processes exactly one batch.
 6. Keep the task result compact and token-free. Output one line per processed UTC date as
    `YYYY-MM-DD: extracted=<published count>, failed=<failed Signal or chunk count>`. Report achieved and requested
    totals. Add one `Problems:` line only when the publication receipt reports provider, analysis, storage, or missing
-   chunk problems; include counts and affected chunk indices, never Signal payloads or full IDs. Report explicit PR
-   coverage analogously. After publishing all successful chunks, finish `completed` when at most half of all chunks
-   handled by this coordinator remain failed after retry, including when exactly half failed. Failed child tasks remain
+   chunk problems; include successful and failed work-item counts and affected chunk indices, never Signal payloads or
+   full IDs. Report explicit PR coverage analogously. After publishing all successful chunks, finish `completed` when
+   at most half of all chunks handled by this coordinator remain failed after retry, including when exactly half failed. Failed child tasks remain
    visible in the plan and must be reported, but they do not by themselves force coordinator failure. Finish `failed`
    with the partial receipt only when strictly more than half of all handled chunks remain failed after retry.
