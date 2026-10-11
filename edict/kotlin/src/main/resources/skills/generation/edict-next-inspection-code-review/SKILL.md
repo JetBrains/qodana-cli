@@ -13,7 +13,7 @@ Load only this skill. Do not launch workers: write every example yourself.
 ## Inputs and boundaries
 
 The prompt supplies `Cluster id`, an absolute private-scratch `Review output path`, and `Previous code review`: the
-output of this cluster's previous code review round, or none. Call `edict_context`, resolve the
+output of this cluster's previous code review round, or none. Call `edict_context` with your own token, resolve the
 cluster and its candidate inspection below its `stateDirectory`, and use its `projectDirectory` as the inspected
 IntelliJ project. Read the candidate, every Signal and example, and the previous code review. Do not read cluster
 history, predecessor inspections or other reviews.

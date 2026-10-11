@@ -11,7 +11,7 @@ domain work and use its assigned task lifecycle.
 Load only this skill.
 
 The prompt identifies either a persisted Signal with `Cluster id` and `Signal id`, or a transient Signal with
-`Cluster id` and an absolute private-scratch `Signal path`. Call `edict_context` and use its `stateDirectory` and
+`Cluster id` and an absolute private-scratch `Signal path`. Call `edict_context` with your own token and use its `stateDirectory` and
 `projectDirectory` to resolve all managed state and the inspected IntelliJ project. Do not request or repeat the state
 path in a prompt.
 

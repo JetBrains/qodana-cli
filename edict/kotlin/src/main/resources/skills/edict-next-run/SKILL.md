@@ -11,7 +11,7 @@ domain work and use it for every child delegation and task transition.
 Load only this skill. Launch every stage with the native `spawn_agent` tool and mention its skill only in the first line
 of the fresh worker prompt. Do not edit the state repository, call cluster-processing MCPs, or run tests yourself.
 
-Call `edict_context` to verify the configured run context. Every delegated stage must obtain its paths from
+Call `edict_context` with your own token to verify the configured run context. Every delegated stage must obtain its paths from
 `edict_context`; do not copy the state path into its prompt.
 
 Run sequentially:

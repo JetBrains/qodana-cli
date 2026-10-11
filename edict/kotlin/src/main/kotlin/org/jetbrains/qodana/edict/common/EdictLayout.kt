@@ -1,6 +1,8 @@
 // Copyright 2026 JetBrains s.r.o. Licensed under the Apache License, Version 2.0.
 package org.jetbrains.qodana.edict.common
 
+import java.nio.file.Files
+import java.nio.file.LinkOption.NOFOLLOW_LINKS
 import java.nio.file.Path
 import java.time.Instant
 import java.time.ZoneOffset
@@ -46,12 +48,29 @@ internal data class EdictLayout(
 
   fun taskLogPath(taskId: String): Path = taskLogDirectory.resolve("$taskId.log")
 
+  /** Private scratch owned by one managed task (or by the root manager). */
+  fun taskScratchDirectory(taskId: String): Path {
+    require(taskId == MANAGER_SCRATCH_ID || taskId.matches(Regex("[0-9a-f]{64}"))) { "Invalid scratch task ID" }
+    return scratchDirectory.resolve(taskId)
+  }
+
+  /** Deletes only the scratch tree owned by [taskId], without following symbolic links. */
+  fun cleanupTaskScratchDirectory(taskId: String): Boolean {
+    val directory = taskScratchDirectory(taskId)
+    if (!Files.exists(directory, NOFOLLOW_LINKS)) return false
+    Files.walk(directory).use { paths ->
+      paths.sorted(Comparator.reverseOrder()).forEach(Files::delete)
+    }
+    return true
+  }
+
   companion object {
     /** Moves the log folder; a relative value is resolved against the project root. */
     const val LOG_DIRECTORY_PROPERTY = "edict.log.dir"
 
     /** Holds [processRunId]; logback.xml names this process's log folder with it. */
     const val RUN_ID_PROPERTY = "edict.run.id"
+    const val MANAGER_SCRATCH_ID = "manager"
 
     private val RUN_ID_FORMAT = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH-mm-ss.SSS'Z'").withZone(ZoneOffset.UTC)
 
