@@ -24,7 +24,13 @@ package. Do not strip a project/module
 prefix, reinterpret it relative to `projectDirectory`, or probe guessed alternatives: provider paths are repository-relative.
 Preserve returned content byte-for-byte. Resolve renames with local Git when possible, use the real path on
 each side, and report unavailable evidence as blocked. Never substitute the current checkout for historical evidence. If neither source can provide
-required evidence, report the work item as blocked and fail the task.
+required evidence, report that work item in `failedWorkItemIds` and continue with the assignment.
+
+Treat inspection and output problems independently per work-item ID. Preserve correct sibling results. Put an item
+whose evidence cannot be completed or whose complete output cannot be materialized in `failedWorkItemIds` with a concise
+diagnostic, and finish the managed task as completed so the coordinator can retry that item once. Do not mark the task
+failed merely because one item is blocked or its output is incorrect. A failed task status is reserved for a task-wide
+prerequisite or lifecycle failure that prevents processing the assignment.
 
 Do not reject an item from its title, message, discussion wording, or metadata alone. Terse human material still
 requires source and diff inspection. Apply the acceptance checklist independently to every supported correction in
@@ -38,7 +44,8 @@ Use the signal contract's `fileRevision.expectedRanges` objects with integer `st
 findings. These are the persisted schema names; `startLine` and `endLine` are unsupported.
 
 Finish with the exact ordered `inspectedWorkItemIds` whose human material and source diff were fully inspected, every
-supported finding with its work-item ID, and blocked IDs/diagnostics only for incomplete inspection. Do not create a
+supported finding with its work-item ID, and `failedWorkItemIds` plus diagnostics only for incomplete inspection or
+incorrect output. Do not create a
 per-item explanation or placeholder for a fully inspected item with no signal; it contributes only to coverage and
 the findings array remains empty when none qualify. Do not validate/publish inbox records, formulate rules, modify
 persisted state, stage files, or commit. The coordinator owns complete-batch coverage and publication.
