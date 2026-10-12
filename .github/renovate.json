@@ -117,8 +117,8 @@
       "paths": ["dockerfiles/**"]
     },
     {
-      "description": "Don't bump npm packages (pnpm, eslint) to freshly published versions, which protects against hijacked publishes.",
-      "matchDatasources": ["npm"],
+      "description": "Don't bump dependencies to freshly published versions, which protects against hijacked publishes.",
+      "matchPackageNames": ["*"],
       "minimumReleaseAge": "7 days"
     },
     {

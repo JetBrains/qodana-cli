@@ -8,8 +8,6 @@ SHELL ["/bin/bash", "-c"]
 
 # renovate: datasource=npm depName=eslint
 ENV ESLINT_VERSION="9.31.0"
-# renovate: datasource=npm depName=pnpm
-ENV PNPM_VERSION="11.18.0"
 
 ENV HOME="/root" \
     LC_ALL="en_US.UTF-8" \
@@ -63,8 +61,7 @@ RUN ln -s /usr/local/lib/node_modules/npm/bin/npm-cli.js /usr/local/bin/npm && \
     npx --version && \
     corepack --version && \
     yarn --version && \
-    npm install -g eslint@$ESLINT_VERSION pnpm@$PNPM_VERSION && npm config set update-notifier false && \
-    pnpm --version && \
+    npm install -g eslint@$ESLINT_VERSION && npm config set update-notifier false && \
     chmod 777 -R "$HOME/.npm" "$HOME/.npmrc"
 
 COPY --from=composer_base /usr/bin/composer /usr/bin/composer

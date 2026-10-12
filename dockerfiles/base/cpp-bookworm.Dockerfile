@@ -8,8 +8,6 @@ FROM cpp-community
 
 # renovate: datasource=npm depName=eslint
 ENV ESLINT_VERSION="9.31.0"
-# renovate: datasource=npm depName=pnpm
-ENV PNPM_VERSION="11.18.0"
 
 ENV PATH="/opt/yarn/bin:$PATH"
 ENV SKIP_YARN_COREPACK_CHECK=0
@@ -26,8 +24,7 @@ RUN ln -s /usr/local/lib/node_modules/npm/bin/npm-cli.js /usr/local/bin/npm && \
     npx --version && \
     corepack --version && \
     yarn --version && \
-    npm install -g eslint@$ESLINT_VERSION pnpm@$PNPM_VERSION && npm config set update-notifier false && \
-    pnpm --version && \
+    npm install -g eslint@$ESLINT_VERSION && npm config set update-notifier false && \
     chmod 777 -R "$HOME/.npm" "$HOME/.npmrc" && \
     apt-get update && \
     DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
