@@ -117,6 +117,11 @@
       "paths": ["dockerfiles/**"]
     },
     {
+      "description": "Don't bump dependencies to freshly published versions, which protects against hijacked publishes.",
+      "matchPackageNames": ["*"],
+      "minimumReleaseAge": "7 days"
+    },
+    {
       "datasources": ["docker"],
       "paths": ["dockerfiles/**"]
     }
