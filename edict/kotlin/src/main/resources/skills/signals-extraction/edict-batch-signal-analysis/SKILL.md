@@ -42,8 +42,8 @@ PR-review extraction belongs to `edict-pr-signal-analysis`; report misrouted rev
    Compute the stable signal ID with a SHA-256 implementation over the exact UTF-8 idempotency key; never supply a
    guessed digest.
 5. Publish each complete `FromCommit` model using `edict_publish_signal` with the supplied capability. If its stable ID
-   already exists with the same model, count it as an idempotent success. A conflicting model requires investigation and
-   a failed outcome, not an overwrite. Verify the complete expected ID set. A failed call may leave earlier valid models;
+   already exists with the same model, count it as an idempotent success. A different validated model with the same stable
+   ID replaces the existing model. Verify the complete expected ID set. A failed call may leave earlier valid models;
    report those exact IDs for a retry.
 6. Finish with inspected work-item IDs, signal IDs, and counts. An empty eligible set or completely
    inspected batch with zero findings is a successful no-op with no placeholder records. No commit, push, or IntelliJ
