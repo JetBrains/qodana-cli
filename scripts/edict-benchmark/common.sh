@@ -37,3 +37,34 @@ stop_servers() {
     rm -f "$pid_file"
   done
 }
+
+# The servers run in their own session (setsid), which TeamCity does not stop when a build ends, so a previous build on a
+# reused agent may still hold the MCP port. Stop that build's servers by their pid files, then whatever still listens.
+stop_leftover_servers() {
+  local port="$1" own_group pid group attempt
+  stop_servers
+  own_group=$(ps -o pgid= -p "$$" | tr -d ' ')
+  for pid in $(listening_pids "$port"); do
+    group=$(ps -o pgid= -p "$pid" 2>/dev/null | tr -d ' ' || true)
+    echo "Stopping leftover process $pid on port $port"
+    # A group other than this build step's own is the leftover server's session: stop all of it, its IDE included.
+    if [[ -n "$group" && "$group" != "$own_group" ]]; then
+      kill -TERM -- "-$group" 2>/dev/null || true
+    else
+      kill -TERM "$pid" 2>/dev/null || true
+    fi
+  done
+  for attempt in {1..20}; do
+    [[ -z "$(listening_pids "$port")" ]] && return
+    sleep 1
+  done
+  for pid in $(listening_pids "$port"); do kill -KILL "$pid" 2>/dev/null || true; done
+}
+
+listening_pids() {
+  if command -v ss >/dev/null; then
+    ss -ltnpH "sport = :$1" 2>/dev/null | grep -o 'pid=[0-9]*' | cut -d= -f2 | sort -u
+  elif command -v lsof >/dev/null; then
+    lsof -t -iTCP:"$1" -sTCP:LISTEN 2>/dev/null | sort -u
+  fi
+}

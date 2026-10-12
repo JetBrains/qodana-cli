@@ -7,20 +7,23 @@ cd "$benchmark_project"
 qodana edict install --deny benchmark --deny .edict/gold.sarif.json \
   --deny "$benchmark_output/trace" --deny "$benchmark_codex_home/sessions" --deny "$benchmark_codex_home/log"
 
-# The server listens on edict.mcpPort (default 27182), keeps .edict as its state and logs to log/process-log/<run-id>.
+# The server listens on edict.mcpPort, keeps .edict as its state and logs to log/process-log/<run-id>.
 # It starts IntelliJ from QODANA_DIST on the first inspection call and stops it on exit.
 # Its console output stays beside the run folders, which agents cannot read either.
 server_log=log/process-log/edict-server.log
 mkdir -p log/process-log
 # The fixture has no qodana.yaml. Generate every cluster, not the default first few, and let the manager write the price
 # report: without a persisted plan the report step cannot attribute sessions to stages.
+edict_port=27182
 edict_config="$benchmark_output/edict-qodana.yaml"
-cat > "$edict_config" <<'YAML'
+cat > "$edict_config" <<YAML
 edict:
+  mcpPort: $edict_port
   calculatePrice: true
   generation:
     defaultGenerationCount: 20
 YAML
+stop_leftover_servers "$edict_port"
 QODANA_CONF="$benchmark_output/mcp-config" nohup setsid qodana edict mcp start \
   --config "$edict_config" \
   --ide-wait-timeout 20m \
