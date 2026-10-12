@@ -273,10 +273,9 @@ internal class EdictNextRepositoryState(
     val existing = if (Files.exists(target, NOFOLLOW_LINKS)) Files.readString(target) else null
     if (existing != null) {
       val existingSignal = EdictNextJson.decodeFromString<EdictNextSignal>(existing)
-      require(existingSignal == signal) {
-        "Signal '${signal.id}' already exists with a different model"
-      }
-      return SignalPublication(existingSignal, created = false)
+      if (existingSignal == signal) return SignalPublication(existingSignal, created = false)
+      atomicWrite(path, content)
+      return SignalPublication(signal, created = false)
     }
     atomicWrite(path, content)
     return SignalPublication(signal, created = true)

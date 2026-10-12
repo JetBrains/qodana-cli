@@ -365,7 +365,7 @@ internal class EdictManagementService(
 
     tool(
       name = "edict_publish_signal",
-      description = "Validate and idempotently publish one non-PR Signal model to the managed inbox. PR-analysis coordinators publish their cached validated batch with edict_publish_validated_pr_signals.",
+      description = "Validate and publish one non-PR Signal model to the managed inbox, replacing the existing model when its stable ID already exists. PR-analysis coordinators publish their cached validated batch with edict_publish_validated_pr_signals.",
       required = listOf("token", "signal"),
       properties = mapOf("signal" to signalObject),
     ) { arguments ->
@@ -386,7 +386,7 @@ internal class EdictManagementService(
 
     tool(
       name = "edict_publish_validated_pr_signals",
-      description = "Idempotently publish valid Signals from every stored PR chunk. Missing chunks are reported and skipped. Complete provider-, analysis-, and storage-problem-free batches update date or explicit-PR coverage; incomplete batches leave coverage unchanged.",
+      description = "Publish valid Signals from every stored PR chunk, atomically replacing an existing model with the same stable ID. Missing chunks are reported and skipped. Date coverage is updated when strictly more than half of known work items succeeded; explicit-PR coverage requires complete success.",
       required = listOf("token", "batchId"),
       properties = properties("batchId"),
     ) { arguments ->

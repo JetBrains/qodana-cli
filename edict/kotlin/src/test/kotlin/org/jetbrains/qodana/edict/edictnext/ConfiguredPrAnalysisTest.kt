@@ -556,6 +556,9 @@ class ConfiguredPrAnalysisTest {
       })
       assertTrue(workerBatchPublication.flag("isError") == true)
 
+      val previousModel = signals.first().copy(description = "Previously published description")
+      assertTrue(store.publishSignal(worker.token, previousModel).created)
+
       val publication = management.call("edict_publish_validated_pr_signals", buildJsonObject {
         put("token", worker.token)
         put("batchId", batchId)
@@ -563,7 +566,7 @@ class ConfiguredPrAnalysisTest {
       assertFalse(publication.flag("isError") == true)
       val receipt = publication.obj("structuredContent")
       assertEquals(signals.map(EdictNextSignal::id), receipt.getValue("signalIds").jsonArray.map { it.jsonPrimitive.content })
-      assertEquals(signals.map(EdictNextSignal::id), receipt.getValue("createdSignalIds").jsonArray.map { it.jsonPrimitive.content })
+      assertEquals(signals.drop(1).map(EdictNextSignal::id), receipt.getValue("createdSignalIds").jsonArray.map { it.jsonPrimitive.content })
       assertFalse(receipt.flag("coverageUpdated") == true)
       assertTrue(store.getPrAnalysisCoverage(worker.token, configured).analyzedPrNumbers.isEmpty())
       assertEquals(signals, signals.map { store.inboxSignal(it.id) })
