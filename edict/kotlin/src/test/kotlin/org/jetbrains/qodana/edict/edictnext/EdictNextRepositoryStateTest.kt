@@ -121,7 +121,7 @@ class EdictNextRepositoryStateTest {
   }
 
   @Test
-  fun `signal publication derives storage from the model and is idempotent`() {
+  fun `signal publication derives storage from the model and replaces an existing model`() {
     EdictNextRepositoryState.open(directory).use { state ->
       val (_, batch) = state.batch()
       val key = "repository:commit:item:negative"
@@ -139,7 +139,9 @@ class EdictNextRepositoryStateTest {
       assertFalse(state.publishSignal(batch.token, signal).created)
       assertEquals(signal, state.inboxSignal(signal.id))
       assertTrue(Files.exists(directory.resolve("inbox/${signal.id}.json")))
-      assertFails { state.publishSignal(batch.token, signal.copy(description = "Conflicting finding")) }
+      val replacement = signal.copy(description = "Updated finding")
+      assertFalse(state.publishSignal(batch.token, replacement).created)
+      assertEquals(replacement, state.inboxSignal(signal.id))
     }
   }
 
