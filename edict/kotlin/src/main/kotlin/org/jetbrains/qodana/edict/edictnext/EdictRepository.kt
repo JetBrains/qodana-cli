@@ -403,16 +403,60 @@ internal class EdictRepository(val paths: EdictRepositoryDirectory) {
     cluster.directory.signalsDirectory.createDirectories()
     Files.move(paths.inboxDirectory.resolve("$signalId.json"), cluster.directory.signalPath(signalId))
 
-    val predecessorId = when (cluster.manifest.status) {
-      EdictNextClusterStatus.Generated -> cluster.id
-      EdictNextClusterStatus.Pending, EdictNextClusterStatus.Invalid -> cluster.manifest.predecessorId
-      EdictNextClusterStatus.Discontinued -> null
-    }
     write(
       cluster.directory.manifestPath,
-      cluster.manifest.copy(status = EdictNextClusterStatus.Pending, predecessorId = predecessorId),
+      pendingManifest(cluster),
       EdictNextClusterManifest.serializer(),
     )
+  }
+
+  /** Replaces a clustered Signal with its re-published inbox version and schedules the cluster for regeneration. */
+  @Synchronized
+  fun replaceClusterSignalFromInbox(signalId: String, clusterId: String) {
+    val inboxPath = paths.inboxDirectory.resolve("$signalId.json")
+    require(inboxPath.isRegularFile()) { "Inbox Signal '$signalId' does not exist" }
+    val replacement = loadSignals(paths.inboxDirectory).singleOrNull { it.id == signalId }
+                      ?: error("Inbox Signal '$signalId' does not exist")
+    val cluster = loadCluster(clusterId)
+    require(cluster.signals.count { it.id == signalId } == 1) {
+      "Signal '$signalId' does not belong to cluster '$clusterId' exactly once"
+    }
+    require(replacement.language == cluster.manifest.language) {
+      "Signal language does not match cluster '${cluster.id}'"
+    }
+
+    val target = cluster.directory.signalPath(signalId)
+    val originalSignal = target.readBytes()
+    val replacementSignal = inboxPath.readBytes()
+    val originalHistory = cluster.historyPath.takeIf(Path::isRegularFile)?.readBytes()
+    try {
+      writeBytesAtomically(target, replacementSignal)
+      writeAtomically(
+        cluster.directory.manifestPath,
+        pendingManifest(cluster),
+        EdictNextClusterManifest.serializer(),
+      )
+      Files.writeString(
+        cluster.historyPath,
+        "Replaced Signal `$signalId` with its re-published inbox version; moved cluster to Pending.\n",
+        StandardOpenOption.CREATE,
+        StandardOpenOption.APPEND,
+      )
+      inboxPath.deleteIfExists()
+    }
+    catch (e: Exception) {
+      try {
+        writeBytesAtomically(target, originalSignal)
+        writeAtomically(cluster.directory.manifestPath, cluster.manifest, EdictNextClusterManifest.serializer())
+        if (originalHistory == null) cluster.historyPath.deleteIfExists()
+        else writeBytesAtomically(cluster.historyPath, originalHistory)
+        writeBytesAtomically(inboxPath, replacementSignal)
+      }
+      catch (rollbackError: Exception) {
+        e.addSuppressed(rollbackError)
+      }
+      throw e
+    }
   }
 
   private fun createCluster(cluster: EdictNextClusterDirectory, signal: EdictNextSignal) {
@@ -425,6 +469,15 @@ internal class EdictRepository(val paths: EdictRepositoryDirectory) {
       EdictNextClusterManifest.serializer()
     )
     cluster.historyPath.writeText("Created for Signal `${signal.id}`.\n")
+  }
+
+  private fun pendingManifest(cluster: EdictNextStoredCluster): EdictNextClusterManifest {
+    val predecessorId = when (cluster.manifest.status) {
+      EdictNextClusterStatus.Generated -> cluster.id
+      EdictNextClusterStatus.Pending, EdictNextClusterStatus.Invalid -> cluster.manifest.predecessorId
+      EdictNextClusterStatus.Discontinued -> null
+    }
+    return cluster.manifest.copy(status = EdictNextClusterStatus.Pending, predecessorId = predecessorId)
   }
 
   /** Changes only `syntheticExampleId`, keeping every other field of the stored Signal as it is. */
@@ -478,10 +531,14 @@ internal class EdictRepository(val paths: EdictRepositoryDirectory) {
   }
 
   private fun <T> writeAtomically(path: Path, value: T, serializer: SerializationStrategy<T>) {
+    writeBytesAtomically(path, EdictNextJson.encodeToString(serializer, value).toByteArray())
+  }
+
+  private fun writeBytesAtomically(path: Path, content: ByteArray) {
     path.parent.createDirectories()
     val temporary = Files.createTempFile(path.parent, ".${path.fileName}.", ".tmp")
     try {
-      temporary.writeText(EdictNextJson.encodeToString(serializer, value))
+      temporary.writeBytes(content)
       try {
         Files.move(temporary, path, StandardCopyOption.ATOMIC_MOVE, StandardCopyOption.REPLACE_EXISTING)
       }

@@ -129,6 +129,8 @@ edict_manager
 
 - `$edict-next-distribution`
   - call `edict_next_prepare_pipeline` once
+    - replace each re-published inbox Signal already owned by exactly one cluster, append a history record, and move the
+      cluster to Pending; ambiguous ownership remains a validation failure
     - snapshot and validate the state repository
     - select up to 100 alphabetical JVM inbox Signals
     - build 10 nearest same-language neighbours per Signal with in-JVM GTE embeddings (`EdictNextNeighbourFinder`);

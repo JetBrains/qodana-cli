@@ -53,10 +53,9 @@ End-to-end review of the current pipeline (code reading only, nothing run). Path
   `edictnext/EdictRepository.kt:240-277`). `../x` or an absolute path moves the Signal out of the state tree while
   distribution "completes"; `Foo_Bar` or `a/b` leave state that `loadState`/`requireNoIssues` reject on every later
   run, with no repair tool.
-- [ ] (verified) `edict_publish_signal` deduplicates only against the inbox
-  (`edictnext/EdictNextRepositoryState.kt:265-275`). Re-extracting a commit whose Signal was distributed writes a second
-  copy to `inbox/` and validation fails ("occurs 2 times") forever. Re-publishing while still in the inbox fails with
-  "already exists with a different model" because LLM descriptions rarely match byte for byte.
+- [x] `edict_publish_signal` stores a re-published model in the inbox. Pipeline preparation now consumes an inbox Signal
+  already owned by one cluster, replaces the clustered model, records the replacement in cluster history, and moves the
+  cluster to Pending. Ambiguous ownership still fails repository validation.
 
 ### High: wrong data or Generated unreachable
 
