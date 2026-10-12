@@ -117,6 +117,11 @@
       "paths": ["dockerfiles/**"]
     },
     {
+      "description": "Don't bump npm packages (pnpm, eslint) to freshly published versions, which protects against hijacked publishes.",
+      "matchDatasources": ["npm"],
+      "minimumReleaseAge": "7 days"
+    },
+    {
       "datasources": ["docker"],
       "paths": ["dockerfiles/**"]
     }

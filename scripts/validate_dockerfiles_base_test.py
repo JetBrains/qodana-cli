@@ -132,14 +132,8 @@ def test_real_node_base_files_install_pnpm():
         checked.append(path.name)
         assert "# renovate: datasource=npm depName=pnpm" in content, path
         assert 'ENV PNPM_VERSION="' in content, path
-        assert 'ARG PNPM_SHA512="' in content, path
-        assert 'pnpm-$PNPM_VERSION.tgz' in content, path
-        assert 'sha512sum -c -' in content, path
-        assert '/usr/local/bin/pnpm' in content, path
-        assert '/usr/local/bin/pnpx' in content, path
-        assert '/usr/local/bin/pn' in content, path
-        assert '/usr/local/bin/pnx' in content, path
-        assert "pnpm@$PNPM_VERSION" not in content, path
+        assert "pnpm@$PNPM_VERSION" in content, path
+        assert "pnpm --version" in content, path
     assert checked, "no Node-capable base Dockerfiles found"
 
 
