@@ -31,6 +31,11 @@ internal class EdictNextGenerationService(
   private val analyzedCandidateDigests = ConcurrentHashMap<Set<String>, String>()
   private val projectAnalysisCounts = ConcurrentHashMap<Set<String>, Int>()
   private val reviewedFindings = ConcurrentHashMap<Set<String>, List<Pair<String, List<EdictNextLineRange>?>>>()
+  private val analyzedFindings = ConcurrentHashMap<Set<String>, EdictNextInspectionFindings>()
+  private val weakReviewResults = ConcurrentHashMap<Set<String>, Map<Pair<String, Int>, EdictNextReviewedFinding>>()
+  private val validatedExampleReports = ConcurrentHashMap<Set<String>, Pair<String, Map<String, Boolean>>>()
+  private val analyzedExampleReports = ConcurrentHashMap<Set<String>, Map<String, Boolean>>()
+  private val analyzedCodes = ConcurrentHashMap<Set<String>, String>()
   private var generationSnapshot: EdictNextGenerationSnapshot? = null
 
   suspend fun getGenerationClusters(generationCount: Int? = null): EdictNextGenerationClustersResponse {
@@ -58,6 +63,11 @@ internal class EdictNextGenerationService(
     validatedCandidateDigests.clear()
     analyzedCandidateDigests.clear()
     reviewedFindings.clear()
+    analyzedFindings.clear()
+    weakReviewResults.clear()
+    validatedExampleReports.clear()
+    analyzedExampleReports.clear()
+    analyzedCodes.clear()
     projectAnalysisCounts.clear()
     return EdictNextGenerationClustersResponse(
       clusters = targets.map { EdictNextGenerationTarget(it.id, it.directory.root.toString()) },
@@ -112,8 +122,17 @@ internal class EdictNextGenerationService(
       repository.saveCandidateInspection(clusterId, code)
       val cluster = repository.loadCluster(clusterId)
       inspection.validate(cluster, code).also { validation ->
-        if (validation.overallSuccess) validatedCandidateDigests[cluster.signalIds] = sha256Hex(code)
-        else validatedCandidateDigests.remove(cluster.signalIds)
+        if (validation.overallSuccess) {
+          validatedCandidateDigests[cluster.signalIds] = sha256Hex(code)
+          val failing = validation.failures.map { it.exampleId }.toSet()
+          validatedExampleReports[cluster.signalIds] = sha256Hex(code) to cluster.examples.associate { example ->
+            example.metadata.id to ((example.metadata.label == EdictNextSignalLabel.POSITIVE) == (example.metadata.id !in failing))
+          }
+        }
+        else {
+          validatedCandidateDigests.remove(cluster.signalIds)
+          validatedExampleReports.remove(cluster.signalIds)
+        }
       }
     }
 
@@ -128,13 +147,18 @@ internal class EdictNextGenerationService(
       }
       val cluster = repository.loadCluster(clusterId)
       val code = cluster.candidateInspectionPath.takeIf(Path::isRegularFile)?.readText()
-      val renamedCode = code?.replace(Regex("(\\bid\\s*=\\s*)\"${Regex.escape(clusterId)}\""), "$1\"$newClusterId\"")
+      fun rename(code: String) = code.replace(Regex("(\\bid\\s*=\\s*)\"${Regex.escape(clusterId)}\""), "$1\"$newClusterId\"")
+      val renamedCode = code?.let(::rename)
       repository.renameCluster(cluster, newClusterId, renamedCode)
+      analyzedCodes.computeIfPresent(cluster.signalIds) { _, analyzed -> rename(analyzed) }
       generationTargetSignalIdsByClusterId[newClusterId] = cluster.signalIds
       generationTargetSignalIdsByClusterId.remove(clusterId)
       if (code != null && renamedCode != null) {
         for (digests in listOf(validatedCandidateDigests, analyzedCandidateDigests)) {
           digests.replace(cluster.signalIds, sha256Hex(code), sha256Hex(renamedCode))
+        }
+        validatedExampleReports.computeIfPresent(cluster.signalIds) { _, (digest, reports) ->
+          (if (digest == sha256Hex(code)) sha256Hex(renamedCode) else digest) to reports
         }
       }
       EdictNextMutationResponse(true, "Renamed cluster '$clusterId' to '$newClusterId'")
@@ -211,6 +235,22 @@ internal class EdictNextGenerationService(
         val findings = inspection.analyzeProject(cluster, code, projectRevision)
         val key = findings.reviewKey()
         val unchanged = reviewedFindings.put(cluster.signalIds, key) == key
+        val reports = validatedExampleReports[cluster.signalIds]?.takeIf { it.first == findings.candidateDigest }?.second.orEmpty()
+        analyzedExampleReports[cluster.signalIds] = reports
+        val strong = cluster.strongExampleIds()
+        val labels = cluster.examples.associate { it.metadata.id to it.metadata.label }
+        val exampleStatus = reports.filterKeys { it in labels }.mapValues { (id, reported) ->
+          EdictNextReviewExampleStatus(labels.getValue(id), id in strong, reported)
+        }.toSortedMap()
+        val locations = findings.findings.map { it.location() }.toSet()
+        val unreproducedFindings = weakReviewResults[cluster.signalIds].orEmpty().values
+          .filter { it.exampleId != null && reports[it.exampleId] == false }
+          .groupBy { checkNotNull(it.exampleId) }
+          .mapNotNull { (exampleId, assigned) ->
+            val (still, gone) = assigned.partition { it.path to it.line in locations }
+            if (still.isEmpty()) null
+            else exampleId to EdictNextUnreproducedFindings(still.map { "${it.path}:${it.line}" }.sorted(), gone.size)
+          }.toMap().toSortedMap()
         val response = EdictNextReviewArtifacts.create(
           findings = findings,
           clusterDirectory = cluster.directory.root,
@@ -218,11 +258,72 @@ internal class EdictNextGenerationService(
           inspectedProject = projectRoot,
           privateScratchDirectory = Path.of(privateScratchDirectory).toAbsolutePath().normalize(),
           remainingProjectAnalyses = maxProjectAnalyses - analysis,
+          reviewedLocations = weakReviewResults[cluster.signalIds].orEmpty().keys,
+          exampleStatus = exampleStatus,
+          unreproducedFindings = unreproducedFindings,
         )
         analyzedCandidateDigests[cluster.signalIds] = findings.candidateDigest
+        analyzedFindings[cluster.signalIds] = findings
+        analyzedCodes[cluster.signalIds] = code
         response.copy(findingsUnchanged = unchanged)
       }
     }
+  }
+
+  /**
+   * Records how the weak-signal review classified findings of the cluster's last project analysis and which example
+   * represents each. Kept for the run and counted by [recordEvaluation] as the weight of each example.
+   */
+  suspend fun recordWeakReview(
+    clusterId: String,
+    findings: List<EdictNextReviewedFinding>,
+  ): EdictNextMutationResponse = withinGenerationTarget(clusterId) { repository ->
+    val cluster = repository.loadCluster(clusterId)
+    val analysis = checkNotNull(analyzedFindings[cluster.signalIds]) {
+      "Cluster '$clusterId' has no project analysis in this run to review"
+    }
+    val locations = analysis.findings.map { it.location() }.toSet()
+    val labels = cluster.examples.associate { it.metadata.id to it.metadata.label }
+    val reports = analyzedExampleReports[cluster.signalIds].orEmpty()
+    // An example written after the analysis is checked now: an example made from a finding must be reported as it is.
+    val created = findings.mapNotNull { it.exampleId }.filter { it in labels && it !in reports }
+    val createdReports = if (created.isEmpty()) emptyMap() else {
+      inspection.reports(cluster, checkNotNull(analyzedCodes[cluster.signalIds]))
+    }
+    for (finding in findings) {
+      val where = "${finding.path}:${finding.line}"
+      require(finding.path to finding.line in locations) {
+        "No finding at $where in the last project analysis of cluster '$clusterId'"
+      }
+      val exampleId = finding.exampleId
+      if (exampleId == null) {
+        require(finding.classification == EdictNextFindingClassification.UNCERTAIN) {
+          "Finding $where is ${finding.classification} but names no example"
+        }
+        continue
+      }
+      val label = requireNotNull(labels[exampleId]) { "Cluster '$clusterId' has no example '$exampleId'" }
+      val expected = when (finding.classification) {
+        EdictNextFindingClassification.TP -> EdictNextSignalLabel.POSITIVE
+        EdictNextFindingClassification.FP -> EdictNextSignalLabel.NEGATIVE
+        EdictNextFindingClassification.UNCERTAIN -> label
+      }
+      require(label == expected) { "Finding $where is ${finding.classification}, but example '$exampleId' is $label" }
+      require(reports[exampleId] ?: createdReports.getValue(exampleId)) {
+        if (exampleId in reports) {
+          "The analyzed inspection reports $where but not example '$exampleId', so '$exampleId' does not reproduce it. " +
+          "Create an example from this finding's code: split '$exampleId', or replace it when it reproduces none of its findings"
+        }
+        else {
+          "The analyzed inspection reports $where but not example '$exampleId'" +
+          (if (label == EdictNextSignalLabel.POSITIVE) " at its expected range" else "") +
+          ", so the reduction removed what makes it report this code. Restore that from the finding's code, " +
+          "save '$exampleId' again and record again"
+        }
+      }
+    }
+    weakReviewResults.merge(cluster.signalIds, findings.associateBy { it.path to it.line }) { old, new -> old + new }
+    EdictNextMutationResponse(true, "Recorded ${findings.size} reviewed finding(s) of cluster '$clusterId'")
   }
 
   /**
@@ -236,7 +337,29 @@ internal class EdictNextGenerationService(
     when (val selection = selectGeneratedInspection(cluster)) {
       is InspectionSelection.Rejected -> EdictNextRecordEvaluationResponse(false, selection.reason)
       is InspectionSelection.Selected -> {
-        val (validation, evaluation) = inspection.evaluate(cluster, selection.code, selection.action)
+        val reviewed = weakReviewResults[cluster.signalIds].orEmpty().values
+        val exampleIds = cluster.examples.map { it.metadata.id }.toSet()
+        val classified = reviewed.filter { it.classification != EdictNextFindingClassification.UNCERTAIN }
+        // On GENERATE the selection requires that the last analysis, stored with its digest, was of these bytes (a rename
+        // carries the digest over); SKIP publishes a predecessor this run did not analyze.
+        val analysis = analyzedFindings[cluster.signalIds]?.takeIf { selection.action == EdictNextInspectionAction.GENERATE }
+        val stillReported = analysis?.findings?.map { it.location() }?.toSet().orEmpty()
+        val assignments = classified.mapNotNull { finding ->
+          finding.exampleId?.takeIf { it in exampleIds }?.let {
+            EdictNextFindingAssignment(it, finding.classification, finding.path to finding.line in stillReported)
+          }
+        }
+        val projectReview = analysis?.let {
+          EdictNextProjectReview(
+            projectRevision = it.projectRevision,
+            totalFindings = it.findings.size,
+            reviewedFindings = reviewed.size,
+            uncertain = reviewed.size - classified.size,
+            unassigned = classified.size - assignments.size,
+            unreproduced = 0,
+          )
+        }
+        val (validation, evaluation) = inspection.evaluate(cluster, selection.code, selection.action, assignments, projectReview)
         if (evaluation == null) {
           EdictNextRecordEvaluationResponse(false, "Evaluation not recorded: ${validation.summary}")
         }
@@ -244,7 +367,11 @@ internal class EdictNextGenerationService(
           repository.saveEvaluation(clusterId, evaluation)
           EdictNextRecordEvaluationResponse(
             true,
-            "Recorded evaluation: tp=${evaluation.tp}, fp=${evaluation.fp}, fn=${evaluation.fn}; ${validation.summary}",
+            "Recorded weighted evaluation: tp=${evaluation.tp}, fp=${evaluation.fp}, fn=${evaluation.fn}" +
+            (evaluation.projectReview?.let {
+              "; ${it.totalFindings} project finding(s), ${it.reviewedFindings} reviewed, ${it.unreproduced} not reproduced by their example"
+            } ?: "") +
+            "; ${validation.summary}",
             evaluation,
           )
         }

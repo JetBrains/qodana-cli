@@ -336,8 +336,26 @@ internal class EdictNextMcpToolset(
     }
 
     server.addTool(
+      name = "edict_next_record_weak_review",
+      description = "Record how you classified findings of the cluster's last project analysis: one entry per finding with its path and line as the findings file gives them, its classification, and the example that represents it (the one you created, the existing one covering it, or the strong example of a contract mismatch). Only an example the analyzed inspection reports can represent a finding: an FP needs a reported NEGATIVE, a TP a reported POSITIVE; an example created after the analysis is run with the analyzed inspection now and must be reported too. A later round replaces the entry at the same location, which moves a finding to another example. The final evaluation weighs every example by the findings assigned to it.",
+      inputSchema = stringArguments(
+        "token" to "Your delegated edict-next-weak-signal-review task token",
+        "clusterId" to "Frozen generation cluster id",
+        "findingsJson" to "JSON array of {path, line, classification: TP|FP|UNCERTAIN, exampleId}; line is 0 for a finding without a line, and exampleId is required except for UNCERTAIN",
+      ),
+    ) { request ->
+      management.requireSkill(request.requireString("token"), "edict-next-weak-signal-review")
+      val findingsJson = request.requireString("findingsJson")
+      management.requireTokenFree(findingsJson)
+      generation.recordWeakReview(
+        request.requireString("clusterId"),
+        EdictNextJson.decodeFromString<List<EdictNextReviewedFinding>>(findingsJson),
+      ).toToolResult()
+    }
+
+    server.addTool(
       name = "edict_next_record_evaluation",
-      description = "Last step before finalising Generated: score the inspection that would be published (the analyzed candidate, or the predecessor on SKIP) on every strong and weak example and write clusters/<id>/evaluation.json (tp, fp, fn, precision, recall, inspection hash, per-example results). Writes nothing unless every strong example passes.",
+      description = "Last step before finalising Generated: score the inspection that would be published (the analyzed candidate, or the predecessor on SKIP) on every strong and weak example and write clusters/<id>/evaluation.json: per-example results, tp, fp, fn, precision and recall weighted by the project findings the weak-signal review assigned to each example, and the published inspection's project findings. Writes nothing unless every strong example passes.",
       inputSchema = stringArguments(
         "token" to "Your delegated edict-next-cluster-generation task token",
         "clusterId" to "Pending frozen generation target cluster id",
