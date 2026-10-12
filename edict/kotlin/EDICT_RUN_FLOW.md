@@ -95,8 +95,9 @@ edict_manager
 ├── edict-next-distribution
 └── edict-next-generation ── edict-next-cluster-generation
                               ├── edict-next-code-example-overseer ── edict-next-code-example
-                              ├── edict-next-inspection-code-review
-                              └── edict-next-weak-signal-review ───── edict-next-code-example
+                              ├── edict-next-inspection-shallow-review
+                              ├── edict-next-weak-signal-review
+                              └── edict-next-inspection-code-review
 ```
 
 ## Signal extraction (optional first stage)
@@ -194,7 +195,11 @@ edict_manager
        - `$edict-next-weak-signal-review` classifies the sampled findings against `inspectionDescription` without
          reading the implementation, groups them by shape, and writes examples itself (no workers) only for new
          evidence: one NEGATIVE per distinct FP cause, a POSITIVE only for an uncovered TP shape; strong evidence
-         always wins
+         always wins. It records each finding's classification and representing example with
+         `edict_next_record_weak_review`, which accepts only an example the analyzed inspection reports, running it on examples written
+         since the analysis. Its config
+         lists each example's status and the examples that no longer reproduce findings assigned to them, which it
+         splits or replaces (a strong example is only split) before classifying new findings
        - `$edict-next-inspection-code-review` then reads the implementation and writes at most five important
          corner-case examples: common forms that differ in what the rule decides rather than in syntax, and that an
          inspection within the implementation constraints can decide. It writes them all in the first round; later
@@ -204,8 +209,11 @@ edict_manager
          analyzed candidate unchanged
        - `edict_next_record_evaluation(token, clusterId)` is the last step before finalising Generated: it scores the
          published inspection on every strong and weak example and writes `clusters/<id>/evaluation.json`
-         (`inspectionHash`, `exampleSetDigest`, `tp`, `fp`, `fn`, `precision`, `recall`, per-example results), and
-         writes nothing unless every strong example passes
+         (`inspectionHash`, `exampleSetDigest`, per-example results, `tp`, `fp`, `fn`, `precision`, `recall`, and
+         `projectReview`), and writes nothing unless every strong example passes. Each example weighs the project
+         findings the weak-signal review assigned to it over every round (`edict_next_record_weak_review`), at least 1;
+         `projectReview` counts the published inspection's project findings and the reviewed ones. A finding the
+         published inspection still reports while not reporting its example counts directly by its classification
     6. records operational evidence with `edict_next_append_cluster_history` and ends with one successful
        `edict_next_finalise_cluster(token, clusterId, status, reason)`; it appends the reason to history and applies the
        status only when its contract holds, otherwise it rejects and changes nothing; the worker may then keep repairing

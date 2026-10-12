@@ -79,7 +79,7 @@ class EdictNextInspectionTest {
   }
 
   @Test
-  fun `evaluation scores strong and weak examples once strong examples pass`() = runBlocking {
+  fun `evaluation weighs every example by its assigned project findings`() = runBlocking {
     val cluster = cluster(
       example("weak-missed", EdictNextSignalLabel.POSITIVE, listOf(EdictNextLineRange(1, 1))),
       example("weak-reported", EdictNextSignalLabel.NEGATIVE, null),
@@ -92,21 +92,86 @@ class EdictNextInspectionTest {
         InspectionKtsFileResult("weak-reported", "WeakReported.kt", listOf(problem(1))),
       ),
     )
-    val (validation, evaluation) = EdictNextInspection({ client }, { client.projectResult })
-      .evaluate(cluster, "inspection", EdictNextInspectionAction.GENERATE)
+    val review = EdictNextProjectReview("abcdef", totalFindings = 40, reviewedFindings = 12, uncertain = 1, unassigned = 0, unreproduced = 0)
+    fun assigned(exampleId: String, count: Int, classification: EdictNextFindingClassification) =
+      List(count) { EdictNextFindingAssignment(exampleId, classification, stillReported = false) }
+    val (validation, evaluation) = EdictNextInspection({ client }, { client.projectResult }).evaluate(
+      cluster,
+      "inspection",
+      EdictNextInspectionAction.GENERATE,
+      assignments = assigned("positive", 6, EdictNextFindingClassification.TP) +
+        assigned("weak-missed", 2, EdictNextFindingClassification.TP) +
+        assigned("weak-reported", 3, EdictNextFindingClassification.FP),
+      projectReview = review,
+    )
 
     assertTrue(validation.overallSuccess)
     checkNotNull(evaluation)
-    assertEquals(listOf(1, 1, 1), listOf(evaluation.tp, evaluation.fp, evaluation.fn))
-    assertEquals(0.5, evaluation.precision)
-    assertEquals(0.5, evaluation.recall)
-    assertEquals(listOf("negative", "positive"), evaluation.strongExampleIds)
+    // The negative strong example has no findings and still weighs 1; it is satisfied, so it adds to no count.
+    assertEquals(listOf(6, 3, 2), listOf(evaluation.tp, evaluation.fp, evaluation.fn))
+    assertEquals(6.0 / 9, evaluation.precision)
+    assertEquals(6.0 / 8, evaluation.recall)
     assertEquals(
-      mapOf("negative" to true, "positive" to true, "weak-missed" to false, "weak-reported" to false),
-      evaluation.satisfiedByExampleId,
+      mapOf(
+        "negative" to EdictNextExampleEvaluation(EdictNextSignalLabel.NEGATIVE, strong = true, satisfied = true, projectFindings = 0, weight = 1),
+        "positive" to EdictNextExampleEvaluation(EdictNextSignalLabel.POSITIVE, strong = true, satisfied = true, projectFindings = 6, weight = 6),
+        "weak-missed" to EdictNextExampleEvaluation(EdictNextSignalLabel.POSITIVE, strong = false, satisfied = false, projectFindings = 2, weight = 2),
+        "weak-reported" to EdictNextExampleEvaluation(EdictNextSignalLabel.NEGATIVE, strong = false, satisfied = false, projectFindings = 3, weight = 3),
+      ),
+      evaluation.examples,
     )
+    assertEquals(review, evaluation.projectReview)
     assertEquals(sha256Hex("inspection"), evaluation.inspectionHash)
     assertEquals(exampleSetDigest(cluster), evaluation.exampleSetDigest)
+  }
+
+  @Test
+  fun `a still reported finding its example does not reproduce counts by its classification`() = runBlocking {
+    val cluster = cluster()
+    val client = FakeInspectionClient(
+      examplesResult = batchResult(
+        InspectionKtsFileResult("positive", "Positive.kt", listOf(problem(2))),
+        InspectionKtsFileResult("negative", "Negative.kt"),
+      ),
+    )
+    val review = EdictNextProjectReview("abcdef", totalFindings = 10, reviewedFindings = 3, uncertain = 0, unassigned = 0, unreproduced = 0)
+    val (_, evaluation) = EdictNextInspection({ client }, { client.projectResult }).evaluate(
+      cluster,
+      "inspection",
+      EdictNextInspectionAction.GENERATE,
+      assignments = listOf(
+        // The inspection no longer reports the negative example but still reports this finding: a real false positive.
+        EdictNextFindingAssignment("negative", EdictNextFindingClassification.FP, stillReported = true),
+        // Fixed together with the negative example, so it only weighs it.
+        EdictNextFindingAssignment("negative", EdictNextFindingClassification.FP, stillReported = false),
+        EdictNextFindingAssignment("positive", EdictNextFindingClassification.TP, stillReported = true),
+      ),
+      projectReview = review,
+    )
+
+    checkNotNull(evaluation)
+    assertEquals(listOf(1, 1, 0), listOf(evaluation.tp, evaluation.fp, evaluation.fn))
+    assertEquals(1, evaluation.examples.getValue("negative").projectFindings)
+    assertEquals(1, evaluation.projectReview?.unreproduced)
+  }
+
+  @Test
+  fun `without review data every example weighs 1`() = runBlocking {
+    val cluster = cluster(example("weak-missed", EdictNextSignalLabel.POSITIVE, listOf(EdictNextLineRange(1, 1))))
+    val client = FakeInspectionClient(
+      examplesResult = batchResult(
+        InspectionKtsFileResult("positive", "Positive.kt", listOf(problem(2))),
+        InspectionKtsFileResult("negative", "Negative.kt"),
+        InspectionKtsFileResult("weak-missed", "WeakMissed.kt"),
+      ),
+    )
+    val (_, evaluation) = EdictNextInspection({ client }, { client.projectResult })
+      .evaluate(cluster, "inspection", EdictNextInspectionAction.SKIP)
+
+    checkNotNull(evaluation)
+    assertEquals(listOf(1, 0, 1), listOf(evaluation.tp, evaluation.fp, evaluation.fn))
+    assertTrue(evaluation.examples.values.all { it.weight == 1 && it.projectFindings == 0 })
+    assertEquals(null, evaluation.projectReview)
   }
 
   @Test

@@ -351,8 +351,9 @@ internal data class EdictNextInspectionResultsResponse(
 
 /**
  * `clusters/<id>/evaluation.json`: the final score of one inspection on one example set, written only by
- * `edict_next_record_evaluation`. Positive examples count as tp when satisfied and fn otherwise; negative examples the
- * inspection reports count as fp. Finalising Generated requires one matching the published inspection and examples.
+ * `edict_next_record_evaluation`. Every example weighs the project findings the weak-signal review assigned to it, at
+ * least 1: tp sums the weights of satisfied positive examples, fn of unsatisfied positive ones, and fp of negative
+ * examples the inspection reports. Finalising Generated requires one matching the published inspection and examples.
  */
 @Serializable
 internal data class EdictNextEvaluation(
@@ -364,8 +365,39 @@ internal data class EdictNextEvaluation(
   val fn: Int,
   val precision: Double,
   val recall: Double,
-  val strongExampleIds: List<String>,
-  val satisfiedByExampleId: Map<String, Boolean>,
+  val examples: Map<String, EdictNextExampleEvaluation>,
+  /** The published inspection's project analysis and its weak-signal review; null when this run analyzed no such bytes. */
+  val projectReview: EdictNextProjectReview?,
+)
+
+@Serializable
+internal data class EdictNextExampleEvaluation(
+  val label: EdictNextSignalLabel,
+  val strong: Boolean,
+  val satisfied: Boolean,
+  val projectFindings: Int,
+  val weight: Int,
+)
+
+@Serializable
+internal data class EdictNextProjectReview(
+  val projectRevision: String,
+  val totalFindings: Int,
+  val reviewedFindings: Int,
+  val uncertain: Int,
+  val unassigned: Int,
+  val unreproduced: Int,
+)
+
+@Serializable
+internal enum class EdictNextFindingClassification { TP, FP, UNCERTAIN }
+
+@Serializable
+internal data class EdictNextReviewedFinding(
+  val path: String,
+  val line: Int,
+  val classification: EdictNextFindingClassification,
+  val exampleId: String? = null,
 )
 
 @Serializable
@@ -409,6 +441,21 @@ internal data class EdictNextWeakSignalReviewConfig(
   val inspectedProject: String,
   val privateScratchDirectory: String,
   val outputPath: String,
+  val exampleStatus: Map<String, EdictNextReviewExampleStatus>,
+  val unreproducedFindings: Map<String, EdictNextUnreproducedFindings>,
+)
+
+@Serializable
+internal data class EdictNextUnreproducedFindings(
+  val stillReported: List<String>,
+  val noLongerReported: Int,
+)
+
+@Serializable
+internal data class EdictNextReviewExampleStatus(
+  val label: EdictNextSignalLabel,
+  val strong: Boolean,
+  val reported: Boolean,
 )
 
 @Serializable
