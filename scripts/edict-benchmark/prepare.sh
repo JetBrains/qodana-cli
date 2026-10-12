@@ -12,7 +12,17 @@ qodana edict install --deny benchmark --deny .edict/gold.sarif.json \
 # Its console output stays beside the run folders, which agents cannot read either.
 server_log=log/process-log/edict-server.log
 mkdir -p log/process-log
+# The fixture has no qodana.yaml. Generate every cluster, not the default first few, and let the manager write the price
+# report: without a persisted plan the report step cannot attribute sessions to stages.
+edict_config="$benchmark_output/edict-qodana.yaml"
+cat > "$edict_config" <<'YAML'
+edict:
+  calculatePrice: true
+  generation:
+    defaultGenerationCount: 20
+YAML
 QODANA_CONF="$benchmark_output/mcp-config" nohup setsid qodana edict mcp start \
+  --config "$edict_config" \
   --ide-wait-timeout 20m \
   --ide-property=-Xmx8g --ide-property=java.awt.headless=true --ide-property=idea.is.internal=true \
   --ide-property=eap.login.enabled=false > "$server_log" 2>&1 < /dev/null &
