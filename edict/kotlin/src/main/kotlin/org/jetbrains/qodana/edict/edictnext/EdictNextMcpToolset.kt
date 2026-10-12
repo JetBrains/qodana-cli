@@ -86,7 +86,7 @@ internal class EdictNextMcpToolset(
 
     server.addTool(
       name = "edict_next_prepare_pipeline",
-      description = "Snapshot the state repository and prepare neighbours for up to 100 alphabetical inbox Signals. Call once.",
+      description = "Replace re-published clustered Signals, snapshot the state repository, and prepare neighbours for up to 100 alphabetical inbox Signals. Call once.",
     ) {
       distribution.preparePipeline().toToolResult()
     }

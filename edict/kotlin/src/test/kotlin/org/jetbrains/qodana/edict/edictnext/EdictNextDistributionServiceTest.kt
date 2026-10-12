@@ -1,0 +1,129 @@
+package org.jetbrains.qodana.edict.edictnext
+
+import kotlinx.coroutines.runBlocking
+import org.jetbrains.qodana.edict.common.runProcess
+import org.junit.jupiter.api.io.TempDir
+import java.nio.file.Path
+import kotlin.io.path.createDirectories
+import kotlin.io.path.exists
+import kotlin.io.path.readText
+import kotlin.io.path.writeText
+import kotlin.test.Test
+import kotlin.test.assertContains
+import kotlin.test.assertEquals
+import kotlin.test.assertFailsWith
+import kotlin.test.assertFalse
+import kotlin.test.assertTrue
+
+class EdictNextDistributionServiceTest {
+  @TempDir
+  lateinit var directory: Path
+
+  @Test
+  fun `pipeline preparation replaces a re-published clustered Signal and resets generation`() = runBlocking {
+    val state = directory.resolve("state").createDirectories()
+    runProcess(state, listOf("git", "init", "--quiet"))
+    val repository = EdictRepository(EdictRepositoryDirectory(state))
+    val clusterId = "generated-rule"
+    val signalId = stableSignalId(SIGNAL_KEY)
+    val cluster = state.resolve("clusters/$clusterId").createDirectories()
+    cluster.resolve("signals").createDirectories()
+    cluster.resolve("cluster.json").writeText(
+      EdictNextJson.encodeToString(
+        EdictNextClusterManifest(clusterId, EdictNextLanguage.Kotlin, EdictNextClusterStatus.Generated),
+      ),
+    )
+    cluster.resolve("history.md").writeText("Generated from the original Signal.\n")
+    val original = signal(signalId, "Original model", "old-batch")
+    cluster.resolve("signals/$signalId.json").writeText(EdictNextJson.encodeToString(original))
+    repository.paths.inspectionPath(clusterId).also {
+      it.parent.createDirectories()
+      it.writeText("// generated inspection")
+    }
+    val replacement = signal(signalId, "Improved re-published model", "new-batch")
+    repository.paths.inboxDirectory.createDirectories()
+      .resolve("$signalId.json").writeText(EdictNextJson.encodeToString(replacement))
+
+    val distribution = EdictNextDistributionService(repository, directory.resolve("neighbours.json"))
+    val prepared = distribution.preparePipeline()
+
+    assertContains(prepared.summary, "0 Signal(s) selected for distribution")
+    assertContains(prepared.summary, "1 re-published Signal(s) replaced")
+    val current = repository.loadState()
+    val currentCluster = current.clusters.single()
+    assertEquals(replacement, currentCluster.signals.single())
+    assertEquals(EdictNextClusterStatus.Pending, currentCluster.manifest.status)
+    assertEquals(clusterId, currentCluster.manifest.predecessorId)
+    assertFalse(repository.paths.inboxDirectory.resolve("$signalId.json").exists())
+    assertContains(currentCluster.historyPath.readText(), "Replaced Signal `$signalId`")
+    assertTrue(repository.paths.inspectionPath(clusterId).exists())
+    assertTrue(validateRepositoryState(repository, current).isEmpty())
+    assertTrue(distribution.validateDistribution().success)
+  }
+
+  @Test
+  fun `ambiguous ownership rejects all replacements without changing the repository`() = runBlocking {
+    val state = directory.resolve("state").createDirectories()
+    runProcess(state, listOf("git", "init", "--quiet"))
+    val repository = EdictRepository(EdictRepositoryDirectory(state))
+    val uniqueId = stableSignalId(UNIQUE_SIGNAL_KEY)
+    val ambiguousId = stableSignalId(AMBIGUOUS_SIGNAL_KEY)
+    writePendingCluster(state, "unique-owner", signal(uniqueId, "Original unique model", "old", UNIQUE_SIGNAL_KEY))
+    writePendingCluster(state, "ambiguous-a", signal(ambiguousId, "Original ambiguous model", "old", AMBIGUOUS_SIGNAL_KEY))
+    writePendingCluster(state, "ambiguous-b", signal(ambiguousId, "Original ambiguous model", "old", AMBIGUOUS_SIGNAL_KEY))
+    repository.paths.inboxDirectory.createDirectories().also { inbox ->
+      inbox.resolve("$uniqueId.json").writeText(
+        EdictNextJson.encodeToString(signal(uniqueId, "Replacement unique model", "new", UNIQUE_SIGNAL_KEY)),
+      )
+      inbox.resolve("$ambiguousId.json").writeText(
+        EdictNextJson.encodeToString(signal(ambiguousId, "Replacement ambiguous model", "new", AMBIGUOUS_SIGNAL_KEY)),
+      )
+    }
+
+    val distribution = EdictNextDistributionService(repository, directory.resolve("neighbours.json"))
+    val error = assertFailsWith<IllegalStateException> { distribution.preparePipeline() }
+
+    assertContains(error.message.orEmpty(), "Signal occurs 3 times")
+    assertEquals("Original unique model", repository.loadCluster("unique-owner").signals.single().description)
+    assertTrue(repository.paths.inboxDirectory.resolve("$uniqueId.json").exists())
+    assertTrue(repository.paths.inboxDirectory.resolve("$ambiguousId.json").exists())
+  }
+
+  private fun writePendingCluster(state: Path, clusterId: String, signal: EdictNextSignal) {
+    val cluster = state.resolve("clusters/$clusterId").createDirectories()
+    cluster.resolve("signals").createDirectories()
+    cluster.resolve("cluster.json").writeText(
+      EdictNextJson.encodeToString(
+        EdictNextClusterManifest(clusterId, EdictNextLanguage.Kotlin, EdictNextClusterStatus.Pending),
+      ),
+    )
+    cluster.resolve("signals/${signal.id}.json").writeText(EdictNextJson.encodeToString(signal))
+  }
+
+  private fun signal(
+    id: String,
+    description: String,
+    batchId: String,
+    idempotencyKey: String = SIGNAL_KEY,
+  ): EdictNextSignal = EdictNextSignal(
+    id = id,
+    idempotencyKey = idempotencyKey,
+    fileRevision = EdictNextFileRevision("Example.kt", "a".repeat(40), listOf(EdictNextLineRange(1, 1))),
+    source = EdictNextSignalSource.FromPR(
+      prNumber = 42,
+      title = "Improve example",
+      discussionMessages = listOf("Please improve this"),
+      diffPositiveToNegative = "--- a/Example.kt\n+++ b/Example.kt\n@@ -1 +1 @@\n-old\n+new\n",
+      url = "https://example.invalid/review/42",
+    ),
+    label = EdictNextSignalLabel.POSITIVE,
+    description = description,
+    provenance = EdictNextSignalProvenance("work-item", batchId),
+  )
+
+  private companion object {
+    val SIGNAL_KEY = "space:ij/ultimate:pr:42:work-item:0:POSITIVE:Example.kt:${"a".repeat(40)}:1-1"
+    val UNIQUE_SIGNAL_KEY = "space:ij/ultimate:pr:43:work-item:0:POSITIVE:Example.kt:${"a".repeat(40)}:1-1"
+    val AMBIGUOUS_SIGNAL_KEY = "space:ij/ultimate:pr:44:work-item:0:POSITIVE:Example.kt:${"a".repeat(40)}:1-1"
+  }
+}

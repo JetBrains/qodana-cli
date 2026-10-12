@@ -19,7 +19,19 @@ internal class EdictNextDistributionService(
     internal var maxInboxSignalsPerRun: Int = EDICT_NEXT_MAX_INBOX_SIGNALS_PER_RUN
 
     suspend fun preparePipeline(): EdictNextPreparePipelineResponse {
-        val initialState = repository.loadState()
+        var initialState = repository.loadState()
+        val replacementOwners = initialState.inboxSignals.associateWith { signal ->
+            initialState.clusters.filter { signal.id in it.signalIds }
+        }
+        if (replacementOwners.values.any { it.size > 1 }) {
+            requireNoIssues(validateRepositoryState(repository, initialState))
+        }
+        val replacedSignals = replacementOwners.mapNotNull { (signal, owners) ->
+            val owner = owners.singleOrNull() ?: return@mapNotNull null
+            repository.replaceClusterSignalFromInbox(signal.id, owner.id)
+            signal.id
+        }
+        if (replacedSignals.isNotEmpty()) initialState = repository.loadState()
         requireNoIssues(validateRepositoryState(repository, initialState))
 
         val signalIds = initialState.jvmInboxSignalIds.sorted().take(maxInboxSignalsPerRun)
@@ -27,7 +39,12 @@ internal class EdictNextDistributionService(
         batch = DistributionBatch(initialState, signalIds.toSet(), neighbours)
 
         return EdictNextPreparePipelineResponse(
-          summary = "${initialState.clusters.size} cluster(s), ${signalIds.size} Signal(s) selected for distribution",
+          summary = buildString {
+              append("${initialState.clusters.size} cluster(s), ${signalIds.size} Signal(s) selected for distribution")
+              if (replacedSignals.isNotEmpty()) {
+                  append(", ${replacedSignals.size} re-published Signal(s) replaced in existing clusters")
+              }
+          },
         )
     }
 
