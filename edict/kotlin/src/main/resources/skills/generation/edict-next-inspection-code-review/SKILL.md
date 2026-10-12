@@ -38,8 +38,9 @@ Add only the few corner cases that really matter, and add them all in the first 
 nothing left to add. Adding none is a normal outcome.
 
 - **First round** (no previous code review): decide which forms of the construct the rule must get right from the
-  contract and the Signals, independently of how the candidate handles them today. Write every important form, also
-  ones the candidate already decides correctly: they keep later regenerations from breaking it.
+  contract and the Signals, independently of how the candidate handles them today. Write a form the candidate already
+  decides correctly only when it is a core form of the rule that no example covers yet, so later regenerations do not
+  break it; otherwise write only forms it probably decides wrongly.
 - **Later rounds**: compare the decision points with those the previous code review listed. Look only at decision
   points the regeneration added or changed, and only at forms those introduce. A form the first round could have
   found is not a reason to add an example now.
@@ -55,6 +56,9 @@ Keep a form only when all of these hold:
   language and of the framework the Signals come from (one-sentence justification);
 - it differs from covered forms in what the rule decides, not only in syntax: extra parentheses, negation, compound
   assignment, an additional wrapper, nesting level or operator around a covered form is not a new corner case;
+- it is not one more member of a family the rule treats alike: another library method, overload, factory, static helper
+  or wrapper type that reaches the same decision as a covered form is not a corner case. When you suspect the
+  implementation's list of such members is incomplete, say so in `droppedForms` instead of writing an example per member;
 - a user would notice the mistake: a missed problem in a core form, or a false report on code that is written often;
 - in later rounds, reading the implementation gives a concrete reason, at a decision point added or changed since the
   previous round, to expect it decides the form wrongly;
