@@ -17,6 +17,7 @@
 package core
 
 import (
+	"bytes"
 	"errors"
 	"fmt"
 	"net/http"
@@ -67,29 +68,30 @@ func TestDockerCliArgs(t *testing.T) {
 			name:         "typical set up",
 			majorVersion: "2024.2",
 			cb: corescan.ContextBuilder{
-				ProjectDir:            projectDir,
-				RepositoryRoot:        projectDir,
-				CacheDir:              cacheDir,
-				ResultsDir:            resultsDir,
-				Analyser:              product.JvmLinter.DockerAnalyzer(),
-				OnlyDirectory:         "./src",
-				DisableSanity:         true,
-				RunPromo:              "true",
-				Baseline:              "qodana.sarif.json",
-				BaselineIncludeAbsent: true,
-				SaveReport:            true,
-				ShowReport:            true,
-				ShowReportPort:        8888,
-				Property:              []string{"foo.baz=bar", "foo.bar=baz"},
-				Script:                "default",
-				FailThreshold:         "0",
-				AnalysisId:            "id",
-				Env:                   []string{"A=B"},
-				Volumes:               []string{"/tmp/foo:/tmp/foo"},
-				User:                  "1001:1001",
-				PrintProblems:         true,
-				ProfileName:           "Default",
-				ApplyFixes:            true,
+				ProjectDir:             projectDir,
+				RepositoryRoot:         projectDir,
+				CacheDir:               cacheDir,
+				ResultsDir:             resultsDir,
+				Analyser:               product.JvmLinter.DockerAnalyzer(),
+				OnlyDirectory:          "./src",
+				DisableSanity:          true,
+				RunPromo:               "true",
+				ReportCoverageProblems: "true",
+				Baseline:               "qodana.sarif.json",
+				BaselineIncludeAbsent:  true,
+				SaveReport:             true,
+				ShowReport:             true,
+				ShowReportPort:         8888,
+				Property:               []string{"foo.baz=bar", "foo.bar=baz"},
+				Script:                 "default",
+				FailThreshold:          "0",
+				AnalysisId:             "id",
+				Env:                    []string{"A=B"},
+				Volumes:                []string{"/tmp/foo:/tmp/foo"},
+				User:                   "1001:1001",
+				PrintProblems:          true,
+				ProfileName:            "Default",
+				ApplyFixes:             true,
 			},
 			res: []string{
 				"--save-report",
@@ -105,6 +107,8 @@ func TestDockerCliArgs(t *testing.T) {
 				"--baseline-include-absent",
 				"--fail-threshold",
 				"0",
+				"--report-coverage-problems",
+				"true",
 				"--fixes-strategy",
 				"apply",
 				"--analysis-id",
@@ -174,6 +178,99 @@ func TestDockerCliArgs(t *testing.T) {
 	}
 }
 
+func TestTeamCityLicenseAuditCompatibilityArgs(t *testing.T) {
+	logger := log.StandardLogger()
+	originalOutput := logger.Out
+	t.Cleanup(func() { logger.SetOutput(originalOutput) })
+
+	for _, tc := range []struct {
+		name        string
+		environment string
+		properties  []string
+		want        []string
+		wantWarning bool
+	}{
+		{
+			name:        "old TeamCity user property overrides compatibility property",
+			environment: "teamcity:2026.0:123456",
+			properties:  []string{"qodana.license.audit.v2=false"},
+			want: []string{
+				"--property=qodana.license.audit.v2=true",
+				"--property=qodana.license.audit.v2=false",
+			},
+		},
+		{
+			name:        "older major version",
+			environment: "teamcity:2025.2.1:123456",
+			want:        []string{"--property=qodana.license.audit.v2=true"},
+		},
+		{
+			name:        "TeamCity 2026.1 needs the legacy format",
+			environment: "teamcity:2026.1:123456",
+			want:        []string{"--property=qodana.license.audit.v2=true"},
+		},
+		{
+			name:        "TeamCity 2026.1 EAP needs the legacy format",
+			environment: "teamcity:2026.1_EAP:123456",
+			want:        []string{"--property=qodana.license.audit.v2=true"},
+		},
+		{
+			name:        "minimum supported version",
+			environment: "teamcity:2026.1.2:123456",
+			want:        []string{},
+		},
+		{
+			name:        "newer version",
+			environment: "teamcity:2026.2:123456",
+			want:        []string{},
+		},
+		{
+			name:        "unrelated environment",
+			environment: "github-actions:2026.0:123456",
+			want:        []string{},
+		},
+		{
+			name:        "bare TeamCity environment",
+			environment: "teamcity",
+			want:        []string{},
+		},
+		{
+			name:        "malformed version",
+			environment: "teamcity:2026.x:123456",
+			want:        []string{},
+			wantWarning: true,
+		},
+		{
+			name:        "overflowing version",
+			environment: "teamcity:999999999999999999999999.1:123456",
+			want:        []string{},
+			wantWarning: true,
+		},
+	} {
+		t.Run(
+			tc.name, func(t *testing.T) {
+				var output bytes.Buffer
+				logger.SetOutput(&output)
+
+				args := GetIdeArgs(
+					corescan.ContextBuilder{
+						Analyser: product.JvmLinter.DockerAnalyzer(),
+						Env:      []string{qdenv.QodanaEnv + "=" + tc.environment},
+						Property: tc.properties,
+					}.Build(),
+				)
+
+				assert.Equal(t, tc.want, args)
+				if tc.wantWarning {
+					assert.Contains(t, output.String(), "Cannot parse TeamCity version")
+				} else {
+					assert.Empty(t, output.String())
+				}
+			},
+		)
+	}
+}
+
 func TestCliArgs(t *testing.T) {
 	dir, _ := os.Getwd()
 	projectDir := filepath.Join(dir, "project")
@@ -209,6 +306,7 @@ func TestCliArgs(t *testing.T) {
 				OnlyDirectory:             "./src",
 				DisableSanity:             true,
 				RunPromo:                  "true",
+				ReportCoverageProblems:    "true",
 				Baseline:                  "qodana.sarif.json",
 				BaselineIncludeAbsent:     true,
 				SaveReport:                true,
@@ -240,6 +338,8 @@ func TestCliArgs(t *testing.T) {
 				"--baseline-include-absent",
 				"--fail-threshold",
 				"0",
+				"--report-coverage-problems",
+				"true",
 				"--apply-fixes",
 				"--config-dir",
 				"/qdconfig",
@@ -453,8 +553,10 @@ func TestCliArgs_ProfileNameWithSpaces(t *testing.T) {
 	// "My Custom Profile" (with quotes) instead of My Custom Profile.
 	for i, arg := range args {
 		if arg == "--profile-name" {
-			assert.Equal(t, "My Custom Profile", args[i+1],
-				"profile name should not have embedded quotes for exec.Command")
+			assert.Equal(
+				t, "My Custom Profile", args[i+1],
+				"profile name should not have embedded quotes for exec.Command",
+			)
 			return
 		}
 	}
@@ -960,6 +1062,7 @@ func Test_ideaExitCode(t *testing.T) {
 }
 
 func TestSetupLicense(t *testing.T) {
+	t.Cleanup(func() { cloud.OrganizationAllowsErrorReporting = nil })
 	prod := product.Product{
 		Code:     "QDJVM",
 		IsEap:    false,
@@ -1041,6 +1144,7 @@ func TestSetupLicense(t *testing.T) {
 }
 
 func TestSetupLicenseToken(t *testing.T) {
+	t.Cleanup(func() { cloud.OrganizationAllowsErrorReporting = nil })
 	for _, testData := range []struct {
 		name       string
 		token      string
@@ -1204,16 +1308,26 @@ func TestGetPluginIds(t *testing.T) {
 	}
 
 	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			result := getPluginIds(tt.plugins)
-			assert.Equal(t, tt.expected, result)
-		})
+		t.Run(
+			tt.name, func(t *testing.T) {
+				result := getPluginIds(tt.plugins)
+				assert.Equal(t, tt.expected, result)
+			},
+		)
 	}
 }
 
 func propertiesFixture(enableStats bool, additionalProperties []string) []string {
+	return propertiesFixtureWithConfigPath(
+		enableStats,
+		filepath.Join(os.TempDir(), "entrypoint", "root", "project"),
+		additionalProperties,
+	)
+}
+
+func propertiesFixtureWithConfigPath(enableStats bool, configPath string, additionalProperties []string) []string {
 	properties := []string{
-		fmt.Sprintf("-Didea.config.path=%s", filepath.Join(os.TempDir(), "entrypoint", "root", "project")),
+		fmt.Sprintf("-Didea.config.path=%s", configPath),
 		fmt.Sprintf("-Didea.headless.enable.statistics=%t", enableStats),
 		"-Didea.headless.statistics.device.id=FAKE",
 		"-Didea.headless.statistics.salt=FAKE",
@@ -1224,6 +1338,7 @@ func propertiesFixture(enableStats bool, additionalProperties []string) []string
 		fmt.Sprintf("-Didea.system.path=%s", filepath.Join(os.TempDir(), "entrypoint", "cache", "idea", "233")),
 		fmt.Sprintf("-Xlog:gc*:%s", filepath.Join(os.TempDir(), "entrypoint", "results", "log", "gc.log")),
 		"-XX:MaxRAMPercentage=70",
+		"-Dtypescript.service.node.defaultMemoryLimit=1024",
 	}
 	properties = append(properties, additionalProperties...)
 	sort.Strings(properties)
@@ -1238,6 +1353,8 @@ func Test_Properties(t *testing.T) {
 	resultsDir := filepath.Join(tmpDir, "results")
 	cacheDir := filepath.Join(tmpDir, "cache")
 
+	cloud.OrganizationAllowsErrorReporting = nil
+	t.Cleanup(func() { cloud.OrganizationAllowsErrorReporting = nil })
 	t.Setenv(qdenv.QodanaConfEnv, projectDir)
 	t.Setenv(qdenv.QodanaDockerEnv, "true")
 	t.Setenv("DEVICEID", "FAKE")
@@ -1327,6 +1444,18 @@ func Test_Properties(t *testing.T) {
 			),
 		},
 		{
+			name:              "CLI overrides common configuration path",
+			cliProperties:     []string{"idea.config.path=.qodana\\config\\idea"},
+			qodanaYaml:        "",
+			isContainer:       false,
+			useRepositoryRoot: false,
+			expected: propertiesFixtureWithConfigPath(
+				true,
+				".qodana\\config\\idea",
+				[]string{},
+			),
+		},
+		{
 			name:              "different repositoryRoot adds project root property",
 			cliProperties:     []string{},
 			qodanaYaml:        "",
@@ -1405,4 +1534,26 @@ func Test_Properties(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+}
+
+func TestPluginProperties_ReceiveYamlCommonPropertyOverrides(t *testing.T) {
+	context := corescan.ContextBuilder{
+		ConfigDir: filepath.Join(t.TempDir(), "config"),
+		LogDir:    filepath.Join(t.TempDir(), "log"),
+		CacheDir:  filepath.Join(t.TempDir(), "cache"),
+		Prod: product.Product{
+			Version: "2023.3",
+		},
+		QodanaYamlConfig: corescan.YamlConfig(qdyaml.QodanaYaml{
+			Properties: map[string]string{
+				"idea.config.path": ".qodana/config/idea",
+			},
+		}),
+	}.Build()
+
+	pluginProperties := GetInstallPluginsProperties(context)
+	scanProperties := GetScanProperties(context)
+	expected := "-Didea.config.path=.qodana/config/idea"
+	assert.Contains(t, pluginProperties, expected)
+	assert.Contains(t, scanProperties, expected)
 }

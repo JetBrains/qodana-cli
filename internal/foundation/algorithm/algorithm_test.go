@@ -70,6 +70,20 @@ func TestFilter(t *testing.T) {
 	})
 }
 
+func TestMapValues(t *testing.T) {
+	t.Run("transform values", func(t *testing.T) {
+		result := MapValues(map[string]int{"a": 1, "b": 2}, func(key string, value int) bool {
+			return key == "a" && value == 1
+		})
+		assert.Equal(t, map[string]bool{"a": true, "b": false}, result)
+	})
+
+	t.Run("empty map", func(t *testing.T) {
+		result := MapValues(map[string]int{}, func(_ string, value int) int { return value })
+		assert.Empty(t, result)
+	})
+}
+
 func TestUnique(t *testing.T) {
 	t.Run("remove duplicates", func(t *testing.T) {
 		nums := []int{1, 2, 2, 3, 3, 3, 4}
@@ -101,4 +115,3 @@ func TestUnique(t *testing.T) {
 		assert.Empty(t, result)
 	})
 }
-

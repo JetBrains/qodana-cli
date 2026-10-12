@@ -23,6 +23,7 @@ TLS_KEY_FILE = "/tmp/mock_server.key"
 MOCK_PROJECT_ID = "test"
 MOCK_PRODUCT_CODE = "QDTEST"
 MOCK_REPORT_ID = "mock-report-12345"
+BASELINE_SARIF_FILE = "/workspace/results/qodana-cloud-baseline.sarif.json"
 
 app = Flask(__name__)
 app.url_map.strict_slashes = False
@@ -86,6 +87,7 @@ def log_endpoint(func):
             "timestamp": datetime.now().isoformat(),
             "method": request.method,
             "path": request.path.rstrip('/'),
+            "query": request.query_string.decode('utf-8'),
             "request_body": parse_json_body(request_body) if not is_binary(request_body) else "<binary>",
         }
 
@@ -214,6 +216,32 @@ def license_key():
         "expirationDate": "2999-06-30",
         "licensePlan": "ULTIMATE_PLUS"
     }
+
+
+@app.route('/linters/v1/linters/baseline', methods=['GET'])
+@log_endpoint
+def linters_baseline():
+    """Stream the cloud baseline built from the baseline SARIF report of the test data.
+
+    The problems of the test data are already shaped the way Qodana Cloud streams them, so they go
+    out as they are, as `{"baseline":[...]}`, gzipped when the linter accepts it. The requested tool
+    name is logged instead of filtering the test data."""
+    log(f"    Baseline requested for tool: {request.args.get('toolName', '')}")
+    with open(BASELINE_SARIF_FILE) as f:
+        baseline_sarif = json.load(f)
+    problems = [
+        result
+        for run in baseline_sarif.get("runs", [])
+        for result in run.get("results", [])
+    ]
+    body = ('{"baseline":[' + ",".join(json.dumps(p) for p in problems) + "]}").encode("utf-8")
+
+    headers = {"Vary": "Accept-Encoding"}
+    if "gzip" in request.headers.get("Accept-Encoding", ""):
+        body = gzip.compress(body)
+        headers["Content-Encoding"] = "gzip"
+    return Response(body, status=200, content_type="application/json", headers=headers)
+
 
 
 @app.route('/api/v1/reports', methods=['POST'])

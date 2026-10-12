@@ -19,6 +19,7 @@ package startup
 import (
 	"crypto/sha256"
 	"encoding/hex"
+	"errors"
 	"fmt"
 	"io"
 	"math/rand"
@@ -30,6 +31,7 @@ import (
 	"strings"
 
 	fexec "github.com/JetBrains/qodana-cli/internal/foundation/exec"
+	"github.com/JetBrains/qodana-cli/internal/foundation/flock"
 	"github.com/JetBrains/qodana-cli/internal/platform"
 	"github.com/JetBrains/qodana-cli/internal/platform/msg"
 	"github.com/JetBrains/qodana-cli/internal/platform/product"
@@ -371,32 +373,194 @@ func verifySha256(checksumFile string, checkSumUrl string, filePath string) {
 	log.Info("Checksum of downloaded IDE was verified")
 }
 
+// customPluginsSourceFile stores the plugins URL used to populate the cache.
+// Custom plugins live under <code>/<version-branch>/, so the URL (which includes
+// the build number) is what invalidates the cache across patch releases.
+const customPluginsSourceFile = "custom-plugins.source"
+
+// customPluginsLockFile coordinates concurrent downloads into the same targetDir.
+const customPluginsLockFile = "custom-plugins.lock"
+
 func downloadCustomPlugins(ideUrl string, targetDir string, spinner *pterm.SpinnerPrinter) error {
 	pluginsUrl := getPluginsURL(ideUrl)
+	if isCustomPluginsCacheValid(targetDir, pluginsUrl) {
+		log.Debugf("Custom plugins already downloaded from %s to %s, skipping download", pluginsUrl, targetDir)
+		return nil
+	}
+
+	// Exclusive lock so concurrent runs for the same version-branch wait instead of
+	// racing on staging/install. Re-check the cache after acquiring — another process
+	// may have finished the download while we waited.
+	lockPath := filepath.Join(targetDir, customPluginsLockFile)
+	var downloadErr error
+	if err := flock.With(lockPath, func() {
+		if isCustomPluginsCacheValid(targetDir, pluginsUrl) {
+			log.Debugf("Custom plugins already downloaded from %s to %s (updated by another process), skipping download", pluginsUrl, targetDir)
+			return
+		}
+		downloadErr = downloadAndInstallCustomPlugins(pluginsUrl, targetDir, spinner)
+	}); err != nil {
+		return failedCustomPluginsUpdate(pluginsUrl, hasCustomPluginsInstall(targetDir), fmt.Errorf("couldn't acquire custom plugins lock: %w", err))
+	}
+	return downloadErr
+}
+
+func downloadAndInstallCustomPlugins(pluginsUrl string, targetDir string, spinner *pterm.SpinnerPrinter) error {
 	log.Debugf("Downloading custom plugins from %s to %s", pluginsUrl, targetDir)
+	hadPrevious := hasCustomPluginsInstall(targetDir)
 
 	if err := os.MkdirAll(targetDir, os.ModePerm); err != nil {
-		return fmt.Errorf("couldn't create a directory %s: %v", targetDir, err)
+		return failedCustomPluginsUpdate(pluginsUrl, hadPrevious, fmt.Errorf("couldn't create a directory %s: %v", targetDir, err))
+	}
+	cleanupStaleCustomPluginsStaging(targetDir)
+
+	// Stage into a temp dir first so a failed download/unpack keeps the previous cache intact.
+	stagingDir, err := os.MkdirTemp(targetDir, "custom-plugins.*.partial")
+	if err != nil {
+		return failedCustomPluginsUpdate(pluginsUrl, hadPrevious, fmt.Errorf("couldn't create staging directory: %v", err))
+	}
+	defer func() {
+		if removeErr := os.RemoveAll(stagingDir); removeErr != nil {
+			log.Warning("Error while removing custom plugins staging directory: " + removeErr.Error())
+		}
+	}()
+
+	archivePath := filepath.Join(stagingDir, "custom-plugins.zip")
+	err = utils.DownloadFile(archivePath, pluginsUrl, getInternalAuth(), spinner)
+	if err != nil {
+		return failedCustomPluginsUpdate(pluginsUrl, hadPrevious, fmt.Errorf("error while downloading plugins: %v", err))
 	}
 
-	archivePath := filepath.Join(targetDir, "custom-plugins.zip")
-	err := utils.DownloadFile(archivePath, pluginsUrl, getInternalAuth(), spinner)
+	// fexec.Exec returns a nil error for normal non-zero process exits; only the
+	// exit code signals tar failure (e.g. partial extract of a malformed archive).
+	exitCode, err := fexec.Exec(".", "tar", "-xf", archivePath, "-C", stagingDir)
 	if err != nil {
-		return fmt.Errorf("error while downloading plugins: %v", err)
+		return failedCustomPluginsUpdate(pluginsUrl, hadPrevious, fmt.Errorf("tar: %w", err))
+	}
+	if exitCode != 0 {
+		return failedCustomPluginsUpdate(pluginsUrl, hadPrevious, fmt.Errorf("tar: exit code %d", exitCode))
 	}
 
-	_, err = fexec.Exec(".", "tar", "-xf", archivePath, "-C", targetDir)
+	stagingPlugins := filepath.Join(stagingDir, "custom-plugins")
+	stagingDisabled := filepath.Join(stagingDir, "disabled_plugins.txt")
+	err = cp.Copy(filepath.Join(stagingPlugins, "disabled_plugins.txt"), stagingDisabled)
 	if err != nil {
-		return fmt.Errorf("tar: %s", err)
+		return failedCustomPluginsUpdate(pluginsUrl, hadPrevious, fmt.Errorf("error while copying plugins: %s", err))
 	}
 
-	disabledPluginsPath := filepath.Join(targetDir, "custom-plugins", "disabled_plugins.txt")
-	err = cp.Copy(disabledPluginsPath, filepath.Join(targetDir, "disabled_plugins.txt"))
-	if err != nil {
-		return fmt.Errorf("error while copying plugins: %s", err)
+	if err := os.WriteFile(filepath.Join(stagingDir, customPluginsSourceFile), []byte(pluginsUrl), 0o644); err != nil {
+		return failedCustomPluginsUpdate(pluginsUrl, hadPrevious, fmt.Errorf("error while writing custom plugins source marker: %v", err))
+	}
+
+	if err := installCustomPluginsFromStaging(targetDir, stagingDir); err != nil {
+		return failedCustomPluginsUpdate(pluginsUrl, hadPrevious, err)
 	}
 
 	return nil
+}
+
+func hasCustomPluginsInstall(targetDir string) bool {
+	info, err := os.Stat(filepath.Join(targetDir, "custom-plugins"))
+	return err == nil && info.IsDir()
+}
+
+// failedCustomPluginsUpdate logs update failures. When a previous install exists it
+// stays on disk (staging never replaced it, or install was rolled back), so the
+// warning says we are keeping it.
+func failedCustomPluginsUpdate(pluginsUrl string, hadPrevious bool, err error) error {
+	if hadPrevious {
+		log.Warningf("Failed to update custom plugins from %s, keeping previously cached plugins: %v", pluginsUrl, err)
+		return err
+	}
+	log.Warningf("Failed to update custom plugins from %s: %v", pluginsUrl, err)
+	return err
+}
+
+func cleanupStaleCustomPluginsStaging(targetDir string) {
+	matches, err := filepath.Glob(filepath.Join(targetDir, "custom-plugins.*.partial"))
+	if err != nil {
+		return
+	}
+	for _, match := range matches {
+		if err := os.RemoveAll(match); err != nil {
+			log.Warningf("Failed to remove stale custom plugins staging directory %s: %s", match, err)
+		}
+	}
+}
+
+// installCustomPluginsFromStaging replaces the live custom-plugins tree only after
+// staging is complete. The previous tree is moved aside first so a rename failure
+// can roll back instead of leaving an empty cache. The source marker is written
+// last; any removal failure aborts before that so the old URL marker is kept.
+func installCustomPluginsFromStaging(targetDir string, stagingDir string) error {
+	finalPlugins := filepath.Join(targetDir, "custom-plugins")
+	stagingPlugins := filepath.Join(stagingDir, "custom-plugins")
+	backupPlugins := filepath.Join(targetDir, "custom-plugins.old")
+
+	if err := os.RemoveAll(backupPlugins); err != nil {
+		return fmt.Errorf("failed to remove leftover custom plugins backup: %w", err)
+	}
+
+	hadPrevious := false
+	if info, err := os.Stat(finalPlugins); err == nil && info.IsDir() {
+		if err := os.Rename(finalPlugins, backupPlugins); err != nil {
+			return fmt.Errorf("failed to move previous custom plugins aside: %w", err)
+		}
+		hadPrevious = true
+	} else if err != nil && !errors.Is(err, os.ErrNotExist) {
+		return fmt.Errorf("failed to stat custom plugins directory: %w", err)
+	}
+
+	if err := os.Rename(stagingPlugins, finalPlugins); err != nil {
+		if hadPrevious {
+			if rollbackErr := os.Rename(backupPlugins, finalPlugins); rollbackErr != nil {
+				log.Warningf("Failed to roll back custom plugins after install error: %s", rollbackErr)
+			}
+		}
+		return fmt.Errorf("failed to install custom plugins: %w", err)
+	}
+
+	if hadPrevious {
+		if err := os.RemoveAll(backupPlugins); err != nil {
+			// New tree is already in place; put the previous one back and leave the
+			// URL marker untouched so the cache is not claimed as updated.
+			if rbErr := os.Rename(finalPlugins, stagingPlugins); rbErr != nil {
+				log.Warningf("Failed to undo custom plugins install after removal error: %s", rbErr)
+			} else if rbErr := os.Rename(backupPlugins, finalPlugins); rbErr != nil {
+				log.Warningf("Failed to roll back custom plugins after removal error: %s", rbErr)
+			}
+			return fmt.Errorf("failed to remove previous custom plugins: %w", err)
+		}
+	}
+
+	if err := os.Rename(filepath.Join(stagingDir, "disabled_plugins.txt"), filepath.Join(targetDir, "disabled_plugins.txt")); err != nil {
+		return fmt.Errorf("failed to install disabled_plugins.txt: %w", err)
+	}
+	if err := os.Rename(filepath.Join(stagingDir, customPluginsSourceFile), filepath.Join(targetDir, customPluginsSourceFile)); err != nil {
+		return fmt.Errorf("failed to install custom plugins source marker: %w", err)
+	}
+
+	return nil
+}
+
+func isCustomPluginsCacheValid(targetDir string, pluginsUrl string) bool {
+	if _, err := os.Stat(filepath.Join(targetDir, "disabled_plugins.txt")); err != nil {
+		return false
+	}
+	pluginsDir := filepath.Join(targetDir, "custom-plugins")
+	info, err := os.Stat(pluginsDir)
+	if err != nil || !info.IsDir() {
+		return false
+	}
+	entries, err := os.ReadDir(pluginsDir)
+	if err != nil || len(entries) == 0 {
+		return false
+	}
+	data, err := os.ReadFile(filepath.Join(targetDir, customPluginsSourceFile))
+	if err != nil {
+		return false
+	}
+	return strings.TrimSpace(string(data)) == pluginsUrl
 }
 
 func getPluginsURL(ideUrl string) string {

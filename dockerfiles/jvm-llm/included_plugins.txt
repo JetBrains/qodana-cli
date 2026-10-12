@@ -57,7 +57,6 @@ org.intellij.groovy
 org.jetbrains.idea.eclipse
 org.jetbrains.idea.maven
 org.jetbrains.idea.gradle.dsl
-org.jetbrains.idea.reposearch
 org.jetbrains.kotlin
 org.jetbrains.plugins.gradle
 com.jetbrains.restWebServices
