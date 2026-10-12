@@ -319,10 +319,16 @@ func prepareMCPScanContext(options ideMCPOptions) (corescan.Context, func(), err
 		Linter:       options.Linter,
 		WithinDocker: "false",
 		Script:       mcpServerScript,
-		Property:     options.Property,
+		Property:     ideMCPProperties(options.Property),
 	}
 	scanContext := corescan.CreateContext(cliOptions, commonCtx, preparedHost, corescan.QodanaYamlConfig{}, configDir)
 	return scanContext, cleanup, nil
+}
+
+// ideMCPProperties starts the IDE in Qodana mode, as a scan does: its headless project setup, such as assigning the
+// project JDK after a Maven import, runs only then. Caller properties come later, so they can override it.
+func ideMCPProperties(properties []string) []string {
+	return append([]string{"qodana.application=true"}, properties...)
 }
 
 func computeNativeMCPContext(options ideMCPOptions) commoncontext.Context {
