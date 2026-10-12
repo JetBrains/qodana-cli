@@ -207,10 +207,18 @@ internal class EdictManagementService(
 
     tool(
       name = "edict_plan_get",
-      description = "Read current execution plan and worker results.",
+      description = "Read the current execution plan and worker results. With taskId, return only that task: its status and result, which is how a coordinator checks a child it waited for.",
       readOnly = true,
-    ) {
-      buildJsonObject { put("plan", EdictNextJson.encodeToJsonElement(store.plan())) }
+      properties = properties("taskId"),
+    ) { arguments ->
+      val taskId = arguments.text("taskId")
+      if (taskId.isEmpty()) {
+        buildJsonObject { put("plan", EdictNextJson.encodeToJsonElement(store.plan())) }
+      }
+      else {
+        val task = requireNotNull(store.plan()?.tasks?.singleOrNull { it.id == taskId }) { "No task '$taskId' in the plan" }
+        buildJsonObject { put("task", EdictNextJson.encodeToJsonElement(task)) }
+      }
     }
 
     if (calculatePrice) tool(
