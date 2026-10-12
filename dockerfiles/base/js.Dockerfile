@@ -45,7 +45,7 @@ RUN --mount=target=/var/lib/apt/lists,type=cache,sharing=locked \
     npm install -g eslint@$ESLINT_VERSION && npm config set update-notifier false && \
     curl -fsSL "https://registry.npmjs.org/pnpm/-/pnpm-$PNPM_VERSION.tgz" -o /tmp/pnpm.tgz && \
     echo "$PNPM_SHA512  /tmp/pnpm.tgz" | sha512sum -c - && \
-    mkdir -p /usr/local/lib/node_modules/pnpm && \
+    mkdir -p /usr/local/lib/node_modules/pnpm /usr/local/bin && \
     tar -xzf /tmp/pnpm.tgz --strip-components=1 -C /usr/local/lib/node_modules/pnpm && \
     ln -s /usr/local/lib/node_modules/pnpm/bin/pnpm.mjs /usr/local/bin/pnpm && \
     ln -s /usr/local/lib/node_modules/pnpm/bin/pnpx.mjs /usr/local/bin/pnpx && \
