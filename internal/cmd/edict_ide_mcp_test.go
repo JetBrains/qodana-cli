@@ -116,6 +116,18 @@ func TestPrepareMCPScanContextRejectsDockerLinters(t *testing.T) {
 	}
 }
 
+func TestIDEMCPPropertiesEnableQodanaModeUnlessOverridden(t *testing.T) {
+	properties := ideMCPProperties([]string{"-Xmx8g", "qodana.application=false"})
+
+	if properties[0] != "qodana.application=true" {
+		t.Fatalf("IDE properties do not enable Qodana mode: %v", properties)
+	}
+	// Later occurrences win when properties become VM options, so a caller can still turn it off.
+	if properties[len(properties)-1] != "qodana.application=false" || !slices.Contains(properties, "-Xmx8g") {
+		t.Fatalf("caller properties were not kept after the default: %v", properties)
+	}
+}
+
 func TestComputeNativeMCPContextLoadsTokenWithoutVCSDiscovery(t *testing.T) {
 	t.Setenv(qdenv.QodanaDistEnv, "")
 	t.Setenv(qdenv.QodanaToken, "license-token")
