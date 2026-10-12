@@ -304,6 +304,162 @@ class EdictNextGenerationServiceTest {
   }
 
   @Test
+  fun `weak review assignments over every round weigh the final evaluation`() = withGeneration { generation, repository ->
+    val scratch = directory.resolve("scratch").toString()
+    generation.saveCandidateInspection("busy-wait", "// busy-wait report findings=25")
+    generation.getInspectionAction("busy-wait")
+    val negative = EdictNextCodeExampleMetadata("extra-negative", "Extra.java", EdictNextSignalLabel.NEGATIVE, emptyList())
+    generation.saveCodeExample("busy-wait", negative.id, EdictNextJson.encodeToString(negative), "class Extra {}")
+    fun finding(line: Int, classification: EdictNextFindingClassification, exampleId: String?) =
+      EdictNextReviewedFinding("src/Found.java", line, classification, exampleId)
+
+    generation.getNewInspectionResults("busy-wait", scratch)
+    generation.recordWeakReview(
+      "busy-wait",
+      (1..3).map { finding(it, EdictNextFindingClassification.TP, "busy-wait-example") } +
+      finding(4, EdictNextFindingClassification.UNCERTAIN, null) +
+      (5..6).map { finding(it, EdictNextFindingClassification.FP, negative.id) },
+    )
+    // The next round reclassifies line 3; the location keeps only its latest classification.
+    generation.getNewInspectionResults("busy-wait", scratch)
+    generation.recordWeakReview("busy-wait", listOf(finding(3, EdictNextFindingClassification.FP, negative.id)))
+
+    val evaluation = checkNotNull(generation.recordEvaluation("busy-wait").evaluation)
+    assertEquals(2, evaluation.examples.getValue("busy-wait-example").weight)
+    assertEquals(3, evaluation.examples.getValue(negative.id).weight)
+    // The candidate reports every example, so the weak negative is a weighted false positive.
+    assertEquals(listOf(2, 3, 0), listOf(evaluation.tp, evaluation.fp, evaluation.fn))
+    val review = checkNotNull(evaluation.projectReview)
+    assertEquals(listOf(25, 6, 1, 0), listOf(review.totalFindings, review.reviewedFindings, review.uncertain, review.unassigned))
+    assertEquals(evaluation, repository.loadEvaluation(repository.loadCluster("busy-wait")))
+
+    // Findings of a deleted example no longer weigh anything and count as unassigned.
+    generation.deleteCodeExample("busy-wait", negative.id)
+    val afterDelete = checkNotNull(generation.recordEvaluation("busy-wait").evaluation)
+    assertEquals(listOf(2, 0, 0), listOf(afterDelete.tp, afterDelete.fp, afterDelete.fn))
+    assertEquals(3, afterDelete.projectReview?.unassigned)
+  }
+
+  @Test
+  fun `each round samples findings the weak review has not classified yet`() = withGeneration { generation, _ ->
+    val scratch = directory.resolve("scratch").toString()
+    generation.saveCandidateInspection("busy-wait", "// busy-wait report findings=25")
+    fun sampledLines(response: EdictNextInspectionResultsResponse): List<Int> {
+      val config = EdictNextJson.decodeFromString<EdictNextWeakSignalReviewConfig>(
+        Path.of(checkNotNull(response.weakSignalReviewConfigPath)).readText(),
+      )
+      return EdictNextJson.decodeFromString<EdictNextInspectionFindings>(Path.of(config.findingsPath).readText())
+        .findings.map { it.location().second }
+    }
+
+    val first = sampledLines(generation.getNewInspectionResults("busy-wait", scratch))
+    assertEquals(20, first.size)
+    assertEquals(first.sorted(), first)
+    assertTrue(first.all { it in 1..25 })
+    generation.recordWeakReview(
+      "busy-wait",
+      first.map { EdictNextReviewedFinding("src/Found.java", it, EdictNextFindingClassification.TP, "busy-wait-example") },
+    )
+
+    val second = sampledLines(generation.getNewInspectionResults("busy-wait", scratch))
+    assertEquals((1..25).toSet() - first.toSet(), second.toSet())
+  }
+
+  @Test
+  fun `only an example the analyzed inspection reports can represent a finding`() = withGeneration { generation, _ ->
+    val negative = EdictNextCodeExampleMetadata("fixed-negative", "Fixed.java", EdictNextSignalLabel.NEGATIVE, emptyList())
+    generation.saveCodeExample("busy-wait", negative.id, EdictNextJson.encodeToString(negative), "class Fixed {}")
+    generation.saveCandidateInspection("busy-wait", "// busy-wait report skip=fixed-negative findings=3")
+    generation.getNewInspectionResults("busy-wait", directory.resolve("scratch").toString())
+    fun finding(line: Int, classification: EdictNextFindingClassification, exampleId: String) =
+      EdictNextReviewedFinding("src/Found.java", line, classification, exampleId)
+
+    // The inspection passes the negative example but reports this finding, so the example does not reproduce it.
+    val unreproduced = assertFailsWith<IllegalArgumentException> {
+      generation.recordWeakReview("busy-wait", listOf(finding(1, EdictNextFindingClassification.FP, negative.id)))
+    }
+    assertContains(unreproduced.message.orEmpty(), "does not reproduce it")
+    assertFailsWith<IllegalArgumentException> {
+      generation.recordWeakReview("busy-wait", listOf(finding(1, EdictNextFindingClassification.TP, negative.id)))
+    }
+    // An example written after the analysis is accepted when the analyzed inspection reports it.
+    val split = EdictNextCodeExampleMetadata("split-negative", "Split.java", EdictNextSignalLabel.NEGATIVE, emptyList())
+    generation.saveCodeExample("busy-wait", split.id, EdictNextJson.encodeToString(split), "class Split {}")
+    val accepted = generation.recordWeakReview(
+      "busy-wait",
+      listOf(finding(1, EdictNextFindingClassification.FP, split.id), finding(2, EdictNextFindingClassification.TP, "busy-wait-example")),
+    )
+    assertTrue(accepted.success, accepted.summary)
+  }
+
+  @Test
+  fun `an example written from a finding must be reported by the analyzed inspection`() = withGeneration { generation, _ ->
+    generation.saveCandidateInspection("busy-wait", "// busy-wait report skip=reduced-negative findings=2")
+    generation.getNewInspectionResults("busy-wait", directory.resolve("scratch").toString())
+    // A later candidate would report the example; the check runs the analyzed one, which reported the finding.
+    generation.saveCandidateInspection("busy-wait", "// busy-wait report findings=2")
+    val reduced = EdictNextCodeExampleMetadata("reduced-negative", "Reduced.java", EdictNextSignalLabel.NEGATIVE, emptyList())
+    generation.saveCodeExample("busy-wait", reduced.id, EdictNextJson.encodeToString(reduced), "class Reduced {}")
+    val finding = EdictNextReviewedFinding("src/Found.java", 1, EdictNextFindingClassification.FP, reduced.id)
+
+    val rejected = assertFailsWith<IllegalArgumentException> { generation.recordWeakReview("busy-wait", listOf(finding)) }
+    assertContains(rejected.message.orEmpty(), "the reduction removed what makes it report this code")
+
+    val restored = EdictNextCodeExampleMetadata("restored-negative", "Restored.java", EdictNextSignalLabel.NEGATIVE, emptyList())
+    generation.saveCodeExample("busy-wait", restored.id, EdictNextJson.encodeToString(restored), "class Restored {}")
+    val accepted = generation.recordWeakReview("busy-wait", listOf(finding.copy(exampleId = restored.id)))
+    assertTrue(accepted.success, accepted.summary)
+  }
+
+  @Test
+  fun `the next round sees examples that no longer reproduce their findings`() = withGeneration { generation, repository ->
+    val scratch = directory.resolve("scratch").toString()
+    val negative = EdictNextCodeExampleMetadata("aliased-negative", "Aliased.java", EdictNextSignalLabel.NEGATIVE, emptyList())
+    generation.saveCodeExample("busy-wait", negative.id, EdictNextJson.encodeToString(negative), "class Aliased {}")
+    generation.getInspectionAction("busy-wait")
+    generation.saveCandidateInspection("busy-wait", "// busy-wait report findings=2")
+    generation.getNewInspectionResults("busy-wait", scratch)
+    generation.recordWeakReview(
+      "busy-wait",
+      (1..2).map { EdictNextReviewedFinding("src/Found.java", it, EdictNextFindingClassification.FP, negative.id) },
+    )
+
+    // The repaired candidate passes the negative example yet still reports line 1 of the project.
+    generation.saveCandidateInspection("busy-wait", "// busy-wait report skip=aliased-negative findings=1")
+    val response = generation.getNewInspectionResults("busy-wait", scratch)
+    val config = EdictNextJson.decodeFromString<EdictNextWeakSignalReviewConfig>(
+      Path.of(checkNotNull(response.weakSignalReviewConfigPath)).readText(),
+    )
+    assertEquals(
+      EdictNextReviewExampleStatus(EdictNextSignalLabel.NEGATIVE, strong = false, reported = false),
+      config.exampleStatus[negative.id],
+    )
+    assertEquals(EdictNextReviewExampleStatus(EdictNextSignalLabel.POSITIVE, strong = true, reported = true), config.exampleStatus["busy-wait-example"])
+    assertEquals(mapOf(negative.id to EdictNextUnreproducedFindings(listOf("src/Found.java:1"), noLongerReported = 1)), config.unreproducedFindings)
+
+    // Not moved to a reproducing example, the still reported finding counts as a false positive by itself.
+    val evaluation = checkNotNull(generation.recordEvaluation("busy-wait").evaluation)
+    assertEquals(listOf(1, 1, 0), listOf(evaluation.tp, evaluation.fp, evaluation.fn))
+    assertEquals(1, evaluation.projectReview?.unreproduced)
+    assertEquals(1, evaluation.examples.getValue(negative.id).projectFindings)
+    assertTrue(repository.loadCluster("busy-wait").examples.any { it.metadata.id == negative.id })
+  }
+
+  @Test
+  fun `weak review accepts only findings of the last analysis with existing examples`() = withGeneration { generation, _ ->
+    suspend fun review(vararg findings: EdictNextReviewedFinding) = generation.recordWeakReview("busy-wait", findings.toList())
+    val tp = EdictNextReviewedFinding("src/Found.java", 1, EdictNextFindingClassification.TP, "busy-wait-example")
+    generation.saveCandidateInspection("busy-wait", "// busy-wait report findings=2")
+    assertFailsWith<IllegalStateException> { review(tp) }
+
+    generation.getNewInspectionResults("busy-wait", directory.resolve("scratch").toString())
+    assertFailsWith<IllegalArgumentException> { review(tp.copy(line = 9)) }
+    assertFailsWith<IllegalArgumentException> { review(tp.copy(exampleId = "missing")) }
+    assertFailsWith<IllegalArgumentException> { review(tp.copy(exampleId = null)) }
+    assertTrue(review(tp, tp.copy(line = 2, classification = EdictNextFindingClassification.UNCERTAIN, exampleId = null)).success)
+  }
+
+  @Test
   fun `saving a structurally invalid example stores nothing`() = withGeneration { generation, repository ->
     val outsideFile = EdictNextCodeExampleMetadata("extra", "Extra.java", EdictNextSignalLabel.POSITIVE, listOf(EdictNextLineRange(2, 2)))
     val error = assertFailsWith<IllegalArgumentException> {
@@ -401,22 +557,24 @@ class EdictNextGenerationServiceTest {
   }
 
   /**
-   * A candidate `// <cluster id> [report]` names its cluster, unless it has an `id = "<id>"`, and reports line 1 of every
-   * example when it says ` report`.
+   * A candidate `// <cluster id> [report] [skip=<example id>] [findings=N]` names its cluster, unless it has an `id = "<id>"`, and reports line 1 of every
+   * example except a skipped one when it says ` report`, and reports lines 1..N of `src/Found.java` in a project analysis.
    */
   private class FakeIdeClient(private val analyses: MutableList<String>) : InspectionKtsClient {
     override suspend fun runExamples(code: String, examples: List<InspectionKtsExampleRequest>): InspectionKtsBatchRunResult {
       val problems = if (" report" in code) listOf(InspectionKtsProblem("found", 1, "WARNING")) else emptyList()
       return InspectionKtsBatchRunResult(
         compilation(code),
-        examples.map { InspectionKtsFileResult(it.id, it.targetFilePath, problems) },
+        examples.map { InspectionKtsFileResult(it.id, it.targetFilePath, if (" skip=${it.id}" in code) emptyList() else problems) },
       )
     }
 
     override suspend fun analyzeProject(code: String): InspectionKtsProjectRunResult {
       val compilation = compilation(code)
       synchronized(analyses) { analyses += checkNotNull(compilation.inspectionId) }
-      return InspectionKtsProjectRunResult(compilation)
+      val findings = Regex("findings=(\\d+)").find(code)?.groupValues?.get(1)?.toInt() ?: 0
+      val problems = (1..findings).map { InspectionKtsProblem("found", it, "WARNING") }
+      return InspectionKtsProjectRunResult(compilation, listOf(InspectionKtsFileResult(path = "src/Found.java", foundProblems = problems)))
     }
 
     private fun compilation(code: String): InspectionKtsCompileResult {

@@ -2,6 +2,7 @@ package org.jetbrains.qodana.edict.edictnext
 
 import java.nio.file.Path
 import java.util.UUID
+import kotlin.random.Random
 import kotlin.io.path.createDirectories
 import kotlin.io.path.writeText
 
@@ -13,6 +14,9 @@ internal object EdictNextReviewArtifacts {
     inspectedProject: Path,
     privateScratchDirectory: Path,
     remainingProjectAnalyses: Int,
+    reviewedLocations: Set<Pair<String, Int>> = emptySet(),
+    exampleStatus: Map<String, EdictNextReviewExampleStatus> = emptyMap(),
+    unreproducedFindings: Map<String, EdictNextUnreproducedFindings> = emptyMap(),
   ): EdictNextInspectionResultsResponse {
     privateScratchDirectory.createDirectories()
     val attemptDirectory = privateScratchDirectory.resolve("attempt-${UUID.randomUUID()}").also { it.createDirectories() }
@@ -23,7 +27,7 @@ internal object EdictNextReviewArtifacts {
     weakFindingsPath.writeText(
       EdictNextJson.encodeToString(
         EdictNextInspectionFindings.serializer(),
-        findings.copy(findings = findings.findings.take(SAMPLE_SIZE)),
+        findings.copy(findings = sample(findings, reviewedLocations)),
       ),
     )
 
@@ -42,6 +46,8 @@ internal object EdictNextReviewArtifacts {
           inspectedProject = projectPath,
           privateScratchDirectory = attemptDirectory.absoluteString(),
           outputPath = weakReviewOutputPath.absoluteString(),
+          exampleStatus = exampleStatus,
+          unreproducedFindings = unreproducedFindings,
         ),
       ),
     )
@@ -49,6 +55,14 @@ internal object EdictNextReviewArtifacts {
       weakSignalReviewConfigPath = weakConfigPath.absoluteString(),
       remainingProjectAnalyses = remainingProjectAnalyses,
     )
+  }
+
+  private fun sample(findings: EdictNextInspectionFindings, reviewedLocations: Set<Pair<String, Int>>): List<EdictNextProjectFinding> {
+    val unreviewed = findings.findings.filter { it.location() !in reviewedLocations }
+    return unreviewed.ifEmpty { findings.findings }
+      .shuffled(Random(findings.candidateDigest.hashCode()))
+      .take(SAMPLE_SIZE)
+      .sortedWith(compareBy({ it.fileRevision.path }, { it.location().second }))
   }
 
   private fun Path.absoluteString(): String = toAbsolutePath().normalize().toString()

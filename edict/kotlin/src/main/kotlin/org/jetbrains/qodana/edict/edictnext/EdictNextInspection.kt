@@ -20,15 +20,33 @@ internal class EdictNextInspection(
     cluster: EdictNextStoredCluster,
     code: String,
     action: EdictNextInspectionAction,
+    assignments: List<EdictNextFindingAssignment> = emptyList(),
+    projectReview: EdictNextProjectReview? = null,
   ): Pair<EdictNextInspectionValidationResponse, EdictNextEvaluation?> {
     val measurement = measure(cluster, code)
     if (!measurement.validation.overallSuccess) return measurement.validation to null
     val labels = cluster.examples.associate { it.metadata.id to it.metadata.label }
-    fun count(label: EdictNextSignalLabel, satisfied: Boolean) =
-      measurement.satisfiedByExampleId.count { (id, value) -> labels[id] == label && value == satisfied }
-    val tp = count(EdictNextSignalLabel.POSITIVE, satisfied = true)
-    val fn = count(EdictNextSignalLabel.POSITIVE, satisfied = false)
-    val fp = count(EdictNextSignalLabel.NEGATIVE, satisfied = false)
+    fun reported(exampleId: String) =
+      (labels[exampleId] == EdictNextSignalLabel.POSITIVE) == (measurement.satisfiedByExampleId[exampleId] == true)
+    val (unreproduced, reproduced) = assignments.partition { it.stillReported && !reported(it.exampleId) }
+    val findingsByExampleId = reproduced.groupingBy { it.exampleId }.eachCount()
+    val examples = cluster.examples.associate { example ->
+      val id = example.metadata.id
+      val findings = findingsByExampleId[id] ?: 0
+      id to EdictNextExampleEvaluation(
+        label = example.metadata.label,
+        strong = id in measurement.strongExampleIds,
+        satisfied = measurement.satisfiedByExampleId[id] == true,
+        projectFindings = findings,
+        weight = maxOf(1, findings),
+      )
+    }.toSortedMap()
+    fun weight(label: EdictNextSignalLabel, satisfied: Boolean) =
+      examples.values.filter { it.label == label && it.satisfied == satisfied }.sumOf { it.weight }
+    fun direct(classification: EdictNextFindingClassification) = unreproduced.count { it.classification == classification }
+    val tp = weight(EdictNextSignalLabel.POSITIVE, satisfied = true) + direct(EdictNextFindingClassification.TP)
+    val fn = weight(EdictNextSignalLabel.POSITIVE, satisfied = false)
+    val fp = weight(EdictNextSignalLabel.NEGATIVE, satisfied = false) + direct(EdictNextFindingClassification.FP)
     return measurement.validation to EdictNextEvaluation(
       inspectionHash = sha256Hex(code),
       exampleSetDigest = exampleSetDigest(cluster),
@@ -38,9 +56,18 @@ internal class EdictNextInspection(
       fn = fn,
       precision = if (tp + fp == 0) 0.0 else tp.toDouble() / (tp + fp),
       recall = if (tp + fn == 0) 0.0 else tp.toDouble() / (tp + fn),
-      strongExampleIds = measurement.strongExampleIds.sorted(),
-      satisfiedByExampleId = measurement.satisfiedByExampleId.toSortedMap(),
+      examples = examples,
+      projectReview = projectReview?.copy(unreproduced = unreproduced.size),
     )
+  }
+
+  suspend fun reports(cluster: EdictNextStoredCluster, code: String): Map<String, Boolean> {
+    val measurement = measure(cluster, code)
+    check(measurement.validation.compilationSuccess) { measurement.validation.summary }
+    return cluster.examples.associate { example ->
+      val satisfied = measurement.satisfiedByExampleId[example.metadata.id] == true
+      example.metadata.id to ((example.metadata.label == EdictNextSignalLabel.POSITIVE) == satisfied)
+    }
   }
 
   private suspend fun measure(cluster: EdictNextStoredCluster, code: String): Measurement {
@@ -63,10 +90,7 @@ internal class EdictNextInspection(
     }
     val examplesById = cluster.examples.associateBy { it.metadata.id }
     val scoredExampleIds = examplesById.keys
-    val strongExampleIds = cluster.signals.asSequence()
-      .filter { it.strength == EdictNextSignalStrength.STRONG }
-      .mapNotNull(EdictNextSignal::syntheticExampleId)
-      .toSet()
+    val strongExampleIds = cluster.strongExampleIds()
     val weakExampleIds = scoredExampleIds - strongExampleIds
     val strongPositiveCount = strongExampleIds.count { examplesById[it]?.metadata?.label == EdictNextSignalLabel.POSITIVE }
     val strongCorrectCount = strongExampleIds.count { outcomesById[it]?.satisfied == true }
@@ -210,6 +234,19 @@ internal class EdictNextInspection(
 /** What makes two analyses' findings the same for review: every reported location, in order. */
 internal fun EdictNextInspectionFindings.reviewKey(): List<Pair<String, List<EdictNextLineRange>?>> =
   findings.map { it.fileRevision.path to it.fileRevision.expectedRanges }
+
+/** A reviewed finding assigned to an existing example; [stillReported] when the published inspection reports it. */
+internal data class EdictNextFindingAssignment(
+  val exampleId: String,
+  val classification: EdictNextFindingClassification,
+  val stillReported: Boolean,
+)
+
+internal fun EdictNextProjectFinding.location(): Pair<String, Int> =
+  fileRevision.path to (fileRevision.expectedRanges?.firstOrNull()?.start ?: 0)
+
+internal fun EdictNextStoredCluster.strongExampleIds(): Set<String> =
+  signals.asSequence().filter { it.strength == EdictNextSignalStrength.STRONG }.mapNotNull(EdictNextSignal::syntheticExampleId).toSet()
 
 internal fun exampleSetDigest(cluster: EdictNextStoredCluster): String {
   val strong = cluster.signals.asSequence()
