@@ -1,6 +1,9 @@
 package org.jetbrains.qodana.edict.edictnext
 
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.NonCancellable
+import kotlinx.coroutines.future.await
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.JsonArray
@@ -165,15 +168,13 @@ internal class HttpInspectionKtsClient(
       put("projectPath", projectPath)
     })
 
-  override suspend fun callTool(name: String, arguments: JsonObject): JsonObject = withContext(Dispatchers.IO) {
-    requestBlocking(
-      "tools/call",
-      buildJsonObject {
-        put("name", name)
-        put("arguments", projectPath?.let { JsonObject(arguments + ("projectPath" to JsonPrimitive(it))) } ?: arguments)
-      },
-    )
-  }
+  override suspend fun callTool(name: String, arguments: JsonObject): JsonObject = request(
+    "tools/call",
+    buildJsonObject {
+      put("name", name)
+      put("arguments", projectPath?.let { JsonObject(arguments + ("projectPath" to JsonPrimitive(it))) } ?: arguments)
+    },
+  )
 
   private suspend inline fun <reified T> call(name: String, arguments: JsonObject): T {
     val result = callTool(name, arguments)
@@ -188,40 +189,96 @@ internal class HttpInspectionKtsClient(
     return EdictNextJson.decodeFromJsonElement<T>(structured)
   }
 
+  /**
+   * Suspends instead of blocking, so cancelling the caller, as the analysis timeout does, aborts the exchange. The IDE
+   * is then asked to cancel the call too; otherwise it would keep running an abandoned whole-project analysis.
+   */
+  private suspend fun request(method: String, params: JsonObject): JsonObject {
+    val id = sequence.incrementAndGet()
+    val response = try {
+      send(requestMessage(id, method, params))
+    }
+    catch (e: CancellationException) {
+      withContext(NonCancellable + Dispatchers.IO) { notifyCancelled(id) }
+      throw e
+    }
+    return result(method, response)
+  }
+
+  /** For the session handshake, which runs from the constructor and from [renewSession]. */
   private fun requestBlocking(method: String, params: JsonObject): JsonObject {
     val id = sequence.incrementAndGet()
-    val response = sendBlocking(buildJsonObject {
-      put("jsonrpc", "2.0")
-      put("id", id)
-      put("method", method)
-      put("params", params)
-    }) ?: error("Inspection MCP returned no response for '$method'")
+    return result(method, sendBlocking(requestMessage(id, method, params)))
+  }
+
+  private fun requestMessage(id: Long, method: String, params: JsonObject): JsonObject = buildJsonObject {
+    put("jsonrpc", "2.0")
+    put("id", id)
+    put("method", method)
+    put("params", params)
+  }
+
+  private fun result(method: String, response: JsonObject?): JsonObject {
+    checkNotNull(response) { "Inspection MCP returned no response for '$method'" }
     check("error" !in response) { "Inspection MCP '$method' failed: ${response["error"]}" }
     return response.getValue("result").jsonObject
   }
 
+  private suspend fun send(message: JsonObject, renewed: Boolean = false): JsonObject? {
+    val requestSessionId = sessionId
+    val response = client.sendAsync(post(message, requestSessionId), HttpResponse.BodyHandlers.ofString()).await()
+    if (requestSessionId != null && response.statusCode() == 404) {
+      if (renewed) throw StaleInspectionMcpSession(requestSessionId)
+      withContext(Dispatchers.IO) { renew(requestSessionId) }
+      return send(message, renewed = true)
+    }
+    return parse(message, response)
+  }
+
   private fun sendBlocking(message: JsonObject, renewed: Boolean = false): JsonObject? {
     val requestSessionId = sessionId
+    val response = client.send(post(message, requestSessionId), HttpResponse.BodyHandlers.ofString())
+    if (requestSessionId != null && response.statusCode() == 404) {
+      if (renewed) throw StaleInspectionMcpSession(requestSessionId)
+      renew(requestSessionId)
+      return sendBlocking(message, renewed = true)
+    }
+    return parse(message, response)
+  }
+
+  private fun renew(staleSessionId: String) {
+    try {
+      renewSession(staleSessionId)
+    }
+    catch (e: Exception) {
+      throw StaleInspectionMcpSession(staleSessionId).apply { addSuppressed(e) }
+    }
+  }
+
+  /** Best effort and brief: a server that already finished the call, or is gone, has nothing to cancel. */
+  private fun notifyCancelled(id: Long) {
+    val notification = buildJsonObject {
+      put("jsonrpc", "2.0")
+      put("method", "notifications/cancelled")
+      putJsonObject("params") {
+        put("requestId", id)
+        put("reason", "Edict stopped waiting for the result")
+      }
+    }
+    runCatching { client.send(post(notification, sessionId, CANCEL_TIMEOUT), HttpResponse.BodyHandlers.discarding()) }
+  }
+
+  private fun post(message: JsonObject, requestSessionId: String?, timeout: Duration = requestTimeout): HttpRequest {
     val builder = HttpRequest.newBuilder(endpoint)
-      .timeout(requestTimeout)
+      .timeout(timeout)
       .header("Content-Type", "application/json")
       .header("Accept", "application/json, text/event-stream")
       .header("MCP-Protocol-Version", protocolVersion)
     requestSessionId?.let { builder.header("Mcp-Session-Id", it) }
-    val response = client.send(
-      builder.POST(HttpRequest.BodyPublishers.ofString(EdictNextJson.encodeToString(message))).build(),
-      HttpResponse.BodyHandlers.ofString(),
-    )
-    if (requestSessionId != null && response.statusCode() == 404) {
-      if (renewed) throw StaleInspectionMcpSession(requestSessionId)
-      try {
-        renewSession(requestSessionId)
-      }
-      catch (e: Exception) {
-        throw StaleInspectionMcpSession(requestSessionId).apply { addSuppressed(e) }
-      }
-      return sendBlocking(message, renewed = true)
-    }
+    return builder.POST(HttpRequest.BodyPublishers.ofString(EdictNextJson.encodeToString(message))).build()
+  }
+
+  private fun parse(message: JsonObject, response: HttpResponse<String>): JsonObject? {
     response.headers().firstValue("Mcp-Session-Id").ifPresent { sessionId = it }
     check(response.statusCode() in 200..299) {
       "Inspection MCP HTTP ${response.statusCode()}: ${response.body().take(4_096)}"
@@ -247,6 +304,7 @@ internal class HttpInspectionKtsClient(
 
   private companion object {
     val ListSerializer = kotlinx.serialization.builtins.ListSerializer(InspectionKtsExampleRequest.serializer())
+    val CANCEL_TIMEOUT: Duration = Duration.ofSeconds(10)
   }
 }
 
