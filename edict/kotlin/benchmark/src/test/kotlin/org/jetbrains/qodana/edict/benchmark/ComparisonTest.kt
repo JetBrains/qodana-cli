@@ -10,11 +10,11 @@ import kotlin.test.*
 
 class ComparisonTest {
     @TempDir lateinit var root: Path
-    private fun finding(line: Long, offset: Long? = null, path: String? = "X.java", rule: String = "Rule") =
-        Finding(rule, path, line, offset, offset?.let { 4L })
+    private fun finding(line: Long, offset: Long? = null, path: String? = "X.java", rule: String = "Rule", label: String? = null) =
+        Finding(rule, path, line, offset, offset?.let { 4L }, label)
 
     @Test fun `nearby TP covers the corresponding gold finding`() {
-        val metrics = calculateMetrics("Rule", listOf(finding(10, 100)), listOf(finding(12, 200), finding(20, 300)))
+        val metrics = calculateMetrics("Rule", listOf(finding(10, 100, label = POSITIVE)), listOf(finding(12, 200), finding(20, 300)))
         assertEquals(1, metrics.truePositives)
         assertEquals(1, metrics.falsePositives)
         assertEquals(0, metrics.falseNegatives)
@@ -23,7 +23,7 @@ class ComparisonTest {
     }
 
     @Test fun `duplicate generated matches do not inflate recall`() {
-        val metrics = calculateMetrics("Rule", listOf(finding(10, 100)), listOf(finding(10, 100), finding(11, 200)))
+        val metrics = calculateMetrics("Rule", listOf(finding(10, 100, label = POSITIVE)), listOf(finding(10, 100), finding(11, 200)))
         assertEquals(2, metrics.truePositives)
         assertEquals(0, metrics.falsePositives)
         assertEquals(0, metrics.falseNegatives)
@@ -40,6 +40,36 @@ class ComparisonTest {
         assertFalse(matchExact(finding(1), finding(1)))
         assertTrue(matchLenient(finding(1), finding(3)))
         assertFalse(matchLenient(finding(1), finding(4)))
+    }
+
+    @Test fun `false positives report matched negative and unlabeled gold results`() {
+        val gold = listOf(finding(10, 100, label = POSITIVE), finding(30, 300, label = POSITIVE), finding(50, 500, label = NEGATIVE),
+            finding(70, 700, label = NEGATIVE), finding(71, 710), finding(90, 900))
+        val metrics = calculateMetrics("Rule", gold,
+            listOf(finding(11, 100), finding(50, 500), finding(70, 700), finding(90, 900), finding(120, 1200)))
+        assertEquals(1, metrics.truePositives)
+        assertEquals(4, metrics.falsePositives)
+        assertEquals(1, metrics.falseNegatives)
+        // A false positive near both a negative and an unlabeled result counts as a negative only.
+        assertEquals(2, metrics.matchedNegative)
+        assertEquals(1, metrics.matchedUnlabeled)
+        assertEquals(0.5, metrics.recall)
+        assertEquals(0.2, metrics.precision)
+    }
+
+    @Test fun `a finding matching a positive is a true positive even on a negative`() {
+        val gold = listOf(finding(10, 100, label = POSITIVE), finding(11, 150, label = NEGATIVE))
+        val metrics = calculateMetrics("Rule", gold, listOf(finding(11, 150)))
+        assertEquals(1, metrics.truePositives)
+        assertEquals(0, metrics.falsePositives)
+        assertEquals(0, metrics.matchedNegative)
+    }
+
+    @Test fun `gold without labels lists only positives`() {
+        val results = { first: String -> """{"runs":[{"results":[{"ruleId":"Rule"$first},{"ruleId":"Rule"}]}]}""" }
+        assertEquals(listOf(POSITIVE, POSITIVE), readGold(write("plain.sarif.json", results(""))).findings.map { it.label })
+        assertEquals(listOf(NEGATIVE, null),
+            readGold(write("labeled.sarif.json", results(""","properties":{"edictLabel":"NEGATIVE"}"""))).findings.map { it.label })
     }
 
     @Test fun `aggregate defaults and median are stable`() {

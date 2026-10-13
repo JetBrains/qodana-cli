@@ -12,5 +12,10 @@ Pipeline setup, parameters, artifact provenance, and commands are documented in
 
 Comparison uses exact character intersection or a two-line tolerance for both
 generated-finding matches and gold-finding coverage.
+Each gold result is `POSITIVE`, `NEGATIVE`, or unlabeled (`edictLabel`); gold without any
+label lists only expected findings, so all its results are `POSITIVE`. A finding matching a
+`POSITIVE` result is a true positive and any other a false positive. False positives also
+report `matchedNegative` (matching a `NEGATIVE` result) and `matchedUnlabeled` (matching only
+an unlabeled one, possibly a positive nobody labeled yet).
 Only Generated inspections contribute quality metrics; every selected rule remains
 in the generation-outcome report.
