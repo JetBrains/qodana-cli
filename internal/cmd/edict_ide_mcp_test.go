@@ -84,11 +84,30 @@ func TestSelectIDEDistributionPrefersExplicitChoiceOverQodanaDist(t *testing.T) 
 }
 
 // The Kotlin Edict server calls or forwards exactly these IntelliJ tools; keep both sides in sync.
+const edictInspectionTools = "generate_psi_tree,generate_inspection_kts_api,generate_inspection_kts_examples," +
+	"run_inspection_kts,compile_inspection_kts,run_inspection_kts_examples,run_inspection_kts_project"
+
 func TestIDEStarterAllowsInspectionKtsTools(t *testing.T) {
-	want := "--allowed-tools=generate_psi_tree,generate_inspection_kts_api,generate_inspection_kts_examples," +
-		"run_inspection_kts,compile_inspection_kts,run_inspection_kts_examples,run_inspection_kts_project"
-	if !slices.Contains(ideMCPArguments("/opt/idea", "/project"), want) {
+	if !slices.Contains(ideMCPArguments("/opt/idea", "/project"), "--allowed-tools="+edictInspectionTools) {
 		t.Fatalf("IDE MCP arguments do not allow the Edict inspection tools")
+	}
+}
+
+func TestQodanaScriptIsSelectedByEnvironment(t *testing.T) {
+	qodanaScript := func() bool {
+		value, err := newEdictIDEMCPCommand().Flags().GetBool("qodana-script")
+		if err != nil {
+			t.Fatal(err)
+		}
+		return value
+	}
+	t.Setenv(ideMCPStarterEnv, "")
+	if qodanaScript() {
+		t.Fatalf("the IDE's headless starter must stay the default until the linters ship the script")
+	}
+	t.Setenv(ideMCPStarterEnv, "script")
+	if !qodanaScript() {
+		t.Fatalf("%s=script does not select the Qodana mcp-server script", ideMCPStarterEnv)
 	}
 }
 
