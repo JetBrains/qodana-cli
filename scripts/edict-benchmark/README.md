@@ -84,14 +84,17 @@ already supplied by the repository. Their IDs, revisions, labels, ranges and ori
 feedback are preserved. Setup creates no signals or clusters: Edict creates clusters
 while processing the inbox in place. Kotlin accepts the checked-in SubmittedFeedback
 format (`inspectionName`, `inspectionDescription`, `codeSnippet`, `reason`,
-`suggestionId`) directly. Comparison discovers the resulting membership from each
-signal's `source.suggestionId` (or managed feedback provenance). Split clusters are
+`suggestionId`) directly. When the gold run's `edictBenchmarkManifest` property lists
+the benchmark rules (`cases[].id`) and their Signal ids (`cases[].signals[].id`), it
+defines the rules and each Signal's rule; otherwise the rules come from the gold findings
+and comparison discovers the resulting membership from each signal's `source.suggestionId`
+(or managed feedback provenance) of the form `benchmark/<RuleId>/specification.json#`. Split clusters are
 scored together for their source rule, with duplicate findings counted once; merged
 clusters are evaluated for each contributing rule against the gold SARIF. Missing clusters
 are reported as `NotClustered`; mixed generated and unfinished clusters as
 `PartiallyGenerated`. The report includes cluster membership and statuses.
 Scoring copies namespace the literal first `InspectionKts` descriptor ID to
-`EdictBenchmark<RuleId>` (with a numbered suffix for split clusters) to avoid built-in
+`EdictBenchmark<RuleId>` (kebab-case IDs in PascalCase, with a numbered suffix for split clusters) to avoid built-in
 inspection collisions; accepted scripts remain unchanged. Unsupported descriptors
 fail explicitly.
 

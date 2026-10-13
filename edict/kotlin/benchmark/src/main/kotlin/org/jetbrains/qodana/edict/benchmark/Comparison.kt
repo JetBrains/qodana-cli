@@ -16,18 +16,25 @@ internal fun matchLenient(a: Finding, b: Finding): Boolean =
 internal fun f1(precision: Double, recall: Double): Double =
     if (precision + recall > 0) 2 * precision * recall / (precision + recall) else 0.0
 
+internal const val POSITIVE = "POSITIVE"
+internal const val NEGATIVE = "NEGATIVE"
+
+private fun matches(expected: Finding, actual: Finding) = matchExact(expected, actual) || matchLenient(expected, actual)
+
+// A finding matching a POSITIVE result is a true positive and any other a false positive. A false positive matching a
+// NEGATIVE result is a confirmed one; one matching only an unlabeled result may still be an unconfirmed positive.
 internal fun calculateMetrics(ruleId: String, gold: List<Finding>, findings: List<Finding>): InspectionMetrics {
-    val baseline = gold.filter { it.ruleId == ruleId }
+    val (positives, others) = gold.filter { it.ruleId == ruleId }.partition { it.label == POSITIVE }
+    val (negatives, unlabeled) = others.partition { it.label == NEGATIVE }
     val actual = findings.filter { it.ruleId == ruleId }
-    val tp = actual.filter { candidate -> baseline.any { matchExact(it, candidate) || matchLenient(it, candidate) } }
-    val fp = actual.size - tp.size
-    val coveredGold = baseline.count { expected ->
-        actual.any { matchExact(expected, it) || matchLenient(expected, it) }
-    }
-    val fn = baseline.size - coveredGold
-    val recall = if (baseline.isEmpty()) 0.0 else coveredGold.toDouble() / baseline.size
+    val (tp, fp) = actual.partition { candidate -> positives.any { matches(it, candidate) } }
+    val (matchedNegative, rest) = fp.partition { candidate -> negatives.any { matches(it, candidate) } }
+    val matchedUnlabeled = rest.count { candidate -> unlabeled.any { matches(it, candidate) } }
+    val coveredGold = positives.count { expected -> actual.any { matches(expected, it) } }
+    val recall = if (positives.isEmpty()) 0.0 else coveredGold.toDouble() / positives.size
     val precision = if (actual.isEmpty()) 0.0 else tp.size.toDouble() / actual.size
-    return InspectionMetrics(ruleId, tp.size, fp, fn, recall, precision, f1(precision, recall))
+    return InspectionMetrics(ruleId, tp.size, fp.size, positives.size - coveredGold, matchedNegative.size, matchedUnlabeled,
+        recall, precision, f1(precision, recall))
 }
 
 internal fun List<Double>.median(): Double {
@@ -41,6 +48,7 @@ private fun List<Double>.averageOrZero() = if (isEmpty()) 0.0 else average()
 
 internal fun aggregate(metrics: List<InspectionMetrics>): AggregateMetrics = AggregateMetrics(
     metrics.sumOf { it.truePositives }, metrics.sumOf { it.falsePositives }, metrics.sumOf { it.falseNegatives },
+    metrics.sumOf { it.matchedNegative }, metrics.sumOf { it.matchedUnlabeled },
     metrics.map { it.recall }.averageOrZero(), metrics.map { it.precision }.averageOrZero(),
     metrics.map { it.f1Score }.averageOrZero(), metrics.map { it.recall }.median(),
     metrics.map { it.precision }.median(), metrics.map { it.f1Score }.median(),

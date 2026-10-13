@@ -10,10 +10,22 @@ import kotlin.system.exitProcess
 
 internal val json = Json { ignoreUnknownKeys = true; prettyPrint = true; encodeDefaults = true }
 
-internal data class Sarif(val findings: List<Finding>, val registeredRules: Set<String>)
+/** Every benchmark rule and the rule of each Signal, from the gold run's `edictBenchmarkManifest` property. */
+internal data class GoldManifest(val rules: List<String>, val ruleBySignal: Map<String, String>)
+
+internal data class Sarif(val findings: List<Finding>, val registeredRules: Set<String>, val manifest: GoldManifest? = null)
 
 private fun JsonObject.obj(name: String): JsonObject? = get(name)?.takeUnless { it is JsonNull }?.jsonObject
 private fun JsonObject.array(name: String): JsonArray? = get(name)?.takeUnless { it is JsonNull }?.jsonArray
+
+private fun JsonElement.id(): String = jsonObject.getValue("id").jsonPrimitive.content
+
+private fun goldManifest(manifest: JsonObject, path: Path): GoldManifest {
+    val cases = manifest.array("cases") ?: error("edictBenchmarkManifest without cases in $path")
+    val signals = cases.flatMap { case -> (case.jsonObject.array("signals") ?: emptyList()).map { it.id() to case.id() } }
+    require(signals.distinctBy { it.first }.size == signals.size) { "edictBenchmarkManifest assigns a Signal twice in $path" }
+    return GoldManifest(cases.map { it.id() }, signals.toMap())
+}
 
 internal fun readSarif(path: Path): Sarif {
     val report = json.parseToJsonElement(path.readText()).jsonObject
@@ -37,16 +49,24 @@ internal fun readSarif(path: Path): Sarif {
                 location?.obj("artifactLocation")?.get("uri")?.jsonPrimitive?.contentOrNull,
                 region?.get("startLine")?.jsonPrimitive?.longOrNull,
                 region?.get("charOffset")?.jsonPrimitive?.longOrNull,
-                region?.get("charLength")?.jsonPrimitive?.longOrNull)
+                region?.get("charLength")?.jsonPrimitive?.longOrNull,
+                value.obj("properties")?.get("edictLabel")?.jsonPrimitive?.contentOrNull)
         }
     }
-    return Sarif(findings, registered)
+    val manifest = runs.firstNotNullOfOrNull { it.jsonObject.obj("properties")?.obj("edictBenchmarkManifest") }
+    return Sarif(findings, registered, manifest?.let { goldManifest(it, path) })
+}
+
+// Gold without any edictLabel lists only expected findings, so each of its results is a positive.
+internal fun readGold(path: Path): Sarif {
+    val gold = readSarif(path)
+    return if (gold.findings.any { it.label != null }) gold else gold.copy(findings = gold.findings.map { it.copy(label = POSITIVE) })
 }
 
 internal fun compare(_benchmarkDir: Path, stateDir: Path, outputDir: Path,
                      analysisSarif: Path = outputDir.resolve("qodana.sarif.json"),
                      generationPriceReport: JsonObject? = null): BenchmarkReport {
-    val goldSarif = readSarif(stateDir.resolve("gold.sarif.json"))
+    val goldSarif = readGold(stateDir.resolve("gold.sarif.json"))
     val inputs = loadInputs(goldSarif, outputDir)
     val clusters = resolveClusters(inputs, stateDir)
     val statuses = clusterOutcomes(clusters, stateDir)
@@ -103,11 +123,17 @@ internal fun logReport(report: BenchmarkReport) {
         }
         teamCity("testFinished", "name" to rule)
         if (metric != null) println("$rule: TP=${metric.truePositives} FP=${metric.falsePositives} FN=${metric.falseNegatives} " +
+            "matchedNegative=${metric.matchedNegative} matchedUnlabeled=${metric.matchedUnlabeled} " +
             "R=${metric.recall} P=${metric.precision} F1=${metric.f1Score}")
     }
     teamCity("buildStatisticValue", "key" to "edict.totalInspectionsProcessed", "value" to report.totalInspectionsProcessed)
     teamCity("buildStatisticValue", "key" to "edict.successful", "value" to report.successful)
     teamCity("buildStatisticValue", "key" to "edict.avgF1Score", "value" to report.aggregate.avgF1Score)
+    teamCity("buildStatisticValue", "key" to "edict.totalTP", "value" to report.aggregate.totalTP)
+    teamCity("buildStatisticValue", "key" to "edict.totalFP", "value" to report.aggregate.totalFP)
+    teamCity("buildStatisticValue", "key" to "edict.totalFN", "value" to report.aggregate.totalFN)
+    teamCity("buildStatisticValue", "key" to "edict.totalMatchedNegative", "value" to report.aggregate.totalMatchedNegative)
+    teamCity("buildStatisticValue", "key" to "edict.totalMatchedUnlabeled", "value" to report.aggregate.totalMatchedUnlabeled)
     report.generationPriceReport?.get("totalPrice")?.jsonObject?.let { total ->
         total["priceUsd"]?.jsonPrimitive?.doubleOrNull?.let {
             teamCity("buildStatisticValue", "key" to "edict.priceUsd", "value" to it)
