@@ -33,9 +33,13 @@ import (
 )
 
 const (
-	// Qodana's native service script; its name selects the MCP service properties.
+	// Qodana's mcp-server script opens the project as a Qodana run does, then serves MCP instead of analyzing.
 	mcpServerScript = "mcp-server"
-	mcpIDEStarter   = "mcpServer"
+	// The IDE's own headless starter: it opens the project without Qodana's project configuration. It stays the default
+	// until the Qodana linters ship the mcp-server script.
+	mcpIDEStarter = "mcpServer"
+	// Set to "script" to start the Qodana mcp-server script instead of the headless starter.
+	ideMCPStarterEnv = "QODANA_EDICT_IDE_STARTER"
 	// The IDE gets this long to exit after SIGTERM before it is killed.
 	ideMCPStopTimeout = 10 * time.Second
 )
@@ -65,6 +69,8 @@ type ideMCPOptions struct {
 	Property    []string
 	ResultsDir  string
 	WaitTimeout time.Duration
+	// QodanaScript starts Qodana's mcp-server script instead of the IDE's mcpServer starter.
+	QodanaScript bool
 }
 
 // newEdictIDEMCPCommand runs one IntelliJ MCP server for the lifetime of its caller, the Kotlin Edict server.
@@ -110,6 +116,13 @@ The IDE comes from --dist, else --linter, else QODANA_DIST; Docker is not suppor
 		"Directory for IDE results and logs, kept after exit (default: a temporary directory removed on exit)",
 	)
 	flags.DurationVar(&options.WaitTimeout, "wait-timeout", 90*time.Second, "Maximum time to wait for MCP readiness")
+	flags.BoolVar(
+		&options.QodanaScript,
+		"qodana-script",
+		os.Getenv(ideMCPStarterEnv) == "script",
+		"Start Qodana's mcp-server script, which configures the project as a Qodana run does, instead of the IDE's "+
+			"mcpServer starter; the linter must contain the script (default from "+ideMCPStarterEnv+"=script)",
+	)
 	command.MarkFlagsMutuallyExclusive("dist", "linter")
 	return command
 }
@@ -176,8 +189,11 @@ func ideMCPCommand(options ideMCPOptions) ([]string, func(), error) {
 	if err != nil {
 		return nil, cleanup, err
 	}
-	// Only for its side effects: it writes the vmoptions file and exports its environment variable for the IDE.
-	_ = core.PrepareNativeServiceRunCommand(scanContext)
+	// It also writes the vmoptions file and exports its environment variable for the IDE, which both entry points need.
+	qodanaRun := core.PrepareNativeServiceRunCommand(scanContext)
+	if options.QodanaScript {
+		return qodanaRun, cleanup, nil
+	}
 	return ideMCPArguments(scanContext.Prod().IdeScript, options.ProjectDir), cleanup, nil
 }
 
@@ -326,7 +342,8 @@ func prepareMCPScanContext(options ideMCPOptions) (corescan.Context, func(), err
 }
 
 // ideMCPProperties starts the IDE in Qodana mode, as a scan does: its headless project setup, such as assigning the
-// project JDK after a Maven import, runs only then. Caller properties come later, so they can override it.
+// project JDK after a Maven import, runs only then. The mcp-server script runs in Qodana mode anyway; the headless
+// starter needs it. Caller properties come later, so they can override it.
 func ideMCPProperties(properties []string) []string {
 	return append([]string{"qodana.application=true"}, properties...)
 }
