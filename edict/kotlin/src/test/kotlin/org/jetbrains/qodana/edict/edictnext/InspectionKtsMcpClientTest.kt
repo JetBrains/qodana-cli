@@ -2,7 +2,9 @@ package org.jetbrains.qodana.edict.edictnext
 
 import com.sun.net.httpserver.HttpExchange
 import com.sun.net.httpserver.HttpServer
+import kotlinx.coroutines.TimeoutCancellationException
 import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.withTimeout
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.jsonArray
@@ -22,6 +24,7 @@ import java.util.concurrent.atomic.AtomicInteger
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
+import kotlin.test.assertTrue
 
 class InspectionKtsMcpClientTest {
   @Test
@@ -176,6 +179,70 @@ class InspectionKtsMcpClientTest {
         assertEquals(listOf("session-1", "session-2"), server.toolSessions())
       }
     }
+  }
+
+  @Test
+  @Timeout(30)
+  fun `a cancelled call stops waiting and asks the IDE to cancel it`() = runBlocking {
+    val callIds = LinkedBlockingQueue<String>()
+    val cancelled = LinkedBlockingQueue<JsonObject>()
+    val executor = Executors.newCachedThreadPool()
+    val server = HttpServer.create(InetSocketAddress("127.0.0.1", 0), 0).apply {
+      this.executor = executor
+      createContext("/mcp") { exchange ->
+        exchange.use {
+          if (exchange.requestMethod == "GET") {
+            exchange.sendResponseHeaders(405, -1)
+            return@createContext
+          }
+          val request = EdictNextJson.parseToJsonElement(exchange.requestBody.readAllBytes().decodeToString()).jsonObject
+          when (request.getValue("method").jsonPrimitive.content) {
+            "initialize" -> respond(exchange, request, buildJsonObject {
+              put("protocolVersion", "2025-03-26")
+              putJsonObject("capabilities") { putJsonObject("tools") {} }
+              putJsonObject("serverInfo") { put("name", "inspection"); put("version", "1") }
+            })
+            "notifications/cancelled" -> {
+              cancelled += request.getValue("params").jsonObject
+              exchange.sendResponseHeaders(202, -1)
+            }
+            "tools/call" -> {
+              // Like a whole-project analysis on a large project: no answer before the client gives up.
+              callIds += request.getValue("id").jsonPrimitive.content
+              Thread.sleep(20_000)
+            }
+            else -> exchange.sendResponseHeaders(202, -1)
+          }
+        }
+      }
+      start()
+    }
+    try {
+      HttpInspectionKtsClient(URI("http://127.0.0.1:${server.address.port}/mcp"), "/project/root").use { client ->
+        val started = System.nanoTime()
+        assertFailsWith<TimeoutCancellationException> {
+          withTimeout(500) { client.analyzeProject("project inspection") }
+        }
+        assertTrue(System.nanoTime() - started < TimeUnit.SECONDS.toNanos(10), "the timeout waited for the IDE")
+        val notification = checkNotNull(cancelled.poll(10, TimeUnit.SECONDS)) { "the IDE was not asked to cancel" }
+        assertEquals(callIds.single(), notification.getValue("requestId").jsonPrimitive.content)
+      }
+    }
+    finally {
+      server.stop(0)
+      executor.shutdownNow()
+    }
+  }
+
+  private fun respond(exchange: HttpExchange, request: JsonObject, result: JsonObject) {
+    val bytes = EdictNextJson.encodeToString(buildJsonObject {
+      put("jsonrpc", "2.0")
+      put("id", request.getValue("id"))
+      put("result", result)
+    }).encodeToByteArray()
+    exchange.responseHeaders.set("Content-Type", "application/json")
+    exchange.sendResponseHeaders(200, bytes.size.toLong())
+    exchange.responseBody.write(bytes)
   }
 
   /**
