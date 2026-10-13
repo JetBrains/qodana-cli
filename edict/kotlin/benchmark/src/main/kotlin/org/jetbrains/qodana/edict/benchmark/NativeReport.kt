@@ -5,16 +5,28 @@ import kotlinx.serialization.json.*
 import java.nio.file.Path
 import kotlin.io.path.*
 
+// A gold manifest names every rule, including one without a confirmed positive; otherwise the gold findings do.
 internal fun loadInputs(gold: Sarif, output: Path): BenchmarkInputs = BenchmarkInputs(
     output.resolve("source-revision.txt").readText().trim(),
-    gold.findings.map { it.ruleId }.distinct().sorted(),
+    gold.manifest?.rules?.sorted() ?: gold.findings.map { it.ruleId }.distinct().sorted(),
+    gold.manifest?.ruleBySignal,
 )
+
+private val SPECIFICATION_REFERENCE = Regex("^benchmark/([A-Za-z0-9]+)/specification\\.json#/?")
+
+// With a gold manifest, a Signal belongs to the rule listed for its id; otherwise to its specification reference.
+private fun signalRule(signal: JsonObject, ruleBySignal: Map<String, String>?): String? {
+    if (ruleBySignal != null) return signal["id"]?.jsonPrimitive?.contentOrNull?.let(ruleBySignal::get)
+    val origin = signal["source"]?.jsonObject?.get("suggestionId")?.jsonPrimitive?.contentOrNull
+        ?: signal["provenance"]?.jsonObject?.get("workItemId")?.jsonPrimitive?.contentOrNull
+    return origin?.let { SPECIFICATION_REFERENCE.find(it)?.groupValues?.get(1) }
+}
 
 // Discover only clusters created by Edict. A rule may span several clusters,
 // and a cluster may contain feedback for several rules.
 internal fun resolveClusters(inputs: BenchmarkInputs, state: Path): Map<String, List<String>> {
     val rules = inputs.rules
-    require(rules.isNotEmpty() && rules.distinct().size == rules.size && rules.all { it.matches(Regex("[A-Za-z0-9]+")) }) {
+    require(rules.isNotEmpty() && rules.distinct().size == rules.size && rules.all { it.matches(Regex("[A-Za-z0-9]+(-[A-Za-z0-9]+)*")) }) {
         "Expected distinct, safe benchmark rule IDs"
     }
     val root = state.resolve("clusters")
@@ -23,10 +35,7 @@ internal fun resolveClusters(inputs: BenchmarkInputs, state: Path): Map<String, 
         require(directory.name.matches(Regex("[a-z0-9][a-z0-9-]*"))) { "Unsafe cluster ID: ${directory.name}" }
         val signals = directory.resolve("signals")
         directory.name to if (!signals.exists()) emptySet() else signals.listDirectoryEntries("*.json").mapNotNull {
-            val signal = readObject(it)
-            val origin = signal["source"]?.jsonObject?.get("suggestionId")?.jsonPrimitive?.contentOrNull
-                ?: signal["provenance"]?.jsonObject?.get("workItemId")?.jsonPrimitive?.contentOrNull
-            origin?.let { Regex("^benchmark/([A-Za-z0-9]+)/specification\\.json#/?").find(it)?.groupValues?.get(1) }
+            signalRule(readObject(it), inputs.ruleBySignal)
         }.toSet()
     }
     return rules.associateWith { rule -> memberships.filterValues { rule in it }.keys.toList() }
@@ -52,12 +61,16 @@ internal fun generationOutcome(clusters: List<String>, statuses: Map<String, Str
 
 internal data class ScoringInspection(val rule: String, val cluster: String, val id: String)
 
+// Kebab-case rule ids become PascalCase, so every scoring id stays a plain identifier.
 internal fun scoringInspections(clusters: Map<String, List<String>>, statuses: Map<String, String>): List<ScoringInspection> =
     clusters.flatMap { (rule, members) ->
+        val id = "EdictBenchmark" + rule.split('-').joinToString("") { it.replaceFirstChar(Char::uppercaseChar) }
         members.mapIndexedNotNull { index, cluster ->
             if (statuses.getValue(cluster) != "Generated") null else ScoringInspection(rule, cluster,
-                "EdictBenchmark$rule" + if (members.size == 1) "" else "_Cluster${index + 1}")
+                id + if (members.size == 1) "" else "_Cluster${index + 1}")
         }
+    }.also { inspections ->
+        require(inspections.distinctBy { it.id }.size == inspections.size) { "Benchmark rule IDs collide as scoring IDs" }
     }
 
 // Only descriptor metadata changes in the scoring copy; the accepted source stays untouched.
@@ -72,7 +85,7 @@ internal fun scoringCode(code: String, id: String): String {
 }
 
 internal fun generateSarif(project: Path, state: Path, output: Path) {
-    val inputs = loadInputs(readSarif(state.resolve("gold.sarif.json")), output)
+    val inputs = loadInputs(readGold(state.resolve("gold.sarif.json")), output)
     val clusters = resolveClusters(inputs, state)
     val codes = scoringInspections(clusters, clusterOutcomes(clusters, state)).associate { inspection ->
         inspection.id to scoringCode(state.resolve("inspections/${inspection.cluster}.inspection.kts").readText(), inspection.id)

@@ -7,6 +7,8 @@ import kotlinx.serialization.json.JsonObject
 data class BenchmarkInputs(
     val revision: String,
     val rules: List<String>,
+    /** The gold manifest's rule for each Signal id; null maps Signals by their `benchmark/<Rule>/` source reference. */
+    val ruleBySignal: Map<String, String>? = null,
 )
 
 data class Finding(
@@ -15,6 +17,8 @@ data class Finding(
     val startLine: Long? = null,
     val charOffset: Long? = null,
     val charLength: Long? = null,
+    /** Gold classification: POSITIVE, NEGATIVE or unlabeled (null); generated findings have none. */
+    val label: String? = null,
 )
 
 @Serializable
@@ -23,6 +27,10 @@ data class InspectionMetrics(
     val truePositives: Int,
     val falsePositives: Int,
     val falseNegatives: Int,
+    /** False positives matching a NEGATIVE gold result. */
+    val matchedNegative: Int,
+    /** False positives matching only an unlabeled gold result. */
+    val matchedUnlabeled: Int,
     val recall: Double,
     val precision: Double,
     val f1Score: Double,
@@ -33,6 +41,8 @@ data class AggregateMetrics(
     val totalTP: Int,
     val totalFP: Int,
     val totalFN: Int,
+    val totalMatchedNegative: Int,
+    val totalMatchedUnlabeled: Int,
     val avgRecall: Double,
     val avgPrecision: Double,
     val avgF1Score: Double,

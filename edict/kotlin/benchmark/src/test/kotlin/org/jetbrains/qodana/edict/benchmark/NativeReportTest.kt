@@ -39,6 +39,28 @@ class NativeReportTest {
         signal.resolveSibling("s-other.json").writeText("""{"provenance":{"workItemId":"benchmark/Other/specification.json#/positiveExamples/0"}}""")
         assertEquals(mapOf("Rule" to listOf("another", "chosen-name"), "Other" to listOf("chosen-name")), resolveClusters(inputs, root))
     }
+    @Test fun `a gold manifest assigns Signals by id instead of their source reference`() {
+        val gold = root.resolve("gold.sarif.json")
+        gold.writeText("""{"runs":[{"properties":{"edictBenchmarkManifest":{"format":"intellij-v1","cases":[
+          {"id":"use-set-contains","signals":[{"id":"s-000000000001","label":"POSITIVE"}]},
+          {"id":"no-sleep-on-edt","signals":[{"id":"s-000000000002","label":"NEGATIVE"},{"id":"s-000000000003"}]}]}},
+          "results":[{"ruleId":"use-set-contains","properties":{"edictLabel":"POSITIVE"}}]}]}""")
+        val sarif = readSarif(gold)
+        assertEquals(POSITIVE, sarif.findings.single().label)
+        root.resolve("reports").createDirectories().resolve("source-revision.txt").writeText("revision\n")
+        val inputs = loadInputs(sarif, root.resolve("reports"))
+        // A rule without any gold result still takes part.
+        assertEquals(listOf("no-sleep-on-edt", "use-set-contains"), inputs.rules)
+        for ((cluster, signal) in listOf("chosen" to "s-000000000001", "chosen" to "s-000000000002", "split" to "s-000000000003")) {
+            root.resolve("clusters/$cluster/signals").createDirectories().resolve("$signal.json").writeText("""{"id":"$signal",
+              "source":{"type":"SubmittedFeedback","suggestionId":"benchmark/Other/specification.json#positiveExamples/0"}}""")
+        }
+        val clusters = resolveClusters(inputs, root)
+        assertEquals(mapOf("no-sleep-on-edt" to listOf("chosen", "split"), "use-set-contains" to listOf("chosen")), clusters)
+        val statuses = mapOf("chosen" to "Generated", "split" to "Generated")
+        assertEquals(setOf("EdictBenchmarkNoSleepOnEdt_Cluster1", "EdictBenchmarkNoSleepOnEdt_Cluster2", "EdictBenchmarkUseSetContains"),
+            scoringInspections(clusters, statuses).map { it.id }.toSet())
+    }
     @Test fun `missing clusters never fall back to a predefined inspection name`() {
         val inputs = BenchmarkInputs("revision", listOf("Rule"))
         assertEquals(mapOf("Rule" to emptyList()), resolveClusters(inputs, root))
