@@ -10,12 +10,16 @@ import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.jsonArray
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
+import kotlinx.serialization.json.long
 import kotlinx.serialization.json.put
 import kotlinx.serialization.json.putJsonObject
 import org.junit.jupiter.api.Timeout
 import java.io.IOException
 import java.net.InetSocketAddress
 import java.net.URI
+import java.net.http.HttpTimeoutException
+import java.nio.file.Path
+import java.time.Duration
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.Executors
 import java.util.concurrent.LinkedBlockingQueue
@@ -28,7 +32,12 @@ import kotlin.test.assertTrue
 
 class InspectionKtsMcpClientTest {
   @Test
-  fun `initializes MCP and decodes structured tool results`() = runBlocking {
+  fun `initializes MCP and decodes structured tool results`() = checkToolResults(30)
+
+  @Test
+  fun `forwards configured project analysis timeout through the default client factory`() = checkToolResults(75)
+
+  private fun checkToolResults(projectAnalysisTimeoutMinutes: Long) = runBlocking {
     val requests = mutableListOf<JsonObject>()
     val executor = Executors.newCachedThreadPool()
     val server = HttpServer.create(InetSocketAddress("127.0.0.1", 0), 0).apply {
@@ -89,11 +98,16 @@ class InspectionKtsMcpClientTest {
       }
       start()
     }
+    val service = IntellijMcpServerService(
+      projectPath = Path.of("/project/root"),
+      projectAnalysisTimeoutMinutes = projectAnalysisTimeoutMinutes,
+      serverLifecycle = object : IntellijMcpServerLifecycle {
+        override suspend fun start() = URI("http://127.0.0.1:${server.address.port}/mcp")
+        override suspend fun stop() = Unit
+      },
+    )
     try {
-      HttpInspectionKtsClient(
-        URI("http://127.0.0.1:${server.address.port}/mcp"),
-        "/project/root",
-      ).use { client ->
+      service.withClient { client ->
         val proxyResult = client.callTool(
           "generate_inspection_kts_api",
           buildJsonObject {
@@ -137,10 +151,32 @@ class InspectionKtsMcpClientTest {
       }.getValue("params").jsonObject.getValue("arguments").jsonObject
       assertEquals("project inspection", projectArguments.getValue("inspectionKtsCode").jsonPrimitive.content)
       assertEquals("/project/root", projectArguments.getValue("projectPath").jsonPrimitive.content)
+      assertEquals(
+        projectAnalysisTimeoutMinutes,
+        projectArguments.getValue("timeoutMinutes").jsonPrimitive.long,
+      )
     }
     finally {
+      service.stop()
       server.stop(0)
       executor.shutdownNow()
+    }
+  }
+
+  @Test
+  @Timeout(15)
+  fun `project analysis overrides the HTTP timeout without changing other calls`() = runBlocking<Unit> {
+    SessionServer(rejected = setOf("session-1"), toolDelayMillis = 1_500).use { server ->
+      HttpInspectionKtsClient(
+        server.endpoint,
+        "/project/root",
+        projectAnalysisTimeoutMinutes = 1,
+        requestTimeout = Duration.ofSeconds(1),
+      ).use { client ->
+        assertTrue(client.analyzeProject("inspection").compilation.compilationSuccess)
+        assertEquals(listOf("session-1", "session-2"), server.toolSessions())
+        assertFailsWith<HttpTimeoutException> { client.compile("inspection") }
+      }
     }
   }
 
@@ -249,7 +285,10 @@ class InspectionKtsMcpClientTest {
    * Streamable HTTP server numbering its sessions and holding GET event streams open. Like the IDE after it drops a session,
    * it accepts a [rejected] session's handshake but answers its tool calls with 404.
    */
-  private class SessionServer(private val rejected: Set<String> = emptySet()) : AutoCloseable {
+  private class SessionServer(
+    private val rejected: Set<String> = emptySet(),
+    private val toolDelayMillis: Long = 0,
+  ) : AutoCloseable {
     private val executor = Executors.newCachedThreadPool()
     private val sessions = AtomicInteger()
     private val toolSessions = mutableListOf<String?>()
@@ -279,13 +318,20 @@ class InspectionKtsMcpClientTest {
                 putJsonObject("serverInfo") { put("name", "inspection"); put("version", "1") }
               })
             }
-            else -> respond(exchange, request, buildJsonObject {
-              put("isError", false)
-              put("structuredContent", EdictNextJson.encodeToJsonElement(
+            else -> {
+              Thread.sleep(toolDelayMillis)
+              val compilation = EdictNextJson.encodeToJsonElement(
                 InspectionKtsCompileResult.serializer(),
                 InspectionKtsCompileResult(true, inspectionId = "sample-rule"),
-              ))
-            })
+              )
+              val toolName = request.getValue("params").jsonObject.getValue("name").jsonPrimitive.content
+              respond(exchange, request, buildJsonObject {
+                put("isError", false)
+                put("structuredContent", if (toolName == "run_inspection_kts_project") {
+                  buildJsonObject { put("compilation", compilation) }
+                } else compilation)
+              })
+            }
           }
         }
       }

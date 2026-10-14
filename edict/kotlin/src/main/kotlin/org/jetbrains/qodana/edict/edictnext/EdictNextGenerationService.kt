@@ -1,6 +1,5 @@
 package org.jetbrains.qodana.edict.edictnext
 
-import kotlinx.coroutines.withTimeout
 import kotlinx.coroutines.withTimeoutOrNull
 import org.jetbrains.qodana.edict.common.DEFAULT_GENERATION_COUNT
 import org.jetbrains.qodana.edict.common.DEFAULT_MAX_PROJECT_ANALYSES
@@ -229,42 +228,40 @@ internal class EdictNextGenerationService(
         "Cluster '$clusterId' used all $maxProjectAnalyses project analyses of this run; stop generating. " +
         "Finalise the last analyzed candidate Generated if it passes every strong example, otherwise finalise Pending"
       }
-      withTimeout(EdictNextTimeouts.analysis) {
-        val findings = inspection.analyzeProject(cluster, code, projectRevision)
-        val key = findings.reviewKey()
-        val unchanged = reviewedFindings.put(cluster.signalIds, key) == key
-        val reports = validatedExampleReports[cluster.signalIds]?.takeIf { it.first == findings.candidateDigest }?.second.orEmpty()
-        analyzedExampleReports[cluster.signalIds] = reports
-        val strong = cluster.strongExampleIds()
-        val labels = cluster.examples.associate { it.metadata.id to it.metadata.label }
-        val exampleStatus = reports.filterKeys { it in labels }.mapValues { (id, reported) ->
-          EdictNextReviewExampleStatus(labels.getValue(id), id in strong, reported)
-        }.toSortedMap()
-        val locations = findings.findings.map { it.location() }.toSet()
-        val unreproducedFindings = weakReviewResults[cluster.signalIds].orEmpty().values
-          .filter { it.exampleId != null && reports[it.exampleId] == false }
-          .groupBy { checkNotNull(it.exampleId) }
-          .mapNotNull { (exampleId, assigned) ->
-            val (still, gone) = assigned.partition { it.path to it.line in locations }
-            if (still.isEmpty()) null
-            else exampleId to EdictNextUnreproducedFindings(still.map { "${it.path}:${it.line}" }.sorted(), gone.size)
-          }.toMap().toSortedMap()
-        val response = EdictNextReviewArtifacts.create(
-          findings = findings,
-          clusterDirectory = cluster.directory.root,
-          candidateInspection = cluster.candidateInspectionPath,
-          inspectedProject = projectRoot,
-          privateScratchDirectory = Path.of(privateScratchDirectory).toAbsolutePath().normalize(),
-          remainingProjectAnalyses = maxProjectAnalyses - analysis,
-          reviewedLocations = weakReviewResults[cluster.signalIds].orEmpty().keys,
-          exampleStatus = exampleStatus,
-          unreproducedFindings = unreproducedFindings,
-        )
-        analyzedCandidateDigests[cluster.signalIds] = findings.candidateDigest
-        analyzedFindings[cluster.signalIds] = findings
-        analyzedCodes[cluster.signalIds] = code
-        response.copy(findingsUnchanged = unchanged)
-      }
+      val findings = inspection.analyzeProject(cluster, code, projectRevision)
+      val key = findings.reviewKey()
+      val unchanged = reviewedFindings.put(cluster.signalIds, key) == key
+      val reports = validatedExampleReports[cluster.signalIds]?.takeIf { it.first == findings.candidateDigest }?.second.orEmpty()
+      analyzedExampleReports[cluster.signalIds] = reports
+      val strong = cluster.strongExampleIds()
+      val labels = cluster.examples.associate { it.metadata.id to it.metadata.label }
+      val exampleStatus = reports.filterKeys { it in labels }.mapValues { (id, reported) ->
+        EdictNextReviewExampleStatus(labels.getValue(id), id in strong, reported)
+      }.toSortedMap()
+      val locations = findings.findings.map { it.location() }.toSet()
+      val unreproducedFindings = weakReviewResults[cluster.signalIds].orEmpty().values
+        .filter { it.exampleId != null && reports[it.exampleId] == false }
+        .groupBy { checkNotNull(it.exampleId) }
+        .mapNotNull { (exampleId, assigned) ->
+          val (still, gone) = assigned.partition { it.path to it.line in locations }
+          if (still.isEmpty()) null
+          else exampleId to EdictNextUnreproducedFindings(still.map { "${it.path}:${it.line}" }.sorted(), gone.size)
+        }.toMap().toSortedMap()
+      val response = EdictNextReviewArtifacts.create(
+        findings = findings,
+        clusterDirectory = cluster.directory.root,
+        candidateInspection = cluster.candidateInspectionPath,
+        inspectedProject = projectRoot,
+        privateScratchDirectory = Path.of(privateScratchDirectory).toAbsolutePath().normalize(),
+        remainingProjectAnalyses = maxProjectAnalyses - analysis,
+        reviewedLocations = weakReviewResults[cluster.signalIds].orEmpty().keys,
+        exampleStatus = exampleStatus,
+        unreproducedFindings = unreproducedFindings,
+      )
+      analyzedCandidateDigests[cluster.signalIds] = findings.candidateDigest
+      analyzedFindings[cluster.signalIds] = findings
+      analyzedCodes[cluster.signalIds] = code
+      response.copy(findingsUnchanged = unchanged)
     }
   }
 

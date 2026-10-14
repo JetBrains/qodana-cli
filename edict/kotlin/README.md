@@ -63,6 +63,11 @@ stops the IDE when its stdin closes. The IDE is native only: `--ide-dist <path>`
 `--ide-property`/`--ide-wait-timeout` through `edict mcp start`; IDE output goes to
 `intellij-mcp.log` in the run's log folder, and the IDE's own logs to `intellij-mcp/log/idea.log` next to it.
 
+Set `edict.projectAnalysisTimeoutMinutes` in `qodana.yaml` to override the 30-minute timeout for each whole-project
+inspection analysis. The value must be a positive whole number of minutes. Its HTTP request timeout is this value
+plus 10 minutes; other IDE HTTP requests default to 60 minutes. Queue wait and analysis remain subject to the overall
+120-minute cluster generation limit.
+
 `mcp` serves one shared Streamable HTTP endpoint on loopback port `edict.mcpPort`, so every native
 agent shares one server and one state lock. It fails when `.codex/config.toml` is missing or names
 another port, or when the port is busy; it never moves to another port. State is read from

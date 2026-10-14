@@ -87,6 +87,23 @@ class EdictYamlConfigurationTest {
   }
 
   @Test
+  fun `project analysis timeout defaults to 30 minutes and can be overridden`() {
+    assertEquals(30L, EdictYamlConfiguration.load(null).projectAnalysisTimeoutMinutes)
+    assertEquals(30L, EdictYamlConfiguration.load(yaml("version: \"1.0\"\n")).projectAnalysisTimeoutMinutes)
+    assertEquals(30L, EdictYamlConfiguration.load(yaml("edict: {}\n")).projectAnalysisTimeoutMinutes)
+    assertEquals(
+      75L,
+      EdictYamlConfiguration.load(yaml("edict:\n  projectAnalysisTimeoutMinutes: 75\n")).projectAnalysisTimeoutMinutes,
+    )
+    for (minutes in listOf(0, -1)) {
+      val invalid = assertFailsWith<IllegalArgumentException> {
+        EdictYamlConfiguration.load(yaml("edict:\n  projectAnalysisTimeoutMinutes: $minutes\n"))
+      }
+      assertContains(invalid.message.orEmpty(), "edict.projectAnalysisTimeoutMinutes must be at least 1")
+    }
+  }
+
+  @Test
   fun `generation limits have defaults and are configurable`() {
     val defaults = EdictYamlConfiguration.load(null).generation
     assertEquals(3, defaults.maxProjectAnalyses)
