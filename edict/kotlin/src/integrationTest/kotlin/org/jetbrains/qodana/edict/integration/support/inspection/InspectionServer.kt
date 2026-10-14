@@ -44,7 +44,7 @@ internal class InspectionServer private constructor(
     }
 
     companion object {
-        fun start(workspace: IntegrationWorkspace): InspectionServer {
+        fun start(workspace: IntegrationWorkspace, prepareSource: (Path) -> Unit = {}): InspectionServer {
             val ultimate = System.getenv("ULTIMATE_EDICT_REPO")?.takeIf(String::isNotBlank)?.let(Path::of)
                 ?: error("Set ULTIMATE_EDICT_REPO to the Ultimate checkout providing the external inspection MCP compiler")
             require(Files.isRegularFile(ultimate.resolve("bazel.cmd"))) { "Missing bazel.cmd in ULTIMATE_EDICT_REPO" }
@@ -59,6 +59,7 @@ internal class InspectionServer private constructor(
                     }
                 }
             }
+            prepareSource(source)
             val log = root.resolve("log/intellij-mcp.log")
             Files.createDirectories(log.parent)
             val process = ProcessBuilder(

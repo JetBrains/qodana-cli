@@ -67,6 +67,7 @@ fun main(args: Array<String>) {
                     ideArguments,
                     layout.intellijMcpLogPath,
                     layout.intellijMcpResultsDirectory,
+                    projectAnalysisTimeoutMinutes = configuration.projectAnalysisTimeoutMinutes,
                 )
                 EdictServer.start(layout, port, inspectionServer, configuration = configuration).use { server ->
                     Runtime.getRuntime().addShutdownHook(Thread(server::close))

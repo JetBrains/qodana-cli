@@ -24,9 +24,13 @@ internal data class EdictConfiguration(
   val extraction: ExtractionConfiguration = ExtractionConfiguration(),
   val generation: GenerationConfiguration = GenerationConfiguration(),
   val calculatePrice: Boolean = false,
+  val projectAnalysisTimeoutMinutes: Long = DEFAULT_PROJECT_ANALYSIS_TIMEOUT_MINUTES,
 ) {
   init {
     require(mcpPort in 1..65535) { "edict.mcpPort must be between 1 and 65535: $mcpPort" }
+    require(projectAnalysisTimeoutMinutes >= 1) {
+      "edict.projectAnalysisTimeoutMinutes must be at least 1: $projectAnalysisTimeoutMinutes"
+    }
     require(statePath.isNotBlank()) { "edict.statePath must not be blank" }
     try {
       Path.of(statePath)
@@ -39,6 +43,7 @@ internal data class EdictConfiguration(
 
 internal const val DEFAULT_EDICT_MCP_PORT = 27182
 internal const val DEFAULT_EDICT_STATE_PATH = ".edict"
+internal const val DEFAULT_PROJECT_ANALYSIS_TIMEOUT_MINUTES = 30L
 
 /** [defaultSignalCount] is the daily extraction target when the request does not specify one. */
 internal data class ExtractionConfiguration(
@@ -145,6 +150,7 @@ internal class EdictYaml {
   var extraction: ExtractionYaml? = null
   var generation: GenerationYaml? = null
   var calculatePrice: Boolean? = null
+  var projectAnalysisTimeoutMinutes: Long? = null
 
   fun toConfiguration() = EdictConfiguration(
     mcpPort = mcpPort ?: DEFAULT_EDICT_MCP_PORT,
@@ -154,6 +160,7 @@ internal class EdictYaml {
     extraction = extraction?.toConfiguration() ?: ExtractionConfiguration(),
     generation = generation?.toConfiguration() ?: GenerationConfiguration(),
     calculatePrice = calculatePrice ?: false,
+    projectAnalysisTimeoutMinutes = projectAnalysisTimeoutMinutes ?: DEFAULT_PROJECT_ANALYSIS_TIMEOUT_MINUTES,
   )
 }
 

@@ -15,6 +15,7 @@ import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
 import kotlinx.serialization.json.put
 import kotlinx.serialization.json.putJsonObject
+import org.jetbrains.qodana.edict.common.DEFAULT_PROJECT_ANALYSIS_TIMEOUT_MINUTES
 import java.net.URI
 import java.net.http.HttpClient
 import java.net.http.HttpRequest
@@ -93,6 +94,7 @@ internal class StaleInspectionMcpSession(val sessionId: String) :
 internal class HttpInspectionKtsClient(
   private val endpoint: URI,
   private val projectPath: String? = null,
+  private val projectAnalysisTimeoutMinutes: Long = DEFAULT_PROJECT_ANALYSIS_TIMEOUT_MINUTES,
   private val requestTimeout: Duration = Duration.ofHours(1),
 ) : InspectionKtsClient {
   private val client = HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(30)).build()
@@ -163,21 +165,30 @@ internal class HttpInspectionKtsClient(
   )
 
   override suspend fun analyzeProject(code: String): InspectionKtsProjectRunResult =
-    call("run_inspection_kts_project", buildJsonObject {
-      put("inspectionKtsCode", code)
-      put("projectPath", projectPath)
-    })
+    call(
+      "run_inspection_kts_project",
+      buildJsonObject {
+        put("inspectionKtsCode", code)
+        put("projectPath", projectPath)
+        put("timeoutMinutes", projectAnalysisTimeoutMinutes)
+      },
+      timeout = Duration.ofMinutes(projectAnalysisTimeoutMinutes).plusMinutes(10),
+    )
 
-  override suspend fun callTool(name: String, arguments: JsonObject): JsonObject = request(
-    "tools/call",
-    buildJsonObject {
-      put("name", name)
-      put("arguments", projectPath?.let { JsonObject(arguments + ("projectPath" to JsonPrimitive(it))) } ?: arguments)
-    },
+  override suspend fun callTool(name: String, arguments: JsonObject): JsonObject = callTool(name, arguments, requestTimeout)
+
+  private suspend fun callTool(name: String, arguments: JsonObject, timeout: Duration): JsonObject = request(
+      "tools/call",
+      buildJsonObject {
+        put("name", name)
+        put("arguments", projectPath?.let { JsonObject(arguments + ("projectPath" to JsonPrimitive(it))) } ?: arguments)
+      },
+      timeout = timeout,
   )
 
-  private suspend inline fun <reified T> call(name: String, arguments: JsonObject): T {
-    val result = callTool(name, arguments)
+
+  private suspend inline fun <reified T> call(name: String, arguments: JsonObject, timeout: Duration = requestTimeout): T {
+    val result = callTool(name, arguments, timeout)
     check(result["isError"]?.jsonPrimitive?.content != "true") { "Inspection MCP tool '$name' failed: $result" }
     val structured = result["structuredContent"] as? JsonObject
       ?: (result["content"] as? JsonArray).orEmpty().firstNotNullOfOrNull { item ->
@@ -193,10 +204,10 @@ internal class HttpInspectionKtsClient(
    * Suspends instead of blocking, so cancelling the caller, as the analysis timeout does, aborts the exchange. The IDE
    * is then asked to cancel the call too; otherwise it would keep running an abandoned whole-project analysis.
    */
-  private suspend fun request(method: String, params: JsonObject): JsonObject {
+  private suspend fun request(method: String, params: JsonObject, timeout: Duration = requestTimeout): JsonObject {
     val id = sequence.incrementAndGet()
     val response = try {
-      send(requestMessage(id, method, params))
+      send(requestMessage(id, method, params), timeout)
     }
     catch (e: CancellationException) {
       withContext(NonCancellable + Dispatchers.IO) { notifyCancelled(id) }
@@ -206,9 +217,9 @@ internal class HttpInspectionKtsClient(
   }
 
   /** For the session handshake, which runs from the constructor and from [renewSession]. */
-  private fun requestBlocking(method: String, params: JsonObject): JsonObject {
+  private fun requestBlocking(method: String, params: JsonObject, timeout: Duration = requestTimeout): JsonObject {
     val id = sequence.incrementAndGet()
-    return result(method, sendBlocking(requestMessage(id, method, params)))
+    return result(method, sendBlocking(requestMessage(id, method, params), timeout))
   }
 
   private fun requestMessage(id: Long, method: String, params: JsonObject): JsonObject = buildJsonObject {
@@ -224,24 +235,24 @@ internal class HttpInspectionKtsClient(
     return response.getValue("result").jsonObject
   }
 
-  private suspend fun send(message: JsonObject, renewed: Boolean = false): JsonObject? {
+  private suspend fun send(message: JsonObject, timeout: Duration = requestTimeout, renewed: Boolean = false): JsonObject? {
     val requestSessionId = sessionId
-    val response = client.sendAsync(post(message, requestSessionId), HttpResponse.BodyHandlers.ofString()).await()
+    val response = client.sendAsync(post(message, requestSessionId, timeout), HttpResponse.BodyHandlers.ofString()).await()
     if (requestSessionId != null && response.statusCode() == 404) {
       if (renewed) throw StaleInspectionMcpSession(requestSessionId)
       withContext(Dispatchers.IO) { renew(requestSessionId) }
-      return send(message, renewed = true)
+      return send(message, timeout, renewed = true)
     }
     return parse(message, response)
   }
 
-  private fun sendBlocking(message: JsonObject, renewed: Boolean = false): JsonObject? {
+  private fun sendBlocking(message: JsonObject, timeout: Duration = requestTimeout, renewed: Boolean = false): JsonObject? {
     val requestSessionId = sessionId
-    val response = client.send(post(message, requestSessionId), HttpResponse.BodyHandlers.ofString())
+    val response = client.send(post(message, requestSessionId, timeout), HttpResponse.BodyHandlers.ofString())
     if (requestSessionId != null && response.statusCode() == 404) {
       if (renewed) throw StaleInspectionMcpSession(requestSessionId)
       renew(requestSessionId)
-      return sendBlocking(message, renewed = true)
+      return sendBlocking(message, timeout, renewed = true)
     }
     return parse(message, response)
   }
