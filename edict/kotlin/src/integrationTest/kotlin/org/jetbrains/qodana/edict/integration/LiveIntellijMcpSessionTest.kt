@@ -2,13 +2,20 @@ package org.jetbrains.qodana.edict.integration
 
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
+import org.jetbrains.qodana.edict.edictnext.HttpInspectionKtsClient
 import org.jetbrains.qodana.edict.edictnext.IntellijMcpServerLifecycle
 import org.jetbrains.qodana.edict.edictnext.IntellijMcpServerService
 import org.jetbrains.qodana.edict.integration.support.IntegrationTest
 import org.jetbrains.qodana.edict.integration.support.inspection.InspectionServer
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.Timeout
 import java.net.URI
+import java.nio.file.Files
+import java.nio.file.Path
+import java.time.Duration
 import java.util.concurrent.atomic.AtomicInteger
+import java.util.concurrent.TimeUnit
+import kotlin.test.assertContains
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 import kotlin.time.Duration.Companion.seconds
@@ -46,7 +53,97 @@ class LiveIntellijMcpSessionTest : IntegrationTest() {
         }
     }
 
+    @Test
+    @Timeout(value = 15, unit = TimeUnit.MINUTES)
+    fun `project analysis can be submitted after the previous analysis times out`() = runBlocking {
+        InspectionServer.start(workspace, ::prepareProjectForAnalysis).use { ide ->
+            HttpInspectionKtsClient(
+                endpoint = ide.streamableEndpoint,
+                projectPath = ide.source.toString(),
+                requestTimeout = Duration.ofMinutes(2),
+                projectAnalysisTimeoutMinutes = 1,
+            ).use { client ->
+                val timedOut = client.analyzeProject(HANGING_INSPECTION)
+                val timeoutError = timedOut.files.singleOrNull()?.executionError.orEmpty()
+                assertContains(
+                    timeoutError,
+                    "Time limit",
+                    message = "The first project analysis must reach the IDE-side timeout",
+                )
+
+                val completed = client.analyzeProject(INSPECTION)
+                assertTrue(completed.compilation.compilationSuccess, completed.compilation.compilationErrorDetails)
+                assertTrue(
+                    completed.files.none { it.executionError != null },
+                    "A submission after the timed-out batch must complete: ${completed.files}",
+                )
+            }
+        }
+    }
+
     private companion object {
+        /** The Bazel MCP runner has an isolated IDE config, so give this copied fixture an explicit SDK and module. */
+        fun prepareProjectForAnalysis(source: Path) {
+            val idea = source.resolve(".idea")
+            Files.createDirectories(idea)
+            Files.writeString(
+                idea.resolve("misc.xml"),
+                """<?xml version="1.0" encoding="UTF-8"?>
+                    |<project version="4">
+                    |  <component name="ProjectRootManager" version="2" project-jdk-name="25" project-jdk-type="JavaSDK" />
+                    |</project>
+                    |""".trimMargin(),
+            )
+            Files.writeString(
+                idea.resolve("modules.xml"),
+                """<?xml version="1.0" encoding="UTF-8"?>
+                    |<project version="4">
+                    |  <component name="ProjectModuleManager">
+                    |    <modules>
+                    |      <module fileurl="file://${'$'}PROJECT_DIR${'$'}/inspection-project.iml" filepath="${'$'}PROJECT_DIR${'$'}/inspection-project.iml" />
+                    |    </modules>
+                    |  </component>
+                    |</project>
+                    |""".trimMargin(),
+            )
+            Files.writeString(
+                source.resolve("inspection-project.iml"),
+                """<?xml version="1.0" encoding="UTF-8"?>
+                    |<module type="JAVA_MODULE" version="4">
+                    |  <component name="NewModuleRootManager" inherit-compiler-output="true">
+                    |    <exclude-output />
+                    |    <content url="file://${'$'}MODULE_DIR${'$'}">
+                    |      <sourceFolder url="file://${'$'}MODULE_DIR${'$'}/src/main/java" isTestSource="false" />
+                    |    </content>
+                    |    <orderEntry type="inheritedJdk" />
+                    |    <orderEntry type="sourceFolder" forTests="false" />
+                    |  </component>
+                    |</module>
+                    |""".trimMargin(),
+            )
+        }
+
+        val HANGING_INSPECTION = """
+            import com.intellij.openapi.progress.ProgressManager
+
+            val hangingInspection = localInspection { _, _ ->
+                while (true) {
+                    ProgressManager.checkCanceled()
+                    Thread.sleep(10)
+                }
+            }
+
+            listOf(
+                InspectionKts(
+                    id = "timeout-regression-hanging",
+                    localTool = hangingInspection,
+                    name = "Timeout regression hanging inspection",
+                    htmlDescription = "<html><body>Waits until project analysis is cancelled.</body></html>",
+                    level = HighlightDisplayLevel.WARNING,
+                )
+            )
+        """.trimIndent()
+
         val INSPECTION = """
             import org.intellij.lang.annotations.Language
             import com.intellij.psi.PsiJavaFile

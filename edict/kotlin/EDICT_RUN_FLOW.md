@@ -10,6 +10,7 @@ $CODEX_HOME/config.toml
 edict:
   mcpPort: 27182   # the default
   statePath: .edict # the default; relative paths are resolved from the project
+  projectAnalysisTimeoutMinutes: 30 # the default: timeout for each whole-project inspection analysis
   extraction:
     defaultSignalCount: 100 # the default: newly extracted Signals per daily run
   generation:

@@ -6,6 +6,7 @@ import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.JsonObject
+import org.jetbrains.qodana.edict.common.DEFAULT_PROJECT_ANALYSIS_TIMEOUT_MINUTES
 import java.net.URI
 import java.nio.file.Files
 import java.nio.file.Path
@@ -134,9 +135,14 @@ internal class IntellijMcpServerService(
   ideArguments: List<String> = emptyList(),
   log: Path? = null,
   resultsDirectory: Path? = null,
+  projectAnalysisTimeoutMinutes: Long = DEFAULT_PROJECT_ANALYSIS_TIMEOUT_MINUTES,
   // The helper opens the project by its canonical path, so name it the same way in tool calls.
   private val clientFactory: InspectionKtsClientFactory = InspectionKtsClientFactory { endpoint ->
-    HttpInspectionKtsClient(endpoint, runCatching { projectPath.toRealPath() }.getOrElse { projectPath.toAbsolutePath().normalize() }.toString())
+    HttpInspectionKtsClient(
+      endpoint,
+      runCatching { projectPath.toRealPath() }.getOrElse { projectPath.toAbsolutePath().normalize() }.toString(),
+      projectAnalysisTimeoutMinutes = projectAnalysisTimeoutMinutes,
+    )
   },
   private val serverLifecycle: IntellijMcpServerLifecycle = QodanaIntellijMcpServerLifecycle(
     projectPath,
