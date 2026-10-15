@@ -26,6 +26,9 @@ A PR assignment contains only `batchId` and a zero-based `chunkIndex`.
    mark the lines that contain the code the finding is about, not the blank, comment, or signature lines beside it.
 3. Inspect terse and cosmetic corrections as well as larger changes. Preserve every supported finding. A replacement
    normally yields a POSITIVE finding at the before/comment revision and a NEGATIVE finding at the head revision.
+   Record one POSITIVE/NEGATIVE pair per distinct correction, even when one comment asks for several: each changed
+   construct or behaviour, such as each renamed option or each fixed case, is its own finding. Merge only the same edit
+   repeated on several lines.
    Record each finding as a Signal draft: `workItemId`, `fileRevision` with bounded one-based
    `expectedRanges`, `label`, `strength`, `description`, and `diff`, the exact prepared `before` (base or comment) and
    `after` (head) revisions and the `beforePath` and `afterPath` that the canonical diff compares. Do not copy PR
