@@ -22,11 +22,16 @@ class SkillsTest {
             assertContains(text, "name: $name\n")
             if (name != "edict_manager") {
                 assertContains(text, "description: Managed ")
-                assertContains(text, "[the manager protocol](../edict_manager/references/protocol.md)")
+                // Leaves read only the task protocol; skills that delegate read the delegation protocol, which links it.
+                if (policy.delegates.isEmpty()) {
+                    assertContains(text, "[the managed task protocol](../edict_manager/references/task-protocol.md)")
+                }
+                else assertContains(text, "[the manager protocol](../edict_manager/references/protocol.md)")
                 assertContains(text, "Run only as a delegated managed subagent.")
             }
         }
         assertTrue(Files.exists(directory.resolve("edict_manager/references/protocol.md")))
+        assertTrue(Files.exists(directory.resolve("edict_manager/references/task-protocol.md")))
         assertTrue(Files.exists(directory.resolve("edict-next-generation/SKILL.md")))
         assertFalse(Files.exists(directory.resolve("edict-next-run/SKILL.md")))
         assertFalse(Files.exists(directory.resolve("generation")))
