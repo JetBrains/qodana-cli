@@ -45,7 +45,7 @@ internal class EdictSourceFileService(
   }
 }
 
-private fun numberedLines(content: String, anchor: EdictNextLineRange?, radius: Int): String {
+internal fun numberedLines(content: String, anchor: EdictNextLineRange?, radius: Int): String {
   val lines = content.lines().let { if (it.size > 1 && it.last().isEmpty()) it.dropLast(1) else it }
   val first = anchor?.let { (it.start - 1 - radius).coerceAtLeast(0) } ?: 0
   val last = anchor?.let { (it.end + radius).coerceAtMost(lines.size) } ?: lines.size

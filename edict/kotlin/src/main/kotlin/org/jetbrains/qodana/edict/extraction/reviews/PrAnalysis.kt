@@ -11,10 +11,13 @@ import org.jetbrains.qodana.edict.ci.ReviewSelection
 import org.jetbrains.qodana.edict.common.json
 import org.jetbrains.qodana.edict.common.sha256
 import org.jetbrains.qodana.edict.common.wireJson
+import org.jetbrains.qodana.edict.edictnext.EdictNextLineRange
 import org.jetbrains.qodana.edict.edictnext.EdictNextRepositoryState
 import org.jetbrains.qodana.edict.edictnext.EdictNextSignal
 import org.jetbrains.qodana.edict.edictnext.EdictNextSignalLabel
+import org.jetbrains.qodana.edict.edictnext.EdictNextSignalProvenance
 import org.jetbrains.qodana.edict.edictnext.EdictNextSignalSource
+import org.jetbrains.qodana.edict.edictnext.numberedLines
 import org.jetbrains.qodana.edict.signals.SignalValidation
 import java.time.LocalDate
 import java.time.ZoneOffset
@@ -222,6 +225,7 @@ internal class PrAnalysis(
     failedWorkItemIds: List<String>,
     signals: List<EdictNextSignal>,
     problems: List<String>,
+    drafts: List<PrSignalDraft> = emptyList(),
   ): PrReceipt = synchronized(store) {
     store.requireSkill(token, setOf("edict-signal-analysis"))
     store.requireTokenFree(problems.joinToString("\n"))
@@ -238,7 +242,13 @@ internal class PrAnalysis(
     }
     val stored = linkedMapOf<String, EdictNextSignal>()
     val failures = mutableListOf<PrSignalStoreFailure>()
-    signals.forEachIndexed { index, candidate ->
+    val completed = drafts.mapIndexedNotNull { draftIndex, draft ->
+      val index = signals.size + draftIndex
+      runCatching { IndexedValue(index, complete(draft, chunk, batchId)) }.onFailure { e ->
+        failures += PrSignalStoreFailure(index, draft.id, draft.workItemId, e.message ?: e.javaClass.simpleName)
+      }.getOrNull()
+    }
+    (signals.withIndex() + completed).forEach { (index, candidate) ->
       try {
         require(wireJson.encodeToString(candidate).toByteArray().size <= MAX_ARTIFACT_BYTES) { "Signal exceeds 8 MiB" }
         val signal = SignalValidation.validate(candidate)
@@ -282,6 +292,31 @@ internal class PrAnalysis(
       signalIds = stored.keys.toList(),
       failures = failures,
       problems = problems,
+    )
+  }
+
+  /** Builds the draft's `FromPR` source from its prepared work item, so the worker copies none of it. */
+  private fun complete(draft: PrSignalDraft, chunk: List<PrItem>, batchId: String): EdictNextSignal {
+    val item = chunk.firstOrNull { it.workItemId == draft.workItemId } ?: error("Signal work item does not belong to this chunk")
+    val diff = draft.diff
+    require(diff.before in listOf(item.pr.baseRevision, item.thread.originalCommitSha) && diff.after == item.pr.headRevision) {
+      "Diff must compare prepared base/comment revision to head"
+    }
+    return EdictNextSignal(
+      id = draft.id,
+      idempotencyKey = draft.idempotencyKey,
+      fileRevision = draft.fileRevision,
+      source = EdictNextSignalSource.FromPR(
+        prNumber = item.pr.number,
+        title = item.pr.title,
+        discussionMessages = item.thread.messages.map(ReviewMessage::body),
+        diffPositiveToNegative = provider.diff(item.repository, diff.before, diff.after, diff.beforePath, diff.afterPath),
+        url = item.thread.reviewDiscussionUrl,
+      ),
+      label = draft.label,
+      description = draft.description,
+      strength = draft.strength,
+      provenance = EdictNextSignalProvenance(draft.workItemId, batchId),
     )
   }
 
@@ -344,6 +379,36 @@ internal class PrAnalysis(
     return provider.file(item.repository, revision, path)
   }
 
+  fun evidence(item: PrItem): PrItemEvidence {
+    val thread = item.thread
+    val anchor = thread.anchorLine?.let { it..(thread.anchorEndLine ?: it) }
+    val notes = mutableListOf<String>()
+    val diff = runCatching {
+      provider.diff(item.repository, thread.originalCommitSha, item.pr.headRevision, thread.filePath, thread.filePath, DIFF_CONTEXT)
+        .let { diff ->
+          val near = anchor?.let { hunksNear(diff, (it.first - DIFF_RADIUS)..(it.last + DIFF_RADIUS)) } ?: diff
+          if (near != diff) notes += "the diff shows only changes near the comment; edict_pr_file_diff has the whole file"
+          near
+        }
+        .lines().let { if (it.size <= MAX_DIFF_LINES) it else it.take(MAX_DIFF_LINES) + "… read the full diff for the rest" }
+        .joinToString("\n")
+    }.onFailure { notes += "diff unavailable: ${it.message}" }.getOrNull()
+    val code = anchor?.let { lines ->
+      runCatching {
+        val content = provider.file(item.repository, thread.originalCommitSha, thread.filePath)
+        numberedLines(content, EdictNextLineRange(lines.first, lines.last), CODE_RADIUS)
+      }.onFailure { notes += "commented code unavailable: ${it.message}" }.getOrNull()
+    }
+    return PrItemEvidence(
+      path = thread.filePath,
+      before = thread.originalCommitSha,
+      after = item.pr.headRevision,
+      diff = diff?.ifBlank { null } ?: "(no changes to this file near the comment)",
+      commentedCode = code,
+      notes = notes,
+    )
+  }
+
   fun diff(
     token: String,
     batchId: String,
@@ -387,6 +452,10 @@ internal class PrAnalysis(
   private companion object {
     const val CHUNK_SIZE = 8
     const val MAX_ARTIFACT_BYTES = 8 * 1024 * 1024
+    const val CODE_RADIUS = 25
+    const val DIFF_CONTEXT = 20
+    const val DIFF_RADIUS = 40
+    const val MAX_DIFF_LINES = 600
     const val FULL_DATE_FETCH_LIMIT = 1000
     val MIN_REVIEW_DATE: LocalDate = LocalDate.of(1970, 1, 1)
   }
@@ -395,3 +464,15 @@ internal class PrAnalysis(
 private fun RepositoryPrAnalysisCoverage.includes(date: LocalDate): Boolean = analyzedDateRanges.any {
   date in LocalDate.parse(it.startDate)..LocalDate.parse(it.endDate)
 }
+
+internal fun hunksNear(diff: String, lines: IntRange): String =
+  diff.split(HUNK_START).filterIndexed { index, part ->
+    index == 0 || HUNK_BEFORE.find(part)!!.let { header ->
+      val start = header.groupValues[1].toInt()
+      val end = start + (header.groupValues[2].ifEmpty { "1" }.toInt() - 1).coerceAtLeast(0)
+      start <= lines.last && end >= lines.first
+    }
+  }.joinToString("")
+
+private val HUNK_START = Regex("(?m)^(?=@@ )")
+private val HUNK_BEFORE = Regex("""^@@ -(\d+)(?:,(\d+))?""")

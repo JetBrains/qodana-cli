@@ -26,6 +26,8 @@ import org.jetbrains.qodana.edict.ci.ReviewSelection
 import org.jetbrains.qodana.edict.ci.ReviewThread
 import org.jetbrains.qodana.edict.extraction.reviews.PrAnalysis
 import org.jetbrains.qodana.edict.extraction.reviews.PrAnalysisDateRange
+import org.jetbrains.qodana.edict.extraction.reviews.PrSignalDiff
+import org.jetbrains.qodana.edict.extraction.reviews.PrSignalDraft
 import org.jetbrains.qodana.edict.extraction.reviews.ReviewSelectionInput
 import org.jetbrains.qodana.edict.support.launch
 import org.jetbrains.qodana.edict.support.edictNextToolset
@@ -34,6 +36,7 @@ import java.nio.file.Path
 import java.time.LocalDate
 import java.time.ZoneOffset
 import kotlin.test.Test
+import kotlin.test.assertContains
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertNotEquals
@@ -388,6 +391,59 @@ class ConfiguredPrAnalysisTest {
   }
 
   @Test
+  fun `a stored Signal draft gets its PR source and canonical diff from the work item`() {
+    val configured = ReviewRepository(CiProviderId.GITHUB, "JetBrains", "qodana-cli")
+    val today = LocalDate.of(2026, 10, 9)
+    val diff = """
+      diff --git a/src/Example1.kt b/src/Example1.kt
+      --- a/src/Example1.kt
+      +++ b/src/Example1.kt
+      @@ -1,3 +1,3 @@
+       fun a() {
+      -  bad()
+      +  good()
+       }
+    """.trimIndent() + "\n"
+    EdictNextRepositoryState.open(directory.resolve("state")).use { store ->
+      val plan = store.createPlan(
+        "Draft storage",
+        listOf(EdictNextRepositoryState.Step("edict-pr-signal-analysis", "Analyze a complete UTC date")),
+      )
+      val coordinator = store.launch(plan.token, plan.plan.tasks.single().id, "edict-pr-signal-analysis")
+      val pullRequests = datedPullRequests(1, today.minusDays(1))
+      val analysis = PrAnalysis(store, DateReviewProvider(pullRequests, diff = diff)) { today }
+      val batch = analysis.prepareBatch(coordinator.token, configured, ReviewSelectionInput())
+      val worker = launchAnalysisWorker(store, coordinator.token)
+      val item = analysis.chunk(worker.token, batch.batchId, 0).workItemIds.single()
+      val key = "draft:$item:POSITIVE"
+      fun draft(before: String) = PrSignalDraft(
+        id = stableSignalId(key),
+        idempotencyKey = key,
+        workItemId = item,
+        fileRevision = EdictNextFileRevision("src/Example1.kt", "a".repeat(40), listOf(EdictNextLineRange(2, 2))),
+        label = EdictNextSignalLabel.POSITIVE,
+        description = "Calls bad() where good() is required.",
+        diff = PrSignalDiff(before, "b".repeat(40), "src/Example1.kt", "src/Example1.kt"),
+      )
+
+      val rejected = analysis.store(worker.token, batch.batchId, 0, listOf(item), emptyList(), emptyList(), emptyList(), listOf(draft("c".repeat(40))))
+      assertEquals(0, rejected.signalCount)
+      assertContains(rejected.failures.single().message, "base/comment revision to head")
+
+      val receipt = analysis.store(worker.token, batch.batchId, 0, listOf(item), emptyList(), emptyList(), emptyList(), listOf(draft("a".repeat(40))))
+      assertEquals(1, receipt.signalCount, receipt.failures.toString())
+      analysis.publishValidated(coordinator.token, batch.batchId)
+      val source = checkNotNull(store.inboxSignal(stableSignalId(key))).source as EdictNextSignalSource.FromPR
+      val pr = pullRequests.single()
+      assertEquals(pr.number, source.prNumber)
+      assertEquals(pr.title, source.title)
+      assertEquals(pr.threads.single().reviewDiscussionUrl, source.url)
+      assertEquals(listOf("Fix this"), source.discussionMessages)
+      assertEquals(diff, source.diffPositiveToNegative)
+    }
+  }
+
+  @Test
   fun `coordinator cannot complete when more than half of chunks fail`() {
     val configured = ReviewRepository(CiProviderId.GITHUB, "JetBrains", "qodana-cli")
     val today = LocalDate.of(2026, 10, 9)
@@ -680,12 +736,13 @@ class ConfiguredPrAnalysisTest {
       return ReviewFetchResult(pullRequests)
     }
     override fun file(repository: ReviewRepository, revision: String, path: String): String = error("unused")
-    override fun diff(repository: ReviewRepository, before: String, after: String, beforePath: String, afterPath: String): String = error("unused")
+    override fun diff(repository: ReviewRepository, before: String, after: String, beforePath: String, afterPath: String, context: Int): String = error("unused")
   }
 
   private class DateReviewProvider(
     private val pullRequests: List<PullRequest>,
     private val problems: List<String> = emptyList(),
+    private val diff: String? = null,
   ) : ReviewExtractionApi {
     val selections = mutableListOf<ReviewSelection>()
 
@@ -707,6 +764,7 @@ class ConfiguredPrAnalysisTest {
       after: String,
       beforePath: String,
       afterPath: String,
-    ): String = error("unused")
+      context: Int,
+    ): String = diff ?: error("unused")
   }
 }
