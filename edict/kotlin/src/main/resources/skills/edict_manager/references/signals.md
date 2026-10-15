@@ -70,7 +70,8 @@ a transient run/plan ID in this key. If a provider supplies an immutable analysi
 Keep mutable orchestration progress in the MCP plan.
 
 PR source preserves `type: "FromPR"`, `prNumber`, complete `title`, ordered complete human `discussionMessages`,
-canonical `diffPositiveToNegative`, and discussion `url`.
+canonical `diffPositiveToNegative`, and discussion `url`. A PR chunk worker does not write it: it stores Signal drafts
+naming the diff's revisions and paths, and the server completes this source from the prepared work item.
 
 Commit source preserves `type: "FromCommit"`, the full correcting `commitRevision`, and `url` when available. The commit
 object determines its parent, message, and canonical diff; do not duplicate them in the Signal. The correcting

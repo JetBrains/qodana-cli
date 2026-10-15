@@ -134,7 +134,7 @@ class EdictNextMcpToolsetTest {
       assertEquals(listOf("token", "batchId", "chunkIndex"), chunkSchema.required)
       val storePrSchema = server.tools.getValue("edict_store_pr_signals").tool.inputSchema
       assertEquals(
-        setOf("token", "batchId", "chunkIndex", "inspectedWorkItemIds", "failedWorkItemIds", "signals", "problems"),
+        setOf("token", "batchId", "chunkIndex", "inspectedWorkItemIds", "failedWorkItemIds", "signals", "signalDrafts", "problems"),
         checkNotNull(storePrSchema.properties).keys,
       )
       assertEquals(

@@ -55,7 +55,7 @@ data class CreateReviewRequest(
 interface ReviewExtractionApi {
   fun fetch(selection: ReviewSelection): ReviewFetchResult
   fun file(repository: ReviewRepository, revision: String, path: String): String
-  fun diff(repository: ReviewRepository, before: String, after: String, beforePath: String, afterPath: String): String
+  fun diff(repository: ReviewRepository, before: String, after: String, beforePath: String, afterPath: String, context: Int = 200): String
 }
 
 data class ReviewFetchResult(
@@ -140,6 +140,7 @@ class ReviewClient private constructor(
     after: String,
     beforePath: String,
     afterPath: String,
+    context: Int,
   ): String {
     fun readOrMissing(revision: String, path: String): String? = try {
       file(repository, revision, path)
@@ -160,7 +161,7 @@ class ReviewClient private constructor(
       val diff = runProcess(
         scratch,
         listOf(
-          "git", "--no-pager", "diff", "--no-color", "--no-ext-diff", "--no-textconv", "--unified=200", "--", "source",
+          "git", "--no-pager", "diff", "--no-color", "--no-ext-diff", "--no-textconv", "--unified=$context", "--", "source",
         ),
       )
       if (diff.isEmpty()) return ""
