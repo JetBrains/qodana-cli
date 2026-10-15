@@ -5,7 +5,35 @@ import kotlinx.serialization.Serializable
 import org.jetbrains.qodana.edict.ci.PullRequest
 import org.jetbrains.qodana.edict.ci.ReviewRepository
 import org.jetbrains.qodana.edict.ci.ReviewThread
+import org.jetbrains.qodana.edict.edictnext.EdictNextFileRevision
+import org.jetbrains.qodana.edict.edictnext.EdictNextSignalLabel
+import org.jetbrains.qodana.edict.edictnext.EdictNextSignalStrength
 import java.time.LocalDate
+
+@Serializable
+data class PrItemEvidence(
+  val path: String,
+  val before: String,
+  val after: String,
+  val diff: String,
+  val commentedCode: String? = null,
+  val notes: List<String> = emptyList(),
+)
+
+@Serializable
+data class PrSignalDiff(val before: String, val after: String, val beforePath: String, val afterPath: String)
+
+@Serializable
+data class PrSignalDraft(
+  val id: String,
+  val idempotencyKey: String = "",
+  val workItemId: String,
+  val fileRevision: EdictNextFileRevision,
+  val label: EdictNextSignalLabel,
+  val description: String,
+  val strength: EdictNextSignalStrength = EdictNextSignalStrength.STRONG,
+  val diff: PrSignalDiff,
+)
 
 @Serializable
 data class PrAnalysisDateRange(val startDate: String, val endDate: String) {

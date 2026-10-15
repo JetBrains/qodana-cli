@@ -28,7 +28,7 @@ class EdictSourceFileServiceTest {
       return "class Remote {}\n"
     }
 
-    override fun diff(repository: ReviewRepository, before: String, after: String, beforePath: String, afterPath: String): String =
+    override fun diff(repository: ReviewRepository, before: String, after: String, beforePath: String, afterPath: String, context: Int): String =
       error("not used")
   }
 
