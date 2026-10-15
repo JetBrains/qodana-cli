@@ -22,6 +22,7 @@ import (
 	"github.com/JetBrains/qodana-cli/internal/platform/product"
 	"github.com/JetBrains/qodana-cli/internal/platform/qdcontainer"
 	"github.com/JetBrains/qodana-cli/internal/platform/qdenv"
+	"github.com/JetBrains/qodana-cli/internal/platform/tokenloader"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 )
@@ -34,7 +35,7 @@ func newPullCommand() *cobra.Command {
 		Short: "Pull latest version of linter",
 		Long:  `An alternative to pull an image.`,
 		Run: func(cmd *cobra.Command, args []string) {
-			qdenv.InitializeQodanaGlobalEnv(qdenv.EmptyEnvProvider())
+			tokenloader.InitializeQodanaGlobalEnv(qdenv.EmptyEnvProvider(), cliOptions.ProjectDir, cliOptions.ConfigName)
 
 			commonCtx := commoncontext.Compute(
 				cliOptions.Linter,

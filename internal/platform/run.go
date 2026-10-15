@@ -41,7 +41,9 @@ func RunThirdPartyLinterAnalysis(
 	linter ThirdPartyLinter,
 	linterInfo thirdpartyscan.LinterInfo,
 ) (int, error) {
-	qdenv.InitializeQodanaGlobalEnv(cliOptions)
+	tokenloader.InitializeQodanaGlobalEnv(cliOptions, cliOptions.ProjectDir, cliOptions.ConfigName)
+	// QODANA_ORG_TOKEN is resolved: drop it so it never reaches the scan context
+	cliOptions.Env_ = qdenv.WithoutEnv(cliOptions.Env_, qdenv.QodanaOrgToken)
 
 	var err error
 
