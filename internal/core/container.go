@@ -31,6 +31,7 @@ import (
 	"strings"
 
 	"github.com/JetBrains/qodana-cli/internal/cloud"
+	"github.com/JetBrains/qodana-cli/internal/platform/git"
 	"github.com/docker/docker/api/types/image"
 	"github.com/docker/docker/api/types/network"
 
@@ -306,7 +307,7 @@ func getDockerOptions(c corescan.Context, image string) *backend.ContainerCreate
 	cmdOpts := GetIdeArgs(c)
 
 	updateScanContextEnv := func(key string, value string) { c = c.WithEnvExtractedFromOsEnv(key, value) }
-	qdenv.ExtractQodanaEnvironment(updateScanContextEnv)
+	qdenv.ExtractQodanaEnvironment(git.GetGitEnv(c.RepositoryRoot(), c.LogDir()), updateScanContextEnv)
 
 	dockerEnv := c.Env()
 	qodanaCloudUploadToken := c.QodanaUploadToken()
