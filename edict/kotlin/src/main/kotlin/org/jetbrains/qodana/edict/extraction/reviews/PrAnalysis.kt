@@ -18,6 +18,7 @@ import org.jetbrains.qodana.edict.edictnext.EdictNextSignalLabel
 import org.jetbrains.qodana.edict.edictnext.EdictNextSignalProvenance
 import org.jetbrains.qodana.edict.edictnext.EdictNextSignalSource
 import org.jetbrains.qodana.edict.edictnext.numberedLines
+import org.jetbrains.qodana.edict.edictnext.stableSignalId
 import org.jetbrains.qodana.edict.signals.SignalValidation
 import java.time.LocalDate
 import java.time.ZoneOffset
@@ -242,10 +243,12 @@ internal class PrAnalysis(
     }
     val stored = linkedMapOf<String, EdictNextSignal>()
     val failures = mutableListOf<PrSignalStoreFailure>()
+    val ordinals = mutableMapOf<String, Int>()
     val completed = drafts.mapIndexedNotNull { draftIndex, draft ->
       val index = signals.size + draftIndex
-      runCatching { IndexedValue(index, complete(draft, chunk, batchId)) }.onFailure { e ->
-        failures += PrSignalStoreFailure(index, draft.id, draft.workItemId, e.message ?: e.javaClass.simpleName)
+      val key = idempotencyKey(draft, ordinals.merge(draft.workItemId, 1, Int::plus)!! - 1)
+      runCatching { IndexedValue(index, complete(draft, key, chunk, batchId)) }.onFailure { e ->
+        failures += PrSignalStoreFailure(index, stableSignalId(key), draft.workItemId, e.message ?: e.javaClass.simpleName)
       }.getOrNull()
     }
     (signals.withIndex() + completed).forEach { (index, candidate) ->
@@ -295,16 +298,25 @@ internal class PrAnalysis(
     )
   }
 
+  /**
+   * The draft's idempotency key, from its evidence identity like a commit Signal's: work item, the draft's [ordinal]
+   * among that item's drafts, label, path, revision, and ranges.
+   */
+  private fun idempotencyKey(draft: PrSignalDraft, ordinal: Int): String = with(draft.fileRevision) {
+    listOf(draft.workItemId, ordinal, draft.label, path, revision, expectedRanges.orEmpty().joinToString(",") { "${it.start}:${it.end}" })
+      .joinToString("|")
+  }
+
   /** Builds the draft's `FromPR` source from its prepared work item, so the worker copies none of it. */
-  private fun complete(draft: PrSignalDraft, chunk: List<PrItem>, batchId: String): EdictNextSignal {
+  private fun complete(draft: PrSignalDraft, key: String, chunk: List<PrItem>, batchId: String): EdictNextSignal {
     val item = chunk.firstOrNull { it.workItemId == draft.workItemId } ?: error("Signal work item does not belong to this chunk")
     val diff = draft.diff
     require(diff.before in listOf(item.pr.baseRevision, item.thread.originalCommitSha) && diff.after == item.pr.headRevision) {
       "Diff must compare prepared base/comment revision to head"
     }
     return EdictNextSignal(
-      id = draft.id,
-      idempotencyKey = draft.idempotencyKey,
+      id = stableSignalId(key),
+      idempotencyKey = key,
       fileRevision = draft.fileRevision,
       source = EdictNextSignalSource.FromPR(
         prNumber = item.pr.number,

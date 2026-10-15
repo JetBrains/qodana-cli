@@ -66,7 +66,8 @@ Each persisted record has this shape:
 
 Construct the idempotency key from immutable repository/source identity, work-item ID, a deterministic signal index,
 label, path, revision, and ranges. Use `s-` plus the first 10 lowercase SHA-256 hex characters as the ID. Do not include
-a transient run/plan ID in this key. If a provider supplies an immutable analysis batch ID, preserve it in provenance.
+a transient run/plan ID in this key. PR Signal drafts carry neither key nor ID: the server derives both. If a provider
+supplies an immutable analysis batch ID, preserve it in provenance.
 Keep mutable orchestration progress in the MCP plan.
 
 PR source preserves `type: "FromPR"`, `prNumber`, complete `title`, ordered complete human `discussionMessages`,
