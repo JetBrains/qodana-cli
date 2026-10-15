@@ -5,7 +5,7 @@ description: Managed subagent that reduces one Edict Next Signal and its exact s
 
 # Edict Next Code Example
 
-Run only as a delegated managed subagent. Follow [the manager protocol](../edict_manager/references/protocol.md) before
+Run only as a delegated managed subagent. Follow [the managed task protocol](../edict_manager/references/task-protocol.md) before
 domain work and use its assigned task lifecycle.
 
 Load only this skill.

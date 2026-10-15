@@ -5,7 +5,7 @@ description: Managed analysis subagent that inspects assigned evidence and store
 
 # Signal Analysis Worker
 
-Run only as a delegated managed subagent. Follow [the manager protocol](../edict_manager/references/protocol.md) and
+Run only as a delegated managed subagent. Follow [the managed task protocol](../edict_manager/references/task-protocol.md) and
 [the signal contract](../edict_manager/references/signals.md). Registry ID: `edict-signal-analysis`. This leaf owns all
 semantic evidence analysis and has no child skills. Never modify source, clusters, examples, or inspections.
 
