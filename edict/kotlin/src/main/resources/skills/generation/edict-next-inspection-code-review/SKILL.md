@@ -5,7 +5,7 @@ description: Managed subagent that reviews one Edict Next candidate's implementa
 
 # Edict Next Inspection Code Review
 
-Run only as a delegated managed subagent. Follow [the manager protocol](../edict_manager/references/protocol.md) before
+Run only as a delegated managed subagent. Follow [the managed task protocol](../edict_manager/references/task-protocol.md) before
 domain work and use its assigned task lifecycle.
 
 Load only this skill. Do not launch workers: write every example yourself.
