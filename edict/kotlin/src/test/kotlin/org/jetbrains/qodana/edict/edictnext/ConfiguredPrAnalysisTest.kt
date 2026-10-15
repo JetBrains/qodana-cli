@@ -415,10 +415,8 @@ class ConfiguredPrAnalysisTest {
       val batch = analysis.prepareBatch(coordinator.token, configured, ReviewSelectionInput())
       val worker = launchAnalysisWorker(store, coordinator.token)
       val item = analysis.chunk(worker.token, batch.batchId, 0).workItemIds.single()
-      val key = "draft:$item:POSITIVE"
+      val key = "$item|0|POSITIVE|src/Example1.kt|${"a".repeat(40)}|2:2"
       fun draft(before: String) = PrSignalDraft(
-        id = stableSignalId(key),
-        idempotencyKey = key,
         workItemId = item,
         fileRevision = EdictNextFileRevision("src/Example1.kt", "a".repeat(40), listOf(EdictNextLineRange(2, 2))),
         label = EdictNextSignalLabel.POSITIVE,

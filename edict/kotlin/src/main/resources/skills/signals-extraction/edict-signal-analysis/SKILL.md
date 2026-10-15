@@ -26,12 +26,12 @@ A PR assignment contains only `batchId` and a zero-based `chunkIndex`.
    mark the lines that contain the code the finding is about, not the blank, comment, or signature lines beside it.
 3. Inspect terse and cosmetic corrections as well as larger changes. Preserve every supported finding. A replacement
    normally yields a POSITIVE finding at the before/comment revision and a NEGATIVE finding at the head revision.
-   Record each finding as a Signal draft: `id`, `idempotencyKey`, `workItemId`, `fileRevision` with bounded one-based
+   Record each finding as a Signal draft: `workItemId`, `fileRevision` with bounded one-based
    `expectedRanges`, `label`, `strength`, `description`, and `diff`, the exact prepared `before` (base or comment) and
    `after` (head) revisions and the `beforePath` and `afterPath` that the canonical diff compares. Do not copy PR
    metadata, discussion messages, or diff text: the server completes each draft's source from its work item and checks
-   that the ranges intersect lines its canonical diff changes. Build stable Signal IDs and idempotency keys from
-   repository/discussion/evidence identity, never transient task or plan IDs.
+   that the ranges intersect lines its canonical diff changes. The server also derives each draft's idempotency key
+   and Signal ID; never compute them or write scripts for them.
 4. Isolate item failures. If one item lacks complete evidence or cannot produce a valid model, append its ID to
    `failedWorkItemIds`, append a concise problem containing that work-item ID, and continue with later items. Do not
    invent a Signal or discard correct sibling

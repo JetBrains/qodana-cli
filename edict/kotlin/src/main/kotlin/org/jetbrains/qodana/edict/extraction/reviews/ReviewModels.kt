@@ -25,8 +25,6 @@ data class PrSignalDiff(val before: String, val after: String, val beforePath: S
 
 @Serializable
 data class PrSignalDraft(
-  val id: String,
-  val idempotencyKey: String = "",
   val workItemId: String,
   val fileRevision: EdictNextFileRevision,
   val label: EdictNextSignalLabel,

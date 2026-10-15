@@ -174,8 +174,6 @@ internal class EdictManagementService(
         "items",
         objectOf(
           properties = mapOf(
-            "id" to string,
-            "idempotencyKey" to string,
             "workItemId" to string,
             "fileRevision" to fileRevision,
             "label" to enumOf("POSITIVE", "NEGATIVE"),
@@ -186,7 +184,7 @@ internal class EdictManagementService(
               required = listOf("before", "after", "beforePath", "afterPath"),
             ),
           ),
-          required = listOf("id", "workItemId", "fileRevision", "label", "description", "diff"),
+          required = listOf("workItemId", "fileRevision", "label", "description", "diff"),
         ),
       )
     }
@@ -523,7 +521,7 @@ internal class EdictManagementService(
     tool(
       name = "edict_store_pr_signals",
       description = "Store one analyzed PR chunk. Requires complete ordered work-item coverage and explicit failed work-item IDs, independently validates each Signal, and retains valid models despite per-Signal failures. " +
-        "Pass Signals as signalDrafts: the server completes each draft's FromPR source (PR number, title, discussion URL, messages, and the canonical diff of its diff snapshots) from its work item.",
+        "Pass Signals as signalDrafts: the server completes each draft's FromPR source (PR number, title, discussion URL, messages, and the canonical diff of its diff snapshots) from its work item, and derives its idempotency key and ID.",
       required = listOf("token", "batchId", "chunkIndex", "inspectedWorkItemIds", "failedWorkItemIds", "signals", "problems"),
       properties = properties("batchId") + mapOf(
         "chunkIndex" to integer,
