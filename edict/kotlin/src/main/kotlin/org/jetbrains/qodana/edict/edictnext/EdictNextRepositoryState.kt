@@ -116,7 +116,7 @@ internal class EdictNextRepositoryState(
   fun createPlan(request: String, steps: List<Step>): PlanCreation {
     ensureManagementState()
     check(!managerClaimed) { "edict_plan_create has already succeeded for this server" }
-    require(request.isNotBlank() && steps.size in 1..1000) { "A request and 1..1000 steps are required" }
+    require(request.isNotBlank() && steps.size <= 1000) { "A request and at most 1000 initial steps are required" }
     require(steps.count { it.skill == PR_ANALYSIS_SKILL } <= 1) {
       "A plan can contain only one PR-analysis coordinator"
     }
@@ -554,7 +554,7 @@ internal class EdictNextRepositoryState(
     private const val PR_ANALYSIS_COVERAGE_FILE = "extraction/pr-analysis-coverage.json"
     private val COMMIT_SIGNAL_PUBLISHERS = setOf(
       "edict-batch-signal-analysis",
-      "edict-git-history-signal-analysis",
+      "edict-git-history-signal-enrichment",
       "edict-retrospective-signal-analysis",
     )
     private val SIGNAL_PUBLISHERS = COMMIT_SIGNAL_PUBLISHERS + "edict-pr-signal-analysis"

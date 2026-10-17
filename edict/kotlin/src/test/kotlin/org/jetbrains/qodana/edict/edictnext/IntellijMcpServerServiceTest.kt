@@ -4,6 +4,7 @@ import kotlinx.coroutines.async
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.json.JsonObject
+import org.jetbrains.qodana.edict.history.enrichment.EdictNextEnrichmentService
 import org.junit.jupiter.api.io.TempDir
 import java.net.URI
 import java.nio.file.Files
@@ -134,7 +135,9 @@ class IntellijMcpServerServiceTest {
     val inspection = IntellijMcpServerService(projectPath = project, qodanaExecutable = qodana.toString())
     try {
       // The project is no Git repository, so resolving its HEAD here would throw.
-      EdictNextGenerationService(EdictRepository(EdictRepositoryDirectory(project)), inspection, project)
+      val repository = EdictRepository(EdictRepositoryDirectory(project))
+      EdictNextGenerationService(repository, inspection, project)
+      EdictNextEnrichmentService(repository, project)
     }
     finally {
       inspection.stop()

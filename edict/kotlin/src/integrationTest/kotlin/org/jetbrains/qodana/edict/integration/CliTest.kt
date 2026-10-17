@@ -97,7 +97,8 @@ class CliTest : IntegrationTest() {
                     assertTrue("edict_context" in tools)
                     assertTrue("edict_delegate" in tools)
                     assertTrue("edict_next_calculate_neighbours_by_embeddings" in tools)
-                    assertTrue("edict_next_get_generation_clusters" in tools)
+                    assertTrue("edict_next_select_generation_clusters" in tools)
+                    assertTrue("edict_publish_signal_to_cluster" in tools)
                     assertTrue("generate_inspection_kts_api" in tools)
                 } finally {
                     process.destroy()

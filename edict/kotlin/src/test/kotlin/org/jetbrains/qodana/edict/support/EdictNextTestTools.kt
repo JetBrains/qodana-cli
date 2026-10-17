@@ -13,6 +13,8 @@ import org.jetbrains.qodana.edict.edictnext.EdictRepository
 import org.jetbrains.qodana.edict.edictnext.EdictRepositoryDirectory
 import org.jetbrains.qodana.edict.edictnext.EdictSourceFileService
 import org.jetbrains.qodana.edict.edictnext.IntellijMcpServerService
+import org.jetbrains.qodana.edict.history.enrichment.EdictNextEnrichmentMcpToolset
+import org.jetbrains.qodana.edict.history.enrichment.EdictNextEnrichmentService
 import org.jetbrains.qodana.edict.promotion.PromotionService
 import java.io.PrintWriter
 import kotlin.io.path.createDirectories
@@ -51,6 +53,7 @@ internal fun edictNextToolset(
       configuration.generation.maxProjectAnalyses,
       configuration.generation.defaultGenerationCount,
     ),
+    EdictNextEnrichmentMcpToolset(management, EdictNextEnrichmentService(repository, layout.root)),
     EdictSourceFileService(layout.root, ReviewClient(), configuration.ci?.reviewRepository),
     configuration,
     promotion ?: PromotionService({ repository }, configuration),

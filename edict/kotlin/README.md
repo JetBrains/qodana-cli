@@ -65,8 +65,7 @@ stops the IDE when its stdin closes. The IDE is native only: `--ide-dist <path>`
 
 Set `edict.projectAnalysisTimeoutMinutes` in `qodana.yaml` to override the 30-minute timeout for each whole-project
 inspection analysis. The value must be a positive whole number of minutes. Its HTTP request timeout is this value
-plus 10 minutes; other IDE HTTP requests default to 60 minutes. Queue wait and analysis remain subject to the overall
-120-minute cluster generation limit.
+plus 10 minutes; other IDE HTTP requests default to 60 minutes.
 
 `mcp` serves one shared Streamable HTTP endpoint on loopback port `edict.mcpPort`, so every native
 agent shares one server and one state lock. It fails when `.codex/config.toml` is missing or names
@@ -87,7 +86,7 @@ Standard rates, and writes
 
 ## What is ported
 
-- All 14 managed skills, their invocation policies, and shared references.
+- All 16 managed skills, their invocation policies, and shared references.
   Worker registry IDs and installed skill names both use `edict-*`.
   The manager remains `edict_manager`.
 - Manager claims, task assignment retrieval, native worker startup, attenuated
@@ -102,8 +101,14 @@ Standard rates, and writes
   validation, inbox receipts, exact Git revision/source readers, and a commit
   extraction boundary with an injectable semantic analyzer. Managed Git-history
   and retrospective Qodana workflows can discover additional corrective evidence.
-- Task-bound sequential distribution with same-language embedding candidates, context receipts, one guarded
-  Signal-to-cluster transition, a durable vector cache, and post-distribution validation. Code-example,
+- Task-bound distribution with same-language embedding candidates, context receipts, one guarded Signal-to-cluster
+  transition, and post-distribution validation. The manager chooses generation clusters using read-only suggestions or
+  the user's requested targets, then runs one `edict-git-history-signal-enrichment` task per `clusterId`. Each task searches
+  bounded Git history, analyzes all member Signals and candidate corrections in the same agent without child workers,
+  and assigns newly found strong Signals directly to
+  that cluster. The manager alone keeps the chosen cluster list and directly launches one cluster-generation worker
+  per target. Selection creates no state. No second distribution pass is needed.
+  A durable vector cache supports distribution. Code-example,
   cluster-example, and generation-state gates remain read-only. Generated inspection compilation and execution run through
   Ultimate's generic inspection MCP; this CLI contains only its lifecycle and HTTP client.
 - GitHub and Space review readers, bounded selection, pagination, bot filtering,
@@ -173,6 +178,8 @@ ULTIMATE_EDICT_REPO=/path/to/ultimate.edict.master ./gradlew test --console=plai
 # Generation with the same model as the retained Go generation baseline.
 CODEX_MODEL=gpt-5.6-terra ULTIMATE_EDICT_REPO=/path/to/ultimate.edict.master \
   ./gradlew test --tests '*LivePipelineTest' --console=plain
+# Enrich a selected Signal's cluster, without an inspection compiler or generation.
+./gradlew :test --tests '*LiveEnrichmentTest' --console=plain
 ```
 
 Every integration test inherits `IntegrationTest`, which prepares an
@@ -226,6 +233,16 @@ against original Git evidence and synthetic examples, and verifies reviews accep
 that exact inspection hash. Compiler startup output is retained in `log/intellij-mcp.log`.
 Generation allows up to 60 minutes for model execution, including candidate revisions
 and independent reviews. Extraction tests retain their 20-minute execution limit.
+
+`LiveEnrichmentTest` loads the inspected project and prepared `.edict` state from the dedicated
+`testEnrichSignalFromGitHistory` folder in the pinned `distillery-test` revision, without constructing Signals or clusters
+in the test. The harness copies the committed seed to disposable state and leaves the tracked fixture unchanged.
+The test uses a short request to enrich its prepared cluster. The real history coordinator reads member Signals through
+`edict_get_cluster_signals`, obtains a server-computed history range, and publishes independent strong evidence directly
+into that cluster. The range is the intersection of the latest 100 commits and the last 90 days, anchored to an exact
+HEAD revision. It verifies actual Git evidence and that every analyzed candidate belongs to the returned range, with no
+distribution, generation selection, inspection generation, or IntelliJ startup. No analyzed-commit coverage is persisted;
+legacy history-analysis files are ignored.
 
 Each test's `log/process-log/<run-id>/` directory contains:
 

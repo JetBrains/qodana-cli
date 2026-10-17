@@ -28,7 +28,7 @@ internal class ReviewProviderFixture(private val provider: String, repository: G
     private val requests = ConcurrentLinkedQueue<String>()
     private val server = HttpServer.create(InetSocketAddress("127.0.0.1", 0), 0)
     private val baseUrl = "http://127.0.0.1:${server.address.port}"
-    private val mergedAt = LocalDate.now(ZoneOffset.UTC).atTime(12, 0).toInstant(ZoneOffset.UTC).toString()
+    private val mergedAt = LocalDate.now(ZoneOffset.UTC).minusDays(1).atTime(12, 0).toInstant(ZoneOffset.UTC).toString()
     val discussionUrl = when (provider) {
         "github" -> "https://github.test/owner/repo/pull/7#discussion_r10"
         "space" -> "$baseUrl/im/review/review-id?message=root&channel=feed"
