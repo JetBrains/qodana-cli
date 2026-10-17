@@ -22,6 +22,8 @@ import org.jetbrains.qodana.edict.edictnext.EdictRepository
 import org.jetbrains.qodana.edict.edictnext.EdictRepositoryDirectory
 import org.jetbrains.qodana.edict.edictnext.EdictSourceFileService
 import org.jetbrains.qodana.edict.edictnext.IntellijMcpServerService
+import org.jetbrains.qodana.edict.history.enrichment.EdictNextEnrichmentMcpToolset
+import org.jetbrains.qodana.edict.history.enrichment.EdictNextEnrichmentService
 import org.jetbrains.qodana.edict.promotion.PromotionService
 import java.util.concurrent.atomic.AtomicBoolean
 
@@ -80,6 +82,7 @@ internal class EdictServer private constructor(
             configuration.generation.maxProjectAnalyses,
             configuration.generation.defaultGenerationCount,
           ),
+          EdictNextEnrichmentMcpToolset(management, EdictNextEnrichmentService(repository, layout.root)),
           EdictSourceFileService(layout.root, reviewProvider, configuration.ci?.reviewRepository),
           configuration,
           PromotionService({ repository }, configuration, reviewManagement),

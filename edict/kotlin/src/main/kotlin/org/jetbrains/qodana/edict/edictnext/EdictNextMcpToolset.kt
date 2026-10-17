@@ -2,15 +2,11 @@ package org.jetbrains.qodana.edict.edictnext
 
 import io.modelcontextprotocol.kotlin.sdk.server.Server
 import io.modelcontextprotocol.kotlin.sdk.server.ServerOptions
-import io.modelcontextprotocol.kotlin.sdk.types.CallToolRequest
-import io.modelcontextprotocol.kotlin.sdk.types.CallToolResult
-import io.modelcontextprotocol.kotlin.sdk.types.Implementation
-import io.modelcontextprotocol.kotlin.sdk.types.ServerCapabilities
-import io.modelcontextprotocol.kotlin.sdk.types.TextContent
-import io.modelcontextprotocol.kotlin.sdk.types.ToolSchema
+import io.modelcontextprotocol.kotlin.sdk.types.*
 import kotlinx.serialization.json.*
 import org.jetbrains.qodana.edict.common.EdictConfiguration
 import org.jetbrains.qodana.edict.common.EdictLayout
+import org.jetbrains.qodana.edict.history.enrichment.EdictNextEnrichmentMcpToolset
 import org.jetbrains.qodana.edict.promotion.PromotionReviewDecision
 import org.jetbrains.qodana.edict.promotion.PromotionService
 import kotlin.coroutines.cancellation.CancellationException
@@ -22,6 +18,7 @@ internal class EdictNextMcpToolset(
   private val management: EdictManagementService,
   private val distribution: EdictNextDistributionService,
   private val generation: EdictNextGenerationService,
+  private val enrichment: EdictNextEnrichmentMcpToolset,
   private val sourceFiles: EdictSourceFileService,
   private val configuration: EdictConfiguration = EdictConfiguration(),
   private val promotion: PromotionService,
@@ -41,6 +38,7 @@ internal class EdictNextMcpToolset(
 
   private fun registerTools(server: Server) {
     management.registerTools(server, configuration.calculatePrice)
+    enrichment.registerTools(server)
     registerPromotionTools(server)
 
     server.addTool(
@@ -63,18 +61,25 @@ internal class EdictNextMcpToolset(
     server.addTool(
       name = "edict_file_at_ref",
       description = "Read a repository file at an exact commit with 1-based line numbers, from local Git or, when the " +
-        "commit is not local, from the CI review repository. With anchor lines, return only them and radius lines around " +
-        "them. Read-only.",
+              "commit is not local, from the CI review repository. With anchor lines, return only them and radius lines around " +
+              "them. Read-only.",
       inputSchema = toolSchema(
         required = listOf("path", "ref"),
         "path" to property("string", "File path relative to the repository root"),
         "ref" to property("string", "Full commit SHA"),
         "anchorStartLine" to property("integer", "Optional 1-based first line to focus on"),
-        "anchorEndLine" to property("integer", "Optional 1-based last line to focus on; defaults to anchorStartLine"),
-        "radius" to property("integer", "Context lines around the anchor (default ${EdictSourceFileService.DEFAULT_RADIUS})"),
+        "anchorEndLine" to property(
+          "integer",
+          "Optional 1-based last line to focus on; defaults to anchorStartLine"
+        ),
+        "radius" to property(
+          "integer",
+          "Context lines around the anchor (default ${EdictSourceFileService.DEFAULT_RADIUS})"
+        ),
       ),
     ) { request ->
-      val anchor = request.optionalInt("anchorStartLine")?.let { EdictNextLineRange(it, request.optionalInt("anchorEndLine") ?: it) }
+      val anchor = request.optionalInt("anchorStartLine")
+        ?.let { EdictNextLineRange(it, request.optionalInt("anchorEndLine") ?: it) }
       val content = sourceFiles.fileAtRef(
         request.requireString("path"),
         request.requireString("ref"),
@@ -124,8 +129,7 @@ internal class EdictNextMcpToolset(
         distribution
           .addSignalToCluster(signalId, request.requireString("clusterId"))
           .toToolResult()
-      }
-      catch (e: Exception) {
+      } catch (e: Exception) {
         EdictNextSignalValidationResponse(
           signalId = signalId,
           summary = e.message ?: "The ${e.javaClass} error occurred",
@@ -135,20 +139,24 @@ internal class EdictNextMcpToolset(
     }
 
     server.addTool(
-      name = "edict_next_get_generation_clusters",
-      description = "Freeze and return the requested number of Pending clusters that generation must process, ranked " +
-        "by descending positive-Signal count. Omit generationCount to use the configured default. Only eligible selected " +
-        "clusters are returned.",
+      name = "edict_next_select_generation_clusters",
+      description = "Suggest Pending clusters for generation, ranked by descending positive-Signal count and requiring " +
+              "strong positive evidence. Read-only: creates no state or reservations; each call reflects the current repository. " +
+              "The manager may choose other Pending clusters without calling this tool. Returns the concurrency limit as well. " +
+              "Omit generationCount to use the configured default.",
       inputSchema = toolSchema(
         required = emptyList(),
         "generationCount" to buildJsonObject {
           put("type", "integer")
           put("minimum", 1)
-          put("description", "Optional number of clusters to generate; omitted uses edict.generation.defaultGenerationCount")
+          put(
+            "description",
+            "Optional number of clusters to select; omitted uses edict.generation.defaultGenerationCount"
+          )
         },
       ),
     ) { request ->
-      generation.getGenerationClusters(request.optionalInt("generationCount")).toToolResult()
+      generation.selectGenerationClusters(request.optionalInt("generationCount")).toToolResult()
     }
 
     server.addTool(
@@ -169,7 +177,7 @@ internal class EdictNextMcpToolset(
       description = "Persist one complete synthetic example in the read-only managed state. Code-example, overseer, and weak-review workers must use this instead of filesystem writes.",
       inputSchema = stringArguments(
         "token" to "Your delegated managed-task token",
-        "clusterId" to "Frozen generation cluster id",
+        "clusterId" to "Pending cluster chosen for generation",
         "exampleId" to "New or existing lowercase kebab-case example id",
         "metadataJson" to "Complete metadata JSON with id, fileName, label, and expectedRanges",
         "sourceCode" to "Complete self-contained Java or Kotlin source",
@@ -198,7 +206,7 @@ internal class EdictNextMcpToolset(
       description = "Assign a structurally valid stored example to one persisted cluster Signal. Only syntheticExampleId is changed.",
       inputSchema = stringArguments(
         "token" to "Your delegated managed-task token",
-        "clusterId" to "Frozen generation cluster id",
+        "clusterId" to "Pending cluster chosen for generation",
         "signalId" to "Persisted Signal id in the cluster",
         "exampleId" to "Validated example id in the cluster",
       ),
@@ -217,10 +225,10 @@ internal class EdictNextMcpToolset(
 
     server.addTool(
       name = "edict_next_delete_code_example",
-      description = "Delete one synthetic example from a frozen cluster and clear syntheticExampleId on every Signal that references it; those Signals then need a new example.",
+      description = "Delete one synthetic example from a Pending cluster and clear syntheticExampleId on every Signal that references it; those Signals then need a new example.",
       inputSchema = stringArguments(
         "token" to "Your delegated managed-task token",
-        "clusterId" to "Frozen generation cluster id",
+        "clusterId" to "Pending cluster chosen for generation",
         "exampleId" to "Example id to delete",
       ),
     ) { request ->
@@ -258,12 +266,12 @@ internal class EdictNextMcpToolset(
 
     server.addTool(
       name = "edict_next_save_candidate_inspection",
-      description = """Store the complete candidate Inspection KTS of a frozen Pending cluster, then compile it, check its
+      description = """Store the complete candidate Inspection KTS of a Pending cluster, then compile it, check its
         metadata against the cluster, and run every example. The candidate is stored even when it fails. Every strong
         example must pass before project analysis; weak-example results are reported for recall.""",
       inputSchema = stringArguments(
         "token" to "Your delegated edict-next-cluster-generation task token",
-        "clusterId" to "Frozen generation cluster id",
+        "clusterId" to "Pending cluster chosen for generation",
         "inspectionKtsCode" to "Complete candidate Inspection KTS source",
       ),
     ) { request ->
@@ -277,11 +285,11 @@ internal class EdictNextMcpToolset(
 
     server.addTool(
       name = "edict_next_rename_cluster",
-      description = """Rename a frozen Pending cluster: its directory, cluster.json id, and candidate, including the
+      description = """Rename a Pending cluster: its directory, cluster.json id, and candidate, including the
         candidate's `id = "<clusterId>"`. The predecessor keeps its id. Later calls use the new id.""",
       inputSchema = stringArguments(
         "token" to "Your delegated edict-next-cluster-generation task token",
-        "clusterId" to "Frozen generation cluster id",
+        "clusterId" to "Pending cluster chosen for generation",
         "newClusterId" to "New lowercase kebab-case cluster id, unused by any cluster or inspection",
       ),
     ) { request ->
@@ -294,10 +302,10 @@ internal class EdictNextMcpToolset(
 
     server.addTool(
       name = "edict_next_append_cluster_history",
-      description = "Append one token-free operational decision to a frozen Pending cluster history in managed state.",
+      description = "Append one token-free operational decision to a Pending cluster history in managed state.",
       inputSchema = stringArguments(
         "token" to "Your delegated edict-next-cluster-generation task token",
-        "clusterId" to "Frozen generation cluster id",
+        "clusterId" to "Pending cluster chosen for generation",
         "entry" to "Concise operational decision or known problem",
       ),
     ) { request ->
@@ -333,7 +341,7 @@ internal class EdictNextMcpToolset(
       description = "Record how you classified findings of the cluster's last project analysis: one entry per finding with its path and line as the findings file gives them, its classification, and the example that represents it (the one you created, the existing one covering it, or the strong example of a contract mismatch). Only an example the analyzed inspection reports can represent a finding: an FP needs a reported NEGATIVE, a TP a reported POSITIVE; an example created after the analysis is run with the analyzed inspection now and must be reported too. A later round replaces the entry at the same location, which moves a finding to another example. The final evaluation weighs every example by the findings assigned to it.",
       inputSchema = stringArguments(
         "token" to "Your delegated edict-next-weak-signal-review task token",
-        "clusterId" to "Frozen generation cluster id",
+        "clusterId" to "Pending cluster chosen for generation",
         "findingsJson" to "JSON array of {path, line, classification: TP|FP|UNCERTAIN, exampleId}; line is 0 for a finding without a line, and exampleId is required except for UNCERTAIN",
       ),
     ) { request ->
@@ -351,7 +359,7 @@ internal class EdictNextMcpToolset(
       description = "Last step before finalising Generated: score the inspection that would be published (the analyzed candidate, or the predecessor on SKIP) on every strong and weak example and write clusters/<id>/evaluation.json: per-example results, tp, fp, fn, precision and recall weighted by the project findings the weak-signal review assigned to each example, and the published inspection's project findings. Writes nothing unless every strong example passes.",
       inputSchema = stringArguments(
         "token" to "Your delegated edict-next-cluster-generation task token",
-        "clusterId" to "Pending frozen generation target cluster id",
+        "clusterId" to "Pending cluster chosen for generation",
       ),
     ) { request ->
       management.requireSkill(request.requireString("token"), "edict-next-cluster-generation")
@@ -360,7 +368,7 @@ internal class EdictNextMcpToolset(
 
     server.addTool(
       name = "edict_next_finalise_cluster",
-      description = """End the processing of a frozen Pending cluster: record the reason in its history and move it to the
+      description = """End the processing of a Pending cluster: record the reason in its history and move it to the
         requested status with that status's contract satisfied, or reject and leave the cluster unchanged.
         Generated: publishes the predecessor on SKIP, or the candidate that completed project analysis on GENERATE, when it
         passes every strong example and edict_next_record_evaluation scored exactly it on the current examples. Discontinued: removes the candidate and predecessor.
@@ -368,7 +376,7 @@ internal class EdictNextMcpToolset(
       inputSchema = toolSchema(
         listOf("token", "clusterId", "status", "reason"),
         "token" to property("string", "Your delegated edict-next-cluster-generation task token"),
-        "clusterId" to property("string", "Pending frozen generation target cluster id"),
+        "clusterId" to property("string", "Pending cluster chosen for generation"),
         "status" to buildJsonObject {
           put("type", "string")
           put("description", "Status to set")
@@ -384,11 +392,9 @@ internal class EdictNextMcpToolset(
         management.requireTokenFree(reason)
         val status = EdictNextClusterStatus.valueOf(request.requireString("status"))
         generation.finaliseCluster(clusterId, status, reason).toToolResult()
-      }
-      catch (e: CancellationException) {
+      } catch (e: CancellationException) {
         throw e
-      }
-      catch (e: Exception) {
+      } catch (e: Exception) {
         EdictNextFinaliseClusterResponse(
           success = false,
           summary = e.message ?: "Failed to finalise cluster '$clusterId'",
@@ -421,9 +427,11 @@ internal class EdictNextMcpToolset(
           EdictNextJson.decodeFromJsonElement<List<String>>(it)
         }
         promotion.promote(clusterIds).toToolResult()
-      }
-      catch (e: Exception) {
-        EdictNextMutationResponse(false, e.message ?: "Inspection promotion failed").toToolResult(isError = true)
+      } catch (e: Exception) {
+        EdictNextMutationResponse(
+          false,
+          e.message ?: "Inspection promotion failed"
+        ).toToolResult(isError = true)
       }
     }
 
@@ -442,9 +450,11 @@ internal class EdictNextMcpToolset(
           undecided = response.undecided.map { it.copy(evidence = management.redact(it.evidence)) },
           failures = response.failures.map { it.copy(message = management.redact(it.message)) },
         ).toToolResult()
-      }
-      catch (e: Exception) {
-        EdictNextMutationResponse(false, e.message ?: "Promotion review check failed").toToolResult(isError = true)
+      } catch (e: Exception) {
+        EdictNextMutationResponse(
+          false,
+          e.message ?: "Promotion review check failed"
+        ).toToolResult(isError = true)
       }
     }
 
@@ -483,9 +493,11 @@ internal class EdictNextMcpToolset(
         response.copy(
           failures = response.failures.map { it.copy(message = management.redact(it.message)) },
         ).toToolResult()
-      }
-      catch (e: Exception) {
-        EdictNextMutationResponse(false, e.message ?: "Promotion review decision failed").toToolResult(isError = true)
+      } catch (e: Exception) {
+        EdictNextMutationResponse(
+          false,
+          e.message ?: "Promotion review decision failed"
+        ).toToolResult(isError = true)
       }
     }
   }
@@ -501,6 +513,7 @@ internal class EdictNextMcpToolset(
         inspectionServer.withClient { it.callTool(name, arguments) }.toProxiedToolResult()
       }
     }
+
     val inspectionKtsCode = "inspectionKtsCode" to property("string", "The complete inspection.kts script")
 
     proxy(
@@ -518,7 +531,10 @@ internal class EdictNextMcpToolset(
       inputSchema = toolSchema(
         required = emptyList(),
         "language" to property("string", "Target language for examples: 'Java', 'Kotlin', or 'Any' (default)"),
-        "includeAdditionalExamples" to property("boolean", "If true, includes additional curated examples besides templates"),
+        "includeAdditionalExamples" to property(
+          "boolean",
+          "If true, includes additional curated examples besides templates"
+        ),
       ),
     )
     proxy(
@@ -538,12 +554,18 @@ internal class EdictNextMcpToolset(
     proxy(
       name = "run_inspection_kts",
       description = "Compile an inspection.kts script and run it against one file of the inspected project, " +
-        "optionally replacing its content. Returns compilation errors or the found problems.",
+              "optionally replacing its content. Returns compilation errors or the found problems.",
       inputSchema = toolSchema(
         required = listOf("inspectionKtsCode", "contextPath"),
         inspectionKtsCode,
-        "contextPath" to property("string", "Path of the target file relative to the inspected project, e.g. 'src/my/Example.kt'"),
-        "targetFileContent" to property("string", "Content to analyze instead of the file on disk; the file must exist when omitted"),
+        "contextPath" to property(
+          "string",
+          "Path of the target file relative to the inspected project, e.g. 'src/my/Example.kt'"
+        ),
+        "targetFileContent" to property(
+          "string",
+          "Content to analyze instead of the file on disk; the file must exist when omitted"
+        ),
       ),
     )
   }
@@ -554,51 +576,12 @@ internal class EdictNextMcpToolset(
   }
 }
 
-private fun stringArguments(vararg arguments: Pair<String, String>): ToolSchema = ToolSchema(
-  properties = buildJsonObject {
-    arguments.forEach { (name, description) ->
-      putJsonObject(name) {
-        put("type", "string")
-        put("description", description)
-      }
-    }
-  },
-  required = arguments.map(Pair<String, String>::first),
-)
-
-private fun property(type: String, description: String): JsonObject = buildJsonObject {
-  put("type", type)
-  put("description", description)
-}
-
-private fun toolSchema(required: List<String>, vararg properties: Pair<String, JsonObject>): ToolSchema = ToolSchema(
-  properties = JsonObject(properties.toMap()),
-  required = required,
-)
-
-private fun CallToolRequest.requireString(name: String): String =
-  arguments?.get(name)?.jsonPrimitive?.content
-  ?: error("'$name' is required")
-
-private fun CallToolRequest.optionalInt(name: String): Int? =
-  arguments?.get(name)?.jsonPrimitive?.let { it.intOrNull ?: error("'$name' must be an integer") }
-
-private inline fun <reified T> T.toToolResult(isError: Boolean = false): CallToolResult {
-  val element = EdictNextJson.encodeToJsonElement(this)
-  return CallToolResult(
-    content = listOf(TextContent(EdictNextJson.encodeToString(this))),
-    isError = isError.takeIf { it },
-    structuredContent = element as? JsonObject,
-  )
-}
-
 private fun JsonObject.toProxiedToolResult(): CallToolResult = CallToolResult(
   content = (this["content"] as? JsonArray).orEmpty().mapNotNull { item ->
     val block = item as? JsonObject ?: return@mapNotNull null
     if (block["type"]?.jsonPrimitive?.content == "text") {
       TextContent(block["text"]?.jsonPrimitive?.content.orEmpty())
-    }
-    else null
+    } else null
   },
   isError = this["isError"]?.jsonPrimitive?.content?.toBooleanStrictOrNull(),
   structuredContent = this["structuredContent"] as? JsonObject,

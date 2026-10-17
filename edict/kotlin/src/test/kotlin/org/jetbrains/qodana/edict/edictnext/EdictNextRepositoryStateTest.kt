@@ -54,7 +54,7 @@ class EdictNextRepositoryStateTest {
   fun `historical coordinators can publish validated commit signals`() {
     val repository = gitFixture(directory.resolve("source"))
     val signal = fixtureSignals(repository).first()
-    listOf("edict-git-history-signal-analysis", "edict-retrospective-signal-analysis").forEach { skill ->
+    listOf("edict-git-history-signal-enrichment", "edict-retrospective-signal-analysis").forEach { skill ->
       EdictNextRepositoryState.open(directory.resolve(skill)).use { state ->
         val plan = state.createPlan("Find historical evidence", listOf(Step(skill, "Search")))
         val worker = state.launch(plan.token, plan.plan.tasks.single().id, skill)
@@ -62,6 +62,29 @@ class EdictNextRepositoryStateTest {
         assertEquals(signal, state.inboxSignal(signal.id))
         assertTrue(Files.exists(directory.resolve(skill).resolve("inbox/${signal.id}.json")))
       }
+    }
+  }
+
+  @Test
+  fun `manager delegates separate enrichment tasks that cannot create child workers`() {
+    val skill = "edict-git-history-signal-enrichment"
+    EdictNextRepositoryState.open(directory).use { state ->
+      val manager = state.createPlan("Enrich two clusters", emptyList())
+      val assignments = listOf("first-cluster", "second-cluster").map { clusterId ->
+        val task = state.addTask(manager.token, skill, "Enrich $clusterId")
+        val worker = state.delegate(manager.token, task.id,
+          "\$$skill\nRead /skills/$skill/SKILL.md.\nclusterId: $clusterId")
+        state.readTask(worker.token)
+        state.startTask(worker.token, "agent-$clusterId", skill)
+        assertFails { state.addTask(worker.token, "edict-signal-analysis", "Inspect correction for $clusterId") }
+        worker
+      }
+      assertEquals(2, state.plan()!!.tasks.count { it.parentId.isEmpty() && it.skill == skill })
+      assertEquals(2, state.plan()!!.tasks.size, "Enrichment must not create evidence-worker tasks")
+      assignments.forEach { worker ->
+        state.finishTask(worker.token, "completed", "Analyzed every candidate and enriched one cluster")
+      }
+      assertTrue(state.plan()!!.tasks.all { it.status == "completed" })
     }
   }
 
@@ -166,8 +189,22 @@ class EdictNextRepositoryStateTest {
   }
 
   @Test
+  fun `manager can start an empty plan and directly delegate chosen cluster generation`() {
+    EdictNextRepositoryState.open(directory).use { state ->
+      val plan = state.createPlan("Generate a cluster chosen later", emptyList())
+      assertTrue(plan.plan.tasks.isEmpty())
+      assertFails { state.addTask(plan.token, "edict-next-generation", "Removed coordinator") }
+      val task = state.addTask(plan.token, "edict-next-cluster-generation", "Chosen cluster")
+      assertEquals("", task.parentId)
+      val worker = state.launch(plan.token, task.id, task.skill)
+      state.finishTask(worker.token, "completed", "Pending: needs more evidence")
+      assertEquals("completed", state.plan()!!.tasks.single().status)
+    }
+  }
+
+  @Test
   fun `generation reviews are not limited per cluster worker`() {
-    val steps = listOf(Step("edict-next-generation", "Generate"))
+    val steps = listOf(Step("edict-next-cluster-generation", "First cluster"))
     val reviewSkills = listOf(
       "edict-next-inspection-shallow-review",
       "edict-next-inspection-code-review",
@@ -175,11 +212,9 @@ class EdictNextRepositoryStateTest {
     )
     EdictNextRepositoryState.open(directory).use { state ->
       val plan = state.createPlan("Generate", steps)
-      val generationId = plan.plan.tasks.single().id
-      val generation = state.launch(plan.token, generationId, "edict-next-generation")
-      val cluster = state.addTask(generation.token, "edict-next-cluster-generation", "First cluster")
+      val cluster = plan.plan.tasks.single()
       val clusterId = cluster.id
-      val worker = state.launch(generation.token, cluster.id, cluster.skill)
+      val worker = state.launch(plan.token, cluster.id, cluster.skill)
       for (skill in reviewSkills) repeat(4) { attempt ->
         val title = if (attempt == 0) "Initial review" else "Review after repair $attempt"
         val review = state.addTask(worker.token, skill, title)
@@ -213,7 +248,7 @@ class EdictNextRepositoryStateTest {
       assertEquals("running", started.status)
       assertEquals(state.plan()!!.revision, started.planRevision)
       assertFails { state.startTask(delegation.token, "worker", delegation.skill) }
-      assertFails { state.createPlan("Again", listOf(Step("edict-next-generation", "Generate"))) }
+      assertFails { state.createPlan("Again", listOf(Step("edict-next-cluster-generation", "Generate"))) }
     }
   }
 
@@ -226,7 +261,7 @@ class EdictNextRepositoryStateTest {
         state.delegate(batch.token, child.id, "\$edict-signal-analysis\n${manager.token}")
       }
       val leaf = state.launch(batch.token, child.id, child.skill)
-      assertFails { state.addTask(leaf.token, "edict-next-generation", "Escalate") }
+      assertFails { state.addTask(leaf.token, "edict-next-cluster-generation", "Escalate") }
       assertFails { state.finishTask(batch.token, "completed", "Done") }
       state.cancelTask(manager.token, batch.taskId, "Worker lost")
       assertFails { state.readTask(leaf.token) }

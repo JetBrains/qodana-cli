@@ -39,8 +39,10 @@ internal class EdictRepository(val paths: EdictRepositoryDirectory) {
       .map { clusterPath -> EdictNextClusterDirectory(clusterPath) }
       .map { clusterDir -> loadCluster(clusterDir) }
 
-  fun loadCluster(clusterId: String): EdictNextStoredCluster =
-    loadCluster(EdictNextClusterDirectory(paths.clustersDirectory.resolve(clusterId)))
+  fun loadCluster(clusterId: String): EdictNextStoredCluster {
+    require(EDICT_NEXT_KEBAB_CASE.matches(clusterId)) { "Invalid cluster id '$clusterId'" }
+    return loadCluster(EdictNextClusterDirectory(paths.clustersDirectory.resolve(clusterId)))
+  }
 
   private fun loadCluster(clusterDirectory: EdictNextClusterDirectory): EdictNextStoredCluster {
     require(clusterDirectory.root.parent == paths.clustersDirectory) {
@@ -65,6 +67,15 @@ internal class EdictRepository(val paths: EdictRepositoryDirectory) {
   }
 
   fun loadInboxSignals(): List<EdictNextSignal> = loadSignals(paths.inboxDirectory)
+
+  /** Adds trusted historical evidence directly, without an intermediate inbox record. */
+  fun saveClusterSignal(clusterId: String, signal: EdictNextSignal) {
+    val cluster = loadCluster(clusterId)
+    require(cluster.manifest.status == EdictNextClusterStatus.Pending) { "Cluster '$clusterId' is not Pending" }
+    require(signal.language == cluster.manifest.language) { "Signal language does not match cluster '$clusterId'" }
+    require(signal.id !in cluster.signalIds) { "Signal '${signal.id}' already belongs to cluster '$clusterId'" }
+    writeAtomically(cluster.directory.signalPath(signal.id), signal, EdictNextSignal.serializer())
+  }
 
   fun clusterSignalIds(clusterId: String): Set<String> {
     require(EDICT_NEXT_KEBAB_CASE.matches(clusterId)) { "Invalid cluster id '$clusterId'" }

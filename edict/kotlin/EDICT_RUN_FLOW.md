@@ -72,7 +72,8 @@ repository-wide validation.
     - after a server restart, calling it again with the exact persisted request and steps claims the unfinished plan
       with a fresh token; interrupted tasks return to pending, completed results are kept
   - plan steps from the request; the default repository pipeline is
-    `edict-pr-signal-analysis` -> `edict-next-distribution` -> `edict-next-generation` -> `edict-promote`
+    `edict-pr-signal-analysis` -> `edict-next-distribution` -> one `edict-git-history-signal-enrichment` per cluster ->
+    parallel top-level `edict-next-cluster-generation` workers -> `edict-promote`
     (`LivePipelineTest`)
   - stop on any failed or uncompleted task and cancel unstarted dependent stages
   - report the plan path, produced Signal/cluster/inspection ids, Generated `knownProblems`, and Pending/Invalid clusters
@@ -92,11 +93,12 @@ edict_manager
 ├── edict-batch-signal-analysis ── edict-signal-analysis
 ├── edict-pr-signal-analysis ───── edict-signal-analysis
 ├── edict-next-distribution
-└── edict-next-generation ── edict-next-cluster-generation
-                              ├── edict-next-code-example-overseer ── edict-next-code-example
-                              ├── edict-next-inspection-shallow-review
-                              ├── edict-next-weak-signal-review
-                              └── edict-next-inspection-code-review
+├── edict-git-history-signal-enrichment (one cluster, no children)
+└── edict-next-cluster-generation
+    ├── edict-next-code-example-overseer ── edict-next-code-example
+    ├── edict-next-inspection-shallow-review
+    ├── edict-next-weak-signal-review
+    └── edict-next-inspection-code-review
 ```
 
 ## Signal extraction (optional first stage)
@@ -140,12 +142,28 @@ edict_manager
   - call `edict_next_add_signal_to_cluster(signalId, clusterId)` with a compatible existing id (requires the context
     receipt) or a new provisional kebab-case id; retry the same Signal when `added` is false; never split clusters
   - stop on `STOP_DISTRIBUTION`
-- `$edict-next-generation`
-  - take the state repository and project from `edict_context`, create a generation scratch root below its `scratchDirectory`,
-    and call `edict_next_get_generation_clusters`
-    - freeze Pending clusters and their Signal memberships; `maxConcurrentClusterTasks` is 6
-    - Pending clusters without a strong positive Signal and eligible clusters beyond the requested count are not returned
-      or frozen; they stay Pending without a worker
+- standalone enrichment (`Enrich cluster <id> with historical evidence`)
+  - schedule one `$edict-git-history-signal-enrichment` per requested cluster, each receiving exactly one `clusterId`;
+    do not select generation targets or start inspections
+  - `edict_next_get_history_context(token, clusterId)` returns frozen HEAD, a UTC cutoff and exact eligible commit SHAs
+  - the server intersects the latest 100 commits with the last 90 days; the smaller window bounds every search
+  - get all member Signals separately through the common `edict_get_cluster_signals(clusterId)` read tool
+  - skip originating and already represented commits; filter only the returned SHAs
+  - the enrichment agent analyzes every member Signal and retained candidate itself, without evidence workers
+  - publish accepted strong evidence directly with `edict_publish_signal_to_cluster`
+  - verify publication by re-reading cluster Signals; no analyzed-commit coverage or cursor is stored
+- root manager for generation, after distribution and before historical enrichment
+  - call `edict_next_select_generation_clusters`, omitting `generationCount` unless the user specifies a generation count
+  - selection is read-only and recomputes suggestions each call; it creates no reservations or membership state
+  - choose suggested or other Pending cluster IDs; explicitly requested targets need no selection call
+  - delegate one `$edict-git-history-signal-enrichment` task per chosen cluster, passing exactly one `clusterId` to each;
+    each task obtains its Signals and bounded range via MCP
+  - wait for all enrichment tasks to complete successfully before generation; enrich any later chosen target in its
+    own task before launching its generation worker; an empty chosen target list creates no enrichment tasks
+  - only the manager keeps the list of chosen clusters and tracks renamed IDs from worker results
+  - use `maxConcurrentClusterTasks` from selection, or six when selection was not needed, respecting runtime capacity
+    - suggestions omit Pending clusters without strong positive evidence and clusters beyond the requested count;
+      the manager may still choose them, and generation acceptance checks still apply
   - run one `$edict-next-cluster-generation` worker per cluster, keeping up to that many active
   - leaving a cluster Pending or Invalid is not a stage failure; the coordinator never repairs worker output
   - each `$edict-next-cluster-generation` worker:
@@ -160,7 +178,7 @@ edict_manager
        - delete an unreferenced weak example that contradicts a strong Signal, keep every other one, and repeat
          `edict_next_validate_cluster_examples` until it succeeds
        - an exact semantic contradiction finalises the cluster Discontinued; incomplete reconciliation finalises Pending
-    2. calls `edict_next_get_inspection_action(clusterId)`, starting the 120-minute cluster deadline
+    2. calls `edict_next_get_inspection_action(clusterId)` to select predecessor reuse or generation
        - `CONFLICT`: Signals with the same file revision have different labels; finalise Invalid with their ids
        - `SKIP`: the predecessor passes every strong example; record the evaluation, then finalise Generated, whatever
          weak examples fail
@@ -216,14 +234,14 @@ edict_manager
     6. records operational evidence with `edict_next_append_cluster_history` and ends with one successful
        `edict_next_finalise_cluster(token, clusterId, status, reason)`; it appends the reason to history and applies the
        status only when its contract holds, otherwise it rejects and changes nothing; the worker may then keep repairing
-       within its remaining analyses and deadline, and finalises Pending when nothing more can be fixed
-       - Generated (accepted/reused): requires a frozen, unchanged target, project analysis of the exact candidate bytes
+       within its remaining analyses, and finalises Pending when nothing more can be fixed
+       - Generated (accepted/reused): requires validation against current evidence, project analysis of the exact candidate bytes
          (or `SKIP`), an evaluation of exactly that inspection on the current examples, and a passing validation;
          publishes the inspection, removes candidate and predecessor
        - Discontinued (exact Signal contradiction only): requires an example per Signal; removes candidate and
          predecessor inspection
        - Invalid (concrete infrastructure/tooling failure or broken input): keeps candidate and predecessor
-       - Pending (unfinished): records the reason only; after a deadline response the worker makes no MCP call
+       - Pending (unfinished): records the reason only
 
 ## Repository state
 
@@ -241,7 +259,7 @@ responses), and `tasks/<task-id>.log`.
 
 ## Known inconsistencies
 
-- `edict-git-history-signal-analysis` and `edict-retrospective-signal-analysis` still publish through
+- `edict-retrospective-signal-analysis` still publishes through
   `edict_state_write`, which the server no longer registers; the tool is `edict_publish_signal`.
 - `EdictNextTimeouts.session` (900m) is defined but not enforced; the benchmark job timeout is 300 minutes.
 - `README.md` says 13 managed skills (the registry has 12).
@@ -249,5 +267,5 @@ responses), and `tasks/<task-id>.log`.
 ## TODO (outside the setup/run separation)
 
 - MCP server names: `edict` for Edict, `qodana` for IDE tools.
-- Upstream breakages: test sources do not compile (`LiveGitHistorySignalAnalysisTest.kt`, `IntegrationWorkspace.kt`
+- Upstream breakages: test sources do not compile (`LiveGitHistorySignalEnrichmentTest.kt`, `IntegrationWorkspace.kt`
   import, `InspectionKtsMcpClientTest.kt`), and server startup requires the project to be a Git repository (`Main.kt`).

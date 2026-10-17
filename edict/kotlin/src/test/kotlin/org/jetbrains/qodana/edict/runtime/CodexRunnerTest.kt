@@ -51,7 +51,7 @@ class CodexRunnerTest {
         val repository = Files.createDirectory(directory.resolve("repository-next"))
         val runner = CodexRunner(
             directory.resolve("output-next"), EdictLayout(project, state), "http://127.0.0.1:10002/mcp",
-            enabledTools = listOf("edict_next_calculate_neighbours_by_embeddings", "edict_next_get_generation_clusters"),
+            enabledTools = listOf("edict_next_calculate_neighbours_by_embeddings", "edict_next_select_generation_clusters"),
             additionalWritableRoots = listOf(repository),
             stateWritable = true,
         )
@@ -59,7 +59,7 @@ class CodexRunnerTest {
         assertEquals(
             listOf(
                 "-c", """mcp_servers.edict-mcp.url="http://127.0.0.1:10002/mcp"""",
-                "-c", """mcp_servers.edict-mcp.enabled_tools=["edict_next_calculate_neighbours_by_embeddings", "edict_next_get_generation_clusters"]""",
+                "-c", """mcp_servers.edict-mcp.enabled_tools=["edict_next_calculate_neighbours_by_embeddings", "edict_next_select_generation_clusters"]""",
                 "-c", """permissions.edict.filesystem={"$root" = "write", "$root/.git" = "write", "${state.toRealPath()}" = "write"}""",
             ),
             runner.configOverrides(),

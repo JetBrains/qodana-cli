@@ -25,7 +25,14 @@ import org.jetbrains.qodana.edict.common.obj
 import org.jetbrains.qodana.edict.common.runProcess
 import org.jetbrains.qodana.edict.common.text
 import org.jetbrains.qodana.edict.common.wireJson
+import org.jetbrains.qodana.edict.ci.ReviewClient
+import org.jetbrains.qodana.edict.history.enrichment.EdictNextEnrichmentMcpToolset
+import org.jetbrains.qodana.edict.history.enrichment.EdictNextEnrichmentService
+import org.jetbrains.qodana.edict.promotion.PromotionService
 import org.jetbrains.qodana.edict.support.edictNextToolset
+import org.jetbrains.qodana.edict.support.fixtureSignals
+import org.jetbrains.qodana.edict.support.gitFixture
+import org.jetbrains.qodana.edict.support.launch
 import org.junit.jupiter.api.io.TempDir
 import java.io.ByteArrayInputStream
 import java.io.ByteArrayOutputStream
@@ -34,6 +41,8 @@ import java.io.InputStream
 import java.net.URI
 import java.nio.file.Files
 import java.nio.file.Path
+import java.util.concurrent.CountDownLatch
+import java.util.concurrent.TimeUnit
 import kotlin.test.Test
 import kotlin.test.assertContains
 import kotlin.test.assertEquals
@@ -81,6 +90,14 @@ class EdictNextMcpToolsetTest {
       assertTrue(server.tools.keys.containsAll(movedTools))
       assertFalse("edict_calculate_price" in server.tools)
       assertTrue("edict_publish_signal" in server.tools)
+      val clusterPublication = server.tools.getValue("edict_publish_signal_to_cluster").tool.inputSchema
+      assertEquals(listOf("token", "clusterId", "signal"), clusterPublication.required)
+      assertEquals(setOf("token", "clusterId", "signal"), checkNotNull(clusterPublication.properties).keys)
+      val historyContext = server.tools.getValue("edict_next_get_history_context").tool.inputSchema
+      assertEquals(listOf("token", "clusterId"), historyContext.required)
+      assertEquals(setOf("token", "clusterId"), checkNotNull(historyContext.properties).keys)
+      assertFalse("edict_next_record_history_analysis" in server.tools)
+      assertTrue("edict_get_cluster_signals" in server.tools)
       assertTrue("edict_publish_validated_pr_signals" in server.tools)
       assertTrue("edict_get_pr_analysis_coverage" in server.tools)
       assertTrue("edict_record_pr_analysis_coverage" in server.tools)
@@ -91,6 +108,7 @@ class EdictNextMcpToolsetTest {
       val signalSchema = checkNotNull(
         server.tools.getValue("edict_publish_signal").tool.inputSchema.properties,
       ).getValue("signal").jsonObject
+      assertEquals(signalSchema, checkNotNull(clusterPublication.properties).getValue("signal"))
       assertEquals(
         setOf(
           "id", "idempotencyKey", "fileRevision", "source", "label", "description", "strength",
@@ -239,40 +257,132 @@ class EdictNextMcpToolsetTest {
   }
 
   @Test
-  fun `toolset exposes every tool agents used from the single IDE server`() {
-    EdictNextRepositoryState.open(directory.resolve("state")).use { store ->
-      val layout = EdictLayout(directory, directory.resolve(".edict"))
-      val server = edictNextToolset(layout, EdictManagementService(store, layout)).createServer()
-      assertEquals(
-        setOf(
-          "edict_registry", "edict_plan_get", "edict_plan_create", "edict_task_add", "edict_delegate",
-          "edict_task_get", "edict_task_start", "edict_task_finish", "edict_task_cancel",
-          "edict_task_cleanup_scratch", "edict_publish_signal",
-          "edict_publish_validated_pr_signals",
-          "edict_fetch_pr_batch", "edict_get_pr_analysis_chunk", "edict_get_pr_analysis_item",
-          "edict_store_pr_signals", "edict_pr_file_at_ref", "edict_pr_file_diff",
-          "edict_get_pr_analysis_coverage", "edict_record_pr_analysis_coverage",
-          "edict_context", "edict_file_at_ref", "edict_next_calculate_neighbours_by_embeddings", "edict_next_next_signal", "edict_next_get_distribution_context",
-          "edict_next_add_signal_to_cluster", "edict_next_get_generation_clusters",
-          "edict_next_validate_code_example", "edict_next_validate_cluster_examples", "edict_next_get_inspection_action",
-          "edict_next_get_new_inspection_results", "edict_next_record_weak_review", "edict_next_record_evaluation",
-          "edict_next_finalise_cluster",
-          "edict_next_save_code_example", "edict_next_assign_code_example",
-          "edict_next_delete_code_example", "edict_next_save_candidate_inspection", "edict_next_rename_cluster",
-          "edict_next_append_cluster_history",
-          "edict_promote_clusters", "ecict-check-promotion", "edict_promotion_decide_reviews",
-          "generate_psi_tree", "generate_inspection_kts_examples", "generate_inspection_kts_api",
-          "compile_inspection_kts", "run_inspection_kts",
-        ),
-        server.tools.keys,
+  fun `cluster publication requires history capability and accepts the strict Signal model`() = runBlocking {
+    val project = gitFixture(directory.resolve("project"))
+    val layout = EdictLayout(project.root, directory.resolve("state"))
+    EdictNextRepositoryState.open(layout.stateDirectory).use { store ->
+      runProcess(store.root, listOf("git", "init", "--quiet"))
+      val repository = EdictRepository(EdictRepositoryDirectory(store.root))
+      val signals = fixtureSignals(project)
+      Files.createDirectories(repository.paths.inboxDirectory)
+      Files.writeString(repository.paths.inboxDirectory.resolve("${signals.first().id}.json"), EdictNextJson.encodeToString(signals.first()))
+      repository.addSignalToCluster(signals.first().id, "string-equality")
+      val inspection = IntellijMcpServerService(project.root)
+      val generation = EdictNextGenerationService(repository, inspection, project.root)
+      val plan = store.createPlan("Enrich the selected cluster", listOf(EdictNextRepositoryState.Step("edict-git-history-signal-enrichment", "Find independent corrections")))
+      val worker = store.launch(plan.token, plan.plan.tasks.single().id, "edict-git-history-signal-enrichment")
+      val signal = EdictNextJson.encodeToJsonElement(EdictNextSignal.serializer(), signals.last()).jsonObject
+      val unsupportedSource = JsonObject(signal.getValue("source").jsonObject + ("parentRevision" to JsonPrimitive(project.resolve("HEAD^"))))
+      fun publication(id: Int, token: String, document: JsonObject) = buildJsonObject {
+        put("jsonrpc", "2.0")
+        put("id", id)
+        put("method", "tools/call")
+        put("params", buildJsonObject {
+          put("name", "edict_publish_signal_to_cluster")
+          put("arguments", buildJsonObject {
+            put("token", token)
+            put("clusterId", "string-equality")
+            put("signal", document)
+          })
+        })
+      }.toString()
+      fun historyCall(id: Int, token: String, tool: String = "edict_next_get_history_context") = buildJsonObject {
+        put("jsonrpc", "2.0")
+        put("id", id)
+        put("method", "tools/call")
+        put("params", buildJsonObject {
+          put("name", tool)
+          put("arguments", buildJsonObject {
+            put("token", token)
+            put("clusterId", "string-equality")
+          })
+        })
+      }.toString()
+      val input = listOf(
+        """{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2025-03-26","capabilities":{},"clientInfo":{"name":"unit","version":"1"}}}""",
+        """{"jsonrpc":"2.0","method":"notifications/initialized"}""",
+        publication(2, plan.token, signal),
+        publication(3, worker.token, JsonObject(signal + ("source" to unsupportedSource))),
+        publication(4, worker.token, signal),
+        publication(5, worker.token, signal),
+        historyCall(6, plan.token),
+        historyCall(7, plan.token, "edict_get_cluster_signals"),
+        historyCall(8, worker.token),
+        historyCall(9, worker.token, "edict_get_cluster_signals"),
+        historyCall(10, worker.token),
+      ).joinToString("\n", postfix = "\n")
+      val responsesReceived = CountDownLatch(1)
+      val output = object : ByteArrayOutputStream() {
+        @Synchronized
+        override fun write(bytes: ByteArray, offset: Int, length: Int) {
+          super.write(bytes, offset, length)
+          val completeLines = toString(Charsets.UTF_8).substringBeforeLast('\n', "")
+          val ids = completeLines.lineSequence().filter(String::isNotBlank)
+            .map { wireJson.parseToJsonElement(it).jsonObject["id"].toString() }.toSet()
+          if ((1..10).all { it.toString() in ids }) responsesReceived.countDown()
+        }
+      }
+      val transport = StdioServerTransport(
+        input = DelayedEofInputStream(ByteArrayInputStream(input.encodeToByteArray())) {
+          check(responsesReceived.await(10, TimeUnit.SECONDS)) { "Timed out waiting for all history-tool responses" }
+        }.asSource().buffered(),
+        output = output.asSink().buffered(),
       )
-      val promoteSchema = server.tools.getValue("edict_promote_clusters").tool.inputSchema
-      assertEquals(setOf("token", "clusterIds"), checkNotNull(promoteSchema.properties).keys)
-      assertEquals(listOf("token"), promoteSchema.required)
-      val generationSchema = server.tools.getValue("edict_next_get_generation_clusters").tool.inputSchema
-      assertEquals(setOf("generationCount"), checkNotNull(generationSchema.properties).keys)
-      assertTrue(generationSchema.required.isNullOrEmpty())
-      assertEquals(listOf("code", "language"), server.tools.getValue("generate_psi_tree").tool.inputSchema.required)
+      val closed = CompletableDeferred<Unit>()
+      transport.onClose { closed.complete(Unit) }
+      val management = EdictManagementService(store, layout)
+      EdictNextMcpToolset(
+        layout, inspection, management,
+        EdictNextDistributionService(repository, layout.neighboursResponsePath), generation,
+        EdictNextEnrichmentMcpToolset(management, EdictNextEnrichmentService(repository, project.root)),
+        EdictSourceFileService(project.root, ReviewClient(), null),
+        promotion = PromotionService({ repository }, EdictConfiguration()),
+      ).createServer().createSession(transport)
+      closed.await()
+      val responses = output.toString(Charsets.UTF_8).lineSequence().filter(String::isNotBlank)
+        .map { wireJson.parseToJsonElement(it).jsonObject }.associateBy { it["id"].toString() }
+      assertTrue(responses.getValue("2").obj("result").flag("isError") == true)
+      assertTrue(responses.getValue("3").obj("result").flag("isError") == true)
+      for (id in listOf("4", "5")) assertFalse(responses.getValue(id).obj("result").flag("isError") == true)
+      assertEquals(setOf(true, false), listOf("4", "5").map { responses.getValue(it).obj("result").obj("structuredContent").flag("created") }.toSet())
+      assertEquals(signals.map { it.id }.toSet(), repository.clusterSignalIds("string-equality"))
+      assertTrue(repository.loadInboxSignals().isEmpty())
+      assertTrue(responses.getValue("6").obj("result").flag("isError") == true)
+      for (id in listOf("7", "8", "9", "10")) assertFalse(responses.getValue(id).obj("result").flag("isError") == true)
+      val context = responses.getValue("10").obj("result").obj("structuredContent")
+      assertEquals("string-equality", context.text("clusterId"))
+      assertFalse("signals" in context || "coverage" in context)
+      assertEquals(project.resolve("HEAD"), context.obj("range").text("headRevision"))
+      assertTrue(context.obj("range").getValue("commitRevisions").jsonArray.isNotEmpty())
+      // Common evidence reads have no history capability or distribution/generation lifecycle prerequisite.
+      for (id in listOf("7", "9")) {
+        val evidence = responses.getValue(id).obj("result").obj("structuredContent")
+        assertEquals("string-equality", evidence.text("clusterId"))
+        assertTrue(evidence.array("signals").isNotEmpty())
+      }
+      val evidence = management.call("edict_get_cluster_signals", buildJsonObject { put("clusterId", "string-equality") })
+        .obj("structuredContent")
+      assertEquals(
+        repository.loadCluster("string-equality").signals.map { it.id }.toSet(),
+        evidence.array("signals").map { it.jsonObject.text("id") }.toSet(),
+      )
+      generation.selectGenerationClusters()
+      assertTrue(generation.appendHistory("string-equality", "Generate from the accepted evidence").success)
+    }
+  }
+
+  @Test
+  fun `generation suggestion tool has an optional count and documents read only behavior`() {
+    EdictNextRepositoryState.open(directory.resolve("selection-state")).use { store ->
+      val layout = EdictLayout(directory, store.root)
+      val server = edictNextToolset(layout, EdictManagementService(store, layout)).createServer()
+      assertFalse("edict_next_get_generation_clusters" in server.tools)
+      assertFalse("edict_next_validate_generation" in server.tools)
+      val selection = server.tools.getValue("edict_next_select_generation_clusters").tool
+      assertEquals(setOf("generationCount"), checkNotNull(selection.inputSchema.properties).keys)
+      assertTrue(selection.inputSchema.required.isNullOrEmpty())
+      assertContains(selection.description.orEmpty(), "Read-only")
+      assertContains(selection.description.orEmpty(), "may choose other Pending clusters")
     }
   }
 
@@ -444,7 +554,10 @@ class EdictNextMcpToolsetTest {
     override fun close() = Unit
   }
 
-  private class DelayedEofInputStream(input: InputStream) : FilterInputStream(input) {
+  private class DelayedEofInputStream(
+    input: InputStream,
+    private val beforeEof: () -> Unit = { Thread.sleep(500) },
+  ) : FilterInputStream(input) {
     private var delayed = false
 
     override fun read(): Int = delayAtEof(super.read())
@@ -455,7 +568,7 @@ class EdictNextMcpToolsetTest {
     private fun delayAtEof(result: Int): Int {
       if (result < 0 && !delayed) {
         delayed = true
-        Thread.sleep(500)
+        beforeEof()
       }
       return result
     }

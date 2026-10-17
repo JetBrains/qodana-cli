@@ -15,17 +15,16 @@ object Registry {
             "edict_manager",
             delegates = listOf(
                 "edict-next-distribution",
-                "edict-next-generation",
+                "edict-next-cluster-generation",
                 "edict-batch-signal-analysis",
                 "edict-pr-signal-analysis",
-                "edict-git-history-signal-analysis",
+                "edict-git-history-signal-enrichment",
                 "edict-retrospective-signal-analysis",
                 "edict-promote",
                 "ecict-check-promotion",
             ),
         ),
         Policy("edict-next-distribution"),
-        Policy("edict-next-generation", delegates = listOf("edict-next-cluster-generation")),
         Policy(
             "edict-next-cluster-generation",
             listOf(
@@ -48,10 +47,7 @@ object Registry {
             "edict-pr-signal-analysis",
             delegates = listOf("edict-signal-analysis"),
         ),
-        Policy(
-            "edict-git-history-signal-analysis",
-            delegates = listOf("edict-signal-analysis"),
-        ),
+        Policy("edict-git-history-signal-enrichment"),
         Policy(
             "edict-retrospective-signal-analysis",
             delegates = listOf("edict-signal-analysis"),
