@@ -38,8 +38,8 @@ internal class IntegrationWorkspace private constructor(
     val output: Path, val repository: GitRepository, val project: Path,
     val revision: String, private val lock: FileLock, private val channel: FileChannel,
 ) : AutoCloseable {
-    // Fixture projects can contain legacy .edict data. Every test instead owns a clean Edict Next repository
-    // at the clone root while keeping the requested subproject as the inspected IntelliJ project.
+    // State is disposable and separate from tracked fixture projects. Tests may explicitly import committed seed state;
+    // otherwise legacy subproject .edict directories are ignored and each test starts with clean state.
     val state = repository.root.resolve(".edict")
 
     // Logs stay in the test output, outside the disposable clone. `open` rejects symlinked ancestors, so these paths
@@ -196,6 +196,7 @@ internal class IntegrationWorkspace private constructor(
         fun open(
             outputDirectory: Path, testClass: String, testMethod: String,
             source: String = defaultSource(), revision: String = historyCommit, projectPath: String = historyProject,
+            initialStatePath: String? = null,
         ): IntegrationWorkspace {
             val base = outputDirectory.toAbsolutePath().normalize()
             generateSequence(base) { it.parent }.forEach { require(!Files.isSymbolicLink(it)) { "Refusing to clear integration output through symlink: $it" } }
@@ -248,10 +249,35 @@ internal class IntegrationWorkspace private constructor(
                 ) { "Distillery clone must be clean before execution" }
                 val project = clone.resolve(projectPath).normalize()
                 require(project.startsWith(clone) && Files.isDirectory(project) && !Files.isSymbolicLink(project)) { "Missing fixture project: $projectPath" }
+                initialStatePath?.let { copyInitialState(clone, it) }
                 return IntegrationWorkspace(output, repository, project, exact, lock, channel)
             } catch (e: Throwable) {
                 lock?.release(); channel.close(); throw e
             }
+        }
+
+        private fun copyInitialState(clone: Path, relativePath: String) {
+            val source = clone.resolve(relativePath).normalize()
+            val target = clone.resolve(".edict")
+            require(!Path.of(relativePath).isAbsolute && source.startsWith(clone) && source != clone && source != target) {
+                "Initial state must be a subdirectory of the fixture checkout: $relativePath"
+            }
+            require(Files.isDirectory(source, NOFOLLOW_LINKS) && source.toRealPath().startsWith(clone)) {
+                "Missing or redirected fixture state: $relativePath"
+            }
+            require(!Files.exists(target, NOFOLLOW_LINKS)) { "Disposable state root already exists: $target" }
+            Files.walkFileTree(source, object : SimpleFileVisitor<Path>() {
+                override fun preVisitDirectory(dir: Path, attrs: BasicFileAttributes): FileVisitResult {
+                    Files.createDirectory(target.resolve(source.relativize(dir)))
+                    return FileVisitResult.CONTINUE
+                }
+
+                override fun visitFile(file: Path, attrs: BasicFileAttributes): FileVisitResult {
+                    require(attrs.isRegularFile) { "Fixture state contains a non-regular file: $file" }
+                    Files.copy(file, target.resolve(source.relativize(file)))
+                    return FileVisitResult.CONTINUE
+                }
+            })
         }
 
         private fun privateDirectory(path: Path) {

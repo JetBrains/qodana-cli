@@ -12,6 +12,7 @@ import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
 import org.jetbrains.qodana.edict.common.EdictCIConfiguration
 import org.jetbrains.qodana.edict.common.EdictConfiguration
+import org.jetbrains.qodana.edict.common.ExtractionConfiguration
 import org.jetbrains.qodana.edict.common.PromotionConfiguration
 import org.jetbrains.qodana.edict.common.sha256
 import org.jetbrains.qodana.edict.common.wireJson
@@ -39,6 +40,7 @@ class LivePipelineTest : IntegrationTest() {
                     timeoutMinutes = 180,
                     configuration = EdictConfiguration(
                         ci = EdictCIConfiguration("https://github.com/owner/repo"),
+                        extraction = ExtractionConfiguration(defaultSignalCount = 2),
                         promotion = PromotionConfiguration("fixture-reviewer"),
                     ),
                 ) { store, runtime, _ ->
@@ -47,18 +49,18 @@ class LivePipelineTest : IntegrationTest() {
                         "edict-signal-analysis",
                         "edict-pr-signal-analysis",
                         "edict-next-distribution",
-                        "edict-next-generation",
+                        "edict-git-history-signal-enrichment",
                         "edict-next-cluster-generation",
                         "edict-next-code-example-overseer",
                         "edict-next-inspection-shallow-review",
-                        "edict-next-weak-signal-review",
-                        "edict-next-inspection-code-review",
                         "edict-promote",
                     )
                     assertTrue(
                         plan.tasks.map { it.skill }.toSet().containsAll(required),
-                        "Pipeline must execute PR extraction, distribution, generation, all three reviews, and publication",
+                        "Pipeline must execute PR extraction, distribution, historical enrichment, generation, independent review, and publication",
                     )
+                    val enrichmentIds = plan.tasks.filter { it.skill == "edict-git-history-signal-enrichment" }.map { it.id }.toSet()
+                    assertTrue(plan.tasks.none { it.parentId in enrichmentIds }, "Enrichment agents must analyze evidence without child workers")
                     verifyManagedRun(workspace, runtime, plan)
                     verifySequentialStages(plan)
                     verifyProcessedCluster(runtime, inspection, plan)
@@ -71,20 +73,22 @@ class LivePipelineTest : IntegrationTest() {
     private fun verifySequentialStages(plan: Plan) {
         val stages = plan.tasks.filter { it.parentId.isEmpty() }
         assertEquals(
-            listOf("edict-pr-signal-analysis", "edict-next-distribution", "edict-next-generation", "edict-promote"),
+            listOf("edict-pr-signal-analysis", "edict-next-distribution", "edict-git-history-signal-enrichment", "edict-next-cluster-generation", "edict-promote"),
             stages.map { it.skill },
         )
         val ids = stages.map { it.id }
         // Lifecycle calls return compact acknowledgements, so the task log is the record of stage order.
         val events = Files.readAllLines(workspace.layout.tasksLogPath)
         ids.forEachIndexed { index, id ->
-            val started = events.indexOfFirst { it.startsWith("[-:$id] ") && it.endsWith(" started") }
-            val finished = events.indexOfFirst { it.startsWith("[-:$id] ") && it.endsWith(" finished") }
+            val displayId = id.take(8)
+            val started = events.indexOfFirst { it.startsWith("[-:$displayId] ") && it.endsWith(" started") }
+            val finished = events.indexOfFirst { it.startsWith("[-:$displayId] ") && it.endsWith(" finished [completed]") }
             assertTrue(started >= 0, "Stage $id has no recorded running state")
             assertTrue(finished > started, "Stage $id did not finish after it started")
             if (index > 0) {
-                val previous = ids[index - 1]
-                val previousFinished = events.indexOfFirst { it.startsWith("[-:$previous] ") && it.endsWith(" finished") }
+                val previous = ids[index - 1].take(8)
+                val previousFinished = events.indexOfFirst { it.startsWith("[-:$previous] ") && it.endsWith(" finished [completed]") }
+                assertTrue(previousFinished >= 0, "Previous stage $previous has no recorded completion")
                 assertTrue(started > previousFinished, "Stage $id started before previous stage $previous finished")
             }
         }
@@ -101,11 +105,12 @@ class LivePipelineTest : IntegrationTest() {
         assertEquals(1, state.clusters.size, "The positive/negative pair must form exactly one cluster")
         val cluster = state.clusters.single()
         assertEquals("Java", cluster.manifest.language.name)
-        assertEquals(2, cluster.signals.size, "The review correction must retain both evidence sides")
+        val reviewSignals = cluster.signals.filter { it.source is EdictNextSignalSource.FromPR }
+        assertEquals(2, reviewSignals.size, "The review correction must retain both evidence sides")
         assertEquals(EdictNextSignalLabel.entries.toSet(), cluster.signals.map { it.label }.toSet())
         val expectedDiff = workspace.repository.diff(historyBefore, historyCommit, listOf(historyPath))
         val providerDiff = expectedDiff.substring(expectedDiff.indexOf("--- a/"))
-        cluster.signals.forEach { signal ->
+        reviewSignals.forEach { signal ->
             val source = signal.source as EdictNextSignalSource.FromPR
             assertEquals(7, source.prNumber)
             assertTrue(source.diffPositiveToNegative in listOf(expectedDiff, providerDiff))
@@ -120,20 +125,23 @@ class LivePipelineTest : IntegrationTest() {
         }
         assertTrue(cluster.historyPath.readText().isNotBlank())
 
-        if (cluster.manifest.status == EdictNextClusterStatus.Pending) {
+        if (cluster.manifest.status in setOf(EdictNextClusterStatus.Pending, EdictNextClusterStatus.Invalid)) {
             assertEquals(
                 listOf("inspections/${cluster.id}.candidate.kts"),
                 state.filesByRelativePath.keys.filter { it.startsWith("inspections/") }.sorted(),
-                "A rejected evidence-backed attempt must remain as one resumable candidate",
+                "A non-generated evidence-backed attempt must remain as one resumable candidate",
             )
             assertTrue(
                 state.filesByRelativePath.getValue("inspections/${cluster.id}.candidate.kts").isNotEmpty(),
-                "Pending generation must preserve its candidate",
+                "Pending or Invalid generation must preserve its candidate",
             )
             assertTrue(
                 plan.tasks.any { it.skill == "edict-next-inspection-shallow-review" && it.status == "completed" },
-                "Pending is acceptable only after an independent candidate review",
+                "Pending or Invalid is acceptable only after an independent candidate review",
             )
+            if (cluster.manifest.status == EdictNextClusterStatus.Invalid) {
+                assertContains(cluster.historyPath.readText(), "Invalid:")
+            }
             return
         }
 
@@ -141,6 +149,10 @@ class LivePipelineTest : IntegrationTest() {
         assertTrue(
             plan.tasks.any { it.skill == "edict-next-weak-signal-review" && it.status == "completed" },
             "Generated transition requires weak-signal review",
+        )
+        assertTrue(
+            plan.tasks.any { it.skill == "edict-next-inspection-code-review" && it.status == "completed" },
+            "Generated transition requires inspection code review",
         )
 
         val code = assertNotNull(state.inspectionCode(cluster.id))

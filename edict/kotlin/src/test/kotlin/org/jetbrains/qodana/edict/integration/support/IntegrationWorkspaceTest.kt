@@ -77,4 +77,59 @@ class IntegrationWorkspaceTest {
         }
         assertEquals("keep", Files.readString(target.resolve("keep")))
     }
+
+    @Test
+    fun `committed initial state is opt in and copied without changing fixture files`() {
+        val source = gitFixture(directory.resolve("source"))
+        val fixtureState = "scenario/.edict"
+        val relativeSignal = "clusters/prepared/signals/s-seed.json"
+        val committed = source.root.resolve(fixtureState).resolve(relativeSignal)
+        Files.createDirectories(committed.parent)
+        Files.writeString(committed, "committed seed")
+        source.git("add", "scenario")
+        source.git("commit", "-qm", "Prepare fixture state")
+        val revision = source.resolve("HEAD")
+        Files.writeString(committed, "uncommitted local seed")
+        val out = directory.resolve("out")
+        IntegrationWorkspace.open(out, "FixtureTest", "without seed", source.root.toString(), revision, "scenario").use { workspace ->
+            assertFalse(Files.exists(workspace.state), "Legacy fixture state must not load implicitly")
+            workspace.assertCheckoutUnchanged()
+        }
+        fun open() = IntegrationWorkspace.open(
+            out, "FixtureTest", "with seed", source.root.toString(), revision, "scenario", fixtureState,
+        )
+        open().use { workspace ->
+            assertEquals("committed seed", Files.readString(workspace.state.resolve(relativeSignal)))
+            Files.writeString(workspace.state.resolve(relativeSignal), "enriched disposable state")
+            assertEquals("committed seed", Files.readString(workspace.project.resolve(".edict").resolve(relativeSignal)))
+            workspace.assertCheckoutUnchanged()
+        }
+        open().use { workspace ->
+            assertEquals("committed seed", Files.readString(workspace.state.resolve(relativeSignal)))
+            workspace.assertCheckoutUnchanged()
+        }
+        assertEquals("uncommitted local seed", Files.readString(committed))
+    }
+
+    @Test
+    fun `initial state rejects paths outside the checkout and redirected files`() {
+        val source = gitFixture(directory.resolve("source"))
+        val external = directory.resolve("external")
+        Files.createDirectory(external)
+        Files.writeString(external.resolve("keep"), "keep")
+        val fixtureState = source.root.resolve("scenario/.edict")
+        Files.createDirectories(fixtureState)
+        Files.createSymbolicLink(fixtureState.resolve("redirected"), external.resolve("keep"))
+        source.git("add", "scenario")
+        source.git("commit", "-qm", "Add redirected fixture")
+        for ((index, initialState) in listOf(external.toString(), "../external", ".edict", "scenario/.edict").withIndex()) {
+            assertFailsWith<IllegalArgumentException> {
+                IntegrationWorkspace.open(
+                    directory.resolve("out"), "FixtureTest", "reject $index", source.root.toString(), source.resolve("HEAD"),
+                    "scenario", initialState,
+                )
+            }
+        }
+        assertEquals("keep", Files.readString(external.resolve("keep")))
+    }
 }

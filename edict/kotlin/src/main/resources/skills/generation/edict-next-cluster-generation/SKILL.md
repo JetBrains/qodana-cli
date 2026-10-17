@@ -36,9 +36,8 @@ your own task token:
 Never use `apply_patch` or shell writes for the state repository; write files only in the supplied private scratch directory.
 
 End with exactly one successful `edict_next_finalise_cluster` call. A rejected call changes nothing and the cluster
-stays a Pending target, so you may fix what the response names if you still have the time and verification budget left.
-When nothing more can be fixed, finalise `Pending` with what is left. The only exception is a cluster deadline response, 
-after which you make no MCP call.
+stays Pending, so you may fix what the response names if you still have the verification budget left.
+When nothing more can be fixed, finalise `Pending` with what is left.
 
 Do not load `edict-next-code-example-overseer`, `edict-next-code-example`, `edict-next-inspection-shallow-review`,
 `edict-next-weak-signal-review`, or `edict-next-inspection-code-review` yourself. Launch each required skill in a fresh
@@ -50,9 +49,6 @@ Name every child task exactly as follows, with `<n>` counting from 1:
 - `Shallow review <clusterId> iteration <n>`;
 - `Weak-signal review <clusterId> round <n>`;
 - `Code review <clusterId> round <n>`.
-
-The 120-minute cluster deadline starts at the first `edict_next_get_inspection_action` call. If an MCP response says to
-clean up to Pending and stop, stop children, leave valid partial artifacts, and make no further MCP call.
 
 # Process
 

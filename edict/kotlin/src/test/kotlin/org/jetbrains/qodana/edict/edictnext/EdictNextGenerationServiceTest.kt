@@ -3,9 +3,13 @@ package org.jetbrains.qodana.edict.edictnext
 import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.json.JsonObject
 import org.jetbrains.qodana.edict.common.runProcess
+import org.jetbrains.qodana.edict.common.GitRepository
+import org.jetbrains.qodana.edict.history.enrichment.EdictNextEnrichmentService
+import org.jetbrains.qodana.edict.support.fixtureSignals
 import org.jetbrains.qodana.edict.support.gitFixture
 import org.junit.jupiter.api.io.TempDir
 import java.net.URI
+import java.nio.file.Files
 import java.nio.file.Path
 import kotlin.io.path.createDirectories
 import kotlin.io.path.createParentDirectories
@@ -25,6 +29,39 @@ class EdictNextGenerationServiceTest {
   lateinit var directory: Path
 
   private val analyses = mutableListOf<String>()
+  private lateinit var enrichment: EdictNextEnrichmentService
+
+  @Test
+  fun `enrichment remains available after restart and generation rename`() = runBlocking<Unit> {
+    val (generation, inspection) = generation("second" to (EdictNextSignalStrength.STRONG to EdictNextSignalLabel.POSITIVE))
+    val repository = EdictRepository(EdictRepositoryDirectory(directory.resolve("state")))
+    val project = GitRepository(directory.resolve("project"))
+    try {
+      val context = enrichment.getHistoryContext("busy-wait")
+      assertEquals("busy-wait", context.clusterId)
+      assertEquals(project.resolve("HEAD"), context.range.headRevision)
+      val accepted = fixtureSignals(project).first()
+      assertTrue(enrichment.publishClusterSignal("busy-wait", accepted).created)
+      assertFalse(enrichment.publishClusterSignal("busy-wait", accepted).created)
+      assertEquals(context.range.commitRevisions, enrichment.getHistoryContext("second").range.commitRevisions)
+      assertFalse(repository.loadCluster("busy-wait").candidateInspectionPath.exists())
+      assertFalse(repository.loadCluster("busy-wait").directory.evaluationPath.exists())
+      assertTrue(generation.appendHistory("second", "Manager chose this cluster without selection").success)
+      assertEquals(context.range.commitRevisions, enrichment.getHistoryContext("busy-wait").range.commitRevisions)
+
+      val restartedEnrichment = EdictNextEnrichmentService(EdictRepository(repository.paths), project.root)
+      val restarted = EdictNextGenerationService(EdictRepository(repository.paths), inspection, project.root)
+      assertEquals(context.range.commitRevisions, restartedEnrichment.getHistoryContext("busy-wait").range.commitRevisions)
+      restarted.renameCluster("busy-wait", "renamed-cluster")
+      assertEquals(setOf("s-busy-wait", accepted.id), repository.clusterSignalIds("renamed-cluster"))
+      assertEquals(context.range.commitRevisions, restartedEnrichment.getHistoryContext("renamed-cluster").range.commitRevisions)
+      assertTrue(restartedEnrichment.publishClusterSignal("renamed-cluster", fixtureSignals(project).last()).created)
+      assertTrue(restarted.appendHistory("renamed-cluster", "Continue with the latest evidence").success)
+      assertTrue(analyses.isEmpty())
+    } finally {
+      inspection.stop()
+    }
+  }
 
   @Test
   fun `saving validates the candidate and only a passing one is analyzed`() = withGeneration { generation, repository ->
@@ -54,6 +91,7 @@ class EdictNextGenerationServiceTest {
 
     assertEquals(1, generation.getNewInspectionResults("busy-wait", scratch).remainingProjectAnalyses)
     assertEquals(0, generation.getNewInspectionResults("busy-wait", scratch).remainingProjectAnalyses)
+    generation.selectGenerationClusters()
     val error = assertFailsWith<IllegalStateException> { generation.getNewInspectionResults("busy-wait", scratch) }
     assertContains(error.message.orEmpty(), "used all 2 project analyses")
     // Another cluster keeps its own count, and a refused call starts no analysis.
@@ -68,9 +106,10 @@ class EdictNextGenerationServiceTest {
       "strong-negative" to (EdictNextSignalStrength.STRONG to EdictNextSignalLabel.NEGATIVE),
     )
     try {
-      val response = generation.getGenerationClusters()
+      val response = generation.selectGenerationClusters()
       assertEquals(listOf("busy-wait"), response.clusters.map { it.clusterId })
-      assertFailsWith<IllegalStateException> { generation.saveCandidateInspection("weak-positive", "// weak-positive report") }
+      // Suggestions are not an allowlist. Acceptance still requires strong positive evidence.
+      assertFalse(generation.saveCandidateInspection("weak-positive", "// weak-positive report").overallSuccess)
     }
     finally {
       inspection.stop()
@@ -98,12 +137,9 @@ class EdictNextGenerationServiceTest {
     writeSignal("negative-heavy", "s-negative-heavy-3", EdictNextSignalStrength.STRONG, EdictNextSignalLabel.NEGATIVE)
 
     try {
-      val response = generation.getGenerationClusters(generationCount = 2)
+      val response = generation.selectGenerationClusters(generationCount = 2)
       assertEquals(listOf("most", "tie-a"), response.clusters.map { it.clusterId })
-      val error = assertFailsWith<IllegalStateException> {
-        generation.saveCandidateInspection("tie-b", "// tie-b report")
-      }
-      assertContains(error.message.orEmpty(), "not a frozen generation target")
+      assertTrue(generation.saveCandidateInspection("tie-b", "// tie-b report").overallSuccess)
     }
     finally {
       inspection.stop()
@@ -120,10 +156,238 @@ class EdictNextGenerationServiceTest {
     writeSignal("second", "s-second-2", EdictNextSignalStrength.WEAK, EdictNextSignalLabel.POSITIVE)
 
     try {
-      val response = generation.getGenerationClusters()
+      val response = generation.selectGenerationClusters()
       assertEquals(listOf("second"), response.clusters.map { it.clusterId })
-      val error = assertFailsWith<IllegalArgumentException> { generation.getGenerationClusters(generationCount = 0) }
+      val error = assertFailsWith<IllegalArgumentException> { generation.selectGenerationClusters(generationCount = 0) }
       assertContains(error.message.orEmpty(), "generationCount must be at least 1")
+    }
+    finally {
+      inspection.stop()
+    }
+  }
+
+  @Test
+  fun `generation uses all enriched evidence and accepts manager chosen clusters`() = runBlocking<Unit> {
+    val strongPositive = EdictNextSignalStrength.STRONG to EdictNextSignalLabel.POSITIVE
+    val (generation, inspection) = generation("second" to strongPositive, defaultGenerationCount = 1)
+    try {
+      val selected = generation.selectGenerationClusters()
+      assertEquals(listOf("busy-wait"), selected.clusters.map { it.clusterId })
+      val repository = EdictRepository(EdictRepositoryDirectory(directory.resolve("state")))
+      val signals = fixtureSignals(GitRepository(directory.resolve("project")))
+      for (signal in signals) {
+        assertTrue(enrichment.publishClusterSignal("busy-wait", signal).created)
+        assertFalse(enrichment.publishClusterSignal("busy-wait", signal).created)
+        assertTrue(repository.loadCluster("busy-wait").directory.signalPath(signal.id).isRegularFile())
+        assertFalse(repository.paths.inboxDirectory.resolve("${signal.id}.json").exists())
+      }
+      assertTrue(repository.loadInboxSignals().isEmpty())
+      assertEquals(setOf("s-busy-wait") + signals.map { it.id }, repository.clusterSignalIds("busy-wait"))
+      assertEquals(listOf("busy-wait", "second"), generation.selectGenerationClusters(generationCount = 2).clusters.map { it.clusterId })
+      assertFailsWith<IllegalArgumentException> { enrichment.publishClusterSignal("second", signals.first()) }
+      assertTrue(generation.appendHistory("busy-wait", "Generate with enriched evidence").success)
+      assertFalse(enrichment.publishClusterSignal("busy-wait", signals.first()).created)
+      assertTrue(generation.finaliseCluster("busy-wait", EdictNextClusterStatus.Pending, "More work needed").success)
+      assertEquals(setOf("s-busy-wait") + signals.map { it.id }, repository.clusterSignalIds("busy-wait"))
+      assertTrue(generation.saveCandidateInspection("second", "// second report").overallSuccess)
+      generation.getInspectionAction("second")
+
+      // The manager owns scheduling; generation reads the current membership on each call.
+      writeSignal("busy-wait", "s-too-late", EdictNextSignalStrength.WEAK, EdictNextSignalLabel.POSITIVE)
+      assertTrue(generation.appendHistory("busy-wait", "Use the current evidence").success)
+    }
+    finally {
+      inspection.stop()
+    }
+  }
+
+  @Test
+  fun `an empty suggestion neither reserves targets nor blocks enrichment and later suggestions`() = runBlocking<Unit> {
+    val (generation, inspection) = generation()
+    writeSignal("busy-wait", "s-busy-wait", EdictNextSignalStrength.WEAK, EdictNextSignalLabel.POSITIVE)
+    try {
+      val selected = generation.selectGenerationClusters()
+      assertTrue(selected.clusters.isEmpty())
+      assertTrue(enrichment.publishClusterSignal("busy-wait", fixtureSignals(GitRepository(directory.resolve("project"))).first()).created)
+      writeSignal("busy-wait", "s-busy-wait", EdictNextSignalStrength.STRONG, EdictNextSignalLabel.POSITIVE)
+      assertEquals(listOf("busy-wait"), generation.selectGenerationClusters().clusters.map { it.clusterId })
+      assertTrue(generation.appendHistory("busy-wait", "Chosen after new evidence arrived").success)
+    }
+    finally {
+      inspection.stop()
+    }
+  }
+
+  @Test
+  fun `generation operations leave Pending clusters open to enrichment`() = runBlocking<Unit> {
+    val strongPositive = EdictNextSignalStrength.STRONG to EdictNextSignalLabel.POSITIVE
+    val (generation, inspection) = generation("second" to strongPositive)
+    try {
+      generation.selectGenerationClusters()
+      generation.appendHistory("busy-wait", "First target started")
+      val signal = fixtureSignals(GitRepository(directory.resolve("project"))).first()
+      assertEquals("busy-wait", enrichment.getHistoryContext("busy-wait").clusterId)
+      assertEquals("second", enrichment.getHistoryContext("second").clusterId)
+      assertTrue(enrichment.publishClusterSignal("second", signal).created)
+      assertTrue(directory.resolve("state/clusters/second/signals/${signal.id}.json").exists())
+      assertTrue(generation.appendHistory("second", "Start with all enriched evidence").success)
+      assertFalse(enrichment.publishClusterSignal("second", signal).created)
+      generation.getInspectionAction("second")
+      assertTrue(enrichment.publishClusterSignal("second", fixtureSignals(GitRepository(directory.resolve("project"))).last()).created)
+      writeSignal("second", "s-too-late", EdictNextSignalStrength.WEAK, EdictNextSignalLabel.POSITIVE)
+      assertTrue(generation.appendHistory("second", "Use the current evidence").success)
+      assertEquals(EdictNextInspectionAction.GENERATE, generation.getInspectionAction("second").action)
+    }
+    finally {
+      inspection.stop()
+    }
+  }
+
+  @Test
+  fun `direct enrichment extends memberships independently for manager chosen targets`() = runBlocking<Unit> {
+    val (generation, inspection) = generation("second" to (EdictNextSignalStrength.STRONG to EdictNextSignalLabel.POSITIVE))
+    try {
+      val signals = fixtureSignals(GitRepository(directory.resolve("project")))
+      enrichment.publishClusterSignal("busy-wait", signals.first())
+      enrichment.publishClusterSignal("second", signals.last())
+      generation.appendHistory("busy-wait", "Enrichment complete")
+      generation.appendHistory("second", "Enrichment complete")
+      val repository = EdictRepository(EdictRepositoryDirectory(directory.resolve("state")))
+      assertEquals(setOf("s-busy-wait", signals.first().id), repository.clusterSignalIds("busy-wait"))
+      assertEquals(setOf("s-second", signals.last().id), repository.clusterSignalIds("second"))
+    }
+    finally {
+      inspection.stop()
+    }
+  }
+
+  @Test
+  fun `direct enrichment rejects a different source language`() = runBlocking<Unit> {
+    val (generation, inspection) = generation()
+    val repository = EdictRepository(EdictRepositoryDirectory(directory.resolve("state")))
+    try {
+      val project = GitRepository(directory.resolve("project"))
+      val kotlinFile = project.root.resolve("module/src/Equality.kt")
+      kotlinFile.writeText("fun same(a: String, b: String) = a === b\n")
+      project.git("add", ".")
+      project.git("commit", "-qm", "Add Kotlin comparison")
+      val parent = project.resolve("HEAD")
+      kotlinFile.writeText("fun same(a: String, b: String) = a == b\n")
+      project.git("add", ".")
+      project.git("commit", "-qm", "Fix Kotlin comparison")
+      val key = "kotlin-equality-correction"
+      val signal = EdictNextSignal(
+        id = stableSignalId(key), idempotencyKey = key,
+        fileRevision = EdictNextFileRevision("module/src/Equality.kt", parent, listOf(EdictNextLineRange(1, 1))),
+        source = EdictNextSignalSource.FromCommit(project.resolve("HEAD")), label = EdictNextSignalLabel.POSITIVE,
+        description = "Reference equality does not compare string values", provenance = EdictNextSignalProvenance("kotlin-commit"),
+      )
+      generation.selectGenerationClusters()
+      val error = assertFailsWith<IllegalArgumentException> { enrichment.publishClusterSignal("busy-wait", signal) }
+      assertContains(error.message.orEmpty(), "Signal language does not match")
+      assertEquals(setOf("s-busy-wait"), repository.clusterSignalIds("busy-wait"))
+      assertTrue(repository.loadInboxSignals().isEmpty())
+    }
+    finally {
+      inspection.stop()
+    }
+  }
+
+  @Test
+  fun `enrichment rejects weak invalid and conflicting evidence without writing`() = runBlocking<Unit> {
+    val (generation, inspection) = generation()
+    val repository = EdictRepository(EdictRepositoryDirectory(directory.resolve("state")))
+    try {
+      val signal = fixtureSignals(GitRepository(directory.resolve("project"))).first()
+      generation.selectGenerationClusters()
+      for (invalid in listOf(
+        signal.copy(strength = EdictNextSignalStrength.WEAK),
+        signal.copy(source = EdictNextSignalSource.SubmittedFeedback()),
+        signal.copy(syntheticExampleId = "not-an-example"),
+        signal.copy(fileRevision = signal.fileRevision.copy(expectedRanges = listOf(EdictNextLineRange(1, 1)))),
+        signal.copy(fileRevision = signal.fileRevision.copy(revision = (signal.source as EdictNextSignalSource.FromCommit).commitRevision)),
+      )) {
+        assertFailsWith<IllegalArgumentException> { enrichment.publishClusterSignal("busy-wait", invalid) }
+      }
+      assertEquals(setOf("s-busy-wait"), repository.clusterSignalIds("busy-wait"))
+      assertTrue(repository.loadInboxSignals().isEmpty())
+      assertTrue(enrichment.publishClusterSignal("busy-wait", signal).created)
+      assertFailsWith<IllegalArgumentException> {
+        enrichment.publishClusterSignal("busy-wait", signal.copy(description = "Different evidence with the same ID"))
+      }
+      assertEquals(signal, repository.loadCluster("busy-wait").signals.single { it.id == signal.id })
+      assertTrue(generation.appendHistory("busy-wait", "Generate from the accepted evidence").success)
+    }
+    finally {
+      inspection.stop()
+    }
+  }
+
+  @Test
+  fun `enrichment rejects evidence already owned by another cluster or inbox`() = runBlocking<Unit> {
+    val (generation, inspection) = generation("second" to (EdictNextSignalStrength.STRONG to EdictNextSignalLabel.POSITIVE))
+    val repository = EdictRepository(EdictRepositoryDirectory(directory.resolve("state")))
+    try {
+      val signals = fixtureSignals(GitRepository(directory.resolve("project")))
+      repository.saveClusterSignal("second", signals.first())
+      val inboxPath = repository.paths.inboxDirectory.resolve("${signals.last().id}.json").createParentDirectories()
+      inboxPath.writeText(EdictNextJson.encodeToString(signals.last()))
+      generation.selectGenerationClusters()
+      for (signal in signals) {
+        assertFailsWith<IllegalArgumentException> { enrichment.publishClusterSignal("busy-wait", signal) }
+      }
+      assertEquals(setOf("s-busy-wait"), repository.clusterSignalIds("busy-wait"))
+      assertEquals(listOf(signals.last()), repository.loadInboxSignals())
+    }
+    finally {
+      inspection.stop()
+    }
+  }
+
+  @Test
+  fun `selection is read only and reranks current evidence without constraining generation`() = runBlocking<Unit> {
+    val (generation, inspection) = generation(
+      "second" to (EdictNextSignalStrength.STRONG to EdictNextSignalLabel.POSITIVE), defaultGenerationCount = 1,
+    )
+    try {
+      val repository = EdictRepository(EdictRepositoryDirectory(directory.resolve("state")))
+      fun snapshot() = Files.walk(repository.paths.root).use { paths ->
+        paths.filter { it.isRegularFile() }.toList().associate { it.toString() to Files.readAllBytes(it).toList() }
+      }
+      val before = snapshot()
+      val selected = generation.selectGenerationClusters()
+      assertEquals(before, snapshot())
+      assertEquals(listOf("busy-wait"), selected.clusters.map { it.clusterId })
+      assertEquals(listOf("busy-wait", "second"), generation.selectGenerationClusters(generationCount = 2).clusters.map { it.clusterId })
+      assertEquals(before, snapshot())
+      writeSignal("second", "s-second-2", EdictNextSignalStrength.STRONG, EdictNextSignalLabel.POSITIVE)
+      assertEquals(listOf("second"), generation.selectGenerationClusters().clusters.map { it.clusterId })
+      val signal = fixtureSignals(GitRepository(directory.resolve("project"))).first()
+      enrichment.publishClusterSignal("busy-wait", signal)
+      assertEquals(listOf("busy-wait", "second"), generation.selectGenerationClusters(generationCount = 2).clusters.map { it.clusterId })
+      assertTrue(generation.appendHistory("busy-wait", "Manager chose this cluster").success)
+      assertTrue(generation.appendHistory("second", "Manager also chose this cluster").success)
+      assertEquals(setOf("s-second", "s-second-2"), repository.clusterSignalIds("second"))
+    }
+    finally {
+      inspection.stop()
+    }
+  }
+
+  @Test
+  fun `direct enrichment has no hundred signal distribution cap`() = runBlocking<Unit> {
+    val (generation, inspection) = generation()
+    try {
+      generation.selectGenerationClusters()
+      val evidence = fixtureSignals(GitRepository(directory.resolve("project"))).first()
+      repeat(101) { index ->
+        val key = "history-evidence-$index"
+        enrichment.publishClusterSignal("busy-wait", evidence.copy(id = stableSignalId(key), idempotencyKey = key))
+      }
+      val repository = EdictRepository(EdictRepositoryDirectory(directory.resolve("state")))
+      assertEquals(102, repository.clusterSignalIds("busy-wait").size)
+      assertTrue(repository.loadInboxSignals().isEmpty())
+      assertTrue(generation.appendHistory("busy-wait", "Generate from every accepted Signal").success)
     }
     finally {
       inspection.stop()
@@ -136,7 +400,7 @@ class EdictNextGenerationServiceTest {
     val (generation, inspection) = generation("discontinued" to strongPositive, "invalid" to strongPositive, "pending" to strongPositive)
     val repository = EdictRepository(EdictRepositoryDirectory(directory.resolve("state")))
     try {
-      generation.getGenerationClusters()
+      generation.selectGenerationClusters()
       for (clusterId in listOf("busy-wait", "discontinued", "invalid")) {
         generation.saveCandidateInspection(clusterId, "// $clusterId report")
       }
@@ -176,7 +440,7 @@ class EdictNextGenerationServiceTest {
     // A Pending cluster may have a Signal without an example; a Discontinued one may not.
     writeSignal("busy-wait", "s-busy-wait-uncovered", EdictNextSignalStrength.WEAK, EdictNextSignalLabel.POSITIVE)
     try {
-      generation.getGenerationClusters()
+      generation.selectGenerationClusters()
       val histories = listOf("busy-wait", "empty-catch").associateWith { repository.loadCluster(it).historyPath.readText() }
       generation.saveCandidateInspection("empty-catch", "// empty-catch report")
       generation.getInspectionAction("empty-catch")
@@ -208,7 +472,7 @@ class EdictNextGenerationServiceTest {
     )
     val repository = EdictRepository(EdictRepositoryDirectory(directory.resolve("state")))
     try {
-      generation.getGenerationClusters()
+      generation.selectGenerationClusters()
       generation.saveCandidateInspection("discontinued", "// discontinued report")
       assertTrue(generation.finaliseCluster("discontinued", EdictNextClusterStatus.Discontinued, "Contradiction").success)
       val cluster = repository.loadCluster("discontinued")
@@ -235,7 +499,7 @@ class EdictNextGenerationServiceTest {
     assertEquals("busy-loop", cluster.manifest.id)
     assertEquals("// with report\nInspectionKts(id = \"busy-loop\")", cluster.candidateInspectionPath.readText())
     assertFalse(repository.paths.candidateInspectionPath("busy-wait").exists())
-    assertFailsWith<IllegalStateException> { generation.appendHistory("busy-wait", "Old id") }
+    assertFailsWith<IllegalArgumentException> { generation.appendHistory("busy-wait", "Old id") }
 
     // Only the id changed, so the analyzed candidate can be Generated without another analysis.
     assertTrue(generation.recordEvaluation("busy-loop").success)
@@ -427,7 +691,6 @@ class EdictNextGenerationServiceTest {
   private fun withGeneration(test: suspend (EdictNextGenerationService, EdictRepository) -> Unit) = runBlocking {
     val (generation, inspection) = generation("empty-catch" to (EdictNextSignalStrength.STRONG to EdictNextSignalLabel.POSITIVE))
     try {
-      generation.getGenerationClusters()
       test(generation, EdictRepository(EdictRepositoryDirectory(directory.resolve("state"))))
     }
     finally {
@@ -448,6 +711,7 @@ class EdictNextGenerationServiceTest {
     val state = directory.resolve("state").createDirectories()
     runProcess(state, listOf("git", "init", "--quiet"))
     val repository = EdictRepository(EdictRepositoryDirectory(state))
+    enrichment = EdictNextEnrichmentService(repository, project)
     pendingCluster(repository, "busy-wait", EdictNextSignalStrength.STRONG, EdictNextSignalLabel.POSITIVE)
     predecessorId?.let { repository.paths.inspectionPath(it).createParentDirectories().writeText("// $it report") }
     for ((clusterId, evidence) in clusters) pendingCluster(repository, clusterId, evidence.first, evidence.second, predecessorId)

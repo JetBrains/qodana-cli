@@ -9,9 +9,6 @@ internal object EdictNextTimeouts {
   val session: Duration
     get() = property("qodana.edictnext.timeout.minutes") ?: 900.minutes
 
-  /** One cluster generation, starting with the first inspection-action request. */
-  val clusterGeneration: Duration = 120.minutes
-
   private fun property(name: String): Duration? {
     val value = System.getProperty(name) ?: return null
     val minutes = value.toLongOrNull()

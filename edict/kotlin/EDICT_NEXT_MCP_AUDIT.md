@@ -11,14 +11,14 @@ and every bundled Edict Next skill reference to its tools.
 | `edict_next_get_distribution_context` | Distribution records that candidate context was read. | Pipeline/task management | Port. Complete current cluster membership is returned and an existing-cluster context receipt is recorded for the current Signal. |
 | `edict_next_add_signal_to_cluster` | Distribution applies the only legacy distribution mutation. | Pipeline/task management/state mutation | Port. The managed capability authorizes one hash-checked server transition that creates/updates the cluster, verifies the exact Signal destination, records history, and only then deletes the inbox copy. Generic writes are rejected for distribution workers. |
 | `edict_next_validate_distribution` | Root calls it after distribution and stops on failure. | State validation | Port as `edict_validate_distribution`, using the immutable receipt and server-side repository snapshot from `edict_validate_inbox`. It requires each selected Signal to move byte-for-byte into exactly one cluster, rejects unrelated state changes, and validates repository invariants. |
-| `edict_next_get_generation_clusters` | Generation freezes Pending targets and supplies concurrency. | Pipeline/task management | Ignore. The managed coordinator receives explicit affected/Pending IDs and controls native worker capacity. |
+| `edict_next_select_generation_clusters` | Suggests Pending clusters and supplies concurrency. | Pipeline/task management | The manager chooses cluster IDs from read-only suggestions or the user's request and controls native worker capacity. |
 | `edict_next_validate_code_example` | Every code-example worker calls it before assigning the example. | State validation plus IDE parsing | Split. `edict_validate_code_example` ports persisted metadata/layout/language/label/range checks; the skill performs the PSI/parser check with Ultimate's generic inspection MCP before assignment. |
 | `edict_next_validate_cluster_examples` | Overseer, cluster generation, and weak review require it after reconciliation. | State validation plus IDE parsing | Split. `edict_validate_cluster_examples` ports complete Signal/example linkage and structural state checks; skills retain Ultimate PSI/parser checks per example. |
-| `edict_next_get_inspection_action` | Cluster generation detects conflicts and executes a predecessor against examples to choose reuse or generation. | Generated-inspection execution plus session deadline/action state | Do not port. Managed generation reviews and measures the previous version with the same generic `run_inspection_kts` calls as a new candidate. |
+| `edict_next_get_inspection_action` | Cluster generation detects conflicts and executes a predecessor against examples to choose reuse or generation. | Generated-inspection execution plus action state | Do not port. Managed generation reviews and measures the previous version with the same generic `run_inspection_kts` calls as a new candidate. |
 | `edict_next_validate_inspection` | Cluster generation compiles the candidate and measures all examples. | Generated-inspection execution | Keep in Ultimate. Managed skills pass exact `edict_read` candidate bytes as `inspectionKtsCode`, the inspected source project as `projectPath`, and enforce strong-example/85% accuracy gates. |
 | `edict_next_get_new_inspection_results` | Cluster generation executes the candidate over the inspected project and builds weak-review inputs. | Generated-inspection execution | Keep in Ultimate. Managed skills use the same generic `run_inspection_kts` call shape and store complete findings/manifests only in private scratch. |
 | `edict_next_mark_generated` | Applies a guarded legacy session transition after action, analysis, and validation receipts. | Session/task management plus state mutation | Ignore. Managed hash-checked writes publish exact accepted bytes; state validation is separate from external execution/review evidence. |
-| `edict_next_validate_generation` | Root validates frozen state, then recompiles every Generated inspection before publication. | Mixed state validation and generated-inspection execution | Split. `edict_validate_generation` ports repository/target state checks. Skills must first verify Ultimate compilation, example/project runs, reviews, and exact-candidate hashes; the managed validator explicitly does not replace them. |
+| `edict_next_validate_generation` | Root validates repository state, then recompiles every Generated inspection before publication. | Mixed state validation and generated-inspection execution | Split. `edict_validate_generation` ports repository state checks. Skills must first verify Ultimate compilation, example/project runs, reviews, and exact-candidate hashes; the managed validator explicitly does not replace them. |
 
 The resulting boundary is intentional: managed Kotlin owns authoritative state and read-only state validation; Ultimate
 owns PSI parsing and all generated-inspection compilation/execution; native agents own orchestration and task lifecycle.
@@ -40,10 +40,6 @@ End-to-end review of the current pipeline (code reading only, nothing run). Path
   plan, contradicting "Pending/Invalid is not a stage failure"); a spawn failure or lost worker (protocol says cancel);
   a `task_add` without a successful `edict_delegate`; a server restart, where interrupted children return to `pending`
   and a coordinator that does not re-delegate exactly those ids can never complete.
-- [ ] After the cluster deadline `edict-next-cluster-generation/SKILL.md` forbids every MCP call, including
-  `edict_task_finish`; the task stays running, the coordinator must cancel it, and generation fails. The deadline
-  message asks to "Cleanup ... to valid Pending state", but every generation tool, including finalise Pending, rejects
-  after the deadline.
 - [ ] State loading requires the state root inside a Git work tree (`edictnext/EdictRepository.kt:349-360`,
   `loadGitIgnoredFiles`). A `statePath` outside Git makes `prepare_pipeline` and `get_generation_clusters` always fail.
   A git-ignored `.edict/` drops every state file (Generated clusters "have no inspection"). The `ls-files --ignored`
@@ -64,7 +60,7 @@ End-to-end review of the current pipeline (code reading only, nothing run). Path
   clusters a cluster can lose analyses without running any. The timeout escapes as a JSON-RPC internal error, so the
   agent never sees `remainingProjectAnalyses`.
 - [ ] Timeouts cannot interrupt IDE calls: `edictnext/InspectionKtsMcpClient.kt:168` makes a blocking
-  `HttpClient.send` with a 1-hour timeout. The analysis limit and the cluster deadline overrun by up to 1 hour;
+  `HttpClient.send` with a 1-hour timeout. The analysis limit overruns by up to 1 hour;
   `IntellijMcpServerService.stop()` takes the `analyses` mutex first, so shutdown hangs holding `.edict-mcp.lock` and a
   restarted `mcp start` is refused. Close the client before taking the mutex.
 - [ ] Codex thread limit vs fan-out: `max_concurrent_threads_per_session = 50` (`setup/CodexSetup.kt:125`) against 6
@@ -94,8 +90,6 @@ End-to-end review of the current pipeline (code reading only, nothing run). Path
   `inspections/<id>.inspection.kts`, so that cluster can never be Generated ("Unexpected existing final inspection",
   `edictnext/EdictNextValidation.kt:263-266`).
 - [ ] Rename after `SKIP` is not enforced; finalise Generated then always rejects.
-- [ ] `withinClusterGenerationDeadline` (`edictnext/EdictNextGenerationService.kt:380`) overwrites the frozen membership
-  for any cluster id passed to it, bypassing the frozen-target guard (including `clustersWithoutStrongPositiveSignal`).
 - [ ] Multi-file mutations are not atomic: move before manifest write in distribution, rename, Discontinued, history
   appended before `markGenerated`. A crash leaves state that blocks every later run. The embedding cache
   (`edictnext/EdictNextNeighbourFinder.kt:76-91`) is written non-atomically and read without a size check.
@@ -122,7 +116,7 @@ End-to-end review of the current pipeline (code reading only, nothing run). Path
 ### Skill and doc mismatches
 
 - [ ] `edict-retrospective-signal-analysis` requires `clusters/<id>/description.json`, which no longer exists, and
-  needs a whole-project runner that is not forwarded. It and `edict-git-history-signal-analysis` mention a
+  needs a whole-project runner that is not forwarded. It mentions a
   non-existent `inbox.write` capability.
 - [ ] `edict-next-distribution` never names `edict_next_get_distribution_context`.
 - [ ] `EDICT_RUN_FLOW.md`: `maxConcurrentClusterTasks` is 6 in code, not 20; the `edict_state_write` note is stale

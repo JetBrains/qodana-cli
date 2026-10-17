@@ -43,13 +43,12 @@ class TaskLifecycleLoggingTest {
     @Test
     fun `parallel task transitions have one ordered pair each and do not log rejected calls`() {
         EdictNextRepositoryState.open(directory.resolve("state")).use { store ->
-            val created = store.createPlan("Generate", listOf(Step("edict-next-generation", "Generate")))
-            val generation = store.launch(created.token, created.plan.tasks.single().id, "edict-next-generation")
+            val created = store.createPlan("Generate", emptyList())
             val output = StringWriter()
             val layout = EdictLayout(directory, directory.resolve(".edict"))
             val server = EdictNextTestTools(store, layout = layout, taskOutput = PrintWriter(output))
             val workers = (1..15).map { index ->
-                store.delegateChild(generation.token, "edict-next-cluster-generation", "Generate $index")
+                store.delegateChild(created.token, "edict-next-cluster-generation", "Generate $index")
             }
             Executors.newFixedThreadPool(15).use { executor ->
                 workers.mapIndexed { index, worker -> executor.submit {
@@ -80,11 +79,12 @@ class TaskLifecycleLoggingTest {
     @Test
     fun `nested review inherits cluster and cancellation ends all active descendants once`() {
         EdictNextRepositoryState.open(directory.resolve("state")).use { store ->
-            val created = store.createPlan("Generate", listOf(Step("edict-next-generation", "Generate")))
-            val generation = store.launch(created.token, created.plan.tasks.single().id, "edict-next-generation")
+            val created = store.createPlan("Generate", listOf(Step("edict-next-cluster-generation", "Generate rule")))
             val output = StringWriter()
             val server = EdictNextTestTools(store, taskOutput = PrintWriter(output))
-            val cluster = store.delegateChild(generation.token, "edict-next-cluster-generation", "Generate rule")
+            val cluster = store.delegate(created.token, created.plan.tasks.single().id,
+                "\$edict-next-cluster-generation\nRead /skills/edict-next-cluster-generation/SKILL.md")
+            store.readTask(cluster.token)
             server.ok("edict_task_start", start(cluster))
             val finished = store.delegateChild(cluster.token, "edict-next-inspection-code-review", "Code review")
             server.ok("edict_task_start", start(finished))
@@ -94,15 +94,14 @@ class TaskLifecycleLoggingTest {
             val example = store.delegateChild(review.token, "edict-next-code-example", "Check example")
             server.ok("edict_task_start", start(example))
             server.ok("edict_task_cancel", buildJsonObject {
-                put("token", created.token); put("taskId", generation.taskId); put("result", "Worker lost")
+                put("token", created.token); put("taskId", cluster.taskId); put("result", "Worker lost")
             })
             val lines = output.toString().lines().filter { it.isNotEmpty() }
-            assertEquals(14, lines.size)
+            assertEquals(12, lines.size)
             assertContains(lines, "[-:${review.taskId.take(8)}] Reconcile examples for rule started")
             assertContains(lines, "[-:${example.taskId.take(8)}] Check example finished [cancelled]")
             assertContains(lines, "[-:${cluster.taskId.take(8)}] Generate rule finished [cancelled]")
-            assertContains(lines, "[-:${generation.taskId.take(8)}] Generate finished [cancelled]")
-            assertEquals(4, lines.count { it == "  Worker lost" })
+            assertEquals(3, lines.count { it == "  Worker lost" })
             assertEquals(
                 1,
                 lines.count { it == "[-:${finished.taskId.take(8)}] Code review finished [completed]" },
@@ -113,9 +112,9 @@ class TaskLifecycleLoggingTest {
     @Test
     fun `lifecycle messages stay separate from tool responses`() {
         EdictNextRepositoryState.open(directory.resolve("state")).use { store ->
-            val created = store.createPlan("Generate", listOf(Step("edict-next-generation", "Generate")))
+            val created = store.createPlan("Generate", listOf(Step("edict-next-cluster-generation", "Generate")))
             val task = created.plan.tasks.single()
-            val worker = store.delegate(created.token, task.id, "\$edict-next-generation\nRead /skills/edict-next-generation/SKILL.md")
+            val worker = store.delegate(created.token, task.id, "\$edict-next-cluster-generation\nRead /skills/edict-next-cluster-generation/SKILL.md")
             store.readTask(worker.token)
             val messages = StringWriter()
             val protocol = StringWriter()

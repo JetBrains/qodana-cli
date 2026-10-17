@@ -21,8 +21,8 @@ permission to execute stages inline.
 
 1. Read `edict_registry` for managed skills list. Use the registered skill IDs in MCP calls for scheduling. Do not load
    child skills yourself. Route bounded commit lists to `edict-batch-signal-analysis`, review discussions to
-   `edict-pr-signal-analysis`, Git `-S`/`-G` searches for more evidence supporting selected stored Signals or clusters
-   to `edict-git-history-signal-analysis`, and old-snapshot versus HEAD inspection comparisons to
+   `edict-pr-signal-analysis`, Git `-S`/`-G` searches for more evidence supporting selected Pending clusters
+   to one `edict-git-history-signal-enrichment` task per cluster, and old-snapshot versus HEAD inspection comparisons to
    `edict-retrospective-signal-analysis`.
 2. Use managed to build a list of steps required for fulfilling user request. Use availabale mcp tools if it's necessary
    to understand edict state.
@@ -34,6 +34,9 @@ permission to execute stages inline.
    tasks finish. Never call it again once you have the token. Keep the plan ID for the current server lifetime and never
    write the plan yourself. Call `edict_context` with that token before using configured paths or defaults; its
    `scratchDirectory` belongs only to the manager.
+   Initial steps may be empty when all tasks depend on target selection; add them later with `edict_task_add`.
+4. For generation requests, choose Pending clusters after any requested distribution and follow the generation
+   orchestration below. Add dynamically determined cluster tasks with `edict_task_add`; do not create another plan.
 5. Follow the protocol's assignment flow: supply `edict_delegate` the complete token-free task instructions starting
    with the child's exact managed skill invocation, then pass its returned short launch `prompt` to native
    `spawn_agent`.
@@ -73,7 +76,8 @@ not add a generation count to downstream instructions when the user did not prov
 Every count is an evidence-constrained target: never invent Signals, force unrelated Signals into a cluster, weaken
 generation validation, or claim rules or Signals that were not produced. Report each achieved count and any shortfall.
 
-Create and execute these top-level tasks in this exact order:
+Create and execute these top-level tasks in this stage order; add cluster tasks once their IDs are known and promotion
+after they complete:
 
 1. `edict-pr-signal-analysis`: pass the Signal target and call `edict_fetch_pr_batch` without a selection. The child
    repeatedly extracts and publishes every PR on the next complete uncovered UTC date until it reaches the target.
@@ -81,17 +85,29 @@ Create and execute these top-level tasks in this exact order:
    processed full date in PR-analysis coverage. Zero-Signal days do not count toward the target but still advance
    coverage. Stop with a reported shortfall when repository history is exhausted or a provider problem leaves the next
    date uncovered; an empty selection after exhaustion is a successful no-op.
-2. `edict-next-distribution`: assign the resulting inbox Signals to clusters, for up to 120 minutes.
-3. `edict-next-generation`: process the generation targets selected by the requested count or configured default, for
-   up to 660 minutes. Pending and Invalid clusters do not block publication.
-4. `edict-promote`: publish every newly eligible Generated inspection through the configured promotion target. Missing
+2. `edict-next-distribution`: assign the resulting inbox Signals to clusters.
+3. Select clusters for signal enrichment and rule generation.
+   For suggestions, call `edict_next_select_generation_clusters`, omitting `generationCount` unless the user supplies one.
+   It returns ranked candidates and `maxConcurrentClusterTasks`, not a reservation or a required target set. You may choose
+   other Pending clusters based on the user's request and available evidence, or use explicitly requested IDs without
+   calling selection. Use `maxConcurrentClusterTasks` from selection when available;
+   always respecting runtime capacity and reserving room for descendants. Deduplicate your chosen IDs.
+   Keep the list of clusters chosen for this run here in the manager. Pass only the assigned `clusterId` to each worker;
+   track any renamed IDs from worker results for later stages and the final report.
+
+4. `edict-git-history-signal-enrichment`: launch one top-level task per chosen cluster, passing only its `clusterId`.
+   Each enrichment agent directly analyzes all member Signals and historical candidates without child workers.
+   Enrich each target with strong historical evidence derived from all its gathered Signals. Wait for all enrichment
+   tasks to complete before delegating generation. An empty target list creates no enrichment tasks.
+   A failed or incomplete search blocks generation and promotion.
+5. `edict-next-cluster-generation`: launch one top-level task per chosen cluster after history completes, keeping up
+   to the concurrency limit active. Use every original and enriched Signal.
+   Pending and Invalid clusters do not block publication.
+6. `edict-promote`: publish every newly eligible Generated inspection through the configured promotion target. Missing
    CI or promotion configuration is a failed publication prerequisite, not a reason to omit this task.
 
-Wait for workers in chunks of at most 60 minutes and stop on failure or timeout. The complete session budget is 900
-minutes.
-
 Carry a user-provided Signal target into extraction, and a user-provided generation count plus relevant completed-stage
-results into downstream task instructions. For the default pipeline, do not add a generation count: downstream
-generation must omit `generationCount` so the configured default applies. Reaching the Signal target completes only
+results into downstream task instructions. For the default pipeline, do not add a generation count: selection must
+omit `generationCount` so the configured default applies. Pass your chosen IDs to history and cluster workers. Reaching the Signal target completes only
 extraction; continue with generation and promotion, then report their independently achieved results. A more specific
 user request overrides this default pipeline and its counts, ranges, and stages.

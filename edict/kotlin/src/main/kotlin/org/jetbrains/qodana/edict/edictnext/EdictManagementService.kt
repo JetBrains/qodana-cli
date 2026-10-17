@@ -72,6 +72,7 @@ internal class EdictManagementService(
 
   // Only commit Signals need Git, so a project without it still serves every other tool.
   private val signalRepository by lazy { GitRepository(layout.root) }
+  private val repository by lazy { EdictRepository(EdictRepositoryDirectory(store.root)) }
 
   private val taskLogger = TaskLifecycleLogger(store, layout, taskOutput)
   private val invocations = ConcurrentHashMap<String, Invocation>()
@@ -273,7 +274,7 @@ internal class EdictManagementService(
     }
     tool(
       name = "edict_plan_create",
-      description = "Create an in-memory execution plan for this server lifetime. First successful call returns manager token; no token needed.",
+      description = "Create an in-memory execution plan for this server lifetime. Initial steps may be empty and added later with edict_task_add. First successful call returns manager token; no token needed.",
       required = listOf("request", "steps"),
       properties = properties("request") + ("steps" to steps),
     ) { arguments ->
@@ -389,6 +390,20 @@ internal class EdictManagementService(
       buildJsonObject {
         put("taskId", taskId)
         put("removed", layout.cleanupTaskScratchDirectory(taskId))
+      }
+    }
+
+    tool(
+      name = "edict_get_cluster_signals",
+      description = "Read all stored Signals of one cluster, including weak and negative evidence. Independent of distribution, enrichment and generation selection.",
+      readOnly = true,
+      required = listOf("clusterId"),
+      properties = properties("clusterId"),
+    ) { arguments ->
+      val cluster = repository.loadCluster(arguments.requireString("clusterId"))
+      buildJsonObject {
+        put("clusterId", cluster.id)
+        put("signals", EdictNextJson.encodeToJsonElement(cluster.signals))
       }
     }
 
