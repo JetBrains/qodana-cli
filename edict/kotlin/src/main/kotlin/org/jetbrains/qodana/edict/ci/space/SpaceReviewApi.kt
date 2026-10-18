@@ -3,6 +3,7 @@ package org.jetbrains.qodana.edict.ci.space
 
 import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.JsonElement
+import kotlinx.serialization.json.JsonNull
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.buildJsonArray
 import kotlinx.serialization.json.buildJsonObject
@@ -193,7 +194,7 @@ internal class SpaceReviewApi(
     require(repository.provider == id)
     if (configured != null) return configured
     return expectObject(http.send(id, "GET", repositoryEndpoint(repository), requireAuthentication = true), 200)
-      .text("defaultBranch")
+      .obj("defaultBranch").text("head")
       .also { require(it.isNotBlank()) { "Space repository has no default branch" } }
   }
 
@@ -201,34 +202,53 @@ internal class SpaceReviewApi(
     require(request.repository.provider == id)
     val repository = repositoryEndpoint(request.repository)
     val branch = "edict/${request.clusterId}-${request.inspectionDigest.take(12)}"
-    val commit = http.send(id, "POST", "$repository/commits", body = buildJsonObject {
-      put("branch", branch)
-      put("startPoint", request.targetBranch)
-      put("message", "Add Edict inspection ${request.clusterId}")
-      put("changes", buildJsonArray {
-        add(buildJsonObject {
-          put("changeType", "ADD_OR_MODIFY")
-          put("path", request.targetPath)
-          put("contentBase64", Base64.getEncoder().encodeToString(request.inspectionContent))
+    val branchHead = "refs/heads/$branch"
+    val existingBranch = readBranch(repository, branchHead)
+    val existingRevision = existingBranch?.obj("branchInfo")?.text("ref")?.also {
+      require(it.isNotBlank()) { "Space inspection branch has no revision" }
+    }
+    val existingContent = existingRevision?.let { revision ->
+      try { file(request.repository, revision, request.targetPath).encodeToByteArray() }
+      catch (_: NoSuchFileException) { null }
+    }
+    if (existingContent == null || !existingContent.contentEquals(request.inspectionContent)) {
+      val base = requireNotNull(readBranch(repository, request.targetBranch)) { "Space target branch does not exist" }
+      val revision = base.obj("branchInfo").text("ref")
+      require(revision.isNotBlank()) { "Space target branch has no revision" }
+      require(existingBranch == null || existingRevision == revision) {
+        "Space inspection branch already exists with different content"
+      }
+      if (existingBranch == null) {
+        val created = http.send(id, "POST", "$repository/head", body = buildJsonObject {
+          put("head", branchHead)
+          put("target", revision)
+        }, requireAuthentication = true)
+        expectStatus(created, "Space inspection branch creation", 200, 201)
+      }
+      // Unlike the other repository APIs, commit expects the plain project key, not a project selector.
+      val commitEndpoint = "/projects/${urlPart(request.repository.owner)}/repositories/${urlPart(request.repository.repository)}/commit"
+      val commit = expectObject(http.send(id, "POST", commitEndpoint, body = buildJsonObject {
+        put("baseCommit", revision)
+        put("targetBranch", branchHead)
+        put("commitMessage", "Add Edict inspection ${request.clusterId}")
+        put("files", buildJsonArray {
+          add(buildJsonObject {
+            put("path", request.targetPath)
+            put("content", buildJsonObject {
+              put("className", "GitFileContent.Base64")
+              put("value", Base64.getEncoder().encodeToString(request.inspectionContent))
+            })
+          })
         })
-      })
-    }, requireAuthentication = true)
-    require(commit.status in setOf(200, 201, 409)) { "Space inspection commit returned HTTP ${commit.status}" }
+      }, requireAuthentication = true), 200, 201)
+      require(commit.flag("success") == true) { "Space inspection commit failed: ${commit.text("message").take(1000)}" }
+    }
 
-    val reviews = http.send(
-      id,
-      "GET",
-      "/projects/key:${urlPart(request.repository.owner)}/code-reviews",
-      mapOf("repository" to request.repository.repository, "branch" to branch),
-      requireAuthentication = true,
-    )
-    require(reviews.status == 200) { "Space review lookup returned HTTP ${reviews.status}" }
-    val existing = (reviews.body as? JsonArray)?.firstOrNull()?.jsonObject
-      ?: (reviews.body as? JsonObject)?.get("data")?.let { it as? JsonArray }?.firstOrNull()?.jsonObject
-    val review = existing ?: expectObject(http.send(
+    val reviewsRoot = "/projects/key:${urlPart(request.repository.owner)}/code-reviews"
+    val review = findReview(reviewsRoot, request, branch) ?: expectObject(http.send(
       id,
       "POST",
-      "/projects/key:${urlPart(request.repository.owner)}/code-reviews",
+      "$reviewsRoot/merge-requests",
       body = buildJsonObject {
         put("title", "Add Edict inspection ${request.clusterId}")
         put("repository", request.repository.repository)
@@ -237,20 +257,58 @@ internal class SpaceReviewApi(
       },
       requireAuthentication = true,
     ), 200, 201)
-    val reviewId = review.text("id").ifBlank { review.number("number").takeIf { it > 0 }?.toString().orEmpty() }
+    val reviewId = review.text("id")
     require(reviewId.isNotBlank()) { "Space code review has no id" }
-    val reviewer = http.send(
-      id,
-      "POST",
-      "/projects/key:${urlPart(request.repository.owner)}/code-reviews/${urlPart(reviewId)}/reviewers",
-      body = buildJsonObject { put("reviewer", request.reviewer) },
-      requireAuthentication = true,
+    fun assignReviewer(identifier: String): CiHttpResponse = http.send(
+      id, "POST", "$reviewsRoot/${urlPart(reviewId)}/participants/${urlPart(identifier)}",
+      body = buildJsonObject { put("role", "Reviewer") }, requireAuthentication = true,
     )
-    require(reviewer.status in setOf(200, 201, 409)) { "Space reviewer assignment returned HTTP ${reviewer.status}" }
-    val url = review.text("url").ifBlank {
-      review.text("reviewUrl").ifBlank { "$webOrigin/p/${request.repository.owner}/reviews/$reviewId" }
+    var reviewer = assignReviewer(request.reviewer)
+    // A bare value is interpreted as a profile ID. Also accept configured usernames.
+    if (reviewer.status == 404 && ':' !in request.reviewer) {
+      reviewer = assignReviewer("username:${request.reviewer}")
     }
-    return CreatedReview(reviewId, url)
+    expectStatus(reviewer, "Space reviewer assignment", 200, 201)
+    val number = review.number("number")
+    require(number > 0) { "Space code review has no number" }
+    return CreatedReview(reviewId, "$webOrigin/p/${urlPart(request.repository.owner)}/reviews/$number")
+  }
+
+  private fun readBranch(repository: String, branch: String): JsonObject? {
+    val head = if (branch.startsWith("refs/heads/")) branch else "refs/heads/$branch"
+    val response = http.send(id, "GET", "$repository/branches/${urlPart(head)}", requireAuthentication = true)
+    if (response.status == 404) return null
+    expectStatus(response, "Space branch lookup", 200)
+    return if (response.body == JsonNull) null else response.body.jsonObject
+  }
+
+  private fun findReview(root: String, request: CreateReviewRequest, branch: String): JsonObject? {
+    for (state in listOf("Opened", "Closed")) {
+      for (page in 0 until MAX_PAGES) {
+        val response = expectObject(http.send(id, "GET", root, mapOf(
+          "repository" to request.repository.repository,
+          "sourceBranch" to branch,
+          "targetBranch" to request.targetBranch.removePrefix("refs/heads/"),
+          "state" to state,
+          "\$skip" to "${page * PAGE_SIZE}",
+          "\$top" to "$PAGE_SIZE",
+          "\$fields" to "data(review(id,number,branchPair(repository,sourceBranch,targetBranch)))",
+        ), requireAuthentication = true), 200)
+        val entries = response["data"] as? JsonArray ?: error("Space review lookup returned no data array")
+        for (entry in entries) {
+          val review = entry.jsonObject.obj("review")
+          val pair = review.obj("branchPair")
+          if (pair.text("repository") == request.repository.repository &&
+            pair.text("sourceBranch").removePrefix("refs/heads/") == branch &&
+            pair.text("targetBranch").removePrefix("refs/heads/") == request.targetBranch.removePrefix("refs/heads/")) {
+            return review
+          }
+        }
+        if (entries.size < PAGE_SIZE) break
+        check(page < MAX_PAGES - 1) { "Space review lookup exceeds $MAX_PAGES pages" }
+      }
+    }
+    return null
   }
 
   override fun review(reference: ReviewReference): ReviewStatus {
@@ -260,7 +318,7 @@ internal class SpaceReviewApi(
         id,
         "GET",
         "/projects/key:${urlPart(reference.owner)}/code-reviews/${urlPart(reference.id)}",
-        query = mapOf("\$fields" to "state,reason,description,branchPair(isMerged)"),
+        query = mapOf("\$fields" to "state,description,branchPair(isMerged)"),
         requireAuthentication = true,
       ),
       200,
@@ -401,8 +459,16 @@ internal class SpaceReviewApi(
     "/projects/key:${urlPart(repository.owner)}/repositories/${urlPart(repository.repository)}"
 
   private fun expectObject(response: CiHttpResponse, vararg expected: Int): JsonObject {
-    require(response.status in expected.toSet()) { "Space API returned HTTP ${response.status}" }
+    expectStatus(response, "Space API", *expected)
     return response.body as? JsonObject ?: error("Space API did not return an object")
+  }
+
+  private fun expectStatus(response: CiHttpResponse, operation: String, vararg expected: Int) {
+    require(response.status in expected.toSet()) {
+      val body = response.body as? JsonObject
+      val detail = body?.text("error_description").orEmpty().ifBlank { body?.text("message").orEmpty() }
+      "$operation returned HTTP ${response.status}" + detail.take(1000).takeIf(String::isNotBlank)?.let { ": $it" }.orEmpty()
+    }
   }
 
   private companion object {
