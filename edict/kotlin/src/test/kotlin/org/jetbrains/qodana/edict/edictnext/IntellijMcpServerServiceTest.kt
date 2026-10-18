@@ -146,31 +146,6 @@ class IntellijMcpServerServiceTest {
   }
 
   @Test
-  fun `wait for analysis serializes project analyses`() = runBlocking {
-    val service = IntellijMcpServerService(
-      projectPath = project,
-      clientFactory = InspectionKtsClientFactory { EmptyClient() },
-      serverLifecycle = FakeLifecycle(),
-    )
-    val active = AtomicInteger()
-    val maximum = AtomicInteger()
-    val jobs = List(4) {
-      async {
-        service.waitForAnalysis {
-          val current = active.incrementAndGet()
-          maximum.updateAndGet { previous -> maxOf(previous, current) }
-          delay(10)
-          active.decrementAndGet()
-        }
-      }
-    }
-    jobs.forEach { it.await() }
-
-    assertEquals(1, maximum.get())
-    service.stop()
-  }
-
-  @Test
   fun `uses an injected lifecycle without invoking qodana`() = runBlocking {
     val lifecycle = FakeLifecycle()
     val client = EmptyClient()

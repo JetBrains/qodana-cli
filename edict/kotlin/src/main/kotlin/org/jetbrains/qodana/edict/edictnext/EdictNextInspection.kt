@@ -9,7 +9,7 @@ internal class EdictNextInspection(
 ) {
   constructor(server: IntellijMcpServerService) : this(
     client = { server.start() },
-    projectAnalysis = { code -> server.waitForAnalysis { it.analyzeProject(code) } },
+    projectAnalysis = { code -> server.withClient { it.analyzeProject(code) } },
     exampleAnalysis = { code, requests -> server.withClient { it.runExamples(code, requests) } },
   )
 
