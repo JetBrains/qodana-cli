@@ -153,6 +153,31 @@ class EdictYamlConfigurationTest {
   }
 
   @Test
+  fun `distribution signal limit has an independent configurable default`() {
+    assertEquals(DEFAULT_DISTRIBUTION_SIGNAL_COUNT, EdictYamlConfiguration.load(null).distribution.defaultSignalCount)
+    assertEquals(
+      DEFAULT_DISTRIBUTION_SIGNAL_COUNT,
+      EdictYamlConfiguration.load(yaml("edict:\n  distribution: {}\n")).distribution.defaultSignalCount,
+    )
+    val extractionOnly = EdictYamlConfiguration.load(yaml("edict:\n  extraction:\n    defaultSignalCount: 17\n"))
+    assertEquals(17, extractionOnly.extraction.defaultSignalCount)
+    assertEquals(DEFAULT_DISTRIBUTION_SIGNAL_COUNT, extractionOnly.distribution.defaultSignalCount)
+
+    val configured = EdictYamlConfiguration.load(yaml(
+      "edict:\n  extraction:\n    defaultSignalCount: 17\n  distribution:\n    defaultSignalCount: 750\n",
+    ))
+    assertEquals(17, configured.extraction.defaultSignalCount)
+    assertEquals(750, configured.distribution.defaultSignalCount)
+
+    for (count in listOf(0, -1)) {
+      val invalid = assertFailsWith<IllegalArgumentException> {
+        EdictYamlConfiguration.load(yaml("edict:\n  distribution:\n    defaultSignalCount: $count\n"))
+      }
+      assertContains(invalid.message.orEmpty(), "edict.distribution.defaultSignalCount must be at least 1")
+    }
+  }
+
+  @Test
   fun `price reporting is controlled by a boolean switch`() {
     assertTrue(EdictYamlConfiguration.load(yaml("edict:\n  calculatePrice: true\n")).calculatePrice)
     assertFalse(EdictYamlConfiguration.load(yaml("edict:\n  calculatePrice: false\n")).calculatePrice)

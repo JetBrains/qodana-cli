@@ -22,6 +22,7 @@ internal data class EdictConfiguration(
   val ci: EdictCIConfiguration? = null,
   val promotion: PromotionConfiguration? = null,
   val extraction: ExtractionConfiguration = ExtractionConfiguration(),
+  val distribution: DistributionConfiguration = DistributionConfiguration(),
   val generation: GenerationConfiguration = GenerationConfiguration(),
   val calculatePrice: Boolean = false,
   val projectAnalysisTimeoutMinutes: Long = DEFAULT_PROJECT_ANALYSIS_TIMEOUT_MINUTES,
@@ -57,6 +58,19 @@ internal data class ExtractionConfiguration(
 }
 
 internal const val DEFAULT_SIGNAL_COUNT = 100
+
+/** [defaultSignalCount] caps the distribution batch; configured only through Qodana YAML. */
+internal data class DistributionConfiguration(
+  val defaultSignalCount: Int = DEFAULT_DISTRIBUTION_SIGNAL_COUNT,
+) {
+  init {
+    require(defaultSignalCount >= 1) {
+      "edict.distribution.defaultSignalCount must be at least 1: $defaultSignalCount"
+    }
+  }
+}
+
+internal const val DEFAULT_DISTRIBUTION_SIGNAL_COUNT = 300
 
 /**
  * [maxProjectAnalyses] caps the expensive project analysis, and the reviews that follow it, per cluster in one run.
@@ -148,6 +162,7 @@ internal class EdictYaml {
   var ci: EdictCIYaml? = null
   var promotion: PromotionYaml? = null
   var extraction: ExtractionYaml? = null
+  var distribution: DistributionYaml? = null
   var generation: GenerationYaml? = null
   var calculatePrice: Boolean? = null
   var projectAnalysisTimeoutMinutes: Long? = null
@@ -158,6 +173,7 @@ internal class EdictYaml {
     ci = ci?.toConfiguration(),
     promotion = promotion?.toConfiguration(),
     extraction = extraction?.toConfiguration() ?: ExtractionConfiguration(),
+    distribution = distribution?.toConfiguration() ?: DistributionConfiguration(),
     generation = generation?.toConfiguration() ?: GenerationConfiguration(),
     calculatePrice = calculatePrice ?: false,
     projectAnalysisTimeoutMinutes = projectAnalysisTimeoutMinutes ?: DEFAULT_PROJECT_ANALYSIS_TIMEOUT_MINUTES,
@@ -169,6 +185,14 @@ internal class ExtractionYaml {
 
   fun toConfiguration() = ExtractionConfiguration(
     defaultSignalCount = defaultSignalCount ?: DEFAULT_SIGNAL_COUNT,
+  )
+}
+
+internal class DistributionYaml {
+  var defaultSignalCount: Int? = null
+
+  fun toConfiguration() = DistributionConfiguration(
+    defaultSignalCount = defaultSignalCount ?: DEFAULT_DISTRIBUTION_SIGNAL_COUNT,
   )
 }
 

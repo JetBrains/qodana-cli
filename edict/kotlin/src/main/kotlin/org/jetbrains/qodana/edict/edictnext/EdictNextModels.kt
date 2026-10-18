@@ -485,5 +485,4 @@ internal const val EDICT_NEXT_CANDIDATE_SUFFIX: String = ".candidate.kts"
 /** Cluster ids and rule ids share one shape. */
 internal val EDICT_NEXT_KEBAB_CASE: Regex = Regex("[a-z][a-z0-9]*(?:-[a-z0-9]+)*")
 
-internal const val EDICT_NEXT_MAX_INBOX_SIGNALS_PER_RUN: Int = 100
 internal const val EDICT_NEXT_NEIGHBOUR_COUNT: Int = 10

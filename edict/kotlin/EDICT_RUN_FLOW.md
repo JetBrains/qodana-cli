@@ -13,6 +13,8 @@ edict:
   projectAnalysisTimeoutMinutes: 30 # the default: timeout for each whole-project inspection analysis
   extraction:
     defaultSignalCount: 100 # the default: newly extracted Signals per daily run
+  distribution:
+    defaultSignalCount: 300 # the default: inbox Signals per run, independent of extraction
   generation:
     maxProjectAnalyses: 3   # the default: project analyses per cluster in one run
     defaultGenerationCount: 5 # the default: top Pending clusters per run by positive-Signal count
@@ -136,7 +138,8 @@ edict_manager
     - build 10 nearest same-language neighbours per JVM inbox Signal with in-JVM GTE embeddings (`EdictNextNeighbourFinder`);
       vectors are cached in `<state>/embeddings/gte-large-<revision>/`, the model in `<user cache>/JetBrains/Qodana/edict/models/`
   - repeatedly call `edict_next_next_signal`; it returns the complete Signal and neighbouring clusters/inbox Signals
-    - the first call selects the run's batch: up to 100 alphabetical JVM inbox Signals with calculated neighbours
+    - the first call selects the run's batch: alphabetical JVM inbox Signals with calculated neighbours, capped by
+      `edict.distribution.defaultSignalCount` in `qodana.yaml` (300 by default); the tool takes no count argument
   - for every plausible cluster, call `edict_next_get_distribution_context(kind: "cluster", id)` and compare every
     member, including negatives; optionally read a neighbouring Signal (`kind: "signal"`) or its exact revision
   - call `edict_next_add_signal_to_cluster(signalId, clusterId)` with a compatible existing id (requires the context

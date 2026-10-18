@@ -5,11 +5,12 @@ description: Managed worker that promotes eligible generated inspections through
 
 # Inspection promotion
 
-Run only as a delegated managed subagent. Follow [the managed task protocol](../edict_manager/references/task-protocol.md).
+Run only as a delegated managed subagent.
+Follow [the managed task protocol](../edict_manager/references/task-protocol.md).
 Registry ID: `edict-promote`.
 
-Call `edict_promote_clusters` with only your token by default. This promotes every `Generated` cluster having more than
-4 `STRONG` Signals whose current inspection has not already been promoted to the configured target. When the task
+Call `edict_promote_clusters` with only your token by default. This promotes every `Generated` cluster having enough
+`STRONG` Signals whose current inspection has not already been promoted to the configured target. When the task
 explicitly names cluster IDs, pass exactly those IDs as `clusterIds`; the same eligibility rules still apply.
 
 Repository identity, target branch, reviewer, and target inspections directory come from the server's `qodana.yaml`

@@ -162,6 +162,9 @@ class EdictNextMcpToolsetTest {
       val contextSchema = server.tools.getValue("edict_context").tool.inputSchema
       assertEquals(setOf("token"), checkNotNull(contextSchema.properties).keys)
       assertEquals(listOf("token"), contextSchema.required)
+      val distributionSchema = server.tools.getValue("edict_next_next_signal").tool.inputSchema
+      assertTrue(distributionSchema.required.orEmpty().isEmpty())
+      assertTrue(distributionSchema.properties.orEmpty().isEmpty())
       val cleanupSchema = server.tools.getValue("edict_task_cleanup_scratch").tool.inputSchema
       assertEquals(setOf("token", "taskId"), checkNotNull(cleanupSchema.properties).keys)
       assertEquals(listOf("token", "taskId"), cleanupSchema.required)
