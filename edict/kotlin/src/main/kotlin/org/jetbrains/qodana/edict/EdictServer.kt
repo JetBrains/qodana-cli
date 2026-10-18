@@ -74,7 +74,7 @@ internal class EdictServer private constructor(
         val repository = EdictRepository(EdictRepositoryDirectory(layout.stateDirectory))
         val toolset = EdictNextMcpToolset(
           layout, inspectionServer, management,
-          EdictNextDistributionService(repository, layout.neighboursResponsePath),
+          EdictNextDistributionService(repository, layout.neighboursResponsePath, configuration.distribution.defaultSignalCount),
           EdictNextGenerationService(
             repository,
             inspectionServer,
