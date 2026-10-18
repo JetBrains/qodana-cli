@@ -16,8 +16,8 @@ import java.time.Clock
 import java.time.Duration
 import java.time.Instant
 
-internal const val HISTORY_ANALYSIS_COMMIT_DEPTH = 100
-internal const val HISTORY_ANALYSIS_DAY_DEPTH = 90L
+internal const val HISTORY_ANALYSIS_COMMIT_DEPTH = 10000
+internal const val HISTORY_ANALYSIS_DAY_DEPTH = 180L
 
 /** Bounded historical evidence enrichment, independent of inspection generation. */
 internal class EdictNextEnrichmentService(
