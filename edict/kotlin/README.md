@@ -67,6 +67,18 @@ Set `edict.projectAnalysisTimeoutMinutes` in `qodana.yaml` to override the 30-mi
 inspection analysis. The value must be a positive whole number of minutes. Its HTTP request timeout is this value
 plus 10 minutes; other IDE HTTP requests default to 60 minutes.
 
+Distribution uses `edict.distribution.defaultSignalCount` in `qodana.yaml`, defaulting to 300 Signals per run,
+independently of `edict.extraction.defaultSignalCount` (100 by default). The distribution limit can only be set in
+`qodana.yaml`; `edict_next_next_signal` takes no count argument.
+
+```yaml
+edict:
+  extraction:
+    defaultSignalCount: 100
+  distribution:
+    defaultSignalCount: 300
+```
+
 `mcp` serves one shared Streamable HTTP endpoint on loopback port `edict.mcpPort`, so every native
 agent shares one server and one state lock. It fails when `.codex/config.toml` is missing or names
 another port, or when the port is busy; it never moves to another port. State is read from

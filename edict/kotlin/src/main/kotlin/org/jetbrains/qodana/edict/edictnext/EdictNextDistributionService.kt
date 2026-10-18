@@ -2,6 +2,7 @@ package org.jetbrains.qodana.edict.edictnext
 
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import org.jetbrains.qodana.edict.common.DEFAULT_DISTRIBUTION_SIGNAL_COUNT
 import java.nio.file.Path
 import kotlin.io.path.createDirectories
 import kotlin.io.path.writeText
@@ -14,10 +15,10 @@ internal class EdictNextDistributionService(
     private val repository: EdictRepository,
     /** Where the calculated neighbours are dumped for debugging; nothing reads them back. */
     private val neighboursResponsePath: Path,
+    private val defaultSignalCount: Int = DEFAULT_DISTRIBUTION_SIGNAL_COUNT,
 ) {
     private var neighbours: Map<String, EdictNextSignalNeighbours>? = null
     private var batch: DistributionBatch? = null
-    internal var maxInboxSignalsPerRun: Int = EDICT_NEXT_MAX_INBOX_SIGNALS_PER_RUN
 
     suspend fun calculateNeighbours(): EdictNextCalculateNeighboursResponse {
         var state = repository.loadState()
@@ -161,7 +162,7 @@ internal class EdictNextDistributionService(
     private suspend fun selectBatch(): DistributionBatch {
         val neighbours = checkNotNull(neighbours) { "Call edict_next_calculate_neighbours_by_embeddings first" }
         val state = repository.loadState()
-        val signalIds = state.jvmInboxSignalIds.filter(neighbours::containsKey).sorted().take(maxInboxSignalsPerRun)
+        val signalIds = state.jvmInboxSignalIds.filter(neighbours::containsKey).sorted().take(defaultSignalCount)
         return DistributionBatch(state, signalIds.toSet(), neighbours)
     }
 

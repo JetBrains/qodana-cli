@@ -212,7 +212,7 @@ internal class PromotionService(
   }
 
   private companion object {
-    const val MIN_STRONG_SIGNALS = 6
+    const val MIN_STRONG_SIGNALS = 5
     const val MAX_EVIDENCE_CHARS = 32_000
     const val MAX_RATIONALE_CHARS = 4_000
     const val MAX_DECISION_BATCH_SIZE = 10

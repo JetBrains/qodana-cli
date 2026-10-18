@@ -98,7 +98,9 @@ internal class EdictNextMcpToolset(
 
     server.addTool(
       name = "edict_next_next_signal",
-      description = "Return the next alphabetical inbox Signal of this run and its nearest cluster or inbox candidates. The first call selects up to 100 Signals for the run. Call until it returns STOP_DISTRIBUTION.",
+      description = "Return the next alphabetical inbox Signal of this run and its nearest cluster or inbox candidates. " +
+              "The first call selects a batch capped by edict.distribution.defaultSignalCount from qodana.yaml. " +
+              "Call until it returns STOP_DISTRIBUTION; the batch size cannot change after the first call.",
     ) {
       distribution.nextSignal().toToolResult()
     }

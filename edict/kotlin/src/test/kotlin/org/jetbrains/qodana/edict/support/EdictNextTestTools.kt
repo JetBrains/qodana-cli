@@ -45,7 +45,7 @@ internal fun edictNextToolset(
   val repository = EdictRepository(EdictRepositoryDirectory(layout.stateDirectory.createDirectories()))
   return EdictNextMcpToolset(
     layout, inspectionServer, management,
-    EdictNextDistributionService(repository, layout.neighboursResponsePath),
+    EdictNextDistributionService(repository, layout.neighboursResponsePath, configuration.distribution.defaultSignalCount),
     EdictNextGenerationService(
       repository,
       inspectionServer,

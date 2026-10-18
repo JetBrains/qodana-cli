@@ -3,6 +3,9 @@ package org.jetbrains.qodana.edict.edictnext
 import kotlinx.coroutines.runBlocking
 import org.jetbrains.qodana.edict.common.runProcess
 import org.junit.jupiter.api.io.TempDir
+import java.nio.ByteBuffer
+import java.nio.ByteOrder
+import java.nio.file.Files
 import java.nio.file.Path
 import kotlin.io.path.createDirectories
 import kotlin.io.path.exists
@@ -13,11 +16,64 @@ import kotlin.test.assertContains
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
 import kotlin.test.assertFalse
+import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
 
 class EdictNextDistributionServiceTest {
   @TempDir
   lateinit var directory: Path
+
+  @Test
+  fun `default distribution batch can exceed the default extraction target`() = runBlocking {
+    val repository = inboxRepository(101)
+    val distribution = EdictNextDistributionService(repository, directory.resolve("neighbours.json"))
+    assertDistributedCount(repository, distribution, expectedCount = 101)
+  }
+
+  @Test
+  fun `configured distribution limit controls the batch size`() = runBlocking {
+    for (expected in listOf(1, 2, 3)) {
+      val repository = inboxRepository(4, "state-$expected")
+      val distribution = EdictNextDistributionService(repository, directory.resolve("neighbours-$expected.json"), expected)
+      assertDistributedCount(repository, distribution, expectedCount = expected)
+    }
+  }
+
+  private fun inboxRepository(count: Int, name: String = "state"): EdictRepository {
+    val state = directory.resolve(name).createDirectories()
+    runProcess(state, listOf("git", "init", "--quiet"))
+    val repository = EdictRepository(EdictRepositoryDirectory(state))
+    val inbox = repository.paths.inboxDirectory.createDirectories()
+    repeat(count) { index ->
+      val key = SIGNAL_KEY.replace("pr:42:", "pr:${index + 1}:")
+      val id = stableSignalId(key)
+      inbox.resolve("$id.json").writeText(EdictNextJson.encodeToString(signal(id, "Same inspection evidence", "batch", key)))
+    }
+    // Use a cached normalized vector so batch tests do not download or load the embedding model.
+    val vector = ByteBuffer.allocate(EdictNextGteEmbedder.DIMENSION * Float.SIZE_BYTES).order(ByteOrder.LITTLE_ENDIAN)
+    vector.putFloat(1f)
+    Files.write(
+      repository.paths.gteEmbeddingCacheDirectory.createDirectories().resolve("${sha256Hex("Same inspection evidence")}.f32"),
+      vector.array(),
+    )
+    return repository
+  }
+
+  private suspend fun assertDistributedCount(
+    repository: EdictRepository,
+    distribution: EdictNextDistributionService,
+    expectedCount: Int,
+  ) {
+    val initialIds = repository.loadState().inboxSignals.map { it.id }.sorted()
+    distribution.calculateNeighbours()
+    repeat(expectedCount) { index ->
+      val prepared = distribution.nextSignal()
+      assertEquals(initialIds[index], prepared.signalId)
+      distribution.addSignalToCluster(assertNotNull(prepared.signalId), "rule-$index")
+    }
+    assertEquals(EdictNextNextAction.STOP_DISTRIBUTION, distribution.nextSignal().nextAction)
+    assertEquals(initialIds.drop(expectedCount), repository.loadState().inboxSignals.map { it.id }.sorted())
+  }
 
   @Test
   fun `neighbour calculation replaces a re-published clustered Signal and resets generation`() = runBlocking {
