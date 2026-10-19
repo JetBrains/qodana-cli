@@ -77,7 +77,9 @@ repository-wide validation.
     `edict-pr-signal-analysis` -> `edict-next-distribution` -> one `edict-git-history-signal-enrichment` per cluster ->
     parallel top-level `edict-next-cluster-generation` workers -> `edict-promote`
     (`LivePipelineTest`)
-  - stop on any failed or uncompleted task and cancel unstarted dependent stages
+  - stop dependent work on a failed or uncompleted task and cancel unstarted dependent stages; let independent workers
+    finish, then always run selected promotion even after failed/cancelled enrichment or generation or no targets
+  - promotion scans every eligible Generated inspection, including earlier runs; retain upstream failures in the report
   - report the plan path, produced Signal/cluster/inspection ids, Generated `knownProblems`, and Pending/Invalid clusters
 - every delegation, at any depth
   1. parent calls `edict_task_add(token, skill, title)` with a child permitted by the registry
