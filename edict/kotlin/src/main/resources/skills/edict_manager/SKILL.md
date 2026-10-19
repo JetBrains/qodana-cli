@@ -49,13 +49,15 @@ permission to execute stages inline.
    Resolve the delegation's `skillPath` against the installed skills directory (the parent of this skill's directory).
    Include that absolute `SKILL.md` path in the submitted instructions and require reading it before `edict_task_start`.
    Explicit-only children may be absent from the runtime's skill catalog; the file path is authoritative.
-6. Stop on any failed child or uncompleted task. Cancel a lost worker through `edict_task_cancel`, then cancel remaining
-   unstarted dependent stages with an explicit upstream-failure reason. Do not launch them or turn skipped work into
-   success. This leaves the plan terminal for a new request after server restart; a requested retry can still
-   re-delegate failed stages in
-   dependency order. Report the failed task and current plan ID; durable progress is represented by the Edict domain
-   artifacts, not the execution plan.
-7. After all stages complete, read the current plan and report its ID, the produced signal/cluster/inspection IDs,
+6. On a failed child or uncompleted task, stop dependent work. Cancel a lost worker through `edict_task_cancel`, then
+   cancel unstarted dependent stages with an explicit upstream-failure reason. Let independent workers finish and
+   continue independent stages selected by the pipeline. When promotion is included, always delegate `edict-promote`
+   after upstream tasks are terminal, adding its task if needed, even when enrichment or generation failed or was cancelled.
+   Promotion scans eligible Generated inspections independently of this run's generation results, including inspections
+   from earlier runs. Keep failed and cancelled task statuses and reasons; successful promotion does not make the
+   whole pipeline successful. A requested retry can re-delegate failed stages in dependency order. Durable progress
+   is represented by the Edict domain artifacts, not the execution plan.
+7. After all stages are terminal, read the current plan and report its ID, the produced signal/cluster/inspection IDs,
    every stage result including any extraction problem summary, Generated inspections' `knownProblems`, and any Pending
    or Invalid clusters with their reasons. Completion means
    every planned task completed; a Generated inspection additionally requires the generation skill's evidence and
@@ -77,7 +79,7 @@ Every count is an evidence-constrained target: never invent Signals, force unrel
 generation validation, or claim rules or Signals that were not produced. Report each achieved count and any shortfall.
 
 Create and execute these top-level tasks in this stage order; add cluster tasks once their IDs are known and promotion
-after they complete:
+after upstream attempts finish or are cancelled, including when they fail:
 
 1. `edict-pr-signal-analysis`: pass the Signal target and call `edict_fetch_pr_batch` without a selection. The child
    repeatedly extracts and publishes every PR on the next complete uncovered UTC date until it reaches the target.
@@ -99,12 +101,15 @@ after they complete:
    Each enrichment agent directly analyzes all member Signals and historical candidates without child workers.
    Enrich each target with strong historical evidence derived from all its gathered Signals. Wait for all enrichment
    tasks to complete before delegating generation. An empty target list creates no enrichment tasks.
-   A failed or incomplete search blocks generation and promotion.
+   A failed or incomplete search blocks generation; still continue to promotion after settling upstream tasks.
 5. `edict-next-cluster-generation`: launch one top-level task per chosen cluster after history completes, keeping up
    to the concurrency limit active. Use every original and enriched Signal.
-   Pending and Invalid clusters do not block publication.
-6. `edict-promote`: publish every newly eligible Generated inspection through the configured promotion target. Missing
-   CI or promotion configuration is a failed publication prerequisite, not a reason to omit this task.
+   Failed or cancelled generation tasks and Pending or Invalid clusters do not block publication.
+6. `edict-promote`: always attempt publication of every eligible Generated inspection through the configured promotion
+   target, including when enrichment or generation failed, was cancelled, or had no targets. Pass no cluster filter
+   unless the user explicitly restricted publication to particular clusters; eligibility includes inspections from
+   earlier runs. Missing CI or promotion configuration is a failed publication prerequisite, not a reason to omit
+   this task.
 
 Carry a user-provided Signal target into extraction, and a user-provided generation count plus relevant completed-stage
 results into downstream task instructions. For the default pipeline, do not add a generation count: selection must

@@ -17,6 +17,7 @@ import org.jetbrains.qodana.edict.edictnext.EdictNextClusterStatus
 import org.jetbrains.qodana.edict.edictnext.EdictNextFileRevision
 import org.jetbrains.qodana.edict.edictnext.EdictNextJson
 import org.jetbrains.qodana.edict.edictnext.EdictNextLanguage
+import org.jetbrains.qodana.edict.edictnext.EdictNextRepositoryState
 import org.jetbrains.qodana.edict.edictnext.EdictNextSignal
 import org.jetbrains.qodana.edict.edictnext.EdictNextSignalLabel
 import org.jetbrains.qodana.edict.edictnext.EdictNextSignalSource
@@ -26,6 +27,7 @@ import org.jetbrains.qodana.edict.edictnext.EdictRepositoryDirectory
 import org.jetbrains.qodana.edict.edictnext.InspectionPromotion
 import org.jetbrains.qodana.edict.edictnext.PromotionPrState
 import org.jetbrains.qodana.edict.edictnext.sha256Hex
+import org.jetbrains.qodana.edict.support.launch
 import org.junit.jupiter.api.io.TempDir
 import java.nio.file.Path
 import java.time.Clock
@@ -55,16 +57,73 @@ class PromotionServiceTest {
     val repository = repository()
     cluster(repository, "six-strong", 6)
     cluster(repository, "five-strong", 5)
+    cluster(repository, "four-strong", 4)
     cluster(repository, "six-weak", 0, weakSignals = 6)
     cluster(repository, "pending-signals", 6, EdictNextClusterStatus.Pending)
     val provider = FakeProvider()
 
     val result = service(repository, provider).promote()
 
-    assertEquals(listOf("six-strong"), result.created.map { it.targetPath.substringAfterLast('/').removeSuffix(".inspection.kts") })
-    assertEquals(1, provider.ensureCalls)
+    assertEquals(
+      setOf("five-strong", "six-strong"),
+      result.created.map { it.targetPath.substringAfterLast('/').removeSuffix(".inspection.kts") }.toSet(),
+    )
+    assertEquals(2, provider.ensureCalls)
     assertTrue(result.failures.isEmpty())
-    assertEquals(PromotionPrState.ON_REVIEW, repository.loadCluster("six-strong").manifest.promotions.single().state)
+    for (id in listOf("five-strong", "six-strong")) {
+      assertEquals(PromotionPrState.ON_REVIEW, repository.loadCluster(id).manifest.promotions.single().state)
+    }
+  }
+
+  @Test
+  fun `managed promotion publishes eligible inspections despite failed and cancelled upstream tasks`() {
+    val repository = repository()
+    cluster(repository, "earlier-rule", 6)
+    cluster(repository, "new-rule", 6)
+    cluster(repository, "failed-rule", 6, EdictNextClusterStatus.Pending)
+    val provider = FakeProvider()
+    EdictNextRepositoryState.open(repository.paths.root).use { state ->
+      val manager = state.createPlan("Run the daily repository routine", emptyList())
+      val enrichment = state.addTask(manager.token, "edict-git-history-signal-enrichment", "Enrich another rule")
+      val enrichmentWorker = state.launch(manager.token, enrichment.id, enrichment.skill)
+      state.finishTask(enrichmentWorker.token, "failed", "Historical search failed")
+
+      val generation = state.addTask(manager.token, "edict-next-cluster-generation", "Generate failed-rule")
+      val generationWorker = state.launch(manager.token, generation.id, generation.skill)
+      val review = state.addTask(generationWorker.token, "edict-next-inspection-code-review", "Review candidate")
+      val reviewer = state.launch(generationWorker.token, review.id, review.skill)
+      state.finishTask(reviewer.token, "failed", "False positive remains unrecorded")
+      state.finishTask(generationWorker.token, "failed", "Candidate review failed")
+
+      val lost = state.addTask(manager.token, generation.skill, "Generate another rule")
+      state.launch(manager.token, lost.id, lost.skill)
+      state.cancelTask(manager.token, lost.id, "Worker lost")
+      val successful = state.addTask(manager.token, generation.skill, "Generate new-rule")
+      val successfulWorker = state.launch(manager.token, successful.id, successful.skill)
+      state.finishTask(successfulWorker.token, "completed", "Generated new-rule")
+
+      val promotion = state.addTask(manager.token, "edict-promote", "Publish eligible inspections")
+      val worker = state.launch(manager.token, promotion.id, promotion.skill)
+      state.requireSkill(worker.token, setOf("edict-promote"))
+      val result = service(repository, provider).promote()
+
+      assertTrue(result.failures.isEmpty())
+      assertEquals(
+        setOf("inspections/earlier-rule.inspection.kts", "inspections/new-rule.inspection.kts"),
+        result.created.map { it.targetPath }.toSet(),
+      )
+      state.finishTask(worker.token, "completed", "Published earlier-rule and new-rule")
+      val tasks = state.plan()!!.tasks.associateBy { it.id }
+      assertEquals("failed", tasks.getValue(enrichment.id).status)
+      assertEquals("failed", tasks.getValue(generation.id).status)
+      assertEquals("failed", tasks.getValue(review.id).status)
+      assertEquals("cancelled", tasks.getValue(lost.id).status)
+      assertEquals("completed", tasks.getValue(promotion.id).status)
+      assertTrue(repository.loadCluster("failed-rule").manifest.promotions.isEmpty())
+      for (id in listOf("earlier-rule", "new-rule")) {
+        assertEquals(PromotionPrState.ON_REVIEW, repository.loadCluster(id).manifest.promotions.single().state)
+      }
+    }
   }
 
   @Test

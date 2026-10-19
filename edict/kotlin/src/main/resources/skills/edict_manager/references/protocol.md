@@ -41,8 +41,10 @@ A delegating task finishes only after all its descendants complete. When a skill
    check on running children with `edict_plan_get` or `list_agents`.
    When a child completes or fails, read its recorded status and result with `edict_plan_get(taskId)`; without
    `taskId` it returns the whole plan, which you do not need for that.
-   Respect the runtime's concurrency limit and reserve room for descendants. On failure stop dependent work and
-   finish your own task as failed. If spawning
+   Respect the runtime's concurrency limit and reserve room for descendants. On failure stop dependent work;
+   the root manager continues independent stages selected by its pipeline, including promotion after failed
+   enrichment or generation. A managed worker must finish its own task as failed unless its skill explicitly permits
+   tolerating that failure. If spawning
    fails or a worker is lost before finishing (it cannot fetch its assignment, its thread dies, or it stops responding),
    call `edict_task_cancel(token, taskId, result)` with your parent capability. That marks the task `cancelled`,
    revokes it and its descendants, and records your reason. Do not act as its worker. Retry it when your skill still
