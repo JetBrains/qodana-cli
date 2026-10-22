@@ -91,6 +91,10 @@ checks. The candidate counts only once saved. It must declare exactly one
 `localInspection` and provide a lowercase kebab-case `id`, nonblank `name`, and nonblank `htmlDescription` that describe
 the implemented behavior. Do not hard-code example paths, names, text, or ranges.
 
+Set the `InspectionKts` language argument explicitly: `language = "kotlin"` for Kotlin or `language = "JAVA"` for Java,
+matching the cluster's language. Do not omit it or leave it empty. A PSI type guard inside `localInspection` does not
+prevent the inspection engine from processing unrelated languages and discovering injected PSI.
+
 Use the cluster id as the KTS id: validation requires them to match. The initial id is provisional; when old id does not
 reflect the rule, rename the cluster with `edict_next_rename_cluster` and record the old id, new id, and reason via
 edict_next_append_cluster_history.
