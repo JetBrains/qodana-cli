@@ -77,6 +77,20 @@ internal class EdictNextGenerationService(
     return EdictNextMutationResponse(true, "Stored code example '$exampleId' in cluster '$clusterId'")
   }
 
+  suspend fun updateCodeExampleExpectedRange(
+    clusterId: String,
+    exampleId: String,
+    range: EdictNextLineRange,
+  ): EdictNextMutationResponse {
+    val cluster = loadPendingCluster(clusterId)
+    repository.updateCodeExampleExpectedRange(clusterId, exampleId, range)
+    // Project findings and their analysis budget are unchanged, but example results used the old expectation.
+    validatedCandidateDigests.remove(cluster.signalIds)
+    validatedExampleReports.remove(cluster.signalIds)
+    analyzedExampleReports.remove(cluster.signalIds)
+    return EdictNextMutationResponse(true, "Updated only the expected range of code example '$exampleId' to ${range.start}-${range.end}")
+  }
+
   suspend fun assignCodeExample(
     clusterId: String,
     signalId: String,

@@ -23,6 +23,8 @@ your own task token:
 
 - `edict_next_save_candidate_inspection(token, clusterId, inspectionKtsCode)` stores and validates the complete
   candidate;
+- `edict_next_update_code_example_expected_range(token, clusterId, exampleId, startLine, endLine)` corrects only the
+  single expected range of an existing positive example; no other example or Signal changes are permitted;
 - `edict_next_rename_cluster(token, clusterId, newClusterId)` renames the cluster and its candidate, including the
   candidate's `id = "<clusterId>"`; use the new id in every later call;
 - `edict_next_append_cluster_history(token, clusterId, entry)` appends an operational decision to `history.md`;
@@ -135,6 +137,15 @@ limitation: record it in history and do not regenerate for it. Weak failures nev
 transition.
 
 A cycle is cheap, so repeat it as often as needed. Each failed step sends you straight back to repair and regeneration:
+
+If an example expects the wrong location, independently verify the intended target against its unchanged source and
+the supporting Signals (including exact source revisions when needed). You may correct only its `expectedRanges` using
+`edict_next_update_code_example_expected_range`, without another overseer pass. Do not move or widen the range merely
+to match candidate output; the correction must preserve the same semantic target. Record the example id, old and new
+ranges, and source-based justification in history. Require `edict_next_validate_cluster_examples` to succeed, then save
+and validate the candidate again and restart shallow review. This permission does not allow changing example source,
+id, file name, label, Signal evidence or assignments, or adding or deleting examples. If repair needs any of those
+changes, finalise `Pending` with the concrete reason.
 
 1. Submit the complete candidate with `edict_next_save_candidate_inspection`. It always stores the candidate as the
    latest attempt, then compiles it, checks its metadata against the cluster, and runs every example: every strong
