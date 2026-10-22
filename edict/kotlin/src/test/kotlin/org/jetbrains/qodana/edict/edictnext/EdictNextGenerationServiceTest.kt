@@ -2,6 +2,8 @@ package org.jetbrains.qodana.edict.edictnext
 
 import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.JsonPrimitive
+import kotlinx.serialization.json.jsonObject
 import org.jetbrains.qodana.edict.common.runProcess
 import org.jetbrains.qodana.edict.common.GitRepository
 import org.jetbrains.qodana.edict.history.enrichment.EdictNextEnrichmentService
@@ -686,6 +688,92 @@ class EdictNextGenerationServiceTest {
       generation.saveCodeExample("busy-wait", "extra", EdictNextJson.encodeToString(withoutRange), "class Extra {}")
     }
     assertFalse(repository.loadCluster("busy-wait").examples.any { it.metadata.id == "extra" })
+  }
+
+  @Test
+  fun `correcting an expected range preserves every other field source and assignment`() = withGeneration { generation, repository ->
+    val original = repository.loadCluster("busy-wait").examples.single()
+    repository.saveCodeExample("busy-wait", original.metadata.id, original.metadata, "class Example {\n  void work() {}\n}")
+    val before = repository.loadCluster("busy-wait")
+    val example = before.examples.single()
+    val metadata = JsonObject(EdictNextJson.parseToJsonElement(example.directory.metadataPath.readText()).jsonObject +
+      ("futureMetadata" to JsonPrimitive("preserve me")))
+    example.directory.metadataPath.writeText(metadata.toString())
+    example.directory.projectDirectory.resolve("support.txt").writeText("keep the entire example project")
+    fun otherFiles() = Files.walk(before.directory.root).use { paths ->
+      paths.filter { it.isRegularFile() && it != example.directory.metadataPath }
+        .map { it to Files.readAllBytes(it).toList() }.toList().toMap()
+    }
+    val files = otherFiles()
+
+    assertTrue(generation.updateCodeExampleExpectedRange("busy-wait", example.metadata.id, EdictNextLineRange(2, 2)).success)
+
+    val after = repository.loadCluster("busy-wait")
+    assertEquals(before.manifest, after.manifest)
+    assertEquals(before.signals, after.signals)
+    assertEquals(listOf(example.metadata.copy(expectedRanges = listOf(EdictNextLineRange(2, 2)))), after.examples.map { it.metadata })
+    val updated = EdictNextJson.parseToJsonElement(example.directory.metadataPath.readText()).jsonObject
+    assertEquals(metadata - "expectedRanges", updated - "expectedRanges")
+    assertEquals(files, otherFiles())
+  }
+
+  @Test
+  fun `range correction rejects invalid locations negative examples missing examples and non Pending clusters`() = withGeneration { generation, repository ->
+    val before = repository.loadCluster("busy-wait")
+    val example = before.examples.single()
+    val originalMetadata = example.directory.metadataPath.readText()
+    for (range in listOf(EdictNextLineRange(0, 1), EdictNextLineRange(1, 0), EdictNextLineRange(2, 2))) {
+      assertFailsWith<IllegalArgumentException> {
+        generation.updateCodeExampleExpectedRange("busy-wait", example.metadata.id, range)
+      }
+      assertEquals(originalMetadata, example.directory.metadataPath.readText())
+    }
+    assertFailsWith<IllegalStateException> {
+      generation.updateCodeExampleExpectedRange("busy-wait", "missing", EdictNextLineRange(1, 1))
+    }
+    assertEquals(before.examples, repository.loadCluster("busy-wait").examples)
+    val negative = EdictNextCodeExampleMetadata("negative", "Negative.java", EdictNextSignalLabel.NEGATIVE)
+    repository.saveCodeExample("busy-wait", negative.id, negative, "class Negative {}")
+    assertFailsWith<IllegalArgumentException> {
+      generation.updateCodeExampleExpectedRange("busy-wait", negative.id, EdictNextLineRange(1, 1))
+    }
+    assertEquals(negative, repository.loadCluster("busy-wait").examples.single { it.metadata.id == negative.id }.metadata)
+    before.directory.manifestPath.writeText(EdictNextJson.encodeToString(before.manifest.copy(status = EdictNextClusterStatus.Generated)))
+    assertFailsWith<IllegalArgumentException> {
+      generation.updateCodeExampleExpectedRange("busy-wait", example.metadata.id, EdictNextLineRange(1, 1))
+    }
+    assertEquals(originalMetadata, example.directory.metadataPath.readText())
+  }
+
+  @Test
+  fun `range correction requires fresh validation and review results without resetting the analysis budget`() = withGeneration { generation, repository ->
+    val example = repository.loadCluster("busy-wait").examples.single()
+    repository.saveCodeExample("busy-wait", example.metadata.id, example.metadata, "class Example {\n}")
+    val code = "// busy-wait report findings=1"
+    val scratch = directory.resolve("scratch").toString()
+    val tp = EdictNextReviewedFinding("src/Found.java", 1, EdictNextFindingClassification.TP, example.metadata.id)
+    generation.getInspectionAction("busy-wait")
+    assertTrue(generation.saveCandidateInspection("busy-wait", code).overallSuccess)
+    assertEquals(1, generation.getNewInspectionResults("busy-wait", scratch).remainingProjectAnalyses)
+    assertTrue(generation.recordWeakReview("busy-wait", listOf(tp)).success)
+    assertTrue(generation.recordEvaluation("busy-wait").success)
+
+    generation.updateCodeExampleExpectedRange("busy-wait", example.metadata.id, EdictNextLineRange(2, 2))
+    assertFailsWith<IllegalStateException> { generation.getNewInspectionResults("busy-wait", scratch) }
+    assertFailsWith<IllegalArgumentException> { generation.recordWeakReview("busy-wait", listOf(tp)) }
+    assertFalse(generation.finaliseCluster("busy-wait", EdictNextClusterStatus.Generated, "Stale evaluation").success)
+    assertFalse(generation.saveCandidateInspection("busy-wait", code).overallSuccess)
+
+    // A source-based correction restores the declaration line; the same candidate now passes without a workaround.
+    generation.updateCodeExampleExpectedRange("busy-wait", example.metadata.id, EdictNextLineRange(1, 1))
+    assertTrue(generation.validateClusterExamples("busy-wait").success)
+    assertFailsWith<IllegalStateException> { generation.getNewInspectionResults("busy-wait", scratch) }
+    assertTrue(generation.saveCandidateInspection("busy-wait", code).overallSuccess)
+    assertEquals(0, generation.getNewInspectionResults("busy-wait", scratch).remainingProjectAnalyses)
+    assertTrue(generation.recordWeakReview("busy-wait", listOf(tp)).success)
+    assertTrue(generation.recordEvaluation("busy-wait").success)
+    assertTrue(generation.finaliseCluster("busy-wait", EdictNextClusterStatus.Generated, "Corrected only the expected location").success)
+    assertEquals(listOf("busy-wait", "busy-wait"), analyses)
   }
 
   private fun withGeneration(test: suspend (EdictNextGenerationService, EdictRepository) -> Unit) = runBlocking {
