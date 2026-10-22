@@ -36,9 +36,11 @@ to the later review. Check only:
    explicit `HighlightDisplayLevel` import. Unresolved references are handled conservatively, without exceptions or
    reports. Reject file or network I/O, reflection, threads, global mutable state, swallowed cancellation, and
    exceptions used as control flow.
-4. **Metadata.** The id is lowercase kebab-case; the name, message, and `htmlDescription` are nonblank, contain no
-   placeholders, and name the same problem the implementation reports. Do not compare their scope in detail: a
-   description broader or narrower than the implementation is not a finding.
+4. **Metadata.** Require an explicit `InspectionKts` argument `language = "kotlin"` for Kotlin or `language = "JAVA"` for
+   Java, consistent with the PSI the candidate inspects. Reject an omitted, empty, or mismatched language; a PSI type
+   guard inside `localInspection` does not replace this metadata. The id is lowercase kebab-case; the name, message,
+   and `htmlDescription` are nonblank, contain no placeholders, and name the same problem the implementation reports.
+   Do not compare their scope in detail: a description broader or narrower than the implementation is not a finding.
 
 ## Output
 
