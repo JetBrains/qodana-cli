@@ -67,6 +67,7 @@ class EdictNextMcpToolsetTest {
       "edict_task_cancel",
       "edict_task_cleanup_scratch",
       "edict_next_save_code_example",
+      "edict_next_update_code_example_expected_range",
       "edict_next_assign_code_example",
       "edict_next_delete_code_example",
       "edict_next_save_candidate_inspection",
@@ -371,6 +372,116 @@ class EdictNextMcpToolsetTest {
       )
       generation.selectGenerationClusters()
       assertTrue(generation.appendHistory("string-equality", "Generate from the accepted evidence").success)
+    }
+  }
+
+  @Test
+  fun `generator can correct only an expected range and cannot edit or reassign examples`() = runBlocking {
+    val project = gitFixture(directory.resolve("project"))
+    val layout = EdictLayout(project.root, directory.resolve("state"))
+    EdictNextRepositoryState.open(layout.stateDirectory).use { store ->
+      val repository = EdictRepository(EdictRepositoryDirectory(store.root))
+      val signal = fixtureSignals(project).first()
+      Files.createDirectories(repository.paths.inboxDirectory)
+      Files.writeString(repository.paths.inboxDirectory.resolve("${signal.id}.json"), EdictNextJson.encodeToString(signal))
+      repository.addSignalToCluster(signal.id, "string-equality")
+      val example = EdictNextCodeExampleMetadata("public-helper", "Example.java", EdictNextSignalLabel.POSITIVE, listOf(EdictNextLineRange(2, 2)))
+      val source = "class Example {\n}"
+      repository.saveCodeExample("string-equality", example.id, example, source)
+      repository.assignCodeExample("string-equality", signal.id, example.id)
+      val before = repository.loadCluster("string-equality")
+      val plan = store.createPlan("Generate", listOf(
+        EdictNextRepositoryState.Step("edict-next-cluster-generation", "Generate string-equality"),
+        EdictNextRepositoryState.Step("edict-git-history-signal-enrichment", "Find evidence"),
+      ))
+      val generator = store.launch(plan.token, plan.plan.tasks[0].id, "edict-next-cluster-generation")
+      val unrelated = store.launch(plan.token, plan.plan.tasks[1].id, "edict-git-history-signal-enrichment")
+      val tool = "edict_next_update_code_example_expected_range"
+      val management = EdictManagementService(store, layout)
+      val server = edictNextToolset(layout, management).createServer()
+      val schema = server.tools.getValue(tool).tool.inputSchema
+      assertEquals(setOf("token", "clusterId", "exampleId", "startLine", "endLine"), checkNotNull(schema.properties).keys)
+      assertEquals(listOf("token", "clusterId", "exampleId", "startLine", "endLine"), schema.required)
+      fun arguments(token: String) = buildJsonObject {
+        put("token", token)
+        put("clusterId", "string-equality")
+        put("exampleId", example.id)
+        put("startLine", 1)
+        put("endLine", 1)
+      }
+      val base = arguments(generator.token)
+      val denied = mutableListOf(
+        tool to arguments(plan.token),
+        tool to arguments(unrelated.token),
+        tool to JsonObject(base - "endLine"),
+        tool to JsonObject(base + ("startLine" to JsonPrimitive("not a line"))),
+        "edict_next_save_code_example" to buildJsonObject {
+          put("token", generator.token)
+          put("clusterId", "string-equality")
+          put("exampleId", example.id)
+          put("metadataJson", EdictNextJson.encodeToString(example.copy(label = EdictNextSignalLabel.NEGATIVE)))
+          put("sourceCode", "class Replaced {}")
+        },
+        "edict_next_assign_code_example" to buildJsonObject {
+          put("token", generator.token)
+          put("clusterId", "string-equality")
+          put("signalId", signal.id)
+          put("exampleId", example.id)
+        },
+        "edict_next_delete_code_example" to buildJsonObject {
+          put("token", generator.token)
+          put("clusterId", "string-equality")
+          put("exampleId", example.id)
+        },
+      )
+      for (field in listOf("sourceCode", "metadataJson", "label", "fileName", "signalId", "expectedRanges")) {
+        denied += tool to JsonObject(base + (field to JsonPrimitive("must not change")))
+      }
+      val calls = denied + (tool to base)
+      val input = listOf(
+        """{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2025-03-26","capabilities":{},"clientInfo":{"name":"unit","version":"1"}}}""",
+        """{"jsonrpc":"2.0","method":"notifications/initialized"}""",
+      ) + calls.mapIndexed { index, (name, args) ->
+        buildJsonObject {
+          put("jsonrpc", "2.0")
+          put("id", index + 2)
+          put("method", "tools/call")
+          put("params", buildJsonObject { put("name", name); put("arguments", args) })
+        }.toString()
+      }
+      val responsesReceived = CountDownLatch(1)
+      val output = object : ByteArrayOutputStream() {
+        @Synchronized
+        override fun write(bytes: ByteArray, offset: Int, length: Int) {
+          super.write(bytes, offset, length)
+          val ids = toString(Charsets.UTF_8).substringBeforeLast('\n', "").lineSequence().filter(String::isNotBlank)
+            .map { wireJson.parseToJsonElement(it).jsonObject["id"].toString() }.toSet()
+          if ((1..calls.size + 1).all { it.toString() in ids }) responsesReceived.countDown()
+        }
+      }
+      val transport = StdioServerTransport(
+        input = DelayedEofInputStream(ByteArrayInputStream(input.joinToString("\n", postfix = "\n").encodeToByteArray())) {
+          check(responsesReceived.await(10, TimeUnit.SECONDS)) { "Timed out waiting for range-correction responses" }
+        }.asSource().buffered(),
+        output = output.asSink().buffered(),
+      )
+      val closed = CompletableDeferred<Unit>()
+      transport.onClose { closed.complete(Unit) }
+      server.createSession(transport)
+      closed.await()
+      val responses = output.toString(Charsets.UTF_8).lineSequence().filter(String::isNotBlank)
+        .map { wireJson.parseToJsonElement(it).jsonObject }.associateBy { it["id"].toString() }
+      for (index in denied.indices) {
+        assertTrue(responses.getValue((index + 2).toString()).obj("result").flag("isError") == true, "Denied call $index")
+      }
+      val result = responses.getValue((calls.size + 1).toString()).obj("result")
+      assertFalse(result.flag("isError") == true)
+      assertTrue(result.obj("structuredContent").flag("success") == true)
+      val after = repository.loadCluster("string-equality")
+      assertEquals(before.manifest, after.manifest)
+      assertEquals(before.signals, after.signals)
+      assertEquals(source, after.examples.single().code)
+      assertEquals(example.copy(expectedRanges = listOf(EdictNextLineRange(1, 1))), after.examples.single().metadata)
     }
   }
 

@@ -5,6 +5,7 @@ import kotlinx.coroutines.withContext
 import kotlinx.serialization.SerializationStrategy
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
+import kotlinx.serialization.json.encodeToJsonElement
 import kotlinx.serialization.json.jsonObject
 import org.jetbrains.qodana.edict.common.GitRepository
 import java.nio.file.Files
@@ -120,6 +121,26 @@ internal class EdictRepository(val paths: EdictRepositoryDirectory) {
     finally {
       temporaryRoot.toFile().deleteRecursively()
     }
+  }
+
+  /** Corrects only the expected location, preserving the source and every other stored metadata field. */
+  suspend fun updateCodeExampleExpectedRange(clusterId: String, exampleId: String, range: EdictNextLineRange) {
+    val cluster = loadCluster(clusterId)
+    require(cluster.manifest.status == EdictNextClusterStatus.Pending) { "Cluster '$clusterId' is not Pending" }
+    val example = cluster.examples.singleOrNull { it.metadata.id == exampleId }
+                  ?: error("Code example '$exampleId' does not belong to cluster '$clusterId'")
+    require(example.metadata.label == EdictNextSignalLabel.POSITIVE) {
+      "Only positive examples have an expected range to correct"
+    }
+    val metadata = example.metadata.copy(expectedRanges = listOf(range))
+    val validation = validateCodeExample(example.directory, metadata, example.sourcePath, example.code)
+    require(validation.success) { validation.summary + ": " + validation.issues.joinToString("; ") }
+    val document = EdictNextJson.parseToJsonElement(example.directory.metadataPath.readText()).jsonObject
+    writeAtomically(
+      example.directory.metadataPath,
+      JsonObject(document + ("expectedRanges" to EdictNextJson.encodeToJsonElement(listOf(range)))),
+      JsonObject.serializer(),
+    )
   }
 
   fun assignCodeExample(clusterId: String, signalId: String, exampleId: String) {

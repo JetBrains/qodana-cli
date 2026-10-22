@@ -204,6 +204,34 @@ internal class EdictNextMcpToolset(
     }
 
     server.addTool(
+      name = "edict_next_update_code_example_expected_range",
+      description = "Correct only the single expected line range of an existing positive example in a Pending cluster. " +
+              "Generation workers only; source, labels, other metadata, and Signal assignments cannot change. " +
+              "Verify the location from the evidence, record the correction in history, then validate the candidate again.",
+      inputSchema = toolSchema(
+        required = listOf("token", "clusterId", "exampleId", "startLine", "endLine"),
+        "token" to property("string", "Your delegated managed-task token"),
+        "clusterId" to property("string", "Pending cluster chosen for generation"),
+        "exampleId" to property("string", "Existing positive example id in the cluster"),
+        "startLine" to property("integer", "Corrected 1-based first expected line"),
+        "endLine" to property("integer", "Corrected 1-based last expected line, inclusive"),
+      ),
+    ) { request ->
+      management.requireSkill(request.requireString("token"), "edict-next-cluster-generation")
+      require(request.arguments.orEmpty().keys.all { it in setOf("token", "clusterId", "exampleId", "startLine", "endLine") }) {
+        "Only the expected range may be changed; unsupported arguments"
+      }
+      generation.updateCodeExampleExpectedRange(
+        request.requireString("clusterId"),
+        request.requireString("exampleId"),
+        EdictNextLineRange(
+          request.optionalInt("startLine") ?: error("'startLine' is required"),
+          request.optionalInt("endLine") ?: error("'endLine' is required"),
+        ),
+      ).toToolResult()
+    }
+
+    server.addTool(
       name = "edict_next_assign_code_example",
       description = "Assign a structurally valid stored example to one persisted cluster Signal. Only syntheticExampleId is changed.",
       inputSchema = stringArguments(
