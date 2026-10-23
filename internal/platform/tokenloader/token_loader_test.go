@@ -91,6 +91,9 @@ func TestIsCloudTokenRequired(t *testing.T) {
 }
 
 func TestLoadCloudUploadToken(t *testing.T) {
+	clearTokenEnv(t)
+	qdenv.InitializeQodanaGlobalEnv(qdenv.EmptyEnvProvider())
+
 	t.Run("token from loader", func(t *testing.T) {
 		loader := &mockTokenLoader{
 			qodanaToken: "test-token",

@@ -61,9 +61,6 @@ type QodanaYaml struct {
 	// IDE to run.
 	Ide string `yaml:"ide,omitempty"`
 
-	// ProjectSlug identifies the Qodana Cloud project (team-slug:project-slug) for QODANA_ORG_TOKEN exchange.
-	ProjectSlug string `yaml:"projectSlug,omitempty"`
-
 	// Bootstrap contains a command to run in the container before the analysis starts.
 	Bootstrap string `yaml:"bootstrap,omitempty"`
 

@@ -82,7 +82,6 @@ func getInvocationProperties(resultsDir string) *sarif.PropertyBag {
 
 func runQodanaLocal(c corescan.Context) (int, error) {
 	writeProperties(c)
-	setLocalUploadToken(c)
 	args := getIdeRunCommand(c)
 	ideProcess, err := exec.ExecWithTimeout(
 		".",
@@ -102,18 +101,6 @@ func runQodanaLocal(c corescan.Context) (int, error) {
 	}
 	postAnalysis(c)
 	return res, err
-}
-
-// setLocalUploadToken passes the resolved upload token to the locally launched linter, which inherits the CLI env.
-// The token may come from the keyring or QODANA_ORG_TOKEN exchange, not only from QODANA_TOKEN env.
-func setLocalUploadToken(c corescan.Context) {
-	token := c.QodanaUploadToken()
-	if token == "" || os.Getenv(qdenv.QodanaToken) != "" {
-		return
-	}
-	if err := os.Setenv(qdenv.QodanaToken, token); err != nil {
-		log.Fatal(err)
-	}
 }
 
 func getIdeRunCommand(c corescan.Context) []string {

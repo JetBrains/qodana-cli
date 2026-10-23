@@ -26,17 +26,12 @@ import (
 
 	"github.com/JetBrains/qodana-cli/internal/cloud"
 	"github.com/JetBrains/qodana-cli/internal/platform/qdenv"
-	"github.com/JetBrains/qodana-cli/internal/platform/qdyaml"
 	log "github.com/sirupsen/logrus"
 )
 
 // projectSlugPartPattern matches the team or the project part of a project slug.
 // All allowed characters are ASCII, so the length is counted in characters.
 var projectSlugPartPattern = regexp.MustCompile(`^[A-Za-z0-9 ._-]{3,64}$`)
-
-// tokenFromExchange is true when QODANA_TOKEN was obtained by exchanging QODANA_ORG_TOKEN.
-// Such a token is short-lived, so it is never saved to the keyring.
-var tokenFromExchange = false
 
 // projectTokenTtl is the lifetime of a project token obtained via QODANA_ORG_TOKEN.
 const projectTokenTtl = 6 * time.Hour
@@ -46,8 +41,8 @@ var exchangeOrgToken = func(orgToken string, projectQualifiedSlug string) (strin
 	return cloud.GetCloudApiEndpoints().NewPublicApiClient(orgToken).RequestProjectToken(projectQualifiedSlug, projectTokenTtl)
 }
 
-// ValidateProjectSlug checks that a project slug has the form team-slug:project-slug.
-func ValidateProjectSlug(projectSlug string) error {
+// validateProjectSlug checks that a project slug has the form team-slug:project-slug.
+func validateProjectSlug(projectSlug string) error {
 	parts := strings.Split(projectSlug, ":")
 	if len(parts) != 2 {
 		return fmt.Errorf(
@@ -67,25 +62,21 @@ func ValidateProjectSlug(projectSlug string) error {
 }
 
 // InitializeQodanaGlobalEnv initializes the global env and resolves QODANA_ORG_TOKEN into QODANA_TOKEN if it is set.
-func InitializeQodanaGlobalEnv(provider qdenv.EnvProvider, projectDir string, configName string) {
+// Use it only for commands that talk to Qodana Cloud: the exchange requires a connection.
+func InitializeQodanaGlobalEnv(provider qdenv.EnvProvider) {
 	qdenv.InitializeQodanaGlobalEnv(provider)
-	ResolveOrgToken(projectDir, configName)
-}
-
-// ResolveOrgToken exchanges QODANA_ORG_TOKEN for a project token and stores it as QODANA_TOKEN in the global env.
-// Does nothing if QODANA_ORG_TOKEN is not set. Must be called right after qdenv.InitializeQodanaGlobalEnv.
-func ResolveOrgToken(projectDir string, configName string) {
-	if err := resolveOrgToken(projectDir, configName); err != nil {
+	if err := resolveOrgToken(); err != nil {
 		log.Fatal(err)
 	}
 }
 
-func resolveOrgToken(projectDir string, configName string) error {
-	tokenFromExchange = false
+// resolveOrgToken exchanges QODANA_ORG_TOKEN for a project token and stores it as QODANA_TOKEN in the global env.
+// Does nothing if QODANA_ORG_TOKEN is not set.
+func resolveOrgToken() error {
 	orgToken := qdenv.GetQodanaGlobalEnv(qdenv.QodanaOrgToken)
 	if orgToken == "" {
-		if qdenv.GetQodanaGlobalEnv(qdenv.QodanaProjectSlug) != "" {
-			log.Debugf("%s is set without %s, ignoring it", qdenv.QodanaProjectSlug, qdenv.QodanaOrgToken)
+		if qdenv.GetQodanaGlobalEnv(qdenv.QodanaProject) != "" {
+			log.Debugf("%s is set without %s, ignoring it", qdenv.QodanaProject, qdenv.QodanaOrgToken)
 		}
 		return nil
 	}
@@ -97,16 +88,16 @@ func resolveOrgToken(projectDir string, configName string) error {
 		)
 	}
 
-	projectSlug, source := getProjectSlug(projectDir, configName)
+	projectSlug := qdenv.GetQodanaGlobalEnv(qdenv.QodanaProject)
 	if projectSlug == "" {
 		return fmt.Errorf(
-			"%s is set, but no project is specified: set %s or 'projectSlug:' in qodana.yaml (team-slug:project-slug)",
+			"%s is set, but no project is specified: set %s (team-slug:project-slug)",
 			qdenv.QodanaOrgToken,
-			qdenv.QodanaProjectSlug,
+			qdenv.QodanaProject,
 		)
 	}
-	if err := ValidateProjectSlug(projectSlug); err != nil {
-		return fmt.Errorf("%s: %w", source, err)
+	if err := validateProjectSlug(projectSlug); err != nil {
+		return fmt.Errorf("%s: %w", qdenv.QodanaProject, err)
 	}
 
 	projectToken, err := exchangeOrgToken(orgToken, projectSlug)
@@ -117,7 +108,6 @@ func resolveOrgToken(projectDir string, configName string) error {
 		return fmt.Errorf("token exchange for project '%s' failed: %w", projectSlug, err)
 	}
 	qdenv.SetQodanaGlobalEnv(qdenv.QodanaToken, projectToken)
-	tokenFromExchange = true
 	// child processes (linter, git, bootstrap, publisher) inherit the env: they must never see the org token
 	if err := os.Unsetenv(qdenv.QodanaOrgToken); err != nil {
 		return err
@@ -126,14 +116,9 @@ func resolveOrgToken(projectDir string, configName string) error {
 	return nil
 }
 
-// getProjectSlug returns the project slug and where it came from: env takes precedence over qodana.yaml.
-func getProjectSlug(projectDir string, configName string) (projectSlug string, source string) {
-	if projectSlug = qdenv.GetQodanaGlobalEnv(qdenv.QodanaProjectSlug); projectSlug != "" {
-		return projectSlug, qdenv.QodanaProjectSlug
-	}
-	yamlPath := qdyaml.GetLocalNotEffectiveQodanaYamlFullPath(projectDir, configName)
-	if yamlPath == "" {
-		return "", ""
-	}
-	return qdyaml.LoadQodanaYamlByFullPath(yamlPath).ProjectSlug, yamlPath
+// isTokenFromExchange reports whether QODANA_TOKEN was obtained by exchanging QODANA_ORG_TOKEN.
+// Such a token is short-lived, so it is never saved to the keyring.
+// Both tokens can't be set at once: resolveOrgToken fails in that case.
+func isTokenFromExchange() bool {
+	return qdenv.GetQodanaGlobalEnv(qdenv.QodanaOrgToken) != ""
 }

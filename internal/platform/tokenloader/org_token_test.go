@@ -18,7 +18,6 @@ package tokenloader
 
 import (
 	"os"
-	"path/filepath"
 	"strings"
 	"testing"
 
@@ -54,7 +53,7 @@ func TestValidateProjectSlug(t *testing.T) {
 	} {
 		t.Run(
 			testData.identifier, func(t *testing.T) {
-				err := ValidateProjectSlug(testData.identifier)
+				err := validateProjectSlug(testData.identifier)
 				if testData.valid && err != nil {
 					t.Errorf("expected '%s' to be valid, got %v", testData.identifier, err)
 				}
@@ -75,17 +74,17 @@ type exchangeCall struct {
 	slug     string
 }
 
-func setupOrgTokenTest(t *testing.T, yaml string, env ...string) (string, *[]exchangeCall) {
+// clearTokenEnv makes the test independent of tokens set in the developer's environment.
+func clearTokenEnv(t *testing.T) {
 	t.Helper()
-	for _, key := range []string{qdenv.QodanaToken, qdenv.QodanaOrgToken, qdenv.QodanaProjectSlug} {
+	for _, key := range []string{qdenv.QodanaToken, qdenv.QodanaOrgToken, qdenv.QodanaProject} {
 		t.Setenv(key, "")
 	}
-	projectDir := t.TempDir()
-	if yaml != "" {
-		if err := os.WriteFile(filepath.Join(projectDir, "qodana.yaml"), []byte(yaml), 0o644); err != nil {
-			t.Fatal(err)
-		}
-	}
+}
+
+func setupOrgTokenTest(t *testing.T, env ...string) *[]exchangeCall {
+	t.Helper()
+	clearTokenEnv(t)
 	qdenv.InitializeQodanaGlobalEnv(envProvider(env))
 
 	var calls []exchangeCall
@@ -97,19 +96,13 @@ func setupOrgTokenTest(t *testing.T, yaml string, env ...string) (string, *[]exc
 		}
 		return "project-token", nil
 	}
-	t.Cleanup(
-		func() {
-			exchangeOrgToken = original
-			tokenFromExchange = false
-		},
-	)
-	return projectDir, &calls
+	t.Cleanup(func() { exchangeOrgToken = original })
+	return &calls
 }
 
 func TestResolveOrgToken(t *testing.T) {
 	for _, testData := range []struct {
 		name          string
-		yaml          string
 		env           []string
 		expectedCall  *exchangeCall
 		expectedToken string
@@ -122,27 +115,13 @@ func TestResolveOrgToken(t *testing.T) {
 		},
 		{
 			name:          "project without org token is ignored",
-			env:           []string{"QODANA_TOKEN=token", "QODANA_PROJECT_SLUG=team:project"},
+			env:           []string{"QODANA_TOKEN=token", "QODANA_PROJECT=team:project"},
 			expectedToken: "token",
 		},
 		{
 			name:          "org token and project from env",
-			env:           []string{"QODANA_ORG_TOKEN=org", "QODANA_PROJECT_SLUG=team:project"},
+			env:           []string{"QODANA_ORG_TOKEN=org", "QODANA_PROJECT=team:project"},
 			expectedCall:  &exchangeCall{"org", "team:project"},
-			expectedToken: "project-token",
-		},
-		{
-			name:          "org token and project from yaml",
-			yaml:          "version: \"1.0\"\nprojectSlug: My Team:my-project\n",
-			env:           []string{"QODANA_ORG_TOKEN=org"},
-			expectedCall:  &exchangeCall{"org", "My Team:my-project"},
-			expectedToken: "project-token",
-		},
-		{
-			name:          "env project overrides yaml",
-			yaml:          "projectSlug: yaml-team:yaml-project\n",
-			env:           []string{"QODANA_ORG_TOKEN=org", "QODANA_PROJECT_SLUG=env-team:env-project"},
-			expectedCall:  &exchangeCall{"org", "env-team:env-project"},
 			expectedToken: "project-token",
 		},
 		{
@@ -152,7 +131,7 @@ func TestResolveOrgToken(t *testing.T) {
 		},
 		{
 			name:          "both tokens",
-			env:           []string{"QODANA_TOKEN=token", "QODANA_ORG_TOKEN=org", "QODANA_PROJECT_SLUG=team:project"},
+			env:           []string{"QODANA_TOKEN=token", "QODANA_ORG_TOKEN=org", "QODANA_PROJECT=team:project"},
 			errorContains: "only one of them",
 		},
 		{
@@ -161,28 +140,22 @@ func TestResolveOrgToken(t *testing.T) {
 			errorContains: "no project is specified",
 		},
 		{
-			name:          "invalid project from env",
-			env:           []string{"QODANA_ORG_TOKEN=org", "QODANA_PROJECT_SLUG=team/project"},
-			errorContains: "QODANA_PROJECT_SLUG: project slug",
-		},
-		{
-			name:          "invalid project from yaml",
-			yaml:          "projectSlug: team:pro@ject\n",
-			env:           []string{"QODANA_ORG_TOKEN=org"},
-			errorContains: "qodana.yaml: project slug",
+			name:          "invalid project",
+			env:           []string{"QODANA_ORG_TOKEN=org", "QODANA_PROJECT=team/project"},
+			errorContains: "QODANA_PROJECT: project slug",
 		},
 		{
 			name:          "declined org token",
-			env:           []string{"QODANA_ORG_TOKEN=declined", "QODANA_PROJECT_SLUG=team:project"},
+			env:           []string{"QODANA_ORG_TOKEN=declined", "QODANA_PROJECT=team:project"},
 			expectedCall:  &exchangeCall{"declined", "team:project"},
 			errorContains: "Failed to obtain a project token",
 		},
 	} {
 		t.Run(
 			testData.name, func(t *testing.T) {
-				projectDir, calls := setupOrgTokenTest(t, testData.yaml, testData.env...)
+				calls := setupOrgTokenTest(t, testData.env...)
 
-				err := resolveOrgToken(projectDir, "")
+				err := resolveOrgToken()
 
 				if testData.expectedCall == nil && len(*calls) != 0 {
 					t.Errorf("expected no exchange, got %+v", *calls)
@@ -202,8 +175,8 @@ func TestResolveOrgToken(t *testing.T) {
 				if token := qdenv.GetQodanaGlobalEnv(qdenv.QodanaToken); token != testData.expectedToken {
 					t.Errorf("expected QODANA_TOKEN '%s', got '%s'", testData.expectedToken, token)
 				}
-				if tokenFromExchange != (testData.expectedCall != nil) {
-					t.Errorf("unexpected tokenFromExchange %v", tokenFromExchange)
+				if isTokenFromExchange() != (testData.expectedCall != nil) {
+					t.Errorf("unexpected isTokenFromExchange %v", isTokenFromExchange())
 				}
 			},
 		)
@@ -211,12 +184,12 @@ func TestResolveOrgToken(t *testing.T) {
 }
 
 func TestResolveOrgTokenUnsetsOsEnv(t *testing.T) {
-	projectDir, _ := setupOrgTokenTest(t, "")
+	setupOrgTokenTest(t)
 	t.Setenv(qdenv.QodanaOrgToken, "org")
-	t.Setenv(qdenv.QodanaProjectSlug, "team:project")
+	t.Setenv(qdenv.QodanaProject, "team:project")
 	qdenv.InitializeQodanaGlobalEnv(qdenv.EmptyEnvProvider())
 
-	if err := resolveOrgToken(projectDir, ""); err != nil {
+	if err := resolveOrgToken(); err != nil {
 		t.Fatal(err)
 	}
 	if _, exists := os.LookupEnv(qdenv.QodanaOrgToken); exists {
@@ -236,8 +209,8 @@ func (f fakeTokenLoader) GetLogDir() string             { return "" }
 func (f fakeTokenLoader) GetRepositoryRoot() string     { return "" }
 
 func TestLoadCloudUploadTokenSkipsKeyringForExchangedToken(t *testing.T) {
-	tokenFromExchange = true
-	t.Cleanup(func() { tokenFromExchange = false })
+	clearTokenEnv(t)
+	qdenv.InitializeQodanaGlobalEnv(envProvider{"QODANA_ORG_TOKEN=org"})
 
 	// refresh=true would delete the keyring entry: it must not be reached for an exchanged token
 	if token := LoadCloudUploadToken(fakeTokenLoader{token: "project-token"}, true, true, true); token != "project-token" {

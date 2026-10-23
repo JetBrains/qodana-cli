@@ -70,8 +70,8 @@ const (
 	// QodanaOrgToken is an organisation-level token, exchanged for a short-lived project token.
 	// !!! It must never be passed to the linter process or container !!!
 	QodanaOrgToken = "QODANA_ORG_TOKEN"
-	// QodanaProjectSlug identifies the project for QodanaOrgToken exchange, in the form team-slug:project-slug
-	QodanaProjectSlug = "QODANA_PROJECT_SLUG"
+	// QodanaProject identifies the project for QodanaOrgToken exchange, in the form team-slug:project-slug
+	QodanaProject = "QODANA_PROJECT"
 )
 
 type qodanaGlobalEnv struct {
@@ -87,7 +87,7 @@ func InitializeQodanaGlobalEnv(provider EnvProvider) {
 			QodanaEndpointEnv: GetEnvWithOsEnv(provider, QodanaEndpointEnv),
 			QodanaToken:       GetEnvWithOsEnv(provider, QodanaToken),
 			QodanaOrgToken:    GetEnvWithOsEnv(provider, QodanaOrgToken),
-			QodanaProjectSlug: GetEnvWithOsEnv(provider, QodanaProjectSlug),
+			QodanaProject:     GetEnvWithOsEnv(provider, QodanaProject),
 		},
 	}
 }
@@ -134,16 +134,11 @@ func GetEnv(provider EnvProvider, key string) string {
 	return ""
 }
 
-// IsEnv reports whether a KEY=VALUE env entry sets the given key.
-func IsEnv(env string, key string) bool {
-	return strings.HasPrefix(env, key+"=")
-}
-
 // WithoutEnv returns env entries except those setting the given key.
 func WithoutEnv(env []string, key string) []string {
 	result := make([]string, 0, len(env))
 	for _, e := range env {
-		if !IsEnv(e, key) {
+		if !strings.HasPrefix(e, key+"=") {
 			result = append(result, e)
 		}
 	}

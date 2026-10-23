@@ -43,7 +43,7 @@ If you are using other Qodana Cloud instance than https://qodana.cloud/, overrid
 			msg.PrimaryBold(qdenv.QodanaEndpointEnv),
 		),
 		Run: func(cmd *cobra.Command, args []string) {
-			tokenloader.InitializeQodanaGlobalEnv(qdenv.EmptyEnvProvider(), cliOptions.ProjectDir, cliOptions.ConfigName)
+			tokenloader.InitializeQodanaGlobalEnv(qdenv.EmptyEnvProvider())
 
 			commonCtx := commoncontext.Compute(
 				cliOptions.Linter,

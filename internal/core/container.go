@@ -490,9 +490,6 @@ func generateDebugDockerRunCommand(cfg *backend.ContainerCreateConfig) string {
 		cmdBuilder.WriteString(fmt.Sprintf("-u %s ", cfg.Config.User))
 	}
 	for _, env := range cfg.Config.Env {
-		if qdenv.IsEnv(env, qdenv.QodanaOrgToken) {
-			continue
-		}
 		if !strings.Contains(env, qdenv.QodanaToken) || strings.Contains(
 			env,
 			qdenv.QodanaLicense,

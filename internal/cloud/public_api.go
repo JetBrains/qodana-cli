@@ -21,7 +21,6 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
-	"slices"
 	"time"
 )
 
@@ -32,7 +31,7 @@ const publicProjectsPath = "/public/organizations/projects"
 var ErrOrgTokenDeclined = errors.New("organization token was declined by Qodana Cloud server")
 
 const OrgTokenExchangeFailedMessage = `Failed to obtain a project token using QODANA_ORG_TOKEN for project '%s'.
-Please ensure that QODANA_ORG_TOKEN is a valid organization API token and that QODANA_PROJECT_SLUG or 'projectSlug:' in qodana.yaml is correct.`
+Please ensure that QODANA_ORG_TOKEN is a valid organization API token and that QODANA_PROJECT is correct.`
 
 // QdPublicApiClient is a client of the Qodana Public API, authenticated with an organization API token.
 // It is a separate type from QdClient so that the organization token is never used for project-token endpoints.
@@ -73,7 +72,7 @@ func (c *QdPublicApiClient) RequestProjectToken(projectQualifiedSlug string, ttl
 	result, err := c.client.doRequest(&request)
 	if err != nil {
 		var apiErr *APIError
-		if errors.As(err, &apiErr) && slices.Contains(request.AcceptedStatuses, apiErr.StatusCode) {
+		if errors.As(err, &apiErr) {
 			return "", fmt.Errorf("%w: %v", ErrOrgTokenDeclined, err)
 		}
 		return "", err
