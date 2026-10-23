@@ -132,6 +132,10 @@ class EdictNextMcpToolsetTest {
         listOf("type", "prNumber", "title", "discussionMessages", "diffPositiveToNegative", "url"),
         fromPrSchema.getValue("required").jsonArray.map { (it as JsonPrimitive).content },
       )
+      assertEquals(
+        JsonPrimitive(4000),
+        fromPrSchema.getValue("properties").jsonObject.getValue("diffPositiveToNegative").jsonObject.getValue("maxLength"),
+      )
       val publishPrSchema = server.tools.getValue("edict_publish_validated_pr_signals").tool.inputSchema
       assertEquals(setOf("token", "batchId"), checkNotNull(publishPrSchema.properties).keys)
       assertEquals(listOf("token", "batchId"), publishPrSchema.required)
@@ -160,6 +164,10 @@ class EdictNextMcpToolsetTest {
         listOf("token", "batchId", "chunkIndex", "inspectedWorkItemIds", "failedWorkItemIds", "signals", "problems"),
         storePrSchema.required,
       )
+      val draftDiffSchema = checkNotNull(storePrSchema.properties).getValue("signalDrafts").jsonObject
+        .getValue("items").jsonObject.getValue("properties").jsonObject.getValue("diff").jsonObject
+      assertTrue(JsonPrimitive("excerpt") in draftDiffSchema.getValue("required").jsonArray)
+      assertEquals(JsonPrimitive(4000), draftDiffSchema.getValue("properties").jsonObject.getValue("excerpt").jsonObject.getValue("maxLength"))
       val contextSchema = server.tools.getValue("edict_context").tool.inputSchema
       assertEquals(setOf("token"), checkNotNull(contextSchema.properties).keys)
       assertEquals(listOf("token"), contextSchema.required)

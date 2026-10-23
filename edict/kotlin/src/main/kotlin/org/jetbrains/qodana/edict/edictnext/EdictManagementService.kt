@@ -36,6 +36,7 @@ import org.jetbrains.qodana.edict.extraction.reviews.ReviewSelectionInput
 import org.jetbrains.qodana.edict.skills.managed.Registry
 import org.jetbrains.qodana.edict.runtime.CodexPriceAnalyzer
 import org.jetbrains.qodana.edict.setup.CodexSetup
+import org.jetbrains.qodana.edict.signals.SignalValidation
 import java.io.PrintWriter
 import java.nio.file.Files
 import java.time.Instant
@@ -90,6 +91,11 @@ internal class EdictManagementService(
     }
     val modelObject = jsonType("object")
     val nullableString = nullable(string)
+    val signalDiff = buildJsonObject {
+      put("type", "string")
+      put("maxLength", SignalValidation.MAX_DIFF_CHARS)
+      put("description", "Relevant unified-diff excerpt, at most 4000 characters including headers. Preserve source lines and original line coordinates; omit unrelated hunks/context and recount split hunk lengths.")
+    }
     val lineRange = objectOf(
       properties = mapOf("start" to integer, "end" to integer),
       required = listOf("start", "end"),
@@ -109,7 +115,7 @@ internal class EdictManagementService(
         "prNumber" to integer,
         "title" to string,
         "discussionMessages" to stringArray,
-        "diffPositiveToNegative" to string,
+        "diffPositiveToNegative" to signalDiff,
         "url" to string,
       ),
       required = listOf("type", "prNumber", "title", "discussionMessages", "diffPositiveToNegative", "url"),
@@ -181,8 +187,8 @@ internal class EdictManagementService(
             "description" to string,
             "strength" to enumOf("STRONG", "WEAK"),
             "diff" to objectOf(
-              properties = mapOf("before" to string, "after" to string, "beforePath" to string, "afterPath" to string),
-              required = listOf("before", "after", "beforePath", "afterPath"),
+              properties = mapOf("before" to string, "after" to string, "beforePath" to string, "afterPath" to string, "excerpt" to signalDiff),
+              required = listOf("before", "after", "beforePath", "afterPath", "excerpt"),
             ),
           ),
           required = listOf("workItemId", "fileRevision", "label", "description", "diff"),
@@ -536,7 +542,7 @@ internal class EdictManagementService(
     tool(
       name = "edict_store_pr_signals",
       description = "Store one analyzed PR chunk. Requires complete ordered work-item coverage and explicit failed work-item IDs, independently validates each Signal, and retains valid models despite per-Signal failures. " +
-        "Pass Signals as signalDrafts: the server completes each draft's FromPR source (PR number, title, discussion URL, messages, and the canonical diff of its diff snapshots) from its work item, and derives its idempotency key and ID.",
+        "The server verifies the excerpt against the exact diff snapshots, completes PR number, title, discussion URL and messages from the work item, and derives its idempotency key and ID.",
       required = listOf("token", "batchId", "chunkIndex", "inspectedWorkItemIds", "failedWorkItemIds", "signals", "problems"),
       properties = properties("batchId") + mapOf(
         "chunkIndex" to integer,

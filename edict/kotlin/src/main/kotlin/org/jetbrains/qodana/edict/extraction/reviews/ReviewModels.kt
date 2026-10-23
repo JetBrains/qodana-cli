@@ -21,7 +21,13 @@ data class PrItemEvidence(
 )
 
 @Serializable
-data class PrSignalDiff(val before: String, val after: String, val beforePath: String, val afterPath: String)
+data class PrSignalDiff(
+  val before: String,
+  val after: String,
+  val beforePath: String,
+  val afterPath: String,
+  val excerpt: String,
+)
 
 @Serializable
 data class PrSignalDraft(

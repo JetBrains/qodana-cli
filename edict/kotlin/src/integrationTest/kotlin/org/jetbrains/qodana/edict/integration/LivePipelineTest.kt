@@ -1,6 +1,8 @@
 // Copyright 2026 JetBrains s.r.o. Licensed under the Apache License, Version 2.0.
 package org.jetbrains.qodana.edict.integration
 
+import org.jetbrains.qodana.edict.signals.UnifiedDiff
+
 import java.nio.file.Files
 import kotlin.io.path.readText
 import kotlin.test.assertContains
@@ -109,11 +111,10 @@ class LivePipelineTest : IntegrationTest() {
         assertEquals(2, reviewSignals.size, "The review correction must retain both evidence sides")
         assertEquals(EdictNextSignalLabel.entries.toSet(), cluster.signals.map { it.label }.toSet())
         val expectedDiff = workspace.repository.diff(historyBefore, historyCommit, listOf(historyPath))
-        val providerDiff = expectedDiff.substring(expectedDiff.indexOf("--- a/"))
         reviewSignals.forEach { signal ->
             val source = signal.source as EdictNextSignalSource.FromPR
             assertEquals(7, source.prNumber)
-            assertTrue(source.diffPositiveToNegative in listOf(expectedDiff, providerDiff))
+            UnifiedDiff.validateExcerpt(source.diffPositiveToNegative, expectedDiff)
             assertEquals(historyPath, signal.fileRevision.path)
             val positive = signal.label == EdictNextSignalLabel.POSITIVE
             assertEquals(if (positive) historyBefore else historyCommit, signal.fileRevision.revision)
