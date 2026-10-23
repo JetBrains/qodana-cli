@@ -172,7 +172,8 @@ internal class HttpInspectionKtsClient(
         put("projectPath", projectPath)
         put("timeoutMinutes", projectAnalysisTimeoutMinutes)
       },
-      timeout = Duration.ofMinutes(projectAnalysisTimeoutMinutes).plusMinutes(10),
+      //x2 means time on queue until potential timeout of previous run
+      timeout = Duration.ofMinutes(projectAnalysisTimeoutMinutes).multipliedBy(2).plusMinutes(10),
     )
 
   override suspend fun callTool(name: String, arguments: JsonObject): JsonObject = callTool(name, arguments, requestTimeout)
