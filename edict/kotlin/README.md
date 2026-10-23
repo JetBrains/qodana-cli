@@ -298,7 +298,10 @@ before starting; its `agentId` records the runtime's asserted identity.
 Multi-file distribution/generation is not transactional. Publish and verify the
 destination before removing an inbox source, and reconcile partial progress on
 retry. The server validates structure and consistency with the supplied diff;
-semantic correctness and source authenticity still require the worker's review.
+semantic correctness still requires the worker's review. PR extractors retain a relevant unified-diff excerpt of at
+most 4000 characters (including headers and newlines) in `diff.excerpt`. The server verifies its source lines, paths,
+and original coordinates against the complete provider diff before persisting it as `diffPositiveToNegative`.
+Extractors omit unrelated hunks/context and recount split hunk headers; oversized or altered excerpts fail validation.
 `GitRepository.validateEvidence` additionally checks a commit signal against
 actual Git objects, canonical diff bytes, and historical file lengths.
 

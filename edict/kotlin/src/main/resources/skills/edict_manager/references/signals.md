@@ -33,10 +33,20 @@ Resolve that root with `git rev-parse --show-toplevel`. Preserve the full path f
 (without its `a/` or `b/` prefix); for renames, use the before path for POSITIVE and the after path for NEGATIVE.
 Use that same repository-relative path in revision reads and the idempotency key.
 
-Canonical diff content is verbatim
+Read the full canonical diff as evidence using
 `git --no-pager diff --no-color --no-ext-diff --unified=200 <before> <after> -- <before-path> <after-path>` output, or
-the equivalent exact-revision diff reader result. Never synthesize/truncate hunks, normalize content, copy a different
-item's diff, or insert an availability message. If unavailable, block the item.
+the equivalent exact-revision diff reader result. If unavailable, block the item.
+
+Persist each PR Signal's relevant unified-diff excerpt in at most **4000 characters total**, including file and hunk
+headers and newlines. Select the change that supports this Signal and the surrounding context needed to understand it;
+omit unrelated files, hunks, changes, and distant context. Keep source lines verbatim, their ` ` / `-` / `+` prefixes,
+the original before/after paths, and original line coordinates. You may split a large hunk into smaller contiguous
+excerpts: recalculate each hunk's start and line counts for the retained lines, without renumbering the source. A side
+with zero lines names the preceding line (`@@ -10,0 +11,1 @@` for an insertion after old line 10). Every expected range
+must still intersect a retained change on its label's side. Do not cut a diff at character 4000, clip a source line,
+insert ellipses, or substitute a summary. If a faithful excerpt cannot fit, report that Signal as failed rather than
+silently losing supporting evidence. The verifier checks the excerpt's source bytes and coordinates against the full
+canonical diff, so the excerpt need not equal the complete diff.
 
 Each persisted record has this shape:
 
@@ -71,8 +81,9 @@ supplies an immutable analysis batch ID, preserve it in provenance.
 Keep mutable orchestration progress in the MCP plan.
 
 PR source preserves `type: "FromPR"`, `prNumber`, complete `title`, ordered complete human `discussionMessages`,
-canonical `diffPositiveToNegative`, and discussion `url`. A PR chunk worker does not write it: it stores Signal drafts
-naming the diff's revisions and paths, and the server completes this source from the prepared work item.
+focused `diffPositiveToNegative` (at most 4000 characters), and discussion `url`. A PR chunk worker supplies its selected
+excerpt in the draft's `diff.excerpt`, alongside the diff's revisions and paths. The server verifies that excerpt and
+completes the remaining source metadata from the prepared work item.
 
 Commit source preserves `type: "FromCommit"`, the full correcting `commitRevision`, and `url` when available. The commit
 object determines its parent, message, and canonical diff; do not duplicate them in the Signal. The correcting
@@ -83,5 +94,6 @@ language/severity judgments, proposed implementations, or synthetic examples in 
 
 Signal writes reject malformed records and inconsistencies in IDs, revisions, paths, or changed-line ranges before
 persistence, returning the artifact and failing field. Correct the candidate from verified evidence and recompute its
-key/ID when provenance changes; do not alter the canonical diff to make validation pass. Server validation checks
-consistency of supplied evidence; workers must still verify it against the repository or PR provider.
+key/ID when provenance changes; select a faithful bounded excerpt rather than altering source evidence to pass
+validation. Server validation checks consistency of supplied evidence; workers must still verify it against the
+repository or PR provider.
