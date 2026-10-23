@@ -20,6 +20,7 @@ import org.jetbrains.qodana.edict.edictnext.EdictNextSignalSource
 import org.jetbrains.qodana.edict.edictnext.numberedLines
 import org.jetbrains.qodana.edict.edictnext.stableSignalId
 import org.jetbrains.qodana.edict.signals.SignalValidation
+import org.jetbrains.qodana.edict.signals.UnifiedDiff
 import java.time.LocalDate
 import java.time.ZoneOffset
 import java.time.temporal.ChronoUnit
@@ -307,13 +308,22 @@ internal class PrAnalysis(
       .joinToString("|")
   }
 
-  /** Builds the draft's `FromPR` source from its prepared work item, so the worker copies none of it. */
+  /** Binds the worker's focused diff excerpt to the exact prepared PR evidence. */
   private fun complete(draft: PrSignalDraft, key: String, chunk: List<PrItem>, batchId: String): EdictNextSignal {
     val item = chunk.firstOrNull { it.workItemId == draft.workItemId } ?: error("Signal work item does not belong to this chunk")
     val diff = draft.diff
     require(diff.before in listOf(item.pr.baseRevision, item.thread.originalCommitSha) && diff.after == item.pr.headRevision) {
       "Diff must compare prepared base/comment revision to head"
     }
+    require(diff.excerpt.length <= SignalValidation.MAX_DIFF_CHARS) {
+      "Diff excerpt must contain at most ${SignalValidation.MAX_DIFF_CHARS} characters"
+    }
+    val evidencePath = if (draft.label == EdictNextSignalLabel.POSITIVE) diff.beforePath else diff.afterPath
+    require(draft.fileRevision.path == evidencePath) { "Signal path must match its diff side" }
+    UnifiedDiff.validateExcerpt(
+      diff.excerpt,
+      provider.diff(item.repository, diff.before, diff.after, diff.beforePath, diff.afterPath),
+    )
     return EdictNextSignal(
       id = stableSignalId(key),
       idempotencyKey = key,
@@ -322,7 +332,7 @@ internal class PrAnalysis(
         prNumber = item.pr.number,
         title = item.pr.title,
         discussionMessages = item.thread.messages.map(ReviewMessage::body),
-        diffPositiveToNegative = provider.diff(item.repository, diff.before, diff.after, diff.beforePath, diff.afterPath),
+        diffPositiveToNegative = diff.excerpt,
         url = item.thread.reviewDiscussionUrl,
       ),
       label = draft.label,

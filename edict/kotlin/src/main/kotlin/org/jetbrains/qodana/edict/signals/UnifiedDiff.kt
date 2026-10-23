@@ -13,9 +13,31 @@ object UnifiedDiff {
 
     private val hunk = Regex("^@@ -(\\d+)(?:,(\\d+))? \\+(\\d+)(?:,(\\d+))? @@.*")
 
-    fun parse(diff: String): Changes {
+    private data class Line(val before: Int, val after: Int, val content: String)
+    private data class Hunk(val beforePath: String, val afterPath: String, val lines: MutableList<Line> = mutableListOf())
+    private data class ParsedDiff(val changes: Changes, val hunks: List<Hunk>)
+
+    fun parse(diff: String): Changes = parseDiff(diff).changes
+
+    /** Allow omitted hunks/context, including split hunks, but never edited lines, paths, or shifted coordinates. */
+    fun validateExcerpt(excerpt: String, canonicalDiff: String) {
+        val selected = parseDiff(excerpt)
+        val canonical = parseDiff(canonicalDiff)
+        selected.hunks.forEach { selectedHunk ->
+            require(canonical.hunks.any { original ->
+                original.beforePath == selectedHunk.beforePath && original.afterPath == selectedHunk.afterPath &&
+                    original.lines.indices.any { start ->
+                        val end = start + selectedHunk.lines.size
+                        end <= original.lines.size && original.lines.subList(start, end) == selectedHunk.lines
+                    }
+            }) { "Diff excerpt must preserve canonical paths, source lines and line coordinates" }
+        }
+    }
+
+    private fun parseDiff(diff: String): ParsedDiff {
         val before = linkedMapOf<String, MutableList<Int>>()
         val after = linkedMapOf<String, MutableList<Int>>()
+        val hunks = mutableListOf<Hunk>()
         var beforePath = ""
         var afterPath = ""
         var oldLine = 0
@@ -24,9 +46,14 @@ object UnifiedDiff {
         var newRemaining = 0
         diff.split('\n').forEachIndexed { index, line ->
             fun valid(condition: Boolean) = require(condition) { "Malformed unified diff at line ${index + 1}" }
-            if (line == "\\ No newline at end of file") return@forEachIndexed
+            if (line == "\\ No newline at end of file") {
+                valid(hunks.isNotEmpty() && hunks.last().lines.isNotEmpty())
+                hunks.last().lines += Line(oldLine, newLine, line)
+                return@forEachIndexed
+            }
             if (oldRemaining > 0 || newRemaining > 0) {
                 valid(line.isNotEmpty())
+                hunks.last().lines += Line(oldLine, newLine, line)
                 when (line[0]) {
                     ' ' -> {
                         oldRemaining--; newRemaining--; oldLine++; newLine++
@@ -63,6 +90,10 @@ object UnifiedDiff {
                     oldLine = values[1].toInt(); oldRemaining = values[2].ifEmpty { "1" }.toInt()
                     newLine = values[3].toInt(); newRemaining = values[4].ifEmpty { "1" }.toInt()
                     valid((oldRemaining == 0 || oldLine > 0) && (newRemaining == 0 || newLine > 0))
+                    // A zero-length side names the line preceding the insertion/deletion.
+                    if (oldRemaining == 0) oldLine++
+                    if (newRemaining == 0) newLine++
+                    hunks += Hunk(beforePath, afterPath)
                 }
 
                 line.startsWith('+') || line.startsWith('-') || line.startsWith(' ') -> valid(false)
@@ -70,7 +101,7 @@ object UnifiedDiff {
         }
         require(oldRemaining == 0 && newRemaining == 0) { "Truncated unified diff" }
         require(before.isNotEmpty() || after.isNotEmpty()) { "Unified diff must contain changed lines" }
-        return Changes(before, after)
+        return ParsedDiff(Changes(before, after), hunks)
     }
 
     // Git core.quotePath encodes non-ASCII UTF-8 bytes as three-digit octal escapes.

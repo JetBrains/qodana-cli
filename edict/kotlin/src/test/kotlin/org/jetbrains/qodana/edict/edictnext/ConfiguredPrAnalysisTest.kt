@@ -391,7 +391,7 @@ class ConfiguredPrAnalysisTest {
   }
 
   @Test
-  fun `a stored Signal draft gets its PR source and canonical diff from the work item`() {
+  fun `a stored Signal draft gets its PR metadata from the work item and verifies its diff excerpt`() {
     val configured = ReviewRepository(CiProviderId.GITHUB, "JetBrains", "qodana-cli")
     val today = LocalDate.of(2026, 10, 9)
     val diff = """
@@ -421,7 +421,7 @@ class ConfiguredPrAnalysisTest {
         fileRevision = EdictNextFileRevision("src/Example1.kt", "a".repeat(40), listOf(EdictNextLineRange(2, 2))),
         label = EdictNextSignalLabel.POSITIVE,
         description = "Calls bad() where good() is required.",
-        diff = PrSignalDiff(before, "b".repeat(40), "src/Example1.kt", "src/Example1.kt"),
+        diff = PrSignalDiff(before, "b".repeat(40), "src/Example1.kt", "src/Example1.kt", diff),
       )
 
       val rejected = analysis.store(worker.token, batch.batchId, 0, listOf(item), emptyList(), emptyList(), emptyList(), listOf(draft("c".repeat(40))))
@@ -438,6 +438,45 @@ class ConfiguredPrAnalysisTest {
       assertEquals(pr.threads.single().reviewDiscussionUrl, source.url)
       assertEquals(listOf("Fix this"), source.discussionMessages)
       assertEquals(diff, source.diffPositiveToNegative)
+    }
+  }
+
+  @Test
+  fun `draft stores only its relevant excerpt from a large diff and rejects forged or oversized excerpts`() {
+    val configured = ReviewRepository(CiProviderId.GITHUB, "JetBrains", "qodana-cli")
+    val today = LocalDate.of(2026, 10, 9)
+    val header = "--- a/src/Example1.kt\n+++ b/src/Example1.kt\n"
+    val canonical = header + "@@ -1,150 +1,150 @@\n" + (1..150).joinToString("\n", postfix = "\n") {
+      if (it == 100) "-bad()\n+good()" else " context $it ${"x".repeat(40)}"
+    }
+    val excerpt = header + "@@ -100 +100 @@\n-bad()\n+good()\n"
+    assertTrue(canonical.length > 4000)
+    EdictNextRepositoryState.open(directory.resolve("state")).use { store ->
+      val plan = store.createPlan("Bounded evidence", listOf(EdictNextRepositoryState.Step("edict-pr-signal-analysis", "Analyze date")))
+      val coordinator = store.launch(plan.token, plan.plan.tasks.single().id, "edict-pr-signal-analysis")
+      val analysis = PrAnalysis(store, DateReviewProvider(datedPullRequests(1, today.minusDays(1)), diff = canonical)) { today }
+      val batch = analysis.prepareBatch(coordinator.token, configured, ReviewSelectionInput())
+      val worker = launchAnalysisWorker(store, coordinator.token)
+      val item = analysis.chunk(worker.token, batch.batchId, 0).workItemIds.single()
+      fun draft(content: String, label: EdictNextSignalLabel = EdictNextSignalLabel.POSITIVE) = PrSignalDraft(
+        item,
+        EdictNextFileRevision("src/Example1.kt", (if (label == EdictNextSignalLabel.POSITIVE) "a" else "b").repeat(40), listOf(EdictNextLineRange(100, 100))),
+        label,
+        "Use the correct call",
+        diff = PrSignalDiff("a".repeat(40), "b".repeat(40), "src/Example1.kt", "src/Example1.kt", content),
+      )
+      val receipt = analysis.store(
+        worker.token, batch.batchId, 0, listOf(item), emptyList(), emptyList(), emptyList(),
+        listOf(draft(excerpt), draft(excerpt, EdictNextSignalLabel.NEGATIVE), draft(excerpt.replace("+good()", "+fake()")), draft(canonical)),
+      )
+      assertEquals(2, receipt.signalCount, receipt.failures.toString())
+      assertEquals(2, receipt.failures.size)
+      assertContains(receipt.failures[0].message, "canonical")
+      assertContains(receipt.failures[1].message, "at most 4000 characters")
+      analysis.publishValidated(coordinator.token, batch.batchId)
+      val signals = receipt.signalIds.map { checkNotNull(store.inboxSignal(it)) }
+      assertEquals(2, signals.size)
+      signals.forEach { assertEquals(excerpt, (it.source as EdictNextSignalSource.FromPR).diffPositiveToNegative) }
     }
   }
 

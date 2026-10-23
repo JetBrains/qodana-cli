@@ -14,6 +14,8 @@ import org.jetbrains.qodana.edict.edictnext.stableSignalId
 
 /** Validates extraction records at the trusted state boundary before Edict Next consumes them. */
 object SignalValidation {
+  const val MAX_DIFF_CHARS = 4000
+
   fun validate(signal: EdictNextSignal): EdictNextSignal =
     validate("inbox/${signal.id}.json", json.encodeToString(signal))
 
@@ -90,6 +92,11 @@ object SignalValidation {
       }
     }
     if (diffPositiveToNegative == null) return signal
+    field(
+      "source.diffPositiveToNegative",
+      diffPositiveToNegative.length <= MAX_DIFF_CHARS,
+      "must contain at most $MAX_DIFF_CHARS characters; retain only the relevant unified-diff excerpt",
+    )
     val changes = try {
       UnifiedDiff.parse(diffPositiveToNegative).side(signal.label)
     }

@@ -18,6 +18,7 @@ import org.jetbrains.qodana.edict.integration.support.reviews.ReviewProviderFixt
 import org.jetbrains.qodana.edict.integration.support.signalFiles
 import org.jetbrains.qodana.edict.integration.support.verifyManagedRun
 import org.jetbrains.qodana.edict.signals.SignalValidation
+import org.jetbrains.qodana.edict.signals.UnifiedDiff
 import org.junit.jupiter.api.Test
 import java.nio.file.Files
 import kotlin.io.path.readText
@@ -65,7 +66,6 @@ class LivePrExtractionTest : IntegrationTest() {
         val files = signalFiles(workspace.state.resolve("inbox"))
         assertEquals(2, files.size, "Review correction must retain both evidence sides")
         val diff = workspace.repository.diff(historyBefore, historyCommit, listOf(historyPath))
-        val providerDiff = diff.substring(diff.indexOf("--- a/"))
         val signals = files.map { file ->
             val signal = SignalValidation.validate("inbox/${file.fileName}", file.readText())
             val signalSource = signal.source as EdictNextSignalSource.FromPR
@@ -73,10 +73,7 @@ class LivePrExtractionTest : IntegrationTest() {
             assertEquals(fixture.title, signalSource.title)
             assertEquals(listOf(fixture.message), signalSource.discussionMessages)
             assertEquals(fixture.discussionUrl, signalSource.url)
-            assertTrue(
-                signalSource.diffPositiveToNegative in listOf(diff, providerDiff),
-                "PR diff must match canonical historical Git bytes",
-            )
+            UnifiedDiff.validateExcerpt(signalSource.diffPositiveToNegative, diff)
             assertEquals(historyPath, signal.fileRevision.path)
             assertTrue(signal.provenance.workItemId.startsWith("pr-7-"))
             assertFalse(signal.provenance.analysisBatchId.isNullOrBlank())
