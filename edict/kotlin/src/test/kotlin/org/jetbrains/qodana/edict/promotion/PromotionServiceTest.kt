@@ -60,6 +60,10 @@ class PromotionServiceTest {
     cluster(repository, "four-strong", 4)
     cluster(repository, "six-weak", 0, weakSignals = 6)
     cluster(repository, "pending-signals", 6, EdictNextClusterStatus.Pending)
+    val processed = repository.loadCluster("five-strong")
+    processed.directory.manifestPath.writeText(EdictNextJson.encodeToString(
+      processed.manifest.copy(processedSignalIds = processed.signalIds),
+    ))
     val provider = FakeProvider()
 
     val result = service(repository, provider).promote()
@@ -73,6 +77,7 @@ class PromotionServiceTest {
     for (id in listOf("five-strong", "six-strong")) {
       assertEquals(PromotionPrState.ON_REVIEW, repository.loadCluster(id).manifest.promotions.single().state)
     }
+    assertEquals(processed.signalIds, repository.loadCluster("five-strong").manifest.processedSignalIds)
   }
 
   @Test
@@ -256,6 +261,7 @@ class PromotionServiceTest {
     assertEquals(EdictNextClusterStatus.Pending, stored.manifest.status)
     assertEquals("revise-rule", stored.manifest.predecessorId)
     assertEquals(PromotionPrState.CLOSED, stored.manifest.promotions.single().state)
+    assertEquals(stored.signalIds, stored.manifest.processedSignalIds)
     assertTrue(repository.paths.inspectionPath("revise-rule").exists())
     assertTrue(stored.historyPath.readText().contains("Reviewer requested a narrower generated rule"))
   }

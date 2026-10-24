@@ -218,7 +218,11 @@ internal class EdictRepository(val paths: EdictRepositoryDirectory) {
     try {
       write(
         cluster.directory.manifestPath,
-        cluster.manifest.copy(status = EdictNextClusterStatus.Generated, predecessorId = null),
+        cluster.manifest.copy(
+          status = EdictNextClusterStatus.Generated,
+          predecessorId = null,
+          processedSignalIds = cluster.signalIds,
+        ),
         EdictNextClusterManifest.serializer(),
       )
     }
@@ -332,6 +336,7 @@ internal class EdictRepository(val paths: EdictRepositoryDirectory) {
           status = resolvedTargetStatus,
           predecessorId = cluster.id.takeIf { resolvedTargetStatus == EdictNextClusterStatus.Pending },
           promotions = cluster.manifest.promotions.toMutableList().also { it[index] = updated },
+          processedSignalIds = cluster.signalIds,
         )
         historyEntry = "Promotion `$promotionId` moved cluster to $resolvedTargetStatus: ${resolvedRationale.trim()}\n"
       }
@@ -465,7 +470,7 @@ internal class EdictRepository(val paths: EdictRepositoryDirectory) {
       writeBytesAtomically(target, replacementSignal)
       writeAtomically(
         cluster.directory.manifestPath,
-        pendingManifest(cluster),
+        pendingManifest(cluster).let { it.copy(processedSignalIds = it.processedSignalIds - signalId) },
         EdictNextClusterManifest.serializer(),
       )
       Files.writeString(
@@ -509,7 +514,13 @@ internal class EdictRepository(val paths: EdictRepositoryDirectory) {
       EdictNextClusterStatus.Pending, EdictNextClusterStatus.Invalid -> cluster.manifest.predecessorId
       EdictNextClusterStatus.Discontinued -> null
     }
-    return cluster.manifest.copy(status = EdictNextClusterStatus.Pending, predecessorId = predecessorId)
+    return cluster.manifest.copy(
+      status = EdictNextClusterStatus.Pending,
+      predecessorId = predecessorId,
+      // Also initializes the snapshot for Generated manifests written before processedSignalIds existed.
+      processedSignalIds = if (cluster.manifest.status == EdictNextClusterStatus.Generated) cluster.signalIds
+                           else cluster.manifest.processedSignalIds,
+    )
   }
 
   /** Changes only `syntheticExampleId`, keeping every other field of the stored Signal as it is. */

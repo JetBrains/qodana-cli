@@ -175,6 +175,8 @@ internal data class EdictNextClusterManifest(
   val status: EdictNextClusterStatus,
   val predecessorId: String? = null,
   val promotions: List<InspectionPromotion> = emptyList(),
+  /** Signals covered by the last successful generation or predecessor reuse; replacements are removed. */
+  val processedSignalIds: Set<String> = emptySet(),
 )
 
 // --- Neighbour retrieval ------------------------------------------------------------------------
