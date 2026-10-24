@@ -142,8 +142,9 @@ internal class EdictNextMcpToolset(
 
     server.addTool(
       name = "edict_next_select_generation_clusters",
-      description = "Suggest Pending clusters for generation, ranked by descending positive-Signal count and requiring " +
-              "strong positive evidence. Read-only: creates no state or reservations; each call reflects the current repository. " +
+      description = "Suggest Pending clusters for generation, ranked by descending unprocessed strong positive-Signal count and requiring " +
+              "strong positive evidence. Signals covered by a successful generation or inspection reuse do not count toward ranking; " +
+              "re-published replacements count again. Read-only: creates no state or reservations; each call reflects the current repository. " +
               "The manager may choose other Pending clusters without calling this tool. Returns the concurrency limit as well. " +
               "Omit generationCount to use the configured default.",
       inputSchema = toolSchema(

@@ -119,7 +119,7 @@ class EdictNextGenerationServiceTest {
   }
 
   @Test
-  fun `requested generation count overrides default and selects Pending clusters with the most positive Signals`() = runBlocking<Unit> {
+  fun `requested generation count overrides default and ranks only strong positive Signals`() = runBlocking<Unit> {
     val strongPositive = EdictNextSignalStrength.STRONG to EdictNextSignalLabel.POSITIVE
     val strongNegative = EdictNextSignalStrength.STRONG to EdictNextSignalLabel.NEGATIVE
     val (generation, inspection) = generation(
@@ -129,14 +129,15 @@ class EdictNextGenerationServiceTest {
       "negative-heavy" to strongNegative,
       defaultGenerationCount = 1,
     )
-    writeSignal("most", "s-most-2", EdictNextSignalStrength.WEAK, EdictNextSignalLabel.POSITIVE)
-    writeSignal("most", "s-most-3", EdictNextSignalStrength.WEAK, EdictNextSignalLabel.POSITIVE)
-    writeSignal("tie-a", "s-tie-a-2", EdictNextSignalStrength.WEAK, EdictNextSignalLabel.POSITIVE)
-    writeSignal("tie-b", "s-tie-b-2", EdictNextSignalStrength.WEAK, EdictNextSignalLabel.POSITIVE)
+    writeSignal("most", "s-most-2", EdictNextSignalStrength.STRONG, EdictNextSignalLabel.POSITIVE)
+    writeSignal("most", "s-most-3", EdictNextSignalStrength.STRONG, EdictNextSignalLabel.POSITIVE)
+    writeSignal("tie-a", "s-tie-a-2", EdictNextSignalStrength.STRONG, EdictNextSignalLabel.POSITIVE)
+    writeSignal("tie-b", "s-tie-b-2", EdictNextSignalStrength.STRONG, EdictNextSignalLabel.POSITIVE)
     writeSignal("tie-b", "s-tie-b-3", EdictNextSignalStrength.STRONG, EdictNextSignalLabel.NEGATIVE)
     writeSignal("tie-b", "s-tie-b-4", EdictNextSignalStrength.STRONG, EdictNextSignalLabel.NEGATIVE)
     writeSignal("negative-heavy", "s-negative-heavy-2", EdictNextSignalStrength.STRONG, EdictNextSignalLabel.NEGATIVE)
     writeSignal("negative-heavy", "s-negative-heavy-3", EdictNextSignalStrength.STRONG, EdictNextSignalLabel.NEGATIVE)
+    repeat(5) { writeSignal("busy-wait", "s-weak-$it", EdictNextSignalStrength.WEAK, EdictNextSignalLabel.POSITIVE) }
 
     try {
       val response = generation.selectGenerationClusters(generationCount = 2)
@@ -155,13 +156,81 @@ class EdictNextGenerationServiceTest {
       "second" to strongPositive,
       defaultGenerationCount = 1,
     )
-    writeSignal("second", "s-second-2", EdictNextSignalStrength.WEAK, EdictNextSignalLabel.POSITIVE)
+    writeSignal("second", "s-second-2", EdictNextSignalStrength.STRONG, EdictNextSignalLabel.POSITIVE)
 
     try {
       val response = generation.selectGenerationClusters()
       assertEquals(listOf("second"), response.clusters.map { it.clusterId })
       val error = assertFailsWith<IllegalArgumentException> { generation.selectGenerationClusters(generationCount = 0) }
       assertContains(error.message.orEmpty(), "generationCount must be at least 1")
+    }
+    finally {
+      inspection.stop()
+    }
+  }
+
+  @Test
+  fun `Pending clusters with only processed positive evidence remain eligible at lowest priority`() = runBlocking<Unit> {
+    val (generation, inspection) = generation("fresh" to (EdictNextSignalStrength.STRONG to EdictNextSignalLabel.POSITIVE))
+    val repository = EdictRepository(EdictRepositoryDirectory(directory.resolve("state")))
+    val cluster = repository.loadCluster("busy-wait")
+    cluster.directory.manifestPath.writeText(
+      EdictNextJson.encodeToString(cluster.manifest.copy(processedSignalIds = cluster.signalIds)),
+    )
+    try {
+      assertEquals(listOf("fresh", "busy-wait"), generation.selectGenerationClusters().clusters.map { it.clusterId })
+    }
+    finally {
+      inspection.stop()
+    }
+  }
+
+  @Test
+  fun `successful generation and reuse persist processed Signals without discarding validation evidence`() = runBlocking<Unit> {
+    val strongPositive = EdictNextSignalStrength.STRONG to EdictNextSignalLabel.POSITIVE
+    val (generation, inspection) = generation("fresh" to strongPositive, "processed" to strongPositive)
+    val repository = EdictRepository(EdictRepositoryDirectory(directory.resolve("state")))
+    try {
+      repeat(5) { index ->
+        val id = "s-processed-$index"
+        writeSignal("processed", id, strongPositive.first, strongPositive.second)
+        repository.assignCodeExample("processed", id, "processed-example")
+      }
+      writeSignal("fresh", "s-fresh-2", strongPositive.first, strongPositive.second)
+      generation.getInspectionAction("processed")
+      generation.saveCandidateInspection("processed", "// processed report")
+      generation.getNewInspectionResults("processed", directory.resolve("scratch").toString())
+      assertTrue(generation.recordEvaluation("processed").success)
+      assertTrue(generation.finaliseCluster("processed", EdictNextClusterStatus.Generated, "Accepted").success)
+      val processedIds = repository.clusterSignalIds("processed")
+      assertEquals(processedIds, repository.loadCluster("processed").manifest.processedSignalIds)
+
+      val newSignal = repository.loadCluster("processed").signals.first().copy(id = "s-new")
+      repository.paths.inboxDirectory.createDirectories().resolve("${newSignal.id}.json")
+        .writeText(EdictNextJson.encodeToString(newSignal))
+      repository.addSignalToCluster(newSignal.id, "processed")
+      val restarted = EdictNextGenerationService(
+        EdictRepository(repository.paths), inspection, directory.resolve("project"),
+      )
+      // Six handled positives no longer outweigh two fresh ones; ties still use the cluster id.
+      assertEquals(listOf("fresh", "busy-wait", "processed"), restarted.selectGenerationClusters().clusters.map { it.clusterId })
+      assertFalse(restarted.finaliseCluster("processed", EdictNextClusterStatus.Generated, "Not evaluated yet").success)
+      assertTrue(restarted.finaliseCluster("processed", EdictNextClusterStatus.Pending, "Retry later").success)
+      assertEquals(processedIds, repository.loadCluster("processed").manifest.processedSignalIds)
+
+      assertEquals(EdictNextInspectionAction.SKIP, restarted.getInspectionAction("processed").action)
+      assertTrue(restarted.recordEvaluation("processed").success)
+      assertTrue(restarted.finaliseCluster("processed", EdictNextClusterStatus.Generated, "Reused").success)
+      assertEquals(processedIds + newSignal.id, repository.loadCluster("processed").manifest.processedSignalIds)
+
+      // Replacing an already processed Signal counts it again without forgetting the other handled evidence.
+      repository.paths.inboxDirectory.resolve("${newSignal.id}.json")
+        .writeText(EdictNextJson.encodeToString(newSignal.copy(description = "Corrected evidence")))
+      repository.replaceClusterSignalFromInbox(newSignal.id, "processed")
+      assertEquals(processedIds, repository.loadCluster("processed").manifest.processedSignalIds)
+      restarted.renameCluster("processed", "renamed-processed")
+      assertEquals(processedIds, repository.loadCluster("renamed-processed").manifest.processedSignalIds)
+      assertEquals(listOf("fresh", "busy-wait", "renamed-processed"), restarted.selectGenerationClusters().clusters.map { it.clusterId })
     }
     finally {
       inspection.stop()

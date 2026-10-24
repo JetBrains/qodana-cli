@@ -45,7 +45,10 @@ internal class EdictNextGenerationService(
       }
       .sortedWith(
         compareByDescending<EdictNextStoredCluster> { cluster ->
-          cluster.signals.count { it.label == EdictNextSignalLabel.POSITIVE }
+          cluster.signals.count {
+            it.strength == EdictNextSignalStrength.STRONG && it.label == EdictNextSignalLabel.POSITIVE &&
+            it.id !in cluster.manifest.processedSignalIds
+          }
         }.thenBy { it.id },
       )
       .take(targetCount)

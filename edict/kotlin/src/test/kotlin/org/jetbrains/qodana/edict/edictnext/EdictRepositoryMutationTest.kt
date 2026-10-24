@@ -52,6 +52,37 @@ class EdictRepositoryMutationTest {
   }
 
   @Test
+  fun `new evidence snapshots legacy Generated membership before reopening the cluster`() {
+    val repository = EdictRepository(EdictRepositoryDirectory(directory.resolve("state").createDirectories()))
+    val signal = EdictNextSignal(
+      id = "s-original",
+      fileRevision = EdictNextFileRevision("Example.java", "abc"),
+      source = EdictNextSignalSource.SubmittedFeedback(),
+      label = EdictNextSignalLabel.POSITIVE,
+      description = "Original evidence",
+    )
+    val clusterDirectory = repository.paths.clustersDirectory.resolve("legacy").createDirectories()
+    clusterDirectory.resolve("cluster.json").writeText(
+      """{"id":"legacy","language":"Java","status":"Generated"}""",
+    )
+    clusterDirectory.resolve("signals").createDirectories().resolve("${signal.id}.json")
+      .writeText(EdictNextJson.encodeToString(signal))
+    repository.paths.inspectionPath("legacy").also {
+      it.parent.createDirectories()
+      it.writeText("// inspection")
+    }
+    val inbox = repository.paths.inboxDirectory.createDirectories()
+    for (id in listOf("s-new", "s-later")) {
+      inbox.resolve("$id.json").writeText(EdictNextJson.encodeToString(signal.copy(id = id)))
+      repository.addSignalToCluster(id, "legacy")
+      val reloaded = EdictRepository(repository.paths).loadCluster("legacy")
+      assertEquals(EdictNextClusterStatus.Pending, reloaded.manifest.status)
+      assertEquals("legacy", reloaded.manifest.predecessorId)
+      assertEquals(setOf(signal.id), reloaded.manifest.processedSignalIds)
+    }
+  }
+
+  @Test
   fun `managed generation mutations persist examples assignments candidates and history`() {
     val clusterId = "busy-wait"
     val signalId = "s-652d0c8f933a"
