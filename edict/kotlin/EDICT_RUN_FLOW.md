@@ -80,6 +80,10 @@ repository-wide validation.
   - stop dependent work on a failed or uncompleted task and cancel unstarted dependent stages; let independent workers
     finish, then always run selected promotion even after failed/cancelled enrichment or generation or no targets
   - promotion scans every eligible Generated inspection, including earlier runs; retain upstream failures in the report
+    - a new PR requires at least five strong Signals with usable source PR or commit diff URLs; missing references
+      produce a per-cluster failure before PR creation
+    - GitHub and Space PR descriptions include the inspection summary and up to ten referenced strong Signals,
+      each with its explanation, label, source link, and exact file revision and ranges
   - report the plan path, produced Signal/cluster/inspection ids, Generated `knownProblems`, and Pending/Invalid clusters
 - every delegation, at any depth
   1. parent calls `edict_task_add(token, skill, title)` with a child permitted by the registry

@@ -49,7 +49,7 @@ internal class PromotionService(
         return@forEach
       }
       val strongSignals = cluster.signals.count { it.strength == EdictNextSignalStrength.STRONG }
-      if (strongSignals < MIN_STRONG_SIGNALS) {
+      if (strongSignals < MIN_PROMOTION_STRONG_SIGNALS) {
         return@forEach
       }
       val inspectionPath = repository.paths.inspectionPath(cluster.id)
@@ -78,6 +78,7 @@ internal class PromotionService(
             targetPath = targetPath,
             inspectionDigest = digest,
             inspectionContent = content,
+            description = promotionDescription(cluster, targetPath, digest),
           ),
         )
         val now = Instant.now(clock).toString()
@@ -212,7 +213,6 @@ internal class PromotionService(
   }
 
   private companion object {
-    const val MIN_STRONG_SIGNALS = 5
     const val MAX_EVIDENCE_CHARS = 32_000
     const val MAX_RATIONALE_CHARS = 4_000
     const val MAX_DECISION_BATCH_SIZE = 10

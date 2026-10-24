@@ -240,7 +240,7 @@ internal class GitHubReviewApi(
       put("title", "Add Edict inspection ${request.clusterId}")
       put("head", branch)
       put("base", request.targetBranch)
-      put("body", "Generated Edict inspection version `${request.inspectionDigest}`.")
+      put("body", request.description)
     }, requireAuthentication = true), 201)
     val number = pullRequest["number"]?.jsonPrimitive?.content.orEmpty()
     require(number.toLongOrNull()?.let { it > 0 } == true) { "GitHub pull request has no number" }
