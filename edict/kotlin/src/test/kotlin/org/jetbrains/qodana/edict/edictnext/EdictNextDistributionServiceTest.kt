@@ -92,6 +92,10 @@ class EdictNextDistributionServiceTest {
     cluster.resolve("history.md").writeText("Generated from the original Signal.\n")
     val original = signal(signalId, "Original model", "old-batch")
     cluster.resolve("signals/$signalId.json").writeText(EdictNextJson.encodeToString(original))
+    val retainedId = stableSignalId(UNIQUE_SIGNAL_KEY)
+    cluster.resolve("signals/$retainedId.json").writeText(
+      EdictNextJson.encodeToString(signal(retainedId, "Retained model", "old-batch", UNIQUE_SIGNAL_KEY)),
+    )
     repository.paths.inspectionPath(clusterId).also {
       it.parent.createDirectories()
       it.writeText("// generated inspection")
@@ -107,7 +111,8 @@ class EdictNextDistributionServiceTest {
     assertContains(prepared.summary, "1 re-published Signal(s) replaced")
     val current = repository.loadState()
     val currentCluster = current.clusters.single()
-    assertEquals(replacement, currentCluster.signals.single())
+    assertEquals(replacement, currentCluster.signals.single { it.id == signalId })
+    assertEquals(setOf(retainedId), currentCluster.manifest.processedSignalIds)
     assertEquals(EdictNextClusterStatus.Pending, currentCluster.manifest.status)
     assertEquals(clusterId, currentCluster.manifest.predecessorId)
     assertFalse(repository.paths.inboxDirectory.resolve("$signalId.json").exists())
