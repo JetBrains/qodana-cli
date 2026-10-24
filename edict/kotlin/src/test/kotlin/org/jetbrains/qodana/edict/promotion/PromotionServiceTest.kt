@@ -17,6 +17,7 @@ import org.jetbrains.qodana.edict.edictnext.EdictNextClusterStatus
 import org.jetbrains.qodana.edict.edictnext.EdictNextFileRevision
 import org.jetbrains.qodana.edict.edictnext.EdictNextJson
 import org.jetbrains.qodana.edict.edictnext.EdictNextLanguage
+import org.jetbrains.qodana.edict.edictnext.EdictNextLineRange
 import org.jetbrains.qodana.edict.edictnext.EdictNextRepositoryState
 import org.jetbrains.qodana.edict.edictnext.EdictNextSignal
 import org.jetbrains.qodana.edict.edictnext.EdictNextSignalLabel
@@ -78,6 +79,111 @@ class PromotionServiceTest {
       assertEquals(PromotionPrState.ON_REVIEW, repository.loadCluster(id).manifest.promotions.single().state)
     }
     assertEquals(processed.signalIds, repository.loadCluster("five-strong").manifest.processedSignalIds)
+  }
+
+  @Test
+  fun `PR description includes referenced strong positive and negative evidence`() {
+    val repository = repository()
+    cluster(repository, "documented-rule", 6, weakSignals = 1)
+    replaceSignal(repository, "documented-rule", "signal-0") {
+      it.copy(description = "Avoid blocking the worker thread")
+    }
+    val commit = "a".repeat(40)
+    replaceSignal(repository, "documented-rule", "signal-4") {
+      it.copy(
+        source = EdictNextSignalSource.FromCommit(commit, "https://github.com/source/project/commit/$commit"),
+        label = EdictNextSignalLabel.NEGATIVE,
+        description = "Use the completion latch",
+        fileRevision = EdictNextFileRevision("Worker.kt", commit, listOf(EdictNextLineRange(12, 15))),
+      )
+    }
+    replaceSignal(repository, "documented-rule", "signal-5") {
+      it.copy(source = EdictNextSignalSource.Generated(), description = "Unreferenced generated evidence")
+    }
+    replaceSignal(repository, "documented-rule", "weak-0") {
+      it.copy(source = EdictNextSignalSource.FromPR(99, "Weak evidence", emptyList(), "", "https://github.com/source/project/pull/99"))
+    }
+    val provider = FakeProvider()
+
+    val result = service(repository, provider).promote()
+
+    assertEquals(1, result.created.size)
+    assertTrue(result.failures.isEmpty())
+    val description = provider.lastRequest!!.description
+    assertContains(description, "Adds the generated Kotlin inspection `documented-rule` at `inspections/documented-rule.inspection.kts`.")
+    assertContains(description, "Representative evidence: Avoid blocking the worker thread")
+    assertContains(description, "Showing 5 of 5 referenced STRONG signals")
+    assertContains(description, "**POSITIVE** — Avoid blocking the worker thread")
+    assertContains(description, "[PR #1: Correction 0](<https://github.com/source/project/pull/1#discussion_r1>)")
+    assertContains(description, "**NEGATIVE** — Use the completion latch")
+    assertContains(description, "[Commit diff $commit](<https://github.com/source/project/commit/$commit>)")
+    assertContains(description, "Worker.kt at `$commit`, lines 12-15; signal `signal-4`")
+    assertContains(description, "Inspection SHA-256: `${sha256Hex("inspection")}`")
+    assertFalse(description.contains("Unreferenced generated evidence"))
+    assertFalse(description.contains("Weak evidence"))
+    assertFalse(description.contains("weak 0"))
+  }
+
+  @Test
+  fun `promotion fails before creating a PR when fewer than five strong signals have references`() {
+    val repository = repository()
+    cluster(repository, "missing-references", 7, weakSignals = 1)
+    replaceSignal(repository, "missing-references", "signal-4") {
+      it.copy(source = EdictNextSignalSource.FromCommit("a".repeat(40)))
+    }
+    replaceSignal(repository, "missing-references", "signal-5") {
+      it.copy(source = EdictNextSignalSource.Generated())
+    }
+    replaceSignal(repository, "missing-references", "signal-6") {
+      it.copy(source = EdictNextSignalSource.SubmittedFeedback(url = "https://example.com/feedback"))
+    }
+    val provider = FakeProvider()
+
+    val result = service(repository, provider).promote()
+
+    assertTrue(result.created.isEmpty())
+    assertEquals(0, provider.ensureCalls)
+    assertEquals(listOf(PromotionFailure(
+      "missing-references", "Promotion requires at least 5 strong Signals with PR or commit diff URLs; found 4",
+    )), result.failures)
+    assertTrue(repository.loadCluster("missing-references").manifest.promotions.isEmpty())
+  }
+
+  @Test
+  fun `invalid source URLs do not count toward referenced strong signals`() {
+    val invalidUrls = listOf("", "not-a-url", "javascript:alert(1)", "https:///missing-host", "https://host/path\nextra", "https://user:password@host/path")
+    invalidUrls.forEachIndexed { index, url ->
+      val repository = repository("invalid-url-$index")
+      cluster(repository, "invalid-link", 5)
+      replaceSignal(repository, "invalid-link", "signal-4") {
+        it.copy(source = (it.source as EdictNextSignalSource.FromPR).copy(url = url))
+      }
+      val provider = FakeProvider()
+
+      val result = service(repository, provider).promote()
+
+      assertTrue(result.created.isEmpty(), "Unexpected PR for '$url'")
+      assertContains(result.failures.single().message, "found 4")
+      assertEquals(0, provider.ensureCalls)
+    }
+  }
+
+  @Test
+  fun `large clusters produce a deterministic bounded evidence section`() {
+    val repository = repository()
+    cluster(repository, "large-rule", 14)
+    replaceSignal(repository, "large-rule", "signal-0") {
+      it.copy(description = "Do not use [unsafe](https://wrong.test) <markup> or `ticks`\nacross lines")
+    }
+    val provider = FakeProvider()
+
+    assertEquals(1, service(repository, provider).promote().created.size)
+
+    val description = provider.lastRequest!!.description
+    assertContains(description, "Showing 10 of 14 referenced STRONG signals")
+    assertEquals(10, Regex("(?m)^\\d+\\. ").findAll(description).count())
+    assertContains(description, "Do not use \\[unsafe\\](https://wrong.test) &lt;markup&gt; or \\`ticks\\` across lines")
+    assertEquals(description, promotionDescription(repository.loadCluster("large-rule"), provider.lastRequest!!.targetPath, provider.lastRequest!!.inspectionDigest))
   }
 
   @Test
@@ -417,7 +523,10 @@ class PromotionServiceTest {
         EdictNextSignal(
           "signal-$index",
           fileRevision = EdictNextFileRevision("Example.kt", "revision"),
-          source = EdictNextSignalSource.Generated(),
+          source = EdictNextSignalSource.FromPR(
+            index + 1, "Correction $index", listOf("Fix the problem"), "",
+            "https://github.com/source/project/pull/${index + 1}#discussion_r${index + 1}",
+          ),
           label = EdictNextSignalLabel.POSITIVE,
           description = "positive $index",
         ),
@@ -436,6 +545,17 @@ class PromotionServiceTest {
       ))
     }
     repository.paths.inspectionPath(id).writeText(inspection)
+  }
+
+  private fun replaceSignal(
+    repository: EdictRepository,
+    clusterId: String,
+    signalId: String,
+    transform: (EdictNextSignal) -> EdictNextSignal,
+  ) {
+    val cluster = repository.loadCluster(clusterId)
+    val signal = cluster.signals.single { it.id == signalId }
+    cluster.directory.signalPath(signalId).writeText(EdictNextJson.encodeToString(transform(signal)))
   }
 
   private fun promotion(id: String, digest: String, state: PromotionPrState): InspectionPromotion = InspectionPromotion(

@@ -90,6 +90,8 @@ class ReviewProvidersTest {
     assertEquals("reviewer", reviewer.body!!.getValue("reviewers").jsonArray.single().toString().trim('"'))
     val file = transport.calls.single { it.method == "PUT" }
     assertEquals("inspections/sample.inspection.kts", file.endpoint.substringAfter("/contents/"))
+    val created = transport.calls.single { it.method == "POST" && it.endpoint.endsWith("/pulls") }
+    assertEquals(JsonPrimitive(request.description), created.body!!["body"])
 
     val review = api.review(ReviewReference(CiProviderId.GITHUB, "owner", "repo", "17", pullRequest.url))
     assertEquals(ReviewState.CLOSED_UNMERGED, review.state)
@@ -133,6 +135,8 @@ class ReviewProvidersTest {
     assertEquals(JsonPrimitive("refs/heads/edict/sample-${request.inspectionDigest.take(12)}"), branch["head"])
     assertEquals(JsonPrimitive("base-sha"), branch["target"])
     val commitCall = transport.calls.single { it.method == "POST" && it.endpoint.endsWith("/commit") }
+    val created = transport.calls.single { it.method == "POST" && it.endpoint.endsWith("/merge-requests") }
+    assertEquals(JsonPrimitive(request.description), created.body!!["description"])
     assertEquals("/projects/owner/repositories/repo/commit", commitCall.endpoint)
     val commit = commitCall.body!!
     assertEquals(JsonPrimitive("base-sha"), commit["baseCommit"])
@@ -298,6 +302,8 @@ class ReviewProvidersTest {
       "inspections/sample.inspection.kts",
       sha256Hex(content),
       content,
+      "## Description\n\nDetects a recurring problem.\n\n## Strong signals\n\n" +
+        (1..5).joinToString("\n") { "$it. STRONG: [PR #$it](https://example.com/pull/$it)" },
     )
   }
 
