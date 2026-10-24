@@ -55,6 +55,8 @@ internal class QodanaIntellijMcpServerLifecycle(
             )
         )
         addAll(listOfNotNull(this@QodanaIntellijMcpServerLifecycle.resultsDirectory?.let { "--results-dir=${it.toAbsolutePath().normalize().absolutePathString()}" }))
+        // Avoid repeated JSON schema lookups while the batch engine discovers injected code.
+        add("--property=idea.batch.inspections.inspect.injected.psi=false")
         addAll(this@QodanaIntellijMcpServerLifecycle.ideArguments)
     }
     log?.let { Files.createDirectories(it.toAbsolutePath().parent) }
