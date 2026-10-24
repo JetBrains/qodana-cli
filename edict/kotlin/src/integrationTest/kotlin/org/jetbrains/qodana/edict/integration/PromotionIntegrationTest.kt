@@ -28,6 +28,7 @@ import org.junit.jupiter.api.Test
 import kotlin.io.path.createDirectories
 import kotlin.io.path.writeText
 import kotlin.test.assertEquals
+import kotlin.test.assertContains
 import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
 
@@ -54,6 +55,10 @@ class PromotionIntegrationTest : IntegrationTest() {
       assertEquals("completed", promotion.status)
       assertTrue(result.isNotBlank())
       assertEquals("inspections/integration-rule.inspection.kts", provider.request?.targetPath)
+      val description = assertNotNull(provider.request).description
+      assertContains(description, "## Description")
+      assertContains(description, "Showing 6 of 6 referenced STRONG signals")
+      repeat(6) { index -> assertContains(description, "https://github.test/source/pull/${index + 1}") }
       val stored = repository.loadCluster("integration-rule").manifest.promotions.single()
       assertEquals("42", stored.pullRequest.id)
       assertEquals(PromotionPrState.ON_REVIEW, stored.state)
@@ -73,7 +78,9 @@ class PromotionIntegrationTest : IntegrationTest() {
         EdictNextSignal(
           "s-$index",
           fileRevision = EdictNextFileRevision("Example.kt", "revision"),
-          source = EdictNextSignalSource.Generated(),
+          source = EdictNextSignalSource.FromPR(
+            index + 1, "Correction $index", listOf("Fix the problem"), "", "https://github.test/source/pull/${index + 1}",
+          ),
           label = EdictNextSignalLabel.POSITIVE,
           description = "positive $index",
         ),

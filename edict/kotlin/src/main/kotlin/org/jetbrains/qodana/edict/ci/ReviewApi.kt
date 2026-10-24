@@ -20,6 +20,7 @@ data class CreateReviewRequest(
   val targetPath: String,
   val inspectionDigest: String,
   val inspectionContent: ByteArray,
+  val description: String,
 ) {
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
@@ -35,6 +36,7 @@ data class CreateReviewRequest(
         if (targetPath != other.targetPath) return false
         if (inspectionDigest != other.inspectionDigest) return false
         if (!inspectionContent.contentEquals(other.inspectionContent)) return false
+        if (description != other.description) return false
 
         return true
     }
@@ -48,6 +50,7 @@ data class CreateReviewRequest(
         result = 31 * result + targetPath.hashCode()
         result = 31 * result + inspectionDigest.hashCode()
         result = 31 * result + inspectionContent.contentHashCode()
+        result = 31 * result + description.hashCode()
         return result
     }
 }

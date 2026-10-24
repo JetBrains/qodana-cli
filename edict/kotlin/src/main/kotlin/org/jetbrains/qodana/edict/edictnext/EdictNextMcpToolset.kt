@@ -439,7 +439,8 @@ internal class EdictNextMcpToolset(
   private fun registerPromotionTools(server: Server) {
     server.addTool(
       name = "edict_promote_clusters",
-      description = "Promote eligible Generated inspections with more than five strong Signals. Omit clusterIds to process every eligible cluster.",
+      description = "Promote eligible Generated inspections with at least five strong Signals linked to source PRs or commit diffs. " +
+        "Each PR includes a description and referenced evidence. Omit clusterIds to process every eligible cluster.",
       inputSchema = toolSchema(
         required = listOf("token"),
         "token" to property("string", "Your delegated edict-promote task token"),

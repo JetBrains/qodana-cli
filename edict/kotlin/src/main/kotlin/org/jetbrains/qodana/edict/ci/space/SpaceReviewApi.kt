@@ -251,6 +251,7 @@ internal class SpaceReviewApi(
       "$reviewsRoot/merge-requests",
       body = buildJsonObject {
         put("title", "Add Edict inspection ${request.clusterId}")
+        put("description", request.description)
         put("repository", request.repository.repository)
         put("sourceBranch", branch)
         put("targetBranch", request.targetBranch)
