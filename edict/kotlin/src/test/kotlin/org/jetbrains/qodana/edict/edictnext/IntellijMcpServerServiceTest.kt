@@ -53,6 +53,7 @@ class IntellijMcpServerServiceTest {
       listOf(
         "edict", "ide-mcp", "--project-dir", project.toAbsolutePath().normalize().toString(),
         "--results-dir=${project.resolve("logs/intellij-mcp").toAbsolutePath().normalize()}",
+        "--property=idea.batch.inspections.inspect.injected.psi=false",
         "--dist=/opt/idea", "--property=-Xmx8g",
       ),
       Files.readAllLines(qodana.resolveSibling("args")),
