@@ -50,7 +50,7 @@ class LivePromotionReviewResolutionTest : IntegrationTest() {
         ) { store, runtime, result ->
             val plan = assertNotNull(store.plan())
             assertEquals(2, plan.tasks.size, "One checker and one bounded decision worker are required")
-            val checker = plan.tasks.single { it.skill == "ecict-check-promotion" }
+            val checker = plan.tasks.single { it.skill == "edict-check-promotion" }
             val decision = plan.tasks.single { it.skill == "edict-promotion-decision" }
             assertEquals("", checker.parentId)
             assertEquals(checker.id, decision.parentId)
