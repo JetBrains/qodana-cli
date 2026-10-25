@@ -144,7 +144,7 @@ internal class EdictNextMcpToolset(
 
     server.addTool(
       name = "edict_next_select_generation_clusters",
-      description = "Suggest Pending clusters for generation, ranked by descending unprocessed strong positive-Signal count and requiring " +
+      description = "Suggest Pending clusters for generation, ranked by descending distinct source-file count among unprocessed strong positive Signals and requiring " +
               "strong positive evidence. Signals covered by a successful generation or inspection reuse do not count toward ranking; " +
               "re-published replacements count again. Read-only: creates no state or reservations; each call reflects the current repository. " +
               "The manager may choose other Pending clusters without calling this tool. Returns the concurrency limit as well. " +
@@ -442,8 +442,8 @@ internal class EdictNextMcpToolset(
     registerWeakSignalPromotionTools(server)
     server.addTool(
       name = "edict_promote_clusters",
-      description = "Promote eligible Generated inspections with at least five strong Signals linked to source PRs or commit diffs. " +
-        "Each PR includes a description and referenced evidence. Omit clusterIds to process every eligible cluster.",
+      description = "Promote eligible Generated inspections with strong Signals from at least five distinct source files linked to source PRs or commit diffs. " +
+        "Each PR includes a description and one representative Signal per source file. Omit clusterIds to process every eligible cluster.",
       inputSchema = toolSchema(
         required = listOf("token"),
         "token" to property("string", "Your delegated edict-promote task token"),
@@ -605,7 +605,7 @@ internal class EdictNextMcpToolset(
 
     server.addTool(
       name = "edict_prepare_weak_signal_promotion",
-      description = "Select up to five persisted true-positive project locations per Generated inspection that lacks five referenced strong Signals. Skips clusters with an active source-fix review, including merged reviews awaiting signal publication.",
+      description = "Select up to five persisted true-positive project locations per Generated inspection that lacks referenced strong Signals from five distinct source files. Skips clusters with an active source-fix review, including merged reviews awaiting signal publication.",
       inputSchema = toolSchema(
         required = listOf("token"),
         "token" to property("string", "Your delegated edict-promote-weak-signal task token"),

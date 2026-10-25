@@ -112,7 +112,7 @@ class PromotionServiceTest {
     val description = provider.lastRequest!!.description
     assertContains(description, "Adds the generated Kotlin inspection `documented-rule` at `inspections/documented-rule.inspection.kts`.")
     assertContains(description, "Representative evidence: Avoid blocking the worker thread")
-    assertContains(description, "Showing 5 of 5 referenced STRONG signals")
+    assertContains(description, "Showing referenced STRONG signals from 5 of 5 distinct source files, one per file")
     assertContains(description, "**POSITIVE** — Avoid blocking the worker thread")
     assertContains(description, "[PR #1: Correction 0](<https://github.com/source/project/pull/1#discussion_r1>)")
     assertContains(description, "**NEGATIVE** — Use the completion latch")
@@ -144,7 +144,7 @@ class PromotionServiceTest {
     assertTrue(result.created.isEmpty())
     assertEquals(0, provider.ensureCalls)
     assertEquals(listOf(PromotionFailure(
-      "missing-references", "Promotion requires at least 5 strong Signals with PR or commit diff URLs; found 4",
+      "missing-references", "Promotion requires strong Signals from at least 5 distinct source files with PR or commit diff URLs; found 4",
     )), result.failures)
     assertTrue(repository.loadCluster("missing-references").manifest.promotions.isEmpty())
   }
@@ -180,10 +180,65 @@ class PromotionServiceTest {
     assertEquals(1, service(repository, provider).promote().created.size)
 
     val description = provider.lastRequest!!.description
-    assertContains(description, "Showing 10 of 14 referenced STRONG signals")
+    assertContains(description, "Showing referenced STRONG signals from 10 of 14 distinct source files, one per file")
     assertEquals(10, Regex("(?m)^\\d+\\. ").findAll(description).count())
     assertContains(description, "Do not use \\[unsafe\\](https://wrong.test) &lt;markup&gt; or \\`ticks\\` across lines")
     assertEquals(description, promotionDescription(repository.loadCluster("large-rule"), provider.lastRequest!!.targetPath, provider.lastRequest!!.inspectionDigest))
+  }
+
+  @Test
+  fun `promotion counts source files once across revisions labels and reviews`() {
+    val repository = repository()
+    cluster(repository, "one-file", 8, sourceFiles = 1)
+    cluster(repository, "four-files", 10, weakSignals = 5, sourceFiles = 4)
+    cluster(repository, "five-files", 5)
+    repeat(8) { index ->
+      replaceSignal(repository, "one-file", "signal-$index") {
+        it.copy(
+          fileRevision = it.fileRevision.copy(revision = index.toString().repeat(40)),
+          label = if (index % 2 == 0) EdictNextSignalLabel.POSITIVE else EdictNextSignalLabel.NEGATIVE,
+        )
+      }
+    }
+    // Equal basenames in different directories are different source files.
+    repeat(5) { index ->
+      replaceSignal(repository, "five-files", "signal-$index") {
+        it.copy(fileRevision = it.fileRevision.copy(path = "src/package$index/Worker.kt"))
+      }
+    }
+    val provider = FakeProvider()
+
+    val result = service(repository, provider).promote()
+
+    assertEquals(listOf("inspections/five-files.inspection.kts"), result.created.map { it.targetPath })
+    assertEquals(1, provider.ensureCalls)
+    assertTrue(result.failures.isEmpty())
+    assertFailsWith<IllegalArgumentException> {
+      promotionDescription(repository.loadCluster("four-files"), "inspection.kts", "digest")
+    }
+  }
+
+  @Test
+  fun `description selects one referenced strong representative per file preferring positives`() {
+    val repository = repository()
+    cluster(repository, "grouped-rule", 10, sourceFiles = 5)
+    replaceSignal(repository, "grouped-rule", "signal-0") { it.copy(source = EdictNextSignalSource.Generated()) }
+    replaceSignal(repository, "grouped-rule", "signal-1") { it.copy(label = EdictNextSignalLabel.NEGATIVE) }
+    val provider = FakeProvider()
+
+    assertEquals(1, service(repository, provider).promote().created.size)
+
+    val cluster = repository.loadCluster("grouped-rule")
+    val evidence = cluster.promotionEvidence()
+    assertEquals(listOf("signal-2", "signal-3", "signal-4", "signal-5", "signal-6"), evidence.map { it.id })
+    val description = provider.lastRequest!!.description
+    assertContains(description, "from 5 of 5 distinct source files, one per file")
+    assertEquals(5, Regex("(?m)^\\d+\\. ").findAll(description).count())
+    evidence.forEach { assertContains(description, "signal `${it.id}`") }
+    listOf("signal-0", "signal-1", "signal-7", "signal-8", "signal-9").forEach {
+      assertFalse(description.contains("signal `$it`"))
+    }
+    assertEquals(description, promotionDescription(cluster.copy(signals = cluster.signals.reversed()), "inspections/grouped-rule.inspection.kts", sha256Hex("inspection")))
   }
 
   @Test
@@ -511,6 +566,7 @@ class PromotionServiceTest {
     promotions: List<InspectionPromotion> = emptyList(),
     inspection: String = "inspection",
     weakSignals: Int = 0,
+    sourceFiles: Int = positives,
   ) {
     val root = repository.paths.clustersDirectory.resolve(id).createDirectories()
     root.resolve("signals").createDirectories()
@@ -522,7 +578,7 @@ class PromotionServiceTest {
       root.resolve("signals/signal-$index.json").writeText(EdictNextJson.encodeToString(
         EdictNextSignal(
           "signal-$index",
-          fileRevision = EdictNextFileRevision("Example.kt", "revision"),
+          fileRevision = EdictNextFileRevision("Example${index % sourceFiles}.kt", "revision"),
           source = EdictNextSignalSource.FromPR(
             index + 1, "Correction $index", listOf("Fix the problem"), "",
             "https://github.com/source/project/pull/${index + 1}#discussion_r${index + 1}",

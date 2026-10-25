@@ -45,10 +45,14 @@ internal class EdictNextGenerationService(
       }
       .sortedWith(
         compareByDescending<EdictNextStoredCluster> { cluster ->
-          cluster.signals.count {
-            it.strength == EdictNextSignalStrength.STRONG && it.label == EdictNextSignalLabel.POSITIVE &&
-            it.id !in cluster.manifest.processedSignalIds
-          }
+          cluster.signals.asSequence()
+            .filter {
+              it.strength == EdictNextSignalStrength.STRONG && it.label == EdictNextSignalLabel.POSITIVE &&
+                it.id !in cluster.manifest.processedSignalIds
+            }
+            .map { it.fileRevision.path }
+            .distinct()
+            .count()
         }.thenBy { it.id },
       )
       .take(targetCount)

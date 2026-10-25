@@ -17,7 +17,7 @@ edict:
     defaultSignalCount: 300 # the default: inbox Signals per run, independent of extraction
   generation:
     maxProjectAnalyses: 3   # the default: project analyses per cluster in one run
-    defaultGenerationCount: 5 # the default: top Pending clusters per run by positive-Signal count
+    defaultGenerationCount: 5 # the default: top Pending clusters per run by distinct unprocessed positive-Signal source files
   # Optional: infer models from Codex session logs, expose edict_calculate_price, and log a report.
   calculatePrice: true
 
@@ -80,10 +80,11 @@ repository-wide validation.
   - stop dependent work on a failed or uncompleted task and cancel unstarted dependent stages; let independent workers
     finish, then always run selected promotion even after failed/cancelled enrichment or generation or no targets
   - promotion scans every eligible Generated inspection, including earlier runs; retain upstream failures in the report
-    - a new PR requires at least five strong Signals with usable source PR or commit diff URLs; missing references
+    - a new PR requires strong Signals from at least five distinct source files with usable source PR or commit diff URLs;
+      each repository-relative path counts once across revisions, labels, and reviews; missing references
       produce a per-cluster failure before PR creation
-    - GitHub and Space PR descriptions include the inspection summary and up to ten referenced strong Signals,
-      each with its explanation, label, source link, and exact file revision and ranges
+    - GitHub and Space PR descriptions include the inspection summary and one referenced strong Signal per source file,
+      from up to ten distinct files, preferring positives, each with its explanation, label, source link, and exact file revision and ranges
   - report the plan path, produced Signal/cluster/inspection ids, Generated `knownProblems`, and Pending/Invalid clusters
 - every delegation, at any depth
   1. parent calls `edict_task_add(token, skill, title)` with a child permitted by the registry
@@ -171,7 +172,8 @@ edict_manager
     own task before launching its generation worker; an empty chosen target list creates no enrichment tasks
   - only the manager keeps the list of chosen clusters and tracks renamed IDs from worker results
   - use `maxConcurrentClusterTasks` from selection, or six when selection was not needed, respecting runtime capacity
-    - suggestions omit Pending clusters without strong positive evidence and clusters beyond the requested count;
+    - suggestions rank by distinct source files among unprocessed strong positive Signals, counting a source path once
+      across revisions, and omit Pending clusters without strong positive evidence and clusters beyond the requested count;
       the manager may still choose them, and generation acceptance checks still apply
   - run one `$edict-next-cluster-generation` worker per cluster, keeping up to that many active
   - leaving a cluster Pending or Invalid is not a stage failure; the coordinator never repairs worker output
@@ -259,7 +261,7 @@ edict_manager
 Inspection metadata exists only in the KTS. `promotions/active.json` indexes active source-fix reviews in its
 `activePromotions` field, grouped by source cluster, separately from inspection
 publication. The `edict-promote-weak-signal` worker selects up to five persisted true positives for a Generated inspection
-with insufficient referenced strong Signals, attempts source fixes in scratch, and publishes a feedback PR through
+with referenced strong Signals from fewer than five distinct source files, attempts source fixes in scratch, and publishes a feedback PR through
 `edict_promote_weak_signal`. Its description explains the inspection and asks users to accept/merge if they agree.
 The server rejects unselected locations, stale inspection bytes, or an analyzed revision different from the target
 branch. Recorded proposals are reused across server restarts. After an interrupted publication, identical fixes reuse
