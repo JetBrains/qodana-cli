@@ -468,15 +468,15 @@ internal class EdictNextMcpToolset(
     }
 
     server.addTool(
-      name = "ecict-check-promotion",
+      name = "edict-check-promotion",
       description = "Refresh ON_REVIEW promotion PRs, returning accepted promotions and closed-unmerged reviews awaiting a cluster decision.",
       inputSchema = toolSchema(
         required = listOf("token"),
-        "token" to property("string", "Your delegated ecict-check-promotion task token"),
+        "token" to property("string", "Your delegated edict-check-promotion task token"),
       ),
     ) { request ->
       try {
-        management.requireSkill(request.requireString("token"), "ecict-check-promotion")
+        management.requireSkill(request.requireString("token"), "edict-check-promotion")
         val response = promotion.checkReviews()
         response.copy(
           undecided = response.undecided.map { it.copy(evidence = management.redact(it.evidence)) },

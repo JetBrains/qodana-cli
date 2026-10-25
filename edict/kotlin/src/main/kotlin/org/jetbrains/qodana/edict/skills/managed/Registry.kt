@@ -21,7 +21,7 @@ object Registry {
                 "edict-git-history-signal-enrichment",
                 "edict-retrospective-signal-analysis",
                 "edict-promote",
-                "ecict-check-promotion",
+                "edict-check-promotion",
             ),
         ),
         Policy("edict-next-distribution"),
@@ -54,7 +54,7 @@ object Registry {
         ),
         Policy("edict-signal-analysis"),
         Policy("edict-promote"),
-        Policy("ecict-check-promotion", delegates = listOf("edict-promotion-decision")),
+        Policy("edict-check-promotion", delegates = listOf("edict-promotion-decision")),
         Policy("edict-promotion-decision"),
     )
 

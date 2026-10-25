@@ -63,7 +63,7 @@ class McpIntegrationTest : IntegrationTest() {
             assertFalse("run_inspection_kts_examples" in tools)
             assertFalse("run_inspection_kts_project" in tools)
             assertContains(tools, "edict_promote_clusters")
-            assertContains(tools, "ecict-check-promotion")
+            assertContains(tools, "edict-check-promotion")
             assertContains(tools, "edict_promotion_decide_reviews")
             assertEquals(true, lines[2].obj("result").flag("isError"))
             assertTrue(lines.last().obj("result").isEmpty())
