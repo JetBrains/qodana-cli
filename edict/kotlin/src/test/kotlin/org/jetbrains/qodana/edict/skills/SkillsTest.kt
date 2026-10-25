@@ -54,9 +54,9 @@ class SkillsTest {
         assertTrue("edict-git-history-signal-enrichment" in Registry["edict_manager"].delegates)
         assertTrue("edict-retrospective-signal-analysis" in Registry["edict_manager"].delegates)
         assertTrue("edict-promote" in Registry["edict_manager"].delegates)
-        assertTrue("ecict-check-promotion" in Registry["edict_manager"].delegates)
-        assertEquals(listOf("edict-promotion-decision"), Registry["ecict-check-promotion"].delegates)
-        listOf("edict-promote", "ecict-check-promotion", "edict-promotion-decision").forEach {
+        assertTrue("edict-check-promotion" in Registry["edict_manager"].delegates)
+        assertEquals(listOf("edict-promotion-decision"), Registry["edict-check-promotion"].delegates)
+        listOf("edict-promote", "edict-check-promotion", "edict-promotion-decision").forEach {
             assertFalse("worktree" in Skills.read(it).lowercase())
         }
         assertEquals(
