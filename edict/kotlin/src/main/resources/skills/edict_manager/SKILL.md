@@ -113,7 +113,9 @@ IDs are known and promotion after upstream attempts finish or are cancelled, inc
 3. `edict-next-distribution`: assign the resulting inbox Signals to clusters.
 4. Select clusters for signal enrichment and rule generation.
    For suggestions, call `edict_next_select_generation_clusters`, omitting `generationCount` unless the user supplies one.
-   It returns ranked candidates and `maxConcurrentClusterTasks`, not a reservation or a required target set. You may choose
+   It ranks by distinct source files among unprocessed strong positive Signals and returns candidates and
+   `maxConcurrentClusterTasks`, not a reservation or a required target set. Multiple Signals from the same source path
+   count once regardless of revision. You may choose
    other Pending clusters based on the user's request and available evidence, or use explicitly requested IDs without
    calling selection. Use `maxConcurrentClusterTasks` from selection when available;
    always respecting runtime capacity and reserving room for descendants. Deduplicate your chosen IDs.
@@ -133,8 +135,8 @@ IDs are known and promotion after upstream attempts finish or are cancelled, inc
    unless the user explicitly restricted publication to particular clusters; eligibility includes inspections from
    earlier runs. Missing CI or promotion configuration is a failed publication prerequisite, not a reason to omit
    this task.
-8. `edict-promote-weak-signal`: attempt source fixes and feedback PRs for Generated inspections lacking enough referenced
-   strong Signals for normal promotion. Pass no cluster filter unless the user restricted publication. Run after normal
+8. `edict-promote-weak-signal`: attempt source fixes and feedback PRs for Generated inspections lacking referenced
+   strong Signals from five distinct source files for normal promotion. Pass no cluster filter unless the user restricted publication. Run after normal
    promotion settles, including when it fails. The worker selects up to five reviewed true-positive locations per
    inspection, attempts focused fixes, and opens a PR describing the inspection and asking users to accept if they agree.
    Report skipped locations, validation limitations, and missing or stale review evidence.

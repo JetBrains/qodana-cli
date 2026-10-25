@@ -57,8 +57,10 @@ class PromotionIntegrationTest : IntegrationTest() {
       assertEquals("inspections/integration-rule.inspection.kts", provider.request?.targetPath)
       val description = assertNotNull(provider.request).description
       assertContains(description, "## Description")
-      assertContains(description, "Showing 6 of 6 referenced STRONG signals")
+      assertContains(description, "Showing referenced STRONG signals from 6 of 6 distinct source files, one per file")
       repeat(6) { index -> assertContains(description, "https://github.test/source/pull/${index + 1}") }
+      assertEquals(6, Regex("(?m)^\\d+\\. ").findAll(description).count())
+      assertTrue("z-duplicate" !in description)
       val stored = repository.loadCluster("integration-rule").manifest.promotions.single()
       assertEquals("42", stored.pullRequest.id)
       assertEquals(PromotionPrState.ON_REVIEW, stored.state)
@@ -74,17 +76,18 @@ class PromotionIntegrationTest : IntegrationTest() {
     ))
     cluster.resolve("history.md").writeText("Created.\n")
     repeat(6) { index ->
-      cluster.resolve("signals/s-$index.json").writeText(EdictNextJson.encodeToString(
-        EdictNextSignal(
-          "s-$index",
-          fileRevision = EdictNextFileRevision("Example.kt", "revision"),
-          source = EdictNextSignalSource.FromPR(
-            index + 1, "Correction $index", listOf("Fix the problem"), "", "https://github.test/source/pull/${index + 1}",
-          ),
-          label = EdictNextSignalLabel.POSITIVE,
-          description = "positive $index",
+      val signal = EdictNextSignal(
+        "s-$index",
+        fileRevision = EdictNextFileRevision("Example$index.kt", "revision"),
+        source = EdictNextSignalSource.FromPR(
+          index + 1, "Correction $index", listOf("Fix the problem"), "", "https://github.test/source/pull/${index + 1}",
         ),
-      ))
+        label = EdictNextSignalLabel.POSITIVE,
+        description = "positive $index",
+      )
+      cluster.resolve("signals/s-$index.json").writeText(EdictNextJson.encodeToString(signal))
+      val duplicate = signal.copy(id = "z-duplicate-$index", fileRevision = signal.fileRevision.copy(revision = "another-revision"))
+      cluster.resolve("signals/${duplicate.id}.json").writeText(EdictNextJson.encodeToString(duplicate))
     }
     repository.paths.inspectionsDirectory.createDirectories()
     repository.paths.inspectionPath("integration-rule").writeText("inspection")
