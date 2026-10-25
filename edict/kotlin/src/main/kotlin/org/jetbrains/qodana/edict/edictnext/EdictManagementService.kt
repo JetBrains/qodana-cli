@@ -251,7 +251,7 @@ internal class EdictManagementService(
 
     if (calculatePrice) tool(
       name = "edict_calculate_price",
-      description = "Calculate this completed run's Codex token price, write the private JSON price report, and log a readable breakdown.",
+      description = "Calculate this completed run's Codex token price, write the private JSON price report, and log a breakdown grouped by pipeline step and cluster task.",
       required = listOf("token"),
     ) { arguments ->
       store.requireSkill(arguments.requireString("token"), setOf("edict_manager"))

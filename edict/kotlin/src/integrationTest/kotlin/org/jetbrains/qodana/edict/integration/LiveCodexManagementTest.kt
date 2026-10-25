@@ -33,7 +33,7 @@ class LiveCodexManagementTest : IntegrationTest() {
             verifyRuntimeWorkers(runtime.home.resolve("sessions"), plan)
             verifyAgentLogs(workspace.layout, plan)
             val price = runtime.writePriceReport(plan)
-            assertTrue(price.topStages.single().inclusivePrice.totalTokens > 0, "Worker receipt must be attributed")
+            assertTrue(price.pipelineSteps.single().inclusivePrice.totalTokens > 0, "Worker receipt must be attributed")
             assertEquals(0L, price.unattributedPrice.totalTokens, "Every managed session must be attributed")
             assertTrue(price.totalPrice.priceUsd > 0.0, "Official OpenAI rates must produce a USD total")
         }
