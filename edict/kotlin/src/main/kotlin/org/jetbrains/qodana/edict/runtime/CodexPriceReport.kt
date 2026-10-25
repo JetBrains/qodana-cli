@@ -88,22 +88,22 @@ internal data class OpenAiPricing(
 }
 
 @Serializable
-internal data class CodexStagePrice(
+internal data class CodexTaskPrice(
     val taskId: String,
     val skill: String,
     val title: String,
     val ownPrice: CodexTokenPrice,
+    val subtasks: List<CodexTaskPrice>,
     /** Own price plus every descendant task, recursively. */
     val inclusivePrice: CodexTokenPrice,
 )
 
 @Serializable
-internal data class CodexClusterPrice(
-    val taskId: String,
-    val title: String,
-    val ownPrice: CodexTokenPrice,
-    val topSubstages: List<CodexStagePrice>,
-    /** Cluster worker plus every substage and nested worker. */
+internal data class CodexPipelineStepPrice(
+    val skill: String,
+    /** Top-level tasks in this step, for example one enrichment or generation task per cluster. */
+    val tasks: List<CodexTaskPrice>,
+    /** Every task branch in this pipeline step. */
     val inclusivePrice: CodexTokenPrice,
 )
 
@@ -118,8 +118,7 @@ internal data class CodexPriceReport(
     val models: List<CodexModelPrice>,
     val currency: String = "usd",
     val managerOwnPrice: CodexTokenPrice,
-    val topStages: List<CodexStagePrice>,
-    val clusterGenerations: List<CodexClusterPrice>,
+    val pipelineSteps: List<CodexPipelineStepPrice>,
     val unattributedPrice: CodexTokenPrice,
     /** Manager, all managed tasks, and any unattributed runtime sessions exactly once. */
     val totalPrice: CodexTokenPrice,
@@ -133,13 +132,14 @@ internal data class CodexPriceReport(
             pricing.longContextRates?.let { appendLine("- long-context rates: ${rates(it)}") }
             appendLine("- model total: ${format(model.price)}")
         }
-        appendLine("Top stages:")
-        topStages.forEach { appendLine("- ${it.skill}: ${format(it.inclusivePrice)}") }
-        clusterGenerations.forEach { cluster ->
-            appendLine("Cluster generation ${cluster.title}:")
-            appendLine("- own generation/coordination: ${format(cluster.ownPrice)}")
-            cluster.topSubstages.forEach { appendLine("- ${it.skill}: ${format(it.inclusivePrice)}") }
-            appendLine("- cluster total: ${format(cluster.inclusivePrice)}")
+        appendLine("Pipeline steps:")
+        pipelineSteps.forEach { step ->
+            val onlyTask = step.tasks.singleOrNull()
+            val title = onlyTask?.takeIf { it.subtasks.isEmpty() }?.let { " (${it.title})" }.orEmpty()
+            appendLine("- ${step.skill}$title: ${format(step.inclusivePrice)}")
+            if (onlyTask == null || onlyTask.subtasks.isNotEmpty()) {
+                step.tasks.forEach { appendTask(it, "  ", includeSkill = false) }
+            }
         }
         appendLine("Manager own: ${format(managerOwnPrice)}")
         if (unattributedPrice.totalTokens > 0) appendLine("Unattributed sessions: ${format(unattributedPrice)}")
@@ -156,6 +156,15 @@ internal data class CodexPriceReport(
             "cache-write=${"%,d".format(value.cacheWriteInputTokens)}/$${money(value.cacheWritePriceUsd)}, " +
             "output=${"%,d".format(value.outputTokens)}/$${money(value.outputPriceUsd)}, " +
             "reasoning-subset=${"%,d".format(value.reasoningOutputTokens)}, total=${"%,d".format(value.totalTokens)} tokens)"
+
+    private fun StringBuilder.appendTask(task: CodexTaskPrice, indent: String, includeSkill: Boolean) {
+        val skill = if (includeSkill) " [${task.skill}]" else ""
+        appendLine("$indent- ${task.title}$skill: ${format(task.inclusivePrice)}")
+        if (task.subtasks.isNotEmpty()) {
+            appendLine("$indent  - own: ${format(task.ownPrice)}")
+            task.subtasks.forEach { appendTask(it, "$indent  ", includeSkill = true) }
+        }
+    }
 
     private fun money(value: Double): String = "%.6f".format(java.util.Locale.ROOT, value)
 }
@@ -174,7 +183,6 @@ internal object CodexPriceReporter {
         val pricingByModel = mutableMapOf<String, OpenAiPricing>()
         fun pricing(model: String) = pricingByModel.getOrPut(model) { loadPricing(model) }
         val sessions = sessionsForPlan(readSessions(home.resolve("sessions"), ::pricing, since), plan)
-        val tasksById = plan.tasks.associateBy(Task::id)
         val sessionsByAgent = buildMap {
             sessions.forEach { session ->
                 put(session.id, session)
@@ -184,27 +192,18 @@ internal object CodexPriceReporter {
         val taskAgents = plan.tasks.map(Task::agentId).filter(String::isNotBlank).toSet()
 
         fun own(task: Task): CodexTokenPrice = sessionsByAgent[task.agentId]?.price ?: CodexTokenPrice()
-        fun isDescendant(task: Task, ancestorId: String): Boolean {
-            var parentId = task.parentId
-            while (parentId.isNotEmpty()) {
-                if (parentId == ancestorId) return true
-                parentId = tasksById[parentId]?.parentId.orEmpty()
-            }
-            return false
+        val tasksByParent = plan.tasks.groupBy(Task::parentId)
+        fun taskPrice(task: Task): CodexTaskPrice {
+            val subtasks = tasksByParent[task.id].orEmpty().map(::taskPrice)
+            val inclusivePrice = subtasks.fold(own(task)) { price, subtask -> price + subtask.inclusivePrice }
+            return CodexTaskPrice(task.id, task.skill, task.title, own(task), subtasks, inclusivePrice)
         }
-        fun inclusive(task: Task): CodexTokenPrice = plan.tasks.asSequence()
-            .filter { it.id == task.id || isDescendant(it, task.id) }
-            .fold(CodexTokenPrice()) { price, nested -> price + own(nested) }
-        fun stage(task: Task) = CodexStagePrice(task.id, task.skill, task.title, own(task), inclusive(task))
-
-        val roots = plan.tasks.filter { it.parentId.isEmpty() }.map(::stage)
-        val clusters = plan.tasks.filter { it.skill == "edict-next-cluster-generation" }.map { cluster ->
-            CodexClusterPrice(
-                cluster.id,
-                cluster.title,
-                own(cluster),
-                plan.tasks.filter { it.parentId == cluster.id }.map(::stage),
-                inclusive(cluster),
+        val pipelineSteps = tasksByParent[""].orEmpty().groupBy(Task::skill).map { (skill, tasks) ->
+            val taskPrices = tasks.map(::taskPrice)
+            CodexPipelineStepPrice(
+                skill,
+                taskPrices,
+                taskPrices.fold(CodexTokenPrice()) { price, task -> price + task.inclusivePrice },
             )
         }
         val manager = sessions.filter(SessionPrice::root)
@@ -220,7 +219,7 @@ internal object CodexPriceReporter {
             .map { (model, prices) ->
                 CodexModelPrice(pricing(model), prices.fold(CodexTokenPrice(), CodexTokenPrice::plus))
             }
-        return CodexPriceReport(models, managerOwnPrice = manager, topStages = roots, clusterGenerations = clusters,
+        return CodexPriceReport(models, managerOwnPrice = manager, pipelineSteps = pipelineSteps,
             unattributedPrice = unattributed, totalPrice = total)
     }
 
