@@ -42,6 +42,7 @@ class WeakSignalPromotionServiceTest {
     val repository = repository()
     cluster(repository, "weak", findings = (1..7).map(::finding) + finding(1))
     cluster(repository, "strong", strongSignals = 5)
+    cluster(repository, "same-file", strongSignals = 6, sourceFiles = 1)
     cluster(repository, "pending", status = EdictNextClusterStatus.Pending)
     cluster(repository, "no-tp", findings = emptyList())
     // Strong evidence without external references also cannot pass normal promotion.
@@ -49,7 +50,7 @@ class WeakSignalPromotionServiceTest {
     val result = service(repository).prepare()
 
     assertTrue(result.failures.isEmpty())
-    assertEquals(listOf("unreferenced", "weak"), result.candidates.map { it.clusterId })
+    assertEquals(listOf("same-file", "unreferenced", "weak"), result.candidates.map { it.clusterId })
     val selected = result.candidates.single { it.clusterId == "weak" }
     assertEquals((1..5).toList(), selected.findings.map { it.fileRevision.expectedRanges!!.first().start })
     assertEquals(revision, selected.projectRevision)
@@ -603,12 +604,14 @@ class WeakSignalPromotionServiceTest {
     findings: List<EdictNextProjectFinding> = (1..3).map(::finding),
     review: EdictNextProjectReview? = EdictNextProjectReview(revision, findings.size, findings.size, 0, 0, 0, "Avoid busy waiting", findings),
     evaluationDigest: String = digest,
+    sourceFiles: Int = strongSignals,
   ) {
     val root = repository.paths.clustersDirectory.resolve(id).createDirectories()
     root.resolve("cluster.json").writeText(EdictNextJson.encodeToString(EdictNextClusterManifest(id, EdictNextLanguage.Kotlin, status)))
     root.resolve("signals").createDirectories()
     repeat(strongSignals) { index ->
-      val signal = EdictNextSignal("signal-$index", fileRevision = EdictNextFileRevision("src/Worker.kt", revision),
+      val path = if (index % sourceFiles == 0) "src/Worker.kt" else "src/Worker${index % sourceFiles}.kt"
+      val signal = EdictNextSignal("signal-$index", fileRevision = EdictNextFileRevision(path, revision),
         source = EdictNextSignalSource.FromCommit(revision, if (references) "https://example.com/commit/$revision" else null),
         label = EdictNextSignalLabel.POSITIVE, description = "Avoid busy waiting", syntheticExampleId = "positive")
       root.resolve("signals/signal-$index.json").writeText(EdictNextJson.encodeToString(signal))

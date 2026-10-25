@@ -104,7 +104,7 @@ includes that breakdown in its final response after the pipeline completes.
   Worker registry IDs and installed skill names both use `edict-*`.
   The manager remains `edict_manager`.
 - Promoting weak signals: `edict-promote-weak-signal` selects up to five reviewed true-positive locations per Generated
-  inspection with fewer than five referenced strong Signals, attempts focused source fixes, and opens a GitHub or Space
+  inspection with referenced strong Signals from fewer than five distinct source files, attempts focused source fixes, and opens a GitHub or Space
   PR asking users to accept the improvements if they agree. It runs after normal promotion in the default pipeline.
   Review evidence is persisted in `evaluation.json`; older inspections need regeneration to populate it. Source-fix
   PRs require the configured target to remain at the analyzed revision, and are recorded separately from inspection

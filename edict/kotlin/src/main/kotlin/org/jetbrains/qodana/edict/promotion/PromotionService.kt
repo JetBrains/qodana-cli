@@ -71,8 +71,11 @@ internal class PromotionService(
       if (cluster.manifest.status != EdictNextClusterStatus.Generated) {
         return@forEach
       }
-      val strongSignals = cluster.signals.count { it.strength == EdictNextSignalStrength.STRONG }
-      if (strongSignals < MIN_PROMOTION_STRONG_SIGNALS) {
+      val strongSourceFiles = cluster.signals
+        .filter { it.strength == EdictNextSignalStrength.STRONG }
+        .distinctBy { it.fileRevision.path }
+        .size
+      if (strongSourceFiles < MIN_PROMOTION_SOURCE_FILES) {
         return@forEach
       }
       val inspectionPath = repository.paths.inspectionPath(cluster.id)

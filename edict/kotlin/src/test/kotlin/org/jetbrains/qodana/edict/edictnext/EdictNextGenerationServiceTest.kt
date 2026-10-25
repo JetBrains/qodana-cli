@@ -170,6 +170,29 @@ class EdictNextGenerationServiceTest {
   }
 
   @Test
+  fun `selection ranks distinct unprocessed strong positive source files`() = runBlocking<Unit> {
+    val strongPositive = EdictNextSignalStrength.STRONG to EdictNextSignalLabel.POSITIVE
+    val (generation, inspection) = generation("a-repeated" to strongPositive, "z-diverse" to strongPositive)
+    val repository = EdictRepository(EdictRepositoryDirectory(directory.resolve("state")))
+    val repeated = repository.loadCluster("a-repeated").signals.single().fileRevision.path
+    repeat(8) { index ->
+      writeSignal("a-repeated", "s-repeat-$index", strongPositive.first, strongPositive.second, repeated, "revision-$index")
+    }
+    writeSignal("z-diverse", "s-diverse", strongPositive.first, strongPositive.second)
+    writeSignal("a-repeated", "s-negative", EdictNextSignalStrength.STRONG, EdictNextSignalLabel.NEGATIVE)
+    writeSignal("a-repeated", "s-weak", EdictNextSignalStrength.WEAK, EdictNextSignalLabel.POSITIVE)
+    writeSignal("a-repeated", "s-processed", strongPositive.first, strongPositive.second)
+    val cluster = repository.loadCluster("a-repeated")
+    cluster.directory.manifestPath.writeText(EdictNextJson.encodeToString(cluster.manifest.copy(processedSignalIds = setOf("s-processed"))))
+
+    try {
+      assertEquals(listOf("z-diverse", "a-repeated", "busy-wait"), generation.selectGenerationClusters().clusters.map { it.clusterId })
+    } finally {
+      inspection.stop()
+    }
+  }
+
+  @Test
   fun `Pending clusters with only processed positive evidence remain eligible at lowest priority`() = runBlocking<Unit> {
     val (generation, inspection) = generation("fresh" to (EdictNextSignalStrength.STRONG to EdictNextSignalLabel.POSITIVE))
     val repository = EdictRepository(EdictRepositoryDirectory(directory.resolve("state")))
@@ -915,12 +938,19 @@ class EdictNextGenerationServiceTest {
     repository.assignCodeExample(clusterId, signalId, example.id)
   }
 
-  private fun writeSignal(clusterId: String, signalId: String, strength: EdictNextSignalStrength, label: EdictNextSignalLabel) {
+  private fun writeSignal(
+    clusterId: String,
+    signalId: String,
+    strength: EdictNextSignalStrength,
+    label: EdictNextSignalLabel,
+    path: String = "$signalId.java",
+    revision: String = "abc",
+  ) {
     directory.resolve("state/clusters/$clusterId/signals/$signalId.json").writeText(
       EdictNextJson.encodeToString(
         EdictNextSignal(
           id = signalId,
-          fileRevision = EdictNextFileRevision("Example.java", "abc", listOf(EdictNextLineRange(1, 1))),
+          fileRevision = EdictNextFileRevision(path, revision, listOf(EdictNextLineRange(1, 1))),
           source = EdictNextSignalSource.SubmittedFeedback(),
           label = label,
           strength = strength,
