@@ -617,6 +617,8 @@ class EdictNextGenerationServiceTest {
     assertEquals(listOf(2, 3, 0), listOf(evaluation.tp, evaluation.fp, evaluation.fn))
     val review = checkNotNull(evaluation.projectReview)
     assertEquals(listOf(25, 6, 1, 0), listOf(review.totalFindings, review.reviewedFindings, review.uncertain, review.unassigned))
+    assertEquals(listOf(1, 2), review.truePositiveFindings.map { it.fileRevision.expectedRanges!!.first().start })
+    assertTrue(review.inspectionDescription.isNotBlank())
     assertEquals(evaluation, repository.loadEvaluation(repository.loadCluster("busy-wait")))
 
     // Findings of a deleted example no longer weigh anything and count as unassigned.

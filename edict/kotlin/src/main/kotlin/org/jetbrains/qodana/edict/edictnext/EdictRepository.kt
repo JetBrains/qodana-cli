@@ -3,26 +3,15 @@ package org.jetbrains.qodana.edict.edictnext
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.SerializationStrategy
-import kotlinx.serialization.json.JsonObject
-import kotlinx.serialization.json.JsonPrimitive
-import kotlinx.serialization.json.encodeToJsonElement
-import kotlinx.serialization.json.jsonObject
+import kotlinx.serialization.builtins.ListSerializer
+import kotlinx.serialization.json.*
+import org.jetbrains.qodana.edict.ci.ReviewReference
 import org.jetbrains.qodana.edict.common.GitRepository
 import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.StandardCopyOption
 import java.nio.file.StandardOpenOption
-import kotlin.io.path.createDirectories
-import kotlin.io.path.deleteIfExists
-import kotlin.io.path.exists
-import kotlin.io.path.isDirectory
-import kotlin.io.path.isRegularFile
-import kotlin.io.path.listDirectoryEntries
-import kotlin.io.path.name
-import kotlin.io.path.readBytes
-import kotlin.io.path.readText
-import kotlin.io.path.writeBytes
-import kotlin.io.path.writeText
+import kotlin.io.path.*
 
 internal class EdictRepository(val paths: EdictRepositoryDirectory) {
   suspend fun loadState(): EdictNextRepositoryState = EdictNextRepositoryState(
@@ -117,8 +106,7 @@ internal class EdictRepository(val paths: EdictRepositoryDirectory) {
       val target = clusterDirectory.examplesDirectory.resolve(exampleId)
       if (target.exists()) target.toFile().deleteRecursively()
       Files.move(temporaryRoot, target, StandardCopyOption.ATOMIC_MOVE)
-    }
-    finally {
+    } finally {
       temporaryRoot.toFile().deleteRecursively()
     }
   }
@@ -128,7 +116,7 @@ internal class EdictRepository(val paths: EdictRepositoryDirectory) {
     val cluster = loadCluster(clusterId)
     require(cluster.manifest.status == EdictNextClusterStatus.Pending) { "Cluster '$clusterId' is not Pending" }
     val example = cluster.examples.singleOrNull { it.metadata.id == exampleId }
-                  ?: error("Code example '$exampleId' does not belong to cluster '$clusterId'")
+      ?: error("Code example '$exampleId' does not belong to cluster '$clusterId'")
     require(example.metadata.label == EdictNextSignalLabel.POSITIVE) {
       "Only positive examples have an expected range to correct"
     }
@@ -146,9 +134,9 @@ internal class EdictRepository(val paths: EdictRepositoryDirectory) {
   fun assignCodeExample(clusterId: String, signalId: String, exampleId: String) {
     val cluster = loadCluster(clusterId)
     val signal = cluster.signals.singleOrNull { it.id == signalId }
-                 ?: error("Signal '$signalId' does not belong to cluster '$clusterId'")
+      ?: error("Signal '$signalId' does not belong to cluster '$clusterId'")
     val example = cluster.examples.singleOrNull { it.metadata.id == exampleId }
-                  ?: error("Code example '$exampleId' does not belong to cluster '$clusterId'")
+      ?: error("Code example '$exampleId' does not belong to cluster '$clusterId'")
     require(signal.label == example.metadata.label) {
       "Signal '$signalId' and example '$exampleId' have different labels"
     }
@@ -208,8 +196,7 @@ internal class EdictRepository(val paths: EdictRepositoryDirectory) {
     finalInspection.parent.createDirectories()
     val previousFinalCode = if (selectedInspection != finalInspection && finalInspection.isRegularFile()) {
       finalInspection.readBytes()
-    }
-    else {
+    } else {
       null
     }
     if (selectedInspection != finalInspection) {
@@ -225,18 +212,15 @@ internal class EdictRepository(val paths: EdictRepositoryDirectory) {
         ),
         EdictNextClusterManifest.serializer(),
       )
-    }
-    catch (e: Exception) {
+    } catch (e: Exception) {
       if (selectedInspection != finalInspection) {
         try {
           if (previousFinalCode == null) {
             finalInspection.deleteIfExists()
-          }
-          else {
+          } else {
             finalInspection.writeBytes(previousFinalCode)
           }
-        }
-        catch (rollbackError: Exception) {
+        } catch (rollbackError: Exception) {
           e.addSuppressed(rollbackError)
         }
       }
@@ -246,6 +230,165 @@ internal class EdictRepository(val paths: EdictRepositoryDirectory) {
       cluster.candidateInspectionPath.deleteIfExists()
     }
     cluster.manifest.predecessorId?.let(paths::inspectionPath)?.takeIf { it != finalInspection }?.deleteIfExists()
+  }
+
+  @Synchronized
+  fun loadActiveWeakSignalPromotions(): Map<String, List<WeakSignalPromotion>> {
+    val path = paths.activeWeakSignalPromotionsPath
+    if (!path.isRegularFile()) migrateWeakSignalPromotions()
+    val active =
+      if (path.isRegularFile()) EdictNextJson.decodeFromString<WeakSignalPromotionIndex>(path.readText()).activePromotions else emptyMap()
+    active.forEach { (clusterId, promotions) ->
+      require(EDICT_NEXT_KEBAB_CASE.matches(clusterId)) { "Invalid cluster id '$clusterId'" }
+      require(promotions.distinctBy { it.pullRequest }.size == promotions.size) { "Duplicate weak-signal reviews" }
+      promotions.forEach(::validateWeakSignalPromotion)
+    }
+    return active
+  }
+
+  /** One-time upgrade of the old cluster-embedded state; normal checks never scan cluster manifests. */
+  private fun migrateWeakSignalPromotions() {
+    val manifests = paths.clustersDirectory.takeIf { it.isDirectory() }?.listDirectoryEntries().orEmpty()
+      .filter { it.isDirectory() }.map { it.resolve("cluster.json") }.filter { it.isRegularFile() }
+      .mapNotNull { path ->
+        val document = EdictNextJson.parseToJsonElement(path.readText()).jsonObject
+        document["weakSignalPromotions"]?.let {
+          Triple(
+            path,
+            document,
+            EdictNextJson.decodeFromJsonElement<List<WeakSignalPromotion>>(it)
+          )
+        }
+      }
+    val active = manifests.associate { (path, _, promotions) -> path.parent.name to promotions }
+    active.values.flatten().forEach(::validateWeakSignalPromotion)
+    saveActiveWeakSignalPromotions(active)
+    manifests.forEach { (path, document, _) ->
+      writeAtomically(path, JsonObject(document - "weakSignalPromotions"), JsonObject.serializer())
+    }
+  }
+
+  fun loadWeakSignalPromotionHistory(clusterId: String): List<WeakSignalPromotion> =
+    paths.weakSignalPromotionHistoryPath(clusterId).takeIf { it.isRegularFile() }
+      ?.let { EdictNextJson.decodeFromString<List<WeakSignalPromotion>>(it.readText()) }.orEmpty()
+
+  private fun saveActiveWeakSignalPromotions(active: Map<String, List<WeakSignalPromotion>>) =
+    writeAtomically(
+      paths.activeWeakSignalPromotionsPath,
+      WeakSignalPromotionIndex(active.filterValues { it.isNotEmpty() }),
+      WeakSignalPromotionIndex.serializer()
+    )
+
+  @Synchronized
+  fun appendWeakSignalPromotion(
+    clusterId: String,
+    expectedInspectionDigest: String,
+    promotion: WeakSignalPromotion
+  ): WeakSignalPromotion {
+    val cluster = loadCluster(clusterId)
+    require(cluster.manifest.status == EdictNextClusterStatus.Generated) { "Cluster '$clusterId' is not Generated" }
+    require(sha256Hex(paths.inspectionPath(clusterId).readBytes()) == expectedInspectionDigest) {
+      "Generated inspection for '$clusterId' changed while the source-fix PR was being created"
+    }
+    validateWeakSignalPromotion(promotion)
+    val active = loadActiveWeakSignalPromotions()
+    active[clusterId].orEmpty().firstOrNull { it.pullRequest == promotion.pullRequest }?.let { return it }
+    saveActiveWeakSignalPromotions(active + (clusterId to (active[clusterId].orEmpty() + promotion)))
+    return promotion
+  }
+
+  @Synchronized
+  fun recordWeakSignalReview(
+    clusterId: String,
+    pullRequest: ReviewReference,
+    state: PromotionPrState,
+  ): WeakSignalPromotion {
+    val active = loadActiveWeakSignalPromotions()
+    val promotions = active[clusterId].orEmpty()
+    val index = promotions.indexOfFirst { it.pullRequest == pullRequest }
+    require(index >= 0) { "Unknown weak-signal review '${pullRequest.id}' in cluster '$clusterId'" }
+    val updated = promotions[index].copy(state = state)
+    validateWeakSignalPromotion(updated)
+    saveActiveWeakSignalPromotions(active + (clusterId to promotions.toMutableList().also { it[index] = updated }))
+    if (state == PromotionPrState.CLOSED) completeWeakSignalPromotion(clusterId, pullRequest)
+    return updated
+  }
+
+  /** Retire only after all merged evidence has been published (including a deliberate no-op). */
+  @Synchronized
+  fun completeWeakSignalPromotion(clusterId: String, pullRequest: ReviewReference) {
+    val active = loadActiveWeakSignalPromotions()
+    val promotion = active[clusterId].orEmpty().singleOrNull { it.pullRequest == pullRequest }
+    if (promotion == null) {
+      require(loadWeakSignalPromotionHistory(clusterId).any { it.pullRequest == pullRequest }) { "Unknown weak-signal review" }
+      return // Idempotent after successful retirement.
+    }
+    require(promotion.state != PromotionPrState.ON_REVIEW) { "Review is still open" }
+    val history = loadWeakSignalPromotionHistory(clusterId).filterNot { it.pullRequest == pullRequest } + promotion
+    writeAtomically(
+      paths.weakSignalPromotionHistoryPath(clusterId),
+      history,
+      ListSerializer(WeakSignalPromotion.serializer())
+    )
+    saveActiveWeakSignalPromotions(
+      active + (clusterId to active.getValue(clusterId).filterNot { it.pullRequest == pullRequest })
+    )
+  }
+
+  /** Only evidence already covered by the inspection can bypass normal inbox distribution. */
+  @Synchronized
+  fun recordWeakSignalPromotionSignals(
+    clusterId: String,
+    pullRequest: ReviewReference,
+    inspectionDigest: String,
+    signals: List<EdictNextSignal>,
+  ) {
+    val cluster = loadCluster(clusterId)
+    require(
+      loadActiveWeakSignalPromotions()[clusterId].orEmpty()
+        .any { it.pullRequest == pullRequest && it.state == PromotionPrState.ACCEPTED }) {
+      "Review is not an accepted weak-signal promotion of '$clusterId'"
+    }
+    require(
+      sha256Hex(
+        paths.inspectionPath(cluster.manifest.predecessorId ?: clusterId).readBytes()
+      ) == inspectionDigest
+    ) {
+      "Inspection changed since review analysis"
+    }
+    require(signals.isNotEmpty() && signals.distinctBy { it.id }.size == signals.size) { "Supply distinct nonempty signals" }
+    val clusterDirectories = paths.clustersDirectory.listDirectoryEntries().filter { it.isDirectory() }
+    signals.forEach { signal ->
+      require(signal.language == cluster.manifest.language) { "Signal language does not match source cluster" }
+      val example = cluster.examples.singleOrNull { it.metadata.id == signal.syntheticExampleId }
+      require(signal.syntheticExampleId == null || example?.metadata?.label == signal.label) { "Signal must reference an existing matching example" }
+      require(example != null && cluster.signals.any { it.syntheticExampleId == example.metadata.id && it.strength == EdictNextSignalStrength.STRONG }) {
+        "Direct evidence must reuse an existing strong representative example; otherwise publish to inbox"
+      }
+      require(!paths.inboxDirectory.resolve("${signal.id}.json").exists()) { "Signal already exists in inbox" }
+      clusterDirectories.forEach directoryLoop@{ directory ->
+        val path = EdictNextClusterDirectory(directory).signalPath(signal.id)
+        if (!path.isRegularFile()) return@directoryLoop
+        val existing = EdictNextJson.decodeFromString<EdictNextSignal>(path.readText())
+        require(directory.name == clusterId && existing == signal) {
+          "Conflicting signal '${signal.id}'"
+        }
+      }
+    }
+    val processed =
+      (if (cluster.manifest.status == EdictNextClusterStatus.Generated) cluster.signalIds else cluster.manifest.processedSignalIds) + signals.map { it.id }
+    val added = signals.filterNot { it.id in cluster.signalIds }
+    try {
+      added.forEach { writeAtomically(cluster.directory.signalPath(it.id), it, EdictNextSignal.serializer()) }
+      writeAtomically(
+        cluster.directory.manifestPath,
+        cluster.manifest.copy(processedSignalIds = processed),
+        EdictNextClusterManifest.serializer()
+      )
+    } catch (e: Exception) {
+      added.forEach { cluster.directory.signalPath(it.id).deleteIfExists() }
+      throw e
+    }
   }
 
   @Synchronized
@@ -268,11 +411,11 @@ internal class EdictRepository(val paths: EdictRepositoryDirectory) {
     }
     require(cluster.manifest.promotions.none {
       it.inspectionDigest == promotion.inspectionDigest &&
-        it.targetBranch == promotion.targetBranch &&
-        it.targetPath == promotion.targetPath &&
-        it.pullRequest.provider == promotion.pullRequest.provider &&
-        it.pullRequest.owner == promotion.pullRequest.owner &&
-        it.pullRequest.repository == promotion.pullRequest.repository
+              it.targetBranch == promotion.targetBranch &&
+              it.targetPath == promotion.targetPath &&
+              it.pullRequest.provider == promotion.pullRequest.provider &&
+              it.pullRequest.owner == promotion.pullRequest.owner &&
+              it.pullRequest.repository == promotion.pullRequest.repository
     }) { "This inspection version has already been promoted to the configured target" }
     writeAtomically(
       cluster.directory.manifestPath,
@@ -314,6 +457,7 @@ internal class EdictRepository(val paths: EdictRepositoryDirectory) {
         )
         historyEntry = "Promotion `$promotionId` accepted after merged PR ${current.pullRequest.url}.\n"
       }
+
       PromotionPrState.CLOSED -> {
         val resolvedTargetStatus = requireNotNull(targetStatus) { "Promotion decision target status is required" }
         val resolvedRationale = requireNotNull(rationale) { "Promotion decision rationale is required" }
@@ -340,6 +484,7 @@ internal class EdictRepository(val paths: EdictRepositoryDirectory) {
         )
         historyEntry = "Promotion `$promotionId` moved cluster to $resolvedTargetStatus: ${resolvedRationale.trim()}\n"
       }
+
       PromotionPrState.ON_REVIEW, PromotionPrState.DECLINED -> {
         error("Promotion resolution cannot set state to $resolvedState")
       }
@@ -349,8 +494,7 @@ internal class EdictRepository(val paths: EdictRepositoryDirectory) {
     val originalHistory = history.takeIf(Path::isRegularFile)?.readBytes()
     val backup = if (resolvedState == PromotionPrState.CLOSED && targetStatus == EdictNextClusterStatus.Discontinued) {
       Files.createTempFile(inspection.parent, ".edict-discontinued-", ".inspection.kts")
-    }
-    else null
+    } else null
     try {
       backup?.let { Files.move(inspection, it, StandardCopyOption.REPLACE_EXISTING) }
       try {
@@ -365,20 +509,17 @@ internal class EdictRepository(val paths: EdictRepositoryDirectory) {
           StandardOpenOption.CREATE,
           StandardOpenOption.APPEND,
         )
-      }
-      catch (e: Exception) {
+      } catch (e: Exception) {
         writeAtomically(cluster.directory.manifestPath, cluster.manifest, EdictNextClusterManifest.serializer())
         if (originalHistory == null) history.deleteIfExists() else history.writeBytes(originalHistory)
         backup?.takeIf(Path::exists)?.let { Files.move(it, inspection, StandardCopyOption.REPLACE_EXISTING) }
         throw e
       }
       backup?.deleteIfExists()
-    }
-    finally {
+    } finally {
       if (backup?.exists() == true && !inspection.exists()) {
         Files.move(backup, inspection, StandardCopyOption.REPLACE_EXISTING)
-      }
-      else {
+      } else {
         backup?.deleteIfExists()
       }
     }
@@ -426,7 +567,8 @@ internal class EdictRepository(val paths: EdictRepositoryDirectory) {
   }
 
   fun addSignalToCluster(signalId: String, clusterId: String) {
-    val signal = loadInboxSignals().singleOrNull { it.id == signalId } ?: error("Inbox Signal '$signalId' does not exist")
+    val signal =
+      loadInboxSignals().singleOrNull { it.id == signalId } ?: error("Inbox Signal '$signalId' does not exist")
     val clusterDirectory = EdictNextClusterDirectory(paths.clustersDirectory.resolve(clusterId))
 
     if (!clusterDirectory.root.exists()) {
@@ -453,7 +595,7 @@ internal class EdictRepository(val paths: EdictRepositoryDirectory) {
     val inboxPath = paths.inboxDirectory.resolve("$signalId.json")
     require(inboxPath.isRegularFile()) { "Inbox Signal '$signalId' does not exist" }
     val replacement = loadSignals(paths.inboxDirectory).singleOrNull { it.id == signalId }
-                      ?: error("Inbox Signal '$signalId' does not exist")
+      ?: error("Inbox Signal '$signalId' does not exist")
     val cluster = loadCluster(clusterId)
     require(cluster.signals.count { it.id == signalId } == 1) {
       "Signal '$signalId' does not belong to cluster '$clusterId' exactly once"
@@ -480,16 +622,14 @@ internal class EdictRepository(val paths: EdictRepositoryDirectory) {
         StandardOpenOption.APPEND,
       )
       inboxPath.deleteIfExists()
-    }
-    catch (e: Exception) {
+    } catch (e: Exception) {
       try {
         writeBytesAtomically(target, originalSignal)
         writeAtomically(cluster.directory.manifestPath, cluster.manifest, EdictNextClusterManifest.serializer())
         if (originalHistory == null) cluster.historyPath.deleteIfExists()
         else writeBytesAtomically(cluster.historyPath, originalHistory)
         writeBytesAtomically(inboxPath, replacementSignal)
-      }
-      catch (rollbackError: Exception) {
+      } catch (rollbackError: Exception) {
         e.addSuppressed(rollbackError)
       }
       throw e
@@ -519,7 +659,7 @@ internal class EdictRepository(val paths: EdictRepositoryDirectory) {
       predecessorId = predecessorId,
       // Also initializes the snapshot for Generated manifests written before processedSignalIds existed.
       processedSignalIds = if (cluster.manifest.status == EdictNextClusterStatus.Generated) cluster.signalIds
-                           else cluster.manifest.processedSignalIds,
+      else cluster.manifest.processedSignalIds,
     )
   }
 
@@ -527,30 +667,32 @@ internal class EdictRepository(val paths: EdictRepositoryDirectory) {
   private fun writeSyntheticExampleId(signalPath: Path, exampleId: String?) {
     val document = EdictNextJson.parseToJsonElement(signalPath.readText()).jsonObject
     val updated = if (exampleId == null) document - "syntheticExampleId"
-                  else document + ("syntheticExampleId" to JsonPrimitive(exampleId))
+    else document + ("syntheticExampleId" to JsonPrimitive(exampleId))
     signalPath.writeText(EdictNextJson.encodeToString(JsonObject.serializer(), JsonObject(updated)))
   }
 
   private fun loadExamples(clusterDirectory: EdictNextClusterDirectory): List<EdictNextStoredExample> {
     if (!clusterDirectory.examplesDirectory.isDirectory()) return emptyList()
     val issues = mutableListOf<String>()
-    val examples = clusterDirectory.examplesDirectory.listDirectoryEntries().filter(Path::isDirectory).sortedBy(Path::name).mapNotNull { path ->
-      val directory = EdictNextExampleDirectory(path)
-      try {
-        require(directory.metadataPath.isRegularFile()) { "Code example ${directory.root.name} has no metadata.json" }
-        val metadata = EdictNextJson.decodeFromString<EdictNextCodeExampleMetadata>(directory.metadataPath.readText())
-        require(metadata.id == directory.root.name) {
-          "Code example directory '${directory.root.name}' does not match metadata id '${metadata.id}'"
+    val examples =
+      clusterDirectory.examplesDirectory.listDirectoryEntries().filter(Path::isDirectory).sortedBy(Path::name)
+        .mapNotNull { path ->
+          val directory = EdictNextExampleDirectory(path)
+          try {
+            require(directory.metadataPath.isRegularFile()) { "Code example ${directory.root.name} has no metadata.json" }
+            val metadata =
+              EdictNextJson.decodeFromString<EdictNextCodeExampleMetadata>(directory.metadataPath.readText())
+            require(metadata.id == directory.root.name) {
+              "Code example directory '${directory.root.name}' does not match metadata id '${metadata.id}'"
+            }
+            val sourcePath = directory.sourcePath(metadata.fileName)
+            require(sourcePath.isRegularFile()) { "Code example '${metadata.id}' has no source file ${metadata.fileName}" }
+            EdictNextStoredExample(directory, metadata, sourcePath, sourcePath.readText())
+          } catch (e: Exception) {
+            issues += "Cannot read code example '${directory.root}': ${e.message ?: e}"
+            null
+          }
         }
-        val sourcePath = directory.sourcePath(metadata.fileName)
-        require(sourcePath.isRegularFile()) { "Code example '${metadata.id}' has no source file ${metadata.fileName}" }
-        EdictNextStoredExample(directory, metadata, sourcePath, sourcePath.readText())
-      }
-      catch (e: Exception) {
-        issues += "Cannot read code example '${directory.root}': ${e.message ?: e}"
-        null
-      }
-    }
     if (issues.isNotEmpty()) throw EdictNextCodeExampleReadException(issues)
     return examples
   }
@@ -565,7 +707,7 @@ internal class EdictRepository(val paths: EdictRepositoryDirectory) {
             "Signal file '${path.fileName}' does not match Signal id '${signal.id}'"
           }
         }
-    }
+      }
   }
 
   private fun <T> write(path: Path, value: T, serializer: SerializationStrategy<T>) {
@@ -584,12 +726,10 @@ internal class EdictRepository(val paths: EdictRepositoryDirectory) {
       temporary.writeBytes(content)
       try {
         Files.move(temporary, path, StandardCopyOption.ATOMIC_MOVE, StandardCopyOption.REPLACE_EXISTING)
-      }
-      catch (_: java.nio.file.AtomicMoveNotSupportedException) {
+      } catch (_: java.nio.file.AtomicMoveNotSupportedException) {
         Files.move(temporary, path, StandardCopyOption.REPLACE_EXISTING)
       }
-    }
-    finally {
+    } finally {
       temporary.deleteIfExists()
     }
   }
@@ -602,10 +742,10 @@ internal class EdictRepository(val paths: EdictRepositoryDirectory) {
           .filter { path ->
             val relative = paths.root.relativize(path)
             !relative.startsWith(GIT_PATH) &&
-              !relative.startsWith(EMBEDDINGS_PATH) &&
-              !relative.startsWith(PLANS_PATH) &&
-              relative.fileName.toString() !in MANAGEMENT_FILES &&
-              relative !in gitIgnoredFiles
+                    !relative.startsWith(EMBEDDINGS_PATH) &&
+                    !relative.startsWith(PLANS_PATH) &&
+                    relative.fileName.toString() !in MANAGEMENT_FILES &&
+                    relative !in gitIgnoredFiles
           }
           .sorted()
           .toList()

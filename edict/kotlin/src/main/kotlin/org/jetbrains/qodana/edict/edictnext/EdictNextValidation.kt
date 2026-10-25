@@ -44,6 +44,16 @@ internal suspend fun validateRepositoryState(
   state: EdictNextRepositoryState,
 ): List<EdictNextValidationIssue> {
   val issues = mutableListOf<EdictNextValidationIssue>()
+  try {
+    val active = if (repository.paths.activeWeakSignalPromotionsPath.isRegularFile()) repository.loadActiveWeakSignalPromotions() else emptyMap()
+    active.keys.forEach { clusterId ->
+      if (state.clusters.none { it.id == clusterId }) {
+        issues += EdictNextValidationIssue(repository.paths.activeWeakSignalPromotionsPath.toString(), "Unknown source cluster '$clusterId'")
+      }
+    }
+  } catch (e: IllegalArgumentException) {
+    issues += EdictNextValidationIssue(repository.paths.activeWeakSignalPromotionsPath.toString(), e.message.orEmpty())
+  }
   val allSignals = state.clusters.flatMap(EdictNextStoredCluster::signals) + state.inboxSignals
   allSignals.groupingBy(EdictNextSignal::id).eachCount().filterValues { it != 1 }.forEach { (signalId, count) ->
     issues += EdictNextValidationIssue("signals/$signalId", "Signal occurs $count times")
@@ -159,6 +169,11 @@ internal fun validatePromotion(promotion: InspectionPromotion) {
   require(java.time.Instant.parse(promotion.createdAt) <= java.time.Instant.parse(promotion.updatedAt)) {
     "Promotion update timestamp precedes creation"
   }
+}
+
+internal fun validateWeakSignalPromotion(promotion: WeakSignalPromotion) {
+  require(promotion.pullRequest.owner.isNotBlank() && promotion.pullRequest.repository.isNotBlank() &&
+    promotion.pullRequest.id.isNotBlank() && promotion.pullRequest.url.isNotBlank()) { "Weak-signal promotion PR identity is required" }
 }
 
 internal suspend fun validateCluster(

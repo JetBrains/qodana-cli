@@ -74,8 +74,8 @@ repository-wide validation.
     - after a server restart, calling it again with the exact persisted request and steps claims the unfinished plan
       with a fresh token; interrupted tasks return to pending, completed results are kept
   - plan steps from the request; the default repository pipeline is
-    `edict-pr-signal-analysis` -> `edict-next-distribution` -> one `edict-git-history-signal-enrichment` per cluster ->
-    parallel top-level `edict-next-cluster-generation` workers -> `edict-promote`
+    parallel `edict-check-weak-signal-promotion` and `edict-pr-signal-analysis` -> `edict-next-distribution` -> one `edict-git-history-signal-enrichment` per cluster ->
+    parallel top-level `edict-next-cluster-generation` workers -> `edict-promote` -> `edict-promote-weak-signal`
     (`LivePipelineTest`)
   - stop dependent work on a failed or uncompleted task and cancel unstarted dependent stages; let independent workers
     finish, then always run selected promotion even after failed/cancelled enrichment or generation or no targets
@@ -238,7 +238,8 @@ edict_manager
          (`inspectionHash`, `exampleSetDigest`, per-example results, `tp`, `fp`, `fn`, `precision`, `recall`, and
          `projectReview`), and writes nothing unless every strong example passes. Each example weighs the project
          findings the weak-signal review assigned to it over every round (`edict_next_record_weak_review`), at least 1;
-         `projectReview` counts the published inspection's project findings and the reviewed ones. A finding the
+         `projectReview` counts the published inspection's project findings and the reviewed ones, and persists the
+         inspection description and exact true-positive findings for later weak-signal promotion. A finding the
          published inspection still reports while not reporting its example counts directly by its classification
     6. records operational evidence with `edict_next_append_cluster_history` and ends with one successful
        `edict_next_finalise_cluster(token, clusterId, status, reason)`; it appends the reason to history and applies the
@@ -254,8 +255,31 @@ edict_manager
 
 ## Repository state
 
-`cluster.json` contains only `id`, `language`, `status`, and optional `predecessorId`. Inspection metadata exists only in
-the KTS.
+`cluster.json` contains `id`, `language`, `status`, optional `predecessorId`, processed Signal IDs, and promotion records.
+Inspection metadata exists only in the KTS. `promotions/active.json` indexes active source-fix reviews in its
+`activePromotions` field, grouped by source cluster, separately from inspection
+publication. The `edict-promote-weak-signal` worker selects up to five persisted true positives for a Generated inspection
+with insufficient referenced strong Signals, attempts source fixes in scratch, and publishes a feedback PR through
+`edict_promote_weak_signal`. Its description explains the inspection and asks users to accept/merge if they agree.
+The server rejects unselected locations, stale inspection bytes, or an analyzed revision different from the target
+branch. Recorded proposals are reused across server restarts. After an interrupted publication, identical fixes reuse
+their branch and PR; changed fixes use a different branch.
+The separate default-pipeline step `edict-check-weak-signal-promotion` refreshes only indexed active weak-signal PRs,
+without loading all clusters or iterating completed history. Records contain only review references and states. Review evidence and exact
+merged snapshots are returned transiently; the skill extracts actual corrections through
+regular Signal models. Covered corrections use `edict_record_weak_signal_promotion_signals` directly into the originating cluster. The server checks
+immutable merge revisions and canonical diff bytes rather than trusting proposed PR content. Covered evidence reuses
+an existing strong representative example and is implicitly marked processed (no processing flag). All other evidence
+uses the regular `edict_publish_signal` inbox tool, leaving the source cluster unchanged until normal distribution.
+Closed reviews are archived immediately; merged reviews stay active until successful publication or an analyzed no-op
+is acknowledged with `edict_complete_weak_signal_promotion`. History lives in `promotions/history/<clusterId>.json`.
+Legacy cluster-embedded records migrate once when the active index is first created. Missing exact merge
+evidence is retryable and creates no Signals. GitHub single-parent multi-commit reviews and providers without exact
+merge snapshots are reported as unavailable rather than guessed.
+Inspection-promotion reviews remain separate in `edict-check-promotion` with their original acceptance/decision flow.
+Weak-signal checking runs in parallel with extraction; unchecked reviews or provider failures do not block
+`edict_fetch_pr_batch`. Let both stages settle before distribution/selection to observe new evidence, but continue
+independent stages after check failures. Open PRs may remain open after being checked.
 
 - `Generated`: `inspections/<id>.inspection.kts` exists; candidate and predecessor are absent; history is non-empty.
 - `Pending` and `Invalid`: candidate is optional; a referenced predecessor inspection exists.
@@ -271,7 +295,6 @@ responses), and `tasks/<task-id>.log`.
 - `edict-retrospective-signal-analysis` still publishes through
   `edict_state_write`, which the server no longer registers; the tool is `edict_publish_signal`.
 - `EdictNextTimeouts.session` (900m) is defined but not enforced; the benchmark job timeout is 300 minutes.
-- `README.md` says 13 managed skills (the registry has 12).
 
 ## TODO (outside the setup/run separation)
 

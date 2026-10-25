@@ -50,7 +50,7 @@ internal fun promotionDescription(cluster: EdictNextStoredCluster, targetPath: S
   }
 }
 
-private fun EdictNextSignal.referenceUrl(): String? {
+internal fun EdictNextSignal.referenceUrl(): String? {
   val url = when (val origin = source) {
     is EdictNextSignalSource.FromPR -> origin.url
     is EdictNextSignalSource.FromCommit -> origin.url
@@ -63,7 +63,7 @@ private fun EdictNextSignal.referenceUrl(): String? {
   }
 }
 
-private fun String.markdownText(): String = buildString {
+internal fun String.markdownText(): String = buildString {
   for (character in this@markdownText) {
     when (character) {
       '\n', '\r' -> append(' ')

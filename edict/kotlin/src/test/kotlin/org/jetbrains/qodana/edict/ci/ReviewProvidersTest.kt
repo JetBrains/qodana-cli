@@ -18,6 +18,46 @@ import kotlin.test.assertTrue
 
 class ReviewProvidersTest {
   @Test
+  fun `github merged evidence uses first parent and landed revision rather than proposed head`() {
+    val before = "a".repeat(40)
+    val merged = "b".repeat(40)
+    val proposed = "c".repeat(40)
+    var parentCount = 2
+    var prCommits = 3
+    val transport = RecordingTransport { _, method, endpoint, _, _ ->
+      assertEquals("GET", method)
+      when {
+        endpoint.endsWith("/pulls/42") -> response(200, buildJsonObject {
+          put("title", "Fix waiting"); put("merged_at", "2026-10-25T12:00:00Z"); put("merge_commit_sha", merged); put("commits", prCommits)
+          put("head", obj("sha" to JsonPrimitive(proposed)))
+        })
+        endpoint.endsWith("/commits/$merged") -> response(200, buildJsonObject {
+          put("sha", merged)
+          put("parents", JsonArray(listOf(before, proposed).take(parentCount).map { obj("sha" to JsonPrimitive(it)) }))
+          put("files", JsonArray(listOf(obj("filename" to JsonPrimitive("src/Worker.kt"), "previous_filename" to JsonPrimitive("src/OldWorker.kt")))))
+        })
+        endpoint.endsWith("/issues/42/comments") -> CiHttpResponse(200, JsonArray(listOf(
+          obj("body" to JsonPrimitive("Use blocking wait"), "user" to obj("login" to JsonPrimitive("reviewer"), "type" to JsonPrimitive("User"))),
+          obj("body" to JsonPrimitive("CI passed"), "user" to obj("login" to JsonPrimitive("ci[bot]"), "type" to JsonPrimitive("Bot"))),
+        )))
+        endpoint.endsWith("/reviews") || endpoint.endsWith("/comments") -> CiHttpResponse(200, JsonArray(emptyList()))
+        else -> error("Unexpected call $endpoint")
+      }
+    }
+    val api = GitHubReviewApi(transport)
+    val reference = ReviewReference(CiProviderId.GITHUB, "owner", "repo", "42", "https://github.test/owner/repo/pull/42")
+    val result = api.mergedReview(reference)
+    assertEquals(before, result.beforeRevision)
+    assertEquals(merged, result.mergedRevision)
+    assertEquals(listOf(ReviewFileChange("src/OldWorker.kt", "src/Worker.kt")), result.changes)
+    assertEquals(listOf("Use blocking wait"), result.discussionMessages)
+    parentCount = 1
+    assertFailsWith<IllegalArgumentException> { api.mergedReview(reference) }
+    prCommits = 1
+    assertEquals(merged, api.mergedReview(reference).mergedRevision)
+  }
+
+  @Test
   fun `space skips malformed reviews and feed elements and reports every problem`() {
     val transport = RecordingTransport { _, method, endpoint, _, _ ->
       assertEquals("GET", method)
@@ -289,6 +329,217 @@ class ReviewProvidersTest {
     }
     assertEquals("Space inspection branch creation returned HTTP 403: Permission is not granted: VcsRepository.Write", failure.message)
     assertTrue(transport.calls.none { it.endpoint.endsWith("/commit") || it.endpoint.contains("/code-reviews") })
+  }
+
+  @Test
+  fun `github commits all source fixes atomically preserves modes and reuses its PR`() {
+    val revision = "a".repeat(40)
+    val fixedRevision = "b".repeat(40)
+    val changes = SourceFixChanges(revision, mapOf("First.kt" to "fixed first", "Second.kt" to "fixed second"))
+    val request = request(CiProviderId.GITHUB).copy(operationId = "w-${"c".repeat(24)}", sourceFix = changes)
+    var branchExists = false
+    var reviewExists = false
+    val pull = obj("number" to JsonPrimitive(17), "html_url" to JsonPrimitive("https://github.test/pr/17"))
+    val transport = RecordingTransport { _, method, endpoint, query, body ->
+      when {
+        method == "GET" && endpoint.contains("/git/ref/heads/edict") -> if (branchExists)
+          response(200, obj("object" to obj("sha" to JsonPrimitive(fixedRevision)))) else response(404)
+        method == "GET" && endpoint.endsWith("/git/ref/heads/main") ->
+          response(200, obj("object" to obj("sha" to JsonPrimitive(revision))))
+        method == "GET" && endpoint.contains("/contents/") -> {
+          val path = endpoint.substringAfter("/contents/")
+          val content = if (query["ref"] == fixedRevision) changes.files.getValue(path) else "original $path"
+          response(200, obj("type" to JsonPrimitive("file"), "encoding" to JsonPrimitive("base64"),
+            "content" to JsonPrimitive(Base64.getEncoder().encodeToString(content.encodeToByteArray())),
+            "size" to JsonPrimitive(content.encodeToByteArray().size)))
+        }
+        method == "GET" && endpoint.endsWith("/git/commits/$revision") ->
+          response(200, obj("tree" to obj("sha" to JsonPrimitive("base-tree"))))
+        method == "GET" && endpoint.endsWith("/git/trees/base-tree") -> response(200, obj("tree" to JsonArray(
+          changes.files.keys.mapIndexed { index, path -> obj(
+            "path" to JsonPrimitive(path), "type" to JsonPrimitive("blob"),
+            "mode" to JsonPrimitive(if (index == 0) "100755" else "100644"),
+          ) },
+        )))
+        method == "POST" && endpoint.endsWith("/git/trees") -> response(201, obj("sha" to JsonPrimitive("fixed-tree")))
+        method == "POST" && endpoint.endsWith("/git/commits") -> response(201, obj("sha" to JsonPrimitive(fixedRevision)))
+        method == "POST" && endpoint.endsWith("/git/refs") -> { branchExists = true; response(201, body!!) }
+        method == "GET" && endpoint.endsWith("/pulls") -> CiHttpResponse(200, JsonArray(if (reviewExists) listOf(pull) else emptyList()))
+        method == "POST" && endpoint.endsWith("/pulls") -> { reviewExists = true; response(201, pull) }
+        method == "POST" && endpoint.endsWith("/requested_reviewers") -> response(201)
+        else -> error("Unexpected GitHub source-fix call $method $endpoint")
+      }
+    }
+    val api = GitHubReviewApi(transport)
+    assertEquals(api.ensureReview(request), api.ensureReview(request))
+    val tree = transport.calls.single { it.method == "POST" && it.endpoint.endsWith("/git/trees") }.body!!
+    assertEquals(JsonPrimitive("base-tree"), tree["base_tree"])
+    val entries = tree.getValue("tree").jsonArray.map { it as JsonObject }
+    assertEquals(listOf("100755", "100644"), entries.map { (it["mode"] as JsonPrimitive).content })
+    assertEquals(changes.files.keys.toList(), entries.map { (it["path"] as JsonPrimitive).content })
+    val commit = transport.calls.single { it.method == "POST" && it.endpoint.endsWith("/git/commits") }.body!!
+    assertEquals(JsonArray(listOf(JsonPrimitive(revision))), commit["parents"])
+    assertEquals(JsonPrimitive("fixed-tree"), commit["tree"])
+    assertEquals(1, transport.calls.count { it.method == "POST" && it.endpoint.endsWith("/pulls") })
+    assertTrue(transport.calls.none { it.method == "PUT" })
+    val pullRequest = transport.calls.single { it.method == "POST" && it.endpoint.endsWith("/pulls") }.body!!
+    assertEquals(JsonPrimitive(request.title), pullRequest["title"])
+    assertEquals(JsonPrimitive(request.description), pullRequest["body"])
+  }
+
+  @Test
+  fun `space commits multiple source fixes and reuses completed source branch`() {
+    val revision = "a".repeat(40)
+    val fixedRevision = "b".repeat(40)
+    val changes = SourceFixChanges(revision, mapOf("First.kt" to "fixed first", "Second.kt" to "fixed second"))
+    val request = request(CiProviderId.SPACE).copy(operationId = "w-${"c".repeat(24)}", sourceFix = changes)
+    var branchRevision: String? = null
+    var reviewExists = false
+    val review = obj("id" to JsonPrimitive("review-id"), "number" to JsonPrimitive(17))
+    val transport = RecordingTransport { _, method, endpoint, query, body ->
+      when {
+        method == "GET" && endpoint.endsWith("/branches/refs%2Fheads%2Fmain") ->
+          response(200, obj("branchInfo" to obj("ref" to JsonPrimitive(revision))))
+        method == "GET" && endpoint.contains("/branches/") -> branchRevision?.let {
+          response(200, obj("branchInfo" to obj("ref" to JsonPrimitive(it))))
+        } ?: response(404)
+        method == "GET" && endpoint.endsWith("/files") -> CiHttpResponse(200, JsonArray(listOf(obj(
+          "path" to JsonPrimitive(query.getValue("path")), "type" to JsonPrimitive("FILE"),
+          "blob" to JsonPrimitive("${query.getValue("commit")}:${query.getValue("path")}"),
+        ))))
+        method == "GET" && endpoint.endsWith("/content") -> {
+          val blob = query.getValue("blobId")
+          val content = if (blob.startsWith(fixedRevision)) changes.files.getValue(blob.substringAfter(':')) else "original"
+          response(200, obj("partBase64" to JsonPrimitive(Base64.getEncoder().encodeToString(content.encodeToByteArray())),
+            "totalSize" to JsonPrimitive(content.encodeToByteArray().size)))
+        }
+        method == "POST" && endpoint.endsWith("/head") -> { branchRevision = revision; response(200) }
+        method == "POST" && endpoint.endsWith("/commit") -> {
+          branchRevision = fixedRevision; response(200, obj("success" to JsonPrimitive(true)))
+        }
+        method == "GET" && endpoint.endsWith("/code-reviews") -> response(200, obj("data" to JsonArray(
+          if (reviewExists) listOf(obj("review" to JsonObject(review + ("branchPair" to obj(
+            "repository" to JsonPrimitive("repo"), "sourceBranch" to JsonPrimitive(request.branch),
+            "targetBranch" to JsonPrimitive("main"),
+          ))))) else emptyList(),
+        )))
+        method == "POST" && endpoint.endsWith("/merge-requests") -> { reviewExists = true; response(200, review) }
+        method == "POST" && endpoint.endsWith("/participants/reviewer") -> response(200)
+        else -> error("Unexpected Space source-fix call $method $endpoint $body")
+      }
+    }
+    val api = SpaceReviewApi(transport, "https://space.test")
+    assertEquals(api.ensureReview(request), api.ensureReview(request))
+    val commit = transport.calls.single { it.method == "POST" && it.endpoint.endsWith("/commit") }.body!!
+    assertEquals(JsonPrimitive(revision), commit["baseCommit"])
+    assertEquals(JsonPrimitive("refs/heads/${request.branch}"), commit["targetBranch"])
+    val files = commit.getValue("files").jsonArray.map { it as JsonObject }
+    assertEquals(changes.files.keys.toList(), files.map { (it["path"] as JsonPrimitive).content })
+    assertEquals(1, transport.calls.count { it.method == "POST" && it.endpoint.endsWith("/merge-requests") })
+  }
+
+  @Test
+  fun `source fixes reject stale target branches before any provider write`() {
+    val changes = SourceFixChanges("a".repeat(40), mapOf("First.kt" to "fixed"))
+    for (provider in CiProviderId.entries) {
+      val transport = RecordingTransport { _, method, endpoint, _, _ ->
+        assertEquals("GET", method)
+        when {
+          endpoint.endsWith("/git/ref/heads/main") -> response(200, obj("object" to obj("sha" to JsonPrimitive("b".repeat(40)))))
+          endpoint.endsWith("/branches/refs%2Fheads%2Fmain") -> response(200, obj("branchInfo" to obj("ref" to JsonPrimitive("b".repeat(40)))))
+          else -> response(404)
+        }
+      }
+      val api: ProviderReviewApi = when (provider) {
+        CiProviderId.GITHUB -> GitHubReviewApi(transport)
+        CiProviderId.SPACE -> SpaceReviewApi(transport)
+      }
+      val failure = assertFailsWith<IllegalArgumentException> { api.ensureReview(request(provider).copy(sourceFix = changes)) }
+      assertTrue(failure.message.orEmpty().contains("Target branch changed"))
+      assertTrue(transport.calls.all { it.method == "GET" })
+    }
+  }
+
+  @Test
+  fun `github reads human comments reviews and inline feedback on open merged and closed fix PRs`() {
+    for (state in ReviewState.entries) {
+      val transport = RecordingTransport { _, method, endpoint, _, _ ->
+        assertEquals("GET", method)
+        when {
+          endpoint.endsWith("/pulls/17") -> response(200, obj(
+            "state" to JsonPrimitive(if (state == ReviewState.OPEN) "open" else "closed"),
+            "merged_at" to JsonPrimitive(if (state == ReviewState.MERGED) "2026-10-25T12:00:00Z" else ""),
+          ))
+          endpoint.endsWith("/issues/17/comments") -> CiHttpResponse(200, JsonArray(listOf(
+            obj("body" to JsonPrimitive("Top-level feedback"), "user" to obj("login" to JsonPrimitive("reviewer"))),
+            obj("body" to JsonPrimitive("Bot message"), "user" to obj("login" to JsonPrimitive("helper[bot]"))),
+          )))
+          endpoint.endsWith("/pulls/17/reviews") -> CiHttpResponse(200, JsonArray(listOf(obj("body" to JsonPrimitive("Review feedback")))))
+          endpoint.endsWith("/pulls/17/comments") -> CiHttpResponse(200, JsonArray(listOf(obj("body" to JsonPrimitive("Inline feedback")))))
+          else -> error("Unexpected review call $endpoint")
+        }
+      }
+      val result = GitHubReviewApi(transport).reviewWithEvidence(ReviewReference(CiProviderId.GITHUB, "owner", "repo", "17", "https://example.com/17"))
+      assertEquals(state, result.state)
+      assertEquals("Top-level feedback\n\nReview feedback\n\nInline feedback", result.evidence)
+    }
+  }
+
+  @Test
+  fun `space checks feed and inline discussions on open merged and closed fix PRs`() {
+    for (state in ReviewState.entries) {
+      val transport = RecordingTransport { _, method, endpoint, _, _ ->
+        assertEquals("GET", method)
+        when {
+          endpoint.endsWith("/code-reviews/review-id") -> response(200, obj(
+            "state" to JsonPrimitive(when (state) { ReviewState.OPEN -> "Opened"; ReviewState.MERGED -> "Merged"; ReviewState.CLOSED_UNMERGED -> "Closed" }),
+            "feedChannelId" to JsonPrimitive("feed"),
+            "description" to JsonPrimitive("Edict's original PR description"),
+          ))
+          endpoint.endsWith("/chats/messages/sync-batch") -> response(200, obj(
+            "data" to JsonArray(listOf(
+              obj("chatMessage" to obj(
+                "id" to JsonPrimitive("message-1"), "text" to JsonPrimitive("Top-level feedback"),
+                "projectedItem" to obj("author" to obj("name" to JsonPrimitive("reviewer"))),
+              )),
+              obj("chatMessage" to obj(
+                "id" to JsonPrimitive("message-2"), "details" to obj(
+                  "className" to JsonPrimitive("CodeDiscussionAddedFeedEvent"),
+                  "codeDiscussion" to obj("channel" to obj("id" to JsonPrimitive("discussion"))),
+                ),
+              )),
+            )),
+            "hasMore" to JsonPrimitive(false),
+          ))
+          endpoint.endsWith("/chats/messages") -> response(200, obj(
+            "messages" to JsonArray(listOf(obj(
+              "id" to JsonPrimitive("reply-1"), "text" to JsonPrimitive("Inline feedback"),
+              "author" to obj("name" to JsonPrimitive("reviewer")), "created" to obj("timestamp" to JsonPrimitive(1)),
+            ))),
+            "orgLimitReached" to JsonPrimitive(false),
+          ))
+          else -> error("Unexpected Space review call $endpoint")
+        }
+      }
+      val result = SpaceReviewApi(transport).reviewWithEvidence(ReviewReference(CiProviderId.SPACE, "owner", "repo", "review-id", "https://example.com/17"))
+      assertEquals(state, result.state)
+      assertEquals("Top-level feedback\n\nInline feedback", result.evidence)
+    }
+  }
+
+  @Test
+  fun `space incomplete review feedback fails the check`() {
+    val transport = RecordingTransport { _, _, endpoint, _, _ ->
+      when {
+        endpoint.endsWith("/code-reviews/review-id") -> response(200, obj("state" to JsonPrimitive("Opened"), "feedChannelId" to JsonPrimitive("feed")))
+        endpoint.endsWith("/chats/messages/sync-batch") -> response(200, obj("data" to JsonArray(emptyList())))
+        else -> error("Unexpected call $endpoint")
+      }
+    }
+    val failure = assertFailsWith<IllegalArgumentException> {
+      SpaceReviewApi(transport).reviewWithEvidence(ReviewReference(CiProviderId.SPACE, "owner", "repo", "review-id", "https://example.com/17"))
+    }
+    assertTrue(failure.message.orEmpty().contains("Incomplete Space review feedback"))
   }
 
   private fun request(provider: CiProviderId): CreateReviewRequest {

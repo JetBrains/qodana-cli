@@ -5,6 +5,8 @@ import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.buildJsonObject
+import kotlinx.serialization.json.buildJsonArray
+import kotlinx.serialization.json.add
 import kotlinx.serialization.json.jsonArray
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
@@ -24,6 +26,8 @@ import org.jetbrains.qodana.edict.ci.ReviewSelection
 import org.jetbrains.qodana.edict.ci.ReviewState
 import org.jetbrains.qodana.edict.ci.ReviewStatus
 import org.jetbrains.qodana.edict.ci.ReviewThread
+import org.jetbrains.qodana.edict.ci.MergedReview
+import org.jetbrains.qodana.edict.ci.ReviewFileChange
 import org.jetbrains.qodana.edict.ci.isBot
 import org.jetbrains.qodana.edict.ci.urlPart
 import org.jetbrains.qodana.edict.common.number
@@ -189,7 +193,36 @@ internal class GitHubReviewApi(
   override fun ensureReview(request: CreateReviewRequest): CreatedReview {
     require(request.repository.provider == id)
     val root = repositoryEndpoint(request.repository)
-    val branch = "edict/${request.clusterId}-${request.inspectionDigest.take(12)}"
+    val branch = request.branch
+    if (request.sourceFix != null) ensureSourceFixBranch(request, branch)
+    else ensureInspectionBranch(request, branch)
+
+    val found = http.send(
+      id,
+      "GET",
+      "$root/pulls",
+      mapOf("state" to "all", "head" to "${request.repository.owner}:$branch", "base" to request.targetBranch),
+      requireAuthentication = true,
+    )
+    require(found.status == 200) { "GitHub pull-request lookup returned HTTP ${found.status}" }
+    val existing = found.body.jsonArray.firstOrNull()?.jsonObject
+    val pullRequest = existing ?: expectObject(http.send(id, "POST", "$root/pulls", body = buildJsonObject {
+      put("title", request.title)
+      put("head", branch)
+      put("base", request.targetBranch)
+      put("body", request.description)
+    }, requireAuthentication = true), 201)
+    val number = pullRequest["number"]?.jsonPrimitive?.content.orEmpty()
+    require(number.toLongOrNull()?.let { it > 0 } == true) { "GitHub pull request has no number" }
+    val reviewer = http.send(id, "POST", "$root/pulls/$number/requested_reviewers", body = buildJsonObject {
+      put("reviewers", JsonArray(listOf(JsonPrimitive(request.reviewer))))
+    }, requireAuthentication = true)
+    require(reviewer.status in setOf(200, 201, 422)) { "GitHub reviewer assignment returned HTTP ${reviewer.status}" }
+    return CreatedReview(number, pullRequest.text("html_url"))
+  }
+
+  private fun ensureInspectionBranch(request: CreateReviewRequest, branch: String) {
+    val root = repositoryEndpoint(request.repository)
     val branchRef = http.send(id, "GET", "$root/git/ref/heads/${urlPart(branch)}", requireAuthentication = true)
     if (branchRef.status == 404) {
       val base = expectObject(
@@ -219,48 +252,136 @@ internal class GitHubReviewApi(
     else require(current.status == 404) { "GitHub target file lookup returned HTTP ${current.status}" }
     if (currentDigest != request.inspectionDigest) {
       val response = http.send(id, "PUT", contentEndpoint, body = buildJsonObject {
-        put("message", "Add Edict inspection ${request.clusterId}")
+        put("message", request.title)
         put("content", Base64.getEncoder().encodeToString(request.inspectionContent))
         put("branch", branch)
         if (currentSha.isNotBlank()) put("sha", currentSha)
       }, requireAuthentication = true)
       require(response.status in setOf(200, 201)) { "GitHub inspection commit returned HTTP ${response.status}" }
     }
-
-    val found = http.send(
-      id,
-      "GET",
-      "$root/pulls",
-      mapOf("state" to "all", "head" to "${request.repository.owner}:$branch", "base" to request.targetBranch),
-      requireAuthentication = true,
-    )
-    require(found.status == 200) { "GitHub pull-request lookup returned HTTP ${found.status}" }
-    val existing = found.body.jsonArray.firstOrNull()?.jsonObject
-    val pullRequest = existing ?: expectObject(http.send(id, "POST", "$root/pulls", body = buildJsonObject {
-      put("title", "Add Edict inspection ${request.clusterId}")
-      put("head", branch)
-      put("base", request.targetBranch)
-      put("body", request.description)
-    }, requireAuthentication = true), 201)
-    val number = pullRequest["number"]?.jsonPrimitive?.content.orEmpty()
-    require(number.toLongOrNull()?.let { it > 0 } == true) { "GitHub pull request has no number" }
-    val reviewer = http.send(id, "POST", "$root/pulls/$number/requested_reviewers", body = buildJsonObject {
-      put("reviewers", JsonArray(listOf(JsonPrimitive(request.reviewer))))
-    }, requireAuthentication = true)
-    require(reviewer.status in setOf(200, 201, 422)) { "GitHub reviewer assignment returned HTTP ${reviewer.status}" }
-    return CreatedReview(number, pullRequest.text("html_url"))
   }
 
-  override fun review(reference: ReviewReference): ReviewStatus {
+  /** Commit all source files atomically, retaining the target tree's file modes. */
+  private fun ensureSourceFixBranch(request: CreateReviewRequest, branch: String) {
+    val changes = requireNotNull(request.sourceFix)
+    val root = repositoryEndpoint(request.repository)
+    val existing = http.send(id, "GET", "$root/git/ref/heads/${urlPart(branch)}", requireAuthentication = true)
+    if (existing.status == 200) {
+      val revision = existing.body.jsonObject.obj("object").text("sha")
+      require(changes.files.all { (path, content) -> file(request.repository, revision, path) == content }) {
+        "GitHub source-fix branch already exists with different content"
+      }
+      return
+    }
+    require(existing.status == 404) { "GitHub branch lookup returned HTTP ${existing.status}" }
+    val base = expectObject(http.send(id, "GET", "$root/git/ref/heads/${urlPart(request.targetBranch)}", requireAuthentication = true), 200)
+    require(base.obj("object").text("sha") == changes.baseRevision) {
+      "Target branch changed since true-positive analysis; analyze the current revision before publishing fixes"
+    }
+    changes.files.forEach { (path, content) ->
+      require(file(request.repository, changes.baseRevision, path) != content) { "Source fix for '$path' has no changes" }
+    }
+    val commit = expectObject(http.send(id, "GET", "$root/git/commits/${changes.baseRevision}", requireAuthentication = true), 200)
+    val treeSha = commit.obj("tree").text("sha")
+    val trees = mutableMapOf<String, JsonArray>()
+    fun fileMode(path: String): String {
+      var currentTree = treeSha
+      val parts = path.split('/')
+      for ((index, part) in parts.withIndex()) {
+        val entries = trees.getOrPut(currentTree) {
+          expectObject(http.send(id, "GET", "$root/git/trees/$currentTree", requireAuthentication = true), 200).getValue("tree").jsonArray
+        }
+        val entry = entries.singleOrNull { it.jsonObject.text("path") == part }?.jsonObject
+          ?: error("Source fix path '$path' does not exist in the target tree")
+        if (index == parts.lastIndex) {
+          return entry.text("mode").also {
+            require(entry.text("type") == "blob" && it in setOf("100644", "100755")) { "Source fixes require regular files" }
+          }
+        }
+        require(entry.text("type") == "tree") { "Source fix path '$path' traverses a non-directory" }
+        currentTree = entry.text("sha")
+      }
+      error("Invalid source fix path")
+    }
+    val modes = changes.files.keys.associateWith(::fileMode)
+    val tree = expectObject(http.send(id, "POST", "$root/git/trees", body = buildJsonObject {
+      put("base_tree", treeSha)
+      put("tree", buildJsonArray {
+        changes.files.toSortedMap().forEach { (path, content) -> add(buildJsonObject {
+          put("path", path)
+          put("type", "blob")
+          put("mode", modes.getValue(path))
+          put("content", content)
+        }) }
+      })
+    }, requireAuthentication = true), 201)
+    val created = expectObject(http.send(id, "POST", "$root/git/commits", body = buildJsonObject {
+      put("message", request.title)
+      put("tree", tree.text("sha"))
+      put("parents", buildJsonArray { add(changes.baseRevision) })
+    }, requireAuthentication = true), 201)
+    expectObject(http.send(id, "POST", "$root/git/refs", body = buildJsonObject {
+      put("ref", "refs/heads/$branch")
+      put("sha", created.text("sha"))
+    }, requireAuthentication = true), 201)
+  }
+
+  override fun review(reference: ReviewReference): ReviewStatus = readReview(reference, includeEvidence = false)
+
+  override fun reviewWithEvidence(reference: ReviewReference): ReviewStatus = readReview(reference, includeEvidence = true)
+
+  override fun mergedReview(reference: ReviewReference): MergedReview {
     require(reference.provider == id)
     val root = "/repos/${urlPart(reference.owner)}/${urlPart(reference.repository)}"
     val pull = expectObject(http.send(id, "GET", "$root/pulls/${urlPart(reference.id)}", requireAuthentication = true), 200)
-    if (pull.text("merged_at").isNotBlank()) return ReviewStatus(ReviewState.MERGED)
-    if (pull.text("state") == "open") return ReviewStatus(ReviewState.OPEN)
-    val messages = listOf("$root/issues/${urlPart(reference.id)}/comments", "$root/pulls/${urlPart(reference.id)}/reviews")
-      .flatMap(::pages)
+    require(pull.text("merged_at").isNotBlank()) { "Review has not merged" }
+    val merged = pull.text("merge_commit_sha")
+    require(org.jetbrains.qodana.edict.signals.validRevision(merged)) { "Review has no exact merge revision" }
+    val changes = mutableListOf<ReviewFileChange>()
+    var before = ""
+    for (page in 1..MAX_PAGES) {
+      val response = get("$root/commits/$merged", mapOf("per_page" to "$PAGE_SIZE", "page" to "$page"))
+      val commit = response.body.jsonObject
+      require(commit.text("sha") == merged) { "Wrong merge revision returned" }
+      val parents = commit.getValue("parents").jsonArray.map { it.jsonObject.text("sha") }
+      require(parents.size in 1..2) { "Unsupported merge parent count" }
+      // For multi-commit rebase merges merge_commit_sha names only the last commit. Do not treat it as the whole PR.
+      require(parents.size == 2 || pull.number("commits").toInt() == 1) {
+        "Cannot unambiguously identify the complete merged change for this single-parent, multi-commit PR"
+      }
+      if (page == 1) before = parents.first()
+      require(before == parents.first()) { "Merge parent changed during pagination" }
+      val files = commit.getValue("files").jsonArray.map { it.jsonObject }
+      changes += files.map { ReviewFileChange(it.text("previous_filename").ifBlank { it.text("filename") }, it.text("filename")) }
+      if (!response.hasNext && files.size < PAGE_SIZE) break
+      require(page < MAX_PAGES && files.isNotEmpty()) { "Incomplete merged-change file list" }
+    }
+    require(org.jetbrains.qodana.edict.signals.validRevision(before) && changes.isNotEmpty() && changes.distinct().size == changes.size) {
+      "Invalid merged-change evidence"
+    }
+    val messages = listOf("$root/issues/${urlPart(reference.id)}/comments", "$root/pulls/${urlPart(reference.id)}/reviews",
+      "$root/pulls/${urlPart(reference.id)}/comments").flatMap(::pages)
+      .filterNot { isBot(it.obj("user").text("login"), it.obj("user").text("type")) }
       .mapNotNull { it.text("body").takeIf(String::isNotBlank) }
-    return ReviewStatus(ReviewState.CLOSED_UNMERGED, messages.joinToString("\n\n"))
+    return MergedReview(pull.text("title"), messages, before, merged, changes)
+  }
+
+  private fun readReview(reference: ReviewReference, includeEvidence: Boolean): ReviewStatus {
+    require(reference.provider == id)
+    val root = "/repos/${urlPart(reference.owner)}/${urlPart(reference.repository)}"
+    val pull = expectObject(http.send(id, "GET", "$root/pulls/${urlPart(reference.id)}", requireAuthentication = true), 200)
+    val state = when {
+      pull.text("merged_at").isNotBlank() -> ReviewState.MERGED
+      pull.text("state") == "open" -> ReviewState.OPEN
+      else -> ReviewState.CLOSED_UNMERGED
+    }
+    if (!includeEvidence && state != ReviewState.CLOSED_UNMERGED) return ReviewStatus(state)
+    val endpoints = listOf("$root/issues/${urlPart(reference.id)}/comments", "$root/pulls/${urlPart(reference.id)}/reviews") +
+      if (includeEvidence) listOf("$root/pulls/${urlPart(reference.id)}/comments") else emptyList()
+    val messages = endpoints.flatMap(::pages)
+      .filterNot { includeEvidence && isBot(it.obj("user").text("login"), it.obj("user").text("type")) }
+      .mapNotNull { it.text("body").takeIf(String::isNotBlank) }
+    return ReviewStatus(state, messages.joinToString("\n\n"))
   }
 
   private fun pages(endpoint: String): List<JsonObject> {
