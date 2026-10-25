@@ -11,6 +11,8 @@ import org.jetbrains.qodana.edict.edictnext.EdictNextSignalStrength
 import org.jetbrains.qodana.edict.edictnext.EdictRepository
 import org.jetbrains.qodana.edict.edictnext.InspectionPromotion
 import org.jetbrains.qodana.edict.edictnext.PromotionPrState
+import org.jetbrains.qodana.edict.edictnext.WeakSignalPromotion
+import org.jetbrains.qodana.edict.edictnext.EdictNextSignal
 import org.jetbrains.qodana.edict.edictnext.sha256Hex
 import java.time.Clock
 import java.time.Instant
@@ -23,6 +25,27 @@ internal class PromotionService(
   private val reviews: ReviewManagementApi = ReviewClient(),
   private val clock: Clock = Clock.systemUTC(),
 ) {
+  private val weakSignals = WeakSignalPromotionService(repository, configuration, reviews)
+
+  fun prepareWeakSignals(clusterIds: List<String>? = null): WeakSignalPreparationResponse = weakSignals.prepare(clusterIds)
+
+  fun promoteWeakSignals(clusterId: String, inspectionDigest: String, fixes: List<WeakSignalFix>, validation: String): WeakSignalPromotion =
+    weakSignals.publish(clusterId, inspectionDigest, fixes, validation)
+
+  fun checkWeakSignalReviews(redactEvidence: (String) -> String = { it }): WeakSignalPromotionCheckReviewsResponse =
+    weakSignals.checkReviews(redactEvidence)
+
+  fun recordWeakSignalPromotionSignals(
+    clusterId: String,
+    pullRequest: ReviewReference,
+    inspectionDigest: String,
+    signals: List<EdictNextSignal>,
+    redactEvidence: (String) -> String = { it },
+  ): List<EdictNextSignal> = weakSignals.recordSignals(clusterId, pullRequest, inspectionDigest, signals, redactEvidence)
+
+  fun completeWeakSignalReview(clusterId: String, pullRequest: org.jetbrains.qodana.edict.ci.ReviewReference) =
+    weakSignals.completeReview(clusterId, pullRequest)
+
   fun promote(clusterIds: List<String>? = null): PromotionPromoteResponse {
     require(clusterIds == null || clusterIds.isNotEmpty()) { "clusterIds must not be empty when provided" }
     require(clusterIds == null || clusterIds.distinct().size == clusterIds.size) { "clusterIds must be unique" }

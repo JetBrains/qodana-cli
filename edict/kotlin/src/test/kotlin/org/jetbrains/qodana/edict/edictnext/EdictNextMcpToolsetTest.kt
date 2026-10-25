@@ -75,6 +75,11 @@ class EdictNextMcpToolsetTest {
       "generate_psi_tree",
       "generate_inspection_kts_api",
       "generate_inspection_kts_examples",
+      "edict_prepare_weak_signal_promotion",
+      "edict_promote_weak_signal",
+      "edict_check_weak_signal_promotion",
+      "edict_record_weak_signal_promotion_signals",
+      "edict_complete_weak_signal_promotion",
     )
     EdictNextRepositoryState.open(directory.resolve("state")).use { store ->
       val layout = EdictLayout(directory, directory.resolve(".edict"))
@@ -91,6 +96,10 @@ class EdictNextMcpToolsetTest {
       assertTrue(server.tools.keys.containsAll(movedTools))
       assertFalse("edict_calculate_price" in server.tools)
       assertTrue("edict_publish_signal" in server.tools)
+      val regularSignal = server.tools.getValue("edict_publish_signal").tool.inputSchema.properties!!.getValue("signal")
+      val weakSignals = server.tools.getValue("edict_record_weak_signal_promotion_signals").tool.inputSchema.properties!!.getValue("signals").jsonObject
+      assertEquals(regularSignal, weakSignals.getValue("items"))
+      assertFalse("processed" in regularSignal.jsonObject.getValue("properties").jsonObject)
       val clusterPublication = server.tools.getValue("edict_publish_signal_to_cluster").tool.inputSchema
       assertEquals(listOf("token", "clusterId", "signal"), clusterPublication.required)
       assertEquals(setOf("token", "clusterId", "signal"), checkNotNull(clusterPublication.properties).keys)
@@ -570,6 +579,62 @@ class EdictNextMcpToolsetTest {
       }
     } finally {
       inspection.stop()
+    }
+  }
+
+  @Test
+  fun `weak-signal tools accept only their dedicated managed worker`() = runBlocking {
+    val layout = EdictLayout(directory, directory.resolve("state"))
+    EdictNextRepositoryState.open(layout.stateDirectory).use { store ->
+      val manager = store.createPlan("Promote generated inspections", listOf(
+        EdictNextRepositoryState.Step("edict-promote", "Normal promotion"),
+        EdictNextRepositoryState.Step("edict-promote-weak-signal", "Source fixes"),
+        EdictNextRepositoryState.Step("edict-check-promotion", "Inspection reviews"),
+        EdictNextRepositoryState.Step("edict-check-weak-signal-promotion", "Source-fix reviews"),
+      ))
+      val normal = store.launch(manager.token, manager.plan.tasks[0].id, "edict-promote")
+      val weak = store.launch(manager.token, manager.plan.tasks[1].id, "edict-promote-weak-signal")
+      val normalChecker = store.launch(manager.token, manager.plan.tasks[2].id, "edict-check-promotion")
+      val weakChecker = store.launch(manager.token, manager.plan.tasks[3].id, "edict-check-weak-signal-promotion")
+      val output = ByteArrayOutputStream()
+      val input = """
+        {"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2025-03-26","capabilities":{},"clientInfo":{"name":"unit","version":"1"}}}
+        {"jsonrpc":"2.0","method":"notifications/initialized"}
+        {"jsonrpc":"2.0","id":2,"method":"tools/call","params":{"name":"edict_prepare_weak_signal_promotion","arguments":{"token":"${weak.token}"}}}
+        {"jsonrpc":"2.0","id":3,"method":"tools/call","params":{"name":"edict_prepare_weak_signal_promotion","arguments":{"token":"${normal.token}"}}}
+        {"jsonrpc":"2.0","id":4,"method":"tools/call","params":{"name":"edict_promote_weak_signal","arguments":{"token":"${normal.token}","clusterId":"test","inspectionDigest":"unused","fixes":[],"validation":"none"}}}
+        {"jsonrpc":"2.0","id":5,"method":"tools/call","params":{"name":"edict_check_weak_signal_promotion","arguments":{"token":"${weakChecker.token}"}}}
+        {"jsonrpc":"2.0","id":6,"method":"tools/call","params":{"name":"edict_check_weak_signal_promotion","arguments":{"token":"${normalChecker.token}"}}}
+        {"jsonrpc":"2.0","id":7,"method":"tools/call","params":{"name":"edict-check-promotion","arguments":{"token":"${weakChecker.token}"}}}
+        {"jsonrpc":"2.0","id":8,"method":"tools/call","params":{"name":"edict_check_weak_signal_promotion","arguments":{"token":"${weak.token}"}}}
+        {"jsonrpc":"2.0","id":9,"method":"tools/call","params":{"name":"edict-check-promotion","arguments":{"token":"${normalChecker.token}"}}}
+        {"jsonrpc":"2.0","id":10,"method":"ping"}
+        {"jsonrpc":"2.0","id":11,"method":"tools/call","params":{"name":"edict_record_weak_signal_promotion_signals","arguments":{"token":"${normalChecker.token}","clusterId":"test","inspectionDigest":"unused","pullRequest":{},"signals":[]}}}
+        {"jsonrpc":"2.0","id":12,"method":"tools/call","params":{"name":"edict_record_weak_signal_promotion_signals","arguments":{"token":"${weak.token}","clusterId":"test","inspectionDigest":"unused","pullRequest":{},"signals":[]}}}
+      """.trimIndent() + "\n"
+      val transport = StdioServerTransport(
+        input = DelayedEofInputStream(ByteArrayInputStream(input.encodeToByteArray())).asSource().buffered(),
+        output = output.asSink().buffered(),
+      )
+      val closed = CompletableDeferred<Unit>()
+      transport.onClose { closed.complete(Unit) }
+      edictNextToolset(layout, EdictManagementService(store, layout)).createServer().createSession(transport)
+      closed.await()
+      val responses = output.toString(Charsets.UTF_8).lineSequence().filter(String::isNotBlank)
+        .map { wireJson.parseToJsonElement(it).jsonObject }.toList()
+      val selection = responses.single { it["id"].toString() == "2" }.obj("result")
+      assertFalse(selection.flag("isError") == true)
+      assertTrue(selection.obj("structuredContent").array("candidates").isEmpty())
+      val check = responses.single { it["id"].toString() == "5" }.obj("result")
+      assertFalse(check.flag("isError") == true)
+      assertTrue(check.obj("structuredContent").keys.all { it in setOf("reviews", "failures") })
+      assertTrue(check.obj("structuredContent").array("reviews").isEmpty())
+      val normalCheck = responses.single { it["id"].toString() == "9" }.obj("result")
+      assertFalse(normalCheck.flag("isError") == true)
+      assertTrue(normalCheck.obj("structuredContent").keys.all { it in setOf("accepted", "undecided", "failures") })
+      for (id in listOf("3", "4", "6", "7", "8", "11", "12")) {
+        assertTrue(responses.single { it["id"].toString() == id }.obj("result").flag("isError") == true)
+      }
     }
   }
 

@@ -48,6 +48,7 @@ class LivePipelineTest : IntegrationTest() {
                 ) { store, runtime, _ ->
                     val plan = assertNotNull(store.plan())
                     val required = setOf(
+                        "edict-check-weak-signal-promotion",
                         "edict-signal-analysis",
                         "edict-pr-signal-analysis",
                         "edict-next-distribution",
@@ -56,6 +57,7 @@ class LivePipelineTest : IntegrationTest() {
                         "edict-next-code-example-overseer",
                         "edict-next-inspection-shallow-review",
                         "edict-promote",
+                        "edict-promote-weak-signal",
                     )
                     assertTrue(
                         plan.tasks.map { it.skill }.toSet().containsAll(required),
@@ -64,7 +66,7 @@ class LivePipelineTest : IntegrationTest() {
                     val enrichmentIds = plan.tasks.filter { it.skill == "edict-git-history-signal-enrichment" }.map { it.id }.toSet()
                     assertTrue(plan.tasks.none { it.parentId in enrichmentIds }, "Enrichment agents must analyze evidence without child workers")
                     verifyManagedRun(workspace, runtime, plan)
-                    verifySequentialStages(plan)
+                    verifyStages(plan)
                     verifyProcessedCluster(runtime, inspection, plan)
                     reviews.verifyRequests()
                 }
@@ -72,10 +74,10 @@ class LivePipelineTest : IntegrationTest() {
         }
     }
 
-    private fun verifySequentialStages(plan: Plan) {
+    private fun verifyStages(plan: Plan) {
         val stages = plan.tasks.filter { it.parentId.isEmpty() }
         assertEquals(
-            listOf("edict-pr-signal-analysis", "edict-next-distribution", "edict-git-history-signal-enrichment", "edict-next-cluster-generation", "edict-promote"),
+            listOf("edict-check-weak-signal-promotion", "edict-pr-signal-analysis", "edict-next-distribution", "edict-git-history-signal-enrichment", "edict-next-cluster-generation", "edict-promote", "edict-promote-weak-signal"),
             stages.map { it.skill },
         )
         val ids = stages.map { it.id }
@@ -87,7 +89,7 @@ class LivePipelineTest : IntegrationTest() {
             val finished = events.indexOfFirst { it.startsWith("[-:$displayId] ") && it.endsWith(" finished [completed]") }
             assertTrue(started >= 0, "Stage $id has no recorded running state")
             assertTrue(finished > started, "Stage $id did not finish after it started")
-            if (index > 0) {
+            if (index > 1) {
                 val previous = ids[index - 1].take(8)
                 val previousFinished = events.indexOfFirst { it.startsWith("[-:$previous] ") && it.endsWith(" finished [completed]") }
                 assertTrue(previousFinished >= 0, "Previous stage $previous has no recorded completion")

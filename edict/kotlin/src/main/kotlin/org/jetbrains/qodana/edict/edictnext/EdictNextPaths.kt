@@ -7,6 +7,13 @@ internal data class EdictRepositoryDirectory(val root: Path) {
   val clustersDirectory: Path = root.resolve("clusters")
   val inboxDirectory: Path = root.resolve("inbox")
   val inspectionsDirectory: Path = root.resolve("inspections")
+  val promotionsDirectory: Path = root.resolve("promotions")
+  val activeWeakSignalPromotionsPath: Path = promotionsDirectory.resolve("active.json")
+
+  fun weakSignalPromotionHistoryPath(clusterId: String): Path {
+    require(EDICT_NEXT_KEBAB_CASE.matches(clusterId)) { "Invalid cluster id '$clusterId'" }
+    return promotionsDirectory.resolve("history").resolve("$clusterId.json")
+  }
 
   val embeddingsDirectory: Path = root.resolve("embeddings")
   val gteEmbeddingCacheDirectory: Path = embeddingsDirectory.resolve("gte-large-$EDICT_NEXT_MODEL_REVISION")

@@ -9,6 +9,8 @@ import org.jetbrains.qodana.edict.common.EdictLayout
 import org.jetbrains.qodana.edict.history.enrichment.EdictNextEnrichmentMcpToolset
 import org.jetbrains.qodana.edict.promotion.PromotionReviewDecision
 import org.jetbrains.qodana.edict.promotion.PromotionService
+import org.jetbrains.qodana.edict.promotion.WeakSignalFix
+import org.jetbrains.qodana.edict.ci.ReviewReference
 import kotlin.coroutines.cancellation.CancellationException
 
 /** Registers the Edict Next tools on the standalone MCP Kotlin SDK server. */
@@ -437,6 +439,7 @@ internal class EdictNextMcpToolset(
   }
 
   private fun registerPromotionTools(server: Server) {
+    registerWeakSignalPromotionTools(server)
     server.addTool(
       name = "edict_promote_clusters",
       description = "Promote eligible Generated inspections with at least five strong Signals linked to source PRs or commit diffs. " +
@@ -530,6 +533,142 @@ internal class EdictNextMcpToolset(
           false,
           e.message ?: "Promotion review decision failed"
         ).toToolResult(isError = true)
+      }
+    }
+  }
+
+  private fun registerWeakSignalPromotionTools(server: Server) {
+    server.addTool(
+      name = "edict_check_weak_signal_promotion",
+      description = "Refresh active weak-signal source-fix PR states. Return transient reviewer evidence, inspection digest and actual merged diffs. Independent of other signal extraction and inspection-promotion reviews.",
+      inputSchema = toolSchema(
+        required = listOf("token"),
+        "token" to property("string", "Your delegated edict-check-weak-signal-promotion task token"),
+      ),
+    ) { request ->
+      try {
+        management.requireSkill(request.requireString("token"), "edict-check-weak-signal-promotion")
+        val response = promotion.checkWeakSignalReviews(management::redact)
+        response.copy(
+          failures = response.failures.map { it.copy(message = management.redact(it.message)) },
+        ).toToolResult()
+      } catch (e: Exception) {
+        EdictNextMutationResponse(
+          false,
+          e.message ?: "Weak-signal promotion review check failed",
+        ).toToolResult(isError = true)
+      }
+    }
+
+    server.addTool(
+      name = "edict_record_weak_signal_promotion_signals",
+      description = "Publish regular Signals for verified merged corrections already covered by the originating inspection. Direct publication marks them processed and requires an existing matching strong example. Other evidence must use edict_publish_signal to the inbox. Does not complete the review.",
+      inputSchema = toolSchema(
+        required = listOf("token", "clusterId", "pullRequest", "inspectionDigest", "signals"),
+        "token" to property("string", "Your delegated edict-check-weak-signal-promotion task token"),
+        "clusterId" to property("string", "Originating cluster returned by the check"),
+        "pullRequest" to property("object", "Complete pullRequest reference returned by the check: provider, owner, repository, id, url"),
+        "inspectionDigest" to property("string", "Unchanged inspection digest returned by the check"),
+        "signals" to buildJsonObject { put("type", "array"); put("minItems", 1); put("items", management.signalSchema) },
+      ),
+    ) { request ->
+      try {
+        management.requireSkill(request.requireString("token"), "edict-check-weak-signal-promotion")
+        val reference = EdictNextJson.decodeFromJsonElement<ReviewReference>(request.arguments!!.getValue("pullRequest"))
+        val signals = EdictNextJson.decodeFromJsonElement<List<EdictNextSignal>>(request.arguments!!.getValue("signals"))
+        signals.forEach { management.requireTokenFree(EdictNextJson.encodeToString(EdictNextSignal.serializer(), it)) }
+        promotion.recordWeakSignalPromotionSignals(request.requireString("clusterId"), reference, request.requireString("inspectionDigest"), signals, management::redact).toToolResult()
+      } catch (e: Exception) {
+        EdictNextMutationResponse(false, management.redact(e.message ?: "Merged signal publication failed")).toToolResult(isError = true)
+      }
+    }
+
+    server.addTool(
+      name = "edict_complete_weak_signal_promotion",
+      description = "Retire a merged weak-signal review from active checks after all actual evidence was published to the cluster/inbox, or analysis found no relevant correction. Never complete after a publication/evidence failure.",
+      inputSchema = toolSchema(
+        required = listOf("token", "clusterId", "pullRequest"),
+        "token" to property("string", "Your delegated weak-promotion checker token"),
+        "clusterId" to property("string", "Originating cluster"),
+        "pullRequest" to property("object", "Complete review reference returned by the check"),
+      ),
+    ) { request ->
+      try {
+        management.requireSkill(request.requireString("token"), "edict-check-weak-signal-promotion")
+        val reference = EdictNextJson.decodeFromJsonElement<ReviewReference>(request.arguments!!.getValue("pullRequest"))
+        promotion.completeWeakSignalReview(request.requireString("clusterId"), reference)
+        EdictNextMutationResponse(true, "Review completed").toToolResult()
+      } catch (e: Exception) {
+        EdictNextMutationResponse(false, management.redact(e.message ?: "Review completion failed")).toToolResult(isError = true)
+      }
+    }
+
+    server.addTool(
+      name = "edict_prepare_weak_signal_promotion",
+      description = "Select up to five persisted true-positive project locations per Generated inspection that lacks five referenced strong Signals. Skips clusters with an active source-fix review, including merged reviews awaiting signal publication.",
+      inputSchema = toolSchema(
+        required = listOf("token"),
+        "token" to property("string", "Your delegated edict-promote-weak-signal task token"),
+        "clusterIds" to buildJsonObject {
+          put("type", "array")
+          put("minItems", 1)
+          put("uniqueItems", true)
+          putJsonObject("items") { put("type", "string") }
+        },
+      ),
+    ) { request ->
+      try {
+        management.requireSkill(request.requireString("token"), "edict-promote-weak-signal")
+        val clusterIds = request.arguments?.get("clusterIds")?.let { EdictNextJson.decodeFromJsonElement<List<String>>(it) }
+        promotion.prepareWeakSignals(clusterIds).toToolResult()
+      } catch (e: Exception) {
+        EdictNextMutationResponse(false, e.message ?: "Weak-signal selection failed").toToolResult(isError = true)
+      }
+    }
+
+    val fix = buildJsonObject {
+      put("type", "object")
+      putJsonObject("properties") {
+        put("path", property("string", "Selected finding's repository-relative file path"))
+        put("lines", buildJsonObject {
+          put("type", "array")
+          put("minItems", 1)
+          put("maxItems", 5)
+          put("uniqueItems", true)
+          putJsonObject("items") { put("type", "integer"); put("minimum", 1) }
+        })
+        put("content", property("string", "Complete fixed file at the selected project revision"))
+        put("explanation", property("string", "Why these changes repair the selected findings"))
+      }
+      putJsonArray("required") { listOf("path", "lines", "content", "explanation").forEach(::add) }
+      put("additionalProperties", false)
+    }
+    server.addTool(
+      name = "edict_promote_weak_signal",
+      description = "Publish fixes for 1 to 5 selected true-positive locations in one source PR, describing the inspection and asking users to accept the improvements. Requires unchanged generated inspection and analyzed target revision.",
+      inputSchema = toolSchema(
+        required = listOf("token", "clusterId", "inspectionDigest", "fixes", "validation"),
+        "token" to property("string", "Your delegated edict-promote-weak-signal task token"),
+        "clusterId" to property("string", "Selected Generated cluster"),
+        "inspectionDigest" to property("string", "Inspection digest returned by selection"),
+        "fixes" to buildJsonObject {
+          put("type", "array")
+          put("minItems", 1)
+          put("maxItems", 5)
+          put("items", fix)
+        },
+        "validation" to property("string", "Validation performed, its results, and any checks that could not run"),
+      ),
+    ) { request ->
+      try {
+        management.requireSkill(request.requireString("token"), "edict-promote-weak-signal")
+        val fixes = EdictNextJson.decodeFromJsonElement<List<WeakSignalFix>>(request.arguments?.get("fixes") ?: error("fixes is required"))
+        val validation = request.requireString("validation")
+        management.requireTokenFree(validation)
+        fixes.forEach { management.requireTokenFree(it.content); management.requireTokenFree(it.explanation) }
+        promotion.promoteWeakSignals(request.requireString("clusterId"), request.requireString("inspectionDigest"), fixes, validation).toToolResult()
+      } catch (e: Exception) {
+        EdictNextMutationResponse(false, e.message ?: "Weak-signal promotion failed").toToolResult(isError = true)
       }
     }
   }

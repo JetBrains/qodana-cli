@@ -87,7 +87,7 @@ internal class IntegrationWorkspace private constructor(
         prompt = prompt,
         timeoutMinutes = timeoutMinutes,
         inspectionServer = null,
-        reviewProvider = ReviewClient(),
+        reviewProvider = reviews as? ReviewExtractionApi ?: ReviewClient(),
         configuration = configuration,
         reviewManagement = reviews,
         verify = verify,

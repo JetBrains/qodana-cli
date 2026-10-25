@@ -70,6 +70,8 @@ internal class EdictManagementService(
   )
 
   val agents: AgentLogger = AgentLogger(store, layout)
+  internal lateinit var signalSchema: JsonObject
+    private set
 
   // Only commit Signals need Git, so a project without it still serves every other tool.
   private val signalRepository by lazy { GitRepository(layout.root) }
@@ -175,6 +177,7 @@ internal class EdictManagementService(
       put("type", "array")
       put("items", signalObject)
     }
+    signalSchema = signalObject
     val signalDraftArray = buildJsonObject {
       put("type", "array")
       put(
@@ -415,7 +418,7 @@ internal class EdictManagementService(
 
     tool(
       name = "edict_publish_signal",
-      description = "Validate and publish one non-PR Signal model to the managed inbox, replacing the existing model when its stable ID already exists. PR-analysis coordinators publish their cached validated batch with edict_publish_validated_pr_signals.",
+      description = "Validate and publish one regular Signal model to the managed inbox. Available to commit extraction and weak-promotion checking; PR-analysis coordinators use edict_publish_validated_pr_signals.",
       required = listOf("token", "signal"),
       properties = mapOf("signal" to signalObject),
     ) { arguments ->
@@ -501,6 +504,7 @@ internal class EdictManagementService(
       ),
     ) { arguments ->
       val input = wireJson.decodeFromJsonElement<ReviewSelectionInput>(JsonObject(arguments - "token"))
+      store.requireSkill(arguments.requireString("token"), setOf("edict-pr-signal-analysis"))
       EdictNextJson.encodeToJsonElement(
         pr.prepareBatch(arguments.requireString("token"), configuredReviewRepository(), input),
       )

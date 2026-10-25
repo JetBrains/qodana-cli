@@ -106,6 +106,19 @@ data class ReviewStatus(
   val evidence: String = "",
 )
 
+/** Immutable revisions of the change that actually landed, not the proposed PR head. */
+@Serializable
+data class MergedReview(
+  val title: String,
+  val discussionMessages: List<String>,
+  val beforeRevision: String,
+  val mergedRevision: String,
+  val changes: List<ReviewFileChange>,
+)
+
+@Serializable
+data class ReviewFileChange(val beforePath: String, val afterPath: String)
+
 data class CreatedReview(
   val id: String,
   val url: String,
