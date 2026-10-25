@@ -11,6 +11,13 @@ import java.nio.file.Files
 import java.nio.file.NoSuchFileException
 import java.util.Comparator
 
+data class SourceFixChanges(val baseRevision: String, val files: Map<String, String>) {
+  init {
+    require(validRevision(baseRevision)) { "Source fixes require an exact base revision" }
+    require(files.isNotEmpty() && files.keys.all(::validSourcePath)) { "Source fixes require repository-relative file paths" }
+  }
+}
+
 data class CreateReviewRequest(
   val operationId: String,
   val clusterId: String,
@@ -21,7 +28,11 @@ data class CreateReviewRequest(
   val inspectionDigest: String,
   val inspectionContent: ByteArray,
   val description: String,
+  val sourceFix: SourceFixChanges? = null,
 ) {
+    val branch: String get() = if (sourceFix == null) "edict/$clusterId-${inspectionDigest.take(12)}" else "edict/weak-$operationId"
+    val title: String get() = if (sourceFix == null) "Add Edict inspection $clusterId" else "Fix issues found by Edict inspection $clusterId"
+
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
         if (javaClass != other?.javaClass) return false
@@ -37,6 +48,7 @@ data class CreateReviewRequest(
         if (inspectionDigest != other.inspectionDigest) return false
         if (!inspectionContent.contentEquals(other.inspectionContent)) return false
         if (description != other.description) return false
+        if (sourceFix != other.sourceFix) return false
 
         return true
     }
@@ -51,6 +63,7 @@ data class CreateReviewRequest(
         result = 31 * result + inspectionDigest.hashCode()
         result = 31 * result + inspectionContent.contentHashCode()
         result = 31 * result + description.hashCode()
+        result = 31 * result + (sourceFix?.hashCode() ?: 0)
         return result
     }
 }
@@ -70,6 +83,9 @@ interface ReviewManagementApi {
   fun resolveTargetBranch(repository: ReviewRepository, configured: String?): String
   fun ensureReview(request: CreateReviewRequest): CreatedReview
   fun review(reference: ReviewReference): ReviewStatus
+  fun reviewWithEvidence(reference: ReviewReference): ReviewStatus = review(reference)
+  fun mergedReview(reference: ReviewReference): MergedReview =
+    error("Exact merged-change evidence is unavailable for ${reference.url}")
 }
 
 internal interface ProviderReviewApi {
@@ -79,6 +95,9 @@ internal interface ProviderReviewApi {
   fun resolveTargetBranch(repository: ReviewRepository, configured: String?): String
   fun ensureReview(request: CreateReviewRequest): CreatedReview
   fun review(reference: ReviewReference): ReviewStatus
+  fun reviewWithEvidence(reference: ReviewReference): ReviewStatus = review(reference)
+  fun mergedReview(reference: ReviewReference): MergedReview =
+    error("Exact merged-change evidence is unavailable for ${reference.url}")
 }
 
 /** One CI review API shared by extraction and promotion. */
@@ -186,6 +205,10 @@ class ReviewClient private constructor(
     provider(request.repository.provider).ensureReview(request)
 
   override fun review(reference: ReviewReference): ReviewStatus = provider(reference.provider).review(reference)
+
+  override fun reviewWithEvidence(reference: ReviewReference): ReviewStatus = provider(reference.provider).reviewWithEvidence(reference)
+
+  override fun mergedReview(reference: ReviewReference): MergedReview = provider(reference.provider).mergedReview(reference)
 
   private fun provider(id: CiProviderId): ProviderReviewApi = requireNotNull(providers[id])
 }

@@ -168,6 +168,19 @@ internal data class InspectionPromotion(
   val updatedAt: String,
 )
 
+/** A source-fix PR requests feedback on weak evidence */
+@Serializable
+internal data class WeakSignalPromotion(
+  val pullRequest: ReviewReference,
+  val state: PromotionPrState = PromotionPrState.ON_REVIEW,
+)
+
+@Serializable
+internal data class WeakSignalPromotionIndex(
+  @EncodeDefault
+  val activePromotions: Map<String, List<WeakSignalPromotion>> = emptyMap(),
+)
+
 @Serializable
 internal data class EdictNextClusterManifest(
   val id: String,
@@ -379,6 +392,9 @@ internal data class EdictNextProjectReview(
   val uncertain: Int,
   val unassigned: Int,
   val unreproduced: Int,
+  val inspectionDescription: String = "",
+  /** Exact locations classified TP for these inspection bytes, retained across server restarts. */
+  val truePositiveFindings: List<EdictNextProjectFinding> = emptyList(),
 )
 
 @Serializable

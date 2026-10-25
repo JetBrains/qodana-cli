@@ -334,6 +334,8 @@ internal class EdictNextGenerationService(
             EdictNextFindingAssignment(it, finding.classification, finding.path to finding.line in stillReported)
           }
         }
+        val truePositiveLocations = reviewed.filter { it.classification == EdictNextFindingClassification.TP }
+          .map { it.path to it.line }.toSet()
         val projectReview = analysis?.let {
           EdictNextProjectReview(
             projectRevision = it.projectRevision,
@@ -342,6 +344,8 @@ internal class EdictNextGenerationService(
             uncertain = reviewed.size - classified.size,
             unassigned = classified.size - assignments.size,
             unreproduced = 0,
+            inspectionDescription = it.inspectionDescription,
+            truePositiveFindings = it.findings.filter { finding -> finding.location() in truePositiveLocations },
           )
         }
         val (validation, evaluation) = inspection.evaluate(cluster, selection.code, selection.action, assignments, projectReview)

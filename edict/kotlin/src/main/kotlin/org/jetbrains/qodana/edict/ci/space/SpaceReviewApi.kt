@@ -200,9 +200,44 @@ internal class SpaceReviewApi(
 
   override fun ensureReview(request: CreateReviewRequest): CreatedReview {
     require(request.repository.provider == id)
-    val repository = repositoryEndpoint(request.repository)
-    val branch = "edict/${request.clusterId}-${request.inspectionDigest.take(12)}"
+    val branch = request.branch
     val branchHead = "refs/heads/$branch"
+    if (request.sourceFix != null) ensureSourceFixBranch(request, branchHead)
+    else ensureInspectionBranch(request, branchHead)
+
+    val reviewsRoot = "/projects/key:${urlPart(request.repository.owner)}/code-reviews"
+    val review = findReview(reviewsRoot, request, branch) ?: expectObject(http.send(
+      id,
+      "POST",
+      "$reviewsRoot/merge-requests",
+      body = buildJsonObject {
+        put("title", request.title)
+        put("description", request.description)
+        put("repository", request.repository.repository)
+        put("sourceBranch", branch)
+        put("targetBranch", request.targetBranch)
+      },
+      requireAuthentication = true,
+    ), 200, 201)
+    val reviewId = review.text("id")
+    require(reviewId.isNotBlank()) { "Space code review has no id" }
+    fun assignReviewer(identifier: String): CiHttpResponse = http.send(
+      id, "POST", "$reviewsRoot/${urlPart(reviewId)}/participants/${urlPart(identifier)}",
+      body = buildJsonObject { put("role", "Reviewer") }, requireAuthentication = true,
+    )
+    var reviewer = assignReviewer(request.reviewer)
+    // A bare value is interpreted as a profile ID. Also accept configured usernames.
+    if (reviewer.status == 404 && ':' !in request.reviewer) {
+      reviewer = assignReviewer("username:${request.reviewer}")
+    }
+    expectStatus(reviewer, "Space reviewer assignment", 200, 201)
+    val number = review.number("number")
+    require(number > 0) { "Space code review has no number" }
+    return CreatedReview(reviewId, "$webOrigin/p/${urlPart(request.repository.owner)}/reviews/$number")
+  }
+
+  private fun ensureInspectionBranch(request: CreateReviewRequest, branchHead: String) {
+    val repository = repositoryEndpoint(request.repository)
     val existingBranch = readBranch(repository, branchHead)
     val existingRevision = existingBranch?.obj("branchInfo")?.text("ref")?.also {
       require(it.isNotBlank()) { "Space inspection branch has no revision" }
@@ -230,7 +265,7 @@ internal class SpaceReviewApi(
       val commit = expectObject(http.send(id, "POST", commitEndpoint, body = buildJsonObject {
         put("baseCommit", revision)
         put("targetBranch", branchHead)
-        put("commitMessage", "Add Edict inspection ${request.clusterId}")
+        put("commitMessage", request.title)
         put("files", buildJsonArray {
           add(buildJsonObject {
             put("path", request.targetPath)
@@ -243,36 +278,48 @@ internal class SpaceReviewApi(
       }, requireAuthentication = true), 200, 201)
       require(commit.flag("success") == true) { "Space inspection commit failed: ${commit.text("message").take(1000)}" }
     }
+  }
 
-    val reviewsRoot = "/projects/key:${urlPart(request.repository.owner)}/code-reviews"
-    val review = findReview(reviewsRoot, request, branch) ?: expectObject(http.send(
-      id,
-      "POST",
-      "$reviewsRoot/merge-requests",
-      body = buildJsonObject {
-        put("title", "Add Edict inspection ${request.clusterId}")
-        put("description", request.description)
-        put("repository", request.repository.repository)
-        put("sourceBranch", branch)
-        put("targetBranch", request.targetBranch)
-      },
-      requireAuthentication = true,
-    ), 200, 201)
-    val reviewId = review.text("id")
-    require(reviewId.isNotBlank()) { "Space code review has no id" }
-    fun assignReviewer(identifier: String): CiHttpResponse = http.send(
-      id, "POST", "$reviewsRoot/${urlPart(reviewId)}/participants/${urlPart(identifier)}",
-      body = buildJsonObject { put("role", "Reviewer") }, requireAuthentication = true,
-    )
-    var reviewer = assignReviewer(request.reviewer)
-    // A bare value is interpreted as a profile ID. Also accept configured usernames.
-    if (reviewer.status == 404 && ':' !in request.reviewer) {
-      reviewer = assignReviewer("username:${request.reviewer}")
+  private fun ensureSourceFixBranch(request: CreateReviewRequest, branchHead: String) {
+    val changes = requireNotNull(request.sourceFix)
+    val repository = repositoryEndpoint(request.repository)
+    val existing = readBranch(repository, branchHead)
+    val revision = existing?.obj("branchInfo")?.text("ref")
+    if (revision != null && revision != changes.baseRevision) {
+      require(changes.files.all { (path, content) -> file(request.repository, revision, path) == content }) {
+        "Space source-fix branch already exists with different content"
+      }
+      return
     }
-    expectStatus(reviewer, "Space reviewer assignment", 200, 201)
-    val number = review.number("number")
-    require(number > 0) { "Space code review has no number" }
-    return CreatedReview(reviewId, "$webOrigin/p/${urlPart(request.repository.owner)}/reviews/$number")
+    val base = requireNotNull(readBranch(repository, request.targetBranch)) { "Space target branch does not exist" }
+    require(base.obj("branchInfo").text("ref") == changes.baseRevision) {
+      "Target branch changed since true-positive analysis; analyze the current revision before publishing fixes"
+    }
+    changes.files.forEach { (path, content) ->
+      require(file(request.repository, changes.baseRevision, path) != content) { "Source fix for '$path' has no changes" }
+    }
+    if (existing == null) {
+      expectStatus(http.send(id, "POST", "$repository/head", body = buildJsonObject {
+        put("head", branchHead)
+        put("target", changes.baseRevision)
+      }, requireAuthentication = true), "Space source-fix branch creation", 200, 201)
+    }
+    val commitEndpoint = "/projects/${urlPart(request.repository.owner)}/repositories/${urlPart(request.repository.repository)}/commit"
+    val result = expectObject(http.send(id, "POST", commitEndpoint, body = buildJsonObject {
+      put("baseCommit", changes.baseRevision)
+      put("targetBranch", branchHead)
+      put("commitMessage", request.title)
+      put("files", buildJsonArray {
+        changes.files.toSortedMap().forEach { (path, content) -> add(buildJsonObject {
+          put("path", path)
+          put("content", buildJsonObject {
+            put("className", "GitFileContent.Base64")
+            put("value", Base64.getEncoder().encodeToString(content.encodeToByteArray()))
+          })
+        }) }
+      })
+    }, requireAuthentication = true), 200, 201)
+    require(result.flag("success") == true) { "Space source-fix commit failed: ${result.text("message").take(1000)}" }
   }
 
   private fun readBranch(repository: String, branch: String): JsonObject? {
@@ -312,19 +359,23 @@ internal class SpaceReviewApi(
     return null
   }
 
-  override fun review(reference: ReviewReference): ReviewStatus {
+  override fun review(reference: ReviewReference): ReviewStatus = readReview(reference, includeEvidence = false)
+
+  override fun reviewWithEvidence(reference: ReviewReference): ReviewStatus = readReview(reference, includeEvidence = true)
+
+  private fun readReview(reference: ReviewReference, includeEvidence: Boolean): ReviewStatus {
     require(reference.provider == id)
     val response = expectObject(
       http.send(
         id,
         "GET",
         "/projects/key:${urlPart(reference.owner)}/code-reviews/${urlPart(reference.id)}",
-        query = mapOf("\$fields" to "state,description,branchPair(isMerged)"),
+        query = mapOf("\$fields" to ("state,description,branchPair(isMerged)" + if (includeEvidence) ",feedChannelId" else "")),
         requireAuthentication = true,
       ),
       200,
     )
-    return when {
+    val status = when {
       response.text("state").uppercase() in setOf("OPEN", "OPENED") -> ReviewStatus(ReviewState.OPEN)
       response.text("state").uppercase() == "MERGED" || response.obj("branchPair").flag("isMerged") == true ->
         ReviewStatus(ReviewState.MERGED)
@@ -333,6 +384,28 @@ internal class SpaceReviewApi(
         response.text("reason").ifBlank { response.text("description") },
       )
     }
+    if (!includeEvidence) return status
+    val feed = response.text("feedChannelId")
+    require(feed.isNotBlank()) { "Space review lacks discussion feed" }
+    val problems = mutableListOf<String>()
+    val messages = mutableListOf<String>()
+    val discussions = mutableSetOf<String>()
+    spaceFeed(feed, "Space review ${reference.id} feed", problems).forEach { message ->
+      val author = message.obj("projectedItem").obj("author")
+      if (!isBot(author.text("name"), author.obj("details").text("className"))) {
+        message.text("text").takeIf(String::isNotBlank)?.let(messages::add)
+      }
+      val details = message.obj("details")
+      if (details.text("className") == "CodeDiscussionAddedFeedEvent") {
+        val channel = details.obj("codeDiscussion").obj("channel").text("id")
+        require(channel.isNotBlank()) { "Space review discussion lacks channel" }
+        if (discussions.add(channel)) {
+          messages += spaceDiscussion(channel, "Space review ${reference.id} discussion $channel", problems).map { it.body }
+        }
+      }
+    }
+    require(problems.isEmpty()) { "Incomplete Space review feedback: ${problems.joinToString("; ")}" }
+    return status.copy(evidence = messages.joinToString("\n\n"))
   }
 
   private fun spaceFeed(channel: String, context: String, problems: MutableList<String>): List<JsonObject> {

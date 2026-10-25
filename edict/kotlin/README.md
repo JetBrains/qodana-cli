@@ -100,9 +100,20 @@ includes that breakdown in its final response after the pipeline completes.
 
 ## What is ported
 
-- All 16 managed skills, their invocation policies, and shared references.
+- All 18 managed skills, their invocation policies, and shared references.
   Worker registry IDs and installed skill names both use `edict-*`.
   The manager remains `edict_manager`.
+- Promoting weak signals: `edict-promote-weak-signal` selects up to five reviewed true-positive locations per Generated
+  inspection with fewer than five referenced strong Signals, attempts focused source fixes, and opens a GitHub or Space
+  PR asking users to accept the improvements if they agree. It runs after normal promotion in the default pipeline.
+  Review evidence is persisted in `evaluation.json`; older inspections need regeneration to populate it. Source-fix
+  PRs require the configured target to remain at the analyzed revision, and are recorded separately from inspection
+  promotion so repeated runs do not create duplicate PRs.
+  The default pipeline runs `edict-check-weak-signal-promotion` as a separate step alongside signal extraction. It refreshes created
+  weak-signal source-fix PRs. Promotion records contain only review references and states; actual merged corrections
+  become regular strong Signals. Covered evidence goes directly to the originating cluster, implicitly processed;
+  other evidence goes to the inbox for normal distribution. Active reviews are indexed under `promotions/active.json`,
+  separately from completed history, so checks do not search all clusters. Extraction can continue while checks run or fail.
 - Manager claims, task assignment retrieval, native worker startup, attenuated
   capabilities, call-graph restrictions, cancellation, retries, and revocation.
   Capabilities are stored only as hashes in memory and excluded from saved data
@@ -257,6 +268,12 @@ into that cluster. The range is the intersection of the latest 100 commits and t
 HEAD revision. It verifies actual Git evidence and that every analyzed candidate belongs to the returned range, with no
 distribution, generation selection, inspection generation, or IntelliJ startup. No analyzed-commit coverage is persisted;
 legacy history-analysis files are ignored.
+
+`WeakSignalPromotionIntegrationTest` and `WeakSignalPromotionReviewIntegrationTest` use the dedicated
+`testPromoteWeakSignals` project and its committed `.edict` state from independent pinned Distillery revisions.
+They ask only “Promote weak signals” and “Check weak signal promotion reviews”, running the real manager and native workers with
+a deterministic review provider. Creation verifies the proposed source fix and persisted PR; checking starts with an
+existing PR and verifies its state and actual merged Signals are saved directly in the originating cluster, with covered evidence processed.
 
 Each test's `log/process-log/<run-id>/` directory contains:
 

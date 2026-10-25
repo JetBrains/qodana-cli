@@ -14,7 +14,7 @@ class SkillsTest {
     @Test
     fun `install managed skills with matching registry and metadata`() {
         val installed = Skills.install(directory)
-        assertEquals(16, installed.size)
+        assertEquals(18, installed.size)
         assertEquals(Registry.policies.map { it.name }.sorted(), installed)
         Registry.policies.forEach { policy ->
             val name = policy.name
@@ -54,6 +54,9 @@ class SkillsTest {
         assertTrue("edict-git-history-signal-enrichment" in Registry["edict_manager"].delegates)
         assertTrue("edict-retrospective-signal-analysis" in Registry["edict_manager"].delegates)
         assertTrue("edict-promote" in Registry["edict_manager"].delegates)
+        assertTrue("edict-promote-weak-signal" in Registry["edict_manager"].delegates)
+        assertTrue("edict-check-weak-signal-promotion" in Registry["edict_manager"].delegates)
+        assertTrue(Registry["edict-check-weak-signal-promotion"].delegates.isEmpty())
         assertTrue("edict-check-promotion" in Registry["edict_manager"].delegates)
         assertEquals(listOf("edict-promotion-decision"), Registry["edict-check-promotion"].delegates)
         listOf("edict-promote", "edict-check-promotion", "edict-promotion-decision").forEach {
@@ -185,7 +188,7 @@ class SkillsTest {
         val defaultStages = Regex("(?m)^\\d+\\. `([^`]+)`").findAll(manager.substringAfter("# Default repository pipeline"))
             .map { it.groupValues[1] }.toList()
         assertEquals(
-            listOf("edict-pr-signal-analysis", "edict-next-distribution", "edict-git-history-signal-enrichment", "edict-next-cluster-generation", "edict-promote"),
+            listOf("edict-check-weak-signal-promotion", "edict-pr-signal-analysis", "edict-next-distribution", "edict-git-history-signal-enrichment", "edict-next-cluster-generation", "edict-promote", "edict-promote-weak-signal"),
             defaultStages,
         )
         assertFalse("edict-next-generation" in manager)

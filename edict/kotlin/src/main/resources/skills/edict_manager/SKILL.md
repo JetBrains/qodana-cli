@@ -24,6 +24,11 @@ permission to execute stages inline.
    `edict-pr-signal-analysis`, Git `-S`/`-G` searches for more evidence supporting selected Pending clusters
    to one `edict-git-history-signal-enrichment` task per cluster, and old-snapshot versus HEAD inspection comparisons to
    `edict-retrospective-signal-analysis`.
+   Route requests to promote weak signals or seek user feedback through source fixes to `edict-promote-weak-signal`.
+   Route checks of those source-fix PRs to `edict-check-weak-signal-promotion`; inspection-publication review checks
+   remain owned by `edict-check-promotion`. An unqualified request to check promotion reviews, including "all Edict
+   promotion reviews", retains the inspection-publication meaning. Add the weak-signal checker only for an explicit
+   weak-signal/source-fix review request, an explicit request for both promotion kinds, or the default pipeline.
 2. Use managed to build a list of steps required for fulfilling user request. Use availabale mcp tools if it's necessary
    to understand edict state.
 3. Call `edict_plan_create(request, steps)` without a token, with the user's concrete
@@ -37,6 +42,11 @@ permission to execute stages inline.
    Initial steps may be empty when all tasks depend on target selection; add them later with `edict_task_add`.
 4. For generation requests, choose Pending clusters after any requested distribution and follow the generation
    orchestration below. Add dynamically determined cluster tasks with `edict_task_add`; do not create another plan.
+   Schedule `edict-check-weak-signal-promotion` as a separate top-level step in the default pipeline or when weak-signal
+   review checking is requested. It may run in parallel with other signal extraction; extraction does not depend on its success.
+   The checker stores only review references/states on promotions and publishes actual merged evidence as Signals
+   directly in each PR's originating cluster. Do not relay feedback through extraction prompts or the inbox. A source-fix rejection
+   alone does not establish that its inspection is invalid. Report check failures and continue independent stages.
 5. Follow the protocol's assignment flow: supply `edict_delegate` the complete token-free task instructions starting
    with the child's exact managed skill invocation, then pass its returned short launch `prompt` to native
    `spawn_agent`.
@@ -57,6 +67,9 @@ permission to execute stages inline.
    from earlier runs. Keep failed and cancelled task statuses and reasons; successful promotion does not make the
    whole pipeline successful. A requested retry can re-delegate failed stages in dependency order. Durable progress
    is represented by the Edict domain artifacts, not the execution plan.
+   When weak-signal promotion is included, also delegate `edict-promote-weak-signal` after upstream tasks settle,
+   independently of normal promotion's result. It handles Generated inspections with insufficient referenced strong
+   evidence by attempting fixes at up to five reviewed true-positive locations per inspection and opening a source PR.
 7. After all stages are terminal, read the current plan and report its ID, the produced signal/cluster/inspection IDs,
    every stage result including any extraction problem summary, Generated inspections' `knownProblems`, and any Pending
    or Invalid clusters with their reasons. Completion means
@@ -79,17 +92,26 @@ not add a generation count to downstream instructions when the user did not prov
 Every count is an evidence-constrained target: never invent Signals, force unrelated Signals into a cluster, weaken
 generation validation, or claim rules or Signals that were not produced. Report each achieved count and any shortfall.
 
-Create and execute these top-level tasks in this stage order; add cluster tasks once their IDs are known and promotion
-after upstream attempts finish or are cancelled, including when they fail:
+Create these separate top-level tasks; launch review checking alongside signal extraction within available capacity.
+Weak-signal checking does not gate extraction. It publishes uncovered merged evidence to the inbox;
+let both checking and extraction settle before distribution and cluster selection so workers see the resulting evidence.
+Check failures do not block independent stages. If the
+user also requests inspection-publication checks, delegate `edict-check-promotion` separately and let its decision
+workers settle before selecting clusters, since those decisions can change cluster status. Add cluster tasks once their
+IDs are known and promotion after upstream attempts finish or are cancelled, including when they fail:
 
-1. `edict-pr-signal-analysis`: pass the Signal target and call `edict_fetch_pr_batch` without a selection. The child
+1. `edict-check-weak-signal-promotion`: independently check weak-signal source-fix PRs from earlier
+   runs that are still active. Persist review states under `promotions`, publish covered merged corrections directly as
+   processed Signals in their originating clusters, and publish all other Signals to the inbox for normal distribution.
+   Run concurrently with step 2; report provider/check failures without blocking independent stages.
+2. `edict-pr-signal-analysis`: pass the Signal target and call `edict_fetch_pr_batch` without a selection. The child
    repeatedly extracts and publishes every PR on the next complete uncovered UTC date until it reaches the target.
    It always finishes a selected day, so the result may exceed the target. Successful publication persists every
    processed full date in PR-analysis coverage. Zero-Signal days do not count toward the target but still advance
    coverage. Stop with a reported shortfall when repository history is exhausted or a provider problem leaves the next
    date uncovered; an empty selection after exhaustion is a successful no-op.
-2. `edict-next-distribution`: assign the resulting inbox Signals to clusters.
-3. Select clusters for signal enrichment and rule generation.
+3. `edict-next-distribution`: assign the resulting inbox Signals to clusters.
+4. Select clusters for signal enrichment and rule generation.
    For suggestions, call `edict_next_select_generation_clusters`, omitting `generationCount` unless the user supplies one.
    It returns ranked candidates and `maxConcurrentClusterTasks`, not a reservation or a required target set. You may choose
    other Pending clusters based on the user's request and available evidence, or use explicitly requested IDs without
@@ -98,19 +120,24 @@ after upstream attempts finish or are cancelled, including when they fail:
    Keep the list of clusters chosen for this run here in the manager. Pass only the assigned `clusterId` to each worker;
    track any renamed IDs from worker results for later stages and the final report.
 
-4. `edict-git-history-signal-enrichment`: launch one top-level task per chosen cluster, passing only its `clusterId`.
+5. `edict-git-history-signal-enrichment`: launch one top-level task per chosen cluster, passing only its `clusterId`.
    Each enrichment agent directly analyzes all member Signals and historical candidates without child workers.
    Enrich each target with strong historical evidence derived from all its gathered Signals. Wait for all enrichment
    tasks to complete before delegating generation. An empty target list creates no enrichment tasks.
    A failed or incomplete search blocks generation; still continue to promotion after settling upstream tasks.
-5. `edict-next-cluster-generation`: launch one top-level task per chosen cluster after history completes, keeping up
+6. `edict-next-cluster-generation`: launch one top-level task per chosen cluster after history completes, keeping up
    to the concurrency limit active. Use every original and enriched Signal.
    Failed or cancelled generation tasks and Pending or Invalid clusters do not block publication.
-6. `edict-promote`: always attempt publication of every eligible Generated inspection through the configured promotion
+7. `edict-promote`: always attempt publication of every eligible Generated inspection through the configured promotion
    target, including when enrichment or generation failed, was cancelled, or had no targets. Pass no cluster filter
    unless the user explicitly restricted publication to particular clusters; eligibility includes inspections from
    earlier runs. Missing CI or promotion configuration is a failed publication prerequisite, not a reason to omit
    this task.
+8. `edict-promote-weak-signal`: attempt source fixes and feedback PRs for Generated inspections lacking enough referenced
+   strong Signals for normal promotion. Pass no cluster filter unless the user restricted publication. Run after normal
+   promotion settles, including when it fails. The worker selects up to five reviewed true-positive locations per
+   inspection, attempts focused fixes, and opens a PR describing the inspection and asking users to accept if they agree.
+   Report skipped locations, validation limitations, and missing or stale review evidence.
 
 Carry a user-provided Signal target into extraction, and a user-provided generation count plus relevant completed-stage
 results into downstream task instructions. For the default pipeline, do not add a generation count: selection must
