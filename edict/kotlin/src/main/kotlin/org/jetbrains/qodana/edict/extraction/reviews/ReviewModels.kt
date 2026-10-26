@@ -26,7 +26,6 @@ data class PrSignalDiff(
   val after: String,
   val beforePath: String,
   val afterPath: String,
-  val excerpt: String,
 )
 
 @Serializable

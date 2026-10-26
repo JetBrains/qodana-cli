@@ -31,16 +31,11 @@ A PR assignment contains only `batchId` and a zero-based `chunkIndex`.
    repeated on several lines.
    Record each finding as a Signal draft: `workItemId`, `fileRevision` with bounded one-based
    `expectedRanges`, `label`, `strength`, `description`, and `diff`, the exact prepared `before` (base or comment) and
-   `after` (head) revisions, the `beforePath` and `afterPath` that the canonical diff compares, and `excerpt`.
-   Select a relevant unified-diff excerpt of at most 4000 characters, including headers and newlines, for each Signal.
-   Retain the supporting change and useful nearby context; omit unrelated hunks and context instead of taking the
-   beginning of a large diff. Preserve exact source lines, paths and original line coordinates. When splitting a hunk,
-   recount its retained lines and adjust its header as specified in the signal contract. Keep every expected range
-   intersecting a retained change on its label's side. Never insert ellipses, clip a source line, or replace the diff
-   with prose. If the supporting evidence cannot fit, report that Signal as failed.
-   Do not copy PR metadata or discussion messages: the server completes those from the work item, verifies the excerpt
-   against the full canonical diff, and checks changed-line intersections. The server also derives each draft's idempotency key
-   and Signal ID; never compute them or write scripts for them.
+   `after` (head) revisions and the `beforePath` and `afterPath` that the canonical diff compares. Do not copy PR
+   metadata, discussion messages, or diff text: the server completes each draft's source from its work item, stores the
+   canonical diff's changes around the draft's ranges as its excerpt, and checks that the ranges intersect changed
+   lines. The server also derives each draft's idempotency key and Signal ID; never compute them or write scripts for
+   them.
 4. Isolate item failures. If one item lacks complete evidence or cannot produce a valid model, append its ID to
    `failedWorkItemIds`, append a concise problem containing that work-item ID, and continue with later items. Do not
    invent a Signal or discard correct sibling

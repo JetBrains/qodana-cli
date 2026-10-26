@@ -81,9 +81,9 @@ supplies an immutable analysis batch ID, preserve it in provenance.
 Keep mutable orchestration progress in the MCP plan.
 
 PR source preserves `type: "FromPR"`, `prNumber`, complete `title`, ordered complete human `discussionMessages`,
-focused `diffPositiveToNegative` (at most 4000 characters), and discussion `url`. A PR chunk worker supplies its selected
-excerpt in the draft's `diff.excerpt`, alongside the diff's revisions and paths. The server verifies that excerpt and
-completes the remaining source metadata from the prepared work item.
+focused `diffPositiveToNegative` (at most 4000 characters), and discussion `url`. A PR chunk worker does not write it: it
+stores Signal drafts naming the diff's revisions and paths, and the server completes this source from the prepared work
+item, cutting the canonical diff to the changes around the draft's ranges.
 
 Commit source preserves `type: "FromCommit"`, the full correcting `commitRevision`, and `url` when available. The commit
 object determines its parent, message, and canonical diff; do not duplicate them in the Signal. The correcting
