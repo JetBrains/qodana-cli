@@ -219,7 +219,7 @@ func getIde(analyzer product.Analyzer) *ReleaseDownloadInfo {
 
 // installIdeWindowsExe is used as a fallback, since it needs installation privileges and alters the registry
 func installIdeWindowsExe(archivePath string, targetDir string) error {
-	stdout, stderr, _, err := fexec.ExecRedirectOutput(
+	stdout, stderr, exitCode, err := fexec.ExecRedirectOutput(
 		".",
 		archivePath,
 		"/S",
@@ -227,6 +227,9 @@ func installIdeWindowsExe(archivePath string, targetDir string) error {
 	)
 	if err != nil {
 		return fmt.Errorf("%s: %s. Stdout: %s. Stderr: %s", archivePath, err, stdout, stderr)
+	}
+	if exitCode != 0 {
+		return fmt.Errorf("%s: exited with code %d. Stdout: %s. Stderr: %s", archivePath, exitCode, stdout, stderr)
 	}
 	return nil
 }
@@ -258,9 +261,12 @@ func extractArchive(archivePath string, targetDir string, stripComponents int) e
 		tarArgv = append(tarArgv, "--strip-components", strconv.Itoa(stripComponents))
 	}
 
-	stdout, stderr, _, err := fexec.ExecRedirectOutput(".", tarExe, tarArgv...)
+	stdout, stderr, exitCode, err := fexec.ExecRedirectOutput(".", tarExe, tarArgv...)
 	if err != nil {
 		return fmt.Errorf("failed to extract: %w. Stdout: %s. Stderr: %s", err, stdout, stderr)
+	}
+	if exitCode != 0 {
+		return fmt.Errorf("failed to extract: tar exited with code %d. Stdout: %s. Stderr: %s", exitCode, stdout, stderr)
 	}
 
 	if err := os.RemoveAll(targetDir); err != nil {
