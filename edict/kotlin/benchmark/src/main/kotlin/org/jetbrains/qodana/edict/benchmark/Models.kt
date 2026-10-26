@@ -9,6 +9,8 @@ data class BenchmarkInputs(
     val rules: List<String>,
     /** The gold manifest's rule for each Signal id; null maps Signals by their `benchmark/<Rule>/` source reference. */
     val ruleBySignal: Map<String, String>? = null,
+    /** The expected state of every rule: its gold `expectedState`, otherwise `generated`. */
+    val expectedStates: Map<String, String> = rules.associateWith { "generated" },
 )
 
 data class Finding(
@@ -62,4 +64,7 @@ data class BenchmarkReport(
     val clustersByRule: Map<String, List<String>> = emptyMap(),
     val clusterOutcomes: Map<String, String> = emptyMap(),
     val generationPriceReport: JsonObject? = null,
+    val expectedStates: Map<String, String> = emptyMap(),
+    /** Rules whose generation outcome is their expected state. */
+    val expectedStateMatched: Int = 0,
 )

@@ -183,4 +183,23 @@ class ComparisonTest {
         assertTrue(root.resolve("reports/generatedInspections/Rule--pending.kts").exists())
         assertTrue(root.resolve("reports/generatedInspections/Pending.kts").exists())
     }
+
+    @Test fun `rules meet the expected state of the gold rule`() {
+        fixture()
+        val gold = root.resolve("project/.edict/gold.sarif.json")
+        val runs = listOf(sarif("Rule"), sarif("Pending").replace("""{"id":"Pending"}""",
+            """{"id":"Pending","properties":{"expectedState":"discontinued"}}"""))
+            .flatMap { json.parseToJsonElement(it).jsonObject.getValue("runs").jsonArray }
+        writeJson(gold, obj("runs" to JsonArray(runs)))
+        val reports = root.resolve("reports")
+        val report = { compare(root.resolve("benchmark"), root.resolve("project/.edict"), reports) }
+        // A rule without expectedState is expected to be generated.
+        assertEquals(mapOf("Pending" to "discontinued", "Rule" to "generated"), report().expectedStates)
+        assertEquals(1, report().expectedStateMatched)
+        write("project/.edict/clusters/pending/description.json", """{"status":"Discontinued"}""")
+        assertEquals(2, report().expectedStateMatched)
+        assertEquals(1, report().successful)
+        gold.writeText(gold.readText().replace("discontinued", "invalid"))
+        assertContains(assertFailsWith<IllegalArgumentException> { report() }.message.orEmpty(), "expectedState 'invalid'")
+    }
 }

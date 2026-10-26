@@ -18,4 +18,7 @@ label lists only expected findings, so all its results are `POSITIVE`. A finding
 report `matchedNegative` (matching a `NEGATIVE` result) and `matchedUnlabeled` (matching only
 an unlabeled one, possibly a positive nobody labeled yet).
 Only Generated inspections contribute quality metrics; every selected rule remains
-in the generation-outcome report.
+in the generation-outcome report. A gold rule's `expectedState` property (`generated` or
+`discontinued`; `generated` when absent) is the outcome the rule must reach: its TeamCity test
+fails otherwise, and `edict.expectedStateMatched` counts the rules that reach it. A Generated
+rule is scored even when `discontinued` was expected.

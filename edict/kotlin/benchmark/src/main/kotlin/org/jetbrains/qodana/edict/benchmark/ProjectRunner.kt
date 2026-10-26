@@ -3,7 +3,6 @@ package org.jetbrains.qodana.edict.benchmark
 
 import kotlinx.serialization.json.*
 import java.nio.file.*
-import java.nio.file.attribute.BasicFileAttributes
 import java.util.concurrent.TimeUnit
 import kotlin.io.path.*
 
@@ -54,19 +53,12 @@ internal fun qodanaProcess(project: Path, results: Path, cache: Path, log: Path,
         }
 }
 
-internal fun copySource(source: Path, target: Path) {
-    val excluded = setOf(".git", ".edict", ".qodana", "benchmark", "inspections", "target", "qodana.yaml", "AGENTS.md")
-    Files.walkFileTree(source, object : SimpleFileVisitor<Path>() {
-        override fun preVisitDirectory(dir: Path, attrs: BasicFileAttributes): FileVisitResult {
-            if (dir != source && dir.fileName.toString() in excluded) return FileVisitResult.SKIP_SUBTREE
-            target.resolve(source.relativize(dir)).createDirectories()
-            return FileVisitResult.CONTINUE
-        }
-        override fun visitFile(file: Path, attrs: BasicFileAttributes): FileVisitResult {
-            if (file.fileName.toString() !in excluded) Files.copy(file, target.resolve(source.relativize(file)), LinkOption.NOFOLLOW_LINKS)
-            return FileVisitResult.CONTINUE
-        }
-    })
+// Scoring copies go beside the project's own scripts in the inspections directory that FlexInspect loads. Only files with
+// the scoring prefix are replaced or removed, and the directory once it is empty.
+internal fun removeScoringInspections(inspections: Path) {
+    if (!inspections.exists()) return
+    inspections.listDirectoryEntries("EdictBenchmark*.inspection.kts").forEach { it.deleteExisting() }
+    if (inspections.listDirectoryEntries().isEmpty()) inspections.deleteExisting()
 }
 
 internal fun deleteTree(path: Path) {
@@ -74,27 +66,24 @@ internal fun deleteTree(path: Path) {
     Files.walk(path).use { files -> files.sorted(Comparator.reverseOrder()).forEach(Files::delete) }
 }
 
-internal class ProjectRunner(private val source: Path, private val output: Path) {
-    private val workspace = output.resolve("scan-workspace")
-
+// Scans the checked-out project in place: the Edict MCP server has stopped by now, so this IDE opens the project alone.
+internal class ProjectRunner(private val project: Path, private val output: Path) {
     @Synchronized
     fun scan(destination: Path, codes: Map<String, String>): JsonObject {
-        val project = workspace.resolve("project")
-        if (!project.exists()) {
-            copySource(source, project)
-            // Qodana consults Git while computing source roots. No history or gold fixtures are copied.
-            commandOutput("git", "-C", project.toString(), "init", "--quiet")
-        }
-        deleteTree(project.resolve("inspections"))
-        val inspections = project.resolve("inspections").createDirectories()
+        val inspections = project.resolve("inspections")
+        removeScoringInspections(inspections)
+        inspections.createDirectories()
         codes.forEach { (rule, code) ->
             require(rule.matches(Regex("EdictBenchmark[A-Za-z0-9_]+")))
             inspections.resolve("$rule.inspection.kts").writeText(code)
         }
-        writeJson(project.resolve("qodana.yaml"), projectConfiguration(codes.keys))
+        // The project's own qodana.yaml stays untouched: the scan reads this configuration instead.
+        val configuration = destination.resolve("qodana.yaml")
+        writeJson(configuration, projectConfiguration(codes.keys))
         val results = destination.resolve("results")
         val log = destination.resolve("analysis.log")
-        val process = qodanaProcess(project, results, workspace.resolve("cache"), log).start()
+        val process = qodanaProcess(project, results, output.resolve("scan-workspace/cache"), log,
+            "--config", configuration.toString()).start()
         try {
             if (!process.waitFor(30, TimeUnit.MINUTES)) throw IllegalStateException("Project scan timed out; see $log")
             if (process.exitValue() != 0) throw IllegalStateException("Project analysis exited ${process.exitValue()}; see $log\n${log.readText().takeLast(2000)}")
@@ -102,6 +91,9 @@ internal class ProjectRunner(private val source: Path, private val output: Path)
             val registered = readSarif(sarif).registeredRules
             check(registered.containsAll(codes.keys)) { "Generated inspections were not loaded: ${codes.keys - registered}" }
             return readObject(sarif)
-        } finally { stop(process) }
+        } finally {
+            stop(process)
+            removeScoringInspections(inspections)
+        }
     }
 }

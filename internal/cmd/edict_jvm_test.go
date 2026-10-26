@@ -243,7 +243,8 @@ func edictMCPURL(t *testing.T) string {
 	t.Helper()
 	for _, line := range strings.Split(readCodexConfig(t), "\n") {
 		if value, ok := strings.CutPrefix(line, "url = "); ok {
-			url, err := strconv.Unquote(value)
+			// Install ends each line it writes with the "# qodana-edict" marker.
+			url, err := strconv.Unquote(strings.TrimSpace(strings.TrimSuffix(value, "# qodana-edict")))
 			if err != nil {
 				t.Fatal(err)
 			}

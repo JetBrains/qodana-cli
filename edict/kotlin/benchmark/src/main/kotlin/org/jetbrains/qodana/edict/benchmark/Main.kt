@@ -13,7 +13,15 @@ internal val json = Json { ignoreUnknownKeys = true; prettyPrint = true; encodeD
 /** Every benchmark rule and the rule of each Signal, from the gold run's `edictBenchmarkManifest` property. */
 internal data class GoldManifest(val rules: List<String>, val ruleBySignal: Map<String, String>)
 
-internal data class Sarif(val findings: List<Finding>, val registeredRules: Set<String>, val manifest: GoldManifest? = null)
+internal data class Sarif(
+    val findings: List<Finding>,
+    val registeredRules: Set<String>,
+    val manifest: GoldManifest? = null,
+    /** The `expectedState` property of each rule that has one: `generated` or `discontinued`. */
+    val expectedStates: Map<String, String> = emptyMap(),
+)
+
+internal val EXPECTED_STATES = setOf("generated", "discontinued")
 
 private fun JsonObject.obj(name: String): JsonObject? = get(name)?.takeUnless { it is JsonNull }?.jsonObject
 private fun JsonObject.array(name: String): JsonArray? = get(name)?.takeUnless { it is JsonNull }?.jsonArray
@@ -32,13 +40,19 @@ internal fun readSarif(path: Path): Sarif {
     val runs = report.array("runs") ?: error("No SARIF runs in $path")
     require(runs.isNotEmpty()) { "No SARIF runs in $path" }
     val registered = mutableSetOf<String>()
+    val expectedStates = mutableMapOf<String, String>()
     val findings = runs.flatMap { element ->
         val run = element.jsonObject
         val tool = run.obj("tool")
         val components = listOfNotNull(tool?.obj("driver")) + (tool?.array("extensions") ?: emptyList())
         components.forEach { component ->
             component.jsonObject.array("rules")?.forEach { rule ->
-                rule.jsonObject["id"]?.jsonPrimitive?.contentOrNull?.let(registered::add)
+                val id = rule.jsonObject["id"]?.jsonPrimitive?.contentOrNull ?: return@forEach
+                registered.add(id)
+                rule.jsonObject.obj("properties")?.get("expectedState")?.jsonPrimitive?.contentOrNull?.let { state ->
+                    require(state in EXPECTED_STATES) { "Rule $id has expectedState '$state', expected one of $EXPECTED_STATES in $path" }
+                    expectedStates[id] = state
+                }
             }
         }
         (run.array("results") ?: emptyList()).map { result ->
@@ -54,7 +68,7 @@ internal fun readSarif(path: Path): Sarif {
         }
     }
     val manifest = runs.firstNotNullOfOrNull { it.jsonObject.obj("properties")?.obj("edictBenchmarkManifest") }
-    return Sarif(findings, registered, manifest?.let { goldManifest(it, path) })
+    return Sarif(findings, registered, manifest?.let { goldManifest(it, path) }, expectedStates)
 }
 
 // Gold without any edictLabel lists only expected findings, so each of its results is a positive.
@@ -87,7 +101,8 @@ internal fun compare(_benchmarkDir: Path, stateDir: Path, outputDir: Path,
     }
     val metrics = successful.map { calculateMetrics(it, gold, findings) }
     val report = BenchmarkReport(metrics, aggregate(metrics), inputs.rules.size, successful.size,
-        inputs.revision, outcomes, clusters, statuses, generationPriceReport)
+        inputs.revision, outcomes, clusters, statuses, generationPriceReport, inputs.expectedStates,
+        inputs.rules.count { meetsExpectedState(inputs.expectedStates.getValue(it), outcomes.getValue(it)) })
 
     outputDir.createDirectories()
     val inspectionsDir = outputDir.resolve("generatedInspections").createDirectories()
@@ -117,9 +132,10 @@ internal fun logReport(report: BenchmarkReport) {
     val byRule = report.inspectionMetrics.associateBy { it.ruleId }
     report.generationOutcomes.forEach { (rule, status) ->
         val metric = byRule[rule]
+        val expected = report.expectedStates.getValue(rule)
         teamCity("testStarted", "name" to rule)
-        if (metric == null) {
-            teamCity("testFailed", "name" to rule, "message" to status)
+        if (!meetsExpectedState(expected, status)) {
+            teamCity("testFailed", "name" to rule, "message" to "Expected $expected, got $status")
         }
         teamCity("testFinished", "name" to rule)
         if (metric != null) println("$rule: TP=${metric.truePositives} FP=${metric.falsePositives} FN=${metric.falseNegatives} " +
@@ -128,6 +144,7 @@ internal fun logReport(report: BenchmarkReport) {
     }
     teamCity("buildStatisticValue", "key" to "edict.totalInspectionsProcessed", "value" to report.totalInspectionsProcessed)
     teamCity("buildStatisticValue", "key" to "edict.successful", "value" to report.successful)
+    teamCity("buildStatisticValue", "key" to "edict.expectedStateMatched", "value" to report.expectedStateMatched)
     teamCity("buildStatisticValue", "key" to "edict.avgF1Score", "value" to report.aggregate.avgF1Score)
     teamCity("buildStatisticValue", "key" to "edict.totalTP", "value" to report.aggregate.totalTP)
     teamCity("buildStatisticValue", "key" to "edict.totalFP", "value" to report.aggregate.totalFP)
@@ -142,7 +159,8 @@ internal fun logReport(report: BenchmarkReport) {
             teamCity("buildStatisticValue", "key" to "edict.totalTokens", "value" to it)
         }
     }
-    teamCity("buildStatus", "text" to "${report.successful}/${report.totalInspectionsProcessed} inspections generated")
+    teamCity("buildStatus", "text" to "${report.successful}/${report.totalInspectionsProcessed} inspections generated, " +
+        "${report.expectedStateMatched}/${report.totalInspectionsProcessed} in the expected state")
 }
 
 fun main(args: Array<String>) {

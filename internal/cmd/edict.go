@@ -35,8 +35,8 @@ func newEdictInstallCommand() *cobra.Command {
 	command := &cobra.Command{
 		Use:   "install",
 		Short: "Set Edict up for Codex sessions in the current directory",
-		Long: `Install the managed Edict skills into ./.codex/skills and write ./.codex/config.toml
-with the Edict permissions, agent limits, and the edict-mcp server address. The
+		Long: `Install the managed Edict skills into ./.codex/skills and add to ./.codex/config.toml
+the Edict permissions, agent limits, and the edict-mcp server address. The
 server port is edict.mcpPort in ./qodana.yaml (or ./qodana.yml), 27182 by default:
 
   edict:
@@ -45,8 +45,10 @@ server port is edict.mcpPort in ./qodana.yaml (or ./qodana.yml), 27182 by defaul
 The global $CODEX_HOME is never changed: configure the model provider there before
 running this command, and trust the current directory in Codex: Codex ignores
 the local config otherwise. The command asks Codex ('codex mcp list', or $CODEX_BIN)
-whether it loads the config, and removes it and fails if not. Re-run the command after changing the
-port; it updates skills and config. Unrelated files in ./.codex/skills are kept.
+whether it loads the config, and restores the previous config and fails if not. Re-run the command
+after changing the port; it updates skills and config. The lines it writes end with '# qodana-edict'
+and are replaced on each run; every other line and unrelated files in ./.codex/skills are kept. The
+command fails without changes when the config sets a value Edict needs, such as approval_policy, differently.
 Use --deny for paths agents must not read, such as benchmark answers.`,
 		Args:         cobra.NoArgs,
 		SilenceUsage: true,

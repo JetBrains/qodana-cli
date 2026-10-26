@@ -12,22 +12,29 @@ qodana edict install --deny benchmark --deny .edict/gold.sarif.json \
 # Its console output stays beside the run folders, which agents cannot read either.
 server_log=log/process-log/edict-server.log
 mkdir -p log/process-log
-# The fixture has no qodana.yaml. Generate every cluster, not the default first few, and let the manager write the price
-# report: without a persisted plan the report step cannot attribute sessions to stages.
-edict_port=27182
-edict_config="$benchmark_output/edict-qodana.yaml"
-cat > "$edict_config" <<YAML
+# A fixture's qodana.yaml holds its Edict settings. Without one, generate every cluster, not the default first few, and
+# let the manager write the price report: without a persisted plan the report step cannot attribute sessions to stages.
+config_arguments=()
+if [[ -f qodana.yaml ]]; then
+  edict_port=$(sed -n 's/^ *mcpPort: *\([0-9][0-9]*\).*/\1/p' qodana.yaml)
+  edict_port=${edict_port:-27182}
+else
+  edict_port=27182
+  edict_config="$benchmark_output/edict-qodana.yaml"
+  cat > "$edict_config" <<YAML
 edict:
   mcpPort: $edict_port
   calculatePrice: true
   generation:
-    defaultGenerationCount: 20
+    defaultGenerationCount: 25
 YAML
+  config_arguments=(--config "$edict_config")
+fi
 stop_leftover_servers "$edict_port"
 QODANA_CONF="$benchmark_output/mcp-config" nohup setsid qodana edict mcp start \
-  --config "$edict_config" \
+  ${config_arguments[@]+"${config_arguments[@]}"} \
   --ide-wait-timeout 20m \
-  --ide-property=-Xmx8g --ide-property=java.awt.headless=true --ide-property=idea.is.internal=true \
+  --ide-property="-Xmx${BENCHMARK_IDE_XMX:-8g}" --ide-property=java.awt.headless=true --ide-property=idea.is.internal=true \
   --ide-property=eap.login.enabled=false > "$server_log" 2>&1 < /dev/null &
 echo $! > "$benchmark_output/edict.pid"
 for ((attempt=0; attempt<90; attempt++)); do
