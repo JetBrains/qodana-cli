@@ -298,6 +298,26 @@ func TestExtractArchiveBadPath(t *testing.T) {
 	assert.Error(t, err)
 }
 
+func TestExtractArchiveTruncated(t *testing.T) {
+	archive := sampleArchive(t)
+	data, err := os.ReadFile(archive)
+	assert.NoError(t, err)
+	assert.NoError(t, os.WriteFile(archive, data[:len(data)/2], 0o644))
+
+	targetDir := filepath.Join(t.TempDir(), "truncated-target")
+	assert.NoError(t, os.MkdirAll(targetDir, 0o755))
+	marker := filepath.Join(targetDir, "marker.txt")
+	assert.NoError(t, os.WriteFile(marker, []byte("keep"), 0o644))
+
+	err = extractArchive(archive, targetDir, 0)
+
+	assert.ErrorContains(t, err, "tar exited with code")
+	assert.FileExists(t, marker, "existing target dir must stay untouched when extraction fails")
+	leftovers, globErr := filepath.Glob(filepath.Join(os.TempDir(), "truncated-target-*.partial"))
+	assert.NoError(t, globErr)
+	assert.Empty(t, leftovers)
+}
+
 func TestIsCustomPluginsCacheValid(t *testing.T) {
 	pluginsUrl := "https://example.com/qodana-QDJVM-262.9643.87-custom-plugins.zip"
 
@@ -661,4 +681,19 @@ func TestInstallIdeWindowsExe(t *testing.T) {
 	err := installIdeWindowsExe(fakeExe, targetDir)
 	assert.NoError(t, err)
 	assert.True(t, invoked.Load(), "installer mock was not invoked")
+}
+
+func TestInstallIdeWindowsExeNonZeroExit(t *testing.T) {
+	//goland:noinspection GoBoolExpressions
+	if runtime.GOOS != "windows" {
+		t.Skip("installIdeWindowsExe is Windows-only")
+	}
+
+	tmpDir := t.TempDir()
+	fakeExe := mockexe.CreateMockExe(t, filepath.Join(tmpDir, "installer.exe"), func(ctx *mockexe.CallContext) int {
+		return 2
+	})
+
+	err := installIdeWindowsExe(fakeExe, filepath.Join(tmpDir, "installed"))
+	assert.Error(t, err)
 }

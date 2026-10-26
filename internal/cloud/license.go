@@ -37,6 +37,8 @@ type LicenseData struct {
 	ProjectIdHash      string `json:"projectIdHash"`
 	OrganisationIdHash string `json:"organizationIdHash"`
 	LicensePlan        string `json:"licensePlan"`
+	// OrganizationAllowsErrorReporting is optional in the response, a missing field means false.
+	OrganizationAllowsErrorReporting bool `json:"organizationAllowsErrorReporting"`
 }
 
 type LicenseToken struct {
@@ -90,6 +92,9 @@ environment variable is correct and that you have a valid license.
 If you need further assistance, please contact our support team at qodana-support@jetbrains.com`
 
 var Token LicenseToken
+
+// OrganizationAllowsErrorReporting holds the value from the license response. It is nil when the CLI made no license request.
+var OrganizationAllowsErrorReporting *bool
 
 func (o *LicenseToken) IsAllowedToSendReports() bool {
 	return !o.LicenseOnly && o.Token != ""
