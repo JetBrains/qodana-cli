@@ -59,6 +59,30 @@ class WeakSignalPromotionServiceTest {
   }
 
   @Test
+  fun `normal and weak promotion use the same positive source file threshold`() {
+    val repository = repository()
+    cluster(repository, "mixed", strongSignals = 5, negativeSignals = 1)
+    cluster(repository, "negative-only", strongSignals = 6, negativeSignals = 6)
+    cluster(repository, "positive-only", strongSignals = 5)
+    val provider = FakeReviews()
+
+    val normal = PromotionService({ repository }, configuration, provider).promote()
+    assertTrue(normal.failures.isEmpty())
+    assertEquals(listOf("inspections/positive-only.inspection.kts"), normal.created.map { it.targetPath })
+
+    val weak = service(repository, provider)
+    val selection = weak.prepare()
+    assertTrue(selection.failures.isEmpty())
+    assertEquals(listOf("mixed", "negative-only"), selection.candidates.map { it.clusterId })
+    val fixes = listOf(WeakSignalFix("src/Worker.kt", listOf(1), "fixed", "Fix waiting"))
+    weak.publish("mixed", digest, fixes, "Reviewed diff")
+    assertEquals(mapOf("src/Worker.kt" to "fixed"), provider.requests.last().sourceFix!!.files)
+    assertFailsWith<IllegalArgumentException> {
+      weak.publish("positive-only", digest, fixes, "Reviewed diff")
+    }
+  }
+
+  @Test
   fun `publishes source improvements with inspection explanation and acceptance request once across restarts`() {
     val repository = repository()
     cluster(repository, "weak")
@@ -605,15 +629,17 @@ class WeakSignalPromotionServiceTest {
     review: EdictNextProjectReview? = EdictNextProjectReview(revision, findings.size, findings.size, 0, 0, 0, "Avoid busy waiting", findings),
     evaluationDigest: String = digest,
     sourceFiles: Int = strongSignals,
+    negativeSignals: Int = 0,
   ) {
     val root = repository.paths.clustersDirectory.resolve(id).createDirectories()
     root.resolve("cluster.json").writeText(EdictNextJson.encodeToString(EdictNextClusterManifest(id, EdictNextLanguage.Kotlin, status)))
     root.resolve("signals").createDirectories()
     repeat(strongSignals) { index ->
       val path = if (index % sourceFiles == 0) "src/Worker.kt" else "src/Worker${index % sourceFiles}.kt"
+      val label = if (index < negativeSignals) EdictNextSignalLabel.NEGATIVE else EdictNextSignalLabel.POSITIVE
       val signal = EdictNextSignal("signal-$index", fileRevision = EdictNextFileRevision(path, revision),
         source = EdictNextSignalSource.FromCommit(revision, if (references) "https://example.com/commit/$revision" else null),
-        label = EdictNextSignalLabel.POSITIVE, description = "Avoid busy waiting", syntheticExampleId = "positive")
+        label = label, description = "Avoid busy waiting", syntheticExampleId = if (label == EdictNextSignalLabel.POSITIVE) "positive" else "negative")
       root.resolve("signals/signal-$index.json").writeText(EdictNextJson.encodeToString(signal))
     }
     listOf(EdictNextSignalLabel.POSITIVE, EdictNextSignalLabel.NEGATIVE).forEach { label ->

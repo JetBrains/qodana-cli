@@ -138,7 +138,7 @@ IDs are known and promotion after upstream attempts finish or are cancelled, inc
    earlier runs. Missing CI or promotion configuration is a failed publication prerequisite, not a reason to omit
    this task.
 8. `edict-promote-weak-signal`: attempt source fixes and feedback PRs for Generated inspections lacking referenced
-   strong Signals from five distinct source files for normal promotion. Pass no cluster filter unless the user restricted publication. Run after normal
+   strong positive Signals from five distinct source files for normal promotion. Pass no cluster filter unless the user restricted publication. Run after normal
    promotion settles, including when it fails. The worker selects up to five reviewed true-positive locations per
    inspection, attempts focused fixes, and opens a PR describing the inspection and asking users to accept if they agree.
    Report skipped locations, validation limitations, and missing or stale review evidence.
