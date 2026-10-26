@@ -183,8 +183,9 @@ class SkillsTest {
         assertContains(compact, "never invent Signals")
         assertContains(compact, "a user-provided generation count plus relevant completed-stage results into downstream task instructions")
         assertContains(compact, "selection must omit `generationCount` so the configured default applies")
-        assertContains(compact, "Include its cost breakdown in the final response")
+        assertContains(compact, "prints the full cost breakdown directly to the CI task log")
         assertContains(compact, "each individual cluster task when enrichment or generation splits across clusters")
+        assertContains(compact, "Include only the run's USD and token total in the final response")
         val defaultStages = Regex("(?m)^\\d+\\. `([^`]+)`").findAll(manager.substringAfter("# Default repository pipeline"))
             .map { it.groupValues[1] }.toList()
         assertEquals(
