@@ -469,6 +469,8 @@ internal data class EdictNextReviewExampleStatus(
 @Serializable
 internal enum class EdictNextNextAction {
   PROCESS_SIGNAL,
+  /** The current distribution task assigned its share of the batch; a new task continues it. */
+  HAND_OFF,
   STOP_DISTRIBUTION,
   REPAIR_CODE_EXAMPLE,
   CONTINUE_CLUSTER_GENERATION,

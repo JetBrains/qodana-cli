@@ -39,6 +39,32 @@ class EdictNextDistributionServiceTest {
     }
   }
 
+  @Test
+  fun `each task assigns its share of the batch and hands off to the next task`() = runBlocking {
+    val repository = inboxRepository(5)
+    val distribution = EdictNextDistributionService(repository, directory.resolve("neighbours.json"), taskSignalCount = 2)
+    distribution.calculateNeighbours()
+    val actions = mutableListOf<String>()
+    while (true) {
+      val prepared = distribution.nextSignal()
+      if (prepared.nextAction == EdictNextNextAction.STOP_DISTRIBUTION) break
+      if (prepared.nextAction == EdictNextNextAction.HAND_OFF) {
+        actions += "hand off: ${prepared.summary}"
+        assertContains(distribution.calculateNeighbours().summary, "already calculated")
+        continue
+      }
+      distribution.addSignalToCluster(assertNotNull(prepared.signalId), "rule-${actions.size}")
+      actions += "assign"
+    }
+
+    assertEquals(
+      listOf("assign", "assign", "hand off", "assign", "assign", "hand off", "assign"),
+      actions.map { it.substringBefore(":") },
+    )
+    assertContains(actions[2], "3 selected Signal(s) remain")
+    assertTrue(repository.loadState().inboxSignals.isEmpty())
+  }
+
   private fun inboxRepository(count: Int, name: String = "state"): EdictRepository {
     val state = directory.resolve(name).createDirectories()
     runProcess(state, listOf("git", "init", "--quiet"))
@@ -67,7 +93,8 @@ class EdictNextDistributionServiceTest {
     val initialIds = repository.loadState().inboxSignals.map { it.id }.sorted()
     distribution.calculateNeighbours()
     repeat(expectedCount) { index ->
-      val prepared = distribution.nextSignal()
+      val prepared = distribution.nextSignal().takeUnless { it.nextAction == EdictNextNextAction.HAND_OFF }
+        ?: distribution.nextSignal()
       assertEquals(initialIds[index], prepared.signalId)
       distribution.addSignalToCluster(assertNotNull(prepared.signalId), "rule-$index")
     }
