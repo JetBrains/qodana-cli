@@ -30,9 +30,10 @@ new cluster with a provisional lowercase kebab-case id. Do not split an existing
 Repeat until `edict_next_next_signal` returns `STOP_DISTRIBUTION` or `HAND_OFF`:
 
 1. Call `edict_next_next_signal` and read the complete Signal.
-2. For every plausible existing cluster, retrieve `kind: "cluster"` context and compare every member Signal, including
-   negatives. Retrieve a useful neighboring inbox Signal with `kind: "signal"`, or read its exact revision with
-   `edict_file_at_ref` when needed.
+2. Compare every member Signal, including negatives, of every plausible existing cluster. The nearest small cluster
+   candidates already list their `signals`, which counts as their context; retrieve `kind: "cluster"` context for any
+   other plausible cluster. Inbox candidates show their label, path and description; retrieve one with `kind: "signal"`,
+   or read its exact revision with `edict_file_at_ref`, only when that is not enough.
 3. Choose one compatible existing cluster id or a new provisional id.
 4. Call `edict_next_add_signal_to_cluster` with `signalId` and `clusterId`. Existing-cluster assignment requires its
    context receipt. If `added` is false, use the summary to correct the choice and retry the same Signal; do not request
