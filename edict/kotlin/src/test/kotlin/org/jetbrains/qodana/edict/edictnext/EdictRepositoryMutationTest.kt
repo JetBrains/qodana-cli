@@ -43,7 +43,7 @@ class EdictRepositoryMutationTest {
       EdictNextDistributionContextResponse.SignalContext(signal),
     ).jsonObject
     val candidate = EdictNextJson.encodeToJsonElement<EdictNextSignalCandidate>(
-      EdictNextSignalCandidate.SignalCandidate(signal.id, "/inbox/${signal.id}.json", 0.25),
+      EdictNextSignalCandidate.SignalCandidate(signal.id, "/inbox/${signal.id}.json", 0.25, signal.label, signal.fileRevision.path, signal.description),
     ).jsonObject
 
     assertEquals("signal", context.getValue("type").jsonPrimitive.content)

@@ -71,11 +71,15 @@ internal class EdictNextDistributionService(
             )
         }
         currentBatch.startSignal(signalId)
+        val candidates = mergeCandidates(currentBatch.neighbours.getValue(signalId), state.clusters, inbox, repository)
+        candidates.filterIsInstance<EdictNextSignalCandidate.Cluster>()
+            .filter { it.signals != null }
+            .forEach { currentBatch.recordClusterContext(it.clusterId) }
         return EdictNextSignalPreparationResponse(
           signalId = signalId,
           signalPath = repository.paths.inboxDirectory.resolve("$signalId.json").toString(),
           signal = state.inboxSignalsById.getValue(signalId),
-          candidates = mergeCandidates(currentBatch.neighbours.getValue(signalId), state.clusters, inbox, repository),
+          candidates = candidates,
           summary = "Prepared Signal '$signalId' with its nearest candidates",
         )
     }
@@ -145,22 +149,28 @@ internal class EdictNextDistributionService(
         repository: EdictRepository,
     ): List<EdictNextSignalCandidate> {
         val clusterBySignalId = buildMap {
-            clusters.forEach { cluster -> cluster.signalIds.forEach { put(it, cluster.id) } }
+            clusters.forEach { cluster -> cluster.signalIds.forEach { put(it, cluster) } }
         }
         val clusterCandidates = neighbours.closest.mapNotNull { neighbour ->
             clusterBySignalId[neighbour.signalId]?.let { it to neighbour }
-        }.groupBy({ it.first }, { it.second }).map { (clusterId, matched) ->
-            EdictNextSignalCandidate.Cluster(
-                clusterId,
-                matched.minOf(EdictNextNeighbour::distance),
-            )
+        }.groupBy({ it.first }, { it.second }).map { (cluster, matched) ->
+            cluster to matched.minOf(EdictNextNeighbour::distance)
+        }.sortedBy { it.second }.mapIndexed { index, (cluster, distance) ->
+            // The nearest small clusters come with their members, so most assignments need no context call.
+            val included = index < INCLUDED_CLUSTER_COUNT &&
+                EdictNextJson.encodeToString(cluster.signals).length <= INCLUDED_CLUSTER_MAX_CHARS
+            EdictNextSignalCandidate.Cluster(cluster.id, distance, cluster.signals.size, cluster.signals.takeIf { included })
         }
-        val inboxIds = inbox.mapTo(hashSetOf(), EdictNextSignal::id)
-        val signalCandidates = neighbours.closest.filter { it.signalId in inboxIds }.map { neighbour ->
+        val inboxById = inbox.associateBy(EdictNextSignal::id)
+        val signalCandidates = neighbours.closest.mapNotNull { neighbour ->
+            val signal = inboxById[neighbour.signalId] ?: return@mapNotNull null
             EdictNextSignalCandidate.SignalCandidate(
                 neighbour.signalId,
                 repository.paths.inboxDirectory.resolve("${neighbour.signalId}.json").toString(),
                 neighbour.distance,
+                signal.label,
+                signal.fileRevision.path,
+                signal.description,
             )
         }
         return (clusterCandidates + signalCandidates).sortedBy(EdictNextSignalCandidate::nearestDistance)
@@ -237,5 +247,7 @@ internal class EdictNextDistributionService(
         const val CLUSTER_CONTEXT_KIND: String = "cluster"
         /** Keeps a task's context small: every assignment adds the Signal and cluster evidence it read. */
         const val DISTRIBUTION_TASK_SIGNAL_COUNT: Int = 10
+        const val INCLUDED_CLUSTER_COUNT: Int = 2
+        const val INCLUDED_CLUSTER_MAX_CHARS: Int = 12_000
     }
 }

@@ -65,6 +65,34 @@ class EdictNextDistributionServiceTest {
     assertTrue(repository.loadState().inboxSignals.isEmpty())
   }
 
+  @Test
+  fun `nearest small clusters come with their members and count as loaded context`() = runBlocking {
+    val repository = inboxRepository(40)
+    val distribution = EdictNextDistributionService(repository, directory.resolve("neighbours.json"), taskSignalCount = 40)
+    distribution.calculateNeighbours()
+    val first = distribution.nextSignal()
+    val inboxCandidate = first.candidates.filterIsInstance<EdictNextSignalCandidate.SignalCandidate>().first()
+    assertEquals("Same inspection evidence", inboxCandidate.description)
+    distribution.addSignalToCluster(assertNotNull(first.signalId), "rule")
+    var included = 0
+    while (true) {
+      val prepared = distribution.nextSignal()
+      val cluster = prepared.candidates.filterIsInstance<EdictNextSignalCandidate.Cluster>().single()
+      if (cluster.signals == null) {
+        // A cluster grown past the size limit needs an explicit context call before joining.
+        val unloaded = assertFailsWith<IllegalStateException> { distribution.addSignalToCluster(assertNotNull(prepared.signalId), "rule") }
+        assertContains(unloaded.message.orEmpty(), "edict_next_get_distribution_context")
+        assertEquals(included + 1, cluster.memberCount)
+        break
+      }
+      assertEquals(cluster.memberCount, cluster.signals.size)
+      // Joining an included cluster needs no context call.
+      distribution.addSignalToCluster(assertNotNull(prepared.signalId), "rule")
+      included++
+    }
+    assertTrue(included >= 2, "included $included")
+  }
+
   private fun inboxRepository(count: Int, name: String = "state"): EdictRepository {
     val state = directory.resolve(name).createDirectories()
     runProcess(state, listOf("git", "init", "--quiet"))

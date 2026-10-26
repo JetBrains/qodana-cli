@@ -259,6 +259,9 @@ internal sealed interface EdictNextSignalCandidate {
   data class Cluster(
     val clusterId: String,
     override val nearestDistance: Double,
+    val memberCount: Int,
+    /** The members of one of the nearest small clusters, which then counts as loaded context for the current Signal. */
+    val signals: List<EdictNextSignal>? = null,
   ) : EdictNextSignalCandidate
 
   @Serializable
@@ -267,6 +270,9 @@ internal sealed interface EdictNextSignalCandidate {
     val signalId: String,
     val signalPath: String,
     override val nearestDistance: Double,
+    val label: EdictNextSignalLabel,
+    val path: String,
+    val description: String,
   ) : EdictNextSignalCandidate
 }
 
