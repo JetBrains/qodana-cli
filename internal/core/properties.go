@@ -47,11 +47,15 @@ func getScanPropertiesMap(
 	repositoryRoot string,
 ) map[string]string {
 	properties := map[string]string{
-		"-Didea.headless.enable.statistics":    strconv.FormatBool(cloud.Token.IsAllowedToSendFUS()),
-		"-Didea.headless.statistics.device.id": deviceIdSalt[0],
-		"-Didea.headless.statistics.salt":      deviceIdSalt[1],
-		"-Dqodana.automation.guid":             str.QuoteIfSpace(analysisId),
-		"-XX:MaxRAMPercentage":                 "70", //only in docker?
+		"-Didea.headless.enable.statistics":            strconv.FormatBool(cloud.Token.IsAllowedToSendFUS()),
+		"-Didea.headless.statistics.device.id":         deviceIdSalt[0],
+		"-Didea.headless.statistics.salt":              deviceIdSalt[1],
+		"-Dqodana.automation.guid":                     str.QuoteIfSpace(analysisId),
+		"-XX:MaxRAMPercentage":                         "70", //only in docker?
+		"-Dtypescript.service.node.defaultMemoryLimit": "1024",
+	}
+	if cloud.OrganizationAllowsErrorReporting != nil {
+		properties["-Dqodana.organization.allows.error.reporting"] = strconv.FormatBool(*cloud.OrganizationAllowsErrorReporting)
 	}
 	if coverageDir != "" {
 		properties["-Dqodana.coverage.input"] = str.QuoteIfSpace(coverageDir)

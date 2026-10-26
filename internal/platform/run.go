@@ -126,9 +126,19 @@ func RunThirdPartyLinterAnalysis(
 		return 1, err
 	}
 
+	baseline := ResolveBaseline(
+		context.Baseline(),
+		context.CloudData().QodanaToken,
+		context.LinterInfo().ProductCode,
+		context.CacheDir(),
+	)
 	thresholds := getFailureThresholds(context)
 	var analysisResult int
-	if analysisResult, err = computeBaselinePrintResults(context, thresholds); err != nil {
+	analysisResult, err = computeBaselinePrintResults(context, thresholds, baseline.BaselinePath())
+	// not deferred: the analysis may leave the process with os.Exit over the fail threshold
+	baseline.Cleanup()
+	fmt.Println(baseline.UsedMessage())
+	if err != nil {
 		msg.ErrorMessage(err.Error())
 		return 1, err
 	}
