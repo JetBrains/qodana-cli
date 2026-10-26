@@ -3,6 +3,8 @@ set -euo pipefail
 source "$(dirname "$0")/common.sh"
 cd "$benchmark_project"
 mkdir -p "$benchmark_output/trace"
+# The Edict pipeline ends with this step: stop the MCP server and its IDE, so reporting reopens the project alone.
+trap stop_servers EXIT
 # The shared MCP server sees every worker, including children absent from Codex's console.
 # GNU tail drains the lifecycle log and exits when this build-step shell exits.
 tasks_log="$(cat "$benchmark_output/edict-process-log")/edict-tasks.log"

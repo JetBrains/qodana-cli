@@ -18,14 +18,16 @@ The pipeline has six steps:
    need to match the container's glibc version.
 3. `install-intellij.sh` verifies and extracts the native IntelliJ distribution supplied
    by the TeamCity artifact dependency.
-4. `prepare.sh` runs `qodana edict install` in `project`, which writes the skills, sandbox permissions,
-   agent limits and `edict-mcp` address into `project/.codex`; `--deny` adds the benchmark answers and
-   Codex session records. The script then starts a shared `qodana edict mcp start` HTTP server in
-   `project` on `edict.mcpPort` from the fixture's `qodana.yaml` (27182 when unset), using the checked-out
+4. `prepare.sh` runs `qodana edict install` in `project`, which writes the skills and adds the sandbox
+   permissions, agent limits and `edict-mcp` address to `project/.codex`, keeping the fixture's own Codex
+   configuration; `--deny` adds the benchmark answers and Codex session records. The script then starts a
+   shared `qodana edict mcp start` HTTP server in `project`. A fixture's `qodana.yaml` holds its Edict
+   settings, such as `edict.ci` for Signal revisions missing from the checkout; without one, the script
+   writes a configuration on port 27182 that generates 25 clusters and calculates the price. The server uses the checked-out
    project's **`project/.edict`** as both its Edict repository and managed state directory, with logs in
    `project/log`. The server starts the native
    `idea mcpServer` headless entry point from `QODANA_DIST` on the first inspection call,
-   with the benchmark's IDE properties and a 20-minute readiness allowance, and forwards
+   with the benchmark's IDE properties (heap `-Xmx${BENCHMARK_IDE_XMX:-8g}`) and a 20-minute readiness allowance, and forwards
    the IntelliJ tools, so Codex configures only `edict-mcp`.
    Distribution embeds Signals in the MCP JVM with ONNX Runtime; the GTE model is
    downloaded once into `${XDG_CACHE_HOME:-~/.cache}/JetBrains/Qodana/edict/models`. The existing
@@ -33,13 +35,15 @@ The pipeline has six steps:
    signals. The shared managed endpoint remains
    available to isolated Codex workers, and MCP tool calls are auto-approved.
 5. `generate.sh` executes Codex in `project` with `$edict_manager process inbox and generate new rules`.
+   When Codex exits, the step stops the MCP server and its IDE, so reporting opens the project alone.
    The prompt carries no paths: skills read the Edict state, inspected project, and private scratch
    paths from the `edict_context` MCP tool.
    Generation uses TeamCity’s normal execution mode so cancellation remains
    interruptible. TeamCity cleans up server processes when the build finishes.
 6. A TeamCity **Gradle runner** executes `:benchmark:report`. Kotlin runs the accepted
-   inspections from `.edict/inspections` natively, writes SARIF into `benchmark-output`,
-   and compares it with `.edict/gold.sarif.json`. During this analysis it prices every
+   inspections from `.edict/inspections` natively on the checked-out `project` in place (one batched
+   scan with a separate configuration; the scoring copies in `project/inspections` are removed afterwards),
+   writes SARIF into `benchmark-output`, and compares it with `.edict/gold.sarif.json`. During this analysis it prices every
    manager and subagent session using current official OpenAI Standard rates, prints
    the token-type and stage breakdown, writes
    `benchmark-output/log/edict/edict-price-report.json`, embeds the complete price
