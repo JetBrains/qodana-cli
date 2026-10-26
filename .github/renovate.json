@@ -43,7 +43,7 @@
       "matchStrings": [
         "renovate:\\s*datasource=(?<datasource>.*?) depName=(?<depName>.*?)\\n.*?\"(?<currentValue>.*?)\""
       ],
-      "versioningTemplate": "regex:^jbr-release-(?<major>\\d+)\\.(?<minor>\\d+)\\.(?<patch>\\d+)b(?<build>.*)$"
+      "versioningTemplate": "regex:^jbr-release-(?<major>\\d+)\\.(?<minor>\\d+)\\.(?<patch>\\d+)(?:\\.(?<revision>\\d+))?b(?<build>.*)$"
     },
     {
       "description": "Container-engine rows of the CI test matrix.",
