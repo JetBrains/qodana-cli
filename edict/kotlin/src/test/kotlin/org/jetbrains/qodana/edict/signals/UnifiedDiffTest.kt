@@ -1,9 +1,11 @@
 package org.jetbrains.qodana.edict.signals
 
+import org.jetbrains.qodana.edict.edictnext.EdictNextLineRange
 import org.jetbrains.qodana.edict.edictnext.EdictNextSignalLabel
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
+import kotlin.test.assertNull
 
 class UnifiedDiffTest {
   private val header = "--- a/old.kt\n+++ b/new.kt\n"
@@ -55,5 +57,30 @@ class UnifiedDiffTest {
     assertFailsWith<IllegalArgumentException> {
       UnifiedDiff.validateExcerpt(header + "@@ -11,2 +21,2 @@\n-before\n+after\n-last\n+fixed\n", canonical)
     }
+  }
+
+  @Test
+  fun `server excerpt keeps the changes near a Signal's lines with original coordinates`() {
+    val large = header + "@@ -1,200 +1,201 @@\n" + (1..200).joinToString("\n", postfix = "\n") { line ->
+      when (line) {
+        100 -> "-old 100\n+new 100"
+        150 -> " line 150\n+inserted"
+        180 -> "-old 180\n+new 180"
+        else -> " line $line"
+      }
+    }
+    val near = { line: Int -> (line - 3..line + 3).filter { it != line }.map { " line $it" } }
+
+    val positive = UnifiedDiff.excerpt(large, EdictNextSignalLabel.POSITIVE, listOf(EdictNextLineRange(100, 100)), 4000)!!
+    assertEquals(
+      header + "@@ -97,7 +97,7 @@\n" + (near(100).take(3) + listOf("-old 100", "+new 100") + near(100).drop(3)).joinToString("") { "$it\n" },
+      positive,
+    )
+    UnifiedDiff.validateExcerpt(positive, large)
+    val negative = UnifiedDiff.excerpt(large, EdictNextSignalLabel.NEGATIVE, listOf(EdictNextLineRange(151, 151)), 4000)!!
+    assertEquals(header + "@@ -148,6 +148,7 @@\n", negative.lines().take(3).joinToString("\n") + "\n")
+    UnifiedDiff.validateExcerpt(negative, large)
+    assertEquals(mapOf("new.kt" to listOf(151)), UnifiedDiff.parse(negative).after)
+    assertNull(UnifiedDiff.excerpt(large, EdictNextSignalLabel.POSITIVE, listOf(EdictNextLineRange(100, 100)), header.length + 20))
   }
 }

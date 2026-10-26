@@ -1,6 +1,7 @@
 // Copyright 2026 JetBrains s.r.o. Licensed under the Apache License, Version 2.0.
 package org.jetbrains.qodana.edict.signals
 
+import org.jetbrains.qodana.edict.edictnext.EdictNextLineRange
 import org.jetbrains.qodana.edict.edictnext.EdictNextSignalLabel
 import java.io.ByteArrayOutputStream
 
@@ -33,6 +34,51 @@ object UnifiedDiff {
             }) { "Diff excerpt must preserve canonical paths, source lines and line coordinates" }
         }
     }
+
+    fun excerpt(diff: String, label: EdictNextSignalLabel, ranges: List<EdictNextLineRange>, maxChars: Int): String? {
+        val header = diff.lineSequence().takeWhile { !it.startsWith("@@") }.joinToString("") { "$it\n" }
+        val lines = parseDiff(diff).hunks.flatMapIndexed { hunk, it -> it.lines.map { line -> hunk to line } }
+        val positive = label == EdictNextSignalLabel.POSITIVE
+        fun onSide(line: Line) = line.content[0] == ' ' || line.content[0] == (if (positive) '-' else '+')
+        fun number(line: Line) = if (positive) line.before else line.after
+        fun changed(line: Line) = line.content[0] == '-' || line.content[0] == '+'
+        val focus = lines.indices.filter { i -> onSide(lines[i].second) && ranges.any { number(lines[i].second) in it.start..it.end } }
+        return EXCERPT_LEVELS.firstNotNullOfOrNull { (context, radius) ->
+            val near = lines.indices.filter { i ->
+                changed(lines[i].second) &&
+                    (focus.isEmpty() || ranges.any { number(lines[i].second) in (it.start - radius)..(it.end + radius) })
+            }
+            val kept = BooleanArray(lines.size)
+            (focus + near).forEach { i ->
+                for (j in (i - context).coerceAtLeast(0)..(i + context).coerceAtMost(lines.lastIndex)) {
+                    if (lines[j].first == lines[i].first) kept[j] = true
+                }
+            }
+            // A missing-newline marker belongs to the line before it.
+            lines.indices.filter { lines[it].second.content.startsWith("\\") }.forEach { kept[it] = kept[it - 1] }
+            buildString {
+                append(header)
+                var start = 0
+                while (start < lines.size) {
+                    if (!kept[start]) { start++; continue }
+                    var end = start
+                    while (end + 1 < lines.size && kept[end + 1] && lines[end + 1].first == lines[start].first) end++
+                    val run = lines.subList(start, end + 1).map { it.second }
+                    val beforeCount = run.count { it.content[0] == ' ' || it.content[0] == '-' }
+                    val afterCount = run.count { it.content[0] == ' ' || it.content[0] == '+' }
+                    // A zero-length side names the line preceding the insertion/deletion, as parsing expects.
+                    val beforeStart = run.first().before - if (beforeCount == 0) 1 else 0
+                    val afterStart = run.first().after - if (afterCount == 0) 1 else 0
+                    append("@@ -$beforeStart,$beforeCount +$afterStart,$afterCount @@\n")
+                    run.forEach { append(it.content).append('\n') }
+                    start = end + 1
+                }
+            }.takeIf { it.length <= maxChars && it.length > header.length }
+        }
+    }
+
+    /** Context lines and the radius around the ranges for nearby changes, from the widest excerpt to the narrowest. */
+    private val EXCERPT_LEVELS = listOf(3 to 20, 3 to 0, 1 to 0, 0 to 0)
 
     private fun parseDiff(diff: String): ParsedDiff {
         val before = linkedMapOf<String, MutableList<Int>>()
