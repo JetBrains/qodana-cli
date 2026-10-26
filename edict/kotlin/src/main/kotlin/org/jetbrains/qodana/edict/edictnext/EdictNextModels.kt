@@ -229,6 +229,7 @@ internal data class EdictNextSignalValidationResponse(
   val signalId: String,
   val summary: String,
   val added: Boolean,
+  val next: EdictNextSignalPreparationResponse? = null,
 )
 
 @Serializable

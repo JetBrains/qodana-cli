@@ -40,21 +40,24 @@ class EdictNextDistributionServiceTest {
   }
 
   @Test
-  fun `each task assigns its share of the batch and hands off to the next task`() = runBlocking {
+  fun `each assignment returns the next Signal and each task hands off after its share`() = runBlocking {
     val repository = inboxRepository(5)
     val distribution = EdictNextDistributionService(repository, directory.resolve("neighbours.json"), taskSignalCount = 2)
     distribution.calculateNeighbours()
     val actions = mutableListOf<String>()
-    while (true) {
-      val prepared = distribution.nextSignal()
-      if (prepared.nextAction == EdictNextNextAction.STOP_DISTRIBUTION) break
+    // Each task starts with edict_next_next_signal and then continues from the assignments' `next`.
+    var prepared = distribution.nextSignal()
+    while (prepared.nextAction != EdictNextNextAction.STOP_DISTRIBUTION) {
       if (prepared.nextAction == EdictNextNextAction.HAND_OFF) {
         actions += "hand off: ${prepared.summary}"
         assertContains(distribution.calculateNeighbours().summary, "already calculated")
+        prepared = distribution.nextSignal()
+        assertEquals(prepared, distribution.nextSignal(), "a repeated call returns the same prepared Signal")
         continue
       }
-      distribution.addSignalToCluster(assertNotNull(prepared.signalId), "rule-${actions.size}")
+      val assigned = distribution.addSignalToCluster(assertNotNull(prepared.signalId), "rule-${actions.size}")
       actions += "assign"
+      prepared = assertNotNull(assigned.next)
     }
 
     assertEquals(

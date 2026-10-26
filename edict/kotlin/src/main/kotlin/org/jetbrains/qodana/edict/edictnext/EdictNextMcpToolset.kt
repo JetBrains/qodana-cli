@@ -101,6 +101,7 @@ internal class EdictNextMcpToolset(
     server.addTool(
       name = "edict_next_next_signal",
       description = "Return the next alphabetical inbox Signal of this run and its nearest cluster or inbox candidates. " +
+              "Needed only to start a task: each assignment returns the next Signal. Calling it again returns the same prepared Signal. " +
               "The nearest small clusters include their member Signals, which counts as loaded cluster context; inbox " +
               "candidates include their label, path and description. " +
               "The first call selects a batch capped by edict.distribution.defaultSignalCount from qodana.yaml. " +
@@ -125,9 +126,10 @@ internal class EdictNextMcpToolset(
 
     server.addTool(
       name = "edict_next_add_signal_to_cluster",
-      description = "Add a prepared Signal to an existing cluster or create a new Pending cluster with the supplied id. Existing-cluster assignment requires its context to have been loaded for the current Signal. This is the only distribution mutation.",
+      description = "Add a prepared Signal to an existing cluster or create a new Pending cluster with the supplied id. Existing-cluster assignment requires its context to have been loaded for the current Signal. This is the only distribution mutation. " +
+              "After an assignment, `next` holds what edict_next_next_signal would return: the next Signal, HAND_OFF or STOP_DISTRIBUTION.",
       inputSchema = stringArguments(
-        "signalId" to "ID returned by edict_next_next_signal",
+        "signalId" to "ID of the current prepared Signal",
         "clusterId" to "Existing or new kebab-case cluster id",
       ),
     ) { request ->
