@@ -75,14 +75,15 @@ class NativeReportTest {
         val clusters = mapOf("Rule" to listOf("next", "legacy"))
         assertEquals(mapOf("next" to "Generated", "legacy" to "Pending"), clusterOutcomes(clusters, root))
     }
-    @Test fun `scan source copy excludes state gold and previous candidates`() {
-        val source = root.resolve("source").createDirectories()
-        for (path in listOf("src/X.java", "benchmark/gold.sarif.json", "inspections/Old.inspection.kts", ".edict/state.json", ".git/config", "qodana.yaml", "AGENTS.md")) {
-            source.resolve(path).apply { parent.createDirectories(); writeText(path) }
-        }
-        val target = root.resolve("target")
-        copySource(source, target)
-        assertEquals("src/X.java", target.resolve("src/X.java").readText())
-        assertEquals(listOf("src"), target.listDirectoryEntries().map { it.fileName.toString() })
+    @Test fun `scoring inspections never remove the project's own scripts`() {
+        val inspections = root.resolve("project/inspections").createDirectories()
+        inspections.resolve("Own.inspection.kts").writeText("own")
+        inspections.resolve("EdictBenchmarkRule.inspection.kts").writeText("previous run")
+        removeScoringInspections(inspections)
+        assertEquals(listOf("Own.inspection.kts"), inspections.listDirectoryEntries().map { it.fileName.toString() })
+        inspections.resolve("Own.inspection.kts").deleteExisting()
+        inspections.resolve("EdictBenchmarkRule.inspection.kts").writeText("this run")
+        removeScoringInspections(inspections)
+        assertFalse(inspections.exists())
     }
 }

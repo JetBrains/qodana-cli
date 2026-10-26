@@ -6,11 +6,14 @@ import java.nio.file.Path
 import kotlin.io.path.*
 
 // A gold manifest names every rule, including one without a confirmed positive; otherwise the gold findings do.
-internal fun loadInputs(gold: Sarif, output: Path): BenchmarkInputs = BenchmarkInputs(
-    output.resolve("source-revision.txt").readText().trim(),
-    gold.manifest?.rules?.sorted() ?: gold.findings.map { it.ruleId }.distinct().sorted(),
-    gold.manifest?.ruleBySignal,
-)
+internal fun loadInputs(gold: Sarif, output: Path): BenchmarkInputs {
+    val rules = gold.manifest?.rules?.sorted() ?: gold.findings.map { it.ruleId }.distinct().sorted()
+    return BenchmarkInputs(output.resolve("source-revision.txt").readText().trim(), rules, gold.manifest?.ruleBySignal,
+        rules.associateWith { gold.expectedStates[it] ?: "generated" })
+}
+
+// A rule meets its expected state when its clusters end Generated or Discontinued as the gold rule expects.
+internal fun meetsExpectedState(expected: String, outcome: String): Boolean = outcome.equals(expected, ignoreCase = true)
 
 private val SPECIFICATION_REFERENCE = Regex("^benchmark/([A-Za-z0-9]+)/specification\\.json#/?")
 

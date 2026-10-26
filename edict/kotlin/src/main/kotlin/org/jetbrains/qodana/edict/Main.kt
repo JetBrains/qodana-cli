@@ -88,7 +88,7 @@ fun main(args: Array<String>) {
                 """
                 Edict managed skills (standalone Kotlin/JVM). Run every command in the project directory.
                   edict install [--deny <path>]...
-                    Installs skills into .codex/skills and writes .codex/config.toml for edict.mcpPort from qodana.yaml.
+                    Installs skills into .codex/skills and adds Edict settings for edict.mcpPort from qodana.yaml to .codex/config.toml.
                   edict mcp [--qodana-yaml <path>] [--qodana-executable <qodana>] [--ide-dist <path> | --ide-linter <linter>] [--ide-property <property>]... [--ide-wait-timeout <duration>] [--parent-pid <pid>]
                     Serves HTTP on loopback at edict.mcpPort (default ${EdictConfig.DEFAULT_MCP_PORT}); state comes from edict.statePath (default .edict).
                     edict.calculatePrice=true enables the manager-only price-report MCP tool and private run report.

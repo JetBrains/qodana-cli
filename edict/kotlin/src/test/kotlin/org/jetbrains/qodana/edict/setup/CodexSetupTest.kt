@@ -9,6 +9,7 @@ import org.tomlj.Toml
 import java.nio.file.Path
 import kotlin.io.path.createFile
 import kotlin.io.path.exists
+import kotlin.io.path.readText
 import kotlin.io.path.writeText
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -91,6 +92,78 @@ class CodexSetupTest {
     val ignored = assertFailsWith<IllegalStateException> { CodexSetup.install(project, emptyList(), EdictConfig(), codexHome) }
     assertTrue("trust_level = \"trusted\"" in ignored.message!!, ignored.message)
     assertFalse(project.codexConfigPath.exists())
+  }
+
+  @Test
+  fun `install keeps the user's config and adds Edict settings to its tables`() {
+    val projectRoot = directory.toRealPath()
+    val project = EdictLayout(projectRoot, projectRoot.resolve(".edict"))
+    trust(project.root)
+    val user = """
+      |# The team's settings
+      |[notice]
+      |fast_default_opt_out = true
+      |
+      |[mcp_servers.ijproxy]
+      |command = "node"
+      |
+      |# An implicit `permissions` table: Edict's tables must not go under this header.
+      |[permissions.team]
+      |extends = ":workspace"
+      |
+      |[features]
+      |multi_agent = true
+      |unified_exec = true
+      |""".trimMargin()
+    project.codexConfigPath.parent.toFile().mkdirs()
+    project.codexConfigPath.writeText(user)
+
+    CodexSetup.install(project, emptyList(), EdictConfig(4321), codexHome)
+    CodexSetup.install(project, listOf(Path.of("gold.sarif.json")), EdictConfig(4322), codexHome)
+
+    val merged = project.codexConfigPath.readText()
+    assertEquals(user.lines(), merged.lines().filterNot { it.endsWith("# qodana-edict") })
+    val config = Toml.parse(merged)
+    assertTrue(config.errors().isEmpty(), config.errors().toString())
+    assertEquals("never", config.getString("approval_policy"))
+    assertEquals(true, config.getBoolean(listOf("features", "unified_exec")))
+    assertEquals(1, merged.lines().count { it.trim() == "multi_agent = true" })
+    assertEquals("node", config.getString(listOf("mcp_servers", "ijproxy", "command")))
+    assertEquals(":workspace", config.getString(listOf("permissions", "team", "extends")))
+    assertEquals(":read-only", config.getString(listOf("permissions", "edict", "extends")))
+    CodexSetup.requireInstalled(project, EdictConfig(4322))
+    val filesystem = config.getTable(listOf("permissions", "edict", "filesystem"))!!
+    assertEquals("deny", filesystem.getString(listOf(project.root.resolve("gold.sarif.json").toString())))
+  }
+
+  @Test
+  fun `install fails without changes when the user's config sets a value Edict needs differently`() {
+    val projectRoot = directory.toRealPath()
+    val project = EdictLayout(projectRoot, projectRoot.resolve(".edict"))
+    trust(project.root)
+    val user = "approval_policy = \"on-request\"\n\n[agents]\nmax_depth = 5\n"
+    project.codexConfigPath.parent.toFile().mkdirs()
+    project.codexConfigPath.writeText(user)
+
+    val conflict = assertFailsWith<IllegalStateException> { CodexSetup.install(project, emptyList(), EdictConfig(), codexHome) }
+
+    assertTrue("line 1: approval_policy = \"on-request\" (Edict needs approval_policy = \"never\")" in conflict.message!!, conflict.message)
+    assertFalse("max_depth" in conflict.message!!, conflict.message)
+    assertEquals(user, project.codexConfigPath.readText())
+    assertFalse(project.codexSkillsDirectory.exists())
+  }
+
+  @Test
+  fun `install restores the user's config when Codex does not load it`() {
+    val projectRoot = directory.toRealPath()
+    val project = EdictLayout(projectRoot, projectRoot.resolve(".edict"))
+    codexHome.resolve("fake-mcp-list.json").writeText("[]")
+    project.codexConfigPath.parent.toFile().mkdirs()
+    project.codexConfigPath.writeText("[features]\nunified_exec = true\n")
+
+    assertFailsWith<IllegalStateException> { CodexSetup.install(project, emptyList(), EdictConfig(), codexHome) }
+
+    assertEquals("[features]\nunified_exec = true\n", project.codexConfigPath.readText())
   }
 
   /** The contract the fake stands in for: Codex loads `.codex/config.toml` only for a project trusted in `CODEX_HOME`. */
