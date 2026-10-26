@@ -12,7 +12,8 @@ Load only this skill.
 
 Call `edict_next_calculate_neighbours_by_embeddings` once before the loop. It also consumes re-published inbox Signals
 already owned by exactly one cluster, replaces the clustered model, records that replacement in history, and moves the
-cluster to Pending. Include the reported replacement count in the task result.
+cluster to Pending. Include the reported replacement count in the task result. A task that continues the run's batch
+gets "already calculated" and nothing changes.
 
 ## Evidence
 
@@ -26,7 +27,7 @@ new cluster with a provisional lowercase kebab-case id. Do not split an existing
 
 ## Loop
 
-Repeat until `edict_next_next_signal` returns `STOP_DISTRIBUTION`:
+Repeat until `edict_next_next_signal` returns `STOP_DISTRIBUTION` or `HAND_OFF`:
 
 1. Call `edict_next_next_signal` and read the complete Signal.
 2. For every plausible existing cluster, retrieve `kind: "cluster"` context and compare every member Signal, including
@@ -36,4 +37,5 @@ Repeat until `edict_next_next_signal` returns `STOP_DISTRIBUTION`:
 4. Call `edict_next_add_signal_to_cluster` with `signalId` and `clusterId`. Existing-cluster assignment requires its
    context receipt. If `added` is false, use the summary to correct the choice and retry the same Signal; do not request
    the next Signal while it remains unassigned.
-Return only after distribution is complete.
+Return after `STOP_DISTRIBUTION` or `HAND_OFF`, with the number of Signals this task assigned. On `HAND_OFF` this task's
+share of the batch is done: finish it `completed` and report the remaining count from its summary.

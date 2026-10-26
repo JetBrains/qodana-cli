@@ -9,18 +9,24 @@ import kotlin.io.path.writeText
 
 /**
  * Applies one sequential distribution batch on the run's state repository, which the batch changes in place. The batch is
- * selected on the first [nextSignal] from the inbox Signals whose neighbours [calculateNeighbours] found.
+ * selected on the first [nextSignal] from the inbox Signals whose neighbours [calculateNeighbours] found. Each task
+ * assigns at most [taskSignalCount] Signals, so no agent session grows long; [nextSignal] then hands off to a new task.
  */
 internal class EdictNextDistributionService(
     private val repository: EdictRepository,
     /** Where the calculated neighbours are dumped for debugging; nothing reads them back. */
     private val neighboursResponsePath: Path,
     private val defaultSignalCount: Int = DEFAULT_DISTRIBUTION_SIGNAL_COUNT,
+    private val taskSignalCount: Int = DISTRIBUTION_TASK_SIGNAL_COUNT,
 ) {
     private var neighbours: Map<String, EdictNextSignalNeighbours>? = null
     private var batch: DistributionBatch? = null
 
     suspend fun calculateNeighbours(): EdictNextCalculateNeighboursResponse {
+        // A later task of the same batch keeps the neighbours its Signals were selected with.
+        batch?.let {
+            return EdictNextCalculateNeighboursResponse("Neighbours of this run's ${it.signalIds.size} selected Signal(s) were already calculated")
+        }
         var state = repository.loadState()
         val replacementOwners = state.inboxSignals.associateWith { signal ->
             state.clusters.filter { signal.id in it.signalIds }
@@ -55,6 +61,14 @@ internal class EdictNextDistributionService(
         if (signalId == null) {
             currentBatch.clearCurrentSignal()
             return EdictNextSignalPreparationResponse(summary = "All selected Signals were distributed")
+        }
+        if (currentBatch.taskAssignedCount >= taskSignalCount) {
+            val remaining = inbox.count { it.id in currentBatch.signalIds }
+            currentBatch.handOff()
+            return EdictNextSignalPreparationResponse(
+              summary = "This task assigned $taskSignalCount Signal(s); $remaining selected Signal(s) remain for a new distribution task",
+              nextAction = EdictNextNextAction.HAND_OFF,
+            )
         }
         currentBatch.startSignal(signalId)
         return EdictNextSignalPreparationResponse(
@@ -173,6 +187,8 @@ internal class EdictNextDistributionService(
         val neighbours: Map<String, EdictNextSignalNeighbours>,
     ) {
         private var currentSignalId: String? = null
+        var taskAssignedCount = 0
+            private set
         private val loadedClusterIds = HashSet<String>()
 
         fun startSignal(signalId: String) {
@@ -202,6 +218,12 @@ internal class EdictNextDistributionService(
         fun completeSignal(signalId: String) {
             requireCurrentSignal(signalId)
             clearCurrentSignal()
+            taskAssignedCount++
+        }
+
+        fun handOff() {
+            clearCurrentSignal()
+            taskAssignedCount = 0
         }
 
         fun clearCurrentSignal() {
@@ -213,5 +235,7 @@ internal class EdictNextDistributionService(
     companion object {
         const val SIGNAL_CONTEXT_KIND: String = "signal"
         const val CLUSTER_CONTEXT_KIND: String = "cluster"
+        /** Keeps a task's context small: every assignment adds the Signal and cluster evidence it read. */
+        const val DISTRIBUTION_TASK_SIGNAL_COUNT: Int = 10
     }
 }

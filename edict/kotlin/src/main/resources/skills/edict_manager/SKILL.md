@@ -110,7 +110,8 @@ IDs are known and promotion after upstream attempts finish or are cancelled, inc
    processed full date in PR-analysis coverage. Zero-Signal days do not count toward the target but still advance
    coverage. Stop with a reported shortfall when repository history is exhausted or a provider problem leaves the next
    date uncovered; an empty selection after exhaustion is a successful no-op.
-3. `edict-next-distribution`: assign the resulting inbox Signals to clusters.
+3. `edict-next-distribution`: assign the resulting inbox Signals to clusters. Each task assigns a bounded share of the
+   run's batch; while a completed task reports remaining Signals, delegate another distribution task, one at a time.
 4. Select clusters for signal enrichment and rule generation.
    For suggestions, call `edict_next_select_generation_clusters`, omitting `generationCount` unless the user supplies one.
    It ranks by distinct source files among unprocessed strong positive Signals and returns candidates and
