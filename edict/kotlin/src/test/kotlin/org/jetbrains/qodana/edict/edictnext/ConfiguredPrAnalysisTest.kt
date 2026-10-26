@@ -391,7 +391,7 @@ class ConfiguredPrAnalysisTest {
   }
 
   @Test
-  fun `a stored Signal draft gets its PR metadata from the work item and verifies its diff excerpt`() {
+  fun `a stored Signal draft gets its PR metadata and diff from the work item`() {
     val configured = ReviewRepository(CiProviderId.GITHUB, "JetBrains", "qodana-cli")
     val today = LocalDate.of(2026, 10, 9)
     val diff = """
@@ -421,7 +421,7 @@ class ConfiguredPrAnalysisTest {
         fileRevision = EdictNextFileRevision("src/Example1.kt", "a".repeat(40), listOf(EdictNextLineRange(2, 2))),
         label = EdictNextSignalLabel.POSITIVE,
         description = "Calls bad() where good() is required.",
-        diff = PrSignalDiff(before, "b".repeat(40), "src/Example1.kt", "src/Example1.kt", diff),
+        diff = PrSignalDiff(before, "b".repeat(40), "src/Example1.kt", "src/Example1.kt"),
       )
 
       val rejected = analysis.store(worker.token, batch.batchId, 0, listOf(item), emptyList(), emptyList(), emptyList(), listOf(draft("c".repeat(40))))
@@ -442,14 +442,20 @@ class ConfiguredPrAnalysisTest {
   }
 
   @Test
-  fun `draft stores only its relevant excerpt from a large diff and rejects forged or oversized excerpts`() {
+  fun `a draft stores the changes near its lines from a large diff and fails when they cannot fit`() {
     val configured = ReviewRepository(CiProviderId.GITHUB, "JetBrains", "qodana-cli")
     val today = LocalDate.of(2026, 10, 9)
     val header = "--- a/src/Example1.kt\n+++ b/src/Example1.kt\n"
-    val canonical = header + "@@ -1,150 +1,150 @@\n" + (1..150).joinToString("\n", postfix = "\n") {
-      if (it == 100) "-bad()\n+good()" else " context $it ${"x".repeat(40)}"
+    val context = { line: Int -> " context $line ${"x".repeat(40)}" }
+    val canonical = header + "@@ -1,250 +1,250 @@\n" + (1..250).joinToString("\n", postfix = "\n") {
+      when (it) {
+        100 -> "-bad()\n+good()"
+        in 200..250 -> "-removed $it ${"y".repeat(80)}\n+added $it ${"z".repeat(80)}"
+        else -> context(it)
+      }
     }
-    val excerpt = header + "@@ -100 +100 @@\n-bad()\n+good()\n"
+    val excerpt = header + "@@ -97,7 +97,7 @@\n" +
+      ((97..99).map(context) + listOf("-bad()", "+good()") + (101..103).map(context)).joinToString("") { "$it\n" }
     assertTrue(canonical.length > 4000)
     EdictNextRepositoryState.open(directory.resolve("state")).use { store ->
       val plan = store.createPlan("Bounded evidence", listOf(EdictNextRepositoryState.Step("edict-pr-signal-analysis", "Analyze date")))
@@ -458,24 +464,25 @@ class ConfiguredPrAnalysisTest {
       val batch = analysis.prepareBatch(coordinator.token, configured, ReviewSelectionInput())
       val worker = launchAnalysisWorker(store, coordinator.token)
       val item = analysis.chunk(worker.token, batch.batchId, 0).workItemIds.single()
-      fun draft(content: String, label: EdictNextSignalLabel = EdictNextSignalLabel.POSITIVE) = PrSignalDraft(
+      fun draft(range: EdictNextLineRange, label: EdictNextSignalLabel = EdictNextSignalLabel.POSITIVE) = PrSignalDraft(
         item,
-        EdictNextFileRevision("src/Example1.kt", (if (label == EdictNextSignalLabel.POSITIVE) "a" else "b").repeat(40), listOf(EdictNextLineRange(100, 100))),
+        EdictNextFileRevision("src/Example1.kt", (if (label == EdictNextSignalLabel.POSITIVE) "a" else "b").repeat(40), listOf(range)),
         label,
         "Use the correct call",
-        diff = PrSignalDiff("a".repeat(40), "b".repeat(40), "src/Example1.kt", "src/Example1.kt", content),
+        diff = PrSignalDiff("a".repeat(40), "b".repeat(40), "src/Example1.kt", "src/Example1.kt"),
       )
       val receipt = analysis.store(
         worker.token, batch.batchId, 0, listOf(item), emptyList(), emptyList(), emptyList(),
-        listOf(draft(excerpt), draft(excerpt, EdictNextSignalLabel.NEGATIVE), draft(excerpt.replace("+good()", "+fake()")), draft(canonical)),
+        listOf(
+          draft(EdictNextLineRange(100, 100)),
+          draft(EdictNextLineRange(100, 100), EdictNextSignalLabel.NEGATIVE),
+          draft(EdictNextLineRange(200, 250)),
+        ),
       )
       assertEquals(2, receipt.signalCount, receipt.failures.toString())
-      assertEquals(2, receipt.failures.size)
-      assertContains(receipt.failures[0].message, "canonical")
-      assertContains(receipt.failures[1].message, "at most 4000 characters")
+      assertContains(receipt.failures.single().message, "do not fit 4000 characters")
       analysis.publishValidated(coordinator.token, batch.batchId)
       val signals = receipt.signalIds.map { checkNotNull(store.inboxSignal(it)) }
-      assertEquals(2, signals.size)
       signals.forEach { assertEquals(excerpt, (it.source as EdictNextSignalSource.FromPR).diffPositiveToNegative) }
     }
   }
