@@ -48,7 +48,7 @@ jobs:
     name: "Test (⚙️ ${{ matrix.os }}, 🐳 ${{ matrix.engine }})"
     uses: ./.github/workflows/test.yaml
     with:
-      os: ${{ matrix.os }}
+      os: ${{ matrix.runner || matrix.os }}
       container-engine: ${{ matrix.container-engine }}
       container-tests: ${{ matrix.container-tests || false }}
     secrets: inherit
@@ -67,6 +67,9 @@ jobs:
             engine: docker
             container-tests: true
           - os: ubuntu-latest
+            # Temporary fix to unblock CI, this will be fixed with QD-16643
+            # Runs on 24.04 while matrix.os keeps the required status check name.
+            runner: ubuntu-24.04
             # renovate: datasource=github-releases depName=mgoltzsche/podman-static
             container-engine: podman@6.1.2
             engine: podman
