@@ -9,8 +9,13 @@ benchmark_output="$benchmark_checkout/benchmark-output"
 benchmark_codex_home="$benchmark_output/codex-home"
 benchmark_scratch="$benchmark_output/scratch"
 
-export JAVA_HOME="${JDK_21_0:-${JAVA_HOME:?JDK 21 is required}}"
-export PATH="$benchmark_output/tooling/node_modules/.bin:$benchmark_output/tooling/bin:$JAVA_HOME/bin:$PATH"
+# The container steps (Codex, Qodana CLI) have no JDK; the host steps that start the IDE get it from the agent.
+tooling_path="$benchmark_output/tooling/node_modules/.bin:$benchmark_output/tooling/bin"
+if [[ -n "${JDK_21_0:-${JAVA_HOME:-}}" ]]; then
+  export JAVA_HOME="${JDK_21_0:-$JAVA_HOME}"
+  tooling_path="$tooling_path:$JAVA_HOME/bin"
+fi
+export PATH="$tooling_path:$PATH"
 export QODANA_DIST="${QODANA_DIST:-$benchmark_checkout/native-dist}"
 export TMPDIR="$benchmark_scratch"
 # Every Codex call uses the benchmark's Codex home, including the trust check of `qodana edict install`.
