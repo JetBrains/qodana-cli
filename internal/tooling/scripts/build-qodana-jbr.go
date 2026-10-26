@@ -30,8 +30,9 @@ import (
 // Configuration ===============================================================================
 
 const jbrBaseURL = "https://cache-redirector.jetbrains.com/intellij-jbr"
+
 // renovate: datasource=github-releases depName=JetBrains/JetBrainsRuntime
-const jbrDefaultTag = "jbr-release-25.0.2b329.72"
+const jbrDefaultTag = "jbr-release-25.0.4.1b635.78"
 
 type platform struct {
 	goos   string
@@ -142,11 +143,11 @@ func detectJBRVersion() (version, build string) {
 
 	tagName := strings.TrimPrefix(jbrDefaultTag, "jbr-release-")
 
-	// Expected format: "<version>b<build>", e.g. "25.0.2b329.72"
-	jbrTagRe := regexp.MustCompile(`^(\d+\.\d+\.\d+)(b\d+\.\d+)$`)
+	// Expected format: "<version>b<build>", e.g. "25.0.2b329.72" or "25.0.4.1b635.78"
+	jbrTagRe := regexp.MustCompile(`^(\d+\.\d+\.\d+(?:\.\d+)?)(b\d+\.\d+)$`)
 	m := jbrTagRe.FindStringSubmatch(tagName)
 	if m == nil {
-		log.Fatalf("Cannot parse JBR tag %q: expected format like '25.0.2b329.72'", tagName)
+		log.Fatalf("Cannot parse JBR tag %q: expected format like '25.0.2b329.72' or '25.0.4.1b635.78'", tagName)
 	}
 
 	if version == "" {
