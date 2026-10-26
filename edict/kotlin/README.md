@@ -94,9 +94,11 @@ property moves the `log` folder (relative to the project), and `edict.run.id` fi
 Optional price reporting is enabled with `edict.calculatePrice: true` in `qodana.yaml`. It exposes the manager-only
 `edict_calculate_price` MCP tool, which reads each model from the Codex session log, uses the current official OpenAI
 Standard rates, and writes
-`edict-price-report.json` beside the other private process logs while also logging a readable breakdown. The breakdown
-shows each pipeline step's inclusive cost and groups parallel enrichment and generation work by cluster. The manager
-includes that breakdown in its final response after the pipeline completes.
+`edict-price-report.json` beside the other private process logs while also printing a compact breakdown to
+`edict-tasks.log` (the stream CI follows) and `edict.log`. The breakdown shows USD and token totals for every pipeline
+step, cluster, and descendant task, including each task's own cost when it has children. Inclusive costs contain all
+descendants and must not be added to their child rows. Detailed token categories remain in the JSON report.
+The manager includes only the run total in its final response after the pipeline completes.
 
 ## What is ported
 

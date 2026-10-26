@@ -12,10 +12,12 @@ import org.jetbrains.qodana.edict.edictnext.EdictNextRepositoryState.Plan
 import org.jetbrains.qodana.edict.edictnext.EdictNextRepositoryState.Task
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.io.TempDir
+import org.junitpioneer.jupiter.DefaultLocale
 import java.nio.file.Files
 import java.nio.file.Path
 import kotlin.test.assertContains
 import kotlin.test.assertEquals
+import kotlin.test.assertFalse
 import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
 
@@ -101,13 +103,13 @@ class CodexPriceReportTest {
         assertEquals(setOf("gpt-5.6-luna", "gpt-5.6-sol"), report.models.map { it.pricing.model }.toSet())
         assertEquals(50, report.models.single { it.pricing.model == "gpt-5.6-luna" }.price.totalTokens)
         assertEquals(190, report.models.single { it.pricing.model == "gpt-5.6-sol" }.price.totalTokens)
-        assertContains(report.render(), "- edict-git-history-signal-enrichment: $0.000082")
-        assertContains(report.render(), "  - Enrich first-rule: $0.000039")
-        assertContains(report.render(), "- edict-next-cluster-generation: $0.000134")
-        assertContains(report.render(), "  - Generate first-rule: $0.000094")
-        assertContains(report.render(), "    - Review [edict-next-inspection-code-review]: $0.000049")
-        assertContains(report.render(), "Total price: $0.000298")
-        assertContains(report.render(), "uncached-input=0")
+        assertContains(report.render(), "- edict-git-history-signal-enrichment: $0.0001 (60 tokens)")
+        assertContains(report.render(), "  - Enrich first-rule: $0.0000 (25 tokens)")
+        assertContains(report.render(), "- edict-next-cluster-generation: $0.0001 (120 tokens)")
+        assertContains(report.render(), "  - Generate first-rule: $0.0001 (90 tokens)")
+        assertContains(report.render(), "    - Review [edict-next-inspection-code-review]: $0.0000 (50 tokens)")
+        assertContains(report.render(), "Total price: $0.0003 (240 tokens)")
+        assertFalse(report.render().contains("uncached-input="))
 
         val output = directory.resolve("price.json")
         val analysis = CodexPriceAnalyzer.analyze(directory, plan, output, { pricing(it) })
@@ -116,6 +118,41 @@ class CodexPriceReportTest {
         assertEquals(240, analysis.report.getValue("totalPrice").jsonObject
             .getValue("totalTokens").jsonPrimitive.long)
         assertTrue(Files.size(output) > 0)
+    }
+
+    @Test
+    @DefaultLocale("de-DE")
+    fun `compact report retains every cluster and nested substage with locale independent totals`() {
+        val own = CodexTokenPrice(totalTokens = 1_000, priceUsd = 1.25)
+        val review = CodexTaskPrice("review", "edict-next-inspection-code-review", "Review", own, emptyList(), own)
+        val examples = CodexTaskPrice("examples", "edict-next-code-example-overseer", "Examples", own, listOf(review), own + own)
+        val first = CodexTaskPrice("first", "edict-next-cluster-generation", "Generate first-rule", own,
+            listOf(examples), own + own + own)
+        val second = CodexTaskPrice("second", first.skill, "Generate\nsecond-rule", own, emptyList(), own)
+        val report = CodexPriceReport(
+            models = emptyList(),
+            managerOwnPrice = own,
+            pipelineSteps = listOf(CodexPipelineStepPrice(first.skill, listOf(first, second), own + own + own + own)),
+            unattributedPrice = own,
+            totalPrice = own + own + own + own + own + own,
+        )
+
+        assertEquals(
+            """
+            Pipeline steps:
+            - edict-next-cluster-generation: $5.0000 (4,000 tokens)
+              - Generate first-rule: $3.7500 (3,000 tokens)
+                - own: $1.2500 (1,000 tokens)
+                - Examples [edict-next-code-example-overseer]: $2.5000 (2,000 tokens)
+                  - own: $1.2500 (1,000 tokens)
+                  - Review [edict-next-inspection-code-review]: $1.2500 (1,000 tokens)
+              - Generate second-rule: $1.2500 (1,000 tokens)
+            Manager own: $1.2500 (1,000 tokens)
+            Unattributed sessions: $1.2500 (1,000 tokens)
+            Total price: $7.5000 (6,000 tokens)
+            """.trimIndent(),
+            report.render().substringAfter("\n"),
+        )
     }
 
     @Test

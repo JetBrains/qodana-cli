@@ -21,6 +21,7 @@ import java.nio.file.StandardOpenOption.CREATE
 import java.nio.file.StandardOpenOption.TRUNCATE_EXISTING
 import java.time.Duration
 import java.time.Instant
+import java.util.Locale
 
 @Serializable
 internal data class CodexTokenPrice(
@@ -128,14 +129,14 @@ internal data class CodexPriceReport(
         models.forEach { model ->
             val pricing = model.pricing
             appendLine("Pricing for ${pricing.model}: ${pricing.sourceUrl} (retrieved ${pricing.retrievedAt}; ${pricing.tier} tier)")
-            appendLine("- rates per 1M tokens: ${rates(pricing.shortContextRates)} (input <= ${"%,d".format(pricing.shortContextMaxInputTokens)})")
+            appendLine("- rates per 1M tokens: ${rates(pricing.shortContextRates)} (input <= ${"%,d".format(Locale.ROOT, pricing.shortContextMaxInputTokens)})")
             pricing.longContextRates?.let { appendLine("- long-context rates: ${rates(it)}") }
             appendLine("- model total: ${format(model.price)}")
         }
         appendLine("Pipeline steps:")
         pipelineSteps.forEach { step ->
             val onlyTask = step.tasks.singleOrNull()
-            val title = onlyTask?.takeIf { it.subtasks.isEmpty() }?.let { " (${it.title})" }.orEmpty()
+            val title = onlyTask?.takeIf { it.subtasks.isEmpty() }?.let { " (${label(it.title)})" }.orEmpty()
             appendLine("- ${step.skill}$title: ${format(step.inclusivePrice)}")
             if (onlyTask == null || onlyTask.subtasks.isNotEmpty()) {
                 step.tasks.forEach { appendTask(it, "  ", includeSkill = false) }
@@ -151,22 +152,20 @@ internal data class CodexPriceReport(
             "cache-write=$${money(value.cacheWriteUsdPerMillion)}, output=$${money(value.outputUsdPerMillion)}"
 
     private fun format(value: CodexTokenPrice): String =
-        "$${money(value.priceUsd)} (uncached-input=${"%,d".format(value.uncachedInputTokens)}/$${money(value.uncachedInputPriceUsd)}, " +
-            "cached-input=${"%,d".format(value.cachedInputTokens)}/$${money(value.cachedInputPriceUsd)}, " +
-            "cache-write=${"%,d".format(value.cacheWriteInputTokens)}/$${money(value.cacheWritePriceUsd)}, " +
-            "output=${"%,d".format(value.outputTokens)}/$${money(value.outputPriceUsd)}, " +
-            "reasoning-subset=${"%,d".format(value.reasoningOutputTokens)}, total=${"%,d".format(value.totalTokens)} tokens)"
+        "$${"%.4f".format(Locale.ROOT, value.priceUsd)} (${"%,d".format(Locale.ROOT, value.totalTokens)} tokens)"
 
     private fun StringBuilder.appendTask(task: CodexTaskPrice, indent: String, includeSkill: Boolean) {
         val skill = if (includeSkill) " [${task.skill}]" else ""
-        appendLine("$indent- ${task.title}$skill: ${format(task.inclusivePrice)}")
+        appendLine("$indent- ${label(task.title)}$skill: ${format(task.inclusivePrice)}")
         if (task.subtasks.isNotEmpty()) {
             appendLine("$indent  - own: ${format(task.ownPrice)}")
             task.subtasks.forEach { appendTask(it, "$indent  ", includeSkill = true) }
         }
     }
 
-    private fun money(value: Double): String = "%.6f".format(java.util.Locale.ROOT, value)
+    private fun label(value: String): String = value.replace(Regex("[\\p{Cntrl}\\s]+"), " ").trim()
+
+    private fun money(value: Double): String = "%.6f".format(Locale.ROOT, value)
 }
 
 /** Prices Codex session logs and, when given a live plan, attributes managed worker sessions to its in-memory tasks. */

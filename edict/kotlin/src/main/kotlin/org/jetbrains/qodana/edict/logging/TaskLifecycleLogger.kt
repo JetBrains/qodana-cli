@@ -9,7 +9,7 @@ import java.nio.file.Files
 import java.nio.file.StandardOpenOption.APPEND
 import java.nio.file.StandardOpenOption.CREATE
 
-/** MCP task transitions, also streamed by CI while the coordinating agent waits. */
+/** MCP task transitions and the final price report, streamed by CI while the coordinating agent waits. */
 internal class TaskLifecycleLogger(
     private val store: EdictNextRepositoryState,
     layout: EdictLayout,
@@ -37,11 +37,16 @@ internal class TaskLifecycleLogger(
                 "$header\n  ${singleLine(store.redact(task.result))}"
             }
             else header
-            Files.writeString(file, "$message\n", APPEND)
-            // stdout belongs to JSON-RPC when the MCP transport is stdio.
-            output.println(message)
-            output.flush()
+            report(message)
         }
+    }
+
+    fun report(message: String): Unit = synchronized(store) {
+        val sanitized = store.redact(message)
+        Files.writeString(file, "$sanitized\n", APPEND)
+        // stdout belongs to JSON-RPC when the MCP transport is stdio.
+        output.println(sanitized)
+        output.flush()
     }
 }
 
