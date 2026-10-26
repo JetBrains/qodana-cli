@@ -80,11 +80,11 @@ repository-wide validation.
   - stop dependent work on a failed or uncompleted task and cancel unstarted dependent stages; let independent workers
     finish, then always run selected promotion even after failed/cancelled enrichment or generation or no targets
   - promotion scans every eligible Generated inspection, including earlier runs; retain upstream failures in the report
-    - a new PR requires strong Signals from at least five distinct source files with usable source PR or commit diff URLs;
-      each repository-relative path counts once across revisions, labels, and reviews; missing references
+    - a new PR requires strong positive Signals from at least five distinct source files with usable source PR or commit diff URLs;
+      each repository-relative path counts once across revisions and reviews; negative Signals do not count; missing references
       produce a per-cluster failure before PR creation
-    - GitHub and Space PR descriptions include the inspection summary and one referenced strong Signal per source file,
-      from up to ten distinct files, preferring positives, each with its explanation, label, source link, and exact file revision and ranges
+    - GitHub and Space PR descriptions include the inspection summary and one referenced strong positive Signal per source file,
+      from up to ten distinct files, each with its explanation, label, source link, and exact file revision and ranges
   - report the plan path, produced Signal/cluster/inspection ids, Generated `knownProblems`, and Pending/Invalid clusters
 - every delegation, at any depth
   1. parent calls `edict_task_add(token, skill, title)` with a child permitted by the registry
@@ -261,7 +261,7 @@ edict_manager
 Inspection metadata exists only in the KTS. `promotions/active.json` indexes active source-fix reviews in its
 `activePromotions` field, grouped by source cluster, separately from inspection
 publication. The `edict-promote-weak-signal` worker selects up to five persisted true positives for a Generated inspection
-with referenced strong Signals from fewer than five distinct source files, attempts source fixes in scratch, and publishes a feedback PR through
+with referenced strong positive Signals from fewer than five distinct source files, attempts source fixes in scratch, and publishes a feedback PR through
 `edict_promote_weak_signal`. Its description explains the inspection and asks users to accept/merge if they agree.
 The server rejects unselected locations, stale inspection bytes, or an analyzed revision different from the target
 branch. Recorded proposals are reused across server restarts. After an interrupted publication, identical fixes reuse

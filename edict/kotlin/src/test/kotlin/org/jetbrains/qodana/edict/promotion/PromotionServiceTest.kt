@@ -59,6 +59,14 @@ class PromotionServiceTest {
     cluster(repository, "six-strong", 6)
     cluster(repository, "five-strong", 5)
     cluster(repository, "four-strong", 4)
+    cluster(repository, "four-positive-one-negative", 5)
+    replaceSignal(repository, "four-positive-one-negative", "signal-4") {
+      it.copy(label = EdictNextSignalLabel.NEGATIVE)
+    }
+    cluster(repository, "six-negative", 6)
+    repeat(6) { index ->
+      replaceSignal(repository, "six-negative", "signal-$index") { it.copy(label = EdictNextSignalLabel.NEGATIVE) }
+    }
     cluster(repository, "six-weak", 0, weakSignals = 6)
     cluster(repository, "pending-signals", 6, EdictNextClusterStatus.Pending)
     val processed = repository.loadCluster("five-strong")
@@ -82,9 +90,9 @@ class PromotionServiceTest {
   }
 
   @Test
-  fun `PR description includes referenced strong positive and negative evidence`() {
+  fun `PR description includes only referenced strong positive evidence`() {
     val repository = repository()
-    cluster(repository, "documented-rule", 6, weakSignals = 1)
+    cluster(repository, "documented-rule", 7, weakSignals = 1)
     replaceSignal(repository, "documented-rule", "signal-0") {
       it.copy(description = "Avoid blocking the worker thread")
     }
@@ -100,6 +108,13 @@ class PromotionServiceTest {
     replaceSignal(repository, "documented-rule", "signal-5") {
       it.copy(source = EdictNextSignalSource.Generated(), description = "Unreferenced generated evidence")
     }
+    replaceSignal(repository, "documented-rule", "signal-6") {
+      it.copy(
+        source = EdictNextSignalSource.FromCommit(commit, "https://github.com/source/project/commit/$commit"),
+        description = "Avoid spinning until completion",
+        fileRevision = EdictNextFileRevision("SpinningWorker.kt", commit, listOf(EdictNextLineRange(12, 15))),
+      )
+    }
     replaceSignal(repository, "documented-rule", "weak-0") {
       it.copy(source = EdictNextSignalSource.FromPR(99, "Weak evidence", emptyList(), "", "https://github.com/source/project/pull/99"))
     }
@@ -112,16 +127,18 @@ class PromotionServiceTest {
     val description = provider.lastRequest!!.description
     assertContains(description, "Adds the generated Kotlin inspection `documented-rule` at `inspections/documented-rule.inspection.kts`.")
     assertContains(description, "Representative evidence: Avoid blocking the worker thread")
-    assertContains(description, "Showing referenced STRONG signals from 5 of 5 distinct source files, one per file")
+    assertContains(description, "Showing referenced STRONG POSITIVE signals from 5 of 5 distinct source files, one per file")
     assertContains(description, "**POSITIVE** — Avoid blocking the worker thread")
     assertContains(description, "[PR #1: Correction 0](<https://github.com/source/project/pull/1#discussion_r1>)")
-    assertContains(description, "**NEGATIVE** — Use the completion latch")
+    assertContains(description, "**POSITIVE** — Avoid spinning until completion")
     assertContains(description, "[Commit diff $commit](<https://github.com/source/project/commit/$commit>)")
-    assertContains(description, "Worker.kt at `$commit`, lines 12-15; signal `signal-4`")
+    assertContains(description, "SpinningWorker.kt at `$commit`, lines 12-15; signal `signal-6`")
     assertContains(description, "Inspection SHA-256: `${sha256Hex("inspection")}`")
     assertFalse(description.contains("Unreferenced generated evidence"))
     assertFalse(description.contains("Weak evidence"))
     assertFalse(description.contains("weak 0"))
+    assertFalse(description.contains("NEGATIVE"))
+    assertFalse(description.contains("Use the completion latch"))
   }
 
   @Test
@@ -144,7 +161,7 @@ class PromotionServiceTest {
     assertTrue(result.created.isEmpty())
     assertEquals(0, provider.ensureCalls)
     assertEquals(listOf(PromotionFailure(
-      "missing-references", "Promotion requires strong Signals from at least 5 distinct source files with PR or commit diff URLs; found 4",
+      "missing-references", "Promotion requires strong positive Signals from at least 5 distinct source files with PR or commit diff URLs; found 4",
     )), result.failures)
     assertTrue(repository.loadCluster("missing-references").manifest.promotions.isEmpty())
   }
@@ -180,7 +197,7 @@ class PromotionServiceTest {
     assertEquals(1, service(repository, provider).promote().created.size)
 
     val description = provider.lastRequest!!.description
-    assertContains(description, "Showing referenced STRONG signals from 10 of 14 distinct source files, one per file")
+    assertContains(description, "Showing referenced STRONG POSITIVE signals from 10 of 14 distinct source files, one per file")
     assertEquals(10, Regex("(?m)^\\d+\\. ").findAll(description).count())
     assertContains(description, "Do not use \\[unsafe\\](https://wrong.test) &lt;markup&gt; or \\`ticks\\` across lines")
     assertEquals(description, promotionDescription(repository.loadCluster("large-rule"), provider.lastRequest!!.targetPath, provider.lastRequest!!.inspectionDigest))
@@ -219,7 +236,7 @@ class PromotionServiceTest {
   }
 
   @Test
-  fun `description selects one referenced strong representative per file preferring positives`() {
+  fun `description selects one referenced strong positive representative per file`() {
     val repository = repository()
     cluster(repository, "grouped-rule", 10, sourceFiles = 5)
     replaceSignal(repository, "grouped-rule", "signal-0") { it.copy(source = EdictNextSignalSource.Generated()) }

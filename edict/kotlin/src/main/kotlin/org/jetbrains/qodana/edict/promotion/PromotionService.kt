@@ -7,6 +7,7 @@ import org.jetbrains.qodana.edict.ci.ReviewReference
 import org.jetbrains.qodana.edict.ci.ReviewState
 import org.jetbrains.qodana.edict.common.EdictConfiguration
 import org.jetbrains.qodana.edict.edictnext.EdictNextClusterStatus
+import org.jetbrains.qodana.edict.edictnext.EdictNextSignalLabel
 import org.jetbrains.qodana.edict.edictnext.EdictNextSignalStrength
 import org.jetbrains.qodana.edict.edictnext.EdictRepository
 import org.jetbrains.qodana.edict.edictnext.InspectionPromotion
@@ -71,11 +72,11 @@ internal class PromotionService(
       if (cluster.manifest.status != EdictNextClusterStatus.Generated) {
         return@forEach
       }
-      val strongSourceFiles = cluster.signals
-        .filter { it.strength == EdictNextSignalStrength.STRONG }
+      val strongPositiveSourceFiles = cluster.signals
+        .filter { it.strength == EdictNextSignalStrength.STRONG && it.label == EdictNextSignalLabel.POSITIVE }
         .distinctBy { it.fileRevision.path }
         .size
-      if (strongSourceFiles < MIN_PROMOTION_SOURCE_FILES) {
+      if (strongPositiveSourceFiles < MIN_PROMOTION_SOURCE_FILES) {
         return@forEach
       }
       val inspectionPath = repository.paths.inspectionPath(cluster.id)
