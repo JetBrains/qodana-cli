@@ -1,6 +1,6 @@
 ---
 name: edict-next-code-example
-description: Managed subagent that reduces one Edict Next Signal and its exact source revision to a validated code example.
+description: Managed subagent that reduces each assigned Edict Next Signal and its exact source revision to a validated code example.
 ---
 
 # Edict Next Code Example
@@ -10,10 +10,13 @@ domain work and use its assigned task lifecycle.
 
 Load only this skill.
 
-The prompt identifies either a persisted Signal with `Cluster id` and `Signal id`, or a transient Signal with
-`Cluster id` and an absolute private-scratch `Signal path`. Call `edict_context` with your own token and use its `stateDirectory` and
+The prompt identifies either persisted Signals with `Cluster id` and one or more `Signal id`s, or a transient Signal
+with `Cluster id` and an absolute private-scratch `Signal path`. Call `edict_context` with your own token and use its `stateDirectory` and
 `projectDirectory` to resolve all managed state and the inspected IntelliJ project. Do not request or repeat the state
-path in a prompt.
+path in a prompt. Read each persisted Signal from
+`<stateDirectory>/clusters/<cluster id>/signals/<signal id>.json`; do not read the cluster's other Signals. Handle the
+Signals one at a time, completing each example as described below before the next; when one cannot be completed, report
+it with its reason and continue with the next.
 
 For a persisted cluster Signal, use `edict_next_save_code_example(token, clusterId, exampleId, metadataJson,
 sourceCode)` to create or repair the example, then `edict_next_assign_code_example(token, clusterId, signalId,
@@ -61,4 +64,5 @@ repair. The MCP does not establish semantics: independently confirm that the exa
 label and ranges are correct.
 
 Only after both checks succeed, call `edict_next_assign_code_example` for a persisted Signal, or set
-`syntheticExampleId` in a transient private-scratch Signal, and return the assigned example ID.
+`syntheticExampleId` in a transient private-scratch Signal. Return each Signal id with its assigned example ID, or with
+the reason it has none.
