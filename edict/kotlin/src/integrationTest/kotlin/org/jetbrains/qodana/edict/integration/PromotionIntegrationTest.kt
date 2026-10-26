@@ -57,7 +57,7 @@ class PromotionIntegrationTest : IntegrationTest() {
       assertEquals("inspections/integration-rule.inspection.kts", provider.request?.targetPath)
       val description = assertNotNull(provider.request).description
       assertContains(description, "## Description")
-      assertContains(description, "Showing referenced STRONG signals from 6 of 6 distinct source files, one per file")
+      assertContains(description, "Showing referenced STRONG POSITIVE signals from 6 of 6 distinct source files, one per file")
       repeat(6) { index -> assertContains(description, "https://github.test/source/pull/${index + 1}") }
       assertEquals(6, Regex("(?m)^\\d+\\. ").findAll(description).count())
       assertTrue("z-duplicate" !in description)

@@ -10,17 +10,19 @@ import java.net.URI
 internal const val MIN_PROMOTION_SOURCE_FILES = 5
 private const val MAX_DESCRIPTION_SOURCE_FILES = 10
 
-/** One referenced strong representative per source path, regardless of revision or label. */
+/** One referenced strong positive representative per source path, regardless of revision. */
 internal fun EdictNextStoredCluster.promotionEvidence(): List<EdictNextSignal> = signals
-  .filter { it.strength == EdictNextSignalStrength.STRONG && it.referenceUrl() != null }
-  .sortedWith(compareBy({ it.label != EdictNextSignalLabel.POSITIVE }, { it.id }))
+  .filter {
+    it.strength == EdictNextSignalStrength.STRONG && it.label == EdictNextSignalLabel.POSITIVE && it.referenceUrl() != null
+  }
+  .sortedBy { it.id }
   .distinctBy { it.fileRevision.path }
 
 /** Only historical evidence with a usable external reference can support a promotion PR. */
 internal fun promotionDescription(cluster: EdictNextStoredCluster, targetPath: String, digest: String): String {
   val evidence = cluster.promotionEvidence()
   require(evidence.size >= MIN_PROMOTION_SOURCE_FILES) {
-    "Promotion requires strong Signals from at least $MIN_PROMOTION_SOURCE_FILES distinct source files with PR or commit diff URLs; found ${evidence.size}"
+    "Promotion requires strong positive Signals from at least $MIN_PROMOTION_SOURCE_FILES distinct source files with PR or commit diff URLs; found ${evidence.size}"
   }
   val selected = evidence.take(MAX_DESCRIPTION_SOURCE_FILES)
   return buildString {
@@ -32,7 +34,7 @@ internal fun promotionDescription(cluster: EdictNextStoredCluster, targetPath: S
     appendLine()
     appendLine("## Strong signals")
     appendLine()
-    appendLine("Showing referenced STRONG signals from ${selected.size} of ${evidence.size} distinct source files, one per file. POSITIVE marks problematic code; NEGATIVE marks corrected or acceptable code.")
+    appendLine("Showing referenced STRONG POSITIVE signals from ${selected.size} of ${evidence.size} distinct source files, one per file. POSITIVE marks problematic code.")
     appendLine()
     selected.forEachIndexed { index, signal ->
       val url = checkNotNull(signal.referenceUrl())
