@@ -106,7 +106,8 @@ internal class EdictNextDistributionService(
         }
     }
 
-    fun addSignalToCluster(
+    /** Assigns the current Signal and prepares the next one as [nextSignal] would, so the loop needs one call per Signal. */
+    suspend fun addSignalToCluster(
         signalId: String,
         clusterId: String,
     ): EdictNextSignalValidationResponse {
@@ -118,10 +119,13 @@ internal class EdictNextDistributionService(
         }
         repository.addSignalToCluster(signalId, clusterId)
         currentBatch.completeSignal(signalId)
+        // The assignment stands even if preparing the next Signal fails; edict_next_next_signal then reports the problem.
+        val next = runCatching { nextSignal() }.getOrNull()
         return EdictNextSignalValidationResponse(
           signalId = signalId,
-          summary = "Assigned Signal '$signalId' to '$clusterId'",
+          summary = "Assigned Signal '$signalId' to '$clusterId'" + if (next == null) "; call edict_next_next_signal" else "",
           added = true,
+          next = next,
         )
     }
 
