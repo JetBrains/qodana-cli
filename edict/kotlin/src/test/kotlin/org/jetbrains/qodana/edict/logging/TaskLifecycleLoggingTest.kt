@@ -2,14 +2,18 @@ package org.jetbrains.qodana.edict.logging
 
 import kotlinx.serialization.json.*
 import org.jetbrains.qodana.edict.common.EdictLayout
+import org.jetbrains.qodana.edict.common.EdictConfiguration
 import org.jetbrains.qodana.edict.common.flag
 import org.jetbrains.qodana.edict.common.text
 import org.jetbrains.qodana.edict.common.wireJson
 import org.jetbrains.qodana.edict.edictnext.EdictNextRepositoryState
+import org.jetbrains.qodana.edict.edictnext.EdictManagementService
 import org.jetbrains.qodana.edict.edictnext.EdictNextRepositoryState.Delegation
 import org.jetbrains.qodana.edict.edictnext.EdictNextRepositoryState.Step
 import org.jetbrains.qodana.edict.support.EdictNextTestTools
+import org.jetbrains.qodana.edict.support.edictNextToolset
 import org.jetbrains.qodana.edict.support.launch
+import org.jetbrains.qodana.edict.runtime.CodexPriceAnalysis
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.io.TempDir
 import java.io.PrintWriter
@@ -38,6 +42,45 @@ class TaskLifecycleLoggingTest {
 
     private fun EdictNextTestTools.ok(name: String, arguments: JsonObject) {
         assertEquals(false, call(name, arguments).flag("isError"))
+    }
+
+    @Test
+    fun `price tool prints the report to the CI stream only after all tasks are terminal`() {
+        EdictNextRepositoryState.open(directory.resolve("state")).use { store ->
+            val created = store.createPlan("Generate", listOf(Step("edict-next-cluster-generation", "Generate rule")))
+            val output = StringWriter()
+            val layout = EdictLayout(directory, store.root)
+            val rendered = "Price report:\n  - Generate rule: $14.3129 (24,115,170 tokens)\nTotal price: $14.3129 (24,115,170 tokens)"
+            val report = buildJsonObject {
+                putJsonObject("totalPrice") { put("priceUsd", 14.3128844); put("totalTokens", 24_115_170) }
+            }
+            var analyses = 0
+            val management = EdictManagementService(store, layout, taskOutput = PrintWriter(output), analyzePrice = { plan ->
+                assertEquals(store.plan(), plan)
+                analyses++
+                CodexPriceAnalysis(report, rendered, 14.3128844, 24_115_170)
+            })
+            edictNextToolset(layout, management, configuration = EdictConfiguration(calculatePrice = true)).createServer()
+            val arguments = buildJsonObject { put("token", created.token) }
+
+            assertEquals(true, management.call("edict_calculate_price", arguments).flag("isError"))
+            assertEquals(0, analyses)
+            assertEquals("", output.toString())
+            assertEquals("", Files.readString(layout.tasksLogPath))
+
+            val worker = store.launch(created.token, created.plan.tasks.single().id, "edict-next-cluster-generation")
+            assertEquals(true, management.call("edict_calculate_price", buildJsonObject { put("token", worker.token) }).flag("isError"))
+            assertEquals(0, analyses)
+            store.finishTask(worker.token, "completed", "Generated")
+
+            val response = management.call("edict_calculate_price", arguments)
+            assertEquals(false, response.flag("isError"))
+            assertEquals(1, analyses)
+            assertEquals(report, response.getValue("structuredContent"))
+            assertEquals("$rendered\n", output.toString())
+            assertEquals(output.toString(), Files.readString(layout.tasksLogPath))
+            assertFalse(output.toString().contains(created.token))
+        }
     }
 
     @Test

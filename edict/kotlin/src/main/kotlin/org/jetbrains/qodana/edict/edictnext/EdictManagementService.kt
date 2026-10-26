@@ -23,6 +23,7 @@ import org.jetbrains.qodana.edict.logging.AgentLogger
 import org.jetbrains.qodana.edict.logging.TaskLifecycleLogger
 import org.jetbrains.qodana.edict.edictnext.EdictNextRepositoryState.TaskLifecycleAck
 import org.jetbrains.qodana.edict.edictnext.EdictNextRepositoryState.Step
+import org.jetbrains.qodana.edict.edictnext.EdictNextRepositoryState.Plan
 import org.jetbrains.qodana.edict.common.EdictLayout
 import org.jetbrains.qodana.edict.common.GitRepository
 import org.jetbrains.qodana.edict.ci.ReviewClient
@@ -35,6 +36,7 @@ import org.jetbrains.qodana.edict.extraction.reviews.RepositoryPrAnalysisCoverag
 import org.jetbrains.qodana.edict.extraction.reviews.ReviewSelectionInput
 import org.jetbrains.qodana.edict.skills.managed.Registry
 import org.jetbrains.qodana.edict.runtime.CodexPriceAnalyzer
+import org.jetbrains.qodana.edict.runtime.CodexPriceAnalysis
 import org.jetbrains.qodana.edict.setup.CodexSetup
 import org.jetbrains.qodana.edict.signals.SignalValidation
 import java.io.PrintWriter
@@ -53,6 +55,9 @@ internal class EdictManagementService(
   private val reviewRepository: ReviewRepository? = null,
   prAnalysisToday: () -> LocalDate = { LocalDate.now(ZoneOffset.UTC) },
   private val startedAt: Instant = Instant.now(),
+  private val analyzePrice: (Plan) -> CodexPriceAnalysis = { plan ->
+    CodexPriceAnalyzer.analyze(CodexSetup.userCodexHome(), plan, layout.priceReportPath, startedAt)
+  },
 ) {
   companion object {
     const val INSTRUCTIONS = "Managed Edict state and execution plans. Root requests enter through edict_manager. " +
@@ -254,7 +259,7 @@ internal class EdictManagementService(
 
     if (calculatePrice) tool(
       name = "edict_calculate_price",
-      description = "Calculate this completed run's Codex token price, write the private JSON price report, and log a breakdown grouped by pipeline step and cluster task.",
+      description = "Calculate this completed run's Codex token price, write the private JSON price report, and print the full breakdown by pipeline step, cluster, and descendant task to the CI task log.",
       required = listOf("token"),
     ) { arguments ->
       store.requireSkill(arguments.requireString("token"), setOf("edict_manager"))
@@ -262,12 +267,8 @@ internal class EdictManagementService(
       check(plan.tasks.all { it.status in PRICE_TERMINAL_TASK_STATUSES }) {
         "Finish or cancel every managed task before calculating the run price"
       }
-      val analysis = CodexPriceAnalyzer.analyze(
-        CodexSetup.userCodexHome(),
-        plan,
-        layout.priceReportPath,
-        startedAt,
-      )
+      val analysis = analyzePrice(plan)
+      taskLogger.report(analysis.rendered)
       priceLogger.info { analysis.rendered }
       analysis.report
     }

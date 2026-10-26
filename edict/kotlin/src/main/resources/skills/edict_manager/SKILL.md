@@ -75,10 +75,11 @@ permission to execute stages inline.
    or Invalid clusters with their reasons. Completion means
    every planned task completed; a Generated inspection additionally requires the generation skill's evidence and
    review checks. If `edict_calculate_price` is available, call it once with the manager token after the final plan read.
-   Include its cost breakdown in the final response: the USD and token total for every pipeline step; each individual
-   cluster task when enrichment or generation splits across clusters; generation's descendant substages; the manager's
-   own cost; and the run total. The tool also logs the same breakdown and writes its private JSON report. Do not call it
-   while a managed task is unfinished.
+   The tool prints the full cost breakdown directly to the CI task log, including every pipeline step, each individual
+   cluster task when enrichment or generation splits across clusters, generation's descendant substages, the manager's
+   own cost, and the run total. It also writes the private JSON report with detailed token categories.
+   Include only the run's USD and token total in the final response and refer to the printed price report for the
+   breakdown; do not recreate it as a Markdown table. Do not call it while a managed task is unfinished.
 
 Do not commit, push, create state-repository worktrees, or perform external publication directly. Publication is owned
 only by a delegated registered promotion skill when the selected pipeline includes it.
