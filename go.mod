@@ -1,6 +1,6 @@
 module github.com/JetBrains/qodana-cli
 
-go 1.25.2
+go 1.27.3
 
 require (
 	github.com/boyter/scc/v3 v3.7.0
