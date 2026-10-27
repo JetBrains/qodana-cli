@@ -66,6 +66,13 @@ internal fun deleteTree(path: Path) {
     Files.walk(path).use { files -> files.sorted(Comparator.reverseOrder()).forEach(Files::delete) }
 }
 
+// The limit includes opening the project, which alone takes several minutes for Ultimate.
+private fun scanTimeoutMinutes(): Long {
+    val configured = System.getenv("BENCHMARK_SCAN_TIMEOUT_MINUTES") ?: return 30
+    return configured.toLongOrNull()?.takeIf { it > 0 }
+        ?: error("BENCHMARK_SCAN_TIMEOUT_MINUTES must be a positive number of minutes, got '$configured'")
+}
+
 // Scans the checked-out project in place: the Edict MCP server has stopped by now, so this IDE opens the project alone.
 internal class ProjectRunner(private val project: Path, private val output: Path) {
     @Synchronized
@@ -82,10 +89,15 @@ internal class ProjectRunner(private val project: Path, private val output: Path
         writeJson(configuration, projectConfiguration(codes.keys))
         val results = destination.resolve("results")
         val log = destination.resolve("analysis.log")
+        val timeout = scanTimeoutMinutes()
+        // Scoring rules inspect Java and Kotlin files only, so injected code only costs time: in Ultimate the
+        // JSON Schema injector alone dominated the scan.
         val process = qodanaProcess(project, results, output.resolve("scan-workspace/cache"), log,
-            "--config", configuration.toString()).start()
+            "--config", configuration.toString(), "--property=idea.batch.inspections.inspect.injected.psi=false").start()
         try {
-            if (!process.waitFor(30, TimeUnit.MINUTES)) throw IllegalStateException("Project scan timed out; see $log")
+            if (!process.waitFor(timeout, TimeUnit.MINUTES)) {
+                throw IllegalStateException("Project scan timed out after $timeout minutes; see $log")
+            }
             if (process.exitValue() != 0) throw IllegalStateException("Project analysis exited ${process.exitValue()}; see $log\n${log.readText().takeLast(2000)}")
             val sarif = results.resolve("qodana.sarif.json")
             val registered = readSarif(sarif).registeredRules

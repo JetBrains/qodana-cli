@@ -42,7 +42,9 @@ The pipeline has six steps:
    interruptible. TeamCity cleans up server processes when the build finishes.
 6. A TeamCity **Gradle runner** executes `:benchmark:report`. Kotlin runs the accepted
    inspections from `.edict/inspections` natively on the checked-out `project` in place (one batched
-   scan with a separate configuration; the scoring copies in `project/inspections` are removed afterwards),
+   scan with a separate configuration, without inspecting injected code, limited to
+   `${BENCHMARK_SCAN_TIMEOUT_MINUTES:-30}` minutes including project opening; the scoring copies in
+   `project/inspections` are removed afterwards),
    writes SARIF into `benchmark-output`, and compares it with `.edict/gold.sarif.json`. During this analysis it prices every
    manager and subagent session using current official OpenAI Standard rates, prints
    the token-type and stage breakdown, writes
