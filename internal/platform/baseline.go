@@ -101,7 +101,7 @@ func ResolveBaseline(baselineFile string, cloudToken string, toolName string, ca
 		log.Debug("Not connected to Qodana Cloud, running without a baseline")
 		return noBaseline
 	}
-	fmt.Println("Fetching baseline from Qodana Cloud ...")
+	fmt.Println("Checking for baseline from Qodana Cloud ...")
 	toolName = product.CloudBaselineToolName(toolName)
 	client := cloud.GetCloudApiEndpoints().NewLintersApiClient(cloudToken)
 	baseline, cleanup, err := downloadCloudBaseline(client, toolName, cacheDir)
@@ -113,6 +113,7 @@ func ResolveBaseline(baselineFile string, cloudToken string, toolName string, ca
 		log.Debugf("Qodana Cloud has no baseline of '%s' for this project", toolName)
 		return noBaseline
 	}
+	fmt.Println("Successfully fetched baseline from Qodana Cloud")
 	return Baseline{
 		baselinePath:             baseline,
 		source:                   qdenv.BaselineSourceCloud,
