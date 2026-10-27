@@ -20,6 +20,7 @@ import (
 	"fmt"
 	"net/url"
 	"os"
+	"slices"
 	"strings"
 
 	"github.com/JetBrains/qodana-cli/internal/foundation/str"
@@ -67,6 +68,11 @@ const (
 	// QodanaEndpointEnv QodanaToken properties accessed only by GetQodanaGlobalEnv
 	QodanaEndpointEnv = "QODANA_ENDPOINT"
 	QodanaToken       = "QODANA_TOKEN"
+	// QodanaOrgToken is an organisation-level token, exchanged for a short-lived project token.
+	// !!! It must never be passed to the linter process or container !!!
+	QodanaOrgToken = "QODANA_ORG_TOKEN"
+	// QodanaProject identifies the project for QodanaOrgToken exchange, in the form team-slug:project-slug
+	QodanaProject = "QODANA_PROJECT"
 )
 
 type qodanaGlobalEnv struct {
@@ -81,6 +87,8 @@ func InitializeQodanaGlobalEnv(provider EnvProvider) {
 		env: map[string]string{
 			QodanaEndpointEnv: GetEnvWithOsEnv(provider, QodanaEndpointEnv),
 			QodanaToken:       GetEnvWithOsEnv(provider, QodanaToken),
+			QodanaOrgToken:    GetEnvWithOsEnv(provider, QodanaOrgToken),
+			QodanaProject:     GetEnvWithOsEnv(provider, QodanaProject),
 		},
 	}
 }
@@ -93,6 +101,14 @@ func GetQodanaGlobalEnv(key string) string {
 		return value
 	}
 	return ""
+}
+
+// SetQodanaGlobalEnv overrides a value stored in the global env, e.g. with a token resolved at startup.
+func SetQodanaGlobalEnv(key string, value string) {
+	if globalEnv == nil {
+		log.Fatal("Qodana inner env is not initialized")
+	}
+	globalEnv.env[key] = value
 }
 
 type EnvProvider interface {
@@ -112,11 +128,16 @@ func EmptyEnvProvider() EnvProvider {
 
 func GetEnv(provider EnvProvider, key string) string {
 	for _, e := range provider.Env() {
-		if strings.HasPrefix(e, key) {
+		if strings.HasPrefix(e, key+"=") {
 			return strings.TrimPrefix(e, key+"=")
 		}
 	}
 	return ""
+}
+
+// WithoutEnv returns env entries except those setting the given key.
+func WithoutEnv(env []string, key string) []string {
+	return slices.DeleteFunc(slices.Clone(env), func(e string) bool { return strings.HasPrefix(e, key+"=") })
 }
 
 func GetEnvWithOsEnv(provider EnvProvider, key string) string {
