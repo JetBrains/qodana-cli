@@ -74,7 +74,9 @@ permission to execute stages inline.
    every stage result including any extraction problem summary, Generated inspections' `knownProblems`, and any Pending
    or Invalid clusters with their reasons. Completion means
    every planned task completed; a Generated inspection additionally requires the generation skill's evidence and
-   review checks. If `edict_calculate_price` is available, call it once with the manager token after the final plan read.
+   review checks, not a minimum strong- or weak-example score. Pending is only an input state, not an allowed
+   completed generation outcome; report interrupted or failed tasks separately. If `edict_calculate_price` is available,
+   call it once with the manager token after the final plan read.
    The tool prints the full cost breakdown directly to the CI task log, including every pipeline step, each individual
    cluster task when enrichment or generation splits across clusters, generation's descendant substages, the manager's
    own cost, and the run total. It also writes the private JSON report with detailed token categories.
@@ -131,7 +133,9 @@ IDs are known and promotion after upstream attempts finish or are cancelled, inc
    A failed or incomplete search blocks generation; still continue to promotion after settling upstream tasks.
 6. `edict-next-cluster-generation`: launch one top-level task per chosen cluster after history completes, keeping up
    to the concurrency limit active. Use every original and enriched Signal.
-   Failed or cancelled generation tasks and Pending or Invalid clusters do not block publication.
+   Valid analyzed inspections become Generated regardless of strong- or weak-example accuracy; retain failures in
+   history and evaluation. Completed generation never chooses Pending. Failed or cancelled generation tasks and
+   unprocessed Pending or Invalid clusters do not block publication.
 7. `edict-promote`: always attempt publication of every eligible Generated inspection through the configured promotion
    target, including when enrichment or generation failed, was cancelled, or had no targets. Pass no cluster filter
    unless the user explicitly restricted publication to particular clusters; eligibility includes inspections from

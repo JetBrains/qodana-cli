@@ -19,7 +19,8 @@ IntelliJ project. Read the candidate, every Signal and example, and the previous
 history, predecessor inspections or other reviews.
 
 The output of this review is evidence: weak examples the generation worker regenerates against and the final
-evaluation scores. Strong examples are required evidence; every other example is weak.
+evaluation scores. Strong examples define the intended behavior; every other example is weak. Neither strong nor weak
+accuracy is a gate for `Generated`.
 
 Do not edit the candidate, cluster metadata, Signals or the inspected project. Managed state is read-only to filesystem
 tools: persist examples only with `edict_next_save_code_example(token, clusterId, exampleId, metadataJson, sourceCode)`

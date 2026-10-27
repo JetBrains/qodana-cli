@@ -63,7 +63,7 @@ internal class EdictNextInspection(
 
   suspend fun reports(cluster: EdictNextStoredCluster, code: String): Map<String, Boolean> {
     val measurement = measure(cluster, code)
-    check(measurement.validation.compilationSuccess) { measurement.validation.summary }
+    check(measurement.validation.overallSuccess) { measurement.validation.summary }
     return cluster.examples.associate { example ->
       val satisfied = measurement.satisfiedByExampleId[example.metadata.id] == true
       example.metadata.id to ((example.metadata.label == EdictNextSignalLabel.POSITIVE) == satisfied)
@@ -103,19 +103,19 @@ internal class EdictNextInspection(
     val reportedNegatives = cluster.examples.filter {
       it.metadata.label == EdictNextSignalLabel.NEGATIVE && outcomesById[it.metadata.id]?.satisfied != true
     }.map { it.metadata.id }.sorted()
-    val accepted = strongPositiveCount > 0 && strongCorrectCount == strongExampleIds.size
-    val summary = if (strongPositiveCount == 0) {
-      "The cluster has no strong positive evidence case, so no rule can be accepted for it"
+    val executionSuccess = cluster.examples.all { example ->
+      execution.files.singleOrNull { it.id == example.metadata.id }?.let { it.executionError == null } == true
     }
-    else {
-      "$strongCorrectCount/${strongExampleIds.size} strong evidence cases correct (all required); " +
+    val summary =
+      "$strongCorrectCount/${strongExampleIds.size} strong evidence cases correct (advisory); " +
       "$weakCorrectCount/${weakExampleIds.size} weak evidence cases correct (advisory); " +
-      "${uncovered.size} uncovered positive(s), ${reportedNegatives.size} reported negative(s)"
-    }
+      "${uncovered.size} uncovered positive(s), ${reportedNegatives.size} reported negative(s)" +
+      if (executionSuccess) "" else "; example execution failed or returned missing/duplicate results"
     val validation = EdictNextInspectionValidationResponse(
       compilationSuccess = true,
-      overallSuccess = accepted,
+      overallSuccess = executionSuccess,
       summary = summary,
+      strongExamplesSatisfied = executionSuccess && strongPositiveCount > 0 && strongCorrectCount == strongExampleIds.size,
       failures = failures,
       achievedAccuracyPercent = achieved,
       reportedNegativeExampleIds = reportedNegatives,

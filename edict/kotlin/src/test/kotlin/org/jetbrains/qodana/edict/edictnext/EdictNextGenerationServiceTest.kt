@@ -66,13 +66,13 @@ class EdictNextGenerationServiceTest {
   }
 
   @Test
-  fun `saving validates the candidate and only a passing one is analyzed`() = withGeneration { generation, repository ->
+  fun `saving requires valid metadata before project analysis`() = withGeneration { generation, repository ->
     val scratch = directory.resolve("scratch").toString()
     assertFailsWith<IllegalStateException> { generation.getNewInspectionResults("busy-wait", scratch) }
 
-    val failing = generation.saveCandidateInspection("busy-wait", "// busy-wait")
+    val failing = generation.saveCandidateInspection("busy-wait", "// different-rule")
     // Stored although it fails, so the state always holds the latest attempt.
-    assertEquals("// busy-wait", repository.loadCluster("busy-wait").candidateInspectionPath.readText())
+    assertEquals("// different-rule", repository.loadCluster("busy-wait").candidateInspectionPath.readText())
     assertFalse(failing.overallSuccess)
     assertEquals(EdictNextNextAction.REPAIR_INSPECTION, failing.nextAction)
     val unvalidated = assertFailsWith<IllegalStateException> { generation.getNewInspectionResults("busy-wait", scratch) }
@@ -83,6 +83,91 @@ class EdictNextGenerationServiceTest {
     assertEquals(EdictNextNextAction.REVIEW_INSPECTION, passing.nextAction)
     generation.getNewInspectionResults("busy-wait", scratch)
     assertEquals(listOf("busy-wait"), analyses)
+  }
+
+  @Test
+  fun `generation publishes an analyzed inspection even when every strong and weak example fails`() = withGeneration { generation, repository ->
+    val strongNegative = EdictNextCodeExampleMetadata("strong-negative", "Negative.java", EdictNextSignalLabel.NEGATIVE, emptyList())
+    val weakNegative = EdictNextCodeExampleMetadata("weak-negative", "WeakNegative.java", EdictNextSignalLabel.NEGATIVE, emptyList())
+    val weakPositive = EdictNextCodeExampleMetadata("weak-positive", "WeakPositive.java", EdictNextSignalLabel.POSITIVE, listOf(EdictNextLineRange(1, 1)))
+    for (example in listOf(strongNegative, weakNegative, weakPositive)) {
+      repository.saveCodeExample("busy-wait", example.id, example, "class Example {}")
+    }
+    writeSignal("busy-wait", "s-negative", EdictNextSignalStrength.STRONG, EdictNextSignalLabel.NEGATIVE)
+    repository.assignCodeExample("busy-wait", "s-negative", strongNegative.id)
+    assertEquals(EdictNextInspectionAction.GENERATE, generation.getInspectionAction("busy-wait").action)
+
+    val code = "// busy-wait report skip=busy-wait-example skip=weak-positive"
+    val validation = generation.saveCandidateInspection("busy-wait", code)
+    assertTrue(validation.overallSuccess)
+    assertFalse(validation.strongExamplesSatisfied)
+    assertEquals(0, validation.achievedAccuracyPercent)
+    assertEquals(EdictNextNextAction.REVIEW_INSPECTION, validation.nextAction)
+    val scratch = directory.resolve("scratch").toString()
+    assertEquals(1, generation.getNewInspectionResults("busy-wait", scratch).remainingProjectAnalyses)
+    assertEquals(0, generation.getNewInspectionResults("busy-wait", scratch).remainingProjectAnalyses)
+    val limit = assertFailsWith<IllegalStateException> { generation.getNewInspectionResults("busy-wait", scratch) }
+    assertContains(limit.message.orEmpty(), "Generated regardless of strong- or weak-example accuracy")
+
+    val recorded = generation.recordEvaluation("busy-wait")
+    assertTrue(recorded.success, recorded.summary)
+    val evaluation = checkNotNull(recorded.evaluation)
+    assertEquals(listOf(0, 2, 2), listOf(evaluation.tp, evaluation.fp, evaluation.fn))
+    assertEquals(0.0, evaluation.precision)
+    assertEquals(0.0, evaluation.recall)
+    assertTrue(evaluation.examples.values.all { !it.satisfied })
+    assertEquals(2, evaluation.examples.values.count { it.strong })
+
+    val finalised = generation.finaliseCluster("busy-wait", EdictNextClusterStatus.Generated, "All strong and weak examples fail; recorded as limitations")
+    assertTrue(finalised.success, finalised.summary)
+    val cluster = repository.loadCluster("busy-wait")
+    assertEquals(EdictNextClusterStatus.Generated, cluster.manifest.status)
+    assertEquals(code, repository.paths.inspectionPath("busy-wait").readText())
+    assertFalse(cluster.candidateInspectionPath.exists())
+    assertEquals(cluster.signalIds, cluster.manifest.processedSignalIds)
+    assertEquals(evaluation, repository.loadEvaluation(cluster))
+  }
+
+  @Test
+  fun `Pending is rejected as a generation outcome without changing history or artifacts`() = withGeneration { generation, repository ->
+    generation.saveCandidateInspection("busy-wait", "// busy-wait")
+    val before = repository.loadCluster("busy-wait")
+    val history = before.historyPath.readText()
+    val code = before.candidateInspectionPath.readText()
+    val response = generation.finaliseCluster("busy-wait", EdictNextClusterStatus.Pending, "Poor coverage")
+    assertFalse(response.success)
+    assertContains(response.summary, "Pending is an input state, not a generation outcome")
+    val after = repository.loadCluster("busy-wait")
+    assertEquals(before.manifest, after.manifest)
+    assertEquals(history, after.historyPath.readText())
+    assertEquals(code, after.candidateInspectionPath.readText())
+    assertFalse(repository.paths.inspectionPath("busy-wait").exists())
+  }
+
+  @Test
+  fun `predecessor reuse still requires strong examples but not weak accuracy`() = runBlocking<Unit> {
+    val (generation, inspection) = generation(
+      "retry" to (EdictNextSignalStrength.STRONG to EdictNextSignalLabel.POSITIVE),
+      predecessorId = "retry",
+    )
+    val repository = EdictRepository(EdictRepositoryDirectory(directory.resolve("state")))
+    try {
+      val predecessor = repository.paths.inspectionPath("retry")
+      predecessor.writeText("// retry")
+      assertEquals(EdictNextInspectionAction.GENERATE, generation.getInspectionAction("retry").action)
+
+      val weak = EdictNextCodeExampleMetadata("weak-positive", "Weak.java", EdictNextSignalLabel.POSITIVE, listOf(EdictNextLineRange(1, 1)))
+      repository.saveCodeExample("retry", weak.id, weak, "class Weak {}")
+      predecessor.writeText("// retry report skip=weak-positive")
+      assertEquals(EdictNextInspectionAction.SKIP, generation.getInspectionAction("retry").action)
+      val evaluation = generation.recordEvaluation("retry")
+      assertTrue(evaluation.success, evaluation.summary)
+      assertEquals(1, evaluation.evaluation?.fn)
+      assertTrue(generation.finaliseCluster("retry", EdictNextClusterStatus.Generated, "Reuse with a known weak miss").success)
+    }
+    finally {
+      inspection.stop()
+    }
   }
 
   @Test
@@ -110,8 +195,10 @@ class EdictNextGenerationServiceTest {
     try {
       val response = generation.selectGenerationClusters()
       assertEquals(listOf("busy-wait"), response.clusters.map { it.clusterId })
-      // Suggestions are not an allowlist. Acceptance still requires strong positive evidence.
-      assertFalse(generation.saveCandidateInspection("weak-positive", "// weak-positive report").overallSuccess)
+      // Suggestions are not an allowlist; evidence accuracy is advisory for explicitly chosen clusters too.
+      val validation = generation.saveCandidateInspection("weak-positive", "// weak-positive report")
+      assertTrue(validation.overallSuccess)
+      assertFalse(validation.strongExamplesSatisfied)
     }
     finally {
       inspection.stop()
@@ -238,7 +325,7 @@ class EdictNextGenerationServiceTest {
       // Six handled positives no longer outweigh two fresh ones; ties still use the cluster id.
       assertEquals(listOf("fresh", "busy-wait", "processed"), restarted.selectGenerationClusters().clusters.map { it.clusterId })
       assertFalse(restarted.finaliseCluster("processed", EdictNextClusterStatus.Generated, "Not evaluated yet").success)
-      assertTrue(restarted.finaliseCluster("processed", EdictNextClusterStatus.Pending, "Retry later").success)
+      assertFalse(restarted.finaliseCluster("processed", EdictNextClusterStatus.Pending, "Retry later").success)
       assertEquals(processedIds, repository.loadCluster("processed").manifest.processedSignalIds)
 
       assertEquals(EdictNextInspectionAction.SKIP, restarted.getInspectionAction("processed").action)
@@ -281,7 +368,7 @@ class EdictNextGenerationServiceTest {
       assertFailsWith<IllegalArgumentException> { enrichment.publishClusterSignal("second", signals.first()) }
       assertTrue(generation.appendHistory("busy-wait", "Generate with enriched evidence").success)
       assertFalse(enrichment.publishClusterSignal("busy-wait", signals.first()).created)
-      assertTrue(generation.finaliseCluster("busy-wait", EdictNextClusterStatus.Pending, "More work needed").success)
+      assertTrue(generation.appendHistory("busy-wait", "More work needed before generation").success)
       assertEquals(setOf("s-busy-wait") + signals.map { it.id }, repository.clusterSignalIds("busy-wait"))
       assertTrue(generation.saveCandidateInspection("second", "// second report").overallSuccess)
       generation.getInspectionAction("second")
@@ -491,7 +578,7 @@ class EdictNextGenerationServiceTest {
   @Test
   fun `finalising applies each status with its contract satisfied`() = runBlocking<Unit> {
     val strongPositive = EdictNextSignalStrength.STRONG to EdictNextSignalLabel.POSITIVE
-    val (generation, inspection) = generation("discontinued" to strongPositive, "invalid" to strongPositive, "pending" to strongPositive)
+    val (generation, inspection) = generation("discontinued" to strongPositive, "invalid" to strongPositive)
     val repository = EdictRepository(EdictRepositoryDirectory(directory.resolve("state")))
     try {
       generation.selectGenerationClusters()
@@ -505,7 +592,6 @@ class EdictNextGenerationServiceTest {
         "busy-wait" to EdictNextClusterStatus.Generated,
         "discontinued" to EdictNextClusterStatus.Discontinued,
         "invalid" to EdictNextClusterStatus.Invalid,
-        "pending" to EdictNextClusterStatus.Pending,
       )) {
         if (status == EdictNextClusterStatus.Generated) {
           val evaluation = generation.recordEvaluation(clusterId)
@@ -856,7 +942,9 @@ class EdictNextGenerationServiceTest {
     assertFailsWith<IllegalStateException> { generation.getNewInspectionResults("busy-wait", scratch) }
     assertFailsWith<IllegalArgumentException> { generation.recordWeakReview("busy-wait", listOf(tp)) }
     assertFalse(generation.finaliseCluster("busy-wait", EdictNextClusterStatus.Generated, "Stale evaluation").success)
-    assertFalse(generation.saveCandidateInspection("busy-wait", code).overallSuccess)
+    val missed = generation.saveCandidateInspection("busy-wait", code)
+    assertTrue(missed.overallSuccess)
+    assertFalse(missed.strongExamplesSatisfied)
 
     // A source-based correction restores the declaration line; the same candidate now passes without a workaround.
     generation.updateCodeExampleExpectedRange("busy-wait", example.metadata.id, EdictNextLineRange(1, 1))

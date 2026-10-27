@@ -305,8 +305,8 @@ internal class EdictNextMcpToolset(
     server.addTool(
       name = "edict_next_save_candidate_inspection",
       description = """Store the complete candidate Inspection KTS of a Pending cluster, then compile it, check its
-        metadata against the cluster, and run every example. The candidate is stored even when it fails. Every strong
-        example must pass before project analysis; weak-example results are reported for recall.""",
+        metadata against the cluster, and run every example. The candidate is stored even when it fails. Valid compilation,
+        metadata and execution are required before project analysis; strong- and weak-example accuracy is advisory.""",
       inputSchema = stringArguments(
         "token" to "Your delegated edict-next-cluster-generation task token",
         "clusterId" to "Pending cluster chosen for generation",
@@ -394,7 +394,7 @@ internal class EdictNextMcpToolset(
 
     server.addTool(
       name = "edict_next_record_evaluation",
-      description = "Last step before finalising Generated: score the inspection that would be published (the analyzed candidate, or the predecessor on SKIP) on every strong and weak example and write clusters/<id>/evaluation.json: per-example results, tp, fp, fn, precision and recall weighted by the project findings the weak-signal review assigned to each example, and the published inspection's project findings. Writes nothing unless every strong example passes.",
+      description = "Last step before finalising Generated: score the inspection that would be published (the analyzed candidate, or the predecessor on SKIP) on every strong and weak example and write clusters/<id>/evaluation.json: per-example results, tp, fp, fn, precision and recall weighted by the project findings the weak-signal review assigned to each example, and the published inspection's project findings. Records failing strong and weak examples too; accuracy does not block generation. Requires valid compilation, metadata and execution.",
       inputSchema = stringArguments(
         "token" to "Your delegated edict-next-cluster-generation task token",
         "clusterId" to "Pending cluster chosen for generation",
@@ -409,8 +409,9 @@ internal class EdictNextMcpToolset(
       description = """End the processing of a Pending cluster: record the reason in its history and move it to the
         requested status with that status's contract satisfied, or reject and leave the cluster unchanged.
         Generated: publishes the predecessor on SKIP, or the candidate that completed project analysis on GENERATE, when it
-        passes every strong example and edict_next_record_evaluation scored exactly it on the current examples. Discontinued: removes the candidate and predecessor.
-        Invalid: keeps the candidate and predecessor. Pending: only records the reason.""",
+        has valid compilation, metadata and execution and edict_next_record_evaluation scored exactly it on the current examples.
+        Strong- and weak-example accuracy never block Generated. Discontinued: removes the candidate and predecessor.
+        Invalid: keeps the candidate and predecessor. Pending is not a generation outcome.""",
       inputSchema = toolSchema(
         listOf("token", "clusterId", "status", "reason"),
         "token" to property("string", "Your delegated edict-next-cluster-generation task token"),
@@ -418,7 +419,7 @@ internal class EdictNextMcpToolset(
         "status" to buildJsonObject {
           put("type", "string")
           put("description", "Status to set")
-          putJsonArray("enum") { EdictNextClusterStatus.entries.forEach { add(it.name) } }
+          putJsonArray("enum") { EdictNextClusterStatus.entries.filter { it != EdictNextClusterStatus.Pending }.forEach { add(it.name) } }
         },
         "reason" to property("string", "Token-free decision recorded in the cluster history"),
       ),
