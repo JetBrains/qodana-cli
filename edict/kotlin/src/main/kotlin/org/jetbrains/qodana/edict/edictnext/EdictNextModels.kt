@@ -341,8 +341,11 @@ internal data class EdictNextInspectionFailure(
 @Serializable
 internal data class EdictNextInspectionValidationResponse(
   val compilationSuccess: Boolean,
+  /** Compilation, metadata and example execution are valid; evidence accuracy is advisory. */
   val overallSuccess: Boolean,
   val summary: String,
+  /** Used only to decide whether an existing predecessor can be reused without regeneration. */
+  val strongExamplesSatisfied: Boolean = false,
   val failures: List<EdictNextInspectionFailure> = emptyList(),
   val achievedAccuracyPercent: Int? = null,
   val reportedNegativeExampleIds: List<String> = emptyList(),

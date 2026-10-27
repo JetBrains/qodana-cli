@@ -9,7 +9,7 @@ Run only as a delegated managed subagent. Follow [the manager protocol](../edict
 domain work and use it for every child delegation and task transition.
 
 Process the supplied Pending cluster through example reconciliation, predecessor reuse or candidate generation, review,
-and a valid terminal or resumable state.
+and a valid terminal state. `Pending` is only the input state, never a generation outcome.
 
 The prompt supplies only `clusterId`. Call `edict_context` with your own token before any other MCP call or write. Resolve the cluster below
 its `stateDirectory`, use its `projectDirectory` as the inspected project, and create a unique private scratch directory
@@ -32,14 +32,18 @@ your own task token:
   weak example and writes `evaluation.json`; finalising `Generated` requires it for exactly that inspection and the
   current examples;
 - `edict_next_finalise_cluster(token, clusterId, status, reason)` records the reason and sets `Generated`,
-  `Discontinued`, `Invalid`, or keeps `Pending`, applying that status's file changes. It rejects a status whose contract
+  `Discontinued`, or `Invalid`, applying that status's file changes. It rejects a status whose contract
   the cluster does not meet and leaves the cluster unchanged.
 
 Never use `apply_patch` or shell writes for the state repository; write files only in the supplied private scratch directory.
 
 End with exactly one successful `edict_next_finalise_cluster` call. A rejected call changes nothing and the cluster
-stays Pending, so you may fix what the response names if you still have the verification budget left.
-When nothing more can be fixed, finalise `Pending` with what is left.
+stays unchanged, so fix what the response names. Never finalise `Pending`. A candidate with valid compilation,
+metadata, execution and the required analysis becomes `Generated` even when it fails every strong or weak example.
+Record those failures and limitations in history and evaluation, not as a reason to withhold generation. If the rule
+cannot be implemented reliably within the constraints, use a conservative implementation that abstains on unsupported
+cases, even if it reports nothing. Only broken input or a concrete compilation, execution or tooling failure that
+prevents a valid inspected artifact justifies `Invalid`; exact contradictory Signal evidence justifies `Discontinued`.
 
 Do not load `edict-next-code-example-overseer`, `edict-next-code-example`, `edict-next-inspection-shallow-review`,
 `edict-next-weak-signal-review`, or `edict-next-inspection-code-review` yourself. Launch each required skill in a fresh
@@ -64,9 +68,9 @@ Load the edict-next-code-example-overseer skill.
 Cluster id: <clusterId>
 ```
 
-Require a successful `edict_next_validate_cluster_examples` result. If reconciliation is incomplete, finalise `Pending`
-with the concrete reason. If the overseer reports an exact semantic contradiction, finalise `Discontinued` with its
-Signal evidence.
+Require a successful `edict_next_validate_cluster_examples` result. Repair incomplete reconciliation; if broken input or
+tooling prevents it, finalise `Invalid` with the concrete reason. If the overseer reports an exact semantic contradiction,
+finalise `Discontinued` with its Signal evidence.
 
 ## 2. Select reuse or generation
 
@@ -124,7 +128,8 @@ Implementation constraints:
 
 ## 4. Repeat generation cycles
 
-Strong examples, those referenced by a `STRONG` cluster Signal, define the required behavior. Every other example is
+Strong examples, those referenced by a `STRONG` cluster Signal, define the intended behavior and take priority when
+improving the candidate, but their failures do not block analysis, evaluation or `Generated`. Every other example is
 weak: it targets recall and does not define behavior. Satisfy every weak example that still fits the rule you implement;
 never contradict strong evidence to satisfy one. Fix a failing weak example by deciding its construct correctly within
 the implementation constraints. Only when you are sure the construct the decision depends on cannot be analyzed within
@@ -133,8 +138,8 @@ abstain on it: treat it as unknown and do not report. Abstain with the simplest 
 construct, such as the relevant value being passed to a call or a delegation; never follow helpers or aliases to decide
 whether to abstain. Abstaining is a last resort, not a shortcut: record in history why the construct cannot be analyzed.
 A weak example that neither allowed analysis nor abstaining can satisfy without failing a strong example is a known
-limitation: record it in history and do not regenerate for it. Weak failures never block a cycle or the Generated
-transition.
+limitation: record it in history and do not regenerate for it. Strong and weak failures never block a cycle or the
+Generated transition. Poor precision or recall is an evaluation result, not an alternative final state.
 
 A cycle is cheap, so repeat it as often as needed. Each failed step sends you straight back to repair and regeneration:
 
@@ -145,12 +150,13 @@ to match candidate output; the correction must preserve the same semantic target
 ranges, and source-based justification in history. Require `edict_next_validate_cluster_examples` to succeed, then save
 and validate the candidate again and restart shallow review. This permission does not allow changing example source,
 id, file name, label, Signal evidence or assignments, or adding or deleting examples. If repair needs any of those
-changes, finalise `Pending` with the concrete reason.
+changes, repair through the authorized worker or finalise `Invalid` only if concrete broken input or tooling prevents it.
 
 1. Submit the complete candidate with `edict_next_save_candidate_inspection`. It always stores the candidate as the
-   latest attempt, then compiles it, checks its metadata against the cluster, and runs every example: every strong
-   example must pass, and weak-example results are reported. On `REPAIR_INSPECTION`, repair and submit again; only a
-   saved candidate that passed may go on to project analysis.
+   latest attempt, then compiles it, checks its metadata against the cluster, and runs every example. Compilation,
+   metadata and execution must be valid; strong- and weak-example accuracy is advisory and every failure is reported.
+   On `REPAIR_INSPECTION`, fix the compilation, metadata or execution problem and submit again. A valid saved candidate
+   may go on to project analysis even when no strong or weak example passes.
 2. Launch a fresh shallow review worker:
 
    ```text
@@ -192,13 +198,13 @@ remain after this one. The copy is the last analyzed candidate; replace it only 
 
    Both reviews add weak examples and report them.
 3. Save the analyzed candidate again unchanged with `edict_next_save_candidate_inspection`: its validation measures it
-   against the examples this round added. If one of them fails, is not a known limitation, and analyses remain, start
-   another generation cycle (section 4) against it, then another evidence round.
+   against all examples, including those this round added. If a strong or weak example fails, is not a known limitation,
+   and analyses remain, start another generation cycle (section 4) against it, then another evidence round.
 
 Otherwise, and always once `remainingProjectAnalyses` is 0 or the call fails because the limit was reached, stop
 generating: `Generated` requires the stored candidate to be exactly the last analyzed one. If a later cycle saved another
 candidate, save `<privateScratchDirectory>/analyzed-candidate.kts` back unchanged with
-`edict_next_save_candidate_inspection`. Append the decision and the remaining weak failures to history, call
+`edict_next_save_candidate_inspection`. Append the decision and all remaining strong and weak failures to history, call
 `edict_next_record_evaluation(token, clusterId)` as the last step before finalising, then finalise `Generated`.
 
 ## 6. Other statuses
@@ -206,5 +212,6 @@ candidate, save `<privateScratchDirectory>/analyzed-candidate.kts` back unchange
 - `Discontinued`: use only when exact Signal evidence proves semantic incompatibility. Give the conflicting Signal ids
   and the contradiction. It removes the candidate and the predecessor inspection.
 - `Invalid`: give the concrete infrastructure/tooling failure or broken input. Valid partial artifacts stay.
-- `Pending`: an unfinished or rejected attempt is not by itself Invalid. Keep repairing while time remains, otherwise
-  finalise `Pending` with what is left to do.
+- `Pending` is not an allowed outcome. An inaccurate or incomplete detector must still become `Generated` once its
+  compilation, metadata, execution, project analysis and evaluation are valid. Do not use `Invalid` or `Discontinued`
+  to hide failed strong examples, poor weak coverage, low precision or low recall.

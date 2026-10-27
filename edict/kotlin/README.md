@@ -138,6 +138,8 @@ The manager includes only the run total in its final response after the pipeline
   A durable vector cache supports distribution. Code-example,
   cluster-example, and generation-state gates remain read-only. Generated inspection compilation and execution run through
   Ultimate's generic inspection MCP; this CLI contains only its lifecycle and HTTP client.
+  Generation publishes valid analyzed inspections as `Generated` even when strong or weak examples fail; evaluation
+  records their actual coverage, precision and recall. `Pending` remains an input state, not a generation outcome.
 - GitHub and Space review readers, bounded selection, pagination, bot filtering,
   complete discussion provenance, exact source snapshots, task-bound batches,
   ordered coverage validation, publication receipts tied to exact Signal models, and normalized analyzed-PR coverage
