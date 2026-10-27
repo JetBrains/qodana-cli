@@ -517,6 +517,20 @@ class EdictNextMcpToolsetTest {
   }
 
   @Test
+  fun `generation finalization schema excludes Pending and documents advisory accuracy`() {
+    EdictNextRepositoryState.open(directory.resolve("finalization-state")).use { store ->
+      val layout = EdictLayout(directory, store.root)
+      val server = edictNextToolset(layout, EdictManagementService(store, layout)).createServer()
+      val finalise = server.tools.getValue("edict_next_finalise_cluster").tool
+      val statuses = checkNotNull(finalise.inputSchema.properties).getValue("status").jsonObject.getValue("enum").jsonArray
+      assertEquals(setOf("Generated", "Invalid", "Discontinued"), statuses.map { (it as JsonPrimitive).content }.toSet())
+      assertContains(finalise.description.orEmpty(), "accuracy never block Generated")
+      assertContains(finalise.description.orEmpty(), "Pending is not a generation outcome")
+      assertContains(server.tools.getValue("edict_next_record_evaluation").tool.description.orEmpty(), "Records failing strong and weak examples too")
+    }
+  }
+
+  @Test
   fun `price switch exposes the manager price tool`() {
     EdictNextRepositoryState.open(directory.resolve("price-state")).use { store ->
       val layout = EdictLayout(directory, store.root)

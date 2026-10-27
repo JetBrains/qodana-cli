@@ -26,6 +26,7 @@ class EdictNextInspectionTest {
 
     assertTrue(result.compilationSuccess)
     assertTrue(result.overallSuccess)
+    assertTrue(result.strongExamplesSatisfied)
     assertEquals(100, result.achievedAccuracyPercent)
     assertTrue(result.failures.isEmpty())
   }
@@ -41,7 +42,9 @@ class EdictNextInspectionTest {
     )
     val result = EdictNextInspection({ client }, { client.projectResult }).validate(cluster, "inspection")
 
-    assertFalse(result.overallSuccess)
+    assertTrue(result.overallSuccess)
+    assertFalse(result.strongExamplesSatisfied)
+    assertEquals(EdictNextNextAction.REVIEW_INSPECTION, result.nextAction)
     assertEquals(listOf("positive"), result.uncoveredPositiveExampleIds)
     assertEquals(listOf("negative"), result.reportedNegativeExampleIds)
     assertEquals(2, result.failures.size)
@@ -58,7 +61,35 @@ class EdictNextInspectionTest {
     val result = EdictNextInspection({ client }, { client.projectResult }).validate(cluster, "inspection")
 
     assertFalse(result.compilationSuccess)
+    assertFalse(result.overallSuccess)
+    assertFalse(result.strongExamplesSatisfied)
     assertTrue(result.summary.contains("does not match cluster id"))
+  }
+
+  @Test
+  fun `compilation and example execution failures still prevent generation and evaluation`() = runBlocking {
+    val results = listOf(
+      batchResult().copy(compilation = successfulCompilation().copy(compilationSuccess = false, compilationStatus = "Compile error")),
+      batchResult(),
+      batchResult(
+        InspectionKtsFileResult("positive", "Positive.kt", executionError = "Execution error"),
+        InspectionKtsFileResult("negative", "Negative.kt"),
+      ),
+      batchResult(
+        InspectionKtsFileResult("positive", "Positive.kt", listOf(problem(2))),
+        InspectionKtsFileResult("positive", "Positive.kt", listOf(problem(2))),
+        InspectionKtsFileResult("negative", "Negative.kt"),
+      ),
+    )
+    for (result in results) {
+      val client = FakeInspectionClient(result)
+      val (validation, evaluation) = EdictNextInspection({ client }, { client.projectResult })
+        .evaluate(cluster(), "inspection", EdictNextInspectionAction.GENERATE)
+      assertFalse(validation.overallSuccess)
+      assertFalse(validation.strongExamplesSatisfied)
+      assertEquals(EdictNextNextAction.REPAIR_INSPECTION, validation.nextAction)
+      assertEquals(null, evaluation)
+    }
   }
 
   @Test
@@ -175,18 +206,23 @@ class EdictNextInspectionTest {
   }
 
   @Test
-  fun `evaluation is not produced while a strong example fails`() = runBlocking {
+  fun `evaluation records failing strong positive and negative examples without blocking generation`() = runBlocking {
     val client = FakeInspectionClient(
       examplesResult = batchResult(
         InspectionKtsFileResult("positive", "Positive.kt"),
-        InspectionKtsFileResult("negative", "Negative.kt"),
+        InspectionKtsFileResult("negative", "Negative.kt", listOf(problem(1))),
       ),
     )
     val (validation, evaluation) = EdictNextInspection({ client }, { client.projectResult })
       .evaluate(cluster(), "inspection", EdictNextInspectionAction.GENERATE)
 
-    assertFalse(validation.overallSuccess)
-    assertEquals(null, evaluation)
+    assertTrue(validation.overallSuccess)
+    assertFalse(validation.strongExamplesSatisfied)
+    checkNotNull(evaluation)
+    assertEquals(listOf(0, 1, 1), listOf(evaluation.tp, evaluation.fp, evaluation.fn))
+    assertEquals(0.0, evaluation.precision)
+    assertEquals(0.0, evaluation.recall)
+    assertTrue(evaluation.examples.values.all { it.strong && !it.satisfied })
   }
 
   @Test

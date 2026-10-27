@@ -174,9 +174,10 @@ edict_manager
   - use `maxConcurrentClusterTasks` from selection, or six when selection was not needed, respecting runtime capacity
     - suggestions rank by distinct source files among unprocessed strong positive Signals, counting a source path once
       across revisions, and omit Pending clusters without strong positive evidence and clusters beyond the requested count;
-      the manager may still choose them, and generation acceptance checks still apply
+      the manager may still choose them, and structural generation checks still apply
   - run one `$edict-next-cluster-generation` worker per cluster, keeping up to that many active
-  - leaving a cluster Pending or Invalid is not a stage failure; the coordinator never repairs worker output
+  - Pending is an input state, not a completed generation outcome; Invalid and Discontinued require concrete causes,
+    not poor evidence coverage; the coordinator never repairs worker output
   - each `$edict-next-cluster-generation` worker:
     1. launches one `$edict-next-code-example-overseer`
        - read every Signal at its exact revision (`git show`, then `edict_file_at_ref` with radius 20/5/0)
@@ -188,7 +189,8 @@ edict_manager
          occurrence and no ranges
        - delete an unreferenced weak example that contradicts a strong Signal, keep every other one, and repeat
          `edict_next_validate_cluster_examples` until it succeeds
-       - an exact semantic contradiction finalises the cluster Discontinued; incomplete reconciliation finalises Pending
+       - an exact semantic contradiction finalises the cluster Discontinued; repair incomplete reconciliation, or
+         finalise Invalid when concrete broken input or tooling prevents reconciliation
     2. calls `edict_next_get_inspection_action(clusterId)` to select predecessor reuse or generation
        - `CONFLICT`: Signals with the same file revision have different labels; finalise Invalid with their ids
        - `SKIP`: the predecessor passes every strong example; record the evaluation, then finalise Generated, whatever
@@ -206,8 +208,8 @@ edict_manager
     4. repeats a cheap generation cycle as often as needed, regenerating as soon as a step fails
        1. `edict_next_save_candidate_inspection`: always stores `inspections/<clusterId>.candidate.kts` as the latest
           attempt, then compiles it, checks metadata, and measures examples
-          - passes only with at least one strong positive and every strong example correct; only a passing saved
-            candidate may start project analysis
+          - requires valid compilation, metadata and execution before project analysis; strong- and weak-example
+            accuracy is advisory, including when every example fails
           - weak examples target recall: satisfy those that still fit the rule; they never block. One that only a
             prohibited technique could satisfy is a known limitation recorded in history
        2. launch a fresh `$edict-next-inspection-shallow-review` (output `<scratch>/shallow-review-<n>.json`)
@@ -238,7 +240,8 @@ edict_manager
        - `edict_next_record_evaluation(token, clusterId)` is the last step before finalising Generated: it scores the
          published inspection on every strong and weak example and writes `clusters/<id>/evaluation.json`
          (`inspectionHash`, `exampleSetDigest`, per-example results, `tp`, `fp`, `fn`, `precision`, `recall`, and
-         `projectReview`), and writes nothing unless every strong example passes. Each example weighs the project
+         `projectReview`), including failed strong and weak examples. Recording requires valid compilation, metadata
+         and execution, not minimum accuracy. Each example weighs the project
          findings the weak-signal review assigned to it over every round (`edict_next_record_weak_review`), at least 1;
          `projectReview` counts the published inspection's project findings and the reviewed ones, and persists the
          inspection description and exact true-positive findings for later weak-signal promotion. A finding the
@@ -246,14 +249,14 @@ edict_manager
     6. records operational evidence with `edict_next_append_cluster_history` and ends with one successful
        `edict_next_finalise_cluster(token, clusterId, status, reason)`; it appends the reason to history and applies the
        status only when its contract holds, otherwise it rejects and changes nothing; the worker may then keep repairing
-       within its remaining analyses, and finalises Pending when nothing more can be fixed
-       - Generated (accepted/reused): requires validation against current evidence, project analysis of the exact candidate bytes
-         (or `SKIP`), an evaluation of exactly that inspection on the current examples, and a passing validation;
+       within its remaining analyses; Pending is never an allowed outcome
+       - Generated (produced/reused): requires valid compilation, metadata and execution, project analysis of the exact candidate bytes
+         (or `SKIP`), and an evaluation of exactly that inspection on the current examples; strong and weak failures,
+         low precision and low recall are recorded as limitations and never block generation;
          publishes the inspection, removes candidate and predecessor
        - Discontinued (exact Signal contradiction only): requires an example per Signal; removes candidate and
          predecessor inspection
        - Invalid (concrete infrastructure/tooling failure or broken input): keeps candidate and predecessor
-       - Pending (unfinished): records the reason only
 
 ## Repository state
 

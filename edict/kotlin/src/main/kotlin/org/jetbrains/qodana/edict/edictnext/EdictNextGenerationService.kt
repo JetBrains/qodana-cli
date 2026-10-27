@@ -37,7 +37,7 @@ internal class EdictNextGenerationService(
     require(targetCount >= 1) { "generationCount must be at least 1: $targetCount" }
     val state = repository.loadState()
     requireNoIssues(validateRepositoryState(repository, state))
-    // Prefer clusters that already have the strong positive evidence required for acceptance.
+    // Prefer clusters with strong positive evidence to guide generation
     val selected = state.clusters
       .filter { it.manifest.status == EdictNextClusterStatus.Pending }
       .filter { cluster ->
@@ -118,7 +118,8 @@ internal class EdictNextGenerationService(
 
   /**
    * Stores the candidate whatever its quality, then compiles it and runs every example, so the stored candidate is always
-   * the latest attempt. Only a candidate that passes every strong example may go on to project analysis.
+   * the latest attempt. A candidate with valid compilation, metadata and example execution may go on to project analysis,
+   * regardless of its strong- or weak-example accuracy.
    */
   suspend fun saveCandidateInspection(clusterId: String, code: String): EdictNextInspectionValidationResponse {
     val cluster = loadPendingCluster(clusterId)
@@ -217,12 +218,12 @@ internal class EdictNextGenerationService(
     val code = cluster.candidateInspectionPath.takeIf(Path::isRegularFile)?.readText()
     check(code != null && validatedCandidateDigests[cluster.signalIds] == sha256Hex(code)) {
       "The current candidate of cluster '$clusterId' has not passed validation; " +
-      "save a candidate that passes every strong example first"
+      "save a candidate with valid compilation, metadata and example execution first"
     }
     val analysis = checkNotNull(projectAnalysisCounts.merge(cluster.signalIds, 1, Int::plus))
     check(analysis <= maxProjectAnalyses) {
       "Cluster '$clusterId' used all $maxProjectAnalyses project analyses of this run; stop generating. " +
-      "Finalise the last analyzed candidate Generated if it passes every strong example, otherwise finalise Pending"
+      "Finalise the last analyzed candidate Generated regardless of strong- or weak-example accuracy"
     }
     val findings = inspection.analyzeProject(cluster, code, projectRevision)
     val key = findings.reviewKey()
@@ -318,8 +319,8 @@ internal class EdictNextGenerationService(
 
   /**
    * Last step before finalising Generated: scores the inspection that would be published (the analyzed candidate, or the
-   * predecessor on SKIP) on every strong and weak example and writes `evaluation.json`. Nothing is written unless every
-   * strong example passes.
+   * predecessor on SKIP) on every strong and weak example and writes `evaluation.json`, including failed evidence cases.
+   * Compilation, metadata and execution must be valid, but evidence accuracy does not gate recording.
    */
   suspend fun recordEvaluation(clusterId: String): EdictNextRecordEvaluationResponse {
     val cluster = loadPendingCluster(clusterId)
@@ -383,6 +384,9 @@ internal class EdictNextGenerationService(
   ): EdictNextFinaliseClusterResponse {
     require(reason.isNotBlank()) { "Reason must not be blank" }
     val cluster = loadPendingCluster(clusterId)
+    if (status == EdictNextClusterStatus.Pending) {
+      return rejectedFinalisation(status, "Pending is an input state, not a generation outcome; use Generated, Invalid or Discontinued")
+    }
     val history = cluster.historyPath.takeIf(Path::isRegularFile)?.readText().orEmpty() + reason
     if (status == EdictNextClusterStatus.Generated) return finaliseGenerated(cluster, history, reason)
 
@@ -392,7 +396,7 @@ internal class EdictNextGenerationService(
     when (status) {
       EdictNextClusterStatus.Discontinued -> repository.markDiscontinued(cluster)
       EdictNextClusterStatus.Invalid -> repository.markInvalid(cluster)
-      EdictNextClusterStatus.Pending -> Unit
+      EdictNextClusterStatus.Pending -> error("Pending is not a generation outcome")
     }
     return EdictNextFinaliseClusterResponse(success = true, summary = "Cluster '$clusterId' is $status")
   }
@@ -423,7 +427,7 @@ internal class EdictNextGenerationService(
     }
     val validation = inspection.validate(cluster, selection.code)
     if (!validation.overallSuccess) {
-      return rejectedFinalisation(generated, "Selected inspection does not meet the acceptance criterion: ${validation.summary}")
+      return rejectedFinalisation(generated, "Selected inspection has invalid compilation, metadata or execution: ${validation.summary}")
     }
     repository.appendHistory(cluster.id, "$generated: $reason")
     repository.markGenerated(cluster, selection.path)
@@ -489,13 +493,13 @@ internal class EdictNextGenerationService(
                         )
     val code = repository.paths.inspectionPath(predecessorId).readText()
     val validation = inspection.validate(cluster, code)
-    val reusable = validation.overallSuccess
+    val reusable = validation.strongExamplesSatisfied
     return EdictNextInspectionActionResponse(
       action = if (reusable) EdictNextInspectionAction.SKIP else EdictNextInspectionAction.GENERATE,
       summary = if (reusable) {
-        "The predecessor inspection meets the acceptance criterion: ${validation.summary}"
+        "The predecessor inspection meets the strong-example reuse criterion: ${validation.summary}"
       } else {
-        "The predecessor inspection does not meet the acceptance criterion: ${validation.summary}"
+        "The predecessor inspection does not meet the strong-example reuse criterion: ${validation.summary}"
       },
     )
   }
