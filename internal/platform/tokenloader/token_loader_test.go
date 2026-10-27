@@ -7,7 +7,17 @@ import (
 	"github.com/JetBrains/qodana-cli/internal/platform/product"
 	"github.com/JetBrains/qodana-cli/internal/platform/qdenv"
 	"github.com/stretchr/testify/assert"
+	"github.com/zalando/go-keyring"
 )
+
+// saveTestCloudToken saves a token to the real keyring and removes it after the test.
+func saveTestCloudToken(t *testing.T, id string, token string) {
+	t.Helper()
+	if err := saveCloudToken(id, token); err != nil {
+		t.Skipf("Keyring not available: %v", err)
+	}
+	t.Cleanup(func() { _ = keyring.Delete(keyringDefaultService, id) })
+}
 
 type mockTokenLoader struct {
 	qodanaToken    string
@@ -91,9 +101,6 @@ func TestIsCloudTokenRequired(t *testing.T) {
 }
 
 func TestLoadCloudUploadToken(t *testing.T) {
-	clearTokenEnv(t)
-	qdenv.InitializeQodanaGlobalEnv(qdenv.EmptyEnvProvider())
-
 	t.Run("token from loader", func(t *testing.T) {
 		loader := &mockTokenLoader{
 			qodanaToken: "test-token",
@@ -113,6 +120,16 @@ func TestLoadCloudUploadToken(t *testing.T) {
 		}
 		token := LoadCloudUploadToken(loader, false, false, false)
 		assert.Empty(t, token)
+	})
+
+	t.Run("keyring is used when QODANA_ORG_TOKEN is set but not exchanged", func(t *testing.T) {
+		// e.g. qodana init: the global env holds QODANA_ORG_TOKEN, but no exchange happens
+		t.Setenv(qdenv.QodanaClearKeyring, "")
+		qdenv.InitializeQodanaGlobalEnv(envProvider{"QODANA_ORG_TOKEN=org"})
+		saveTestCloudToken(t, "keyring-id", "keyring-token")
+
+		token := LoadCloudUploadToken(&mockTokenLoader{id: "keyring-id"}, false, true, false)
+		assert.Equal(t, "keyring-token", token)
 	})
 }
 
@@ -141,10 +158,7 @@ func TestSaveAndGetCloudToken(t *testing.T) {
 		testID := "test-token-id-12345"
 		testToken := "test-token-value"
 
-		err := saveCloudToken(testID, testToken)
-		if err != nil {
-			t.Skipf("Keyring not available: %v", err)
-		}
+		saveTestCloudToken(t, testID, testToken)
 
 		retrievedToken, err := getCloudToken(testID)
 		assert.NoError(t, err)

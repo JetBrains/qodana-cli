@@ -103,7 +103,7 @@ func resolveOrgToken() error {
 	projectToken, err := exchangeOrgToken(orgToken, projectSlug)
 	if err != nil {
 		if errors.Is(err, cloud.ErrOrgTokenDeclined) {
-			return fmt.Errorf("%w\n%s", err, fmt.Sprintf(cloud.OrgTokenExchangeFailedMessage, projectSlug))
+			return fmt.Errorf("%w\n"+cloud.OrgTokenExchangeFailedMessage, err, projectSlug)
 		}
 		return fmt.Errorf("token exchange for project '%s' failed: %w", projectSlug, err)
 	}
@@ -114,11 +114,4 @@ func resolveOrgToken() error {
 	}
 	log.Debugf("Obtained a project token for '%s' using %s", projectSlug, qdenv.QodanaOrgToken)
 	return nil
-}
-
-// isTokenFromExchange reports whether QODANA_TOKEN was obtained by exchanging QODANA_ORG_TOKEN.
-// Such a token is short-lived, so it is never saved to the keyring.
-// Both tokens can't be set at once: resolveOrgToken fails in that case.
-func isTokenFromExchange() bool {
-	return qdenv.GetQodanaGlobalEnv(qdenv.QodanaOrgToken) != ""
 }

@@ -22,7 +22,6 @@ import (
 	"testing"
 
 	"github.com/JetBrains/qodana-cli/internal/cloud"
-	"github.com/JetBrains/qodana-cli/internal/platform/product"
 	"github.com/JetBrains/qodana-cli/internal/platform/qdenv"
 )
 
@@ -74,17 +73,12 @@ type exchangeCall struct {
 	slug     string
 }
 
-// clearTokenEnv makes the test independent of tokens set in the developer's environment.
-func clearTokenEnv(t *testing.T) {
+func setupOrgTokenTest(t *testing.T, env ...string) *[]exchangeCall {
 	t.Helper()
+	// independent of tokens set in the developer's environment
 	for _, key := range []string{qdenv.QodanaToken, qdenv.QodanaOrgToken, qdenv.QodanaProject} {
 		t.Setenv(key, "")
 	}
-}
-
-func setupOrgTokenTest(t *testing.T, env ...string) *[]exchangeCall {
-	t.Helper()
-	clearTokenEnv(t)
 	qdenv.InitializeQodanaGlobalEnv(envProvider(env))
 
 	var calls []exchangeCall
@@ -175,9 +169,6 @@ func TestResolveOrgToken(t *testing.T) {
 				if token := qdenv.GetQodanaGlobalEnv(qdenv.QodanaToken); token != testData.expectedToken {
 					t.Errorf("expected QODANA_TOKEN '%s', got '%s'", testData.expectedToken, token)
 				}
-				if isTokenFromExchange() != (testData.expectedCall != nil) {
-					t.Errorf("unexpected isTokenFromExchange %v", isTokenFromExchange())
-				}
 			},
 		)
 	}
@@ -194,26 +185,5 @@ func TestResolveOrgTokenUnsetsOsEnv(t *testing.T) {
 	}
 	if _, exists := os.LookupEnv(qdenv.QodanaOrgToken); exists {
 		t.Errorf("%s must be removed from the process env", qdenv.QodanaOrgToken)
-	}
-}
-
-type fakeTokenLoader struct {
-	token string
-}
-
-func (f fakeTokenLoader) GetQodanaToken() string        { return f.token }
-func (f fakeTokenLoader) GetId() string                 { return "test-id" }
-func (f fakeTokenLoader) GetAnalyzer() product.Analyzer { return nil }
-func (f fakeTokenLoader) GetProjectDir() string         { return "" }
-func (f fakeTokenLoader) GetLogDir() string             { return "" }
-func (f fakeTokenLoader) GetRepositoryRoot() string     { return "" }
-
-func TestLoadCloudUploadTokenSkipsKeyringForExchangedToken(t *testing.T) {
-	clearTokenEnv(t)
-	qdenv.InitializeQodanaGlobalEnv(envProvider{"QODANA_ORG_TOKEN=org"})
-
-	// refresh=true would delete the keyring entry: it must not be reached for an exchanged token
-	if token := LoadCloudUploadToken(fakeTokenLoader{token: "project-token"}, true, true, true); token != "project-token" {
-		t.Errorf("expected 'project-token', got '%s'", token)
 	}
 }

@@ -20,6 +20,7 @@ import (
 	"fmt"
 	"net/url"
 	"os"
+	"slices"
 	"strings"
 
 	"github.com/JetBrains/qodana-cli/internal/foundation/str"
@@ -136,13 +137,7 @@ func GetEnv(provider EnvProvider, key string) string {
 
 // WithoutEnv returns env entries except those setting the given key.
 func WithoutEnv(env []string, key string) []string {
-	result := make([]string, 0, len(env))
-	for _, e := range env {
-		if !strings.HasPrefix(e, key+"=") {
-			result = append(result, e)
-		}
-	}
-	return result
+	return slices.DeleteFunc(slices.Clone(env), func(e string) bool { return strings.HasPrefix(e, key+"=") })
 }
 
 func GetEnvWithOsEnv(provider EnvProvider, key string) string {
