@@ -26,9 +26,9 @@ Never assign an example to a Signal.
 
 ## 1. Evidence inventory
 
-List every existing example: its id, label, whether a STRONG Signal references it (strong) or not (weak), the construct
-its range targets, and its `exampleStatus` from the config: `reported` says whether the analyzed inspection reports it.
-Read `metadata.json` and the target lines; open the whole example only when needed.
+Read every existing example with `edict_next_get_cluster_examples`: its id, label, whether a STRONG Signal references
+it (strong) or not (weak), and its numbered source. List for each the construct its range targets and its
+`exampleStatus` from the config: `reported` says whether the analyzed inspection reports it.
 
 Every finding is reported by the analyzed inspection, so only a reported example can represent one: an FP needs a
 NEGATIVE the inspection still reports, a TP a POSITIVE it reports. An example it does not report stands for a case it no

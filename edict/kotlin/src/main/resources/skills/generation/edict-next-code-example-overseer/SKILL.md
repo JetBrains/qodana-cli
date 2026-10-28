@@ -20,9 +20,10 @@ Change examples only through `edict_next_save_code_example`, `edict_next_assign_
 
 ## Reconcile the evidence
 
-Read every Signal in the cluster. Resolve the Git root from the inspected project and retrieve each exact
-`fileRevision` with read-only Git (`git show <revision>:<repository-relative-path>`), treating those complete historical
-bytes as authoritative. If an object is unavailable, read it with `edict_file_at_ref` anchored at the expected range,
+Read every Signal in the cluster and its examples with `edict_next_get_cluster_examples`. Resolve the Git root from
+the inspected project and retrieve each exact `fileRevision` with read-only Git
+(`git show <revision>:<repository-relative-path>`), treating those complete historical bytes as authoritative. If an
+object is unavailable, read it with `edict_file_at_ref` anchored at the expected range,
 with radius 20, then 5 and 0, until every requested expected-range line is visible. Do not reconcile that Signal before that. Independently infer
 the broadest coherent rule that explains all positive and negative Signals. Use that inference only to identify which
 source relationships are relevant to each Signal reduction. Do not persist a rule, id, name, or description, and do not
