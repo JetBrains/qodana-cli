@@ -25,7 +25,9 @@ scratch file and is updated there after the stored example validates.
 
 Your operation is `reduce(Signal, exact source revision) -> one self-contained code example`. A Signal is exact local
 evidence; its example is a semantic program slice, not a rule hypothesis. Do not read cluster metadata, a candidate
-inspection, or review feedback. Neither the reduction nor its label may depend on a general rule or Inspection KTS limits.
+inspection, or review feedback. The prompt may give a line `Rejected example <signal id>: <defect>`: an earlier example
+for that Signal was deleted because it lost fidelity to the source. Confirm the defect against the exact source and
+make sure the new example does not repeat it. Neither the reduction nor its label may depend on a general rule or Inspection KTS limits.
 
 Read the identified Signal. If it already has `syntheticExampleId`, return that ID. Otherwise resolve the Git root from
 the inspected project and retrieve the exact `fileRevision` with read-only Git

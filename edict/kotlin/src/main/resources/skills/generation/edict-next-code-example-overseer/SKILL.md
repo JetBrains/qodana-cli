@@ -38,11 +38,17 @@ For every Signal:
 3. Delete every incorrect example with `edict_next_delete_code_example`; this unassigns its Signals. Split the Signals
    without an example, in Signal ID order, into groups of at most five, and for each group create and delegate one
    `edict-next-code-example` managed task to a fresh native subagent, following the manager protocol. Give it only this
-   cluster id and the group's Signal ids. The worker resolves configured paths with `edict_context`. Wait for every
-   example worker and require its managed task to complete; do not perform the leaf reduction inline. Delegate a new
-   task for any Signal still without an example after its worker completes. Preserve the original types, modifiers, annotations,
-   hierarchy, assignments, calls, aliases, and control flow that determine the label. Replace unrelated dependencies
-   with minimal same-file declarations only when their PSI and semantic contracts remain equivalent.
+   cluster id, the group's Signal ids and, for each Signal whose example you deleted, one line
+   `Rejected example <signal id>: <defect>`. State the defect as the source facts the deleted example dropped, changed
+   or invented, compared with the exact source revision, for example a missing field write or a changed declaring
+   type; never a rule, a label opinion or an inspection concern. The worker resolves configured paths with
+   `edict_context`. Wait for every example worker and require its managed task to complete; do not perform the leaf
+   reduction inline except as the last resort below. Delegate each Signal to a worker at most twice. When the second
+   worker leaves it without an example or its example is incorrect too, correct that example yourself with
+   `edict_next_save_code_example`, or create and assign it when missing, and report the Signal with both defects.
+   Preserve the original types, modifiers, annotations, hierarchy, assignments, calls, aliases, and control flow that
+   determine the label. Replace unrelated dependencies with minimal same-file declarations only when their PSI and
+   semantic contracts remain equivalent.
 A positive example contains exactly one reportable occurrence and one expected range over the same semantic target as
 the source Signal. A negative example contains one focused allowed occurrence and an empty expected-range list. Keep
 each example in one self-contained source file; support files do not participate in validation.
