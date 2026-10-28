@@ -213,8 +213,9 @@ class EdictNextRepositoryStateTest {
     EdictNextRepositoryState.open(directory).use { state ->
       val plan = state.createPlan("Generate", steps)
       val cluster = plan.plan.tasks.single()
-      val clusterId = cluster.id
-      val worker = state.launch(plan.token, cluster.id, cluster.skill)
+      val clusterWorker = state.launch(plan.token, cluster.id, cluster.skill)
+      val round = state.addTask(clusterWorker.token, "edict-next-generation-round", "Generation round 1")
+      val worker = state.launch(clusterWorker.token, round.id, round.skill)
       for (skill in reviewSkills) repeat(4) { attempt ->
         val title = if (attempt == 0) "Initial review" else "Review after repair $attempt"
         val review = state.addTask(worker.token, skill, title)
@@ -225,7 +226,7 @@ class EdictNextRepositoryStateTest {
       for (skill in reviewSkills) state.addTask(worker.token, skill, "Fifth review attempt")
       assertEquals(
         5,
-        state.plan()!!.tasks.count { it.parentId == clusterId && it.skill == "edict-next-inspection-code-review" },
+        state.plan()!!.tasks.count { it.parentId == round.id && it.skill == "edict-next-inspection-code-review" },
       )
     }
   }

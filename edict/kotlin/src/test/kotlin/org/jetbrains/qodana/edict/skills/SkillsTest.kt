@@ -14,7 +14,7 @@ class SkillsTest {
     @Test
     fun `install managed skills with matching registry and metadata`() {
         val installed = Skills.install(directory)
-        assertEquals(18, installed.size)
+        assertEquals(19, installed.size)
         assertEquals(Registry.policies.map { it.name }.sorted(), installed)
         Registry.policies.forEach { policy ->
             val name = policy.name
@@ -71,13 +71,16 @@ class SkillsTest {
             Registry["edict-retrospective-signal-analysis"].delegates,
         )
         assertEquals(
+            listOf("edict-next-code-example-overseer", "edict-next-generation-round"),
+            Registry["edict-next-cluster-generation"].delegates,
+        )
+        assertEquals(
             listOf(
-                "edict-next-code-example-overseer",
                 "edict-next-inspection-shallow-review",
                 "edict-next-weak-signal-review",
                 "edict-next-inspection-code-review",
             ),
-            Registry["edict-next-cluster-generation"].delegates,
+            Registry["edict-next-generation-round"].delegates,
         )
         // Evidence reviews write their examples themselves.
         assertEquals(emptyList(), Registry["edict-next-weak-signal-review"].delegates)
@@ -123,19 +126,20 @@ class SkillsTest {
     @Test
     fun `shallow review gates and evidence reviews only add weak examples before the final evaluation`() {
         val compactGeneration = Skills.read("edict-next-cluster-generation").replace(Regex("\\s+"), " ")
+        val round = Skills.read("edict-next-generation-round").replace(Regex("\\s+"), " ")
         val shallow = Skills.read("edict-next-inspection-shallow-review")
         val compactShallow = shallow.replace(Regex("\\s+"), " ")
         val weak = Skills.read("edict-next-weak-signal-review").replace(Regex("\\s+"), " ")
         val review = Skills.read("edict-next-inspection-code-review").replace(Regex("\\s+"), " ")
 
-        val validation = compactGeneration.indexOf("Submit the complete candidate with `edict_next_save_candidate_inspection`")
-        val shallowReview = compactGeneration.indexOf("Launch a fresh shallow review worker")
+        val validation = round.indexOf("Submit the complete candidate with `edict_next_save_candidate_inspection`")
+        val shallowReview = round.indexOf("Launch a fresh shallow review worker")
         assertTrue(validation in 0..<shallowReview)
-        assertContains(compactGeneration, "Strong and weak failures never block a cycle or the Generated transition")
+        assertContains(round, "Strong and weak failures never block a cycle or the Generated transition")
         assertContains(compactGeneration, "`Pending` is only the input state, never a generation outcome")
         assertContains(compactGeneration, "even when it fails every strong or weak example")
         assertFalse("finalise `Pending` with" in compactGeneration)
-        assertContains(compactGeneration, "its `remainingProjectAnalyses` says how many remain")
+        assertContains(round, "its `remainingProjectAnalyses` says how many remain")
         assertContains(compactGeneration, "call `edict_next_record_evaluation(token, clusterId)` as the last step")
         assertContains(shallow, "Do not edit the candidate, inspected project, or repository")
         assertContains(compactShallow, "Read only the candidate")
