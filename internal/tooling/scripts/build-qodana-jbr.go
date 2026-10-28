@@ -32,7 +32,7 @@ import (
 const jbrBaseURL = "https://cache-redirector.jetbrains.com/intellij-jbr"
 
 // renovate: datasource=github-releases depName=JetBrains/JetBrainsRuntime
-const jbrDefaultTag = "jbr-release-25.0.4.1b635.78"
+const jbrDefaultTag = "jbr-release-25.0.4.1b635.79"
 
 type platform struct {
 	goos   string
