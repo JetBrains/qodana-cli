@@ -95,9 +95,9 @@ Reduce the finding's exact source to one self-contained file, following the redu
 - a NEGATIVE contains one focused allowed case and no expected ranges, and must not be trivial by removing the construct;
 - never copy the complete production file; derive ranges from the finished reduced source.
 
-Use a fresh descriptive kebab-case id. Metadata is `id`, `fileName`, `label` and `expectedRanges`. Call
-`edict_next_validate_code_example(clusterId, exampleId)` and repair structural issues; after three failed repairs delete
-the example and report it as not created. Finish with a successful `edict_next_validate_cluster_examples(clusterId)`.
+Use a fresh descriptive kebab-case id. Metadata is `id`, `fileName`, `label` and `expectedRanges`. Saving checks the
+example structurally and refuses it with its issues; repair them and save again, and after three refused saves report
+the example as not created. Finish with a successful `edict_next_validate_cluster_examples(clusterId)`.
 
 ## 6. Record and report
 

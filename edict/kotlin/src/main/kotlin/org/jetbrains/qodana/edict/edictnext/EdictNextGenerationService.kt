@@ -81,7 +81,7 @@ internal class EdictNextGenerationService(
     val validation = validateCodeExample(directory, metadata, directory.sourcePath(metadata.fileName), sourceCode)
     require(validation.success) { validation.summary + ": " + validation.issues.joinToString("; ") }
     repository.saveCodeExample(clusterId, exampleId, metadata, sourceCode)
-    return EdictNextMutationResponse(true, "Stored code example '$exampleId' in cluster '$clusterId'")
+    return EdictNextMutationResponse(true, "Stored code example '$exampleId' in cluster '$clusterId'; it is structurally valid")
   }
 
   suspend fun updateCodeExampleExpectedRange(
