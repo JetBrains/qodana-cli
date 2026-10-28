@@ -130,8 +130,8 @@ internal val LONG_DIFF_FIRST_600_LINES: String =
 
 /**
  * A worker's draft of [label] on [lines] of the item's file [at] a revision, diffed from [beforePath] at [before] to the
- * item's file at the head. By default a positive draft is at [before] and a negative one at the head, and the file kept
- * its path.
+ * item's file at the head, naming [relatedAfter] lines of the head. By default a positive draft is at [before] and a
+ * negative one at the head, and the file kept its path.
  */
 internal fun draft(
   item: PrItem,
@@ -140,12 +140,13 @@ internal fun draft(
   before: String = item.pr.baseRevision,
   at: String = if (label == EdictNextSignalLabel.POSITIVE) before else item.pr.headRevision,
   beforePath: String = item.thread.filePath,
+  relatedAfter: List<EdictNextLineRange> = emptyList(),
 ): PrSignalDraft = PrSignalDraft(
   workItemId = item.workItemId,
   fileRevision = EdictNextFileRevision(item.thread.filePath, at, listOf(lines)),
   label = label,
   description = DRAFT_DESCRIPTION,
-  diff = PrSignalDiff(before, item.pr.headRevision, beforePath, item.thread.filePath),
+  diff = PrSignalDiff(before, item.pr.headRevision, beforePath, item.thread.filePath, relatedAfterRanges = relatedAfter),
 )
 
 /** The description of every fixture draft and Signal. */

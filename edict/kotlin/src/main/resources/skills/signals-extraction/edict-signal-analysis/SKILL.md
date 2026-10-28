@@ -31,11 +31,13 @@ A PR assignment contains only `batchId` and a zero-based `chunkIndex`.
    repeated on several lines.
    Record each finding as a Signal draft: `workItemId`, `fileRevision` with bounded one-based
    `expectedRanges`, `label`, `strength`, `description`, and `diff`, the exact prepared `before` (base or comment) and
-   `after` (head) revisions and the `beforePath` and `afterPath` that the canonical diff compares. Do not copy PR
+   `after` (head) revisions and the `beforePath` and `afterPath` that the canonical diff compares. When the finding
+   depends on diff lines away from its ranges, such as an added import, a new field or a changed helper, name them in
+   `relatedBeforeRanges` (before-side line numbers) and `relatedAfterRanges` (after-side line numbers). Do not copy PR
    metadata, discussion messages, or diff text: the server completes each draft's source from its work item, stores the
-   canonical diff's changes around the draft's ranges as its excerpt, and checks that the ranges intersect changed
-   lines. The server also derives each draft's idempotency key and Signal ID; never compute them or write scripts for
-   them.
+   canonical diff's changes as its excerpt, narrowed to those around the draft's ranges and related lines when the
+   file's changes do not fit, and checks that the ranges intersect changed lines. The server also derives each draft's
+   idempotency key and Signal ID; never compute them or write scripts for them.
 4. Isolate item failures. If one item lacks complete evidence or cannot produce a valid model, append its ID to
    `failedWorkItemIds`, append a concise problem containing that work-item ID, and continue with later items. Do not
    invent a Signal or discard correct sibling

@@ -82,8 +82,9 @@ Keep mutable orchestration progress in the MCP plan.
 
 PR source preserves `type: "FromPR"`, `prNumber`, complete `title`, ordered complete human `discussionMessages`,
 focused `diffPositiveToNegative` (at most 4000 characters), and discussion `url`. A PR chunk worker does not write it: it
-stores Signal drafts naming the diff's revisions and paths, and the server completes this source from the prepared work
-item, cutting the canonical diff to the changes around the draft's ranges.
+stores Signal drafts naming the diff's revisions and paths, and optionally related diff lines away from the ranges. The
+server completes this source from the prepared work item, cutting the canonical diff to the file's changes, or, when they
+do not fit, to the changes around the draft's ranges and related lines.
 
 Commit source preserves `type: "FromCommit"`, the full correcting `commitRevision`, and `url` when available. The commit
 object determines its parent, message, and canonical diff; do not duplicate them in the Signal. The correcting
