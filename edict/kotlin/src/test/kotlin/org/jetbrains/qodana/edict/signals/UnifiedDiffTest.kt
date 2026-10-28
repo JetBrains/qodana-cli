@@ -145,15 +145,33 @@ internal class UnifiedDiffTest {
   }
 
   @Test
-  fun `a positive excerpt keeps the change at its line with three context lines`() {
-    // The hunk around line 100 of LARGE, with three context lines, and the file headers.
-    assertEquals(diff("large-positive-100"), UnifiedDiff.excerpt(LARGE, POSITIVE, onLine(100), 4000))
+  fun `an excerpt keeps every change in the file while they fit`() {
+    // Three hunks, for the change of line 100, the insertion at line 151 and the change of line 180, each with three
+    // context lines.
+    assertEquals(diff("large-every-change"), UnifiedDiff.excerpt(LARGE, POSITIVE, onLine(100), 4000))
   }
 
   @Test
-  fun `a negative excerpt keeps the insertion at its line with three context lines`() {
+  fun `a positive excerpt that cannot fit every change keeps the change at its line with three context lines`() {
+    // The hunk around line 100 of LARGE, with three context lines, and the file headers.
+    assertEquals(diff("large-positive-100"), UnifiedDiff.excerpt(LARGE, POSITIVE, onLine(100), 200))
+  }
+
+  @Test
+  fun `a negative excerpt that cannot fit every change keeps the insertion at its line with three context lines`() {
     // The hunk around the insertion at line 151 of LARGE, with three context lines either side.
-    assertEquals(diff("large-negative-151"), UnifiedDiff.excerpt(LARGE, NEGATIVE, onLine(151), 4000))
+    assertEquals(diff("large-negative-151"), UnifiedDiff.excerpt(LARGE, NEGATIVE, onLine(151), 200))
+  }
+
+  @Test
+  fun `an excerpt keeps the related lines while it narrows and drops them only when they cannot fit`() {
+    fun relatedAfter(maxChars: Int) =
+      UnifiedDiff.parse(UnifiedDiff.excerpt(LARGE, POSITIVE, onLine(100), maxChars, relatedAfter = onLine(151))!!).after
+
+    assertEquals(mapOf("new.kt" to listOf(100, 151)), relatedAfter(250))
+    assertEquals(mapOf("new.kt" to listOf(100, 151)), relatedAfter(200))
+    // Only the removed line 100 fits, without the related insertion.
+    assertEquals(emptyMap(), relatedAfter(70))
   }
 
   @Test

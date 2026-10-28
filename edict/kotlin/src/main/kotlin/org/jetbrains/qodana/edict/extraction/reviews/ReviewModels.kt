@@ -6,6 +6,7 @@ import org.jetbrains.qodana.edict.ci.PullRequest
 import org.jetbrains.qodana.edict.ci.ReviewRepository
 import org.jetbrains.qodana.edict.ci.ReviewThread
 import org.jetbrains.qodana.edict.edictnext.EdictNextFileRevision
+import org.jetbrains.qodana.edict.edictnext.EdictNextLineRange
 import org.jetbrains.qodana.edict.edictnext.EdictNextSignalLabel
 import org.jetbrains.qodana.edict.edictnext.EdictNextSignalStrength
 import java.time.LocalDate
@@ -26,6 +27,8 @@ data class PrSignalDiff(
   val after: String,
   val beforePath: String,
   val afterPath: String,
+  val relatedBeforeRanges: List<EdictNextLineRange> = emptyList(),
+  val relatedAfterRanges: List<EdictNextLineRange> = emptyList(),
 )
 
 @Serializable
