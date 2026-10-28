@@ -4,3 +4,5 @@ com.intellij.platform.images
 Git4Idea
 intellij.opengrep
 com.intellij.dfa.analysis
+com.intellij.modules.pty4j
+com.intellij.lua
