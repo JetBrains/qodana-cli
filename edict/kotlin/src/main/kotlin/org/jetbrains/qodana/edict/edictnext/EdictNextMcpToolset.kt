@@ -226,7 +226,7 @@ internal class EdictNextMcpToolset(
         "endLine" to property("integer", "Corrected 1-based last expected line, inclusive"),
       ),
     ) { request ->
-      management.requireSkill(request.requireString("token"), "edict-next-cluster-generation")
+      management.requireSkill(request.requireString("token"), "edict-next-cluster-generation", "edict-next-generation-round")
       require(request.arguments.orEmpty().keys.all { it in setOf("token", "clusterId", "exampleId", "startLine", "endLine") }) {
         "Only the expected range may be changed; unsupported arguments"
       }
@@ -331,7 +331,7 @@ internal class EdictNextMcpToolset(
       ),
     ) { request ->
       val token = request.requireString("token")
-      management.requireSkill(token, "edict-next-cluster-generation")
+      management.requireSkill(token, "edict-next-cluster-generation", "edict-next-generation-round")
       val code = management.readScratchFile(token, request.requireString("inspectionKtsPath"))
       management.requireTokenFree(code)
       generation.saveCandidateInspection(request.requireString("clusterId"), code).toToolResult()
@@ -347,7 +347,7 @@ internal class EdictNextMcpToolset(
         "newClusterId" to "New lowercase kebab-case cluster id, unused by any cluster or inspection",
       ),
     ) { request ->
-      management.requireSkill(request.requireString("token"), "edict-next-cluster-generation")
+      management.requireSkill(request.requireString("token"), "edict-next-cluster-generation", "edict-next-generation-round")
       generation.renameCluster(
         request.requireString("clusterId"),
         request.requireString("newClusterId"),
@@ -363,7 +363,7 @@ internal class EdictNextMcpToolset(
         "entry" to "Concise operational decision or known problem",
       ),
     ) { request ->
-      management.requireSkill(request.requireString("token"), "edict-next-cluster-generation")
+      management.requireSkill(request.requireString("token"), "edict-next-cluster-generation", "edict-next-generation-round")
       management.requireTokenFree(request.requireString("entry"))
       generation.appendHistory(
         request.requireString("clusterId"),

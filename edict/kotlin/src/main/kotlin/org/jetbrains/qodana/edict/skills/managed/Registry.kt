@@ -29,8 +29,11 @@ object Registry {
         Policy("edict-next-distribution"),
         Policy(
             "edict-next-cluster-generation",
+            listOf("edict-next-code-example-overseer", "edict-next-generation-round"),
+        ),
+        Policy(
+            "edict-next-generation-round",
             listOf(
-                "edict-next-code-example-overseer",
                 "edict-next-inspection-shallow-review",
                 "edict-next-weak-signal-review",
                 "edict-next-inspection-code-review",
