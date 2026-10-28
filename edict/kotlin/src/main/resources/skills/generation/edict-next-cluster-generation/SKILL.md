@@ -83,7 +83,8 @@ Call `edict_next_get_inspection_action(clusterId)` before changing the cluster i
 
 ## 3. Implement the broadest supported rule
 
-Read all Signals, their exact source revisions when needed, and all reconciled positive and negative examples.
+Read all Signals, their exact source revisions when needed, and all reconciled positive and negative examples with
+`edict_next_get_cluster_examples`.
 Independently derive the broadest coherent code-quality rule best supported by the evidence. Separate essential
 problem-causing conditions from incidental names, APIs, literals, operators, and source shapes. Do not join unrelated
 predicates merely to fit the corpus.
