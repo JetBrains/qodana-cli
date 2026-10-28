@@ -8,25 +8,17 @@ description: Managed subagent that processes one Pending Edict Next cluster thro
 Run only as a delegated managed subagent. Follow [the manager protocol](../edict_manager/references/protocol.md) before
 domain work and use it for every child delegation and task transition.
 
-Process the supplied Pending cluster through example reconciliation, predecessor reuse or candidate generation, review,
-and a valid terminal state. `Pending` is only the input state, never a generation outcome.
+Process the supplied Pending cluster through example reconciliation, predecessor reuse or generation rounds, and a
+valid terminal state. `Pending` is only the input state, never a generation outcome.
 
 The prompt supplies only `clusterId`. Call `edict_context` with your own token before any other MCP call or write. Resolve the cluster below
-its `stateDirectory`, use its `projectDirectory` as the inspected project, and create a unique private scratch directory
-below its `scratchDirectory`. Do not copy the state path into delegated prompts. Return without changing the repository
-if the scratch directory equals or is below the state repository.
+its `stateDirectory`. Do not copy the state path into delegated prompts.
 
 # Boundaries
 
 Managed state is read-only to filesystem tools; change the target cluster only through these MCP mutations, always with
 your own task token:
 
-- `edict_next_save_candidate_inspection(token, clusterId, inspectionKtsPath)` stores and validates the complete
-  candidate from its file in your private scratch directory;
-- `edict_next_update_code_example_expected_range(token, clusterId, exampleId, startLine, endLine)` corrects only the
-  single expected range of an existing positive example; no other example or Signal changes are permitted;
-- `edict_next_rename_cluster(token, clusterId, newClusterId)` renames the cluster and its candidate, including the
-  candidate's `id = "<clusterId>"`; use the new id in every later call;
 - `edict_next_append_cluster_history(token, clusterId, entry)` appends an operational decision to `history.md`;
 - `edict_next_record_evaluation(token, clusterId)` scores the inspection that would be published on every strong and
   weak example and writes `evaluation.json`; finalising `Generated` requires it for exactly that inspection and the
@@ -35,32 +27,31 @@ your own task token:
   `Discontinued`, or `Invalid`, applying that status's file changes. It rejects a status whose contract
   the cluster does not meet and leaves the cluster unchanged.
 
-Never use `apply_patch` or shell writes for the state repository; write files only in the supplied private scratch directory.
+Generation rounds implement, review, and rename the candidate; do not do that work yourself. Never use `apply_patch` or
+shell writes for the state repository.
 
 End with exactly one successful `edict_next_finalise_cluster` call. A rejected call changes nothing and the cluster
 stays unchanged, so fix what the response names. Never finalise `Pending`. A candidate with valid compilation,
 metadata, execution and the required analysis becomes `Generated` even when it fails every strong or weak example.
 Record those failures and limitations in history and evaluation, not as a reason to withhold generation. If the rule
-cannot be implemented reliably within the constraints, use a conservative implementation that abstains on unsupported
-cases, even if it reports nothing. Only broken input or a concrete compilation, execution or tooling failure that
-prevents a valid inspected artifact justifies `Invalid`; exact contradictory Signal evidence justifies `Discontinued`.
+cannot be implemented reliably within the constraints, the rounds use a conservative implementation that abstains on
+unsupported cases, even if it reports nothing. Only broken input or a concrete compilation, execution or tooling
+failure that prevents a valid inspected artifact justifies `Invalid`; exact contradictory Signal evidence justifies
+`Discontinued`.
 
-Do not load `edict-next-code-example-overseer`, `edict-next-code-example`, `edict-next-inspection-shallow-review`,
-`edict-next-weak-signal-review`, or `edict-next-inspection-code-review` yourself. Launch each required skill in a fresh
-native `spawn_agent` worker with no inherited conversation context.
+Do not load `edict-next-code-example-overseer` or `edict-next-generation-round` yourself. Launch each required skill in
+a fresh native `spawn_agent` worker with no inherited conversation context.
 
 Name every child task exactly as follows, with `<n>` counting from 1:
 
 - `Reconcile examples for <clusterId>` for the overseer;
-- `Shallow review <clusterId> iteration <n>`;
-- `Weak-signal review <clusterId> round <n>`;
-- `Code review <clusterId> round <n>`.
+- `Generation round <clusterId> <n>`.
 
 # Process
 
 ## 1. Reconcile code examples
 
-Read every Signal and launch exactly one fresh overseer:
+Launch exactly one fresh overseer:
 
 ```text
 Load the edict-next-code-example-overseer skill.
@@ -74,142 +65,40 @@ finalise `Discontinued` with its Signal evidence.
 
 ## 2. Select reuse or generation
 
-Call `edict_next_get_inspection_action(clusterId)` before changing the cluster id or candidate.
+Call `edict_next_get_inspection_action(clusterId)` before any generation round.
 
 - `CONFLICT`: finalise `Invalid` with the conflicting Signal ids.
-- `SKIP`: the predecessor passes every strong example. Keep the id, call `edict_next_record_evaluation`, and finalise
-  `Generated`, recording reuse; weak-example failures do not prevent reuse. Do not create or review a candidate.
-- `GENERATE`: derive and implement a new inspection.
+- `SKIP`: the predecessor passes every strong example. Call `edict_next_record_evaluation`, and finalise
+  `Generated`, recording reuse; weak-example failures do not prevent reuse. Do not launch a generation round.
+- `GENERATE`: run generation rounds.
 
-## 3. Implement the broadest supported rule
+## 3. Generation rounds
 
-Read all Signals, their exact source revisions when needed, and all reconciled positive and negative examples with
-`edict_next_get_cluster_examples`.
-Independently derive the broadest coherent code-quality rule best supported by the evidence. Separate essential
-problem-causing conditions from incidental names, APIs, literals, operators, and source shapes. Do not join unrelated
-predicates merely to fit the corpus.
+Each round runs in its own fresh worker, so no session carries the context of earlier rounds: it implements or repairs
+the candidate, passes the shallow review, and runs one evidence round of project analysis, weak-signal review and code
+review. The server bounds the analyses per cluster, so the rounds end. Launch round 1, then each next round only after
+the previous one completes:
 
-Before the first candidate, call `generate_inspection_kts_api` and
-`generate_inspection_kts_examples` for the language. Use
-`generate_psi_tree` when relevant PSI structure is uncertain.
+```text
+Load the edict-next-generation-round skill.
 
-Write the candidate as a file in your private scratch directory and edit it there; the save reads it by path, so never
-repeat its source in the save call. `compile_inspection_kts` and `run_inspection_kts` on one project file are available
-for quick checks. The candidate counts only once saved. It must declare exactly one
-`localInspection` and provide a lowercase kebab-case `id`, nonblank `name`, and nonblank `htmlDescription` that describe
-the implemented behavior. Do not hard-code example paths, names, text, or ranges.
+Cluster id: <clusterId>
+Round: <n>
+Previous analyzed candidate: <Analyzed candidate from the previous round's result, or none>
+Previous code review: <Code review from the previous round's result, or none>
+```
 
-Set the `InspectionKts` language argument explicitly: `language = "kotlin"` for Kotlin or `language = "JAVA"` for Java,
-matching the cluster's language. Do not omit it or leave it empty. A PSI type guard inside `localInspection` does not
-prevent the inspection engine from processing unrelated languages and discovering injected PSI.
+A round finishes with the lines `Cluster id`, `Analyzed candidate`, `Code review`, and `Next`. Use its cluster id for
+every later call and round, since a round may rename the cluster. On `Next: CONTINUE`, launch the next round. On
+`STOP`, finish as below. On `INVALID` or `DISCONTINUED`, finalise that status with the round's reason. When a round
+fails or is cancelled, launch one more round with the last completed round's lines; when that one fails too, finalise
+`Invalid` with the failure.
 
-Use the cluster id as the KTS id: validation requires them to match. The initial id is provisional; when old id does not
-reflect the rule, rename the cluster with `edict_next_rename_cluster` and record the old id, new id, and reason via
-edict_next_append_cluster_history.
+After `STOP`, append the decision to history, call `edict_next_record_evaluation(token, clusterId)` as the last step
+before finalising, then finalise `Generated`. Do not read or change the candidate: the round left the stored candidate
+the last analyzed one, which `Generated` requires.
 
-Implementation constraints:
-
-- use only the Inspection KTS API and one self-contained file;
-- do not explicitly import `HighlightDisplayLevel`; the Inspection KTS host pre-imports it and a duplicate import
-  fails compilation;
-- keep PSI traversal inside the inspected file;
-- directly resolve current-file references, calls, types, annotations, hierarchy facts, and constants when needed;
-  resolved declarations may live elsewhere and their metadata may be read;
-- do not enumerate project/module/global usages, references, inheritors, overrides, files, or index contents;
-- use `LocalSearchScope` only when rooted in the current file;
-- do not use data-flow analysis: decide from the inspected expression and what it directly resolves to, without
-  tracking values through local variables, aliases, loop variables, or helper-call parameters, and without iterating
-  to a fixed point;
-- treat an unresolved reference, call, or type the decision depends on as unknown and do not report: never count it
-  as a match by name, and never treat it as proof that something is absent;
-- keep work proportional to the current file: visit each element a bounded number of times, with no whole-body walk
-  per field, per call, or per call path; follow a same-file delegation (`this(...)`, a helper call) at most one level,
-  or compute one summary per method and reuse it; filter by syntax and names before resolving; preserve cancellation;
-- make the message, highlighted element, and `htmlDescription` state the property the implementation verifies, not a
-  stronger one it assumes.
-
-## 4. Repeat generation cycles
-
-Strong examples, those referenced by a `STRONG` cluster Signal, define the intended behavior and take priority when
-improving the candidate, but their failures do not block analysis, evaluation or `Generated`. Every other example is
-weak: it targets recall and does not define behavior. Satisfy every weak example that still fits the rule you implement;
-never contradict strong evidence to satisfy one. Fix a failing weak example by deciding its construct correctly within
-the implementation constraints. Only when you are sure the construct the decision depends on cannot be analyzed within
-them (for example, the copy happens inside a call whose body the inspection may not follow), make the inspection
-abstain on it: treat it as unknown and do not report. Abstain with the simplest syntactic check that recognizes the
-construct, such as the relevant value being passed to a call or a delegation; never follow helpers or aliases to decide
-whether to abstain. Abstaining is a last resort, not a shortcut: record in history why the construct cannot be analyzed.
-A weak example that neither allowed analysis nor abstaining can satisfy without failing a strong example is a known
-limitation: record it in history and do not regenerate for it. Strong and weak failures never block a cycle or the
-Generated transition. Poor precision or recall is an evaluation result, not an alternative final state.
-
-A cycle is cheap, so repeat it as often as needed. Each failed step sends you straight back to repair and regeneration:
-
-If an example expects the wrong location, independently verify the intended target against its unchanged source and
-the supporting Signals (including exact source revisions when needed). You may correct only its `expectedRanges` using
-`edict_next_update_code_example_expected_range`, without another overseer pass. Do not move or widen the range merely
-to match candidate output; the correction must preserve the same semantic target. Record the example id, old and new
-ranges, and source-based justification in history. Require `edict_next_validate_cluster_examples` to succeed, then save
-and validate the candidate again and restart shallow review. This permission does not allow changing example source,
-id, file name, label, Signal evidence or assignments, or adding or deleting examples. If repair needs any of those
-changes, repair through the authorized worker or finalise `Invalid` only if concrete broken input or tooling prevents it.
-
-1. Submit the complete candidate with `edict_next_save_candidate_inspection`, passing its scratch file. It always
-   stores the candidate as the latest attempt, then compiles it, checks its metadata against the cluster, and runs every
-   example. Compilation, metadata and execution must be valid; strong- and weak-example accuracy is advisory and every failure is reported.
-   On `REPAIR_INSPECTION`, fix the compilation, metadata or execution problem and submit again. A valid saved candidate
-   may go on to project analysis even when no strong or weak example passes.
-2. Launch a fresh shallow review worker:
-
-   ```text
-   Load the edict-next-inspection-shallow-review skill.
-
-   Cluster id: <clusterId>
-   Review output path: <privateScratchDirectory>/shallow-review-<n>.json
-   ```
-
-   It reads only the candidate and checks hard-coded evidence, scope and cost, implementation practices, and metadata. On
-   `REJECT`, repair every BLOCKER and restart the cycle. On `ACCEPT`, continue with an evidence round.
-
-## 5. Evidence rounds
-
-Project analysis and the reviews after it are expensive, so each cluster gets a fixed number of analyses per run. Copy
-the saved candidate byte for byte to `<privateScratchDirectory>/analyzed-candidate.kts`, then call
-`edict_next_get_new_inspection_results(clusterId, privateScratchDirectory)`; its `remainingProjectAnalyses` says how many
-remain after this one. The copy is the last analyzed candidate; replace it only before the next analysis.
-
-1. If the response has `findingsUnchanged: true`, the project findings equal the previous round's, which were already
-   reviewed: skip the weak-signal review. Otherwise launch a fresh worker with only:
-
-   ```text
-   Load the edict-next-weak-signal-review skill.
-
-   Review config: <returned weak-signal-review-config path>
-   ```
-
-   Require every finding to be classified and its final `edict_next_validate_cluster_examples` call to succeed.
-2. Then launch a fresh worker:
-
-   ```text
-   Load the edict-next-inspection-code-review skill.
-
-   Cluster id: <clusterId>
-   Review output path: <privateScratchDirectory>/inspection-code-review-<n>.json
-   Previous code review: <output path of the previous round's code review, or none>
-   ```
-
-   Both reviews add weak examples and report them.
-3. Save `<privateScratchDirectory>/analyzed-candidate.kts` again with `edict_next_save_candidate_inspection`: its
-   validation measures it against all examples, including those this round added. If a strong or weak example fails, is not a known limitation,
-   and analyses remain, start another generation cycle (section 4) against it, then another evidence round.
-
-Otherwise, and always once `remainingProjectAnalyses` is 0 or the call fails because the limit was reached, stop
-generating: `Generated` requires the stored candidate to be exactly the last analyzed one. If a later cycle saved another
-candidate, save `<privateScratchDirectory>/analyzed-candidate.kts` back unchanged with
-`edict_next_save_candidate_inspection`. Append the decision and all remaining strong and weak failures to history, call
-`edict_next_record_evaluation(token, clusterId)` as the last step before finalising, then finalise `Generated`.
-
-## 6. Other statuses
+## 4. Other statuses
 
 - `Discontinued`: use only when exact Signal evidence proves semantic incompatibility. Give the conflicting Signal ids
   and the contradiction. It removes the candidate and the predecessor inspection.

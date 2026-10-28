@@ -129,7 +129,7 @@ class TaskLifecycleLoggingTest {
                 "\$edict-next-cluster-generation\nRead /skills/edict-next-cluster-generation/SKILL.md")
             store.readTask(cluster.token)
             server.ok("edict_task_start", start(cluster))
-            val finished = store.delegateChild(cluster.token, "edict-next-inspection-code-review", "Code review")
+            val finished = store.delegateChild(cluster.token, "edict-next-generation-round", "Generation round")
             server.ok("edict_task_start", start(finished))
             server.ok("edict_task_finish", finish(finished))
             val review = store.delegateChild(cluster.token, "edict-next-code-example-overseer", "Reconcile\nexamples\tfor rule")
@@ -147,7 +147,7 @@ class TaskLifecycleLoggingTest {
             assertEquals(3, lines.count { it == "  Worker lost" })
             assertEquals(
                 1,
-                lines.count { it == "[-:${finished.taskId.take(8)}] Code review finished [completed]" },
+                lines.count { it == "[-:${finished.taskId.take(8)}] Generation round finished [completed]" },
             )
         }
     }

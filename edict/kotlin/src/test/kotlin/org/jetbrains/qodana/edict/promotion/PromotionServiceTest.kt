@@ -273,10 +273,10 @@ class PromotionServiceTest {
 
       val generation = state.addTask(manager.token, "edict-next-cluster-generation", "Generate failed-rule")
       val generationWorker = state.launch(manager.token, generation.id, generation.skill)
-      val review = state.addTask(generationWorker.token, "edict-next-inspection-code-review", "Review candidate")
-      val reviewer = state.launch(generationWorker.token, review.id, review.skill)
-      state.finishTask(reviewer.token, "failed", "False positive remains unrecorded")
-      state.finishTask(generationWorker.token, "failed", "Candidate review failed")
+      val round = state.addTask(generationWorker.token, "edict-next-generation-round", "Generation round failed-rule 1")
+      val roundWorker = state.launch(generationWorker.token, round.id, round.skill)
+      state.finishTask(roundWorker.token, "failed", "Code review failed")
+      state.finishTask(generationWorker.token, "failed", "Generation round failed")
 
       val lost = state.addTask(manager.token, generation.skill, "Generate another rule")
       state.launch(manager.token, lost.id, lost.skill)
@@ -299,7 +299,7 @@ class PromotionServiceTest {
       val tasks = state.plan()!!.tasks.associateBy { it.id }
       assertEquals("failed", tasks.getValue(enrichment.id).status)
       assertEquals("failed", tasks.getValue(generation.id).status)
-      assertEquals("failed", tasks.getValue(review.id).status)
+      assertEquals("failed", tasks.getValue(round.id).status)
       assertEquals("cancelled", tasks.getValue(lost.id).status)
       assertEquals("completed", tasks.getValue(promotion.id).status)
       assertTrue(repository.loadCluster("failed-rule").manifest.promotions.isEmpty())
