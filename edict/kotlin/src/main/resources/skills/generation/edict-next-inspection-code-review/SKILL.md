@@ -83,7 +83,7 @@ Write each kept form as one self-contained file following the reduction rules of
 expected range; a NEGATIVE has one focused allowed case and no expected ranges. Metadata is `id`, `fileName`, `label`
 and `expectedRanges`; use a fresh descriptive kebab-case id.
 
-For each example call `edict_next_validate_code_example(clusterId, exampleId)` and repair structural issues; use
+Saving checks each example structurally and refuses it with its issues; repair them and save again. Use
 `generate_psi_tree` to confirm the target has the PSI shape the form assumes, and `run_inspection_kts` with the example
 source only to confirm it parses and executes. Ignore what the candidate reports there; the evaluation scores it later.
 After three failed repairs delete the example and report it as not created. Finish with a successful

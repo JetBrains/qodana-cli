@@ -184,7 +184,8 @@ internal class EdictNextMcpToolset(
 
     server.addTool(
       name = "edict_next_save_code_example",
-      description = "Persist one complete synthetic example in the read-only managed state. Code-example, overseer, and weak-review workers must use this instead of filesystem writes.",
+      description = "Persist one complete synthetic example in the read-only managed state. Code-example, overseer, and weak-review workers must use this instead of filesystem writes. " +
+        "It first checks the example structurally, like edict_next_validate_code_example, and refuses an invalid one with its issues, so a stored example needs no separate validation.",
       inputSchema = stringArguments(
         "token" to "Your delegated managed-task token",
         "clusterId" to "Pending cluster chosen for generation",
