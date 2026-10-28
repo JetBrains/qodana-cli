@@ -487,30 +487,30 @@ func generateDebugDockerRunCommand(cfg *backend.ContainerCreateConfig) string {
 		cmdBuilder.WriteString("-it ")
 	}
 	if cfg.Config.User != "" {
-		cmdBuilder.WriteString(fmt.Sprintf("-u %s ", cfg.Config.User))
+		_, _ = fmt.Fprintf(&cmdBuilder, "-u %s ", cfg.Config.User)
 	}
 	for _, env := range cfg.Config.Env {
 		if !strings.Contains(env, qdenv.QodanaToken) || strings.Contains(
 			env,
 			qdenv.QodanaLicense,
 		) || strings.Contains(env, qdenv.QodanaLicenseOnlyToken) {
-			cmdBuilder.WriteString(fmt.Sprintf("-e %s ", env))
+			_, _ = fmt.Fprintf(&cmdBuilder, "-e %s ", env)
 		}
 	}
 	if cfg.HostConfig != nil {
 		for _, m := range cfg.HostConfig.Mounts {
-			cmdBuilder.WriteString(fmt.Sprintf("-v %s:%s ", m.Source, m.Target))
+			_, _ = fmt.Fprintf(&cmdBuilder, "-v %s:%s ", m.Source, m.Target)
 		}
 		for _, capAdd := range cfg.HostConfig.CapAdd {
-			cmdBuilder.WriteString(fmt.Sprintf("--cap-add %s ", capAdd))
+			_, _ = fmt.Fprintf(&cmdBuilder, "--cap-add %s ", capAdd)
 		}
 		for _, secOpt := range cfg.HostConfig.SecurityOpt {
-			cmdBuilder.WriteString(fmt.Sprintf("--security-opt %s ", secOpt))
+			_, _ = fmt.Fprintf(&cmdBuilder, "--security-opt %s ", secOpt)
 		}
 	}
 	cmdBuilder.WriteString(cfg.Config.Image + " ")
 	for _, arg := range cfg.Config.Cmd {
-		cmdBuilder.WriteString(fmt.Sprintf("%s ", arg))
+		_, _ = fmt.Fprintf(&cmdBuilder, "%s ", arg)
 	}
 
 	return cmdBuilder.String()
