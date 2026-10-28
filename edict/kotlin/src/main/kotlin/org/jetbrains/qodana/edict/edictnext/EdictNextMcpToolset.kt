@@ -293,6 +293,21 @@ internal class EdictNextMcpToolset(
     }
 
     server.addTool(
+      name = "edict_next_get_cluster_examples",
+      description = "Read every code example of a cluster in one answer: per example its label, whether a STRONG Signal is " +
+              "assigned to it (strong) or not (weak), the Signals assigned to it, its file and expected ranges, then its " +
+              "numbered source. Read-only.",
+      inputSchema = stringArguments("clusterId" to "Cluster id"),
+    ) { request ->
+      val examples = try {
+        generation.clusterExamples(request.requireString("clusterId"))
+      } catch (e: EdictNextCodeExampleReadException) {
+        "Cannot read every code example:\n" + e.issues.joinToString("\n")
+      }
+      CallToolResult(content = listOf(TextContent(examples)))
+    }
+
+    server.addTool(
       name = "edict_next_get_inspection_action",
       description = "Detect conflicting Signals, then return SKIP when the predecessor passes every strong example; otherwise return GENERATE. Call before changing the cluster id or inspection candidate.",
       inputSchema = stringArguments("clusterId" to "Cluster id"),

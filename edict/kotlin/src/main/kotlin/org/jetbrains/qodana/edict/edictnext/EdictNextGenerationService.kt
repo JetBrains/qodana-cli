@@ -170,6 +170,27 @@ internal class EdictNextGenerationService(
     return EdictNextMutationResponse(true, "Appended history for cluster '$clusterId'")
   }
 
+  /**
+   * Every code example of [clusterId] as text: per example its label, whether a STRONG Signal is assigned to it, the
+   * Signals assigned to it, its file and expected ranges, then its numbered source.
+   */
+  fun clusterExamples(clusterId: String): String {
+    val cluster = repository.loadCluster(clusterId)
+    if (cluster.examples.isEmpty()) return "Cluster '$clusterId' has no code examples"
+    val signalsByExample = cluster.signals.filter { it.syntheticExampleId != null }.groupBy { it.syntheticExampleId }
+    return cluster.examples.joinToString("\n\n") { example ->
+      val metadata = example.metadata
+      val signals = signalsByExample[metadata.id].orEmpty()
+      val strength = if (signals.any { it.strength == EdictNextSignalStrength.STRONG }) "strong" else "weak"
+      val assigned = if (signals.isEmpty()) "" else signals.joinToString(", ", " (", ")") { it.id }
+      val ranges = metadata.expectedRanges.orEmpty()
+        .joinToString(", ") { if (it.start == it.end) "${it.start}" else "${it.start}-${it.end}" }
+        .ifEmpty { "none" }
+      "== ${metadata.id} · ${metadata.label} · $strength$assigned · ${metadata.fileName} · expected $ranges\n" +
+        numberedLines(example.code, null, 0)
+    }
+  }
+
   suspend fun validateClusterExamples(clusterId: String): EdictNextCodeExampleValidationResponse {
     val cluster = try {
       loadPendingCluster(clusterId)

@@ -66,6 +66,25 @@ class EdictNextGenerationServiceTest {
   }
 
   @Test
+  fun `cluster examples are read in one answer with their strength and numbered source`() = withGeneration { generation, repository ->
+    val weak = EdictNextCodeExampleMetadata("weak-positive", "Weak.java", EdictNextSignalLabel.POSITIVE, listOf(EdictNextLineRange(1, 2)))
+    repository.saveCodeExample("busy-wait", weak.id, weak, "class Weak {\n  void run() {}\n}\n")
+
+    assertEquals(
+      """
+        |== busy-wait-example · POSITIVE · strong (s-busy-wait) · Example.java · expected 1
+        |    1| class Example {}
+        |
+        |== weak-positive · POSITIVE · weak · Weak.java · expected 1-2
+        |    1| class Weak {
+        |    2|   void run() {}
+        |    3| }
+      """.trimMargin(),
+      generation.clusterExamples("busy-wait"),
+    )
+  }
+
+  @Test
   fun `saving requires valid metadata before project analysis`() = withGeneration { generation, repository ->
     val scratch = directory.resolve("scratch").toString()
     assertFailsWith<IllegalStateException> { generation.getNewInspectionResults("busy-wait", scratch) }
