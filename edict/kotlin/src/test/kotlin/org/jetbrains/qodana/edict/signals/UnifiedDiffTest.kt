@@ -59,28 +59,49 @@ class UnifiedDiffTest {
     }
   }
 
-  @Test
-  fun `server excerpt keeps the changes near a Signal's lines with original coordinates`() {
-    val large = header + "@@ -1,200 +1,201 @@\n" + (1..200).joinToString("\n", postfix = "\n") { line ->
-      when (line) {
-        100 -> "-old 100\n+new 100"
-        150 -> " line 150\n+inserted"
-        180 -> "-old 180\n+new 180"
-        else -> " line $line"
-      }
+  private val large = header + "@@ -1,200 +1,201 @@\n" + (1..200).joinToString("\n", postfix = "\n") { line ->
+    when (line) {
+      100 -> "-old 100\n+new 100"
+      150 -> " line 150\n+inserted"
+      180 -> "-old 180\n+new 180"
+      else -> " line $line"
     }
+  }
+
+  @Test
+  fun `server excerpt keeps every change in the file when they fit`() {
+    val excerpt = UnifiedDiff.excerpt(large, EdictNextSignalLabel.POSITIVE, listOf(EdictNextLineRange(100, 100)), 4000)!!
+    UnifiedDiff.validateExcerpt(excerpt, large)
+    assertEquals(UnifiedDiff.Changes(mapOf("old.kt" to listOf(100, 180)), mapOf("new.kt" to listOf(100, 151, 181))), UnifiedDiff.parse(excerpt))
+    assertEquals(3, excerpt.lines().count { it.startsWith("@@") })
+  }
+
+  @Test
+  fun `server excerpt narrows to the changes near a Signal's lines with original coordinates`() {
     val near = { line: Int -> (line - 3..line + 3).filter { it != line }.map { " line $it" } }
 
-    val positive = UnifiedDiff.excerpt(large, EdictNextSignalLabel.POSITIVE, listOf(EdictNextLineRange(100, 100)), 4000)!!
+    val positive = UnifiedDiff.excerpt(large, EdictNextSignalLabel.POSITIVE, listOf(EdictNextLineRange(100, 100)), header.length + 120)!!
     assertEquals(
       header + "@@ -97,7 +97,7 @@\n" + (near(100).take(3) + listOf("-old 100", "+new 100") + near(100).drop(3)).joinToString("") { "$it\n" },
       positive,
     )
     UnifiedDiff.validateExcerpt(positive, large)
-    val negative = UnifiedDiff.excerpt(large, EdictNextSignalLabel.NEGATIVE, listOf(EdictNextLineRange(151, 151)), 4000)!!
+    val negative = UnifiedDiff.excerpt(large, EdictNextSignalLabel.NEGATIVE, listOf(EdictNextLineRange(151, 151)), header.length + 120)!!
     assertEquals(header + "@@ -148,6 +148,7 @@\n", negative.lines().take(3).joinToString("\n") + "\n")
     UnifiedDiff.validateExcerpt(negative, large)
     assertEquals(mapOf("new.kt" to listOf(151)), UnifiedDiff.parse(negative).after)
     assertNull(UnifiedDiff.excerpt(large, EdictNextSignalLabel.POSITIVE, listOf(EdictNextLineRange(100, 100)), header.length + 20))
+  }
+
+  @Test
+  fun `server excerpt keeps the related lines while narrowing and drops them only when they cannot fit`() {
+    fun excerpt(maxChars: Int) = UnifiedDiff.excerpt(
+      large, EdictNextSignalLabel.POSITIVE, listOf(EdictNextLineRange(100, 100)), header.length + maxChars,
+      relatedAfter = listOf(EdictNextLineRange(151, 151)),
+    )!!.also { UnifiedDiff.validateExcerpt(it, large) }
+
+    assertEquals(mapOf("new.kt" to listOf(100, 151)), UnifiedDiff.parse(excerpt(200)).after)
+    assertEquals(mapOf("new.kt" to listOf(100, 151)), UnifiedDiff.parse(excerpt(120)).after)
+    assertEquals(mapOf("new.kt" to listOf(100)), UnifiedDiff.parse(excerpt(50)).after)
   }
 }

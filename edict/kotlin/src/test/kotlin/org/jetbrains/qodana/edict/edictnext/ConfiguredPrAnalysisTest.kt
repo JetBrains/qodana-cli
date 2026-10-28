@@ -464,12 +464,16 @@ class ConfiguredPrAnalysisTest {
       val batch = analysis.prepareBatch(coordinator.token, configured, ReviewSelectionInput())
       val worker = launchAnalysisWorker(store, coordinator.token)
       val item = analysis.chunk(worker.token, batch.batchId, 0).workItemIds.single()
-      fun draft(range: EdictNextLineRange, label: EdictNextSignalLabel = EdictNextSignalLabel.POSITIVE) = PrSignalDraft(
+      fun draft(
+        range: EdictNextLineRange,
+        label: EdictNextSignalLabel = EdictNextSignalLabel.POSITIVE,
+        related: List<EdictNextLineRange> = emptyList(),
+      ) = PrSignalDraft(
         item,
         EdictNextFileRevision("src/Example1.kt", (if (label == EdictNextSignalLabel.POSITIVE) "a" else "b").repeat(40), listOf(range)),
         label,
         "Use the correct call",
-        diff = PrSignalDiff("a".repeat(40), "b".repeat(40), "src/Example1.kt", "src/Example1.kt"),
+        diff = PrSignalDiff("a".repeat(40), "b".repeat(40), "src/Example1.kt", "src/Example1.kt", relatedAfterRanges = related),
       )
       val receipt = analysis.store(
         worker.token, batch.batchId, 0, listOf(item), emptyList(), emptyList(), emptyList(),
@@ -477,13 +481,16 @@ class ConfiguredPrAnalysisTest {
           draft(EdictNextLineRange(100, 100)),
           draft(EdictNextLineRange(100, 100), EdictNextSignalLabel.NEGATIVE),
           draft(EdictNextLineRange(200, 250)),
+          draft(EdictNextLineRange(99, 100), related = listOf(EdictNextLineRange(210, 210))),
         ),
       )
-      assertEquals(2, receipt.signalCount, receipt.failures.toString())
+      assertEquals(3, receipt.signalCount, receipt.failures.toString())
       assertContains(receipt.failures.single().message, "do not fit 4000 characters")
       analysis.publishValidated(coordinator.token, batch.batchId)
-      val signals = receipt.signalIds.map { checkNotNull(store.inboxSignal(it)) }
-      signals.forEach { assertEquals(excerpt, (it.source as EdictNextSignalSource.FromPR).diffPositiveToNegative) }
+      val diffs = receipt.signalIds.map { (checkNotNull(store.inboxSignal(it)).source as EdictNextSignalSource.FromPR).diffPositiveToNegative }
+      assertEquals(listOf(excerpt, excerpt), diffs.take(2))
+      assertContains(diffs[2], "+added 210 ")
+      assertFalse("+added 230 " in diffs[2])
     }
   }
 

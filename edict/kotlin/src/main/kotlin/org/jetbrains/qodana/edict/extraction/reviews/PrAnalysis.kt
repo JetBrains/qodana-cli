@@ -321,7 +321,10 @@ internal class PrAnalysis(
     val evidencePath = if (draft.label == EdictNextSignalLabel.POSITIVE) diff.beforePath else diff.afterPath
     require(draft.fileRevision.path == evidencePath) { "Signal path must match its diff side" }
     val canonical = provider.diff(item.repository, diff.before, diff.after, diff.beforePath, diff.afterPath)
-    val excerpt = UnifiedDiff.excerpt(canonical, draft.label, draft.fileRevision.expectedRanges.orEmpty(), SignalValidation.MAX_DIFF_CHARS)
+    val excerpt = UnifiedDiff.excerpt(
+      canonical, draft.label, draft.fileRevision.expectedRanges.orEmpty(), SignalValidation.MAX_DIFF_CHARS,
+      diff.relatedBeforeRanges, diff.relatedAfterRanges,
+    )
       ?: error("The changes at the Signal's lines do not fit ${SignalValidation.MAX_DIFF_CHARS} characters; narrow its ranges")
     UnifiedDiff.validateExcerpt(excerpt, canonical)
     return EdictNextSignal(

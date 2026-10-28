@@ -195,7 +195,14 @@ internal class EdictManagementService(
             "description" to string,
             "strength" to enumOf("STRONG", "WEAK"),
             "diff" to objectOf(
-              properties = mapOf("before" to string, "after" to string, "beforePath" to string, "afterPath" to string),
+              properties = mapOf(
+                "before" to string,
+                "after" to string,
+                "beforePath" to string,
+                "afterPath" to string,
+                "relatedBeforeRanges" to arrayOf(lineRange),
+                "relatedAfterRanges" to arrayOf(lineRange),
+              ),
               required = listOf("before", "after", "beforePath", "afterPath"),
             ),
           ),
@@ -547,7 +554,7 @@ internal class EdictManagementService(
     tool(
       name = "edict_store_pr_signals",
       description = "Store one analyzed PR chunk. Requires complete ordered work-item coverage and explicit failed work-item IDs, independently validates each Signal, and retains valid models despite per-Signal failures. " +
-        "Pass Signals as signalDrafts: the server cuts the canonical diff of each draft's diff snapshots to an excerpt of at most 4000 characters around its lines, completes PR number, title, discussion URL and messages from the work item, and derives its idempotency key and ID.",
+        "Pass Signals as signalDrafts: the server cuts the canonical diff of each draft's diff snapshots to an excerpt of at most 4000 characters: its lines, the file's other changes, and the lines named in diff.relatedBeforeRanges and diff.relatedAfterRanges, narrowed to the changes near its lines when they do not fit. It completes PR number, title, discussion URL and messages from the work item, and derives its idempotency key and ID.",
       required = listOf("token", "batchId", "chunkIndex", "inspectedWorkItemIds", "failedWorkItemIds", "signals", "problems"),
       properties = properties("batchId") + mapOf(
         "chunkIndex" to integer,

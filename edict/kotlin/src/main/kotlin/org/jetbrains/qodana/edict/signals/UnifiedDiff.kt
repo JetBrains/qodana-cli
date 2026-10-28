@@ -35,7 +35,19 @@ object UnifiedDiff {
         }
     }
 
-    fun excerpt(diff: String, label: EdictNextSignalLabel, ranges: List<EdictNextLineRange>, maxChars: Int): String? {
+    /**
+     * Cuts [diff] to the Signal's [ranges] on its [label]'s side, the other changes in the file, the lines the worker
+     * named as related ([relatedBefore], [relatedAfter]) and context around them, narrowing until it fits [maxChars]:
+     * fewer changes, then less context, then without the related lines.
+     */
+    fun excerpt(
+        diff: String,
+        label: EdictNextSignalLabel,
+        ranges: List<EdictNextLineRange>,
+        maxChars: Int,
+        relatedBefore: List<EdictNextLineRange> = emptyList(),
+        relatedAfter: List<EdictNextLineRange> = emptyList(),
+    ): String? {
         val header = diff.lineSequence().takeWhile { !it.startsWith("@@") }.joinToString("") { "$it\n" }
         val lines = parseDiff(diff).hunks.flatMapIndexed { hunk, it -> it.lines.map { line -> hunk to line } }
         val positive = label == EdictNextSignalLabel.POSITIVE
@@ -43,13 +55,20 @@ object UnifiedDiff {
         fun number(line: Line) = if (positive) line.before else line.after
         fun changed(line: Line) = line.content[0] == '-' || line.content[0] == '+'
         val focus = lines.indices.filter { i -> onSide(lines[i].second) && ranges.any { number(lines[i].second) in it.start..it.end } }
-        return EXCERPT_LEVELS.firstNotNullOfOrNull { (context, radius) ->
+        val related = lines.indices.filter { i ->
+            val line = lines[i].second
+            line.content[0] in " -" && relatedBefore.any { line.before in it.start..it.end } ||
+                line.content[0] in " +" && relatedAfter.any { line.after in it.start..it.end }
+        }
+        val selections = if (related.isEmpty()) listOf(focus) else listOf(focus + related, focus)
+        return selections.flatMap { selected -> EXCERPT_LEVELS.map { selected to it } }.firstNotNullOfOrNull { (selected, level) ->
+            val (context, radius) = level
             val near = lines.indices.filter { i ->
                 changed(lines[i].second) &&
-                    (focus.isEmpty() || ranges.any { number(lines[i].second) in (it.start - radius)..(it.end + radius) })
+                    (focus.isEmpty() || radius == null || ranges.any { number(lines[i].second) in (it.start - radius)..(it.end + radius) })
             }
             val kept = BooleanArray(lines.size)
-            (focus + near).forEach { i ->
+            (selected + near).forEach { i ->
                 for (j in (i - context).coerceAtLeast(0)..(i + context).coerceAtMost(lines.lastIndex)) {
                     if (lines[j].first == lines[i].first) kept[j] = true
                 }
@@ -77,8 +96,11 @@ object UnifiedDiff {
         }
     }
 
-    /** Context lines and the radius around the ranges for nearby changes, from the widest excerpt to the narrowest. */
-    private val EXCERPT_LEVELS = listOf(3 to 20, 3 to 0, 1 to 0, 0 to 0)
+    /**
+     * Context lines and the radius around the ranges for other changes, from the widest excerpt to the narrowest; a null
+     * radius keeps every change in the file.
+     */
+    private val EXCERPT_LEVELS = listOf(3 to null, 3 to 20, 3 to 0, 1 to 0, 0 to 0)
 
     private fun parseDiff(diff: String): ParsedDiff {
         val before = linkedMapOf<String, MutableList<Int>>()

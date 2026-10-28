@@ -175,7 +175,7 @@ class EdictNextMcpToolsetTest {
       )
       val draftDiffSchema = checkNotNull(storePrSchema.properties).getValue("signalDrafts").jsonObject
         .getValue("items").jsonObject.getValue("properties").jsonObject.getValue("diff").jsonObject
-      assertEquals(setOf("before", "after", "beforePath", "afterPath"), draftDiffSchema.getValue("properties").jsonObject.keys)
+      assertEquals(setOf("before", "after", "beforePath", "afterPath", "relatedBeforeRanges", "relatedAfterRanges"), draftDiffSchema.getValue("properties").jsonObject.keys)
       val contextSchema = server.tools.getValue("edict_context").tool.inputSchema
       assertEquals(setOf("token"), checkNotNull(contextSchema.properties).keys)
       assertEquals(listOf("token"), contextSchema.required)
