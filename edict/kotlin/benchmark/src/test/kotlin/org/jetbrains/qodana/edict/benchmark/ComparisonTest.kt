@@ -124,6 +124,23 @@ class ComparisonTest {
         assertFalse(root.resolve("reports/state").exists())
     }
 
+    @Test fun `published SARIF drops built-in rule descriptions and context regions`() {
+        fixture()
+        write("reports/qodana.sarif.json", sarif("EdictBenchmarkRule")
+            .replace("""{"name":"test"}""", """{"name":"test","rules":[{"id":"EdictBenchmarkRule","fullDescription":{"text":"generated help"}}]}""")
+            .replace("""[{"id":"EdictBenchmarkRule"}]""", """[{"id":"BuiltIn","fullDescription":{"text":"built-in help"}}]""")
+            .replace("""{"ruleId":"EdictBenchmarkRule",""", """{"ruleId":"EdictBenchmarkRule","partialFingerprints":{"hash":"1"},""")
+            .replace(""""charLength":4}}""", """"charLength":4,"snippet":{"text":"code"}},"contextRegion":{"startLine":9}}"""))
+        val reports = root.resolve("reports")
+        val report = compare(root.resolve("benchmark"), root.resolve("project/.edict"), reports)
+        val published = reports.resolve("qodana.sarif.json").readText()
+        listOf("built-in help", "contextRegion").forEach { assertFalse(it in published, it) }
+        // The Edict viewer keys labels by fingerprint and shows the generated rules' descriptions.
+        listOf("generated help", "partialFingerprints", "snippet", "\"BuiltIn\"").forEach { assertTrue(it in published, it) }
+        // The published SARIF scores the same when it is compared again.
+        assertEquals(report, compare(root.resolve("benchmark"), root.resolve("project/.edict"), reports))
+    }
+
     @Test fun `built in rules cannot stand in for generated inspections`() {
         fixture()
         write("reports/qodana.sarif.json", sarif("Rule"))
