@@ -337,6 +337,21 @@ class PromotionServiceTest {
   }
 
   @Test
+  fun `opens PRs in the promotion repository rather than the reviewed one`() {
+    val repository = repository()
+    cluster(repository, "forked", 6)
+    val provider = FakeProvider()
+    val promotion = PromotionConfiguration("reviewer", "main", url = "https://github.com/qodana/kotlin-edict")
+
+    val result = service(repository, provider, promotion).promote()
+
+    val fork = ReviewRepository(CiProviderId.GITHUB, "qodana", "kotlin-edict")
+    assertEquals(fork, provider.lastRequest?.repository)
+    val reference = result.created.single().pullRequest
+    assertEquals(fork, ReviewRepository(reference.provider, reference.owner, reference.repository))
+  }
+
+  @Test
   fun `same digest and target is idempotent in every PR state while a new digest is promotable`() {
     PromotionPrState.entries.forEachIndexed { index, state ->
       val repository = repository("state-$index")

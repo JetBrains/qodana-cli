@@ -14,6 +14,7 @@ import java.net.URI
 import java.nio.file.Files
 import java.nio.file.InvalidPathException
 import java.nio.file.Path
+import kotlin.io.path.invariantSeparatorsPathString
 import kotlin.io.path.isRegularFile
 
 internal data class EdictConfiguration(
@@ -40,6 +41,16 @@ internal data class EdictConfiguration(
       throw IllegalArgumentException("edict.statePath is invalid: $statePath", e)
     }
   }
+
+  /** Where promotion PRs are opened: `edict.promotion.url`, else the `edict.ci.url` repository reviews are read from. */
+  val promotionRepository: EdictCIConfiguration? get() = promotion?.repository ?: ci
+
+  /** Repository directories Edict commits to: a relative state path and the promoted inspections directory. */
+  val storagePaths: List<String>
+    get() = listOfNotNull(
+      Path.of(statePath).takeUnless { it.isAbsolute }?.normalize()?.invariantSeparatorsPathString,
+      promotion?.inspectionsDirectory?.let { Path.of(it).normalize().invariantSeparatorsPathString },
+    ).filter { it.isNotEmpty() && !it.startsWith("..") }.distinct()
 }
 
 internal const val DEFAULT_EDICT_MCP_PORT = 27182
@@ -110,7 +121,10 @@ internal data class PromotionConfiguration(
   val reviewer: String,
   val targetBranch: String? = null,
   val inspectionsDirectory: String = "inspections",
+  val url: String? = null,
 ) {
+  val repository = url?.let(::EdictCIConfiguration)
+
   init {
     require(reviewer.isNotBlank() && reviewer.none { it in "/\\\u0000\r\n" }) { "Promotion reviewer is invalid" }
     targetBranch?.let {
@@ -216,11 +230,13 @@ internal class PromotionYaml {
   var reviewer: String? = null
   var targetBranch: String? = null
   var inspectionsDirectory: String? = null
+  var url: String? = null
 
   fun toConfiguration() = PromotionConfiguration(
     reviewer = reviewer.required("edict.promotion.reviewer"),
     targetBranch = targetBranch?.required("edict.promotion.targetBranch"),
     inspectionsDirectory = inspectionsDirectory?.required("edict.promotion.inspectionsDirectory") ?: "inspections",
+    url = url?.required("edict.promotion.url"),
   )
 }
 

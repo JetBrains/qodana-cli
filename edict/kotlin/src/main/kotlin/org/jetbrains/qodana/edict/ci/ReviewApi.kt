@@ -11,11 +11,22 @@ import java.nio.file.Files
 import java.nio.file.NoSuchFileException
 import java.util.Comparator
 
-data class SourceFixChanges(val baseRevision: String, val files: Map<String, String>) {
+/**
+ * Fixes of files at [baseRevision]. The target branch may have advanced since then only by commits that change files
+ * under [storagePaths], the repository directories Edict itself commits to (GitHub only; Space requires the exact base).
+ */
+data class SourceFixChanges(
+  val baseRevision: String,
+  val files: Map<String, String>,
+  val storagePaths: List<String> = emptyList(),
+) {
   init {
     require(validRevision(baseRevision)) { "Source fixes require an exact base revision" }
     require(files.isNotEmpty() && files.keys.all(::validSourcePath)) { "Source fixes require repository-relative file paths" }
+    require(storagePaths.all(::validSourcePath)) { "Edict storage paths must be repository-relative" }
   }
+
+  fun isStoragePath(path: String): Boolean = storagePaths.any { path.startsWith("$it/") }
 }
 
 data class CreateReviewRequest(

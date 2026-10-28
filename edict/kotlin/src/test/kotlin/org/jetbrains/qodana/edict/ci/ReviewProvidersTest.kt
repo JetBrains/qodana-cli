@@ -335,7 +335,11 @@ class ReviewProvidersTest {
   fun `github commits all source fixes atomically preserves modes and reuses its PR`() {
     val revision = "a".repeat(40)
     val fixedRevision = "b".repeat(40)
-    val changes = SourceFixChanges(revision, mapOf("First.kt" to "fixed first", "Second.kt" to "fixed second"))
+    // Since the analysis, the target branch has only gained Edict state and a promoted inspection.
+    val targetRevision = "d".repeat(40)
+    val changes = SourceFixChanges(
+      revision, mapOf("First.kt" to "fixed first", "Second.kt" to "fixed second"), listOf(".edict", "inspections"),
+    )
     val request = request(CiProviderId.GITHUB).copy(operationId = "w-${"c".repeat(24)}", sourceFix = changes)
     var branchExists = false
     var reviewExists = false
@@ -345,7 +349,15 @@ class ReviewProvidersTest {
         method == "GET" && endpoint.contains("/git/ref/heads/edict") -> if (branchExists)
           response(200, obj("object" to obj("sha" to JsonPrimitive(fixedRevision)))) else response(404)
         method == "GET" && endpoint.endsWith("/git/ref/heads/main") ->
-          response(200, obj("object" to obj("sha" to JsonPrimitive(revision))))
+          response(200, obj("object" to obj("sha" to JsonPrimitive(targetRevision))))
+        method == "GET" && endpoint.endsWith("/compare/$revision...$targetRevision") -> response(200, obj(
+          "status" to JsonPrimitive("ahead"),
+          "files" to JsonArray(listOf(
+            obj("filename" to JsonPrimitive(".edict/state.json")),
+            obj("filename" to JsonPrimitive("inspections/rule.inspection.kts"),
+              "previous_filename" to JsonPrimitive(".edict/inspections/rule.inspection.kts")),
+          )),
+        ))
         method == "GET" && endpoint.contains("/contents/") -> {
           val path = endpoint.substringAfter("/contents/")
           val content = if (query["ref"] == fixedRevision) changes.files.getValue(path) else "original $path"
@@ -436,6 +448,34 @@ class ReviewProvidersTest {
     val files = commit.getValue("files").jsonArray.map { it as JsonObject }
     assertEquals(changes.files.keys.toList(), files.map { (it["path"] as JsonPrimitive).content })
     assertEquals(1, transport.calls.count { it.method == "POST" && it.endpoint.endsWith("/merge-requests") })
+  }
+
+  @Test
+  fun `github source fixes reject target branches changed outside Edict storage`() {
+    val revision = "a".repeat(40)
+    val targetRevision = "b".repeat(40)
+    val changes = SourceFixChanges(revision, mapOf("First.kt" to "fixed"), listOf(".edict"))
+    val comparisons = listOf(
+      "ahead" to listOf(obj("filename" to JsonPrimitive(".edict/state.json")), obj("filename" to JsonPrimitive("First.kt"))),
+      "ahead" to listOf(obj("filename" to JsonPrimitive(".edict/First.kt"), "previous_filename" to JsonPrimitive("First.kt"))),
+      "diverged" to listOf(obj("filename" to JsonPrimitive(".edict/state.json"))),
+      "ahead" to List(300) { obj("filename" to JsonPrimitive(".edict/$it.json")) },
+    )
+    for ((status, files) in comparisons) {
+      val transport = RecordingTransport { _, method, endpoint, _, _ ->
+        assertEquals("GET", method)
+        when {
+          endpoint.endsWith("/git/ref/heads/main") -> response(200, obj("object" to obj("sha" to JsonPrimitive(targetRevision))))
+          endpoint.endsWith("/compare/$revision...$targetRevision") ->
+            response(200, obj("status" to JsonPrimitive(status), "files" to JsonArray(files)))
+          else -> response(404)
+        }
+      }
+      val failure = assertFailsWith<IllegalArgumentException> {
+        GitHubReviewApi(transport).ensureReview(request(CiProviderId.GITHUB).copy(sourceFix = changes))
+      }
+      assertTrue(failure.message.orEmpty().contains("Target branch changed"))
+    }
   }
 
   @Test

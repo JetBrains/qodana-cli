@@ -48,6 +48,46 @@ class EdictYamlConfigurationTest {
   }
 
   @Test
+  fun `promotes to the promotion URL and falls back to the CI repository`() {
+    val separate = EdictYamlConfiguration.load(yaml(
+      """
+      edict:
+        ci:
+          url: https://github.com/JetBrains/kotlin
+        promotion:
+          url: https://github.com/qodana/kotlin-edict
+          reviewer: reviewer
+      """,
+    ))
+    assertEquals("JetBrains", separate.ci?.owner)
+    assertEquals(EdictCIConfiguration("https://github.com/qodana/kotlin-edict"), separate.promotionRepository)
+
+    val shared = EdictYamlConfiguration.load(yaml(
+      """
+      edict:
+        ci:
+          url: https://github.com/JetBrains/kotlin
+        promotion:
+          reviewer: reviewer
+      """,
+    ))
+    assertEquals(shared.ci, shared.promotionRepository)
+  }
+
+  @Test
+  fun `treats relative state and promoted inspections as Edict storage`() {
+    assertEquals(listOf(".edict"), EdictConfiguration().storagePaths)
+    assertEquals(
+      listOf("build/edict", "quality/rules"),
+      EdictConfiguration(statePath = "./build/edict/", promotion = PromotionConfiguration("reviewer", inspectionsDirectory = "quality/rules/")).storagePaths,
+    )
+    assertEquals(
+      listOf("inspections"),
+      EdictConfiguration(statePath = "/var/edict", promotion = PromotionConfiguration("reviewer")).storagePaths,
+    )
+  }
+
+  @Test
   fun `derives Space project and repository from one URL`() {
     val configuration = EdictYamlConfiguration.load(yaml(
       """

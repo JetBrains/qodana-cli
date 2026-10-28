@@ -124,7 +124,7 @@ internal class WeakSignalPromotionService(
     val candidates = mutableListOf<WeakSignalPromotionCandidate>()
     val failures = mutableListOf<PromotionFailure>()
     val clusters = repository.loadClusters().associateBy { it.id }
-    val ci = configuration.ci
+    val ci = configuration.promotionRepository
     val active = repository.loadActiveWeakSignalPromotions()
     (clusterIds ?: clusters.keys.toList()).forEach { id ->
       try {
@@ -145,7 +145,9 @@ internal class WeakSignalPromotionService(
   }
 
   fun publish(clusterId: String, inspectionDigest: String, fixes: List<WeakSignalFix>, validation: String): WeakSignalPromotion {
-    val ci = requireNotNull(configuration.ci) { "Weak-signal promotion requires complete edict.ci configuration" }
+    val ci = requireNotNull(configuration.promotionRepository) {
+      "Weak-signal promotion requires edict.promotion.url or edict.ci.url configuration"
+    }
     val config = requireNotNull(configuration.promotion) { "Weak-signal promotion requires edict.promotion.reviewer configuration" }
     val repository = repository()
     val cluster = repository.loadCluster(clusterId)
@@ -205,7 +207,9 @@ internal class WeakSignalPromotionService(
       inspectionDigest = inspectionDigest,
       inspectionContent = byteArrayOf(),
       description = description,
-      sourceFix = SourceFixChanges(candidate.projectRevision, fixes.associate { it.path to it.content }),
+      sourceFix = SourceFixChanges(
+        candidate.projectRevision, fixes.associate { it.path to it.content }, configuration.storagePaths,
+      ),
     ))
     return repository.appendWeakSignalPromotion(clusterId, inspectionDigest, WeakSignalPromotion(
       ReviewReference(ci.provider, ci.owner, ci.repository, remote.id, remote.url),

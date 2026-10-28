@@ -28,6 +28,7 @@ import org.jetbrains.qodana.edict.ci.ReviewStatus
 import org.jetbrains.qodana.edict.ci.ReviewThread
 import org.jetbrains.qodana.edict.ci.MergedReview
 import org.jetbrains.qodana.edict.ci.ReviewFileChange
+import org.jetbrains.qodana.edict.ci.SourceFixChanges
 import org.jetbrains.qodana.edict.ci.isBot
 import org.jetbrains.qodana.edict.ci.urlPart
 import org.jetbrains.qodana.edict.common.number
@@ -275,7 +276,8 @@ internal class GitHubReviewApi(
     }
     require(existing.status == 404) { "GitHub branch lookup returned HTTP ${existing.status}" }
     val base = expectObject(http.send(id, "GET", "$root/git/ref/heads/${urlPart(request.targetBranch)}", requireAuthentication = true), 200)
-    require(base.obj("object").text("sha") == changes.baseRevision) {
+    val head = base.obj("object").text("sha")
+    require(head == changes.baseRevision || advancedOnlyInStorage(root, changes, head)) {
       "Target branch changed since true-positive analysis; analyze the current revision before publishing fixes"
     }
     changes.files.forEach { (path, content) ->
@@ -324,6 +326,18 @@ internal class GitHubReviewApi(
       put("ref", "refs/heads/$branch")
       put("sha", created.text("sha"))
     }, requireAuthentication = true), 201)
+  }
+
+  /** The compare API lists at most [MAX_COMPARED_FILES] files, all on its first page, so a full list is ambiguous. */
+  private fun advancedOnlyInStorage(root: String, changes: SourceFixChanges, head: String): Boolean {
+    if (changes.storagePaths.isEmpty()) return false
+    val comparison = expectObject(http.send(id, "GET", "$root/compare/${changes.baseRevision}...$head",
+      mapOf("per_page" to "1"), requireAuthentication = true), 200)
+    val files = comparison.getValue("files").jsonArray.map { it.jsonObject }
+    return comparison.text("status") == "ahead" && files.size < MAX_COMPARED_FILES && files.all { file ->
+      changes.isStoragePath(file.text("filename")) &&
+        (file["previous_filename"] == null || changes.isStoragePath(file.text("previous_filename")))
+    }
   }
 
   override fun review(reference: ReviewReference): ReviewStatus = readReview(reference, includeEvidence = false)
@@ -413,5 +427,6 @@ internal class GitHubReviewApi(
   private companion object {
     const val PAGE_SIZE = 100
     const val MAX_PAGES = 1000
+    const val MAX_COMPARED_FILES = 300
   }
 }

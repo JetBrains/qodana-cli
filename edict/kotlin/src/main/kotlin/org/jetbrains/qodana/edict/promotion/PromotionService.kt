@@ -50,7 +50,9 @@ internal class PromotionService(
   fun promote(clusterIds: List<String>? = null): PromotionPromoteResponse {
     require(clusterIds == null || clusterIds.isNotEmpty()) { "clusterIds must not be empty when provided" }
     require(clusterIds == null || clusterIds.distinct().size == clusterIds.size) { "clusterIds must be unique" }
-    val ci = requireNotNull(configuration.ci) { "Inspection promotion requires complete edict.ci configuration" }
+    val ci = requireNotNull(configuration.promotionRepository) {
+      "Inspection promotion requires edict.promotion.url or edict.ci.url configuration"
+    }
     val promotionConfiguration = requireNotNull(configuration.promotion) {
       "Inspection promotion requires edict.promotion.reviewer configuration"
     }
