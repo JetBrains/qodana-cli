@@ -58,10 +58,9 @@ For an unassigned Signal, create its example through `edict_next_save_code_examp
 Metadata contains `id`, `fileName`, `label`, and `expectedRanges`. Derive the expected ranges from the finished reduced source;
 do not retain source line numbers after moving the target. Never copy the complete production source file.
 
-Call `edict_next_validate_code_example(clusterId, exampleId)` for the newly created example before assigning it.
-Repair structural issues in the example and validate again after any
-repair. The MCP does not establish semantics: independently confirm that the example demonstrates the Signal and that its
-label and ranges are correct.
+Saving checks the example structurally and refuses it with its issues; repair them and save again. The MCP does not
+establish semantics: independently confirm that the example demonstrates the Signal and that its label and ranges are
+correct.
 
 Only after both checks succeed, call `edict_next_assign_code_example` for a persisted Signal, or set
 `syntheticExampleId` in a transient private-scratch Signal. Return each Signal id with its assigned example ID, or with
