@@ -46,6 +46,7 @@ import java.util.concurrent.TimeUnit
 import kotlin.test.Test
 import kotlin.test.assertContains
 import kotlin.test.assertEquals
+import kotlin.test.assertFailsWith
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 
@@ -388,6 +389,32 @@ class EdictNextMcpToolsetTest {
       )
       generation.selectGenerationClusters()
       assertTrue(generation.appendHistory("string-equality", "Generate from the accepted evidence").success)
+    }
+  }
+
+  @Test
+  fun `a candidate is read only from a file below the generator's own scratch directory`() {
+    val project = gitFixture(directory.resolve("project"))
+    val layout = EdictLayout(project.root, directory.resolve("state"))
+    EdictNextRepositoryState.open(layout.stateDirectory).use { store ->
+      val plan = store.createPlan("Generate", listOf(
+        EdictNextRepositoryState.Step("edict-next-cluster-generation", "Generate one"),
+        EdictNextRepositoryState.Step("edict-next-cluster-generation", "Generate another"),
+      ))
+      val generator = store.launch(plan.token, plan.plan.tasks[0].id, "edict-next-cluster-generation")
+      val other = store.launch(plan.token, plan.plan.tasks[1].id, "edict-next-cluster-generation")
+      val management = EdictManagementService(store, layout)
+      val candidate = Files.writeString(
+        Files.createDirectories(management.scratchDirectory(generator.token).resolve("work")).resolve("candidate.kts"),
+        "candidate bytes",
+      )
+
+      assertEquals("candidate bytes", management.readScratchFile(generator.token, candidate.toString()))
+      val foreign = assertFailsWith<IllegalArgumentException> { management.readScratchFile(other.token, candidate.toString()) }
+      assertContains(foreign.message!!, "not below your scratch directory")
+      val escape = candidate.parent.resolve("../../../outside.kts").also { Files.writeString(it, "outside") }
+      assertFailsWith<IllegalArgumentException> { management.readScratchFile(generator.token, escape.toString()) }
+      assertFailsWith<IllegalArgumentException> { management.readScratchFile(generator.token, "work/candidate.kts") }
     }
   }
 

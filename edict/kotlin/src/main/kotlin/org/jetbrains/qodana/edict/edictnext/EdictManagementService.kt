@@ -41,10 +41,13 @@ import org.jetbrains.qodana.edict.setup.CodexSetup
 import org.jetbrains.qodana.edict.signals.SignalValidation
 import java.io.PrintWriter
 import java.nio.file.Files
+import java.nio.file.Path
 import java.time.Instant
 import java.time.LocalDate
 import java.time.ZoneOffset
 import java.util.concurrent.ConcurrentHashMap
+import kotlin.io.path.isRegularFile
+import kotlin.io.path.readText
 
 /** Owns managed execution state and exposes its plan/task lifecycle as MCP tools. */
 internal class EdictManagementService(
@@ -88,6 +91,16 @@ internal class EdictManagementService(
 
   internal fun scratchDirectory(token: String) =
     layout.taskScratchDirectory(store.scratchOwnerId(token)).also { Files.createDirectories(it) }
+
+  /** Reads a file that the task with [token] wrote below its own scratch directory. */
+  internal fun readScratchFile(token: String, path: String): String {
+    val file = Path.of(path)
+    require(file.isAbsolute) { "'$path' must be an absolute path" }
+    require(file.isRegularFile()) { "'$path' is not a file" }
+    val scratch = scratchDirectory(token).toRealPath()
+    require(file.toRealPath().startsWith(scratch)) { "'$path' is not below your scratch directory $scratch" }
+    return file.readText()
+  }
 
   fun registerTools(server: Server, calculatePrice: Boolean = false) {
     val string = jsonType("string")

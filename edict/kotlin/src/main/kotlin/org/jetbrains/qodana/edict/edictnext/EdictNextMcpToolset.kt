@@ -320,21 +320,21 @@ internal class EdictNextMcpToolset(
 
     server.addTool(
       name = "edict_next_save_candidate_inspection",
-      description = """Store the complete candidate Inspection KTS of a Pending cluster, then compile it, check its
-        metadata against the cluster, and run every example. The candidate is stored even when it fails. Valid compilation,
-        metadata and execution are required before project analysis; strong- and weak-example accuracy is advisory.""",
+      description = """Store the complete candidate Inspection KTS of a Pending cluster from a file in your scratch
+        directory, then compile it, check its metadata against the cluster, and run every example. The candidate is stored
+        even when it fails. Valid compilation, metadata and execution are required before project analysis; strong- and
+        weak-example accuracy is advisory.""",
       inputSchema = stringArguments(
         "token" to "Your delegated edict-next-cluster-generation task token",
         "clusterId" to "Pending cluster chosen for generation",
-        "inspectionKtsCode" to "Complete candidate Inspection KTS source",
+        "inspectionKtsPath" to "Absolute path of the complete candidate Inspection KTS file below your scratch directory",
       ),
     ) { request ->
-      management.requireSkill(request.requireString("token"), "edict-next-cluster-generation")
-      management.requireTokenFree(request.requireString("inspectionKtsCode"))
-      generation.saveCandidateInspection(
-        request.requireString("clusterId"),
-        request.requireString("inspectionKtsCode"),
-      ).toToolResult()
+      val token = request.requireString("token")
+      management.requireSkill(token, "edict-next-cluster-generation")
+      val code = management.readScratchFile(token, request.requireString("inspectionKtsPath"))
+      management.requireTokenFree(code)
+      generation.saveCandidateInspection(request.requireString("clusterId"), code).toToolResult()
     }
 
     server.addTool(
