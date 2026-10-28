@@ -6,6 +6,9 @@ with `.edict/gold.sarif.json`. Both tasks
 read the project's existing `.edict` state via `-PedictStateDir`; report artifacts
 go to `-PbenchmarkOutputDir`. `:benchmark:compare` can
 re-evaluate existing SARIF. The subproject has no generation controller or MCP proxy.
+The published `qodana.sarif.json` drops the descriptions of built-in rules (their ids and properties stay) and the
+results' context regions, so the SARIF stays small enough to become gold. Fingerprints, snippets and the generated rules'
+descriptions stay: the Edict viewer keys labels by fingerprint.
 
 Pipeline setup, parameters, artifact provenance, and commands are documented in
 [`scripts/edict-benchmark/README.md`](../../../scripts/edict-benchmark/README.md).

@@ -71,6 +71,43 @@ internal fun readSarif(path: Path): Sarif {
     return Sarif(findings, registered, manifest?.let { goldManifest(it, path) }, expectedStates)
 }
 
+private fun JsonObject.withField(name: String, value: JsonElement?): JsonObject =
+    if (value == null) this else JsonObject(this + (name to value))
+
+private fun JsonObject.withoutFields(vararg names: String): JsonObject = JsonObject(this - names.toSet())
+
+private fun slimExtension(component: JsonElement): JsonElement {
+    val value = component.jsonObject
+    return value.withField("rules", value.array("rules")?.let { rules ->
+        JsonArray(rules.map { rule -> JsonObject(rule.jsonObject.filterKeys { it == "id" || it == "properties" }) })
+    })
+}
+
+private fun slimLocation(location: JsonElement): JsonElement {
+    val value = location.jsonObject
+    val physical = value.obj("physicalLocation") ?: return location
+    return value.withField("physicalLocation", physical.withoutFields("contextRegion"))
+}
+
+private fun slimResult(result: JsonElement): JsonElement {
+    val value = result.jsonObject
+    return value.withField("locations", value.array("locations")?.let { JsonArray(it.map(::slimLocation)) })
+}
+
+private fun slimRun(run: JsonElement): JsonElement {
+    val value = run.jsonObject
+    val tool = value.obj("tool")?.let { tool ->
+        tool.withField("extensions", tool.array("extensions")?.let { JsonArray(it.map(::slimExtension)) })
+    }
+    return value.withField("tool", tool).withField("results", value.array("results")?.let { JsonArray(it.map(::slimResult)) })
+}
+
+// The published SARIF is scored again and becomes gold that the Edict viewer labels. The viewer keys labels by
+// partialFingerprints, relocates problems by their snippets and shows the driver's rule descriptions, so those stay.
+// Built-in rules in extensions keep their ids and properties: their descriptions made up most of an Ultimate SARIF.
+internal fun slimSarif(sarif: JsonObject): JsonObject =
+    sarif.withField("runs", sarif.array("runs")?.let { JsonArray(it.map(::slimRun)) })
+
 // Gold without any edictLabel lists only expected findings, so each of its results is a positive.
 internal fun readGold(path: Path): Sarif {
     val gold = readSarif(path)
@@ -114,10 +151,7 @@ internal fun compare(_benchmarkDir: Path, stateDir: Path, outputDir: Path,
         stateDir.resolve("inspections/${inspection.cluster}.inspection.kts")
             .copyTo(inspectionsDir.resolve("$filename.kts"), overwrite = true)
     }
-    val destinationSarif = outputDir.resolve("qodana.sarif.json")
-    if (analysisSarif.toAbsolutePath().normalize() != destinationSarif.toAbsolutePath().normalize()) {
-        analysisSarif.copyTo(destinationSarif, overwrite = true)
-    }
+    writeJson(outputDir.resolve("qodana.sarif.json"), slimSarif(readObject(analysisSarif)))
     outputDir.resolve("report.json").writeText(json.encodeToString(report) + "\n")
     return report
 }
