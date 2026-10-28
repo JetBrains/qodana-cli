@@ -21,8 +21,8 @@ if the scratch directory equals or is below the state repository.
 Managed state is read-only to filesystem tools; change the target cluster only through these MCP mutations, always with
 your own task token:
 
-- `edict_next_save_candidate_inspection(token, clusterId, inspectionKtsCode)` stores and validates the complete
-  candidate;
+- `edict_next_save_candidate_inspection(token, clusterId, inspectionKtsPath)` stores and validates the complete
+  candidate from its file in your private scratch directory;
 - `edict_next_update_code_example_expected_range(token, clusterId, exampleId, startLine, endLine)` corrects only the
   single expected range of an existing positive example; no other example or Signal changes are permitted;
 - `edict_next_rename_cluster(token, clusterId, newClusterId)` renames the cluster and its candidate, including the
@@ -93,8 +93,9 @@ Before the first candidate, call `generate_inspection_kts_api` and
 `generate_inspection_kts_examples` for the language. Use
 `generate_psi_tree` when relevant PSI structure is uncertain.
 
-Draft in private scratch; `compile_inspection_kts` and `run_inspection_kts` on one project file are available for quick
-checks. The candidate counts only once saved. It must declare exactly one
+Write the candidate as a file in your private scratch directory and edit it there; the save reads it by path, so never
+repeat its source in the save call. `compile_inspection_kts` and `run_inspection_kts` on one project file are available
+for quick checks. The candidate counts only once saved. It must declare exactly one
 `localInspection` and provide a lowercase kebab-case `id`, nonblank `name`, and nonblank `htmlDescription` that describe
 the implemented behavior. Do not hard-code example paths, names, text, or ranges.
 
@@ -153,9 +154,9 @@ and validate the candidate again and restart shallow review. This permission doe
 id, file name, label, Signal evidence or assignments, or adding or deleting examples. If repair needs any of those
 changes, repair through the authorized worker or finalise `Invalid` only if concrete broken input or tooling prevents it.
 
-1. Submit the complete candidate with `edict_next_save_candidate_inspection`. It always stores the candidate as the
-   latest attempt, then compiles it, checks its metadata against the cluster, and runs every example. Compilation,
-   metadata and execution must be valid; strong- and weak-example accuracy is advisory and every failure is reported.
+1. Submit the complete candidate with `edict_next_save_candidate_inspection`, passing its scratch file. It always
+   stores the candidate as the latest attempt, then compiles it, checks its metadata against the cluster, and runs every
+   example. Compilation, metadata and execution must be valid; strong- and weak-example accuracy is advisory and every failure is reported.
    On `REPAIR_INSPECTION`, fix the compilation, metadata or execution problem and submit again. A valid saved candidate
    may go on to project analysis even when no strong or weak example passes.
 2. Launch a fresh shallow review worker:
@@ -198,8 +199,8 @@ remain after this one. The copy is the last analyzed candidate; replace it only 
    ```
 
    Both reviews add weak examples and report them.
-3. Save the analyzed candidate again unchanged with `edict_next_save_candidate_inspection`: its validation measures it
-   against all examples, including those this round added. If a strong or weak example fails, is not a known limitation,
+3. Save `<privateScratchDirectory>/analyzed-candidate.kts` again with `edict_next_save_candidate_inspection`: its
+   validation measures it against all examples, including those this round added. If a strong or weak example fails, is not a known limitation,
    and analyses remain, start another generation cycle (section 4) against it, then another evidence round.
 
 Otherwise, and always once `remainingProjectAnalyses` is 0 or the call fails because the limit was reached, stop
