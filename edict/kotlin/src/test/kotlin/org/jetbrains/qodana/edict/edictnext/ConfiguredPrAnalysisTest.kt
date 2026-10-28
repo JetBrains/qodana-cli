@@ -49,8 +49,10 @@ import org.jetbrains.qodana.edict.extraction.reviews.ReviewSelectionInput
 import org.jetbrains.qodana.edict.signals.support.diff
 import org.junit.jupiter.api.extension.RegisterExtension
 import kotlin.test.Test
+import kotlin.test.assertContains
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
+import kotlin.test.assertFalse
 import kotlin.test.assertNotEquals
 
 internal class ConfiguredPrAnalysisTest {
@@ -699,6 +701,19 @@ internal class ConfiguredPrAnalysisTest {
     pr.analysis.publishValidated(pr.coordinator, batch.batchId)
     // The hunk around line 100 replacing bad() with good(), with three context lines either side.
     assertEquals(diff("large-draft-excerpt-100"), (pr.store.inboxSignal(id)?.source as EdictNextSignalSource.FromPR).diffPositiveToNegative)
+  }
+
+  @Test
+  fun `a draft on a large diff also keeps the related lines it names`() {
+    val batch = pr.correctionBatch(largeDiffFiles())
+    val item = pr.item(batch)
+    val drafted = draft(item, POSITIVE, EdictNextLineRange(99, 100), relatedAfter = listOf(EdictNextLineRange(210, 210)))
+    val id = pr.storeDrafts(batch, drafted).signalIds.single()
+
+    pr.analysis.publishValidated(pr.coordinator, batch.batchId)
+    val excerpt = (pr.store.inboxSignal(id)?.source as EdictNextSignalSource.FromPR).diffPositiveToNegative
+    assertContains(excerpt, "+added 210 ")
+    assertFalse("+added 230 " in excerpt)
   }
 
   @Test
