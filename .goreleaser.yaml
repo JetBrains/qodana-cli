@@ -179,7 +179,8 @@ chocolateys:
 checksum:
   name_template: 'checksums.txt'
 snapshot:
-  version_template: "{{ incpatch .Version }}-next"
+  # TeamCity passes VERSION=<build number>; without it (GitHub Actions, local) keep the "-next" marker
+  version_template: '{{ envOrDefault "VERSION" (printf "%s-next" (incpatch .Version)) }}'
 release:
   extra_files:
     - glob: dist/upload/**
