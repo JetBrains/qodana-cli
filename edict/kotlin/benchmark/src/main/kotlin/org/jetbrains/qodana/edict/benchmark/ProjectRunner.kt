@@ -17,10 +17,14 @@ internal fun writeJson(path: Path, value: JsonElement) {
 
 internal fun readObject(path: Path) = json.parseToJsonElement(path.readText()).jsonObject
 
+// Edict evaluates inspections on every content file, test sources included. The empty base drops the recommended
+// profile's exclusions (test sources, tests/, tools/, build/, .gitignore and others); the FlexInspect group loads the
+// generated scripts, which an empty profile does not contain.
 internal fun projectConfiguration(rules: Set<String>) = obj(
     "version" to text("1.0"),
     "profile" to obj(
-        "inspections" to JsonArray(listOf(obj("group" to text("ALL"), "enabled" to JsonPrimitive(false)))),
+        "base" to obj("name" to text("empty")),
+        "inspections" to JsonArray(listOf(obj("group" to text("category:FlexInspect"), "enabled" to JsonPrimitive(true)))),
     ),
     "include" to JsonArray(rules.map { obj("name" to text(it)) }),
 )
