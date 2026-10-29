@@ -17,9 +17,11 @@ Comparison uses exact character intersection or a two-line tolerance for both
 generated-finding matches and gold-finding coverage.
 Each gold result is `POSITIVE`, `NEGATIVE`, or unlabeled (`edictLabel`); gold without any
 label lists only expected findings, so all its results are `POSITIVE`. A finding matching a
-`POSITIVE` result is a true positive and any other a false positive. False positives also
-report `matchedNegative` (matching a `NEGATIVE` result) and `matchedUnlabeled` (matching only
-an unlabeled one, possibly a positive nobody labeled yet).
+`POSITIVE` result is a true positive and any other a false positive; precision is true positives
+over all findings. A false negative is a `POSITIVE` result that no finding matches; recall is
+the matched share of `POSITIVE` results. Every finding is reported in one group: matched a
+`POSITIVE` result (`truePositives`), matched a `NEGATIVE` result (`matchedNegative`), or matched
+neither (`unmatched`, also when it matches only an unlabeled result).
 Only Generated inspections contribute quality metrics; every selected rule remains
 in the generation-outcome report. A gold rule's `expectedState` property (`generated` or
 `discontinued`; `generated` when absent) is the outcome the rule must reach: its TeamCity test

@@ -172,8 +172,9 @@ internal fun logReport(report: BenchmarkReport) {
             teamCity("testFailed", "name" to rule, "message" to "Expected $expected, got $status")
         }
         teamCity("testFinished", "name" to rule)
-        if (metric != null) println("$rule: TP=${metric.truePositives} FP=${metric.falsePositives} FN=${metric.falseNegatives} " +
-            "matchedNegative=${metric.matchedNegative} matchedUnlabeled=${metric.matchedUnlabeled} " +
+        if (metric != null) println("$rule: matchedPositive=${metric.truePositives} " +
+            "matchedNegative=${metric.matchedNegative} unmatched=${metric.unmatched} " +
+            "TP=${metric.truePositives} FP=${metric.falsePositives} FN=${metric.falseNegatives} " +
             "R=${metric.recall} P=${metric.precision} F1=${metric.f1Score}")
     }
     teamCity("buildStatisticValue", "key" to "edict.totalInspectionsProcessed", "value" to report.totalInspectionsProcessed)
@@ -184,7 +185,7 @@ internal fun logReport(report: BenchmarkReport) {
     teamCity("buildStatisticValue", "key" to "edict.totalFP", "value" to report.aggregate.totalFP)
     teamCity("buildStatisticValue", "key" to "edict.totalFN", "value" to report.aggregate.totalFN)
     teamCity("buildStatisticValue", "key" to "edict.totalMatchedNegative", "value" to report.aggregate.totalMatchedNegative)
-    teamCity("buildStatisticValue", "key" to "edict.totalMatchedUnlabeled", "value" to report.aggregate.totalMatchedUnlabeled)
+    teamCity("buildStatisticValue", "key" to "edict.totalUnmatched", "value" to report.aggregate.totalUnmatched)
     report.generationPriceReport?.get("totalPrice")?.jsonObject?.let { total ->
         total["priceUsd"]?.jsonPrimitive?.doubleOrNull?.let {
             teamCity("buildStatisticValue", "key" to "edict.priceUsd", "value" to it)

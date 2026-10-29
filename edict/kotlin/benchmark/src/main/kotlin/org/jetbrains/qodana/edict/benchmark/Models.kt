@@ -26,13 +26,16 @@ data class Finding(
 @Serializable
 data class InspectionMetrics(
     val ruleId: String,
+    /** Findings matching a POSITIVE gold result. */
     val truePositives: Int,
+    /** All other findings: [matchedNegative] plus [unmatched]. */
     val falsePositives: Int,
+    /** POSITIVE gold results that no finding matches. */
     val falseNegatives: Int,
-    /** False positives matching a NEGATIVE gold result. */
+    /** Findings matching a NEGATIVE gold result and no POSITIVE one. */
     val matchedNegative: Int,
-    /** False positives matching only an unlabeled gold result. */
-    val matchedUnlabeled: Int,
+    /** Findings matching no POSITIVE or NEGATIVE gold result. */
+    val unmatched: Int,
     val recall: Double,
     val precision: Double,
     val f1Score: Double,
@@ -44,7 +47,7 @@ data class AggregateMetrics(
     val totalFP: Int,
     val totalFN: Int,
     val totalMatchedNegative: Int,
-    val totalMatchedUnlabeled: Int,
+    val totalUnmatched: Int,
     val avgRecall: Double,
     val avgPrecision: Double,
     val avgF1Score: Double,
