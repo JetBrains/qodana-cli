@@ -13,7 +13,8 @@ Load only this skill. Do not launch workers: write every example yourself.
 # Inputs and boundaries
 
 The prompt supplies one absolute `Review config` path. Read it first, then the sampled findings, the cluster's Signals
-and examples, and the inspected project as needed. Its private scratch directory is yours to write.
+with `edict_get_cluster_signals` and examples, and the inspected project as needed. Read a Signal's full evidence from
+`<signalsDirectory>/<id>.json` only when its description and example leave its meaning unclear. Its private scratch directory is yours to write.
 
 Take the rule contract from `inspectionDescription` in the findings file. Do not read the candidate's implementation:
 classify against what the rule says, not against what the detector does.
