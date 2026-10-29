@@ -12,11 +12,14 @@ import kotlin.test.*
 
 class NativeReportTest {
     @TempDir lateinit var root: Path
-    @Test fun `project scan disables all inspections without naming an empty profile`() {
+    @Test fun `project scan enables FlexInspect on an empty base without default exclusions`() {
         val configuration = projectConfiguration(linkedSetOf("EdictBenchmarkRule"))
         assertNull(configuration["inspections"])
-        assertEquals(JsonArray(listOf(obj("group" to text("ALL"), "enabled" to JsonPrimitive(false)))),
-            configuration.getValue("profile").jsonObject["inspections"])
+        assertNull(configuration["exclude"])
+        val profile = configuration.getValue("profile").jsonObject
+        assertEquals(obj("name" to text("empty")), profile["base"])
+        assertEquals(JsonArray(listOf(obj("group" to text("category:FlexInspect"), "enabled" to JsonPrimitive(true)))),
+            profile["inspections"])
         assertEquals(JsonArray(listOf(obj("name" to text("EdictBenchmarkRule")))), configuration["include"])
     }
     @Test fun `scoring renames descriptor metadata without changing the implementation`() {
