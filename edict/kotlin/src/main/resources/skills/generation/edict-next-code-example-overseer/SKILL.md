@@ -35,15 +35,18 @@ For every Signal:
 
 1. Identify the construct covered by its expected range and the source facts that make its label correct.
 2. Inspect its assigned example when present. Keep it when it is a faithful, focused semantic slice of the exact source.
-3. Delete every incorrect example with `edict_next_delete_code_example`; this unassigns its Signals. Split the Signals
+3. Delete every incorrect example with `edict_next_delete_code_example`; this unassigns its Signals. When at most three
+   Signals are without an example, reduce each yourself from the exact source you already read, as
+   [the code-example skill](../edict-next-code-example/SKILL.md) describes, avoiding the defect of any example you deleted
+   for it, and assign it with `edict_next_assign_code_example`; do not delegate them. Otherwise split the Signals
    without an example, in Signal ID order, into groups of at most five, and for each group create and delegate one
    `edict-next-code-example` managed task to a fresh native subagent, following the manager protocol. Give it only this
    cluster id, the group's Signal ids and, for each Signal whose example you deleted, one line
    `Rejected example <signal id>: <defect>`. State the defect as the source facts the deleted example dropped, changed
    or invented, compared with the exact source revision, for example a missing field write or a changed declaring
    type; never a rule, a label opinion or an inspection concern. The worker resolves configured paths with
-   `edict_context`. Wait for every example worker and require its managed task to complete; do not perform the leaf
-   reduction inline except as the last resort below. Delegate each Signal to a worker at most twice. When the second
+   `edict_context`. Wait for every example worker and require its managed task to complete; do not reduce a delegated
+   Signal inline except as the last resort below. Delegate each Signal to a worker at most twice. When the second
    worker leaves it without an example or its example is incorrect too, correct that example yourself with
    `edict_next_save_code_example`, or create and assign it when missing, and report the Signal with both defects.
    Preserve the original types, modifiers, annotations, hierarchy, assignments, calls, aliases, and control flow that
