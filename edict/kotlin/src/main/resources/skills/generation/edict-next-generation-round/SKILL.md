@@ -64,8 +64,9 @@ Independently derive the broadest coherent code-quality rule best supported by t
 problem-causing conditions from incidental names, APIs, literals, operators, and source shapes. Do not join unrelated
 predicates merely to fit the corpus.
 
-Before your first change to the candidate, call `generate_inspection_kts_api` and
-`generate_inspection_kts_examples` for the language. Use
+Before your first change to the candidate, call `generate_inspection_kts_api` for the language. Call
+`generate_inspection_kts_examples` too in round 1, and in a later round only when you replace the implementation
+approach: a repair can follow the previous candidate. Use
 `generate_psi_tree` when relevant PSI structure is uncertain.
 
 Write the candidate as a file in your private scratch directory and edit it there; the save reads it by path, so never
