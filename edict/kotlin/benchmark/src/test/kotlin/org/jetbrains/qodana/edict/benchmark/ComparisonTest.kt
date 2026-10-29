@@ -42,7 +42,7 @@ class ComparisonTest {
         assertFalse(matchLenient(finding(1), finding(4)))
     }
 
-    @Test fun `false positives report matched negative and unlabeled gold results`() {
+    @Test fun `false positives split into matched negative and unmatched findings`() {
         val gold = listOf(finding(10, 100, label = POSITIVE), finding(30, 300, label = POSITIVE), finding(50, 500, label = NEGATIVE),
             finding(70, 700, label = NEGATIVE), finding(71, 710), finding(90, 900))
         val metrics = calculateMetrics("Rule", gold,
@@ -52,7 +52,8 @@ class ComparisonTest {
         assertEquals(1, metrics.falseNegatives)
         // A false positive near both a negative and an unlabeled result counts as a negative only.
         assertEquals(2, metrics.matchedNegative)
-        assertEquals(1, metrics.matchedUnlabeled)
+        // Matching only an unlabeled result counts as matching nothing.
+        assertEquals(2, metrics.unmatched)
         assertEquals(0.5, metrics.recall)
         assertEquals(0.2, metrics.precision)
     }
