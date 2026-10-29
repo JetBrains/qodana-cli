@@ -15,7 +15,8 @@ Start the task. Take the source checkout (`projectDirectory`) and private task s
 (`scratchDirectory`) from `edict_context` called with your own token. Require exactly one `clusterId` as domain input.
 Reject a missing, empty, or multiple-cluster assignment before any history query or write; the manager must create
 separate enrichment tasks for separate clusters. Call `edict_next_get_history_context(token, clusterId)` once for its
-server-computed `range`, and `edict_get_cluster_signals(clusterId)` for all member evidence.
+server-computed `range`, and `edict_get_cluster_signals(clusterId)` for the member list. Read a member's full
+evidence (correcting diff, discussion) from `<signalsDirectory>/<id>.json` when you derive queries from it.
 The server limits the range by both commit depth and days backwards, returning frozen `headRevision`, the UTC
 `since` cutoff, and exact newest-first `commitRevisions`. Search only those commits; user-supplied filters may narrow
 that set, never expand it. An empty revision list is a successful no-op for that cluster: do not run a Git command

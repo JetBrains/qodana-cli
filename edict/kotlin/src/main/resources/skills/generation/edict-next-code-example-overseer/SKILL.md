@@ -20,7 +20,9 @@ Change examples only through `edict_next_save_code_example`, `edict_next_assign_
 
 ## Reconcile the evidence
 
-Read every Signal in the cluster and its examples with `edict_next_get_cluster_examples`. Resolve the Git root from
+List every Signal in the cluster with `edict_get_cluster_signals` and read its examples with
+`edict_next_get_cluster_examples`. Reconcile the Signals one at a time: read a Signal's full evidence from
+`<signalsDirectory>/<id>.json` when you reconcile it. Resolve the Git root from
 the inspected project and retrieve each exact `fileRevision` with read-only Git
 (`git show <revision>:<repository-relative-path>`), treating those complete historical bytes as authoritative. If an
 object is unavailable, read it with `edict_file_at_ref` anchored at the expected range,
