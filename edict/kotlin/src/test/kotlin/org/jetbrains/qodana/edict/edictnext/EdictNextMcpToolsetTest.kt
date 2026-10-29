@@ -6,6 +6,7 @@ import kotlinx.coroutines.runBlocking
 import kotlinx.io.asSink
 import kotlinx.io.asSource
 import kotlinx.io.buffered
+import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
@@ -41,6 +42,7 @@ import java.io.InputStream
 import java.net.URI
 import java.nio.file.Files
 import java.nio.file.Path
+import kotlin.io.path.readText
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
 import kotlin.test.Test
@@ -387,6 +389,15 @@ class EdictNextMcpToolsetTest {
         repository.loadCluster("string-equality").signals.map { it.id }.toSet(),
         evidence.array("signals").map { it.jsonObject.text("id") }.toSet(),
       )
+      // The list keeps each Signal's identity and points to its file for the full evidence.
+      val signalsDirectory = Path.of(evidence.text("signalsDirectory"))
+      for (signal in evidence.array("signals").map { it.jsonObject }) {
+        assertFalse("idempotencyKey" in signal || "provenance" in signal, signal.toString())
+        assertTrue(signal.obj("source").keys.all { it in setOf("type", "prNumber", "title", "commitRevision", "inspectionName") })
+        assertTrue(signal.obj("fileRevision").text("path").isNotEmpty())
+        val stored = EdictNextJson.decodeFromString<EdictNextSignal>(signalsDirectory.resolve("${signal.text("id")}.json").readText())
+        assertEquals(signal.text("description"), stored.description)
+      }
       generation.selectGenerationClusters()
       assertTrue(generation.appendHistory("string-equality", "Generate from the accepted evidence").success)
     }

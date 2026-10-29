@@ -425,7 +425,10 @@ internal class EdictManagementService(
 
     tool(
       name = "edict_get_cluster_signals",
-      description = "Read all stored Signals of one cluster, including weak and negative evidence. Independent of distribution, enrichment and generation selection.",
+      description = "List all stored Signals of one cluster, including weak and negative evidence: per Signal its id, " +
+              "label, strength, description, file revision, assigned example and source identity. A Signal's full " +
+              "evidence (correcting diff, discussion, submitted feedback) is in <signalsDirectory>/<id>.json. " +
+              "Independent of distribution, enrichment and generation selection.",
       readOnly = true,
       required = listOf("clusterId"),
       properties = properties("clusterId"),
@@ -433,7 +436,8 @@ internal class EdictManagementService(
       val cluster = repository.loadCluster(arguments.requireString("clusterId"))
       buildJsonObject {
         put("clusterId", cluster.id)
-        put("signals", EdictNextJson.encodeToJsonElement(cluster.signals))
+        put("signalsDirectory", cluster.directory.signalsDirectory.toAbsolutePath().normalize().toString())
+        put("signals", JsonArray(cluster.signals.map(::signalIndexEntry)))
       }
     }
 
@@ -715,6 +719,20 @@ private fun nullable(schema: JsonElement) = buildJsonObject {
 private fun oneOf(vararg schemas: JsonElement) = buildJsonObject {
   put("oneOf", JsonArray(schemas.toList()))
 }
+
+/**
+ * A Signal as `edict_get_cluster_signals` lists it: without the bulky evidence its file keeps and without the keys only
+ * extraction writes, so a cluster of any size fits one answer that every later turn re-reads.
+ */
+private fun signalIndexEntry(signal: EdictNextSignal): JsonObject {
+  val full = EdictNextJson.encodeToJsonElement(signal).jsonObject
+  val source = full.getValue("source").jsonObject
+  return JsonObject(full - INDEX_OMITTED_SIGNAL_KEYS + ("source" to JsonObject(source.filterKeys { it in INDEX_SOURCE_KEYS })))
+}
+
+private val INDEX_OMITTED_SIGNAL_KEYS = setOf("idempotencyKey", "provenance")
+
+private val INDEX_SOURCE_KEYS = setOf("type", "prNumber", "title", "commitRevision", "inspectionName")
 
 private fun arrayOf(items: JsonElement, minItems: Int? = null) = buildJsonObject {
   put("type", "array")
