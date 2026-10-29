@@ -58,8 +58,9 @@ recorded there unless this evidence shows they are wrong.
 
 ## 2. Implement the broadest supported rule
 
-Read all Signals, their exact source revisions when needed, and all reconciled positive and negative examples with
-`edict_next_get_cluster_examples`.
+List all Signals with `edict_get_cluster_signals` and read all reconciled positive and negative examples with
+`edict_next_get_cluster_examples`. Read a Signal's full evidence from `<signalsDirectory>/<id>.json`, or its exact
+source revision, only when its description and example leave its meaning unclear.
 Independently derive the broadest coherent code-quality rule best supported by the evidence. Separate essential
 problem-causing conditions from incidental names, APIs, literals, operators, and source shapes. Do not join unrelated
 predicates merely to fit the corpus.
