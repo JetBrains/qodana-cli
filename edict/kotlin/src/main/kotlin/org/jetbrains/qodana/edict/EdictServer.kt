@@ -69,6 +69,7 @@ internal class EdictServer private constructor(
           layout,
           reviewProvider = reviewProvider,
           reviewRepository = configuration.ci?.reviewRepository,
+          defaultSignalCount = configuration.extraction.defaultSignalCount,
         )
         // The lock above created the state directory, so the repository can be opened now.
         val repository = EdictRepository(EdictRepositoryDirectory(layout.stateDirectory))

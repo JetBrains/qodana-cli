@@ -11,9 +11,11 @@ import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.addJsonObject
+import kotlinx.serialization.json.int
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.jsonArray
 import kotlinx.serialization.json.jsonObject
+import kotlinx.serialization.json.jsonPrimitive
 import kotlinx.serialization.json.put
 import kotlinx.serialization.json.putJsonArray
 import org.jetbrains.qodana.edict.common.EdictLayout
@@ -30,6 +32,7 @@ import org.jetbrains.qodana.edict.ci.ReviewClient
 import org.jetbrains.qodana.edict.history.enrichment.EdictNextEnrichmentMcpToolset
 import org.jetbrains.qodana.edict.history.enrichment.EdictNextEnrichmentService
 import org.jetbrains.qodana.edict.promotion.PromotionService
+import org.jetbrains.qodana.edict.skills.Skills
 import org.jetbrains.qodana.edict.support.edictNextToolset
 import org.jetbrains.qodana.edict.support.fixtureSignals
 import org.jetbrains.qodana.edict.support.gitFixture
@@ -65,7 +68,6 @@ class EdictNextMcpToolsetTest {
       "edict_task_add",
       "edict_delegate",
       "edict_task_get",
-      "edict_task_start",
       "edict_task_finish",
       "edict_task_cancel",
       "edict_task_cleanup_scratch",
@@ -86,7 +88,7 @@ class EdictNextMcpToolsetTest {
     )
     EdictNextRepositoryState.open(directory.resolve("state")).use { store ->
       val layout = EdictLayout(directory, directory.resolve(".edict"))
-      val management = EdictManagementService(store, layout)
+      val management = EdictManagementService(store, layout, defaultSignalCount = 17)
       val toolset = edictNextToolset(
         layout,
         management,
@@ -118,6 +120,7 @@ class EdictNextMcpToolsetTest {
       val delegateSchema = server.tools.getValue("edict_delegate").tool.inputSchema
       assertEquals(setOf("token", "taskId", "prompt"), checkNotNull(delegateSchema.properties).keys)
       assertEquals(listOf("token", "taskId", "prompt"), delegateSchema.required)
+      assertEquals(listOf("token", "skill", "title", "prompt"), server.tools.getValue("edict_task_add").tool.inputSchema.required)
       val signalSchema = checkNotNull(
         server.tools.getValue("edict_publish_signal").tool.inputSchema.properties,
       ).getValue("signal").jsonObject
@@ -248,8 +251,24 @@ class EdictNextMcpToolsetTest {
       assertFalse(delegation.flag("isError") == true)
       assertEquals("delegated", store.plan()!!.tasks.single().status)
       val childToken = delegation.obj("structuredContent").text("token")
-      val assignment = management.call("edict_task_get", buildJsonObject { put("token", childToken) })
-        .obj("structuredContent")
+      val assignment = management.call("edict_task_get", buildJsonObject {
+        put("token", childToken)
+        put("agentId", "scratch-test-agent")
+      }).obj("structuredContent")
+      // Fetching the assignment starts the task and hands over everything the worker would otherwise read first.
+      assertEquals("running", store.plan()!!.tasks.single().status)
+      assertEquals(Skills.read(task.skill), assignment.text("skillInstructions"))
+      assertTrue("task-protocol.md" in assignment.obj("references"))
+      assertEquals(layout.root.toString(), assignment.obj("context").text("projectDirectory"))
+      assertEquals(17, assignment.obj("context").getValue("defaultSignalCount").jsonPrimitive.int)
+      assertFalse(management.call("edict_task_get", buildJsonObject {
+        put("token", childToken)
+        put("agentId", "scratch-test-agent")
+      }).flag("isError") == true)
+      assertTrue(management.call("edict_task_get", buildJsonObject {
+        put("token", childToken)
+        put("agentId", "another-agent")
+      }).flag("isError") == true)
       val taskScratch = layout.taskScratchDirectory(task.id)
       assertEquals(taskScratch.toString(), assignment.text("scratchDirectory"))
       assertTrue(Files.isDirectory(taskScratch))
@@ -259,11 +278,6 @@ class EdictNextMcpToolsetTest {
         put("taskId", task.id)
       })
       assertTrue(prematureCleanup.flag("isError") == true)
-      assertFalse(management.call("edict_task_start", buildJsonObject {
-        put("token", childToken)
-        put("agentId", "scratch-test-agent")
-        put("skill", task.skill)
-      }).flag("isError") == true)
       assertFalse(management.call("edict_task_finish", buildJsonObject {
         put("token", childToken)
         put("status", "completed")

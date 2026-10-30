@@ -47,17 +47,19 @@ permission to execute stages inline.
    The checker stores only review references/states on promotions and publishes actual merged evidence as Signals
    directly in each PR's originating cluster. Do not relay feedback through extraction prompts or the inbox. A source-fix rejection
    alone does not establish that its inspection is invalid. Report check failures and continue independent stages.
-5. Follow the protocol's assignment flow: supply `edict_delegate` the complete token-free task instructions starting
-   with the child's exact managed skill invocation, then pass its returned short launch `prompt` to native
-   `spawn_agent`.
+5. Follow the protocol's assignment flow: supply `edict_task_add`, or `edict_delegate` for a step of the created plan,
+   the complete token-free task instructions starting with the child's exact managed skill invocation, then pass its
+   returned short launch `prompt` to native `spawn_agent`.
    The worker fetches the full assignment with `edict_task_get`; do not copy task instructions into the launch message.
    Spawn without inherited conversation (`fork_turns: "none"`, or `fork_context: false` in runtimes exposing that
    parameter).
    Include relevant prior-stage results in the submitted instructions. Wait for the child as the protocol describes:
-   `wait_agent` with `timeout_ms: 3600000`, again after a timeout, then `edict_plan_get(taskId)` for its result.
+   `wait_agent` with `timeout_ms: 3600000`, again after a timeout; its final message gives the child's status and
+   result.
    Never print the child token or save it in a prompt file.
    Resolve the delegation's `skillPath` against the installed skills directory (the parent of this skill's directory).
-   Include that absolute `SKILL.md` path in the submitted instructions and require reading it before `edict_task_start`.
+   Include that absolute `SKILL.md` path in the submitted instructions; the worker also receives that skill's text from
+   `edict_task_get`.
    Explicit-only children may be absent from the runtime's skill catalog; the file path is authoritative.
 6. On a failed child or uncompleted task, stop dependent work. Cancel a lost worker through `edict_task_cancel`, then
    cancel unstarted dependent stages with an explicit upstream-failure reason. Let independent workers finish and

@@ -9,7 +9,7 @@ Run only as a delegated managed subagent.
 Follow [the managed task protocol](../edict_manager/references/task-protocol.md).
 Registry ID: `edict-promote-weak-signal`.
 
-Call `edict_context` with your token for the inspected project and your scratch directory. Call
+Take the inspected project and your scratch directory from your run context. Call
 `edict_prepare_weak_signal_promotion(token)`, passing `clusterIds` only when the assignment restricts the targets.
 Selection considers Generated inspections with referenced strong positive Signals from fewer than five distinct source files and returns
 up to five distinct, reviewed true-positive project locations per inspection. Clusters with an open source-fix review

@@ -24,6 +24,7 @@ import org.jetbrains.qodana.edict.logging.TaskLifecycleLogger
 import org.jetbrains.qodana.edict.edictnext.EdictNextRepositoryState.TaskLifecycleAck
 import org.jetbrains.qodana.edict.edictnext.EdictNextRepositoryState.Step
 import org.jetbrains.qodana.edict.edictnext.EdictNextRepositoryState.Plan
+import org.jetbrains.qodana.edict.common.DEFAULT_SIGNAL_COUNT
 import org.jetbrains.qodana.edict.common.EdictLayout
 import org.jetbrains.qodana.edict.common.GitRepository
 import org.jetbrains.qodana.edict.ci.ReviewClient
@@ -34,6 +35,7 @@ import org.jetbrains.qodana.edict.extraction.reviews.PrAnalysisCoverageInput
 import org.jetbrains.qodana.edict.extraction.reviews.PrSignalDraft
 import org.jetbrains.qodana.edict.extraction.reviews.RepositoryPrAnalysisCoverage
 import org.jetbrains.qodana.edict.extraction.reviews.ReviewSelectionInput
+import org.jetbrains.qodana.edict.skills.Skills
 import org.jetbrains.qodana.edict.skills.managed.Registry
 import org.jetbrains.qodana.edict.runtime.CodexPriceAnalyzer
 import org.jetbrains.qodana.edict.runtime.CodexPriceAnalysis
@@ -56,6 +58,7 @@ internal class EdictManagementService(
   taskOutput: PrintWriter = PrintWriter(System.err, true),
   reviewProvider: ReviewExtractionApi = ReviewClient(),
   private val reviewRepository: ReviewRepository? = null,
+  private val defaultSignalCount: Int = DEFAULT_SIGNAL_COUNT,
   prAnalysisToday: () -> LocalDate = { LocalDate.now(ZoneOffset.UTC) },
   private val startedAt: Instant = Instant.now(),
   private val analyzePrice: (Plan) -> CodexPriceAnalysis = { plan ->
@@ -65,8 +68,8 @@ internal class EdictManagementService(
   companion object {
     const val INSTRUCTIONS = "Managed Edict state and execution plans. Root requests enter through edict_manager. " +
       "Each task must execute in a fresh native subagent with its delegated token and no inherited conversation. " +
-      "edict_delegate stores full task instructions and returns a short launch prompt: pass that prompt to spawn_agent. " +
-      "Workers call edict_task_get, read the assigned SKILL.md, then edict_task_start with their actual agentId and registry skill. " +
+      "edict_task_add stores full task instructions and returns a short launch prompt: pass that prompt to spawn_agent. " +
+      "Workers call edict_task_get with their actual agentId: it starts the task and returns its assignment, skill and protocols. " +
       "Include your own token in calls. Never persist tokens or put them in results. Reads are public. " +
       "Only the first edict_plan_create claims the manager capability. This server does not compile or run inspections."
   }
@@ -318,22 +321,23 @@ internal class EdictManagementService(
 
     tool(
       name = "edict_task_add",
-      description = "Add a direct child task allowed by your registered skill.",
-      required = listOf("token", "skill", "title"),
-      properties = properties("skill", "title"),
+      description = "Add a direct child task allowed by your registered skill and delegate it. Prompt must start with the exact line \$<registry skill>, then absolute SKILL.md path and bounded token-free instructions. Pass only returned short prompt to native spawn_agent without inherited conversation.",
+      required = listOf("token", "skill", "title", "prompt"),
+      properties = properties("skill", "title", "prompt"),
     ) { arguments ->
       EdictNextJson.encodeToJsonElement(
-        store.addTask(
+        store.addDelegatedTask(
           arguments.requireString("token"),
           arguments.requireString("skill"),
           arguments.requireString("title"),
+          arguments.requireString("prompt"),
         ),
       )
     }
 
     tool(
       name = "edict_delegate",
-      description = "Delegate a registered direct child task. Prompt must start with the exact line \$<registry skill>, then absolute SKILL.md path and bounded token-free instructions. Pass only returned short prompt to native spawn_agent without inherited conversation.",
+      description = "Delegate an existing direct child task: a step of the created plan, or a cancelled task to retry with a fresh worker. Prompt must start with the exact line \$<registry skill>, then absolute SKILL.md path and bounded token-free instructions. Pass only returned short prompt to native spawn_agent without inherited conversation.",
       required = listOf("token", "taskId", "prompt"),
       properties = properties("taskId", "prompt"),
     ) { arguments ->
@@ -348,29 +352,26 @@ internal class EdictManagementService(
 
     tool(
       name = "edict_task_get",
-      description = "Fetch authoritative assignment and its task-owned scratch directory using only your token; taskId is a returned field, not an input. Read returned prompt and assigned SKILL.md before starting. Required on every delegation including retry.",
-      readOnly = true,
-      required = listOf("token"),
+      description = "Start your task with your token and actual native subagent ID; taskId is a returned field, not an input. " +
+              "Returns the authoritative assignment prompt, your managed skill's SKILL.md, the shared references it links to, and the " +
+              "run context: project, state and task-owned scratch directories, CI review repository and default Signal " +
+              "target. Required on every delegation including retry.",
+      required = listOf("token", "agentId"),
+      properties = properties("agentId"),
     ) { arguments ->
       val token = arguments.requireString("token")
-      EdictNextJson.encodeToJsonElement(
-        store.readTask(token).copy(scratchDirectory = scratchDirectory(token).toString()),
+      val assignment = recorded { store.claimTask(token, arguments.requireString("agentId")) }
+      val skill = Skills.read(Registry.installedName(assignment.skill))
+      val scratch = scratchDirectory(token).toString()
+      JsonObject(
+        EdictNextJson.encodeToJsonElement(assignment.copy(scratchDirectory = scratch)).jsonObject + mapOf(
+          "skillInstructions" to JsonPrimitive(skill),
+          "references" to JsonObject(referencesOf(skill).associateWith { JsonPrimitive(Skills.readReference(it)) }),
+          "context" to EdictNextJson.encodeToJsonElement(
+            EdictRunContext(layout.root.toString(), layout.stateDirectory.toString(), scratch, reviewRepository, defaultSignalCount),
+          ),
+        ),
       )
-    }
-
-    tool(
-      name = "edict_task_start",
-      description = "Start after fetching assignment and reading skill. Use assigned registry skill and actual native subagent ID.",
-      required = listOf("token", "agentId", "skill"),
-      properties = properties("agentId", "skill"),
-    ) { arguments ->
-      lifecycle {
-        store.startTask(
-          arguments.requireString("token"),
-          arguments.requireString("agentId"),
-          arguments.requireString("skill"),
-        )
-      }
     }
 
     tool(
@@ -670,12 +671,14 @@ internal class EdictManagementService(
     "PR extraction requires complete edict.ci configuration"
   }
 
-  private fun lifecycle(change: () -> TaskLifecycleAck): JsonElement = synchronized(store) {
+  private fun lifecycle(change: () -> TaskLifecycleAck): JsonElement = EdictNextJson.encodeToJsonElement(recorded(change))
+
+  /** Applies a task transition and logs it. */
+  private fun <T> recorded(change: () -> T): T = synchronized(store) {
     val before = store.plan()
     val result = change()
-    val after = checkNotNull(store.plan())
-    taskLogger.record(before, after)
-    EdictNextJson.encodeToJsonElement(result)
+    taskLogger.record(before, checkNotNull(store.plan()))
+    result
   }
 
   @Synchronized
@@ -719,6 +722,12 @@ private fun nullable(schema: JsonElement) = buildJsonObject {
 private fun oneOf(vararg schemas: JsonElement) = buildJsonObject {
   put("oneOf", JsonArray(schemas.toList()))
 }
+
+/** The shared references [skill] links to, and the task protocol that every managed task follows. */
+private fun referencesOf(skill: String): List<String> =
+  (listOf("task-protocol.md") + REFERENCE_LINK.findAll(skill).map { it.groupValues[1] }).distinct()
+
+private val REFERENCE_LINK = Regex("""\.\./edict_manager/references/(\w[\w-]*\.md)""")
 
 /**
  * A Signal as `edict_get_cluster_signals` lists it: without the bulky evidence its file keeps and without the keys only

@@ -142,6 +142,13 @@ internal class EdictNextRepositoryState(
     }
   }
 
+  /** Adds a direct child task and delegates it in one call; a rejected prompt adds no task. */
+  @Synchronized
+  fun addDelegatedTask(token: String, skill: String, title: String, prompt: String): Delegation {
+    requireDelegationPrompt(skill, prompt)
+    return delegate(token, addTask(token, skill, title).id, prompt)
+  }
+
   @Synchronized
   fun delegate(token: String, taskId: String, prompt: String): Delegation {
     val parent = authorize(token)
@@ -149,10 +156,7 @@ internal class EdictNextRepositoryState(
     require(task.parentId == parent.taskId) { "Task is not a direct child of this capability" }
     allowedChild(parent, task.skill, task.title)
     require(task.status in listOf("pending", "failed", CANCELLED)) { "Task is already delegated or completed" }
-    require(prompt.substringBefore('\n') == "\$${task.skill}" && prompt.substringAfter('\n', "").isNotBlank()) {
-      "Subagent prompt must start with the exact line \$${task.skill} followed by its skill path and bounded task instructions"
-    }
-    requireNoTokens(prompt)
+    requireDelegationPrompt(task.skill, prompt)
     update(task.copy(status = "delegated", agentId = "", result = "", prompt = prompt))
     val secret = issue(Capability(task.skill, taskId, sha256(token)))
     return Delegation(
@@ -160,10 +164,11 @@ internal class EdictNextRepositoryState(
       taskId,
       task.skill,
       Registry.skillPath(task.skill),
-      "\$${task.skill}\nBefore loading any skill, call edict_task_get with exactly these arguments:\n" +
-        "{\"token\":\"$secret\"}\n" +
+      "\$${task.skill}\nBefore loading any skill, call edict_task_get with this token and your actual native subagent ID:\n" +
+        "{\"token\":\"$secret\",\"agentId\":\"<your subagent ID>\"}\n" +
         "The token selects your assigned task. taskId is returned by this call; it is not an input argument. " +
-        "Read the returned prompt and assigned SKILL.md, then execute it using the managed lifecycle. " +
+        "It starts your task and returns your assignment, your skill's SKILL.md, the protocols it follows and the " +
+        "run context: follow them using the managed lifecycle, without reading those files again. " +
         "Use only the assigned worker skill; edict_manager is for the root manager.",
     )
   }
@@ -177,6 +182,18 @@ internal class EdictNextRepositoryState(
     }
     capability.taskRead = true
     return TaskAssignment(task.id, task.skill, Registry.skillPath(task.skill), task.prompt)
+  }
+
+  /**
+   * Fetches the assignment and starts the task in one call, since a fresh worker needs both before any domain work. The
+   * same worker calling again gets its assignment back.
+   */
+  @Synchronized
+  fun claimTask(token: String, agentId: String): TaskAssignment {
+    val assignment = readTask(token)
+    val task = task(assignment.taskId)
+    if (task.status != "running" || task.agentId != agentId) startTask(token, agentId, assignment.skill)
+    return assignment
   }
 
   @Synchronized
@@ -460,6 +477,13 @@ internal class EdictNextRepositoryState(
 
   private fun requireNoTokens(text: String) {
     require(redact(text) == text) { "Persisted content must not contain capability tokens" }
+  }
+
+  private fun requireDelegationPrompt(skill: String, prompt: String) {
+    require(prompt.substringBefore('\n') == "\$$skill" && prompt.substringAfter('\n', "").isNotBlank()) {
+      "Subagent prompt must start with the exact line \$$skill followed by its skill path and bounded task instructions"
+    }
+    requireNoTokens(prompt)
   }
 
   private fun allowedChild(capability: Capability, skill: String, title: String) {

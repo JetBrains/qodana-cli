@@ -10,8 +10,8 @@ domain work and use it for every child delegation and task transition.
 
 Load only this skill.
 
-The prompt supplies `Cluster id`, `Round`, `Previous analyzed candidate`, and `Previous code review`. Call
-`edict_context` with your own token before any other MCP call or write. Resolve the cluster below its `stateDirectory`,
+The prompt supplies `Cluster id`, `Round`, `Previous analyzed candidate`, and `Previous code review`. Resolve the
+cluster below the `stateDirectory` of your run context,
 use its `projectDirectory` as the inspected project, and create a unique private scratch directory below its
 `scratchDirectory`. Do not copy the state path into delegated prompts. Return without changing the repository if the
 scratch directory equals or is below the state repository.
