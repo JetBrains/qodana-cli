@@ -33,27 +33,30 @@ account for an inspection candidate or Inspection KTS implementation limits.
 If exact Signals are incompatible, still reconcile each Signal independently and report the exact contradiction; this
 is a semantic result, not an example-generation failure.
 
-For every Signal:
+A Signal without an assigned example has nothing to inspect yet: reconcile it when you review the example created for
+it, or when you reduce it yourself, not before delegating it. Until then use only its index entry.
+
+For every Signal with an assigned example:
 
 1. Identify the construct covered by its expected range and the source facts that make its label correct.
-2. Inspect its assigned example when present. Keep it when it is a faithful, focused semantic slice of the exact source.
-3. Delete every incorrect example with `edict_next_delete_code_example`; this unassigns its Signals. When at most three
-   Signals are without an example, reduce each yourself from the exact source you already read, as
-   [the code-example skill](../edict-next-code-example/SKILL.md) describes, avoiding the defect of any example you deleted
-   for it, and assign it with `edict_next_assign_code_example`; do not delegate them. Otherwise split the Signals
-   without an example, in Signal ID order, into groups of at most five, and for each group create and delegate one
-   `edict-next-code-example` managed task to a fresh native subagent, following the manager protocol. Give it only this
-   cluster id, the group's Signal ids and, for each Signal whose example you deleted, one line
-   `Rejected example <signal id>: <defect>`. State the defect as the source facts the deleted example dropped, changed
-   or invented, compared with the exact source revision, for example a missing field write or a changed declaring
-   type; never a rule, a label opinion or an inspection concern. The worker resolves configured paths with
-   `edict_context`. Wait for every example worker and require its managed task to complete; do not reduce a delegated
-   Signal inline except as the last resort below. Delegate each Signal to a worker at most twice. When the second
-   worker leaves it without an example or its example is incorrect too, correct that example yourself with
-   `edict_next_save_code_example`, or create and assign it when missing, and report the Signal with both defects.
-   Preserve the original types, modifiers, annotations, hierarchy, assignments, calls, aliases, and control flow that
-   determine the label. Replace unrelated dependencies with minimal same-file declarations only when their PSI and
-   semantic contracts remain equivalent.
+2. Inspect its assigned example. Keep it when it is a faithful, focused semantic slice of the exact source.
+3. Delete every incorrect example with `edict_next_delete_code_example`; this unassigns its Signals.
+
+Then handle every Signal without an example. When at most three Signals are without an example, reduce each yourself
+from its exact source, as [the code-example skill](../edict-next-code-example/SKILL.md) describes, avoiding the defect
+of any example you deleted for it, and assign it with `edict_next_assign_code_example`; do not delegate them. Otherwise
+split the Signals without an example, in Signal ID order, into groups of at most five, and for each group create and
+delegate one `edict-next-code-example` managed task to a fresh native subagent, following the manager protocol. Give it
+only this cluster id, the group's Signal ids and, for each Signal whose example you deleted, one line
+`Rejected example <signal id>: <defect>`. State the defect as the source facts the deleted example dropped, changed or
+invented, compared with the exact source revision, for example a missing field write or a changed declaring type; never
+a rule, a label opinion or an inspection concern. The worker resolves configured paths with `edict_context`. Wait for
+every example worker and require its managed task to complete; do not reduce a delegated Signal inline except as the
+last resort below. Delegate each Signal to a worker at most twice. When the second worker leaves it without an example
+or its example is incorrect too, correct that example yourself with `edict_next_save_code_example`, or create and assign
+it when missing, and report the Signal with both defects. Preserve the original types, modifiers, annotations,
+hierarchy, assignments, calls, aliases, and control flow that determine the label. Replace unrelated dependencies with
+minimal same-file declarations only when their PSI and semantic contracts remain equivalent.
 A positive example contains exactly one reportable occurrence and one expected range over the same semantic target as
 the source Signal. A negative example contains one focused allowed occurrence and an empty expected-range list. Keep
 each example in one self-contained source file; support files do not participate in validation.
