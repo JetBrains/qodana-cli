@@ -5,7 +5,11 @@ on:
     branches:
       - main
       - '[0-9][0-9][0-9]'
+    paths-ignore:
+      - 'dockerfiles/**'
   pull_request:
+    paths-ignore:
+      - 'dockerfiles/**'
 
 jobs:
   lint:
