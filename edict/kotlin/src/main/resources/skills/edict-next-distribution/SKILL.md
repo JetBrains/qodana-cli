@@ -30,15 +30,17 @@ new cluster with a provisional lowercase kebab-case id. Do not split an existing
 Call `edict_next_next_signal` once to get the first Signal. Then repeat until a response's action is
 `STOP_DISTRIBUTION` or `HAND_OFF`:
 
-1. Read the complete current Signal.
+1. Read the complete current Signal. A `pairedSignal` beside it is the other half of the same PR correction.
 2. Compare every member Signal, including negatives, of every plausible existing cluster. The nearest small cluster
    candidates already list their `signals`, which counts as their context; retrieve `kind: "cluster"` context for any
    other plausible cluster. Inbox candidates show their label, path and description; retrieve one with `kind: "signal"`,
    or read its exact revision with `edict_file_at_ref`, only when that is not enough.
 3. Choose one compatible existing cluster id or a new provisional id.
-4. Call `edict_next_add_signal_to_cluster` with `signalId` and `clusterId`. Existing-cluster assignment requires its
-   context receipt. If `added` is false, use the summary to correct the choice and retry the same Signal. Otherwise its
-   `next` is the next Signal, `HAND_OFF` or `STOP_DISTRIBUTION`; do not call `edict_next_next_signal` for it.
+4. Call `edict_next_add_signal_to_cluster` with `signalId` and `clusterId`, and with `pairedSignalId` when the
+   `pairedSignal` belongs to the same cluster; otherwise it comes back later as its own Signal. Existing-cluster
+   assignment requires its context receipt. If `added` is false, use the summary to correct the choice and retry the
+   same Signal. Otherwise its `next` is the next Signal, `HAND_OFF` or `STOP_DISTRIBUTION`; do not call
+   `edict_next_next_signal` for it.
 
 Return after `STOP_DISTRIBUTION` or `HAND_OFF`, with the number of Signals this task assigned. On `HAND_OFF` this task's
 share of the batch is done: finish it `completed` and report the remaining count from its summary.

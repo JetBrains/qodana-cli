@@ -104,6 +104,57 @@ class EdictNextDistributionServiceTest {
     assertTrue(included >= 2, "included $included")
   }
 
+  @Test
+  fun `a paired Signal comes with its sibling and one decision assigns both`() = runBlocking {
+    val repository = inboxRepository(4)
+    val ids = repository.loadState().inboxSignals.map { it.id }.sorted()
+    // The first two Signals are the POSITIVE and NEGATIVE of one correction; the last two share a label.
+    val negativePath = repository.paths.inboxDirectory.resolve("${ids[1]}.json")
+    val negative = EdictNextJson.decodeFromString<EdictNextSignal>(negativePath.readText())
+    negativePath.writeText(EdictNextJson.encodeToString(negative.copy(label = EdictNextSignalLabel.NEGATIVE)))
+    val pairs = EdictNextSignalPairs().apply {
+      record(ids[0], ids[1])
+      record(ids[2], ids[3])
+    }
+    val distribution = EdictNextDistributionService(
+      repository, directory.resolve("neighbours.json"), taskSignalCount = 2, pairs = pairs,
+    )
+    distribution.calculateNeighbours()
+
+    val first = distribution.nextSignal()
+    assertEquals(ids[0], first.signalId)
+    assertEquals(ids[1], first.pairedSignal?.id)
+    assertFalse(first.candidates.any { it is EdictNextSignalCandidate.SignalCandidate && it.signalId == ids[1] })
+    assertFailsWith<IllegalArgumentException> { distribution.addSignalToCluster(ids[0], "rule", pairedSignalId = ids[2]) }
+    val assigned = distribution.addSignalToCluster(ids[0], "rule", pairedSignalId = ids[1])
+
+    assertEquals(setOf(ids[0], ids[1]), repository.loadCluster("rule").signalIds.toSet())
+    // The pair was one decision of the task's share of two, and two Signals of one label are not offered as a pair.
+    val next = assertNotNull(assigned.next)
+    assertEquals(ids[2], next.signalId)
+    assertEquals(null, next.pairedSignal)
+  }
+
+  @Test
+  fun `a sibling assigned alone comes back later without its pair`() = runBlocking {
+    val repository = inboxRepository(2)
+    val ids = repository.loadState().inboxSignals.map { it.id }.sorted()
+    val negativePath = repository.paths.inboxDirectory.resolve("${ids[1]}.json")
+    val negative = EdictNextJson.decodeFromString<EdictNextSignal>(negativePath.readText())
+    negativePath.writeText(EdictNextJson.encodeToString(negative.copy(label = EdictNextSignalLabel.NEGATIVE)))
+    val pairs = EdictNextSignalPairs().apply { record(ids[0], ids[1]) }
+    val distribution = EdictNextDistributionService(repository, directory.resolve("neighbours.json"), pairs = pairs)
+    distribution.calculateNeighbours()
+
+    assertEquals(ids[1], distribution.nextSignal().pairedSignal?.id)
+    val next = assertNotNull(distribution.addSignalToCluster(ids[0], "positive-rule").next)
+
+    assertEquals(ids[1], next.signalId)
+    assertEquals(null, next.pairedSignal)
+    distribution.addSignalToCluster(ids[1], "negative-rule")
+    assertEquals(setOf(ids[0]), repository.loadCluster("positive-rule").signalIds.toSet())
+  }
+
   private fun inboxRepository(count: Int, name: String = "state"): EdictRepository {
     val state = directory.resolve(name).createDirectories()
     runProcess(state, listOf("git", "init", "--quiet"))

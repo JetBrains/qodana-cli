@@ -28,7 +28,8 @@ A PR assignment contains only `batchId` and a zero-based `chunkIndex`.
    normally yields a POSITIVE finding at the before/comment revision and a NEGATIVE finding at the head revision.
    Record one POSITIVE/NEGATIVE pair per distinct correction, even when one comment asks for several: each changed
    construct or behaviour, such as each renamed option or each fixed case, is its own finding. Merge only the same edit
-   repeated on several lines.
+   repeated on several lines. Give both drafts of one correction the same `correction` number, distinct within the
+   work item, so they are distributed together; a draft without a counterpart has none.
    Record each finding as a Signal draft: `workItemId`, `fileRevision` with bounded one-based
    `expectedRanges`, `label`, `strength`, `description`, and `diff`, the exact prepared `before` (base or comment) and
    `after` (head) revisions and the `beforePath` and `afterPath` that the canonical diff compares. When the finding

@@ -32,6 +32,8 @@ internal fun CallToolRequest.requireString(name: String): String =
   arguments?.get(name)?.jsonPrimitive?.content
   ?: error("'$name' is required")
 
+internal fun CallToolRequest.optionalString(name: String): String? = arguments?.get(name)?.jsonPrimitive?.contentOrNull
+
 internal fun CallToolRequest.optionalInt(name: String): Int? =
   arguments?.get(name)?.jsonPrimitive?.let { it.intOrNull ?: error("'$name' must be an integer") }
 
