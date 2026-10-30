@@ -38,6 +38,19 @@ class WeakSignalPromotionServiceTest {
   )
 
   @Test
+  fun `source fixes always target execution branch independently of inspection publication`() {
+    val repository = repository()
+    cluster(repository, "weak")
+    val provider = FakeReviews()
+    val service = PromotionService({ repository }, configuration.copy(
+      promotion = configuration.promotion!!.copy(targetBranch = "edict-2"),
+    ), provider, executionBranch = { "master" })
+    service.promoteWeakSignals("weak", digest,
+      listOf(WeakSignalFix("src/Worker.kt", listOf(1), "fixed", "Fix waiting")), "Reviewed diff")
+    assertEquals("master", provider.requests.single().targetBranch)
+  }
+
+  @Test
   fun `selects at most five distinct true positives only from eligible generated inspections`() {
     val repository = repository()
     cluster(repository, "weak", findings = (1..7).map(::finding) + finding(1))
@@ -66,7 +79,8 @@ class WeakSignalPromotionServiceTest {
     cluster(repository, "positive-only", strongSignals = 5)
     val provider = FakeReviews()
 
-    val normal = PromotionService({ repository }, configuration, provider).promote()
+    val normalService = PromotionService({ repository }, configuration, provider)
+    val normal = normalService.promote(normalService.select().candidates.map { it.clusterId })
     assertTrue(normal.failures.isEmpty())
     assertEquals(listOf("inspections/positive-only.inspection.kts"), normal.created.map { it.targetPath })
 
@@ -613,7 +627,7 @@ class WeakSignalPromotionServiceTest {
   }
 
   private fun service(repository: EdictRepository, reviews: FakeReviews = FakeReviews()) =
-    WeakSignalPromotionService({ repository }, configuration, reviews)
+    WeakSignalPromotionService({ repository }, configuration, reviews, { "main" })
 
   private fun finding(line: Int) = EdictNextProjectFinding(
     EdictNextFileRevision("src/Worker.kt", revision, listOf(EdictNextLineRange(line, line))), "Busy waiting",
@@ -650,7 +664,7 @@ class WeakSignalPromotionServiceTest {
       example.resolve("project").createDirectories().resolve("Example.kt").writeText("fun example() {}\n")
     }
     root.resolve("evaluation.json").writeText(EdictNextJson.encodeToString(
-      EdictNextEvaluation(evaluationDigest, "examples", EdictNextInspectionAction.GENERATE, findings.size, 0, 0, 1.0, 1.0, emptyMap(), review),
+      EdictNextEvaluation(evaluationDigest, exampleSetDigest(repository.loadCluster(id)), EdictNextInspectionAction.GENERATE, findings.size, 0, 0, 1.0, 1.0, emptyMap(), review),
     ))
     repository.paths.inspectionsDirectory.createDirectories()
     repository.paths.inspectionPath(id).writeText("inspection")

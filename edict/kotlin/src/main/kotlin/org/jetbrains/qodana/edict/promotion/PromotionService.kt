@@ -14,6 +14,7 @@ import org.jetbrains.qodana.edict.edictnext.InspectionPromotion
 import org.jetbrains.qodana.edict.edictnext.PromotionPrState
 import org.jetbrains.qodana.edict.edictnext.WeakSignalPromotion
 import org.jetbrains.qodana.edict.edictnext.EdictNextSignal
+import org.jetbrains.qodana.edict.edictnext.exampleSetDigest
 import org.jetbrains.qodana.edict.edictnext.sha256Hex
 import java.time.Clock
 import java.time.Instant
@@ -25,8 +26,9 @@ internal class PromotionService(
   private val configuration: EdictConfiguration = EdictConfiguration(),
   private val reviews: ReviewManagementApi = ReviewClient(),
   private val clock: Clock = Clock.systemUTC(),
+  executionBranch: () -> String = { error("The project execution branch is unavailable") },
 ) {
-  private val weakSignals = WeakSignalPromotionService(repository, configuration, reviews)
+  private val weakSignals = WeakSignalPromotionService(repository, configuration, reviews, executionBranch)
 
   fun prepareWeakSignals(clusterIds: List<String>? = null): WeakSignalPreparationResponse = weakSignals.prepare(clusterIds)
 
@@ -47,9 +49,54 @@ internal class PromotionService(
   fun completeWeakSignalReview(clusterId: String, pullRequest: org.jetbrains.qodana.edict.ci.ReviewReference) =
     weakSignals.completeReview(clusterId, pullRequest)
 
-  fun promote(clusterIds: List<String>? = null): PromotionPromoteResponse {
-    require(clusterIds == null || clusterIds.isNotEmpty()) { "clusterIds must not be empty when provided" }
-    require(clusterIds == null || clusterIds.distinct().size == clusterIds.size) { "clusterIds must be unique" }
+  fun select(count: Int? = null): PromotionSelectionResponse {
+    require(count == null || count > 0) { "count must be positive when provided" }
+    val ci = requireNotNull(configuration.ci) { "Inspection promotion requires complete edict.ci configuration" }
+    val targets = requireNotNull(configuration.promotion) { "Inspection promotion requires edict.promotion.reviewer configuration" }
+    val targetBranch by lazy { reviews.resolveTargetBranch(ci.reviewRepository, targets.targetBranch) }
+    val repository = repository()
+    val candidates = mutableListOf<PromotionCandidate>()
+    val failures = mutableListOf<PromotionFailure>()
+    repository.loadClusters().sortedBy { it.id }.forEach { cluster ->
+      if (count != null && candidates.size >= count) return@forEach
+      val id = cluster.id
+      if (cluster.manifest.status != EdictNextClusterStatus.Generated) return@forEach
+      val sourceFiles = cluster.signals
+        .filter { it.strength == EdictNextSignalStrength.STRONG && it.label == EdictNextSignalLabel.POSITIVE }
+        .distinctBy { it.fileRevision.path }.size
+      if (sourceFiles < MIN_PROMOTION_SOURCE_FILES) return@forEach
+      try {
+        val path = repository.paths.inspectionPath(id)
+        require(path.isRegularFile()) { "generated inspection is missing" }
+        val digest = sha256Hex(path.readBytes())
+        val evaluation = repository.loadEvaluation(cluster) ?: return@forEach
+        if (evaluation.inspectionHash != digest || evaluation.exampleSetDigest != exampleSetDigest(cluster)) return@forEach
+        val precision = evaluation.precision
+        val recall = evaluation.recall
+        val f1 = if (precision == 0.0 || recall == 0.0) 0.0 else 2 / (1 / precision + 1 / recall)
+        if (!precision.isFinite() || precision !in 0.0..1.0 || !recall.isFinite() || recall !in 0.0..1.0 ||
+          precision <= targets.targetPrecision || recall <= targets.targetRecall || f1 <= targets.targetF1) return@forEach
+        val targetPath = "${targets.inspectionsDirectory.trim('/')}/$id.inspection.kts"
+        if (cluster.manifest.promotions.any {
+          it.inspectionDigest == digest && it.targetBranch == targetBranch && it.targetPath == targetPath &&
+            it.pullRequest.provider == ci.provider && it.pullRequest.owner == ci.owner && it.pullRequest.repository == ci.repository
+        }) return@forEach
+        // Validate the referenced evidence without publishing anything.
+        promotionDescription(cluster, targetPath, digest)
+        candidates += PromotionCandidate(id, path.toString(), digest, sourceFiles, evaluation, f1)
+      }
+      catch (e: Exception) {
+        failures += PromotionFailure(id, e.message ?: e.javaClass.simpleName)
+      }
+    }
+    return PromotionSelectionResponse(
+      PromotionThresholds(targets.targetPrecision, targets.targetRecall, targets.targetF1), candidates, failures,
+    )
+  }
+
+  fun promote(clusterIds: List<String>): PromotionPromoteResponse {
+    require(clusterIds.isNotEmpty()) { "clusterIds must not be empty" }
+    require(clusterIds.distinct().size == clusterIds.size) { "clusterIds must be unique" }
     val ci = requireNotNull(configuration.ci) { "Inspection promotion requires complete edict.ci configuration" }
     val promotionConfiguration = requireNotNull(configuration.promotion) {
       "Inspection promotion requires edict.promotion.reviewer configuration"
@@ -59,7 +106,7 @@ internal class PromotionService(
     val created = mutableListOf<InspectionPromotion>()
     val failures = mutableListOf<PromotionFailure>()
     val available = repository.loadClusters()
-    val clusters = if (clusterIds == null) available else {
+    val clusters = run {
       val byId = available.associateBy { it.id }
       clusterIds.mapNotNull { clusterId ->
         byId[clusterId] ?: run {
@@ -70,13 +117,6 @@ internal class PromotionService(
     }
     clusters.forEach { cluster ->
       if (cluster.manifest.status != EdictNextClusterStatus.Generated) {
-        return@forEach
-      }
-      val strongPositiveSourceFiles = cluster.signals
-        .filter { it.strength == EdictNextSignalStrength.STRONG && it.label == EdictNextSignalLabel.POSITIVE }
-        .distinctBy { it.fileRevision.path }
-        .size
-      if (strongPositiveSourceFiles < MIN_PROMOTION_SOURCE_FILES) {
         return@forEach
       }
       val inspectionPath = repository.paths.inspectionPath(cluster.id)

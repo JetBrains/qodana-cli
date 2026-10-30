@@ -14,6 +14,10 @@ import org.jetbrains.qodana.edict.common.PromotionConfiguration
 import org.jetbrains.qodana.edict.edictnext.EdictNextClusterManifest
 import org.jetbrains.qodana.edict.edictnext.EdictNextClusterStatus
 import org.jetbrains.qodana.edict.edictnext.EdictNextFileRevision
+import org.jetbrains.qodana.edict.edictnext.EdictNextEvaluation
+import org.jetbrains.qodana.edict.edictnext.EdictNextInspectionAction
+import org.jetbrains.qodana.edict.edictnext.exampleSetDigest
+import org.jetbrains.qodana.edict.edictnext.sha256Hex
 import org.jetbrains.qodana.edict.edictnext.EdictNextJson
 import org.jetbrains.qodana.edict.edictnext.EdictNextLanguage
 import org.jetbrains.qodana.edict.edictnext.EdictNextSignal
@@ -91,6 +95,10 @@ class PromotionIntegrationTest : IntegrationTest() {
     }
     repository.paths.inspectionsDirectory.createDirectories()
     repository.paths.inspectionPath("integration-rule").writeText("inspection")
+    repository.loadCluster("integration-rule").directory.evaluationPath.writeText(EdictNextJson.encodeToString(EdictNextEvaluation(
+      sha256Hex("inspection"), exampleSetDigest(repository.loadCluster("integration-rule")),
+      EdictNextInspectionAction.GENERATE, 6, 0, 0, 1.0, 1.0, emptyMap(), null,
+    )))
   }
 
   private class IntegrationPromotionProvider : ReviewManagementApi {

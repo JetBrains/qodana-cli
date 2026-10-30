@@ -15,6 +15,9 @@ import org.jetbrains.qodana.edict.common.PromotionConfiguration
 import org.jetbrains.qodana.edict.edictnext.EdictNextClusterManifest
 import org.jetbrains.qodana.edict.edictnext.EdictNextClusterStatus
 import org.jetbrains.qodana.edict.edictnext.EdictNextFileRevision
+import org.jetbrains.qodana.edict.edictnext.EdictNextEvaluation
+import org.jetbrains.qodana.edict.edictnext.EdictNextInspectionAction
+import org.jetbrains.qodana.edict.edictnext.exampleSetDigest
 import org.jetbrains.qodana.edict.edictnext.EdictNextJson
 import org.jetbrains.qodana.edict.edictnext.EdictNextLanguage
 import org.jetbrains.qodana.edict.edictnext.EdictNextLineRange
@@ -75,7 +78,7 @@ class PromotionServiceTest {
     ))
     val provider = FakeProvider()
 
-    val result = service(repository, provider).promote()
+    val result = service(repository, provider).promoteSelected()
 
     assertEquals(
       setOf("five-strong", "six-strong"),
@@ -120,7 +123,7 @@ class PromotionServiceTest {
     }
     val provider = FakeProvider()
 
-    val result = service(repository, provider).promote()
+    val result = service(repository, provider).promoteSelected()
 
     assertEquals(1, result.created.size)
     assertTrue(result.failures.isEmpty())
@@ -156,7 +159,7 @@ class PromotionServiceTest {
     }
     val provider = FakeProvider()
 
-    val result = service(repository, provider).promote()
+    val result = service(repository, provider).promoteSelected()
 
     assertTrue(result.created.isEmpty())
     assertEquals(0, provider.ensureCalls)
@@ -177,7 +180,7 @@ class PromotionServiceTest {
       }
       val provider = FakeProvider()
 
-      val result = service(repository, provider).promote()
+      val result = service(repository, provider).promoteSelected()
 
       assertTrue(result.created.isEmpty(), "Unexpected PR for '$url'")
       assertContains(result.failures.single().message, "found 4")
@@ -194,7 +197,7 @@ class PromotionServiceTest {
     }
     val provider = FakeProvider()
 
-    assertEquals(1, service(repository, provider).promote().created.size)
+    assertEquals(1, service(repository, provider).promoteSelected().created.size)
 
     val description = provider.lastRequest!!.description
     assertContains(description, "Showing referenced STRONG POSITIVE signals from 10 of 14 distinct source files, one per file")
@@ -225,7 +228,7 @@ class PromotionServiceTest {
     }
     val provider = FakeProvider()
 
-    val result = service(repository, provider).promote()
+    val result = service(repository, provider).promoteSelected()
 
     assertEquals(listOf("inspections/five-files.inspection.kts"), result.created.map { it.targetPath })
     assertEquals(1, provider.ensureCalls)
@@ -243,7 +246,7 @@ class PromotionServiceTest {
     replaceSignal(repository, "grouped-rule", "signal-1") { it.copy(label = EdictNextSignalLabel.NEGATIVE) }
     val provider = FakeProvider()
 
-    assertEquals(1, service(repository, provider).promote().created.size)
+    assertEquals(1, service(repository, provider).promoteSelected().created.size)
 
     val cluster = repository.loadCluster("grouped-rule")
     val evidence = cluster.promotionEvidence()
@@ -288,7 +291,7 @@ class PromotionServiceTest {
       val promotion = state.addTask(manager.token, "edict-promote", "Publish eligible inspections")
       val worker = state.launch(manager.token, promotion.id, promotion.skill)
       state.requireSkill(worker.token, setOf("edict-promote"))
-      val result = service(repository, provider).promote()
+      val result = service(repository, provider).promoteSelected()
 
       assertTrue(result.failures.isEmpty())
       assertEquals(
@@ -330,7 +333,7 @@ class PromotionServiceTest {
     cluster(repository, "default-branch", 6)
     val provider = FakeProvider().apply { defaultBranch = "trunk" }
 
-    val result = service(repository, provider, PromotionConfiguration("reviewer")).promote()
+    val result = service(repository, provider, PromotionConfiguration("reviewer")).promoteSelected()
 
     assertEquals("trunk", result.created.single().targetBranch)
     assertEquals("trunk", provider.lastRequest?.targetBranch)
@@ -346,7 +349,7 @@ class PromotionServiceTest {
       cluster(repository, "same-version", 6, promotions = listOf(existing), inspection = content)
       val provider = FakeProvider()
 
-      val result = service(repository, provider).promote()
+      val result = service(repository, provider).promoteSelected()
 
       assertTrue(result.created.isEmpty())
       assertTrue(result.failures.isEmpty())
@@ -357,7 +360,7 @@ class PromotionServiceTest {
     val repository = repository("new-version")
     cluster(repository, "changed-version", 6, promotions = listOf(promotion("p-${"a".repeat(24)}", sha256Hex("old"), PromotionPrState.ACCEPTED)))
     val provider = FakeProvider()
-    val result = service(repository, provider).promote()
+    val result = service(repository, provider).promoteSelected()
     assertEquals(1, result.created.size)
     assertEquals(2, repository.loadCluster("changed-version").manifest.promotions.size)
   }
@@ -368,9 +371,9 @@ class PromotionServiceTest {
     cluster(repository, "retry-rule", 6)
     val provider = FakeProvider(failOnceAfterRemoteCreation = true)
 
-    assertEquals(1, service(repository, provider).promote().failures.size)
+    assertEquals(1, service(repository, provider).promoteSelected().failures.size)
     assertTrue(repository.loadCluster("retry-rule").manifest.promotions.isEmpty())
-    assertEquals(1, service(repository, provider).promote().created.size)
+    assertEquals(1, service(repository, provider).promoteSelected().created.size)
     assertEquals(1, repository.loadCluster("retry-rule").manifest.promotions.size)
     assertEquals(2, provider.ensureCalls)
     assertEquals(1, provider.remotePullRequests)
@@ -568,6 +571,77 @@ class PromotionServiceTest {
     assertEquals(PromotionPrState.ON_REVIEW, repository.loadCluster("bounded-evidence").manifest.promotions.single().state)
   }
 
+  private fun PromotionService.promoteSelected(clusterIds: List<String>? = null): PromotionPromoteResponse {
+    val selection = select()
+    val chosen = selection.candidates.filter { clusterIds == null || it.clusterId in clusterIds }
+    val result = if (chosen.isEmpty()) PromotionPromoteResponse()
+      else promote(chosen.map { it.clusterId })
+    return result.copy(failures = selection.failures + result.failures)
+  }
+
+  @Test
+  fun `selection is read only and publication accepts only the skills chosen subset`() {
+    val repository = repository()
+    cluster(repository, "first", 5)
+    cluster(repository, "second", 5)
+    val provider = FakeProvider()
+    val service = service(repository, provider)
+
+    val selection = service.select()
+    assertEquals(setOf("first", "second"), selection.candidates.map { it.clusterId }.toSet())
+    assertTrue(selection.candidates.all { it.evaluation.precision == 1.0 && it.f1 == 1.0 })
+    assertEquals(0, provider.ensureCalls)
+    assertTrue(repository.loadCluster("first").manifest.promotions.isEmpty())
+    assertTrue(repository.loadCluster("second").manifest.promotions.isEmpty())
+
+    val result = service.promote(listOf("second"))
+    assertEquals(listOf("inspections/second.inspection.kts"), result.created.map { it.targetPath })
+    assertTrue(repository.loadCluster("first").manifest.promotions.isEmpty())
+    assertEquals(listOf("first"), service.select().candidates.map { it.clusterId })
+  }
+
+  @Test
+  fun `selection count limits eligible candidates and reports configured thresholds`() {
+    val repository = repository()
+    cluster(repository, "a-ineligible", 5)
+    evaluation(repository, "a-ineligible", 0.1, 0.1)
+    cluster(repository, "b-eligible", 5)
+    cluster(repository, "c-eligible", 5)
+    val provider = FakeProvider()
+    val targets = configuration.copy(targetPrecision = 0.75, targetRecall = 0.65, targetF1 = 0.2)
+    val service = service(repository, provider, targets)
+
+    val limited = service.select(count = 1)
+    assertEquals(listOf("b-eligible"), limited.candidates.map { it.clusterId })
+    assertEquals(PromotionThresholds(0.75, 0.65, 0.2), limited.thresholds)
+    assertEquals(listOf("b-eligible", "c-eligible"), service.select().candidates.map { it.clusterId })
+    assertEquals(2, service.select(count = 10).candidates.size)
+    assertEquals(0, provider.ensureCalls)
+    assertFailsWith<IllegalArgumentException> { service.select(count = 0) }
+    assertFailsWith<IllegalArgumentException> { service.select(count = -1) }
+    val empty = service(repository("empty-selection"), provider, targets).select()
+    assertTrue(empty.candidates.isEmpty())
+    assertEquals(limited.thresholds, empty.thresholds)
+  }
+
+  @Test
+  fun `skill can publish generated inspections outside metric selection`() {
+    val repository = repository()
+    cluster(repository, "low-score", 5)
+    evaluation(repository, "low-score", 0.1, 0.1)
+    cluster(repository, "no-evaluation", 5)
+    repository.loadCluster("no-evaluation").directory.evaluationPath.toFile().delete()
+    val provider = FakeProvider()
+    val service = service(repository, provider)
+    assertTrue(service.select().candidates.isEmpty())
+
+    val result = service.promote(listOf("low-score", "no-evaluation"))
+    assertEquals(2, result.created.size)
+    assertTrue(result.failures.isEmpty())
+    assertFailsWith<IllegalArgumentException> { service.promote(emptyList()) }
+    assertFailsWith<IllegalArgumentException> { service.promote(listOf("low-score", "low-score")) }
+  }
+
   private fun repository(name: String = "state"): EdictRepository {
     val root = temporary.resolve(name).createDirectories()
     root.resolve("clusters").createDirectories()
@@ -618,6 +692,58 @@ class PromotionServiceTest {
       ))
     }
     repository.paths.inspectionPath(id).writeText(inspection)
+    evaluation(repository, id)
+  }
+
+  private fun evaluation(repository: EdictRepository, id: String, precision: Double = 1.0, recall: Double = 1.0) {
+    repository.loadCluster(id).directory.evaluationPath.writeText(EdictNextJson.encodeToString(EdictNextEvaluation(
+      inspectionHash = sha256Hex(repository.paths.inspectionPath(id).readText()),
+      exampleSetDigest = exampleSetDigest(repository.loadCluster(id)),
+      action = EdictNextInspectionAction.GENERATE,
+      tp = 5, fp = 0, fn = 0, precision = precision, recall = recall,
+      examples = emptyMap(), projectReview = null,
+    )))
+  }
+
+  @Test
+  fun `promotion requires all metrics strictly above their targets`() {
+    val repository = repository()
+    val provider = FakeProvider()
+    cluster(repository, "quality-rule", 5)
+    val targets = configuration.copy(targetPrecision = 0.7, targetRecall = 0.7, targetF1 = 0.8)
+    for ((precision, recall) in listOf(0.6 to 1.0, 1.0 to 0.6, 0.7 to 1.0, 1.0 to 0.7, 0.75 to 0.75, 0.8 to 0.8, 0.0 to 0.0)) {
+      evaluation(repository, "quality-rule", precision, recall)
+      val result = service(repository, provider, targets).promoteSelected(listOf("quality-rule"))
+      assertTrue(result.created.isEmpty(), "Unexpected promotion for $precision / $recall")
+      assertTrue(result.failures.isEmpty())
+      assertEquals(EdictNextClusterStatus.Generated, repository.loadCluster("quality-rule").manifest.status)
+      assertTrue(repository.paths.inspectionPath("quality-rule").exists())
+    }
+    assertEquals(0, provider.ensureCalls)
+    evaluation(repository, "quality-rule", 0.9, 0.9)
+    assertEquals(1, service(repository, provider, targets).promoteSelected().created.size)
+  }
+
+  @Test
+  fun `missing or stale evaluations leave inspections generated`() {
+    val repository = repository()
+    val provider = FakeProvider()
+    cluster(repository, "missing", 5)
+    repository.loadCluster("missing").directory.evaluationPath.toFile().delete()
+    cluster(repository, "stale-inspection", 5)
+    repository.paths.inspectionPath("stale-inspection").writeText("changed")
+    cluster(repository, "stale-examples", 5)
+    val cluster = repository.loadCluster("stale-examples")
+    cluster.directory.evaluationPath.writeText(EdictNextJson.encodeToString(repository.loadEvaluation(cluster)!!.copy(exampleSetDigest = "stale")))
+
+    val result = service(repository, provider).promoteSelected()
+    assertTrue(result.created.isEmpty())
+    assertTrue(result.failures.isEmpty())
+    assertEquals(0, provider.ensureCalls)
+    for (id in listOf("missing", "stale-inspection", "stale-examples")) {
+      assertEquals(EdictNextClusterStatus.Generated, repository.loadCluster(id).manifest.status)
+      assertTrue(repository.paths.inspectionPath(id).exists())
+    }
   }
 
   private fun replaceSignal(

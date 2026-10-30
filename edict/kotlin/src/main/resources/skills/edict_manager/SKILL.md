@@ -136,11 +136,12 @@ IDs are known and promotion after upstream attempts finish or are cancelled, inc
    Valid analyzed inspections become Generated regardless of strong- or weak-example accuracy; retain failures in
    history and evaluation. Completed generation never chooses Pending. Failed or cancelled generation tasks and
    unprocessed Pending or Invalid clusters do not block publication.
-7. `edict-promote`: always attempt publication of every eligible Generated inspection through the configured promotion
-   target, including when enrichment or generation failed, was cancelled, or had no targets. Pass no cluster filter
-   unless the user explicitly restricted publication to particular clusters; eligibility includes inspections from
-   earlier runs. Missing CI or promotion configuration is a failed publication prerequisite, not a reason to omit
-   this task.
+
+7. `edict-promote`: always select candidates and let the promotion worker choose Generated inspections to publish through the configured promotion
+   target, including when enrichment or generation failed, was cancelled, or had no targets. Omit selection `count`
+   to consider all eligible inspections, including earlier runs, unless the task requests a limit. Apply any cluster ID
+   restrictions when choosing IDs for publication. Configured thresholds are returned by `edict_select_promotion_clusters`. Eligibility requires a current evaluation whose precision, recall and F1 are strictly above the
+   configured promotion targets; all others remain Generated. Missing CI or promotion configuration is a failed publication prerequisite, not a reason to omit this task.
 8. `edict-promote-weak-signal`: attempt source fixes and feedback PRs for Generated inspections lacking referenced
    strong positive Signals from five distinct source files for normal promotion. Pass no cluster filter unless the user restricted publication. Run after normal
    promotion settles, including when it fails. The worker selects up to five reviewed true-positive locations per
