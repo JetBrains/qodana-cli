@@ -22,12 +22,13 @@ capability token, run paths, and task lifecycle.
 
 A delegating task finishes only after all its descendants complete. When a skill requires another skill:
 
-1. Call `edict_task_add(token, skill, title)` using a child permitted by `edict_registry`.
-2. Prepare the complete token-free child instructions. The first line must be exactly `$<registered skill>`
+1. Prepare the complete token-free child instructions. The first line must be exactly `$<registered skill>`
    (for example, `$edict-signal-analysis`). Then give the absolute assigned `SKILL.md` path, the exact
    bounded source package, source checkout, scratch paths, and expected outcome. Resolve the skill path against the
    installed skills directory, the parent of your own skill directory. Do not include credentials or placeholders.
-   Call `edict_delegate(token, taskId, prompt)` to store those instructions. Copy your capability token unchanged from
+2. Call `edict_task_add(token, skill, title, prompt)` with a child permitted by `edict_registry` and those
+   instructions: it adds the task and stores them. A step of the created plan already exists: store its instructions
+   with `edict_delegate(token, taskId, prompt)` instead. Copy your capability token unchanged from
    the server response; never retype, shorten, normalize, or reconstruct it. A rejected capability is a lifecycle
    failure, not a reason to guess or edit the token before retrying.
    The server records the full assignment in its plan and logs. It returns a short `prompt` containing the child's
@@ -39,8 +40,9 @@ A delegating task finishes only after all its descendants complete. When a skill
 4.  Start independent siblings within the reserved capacity before waiting; only dependent work waits for a child.
    To wait, call `wait_agent` with `timeout_ms: 3600000`, and call it again the same way if it times out. Do not
    check on running children with `edict_plan_get` or `list_agents`.
-   When a child completes or fails, read its recorded status and result with `edict_plan_get(taskId)`; without
-   `taskId` it returns the whole plan, which you do not need for that.
+   When a child completes or fails, `wait_agent` returns its final message: its status on the first line, then its
+   result. Read `edict_plan_get(taskId)` only when that message does not give them; without `taskId` it returns the
+   whole plan, which you do not need for that.
    Respect the runtime's concurrency limit and reserve room for descendants. On failure stop dependent work;
    the root manager continues independent stages selected by its pipeline, including promotion after failed
    enrichment or generation. A managed worker must finish its own task as failed unless its skill explicitly permits

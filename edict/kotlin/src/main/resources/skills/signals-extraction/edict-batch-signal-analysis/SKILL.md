@@ -10,8 +10,8 @@ and [the signal contract](../edict_manager/references/signals.md). Registry ID: 
 own coverage and Signal publication; workers own evidence inspection. Do not generate rules, clusters, examples, or
 inspections.
 
-Start the task. Take the source checkout (`projectDirectory`) and private task scratch (`scratchDirectory`) from
-`edict_context` called with your own token. Require a
+Start the task. Take the source checkout (`projectDirectory`) and private task scratch (`scratchDirectory`) from your
+run context. Require a
 bounded Git revision expression with a commit limit.
 PR-review extraction belongs to `edict-pr-signal-analysis`; report misrouted review requests to the manager.
 
@@ -23,7 +23,7 @@ PR-review extraction belongs to `edict-pr-signal-analysis`; report misrouted rev
 2. Create and delegate one `edict-signal-analysis` task per prepared work item, preserving
    stable order. Every task owns exactly one commit; never combine several commits in one evidence worker. Include its
    work-item ID, full commit/parent revisions and complete message
-   in the `edict_delegate` prompt, together with its retained packages, source checkout, revision
+   in the delegation prompt, together with its retained packages, source checkout, revision
    readers if needed, and private scratch path. Pass only the returned short launch prompt to a fresh native subagent; it fetches
    the full assignment from `edict_task_get`. Even a singleton runs in a managed child; there is no inline fallback.
    Use waves within available concurrency. Assign each item exactly once.

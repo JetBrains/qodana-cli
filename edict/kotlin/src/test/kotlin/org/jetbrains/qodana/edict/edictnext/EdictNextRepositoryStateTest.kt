@@ -203,6 +203,21 @@ class EdictNextRepositoryStateTest {
   }
 
   @Test
+  fun `adding a child task with its prompt delegates it, and a rejected prompt adds nothing`() {
+    EdictNextRepositoryState.open(directory).use { state ->
+      val plan = state.createPlan("Generate a cluster chosen later", emptyList())
+      val skill = "edict-next-cluster-generation"
+      assertFails { state.addDelegatedTask(plan.token, skill, "Chosen cluster", "\$edict-next-distribution\nGenerate it") }
+      assertTrue(state.plan()!!.tasks.isEmpty())
+      val delegation = state.addDelegatedTask(plan.token, skill, "Chosen cluster", "\$$skill\nGenerate cluster c")
+      val task = state.plan()!!.tasks.single()
+      assertEquals(task.id, delegation.taskId)
+      assertEquals("delegated", task.status)
+      assertEquals("\$$skill\nGenerate cluster c", state.readTask(delegation.token).prompt)
+    }
+  }
+
+  @Test
   fun `generation reviews are not limited per cluster worker`() {
     val steps = listOf(Step("edict-next-cluster-generation", "First cluster"))
     val reviewSkills = listOf(

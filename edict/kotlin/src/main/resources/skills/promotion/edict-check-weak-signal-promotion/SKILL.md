@@ -19,7 +19,7 @@ For each merged review with available `mergedReview`, `diffs`, and `inspectionDi
 
 1. Read [the Signal evidence contract](../edict_manager/references/signals.md). Compare the actual merged diffs and
    complete human feedback with the originating inspection at `inspections/<clusterId>.inspection.kts` (under the
-   state directory returned by `edict_context`). A merged PR does not mean every proposed fix landed. Extract only
+   state directory in your run context). A merged PR does not mean every proposed fix landed. Extract only
    concrete corrections that really landed and belong to this inspection; omit proposed-only, reverted, unchanged,
    or unrelated code. A modified or partial fix must use its actual merged form, not the original proposal.
    Read existing Signals with `edict_get_cluster_signals`. Skip evidence already stored for this review's merge revision,
