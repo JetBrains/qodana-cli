@@ -183,7 +183,7 @@ edict_manager
        - read every Signal at its exact revision (`git show`, then `edict_file_at_ref` with radius 20/5/0)
        - infer the common rule only to guide reductions; never persist it
        - keep faithful examples; for each missing or incorrect one, launch an `$edict-next-code-example` worker that
-         reduces the Signal to one self-contained file, calls `edict_next_validate_code_example`, then sets
+         reduces the Signal to one self-contained file, saves it (saving validates it structurally), then sets
          `syntheticExampleId`
        - positive examples contain exactly one reportable occurrence and one range; negatives contain one allowed
          occurrence and no ranges

@@ -62,11 +62,6 @@ internal class EdictNextGenerationService(
     )
   }
 
-  suspend fun validateCodeExample(clusterId: String, exampleId: String): EdictNextCodeExampleValidationResponse {
-    loadPendingCluster(clusterId)
-    return validateCodeExample(repository, clusterId, exampleId)
-  }
-
   suspend fun saveCodeExample(
     clusterId: String,
     exampleId: String,
