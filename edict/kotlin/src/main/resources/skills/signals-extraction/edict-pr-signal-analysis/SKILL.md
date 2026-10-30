@@ -10,7 +10,7 @@ Run only as a delegated managed subagent. Follow [the manager protocol](../edict
 You orchestrate batches, retries, publication, and coverage. Never inspect discussions, read source evidence, construct
 Signals, or collect Signal payloads yourself; `edict-signal-analysis` workers own all analysis and storage.
 
-Call `edict_context` with your own token and require its configured `reviewRepository`. A daily assignment uses its explicit `signalTarget`,
+Require the configured `reviewRepository` in your run context. A daily assignment uses its explicit `signalTarget`,
 or `defaultSignalCount` when the assignment omits one. Other requests require explicit PR numbers or inclusive complete
 UTC date bounds. Provider credentials and all run paths belong to the server and must not be copied into child prompts.
 

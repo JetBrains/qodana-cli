@@ -12,7 +12,7 @@ retained candidate, and accepted evidence publication. Do not launch workers, de
 Do not generate rules, clusters, examples, or inspections.
 
 Start the task. Take the source checkout (`projectDirectory`) and private task scratch
-(`scratchDirectory`) from `edict_context` called with your own token. Require exactly one `clusterId` as domain input.
+(`scratchDirectory`) from your run context. Require exactly one `clusterId` as domain input.
 Reject a missing, empty, or multiple-cluster assignment before any history query or write; the manager must create
 separate enrichment tasks for separate clusters. Call `edict_next_get_history_context(token, clusterId)` once for its
 server-computed `range`, and `edict_get_cluster_signals(clusterId)` for the member list. Read a member's full

@@ -155,10 +155,7 @@ class AgentLoggingTest {
                 "edict_delegate",
                 buildJsonObject { put("token", created.text("token")); put("taskId", task.id); put("prompt", prompt) })
             val token = delegated.text("token")
-            call("edict_task_get", buildJsonObject { put("token", token) })
-            call(
-                "edict_task_start",
-                buildJsonObject { put("token", token); put("agentId", "worker"); put("skill", task.skill) })
+            call("edict_task_get", buildJsonObject { put("token", token); put("agentId", "worker") })
             call(
                 "edict_task_finish",
                 buildJsonObject { put("token", token); put("status", "completed"); put("result", "Done") })
@@ -176,6 +173,16 @@ class AgentLoggingTest {
                 full,
                 short
             ).forEach { assertFalse(it.contains(token)); assertFalse(it.contains(created.text("token"))) }
+            // A task added with its prompt is delegated in the same call and logged like a delegation.
+            val addedPrompt = "\$edict-batch-signal-analysis\nRead /skills/edict-batch-signal-analysis/SKILL.md and inspect HEAD~1."
+            val added = call("edict_task_add", buildJsonObject {
+                put("token", created.text("token")); put("skill", "edict-batch-signal-analysis"); put("title", "Older commit")
+                put("prompt", addedPrompt)
+            })
+            val addedLog = Files.readString(layout.taskLogPath(added.text("taskId")))
+            assertContains(addedLog, "Task prompt assigned by edict_manager/-")
+            assertContains(addedLog.replace("\n    ", ""), addedPrompt.replace("\n", ""))
+            assertFalse(addedLog.contains(added.text("token")))
         }
     }
 

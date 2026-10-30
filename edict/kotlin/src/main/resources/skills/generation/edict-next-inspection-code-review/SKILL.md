@@ -13,8 +13,8 @@ Load only this skill. Do not launch workers: write every example yourself.
 ## Inputs and boundaries
 
 The prompt supplies `Cluster id`, an absolute private-scratch `Review output path`, and `Previous code review`: the
-output of this cluster's previous code review round, or none. Call `edict_context` with your own token, resolve the
-cluster and its candidate inspection below its `stateDirectory`, and use its `projectDirectory` as the inspected
+output of this cluster's previous code review round, or none. Resolve the cluster and its candidate inspection below the
+`stateDirectory` of your run context, and use its `projectDirectory` as the inspected
 IntelliJ project. Read the candidate, the Signals with `edict_get_cluster_signals`, every example with
 `edict_next_get_cluster_examples`, and the previous code review. Read a Signal's full evidence from
 `<signalsDirectory>/<id>.json` only when its description and example leave its meaning unclear. Do not read cluster

@@ -64,6 +64,7 @@ class EdictNextRepositoryStateRedactionTest {
                 put("token", batch.token)
                 put("skill", "edict-signal-analysis")
                 put("title", "Receipt: a${manager.token}f${batch.token}")
+                put("prompt", "\$edict-signal-analysis\nInspect the commit")
             })
             assertEquals(true, response.flag("isError"))
             assertEquals(1, store.plan()!!.tasks.size)
