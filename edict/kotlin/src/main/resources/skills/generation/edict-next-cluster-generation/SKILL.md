@@ -11,8 +11,8 @@ domain work and use it for every child delegation and task transition.
 Process the supplied Pending cluster through example reconciliation, predecessor reuse or generation rounds, and a
 valid terminal state. `Pending` is only the input state, never a generation outcome.
 
-The prompt supplies only `clusterId`. Call `edict_context` with your own token before any other MCP call or write. Resolve the cluster below
-its `stateDirectory`. Do not copy the state path into delegated prompts.
+The prompt supplies only `clusterId`. Resolve the cluster below the `stateDirectory` of your run context. Do not copy
+the state path into delegated prompts.
 
 # Boundaries
 

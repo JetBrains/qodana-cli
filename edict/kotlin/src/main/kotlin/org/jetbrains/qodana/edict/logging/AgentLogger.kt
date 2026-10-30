@@ -82,15 +82,16 @@ class AgentLogger internal constructor(private val store: EdictNextRepositorySta
         val ok = response.flag("isError") != true
         val callerIdentity = if (caller.startsWith("edict_manager/") || tool == "edict_plan_create" && ok)
             Identity("edict_manager") else Identity(caller.substringBefore('/'), caller.substringAfter('/', ""))
-        val target = if (tool == "edict_delegate" && ok) Identity(
+        val delegated = ok && tool in DELEGATING_TOOLS
+        val target = if (delegated) Identity(
             result.text("skill"),
             result.text("taskId")
         ) else callerIdentity
         val summary = if (!ok) "$tool failed" else when (tool) {
-            "edict_task_start" -> "Started task; assignment fetched and skill verified"
+            "edict_task_get" -> "Started task; assignment fetched"
             "edict_task_finish" -> "Finished task: ${arguments.text("status")}"
             "edict_task_cancel" -> "Cancelled task ${arguments.text("taskId").take(8)}"
-            "edict_delegate" -> "Task delegated by ${callerIdentity.skill}/${
+            "edict_task_add", "edict_delegate" -> "Task delegated by ${callerIdentity.skill}/${
                 callerIdentity.task.take(8).ifEmpty { "-" }
             }"
 
@@ -100,7 +101,7 @@ class AgentLogger internal constructor(private val store: EdictNextRepositorySta
             "edict_state_delete" -> "Deleted ${arguments.text("path")}"
             else -> "$tool ok"
         }
-        val detail = if (tool == "edict_delegate" && ok)
+        val detail = if (delegated)
             "Task prompt assigned by ${callerIdentity.skill}/${
                 callerIdentity.task.take(8).ifEmpty { "-" }
             }:\n${arguments.text("prompt")}" else summary
@@ -137,3 +138,6 @@ class AgentLogger internal constructor(private val store: EdictNextRepositorySta
         }
     }
 }
+
+/** Tools that delegate a child task and return its credentials. */
+private val DELEGATING_TOOLS = setOf("edict_task_add", "edict_delegate")

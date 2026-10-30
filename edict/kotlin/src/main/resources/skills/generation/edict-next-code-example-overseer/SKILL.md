@@ -8,8 +8,8 @@ description: Managed subagent that reconciles one Edict Next cluster's code exam
 Run only as a delegated managed subagent. Follow [the manager protocol](../edict_manager/references/protocol.md) before
 domain work and use its assigned task lifecycle.
 
-Load only this skill. The prompt supplies `Cluster id`. Call `edict_context` with your own token, then resolve the target cluster below its
-`stateDirectory` and use its `projectDirectory` as the inspected IntelliJ project. Do not request or repeat the state
+Load only this skill. The prompt supplies `Cluster id`. Resolve the target cluster below the `stateDirectory` of your
+run context and use its `projectDirectory` as the inspected IntelliJ project. Do not request or repeat the state
 path in a prompt.
 
 Reconcile from the Signals alone: do not read cluster history, `cluster.json`, candidate or predecessor inspections,
@@ -50,7 +50,7 @@ delegate one `edict-next-code-example` managed task to a fresh native subagent, 
 only this cluster id, the group's Signal ids and, for each Signal whose example you deleted, one line
 `Rejected example <signal id>: <defect>`. State the defect as the source facts the deleted example dropped, changed or
 invented, compared with the exact source revision, for example a missing field write or a changed declaring type; never
-a rule, a label opinion or an inspection concern. The worker resolves configured paths with `edict_context`. Wait for
+a rule, a label opinion or an inspection concern. The worker takes configured paths from its run context. Wait for
 every example worker and require its managed task to complete; do not reduce a delegated Signal inline except as the
 last resort below. Delegate each Signal to a worker at most twice. When the second worker leaves it without an example
 or its example is incorrect too, correct that example yourself with `edict_next_save_code_example`, or create and assign

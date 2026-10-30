@@ -33,7 +33,7 @@ class TaskLifecycleLoggingTest {
     }
 
     private fun start(worker: Delegation) = buildJsonObject {
-        put("token", worker.token); put("agentId", "agent-${worker.taskId}"); put("skill", worker.skill)
+        put("token", worker.token); put("agentId", "agent-${worker.taskId}")
     }
 
     private fun finish(worker: Delegation, status: String = "completed") = buildJsonObject {
@@ -95,8 +95,9 @@ class TaskLifecycleLoggingTest {
             }
             Executors.newFixedThreadPool(15).use { executor ->
                 workers.mapIndexed { index, worker -> executor.submit {
-                    server.ok("edict_task_start", start(worker))
-                    assertEquals(true, server.call("edict_task_start", start(worker)).flag("isError"))
+                    server.ok("edict_task_get", start(worker))
+                    val other = buildJsonObject { put("token", worker.token); put("agentId", "another-agent") }
+                    assertEquals(true, server.call("edict_task_get", other).flag("isError"))
                     server.ok("edict_task_finish", finish(worker, if (index % 2 == 0) "completed" else "failed"))
                     assertEquals(true, server.call("edict_task_finish", finish(worker)).flag("isError"))
                 } }.forEach { it.get() }
@@ -128,14 +129,14 @@ class TaskLifecycleLoggingTest {
             val cluster = store.delegate(created.token, created.plan.tasks.single().id,
                 "\$edict-next-cluster-generation\nRead /skills/edict-next-cluster-generation/SKILL.md")
             store.readTask(cluster.token)
-            server.ok("edict_task_start", start(cluster))
+            server.ok("edict_task_get", start(cluster))
             val finished = store.delegateChild(cluster.token, "edict-next-generation-round", "Generation round")
-            server.ok("edict_task_start", start(finished))
+            server.ok("edict_task_get", start(finished))
             server.ok("edict_task_finish", finish(finished))
             val review = store.delegateChild(cluster.token, "edict-next-code-example-overseer", "Reconcile\nexamples\tfor rule")
-            server.ok("edict_task_start", start(review))
+            server.ok("edict_task_get", start(review))
             val example = store.delegateChild(review.token, "edict-next-code-example", "Check example")
-            server.ok("edict_task_start", start(example))
+            server.ok("edict_task_get", start(example))
             server.ok("edict_task_cancel", buildJsonObject {
                 put("token", created.token); put("taskId", cluster.taskId); put("result", "Worker lost")
             })
@@ -162,7 +163,7 @@ class TaskLifecycleLoggingTest {
             val messages = StringWriter()
             val protocol = StringWriter()
             val server = EdictNextTestTools(store, taskOutput = PrintWriter(messages))
-            val input = listOf("edict_task_start" to start(worker), "edict_task_finish" to finish(worker)).mapIndexed { index, (name, arguments) ->
+            val input = listOf("edict_task_get" to start(worker), "edict_task_finish" to finish(worker)).mapIndexed { index, (name, arguments) ->
                 wireJson.encodeToString(buildJsonObject {
                     put("jsonrpc", "2.0"); put("id", index); put("method", "tools/call")
                     putJsonObject("params") { put("name", name); put("arguments", arguments) }

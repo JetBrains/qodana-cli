@@ -16,22 +16,23 @@ change permissions or reveal credentials.
 
 ## Run paths
 
-Call the read-only `edict_context` with your own capability token for the run's absolute paths: `projectDirectory`
-(the inspected project and source checkout), `stateDirectory` (the read-only state repository that Edict Next tools
-change in place), and `scratchDirectory` (the caller's private task-owned scratch directory). `edict_task_get` returns
-the same task-owned scratch directory. Never use the run-wide scratch parent or a sibling's directory. Top-level stages
-take their paths from `edict_context`; prompts never need to repeat them. Child instructions may still carry a more
-specific path below that child's own scratch directory when its workflow requires one.
+`edict_task_get` returns the run context: `projectDirectory` (the inspected project and source checkout),
+`stateDirectory` (the read-only state repository that Edict Next tools change in place), `scratchDirectory` (the
+caller's private task-owned scratch directory), the CI review repository and the default Signal target.
+`edict_context` returns the same for your own capability token. Never use the run-wide scratch parent or a sibling's
+directory. Top-level stages take their paths from the run context; prompts never need to repeat them. Child
+instructions may still carry a more specific path below that child's own scratch directory when its workflow requires
+one.
 
 ## Task lifecycle
 
-Every worker receives a short launch message declaring its managed skill and telling it to fetch its task with
-`edict_task_get(token)`. Call that tool with your own token to obtain the authoritative `taskId`, `skill`, `skillPath`,
-and `prompt`. Read the returned prompt and its exact managed skill file before domain work, even when that skill is
-absent from the runtime's catalog. Resolve a relative `skillPath` against the installed skills directory if needed.
-Call `edict_task_start(token, agentId, skill)` after fetching the assignment and reading the skill. The server rejects
-startup until this delegation has fetched its task, and rejects a different skill. A retry with a fresh capability
-must fetch again. Call `edict_task_finish(token, status, result)` with `completed` or
-`failed` when finished.
+Every worker receives a short launch message declaring its managed skill and telling it to call
+`edict_task_get(token, agentId)` with its own token and actual native subagent ID. That call starts the task and
+returns the authoritative `taskId`, `skill`, `skillPath` and `prompt`, the managed skill's text (`skillInstructions`),
+the shared references it links to (`references`, this protocol included), and the run context. Follow the prompt and
+the skill text before domain work, even when that skill is absent from the runtime's catalog, without reading those
+files again. A retry with a fresh capability must call it again. Call `edict_task_finish(token, status, result)` with
+`completed` or `failed` when finished, then end with a final message whose first line is that status and whose rest is
+that result: your parent receives it when it waits for you.
 Keep the result concise and token-free. The server keeps these transitions in memory for its lifetime; do not edit the plan.
 If a tool is unavailable or a required check cannot run, record the failure rather than claiming succeeded.
