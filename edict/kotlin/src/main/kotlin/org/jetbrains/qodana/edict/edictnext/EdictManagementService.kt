@@ -725,12 +725,10 @@ private fun oneOf(vararg schemas: JsonElement) = buildJsonObject {
  * extraction writes, so a cluster of any size fits one answer that every later turn re-reads.
  */
 private fun signalIndexEntry(signal: EdictNextSignal): JsonObject {
-  val full = EdictNextJson.encodeToJsonElement(signal).jsonObject
-  val source = full.getValue("source").jsonObject
-  return JsonObject(full - INDEX_OMITTED_SIGNAL_KEYS + ("source" to JsonObject(source.filterKeys { it in INDEX_SOURCE_KEYS })))
+  val evidence = signal.asEvidence()
+  val source = evidence.getValue("source").jsonObject
+  return JsonObject(evidence + ("source" to JsonObject(source.filterKeys { it in INDEX_SOURCE_KEYS })))
 }
-
-private val INDEX_OMITTED_SIGNAL_KEYS = setOf("idempotencyKey", "provenance")
 
 private val INDEX_SOURCE_KEYS = setOf("type", "prNumber", "title", "commitRevision", "inspectionName")
 

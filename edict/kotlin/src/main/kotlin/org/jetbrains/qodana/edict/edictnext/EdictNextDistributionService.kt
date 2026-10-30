@@ -96,7 +96,7 @@ internal class EdictNextDistributionService(
                 val cluster = repository.loadCluster(id)
                 val response = EdictNextDistributionContextResponse.Cluster(
                     clusterId = cluster.id,
-                    signals = cluster.signals,
+                    signals = cluster.signals.map(EdictNextSignal::asEvidence),
                 )
                 currentBatch.recordClusterContext(id)
                 response
@@ -161,9 +161,10 @@ internal class EdictNextDistributionService(
             cluster to matched.minOf(EdictNextNeighbour::distance)
         }.sortedBy { it.second }.mapIndexed { index, (cluster, distance) ->
             // The nearest small clusters come with their members, so most assignments need no context call.
+            val members = cluster.signals.map(EdictNextSignal::asEvidence)
             val included = index < INCLUDED_CLUSTER_COUNT &&
-                EdictNextJson.encodeToString(cluster.signals).length <= INCLUDED_CLUSTER_MAX_CHARS
-            EdictNextSignalCandidate.Cluster(cluster.id, distance, cluster.signals.size, cluster.signals.takeIf { included })
+                EdictNextJson.encodeToString(members).length <= INCLUDED_CLUSTER_MAX_CHARS
+            EdictNextSignalCandidate.Cluster(cluster.id, distance, cluster.signals.size, members.takeIf { included })
         }
         val inboxById = inbox.associateBy(EdictNextSignal::id)
         val signalCandidates = neighbours.closest.mapNotNull { neighbour ->
