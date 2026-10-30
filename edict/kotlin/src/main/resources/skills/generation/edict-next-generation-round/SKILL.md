@@ -156,8 +156,11 @@ the saved candidate byte for byte to `<privateScratchDirectory>/analyzed-candida
 remain after this one. If the call fails because the limit was reached, save the previous analyzed candidate back
 unchanged with `edict_next_save_candidate_inspection` and report `STOP`.
 
-1. If the response has `findingsUnchanged: true`, the project findings equal the previous round's, which were already
-   reviewed: skip the weak-signal review. Otherwise launch a fresh worker with only:
+If the response has `findingsUnchanged: true`, the project findings equal the previous round's, which were already
+reviewed: this round changed the candidate only on cases that the project does not contain, and the examples that
+define them are checked by the save. Skip both reviews and continue with step 3. Otherwise:
+
+1. Launch a fresh worker with only:
 
    ```text
    Load the edict-next-weak-signal-review skill.
@@ -197,6 +200,6 @@ Finish your task with a result of exactly these lines:
 ```text
 Cluster id: <the current cluster id>
 Analyzed candidate: <privateScratchDirectory>/analyzed-candidate.kts, or none
-Code review: <privateScratchDirectory>/inspection-code-review.json, or none
+Code review: <privateScratchDirectory>/inspection-code-review.json, the previous one if this round skipped it, or none
 Next: CONTINUE | STOP | INVALID <reason> | DISCONTINUED <Signal ids and the contradiction>
 ```
