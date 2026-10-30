@@ -91,7 +91,6 @@ class EdictNextDistributionServiceTest {
         break
       }
       assertEquals(cluster.memberCount, cluster.signals.size)
-      // Members come as evidence: their correcting diff stays, the keys only extraction uses do not.
       for (member in cluster.signals) {
         val json = EdictNextJson.encodeToJsonElement(member).jsonObject
         assertFalse("idempotencyKey" in json || "provenance" in json, json.toString())
@@ -130,7 +129,6 @@ class EdictNextDistributionServiceTest {
     val assigned = distribution.addSignalToCluster(ids[0], "rule", pairedSignalId = ids[1])
 
     assertEquals(setOf(ids[0], ids[1]), repository.loadCluster("rule").signalIds.toSet())
-    // The pair was one decision of the task's share of two, and two Signals of one label are not offered as a pair.
     val next = assertNotNull(assigned.next)
     assertEquals(ids[2], next.signalId)
     assertEquals(null, next.pairedSignal)

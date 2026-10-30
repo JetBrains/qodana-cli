@@ -2,10 +2,7 @@ package org.jetbrains.qodana.edict.edictnext
 
 import java.util.concurrent.ConcurrentHashMap
 
-/**
- * The POSITIVE and NEGATIVE Signals of one PR correction, as PR extraction stored them in this server run, so that
- * distribution can offer them together. Nothing persists it: after a restart distribution sees each Signal alone.
- */
+/** PR correction pairs stored in this server run; not persisted, so after a restart each Signal comes alone. */
 internal class EdictNextSignalPairs {
   private val siblings = ConcurrentHashMap<String, String>()
 

@@ -72,7 +72,6 @@ internal class EdictNextDistributionService(
             )
         }
         val signal = state.inboxSignalsById.getValue(signalId)
-        // The other half of the same correction comes with it, so one decision places both.
         val pairedSignal = pairs.sibling(signalId)
             ?.takeIf { it in currentBatch.signalIds }
             ?.let(state.inboxSignalsById::get)
@@ -116,10 +115,7 @@ internal class EdictNextDistributionService(
         }
     }
 
-    /**
-     * Assigns the current Signal, and with [pairedSignalId] also the paired Signal [nextSignal] offered with it, then
-     * prepares the next one as [nextSignal] would, so the loop needs one call per decision.
-     */
+    /** Assigns the current Signal and prepares the next one as [nextSignal] would, so the loop needs one call per Signal. */
     suspend fun addSignalToCluster(
         signalId: String,
         clusterId: String,
