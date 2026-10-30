@@ -25,6 +25,7 @@ import org.jetbrains.qodana.edict.extraction.reviews.PrSignalDraft
 import org.jetbrains.qodana.edict.extraction.reviews.RepositoryPrAnalysisCoverage
 import org.jetbrains.qodana.edict.extraction.reviews.ReviewSelectionInput
 import org.jetbrains.qodana.edict.edictnext.EdictNextSignal
+import org.jetbrains.qodana.edict.edictnext.EdictNextSignalPairs
 import org.jetbrains.qodana.edict.support.FakeReviewApi
 import org.jetbrains.qodana.edict.support.withTools
 import org.jetbrains.qodana.edict.support.launch
@@ -51,7 +52,8 @@ internal class PrAnalysisWorkspace : AfterEachCallback {
 
   val store: EdictNextRepositoryState = EdictNextRepositoryState.open(directory.resolve("state"))
   val reviews = FakeReviewApi(KOTLIN)
-  val analysis = PrAnalysis(store, reviews) { TODAY }
+  val pairs = EdictNextSignalPairs()
+  val analysis = PrAnalysis(store, reviews, pairs) { TODAY }
 
   private val plan = store.createPlan("Analyze reviews", listOf(EdictNextRepositoryState.Step(PR_ANALYSIS, "Analyze PRs")))
 

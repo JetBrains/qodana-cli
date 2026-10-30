@@ -18,6 +18,7 @@ internal class EdictNextDistributionService(
     private val neighboursResponsePath: Path,
     private val defaultSignalCount: Int = DEFAULT_DISTRIBUTION_SIGNAL_COUNT,
     private val taskSignalCount: Int = DISTRIBUTION_TASK_SIGNAL_COUNT,
+    private val pairs: EdictNextSignalPairs = EdictNextSignalPairs(),
 ) {
     private var neighbours: Map<String, EdictNextSignalNeighbours>? = null
     private var batch: DistributionBatch? = null
@@ -70,17 +71,26 @@ internal class EdictNextDistributionService(
               nextAction = EdictNextNextAction.HAND_OFF,
             )
         }
-        currentBatch.startSignal(signalId)
+        val signal = state.inboxSignalsById.getValue(signalId)
+        // The other half of the same correction comes with it, so one decision places both.
+        val pairedSignal = pairs.sibling(signalId)
+            ?.takeIf { it in currentBatch.signalIds }
+            ?.let(state.inboxSignalsById::get)
+            ?.takeIf { it.label != signal.label }
+        currentBatch.startSignal(signalId, pairedSignal?.id)
         val candidates = mergeCandidates(currentBatch.neighbours.getValue(signalId), state.clusters, inbox, repository)
+            .filterNot { it is EdictNextSignalCandidate.SignalCandidate && it.signalId == pairedSignal?.id }
         candidates.filterIsInstance<EdictNextSignalCandidate.Cluster>()
             .filter { it.signals != null }
             .forEach { currentBatch.recordClusterContext(it.clusterId) }
         return EdictNextSignalPreparationResponse(
           signalId = signalId,
           signalPath = repository.paths.inboxDirectory.resolve("$signalId.json").toString(),
-          signal = state.inboxSignalsById.getValue(signalId),
+          signal = signal,
+          pairedSignal = pairedSignal,
           candidates = candidates,
-          summary = "Prepared Signal '$signalId' with its nearest candidates",
+          summary = "Prepared Signal '$signalId'" + (pairedSignal?.let { " and its paired Signal '${it.id}'" } ?: "") +
+                    " with its nearest candidates",
         )
     }
 
@@ -106,24 +116,31 @@ internal class EdictNextDistributionService(
         }
     }
 
-    /** Assigns the current Signal and prepares the next one as [nextSignal] would, so the loop needs one call per Signal. */
+    /**
+     * Assigns the current Signal, and with [pairedSignalId] also the paired Signal [nextSignal] offered with it, then
+     * prepares the next one as [nextSignal] would, so the loop needs one call per decision.
+     */
     suspend fun addSignalToCluster(
         signalId: String,
         clusterId: String,
+        pairedSignalId: String? = null,
     ): EdictNextSignalValidationResponse {
         val currentBatch = requireBatch()
         require(signalId in currentBatch.signalIds) { "Signal '$signalId' was not selected for this run" }
         currentBatch.requireCurrentSignal(signalId)
+        if (pairedSignalId != null) currentBatch.requirePairedSignal(pairedSignalId)
         if (repository.loadClusters().any { it.id == clusterId }) {
             currentBatch.requireClusterContext(clusterId)
         }
         repository.addSignalToCluster(signalId, clusterId)
+        pairedSignalId?.let { repository.addSignalToCluster(it, clusterId) }
         currentBatch.completeSignal(signalId)
         // The assignment stands even if preparing the next Signal fails; edict_next_next_signal then reports the problem.
         val next = runCatching { nextSignal() }.getOrNull()
         return EdictNextSignalValidationResponse(
           signalId = signalId,
-          summary = "Assigned Signal '$signalId' to '$clusterId'" + if (next == null) "; call edict_next_next_signal" else "",
+          summary = "Assigned Signal '$signalId'" + (pairedSignalId?.let { " and its paired Signal '$it'" } ?: "") +
+                    " to '$clusterId'" + if (next == null) "; call edict_next_next_signal" else "",
           added = true,
           next = next,
         )
@@ -202,14 +219,22 @@ internal class EdictNextDistributionService(
         val neighbours: Map<String, EdictNextSignalNeighbours>,
     ) {
         private var currentSignalId: String? = null
+        private var currentPairedSignalId: String? = null
         var taskAssignedCount = 0
             private set
         private val loadedClusterIds = HashSet<String>()
 
-        fun startSignal(signalId: String) {
+        fun startSignal(signalId: String, pairedSignalId: String?) {
+            currentPairedSignalId = pairedSignalId
             if (currentSignalId == signalId) return
             currentSignalId = signalId
             loadedClusterIds.clear()
+        }
+
+        fun requirePairedSignal(signalId: String) {
+            require(signalId == currentPairedSignalId) {
+                "Signal '$signalId' is not the paired Signal offered with the current Signal"
+            }
         }
 
         fun recordClusterContext(clusterId: String) {
@@ -243,6 +268,7 @@ internal class EdictNextDistributionService(
 
         fun clearCurrentSignal() {
             currentSignalId = null
+            currentPairedSignalId = null
             loadedClusterIds.clear()
         }
     }

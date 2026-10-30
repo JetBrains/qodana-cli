@@ -54,6 +54,7 @@ import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
 import kotlin.test.assertFalse
 import kotlin.test.assertNotEquals
+import kotlin.test.assertNull
 
 internal class ConfiguredPrAnalysisTest {
   @JvmField
@@ -615,6 +616,27 @@ internal class ConfiguredPrAnalysisTest {
       listOf(stableSignalId("${item.workItemId}|0|NEGATIVE|src/Example.kt|$HEAD|2:2")),
       pr.storeDrafts(batch, draft(item, NEGATIVE)).signalIds,
     )
+  }
+
+  @Test
+  fun `the drafts of one correction are recorded as a pair and other numbered drafts stay separate`() {
+    val batch = pr.correctionBatch(correctionFiles())
+    val item = pr.item(batch)
+
+    val receipt = pr.storeDrafts(
+      batch,
+      draft(item, POSITIVE, correction = 0),
+      draft(item, NEGATIVE, correction = 0),
+      draft(item, POSITIVE, correction = 1),
+      draft(item, NEGATIVE),
+    )
+
+    val (positive, negative, lonePositive, loneNegative) = receipt.signalIds
+    assertEquals(negative, pr.pairs.sibling(positive))
+    assertEquals(positive, pr.pairs.sibling(negative))
+    assertNull(pr.pairs.sibling(lonePositive))
+    assertNull(pr.pairs.sibling(loneNegative))
+    assertEquals(listOf("Correction 1 of ${item.workItemId}: 1 draft(s) share it"), receipt.unpairedCorrections)
   }
 
   @Test
