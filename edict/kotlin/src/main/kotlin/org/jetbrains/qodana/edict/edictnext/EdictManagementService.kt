@@ -60,6 +60,7 @@ internal class EdictManagementService(
   private val reviewRepository: ReviewRepository? = null,
   private val defaultSignalCount: Int = DEFAULT_SIGNAL_COUNT,
   prAnalysisToday: () -> LocalDate = { LocalDate.now(ZoneOffset.UTC) },
+  signalPairs: EdictNextSignalPairs = EdictNextSignalPairs(),
   private val startedAt: Instant = Instant.now(),
   private val analyzePrice: (Plan) -> CodexPriceAnalysis = { plan ->
     CodexPriceAnalyzer.analyze(CodexSetup.userCodexHome(), plan, layout.priceReportPath, startedAt)
@@ -90,7 +91,7 @@ internal class EdictManagementService(
 
   private val taskLogger = TaskLifecycleLogger(store, layout, taskOutput)
   private val invocations = ConcurrentHashMap<String, Invocation>()
-  private val pr = PrAnalysis(store, reviewProvider, prAnalysisToday)
+  private val pr = PrAnalysis(store, reviewProvider, signalPairs, prAnalysisToday)
 
   internal fun scratchDirectory(token: String) =
     layout.taskScratchDirectory(store.scratchOwnerId(token)).also { Files.createDirectories(it) }
@@ -221,6 +222,7 @@ internal class EdictManagementService(
               ),
               required = listOf("before", "after", "beforePath", "afterPath"),
             ),
+            "correction" to integer,
           ),
           required = listOf("workItemId", "fileRevision", "label", "description", "diff"),
         ),
@@ -572,7 +574,8 @@ internal class EdictManagementService(
     tool(
       name = "edict_store_pr_signals",
       description = "Store one analyzed PR chunk. Requires complete ordered work-item coverage and explicit failed work-item IDs, independently validates each Signal, and retains valid models despite per-Signal failures. " +
-        "Pass Signals as signalDrafts: the server cuts the canonical diff of each draft's diff snapshots to an excerpt of at most 4000 characters: its lines, the file's other changes, and the lines named in diff.relatedBeforeRanges and diff.relatedAfterRanges, narrowed to the changes near its lines when they do not fit. It completes PR number, title, discussion URL and messages from the work item, and derives its idempotency key and ID.",
+        "Pass Signals as signalDrafts: the server cuts the canonical diff of each draft's diff snapshots to an excerpt of at most 4000 characters: its lines, the file's other changes, and the lines named in diff.relatedBeforeRanges and diff.relatedAfterRanges, narrowed to the changes near its lines when they do not fit. It completes PR number, title, discussion URL and messages from the work item, and derives its idempotency key and ID. " +
+        "Give the POSITIVE and NEGATIVE drafts of one correction the same correction number within their work item, so distribution offers them together.",
       required = listOf("token", "batchId", "chunkIndex", "inspectedWorkItemIds", "failedWorkItemIds", "signals", "problems"),
       properties = properties("batchId") + mapOf(
         "chunkIndex" to integer,

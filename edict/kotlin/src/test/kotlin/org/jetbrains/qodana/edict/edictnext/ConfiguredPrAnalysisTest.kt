@@ -442,6 +442,62 @@ class ConfiguredPrAnalysisTest {
   }
 
   @Test
+  fun `drafts of one correction are recorded as a pair and other numbered drafts stay separate`() {
+    val configured = ReviewRepository(CiProviderId.GITHUB, "JetBrains", "qodana-cli")
+    val today = LocalDate.of(2026, 10, 9)
+    val diff = """
+      diff --git a/src/Example1.kt b/src/Example1.kt
+      --- a/src/Example1.kt
+      +++ b/src/Example1.kt
+      @@ -1,3 +1,3 @@
+       fun a() {
+      -  bad()
+      +  good()
+       }
+    """.trimIndent() + "\n"
+    EdictNextRepositoryState.open(directory.resolve("state")).use { store ->
+      val plan = store.createPlan(
+        "Draft pairs",
+        listOf(EdictNextRepositoryState.Step("edict-pr-signal-analysis", "Analyze a complete UTC date")),
+      )
+      val coordinator = store.launch(plan.token, plan.plan.tasks.single().id, "edict-pr-signal-analysis")
+      val pairs = EdictNextSignalPairs()
+      val analysis = PrAnalysis(store, DateReviewProvider(datedPullRequests(1, today.minusDays(1)), diff = diff), pairs) { today }
+      val batch = analysis.prepareBatch(coordinator.token, configured, ReviewSelectionInput())
+      val worker = launchAnalysisWorker(store, coordinator.token)
+      val item = analysis.chunk(worker.token, batch.batchId, 0).workItemIds.single()
+      fun draft(label: EdictNextSignalLabel, correction: Int?) = PrSignalDraft(
+        workItemId = item,
+        fileRevision = EdictNextFileRevision(
+          "src/Example1.kt",
+          (if (label == EdictNextSignalLabel.POSITIVE) "a" else "b").repeat(40),
+          listOf(EdictNextLineRange(2, 2)),
+        ),
+        label = label,
+        description = "Calls ${if (label == EdictNextSignalLabel.POSITIVE) "bad" else "good"}().",
+        diff = PrSignalDiff("a".repeat(40), "b".repeat(40), "src/Example1.kt", "src/Example1.kt"),
+        correction = correction,
+      )
+      val drafts = listOf(
+        draft(EdictNextSignalLabel.POSITIVE, 0),
+        draft(EdictNextSignalLabel.NEGATIVE, 0),
+        draft(EdictNextSignalLabel.POSITIVE, 1),
+        draft(EdictNextSignalLabel.NEGATIVE, null),
+      )
+
+      val receipt = analysis.store(worker.token, batch.batchId, 0, listOf(item), emptyList(), emptyList(), emptyList(), drafts)
+
+      assertEquals(4, receipt.signalCount, receipt.failures.toString())
+      val (positive, negative, lonePositive, loneNegative) = receipt.signalIds
+      assertEquals(negative, pairs.sibling(positive))
+      assertEquals(positive, pairs.sibling(negative))
+      assertEquals(null, pairs.sibling(lonePositive))
+      assertEquals(null, pairs.sibling(loneNegative))
+      assertEquals(listOf("Correction 1 of $item: 1 draft(s) share it"), receipt.unpairedCorrections)
+    }
+  }
+
+  @Test
   fun `a draft stores the changes near its lines from a large diff and fails when they cannot fit`() {
     val configured = ReviewRepository(CiProviderId.GITHUB, "JetBrains", "qodana-cli")
     val today = LocalDate.of(2026, 10, 9)

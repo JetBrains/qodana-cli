@@ -39,6 +39,11 @@ data class PrSignalDraft(
   val description: String,
   val strength: EdictNextSignalStrength = EdictNextSignalStrength.STRONG,
   val diff: PrSignalDiff,
+  /**
+   * Numbers the correction this draft shows within its work item: the POSITIVE and NEGATIVE drafts of one correction
+   * share it, so distribution offers them together in this server run. The stored Signal does not keep it.
+   */
+  val correction: Int? = null,
 )
 
 @Serializable
@@ -120,6 +125,8 @@ data class PrReceipt(
   val signalIds: List<String>,
   val failures: List<PrSignalStoreFailure> = emptyList(),
   val problems: List<String> = emptyList(),
+  /** Why drafts that share a correction number were stored as separate Signals instead of a pair. */
+  val unpairedCorrections: List<String> = emptyList(),
 )
 
 @Serializable

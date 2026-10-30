@@ -220,6 +220,8 @@ internal data class EdictNextSignalPreparationResponse(
   val signalId: String? = null,
   val signalPath: String? = null,
   val signal: EdictNextSignal? = null,
+  /** The other Signal of the same PR correction, still undistributed; assigning it with [signal] needs no own decision. */
+  val pairedSignal: EdictNextSignal? = null,
   val candidates: List<EdictNextSignalCandidate> = emptyList(),
   val summary: String,
   @EncodeDefault(EncodeDefault.Mode.ALWAYS)

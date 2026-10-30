@@ -15,6 +15,7 @@ import org.jetbrains.qodana.edict.edictnext.EdictNextLineRange
 import org.jetbrains.qodana.edict.edictnext.EdictNextRepositoryState
 import org.jetbrains.qodana.edict.edictnext.EdictNextSignal
 import org.jetbrains.qodana.edict.edictnext.EdictNextSignalLabel
+import org.jetbrains.qodana.edict.edictnext.EdictNextSignalPairs
 import org.jetbrains.qodana.edict.edictnext.EdictNextSignalProvenance
 import org.jetbrains.qodana.edict.edictnext.EdictNextSignalSource
 import org.jetbrains.qodana.edict.edictnext.numberedLines
@@ -29,6 +30,7 @@ import java.time.temporal.ChronoUnit
 internal class PrAnalysis(
   private val store: EdictNextRepositoryState,
   private val provider: ReviewExtractionApi,
+  private val pairs: EdictNextSignalPairs = EdictNextSignalPairs(),
   private val today: () -> LocalDate = { LocalDate.now(ZoneOffset.UTC) },
 ) {
   private data class Batch(
@@ -283,6 +285,7 @@ internal class PrAnalysis(
         )
       }
     }
+    val unpairedCorrections = recordPairs(drafts, completed.associate { (index, signal) -> index - signals.size to signal.id }, stored)
     val failedIds = failedWorkItemIds.toSet() + failures.map(PrSignalStoreFailure::workItemId)
     val successfulIds = inspected.toSet() - failedIds
     batch.storedChunks[chunkIndex] = StoredChunk(stored, failures, problems, successfulIds)
@@ -296,8 +299,38 @@ internal class PrAnalysis(
       signalIds = stored.keys.toList(),
       failures = failures,
       problems = problems,
+      unpairedCorrections = unpairedCorrections,
     )
   }
+
+  /**
+   * Records the stored Signals of each correction as a pair: the two drafts that share a work item and correction number,
+   * one POSITIVE and one NEGATIVE of the same diff. Returns why the other numbered corrections stay separate Signals.
+   */
+  private fun recordPairs(
+    drafts: List<PrSignalDraft>,
+    draftSignalIds: Map<Int, String>,
+    stored: Map<String, EdictNextSignal>,
+  ): List<String> = drafts.withIndex()
+    .filter { it.value.correction != null }
+    .groupBy { it.value.workItemId to it.value.correction }
+    .mapNotNull { (correction, members) ->
+      val ids = members.map { draftSignalIds[it.index]?.takeIf(stored::containsKey) }
+      val reason = when {
+        members.size != 2 -> "${members.size} draft(s) share it"
+        members.map { it.value.label }.toSet() != EdictNextSignalLabel.entries.toSet() ->
+          "its drafts are not one POSITIVE and one NEGATIVE"
+        members.map { with(it.value.diff) { listOf(before, after, beforePath, afterPath) } }.distinct().size != 1 ->
+          "its drafts name different diffs"
+        ids.any { it == null } -> "a draft of it was not stored"
+        else -> null
+      }
+      if (reason == null) {
+        pairs.record(ids[0]!!, ids[1]!!)
+        null
+      }
+      else "Correction ${correction.second} of ${correction.first}: $reason"
+    }
 
   /**
    * The draft's idempotency key, from its evidence identity like a commit Signal's: work item, the draft's [ordinal]

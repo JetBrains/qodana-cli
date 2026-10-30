@@ -18,6 +18,7 @@ import org.jetbrains.qodana.edict.edictnext.EdictNextDistributionService
 import org.jetbrains.qodana.edict.edictnext.EdictNextGenerationService
 import org.jetbrains.qodana.edict.edictnext.EdictNextMcpToolset
 import org.jetbrains.qodana.edict.edictnext.EdictNextRepositoryState
+import org.jetbrains.qodana.edict.edictnext.EdictNextSignalPairs
 import org.jetbrains.qodana.edict.edictnext.EdictRepository
 import org.jetbrains.qodana.edict.edictnext.EdictRepositoryDirectory
 import org.jetbrains.qodana.edict.edictnext.EdictSourceFileService
@@ -64,18 +65,26 @@ internal class EdictServer private constructor(
     ): EdictServer {
       val store = EdictNextRepositoryState.open(layout.stateDirectory)
       try {
+        // PR extraction records the Signals of one correction; distribution in the same run offers them together.
+        val signalPairs = EdictNextSignalPairs()
         val management = EdictManagementService(
           store,
           layout,
           reviewProvider = reviewProvider,
           reviewRepository = configuration.ci?.reviewRepository,
           defaultSignalCount = configuration.extraction.defaultSignalCount,
+          signalPairs = signalPairs,
         )
         // The lock above created the state directory, so the repository can be opened now.
         val repository = EdictRepository(EdictRepositoryDirectory(layout.stateDirectory))
         val toolset = EdictNextMcpToolset(
           layout, inspectionServer, management,
-          EdictNextDistributionService(repository, layout.neighboursResponsePath, configuration.distribution.defaultSignalCount),
+          EdictNextDistributionService(
+            repository,
+            layout.neighboursResponsePath,
+            configuration.distribution.defaultSignalCount,
+            pairs = signalPairs,
+          ),
           EdictNextGenerationService(
             repository,
             inspectionServer,

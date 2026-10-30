@@ -126,17 +126,19 @@ internal class EdictNextMcpToolset(
 
     server.addTool(
       name = "edict_next_add_signal_to_cluster",
-      description = "Add a prepared Signal to an existing cluster or create a new Pending cluster with the supplied id. Existing-cluster assignment requires its context to have been loaded for the current Signal. This is the only distribution mutation. " +
+      description = "Add a prepared Signal, and with pairedSignalId also the pairedSignal prepared with it, to an existing cluster or create a new Pending cluster with the supplied id. Existing-cluster assignment requires its context to have been loaded for the current Signal. This is the only distribution mutation. " +
               "After an assignment, `next` holds what edict_next_next_signal would return: the next Signal, HAND_OFF or STOP_DISTRIBUTION.",
-      inputSchema = stringArguments(
-        "signalId" to "ID of the current prepared Signal",
-        "clusterId" to "Existing or new kebab-case cluster id",
+      inputSchema = toolSchema(
+        listOf("signalId", "clusterId"),
+        "signalId" to property("string", "ID of the current prepared Signal"),
+        "clusterId" to property("string", "Existing or new kebab-case cluster id"),
+        "pairedSignalId" to property("string", "ID of the pairedSignal prepared with it, to assign both"),
       ),
     ) { request ->
       val signalId = request.requireString("signalId")
       try {
         distribution
-          .addSignalToCluster(signalId, request.requireString("clusterId"))
+          .addSignalToCluster(signalId, request.requireString("clusterId"), request.optionalString("pairedSignalId"))
           .toToolResult()
       } catch (e: Exception) {
         EdictNextSignalValidationResponse(
