@@ -79,6 +79,26 @@ edict:
     defaultSignalCount: 300
 ```
 
+Inspection promotion uses two MCP calls. `edict_select_promotion_clusters` suggests candidates whose precision,
+recall, and F1 are strictly above the configured targets (defaults: precision 0.7, recall 0.6, F1 0), with a saved
+evaluation matching the inspection and current examples. F1 is the harmonic mean of precision and recall. Each
+target must be between 0 and 1. Selection returns the configured thresholds in `thresholds` and does not create PRs.
+Its optional positive `count` limits the number of eligible clusters returned; omitting it selects all eligible clusters.
+
+The promotion skill reviews candidates and chooses explicit cluster IDs for `edict_promote_clusters`. It may choose
+a subset or deliberately choose other Generated inspections based on their evidence. Publication does not reapply
+metric thresholds or require an evaluation. It still requires referenced strong positive Signals from five distinct
+source files and an inspection file, and skips previously published digests. Unchosen inspections remain `Generated`.
+
+```yaml
+edict:
+  promotion:
+    reviewer: reviewer-login
+    targetPrecision: 0.7
+    targetRecall: 0.6
+    targetF1: 0.0
+```
+
 `mcp` serves one shared Streamable HTTP endpoint on loopback port `edict.mcpPort`, so every native
 agent shares one server and one state lock. It fails when `.codex/config.toml` is missing or names
 another port, or when the port is busy; it never moves to another port. State is read from
@@ -99,6 +119,10 @@ Standard rates, and writes
 step, cluster, and descendant task, including each task's own cost when it has children. Inclusive costs contain all
 descendants and must not be added to their child rows. Detailed token categories remain in the JSON report.
 The manager includes only the run total in its final response after the pipeline completes.
+
+Weak-signal source fixes always target the Git branch checked out in the project where the skills run,
+independently of the inspection publication `targetBranch`. Detached checkouts must check out a branch
+before running the skills. The target head must still match the analyzed revision; refresh analysis if it has moved.
 
 ## What is ported
 

@@ -18,6 +18,34 @@ class EdictYamlConfigurationTest {
   lateinit var directory: Path
 
   @Test
+  fun `promotion metric targets have defaults and accept YAML overrides`() {
+    val defaults = PromotionConfiguration("reviewer")
+    assertEquals(0.7, defaults.targetPrecision)
+    assertEquals(0.6, defaults.targetRecall)
+    assertEquals(0.0, defaults.targetF1)
+    val configuration = EdictYamlConfiguration.load(yaml("""
+      edict:
+        promotion:
+          reviewer: reviewer
+          targetPrecision: 0.95
+          targetRecall: 0.7
+          targetF1: 0.85
+    """))
+    assertEquals(defaults.copy(targetPrecision = 0.95, targetRecall = 0.7, targetF1 = 0.85), configuration.promotion)
+  }
+
+  @Test
+  fun `promotion metric targets must be finite fractions`() {
+    for (value in listOf(-0.1, 1.1, Double.NaN, Double.POSITIVE_INFINITY)) {
+      assertFailsWith<IllegalArgumentException> { PromotionConfiguration("reviewer", targetPrecision = value) }
+      assertFailsWith<IllegalArgumentException> { PromotionConfiguration("reviewer", targetRecall = value) }
+      assertFailsWith<IllegalArgumentException> { PromotionConfiguration("reviewer", targetF1 = value) }
+    }
+    assertEquals(0.0, PromotionConfiguration("reviewer", targetPrecision = 0.0).targetPrecision)
+    assertEquals(1.0, PromotionConfiguration("reviewer", targetF1 = 1.0).targetF1)
+  }
+
+  @Test
   fun `loads Edict sections while ignoring unrelated Qodana configuration`() {
     val configuration = EdictYamlConfiguration.load(yaml(
       """

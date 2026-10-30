@@ -447,15 +447,36 @@ internal class EdictNextMcpToolset(
   private fun registerPromotionTools(server: Server) {
     registerWeakSignalPromotionTools(server)
     server.addTool(
-      name = "edict_promote_clusters",
-      description = "Promote eligible Generated inspections with strong positive Signals from at least five distinct source files linked to source PRs or commit diffs. " +
-        "Each PR includes a description and one representative positive Signal per source file. Omit clusterIds to process every eligible cluster.",
+      name = "edict_select_promotion_clusters",
+      description = "Select Generated inspection candidates using configured precision, recall and F1 targets, current evaluation, referenced source evidence and publication history. Returns configured thresholds and candidates with metrics without creating PRs. Omit count to select all eligible clusters. The skill decides which clusters to publish with edict_promote_clusters.",
       inputSchema = toolSchema(
         required = listOf("token"),
         "token" to property("string", "Your delegated edict-promote task token"),
+        "count" to buildJsonObject {
+          put("type", "integer")
+          put("description", "Maximum number of eligible clusters to return; omitted means all eligible clusters")
+          put("minimum", 1)
+        },
+      ),
+    ) { request ->
+      try {
+        management.requireSkill(request.requireString("token"), "edict-promote")
+        val count = request.arguments?.get("count")?.let { EdictNextJson.decodeFromJsonElement<Int>(it) }
+        promotion.select(count).toToolResult()
+      } catch (e: Exception) {
+        EdictNextMutationResponse(false, e.message ?: "Inspection selection failed").toToolResult(isError = true)
+      }
+    }
+
+    server.addTool(
+      name = "edict_promote_clusters",
+      description = "Publish only the Generated clusters explicitly chosen by the skill. Selection thresholds are advisory here: this call does not reapply metric targets or require a saved evaluation. Requires inspection files and valid referenced strong positive source evidence. Already-published digests are skipped.",
+      inputSchema = toolSchema(
+        required = listOf("token", "clusterIds"),
+        "token" to property("string", "Your delegated edict-promote task token"),
         "clusterIds" to buildJsonObject {
           put("type", "array")
-          put("description", "Optional cluster IDs to consider; omitted means every cluster")
+          put("description", "Explicit cluster IDs chosen by the skill to publish")
           put("minItems", 1)
           put("uniqueItems", true)
           putJsonObject("items") { put("type", "string") }
@@ -464,9 +485,9 @@ internal class EdictNextMcpToolset(
     ) { request ->
       try {
         management.requireSkill(request.requireString("token"), "edict-promote")
-        val clusterIds = request.arguments?.get("clusterIds")?.let {
-          EdictNextJson.decodeFromJsonElement<List<String>>(it)
-        }
+        val clusterIds = EdictNextJson.decodeFromJsonElement<List<String>>(
+          requireNotNull(request.arguments?.get("clusterIds")) { "clusterIds is required" },
+        )
         promotion.promote(clusterIds).toToolResult()
       } catch (e: Exception) {
         EdictNextMutationResponse(
