@@ -173,7 +173,6 @@ class AgentLoggingTest {
                 full,
                 short
             ).forEach { assertFalse(it.contains(token)); assertFalse(it.contains(created.text("token"))) }
-            // A task added with its prompt is delegated in the same call and logged like a delegation.
             val addedPrompt = "\$edict-batch-signal-analysis\nRead /skills/edict-batch-signal-analysis/SKILL.md and inspect HEAD~1."
             val added = call("edict_task_add", buildJsonObject {
                 put("token", created.text("token")); put("skill", "edict-batch-signal-analysis"); put("title", "Older commit")

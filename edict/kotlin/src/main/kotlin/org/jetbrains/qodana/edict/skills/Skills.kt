@@ -46,7 +46,6 @@ object Skills {
         return resource("/skills/${resourceRoots.getValue(name)}/SKILL.md")
     }
 
-    /** A shared reference that managed skills link to, such as `task-protocol.md`, from the manager's references. */
     fun readReference(name: String): String =
         resource("/skills/${resourceRoots.getValue(Registry.installedName("edict_manager"))}/references/$name")
 

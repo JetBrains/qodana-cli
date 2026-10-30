@@ -217,7 +217,6 @@ internal data class EdictNextSignalPreparationResponse(
   val signalId: String? = null,
   val signalPath: String? = null,
   val signal: EdictNextSignal? = null,
-  /** The other Signal of the same PR correction, still undistributed; assigning it with [signal] needs no own decision. */
   val pairedSignal: EdictNextSignal? = null,
   val candidates: List<EdictNextSignalCandidate> = emptyList(),
   val summary: String,
@@ -246,7 +245,6 @@ internal sealed class EdictNextDistributionContextResponse {
   @SerialName("cluster")
   data class Cluster(
     val clusterId: String,
-    /** The cluster's members as evidence ([asEvidence]). */
     val signals: List<EdictNextSignal>,
   ) : EdictNextDistributionContextResponse()
 }
@@ -264,10 +262,7 @@ internal sealed interface EdictNextSignalCandidate {
     val clusterId: String,
     override val nearestDistance: Double,
     val memberCount: Int,
-    /**
-     * The members of one of the nearest small clusters as evidence ([asEvidence]), which then counts as loaded context for
-     * the current Signal.
-     */
+    /** The members of one of the nearest small clusters, which then counts as loaded context for the current Signal. */
     val signals: List<EdictNextSignal>? = null,
   ) : EdictNextSignalCandidate
 
@@ -504,10 +499,7 @@ internal data class EdictRunContext(
   val defaultSignalCount: Int,
 )
 
-/**
- * The Signal as agents read it for evidence: its idempotency key and provenance, which only extraction uses, are reset
- * to their defaults, so encoding leaves them out.
- */
+/** Resets the keys only extraction uses to their defaults, which encoding leaves out. */
 internal fun EdictNextSignal.asEvidence(): EdictNextSignal =
   copy(idempotencyKey = "", provenance = EdictNextSignalProvenance(""))
 

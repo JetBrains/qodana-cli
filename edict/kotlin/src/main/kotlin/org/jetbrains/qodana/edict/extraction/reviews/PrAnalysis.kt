@@ -303,10 +303,7 @@ internal class PrAnalysis(
     )
   }
 
-  /**
-   * Records the stored Signals of each correction as a pair: the two drafts that share a work item and correction number,
-   * one POSITIVE and one NEGATIVE of the same diff. Returns why the other numbered corrections stay separate Signals.
-   */
+  /** Returns why numbered corrections were not paired. */
   private fun recordPairs(
     drafts: List<PrSignalDraft>,
     draftSignalIds: Map<Int, String>,

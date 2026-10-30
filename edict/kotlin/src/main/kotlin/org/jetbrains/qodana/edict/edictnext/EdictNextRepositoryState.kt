@@ -142,7 +142,7 @@ internal class EdictNextRepositoryState(
     }
   }
 
-  /** Adds a direct child task and delegates it in one call; a rejected prompt adds no task. */
+  /** A rejected prompt adds no task. */
   @Synchronized
   fun addDelegatedTask(token: String, skill: String, title: String, prompt: String): Delegation {
     requireDelegationPrompt(skill, prompt)
@@ -184,10 +184,7 @@ internal class EdictNextRepositoryState(
     return TaskAssignment(task.id, task.skill, Registry.skillPath(task.skill), task.prompt)
   }
 
-  /**
-   * Fetches the assignment and starts the task in one call, since a fresh worker needs both before any domain work. The
-   * same worker calling again gets its assignment back.
-   */
+  /** Starts the task; the same worker calling again gets its assignment back. */
   @Synchronized
   fun claimTask(token: String, agentId: String): TaskAssignment {
     val assignment = readTask(token)

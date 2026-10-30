@@ -96,7 +96,6 @@ internal class EdictManagementService(
   internal fun scratchDirectory(token: String) =
     layout.taskScratchDirectory(store.scratchOwnerId(token)).also { Files.createDirectories(it) }
 
-  /** Reads a file that the task with [token] wrote below its own scratch directory. */
   internal fun readScratchFile(token: String, path: String): String {
     val file = Path.of(path)
     require(file.isAbsolute) { "'$path' must be an absolute path" }
@@ -676,7 +675,6 @@ internal class EdictManagementService(
 
   private fun lifecycle(change: () -> TaskLifecycleAck): JsonElement = EdictNextJson.encodeToJsonElement(recorded(change))
 
-  /** Applies a task transition and logs it. */
   private fun <T> recorded(change: () -> T): T = synchronized(store) {
     val before = store.plan()
     val result = change()
@@ -726,16 +724,12 @@ private fun oneOf(vararg schemas: JsonElement) = buildJsonObject {
   put("oneOf", JsonArray(schemas.toList()))
 }
 
-/** The shared references [skill] links to, and the task protocol that every managed task follows. */
 private fun referencesOf(skill: String): List<String> =
   (listOf("task-protocol.md") + REFERENCE_LINK.findAll(skill).map { it.groupValues[1] }).distinct()
 
 private val REFERENCE_LINK = Regex("""\.\./edict_manager/references/(\w[\w-]*\.md)""")
 
-/**
- * A Signal as `edict_get_cluster_signals` lists it: without the bulky evidence its file keeps and without the keys only
- * extraction writes, so a cluster of any size fits one answer that every later turn re-reads.
- */
+/** Without the evidence the Signal file keeps, so a cluster of any size fits one answer. */
 private fun signalIndexEntry(signal: EdictNextSignal): JsonObject {
   val evidence = EdictNextJson.encodeToJsonElement(signal.asEvidence()).jsonObject
   val source = evidence.getValue("source").jsonObject

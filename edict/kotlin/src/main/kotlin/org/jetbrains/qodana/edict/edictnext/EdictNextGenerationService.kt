@@ -165,10 +165,6 @@ internal class EdictNextGenerationService(
     return EdictNextMutationResponse(true, "Appended history for cluster '$clusterId'")
   }
 
-  /**
-   * Every code example of [clusterId] as text: per example its label, whether a STRONG Signal is assigned to it, the
-   * Signals assigned to it, its file and expected ranges, then its numbered source.
-   */
   fun clusterExamples(clusterId: String): String {
     val cluster = repository.loadCluster(clusterId)
     if (cluster.examples.isEmpty()) return "Cluster '$clusterId' has no code examples"

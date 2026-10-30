@@ -255,7 +255,6 @@ class EdictNextMcpToolsetTest {
         put("token", childToken)
         put("agentId", "scratch-test-agent")
       }).obj("structuredContent")
-      // Fetching the assignment starts the task and hands over everything the worker would otherwise read first.
       assertEquals("running", store.plan()!!.tasks.single().status)
       assertEquals(Skills.read(task.skill), assignment.text("skillInstructions"))
       assertTrue("task-protocol.md" in assignment.obj("references"))
@@ -403,7 +402,6 @@ class EdictNextMcpToolsetTest {
         repository.loadCluster("string-equality").signals.map { it.id }.toSet(),
         evidence.array("signals").map { it.jsonObject.text("id") }.toSet(),
       )
-      // The list keeps each Signal's identity and points to its file for the full evidence.
       val signalsDirectory = Path.of(evidence.text("signalsDirectory"))
       for (signal in evidence.array("signals").map { it.jsonObject }) {
         assertFalse("idempotencyKey" in signal || "provenance" in signal, signal.toString())

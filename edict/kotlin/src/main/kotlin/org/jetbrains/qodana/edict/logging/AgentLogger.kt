@@ -139,5 +139,4 @@ class AgentLogger internal constructor(private val store: EdictNextRepositorySta
     }
 }
 
-/** Tools that delegate a child task and return its credentials. */
 private val DELEGATING_TOOLS = setOf("edict_task_add", "edict_delegate")
