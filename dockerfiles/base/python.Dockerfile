@@ -1,5 +1,5 @@
 ARG BASE_TAG="trixie-debian13-dev"
-ARG NODE_TAG="22-debian13-dev@sha256:6193eadf230e43b9df82c4340e1f98223d2ef41ec83bde0ba32ccc3dbf11b0b1"
+ARG NODE_TAG="22-debian13-dev@sha256:50e98c244814769b94e2d2594edd2dcee91742ec943570ead23be7a411632301"
 FROM dhi.io/node:$NODE_TAG AS node_base
 FROM python-community
 
