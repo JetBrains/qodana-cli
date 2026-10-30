@@ -62,6 +62,7 @@ class McpIntegrationTest : IntegrationTest() {
             // Only the managed tools run examples and the whole project.
             assertFalse("run_inspection_kts_examples" in tools)
             assertFalse("run_inspection_kts_project" in tools)
+            assertContains(tools, "edict_select_promotion_clusters")
             assertContains(tools, "edict_promote_clusters")
             assertContains(tools, "edict-check-promotion")
             assertContains(tools, "edict_promotion_decide_reviews")

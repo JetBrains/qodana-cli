@@ -1,6 +1,7 @@
 // Copyright 2026 JetBrains s.r.o. Licensed under the Apache License, Version 2.0.
 package org.jetbrains.qodana.edict
 
+import org.jetbrains.qodana.edict.common.GitRepository
 import io.ktor.server.cio.CIO
 import io.ktor.server.cio.CIOApplicationEngine
 import io.ktor.server.engine.EmbeddedServer
@@ -85,7 +86,9 @@ internal class EdictServer private constructor(
           EdictNextEnrichmentMcpToolset(management, EdictNextEnrichmentService(repository, layout.root)),
           EdictSourceFileService(layout.root, reviewProvider, configuration.ci?.reviewRepository),
           configuration,
-          PromotionService({ repository }, configuration, reviewManagement),
+          PromotionService({ repository }, configuration, reviewManagement, executionBranch = {
+            GitRepository(layout.root).currentBranch()
+          }),
         )
         val engine = embeddedServer(CIO, host = "127.0.0.1", port = port) {
           mcpStreamableHttp { toolset.createServer() }

@@ -20,6 +20,12 @@ class GitRepository(directory: Path) {
     fun git(vararg arguments: String): String =
         runProcess(root, listOf("git", "--no-pager", "--literal-pathspecs") + arguments)
 
+    fun currentBranch(): String = git("rev-parse", "--abbrev-ref", "HEAD").trim().also {
+        require(it.isNotBlank() && it != "HEAD") {
+            "Cannot publish source fixes from detached HEAD; check out the project branch before running the skills"
+        }
+    }
+
     fun resolve(revision: String): String {
         require(revision.isNotBlank() && revision.none { it in "\u0000\r\n" }) { "Revision must be one nonblank expression" }
         return git("rev-parse", "--verify", "--end-of-options", "$revision^{commit}").trim()

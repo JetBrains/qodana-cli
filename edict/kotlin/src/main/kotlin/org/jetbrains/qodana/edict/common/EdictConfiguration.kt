@@ -110,8 +110,14 @@ internal data class PromotionConfiguration(
   val reviewer: String,
   val targetBranch: String? = null,
   val inspectionsDirectory: String = "inspections",
+  val targetPrecision: Double = 0.7,
+  val targetRecall: Double = 0.6,
+  val targetF1: Double = 0.0,
 ) {
   init {
+    mapOf("targetPrecision" to targetPrecision, "targetRecall" to targetRecall, "targetF1" to targetF1).forEach { (name, value) ->
+      require(value.isFinite() && value in 0.0..1.0) { "edict.promotion.$name must be between 0 and 1: $value" }
+    }
     require(reviewer.isNotBlank() && reviewer.none { it in "/\\\u0000\r\n" }) { "Promotion reviewer is invalid" }
     targetBranch?.let {
       require(
@@ -216,11 +222,17 @@ internal class PromotionYaml {
   var reviewer: String? = null
   var targetBranch: String? = null
   var inspectionsDirectory: String? = null
+  var targetPrecision: Double? = null
+  var targetRecall: Double? = null
+  var targetF1: Double? = null
 
   fun toConfiguration() = PromotionConfiguration(
     reviewer = reviewer.required("edict.promotion.reviewer"),
     targetBranch = targetBranch?.required("edict.promotion.targetBranch"),
     inspectionsDirectory = inspectionsDirectory?.required("edict.promotion.inspectionsDirectory") ?: "inspections",
+    targetPrecision = targetPrecision ?: 0.7,
+    targetRecall = targetRecall ?: 0.6,
+    targetF1 = targetF1 ?: 0.0,
   )
 }
 

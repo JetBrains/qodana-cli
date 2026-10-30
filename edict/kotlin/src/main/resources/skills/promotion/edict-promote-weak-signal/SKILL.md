@@ -34,7 +34,10 @@ For each returned inspection:
    locations' original starting lines), `content` (the complete replacement file), and `explanation`. Submit no more
    than five fixed locations in total for that inspection. The server creates one PR containing only these source
    files, describes the inspection and improvements, and asks users to accept/merge if they agree. It resolves the
-   repository, reviewer, and target branch from configuration and keeps provider credentials private.
+   repository and reviewer from configuration, and the source-fix target from the project Git branch and keeps provider credentials private.
+
+Source-fix publication always targets the project Git branch where the skills run.
+Detached checkouts must check out a branch before running the skills.
 
 Publication is owned by the MCP server. Do not commit, push, or invoke a provider CLI yourself. If the target branch
 has moved since analysis, report the stale evidence and request a new analysis instead of overwriting newer code.

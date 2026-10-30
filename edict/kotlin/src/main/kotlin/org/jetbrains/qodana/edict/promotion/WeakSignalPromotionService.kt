@@ -67,6 +67,7 @@ internal class WeakSignalPromotionService(
   private val repository: () -> EdictRepository,
   private val configuration: EdictConfiguration,
   private val reviews: ReviewManagementApi,
+  private val executionBranch: () -> String = { error("The project execution branch is unavailable") },
 ) {
   fun checkReviews(redactEvidence: (String) -> String = { it }): WeakSignalPromotionCheckReviewsResponse {
     val repository = repository()
@@ -164,7 +165,7 @@ internal class WeakSignalPromotionService(
     require(fixed.size in 1..MAX_WEAK_SIGNAL_FIXES && fixed.all { it in selected }) {
       "Fix only 1 to $MAX_WEAK_SIGNAL_FIXES selected true-positive locations"
     }
-    val targetBranch = reviews.resolveTargetBranch(ci.reviewRepository, config.targetBranch)
+    val targetBranch = reviews.resolveTargetBranch(ci.reviewRepository, executionBranch())
     repository.loadActiveWeakSignalPromotions()[clusterId].orEmpty().firstOrNull {
       it.pullRequest.provider == ci.provider &&
         it.pullRequest.owner == ci.owner && it.pullRequest.repository == ci.repository

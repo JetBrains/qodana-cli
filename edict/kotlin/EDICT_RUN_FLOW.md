@@ -79,7 +79,8 @@ repository-wide validation.
     (`LivePipelineTest`)
   - stop dependent work on a failed or uncompleted task and cancel unstarted dependent stages; let independent workers
     finish, then always run selected promotion even after failed/cancelled enrichment or generation or no targets
-  - promotion scans every eligible Generated inspection, including earlier runs; retain upstream failures in the report
+  - `edict_select_promotion_clusters` scans Generated inspections, including earlier runs, and suggests candidates using a current evaluation and configured precision, recall and F1 targets (defaults: 0.7, 0.6, 0)
+  - the promotion skill chooses explicit cluster IDs for `edict_promote_clusters`; publication does not reapply metric thresholds, and unchosen inspections stay Generated; retain upstream failures in the report
     - a new PR requires strong positive Signals from at least five distinct source files with usable source PR or commit diff URLs;
       each repository-relative path counts once across revisions and reviews; negative Signals do not count; missing references
       produce a per-cluster failure before PR creation

@@ -13,6 +13,7 @@ import kotlinx.serialization.json.addJsonObject
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.jsonArray
 import kotlinx.serialization.json.jsonObject
+import kotlinx.serialization.json.jsonPrimitive
 import kotlinx.serialization.json.put
 import kotlinx.serialization.json.putJsonArray
 import org.jetbrains.qodana.edict.common.EdictLayout
@@ -75,6 +76,8 @@ class EdictNextMcpToolsetTest {
       "generate_psi_tree",
       "generate_inspection_kts_api",
       "generate_inspection_kts_examples",
+      "edict_select_promotion_clusters",
+      "edict_promote_clusters",
       "edict_prepare_weak_signal_promotion",
       "edict_promote_weak_signal",
       "edict_check_weak_signal_promotion",
@@ -94,6 +97,12 @@ class EdictNextMcpToolsetTest {
       )
       val server = toolset.createServer()
       assertTrue(server.tools.keys.containsAll(movedTools))
+      val promotionSelection = server.tools.getValue("edict_select_promotion_clusters").tool.inputSchema
+      assertEquals(listOf("token"), promotionSelection.required)
+      assertEquals(setOf("token", "count"), checkNotNull(promotionSelection.properties).keys)
+      assertEquals("integer", promotionSelection.properties!!.getValue("count").jsonObject.getValue("type").jsonPrimitive.content)
+      assertEquals("1", promotionSelection.properties!!.getValue("count").jsonObject.getValue("minimum").toString())
+      assertEquals(listOf("token", "clusterIds"), server.tools.getValue("edict_promote_clusters").tool.inputSchema.required)
       assertFalse("edict_calculate_price" in server.tools)
       assertTrue("edict_publish_signal" in server.tools)
       val regularSignal = server.tools.getValue("edict_publish_signal").tool.inputSchema.properties!!.getValue("signal")
@@ -624,6 +633,10 @@ class EdictNextMcpToolsetTest {
         {"jsonrpc":"2.0","id":10,"method":"ping"}
         {"jsonrpc":"2.0","id":11,"method":"tools/call","params":{"name":"edict_record_weak_signal_promotion_signals","arguments":{"token":"${normalChecker.token}","clusterId":"test","inspectionDigest":"unused","pullRequest":{},"signals":[]}}}
         {"jsonrpc":"2.0","id":12,"method":"tools/call","params":{"name":"edict_record_weak_signal_promotion_signals","arguments":{"token":"${weak.token}","clusterId":"test","inspectionDigest":"unused","pullRequest":{},"signals":[]}}}
+        {"jsonrpc":"2.0","id":13,"method":"tools/call","params":{"name":"edict_select_promotion_clusters","arguments":{"token":"${weak.token}"}}}
+        {"jsonrpc":"2.0","id":14,"method":"tools/call","params":{"name":"edict_promote_clusters","arguments":{"token":"${normal.token}"}}}
+        {"jsonrpc":"2.0","id":15,"method":"tools/call","params":{"name":"edict_promote_clusters","arguments":{"token":"${normal.token}","clusterIds":[]}}}
+        {"jsonrpc":"2.0","id":16,"method":"tools/call","params":{"name":"edict_promote_clusters","arguments":{"token":"${weak.token}","clusterIds":["test"]}}}
       """.trimIndent() + "\n"
       val transport = StdioServerTransport(
         input = DelayedEofInputStream(ByteArrayInputStream(input.encodeToByteArray())).asSource().buffered(),
@@ -645,7 +658,7 @@ class EdictNextMcpToolsetTest {
       val normalCheck = responses.single { it["id"].toString() == "9" }.obj("result")
       assertFalse(normalCheck.flag("isError") == true)
       assertTrue(normalCheck.obj("structuredContent").keys.all { it in setOf("accepted", "undecided", "failures") })
-      for (id in listOf("3", "4", "6", "7", "8", "11", "12")) {
+      for (id in listOf("3", "4", "6", "7", "8", "11", "12", "13", "14", "15", "16")) {
         assertTrue(responses.single { it["id"].toString() == id }.obj("result").flag("isError") == true)
       }
     }
