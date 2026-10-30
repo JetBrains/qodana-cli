@@ -1,6 +1,7 @@
 package org.jetbrains.qodana.edict.edictnext
 
 import kotlinx.coroutines.runBlocking
+import kotlinx.serialization.json.jsonObject
 import org.jetbrains.qodana.edict.common.runProcess
 import org.junit.jupiter.api.io.TempDir
 import java.nio.ByteBuffer
@@ -89,6 +90,13 @@ class EdictNextDistributionServiceTest {
         break
       }
       assertEquals(cluster.memberCount, cluster.signals.size)
+      // Members come as evidence: their correcting diff stays, the keys only extraction uses do not.
+      for (member in cluster.signals) {
+        assertFalse("idempotencyKey" in member || "provenance" in member, member.toString())
+        val source = member.getValue("source").jsonObject
+        assertFalse("url" in source)
+        assertTrue("diffPositiveToNegative" in source && "discussionMessages" in source)
+      }
       // Joining an included cluster needs no context call.
       distribution.addSignalToCluster(assertNotNull(prepared.signalId), "rule")
       included++
