@@ -120,7 +120,7 @@ class EdictNextMcpToolsetTest {
       val delegateSchema = server.tools.getValue("edict_delegate").tool.inputSchema
       assertEquals(setOf("token", "taskId", "prompt"), checkNotNull(delegateSchema.properties).keys)
       assertEquals(listOf("token", "taskId", "prompt"), delegateSchema.required)
-      assertEquals(listOf("token", "skill", "title", "prompt"), server.tools.getValue("edict_task_add").tool.inputSchema.required)
+      assertEquals(listOf("token", "skill", "title"), server.tools.getValue("edict_task_add").tool.inputSchema.required)
       val signalSchema = checkNotNull(
         server.tools.getValue("edict_publish_signal").tool.inputSchema.properties,
       ).getValue("signal").jsonObject
@@ -289,6 +289,18 @@ class EdictNextMcpToolsetTest {
       assertFalse(cleanup.flag("isError") == true)
       assertTrue(cleanup.obj("structuredContent").flag("removed") == true)
       assertFalse(Files.exists(taskScratch))
+      val pending = management.call("edict_task_add", buildJsonObject {
+        put("token", token)
+        put("skill", "edict-batch-signal-analysis")
+        put("title", "Later commits")
+      }).obj("structuredContent").text("id")
+      assertEquals("pending", store.plan()!!.tasks.single { it.id == pending }.status)
+      assertFalse(management.call("edict_delegate", buildJsonObject {
+        put("token", token)
+        put("taskId", pending)
+        put("prompt", "\$edict-batch-signal-analysis\nRead /skills/edict-batch-signal-analysis/SKILL.md")
+      }).flag("isError") == true)
+      assertEquals("delegated", store.plan()!!.tasks.single { it.id == pending }.status)
     }
   }
 

@@ -322,23 +322,25 @@ internal class EdictManagementService(
 
     tool(
       name = "edict_task_add",
-      description = "Add a direct child task allowed by your registered skill and delegate it. Prompt must start with the exact line \$<registry skill>, then absolute SKILL.md path and bounded token-free instructions. Pass only returned short prompt to native spawn_agent without inherited conversation.",
-      required = listOf("token", "skill", "title", "prompt"),
+      description = "Add a direct child task allowed by your registered skill and delegate it. Prompt must start with the exact line \$<registry skill>, then absolute SKILL.md path and bounded token-free instructions. Pass only returned short prompt to native spawn_agent without inherited conversation. " +
+        "Without a prompt the task stays pending until edict_delegate.",
+      required = listOf("token", "skill", "title"),
       properties = properties("skill", "title", "prompt"),
     ) { arguments ->
-      EdictNextJson.encodeToJsonElement(
-        store.addDelegatedTask(
-          arguments.requireString("token"),
-          arguments.requireString("skill"),
-          arguments.requireString("title"),
-          arguments.requireString("prompt"),
-        ),
-      )
+      val token = arguments.requireString("token")
+      val skill = arguments.requireString("skill")
+      val title = arguments.requireString("title")
+      val prompt = arguments.optionalString("prompt")
+      if (prompt == null) {
+        EdictNextJson.encodeToJsonElement(store.addTask(token, skill, title))
+      } else {
+        EdictNextJson.encodeToJsonElement(store.addDelegatedTask(token, skill, title, prompt))
+      }
     }
 
     tool(
       name = "edict_delegate",
-      description = "Delegate an existing direct child task: a step of the created plan, or a cancelled task to retry with a fresh worker. Prompt must start with the exact line \$<registry skill>, then absolute SKILL.md path and bounded token-free instructions. Pass only returned short prompt to native spawn_agent without inherited conversation.",
+      description = "Delegate an existing direct child task: a step of the created plan, a task added without a prompt, or a cancelled task to retry with a fresh worker. Prompt must start with the exact line \$<registry skill>, then absolute SKILL.md path and bounded token-free instructions. Pass only returned short prompt to native spawn_agent without inherited conversation.",
       required = listOf("token", "taskId", "prompt"),
       properties = properties("taskId", "prompt"),
     ) { arguments ->
@@ -755,6 +757,9 @@ private fun objectOf(properties: Map<String, JsonElement>, required: List<String
 private fun JsonObject.requireString(name: String): String =
   (get(name) as? JsonPrimitive)?.takeIf(JsonPrimitive::isString)?.content
     ?: error("$name must be a string")
+
+private fun JsonObject.optionalString(name: String): String? =
+  get(name)?.let { (it as? JsonPrimitive)?.takeIf(JsonPrimitive::isString)?.content ?: error("$name must be a string") }
 
 private fun JsonObject.requireInt(name: String): Int =
   (get(name) as? JsonPrimitive)?.takeUnless(JsonPrimitive::isString)?.content?.toIntOrNull()
