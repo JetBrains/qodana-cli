@@ -737,7 +737,7 @@ private val REFERENCE_LINK = Regex("""\.\./edict_manager/references/(\w[\w-]*\.m
  * extraction writes, so a cluster of any size fits one answer that every later turn re-reads.
  */
 private fun signalIndexEntry(signal: EdictNextSignal): JsonObject {
-  val evidence = signal.asEvidence()
+  val evidence = EdictNextJson.encodeToJsonElement(signal.asEvidence()).jsonObject
   val source = evidence.getValue("source").jsonObject
   return JsonObject(evidence + ("source" to JsonObject(source.filterKeys { it in INDEX_SOURCE_KEYS })))
 }

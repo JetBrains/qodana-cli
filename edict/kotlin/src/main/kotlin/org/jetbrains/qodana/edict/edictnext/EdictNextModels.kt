@@ -8,9 +8,6 @@ import kotlinx.serialization.Serializable
 import org.jetbrains.qodana.edict.ci.ReviewReference
 import org.jetbrains.qodana.edict.ci.ReviewRepository
 import kotlinx.serialization.json.Json
-import kotlinx.serialization.json.JsonObject
-import kotlinx.serialization.json.encodeToJsonElement
-import kotlinx.serialization.json.jsonObject
 import org.jetbrains.qodana.edict.common.sha256
 import java.security.MessageDigest
 
@@ -250,7 +247,7 @@ internal sealed class EdictNextDistributionContextResponse {
   data class Cluster(
     val clusterId: String,
     /** The cluster's members as evidence ([asEvidence]). */
-    val signals: List<JsonObject>,
+    val signals: List<EdictNextSignal>,
   ) : EdictNextDistributionContextResponse()
 }
 
@@ -271,7 +268,7 @@ internal sealed interface EdictNextSignalCandidate {
      * The members of one of the nearest small clusters as evidence ([asEvidence]), which then counts as loaded context for
      * the current Signal.
      */
-    val signals: List<JsonObject>? = null,
+    val signals: List<EdictNextSignal>? = null,
   ) : EdictNextSignalCandidate
 
   @Serializable
@@ -508,14 +505,11 @@ internal data class EdictRunContext(
 )
 
 /**
- * The Signal as agents read it for evidence: without the keys only extraction uses, its idempotency key, provenance
- * and source URL.
+ * The Signal as agents read it for evidence: its idempotency key and provenance, which only extraction uses, are reset
+ * to their defaults, so encoding leaves them out.
  */
-internal fun EdictNextSignal.asEvidence(): JsonObject {
-  val full = EdictNextJson.encodeToJsonElement(this).jsonObject
-  val source = full.getValue("source").jsonObject
-  return JsonObject(full - setOf("idempotencyKey", "provenance") + ("source" to JsonObject(source - "url")))
-}
+internal fun EdictNextSignal.asEvidence(): EdictNextSignal =
+  copy(idempotencyKey = "", provenance = EdictNextSignalProvenance(""))
 
 internal fun sha256Hex(text: String): String = sha256Hex(text.toByteArray(Charsets.UTF_8))
 
