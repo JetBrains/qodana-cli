@@ -58,12 +58,12 @@ class WeakSignalPromotionServiceTest {
     cluster(repository, "same-file", strongSignals = 6, sourceFiles = 1)
     cluster(repository, "pending", status = EdictNextClusterStatus.Pending)
     cluster(repository, "no-tp", findings = emptyList())
-    // Strong evidence without external references also cannot pass normal promotion.
+    // Commit references qualify for normal promotion even without explicit URLs.
     cluster(repository, "unreferenced", strongSignals = 6, references = false)
     val result = service(repository).prepare()
 
     assertTrue(result.failures.isEmpty())
-    assertEquals(listOf("same-file", "unreferenced", "weak"), result.candidates.map { it.clusterId })
+    assertEquals(listOf("same-file", "weak"), result.candidates.map { it.clusterId })
     val selected = result.candidates.single { it.clusterId == "weak" }
     assertEquals((1..5).toList(), selected.findings.map { it.fileRevision.expectedRanges!!.first().start })
     assertEquals(revision, selected.projectRevision)
