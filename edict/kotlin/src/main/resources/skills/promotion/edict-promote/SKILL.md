@@ -24,8 +24,8 @@ Registry ID: `edict-promote`.
    Omitted IDs are never published. If you choose none, do not call publication. Unchosen clusters remain Generated.
    Publication requires an inspection file and usable HTTP(S) PR or commit diff references for strong positive Signals
    from at least five distinct source files. It does not require a saved evaluation or reapply metric thresholds.
-   Negative Signals, generated evidence, feedback, weak Signals, and commit Signals without URLs do not count toward
-   the reference requirement. Never invent URLs to bypass this check. A repository-relative path counts once across
+   The server constructs missing commit URLs from the configured repository and commit revision.
+   Negative Signals, generated evidence, feedback, and weak Signals do not count toward the reference requirement. Never invent URLs to bypass this check. A repository-relative path counts once across
    revisions and reviews. The server builds each PR description from up to ten source files, with one representative
    positive Signal per file, explanations, labels, source links, and exact revisions and ranges.
 

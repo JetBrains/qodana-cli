@@ -269,7 +269,7 @@ internal class WeakSignalPromotionService(
 
   private fun eligible(cluster: EdictNextStoredCluster): Boolean =
     cluster.manifest.status == EdictNextClusterStatus.Generated &&
-      cluster.promotionEvidence().size < MIN_PROMOTION_SOURCE_FILES
+      cluster.promotionEvidence(configuration.ci).size < MIN_PROMOTION_SOURCE_FILES
 
   private fun candidate(repository: EdictRepository, cluster: EdictNextStoredCluster): WeakSignalPromotionCandidate {
     val digest = sha256Hex(repository.paths.inspectionPath(cluster.id).readBytes())

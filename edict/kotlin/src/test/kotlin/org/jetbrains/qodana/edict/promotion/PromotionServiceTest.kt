@@ -149,7 +149,7 @@ class PromotionServiceTest {
     val repository = repository()
     cluster(repository, "missing-references", 7, weakSignals = 1)
     replaceSignal(repository, "missing-references", "signal-4") {
-      it.copy(source = EdictNextSignalSource.FromCommit("a".repeat(40)))
+      it.copy(source = EdictNextSignalSource.Generated())
     }
     replaceSignal(repository, "missing-references", "signal-5") {
       it.copy(source = EdictNextSignalSource.Generated())
@@ -167,6 +167,40 @@ class PromotionServiceTest {
       "missing-references", "Promotion requires strong positive Signals from at least 5 distinct source files with PR or commit diff URLs; found 4",
     )), result.failures)
     assertTrue(repository.loadCluster("missing-references").manifest.promotions.isEmpty())
+  }
+
+  @Test
+  fun `commit signals without URLs support selection and publication for both providers`() {
+    val commit = "a".repeat(40)
+    val repositories = listOf(
+      "https://github.example.com/owner/repo.git/" to "https://github.example.com/owner/repo/commit/$commit",
+      "https://code.jetbrains.team/p/ij/repositories/ultimate/" to
+        "https://code.jetbrains.team/p/ij/repositories/ultimate/revision/$commit",
+    )
+    repositories.forEachIndexed { index, (repositoryUrl, expectedUrl) ->
+      val repository = repository("commit-urls-$index")
+      cluster(repository, "commit-rule", 5)
+      repeat(5) { signalIndex ->
+        replaceSignal(repository, "commit-rule", "signal-$signalIndex") {
+          it.copy(source = EdictNextSignalSource.FromCommit(commit))
+        }
+      }
+      val provider = FakeProvider()
+      val service = PromotionService({ repository }, EdictConfiguration(
+        ci = EdictCIConfiguration(repositoryUrl), promotion = configuration,
+      ), provider, clock)
+
+      assertEquals(listOf("commit-rule"), service.select().candidates.map { it.clusterId })
+      assertTrue(service.prepareWeakSignals().candidates.isEmpty())
+      val result = service.promote(listOf("commit-rule"))
+
+      assertTrue(result.failures.isEmpty())
+      assertEquals(1, result.created.size)
+      assertContains(provider.lastRequest!!.description, "[Commit diff $commit](<$expectedUrl>)")
+      assertTrue(repository.loadCluster("commit-rule").signals.all {
+        (it.source as EdictNextSignalSource.FromCommit).url == null
+      })
+    }
   }
 
   @Test
