@@ -49,6 +49,8 @@ internal class EdictNextInspection(
     val fp = weight(EdictNextSignalLabel.NEGATIVE, satisfied = false) + direct(EdictNextFindingClassification.FP)
     return measurement.validation to EdictNextEvaluation(
       inspectionHash = sha256Hex(code),
+      inspectionName = measurement.inspectionName,
+      inspectionDescription = measurement.inspectionDescription,
       exampleSetDigest = exampleSetDigest(cluster),
       action = action,
       tp = tp,
@@ -121,7 +123,8 @@ internal class EdictNextInspection(
       reportedNegativeExampleIds = reportedNegatives,
       uncoveredPositiveExampleIds = uncovered,
     )
-    return Measurement(validation, outcomesById.mapValues { it.value.satisfied }, strongExampleIds)
+    return Measurement(validation, outcomesById.mapValues { it.value.satisfied }, strongExampleIds,
+      execution.compilation.inspectionName.orEmpty(), execution.compilation.inspectionDescription.orEmpty())
   }
 
   suspend fun analyzeProject(
@@ -228,6 +231,8 @@ internal class EdictNextInspection(
     val validation: EdictNextInspectionValidationResponse,
     val satisfiedByExampleId: Map<String, Boolean>,
     val strongExampleIds: Set<String>,
+    val inspectionName: String = "",
+    val inspectionDescription: String = "",
   )
 }
 
