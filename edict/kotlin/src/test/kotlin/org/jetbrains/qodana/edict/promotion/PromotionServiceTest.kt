@@ -15,6 +15,7 @@ import org.jetbrains.qodana.edict.common.PromotionConfiguration
 import org.jetbrains.qodana.edict.edictnext.EdictNextClusterManifest
 import org.jetbrains.qodana.edict.edictnext.EdictNextClusterStatus
 import org.jetbrains.qodana.edict.edictnext.EdictNextFileRevision
+import org.jetbrains.qodana.edict.edictnext.EdictNextExampleEvaluation
 import org.jetbrains.qodana.edict.edictnext.EdictNextEvaluation
 import org.jetbrains.qodana.edict.edictnext.EdictNextInspectionAction
 import org.jetbrains.qodana.edict.edictnext.exampleSetDigest
@@ -132,10 +133,10 @@ class PromotionServiceTest {
     assertContains(description, "Representative evidence: Avoid blocking the worker thread")
     assertContains(description, "Showing referenced STRONG POSITIVE signals from 5 of 5 distinct source files, one per file")
     assertContains(description, "**POSITIVE** — Avoid blocking the worker thread")
-    assertContains(description, "[PR #1: Correction 0](<https://github.com/source/project/pull/1#discussion_r1>)")
+    assertContains(description, "[PR #1: Correction 0](<https://github.com/source/project/blob/${"b".repeat(40)}/Example0.kt#L3-L5>)")
     assertContains(description, "**POSITIVE** — Avoid spinning until completion")
-    assertContains(description, "[Commit diff $commit](<https://github.com/source/project/commit/$commit>)")
-    assertContains(description, "SpinningWorker.kt at `$commit`, lines 12-15; signal `signal-6`")
+    assertContains(description, "[Commit $commit](<https://github.com/source/project/blob/$commit/SpinningWorker.kt#L12-L15>)")
+    assertContains(description, "SpinningWorker.kt](<https://github.com/source/project/blob/$commit/SpinningWorker.kt#L12-L15>) at `$commit`, lines 12-15; signal `signal-6`")
     assertContains(description, "Inspection SHA-256: `${sha256Hex("inspection")}`")
     assertFalse(description.contains("Unreferenced generated evidence"))
     assertFalse(description.contains("Weak evidence"))
@@ -164,7 +165,7 @@ class PromotionServiceTest {
     assertTrue(result.created.isEmpty())
     assertEquals(0, provider.ensureCalls)
     assertEquals(listOf(PromotionFailure(
-      "missing-references", "Promotion requires strong positive Signals from at least 5 distinct source files with PR or commit diff URLs; found 4",
+      "missing-references", "Promotion requires strong positive Signals from at least 5 distinct source files with satisfied examples and file/line URLs; found 4",
     )), result.failures)
     assertTrue(repository.loadCluster("missing-references").manifest.promotions.isEmpty())
   }
@@ -173,9 +174,9 @@ class PromotionServiceTest {
   fun `commit signals without URLs support selection and publication for both providers`() {
     val commit = "a".repeat(40)
     val repositories = listOf(
-      "https://github.example.com/owner/repo.git/" to "https://github.example.com/owner/repo/commit/$commit",
+      "https://github.example.com/owner/repo.git/" to "https://github.example.com/owner/repo/blob/${"b".repeat(40)}/Example0.kt#L3-L5",
       "https://code.jetbrains.team/p/ij/repositories/ultimate/" to
-        "https://code.jetbrains.team/p/ij/repositories/ultimate/revision/$commit",
+        "https://code.jetbrains.team/p/ij/repositories/ultimate/files/${"b".repeat(40)}/Example0.kt?line=3",
     )
     repositories.forEachIndexed { index, (repositoryUrl, expectedUrl) ->
       val repository = repository("commit-urls-$index")
@@ -196,7 +197,7 @@ class PromotionServiceTest {
 
       assertTrue(result.failures.isEmpty())
       assertEquals(1, result.created.size)
-      assertContains(provider.lastRequest!!.description, "[Commit diff $commit](<$expectedUrl>)")
+      assertContains(provider.lastRequest!!.description, "[Commit $commit](<$expectedUrl>)")
       assertTrue(repository.loadCluster("commit-rule").signals.all {
         (it.source as EdictNextSignalSource.FromCommit).url == null
       })
@@ -234,10 +235,10 @@ class PromotionServiceTest {
     assertEquals(1, service(repository, provider).promoteSelected().created.size)
 
     val description = provider.lastRequest!!.description
-    assertContains(description, "Showing referenced STRONG POSITIVE signals from 10 of 14 distinct source files, one per file")
-    assertEquals(10, Regex("(?m)^\\d+\\. ").findAll(description).count())
+    assertContains(description, "Showing referenced STRONG POSITIVE signals from 5 of 14 distinct source files, one per file")
+    assertEquals(5, Regex("(?m)^\\d+\\. ").findAll(description).count())
     assertContains(description, "Do not use \\[unsafe\\](https://wrong.test) &lt;markup&gt; or \\`ticks\\` across lines")
-    assertEquals(description, promotionDescription(repository.loadCluster("large-rule"), provider.lastRequest!!.targetPath, provider.lastRequest!!.inspectionDigest))
+    assertEquals(description, promotionDescription(repository.loadCluster("large-rule"), provider.lastRequest!!.targetPath, provider.lastRequest!!.inspectionDigest, evaluation = repository.loadEvaluation(repository.loadCluster("large-rule"))))
   }
 
   @Test
@@ -268,7 +269,7 @@ class PromotionServiceTest {
     assertEquals(1, provider.ensureCalls)
     assertTrue(result.failures.isEmpty())
     assertFailsWith<IllegalArgumentException> {
-      promotionDescription(repository.loadCluster("four-files"), "inspection.kts", "digest")
+      promotionDescription(repository.loadCluster("four-files"), "inspection.kts", sha256Hex("inspection"), evaluation = repository.loadEvaluation(repository.loadCluster("four-files")))
     }
   }
 
@@ -283,7 +284,7 @@ class PromotionServiceTest {
     assertEquals(1, service(repository, provider).promoteSelected().created.size)
 
     val cluster = repository.loadCluster("grouped-rule")
-    val evidence = cluster.promotionEvidence()
+    val evidence = cluster.promotionEvidence(evaluation = repository.loadEvaluation(cluster))
     assertEquals(listOf("signal-2", "signal-3", "signal-4", "signal-5", "signal-6"), evidence.map { it.id })
     val description = provider.lastRequest!!.description
     assertContains(description, "from 5 of 5 distinct source files, one per file")
@@ -292,7 +293,7 @@ class PromotionServiceTest {
     listOf("signal-0", "signal-1", "signal-7", "signal-8", "signal-9").forEach {
       assertFalse(description.contains("signal `$it`"))
     }
-    assertEquals(description, promotionDescription(cluster.copy(signals = cluster.signals.reversed()), "inspections/grouped-rule.inspection.kts", sha256Hex("inspection")))
+    assertEquals(description, promotionDescription(cluster.copy(signals = cluster.signals.reversed()), "inspections/grouped-rule.inspection.kts", sha256Hex("inspection"), evaluation = repository.loadEvaluation(cluster)))
   }
 
   @Test
@@ -659,7 +660,7 @@ class PromotionServiceTest {
   }
 
   @Test
-  fun `skill can publish generated inspections outside metric selection`() {
+  fun `skill can publish outside metric selection but cannot omit evaluation`() {
     val repository = repository()
     cluster(repository, "low-score", 5)
     evaluation(repository, "low-score", 0.1, 0.1)
@@ -670,10 +671,70 @@ class PromotionServiceTest {
     assertTrue(service.select().candidates.isEmpty())
 
     val result = service.promote(listOf("low-score", "no-evaluation"))
-    assertEquals(2, result.created.size)
-    assertTrue(result.failures.isEmpty())
+    assertEquals(1, result.created.size)
+    assertContains(result.failures.single().message, "current evaluation")
     assertFailsWith<IllegalArgumentException> { service.promote(emptyList()) }
     assertFailsWith<IllegalArgumentException> { service.promote(listOf("low-score", "low-score")) }
+  }
+
+  @Test
+  fun `publication excludes missed and missing examples before selecting representatives`() {
+    val repository = repository()
+    cluster(repository, "missed", 8)
+    val cluster = repository.loadCluster("missed")
+    val evaluation = repository.loadEvaluation(cluster)!!
+    cluster.directory.evaluationPath.writeText(EdictNextJson.encodeToString(evaluation.copy(
+      examples = evaluation.examples - "example-1" + ("example-0" to evaluation.examples.getValue("example-0").copy(satisfied = false)),
+    )))
+    val provider = FakeProvider()
+    val result = service(repository, provider).promote(listOf("missed"))
+    assertEquals(1, result.created.size)
+    val description = provider.lastRequest!!.description
+    assertFalse(description.contains("signal `signal-0`"))
+    assertFalse(description.contains("signal `signal-1`"))
+    assertEquals(5, Regex("(?m)^\\d+\\. ").findAll(description).count())
+    assertContains(description, "from 5 of 6 distinct source files")
+  }
+
+  @Test
+  fun `explicit publication rejects stale evaluations and insufficient satisfied evidence`() {
+    val repository = repository()
+    cluster(repository, "insufficient", 5)
+    val cluster = repository.loadCluster("insufficient")
+    val evaluation = repository.loadEvaluation(cluster)!!
+    cluster.directory.evaluationPath.writeText(EdictNextJson.encodeToString(evaluation.copy(
+      examples = evaluation.examples + ("example-0" to evaluation.examples.getValue("example-0").copy(satisfied = false)),
+    )))
+    cluster(repository, "changed-inspection", 5)
+    repository.paths.inspectionPath("changed-inspection").writeText("changed")
+    cluster(repository, "changed-examples", 5)
+    val stale = repository.loadCluster("changed-examples")
+    stale.directory.evaluationPath.writeText(EdictNextJson.encodeToString(repository.loadEvaluation(stale)!!.copy(exampleSetDigest = "stale")))
+    val provider = FakeProvider()
+    val result = service(repository, provider).promote(listOf("insufficient", "changed-inspection", "changed-examples"))
+    assertTrue(result.created.isEmpty())
+    assertEquals(3, result.failures.size)
+    assertEquals(0, provider.ensureCalls)
+    assertContains(result.failures.first().message, "found 4")
+    result.failures.drop(1).forEach { assertContains(it.message, "current evaluation") }
+  }
+
+  @Test
+  fun `Space discussions link to the exact problematic file revision and encoded path`() {
+    val repository = repository()
+    cluster(repository, "space", 5)
+    val revision = "c".repeat(40)
+    val signal = repository.loadCluster("space").signals.first().copy(
+      source = EdictNextSignalSource.FromPR(215081, "akats/reused-run", listOf("Fix documentation"), "",
+        "https://jetbrains.team/im/review/4RJJlz4NRWvS?message=F2A2J0W06tf&channel=42GEq23U7k8O"),
+      fileRevision = EdictNextFileRevision("src/My File#1.kt", revision, listOf(EdictNextLineRange(13, 15))),
+    )
+    assertEquals(
+      "https://code.jetbrains.team/p/ij/repositories/ultimate/files/$revision/src/My%20File%231.kt?line=13",
+      signal.referenceUrl(EdictCIConfiguration("https://code.jetbrains.team/p/ij/repositories/ultimate")),
+    )
+    assertEquals(null, signal.copy(fileRevision = signal.fileRevision.copy(expectedRanges = null)).referenceUrl(ci))
+    assertEquals(null, signal.copy(fileRevision = signal.fileRevision.copy(revision = "master")).referenceUrl(ci))
   }
 
   private fun repository(name: String = "state"): EdictRepository {
@@ -703,13 +764,14 @@ class PromotionServiceTest {
       root.resolve("signals/signal-$index.json").writeText(EdictNextJson.encodeToString(
         EdictNextSignal(
           "signal-$index",
-          fileRevision = EdictNextFileRevision("Example${index % sourceFiles}.kt", "revision"),
+          fileRevision = EdictNextFileRevision("Example${index % sourceFiles}.kt", "b".repeat(40), listOf(EdictNextLineRange(3, 5))),
           source = EdictNextSignalSource.FromPR(
             index + 1, "Correction $index", listOf("Fix the problem"), "",
             "https://github.com/source/project/pull/${index + 1}#discussion_r${index + 1}",
           ),
           label = EdictNextSignalLabel.POSITIVE,
           description = "positive $index",
+          syntheticExampleId = "example-$index",
         ),
       ))
     }
@@ -735,7 +797,8 @@ class PromotionServiceTest {
       exampleSetDigest = exampleSetDigest(repository.loadCluster(id)),
       action = EdictNextInspectionAction.GENERATE,
       tp = 5, fp = 0, fn = 0, precision = precision, recall = recall,
-      examples = emptyMap(), projectReview = null,
+      examples = repository.loadCluster(id).signals.associate { it.syntheticExampleId.orEmpty() to
+        EdictNextExampleEvaluation(it.label, it.strength == EdictNextSignalStrength.STRONG, true, 0, 1) }, projectReview = null,
     )))
   }
 

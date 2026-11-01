@@ -11,9 +11,11 @@ Registry ID: `edict-promote-weak-signal`.
 
 Call `edict_context` with your token for the inspected project and your scratch directory. Call
 `edict_prepare_weak_signal_promotion(token)`, passing `clusterIds` only when the assignment restricts the targets.
-Selection considers Generated inspections with referenced strong positive Signals from fewer than five distinct source files and returns
+Selection considers Generated inspections with satisfied, referenced strong positive Signals from fewer than five
+distinct source files and returns
 up to five distinct, reviewed true-positive project locations per inspection. Clusters with an open source-fix review
-or merged review awaiting signal publication are skipped. Missing persisted project review evidence requires a new generation/review run; report that prerequisite.
+or merged review awaiting signal publication are skipped. Missing persisted project review evidence requires a new
+generation/review run; report that prerequisite.
 
 For each returned inspection:
 
@@ -34,19 +36,21 @@ For each returned inspection:
    locations' original starting lines), `content` (the complete replacement file), and `explanation`. Submit no more
    than five fixed locations in total for that inspection. The server creates one PR containing only these source
    files, describes the inspection and improvements, and asks users to accept/merge if they agree. It resolves the
-   repository and reviewer from configuration, and the source-fix target from the project Git branch and keeps provider credentials private.
+   repository and reviewer from configuration, and the source-fix target from the project Git branch and keeps provider
+   credentials private.
 
 Source-fix publication always targets the project Git branch where the skills run.
 Detached checkouts must check out a branch before running the skills.
 
-Publication is owned by the MCP server. Do not commit, push, or invoke a provider CLI yourself. If the target branch
-has moved since analysis, report the stale evidence and request a new analysis instead of overwriting newer code.
+Publication is owned by the MCP server. Do not commit, push, or invoke a provider CLI yourself. Source-fix branches are
+based on the analyzed revision, even when the target branch has advanced.
 An open review is reused. Identical fixes reuse their branch and PR on retry; changed fixes
 after an interrupted publication use a different branch. A source-fix PR does not publish the inspection or
 automatically turn weak evidence into a strong Signal.
 The default pipeline checks the created PRs through the independent `edict-check-weak-signal-promotion` step; their
 records under `promotions/active.json` keep only review references and states, grouped by source cluster. Covered merged
-corrections become processed Signals in the originating cluster; other corrections go to the inbox for normal distribution.
+corrections become processed Signals in the originating cluster; other corrections go to the inbox for normal
+distribution.
 
 Continue independent candidates after a per-inspection problem. Report every created/reused PR URL, fixed location,
 skipped location and reason, validation limitation, and selection/publication failure. If no supported fix can be made,

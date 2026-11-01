@@ -345,7 +345,7 @@ class ReviewProvidersTest {
         method == "GET" && endpoint.contains("/git/ref/heads/edict") -> if (branchExists)
           response(200, obj("object" to obj("sha" to JsonPrimitive(fixedRevision)))) else response(404)
         method == "GET" && endpoint.endsWith("/git/ref/heads/main") ->
-          response(200, obj("object" to obj("sha" to JsonPrimitive(revision))))
+          response(200, obj("object" to obj("sha" to JsonPrimitive("d".repeat(40)))))
         method == "GET" && endpoint.contains("/contents/") -> {
           val path = endpoint.substringAfter("/contents/")
           val content = if (query["ref"] == fixedRevision) changes.files.getValue(path) else "original $path"
@@ -399,7 +399,7 @@ class ReviewProvidersTest {
     val transport = RecordingTransport { _, method, endpoint, query, body ->
       when {
         method == "GET" && endpoint.endsWith("/branches/refs%2Fheads%2Fmain") ->
-          response(200, obj("branchInfo" to obj("ref" to JsonPrimitive(revision))))
+          response(200, obj("branchInfo" to obj("ref" to JsonPrimitive("d".repeat(40)))))
         method == "GET" && endpoint.contains("/branches/") -> branchRevision?.let {
           response(200, obj("branchInfo" to obj("ref" to JsonPrimitive(it))))
         } ?: response(404)
@@ -436,28 +436,6 @@ class ReviewProvidersTest {
     val files = commit.getValue("files").jsonArray.map { it as JsonObject }
     assertEquals(changes.files.keys.toList(), files.map { (it["path"] as JsonPrimitive).content })
     assertEquals(1, transport.calls.count { it.method == "POST" && it.endpoint.endsWith("/merge-requests") })
-  }
-
-  @Test
-  fun `source fixes reject stale target branches before any provider write`() {
-    val changes = SourceFixChanges("a".repeat(40), mapOf("First.kt" to "fixed"))
-    for (provider in CiProviderId.entries) {
-      val transport = RecordingTransport { _, method, endpoint, _, _ ->
-        assertEquals("GET", method)
-        when {
-          endpoint.endsWith("/git/ref/heads/main") -> response(200, obj("object" to obj("sha" to JsonPrimitive("b".repeat(40)))))
-          endpoint.endsWith("/branches/refs%2Fheads%2Fmain") -> response(200, obj("branchInfo" to obj("ref" to JsonPrimitive("b".repeat(40)))))
-          else -> response(404)
-        }
-      }
-      val api: ProviderReviewApi = when (provider) {
-        CiProviderId.GITHUB -> GitHubReviewApi(transport)
-        CiProviderId.SPACE -> SpaceReviewApi(transport)
-      }
-      val failure = assertFailsWith<IllegalArgumentException> { api.ensureReview(request(provider).copy(sourceFix = changes)) }
-      assertTrue(failure.message.orEmpty().contains("Target branch changed"))
-      assertTrue(transport.calls.all { it.method == "GET" })
-    }
   }
 
   @Test

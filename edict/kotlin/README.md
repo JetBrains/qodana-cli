@@ -87,8 +87,9 @@ Its optional positive `count` limits the number of eligible clusters returned; o
 
 The promotion skill reviews candidates and chooses explicit cluster IDs for `edict_promote_clusters`. It may choose
 a subset or deliberately choose other Generated inspections based on their evidence. Publication does not reapply
-metric thresholds or require an evaluation. It still requires referenced strong positive Signals from five distinct
-source files and an inspection file, and skips previously published digests. Unchosen inspections remain `Generated`.
+metric thresholds. It requires a current evaluation, an inspection file, and referenced strong positive Signals
+from five distinct source files whose strong positive examples are satisfied. Descriptions cite at most five Signals
+and link to the source file and line at the exact evidence revision. Previously published digests are skipped. Unchosen inspections remain `Generated`.
 
 ```yaml
 edict:
@@ -130,7 +131,7 @@ before running the skills. The target head must still match the analyzed revisio
   Worker registry IDs and installed skill names both use `edict-*`.
   The manager remains `edict_manager`.
 - Promoting weak signals: `edict-promote-weak-signal` selects up to five reviewed true-positive locations per Generated
-  inspection with referenced strong positive Signals from fewer than five distinct source files, attempts focused source fixes, and opens a GitHub or Space
+  inspection with satisfied, referenced strong positive Signals from fewer than five distinct source files, attempts focused source fixes, and opens a GitHub or Space
   PR asking users to accept the improvements if they agree. It runs after normal promotion in the default pipeline.
   Review evidence is persisted in `evaluation.json`; older inspections need regeneration to populate it. Source-fix
   PRs require the configured target to remain at the analyzed revision, and are recorded separately from inspection

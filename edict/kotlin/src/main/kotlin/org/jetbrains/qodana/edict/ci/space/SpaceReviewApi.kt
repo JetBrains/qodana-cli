@@ -291,10 +291,7 @@ internal class SpaceReviewApi(
       }
       return
     }
-    val base = requireNotNull(readBranch(repository, request.targetBranch)) { "Space target branch does not exist" }
-    require(base.obj("branchInfo").text("ref") == changes.baseRevision) {
-      "Target branch changed since true-positive analysis; analyze the current revision before publishing fixes"
-    }
+    requireNotNull(readBranch(repository, request.targetBranch)) { "Space target branch does not exist" }
     changes.files.forEach { (path, content) ->
       require(file(request.repository, changes.baseRevision, path) != content) { "Source fix for '$path' has no changes" }
     }

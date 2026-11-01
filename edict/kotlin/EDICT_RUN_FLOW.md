@@ -81,11 +81,11 @@ repository-wide validation.
     finish, then always run selected promotion even after failed/cancelled enrichment or generation or no targets
   - `edict_select_promotion_clusters` scans Generated inspections, including earlier runs, and suggests candidates using a current evaluation and configured precision, recall and F1 targets (defaults: 0.7, 0.6, 0)
   - the promotion skill chooses explicit cluster IDs for `edict_promote_clusters`; publication does not reapply metric thresholds, and unchosen inspections stay Generated; retain upstream failures in the report
-    - a new PR requires strong positive Signals from at least five distinct source files with usable source PR or commit diff URLs;
+      - a new PR requires strong positive Signals from at least five distinct source files with satisfied strong positive examples and usable file/line URLs from a current evaluation;
       each repository-relative path counts once across revisions and reviews; negative Signals do not count; missing references
       produce a per-cluster failure before PR creation
     - GitHub and Space PR descriptions include the inspection summary and one referenced strong positive Signal per source file,
-      from up to ten distinct files, each with its explanation, label, source link, and exact file revision and ranges
+      from up to five distinct files with satisfied strong positive examples, each with its explanation, label, source link, and exact file revision and ranges
   - report the plan path, produced Signal/cluster/inspection ids, Generated `knownProblems`, and Pending/Invalid clusters
 - every delegation, at any depth
   1. parent calls `edict_task_add(token, skill, title)` with a child permitted by the registry

@@ -82,8 +82,8 @@ internal class PromotionService(
             it.pullRequest.provider == ci.provider && it.pullRequest.owner == ci.owner && it.pullRequest.repository == ci.repository
         }) return@forEach
         // Validate the referenced evidence without publishing anything.
-        promotionDescription(cluster, targetPath, digest, ci)
-        candidates += PromotionCandidate(id, path.toString(), digest, sourceFiles, evaluation, f1)
+        promotionDescription(cluster, targetPath, digest, ci, evaluation)
+        candidates += PromotionCandidate(id, path.toString(), digest, cluster.promotionEvidence(ci, evaluation).size, evaluation, f1)
       }
       catch (e: Exception) {
         failures += PromotionFailure(id, e.message ?: e.javaClass.simpleName)
@@ -145,7 +145,7 @@ internal class PromotionService(
             targetPath = targetPath,
             inspectionDigest = digest,
             inspectionContent = content,
-            description = promotionDescription(cluster, targetPath, digest, ci),
+            description = promotionDescription(cluster, targetPath, digest, ci, repository.loadEvaluation(cluster)),
           ),
         )
         val now = Instant.now(clock).toString()
