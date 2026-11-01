@@ -88,8 +88,8 @@ Its optional positive `count` limits the number of eligible clusters returned; o
 The promotion skill reviews candidates and chooses explicit cluster IDs for `edict_promote_clusters`. It may choose
 a subset or deliberately choose other Generated inspections based on their evidence. Publication does not reapply
 metric thresholds. It requires a current evaluation, an inspection file, and referenced strong positive Signals
-from five distinct source files whose strong positive examples are satisfied. Descriptions cite at most five Signals
-and link to the source file and line at the exact evidence revision. Previously published digests are skipped. Unchosen inspections remain `Generated`.
+from five distinct source files whose strong positive examples are satisfied. Descriptions include the compiled inspection name and description and cite at most five fixes,
+linking to their PR numbers or short commit hashes. Older evaluations without inspection metadata must be rerun. Previously published digests are skipped. Unchosen inspections remain `Generated`.
 
 ```yaml
 edict:

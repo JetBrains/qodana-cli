@@ -664,7 +664,7 @@ class WeakSignalPromotionServiceTest {
       example.resolve("project").createDirectories().resolve("Example.kt").writeText("fun example() {}\n")
     }
     root.resolve("evaluation.json").writeText(EdictNextJson.encodeToString(
-      EdictNextEvaluation(evaluationDigest, exampleSetDigest(repository.loadCluster(id)), EdictNextInspectionAction.GENERATE, findings.size, 0, 0, 1.0, 1.0, mapOf("positive" to EdictNextExampleEvaluation(EdictNextSignalLabel.POSITIVE, true, true, 0, 1)), review),
+      EdictNextEvaluation(evaluationDigest, exampleSetDigest(repository.loadCluster(id)), EdictNextInspectionAction.GENERATE, findings.size, 0, 0, 1.0, 1.0, mapOf("positive" to EdictNextExampleEvaluation(EdictNextSignalLabel.POSITIVE, true, true, 0, 1)), review, "Sample rule", "Detects sample problems."),
     ))
     repository.paths.inspectionsDirectory.createDirectories()
     repository.paths.inspectionPath(id).writeText("inspection")

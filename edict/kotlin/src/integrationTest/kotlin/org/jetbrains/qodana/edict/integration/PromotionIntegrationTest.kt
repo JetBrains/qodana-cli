@@ -63,8 +63,8 @@ class PromotionIntegrationTest : IntegrationTest() {
       assertEquals("inspections/integration-rule.inspection.kts", provider.request?.targetPath)
       val description = assertNotNull(provider.request).description
       assertContains(description, "## Description")
-      assertContains(description, "Showing referenced STRONG POSITIVE signals from 5 of 6 distinct source files, one per file")
-      repeat(5) { index -> assertContains(description, "https://github.test/source/project/blob/${"a".repeat(40)}/Example$index.kt#L1") }
+      assertContains(description, "## Evidence")
+      repeat(5) { index -> assertContains(description, "https://github.test/source/project/pull/${index + 1}") }
       assertEquals(5, Regex("(?m)^\\d+\\. ").findAll(description).count())
       assertTrue("z-duplicate" !in description)
       val stored = repository.loadCluster("integration-rule").manifest.promotions.single()
@@ -100,7 +100,7 @@ class PromotionIntegrationTest : IntegrationTest() {
     repository.paths.inspectionPath("integration-rule").writeText("inspection")
     repository.loadCluster("integration-rule").directory.evaluationPath.writeText(EdictNextJson.encodeToString(EdictNextEvaluation(
       sha256Hex("inspection"), exampleSetDigest(repository.loadCluster("integration-rule")),
-      EdictNextInspectionAction.GENERATE, 6, 0, 0, 1.0, 1.0, (0..5).associate { "example-$it" to EdictNextExampleEvaluation(EdictNextSignalLabel.POSITIVE, true, true, 0, 1) }, null,
+      EdictNextInspectionAction.GENERATE, 6, 0, 0, 1.0, 1.0, (0..5).associate { "example-$it" to EdictNextExampleEvaluation(EdictNextSignalLabel.POSITIVE, true, true, 0, 1) }, null, "Integration rule", "Detects integration problems.",
     )))
   }
 

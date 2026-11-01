@@ -383,6 +383,8 @@ internal data class EdictNextEvaluation(
   val examples: Map<String, EdictNextExampleEvaluation>,
   /** The published inspection's project analysis and its weak-signal review; null when this run analyzed no such bytes. */
   val projectReview: EdictNextProjectReview?,
+  val inspectionName: String = "",
+  val inspectionDescription: String = "",
 )
 
 @Serializable

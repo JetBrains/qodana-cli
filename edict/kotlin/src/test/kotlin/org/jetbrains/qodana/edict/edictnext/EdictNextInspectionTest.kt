@@ -138,6 +138,8 @@ class EdictNextInspectionTest {
 
     assertTrue(validation.overallSuccess)
     checkNotNull(evaluation)
+    assertEquals("Sample rule", evaluation.inspectionName)
+    assertEquals("Finds samples", evaluation.inspectionDescription)
     // The negative strong example has no findings and still weighs 1; it is satisfied, so it adds to no count.
     assertEquals(listOf(6, 3, 2), listOf(evaluation.tp, evaluation.fp, evaluation.fn))
     assertEquals(6.0 / 9, evaluation.precision)
