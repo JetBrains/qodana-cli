@@ -14,6 +14,8 @@ import org.jetbrains.qodana.edict.common.PromotionConfiguration
 import org.jetbrains.qodana.edict.edictnext.EdictNextClusterManifest
 import org.jetbrains.qodana.edict.edictnext.EdictNextClusterStatus
 import org.jetbrains.qodana.edict.edictnext.EdictNextFileRevision
+import org.jetbrains.qodana.edict.edictnext.EdictNextExampleEvaluation
+import org.jetbrains.qodana.edict.edictnext.EdictNextLineRange
 import org.jetbrains.qodana.edict.edictnext.EdictNextEvaluation
 import org.jetbrains.qodana.edict.edictnext.EdictNextInspectionAction
 import org.jetbrains.qodana.edict.edictnext.exampleSetDigest
@@ -61,9 +63,9 @@ class PromotionIntegrationTest : IntegrationTest() {
       assertEquals("inspections/integration-rule.inspection.kts", provider.request?.targetPath)
       val description = assertNotNull(provider.request).description
       assertContains(description, "## Description")
-      assertContains(description, "Showing referenced STRONG POSITIVE signals from 6 of 6 distinct source files, one per file")
-      repeat(6) { index -> assertContains(description, "https://github.test/source/pull/${index + 1}") }
-      assertEquals(6, Regex("(?m)^\\d+\\. ").findAll(description).count())
+      assertContains(description, "Showing referenced STRONG POSITIVE signals from 5 of 6 distinct source files, one per file")
+      repeat(5) { index -> assertContains(description, "https://github.test/source/project/blob/${"a".repeat(40)}/Example$index.kt#L1") }
+      assertEquals(5, Regex("(?m)^\\d+\\. ").findAll(description).count())
       assertTrue("z-duplicate" !in description)
       val stored = repository.loadCluster("integration-rule").manifest.promotions.single()
       assertEquals("42", stored.pullRequest.id)
@@ -82,12 +84,13 @@ class PromotionIntegrationTest : IntegrationTest() {
     repeat(6) { index ->
       val signal = EdictNextSignal(
         "s-$index",
-        fileRevision = EdictNextFileRevision("Example$index.kt", "revision"),
+        fileRevision = EdictNextFileRevision("Example$index.kt", "a".repeat(40), listOf(EdictNextLineRange(1, 1))),
         source = EdictNextSignalSource.FromPR(
-          index + 1, "Correction $index", listOf("Fix the problem"), "", "https://github.test/source/pull/${index + 1}",
+          index + 1, "Correction $index", listOf("Fix the problem"), "", "https://github.test/source/project/pull/${index + 1}",
         ),
         label = EdictNextSignalLabel.POSITIVE,
         description = "positive $index",
+        syntheticExampleId = "example-$index",
       )
       cluster.resolve("signals/s-$index.json").writeText(EdictNextJson.encodeToString(signal))
       val duplicate = signal.copy(id = "z-duplicate-$index", fileRevision = signal.fileRevision.copy(revision = "another-revision"))
@@ -97,7 +100,7 @@ class PromotionIntegrationTest : IntegrationTest() {
     repository.paths.inspectionPath("integration-rule").writeText("inspection")
     repository.loadCluster("integration-rule").directory.evaluationPath.writeText(EdictNextJson.encodeToString(EdictNextEvaluation(
       sha256Hex("inspection"), exampleSetDigest(repository.loadCluster("integration-rule")),
-      EdictNextInspectionAction.GENERATE, 6, 0, 0, 1.0, 1.0, emptyMap(), null,
+      EdictNextInspectionAction.GENERATE, 6, 0, 0, 1.0, 1.0, (0..5).associate { "example-$it" to EdictNextExampleEvaluation(EdictNextSignalLabel.POSITIVE, true, true, 0, 1) }, null,
     )))
   }
 
