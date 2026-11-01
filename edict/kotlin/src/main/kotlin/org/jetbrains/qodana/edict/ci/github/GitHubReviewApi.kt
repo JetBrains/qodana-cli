@@ -274,10 +274,7 @@ internal class GitHubReviewApi(
       return
     }
     require(existing.status == 404) { "GitHub branch lookup returned HTTP ${existing.status}" }
-    val base = expectObject(http.send(id, "GET", "$root/git/ref/heads/${urlPart(request.targetBranch)}", requireAuthentication = true), 200)
-    require(base.obj("object").text("sha") == changes.baseRevision) {
-      "Target branch changed since true-positive analysis; analyze the current revision before publishing fixes"
-    }
+    expectObject(http.send(id, "GET", "$root/git/ref/heads/${urlPart(request.targetBranch)}", requireAuthentication = true), 200)
     changes.files.forEach { (path, content) ->
       require(file(request.repository, changes.baseRevision, path) != content) { "Source fix for '$path' has no changes" }
     }

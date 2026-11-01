@@ -3,6 +3,7 @@
 build/
 .idea/
 out/
+local.properties
 
 # The parent Go repository ignores qodana binaries and all JARs.
 !src/**/qodana/

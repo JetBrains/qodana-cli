@@ -651,7 +651,7 @@ class WeakSignalPromotionServiceTest {
     repeat(strongSignals) { index ->
       val path = if (index % sourceFiles == 0) "src/Worker.kt" else "src/Worker${index % sourceFiles}.kt"
       val label = if (index < negativeSignals) EdictNextSignalLabel.NEGATIVE else EdictNextSignalLabel.POSITIVE
-      val signal = EdictNextSignal("signal-$index", fileRevision = EdictNextFileRevision(path, revision),
+      val signal = EdictNextSignal("signal-$index", fileRevision = EdictNextFileRevision(path, revision, listOf(EdictNextLineRange(1, 1))),
         source = EdictNextSignalSource.FromCommit(revision, if (references) "https://example.com/commit/$revision" else null),
         label = label, description = "Avoid busy waiting", syntheticExampleId = if (label == EdictNextSignalLabel.POSITIVE) "positive" else "negative")
       root.resolve("signals/signal-$index.json").writeText(EdictNextJson.encodeToString(signal))
@@ -664,7 +664,7 @@ class WeakSignalPromotionServiceTest {
       example.resolve("project").createDirectories().resolve("Example.kt").writeText("fun example() {}\n")
     }
     root.resolve("evaluation.json").writeText(EdictNextJson.encodeToString(
-      EdictNextEvaluation(evaluationDigest, exampleSetDigest(repository.loadCluster(id)), EdictNextInspectionAction.GENERATE, findings.size, 0, 0, 1.0, 1.0, emptyMap(), review),
+      EdictNextEvaluation(evaluationDigest, exampleSetDigest(repository.loadCluster(id)), EdictNextInspectionAction.GENERATE, findings.size, 0, 0, 1.0, 1.0, mapOf("positive" to EdictNextExampleEvaluation(EdictNextSignalLabel.POSITIVE, true, true, 0, 1)), review),
     ))
     repository.paths.inspectionsDirectory.createDirectories()
     repository.paths.inspectionPath(id).writeText("inspection")

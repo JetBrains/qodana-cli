@@ -470,7 +470,7 @@ internal class EdictNextMcpToolset(
 
     server.addTool(
       name = "edict_promote_clusters",
-      description = "Publish only the Generated clusters explicitly chosen by the skill. Selection thresholds are advisory here: this call does not reapply metric targets or require a saved evaluation. Requires inspection files and valid referenced strong positive source evidence. Already-published digests are skipped.",
+      description = "Publish only the Generated clusters explicitly chosen by the skill. Selection thresholds are advisory here: this call does not reapply metric targets. Requires inspection files, a current evaluation, and satisfied strong positive source evidence from at least five distinct files. Descriptions cite at most five signals with exact file/line links. Already-published digests are skipped.",
       inputSchema = toolSchema(
         required = listOf("token", "clusterIds"),
         "token" to property("string", "Your delegated edict-promote task token"),
