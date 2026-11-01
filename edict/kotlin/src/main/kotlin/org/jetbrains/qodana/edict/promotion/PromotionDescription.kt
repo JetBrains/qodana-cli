@@ -12,6 +12,8 @@ import org.jetbrains.qodana.edict.edictnext.EdictNextStoredCluster
 import org.jetbrains.qodana.edict.signals.validSourcePath
 import org.jetbrains.qodana.edict.signals.validRevision
 import java.net.URI
+import java.net.URLEncoder
+import java.util.Locale
 
 internal const val MIN_PROMOTION_SOURCE_FILES = 5
 private const val MAX_DESCRIPTION_SOURCE_FILES = 5
@@ -33,7 +35,6 @@ internal fun EdictNextStoredCluster.promotionEvidence(
 /** Only historical evidence with a usable external reference can support a promotion PR. */
 internal fun promotionDescription(
   cluster: EdictNextStoredCluster,
-  targetPath: String,
   digest: String,
   ci: EdictCIConfiguration? = null,
   evaluation: EdictNextEvaluation? = null,
@@ -41,39 +42,73 @@ internal fun promotionDescription(
   require(evaluation != null && evaluation.inspectionHash == digest && evaluation.exampleSetDigest == exampleSetDigest(cluster)) {
     "Promotion requires a current evaluation matching the inspection and examples"
   }
+  require(evaluation.inspectionName.isNotBlank() && evaluation.inspectionDescription.isNotBlank()) {
+    "Promotion requires inspection name and description; re-evaluate the inspection"
+  }
   val evidence = cluster.promotionEvidence(ci, evaluation)
   require(evidence.size >= MIN_PROMOTION_SOURCE_FILES) {
     "Promotion requires strong positive Signals from at least $MIN_PROMOTION_SOURCE_FILES distinct source files with satisfied examples and file/line URLs; found ${evidence.size}"
   }
   val selected = evidence.take(MAX_DESCRIPTION_SOURCE_FILES)
+  val precision = evaluation.precision
+  val recall = evaluation.recall
+  val f1 = if (precision + recall == 0.0) 0.0 else 2 * precision * recall / (precision + recall)
+  fun percent(value: Double): String = String.format(Locale.ROOT, "%.1f%%", value * 100)
   return buildString {
     appendLine("## Description")
     appendLine()
-    appendLine("Adds the generated ${cluster.manifest.language} inspection `${cluster.id}` at `$targetPath`.")
+    appendLine("**${evaluation.inspectionName.markdownText()}**")
     appendLine()
-    appendLine("Representative evidence: ${selected.first().description.markdownText()}")
+    appendLine("Rule ID: `${cluster.id}`")
     appendLine()
-    appendLine("## Strong signals")
+    appendLine(evaluation.inspectionDescription.markdownText())
     appendLine()
-    appendLine("Showing referenced STRONG POSITIVE signals from ${selected.size} of ${evidence.size} distinct source files, one per file. POSITIVE marks problematic code.")
+    appendLine("Estimated precision: **${percent(precision)}** · recall: **${percent(recall)}** · F1: **${percent(f1)}**")
     appendLine()
-    selected.forEachIndexed { index, signal ->
-      val url = checkNotNull(signal.referenceUrl(ci))
-      val source = when (val origin = signal.source) {
-        is EdictNextSignalSource.FromPR -> "PR #${origin.prNumber}: ${origin.title.take(200).markdownText()}"
-        is EdictNextSignalSource.FromCommit -> "Commit ${origin.commitRevision}"
-        else -> error("Unsupported promotion evidence")
-      }
-      val file = signal.fileRevision
-      val ranges = file.expectedRanges.orEmpty().joinToString(", ") {
-        if (it.start == it.end) "${it.start}" else "${it.start}-${it.end}"
-      }
-      appendLine("${index + 1}. **${signal.label}** — ${signal.description.markdownText()}  ")
-      appendLine("   Source: [$source](<$url>)  ")
-      appendLine("   Evidence: [${file.path.markdownText()}](<$url>) at `${file.revision}`${if (ranges.isEmpty()) "" else ", lines $ranges"}; signal `${signal.id}`.")
+    evaluation.projectReview?.let { review ->
+      appendLine("Last project analysis reported ${review.totalFindings} findings; ${review.reviewedFindings} were reviewed.")
       appendLine()
     }
-    appendLine("Inspection SHA-256: `$digest`.")
+    appendLine("## Evidence")
+    appendLine()
+    selected.forEachIndexed { index, signal ->
+      val url = when (val source = signal.source) {
+        is EdictNextSignalSource.FromPR -> {
+          val sourceUri = URI(source.url)
+          if (ci?.provider == CiProviderId.SPACE && sourceUri.host == URI(ci.url).host) {
+            val project = Regex("/p/([^/]+)/").find(sourceUri.path)?.groupValues?.get(1) ?: ci.owner
+            "${sourceUri.scheme}://${sourceUri.rawAuthority}/p/$project/reviews/${source.prNumber}"
+          }
+          else source.url
+        }
+        is EdictNextSignalSource.FromCommit -> {
+          val commitUrl = source.url?.takeIf { it.isNotBlank() } ?: run {
+            val repository = checkNotNull(ci).url.trimEnd('/').removeSuffix(".git")
+            when (ci.provider) {
+              CiProviderId.GITHUB -> "$repository/commit/${source.commitRevision}"
+              CiProviderId.SPACE -> "$repository/revision/${source.commitRevision}"
+            }
+          }
+          val uri = URI(commitUrl)
+          if (Regex("/p/[^/]+/repositories/[^/]+/revision/").containsMatchIn(uri.path)) {
+            val file = URLEncoder.encode(signal.fileRevision.path, Charsets.UTF_8)
+            val range = checkNotNull(signal.fileRevision.expectedRanges).first()
+            // Historical evidence describes the problematic code on the old side of the fix.
+            "$commitUrl?file=$file&from-line=OLD:${range.start}" +
+              if (range.end == range.start) "" else "&to-line=OLD:${range.end}"
+          }
+          else commitUrl
+        }
+        else -> error("Unsupported promotion evidence")
+      }
+      val linkText = when (val source = signal.source) {
+        is EdictNextSignalSource.FromPR -> "PR #${source.prNumber}"
+        is EdictNextSignalSource.FromCommit -> source.commitRevision.take(7)
+        else -> error("Unsupported promotion evidence")
+      }
+      appendLine("${index + 1}. Fixed: \"${signal.description.markdownText()}\" in [$linkText]($url).")
+      appendLine()
+    }
   }
 }
 
