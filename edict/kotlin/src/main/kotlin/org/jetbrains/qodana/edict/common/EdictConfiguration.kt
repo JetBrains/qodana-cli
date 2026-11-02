@@ -3,6 +3,8 @@ package org.jetbrains.qodana.edict.common
 
 import org.jetbrains.qodana.edict.ci.CiProviderId
 import org.jetbrains.qodana.edict.ci.ReviewRepository
+import java.net.URI
+import java.net.URISyntaxException
 import org.yaml.snakeyaml.LoaderOptions
 import org.yaml.snakeyaml.Yaml
 import org.yaml.snakeyaml.constructor.Constructor
@@ -10,16 +12,17 @@ import org.yaml.snakeyaml.error.YAMLException
 import org.yaml.snakeyaml.introspector.MissingProperty
 import org.yaml.snakeyaml.introspector.Property
 import org.yaml.snakeyaml.introspector.PropertyUtils
-import java.net.URI
 import java.nio.file.Files
 import java.nio.file.InvalidPathException
 import java.nio.file.Path
 import kotlin.io.path.isRegularFile
 
+// TODO: I believe promotion at least should be non-null, as ci may be missing if user supplied different signal source, but promotion cannot be missing
+// TODO: (Keep this one) - currently we have the whole pipeline too coupled, as if we require each part for edict pipeline to function. We need to split it somehow
 internal data class EdictConfiguration(
   val mcpPort: Int = DEFAULT_EDICT_MCP_PORT,
   val statePath: String = DEFAULT_EDICT_STATE_PATH,
-  val ci: EdictCIConfiguration? = null,
+  val ci: ReviewRepository? = null,
   val promotion: PromotionConfiguration? = null,
   val extraction: ExtractionConfiguration = ExtractionConfiguration(),
   val distribution: DistributionConfiguration = DistributionConfiguration(),
@@ -27,7 +30,11 @@ internal data class EdictConfiguration(
   val calculatePrice: Boolean = false,
   val projectAnalysisTimeoutMinutes: Long = DEFAULT_PROJECT_ANALYSIS_TIMEOUT_MINUTES,
 ) {
+  /** Where promotion PRs are opened: `edict.promotion.url`, else the `edict.ci.url` repository reviews are read from. */
+  val promotionRepository: ReviewRepository? = promotion?.repository ?: ci
+
   init {
+    require(promotion == null || promotionRepository != null) { "edict.promotion requires edict.promotion.url or edict.ci.url" }
     require(mcpPort in 1..65535) { "edict.mcpPort must be between 1 and 65535: $mcpPort" }
     require(projectAnalysisTimeoutMinutes >= 1) {
       "edict.projectAnalysisTimeoutMinutes must be at least 1: $projectAnalysisTimeoutMinutes"
@@ -91,21 +98,6 @@ internal data class GenerationConfiguration(
 internal const val DEFAULT_MAX_PROJECT_ANALYSES = 3
 internal const val DEFAULT_GENERATION_COUNT = 5
 
-internal data class EdictCIConfiguration(val url: String) {
-  private val path = webUrl(url, "CI repository").pathSegments()
-
-  init {
-    require(path.size == 2 || path.size == 4 && path[0] == "p" && path[2] == "repositories") {
-      "CI repository URL must end with /<owner>/<repository> for GitHub or /p/<project-key>/repositories/<repository> for Space"
-    }
-  }
-
-  val provider = if (path.size == 2) CiProviderId.GITHUB else CiProviderId.SPACE
-  val owner = path[if (provider == CiProviderId.GITHUB) 0 else 1].validRepositoryName("CI owner or project key")
-  val repository = path.last().removeSuffix(".git").validRepositoryName("CI repository")
-  val reviewRepository get() = ReviewRepository(provider, owner, repository)
-}
-
 internal data class PromotionConfiguration(
   val reviewer: String,
   val targetBranch: String? = null,
@@ -113,6 +105,8 @@ internal data class PromotionConfiguration(
   val targetPrecision: Double = 0.7,
   val targetRecall: Double = 0.6,
   val targetF1: Double = 0.0,
+  /** Where promotion PRs are opened when it isn't the `edict.ci.url` repository. */
+  val repository: ReviewRepository? = null,
 ) {
   init {
     mapOf("targetPrecision" to targetPrecision, "targetRecall" to targetRecall, "targetF1" to targetF1).forEach { (name, value) ->
@@ -147,12 +141,11 @@ internal object EdictYamlConfiguration {
     val constructor = Constructor(QodanaYaml::class.java, options).apply { propertyUtils = QodanaPropertyUtils() }
     val yaml = try {
       Files.newBufferedReader(path).use { reader -> Yaml(constructor).load<QodanaYaml?>(reader) }
-    }
-    catch (e: YAMLException) {
+    } catch (e: YAMLException) {
       throw IllegalArgumentException("Cannot parse Qodana configuration $path: ${e.message}", e)
-    } ?: return EdictConfiguration()
+    }
 
-    return yaml.edict?.toConfiguration() ?: EdictConfiguration()
+    return yaml?.edict?.toConfiguration() ?: EdictConfiguration()
   }
 
   private const val MAX_YAML_BYTES = 2 * 1024 * 1024
@@ -215,7 +208,7 @@ internal class GenerationYaml {
 internal class EdictCIYaml {
   var url: String? = null
 
-  fun toConfiguration() = EdictCIConfiguration(url.required("edict.ci.url"))
+  fun toConfiguration() = reviewRepository(url.required("edict.ci.url"), "edict.ci.url")
 }
 
 internal class PromotionYaml {
@@ -225,6 +218,7 @@ internal class PromotionYaml {
   var targetPrecision: Double? = null
   var targetRecall: Double? = null
   var targetF1: Double? = null
+  var url: String? = null
 
   fun toConfiguration() = PromotionConfiguration(
     reviewer = reviewer.required("edict.promotion.reviewer"),
@@ -233,6 +227,7 @@ internal class PromotionYaml {
     targetPrecision = targetPrecision ?: 0.7,
     targetRecall = targetRecall ?: 0.6,
     targetF1 = targetF1 ?: 0.0,
+    repository = url?.required("edict.promotion.url")?.let { reviewRepository(it, "edict.promotion.url") },
   )
 }
 
@@ -245,24 +240,28 @@ private class QodanaPropertyUtils : PropertyUtils() {
 private fun String?.required(path: String): String =
   this?.trim()?.takeIf(String::isNotEmpty) ?: error("$path is required")
 
-private fun webUrl(value: String, label: String): URI {
+/**
+ * The repository a web URL names, by its path: `https://<host>/<owner>/<repo>` on GitHub and
+ * `https://<host>/p/<project-key>/repositories/<repo>` on Space.
+ */
+internal fun reviewRepository(url: String, path: String): ReviewRepository {
   val uri = try {
-    URI(value)
+    URI(url)
   }
-  catch (e: Exception) {
-    throw IllegalArgumentException("$label URL is invalid", e)
+  catch (e: URISyntaxException) {
+    throw IllegalArgumentException("$path is not a URL: $url", e)
   }
-  require(
-    uri.scheme in setOf("http", "https") && uri.host != null && uri.userInfo == null &&
-      uri.query == null && uri.fragment == null,
-  ) { "$label must be an HTTP(S) URL without credentials, query, or fragment" }
-  return uri
-}
-
-private fun URI.pathSegments(): List<String> = path.trim('/').split('/').filter(String::isNotEmpty)
-
-private fun String.validRepositoryName(label: String): String = also {
-  require(isNotBlank() && this !in setOf(".", "..") && none { character -> character in "/\\\u0000\r\n" }) {
-    "$label is invalid"
+  require(uri.scheme == "https" && uri.host != null && uri.port == -1 && uri.userInfo == null && uri.query == null && uri.fragment == null) {
+    "$path must be an https URL without a port, credentials, query or fragment: $url"
+  }
+  val host = uri.host.lowercase()
+  val segments = uri.path.trim('/').split('/').filter(String::isNotEmpty)
+  return when {
+    segments.size == 2 -> ReviewRepository(CiProviderId.GITHUB, host, segments[0], segments[1].removeSuffix(".git"))
+    segments[0] == "p" && segments[2] == "repositories" && segments.size == 4 ->
+      ReviewRepository(CiProviderId.SPACE, host, segments[1], segments[3].removeSuffix(".git"))
+    else -> throw IllegalArgumentException(
+      "$path must end with /<owner>/<repository> for GitHub or /p/<project-key>/repositories/<repository> for Space: $url",
+    )
   }
 }

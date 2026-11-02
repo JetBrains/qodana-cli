@@ -3,11 +3,12 @@ package org.jetbrains.qodana.edict.extraction.reviews
 
 import kotlinx.serialization.json.*
 import org.jetbrains.qodana.edict.ci.PullRequest
-import org.jetbrains.qodana.edict.ci.ReviewExtractionApi
+import org.jetbrains.qodana.edict.ci.ReviewApi
 import org.jetbrains.qodana.edict.ci.ReviewFetchResult
 import org.jetbrains.qodana.edict.ci.ReviewMessage
 import org.jetbrains.qodana.edict.ci.ReviewRepository
 import org.jetbrains.qodana.edict.ci.ReviewSelection
+import org.jetbrains.qodana.edict.ci.ReviewThread
 import org.jetbrains.qodana.edict.common.json
 import org.jetbrains.qodana.edict.common.sha256
 import org.jetbrains.qodana.edict.common.wireJson
@@ -21,6 +22,8 @@ import org.jetbrains.qodana.edict.edictnext.numberedLines
 import org.jetbrains.qodana.edict.edictnext.stableSignalId
 import org.jetbrains.qodana.edict.signals.SignalValidation
 import org.jetbrains.qodana.edict.signals.UnifiedDiff
+import org.jetbrains.qodana.edict.signals.validRevision
+import org.jetbrains.qodana.edict.signals.validSourcePath
 import java.time.LocalDate
 import java.time.ZoneOffset
 import java.time.temporal.ChronoUnit
@@ -28,7 +31,7 @@ import java.time.temporal.ChronoUnit
 /** Prepared PR evidence and stored Signal batches scoped to one managed PR-analysis task. */
 internal class PrAnalysis(
   private val store: EdictNextRepositoryState,
-  private val provider: ReviewExtractionApi,
+  private val provider: ReviewApi?,
   private val today: () -> LocalDate = { LocalDate.now(ZoneOffset.UTC) },
 ) {
   private data class Batch(
@@ -53,9 +56,10 @@ internal class PrAnalysis(
 
   private val batches = mutableMapOf<String, Batch>()
 
-  fun prepareBatch(token: String, repository: ReviewRepository, input: ReviewSelectionInput): PrBatchSummary {
+  fun prepareBatch(token: String, input: ReviewSelectionInput): PrBatchSummary {
     store.requirePrAnalysisCaller(token, coordinator = true)
     input.validate()
+    val repository = reviews().repository
     return when {
       input.prNumbers.isNotEmpty() -> prepareNumberBatch(token, repository, input.prNumbers)
       input.startDate.isNotEmpty() -> prepareDateBatch(token, repository, input.startDate, input.endDate)
@@ -74,7 +78,7 @@ internal class PrAnalysis(
       .takeWhile { !it.isBefore(MIN_REVIEW_DATE) }
       .firstOrNull { !coverage.includes(it) }
       ?: return registerBatch(token, repository, emptyList(), "${json.encodeToString(repository)}:history-exhausted")
-    val fetched = fetchCompleteRange(repository, date, date)
+    val fetched = fetchCompleteRange(date, date)
     val prs = fetched.pullRequests
       .filterNot { it.number in coverage.analyzedPrNumbers }
       .sortedByDescending(PullRequest::closeTimestamp)
@@ -98,7 +102,7 @@ internal class PrAnalysis(
     val start = LocalDate.parse(startDate)
     val end = LocalDate.parse(endDate)
     require(end.isBefore(today())) { "Only complete UTC dates before today can be selected" }
-    val fetched = fetchCompleteRange(repository, start, end)
+    val fetched = fetchCompleteRange(start, end)
     val ranges = listOf(PrAnalysisDateRange(startDate, endDate))
     return registerBatch(
       token,
@@ -115,38 +119,23 @@ internal class PrAnalysis(
     repository: ReviewRepository,
     prNumbers: List<Int>,
   ): PrBatchSummary {
-    val selection = ReviewSelection(
-      repository.provider,
-      repository.owner,
-      repository.repository,
-      maxPrs = prNumbers.size,
-      prNumbers = prNumbers,
-    )
-    selection.validate()
-    val fetched = provider.fetch(selection)
+    val selection = ReviewSelection(maxPrs = prNumbers.size, prNumbers = prNumbers)
+    val fetched = fetch(selection)
     return registerBatch(
       token,
       repository,
       fetched.pullRequests,
-      json.encodeToString(selection),
+      json.encodeToString(repository) + json.encodeToString(selection),
       problems = fetched.problems,
     )
   }
 
   private fun fetchCompleteRange(
-    repository: ReviewRepository,
     startDate: LocalDate,
     endDate: LocalDate,
   ): ReviewFetchResult {
-    val selection = ReviewSelection(
-      repository.provider,
-      repository.owner,
-      repository.repository,
-      FULL_DATE_FETCH_LIMIT,
-      startDate = startDate.toString(),
-      endDate = endDate.toString(),
-    )
-    val fetched = provider.fetch(selection)
+    val selection = ReviewSelection(FULL_DATE_FETCH_LIMIT, startDate = startDate.toString(), endDate = endDate.toString())
+    val fetched = fetch(selection)
     val prs = fetched.pullRequests
     require(prs.all { selection.containsDate(it.closeTimestamp) }) { "Provider returned a PR outside the requested dates" }
     if (prs.size < FULL_DATE_FETCH_LIMIT) return fetched
@@ -154,8 +143,8 @@ internal class PrAnalysis(
       "Cannot prove that UTC date $startDate was fetched completely: it contains at least $FULL_DATE_FETCH_LIMIT PRs"
     }
     val midpoint = startDate.plusDays(ChronoUnit.DAYS.between(startDate, endDate) / 2)
-    val newer = fetchCompleteRange(repository, midpoint.plusDays(1), endDate)
-    val older = fetchCompleteRange(repository, startDate, midpoint)
+    val newer = fetchCompleteRange(midpoint.plusDays(1), endDate)
+    val older = fetchCompleteRange(startDate, midpoint)
     return ReviewFetchResult(
       newer.pullRequests + older.pullRequests,
       newer.problems + older.problems,
@@ -219,6 +208,8 @@ internal class PrAnalysis(
       ?: error("Unknown work item in PR batch")
   }
 
+  // TODO(R11): drafts are mapped while `failures` and `ordinals` are filled as side effects; map each draft to its
+  //  outcome (stored Signal or failure) and split the outcomes afterwards.
   fun store(
     token: String,
     batchId: String,
@@ -320,7 +311,7 @@ internal class PrAnalysis(
     }
     val evidencePath = if (draft.label == EdictNextSignalLabel.POSITIVE) diff.beforePath else diff.afterPath
     require(draft.fileRevision.path == evidencePath) { "Signal path must match its diff side" }
-    val canonical = provider.diff(item.repository, diff.before, diff.after, diff.beforePath, diff.afterPath)
+    val canonical = reviews().diff(diff.before, diff.after, diff.beforePath, diff.afterPath)
     val excerpt = UnifiedDiff.excerpt(canonical, draft.label, draft.fileRevision.expectedRanges.orEmpty(), SignalValidation.MAX_DIFF_CHARS)
       ?: error("The changes at the Signal's lines do not fit ${SignalValidation.MAX_DIFF_CHARS} characters; narrow its ranges")
     UnifiedDiff.validateExcerpt(excerpt, canonical)
@@ -398,15 +389,16 @@ internal class PrAnalysis(
     require(revision in listOf(item.pr.baseRevision, item.pr.headRevision, item.thread.originalCommitSha)) {
       "Revision does not belong to work item"
     }
-    return provider.file(item.repository, revision, path)
+    return reviews().file(revision, path)
   }
 
+  // TODO(R11): each read appends to `notes` from `onFailure`; give each read a result with its own note and collect them.
   fun evidence(item: PrItem): PrItemEvidence {
     val thread = item.thread
     val anchor = thread.anchorLine?.let { it..(thread.anchorEndLine ?: it) }
     val notes = mutableListOf<String>()
     val diff = runCatching {
-      provider.diff(item.repository, thread.originalCommitSha, item.pr.headRevision, thread.filePath, thread.filePath, DIFF_CONTEXT)
+      reviews().diff(thread.originalCommitSha, item.pr.headRevision, thread.filePath, thread.filePath, DIFF_CONTEXT)
         .let { diff ->
           val near = anchor?.let { hunksNear(diff, (it.first - DIFF_RADIUS)..(it.last + DIFF_RADIUS)) } ?: diff
           if (near != diff) notes += "the diff shows only changes near the comment; edict_pr_file_diff has the whole file"
@@ -417,7 +409,7 @@ internal class PrAnalysis(
     }.onFailure { notes += "diff unavailable: ${it.message}" }.getOrNull()
     val code = anchor?.let { lines ->
       runCatching {
-        val content = provider.file(item.repository, thread.originalCommitSha, thread.filePath)
+        val content = reviews().file(thread.originalCommitSha, thread.filePath)
         numberedLines(content, EdictNextLineRange(lines.first, lines.last), CODE_RADIUS)
       }.onFailure { notes += "commented code unavailable: ${it.message}" }.getOrNull()
     }
@@ -444,7 +436,7 @@ internal class PrAnalysis(
     require(before in listOf(item.pr.baseRevision, item.thread.originalCommitSha) && after == item.pr.headRevision) {
       "Diff must compare prepared base/comment revision to head"
     }
-    return provider.diff(item.repository, before, after, beforePath, afterPath)
+    return reviews().diff(before, after, beforePath, afterPath)
   }
 
   fun complete(token: String) {
@@ -471,6 +463,10 @@ internal class PrAnalysis(
     return batches[id] ?: error("Unknown PR batch; prepare again after restart")
   }
 
+  private fun fetch(selection: ReviewSelection): ReviewFetchResult = reviews().fetch(selection).withValidThreads()
+
+  private fun reviews(): ReviewApi = requireNotNull(provider) { "PR extraction requires complete edict.ci configuration" }
+
   private companion object {
     const val CHUNK_SIZE = 8
     const val MAX_ARTIFACT_BYTES = 8 * 1024 * 1024
@@ -481,6 +477,28 @@ internal class PrAnalysis(
     const val FULL_DATE_FETCH_LIMIT = 1000
     val MIN_REVIEW_DATE: LocalDate = LocalDate.of(1970, 1, 1)
   }
+}
+
+/** Drops PRs without exact revisions and threads with an invalid path, revision or anchor, reporting each. */
+private fun ReviewFetchResult.withValidThreads(): ReviewFetchResult {
+  val (exact, inexact) = pullRequests.partition { validRevision(it.baseRevision) && validRevision(it.headRevision) }
+  val checked = exact.map { it to it.threads.partition(ReviewThread::isValid) }
+  return ReviewFetchResult(
+    checked.map { (pr, threads) -> pr.copy(threads = threads.first) },
+      buildList {
+          addAll(this@withValidThreads.problems)
+          inexact.mapTo(this) { "PR ${it.number}: lacks exact base/head revisions" }
+          checked.flatMapTo(this) { (pr, threads) -> threads.second.map { "PR ${pr.number} discussion ${it.threadId}: invalid path, revision or anchors" } }
+      },
+  )
+}
+
+private fun ReviewThread.isValid(): Boolean {
+  val anchorLine = anchorLine
+  val anchorEndLine = anchorEndLine
+  val validAnchor = if (anchorLine == null || anchorEndLine == null) anchorLine == null && anchorEndLine == null
+  else anchorLine in 1..anchorEndLine
+  return validSourcePath(filePath) && validRevision(originalCommitSha) && validAnchor
 }
 
 private fun RepositoryPrAnalysisCoverage.includes(date: LocalDate): Boolean = analyzedDateRanges.any {

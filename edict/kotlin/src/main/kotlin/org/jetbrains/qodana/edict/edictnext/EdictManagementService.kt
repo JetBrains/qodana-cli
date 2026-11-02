@@ -26,8 +26,7 @@ import org.jetbrains.qodana.edict.edictnext.EdictNextRepositoryState.Step
 import org.jetbrains.qodana.edict.edictnext.EdictNextRepositoryState.Plan
 import org.jetbrains.qodana.edict.common.EdictLayout
 import org.jetbrains.qodana.edict.common.GitRepository
-import org.jetbrains.qodana.edict.ci.ReviewClient
-import org.jetbrains.qodana.edict.ci.ReviewExtractionApi
+import org.jetbrains.qodana.edict.ci.ReviewApi
 import org.jetbrains.qodana.edict.ci.ReviewRepository
 import org.jetbrains.qodana.edict.extraction.reviews.PrAnalysis
 import org.jetbrains.qodana.edict.extraction.reviews.PrAnalysisCoverageInput
@@ -51,8 +50,7 @@ internal class EdictManagementService(
   private val store: EdictNextRepositoryState,
   private val layout: EdictLayout,
   taskOutput: PrintWriter = PrintWriter(System.err, true),
-  reviewProvider: ReviewExtractionApi = ReviewClient(),
-  private val reviewRepository: ReviewRepository? = null,
+  private val ciReviews: ReviewApi? = null,
   prAnalysisToday: () -> LocalDate = { LocalDate.now(ZoneOffset.UTC) },
   private val startedAt: Instant = Instant.now(),
   private val analyzePrice: (Plan) -> CodexPriceAnalysis = { plan ->
@@ -84,7 +82,7 @@ internal class EdictManagementService(
 
   private val taskLogger = TaskLifecycleLogger(store, layout, taskOutput)
   private val invocations = ConcurrentHashMap<String, Invocation>()
-  private val pr = PrAnalysis(store, reviewProvider, prAnalysisToday)
+  private val pr = PrAnalysis(store, ciReviews, prAnalysisToday)
 
   internal fun scratchDirectory(token: String) =
     layout.taskScratchDirectory(store.scratchOwnerId(token)).also { Files.createDirectories(it) }
@@ -507,7 +505,7 @@ internal class EdictManagementService(
       val input = wireJson.decodeFromJsonElement<ReviewSelectionInput>(JsonObject(arguments - "token"))
       store.requireSkill(arguments.requireString("token"), setOf("edict-pr-signal-analysis"))
       EdictNextJson.encodeToJsonElement(
-        pr.prepareBatch(arguments.requireString("token"), configuredReviewRepository(), input),
+        pr.prepareBatch(arguments.requireString("token"), input),
       )
     }
 
@@ -642,9 +640,9 @@ internal class EdictManagementService(
 
   internal fun redact(content: String): String = store.redact(content)
 
-  private fun configuredReviewRepository(): ReviewRepository = requireNotNull(reviewRepository) {
+  private fun configuredReviewRepository(): ReviewRepository = requireNotNull(ciReviews) {
     "PR extraction requires complete edict.ci configuration"
-  }
+  }.repository
 
   private fun lifecycle(change: () -> TaskLifecycleAck): JsonElement = synchronized(store) {
     val before = store.plan()

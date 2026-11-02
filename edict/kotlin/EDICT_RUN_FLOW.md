@@ -49,10 +49,11 @@ codex exec '$edict_manager process inbox and generate new rules'
   IntelliJ inspection tools, starting the IDE on the first inspection call, so Codex configures only `edict-mcp`.
 - The request carries no paths or CI repository identity. Skills call `edict_context` with their task token for
   `projectDirectory`, `stateDirectory` (read-only; the state repository Edict Next tools change in place), task-owned
-  `scratchDirectory` (`<cwd>/log/agent-work/<run-id>/scratch/<task-id>`), and `reviewRepository` derived from
+  `scratchDirectory` (`<cwd>/log/agent-work/<run-id>/scratch/<task-id>`), and `reviewRepository`, read from
   `edict.ci.url`.
 - Provider tokens (`GITHUB_TOKEN`/`GH_TOKEN`, `SPACE_TOKEN`) come from the server environment, never from MCP arguments.
-  A run fails only when it uses a VCS provider without its token.
+  The server does not start when `edict.ci.url` or `edict.promotion.url` (default `edict.ci.url`) names a provider
+  without its token, or while an active promotion belongs to a repository other than the promotion one.
 
 The benchmark (`scripts/edict-benchmark/`) follows this shape: `install-codex.sh` writes the temporary global home,
 `prepare.sh` runs `install --deny` and `mcp start` in the project, and `generate.sh` runs the explicit `$edict_manager`

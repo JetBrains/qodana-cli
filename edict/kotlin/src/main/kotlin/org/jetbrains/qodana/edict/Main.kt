@@ -2,6 +2,7 @@
 package org.jetbrains.qodana.edict
 
 import io.github.oshai.kotlinlogging.KotlinLogging
+import org.jetbrains.qodana.edict.ci.getReviewAPI
 import org.jetbrains.qodana.edict.common.EdictLayout
 import org.jetbrains.qodana.edict.common.EdictYamlConfiguration
 import org.jetbrains.qodana.edict.edictnext.EdictNextMcpToolset
@@ -51,6 +52,8 @@ fun main(args: Array<String>) {
                 val qodanaYaml = options["qodana-yaml"]?.let(Path::of)?.toAbsolutePath()?.normalize()
                     ?: EdictLayout.findQodanaYaml()
                 val configuration = EdictYamlConfiguration.load(qodanaYaml)
+                val ciReviews = configuration.ci?.let(::getReviewAPI)
+                val promotionReviews = configuration.promotionRepository?.let(::getReviewAPI)
                 val layout = EdictLayout.get(configuration.statePath)
                 val portConfig = EdictConfig(configuration.mcpPort).also { CodexSetup.requireInstalled(layout, it) }
                 val port = portConfig.mcpPort
@@ -69,7 +72,7 @@ fun main(args: Array<String>) {
                     layout.intellijMcpResultsDirectory,
                     projectAnalysisTimeoutMinutes = configuration.projectAnalysisTimeoutMinutes,
                 )
-                EdictServer.start(layout, port, inspectionServer, configuration = configuration).use { server ->
+                EdictServer.start(layout, port, inspectionServer, configuration, ciReviews, promotionReviews).use { server ->
                     Runtime.getRuntime().addShutdownHook(Thread(server::close))
                     // A launcher killed with SIGKILL cannot stop this server, and stdin may stay open (HTTP mode never
                     // reads it). Exit with the launcher instead; the shutdown hook then stops the server.

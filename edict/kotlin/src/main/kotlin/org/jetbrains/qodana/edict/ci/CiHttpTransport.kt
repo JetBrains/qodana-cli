@@ -26,53 +26,38 @@ internal data class CiHttpResponse(
 
 internal interface CiHttpTransport {
   fun send(
-    provider: CiProviderId,
     method: String,
     endpoint: String,
     query: Map<String, String> = emptyMap(),
     body: JsonObject? = null,
-    requireAuthentication: Boolean = false,
   ): CiHttpResponse
 }
 
+/** Sends requests authenticated by [token] to the provider API at [apiUrl], named by [provider] in errors. */
 internal class DefaultCiHttpTransport(
-  githubUrl: String = System.getenv("EDICT_GITHUB_API_URL") ?: "https://api.github.com",
-  spaceUrl: String = System.getenv("EDICT_SPACE_URL") ?: "https://jetbrains.team",
-  private val githubToken: String = System.getenv("GITHUB_TOKEN") ?: System.getenv("GH_TOKEN").orEmpty(),
-  private val spaceToken: String = System.getenv("SPACE_TOKEN").orEmpty(),
+  private val provider: CiProviderId,
+  private val apiUrl: String,
+  private val token: String,
 ) : CiHttpTransport {
-  private val origins = mapOf(
-    CiProviderId.GITHUB to validateOrigin(githubUrl),
-    CiProviderId.SPACE to validateOrigin(spaceUrl).trimEnd('/') + "/api/http",
-  )
   private val client = HttpClient.newBuilder()
     .connectTimeout(Duration.ofSeconds(30))
     .followRedirects(HttpClient.Redirect.NEVER)
     .build()
 
   override fun send(
-    provider: CiProviderId,
     method: String,
     endpoint: String,
     query: Map<String, String>,
     body: JsonObject?,
-    requireAuthentication: Boolean,
   ): CiHttpResponse {
     require(endpoint.startsWith('/') && '?' !in endpoint && '#' !in endpoint) { "Invalid provider API endpoint" }
-    val token = if (provider == CiProviderId.GITHUB) githubToken else spaceToken
-    require(provider != CiProviderId.SPACE || token.isNotBlank()) {
-      "Space access requires SPACE_TOKEN in server environment"
-    }
-    require(!requireAuthentication || token.isNotBlank()) {
-      "${provider.name.lowercase().replaceFirstChar(Char::uppercase)} review changes require a provider token in the server environment"
-    }
     val suffix = query.entries.joinToString("&") { "${urlPart(it.key)}=${urlPart(it.value)}" }
-    val url = origins.getValue(provider) + endpoint + suffix.takeIf(String::isNotEmpty)?.let { "?$it" }.orEmpty()
+    val url = apiUrl + endpoint + suffix.takeIf(String::isNotEmpty)?.let { "?$it" }.orEmpty()
     val builder = HttpRequest.newBuilder(URI(url))
       .timeout(Duration.ofSeconds(30))
       .header("Accept", "application/json")
       .header("User-Agent", "edict-mcp")
-    if (token.isNotEmpty()) builder.header("Authorization", "Bearer $token")
+      .header("Authorization", "Bearer $token")
     if (body == null) builder.method(method, HttpRequest.BodyPublishers.noBody())
     else {
       builder.header("Content-Type", "application/json")
@@ -104,15 +89,6 @@ internal class DefaultCiHttpTransport(
       parsed,
       response.headers().firstValue("Link").orElse("").contains("rel=\"next\""),
     )
-  }
-
-  private fun validateOrigin(value: String): String {
-    val uri = URI(value.trimEnd('/'))
-    require(
-      uri.scheme in listOf("https", "http") && uri.host != null && uri.userInfo == null &&
-        uri.query == null && uri.fragment == null,
-    ) { "Invalid provider API URL" }
-    return uri.toString().trimEnd('/')
   }
 
   private companion object {
