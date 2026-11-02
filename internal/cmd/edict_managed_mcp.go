@@ -48,9 +48,11 @@ On the first inspection call the server starts a native IntelliJ MCP server for
 the current directory and stops it on exit; runs without inspections never start an IDE.
 The IDE comes from --ide-dist, else --ide-linter, else QODANA_DIST; Docker linters
 are not supported. IDE output is logged to intellij-mcp.log in the run's log directory.
-GitHub and Space PR-review data is read directly by edict-mcp. Configure
-GITHUB_TOKEN (or GH_TOKEN), SPACE_TOKEN, and optionally EDICT_GITHUB_API_URL or
-EDICT_SPACE_URL in the server environment; provider tokens are never MCP arguments.
+GitHub and Space PR-review data is read directly by edict-mcp from edict.ci.url;
+promotion PRs go to edict.promotion.url, defaulting to edict.ci.url. Each URL's
+host selects the provider API, including GitHub Enterprise. Configure GITHUB_TOKEN
+(or GH_TOKEN) or SPACE_TOKEN for every configured provider in the server
+environment; provider tokens are never MCP arguments.
 
 The first successful edict_plan_create call returns the manager capability.
 It requires no token and can succeed only once per server lifetime. Keep the

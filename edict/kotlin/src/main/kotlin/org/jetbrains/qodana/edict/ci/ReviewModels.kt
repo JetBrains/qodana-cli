@@ -3,7 +3,10 @@ package org.jetbrains.qodana.edict.ci
 
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.Transient
+import org.jetbrains.qodana.edict.signals.validRevision
 import org.jetbrains.qodana.edict.signals.validSourcePath
+import java.net.URI
 import java.time.LocalDate
 import java.time.ZoneOffset
 
@@ -16,31 +19,78 @@ enum class CiProviderId {
   SPACE,
 }
 
+/**
+ * A repository of a review provider. [host] is the lowercase host of its web pages, such as `github.com`, which also
+ * locates the provider's API; on Space, [owner] is the project key.
+ */
 @Serializable
 data class ReviewRepository(
   val provider: CiProviderId,
+  val host: String,
   val owner: String,
-  @SerialName("repo") val repository: String,
+  val repository: String,
 ) {
-  fun validate() {
+  init {
+    require(host.isNotEmpty() && host == host.lowercase() && host.none { it in "/:@\\ " }) { "Invalid host: $host" }
     require(listOf(owner, repository).all { validSourcePath(it) && '/' !in it }) { "Invalid owner or repository" }
+  }
+
+  /** A review of this repository; see [ReviewReference] for what [id] and [url] hold. */
+  fun reference(id: String, url: String): ReviewReference = ReviewReference(provider, owner, repository, id, url)
+
+  fun label(): String = "${provider.name.lowercase()}:$host/$owner/$repository"
+
+  fun owns(reference: ReviewReference): Boolean = reference.reviewRepository == this
+
+  /** Rejects a review of another repository, which a client of this one cannot reach. */
+  fun requireOwns(reference: ReviewReference) {
+    require(owns(reference)) { "Review ${reference.url} (${reference.reviewRepository.label()}) is not in the configured ${label()}" }
   }
 }
 
+/** Files of a weak-signal source fix, by repository-relative path, applied on top of the full [baseRevision] SHA. */
+data class SourceFixChanges(val baseRevision: String, val files: Map<String, String>) {
+  init {
+    require(validRevision(baseRevision)) { "Source fixes require an exact base revision" }
+    require(files.isNotEmpty() && files.keys.all(::validSourcePath)) { "Source fixes require repository-relative file paths" }
+  }
+}
+
+// TODO: am I correct that both weak signals PR creation and inspection one mixed here? If yes, we need to split them, maybe in later refactoring
+/**
+ * A review to open against [targetBranch]. [targetPath] is the repository-relative path the inspection is written to,
+ * [inspectionDigest] the SHA-256 hex of the cluster's inspection, and [reviewer] the provider login to request. A
+ * source-fix request leaves [targetPath] and [inspectionContent] empty.
+ */
+data class CreateReviewRequest(
+  val operationId: String,
+  val clusterId: String,
+  val targetBranch: String,
+  val reviewer: String,
+  val targetPath: String,
+  val inspectionDigest: String,
+  val inspectionContent: String,
+  val description: String,
+  val sourceFix: SourceFixChanges? = null,
+) {
+  val branch: String = if (sourceFix == null) "edict/$clusterId-${inspectionDigest.take(12)}" else "edict/weak-$operationId"
+  val title: String = if (sourceFix == null) "Add Edict inspection $clusterId" else "Fix issues found by Edict inspection $clusterId"
+}
+
+data class ReviewFetchResult(
+  val pullRequests: List<PullRequest>,
+  /** Why pull requests or threads were left out, one human-readable message each. */
+  val problems: List<String> = emptyList(),
+)
+
 @Serializable
 data class ReviewSelection(
-  val provider: CiProviderId,
-  val owner: String,
-  @SerialName("repo") val repository: String,
   val maxPrs: Int,
   val prNumbers: List<Int> = emptyList(),
   val startDate: String = "",
   val endDate: String = "",
 ) {
-  val repositoryRef: ReviewRepository get() = ReviewRepository(provider, owner, repository)
-
-  fun validate() {
-    repositoryRef.validate()
+  init {
     require(maxPrs in 1..1000) { "maxPrs must be 1..1000" }
     if (prNumbers.isNotEmpty()) {
       require(
@@ -86,6 +136,7 @@ data class PullRequest(
   val threads: List<ReviewThread> = emptyList(),
 )
 
+/** [id] is the pull request number on GitHub and the review id on Space; [url] is the review's web page. */
 @Serializable
 data class ReviewReference(
   val provider: CiProviderId,
@@ -93,7 +144,11 @@ data class ReviewReference(
   val repository: String,
   val id: String,
   val url: String,
-)
+) {
+  /** The reviewed repository; its host is the host of [url]. */
+  @Transient
+  val reviewRepository: ReviewRepository = ReviewRepository(provider, URI(url).host.orEmpty().lowercase(), owner, repository)
+}
 
 enum class ReviewState {
   OPEN,
@@ -103,6 +158,7 @@ enum class ReviewState {
 
 data class ReviewStatus(
   val state: ReviewState,
+  /** The reviewers' discussion without bots, from [ReviewApi.reviewWithEvidence]; empty from [ReviewApi.review]. */
   val evidence: String = "",
 )
 
@@ -118,8 +174,3 @@ data class MergedReview(
 
 @Serializable
 data class ReviewFileChange(val beforePath: String, val afterPath: String)
-
-data class CreatedReview(
-  val id: String,
-  val url: String,
-)

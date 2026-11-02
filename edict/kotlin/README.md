@@ -328,10 +328,17 @@ Extractors omit unrelated hunks/context and recount split hunk headers; oversize
 `GitRepository.validateEvidence` additionally checks a commit signal against
 actual Git objects, canonical diff bytes, and historical file lengths.
 
-Provider settings are host environment variables: `GITHUB_TOKEN` (or `GH_TOKEN`),
-`SPACE_TOKEN`, and optionally `EDICT_GITHUB_API_URL` / `EDICT_SPACE_URL`. Provider
-credentials are never tool arguments. Redirects are disabled and incomplete
-provider evidence fails validation.
+Reviews are read from the repository at `edict.ci.url`; promotion PRs are opened in `edict.promotion.url`, which
+defaults to `edict.ci.url`. Each URL is read once, at load, into a provider, host, owner and repository:
+`https://<host>/<owner>/<repo>` is GitHub and `https://<host>/p/<project-key>/repositories/<repo>` is Space. The host
+locates the API: `api.github.com` for github.com, `api.<sub>.ghe.com` for GitHub Enterprise Cloud, `<host>/api/v3` for
+GitHub Enterprise Server, and `<host>/api/http` for Space. A review belongs to the repository only on the same host.
+Each configured repository needs its provider token in the host environment, `GITHUB_TOKEN`
+(or `GH_TOKEN`) or `SPACE_TOKEN`; the server does not start without it. Provider credentials
+are never tool arguments. Redirects are disabled and incomplete provider evidence fails
+validation. The server also refuses to start while an inspection promotion on review or an
+active weak-signal review belongs to a repository other than the promotion one; resolved
+promotions may come from an earlier repository.
 
 ## Implementation references
 

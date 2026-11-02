@@ -1,5 +1,6 @@
 package org.jetbrains.qodana.edict.promotion
 
+import org.jetbrains.qodana.edict.edictnext.EdictNextClusterStatus
 import org.jetbrains.qodana.edict.edictnext.EdictNextSignal
 import org.jetbrains.qodana.edict.edictnext.EdictNextSignalLabel
 import org.jetbrains.qodana.edict.edictnext.EdictNextSignalSource
@@ -10,20 +11,37 @@ import java.net.URI
 internal const val MIN_PROMOTION_SOURCE_FILES = 5
 private const val MAX_DESCRIPTION_SOURCE_FILES = 10
 
+/**
+ * What decides how a cluster's inspection is promoted. An inspection PR needs [MIN_PROMOTION_SOURCE_FILES] source files
+ * of both kinds; a weak-signal source-fix review is for an inspection with fewer [referencedSourceFiles].
+ */
+internal data class PromotionEligibility(
+  /** The inspection is generated and awaits review; other statuses are pending, decided or discontinued. */
+  val generated: Boolean,
+  /** Distinct source files with a strong positive Signal: how widely the problem was observed. */
+  val strongPositiveSourceFiles: Int,
+  /** Distinct source files with a strong positive Signal that links to its PR or commit diff: what a PR can cite. */
+  val referencedSourceFiles: Int,
+)
+
+internal fun EdictNextStoredCluster.promotionEligibility(): PromotionEligibility = PromotionEligibility(
+  generated = manifest.status == EdictNextClusterStatus.Generated,
+  strongPositiveSourceFiles = signals.filter(EdictNextSignal::isStrongPositive).distinctBy { it.fileRevision.path }.size,
+  referencedSourceFiles = promotionEvidence().size,
+)
+
 /** One referenced strong positive representative per source path, regardless of revision. */
 internal fun EdictNextStoredCluster.promotionEvidence(): List<EdictNextSignal> = signals
-  .filter {
-    it.strength == EdictNextSignalStrength.STRONG && it.label == EdictNextSignalLabel.POSITIVE && it.referenceUrl() != null
-  }
+  .filter { it.isStrongPositive() && it.referenceUrl() != null }
   .sortedBy { it.id }
   .distinctBy { it.fileRevision.path }
 
-/** Only historical evidence with a usable external reference can support a promotion PR. */
+private fun EdictNextSignal.isStrongPositive(): Boolean =
+  strength == EdictNextSignalStrength.STRONG && label == EdictNextSignalLabel.POSITIVE
+
+/** Describes a cluster with [MIN_PROMOTION_SOURCE_FILES] referenced source files; only those can support a promotion PR. */
 internal fun promotionDescription(cluster: EdictNextStoredCluster, targetPath: String, digest: String): String {
   val evidence = cluster.promotionEvidence()
-  require(evidence.size >= MIN_PROMOTION_SOURCE_FILES) {
-    "Promotion requires strong positive Signals from at least $MIN_PROMOTION_SOURCE_FILES distinct source files with PR or commit diff URLs; found ${evidence.size}"
-  }
   val selected = evidence.take(MAX_DESCRIPTION_SOURCE_FILES)
   return buildString {
     appendLine("## Description")
@@ -41,7 +59,7 @@ internal fun promotionDescription(cluster: EdictNextStoredCluster, targetPath: S
       val source = when (val origin = signal.source) {
         is EdictNextSignalSource.FromPR -> "PR #${origin.prNumber}: ${origin.title.take(200).markdownText()}"
         is EdictNextSignalSource.FromCommit -> "Commit diff ${origin.commitRevision}"
-        else -> error("Unsupported promotion evidence")
+        is EdictNextSignalSource.SubmittedFeedback, is EdictNextSignalSource.Generated -> error("Unsupported promotion evidence")
       }
       val file = signal.fileRevision
       val ranges = file.expectedRanges.orEmpty().joinToString(", ") {
@@ -60,7 +78,7 @@ internal fun EdictNextSignal.referenceUrl(): String? {
   val url = when (val origin = source) {
     is EdictNextSignalSource.FromPR -> origin.url
     is EdictNextSignalSource.FromCommit -> origin.url
-    else -> null
+    is EdictNextSignalSource.SubmittedFeedback, is EdictNextSignalSource.Generated -> null
   }?.takeIf { it.isNotBlank() } ?: return null
   val uri = runCatching { URI(url) }.getOrNull() ?: return null
   return url.takeIf {

@@ -1,19 +1,19 @@
 package org.jetbrains.qodana.edict.promotion
 
 import org.jetbrains.qodana.edict.ci.CreateReviewRequest
-import org.jetbrains.qodana.edict.ci.ReviewClient
-import org.jetbrains.qodana.edict.ci.ReviewManagementApi
+import org.jetbrains.qodana.edict.ci.ReviewApi
 import org.jetbrains.qodana.edict.ci.ReviewReference
 import org.jetbrains.qodana.edict.ci.ReviewState
 import org.jetbrains.qodana.edict.common.EdictConfiguration
+import org.jetbrains.qodana.edict.common.PromotionConfiguration
 import org.jetbrains.qodana.edict.edictnext.EdictNextClusterStatus
-import org.jetbrains.qodana.edict.edictnext.EdictNextSignalLabel
-import org.jetbrains.qodana.edict.edictnext.EdictNextSignalStrength
 import org.jetbrains.qodana.edict.edictnext.EdictRepository
 import org.jetbrains.qodana.edict.edictnext.InspectionPromotion
 import org.jetbrains.qodana.edict.edictnext.PromotionPrState
+import org.jetbrains.qodana.edict.edictnext.TokenRedactor
 import org.jetbrains.qodana.edict.edictnext.WeakSignalPromotion
 import org.jetbrains.qodana.edict.edictnext.EdictNextSignal
+import org.jetbrains.qodana.edict.edictnext.EdictNextStoredCluster
 import org.jetbrains.qodana.edict.edictnext.sha256Hex
 import java.time.Clock
 import java.time.Instant
@@ -21,169 +21,174 @@ import kotlin.io.path.isRegularFile
 import kotlin.io.path.readBytes
 
 internal class PromotionService(
-  private val repository: () -> EdictRepository,
+  private val repository: EdictRepository,
   private val configuration: EdictConfiguration = EdictConfiguration(),
-  private val reviews: ReviewManagementApi = ReviewClient(),
+  // TODO I think we should require non-null promotionReviews. The whole class depends on this. If promotion step itsel is missing we can make promotion service nullable
+  /** The promotion repository's client; null when neither `edict.promotion.url` nor `edict.ci.url` is configured. */
+  private val promotionReviews: ReviewApi?,
+  /** Review text and review failures reach agents, so they are redacted, and before they are bounded. */
+  private val redactor: TokenRedactor,
   private val clock: Clock = Clock.systemUTC(),
 ) {
-  private val weakSignals = WeakSignalPromotionService(repository, configuration, reviews)
+  // TODO: Is signle promotion service which delegates weak signals to other service right architecture? Why not have dedicated services for inpsectins and weak signals?
+  private val weakSignals = WeakSignalPromotionService(repository, configuration, promotionReviews, redactor)
 
   fun prepareWeakSignals(clusterIds: List<String>? = null): WeakSignalPreparationResponse = weakSignals.prepare(clusterIds)
 
   fun promoteWeakSignals(clusterId: String, inspectionDigest: String, fixes: List<WeakSignalFix>, validation: String): WeakSignalPromotion =
     weakSignals.publish(clusterId, inspectionDigest, fixes, validation)
 
-  fun checkWeakSignalReviews(redactEvidence: (String) -> String = { it }): WeakSignalPromotionCheckReviewsResponse =
-    weakSignals.checkReviews(redactEvidence)
+  fun checkWeakSignalReviews(): WeakSignalPromotionCheckReviewsResponse = weakSignals.checkReviews()
 
   fun recordWeakSignalPromotionSignals(
     clusterId: String,
     pullRequest: ReviewReference,
     inspectionDigest: String,
     signals: List<EdictNextSignal>,
-    redactEvidence: (String) -> String = { it },
-  ): List<EdictNextSignal> = weakSignals.recordSignals(clusterId, pullRequest, inspectionDigest, signals, redactEvidence)
+  ): List<EdictNextSignal> = weakSignals.recordSignals(clusterId, pullRequest, inspectionDigest, signals)
 
-  fun completeWeakSignalReview(clusterId: String, pullRequest: org.jetbrains.qodana.edict.ci.ReviewReference) =
+  fun completeWeakSignalReview(clusterId: String, pullRequest: ReviewReference) =
     weakSignals.completeReview(clusterId, pullRequest)
 
   fun promote(clusterIds: List<String>? = null): PromotionPromoteResponse {
     require(clusterIds == null || clusterIds.isNotEmpty()) { "clusterIds must not be empty when provided" }
     require(clusterIds == null || clusterIds.distinct().size == clusterIds.size) { "clusterIds must be unique" }
-    val ci = requireNotNull(configuration.ci) { "Inspection promotion requires complete edict.ci configuration" }
+    val reviews = reviews()
     val promotionConfiguration = requireNotNull(configuration.promotion) {
       "Inspection promotion requires edict.promotion.reviewer configuration"
     }
-    val targetBranch by lazy { reviews.resolveTargetBranch(ci.reviewRepository, promotionConfiguration.targetBranch) }
-    val repository = repository()
-    val created = mutableListOf<InspectionPromotion>()
-    val failures = mutableListOf<PromotionFailure>()
-    val available = repository.loadClusters()
-    val clusters = if (clusterIds == null) available else {
-      val byId = available.associateBy { it.id }
-      clusterIds.mapNotNull { clusterId ->
-        byId[clusterId] ?: run {
-          failures += PromotionFailure(clusterId, "cluster does not exist")
-          null
-        }
-      }
+    // Resolved on the first cluster that needs it, so a run with nothing to promote makes no request.
+    val targetBranch = lazy { reviews.resolveTargetBranch(promotionConfiguration.targetBranch) }
+    val clusters = repository.loadClusters().associateBy { it.id }
+    val outcomes = (clusterIds ?: clusters.keys.toList()).map { clusterId ->
+      val cluster = clusters[clusterId] ?: return@map ClusterPromotion.Failed(PromotionFailure(clusterId, "cluster does not exist"))
+      val eligibility = cluster.promotionEligibility()
+      if (!eligibility.generated || eligibility.strongPositiveSourceFiles < MIN_PROMOTION_SOURCE_FILES) ClusterPromotion.Skipped
+      else promote(cluster, eligibility, reviews, promotionConfiguration, targetBranch)
     }
-    clusters.forEach { cluster ->
-      if (cluster.manifest.status != EdictNextClusterStatus.Generated) {
-        return@forEach
-      }
-      val strongPositiveSourceFiles = cluster.signals
-        .filter { it.strength == EdictNextSignalStrength.STRONG && it.label == EdictNextSignalLabel.POSITIVE }
-        .distinctBy { it.fileRevision.path }
-        .size
-      if (strongPositiveSourceFiles < MIN_PROMOTION_SOURCE_FILES) {
-        return@forEach
-      }
-      val inspectionPath = repository.paths.inspectionPath(cluster.id)
-      if (!inspectionPath.isRegularFile()) {
-        failures += PromotionFailure(cluster.id, "generated inspection is missing")
-        return@forEach
-      }
-      val content = inspectionPath.readBytes()
-      val digest = sha256Hex(content)
-      val targetPath = "${promotionConfiguration.inspectionsDirectory.trim('/')}/${cluster.id}.inspection.kts"
-      val alreadyPromoted = cluster.manifest.promotions.any {
-        it.inspectionDigest == digest && it.targetBranch == targetBranch && it.targetPath == targetPath &&
-          it.pullRequest.provider == ci.provider && it.pullRequest.owner == ci.owner &&
-          it.pullRequest.repository == ci.repository
-      }
-      if (alreadyPromoted) return@forEach
-      val promotionId = "p-${sha256Hex("${cluster.id}\u0000$digest\u0000${ci.provider}\u0000${ci.owner}\u0000${ci.repository}\u0000$targetBranch\u0000$targetPath").take(24)}"
-      try {
-        val remote = reviews.ensureReview(
-          CreateReviewRequest(
-            operationId = promotionId,
-            clusterId = cluster.id,
-            repository = ci.reviewRepository,
-            targetBranch = targetBranch,
-            reviewer = promotionConfiguration.reviewer,
-            targetPath = targetPath,
-            inspectionDigest = digest,
-            inspectionContent = content,
-            description = promotionDescription(cluster, targetPath, digest),
-          ),
-        )
-        val now = Instant.now(clock).toString()
-        val promotion = InspectionPromotion(
-          id = promotionId,
-          inspectionDigest = digest,
+    return PromotionPromoteResponse(
+      outcomes.filterIsInstance<ClusterPromotion.Created>().map { it.promotion },
+      outcomes.filterIsInstance<ClusterPromotion.Failed>().map { it.failure },
+    )
+  }
+
+  private fun promote(
+    cluster: EdictNextStoredCluster,
+    eligibility: PromotionEligibility,
+    reviews: ReviewApi,
+    promotionConfiguration: PromotionConfiguration,
+    resolvedTargetBranch: Lazy<String>,
+  ): ClusterPromotion {
+    val inspectionPath = repository.paths.inspectionPath(cluster.id)
+    if (!inspectionPath.isRegularFile()) return ClusterPromotion.Failed(PromotionFailure(cluster.id, "generated inspection is missing"))
+    val bytes = inspectionPath.readBytes()
+    val digest = sha256Hex(bytes)
+    // Strict decoding, so the pushed text has exactly the digested bytes.
+    val content = try {
+      bytes.decodeToString(throwOnInvalidSequence = true)
+    }
+    catch (_: CharacterCodingException) {
+      return ClusterPromotion.Failed(PromotionFailure(cluster.id, "generated inspection is not UTF-8 text"))
+    }
+    val targetBranch = resolvedTargetBranch.value
+    val targetPath = "${promotionConfiguration.inspectionsDirectory.trim('/')}/${cluster.id}.inspection.kts"
+    val alreadyPromoted = cluster.manifest.promotions.any {
+      it.inspectionDigest == digest && it.targetBranch == targetBranch && it.targetPath == targetPath &&
+        reviews.repository.owns(it.pullRequest)
+    }
+    if (alreadyPromoted) return ClusterPromotion.Skipped
+    if (eligibility.referencedSourceFiles < MIN_PROMOTION_SOURCE_FILES) {
+      return ClusterPromotion.Failed(PromotionFailure(
+        cluster.id,
+        "Promotion requires strong positive Signals from at least $MIN_PROMOTION_SOURCE_FILES distinct source files with PR or " +
+          "commit diff URLs; found ${eligibility.referencedSourceFiles}",
+      ))
+    }
+    val target = reviews.repository
+    val promotionId = "p-${sha256Hex("${cluster.id}\u0000$digest\u0000${target.provider}\u0000${target.owner}\u0000${target.repository}\u0000$targetBranch\u0000$targetPath").take(24)}"
+    return try {
+      val review = reviews.findOrCreateReview(
+        CreateReviewRequest(
+          operationId = promotionId,
+          clusterId = cluster.id,
           targetBranch = targetBranch,
+          reviewer = promotionConfiguration.reviewer,
           targetPath = targetPath,
-          pullRequest = ReviewReference(ci.provider, ci.owner, ci.repository, remote.id, remote.url),
-          state = PromotionPrState.ON_REVIEW,
-          createdAt = now,
-          updatedAt = now,
-        )
-        created += repository.appendPromotion(cluster.id, digest, promotion)
-      }
-      catch (e: Exception) {
-        failures += PromotionFailure(cluster.id, e.message ?: e.javaClass.simpleName)
-      }
+          inspectionDigest = digest,
+          inspectionContent = content,
+          description = promotionDescription(cluster, targetPath, digest),
+        ),
+      )
+      val now = Instant.now(clock).toString()
+      val promotion = InspectionPromotion(
+        id = promotionId,
+        inspectionDigest = digest,
+        targetBranch = targetBranch,
+        targetPath = targetPath,
+        pullRequest = review,
+        state = PromotionPrState.ON_REVIEW,
+        createdAt = now,
+        updatedAt = now,
+      )
+      ClusterPromotion.Created(repository.appendPromotion(cluster.id, digest, promotion))
     }
-    return PromotionPromoteResponse(created, failures)
+    catch (e: Exception) {
+      ClusterPromotion.Failed(PromotionFailure(cluster.id, e.message ?: e.javaClass.simpleName))
+    }
   }
 
   fun checkReviews(): PromotionCheckReviewsResponse {
-    val repository = repository()
-    val accepted = mutableListOf<InspectionPromotion>()
-    val undecided = mutableListOf<UndecidedPromotionReview>()
-    val failures = mutableListOf<PromotionReviewFailure>()
-
-    repository.loadClusters().forEach { cluster ->
+    val outcomes = repository.loadClusters().flatMap { cluster ->
       cluster.manifest.promotions.filter {
         it.state == PromotionPrState.ON_REVIEW ||
           it.state == PromotionPrState.CLOSED && cluster.manifest.status == EdictNextClusterStatus.Generated
-      }.forEach { promotion ->
-        try {
-          val review = reviews.review(promotion.pullRequest)
-          if (promotion.state == PromotionPrState.ON_REVIEW) {
-            when (review.state) {
-              ReviewState.OPEN -> Unit
-              ReviewState.MERGED -> accepted += repository.applyResolvedPromotion(
-                cluster.id,
-                promotion.id,
-                PromotionPrState.ACCEPTED,
-                Instant.now(clock).toString(),
-              )
-              ReviewState.CLOSED_UNMERGED -> {
-                undecided += UndecidedPromotionReview(
-                  cluster.id,
-                  promotion.id,
-                  promotion.pullRequest.url,
-                  review.evidence.take(MAX_EVIDENCE_CHARS),
-                )
-              }
-            }
-          }
-          else {
-            undecided += UndecidedPromotionReview(
-                cluster.id,
-                promotion.id,
-                promotion.pullRequest.url,
-                if (review.state == ReviewState.CLOSED_UNMERGED) review.evidence.take(MAX_EVIDENCE_CHARS)
-                else "Remote review state is ${review.state}",
-              )
-          }
-        }
-        catch (e: Exception) {
-          failures += PromotionReviewFailure(cluster.id, promotion.id, e.message ?: e.javaClass.simpleName)
-          if (promotion.state == PromotionPrState.CLOSED) {
-            undecided += UndecidedPromotionReview(cluster.id, promotion.id, promotion.pullRequest.url, "")
-          }
-        }
-      }
+      }.map { promotion -> checkReview(cluster, promotion) }
     }
     return PromotionCheckReviewsResponse(
-      accepted,
-      undecided.sortedWith(compareBy(UndecidedPromotionReview::clusterId, UndecidedPromotionReview::promotionId)),
-      failures,
+      outcomes.filterIsInstance<ReviewOutcome.Resolved>().map { it.promotion },
+      outcomes.mapNotNull {
+        when (it) {
+          is ReviewOutcome.Undecided -> it.review
+          is ReviewOutcome.UnreadableClosed -> it.review
+          ReviewOutcome.Open, is ReviewOutcome.Resolved, is ReviewOutcome.Failed -> null
+        }
+      }.sortedWith(compareBy(UndecidedPromotionReview::clusterId, UndecidedPromotionReview::promotionId)),
+      outcomes.mapNotNull {
+        when (it) {
+          is ReviewOutcome.Failed -> it.failure
+          is ReviewOutcome.UnreadableClosed -> it.failure
+          ReviewOutcome.Open, is ReviewOutcome.Resolved, is ReviewOutcome.Undecided -> null
+        }
+      },
     )
   }
+
+  /** A promotion on review is accepted once merged; a closed review, of a promotion on review or closed, awaits a decision. */
+  private fun checkReview(cluster: EdictNextStoredCluster, promotion: InspectionPromotion): ReviewOutcome = try {
+    val review = reviews().review(promotion.pullRequest)
+    when {
+      review.state == ReviewState.CLOSED_UNMERGED -> ReviewOutcome.Undecided(
+        // Only a closed review needs its discussion, which the decision is based on.
+        undecided(cluster, promotion, reviews().reviewWithEvidence(promotion.pullRequest).evidence),
+      )
+      // A decision needs a closed review, so a reopened or merged review of a closed promotion cannot be decided.
+      promotion.state == PromotionPrState.CLOSED -> ReviewOutcome.Failed(
+        PromotionReviewFailure(cluster.id, promotion.id, "Promotion is CLOSED, but its review is now ${review.state}"),
+      )
+      review.state == ReviewState.OPEN -> ReviewOutcome.Open
+      else -> ReviewOutcome.Resolved(
+        repository.applyResolvedPromotion(cluster.id, promotion.id, PromotionPrState.ACCEPTED, Instant.now(clock).toString()),
+      )
+    }
+  }
+  catch (e: Exception) {
+    val failure = PromotionReviewFailure(cluster.id, promotion.id, redactor.redact(e.message ?: e.javaClass.simpleName))
+    if (promotion.state == PromotionPrState.CLOSED) ReviewOutcome.UnreadableClosed(undecided(cluster, promotion, ""), failure)
+    else ReviewOutcome.Failed(failure)
+  }
+
+  private fun undecided(cluster: EdictNextStoredCluster, promotion: InspectionPromotion, evidence: String) =
+    UndecidedPromotionReview(cluster.id, promotion.id, promotion.pullRequest.url, redactor.redact(evidence).take(MAX_EVIDENCE_CHARS))
 
   fun decideReviews(decisions: List<PromotionReviewDecision>): PromotionDecideReviewsResponse {
     require(decisions.size in 1..MAX_DECISION_BATCH_SIZE) {
@@ -196,47 +201,49 @@ internal class PromotionService(
       require(it.rationale.isNotBlank()) { "A rationale is required for ${it.decision}" }
       require(it.rationale.length <= MAX_RATIONALE_CHARS) { "Decision rationale exceeds $MAX_RATIONALE_CHARS characters" }
     }
-    val repository = repository()
-    val updated = mutableListOf<InspectionPromotion>()
-    val failures = mutableListOf<PromotionReviewFailure>()
-    decisions.forEach { decision ->
+    val outcomes = decisions.map { decision ->
       try {
-        val cluster = repository.loadCluster(decision.clusterId)
-        val promotion = cluster.manifest.promotions.singleOrNull { it.id == decision.promotionId }
-          ?: error("Unknown promotion '${decision.promotionId}' in cluster '${decision.clusterId}'")
-        require(promotion.state in setOf(PromotionPrState.ON_REVIEW, PromotionPrState.CLOSED)) {
-          "Promotion '${decision.promotionId}' is not awaiting a closed-review decision"
-        }
-        val remote = reviews.review(promotion.pullRequest)
-        require(remote.state == ReviewState.CLOSED_UNMERGED) {
-          "Promotion '${decision.promotionId}' remote review is ${remote.state}, not CLOSED_UNMERGED"
-        }
-        when (decision.decision) {
-          ClosedReviewDecision.MOVE_CLUSTER_TO_PENDING -> updated += repository.applyResolvedPromotion(
-            clusterId = cluster.id,
-            promotionId = promotion.id,
-            resolvedState = PromotionPrState.CLOSED,
-            updatedAt = Instant.now(clock).toString(),
-            expectedInspectionDigest = promotion.inspectionDigest,
-            targetStatus = EdictNextClusterStatus.Pending,
-            rationale = decision.rationale,
-          )
-          ClosedReviewDecision.DISCONTINUE_CLUSTER -> updated += repository.applyResolvedPromotion(
-            clusterId = cluster.id,
-            promotionId = promotion.id,
-            resolvedState = PromotionPrState.CLOSED,
-            updatedAt = Instant.now(clock).toString(),
-            expectedInspectionDigest = promotion.inspectionDigest,
-            targetStatus = EdictNextClusterStatus.Discontinued,
-            rationale = decision.rationale,
-          )
-        }
+        ReviewOutcome.Resolved(decide(decision))
       }
       catch (e: Exception) {
-        failures += PromotionReviewFailure(decision.clusterId, decision.promotionId, e.message ?: e.javaClass.simpleName)
+        ReviewOutcome.Failed(
+          PromotionReviewFailure(decision.clusterId, decision.promotionId, redactor.redact(e.message ?: e.javaClass.simpleName)),
+        )
       }
     }
-    return PromotionDecideReviewsResponse(updated, failures)
+    return PromotionDecideReviewsResponse(
+      outcomes.filterIsInstance<ReviewOutcome.Resolved>().map { it.promotion },
+      outcomes.filterIsInstance<ReviewOutcome.Failed>().map { it.failure },
+    )
+  }
+
+  private fun decide(decision: PromotionReviewDecision): InspectionPromotion {
+    val cluster = repository.loadCluster(decision.clusterId)
+    val promotion = cluster.manifest.promotions.singleOrNull { it.id == decision.promotionId }
+      ?: error("Unknown promotion '${decision.promotionId}' in cluster '${decision.clusterId}'")
+    require(promotion.state in setOf(PromotionPrState.ON_REVIEW, PromotionPrState.CLOSED)) {
+      "Promotion '${decision.promotionId}' is not awaiting a closed-review decision"
+    }
+    val review = reviews().review(promotion.pullRequest)
+    require(review.state == ReviewState.CLOSED_UNMERGED) {
+      "Promotion '${decision.promotionId}' remote review is ${review.state}, not CLOSED_UNMERGED"
+    }
+    return repository.applyResolvedPromotion(
+      clusterId = cluster.id,
+      promotionId = promotion.id,
+      resolvedState = PromotionPrState.CLOSED,
+      updatedAt = Instant.now(clock).toString(),
+      expectedInspectionDigest = promotion.inspectionDigest,
+      targetStatus = when (decision.decision) {
+        ClosedReviewDecision.MOVE_CLUSTER_TO_PENDING -> EdictNextClusterStatus.Pending
+        ClosedReviewDecision.DISCONTINUE_CLUSTER -> EdictNextClusterStatus.Discontinued
+      },
+      rationale = decision.rationale,
+    )
+  }
+
+  private fun reviews(): ReviewApi = requireNotNull(promotionReviews) {
+    "Inspection promotion requires edict.promotion.url or edict.ci.url configuration"
   }
 
   private companion object {
@@ -244,4 +251,24 @@ internal class PromotionService(
     const val MAX_RATIONALE_CHARS = 4_000
     const val MAX_DECISION_BATCH_SIZE = 10
   }
+}
+
+/** What [PromotionService.promote] did with one requested cluster. */
+private sealed interface ClusterPromotion {
+  data class Created(val promotion: InspectionPromotion) : ClusterPromotion
+  data class Failed(val failure: PromotionFailure) : ClusterPromotion
+  /** Not eligible for an inspection PR, or already on review with the same inspection. */
+  data object Skipped : ClusterPromotion
+}
+
+/** What checking or deciding one promotion's review produced. */
+private sealed interface ReviewOutcome {
+  /** Still on review. */
+  data object Open : ReviewOutcome
+  data class Resolved(val promotion: InspectionPromotion) : ReviewOutcome
+  /** Closed unmerged: awaits a decision. */
+  data class Undecided(val review: UndecidedPromotionReview) : ReviewOutcome
+  data class Failed(val failure: PromotionReviewFailure) : ReviewOutcome
+  /** A closed promotion whose review cannot be read: it still awaits a decision, and the read failure is reported. */
+  data class UnreadableClosed(val review: UndecidedPromotionReview, val failure: PromotionReviewFailure) : ReviewOutcome
 }

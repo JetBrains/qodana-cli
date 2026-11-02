@@ -8,9 +8,7 @@ import io.ktor.server.engine.embeddedServer
 import io.modelcontextprotocol.kotlin.sdk.server.mcpStreamableHttp
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.runBlocking
-import org.jetbrains.qodana.edict.ci.ReviewClient
-import org.jetbrains.qodana.edict.ci.ReviewExtractionApi
-import org.jetbrains.qodana.edict.ci.ReviewManagementApi
+import org.jetbrains.qodana.edict.ci.ReviewApi
 import org.jetbrains.qodana.edict.common.EdictConfiguration
 import org.jetbrains.qodana.edict.common.EdictLayout
 import org.jetbrains.qodana.edict.edictnext.EdictManagementService
@@ -25,6 +23,7 @@ import org.jetbrains.qodana.edict.edictnext.IntellijMcpServerService
 import org.jetbrains.qodana.edict.history.enrichment.EdictNextEnrichmentMcpToolset
 import org.jetbrains.qodana.edict.history.enrichment.EdictNextEnrichmentService
 import org.jetbrains.qodana.edict.promotion.PromotionService
+import org.jetbrains.qodana.edict.promotion.requireActivePromotionsOwnedBy
 import java.util.concurrent.atomic.AtomicBoolean
 
 /**
@@ -53,25 +52,22 @@ internal class EdictServer private constructor(
   }
 
   companion object {
+    // TODO: we ara initialising a lot of things in Main and here. In my opinion, the initialisation code looks tangled and not structured at all. What do you think - should this be changed?
     /** Starts on [port]; the agent config names it, so a busy port fails instead of moving the server. 0 picks a free one. */
     fun start(
       layout: EdictLayout,
       port: Int,
       inspectionServer: IntellijMcpServerService,
-      configuration: EdictConfiguration = EdictConfiguration(),
-      reviewProvider: ReviewExtractionApi = ReviewClient(),
-      reviewManagement: ReviewManagementApi = reviewProvider as? ReviewManagementApi ?: ReviewClient(),
+      configuration: EdictConfiguration,
+      ciReviews: ReviewApi?,
+      promotionReviews: ReviewApi?,
     ): EdictServer {
       val store = EdictNextRepositoryState.open(layout.stateDirectory)
       try {
-        val management = EdictManagementService(
-          store,
-          layout,
-          reviewProvider = reviewProvider,
-          reviewRepository = configuration.ci?.reviewRepository,
-        )
         // The lock above created the state directory, so the repository can be opened now.
         val repository = EdictRepository(EdictRepositoryDirectory(layout.stateDirectory))
+        requireActivePromotionsOwnedBy(repository, promotionReviews)
+        val management = EdictManagementService(store, layout, ciReviews = ciReviews)
         val toolset = EdictNextMcpToolset(
           layout, inspectionServer, management,
           EdictNextDistributionService(repository, layout.neighboursResponsePath, configuration.distribution.defaultSignalCount),
@@ -83,9 +79,9 @@ internal class EdictServer private constructor(
             configuration.generation.defaultGenerationCount,
           ),
           EdictNextEnrichmentMcpToolset(management, EdictNextEnrichmentService(repository, layout.root)),
-          EdictSourceFileService(layout.root, reviewProvider, configuration.ci?.reviewRepository),
+          EdictSourceFileService(layout.root, ciReviews),
           configuration,
-          PromotionService({ repository }, configuration, reviewManagement),
+          PromotionService(repository, configuration, promotionReviews, store),
         )
         val engine = embeddedServer(CIO, host = "127.0.0.1", port = port) {
           mcpStreamableHttp { toolset.createServer() }

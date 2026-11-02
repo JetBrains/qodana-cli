@@ -1,6 +1,11 @@
 // Copyright 2026 JetBrains s.r.o. Licensed under the Apache License, Version 2.0.
 package org.jetbrains.qodana.edict.signals
 
+import org.eclipse.jgit.diff.DiffAlgorithm
+import org.eclipse.jgit.diff.DiffFormatter
+import org.eclipse.jgit.diff.RawText
+import org.eclipse.jgit.diff.RawTextComparator
+import org.eclipse.jgit.util.QuotedString
 import org.jetbrains.qodana.edict.edictnext.EdictNextLineRange
 import org.jetbrains.qodana.edict.edictnext.EdictNextSignalLabel
 import java.io.ByteArrayOutputStream
@@ -19,6 +24,28 @@ object UnifiedDiff {
     private data class ParsedDiff(val changes: Changes, val hunks: List<Hunk>)
 
     fun parse(diff: String): Changes = parseDiff(diff).changes
+
+    /**
+     * The Git-format diff of one file from [before] to [after], with [context] lines around each change, or an empty
+     * string when nothing changed. A null side is an absent file; paths are repository-relative and appear as `a/` and
+     * `b/`, or `/dev/null` for an absent side.
+     */
+    fun between(before: String?, after: String?, beforePath: String, afterPath: String, context: Int): String {
+        require(before != null || after != null) { "File absent at both revisions" }
+        val old = RawText(before.orEmpty().toByteArray())
+        val new = RawText(after.orEmpty().toByteArray())
+        require(!RawText.isBinary(old.rawContent) && !RawText.isBinary(new.rawContent)) { "Binary files have no unified diff" }
+        // Git's default algorithm.
+        val edits = DiffAlgorithm.getAlgorithm(DiffAlgorithm.SupportedAlgorithm.MYERS).diff(RawTextComparator.DEFAULT, old, new)
+        if (edits.isEmpty()) return ""
+        val hunks = ByteArrayOutputStream()
+        DiffFormatter(hunks).use {
+            it.setContext(context)
+            it.format(edits, old, new)
+        }
+        return "--- ${QuotedString.GIT_PATH.quote(if (before == null) "/dev/null" else "a/$beforePath")}\n" +
+            "+++ ${QuotedString.GIT_PATH.quote(if (after == null) "/dev/null" else "b/$afterPath")}\n" + hunks.toString(Charsets.UTF_8)
+    }
 
     /** Allow omitted hunks/context, including split hunks, but never edited lines, paths, or shifted coordinates. */
     fun validateExcerpt(excerpt: String, canonicalDiff: String) {
@@ -150,29 +177,10 @@ object UnifiedDiff {
         return ParsedDiff(Changes(before, after), hunks)
     }
 
-    // Git core.quotePath encodes non-ASCII UTF-8 bytes as three-digit octal escapes.
+    /** A header path as Git writes it: quoted, with C-style and octal escapes, when it has special or non-ASCII bytes. */
     private fun unquotePath(value: String): String {
-        if (!value.startsWith('"')) return value
-        require(value.endsWith('"')) { "Malformed quoted Git path" }
-        val bytes = ByteArrayOutputStream()
-        var i = 1
-        while (i < value.lastIndex) {
-            val c = value[i++]
-            if (c != '\\') {
-                bytes.write(c.toString().toByteArray(Charsets.UTF_8)); continue
-            }
-            require(i < value.lastIndex) { "Incomplete Git path escape" }
-            val escaped = value[i++]
-            if (escaped in '0'..'7') {
-                require(i + 1 < value.lastIndex && value[i] in '0'..'7' && value[i + 1] in '0'..'7') { "Invalid Git octal escape" }
-                bytes.write("$escaped${value[i++]}${value[i++]}".toInt(8))
-            } else bytes.write(
-                when (escaped) {
-                    '\\' -> 92; '"' -> 34; 't' -> 9; 'n' -> 10; 'r' -> 13; 'a' -> 7; 'b' -> 8; 'f' -> 12; 'v' -> 11
-                    else -> error("Invalid Git path escape")
-                }
-            )
-        }
-        return bytes.toString(Charsets.UTF_8)
+        require(!value.startsWith('"') || value.length >= 2 && value.endsWith('"')) { "Malformed quoted Git path" }
+        return QuotedString.GIT_PATH.dequote(value)
     }
 }
+
