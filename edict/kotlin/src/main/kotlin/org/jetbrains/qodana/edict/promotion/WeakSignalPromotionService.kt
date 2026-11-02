@@ -2,13 +2,11 @@ package org.jetbrains.qodana.edict.promotion
 
 import kotlinx.serialization.Serializable
 import org.jetbrains.qodana.edict.ci.CreateReviewRequest
-import org.jetbrains.qodana.edict.ci.ReviewManagementApi
+import org.jetbrains.qodana.edict.ci.ReviewApi
 import org.jetbrains.qodana.edict.ci.ReviewReference
 import org.jetbrains.qodana.edict.ci.ReviewState
 import org.jetbrains.qodana.edict.ci.SourceFixChanges
 import org.jetbrains.qodana.edict.ci.MergedReview
-import org.jetbrains.qodana.edict.ci.ReviewExtractionApi
-import org.jetbrains.qodana.edict.ci.ReviewRepository
 import org.jetbrains.qodana.edict.ci.ReviewFileChange
 import org.jetbrains.qodana.edict.common.EdictConfiguration
 import org.jetbrains.qodana.edict.edictnext.*
@@ -64,94 +62,118 @@ internal data class WeakSignalFix(
 )
 
 internal class WeakSignalPromotionService(
-  private val repository: () -> EdictRepository,
+  private val repository: EdictRepository,
   private val configuration: EdictConfiguration,
-  private val reviews: ReviewManagementApi,
+  private val promotionReviews: ReviewApi?,
+  /** Review text and review failures reach agents, so they are redacted, before they are bounded and when compared. */
+  private val redactor: TokenRedactor,
+  /** The branch of the project the run checked out; source fixes are proposed against it. */
   private val executionBranch: () -> String = { error("The project execution branch is unavailable") },
 ) {
-  fun checkReviews(redactEvidence: (String) -> String = { it }): WeakSignalPromotionCheckReviewsResponse {
-    val repository = repository()
-    val checked = mutableListOf<CheckedWeakSignalReview>()
-    val failures = mutableListOf<PromotionReviewFailure>()
-    repository.loadActiveWeakSignalPromotions().forEach { (clusterId, promotions) ->
-      promotions.forEach { promotion ->
-        try {
-          val review = reviews.reviewWithEvidence(promotion.pullRequest)
-          val state = when (review.state) {
-            ReviewState.OPEN -> PromotionPrState.ON_REVIEW
-            ReviewState.MERGED -> PromotionPrState.ACCEPTED
-            ReviewState.CLOSED_UNMERGED -> PromotionPrState.CLOSED
-          }
-          val updated = repository.recordWeakSignalReview(
-            clusterId, promotion.pullRequest, state,
-          )
-          var inspectionDigest: String? = null
-          var merged: MergedReview? = null
-          var diffs = emptyList<String>()
-          if (state == PromotionPrState.ACCEPTED) {
-            try {
-              val cluster = repository.loadCluster(clusterId)
-              inspectionDigest = repository.paths.inspectionPath(cluster.manifest.predecessorId ?: clusterId)
-                .takeIf { it.isRegularFile() }?.let { sha256Hex(it.readBytes()) }
-              merged = mergedReview(promotion.pullRequest)
-              diffs = merged.changes.filter { change ->
-                EdictNextLanguage.fromPathOrNull(change.beforePath) == cluster.manifest.language ||
-                  EdictNextLanguage.fromPathOrNull(change.afterPath) == cluster.manifest.language
-              }.map { change ->
-                source().diff(reviewRepository(promotion.pullRequest), merged.beforeRevision, merged.mergedRevision, change.beforePath, change.afterPath)
-              }
-              merged = merged.copy(title = redactEvidence(merged.title), discussionMessages = merged.discussionMessages.map(redactEvidence))
-            } catch (e: Exception) {
-              failures += PromotionReviewFailure(clusterId, promotion.pullRequest.id, e.message ?: e.javaClass.simpleName)
-              merged = null
-            }
-          }
-          checked += CheckedWeakSignalReview(clusterId, updated,
-            redactEvidence(review.evidence).take(MAX_WEAK_SIGNAL_REVIEW_EVIDENCE_CHARS), inspectionDigest, merged, diffs)
-        }
-        catch (e: Exception) {
-          failures += PromotionReviewFailure(clusterId, promotion.pullRequest.id, e.message ?: e.javaClass.simpleName)
-        }
-      }
+  fun checkReviews(): WeakSignalPromotionCheckReviewsResponse {
+    val outcomes = repository.loadActiveWeakSignalPromotions().flatMap { (clusterId, promotions) ->
+      promotions.map { promotion -> checkReview(clusterId, promotion) }
     }
-    return WeakSignalPromotionCheckReviewsResponse(checked, failures)
+    return WeakSignalPromotionCheckReviewsResponse(
+      outcomes.mapNotNull {
+        when (it) {
+          is WeakSignalReviewOutcome.Checked -> it.review
+          is WeakSignalReviewOutcome.MergedChangeUnreadable -> it.review
+          is WeakSignalReviewOutcome.Failed -> null
+        }
+      },
+      outcomes.mapNotNull {
+        when (it) {
+          is WeakSignalReviewOutcome.Checked -> null
+          is WeakSignalReviewOutcome.MergedChangeUnreadable -> it.failure
+          is WeakSignalReviewOutcome.Failed -> it.failure
+        }
+      },
+    )
   }
+
+  private fun checkReview(clusterId: String, promotion: WeakSignalPromotion): WeakSignalReviewOutcome = try {
+    val review = reviews().reviewWithEvidence(promotion.pullRequest)
+    val state = when (review.state) {
+      ReviewState.OPEN -> PromotionPrState.ON_REVIEW
+      ReviewState.MERGED -> PromotionPrState.ACCEPTED
+      ReviewState.CLOSED_UNMERGED -> PromotionPrState.CLOSED
+    }
+    val updated = repository.recordWeakSignalReview(clusterId, promotion.pullRequest, state)
+    val checked = CheckedWeakSignalReview(
+      clusterId, updated, redactor.redact(review.evidence).take(MAX_WEAK_SIGNAL_REVIEW_EVIDENCE_CHARS), inspectionDigest = null,
+    )
+    if (state != PromotionPrState.ACCEPTED) WeakSignalReviewOutcome.Checked(checked)
+    else try {
+      WeakSignalReviewOutcome.Checked(withMergedChange(checked))
+    }
+    catch (e: Exception) {
+      WeakSignalReviewOutcome.MergedChangeUnreadable(checked, reviewFailure(clusterId, promotion, e))
+    }
+  }
+  catch (e: Exception) {
+    WeakSignalReviewOutcome.Failed(reviewFailure(clusterId, promotion, e))
+  }
+
+  /** Adds what turns an accepted review into Signals: the source inspection's digest and the merged change in the cluster's language. */
+  private fun withMergedChange(checked: CheckedWeakSignalReview): CheckedWeakSignalReview {
+    val cluster = repository.loadCluster(checked.clusterId)
+    val inspectionDigest = repository.paths.inspectionPath(cluster.manifest.predecessorId ?: cluster.id)
+      .takeIf { it.isRegularFile() }?.let { sha256Hex(it.readBytes()) }
+    val merged = mergedReview(checked.promotion.pullRequest)
+    val diffs = merged.changes.filter { change ->
+      EdictNextLanguage.fromPathOrNull(change.beforePath) == cluster.manifest.language ||
+        EdictNextLanguage.fromPathOrNull(change.afterPath) == cluster.manifest.language
+    }.map { change ->
+      reviews().diff(merged.beforeRevision, merged.mergedRevision, change.beforePath, change.afterPath)
+    }
+    return checked.copy(
+      inspectionDigest = inspectionDigest,
+      mergedReview = merged,
+      diffs = diffs,
+    )
+  }
+
+  private fun reviewFailure(clusterId: String, promotion: WeakSignalPromotion, e: Exception) =
+    PromotionReviewFailure(clusterId, promotion.pullRequest.id, redactor.redact(e.message ?: e.javaClass.simpleName))
 
   fun prepare(clusterIds: List<String>? = null): WeakSignalPreparationResponse {
     require(clusterIds == null || clusterIds.isNotEmpty() && clusterIds.distinct().size == clusterIds.size) {
       "clusterIds must be nonempty and unique when provided"
     }
-    val repository = repository()
-    val candidates = mutableListOf<WeakSignalPromotionCandidate>()
-    val failures = mutableListOf<PromotionFailure>()
     val clusters = repository.loadClusters().associateBy { it.id }
-    val ci = configuration.ci
+    // The server starts only when every active promotion belongs to the promotion repository.
     val active = repository.loadActiveWeakSignalPromotions()
-    (clusterIds ?: clusters.keys.toList()).forEach { id ->
+    val outcomes = (clusterIds ?: clusters.keys.toList()).map { id ->
       try {
         val cluster = clusters[id] ?: error("Cluster does not exist")
-        if (!eligible(cluster)) return@forEach
-        val candidate = candidate(repository, cluster)
-        if (ci != null && active[id].orEmpty().any {
-          it.pullRequest.provider == ci.provider && it.pullRequest.owner == ci.owner &&
-            it.pullRequest.repository == ci.repository
-        }) return@forEach
-        if (candidate.findings.isNotEmpty()) candidates += candidate
+        preparedCandidate(cluster, hasActiveReview = !active[id].isNullOrEmpty())
+          ?.let(PreparationOutcome::Prepared) ?: PreparationOutcome.Skipped
       }
       catch (e: Exception) {
-        failures += PromotionFailure(id, e.message ?: e.javaClass.simpleName)
+        PreparationOutcome.Failed(PromotionFailure(id, e.message ?: e.javaClass.simpleName))
       }
     }
-    return WeakSignalPreparationResponse(candidates, failures)
+    return WeakSignalPreparationResponse(
+      outcomes.filterIsInstance<PreparationOutcome.Prepared>().map { it.candidate },
+      outcomes.filterIsInstance<PreparationOutcome.Failed>().map { it.failure },
+    )
+  }
+
+  /** The cluster's source-fix candidate; null when it isn't eligible, already has an active review, or has nothing to fix. */
+  private fun preparedCandidate(cluster: EdictNextStoredCluster, hasActiveReview: Boolean): WeakSignalPromotionCandidate? {
+    if (!eligible(cluster)) return null
+    // Built even while a review is active, so a broken evaluation is still reported.
+    val candidate = candidate(cluster)
+    return candidate.takeIf { !hasActiveReview && it.findings.isNotEmpty() }
   }
 
   fun publish(clusterId: String, inspectionDigest: String, fixes: List<WeakSignalFix>, validation: String): WeakSignalPromotion {
-    val ci = requireNotNull(configuration.ci) { "Weak-signal promotion requires complete edict.ci configuration" }
+    val reviews = reviews()
     val config = requireNotNull(configuration.promotion) { "Weak-signal promotion requires edict.promotion.reviewer configuration" }
-    val repository = repository()
     val cluster = repository.loadCluster(clusterId)
     require(eligible(cluster)) { "Cluster '$clusterId' must be Generated with satisfied, referenced strong positive Signals from fewer than five distinct source files" }
-    val candidate = candidate(repository, cluster)
+    val candidate = candidate(cluster)
     require(candidate.inspectionDigest == inspectionDigest) { "Inspection changed since weak-signal selection" }
     require(fixes.isNotEmpty() && fixes.map { it.path }.distinct().size == fixes.size) { "Supply unique, nonempty source fixes" }
     require(validation.isNotBlank() && validation.length <= 8_000) { "Describe validation results in at most 8000 characters" }
@@ -165,16 +187,14 @@ internal class WeakSignalPromotionService(
     require(fixed.size in 1..MAX_WEAK_SIGNAL_FIXES && fixed.all { it in selected }) {
       "Fix only 1 to $MAX_WEAK_SIGNAL_FIXES selected true-positive locations"
     }
-    val targetBranch = reviews.resolveTargetBranch(ci.reviewRepository, executionBranch())
-    repository.loadActiveWeakSignalPromotions()[clusterId].orEmpty().firstOrNull {
-      it.pullRequest.provider == ci.provider &&
-        it.pullRequest.owner == ci.owner && it.pullRequest.repository == ci.repository
-    }?.let { return it }
+    val targetBranch = reviews.resolveTargetBranch(executionBranch())
+    repository.loadActiveWeakSignalPromotions()[clusterId]?.firstOrNull()?.let { return it }
+    val target = reviews.repository
     // Identical fixes reuse their branch; changed fixes can recover from an interrupted publication on a new branch.
     val fixesDigest = sha256Hex(
       fixes.sortedBy { it.path }.joinToString("\u0000") { "${it.path}\u0000${sha256Hex(it.content)}" },
     )
-    val id = "w-${sha256Hex("$clusterId\u0000$inspectionDigest\u0000${candidate.projectRevision}\u0000${ci.provider}\u0000${ci.owner}\u0000${ci.repository}\u0000$targetBranch\u0000$fixesDigest").take(24)}"
+    val id = "w-${sha256Hex("$clusterId\u0000$inspectionDigest\u0000${candidate.projectRevision}\u0000${target.provider}\u0000${target.owner}\u0000${target.repository}\u0000$targetBranch\u0000$fixesDigest").take(24)}"
     val description = buildString {
       appendLine("## Inspection")
       appendLine()
@@ -196,21 +216,18 @@ internal class WeakSignalPromotionService(
       appendLine()
       appendLine("Analyzed project revision: `${candidate.projectRevision}`. Inspection SHA-256: `$inspectionDigest`.")
     }
-    val remote = reviews.ensureReview(CreateReviewRequest(
+    val review = reviews.findOrCreateReview(CreateReviewRequest(
       operationId = id,
       clusterId = clusterId,
-      repository = ci.reviewRepository,
       targetBranch = targetBranch,
       reviewer = config.reviewer,
       targetPath = "",
       inspectionDigest = inspectionDigest,
-      inspectionContent = byteArrayOf(),
+      inspectionContent = "",
       description = description,
       sourceFix = SourceFixChanges(candidate.projectRevision, fixes.associate { it.path to it.content }),
     ))
-    return repository.appendWeakSignalPromotion(clusterId, inspectionDigest, WeakSignalPromotion(
-      ReviewReference(ci.provider, ci.owner, ci.repository, remote.id, remote.url),
-    ))
+    return repository.appendWeakSignalPromotion(clusterId, inspectionDigest, WeakSignalPromotion(review))
   }
 
   fun recordSignals(
@@ -218,32 +235,29 @@ internal class WeakSignalPromotionService(
     pullRequest: ReviewReference,
     inspectionDigest: String,
     signals: List<EdictNextSignal>,
-    redactEvidence: (String) -> String = { it },
   ): List<EdictNextSignal> {
-    val repository = repository()
     require(repository.loadActiveWeakSignalPromotions()[clusterId].orEmpty().any { it.pullRequest == pullRequest && it.state == PromotionPrState.ACCEPTED }) {
       "Review does not belong to source cluster '$clusterId'"
     }
     require(signals.isNotEmpty()) { "Supply actual merged corrections, not proposed fixes" }
     val merged = mergedReview(pullRequest)
-    val repo = reviewRepository(pullRequest)
     val canonical = mutableMapOf<ReviewFileChange, String>()
     val workItem = "weak-promotion:${pullRequest.provider}:${pullRequest.owner}/${pullRequest.repository}:${pullRequest.id}:${merged.mergedRevision}"
     signals.forEach { draft ->
       SignalValidation.validate("clusters/$clusterId/signals/${draft.id}.json", EdictNextJson.encodeToString(EdictNextSignal.serializer(), draft))
       val pr = requireNotNull(draft.source as? EdictNextSignalSource.FromPR) { "Expected regular FromPR signal" }
       require(draft.strength == EdictNextSignalStrength.STRONG && pr.prNumber.toString() == pullRequest.id && pr.url == pullRequest.url &&
-        pr.title == redactEvidence(merged.title) && pr.discussionMessages ==
-        merged.discussionMessages.ifEmpty { listOf("Source-fix review merged: ${pullRequest.url}") }.map(redactEvidence)) { "Signal must preserve actual merged review metadata" }
+        pr.title == merged.title && pr.discussionMessages ==
+        merged.discussionMessages.ifEmpty { listOf("Source-fix review merged: ${pullRequest.url}") }) { "Signal must preserve actual merged review metadata" }
       val revision = if (draft.label == EdictNextSignalLabel.POSITIVE) merged.beforeRevision else merged.mergedRevision
       require(draft.fileRevision.revision == revision) { "Signal must use the actual merged before/after revision" }
       val change = merged.changes.singleOrNull {
         (if (draft.label == EdictNextSignalLabel.POSITIVE) it.beforePath else it.afterPath) == draft.fileRevision.path
       } ?: error("Signal path is absent from the actual merged change")
       UnifiedDiff.validateExcerpt(pr.diffPositiveToNegative, canonical.getOrPut(change) {
-        source().diff(repo, merged.beforeRevision, merged.mergedRevision, change.beforePath, change.afterPath)
+        reviews().diff(merged.beforeRevision, merged.mergedRevision, change.beforePath, change.afterPath)
       })
-      val content = try { source().file(repo, revision, draft.fileRevision.path) } catch (_: NoSuchFileException) {
+      val content = try { reviews().file(revision, draft.fileRevision.path) } catch (_: NoSuchFileException) {
         error("Cannot create a signal for absent code")
       }
       require(draft.fileRevision.expectedRanges.orEmpty().all { it.end <= content.lines().size }) { "Signal range exceeds actual source" }
@@ -255,23 +269,26 @@ internal class WeakSignalPromotionService(
     return signals
   }
 
-  fun completeReview(clusterId: String, pullRequest: ReviewReference) = repository().completeWeakSignalPromotion(clusterId, pullRequest)
+  fun completeReview(clusterId: String, pullRequest: ReviewReference) = repository.completeWeakSignalPromotion(clusterId, pullRequest)
 
-  private fun source(): ReviewExtractionApi = requireNotNull(reviews as? ReviewExtractionApi) { "Provider cannot read exact merged source snapshots" }
+  private fun reviews(): ReviewApi = requireNotNull(promotionReviews) {
+    "Weak-signal promotion requires edict.promotion.url or edict.ci.url configuration"
+  }
 
-  private fun reviewRepository(reference: ReviewReference) = ReviewRepository(reference.provider, reference.owner, reference.repository)
-
-  private fun mergedReview(reference: ReviewReference): MergedReview = reviews.mergedReview(reference).also { merged ->
+  /** The merged change, with its title and messages redacted as agents see them. */
+  private fun mergedReview(reference: ReviewReference): MergedReview {
+    val merged = reviews().mergedReview(reference)
     require(merged.title.isNotBlank() && validRevision(merged.beforeRevision) && validRevision(merged.mergedRevision) &&
       merged.beforeRevision != merged.mergedRevision && merged.changes.isNotEmpty() && merged.changes.distinct().size == merged.changes.size &&
       merged.changes.all { validSourcePath(it.beforePath) && validSourcePath(it.afterPath) }) { "Invalid actual merged-change evidence" }
+    return merged.copy(title = redactor.redact(merged.title), discussionMessages = merged.discussionMessages.map(redactor::redact))
   }
 
   private fun eligible(cluster: EdictNextStoredCluster): Boolean =
-    cluster.manifest.status == EdictNextClusterStatus.Generated &&
-      cluster.promotionEvidence(configuration.ci, repository().loadEvaluation(cluster)).size < MIN_PROMOTION_SOURCE_FILES
+    cluster.promotionEligibility(configuration.ci, repository.loadEvaluation(cluster))
+      .let { it.generated && it.referencedSourceFiles < MIN_PROMOTION_SOURCE_FILES }
 
-  private fun candidate(repository: EdictRepository, cluster: EdictNextStoredCluster): WeakSignalPromotionCandidate {
+  private fun candidate(cluster: EdictNextStoredCluster): WeakSignalPromotionCandidate {
     val digest = sha256Hex(repository.paths.inspectionPath(cluster.id).readBytes())
     val evaluation = requireNotNull(repository.loadEvaluation(cluster)) { "No persisted evaluation; regenerate the inspection to review project findings" }
     require(evaluation.inspectionHash == digest) { "Evaluation does not match the generated inspection" }
@@ -289,3 +306,19 @@ internal class WeakSignalPromotionService(
 }
 
 private fun EdictNextProjectFinding.line(): Int = fileRevision.expectedRanges?.firstOrNull()?.start ?: 0
+
+/** What preparing one cluster produced. */
+private sealed interface PreparationOutcome {
+  data class Prepared(val candidate: WeakSignalPromotionCandidate) : PreparationOutcome
+  data class Failed(val failure: PromotionFailure) : PreparationOutcome
+  /** Not eligible, already on review, or nothing to fix. */
+  data object Skipped : PreparationOutcome
+}
+
+/** What checking one weak-signal review produced. */
+private sealed interface WeakSignalReviewOutcome {
+  data class Checked(val review: CheckedWeakSignalReview) : WeakSignalReviewOutcome
+  /** Accepted, and its state is recorded, but its merged change cannot be read yet; the next check reads it again. */
+  data class MergedChangeUnreadable(val review: CheckedWeakSignalReview, val failure: PromotionReviewFailure) : WeakSignalReviewOutcome
+  data class Failed(val failure: PromotionReviewFailure) : WeakSignalReviewOutcome
+}

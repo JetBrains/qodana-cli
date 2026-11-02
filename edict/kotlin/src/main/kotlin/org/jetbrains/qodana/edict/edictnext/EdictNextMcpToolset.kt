@@ -55,7 +55,7 @@ internal class EdictNextMcpToolset(
         projectDirectory = layout.root.toString(),
         stateDirectory = layout.stateDirectory.toString(),
         scratchDirectory = management.scratchDirectory(request.requireString("token")).toString(),
-        reviewRepository = configuration.ci?.reviewRepository,
+        reviewRepository = configuration.ci,
         defaultSignalCount = configuration.extraction.defaultSignalCount,
       ).toToolResult()
     }
@@ -509,11 +509,7 @@ internal class EdictNextMcpToolset(
     ) { request ->
       try {
         management.requireSkill(request.requireString("token"), "edict-check-promotion")
-        val response = promotion.checkReviews()
-        response.copy(
-          undecided = response.undecided.map { it.copy(evidence = management.redact(it.evidence)) },
-          failures = response.failures.map { it.copy(message = management.redact(it.message)) },
-        ).toToolResult()
+        promotion.checkReviews().toToolResult()
       } catch (e: Exception) {
         EdictNextMutationResponse(
           false,
@@ -553,10 +549,7 @@ internal class EdictNextMcpToolset(
           request.arguments?.get("decisions") ?: error("decisions is required"),
         )
         decisions.forEach { management.requireTokenFree(it.rationale) }
-        val response = promotion.decideReviews(decisions)
-        response.copy(
-          failures = response.failures.map { it.copy(message = management.redact(it.message)) },
-        ).toToolResult()
+        promotion.decideReviews(decisions).toToolResult()
       } catch (e: Exception) {
         EdictNextMutationResponse(
           false,
@@ -577,10 +570,7 @@ internal class EdictNextMcpToolset(
     ) { request ->
       try {
         management.requireSkill(request.requireString("token"), "edict-check-weak-signal-promotion")
-        val response = promotion.checkWeakSignalReviews(management::redact)
-        response.copy(
-          failures = response.failures.map { it.copy(message = management.redact(it.message)) },
-        ).toToolResult()
+        promotion.checkWeakSignalReviews().toToolResult()
       } catch (e: Exception) {
         EdictNextMutationResponse(
           false,
@@ -606,7 +596,7 @@ internal class EdictNextMcpToolset(
         val reference = EdictNextJson.decodeFromJsonElement<ReviewReference>(request.arguments!!.getValue("pullRequest"))
         val signals = EdictNextJson.decodeFromJsonElement<List<EdictNextSignal>>(request.arguments!!.getValue("signals"))
         signals.forEach { management.requireTokenFree(EdictNextJson.encodeToString(EdictNextSignal.serializer(), it)) }
-        promotion.recordWeakSignalPromotionSignals(request.requireString("clusterId"), reference, request.requireString("inspectionDigest"), signals, management::redact).toToolResult()
+        promotion.recordWeakSignalPromotionSignals(request.requireString("clusterId"), reference, request.requireString("inspectionDigest"), signals).toToolResult()
       } catch (e: Exception) {
         EdictNextMutationResponse(false, management.redact(e.message ?: "Merged signal publication failed")).toToolResult(isError = true)
       }

@@ -21,13 +21,18 @@ import java.nio.file.StandardOpenOption.WRITE
 import java.nio.file.attribute.PosixFilePermissions
 import java.time.LocalDate
 
+/** Hides the task tokens this server issued in text that agents will read. */
+internal fun interface TokenRedactor {
+  fun redact(text: String): String
+}
+
 /** Repository snapshot plus the in-memory execution state associated with an Edict Next server lifetime. */
 internal class EdictNextRepositoryState(
   val root: Path,
   val clusters: List<EdictNextStoredCluster>,
   val inboxSignals: List<EdictNextSignal>,
   val filesByRelativePath: Map<String, ByteArray>,
-) : AutoCloseable {
+) : AutoCloseable, TokenRedactor {
   @Serializable
   data class Step(val skill: String, val title: String)
 
@@ -285,7 +290,7 @@ internal class EdictNextRepositoryState(
   }
 
   @Synchronized
-  fun redact(text: String): String {
+  override fun redact(text: String): String {
     if (issuedTokens.isEmpty()) return text
     return buildString {
       var copiedUntil = 0
@@ -353,7 +358,6 @@ internal class EdictNextRepositoryState(
   @Synchronized
   internal fun getPrAnalysisCoverage(token: String, repository: ReviewRepository): RepositoryPrAnalysisCoverage {
     requirePrAnalysisCaller(token, coordinator = true)
-    repository.validate()
     return loadPrAnalysisCoverage().repositories.singleOrNull { it.repository == repository }
       ?: RepositoryPrAnalysisCoverage(repository)
   }
@@ -588,7 +592,6 @@ private fun RepositoryPrAnalysisCoverage?.orEmptyPrNumbers(): List<Int> =
   this?.analyzedPrNumbers.orEmpty()
 
 private fun RepositoryPrAnalysisCoverage.normalized(): RepositoryPrAnalysisCoverage {
-  repository.validate()
   analyzedDateRanges.forEach(PrAnalysisDateRange::validate)
   require(analyzedPrNumbers.all { it > 0 }) { "Analyzed PR numbers must be positive" }
   val mergedRanges = analyzedDateRanges

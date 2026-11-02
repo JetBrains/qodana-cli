@@ -1,10 +1,12 @@
 package org.jetbrains.qodana.edict.promotion
 
+import org.jetbrains.qodana.edict.edictnext.EdictNextClusterStatus
 import org.jetbrains.qodana.edict.edictnext.EdictNextSignal
 import org.jetbrains.qodana.edict.edictnext.EdictNextEvaluation
 import org.jetbrains.qodana.edict.edictnext.exampleSetDigest
 import org.jetbrains.qodana.edict.ci.CiProviderId
-import org.jetbrains.qodana.edict.common.EdictCIConfiguration
+import org.jetbrains.qodana.edict.ci.ReviewRepository
+import org.jetbrains.qodana.edict.common.reviewRepository
 import org.jetbrains.qodana.edict.edictnext.EdictNextSignalLabel
 import org.jetbrains.qodana.edict.edictnext.EdictNextSignalSource
 import org.jetbrains.qodana.edict.edictnext.EdictNextSignalStrength
@@ -18,13 +20,31 @@ import java.util.Locale
 internal const val MIN_PROMOTION_SOURCE_FILES = 5
 private const val MAX_DESCRIPTION_SOURCE_FILES = 5
 
+/**
+ * What decides how a cluster's inspection is promoted. An inspection PR needs [MIN_PROMOTION_SOURCE_FILES] source files
+ * of both kinds; a weak-signal source-fix review is for an inspection with fewer [referencedSourceFiles].
+ */
+internal data class PromotionEligibility(
+  /** The inspection is generated and awaits review; other statuses are pending, decided or discontinued. */
+  val generated: Boolean,
+  /** Distinct source files with a strong positive Signal: how widely the problem was observed. */
+  val strongPositiveSourceFiles: Int,
+  /** Distinct source files with a strong positive Signal that the evaluation satisfies and that links to its lines: what a PR can cite. */
+  val referencedSourceFiles: Int,
+)
+
+/** Eligibility under the [evaluation] of the cluster's inspection, with commit Signals without a URL linked in the [ci] repository. */
+internal fun EdictNextStoredCluster.promotionEligibility(ci: ReviewRepository?, evaluation: EdictNextEvaluation?): PromotionEligibility =
+  PromotionEligibility(
+    generated = manifest.status == EdictNextClusterStatus.Generated,
+    strongPositiveSourceFiles = signals.filter(EdictNextSignal::isStrongPositive).distinctBy { it.fileRevision.path }.size,
+    referencedSourceFiles = promotionEvidence(ci, evaluation).size,
+  )
+
 /** One satisfied, referenced strong positive representative per source path, regardless of revision. */
-internal fun EdictNextStoredCluster.promotionEvidence(
-  ci: EdictCIConfiguration? = null,
-  evaluation: EdictNextEvaluation? = null,
-): List<EdictNextSignal> = signals
+internal fun EdictNextStoredCluster.promotionEvidence(ci: ReviewRepository?, evaluation: EdictNextEvaluation?): List<EdictNextSignal> = signals
   .filter {
-    it.strength == EdictNextSignalStrength.STRONG && it.label == EdictNextSignalLabel.POSITIVE && it.referenceUrl(ci) != null &&
+    it.isStrongPositive() && it.referenceUrl(ci) != null &&
       evaluation?.examples?.get(it.syntheticExampleId)?.let { example ->
         example.strong && example.label == EdictNextSignalLabel.POSITIVE && example.satisfied
       } == true
@@ -32,12 +52,15 @@ internal fun EdictNextStoredCluster.promotionEvidence(
   .sortedBy { it.id }
   .distinctBy { it.fileRevision.path }
 
-/** Only historical evidence with a usable external reference can support a promotion PR. */
+private fun EdictNextSignal.isStrongPositive(): Boolean =
+  strength == EdictNextSignalStrength.STRONG && label == EdictNextSignalLabel.POSITIVE
+
+/** Describes a cluster with [MIN_PROMOTION_SOURCE_FILES] referenced source files; only those can support a promotion PR. */
 internal fun promotionDescription(
   cluster: EdictNextStoredCluster,
   digest: String,
-  ci: EdictCIConfiguration? = null,
-  evaluation: EdictNextEvaluation? = null,
+  ci: ReviewRepository?,
+  evaluation: EdictNextEvaluation?,
 ): String {
   require(evaluation != null && evaluation.inspectionHash == digest && evaluation.exampleSetDigest == exampleSetDigest(cluster)) {
     "Promotion requires a current evaluation matching the inspection and examples"
@@ -78,7 +101,7 @@ internal fun promotionDescription(
       val url = when (val source = signal.source) {
         is EdictNextSignalSource.FromPR -> {
           val sourceUri = URI(source.url)
-          if (ci?.provider == CiProviderId.SPACE && sourceUri.host == URI(ci.url).host) {
+          if (ci?.provider == CiProviderId.SPACE && sourceUri.host?.lowercase() == ci.host) {
             val project = Regex("/p/([^/]+)/").find(sourceUri.path)?.groupValues?.get(1) ?: ci.owner
             "${sourceUri.scheme}://${sourceUri.rawAuthority}/p/$project/reviews/${source.prNumber}"
           }
@@ -86,7 +109,7 @@ internal fun promotionDescription(
         }
         is EdictNextSignalSource.FromCommit -> {
           val commitUrl = source.url?.takeIf { it.isNotBlank() } ?: run {
-            val repository = checkNotNull(ci).url.trimEnd('/').removeSuffix(".git")
+            val repository = checkNotNull(ci).webUrl()
             when (ci.provider) {
               CiProviderId.GITHUB -> "$repository/commit/${source.commitRevision}"
               CiProviderId.SPACE -> "$repository/revision/${source.commitRevision}"
@@ -102,12 +125,12 @@ internal fun promotionDescription(
           }
           else commitUrl
         }
-        else -> error("Unsupported promotion evidence")
+        is EdictNextSignalSource.SubmittedFeedback, is EdictNextSignalSource.Generated -> error("Unsupported promotion evidence")
       }
       val linkText = when (val source = signal.source) {
         is EdictNextSignalSource.FromPR -> "PR #${source.prNumber}"
         is EdictNextSignalSource.FromCommit -> source.commitRevision.take(7)
-        else -> error("Unsupported promotion evidence")
+        is EdictNextSignalSource.SubmittedFeedback, is EdictNextSignalSource.Generated -> error("Unsupported promotion evidence")
       }
       appendLine("${index + 1}. Fixed: \"${signal.description.markdownText()}\" in [$linkText]($url).")
       appendLine()
@@ -115,11 +138,11 @@ internal fun promotionDescription(
   }
 }
 
-internal fun EdictNextSignal.referenceUrl(ci: EdictCIConfiguration? = null): String? {
+internal fun EdictNextSignal.referenceUrl(ci: ReviewRepository?): String? {
   val originUrl = when (val origin = source) {
     is EdictNextSignalSource.FromPR -> origin.url
-    is EdictNextSignalSource.FromCommit -> origin.url?.takeIf { it.isNotBlank() } ?: ci?.url
-    else -> null
+    is EdictNextSignalSource.FromCommit -> origin.url?.takeIf { it.isNotBlank() } ?: ci?.webUrl()
+    is EdictNextSignalSource.SubmittedFeedback, is EdictNextSignalSource.Generated -> null
   } ?: return null
   val originUri = runCatching { URI(originUrl) }.getOrNull() ?: return null
   if (originUri.scheme?.lowercase() !in setOf("http", "https") || originUri.host.isNullOrBlank() ||
@@ -133,11 +156,10 @@ internal fun EdictNextSignal.referenceUrl(ci: EdictCIConfiguration? = null): Str
   // Prefer the evidence repository over the publication repository when the source URL identifies it.
   val sourceRepository = Regex("^(https?://[^/]+/p/[^/]+/repositories/[^/]+)(?:/|$)").find(originUrl)?.groupValues?.get(1)
     ?: Regex("^(https?://[^/]+/[^/]+/[^/]+)/(?:pull|commit|blob)/").find(originUrl)?.groupValues?.get(1)
-  val repository = sourceRepository ?: ci?.url ?: return null
-  val config = runCatching { EdictCIConfiguration(repository) }.getOrNull() ?: return null
+  val repository = sourceRepository?.let { runCatching { reviewRepository(it, "Evidence URL") }.getOrNull() ?: return null } ?: ci ?: return null
   val path = URI(null, null, "/$sourcePath", null).rawPath.removePrefix("/")
-  val root = repository.trimEnd('/').removeSuffix(".git")
-  val url = when (config.provider) {
+  val root = repository.webUrl()
+  val url = when (repository.provider) {
     CiProviderId.GITHUB -> "$root/blob/${fileRevision.revision}/$path#L${range.start}" +
       if (range.end == range.start) "" else "-L${range.end}"
     CiProviderId.SPACE -> "$root/files/${fileRevision.revision}/$path?line=${range.start}"
