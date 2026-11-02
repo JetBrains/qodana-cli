@@ -407,6 +407,7 @@ internal data class EdictNextProjectReview(
   val inspectionDescription: String = "",
   /** Exact locations classified TP for these inspection bytes, retained across server restarts. */
   val truePositiveFindings: List<EdictNextProjectFinding> = emptyList(),
+  val reportUrl: String? = null,
 )
 
 @Serializable

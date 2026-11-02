@@ -89,7 +89,12 @@ The promotion skill reviews candidates and chooses explicit cluster IDs for `edi
 a subset or deliberately choose other Generated inspections based on their evidence. Publication does not reapply
 metric thresholds. It requires a current evaluation, an inspection file, and referenced strong positive Signals
 from five distinct source files whose strong positive examples are satisfied. Descriptions include the compiled inspection name and description and cite at most five fixes,
-linking to their PR numbers or short commit hashes. Older evaluations without inspection metadata must be rerun. Previously published digests are skipped. Unchosen inspections remain `Generated`.
+linking to their PR numbers or short commit hashes. When `QODANA_TOKEN` is set in the Edict server environment,
+finalizing a newly generated inspection uploads its last project analysis to Qodana Cloud and saves the report URL in
+`evaluation.json`. The PR links its findings count to that report. `QODANA_ENDPOINT` optionally selects the cloud endpoint
+(default `https://qodana.cloud`). Without a token, generation continues without uploading. Upload failures leave the
+cluster Pending and are reported as finalization failures; retry after resolving the upload failure. Reusing a predecessor
+without a project analysis does not upload a report. Older evaluations without inspection metadata must be rerun. Previously published digests are skipped. Unchosen inspections remain `Generated`.
 
 ```yaml
 edict:

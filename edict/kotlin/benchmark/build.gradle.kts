@@ -4,8 +4,6 @@ plugins {
     application
 }
 
-repositories { mavenCentral() }
-
 dependencies {
     implementation(project(":"))
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.10.0")

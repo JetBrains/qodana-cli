@@ -66,7 +66,10 @@ internal fun promotionDescription(
     appendLine("Estimated precision: **${percent(precision)}** · recall: **${percent(recall)}** · F1: **${percent(f1)}**")
     appendLine()
     evaluation.projectReview?.let { review ->
-      appendLine("Last project analysis reported ${review.totalFindings} findings; ${review.reviewedFindings} were reviewed.")
+      val count = "${review.totalFindings} findings"
+      val findings = review.reportUrl?.takeIf { org.jetbrains.qodana.edict.edictnext.validReportUrl(it) }
+        ?.let { "[$count]($it)" } ?: count
+      appendLine("Last project analysis reported $findings; ${review.reviewedFindings} were reviewed.")
       appendLine()
     }
     appendLine("## Evidence")

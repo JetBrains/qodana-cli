@@ -15,6 +15,7 @@ internal class EdictNextGenerationService(
   private val projectRoot: Path,
   private val maxProjectAnalyses: Int = DEFAULT_MAX_PROJECT_ANALYSES,
   private val defaultGenerationCount: Int = DEFAULT_GENERATION_COUNT,
+  private val reportUploader: EdictNextReportUploader? = EdictNextCloudReports.fromEnvironment(),
 ) {
   private val inspection = EdictNextInspection(inspectionServer)
 
@@ -428,6 +429,16 @@ internal class EdictNextGenerationService(
     val validation = inspection.validate(cluster, selection.code)
     if (!validation.overallSuccess) {
       return rejectedFinalisation(generated, "Selected inspection has invalid compilation, metadata or execution: ${validation.summary}")
+    }
+    if (reportUploader != null && evaluation.projectReview != null && evaluation.projectReview.reportUrl == null) {
+      val findings = analyzedFindings[cluster.signalIds]
+        ?: return rejectedFinalisation(generated, "Project analysis is unavailable for cloud upload; analyze and evaluate again")
+      check(findings.candidateDigest == evaluation.inspectionHash && findings.projectRevision == evaluation.projectReview.projectRevision) {
+        "Cloud upload requires the evaluated inspection's project analysis"
+      }
+      val reportUrl = reportUploader.upload(projectRoot, evaluation.inspectionName, findings)
+      require(validReportUrl(reportUrl)) { "Cloud upload returned an invalid report URL" }
+      repository.saveEvaluation(cluster.id, evaluation.copy(projectReview = evaluation.projectReview.copy(reportUrl = reportUrl)))
     }
     repository.appendHistory(cluster.id, "$generated: $reason")
     repository.markGenerated(cluster, selection.path)

@@ -958,6 +958,50 @@ class EdictNextGenerationServiceTest {
     assertEquals(listOf("busy-wait", "busy-wait"), analyses)
   }
 
+  @Test
+  fun `final generation uploads the evaluated findings and persists the cloud report link`() = runBlocking {
+    val uploads = mutableListOf<EdictNextInspectionFindings>()
+    val (generation, server) = generation(reportUploader = EdictNextReportUploader { _, name, findings ->
+      assertTrue(name.isNotBlank())
+      uploads += findings
+      "https://qodana.cloud/reports/final-report"
+    })
+    try {
+      generation.getInspectionAction("busy-wait")
+      val repository = EdictRepository(EdictRepositoryDirectory(directory.resolve("state")))
+      val code = "// busy-wait report"
+      assertTrue(generation.saveCandidateInspection("busy-wait", code).overallSuccess)
+      generation.getNewInspectionResults("busy-wait", directory.resolve("scratch").toString())
+      assertTrue(generation.recordEvaluation("busy-wait").success)
+      assertTrue(uploads.isEmpty())
+      assertTrue(generation.finaliseCluster("busy-wait", EdictNextClusterStatus.Generated, "Accepted").success)
+      val cluster = repository.loadCluster("busy-wait")
+      val review = checkNotNull(repository.loadEvaluation(cluster)?.projectReview)
+      assertEquals(sha256Hex(code), uploads.single().candidateDigest)
+      assertEquals(review.totalFindings, uploads.single().findings.size)
+      assertEquals("https://qodana.cloud/reports/final-report", review.reportUrl)
+      assertEquals(EdictNextClusterStatus.Generated, cluster.manifest.status)
+    } finally { server.stop() }
+  }
+
+  @Test
+  fun `failed cloud upload leaves generation pending and evaluation without report link`() = runBlocking {
+    val (generation, server) = generation(reportUploader = EdictNextReportUploader { _, _, _ -> error("Upload unavailable") })
+    try {
+      generation.getInspectionAction("busy-wait")
+      val repository = EdictRepository(EdictRepositoryDirectory(directory.resolve("state")))
+      assertTrue(generation.saveCandidateInspection("busy-wait", "// busy-wait report").overallSuccess)
+      generation.getNewInspectionResults("busy-wait", directory.resolve("scratch").toString())
+      assertTrue(generation.recordEvaluation("busy-wait").success)
+      assertFailsWith<IllegalStateException> {
+        generation.finaliseCluster("busy-wait", EdictNextClusterStatus.Generated, "Accepted")
+      }
+      val cluster = repository.loadCluster("busy-wait")
+      assertEquals(EdictNextClusterStatus.Pending, cluster.manifest.status)
+      assertEquals(null, repository.loadEvaluation(cluster)?.projectReview?.reportUrl)
+    } finally { server.stop() }
+  }
+
   private fun withGeneration(test: suspend (EdictNextGenerationService, EdictRepository) -> Unit) = runBlocking {
     val (generation, inspection) = generation("empty-catch" to (EdictNextSignalStrength.STRONG to EdictNextSignalLabel.POSITIVE))
     try {
@@ -976,6 +1020,7 @@ class EdictNextGenerationServiceTest {
     vararg clusters: Pair<String, Pair<EdictNextSignalStrength, EdictNextSignalLabel>>,
     predecessorId: String? = null,
     defaultGenerationCount: Int = 5,
+    reportUploader: EdictNextReportUploader? = null,
   ): Pair<EdictNextGenerationService, IntellijMcpServerService> {
     val project = gitFixture(directory.resolve("project")).root
     val state = directory.resolve("state").createDirectories()
@@ -999,6 +1044,7 @@ class EdictNextGenerationServiceTest {
       project,
       maxProjectAnalyses = 2,
       defaultGenerationCount = defaultGenerationCount,
+      reportUploader = reportUploader,
     ) to inspection
   }
 

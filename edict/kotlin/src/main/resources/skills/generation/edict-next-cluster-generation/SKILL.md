@@ -206,6 +206,9 @@ generating: `Generated` requires the stored candidate to be exactly the last ana
 candidate, save `<privateScratchDirectory>/analyzed-candidate.kts` back unchanged with
 `edict_next_save_candidate_inspection`. Append the decision and all remaining strong and weak failures to history, call
 `edict_next_record_evaluation(token, clusterId)` as the last step before finalising, then finalise `Generated`.
+When the server has `QODANA_TOKEN`, finalisation uploads the last project analysis to Qodana Cloud and stores its report URL.
+Do not upload separately or handle credentials. An upload failure leaves the cluster Pending; report the infrastructure
+failure rather than claiming generation completed.
 
 ## 6. Other statuses
 
