@@ -24,6 +24,7 @@ dependencies {
     implementation("io.github.oshai:kotlin-logging-jvm:8.0.4")
     runtimeOnly("ch.qos.logback:logback-classic:1.6.3")
     implementation("org.yaml:snakeyaml:2.4")
+    implementation("org.eclipse.jgit:org.eclipse.jgit:7.3.0.202506031305-r")
     testImplementation(kotlin("test-junit5"))
     testImplementation(kotlin("reflect"))
     testImplementation("org.junit-pioneer:junit-pioneer:2.3.0")

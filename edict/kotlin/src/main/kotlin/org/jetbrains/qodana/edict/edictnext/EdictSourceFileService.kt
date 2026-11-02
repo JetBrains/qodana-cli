@@ -1,8 +1,7 @@
 // Copyright 2026 JetBrains s.r.o. Licensed under the Apache License, Version 2.0.
 package org.jetbrains.qodana.edict.edictnext
 
-import org.jetbrains.qodana.edict.ci.ReviewExtractionApi
-import org.jetbrains.qodana.edict.ci.ReviewRepository
+import org.jetbrains.qodana.edict.ci.ReviewApi
 import org.jetbrains.qodana.edict.common.GitRepository
 import org.jetbrains.qodana.edict.signals.validRevision
 import org.jetbrains.qodana.edict.signals.validSourcePath
@@ -14,8 +13,7 @@ import java.nio.file.Path
  */
 internal class EdictSourceFileService(
   projectRoot: Path,
-  private val provider: ReviewExtractionApi,
-  private val remote: ReviewRepository?,
+  private val remote: ReviewApi?,
 ) {
   // Opened on first read, so a project without Git still serves every other tool.
   private val local by lazy { GitRepository(projectRoot) }
@@ -28,12 +26,13 @@ internal class EdictSourceFileService(
     require(validRevision(ref) && validSourcePath(path)) { "Requires a full commit SHA and a repository-relative path" }
     require(radius >= 0) { "Radius must not be negative" }
     anchor?.let { require(it.start >= 1 && it.end >= it.start) { "Invalid anchor lines ${it.start}-${it.end}" } }
-    val content = if (hasLocalCommit(ref)) local.fileAt(ref, path)
-    else provider.file(
-      checkNotNull(remote) { "Commit $ref is not in the local repository, and edict.ci.url names no remote one" },
-      ref,
-      path,
-    )
+    val content = if (hasLocalCommit(ref)) {
+      local.fileAt(ref, path)
+    }
+    else {
+      checkNotNull(remote) { "Commit $ref is not in the local repository, and edict.ci.url names no remote one" }
+      remote.file(ref, path)
+    }
     return numberedLines(content, anchor, radius)
   }
 
