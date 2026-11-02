@@ -7,9 +7,18 @@ plugins {
 group = "org.jetbrains.qodana"
 version = "1.0.0"
 
-repositories { mavenCentral() }
+allprojects {
+    repositories {
+        mavenCentral()
+        maven("https://packages.jetbrains.team/maven/p/ij/intellij-dependencies") {
+            content { includeGroup("org.jetbrains.qodana"); includeGroup("com.jetbrains.qodana") }
+        }
+    }
+}
 
 dependencies {
+    implementation("org.jetbrains.qodana:publisher:3.0.13")
+    implementation("org.jetbrains.qodana:qodana-cloud-kotlin-client:0.2.12")
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.10.0")
     implementation("org.tomlj:tomlj:1.1.1")
     implementation("io.github.oshai:kotlin-logging-jvm:8.0.4")
