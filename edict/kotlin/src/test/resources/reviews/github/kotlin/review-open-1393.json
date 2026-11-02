@@ -1,0 +1,60 @@
+{
+  "exchanges": [
+    {
+      "request": {
+        "method": "GET",
+        "endpoint": "/repos/JetBrains/kotlin/pulls/1393",
+        "query": {}
+      },
+      "response": {
+        "status": 200,
+        "body": {
+          "state": "open",
+          "user": {
+            "login": "LouisCAD",
+            "type": "User"
+          },
+          "labels": [
+            {
+              "name": "Standard Library"
+            }
+          ],
+          "assignee": {
+            "login": "ilya-g",
+            "type": "User"
+          },
+          "assignees": [
+            {
+              "login": "ilya-g",
+              "type": "User"
+            }
+          ],
+          "head": {
+            "user": {
+              "login": "LouisCAD",
+              "type": "User"
+            }
+          },
+          "base": {
+            "repo": {
+              "name": "kotlin",
+              "owner": {
+                "login": "JetBrains",
+                "type": "Organization"
+              }
+            },
+            "user": {
+              "login": "JetBrains",
+              "type": "Organization"
+            }
+          }
+        },
+        "hasNext": false
+      }
+    }
+  ],
+  "result": {
+    "state": "OPEN",
+    "evidence": ""
+  }
+}

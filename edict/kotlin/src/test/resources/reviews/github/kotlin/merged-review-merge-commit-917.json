@@ -1,0 +1,186 @@
+{
+  "exchanges": [
+    {
+      "request": {
+        "method": "GET",
+        "endpoint": "/repos/JetBrains/kotlin/pulls/917",
+        "query": {}
+      },
+      "response": {
+        "status": 200,
+        "body": {
+          "title": "Add inline",
+          "user": {
+            "login": "mglukhikh",
+            "type": "User"
+          },
+          "merged_at": "2016-08-12T08:55:27Z",
+          "merge_commit_sha": "fdb8e1026aee542994c512a524bf45672738cf68",
+          "head": {
+            "repo": {
+              "name": "kotlin",
+              "owner": {
+                "login": "shiraji",
+                "type": "User"
+              }
+            },
+            "user": {
+              "login": "shiraji",
+              "type": "User"
+            }
+          },
+          "base": {
+            "repo": {
+              "name": "kotlin",
+              "owner": {
+                "login": "JetBrains",
+                "type": "Organization"
+              }
+            },
+            "user": {
+              "login": "JetBrains",
+              "type": "Organization"
+            }
+          },
+          "merged_by": {
+            "login": "mglukhikh",
+            "type": "User"
+          }
+        },
+        "hasNext": false
+      }
+    },
+    {
+      "request": {
+        "method": "GET",
+        "endpoint": "/repos/JetBrains/kotlin/commits/fdb8e1026aee542994c512a524bf45672738cf68",
+        "query": {
+          "per_page": "100",
+          "page": "1"
+        }
+      },
+      "response": {
+        "status": 200,
+        "body": {
+          "sha": "fdb8e1026aee542994c512a524bf45672738cf68",
+          "commit": {
+            "author": {
+              "name": "Mikhail Glukhikh"
+            },
+            "committer": {
+              "name": "GitHub"
+            },
+            "message": "Merge pull request #917 from shiraji/add_inline\n\nAdd inline"
+          },
+          "author": {
+            "login": "mglukhikh",
+            "type": "User"
+          },
+          "committer": {
+            "login": "web-flow",
+            "type": "User"
+          },
+          "parents": [
+            {
+              "sha": "6cf90cfc4eb5474cdc655caf90da7e4889178148"
+            },
+            {
+              "sha": "145f0dc80ae9a45cfc6b87f03bc6cb646cd314e1"
+            }
+          ],
+          "files": [
+            {
+              "filename": "idea/src/org/jetbrains/kotlin/idea/quickfix/AddInlineToReifiedFunctionFix.kt"
+            },
+            {
+              "filename": "idea/src/org/jetbrains/kotlin/idea/quickfix/QuickFixRegistrar.kt"
+            },
+            {
+              "filename": "idea/testData/quickfix/addInlineToReifiedFunctionFix/basic.kt"
+            },
+            {
+              "filename": "idea/testData/quickfix/addInlineToReifiedFunctionFix/basic.kt.after"
+            },
+            {
+              "filename": "idea/tests/org/jetbrains/kotlin/idea/quickfix/QuickFixTestGenerated.java"
+            }
+          ]
+        },
+        "hasNext": false
+      }
+    },
+    {
+      "request": {
+        "method": "GET",
+        "endpoint": "/repos/JetBrains/kotlin/issues/917/comments",
+        "query": {
+          "per_page": "100",
+          "page": "1"
+        }
+      },
+      "response": {
+        "status": 200,
+        "body": [],
+        "hasNext": false
+      }
+    },
+    {
+      "request": {
+        "method": "GET",
+        "endpoint": "/repos/JetBrains/kotlin/pulls/917/reviews",
+        "query": {
+          "per_page": "100",
+          "page": "1"
+        }
+      },
+      "response": {
+        "status": 200,
+        "body": [],
+        "hasNext": false
+      }
+    },
+    {
+      "request": {
+        "method": "GET",
+        "endpoint": "/repos/JetBrains/kotlin/pulls/917/comments",
+        "query": {
+          "per_page": "100",
+          "page": "1"
+        }
+      },
+      "response": {
+        "status": 200,
+        "body": [],
+        "hasNext": false
+      }
+    }
+  ],
+  "result": {
+    "title": "Add inline",
+    "discussionMessages": [],
+    "beforeRevision": "6cf90cfc4eb5474cdc655caf90da7e4889178148",
+    "mergedRevision": "fdb8e1026aee542994c512a524bf45672738cf68",
+    "changes": [
+      {
+        "beforePath": "idea/src/org/jetbrains/kotlin/idea/quickfix/AddInlineToReifiedFunctionFix.kt",
+        "afterPath": "idea/src/org/jetbrains/kotlin/idea/quickfix/AddInlineToReifiedFunctionFix.kt"
+      },
+      {
+        "beforePath": "idea/src/org/jetbrains/kotlin/idea/quickfix/QuickFixRegistrar.kt",
+        "afterPath": "idea/src/org/jetbrains/kotlin/idea/quickfix/QuickFixRegistrar.kt"
+      },
+      {
+        "beforePath": "idea/testData/quickfix/addInlineToReifiedFunctionFix/basic.kt",
+        "afterPath": "idea/testData/quickfix/addInlineToReifiedFunctionFix/basic.kt"
+      },
+      {
+        "beforePath": "idea/testData/quickfix/addInlineToReifiedFunctionFix/basic.kt.after",
+        "afterPath": "idea/testData/quickfix/addInlineToReifiedFunctionFix/basic.kt.after"
+      },
+      {
+        "beforePath": "idea/tests/org/jetbrains/kotlin/idea/quickfix/QuickFixTestGenerated.java",
+        "afterPath": "idea/tests/org/jetbrains/kotlin/idea/quickfix/QuickFixTestGenerated.java"
+      }
+    ]
+  }
+}

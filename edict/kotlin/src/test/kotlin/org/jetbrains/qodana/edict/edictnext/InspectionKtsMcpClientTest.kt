@@ -13,6 +13,7 @@ import kotlinx.serialization.json.jsonPrimitive
 import kotlinx.serialization.json.long
 import kotlinx.serialization.json.put
 import kotlinx.serialization.json.putJsonObject
+import org.jetbrains.qodana.edict.support.FakeIntellijMcpServerLifecycle
 import org.junit.jupiter.api.Timeout
 import java.io.IOException
 import java.net.InetSocketAddress
@@ -101,10 +102,7 @@ class InspectionKtsMcpClientTest {
     val service = IntellijMcpServerService(
       projectPath = Path.of("/project/root"),
       projectAnalysisTimeoutMinutes = projectAnalysisTimeoutMinutes,
-      serverLifecycle = object : IntellijMcpServerLifecycle {
-        override suspend fun start() = URI("http://127.0.0.1:${server.address.port}/mcp")
-        override suspend fun stop() = Unit
-      },
+      serverLifecycle = FakeIntellijMcpServerLifecycle(URI("http://127.0.0.1:${server.address.port}/mcp")),
     )
     try {
       service.withClient { client ->

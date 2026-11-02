@@ -1,0 +1,19 @@
+{
+  "exchanges": [
+    {
+      "request": {
+        "method": "GET",
+        "endpoint": "/projects/key:ij/code-reviews/id:3CNIEJ2jnTdL",
+        "query": {
+          "$fields": "state,branchPair(isMerged)"
+        }
+      },
+      "response": {
+        "status": 200,
+        "body": null,
+        "hasNext": false
+      }
+    }
+  ],
+  "result": "IllegalArgumentException: Space review id:3CNIEJ2jnTdL is missing or not visible"
+}

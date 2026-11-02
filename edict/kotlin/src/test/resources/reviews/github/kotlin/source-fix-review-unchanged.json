@@ -1,0 +1,56 @@
+{
+  "exchanges": [
+    {
+      "request": {
+        "method": "GET",
+        "endpoint": "/repos/JetBrains/kotlin/git/ref/heads/edict%2Fweak-w-cccccccccccccccccccccccc",
+        "query": {}
+      },
+      "response": {
+        "status": 404,
+        "body": {
+          "message": "Not Found"
+        },
+        "hasNext": false
+      }
+    },
+    {
+      "request": {
+        "method": "GET",
+        "endpoint": "/repos/JetBrains/kotlin/git/ref/heads/1.3.70",
+        "query": {}
+      },
+      "response": {
+        "status": 200,
+        "body": {
+          "object": {
+            "sha": "00708e800293156c9c4acaaaa7c06cb78e96ae69",
+            "type": "commit"
+          }
+        },
+        "hasNext": false
+      }
+    },
+    {
+      "request": {
+        "method": "GET",
+        "endpoint": "/repos/JetBrains/kotlin/contents/.bunch",
+        "query": {
+          "ref": "00708e800293156c9c4acaaaa7c06cb78e96ae69"
+        }
+      },
+      "response": {
+        "status": 200,
+        "body": {
+          "name": ".bunch",
+          "size": 84,
+          "type": "file",
+          "content": "MTkzCjIwMQoxOTIKMTkxXzE5MgoxODNfMTkxXzE5MgphczM0XzE4M18xOTFf\nMTkyCmFzMzVfMTkxXzE5MgphczM2XzE5MgphczQwCmFzNDFfMjAx\n",
+          "encoding": "base64"
+        },
+        "hasNext": false
+      }
+    }
+  ],
+  "result": "IllegalArgumentException: Source fix for '.bunch' has no changes"
+}

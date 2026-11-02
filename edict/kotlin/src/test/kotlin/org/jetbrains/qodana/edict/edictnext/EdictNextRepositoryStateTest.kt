@@ -92,7 +92,7 @@ class EdictNextRepositoryStateTest {
   fun `PR analysis coverage merges ranges and PR numbers and survives restart`() {
     val skill = "edict-pr-signal-analysis"
     val steps = listOf(Step(skill, "Reviews"))
-    val repository = ReviewRepository(CiProviderId.GITHUB, "jetbrains", "qodana")
+    val repository = ReviewRepository(CiProviderId.GITHUB, "github.com", "jetbrains", "qodana")
     val expected = RepositoryPrAnalysisCoverage(
       repository,
       analyzedDateRanges = listOf(PrAnalysisDateRange("2026-01-01", "2026-01-05")),

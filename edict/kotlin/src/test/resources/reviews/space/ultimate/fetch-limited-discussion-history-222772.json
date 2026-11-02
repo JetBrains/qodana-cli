@@ -1,0 +1,274 @@
+{
+  "exchanges": [
+    {
+      "request": {
+        "method": "GET",
+        "endpoint": "/projects/key:ij/code-reviews/number:222772",
+        "query": {
+          "$fields": "id,number,state,timestamp,title,description,feedChannelId,branchPair(repository,isMerged,sourceBranchRef,targetBranchInfo(ref))"
+        }
+      },
+      "response": {
+        "status": 200,
+        "body": {
+          "className": "MergeRequestRecord",
+          "number": 222772,
+          "title": "[teamcity-intellij] TW-102566: Log FUS click events for Fix with AI and Copy Prompt",
+          "state": "Closed",
+          "timestamp": 1793633510872,
+          "feedChannelId": "20dhy41jaVYc",
+          "branchPair": {
+            "repository": "ultimate",
+            "sourceBranchRef": "1fb3c4fd0b56143e66e48fe73f2de93fa2716eee",
+            "targetBranchInfo": {
+              "ref": "0bf2a40f3d06465ca8c1c274d30dfd00017f6f90"
+            },
+            "isMerged": true
+          }
+        },
+        "hasNext": false
+      }
+    },
+    {
+      "request": {
+        "method": "GET",
+        "endpoint": "/chats/messages/sync-batch",
+        "query": {
+          "channel": "id:20dhy41jaVYc",
+          "batchInfo": "{etag:0,batchSize:100}",
+          "$fields": "data(chatMessage(id,text,author(name,details(className)),details(className,codeDiscussion(channel(id),anchor(filename,line,oldLine,revision),endAnchor(line,oldLine))))),etag,hasMore"
+        }
+      },
+      "response": {
+        "status": 200,
+        "body": {
+          "data": [
+            {
+              "chatMessage": {
+                "details": {
+                  "className": "ReviewCreatedEvent"
+                },
+                "author": {
+                  "name": "arkadii.sapozhnikov",
+                  "details": {
+                    "className": "CUserPrincipalDetails"
+                  }
+                },
+                "id": "EwcXU0W3Lto"
+              }
+            },
+            {
+              "chatMessage": {
+                "details": {
+                  "className": "MCMessage"
+                },
+                "author": {
+                  "name": "arkadii.sapozhnikov",
+                  "details": {
+                    "className": "CUserPrincipalDetails"
+                  }
+                },
+                "id": "EwcXV0W3Ltp"
+              }
+            },
+            {
+              "chatMessage": {
+                "details": {
+                  "className": "M2TextItemContent"
+                },
+                "author": {
+                  "name": "arkadii.sapozhnikov",
+                  "details": {
+                    "className": "CUserPrincipalDetails"
+                  }
+                },
+                "id": "EwcXS0W3Ltu"
+              }
+            },
+            {
+              "chatMessage": {
+                "details": {
+                  "className": "M2TextItemContent"
+                },
+                "author": {
+                  "name": "arkadii.sapozhnikov",
+                  "details": {
+                    "className": "CUserPrincipalDetails"
+                  }
+                },
+                "id": "Ewf100W3PRW"
+              }
+            },
+            {
+              "chatMessage": {
+                "details": {
+                  "className": "CodeDiscussionAddedFeedEvent",
+                  "codeDiscussion": {
+                    "channel": {
+                      "id": "20NyBn21e5p3"
+                    }
+                  }
+                },
+                "author": {
+                  "name": "arkadii.sapozhnikov",
+                  "details": {
+                    "className": "CUserPrincipalDetails"
+                  }
+                },
+                "id": "Ewf110W3PRX"
+              }
+            },
+            {
+              "chatMessage": {
+                "details": {
+                  "className": "MCMessage"
+                },
+                "author": {
+                  "name": "arkadii.sapozhnikov",
+                  "details": {
+                    "className": "CUserPrincipalDetails"
+                  }
+                },
+                "id": "ExGe90W4Haf"
+              }
+            },
+            {
+              "chatMessage": {
+                "details": {
+                  "className": "M2TextItemContent"
+                },
+                "author": {
+                  "name": "arkadii.sapozhnikov",
+                  "details": {
+                    "className": "CUserPrincipalDetails"
+                  }
+                },
+                "id": "ExGeA0W4Hag"
+              }
+            },
+            {
+              "chatMessage": {
+                "details": {
+                  "className": "MCMessage"
+                },
+                "author": {
+                  "name": "arkadii.sapozhnikov",
+                  "details": {
+                    "className": "CUserPrincipalDetails"
+                  }
+                },
+                "id": "F9Rth0W7foD"
+              }
+            },
+            {
+              "chatMessage": {
+                "details": {
+                  "className": "M2TextItemContent"
+                },
+                "author": {
+                  "name": "Patronus",
+                  "details": {
+                    "className": "CApplicationPrincipalDetails"
+                  }
+                },
+                "id": "F9Ru30W7foR"
+              }
+            },
+            {
+              "chatMessage": {
+                "details": {
+                  "className": "MCMessage"
+                },
+                "author": {
+                  "name": "Patronus",
+                  "details": {
+                    "className": "CApplicationPrincipalDetails"
+                  }
+                },
+                "id": "F9mt90W7kHf"
+              }
+            },
+            {
+              "chatMessage": {
+                "details": {
+                  "className": "MCMessage"
+                },
+                "author": {
+                  "name": "JetBrains Space",
+                  "details": {
+                    "className": "CBuiltInServicePrincipalDetails"
+                  }
+                },
+                "id": "F9mtI0W7kHg"
+              }
+            },
+            {
+              "chatMessage": {
+                "details": {
+                  "className": "M2TextItemContent"
+                },
+                "author": {
+                  "name": "Patronus",
+                  "details": {
+                    "className": "CApplicationPrincipalDetails"
+                  }
+                },
+                "id": "F9mtJ0W7kHh"
+              }
+            }
+          ],
+          "hasMore": false
+        },
+        "hasNext": false
+      }
+    },
+    {
+      "request": {
+        "method": "GET",
+        "endpoint": "/chats/messages",
+        "query": {
+          "channel": "id:20NyBn21e5p3",
+          "sorting": "FromOldestToNewest",
+          "batchSize": "50",
+          "$fields": "messages(id,text,details(className),author(name,details(className)),created),nextStartFromDate,orgLimitReached"
+        }
+      },
+      "response": {
+        "status": 200,
+        "body": {
+          "messages": [
+            {
+              "details": {
+                "className": "M2TextItemContent"
+              },
+              "author": {
+                "name": "arkadii.sapozhnikov",
+                "details": {
+                  "className": "CUserPrincipalDetails"
+                }
+              }
+            }
+          ]
+        },
+        "hasNext": false
+      }
+    }
+  ],
+  "result": {
+    "pullRequests": [
+      {
+        "number": 222772,
+        "url": "https://jetbrains.team/p/ij/reviews/222772",
+        "title": "[teamcity-intellij] TW-102566: Log FUS click events for Fix with AI and Copy Prompt",
+        "body": "",
+        "baseRevision": "0bf2a40f3d06465ca8c1c274d30dfd00017f6f90",
+        "headRevision": "1fb3c4fd0b56143e66e48fe73f2de93fa2716eee",
+        "closeTimestamp": 1793633510872,
+        "threads": []
+      }
+    ],
+    "problems": [
+      "Space PR 222772 discussion 20NyBn21e5p3 page 1: history unavailable or limited"
+    ]
+  }
+}

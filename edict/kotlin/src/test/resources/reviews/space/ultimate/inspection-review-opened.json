@@ -1,0 +1,174 @@
+{
+  "exchanges": [
+    {
+      "request": {
+        "method": "GET",
+        "endpoint": "/projects/key:ij/repositories/ultimate/branches/refs%2Fheads%2Fedict%2Favoid-thread-sleep-9cc450caa078",
+        "query": {}
+      },
+      "response": {
+        "status": 200,
+        "body": null,
+        "hasNext": false
+      }
+    },
+    {
+      "request": {
+        "method": "GET",
+        "endpoint": "/projects/key:ij/repositories/ultimate/branches/refs%2Fheads%2F191",
+        "query": {}
+      },
+      "response": {
+        "status": 200,
+        "body": {
+          "branchInfo": {
+            "ref": "17795949cee5953ee3e18b810af8db74f641dc54"
+          },
+          "lastCommit": {
+            "message": "set majorReleaseDate for RubyMine\n\nSpace-RevId: 0789542778d35e2bc9140e695ff123c67ec53f34",
+            "author": {
+              "name": "Andrey Vokin"
+            },
+            "committer": {
+              "name": "Andrey Vokin"
+            }
+          }
+        },
+        "hasNext": false
+      }
+    },
+    {
+      "request": {
+        "method": "POST",
+        "endpoint": "/projects/key:ij/repositories/ultimate/head",
+        "query": {},
+        "body": {
+          "head": "refs/heads/edict/avoid-thread-sleep-9cc450caa078",
+          "target": "17795949cee5953ee3e18b810af8db74f641dc54"
+        }
+      },
+      "response": {
+        "status": 200,
+        "body": null,
+        "hasNext": false
+      }
+    },
+    {
+      "request": {
+        "method": "POST",
+        "endpoint": "/projects/ij/repositories/ultimate/commit",
+        "query": {},
+        "body": {
+          "baseCommit": "17795949cee5953ee3e18b810af8db74f641dc54",
+          "targetBranch": "refs/heads/edict/avoid-thread-sleep-9cc450caa078",
+          "commitMessage": "Add Edict inspection avoid-thread-sleep",
+          "files": [
+            {
+              "path": "inspections/avoid-thread-sleep.inspection.kts",
+              "content": {
+                "className": "GitFileContent.Base64",
+                "value": "aW1wb3J0IGNvbS5pbnRlbGxpai5wc2kuUHNpSmF2YUZpbGUKaW1wb3J0IGNvbS5pbnRlbGxpai5wc2kuUHNpTWV0aG9kQ2FsbEV4cHJlc3Npb24KaW1wb3J0IGNvbS5pbnRlbGxpai5wc2kudXRpbC5Qc2lUcmVlVXRpbAoKdmFsIGF2b2lkVGhyZWFkU2xlZXBJbnNwZWN0aW9uID0gbG9jYWxJbnNwZWN0aW9uIHsgcHNpRmlsZSwgaW5zcGVjdGlvbiAtPgogICAgdmFsIGphdmFGaWxlID0gcHNpRmlsZSBhcz8gUHNpSmF2YUZpbGUgPzogcmV0dXJuQGxvY2FsSW5zcGVjdGlvbgogICAgUHNpVHJlZVV0aWwuY29sbGVjdEVsZW1lbnRzT2ZUeXBlKGphdmFGaWxlLCBQc2lNZXRob2RDYWxsRXhwcmVzc2lvbjo6Y2xhc3MuamF2YSkuZm9yRWFjaCB7IGNhbGwgLT4KICAgICAgICB2YWwgbWV0aG9kID0gY2FsbC5tZXRob2RFeHByZXNzaW9uCiAgICAgICAgaWYgKG1ldGhvZC5yZWZlcmVuY2VOYW1lID09ICJzbGVlcCIgJiYgbWV0aG9kLnF1YWxpZmllckV4cHJlc3Npb24/LnRleHQgPT0gIlRocmVhZCIpIHsKICAgICAgICAgICAgaW5zcGVjdGlvbi5yZWdpc3RlclByb2JsZW0oY2FsbCwgIlJlcGxhY2UgVGhyZWFkLnNsZWVwIHdpdGggZXhwbGljaXQgc3luY2hyb25pemF0aW9uIikKICAgICAgICB9CiAgICB9Cn0KCmxpc3RPZigKICAgIEluc3BlY3Rpb25LdHMoCiAgICAgICAgaWQgPSAiQXZvaWRUaHJlYWRTbGVlcEZvclN5bmNocm9uaXphdGlvbiIsCiAgICAgICAgbG9jYWxUb29sID0gYXZvaWRUaHJlYWRTbGVlcEluc3BlY3Rpb24sCiAgICAgICAgbmFtZSA9ICJBdm9pZCBUaHJlYWQuc2xlZXAgZm9yIHN5bmNocm9uaXphdGlvbiIsCiAgICAgICAgaHRtbERlc2NyaXB0aW9uID0gIjxodG1sPjxib2R5PlJlcG9ydHMgVGhyZWFkLnNsZWVwIHVzZWQgYXMgc3luY2hyb25pemF0aW9uLjwvYm9keT48L2h0bWw+IiwKICAgICkKKQo="
+              }
+            }
+          ]
+        }
+      },
+      "response": {
+        "status": 200,
+        "body": {
+          "success": true,
+          "message": ""
+        },
+        "hasNext": false
+      }
+    },
+    {
+      "request": {
+        "method": "GET",
+        "endpoint": "/projects/key:ij/code-reviews",
+        "query": {
+          "repository": "ultimate",
+          "sourceBranch": "edict/avoid-thread-sleep-9cc450caa078",
+          "targetBranch": "191",
+          "state": "Opened",
+          "$skip": "0",
+          "$top": "100",
+          "$fields": "data(review(id,number,branchPair(repository,sourceBranch,targetBranch)))"
+        }
+      },
+      "response": {
+        "status": 200,
+        "body": {
+          "data": []
+        },
+        "hasNext": false
+      }
+    },
+    {
+      "request": {
+        "method": "GET",
+        "endpoint": "/projects/key:ij/code-reviews",
+        "query": {
+          "repository": "ultimate",
+          "sourceBranch": "edict/avoid-thread-sleep-9cc450caa078",
+          "targetBranch": "191",
+          "state": "Closed",
+          "$skip": "0",
+          "$top": "100",
+          "$fields": "data(review(id,number,branchPair(repository,sourceBranch,targetBranch)))"
+        }
+      },
+      "response": {
+        "status": 200,
+        "body": {
+          "data": []
+        },
+        "hasNext": false
+      }
+    },
+    {
+      "request": {
+        "method": "POST",
+        "endpoint": "/projects/key:ij/code-reviews/merge-requests",
+        "query": {},
+        "body": {
+          "title": "Add Edict inspection avoid-thread-sleep",
+          "description": "Reviewers asked five times to replace Thread.sleep with explicit synchronization.",
+          "repository": "ultimate",
+          "sourceBranch": "edict/avoid-thread-sleep-9cc450caa078",
+          "targetBranch": "191"
+        }
+      },
+      "response": {
+        "status": 200,
+        "body": {
+          "id": "2EdIcT0ReVu1",
+          "number": 240001
+        },
+        "hasNext": false
+      }
+    },
+    {
+      "request": {
+        "method": "POST",
+        "endpoint": "/projects/key:ij/code-reviews/2EdIcT0ReVu1/participants/reviewer",
+        "query": {},
+        "body": {
+          "role": "Reviewer"
+        }
+      },
+      "response": {
+        "status": 200,
+        "body": null,
+        "hasNext": false
+      }
+    }
+  ],
+  "result": {
+    "provider": "space",
+    "owner": "ij",
+    "repository": "ultimate",
+    "id": "2EdIcT0ReVu1",
+    "url": "https://jetbrains.team/p/ij/reviews/240001"
+  }
+}

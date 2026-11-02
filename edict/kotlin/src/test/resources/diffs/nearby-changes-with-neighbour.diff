@@ -1,0 +1,20 @@
+--- a/old.kt
++++ b/new.kt
+@@ -7,7 +7,7 @@
+ line 7
+ line 8
+ line 9
+-old 10
++new 10
+ line 11
+ line 12
+ line 13
+@@ -17,7 +17,7 @@
+ line 17
+ line 18
+ line 19
+-old 20
++new 20
+ line 21
+ line 22
+ line 23

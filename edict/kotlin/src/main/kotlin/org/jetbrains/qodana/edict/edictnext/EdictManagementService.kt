@@ -361,7 +361,7 @@ internal class EdictManagementService(
         val token = arguments.requireString("token")
         val status = arguments.requireString("status")
         val tolerateFailedChildren = status == "completed" && store.isPrAnalysisCoordinator(token)
-        if (tolerateFailedChildren) pr.complete(token)
+        if (tolerateFailedChildren) pr.complete()
         store.finishTask(
           token,
           status,
@@ -442,11 +442,9 @@ internal class EdictManagementService(
       required = listOf("token", "batchId"),
       properties = properties("batchId"),
     ) { arguments ->
-      val token = arguments.requireString("token")
-      store.requireSkill(token, setOf("edict-pr-signal-analysis"))
       EdictNextJson.encodeToJsonElement(
         pr.publishValidated(
-          token,
+          arguments.requireString("token"),
           arguments.requireString("batchId"),
         ),
       )
@@ -503,7 +501,6 @@ internal class EdictManagementService(
       ),
     ) { arguments ->
       val input = wireJson.decodeFromJsonElement<ReviewSelectionInput>(JsonObject(arguments - "token"))
-      store.requireSkill(arguments.requireString("token"), setOf("edict-pr-signal-analysis"))
       EdictNextJson.encodeToJsonElement(
         pr.prepareBatch(arguments.requireString("token"), input),
       )

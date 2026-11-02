@@ -1,0 +1,128 @@
+{
+  "exchanges": [
+    {
+      "request": {
+        "method": "GET",
+        "endpoint": "/repos/JetBrains/kotlin/pulls/1393",
+        "query": {}
+      },
+      "response": {
+        "status": 200,
+        "body": {
+          "state": "open",
+          "user": {
+            "login": "LouisCAD",
+            "type": "User"
+          },
+          "labels": [
+            {
+              "name": "Standard Library"
+            }
+          ],
+          "assignee": {
+            "login": "ilya-g",
+            "type": "User"
+          },
+          "assignees": [
+            {
+              "login": "ilya-g",
+              "type": "User"
+            }
+          ],
+          "head": {
+            "user": {
+              "login": "LouisCAD",
+              "type": "User"
+            }
+          },
+          "base": {
+            "repo": {
+              "name": "kotlin",
+              "owner": {
+                "login": "JetBrains",
+                "type": "Organization"
+              }
+            },
+            "user": {
+              "login": "JetBrains",
+              "type": "Organization"
+            }
+          }
+        },
+        "hasNext": false
+      }
+    },
+    {
+      "request": {
+        "method": "GET",
+        "endpoint": "/repos/JetBrains/kotlin/issues/1393/comments",
+        "query": {
+          "per_page": "100",
+          "page": "1"
+        }
+      },
+      "response": {
+        "status": 200,
+        "body": [
+          {
+            "user": {
+              "login": "ilya-g",
+              "type": "User"
+            },
+            "body": "Though it was noted that making `UNINITIALIZED_VALUE` just an instance of `Any` may complicate debugging, because instead of the name of the class `UNINITIALIZED_VALUE@5305068a` you'll get something like `java.lang.Object@5305068a` when evaluating/watching over lazy instance fields.\r\n\r\nThe proposed solution is to introduce internal enum for all such constant-like objects in the standard library."
+          },
+          {
+            "user": {
+              "login": "LouisCAD",
+              "type": "User"
+            },
+            "body": "@ilya-g Could as well be just a `String` wrapper that prints its value in `toString()`, which could be reused in all parts of the stdlib. Cleaner than the enum IMO because the purpose of each object stays where it's used, and not in a god-like place.\r\n  "
+          }
+        ],
+        "hasNext": false
+      }
+    },
+    {
+      "request": {
+        "method": "GET",
+        "endpoint": "/repos/JetBrains/kotlin/pulls/1393/reviews",
+        "query": {
+          "per_page": "100",
+          "page": "1"
+        }
+      },
+      "response": {
+        "status": 200,
+        "body": [
+          {
+            "user": {
+              "login": "ilya-g",
+              "type": "User"
+            },
+            "body": "Historically `UNINITIALIZED_VALUE` was declared as object because Kotlin/JS didn't support instantiation of `Any()`. Now this limitation is gone, so we can rewrite it this way."
+          }
+        ],
+        "hasNext": false
+      }
+    },
+    {
+      "request": {
+        "method": "GET",
+        "endpoint": "/repos/JetBrains/kotlin/pulls/1393/comments",
+        "query": {
+          "per_page": "100",
+          "page": "1"
+        }
+      },
+      "response": {
+        "status": 200,
+        "body": [],
+        "hasNext": false
+      }
+    }
+  ],
+  "result": {
+    "state": "OPEN",
+    "evidence": "Though it was noted that making `UNINITIALIZED_VALUE` just an instance of `Any` may complicate debugging, because instead of the name of the class `UNINITIALIZED_VALUE@5305068a` you'll get something like `java.lang.Object@5305068a` when evaluating/watching over lazy instance fields.\r\n\r\nThe proposed solution is to introduce internal enum for all such constant-like objects in the standard library.\n\n@ilya-g Could as well be just a `String` wrapper that prints its value in `toString()`, which could be reused in all parts of the stdlib. Cleaner than the enum IMO because the purpose of each object stays where it's used, and not in a god-like place.\r\n  \n\nHistorically `UNINITIALIZED_VALUE` was declared as object because Kotlin/JS didn't support instantiation of `Any()`. Now this limitation is gone, so we can rewrite it this way."
+  }
+}

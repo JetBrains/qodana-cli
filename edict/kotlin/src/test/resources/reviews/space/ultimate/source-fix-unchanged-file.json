@@ -1,0 +1,91 @@
+{
+  "exchanges": [
+    {
+      "request": {
+        "method": "GET",
+        "endpoint": "/projects/key:ij/repositories/ultimate/branches/refs%2Fheads%2Fedict%2Fweak-w-cccccccccccccccccccccccc",
+        "query": {}
+      },
+      "response": {
+        "status": 200,
+        "body": null,
+        "hasNext": false
+      }
+    },
+    {
+      "request": {
+        "method": "GET",
+        "endpoint": "/projects/key:ij/repositories/ultimate/branches/refs%2Fheads%2F191",
+        "query": {}
+      },
+      "response": {
+        "status": 200,
+        "body": {
+          "branchInfo": {
+            "ref": "17795949cee5953ee3e18b810af8db74f641dc54"
+          },
+          "lastCommit": {
+            "message": "set majorReleaseDate for RubyMine\n\nSpace-RevId: 0789542778d35e2bc9140e695ff123c67ec53f34",
+            "author": {
+              "name": "Andrey Vokin"
+            },
+            "committer": {
+              "name": "Andrey Vokin"
+            }
+          }
+        },
+        "hasNext": false
+      }
+    },
+    {
+      "request": {
+        "method": "GET",
+        "endpoint": "/projects/key:ij/repositories/ultimate/files",
+        "query": {
+          "commit": "17795949cee5953ee3e18b810af8db74f641dc54",
+          "path": "community/build.txt"
+        }
+      },
+      "response": {
+        "status": 200,
+        "body": [
+          {
+            "path": "community/build.txt",
+            "blob": "ee358d2380f97c7b56130fd5a7a13dc91e55cd66",
+            "type": "FILE",
+            "properties": {
+              "attributes": [
+                {
+                  "name": "text",
+                  "value": "auto",
+                  "state": "Custom"
+                }
+              ]
+            }
+          }
+        ],
+        "hasNext": false
+      }
+    },
+    {
+      "request": {
+        "method": "GET",
+        "endpoint": "/projects/key:ij/repositories/ultimate/content",
+        "query": {
+          "blobId": "ee358d2380f97c7b56130fd5a7a13dc91e55cd66",
+          "skip": "0",
+          "limit": "16777216"
+        }
+      },
+      "response": {
+        "status": 200,
+        "body": {
+          "totalSize": 13,
+          "partBase64": "MTkxLlNOQVBTSE9UCg=="
+        },
+        "hasNext": false
+      }
+    }
+  ],
+  "result": "IllegalArgumentException: Source fix for 'community/build.txt' has no changes"
+}

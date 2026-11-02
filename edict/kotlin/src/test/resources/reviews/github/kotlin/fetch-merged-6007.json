@@ -1,0 +1,355 @@
+{
+  "exchanges": [
+    {
+      "request": {
+        "method": "GET",
+        "endpoint": "/repos/JetBrains/kotlin/pulls/6007",
+        "query": {}
+      },
+      "response": {
+        "status": 200,
+        "body": {
+          "html_url": "https://github.com/JetBrains/kotlin/pull/6007",
+          "number": 6007,
+          "title": "KT-86199 Fix scalability problems with packageFragmentProviderImpl",
+          "user": {
+            "login": "alfonsocvu",
+            "type": "User"
+          },
+          "body": "Fixing a scaling issue with packageFragments when dependencies are over 10k by \r\n\r\n* reducing allocations\r\n* remove linear look ups by grouping the fragments\r\n\r\nWhen profiling an app with over 40k dependencies it when from 32s~ or 9%~ to 8s~ or 2%~\r\n\r\n[details in issue](https://youtrack.jetbrains.com/issue/KT-86199/PackageFragmentProviderImpl-bottleneck)",
+          "merged_at": "2026-09-03T14:08:08Z",
+          "head": {
+            "repo": {
+              "name": "kotlin",
+              "owner": {
+                "login": "alfonsocvu",
+                "type": "User"
+              }
+            },
+            "sha": "9b3ddcfd3b482ebe96600d8d37a5bd802a3e7051",
+            "user": {
+              "login": "alfonsocvu",
+              "type": "User"
+            }
+          },
+          "base": {
+            "repo": {
+              "name": "kotlin",
+              "owner": {
+                "login": "JetBrains",
+                "type": "Organization"
+              }
+            },
+            "sha": "f550b76e8c9d0e703fdc0ec9c2b0a23a4076f082",
+            "user": {
+              "login": "JetBrains",
+              "type": "Organization"
+            }
+          },
+          "merged_by": {
+            "login": "KotlinBuild",
+            "type": "User"
+          }
+        },
+        "hasNext": false
+      }
+    },
+    {
+      "request": {
+        "method": "GET",
+        "endpoint": "/repos/JetBrains/kotlin/pulls/6007/comments",
+        "query": {
+          "per_page": "100",
+          "page": "1"
+        }
+      },
+      "response": {
+        "status": 200,
+        "body": [
+          {
+            "id": 3823024632,
+            "path": "core/descriptors/src/org/jetbrains/kotlin/descriptors/PackageFragmentProviderImpl.kt",
+            "original_commit_id": "144c0844248b8fff0d46b00156f6bcf79b18400a",
+            "user": {
+              "login": "SvyatoslavScherbina",
+              "type": "User"
+            },
+            "body": "Does it affect memory consumption?",
+            "created_at": "2026-08-20T15:34:10Z",
+            "original_start_line": 25,
+            "original_line": 31
+          },
+          {
+            "id": 3898321066,
+            "path": "core/descriptors/src/org/jetbrains/kotlin/descriptors/PackageFragmentProviderImpl.kt",
+            "original_commit_id": "144c0844248b8fff0d46b00156f6bcf79b18400a",
+            "user": {
+              "login": "alfonsocvu",
+              "type": "User"
+            },
+            "body": "Not that much. I just ran a benchmark of the same framework action as the one use for the issue report (10k klib). Here are the results\r\n\r\nA is with this packageFragment patch and B is without.\r\n\r\n```\r\nUsable data from 205/205 runs.\r\n\r\n| Measure              | p50      | p90      | p95      |\r\n|----------------------|----------|----------|----------|\r\n| Action A wall time   |   294.84 |   432.46 |   451.81 |\r\n| Action B wall time   |   431.30 |   669.46 |   747.36 |\r\n| Action A CPU time    |   512.10 |   677.11 |   695.66 |\r\n| Action B CPU time    |   636.70 |   917.02 |  1012.21 |\r\n| Action A peak memory | 17.62GiB | 17.68GiB | 17.70GiB |\r\n| Action B peak memory | 17.19GiB | 17.26GiB | 17.28GiB |\r\n\r\nTotal wall time ratio (B / A): 1.48\r\nTotal CPU time ratio (B / A): 1.28\r\nActions have a significant difference in wall time (p < 0.05).\r\nAction B is slower.\r\n```",
+            "created_at": "2026-08-31T20:58:17Z",
+            "original_start_line": 25,
+            "original_line": 31,
+            "in_reply_to_id": 3823024632
+          },
+          {
+            "id": 3902993904,
+            "path": "core/descriptors/src/org/jetbrains/kotlin/descriptors/PackageFragmentProviderImpl.kt",
+            "original_commit_id": "144c0844248b8fff0d46b00156f6bcf79b18400a",
+            "user": {
+              "login": "SvyatoslavScherbina",
+              "type": "User"
+            },
+            "body": "Formatting: should be `.map { it.fqName }`.",
+            "created_at": "2026-09-01T10:03:13Z",
+            "original_start_line": null,
+            "original_line": 28
+          },
+          {
+            "id": 3903069948,
+            "path": "core/descriptors/src/org/jetbrains/kotlin/descriptors/PackageFragmentProviderImpl.kt",
+            "original_commit_id": "144c0844248b8fff0d46b00156f6bcf79b18400a",
+            "user": {
+              "login": "SvyatoslavScherbina",
+              "type": "User"
+            },
+            "body": "Interesting. What does the action include? Is it only the Objective-C header generation, or something more?",
+            "created_at": "2026-09-01T10:13:12Z",
+            "original_start_line": 25,
+            "original_line": 31,
+            "in_reply_to_id": 3823024632
+          },
+          {
+            "id": 3907088595,
+            "path": "core/descriptors/src/org/jetbrains/kotlin/descriptors/PackageFragmentProviderImpl.kt",
+            "original_commit_id": "144c0844248b8fff0d46b00156f6bcf79b18400a",
+            "user": {
+              "login": "alfonsocvu",
+              "type": "User"
+            },
+            "body": "Nice catch, sorry.",
+            "created_at": "2026-09-01T18:24:43Z",
+            "original_start_line": null,
+            "original_line": 28,
+            "in_reply_to_id": 3902993904
+          },
+          {
+            "id": 3907187494,
+            "path": "core/descriptors/src/org/jetbrains/kotlin/descriptors/PackageFragmentProviderImpl.kt",
+            "original_commit_id": "144c0844248b8fff0d46b00156f6bcf79b18400a",
+            "user": {
+              "login": "alfonsocvu",
+              "type": "User"
+            },
+            "body": "This is the full framework it generates the Objective-C header, stubs and bridges",
+            "created_at": "2026-09-01T18:36:34Z",
+            "original_start_line": 25,
+            "original_line": 31,
+            "in_reply_to_id": 3823024632
+          },
+          {
+            "id": 3913669017,
+            "path": "core/descriptors/src/org/jetbrains/kotlin/descriptors/PackageFragmentProviderImpl.kt",
+            "original_commit_id": "144c0844248b8fff0d46b00156f6bcf79b18400a",
+            "user": {
+              "login": "SvyatoslavScherbina",
+              "type": "User"
+            },
+            "body": "What are the numbers when compiling with `-Xomit-framework-binary`? It basically limits the compilation to generating the header and skips the rest.",
+            "created_at": "2026-09-02T11:38:50Z",
+            "original_start_line": 25,
+            "original_line": 31,
+            "in_reply_to_id": 3823024632
+          },
+          {
+            "id": 3919386757,
+            "path": "core/descriptors/src/org/jetbrains/kotlin/descriptors/PackageFragmentProviderImpl.kt",
+            "original_commit_id": "144c0844248b8fff0d46b00156f6bcf79b18400a",
+            "user": {
+              "login": "alfonsocvu",
+              "type": "User"
+            },
+            "body": "Here you go. This is only the `FremeworkHeaderOnly`\r\n\r\nA is with this packageFragment patch and B is without.\r\n\r\n```\r\nUsable data from 205/205 runs.\r\n\r\n| Measure              | p50     | p90     | p95     |\r\n|----------------------|---------|---------|---------|\r\n| Action A wall time   |   65.44 |   73.24 |   75.62 |\r\n| Action B wall time   |   87.64 |  102.25 |  125.46 |\r\n| Action A CPU time    |  102.35 |  118.24 |  121.70 |\r\n| Action B CPU time    |  135.60 |  156.19 |  182.90 |\r\n| Action A peak memory | 4.51GiB | 4.53GiB | 4.53GiB |\r\n| Action B peak memory | 4.45GiB | 4.51GiB | 4.52GiB |\r\n\r\nTotal wall time ratio (B / A): 1.39\r\nTotal CPU time ratio (B / A): 1.33\r\nActions have a significant difference in wall time (p < 0.05).\r\nAction B is slower.\r\n```",
+            "created_at": "2026-09-02T22:49:00Z",
+            "original_start_line": 25,
+            "original_line": 31,
+            "in_reply_to_id": 3823024632
+          },
+          {
+            "id": 3922682837,
+            "path": "core/descriptors/src/org/jetbrains/kotlin/descriptors/PackageFragmentProviderImpl.kt",
+            "original_commit_id": "144c0844248b8fff0d46b00156f6bcf79b18400a",
+            "user": {
+              "login": "SvyatoslavScherbina",
+              "type": "User"
+            },
+            "body": "Ok, seems reasonable, thanks!",
+            "created_at": "2026-09-03T08:40:19Z",
+            "original_start_line": 25,
+            "original_line": 31,
+            "in_reply_to_id": 3823024632
+          }
+        ],
+        "hasNext": false
+      }
+    },
+    {
+      "request": {
+        "method": "GET",
+        "endpoint": "/repos/JetBrains/kotlin/pulls/6007/reviews",
+        "query": {
+          "per_page": "100",
+          "page": "1"
+        }
+      },
+      "response": {
+        "status": 200,
+        "body": [
+          {
+            "user": {
+              "login": "SvyatoslavScherbina",
+              "type": "User"
+            }
+          },
+          {
+            "user": {
+              "login": "alfonsocvu",
+              "type": "User"
+            }
+          },
+          {
+            "user": {
+              "login": "SvyatoslavScherbina",
+              "type": "User"
+            }
+          },
+          {
+            "user": {
+              "login": "alfonsocvu",
+              "type": "User"
+            }
+          },
+          {
+            "user": {
+              "login": "alfonsocvu",
+              "type": "User"
+            }
+          },
+          {
+            "user": {
+              "login": "SvyatoslavScherbina",
+              "type": "User"
+            }
+          },
+          {
+            "user": {
+              "login": "alfonsocvu",
+              "type": "User"
+            }
+          },
+          {
+            "user": {
+              "login": "SvyatoslavScherbina",
+              "type": "User"
+            }
+          },
+          {
+            "user": {
+              "login": "SvyatoslavScherbina",
+              "type": "User"
+            }
+          },
+          {
+            "user": {
+              "login": "ligee",
+              "type": "User"
+            }
+          }
+        ],
+        "hasNext": false
+      }
+    }
+  ],
+  "result": {
+    "pullRequests": [
+      {
+        "number": 6007,
+        "url": "https://github.com/JetBrains/kotlin/pull/6007",
+        "title": "KT-86199 Fix scalability problems with packageFragmentProviderImpl",
+        "body": "Fixing a scaling issue with packageFragments when dependencies are over 10k by \r\n\r\n* reducing allocations\r\n* remove linear look ups by grouping the fragments\r\n\r\nWhen profiling an app with over 40k dependencies it when from 32s~ or 9%~ to 8s~ or 2%~\r\n\r\n[details in issue](https://youtrack.jetbrains.com/issue/KT-86199/PackageFragmentProviderImpl-bottleneck)",
+        "baseRevision": "f550b76e8c9d0e703fdc0ec9c2b0a23a4076f082",
+        "headRevision": "9b3ddcfd3b482ebe96600d8d37a5bd802a3e7051",
+        "closeTimestamp": 1788444488000,
+        "threads": [
+          {
+            "threadId": "github-6007-3823024632",
+            "reviewDiscussionUrl": "https://github.com/JetBrains/kotlin/pull/6007#discussion_r3823024632",
+            "filePath": "core/descriptors/src/org/jetbrains/kotlin/descriptors/PackageFragmentProviderImpl.kt",
+            "originalCommitSha": "144c0844248b8fff0d46b00156f6bcf79b18400a",
+            "anchorLine": 25,
+            "anchorEndLine": 31,
+            "messages": [
+              {
+                "author": "SvyatoslavScherbina",
+                "body": "Does it affect memory consumption?",
+                "createdAt": "2026-08-20T15:34:10Z"
+              },
+              {
+                "author": "alfonsocvu",
+                "body": "Not that much. I just ran a benchmark of the same framework action as the one use for the issue report (10k klib). Here are the results\r\n\r\nA is with this packageFragment patch and B is without.\r\n\r\n```\r\nUsable data from 205/205 runs.\r\n\r\n| Measure              | p50      | p90      | p95      |\r\n|----------------------|----------|----------|----------|\r\n| Action A wall time   |   294.84 |   432.46 |   451.81 |\r\n| Action B wall time   |   431.30 |   669.46 |   747.36 |\r\n| Action A CPU time    |   512.10 |   677.11 |   695.66 |\r\n| Action B CPU time    |   636.70 |   917.02 |  1012.21 |\r\n| Action A peak memory | 17.62GiB | 17.68GiB | 17.70GiB |\r\n| Action B peak memory | 17.19GiB | 17.26GiB | 17.28GiB |\r\n\r\nTotal wall time ratio (B / A): 1.48\r\nTotal CPU time ratio (B / A): 1.28\r\nActions have a significant difference in wall time (p < 0.05).\r\nAction B is slower.\r\n```",
+                "createdAt": "2026-08-31T20:58:17Z"
+              },
+              {
+                "author": "SvyatoslavScherbina",
+                "body": "Interesting. What does the action include? Is it only the Objective-C header generation, or something more?",
+                "createdAt": "2026-09-01T10:13:12Z"
+              },
+              {
+                "author": "alfonsocvu",
+                "body": "This is the full framework it generates the Objective-C header, stubs and bridges",
+                "createdAt": "2026-09-01T18:36:34Z"
+              },
+              {
+                "author": "SvyatoslavScherbina",
+                "body": "What are the numbers when compiling with `-Xomit-framework-binary`? It basically limits the compilation to generating the header and skips the rest.",
+                "createdAt": "2026-09-02T11:38:50Z"
+              },
+              {
+                "author": "alfonsocvu",
+                "body": "Here you go. This is only the `FremeworkHeaderOnly`\r\n\r\nA is with this packageFragment patch and B is without.\r\n\r\n```\r\nUsable data from 205/205 runs.\r\n\r\n| Measure              | p50     | p90     | p95     |\r\n|----------------------|---------|---------|---------|\r\n| Action A wall time   |   65.44 |   73.24 |   75.62 |\r\n| Action B wall time   |   87.64 |  102.25 |  125.46 |\r\n| Action A CPU time    |  102.35 |  118.24 |  121.70 |\r\n| Action B CPU time    |  135.60 |  156.19 |  182.90 |\r\n| Action A peak memory | 4.51GiB | 4.53GiB | 4.53GiB |\r\n| Action B peak memory | 4.45GiB | 4.51GiB | 4.52GiB |\r\n\r\nTotal wall time ratio (B / A): 1.39\r\nTotal CPU time ratio (B / A): 1.33\r\nActions have a significant difference in wall time (p < 0.05).\r\nAction B is slower.\r\n```",
+                "createdAt": "2026-09-02T22:49:00Z"
+              },
+              {
+                "author": "SvyatoslavScherbina",
+                "body": "Ok, seems reasonable, thanks!",
+                "createdAt": "2026-09-03T08:40:19Z"
+              }
+            ]
+          },
+          {
+            "threadId": "github-6007-3902993904",
+            "reviewDiscussionUrl": "https://github.com/JetBrains/kotlin/pull/6007#discussion_r3902993904",
+            "filePath": "core/descriptors/src/org/jetbrains/kotlin/descriptors/PackageFragmentProviderImpl.kt",
+            "originalCommitSha": "144c0844248b8fff0d46b00156f6bcf79b18400a",
+            "anchorLine": 28,
+            "anchorEndLine": 28,
+            "messages": [
+              {
+                "author": "SvyatoslavScherbina",
+                "body": "Formatting: should be `.map { it.fqName }`.",
+                "createdAt": "2026-09-01T10:03:13Z"
+              },
+              {
+                "author": "alfonsocvu",
+                "body": "Nice catch, sorry.",
+                "createdAt": "2026-09-01T18:24:43Z"
+              }
+            ]
+          }
+        ]
+      }
+    ],
+    "problems": []
+  }
+}

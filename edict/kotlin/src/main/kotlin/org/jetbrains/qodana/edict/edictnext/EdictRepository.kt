@@ -405,18 +405,6 @@ internal class EdictRepository(val paths: EdictRepositoryDirectory) {
       "Generated inspection for '$clusterId' changed while promotion was being created"
     }
     validatePromotion(promotion)
-    cluster.manifest.promotions.firstOrNull { it.id == promotion.id }?.let { existing ->
-      require(existing == promotion) { "Promotion id '${promotion.id}' already identifies a different promotion" }
-      return existing
-    }
-    require(cluster.manifest.promotions.none {
-      it.inspectionDigest == promotion.inspectionDigest &&
-              it.targetBranch == promotion.targetBranch &&
-              it.targetPath == promotion.targetPath &&
-              it.pullRequest.provider == promotion.pullRequest.provider &&
-              it.pullRequest.owner == promotion.pullRequest.owner &&
-              it.pullRequest.repository == promotion.pullRequest.repository
-    }) { "This inspection version has already been promoted to the configured target" }
     writeAtomically(
       cluster.directory.manifestPath,
       cluster.manifest.copy(promotions = cluster.manifest.promotions + promotion),

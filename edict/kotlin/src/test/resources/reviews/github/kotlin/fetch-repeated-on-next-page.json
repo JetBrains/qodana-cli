@@ -1,0 +1,162 @@
+{
+  "exchanges": [
+    {
+      "request": {
+        "method": "GET",
+        "endpoint": "/repos/JetBrains/kotlin/pulls",
+        "query": {
+          "state": "closed",
+          "sort": "updated",
+          "direction": "desc",
+          "per_page": "100",
+          "page": "1"
+        }
+      },
+      "response": {
+        "status": 200,
+        "body": [
+          {
+            "number": 9413,
+            "merged_at": "2026-10-31T00:07:35Z",
+            "updated_at": "2026-10-31T00:07:38Z"
+          }
+        ],
+        "hasNext": true
+      }
+    },
+    {
+      "request": {
+        "method": "GET",
+        "endpoint": "/repos/JetBrains/kotlin/pulls",
+        "query": {
+          "state": "closed",
+          "sort": "updated",
+          "direction": "desc",
+          "per_page": "100",
+          "page": "2"
+        }
+      },
+      "response": {
+        "status": 200,
+        "body": [
+          {
+            "number": 9413,
+            "updated_at": "2026-10-31T00:07:38Z"
+          },
+          {
+            "number": 9173,
+            "updated_at": "2026-10-30T22:16:51Z"
+          }
+        ],
+        "hasNext": false
+      }
+    },
+    {
+      "request": {
+        "method": "GET",
+        "endpoint": "/repos/JetBrains/kotlin/pulls/9413",
+        "query": {}
+      },
+      "response": {
+        "status": 200,
+        "body": {
+          "html_url": "https://github.com/JetBrains/kotlin/pull/9413",
+          "number": 9413,
+          "title": "KT-88617 [Analysis API] Adjust return type of `KaTypeCreator.capturedType`",
+          "user": {
+            "login": "BlaBlaHuman",
+            "type": "User"
+          },
+          "merged_at": "2026-10-31T00:07:35Z",
+          "head": {
+            "repo": {
+              "name": "kotlin",
+              "owner": {
+                "login": "JetBrains",
+                "type": "Organization"
+              }
+            },
+            "sha": "27ff017ae49d78b6b6d18bf70654ceb3e3b27e8e",
+            "user": {
+              "login": "JetBrains",
+              "type": "Organization"
+            }
+          },
+          "base": {
+            "repo": {
+              "name": "kotlin",
+              "owner": {
+                "login": "JetBrains",
+                "type": "Organization"
+              }
+            },
+            "sha": "d9b08aa7eab8d19d3d6f7d3d31c0fa49898e8194",
+            "user": {
+              "login": "JetBrains",
+              "type": "Organization"
+            }
+          },
+          "merged_by": {
+            "login": "KotlinBuild",
+            "type": "User"
+          }
+        },
+        "hasNext": false
+      }
+    },
+    {
+      "request": {
+        "method": "GET",
+        "endpoint": "/repos/JetBrains/kotlin/pulls/9413/comments",
+        "query": {
+          "per_page": "100",
+          "page": "1"
+        }
+      },
+      "response": {
+        "status": 200,
+        "body": [],
+        "hasNext": false
+      }
+    },
+    {
+      "request": {
+        "method": "GET",
+        "endpoint": "/repos/JetBrains/kotlin/pulls/9413/reviews",
+        "query": {
+          "per_page": "100",
+          "page": "1"
+        }
+      },
+      "response": {
+        "status": 200,
+        "body": [
+          {
+            "user": {
+              "login": "dimonchik0036",
+              "type": "User"
+            }
+          }
+        ],
+        "hasNext": false
+      }
+    }
+  ],
+  "result": {
+    "pullRequests": [
+      {
+        "number": 9413,
+        "url": "https://github.com/JetBrains/kotlin/pull/9413",
+        "title": "KT-88617 [Analysis API] Adjust return type of `KaTypeCreator.capturedType`",
+        "body": "",
+        "baseRevision": "d9b08aa7eab8d19d3d6f7d3d31c0fa49898e8194",
+        "headRevision": "27ff017ae49d78b6b6d18bf70654ceb3e3b27e8e",
+        "closeTimestamp": 1793405255000,
+        "threads": []
+      }
+    ],
+    "problems": [
+      "GitHub PR discovery page 2 item[0]: invalid or repeated PR number"
+    ]
+  }
+}

@@ -52,8 +52,8 @@ fun main(args: Array<String>) {
                 val qodanaYaml = options["qodana-yaml"]?.let(Path::of)?.toAbsolutePath()?.normalize()
                     ?: EdictLayout.findQodanaYaml()
                 val configuration = EdictYamlConfiguration.load(qodanaYaml)
-                val ciReviews = configuration.ci?.let(::getReviewAPI)
-                val promotionReviews = configuration.promotionRepository?.let(::getReviewAPI)
+                val ciReviews = configuration.ci?.let { getReviewAPI(it, configuration.bots) }
+                val promotionReviews = configuration.promotionRepository?.let { getReviewAPI(it, configuration.bots) }
                 val layout = EdictLayout.get(configuration.statePath)
                 val portConfig = EdictConfig(configuration.mcpPort).also { CodexSetup.requireInstalled(layout, it) }
                 val port = portConfig.mcpPort

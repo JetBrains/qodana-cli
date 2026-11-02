@@ -1,7 +1,7 @@
 package org.jetbrains.qodana.edict.support
 
+import org.jetbrains.qodana.edict.edictnext.TokenRedactor
 import kotlinx.serialization.json.JsonObject
-import org.jetbrains.qodana.edict.ci.ReviewClient
 import org.jetbrains.qodana.edict.common.EdictConfiguration
 import org.jetbrains.qodana.edict.common.EdictLayout
 import org.jetbrains.qodana.edict.edictnext.EdictManagementService
@@ -25,14 +25,17 @@ internal class EdictNextTestTools(
   layout: EdictLayout = EdictLayout(store.root.parent, store.root),
   taskOutput: PrintWriter = PrintWriter(System.err, true),
 ) {
-  private val management = EdictManagementService(store, layout, taskOutput = taskOutput)
-  init {
-    // Registering the toolset fills the management tool table that call() uses; the IDE never starts.
-    edictNextToolset(layout, management).createServer()
-  }
+  private val management = EdictManagementService(store, layout, taskOutput).withTools(layout)
 
   fun call(name: String, arguments: JsonObject): JsonObject = management.call(name, arguments)
 }
+
+/**
+ * This service with its tool table filled, as the MCP server over [layout] serves it: registering the toolset fills the
+ * table that `call` uses, and the IDE never starts.
+ */
+internal fun EdictManagementService.withTools(layout: EdictLayout): EdictManagementService =
+  also { edictNextToolset(layout, it).createServer() }
 
 /** The toolset `EdictServer` wires for a run over [layout], creating the state directory its repository requires. */
 internal fun edictNextToolset(
@@ -54,8 +57,11 @@ internal fun edictNextToolset(
       configuration.generation.defaultGenerationCount,
     ),
     EdictNextEnrichmentMcpToolset(management, EdictNextEnrichmentService(repository, layout.root)),
-    EdictSourceFileService(layout.root, ReviewClient(), configuration.ci?.reviewRepository),
+    EdictSourceFileService(layout.root, null),
     configuration,
-    promotion ?: PromotionService({ repository }, configuration),
+    promotion ?: PromotionService(repository, configuration, null, NoRedaction),
   )
 }
+
+/** Redacts nothing, for services whose test text holds no issued tokens. */
+internal val NoRedaction = TokenRedactor { it }

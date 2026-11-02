@@ -28,7 +28,6 @@ import org.jetbrains.qodana.edict.ci.ReviewStatus
 import org.jetbrains.qodana.edict.ci.ReviewThread
 import org.jetbrains.qodana.edict.ci.MergedReview
 import org.jetbrains.qodana.edict.ci.ReviewFileChange
-import org.jetbrains.qodana.edict.ci.isBot
 import org.jetbrains.qodana.edict.ci.urlPart
 import org.jetbrains.qodana.edict.signals.validRevision
 import org.jetbrains.qodana.edict.signals.validSourcePath
@@ -43,16 +42,16 @@ import java.time.ZoneOffset
 import java.util.Base64
 
 /** The client of [repository], with `GITHUB_TOKEN` (or `GH_TOKEN`) from the server environment. */
-internal fun gitHubReviewApi(repository: ReviewRepository): GitHubReviewApi {
+internal fun gitHubReviewApi(repository: ReviewRepository, bots: Set<String>): GitHubReviewApi {
   // Pull requests link to github.com, so reviews under another host would never be owned.
   require(repository.host != "www.github.com") { "Name the repository as https://github.com/<owner>/<repository>, without www" }
   val token = System.getenv("GITHUB_TOKEN")?.takeIf(String::isNotBlank) ?: System.getenv("GH_TOKEN")
   require(!token.isNullOrBlank()) { "${repository.label()} requires GITHUB_TOKEN or GH_TOKEN in the server environment" }
-  return GitHubReviewApi(repository, DefaultCiHttpTransport(CiProviderId.GITHUB, apiUrl(repository.host), token))
+  return GitHubReviewApi(repository, DefaultCiHttpTransport(CiProviderId.GITHUB, gitHubApiUrl(repository.host), token), bots)
 }
 
 /** The API of github.com, of GitHub Enterprise Cloud (`<sub>.ghe.com`) or, on any other host, of GitHub Enterprise Server. */
-private fun apiUrl(host: String): String = when {
+internal fun gitHubApiUrl(host: String): String = when {
   host == "github.com" -> "https://api.github.com"
   host.endsWith(".ghe.com") -> "https://api.$host"
   else -> "https://$host/api/v3"
@@ -61,6 +60,8 @@ private fun apiUrl(host: String): String = when {
 internal class GitHubReviewApi(
   override val repository: ReviewRepository,
   private val http: CiHttpTransport,
+  /** The logins, in any case, of accounts that post as users but are bots, such as a build server's. */
+  private val bots: Set<String>,
 ) : ReviewApi {
   // TODO(R11): discovery pages and PR reads append to `numbers` and `problems` from nested loops; map each page and PR
   //  to its result (numbers or reviews, plus its own problems) and combine them at the end.
@@ -153,27 +154,22 @@ internal class GitHubReviewApi(
     val threads = comments.groupBy { it.number("in_reply_to_id").takeIf { id -> id > 0 } ?: it.number("id") }
       .mapNotNull { (commentId, group) ->
         val anchor = byId[commentId] ?: error("Missing root comment $commentId")
-        // TODO: file-level comments (`subject_type: file`) have no line, so the anchor becomes 0 and fetch normalization
-        //  rejects the whole batch; skip or anchor them instead.
-        val line = anchor.number("original_line").takeIf { it > 0 } ?: anchor.number("line")
-        val startLine = anchor.number("original_start_line").takeIf { it > 0 }
-          ?: anchor.number("start_line").takeIf { it > 0 }
-          ?: line
+        val lines = anchor.anchorLines()
         val messages = reviews.filter {
           it.number("id") == anchor.number("pull_request_review_id") && it.text("body").isNotBlank()
         }
-          .filterNot { isBot(it.obj("user").text("login"), it.obj("user").text("type")) }
+          .filterNot { it.isBot() }
           .map { ReviewMessage(it.obj("user").text("login"), it.text("body"), it.text("submitted_at")) } +
           group.sortedWith(compareBy({ it.text("created_at") }, { it.number("id") }))
-            .filterNot { isBot(it.obj("user").text("login"), it.obj("user").text("type")) }
+            .filterNot { it.isBot() }
             .map { ReviewMessage(it.obj("user").text("login"), it.text("body"), it.text("created_at")) }
         if (messages.isEmpty()) null else ReviewThread(
           "github-$number-$commentId",
           "${pullRequest.url}#discussion_r$commentId",
           anchor.text("path"),
           anchor.text("original_commit_id"),
-          startLine.toInt(),
-          line.toInt(),
+          lines?.first,
+          lines?.last,
           messages,
         )
       }.sortedWith(compareBy({ it.messages.first().createdAt }, { it.threadId }))
@@ -192,8 +188,9 @@ internal class GitHubReviewApi(
       "${repositoryEndpoint()}/contents/${path.split('/').joinToString("/", transform = ::urlPart)}",
       mapOf("ref" to revision),
     )
-    if (response.status == 404) throw NoSuchFileException(path)
-    val value = expectObject(response, 200)
+    // GitHub answers "Not Found" for a missing path, and names the ref when the revision doesn't exist.
+    if (response.status == 404 && response.message() == "Not Found") throw NoSuchFileException(path)
+    val value = expectObject(response, "GitHub file read", 200)
     require(value.text("type") == "file" && value.text("encoding") == "base64") {
       "GitHub did not return complete base64 file content"
     }
@@ -206,7 +203,7 @@ internal class GitHubReviewApi(
 
   override fun resolveTargetBranch(configured: String?): String {
     if (configured != null) return configured
-    return expectObject(http.send("GET", repositoryEndpoint()), 200)
+    return expectObject(http.send("GET", repositoryEndpoint()), "GitHub repository read", 200)
       .text("default_branch")
       .also { require(it.isNotBlank()) { "GitHub repository has no default branch" } }
   }
@@ -217,25 +214,28 @@ internal class GitHubReviewApi(
     if (request.sourceFix != null) ensureSourceFixBranch(request, branch)
     else ensureInspectionBranch(request, branch)
 
+    // TODO: `state=all` can return a closed or merged PR (an interrupted inspection promotion, or weak-signal fixes
+    //  re-published with the same content), which is then reused and gets a reviewer request; GitHub may answer 422.
+    //  Decide whether to reuse only open PRs, or at least skip the reviewer request on one that isn't open.
     val found = http.send(
       "GET",
       "$root/pulls",
       mapOf("state" to "all", "head" to "${repository.owner}:$branch", "base" to request.targetBranch),
     )
-    require(found.status == 200) { "GitHub pull-request lookup returned HTTP ${found.status}" }
+    expectStatus(found, "GitHub pull-request lookup", 200)
     val existing = found.body.jsonArray.firstOrNull()?.jsonObject
     val pullRequest = existing ?: expectObject(http.send("POST", "$root/pulls", body = buildJsonObject {
       put("title", request.title)
       put("head", branch)
       put("base", request.targetBranch)
       put("body", request.description)
-    }), 201)
+    }), "GitHub pull-request creation", 201)
     val number = pullRequest["number"]?.jsonPrimitive?.content.orEmpty()
     require(number.toLongOrNull()?.let { it > 0 } == true) { "GitHub pull request has no number" }
     val reviewer = http.send("POST", "$root/pulls/$number/requested_reviewers", body = buildJsonObject {
       put("reviewers", JsonArray(listOf(JsonPrimitive(request.reviewer))))
     })
-    require(reviewer.status in setOf(200, 201, 422)) { "GitHub reviewer assignment returned HTTP ${reviewer.status}" }
+    expectStatus(reviewer, "GitHub reviewer assignment", 200, 201)
     return repository.reference(number, pullRequest.text("html_url"))
   }
 
@@ -244,8 +244,7 @@ internal class GitHubReviewApi(
     val branchRef = http.send("GET", "$root/git/ref/heads/${urlPart(branch)}")
     if (branchRef.status == 404) {
       val base = expectObject(
-        http.send("GET", "$root/git/ref/heads/${urlPart(request.targetBranch)}"),
-        200,
+        http.send("GET", "$root/git/ref/heads/${urlPart(request.targetBranch)}"), "GitHub target branch lookup", 200,
       )
       val sha = base["object"]?.jsonObject?.text("sha").orEmpty()
       require(sha.isNotBlank()) { "GitHub target branch has no head revision" }
@@ -253,9 +252,9 @@ internal class GitHubReviewApi(
         put("ref", "refs/heads/$branch")
         put("sha", sha)
       })
-      require(created.status in setOf(201, 422)) { "GitHub branch creation returned HTTP ${created.status}" }
+      expectStatus(created, "GitHub branch creation", 201)
     }
-    else require(branchRef.status == 200) { "GitHub branch lookup returned HTTP ${branchRef.status}" }
+    else expectStatus(branchRef, "GitHub branch lookup", 200)
 
     val contentEndpoint = "$root/contents/${request.targetPath.split('/').joinToString("/", transform = ::urlPart)}"
     val current = http.send("GET", contentEndpoint, mapOf("ref" to branch))
@@ -264,10 +263,9 @@ internal class GitHubReviewApi(
     if (current.status == 200) {
       val value = current.body.jsonObject
       currentSha = value.text("sha")
-      val encoded = value.text("content").replace("\n", "").replace("\r", "")
-      if (encoded.isNotBlank()) currentDigest = sha256(Base64.getDecoder().decode(encoded))
+      currentDigest = sha256(Base64.getDecoder().decode(value.text("content").replace("\n", "").replace("\r", "")))
     }
-    else require(current.status == 404) { "GitHub target file lookup returned HTTP ${current.status}" }
+    else expectStatus(current, "GitHub target file lookup", 404)
     if (currentDigest != request.inspectionDigest) {
       val response = http.send("PUT", contentEndpoint, body = buildJsonObject {
         put("message", request.title)
@@ -275,7 +273,7 @@ internal class GitHubReviewApi(
         put("branch", branch)
         if (currentSha.isNotBlank()) put("sha", currentSha)
       })
-      require(response.status in setOf(200, 201)) { "GitHub inspection commit returned HTTP ${response.status}" }
+      expectStatus(response, "GitHub inspection commit", 200, 201)
     }
   }
 
@@ -291,12 +289,12 @@ internal class GitHubReviewApi(
       }
       return
     }
-    require(existing.status == 404) { "GitHub branch lookup returned HTTP ${existing.status}" }
-    expectObject(http.send("GET", "$root/git/ref/heads/${urlPart(request.targetBranch)}"), 200)
+    expectStatus(existing, "GitHub branch lookup", 404)
+    expectObject(http.send("GET", "$root/git/ref/heads/${urlPart(request.targetBranch)}"), "GitHub target branch lookup", 200)
     changes.files.forEach { (path, content) ->
       require(readFile(changes.baseRevision, path) != content) { "Source fix for '$path' has no changes" }
     }
-    val commit = expectObject(http.send("GET", "$root/git/commits/${changes.baseRevision}"), 200)
+    val commit = expectObject(http.send("GET", "$root/git/commits/${changes.baseRevision}"), "GitHub commit read", 200)
     val treeSha = commit.obj("tree").text("sha")
     val trees = mutableMapOf<String, JsonArray>()
     val modes = changes.files.keys.associateWith { fileMode(treeSha, it, trees) }
@@ -310,16 +308,16 @@ internal class GitHubReviewApi(
           put("content", content)
         }) }
       })
-    }), 201)
+    }), "GitHub tree creation", 201)
     val created = expectObject(http.send("POST", "$root/git/commits", body = buildJsonObject {
       put("message", request.title)
       put("tree", tree.text("sha"))
       put("parents", buildJsonArray { add(changes.baseRevision) })
-    }), 201)
+    }), "GitHub commit creation", 201)
     expectObject(http.send("POST", "$root/git/refs", body = buildJsonObject {
       put("ref", "refs/heads/$branch")
       put("sha", created.text("sha"))
-    }), 201)
+    }), "GitHub branch creation", 201)
   }
 
   /** The mode of the regular file at [path] in tree [treeSha], reading each tree once through [trees]. */
@@ -328,7 +326,8 @@ internal class GitHubReviewApi(
     val parts = path.split('/')
     for ((index, part) in parts.withIndex()) {
       val entries = trees.getOrPut(currentTree) {
-        expectObject(http.send("GET", "${repositoryEndpoint()}/git/trees/$currentTree"), 200).getValue("tree").jsonArray
+        expectObject(http.send("GET", "${repositoryEndpoint()}/git/trees/$currentTree"), "GitHub tree read", 200)
+          .getValue("tree").jsonArray
       }
       val entry = entries.singleOrNull { it.jsonObject.text("path") == part }?.jsonObject
         ?: error("Source fix path '$path' does not exist in the target tree")
@@ -351,7 +350,7 @@ internal class GitHubReviewApi(
   override fun mergedReview(reference: ReviewReference): MergedReview {
     repository.requireOwns(reference)
     val root = repositoryEndpoint()
-    val pull = expectObject(http.send("GET", "$root/pulls/${urlPart(reference.id)}"), 200)
+    val pull = expectObject(http.send("GET", "$root/pulls/${urlPart(reference.id)}"), "GitHub pull-request read", 200)
     require(pull.text("merged_at").isNotBlank()) { "Review has not merged" }
     val merged = pull.text("merge_commit_sha")
     require(validRevision(merged)) { "Review has no exact merge revision" }
@@ -379,7 +378,7 @@ internal class GitHubReviewApi(
     }
     val messages = listOf("$root/issues/${urlPart(reference.id)}/comments", "$root/pulls/${urlPart(reference.id)}/reviews",
       "$root/pulls/${urlPart(reference.id)}/comments").flatMap(::pages)
-      .filterNot { isBot(it.obj("user").text("login"), it.obj("user").text("type")) }
+      .filterNot { it.isBot() }
       .mapNotNull { it.text("body").takeIf(String::isNotBlank) }
     return MergedReview(pull.text("title"), messages, before, merged, changes)
   }
@@ -387,7 +386,7 @@ internal class GitHubReviewApi(
   private fun readReview(reference: ReviewReference, includeEvidence: Boolean): ReviewStatus {
     repository.requireOwns(reference)
     val root = repositoryEndpoint()
-    val pull = expectObject(http.send("GET", "$root/pulls/${urlPart(reference.id)}"), 200)
+    val pull = expectObject(http.send("GET", "$root/pulls/${urlPart(reference.id)}"), "GitHub pull-request read", 200)
     val state = when {
       pull.text("merged_at").isNotBlank() -> ReviewState.MERGED
       pull.text("state") == "open" -> ReviewState.OPEN
@@ -398,9 +397,14 @@ internal class GitHubReviewApi(
       "$root/issues/${urlPart(reference.id)}/comments", "$root/pulls/${urlPart(reference.id)}/reviews", "$root/pulls/${urlPart(reference.id)}/comments",
     )
     val messages = endpoints.flatMap(::pages)
-      .filterNot { isBot(it.obj("user").text("login"), it.obj("user").text("type")) }
+      .filterNot { it.isBot() }
       .mapNotNull { it.text("body").takeIf(String::isNotBlank) }
     return ReviewStatus(state, messages.joinToString("\n\n"))
+  }
+
+  /** Whether a bot wrote this comment or review: an app, which GitHub marks as `Bot`, or one of [bots]. */
+  private fun JsonObject.isBot(): Boolean = obj("user").let { user ->
+    user.text("type") == "Bot" || bots.any { it.equals(user.text("login"), ignoreCase = true) }
   }
 
   private fun pages(endpoint: String): List<JsonObject> {
@@ -416,17 +420,21 @@ internal class GitHubReviewApi(
   }
 
   private fun get(endpoint: String, query: Map<String, String> = emptyMap()): CiHttpResponse =
-    http.send("GET", endpoint, query).also { response ->
-      if (response.status == 404) throw NoSuchFileException("github source")
-      check(response.status == 200) { "github API returned HTTP ${response.status}" }
-    }
+    http.send("GET", endpoint, query).also { expectStatus(it, "GitHub read of $endpoint", 200) }
 
   private fun repositoryEndpoint(): String =
     "/repos/${urlPart(repository.owner)}/${urlPart(repository.repository)}"
 
-  private fun expectObject(response: CiHttpResponse, vararg expected: Int): JsonObject {
-    require(response.status in expected.toSet()) { "GitHub API returned HTTP ${response.status}" }
-    return response.body as? JsonObject ?: error("GitHub API did not return an object")
+  private fun expectObject(response: CiHttpResponse, operation: String, vararg expected: Int): JsonObject {
+    expectStatus(response, operation, *expected)
+    return response.body as? JsonObject ?: error("$operation did not return an object")
+  }
+
+  private fun expectStatus(response: CiHttpResponse, operation: String, vararg expected: Int) {
+    require(response.status in expected.toSet()) {
+      val detail = response.message().take(1000).takeIf(String::isNotBlank)?.let { ": $it" }.orEmpty()
+      "$operation returned HTTP ${response.status}$detail"
+    }
   }
 
   private companion object {
@@ -434,3 +442,17 @@ internal class GitHubReviewApi(
     const val MAX_PAGES = 1000
   }
 }
+
+/**
+ * The lines the thread of this review comment is anchored to, where GitHub has lines; null for a comment on the whole
+ * file, which GitHub places on line 1.
+ */
+private fun JsonObject.anchorLines(): IntRange? {
+  if (text("subject_type") == "file") return null
+  val line = number("original_line").takeIf { it > 0 } ?: number("line")
+  val start = number("original_start_line").takeIf { it > 0 } ?: number("start_line").takeIf { it > 0 } ?: line
+  return start.toInt()..line.toInt()
+}
+
+/** The error message GitHub answered with; empty when there is none. */
+private fun CiHttpResponse.message(): String = (body as? JsonObject)?.text("message").orEmpty()

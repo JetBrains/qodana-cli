@@ -1,0 +1,957 @@
+{
+  "exchanges": [
+    {
+      "request": {
+        "method": "GET",
+        "endpoint": "/projects/key:ij/code-reviews/number:231618",
+        "query": {
+          "$fields": "id,number,state,timestamp,title,description,feedChannelId,branchPair(repository,isMerged,sourceBranchRef,targetBranchInfo(ref))"
+        }
+      },
+      "response": {
+        "status": 200,
+        "body": {
+          "className": "MergeRequestRecord",
+          "id": "FbzNi2BCnKK",
+          "number": 231618,
+          "title": "hjwylde/review/ruby-35347-remove-gem-tests",
+          "state": "Closed",
+          "timestamp": 1793159322533,
+          "feedChannelId": "3BJIK1vWEmh",
+          "branchPair": {
+            "repository": "ultimate",
+            "sourceBranchRef": "2772c6c2828b6158b0a412f213e0de42b5ea4ed6",
+            "targetBranchInfo": {
+              "ref": "216997be332854eece3adeb41137240d5f4562cc"
+            },
+            "isMerged": true
+          }
+        },
+        "hasNext": false
+      }
+    },
+    {
+      "request": {
+        "method": "GET",
+        "endpoint": "/chats/messages/sync-batch",
+        "query": {
+          "channel": "id:3BJIK1vWEmh",
+          "batchInfo": "{etag:0,batchSize:100}",
+          "$fields": "data(chatMessage(id,text,author(name,details(className)),details(className,codeDiscussion(channel(id),anchor(filename,line,oldLine,revision),endAnchor(line,oldLine))))),etag,hasMore"
+        }
+      },
+      "response": {
+        "status": 200,
+        "body": {
+          "data": [
+            {
+              "chatMessage": {
+                "details": {
+                  "className": "ReviewCreatedEvent"
+                },
+                "author": {
+                  "name": "Henry.Wylde",
+                  "details": {
+                    "className": "CUserPrincipalDetails"
+                  }
+                },
+                "id": "F9yKP0W74yj"
+              }
+            },
+            {
+              "chatMessage": {
+                "details": {
+                  "className": "MCMessage"
+                },
+                "author": {
+                  "name": "Henry.Wylde",
+                  "details": {
+                    "className": "CUserPrincipalDetails"
+                  }
+                },
+                "id": "F9yKQ0W74yk"
+              }
+            },
+            {
+              "chatMessage": {
+                "details": {
+                  "className": "M2TextItemContent"
+                },
+                "author": {
+                  "name": "Patronus",
+                  "details": {
+                    "className": "CApplicationPrincipalDetails"
+                  }
+                },
+                "id": "F9yKR0W74yl"
+              }
+            },
+            {
+              "chatMessage": {
+                "details": {
+                  "className": "MCMessage"
+                },
+                "author": {
+                  "name": "Henry.Wylde",
+                  "details": {
+                    "className": "CUserPrincipalDetails"
+                  }
+                },
+                "id": "F9yKa0W74ym"
+              }
+            },
+            {
+              "chatMessage": {
+                "details": {
+                  "className": "M2TextItemContent"
+                },
+                "author": {
+                  "name": "Patronus",
+                  "details": {
+                    "className": "CApplicationPrincipalDetails"
+                  }
+                },
+                "id": "F9yKc0W74yo"
+              }
+            },
+            {
+              "chatMessage": {
+                "details": {
+                  "className": "MCMessage"
+                },
+                "author": {
+                  "name": "Henry.Wylde",
+                  "details": {
+                    "className": "CUserPrincipalDetails"
+                  }
+                },
+                "id": "F9yMx0W7519"
+              }
+            },
+            {
+              "chatMessage": {
+                "details": {
+                  "className": "M2TextItemContent"
+                },
+                "author": {
+                  "name": "Henry.Wylde",
+                  "details": {
+                    "className": "CUserPrincipalDetails"
+                  }
+                },
+                "id": "F9yMq0W751A"
+              }
+            },
+            {
+              "chatMessage": {
+                "details": {
+                  "className": "M2TextItemContent"
+                },
+                "author": {
+                  "name": "RubyMine Workflow",
+                  "details": {
+                    "className": "CApplicationPrincipalDetails"
+                  }
+                },
+                "id": "F9yMt0W751D"
+              }
+            },
+            {
+              "chatMessage": {
+                "details": {
+                  "className": "CodeDiscussionAddedFeedEvent",
+                  "codeDiscussion": {
+                    "anchor": {
+                      "revision": "0b9e8da6502173d26907c3a91389a552d7144a4d",
+                      "filename": "/ruby/tests/src/org/jetbrains/plugins/ruby/rails/codeInsight/sprockets/SprocketsCompletionContributorTest.java",
+                      "oldLine": null
+                    },
+                    "channel": {
+                      "id": "3v1xs52Wr5v9"
+                    }
+                  }
+                },
+                "author": {
+                  "name": "RubyMine Workflow",
+                  "details": {
+                    "className": "CApplicationPrincipalDetails"
+                  }
+                },
+                "id": "F9yN20W751E"
+              }
+            },
+            {
+              "chatMessage": {
+                "details": {
+                  "className": "M2TextItemContent"
+                },
+                "author": {
+                  "name": "RubyMine Workflow",
+                  "details": {
+                    "className": "CApplicationPrincipalDetails"
+                  }
+                },
+                "id": "F9yN30W751F"
+              }
+            },
+            {
+              "chatMessage": {
+                "details": {
+                  "className": "CodeDiscussionAddedFeedEvent",
+                  "codeDiscussion": {
+                    "anchor": {
+                      "revision": "0b9e8da6502173d26907c3a91389a552d7144a4d",
+                      "filename": "/ruby/tests/src/org/jetbrains/plugins/ruby/rails/codeInsight/sprockets/SprocketsCompletionContributorTest.java",
+                      "oldLine": null
+                    },
+                    "channel": {
+                      "id": "hPLIE2Irfw6"
+                    }
+                  }
+                },
+                "author": {
+                  "name": "RubyMine Workflow",
+                  "details": {
+                    "className": "CApplicationPrincipalDetails"
+                  }
+                },
+                "id": "F9yN40W751G"
+              }
+            },
+            {
+              "chatMessage": {
+                "details": {
+                  "className": "M2TextItemContent"
+                },
+                "author": {
+                  "name": "RubyMine Workflow",
+                  "details": {
+                    "className": "CApplicationPrincipalDetails"
+                  }
+                },
+                "id": "F9yN50W751H"
+              }
+            },
+            {
+              "chatMessage": {
+                "details": {
+                  "className": "CodeDiscussionAddedFeedEvent",
+                  "codeDiscussion": {
+                    "anchor": {
+                      "revision": "e1d28def059bace41670d459bee244ec9d1ab52a",
+                      "filename": "/ruby/tests/src/org/jetbrains/plugins/ruby/rails/run/commandLine/RailsCommandLineGeneratorTest.java",
+                      "oldLine": 80
+                    },
+                    "channel": {
+                      "id": "99tNr1rpsI6"
+                    }
+                  }
+                },
+                "author": {
+                  "name": "RubyMine Workflow",
+                  "details": {
+                    "className": "CApplicationPrincipalDetails"
+                  }
+                },
+                "id": "F9yMy0W751I"
+              }
+            },
+            {
+              "chatMessage": {
+                "details": {
+                  "className": "M2TextItemContent"
+                },
+                "author": {
+                  "name": "RubyMine Workflow",
+                  "details": {
+                    "className": "CApplicationPrincipalDetails"
+                  }
+                },
+                "id": "F9yMz0W751J"
+              }
+            },
+            {
+              "chatMessage": {
+                "details": {
+                  "className": "CodeDiscussionAddedFeedEvent",
+                  "codeDiscussion": {
+                    "anchor": {
+                      "revision": "abd04ef6d7ab6cbc0d8b7740c20e7a067b50675f",
+                      "filename": "/ruby/tests/src/org/jetbrains/plugins/ruby/cucumber/codeinsight/CucumberRubyResolveTest.java",
+                      "oldLine": 19
+                    },
+                    "channel": {
+                      "id": "kBnP420xGYj"
+                    }
+                  }
+                },
+                "author": {
+                  "name": "RubyMine Workflow",
+                  "details": {
+                    "className": "CApplicationPrincipalDetails"
+                  }
+                },
+                "id": "F9yN00W751K"
+              }
+            },
+            {
+              "chatMessage": {
+                "details": {
+                  "className": "M2TextItemContent"
+                },
+                "author": {
+                  "name": "RubyMine Workflow",
+                  "details": {
+                    "className": "CApplicationPrincipalDetails"
+                  }
+                },
+                "id": "F9yN10W751L"
+              }
+            },
+            {
+              "chatMessage": {
+                "details": {
+                  "className": "CodeDiscussionAddedFeedEvent",
+                  "codeDiscussion": {
+                    "anchor": {
+                      "revision": "fa663e61870ba0e69c13aa41a5c1c43d439fb1ef",
+                      "filename": "/ruby/tests/src/org/jetbrains/plugins/ruby/ruby/lang/psi/Ruby4502Test.java",
+                      "oldLine": 15
+                    },
+                    "channel": {
+                      "id": "jecMS1e956l"
+                    }
+                  }
+                },
+                "author": {
+                  "name": "RubyMine Workflow",
+                  "details": {
+                    "className": "CApplicationPrincipalDetails"
+                  }
+                },
+                "id": "F9yNA0W751M"
+              }
+            },
+            {
+              "chatMessage": {
+                "details": {
+                  "className": "M2TextItemContent"
+                },
+                "author": {
+                  "name": "RubyMine Workflow",
+                  "details": {
+                    "className": "CApplicationPrincipalDetails"
+                  }
+                },
+                "id": "F9yNB0W751N"
+              }
+            },
+            {
+              "chatMessage": {
+                "details": {
+                  "className": "CodeDiscussionAddedFeedEvent",
+                  "codeDiscussion": {
+                    "anchor": {
+                      "revision": "fa663e61870ba0e69c13aa41a5c1c43d439fb1ef",
+                      "filename": "/ruby/tests/src/org/jetbrains/plugins/ruby/ruby/lang/psi/Ruby4502Test.java",
+                      "oldLine": 5
+                    },
+                    "channel": {
+                      "id": "4e1zli2VguA2"
+                    }
+                  }
+                },
+                "author": {
+                  "name": "RubyMine Workflow",
+                  "details": {
+                    "className": "CApplicationPrincipalDetails"
+                  }
+                },
+                "id": "F9yNC0W751O"
+              }
+            },
+            {
+              "chatMessage": {
+                "details": {
+                  "className": "M2TextItemContent"
+                },
+                "author": {
+                  "name": "RubyMine Workflow",
+                  "details": {
+                    "className": "CApplicationPrincipalDetails"
+                  }
+                },
+                "id": "F9yND0W751P"
+              }
+            },
+            {
+              "chatMessage": {
+                "details": {
+                  "className": "M2TextItemContent"
+                },
+                "author": {
+                  "name": "Patronus",
+                  "details": {
+                    "className": "CApplicationPrincipalDetails"
+                  }
+                },
+                "id": "F9yP60W753I"
+              }
+            },
+            {
+              "chatMessage": {
+                "details": {
+                  "className": "MCMessage"
+                },
+                "author": {
+                  "name": "JetBrains Space",
+                  "details": {
+                    "className": "CBuiltInServicePrincipalDetails"
+                  }
+                },
+                "id": "F9yP70W753J"
+              }
+            },
+            {
+              "chatMessage": {
+                "details": {
+                  "className": "M2TextItemContent"
+                },
+                "author": {
+                  "name": "Dmitry.Pogrebnoy",
+                  "details": {
+                    "className": "CUserPrincipalDetails"
+                  }
+                },
+                "id": "F9zpH0W77XX"
+              }
+            },
+            {
+              "chatMessage": {
+                "details": {
+                  "className": "MCMessage"
+                },
+                "author": {
+                  "name": "Dmitry.Pogrebnoy",
+                  "details": {
+                    "className": "CUserPrincipalDetails"
+                  }
+                },
+                "id": "F9zpA0W77XY"
+              }
+            },
+            {
+              "chatMessage": {
+                "details": {
+                  "className": "MCMessage"
+                },
+                "author": {
+                  "name": "Henry.Wylde",
+                  "details": {
+                    "className": "CUserPrincipalDetails"
+                  }
+                },
+                "id": "FAJEp0W79uB"
+              }
+            },
+            {
+              "chatMessage": {
+                "details": {
+                  "className": "MCMessage"
+                },
+                "author": {
+                  "name": "Henry.Wylde",
+                  "details": {
+                    "className": "CUserPrincipalDetails"
+                  }
+                },
+                "id": "FAJEy0W79uC"
+              }
+            },
+            {
+              "chatMessage": {
+                "details": {
+                  "className": "MCMessage"
+                },
+                "author": {
+                  "name": "Henry.Wylde",
+                  "details": {
+                    "className": "CUserPrincipalDetails"
+                  }
+                },
+                "id": "FAJEz0W79uD"
+              }
+            },
+            {
+              "chatMessage": {
+                "details": {
+                  "className": "MCMessage"
+                },
+                "author": {
+                  "name": "Henry.Wylde",
+                  "details": {
+                    "className": "CUserPrincipalDetails"
+                  }
+                },
+                "id": "FAJF00W79uE"
+              }
+            },
+            {
+              "chatMessage": {
+                "details": {
+                  "className": "M2TextItemContent"
+                },
+                "author": {
+                  "name": "Henry.Wylde",
+                  "details": {
+                    "className": "CUserPrincipalDetails"
+                  }
+                },
+                "id": "FAJF10W79uF"
+              }
+            },
+            {
+              "chatMessage": {
+                "details": {
+                  "className": "MCMessage"
+                },
+                "author": {
+                  "name": "Henry.Wylde",
+                  "details": {
+                    "className": "CUserPrincipalDetails"
+                  }
+                },
+                "id": "FAJEu0W79uG"
+              }
+            },
+            {
+              "chatMessage": {
+                "details": {
+                  "className": "MCMessage"
+                },
+                "author": {
+                  "name": "Henry.Wylde",
+                  "details": {
+                    "className": "CUserPrincipalDetails"
+                  }
+                },
+                "id": "FAJEv0W79uH"
+              }
+            },
+            {
+              "chatMessage": {
+                "details": {
+                  "className": "MCMessage"
+                },
+                "author": {
+                  "name": "Henry.Wylde",
+                  "details": {
+                    "className": "CUserPrincipalDetails"
+                  }
+                },
+                "id": "FAJEw0W79uI"
+              }
+            },
+            {
+              "chatMessage": {
+                "details": {
+                  "className": "MCMessage"
+                },
+                "author": {
+                  "name": "Henry.Wylde",
+                  "details": {
+                    "className": "CUserPrincipalDetails"
+                  }
+                },
+                "id": "FAJEx0W79uJ"
+              }
+            },
+            {
+              "chatMessage": {
+                "details": {
+                  "className": "M2TextItemContent"
+                },
+                "author": {
+                  "name": "Patronus",
+                  "details": {
+                    "className": "CApplicationPrincipalDetails"
+                  }
+                },
+                "id": "FAJF60W79uK"
+              }
+            },
+            {
+              "chatMessage": {
+                "details": {
+                  "className": "MCMessage"
+                },
+                "author": {
+                  "name": "Patronus",
+                  "details": {
+                    "className": "CApplicationPrincipalDetails"
+                  }
+                },
+                "id": "FAIk50W79wT"
+              }
+            },
+            {
+              "chatMessage": {
+                "details": {
+                  "className": "M2TextItemContent"
+                },
+                "author": {
+                  "name": "Patronus",
+                  "details": {
+                    "className": "CApplicationPrincipalDetails"
+                  }
+                },
+                "id": "FAIk70W79wV"
+              }
+            },
+            {
+              "chatMessage": {
+                "details": {
+                  "className": "MCMessage"
+                },
+                "author": {
+                  "name": "JetBrains Space",
+                  "details": {
+                    "className": "CBuiltInServicePrincipalDetails"
+                  }
+                },
+                "id": "FAIkG0W79wW"
+              }
+            }
+          ],
+          "hasMore": false
+        },
+        "hasNext": false
+      }
+    },
+    {
+      "request": {
+        "method": "GET",
+        "endpoint": "/chats/messages",
+        "query": {
+          "channel": "id:3v1xs52Wr5v9",
+          "sorting": "FromOldestToNewest",
+          "batchSize": "50",
+          "$fields": "messages(id,text,details(className),author(name,details(className)),created),nextStartFromDate,orgLimitReached"
+        }
+      },
+      "response": {
+        "status": 200,
+        "body": {
+          "messages": [
+            {
+              "details": {
+                "className": "M2TextItemContent"
+              },
+              "author": {
+                "name": "RubyMine Workflow",
+                "details": {
+                  "className": "CApplicationPrincipalDetails"
+                }
+              },
+              "id": "F9yMt0W751D"
+            },
+            {
+              "details": {
+                "className": "MCMessage"
+              },
+              "author": {
+                "name": "Henry.Wylde",
+                "details": {
+                  "className": "CUserPrincipalDetails"
+                }
+              },
+              "id": "FAJEv0W79uH"
+            }
+          ],
+          "orgLimitReached": false
+        },
+        "hasNext": false
+      }
+    },
+    {
+      "request": {
+        "method": "GET",
+        "endpoint": "/chats/messages",
+        "query": {
+          "channel": "id:hPLIE2Irfw6",
+          "sorting": "FromOldestToNewest",
+          "batchSize": "50",
+          "$fields": "messages(id,text,details(className),author(name,details(className)),created),nextStartFromDate,orgLimitReached"
+        }
+      },
+      "response": {
+        "status": 200,
+        "body": {
+          "messages": [
+            {
+              "details": {
+                "className": "M2TextItemContent"
+              },
+              "author": {
+                "name": "RubyMine Workflow",
+                "details": {
+                  "className": "CApplicationPrincipalDetails"
+                }
+              },
+              "id": "F9yN30W751F"
+            },
+            {
+              "details": {
+                "className": "MCMessage"
+              },
+              "author": {
+                "name": "Henry.Wylde",
+                "details": {
+                  "className": "CUserPrincipalDetails"
+                }
+              },
+              "id": "FAJEp0W79uB"
+            }
+          ],
+          "orgLimitReached": false
+        },
+        "hasNext": false
+      }
+    },
+    {
+      "request": {
+        "method": "GET",
+        "endpoint": "/chats/messages",
+        "query": {
+          "channel": "id:99tNr1rpsI6",
+          "sorting": "FromOldestToNewest",
+          "batchSize": "50",
+          "$fields": "messages(id,text,details(className),author(name,details(className)),created),nextStartFromDate,orgLimitReached"
+        }
+      },
+      "response": {
+        "status": 200,
+        "body": {
+          "messages": [
+            {
+              "details": {
+                "className": "M2TextItemContent"
+              },
+              "author": {
+                "name": "RubyMine Workflow",
+                "details": {
+                  "className": "CApplicationPrincipalDetails"
+                }
+              },
+              "id": "F9yN50W751H"
+            },
+            {
+              "details": {
+                "className": "MCMessage"
+              },
+              "author": {
+                "name": "Henry.Wylde",
+                "details": {
+                  "className": "CUserPrincipalDetails"
+                }
+              },
+              "id": "FAJEy0W79uC"
+            }
+          ],
+          "orgLimitReached": false
+        },
+        "hasNext": false
+      }
+    },
+    {
+      "request": {
+        "method": "GET",
+        "endpoint": "/chats/messages",
+        "query": {
+          "channel": "id:kBnP420xGYj",
+          "sorting": "FromOldestToNewest",
+          "batchSize": "50",
+          "$fields": "messages(id,text,details(className),author(name,details(className)),created),nextStartFromDate,orgLimitReached"
+        }
+      },
+      "response": {
+        "status": 200,
+        "body": {
+          "messages": [
+            {
+              "details": {
+                "className": "M2TextItemContent"
+              },
+              "author": {
+                "name": "RubyMine Workflow",
+                "details": {
+                  "className": "CApplicationPrincipalDetails"
+                }
+              },
+              "id": "F9yMz0W751J"
+            },
+            {
+              "details": {
+                "className": "MCMessage"
+              },
+              "author": {
+                "name": "Henry.Wylde",
+                "details": {
+                  "className": "CUserPrincipalDetails"
+                }
+              },
+              "id": "FAJEz0W79uD"
+            }
+          ],
+          "orgLimitReached": false
+        },
+        "hasNext": false
+      }
+    },
+    {
+      "request": {
+        "method": "GET",
+        "endpoint": "/chats/messages",
+        "query": {
+          "channel": "id:jecMS1e956l",
+          "sorting": "FromOldestToNewest",
+          "batchSize": "50",
+          "$fields": "messages(id,text,details(className),author(name,details(className)),created),nextStartFromDate,orgLimitReached"
+        }
+      },
+      "response": {
+        "status": 200,
+        "body": {
+          "messages": [
+            {
+              "details": {
+                "className": "M2TextItemContent"
+              },
+              "author": {
+                "name": "RubyMine Workflow",
+                "details": {
+                  "className": "CApplicationPrincipalDetails"
+                }
+              },
+              "id": "F9yN10W751L"
+            },
+            {
+              "details": {
+                "className": "MCMessage"
+              },
+              "author": {
+                "name": "Henry.Wylde",
+                "details": {
+                  "className": "CUserPrincipalDetails"
+                }
+              },
+              "id": "FAJF00W79uE"
+            }
+          ],
+          "orgLimitReached": false
+        },
+        "hasNext": false
+      }
+    },
+    {
+      "request": {
+        "method": "GET",
+        "endpoint": "/chats/messages",
+        "query": {
+          "channel": "id:4e1zli2VguA2",
+          "sorting": "FromOldestToNewest",
+          "batchSize": "50",
+          "$fields": "messages(id,text,details(className),author(name,details(className)),created),nextStartFromDate,orgLimitReached"
+        }
+      },
+      "response": {
+        "status": 200,
+        "body": {
+          "messages": [
+            {
+              "text": "⚪ Ruby4502Test:6: `tests/classes-duration/seasons/Ruby_Common_Tests.csv:837` still lists `org.jetbrains.plugins.ruby.ruby.lang.psi.Ruby4502Test,1957`, so the bucketing data keeps a duration for a class that no longer exists. Delete the row in this change, as RUBY-34991 and RUBY-34992 did for their removed classes.",
+              "details": {
+                "className": "M2TextItemContent"
+              },
+              "author": {
+                "name": "RubyMine Workflow",
+                "details": {
+                  "className": "CApplicationPrincipalDetails"
+                }
+              },
+              "created": {
+                "timestamp": 1793075087754
+              },
+              "id": "F9yNB0W751N"
+            },
+            {
+              "text": "Autogenerated",
+              "details": {
+                "className": "M2TextItemContent"
+              },
+              "author": {
+                "name": "Henry.Wylde",
+                "details": {
+                  "className": "CUserPrincipalDetails"
+                }
+              },
+              "created": {
+                "timestamp": 1793151053020
+              },
+              "id": "FAJF10W79uF"
+            },
+            {
+              "text": "User resolved the discussion",
+              "details": {
+                "className": "MCMessage"
+              },
+              "author": {
+                "name": "Henry.Wylde",
+                "details": {
+                  "className": "CUserPrincipalDetails"
+                }
+              },
+              "created": {
+                "timestamp": 1793151054074
+              },
+              "id": "FAJEu0W79uG"
+            }
+          ],
+          "orgLimitReached": false
+        },
+        "hasNext": false
+      }
+    }
+  ],
+  "result": {
+    "pullRequests": [
+      {
+        "number": 231618,
+        "url": "https://jetbrains.team/p/ij/reviews/231618",
+        "title": "hjwylde/review/ruby-35347-remove-gem-tests",
+        "body": "",
+        "baseRevision": "216997be332854eece3adeb41137240d5f4562cc",
+        "headRevision": "2772c6c2828b6158b0a412f213e0de42b5ea4ed6",
+        "closeTimestamp": 1793159322533,
+        "threads": [
+          {
+            "threadId": "space-231618-F9yNC0W751O",
+            "reviewDiscussionUrl": "https://jetbrains.team/im/review/FbzNi2BCnKK?message=F9yNC0W751O&channel=3BJIK1vWEmh",
+            "filePath": "ruby/tests/src/org/jetbrains/plugins/ruby/ruby/lang/psi/Ruby4502Test.java",
+            "originalCommitSha": "fa663e61870ba0e69c13aa41a5c1c43d439fb1ef",
+            "anchorLine": 6,
+            "anchorEndLine": 6,
+            "messages": [
+              {
+                "author": "Henry.Wylde",
+                "body": "Autogenerated",
+                "createdAt": "2026-10-28T01:30:53.020Z"
+              }
+            ]
+          }
+        ]
+      }
+    ],
+    "problems": []
+  }
+}

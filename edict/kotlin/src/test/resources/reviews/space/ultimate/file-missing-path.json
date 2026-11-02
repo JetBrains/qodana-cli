@@ -1,0 +1,20 @@
+{
+  "exchanges": [
+    {
+      "request": {
+        "method": "GET",
+        "endpoint": "/projects/key:ij/repositories/ultimate/files",
+        "query": {
+          "commit": "05086d8d08296dd055c7c7ec95fc76930fbd8b50",
+          "path": "plugins/bazel/Missing.kt"
+        }
+      },
+      "response": {
+        "status": 200,
+        "body": [],
+        "hasNext": false
+      }
+    }
+  ],
+  "result": "NoSuchFileException: plugins/bazel/Missing.kt"
+}

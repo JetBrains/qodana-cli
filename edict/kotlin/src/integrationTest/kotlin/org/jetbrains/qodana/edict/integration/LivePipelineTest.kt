@@ -1,6 +1,8 @@
 // Copyright 2026 JetBrains s.r.o. Licensed under the Apache License, Version 2.0.
 package org.jetbrains.qodana.edict.integration
 
+import org.jetbrains.qodana.edict.ci.ReviewRepository
+import org.jetbrains.qodana.edict.ci.CiProviderId
 import org.jetbrains.qodana.edict.signals.UnifiedDiff
 
 import java.nio.file.Files
@@ -12,7 +14,6 @@ import kotlin.test.assertTrue
 import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
-import org.jetbrains.qodana.edict.common.EdictCIConfiguration
 import org.jetbrains.qodana.edict.common.EdictConfiguration
 import org.jetbrains.qodana.edict.common.ExtractionConfiguration
 import org.jetbrains.qodana.edict.common.PromotionConfiguration
@@ -26,50 +27,49 @@ import org.jetbrains.qodana.edict.edictnext.EdictRepository
 import org.jetbrains.qodana.edict.edictnext.EdictRepositoryDirectory
 import org.jetbrains.qodana.edict.integration.support.*
 import org.jetbrains.qodana.edict.integration.support.inspection.InspectionServer
-import org.jetbrains.qodana.edict.integration.support.reviews.ReviewProviderFixture
+import org.jetbrains.qodana.edict.integration.support.reviews.MergedReviewFixture
 import org.jetbrains.qodana.edict.runtime.CodexRunner
 import org.junit.jupiter.api.Test
 
 class LivePipelineTest : IntegrationTest() {
     @Test
     fun `short daily request runs the default pipeline`() {
-        ReviewProviderFixture("github", workspace.repository).use { reviews ->
-            InspectionServer.start(workspace).use { inspection ->
-                workspace.withCodex(
-                    "Run the daily repository routine.",
-                    provider = reviews.client,
-                    inspectionServer = inspection,
-                    timeoutMinutes = 180,
-                    configuration = EdictConfiguration(
-                        ci = EdictCIConfiguration("https://github.com/owner/repo"),
-                        extraction = ExtractionConfiguration(defaultSignalCount = 2),
-                        promotion = PromotionConfiguration("fixture-reviewer"),
-                    ),
-                ) { store, runtime, _ ->
-                    val plan = assertNotNull(store.plan())
-                    val required = setOf(
-                        "edict-check-weak-signal-promotion",
-                        "edict-signal-analysis",
-                        "edict-pr-signal-analysis",
-                        "edict-next-distribution",
-                        "edict-git-history-signal-enrichment",
-                        "edict-next-cluster-generation",
-                        "edict-next-code-example-overseer",
-                        "edict-next-inspection-shallow-review",
-                        "edict-promote",
-                        "edict-promote-weak-signal",
-                    )
-                    assertTrue(
-                        plan.tasks.map { it.skill }.toSet().containsAll(required),
-                        "Pipeline must execute PR extraction, distribution, historical enrichment, generation, independent review, and publication",
-                    )
-                    val enrichmentIds = plan.tasks.filter { it.skill == "edict-git-history-signal-enrichment" }.map { it.id }.toSet()
-                    assertTrue(plan.tasks.none { it.parentId in enrichmentIds }, "Enrichment agents must analyze evidence without child workers")
-                    verifyManagedRun(workspace, runtime, plan)
-                    verifyStages(plan)
-                    verifyProcessedCluster(runtime, inspection, plan)
-                    reviews.verifyRequests()
-                }
+        val reviews = MergedReviewFixture(CiProviderId.GITHUB, workspace.repository)
+        InspectionServer.start(workspace.project, workspace.output).use { inspection ->
+            workspace.withCodex(
+                "Run the daily repository routine.",
+                provider = reviews.client,
+                inspectionServer = inspection,
+                timeoutMinutes = 180,
+                configuration = EdictConfiguration(
+                    ci = ReviewRepository(CiProviderId.GITHUB, "github.com", "owner", "repo"),
+                    extraction = ExtractionConfiguration(defaultSignalCount = 2),
+                    promotion = PromotionConfiguration("fixture-reviewer"),
+                ),
+            ) { store, runtime, _ ->
+                val plan = assertNotNull(store.plan())
+                val required = setOf(
+                    "edict-check-weak-signal-promotion",
+                    "edict-signal-analysis",
+                    "edict-pr-signal-analysis",
+                    "edict-next-distribution",
+                    "edict-git-history-signal-enrichment",
+                    "edict-next-cluster-generation",
+                    "edict-next-code-example-overseer",
+                    "edict-next-inspection-shallow-review",
+                    "edict-promote",
+                    "edict-promote-weak-signal",
+                )
+                assertTrue(
+                    plan.tasks.map { it.skill }.toSet().containsAll(required),
+                    "Pipeline must execute PR extraction, distribution, historical enrichment, generation, independent review, and publication",
+                )
+                val enrichmentIds = plan.tasks.filter { it.skill == "edict-git-history-signal-enrichment" }.map { it.id }.toSet()
+                assertTrue(plan.tasks.none { it.parentId in enrichmentIds }, "Enrichment agents must analyze evidence without child workers")
+                verifyManagedRun(workspace, runtime, plan)
+                verifyStages(plan)
+                verifyProcessedCluster(runtime, inspection, plan)
+                reviews.verifyRequests()
             }
         }
     }

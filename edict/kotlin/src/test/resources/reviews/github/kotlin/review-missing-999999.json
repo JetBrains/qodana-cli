@@ -1,0 +1,19 @@
+{
+  "exchanges": [
+    {
+      "request": {
+        "method": "GET",
+        "endpoint": "/repos/JetBrains/kotlin/pulls/999999",
+        "query": {}
+      },
+      "response": {
+        "status": 404,
+        "body": {
+          "message": "Not Found"
+        },
+        "hasNext": false
+      }
+    }
+  ],
+  "result": "IllegalArgumentException: GitHub pull-request read returned HTTP 404: Not Found"
+}

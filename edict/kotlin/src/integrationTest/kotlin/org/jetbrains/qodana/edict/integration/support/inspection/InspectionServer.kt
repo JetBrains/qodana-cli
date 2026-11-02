@@ -2,8 +2,6 @@
 package org.jetbrains.qodana.edict.integration.support.inspection
 
 import kotlinx.serialization.json.*
-import org.jetbrains.qodana.edict.edictnext.IntellijMcpServerLifecycle
-import org.jetbrains.qodana.edict.integration.support.IntegrationWorkspace
 import java.net.URI
 import java.nio.file.Files
 import java.nio.file.Path
@@ -18,13 +16,8 @@ internal class InspectionServer private constructor(
     private val proxy: InspectionToolProxy,
     /** The IDE's own Streamable HTTP endpoint, which production Edict talks to directly, unlike [url]. */
     val streamableEndpoint: URI,
-) : AutoCloseable, IntellijMcpServerLifecycle {
+) : AutoCloseable {
     val url = proxy.url
-
-    override suspend fun start(): URI = URI.create(url)
-
-    // The surrounding test owns this shared server because it is also used for direct assertions.
-    override suspend fun stop() = Unit
 
     fun run(code: String, path: String, content: String): InspectionResult =
         decodeInspectionResult(client.call("run_inspection_kts", buildJsonObject {
@@ -44,15 +37,16 @@ internal class InspectionServer private constructor(
     }
 
     companion object {
-        fun start(workspace: IntegrationWorkspace, prepareSource: (Path) -> Unit = {}): InspectionServer {
+        /** Opens a copy of [project], without its Edict state, in an IDE whose files live under [output]. */
+        fun start(project: Path, output: Path, prepareSource: (Path) -> Unit = {}): InspectionServer {
             val ultimate = System.getenv("ULTIMATE_EDICT_REPO")?.takeIf(String::isNotBlank)?.let(Path::of)
                 ?: error("Set ULTIMATE_EDICT_REPO to the Ultimate checkout providing the external inspection MCP compiler")
             require(Files.isRegularFile(ultimate.resolve("bazel.cmd"))) { "Missing bazel.cmd in ULTIMATE_EDICT_REPO" }
-            val root = workspace.output
+            val root = output
             val source = root.resolve("inspection-project")
-            Files.walk(workspace.project).use { paths ->
+            Files.walk(project).use { paths ->
                 paths.forEach { path ->
-                    val relative = workspace.project.relativize(path)
+                    val relative = project.relativize(path)
                     if (relative.firstOrNull()?.toString() != ".edict") {
                         val target = source.resolve(relative)
                         if (Files.isDirectory(path)) Files.createDirectories(target) else Files.copy(path, target)

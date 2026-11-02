@@ -1,0 +1,41 @@
+{
+  "exchanges": [
+    {
+      "request": {
+        "method": "GET",
+        "endpoint": "/repos/JetBrains/kotlin/contents/idea/testData/quickfix/addInlineToReifiedFunctionFix/basic.kt",
+        "query": {
+          "ref": "6cf90cfc4eb5474cdc655caf90da7e4889178148"
+        }
+      },
+      "response": {
+        "status": 404,
+        "body": {
+          "message": "Not Found"
+        },
+        "hasNext": false
+      }
+    },
+    {
+      "request": {
+        "method": "GET",
+        "endpoint": "/repos/JetBrains/kotlin/contents/idea/testData/quickfix/addInlineToReifiedFunctionFix/basic.kt",
+        "query": {
+          "ref": "fdb8e1026aee542994c512a524bf45672738cf68"
+        }
+      },
+      "response": {
+        "status": 200,
+        "body": {
+          "name": "basic.kt",
+          "size": 76,
+          "type": "file",
+          "content": "Ly8gIkFkZCBJbmxpbmUgdG8gcmVpZmllZCBmdW5jdGlvbiIgInRydWUiCgpm\ndW4gPDxjYXJldD5yZWlmaWVkIFQ+IGZuKCkgewoKfQ==\n",
+          "encoding": "base64"
+        },
+        "hasNext": false
+      }
+    }
+  ],
+  "result": "--- /dev/null\n+++ b/idea/testData/quickfix/addInlineToReifiedFunctionFix/basic.kt\n@@ -0,0 +1,5 @@\n+// \"Add Inline to reified function\" \"true\"\n+\n+fun <<caret>reified T> fn() {\n+\n+}\n\\ No newline at end of file\n"
+}

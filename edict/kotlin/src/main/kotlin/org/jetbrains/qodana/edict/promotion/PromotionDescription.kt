@@ -165,10 +165,7 @@ internal fun EdictNextSignal.referenceUrl(ci: ReviewRepository?): String? {
     CiProviderId.SPACE -> "$root/files/${fileRevision.revision}/$path?line=${range.start}"
   }
   val uri = runCatching { URI(url) }.getOrNull() ?: return null
-  return url.takeIf {
-    uri.scheme?.lowercase() in setOf("http", "https") && !uri.host.isNullOrBlank() && uri.userInfo == null &&
-      url.none { it.isWhitespace() || it in "<>" }
-  }
+  return url.takeIf { uri.scheme?.lowercase() in setOf("http", "https") && !uri.host.isNullOrBlank() && uri.userInfo == null }
 }
 
 internal fun String.markdownText(): String = buildString {

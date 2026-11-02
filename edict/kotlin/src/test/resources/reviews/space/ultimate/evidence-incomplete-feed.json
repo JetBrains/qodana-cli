@@ -1,0 +1,172 @@
+{
+  "exchanges": [
+    {
+      "request": {
+        "method": "GET",
+        "endpoint": "/projects/key:ij/code-reviews/id:3mjARa4QCqdV",
+        "query": {
+          "$fields": "state,branchPair(isMerged),feedChannelId"
+        }
+      },
+      "response": {
+        "status": 200,
+        "body": {
+          "className": "MergeRequestRecord",
+          "state": "Opened",
+          "feedChannelId": "191BsY07WiVq"
+        },
+        "hasNext": false
+      }
+    },
+    {
+      "request": {
+        "method": "GET",
+        "endpoint": "/chats/messages/sync-batch",
+        "query": {
+          "channel": "id:191BsY07WiVq",
+          "batchInfo": "{etag:0,batchSize:100}",
+          "$fields": "data(chatMessage(id,text,author(name,details(className)),details(className,codeDiscussion(channel(id),anchor(filename,line,oldLine,revision),endAnchor(line,oldLine))))),etag,hasMore"
+        }
+      },
+      "response": {
+        "status": 200,
+        "body": {
+          "data": [
+            {
+              "chatMessage": {
+                "details": {
+                  "className": "ReviewCreatedEvent"
+                },
+                "author": {
+                  "name": "Evgenii.Im",
+                  "details": {
+                    "className": "CUserPrincipalDetails"
+                  }
+                }
+              }
+            },
+            {
+              "chatMessage": {
+                "details": {
+                  "className": "MCMessage"
+                },
+                "author": {
+                  "name": "Evgenii.Im",
+                  "details": {
+                    "className": "CUserPrincipalDetails"
+                  }
+                }
+              }
+            },
+            {
+              "chatMessage": {
+                "details": {
+                  "className": "M2TextItemContent"
+                },
+                "author": {
+                  "name": "Patronus",
+                  "details": {
+                    "className": "CApplicationPrincipalDetails"
+                  }
+                }
+              }
+            },
+            {
+              "chatMessage": {
+                "details": {
+                  "className": "M2TextItemContent"
+                },
+                "author": {
+                  "name": "Patronus",
+                  "details": {
+                    "className": "CApplicationPrincipalDetails"
+                  }
+                }
+              }
+            },
+            {
+              "chatMessage": {
+                "details": {
+                  "className": "M2TextItemContent"
+                },
+                "author": {
+                  "name": "Patronus",
+                  "details": {
+                    "className": "CApplicationPrincipalDetails"
+                  }
+                }
+              }
+            },
+            {
+              "chatMessage": {
+                "details": {
+                  "className": "M2TextItemContent"
+                },
+                "author": {
+                  "name": "Patronus",
+                  "details": {
+                    "className": "CApplicationPrincipalDetails"
+                  }
+                }
+              }
+            },
+            {
+              "chatMessage": {
+                "details": {
+                  "className": "M2TextItemContent"
+                },
+                "author": {
+                  "name": "Patronus",
+                  "details": {
+                    "className": "CApplicationPrincipalDetails"
+                  }
+                }
+              }
+            },
+            {
+              "chatMessage": {
+                "details": {
+                  "className": "M2TextItemContent"
+                },
+                "author": {
+                  "name": "Patronus",
+                  "details": {
+                    "className": "CApplicationPrincipalDetails"
+                  }
+                }
+              }
+            },
+            {
+              "chatMessage": {
+                "details": {
+                  "className": "M2TextItemContent"
+                },
+                "author": {
+                  "name": "Patronus",
+                  "details": {
+                    "className": "CApplicationPrincipalDetails"
+                  }
+                }
+              }
+            },
+            {
+              "chatMessage": {
+                "details": {
+                  "className": "M2TextItemContent"
+                },
+                "author": {
+                  "name": "Patronus",
+                  "details": {
+                    "className": "CApplicationPrincipalDetails"
+                  }
+                }
+              }
+            }
+          ]
+        },
+        "hasNext": false
+      }
+    }
+  ],
+  "result": "IllegalArgumentException: Incomplete Space review feedback: Space review 3mjARa4QCqdV feed page 1: omitted pagination completeness flag"
+}

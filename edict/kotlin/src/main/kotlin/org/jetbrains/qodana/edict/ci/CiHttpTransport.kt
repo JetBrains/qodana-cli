@@ -4,6 +4,9 @@ package org.jetbrains.qodana.edict.ci
 import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.JsonNull
 import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.JsonPrimitive
+import kotlinx.serialization.json.booleanOrNull
+import kotlinx.serialization.json.doubleOrNull
 import org.jetbrains.qodana.edict.common.wireJson
 import java.net.URI
 import java.net.URLEncoder
@@ -13,10 +16,6 @@ import java.net.http.HttpResponse
 import java.time.Duration
 
 internal fun urlPart(value: String): String = URLEncoder.encode(value, Charsets.UTF_8).replace("+", "%20")
-
-internal fun isBot(name: String, kind: String): Boolean = kind.equals("bot", true) || name.lowercase().let {
-  it.endsWith("[bot]") || it in listOf("dependabot", "github-actions", "patronus", "space-automation", "jetbrains-bot")
-}
 
 internal data class CiHttpResponse(
   val status: Int,
@@ -70,8 +69,8 @@ internal class DefaultCiHttpTransport(
       Thread.currentThread().interrupt()
       throw error
     }
-    catch (_: Exception) {
-      error("${provider.name.lowercase()} API request failed (connection or timeout)")
+    catch (e: Exception) {
+      throw IllegalStateException("${provider.name.lowercase()} API request failed (connection or timeout)", e)
     }
     val text = response.body().use { input ->
       val bytes = input.readNBytes(MAX_RESPONSE_BYTES + 1)
@@ -79,10 +78,11 @@ internal class DefaultCiHttpTransport(
       bytes.toString(Charsets.UTF_8)
     }
     val parsed = if (text.isBlank()) JsonNull else try {
-      wireJson.parseToJsonElement(text)
+      // The parser takes a lone unquoted word, such as a plain-text "Forbidden", for a JSON literal.
+      wireJson.parseToJsonElement(text).also { require(it.isJson()) }
     }
-    catch (_: Exception) {
-      error("Invalid ${provider.name.lowercase()} API JSON response (HTTP ${response.statusCode()})")
+    catch (e: Exception) {
+      throw IllegalStateException("Invalid ${provider.name.lowercase()} API JSON response (HTTP ${response.statusCode()})", e)
     }
     return CiHttpResponse(
       response.statusCode(),
@@ -95,3 +95,7 @@ internal class DefaultCiHttpTransport(
     const val MAX_RESPONSE_BYTES = 16 * 1024 * 1024
   }
 }
+
+/** False for an unquoted literal that is no JSON number, boolean or null. */
+private fun JsonElement.isJson(): Boolean =
+  this !is JsonPrimitive || isString || this is JsonNull || booleanOrNull != null || doubleOrNull != null
