@@ -1,6 +1,5 @@
 package org.jetbrains.qodana.edict.promotion
 
-import kotlinx.serialization.encodeToString
 import org.jetbrains.qodana.edict.ci.CiProviderId
 import org.jetbrains.qodana.edict.ci.CreateReviewRequest
 import org.jetbrains.qodana.edict.ci.CreatedReview
@@ -22,6 +21,7 @@ import org.jetbrains.qodana.edict.edictnext.exampleSetDigest
 import org.jetbrains.qodana.edict.edictnext.EdictNextJson
 import org.jetbrains.qodana.edict.edictnext.EdictNextLanguage
 import org.jetbrains.qodana.edict.edictnext.EdictNextLineRange
+import org.jetbrains.qodana.edict.edictnext.EdictNextProjectReview
 import org.jetbrains.qodana.edict.edictnext.EdictNextRepositoryState
 import org.jetbrains.qodana.edict.edictnext.EdictNextSignal
 import org.jetbrains.qodana.edict.edictnext.EdictNextSignalLabel
@@ -164,11 +164,25 @@ class PromotionServiceTest {
       assertContains(description, expected)
       assertFalse(description.contains("Last project analysis"))
       val withProjectReview = promotionDescription(cluster, sha256Hex("inspection"), evaluation =
-        repository.loadEvaluation(cluster)!!.copy(projectReview = org.jetbrains.qodana.edict.edictnext.EdictNextProjectReview(
+        repository.loadEvaluation(cluster)!!.copy(projectReview = EdictNextProjectReview(
           projectRevision = "a".repeat(40), totalFindings = 73, reviewedFindings = 20,
           uncertain = 0, unassigned = 0, unreproduced = 0,
-        )))
+        )
+        ))
       assertContains(withProjectReview, "Last project analysis reported 73 findings; 20 were reviewed.")
+      val evaluation = repository.loadEvaluation(cluster)!!
+      val review = EdictNextProjectReview(
+        projectRevision = "a".repeat(40), totalFindings = 73, reviewedFindings = 20,
+        uncertain = 0, unassigned = 0, unreproduced = 0,
+      )
+      val linked = promotionDescription(cluster, sha256Hex("inspection"), evaluation = evaluation.copy(
+        projectReview = review.copy(reportUrl = "https://qodana.cloud/reports/latest"),
+      ))
+      assertContains(linked, "Last project analysis reported [73 findings](https://qodana.cloud/reports/latest); 20 were reviewed.")
+      val unsafe = promotionDescription(cluster, sha256Hex("inspection"), evaluation = evaluation.copy(
+        projectReview = review.copy(reportUrl = "javascript:alert(1)"),
+      ))
+      assertContains(unsafe, "Last project analysis reported 73 findings; 20 were reviewed.")
     }
   }
 

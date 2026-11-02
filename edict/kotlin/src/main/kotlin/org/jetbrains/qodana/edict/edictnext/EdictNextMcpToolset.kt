@@ -410,6 +410,8 @@ internal class EdictNextMcpToolset(
         requested status with that status's contract satisfied, or reject and leave the cluster unchanged.
         Generated: publishes the predecessor on SKIP, or the candidate that completed project analysis on GENERATE, when it
         has valid compilation, metadata and execution and edict_next_record_evaluation scored exactly it on the current examples.
+        With QODANA_TOKEN in the server environment, uploads the last project analysis to Qodana Cloud and saves its URL;
+        upload failure leaves the cluster Pending. Reusing a predecessor without project analysis does not upload.
         Strong- and weak-example accuracy never block Generated. Discontinued: removes the candidate and predecessor.
         Invalid: keeps the candidate and predecessor. Pending is not a generation outcome.""",
       inputSchema = toolSchema(
