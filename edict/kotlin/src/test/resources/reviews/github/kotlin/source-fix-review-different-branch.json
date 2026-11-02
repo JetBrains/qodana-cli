@@ -1,0 +1,42 @@
+{
+  "exchanges": [
+    {
+      "request": {
+        "method": "GET",
+        "endpoint": "/repos/JetBrains/kotlin/git/ref/heads/edict%2Fweak-w-cccccccccccccccccccccccc",
+        "query": {}
+      },
+      "response": {
+        "status": 200,
+        "body": {
+          "object": {
+            "sha": "1111111111111111111111111111111111111111",
+            "type": "commit"
+          }
+        },
+        "hasNext": false
+      }
+    },
+    {
+      "request": {
+        "method": "GET",
+        "endpoint": "/repos/JetBrains/kotlin/contents/gradlew",
+        "query": {
+          "ref": "1111111111111111111111111111111111111111"
+        }
+      },
+      "response": {
+        "status": 200,
+        "body": {
+          "type": "file",
+          "encoding": "base64",
+          "size": 38,
+          "name": "gradlew",
+          "content": "IyEvdXNyL2Jpbi9lbnYgc2gKIyBGaXhlZCBkaWZmZXJlbnRseQo=\n"
+        },
+        "hasNext": false
+      }
+    }
+  ],
+  "result": "IllegalArgumentException: GitHub source-fix branch already exists with different content"
+}

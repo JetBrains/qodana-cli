@@ -1,0 +1,180 @@
+{
+  "exchanges": [
+    {
+      "request": {
+        "method": "GET",
+        "endpoint": "/repos/JetBrains/kotlin/pulls/5976",
+        "query": {}
+      },
+      "response": {
+        "status": 200,
+        "body": {
+          "user": {
+            "login": "fzhinkin",
+            "type": "User"
+          },
+          "head": {
+            "repo": {
+              "name": "kotlin",
+              "owner": {
+                "login": "JetBrains",
+                "type": "Organization"
+              }
+            },
+            "user": {
+              "login": "JetBrains",
+              "type": "Organization"
+            }
+          },
+          "base": {
+            "repo": {
+              "name": "kotlin",
+              "owner": {
+                "login": "JetBrains",
+                "type": "Organization"
+              }
+            },
+            "user": {
+              "login": "JetBrains",
+              "type": "Organization"
+            }
+          }
+        },
+        "hasNext": false
+      }
+    },
+    {
+      "request": {
+        "method": "GET",
+        "endpoint": "/repos/JetBrains/kotlin/issues/5976/comments",
+        "query": {
+          "per_page": "100",
+          "page": "1"
+        }
+      },
+      "response": {
+        "status": 200,
+        "body": [
+          {
+            "user": {
+              "login": "ghost",
+              "type": "User"
+            },
+            "body": "### Code Owners\n\n<table><tr><th>Rule</th><th>Owners</th><th>Approval</th></tr><tr><td><code>/​libraries/​stdlib/​</code></td><td><a href=\"https://github.com/DmitryNekrasov\"><b><code>@DmitryNekrasov</code></b></a>, <a href=\"https://github.com/fzhinkin\"><b><code>@fzhinkin</code></b></a>, <a href=\"https://github.com/ilya-g\"><b><code>@ilya-g</code></b></a>, <a href=\"https://github.com/qwwdfsad\"><b><code>@qwwdfsad</code></b></a></td><td align=\"center\">❌<br><b><code>UNASSIGNED</code></b></td></tr></table>\n<!-- CODE_OWNERS_REVIEW_COMMENT -->"
+          },
+          {
+            "user": {
+              "login": "fzhinkin",
+              "type": "User"
+            },
+            "body": "/dry-run"
+          },
+          {
+            "user": {
+              "login": "KotlinBuild",
+              "type": "User"
+            },
+            "body": "**THIS IS A DRY RUN**\n\nQuality gate is triggered at https://buildserver.labs.intellij.net/build/939099857 — use this link to get full insight.\n\nQuality gate was triggered with the following revisions:\n> **kotlin**\n> Branch: `refs/merge/GITHUB-5976/safe-merge`\n> Commit: [92e1e44](https://github.com/JetBrains/kotlin/commit/92e1e44ef7fb5bd8e8685cb3789af8249ed35a11)\n\n"
+          },
+          {
+            "user": {
+              "login": "KotlinBuild",
+              "type": "User"
+            },
+            "body": "Quality gate finished successfully."
+          }
+        ],
+        "hasNext": false
+      }
+    },
+    {
+      "request": {
+        "method": "GET",
+        "endpoint": "/repos/JetBrains/kotlin/pulls/5976/reviews",
+        "query": {
+          "per_page": "100",
+          "page": "1"
+        }
+      },
+      "response": {
+        "status": 200,
+        "body": [
+          {
+            "user": {
+              "login": "DmitryNekrasov",
+              "type": "User"
+            }
+          },
+          {
+            "user": {
+              "login": "DmitryNekrasov",
+              "type": "User"
+            }
+          },
+          {
+            "user": {
+              "login": "fzhinkin",
+              "type": "User"
+            }
+          }
+        ],
+        "hasNext": false
+      }
+    },
+    {
+      "request": {
+        "method": "GET",
+        "endpoint": "/repos/JetBrains/kotlin/pulls/5976/comments",
+        "query": {
+          "per_page": "100",
+          "page": "1"
+        }
+      },
+      "response": {
+        "status": 200,
+        "body": [
+          {
+            "user": {
+              "login": "DmitryNekrasov",
+              "type": "User"
+            },
+            "body": "nit: `destination(source, validatePath = false)` still calls `source.relativeTo(this@copyToRecursively)` and `target.resolve(...)`, both of which can throw on their own (`IllegalArgumentException` from `relativeTo` if roots don't match, `InvalidPathException` from `resolve` for names that are valid in the source FS but not in the target FS — e.g. `\\0` or `:` when copying from a zip onto a non-Windows / Windows target).\n\nIf that happens here, the secondary exception will mask the original one and still bypass `onError` — the same class of bug this PR fixes, in a narrower case.\n\nTwo options:\n- (a) document this as a known limitation in the comment above, scoping the fix to `IllegalFileNameException` only;\n- (b) wrap the resolve in try/catch and fall back to a safe path (e.g. `target.resolve(source.fileName?.toString().orEmpty())` or just `target`) so `onError` always gets called with the original exception.\n\nEither is fine, but currently the comment claims `onError` is now always reachable, which isn't strictly true."
+          },
+          {
+            "user": {
+              "login": "DmitryNekrasov",
+              "type": "User"
+            },
+            "body": "Suggest naming the specific exception type to make the rationale concrete:\n\n```kotlin\n// destination(source) throws IllegalFileNameException when the resolved path\n// escapes target — which is exactly the case onError must be notified about.\n// Skip validation here so the original exception reaches onError instead of\n// being replaced by a recursive throw.\n```"
+          },
+          {
+            "user": {
+              "login": "DmitryNekrasov",
+              "type": "User"
+            },
+            "body": "The destination path passed to `onError` is now part of the contract this PR restores — please don't drop it with `_`. Capture and assert at least:\n\n- `source` corresponds to the offending zip entry (e.g. `assertTrue(source.toString().endsWith(\"test\"))`)\n- `dst` is the unvalidated resolved path (e.g. `assertFalse(dst.normalize().startsWith(target.normalize()))`)\n\nWithout this, a future change that silently re-enables validation inside `error()` would not be caught — the test would still pass as long as the callback is invoked at all (which it would, for some other exception)."
+          },
+          {
+            "user": {
+              "login": "DmitryNekrasov",
+              "type": "User"
+            },
+            "body": "Concrete regression this catches:\n\nSuppose someone later \"helpfully\" clamps `dst` inside `error()` to keep it within `target`:\n\n```kotlin\nfun error(source: Path, exception: Exception): FileVisitResult {\n    val raw = destination(source, validatePath = false)\n    val dst = if (raw.normalize().startsWith(normalizedTarget)) raw else target\n    return onError(source, dst, exception).toFileVisitResult()\n}\n```\n\nWalk-through for the Archive4 entry `../../../../../test`:\n\n1. `destination(source)` at line 237 still throws `IllegalFileNameException` (validation is on at that call site).\n2. The `catch` block invokes `error()`.\n3. `raw` = `<tmpdir>/UnzipArchive4/../../../../../test` — outside `target`.\n4. The new \"guard\" replaces it: `dst = target`.\n5. `onError(source, target, IllegalFileNameException)` is invoked.\n\nThe current test passes:\n- `failed = true` ✓\n- `assertIs<IllegalFileNameException>(exception)` ✓\n- `assertTrue(failed)` ✓\n\n…but the restored contract is silently broken — the caller now sees `target` itself instead of the unvalidated path that triggered the error.\n\nThe proposed `assertFalse(dst.normalize().startsWith(target.normalize()))` fails here, catching the regression."
+          },
+          {
+            "user": {
+              "login": "fzhinkin",
+              "type": "User"
+            },
+            "body": "> `destination(source, validatePath = false)` still calls `source.relativeTo(this@copyToRecursively)` and `target.resolve(...)`, both of which can throw on their own (`IllegalArgumentException` from `relativeTo` if roots don't match, `InvalidPathException` from `resolve` for names that are valid in the source FS but not in the target FS — e.g. `\\0` or `:` when copying from a zip onto a non-Windows / Windows target).\r\n\r\nI don't see how we can get an exception from `relativeTo`, but `resolve` can indeed throw one. Not sure if there's a reasonable way to handle it other than updating `onError`'s contract."
+          }
+        ],
+        "hasNext": false
+      }
+    }
+  ],
+  "result": {
+    "state": "CLOSED_UNMERGED",
+    "evidence": "### Code Owners\n\n<table><tr><th>Rule</th><th>Owners</th><th>Approval</th></tr><tr><td><code>/​libraries/​stdlib/​</code></td><td><a href=\"https://github.com/DmitryNekrasov\"><b><code>@DmitryNekrasov</code></b></a>, <a href=\"https://github.com/fzhinkin\"><b><code>@fzhinkin</code></b></a>, <a href=\"https://github.com/ilya-g\"><b><code>@ilya-g</code></b></a>, <a href=\"https://github.com/qwwdfsad\"><b><code>@qwwdfsad</code></b></a></td><td align=\"center\">❌<br><b><code>UNASSIGNED</code></b></td></tr></table>\n<!-- CODE_OWNERS_REVIEW_COMMENT -->\n\n/dry-run\n\nnit: `destination(source, validatePath = false)` still calls `source.relativeTo(this@copyToRecursively)` and `target.resolve(...)`, both of which can throw on their own (`IllegalArgumentException` from `relativeTo` if roots don't match, `InvalidPathException` from `resolve` for names that are valid in the source FS but not in the target FS — e.g. `\\0` or `:` when copying from a zip onto a non-Windows / Windows target).\n\nIf that happens here, the secondary exception will mask the original one and still bypass `onError` — the same class of bug this PR fixes, in a narrower case.\n\nTwo options:\n- (a) document this as a known limitation in the comment above, scoping the fix to `IllegalFileNameException` only;\n- (b) wrap the resolve in try/catch and fall back to a safe path (e.g. `target.resolve(source.fileName?.toString().orEmpty())` or just `target`) so `onError` always gets called with the original exception.\n\nEither is fine, but currently the comment claims `onError` is now always reachable, which isn't strictly true.\n\nSuggest naming the specific exception type to make the rationale concrete:\n\n```kotlin\n// destination(source) throws IllegalFileNameException when the resolved path\n// escapes target — which is exactly the case onError must be notified about.\n// Skip validation here so the original exception reaches onError instead of\n// being replaced by a recursive throw.\n```\n\nThe destination path passed to `onError` is now part of the contract this PR restores — please don't drop it with `_`. Capture and assert at least:\n\n- `source` corresponds to the offending zip entry (e.g. `assertTrue(source.toString().endsWith(\"test\"))`)\n- `dst` is the unvalidated resolved path (e.g. `assertFalse(dst.normalize().startsWith(target.normalize()))`)\n\nWithout this, a future change that silently re-enables validation inside `error()` would not be caught — the test would still pass as long as the callback is invoked at all (which it would, for some other exception).\n\nConcrete regression this catches:\n\nSuppose someone later \"helpfully\" clamps `dst` inside `error()` to keep it within `target`:\n\n```kotlin\nfun error(source: Path, exception: Exception): FileVisitResult {\n    val raw = destination(source, validatePath = false)\n    val dst = if (raw.normalize().startsWith(normalizedTarget)) raw else target\n    return onError(source, dst, exception).toFileVisitResult()\n}\n```\n\nWalk-through for the Archive4 entry `../../../../../test`:\n\n1. `destination(source)` at line 237 still throws `IllegalFileNameException` (validation is on at that call site).\n2. The `catch` block invokes `error()`.\n3. `raw` = `<tmpdir>/UnzipArchive4/../../../../../test` — outside `target`.\n4. The new \"guard\" replaces it: `dst = target`.\n5. `onError(source, target, IllegalFileNameException)` is invoked.\n\nThe current test passes:\n- `failed = true` ✓\n- `assertIs<IllegalFileNameException>(exception)` ✓\n- `assertTrue(failed)` ✓\n\n…but the restored contract is silently broken — the caller now sees `target` itself instead of the unvalidated path that triggered the error.\n\nThe proposed `assertFalse(dst.normalize().startsWith(target.normalize()))` fails here, catching the regression.\n\n> `destination(source, validatePath = false)` still calls `source.relativeTo(this@copyToRecursively)` and `target.resolve(...)`, both of which can throw on their own (`IllegalArgumentException` from `relativeTo` if roots don't match, `InvalidPathException` from `resolve` for names that are valid in the source FS but not in the target FS — e.g. `\\0` or `:` when copying from a zip onto a non-Windows / Windows target).\r\n\r\nI don't see how we can get an exception from `relativeTo`, but `resolve` can indeed throw one. Not sure if there's a reasonable way to handle it other than updating `onError`'s contract."
+  }
+}

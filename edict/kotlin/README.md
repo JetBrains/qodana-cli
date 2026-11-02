@@ -340,6 +340,15 @@ validation. The server also refuses to start while an inspection promotion on re
 active weak-signal review belongs to a repository other than the promotion one; resolved
 promotions may come from an earlier repository.
 
+Review comments of bots are no evidence. Providers mark apps themselves (GitHub's `Bot` accounts, Space applications
+and built-in services); name the accounts that post as users, such as a build server's, in `edict.bots`:
+
+```yaml
+edict:
+  bots:
+    - KotlinBuild
+```
+
 ## Implementation references
 
 The managed API and policies were ported from the former Go implementation

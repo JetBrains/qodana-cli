@@ -1,0 +1,28 @@
+{
+  "exchanges": [
+    {
+      "request": {
+        "method": "GET",
+        "endpoint": "/repos/JetBrains/kotlin/contents/core/descriptors",
+        "query": {
+          "ref": "00708e800293156c9c4acaaaa7c06cb78e96ae69"
+        }
+      },
+      "response": {
+        "status": 200,
+        "body": [
+          {
+            "name": "build.gradle.kts",
+            "type": "file"
+          },
+          {
+            "name": "src",
+            "type": "dir"
+          }
+        ],
+        "hasNext": false
+      }
+    }
+  ],
+  "result": "IllegalStateException: GitHub file read did not return an object"
+}

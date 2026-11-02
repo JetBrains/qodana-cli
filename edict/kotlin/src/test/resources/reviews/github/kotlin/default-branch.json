@@ -1,0 +1,28 @@
+{
+  "exchanges": [
+    {
+      "request": {
+        "method": "GET",
+        "endpoint": "/repos/JetBrains/kotlin",
+        "query": {}
+      },
+      "response": {
+        "status": 200,
+        "body": {
+          "name": "kotlin",
+          "owner": {
+            "login": "JetBrains",
+            "type": "Organization"
+          },
+          "default_branch": "master",
+          "organization": {
+            "login": "JetBrains",
+            "type": "Organization"
+          }
+        },
+        "hasNext": false
+      }
+    }
+  ],
+  "result": "master"
+}

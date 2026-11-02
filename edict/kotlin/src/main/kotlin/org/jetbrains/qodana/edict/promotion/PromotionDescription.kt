@@ -79,12 +79,9 @@ internal fun EdictNextSignal.referenceUrl(): String? {
     is EdictNextSignalSource.FromPR -> origin.url
     is EdictNextSignalSource.FromCommit -> origin.url
     is EdictNextSignalSource.SubmittedFeedback, is EdictNextSignalSource.Generated -> null
-  }?.takeIf { it.isNotBlank() } ?: return null
+  } ?: return null
   val uri = runCatching { URI(url) }.getOrNull() ?: return null
-  return url.takeIf {
-    uri.scheme?.lowercase() in setOf("http", "https") && !uri.host.isNullOrBlank() && uri.userInfo == null &&
-      url.none { it.isWhitespace() || it in "<>" }
-  }
+  return url.takeIf { uri.scheme?.lowercase() in setOf("http", "https") && !uri.host.isNullOrBlank() && uri.userInfo == null }
 }
 
 internal fun String.markdownText(): String = buildString {

@@ -2,11 +2,12 @@
 package org.jetbrains.qodana.edict.ci.space
 
 import kotlinx.serialization.json.JsonArray
-import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.JsonNull
 import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.buildJsonArray
 import kotlinx.serialization.json.buildJsonObject
+import kotlinx.serialization.json.intOrNull
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.put
 import org.jetbrains.qodana.edict.ci.CiHttpResponse
@@ -24,7 +25,6 @@ import org.jetbrains.qodana.edict.ci.ReviewSelection
 import org.jetbrains.qodana.edict.ci.ReviewState
 import org.jetbrains.qodana.edict.ci.ReviewStatus
 import org.jetbrains.qodana.edict.ci.ReviewThread
-import org.jetbrains.qodana.edict.ci.isBot
 import org.jetbrains.qodana.edict.ci.urlPart
 import org.jetbrains.qodana.edict.signals.validRevision
 import org.jetbrains.qodana.edict.signals.validSourcePath
@@ -39,16 +39,18 @@ import java.time.ZoneOffset
 import java.util.Base64
 
 /** The client of [repository], with `SPACE_TOKEN` from the server environment. */
-internal fun spaceReviewApi(repository: ReviewRepository): SpaceReviewApi {
+internal fun spaceReviewApi(repository: ReviewRepository, bots: Set<String>): SpaceReviewApi {
   val token = System.getenv("SPACE_TOKEN")
   require(!token.isNullOrBlank()) { "${repository.label()} requires SPACE_TOKEN in the server environment" }
-  return SpaceReviewApi(repository, DefaultCiHttpTransport(CiProviderId.SPACE, "https://${repository.host}/api/http", token))
+  return SpaceReviewApi(repository, DefaultCiHttpTransport(CiProviderId.SPACE, "https://${repository.host}/api/http", token), bots)
 }
 
 
 internal class SpaceReviewApi(
   override val repository: ReviewRepository,
   private val http: CiHttpTransport,
+  /** The usernames, in any case, of accounts that post as users but are bots. */
+  private val bots: Set<String>,
 ) : ReviewApi {
   // TODO(R11): discovery pages and PR reads append to `numbers` and `problems` from nested loops; map each page and PR
   //  to its result (numbers or reviews, plus its own problems) and combine them at the end.
@@ -59,6 +61,10 @@ internal class SpaceReviewApi(
     if (numbers.isEmpty()) {
       val start = LocalDate.parse(selection.startDate).atStartOfDay().toInstant(ZoneOffset.UTC).toEpochMilli()
       val seen = mutableSetOf<Int>()
+      // Space keeps no merge time: `timestamp` is the review's last change, which for a merged review is its merge;
+      // comments, resolved discussions and cherry-picks after the merge leave it.
+      // `to` bounds the creation date, which every review merged by the end date meets, and `LastUpdatedDesc` sorts
+      // by `timestamp`, so the first review changed before the start date ends the range.
       for (page in 0 until MAX_PAGES) {
         val response = get(
           root,
@@ -69,7 +75,7 @@ internal class SpaceReviewApi(
             "repository" to repository.repository,
             "sort" to "LastUpdatedDesc",
             "to" to selection.endDate,
-            "\$fields" to "data(review(id,number,timestamp))",
+            "\$fields" to "data(review(number,timestamp))",
           ),
         ).body as? JsonObject
         if (response == null) {
@@ -78,7 +84,7 @@ internal class SpaceReviewApi(
         }
         val data = response.objectElements("data", "Space review discovery page ${page + 1}", problems)
         var old = false
-        for ((index, wrapper) in data.objects.withIndex()) {
+        for ((index, wrapper) in data.objects) {
           val item = wrapper["review"] as? JsonObject
           if (item == null) {
             problems += "Space review discovery page ${page + 1} data[$index]: missing review object"
@@ -118,47 +124,37 @@ internal class SpaceReviewApi(
     selection: ReviewSelection,
     problems: MutableList<String>,
   ): PullRequest? {
-    val value = get(
-      "$root/number:$number",
-      mapOf(
-        "\$fields" to "id,number,state,timestamp,title,description,feedChannelId," +
-          "branchPair(repository,isMerged,sourceBranchRef,targetBranchInfo(ref))",
-      ),
-    ).body.jsonObject
-    require(value.number("number").toInt() == number && value.text("state").isNotEmpty()) {
-      "Wrong Space review or missing merge state"
-    }
-    if (value.text("state") != "Closed") return null
+    val value = reviewRecord(
+      "number:$number",
+      "id,number,state,timestamp,title,description,feedChannelId," +
+        "branchPair(repository,isMerged,sourceBranchRef,targetBranchInfo(ref))",
+    )
+    require(value.number("number").toInt() == number) { "Space answered with another review" }
     val pair = value.obj("branchPair")
-    require(pair.text("repository") == repository.repository && pair.flag("isMerged") != null) {
-      "Invalid Space review repository or merge status"
-    }
-    if (pair.flag("isMerged") != true || !selection.containsDate(value.number("timestamp"))) return null
+    require(pair.isNotEmpty()) { "Space review is a review of commits, not a merge request" }
+    require(pair.text("repository") == repository.repository) { "Space review of another repository" }
+    if (value.reviewState() != ReviewState.MERGED) return null
+    if (!selection.containsDate(value.number("timestamp"))) return null
     val feed = value.text("feedChannelId")
     require(feed.isNotEmpty()) { "Space review lacks discussion feed" }
     val threads = spaceFeed(feed, "Space PR $number feed", problems).mapIndexedNotNull { index, message ->
       try {
         val details = message.obj("details")
-        val author = message.obj("projectedItem").obj("author")
-        if (
-          details.text("className") != "CodeDiscussionAddedFeedEvent" ||
-          author.obj("details").obj("user").isEmpty() ||
-          isBot(author.text("name"), author.obj("details").text("className"))
-        ) return@mapIndexedNotNull null
+        if (details.text("className") != "CodeDiscussionAddedFeedEvent") return@mapIndexedNotNull null
         val discussion = details.obj("codeDiscussion")
         val channel = discussion.obj("channel").text("id")
         require(channel.isNotEmpty()) { "discussion lacks channel" }
         val messages = spaceDiscussion(channel, "Space PR $number discussion $channel", problems)
         if (messages.isEmpty()) return@mapIndexedNotNull null
         val anchor = discussion.obj("anchor")
-        val line = (anchor.number("line").takeIf { it > 0 } ?: anchor.number("oldLine").takeIf { it > 0 })?.toInt()
+        val lines = anchor.anchorLines(discussion.obj("endAnchor"))
         ReviewThread(
           "space-$number-${message.text("id")}",
           "https://${repository.host}/im/review/${urlPart(value.text("id"))}?message=${urlPart(message.text("id"))}&channel=${urlPart(feed)}",
           anchor.text("filename").removePrefix("/"),
           anchor.text("revision"),
-          line,
-          line,
+          lines?.first,
+          lines?.last,
           messages,
         )
       }
@@ -187,7 +183,8 @@ internal class SpaceReviewApi(
   /** Reads without validation, for branch revisions this client resolved itself. */
   private fun readFile(revision: String, path: String): String {
     val root = repositoryEndpoint()
-    val files = get(root + "/files", mapOf("commit" to revision, "path" to path)).body as? JsonArray
+    // Space answers 404 for a revision it doesn't have, which the read reports, and no file for a missing path.
+    val files = get("$root/files", mapOf("commit" to revision, "path" to path)).body as? JsonArray
       ?: error("Space API did not return a file list")
     val file = files.map { it.jsonObject }
       .firstOrNull { it.text("path") == path && it.text("type") in listOf("FILE", "EXE_FILE") }
@@ -203,12 +200,10 @@ internal class SpaceReviewApi(
     return bytes.toString(Charsets.UTF_8)
   }
 
-  override fun resolveTargetBranch(configured: String?): String {
-    if (configured != null) return configured
-    return expectObject(http.send("GET", repositoryEndpoint()), 200)
-      .obj("defaultBranch").text("head")
-      .also { require(it.isNotBlank()) { "Space repository has no default branch" } }
-  }
+  // Space answers the default branch as a ref, refs/heads/<name>.
+  override fun resolveTargetBranch(configured: String?): String =
+    configured ?: expectObject(http.send("GET", repositoryEndpoint()), 200).obj("defaultBranch").text("head")
+      .removePrefix("refs/heads/").also { require(it.isNotBlank()) { "Space repository has no default branch" } }
 
   override fun findOrCreateReview(request: CreateReviewRequest): ReviewReference {
     val branch = request.branch
@@ -230,14 +225,14 @@ internal class SpaceReviewApi(
     ), 200, 201)
     val reviewId = review.text("id")
     require(reviewId.isNotBlank()) { "Space code review has no id" }
+    val number = review.number("number")
+    require(number > 0) { "Space code review has no number" }
     var reviewer = assignReviewer(reviewsRoot, reviewId, request.reviewer)
     // A bare value is interpreted as a profile ID. Also accept configured usernames.
     if (reviewer.status == 404 && ':' !in request.reviewer) {
       reviewer = assignReviewer(reviewsRoot, reviewId, "username:${request.reviewer}")
     }
     expectStatus(reviewer, "Space reviewer assignment", 200, 201)
-    val number = review.number("number")
-    require(number > 0) { "Space code review has no number" }
     return repository.reference(reviewId, "https://${repository.host}/p/${urlPart(repository.owner)}/reviews/$number")
   }
 
@@ -346,7 +341,7 @@ internal class SpaceReviewApi(
         val response = expectObject(http.send("GET", root, mapOf(
           "repository" to repository.repository,
           "sourceBranch" to branch,
-          "targetBranch" to request.targetBranch.removePrefix("refs/heads/"),
+          "targetBranch" to request.targetBranch,
           "state" to state,
           "\$skip" to "${page * PAGE_SIZE}",
           "\$top" to "$PAGE_SIZE",
@@ -358,7 +353,7 @@ internal class SpaceReviewApi(
           val pair = review.obj("branchPair")
           if (pair.text("repository") == repository.repository &&
             pair.text("sourceBranch").removePrefix("refs/heads/") == branch &&
-            pair.text("targetBranch").removePrefix("refs/heads/") == request.targetBranch.removePrefix("refs/heads/")) {
+            pair.text("targetBranch").removePrefix("refs/heads/") == request.targetBranch) {
             return review
           }
         }
@@ -375,41 +370,17 @@ internal class SpaceReviewApi(
 
   private fun readReview(reference: ReviewReference, includeEvidence: Boolean): ReviewStatus {
     repository.requireOwns(reference)
-    val response = expectObject(
-      http.send(
-        "GET",
-        "/projects/key:${urlPart(repository.owner)}/code-reviews/${urlPart(reference.id)}",
-        query = mapOf("\$fields" to ("state,branchPair(isMerged)" + if (includeEvidence) ",feedChannelId" else "")),
-      ),
-      200,
-    )
-    val state = when {
-      response.text("state").uppercase() in setOf("OPEN", "OPENED") -> ReviewState.OPEN
-      response.text("state").uppercase() == "MERGED" || response.obj("branchPair").flag("isMerged") == true -> ReviewState.MERGED
-      else -> ReviewState.CLOSED_UNMERGED
-    }
+    val fields = "state,branchPair(isMerged)" + if (includeEvidence) ",feedChannelId" else ""
+    val response = reviewRecord("id:${urlPart(reference.id)}", fields)
+    val state = response.reviewState()
     if (!includeEvidence) return ReviewStatus(state)
     val feed = response.text("feedChannelId")
     require(feed.isNotBlank()) { "Space review lacks discussion feed" }
     val problems = mutableListOf<String>()
-    val messages = mutableListOf<String>()
-    val discussions = mutableSetOf<String>()
-    spaceFeed(feed, "Space review ${reference.id} feed", problems).forEach { message ->
-      val author = message.obj("projectedItem").obj("author")
-      if (!isBot(author.text("name"), author.obj("details").text("className"))) {
-        message.text("text").takeIf(String::isNotBlank)?.let(messages::add)
-      }
-      val details = message.obj("details")
-      if (details.text("className") == "CodeDiscussionAddedFeedEvent") {
-        val channel = details.obj("codeDiscussion").obj("channel").text("id")
-        require(channel.isNotBlank()) { "Space review discussion lacks channel" }
-        if (discussions.add(channel)) {
-          messages += spaceDiscussion(channel, "Space review ${reference.id} discussion $channel", problems).map { it.body }
-        }
-      }
-    }
+    // The feed also holds every message of the review's code discussions, under the same id, so it lists each once.
+    val messages = spaceFeed(feed, "Space review ${reference.id} feed", problems).filter { it.isPersonText() }
     require(problems.isEmpty()) { "Incomplete Space review feedback: ${problems.joinToString("; ")}" }
-    return ReviewStatus(state, messages.joinToString("\n\n"))
+    return ReviewStatus(state, messages.joinToString("\n\n") { it.text("text") })
   }
 
   // TODO(R11): `spaceFeed` and `spaceDiscussion` fill the caller's `problems` list as an out-parameter, which
@@ -424,8 +395,8 @@ internal class SpaceReviewApi(
         mapOf(
           "channel" to "id:$channel",
           "batchInfo" to "{etag:$etag,batchSize:$PAGE_SIZE}",
-          "\$fields" to "data(chatMessage(id,text,created,details(className,codeDiscussion(id,channel(id)," +
-            "anchor(filename,line,oldLine,revision))),projectedItem(author(name,details(className,user(id)))))),etag,hasMore",
+          "\$fields" to "data(chatMessage(id,text,author(name,details(className))," +
+            "details(className,codeDiscussion(channel(id),anchor(filename,line,oldLine,revision),endAnchor(line,oldLine))))),etag,hasMore",
         ),
       ).body as? JsonObject
       if (response == null) {
@@ -433,7 +404,7 @@ internal class SpaceReviewApi(
         return all.values.toList()
       }
       response.objectElements("data", "$context page ${page + 1}", problems).objects
-        .forEachIndexed { index, wrapper ->
+        .forEach { (index, wrapper) ->
           val message = wrapper["chatMessage"] as? JsonObject
           if (message == null || message.isEmpty()) {
             problems += "$context page ${page + 1} data[$index]: missing chatMessage object"
@@ -465,7 +436,8 @@ internal class SpaceReviewApi(
         "channel" to "id:$channel",
         "sorting" to "FromOldestToNewest",
         "batchSize" to "$DISCUSSION_PAGE_SIZE",
-        "\$fields" to "messages(id,text,author(name,details(className,user(id))),created),nextStartFromDate,orgLimitReached",
+        "\$fields" to "messages(id,text,details(className),author(name,details(className)),created)," +
+          "nextStartFromDate,orgLimitReached",
       )
       if (start.isNotEmpty()) query["startFromDate"] = start
       val response = get("/chats/messages", query).body as? JsonObject
@@ -479,18 +451,17 @@ internal class SpaceReviewApi(
       }
       val messages = response.objectElements("messages", "$context page ${page + 1}", problems)
       var fresh = 0
-      messages.objects.forEachIndexed { index, message ->
+      messages.objects.forEach { (index, message) ->
         if (message.text("id").isEmpty()) {
           problems += "$context page ${page + 1} messages[$index]: missing message ID"
-          return@forEachIndexed
+          return@forEach
         }
-        if (!seen.add(message.text("id"))) return@forEachIndexed
+        if (!seen.add(message.text("id"))) return@forEach
         fresh++
-        val author = message.obj("author")
-        if (message.text("text").isNotEmpty() && !isBot(author.text("name"), author.obj("details").text("className"))) {
+        if (message.isPersonText()) {
           val created = message.obj("created")
           val timestamp = created.text("iso").ifEmpty { Instant.ofEpochMilli(created.number("timestamp")).toString() }
-          all += ReviewMessage(author.text("name"), message.text("text"), timestamp)
+          all += ReviewMessage(message.obj("author").text("name"), message.text("text"), timestamp)
         }
       }
       if (messages.elementCount < DISCUSSION_PAGE_SIZE) return all
@@ -509,7 +480,8 @@ internal class SpaceReviewApi(
     return all
   }
 
-  private data class ObjectElements(val objects: List<JsonObject>, val elementCount: Int)
+  /** The [objects] of an array of [elementCount] elements, each with its index in the array. */
+  private data class ObjectElements(val objects: List<IndexedValue<JsonObject>>, val elementCount: Int)
 
   private fun JsonObject.objectElements(
     key: String,
@@ -521,19 +493,34 @@ internal class SpaceReviewApi(
       problems += "$context: expected '$key' array"
       return ObjectElements(emptyList(), 0)
     }
-    val objects = elements.mapIndexedNotNull { index: Int, element: JsonElement ->
-      (element as? JsonObject).also {
+    val objects = elements.withIndex().mapNotNull { (index, element) ->
+      (element as? JsonObject)?.let { IndexedValue(index, it) }.also {
         if (it == null) problems += "$context $key[$index]: expected object"
       }
     }
     return ObjectElements(objects, elements.size)
   }
 
+  /**
+   * A person's text message: Space marks events and state changes, such as a resolved discussion, with other content
+   * classes, and gives applications and built-in services, such as "RubyMine Workflow" and "JetBrains Space", other
+   * author classes than users. Users named in [bots] aren't people either.
+   */
+  private fun JsonObject.isPersonText(): Boolean =
+    obj("details").text("className") == "M2TextItemContent" && text("text").isNotBlank() &&
+      obj("author").let { author ->
+        author.obj("details").text("className") == "CUserPrincipalDetails" &&
+          bots.none { it.equals(author.text("name"), ignoreCase = true) }
+      }
+
   private fun get(endpoint: String, query: Map<String, String> = emptyMap()): CiHttpResponse =
-    http.send("GET", endpoint, query).also { response ->
-      if (response.status == 404) throw NoSuchFileException("space source")
-      check(response.status == 200) { "space API returned HTTP ${response.status}" }
-    }
+    http.send("GET", endpoint, query).also { expectStatus(it, "Space API", 200) }
+
+  /** The [fields] of the review named by [selector], `id:` or `number:` and the path-encoded id or number. */
+  private fun reviewRecord(selector: String, fields: String): JsonObject =
+    get("/projects/key:${urlPart(repository.owner)}/code-reviews/$selector", mapOf("\$fields" to fields)).body as? JsonObject
+      // Space answers null for a review that doesn't exist or that the token may not read.
+      ?: throw IllegalArgumentException("Space review $selector is missing or not visible")
 
   private fun repositoryEndpoint(): String =
     "/projects/key:${urlPart(repository.owner)}/repositories/${urlPart(repository.repository)}"
@@ -556,4 +543,32 @@ internal class SpaceReviewApi(
     const val DISCUSSION_PAGE_SIZE = 50
     const val MAX_PAGES = 1000
   }
+}
+
+/**
+ * The 1-based lines of a discussion from this anchor to [end], where Space has lines; null for a discussion of the
+ * whole file. Space counts lines from 0, and anchors a line that the change removed by its `oldLine` in the anchor's
+ * revision, which is then the one before the change.
+ */
+private fun JsonObject.anchorLines(end: JsonObject): IntRange? {
+  val side = if (line("line") != null) "line" else "oldLine"
+  val start = line(side) ?: return null
+  return start + 1..(end.line(side) ?: start) + 1
+}
+
+/** The 0-based line under [key]; null where Space has none. */
+private fun JsonObject.line(key: String): Int? = (get(key) as? JsonPrimitive)?.intOrNull
+
+/**
+ * The state of a review answered with `state` and `branchPair(isMerged)`. A review of commits has no branch pair, so
+ * once closed it fails as having no merge status.
+ */
+private fun JsonObject.reviewState(): ReviewState = when (text("state")) {
+  "Opened" -> ReviewState.OPEN
+  "Closed" -> when (obj("branchPair").flag("isMerged")) {
+    true -> ReviewState.MERGED
+    false -> ReviewState.CLOSED_UNMERGED
+    null -> throw IllegalArgumentException("Space review has no merge status")
+  }
+  else -> throw IllegalArgumentException("Space review has the unknown state '${text("state")}'")
 }

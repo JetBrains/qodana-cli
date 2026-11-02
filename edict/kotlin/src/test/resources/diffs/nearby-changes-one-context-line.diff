@@ -1,0 +1,6 @@
+--- a/old.kt
++++ b/new.kt
+@@ -9,2 +9,2 @@
+ line 9
+-old 10
++new 10

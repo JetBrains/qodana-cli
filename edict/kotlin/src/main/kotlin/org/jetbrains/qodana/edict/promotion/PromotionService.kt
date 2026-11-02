@@ -105,7 +105,7 @@ internal class PromotionService(
       ))
     }
     val target = reviews.repository
-    val promotionId = "p-${sha256Hex("${cluster.id}\u0000$digest\u0000${target.provider}\u0000${target.owner}\u0000${target.repository}\u0000$targetBranch\u0000$targetPath").take(24)}"
+    val promotionId = "p-${sha256Hex("${cluster.id}\u0000$digest\u0000${target.label()}\u0000$targetBranch\u0000$targetPath").take(24)}"
     return try {
       val review = reviews.findOrCreateReview(
         CreateReviewRequest(

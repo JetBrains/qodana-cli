@@ -38,6 +38,7 @@ data class ReviewRepository(
   /** A review of this repository; see [ReviewReference] for what [id] and [url] hold. */
   fun reference(id: String, url: String): ReviewReference = ReviewReference(provider, owner, repository, id, url)
 
+  /** Names the repository in messages; promotion ids hash it, so changing it changes the ids of new promotions. */
   fun label(): String = "${provider.name.lowercase()}:$host/$owner/$repository"
 
   fun owns(reference: ReviewReference): Boolean = reference.reviewRepository == this
@@ -77,6 +78,7 @@ data class CreateReviewRequest(
   val title: String = if (sourceFix == null) "Add Edict inspection $clusterId" else "Fix issues found by Edict inspection $clusterId"
 }
 
+@Serializable
 data class ReviewFetchResult(
   val pullRequests: List<PullRequest>,
   /** Why pull requests or threads were left out, one human-readable message each. */
@@ -150,12 +152,14 @@ data class ReviewReference(
   val reviewRepository: ReviewRepository = ReviewRepository(provider, URI(url).host.orEmpty().lowercase(), owner, repository)
 }
 
+@Serializable
 enum class ReviewState {
   OPEN,
   MERGED,
   CLOSED_UNMERGED,
 }
 
+@Serializable
 data class ReviewStatus(
   val state: ReviewState,
   /** The reviewers' discussion without bots, from [ReviewApi.reviewWithEvidence]; empty from [ReviewApi.review]. */

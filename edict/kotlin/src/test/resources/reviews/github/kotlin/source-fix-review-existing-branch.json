@@ -1,0 +1,122 @@
+{
+  "exchanges": [
+    {
+      "request": {
+        "method": "GET",
+        "endpoint": "/repos/JetBrains/kotlin/git/ref/heads/edict%2Fweak-w-cccccccccccccccccccccccc",
+        "query": {}
+      },
+      "response": {
+        "status": 200,
+        "body": {
+          "object": {
+            "sha": "1111111111111111111111111111111111111111",
+            "type": "commit"
+          }
+        },
+        "hasNext": false
+      }
+    },
+    {
+      "request": {
+        "method": "GET",
+        "endpoint": "/repos/JetBrains/kotlin/contents/gradlew",
+        "query": {
+          "ref": "1111111111111111111111111111111111111111"
+        }
+      },
+      "response": {
+        "status": 200,
+        "body": {
+          "type": "file",
+          "encoding": "base64",
+          "size": 35,
+          "name": "gradlew",
+          "content": "IyEvdXNyL2Jpbi9lbnYgc2gKIyBGaXhlZCBieSBFZGljdAo=\n"
+        },
+        "hasNext": false
+      }
+    },
+    {
+      "request": {
+        "method": "GET",
+        "endpoint": "/repos/JetBrains/kotlin/contents/libraries/stdlib/src/kotlin/util/Lazy.kt",
+        "query": {
+          "ref": "1111111111111111111111111111111111111111"
+        }
+      },
+      "response": {
+        "status": 200,
+        "body": {
+          "type": "file",
+          "encoding": "base64",
+          "size": 33,
+          "name": "Lazy.kt",
+          "content": "cGFja2FnZSBrb3RsaW4KLy8gRml4ZWQgYnkgRWRpY3QK\n"
+        },
+        "hasNext": false
+      }
+    },
+    {
+      "request": {
+        "method": "GET",
+        "endpoint": "/repos/JetBrains/kotlin/pulls",
+        "query": {
+          "state": "all",
+          "head": "JetBrains:edict/weak-w-cccccccccccccccccccccccc",
+          "base": "1.3.70"
+        }
+      },
+      "response": {
+        "status": 200,
+        "body": [],
+        "hasNext": false
+      }
+    },
+    {
+      "request": {
+        "method": "POST",
+        "endpoint": "/repos/JetBrains/kotlin/pulls",
+        "query": {},
+        "body": {
+          "title": "Fix issues found by Edict inspection avoid-thread-sleep",
+          "head": "edict/weak-w-cccccccccccccccccccccccc",
+          "base": "1.3.70",
+          "body": "Replaces Thread.sleep with explicit synchronization where the inspection reports it."
+        }
+      },
+      "response": {
+        "status": 201,
+        "body": {
+          "html_url": "https://github.com/JetBrains/kotlin/pull/99999",
+          "number": 99999
+        },
+        "hasNext": false
+      }
+    },
+    {
+      "request": {
+        "method": "POST",
+        "endpoint": "/repos/JetBrains/kotlin/pulls/99999/requested_reviewers",
+        "query": {},
+        "body": {
+          "reviewers": [
+            "reviewer"
+          ]
+        }
+      },
+      "response": {
+        "status": 201,
+        "body": {},
+        "hasNext": false
+      }
+    }
+  ],
+  "result": {
+    "provider": "github",
+    "owner": "JetBrains",
+    "repository": "kotlin",
+    "id": "99999",
+    "url": "https://github.com/JetBrains/kotlin/pull/99999"
+  }
+}

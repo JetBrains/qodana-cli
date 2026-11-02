@@ -1,14 +1,9 @@
 package org.jetbrains.qodana.edict.integration
 
 import kotlinx.serialization.encodeToString
-import org.jetbrains.qodana.edict.ci.CreateReviewRequest
-import org.jetbrains.qodana.edict.ci.CreatedReview
-import org.jetbrains.qodana.edict.ci.ReviewManagementApi
-import org.jetbrains.qodana.edict.ci.ReviewReference
+import org.jetbrains.qodana.edict.ci.CiProviderId
 import org.jetbrains.qodana.edict.ci.ReviewRepository
-import org.jetbrains.qodana.edict.ci.ReviewState
-import org.jetbrains.qodana.edict.ci.ReviewStatus
-import org.jetbrains.qodana.edict.common.EdictCIConfiguration
+import org.jetbrains.qodana.edict.support.FakeReviewApi
 import org.jetbrains.qodana.edict.common.EdictConfiguration
 import org.jetbrains.qodana.edict.common.PromotionConfiguration
 import org.jetbrains.qodana.edict.edictnext.EdictNextClusterManifest
@@ -38,12 +33,12 @@ class PromotionIntegrationTest : IntegrationTest() {
     workspace.state.createDirectories()
     val repository = EdictRepository(EdictRepositoryDirectory(workspace.state))
     createGeneratedCluster(repository)
-    val provider = IntegrationPromotionProvider()
+    val provider = FakeReviewApi(ReviewRepository(CiProviderId.GITHUB, "github.test", "JetBrains", "target"))
 
     workspace.withPromotionCodex(
       prompt = "Promote all generated inspections",
       configuration = EdictConfiguration(
-        ci = EdictCIConfiguration("https://github.com/JetBrains/target"),
+        ci = ReviewRepository(CiProviderId.GITHUB, "github.com", "JetBrains", "target"),
         promotion = PromotionConfiguration("reviewer"),
       ),
       reviews = provider,
@@ -54,15 +49,16 @@ class PromotionIntegrationTest : IntegrationTest() {
       assertEquals("edict-promote", promotion.skill)
       assertEquals("completed", promotion.status)
       assertTrue(result.isNotBlank())
-      assertEquals("inspections/integration-rule.inspection.kts", provider.request?.targetPath)
-      val description = assertNotNull(provider.request).description
+      val request = provider.requests.single()
+      assertEquals("inspections/integration-rule.inspection.kts", request.targetPath)
+      val description = request.description
       assertContains(description, "## Description")
       assertContains(description, "Showing referenced STRONG POSITIVE signals from 6 of 6 distinct source files, one per file")
       repeat(6) { index -> assertContains(description, "https://github.test/source/pull/${index + 1}") }
       assertEquals(6, Regex("(?m)^\\d+\\. ").findAll(description).count())
       assertTrue("z-duplicate" !in description)
       val stored = repository.loadCluster("integration-rule").manifest.promotions.single()
-      assertEquals("42", stored.pullRequest.id)
+      assertEquals(listOf(stored.pullRequest), provider.opened.values.toList())
       assertEquals(PromotionPrState.ON_REVIEW, stored.state)
       verifyManagedRun(workspace, runtime, plan)
     }
@@ -91,15 +87,5 @@ class PromotionIntegrationTest : IntegrationTest() {
     }
     repository.paths.inspectionsDirectory.createDirectories()
     repository.paths.inspectionPath("integration-rule").writeText("inspection")
-  }
-
-  private class IntegrationPromotionProvider : ReviewManagementApi {
-    var request: CreateReviewRequest? = null
-    override fun resolveTargetBranch(repository: ReviewRepository, configured: String?): String = configured ?: "main"
-    override fun ensureReview(request: CreateReviewRequest): CreatedReview {
-      this.request = request
-      return CreatedReview("42", "https://github.test/pr/42")
-    }
-    override fun review(reference: ReviewReference) = ReviewStatus(ReviewState.OPEN)
   }
 }

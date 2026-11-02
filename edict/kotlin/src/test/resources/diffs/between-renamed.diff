@@ -1,0 +1,9 @@
+--- a/module/src/Equality.java
++++ b/module/src/Strings.java
+@@ -1,5 +1,5 @@
+ class Equality {
+   boolean same(String a, String b) {
+-    return a == b;
++    return java.util.Objects.equals(a, b);
+   }
+ }

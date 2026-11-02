@@ -1,0 +1,14 @@
+diff --git a/A.kt b/A.kt
+index 1111111..2222222 100644
+--- a/A.kt
++++ b/A.kt
+@@ -2 +2 @@
+-a
++b
+diff --git a/B.kt b/B.kt
+--- a/B.kt
++++ b/B.kt
+@@ -5,2 +5,2 @@
+ x
+-c
++d

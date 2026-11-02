@@ -1,0 +1,388 @@
+{
+  "exchanges": [
+    {
+      "request": {
+        "method": "GET",
+        "endpoint": "/repos/JetBrains/kotlin/pulls/7832",
+        "query": {}
+      },
+      "response": {
+        "status": 200,
+        "body": {
+          "html_url": "https://github.com/JetBrains/kotlin/pull/7832",
+          "number": 7832,
+          "title": "Introduce 'possibleSmartCasts' in 'KaScopeContext'",
+          "user": {
+            "login": "yanex",
+            "type": "User"
+          },
+          "body": "The new endpoint makes it possible to track potential smart casts in a particular position, even if a real cast isn't yet present in the source code.",
+          "merged_at": "2026-09-02T01:33:01Z",
+          "head": {
+            "repo": {
+              "name": "kotlin",
+              "owner": {
+                "login": "JetBrains",
+                "type": "Organization"
+              }
+            },
+            "sha": "e11e8f4afba2b364617b1c89b13746174083acf5",
+            "user": {
+              "login": "JetBrains",
+              "type": "Organization"
+            }
+          },
+          "base": {
+            "repo": {
+              "name": "kotlin",
+              "owner": {
+                "login": "JetBrains",
+                "type": "Organization"
+              }
+            },
+            "sha": "16f6e7a006d3b36950a03df9f87f1193005864a9",
+            "user": {
+              "login": "JetBrains",
+              "type": "Organization"
+            }
+          },
+          "merged_by": {
+            "login": "KotlinBuild",
+            "type": "User"
+          }
+        },
+        "hasNext": false
+      }
+    },
+    {
+      "request": {
+        "method": "GET",
+        "endpoint": "/repos/JetBrains/kotlin/pulls/7832/comments",
+        "query": {
+          "per_page": "100",
+          "page": "1"
+        }
+      },
+      "response": {
+        "status": 200,
+        "body": [
+          {
+            "id": 3904675514,
+            "path": "analysis/analysis-api/src/org/jetbrains/kotlin/analysis/api/components/KaScopeProvider.kt",
+            "original_commit_id": "5abd9cae4bbeddff2f24361bad5c01410cdd0daa",
+            "user": {
+              "login": "abelkov",
+              "type": "User"
+            },
+            "body": "In the [specification](https://kotlinlang.org/spec/type-inference.html#smart-cast-sink-stability) \"smart cast source\" has a different meaning. In the spec terms, this is a smart cast sink. To avoid using the word \"sink\", maybe we should call it `KaSmartCastPosition`?",
+            "created_at": "2026-09-01T13:39:14Z",
+            "original_line": 373,
+            "subject_type": "line"
+          },
+          {
+            "id": 3904686039,
+            "path": "analysis/analysis-api/src/org/jetbrains/kotlin/analysis/api/components/KaScopeProvider.kt",
+            "original_commit_id": "5abd9cae4bbeddff2f24361bad5c01410cdd0daa",
+            "user": {
+              "login": "abelkov",
+              "type": "User"
+            },
+            "body": "Maybe `originalType` like we already have in `KaSmartCastInfo`? It could be clearer in use-site code.",
+            "created_at": "2026-09-01T13:40:22Z",
+            "original_line": 424,
+            "subject_type": "line"
+          },
+          {
+            "id": 3904701730,
+            "path": "analysis/analysis-api/src/org/jetbrains/kotlin/analysis/api/components/KaScopeProvider.kt",
+            "original_commit_id": "5abd9cae4bbeddff2f24361bad5c01410cdd0daa",
+            "user": {
+              "login": "abelkov",
+              "type": "User"
+            },
+            "body": "I think something is wrong with the grammar here. It's better to proofread the docs before merging.",
+            "created_at": "2026-09-01T13:42:07Z",
+            "original_line": 330,
+            "subject_type": "line"
+          },
+          {
+            "id": 3904712965,
+            "path": "analysis/analysis-api/src/org/jetbrains/kotlin/analysis/api/components/KaScopeProvider.kt",
+            "original_commit_id": "5abd9cae4bbeddff2f24361bad5c01410cdd0daa",
+            "user": {
+              "login": "abelkov",
+              "type": "User"
+            },
+            "body": "Maybe `smartCastTypes` (for consistency with `KaSmartCastInfo`)?",
+            "created_at": "2026-09-01T13:43:21Z",
+            "original_line": 337,
+            "subject_type": "line"
+          },
+          {
+            "id": 3904783992,
+            "path": "analysis/analysis-api/src/org/jetbrains/kotlin/analysis/api/components/KaScopeProvider.kt",
+            "original_commit_id": "5abd9cae4bbeddff2f24361bad5c01410cdd0daa",
+            "user": {
+              "login": "abelkov",
+              "type": "User"
+            },
+            "body": "Analysis from Codex:\r\n\r\nFound three issues:\r\n\r\n1. **[P1] New API is added to the frozen legacy surface** — [KaScopeProvider.kt:317](/Users/alexey.belkov/code/kotlin/analysis/analysis-api/src/org/jetbrains/kotlin/analysis/api/components/KaScopeProvider.kt:317)\r\n\r\n   `possibleSmartCasts` and its public types are under `components/`, which is frozen during the endpoint-architecture migration. `AnalysisApiLegacySurfaceDumpTest` and `AnalysisApiLegacyCallableDumpTest` both fail. This should be exposed from a domain package as a context-session endpoint rather than updating the legacy dumps.\r\n\r\n2. **[P1] New public interfaces are unintentionally extensible** — [KaScopeProvider.kt:328](/Users/alexey.belkov/code/kotlin/analysis/analysis-api/src/org/jetbrains/kotlin/analysis/api/components/KaScopeProvider.kt:328), [KaScopeProvider.kt:373](/Users/alexey.belkov/code/kotlin/analysis/analysis-api/src/org/jetbrains/kotlin/analysis/api/components/KaScopeProvider.kt:373)\r\n\r\n   `KaSmartCastPossibility` and `KaSmartCastSource` lack `@SubclassOptInRequired(KaImplementationDetail::class)` or `@KaSpi`. `AnalysisApiExtensibilityTest` consequently fails, and the current API accidentally promises client implementability.\r\n\r\n3. **[P2] Dispatch-receiver smart casts are silently discarded** — [KaFirScopeProvider.kt:380](/Users/alexey.belkov/code/kotlin/analysis/analysis-api-fir/src/org/jetbrains/kotlin/analysis/api/fir/components/KaFirScopeProvider.kt:380)\r\n\r\n   FIR represents a member function’s `this` as a `FirRegularClassSymbol`, which becomes a class symbol rather than `KaVariableSymbol`. The `takeIf` therefore drops valid cases such as `if (this is Bar)`. Widen the source representation to `KaDeclarationSymbol` or explicitly model `this`, and add the existing LL `dispatchReceiver.kt` scenario to the Analysis API tests.",
+            "created_at": "2026-09-01T13:50:46Z",
+            "original_line": 1,
+            "subject_type": "file"
+          },
+          {
+            "id": 3905584034,
+            "path": "analysis/analysis-api/src/org/jetbrains/kotlin/analysis/api/components/KaScopeProvider.kt",
+            "original_commit_id": "5abd9cae4bbeddff2f24361bad5c01410cdd0daa",
+            "user": {
+              "login": "yanex",
+              "type": "User"
+            },
+            "body": "The word \"position\" clashes with the literal position in code (text offsets), whereas an interface represents a node in the smart cast chain.",
+            "created_at": "2026-09-01T15:16:34Z",
+            "original_line": 373,
+            "in_reply_to_id": 3904675514,
+            "subject_type": "line"
+          },
+          {
+            "id": 3907484207,
+            "path": "analysis/analysis-api/src/org/jetbrains/kotlin/analysis/api/components/KaScopeProvider.kt",
+            "original_commit_id": "5abd9cae4bbeddff2f24361bad5c01410cdd0daa",
+            "user": {
+              "login": "yanex",
+              "type": "User"
+            },
+            "body": "1. Addressed in https://github.com/JetBrains/kotlin/pull/7832/changes/c5db5ba3b2aa7f2b01a03c6362925cb5653bd490.\r\n2. Addressed in https://github.com/JetBrains/kotlin/pull/7832/changes/c4df335902a8ae99c4d8a9f4d00dbc3608c2e488.\r\n3. Addressed in https://github.com/JetBrains/kotlin/pull/7832/changes/ee0c772f8f696f40dbbabab89494b0203d36ee91, https://github.com/JetBrains/kotlin/pull/7832/changes/b846e9381784e7a247e75234175fd2b853b1ab1b and https://github.com/JetBrains/kotlin/pull/7832/changes/6d6a73f7e4ab25226820cb8366695639e35a1e4f.",
+            "created_at": "2026-09-01T19:09:30Z",
+            "original_line": 1,
+            "in_reply_to_id": 3904783992,
+            "subject_type": "file"
+          },
+          {
+            "id": 3907490539,
+            "path": "analysis/analysis-api/src/org/jetbrains/kotlin/analysis/api/components/KaScopeProvider.kt",
+            "original_commit_id": "5abd9cae4bbeddff2f24361bad5c01410cdd0daa",
+            "user": {
+              "login": "yanex",
+              "type": "User"
+            },
+            "body": "Renamed in https://github.com/JetBrains/kotlin/pull/7832/changes/53f8856dbf3bd2965257973f42553bf745bce464.",
+            "created_at": "2026-09-01T19:10:13Z",
+            "original_line": 337,
+            "in_reply_to_id": 3904712965,
+            "subject_type": "line"
+          },
+          {
+            "id": 3907492338,
+            "path": "analysis/analysis-api/src/org/jetbrains/kotlin/analysis/api/components/KaScopeProvider.kt",
+            "original_commit_id": "5abd9cae4bbeddff2f24361bad5c01410cdd0daa",
+            "user": {
+              "login": "yanex",
+              "type": "User"
+            },
+            "body": "Renamed in https://github.com/JetBrains/kotlin/pull/7832/changes/d80b4d23c935646feb0d6ad5e1734b5d5cbf0a9d.",
+            "created_at": "2026-09-01T19:10:23Z",
+            "original_line": 424,
+            "in_reply_to_id": 3904686039,
+            "subject_type": "line"
+          },
+          {
+            "id": 3907594875,
+            "path": "analysis/analysis-api/src/org/jetbrains/kotlin/analysis/api/components/KaScopeProvider.kt",
+            "original_commit_id": "5abd9cae4bbeddff2f24361bad5c01410cdd0daa",
+            "user": {
+              "login": "yanex",
+              "type": "User"
+            },
+            "body": "Addressed in https://github.com/JetBrains/kotlin/pull/7832/changes/0f2ea971a890d52729bec35811ef73a5fed556c2.",
+            "created_at": "2026-09-01T19:22:36Z",
+            "original_line": 330,
+            "in_reply_to_id": 3904701730,
+            "subject_type": "line"
+          }
+        ],
+        "hasNext": false
+      }
+    },
+    {
+      "request": {
+        "method": "GET",
+        "endpoint": "/repos/JetBrains/kotlin/pulls/7832/reviews",
+        "query": {
+          "per_page": "100",
+          "page": "1"
+        }
+      },
+      "response": {
+        "status": 200,
+        "body": [
+          {
+            "id": 5078741791,
+            "user": {
+              "login": "abelkov",
+              "type": "User"
+            }
+          },
+          {
+            "id": 5079827002,
+            "user": {
+              "login": "yanex",
+              "type": "User"
+            }
+          },
+          {
+            "id": 5082012370,
+            "user": {
+              "login": "yanex",
+              "type": "User"
+            }
+          },
+          {
+            "id": 5082019664,
+            "user": {
+              "login": "yanex",
+              "type": "User"
+            }
+          },
+          {
+            "id": 5082021659,
+            "user": {
+              "login": "yanex",
+              "type": "User"
+            }
+          },
+          {
+            "id": 5082133037,
+            "user": {
+              "login": "yanex",
+              "type": "User"
+            }
+          },
+          {
+            "id": 5082196953,
+            "user": {
+              "login": "abelkov",
+              "type": "User"
+            }
+          }
+        ],
+        "hasNext": false
+      }
+    }
+  ],
+  "result": {
+    "pullRequests": [
+      {
+        "number": 7832,
+        "url": "https://github.com/JetBrains/kotlin/pull/7832",
+        "title": "Introduce 'possibleSmartCasts' in 'KaScopeContext'",
+        "body": "The new endpoint makes it possible to track potential smart casts in a particular position, even if a real cast isn't yet present in the source code.",
+        "baseRevision": "16f6e7a006d3b36950a03df9f87f1193005864a9",
+        "headRevision": "e11e8f4afba2b364617b1c89b13746174083acf5",
+        "closeTimestamp": 1788312781000,
+        "threads": [
+          {
+            "threadId": "github-7832-3904675514",
+            "reviewDiscussionUrl": "https://github.com/JetBrains/kotlin/pull/7832#discussion_r3904675514",
+            "filePath": "analysis/analysis-api/src/org/jetbrains/kotlin/analysis/api/components/KaScopeProvider.kt",
+            "originalCommitSha": "5abd9cae4bbeddff2f24361bad5c01410cdd0daa",
+            "anchorLine": 373,
+            "anchorEndLine": 373,
+            "messages": [
+              {
+                "author": "abelkov",
+                "body": "In the [specification](https://kotlinlang.org/spec/type-inference.html#smart-cast-sink-stability) \"smart cast source\" has a different meaning. In the spec terms, this is a smart cast sink. To avoid using the word \"sink\", maybe we should call it `KaSmartCastPosition`?",
+                "createdAt": "2026-09-01T13:39:14Z"
+              },
+              {
+                "author": "yanex",
+                "body": "The word \"position\" clashes with the literal position in code (text offsets), whereas an interface represents a node in the smart cast chain.",
+                "createdAt": "2026-09-01T15:16:34Z"
+              }
+            ]
+          },
+          {
+            "threadId": "github-7832-3904686039",
+            "reviewDiscussionUrl": "https://github.com/JetBrains/kotlin/pull/7832#discussion_r3904686039",
+            "filePath": "analysis/analysis-api/src/org/jetbrains/kotlin/analysis/api/components/KaScopeProvider.kt",
+            "originalCommitSha": "5abd9cae4bbeddff2f24361bad5c01410cdd0daa",
+            "anchorLine": 424,
+            "anchorEndLine": 424,
+            "messages": [
+              {
+                "author": "abelkov",
+                "body": "Maybe `originalType` like we already have in `KaSmartCastInfo`? It could be clearer in use-site code.",
+                "createdAt": "2026-09-01T13:40:22Z"
+              },
+              {
+                "author": "yanex",
+                "body": "Renamed in https://github.com/JetBrains/kotlin/pull/7832/changes/d80b4d23c935646feb0d6ad5e1734b5d5cbf0a9d.",
+                "createdAt": "2026-09-01T19:10:23Z"
+              }
+            ]
+          },
+          {
+            "threadId": "github-7832-3904701730",
+            "reviewDiscussionUrl": "https://github.com/JetBrains/kotlin/pull/7832#discussion_r3904701730",
+            "filePath": "analysis/analysis-api/src/org/jetbrains/kotlin/analysis/api/components/KaScopeProvider.kt",
+            "originalCommitSha": "5abd9cae4bbeddff2f24361bad5c01410cdd0daa",
+            "anchorLine": 330,
+            "anchorEndLine": 330,
+            "messages": [
+              {
+                "author": "abelkov",
+                "body": "I think something is wrong with the grammar here. It's better to proofread the docs before merging.",
+                "createdAt": "2026-09-01T13:42:07Z"
+              },
+              {
+                "author": "yanex",
+                "body": "Addressed in https://github.com/JetBrains/kotlin/pull/7832/changes/0f2ea971a890d52729bec35811ef73a5fed556c2.",
+                "createdAt": "2026-09-01T19:22:36Z"
+              }
+            ]
+          },
+          {
+            "threadId": "github-7832-3904712965",
+            "reviewDiscussionUrl": "https://github.com/JetBrains/kotlin/pull/7832#discussion_r3904712965",
+            "filePath": "analysis/analysis-api/src/org/jetbrains/kotlin/analysis/api/components/KaScopeProvider.kt",
+            "originalCommitSha": "5abd9cae4bbeddff2f24361bad5c01410cdd0daa",
+            "anchorLine": 337,
+            "anchorEndLine": 337,
+            "messages": [
+              {
+                "author": "abelkov",
+                "body": "Maybe `smartCastTypes` (for consistency with `KaSmartCastInfo`)?",
+                "createdAt": "2026-09-01T13:43:21Z"
+              },
+              {
+                "author": "yanex",
+                "body": "Renamed in https://github.com/JetBrains/kotlin/pull/7832/changes/53f8856dbf3bd2965257973f42553bf745bce464.",
+                "createdAt": "2026-09-01T19:10:13Z"
+              }
+            ]
+          },
+          {
+            "threadId": "github-7832-3904783992",
+            "reviewDiscussionUrl": "https://github.com/JetBrains/kotlin/pull/7832#discussion_r3904783992",
+            "filePath": "analysis/analysis-api/src/org/jetbrains/kotlin/analysis/api/components/KaScopeProvider.kt",
+            "originalCommitSha": "5abd9cae4bbeddff2f24361bad5c01410cdd0daa",
+            "messages": [
+              {
+                "author": "abelkov",
+                "body": "Analysis from Codex:\r\n\r\nFound three issues:\r\n\r\n1. **[P1] New API is added to the frozen legacy surface** — [KaScopeProvider.kt:317](/Users/alexey.belkov/code/kotlin/analysis/analysis-api/src/org/jetbrains/kotlin/analysis/api/components/KaScopeProvider.kt:317)\r\n\r\n   `possibleSmartCasts` and its public types are under `components/`, which is frozen during the endpoint-architecture migration. `AnalysisApiLegacySurfaceDumpTest` and `AnalysisApiLegacyCallableDumpTest` both fail. This should be exposed from a domain package as a context-session endpoint rather than updating the legacy dumps.\r\n\r\n2. **[P1] New public interfaces are unintentionally extensible** — [KaScopeProvider.kt:328](/Users/alexey.belkov/code/kotlin/analysis/analysis-api/src/org/jetbrains/kotlin/analysis/api/components/KaScopeProvider.kt:328), [KaScopeProvider.kt:373](/Users/alexey.belkov/code/kotlin/analysis/analysis-api/src/org/jetbrains/kotlin/analysis/api/components/KaScopeProvider.kt:373)\r\n\r\n   `KaSmartCastPossibility` and `KaSmartCastSource` lack `@SubclassOptInRequired(KaImplementationDetail::class)` or `@KaSpi`. `AnalysisApiExtensibilityTest` consequently fails, and the current API accidentally promises client implementability.\r\n\r\n3. **[P2] Dispatch-receiver smart casts are silently discarded** — [KaFirScopeProvider.kt:380](/Users/alexey.belkov/code/kotlin/analysis/analysis-api-fir/src/org/jetbrains/kotlin/analysis/api/fir/components/KaFirScopeProvider.kt:380)\r\n\r\n   FIR represents a member function’s `this` as a `FirRegularClassSymbol`, which becomes a class symbol rather than `KaVariableSymbol`. The `takeIf` therefore drops valid cases such as `if (this is Bar)`. Widen the source representation to `KaDeclarationSymbol` or explicitly model `this`, and add the existing LL `dispatchReceiver.kt` scenario to the Analysis API tests.",
+                "createdAt": "2026-09-01T13:50:46Z"
+              },
+              {
+                "author": "yanex",
+                "body": "1. Addressed in https://github.com/JetBrains/kotlin/pull/7832/changes/c5db5ba3b2aa7f2b01a03c6362925cb5653bd490.\r\n2. Addressed in https://github.com/JetBrains/kotlin/pull/7832/changes/c4df335902a8ae99c4d8a9f4d00dbc3608c2e488.\r\n3. Addressed in https://github.com/JetBrains/kotlin/pull/7832/changes/ee0c772f8f696f40dbbabab89494b0203d36ee91, https://github.com/JetBrains/kotlin/pull/7832/changes/b846e9381784e7a247e75234175fd2b853b1ab1b and https://github.com/JetBrains/kotlin/pull/7832/changes/6d6a73f7e4ab25226820cb8366695639e35a1e4f.",
+                "createdAt": "2026-09-01T19:09:30Z"
+              }
+            ]
+          }
+        ]
+      }
+    ],
+    "problems": []
+  }
+}

@@ -1,0 +1,10 @@
+--- a/old.kt
++++ b/new.kt
+@@ -148,6 +148,7 @@
+ line 148
+ line 149
+ line 150
++inserted
+ line 151
+ line 152
+ line 153

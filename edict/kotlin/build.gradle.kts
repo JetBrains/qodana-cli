@@ -19,6 +19,7 @@ dependencies {
     testImplementation(kotlin("test-junit5"))
     testImplementation(kotlin("reflect"))
     testImplementation("org.junit-pioneer:junit-pioneer:2.3.0")
+    testImplementation("org.junit.jupiter:junit-jupiter-params")
     testRuntimeOnly("org.junit.platform:junit-platform-launcher")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.10.2")
     implementation("io.modelcontextprotocol:kotlin-sdk-server:0.15.0")

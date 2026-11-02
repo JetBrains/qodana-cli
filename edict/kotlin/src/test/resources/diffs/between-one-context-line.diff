@@ -1,0 +1,7 @@
+--- a/module/src/Equality.java
++++ b/module/src/Equality.java
+@@ -2,3 +2,3 @@
+   boolean same(String a, String b) {
+-    return a == b;
++    return java.util.Objects.equals(a, b);
+   }
